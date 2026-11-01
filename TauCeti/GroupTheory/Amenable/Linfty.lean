@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 public import TauCeti.RepresentationTheory.Compact.Haar
@@ -26,14 +26,20 @@ So a topological group is amenable as soon as `L∞` of some left-invariant meas
 left-invariant mean; this is one implication of the characterization of amenable locally compact
 groups by invariant means on Haar `L∞`.
 
-For a compact group, integration against the normalized Haar measure `TauCeti.haarProb G` is
-such a mean on `L∞`, by left invariance of Haar measure. Hence every compact topological group
-is amenable, for its given topology.
+For a Borel probability measure `μ`, integration `φ ↦ ∫ x, φ x ∂μ` is a normalized positive
+functional on `L∞(G, μ)` (`MeasureTheory.Lp.integralPositiveLinearMap`), left invariant
+when `μ` is. Its restriction to `UCB G` is the mean `f ↦ ∫ x, f x ∂μ` (`TauCeti.Mean.integral`).
+For a compact group, the normalized Haar measure `TauCeti.haarProb G` is such a measure. Hence
+every compact topological group is amenable, for its given topology. On a finite group, with any
+group topology, the Haar mean is the normalized counting mean `f ↦ (∑ x, f x) / |G|`, since that
+is the only left-invariant mean (`TauCeti.Mean.IsLeftInvariant.eq_uniform`).
 
 ## Main definitions
 
 * `TauCeti.Mean.ofLpTop M hM`: the restriction `f ↦ M [f]` of a normalized positive functional
   on `L∞` to a mean on `UCB G`.
+* `TauCeti.Mean.integral μ`: integration against a Borel probability measure, as a mean on
+  `UCB G`.
 
 ## Main results
 
@@ -41,7 +47,11 @@ is amenable, for its given topology.
   left-invariant mean.
 * `TauCeti.Amenable.of_lpTop`: a topological group with a left-invariant normalized positive
   functional on `L∞` of a left-invariant measure is amenable.
+* `TauCeti.Mean.isLeftInvariant_integral`: integration against a left-invariant probability
+  measure is a left-invariant mean.
 * `TauCeti.Amenable.of_compactSpace`: every compact topological group is amenable.
+* `TauCeti.Mean.integral_haarProb`: on a finite group, integration against normalized Haar
+  measure is the uniform mean.
 
 ## References
 
@@ -84,6 +94,30 @@ theorem isLeftInvariant_ofLpTop [μ.IsMulLeftInvariant] {M : Lp ℝ ∞ μ →�
   refine isLeftInvariant_iff.2 fun g f => ?_
   rw [ofLpTop_apply, ofLpTop_apply, UCB.coe_leftTranslation, ← Lp.leftTranslation_toLpTop, h]
 
+variable (μ) in
+/-- Integration against a Borel probability measure `μ`, `f ↦ ∫ x, f x ∂μ`, as a mean on `UCB G`.
+It is the restriction to `UCB G` of integration against `μ` on `L∞(G, μ)`. -/
+def integral [IsProbabilityMeasure μ] : Mean G :=
+  ofLpTop (Lp.integralPositiveLinearMap μ ∞) (by simp)
+
+/-- The integration mean integrates a function in `UCB G` against `μ`. -/
+@[simp]
+theorem integral_apply [IsProbabilityMeasure μ] (f : UCB G) :
+    integral μ f = ∫ x, (f : G →ᵇ ℝ) x ∂μ := by
+  rw [integral, ofLpTop_apply, Lp.integralPositiveLinearMap_apply]
+  exact integral_congr_ae (coeFn_toLpTop μ (𝕜 := ℝ) (f : G →ᵇ ℝ))
+
+/-- Integration against a Dirac mass is evaluation at its point. -/
+@[simp]
+theorem integral_dirac (x : G) : integral (Measure.dirac x) = eval G x :=
+  ext fun f => by
+    rw [integral_apply, eval_apply, integral_dirac' _ _ (f : G →ᵇ ℝ).continuous.stronglyMeasurable]
+
+/-- Integration against a left-invariant probability measure is a left-invariant mean. -/
+theorem isLeftInvariant_integral [IsProbabilityMeasure μ] [μ.IsMulLeftInvariant] :
+    (integral μ).IsLeftInvariant :=
+  isLeftInvariant_ofLpTop _ fun g φ => by simp
+
 end Mean
 
 /-- A topological group is amenable if, for some left-invariant measure `μ` on its Borel sets,
@@ -97,22 +131,19 @@ end TauCeti
 
 namespace TauCeti
 
-variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Every compact topological group is amenable: integration against normalized Haar measure is
-a left-invariant mean on its `L∞`, and restricts to a left-invariant mean on `UCB G`. -/
-instance (priority := 100) Amenable.of_compactSpace : Amenable G := by
+a left-invariant mean on `UCB G`. -/
+instance (priority := 100) Amenable.of_compactSpace [CompactSpace G] : Amenable G := by
   borelize G
-  -- Integration against normalized Haar measure, as a positive functional on `L∞`.
-  let I := Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (p := ∞) (μ := haarProb G) Set.univ
-    (measure_lt_top _ _)
-  have hI (φ : Lp ℝ ∞ (haarProb G)) : I φ = ∫ x, φ x ∂haarProb G := by
-    rw [Set.setIntegralLp_apply, setIntegral_univ]
-  let M : Lp ℝ ∞ (haarProb G) →ₚ[ℝ] ℝ := PositiveLinearMap.mk₀ I.toLinearMap
-    fun φ hφ => (hI φ).trans_ge (integral_nonneg_of_ae ((Lp.coeFn_nonneg φ).2 hφ))
-  have hM : M linftyOne = 1 := (hI _).trans ((integral_congr_ae coeFn_linftyOne).trans (by simp))
-  refine Amenable.of_lpTop M hM fun g φ => ?_
-  -- `M φ` is by definition `I φ`; `PositiveLinearMap.mk₀` has no evaluation lemma.
-  exact (hI _).trans ((Lp.integral_leftTranslation g φ).trans (hI φ).symm)
+  exact (amenable_iff G).2 ⟨Mean.integral (haarProb G), Mean.isLeftInvariant_integral⟩
+
+variable [MeasurableSpace G] [BorelSpace G]
+
+/-- On a finite group, with any group topology, integration against normalized Haar measure is
+the normalized counting mean `f ↦ (∑ x, f x) / |G|`. -/
+theorem Mean.integral_haarProb [Finite G] : integral (haarProb G) = uniform G :=
+  isLeftInvariant_integral.eq_uniform
 
 end TauCeti
