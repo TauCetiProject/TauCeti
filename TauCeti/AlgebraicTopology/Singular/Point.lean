@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.ExtraDegeneracy
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import TauCeti.Algebra.Homology.AlternatingConst
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+public import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # The singular chains of a point
@@ -73,53 +73,20 @@ def pointSingularChainHomotopyEquiv :
     ((ChainComplex.alternatingConstHomotopyEquiv _).trans
       (HomotopyEquiv.ofIso ((ChainComplex.single₀ C).mapIso (coproductUniqueIso fun _ : X ↦ R))))
 
-omit [HasCoproducts C] in
-/-- In degree zero, the contraction of the alternating constant complex is the identification of
-its degree-zero term with that of the single complex. -/
-private lemma alternatingConstHomotopyEquiv_hom_f_zero (Y : C) :
-    (ChainComplex.alternatingConstHomotopyEquiv Y).hom.f 0 =
-      (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 Y).inv := by
-  -- Mathlib states no degree-zero formula for this contraction. By definition it is the
-  -- degree-zero component of the identity identification `alternatingFaceMapComplexConst`,
-  -- followed by the augmentation of the constant augmented simplicial object.
-  change 𝟙 Y ≫ (AlternatingFaceMapComplex.ε.app (SimplicialObject.Augmented.const.obj Y)).f 0 = _
-  simp only [AlternatingFaceMapComplex.ε_app_f_zero, SimplicialObject.Augmented.const_obj_hom,
-    NatTrans.id_app, ChainComplex.single₀ObjXSelf, Iso.refl_inv]
-  exact Category.id_comp _
-
-omit [HasZeroObject C] in
-/-- Mathlib's identification of the singular chains of a point with the alternating constant
-complex sends the summand of a singular vertex to the summand of the point. -/
-private lemma ιChainComplex_totallyDisconnectedSpaceIso_hom_f_zero
-    (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫
-        (singularChainComplexFunctorIsoOfTotallyDisconnectedSpace C R X).hom.f 0 =
-      Sigma.ι (fun _ : X ↦ R) default := by
-  -- Mathlib states no degree-zero formula for this isomorphism. By definition it is the map of
-  -- alternating face map complexes induced by `TopCat.toSSetIsoConst`, followed by the identity
-  -- identification `alternatingFaceMapComplexConst`.
-  change _ ≫ ((alternatingFaceMapComplex C).map
-      (Functor.whiskerRight (TopCat.toSSetIsoConst X).hom (sigmaConst.obj R) ≫
-        (Functor.constComp _ _ _).hom)).f 0 ≫ 𝟙 _ = _
-  simp only [SSet.ιChainComplex, Functor.map_comp, HomologicalComplex.comp_f,
-    alternatingFaceMapComplex_map_f, Functor.whiskerRight_app, sigmaConst_obj_map,
-    Functor.constComp_hom_app]
-  refine (congrArg _ ((Category.comp_id _).trans (Category.comp_id _))).trans ?_
-  rw [Sigma.ι_comp_map', Category.id_comp]
-  exact congrArg _ (Subsingleton.elim (α := X) _ _)
-
 /-- The augmentation sends the summand of the unique singular vertex of a point identically to
 the coefficients. -/
-@[reassoc]
+@[simp, reassoc]
 lemma ιChainComplex_pointSingularChainHomotopyEquiv_hom_f_zero
     (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫ (pointSingularChainHomotopyEquiv R X).hom.f 0 =
       (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 R).inv := by
   rw [pointSingularChainHomotopyEquiv, HomotopyEquiv.trans_hom, HomotopyEquiv.trans_hom,
-    HomologicalComplex.comp_f, HomologicalComplex.comp_f, alternatingConstHomotopyEquiv_hom_f_zero]
+    HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    ChainComplex.alternatingConstHomotopyEquiv_hom_f_zero]
   refine (Category.assoc _ _ _).symm.trans ?_
   refine (congrArg (· ≫ _)
-    (ιChainComplex_totallyDisconnectedSpaceIso_hom_f_zero R X σ)).trans ?_
+    (ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero
+      R X σ)).trans ?_
   simp only [HomotopyEquiv.ofIso, Functor.mapIso_hom, ChainComplex.single₀_map_f_zero,
     ChainComplex.single₀ObjXSelf, Iso.refl_inv]
   exact (congrArg _ (Category.id_comp _)).trans
@@ -129,7 +96,8 @@ lemma ιChainComplex_pointSingularChainHomotopyEquiv_hom_f_zero
 instance isIso_pointSingularChainHomotopyEquiv_hom_f_zero :
     IsIso ((pointSingularChainHomotopyEquiv R X).hom.f 0) := by
   rw [pointSingularChainHomotopyEquiv, HomotopyEquiv.trans_hom, HomotopyEquiv.trans_hom,
-    HomologicalComplex.comp_f, HomologicalComplex.comp_f, alternatingConstHomotopyEquiv_hom_f_zero]
+    HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    ChainComplex.alternatingConstHomotopyEquiv_hom_f_zero]
   exact IsIso.comp_isIso' (inferInstanceAs
     (IsIso ((singularChainComplexFunctorIsoOfTotallyDisconnectedSpace C R X).hom.f 0)))
     (IsIso.comp_isIso' (Iso.isIso_inv _) (inferInstanceAs
