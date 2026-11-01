@@ -492,6 +492,12 @@ theorem framingNumber_eq_iff (h : IsSolidTorusNeighborhood f Φ) (n : ℤ) :
     simpa only [map_zsmul, complementHomologyEquiv_boundaryHomologyMap_basis_zero, smul_eq_mul,
       mul_one] using hlongitude
 
+/-- The framing number vanishes exactly when the longitude is null-homologous in the knot
+complement, that is, when the framing is the preferred (Seifert) framing. -/
+theorem framingNumber_eq_zero_iff (h : IsSolidTorusNeighborhood f Φ) :
+    h.framingNumber h₁ h₂ = 0 ↔ h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) = 0 := by
+  rw [framingNumber_eq_iff, zero_smul]
+
 /-- A class of the boundary torus with `(μ, λ)`-coordinates `(p, q)` is homologous in the knot
 complement to `p + n q` times the meridian, `n` the framing number. -/
 theorem complementHomologyEquiv_boundaryHomologyMap (h : IsSolidTorusNeighborhood f Φ)

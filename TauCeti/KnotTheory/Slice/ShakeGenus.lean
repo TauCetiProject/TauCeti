@@ -43,8 +43,8 @@ A **`0`-shake surface** for `K` (`TauCeti.ZeroShakeSurface K`) bundles
 * a solid torus neighbourhood `Ψ : D² × S¹ → S³` of `K` (`TauCeti.IsSolidTorusNeighborhood`) with
   the `0`-framing: its longitude `z ↦ Ψ (1, z)` is null-homologous in the knot complement, that is,
   the framing number of `Ψ` vanishes (`TauCeti.ZeroShakeSurface.framingNumber_eq_zero`);
-* a finite set `C` of points of the disc `D²` such that the embedding carries the boundary of `S`
-  onto the parallel copies `Ψ ({c} × S¹)`, `c ∈ C`, recorded by the continuous map
+* a finite set `C` of points of the open disc, `‖c‖ < 1`, such that the embedding carries the
+  boundary of `S` onto the parallel copies `Ψ ({c} × S¹)`, `c ∈ C`, recorded by the continuous map
   `∂S → D² × S¹` reading the boundary through `Ψ`, whose image is `C × S¹`;
 * the condition that the signed boundary of `S` is a generator: the classes in `H₁(∂S; ℤ)` that
   vanish in `H₁(S; ℤ)` are sent onto `H₁(S¹; ℤ)` by the projection of `∂S` to the core circle.
@@ -56,7 +56,8 @@ core, so the kernel is sent onto `H₁(S¹; ℤ)` exactly when the signed count 
 With `k + 1` copies of one sign and `k` of the other this is Akbulut's `0`-shaken knot.
 The neighbourhood `Ψ` is only a topological embedding and is part of the data, so the shake genus
 is also an infimum over the choice of `Ψ`; a smooth surface can only be bounded by copies that are
-smooth curves.
+smooth curves. The copies are taken in the interior of the solid torus, where `Ψ` is open, rather
+than on its boundary torus, which for a merely topological `Ψ` need not be tame.
 
 The **genus** of a `0`-shake surface (`TauCeti.ZeroShakeSurface.genus`) is read off its rational
 homology, as for slice surfaces: a compact, connected, orientable surface of genus `g` with `b`
@@ -122,7 +123,7 @@ variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finr
 space `E`: a compact, connected, orientable smooth surface `S` with boundary, smoothly and properly
 embedded in the closed unit ball `D⁴`, together with a solid torus neighbourhood `Ψ` of `K` whose
 longitude is null-homologous in the knot complement (the `0`-framing) and a finite set `C` of points
-of the disc, such that
+of the open disc, such that
 
 * the embedding carries the boundary of `S` onto the parallel copies `Ψ ({c} × S¹)` of `K`,
   `c ∈ C`: the continuous map `boundaryMap : ∂S → D² × S¹` reads the boundary through `Ψ`, and its
@@ -165,6 +166,8 @@ structure ZeroShakeSurface (K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1
       (isSolidTorusNeighborhood.framedBoundaryTorus.basis 1) = 0
   /-- The points of the disc whose parallel copies of the knot bound the surface. -/
   parallels : Finset (closedBall (0 : ℂ) 1)
+  /-- The parallel copies lie in the interior of the solid torus. -/
+  norm_lt_one_of_mem_parallels {c : closedBall (0 : ℂ) 1} (hc : c ∈ parallels) : ‖(c : ℂ)‖ < 1
   /-- The boundary of the surface, read through the solid torus. -/
   boundaryMap : C((𝓡∂ 2).boundary carrier, SolidTorus)
   /-- The boundary of the surface lies on the solid torus as recorded by `boundaryMap`. -/
@@ -209,7 +212,7 @@ theorem framingNumber_eq_zero (S : ZeroShakeSurface K)
     (h₂ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 2).obj
       (TopCat.of (sphere (0 : E) 1)))) :
     S.isSolidTorusNeighborhood.framingNumber h₁ h₂ = 0 := by
-  rw [IsSolidTorusNeighborhood.framingNumber_eq_iff, S.boundaryHomologyMap_longitude, zero_smul]
+  rw [IsSolidTorusNeighborhood.framingNumber_eq_zero_iff, S.boundaryHomologyMap_longitude]
 
 end ZeroShakeSurface
 
@@ -249,23 +252,14 @@ theorem zeroShakeGenus_lt_top_iff : zeroShakeGenus K < ⊤ ↔ Nonempty (ZeroSha
 
 /-! ### Slice discs as shake surfaces -/
 
-/-- The circle, identified with the boundary circle of the closed unit disc. -/
-private def circleHomeomorphDiskBoundary : Circle ≃ₜ (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1) :=
-  have : Fact (finrank ℝ ℂ = 1 + 1) := finrank_real_complex_fact'
-  Circle.homeomorphSphere.trans (sphereDiffeomorphBoundaryClosedBall (n := 1)).toHomeomorph
-
-private theorem coe_circleHomeomorphDiskBoundary_symm_apply
-    (x : (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1)) :
-    ((circleHomeomorphDiskBoundary.symm x : Circle) : ℂ) = x.val.val := by
-  simp [circleHomeomorphDiskBoundary]
-
-/-- The first integral homology of the closed unit disc vanishes. -/
-private theorem subsingleton_homology_closedBall :
-    Subsingleton (((singularChains ℤ).obj (TopCat.of (closedBall (0 : ℂ) 1))).homology 1) := by
+/-- The first homology of the closed unit disc vanishes, for any coefficient ring. -/
+private theorem subsingleton_homology_closedBall (R : Type) [Ring R] :
+    Subsingleton (((singularHomologyFunctor (ModuleCat R) 1).obj (ModuleCat.of R R)).obj
+      (TopCat.of (closedBall (0 : ℂ) 1))) := by
   have : ContractibleSpace (closedBall (0 : ℂ) 1) :=
     (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
   exact ModuleCat.isZero_iff_subsingleton.1 <|
-    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℤ ℤ)
+    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R)
       (TopCat.of (closedBall (0 : ℂ) 1)) one_ne_zero
 
 variable {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} {Ψ : SolidTorus → sphere (0 : E) 1}
@@ -289,23 +283,25 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
   isSolidTorusNeighborhood := hΨ
   boundaryHomologyMap_longitude := hl
   parallels := {0}
-  boundaryMap := (ContinuousMap.const _ 0).prodMk circleHomeomorphDiskBoundary.symm
+  norm_lt_one_of_mem_parallels hc := by simp [Finset.mem_singleton.1 hc]
+  boundaryMap := (ContinuousMap.const _ 0).prodMk circleHomeomorphBoundaryClosedBall.symm
   solidTorus_boundaryMap x := by
     rw [ContinuousMap.prod_eval, ContinuousMap.const_apply, hΨ.apply_zero, ← h.apply_inclusion]
     congr 2
-    exact Subtype.ext (coe_circleHomeomorphDiskBoundary_symm_apply x)
+    exact Subtype.ext (circleHomeomorphBoundaryClosedBall_symm_apply_coe x)
   range_boundaryMap := by
     ext ⟨c, z⟩
     simp only [mem_range, ContinuousMap.prod_eval, ContinuousMap.const_apply, Prod.mk.injEq,
       Finset.coe_singleton, mem_prod, mem_singleton_iff, mem_univ, and_true]
-    refine ⟨fun ⟨x, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphDiskBoundary z, hc.symm, ?_⟩⟩
-    exact circleHomeomorphDiskBoundary.symm_apply_apply z
+    refine ⟨fun ⟨x, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
+    exact circleHomeomorphBoundaryClosedBall.symm_apply_apply z
   map_ker_eq_top := by
-    have := subsingleton_homology_closedBall
+    have : Subsingleton (((singularChains ℤ).obj (TopCat.of (closedBall (0 : ℂ) 1))).homology 1) :=
+      subsingleton_homology_closedBall ℤ
     rw [LinearMap.ker_eq_top.2 (Subsingleton.elim _ _), Submodule.map_top, LinearMap.range_eq_top]
     -- The projection of the boundary circle to the core circle is a homeomorphism.
     exact (ContinuousMap.HomotopyEquiv.bijective_singularHomologyMap ℤ 1
-      circleHomeomorphDiskBoundary.symm.toHomotopyEquiv).2
+      circleHomeomorphBoundaryClosedBall.symm.toHomotopyEquiv).2
 
 /-- A smooth slice disc, as a `0`-shake surface, has genus `0`: the disc is contractible and has a
 single boundary circle. -/
@@ -314,12 +310,8 @@ theorem IsSmoothSliceDisc.genus_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     (hΨ : IsSolidTorusNeighborhood K Ψ)
     (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
     (h.toZeroShakeSurface hΨ hl).genus = 0 := by
-  have : ContractibleSpace (closedBall (0 : ℂ) 1) :=
-    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
   have : Subsingleton (h.toZeroShakeSurface hΨ hl).firstHomology :=
-    ModuleCat.isZero_iff_subsingleton.1 <|
-      isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℚ ℚ)
-        (TopCat.of (closedBall (0 : ℂ) 1)) one_ne_zero
+    subsingleton_homology_closedBall ℚ
   rw [ZeroShakeSurface.genus_def, finrank_zero_of_subsingleton]
   simp [IsSmoothSliceDisc.toZeroShakeSurface]
 
@@ -338,12 +330,10 @@ standard solid torus neighbourhood has the `0`-framing. -/
 @[simp]
 theorem zeroShakeGenus_unknot : zeroShakeGenus unknot = 0 := by
   have hU := isSolidTorusNeighborhood_unknotSolidTorus
-  refine isSmoothlySlice_unknot.zeroShakeGenus_eq_zero hU ?_
-  have h := (hU.framingNumber_eq_iff
+  exact isSmoothlySlice_unknot.zeroShakeGenus_eq_zero hU <| (hU.framingNumber_eq_zero_iff
     (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
-    (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _) 0).1
+    (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)).1
     (framingNumber_unknotSolidTorus _ _)
-  rwa [zero_smul] at h
 
 /-! ### Kirby's problem 1.41 (A) -/
 
