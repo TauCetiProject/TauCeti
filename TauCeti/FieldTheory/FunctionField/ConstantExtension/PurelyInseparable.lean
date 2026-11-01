@@ -34,7 +34,7 @@ of `k` containing a root `α` of `X ^ p - a`. Embed `k(t)` in `K(t)` by `t ↦ t
   (`TauCeti.Place.degree_adicOfIrreducible_X_sub_C`). Yet the residue extension is `K / k`, which
   contains the purely inseparable `α`, so **`P₀` is not unramified**
   (`TauCeti.Place.not_isUnramified_of_degree_eq_one`). In general `P₀` is unramified exactly when
-  `K / k` is separable.
+  `K / k` is separable (`TauCeti.Place.isUnramified_adicOfIrreducible_X_sub_C_iff`).
 
 The two places separate the two ways a constant extension can fail to be unramified: a
 ramification index above one, and an inseparable residue extension with index one. The underlying
@@ -48,8 +48,6 @@ by the smoothness of the model or by the genus.
 * `TauCeti.Place.ramificationIdx_adicOfIrreducible_X_sub_C_of_pow_eq`: its ramification index is
   `p`.
 * `TauCeti.Place.conorm_ofPoint_adicOfIrreducible_X_pow_sub_C`: `Con P = p Q`.
-* `TauCeti.Place.isUnramified_adicOfIrreducible_X_sub_C_iff`: the place of `t - c` in `k(t)` is
-  unramified in `K(t)` exactly when `K / k` is separable.
 * `TauCeti.Place.not_isUnramified_adicOfIrreducible_X_sub_C_of_pow_eq`: the place of `t - c` in
   `k(t)` is not unramified in `K(t)`.
 
@@ -77,24 +75,6 @@ variable [Algebra (RatFunc k) (RatFunc K)] [IsScalarTower k (RatFunc k) (RatFunc
 variable [Algebra.IsIntegral (RatFunc k) (RatFunc K)]
 
 /-! #### Rational places: an inseparable residue extension -/
-
-/-- **A rational finite place of `k(t)` is unramified in `K(t)` exactly when `K / k` is
-separable**, when `k(t)` is embedded in `K(t)` by `t ↦ t`. For `c ∈ k`, the only place above the
-place of `t - c` is the place of `t - c` in `K(t)`, with ramification index one; both places are
-rational, so the residue extension is `K / k`. -/
-@[simp]
-theorem isUnramified_adicOfIrreducible_X_sub_C_iff
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (c : k) :
-    (adicOfIrreducible (irreducible_X_sub_C c)).IsUnramified (k' := K) (F' := RatFunc K) ↔
-      Algebra.IsSeparable k K := by
-  set Q := adicOfIrreducible (irreducible_X_sub_C (algebraMap k K c))
-  have hQ := restrict_adicOfIrreducible_X_sub_C_algebraMap hX c
-  have hsep := isSeparable_residueField_iff_of_degree_eq_one Q
-    (degree_adicOfIrreducible_X_sub_C _) (hQ ▸ degree_adicOfIrreducible_X_sub_C c)
-  refine ⟨fun h ↦ hsep.mp (h.isSeparable hQ), fun h ↦
-    (isUnramified_iff _).mpr ⟨⟨Q, hQ⟩, fun Q' hQ' ↦ ?_⟩⟩
-  obtain rfl := (restrict_eq_adicOfIrreducible_X_sub_C_iff hX c Q').mp hQ'
-  exact ⟨ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap hX c, hsep.mpr h⟩
 
 variable {p : ℕ} [Fact p.Prime] [CharP k p] {a : k} {α : K}
 

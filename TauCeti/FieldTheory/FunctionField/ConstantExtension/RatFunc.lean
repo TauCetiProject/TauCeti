@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 public import TauCeti.FieldTheory.RatFunc.Map
 import Mathlib.FieldTheory.RatFunc.IntermediateField
@@ -50,6 +51,8 @@ single place.
   `k'(X)` is the only place over the place of `X - c` in `k(X)`, with `e = 1` and `Con P = Q`.
 * `TauCeti.Place.relativeDegree_adicOfIrreducible_X_sub_C_algebraMap`: at that place
   `f = [k' : k]`, since the residue extension is `k' / k`.
+* `TauCeti.Place.isUnramified_adicOfIrreducible_X_sub_C_iff`: the place of `X - c` in `k(X)` is
+  unramified in `k'(X)` exactly when `k' / k` is separable.
 
 ## References
 
@@ -247,6 +250,24 @@ theorem relativeDegree_adicOfIrreducible_X_sub_C_algebraMap
     (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c)))
   rwa [restrict_adicOfIrreducible_X_sub_C_algebraMap hX, degree_adicOfIrreducible_X_sub_C,
     degree_adicOfIrreducible_X_sub_C, mul_one, mul_one, eq_comm] at h
+
+/-- **A rational finite place of `k(X)` is unramified in `k'(X)` exactly when `k' / k` is
+separable**, when `k(X)` is embedded in `k'(X)` by `X ↦ X`. For `c ∈ k`, the only place above the
+place of `X - c` is the place of `X - c` in `k'(X)`, with ramification index one; both places are
+rational, so the residue extension is `k' / k`. -/
+@[simp]
+theorem isUnramified_adicOfIrreducible_X_sub_C_iff
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
+    (adicOfIrreducible (irreducible_X_sub_C c)).IsUnramified (k' := k') (F' := RatFunc k') ↔
+      Algebra.IsSeparable k k' := by
+  set Q := adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))
+  have hQ := restrict_adicOfIrreducible_X_sub_C_algebraMap hX c
+  have hsep := isSeparable_residueField_iff_of_degree_eq_one Q
+    (degree_adicOfIrreducible_X_sub_C _) (hQ ▸ degree_adicOfIrreducible_X_sub_C c)
+  refine ⟨fun h ↦ hsep.mp (h.isSeparable hQ), fun h ↦
+    (isUnramified_iff _).mpr ⟨⟨Q, hQ⟩, fun Q' hQ' ↦ ?_⟩⟩
+  obtain rfl := (restrict_eq_adicOfIrreducible_X_sub_C_iff hX c Q').mp hQ'
+  exact ⟨ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap hX c, hsep.mpr h⟩
 
 /-- **The conorm of a rational finite place is a single place**: for `c ∈ k`, the conorm of the
 place of `X - c` in `k(X)` is the place of `X - c` in `k'(X)`. -/
