@@ -14,9 +14,10 @@ import Mathlib.Analysis.Normed.Operator.Banach
 /-!
 # Smooth compatible Cayley interpolation
 
-The algebraic Cayley chart identifies compatible complex structures with a convex ball of
-self-adjoint antilinear endomorphisms. Here its inverse is shown to preserve smooth parameter
-families, using the operator-norm topology on continuous linear maps. This is needed when
+The algebraic Cayley chart identifies tame complex structures with a convex ball of antilinear
+endomorphisms, and compatible structures with its self-adjoint part. Here the inverse charts
+are shown to preserve smooth parameter families, using the operator-norm topology on continuous
+linear maps. This is needed when
 extending prescribed almost complex structures across collars: convex interpolation must be
 smooth as well as pointwise compatible.
 
@@ -42,6 +43,29 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J₀ J₁ : AlmostComplexStructure V}
 
+/-- The inverse-chart denominator is invertible also in the continuous-endomorphism ring. -/
+lemma isUnit_one_sub_of_toLinearMap_mem_cayleyBall {C : V →L[ℝ] V}
+    (hC : C.toLinearMap ∈ ω.cayleyBall J₀) : IsUnit (1 - C) := by
+  rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
+  exact isUnit_one_sub_of_mem_cayleyBall hC
+
+/-- In operator-norm coordinates, the inverse tame Cayley chart is the same rational
+formula as its algebraic version. -/
+theorem Compatible.cayleyEquiv_symm_apply_toContinuousLinearMap
+    (h₀ : ω.Compatible J₀) (C : V →L[ℝ] V)
+    (hC : C.toLinearMap ∈ ω.cayleyBall J₀) :
+    LinearMap.toContinuousLinearMap
+        (h₀.cayleyEquiv.symm ⟨C.toLinearMap, hC⟩).val.toLinearMap =
+      LinearMap.toContinuousLinearMap J₀.toLinearMap * (1 + C) * Ring.inverse (1 - C) := by
+  apply ContinuousLinearMap.coe_injective
+  rw [LinearMap.coe_toContinuousLinearMap, Compatible.cayleyEquiv_symm_apply_toLinearMap]
+  have hinv := (isUnit_one_sub_of_toLinearMap_mem_cayleyBall hC).map_ringInverse
+    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
+  simpa only [ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.toLinearMap_add,
+    ContinuousLinearMap.toLinearMap_one, LinearMap.coe_toContinuousLinearMap,
+    ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one] using
+    congrArg (fun A => J₀.toLinearMap * (1 + C.toLinearMap) * A) hinv.symm
+
 /-- In operator-norm coordinates, the inverse compatible Cayley chart is the same rational
 formula as its algebraic version. -/
 theorem Compatible.compatibleCayleyEquiv_symm_apply_toContinuousLinearMap
@@ -50,19 +74,34 @@ theorem Compatible.compatibleCayleyEquiv_symm_apply_toContinuousLinearMap
     LinearMap.toContinuousLinearMap
         (h₀.compatibleCayleyEquiv.symm ⟨C.toLinearMap, hC⟩).val.toLinearMap =
       LinearMap.toContinuousLinearMap J₀.toLinearMap * (1 + C) * Ring.inverse (1 - C) := by
-  have hunit : IsUnit (1 - C) := by
-    rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
-    exact isUnit_one_sub_of_mem_cayleyBall (mem_compatibleCayleyBall.1 hC).1
-  apply ContinuousLinearMap.coe_injective
-  rw [LinearMap.coe_toContinuousLinearMap]
-  rw [Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap]
-  have hinv := hunit.map_ringInverse (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
-  simpa only [ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.toLinearMap_add,
-    ContinuousLinearMap.toLinearMap_one, LinearMap.coe_toContinuousLinearMap,
-    ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one] using
-    congrArg (fun A => J₀.toLinearMap * (1 + C.toLinearMap) * A) hinv.symm
+  simpa only [Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
+    Compatible.cayleyEquiv_symm_apply_toLinearMap] using
+    h₀.cayleyEquiv_symm_apply_toContinuousLinearMap C (compatibleCayleyBall_subset_cayleyBall hC)
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+
+/-- A smooth family in the tame Cayley ball gives a smooth family of tame structures.
+Smoothness is in the continuous-endomorphism carrier, including all external parameters. -/
+theorem Compatible.contDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
+    {C : P → V →L[ℝ] V} (hC : ∀ p, (C p).toLinearMap ∈ ω.cayleyBall J₀)
+    {n : WithTop ℕ∞} {p : P} (hCs : ContDiffAt ℝ n C p) :
+    ContDiffAt ℝ n (fun q => LinearMap.toContinuousLinearMap
+      (h₀.cayleyEquiv.symm ⟨(C q).toLinearMap, hC q⟩).val.toLinearMap) p := by
+  simp_rw [h₀.cayleyEquiv_symm_apply_toContinuousLinearMap]
+  obtain ⟨u, hu⟩ := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
+  have hi : ContDiffAt ℝ n (fun q => Ring.inverse (1 - C q)) p := by
+    have hi := contDiffAt_ringInverse (n := n) ℝ u
+    rw [hu] at hi
+    exact hi.comp p (contDiffAt_const.sub hCs)
+  exact (contDiffAt_const.mul (contDiffAt_const.add hCs)).mul hi
+
+/-- The inverse tame Cayley chart preserves globally smooth parameter families. -/
+theorem Compatible.contDiff_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
+    {C : P → V →L[ℝ] V} (hC : ∀ p, (C p).toLinearMap ∈ ω.cayleyBall J₀)
+    {n : WithTop ℕ∞} (hCs : ContDiff ℝ n C) :
+    ContDiff ℝ n (fun p => LinearMap.toContinuousLinearMap
+      (h₀.cayleyEquiv.symm ⟨(C p).toLinearMap, hC p⟩).val.toLinearMap) :=
+  contDiff_iff_contDiffAt.2 fun _ => h₀.contDiffAt_cayleyEquiv_symm hC hCs.contDiffAt
 
 /-- A smooth family in the compatible Cayley ball gives a smooth family of compatible
 structures. Smoothness is in the continuous-endomorphism carrier, so it includes all external
@@ -72,16 +111,9 @@ theorem Compatible.contDiffAt_compatibleCayleyEquiv_symm (h₀ : ω.Compatible J
     {n : WithTop ℕ∞} {p : P} (hCs : ContDiffAt ℝ n C p) :
     ContDiffAt ℝ n (fun q => LinearMap.toContinuousLinearMap
       (h₀.compatibleCayleyEquiv.symm ⟨(C q).toLinearMap, hC q⟩).val.toLinearMap) p := by
-  simp_rw [h₀.compatibleCayleyEquiv_symm_apply_toContinuousLinearMap]
-  have hunit : IsUnit (1 - C p) := by
-    rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
-    exact isUnit_one_sub_of_mem_cayleyBall (mem_compatibleCayleyBall.1 (hC p)).1
-  obtain ⟨u, hu⟩ := hunit
-  have hi : ContDiffAt ℝ n (fun q => Ring.inverse (1 - C q)) p := by
-    have hi := contDiffAt_ringInverse (n := n) ℝ u
-    rw [hu] at hi
-    exact hi.comp p (contDiffAt_const.sub hCs)
-  exact (contDiffAt_const.mul (contDiffAt_const.add hCs)).mul hi
+  simpa only [Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
+    Compatible.cayleyEquiv_symm_apply_toLinearMap] using
+    h₀.contDiffAt_cayleyEquiv_symm (fun q => compatibleCayleyBall_subset_cayleyBall (hC q)) hCs
 
 /-- The inverse compatible Cayley chart preserves globally smooth parameter families. -/
 theorem Compatible.contDiff_compatibleCayleyEquiv_symm (h₀ : ω.Compatible J₀)
@@ -90,16 +122,6 @@ theorem Compatible.contDiff_compatibleCayleyEquiv_symm (h₀ : ω.Compatible J�
     ContDiff ℝ n (fun p => LinearMap.toContinuousLinearMap
       (h₀.compatibleCayleyEquiv.symm ⟨(C p).toLinearMap, hC p⟩).val.toLinearMap) :=
   contDiff_iff_contDiffAt.2 fun _ => h₀.contDiffAt_compatibleCayleyEquiv_symm hC hCs.contDiffAt
-
-/-- Multiplying a compatible Cayley coordinate by a scalar between zero and one stays in the
-compatible Cayley ball. -/
-theorem Compatible.smul_cayley_mem_compatibleCayleyBall (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Compatible J₁) {t : ℝ} (ht : t ∈ Icc 0 1) :
-    t • J₀.cayley J₁ ∈ ω.compatibleCayleyBall J₀ := by
-  have h := h₀.tames.convex_compatibleCayleyBall h₀.tames.zero_mem_compatibleCayleyBall
-    ((h₀.cayley_mem_compatibleCayleyBall_iff h₁.tames).2 h₁)
-    (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
-  simpa only [smul_zero, zero_add] using h
 
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
@@ -130,28 +152,21 @@ theorem Compatible.cayley_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Comp
 @[simp]
 theorem Compatible.cayleyPath_self (h₀ : ω.Compatible J₀) (t : ℝ) :
     h₀.cayleyPath h₀ t = J₀ := by
-  have h := h₀.compatibleCayleyEquiv.injective (a₁ :=
-      ⟨h₀.cayleyPath h₀ t, h₀.compatible_cayleyPath h₀ t⟩) (a₂ := ⟨J₀, h₀⟩)
-    (Subtype.ext (by simp))
-  exact congrArg Subtype.val h
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₀ t).tames h₀.tames (by simp)
 
 /-- The path agrees with its initial structure on the entire incoming collar. -/
 @[simp]
 theorem Compatible.cayleyPath_of_nonpos (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
     {t : ℝ} (ht : t ≤ 0) : h₀.cayleyPath h₁ t = J₀ := by
-  have h := h₀.compatibleCayleyEquiv.injective (a₁ :=
-      ⟨h₀.cayleyPath h₁ t, h₀.compatible_cayleyPath h₁ t⟩) (a₂ := ⟨J₀, h₀⟩)
-    (Subtype.ext (by simp [h₀.cayley_cayleyPath, smoothTransition.zero_of_nonpos ht]))
-  exact congrArg Subtype.val h
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₁ t).tames h₀.tames
+    (by simp [smoothTransition.zero_of_nonpos ht])
 
 /-- The path agrees with its final structure on the entire outgoing collar. -/
 @[simp]
 theorem Compatible.cayleyPath_of_one_le (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
     {t : ℝ} (ht : 1 ≤ t) : h₀.cayleyPath h₁ t = J₁ := by
-  have h := h₀.compatibleCayleyEquiv.injective (a₁ :=
-      ⟨h₀.cayleyPath h₁ t, h₀.compatible_cayleyPath h₁ t⟩) (a₂ := ⟨J₁, h₁⟩)
-    (Subtype.ext (by simp [h₀.cayley_cayleyPath, smoothTransition.one_of_one_le ht]))
-  exact congrArg Subtype.val h
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₁ t).tames h₁.tames
+    (by simp [smoothTransition.one_of_one_le ht])
 
 /-- The path is smooth on the whole real line, including both transition endpoints. -/
 theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
@@ -160,9 +175,13 @@ theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Co
   let C : ℝ → V →L[ℝ] V := fun t =>
     smoothTransition t • LinearMap.toContinuousLinearMap (J₀.cayley J₁)
   have hC (t : ℝ) : (C t).toLinearMap ∈ ω.compatibleCayleyBall J₀ := by
-    exact h₀.smul_cayley_mem_compatibleCayleyBall h₁
-      ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
-  exact h₀.contDiff_compatibleCayleyEquiv_symm hC
-    (smoothTransition.contDiff.smul contDiff_const)
+    simpa only [C, ContinuousLinearMap.toLinearMap_smul,
+      LinearMap.coe_toContinuousLinearMap] using
+      h₀.smul_cayley_mem_compatibleCayleyBall h₁
+        ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
+  simpa only [C, Compatible.cayleyPath, ContinuousLinearMap.toLinearMap_smul,
+    LinearMap.coe_toContinuousLinearMap] using
+    h₀.contDiff_compatibleCayleyEquiv_symm hC
+      (smoothTransition.contDiff.smul contDiff_const)
 
 end TauCeti.SymplecticForm
