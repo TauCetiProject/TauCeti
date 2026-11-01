@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Omega.Basic
-public import TauCeti.RingTheory.Dagger.DaggerAlgebra
 public import TauCeti.RingTheory.Dagger.Noetherian
 public import TauCeti.RingTheory.Derivation.Quotient
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
@@ -61,7 +60,7 @@ variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B]
   [Algebra R A] [Algebra R B] [Algebra A B] [IsScalarTower R A B]
 
 /-- Finiteness of universally finite differentials descends along a surjective algebra map. -/
-theorem finite_of_surjective [IsNoetherianRing A] [Module.Finite A (Omega R A)]
+theorem finite_of_surjective [Module.Finite A (Omega R A)]
     (h : Function.Surjective (algebraMap A B)) : Module.Finite B (Omega R B) := by
   let f := (ofKaehler R B).restrictScalars A ∘ₗ KaehlerDifferential.map R R A B
   have hf : Function.Surjective f := (ofKaehler_surjective R B).comp
@@ -70,12 +69,14 @@ theorem finite_of_surjective [IsNoetherianRing A] [Module.Finite A (Omega R A)]
     intro x hx
     apply ofKaehler_eq_zero_iff.mpr
     intro N hN
-    -- A finite quotient over `B` stays finite over the surjecting noetherian ring `A`.
+    -- A finite quotient over `B` stays finite over the surjecting ring `A`.
     have : Module.Finite A B := (RingHom.finite_algebraMap).mp (.of_surjective _ h)
     have : Module.Finite A (Ω[B⁄R] ⧸ N) := Module.Finite.trans B _
     let g := (N.mkQ.restrictScalars A).comp (KaehlerDifferential.map R R A B)
+    have hg : Function.Surjective g := N.mkQ_surjective.comp
+      (KaehlerDifferential.map_surjective_of_surjective R R A B h)
     have : Module.Finite A (Ω[A⁄R] ⧸ LinearMap.ker g) :=
-      Module.Finite.equiv g.quotKerEquivRange.symm
+      Module.Finite.equiv (g.quotKerEquivOfSurjective hg).symm
     exact (Submodule.Quotient.mk_eq_zero N).mp <|
       LinearMap.mem_ker.mp <|
         (ofKaehler_eq_zero_iff.mp (LinearMap.mem_ker.mp hx)) (LinearMap.ker g) this

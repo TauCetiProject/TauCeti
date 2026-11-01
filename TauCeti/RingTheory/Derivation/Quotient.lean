@@ -47,4 +47,12 @@ theorem liftQuotient_mk (D : Derivation R A M) (hD : ∀ a ∈ I, D a = 0) (a : 
     D.liftQuotient I hD (Ideal.Quotient.mk I a) = D a :=
   (rfl)
 
+/-- A descended derivation is uniquely determined by its values on representatives. -/
+theorem liftQuotient_unique (D : Derivation R A M) (hD : ∀ a ∈ I, D a = 0)
+    (E : Derivation R (A ⧸ I) M) (hE : ∀ a, E (Ideal.Quotient.mk I a) = D a) :
+    E = D.liftQuotient I hD := by
+  ext x
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  exact hE a
+
 end Derivation
