@@ -136,8 +136,10 @@ theorem isCubeReindexCompatible :
     hT ▸ mem_insert_self _ _
   have hst' := cubeState_eq_of_covBy hcov ha' hmem
   have hc' := cubeState_ne_of_notMem_of_mem ha' hmem
-  rw [← cancel_mono (D'.resolutionCubeι hD' R j ((insert a S).map E.crossingEquiv.toEmbedding)),
-    Category.assoc, Category.assoc, resolutionCubeIso_hom_comp_resolutionCubeι,
+  rw [← cancel_mono (D'.resolutionCubeι hD' R j ((insert a S).map E.crossingEquiv.toEmbedding))]
+  simp only [Category.assoc]
+  -- Both sides now reindex circle tensors and apply a saddle map, in the two orders.
+  rw [resolutionCubeIso_hom_comp_resolutionCubeι,
     D'.resolutionCube_map_homOfLE_comp_resolutionCubeι hD' R j ha' hT _ hst' hc'
       (hD'.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst' hc'),
     D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j ha,
@@ -154,9 +156,10 @@ theorem refl_resolutionCubeIso (S : Finset (Fin n)) :
       eqToIso (congrArg (D.resolutionCube hD R j).obj (by simp)) := by
   ext : 1
   rw [← cancel_mono (eqToHom (congrArg (D.resolutionCube hD R j).obj (by simp)) ≫
-    D.resolutionCubeι hD R j S), resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _
-      (by simp) (fun i ↦ by simp), eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp]
+    D.resolutionCubeι hD R j S)]
+  simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  -- The vertex isomorphism reindexes along the identity bijection of resolved circles.
+  rw [resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _ (by simp) fun i ↦ by simp]
   ext x
   simp
 
@@ -171,13 +174,20 @@ theorem trans_resolutionCubeIso (F : D'.ResolutionEquiv D'') (hD'' : D''.IsPlana
   have h : ∀ i, cubeState (S.map (E.trans F).crossingEquiv.toEmbedding) (F.crossingEquiv i) =
       cubeState (S.map E.crossingEquiv.toEmbedding) i := fun i ↦ by
     rw [trans_crossingEquiv, Equiv.trans_toEmbedding, ← map_map, cubeState_map_apply]
+  -- Reindexing along the composite identification is the composite of the reindexings.
+  have hreindex : reindex R (fun _ ↦ R[ε]) ((E.trans F).smoothingEquiv
+      (cubeState_map_apply (E.trans F).crossingEquiv S)).resolvedCircleCongr =
+        (reindex R (fun _ ↦ R[ε])
+          (E.smoothingEquiv (cubeState_map_apply E.crossingEquiv S)).resolvedCircleCongr).trans
+          (reindex R (fun _ ↦ R[ε]) (F.smoothingEquiv h).resolvedCircleCongr) := by
+    rw [← smoothingEquiv_trans_smoothingEquiv E F (cubeState_map_apply E.crossingEquiv S) h,
+      SmoothingEquiv.resolvedCircleCongr_trans, reindex_trans]
   ext : 1
-  rw [← cancel_mono (D''.resolutionCubeι hD'' R j _), resolutionCubeIso_hom_comp_resolutionCubeι]
+  rw [← cancel_mono (D''.resolutionCubeι hD'' R j _)]
   simp only [Iso.trans_hom, eqToIso.hom, Category.assoc]
-  rw [resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _ (by simp [map_map]) h,
-    resolutionCubeIso_hom_comp_resolutionCubeι_assoc,
-    ← smoothingEquiv_trans_smoothingEquiv E F (cubeState_map_apply E.crossingEquiv S) h,
-    SmoothingEquiv.resolvedCircleCongr_trans, ← reindex_trans]
+  rw [resolutionCubeIso_hom_comp_resolutionCubeι,
+    resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _ (by simp [map_map]) h,
+    resolutionCubeIso_hom_comp_resolutionCubeι_assoc, hreindex]
   simp only [LinearEquiv.coe_trans, ModuleCat.ofHom_comp]
 
 /-- **Relabelling the unnormalized Khovanov complex.** An identification of all smoothings of
