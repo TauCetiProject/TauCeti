@@ -26,13 +26,18 @@ Lemma 10.104.9 (00NG).
 The resolutions are `TauCeti.ExactStructure.FiniteResolution`s for the abelian exact structure on
 `ModuleCat R`. Their objects all satisfy the resolving property: they are finite of depth at
 least `depth R`, respectively at least `d`. This holds for the last syzygy by construction and
-for the finite free terms because they have the depth of the ring. The terms other than the last
-syzygy are moreover free, which is stated through
-`TauCeti.ExactStructure.FiniteResolution.term`.
+for the finite free terms because their depth is at least that of the ring, with equality for the
+nonzero ones (a zero term has infinite depth). The terms other than the last syzygy are moreover
+free, which is stated through `TauCeti.ExactStructure.FiniteResolution.term`.
+
+The construction adapts the induction of
+`TauCeti.exists_finiteProjectiveResolution_of_hasProjectiveDimensionLE`, which iterates finite
+free covers (`Module.Finite.exists_fin'`) and their kernels; here the induction carries a depth
+bound on the syzygies instead of a projective dimension bound.
 
 ## Main results
 
-* `TauCeti.exists_finiteResolution_free_of_depth_le_depth_add`: over a Noetherian local ring, if
+* `ModuleCat.exists_finiteResolution_free_of_depth_le_depth_add`: over a Noetherian local ring, if
   `depth R ≤ depth M + n`, then `M` has a finite resolution of length `n` by finite free modules
   whose `n`-th syzygy is finite of depth at least `depth R`.
 * `TauCeti.exists_resolution_maximalCohenMacaulay`: the same over a Cohen–Macaulay local ring,
@@ -46,21 +51,25 @@ syzygy are moreover free, which is stated through
 
 public section
 
-namespace TauCeti
-
 open CategoryTheory IsLocalRing
 
 universe u
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
 
+namespace ModuleCat
+
+open TauCeti
+
 /-- Over a Noetherian local ring, a finite module `M` with `depth R ≤ depth M + n` has a finite
 resolution of length `n` by finite free modules whose `n`-th syzygy is a finite module of depth at
 least `depth R`. Every object of the resolution is finite of depth at least `depth R`. -/
 theorem exists_finiteResolution_free_of_depth_le_depth_add (M : ModuleCat.{u} R)
-    [Module.Finite R M] {n : ℕ} (h : depth (ModuleCat.of R R) ≤ depth M + n) :
+    [Module.Finite R M] {n : ℕ}
+    (h : IsLocalRing.depth (ModuleCat.of R R) ≤ IsLocalRing.depth M + n) :
     ∃ r : (ExactStructure.abelian (ModuleCat.{u} R)).FiniteResolution
-        (fun N ↦ Module.Finite R N ∧ depth (ModuleCat.of R R) ≤ depth N) M,
+        (fun N ↦ Module.Finite R N ∧
+          IsLocalRing.depth (ModuleCat.of R R) ≤ IsLocalRing.depth N) M,
       r.length = n ∧ ∀ i < n, Module.Free R (r.term i) := by
   induction n generalizing M with
   | zero => exact ⟨.base ⟨inferInstance, by simpa using h⟩, by simp, by simp⟩
@@ -70,16 +79,18 @@ theorem exists_finiteResolution_free_of_depth_le_depth_add (M : ModuleCat.{u} R)
     have hS : S.ShortExact := f.shortExact_shortComplexKer hf
     have : Module.Finite R S.X₁ := inferInstanceAs (Module.Finite R (LinearMap.ker f))
     -- A finite free module has depth at least that of the ring.
-    have hF : depth (ModuleCat.of R R) ≤ depth (ModuleCat.of R (Fin d → R)) := by
+    have hF : IsLocalRing.depth (ModuleCat.of R R) ≤
+        IsLocalRing.depth (ModuleCat.of R (Fin d → R)) := by
       cases subsingleton_or_nontrivial (Fin d → R)
-      · simp only [depth, Ideal.depth_eq_top_of_subsingleton, le_top]
+      · simp only [IsLocalRing.depth, Ideal.depth_eq_top_of_subsingleton, le_top]
       · exact (depth_eq_depth_self_of_free _).ge
     -- The depth lemma for `0 → ker f → Rᵈ → M → 0`.
     have hK := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.ker f).subtype f
       (LinearMap.exact_subtype_ker_map f) (LinearMap.ker f).injective_subtype hf
-    have hKn : depth (ModuleCat.of R R) ≤ depth S.X₁ + n := by
+    have hKn : IsLocalRing.depth (ModuleCat.of R R) ≤ IsLocalRing.depth S.X₁ + n := by
       refine le_trans ?_ (add_le_add hK le_rfl)
-      rcases le_total (depth (ModuleCat.of R (Fin d → R))) (depth M + 1) with hle | hle
+      rcases le_total (IsLocalRing.depth (ModuleCat.of R (Fin d → R)))
+        (IsLocalRing.depth M + 1) with hle | hle
       · rw [inf_eq_left.2 hle]
         exact hF.trans le_self_add
       · rw [inf_eq_right.2 hle, add_assoc, add_comm 1]
@@ -90,6 +101,10 @@ theorem exists_finiteResolution_free_of_depth_le_depth_add (M : ModuleCat.{u} R)
     cases i with
     | zero => exact inferInstanceAs (Module.Free R (Fin d → R))
     | succ i => exact hfree i (by omega)
+
+end ModuleCat
+
+namespace TauCeti
 
 /-- **Free resolutions ending in a maximal Cohen–Macaulay module.** Over a Cohen–Macaulay local
 ring `R` of dimension `d`, a finite module `M` with `d ≤ depth M + n` has a finite resolution of
@@ -111,6 +126,6 @@ theorem exists_resolution_maximalCohenMacaulay (hR : Module.IsCohenMacaulay R R)
     ext N
     rw [← hd, WithBot.coe_le_coe]
   rw [← hd] at h
-  exact hP ▸ exists_finiteResolution_free_of_depth_le_depth_add M (by exact_mod_cast h)
+  exact hP ▸ M.exists_finiteResolution_free_of_depth_le_depth_add (by exact_mod_cast h)
 
 end TauCeti
