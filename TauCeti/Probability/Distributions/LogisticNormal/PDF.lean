@@ -9,7 +9,6 @@ public import TauCeti.Probability.Distributions.Dirichlet.Density
 public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Distributions.LogisticNormal.Basic
 
-import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
@@ -44,6 +43,8 @@ simplex, where `φ_{m,S}` is the multivariate Gaussian density, and zero elsewhe
 
 * J. Aitchison and S. M. Shen, *Logistic-normal distributions: Some properties and uses*,
   Biometrika 67(2), 261–272, 1980.
+* The change-of-variables proof follows `multivariateLogNormalMeasure_eq_withDensity` in
+  `TauCeti/Probability/Distributions/MultivariateLogNormal/PDF.lean`.
 -/
 
 public section
