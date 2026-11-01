@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 import TauCeti.MeasureTheory.Constructions.Pi

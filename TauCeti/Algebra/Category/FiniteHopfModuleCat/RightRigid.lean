@@ -30,6 +30,12 @@ be bijective. Left duals, which use the inverse of the antipode, are not constru
 * `TauCeti.FiniteHopfModuleCat.dualCoevaluation`: coevaluation `𝟙_ ⟶ M ⊗ dual M`.
 * `TauCeti.FiniteHopfModuleCat.instRightRigidCategory`: finite-dimensional modules over a Hopf
   algebra form a right rigid monoidal category.
+* `TauCeti.FiniteHopfModuleCat.evaluation_tmul`,
+  `TauCeti.FiniteHopfModuleCat.dualEquiv_rightAdjointMate_apply` and
+  `TauCeti.FiniteHopfModuleCat.tensor_evaluation_tmul`: on elements, evaluation applies a
+  functional, the right adjoint mate of a morphism is its transpose, and the tensor product
+  pairing of `(X₁, X₁ᘁ)` and `(X₂, X₂ᘁ)` multiplies the two evaluations. These reduce identities
+  between morphisms out of tensor products with duals to computations with linear functionals.
 
 ## References
 
@@ -115,5 +121,60 @@ instance instHasRightDual (M : FiniteHopfModuleCat k H) : HasRightDual M :=
 
 /-- Finite-dimensional modules over a Hopf algebra form a right rigid monoidal category. -/
 instance instRightRigidCategory : RightRigidCategory (FiniteHopfModuleCat k H) where
+
+/-- Evaluation of the right dual applies the functional to the vector. -/
+@[simp]
+theorem evaluation_tmul (M : FiniteHopfModuleCat k H) (φ : (Mᘁ : FiniteHopfModuleCat k H))
+    (m : M) :
+    (ε_ M Mᘁ).hom.hom (tmul k H φ m) = (trivialEquiv k H).symm (dualEquiv k H M φ m) := by
+  -- The evaluation of the right dual is `dualEvaluation M`, by definition of the instance.
+  rw [show ε_ M Mᘁ = dualEvaluation M from rfl, dualEvaluation_hom_hom]
+  exact dualEval_tmul k H M φ m
+
+/-- The right adjoint mate of a morphism is its transpose. -/
+@[simp]
+theorem dualEquiv_rightAdjointMate_apply {M N : FiniteHopfModuleCat k H} (f : M ⟶ N)
+    (φ : (Nᘁ : FiniteHopfModuleCat k H)) (m : M) :
+    dualEquiv k H M ((fᘁ).hom.hom φ) m = dualEquiv k H N φ (f.hom.hom m) := by
+  have h := LinearMap.congr_fun
+    (congrArg (fun u => u.hom.hom) (rightAdjointMate_comp_evaluation f)) (tmul k H φ m)
+  simp only [hom_hom_comp, LinearMap.comp_apply] at h
+  rw [whiskerRight_tmul, whiskerLeft_tmul, evaluation_tmul, evaluation_tmul] at h
+  exact (trivialEquiv k H).symm.injective h
+
+omit [HopfAlgebra k H] in
+/-- The evaluation of a tensor product pairing, written with the module-level maps on the
+native carriers. -/
+private theorem dualEval_tensorMap_assoc_tmul [HopfAlgebra k H] {V W : Type*} [AddCommGroup V]
+    [Module k V] [Module H V] [IsScalarTower k H V] [AddCommGroup W] [Module k W] [Module H W]
+    [IsScalarTower k H W] (β : Dual k H W) (α : Dual k H V) (v : V) (w : W) :
+    dualEval k H W (tensorMap k H LinearMap.id (lid k H W).toLinearMap
+      (tensorMap k H LinearMap.id (tensorMap k H (dualEval k H V) LinearMap.id)
+        (tensorMap k H LinearMap.id (assoc k H (Dual k H V) V W).symm.toLinearMap
+          (assoc k H (Dual k H W) (Dual k H V) (Tensor k H V W)
+            (tmul k H (tmul k H β α) (tmul k H v w)))))) =
+      (trivialEquiv k H).symm (dualEquiv k H V α v * dualEquiv k H W β w) := by
+  simp [← LinearEquiv.map_smul]
+
+/-- The evaluation of the tensor product pairing of `(X₁, X₁ᘁ)` and `(X₂, X₂ᘁ)` sends
+`(β ⊗ α) ⊗ (x₁ ⊗ x₂)` to `α(x₁) β(x₂)`. -/
+@[simp]
+theorem tensor_evaluation_tmul (X₁ X₂ : FiniteHopfModuleCat k H)
+    (β : (X₂ᘁ : FiniteHopfModuleCat k H)) (α : (X₁ᘁ : FiniteHopfModuleCat k H))
+    (x₁ : X₁) (x₂ : X₂) :
+    (ε_ (X₁ ⊗ X₂) (X₂ᘁ ⊗ X₁ᘁ)).hom.hom
+        (tmul k H (tmul k H β α : ↑(X₂ᘁ ⊗ X₁ᘁ)) (tmul k H x₁ x₂ : ↑(X₁ ⊗ X₂))) =
+      (trivialEquiv k H).symm (dualEquiv k H X₁ α x₁ * dualEquiv k H X₂ β x₂) := by
+  have h : ε_ (X₁ ⊗ X₂) (X₂ᘁ ⊗ X₁ᘁ) = (α_ _ _ _).hom ≫
+      (X₂ᘁ : FiniteHopfModuleCat k H) ◁ (α_ _ _ _).inv ≫
+      (X₂ᘁ : FiniteHopfModuleCat k H) ◁ (ε_ X₁ X₁ᘁ ▷ X₂) ≫
+      (X₂ᘁ : FiniteHopfModuleCat k H) ◁ (λ_ X₂).hom ≫ ε_ X₂ X₂ᘁ := by
+    rw [ExactPairing.tensor_evaluation]; monoidal
+  rw [h, show ε_ X₁ X₁ᘁ = dualEvaluation X₁ from rfl, show ε_ X₂ X₂ᘁ = dualEvaluation X₂ from rfl]
+  simp only [hom_hom_comp, whiskerLeft_hom_hom, whiskerRight_hom_hom, associator_hom_hom,
+    associator_inv_hom, leftUnitor_hom_hom, dualEvaluation_hom_hom]
+  -- The carriers of the categorical tensor products and duals agree with the module-level
+  -- carriers only up to unfolding.
+  exact dualEval_tensorMap_assoc_tmul β α x₁ x₂
 
 end TauCeti.FiniteHopfModuleCat

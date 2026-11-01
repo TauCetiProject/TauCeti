@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 -- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, the congruence at two slots the cup
 -- invariance below runs on.
-public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Expansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Basic
 -- The entrywise identities for `Matrix.J` the relations below contract with.
 import TauCeti.LinearAlgebra.SymplecticGroup
