@@ -21,7 +21,7 @@ original functional. For compact bonding maps this is the factorization used to 
 functionals on projective limits of dual Banach spaces in the next original Banach stage.
 The statement allows arbitrary subspaces, not only closed ones.
 
-The proofs use the native bidual isometry `NormedSpace.inclusionInDoubleDualLi`,
+The proofs use dual separation `SeparatingDual.eq_iff_forall_dual_eq`,
 `ContinuousLinearMap.isWeaklyCompact_iff_range_subset`, and
 `Module.Dual.exists_continuous_extension_of_le_seminorm`.
 
@@ -60,9 +60,8 @@ theorem existsUnique_norm_le_forall_apply_eq (hT : T.IsWeaklyCompact)
         mul_le_mul_of_nonneg_left (f.opNorm_comp_le T) (norm_nonneg Φ)
       _ = (‖T‖ * ‖Φ‖) * ‖f‖ := by ring
   · intro z hz
-    apply (inclusionInDoubleDualLi 𝕜 (E := F)).injective
-    -- The native bidual isometry has the canonical inclusion as its underlying map.
-    exact ContinuousLinearMap.ext fun f ↦ (hz.2 f).trans (hpair f).symm
+    exact (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun f ↦
+      (hz.2 f).trans (hpair f).symm
 
 /-- Hahn–Banach and weak compactness represent a dominated functional on a subspace of `E*`,
 after composition with `T*`, by evaluation at a vector in `F`. The bound is uniform in the
@@ -73,8 +72,9 @@ theorem exists_norm_le_forall_apply_eq (hT : T.IsWeaklyCompact)
     ∃ y : F, ‖y‖ ≤ ‖T‖ * C ∧
       ∀ (f : StrongDual 𝕜 F) (hf : f.comp T ∈ p), f y = φ ⟨f.comp T, hf⟩ := by
   obtain ⟨Φ, hΦ, hbound⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm p φ
-    (show Continuous (C • normSeminorm 𝕜 (StrongDual 𝕜 E)) from
-      continuous_norm.const_smul C) hφ
+    (by
+      rw [FunLike.coe_smul C (normSeminorm 𝕜 (StrongDual 𝕜 E)), coe_normSeminorm]
+      exact continuous_norm.const_smul C) hφ
   have hnorm : ‖Φ‖ ≤ C := Φ.opNorm_le_bound C.coe_nonneg hbound
   obtain ⟨y, ⟨hy, hpair⟩, -⟩ := hT.existsUnique_norm_le_forall_apply_eq Φ
   refine ⟨y, hy.trans (mul_le_mul_of_nonneg_left hnorm (norm_nonneg _)), fun f hf ↦ ?_⟩
