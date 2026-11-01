@@ -93,22 +93,19 @@ variable {A B : CommRingCat.{u}} (φ : A ⟶ B) {p : ℕ} [Fact p.Prime] (Y : Sc
 `Spec.map φ` is a bijection from morphisms `Y ⟶ Spec B` to morphisms `Y ⟶ Spec A`. -/
 theorem bijective_comp_SpecMap [IsPRadical φ.hom p] (hA : (p : A) = 0) :
     Function.Bijective fun f : Y ⟶ Spec B ↦ f ≫ Spec.map φ := by
-  -- A morphism `f : Y ⟶ Spec R` is determined by the ring map `R ⟶ Γ(Y, ⊤)` it induces on global
-  -- sections, and composing with `Spec.map φ` precomposes that ring map with `φ`.
-  let r {R : CommRingCat.{u}} (f : Y ⟶ Spec R) : R ⟶ Γ(Y, ⊤) := (ΓSpecIso R).inv ≫ f.appTop
-  have hr {f : Y ⟶ Spec B} : r (f ≫ Spec.map φ) = φ ≫ r f := by
-    simp [r, ΓSpecIso_inv_naturality_assoc]
-  have h := IsPRadical.bijective_comp φ.hom p hA (M := Γ(Y, ⊤)) natCast_eq_zero
-  refine ⟨fun f₁ f₂ hf ↦ ?_, fun g ↦ ?_⟩
-  · have : r f₁ = r f₂ := CommRingCat.hom_ext <| h.1 <| by
-      simp only [← CommRingCat.hom_comp, ← hr, hf]
-    exact ext_of_isAffine (by simpa [r] using this)
-  · obtain ⟨j, hj⟩ := h.2 (r g).hom
-    refine ⟨Y.toSpecΓ ≫ Spec.map (CommRingCat.ofHom j), ?_⟩
-    have : φ ≫ CommRingCat.ofHom j = r g := by ext1; exact hj
-    dsimp only
-    rw [Category.assoc, ← Spec.map_comp, this]
-    simp [r, ← Scheme.toSpecΓ_naturality_assoc]
+  -- Under the Γ–Spec adjunction, a morphism `Y ⟶ Spec R` is a ring map `R ⟶ Γ(Y, ⊤)`, and composing
+  -- with `Spec.map φ` corresponds to precomposing that ring map with `φ`.
+  let e (R : CommRingCat.{u}) : (R ⟶ Γ(Y, ⊤)) ≃ (Y ⟶ Spec R) :=
+    (opEquiv _ _).symm.trans (ΓSpec.adjunction.homEquiv Y (op R))
+  have he (g : B ⟶ Γ(Y, ⊤)) : e B g ≫ Spec.map φ = e A (φ ≫ g) :=
+    (ΓSpec.adjunction.homEquiv_naturality_right _ φ.op).symm
+  have h : Function.Bijective fun g : B ⟶ Γ(Y, ⊤) ↦ φ ≫ g :=
+    (ConcreteCategory.homEquiv (X := A) (Y := Γ(Y, ⊤))).symm.bijective.comp <|
+      (IsPRadical.bijective_comp φ.hom p hA natCast_eq_zero).comp
+        (ConcreteCategory.homEquiv (X := B) (Y := Γ(Y, ⊤))).bijective
+  convert (e A).bijective.comp (h.comp (e B).symm.bijective) using 1
+  ext1 f
+  simp [← he]
 
 /-- For a perfect scheme `Y` and a `p`-radical `φ : A ⟶ B` with `p = 0` in `A`, the bijection
 `(Y ⟶ Spec B) ≃ (Y ⟶ Spec A)` given by composition with `Spec.map φ`. Its inverse lifts a morphism
