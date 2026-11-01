@@ -118,46 +118,96 @@ instance instMonoidalCategory :
 open MonoidalCategory
 
 /-- The categorical tensor product uses the balanced DG bimodule tensor product. -/
-@[simp]
-theorem monoidal_tensorObj : M ⊗ N = tensorObj M N := (rfl)
+theorem tensorObj_eq : M ⊗ N = tensorObj M N := (rfl)
 
 /-- The categorical unit is the lifted regular DG bimodule. -/
-@[simp]
-theorem monoidal_tensorUnit :
+theorem tensorUnit_eq :
     𝟙_ (DGBimoduleCat.{uR, uA, uA, uA} hA hA) = tensorUnit.{uA} hA := (rfl)
 
 variable {M N}
   {M' N' : DGBimoduleCat.{uR, uA, uA, uA} hA hA}
 
 /-- The categorical tensor of morphisms is the balanced tensor map. -/
-@[simp]
-theorem monoidal_tensorHom (f : M ⟶ M') (g : N ⟶ N') : f ⊗ₘ g = tensorMap f g := (rfl)
+theorem tensorHom_eq (f : M ⟶ M') (g : N ⟶ N') : f ⊗ₘ g = tensorMap f g := (rfl)
 
 /-- Left whiskering tensors with the identity of the left factor. -/
-@[simp]
-theorem monoidal_whiskerLeft (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA)
+theorem whiskerLeft_eq (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA)
     (g : N ⟶ N') : M ◁ g = tensorMap (𝟙 M) g := (rfl)
 
 /-- Right whiskering tensors with the identity of the right factor. -/
-@[simp]
-theorem monoidal_whiskerRight (f : M ⟶ M')
+theorem whiskerRight_eq (f : M ⟶ M')
     (N : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
     f ▷ N = tensorMap f (𝟙 N) := (rfl)
 
 /-- The categorical associator is the canonical balanced reassociation. -/
-@[simp]
-theorem monoidal_associator (M N P : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
+theorem associator_eq (M N P : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
     α_ M N P = tensorAssoc M N P := (rfl)
 
 /-- The categorical left unitor evaluates the regular left factor. -/
-@[simp]
-theorem monoidal_leftUnitor (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
+theorem leftUnitor_eq (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
     λ_ M = tensorLeftUnitor.{uA} hA hA M := (rfl)
 
 /-- The categorical right unitor evaluates the regular right factor. -/
-@[simp]
-theorem monoidal_rightUnitor (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
+theorem rightUnitor_eq (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA) :
     ρ_ M = tensorRightUnitor.{uA} hA hA M := (rfl)
+
+/-- The categorical tensor of morphisms acts factorwise on pure tensors. -/
+@[simp]
+theorem tensorHom_tmul (f : M ⟶ M') (g : N ⟶ N') (m : M) (n : N) :
+    (f ⊗ₘ g) (tmul R A m n) = tmul R A (f m) (g n) := by
+  rw [tensorHom_eq, tensorMap_tmul]
+
+/-- Left whiskering applies the morphism to the right tensor factor. -/
+@[simp]
+theorem whiskerLeft_tmul (M : DGBimoduleCat.{uR, uA, uA, uA} hA hA)
+    (g : N ⟶ N') (m : M) (n : N) :
+    (M ◁ g) (tmul R A m n) = tmul R A m (g n) := by
+  rw [whiskerLeft_eq, tensorMap_tmul, id_apply]
+
+/-- Right whiskering applies the morphism to the left tensor factor. -/
+@[simp]
+theorem whiskerRight_tmul (f : M ⟶ M')
+    (N : DGBimoduleCat.{uR, uA, uA, uA} hA hA) (m : M) (n : N) :
+    (f ▷ N) (tmul R A m n) = tmul R A (f m) n := by
+  rw [whiskerRight_eq, tensorMap_tmul, id_apply]
+
+/-- The categorical associator changes only parentheses on pure tensors. -/
+@[simp]
+theorem associator_hom_tmul {P : DGBimoduleCat.{uR, uA, uA, uA} hA hA}
+    (m : M) (n : N) (p : P) :
+    (α_ M N P).hom (tmul R A (tmul R A m n) p) = tmul R A m (tmul R A n p) := by
+  rw [associator_eq, tensorAssoc_hom_tmul]
+
+/-- The inverse categorical associator restores parentheses on pure tensors. -/
+@[simp]
+theorem associator_inv_tmul {P : DGBimoduleCat.{uR, uA, uA, uA} hA hA}
+    (m : M) (n : N) (p : P) :
+    (α_ M N P).inv (tmul R A m (tmul R A n p)) = tmul R A (tmul R A m n) p := by
+  rw [associator_eq, tensorAssoc_inv_tmul]
+
+/-- The categorical left unitor evaluates the regular left tensor factor. -/
+@[simp]
+theorem leftUnitor_hom_tmul (x : 𝟙_ (DGBimoduleCat.{uR, uA, uA, uA} hA hA)) (m : M) :
+    (λ_ M).hom (tmul R A x m) = x.down • m := by
+  rw [leftUnitor_eq, tensorLeftUnitor_hom, tensorLeftUnitorHom_tmul]
+
+/-- The inverse categorical left unitor inserts the algebra unit on the left. -/
+@[simp]
+theorem leftUnitor_inv_apply (m : M) :
+    (λ_ M).inv m = tmul R A (tensorUnitEquiv.{uA} hA 1) m := by
+  rw [leftUnitor_eq, tensorLeftUnitor_inv, tensorLeftUnitorInv_apply]
+
+/-- The categorical right unitor evaluates the regular right tensor factor. -/
+@[simp]
+theorem rightUnitor_hom_tmul (m : M) (x : 𝟙_ (DGBimoduleCat.{uR, uA, uA, uA} hA hA)) :
+    (ρ_ M).hom (tmul R A m x) = op x.down • m := by
+  rw [rightUnitor_eq, tensorRightUnitor_hom, tensorRightUnitorHom_tmul]
+
+/-- The inverse categorical right unitor inserts the algebra unit on the right. -/
+@[simp]
+theorem rightUnitor_inv_apply (m : M) :
+    (ρ_ M).inv m = tmul R A m (tensorUnitEquiv.{uA} hA 1) := by
+  rw [rightUnitor_eq, tensorRightUnitor_inv, tensorRightUnitorInv_apply]
 
 /-- Tensoring DG bimodule morphisms is additive in each factor. -/
 instance instMonoidalPreadditive :
