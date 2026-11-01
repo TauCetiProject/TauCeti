@@ -16,7 +16,8 @@ A locally finite family of sets stays locally finite when it is reindexed along 
 projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
 the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
-finitely many locally finite families is locally finite (`LocallyFinite.iUnion`). A compact set
+finitely many locally finite families is locally finite (`LocallyFinite.iUnion`), as is the family
+of all pairwise intersections of two locally finite families (`LocallyFinite.inter`). A compact set
 has a neighbourhood meeting only finitely many members of a locally finite family
 (`LocallyFinite.exists_mem_nhdsSet_finite`), so the images of the members under a closed map with
 compact fibres, such as a proper map, again form a locally finite family
@@ -47,6 +48,18 @@ theorem comp_fst [Finite κ] (hf : LocallyFinite f) : LocallyFinite fun p : ι �
   fun x ↦
     let ⟨U, hU, hfin⟩ := hf x
     ⟨U, hU, (hfin.prod (finite_univ (α := κ))).subset fun _ hp ↦ ⟨hp, mem_univ _⟩⟩
+
+/-- The pairwise intersections of two locally finite families form a locally finite family.
+The index set includes all pairs, whether or not the two families are the same. -/
+protected theorem inter {s : ι → Set X} {t : κ → Set X}
+    (hs : LocallyFinite s) (ht : LocallyFinite t) :
+    LocallyFinite fun p : ι × κ ↦ s p.1 ∩ t p.2 := by
+  intro x
+  obtain ⟨U, hU, hsU⟩ := hs x
+  obtain ⟨V, hV, htV⟩ := ht x
+  refine ⟨U ∩ V, Filter.inter_mem hU hV, (hsU.prod htV).subset ?_⟩
+  rintro ⟨i, j⟩ ⟨y, ⟨hys, hyt⟩, hyU, hyV⟩
+  exact ⟨⟨y, hys, hyU⟩, ⟨y, hyt, hyV⟩⟩
 
 /-- Positive continuous tolerances on a locally finite family of closed sets admit a positive
 continuous strict minorant on the whole space. No covering or compactness assumption is needed. -/
