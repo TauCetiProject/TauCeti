@@ -52,8 +52,12 @@ theorem isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero {R : Type
   ext z
   obtain ⟨k, hjk, φ, hz⟩ := h j z
   -- the structure map at `j` factors through the map to the finer family `E k`
-  rw [← homologyMap_cechComplexMap_comp_cechCohomologyι_app E hE n hjk φ P, ModuleCat.hom_zero,
-    LinearMap.zero_apply]
+  have hι : HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫
+      (cechCohomologyι E hE n k).app P = (cechCohomologyι E hE n j).app P := by
+    rw [← cechComplexHomologyMap_app]
+    exact (NatTrans.comp_app _ _ P).symm.trans <| NatTrans.congr_app
+      (cechComplexHomologyMap_comp_cechCohomologyι (ModuleCat.{v'} R) E hE n hjk φ) P
+  rw [← hι, ModuleCat.hom_zero, LinearMap.zero_apply]
   exact (congrArg ((cechCohomologyι E hE n k).app P).hom hz).trans (map_zero _)
 
 end TauCeti.CategoryTheory
