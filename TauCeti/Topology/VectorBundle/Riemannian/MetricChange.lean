@@ -81,44 +81,6 @@ theorem inner_metricChangeTransport_metricChangeTransport (b : B) (u v : E b) :
   ContinuousLinearMap.apply_metricChangeTransport_metricChangeTransport
     (h.isStrictlyPositive_continuousLinearMapOfBilin_inner b) u v
 
-/-- A family of operators on the fibres acts continuously on the total space as soon as, read in
-the local Gram–Schmidt orthonormal frames of the linear trivializations, it is a continuous family
-of operators of the model. -/
-private theorem continuous_totalSpaceMk_apply {A : ∀ b, E b →L[ℝ] E b}
-    (hA : ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (n : ℕ) (c : Module.Basis (Fin n) ℝ F),
-      Continuous fun y : e.baseSet ↦
-        ((e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ) y).symm :
-          E y →L[ℝ] EuclideanSpace ℝ (Fin n)) ∘L A y ∘L
-          (e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ) y :
-            EuclideanSpace ℝ (Fin n) →L[ℝ] E y)) :
-    Continuous fun p : TotalSpace F E ↦ (⟨p.proj, A p.proj p.2⟩ : TotalSpace F E) := by
-  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  let e := trivializationAt F E p₀.proj
-  have hp₀ : p₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p₀.proj
-  have : FiniteDimensional ℝ F :=
-    (e.continuousLinearEquivAt ℝ p₀.proj hp₀).toLinearEquiv.finiteDimensional
-  let n := Module.finrank ℝ F
-  let c := Module.finBasis ℝ F
-  let σ := e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ)
-  let U : Set (TotalSpace F E) := TotalSpace.proj ⁻¹' e.baseSet
-  have hU : U ∈ 𝓝 p₀ := (e.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hp₀
-  refine ContinuousOn.continuousAt ?_ hU
-  rw [continuousOn_iff_continuous_domRestrict]
-  let y : U → e.baseSet := fun x ↦ ⟨x.1.proj, x.2⟩
-  have hy : Continuous y :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
-  -- Over `e.baseSet`, `A` applied to `v` is the frame `σ` applied to the operator read in `σ`,
-  -- applied to the coordinates of `v` in `σ`; all three pieces are continuous.
-  have hframe : Continuous fun x : U ↦
-      ((⟨y x, σ (y x)⟩ : OrthonormalFrameBundle F E (EuclideanSpace ℝ (Fin n))),
-        (((σ (y x)).symm : E (y x) →L[ℝ] EuclideanSpace ℝ (Fin n)) ∘L A (y x) ∘L
-          (σ (y x) : EuclideanSpace ℝ (Fin n) →L[ℝ] E (y x))) ((σ (y x)).symm x.1.2)) :=
-    ((e.continuous_orthonormalFrame c _).comp hy).prodMk
-      (((hA e n c).comp hy).clm_apply (e.continuous_orthonormalFrame_symm_apply c _))
-  refine (OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp hframe).congr
-    fun x ↦ ?_
-  simp [y]
-
 omit [∀ b, FiniteDimensional ℝ (E b)] in
 /-- Read in a local orthonormal frame, the metric `h` is a continuous family of bilinear forms on
 the model. -/
@@ -155,8 +117,8 @@ transport of a second continuous Riemannian metric `h` is a continuous map of th
 theorem continuous_metricChangeTransport :
     Continuous fun p : TotalSpace F E ↦
       (⟨p.proj, (h.inner p.proj).metricChangeTransport p.2⟩ : TotalSpace F E) := by
-  refine continuous_totalSpaceMk_apply (A := fun b ↦ (h.inner b).metricChangeTransport)
-    fun e _ n c ↦ ?_
+  refine continuous_totalSpaceMk_apply_of_orthonormalFrame
+    (A := fun b ↦ (h.inner b).metricChangeTransport) fun e _ n c ↦ ?_
   -- Read in a local orthonormal frame, the transport of `h` is the transport of `h` read in the
   -- frame, by naturality.
   refine (ContinuousLinearMap.continuousOn_metricChangeTransport.comp_continuous
@@ -171,7 +133,8 @@ continuous map of the total space. -/
 private theorem continuous_sqrt_continuousLinearMapOfBilin_inner :
     Continuous fun p : TotalSpace F E ↦
       (⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.2⟩ : TotalSpace F E) := by
-  refine continuous_totalSpaceMk_apply (A := fun b ↦ CFC.sqrt (h.inner b)♯) fun e _ n c ↦ ?_
+  refine continuous_totalSpaceMk_apply_of_orthonormalFrame (A := fun b ↦ CFC.sqrt (h.inner b)♯)
+    fun e _ n c ↦ ?_
   refine (ContinuousLinearMap.continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous
     (h.continuous_inner_bilinearComp_orthonormalFrame e c)
     fun y ↦ (h.isStrictlyPositive_inner_bilinearComp _).nonneg).congr fun y ↦ ?_

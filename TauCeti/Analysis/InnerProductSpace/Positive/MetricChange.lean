@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.Dual
 
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
@@ -51,8 +52,6 @@ relative to the fixed inner product of `E`.
   version.
 * `ContinuousLinearMap.inner_sqrt_apply_sqrt_apply`, `ContinuousLinearMap.orthonormal_sqrt_apply`:
   the inverse transport `CFC.sqrt H` is an isometry from `h` back to `⟪·, ·⟫`.
-* `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling back along a linear
-  isometry equivalence conjugates the Riesz operator.
 * `ContinuousLinearMap.metricChangeTransport_bilinearComp`,
   `ContinuousLinearMap.sqrt_continuousLinearMapOfBilin_bilinearComp`: naturality of the transport
   and of its inverse under linear isometry equivalences.
@@ -182,18 +181,6 @@ theorem metricChangeTransport_innerSL :
     refine ext_inner_right ℝ fun w ↦ ?_
     simp
   rw [metricChangeTransport_def, this, CFC.one_rpow]
-
-/-- Pulling a bilinear form `k` on `F` back along a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F`
-conjugates its Riesz operator by `e`. -/
-theorem continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) (k : F →L[ℝ] F →L[ℝ] ℝ) :
-    (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ = e.symm.conjStarAlgEquiv k♯ := by
-  ext v
-  refine ext_inner_right ℝ fun w ↦ ?_
-  rw [continuousLinearMapOfBilin_apply, bilinearComp_apply,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.symm_symm,
-    ← LinearIsometryEquiv.inner_map_map e, e.apply_symm_apply, continuousLinearMapOfBilin_apply]
-  -- Only the coercion of `e` to a continuous linear map remains to be unfolded.
-  simp
 
 /-- **Naturality of the metric change transport.** Pulling an inner product `k` on `F` back along
 a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates its metric change transport by `e`. -/
