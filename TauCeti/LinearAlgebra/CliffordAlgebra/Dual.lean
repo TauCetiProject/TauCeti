@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.Dual.Defs
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
@@ -23,7 +24,9 @@ The construction needs neither finite dimension nor a nondegenerate quadratic fo
 contravariantly natural in intertwiners, and the canonical map to the double dual intertwines
 the original action with its double reverse dual. For reflexive modules this is an equivalence.
 On an orthogonal volume product of length `n`, the dual action is the transpose multiplied by
-`(-1) ^ n.choose 2`; this fixes the sign needed when comparing dual chiralities.
+`(-1) ^ n.choose 2`. On normalized complex volume, the sign is `(-1) ^ (n / 2)`:
+in dimension `n = 2ℓ`, reverse-dual chirality is `(-1)^ℓ` times transposed chirality,
+whereas the induced dual parity is simply transposed chirality.
 
 The construction uses Mathlib's `LinearMap.dualMap` and `CliffordAlgebra.reverse`.
 
@@ -121,5 +124,26 @@ theorem cliffordReverseDual_smul_prod_map_ι
       (r * (-1 : R) ^ l.length.choose 2) • (ρ (l.map (ι Q)).prod).dualMap := by
   ext φ s
   simp [reverse_prod_map_ι_of_pairwise_isOrtho hl, mul_smul]
+
+end AlgHom
+
+namespace AlgHom
+
+variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] [AddCommGroup S] [Module ℂ S]
+  {n : ℕ} [Fact (Module.finrank ℝ V = n)] {Q : QuadraticForm ℝ V}
+
+/-- The reverse-dual action on normalized complex volume is `(-1) ^ (n / 2)` times
+its transpose. In even dimension `n = 2ℓ`, reverse-dual chirality is `(-1)^ℓ` times
+transposed chirality; the induced dual parity has no such sign. No finite dimension
+of the module or Hermitian metric is required. -/
+@[simp]
+theorem cliffordReverseDual_complexVolume
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
+    (o : Orientation ℝ V (Fin n)) :
+    ρ.cliffordReverseDual (CliffordAlgebra.complexVolume Q o) =
+      (-1 : ℂ) ^ (n / 2) • (ρ (CliffordAlgebra.complexVolume Q o)).dualMap := by
+  ext φ s
+  simp [cliffordReverseDual_apply_apply]
 
 end AlgHom
