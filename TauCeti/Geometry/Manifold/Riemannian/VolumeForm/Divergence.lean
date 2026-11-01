@@ -65,18 +65,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] {m : ℕ}
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- Near the centre `x` of a chart, the basis of a tangent space given by the tangent
-trivialization at `x`, reindexed along `σ`, is the coordinate frame. -/
-private theorem coe_basisAt_reindex_eq_chartLocalFrame (σ : Fin (finrank ℝ E) ≃ Fin (m + 1))
-    {x y : M} (hy : y ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    ⇑(((trivializationAt E (TangentSpace I) x).basisAt (Module.finBasis ℝ E) hy).reindex σ) =
-      fun i ↦ chartLocalFrame (I := I) x (σ.symm i) y := by
-  funext i
-  rw [Module.Basis.reindex_apply, chartLocalFrame_def,
-    Bundle.Trivialization.localFrame_apply_of_mem_baseSet _ _ hy]
-
 omit [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- Near `x`, contracting `X` into the volume form and evaluating on the coordinate frame with its
 `i`-th vector removed gives `(-1)^i c ρ Xⁱ`, where `Xⁱ` is the `i`-th coordinate of `X` and
@@ -97,7 +85,7 @@ private theorem eventually_interior_riemannianVolumeForm_removeNth
   set e := trivializationAt E (TangentSpace I) x
   filter_upwards [hc, e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)]
     with y hcy hy i
-  have hframe := coe_basisAt_reindex_eq_chartLocalFrame σ hy
+  have hframe := coe_basisAt_reindex_eq_chartLocalFrame σ x hy
   rw [RoughForm.interior_apply, ← hframe, ← ContinuousAlternatingMap.coe_toAlternatingMap,
     AlternatingMap.map_vecCons_removeNth_basis, ContinuousAlternatingMap.coe_toAlternatingMap,
     hframe, hcy, Module.Basis.repr_reindex_apply,
@@ -166,13 +154,19 @@ theorem mextDeriv_interior_riemannianVolumeForm_apply
   ext v
   rw [ContinuousAlternatingMap.apply_eq_det_mul _ ((e.basisAt (Module.finBasis ℝ E) hx).reindex σ),
     ContinuousAlternatingMap.apply_eq_det_mul (Manifold.divergence I X x • riemannianVolumeForm o x)
-      ((e.basisAt (Module.finBasis ℝ E) hx).reindex σ), coe_basisAt_reindex_eq_chartLocalFrame σ hx,
+      ((e.basisAt (Module.finBasis ℝ E) hx).reindex σ),
+    coe_basisAt_reindex_eq_chartLocalFrame σ x hx,
     mextDeriv_apply_vectorField_of_mlieBracket_eq_zero hφ hV hVV]
   congr 1
   -- The signs `(-1)^i` cancel, leaving `c ∑ᵢ ∂ᵢ (ρ Xⁱ) = c ρ div X`.
-  simp only [mvfderiv_interior_riemannianVolumeForm_removeNth o σ hc hX, zsmul_eq_mul,
-    Int.cast_pow, Int.cast_neg, Int.cast_one, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
-    neg_one_sq, one_pow, one_mul, ← Finset.mul_sum]
+  trans c * ∑ i, mvfderiv I (fun y ↦ chartVolumeDensity (I := I) x y *
+      e.localFrameCoeff I (Module.finBasis ℝ E) (σ.symm i) y (X y)) x
+        (chartLocalFrame (I := I) x (σ.symm i) x)
+  · rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [mvfderiv_interior_riemannianVolumeForm_removeNth o σ hc hX, zsmul_eq_mul]
+    push_cast
+    rcases neg_one_pow_eq_or ℝ (i : ℕ) with h | h <;> rw [h] <;> ring
   rw [Equiv.sum_comp σ.symm (fun k ↦ mvfderiv I (fun y ↦ chartVolumeDensity (I := I) x y *
       e.localFrameCoeff I (Module.finBasis ℝ E) k y (X y)) x (chartLocalFrame (I := I) x k x)),
     ← chartVolumeDensity_mul_divergence x hx hX, ContinuousAlternatingMap.smul_apply, smul_eq_mul,

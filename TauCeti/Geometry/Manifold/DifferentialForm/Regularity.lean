@@ -333,12 +333,7 @@ theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
   rw [contMDiffAt_section x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
-  have heq : (fun z ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
-      (fun y ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] F) x
-        ⟨(extChartAt I x).symm z, φ ((extChartAt I x).symm z)⟩).2) =ᶠ[
-          𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    exact (φ.inChartAt_eq_trivializationAt x hz).symm
+  have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
   exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
     (extChartAt_target_subset_range x (mem_extChartAt_target x)))
 
@@ -351,12 +346,7 @@ theorem mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self [IsManif
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
   rw [mdifferentiableAt_section, mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
     mdifferentiableWithinAt_iff_differentiableWithinAt]
-  have heq : (fun z ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
-      (fun y ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] F) x
-        ⟨(extChartAt I x).symm z, φ ((extChartAt I x).symm z)⟩).2) =ᶠ[
-          𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    exact (φ.inChartAt_eq_trivializationAt x hz).symm
+  have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
   exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
     (extChartAt_target_subset_range x (mem_extChartAt_target x)))
 

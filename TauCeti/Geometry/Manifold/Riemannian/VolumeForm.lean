@@ -169,10 +169,8 @@ theorem exists_eventually_riemannianVolumeForm_chartLocalFrame_eq
   have hm : finrank ℝ E = m := by simpa using o.card_eq.symm
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
   have hframe (y : M) (hy : y ∈ e.baseSet) :
-      (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) = e.basisAt b hy := by
-    funext i
-    rw [TauCeti.Manifold.basisAt_apply, Riemannian.Tensor.chartLocalFrame_eq_symmL,
-      Module.Basis.reindex_apply]
+      (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) = e.basisAt b hy :=
+    (Riemannian.Tensor.coe_basisAt_reindex_eq_chartLocalFrame σ x hy).symm
   have hconst := o.toVectorBundleOrientation.eventually_mapOrientation_eq (by simp [hm]) e hx
   simp only [Manifold.Orientation.toVectorBundleOrientation_apply] at hconst
   by_cases hP : b.orientation = e.mapOrientation (Fin m) hx (o.orientationAt x)
