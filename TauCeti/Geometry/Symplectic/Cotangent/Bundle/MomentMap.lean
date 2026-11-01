@@ -106,7 +106,7 @@ theorem mfderiv_proj_fundamentalVectorField (ξ : GroupLieAlgebra IG G) (z : Cot
     mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z
         (fundamentalVectorField (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ξ z) =
       fundamentalVectorField I ξ z.proj :=
-  mfderiv_fundamentalVectorField_of_apply_smul
+  mfderiv_fundamentalVectorField_of_map_smul
     ((contMDiff_proj (n := 1) _).mdifferentiableAt one_ne_zero)
     ((ContMDiffSMul.contMDiff_smul_const (n := ∞) z).mdifferentiableAt (by simp))
     (fun g ↦ proj_smul g z) ξ
