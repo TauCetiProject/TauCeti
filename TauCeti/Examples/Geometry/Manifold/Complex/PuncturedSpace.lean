@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.SquaredDistance
-public import TauCeti.Topology.Maps.Proper.Metric
+import TauCeti.Geometry.Manifold.Complex.SquaredDistance
+import TauCeti.Geometry.Manifold.MFDeriv.Inner
+import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
-# Squared distance on a punctured complex space
+# Examples: squared distance on a punctured complex space
 
 Milnor's proof that a closed complex submanifold of `ℂᴺ` of complex dimension `n` has the
 homotopy type of a CW complex of dimension at most `n` uses two properties of the squared
@@ -35,15 +36,13 @@ The general results live with the APIs they extend; this file assembles them for
   the only critical point of `ρ_a` is `a`.
 * `TauCeti.not_isCompact_compl_singleton_inter_preimage_Iic`: the sublevel `{ρ_a ≤ r}` of the
   space punctured at `y` is not compact when `ρ_a y < r`.
-* `TauCeti.not_isProperMap_norm_sq_sub_compl_singleton`: `ρ_a` is not proper on a punctured
-  nonzero real normed space.
+* `TauCeti.not_isProperMap_norm_sq_sub_compl_singleton`: `ρ_a` is not proper on a normed group
+  punctured at a non-isolated point.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, Section 7.
 -/
-
-public section
 
 open Set TopologicalSpace
 open scoped Manifold
@@ -61,5 +60,14 @@ example (a : EuclideanSpace ℂ (Fin 2)) {r : ℝ} (hr : ‖a‖ ^ 2 < r) :
     ¬IsCompact (({0}ᶜ : Set (EuclideanSpace ℂ (Fin 2))) ∩ (fun v ↦ ‖v - a‖ ^ 2) ⁻¹' Iic r) :=
   ⟨isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal _ a,
     not_isCompact_compl_singleton_inter_preimage_Iic (by simpa using hr)⟩
+
+/- On `ℂ² ∖ {0}`, the only possible critical point of a squared distance is its centre. -/
+example (a : EuclideanSpace ℂ (Fin 2))
+    (x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens (EuclideanSpace ℂ (Fin 2)))) :
+    mvfderiv 𝓘(ℝ, EuclideanSpace ℂ (Fin 2))
+        (fun y : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens (EuclideanSpace ℂ (Fin 2))) ↦
+          ‖(y : EuclideanSpace ℂ (Fin 2)) - a‖ ^ 2) x = 0 ↔
+      (x : EuclideanSpace ℂ (Fin 2)) = a :=
+  mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff _ a x
 
 end TauCeti

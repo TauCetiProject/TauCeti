@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.Order.Sublevel
 
 import Mathlib.Analysis.Normed.Group.Uniform
-import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
@@ -32,7 +30,7 @@ These are the squared-distance exhaustions of closed subsets of Euclidean space 
 theory. Conversely, along a continuous map the squared distance is proper only if the map is
 proper, so along the inclusion of a subset only if the subset is closed
 (`TauCeti.isProperMap_norm_sq_sub_comp_iff`, `TauCeti.isProperMap_norm_sq_sub_subtypeVal_iff`).
-For example, in a nonzero real normed space punctured at `y`, the bounded sublevel
+For example, in a normed group punctured at a non-isolated point `y`, the bounded sublevel
 `{v | ‖v - a‖² ≤ r}` accumulates at the puncture and is not compact when `‖y - a‖² < r`
 (`TauCeti.not_isCompact_compl_singleton_inter_preimage_Iic`), so the squared distance is not
 proper (`TauCeti.not_isProperMap_norm_sq_sub_compl_singleton`).
@@ -41,6 +39,7 @@ proper (`TauCeti.not_isProperMap_norm_sq_sub_compl_singleton`).
 public section
 
 open Set
+open scoped Topology
 
 namespace TauCeti
 
@@ -90,19 +89,20 @@ theorem isProperMap_norm_sq_sub_subtypeVal_iff {E : Type*} [NormedAddCommGroup E
 
 section Punctured
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Nontrivial F]
+variable {F : Type*} [NormedAddCommGroup F]
 
-/-- In a nonzero real normed space punctured at `y`, the bounded sublevel `{ρ_a ≤ r}` of the
-squared distance from `a` is not compact when `‖y - a‖² < r`: it accumulates at the puncture. -/
-theorem not_isCompact_compl_singleton_inter_preimage_Iic {y a : F} {r : ℝ}
+/-- In a normed group punctured at a non-isolated point `y`, the bounded sublevel `{ρ_a ≤ r}` of
+the squared distance from `a` is not compact when `‖y - a‖² < r`: it accumulates at the
+puncture. -/
+theorem not_isCompact_compl_singleton_inter_preimage_Iic {y a : F} [(𝓝[≠] y).NeBot] {r : ℝ}
     (hr : ‖y - a‖ ^ 2 < r) :
     ¬IsCompact (({y}ᶜ : Set F) ∩ (fun v ↦ ‖v - a‖ ^ 2) ⁻¹' Iic r) :=
   not_isCompact_inter_preimage_Iic (by simp) (by simp)
     (by fun_prop) hr
 
-/-- On a nonzero real normed space punctured at `y`, the squared distance from any point is not a
-proper map. -/
-theorem not_isProperMap_norm_sq_sub_compl_singleton (y a : F) :
+/-- On a normed group punctured at a non-isolated point `y`, the squared distance from any point
+is not a proper map. -/
+theorem not_isProperMap_norm_sq_sub_compl_singleton (y a : F) [(𝓝[≠] y).NeBot] :
     ¬IsProperMap fun x : ({y}ᶜ : Set F) ↦ ‖(x : F) - a‖ ^ 2 := by
   intro h
   refine not_isCompact_compl_singleton_inter_preimage_Iic (lt_add_one (‖y - a‖ ^ 2)) ?_
