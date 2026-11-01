@@ -72,6 +72,7 @@ theorem isCohenMacaulay_iff_of_isLocalRing [IsLocalRing R] [IsNoetherianRing R] 
     let e : R ≃ₐ[R] Localization.AtPrime (IsLocalRing.maximalIdeal R) :=
       IsLocalization.atUnits R (IsLocalRing.maximalIdeal R).primeCompl
         (fun x hx ↦ by
+          change IsUnit x
           simpa only [Ideal.mem_primeCompl_iff, IsLocalRing.mem_maximalIdeal,
             mem_nonunits_iff, not_not] using hx)
     exact e.toRingEquiv.isCohenMacaulay_self_iff.mpr
