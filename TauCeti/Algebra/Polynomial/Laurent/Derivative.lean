@@ -21,7 +21,7 @@ following `Polynomial.derivative'`.
 
 The residue of the form `f dT` is the coefficient of `T⁻¹` in `f`. Since `n Tⁿ⁻¹` has residue zero
 for every `n`, every derivative has residue zero, and the product rule gives integration by parts
-`Res(f dg) = -Res(g df)`. These are the Laurent-polynomial counterparts of the derivative and
+`Res(f dg) = -Res((df) g)`. These are the Laurent-polynomial counterparts of the derivative and
 residue of Laurent series: the embedding of Laurent polynomials into Laurent series commutes with
 the derivatives (`LaurentPolynomial.toLaurentSeries_derivative`) and carries the residue
 `Res(f dg)` of Laurent polynomials to the Laurent-series residue pairing
@@ -157,8 +157,9 @@ theorem derivative_eq_zero_iff_exists_C [IsAddTorsionFree R] {f : R[T;T⁻¹]} :
   · rintro ⟨c, rfl⟩
     exact derivative_C c
 
-/-- **Integration by parts** for residues of Laurent polynomials: `Res(f dg) = -Res(g df)`, where
-the residue is the coefficient of `T⁻¹`. -/
+/-- **Integration by parts** for residues of Laurent polynomials: `Res(f dg) = -Res((df) g)`,
+where the residue is the coefficient of `T⁻¹`. The factor order is kept, since `R` need not be
+commutative. -/
 theorem coeff_neg_one_mul_derivative (f g : R[T;T⁻¹]) :
     (f * derivative g).coeff (-1) = -(derivative f * g).coeff (-1) := by
   have h := coeff_neg_one_derivative (f * g)
