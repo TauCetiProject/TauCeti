@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Quaternion
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # One-sided quotient derivatives of quaternionic functions
@@ -42,6 +44,18 @@ The order of multiplication is part of every statement.
   slope at the same point coincide and are real.
 * `TauCeti.not_hasLeftQuotientFDerivAt_const_mul`: for nonreal `a`, the map `x ↦ a * x` has no
   left slope at any point, although it has right slope `a` everywhere; dually for `x ↦ x * b`.
+* `TauCeti.HasLeftQuotientFDerivAt.mul_iff` and `TauCeti.HasRightQuotientFDerivAt.mul_iff`: the
+  product of two functions with left slopes `b`, `c` has left slope `b * g q + f q * c` exactly when
+  `c = 0` or `f q` is real; the product of two functions with right slopes `a`, `c` has right slope
+  `a * g q + f q * c` exactly when `a = 0` or `g q` is real.
+* `TauCeti.HasLeftQuotientFDerivAt.inv_iff` and `TauCeti.HasRightQuotientFDerivAt.inv_iff`: the
+  pointwise inverse of a nonvanishing function with slope `b` has slope `-((f q)⁻¹ * b * (f q)⁻¹)`
+  on the same side exactly when `b = 0` or `f q` is real.
+* `TauCeti.HasLeftQuotientFDerivAt.leftQuotientDifferentiableAt_mul_iff` and its siblings: the same
+  criteria for the existence of some slope, since a slope is forced to be the value of the real
+  derivative at `1`.
+* `TauCeti.HasLeftQuotientFDerivAt.comp` and `TauCeti.HasRightQuotientFDerivAt.comp`: the chain
+  rules, with left slope `c * b` and right slope `a * c` for an inner slope `c`.
 
 ## References
 
@@ -384,6 +398,12 @@ theorem hasRightQuotientFDerivAt_iff_tendsto_mul_inv :
 
 /-! ### Simultaneous left and right slopes -/
 
+/-- A quaternion commutes with every quaternion exactly when it is real. -/
+private theorem forall_mul_comm_iff_im_eq_zero {p : ℍ} : (∀ h, p * h = h * p) ↔ p.im = 0 := by
+  rw [← Quaternion.mem_center_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h,
+    Subalgebra.mem_center_iff]
+  exact forall_congr' fun _ ↦ eq_comm
+
 namespace HasLeftQuotientFDerivAt
 
 /-- If `f` has left slope `b` and right slope `a` at the same point, then `b = a`: both are the
@@ -398,10 +418,8 @@ theorem im_eq_zero_of_hasRightQuotientFDerivAt (hb : HasLeftQuotientFDerivAt f q
     (ha : HasRightQuotientFDerivAt f q a) : b.im = 0 := by
   have hD := hb.hasFDerivAt.unique ha.hasFDerivAt
   obtain rfl := hb.eq_of_hasRightQuotientFDerivAt ha
-  have hcenter : b ∈ Subalgebra.center ℝ ℍ :=
-    Subalgebra.mem_center_iff.mpr fun h ↦ by simpa using DFunLike.congr_fun hD h
-  obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hcenter)
-  simp
+  exact forall_mul_comm_iff_im_eq_zero.mp fun h ↦
+    (by simpa using DFunLike.congr_fun hD h : h * b = b * h).symm
 
 end HasLeftQuotientFDerivAt
 
@@ -418,5 +436,196 @@ slope `b` everywhere (`TauCeti.hasLeftQuotientFDerivAt_mul_const`). -/
 theorem not_hasRightQuotientFDerivAt_mul_const (hb : b.im ≠ 0) (q c : ℍ) :
     ¬HasRightQuotientFDerivAt (fun x ↦ x * b) q c := fun hc ↦
   hb ((hasLeftQuotientFDerivAt_mul_const b q).im_eq_zero_of_hasRightQuotientFDerivAt hc)
+
+
+/-! ### Products, inverses and compositions -/
+
+/-- A real derivative `D` of `f` at `q` identifies the left slopes of `f` at `q`: `c` is one exactly
+when `D h = h * c` for every `h`. -/
+theorem _root_.HasFDerivAt.hasLeftQuotientFDerivAt_iff {D : ℍ →L[ℝ] ℍ} (hD : HasFDerivAt f D q) :
+    HasLeftQuotientFDerivAt f q c ↔ ∀ h, D h = h * c := by
+  refine ⟨fun hc h ↦ by simp [hD.unique hc.hasFDerivAt], fun H ↦ ?_⟩
+  have hc : (ContinuousLinearMap.mul ℝ ℍ).flip c = D := ContinuousLinearMap.ext fun h ↦ by simp [H]
+  rwa [hasLeftQuotientFDerivAt_iff_hasFDerivAt, hc]
+
+/-- A real derivative `D` of `f` at `q` identifies the right slopes of `f` at `q`: `c` is one
+exactly when `D h = c * h` for every `h`. -/
+theorem _root_.HasFDerivAt.hasRightQuotientFDerivAt_iff {D : ℍ →L[ℝ] ℍ} (hD : HasFDerivAt f D q) :
+    HasRightQuotientFDerivAt f q c ↔ ∀ h, D h = c * h := by
+  refine ⟨fun hc h ↦ by simp [hD.unique hc.hasFDerivAt], fun H ↦ ?_⟩
+  have hc : ContinuousLinearMap.mul ℝ ℍ c = D := ContinuousLinearMap.ext fun h ↦ by simp [H]
+  rwa [hasRightQuotientFDerivAt_iff_hasFDerivAt, hc]
+
+/-- If `D` is the real derivative of `f` at `q`, then `f` has some left slope at `q` exactly when
+`D 1` is one. -/
+theorem _root_.HasFDerivAt.leftQuotientDifferentiableAt_iff {D : ℍ →L[ℝ] ℍ}
+    (hD : HasFDerivAt f D q) :
+    LeftQuotientDifferentiableAt f q ↔ HasLeftQuotientFDerivAt f q (D 1) := by
+  rw [← hD.fderiv]
+  exact leftQuotientDifferentiableAt_iff_hasLeftQuotientFDerivAt_fderiv
+
+/-- If `D` is the real derivative of `f` at `q`, then `f` has some right slope at `q` exactly when
+`D 1` is one. -/
+theorem _root_.HasFDerivAt.rightQuotientDifferentiableAt_iff {D : ℍ →L[ℝ] ℍ}
+    (hD : HasFDerivAt f D q) :
+    RightQuotientDifferentiableAt f q ↔ HasRightQuotientFDerivAt f q (D 1) := by
+  rw [← hD.fderiv]
+  exact rightQuotientDifferentiableAt_iff_hasRightQuotientFDerivAt_fderiv
+
+/-- The commutator with `p` followed by right multiplication by `c` vanishes identically exactly
+when `c = 0` or `p` is real. -/
+private theorem forall_sub_mul_eq_zero_iff {p c : ℍ} :
+    (∀ h, (p * h - h * p) * c = 0) ↔ c = 0 ∨ p.im = 0 := by
+  rw [← forall_mul_comm_iff_im_eq_zero]
+  refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hc h ↦ ?_, ?_⟩
+  · exact sub_eq_zero.mp ((mul_eq_zero.mp (H h)).resolve_right hc)
+  · rintro (rfl | H) h
+    · exact mul_zero _
+    · rw [H, sub_self, zero_mul]
+
+/-- Left multiplication by `c` of the commutator with `p` vanishes identically exactly when `c = 0`
+or `p` is real. -/
+private theorem forall_mul_sub_eq_zero_iff {p c : ℍ} :
+    (∀ h, c * (h * p - p * h) = 0) ↔ c = 0 ∨ p.im = 0 := by
+  rw [← forall_mul_comm_iff_im_eq_zero]
+  refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hc h ↦ ?_, ?_⟩
+  · exact (sub_eq_zero.mp ((mul_eq_zero.mp (H h)).resolve_left hc)).symm
+  · rintro (rfl | H) h
+    · exact zero_mul _
+    · rw [H, sub_self, mul_zero]
+
+/-- A quaternion is real exactly when its inverse is. -/
+private theorem im_inv_eq_zero_iff {p : ℍ} : p⁻¹.im = 0 ↔ p.im = 0 := by
+  simp_rw [← forall_mul_comm_iff_im_eq_zero, ← commute_iff_eq]
+  exact ⟨fun H h ↦ by simpa using (H h).inv_left₀, fun H h ↦ (H h).inv_left₀⟩
+
+namespace HasLeftQuotientFDerivAt
+
+/-- **Left product criterion.** If `f` and `g` have left slopes `b` and `c` at `q`, their product
+has left slope `b * g q + f q * c` at `q` exactly when `c = 0` or `f q` is real. -/
+theorem mul_iff (hf : HasLeftQuotientFDerivAt f q b) (hg : HasLeftQuotientFDerivAt g q c) :
+    HasLeftQuotientFDerivAt (fun x ↦ f x * g x) q (b * g q + f q * c) ↔
+      c = 0 ∨ (f q).im = 0 := by
+  rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).hasLeftQuotientFDerivAt_iff,
+    ← forall_sub_mul_eq_zero_iff]
+  refine forall_congr' fun h ↦ ?_
+  rw [← sub_eq_zero, iff_iff_eq]
+  congr 1
+  simp only [add_apply, smul_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.mul_apply', smul_eq_mul, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op]
+  noncomm_ring
+
+/-- If `f` and `g` have left slopes `b` and `c` at `q`, their product has some left slope at `q`
+exactly when `c = 0` or `f q` is real. -/
+theorem leftQuotientDifferentiableAt_mul_iff (hf : HasLeftQuotientFDerivAt f q b)
+    (hg : HasLeftQuotientFDerivAt g q c) :
+    LeftQuotientDifferentiableAt (fun x ↦ f x * g x) q ↔ c = 0 ∨ (f q).im = 0 := by
+  rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).leftQuotientDifferentiableAt_iff,
+    ← hf.mul_iff hg]
+  refine iff_of_eq (congrArg (HasLeftQuotientFDerivAt _ q) ?_)
+  simp [add_comm]
+
+/-- **Left inverse criterion.** If `f` has left slope `b` at `q` and `f q ≠ 0`, the pointwise
+inverse of `f` has left slope `-((f q)⁻¹ * b * (f q)⁻¹)` at `q` exactly when `b = 0` or `f q` is
+real. -/
+theorem inv_iff (hf : HasLeftQuotientFDerivAt f q b) (hq : f q ≠ 0) :
+    HasLeftQuotientFDerivAt (fun x ↦ (f x)⁻¹) q (-((f q)⁻¹ * b * (f q)⁻¹)) ↔
+      b = 0 ∨ (f q).im = 0 := by
+  have hD : HasFDerivAt (fun x ↦ (f x)⁻¹)
+      ((-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
+        ((ContinuousLinearMap.mul ℝ ℍ).flip b)) q :=
+    (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
+  rw [hD.hasLeftQuotientFDerivAt_iff, ← im_inv_eq_zero_iff, ← forall_sub_mul_eq_zero_iff]
+  refine forall_congr' fun h ↦ ?_
+  have key : (-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
+        ((ContinuousLinearMap.mul ℝ ℍ).flip b) h - h * -((f q)⁻¹ * b * (f q)⁻¹) =
+      -(((f q)⁻¹ * h - h * (f q)⁻¹) * b * (f q)⁻¹) := by
+    simp only [ContinuousLinearMap.comp_apply, neg_apply, ContinuousLinearMap.mulLeftRight_apply,
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply']
+    noncomm_ring
+  rw [← sub_eq_zero, key, neg_eq_zero, mul_eq_zero, or_iff_left (inv_ne_zero hq)]
+
+/-- If `f` has left slope `b` at `q` and `f q ≠ 0`, the pointwise inverse of `f` has some left
+slope at `q` exactly when `b = 0` or `f q` is real. -/
+theorem leftQuotientDifferentiableAt_inv_iff (hf : HasLeftQuotientFDerivAt f q b) (hq : f q ≠ 0) :
+    LeftQuotientDifferentiableAt (fun x ↦ (f x)⁻¹) q ↔ b = 0 ∨ (f q).im = 0 := by
+  have hD : HasFDerivAt (fun x ↦ (f x)⁻¹) _ q := (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
+  rw [hD.leftQuotientDifferentiableAt_iff, ← hf.inv_iff hq]
+  refine iff_of_eq (congrArg (HasLeftQuotientFDerivAt _ q) ?_)
+  simp
+
+/-- **Chain rule for left slopes.** If `g` has left slope `c` at `q` and `f` has left slope `b` at
+`g q`, then `f ∘ g` has left slope `c * b` at `q`. -/
+theorem comp (q : ℍ) (hf : HasLeftQuotientFDerivAt f (g q) b)
+    (hg : HasLeftQuotientFDerivAt g q c) : HasLeftQuotientFDerivAt (f ∘ g) q (c * b) :=
+  (hf.hasFDerivAt.comp q hg.hasFDerivAt).hasLeftQuotientFDerivAt_iff.mpr fun h ↦ by
+    simp [mul_assoc]
+
+end HasLeftQuotientFDerivAt
+
+namespace HasRightQuotientFDerivAt
+
+/-- **Right product criterion.** If `f` and `g` have right slopes `a` and `c` at `q`, their product
+has right slope `a * g q + f q * c` at `q` exactly when `a = 0` or `g q` is real. -/
+theorem mul_iff (hf : HasRightQuotientFDerivAt f q a) (hg : HasRightQuotientFDerivAt g q c) :
+    HasRightQuotientFDerivAt (fun x ↦ f x * g x) q (a * g q + f q * c) ↔
+      a = 0 ∨ (g q).im = 0 := by
+  rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).hasRightQuotientFDerivAt_iff,
+    ← forall_mul_sub_eq_zero_iff]
+  refine forall_congr' fun h ↦ ?_
+  rw [← sub_eq_zero, iff_iff_eq]
+  congr 1
+  simp only [add_apply, smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul,
+    MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op]
+  noncomm_ring
+
+/-- If `f` and `g` have right slopes `a` and `c` at `q`, their product has some right slope at `q`
+exactly when `a = 0` or `g q` is real. -/
+theorem rightQuotientDifferentiableAt_mul_iff (hf : HasRightQuotientFDerivAt f q a)
+    (hg : HasRightQuotientFDerivAt g q c) :
+    RightQuotientDifferentiableAt (fun x ↦ f x * g x) q ↔ a = 0 ∨ (g q).im = 0 := by
+  rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).rightQuotientDifferentiableAt_iff,
+    ← hf.mul_iff hg]
+  refine iff_of_eq (congrArg (HasRightQuotientFDerivAt _ q) ?_)
+  simp [add_comm]
+
+/-- **Right inverse criterion.** If `f` has right slope `a` at `q` and `f q ≠ 0`, the pointwise
+inverse of `f` has right slope `-((f q)⁻¹ * a * (f q)⁻¹)` at `q` exactly when `a = 0` or `f q` is
+real. -/
+theorem inv_iff (hf : HasRightQuotientFDerivAt f q a) (hq : f q ≠ 0) :
+    HasRightQuotientFDerivAt (fun x ↦ (f x)⁻¹) q (-((f q)⁻¹ * a * (f q)⁻¹)) ↔
+      a = 0 ∨ (f q).im = 0 := by
+  have hD : HasFDerivAt (fun x ↦ (f x)⁻¹)
+      ((-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
+        (ContinuousLinearMap.mul ℝ ℍ a)) q :=
+    (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
+  rw [hD.hasRightQuotientFDerivAt_iff, ← im_inv_eq_zero_iff, ← forall_mul_sub_eq_zero_iff]
+  refine forall_congr' fun h ↦ ?_
+  have key : (-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
+        (ContinuousLinearMap.mul ℝ ℍ a) h - -((f q)⁻¹ * a * (f q)⁻¹) * h =
+      -((f q)⁻¹ * (a * (h * (f q)⁻¹ - (f q)⁻¹ * h))) := by
+    simp only [ContinuousLinearMap.comp_apply, neg_apply, ContinuousLinearMap.mulLeftRight_apply,
+      ContinuousLinearMap.mul_apply']
+    noncomm_ring
+  rw [← sub_eq_zero, key, neg_eq_zero, mul_eq_zero, or_iff_right (inv_ne_zero hq)]
+
+/-- If `f` has right slope `a` at `q` and `f q ≠ 0`, the pointwise inverse of `f` has some right
+slope at `q` exactly when `a = 0` or `f q` is real. -/
+theorem rightQuotientDifferentiableAt_inv_iff (hf : HasRightQuotientFDerivAt f q a)
+    (hq : f q ≠ 0) :
+    RightQuotientDifferentiableAt (fun x ↦ (f x)⁻¹) q ↔ a = 0 ∨ (f q).im = 0 := by
+  have hD : HasFDerivAt (fun x ↦ (f x)⁻¹) _ q := (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
+  rw [hD.rightQuotientDifferentiableAt_iff, ← hf.inv_iff hq]
+  refine iff_of_eq (congrArg (HasRightQuotientFDerivAt _ q) ?_)
+  simp
+
+/-- **Chain rule for right slopes.** If `g` has right slope `c` at `q` and `f` has right slope `a`
+at `g q`, then `f ∘ g` has right slope `a * c` at `q`. -/
+theorem comp (q : ℍ) (hf : HasRightQuotientFDerivAt f (g q) a)
+    (hg : HasRightQuotientFDerivAt g q c) : HasRightQuotientFDerivAt (f ∘ g) q (a * c) :=
+  (hf.hasFDerivAt.comp q hg.hasFDerivAt).hasRightQuotientFDerivAt_iff.mpr fun h ↦ by
+    simp [mul_assoc]
+
+end HasRightQuotientFDerivAt
 
 end TauCeti

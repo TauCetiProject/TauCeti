@@ -36,7 +36,8 @@ than excluding it.
 * `TauCeti.Quaternion.mem_center_iff`: a quaternion is central iff `2` annihilates each of its
   three imaginary coordinates.
 * `TauCeti.Quaternion.center_eq_bot`: if `2` is left regular in `R`, the centre of `ℍ[R]` is the
-  image of `R`.
+  image of `R`; `TauCeti.Quaternion.mem_center_iff_im_eq_zero` says equivalently that the central
+  quaternions are those with vanishing imaginary part.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
   and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
@@ -158,6 +159,21 @@ theorem center_eq_bot (h2 : IsLeftRegular (2 : R)) :
   have hK' : x.imK = 0 := h2 (by simpa using hK)
   refine Algebra.mem_bot.mpr ⟨x.re, ?_⟩
   refine _root_.Quaternion.ext _ _ rfl ?_ ?_ ?_ <;> simp [hI', hJ', hK']
+
+/-- **A quaternion is central exactly when its imaginary part vanishes**, as soon as `2` is a left
+regular element of `R`. -/
+theorem mem_center_iff_im_eq_zero (h2 : IsLeftRegular (2 : R)) :
+    x ∈ Subalgebra.center R ℍ[R] ↔ x.im = 0 := by
+  rw [mem_center_iff]
+  refine ⟨fun ⟨hI, hJ, hK⟩ ↦ ?_, fun h ↦ ?_⟩
+  · have hI' : x.imI = 0 := h2 (by simpa using hI)
+    have hJ' : x.imJ = 0 := h2 (by simpa using hJ)
+    have hK' : x.imK = 0 := h2 (by simpa using hK)
+    ext <;> simp [hI', hJ', hK']
+  · have hI : x.imI = 0 := by simpa using congrArg QuaternionAlgebra.imI h
+    have hJ : x.imJ = 0 := by simpa using congrArg QuaternionAlgebra.imJ h
+    have hK : x.imK = 0 := by simpa using congrArg QuaternionAlgebra.imK h
+    simp [hI, hJ, hK]
 
 /-- **The Hamilton quaternions are a central algebra.** Over a commutative ring with no zero
 divisors in which `2 ≠ 0`, the centre of `ℍ[R]` is exactly the image of `R`. Specialized to
