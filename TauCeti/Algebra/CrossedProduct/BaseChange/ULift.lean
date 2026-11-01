@@ -255,7 +255,8 @@ theorem brauerCohomologyEquiv_symm_unitsContinuousH2Congr
 /-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
 does not find this within its default budget, so it is assembled here from the Krull topology
 being Hausdorff, as in `TauCeti.Algebra.CrossedProduct.Comparison`. -/
-local instance {F : Type*} [Field F] : LocallyCompactSpace (AbsoluteGaloisGroup F) :=
+local instance locallyCompactSpace_absoluteGaloisGroup_uliftBaseChange {F : Type*} [Field F] :
+    LocallyCompactSpace (AbsoluteGaloisGroup F) :=
   have : R1Space (AbsoluteGaloisGroup F) := @T2Space.r1Space _ _ krullTopology_t2
   have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup F) :=
     ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩

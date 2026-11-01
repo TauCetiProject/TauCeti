@@ -52,14 +52,16 @@ universe u v
 attribute [local instance] TopRep.distribMulAction
 
 /-- The trivial `𝔽₂` coefficients are a discrete module. -/
-local instance (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] :
+local instance continuousSMul_trivialF2_muTwoCongr (G : Type*) [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] :
     ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
 /-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
 does not find this within its default budget, so it is assembled here from the Krull topology
 being Hausdorff, as in `TauCeti.FieldTheory.GaloisCohomology.Congr`. -/
-local instance {F : Type*} [Field F] : LocallyCompactSpace (AbsoluteGaloisGroup F) :=
+local instance locallyCompactSpace_absoluteGaloisGroup_muTwoCongr {F : Type*} [Field F] :
+    LocallyCompactSpace (AbsoluteGaloisGroup F) :=
   have : R1Space (AbsoluteGaloisGroup F) := @T2Space.r1Space _ _ krullTopology_t2
   have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup F) :=
     ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
