@@ -11,6 +11,8 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 import Mathlib.Data.Fintype.Lattice
+import TauCeti.Algebra.Order.AbsoluteValue.Basic
+import TauCeti.LinearAlgebra.Span.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
@@ -75,41 +77,15 @@ namespace AbsoluteValue
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
-/-- A sum of `card s` terms of size at most `T` has size at most `c ^ card s * T`, for an
-absolute value satisfying `v (a + b) ≤ c * max (v a) (v b)` with `1 ≤ c`. -/
-private theorem apply_sum_le_pow_mul {v : AbsoluteValue K ℝ} {c : ℝ} (hc : 1 ≤ c)
-    (hv : ∀ a b, v (a + b) ≤ c * max (v a) (v b)) {ι : Type*} (s : Finset ι) (f : ι → K)
-    {T : ℝ} (hT : 0 ≤ T) (hf : ∀ i ∈ s, v (f i) ≤ T) : v (∑ i ∈ s, f i) ≤ c ^ s.card * T := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hT
-  | insert a s ha ih =>
-    rw [sum_insert ha, card_insert_of_notMem ha, pow_succ']
-    have hs := ih fun i hi ↦ hf i (mem_insert_of_mem hi)
-    have hTs : T ≤ c ^ s.card * T := le_mul_of_one_le_left hT (one_le_pow₀ hc)
-    calc v (f a + ∑ i ∈ s, f i) ≤ c * max (v (f a)) (v (∑ i ∈ s, f i)) := hv _ _
-      _ ≤ c * (c ^ s.card * T) := by
-        gcongr
-        exact max_le ((hf a (mem_insert_self a s)).trans hTs) hs
-      _ = c * c ^ s.card * T := by ring
-
-/-- The span of an initial segment of `x` lies in that of `z`, when every `z j` is `x j` plus a
-combination of the earlier `x l`. -/
-private theorem span_image_Iio_le_span_image_Iio {n : ℕ} {x z : Fin n → V}
-    (h : ∀ j, z j - x j ∈ span K (x '' Set.Iio j)) (j : Fin n) :
-    span K (x '' Set.Iio j) ≤ span K (z '' Set.Iio j) := by
-  induction j using WellFoundedLT.induction with
-  | _ j ih =>
-    rw [span_le]
-    rintro _ ⟨l, hl, rfl⟩
-    rw [show x l = z l - (z l - x l) by abel]
-    exact sub_mem (subset_span ⟨l, hl, rfl⟩) <|
-      span_mono (Set.image_mono (Set.Iio_subset_Iio (le_of_lt hl))) (ih l hl (h l))
+/-- `Set.Iio j` in `Fin n`, as a condition on values. -/
+private theorem Iio_eq_setOf_val_lt {n : ℕ} (j : Fin n) :
+    Set.Iio j = {l : Fin n | l.val < j.val} :=
+  Set.ext fun _ ↦ Fin.lt_def
 
 /-- One elimination step: if the pivot `q` maximizes `v (·) / s` in its column, then subtracting
 `p / q` times that column from a column bounded by `M` (in units of the row weights `s`, `t`)
 keeps it bounded by `c * M`. -/
-private theorem apply_sub_div_mul_le {v : AbsoluteValue K ℝ} {c : ℝ}
+private theorem apply_sub_div_mul_le {v : AbsoluteValue K ℝ} {c : ℝ} (hc : 0 ≤ c)
     (hv : ∀ a b, v (a + b) ≤ c * max (v a) (v b)) {a b p q : K} {s t M : ℝ} (hs : 0 < s)
     (ht : 0 < t) (hq : 0 < v q) (ha : v a ≤ s * M) (hp : v p ≤ t * M)
     (hb : v b / s ≤ v q / t) : v (a - p / q * b) ≤ c * (s * M) := by
@@ -128,10 +104,6 @@ private theorem apply_sub_div_mul_le {v : AbsoluteValue K ℝ} {c : ℝ}
         exact hv _ _
     _ ≤ c * (s * M) := by
         rw [map_neg_eq_map]
-        have hc : 0 ≤ c := by
-          have h := hv q 0
-          rw [add_zero, map_zero, max_eq_left (v.nonneg q)] at h
-          nlinarith
         exact mul_le_mul_of_nonneg_left (max_le ha hsub) hc
 
 /-- **Elimination with partial pivoting at one place.** If the forms `L r` separate the points of
@@ -176,7 +148,8 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
       rw [show x j.succ = x' j + t j • x 0 by simp [hx']]
       exact add_mem (hspan j h) (smul_mem _ _ (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
     have hM' (j : Fin n) (r : ρ) : v (L r (x' j)) ≤ ν r * (c * M j.succ) := by
-      have h := apply_sub_div_mul_le hv (hν r) (hν r₀) hpos (hM j.succ r) (hM j.succ r₀) (hr₀ r)
+      have h := apply_sub_div_mul_le (zero_le_one.trans hc) hv (hν r) (hν r₀) hpos (hM j.succ r)
+        (hM j.succ r₀) (hr₀ r)
       rw [show L r (x' j) = L r (x j.succ) - L r₀ (x j.succ) / L r₀ (x 0) * L r (x 0) by
         simp [hx', ht]]
       linarith
@@ -238,7 +211,6 @@ private theorem exists_sum_smul_sub_eq {T : Set (AbsoluteValue K ℝ)} {R : Set 
   | s + 1, hs, w, hw => by
     classical
     set ls : Fin n := ⟨s, hs⟩
-    have hIio : Set.Iio ls = {l : Fin n | l.val < s} := Set.ext fun _ ↦ Fin.lt_def
     have hset : {l : Fin n | l.val < s + 1} = insert ls {l | l.val < s} := by
       ext l
       simp only [Set.mem_ofPred_eq, Set.mem_insert_iff, ls, Fin.ext_iff]
@@ -259,8 +231,8 @@ private theorem exists_sum_smul_sub_eq {T : Set (AbsoluteValue K ℝ)} {R : Set 
     have hw'' (v : AbsoluteValue K ℝ) :
         w' v + ξs • (z v ls - x ls) ∈ span K (z v '' {l | l.val < s}) := by
       refine add_mem (hw' v) (smul_mem _ _ ?_)
-      have := span_image_Iio_le_span_image_Iio (hz v) ls (hz v ls)
-      rwa [hIio] at this
+      have := (span_image_Iio_eq_span_image_Iio (hz v) ls).ge (hz v ls)
+      rwa [Iio_eq_setOf_val_lt] at this
     obtain ⟨ξ, hξ, he⟩ := exists_sum_smul_sub_eq happrox hz s (Nat.le_of_succ_le hs)
       (fun v ↦ w' v + ξs • (z v ls - x ls)) hw''
     refine ⟨Function.update ξ ls ξs, fun l ↦ ?_, fun v hv ↦ ?_⟩
@@ -398,9 +370,11 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
   -- Step 2: glue the local families by simultaneous approximation, one vector at a time.
   have hglue (j : Fin m) := exists_sum_smul_sub_eq happrox hzx j.val j.isLt.le
     (fun v ↦ z v j - x j) fun v ↦ by
-      have := span_image_Iio_le_span_image_Iio (hzx v) j (hzx v j)
-      rwa [show Set.Iio j = {l : Fin m | l.val < j.val} from Set.ext fun _ ↦ Fin.lt_def] at this
+      have := (span_image_Iio_eq_span_image_Iio (hzx v) j).ge (hzx v j)
+      rwa [Iio_eq_setOf_val_lt] at this
   choose ξ hξR he using hglue
+  have hμ₀ (v : AbsoluteValue K ℝ) (hv : v ∈ T) (l : Fin m) : 0 ≤ μ v l :=
+    (mul_nonneg_iff_of_pos_left (hν v hv l)).mp ((v.nonneg _).trans (hLx v hv l l))
   -- Step 3: at each place, `y j - z v j` is a small combination of the `z v l`, `l < j`.
   have key (v : AbsoluteValue K ℝ) (hv : v ∈ T) (i j : Fin m) :
       v (L v (σ v i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
@@ -412,14 +386,10 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
       rw [filter_congr fun l _ ↦ (Fin.lt_def (a := l) (b := j)), ← heq]
       abel
     rw [hy, hσ v hv]
-    exact apply_add_sum_le (hc v) (hcv v) h₀ hbd (hν v hv) (hμ v hv)
-      (fun l ↦ (mul_nonneg_iff_of_pos_left (hν v hv i)).mp ((v.nonneg _).trans (hLx v hv i l)))
-      he_le i j
+    exact apply_add_sum_le (hc v) (hcv v) h₀ hbd (hν v hv) (hμ v hv) (hμ₀ v hv) he_le i j
   refine ⟨ξ, σ, hξR, fun v hv i j ↦ (key v hv i j).trans ?_, fun v hv hna hA i j ↦ ?_⟩
   · have h₀ : 0 ≤ max 1 (A v) * (ν v (σ v i) * min (μ v i) (μ v j)) := by
-      have hμ₀ (l : Fin m) : 0 ≤ μ v l :=
-        (mul_nonneg_iff_of_pos_left (hν v hv i)).mp ((v.nonneg _).trans (hLx v hv i l))
-      have := le_min (hμ₀ i) (hμ₀ j)
+      have := le_min (hμ₀ v hv i) (hμ₀ v hv j)
       have := (hν v hv (σ v i)).le
       positivity
     rw [mul_assoc, mul_assoc]

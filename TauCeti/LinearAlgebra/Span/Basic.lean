@@ -12,6 +12,7 @@ import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Data.Fintype.BigOperators
+import Mathlib.Tactic.Abel
 
 /-!
 # Finite spans and singleton spans
@@ -22,7 +23,9 @@ used to recover the generator's membership in any submodule. Acting on a line gi
 through the image of its generator, so a group element stabilizes the line through a vector
 exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
-subspace over the larger field as the family `y`.
+subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
+well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
+the spans of initial segments.
 -/
 
 public section
@@ -129,5 +132,29 @@ theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fi
       exact smul_mem _ _ (subset_span ⟨i, rfl⟩)
 
 end IdealCoefficients
+
+section Unitriangular
+
+variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι] [WellFoundedLT ι]
+
+/-- Initial segments of `x` and `z` span the same submodule when every `z j` is `x j` plus a
+combination of the earlier `x l`. -/
+theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
+    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) (j : ι) :
+    span R (z '' Set.Iio j) = span R (x '' Set.Iio j) := by
+  refine le_antisymm (span_le.2 ?_) ?_
+  · rintro _ ⟨l, hl, rfl⟩
+    rw [show z l = (z l - x l) + x l by abel]
+    exact add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
+      (subset_span ⟨l, hl, rfl⟩)
+  induction j using WellFoundedLT.induction with
+  | _ j ih =>
+    rw [span_le]
+    rintro _ ⟨l, hl, rfl⟩
+    rw [show x l = z l - (z l - x l) by abel]
+    exact sub_mem (subset_span ⟨l, hl, rfl⟩) <|
+      span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+
+end Unitriangular
 
 end Submodule

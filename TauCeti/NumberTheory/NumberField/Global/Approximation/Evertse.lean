@@ -8,8 +8,9 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.Analysis.AbsoluteValue.Evertse
-import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.NumberTheory.NumberField.Global.Approximation.SInteger
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # Evertse's lemma over a number field
@@ -39,7 +40,6 @@ bodies and Davenport's lemma in Schmidt's original argument. The proof is the ge
 
 ## Main results
 
-* `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
 * `NumberField.exists_evertse`: Evertse's lemma with weights.
 * `NumberField.exists_evertse_unweighted`: Evertse's lemma without weights.
 
@@ -58,29 +58,6 @@ open Finset
 namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
-
-omit [NumberField K] in
-/-- An infinite place is archimedean: it takes the value `2` at `2`. -/
-theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.1 := by
-  intro h
-  have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
-  rw [← InfinitePlace.coe_apply, v.map_natCast] at this
-  norm_num at this
-
-omit [NumberField K] in
-/-- Linearly independent forms, as many as the dimension, have no common zero but `0`. -/
-private theorem eq_zero_of_forall_apply_eq_zero {V : Type*} [AddCommGroup V] [Module K V] {m : ℕ}
-    (x : Module.Basis (Fin m) K V) {L : Fin m → Module.Dual K V} (hL : LinearIndependent K L)
-    {z : V} (hz : ∀ k, L k z = 0) : z = 0 := by
-  have : FiniteDimensional K V := Module.Finite.of_basis x
-  have hspan := hL.span_eq_top_of_card_eq_finrank' <| by
-    rw [Subspace.dual_finrank_eq, Module.finrank_eq_card_basis x]
-  have hz' : z ∈ (Submodule.span K (Set.range L)).dualCoannihilator := by
-    rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span]
-    rintro _ ⟨k, rfl⟩
-    exact hz k
-  rw [hspan] at hz'
-  simpa using hz'
 
 /-- **Evertse's lemma** (Evertse; Bombieri–Gubler, Lemma 7.5.29). There is a constant `C`,
 depending only on `K` and `m`, with the following property. Let `S₀` be a finite set of finite
@@ -112,6 +89,9 @@ theorem exists_evertse (m : ℕ) :
   obtain ⟨A₀, hA₀⟩ := exists_forall_apply_add_le (K := K)
   refine ⟨2 ^ (2 * m + 1) * max 1 A₀, fun V _ _ Sfin L x ν μ hLinf hLfin hνinf hνfin hμinf
     hμfin hinf hfin ↦ ?_⟩
+  have : FiniteDimensional K V := Module.Finite.of_basis x
+  have hcard : Fintype.card (Fin m) = Module.finrank K V := by
+    rw [Module.finrank_eq_card_basis x]
   -- The places of the statement, as underlying absolute values.
   set T : Set (AbsoluteValue K ℝ) :=
     {v | (∃ w : InfinitePlace K, w.1 = v) ∨ ∃ u ∈ Sfin, u.1 = v} with hT
@@ -136,11 +116,17 @@ theorem exists_evertse (m : ℕ) :
     (L := L) (x := x) (ν := ν) (μ := μ)
     (by
       rintro v (⟨w, rfl⟩ | ⟨u, hu, rfl⟩) z hz
-      · exact eq_zero_of_forall_apply_eq_zero x (hLinf w) hz
-      · exact eq_zero_of_forall_apply_eq_zero x (hLfin u hu) hz)
+      · exact (hLinf w).eq_zero_of_forall_apply_eq_zero hcard hz
+      · exact (hLfin u hu).eq_zero_of_forall_apply_eq_zero hcard hz)
     x.linearIndependent
-    (by rintro v (⟨w, rfl⟩ | ⟨u, hu, rfl⟩) <;> simp [*])
-    (by rintro v (⟨w, rfl⟩ | ⟨u, hu, rfl⟩) <;> simp [*])
+    (by
+      rintro v (⟨w, rfl⟩ | ⟨u, hu, rfl⟩)
+      · exact hνinf w
+      · exact hνfin u hu)
+    (by
+      rintro v (⟨w, rfl⟩ | ⟨u, hu, rfl⟩)
+      · exact hμinf w
+      · exact hμfin u hu)
     (by
       rintro v (⟨w, rfl⟩ | ⟨u, hu, rfl⟩)
       · exact hinf w
