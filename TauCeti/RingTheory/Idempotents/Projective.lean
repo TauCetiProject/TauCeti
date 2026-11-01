@@ -17,7 +17,7 @@ input for constructing projective covers from primitive idempotents.
 If `R` is projective over a coefficient semiring `k` acting compatibly with multiplication
 (`IsScalarTower k R R`), the same retraction makes `Re` projective over those coefficients.
 
-For an idempotent `e` of an `R`-algebra `S` that is projective over a commutative ring `R`, with
+For an idempotent `e` of an `R`-algebra `S` that is projective over a commutative semiring `R`, with
 `e S = R e`, the surjection `R → R e` splits, so some `c : R` acts as the identity on `e` and
 kills the annihilator of `e` (`IsIdempotentElem.exists_smul_eq_self_and_mul_eq_zero`).
 
@@ -51,7 +51,8 @@ theorem projective_span_singleton (he : IsIdempotentElem e) :
 /-- Let `e` be an idempotent of an `R`-algebra `S` that is projective as an `R`-module, with
 `e S = R e`. Then the surjection `R → R e` splits: some `c : R` has `c e = e` and kills the
 annihilator of `e`. -/
-theorem exists_smul_eq_self_and_mul_eq_zero {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
+theorem exists_smul_eq_self_and_mul_eq_zero {R S : Type*} [CommSemiring R] [Semiring S]
+    [Algebra R S]
     [Module.Projective R S] {e : S} (he : IsIdempotentElem e)
     (hσ : ∀ y : S, ∃ σ : R, σ • e = e * y) :
     ∃ c : R, c • e = e ∧ ∀ r : R, r • e = 0 → r * c = 0 := by
@@ -69,6 +70,7 @@ theorem exists_smul_eq_self_and_mul_eq_zero {R S : Type*} [CommRing R] [Ring S] 
     exact ⟨σ, Subtype.ext hσ⟩
   obtain ⟨τ, hτ⟩ := Module.projective_lifting_property _ LinearMap.id hρ
   refine ⟨τ e', congrArg Subtype.val (LinearMap.congr_fun hτ e'), fun r hr ↦ ?_⟩
-  rw [← smul_eq_mul, ← map_smul, show r • e' = 0 from Subtype.ext hr, map_zero]
+  have hre : r • e' = 0 := Subtype.ext hr
+  rw [← smul_eq_mul, ← map_smul, hre, map_zero]
 
 end IsIdempotentElem

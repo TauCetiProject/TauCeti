@@ -147,9 +147,9 @@ theorem exists_isIdempotentElem_sub_mem_map_of_isIntegral {s : S}
   refine ⟨aeval s (a * g), ?_, aeval_mul_sub_mem_map_of_add_eq_one I hs hab hgmap hhmap⟩
   -- `a(s) g(s)` and `b(s) h(s)` are complementary idempotents, since `g h = P` kills `s`.
   have h1 : aeval s (a * g) + aeval s (b * h) = 1 := by rw [← map_add, hab, map_one]
+  have hagbh : a * g * (b * h) = a * b * P := by rw [← hgh]; ring
   have h0 : aeval s (a * g) * aeval s (b * h) = 0 := by
-    rw [← map_mul, show a * g * (b * h) = a * b * P by rw [← hgh]; ring, map_mul, hPs,
-      mul_zero]
+    rw [← map_mul, hagbh, map_mul, hPs, mul_zero]
   exact (IsIdempotentElem.of_mul_add h0 h1).1
 
 /-- **Idempotents of an integral algebra over a Henselian pair.** If `(R, I)` is Henselian and `S`
@@ -162,9 +162,11 @@ theorem bijOn_quotient_mk_map_isIdempotentElem :
   refine ⟨fun _ he ↦ he.map _, injOn_quotient_mk_map_isIdempotentElem I,
     fun t ht ↦ ?_⟩
   obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective t
+  have hss : Ideal.Quotient.mk (I.map (algebraMap R S)) (s * s) =
+      Ideal.Quotient.mk (I.map (algebraMap R S)) s := by
+    rw [map_mul]; exact ht.eq
   obtain ⟨e, he, hes⟩ := exists_isIdempotentElem_sub_mem_map_of_isIntegral I
-    (Ideal.Quotient.eq.mp (show Ideal.Quotient.mk _ (s * s) = Ideal.Quotient.mk _ s by
-      rw [map_mul]; exact ht.eq))
+    (Ideal.Quotient.eq.mp hss)
   exact ⟨e, he, Ideal.Quotient.eq.mpr hes⟩
 
 end HenselianRing
@@ -318,9 +320,9 @@ theorem henselianRing_iff_forall_bijOn_isIdempotentElem {R : Type u} [CommRing R
       (Ideal.Quotient.eq.mpr (by rw [htop]; trivial))
     exact zero_ne_one this
   · have : Module.Finite R (AdjoinRoot f) := hf.finite_adjoinRoot
-    obtain ⟨e, he, hes⟩ := (H (AdjoinRoot f)).surjOn
-      (show IsIdempotentElem (Ideal.Quotient.mk _ s) by
-        rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs])
+    have hs' : IsIdempotentElem (Ideal.Quotient.mk (I.map (algebraMap R (AdjoinRoot f))) s) := by
+      rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs]
+    obtain ⟨e, he, hes⟩ := (H (AdjoinRoot f)).surjOn hs'
     exact ⟨e, he, Ideal.Quotient.eq.mp hes⟩
 
 /-- **Henselian pairs and idempotents of integral algebras.** A pair `(R, I)` is Henselian if and
