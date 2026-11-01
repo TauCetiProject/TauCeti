@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 
 import TauCeti.Topology.FiberBundle.Separation
 
