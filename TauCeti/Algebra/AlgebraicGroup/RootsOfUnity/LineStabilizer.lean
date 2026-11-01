@@ -107,20 +107,6 @@ section Field
 
 variable {k : Type u} [Field k]
 
-/-- The two coordinate vectors are linearly independent, in the form used for the line through
-their sum. -/
-private theorem linearIndependent_basisFun_pair :
-    LinearIndependent k ![Pi.basisFun k (Fin 2) 0, Pi.basisFun k (Fin 2) 1] := by
-  convert (Pi.basisFun k (Fin 2)).linearIndependent using 1
-  ext i : 1
-  fin_cases i <;> simp
-
-/-- The point `[1 : 1]` is the line through the sum of the two coordinate vectors. -/
-private theorem one_eq_basisFun_add :
-    (1 : Fin 2 → k) = Pi.basisFun k (Fin 2) 0 + Pi.basisFun k (Fin 2) 1 := by
-  ext i
-  fin_cases i <;> simp
-
 /-- **`μ_n` is the stabilizer of `[1 : 1]` under `t · [u : v] = [tⁿ u : v]`.** For the
 representation of `𝔾ₘ = D(ℤ)` on `k²` with weights `n` and `0`, the scheme-theoretic stabilizer
 of the line through `(1, 1)` is the closed subgroup `μ_n`, the kernel of the coordinate surjection
@@ -130,10 +116,13 @@ theorem stabilizerHopfIdeal_projLineComodule_toIdeal (n : ℕ) :
     ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal (MonoidAlgebra k (Multiplicative ℤ))).toIdeal =
       RingHom.ker (MonoidAlgebra.mapDomainRingHom k (toMultiplicativeZMod n)) := by
   let : Comodule k (MonoidAlgebra k (Multiplicative ℤ)) (Fin 2 → k) := projLineComodule k n
-  rw [ker_mapDomainRingHom_toMultiplicativeZMod, one_eq_basisFun_add]
+  -- `[1 : 1]` is the line through the sum of the two coordinate vectors.
+  rw [ker_mapDomainRingHom_toMultiplicativeZMod,
+    show (1 : Fin 2 → k) = Pi.basisFun k (Fin 2) 0 + Pi.basisFun k (Fin 2) 1 by
+      simpa [Fin.sum_univ_two] using (Finset.univ_sum_single (1 : Fin 2 → k)).symm]
   exact Submodule.stabilizerHopfIdeal_span_singleton_add_toIdeal _
-    linearIndependent_basisFun_pair (projLineComodule_coact_basisFun_zero k n)
-    (projLineComodule_coact_basisFun_one k n)
+    (FinVec.etaExpand_eq (Pi.basisFun k (Fin 2)) ▸ (Pi.basisFun k (Fin 2)).linearIndependent)
+    (projLineComodule_coact_basisFun_zero k n) (projLineComodule_coact_basisFun_one k n)
 
 /-- **The stabilizer of `[1 : 1]` is smooth exactly when `n` is invertible.** For `n ≠ 0` and
 the action `t · [u : v] = [tⁿ u : v]` of `𝔾ₘ`, the coordinate algebra of the stabilizer of
@@ -167,11 +156,13 @@ theorem lieSubalgebra_stabilizerHopfIdeal_projLineComodule_eq_top {n : ℕ} (hn 
     ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal
       (MonoidAlgebra k (Multiplicative ℤ))).lieSubalgebra (B := k) = ⊤ := by
   let : Comodule k (MonoidAlgebra k (Multiplicative ℤ)) (Fin 2 → k) := projLineComodule k n
-  rw [one_eq_basisFun_add]
+  -- `[1 : 1]` is the line through the sum of the two coordinate vectors.
+  rw [show (1 : Fin 2 → k) = Pi.basisFun k (Fin 2) 0 + Pi.basisFun k (Fin 2) 1 by
+    simpa [Fin.sum_univ_two] using (Finset.univ_sum_single (1 : Fin 2 → k)).symm]
   refine eq_top_iff.mpr fun d _ ↦ ?_
   rw [Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_span_singleton_add_iff
-    (linearIndependent_basisFun_pair (k := k)) (projLineComodule_coact_basisFun_zero k n)
-    (projLineComodule_coact_basisFun_one k n)]
+    (FinVec.etaExpand_eq (Pi.basisFun k (Fin 2)) ▸ (Pi.basisFun k (Fin 2)).linearIndependent)
+    (projLineComodule_coact_basisFun_zero k n) (projLineComodule_coact_basisFun_one k n)]
   -- `Tⁿ` is the `n`th power of `T`, so `d (Tⁿ) = n • Tⁿ⁻¹ • d T = 0`.
   have hT : MonoidAlgebra.single (Multiplicative.ofAdd (n : ℤ)) (1 : k) =
       MonoidAlgebra.single (Multiplicative.ofAdd (1 : ℤ)) 1 ^ n := by
