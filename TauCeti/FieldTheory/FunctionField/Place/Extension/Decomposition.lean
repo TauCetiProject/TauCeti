@@ -384,22 +384,16 @@ theorem eq_one_of_smul_eq_self_of_ramificationIdx_eq_one {σ : F' ≃ₐ[F] F'} 
     (hσ : σ • P = P) (he : ramificationIdx F P = 1) (hf : relativeDegree k F P = 1) : σ = 1 := by
   -- Over the field `E` fixed by `σ`, `F'` is Galois and `σ` lies in the decomposition group of `P`.
   let E := IntermediateField.fixedField (Subgroup.zpowers σ)
-  let τ : F' ≃ₐ[E] F' :=
-    IntermediateField.subgroupEquivAlgEquiv _ ⟨σ, Subgroup.mem_zpowers σ⟩
-  have hτσ : τ.restrictScalars F = σ := AlgEquiv.ext fun x ↦ by
-    rw [AlgEquiv.restrictScalars_apply, IntermediateField.coe_subgroupEquivAlgEquiv_apply]
+  let τ : F' ≃ₐ[E] F' := σ.toFixedFieldAlgEquiv
+  have hτσ : τ.restrictScalars F = σ := AlgEquiv.restrictScalars_toFixedFieldAlgEquiv σ
   have hτ : τ ∈ P.integers.decompositionSubgroup E := by
     rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff,
       ← restrictScalars_smul, hτσ, hσ]
   -- Over `E`, the place `P` is still unramified of relative degree one.
-  have he' : ramificationIdx E P = 1 := by
-    have h := ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) P
-    rw [he] at h
-    exact Nat.eq_one_of_mul_eq_one_right h.symm
-  have hf' : relativeDegree k E P = 1 := by
-    have h := relativeDegree_restrict_mul (k₀ := k) (k₁ := k) (F₀ := F) (F₁ := E) P
-    rw [hf] at h
-    exact Nat.eq_one_of_mul_eq_one_right h.symm
+  have he' : ramificationIdx E P = 1 :=
+    ((ramificationIdx_eq_one_iff_restrict_eq_one (k₁ := k) (F₁ := E) P).mp he).1
+  have hf' : relativeDegree k E P = 1 :=
+    ((relativeDegree_eq_one_iff_restrict_eq_one (k₁ := k) (F₁ := E) P).mp hf).1
   have hcard := card_decompositionSubgroup E P
   rw [he', hf', mul_one, Nat.card_eq_one_iff_unique] at hcard
   have hτ1 : τ = 1 := congrArg Subtype.val (hcard.1.elim ⟨τ, hτ⟩ 1)
