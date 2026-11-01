@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
 public import TauCeti.Analysis.OperatorIdeal.Family.KyFan.Dominance
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 
 /-!
 # The logarithmic operator ideal `L^(1,∞)`
@@ -65,15 +66,6 @@ open scoped ENNReal NNReal BoundedContinuousFunction
 
 universe u v w
 
-/-- The logarithmic weights `log (N + 2)` are positive. -/
-private theorem log_natCast_add_two_pos (N : ℕ) : 0 < Real.log (N + 2) :=
-  Real.log_pos (by linarith [N.cast_nonneg (α := ℝ)])
-
-/-- The logarithmic weights `log (N + 2)` tend to infinity. -/
-private theorem tendsto_log_natCast_add_two :
-    Tendsto (fun N : ℕ ↦ Real.log (N + 2)) atTop atTop :=
-  Real.tendsto_log_atTop.comp (tendsto_atTop_add_const_right atTop 2 tendsto_natCast_atTop_atTop)
-
 namespace ContinuousLinearMap
 
 section Seminormed
@@ -94,7 +86,7 @@ theorem kyFanLogMean_def (T : E →L[𝕜] F) (N : ℕ) :
 
 /-- The logarithmic means are nonnegative. -/
 theorem kyFanLogMean_nonneg (T : E →L[𝕜] F) (N : ℕ) : 0 ≤ T.kyFanLogMean N :=
-  div_nonneg (NNReal.coe_nonneg _) (log_natCast_add_two_pos N).le
+  div_nonneg (NNReal.coe_nonneg _) (Real.log_natCast_add_pos one_lt_two N).le
 
 /-- The logarithmic means are homogeneous: those of `c T` are `‖c‖` times those of `T`. -/
 @[simp]
@@ -112,7 +104,7 @@ theorem kyFanLogMean_le_of_forall_kyFanGauge_le {S : G →L[𝕜] H} {T : E →L
     (h : ∀ k, S.kyFanGauge k ≤ T.kyFanGauge k) (N : ℕ) : S.kyFanLogMean N ≤ T.kyFanLogMean N := by
   rw [kyFanLogMean_def, kyFanLogMean_def]
   gcongr
-  · exact (log_natCast_add_two_pos N).le
+  · exact (Real.log_natCast_add_pos one_lt_two N).le
   · exact h (N + 1)
 
 /-- Operators with the same approximation numbers have the same logarithmic means. -/
@@ -125,19 +117,19 @@ theorem kyFanLogMean_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B :
     (A ∘L T ∘L B).kyFanLogMean N ≤ ‖A‖ * T.kyFanLogMean N * ‖B‖ := by
   rw [kyFanLogMean_def, kyFanLogMean_def, mul_div_assoc', div_mul_eq_mul_div]
   gcongr
-  · exact (log_natCast_add_two_pos N).le
+  · exact (Real.log_natCast_add_pos one_lt_two N).le
   · exact_mod_cast kyFanGauge_comp_comp_le A T B (N + 1)
 
 /-- The logarithmic means of a trace-class operator tend to zero: its Ky Fan sums are bounded by
 `∑ⱼ aⱼ(T)` while `log (N + 2)` tends to infinity. -/
 theorem tendsto_kyFanLogMean_of_summable {T : E →L[𝕜] F} (hT : Summable T.singularValue) :
     Tendsto T.kyFanLogMean atTop (𝓝 0) := by
-  have hlim :=
-    tendsto_log_natCast_add_two.inv_tendsto_atTop.const_mul (∑' j, (T.singularValue j : ℝ))
+  have hlim := (Real.tendsto_log_natCast_add_atTop 2).inv_tendsto_atTop.const_mul
+    (∑' j, (T.singularValue j : ℝ))
   rw [mul_zero] at hlim
   refine squeeze_zero T.kyFanLogMean_nonneg (fun N ↦ ?_) hlim
   rw [kyFanLogMean_def, div_eq_mul_inv]
-  refine mul_le_mul_of_nonneg_right ?_ (inv_nonneg.2 (log_natCast_add_two_pos N).le)
+  refine mul_le_mul_of_nonneg_right ?_ (inv_nonneg.2 (Real.log_natCast_add_pos one_lt_two N).le)
   rw [kyFanGauge_def, NNReal.coe_sum]
   exact (NNReal.summable_coe.2 hT).sum_le_tsum _ fun j _ ↦ NNReal.coe_nonneg _
 
@@ -151,7 +143,7 @@ theorem kyFanLogMean_add_le {𝕜 E F : Type*} [RCLike 𝕜]
     (S + T).kyFanLogMean N ≤ S.kyFanLogMean N + T.kyFanLogMean N := by
   rw [kyFanLogMean_def, kyFanLogMean_def, kyFanLogMean_def, ← add_div]
   gcongr
-  · exact (log_natCast_add_two_pos N).le
+  · exact (Real.log_natCast_add_pos one_lt_two N).le
   · exact_mod_cast kyFanGauge_add_le S T (N + 1)
 
 end ContinuousLinearMap
@@ -162,7 +154,7 @@ namespace OperatorIdealFamily
 
 /-- The weights `log (N + 2)` of the logarithmic gauge are nonzero. -/
 private theorem ofReal_log_add_two_ne_zero (N : ℕ) : ENNReal.ofReal (Real.log (N + 2)) ≠ 0 :=
-  (ENNReal.ofReal_pos.2 (log_natCast_add_two_pos N)).ne'
+  (ENNReal.ofReal_pos.2 (Real.log_natCast_add_pos one_lt_two N)).ne'
 
 variable (𝕜 : Type u) [RCLike 𝕜]
 
@@ -276,7 +268,7 @@ theorem mem_finiteSubmodule_logarithmic_iff (T : E →L[𝕜] F) :
 theorem ofReal_kyFanLogMean_le_gauge_logarithmic (T : E →L[𝕜] F) (N : ℕ) :
     ENNReal.ofReal (T.kyFanLogMean N) ≤ (logarithmic 𝕜).gauge T := by
   rw [gauge_logarithmic, ContinuousLinearMap.kyFanLogMean_def,
-    ENNReal.ofReal_div_of_pos (log_natCast_add_two_pos N),
+    ENNReal.ofReal_div_of_pos (Real.log_natCast_add_pos one_lt_two N),
     ENNReal.ofReal_coe_nnreal]
   exact le_iSup (fun N : ℕ ↦ (T.kyFanGauge (N + 1) : ℝ≥0∞) /
     ENNReal.ofReal (Real.log (N + 2))) N
@@ -299,7 +291,8 @@ theorem mem_finiteSubmodule_logarithmic_iff_bddAbove (T : E →L[𝕜] F) :
   | zero => simp
   | succ N =>
     have hN := Set.forall_mem_range.1 hC N
-    rw [ContinuousLinearMap.kyFanLogMean_def, div_le_iff₀ (log_natCast_add_two_pos N)] at hN
+    rw [ContinuousLinearMap.kyFanLogMean_def,
+      div_le_iff₀ (Real.log_natCast_add_pos one_lt_two N)] at hN
     convert hN using 3
     push_cast
     ring

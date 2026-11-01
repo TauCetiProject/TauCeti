@@ -262,13 +262,11 @@ grow like `log N`. -/
 theorem dixmierTrace_eq_one_of_singularValue_eq {T : E →L[𝕜] F}
     (hT : ∀ j, T.singularValue j = ((j : ℝ≥0) + 1)⁻¹) : dixmierTrace ω T = 1 := by
   refine dixmierTrace_eq_of_tendsto ω ?_
-  have hpos (N : ℕ) : 0 < Real.log (N + 2) := Real.log_pos (by linarith [N.cast_nonneg (α := ℝ)])
+  have hpos (N : ℕ) : 0 < Real.log (N + 2) := Real.log_natCast_add_pos one_lt_two N
   have hK (N : ℕ) : (T.kyFanGauge (N + 1) : ℝ) = harmonic (N + 1) := by
     simp [kyFanGauge_def, hT, harmonic]
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using ((Real.tendsto_log_atTop.comp (tendsto_atTop_add_const_right atTop 2
-      tendsto_natCast_atTop_atTop)).inv_tendsto_atTop.const_add 1 : Tendsto
-      (fun N : ℕ ↦ 1 + (Real.log (N + 2))⁻¹) atTop _))
+    (by simpa using (Real.tendsto_log_natCast_add_atTop 2).inv_tendsto_atTop.const_add 1)
     (fun N ↦ ?_) (fun N ↦ ?_)
   · -- `log (N + 2) ≤ H_(N+1)`.
     rw [kyFanLogMean_def, hK, le_div_iff₀ (hpos N), one_mul]
@@ -288,12 +286,12 @@ theorem dixmierTrace_eq_one_of_singularValue_eq {T : E →L[𝕜] F}
 theorem dixmierTrace_diagonalCLM_eq_one (d : ℓ^∞(ℕ, 𝕜)) (hd : ∀ j, d j = ((j : 𝕜) + 1)⁻¹) :
     dixmierTrace ω (lp.diagonalCLM (p := 2) d) = 1 := by
   have hnorm (j : ℕ) : ‖d j‖ = ((j : ℝ) + 1)⁻¹ := by
-    rw [hd, norm_inv, ← Nat.cast_add_one, RCLike.norm_natCast, Nat.cast_add_one]
+    simpa [hd] using RCLike.norm_natCast (K := 𝕜) (j + 1)
   have hanti : Antitone fun j ↦ ‖d j‖ := fun i j hij ↦ by
     simp only [hnorm]
     gcongr
   refine dixmierTrace_eq_one_of_singularValue_eq ω fun j ↦ ?_
-  rw [lp.singularValue_diagonalCLM d hanti, ← NNReal.coe_inj, coe_nnnorm, hnorm,
-    NNReal.coe_inv, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one]
+  rw [lp.singularValue_diagonalCLM d hanti, ← NNReal.coe_inj]
+  simp [hnorm]
 
 end TauCeti
