@@ -150,7 +150,7 @@ theorem summable_archGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolo
   simpa using ZLattice.summable_poisson_left L (archGaussianSchwartz y hy) 0
 
 /-- The theta kernel of a lattice at a parameter with one coordinate per infinite place.
-Its defining series converges whenever all the coordinates are positive. -/
+Its defining series converges when `L` is discrete and all the coordinates of `y` are positive. -/
 def latticeTheta (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) : ℂ :=
   ∑' x : L, archGaussian y x
 
