@@ -23,9 +23,6 @@ equations of a column commutation and of a crossing change alike.
 
 ## Main results
 
-* `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_right_eq_left_of_ne` and
-  `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_left_eq_right_of_ne`: off the diagonal,
-  two rectangles sharing a grid line with opposite orientations share no other side.
 * `toRectangleDecomposition_ne_recut_of_right_eq_left` and
   `toRectangleDecomposition_ne_recut_of_left_eq_right`, in the namespace
   `TauCeti.GridHexagonCompositeDecomposition`: the recut of two empty rectangles sharing the
@@ -41,26 +38,6 @@ Proposition 3.2 (arXiv:math/0610559).
 -/
 
 public section
-
-namespace TauCeti.GridRectangleDecomposition
-
-variable {n : ℕ} {x z : GridState n}
-
-/-- Off the diagonal, when the terminal side of the first rectangle is the initial side of the
-second, this grid line is their unique common side. -/
-theorem hasOneCommonSide_of_right_eq_left_of_ne (D : GridRectangleDecomposition x z)
-    (hcommon : D.first.right = D.second.left) (hzx : z ≠ x) : D.HasOneCommonSide :=
-  D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.right)
-    (by simp [D.mem_commonSideColumns, GridRectangleBetween.mem_sideColumns, hcommon]) hzx
-
-/-- Off the diagonal, when the initial side of the first rectangle is the terminal side of the
-second, this grid line is their unique common side. -/
-theorem hasOneCommonSide_of_left_eq_right_of_ne (D : GridRectangleDecomposition x z)
-    (hcommon : D.first.left = D.second.right) (hzx : z ≠ x) : D.HasOneCommonSide :=
-  D.hasOneCommonSide_of_mem_commonSideColumns (c := D.first.left)
-    (by simp [D.mem_commonSideColumns, GridRectangleBetween.mem_sideColumns, hcommon]) hzx
-
-end TauCeti.GridRectangleDecomposition
 
 namespace TauCeti.GridHexagonCompositeDecomposition
 
