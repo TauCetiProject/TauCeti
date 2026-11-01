@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.Homology.Additive
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
@@ -51,7 +52,9 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 ## Main results
 
 * `Functor.isZero_cubeComplex_X_of_neg`, `Functor.isZero_cubeComplex_X_of_card_lt`: the terms
-  vanish outside the degrees `0, …, #ι`.
+  vanish outside the degrees `0, …, #ι`, so the totalization is strictly supported there
+  (`CochainComplex.IsStrictlyGE`, `CochainComplex.IsStrictlyLE`).
+* `Functor.cubeComplexXIso`: the degree `r` term is the biproduct of the vertices of height `r`.
 * `Functor.cubeComplexXZeroIso`: the degree `0` term is the initial vertex `F(∅)`.
 
 ## References
@@ -175,6 +178,26 @@ of height `#S = r`. -/
 def cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.cubeComplex.X r ⟶ F.obj S.1 :=
   biproduct.π (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
 
+/-- The degree `r` term of the cube complex is the biproduct of the vertices `F(S)` of height
+`#S = r`. -/
+def cubeComplexXIso (r : ℤ) :
+    F.cubeComplex.X r ≅ ⨁ fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1 :=
+  Iso.refl _
+
+/-- Under `Functor.cubeComplexXIso`, the inclusion of a vertex is the biproduct inclusion. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_cubeComplexXIso_hom {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ (F.cubeComplexXIso r).hom =
+      biproduct.ι (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S :=
+  Category.comp_id _
+
+/-- Under `Functor.cubeComplexXIso`, the projection onto a vertex is the biproduct projection. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexXIso_inv_cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    (F.cubeComplexXIso r).inv ≫ F.cubeComplexπ S =
+      biproduct.π (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S :=
+  Category.id_comp _
+
 /-- The inclusion of a vertex followed by the projection onto a vertex of the same height is the
 identity when the vertices agree, and zero otherwise. -/
 @[reassoc]
@@ -285,6 +308,17 @@ lemma isZero_cubeComplex_X_of_card_lt {r : ℤ} (hr : (Fintype.card ι : ℤ) < 
   have : (#S.1 : ℤ) ≤ Fintype.card ι := by exact_mod_cast card_le_univ S.1
   have := S.2
   omega
+
+/-- The cube complex is strictly supported in nonnegative degrees. -/
+instance : F.cubeComplex.IsStrictlyGE 0 := by
+  rw [CochainComplex.isStrictlyGE_iff]
+  exact fun _ hr ↦ F.isZero_cubeComplex_X_of_neg hr
+
+/-- The cube complex is strictly supported in the degrees up to the cardinality of the index
+type. -/
+instance : F.cubeComplex.IsStrictlyLE (Fintype.card ι) := by
+  rw [CochainComplex.isStrictlyLE_iff]
+  exact fun _ hr ↦ F.isZero_cubeComplex_X_of_card_lt hr
 
 /-- The degree `0` term of the cube complex is the initial vertex `F(∅)`, the only vertex of
 height `0`. -/

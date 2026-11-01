@@ -247,6 +247,17 @@ theorem resolutionCube_obj (S : Finset (Fin n)) :
         (j - #S)) :=
   (rfl)
 
+/-- The vertices of the cube of resolutions are free: each is a homogeneous piece of a circle
+tensor, with basis the labellings of the right degree. -/
+instance (S : Finset (Fin n)) : Module.Free R ((D.resolutionCube hD R j).obj S) := by
+  rw [resolutionCube_obj]
+  infer_instance
+
+/-- The vertices of the cube of resolutions are finitely generated. -/
+instance (S : Finset (Fin n)) : Module.Finite R ((D.resolutionCube hD R j).obj S) := by
+  rw [resolutionCube_obj]
+  infer_instance
+
 /-- The inclusion of the vertex `S` of the degree-`j` cube of resolutions into the circle tensor
 of the resolution of `S`. -/
 def resolutionCubeι (S : Finset (Fin n)) : (D.resolutionCube hD R j).obj S ⟶
