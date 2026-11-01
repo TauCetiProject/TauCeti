@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-public import TauCeti.Topology.Algebra.InfiniteSum.Real
+public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
 # Taylor series bounds for `-log (1 - ·)`
