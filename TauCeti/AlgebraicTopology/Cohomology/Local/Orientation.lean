@@ -299,7 +299,7 @@ theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] G)
         ((ω.map _ f.toLinearEquiv).localCohomologyClass hG) =
       ω.localCohomologyClass hF := by
   rw [eq_localCohomologyClass_iff, TopPair.singularKronecker_naturality, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ← localOrientation_map f ω hF hG]
+    LinearMap.comp_apply, ← LocalOrientation.coe_map, ← localOrientation_map f ω hF hG]
   exact (ω.map _ f.toLinearEquiv).kronecker_localCohomologyClass hG
 
 end Orientation
