@@ -24,10 +24,12 @@ Contraction along `τ` is a bijection from the maximal ideals of `Â` onto those
 `A ⧸ (m ∩ A) → Â ⧸ m` is an isomorphism for every maximal ideal `m` of `Â`. This is the dagger
 algebra form of the corresponding statement for `W_n ⊆ T_n`, proved in
 `TauCeti.RingTheory.Dagger.MaximalSpectrum`. Indeed a maximal ideal of `Â` is `M ⧸ I T_n` for a
-maximal ideal `M` of `T_n` containing `I T_n`, and `M ∩ W_n` contains `I`, since
-`M = (M ∩ W_n) T_n` and `(M ∩ W_n) T_n ∩ W_n = M ∩ W_n`. Consequently an element of `A` is a unit
-as soon as its image in `Â` is one: otherwise it lies in a maximal ideal of `A`, and hence its
-image lies in the maximal ideal of `Â` above it.
+maximal ideal `M` of `T_n` containing `I T_n`. Then `M ∩ W_n` contains `I` because
+`I T_n ⊆ M`, and since `M = (M ∩ W_n) T_n` and `(M ∩ W_n) T_n ∩ W_n = M ∩ W_n`, the map
+`M ↦ M ∩ W_n` is a bijection between the maximal ideals of `T_n` containing `I T_n` and the
+maximal ideals of `W_n` containing `I`. Consequently an element of `A` is a unit as soon as its
+image in `Â` is one: otherwise it lies in a maximal ideal of `A`, and hence its image lies in the
+maximal ideal of `Â` above it.
 
 ## Main definitions
 
