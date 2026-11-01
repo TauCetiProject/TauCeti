@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
@@ -18,26 +19,27 @@ import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 Let `K` be a number field and `S₀` a finite set of finite places of `K`. Fix linear forms
 `L v i` on `ι → K`, real exponents `c v i` and a level `Q`. The **approximation domain**
-`NumberField.approxDomain S₀ L c Q` is the set of `x : ι → K` with
+`TauCeti.NumberField.approxDomain S₀ L c Q` is the set of `x : ι → K` with
 
 * `v (L v i x) ≤ Q ^ c v i` for every `i`, at every infinite place `v` and every `v ∈ S₀`;
 * `v (x j) ≤ 1` for every `j`, at every finite place `v ∉ S₀`.
 
 Schmidt's proof of the Subspace Theorem applies the geometry of numbers to these domains. The two
 kinds of conditions separate. The finite-place conditions cut out an `𝓞 K`-submodule
-`NumberField.approxModule S₀ L c Q` of `ι → K`; the infinite-place conditions cut out a body
-`NumberField.approxBody L c Q` in `ι → mixedSpace K`, the real space `(K ⊗ ℝ)ⁱ`; and the domain is
-the set of points of the module whose coordinatewise mixed embedding lies in the body
-(`NumberField.approxDomain_eq`).
+`TauCeti.NumberField.approxModule S₀ L c Q` of `ι → K`; the infinite-place conditions cut out a
+body `TauCeti.NumberField.approxBody L c Q` in `ι → mixedSpace K`, the real space `(K ⊗ ℝ)ⁱ`; and
+the domain is the set of points of the module whose coordinatewise mixed embedding lies in the body
+(`TauCeti.NumberField.approxDomain_eq`).
 
-The body is convex and symmetric (`NumberField.convex_approxBody`,
-`NumberField.neg_mem_approxBody`), compact when the forms at each infinite place are linearly
-independent (`NumberField.isCompact_approxBody`), and a neighbourhood of `0` for `0 < Q`
-(`NumberField.approxBody_mem_nhds_zero`). It is balanced over every completion at once:
-multiplying a point by an element of `mixedSpace K` of norm at most `1` at every infinite place
-keeps it in the body (`NumberField.mul_mem_approxBody`). When the forms at the places of `S₀` are
-linearly independent the module is finitely generated (`NumberField.fg_approxModule`), and for
-`Q ≠ 0` it spans `ι → K` (`NumberField.span_approxModule`). By
+The body is convex and symmetric (`TauCeti.NumberField.convex_approxBody`,
+`TauCeti.NumberField.neg_mem_approxBody`), compact when the forms at each infinite place are
+linearly independent (`TauCeti.NumberField.isCompact_approxBody`), and a neighbourhood of `0` for
+`0 < Q` (`TauCeti.NumberField.approxBody_mem_nhds_zero`). It is balanced over every completion at
+once: multiplying a point by an element of `mixedSpace K` of norm at most `1` at every infinite
+place keeps it in the body (`TauCeti.NumberField.mul_mem_approxBody`). When the forms at the places
+of `S₀` are linearly independent the module is finitely generated
+(`TauCeti.NumberField.fg_approxModule`), and for `Q ≠ 0` it spans `ι → K`
+(`TauCeti.NumberField.span_approxModule_eq_top`). By
 `Submodule.discreteTopology_mixedImage_iff` and `Submodule.isZLattice_mixedImage` its mixed image
 is then a full lattice in `ι → mixedSpace K`, so
 an approximation domain is the set of points of a lattice in a convex body.
@@ -52,28 +54,29 @@ form `l` acts through its coefficients `l (Pi.basisFun K ι j)`, as
 reads only the `w`-component through `normAtPlace w`. No statement needs `DecidableEq ι`.
 
 The module is defined with `|Q|` in place of `Q`, so that it is a submodule for every real `Q`.
-Real powers of a negative base are not meaningful bounds, and `NumberField.approxDomain_eq` is
-stated for `0 ≤ Q`, where `|Q| = Q`.
+Real powers of a negative base are not meaningful bounds, and
+`TauCeti.NumberField.approxDomain_eq` is stated for `0 ≤ Q`, where `|Q| = Q`.
 
 Every infinite place carries a condition: a domain without a condition at some infinite place is
-unbounded there. Domains with conditions at only some infinite places are reduced to these by
-adding the missing places.
+unbounded there.
 
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
   7.5.6 and Lemma 7.5.7.
 * The definitions and the structure results follow Ralf Stephan's
-  `DiophantineApproximation/ApproximationDomain.lean` in `rwst/Subspace-Theorems` (Apache 2.0).
+  `DiophantineApproximation/ApproximationDomain.lean` and
+  `DiophantineApproximation/FinitePlaceValues.lean` in `rwst/Subspace-Theorems`, snapshot
+  `c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
 
 noncomputable section
 
-open Module NumberField.mixedEmbedding NumberField.InfinitePlace
+open Module NumberField NumberField.mixedEmbedding NumberField.InfinitePlace
 
-namespace NumberField
+namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] {ι : Type*}
 
@@ -127,9 +130,8 @@ theorem mem_approxModule [NumberField K] {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ} {Q : ℝ}
     {x : ι → K} :
     x ∈ approxModule S₀ L c Q ↔ (∀ v ∈ S₀, ∀ i : ι, v (L v.1 i x) ≤ |Q| ^ c v.1 i) ∧
-      ∀ v : FinitePlace K, v ∉ S₀ → ∀ j : ι, v (x j) ≤ 1 := by
-  rw [approxModule, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk,
-    Set.mem_ofPred_eq]
+      ∀ v : FinitePlace K, v ∉ S₀ → ∀ j : ι, v (x j) ≤ 1 :=
+  Iff.rfl
 
 variable [Fintype ι]
 
@@ -149,14 +151,13 @@ theorem mem_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
       normAtPlace w (∑ j, mixedEmbedding K (L w.1 i (Pi.basisFun K ι j)) * z j) ≤ Q ^ c w.1 i := by
   rw [approxBody, Set.mem_ofPred_eq]
 
-/-- A form acting through its coefficients on the mixed embedding of a point of `Kⁱ` is the mixed
-embedding of its value there. -/
-private theorem sum_mixedEmbedding_mul_mixedEmbedding (l : Dual K (ι → K)) (x : ι → K) :
-    ∑ j, mixedEmbedding K (l (Pi.basisFun K ι j)) * mixedEmbedding K (x j) =
-      mixedEmbedding K (l x) := by
-  simp_rw [← map_mul, ← map_sum]
-  conv_rhs => rw [← (Pi.basisFun K ι).sum_repr x]
-  simp [mul_comm]
+/-- The coordinatewise mixed embedding of a point `x` of `Kⁱ` lies in the infinite part of an
+approximation domain exactly when `w (L w i x) ≤ Q ^ c w i` at every infinite place `w`. -/
+theorem mixedEmbedding_mem_approxBody_iff {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    {c : AbsoluteValue K ℝ → ι → ℝ} {Q : ℝ} {x : ι → K} :
+    (fun j ↦ mixedEmbedding K (x j)) ∈ approxBody L c Q ↔
+      ∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ Q ^ c w.1 i := by
+  simp only [mem_approxBody, sum_mixedEmbedding_mul_mixedEmbedding, normAtPlace_apply]
 
 /-- **An approximation domain is the set of points of a module whose mixed embedding lies in a
 body**: `x` lies in it exactly when it lies in the finite part and its coordinatewise mixed
@@ -167,26 +168,19 @@ theorem approxDomain_eq [NumberField K] (S₀ : Finset (FinitePlace K))
     approxDomain S₀ L c Q =
       {x | x ∈ approxModule S₀ L c Q ∧ (fun j ↦ mixedEmbedding K (x j)) ∈ approxBody L c Q} := by
   ext x
-  simp only [mem_approxDomain, mem_approxModule, mem_approxBody, Set.mem_ofPred_eq,
-    sum_mixedEmbedding_mul_mixedEmbedding, normAtPlace_apply, abs_of_nonneg hQ]
+  simp only [mem_approxDomain, mem_approxModule, mixedEmbedding_mem_approxBody_iff,
+    Set.mem_ofPred_eq, abs_of_nonneg hQ]
   tauto
 
-/-- The value at a point of the mixed space of a form acting through its coefficients is linear
-in the form. -/
-private theorem sum_mixedEmbedding_sum_smul_mul (a : ι → K) (l : ι → Dual K (ι → K))
-    (z : ι → mixedSpace K) :
-    ∑ j, mixedEmbedding K ((∑ k, a k • l k) (Pi.basisFun K ι j)) * z j =
-      ∑ k, mixedEmbedding K (a k) * ∑ j, mixedEmbedding K (l k (Pi.basisFun K ι j)) * z j := by
-  simp only [LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, map_sum,
-    map_mul, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-  exact Finset.sum_comm
-
-/-- A coordinate form acting through its coefficients reads off the coordinate. -/
-private theorem sum_mixedEmbedding_proj_mul (j₀ : ι) (z : ι → mixedSpace K) :
-    ∑ j, mixedEmbedding K (LinearMap.proj (R := K) (φ := fun _ : ι ↦ K) j₀ (Pi.basisFun K ι j)) *
-      z j = z j₀ := by
-  classical
-  simp [Pi.basisFun_apply, Pi.single_apply]
+/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate form is a
+combination of them. -/
+private theorem exists_sum_smul_eq_proj {l : ι → Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
+  have hspan : Submodule.span K (Set.range l) = ⊤ :=
+    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
+    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  exact ⟨a, ha⟩
 
 omit [Fintype ι] in
 /-- At a place of `S₀` where the forms are linearly independent, the coordinates of the points of
@@ -197,11 +191,7 @@ private theorem exists_forall_mem_approxModule_apply_le [Finite ι] [NumberField
     (hL : LinearIndependent K (L v.1)) :
     ∃ R : ℝ, 0 ≤ R ∧ ∀ x ∈ approxModule S₀ L c Q, ∀ j, v (x j) ≤ R := by
   have : Fintype ι := Fintype.ofFinite ι
-  -- `#ι` independent forms span the dual, so each coordinate form is a combination `a j` of them.
-  have hspan : Submodule.span K (Set.range (L v.1)) = ⊤ :=
-    hL.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
-  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
-    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  obtain ⟨a, ha⟩ := exists_sum_smul_eq_proj hL
   refine ⟨∑ j, ∑ i, v (a j i) * |Q| ^ c v.1 i, by positivity, fun x hx j ↦ ?_⟩
   have hxj : x j = ∑ i, a j i * L v.1 i x := by
     simpa using (LinearMap.congr_fun (ha j) x).symm
@@ -285,13 +275,8 @@ theorem isBounded_approxBody [NumberField K] {L : AbsoluteValue K ℝ → ι →
     (hL : ∀ w : InfinitePlace K, LinearIndependent K (L w.1)) (c : AbsoluteValue K ℝ → ι → ℝ)
     (Q : ℝ) : Bornology.IsBounded (approxBody L c Q) := by
   classical
-  -- `#ι` independent forms span the dual, so at each infinite place `w` every coordinate form is
-  -- a combination `a w j` of the forms at `w`.
-  have hspan (w : InfinitePlace K) : Submodule.span K (Set.range (L w.1)) = ⊤ :=
-    (hL w).span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
-  choose a ha using fun (w : InfinitePlace K) (j : ι) ↦
-    (Submodule.mem_span_range_iff_exists_fun K).mp
-      (hspan w ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  -- At each infinite place `w` every coordinate form is a combination `a w j` of the forms at `w`.
+  choose a ha using fun w : InfinitePlace K ↦ exists_sum_smul_eq_proj (hL w)
   set R : ℝ := ∑ w : InfinitePlace K, ∑ j, ∑ i, w (a w j i) * |Q ^ c w.1 i|
   have hR (w : InfinitePlace K) (j : ι) : ∑ i, w (a w j i) * |Q ^ c w.1 i| ≤ R :=
     (Finset.single_le_sum (f := fun j ↦ ∑ i, w (a w j i) * |Q ^ c w.1 i|)
@@ -326,7 +311,7 @@ theorem isCompact_approxBody [NumberField K] {L : AbsoluteValue K ℝ → ι →
 omit [Fintype ι]
 
 /-- **The finite part of an approximation domain is finitely generated** when the forms are
-linearly independent at the places of `S₀`: its coordinates have bounded denominators. -/
+linearly independent at the places of `S₀`. -/
 theorem fg_approxModule [Finite ι] [NumberField K] {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} (hL : ∀ v ∈ S₀, LinearIndependent K (L v.1))
     (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) : (approxModule S₀ L c Q).FG := by
@@ -340,9 +325,8 @@ theorem fg_approxModule [Finite ι] [NumberField K] {S₀ : Finset (FinitePlace 
     · exact ⟨0, le_rfl, fun h ↦ (hv h).elim⟩
   choose R hR0 hR using hR
   -- A nonzero algebraic integer `d` clears these denominators.
-  obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_apply_le S₀
-    (ε := fun v ↦ (1 + R v)⁻¹) fun v _ ↦ by have := hR0 v; positivity
-  have hdK : (d : K) ≠ 0 := by exact_mod_cast hd0
+  obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_mul_apply_le S₀ fun v _ ↦ hR0 v
+  have hdK : (d : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.2 hd0
   have hle : approxModule S₀ L c Q ≤
       Submodule.span (𝓞 K) (Set.range fun j ↦ (d : K)⁻¹ • Pi.basisFun K ι j) := by
     intro x hx
@@ -351,20 +335,15 @@ theorem fg_approxModule [Finite ι] [NumberField K] {S₀ : Finset (FinitePlace 
       rw [← FinitePlace.mk_apply_le_one_iff, map_mul]
       set v := FinitePlace.mk P
       by_cases hv : v ∈ S₀
-      · have hR1 := hR0 v
-        calc v (d : K) * v (x j) ≤ (1 + R v)⁻¹ * R v := by
-              gcongr
-              exacts [hd v hv, hR v hv x hx j]
-          _ ≤ 1 := by rw [inv_mul_le_iff₀ (by positivity)]; linarith
+      · exact (mul_le_mul_of_nonneg_left (hR v hv x hx j) (apply_nonneg _ _)).trans (hd v hv)
       · exact (mul_le_mul (v.apply_le_one d) ((mem_approxModule.1 hx).2 v hv j)
           (apply_nonneg _ _) zero_le_one).trans_eq (one_mul 1)
     choose z hz using hint
     have hsum : x = ∑ j, z j • ((d : K)⁻¹ • Pi.basisFun K ι j) := by
       ext k
       classical
-      have hdK' : algebraMap (𝓞 K) K d ≠ 0 := hdK
-      simp [Algebra.smul_def, hz, Pi.single_apply]
-      field_simp
+      have hk : x k = (d : K)⁻¹ * (d * x k) := (inv_mul_cancel_left₀ hdK (x k)).symm
+      simpa [Algebra.smul_def, hz, Pi.single_apply, mul_comm] using hk
     rw [hsum]
     exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, rfl⟩)
   have : IsNoetherian (𝓞 K)
@@ -372,9 +351,9 @@ theorem fg_approxModule [Finite ι] [NumberField K] {S₀ : Finset (FinitePlace 
     isNoetherian_of_fg_of_noetherian _ (Submodule.fg_span (Set.finite_range _))
   exact Submodule.FG.of_le_of_isNoetherian hle
 
-/-- **The finite part of an approximation domain of nonzero level spans `Kⁱ`**: a nonzero
-algebraic integer small enough at the places of `S₀` moves each standard basis vector into it. -/
-theorem span_approxModule [Finite ι] [NumberField K] (S₀ : Finset (FinitePlace K))
+/-- **The finite part of an approximation domain of nonzero level spans `Kⁱ` over `K`**, for every
+`S₀`, `L` and `c`. -/
+theorem span_approxModule_eq_top [Finite ι] [NumberField K] (S₀ : Finset (FinitePlace K))
     (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
     (hQ : Q ≠ 0) : Submodule.span K (approxModule S₀ L c Q : Set (ι → K)) = ⊤ := by
   have : Fintype ι := Fintype.ofFinite ι
@@ -394,20 +373,16 @@ theorem span_approxModule [Finite ι] [NumberField K] (S₀ : Finset (FinitePlac
   have hS0 (v : FinitePlace K) : 0 ≤ S v :=
     Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦
       div_nonneg (apply_nonneg _ _) (hQc v i).le
-  obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_apply_le S₀
-    (ε := fun v ↦ (1 + S v)⁻¹) fun v _ ↦ by have := hS0 v; positivity
-  have hdK : (d : K) ≠ 0 := by exact_mod_cast hd0
+  obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_mul_apply_le S₀ fun v _ ↦ hS0 v
+  have hdK : (d : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.2 hd0
   have hmem (j : ι) : (d : K) • Pi.basisFun K ι j ∈ approxModule S₀ L c Q := by
     refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v hv k ↦ ?_⟩
-    · have := hS0 v
-      rw [map_smul, smul_eq_mul, map_mul]
+    · rw [map_smul, smul_eq_mul, map_mul]
       calc v (d : K) * v (L v.1 i (Pi.basisFun K ι j))
-          ≤ (1 + S v)⁻¹ * (S v * |Q| ^ c v.1 i) := by
-            gcongr
-            exacts [hd v hv, hS v i j]
-        _ ≤ |Q| ^ c v.1 i := by
-            rw [inv_mul_le_iff₀ (by positivity)]
-            nlinarith [hQc v i]
+          ≤ v (d : K) * (S v * |Q| ^ c v.1 i) :=
+            mul_le_mul_of_nonneg_left (hS v i j) (apply_nonneg _ _)
+        _ = v (d : K) * S v * |Q| ^ c v.1 i := (mul_assoc _ _ _).symm
+        _ ≤ |Q| ^ c v.1 i := mul_le_of_le_one_left (hQc v i).le (hd v hv)
     · rw [Pi.smul_apply, smul_eq_mul, map_mul, Pi.basisFun_apply, Pi.single_apply]
       split_ifs <;> simp [v.apply_le_one d]
   rw [eq_top_iff, ← (Pi.basisFun K ι).span_eq, Submodule.span_le]
@@ -415,4 +390,4 @@ theorem span_approxModule [Finite ι] [NumberField K] (S₀ : Finset (FinitePlac
   rw [SetLike.mem_coe, ← inv_smul_smul₀ hdK (Pi.basisFun K ι j)]
   exact Submodule.smul_mem _ _ (Submodule.subset_span (hmem j))
 
-end NumberField
+end TauCeti.NumberField

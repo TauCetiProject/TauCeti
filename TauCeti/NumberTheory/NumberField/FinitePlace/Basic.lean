@@ -55,8 +55,11 @@ element truncated from below or above at `1`.
 
 An algebraic integer is at most `1` at every finite place, `NumberField.FinitePlace.apply_le_one`,
 and `NumberField.FinitePlace.exists_ne_zero_forall_apply_le` produces a nonzero algebraic integer
-which is as small as prescribed at finitely many finite places, a power of a product of elements
-of their primes; multiplying by it clears bounded denominators at those places.
+which is as small as prescribed at finitely many finite places. Its form
+`NumberField.FinitePlace.exists_ne_zero_forall_mul_apply_le` clears prescribed bounds `R v` at
+those places: `v d * R v ≤ 1`. These follow Ralf Stephan's
+`DiophantineApproximation/FinitePlaceValues.lean` in `rwst/Subspace-Theorems`, snapshot
+`c26d909dc48cf7fe` (Apache 2.0).
 -/
 
 public section
@@ -195,6 +198,17 @@ theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : Finite
       (ge_mem_nhds (hε v hv))
   obtain ⟨m, hm⟩ := ((Filter.eventually_all_finset T).2 hpow).exists
   exact ⟨t ^ m, pow_ne_zero m (Finset.prod_ne_zero_iff.2 fun w _ ↦ hp0 w), hm⟩
+
+/-- Some nonzero algebraic integer clears prescribed nonnegative bounds at every place of a finite
+set of finite places: `v d * R v ≤ 1` there. -/
+theorem exists_ne_zero_forall_mul_apply_le (T : Finset (FinitePlace K)) {R : FinitePlace K → ℝ}
+    (hR : ∀ v ∈ T, 0 ≤ R v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
+  obtain ⟨d, hd0, hd⟩ := exists_ne_zero_forall_apply_le T (ε := fun v ↦ (1 + R v)⁻¹)
+    fun v hv ↦ by have := hR v hv; positivity
+  refine ⟨d, hd0, fun v hv ↦ ?_⟩
+  have h1 : 0 < 1 + R v := by linarith [hR v hv]
+  calc v (d : K) * R v ≤ (1 + R v)⁻¹ * R v := by gcongr; exacts [hR v hv, hd v hv]
+    _ ≤ 1 := by rw [inv_mul_le_iff₀ h1]; linarith
 
 end NumberField.FinitePlace
 
