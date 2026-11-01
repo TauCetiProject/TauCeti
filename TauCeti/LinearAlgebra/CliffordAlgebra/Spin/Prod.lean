@@ -23,9 +23,10 @@ sending `(x, y)` to the Clifford product of the images of `x` and `y`. It acts o
 sum componentwise, so over a free finite base its projection to the special orthogonal group of
 the sum is the product of the projections of the two factors.
 
-The homomorphism is not injective: the scalar `-1` of either factor maps to the scalar `-1` of the
-sum, so `(-1, -1)` maps to `1`. For finite-dimensional nondegenerate forms on nonzero spaces over
-a field in which `2` is invertible, this is the whole kernel, so the image is
+For finite-dimensional nondegenerate forms on nonzero spaces over a field in which `2` is
+invertible, the homomorphism is not injective: the scalar `-1` of either factor maps to the scalar
+`-1` of the sum, so the nontrivial element `(-1, -1)` maps to `1`. In that setting this is the
+whole kernel, so the image is
 `(Spin(Q₁) × Spin(Q₂)) / ⟨(-1, -1)⟩`. Splitting a real signature form into its definite blocks,
 this gives the block subgroup `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩` of `Spin(p, q)`.
 
@@ -50,6 +51,11 @@ this gives the block subgroup `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩` of `Spin(p
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Columbia (1954), Chapter II.
+
+Building `spinGroupProd` as `MonoidHom.noncommCoprod` of the two orthogonal-inclusion Spin maps
+follows the approach of the closed, unmerged Tau Ceti pull request
+[#12828](https://github.com/TauCetiProject/TauCeti/pull/12828) (combine Spin groups across
+orthogonal sums).
 -/
 
 public section
@@ -98,28 +104,16 @@ variable [Invertible (2 : R)]
 /-- **The Spin group of a summand fixes the other summand.** The image of `Spin(Q₁)` fixes the
 second summand of the orthogonal sum. -/
 theorem spinVectorAction_spinGroupMap_inl_inr (x : spinGroup Q₁) (m : M₂) :
-    spinVectorAction (Q₁.prod Q₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x) (0, m) = (0, m) := by
-  have hinl : (IsometryEquiv.refl (Q₁.prod Q₂)).symm.toIsometry.comp (Isometry.inl Q₁ Q₂) =
-      Isometry.inl Q₁ Q₂ := by
-    ext <;> rfl
-  have hinr : (IsometryEquiv.refl (Q₁.prod Q₂)).symm.toIsometry.comp (Isometry.inr Q₁ Q₂) =
-      Isometry.inr Q₁ Q₂ := by
-    ext <;> rfl
-  have h := (IsometryEquiv.refl (Q₁.prod Q₂)).spinGroupMap_fixed_of_prod x m
-  rwa [hinl, hinr] at h
+    spinVectorAction (Q₁.prod Q₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x) (0, m) = (0, m) :=
+  -- Composing the inclusions with the identity isometry is definitionally the inclusions.
+  (IsometryEquiv.refl (Q₁.prod Q₂)).spinGroupMap_fixed_of_prod x m
 
 /-- **The Spin group of a summand fixes the other summand.** The image of `Spin(Q₂)` fixes the
 first summand of the orthogonal sum. -/
 theorem spinVectorAction_spinGroupMap_inr_inl (y : spinGroup Q₂) (m : M₁) :
-    spinVectorAction (Q₁.prod Q₂) ((Isometry.inr Q₁ Q₂).spinGroupMap y) (m, 0) = (m, 0) := by
-  have hinr : (IsometryEquiv.prodComm Q₁ Q₂).symm.toIsometry.comp (Isometry.inl Q₂ Q₁) =
-      Isometry.inr Q₁ Q₂ := by
-    ext <;> rfl
-  have hinl : (IsometryEquiv.prodComm Q₁ Q₂).symm.toIsometry.comp (Isometry.inr Q₂ Q₁) =
-      Isometry.inl Q₁ Q₂ := by
-    ext <;> rfl
-  have h := (IsometryEquiv.prodComm Q₁ Q₂).spinGroupMap_fixed_of_prod y m
-  rwa [hinr, hinl] at h
+    spinVectorAction (Q₁.prod Q₂) ((Isometry.inr Q₁ Q₂).spinGroupMap y) (m, 0) = (m, 0) :=
+  -- Composing the swapped inclusions with the swap isometry is definitionally the inclusions.
+  (IsometryEquiv.prodComm Q₁ Q₂).spinGroupMap_fixed_of_prod y m
 
 /-- **`spinGroupProd` acts componentwise**: `(x, y)` acts on the orthogonal sum by `x` on the first
 summand and by `y` on the second. -/
@@ -128,19 +122,13 @@ theorem spinVectorAction_spinGroupProd (x : spinGroup Q₁ × spinGroup Q₂) (m
     spinVectorAction (Q₁.prod Q₂) (spinGroupProd Q₁ Q₂ x) m =
       (spinVectorAction Q₁ x.1 m.1, spinVectorAction Q₂ x.2 m.2) := by
   obtain ⟨a, b⟩ := m
-  have h₂ : spinVectorAction (Q₁.prod Q₂) ((Isometry.inr Q₁ Q₂).spinGroupMap x.2) (a, b) =
-      (a, spinVectorAction Q₂ x.2 b) := by
-    have hab : ((a, b) : M₁ × M₂) = (a, 0) + Isometry.inr Q₁ Q₂ b := by simp
-    rw [hab, map_add, spinVectorAction_spinGroupMap_inr_inl,
-      Isometry.spinGroupMap_spinVectorAction]
-    simp
-  have h₁ (c : M₂) : spinVectorAction (Q₁.prod Q₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x.1) (a, c) =
-      (spinVectorAction Q₁ x.1 a, c) := by
-    have hac : ((a, c) : M₁ × M₂) = Isometry.inl Q₁ Q₂ a + (0, c) := by simp
-    rw [hac, map_add, spinVectorAction_spinGroupMap_inl_inr,
-      Isometry.spinGroupMap_spinVectorAction]
-    simp
-  rw [spinGroupProd_apply, spinVectorAction_mul, LinearEquiv.mul_apply, h₂, h₁]
+  -- The product-action lemma, applied through the identity and swap isometries, whose
+  -- compositions with the inclusions are definitionally the inclusions.
+  have h₁ := (IsometryEquiv.refl (Q₁.prod Q₂)).spinGroupMap_spinVectorAction_prod x.1 a
+    (spinVectorAction Q₂ x.2 b)
+  have h₂ := (IsometryEquiv.prodComm Q₁ Q₂).spinGroupMap_spinVectorAction_prod x.2 b a
+  rw [spinGroupProd_apply, spinVectorAction_mul, LinearEquiv.mul_apply]
+  exact (congrArg _ h₂).trans h₁
 
 /-- **The projection of `spinGroupProd` to the special orthogonal group** is the product of the
 projections of the two factors. -/
