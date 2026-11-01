@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.Bruhat.SymmetricThree
+public import TauCeti.GroupTheory.Perm.FinThree.Bruhat
 public import TauCeti.AlgebraicTopology.SimplicialComplex.OrderComplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Pure
 import Mathlib.Tactic.FinCases
