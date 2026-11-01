@@ -14,8 +14,7 @@ public import TauCeti.RingTheory.Algebraic.Basic
 Adjoining an arbitrary algebraic extension of constants to a function field produces an
 algebraic extension of it, and a function field over the enlarged constants, even when the
 extension is infinite.  An element of `F` transcendental over `k` stays transcendental over `k'`
-in `F'`.  In particular, if `F` is finite over a rational function field `k(t)`, then `F'` is
-finite over every rational function field `k'(t')` it contains.
+in `F'`.
 
 ## Reference
 
@@ -79,17 +78,5 @@ theorem IsFunctionField.of_constantCompositum_eq_top
   have := isAlgebraic_of_constantCompositum_eq_top (k := k) h
   rw [trdeg_eq_of_isAlgebraic_base (R := k)]
   exact hF.trdeg_eq_one_of_isAlgebraic
-
-/-- **A constant field extension of a finite extension of `k(t)` is finite over `k'(t)`**: if `F`
-is finite over a rational function field `k(t)` and `F'` is the compositum of `F` with an algebraic
-extension `k'` of `k`, then `F'` is finite over every rational function field `k'(t')` it contains.
-No compatibility between `t` and `t'` is needed: `F'` is a function field over `k'`, and a function
-field is finite over the rational function field of any of its transcendental elements. -/
-theorem finiteDimensional_ratFunc_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
-    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-    [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
-    (h : constantCompositum F k' F' = ⊤) : FiniteDimensional (RatFunc k') F' :=
-  isFunctionField_iff_functionField.mp <|
-    (isFunctionField_iff_functionField.mpr ‹_›).of_constantCompositum_eq_top h
 
 end TauCeti
