@@ -43,6 +43,9 @@ it to the finite-dimensional principle `LinearMap.norm_sum_inner_le_kyFanSum`.
   compressions of `T` bounds those of `T`.
 * `TauCeti.HasMinMaxLowerBound.kyFanGauge_add_le`: on a pair with the converse min–max
   localization property, `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`.
+* `TauCeti.HasMinMaxLowerBound.kyFanGauge_le_iff`: on a pair with the converse min–max
+  localization property, the variational characterization of `Kₖ(T)` by sums
+  `‖∑ᵢ ⟪uᵢ, T vᵢ⟫‖` over pairs of orthonormal families.
 * `ContinuousLinearMap.kyFanGauge_add_le`: **Ky Fan triangle inequality**,
   `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` for bounded linear maps on a complete inner product space.
 * `ContinuousLinearMap.kyFanGauge_le_iff`: the variational characterization of `Kₖ(T)` by sums
@@ -165,6 +168,25 @@ theorem HasMinMaxLowerBound.kyFanGauge_add_le (h : HasMinMaxLowerBound 𝕜 E F)
     _ ≤ S.kyFanGauge k + T.kyFanGauge k := by
         gcongr <;> exact_mod_cast kyFanGauge_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V _ k
 
+/-- The **variational characterization of Ky Fan gauges from the converse min–max localization.**
+On a pair with the property `HasMinMaxLowerBound`, `Kₖ(T) ≤ c` exactly when
+`‖∑ᵢ ⟪uᵢ, T vᵢ⟫‖ ≤ c` for all orthonormal families `(uᵢ)` in `F` and `(vᵢ)` in `E` with at most
+`k` members. -/
+theorem HasMinMaxLowerBound.kyFanGauge_le_iff (h : HasMinMaxLowerBound 𝕜 E F) (T : E →L[𝕜] F)
+    {k : ℕ} {c : ℝ} :
+    (T.kyFanGauge k : ℝ) ≤ c ↔ ∀ m ≤ k, ∀ (u : Fin m → F) (v : Fin m → E), Orthonormal 𝕜 u →
+      Orthonormal 𝕜 v → ‖∑ i, ⟪u i, T (v i)⟫_𝕜‖ ≤ c := by
+  refine ⟨fun hc m hm u v hu hv ↦ ?_, fun hc ↦ ?_⟩
+  · have := T.norm_sum_inner_le_kyFanGauge hu hv
+    rw [Fintype.card_fin] at this
+    exact this.trans ((NNReal.coe_le_coe.mpr (T.monotone_kyFanGauge hm)).trans hc)
+  refine h.kyFanGauge_le_of_forall_compression T fun V _ ↦ ?_
+  -- The finite-dimensional variational characterization bounds the compression to `V`.
+  rw [kyFanGauge_eq_kyFanSum]
+  refine (LinearMap.kyFanSum_le_iff _).mpr fun m hm u v hu hv ↦ ?_
+  simpa using hc m hm _ _ (hu.comp_linearIsometry (Submodule.subtypeₗᵢ _))
+    (hv.comp_linearIsometry V.subtypeₗᵢ)
+
 end TauCeti
 
 namespace ContinuousLinearMap
@@ -180,17 +202,7 @@ theorem kyFanGauge_add_le [CompleteSpace E] (S T : E →L[𝕜] F) (k : ℕ) :
 `(vᵢ)` in `E` with at most `k` members. -/
 theorem kyFanGauge_le_iff [CompleteSpace E] (T : E →L[𝕜] F) {k : ℕ} {c : ℝ} :
     (T.kyFanGauge k : ℝ) ≤ c ↔ ∀ m ≤ k, ∀ (u : Fin m → F) (v : Fin m → E), Orthonormal 𝕜 u →
-      Orthonormal 𝕜 v → ‖∑ i, ⟪u i, T (v i)⟫_𝕜‖ ≤ c := by
-  refine ⟨fun h m hm u v hu hv ↦ ?_, fun h ↦ ?_⟩
-  · have := T.norm_sum_inner_le_kyFanGauge hu hv
-    rw [Fintype.card_fin] at this
-    exact this.trans ((NNReal.coe_le_coe.mpr (T.monotone_kyFanGauge hm)).trans h)
-  refine TauCeti.HasMinMaxLowerBound.of_completeSpace.kyFanGauge_le_of_forall_compression T
-    fun V _ ↦ ?_
-  -- The finite-dimensional variational characterization bounds the compression to `V`.
-  rw [kyFanGauge_eq_kyFanSum]
-  refine (LinearMap.kyFanSum_le_iff _).mpr fun m hm u v hu hv ↦ ?_
-  simpa using h m hm _ _ (hu.comp_linearIsometry (Submodule.subtypeₗᵢ _))
-    (hv.comp_linearIsometry V.subtypeₗᵢ)
+      Orthonormal 𝕜 v → ‖∑ i, ⟪u i, T (v i)⟫_𝕜‖ ≤ c :=
+  TauCeti.HasMinMaxLowerBound.of_completeSpace.kyFanGauge_le_iff T
 
 end ContinuousLinearMap
