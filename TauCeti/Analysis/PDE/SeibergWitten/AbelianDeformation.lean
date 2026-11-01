@@ -11,19 +11,21 @@ public import TauCeti.Geometry.Manifold.Riemannian.SelfDual
 /-!
 # The abelian deformation operator of the Seiberg–Witten equations
 
-On an oriented Riemannian four-manifold `X`, the Seiberg–Witten equations for a pair `(A, ψ)` are
-gauge fixed by the Coulomb condition `d*(A - A₀) = 0` and impose the curvature equation
-`F_A⁺ = q(ψ) + η`. Varying only the imaginary connection form `a`, with the spinor held at zero,
-these linearize to the first-order operator
+On an oriented Riemannian four-manifold `X`, the Seiberg–Witten equations for a pair `(A, ψ)`
+impose the curvature equation `F_A⁺ = q(ψ) + η` and are gauge fixed on the Coulomb slice
+`d*(A - A₀) = 0`. Varying only the imaginary connection form `a`, with the spinor held at zero,
+gives the first-order operator
 
-`T a = (-2 d*a, d⁺a) : iΩ¹(X) → iΩ⁰(X) ⊕ iΩ⁺(X)`,  `d⁺a = (da)⁺ = (da + ⋆da) / 2`,
+`T a = (-2 d*a, d⁺a) : iΩ¹(X) → iΩ⁰(X) ⊕ iΩ⁺(X)`,  `d⁺a = (da)⁺ = (da + ⋆da) / 2`.
 
-where `-2 d*` is the formal adjoint of the infinitesimal gauge action `ξ ↦ -2 dξ` coming from the
-action `A ↦ A - 2u⁻¹du` of gauge transformations on determinant connections. As for the quadratic
+Its second component is the derivative of the curvature equation. Its first component is the
+formal adjoint `d₀* = -2 d*` of the infinitesimal gauge action `d₀ξ = -2 dξ`, coming from the
+action `A ↦ A - 2u⁻¹du` of gauge transformations on determinant connections; it rescales the
+derivative `d*a` of the Coulomb condition and cuts out the same slice. As for the quadratic
 two-form `TauCeti.SeibergWitten.quadraticTwoForm`, an imaginary form `i a` is indexed here by the
 real form `a`, so that `T` is a real-linear map from smooth real one-forms to pairs of a smooth
-function and a smooth two-form (`TauCeti.SeibergWitten.abelianDeformationOperator`). Its second
-component is self-dual (`TauCeti.SeibergWitten.hodgeStar_abelianDeformationOperator_snd`).
+function and a smooth self-dual two-form (`TauCeti.SeibergWitten.abelianDeformationOperator`),
+the self-dual forms being `TauCeti.SmoothForm.selfDualForms`.
 Together with the complex Dirac operator `D_A⁺`, `T` is the leading part of the gauge-fixed
 linearization of the Seiberg–Witten map, and its index enters the expected dimension of the moduli
 space.
@@ -38,12 +40,10 @@ condition `da = 0` comes from the vanishing of `(da)⁺`: an exact two-form `β`
 ## Main definitions
 
 * `TauCeti.SeibergWitten.abelianDeformationOperator o`: the operator `a ↦ (-2 d*a, (da)⁺)` from
-  smooth one-forms to smooth functions and smooth two-forms.
+  smooth one-forms to smooth functions and smooth self-dual two-forms.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.hodgeStar_abelianDeformationOperator_snd`: the two-form component of
-  `T a` is self-dual.
 * `TauCeti.SeibergWitten.abelianDeformationOperator_eq_zero_iff`: on a closed four-manifold,
   `T a = 0` exactly when `da = 0` and `d*a = 0`.
 * `TauCeti.SeibergWitten.ker_abelianDeformationOperator`: on a closed four-manifold, the kernel of
@@ -75,12 +75,15 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- The **abelian deformation operator** `T a = (-2 d*a, (da)⁺)` of the Seiberg–Witten equations on
 an oriented Riemannian four-manifold, from smooth one-forms to smooth functions and smooth
-two-forms. It is the derivative in the connection direction of the Coulomb gauge condition and
-of the curvature equation, an imaginary form `i a` being indexed by the real form `a`. -/
+self-dual two-forms, an imaginary form `i a` being indexed by the real form `a`. Its first
+component is the formal adjoint `-2 d*` of the infinitesimal gauge action, a rescaling of the
+derivative of the Coulomb gauge condition; its second is the derivative of the curvature equation
+in the connection direction. -/
 def abelianDeformationOperator :
-    SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I M ℝ 0 × SmoothForm I M ℝ 2 :=
+    SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o :=
   ((-2 : ℝ) • SmoothForm.codifferential o (show 0 + 1 + 3 = 2 + 2 from rfl)).prod
-    (SmoothForm.selfDualPart o ∘ₗ mextDerivₗ I 1)
+    ((SmoothForm.selfDualPart o ∘ₗ mextDerivₗ I 1).codRestrict _ fun _ ↦
+      SmoothForm.selfDualPart_mem_selfDualForms o even_two _)
 
 /-- The function component of `T a` is `-2 d*a`. -/
 @[simp]
@@ -91,15 +94,10 @@ theorem abelianDeformationOperator_apply_fst (a : SmoothForm I M ℝ 1) :
 
 /-- The two-form component of `T a` is `d⁺a = (da)⁺`. -/
 @[simp]
-theorem abelianDeformationOperator_apply_snd (a : SmoothForm I M ℝ 1) :
-    (abelianDeformationOperator o a).2 = SmoothForm.selfDualPart o (mextDerivₗ I 1 a) :=
+theorem coe_abelianDeformationOperator_apply_snd (a : SmoothForm I M ℝ 1) :
+    ((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2) =
+      SmoothForm.selfDualPart o (mextDerivₗ I 1 a) :=
   (rfl)
-
-/-- The two-form component of `T a` is self-dual: `⋆d⁺a = d⁺a`. -/
-theorem hodgeStar_abelianDeformationOperator_snd (a : SmoothForm I M ℝ 1) :
-    SmoothForm.hodgeStar o rfl (abelianDeformationOperator o a).2 =
-      (abelianDeformationOperator o a).2 := by
-  rw [abelianDeformationOperator_apply_snd, SmoothForm.hodgeStar_selfDualPart o even_two]
 
 variable [CompactSpace M] [BoundarylessManifold I M] [T2Space M]
 
@@ -109,10 +107,12 @@ theorem abelianDeformationOperator_eq_zero_iff (a : SmoothForm I M ℝ 1) :
     abelianDeformationOperator o a = 0 ↔
       mextDerivₗ I 1 a = 0 ∧
         SmoothForm.codifferential o (show 0 + 1 + 3 = 2 + 2 from rfl) a = 0 := by
-  rw [Prod.ext_iff, abelianDeformationOperator_apply_fst, abelianDeformationOperator_apply_snd,
-    Prod.fst_zero, Prod.snd_zero, smul_eq_zero, and_comm]
-  simp only [neg_eq_zero, OfNat.ofNat_ne_zero, false_or]
-  refine and_congr_left fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  have hsnd : (abelianDeformationOperator o a).2 = 0 ↔
+      SmoothForm.selfDualPart o (mextDerivₗ I 1 a) = 0 := by
+    rw [← coe_abelianDeformationOperator_apply_snd, Submodule.coe_eq_zero]
+  simp only [Prod.ext_iff, abelianDeformationOperator_apply_fst, Prod.fst_zero, Prod.snd_zero,
+    hsnd, smul_eq_zero, neg_eq_zero, OfNat.ofNat_ne_zero, false_or]
+  refine and_comm.trans <| and_congr_left fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
   have hex : mextDerivₗ I 1 a ∈ exactForms I M (1 + 1) := by
     rw [exactForms_succ]
     exact LinearMap.mem_range_self _ a

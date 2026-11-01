@@ -232,8 +232,8 @@ theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero
     have hb : b.toBasis.orientation = o.orientationAt x := by simp [b]
     refine (integralTopForm_pos o
       ((isSmoothForm_inner_smul_riemannianVolumeForm o hkl α α).of_le bot_le)
-      (((mem_compactlySupportedForms I).mp hα).of_isClosed_subset (_root_.isClosed_tsupport _)
-        (RoughForm.tsupport_inner_smul_riemannianVolumeForm_subset o α.1 α.1))
+      (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o α.1 α.1
+        ((mem_compactlySupportedForms I).mp hα))
       (inner_self_smul_riemannianVolumeForm_apply_nonneg o α.1) ⟨x, b.toBasis, hb, ?_⟩).ne' h
     rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, OrthonormalBasis.coe_toBasis,
       riemannianVolumeForm_apply_orthonormal o x b hb, mul_one]

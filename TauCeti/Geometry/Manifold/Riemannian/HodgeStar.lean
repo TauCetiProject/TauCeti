@@ -152,6 +152,15 @@ theorem tsupport_inner_smul_riemannianVolumeForm_subset (o : Manifold.Orientatio
     (by simp [show α x = 0 from hα] :
       alternatingFormInner (TangentSpace I x) k (α x) (β x) • riemannianVolumeForm o x = 0)
 
+/-- The top form `⟨α, β⟩ vol` is compactly supported when `α` is. -/
+theorem isCompact_tsupport_inner_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+    (α β : RoughForm I M ℝ k) (hα : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
+      (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
+        riemannianVolumeForm o x)) :=
+  hα.of_isClosed_subset (_root_.isClosed_tsupport _)
+    (tsupport_inner_smul_riemannianVolumeForm_subset o α β)
+
 /-- The wedge `α ∧ ⋆β` is compactly supported when `α` or `β` is. -/
 theorem isCompact_tsupport_wedge_hodgeStar {j : ℕ} (o : Manifold.Orientation I M (Fin m))
     (hjl : j + l = m) (α : RoughForm I M ℝ k) (β : RoughForm I M ℝ j)
