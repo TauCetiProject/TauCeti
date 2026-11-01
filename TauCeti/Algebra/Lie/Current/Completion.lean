@@ -432,6 +432,25 @@ variable (e : CentralQuotient R (centralElement Ψ hΨ hΨs) b ≃ₐ[R]
   (he' : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
     e.symm (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n)
 
+/-- The extension of `e` is the extension `TauCeti.CurrentAlgebra.completedEnvelopingMap` of the
+underlying algebra morphism of `e`. The continuity hypothesis `hg` is an argument, so this is
+stated for `rw` rather than `simp`. -/
+theorem completedEnvelopingEquiv_toAlgHom
+    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
+      (e : UΨ →ₐ[R] UΦ) (envelopingι Ψ hΨ hΨs b u) ∈ orderLeftIdeal Φ hΦ hΦs a n) :
+    (completedEnvelopingEquiv e he he' : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R]
+      CompletedEnveloping Φ hΦ hΦs a) = completedEnvelopingMap (e : UΨ →ₐ[R] UΦ) hg :=
+  AlgHom.ext fun _ ↦ rfl
+
+/-- The inverse of the extension of `e` is the extension
+`TauCeti.CurrentAlgebra.completedEnvelopingMap` of the underlying algebra morphism of `e⁻¹`. -/
+theorem completedEnvelopingEquiv_symm_toAlgHom
+    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
+      (e.symm : UΦ →ₐ[R] UΨ) (envelopingι Φ hΦ hΦs a u) ∈ orderLeftIdeal Ψ hΨ hΨs b n) :
+    ((completedEnvelopingEquiv e he he').symm : CompletedEnveloping Φ hΦ hΦs a →ₐ[R]
+      CompletedEnveloping Ψ hΨ hΨs b) = completedEnvelopingMap (e.symm : UΦ →ₐ[R] UΨ) hg :=
+  AlgHom.ext fun _ ↦ rfl
+
 /-- The extension of `e` to the completions extends `e`. -/
 @[simp]
 theorem completedEnvelopingEquiv_toLimQuotients (x : UΨ) :
@@ -504,6 +523,29 @@ def levelCompletedEnvelopingEquiv (h : Ψ = k • Φ) :
   completedEnvelopingEquiv (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h)
     (fun n ↦ ⟨n, levelEnvelopingEquiv_envelopingι_mem hΦ hΦs hΨ hΨs h n⟩)
     (fun n ↦ ⟨n, levelEnvelopingEquiv_symm_envelopingι_mem hΦ hΦs hΨ hΨs h n⟩)
+
+/-- The completed level comparison is the extension
+`TauCeti.CurrentAlgebra.completedEnvelopingMap` of the level comparison. The continuity
+hypothesis `hg` is an argument, so this is stated for `rw` rather than `simp`. -/
+theorem levelCompletedEnvelopingEquiv_toAlgHom (h : Ψ = k • Φ)
+    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
+      (levelEnvelopingEquiv hΦ hΦs hΨ hΨs h : CentralQuotient R (centralElement Ψ hΨ hΨs) 1 →ₐ[R]
+        CentralQuotient R (centralElement Φ hΦ hΦs) k) (envelopingι Ψ hΨ hΨs 1 u) ∈
+          orderLeftIdeal Φ hΦ hΦs k n) :
+    (levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h : CompletedEnveloping Ψ hΨ hΨs 1 →ₐ[R]
+      CompletedEnveloping Φ hΦ hΦs k) = completedEnvelopingMap _ hg :=
+  AlgHom.ext fun _ ↦ rfl
+
+/-- The inverse completed level comparison is the extension
+`TauCeti.CurrentAlgebra.completedEnvelopingMap` of the inverse level comparison. -/
+theorem levelCompletedEnvelopingEquiv_symm_toAlgHom (h : Ψ = k • Φ)
+    (hg : ∀ n : ℕ, ∃ m : ℕ, ∀ u ∈ orderSubmodule R L m,
+      ((levelEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm : CentralQuotient R (centralElement Φ hΦ hΦs) k
+        →ₐ[R] CentralQuotient R (centralElement Ψ hΨ hΨs) 1) (envelopingι Φ hΦ hΦs k u) ∈
+          orderLeftIdeal Ψ hΨ hΨs 1 n) :
+    ((levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h).symm : CompletedEnveloping Φ hΦ hΦs k →ₐ[R]
+      CompletedEnveloping Ψ hΨ hΨs 1) = completedEnvelopingMap _ hg :=
+  AlgHom.ext fun _ ↦ rfl
 
 /-- The completed level comparison extends the level comparison. -/
 @[simp]
