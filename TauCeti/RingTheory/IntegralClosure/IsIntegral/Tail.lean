@@ -29,8 +29,9 @@ The proof is a downward induction on `k`. If the tail at `k + 1` is integral, th
 over the integral closure of `R` with leading coefficient `c`; hence `c x` is integral over the
 integral closure, and so over `R`.
 
-These elements show that a valuation ring of an algebraic extension of the fraction field of a
-valuation ring `O` is a localisation of the integral closure of `O`.
+For a valuation ring `O'` of an algebraic extension `L` of a field `K` lying over a valuation
+ring `O` of `K`, these elements produce, for each `x ∈ O'`, an element `u` of the integral closure
+`C` of `O` in `L` that is a unit of `O'` with `x u ∈ C`.
 
 ## Main results
 
@@ -79,11 +80,8 @@ theorem isIntegral_mul_aeval_iterate_divX {p : R[X]} {x : S} (hx : aeval x p = 0
     let c : integralClosure R S := ⟨_, hc⟩
     set L := p - X ^ k * divX^[k] p
     have hroot : aeval x (C c * X ^ k + L.map (algebraMap R (integralClosure R S))) = 0 := by
-      rw [map_add, aeval_map_algebraMap, map_mul, aeval_C, map_pow, aeval_X, map_sub, map_mul,
-        map_pow, aeval_X, hx]
-      -- `algebraMap` of the integral closure is the inclusion, so `c` is `p_k(x)`
-      change aeval x (divX^[k] p) * x ^ k + (0 - x ^ k * aeval x (divX^[k] p)) = 0
-      ring
+      rw [map_add, aeval_map_algebraMap, map_mul, aeval_C, Subalgebra.algebraMap_apply, map_pow,
+        aeval_X, map_sub, map_mul, map_pow, aeval_X, hx, mul_comm, zero_sub, add_neg_cancel]
     have := isIntegral_smul_of_aeval_C_mul_X_pow_add
       (degree_map_le.trans_lt (degree_sub_X_pow_mul_iterate_divX_lt k p)) hroot
     rw [Subalgebra.smul_def, smul_eq_mul, mul_comm] at this

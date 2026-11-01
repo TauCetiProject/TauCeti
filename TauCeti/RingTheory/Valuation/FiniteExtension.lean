@@ -59,40 +59,22 @@ namespace ValuationSubring
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {O : ValuationSubring K}
   {O' : ValuationSubring L}
 
-/-- Over `O`, an element of `K` has valuation below `1` in `O'` iff it does in `O`. -/
-private theorem valuation_algebraMap_lt_one_iff (hO' : O'.comap (algebraMap K L) = O) (a : K) :
-    O'.valuation (algebraMap K L a) < 1 ↔ O.valuation a < 1 := by
-  rw [← mem_nonunits_iff, ← mem_nonunits_iff, ← hO', mem_nonunits_comap]
-
-/-- Over `O`, an element of `K` has valuation at most `1` in `O'` iff it does in `O`. -/
-private theorem valuation_algebraMap_le_one_iff (hO' : O'.comap (algebraMap K L) = O) (a : K) :
-    O'.valuation (algebraMap K L a) ≤ 1 ↔ O.valuation a ≤ 1 := by
-  rw [valuation_le_one_iff, valuation_le_one_iff, ← hO', mem_comap]
-
-/-- Over `O`, a unit of `O` stays a unit of `O'`. -/
-private theorem valuation_algebraMap_eq_one (hO' : O'.comap (algebraMap K L) = O) {a : O}
-    (ha : IsUnit a) : O'.valuation (algebraMap O L a) = 1 := by
-  rw [IsScalarTower.algebraMap_apply O K L]
-  refine le_antisymm ((valuation_algebraMap_le_one_iff hO' _).mpr (O.valuation_le_one a))
-    (not_lt.mp fun h ↦ ?_)
-  exact ((valuation_eq_one_iff O a).mp ha).not_lt ((valuation_algebraMap_lt_one_iff hO' _).mp h)
-
-/-- Over `O`, a nonunit of `O` stays a nonunit of `O'`. -/
-private theorem valuation_algebraMap_lt_one (hO' : O'.comap (algebraMap K L) = O) {a : O}
-    (ha : ¬IsUnit a) : O'.valuation (algebraMap O L a) < 1 := by
-  rw [IsScalarTower.algebraMap_apply O K L, valuation_algebraMap_lt_one_iff hO']
-  exact (valuation_lt_one_iff O a).mp ((IsLocalRing.mem_maximalIdeal _).mpr ha)
-
-/-- A valuation subring of `L` over `O` contains the integral closure of `O` in `L`. -/
-private theorem integralClosure_le (hO' : O'.comap (algebraMap K L) = O) :
-    (integralClosure O L).toSubring ≤ O'.toSubring := by
-  have : IsIntegrallyClosedIn O' L :=
-    (isIntegrallyClosed_iff_isIntegrallyClosedIn L).mp inferInstance
-  have : IsIntegrallyClosedIn O'.toSubring L := this
-  refine Subring.integralClosure_le_iff.mpr fun a ↦ ?_
-  rw [IsScalarTower.algebraMap_apply O K L]
-  exact (valuation_le_one_iff _ _).mp
-    ((valuation_algebraMap_le_one_iff hO' _).mpr (O.valuation_le_one a))
+/-- **Normalising a relation.** A family `g` of elements of `K` that vanishes outside `s` and is
+not identically zero has an index `i₀` with `g i₀ ≠ 0` such that every `g i / g i₀` lies in `O`. -/
+private theorem exists_valuation_div_le_one {ι : Type*} (s : Finset ι) {g : ι → K}
+    (hs : ∀ i ∉ s, g i = 0) {i : ι} (hi : g i ≠ 0) :
+    ∃ i₀, g i₀ ≠ 0 ∧ ∀ i, O.valuation (g i / g i₀) ≤ 1 := by
+  have hne : s.Nonempty := ⟨i, by_contra fun h ↦ hi (hs i h)⟩
+  obtain ⟨i₀, -, hmax⟩ := s.exists_max_image (fun i ↦ O.valuation (g i)) hne
+  have hi₀ : g i₀ ≠ 0 := fun h ↦ hi <| by
+    by_cases his : i ∈ s
+    · simpa [h] using hmax i his
+    · exact hs i his
+  refine ⟨i₀, hi₀, fun j ↦ ?_⟩
+  rw [map_div₀, div_le_one₀ ((Valuation.pos_iff _).mpr hi₀)]
+  by_cases hj : j ∈ s
+  · exact hmax j hj
+  · simp [hs j hj]
 
 /-- **The key step.** If `O'` lies over `O` and `x ∈ O'` is algebraic over `K`, there is `u` in
 the integral closure `C` of `O` with `x u ∈ C` and `u` a unit of `O'`. -/
@@ -102,16 +84,13 @@ private theorem exists_mul_mem_integralClosure (hO' : O'.comap (algebraMap K L) 
   classical
   obtain ⟨p, hp0, hpx⟩ := hx
   -- scale `p` so that its coefficients lie in `O`, one of them being `1`
-  obtain ⟨i₀, hi₀, hmax⟩ := p.support.exists_max_image (fun i ↦ O.valuation (p.coeff i))
-    (nonempty_support_iff.mpr hp0)
-  have hc₀ : p.coeff i₀ ≠ 0 := mem_support_iff.mp hi₀
+  obtain ⟨n₀, hn₀⟩ := nonempty_support_iff.mpr hp0
+  obtain ⟨i₀, hc₀, hmax⟩ := exists_valuation_div_le_one (O := O) p.support
+    (fun n ↦ notMem_support_iff.mp) (mem_support_iff.mp hn₀)
   have hlift : C (p.coeff i₀)⁻¹ * p ∈ lifts (algebraMap O K) := by
     refine (lifts_iff_coeff_lifts _).mpr fun n ↦ ⟨⟨(C (p.coeff i₀)⁻¹ * p).coeff n, ?_⟩, rfl⟩
-    rw [coeff_C_mul, ← valuation_le_one_iff, map_mul, map_inv₀, inv_mul_le_one₀
-      ((Valuation.pos_iff _).mpr hc₀)]
-    by_cases hn : n ∈ p.support
-    · exact hmax n hn
-    · simp [notMem_support_iff.mp hn]
+    rw [coeff_C_mul, ← valuation_le_one_iff, ← div_eq_inv_mul]
+    exact hmax n
   obtain ⟨q, hq⟩ := hlift
   rw [coe_mapRingHom] at hq
   have hqx : aeval x q = 0 := by
@@ -133,13 +112,16 @@ private theorem exists_mul_mem_integralClosure (hO' : O'.comap (algebraMap K L) 
     rw [map_mul, aeval_eq_sum_range]
     refine (mul_le_of_le_one_left' ((valuation_le_one_iff _ _).mpr hxO')).trans_lt
       (Valuation.map_sum_lt _ one_ne_zero fun n _ ↦ ?_)
-    rw [Algebra.smul_def, map_mul, map_pow, coeff_iterate_divX, ← add_assoc]
+    rw [Algebra.smul_def, map_mul, map_pow, coeff_iterate_divX, ← add_assoc,
+      IsScalarTower.algebraMap_apply O K L]
     exact (mul_le_of_le_one_right' (pow_le_one' ((valuation_le_one_iff _ _).mpr hxO') n)).trans_lt
-      (valuation_algebraMap_lt_one hO' (hgt n))
+      (valuation_apply_lt_one_of_comap_eq hO' (hgt n))
   refine ⟨aeval x (divX^[j] q), ?_, isIntegral_mul_aeval_iterate_divX hqx j, ?_⟩ <;>
     rw [← iterate_divX_succ_mul_X_add_C, map_add, map_mul, aeval_X, aeval_C, mul_comm _ x]
   · exact (isIntegral_mul_aeval_iterate_divX hqx (j + 1)).add isIntegral_algebraMap
-  · have hu := valuation_algebraMap_eq_one hO' hj
+  · have hu : O'.valuation (algebraMap O L (q.coeff j)) = 1 := by
+      rw [IsScalarTower.algebraMap_apply O K L]
+      exact valuation_apply_eq_one_of_comap_eq hO' hj
     rw [Valuation.map_add_eq_of_lt_right _ (htail.trans_eq hu.symm), hu]
 
 /-- The centre of `O'` on the integral closure `C` of `O`: the elements of `C` in the maximal
@@ -147,7 +129,7 @@ ideal of `O'`. -/
 private noncomputable def centre (hO' : O'.comap (algebraMap K L) = O) :
     Ideal (integralClosure O L) :=
   Valuation.centerIdeal (integralClosure O L) O'.valuation fun c ↦
-    (valuation_le_one_iff _ _).mpr (integralClosure_le hO' c.2)
+    (valuation_le_one_iff _ _).mpr (integralClosure_le_of_comap_eq hO' c.2)
 
 private theorem mem_centre (hO' : O'.comap (algebraMap K L) = O) {c : integralClosure O L} :
     c ∈ centre hO' ↔ O'.valuation c < 1 :=
@@ -166,8 +148,9 @@ private theorem isMaximal_centre (hO' : O'.comap (algebraMap K L) = O) :
   convert IsLocalRing.maximalIdeal.isMaximal O
   ext a
   rw [Ideal.mem_comap, mem_centre, IsLocalRing.mem_maximalIdeal, _root_.mem_nonunits_iff,
-    Subalgebra.coe_algebraMap]
-  exact ⟨fun h hu ↦ h.ne (valuation_algebraMap_eq_one hO' hu), valuation_algebraMap_lt_one hO'⟩
+    Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply O K L]
+  exact ⟨fun h hu ↦ h.ne (valuation_apply_eq_one_of_comap_eq hO' hu),
+    valuation_apply_lt_one_of_comap_eq hO'⟩
 
 /-- A valuation subring over `O` is contained in every valuation subring over `O` whose centre
 lies inside its own. -/
@@ -180,7 +163,7 @@ private theorem le_of_centre_le [Algebra.IsAlgebraic K L] {O₁ O₂ : Valuation
   have hu₂ : O₂.valuation u = 1 :=
     Valuation.eq_one_of_notMem_centerIdeal (r := ⟨u, hu⟩) _ fun h' ↦
       (mem_centre h₁).mp (h h') |>.ne hu₁
-  have := (valuation_le_one_iff _ _).mpr (integralClosure_le h₂ hxu)
+  have := (valuation_le_one_iff _ _).mpr (integralClosure_le_of_comap_eq h₂ hxu)
   rw [map_mul, hu₂, mul_one] at this
   exact (valuation_le_one_iff _ _).mp this
 
@@ -222,10 +205,8 @@ private theorem card_le_finrank [FiniteDimensional K L] (s : Finset (ValuationSu
   intro g hg i
   by_contra hgi
   -- normalise the relation by a coefficient of largest valuation
-  obtain ⟨i₀, -, hi₀⟩ :=
-    Finset.univ.exists_max_image (fun i ↦ O.valuation (g i)) ⟨i, Finset.mem_univ i⟩
-  have hg₀ : g i₀ ≠ 0 := fun h ↦ hgi <| by
-    simpa [h] using hi₀ i (Finset.mem_univ i)
+  obtain ⟨i₀, hg₀, hi₀⟩ :=
+    exists_valuation_div_le_one (O := O) Finset.univ (fun j hj ↦ absurd (Finset.mem_univ j) hj) hgi
   have hsum : ∑ i, (g i / g i₀) • e i = 0 := by
     simp_rw [div_eq_inv_mul, mul_smul, ← Finset.smul_sum, hg, smul_zero]
   -- the valuation of the `i₀`-th subring sees only the `i₀`-th term
@@ -235,9 +216,7 @@ private theorem card_le_finrank [FiniteDimensional K L] (s : Finset (ValuationSu
     rw [Algebra.smul_def, map_mul]
     refine mul_le_of_le_one_left' ?_ |>.trans_lt <|
       he₃ i i₀ i₀.2 (Subtype.coe_injective.ne (Finset.ne_of_mem_erase hi).symm)
-    rw [valuation_algebraMap_le_one_iff (hs _ i₀.2), map_div₀,
-      div_le_one₀ ((Valuation.pos_iff _).mpr hg₀)]
-    exact hi₀ i (Finset.mem_univ i)
+    exact (valuation_apply_le_one_iff_of_comap_eq (hs _ i₀.2) _).mpr (hi₀ i)
   have := congrArg (i₀ : ValuationSubring L).valuation hsum
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i₀), div_self hg₀, one_smul,
     Valuation.map_add_eq_of_lt_left _ (hlt.trans_eq (he₂ i₀).symm), he₂, map_zero] at this

@@ -34,6 +34,8 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   `TauCeti.ValuationSpectrum.comap_ofValuation_valuation` and
   `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
   point of its valuation subring, compatibly with pullback.
+* `TauCeti.ValuationSpectrum.valuationSubring_valuation_injective` : over a field, a point is
+  determined by its valuation subring.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
   Lemma 7.5, that the rational opens are stable under finite intersection.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_image_mul_right` : scaling every numerator and the
@@ -434,6 +436,12 @@ theorem ofValuation_valuationSubring_valuation (w : Spv K) :
     ofValuation w.valuation.valuationSubring.valuation = w :=
   (ofValuation_eq_of_isEquiv
     (Valuation.isEquiv_valuation_valuationSubring w.valuation).symm).trans (ofValuation_valuation w)
+
+/-- On a field, a point of the valuation spectrum is determined by its valuation subring. -/
+theorem valuationSubring_valuation_injective :
+    Function.Injective fun w : Spv K ↦ w.valuation.valuationSubring :=
+  Function.LeftInverse.injective (g := fun O : ValuationSubring K ↦ ofValuation O.valuation)
+    ofValuation_valuationSubring_valuation
 
 /-- Pulling back the valuation of a valuation subring along a field homomorphism gives the point
 of the pulled-back valuation subring. -/

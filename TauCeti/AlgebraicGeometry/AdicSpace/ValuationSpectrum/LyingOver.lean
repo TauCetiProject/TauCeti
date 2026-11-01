@@ -120,11 +120,6 @@ section Field
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
-/-- On a field, a point of the valuation spectrum is determined by its valuation subring. -/
-private theorem valuationSubring_valuation_injective :
-    Function.Injective fun w : Spv L ↦ w.valuation.valuationSubring := fun w₁ w₂ h ↦ by
-  simpa using congrArg (fun O : ValuationSubring L ↦ ofValuation O.valuation) h
-
 /-- The valuation subring of a point over `v` lies over the valuation subring of `v`. -/
 private theorem mapsTo_valuationSubring (v : Spv K) :
     Set.MapsTo (fun w : Spv L ↦ w.valuation.valuationSubring)
