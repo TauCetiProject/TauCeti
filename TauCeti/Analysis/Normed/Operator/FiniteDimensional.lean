@@ -31,7 +31,7 @@ to strict operator-norm bounds.
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
-* `IsCompact.isCompact_setOf_mapsTo`: between finite-dimensional spaces over a proper field, the
+* `IsCompact.isCompact_setOfPred_mapsTo`: between finite-dimensional spaces over a proper field, the
   operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
 
@@ -110,7 +110,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
 /-- Between finite-dimensional normed spaces over a proper field, the operators sending a
 neighbourhood `s` of `0` into a compact set `K` form a compact set: they are bounded in operator
 norm because `s` contains a ball. -/
-theorem IsCompact.isCompact_setOf_mapsTo {K : Set F} (hK : IsCompact K) {s : Set E}
+theorem IsCompact.isCompact_setOfPred_mapsTo {K : Set F} (hK : IsCompact K) {s : Set E}
     (hs : s ∈ 𝓝 (0 : E)) : IsCompact {T : E →L[𝕜] F | MapsTo T s K} := by
   have : ProperSpace (E →L[𝕜] F) := FiniteDimensional.proper 𝕜 _
   obtain ⟨ε, hε, hεs⟩ := Metric.mem_nhds_iff.1 hs

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
+import TauCeti.RingTheory.Norm.RCLike
 
 /-!
 # Additive Haar measures on real normed spaces
@@ -316,28 +317,10 @@ theorem _root_.ContinuousLinearMap.abs_det_le_opNorm_pow
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 <|
     (ENNReal.mul_le_mul_iff_left (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne).1 h
 
-/-- The norm of `z : 𝕜` raised to `finrank ℝ 𝕜` bounds its field norm over `ℝ` from below: the
-field norm of `z⁻¹` is the determinant of multiplication by `z⁻¹`, whose operator norm is at most
-`‖z⁻¹‖`. -/
-private theorem norm_pow_finrank_le_abs_algebraNorm {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
-    ‖z‖ ^ finrank ℝ 𝕜 ≤ |Algebra.norm ℝ z| := by
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp [finrank_pos.ne']
-  have h := (ContinuousLinearMap.mul ℝ 𝕜 z⁻¹).abs_det_le_opNorm_pow
-  have hdet : (ContinuousLinearMap.mul ℝ 𝕜 z⁻¹).det = Algebra.norm ℝ z⁻¹ := by
-    rw [Algebra.norm_apply]
-    rfl
-  have hinv : Algebra.norm ℝ z⁻¹ = (Algebra.norm ℝ z)⁻¹ :=
-    eq_inv_of_mul_eq_one_left <| by rw [← map_mul, inv_mul_cancel₀ hz, map_one]
-  rw [hdet, hinv, abs_inv] at h
-  have hN : 0 < |Algebra.norm ℝ z| := by simp [hz]
-  have := h.trans <| pow_le_pow_left₀ (norm_nonneg _)
-    (ContinuousLinearMap.opNorm_mul_apply_le ℝ 𝕜 z⁻¹) _
-  rwa [norm_inv, inv_pow, inv_le_inv₀ hN (by positivity)] at this
-
 /-- **The determinant is bounded by the operator norm** over an `RCLike` field: `‖det f‖ ≤ ‖f‖ ^ n`
 for a linear endomorphism `f` of a normed space of finite dimension `n`. Restricting scalars to `ℝ`
-turns the determinant into its field norm, which `abs_det_le_opNorm_pow` bounds. -/
+turns the determinant into its field norm, whose absolute value is `‖det f‖ ^ finrank ℝ 𝕜` by
+`TauCeti.RCLike.abs_algebraNorm_eq_norm_pow` and is bounded by `abs_det_le_opNorm_pow`. -/
 theorem _root_.ContinuousLinearMap.norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] (f : E →L[𝕜] E) :
     ‖f.det‖ ≤ ‖f‖ ^ finrank 𝕜 E := by
@@ -345,10 +328,12 @@ theorem _root_.ContinuousLinearMap.norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLi
   have : IsScalarTower ℝ 𝕜 E := ⟨fun r c x ↦ by simp [Algebra.smul_def, mul_smul]⟩
   have : FiniteDimensional ℝ E := Module.Finite.trans 𝕜 E
   have h := (f.restrictScalars ℝ).abs_det_le_opNorm_pow
-  have hdet : (f.restrictScalars ℝ).det = Algebra.norm ℝ f.det := LinearMap.det_restrictScalars
-  rw [hdet, ContinuousLinearMap.norm_restrictScalars, ← finrank_mul_finrank ℝ 𝕜 E, pow_mul'] at h
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 <|
-    (norm_pow_finrank_le_abs_algebraNorm f.det).trans h
+  have hdet : (f.restrictScalars ℝ).det = Algebra.norm ℝ f.det := by
+    rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ContinuousLinearMap.coe_restrictScalars,
+      LinearMap.det_restrictScalars]
+  rw [hdet, RCLike.abs_algebraNorm_eq_norm_pow, ContinuousLinearMap.norm_restrictScalars,
+    ← finrank_mul_finrank ℝ 𝕜 E, pow_mul'] at h
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
 end TauCeti
 

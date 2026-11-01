@@ -13,21 +13,22 @@ public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 /-!
 # Inscribed ellipsoids of maximal volume
 
-An ellipsoid centred at `0` in a finite-dimensional inner product space `E` is the image `T(B)` of
-the closed unit ball `B` under a linear automorphism `T` of `E`. Over `ℝ` the volume of `T(B)` is
+An ellipsoid centred at `0` in a finite-dimensional real inner product space `E` is the image
+`T(B)` of the closed unit ball `B` under a linear automorphism `T` of `E`. The volume of `T(B)` is
 `|det T|` times that of `B` (`MeasureTheory.Measure.addHaar_image_continuousLinearMap`), so
 among the ellipsoids centred at `0` contained in a set `K` the ones of maximal volume are those
-maximizing `‖det T‖`; over `ℂ` the real volume factor is `‖det T‖ ^ 2`, with the same maximizers.
-This file proves that for a compact neighbourhood `K` of `0` such a maximizer exists and is
-invertible, and that the linear change of variables by its inverse moves `K` into **John's
-position**: the unit ball itself is then an inscribed ellipsoid of maximal volume among the
-ellipsoids centred at `0`. For a symmetric convex body `K` this is the John ellipsoid of `K`, and
-this is the position in which John's theorem describes the contact points of `K` with the unit
-sphere.
+maximizing `|det T|`. This file proves that for a compact neighbourhood `K` of `0` such a maximizer
+exists and is invertible, and that the linear change of variables by its inverse moves `K` into
+**John's position**: the unit ball itself is then an inscribed ellipsoid of maximal volume among the
+ellipsoids centred at `0`. Over `ℝ`, for a symmetric convex body `K` this is the John ellipsoid of
+`K`, and this is the position in which John's theorem describes the contact points of `K` with the
+unit sphere. Over `ℂ` only complex ellipsoids, the `ℂ`-linear images `T(B)`, are compared; their
+real volume factor is `‖det T‖ ^ 2`, so `B` is the complex ellipsoid of maximal volume in `K`. It is
+the John ellipsoid of a symmetric convex body `K` when `K` is moreover circled.
 
 Existence of the maximizer uses no inner product, so it is stated for linear images of the unit
 ball of any finite-dimensional normed space over a proper field: the linear maps sending the unit
-ball into a compact set form a compact set (`IsCompact.isCompact_setOf_mapsTo`), on which the
+ball into a compact set form a compact set (`IsCompact.isCompact_setOfPred_mapsTo`), on which the
 continuous function `‖det T‖` attains its maximum, and a neighbourhood of `0` contains a nonzero
 multiple of the unit ball. These images are ellipsoids when the norm comes from an inner product.
 Over `ℝ` or `ℂ` the unit ball of any finite-dimensional normed space is itself in John's position,
@@ -73,9 +74,10 @@ variable (𝕜 : Type*) {E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCom
 
 /-- A set `K` is in **John's position** if the closed unit ball `B` is contained in `K` and every
 linear map sending `B` into `K` has determinant of norm at most `1`, the determinant of the
-identity. In an inner product space this says that `B` has maximal volume among the ellipsoids
+identity. In a real inner product space this says that `B` has maximal volume among the ellipsoids
 centred at `0` contained in `K`; for a symmetric convex body `K` this makes `B` the John ellipsoid
-of `K`. -/
+of `K`. Over `ℂ` it says that `B` has maximal volume among the complex ellipsoids, the `ℂ`-linear
+images of `B`, contained in `K`; this is the John ellipsoid when `K` is moreover circled. -/
 structure IsJohnPosition (K : Set E) : Prop where
   /-- The closed unit ball is contained in `K`. -/
   closedBall_subset : closedBall (0 : E) 1 ⊆ K
@@ -120,7 +122,8 @@ variable [ProperSpace 𝕜] [FiniteDimensional 𝕜 E]
 in a finite-dimensional normed space over a proper field contains the image of the closed unit
 ball under a linear equivalence `T` whose determinant has maximal norm among all linear maps
 sending the unit ball into `K`. In an inner product space, `T(B)` has maximal volume among the
-ellipsoids centred at `0` contained in `K`. -/
+`𝕜`-linear images of the unit ball contained in `K`: the ellipsoids centred at `0` when `𝕜 = ℝ`,
+and the complex ellipsoids when `𝕜 = ℂ`. -/
 theorem _root_.IsCompact.exists_isMaxOn_norm_det {K : Set E} (hK : IsCompact K)
     (hK0 : K ∈ 𝓝 (0 : E)) :
     ∃ T : E ≃L[𝕜] E, MapsTo T (closedBall 0 1) K ∧
@@ -136,7 +139,7 @@ theorem _root_.IsCompact.exists_isMaxOn_norm_det {K : Set E} (hK : IsCompact K)
     rw [mem_ball_zero_iff]
     simpa [norm_smul] using (mul_le_of_le_one_right ha0.le hx).trans_lt har
   obtain ⟨T, hT, hmax⟩ :=
-    (hK.isCompact_setOf_mapsTo (𝕜 := 𝕜) (closedBall_mem_nhds 0 one_pos)).exists_isMaxOn ⟨_, ha⟩
+    (hK.isCompact_setOfPred_mapsTo (𝕜 := 𝕜) (closedBall_mem_nhds 0 one_pos)).exists_isMaxOn ⟨_, ha⟩
       ContinuousLinearMap.continuous_det.norm.continuousOn
   -- The maximum is at least `‖a‖ ^ dim E > 0`, so the maximizer is invertible.
   have hdet : T.det ≠ 0 := by
