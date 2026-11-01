@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Quaternion.Forms
 public import TauCeti.Analysis.Quaternion.Fueter
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Box
 
@@ -38,20 +37,6 @@ open Quaternion Set
 namespace TauCeti
 
 open Quaternion
-
-/-- The left Fueter operator is the sum of left multiplication by the coordinate units
-against the corresponding directional derivatives. -/
-theorem fueterLeft_eq_sum (D : ℍ →L[ℝ] ℍ) :
-    fueterLeft D = ∑ i : Fin 4, dq (Pi.single i 1) * D (dq (Pi.single i 1)) := by
-  have h1 : (QuaternionAlgebra.mk 1 0 0 0 : ℍ) = 1 := rfl
-  simp [fueterLeft_apply, Fin.sum_univ_four, dq_apply, Pi.single_apply, h1]
-
-/-- The right Fueter operator is the sum of the directional derivatives multiplied on
-the right by their coordinate units. -/
-theorem fueterRight_eq_sum (D : ℍ →L[ℝ] ℍ) :
-    fueterRight D = ∑ i : Fin 4, D (dq (Pi.single i 1)) * dq (Pi.single i 1) := by
-  have h1 : (QuaternionAlgebra.mk 1 0 0 0 : ℍ) = 1 := rfl
-  simp [fueterRight_apply, Fin.sum_univ_four, dq_apply, Pi.single_apply, h1]
 
 /-- The box Cauchy theorem for a left Fueter regular function. The coefficients are ordered
 `eᵢ * f`, where `eᵢ` runs through `1, i, j, k`. Only pointwise regularity in the open box and
