@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
 public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -60,6 +60,12 @@ the gluing uses: `Hⁿ(E, E₀) = 0` for `n < r`
 instance a Thom class, is determined by its restrictions to the fibres
 (`Bundle.Trivialization.singularCohomology_thomPair_ext`).
 
+Two linear trivializations whose base sets contain `b` read a class of `(F, F ∖ {0})` as classes of
+the fibre pair over `b` differing by the sign of the determinant of their coordinate change at `b`
+(`Bundle.Trivialization.singularCohomologyMap_fiberPairIso_hom_eq_sign_det_smul`): an invertible
+linear map acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant. This is the transition rule
+for the fibre classes of an oriented bundle.
+
 ## Main definitions and results
 
 * `TauCeti.trivialThomPairMap`: the projection of the Thom pair of the trivial bundle onto the
@@ -89,6 +95,8 @@ instance a Thom class, is determined by its restrictions to the fibres
   trivializing set with prescribed restrictions to the fibres.
 * `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
   the top degree is determined on the fibres.
+* `Bundle.Trivialization.singularCohomologyMap_fiberPairIso_hom_eq_sign_det_smul`: fibre classes
+  read in two trivializations differ by the sign of the coordinate change.
 
 ## References
 
@@ -512,5 +520,36 @@ theorem singularCohomology_thomPair_ext (he : e.baseSet = Set.univ)
     ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h b]
 
 end ProdThomPair
+
+section CoordChange
+
+variable (e' : Trivialization F (π F E)) [e'.IsLinear ℝ] {K : Type*} [CommRing K]
+  {R' : ModuleCat.{w} K} {M' : ModuleCat.{w} K} [Module.Projective K R']
+
+/-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**: for
+linear trivializations `e` and `e'` whose base sets contain `b`, pulling back a class
+`g ∈ Hⁿ(F, F ∖ {0}; R, M)` to the fibre pair `(E_b, E_b ∖ {0})` along `e'` gives the pull-back
+along `e` multiplied by the sign of the determinant of the coordinate change from `e` to `e'` at
+`b`. -/
+theorem singularCohomologyMap_fiberPairIso_hom_eq_sign_det_smul {b : B} (hb : b ∈ e.baseSet)
+    (hb' : b ∈ e'.baseSet) {n : ℕ}
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M' n) :
+    TopPair.singularCohomologyMap (e'.fiberPairIso ℝ hb').hom n g =
+      (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
+        TopPair.singularCohomologyMap (e.fiberPairIso ℝ hb).hom n g := by
+  have hf : Set.MapsTo (e.coordChangeL ℝ e' b : F →L[ℝ] F) ({0}ᶜ : Set F) {0}ᶜ := fun v hv ↦
+    (map_ne_zero_iff (e.coordChangeL ℝ e' b) (ContinuousLinearEquiv.injective _)).2 hv
+  -- The fibre of `e'` at `b` is the fibre of `e` followed by the coordinate change.
+  have hcomp : (e'.fiberPairIso ℝ hb').hom = (e.fiberPairIso ℝ hb).hom ≫
+      TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
+    rw [fiberPairIso, fiberPairIso, TopPair.ofSubsetIso_hom, TopPair.ofSubsetIso_hom]
+    refine (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ ?_).symm
+    ext x
+    simp [coe_coordChangeL e e' ⟨hb, hb'⟩, linearEquivAt_apply, e.symm_apply_apply_mk hb]
+  rw [hcomp, TopPair.singularCohomologyMap_comp,
+    singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
+  exact congr($(ModuleCat.hom_zsmul _ _) g)
+
+end CoordChange
 
 end Bundle.Trivialization
