@@ -52,7 +52,7 @@ private theorem terminalInitial_squares_initial {x y z : GridState n}
     (p ∈ P.coveredSquares ∧
         p ∈ Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding ↔
       p ∈ P.toGridRectangle.coveredSquares ∧ p ∈ H.crossingCoveredSquares) := by
-  have hbottom := Q.bottom_eq_of_pentagon P
+  have hbottom := Q.bottom_eq_bottom_of_pentagon P
   have hs := P.turn_mem_cIco_bottom_top
   have ht := Q.turn_mem_cIco_bottom_top
   have hst : t ∈ Grid.cIoo C.turnRow H.top := H.upper_mem
@@ -97,7 +97,7 @@ private theorem terminalInitial_squares_terminal {x y z : GridState n}
     (p ∈ P.coveredSquares ∧
         p ∈ Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding ↔
       p ∈ H.crossingCoveredSquares ∧ p ∈ Q.toGridRectangle.coveredSquares) := by
-  have hbottom := Q.bottom_eq_of_pentagon P
+  have hbottom := Q.bottom_eq_bottom_of_pentagon P
   have hs := P.turn_mem_cIco_bottom_top
   have ht := Q.turn_mem_cIco_bottom_top
   have hst : C.turnRow ∈ Grid.cIoo t H.top := H.upper_mem
@@ -162,7 +162,7 @@ private theorem terminalInitial_disjoint_and_weight (R : Type*) [CommSemiring R]
   rw [hu, Finset.disjoint_union_left] at hX
   refine ⟨hX.1, hX.2, ?_⟩
   rw [G.rename_pentagonWeight, G.prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    initialPentagonWeight_withTurnRow R]
+    swapColumns_initialPentagonWeight_withTurnRow R]
   have hu' : G.OColumnsOfSquares P.coveredSquares ∪
       G.OColumnsOfSquares (Q.coveredSquares.map
         ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) =
@@ -198,7 +198,7 @@ theorem exists_crossingChangeHexagonComposite_of_terminalInitialPentagonPair
   obtain ⟨hp, hpX⟩ := (G.mem_pentagons P).mp hP
   obtain ⟨hq, hqX⟩ :=
     ((G.swapColumns a b).mem_initialPentagons (C := C.withTurnRow t) Q).mp hQ
-  have hbottom := Q.bottom_eq_of_pentagon P
+  have hbottom := Q.bottom_eq_bottom_of_pentagon P
   have ht : t ∈ Grid.cIco P.bottom Q.top := by
     rw [← hbottom]
     exact Q.turn_mem_cIco_bottom_top
