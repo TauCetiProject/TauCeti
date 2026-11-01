@@ -41,11 +41,12 @@ residues modulo `p`.
 
 ## Main results
 
-* `TauCeti.Padic.oddResidueSign_integerRingEquiv_symm`: the residue sign of a unit of `ℤ_p` is
-  the quadratic character of its reduction modulo `p`.
-* `TauCeti.Padic.hilbertSymbol_formula`: Serre's formula for the Hilbert symbol over `ℚ_p`.
-* `TauCeti.Padic.coe_hilbertSymbol_pow_mul_intCast`: the same formula for `p ^ α m` and `p ^ β n`
-  with integers `m, n` prime to `p`, in Legendre symbols.
+* `Units.oddResidueSign_map_integerRingEquiv_symm_eq_quadraticChar`: the residue sign of a unit
+  of `ℤ_p` is the quadratic character of its reduction modulo `p`.
+* `TauCeti.Padic.hilbertSymbol_formula_of_ne_two`: Serre's formula for the Hilbert symbol over
+  `ℚ_p`.
+* `TauCeti.Padic.coe_hilbertSymbol_pow_mul_intCast_pow_mul_intCast`: the same formula for
+  `p ^ α m` and `p ^ β n` with integers `m, n` prime to `p`, in Legendre symbols.
 * `TauCeti.Padic.hilbertSymbol_intCast_intCast_eq_one`: `(m, n)_p = 1` for integers `m, n` prime
   to `p`.
 * `TauCeti.Padic.hilbertSymbol_intCast_self_eq_legendreSym`: `(n, p)_p = (n / p)` for an integer
@@ -62,41 +63,38 @@ public section
 
 open TauCeti ValuativeRel IsLocalRing
 
-namespace TauCeti.Padic
+namespace Units
 
-variable (p : ℕ) [Fact p.Prime]
+variable {p : ℕ} [Fact p.Prime]
 
 open _root_.TauCeti.Units
 
-variable {p} in
 /-- **The residue sign over `ℚ_p` is the Legendre character.** For a unit `u` of `ℤ_p`, the
 residue sign of `u`, read in the integer ring of `ℚ_p`, is the quadratic character of the reduction
 of `u` modulo `p`; for `u` the image of an integer `n`, this is `legendreSym p n`. -/
-theorem oddResidueSign_integerRingEquiv_symm (u : ℤ_[p]ˣ) :
+theorem oddResidueSign_map_integerRingEquiv_symm_eq_quadraticChar (u : ℤ_[p]ˣ) :
     oddResidueSign (Units.map ((_root_.Padic.integerRingEquiv p).symm : ℤ_[p] →* 𝒪[ℚ_[p]]) u) =
       (quadraticChar (ZMod p)).toUnitHom
         (Units.map (PadicInt.toZMod (p := p) : ℤ_[p] →* ZMod p) u) := by
   classical
-  set u' := Units.map ((_root_.Padic.integerRingEquiv p).symm : ℤ_[p] →* 𝒪[ℚ_[p]]) u
-  -- The residue field of `ℚ_[p]` is `𝔽_p`, the residue of `u'` going to `u mod p`.
+  -- The residue field of `ℚ_[p]` is `𝔽_p`, the residue of `u` going to `u mod p`.
   let E : 𝓀[ℚ_[p]] ≃+* ZMod p :=
     (ResidueField.mapEquiv (_root_.Padic.integerRingEquiv p)).trans PadicInt.residueField
-  have hE : E (Units.map (residue 𝒪[ℚ_[p]] : 𝒪[ℚ_[p]] →* 𝓀[ℚ_[p]]) u' : 𝓀[ℚ_[p]]) =
-      PadicInt.toZMod (u : ℤ_[p]) := by
-    simp [E, u', PadicInt.toZMod_eq_residueField_comp_residue]
-  have hres : IsSquare (Units.map (residue 𝒪[ℚ_[p]] : 𝒪[ℚ_[p]] →* 𝓀[ℚ_[p]]) u') ↔
-      IsSquare (PadicInt.toZMod (u : ℤ_[p])) := by
-    rw [← isSquare_units_val_iff, ← hE]
-    exact ⟨fun h ↦ h.map E, fun h ↦ by simpa using h.map E.symm⟩
-  have hu0 : PadicInt.toZMod (u : ℤ_[p]) ≠ 0 := (u.isUnit.map PadicInt.toZMod).ne_zero
+  let : Fintype 𝓀[ℚ_[p]] := Fintype.ofFinite _
+  -- The ring isomorphism `E` preserves squares, hence the quadratic character.
+  have hχ (x : 𝓀[ℚ_[p]]) : quadraticChar (ZMod p) (E x) = quadraticChar 𝓀[ℚ_[p]] x := by
+    have hsq : IsSquare (E x) ↔ IsSquare x :=
+      ⟨fun h ↦ by simpa using h.map E.symm, fun h ↦ h.map E⟩
+    simp only [quadraticChar_apply, quadraticCharFun, map_eq_zero_iff E E.injective, hsq]
   apply Units.ext
-  rw [MulChar.coe_toUnitHom, Units.coe_map, MonoidHom.coe_ofClass]
-  by_cases hs : IsSquare (PadicInt.toZMod (u : ℤ_[p]))
-  · rw [(oddResidueSign_eq_one_iff u').2 (hres.2 hs), Units.val_one,
-      (quadraticChar_one_iff_isSquare hu0).2 hs]
-  · have hneg : oddResidueSign u' = -1 :=
-      (Int.units_eq_one_or _).resolve_left fun h ↦ hs (hres.1 ((oddResidueSign_eq_one_iff u').1 h))
-    rw [hneg, Units.val_neg, Units.val_one, quadraticChar_neg_one_iff_not_isSquare.2 hs]
+  rw [oddResidueSign_int, MulChar.coe_toUnitHom, Units.coe_map, MonoidHom.coe_ofClass, ← hχ]
+  simp [E, PadicInt.toZMod_eq_residueField_comp_residue]
+
+end Units
+
+namespace TauCeti.Padic
+
+variable (p : ℕ) [Fact p.Prime]
 
 variable {p} in
 /-- **Serre's formula for the Hilbert symbol over `ℚ_p`, for `p` odd.** For `a = p ^ α u` and
@@ -105,7 +103,7 @@ variable {p} in
 `(a, b) = ((-1) ^ ((p - 1)/2)) ^ (α β) · (u / p) ^ β · (v / p) ^ α`,
 
 where `(u / p)` is the quadratic character of the reduction of `u` modulo `p`, as a sign. -/
-theorem hilbertSymbol_formula (hp : p ≠ 2) {a b : ℚ_[p]ˣ} {α β : ℤ} {u v : ℤ_[p]ˣ}
+theorem hilbertSymbol_formula_of_ne_two (hp : p ≠ 2) {a b : ℚ_[p]ˣ} {α β : ℤ} {u v : ℤ_[p]ˣ}
     (ha : (a : ℚ_[p]) = (p : ℚ_[p]) ^ α * u) (hb : (b : ℚ_[p]) = (p : ℚ_[p]) ^ β * v) :
     hilbertSymbol a b = ((-1 : ℤˣ) ^ ((p - 1) / 2)) ^ (α * β) *
       (quadraticChar (ZMod p)).toUnitHom
@@ -121,14 +119,15 @@ theorem hilbertSymbol_formula (hp : p ≠ 2) {a b : ℚ_[p]ˣ} {α β : ℤ} {u 
   rw [hdecomp ha, hdecomp hb,
     hilbertSymbol_oddResidue_formula (_root_.Padic.isUnit_two_integerRing hp)
       (isUniformizer_natCast_self p), Fintype.card_eq_nat_card, _root_.Padic.natCard_residueField,
-    oddResidueSign_integerRingEquiv_symm, oddResidueSign_integerRingEquiv_symm]
+    Units.oddResidueSign_map_integerRingEquiv_symm_eq_quadraticChar,
+    Units.oddResidueSign_map_integerRingEquiv_symm_eq_quadraticChar]
 
 variable {p} in
 /-- **Serre's formula over `ℚ_p` for integers, with Legendre symbols.** For an odd prime `p`,
 integers `m, n` prime to `p` and natural numbers `α, β`,
 
 `(p ^ α m, p ^ β n) = (-1) ^ (α β (p - 1)/2) · (m / p) ^ β · (n / p) ^ α`. -/
-theorem coe_hilbertSymbol_pow_mul_intCast (hp : p ≠ 2) (α β : ℕ) {m n : ℤ}
+theorem coe_hilbertSymbol_pow_mul_intCast_pow_mul_intCast (hp : p ≠ 2) (α β : ℕ) {m n : ℤ}
     (hm : ¬ (p : ℤ) ∣ m) (hn : ¬ (p : ℤ) ∣ n) :
     ((hilbertSymbol
         (Units.mk0 ((p : ℚ_[p]) ^ α * m) (mul_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.2
@@ -139,7 +138,7 @@ theorem coe_hilbertSymbol_pow_mul_intCast (hp : p ≠ 2) (α β : ℕ) {m n : �
       (-1) ^ (α * β * ((p - 1) / 2)) * legendreSym p m ^ β * legendreSym p n ^ α := by
   have hum := PadicInt.isUnit_intCast_iff.2 hm
   have hun := PadicInt.isUnit_intCast_iff.2 hn
-  rw [hilbertSymbol_formula hp (α := α) (β := β) (u := hum.unit) (v := hun.unit)
+  rw [hilbertSymbol_formula_of_ne_two hp (α := α) (β := β) (u := hum.unit) (v := hun.unit)
     (by simp) (by simp)]
   simp only [← Nat.cast_mul, zpow_natCast, ← pow_mul, Units.val_mul, Units.val_pow_eq_pow_val,
     Units.val_neg, Units.val_one, MulChar.coe_toUnitHom, Units.coe_map, MonoidHom.coe_ofClass,
@@ -167,7 +166,7 @@ theorem hilbertSymbol_intCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℤ} (hn :
       (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) : ℤˣ) : ℤ) =
       legendreSym p n := by
   have h1 : ¬ (p : ℤ) ∣ 1 := by exact_mod_cast (Fact.out : p.Prime).not_dvd_one
-  simpa using coe_hilbertSymbol_pow_mul_intCast hp 0 1 hn h1
+  simpa using coe_hilbertSymbol_pow_mul_intCast_pow_mul_intCast hp 0 1 hn h1
 
 end TauCeti.Padic
 
