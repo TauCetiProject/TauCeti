@@ -220,6 +220,7 @@ end FiniteSlopeData
 /-- The unit-slope presentation of a convex polygon whose finite domain is the half-line
 `[start, ∞)`. The edge from `start + i` to `start + i + 1` has slope `slope i`. A terminal
 ray is an eventually constant slope sequence; no slope is infinite. -/
+@[ext]
 structure InfiniteSlopeData (Γ : Type*) [Preorder Γ] where
   /-- The first index of the finite domain. -/
   start : ℕ
@@ -231,17 +232,6 @@ structure InfiniteSlopeData (Γ : Type*) [Preorder Γ] where
   monotone : Monotone slope
 
 namespace InfiniteSlopeData
-
-/-- Infinite slope data is determined by its anchor and its unit slopes. -/
-@[ext]
-theorem ext {d e : InfiniteSlopeData Γ} (hs : d.start = e.start)
-    (hy : d.initialHeight = e.initialHeight) (hm : d.slope = e.slope) : d = e := by
-  cases d
-  cases e
-  cases hs
-  cases hy
-  cases hm
-  rfl
 
 /-- Keep the anchor and first `n` unit slopes of an infinite slope presentation.
 For `n = 0` the truncation is the singleton at the anchor. -/
