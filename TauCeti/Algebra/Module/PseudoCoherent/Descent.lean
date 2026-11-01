@@ -28,16 +28,9 @@ and is local on `Spec R`, in every degree `m ∈ ℕ ∪ {∞}`:
 
 Together with flat base change (`TauCeti.Huber.IsPseudoCoherentOver.baseChange`) these say that
 pseudocoherence of a module can be checked after a faithfully flat extension, or on a cover of
-`Spec R` by standard opens. The second statement is what identifies the modules of sections of a
-pseudocoherent sheaf on an affine scheme, which is only known to have finite free resolutions
-locally, as pseudocoherent modules.
-
-Both are proved by induction on the degree, one syzygy at a time
-(`TauCeti.Huber.IsPseudoCoherentOver.succ_iff_ker`), for a family of flat algebras that jointly
-detect finite generation. For a surjection `f : Rᵏ → M`, flatness identifies the kernel of
-`S ⊗ f` with `S ⊗[R] ker f` (`LinearMap.tensorKerEquiv`), and finite generation descends by
-Mathlib's `Module.Finite.of_finite_tensorProduct_of_faithfullyFlat` and
-`Module.Finite.of_localizationSpan'`.
+`Spec R` by standard opens. To show that the sections of a pseudocoherent sheaf over an affine
+open are pseudocoherent, the second statement supplies the descent step from a standard-open
+cover, once the sections over each member of the cover are known to be pseudocoherent.
 
 ## Main results
 
@@ -53,9 +46,19 @@ Mathlib's `Module.Finite.of_finite_tensorProduct_of_faithfullyFlat` and
 
 * The Stacks Project, Tag 068R (faithfully flat descent of pseudo-coherence) and Tag 066D
   (pseudo-coherence is local on `Spec R`), for complexes; here for modules.
+* The syzygy induction and the reduction to modules in the universe of `R` follow
+  `TauCeti.Module.IsFPD.of_baseChange` in
+  `TauCeti/Algebra/Module/PseudoCoherent/FaithfullyFlat.lean`.
 -/
 
 public section
+
+/- Both descent statements are proved by induction on the degree, one syzygy at a time
+(`TauCeti.Huber.IsPseudoCoherentOver.succ_iff_ker`), for a family of flat algebras that jointly
+detect finite generation. For a surjection `f : Rᵏ → M`, flatness identifies the kernel of
+`S ⊗ f` with `S ⊗[R] ker f` (`LinearMap.tensorKerEquiv`), and finite generation descends by
+Mathlib's `Module.Finite.of_finite_tensorProduct_of_faithfullyFlat` and
+`Module.Finite.of_localizationSpan'`. -/
 
 namespace TauCeti.Huber
 
