@@ -68,9 +68,7 @@ theorem exists_homogeneousComponent_sub_eq_smul_lazardCocycle {n : ℕ}
     ∃ c : R, homogeneousComponent n (F.toPowerSeries - G.toPowerSeries) =
       ((c • TauCeti.lazardCocycle n R : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
   obtain rfl | hn₀ := eq_or_ne n 0
-  · refine ⟨0, ?_⟩
-    rw [homogeneousComponent_zero, map_sub, F.zero_constantCoeff, G.zero_constantCoeff, sub_zero,
-      map_zero, zero_smul, MvPolynomial.coe_zero]
+  · exact ⟨0, by simp [homogeneousComponent_zero, F.zero_constantCoeff, G.zero_constantCoeff]⟩
   rw [← homDefect_X] at hn ⊢
   exact exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle PowerSeries.constantCoeff_X
     hn₀ hn
@@ -101,7 +99,7 @@ theorem succ_le_order_sub_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
   obtain rfl | hk := eq_or_ne k 0
   · -- formal group laws always agree below degree two
     rw [← sub_sub_sub_cancel_right F.toPowerSeries G.toPowerSeries (X 0 + X 1)]
-    exact le_order_sub
+    simpa using le_order_sub
       (two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y)
       (two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y)
   refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
