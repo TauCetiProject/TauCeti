@@ -29,6 +29,11 @@ If `A` is `I`-adically complete, the global sections of `O_{Spf A}` are `A` itse
 of `O_{I ^ (n + 1)}` are `A ⧸ I ^ (n + 1)`, and `A` is the limit of these rings
 (`IsAdicComplete.isLimitQuotientPowSuccCone`).
 
+For any ideal of definition `K`, some power `I ^ (n + 1)` lies in `K`, and composing the
+projection `O_{Spf A} → O_{I ^ (n + 1)}` with the reduction map `O_{I ^ (n + 1)} → O_K` gives a
+projection `O_{Spf A} → O_K`, independent of `n`. This is the sheaf map of the closed immersion
+`Spec (A ⧸ K) → Spf A` (EGA I, Ch. I, 10.3.2).
+
 The construction is made with a chosen ideal of definition `I`; another ideal of definition gives a
 canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 
@@ -45,6 +50,8 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.quotientProjection`: the projection `O_{Spf A} → O_{I ^ (n + 1)}`.
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift`: the morphism into `O_{Spf A}` induced by
   morphisms to the thickenings compatible with the reduction maps.
+* `TauCeti.FormalScheme.Spf.toQuotientSheaf`: for ideals of definition `I` and `K`, the
+  projection `O_{Spf A} → O_K` from the structure sheaf built from `I`.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso`: for `I`-adically complete `A`, the isomorphism
   of the global sections of `O_{Spf A}` with `A`.
 
@@ -63,13 +70,19 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift_quotientProjection`,
   `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`: morphisms into the structure sheaf correspond
   to compatible families of morphisms to the thickenings.
+* `TauCeti.FormalScheme.Spf.toQuotientSheaf_eq`: the projection to `O_K` factors through the
+  projection to `O_{I ^ (n + 1)}` for every `n` with `I ^ (n + 1) ≤ K`.
+* `TauCeti.FormalScheme.Spf.toQuotientSheaf_comp_quotientTransition`: the projections to
+  arbitrary thickenings are compatible with the reduction maps.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_quotientProjection`: the global section
   corresponding to `a ∈ A` projects to the class of `a` in every `A ⧸ I ^ (n + 1)`.
+* `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_toQuotientSheaf`: the global section
+  corresponding to `a ∈ A` projects to the class of `a` in `A ⧸ K`.
 
 ## References
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. I, §10.1
-  (10.1.2, 10.1.3).
+  (10.1.2, 10.1.3) and §10.3 (10.3.2).
 * [Stacks Project, Tag 0AHY](https://stacks.math.columbia.edu/tag/0AHY).
 -/
 
@@ -267,6 +280,58 @@ theorem structureSheaf.hom_ext (hI : IsAdic I)
     (h : ∀ n, f ≫ quotientProjection hI n = g ≫ quotientProjection hI n) : f = g :=
   limit.hom_ext fun n ↦ h n.unop
 
+/-- For ideals of definition `I` and `K`, the projection `O_{Spf A} → O_K` from the structure
+sheaf built from `I` to the structure sheaf of the thickening `Spec (A ⧸ K)`: the projection to
+`O_{I ^ (n + 1)}` followed by the reduction map, for any `n` with `I ^ (n + 1) ≤ K`
+(`toQuotientSheaf_eq`). It is the sheaf map of the closed immersion `Spec (A ⧸ K) → Spf A`. -/
+noncomputable def toQuotientSheaf (hI : IsAdic I) (hK : IsAdic K) :
+    structureSheaf hI ⟶ quotientSheaf hK :=
+  quotientProjection hI (hI.exists_pow_succ_le hK).choose ≫
+    quotientTransition _ hK (hI.exists_pow_succ_le hK).choose_spec
+
+/-- The two-step composites `O_{Spf A} → O_{I ^ (n + 1)} → O_K` agree for all admissible `n`. -/
+private theorem quotientProjection_comp_quotientTransition_eq (hI : IsAdic I) (hK : IsAdic K)
+    {m n : ℕ} (hm : I ^ (m + 1) ≤ K) (hn : I ^ (n + 1) ≤ K) :
+    quotientProjection hI m ≫ quotientTransition _ hK hm =
+      quotientProjection hI n ≫ quotientTransition _ hK hn := by
+  wlog hmn : m ≤ n generalizing m n
+  · exact (this hn hm (le_of_not_ge hmn)).symm
+  rw [← quotientProjection_comp_quotientTransition hI hmn, Category.assoc,
+    quotientTransition_comp]
+
+/-- The projection to `O_K` is the projection to `O_{I ^ (n + 1)}` followed by the reduction map,
+for every `n` with `I ^ (n + 1) ≤ K`. -/
+theorem toQuotientSheaf_eq (hI : IsAdic I) (hK : IsAdic K) {n : ℕ} (hn : I ^ (n + 1) ≤ K) :
+    toQuotientSheaf hI hK = quotientProjection hI n ≫ quotientTransition _ hK hn :=
+  quotientProjection_comp_quotientTransition_eq hI hK _ hn
+
+/-- The projection to the thickening `O_{I ^ (n + 1)}` is `quotientProjection`. -/
+@[simp]
+theorem toQuotientSheaf_pow_succ (hI : IsAdic I) (n : ℕ) :
+    toQuotientSheaf hI (is_ideal_adic_pow hI n.succ_pos) = quotientProjection hI n := by
+  rw [toQuotientSheaf_eq hI _ le_rfl, quotientTransition_self, Category.comp_id]
+
+/-- The projections to the thickenings are compatible with the reduction maps `O_K → O_L`. -/
+@[reassoc (attr := simp)]
+theorem toQuotientSheaf_comp_quotientTransition (hI : IsAdic I) (hK : IsAdic K) (hL : IsAdic L)
+    (hKL : K ≤ L) :
+    toQuotientSheaf hI hK ≫ quotientTransition hK hL hKL = toQuotientSheaf hI hL := by
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le hK
+  rw [toQuotientSheaf_eq hI hK hn, toQuotientSheaf_eq hI hL (hn.trans hKL), Category.assoc,
+    quotientTransition_comp]
+
+/-- The morphism `structureSheaf.lift` projects to every thickening `O_K` through the given
+morphism to a thickening `O_{I ^ (n + 1)}` with `I ^ (n + 1) ≤ K`. -/
+@[reassoc]
+theorem structureSheaf.lift_toQuotientSheaf (hI : IsAdic I) (hK : IsAdic K)
+    {F : Sheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat}
+    (f : ∀ n : ℕ, F ⟶ quotientSheaf (is_ideal_adic_pow hI n.succ_pos))
+    (hf : ∀ {m n : ℕ} (h : m ≤ n),
+      f n ≫ quotientTransition _ _ (Ideal.pow_le_pow_right (Nat.succ_le_succ h)) = f m)
+    {n : ℕ} (hn : I ^ (n + 1) ≤ K) :
+    structureSheaf.lift hI f hf ≫ toQuotientSheaf hI hK = f n ≫ quotientTransition _ hK hn := by
+  rw [toQuotientSheaf_eq hI hK hn, structureSheaf.lift_quotientProjection_assoc]
+
 /-- On global sections, the diagram of the thickenings is the diagram of the quotients
 `A ⧸ I ^ (n + 1)`. -/
 private noncomputable def quotientDiagramGlobalSectionsIso (hI : IsAdic I) :
@@ -309,6 +374,18 @@ theorem globalSectionsIso_inv_comp_quotientProjection (hI : IsAdic I) (n : ℕ) 
   refine (congrArg (_ ≫ ·) hb).trans ?_
   refine (Category.assoc _ _ _).symm.trans ?_
   exact congrArg (· ≫ _) hc
+
+/-- The global section of the structure sheaf of `Spf A` corresponding to `a ∈ A` projects to the
+class of `a` in the global sections `A ⧸ K` of the thickening `O_K`. -/
+@[reassoc (attr := simp)]
+theorem globalSectionsIso_inv_comp_toQuotientSheaf (hI : IsAdic I) (hK : IsAdic K) :
+    (globalSectionsIso hI).inv ≫ (toQuotientSheaf hI hK).hom.app (op ⊤) =
+      CommRingCat.ofHom (Ideal.Quotient.mk K) ≫ (quotientSheafGlobalSectionsIso hK).inv := by
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le hK
+  rw [toQuotientSheaf_eq hI hK hn, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    globalSectionsIso_inv_comp_quotientProjection_assoc,
+    quotientSheafGlobalSectionsIso_inv_comp_quotientTransition, ← Category.assoc,
+    ← CommRingCat.ofHom_comp, Ideal.Quotient.factor_comp_mk]
 
 end StructureSheaf
 
