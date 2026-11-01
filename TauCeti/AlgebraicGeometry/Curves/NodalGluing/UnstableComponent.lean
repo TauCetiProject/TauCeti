@@ -10,19 +10,15 @@ public import TauCeti.Geometry.Diffeomorphism.Congr
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FixingSubgroup
 
 /-!
-# Automorphisms supported on one component, and unstable rational and elliptic components
+# Unstable rational and elliptic components
 
 A marked nodal curve is presented by its normalization components `X i`, its flag pairs and its
-marks. A diffeomorphism of a single component `X i` which fixes every special point of `X i`
-(every flag point and every mark lying on it, `Marking.specialPoints`) extends by the identity on
-the other components to an automorphism of the marked curve fixing every label. These extensions
-form an injective group homomorphism from the diffeomorphisms of `X i` fixing its special points
-to the ordered automorphisms of the marked curve (`AuxiliaryAut.ofComponent`), the restriction of
-the componentwise action `AuxiliaryAut.ofComponents` to families supported on the component `i`.
-
-Consequently a component with infinitely many such diffeomorphisms makes the ordered automorphism
-group infinite. This happens for a component diffeomorphic to the projective line carrying at most
-two special points, where the Möbius dilations fixing those points give infinitely many
+marks. A component with infinitely many diffeomorphisms fixing its special points (every flag
+point and every mark lying on it, `Marking.specialPoints`) makes the ordered automorphism group
+infinite (`AuxiliaryAut.infinite_ordered_of_infinite_fixingSubgroup`, in
+`TauCeti.AlgebraicGeometry.Curves.NodalGluing.ComponentAut`). This happens for a component
+diffeomorphic to the projective line carrying at most two special points, where the Möbius
+dilations fixing those points give infinitely many
 (`AuxiliaryAut.infinite_ordered_of_encard_specialPoints_le_two`). Contrapositively, when the
 ordered automorphism group is finite, every component diffeomorphic to the projective line carries
 at least three special points (`AuxiliaryAut.two_lt_encard_specialPoints`). Over `ℂ` this says that
@@ -40,19 +36,11 @@ automorphism group is finite, every component diffeomorphic to such a group carr
 (`AuxiliaryAut.nonempty_specialPoints`). Over `ℂ` this is the stability condition
 `2 g_i - 2 + n_i > 0` for a component biholomorphic to a complex torus `ℂ / Λ`, of genus one.
 
-## Main definitions
-
-* `NodalGluing.AuxiliaryAut.ofComponent`: the ordered automorphism extending a diffeomorphism of
-  one component fixing its special points, as a group homomorphism.
-
 ## Main results
 
-* `NodalGluing.AuxiliaryAut.ofComponent_injective`: the extension is injective.
-* `NodalGluing.AuxiliaryAut.infinite_ordered_of_infinite_fixingSubgroup`: a component with
-  infinitely many diffeomorphisms fixing its special points gives infinitely many ordered
-  automorphisms.
-* `NodalGluing.AuxiliaryAut.infinite_ordered_of_encard_specialPoints_le_two`: so does a component
-  diffeomorphic to the projective line with at most two special points.
+* `NodalGluing.AuxiliaryAut.infinite_ordered_of_encard_specialPoints_le_two`: a component
+  diffeomorphic to the projective line with at most two special points gives infinitely many
+  ordered automorphisms.
 * `NodalGluing.AuxiliaryAut.two_lt_encard_specialPoints`: if the ordered automorphism group is
   finite, every component diffeomorphic to the projective line has at least three special points.
 * `NodalGluing.AuxiliaryAut.infinite_ordered_of_specialPoints_eq_empty`: a component without
@@ -85,47 +73,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {d : FlagPairData ι Flag X} {N R : Type*} {m : Marking d (N ⊕ R)}
 
 namespace AuxiliaryAut
-
-/-- **Automorphisms supported on one component.** A diffeomorphism of the component `i` fixing
-every special point of `i` (`Marking.specialPoints`), extended by the identity on the other
-components, is an automorphism of the marked curve fixing every label. The extension is a group
-homomorphism into the ordered automorphisms. -/
-noncomputable def ofComponent (i : ι) :
-    Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i) →* ordered I n m :=
-  open scoped Classical in
-  (ofComponents I n m).comp <| MonoidHom.mulSingle
-    (fun j ↦ Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints j)) i
-
-/-- On the component `i`, the extension acts by the given diffeomorphism. -/
-@[simp]
-theorem ofComponent_apply_mk_self (i : ι)
-    (φ : Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) (x : X i) :
-    (ofComponent i φ : AuxiliaryAut I n m) ⟨i, x⟩ = ⟨i, (φ : X i ≃ₘ^n⟮I, I⟯ X i) x⟩ := by
-  classical
-  simp [ofComponent, Pi.mulSingle_eq_same]
-
-/-- Off the component `i`, the extension is the identity. -/
-@[simp]
-theorem ofComponent_apply_mk_of_ne {i j : ι} (hj : j ≠ i)
-    (φ : Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) (x : X j) :
-    (ofComponent i φ : AuxiliaryAut I n m) ⟨j, x⟩ = ⟨j, x⟩ := by
-  classical
-  simp [ofComponent, Pi.mulSingle_eq_of_ne hj]
-
-/-- A diffeomorphism of a component is determined by the automorphism it extends to. -/
-theorem ofComponent_injective (i : ι) :
-    Function.Injective (ofComponent (I := I) (n := n) (m := m) i) := by
-  intro φ ψ h
-  refine Subtype.ext <| Diffeomorph.ext fun x ↦ sigma_mk_injective (i := i) ?_
-  rw [← ofComponent_apply_mk_self, ← ofComponent_apply_mk_self, h]
-
-/-- **Infinitely many automorphisms from one component.** If the component `i` has infinitely many
-diffeomorphisms fixing its special points, the marked curve has infinitely many automorphisms
-fixing every label. -/
-theorem infinite_ordered_of_infinite_fixingSubgroup (i : ι)
-    [Infinite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i))] :
-    Infinite (ordered I n m) :=
-  Infinite.of_injective _ (ofComponent_injective i)
 
 /-- **An unstable rational component.** If the component `i` is diffeomorphic to the projective
 line `OnePoint 𝕜` and carries at most two special points, the marked curve has infinitely many

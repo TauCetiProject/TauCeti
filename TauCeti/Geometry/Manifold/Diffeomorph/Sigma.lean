@@ -97,16 +97,18 @@ theorem exists_sigmaCongrRight_eq_iff {F : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, 
     Sigma.ext (hF ⟨i, x⟩).symm (cast_heq _ _)
   have hg (i : ι) (y : M' i) : (⟨i, g i y⟩ : Σ i, M i) = F.symm ⟨i, y⟩ :=
     Sigma.ext (hF' ⟨i, y⟩).symm (cast_heq _ _)
+  have hfc (i : ι) : Sigma.mk i ∘ f i = F ∘ Sigma.mk i := funext (hf i)
+  have hgc (i : ι) : Sigma.mk i ∘ g i = F.symm ∘ Sigma.mk i := funext (hg i)
   refine ⟨fun i ↦
     { toFun := f i
       invFun := g i
       left_inv x := sigma_mk_injective <| by rw [hg, hf, symm_apply_apply]
       right_inv y := sigma_mk_injective <| by rw [hf, hg, apply_symm_apply]
       contMDiff_toFun := (TauCeti.contMDiff_sigmaMk_comp_iff (g := f i)).mp <| by
-        rw [show Sigma.mk i ∘ f i = F ∘ Sigma.mk i from funext (hf i)]
+        rw [hfc]
         exact F.contMDiff.comp (TauCeti.contMDiff_sigmaMk i)
       contMDiff_invFun := (TauCeti.contMDiff_sigmaMk_comp_iff (g := g i)).mp <| by
-        rw [show Sigma.mk i ∘ g i = F.symm ∘ Sigma.mk i from funext (hg i)]
+        rw [hgc]
         exact F.symm.contMDiff.comp (TauCeti.contMDiff_sigmaMk i) },
     Diffeomorph.ext fun ⟨i, x⟩ ↦ hf i x⟩
 

@@ -91,6 +91,7 @@ theorem contMDiff_sigmaMk (i : ι) : ContMDiff I I n (Sigma.mk i : M i → Σ i,
 
 /-- **Maps into a component.** A map into the component `M i` is `C^n` at a point exactly when its
 composite with the inclusion of `M i` into the disjoint union is. -/
+@[simp]
 theorem contMDiffAt_sigmaMk_comp_iff {i : ι} {g : N → M i} {x : N} :
     ContMDiffAt J I n (Sigma.mk i ∘ g) x ↔ ContMDiffAt J I n g x := by
   have h : ⇑(extChartAt I ((Sigma.mk i ∘ g) x)) ∘ (Sigma.mk i ∘ g) ∘ (extChartAt J x).symm =
@@ -100,6 +101,7 @@ theorem contMDiffAt_sigmaMk_comp_iff {i : ι} {g : N → M i} {x : N} :
 
 /-- A map into the component `M i` is `C^n` exactly when its composite with the inclusion of
 `M i` into the disjoint union is. -/
+@[simp]
 theorem contMDiff_sigmaMk_comp_iff {i : ι} {g : N → M i} :
     ContMDiff J I n (Sigma.mk i ∘ g) ↔ ContMDiff J I n g :=
   forall_congr' fun _ ↦ contMDiffAt_sigmaMk_comp_iff

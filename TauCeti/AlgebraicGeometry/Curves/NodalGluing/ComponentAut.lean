@@ -21,7 +21,11 @@ These automorphisms form an injective group homomorphism `AuxiliaryAut.ofCompone
 product of the groups of diffeomorphisms of the components fixing their special points to the
 ordered automorphisms of the marked curve. Its image consists exactly of the ordered automorphisms
 which carry every component to itself and fix every flag point
-(`AuxiliaryAut.mem_range_ofComponents_iff`).
+(`AuxiliaryAut.mem_range_ofComponents_iff`). Restricting to families supported on a single
+component `i` gives the automorphisms extending a diffeomorphism of `X i` fixing its special points
+by the identity on the other components (`AuxiliaryAut.ofComponent`), so a component with
+infinitely many such diffeomorphisms makes the ordered automorphism group infinite
+(`AuxiliaryAut.infinite_ordered_of_infinite_fixingSubgroup`).
 
 When there are finitely many components, each connected, and finitely many flags, an ordered
 automorphism acts on the finite sets of components and branches, and the automorphisms acting
@@ -29,9 +33,12 @@ trivially on both are the componentwise ones. Hence the ordered automorphism gro
 exactly when every component has finitely many diffeomorphisms fixing its special points
 (`AuxiliaryAut.finite_ordered_iff`). This reduces the finiteness of the automorphism group of a
 marked nodal curve to the corresponding question for each normalized component with its special
-points. Over `ℂ`, by the classification of smooth marked curves (not proved here), a component of
-genus `g_i` with `n_i` special points has finitely many automorphisms fixing them exactly when
-`2 g_i - 2 + n_i > 0`. Some of the unstable cases, giving infinitely many automorphisms, are
+points. The results here hold for any regularity `n` and need no compactness. In the special case
+of a compact connected Riemann surface with its biholomorphic automorphisms, the classification of
+smooth marked curves (not proved here) says that a component of genus `g_i` with `n_i` special
+points has finitely many biholomorphic automorphisms fixing them exactly when
+`2 g_i - 2 + n_i > 0`; this criterion does not apply to diffeomorphisms of lower regularity, such
+as homeomorphisms (`n = 0`). Some of the unstable cases, giving infinitely many automorphisms, are
 treated in `TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent`.
 
 ## Main definitions
@@ -39,10 +46,17 @@ treated in `TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent`.
 * `NodalGluing.AuxiliaryAut.ofComponents`: the ordered automorphism acting componentwise by a
   family of diffeomorphisms of the components fixing their special points, as a group
   homomorphism.
+* `NodalGluing.AuxiliaryAut.ofComponent`: its restriction to a diffeomorphism of a single component,
+  extended by the identity on the other components.
 
 ## Main results
 
-* `NodalGluing.AuxiliaryAut.ofComponents_injective`: the componentwise action is injective.
+* `NodalGluing.AuxiliaryAut.ofComponents_injective`,
+  `NodalGluing.AuxiliaryAut.ofComponent_injective`: the componentwise action and its
+  single-component restriction are injective.
+* `NodalGluing.AuxiliaryAut.infinite_ordered_of_infinite_fixingSubgroup`: a component with
+  infinitely many diffeomorphisms fixing its special points gives infinitely many ordered
+  automorphisms.
 * `NodalGluing.AuxiliaryAut.mem_range_ofComponents_iff`: an ordered automorphism is componentwise
   exactly when it carries every component to itself and fixes every flag point.
 * `NodalGluing.AuxiliaryAut.finite_ordered`, `NodalGluing.AuxiliaryAut.finite_ordered_iff`: with
@@ -144,6 +158,47 @@ theorem ofComponents_injective : Function.Injective (ofComponents I n m) := by
   refine Subtype.ext <| Diffeomorph.ext fun x ↦ sigma_mk_injective (i := i) ?_
   have := congrArg (fun g : ordered I n m ↦ (g : AuxiliaryAut I n m) ⟨i, x⟩) h
   simpa only [ofComponents_apply] using this
+
+/-- **Automorphisms supported on one component.** A diffeomorphism of the component `i` fixing
+every special point of `i` (`Marking.specialPoints`), extended by the identity on the other
+components, is an automorphism of the marked curve fixing every label. The extension is a group
+homomorphism into the ordered automorphisms. -/
+noncomputable def ofComponent (i : ι) :
+    Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i) →* ordered I n m :=
+  open scoped Classical in
+  (ofComponents I n m).comp <| MonoidHom.mulSingle
+    (fun j ↦ Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints j)) i
+
+/-- On the component `i`, the extension acts by the given diffeomorphism. -/
+@[simp]
+theorem ofComponent_apply_mk_self (i : ι)
+    (φ : Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) (x : X i) :
+    (ofComponent i φ : AuxiliaryAut I n m) ⟨i, x⟩ = ⟨i, (φ : X i ≃ₘ^n⟮I, I⟯ X i) x⟩ := by
+  classical
+  simp [ofComponent, Pi.mulSingle_eq_same]
+
+/-- Off the component `i`, the extension is the identity. -/
+@[simp]
+theorem ofComponent_apply_mk_of_ne {i j : ι} (hj : j ≠ i)
+    (φ : Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) (x : X j) :
+    (ofComponent i φ : AuxiliaryAut I n m) ⟨j, x⟩ = ⟨j, x⟩ := by
+  classical
+  simp [ofComponent, Pi.mulSingle_eq_of_ne hj]
+
+/-- A diffeomorphism of a component is determined by the automorphism it extends to. -/
+theorem ofComponent_injective (i : ι) :
+    Function.Injective (ofComponent (I := I) (n := n) (m := m) i) := by
+  intro φ ψ h
+  refine Subtype.ext <| Diffeomorph.ext fun x ↦ sigma_mk_injective (i := i) ?_
+  rw [← ofComponent_apply_mk_self, ← ofComponent_apply_mk_self, h]
+
+/-- **Infinitely many automorphisms from one component.** If the component `i` has infinitely many
+diffeomorphisms fixing its special points, the marked curve has infinitely many automorphisms
+fixing every label. -/
+theorem infinite_ordered_of_infinite_fixingSubgroup (i : ι)
+    [Infinite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i))] :
+    Infinite (ordered I n m) :=
+  Infinite.of_injective _ (ofComponent_injective i)
 
 /-- **The componentwise automorphisms.** An ordered automorphism acts componentwise, by
 diffeomorphisms of the components fixing their special points, exactly when it carries every
