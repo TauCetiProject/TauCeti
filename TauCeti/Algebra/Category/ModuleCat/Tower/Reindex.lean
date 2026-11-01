@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import Mathlib.Algebra.BigOperators.Intervals
-public import Mathlib.CategoryTheory.Whiskering
+public import Mathlib.CategoryTheory.Filtered.Final
 
 /-!
 # Reindexing module towers along cofinal maps
@@ -20,10 +20,11 @@ changes neither `lim` nor `lim¹`.
 On products, restriction `x ↦ (x_{c n})ₙ` does not commute with the shift maps
 `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)`. Instead `δ' ∘ res = Σ ∘ δ`, where `Σ` sums the images in `A_{c n}` of
 the coordinates `c n ≤ k < c (n + 1)`. The pair `(res, Σ)` is a map between the two-term
-complexes `δ` and `δ'` whose kernels and cokernels are `lim` and `lim¹`, and it induces both
-comparisons. The key step is that a family `x` whose sum `Σ x` is a shift `δ' w` is itself a
-shift `δ z` with `res z = w`: the element `z_k` is the image of `w_n` plus the images of the
-`x_j` with `k ≤ j < c n`, which is independent of the choice of `n` with `k ≤ c n`. No
+complexes `δ` and `δ'` whose kernels and cokernels are `lim` and `lim¹`, and it induces the
+`lim¹` comparison; the `lim` comparison is restriction, an isomorphism because the functor of a
+cofinal `c` is final. The key step is that a family `x` whose sum `Σ x` is a shift `δ' w` is
+itself a shift `δ z` with `res z = w`: the element `z_k` is the image of `w_n` plus the images
+of the `x_j` with `k ≤ j < c n`, which is independent of the choice of `n` with `k ≤ c n`. No
 surjectivity or Mittag-Leffler hypothesis is needed. Both comparisons are natural in morphisms of
 towers, compatible with the projections from `lim`, and compatible with the connecting map of the
 six-term sequence of a levelwise short exact sequence of towers. Consequently, a tower whose
@@ -71,8 +72,7 @@ abbrev reindex : ModuleTower.{v} R :=
 @[simp]
 theorem reindex_transitionOfLE {n m : ℕ} (h : n ≤ m) :
     (F.reindex hc).transitionOfLE h = F.transitionOfLE (hc h) := by
-  rw [transitionOfLE_def, transitionOfLE_def]
-  rfl
+  rw [transitionOfLE_def, Functor.comp_map, map_hom_eq_transitionOfLE]
 
 @[simp]
 theorem reindex_transition (n : ℕ) :
@@ -136,14 +136,14 @@ theorem reindexSum_comp_shift :
     F.reindexSum hc ∘ₗ F.shift = (F.reindex hc).shift ∘ₗ F.reindexRestriction hc := by
   ext x n
   have hn := hc (Nat.le_add_right n 1)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, reindexSum_apply_eq_sum_pull, shift_apply,
-    reindex_transition, reindexRestriction_apply, reindexRestriction_apply,
-    Finset.sum_congr rfl fun k hk ↦ F.pull_shift (Finset.mem_Ico.1 hk).1 x, Finset.sum_sub_distrib,
-    ← F.pull_self (c n) x, ← F.pull_of_le hn x]
   -- Telescoping sum over `c n ≤ k < c (n + 1)`.
   have := Finset.sum_Ico_sub (fun k ↦ F.pull (c n) k x) hn
-  rw [Finset.sum_sub_distrib] at this
-  rw [← neg_sub (F.pull (c n) (c (n + 1)) x), ← this, neg_sub]
+  rw [F.pull_self, F.pull_of_le hn] at this
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, reindexSum_apply_eq_sum_pull, shift_apply,
+    reindex_transition, reindexRestriction_apply, reindexRestriction_apply,
+    Finset.sum_congr rfl fun k hk ↦ F.pull_shift (Finset.mem_Ico.1 hk).1 x]
+  simp only [Finset.sum_sub_distrib] at this ⊢
+  rw [← neg_sub, this, neg_sub]
 
 theorem reindexSum_shift (x : F.Product) :
     F.reindexSum hc (F.shift x) = (F.reindex hc).shift (F.reindexRestriction hc x) :=
@@ -202,49 +202,32 @@ private theorem exists_shift_eq_and_reindexRestriction_eq (hc' : ∀ n, ∃ m, n
 
 variable (F hc)
 
-/-- Restriction of compatible families along `c`. -/
-private def limReindexMap : F.lim →ₗ[R] (F.reindex hc).lim :=
-  (F.reindexRestriction hc).restrict fun x hx ↦ by
-    rw [lim_eq_ker, LinearMap.mem_ker] at hx ⊢
-    rw [← reindexSum_shift, hx, map_zero]
-
-private theorem coe_limReindexMap (x : F.lim) :
-    (F.limReindexMap hc x : (F.reindex hc).Product) = F.reindexRestriction hc x :=
-  (rfl)
-
-private theorem limReindexMap_bijective (hc' : ∀ n, ∃ m, n ≤ c m) :
-    Function.Bijective (F.limReindexMap hc) := by
-  refine ⟨fun x y hxy ↦ lim_ext _ fun k ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨n, hn⟩ := hc' k
-    have := congr_fun (congrArg Subtype.val hxy) n
-    rw [coe_limReindexMap, coe_limReindexMap, reindexRestriction_apply,
-      reindexRestriction_apply] at this
-    rw [limπ_apply, limπ_apply, ← F.transitionOfLE_coe_lim x hn, ← F.transitionOfLE_coe_lim y hn,
-      this]
-  · have hy : F.reindexSum hc 0 = (F.reindex hc).shift y := by
-      rw [map_zero, eq_comm, ← LinearMap.mem_ker, ← lim_eq_ker]
-      exact y.2
-    obtain ⟨z, hz, hzy⟩ := exists_shift_eq_and_reindexRestriction_eq hc' hy
-    exact ⟨⟨z, by rw [lim_eq_ker, LinearMap.mem_ker, hz]⟩,
-      Subtype.ext ((F.coe_limReindexMap hc _).trans hzy)⟩
-
-/-- **Reindexing along a cofinal map preserves `lim`.** The map restricts compatible families
-along `c`; see `coe_limReindexEquiv_symm_apply` for the inverse. -/
+/-- **Reindexing along a cofinal map preserves `lim`.** Since `c` is cofinal, its functor is
+final, so `lim A`, with the projections at the indices `c n`, is a limit of the reindexed tower.
+The map restricts compatible families along `c`; see `coe_limReindexEquiv_symm_apply` for the
+inverse. -/
 def limReindexEquiv (hc' : ∀ n, ∃ m, n ≤ c m) : F.lim ≃ₗ[R] (F.reindex hc).lim :=
-  LinearEquiv.ofBijective (F.limReindexMap hc) (F.limReindexMap_bijective hc hc')
+  have : hc.functor.Final := (Monotone.final_functor_iff hc).2 hc'
+  (Limits.IsLimit.conePointUniqueUpToIso
+    ((Functor.Initial.isLimitWhiskerEquiv hc.functor.op F.limCone).symm F.isLimitLimCone)
+    (F.reindex hc).isLimitLimCone).toLinearEquiv
 
 section
 
 variable (hc' : ∀ n, ∃ m, n ≤ c m)
 
-@[simp]
-theorem coe_limReindexEquiv_apply (x : F.lim) (n : ℕ) :
-    (F.limReindexEquiv hc hc' x : (F.reindex hc).Product) n = (x : F.Product) (c n) :=
-  (rfl)
-
 theorem limπ_limReindexEquiv (x : F.lim) (n : ℕ) :
     (F.reindex hc).limπ n (F.limReindexEquiv hc hc' x) = F.limπ (c n) x := by
-  rw [limπ_apply, limπ_apply, coe_limReindexEquiv_apply]
+  have : hc.functor.Final := (Monotone.final_functor_iff hc).2 hc'
+  exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (Limits.IsLimit.conePointUniqueUpToIso_hom_comp
+      ((Functor.Initial.isLimitWhiskerEquiv hc.functor.op F.limCone).symm F.isLimitLimCone)
+      (F.reindex hc).isLimitLimCone (op n))) x
+
+@[simp]
+theorem coe_limReindexEquiv_apply (x : F.lim) (n : ℕ) :
+    (F.limReindexEquiv hc hc' x : (F.reindex hc).Product) n = (x : F.Product) (c n) := by
+  rw [← limπ_apply, limπ_limReindexEquiv, limπ_apply]
 
 /-- The inverse of `limReindexEquiv`: the `k`-th term is the image of the `n`-th term of the
 reindexed family, for any `n` with `k ≤ c n`. -/
@@ -424,7 +407,7 @@ theorem limOneReindexEquiv_comp_connecting :
   -- The restriction of `b` and the sum of `a` compute the reindexed connecting map.
   refine (connecting_apply _ _ _ _ _ _ (G.reindexRestriction hc b) ?_ (F.reindexSum hc a) ?_).symm
   · rw [← reindexRestriction_natural_apply, hb]
-    rfl
+    exact funext fun n ↦ (H.coe_limReindexEquiv_apply hc hc' z n).symm
   · rw [← reindexSum_natural_apply, ha, reindexSum_shift]
 
 end Naturality
