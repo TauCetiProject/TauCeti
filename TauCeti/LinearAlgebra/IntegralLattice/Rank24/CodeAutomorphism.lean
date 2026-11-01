@@ -34,7 +34,9 @@ Both isometries come from the general mechanism
 `TauCeti.DynkinType.gluedLatticeSignedPermIsometry`: a signed permutation of identical components
 which preserves the glue subgroup restricts to an isometry of the glued lattice.  The code
 automorphisms, the coordinate changes of glue words and the lattice isometries are kept distinct,
-and the evaluation lemmas record how they are related.
+and the evaluation lemmas record how they are related.  The preservation of the glue subgroups is
+`mem_a1TwentyFourGlueSubgroup_golayAut_iff` and `mem_a2TwelfthGlueSubgroup_golayAut_iff`; the
+ternary case rests on the conjugation identity `signedEquiv_a2TwelfthSign_conj`.
 
 ## References
 
@@ -50,6 +52,24 @@ open DynkinType IntegralLattice
 
 /-! ### `A₁²⁴` and the binary Golay code -/
 
+/-- **A permutation automorphism of the binary Golay code preserves the glue subgroup of
+`A₁²⁴`.**  For a coordinate permutation `e` of the Golay coordinates preserving
+`BinaryGolay.code`, permuting the labels of a glue word by `p * e * p⁻¹`, with
+`p = a1TableToGolayPerm`, maps `a1TwentyFourGlueSubgroup` onto itself. -/
+theorem mem_a1TwentyFourGlueSubgroup_golayAut_iff (e : Equiv.Perm (Fin 24))
+    (he : LinearEquiv.funCongrLeft (ZMod 2) (ZMod 2) e.symm ∈ permutationAut BinaryGolay.code)
+    (w : a1TwentyFourGlueModule) :
+    (fun j ↦ w ((a1TableToGolayPerm * e * a1TableToGolayPerm⁻¹).symm j) :
+        a1TwentyFourGlueModule) ∈ a1TwentyFourGlueSubgroup ↔ w ∈ a1TwentyFourGlueSubgroup := by
+  rw [mem_a1TwentyFourGlueSubgroup_iff, mem_a1TwentyFourGlueSubgroup_iff]
+  conv_lhs => rw [← (mem_permutationAut.mp he).2, Submodule.mem_map_equiv]
+  refine iff_of_eq (congrArg (· ∈ BinaryGolay.code) (funext fun j ↦ ?_))
+  simp only [LinearEquiv.funCongrLeft_symm, Equiv.symm_symm, LinearEquiv.funCongrLeft_apply,
+    LinearMap.funLeft_apply]
+  rw [a1TableToGolayIsometry_apply, a1TableToGolayIsometry_apply]
+  exact congrArg (fun k ↦ typeA1GlueAlphabetZModStandardIsometry (w k))
+    (by simp [Equiv.Perm.mul_def, Equiv.Perm.inv_def])
+
 /-- **A permutation automorphism of the binary Golay code induces an isometry of `A₁²⁴`.**  For a
 coordinate permutation `e` of the Golay coordinates preserving `BinaryGolay.code`, the
 permutation `p * e * p⁻¹` of the twenty-four `A₁` components, with `p = a1TableToGolayPerm`,
@@ -60,15 +80,8 @@ noncomputable def a1TwentyFourthGolayAutIsometry (e : Equiv.Perm (Fin 24))
   (Isometry.ofEq a1TwentyFourthLattice_def).trans <|
     (gluedLatticeSignedPermIsometry _ _ 1 (a1TableToGolayPerm * e * a1TableToGolayPerm⁻¹)
       fun w ↦ by
-        have hmap := (mem_permutationAut.mp he).2
-        rw [mem_a1TwentyFourGlueSubgroup_iff, mem_a1TwentyFourGlueSubgroup_iff]
-        conv_lhs => rw [← hmap, Submodule.mem_map_equiv]
-        refine iff_of_eq (congrArg (· ∈ BinaryGolay.code) (funext fun j ↦ ?_))
-        rw [LinearEquiv.funCongrLeft_symm, Equiv.symm_symm, LinearEquiv.funCongrLeft_apply,
-          LinearMap.funLeft_apply, a1TableToGolayIsometry_apply,
-          a1TableToGolayIsometry_apply, Pi.one_apply, one_smul]
-        exact congrArg (fun k ↦ typeA1GlueAlphabetZModStandardIsometry (w k))
-          (by simp [Equiv.Perm.mul_def, Equiv.Perm.inv_def])).trans
+        simpa only [Pi.one_apply, one_smul] using
+          mem_a1TwentyFourGlueSubgroup_golayAut_iff e he w).trans
       (Isometry.ofEq a1TwentyFourthLattice_def.symm)
 
 /-- The isometry of `A₁²⁴` induced by a Golay code automorphism `e` moves the component in table
@@ -86,6 +99,63 @@ theorem a1TwentyFourthGolayAutIsometry_apply (e : Equiv.Perm (Fin 24))
 
 /-! ### `A₂¹²` and the ternary Golay code -/
 
+/-- **The ternary comparison conjugates a Golay code automorphism to a signed permutation of the
+table coordinates.**  Write `p = a2TwelfthDestinationToSource`, `s = a2TwelfthSign`, and
+`signedEquiv (s ∘ p.symm) p.symm` for the coordinate change of `a2TwelfthGolayIsometry` on
+ternary words.  Multiplying table coordinate `p a` by `s (e a) * v a * s a` and moving it to
+`p (e a)`, followed by the coordinate change, agrees with the coordinate change followed by
+`signedEquiv v e`. -/
+theorem signedEquiv_a2TwelfthSign_conj (v : Fin 12 → ℤˣ) (e : Equiv.Perm (Fin 12))
+    (x : Fin 12 → ZMod 3) :
+    signedEquiv (fun i ↦ a2TwelfthSign (a2TwelfthDestinationToSource.symm i))
+        a2TwelfthDestinationToSource.symm
+        (signedEquiv (fun k ↦ a2TwelfthSign (e (a2TwelfthDestinationToSource.symm k)) *
+            v (a2TwelfthDestinationToSource.symm k) *
+              a2TwelfthSign (a2TwelfthDestinationToSource.symm k))
+          (a2TwelfthDestinationToSource * e * a2TwelfthDestinationToSource⁻¹) x) =
+      signedEquiv v e (signedEquiv (fun i ↦ a2TwelfthSign (a2TwelfthDestinationToSource.symm i))
+        a2TwelfthDestinationToSource.symm x) := by
+  set p := a2TwelfthDestinationToSource
+  funext j
+  obtain ⟨a, rfl⟩ := e.surjective j
+  simp only [signedEquiv_apply, Equiv.Perm.mul_def, Equiv.Perm.inv_def, Equiv.symm_symm,
+    Equiv.symm_trans_apply, Equiv.symm_apply_apply, Units.val_mul, Int.cast_mul]
+  -- Each sign squares to one.
+  have hsq : ((a2TwelfthSign (e a) : ℤ) : ZMod 3) * (a2TwelfthSign (e a) : ℤ) = 1 := by
+    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+  linear_combination ((v a : ℤ) * (a2TwelfthSign a : ℤ) * x (p a) : ZMod 3) * hsq
+
+/-- **A monomial automorphism of the ternary Golay code preserves the glue subgroup of
+`A₂¹²`.**  If the signed permutation `signedEquiv v e` preserves `TernaryGolay.code`, then, for
+`p = a2TwelfthDestinationToSource` and `s = a2TwelfthSign`, multiplying the label in table
+position `p a` by `s (e a) * v a * s a` and moving it to table position `p (e a)` maps
+`a2TwelfthGlueSubgroup` onto itself. -/
+theorem mem_a2TwelfthGlueSubgroup_golayAut_iff (v : Fin 12 → ℤˣ) (e : Equiv.Perm (Fin 12))
+    (he : signedEquiv (R := ZMod 3) v e ∈ monomialAut TernaryGolay.code)
+    (w : a2TwelfthGlueModule) :
+    (fun j ↦ (fun k ↦ a2TwelfthSign (e (a2TwelfthDestinationToSource.symm k)) *
+          v (a2TwelfthDestinationToSource.symm k) *
+            a2TwelfthSign (a2TwelfthDestinationToSource.symm k))
+          ((a2TwelfthDestinationToSource * e * a2TwelfthDestinationToSource⁻¹).symm j) •
+        w ((a2TwelfthDestinationToSource * e * a2TwelfthDestinationToSource⁻¹).symm j) :
+        a2TwelfthGlueModule) ∈ a2TwelfthGlueSubgroup ↔ w ∈ a2TwelfthGlueSubgroup := by
+  rw [mem_a2TwelfthGlueSubgroup_iff, mem_a2TwelfthGlueSubgroup_iff]
+  set p := a2TwelfthDestinationToSource
+  set u : Fin 12 → ℤˣ := fun k ↦ a2TwelfthSign (e (p.symm k)) * v (p.symm k) *
+    a2TwelfthSign (p.symm k)
+  -- The glue words of `A₂` are ternary words, on which signs act by multiplication.
+  have hw : (fun j ↦ u ((p * e * p⁻¹).symm j) • w ((p * e * p⁻¹).symm j) :
+      Fin 12 → ZMod 3) = signedEquiv (R := ZMod 3) u (p * e * p⁻¹) w :=
+    funext fun j ↦ ((Units.smul_def _ _).trans (zsmul_eq_mul _ _)).trans
+      (signedEquiv_apply (R := ZMod 3) u (p * e * p⁻¹) w j).symm
+  refine (iff_of_eq (congrArg (· ∈ TernaryGolay.code)
+    (((a2TwelfthGolayIsometry_eq_signedEquiv _).trans (congrArg _ hw)).trans
+      (signedEquiv_a2TwelfthSign_conj v e w)))).trans ?_
+  conv_lhs => rw [← (mem_monomialAut.mp he).2, Submodule.mem_map_equiv,
+    LinearEquiv.symm_apply_apply]
+  exact iff_of_eq (congrArg (· ∈ TernaryGolay.code)
+    (a2TwelfthGolayIsometry_eq_signedEquiv w).symm)
+
 /-- **A monomial automorphism of the ternary Golay code induces an isometry of `A₂¹²`.**  Let the
 signed permutation `signedEquiv v e`, scaling Golay coordinate `a` by `v a` and moving it to
 `e a`, preserve `TernaryGolay.code`.  Write `p = a2TwelfthDestinationToSource` and
@@ -101,37 +171,7 @@ noncomputable def a2TwelfthGolayAutIsometry (v : Fin 12 → ℤˣ) (e : Equiv.Pe
         v (a2TwelfthDestinationToSource.symm k) *
           a2TwelfthSign (a2TwelfthDestinationToSource.symm k))
       (a2TwelfthDestinationToSource * e * a2TwelfthDestinationToSource⁻¹)
-      fun w ↦ by
-        have hmap := (mem_monomialAut.mp he).2
-        rw [mem_a2TwelfthGlueSubgroup_iff, mem_a2TwelfthGlueSubgroup_iff]
-        set p := a2TwelfthDestinationToSource
-        set u : Fin 12 → ℤˣ := fun k ↦ a2TwelfthSign (e (p.symm k)) * v (p.symm k) *
-          a2TwelfthSign (p.symm k)
-        set s : Fin 12 → ℤˣ := fun i ↦ a2TwelfthSign (p.symm i)
-        -- On ternary words, conjugating the code automorphism by the comparison gives the signed
-        -- permutation of the table coordinates.
-        have hconj (x : Fin 12 → ZMod 3) : signedEquiv s p.symm (signedEquiv u (p * e * p⁻¹) x) =
-            signedEquiv v e (signedEquiv s p.symm x) := by
-          funext j
-          obtain ⟨a, rfl⟩ := e.surjective j
-          simp only [signedEquiv_apply, s, u, Equiv.Perm.mul_def, Equiv.Perm.inv_def,
-            Equiv.symm_symm, Equiv.symm_trans_apply, Equiv.symm_apply_apply, Units.val_mul,
-            Int.cast_mul]
-          -- Each sign squares to one.
-          have hsq : ((a2TwelfthSign (e a) : ℤ) : ZMod 3) * (a2TwelfthSign (e a) : ℤ) = 1 := by
-            rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-          linear_combination ((v a : ℤ) * (a2TwelfthSign a : ℤ) * x (p a) : ZMod 3) * hsq
-        -- The glue words of `A₂` are ternary words, on which signs act by multiplication.
-        have hw : (fun j ↦ u ((p * e * p⁻¹).symm j) • w ((p * e * p⁻¹).symm j) :
-            Fin 12 → ZMod 3) = signedEquiv (R := ZMod 3) u (p * e * p⁻¹) w :=
-          funext fun j ↦ ((Units.smul_def _ _).trans (zsmul_eq_mul _ _)).trans
-            (signedEquiv_apply (R := ZMod 3) u (p * e * p⁻¹) w j).symm
-        refine (iff_of_eq (congrArg (· ∈ TernaryGolay.code)
-          (((a2TwelfthGolayIsometry_eq_signedEquiv _).trans (congrArg _ hw)).trans
-            (hconj w)))).trans ?_
-        conv_lhs => rw [← hmap, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
-        exact iff_of_eq (congrArg (· ∈ TernaryGolay.code)
-          (a2TwelfthGolayIsometry_eq_signedEquiv w).symm)).trans
+      (mem_a2TwelfthGlueSubgroup_golayAut_iff v e he)).trans
       (Isometry.ofEq a2TwelfthLattice_def.symm)
 
 /-- The isometry of `A₂¹²` induced by a ternary Golay code automorphism `signedEquiv v e` moves

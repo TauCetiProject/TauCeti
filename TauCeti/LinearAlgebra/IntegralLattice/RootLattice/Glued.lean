@@ -422,6 +422,38 @@ variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
   {K : AddSubgroup (FiniteQuadraticModule.pi fun _ : ι ↦ T.glueAlphabet hT)}
   (hK : (FiniteQuadraticModule.pi fun _ : ι ↦ T.glueAlphabet hT).IsIsotropic K)
 
+/-- **Naturality of glue words under signed permutations of identical components.**  Let all
+components have the same type `T`.  Multiplying component `i` of the orthogonal sum of root
+lattices by the sign `u i` and then moving it to position `σ i` carries the discriminant class of
+a glue word `w` to the class of the word whose label in position `j` is
+`u (σ.symm j) • w (σ.symm j)`. -/
+theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → ℤˣ)
+    (σ : Equiv.Perm ι) (w : ∀ _ : ι, T.glueAlphabet hT) :
+    ((Isometry.pi fun i ↦ Isometry.unitsSMul (T.rootLattice hT) (u i)).trans
+        (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ)).discriminantQuadraticIsometry
+        (isEven_pi_rootLattice _ _) (glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) w) =
+      glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT)
+        fun j ↦ u (σ.symm j) • w (σ.symm j) := by
+  -- The signs act first, componentwise, and the permutation then moves the components.
+  have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
+    _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
+      (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
+      (fun i ↦ Isometry.unitsSMul (T.rootLattice hT) (u i))
+      (fun i x ↦ u i • x) (fun i x ↦ by
+        refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
+          (Isometry.discriminantGroupEquiv_unitsSMul _ (u i) _)).symm
+        exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
+  have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
+    _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
+      (fun _ ↦ hT) (fun _ ↦ hvT) σ (fun i ↦ u i • w i))
+  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
+  rw [Isometry.discriminantGroupEquiv_trans]
+  refine (LinearEquiv.trans_apply _).trans ?_
+  rw [h1]
+  refine h2.trans (congrArg _ (funext fun j ↦ ?_))
+  obtain ⟨k, rfl⟩ := σ.surjective j
+  rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply]
+
 /-- **Signed permutations of identical components induce isometries of glued lattices.**  Let all
 components have the same type `T`.  For signs `u : ι → ℤˣ` and a permutation `σ` of the
 components, the signed coordinate change moving `u i • x i` to position `σ i` is an isometry of the
@@ -436,27 +468,7 @@ noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.
     ((Isometry.pi fun i ↦ Isometry.unitsSMul _ (u i)).trans
       (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ))
     (fun w j ↦ u (σ.symm j) • w (σ.symm j))
-    (fun w ↦ by
-      -- The signs act first, componentwise, and the permutation then moves the components.
-      have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
-        _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
-          (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
-          (fun i ↦ Isometry.unitsSMul (T.rootLattice hT) (u i))
-          (fun i x ↦ u i • x) (fun i x ↦ by
-            refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-              (Isometry.discriminantGroupEquiv_unitsSMul _ (u i) _)).symm
-            exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
-      have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
-        _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
-          (fun _ ↦ hT) (fun _ ↦ hvT) σ (fun i ↦ u i • w i))
-      refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-      rw [Isometry.discriminantGroupEquiv_trans]
-      refine (LinearEquiv.trans_apply _).trans ?_
-      rw [h1]
-      refine h2.trans (congrArg _ (funext fun j ↦ ?_))
-      obtain ⟨k, rfl⟩ := σ.surjective j
-      rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply])
-    hσ
+    (discriminantQuadraticIsometry_signedPerm_glueWordIsometry hvT u σ) hσ
 
 /-- The isometry of a glued lattice induced by a signed permutation of identical components moves
 the coordinates in position `σ.symm j`, multiplied by their sign, to position `j`. -/
