@@ -58,7 +58,7 @@ theorem unitCongruenceIdeal_zero_precision (n : ℕ) : unitCongruenceIdeal (p :=
       (PadicInt.unitsToZModPow (p := p) n).toContinuousMap μ)
 
 /-- Increasing either coefficient precision or unit depth makes a congruence ideal smaller. -/
-theorem unitCongruenceIdeal_antitone {r s m n : ℕ} (hrs : r ≤ s) (hmn : m ≤ n) :
+theorem unitCongruenceIdeal_anti {r s m n : ℕ} (hrs : r ≤ s) (hmn : m ≤ n) :
     unitCongruenceIdeal (p := p) s n ≤ unitCongruenceIdeal (p := p) r m := by
   intro μ hμ
   rw [mem_unitCongruenceIdeal] at hμ ⊢
@@ -66,13 +66,16 @@ theorem unitCongruenceIdeal_antitone {r s m n : ℕ} (hrs : r ≤ s) (hmn : m �
       (PadicInt.unitsToZModPow (p := p) n).toContinuousMap μ = 0 := by
     rw [← jointFiniteProjection_cast r s hrs, hμ]
     exact Finsupp.mapRange_zero
-  let t : C((ZMod (p ^ n))ˣ, (ZMod (p ^ m))ˣ) :=
-    equivFnOfDiscrete.symm (ZMod.unitsMap (pow_dvd_pow p hmn))
-  have ht : t.comp (PadicInt.unitsToZModPow (p := p) n).toContinuousMap =
-      (PadicInt.unitsToZModPow (p := p) m).toContinuousMap := by
-    ext u
-    simp [t]
-  rw [← ht, jointFiniteProjection_comp, hprec, Finsupp.mapDomain_zero]
+  have hproj (k : ℕ) : Finsupp.mapRange (PadicInt.toZModPow r) (map_zero _)
+      (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) k)) μ) =
+        jointFiniteProjection r (PadicInt.unitsToZModPow (p := p) k).toContinuousMap μ := by
+    ext a
+    simp only [Finsupp.mapRange_apply, finiteProjection_apply, jointFiniteProjection_apply,
+      ContinuousMonoidHom.coe_toContinuousMap]
+  have hdepth := congrArg (Finsupp.mapRange (PadicInt.toZModPow r) (map_zero _))
+    (mapDomain_finiteProjection_unitsToZModPow μ m n hmn)
+  rw [← Finsupp.mapDomain_mapRange _ _ _ _ (map_add _)] at hdepth
+  simpa only [hproj, hprec, Finsupp.mapDomain_zero] using hdepth.symm
 
 /-- The diagonal congruence ideals separate integral unit measures. -/
 theorem iInf_unitCongruenceIdeal_diag :
@@ -86,7 +89,7 @@ theorem iInf_unitCongruenceIdeal_diag :
   intro a
   apply PadicInt.ext_of_toZModPow.mp
   intro r
-  have h := unitCongruenceIdeal_antitone (Nat.le_max_left r n) (Nat.le_max_right r n)
+  have h := unitCongruenceIdeal_anti (Nat.le_max_left r n) (Nat.le_max_right r n)
     (Ideal.mem_iInf.mp hμ (max r n))
   rw [mem_unitCongruenceIdeal] at h
   simpa [jointFiniteProjection_apply, finiteProjection_apply] using
@@ -128,7 +131,7 @@ theorem hasAntitoneBasis_nhds_zero_unitCongruenceIdeal :
       iInf_unitCongruenceIdeal_diag, Submodule.mem_bot]
     exact Multiplicative.toAdd.injective.eq_iff
   exact TauCeti.hasAntitoneBasis_nhds_one_of_iInf_eq_bot
-    (N := N) (fun _ _ h ↦ unitCongruenceIdeal_antitone h h)
+    (N := N) (fun _ _ h ↦ unitCongruenceIdeal_anti h h)
     (fun n ↦ isOpen_unitCongruenceIdeal n n) hN
 
 /-- All pairs of coefficient precision and unit depth give a neighbourhood basis at zero. -/
@@ -139,7 +142,7 @@ theorem hasBasis_nhds_zero_unitCongruenceIdeal :
     (fun n _ ↦ ⟨(n, n), trivial, subset_rfl⟩) ?_
   rintro ⟨r, n⟩ _
   exact ⟨max r n, trivial,
-    unitCongruenceIdeal_antitone (Nat.le_max_left r n) (Nat.le_max_right r n)⟩
+    unitCongruenceIdeal_anti (Nat.le_max_left r n) (Nat.le_max_right r n)⟩
 
 /-- The weak topology on integral unit measures is linear over `ℤ_p`. -/
 theorem isLinearTopology_unitMeasures_weak :
