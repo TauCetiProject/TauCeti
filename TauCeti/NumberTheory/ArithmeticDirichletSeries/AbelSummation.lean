@@ -7,6 +7,7 @@ module
 
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.AbelSummation
+import TauCeti.Analysis.SpecialFunctions.LogIntegral
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
 /-!
@@ -432,11 +433,9 @@ theorem primeSummatory_div_log_eq_div_log_add_integral (w : HeightOneSpectrum (�
     fun t ht ↦ Real.differentiableAt_inv_log (by linarith [ht.1] : (0 : ℝ) < t).ne'
       (by linarith [ht.1] : (1 : ℝ) < t).ne' (by linarith [ht.1] : (-1 : ℝ) < t).ne'
   have hint : IntegrableOn (deriv fun u : ℝ ↦ (Real.log u)⁻¹) (Set.Icc (2 : ℝ) x) := by
-    rw [Real.deriv_inv_log]
-    refine ContinuousOn.integrableOn_Icc fun t ht ↦ ?_
-    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
-    exact (((continuousAt_id.inv₀ ht0).neg).div ((Real.continuousAt_log ht0).pow 2)
-      (pow_ne_zero 2 (Real.log_pos (by linarith [ht.1])).ne')).continuousWithinAt
+    simp only [Real.deriv_inv_log, neg_div]
+    exact ((Real.continuousOn_inv_div_log_pow 2).neg.mono fun t (ht : t ∈ Set.Icc 2 x) ↦
+      one_lt_two.trans_le ht.1).integrableOn_Icc
   have key := primeSummatory_mul_eq_sub_integral_mul K w x hdiff hint
   have hI : ∫ t in Set.Ioc (2 : ℝ) x, deriv (fun u : ℝ ↦ (Real.log u)⁻¹) t * primeSummatory K w t =
       -∫ t in Set.Ioc (2 : ℝ) x, primeSummatory K w t / (t * Real.log t ^ 2) := by

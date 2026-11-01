@@ -10,6 +10,7 @@ import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
@@ -471,15 +472,13 @@ private theorem primeSummatory_inv_absNorm_eq {x : ℝ} (hx : 2 ≤ x) :
     have hlog : Real.log t ≠ 0 := (Real.log_pos (by linarith [ht.1])).ne'
     field_simp
     ring
-  have hcont : ContinuousOn (fun t : ℝ ↦ t⁻¹ / Real.log t ^ 2) (Set.Icc 2 x) := fun t ht ↦ by
-    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
-    exact ((continuousAt_id.inv₀ ht0).div ((Real.continuousAt_log ht0).pow 2)
-      (pow_ne_zero 2 (Real.log_pos (by linarith [ht.1])).ne')).continuousWithinAt
+  have hIcc : Set.Icc 2 x ⊆ Set.Ioi 1 := fun t ht ↦ one_lt_two.trans_le ht.1
+  have hcont : ContinuousOn (fun t : ℝ ↦ t⁻¹ / Real.log t ^ 2) (Set.Icc 2 x) :=
+    (Real.continuousOn_inv_div_log_pow 2).mono hIcc
   have hint₁ : IntegrableOn (fun t : ℝ ↦ t⁻¹ / Real.log t) (Set.Ioc 2 x) := by
-    refine (ContinuousOn.integrableOn_Icc fun t ht ↦ ?_).mono_set Set.Ioc_subset_Icc_self
-    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
-    exact ((continuousAt_id.inv₀ ht0).div (Real.continuousAt_log ht0)
-      (Real.log_pos (by linarith [ht.1])).ne').continuousWithinAt
+    simpa only [pow_one] using
+      ((Real.continuousOn_inv_div_log_pow 1).mono hIcc).integrableOn_Icc.mono_set
+        Set.Ioc_subset_Icc_self
   have hint₂ : IntegrableOn (fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2))
       (Set.Ioc 2 x) := by
     have hS' : IntegrableOn (fun t ↦ t⁻¹ / Real.log t ^ 2 * S t) (Set.Icc 2 x) :=
