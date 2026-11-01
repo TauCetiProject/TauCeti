@@ -79,6 +79,12 @@ variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
 def fiberMap (a : CoordinateHom Z W) (x : B) : F →L[𝕜] G :=
   a.operator (Z.indexAt x) (W.indexAt x) ⟨x, Z.mem_baseSet_at x, W.mem_baseSet_at x⟩
 
+/-- The descended operator is the chart operator in the two preferred charts. -/
+theorem fiberMap_def (a : CoordinateHom Z W) (x : B) :
+    a.fiberMap x =
+      a.operator (Z.indexAt x) (W.indexAt x) ⟨x, Z.mem_baseSet_at x, W.mem_baseSet_at x⟩ :=
+  (rfl)
+
 /-- The descended operator has the prescribed expression in every pair of charts. -/
 theorem coordChange_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) {x : B}
     (hi : x ∈ Z.baseSet i) (hj : x ∈ W.baseSet j) (v : F) :

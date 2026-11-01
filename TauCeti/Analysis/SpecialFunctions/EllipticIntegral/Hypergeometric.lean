@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -32,6 +33,10 @@ for `|m| < 1`, and integrates term by term with the Wallis integrals
   series of `∫₀^{π/2} (1 - m sin² θ)^(-a) dθ`.
 * `TauCeti.analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg`: this integral is analytic in `m`
   on `(-1, 1)`.
+* `TauCeti.Real.legendreK_eq_ordinaryHypergeometric` and
+  `TauCeti.Real.legendreEc_eq_ordinaryHypergeometric`: the series formulas in the modulus `k`.
+* `TauCeti.Real.analyticOnNhd_legendreK` and `TauCeti.Real.analyticOnNhd_legendreEc`:
+  analyticity in the modulus on `(-1, 1)`, for use in higher differential identities.
 
 ## References
 
@@ -109,5 +114,53 @@ theorem analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg (a : ℝ) :
   refine ((analyticAt_const (v := π / 2)).mul hF).congr ?_
   filter_upwards [isOpen_Ioo.mem_nhds hm] with x hx
   exact (integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric (abs_lt.mpr hx)).symm
+
+/-- For every real `a`, the integral `∫₀^{π/2} (1 - k² sin² θ)^(-a) dθ` is real analytic
+in the modulus `k` on `(-1, 1)`. -/
+theorem analyticOnNhd_integral_one_sub_sq_mul_sin_sq_rpow_neg (a : ℝ) :
+    AnalyticOnNhd ℝ (fun k : ℝ => ∫ θ in (0 : ℝ)..π / 2,
+      (1 - k ^ 2 * Real.sin θ ^ 2) ^ (-a)) (Ioo (-1) 1) := by
+  intro k hk
+  have hsq : k ^ 2 < 1 := (sq_lt_one_iff_abs_lt_one k).mpr (abs_lt.mpr hk)
+  have h := analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg a
+    (k ^ 2) ⟨by linarith [sq_nonneg k], hsq⟩
+  simpa only [Function.comp_def] using
+    h.comp (f := fun x : ℝ => x ^ 2) (by fun_prop : AnalyticAt ℝ (fun x : ℝ => x ^ 2) k)
+
+namespace Real
+
+/-- The complete elliptic integral of the first kind is a hypergeometric function of the
+squared modulus (DLMF 19.5.1). -/
+theorem legendreK_eq_ordinaryHypergeometric {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreK k = π / 2 * ₂F₁ (1 / 2 : ℝ) (1 / 2) 1 (k ^ 2) := by
+  simpa only [legendreK_def, legendreF_def, neg_div] using
+    (integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric
+      (a := (1 / 2 : ℝ)) (by simpa only [abs_of_nonneg (sq_nonneg k)] using hk))
+
+/-- The complete elliptic integral of the second kind is a hypergeometric function of the
+squared modulus (DLMF 19.5.2). -/
+theorem legendreEc_eq_ordinaryHypergeometric {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreEc k = π / 2 * ₂F₁ (-1 / 2 : ℝ) (1 / 2) 1 (k ^ 2) := by
+  simpa only [legendreEc_def, legendreE_def, neg_div, neg_neg] using
+    (integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric
+      (a := (-1 / 2 : ℝ)) (by simpa only [abs_of_nonneg (sq_nonneg k)] using hk))
+
+/-- The complete elliptic integral of the first kind is real analytic in the modulus on
+`(-1, 1)`. -/
+theorem analyticOnNhd_legendreK : AnalyticOnNhd ℝ legendreK (Ioo (-1) 1) := by
+  refine AnalyticOnNhd.congr isOpen_Ioo
+    (analyticOnNhd_integral_one_sub_sq_mul_sin_sq_rpow_neg (1 / 2 : ℝ)) ?_
+  intro k _
+  simp only [legendreK_def, legendreF_def, neg_div]
+
+/-- The complete elliptic integral of the second kind is real analytic in the modulus on
+`(-1, 1)`. -/
+theorem analyticOnNhd_legendreEc : AnalyticOnNhd ℝ legendreEc (Ioo (-1) 1) := by
+  refine AnalyticOnNhd.congr isOpen_Ioo
+    (analyticOnNhd_integral_one_sub_sq_mul_sin_sq_rpow_neg (-1 / 2 : ℝ)) ?_
+  intro k _
+  simp only [legendreEc_def, legendreE_def, neg_div, neg_neg]
+
+end Real
 
 end TauCeti
