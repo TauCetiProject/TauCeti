@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Affinoid.PowerBounded
 public import TauCeti.RingTheory.Affinoid.RationalFraction
 
 import TauCeti.Analysis.Normed.Group.Quotient
+import TauCeti.RingTheory.Affinoid.Restricted.PointNorm
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 
 /-!
@@ -53,8 +54,6 @@ point and the lift followed by `A ⧸ x → A⟨f/g⟩ ⧸ x'` agree on `A`, hen
 
 * `TauCeti.IsAffinoidAlgebra.range_maximalSpectrumComap_subset_rationalDomain_iff`: `Sp B → Sp A`
   lands in `R(f/g)` if and only if `φ g` is a unit and every `φ fᵢ · (φ g)⁻¹` is power-bounded.
-* `TauCeti.IsAffinoidAlgebra.pointNorm_quotientMk_X_le_one`: each variable has absolute value at
-  most one at every classical point of a quotient of `A⟨X₁, …, Xₖ⟩`.
 * `TauCeti.RationalFraction.existsUnique_algHom_iff_range_subset`: the universal property of
   `A⟨f/g⟩` in terms of classical points.
 * `TauCeti.RationalFraction.range_maximalSpectrumComap`: the image of `Sp A⟨f/g⟩ → Sp A` is
@@ -116,25 +115,6 @@ theorem range_maximalSpectrumComap_subset_rationalDomain_iff (hB : IsAffinoidAlg
     exact ⟨hg, fun i ↦ (hB.isPowerBounded_mul_inverse_iff hg).mpr fun y ↦ (h y).2 i⟩
   · exact ⟨hB.isUnit_iff_forall_pointNorm_ne_zero.mp hg y,
       fun i ↦ (hB.isPowerBounded_mul_inverse_iff hg).mp (hf i) y⟩
-
-end IsAffinoidAlgebra
-
-namespace IsAffinoidAlgebra
-
-variable {A : Type*} [NormedCommRing A] [IsUltrametricDist A] [NormedAlgebra K A] [CompleteSpace A]
-
-/-- **The variables have absolute value at most one.** For an affinoid algebra `A` with a complete
-ultrametric algebra norm and an ideal `I` of `A⟨X₁, …, Xₖ⟩`, each variable `Xᵢ` has absolute value
-at most one at every classical point of `A⟨X₁, …, Xₖ⟩ ⧸ I`. -/
-theorem pointNorm_quotientMk_X_le_one {k : ℕ} (hA : IsAffinoidAlgebra K A)
-    {I : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
-    (x : MaximalSpectrum (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ I)) (i : Fin k) :
-    pointNorm K x (Ideal.Quotient.mk I ⟨X i, isRestricted_X _ i⟩) ≤ 1 := by
-  -- The variable is power-bounded in `A⟨X⟩`, whose points include the points of the quotient.
-  have hT := hA.isRestricted_subring (τ := Fin k)
-  rw [← Ideal.Quotient.mkₐ_eq_mk K, ← (hT.quotient I).pointNorm_maximalSpectrumComap]
-  exact (hT.pointNorm_le_supSeminorm _ _).trans
-    (hT.isPowerBounded_iff_supSeminorm_le_one.mp (isPowerBounded_X i))
 
 end IsAffinoidAlgebra
 

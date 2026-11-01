@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.PowerBounded
 public import TauCeti.RingTheory.Affinoid.LaurentFraction
 
-import TauCeti.RingTheory.Affinoid.Subdomain.Rational
+import TauCeti.RingTheory.Affinoid.Restricted.PointNorm
 
 /-!
 # Laurent domains of affinoid algebras
