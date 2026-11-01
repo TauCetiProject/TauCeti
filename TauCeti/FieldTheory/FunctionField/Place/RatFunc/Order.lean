@@ -174,26 +174,20 @@ theorem ord_X_sub_C_eq_zero_of_ne (a : k) {P : Place k (RatFunc k)}
   · exact ord_adicOfIrreducible_X_sub_C_of_not_associated hq fun h ↦
       hPa ((adicOfIrreducible_eq_adicOfIrreducible_iff hq (irreducible_X_sub_C a)).mpr h)
 
-/-- **The place of an irreducible polynomial `q` is the only zero of `q`**: a place of `k(X)` is
-the place of `q` exactly when `q` has positive order there. -/
-theorem ord_algebraMap_pos_iff {q : k[X]} (hq : Irreducible q) {P : Place k (RatFunc k)} :
-    0 < P.ord (algebraMap k[X] (RatFunc k) q) ↔ P = adicOfIrreducible hq := by
-  classical
-  refine ⟨fun h ↦ ?_, by rintro rfl; simp [ord_adicOfIrreducible_algebraMap_irreducible hq hq]⟩
-  rcases eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨r, hr, rfl⟩
-  · rw [ord_infty, RatFunc.intDegree_polynomial] at h
-    have := hq.natDegree_pos
-    omega
-  · rw [ord_adicOfIrreducible_algebraMap_irreducible hr hq] at h
-    split_ifs at h with hassoc
-    · exact (adicOfIrreducible_eq_adicOfIrreducible_iff hr hq).mpr hassoc
-    · exact absurd h (lt_irrefl 0)
-
 /-- **`X = a` is the only zero of `X - a`**: a place of `k(X)` is the place `X = a` exactly when
 `X - a` has positive order there. -/
 theorem ord_X_sub_C_pos_iff {a : k} {P : Place k (RatFunc k)} :
     0 < P.ord (RatFunc.X - RatFunc.C a) ↔ P = adicOfIrreducible (irreducible_X_sub_C a) := by
-  simpa using ord_algebraMap_pos_iff (irreducible_X_sub_C a) (P := P)
+  refine ⟨fun h ↦ ?_, by rintro rfl; simp⟩
+  by_contra hPa
+  by_cases hPinf : P = infty k
+  · have h1 : (RatFunc.X - RatFunc.C a : RatFunc k).intDegree = 1 := by
+      rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub, RatFunc.intDegree_polynomial,
+        natDegree_X_sub_C, Nat.cast_one]
+    rw [hPinf, ord_infty, h1] at h
+    omega
+  · rw [ord_X_sub_C_eq_zero_of_ne a hPa hPinf] at h
+    exact h.false
 
 /-- **`X = 0` is the only zero of `X`**: a place of `k(X)` is the place `X = 0` exactly when `X`
 has positive order there. -/
