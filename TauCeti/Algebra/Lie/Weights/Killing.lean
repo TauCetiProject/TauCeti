@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Weights.IsSimple
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 
 /-!
 # Killing pairings of root spaces
 
 This file records consequences of the non-degeneracy of the Killing form for the root spaces of a
-splitting Cartan subalgebra. It also records that the root system of a simple Lie algebra has a
-root.
+splitting Cartan subalgebra.
 
 ## Main results
 
@@ -21,7 +19,6 @@ root.
   nonzero Killing pairing.
 * `TauCeti.rootSpace_neg_eq_bot_iff`: the roots are closed under negation, so a functional on the
   Cartan subalgebra is a root exactly when its negative is.
-* `TauCeti.nonempty_root`: the root system of a simple Lie algebra has a root.
 -/
 
 public section
@@ -55,14 +52,5 @@ theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
   have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
-
-omit [LieAlgebra.IsKilling K L] in
-/-- The root system of a simple Lie algebra has a root. -/
-instance nonempty_root [IsSimple K L] : Nonempty H.root := by
-  have := RootPairing.IsIrreducible.nontrivial (rootSystem H)
-  by_contra h
-  have htop := RootPairing.IsRootSystem.span_root_eq_top (P := rootSystem H)
-  rw [Set.range_eq_empty_iff.mpr (not_nonempty_iff.mp h), Submodule.span_empty] at htop
-  exact bot_ne_top htop
 
 end TauCeti

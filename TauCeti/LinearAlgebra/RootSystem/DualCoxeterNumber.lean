@@ -53,8 +53,8 @@ positive roots gives `2 + ⟨2ρ, θ^∨⟩`. The negative roots contribute the 
   `RootPairing.Base.coroot'_highestRoot_weylVector`: `⟨2ρ, θ^∨⟩ = 2 (h^∨ - 1)` and
   `⟨ρ, θ^∨⟩ = h^∨ - 1`, with `RootPairing.Base.sum_pairingIn_highestRoot_right_posRootsFinset`
   the integer form `∑_{α > 0} ⟨α, θ^∨⟩ = 2 (h^∨ - 1)`.
-* `RootPairing.Base.two_le_dualCoxeterNumber` and `RootPairing.Base.dualCoxeterNumber_pos`:
-  `2 ≤ h^∨`, so `0 < h^∨`; `RootPairing.Base.dualCoxeterNumber_cast_ne_zero`: `h^∨ ≠ 0` in `R`.
+* `RootPairing.Base.two_le_dualCoxeterNumber`: `2 ≤ h^∨`.
+* `RootPairing.Base.cast_dualCoxeterNumber_ne_zero`: `h^∨ ≠ 0` in the coefficient ring.
 * `RootPairing.Base.sum_pairingIn_highestRoot_right_sq`: `∑_α ⟨α, θ^∨⟩² = 4 h^∨`, an identity of
   integers.
 * `RootPairing.Base.corootForm_coroot_highestRoot`: `P.CorootForm θ^∨ θ^∨ = 4 h^∨`.
@@ -132,14 +132,12 @@ theorem two_le_dualCoxeterNumber : 2 ≤ b.dualCoxeterNumber := by
   rw [dualCoxeterNumber_def]
   omega
 
-/-- **The dual Coxeter number is positive.** -/
-theorem dualCoxeterNumber_pos : 0 < b.dualCoxeterNumber :=
-  lt_of_lt_of_le two_pos b.two_le_dualCoxeterNumber
-
-/-- **The dual Coxeter number is nonzero in the coefficient ring**, which has characteristic
-zero. -/
-theorem dualCoxeterNumber_cast_ne_zero : (b.dualCoxeterNumber : R) ≠ 0 :=
-  Int.cast_ne_zero.mpr b.dualCoxeterNumber_pos.ne'
+/-- **The dual Coxeter number is nonzero in the coefficient ring**, which has characteristic zero.
+-/
+theorem cast_dualCoxeterNumber_ne_zero : (b.dualCoxeterNumber : R) ≠ 0 := by
+  have h2 := b.two_le_dualCoxeterNumber
+  have h : b.dualCoxeterNumber ≠ 0 := by omega
+  exact_mod_cast h
 
 variable [P.IsIrreducible]
 
