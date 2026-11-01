@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
+public import TauCeti.Algebra.MvPolynomial.Polynomial
 public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Convolution
 public import TauCeti.Geometry.Neuromanifold.Dense
@@ -214,12 +215,6 @@ end Layers
 section Activation
 
 variable {ι : Type*}
-
-/-- Evaluating a one-variable polynomial `r` applied to a multivariate polynomial `p` is `r`
-evaluated at the value of `p`. -/
-@[simp] theorem _root_.MvPolynomial.eval_polynomial_aeval (f : W → K) (p : MvPolynomial W K)
-    (r : Polynomial K) : eval f (Polynomial.aeval p r) = r.eval (eval f p) := by
-  rw [← aeval_eq_eval, ← Polynomial.aeval_algHom_apply, Polynomial.coe_aeval_eq_eval]
 
 /-- The coordinatewise activation by a polynomial `p`, as a polynomial model whose
 parameters `W` do not occur. -/
