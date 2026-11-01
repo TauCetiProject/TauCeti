@@ -152,11 +152,9 @@ noncomputable def splitTorusPointsIsoLeviFunctor :
       apply Subtype.ext
       -- Both component maps are restrictions of the corresponding ambient point maps.
       rw [HopfAlgebra.pointsFunctor_map]
-      erw [GrpCat.hom_comp]
-      erw [MonoidHom.comp_apply]
-      erw [HopfAlgebra.mapPoints_apply, MulEquiv.toGrpIso_hom,
-        coe_splitTorusLeviMulEquiv_apply, Cocharacter.coe_mapLevi_apply,
-        coe_splitTorusLeviMulEquiv_apply]
+      erw [GrpCat.hom_comp, MonoidHom.comp_apply, HopfAlgebra.mapPoints_apply,
+        MulEquiv.toGrpIso_hom, coe_splitTorusLeviMulEquiv_apply,
+        Cocharacter.coe_mapLevi_apply, coe_splitTorusLeviMulEquiv_apply]
       simpa only [← AlgHom.mapValue_apply] using
         (mapValue_diagonalTorusPoints φ.hom f).symm)
 
@@ -232,11 +230,9 @@ noncomputable def additivePointsIsoUnipotentFunctor :
       apply Subtype.ext
       -- Both component maps are restrictions of the corresponding ambient point maps.
       rw [HopfAlgebra.pointsFunctor_map]
-      erw [GrpCat.hom_comp]
-      erw [MonoidHom.comp_apply]
-      erw [HopfAlgebra.mapPoints_apply, MulEquiv.toGrpIso_hom,
-        coe_additiveUnipotentMulEquiv_apply, Cocharacter.coe_mapUnipotent_apply,
-        coe_additiveUnipotentMulEquiv_apply]
+      erw [GrpCat.hom_comp, MonoidHom.comp_apply, HopfAlgebra.mapPoints_apply,
+        MulEquiv.toGrpIso_hom, coe_additiveUnipotentMulEquiv_apply,
+        Cocharacter.coe_mapUnipotent_apply, coe_additiveUnipotentMulEquiv_apply]
       simpa only [← AlgHom.mapValue_apply] using
         (mapValue_rootSubgroupPoints φ.hom (by decide) f).symm)
 

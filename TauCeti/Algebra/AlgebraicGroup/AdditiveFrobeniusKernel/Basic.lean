@@ -147,14 +147,11 @@ theorem map_augmentation_frobeniusBialgHom_eq_hopfIdeal :
     (HopfIdeal.augmentation R (SymmetricAlgebra R R)).map
         (AdditiveGroup.frobeniusBialgHom R p) =
       hopfIdeal (R := R) p := by
-  apply HopfIdeal.ext
-  intro z
-  rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal, HopfIdeal.map_toIdeal,
+  ext z
+  simp_rw [← HopfIdeal.mem_toIdeal, HopfIdeal.map_toIdeal,
     TauCeti.SymmetricAlgebra.augmentation_toIdeal_eq_span_singleton_ι_one, Ideal.map_span,
-    Set.image_singleton]
-  rw [show ((AdditiveGroup.frobeniusBialgHom R p : _ →+* _)
-      (ι R R 1)) = AdditiveGroup.frobeniusBialgHom R p (ι R R 1) from rfl,
-    AdditiveGroup.frobeniusBialgHom_ι_one, hopfIdeal_toIdeal]
+    Set.image_singleton, RingHom.coe_coe, AdditiveGroup.frobeniusBialgHom_ι, one_smul,
+    hopfIdeal_toIdeal]
 
 /-- **The coordinate Hopf algebra of `αₚ`**, the quotient `R[x] / (xᵖ)`. It carries a Hopf
 algebra structure through the bridge instances of `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic`. -/

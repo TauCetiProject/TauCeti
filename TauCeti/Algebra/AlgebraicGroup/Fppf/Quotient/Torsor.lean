@@ -326,12 +326,10 @@ theorem sheafify_pointwiseQuotientTorsorFst
   let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
   -- Unfold the product and carrier comparison isomorphisms so that the stable monoidal
   -- comparison lemmas below apply; there is no lemma for their packaged composite.
-  rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
-    Iso.symm_hom, Iso.symm_hom, ← pointsFppfGroupObjectCarrierIso_hom]
-  simp only [Category.assoc]
-  rw [← Functor.Monoidal.μ_of_cartesianMonoidalCategory,
-    Functor.Monoidal.μ_fst_assoc, CartesianMonoidalCategory.tensorHom_fst_assoc,
-    Iso.inv_hom_id, Category.comp_id]
+  simp_rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
+    ← pointsFppfGroupObjectCarrierIso_hom, Category.assoc,
+    ← Functor.Monoidal.μ_of_cartesianMonoidalCategory, Functor.Monoidal.μ_fst_assoc,
+    CartesianMonoidalCategory.tensorHom_fst_assoc, Iso.inv_hom_id, Category.comp_id]
 
 /-- Sheafification identifies multiplication by subgroup points with the action
 on the product of fppf point sheaves. -/
@@ -356,12 +354,9 @@ theorem sheafify_pointwiseQuotientTorsorAction
   · exact sheafify_pointwiseQuotientTorsorFst H I
   · -- Unfold the product comparison and sheafified subgroup inclusion to expose the
     -- second projection; no public lemma identifies this entire composite at once.
-    rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
-      Iso.symm_hom, Iso.symm_hom]
-    rw [← Functor.Monoidal.μ_of_cartesianMonoidalCategory, Functor.map_comp]
-    simp only [Category.assoc]
-    rw [Functor.Monoidal.μ_snd_assoc,
-      CartesianMonoidalCategory.tensorHom_snd_assoc]
+    simp_rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
+      ← Functor.Monoidal.μ_of_cartesianMonoidalCategory, Functor.map_comp, Category.assoc,
+      Functor.Monoidal.μ_snd_assoc, CartesianMonoidalCategory.tensorHom_snd_assoc]
     rfl
 
 end CommHopfAlgCat
