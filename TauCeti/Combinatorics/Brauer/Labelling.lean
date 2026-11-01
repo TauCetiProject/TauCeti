@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Combinatorics.Brauer.Flip
 public import TauCeti.Combinatorics.Brauer.Generator
-public import TauCeti.Combinatorics.Brauer.LoopCount
 
 /-!
 # Labellings of Brauer diagrams that are constant on arcs
@@ -48,6 +48,11 @@ the Brauer algebra `B_k(|ι|)`.
   permutation.
 * `TauCeti.BrauerDiagram.isConstantOnArcs_capCup_iff`: the labellings constant on the arcs of a
   cap-cup diagram.
+* `TauCeti.BrauerDiagram.isConstantOnArcs_flip_iff`: reflecting a diagram exchanges the bottom and
+  top labels.
+* `TauCeti.BrauerDiagram.exists_forall_isConstantOnArcs_iff_eq`: with at least `k` labels, giving
+  the arcs of a diagram distinct labels produces a labelling constant on the arcs of that diagram
+  and of no other.
 * `TauCeti.BrauerDiagram.IsConstantOnArcs.composeDiagram`: a labelling of a stack constant on the
   arcs of both diagrams restricts to the outer boundary as a labelling constant on the arcs of the
   composite.
@@ -166,7 +171,40 @@ theorem isConstantOnArcsEquiv_symm_apply (D : BrauerDiagram k) (g : {x // D.IsLo
       else g ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd h⟩ :=
   (rfl)
 
+/-- **A labelling that singles out a diagram.** With at least `k` labels, some labelling of the
+boundary points, one that gives the `k` arcs of `D` pairwise distinct labels, is constant on the
+arcs of `D` and of no other Brauer diagram. -/
+theorem exists_forall_isConstantOnArcs_iff_eq [Fintype ι] (hk : k ≤ Fintype.card ι)
+    (D : BrauerDiagram k) :
+    ∃ ℓ : Fin k ⊕ Fin k → ι, ∀ D' : BrauerDiagram k, D'.IsConstantOnArcs ℓ ↔ D' = D := by
+  obtain ⟨g⟩ : Nonempty ({x // D.IsLowerEnd x} ↪ ι) :=
+    Function.Embedding.nonempty_of_card_le (by rwa [D.card_isLowerEnd])
+  refine ⟨(D.isConstantOnArcsEquiv.symm g).1, fun D' => ⟨fun h => ?_, ?_⟩⟩
+  · -- two points with the same label are the two ends of an arc of `D`
+    have hsame (x y : Fin k ⊕ Fin k)
+        (hxy : (D.isConstantOnArcsEquiv.symm g).1 x = (D.isConstantOnArcsEquiv.symm g).1 y) :
+        y = x ∨ y = D.val x := by
+      simp only [isConstantOnArcsEquiv_symm_apply] at hxy
+      split_ifs at hxy with hx hy hy <;> have hxy := congrArg Subtype.val (g.injective hxy) <;>
+        simp only at hxy
+      · exact Or.inl hxy.symm
+      · exact Or.inr (D.apply_eq_of_apply_eq hxy.symm).symm
+      · exact Or.inr hxy.symm
+      · exact Or.inl (D.val.injective hxy).symm
+    refine Subtype.ext (Equiv.ext fun x => ?_)
+    exact (hsame x (D'.val x) (h x).symm).resolve_left (D'.apply_ne x)
+  · exact fun h => h ▸ (D.isConstantOnArcsEquiv.symm g).2
+
 end LowerEnd
+
+/-- **Reflecting a diagram exchanges the bottom and top labels**: a labelling is constant on the
+arcs of `D.flip` exactly when, read with its bottom and top points exchanged, it is constant on
+the arcs of `D`. -/
+@[simp]
+theorem isConstantOnArcs_flip_iff (D : BrauerDiagram k) (ℓ : Fin k ⊕ Fin k → ι) :
+    D.flip.IsConstantOnArcs ℓ ↔ D.IsConstantOnArcs (ℓ ∘ Sum.swap) := by
+  simp only [isConstantOnArcs_def, flip_val, Function.comp_apply]
+  exact ⟨fun h x => by simpa using h x.swap, fun h x => by simpa using h x.swap⟩
 
 /-! ### Labels are carried along the strands of a stack -/
 

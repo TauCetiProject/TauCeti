@@ -129,6 +129,14 @@ def singularCohomologyBockstein (X : TopCat.{w}) {S : ShortComplex C} (hS : S.Sh
     X.singularCohomology R k S.X₃ n ⟶ X.singularCohomology R k S.X₁ m :=
   (X.shortExact_singularCochainComplexCoefficientShortComplex R k hS).δ n m (by simpa)
 
+/-- The Bockstein homomorphism is, by definition, the connecting morphism of the short exact
+sequence `0 ⟶ C*(X; M₁) ⟶ C*(X; M₂) ⟶ C*(X; M₃) ⟶ 0` of singular cochain complexes. -/
+lemma singularCohomologyBockstein_eq_δ (X : TopCat.{w}) {S : ShortComplex C} (hS : S.ShortExact)
+    (n m : ℕ) (h : n + 1 = m := by lia) :
+    X.singularCohomologyBockstein R k hS n m h =
+      (X.shortExact_singularCochainComplexCoefficientShortComplex R k hS).δ n m (by simpa) :=
+  (rfl)
+
 section Exactness
 
 variable (X : TopCat.{w}) {S : ShortComplex C} (hS : S.ShortExact)

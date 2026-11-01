@@ -410,6 +410,21 @@ theorem inter (hf : AnalyticOnSubmanifold d f S) (hU : IsOpen U) :
   obtain ⟨e, hxe, he, hf'⟩ := hf x hx.1
   exact ⟨e.restrOpen U hU, ⟨hxe, hx.2⟩, he.restrOpen_inter hU, by simpa using hf'⟩
 
+/-- Restricting an analytic function to an analytic submanifold is analytic, even when its
+dimension is smaller. The smaller submanifold has the same ambient coordinate space. -/
+theorem mono (hf : AnalyticOnSubmanifold d f S) (hTS : T ⊆ S)
+    (hT : IsAnalyticSubmanifold d' T) : AnalyticOnSubmanifold d' f T := by
+  intro x hx
+  obtain ⟨U, hU, hxU, g, hg, hfg⟩ := hf.exists_analyticAt_eqOn (hTS hx)
+  obtain ⟨e, hxe, he⟩ := hT.exists_isAnalyticChart x hx
+  refine ⟨e, hxe, he, ?_⟩
+  have hparam := he.analyticAt_symm_firstCoords hxe hx
+  have hbase := he.symm_firstCoords_firstCoords_apply hxe hx
+  refine (hg.comp_of_eq hparam hbase).congr ?_
+  filter_upwards [he.eventually_symm_firstCoords_mem hxe hx,
+    hparam.continuousAt.preimage_mem_nhds (hbase ▸ hU.mem_nhds hxU)] with u hu huU
+  exact (hfg ⟨hTS hu.2, huU⟩).symm
+
 /-- A pair of analytic functions on `S` is analytic on `S`. -/
 theorem prod {g : (Fin n → 𝕜) → F} (hf : AnalyticOnSubmanifold d f S)
     (hg : AnalyticOnSubmanifold d g S) : AnalyticOnSubmanifold d (fun x ↦ (f x, g x)) S := by

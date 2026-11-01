@@ -43,6 +43,8 @@ unique `p`-th root of `a` in `Ω` is fixed by every automorphism of `Ω` over `K
   with a bijection of transcendence bases, extends.
 * `RingEquiv.exists_ringEquiv_apply_algebraMap`: every automorphism of a subring
   extends to an automorphism of `Ω`.
+* `AlgEquiv.exists_algEquiv_apply_algebraMap`: every automorphism of a subring over a base ring
+  extends to an automorphism of `Ω` over that base.
 * `Transcendental.exists_algEquiv_apply_eq_add_one`: an element transcendental over the
   base is sent to itself plus one by some automorphism of `Ω` over the base.
 * `TauCeti.IsAlgClosed.mem_range_algebraMap_iff_fixed`,
@@ -111,6 +113,20 @@ theorem exists_ringEquiv_apply_algebraMap [FaithfulSMul R Ω] (σ : R ≃+* R) :
 
 end RingEquiv
 
+namespace AlgEquiv
+
+/-- Every `K`-algebra automorphism `σ` of `R` extends to a `K`-algebra automorphism of an
+algebraically closed field `Ω` containing `R`. -/
+theorem exists_algEquiv_apply_algebraMap {K : Type*} [CommRing K] [Algebra K R] [Algebra K Ω]
+    [IsScalarTower K R Ω] [FaithfulSMul R Ω] (σ : R ≃ₐ[K] R) :
+    ∃ τ : Ω ≃ₐ[K] Ω, ∀ r, τ (algebraMap R Ω r) = algebraMap R Ω (σ r) := by
+  obtain ⟨τ, hτ⟩ := σ.toRingEquiv.exists_ringEquiv_apply_algebraMap (Ω := Ω)
+  refine ⟨AlgEquiv.ofRingEquiv (f := τ) fun k ↦ ?_, hτ⟩
+  rw [IsScalarTower.algebraMap_apply K R Ω, hτ]
+  exact congrArg (algebraMap R Ω) (σ.commutes k)
+
+end AlgEquiv
+
 namespace Transcendental
 
 /-- An element `x` of an algebraically closed field `Ω` that is transcendental over `R` is sent
@@ -152,10 +168,8 @@ theorem mem_range_algebraMap_iff_fixed (x : Ω) :
     let A := algebraicClosure K Ω
     let y : A := ⟨x, mem_algebraicClosure_iff.2 halg⟩
     obtain ⟨k, hk⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed (k := K) y).2 fun f ↦ by
-      obtain ⟨τ, hτ⟩ := f.toRingEquiv.exists_ringEquiv_apply_algebraMap (R := A) (Ω := Ω)
-      let τK : Ω ≃ₐ[K] Ω := AlgEquiv.ofRingEquiv (f := τ) fun k ↦ by
-        simpa [← IsScalarTower.algebraMap_apply] using hτ (algebraMap K A k)
-      exact Subtype.ext ((hτ y).symm.trans (hx τK))
+      obtain ⟨τ, hτ⟩ := f.exists_algEquiv_apply_algebraMap (R := A) (Ω := Ω)
+      exact Subtype.ext ((hτ y).symm.trans (hx τ))
     exact ⟨k, by simpa [y] using congr_arg (algebraMap A Ω) hk⟩
   · obtain ⟨τ, hτ⟩ := Transcendental.exists_algEquiv_apply_eq_add_one (R := K) halg
     simp [hx τ] at hτ
