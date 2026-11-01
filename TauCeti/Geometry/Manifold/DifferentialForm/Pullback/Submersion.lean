@@ -103,7 +103,7 @@ whenever `f x = f y` and `df_x vᵢ = df_y wᵢ` for every `i`. The tangent spac
 are both the model space, identified by `tangentSpaceCast`. Pullbacks along `f` are basic, and
 when the derivatives of `f` have continuous right inverses the basic forms are exactly the
 pullbacks (`TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`). -/
-def IsBasic (α : RoughForm I M V k) : Prop :=
+@[expose] def IsBasic (α : RoughForm I M V k) : Prop :=
   ∀ ⦃x y : M⦄, f x = f y → ∀ (v : Fin k → TangentSpace I x) (w : Fin k → TangentSpace I y),
     (∀ i, mfderiv I I' f x (v i) = tangentSpaceCast I' (f y) (f x) (mfderiv I I' f y (w i))) →
       α x v = α y w
