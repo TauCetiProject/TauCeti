@@ -256,6 +256,32 @@ variable {M N} in
   intro m n
   simp
 
+variable {M N} in
+/-- Tensor products of module isomorphisms, for the coproduct actions. -/
+noncomputable def tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
+    Tensor R H M N ≃ₗ[H] Tensor R H M' N' :=
+  LinearEquiv.ofLinearMap (tensorMap R H f.toLinearMap g.toLinearMap)
+    (tensorMap R H f.symm.toLinearMap g.symm.toLinearMap)
+    (by ext m n; simp) (by ext m n; simp)
+
+variable {M N} in
+/-- The tensor isomorphism has underlying map the tensor product of the two maps. -/
+theorem tensorCongr_apply (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (x : Tensor R H M N) :
+    tensorCongr R H f g x = tensorMap R H f.toLinearMap g.toLinearMap x := (rfl)
+
+variable {M N} in
+/-- Tensor products of isomorphisms act componentwise on pure tensors. -/
+@[simp] theorem tensorCongr_tmul (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (m : M) (n : N) :
+    tensorCongr R H f g (tmul R H m n) = tmul R H (f m) (g n) := by
+  simp [tensorCongr]
+
+variable {M N} in
+/-- The inverse tensor isomorphism acts by the two inverse maps on pure tensors. -/
+@[simp] theorem tensorCongr_symm_tmul (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (m : M') (n : N') :
+    (tensorCongr R H f g).symm (tmul R H m n) = tmul R H (f.symm m) (g.symm n) := by
+  apply (tensorCongr R H f g).injective
+  simp
+
 end Action
 
 section Coherence
