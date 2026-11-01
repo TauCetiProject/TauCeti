@@ -47,26 +47,37 @@ private theorem algEquiv_apply_coe (a : A) :
     (algEquiv 𝕜 A a : A →L[𝕜] A) = ContinuousLinearMap.mul 𝕜 A a := by
   simp only [algEquiv, AlgEquiv.ofInjective_apply, AlgHom.coe_Lmul]
 
+private theorem norm_algEquiv_le (a : A) : ‖algEquiv 𝕜 A a‖ ≤ ‖a‖ := by
+  rw [AddSubgroupClass.coe_norm, algEquiv_apply_coe]
+  exact ContinuousLinearMap.opNorm_mul_apply_le 𝕜 A a
+
+private theorem norm_algEquiv_symm_le (x : LeftRegularNorm 𝕜 A) :
+    ‖(algEquiv 𝕜 A).symm x‖ ≤ ‖x‖ * ‖(1 : A)‖ := by
+  calc
+    ‖(algEquiv 𝕜 A).symm x‖ ≤
+        ‖ContinuousLinearMap.mul 𝕜 A ((algEquiv 𝕜 A).symm x)‖ * ‖(1 : A)‖ :=
+      ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one _
+    _ = ‖x‖ * ‖(1 : A)‖ := by
+      rw [← algEquiv_apply_coe, AlgEquiv.apply_symm_apply, ← AddSubgroupClass.coe_norm]
+
 /-- The original algebra and its left regular renorming are boundedly algebra isomorphic.
 The forward map is contractive and the inverse is bounded by the original norm of one. -/
 noncomputable def equiv : A ≃A[𝕜] LeftRegularNorm 𝕜 A :=
-  let e := algEquiv 𝕜 A
-  { e with
-    continuous_toFun := AddMonoidHomClass.continuous_of_bound e 1 fun a ↦ by
-      rw [one_mul, AddSubgroupClass.coe_norm, algEquiv_apply_coe]
-      exact ContinuousLinearMap.opNorm_mul_apply_le 𝕜 A a
-    continuous_invFun := AddMonoidHomClass.continuous_of_bound e.symm ‖(1 : A)‖ fun x ↦ by
-      have h := ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one
-        (𝕜 := 𝕜) (e.symm x)
-      rw [← algEquiv_apply_coe, e.apply_symm_apply,
-        ← AddSubgroupClass.coe_norm] at h
-      simpa only [mul_comm] using h }
+  { algEquiv 𝕜 A with
+    continuous_toFun := AddMonoidHomClass.continuous_of_bound (algEquiv 𝕜 A) 1 fun a ↦ by
+      simpa only [one_mul] using norm_algEquiv_le 𝕜 A a
+    continuous_invFun := AddMonoidHomClass.continuous_of_bound
+      (algEquiv 𝕜 A).symm ‖(1 : A)‖ fun x ↦ by
+        simpa only [mul_comm] using norm_algEquiv_symm_le 𝕜 A x }
+
+-- Adding continuity leaves the underlying algebra equivalence unchanged.
+private theorem equiv_toAlgEquiv : (equiv 𝕜 A).toAlgEquiv = algEquiv 𝕜 A := rfl
 
 /-- The equivalence sends an element to its bounded left multiplication operator. -/
 @[simp]
 theorem equiv_apply_coe (a : A) :
     (equiv 𝕜 A a : A →L[𝕜] A) = ContinuousLinearMap.mul 𝕜 A a := by
-  rw [← ContinuousAlgEquiv.coe_toAlgEquiv]
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, equiv_toAlgEquiv]
   exact algEquiv_apply_coe 𝕜 A a
 
 /-- The original element corresponding to an operator in the renormed algebra is its
@@ -84,14 +95,15 @@ theorem norm_equiv (a : A) :
 
 /-- Left regular renorming does not increase norms. -/
 theorem norm_equiv_le (a : A) : ‖equiv 𝕜 A a‖ ≤ ‖a‖ := by
-  rw [norm_equiv]
-  exact ContinuousLinearMap.opNorm_mul_apply_le 𝕜 A a
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, equiv_toAlgEquiv]
+  exact norm_algEquiv_le 𝕜 A a
 
 /-- The original norm is controlled by the left regular norm with comparison constant `‖1‖`. -/
 theorem norm_le_norm_equiv_mul_norm_one (a : A) :
     ‖a‖ ≤ ‖equiv 𝕜 A a‖ * ‖(1 : A)‖ := by
-  rw [norm_equiv]
-  exact ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one a
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, equiv_toAlgEquiv]
+  simpa only [AlgEquiv.symm_apply_apply] using
+    norm_algEquiv_symm_le 𝕜 A (algEquiv 𝕜 A a)
 
 /-- The lower comparison in division form, including for the zero algebra. -/
 theorem div_norm_one_le_norm_equiv (a : A) :
