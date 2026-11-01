@@ -154,10 +154,6 @@ theorem slabSpaceMap_slabMk {E' : Type*} {a b : ℝ} (f : E → E') (x : E) (t :
 theorem slabSpaceMap_id {a b : ℝ} : slabSpaceMap (a := a) (b := b) (id : E → E) = id :=
   (rfl)
 
-theorem slabSpaceMap_comp {E' E'' : Type*} {a b : ℝ} (f : E' → E'') (g : E → E') :
-    slabSpaceMap (a := a) (b := b) (f ∘ g) = slabSpaceMap f ∘ slabSpaceMap g :=
-  (rfl)
-
 @[simp]
 theorem slabSpaceMap_slabSpaceMap {E' E'' : Type*} {a b : ℝ} (f : E' → E'') (g : E → E')
     (p : slab (E := E) a b) : slabSpaceMap f (slabSpaceMap g p) = slabSpaceMap (f ∘ g) p :=
