@@ -532,6 +532,17 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
+/-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
+that oracle to a string of length `k` preserves failure as well as output and use. -/
+theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => ((List.range k).map O)[z]?) k c n =
+      evaln (fun z => some (O z)) k c n := by
+  apply Option.ext
+  intro d
+  constructor <;> intro hd <;>
+    refine evaln_eq_some_of_eqOn hd fun z hz => ?_
+  all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+
 /-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
 program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against
 the finite oracle string `O 0, …, O (k - 1)`. -/
