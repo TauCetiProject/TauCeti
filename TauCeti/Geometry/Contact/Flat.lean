@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -33,8 +33,11 @@ of `ι_v dα + α(v) α = α` are exactly the vectors with `α(v) = 1` and `ι_v
 On smooth sections, `X ↦ ι_X dα + α(X) α` is a linear map from smooth vector fields to smooth
 one-forms (`TauCeti.SmoothForm.contactFlatₗ`). For a contact form in finite dimensions it is a
 linear equivalence (`TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`), so the preimage of a
-smooth one-form is a smooth vector field. This smooth-section construction and its evaluation and
-cancellation lemmas are adapted from the symplectic flat equivalence
+smooth one-form is a smooth vector field. In particular the Reeb vector field of a contact form
+is the smooth vector field corresponding to `α`
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_contactFlatEquiv_symm`), so it is smooth
+(`TauCeti.SmoothForm.IsContactForm.contMDiff_reebVectorField`). This smooth-section construction
+and its evaluation and cancellation lemmas are adapted from the symplectic flat equivalence
 `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accompanying API in
 `TauCeti.Geometry.Symplectic.Manifold.Flat`.
 
@@ -48,6 +51,7 @@ cancellation lemmas are adapted from the symplectic flat equivalence
   characterized by the Reeb equations.
 * `TauCeti.SmoothForm.contactFlatₗ`, `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`: the
   contact flat map on smooth sections, and its inverse for a contact form.
+* `TauCeti.SmoothForm.IsContactForm.contMDiff_reebVectorField`: the Reeb vector field is smooth.
 
 ## References
 
@@ -215,6 +219,21 @@ theorem IsContactForm.contactFlatₗ_contactFlatEquiv_symm [FiniteDimensional �
     (hα : α.IsContactForm) (θ : SmoothForm I M ℝ 1) :
     α.contactFlatₗ (hα.contactFlatEquiv.symm θ) = θ :=
   hα.contactFlatEquiv.apply_symm_apply θ
+
+/-- The Reeb vector field of a contact form is the vector field corresponding to `α` under the
+contact flat equivalence: it is the preimage of `α` under `X ↦ ι_X dα + α(X) α`. -/
+theorem IsContactForm.reebVectorField_eq_contactFlatEquiv_symm [FiniteDimensional ℝ E]
+    (hα : α.IsContactForm) (x : M) :
+    α.reebVectorField x = hα.contactFlatEquiv.symm α x :=
+  (hα.isInvertible_contactFlat x).injective <| by
+    rw [contactFlat_contactFlatEquiv_symm]
+    exact hα.contactFlat_apply_eq_iff.2 (hα.eq_reebVectorField_iff.1 rfl)
+
+/-- **The Reeb vector field of a contact form is smooth.** -/
+theorem IsContactForm.contMDiff_reebVectorField [FiniteDimensional ℝ E] (hα : α.IsContactForm) :
+    ContMDiff I I.tangent ∞ (T% α.reebVectorField) := by
+  convert (hα.contactFlatEquiv.symm α).contMDiff using 2 with x
+  rw [hα.reebVectorField_eq_contactFlatEquiv_symm x]
 
 end SmoothForm
 
