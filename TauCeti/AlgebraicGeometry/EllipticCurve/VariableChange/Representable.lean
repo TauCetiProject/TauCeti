@@ -228,6 +228,20 @@ def pushoutLift (f : B →+* B') :
     dsimp only
     rw [← VariableChange.map_map, universalChange_map_map])
 
+/-- The first component of the pair classified by `k : B'[u, u⁻¹, r, s, t] →+* R` is its
+restriction along `algebraMap`. -/
+@[simp]
+theorem pushoutLift_symm_apply_fst (f : B →+* B') (k : ChangeRing B' →+* R) :
+    ((pushoutLift f).symm k).1.1 = k.comp (algebraMap B' _) :=
+  (rfl)
+
+/-- The second component of the pair classified by `k : B'[u, u⁻¹, r, s, t] →+* R` is its
+restriction along `map f`. -/
+@[simp]
+theorem pushoutLift_symm_apply_snd (f : B →+* B') (k : ChangeRing B' →+* R) :
+    ((pushoutLift f).symm k).1.2 = k.comp (map f) :=
+  (rfl)
+
 variable (f : B →+* B')
   (p : {p : (B' →+* R) × (ChangeRing B →+* R) // p.1.comp f = p.2.comp (algebraMap B _)})
 
