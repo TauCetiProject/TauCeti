@@ -230,24 +230,6 @@ private theorem Tames.exists_pair (hJ : ω.Tames J) {S : Submodule ℝ V}
     rw [this]
     exact sub_mem (neg_mem hzx) ((Module.End.mem_invtSubmodule _).1 hS hxv)
 
-omit [FiniteDimensional ℝ V] in
-/-- For a `J`-adapted basis `b`, the span of the first `i` adapted pairs `(b (j, 0), J b (j, 0))`
-is `J`-invariant. -/
-private theorem span_image_fst_lt_mem_invtSubmodule (hb : ∀ i, b (i, 1) = J (b (i, 0)))
-    (i : Fin n) :
-    Submodule.span ℝ (b '' {r | r.1 < i}) ∈ Module.End.invtSubmodule J.toLinearMap := by
-  rw [Module.End.mem_invtSubmodule, Submodule.span_le]
-  rintro _ ⟨⟨j, a⟩, hj, rfl⟩
-  rw [SetLike.mem_coe, Submodule.mem_comap]
-  have hbS (a : Fin 2) : b (j, a) ∈ Submodule.span ℝ (b '' {r | r.1 < i}) :=
-    Submodule.subset_span ⟨(j, a), hj, rfl⟩
-  fin_cases a
-  · exact hb j ▸ hbS 1
-  · have : J.toLinearMap (b (j, 1)) = -b (j, 0) := by
-      rw [hb]
-      exact J.apply_apply _
-    simpa [this] using hbS 0
-
 /-- **A tamed almost complex structure determines the symplectic orientation.** If `ω` tames `J`,
 then every `J`-adapted basis `(v₁, J v₁, …, vₙ, J vₙ)`, listed in this interleaved order, is
 positive for the symplectic orientation of `ω`. -/
@@ -261,7 +243,7 @@ theorem Tames.orientation_reindex (hJ : ω.Tames J) (hb : ∀ i, b (i, 1) = J (b
   have hSmono {i j : Fin n} (h : i ≤ j) : S i ≤ S j :=
     Submodule.span_mono (Set.image_mono fun _ hr ↦ lt_of_lt_of_le hr h)
   have hS (i : Fin n) : S i ∈ Module.End.invtSubmodule J.toLinearMap :=
-    span_image_fst_lt_mem_invtSubmodule hb i
+    J.span_image_fst_lt_mem_invtSubmodule hb i
   have hv (i : Fin n) : b (i, 0) ∉ S i := fun h ↦
     lt_irrefl i ((Basis.mem_span_image b).1 h (by simp : (i, 0) ∈ (b.repr (b (i, 0))).support))
   choose x y hx hy hxy hxv c hc hyv using fun i ↦ hJ.exists_pair (hS i) (hv i)

@@ -43,6 +43,8 @@ structure induced from `ofComplexModule` recovers the original complex module st
 * `TauCeti.AlmostComplexStructure.exists_basis_apply_one_eq`: in finite dimension, `J` has an
   adapted real basis `(v₁, J v₁, …, vₙ, J vₙ)`, the real basis underlying a basis of the induced
   complex vector space.
+* `TauCeti.AlmostComplexStructure.span_image_fst_lt_mem_invtSubmodule`: for an adapted basis, the
+  span of the first `i` adapted pairs is `J`-invariant.
 -/
 
 public section
@@ -160,6 +162,24 @@ theorem exists_basis_apply_one_eq (J : AlmostComplexStructure V) :
   have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
   refine ⟨_, (Module.finBasis ℂ V).complexToReal, fun i ↦ ?_⟩
   simp [J.complexModule_I_smul]
+
+omit [FiniteDimensional ℝ V] in
+/-- For a `J`-adapted basis `b`, the span of the first `i` adapted pairs `(b (j, 0), J b (j, 0))`
+is `J`-invariant. -/
+theorem span_image_fst_lt_mem_invtSubmodule (J : AlmostComplexStructure V) {n : ℕ}
+    {b : Module.Basis (Fin n × Fin 2) ℝ V} (hb : ∀ i, b (i, 1) = J (b (i, 0))) (i : Fin n) :
+    Submodule.span ℝ (b '' {r | r.1 < i}) ∈ Module.End.invtSubmodule J.toLinearMap := by
+  rw [Module.End.mem_invtSubmodule, Submodule.span_le]
+  rintro _ ⟨⟨j, a⟩, hj, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap]
+  have hbS (a : Fin 2) : b (j, a) ∈ Submodule.span ℝ (b '' {r | r.1 < i}) :=
+    Submodule.subset_span ⟨(j, a), hj, rfl⟩
+  fin_cases a
+  · exact hb j ▸ hbS 1
+  · have : J.toLinearMap (b (j, 1)) = -b (j, 0) := by
+      rw [hb]
+      exact J.apply_apply _
+    simpa [this] using hbS 0
 
 end Basis
 
