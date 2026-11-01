@@ -97,6 +97,13 @@ theorem norm_coordinateCutoff_le (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 noncomputable def finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) : H →L[𝕜] H :=
   (b.finiteInclusion n).toContinuousLinearMap ∘L b.coordinateCutoff n
 
+/-- Inclusion composed with its adjoint is the finite-coordinate projection. -/
+@[simp]
+theorem finiteInclusion_comp_adjoint_finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (b.finiteInclusion n).toContinuousLinearMap ∘L
+      (b.finiteInclusion n).toContinuousLinearMap.adjoint = b.finiteProjection n :=
+  (rfl)
+
 /-- The projection is the partial Hilbert expansion. -/
 theorem finiteProjection_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
     b.finiteProjection n x = ∑ i : Fin (n + 1), b.repr x i • b i := by
@@ -127,7 +134,8 @@ theorem finiteProjection_comp_self (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem adjoint_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (b.finiteProjection n).adjoint = b.finiteProjection n := by
-  simp [finiteProjection, coordinateCutoff, ContinuousLinearMap.adjoint_comp]
+  simp only [finiteProjection, coordinateCutoff, ContinuousLinearMap.adjoint_comp,
+    ContinuousLinearMap.adjoint_adjoint]
 
 /-- Finite coordinate projections are contractions. -/
 theorem norm_finiteProjection_le (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :

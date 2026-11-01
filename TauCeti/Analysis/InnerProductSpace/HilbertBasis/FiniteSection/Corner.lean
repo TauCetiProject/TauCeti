@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
-public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Finite operators and their orthogonal corners
@@ -40,18 +40,20 @@ namespace HilbertBasis
 theorem finiteSection_cornerEmbedding (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (A : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) :
     ((b.finiteInclusion n).cornerEmbedding A).finiteSection b n = A := by
-  ext x i
-  rw [finiteSection_apply, ← coordinateCutoff_apply,
-    LinearIsometry.cornerEmbedding_apply_apply, adjoint_finiteInclusion,
-    coordinateCutoff_finiteInclusion, coordinateCutoff_finiteInclusion]
+  calc
+    _ = (b.finiteInclusion n).toContinuousLinearMap.adjoint ∘L
+        (b.finiteInclusion n).cornerEmbedding A ∘L
+          (b.finiteInclusion n).toContinuousLinearMap := by
+      ext x i
+      simp only [finiteSection_apply, comp_apply, adjoint_finiteInclusion,
+        coordinateCutoff_apply, LinearIsometry.coe_toContinuousLinearMap]
+    _ = A := (b.finiteInclusion n).adjoint_comp_cornerEmbedding_comp A
 
 /-- Extending a finite identity gives the finite-coordinate projection. -/
 theorem cornerEmbedding_finiteInclusion_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (b.finiteInclusion n).cornerEmbedding
       (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
-  ext x
-  rw [LinearIsometry.cornerEmbedding_apply_apply, adjoint_finiteInclusion, id_apply,
-    finiteInclusion_coordinateCutoff]
+  simp only [LinearIsometry.cornerEmbedding_id, finiteInclusion_comp_adjoint_finiteInclusion]
 
 /-- Extending the compression of an ambient operator is its existing zero-extended section. -/
 theorem cornerEmbedding_finiteSection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (T : H →L[𝕜] H) :
@@ -62,14 +64,14 @@ theorem cornerEmbedding_finiteSection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (T
     zeroExtendedFiniteSection_apply]
 
 /-- Every operator supported on the finite-coordinate corner has a unique finite matrix
-representative. The representative is its finite section. -/
+representative. -/
 theorem existsUnique_cornerEmbedding_eq_iff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (T : H →L[𝕜] H) :
     (∃! A, (b.finiteInclusion n).cornerEmbedding A = T) ↔
       b.finiteProjection n ∘L T ∘L b.finiteProjection n = T := by
-  rw [(b.finiteInclusion n).cornerEmbedding.injective.existsUnique_iff_exists,
-    ← b.cornerEmbedding_finiteInclusion_id n, LinearIsometry.cornerEmbedding_id]
-  exact (b.finiteInclusion n).mem_range_cornerEmbedding_iff T
+  rw [(b.finiteInclusion n).cornerEmbedding.injective.existsUnique_iff_exists]
+  simpa only [Set.mem_range, finiteInclusion_comp_adjoint_finiteInclusion] using
+    (b.finiteInclusion n).mem_range_cornerEmbedding_iff T
 
 end HilbertBasis
 
