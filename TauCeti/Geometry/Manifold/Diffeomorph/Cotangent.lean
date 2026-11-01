@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
@@ -37,14 +38,15 @@ By functoriality, a group `G` acting on `M` by smooth maps (`ContMDiffConstSMul 
 `g • (x, p) = (g • x, p ∘ (dg_x)⁻¹)`
 
 (`TauCeti.CotangentBundle.instMulAction`), again by smooth maps
-(`TauCeti.CotangentBundle.instContMDiffConstSMul`). This **cotangent-lifted action** covers the
-action on `M` (`TauCeti.CotangentBundle.proj_smul`), preserves the pairing of covectors with
-tangent vectors (`TauCeti.CotangentBundle.smul_snd_apply_mfderiv`) and the zero section, and the
-cotangent lift of each `x ↦ g • x` is the action of `g` on `T*M`
-(`Diffeomorph.cotangent_constSmul`). Cotangent lifts are equivariant for these actions: the
-cotangent lift of a diffeomorphism intertwines the lifted actions exactly when the diffeomorphism
-intertwines the actions on the base (`Diffeomorph.cotangent_smul`,
-`Diffeomorph.forall_cotangent_smul_iff`).
+(`TauCeti.CotangentBundle.instContMDiffConstSMul`). If the action of a Lie group on `M` is jointly
+smooth, so is the cotangent-lifted action (`TauCeti.CotangentBundle.instContMDiffSMul`). This
+**cotangent-lifted action** covers the action on `M` (`TauCeti.CotangentBundle.proj_smul`),
+preserves the pairing of covectors with tangent vectors
+(`TauCeti.CotangentBundle.smul_snd_apply_mfderiv`) and the zero section, and the cotangent lift of
+each `x ↦ g • x` is the action of `g` on `T*M` (`Diffeomorph.cotangent_constSmul`). Cotangent
+lifts are equivariant for these actions: the cotangent lift of a diffeomorphism intertwines the
+lifted actions exactly when the diffeomorphism intertwines the actions on the base
+(`Diffeomorph.cotangent_smul`, `Diffeomorph.forall_cotangent_smul_iff`).
 
 ## References
 
@@ -265,6 +267,36 @@ instance instMulAction : MulAction G (CotangentBundle I M) where
 instance instContMDiffConstSMul :
     ContMDiffConstSMul (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ G (CotangentBundle I M) where
   contMDiff_const_smul g := (Diffeomorph.constSmul I ∞ g).cotangent.contMDiff.congr (smul_def g)
+
+section Joint
+
+variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 𝕜 EG] [TopologicalSpace HG]
+  {IG : ModelWithCorners 𝕜 EG HG} {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace HG G]
+  [LieGroup IG ∞ G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] [ContMDiffSMul IG I ∞ G M]
+
+/-- **The cotangent lift of a smooth Lie group action is jointly smooth.** If a Lie group acts
+smoothly on `M`, then `(g, z) ↦ g • z` is smooth on `G × T*M`. The cotangent-lifted action is
+defined from the smoothness of each `x ↦ g • x` (`ContMDiffConstSMul`), which is assumed alongside
+the joint smoothness of the action on `M`. -/
+instance instContMDiffSMul :
+    ContMDiffSMul IG (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ G (CotangentBundle I M) where
+  contMDiff_smul := by
+    -- `g • z` pulls the covector `z` back along the differential of `x ↦ g⁻¹ • x` at `g • z.proj`;
+    -- this map depends smoothly on the parameter `(g, z)`.
+    have hinv : ContMDiff ((IG.prod (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))).prod I) I ∞
+        (Function.uncurry fun (p : G × CotangentBundle I M) (x : M) ↦ p.1⁻¹ • x) :=
+      contMDiff_fst.fst.inv.smul contMDiff_snd
+    have hbase : ContMDiff (IG.prod (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))) I ∞
+        (fun p : G × CotangentBundle I M ↦ p.1 • p.2.proj) :=
+      contMDiff_fst.smul ((contMDiff_proj _).comp contMDiff_snd)
+    intro p
+    exact (contMDiffAt_mk_comp_mfderiv_uncurry (Ψ := Prod.snd)
+      (f := fun (p : G × CotangentBundle I M) (x : M) ↦ p.1⁻¹ • x)
+      (fun p ↦ (inv_smul_smul p.1 p.2.proj).symm) contMDiff_snd.contMDiffAt (hbase p)
+      (hinv _) (by simp)).congr_of_eventuallyEq
+        (Filter.Eventually.of_forall fun q ↦ smul_eq_mk q.1 q.2)
+
+end Joint
 
 end TauCeti.CotangentBundle
 

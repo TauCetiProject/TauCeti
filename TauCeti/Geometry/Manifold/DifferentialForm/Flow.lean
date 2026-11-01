@@ -25,7 +25,9 @@ in the alternating maps on `T_x M`, and its velocity is the pullback of the Lie 
 
 (`TauCeti.hasDerivAt_mpullback_globalFlow`). Here `L_Z α` is `TauCeti.mlieDerivForm`, which is
 defined in charts with no reference to flows, so this is the flow characterization of the Lie
-derivative of forms. At `t = 0` it reads `d/dt|₀ (ψₜ^* α)ₓ = (L_Z α)ₓ`.
+derivative of forms. At `t = 0` it reads `d/dt|₀ (ψₜ^* α)ₓ = (L_Z α)ₓ`. In particular a form is
+invariant under the flow exactly when its Lie derivative vanishes
+(`TauCeti.mlieDerivForm_eq_zero_iff_forall_mpullback_globalFlow_eq`).
 
 Integrating it: if `L_Z α = c • α` for a real number `c`, then `ψₜ^* α = e^{ct} α` for every
 time `t` (`TauCeti.mpullback_globalFlow_eq_exp_smul`). This is how a Liouville flow rescales the
@@ -43,6 +45,8 @@ reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fder
 * `TauCeti.hasDerivAt_mpullback_globalFlow_zero`: the velocity of `ψₜ^* α` at `t = 0` is `L_Z α`.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
 * `TauCeti.mpullback_globalFlow_eq_exp_smul`: if `L_Z α = c • α`, then `ψₜ^* α = e^{ct} α`.
+* `TauCeti.mlieDerivForm_eq_zero_iff_forall_mpullback_globalFlow_eq`: `L_Z α = 0` exactly when
+  the flow preserves `α`.
 * `TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`: if `α` is closed and `ι_Z α` is
   closed, then `ψₜ^* α = α`.
 
@@ -283,6 +287,22 @@ theorem mpullback_globalFlow_eq_exp_smul {c : ℝ}
   rw [hP0] at hPt
   -- The value at `x` of the form `e^{ct} • α` is `e^{ct} • α x`.
   exact hPt
+
+/-- **Flow-invariant forms have zero Lie derivative.** For a differentiable form `α` and a
+complete `C²` vector field `Z` with flow `ψ`, `L_Z α = 0` exactly when `ψₜ^* α = α` for every
+time `t`. -/
+theorem mlieDerivForm_eq_zero_iff_forall_mpullback_globalFlow_eq
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z))) :
+    mlieDerivForm Z α = 0 ↔
+      ∀ t, mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) α = α := by
+  refine ⟨fun hL t ↦ ?_, fun hinv ↦ funext fun y ↦ ?_⟩
+  · simpa only [zero_mul, Real.exp_zero, one_smul] using
+      mpullback_globalFlow_eq_exp_smul hc hZ hα (c := 0) (by rw [hL, zero_smul]) t
+  · -- `t ↦ ψₜ^* α` is constant at `y`, so its velocity `L_Z α` at `y` vanishes.
+    have h := hasDerivAt_mpullback_globalFlow_zero hc hZ y (hα y)
+    simp only [hinv] at h
+    exact h.unique (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) (0 : ℝ) (α y))
 
 /-- **Flows preserve closed forms with closed contraction.** For a closed smooth form `β` whose
 contraction `ι_Z β` with a complete `C²` vector field `Z` is closed, the flow `ψ` of `Z` satisfies
