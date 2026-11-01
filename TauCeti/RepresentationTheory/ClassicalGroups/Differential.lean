@@ -455,28 +455,27 @@ noncomputable def tprodLieModuleEquiv (hρ : IsRationalRep ρ) (hσ : IsRational
       V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ N) :
     letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
     W ⊗[ℂ] V ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M ⊗[ℂ] N :=
-  letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
   -- The linear equivalences underlying `e₁` and `e₂` are extracted with the `𝔤𝔩ₙ`-module
   -- structures of the factors in scope only locally, so that they never compete with the
   -- structure on the tensor product.
   let f₁ : W ≃ₗ[ℂ] M := letI := LieRingModule.compLieHom W hρ.differential; e₁.toLinearEquiv
   let f₂ : V ≃ₗ[ℂ] N := letI := LieRingModule.compLieHom V hσ.differential; e₂.toLinearEquiv
-  have hf₁ (X : Matrix (Fin n) (Fin n) ℂ) (w : W) : f₁ (hρ.differential X w) = ⁅X, f₁ w⁆ :=
-    letI := LieRingModule.compLieHom W hρ.differential; e₁.map_lie X w
-  have hf₂ (X : Matrix (Fin n) (Fin n) ℂ) (v : V) : f₂ (hσ.differential X v) = ⁅X, f₂ v⁆ :=
-    letI := LieRingModule.compLieHom V hσ.differential; e₂.map_lie X v
+  -- On `W ⊗ V` with the Lie tensor product structure of the factors, the bracket is
+  -- `dρ X ⊗ 1 + 1 ⊗ dσ X`, which Mathlib's `TensorProduct.LieModule.map` respects.
+  have hf (X : Matrix (Fin n) (Fin n) ℂ) (t : W ⊗[ℂ] V) :
+      TensorProduct.congr f₁ f₂ (((hρ.differential X).rTensor V +
+        (hσ.differential X).lTensor W) t) = ⁅X, TensorProduct.congr f₁ f₂ t⁆ :=
+    letI := LieRingModule.compLieHom W hρ.differential
+    letI := LieRingModule.compLieHom V hσ.differential
+    haveI := LieModule.compLieHom W hρ.differential
+    haveI := LieModule.compLieHom V hσ.differential
+    (TensorProduct.LieModule.map e₁.toLieModuleHom e₂.toLieModuleHom).map_lie X t
+  letI := LieRingModule.compLieHom (W ⊗[ℂ] V) (hρ.tprod hσ).differential
   { TensorProduct.congr f₁ f₂ with
     map_lie' := fun {X t} ↦ by
-      induction t using TensorProduct.inductionOn with
-      | add t t' ht ht' =>
-        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, lie_add, map_add] at ht ht' ⊢
-        rw [ht, ht']
-      | tmul w v =>
-        simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
-          LinearMap.coe_toAddHom, LinearEquiv.coe_coe, TensorProduct.congr_tmul,
-          LieModule.lie_tmul_right]
-        rw [differential_tprod_tmul hρ hσ, map_add, TensorProduct.congr_tmul,
-          TensorProduct.congr_tmul, hf₁, hf₂] }
+      simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
+        LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+      rw [differential_tprod hρ hσ, hf] }
 
 /-- `TauCeti.IsRationalRep.tprodLieModuleEquiv` acts on pure tensors factorwise. -/
 @[simp]

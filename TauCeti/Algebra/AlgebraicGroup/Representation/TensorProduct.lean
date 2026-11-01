@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
+import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct.Contraction
 
 /-!
 # Points and tangent vectors acting on a tensor product of comodules
@@ -47,33 +48,6 @@ namespace TauCeti.Comodule
 
 attribute [local instance] tensor
 
-section Contraction
-
-variable {R H V W : Type*} [CommSemiring R] [Semiring H] [Algebra R H]
-variable [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
-
-/-- Contracting the combined coefficient of two coacted tensors against a functional which splits
-on products as `θ (a * b) = φ a * ψ b + φ' a * ψ' b` splits the contraction accordingly. -/
-private theorem tensorComponent_tensorCombine {θ φ ψ φ' ψ' : H →ₗ[R] R}
-    (hθ : ∀ a b, θ (a * b) = φ a * ψ b + φ' a * ψ' b) (x : V ⊗[R] H) (y : W ⊗[R] H) :
-    LinearMap.tensorComponent θ (tensorCombine (R := R) (C := H) (M := V) (N := W) (x ⊗ₜ y)) =
-      LinearMap.tensorComponent φ x ⊗ₜ LinearMap.tensorComponent ψ y +
-        LinearMap.tensorComponent φ' x ⊗ₜ LinearMap.tensorComponent ψ' y := by
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' =>
-    simp only [TensorProduct.add_tmul, map_add, hx, hx']
-    abel
-  | tmul v a =>
-    induction y using TensorProduct.inductionOn with
-    | add y y' hy hy' =>
-      simp only [TensorProduct.tmul_add, map_add, hy, hy']
-      abel
-    | tmul w b =>
-      simp only [tensorCombine_tmul_tmul, LinearMap.tensorComponent_tmul, hθ, add_smul,
-        TensorProduct.smul_tmul_smul]
-
-end Contraction
-
 section Points
 
 variable {R H V W : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
@@ -86,16 +60,10 @@ Hopf algebra `H` acts on the diagonal tensor product comodule `V ⊗ W` by
 theorem basePointsRepresentation_tensor_tmul (g : WithConv (H →ₐ[R] R)) (v : V) (w : W) :
     basePointsRepresentation (H := H) (V ⊗[R] W) g (v ⊗ₜ w) =
       basePointsRepresentation (H := H) V g v ⊗ₜ basePointsRepresentation (H := H) W g w := by
-  have hV : endOfPoint V g.ofConv (1 ⊗ₜ v) = 1 ⊗ₜ basePointsRepresentation (H := H) V g v := by
-    apply (TensorProduct.lid R V).injective
-    rw [basePointsRepresentation_apply, TensorProduct.lid_tmul, one_smul]
-  have hW : endOfPoint W g.ofConv (1 ⊗ₜ w) = 1 ⊗ₜ basePointsRepresentation (H := H) W g w := by
-    apply (TensorProduct.lid R W).injective
-    rw [basePointsRepresentation_apply, TensorProduct.lid_tmul, one_smul]
   have h := endOfPoint_tensor_tmul g.ofConv 1 1 v w
-  rw [hV, hW, TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul] at h
-  rw [basePointsRepresentation_apply, ← mul_one (1 : R), ← h, TensorProduct.lid_tmul, mul_one,
-    one_smul]
+  simp only [endOfPoint_tmul, one_smul, endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation,
+    TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, mul_one] at h
+  simpa using congrArg (TensorProduct.lid R (V ⊗[R] W)) h.symm
 
 end Points
 

@@ -20,14 +20,9 @@ side the irreducible finite-dimensional module of a dominant weight `μ` is name
 
 * An irreducible rational representation with a highest weight vector of dominant weight `λ`
   differentiates to `glIrreducible n λ`
-  (`TauCeti.IsRationalRep.nonempty_lieModuleEquiv_glIrreducible`). Through the differential the
-  representation stays irreducible (`TauCeti.IsRationalRep.isIrreducible_differential`) and the
-  highest weight vector stays a highest weight vector of the same weight
-  (`TauCeti.IsRationalRep.isGlHighestWeightVector_differential`); an irreducible `𝔤𝔩ₙ`-module with
-  a highest weight vector of weight `λ` is `glIrreducible n λ`
-  (`TauCeti.nonempty_lieModuleEquiv_glIrreducible`).
-* In particular the rational Weyl module `V_λ = TauCeti.rationalWeylRep ℂ n λ` of every dominant
-  weight `λ` differentiates to `glIrreducible n λ`
+  (`TauCeti.IsRationalRep.nonempty_lieModuleEquiv_glIrreducible`). Hence the rational Weyl module
+  `V_λ = TauCeti.rationalWeylRep ℂ n λ` of every dominant weight `λ` differentiates to
+  `glIrreducible n λ`
   (`TauCeti.nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible`); for a weight with vanishing
   last entry, `V_λ` is the Weyl module of the Young diagram `λ`.
 * Since the differential of a tensor product is the tensor product of the differentials
@@ -50,8 +45,6 @@ built from it.
 
 ## Main results
 
-* `TauCeti.IsRationalRep.nonempty_lieModuleEquiv_glIrreducible`: an irreducible rational
-  representation differentiates to the named irreducible `𝔤𝔩ₙ`-module of its highest weight.
 * `TauCeti.nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible`: the rational Weyl module of a
   dominant weight `λ` differentiates to `glIrreducible n λ`.
 * `TauCeti.nonempty_lieModuleEquiv_tprod_rationalWeylRep_glIrreducible`: the tensor product of
@@ -72,28 +65,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 namespace TauCeti
 
 variable {n : ℕ}
-
-namespace IsRationalRep
-
-variable {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : Representation ℂ (GL (Fin n) ℂ) W}
-
-/-- **An irreducible rational representation differentiates to the named irreducible
-`𝔤𝔩ₙ`-module of its highest weight**: if `ρ` is irreducible and has a highest weight vector of
-dominant weight `λ` (a nonzero vector of weight `λ` fixed by every transvection `xᵢⱼ(c)` with
-`i < j`), then `W` with the action of `𝔤𝔩ₙ(ℂ)` through `dρ` is isomorphic to
-`glIrreducible n λ`. -/
-theorem nonempty_lieModuleEquiv_glIrreducible (hρ : IsRationalRep ρ) [ρ.IsIrreducible]
-    {l : DominantWeight n} {w : W} (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l.1)
-    (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w) :
-    letI := LieRingModule.compLieHom W hρ.differential
-    Nonempty (W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ glIrreducible n fun i ↦ (l.1 i : ℂ)) := by
-  let _ := LieRingModule.compLieHom W hρ.differential
-  have _ := LieModule.compLieHom W hρ.differential
-  have _ := hρ.isIrreducible_differential
-  exact TauCeti.nonempty_lieModuleEquiv_glIrreducible (isGlDominantIntegral_intCast l.antitone)
-    (hρ.isGlHighestWeightVector_differential hw0 hwl hw)
-
-end IsRationalRep
 
 /-- **The rational Weyl module of a dominant weight `λ` differentiates to `glIrreducible n λ`**:
 `V_λ`, with the action of `𝔤𝔩ₙ(ℂ)` through the differential of `TauCeti.rationalWeylRep ℂ n λ`, is
