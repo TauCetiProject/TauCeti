@@ -43,7 +43,10 @@ of states of the local algebras needs to define a state of their inductive limit
 `Λ'` is the Gibbs state of the included Hamiltonian `H_Φ(Λ) ⊗ 1`,
 `QuantumSpin.Interaction.gibbsExtension_eq_gibbsState`, and hence the unique β-KMS state of the
 dynamics this Hamiltonian generates on `A_Λ'`,
-`QuantumSpin.Interaction.isKMSState_gibbsExtension_iff`.
+`QuantumSpin.Interaction.isKMSState_iff_eq_gibbsExtension`. This rests on a fact about any
+Hermitian matrix `K` of `A_Λ`: the inclusion commutes with the exponential,
+`QuantumSpin.inclusion_exp`, so the Gibbs state of `K` evaluated on the normalized partial trace
+is the Gibbs state of `K ⊗ 1`, `QuantumSpin.gibbsState_expectation`.
 
 ## References
 
@@ -61,6 +64,49 @@ open TauCeti CStarAction
 open scoped Matrix.Norms.L2Operator MatrixOrder ComplexOrder
 
 namespace TauCeti.QuantumSpin
+
+section GibbsState
+
+variable {L S : Type*} [DecidableEq L] [Fintype S] [DecidableEq S] {Λ Λ' : Finset L}
+
+/-- The inclusion of local algebras is continuous. -/
+theorem continuous_inclusion {R : Type*} [CommSemiring R] [StarRing R] [TopologicalSpace R]
+    (h : Λ ⊆ Λ') : Continuous (inclusion (S := S) (R := R) h) :=
+  continuous_matrix fun σ τ => by
+    simp_rw [inclusion_apply]
+    split_ifs
+    · exact continuous_id.matrix_elem _ _
+    · exact continuous_const
+
+/-- The inclusion of local algebras commutes with the exponential: `exp (x ⊗ 1) = exp x ⊗ 1`. -/
+theorem inclusion_exp {𝕜 : Type*} [RCLike 𝕜] (h : Λ ⊆ Λ') (x : Matrix (Λ → S) (Λ → S) 𝕜) :
+    exp (inclusion h x) = inclusion h (exp x) :=
+  (map_exp_of_mem_ball (𝕂 := 𝕜) _ (continuous_inclusion h) x
+    (by simp [expSeries_radius_eq_top])).symm
+
+/-- **The Gibbs state of `K` on the normalized partial trace is the Gibbs state of `K ⊗ 1`.** For
+a Hermitian matrix `K` of the local algebra of `Λ ⊆ Λ'`, composing its Gibbs state with the
+normalized partial trace `A_Λ' → A_Λ` gives the Gibbs state of the included matrix. -/
+theorem gibbsState_expectation [Nonempty S] (h : Λ ⊆ Λ') {K : Matrix (Λ → S) (Λ → S) ℂ}
+    (hK : K.IsHermitian) (β : ℝ) (X : Matrix (Λ' → S) (Λ' → S) ℂ) :
+    gibbsState K hK β (expectation h X) =
+      gibbsState (inclusion h K) (hK.isSelfAdjoint.map (inclusion h)).isHermitian β X := by
+  -- tracing a weight `ρ` against the normalized partial trace is tracing `ρ ⊗ 1`, up to the
+  -- number `c` of configurations of the sites of `Λ'` outside `Λ`
+  set c : ℂ := (Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) : ℂ)
+  have htr (ρ : Matrix (Λ → S) (Λ → S) ℂ) (X : Matrix (Λ' → S) (Λ' → S) ℂ) :
+      (ρ * expectation h X).trace = c⁻¹ * (inclusion h ρ * X).trace := by
+    rw [← expectation_inclusion_mul, trace_expectation]
+  have htr₁ (ρ : Matrix (Λ → S) (Λ → S) ℂ) : ρ.trace = c⁻¹ * (inclusion h ρ).trace := by
+    simpa using htr ρ 1
+  have hc : c⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 Fintype.card_ne_zero)
+  -- the Gibbs weight of `K ⊗ 1` is the included Gibbs weight of `K`
+  have hρ : exp (-(β • inclusion h K)) = inclusion h (exp (-(β • K))) := by
+    rw [← inclusion_exp, map_neg, map_real_smul _ (continuous_inclusion h)]
+  rw [IsHermitian.gibbsState_apply, IsHermitian.gibbsState_apply, hρ, htr, htr₁ (exp _),
+    mul_div_mul_left _ _ hc]
+
+end GibbsState
 
 /-- An **interaction** of a quantum spin system with sites `L` and single-site basis states `S`:
 a Hermitian observable `Φ X` of the local algebra of every finite region `X`, the energy of the
@@ -320,31 +366,13 @@ theorem gibbsExtension_eq_gibbsState (Φ : Interaction ℂ L S) (β : ℝ) (h : 
     Φ.gibbsExtension β h =
       gibbsState (inclusion h (Φ.localHamiltonian Λ)) (Φ.isHermitian_inclusion_localHamiltonian h)
         β := by
-  -- the Gibbs weight of the included Hamiltonian is the included Gibbs weight
-  have hρ : exp (-(β • inclusion h (Φ.localHamiltonian Λ))) =
-      inclusion h (exp (-(β • Φ.localHamiltonian Λ))) := by
-    have hcont : Continuous (inclusion h : Matrix (Λ → S) (Λ → S) ℂ →⋆ₐ[ℂ] _) := by
-      simpa using LinearMap.continuous_of_finiteDimensional
-        (inclusion h : Matrix (Λ → S) (Λ → S) ℂ →⋆ₐ[ℂ] Matrix (Λ' → S) (Λ' → S) ℂ).toLinearMap
-    rw [map_exp_of_mem_ball (𝕂 := ℂ) _ hcont _ (by simp [expSeries_radius_eq_top]), map_neg,
-      map_real_smul _ hcont]
-  -- tracing a weight `ρ` against the normalized partial trace is tracing `ρ ⊗ 1`, up to the
-  -- number `c` of configurations of the sites of `Λ'` outside `Λ`
-  set c : ℂ := (Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) : ℂ)
-  have htr (ρ : Matrix (Λ → S) (Λ → S) ℂ) (X : Matrix (Λ' → S) (Λ' → S) ℂ) :
-      (ρ * expectation h X).trace = c⁻¹ * (inclusion h ρ * X).trace := by
-    rw [← expectation_inclusion_mul, trace_expectation]
-  have htr₁ (ρ : Matrix (Λ → S) (Λ → S) ℂ) : ρ.trace = c⁻¹ * (inclusion h ρ).trace := by
-    simpa using htr ρ 1
-  have hc : c⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 Fintype.card_ne_zero)
   ext X
-  rw [gibbsExtension_apply, IsHermitian.gibbsState_apply, IsHermitian.gibbsState_apply, hρ, htr,
-    htr₁ (exp _), mul_div_mul_left _ _ hc]
+  rw [gibbsExtension_apply, gibbsState_expectation]
 
 /-- **The extended Gibbs state is the unique KMS state of the included dynamics.** A state of the
 local algebra of a larger region `Λ'` is a β-KMS state of the dynamics generated by the included
 Hamiltonian `H_Φ(Λ) ⊗ 1` exactly when it is the extension of the Gibbs state of `Λ`. -/
-theorem isKMSState_gibbsExtension_iff (Φ : Interaction ℂ L S) (β : ℝ) (h : Λ ⊆ Λ')
+theorem isKMSState_iff_eq_gibbsExtension (Φ : Interaction ℂ L S) (β : ℝ) (h : Λ ⊆ Λ')
     {ω : Matrix (Λ' → S) (Λ' → S) ℂ →P[ℂ] ℂ} :
     (selfAdjoint.cstarAction ⟨inclusion h (Φ.localHamiltonian Λ),
       (Φ.isHermitian_inclusion_localHamiltonian h).isSelfAdjoint⟩).IsKMSState β ω ↔

@@ -107,8 +107,7 @@ private theorem hasDerivAt_cstarAction_zero (h : selfAdjoint A) (a : A) :
 /-- Every element lies in the domain of the generator of the inner dynamics. -/
 @[simp]
 theorem generator_cstarAction_domain (h : selfAdjoint A) : (cstarAction h).generator.domain = ⊤ :=
-  eq_top_iff.2 fun a _ => ((cstarAction h).mem_generator_domain_iff_differentiableAt a).2
-    (hasDerivAt_cstarAction_zero h a).differentiableAt
+  eq_top_iff.2 fun a _ => (isEntireAnalytic_cstarAction h a).mem_generator_domain
 
 /-- The generator of the inner dynamics of a self-adjoint element `h` is the inner derivation
 `a ↦ i [h, a]`. -/
