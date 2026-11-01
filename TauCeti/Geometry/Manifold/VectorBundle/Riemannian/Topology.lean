@@ -17,8 +17,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 with the initial topology of its coordinate derivatives of every order `m ≤ k`, for
 `k : ℕ∞`. Each derivative is a continuous map on an extended chart target, with its
 compact-open topology. Thus convergence means uniform convergence of all these derivatives on
-every compact subset of every chart target. Derivatives take values in continuous multilinear
-maps with the operator norm; no basis of the model space is chosen.
+every compact subset of every chart target (`tendsto_chartCk_iff`). Derivatives take values in
+continuous multilinear maps with the operator norm; no basis of the model space is chosen.
 
 The family criterion `continuous_chartCk_iff` expresses continuity by joint continuity of the
 coordinate derivatives in the parameter and chart variable; in particular each coordinate
@@ -37,8 +37,11 @@ can coexist on the same carrier; the C∞ one is finer (`chartCInftyTopology_le_
 
 This construction uses the compact-open derivative convention of M. Hirsch,
 *Differential Topology*, GTM 33, Chapter 2, §1, also used by
-`ContMDiffMap.manifoldWeakWhitneyTopology`. Comparison with other atlases or with a topology
-on smooth tensor sections is not established here.
+`ContMDiffMap.manifoldWeakWhitneyTopology`. The topology is already determined by the charts at
+any set of points whose chart domains cover the manifold; this is proved, through the change of
+charts formula, in `TauCeti.Geometry.Manifold.Riemannian.Pullback.Topology`
+(`Bundle.ContMDiffRiemannianMetric.chartCkTopology_eq_induced`). Comparison with a topology on
+smooth tensor sections is not established here.
 -/
 
 open Bundle Set Filter Topology
@@ -178,27 +181,46 @@ theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) 
   rw [ContinuousAt, ← hmap, tendsto_map'_iff]
   exact h.continuousAt
 
+/-- The order-`m` coordinate derivatives of a family of metrics in the chart at `x` converge in
+the compact-open topology exactly when they converge uniformly on every compact subset of the
+chart target, regarded as a subset of the model space. -/
+theorem tendsto_chartMetricDerivative_iff {P : Type*} {l : Filter P}
+    {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} (x : M) (m : ℕ) :
+    withMetricOperatorNorms E in
+    Tendsto (fun p ↦ (g p).chartMetricDerivative x m) l (𝓝 (g₀.chartMetricDerivative x m)) ↔
+      ∀ K ⊆ (extChartAt I x).target, IsCompact K →
+        TendstoUniformlyOn
+          (fun p z ↦ iteratedFDeriv ℝ m ((g p).toNondegenerateMetric.chartMetric x) z)
+          (fun z ↦ iteratedFDeriv ℝ m (g₀.toNondegenerateMetric.chartMetric x) z) l K := by
+  rw [ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn]
+  constructor
+  · intro h K hKx hK
+    have hK' : IsCompact (Subtype.val ⁻¹' K : Set (extChartAt I x).target) := by
+      rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.mpr hKx]
+      exact hK
+    refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
+    filter_upwards [Metric.tendstoUniformlyOn_iff.mp (h _ hK') ε hε] with p hp z hz
+    exact hp ⟨z, hKx hz⟩ hz
+  · intro h K hK
+    exact ((h _ (image_subset_iff.mpr fun z _ ↦ z.2) (hK.image continuous_subtype_val)).comp
+      Subtype.val).mono (subset_preimage_image _ _)
+
 /-- Convergence of metrics in the chart Cᵏ topology is uniform convergence on every compact
-chart set of each coordinate derivative of order at most `k`. -/
+subset of every chart target of each coordinate derivative of order at most `k`. -/
 theorem tendsto_chartCk_iff {P : Type*} {l : Filter P}
     {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
     withMetricOperatorNorms E in
     letI := chartCkTopology (I := I) (M := M) k
     Tendsto g l (𝓝 g₀) ↔ ∀ (x : M) (m : ℕ), (m : ℕ∞) ≤ k →
-      ∀ (K : Set (extChartAt I x).target), IsCompact K →
+      ∀ K ⊆ (extChartAt I x).target, IsCompact K →
         TendstoUniformlyOn
-          (fun p (z : (extChartAt I x).target) ↦
-            iteratedFDeriv ℝ m ((g p).toNondegenerateMetric.chartMetric x) z)
-          (fun (z : (extChartAt I x).target) ↦
-            iteratedFDeriv ℝ m (g₀.toNondegenerateMetric.chartMetric x) z) l K := by
-  simp only [nhds_induced, tendsto_comap_iff, tendsto_pi_nhds,
-    Function.comp_def, ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn,
-    Subtype.forall, chartMetricDerivative]
-  -- The coercions of the unfolded chart derivatives are taken on the spelled-out chart target
-  -- `I.target ∩ I.symm ⁻¹' (chartAt H x).target`, which is `(extChartAt I x).target` by
-  -- definition; `rfl` identifies the two forms, as the `change` in `continuous_inner_apply` does.
-  rfl
+          (fun p z ↦ iteratedFDeriv ℝ m ((g p).toNondegenerateMetric.chartMetric x) z)
+          (fun z ↦ iteratedFDeriv ℝ m (g₀.toNondegenerateMetric.chartMetric x) z) l K := by
+  simp only [nhds_induced, tendsto_comap_iff, tendsto_pi_nhds, Function.comp_def, Subtype.forall]
+  exact forall_congr' fun x ↦ forall_congr' fun m ↦ forall_congr' fun _ ↦
+    tendsto_chartMetricDerivative_iff x m
 
 /-- Evaluation of a metric on two fixed tangent vectors is continuous in the chart Cᵏ
 topology. -/
