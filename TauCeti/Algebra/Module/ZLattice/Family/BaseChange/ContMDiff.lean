@@ -16,8 +16,9 @@ the canonical map from the period quotient for `P ∘ f` to that for `P` is `C^n
 Moreover, a map into the pulled-back family is `C^n` exactly when its projection to `Z`
 and its composite with this canonical map are `C^n`. Thus the topological pullback
 comparison has the smooth universal property, with the existing quotient atlases.
-In particular, over `ℂ` these statements give holomorphic base change for varying
-period lattices; they do not assert holomorphic local triviality with a fixed fibre.
+For `𝕜 = ℂ` and `1 ≤ n`, with compatible complex manifold structures, these statements
+give holomorphic base change for varying period lattices; they do not assert holomorphic
+local triviality with a fixed fibre.
 
 The universal property requires no continuity hypothesis on the map being tested.
 Local inverses of the period covering in the original family recover smooth vector
@@ -53,7 +54,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 include hf
 
-/-- A `C^n` map of bases induces a `C^n` map of period quotients. In the complex case,
+/-- A `C^n` map of bases induces a `C^n` map of period quotients. For `𝕜 = ℂ` and
+`1 ≤ n`, with complex manifold structures on `Y` and `Z` modeled by `I` and `J`,
 this is the holomorphic map `[z, v] ↦ [f z, v]` for the pulled-back period family. -/
 theorem contMDiff_torusFamilyBaseChangeMap :
     letI : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
@@ -151,7 +153,8 @@ theorem contMDiffAt_torusFamilyBaseChange_iff
       (fun l ↦ (hP l).comp hf)).contMDiff.contMDiffAt.comp x
         (ha.prodMk hs.snd)).congr_of_eventuallyEq heq
 
-/-- The smooth universal property of base change for period quotients. Over `ℂ`, this
+/-- The smooth universal property of base change for period quotients. For `𝕜 = ℂ` and
+`1 ≤ n`, with compatible complex manifold structures on `W`, `Y`, and `Z`, this
 characterizes holomorphic maps into the pulled-back family by their two components. -/
 theorem contMDiff_torusFamilyBaseChange_iff
     (u : letI := periodAddAction (P ∘ f); W → AddAction.orbitRel.Quotient Λ (Z × E)) :
