@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
@@ -17,8 +16,7 @@ The Euler-characteristic degree of a line bundle is unchanged by extension of th
 when the source is quasi-compact with affine diagonal, for instance separated of finite type over
 the field, and in particular proper. The line bundle after base change is its actual pullback. No
 smoothness, rational point or geometric connectedness is needed, so the result applies to nodal
-and to reducible proper curves. The same holds, through an explicit Čech computation, for a
-quasi-separated scheme with a two-affine cover having affine intersection.
+and to reducible proper curves.
 
 Both coefficient cohomology dimensions and both structure-sheaf dimensions are preserved by
 field extension, by flat base change of cohomology
@@ -49,33 +47,6 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 namespace InvertibleSheaf
 
 include H in
-/-- Pullback under a field extension preserves Euler-characteristic degree on a
-quasi-separated scheme with a two-affine cover having affine intersection. -/
-theorem eulerDegree_pullback_of_two_affine_opens [QuasiSeparatedSpace X]
-    (L : InvertibleSheaf X) {U V : X.Opens}
-    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V))
-    (hUV : U ⊔ V = ⊤) :
-    ((pullback g).obj L).eulerDegree K = L.eulerDegree k := by
-  have hOne (M : X.Modules) [M.IsQuasicoherent] :
-      Module.finrank K (Scheme.Modules.Cohomology ((Scheme.Modules.pullback g).obj M) 1) =
-        Module.finrank k (Scheme.Modules.Cohomology M 1) := by
-    obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
-    have : Module.Free k (Scheme.Modules.Cohomology M 1) := Module.Free.of_divisionRing _ _
-    rw [← e.finrank_eq, Module.finrank_baseChange]
-  have : CompactSpace X := ⟨by
-    rw [← TopologicalSpace.Opens.coe_top, ← hUV, TopologicalSpace.Opens.coe_sup]
-    exact hU.isCompact.union hV.isCompact⟩
-  let e : (Scheme.Modules.pullback g).obj (trivial X).obj ≅ (trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (trivialObjIsoUnit Y).symm
-  have hTrivial (i : ℕ) := Scheme.Modules.finrank_cohomology_congr K e i
-  rw [eulerDegree_eq_finrank_sub, eulerDegree_eq_finrank_sub, pullback_obj_obj,
-    ← hTrivial 0, ← hTrivial 1,
-    finrank_cohomology_zero_pullback_eq_of_isPullback H L.obj, hOne L.obj,
-    finrank_cohomology_zero_pullback_eq_of_isPullback H (trivial X).obj,
-    hOne (trivial X).obj]
-
-include H in
 /-- **The degree of a line bundle is unchanged by any extension of the ground field**, on a
 quasi-compact scheme with affine diagonal, for instance a proper scheme over `k`. The scheme need
 not be smooth, irreducible or geometrically connected, nor have a rational point. -/
@@ -93,19 +64,6 @@ theorem eulerDegree_pullback [CompactSpace X] [IsAffineHom (pullback.diagonal (t
 end InvertibleSheaf
 
 namespace LineBundleClass
-
-include H in
-/-- Pullback under a field extension preserves the Euler-characteristic degree of a
-line-bundle class on a quasi-separated scheme with a two-affine cover having affine
-intersection. -/
-theorem eulerDegree_pullback_of_two_affine_opens [QuasiSeparatedSpace X]
-    (a : LineBundleClass X) {U V : X.Opens}
-    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V))
-    (hUV : U ⊔ V = ⊤) :
-    eulerDegree K (pullback g a) = eulerDegree k a := by
-  obtain ⟨L, rfl⟩ := mk_surjective a
-  rw [pullback_mk, eulerDegree_mk, eulerDegree_mk,
-    InvertibleSheaf.eulerDegree_pullback_of_two_affine_opens H L hU hV hInter hUV]
 
 include H in
 /-- Pullback under a field extension preserves the Euler-characteristic degree of a

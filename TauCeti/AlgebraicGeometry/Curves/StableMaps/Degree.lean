@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
-import TauCeti.AlgebraicGeometry.Morphisms.Separated
 
 /-!
 # The polarization degree of a prestable map
@@ -126,18 +126,14 @@ lemma degree_const (P : PointedPrestableFamily (Spec (.of K)) n) (σ : Spec (.of
 /-- **Isomorphic prestable maps have the same degree.** -/
 theorem degree_eq_of_iso {G : PrestableMap q n} (e : F ≅ G) (a : LineBundleClass V) :
     F.degree K a = G.degree K a := by
-  -- The source curve is proper over `K`, so quasi-compact and separated, as flat base change of
-  -- its cohomology requires.
-  have : CompactSpace G.curve.total := compactSpace_of_universallyClosed G.curve.toBase
-  have := Scheme.IsSeparated.of_isSeparated G.curve.toBase
-  have hK : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 _ := by simp
-  have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
-    rw [hK]
-    infer_instance
-  -- `e` gives an isomorphism of source curves over `Spec K`, a pullback square along the identity.
+  -- `e` gives an isomorphism of source curves over `Spec K`, a pullback square along the
+  -- identity `Spec.map (algebraMap K K) = 𝟙 _`.
   have H : IsPullback e.hom.curve.hom (F.curve.total ↘ Spec (.of K)) (G.curve.total ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K K))) :=
-    .of_horiz_isIso ⟨by simp⟩
+      (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
+    have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
+      rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
+      infer_instance
+    exact .of_horiz_isIso ⟨by simp⟩
   rw [degree_def, degree_def, ← e.hom.hom_comp_map, ← LineBundleClass.pullback_comp]
   exact LineBundleClass.eulerDegree_pullback H _
 
@@ -148,8 +144,6 @@ theorem degree_pullback {L : Type u} [Field L] [Algebra K L] (a : LineBundleClas
     (F.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).degree L
         (LineBundleClass.pullback (Limits.pullback.fst q _) a) =
       F.degree K a := by
-  have : CompactSpace F.curve.total := compactSpace_of_universallyClosed F.curve.toBase
-  have := Scheme.IsSeparated.of_isSeparated F.curve.toBase
   -- The source curve of the base change is the fibre product `C ×_K L`.
   have H : IsPullback (Limits.pullback.fst F.curve.toBase _)
       ((F.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).curve.total ↘ Spec (.of L))

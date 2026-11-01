@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Prestable
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
+import TauCeti.AlgebraicGeometry.Morphisms.Separated
 
 /-!
 # Pointed prestable families of curves
@@ -99,17 +100,15 @@ instance instOverTotal : P.total.Over S :=
 theorem over_eq_toBase : P.total ↘ S = P.toBase :=
   (rfl)
 
-/-- A closed subscheme of the total space of a pointed prestable family, for instance the reduced
-subscheme on an irreducible component, is a scheme over the base through the total space. -/
-instance instOverSubscheme (I : P.total.IdealSheafData) : I.subscheme.Over S :=
-  ⟨I.subschemeι ≫ P.toBase⟩
+/-- The total space of a pointed prestable family over a quasi-compact base is quasi-compact,
+the structure morphism being proper. -/
+instance compactSpace_total [CompactSpace S] : CompactSpace P.total :=
+  QuasiCompact.compactSpace_of_compactSpace P.toBase
 
-/-- The structure morphism of a closed subscheme of the total space is its inclusion followed by
-`toBase`. -/
-@[simp]
-theorem over_eq_subschemeι_comp_toBase (I : P.total.IdealSheafData) :
-    I.subscheme ↘ S = I.subschemeι ≫ P.toBase :=
-  (rfl)
+/-- The total space of a pointed prestable family over a separated base is separated, the
+structure morphism being proper. -/
+instance isSeparated_total [S.IsSeparated] : P.total.IsSeparated :=
+  .of_isSeparated P.toBase
 
 /-- Distinct markings take distinct values at every point of the base. -/
 theorem marking_apply_ne {i j : Fin n} (hij : i ≠ j) (s : S) : P.marking i s ≠ P.marking j s :=
