@@ -19,8 +19,9 @@ The compact-open result uses Mathlib's `TopCat.isTopologicalBasis_cofiltered_lim
 `eq_finite_iUnion_of_isTopologicalBasis_of_isCompact_open`: compactness reduces a cover by
 finite-stage cylinders to a finite union, and cofilteredness moves that union to one stage.
 Boolean induction then gives descent of constructible sets. The compact-open result only
-needs compact, prespectral, quasiseparated stages, not sobriety or T₀. These descent results
-are useful for presenting spectral spaces by finite spaces and descending finite geometric data.
+needs only prespectral stages, not compactness, quasiseparatedness, sobriety or T₀.
+These descent results are useful for presenting spectral spaces by finite spaces and descending
+finite geometric data.
 
 This extends the compactness argument of Mathlib's
 `Profinite.exists_isClopen_of_cofiltered` from profinite spaces to compact opens of spaces
@@ -44,27 +45,35 @@ variable {J : Type v} [Category.{w} J] [IsCofiltered J]
   (hF : ∀ {i j} (f : i ⟶ j), IsSpectralMap (F.map f))
   (c : Cone F) (hc : IsLimit c)
 
-include hF hc
+include hc
 
 section CompactOpen
 
-variable [∀ j, CompactSpace (F.obj j)] [∀ j, PrespectralSpace (F.obj j)]
-  [∀ j, QuasiSeparatedSpace (F.obj j)]
+variable [∀ j, PrespectralSpace (F.obj j)]
 
-/-- The inverse images of the compact opens at compact prespectral quasiseparated stages
-form a basis of a cofiltered limit along spectral maps. -/
+/-- The inverse images of the compact opens at prespectral stages form a basis of a
+cofiltered limit. -/
 theorem isTopologicalBasis_isOpen_isCompact_preimage_of_isLimit :
     IsTopologicalBasis {U : Set c.pt | ∃ (j : J) (V : Set (F.obj j)),
       IsOpen V ∧ IsCompact V ∧ U = c.π.app j ⁻¹' V} := by
-  simpa [and_assoc] using isTopologicalBasis_cofiltered_limit.{u, v, w} F c hc
-    (fun j ↦ {V : Set (F.obj j) | IsOpen V ∧ IsCompact V})
-    (fun _ ↦ PrespectralSpace.isTopologicalBasis)
-    (fun _ ↦ ⟨isOpen_univ, isCompact_univ⟩)
-    (fun _ _ _ hU hV ↦ ⟨hU.1.inter hV.1, hU.2.inter_of_isOpen hV.2 hU.1 hV.1⟩)
-    (fun _ _ f _ hV ↦ ⟨hV.1.preimage (hF f).continuous,
-      (hF f).isCompact_preimage_of_isOpen hV.1 hV.2⟩)
+  have hb := isTopologicalBasis_cofiltered_limit.{u, v, w} F c hc
+    (fun j ↦ {V : Set (F.obj j) | IsOpen V})
+    (fun _ ↦ isTopologicalBasis_opens)
+    (fun _ ↦ isOpen_univ)
+    (fun _ _ _ hU hV ↦ hU.inter hV)
+    (fun _ _ f _ hV ↦ hV.preimage (F.map f).hom.continuous)
+  refine hb.isTopologicalBasis_of_exists_subset ?_ ?_
+  · rintro _ ⟨j, V, hVo, _, rfl⟩
+    exact hVo.preimage (c.π.app j).hom.continuous
+  · rintro _ ⟨j, V, hVo, rfl⟩ x hx
+    obtain ⟨W, ⟨hWo, hWc⟩, hxW, hWV⟩ :=
+      PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open
+        (a := c.π.app j x) hx hVo
+    exact ⟨c.π.app j ⁻¹' W, ⟨j, W, hWo, hWc, rfl⟩, hxW, preimage_mono hWV⟩
 
-/-- Every compact open of a cofiltered limit of compact prespectral quasiseparated spaces
+include hF
+
+/-- Every compact open of a cofiltered limit of prespectral spaces
 along spectral maps descends to a compact open at one stage. The limiting cone may be any
 chosen limit cone. -/
 theorem exists_isOpen_isCompact_preimage_of_isLimit {U : Set c.pt} (hUo : IsOpen U)
@@ -74,7 +83,7 @@ theorem exists_isOpen_isCompact_preimage_of_isLimit {U : Set c.pt} (hUo : IsOpen
   let B := {U : Set c.pt | ∃ (j : J) (V : Set (F.obj j)),
     IsOpen V ∧ IsCompact V ∧ U = c.π.app j ⁻¹' V}
   have hb : IsTopologicalBasis B :=
-    isTopologicalBasis_isOpen_isCompact_preimage_of_isLimit F hF c hc
+    isTopologicalBasis_isOpen_isCompact_preimage_of_isLimit F c hc
   obtain ⟨s, hs, rfl⟩ := eq_finite_iUnion_of_isTopologicalBasis_of_isCompact_open
     (fun V : B ↦ (V : Set c.pt)) (by simpa using hb) U hUc hUo
   clear hUo hUc
@@ -96,6 +105,8 @@ theorem exists_isOpen_isCompact_preimage_of_isLimit {U : Set c.pt} (hUo : IsOpen
       ← coe_comp, c.w]
 
 end CompactOpen
+
+include hF
 
 variable [∀ j, SpectralSpace (F.obj j)]
 
