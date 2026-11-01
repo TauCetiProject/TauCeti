@@ -30,7 +30,9 @@ polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degr
 Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `f(a)` by `c e`, where
 `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater than `n`
 (`MvPowerSeries.le_order_subst_update_add_sub`). For a formal group law this says that
-`F(x + e, y) ≡ F(x, y) + e` to lowest order.
+`F(x + e, y) ≡ F(x, y) + e` to lowest order. The proof uses that below degree `n + 1`, multiplying
+`e` by a series `q` scales it by the constant coefficient of `q`
+(`MvPowerSeries.coeff_mul_eq_coeff_mul_constantCoeff_of_le_order`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
@@ -279,6 +281,19 @@ theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPo
 
 end Polynomial
 
+/-- Below degree `n + 1`, multiplying a series `e` of order at least `n` by `q` scales it by the
+constant coefficient of `q`. -/
+theorem coeff_mul_eq_coeff_mul_constantCoeff_of_le_order {σ R : Type*} [Ring R]
+    {e : MvPowerSeries σ R} {n : ℕ} (he : n ≤ e.order) (q : MvPowerSeries σ R) {m : σ →₀ ℕ}
+    (hm : m.degree ≤ n) :
+    coeff m (e * q) = coeff m e * constantCoeff q := by
+  have hq : (1 : ℕ∞) ≤ (q - C (constantCoeff q)).order :=
+    one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
+  have hlt : (m.degree : ℕ∞) < (e * (q - C (constantCoeff q))).order :=
+    lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_of_le hm) ((add_le_add he hq).trans le_order_mul)
+  have h := coeff_of_lt_order hlt
+  rwa [mul_sub, map_sub, coeff_mul_C, sub_eq_zero] at h
+
 section Perturbation
 
 variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -341,20 +356,12 @@ theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
           simp only [c, Finsupp.prod, map_prod, map_pow, ha₀]
           exact Finset.prod_eq_zero ht (zero_pow (Finsupp.mem_support_iff.mp ht))
         simp [hc]
-  -- below degree `n + 1`, multiplying `e` by `Q d` scales it by the constant coefficient of `Q d`
-  have hmul (q : MvPowerSeries τ S) {m : τ →₀ ℕ} (hm : m.degree < n + 1) :
-      coeff m (e * q) = constantCoeff q * coeff m e := by
-    have hq : (1 : ℕ∞) ≤ (q - C (constantCoeff q)).order :=
-      one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
-    have hlt : (m.degree : ℕ∞) < (e * (q - C (constantCoeff q))).order :=
-      lt_of_lt_of_le (by exact_mod_cast hm) ((add_le_add he hq).trans le_order_mul)
-    have h := coeff_of_lt_order hlt
-    rw [mul_sub, map_sub, coeff_mul_C, sub_eq_zero] at h
-    rw [h, mul_comm]
   refine nat_le_order fun m hm ↦ ?_
   have hfin := coeff_subst_finite ha f m
   rw [map_sub, map_sub, coeff_subst hb, coeff_subst ha, coeff_smul, sub_eq_zero, sub_eq_iff_eq_add']
-  simp_rw [hQ, map_add, hmul _ hm, hQ₀, smul_add]
+  -- below degree `n + 1`, multiplying `e` by `Q d` scales it by the constant coefficient of `Q d`
+  simp_rw [hQ, map_add,
+    coeff_mul_eq_coeff_mul_constantCoeff_of_le_order he _ (Nat.lt_succ_iff.mp hm), hQ₀, smul_add]
   rw [finsum_add_distrib hfin, add_right_inj, finsum_eq_single _ (Finsupp.single s 1)]
   · simp [Algebra.smul_def]
   · intro d hd

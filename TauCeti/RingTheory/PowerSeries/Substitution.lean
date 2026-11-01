@@ -86,8 +86,8 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
-* `PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow`,
-  `PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow'`: for `φ = X + ⋯`, the degree-`n`
+* `PowerSeries.homogeneousComponent_subst_left_eq_C_mul_X_pow`,
+  `PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow`: for `φ = X + ⋯`, the degree-`n`
   parts of `f (φ)` and of `φ (f)` are `c Xⁿ` when `f` has order at least `n` (and `n ≥ 1` for
   `φ (f)`), for `c` the coefficient of `Xⁿ` in `f`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
@@ -328,7 +328,7 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
 
 /-- The degree-`n` part of `f (φ)` is `a Xⁿ` when `f` has order at least `n` and coefficient `a`
 of `Xⁿ`, and `φ = X + ⋯`. -/
-theorem homogeneousComponent_subst_eq_C_mul_X_pow {f : R⟦X⟧} {φ : S⟦X⟧} {n : ℕ}
+theorem homogeneousComponent_subst_left_eq_C_mul_X_pow {f : R⟦X⟧} {φ : S⟦X⟧} {n : ℕ}
     (hn : n ≤ f.order) (hφ : constantCoeff φ = 0) (hφ₁ : coeff 1 φ = 1) :
     MvPowerSeries.homogeneousComponent n (f.subst φ) =
       MvPowerSeries.C (algebraMap R S (coeff n f)) * MvPowerSeries.X () ^ n := by
@@ -339,7 +339,7 @@ theorem homogeneousComponent_subst_eq_C_mul_X_pow {f : R⟦X⟧} {φ : S⟦X⟧}
 /-- The degree-`n` part of `φ (f)` is `a Xⁿ` when `f` has order at least `n ≥ 1` and coefficient
 `a` of `Xⁿ`, and `φ = X + ⋯`: the terms of `φ` of degree at least two contribute in degree at
 least `2 n`. -/
-theorem homogeneousComponent_subst_eq_C_mul_X_pow' {f : S⟦X⟧} {φ : R⟦X⟧} {n : ℕ}
+theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R⟦X⟧} {n : ℕ}
     (hn₀ : n ≠ 0) (hn : n ≤ f.order) (hφ : constantCoeff φ = 0) (hφ₁ : coeff 1 φ = 1) :
     MvPowerSeries.homogeneousComponent n (φ.subst f) =
       MvPowerSeries.C (coeff n f) * MvPowerSeries.X () ^ n := by
@@ -358,7 +358,7 @@ theorem homogeneousComponent_subst_eq_C_mul_X_pow' {f : S⟦X⟧} {φ : R⟦X⟧
     rw [subst_sub hS, subst_X hS, X_subst, sub_add_cancel]
   rw [hsplit, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
-    homogeneousComponent_subst_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
+    homogeneousComponent_subst_left_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
     Algebra.algebraMap_self, RingHom.id_apply]
 
 end Algebra

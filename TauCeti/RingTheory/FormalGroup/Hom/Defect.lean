@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import TauCeti.Data.Fin.Basic
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -96,40 +97,6 @@ theorem homDefect_eq {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) 
   simpa only [finTwo_X_eq_X, subst_self, id] using h
 
 end HomDefect
-
-section Perturbation
-
-variable (G : FormalGroup R) {σ : Type*} {x y e : MvPowerSeries σ R}
-
-/-- Perturbing the first argument of `G` by a series `e` of order at least `n ≥ 1` adds `e` to
-`G(x, y)`, up to terms of degree greater than `n`. -/
-private theorem le_order_subst_add_left_sub (hx : constantCoeff x = 0) (hy : constantCoeff y = 0)
-    {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
-    ((n + 1 : ℕ) : ℕ∞) ≤
-      (G.toPowerSeries.subst ![x + e, y] - G.toPowerSeries.subst ![x, y] - e).order := by
-  have hxy₀ : ∀ i, constantCoeff (![x, y] i) = 0 := fun i ↦ by fin_cases i <;> simp [hx, hy]
-  have h := le_order_subst_update_add_sub G.toPowerSeries
-    (hasSubst_of_constantCoeff_zero hxy₀) hxy₀ 0 hn he
-  have hu : Function.update ![x, y] 0 (![x, y] 0 + e) = ![x + e, y] := by
-    funext i
-    fin_cases i <;> simp
-  rwa [hu, G.lin_coeff_X, map_one, one_smul] at h
-
-/-- Perturbing the second argument of `G` by a series `e` of order at least `n ≥ 1` adds `e` to
-`G(x, y)`, up to terms of degree greater than `n`. -/
-private theorem le_order_subst_add_right_sub (hx : constantCoeff x = 0)
-    (hy : constantCoeff y = 0) {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
-    ((n + 1 : ℕ) : ℕ∞) ≤
-      (G.toPowerSeries.subst ![x, y + e] - G.toPowerSeries.subst ![x, y] - e).order := by
-  have hxy₀ : ∀ i, constantCoeff (![x, y] i) = 0 := fun i ↦ by fin_cases i <;> simp [hx, hy]
-  have h := le_order_subst_update_add_sub G.toPowerSeries
-    (hasSubst_of_constantCoeff_zero hxy₀) hxy₀ 1 hn he
-  have hu : Function.update ![x, y] 1 (![x, y] 1 + e) = ![x, y + e] := by
-    funext i
-    fin_cases i <;> simp
-  rwa [hu, G.lin_coeff_Y, map_one, one_smul] at h
-
-end Perturbation
 
 section Leading
 
@@ -227,15 +194,14 @@ theorem succ_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
   have hn₀ : p ^ k ≠ 0 := pow_ne_zero k hp.ne_zero
   have hn₂ : 2 ≤ p ^ k := Nat.one_lt_pow hk hp.one_lt
   -- `p` is the linear coefficient of `[p]_F`, which vanishes
-  have hpR : (p : R) = 0 := by
-    rw [← F.coeff_one_nsmulSeries p]
-    exact PowerSeries.coeff_of_lt_order 1 ((Nat.cast_lt.mpr (by omega)).trans_le hF)
+  have hpR : (p : R) = 0 :=
+    F.natCast_eq_zero_of_two_le_order_nsmulSeries ((Nat.cast_le.mpr hn₂).trans hF)
   -- since `g = X + ⋯`, the coefficients of `X^(pᵏ)` in `[p]_G(g(X))` and `g([p]_F(X))` are those
   -- of `[p]_G` and `[p]_F`
   have hG' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
-    (PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow hG hg hg₁)
+    (PowerSeries.homogeneousComponent_subst_left_eq_C_mul_X_pow hG hg hg₁)
   have hF' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
-    (PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow' hn₀ hF hg hg₁)
+    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg hg₁)
   simp only [coeff_homogeneousComponent, Finsupp.degree_single, ↓reduceIte, coeff_C_mul,
     coeff_X_pow, mul_one, Algebra.algebraMap_self, RingHom.id_apply] at hG' hF'
   rw [← PowerSeries.coeff_def Finsupp.single_eq_same] at hG' hF'
@@ -276,9 +242,8 @@ private theorem exists_succ_le_order_homDefect {p : ℕ} (hp : p.Prime) {h : ℕ
     exact ⟨g, hg, hg₁, succ_le_order_homDefect_of_coeff_nsmulSeries_eq hp hk₀ hg hg₁ hn
       (hle _ hF) (hle _ hG) hcoeff⟩
   · -- otherwise `d_n` is prime to `p`, and `p = 0` in `R`, so `d_n` is a unit
-    have hpR : (p : R) = 0 := by
-      rw [← F.coeff_one_nsmulSeries p]
-      exact PowerSeries.coeff_of_lt_order 1 ((Nat.cast_lt.mpr (by omega)).trans_le hF)
+    have hpR : (p : R) = 0 :=
+      F.natCast_eq_zero_of_two_le_order_nsmulSeries ((Nat.cast_le.mpr (hn₂.trans hnh)).trans hF)
     have hd : IsUnit ((TauCeti.lazardGcd n : ℕ) : R) := by
       have hcop : (TauCeti.lazardGcd n).Coprime p := Nat.Coprime.symm <|
         (Nat.Prime.coprime_iff_not_dvd hp).mpr fun hdvd ↦
