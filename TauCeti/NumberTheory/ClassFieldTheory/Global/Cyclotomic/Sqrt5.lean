@@ -159,7 +159,7 @@ section Zeta5
 
 variable {E : Type} [Field E] [NumberField E] [IsCyclotomicExtension {5} ℚ E]
 
-local instance : IsGalois ℚ E := IsCyclotomicExtension.isGalois {5} ℚ E
+local instance isGalois_zeta5 : IsGalois ℚ E := IsCyclotomicExtension.isGalois {5} ℚ E
 
 /-- **Restricting the Artin symbol of `ℚ(ζ₅)` to `ℚ(√5)`.** Let `M` be the quadratic subfield of
 the fifth cyclotomic field. An automorphism representing the global Artin symbol of a prime
