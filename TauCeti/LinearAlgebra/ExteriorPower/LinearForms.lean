@@ -247,11 +247,6 @@ theorem exists_lt_of_ne_topBlock {k : ℕ} (h : k + p = N) {J : powersetCard (Fi
 variable [Fintype ι] {K : Type*} [Field K] {x : Fin (Fintype.card ι) → ι → K}
   {f : Fin (Fintype.card ι) → Dual K (ι → K)}
 
-omit [LinearOrder ι] in
-private theorem card_powersetCard_fin (p : ℕ) :
-    Fintype.card (powersetCard (Fin (Fintype.card ι)) p) = Fintype.card (powersetCard ι p) := by
-  simp only [Fintype.card_eq_nat_card, Set.powersetCard.card, Nat.card_fin]
-
 /-- **The span of the wedges meeting the first `k` indices is a kernel**: for a basis `x` with
 biorthogonal forms `f`, it is the kernel of the wedge of the last `p` forms `f k, …, f (N - 1)`.
 It is a hyperplane by `finrank_wedgeSpan_add_one`. -/
@@ -266,7 +261,8 @@ theorem wedgeSpan_eq_ker (hf : ∀ i j, f i (x j) = if i = j then 1 else 0) {k :
     exact absurd ((mem_topBlock h).1 hjJ) (by omega)
   · -- expand `z` in the basis of Plücker vectors; the coefficient of the top block vanishes
     have hsp := (linearIndependent_plucker_comp hx p).span_eq_top_of_card_eq_finrank'
-      (by rw [card_powersetCard_fin, Module.finrank_fintype_fun_eq_card])
+      (by simp only [Module.finrank_fintype_fun_eq_card, Fintype.card_eq_nat_card,
+        Set.powersetCard.card, Nat.card_fin])
     obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun K).1
       (hsp ▸ Submodule.mem_top : z ∈ Submodule.span K (Set.range _))
     have hc₀ : c (topBlock h) = 0 := by
