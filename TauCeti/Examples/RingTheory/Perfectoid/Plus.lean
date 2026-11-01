@@ -32,13 +32,13 @@ example {S : Subring ℂ_[p]} (hS : IsRingOfIntegralElements S) :
 example {S : Subring ℂ_[p]} (hS : IsRingOfIntegralElements S) :
     ∃ ϖ : S, IsPseudoUniformizer (ϖ : ℂ_[p]) ∧
       ∃ c : S, (p : S) = ϖ ^ p * c ∧ IsTopologicallyNilpotent (c : ℂ_[p]) :=
-  exists_pseudoUniformizer_pow_mul_eq_natCast_plus hS
+  exists_pseudoUniformizer_natCast_eq_pow_mul_plus hS
 
 -- The same relative Frobenius works for any admissible pseudouniformiser of the plus ring.
 example {S : Subring ℂ_[p]} (hS : IsRingOfIntegralElements S) (ϖ : S)
     (hϖ : IsPseudoUniformizer (ϖ : ℂ_[p])) (hdvd : ϖ ^ p ∣ (p : S)) :
     Function.Bijective (TauCeti.frobeniusModPow p hdvd) :=
-  bijective_frobeniusModPow_plus hS hϖ hdvd
+  frobeniusModPow_bijective_plus hS hϖ hdvd
 
 -- Roots modulo `ϖ p` have their error quotient in the actual plus ring.
 example {S : Subring ℂ_[p]} (hS : IsRingOfIntegralElements S) (ϖ : S)

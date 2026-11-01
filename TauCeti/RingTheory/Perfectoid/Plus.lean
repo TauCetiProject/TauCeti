@@ -46,7 +46,10 @@ theorem exists_natCast_dvd_sub_pow_plus (hplus : IsRingOfIntegralElements Rplus)
     (x : Rplus) : ∃ y : Rplus, (p : Rplus) ∣ x - y ^ p := by
   obtain ⟨ϖ, hϖ, hdvd, -, -⟩ :=
     IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R)
-  obtain ⟨y, z, hz⟩ := IsPerfectoidTateRing.exists_mul_natCast_dvd_sub_pow hϖ hdvd
+  have := IsPerfectoidTateRing.isUniform p (R := R)
+  obtain ⟨y, z, hz⟩ := IsRingOfIntegralElements.exists_mul_natCast_dvd_sub_pow
+    (isRingOfIntegralElements_powerBoundedSubring R) hϖ hdvd
+    IsPerfectoidTateRing.exists_natCast_dvd_sub_pow
     (⟨x, hplus.le_powerBoundedSubring x.2⟩ : powerBoundedSubring R)
   have hzR : (x : R) - (y : R) ^ p = (ϖ : R) * p * (z : R) := by
     simpa only [map_sub, map_pow, map_mul, map_natCast, Subring.subtype_apply]
@@ -69,7 +72,7 @@ theorem exists_natCast_dvd_sub_pow_plus (hplus : IsRingOfIntegralElements Rplus)
 
 /-- A ring of integral elements of a perfectoid Tate ring contains a pseudouniformiser
 whose `p`-th power divides `p` with topologically nilpotent quotient. -/
-theorem exists_pseudoUniformizer_pow_mul_eq_natCast_plus
+theorem exists_pseudoUniformizer_natCast_eq_pow_mul_plus
     (hplus : IsRingOfIntegralElements Rplus) :
     ∃ ϖ : Rplus, IsPseudoUniformizer (ϖ : R) ∧
       ∃ c : Rplus, (p : Rplus) = ϖ ^ p * c ∧ IsTopologicallyNilpotent (c : R) := by
@@ -99,13 +102,12 @@ theorem exists_mul_natCast_dvd_sub_pow_plus (hplus : IsRingOfIntegralElements Rp
     {ϖ : Rplus} (hϖ : IsPseudoUniformizer (ϖ : R)) (hdvd : ϖ ^ p ∣ (p : Rplus))
     (x : Rplus) : ∃ y : Rplus, ϖ * p ∣ x - y ^ p := by
   have := IsPerfectoidTateRing.isUniform p (R := R)
-  have := hplus.isAdicComplete_span_singleton ϖ hϖ
-  have hiff := (tfae_forall_exists_dvd_sub_pow ϖ hdvd).out 2 3
-  exact hiff.mp (exists_natCast_dvd_sub_pow_plus hplus) x
+  exact hplus.exists_mul_natCast_dvd_sub_pow hϖ hdvd
+    (exists_natCast_dvd_sub_pow_plus hplus) x
 
 /-- Relative Frobenius on any ring of integral elements of a perfectoid Tate ring is
 bijective for every pseudouniformiser satisfying the required divisibility in that ring. -/
-theorem bijective_frobeniusModPow_plus (hplus : IsRingOfIntegralElements Rplus)
+theorem frobeniusModPow_bijective_plus (hplus : IsRingOfIntegralElements Rplus)
     {ϖ : Rplus} (hϖ : IsPseudoUniformizer (ϖ : R)) (hdvd : ϖ ^ p ∣ (p : Rplus)) :
     Function.Bijective (frobeniusModPow p hdvd) := by
   have := hplus.isIntegrallyClosedIn
@@ -118,7 +120,7 @@ Tate ring. This supplies the `Fact` hypothesis in Mathlib's integral tilt and Fr
 theorem not_isUnit_natCast_plus [Nontrivial R] (hplus : IsRingOfIntegralElements Rplus) :
     ¬ IsUnit (p : Rplus) := by
   have := IsPerfectoidTateRing.isUniform p (R := R)
-  obtain ⟨ϖ, -, c, hc, hnil⟩ := exists_pseudoUniformizer_pow_mul_eq_natCast_plus (p := p) hplus
+  obtain ⟨ϖ, -, c, hc, hnil⟩ := exists_pseudoUniformizer_natCast_eq_pow_mul_plus (p := p) hplus
   apply hplus.not_isUnit_of_isTopologicallyNilpotent
   have hcR : (p : R) = (ϖ : R) ^ p * (c : R) := by exact_mod_cast hc
   rw [Subring.coe_natCast, hcR]
