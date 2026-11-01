@@ -67,12 +67,14 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq (hπ : P = span {π})
   have hχ : orderOf ((powerResidueSymbol P 4).ringHomComp f) = 4 := by
     rw [← MulChar.ringHomCompHom_apply, orderOf_injective _ (MulChar.injective_ringHomComp hf),
       orderOf_powerResidueSymbol hP]
+  have hcard : (Fintype.card (𝓞 K ⧸ P) : R) = absNorm P := by
+    rw [← Nat.card_eq_fintype_card, ← absNorm_eq_natCard]
+  rw [gaussSum_pow_four_eq_card_mul_jacobiSum_sq hχ hψ, jacobiSum_ringHomComp,
+    jacobiSum_powerResidueSymbol_four_eq hπ hπ', hcard]
   -- `J(χ, χ) ^ 2 = (χ (-1) π) ^ 2 = π ^ 2`, since `χ (-1) ^ 2 = χ (1) = 1`.
   have hsq : powerResidueSymbol P 4 (-1) ^ 2 = 1 := by
     rw [← map_pow, neg_one_sq, map_one]
-  rw [gaussSum_pow_four_eq_card_mul_jacobiSum_sq hχ hψ, jacobiSum_ringHomComp,
-    jacobiSum_powerResidueSymbol_four_eq hπ hπ', ← Nat.card_eq_fintype_card,
-    ← absNorm_eq_natCard, map_mul, map_neg, mul_pow, neg_sq, ← map_pow, hsq, map_one, one_mul]
+  simp [mul_pow, ← map_pow, hsq]
 
 /-- **The fourth power of the quartic Gauss sum, as `π ^ 3 σ π`.** Let `K = ℚ(i)`, let `P = π 𝓞 K`
 be a prime with `π` primary, and let `σ` be a ring endomorphism of `𝓞 K` cubing the fourth roots
@@ -86,7 +88,7 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul (hπ : P = sp
     gaussSum ((powerResidueSymbol P 4).ringHomComp f) ψ ^ 4 = f (π ^ 3 * σ π) := by
   -- `N P = N(π) = π σ π`.
   have hN : (absNorm P : 𝓞 K) = π * σ π := by
-    rw [hπ, ← Int.cast_natCast, natCast_absNorm_span_singleton_of_four,
+    rw [hπ, ← Int.cast_natCast, RingOfIntegers.natCast_absNorm_span_singleton_of_four,
       intCast_norm_eq_mul_of_four hσ]
   rw [gaussSum_powerResidueSymbol_four_pow_four_eq hπ hπ' hf hψ, ← map_natCast f, hN, ← map_pow,
     ← map_mul]

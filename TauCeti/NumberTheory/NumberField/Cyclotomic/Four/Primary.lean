@@ -208,7 +208,7 @@ theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four {ζ : K} {hζ : IsPri
   have hcop := hx.absNorm_span_singleton_coprime_four
   have hN : (Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) : ℤ) =
       Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) :=
-    natCast_absNorm_span_singleton_of_four _
+    RingOfIntegers.natCast_absNorm_span_singleton_of_four _
   have h₀ : Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≠ 0 := by
     intro h
     rw [h, Nat.coprime_zero_left] at hcop

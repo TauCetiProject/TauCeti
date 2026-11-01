@@ -166,7 +166,7 @@ theorem jacobiSum_powerResidueSymbol_four_eq {π : 𝓞 K} (hπ : P = span {π})
       jacobiSum_powerResidueSymbol_pow_mem hP one_ne_zero one_ne_zero (by norm_num)
   have hN : Algebra.norm ℤ π = Fintype.card (𝓞 K ⧸ P) := by
     rw [← Nat.card_eq_fintype_card, ← absNorm_eq_natCard, hπ,
-      natCast_absNorm_span_singleton_of_four]
+      RingOfIntegers.natCast_absNorm_span_singleton_of_four]
   have h := neg_apply_neg_one_mul_jacobiSum_eq_of_dvd (orderOf_powerResidueSymbol hP) hπ' hN hdvd
   -- Multiply by `-χ (-1)`, using `χ (-1) ^ 2 = χ (1) = 1`.
   have hsq : powerResidueSymbol P 4 (-1) * powerResidueSymbol P 4 (-1) = 1 := by
