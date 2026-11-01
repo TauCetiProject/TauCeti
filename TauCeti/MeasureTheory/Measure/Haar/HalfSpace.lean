@@ -53,12 +53,17 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {ν : E}
 
-/-- **Sets stable under a half-space of translations.** If `ν ≠ 0` and `x + h ∈ S` whenever
-`x ∈ S` and `⟪h, ν⟫ ≤ 0`, then `S` is empty, the whole space, or a half-space `{y | ⟪y, ν⟫ < c}` or
+/-- **Sets stable under a half-space of translations.** If `x + h ∈ S` whenever `x ∈ S` and
+`⟪h, ν⟫ ≤ 0`, then `S` is empty, the whole space, or a half-space `{y | ⟪y, ν⟫ < c}` or
 `{y | ⟪y, ν⟫ ≤ c}`. -/
-theorem eq_setOf_inner_lt_or_le_of_forall_inner_nonpos {S : Set E} (hν : ν ≠ 0)
+theorem eq_setOf_inner_lt_or_le_of_forall_inner_nonpos {S : Set E}
     (hS : ∀ h, ⟪h, ν⟫ ≤ 0 → ∀ x ∈ S, x + h ∈ S) :
     S = ∅ ∨ S = univ ∨ ∃ c, S = {y | ⟪y, ν⟫ < c} ∨ S = {y | ⟪y, ν⟫ ≤ c} := by
+  rcases eq_or_ne ν 0 with rfl | hν
+  · -- For `ν = 0` every translation preserves `S`, so it is empty or the whole space.
+    rcases S.eq_empty_or_nonempty with hS0 | ⟨x, hx⟩
+    · exact Or.inl hS0
+    · exact Or.inr (Or.inl (eq_univ_of_forall fun y => by simpa using hS (y - x) (by simp) x hx))
   set T := (fun y => ⟪y, ν⟫) '' S
   have hν2 : ⟪ν, ν⟫ ≠ 0 := inner_self_ne_zero.2 hν
   -- Membership in `S` only depends on `⟪·, ν⟫`, whose values on `S` form a lower set.
@@ -116,16 +121,15 @@ theorem ae_eq_setOf_inner_lt_of_forall_inner_nonpos {s : Set E} (hs : NullMeasur
   have hS (h : E) (hh : ⟪h, ν⟫ ≤ 0) (x : E) (hx : x ∈ S) : x + h ∈ S := by
     have hle : s ≤ᵐ[μ] (· + h) ⁻¹' s := H h hh
     simpa [S, essentialInterior_preimage_add_right] using essentialInterior_mono_ae hle hx
-  rcases eq_or_ne ν 0 with rfl | hν
-  · -- For `ν = 0` every translation preserves `S`, so it is empty or the whole space.
-    rcases S.eq_empty_or_nonempty with hS0 | ⟨x, hx⟩
-    · exact Or.inl (hSs.trans (hS0 ▸ Filter.EventuallyEq.rfl))
-    · have h1 : S = univ := eq_univ_of_forall fun y => by simpa using hS (y - x) (by simp) x hx
-      exact Or.inr (Or.inl (hSs.trans (h1 ▸ Filter.EventuallyEq.rfl)))
-  rcases eq_setOf_inner_lt_or_le_of_forall_inner_nonpos hν hS with h0 | h1 | ⟨c, hc | hc⟩
+  rcases eq_setOf_inner_lt_or_le_of_forall_inner_nonpos hS with h0 | h1 | ⟨c, hc | hc⟩
   · exact Or.inl (hSs.trans (h0 ▸ Filter.EventuallyEq.rfl))
   · exact Or.inr (Or.inl (hSs.trans (h1 ▸ Filter.EventuallyEq.rfl)))
   · exact Or.inr (Or.inr ⟨c, hSs.trans (hc ▸ Filter.EventuallyEq.rfl)⟩)
+  rcases eq_or_ne ν 0 with rfl | hν
+  · -- For `ν = 0` the closed half-space `{y | 0 ≤ c}` is empty or the whole space.
+    by_cases hc0 : 0 ≤ c
+    · exact Or.inr (Or.inl (hSs.trans (by simp [hc, hc0])))
+    · exact Or.inl (hSs.trans (by simp [hc, hc0]))
   · exact Or.inr (Or.inr ⟨c, (hSs.trans (hc ▸ Filter.EventuallyEq.rfl)).trans
       (setOf_inner_le_ae_eq_setOf_inner_lt hν c)⟩)
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import TauCeti.Analysis.BoundedVariation.Translation
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
@@ -48,8 +47,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set TestFunction
-open scoped ENNReal RealInnerProductSpace Distributions
+open MeasureTheory TopologicalSpace Set
+open scoped ENNReal RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Opens E}
@@ -67,14 +66,8 @@ theorem ae_le_comp_add_of_ae_inner_polarDensity_nonneg (hu : LocallyIntegrableOn
     (hσ : ∀ᵐ y ∂variationMeasure μ Ω u, 0 ≤ ⟪h, polarDensity μ Ω u y⟫) :
     ∀ᵐ x ∂μ.restrict V, u x ≤ u (x + h) := by
   refine ae_le_comp_add_of_forall_integral_lineDeriv_mul_nonpos hu hVΩ fun φ hφ => ?_
-  -- Test the polar decomposition against the vector field `φ h`, whose divergence is `∂_h φ`.
-  set ψ : 𝓓(Ω, E) := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ h) φ
-  have hdiv (x : E) : lineDeriv ℝ (φ : E → ℝ) x h = divergenceCLM ψ x := by
-    simp [ψ, lineDerivOp_apply]
-  simp only [hdiv]
-  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, neg_nonpos]
-  refine integral_nonneg_of_ae (hσ.mono fun y hy => ?_)
-  simpa [ψ, real_inner_smul_left] using mul_nonneg (hφ y) hy
+  rw [integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity hu hfin, neg_nonpos]
+  exact integral_nonneg_of_ae (hσ.mono fun y hy => mul_nonneg (hφ y) hy)
 
 /-- A set of locally finite perimeter in the whole space whose outer normal is a constant vector
 `ν` at `|Dχ_s|`-almost every point is almost stable under the translation by every `h` with
