@@ -105,12 +105,14 @@ private lemma integral_inner_pow_div_uniformSphereMeasure (hd : 2 ≤ Module.fin
 
 /-- **The von Mises–Fisher normalizer.** In dimension `d ≥ 2`, the exponential moment of the
 linear observable `⟪η, x⟫` of a uniform sphere point is
-`Γ(d / 2) * (‖η‖ / 2) ^ (1 - d / 2) * I_{d/2-1}(‖η‖)` for every `η ≠ 0`. -/
+`Γ(d / 2) * ((‖η‖ / 2) ^ (-ν) * I_ν(‖η‖))`, where `ν = d / 2 - 1`, for every `η ≠ 0`.
+The normalized Bessel factor is grouped for differentiation in `‖η‖`. -/
 theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.finrank ℝ E)
     {η : E} (hη : η ≠ 0) :
     ∫ x : sphere (0 : E) 1, exp ⟪η, (x : E)⟫ ∂uniformSphereMeasure E =
-      Gamma ((Module.finrank ℝ E : ℝ) / 2) * (‖η‖ / 2) ^ (1 - (Module.finrank ℝ E : ℝ) / 2) *
-        besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ := by
+      Gamma ((Module.finrank ℝ E : ℝ) / 2) *
+        ((‖η‖ / 2) ^ (-((Module.finrank ℝ E : ℝ) / 2 - 1)) *
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖) := by
   have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   -- `⟪-η, x⟫` has the law of `⟪η, x⟫`, so the exponential moment is that of `cosh ⟪η, x⟫`
   have hsymm : ∫ x : sphere (0 : E) 1, exp ⟪-η, (x : E)⟫ ∂uniformSphereMeasure E =
@@ -147,7 +149,7 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
       integral_inner_pow_div_uniformSphereMeasure hd hη]
     exact hseries.summable)
   simp_rw [hF, ← cosh_eq_tsum, ← hcosh, integral_inner_pow_div_uniformSphereMeasure hd hη] at hsum
-  exact hsum.unique hseries
+  simpa only [neg_sub, mul_assoc] using hsum.unique hseries
 
 /-- **The von Mises–Fisher normalizer on the surface measure.** In dimension `d ≥ 2`, the surface
 integral of `exp ⟪η, x⟫` over the unit sphere is `(2 π) ^ (d / 2) * ‖η‖ ^ (1 - d / 2) *
@@ -167,6 +169,7 @@ theorem integral_exp_inner_toSphere_eq_besselI (hd : 2 ≤ Module.finrank ℝ E)
       ENNReal.mul_inv_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
         (measure_ne_top _ _), one_smul]
   rw [hsurf, integral_smul_measure, integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη,
+    neg_sub, ← mul_assoc,
     TauCeti.toSphere_volume_apply_univ, ENNReal.toReal_ofReal (by positivity), smul_eq_mul,
     div_rpow hκ.le zero_le_two, mul_rpow zero_le_two pi_pos.le,
     rpow_sub two_pos, rpow_one]
@@ -186,6 +189,6 @@ theorem vonMisesFisherMeasure_eq_withDensity_besselI (hd : 2 ≤ Module.finrank 
   have hnorm : ‖κ • (m : E)‖ = κ := by simp [norm_smul, abs_of_pos hκ]
   rw [vonMisesFisherMeasure_of_nonneg m hκ.le, vonMisesFisherNaturalMeasure_eq_withDensity,
     integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη, hnorm]
-  simp_rw [real_inner_smul_left]
+  simp_rw [real_inner_smul_left, neg_sub, mul_assoc]
 
 end TauCeti.Probability
