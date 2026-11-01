@@ -49,23 +49,17 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
-/-- The positive open hemisphere centered at the unit vector `p`. -/
-def hemisphereOpens : Opens (sphere (0 : E) 1) :=
+/-- The positive open hemisphere centered at the unit vector `p`.
+An abbreviation so its carrier agrees with the domain of `hemisphereChord`. -/
+abbrev hemisphereOpens : Opens (sphere (0 : E) 1) :=
   ⟨{x | 0 < ⟪(x : E), (p : E)⟫}, isOpen_lt continuous_const (by fun_prop)⟩
 
-@[simp]
-theorem mem_hemisphereOpens {x : sphere (0 : E) 1} :
-    x ∈ hemisphereOpens p ↔ 0 < ⟪(x : E), (p : E)⟫ := Iff.rfl
-
 /-- The open subset of the closed unit ball obtained by removing its equator perpendicular to
-`p`. It consists of points on nondegenerate chords parallel to `p`. -/
-def chordBallOpens : Opens (closedBall (0 : E) 1) :=
+`p`. It consists of points on nondegenerate chords parallel to `p`.
+An abbreviation so its carrier agrees with the codomain of `hemisphereChord`. -/
+abbrev chordBallOpens : Opens (closedBall (0 : E) 1) :=
   ⟨{y | ‖(y : E)‖ ^ 2 - ⟪(y : E), (p : E)⟫ ^ 2 < 1},
     isOpen_setOf_norm_sq_sub_inner_sq_lt_one p⟩
-
-@[simp]
-theorem mem_chordBallOpens {y : closedBall (0 : E) 1} :
-    y ∈ chordBallOpens p ↔ ‖(y : E)‖ ^ 2 - ⟪(y : E), (p : E)⟫ ^ 2 < 1 := Iff.rfl
 
 local instance : Fact ((-1 : ℝ) < 1) := ⟨by norm_num⟩
 
@@ -106,7 +100,7 @@ def hemisphereChordDiffeomorph :
       contDiff_inner.contMDiff.comp (hy.prodMk_space contMDiff_const)
     have hpos (y : chordBallOpens p) :
         0 < 1 - ‖(y : E)‖ ^ 2 + ⟪(y : E), (p : E)⟫ ^ 2 := by
-      have := (mem_chordBallOpens p).mp y.property
+      have : ‖(y : E)‖ ^ 2 - ⟪(y : E), (p : E)⟫ ^ 2 < 1 := y.property
       linarith
     have hr : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ω
         (fun y : chordBallOpens p => √(1 - ‖(y : E)‖ ^ 2 + ⟪(y : E), (p : E)⟫ ^ 2)) := by
@@ -133,5 +127,17 @@ def hemisphereChordDiffeomorph :
       funext y
       exact coe_hemisphereChord_symm_apply_snd p y
     exact hx'.prodMk ht
+
+@[simp]
+theorem toHomeomorph_hemisphereChordDiffeomorph :
+    (hemisphereChordDiffeomorph (n := n) p).toHomeomorph = hemisphereChord p := (rfl)
+
+@[simp]
+theorem coe_hemisphereChordDiffeomorph :
+    ⇑(hemisphereChordDiffeomorph (n := n) p) = hemisphereChord p := (rfl)
+
+@[simp]
+theorem coe_hemisphereChordDiffeomorph_symm :
+    ⇑(hemisphereChordDiffeomorph (n := n) p).symm = (hemisphereChord p).symm := (rfl)
 
 end TauCeti
