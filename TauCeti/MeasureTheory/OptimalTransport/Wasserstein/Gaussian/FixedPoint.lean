@@ -10,9 +10,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Barycenter
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 public import TauCeti.Probability.Moments.Covariance
-import TauCeti.Analysis.Matrix.CovariancePseudoInverse
 import TauCeti.Analysis.Matrix.GeometricMean
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Probability.Moments.FenchelYoung
 import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
@@ -35,8 +35,9 @@ positive-definite covariance.
 
 The matrices `A j = geometricMean S⁻¹ʳ (C j)` are the linear parts of the optimal maps out of the
 Gaussian law with covariance `S`, and `S` solves the fixed-point equation exactly when they
-average to the identity. Averaging the quadratic Fenchel–Young inequalities
-`⟪u, y⟫ ≤ (⟪A j y, y⟫ + ⟪(A j)⁺ u, u⟫) / 2`, in mean over a multi-coupling of the laws `μ j`,
+average to the identity (`Matrix.PosDef.sum_smul_geometricMean_ringInverse_eq_one_iff`).
+Averaging the quadratic Fenchel–Young inequalities `⟪u, y⟫ ≤ (⟪A j y, y⟫ + ⟪(A j)⁺ u, u⟫) / 2`,
+in mean over a multi-coupling of the laws `μ j` (`TauCeti.integral_inner_sub_integral_le`),
 bounds the variance of the weighted mean of the coupling by `tr S`; the weighted variance
 decomposition and the multi-marginal formulation of the barycenter problem turn this into the
 lower bound. Singular covariances `C j` are allowed: the pseudoinverse `(A j)⁺` is used on the
@@ -44,10 +45,6 @@ range of `A j`, which carries the centred `j`th coordinate almost surely.
 
 ## Main statements
 
-* `TauCeti.integral_inner_sub_integral_le`: the quadratic Fenchel–Young inequality in mean, for a
-  random vector whose covariance has the form `A * T * A`.
-* `Matrix.PosDef.sum_smul_geometricMean_ringInverse_eq_one_iff`: the fixed-point equation holds
-  exactly when the matrices `geometricMean S⁻¹ʳ (C j)` average to the identity.
 * `TauCeti.integral_norm_sum_smul_sub_integral_sq_le`: the centred weighted mean of a
   multi-coupling has second moment at most `tr S`.
 * `TauCeti.sum_mul_ofReal_gaussianWassersteinSq_le`: the Gaussian lower bound for the
@@ -79,130 +76,69 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-section FenchelYoung
-
-variable [DecidableEq ι]
-
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
-  {X Y : Ω → EuclideanSpace ℝ ι}
-
-/-- **The quadratic Fenchel–Young inequality in mean.** Let `X` and `Y` be square-integrable
-random vectors, where the law of `X` has covariance matrix `A * T * A` for a positive-semidefinite
-matrix `A`. Then the correlation of the centred variable `X - 𝔼 X` with `Y` is at most
-`(𝔼 ⟪A Y, Y⟫ + tr (A * T)) / 2`. -/
-theorem integral_inner_sub_integral_le (hX : MemLp X 2 P) (hY : MemLp Y 2 P)
-    {A T : Matrix ι ι ℝ} (hA : A.PosSemidef) (hcov : covMatrix (P.map X) = A * T * A) :
-    ∫ ω, ⟪X ω - ∫ ω', X ω' ∂P, Y ω⟫ ∂P ≤
-      (∫ ω, ⟪A.toEuclideanLin (Y ω), Y ω⟫ ∂P + (A * T).trace) / 2 := by
-  set m := ∫ ω', X ω' ∂P
-  set D := A.covariancePseudoInverse
-  have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
-  have hU : MemLp (fun ω ↦ X ω - m) 2 P := hX.sub (memLp_const m)
-  -- Means of quadratic forms of the centred variable are traces against `A * T * A`.
-  have htr (B : Matrix ι ι ℝ) :
-      ∫ ω, ⟪B.toEuclideanLin (X ω - m), X ω - m⟫ ∂P = (B * (A * T * A)).trace := by
-    have hmap : MemLp id 2 (P.map X) :=
-      (memLp_map_measure_iff aestronglyMeasurable_id hXm).2 hX
-    have hmean : ∫ y, y ∂(P.map X) = m := integral_map hXm aestronglyMeasurable_id
-    rw [← hcov, ← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ hmap,
-      hmean, integral_map hXm (by fun_prop)]
-  have hBint (B : Matrix ι ι ℝ) {Z : Ω → EuclideanSpace ℝ ι} (hZ : MemLp Z 2 P) :
-      Integrable (fun ω ↦ ⟪B.toEuclideanLin (Z ω), Z ω⟫) P :=
-    (hZ.continuousLinearMap_comp
-      (LinearMap.toContinuousLinearMap B.toEuclideanLin)).integrable_inner hZ
-  have hsa : A.toEuclideanLin.IsSymmetric :=
-    Matrix.isSymmetric_toEuclideanLin_iff.2 hA.isHermitian
-  have hsd : D.toEuclideanLin.IsSymmetric :=
-    Matrix.isSymmetric_toEuclideanLin_iff.2 (A.posSemidef_covariancePseudoInverse).isHermitian
-  have hpos : A.toEuclideanLin.IsPositive := Matrix.isPositive_toEuclideanLin_iff.2 hA
-  have hdad (x : EuclideanSpace ℝ ι) :
-      D.toEuclideanLin (A.toEuclideanLin (D.toEuclideanLin x)) = D.toEuclideanLin x := by
-    simpa only [Matrix.toLpLin_mul_same, LinearMap.comp_apply] using
-      congrArg (fun M : Matrix ι ι ℝ ↦ M.toEuclideanLin x) A.covariancePseudoInverse_mul_self_mul
-  -- The centred variable lies almost surely in the range of `A`: with `R = 1 - A * D`, the mean
-  -- of `‖R (X - m)‖ ^ 2` is the trace of `Rᴴ * R * (A * T * A)`, and `R * A = 0`.
-  set R : Matrix ι ι ℝ := 1 - A * D
-  have hRA : R * A = 0 := by
-    rw [Matrix.sub_mul, Matrix.one_mul, Matrix.mul_covariancePseudoInverse_mul hA, sub_self]
-  have hR (x : EuclideanSpace ℝ ι) :
-      R.toEuclideanLin x = x - A.toEuclideanLin (D.toEuclideanLin x) := by
-    simp [R, Matrix.toLpLin_mul_same]
-  have hRR (x : EuclideanSpace ℝ ι) :
-      ⟪(Rᴴ * R).toEuclideanLin x, x⟫ = ‖R.toEuclideanLin x‖ ^ 2 := by
-    rw [Matrix.toLpLin_mul_same, LinearMap.comp_apply,
-      Matrix.toEuclideanLin_conjTranspose_eq_adjoint, LinearMap.adjoint_inner_left,
-      real_inner_self_eq_norm_sq]
-  have hrange : ∀ᵐ ω ∂P, A.toEuclideanLin (D.toEuclideanLin (X ω - m)) = X ω - m := by
-    have hsq : ∫ ω, ‖R.toEuclideanLin (X ω - m)‖ ^ 2 ∂P = 0 := by
-      have h := htr (Rᴴ * R)
-      rw [show Rᴴ * R * (A * T * A) = Rᴴ * (R * A) * (T * A) by noncomm_ring, hRA,
-        Matrix.mul_zero, Matrix.zero_mul, Matrix.trace_zero] at h
-      simpa only [hRR] using h
-    have hint : Integrable (fun ω ↦ ‖R.toEuclideanLin (X ω - m)‖ ^ 2) P := by
-      simpa only [hRR] using hBint (Rᴴ * R) hU
-    have hae := (integral_eq_zero_iff_of_nonneg (fun ω ↦ by positivity) hint).1 hsq
-    filter_upwards [hae] with ω hω
-    have : R.toEuclideanLin (X ω - m) = 0 := by simpa using hω
-    rw [hR] at this
-    exact (sub_eq_zero.1 this).symm
-  -- On the range of `A`, the pointwise inequality is `0 ≤ ⟪A (D u - y), D u - y⟫`.
-  have hpt : ∀ᵐ ω ∂P, ⟪X ω - m, Y ω⟫ ≤
-      (⟪A.toEuclideanLin (Y ω), Y ω⟫ + ⟪D.toEuclideanLin (X ω - m), X ω - m⟫) / 2 := by
-    filter_upwards [hrange] with ω hω
-    set u := X ω - m
-    set y := Y ω
-    set v := D.toEuclideanLin u
-    have h0 : 0 ≤ ⟪A.toEuclideanLin (v - y), v - y⟫ := by
-      simpa only [RCLike.re_to_real] using hpos.re_inner_nonneg_left (v - y)
-    have hvv : ⟪A.toEuclideanLin v, v⟫ = ⟪v, u⟫ := by
-      rw [← hsd, hdad]
-    have huy : ⟪u, y⟫ = ⟪A.toEuclideanLin v, y⟫ := by rw [hω]
-    rw [map_sub, inner_sub_left, inner_sub_right, inner_sub_right, hvv, hsa y v,
-      real_inner_comm (A.toEuclideanLin v) y] at h0
-    linarith
-  have htrace : (D * (A * T * A)).trace = (A * T).trace := by
-    rw [Matrix.trace_mul_comm D, show A * T * A * D = A * T * (A * D) by noncomm_ring,
-      Matrix.trace_mul_comm (A * T), show A * D * (A * T) = A * D * A * T by noncomm_ring,
-      Matrix.mul_covariancePseudoInverse_mul hA]
-  calc ∫ ω, ⟪X ω - m, Y ω⟫ ∂P
-      ≤ ∫ ω, (⟪A.toEuclideanLin (Y ω), Y ω⟫ + ⟪D.toEuclideanLin (X ω - m), X ω - m⟫) / 2 ∂P :=
-        integral_mono_ae (hU.integrable_inner hY) (((hBint A hY).add (hBint D hU)).div_const 2)
-          hpt
-    _ = (∫ ω, ⟪A.toEuclideanLin (Y ω), Y ω⟫ ∂P + (A * T).trace) / 2 := by
-        rw [integral_div, integral_add (hBint A hY) (hBint D hU), htr D, htrace]
-
-end FenchelYoung
-
 variable {J : Type*} [Fintype J]
 
-/-- **The fixed-point equation as an averaging condition.** For a positive-definite `S`, the
-standard positive matrices `geometricMean S⁻¹ʳ (C j)`, which solve `A * S * A = C j` when `C j` is
-positive semidefinite, average to the identity with weights `w j` exactly when `S` solves the
-Gaussian barycenter equation `S = ∑ j, w j • (S^(1/2) * C j * S^(1/2))^(1/2)`. -/
-theorem _root_.Matrix.PosDef.sum_smul_geometricMean_ringInverse_eq_one_iff [DecidableEq ι]
-    {S : Matrix ι ι ℝ} (hS : S.PosDef) (w : J → ℝ) (C : J → Matrix ι ι ℝ) :
-    ∑ j, w j • geometricMean S⁻¹ʳ (C j) = 1 ↔
-      S = ∑ j, w j • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S) := by
-  set R := CFC.sqrt S
-  set N := ∑ j, w j • CFC.sqrt (R * C j * R)
-  let _ : Invertible R := (hS.isStrictlyPositive.isUnit_cfcSqrt S).invertible
-  have hRR : R * R = S := CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
-  have hsum : ∑ j, w j • geometricMean S⁻¹ʳ (C j) = R⁻¹ * N * R⁻¹ := by
-    simp only [hS.geometricMean_ringInverse_eq_sqrt_mul_mul_sqrt, N, Finset.mul_sum,
-      Finset.sum_mul, Matrix.mul_smul, Matrix.smul_mul, R]
-  rw [hsum, ← hRR]
-  constructor
-  · intro h
-    calc R * R = R * (R⁻¹ * N * R⁻¹) * R := by
-          rw [h, Matrix.mul_one]
-      _ = N := by
-          simp only [← Matrix.mul_assoc, Matrix.mul_inv_of_invertible, Matrix.one_mul,
-            Matrix.mul_assoc N, Matrix.inv_mul_of_invertible, Matrix.mul_one]
-  · intro h
-    rw [← h, Matrix.mul_assoc, Matrix.mul_assoc R, Matrix.mul_inv_of_invertible, Matrix.mul_one,
-      Matrix.inv_mul_of_invertible]
-
 variable {w : J → ℝ≥0} {μ : J → Measure (EuclideanSpace ℝ ι)} {S : Matrix ι ι ℝ}
+  {γ : Measure (J → EuclideanSpace ℝ ι)}
+
+/-- A weighted sum of the centred coordinates of a multi-coupling of laws with finite second
+moments is square-integrable. -/
+private theorem memLp_sum_smul_sub [IsFiniteMeasure γ] (hμ : ∀ j, MemLp id 2 (μ j))
+    (hγ : Measure.IsMultiCoupling γ μ) (a : J → ℝ) (c : J → EuclideanSpace ℝ ι) :
+    MemLp (fun x ↦ ∑ j, a j • (x j - c j)) 2 γ :=
+  memLp_finsetSum _ fun j _ ↦
+    ((hγ.memLp_comp_eval j (hμ j)).sub (memLp_const (c j))).const_smul (a j)
+
+/-- The multi-marginal cost `∑ i, w i * ‖∑ j, w j • x j - x i‖ ^ 2` of a multi-coupling of laws
+with finite second moments is integrable. -/
+private theorem integrable_sum_mul_norm_sum_smul_sub_sq (hμ : ∀ j, MemLp id 2 (μ j))
+    (hγ : Measure.IsMultiCoupling γ μ) :
+    Integrable (fun x ↦ ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2) γ :=
+  integrable_finsetSum _ fun i _ ↦ by
+    have hi : MemLp (fun x : J → EuclideanSpace ℝ ι ↦ ∑ j, (w j : ℝ) • x j - x i) 2 γ :=
+      (memLp_finsetSum _ fun j _ ↦ (hγ.memLp_comp_eval j (hμ j)).const_smul (w j : ℝ)).sub
+        (hγ.memLp_comp_eval i (hμ i))
+    exact ((memLp_two_iff_integrable_sq_norm hi.aestronglyMeasurable).1 hi).const_mul _
+
+/-- **The weighted variance decomposition of a multi-coupling.** For weights summing to `1`, the
+multi-marginal cost `∑ i, w i * ‖∑ j, w j • x j - x i‖ ^ 2` of a multi-coupling of laws with
+finite second moments, means `m i` and covariance matrices `C i` has mean
+`∑ i, w i * (‖m i - mbar‖ ^ 2 + tr C i)` minus the second moment of the centred weighted mean
+`∑ j, w j • (x j - m j)`, where `mbar = ∑ j, w j • m j`. -/
+private theorem integral_sum_mul_norm_sum_smul_sub_sq (hw : ∑ j, w j = 1)
+    [∀ j, IsProbabilityMeasure (μ j)] (hμ : ∀ j, MemLp id 2 (μ j))
+    (hγ : Measure.IsMultiCoupling γ μ) :
+    ∫ x, ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2 ∂γ =
+      ∑ i, (w i : ℝ) * (‖∫ y, y ∂μ i - ∑ j, (w j : ℝ) • ∫ y, y ∂μ j‖ ^ 2 +
+        (covMatrix (μ i)).trace) - ∫ x, ‖∑ j, (w j : ℝ) • (x j - ∫ y, y ∂μ j)‖ ^ 2 ∂γ := by
+  obtain ⟨j₀, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
+  have := hγ.isProbabilityMeasure j₀
+  set m : J → EuclideanSpace ℝ ι := fun j ↦ ∫ y, y ∂μ j
+  set mbar := ∑ i, (w i : ℝ) • m i
+  set W : (J → EuclideanSpace ℝ ι) → EuclideanSpace ℝ ι := fun x ↦ ∑ j, (w j : ℝ) • (x j - m j)
+  have hw' : ∑ j, (w j : ℝ) = 1 := by exact_mod_cast hw
+  -- The pointwise weighted variance decomposition about `mbar`.
+  have hF (x : J → EuclideanSpace ℝ ι) : ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2 =
+      ∑ i, (w i : ℝ) * ‖x i - mbar‖ ^ 2 - ‖W x‖ ^ 2 := by
+    have h := Finset.univ.sum_mul_norm_sub_sq_eq hw' mbar x
+    have hWx : W x = ∑ j, (w j : ℝ) • x j - mbar := by
+      simp only [W, mbar, smul_sub, Finset.sum_sub_distrib]
+    simp only [norm_sub_rev mbar] at h
+    rw [hWx]
+    linarith
+  have hsq (i : J) : Integrable (fun x : J → EuclideanSpace ℝ ι ↦ ‖x i - mbar‖ ^ 2) γ :=
+    have hi := (hγ.memLp_comp_eval i (hμ i)).sub (memLp_const mbar)
+    (memLp_two_iff_integrable_sq_norm hi.aestronglyMeasurable).1 hi
+  have hW : MemLp W 2 γ := memLp_sum_smul_sub hμ hγ _ m
+  have hWsq : Integrable (fun x ↦ ‖W x‖ ^ 2) γ :=
+    (memLp_two_iff_integrable_sq_norm hW.aestronglyMeasurable).1 hW
+  rw [integral_congr_ae (.of_forall hF), integral_sub
+    (integrable_finsetSum _ fun i _ ↦ (hsq i).const_mul _) hWsq,
+    integral_finsetSum _ fun i _ ↦ (hsq i).const_mul _]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [integral_const_mul, hγ.integral_comp_eval i (f := fun y ↦ ‖y - mbar‖ ^ 2)
+    (by fun_prop), integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _ (hμ i)]
 
 open scoped Classical in
 /-- **The variance of the weighted mean of a multi-coupling.** Let `μ j` be probability laws on
@@ -213,7 +149,7 @@ nonnegative weights, and let the positive-definite matrix `S` solve
 theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (μ j)]
     (hμ : ∀ j, MemLp id 2 (μ j)) (hS : S.PosDef)
     (hfix : S = ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * covMatrix (μ j) * CFC.sqrt S))
-    {γ : Measure (J → EuclideanSpace ℝ ι)} (hγ : Measure.IsMultiCoupling γ μ) :
+    (hγ : Measure.IsMultiCoupling γ μ) :
     ∫ x, ‖∑ j, (w j : ℝ) • (x j - ∫ y, y ∂μ j)‖ ^ 2 ∂γ ≤ S.trace := by
   -- Writing `W` for the centred weighted mean, `‖W‖ ^ 2 = ∑ j, w j * ⟪x j - m j, W⟫`. Bound each
   -- correlation by the Fenchel–Young inequality with `A j = geometricMean S⁻¹ʳ (C j)`; since the
@@ -230,8 +166,7 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
   have hcoord (j : J) : MemLp (fun x : J → EuclideanSpace ℝ ι ↦ x j) 2 γ :=
     hγ.memLp_comp_eval j (hμ j)
   have hmean (j : J) : ∫ x, x j ∂γ = m j := hγ.integral_comp_eval j aestronglyMeasurable_id
-  have hW : MemLp W 2 γ :=
-    memLp_finsetSum _ fun j _ ↦ ((hcoord j).sub (memLp_const (m j))).const_smul (w j : ℝ)
+  have hW : MemLp W 2 γ := memLp_sum_smul_sub hμ hγ _ m
   -- The quadratic Fenchel–Young inequality for the `j`th coordinate against `W`.
   have hFY (j : J) : ∫ x, ⟪x j - m j, W x⟫ ∂γ ≤
       (∫ x, ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ + (A j * S).trace) / 2 := by
@@ -243,8 +178,7 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
   have hint (j : J) : Integrable (fun x ↦ ⟪x j - m j, W x⟫) γ :=
     ((hcoord j).sub (memLp_const _)).integrable_inner hW
   have hAint (j : J) : Integrable (fun x ↦ ⟪(A j).toEuclideanLin (W x), W x⟫) γ :=
-    (hW.continuousLinearMap_comp
-      (LinearMap.toContinuousLinearMap (A j).toEuclideanLin)).integrable_inner hW
+    hW.integrable_inner_toEuclideanLin (A j)
   -- Average the inequalities: the matrices `A j` average to the identity.
   have hsq (x : J → EuclideanSpace ℝ ι) : ‖W x‖ ^ 2 = ∑ j, (w j : ℝ) * ⟪x j - m j, W x⟫ := by
     calc ‖W x‖ ^ 2 = ⟪∑ j, (w j : ℝ) • (x j - m j), W x⟫ := (real_inner_self_eq_norm_sq _).symm
@@ -319,57 +253,24 @@ theorem sum_mul_ofReal_gaussianWassersteinSq_le (hw : ∑ j, w j = 1)
   -- mean `W`, which is at most `tr S`.
   obtain ⟨γ, hγ, hle⟩ := exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le hw μ ν
   refine le_trans ?_ (le_self_add.trans hle)
-  obtain ⟨j₀, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
-  have := hγ.isProbabilityMeasure j₀
   set m : J → EuclideanSpace ℝ ι := fun j ↦ ∫ y, y ∂μ j
   set mbar := ∑ i, (w i : ℝ) • m i
-  set W : (J → EuclideanSpace ℝ ι) → EuclideanSpace ℝ ι := fun x ↦ ∑ j, (w j : ℝ) • (x j - m j)
   set F : (J → EuclideanSpace ℝ ι) → ℝ :=
     fun x ↦ ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2
-  have hw' : ∑ j, (w j : ℝ) = 1 := by exact_mod_cast hw
-  have hcoord (j : J) : MemLp (fun x : J → EuclideanSpace ℝ ι ↦ x j) 2 γ :=
-    hγ.memLp_comp_eval j (hμ j)
   have hC (j : J) : (covMatrix (μ j)).PosSemidef := posSemidef_covMatrix _ (hμ j)
-  -- The weighted variance decomposition about `mbar`.
-  have hF (x : J → EuclideanSpace ℝ ι) :
-      F x = ∑ i, (w i : ℝ) * ‖x i - mbar‖ ^ 2 - ‖W x‖ ^ 2 := by
-    have h := Finset.univ.sum_mul_norm_sub_sq_eq hw' mbar x
-    have hWx : W x = ∑ j, (w j : ℝ) • x j - mbar := by
-      simp only [W, mbar, smul_sub, Finset.sum_sub_distrib]
-    simp only [norm_sub_rev mbar] at h
-    rw [hWx]
-    linarith
-  have hsq (i : J) : Integrable (fun x : J → EuclideanSpace ℝ ι ↦ ‖x i - mbar‖ ^ 2) γ :=
-    have hi := (hcoord i).sub (memLp_const mbar)
-    (memLp_two_iff_integrable_sq_norm hi.aestronglyMeasurable).1 hi
-  have hW : MemLp W 2 γ :=
-    memLp_finsetSum _ fun j _ ↦ ((hcoord j).sub (memLp_const (m j))).const_smul (w j : ℝ)
-  have hWsq : Integrable (fun x ↦ ‖W x‖ ^ 2) γ :=
-    (memLp_two_iff_integrable_sq_norm hW.aestronglyMeasurable).1 hW
-  have hFint : Integrable F γ := by
-    rw [show F = fun x ↦ ∑ i, (w i : ℝ) * ‖x i - mbar‖ ^ 2 - ‖W x‖ ^ 2 from funext hF]
-    exact (integrable_finsetSum _ fun i _ ↦ (hsq i).const_mul _).sub hWsq
   -- The multi-marginal cost of `γ` as a real integral.
   have hlint : ∫⁻ x, ∑ i, (w i : ℝ≥0∞) * edist (∑ j, (w j : ℝ) • x j) (x i) ^ 2 ∂γ =
       ENNReal.ofReal (∫ x, F x ∂γ) := by
-    rw [ofReal_integral_eq_lintegral_ofReal hFint (.of_forall fun x ↦ by positivity)]
+    rw [ofReal_integral_eq_lintegral_ofReal (integrable_sum_mul_norm_sum_smul_sub_sq hμ hγ)
+      (.of_forall fun x ↦ by positivity)]
     refine lintegral_congr fun x ↦ ?_
     rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
       ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (w i).coe_nonneg]
-  have hIF : ∫ x, F x ∂γ =
-      ∑ i, (w i : ℝ) * (‖m i - mbar‖ ^ 2 + (covMatrix (μ i)).trace) - ∫ x, ‖W x‖ ^ 2 ∂γ := by
-    rw [integral_congr_ae (.of_forall hF), integral_sub
-      (integrable_finsetSum _ fun i _ ↦ (hsq i).const_mul _) hWsq,
-      integral_finsetSum _ fun i _ ↦ (hsq i).const_mul _]
-    congr 1
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [integral_const_mul, hγ.integral_comp_eval i (f := fun y ↦ ‖y - mbar‖ ^ 2)
-      (by fun_prop), integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _ (hμ i)]
+  have hIF := integral_sum_mul_norm_sum_smul_sub_sq hw hμ hγ
   have hg := sum_mul_gaussianWassersteinSq_eq hw m (fun j ↦ covMatrix (μ j)) hfix
-  have hvar : ∫ x, ‖W x‖ ^ 2 ∂γ ≤ S.trace :=
-    integral_norm_sum_smul_sub_integral_sq_le hμ hS hfix hγ
+  have hvar := integral_norm_sum_smul_sub_integral_sq_le hμ hS hfix hγ
   rw [hlint]
   calc ∑ j, (w j : ℝ≥0∞) *
         ENNReal.ofReal (gaussianWassersteinSq mbar (m j) S (covMatrix (μ j)))
