@@ -425,14 +425,18 @@ section TerminalInitial
 variable {x y z : GridState n} (P : GridPentagonBetween C.column C.turnRow x y)
   (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z)
 
+/-- A terminal-side pentagon and a following initial-side reverse pentagon share their
+bottom row. -/
+private theorem terminalInitial_bottom_eq : Q.bottom = P.bottom :=
+  GridInitialPentagonBetween.bottom_eq_bottom_of_pentagon
+    ⟨Q.toGridRectangleBetween, Q.left_eq.trans (congrArg (finRotate n) C.reverse_column),
+      Q.turn_mem⟩ P
+
 /-- The reverse turn row of a terminal--initial pentagon pair lies in the rows from the common
 bottom row up to the top row of the reverse pentagon. -/
 private theorem terminalInitial_oppositeTurnRow_mem_cIco :
     C.oppositeTurnRow ∈ Grid.cIco P.bottom Q.top := by
-  have hbottom : Q.bottom = P.bottom :=
-    GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
-      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-      (G.terminalInitialPentagonPair_right_eq_left C P Q)
+  have hbottom := G.terminalInitial_bottom_eq C P Q
   simpa only [C.reverse_turnRow, hbottom] using Q.turn_mem_cIco_bottom_top
 
 /-- The weight of a terminal--initial pentagon pair is the product of the `O`-weights of the
@@ -466,9 +470,7 @@ private theorem terminalInitial_rectangleHexagon
   have hH : H.toGridRectangleBetween = Q.toGridRectangleBetween :=
     GridCommutationHexagonBetween.toGridRectangleBetween_inr _
   have hbottom : Q.bottom = P.bottom :=
-    GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
-      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-      (G.terminalInitialPentagonPair_right_eq_left C P Q)
+    G.terminalInitial_bottom_eq C P Q
   have hs := P.turn_mem_cIco_bottom_top
   have hs' := G.terminalInitial_oppositeTurnRow_mem_cIco C P Q
   obtain ⟨hQoff, hQcol⟩ := G.map_swapColumns_reverse_squares C Q.mem_coveredSquares_iff_of_ne
@@ -516,9 +518,7 @@ private theorem terminalInitial_hexagonRectangle
   have hH : H.toGridRectangleBetween = P.toGridRectangleBetween :=
     GridCommutationHexagonBetween.toGridRectangleBetween_inl _
   have hbottom : Q.bottom = P.bottom :=
-    GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
-      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-      (G.terminalInitialPentagonPair_right_eq_left C P Q)
+    G.terminalInitial_bottom_eq C P Q
   have hs := P.turn_mem_cIco_bottom_top
   have hs' := G.terminalInitial_oppositeTurnRow_mem_cIco C P Q
   obtain ⟨hQoff, hQcol⟩ := G.map_swapColumns_reverse_squares C Q.mem_coveredSquares_iff_of_ne
@@ -709,9 +709,8 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair
     rcases Grid.mem_cIco_and_mem_cIoo_or_mem_cIco_and_mem_cIoo_of_ne P.turn_mem_cIco_bottom_top
         (G.terminalInitial_oppositeTurnRow_mem_cIco C P Q) C.turnRow_ne_oppositeTurnRow with
       hturn | hturn
-    · rw [← GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
-        ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-        (G.terminalInitialPentagonPair_right_eq_left C P Q)] at hturn
+    · have hbottom := G.terminalInitial_bottom_eq C P Q
+      rw [← hbottom] at hturn
       exact G.terminalInitial_rectangleHexagon C R P Q hP hQ hturn
     · exact G.terminalInitial_hexagonRectangle C R P Q hP hQ hturn
   rw [← hFw]
