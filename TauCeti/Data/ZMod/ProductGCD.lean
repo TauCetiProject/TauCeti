@@ -13,7 +13,7 @@ public import Mathlib.Data.ZMod.Basic
 # Gcds of products of residues
 
 Taking a product in `ZMod n` before taking its representative does not change the gcd with `n`.
-A prime divisor of `n` therefore divides this gcd exactly when it divides a leaf gcd. This
+A prime therefore divides this gcd exactly when it divides a leaf gcd. This
 includes the empty product and modulus zero.
 
 For positive modulus, a prime detected at some leaf and a prime absent from every leaf certify
@@ -40,26 +40,28 @@ theorem gcd_val_prod {n : ℕ} (L : List (ZMod n)) :
       simp [Nat.cast_list_prod, List.map_map, Function.comp_def]
     rw [← h, ZMod.val_natCast, ← Nat.gcd_rec, Nat.gcd_comm]
 
-/-- A prime divisor of the modulus divides the product gcd exactly when it divides some leaf
-gcd. In particular, the empty product has no such prime divisor. -/
+/-- A prime divides the product gcd exactly when it divides some leaf gcd, without requiring
+that it divide the modulus. In particular, the empty product has no prime divisor. -/
 theorem prime_dvd_gcd_val_prod_iff {n : ℕ} (L : List (ZMod n)) {p : ℕ}
-    (hp : p.Prime) (hpn : p ∣ n) :
+    (hp : p.Prime) :
     p ∣ Nat.gcd L.prod.val n ↔ ∃ t ∈ L, p ∣ Nat.gcd t.val n := by
   rw [gcd_val_prod]
-  simp only [Nat.dvd_gcd_iff, hpn, and_true]
-  rw [hp.prime.dvd_prod_iff]
-  simp
+  by_cases hpn : p ∣ n
+  · simp only [Nat.dvd_gcd_iff, hpn, and_true]
+    rw [hp.prime.dvd_prod_iff]
+    simp
+  · simp [Nat.dvd_gcd_iff, hpn]
 
 /-- A product gcd is proper if one prime divisor of the modulus occurs in some leaf gcd and
 another prime divisor occurs in none. No conclusion of primality for the gcd is asserted. -/
 theorem one_lt_gcd_val_prod_and_lt {n : ℕ} [NeZero n] (L : List (ZMod n))
-    {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpn : p ∣ n) (hqn : q ∣ n)
+    {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hqn : q ∣ n)
     (hpL : ∃ t ∈ L, p ∣ Nat.gcd t.val n)
     (hqL : ∀ t ∈ L, ¬q ∣ Nat.gcd t.val n) :
     1 < Nat.gcd L.prod.val n ∧ Nat.gcd L.prod.val n < n := by
-  have hpG := (prime_dvd_gcd_val_prod_iff L hp hpn).mpr hpL
+  have hpG := (prime_dvd_gcd_val_prod_iff L hp).mpr hpL
   have hqG : ¬q ∣ Nat.gcd L.prod.val n := by
-    rw [prime_dvd_gcd_val_prod_iff L hq hqn]
+    rw [prime_dvd_gcd_val_prod_iff L hq]
     exact not_exists.mpr fun t => not_and.mpr (hqL t)
   have hpos : 0 < Nat.gcd L.prod.val n := Nat.gcd_pos_of_pos_right _ (NeZero.pos n)
   refine ⟨hp.one_lt.trans_le (Nat.le_of_dvd hpos hpG), ?_⟩

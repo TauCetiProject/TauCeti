@@ -24,7 +24,7 @@ example : Nat.gcd ([3, 5] : List (ZMod 15)).prod.val 15 = 15 ∧
 
 -- Prime divisibility can be checked at the leaves instead of multiplying them.
 example : 5 ∣ Nat.gcd ([1, 5] : List (ZMod 15)).prod.val 15 := by
-  apply (List.prime_dvd_gcd_val_prod_iff _ (by decide) (by decide)).mpr
+  apply (List.prime_dvd_gcd_val_prod_iff _ (by decide)).mpr
   decide
 
 -- A prime present in one leaf and a prime absent from all leaves certify properness.
@@ -38,10 +38,10 @@ example : Nat.gcd ([0] : List (ZMod 15)).prod.val 15 = 15 ∧
     ¬∃ t ∈ ([0] : List (ZMod 15)), 1 < Nat.gcd t.val 15 ∧ Nat.gcd t.val 15 < 15 := by
   decide
 
--- The empty product has no prime divisor shared with the modulus.
-example {n p : ℕ} (hp : p.Prime) (hpn : p ∣ n) :
+-- The empty product gcd has no prime divisor, even one not dividing the modulus.
+example {n p : ℕ} (hp : p.Prime) :
     ¬p ∣ Nat.gcd ([] : List (ZMod n)).prod.val n := by
-  rw [List.prime_dvd_gcd_val_prod_iff _ hp hpn]
+  rw [List.prime_dvd_gcd_val_prod_iff _ hp]
   simp
 
 -- Modulus one is harmless even though its empty product is zero as a residue.
