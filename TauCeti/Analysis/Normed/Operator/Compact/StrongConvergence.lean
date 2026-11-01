@@ -24,7 +24,7 @@ open Filter Metric Set Topology
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -53,13 +53,21 @@ theorem tendsto_comp_zero_of_isCompactOperator {l : Filter ι} {A : ι → F →
   apply tendsto_zero_iff_norm_tendsto_zero.mpr
   apply Metric.tendsto_nhds.mpr
   intro ε hε
-  have he := Metric.tendstoUniformly_iff.mp hunif (ε / 2) (half_pos hε)
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  have hcpos : 0 < ‖c‖ := lt_trans zero_lt_one hc
+  have he := Metric.tendstoUniformly_iff.mp hunif (ε / 2 / ‖c‖)
+    (div_pos (half_pos hε) hcpos)
   filter_upwards [he] with i hi
   rw [dist_zero_right, norm_norm]
   refine lt_of_le_of_lt ?_ (half_lt_self hε)
-  apply opNorm_le_of_unit_norm (le_of_lt (half_pos hε))
-  intro x hx
-  have hmem : K x ∈ s := hKs (mem_image_of_mem K (by simp [mem_closedBall, hx]))
-  exact le_of_lt (by simpa using hi (⟨K x, hmem⟩ : s))
+  apply opNorm_le_of_shell one_pos (le_of_lt (half_pos hε)) hc
+  intro x hcx hx
+  have hmem : K x ∈ s := hKs (mem_image_of_mem K (by
+    simpa only [mem_closedBall, dist_zero_right] using hx.le))
+  calc
+    ‖(A i ∘L K) x‖ ≤ ε / 2 / ‖c‖ :=
+      le_of_lt (by simpa using hi (⟨K x, hmem⟩ : s))
+    _ = (ε / 2) * (1 / ‖c‖) := by ring
+    _ ≤ (ε / 2) * ‖x‖ := mul_le_mul_of_nonneg_left hcx (le_of_lt (half_pos hε))
 
 end ContinuousLinearMap
