@@ -13,11 +13,12 @@ import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.RingTheory.Norm.Projective
 
 /-!
-# Generators of an extension of finite locally free group schemes
+# Generators of an extension of finite flat group schemes
 
-Let `1 → G₁ → G → G₂ → 1` be a short exact sequence of affine group schemes over `Spec R` which
-are finite locally free over `R`. In coordinate Hopf algebras it is a pair of morphisms
-`p : O(G₂) ⟶ O(G)` and `i : O(G) ⟶ O(G₁)` with `TauCeti.CommHopfAlgCat.IsShortExact p i`. Let
+Let `1 → G₁ → G → G₂ → 1` be a short exact sequence of affine group schemes over `Spec R`, with
+`G₁` and `G₂` finite flat over `R` and `G` finite over `R`. In coordinate Hopf algebras it is a pair
+of morphisms `p : O(G₂) ⟶ O(G)` and `i : O(G) ⟶ O(G₁)` with
+`TauCeti.CommHopfAlgCat.IsShortExact p i`. Let
 `1 → A₁ → A → A₂ → 1` be a short exact sequence of finite groups, given by `j : A₁ →* A` and
 `q : A →* A₂`, and let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ →* G₂(R)` be compatible
 homomorphisms to the points. This file proves Katz–Mazur 1.11.3: if `φ₁` is an `A₁`-generator of
@@ -137,9 +138,10 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
     ((MonoidHom.ofInjective hj).trans (MulEquiv.subgroupCongr hjq.symm)).toEquiv _ _ fun _ ↦ rfl
 
 /-- **Generators of an extension** (Katz–Mazur 1.11.3). Let `p : O(G₂) ⟶ O(G)` and
-`i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of finite locally free affine
-group schemes over `R`, and let `j : A₁ →* A` and `q : A →* A₂` be a short exact sequence of finite
-groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ →* G₂(R)` be compatible with these
+`i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of affine group schemes over
+`R`, with `G₁` and `G₂` finite flat over `R` and `G` finite over `R`, and let `j : A₁ →* A` and
+`q : A →* A₂` be a short exact sequence of finite groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)`
+and `φ₂ : A₂ →* G₂(R)` be compatible with these
 maps: `i ∘ φ₁ = φ ∘ j` and `p ∘ φ = φ₂ ∘ q` on points. If `φ₁` is an `A₁`-generator of `G₁` and
 `φ₂` is an `A₂`-generator of `G₂`, then `φ` is an `A`-generator of `G`. -/
 theorem IsAGenerator.of_isShortExact [Module.Flat R Q] [Module.Finite R Q]
