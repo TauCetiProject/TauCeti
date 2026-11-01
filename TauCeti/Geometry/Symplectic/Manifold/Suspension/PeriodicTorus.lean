@@ -261,25 +261,30 @@ theorem isPseudoholomorphicAt_periodicTorus_iff (p : UnitAddCircle × AddCircle 
           ((Manifold.tangentSpaceProdEquiv (periodicTorus φ hx p)).symm ((1 : ℝ), 0)) =
         (Manifold.tangentSpaceProdEquiv (periodicTorus φ hx p)).symm
           ((0 : ℝ), timeVectorField φ (periodicTorus φ hx p).2) := by
-  rw [isPseudoholomorphicAt_iff_mfderiv]
-  refine ⟨fun h ↦ ?_, fun h ↦ ⟨(contMDiff_periodicTorus hx).mdifferentiableAt (by simp),
-    fun w ↦ ?_⟩⟩
-  · -- The Cauchy-Riemann equation on `∂_s`: its image is `∂_s`, and `j ∂_s = ∂_t` has image `T`.
-    have h₁ := h.2 ((Manifold.tangentSpaceProdEquiv p).symm ((1 : ℝ), (0 : ℝ)))
-    simp only [SmoothAlmostComplexStructure.addCircleProd_apply_symm] at h₁
-    rw [mfderiv_periodicTorus_symm, mfderiv_periodicTorus_symm] at h₁
-    simp only [neg_zero, zero_smul, zero_add, one_smul, add_zero] at h₁
-    exact h₁.symm
-  · -- Write `w = a ∂_s + b ∂_t`, so that `du w = a ∂_s + b T` and `du (j w) = -b ∂_s + a T`, while
-    -- `J (a ∂_s + b T) = a T - b ∂_s` because `J T = -∂_s`.
-    obtain ⟨a, b, rfl⟩ : ∃ a b : ℝ, w = (Manifold.tangentSpaceProdEquiv p).symm (a, b) :=
-      ⟨_, _, ((Manifold.tangentSpaceProdEquiv p).symm_apply_apply w).symm⟩
-    have hT := apply_symm_zero_timeVectorField h
-    simp only [SmoothAlmostComplexStructure.addCircleProd_apply_symm]
-    rw [mfderiv_periodicTorus_symm, mfderiv_periodicTorus_symm, map_add, map_smul, map_smul]
-    -- Beta-reduce the coercion of `J` in `h` and `hT` to the endomorphism form of the goal.
-    simp only at h hT
-    rw [h, hT, smul_neg, neg_smul, add_comm]
+  -- In the real coordinates of the parameter torus, `j` is the standard structure of the plane,
+  -- so the Cauchy-Riemann equation is the coordinate equation `du ∂_t = J (du ∂_s)` of the
+  -- standard complex line, and the differential sends `∂_s` to `∂_s` and `∂_t` to `T`.
+  rw [isPseudoholomorphicAt_iff_mfderiv, and_iff_right
+      ((contMDiff_periodicTorus hx).mdifferentiableAt (by simp)), eq_comm]
+  refine Iff.trans ?_ ((isComplexLinearMap_stdComplexLine_iff
+    (J := J.almostComplexStructureAt (periodicTorus φ hx p))
+    (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (periodicTorus φ hx)
+      p).toLinearMap).trans ?_)
+  · refine Iff.trans (forall_congr' fun w ↦ ?_)
+      (isComplexLinearMap_iff_apply (AlmostComplexStructure.product ℝ) _ _).symm
+    simp only [SmoothAlmostComplexStructure.addCircleProd_apply,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+    -- Both sides read `du (-w.2, w.1) = J (du w)`, as `product ℝ w = (-w.2, w.1)` by definition.
+    exact Iff.rfl
+  · -- The coordinate vectors `(1, 0)` and `(0, 1)` are `∂_s` and `∂_t` of the parameter torus.
+    simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply, stdComplexLineReal_eq,
+      stdComplexLineImag_eq]
+    have hs := mfderiv_periodicTorus_symm hx p 1 0
+    have ht := mfderiv_periodicTorus_symm hx p 0 1
+    simp only [zero_smul, zero_add, one_smul, add_zero] at hs ht
+    rw [Manifold.tangentSpaceProdEquiv_symm_apply p] at hs ht
+    -- The goal applies `du` as a linear map on `ℝ × ℝ`; `erw` sees through that coercion.
+    erw [hs, ht]
 
 /-- The periodic torus is pseudoholomorphic, for the standard almost complex structure of the
 parameter torus `(ℝ / ℤ) × (ℝ / dℤ)`, exactly when `J ∂_s = T` along its image: `J` sends the
