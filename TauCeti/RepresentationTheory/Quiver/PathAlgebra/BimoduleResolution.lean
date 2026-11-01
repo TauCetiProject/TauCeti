@@ -232,6 +232,15 @@ private theorem arrowTensorProj_tmul (b : Σ i j : Q, i ⟶ j) (x y : 𝒜) :
   rw [← arrowTensorProj_mul_arrowTensorIdempotent, arrowTensorIdempotent,
     Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
 
+/-- The projection onto the component of an arrow `b` sends `eⱼ ⊗ eᵢ` to the generator. -/
+private theorem arrowTensorProj_arrowTensorIdempotent (b : Σ i j : Q, i ⟶ j) :
+    arrowTensorProj b (arrowTensorIdempotent k Q b) =
+      DirectSum.lof 𝒜ᵉ _ _ b (spanSingletonGenerator (arrowTensorIdempotent k Q b)) := by
+  have h := smul_spanSingletonGenerator (isIdempotentElem_arrowTensorIdempotent k Q b)
+    (spanSingletonGenerator (arrowTensorIdempotent k Q b))
+  rw [coe_spanSingletonGenerator] at h
+  rw [arrowTensorProj, LinearMap.comp_apply, LinearMap.toSpanSingleton_apply, h]
+
 /-- The homotopy on the elements `x ⊗ q` of the enveloping algebra, for a path `q`: the sum, over
 the factorizations `q = q'' c q'` with `c` an arrow, of `x q'' ⊗ q'` in the component of `c`. It is
 defined by recursion on the last arrow of `q`. -/
@@ -251,6 +260,13 @@ private theorem homotopyPath_cons {s t t' : Q} (q : Quiver.Path s t) (c : t ⟶ 
       homotopyPath q (x * ofArrow c) +
         arrowTensorProj ⟨_, _, c⟩ (x ⊗ₜ[k] op (ofPath ⟨_, _, q⟩)) := by
   simp [homotopyPath]
+
+/-- On an arrow `b : i ⟶ j`, the homotopy has the single term `x ⊗ eᵢ` in the component of `b`. -/
+private theorem homotopyPath_toPath {i j : Q} (b : i ⟶ j) (x : 𝒜) :
+    homotopyPath b.toPath x = arrowTensorProj ⟨i, j, b⟩ (x ⊗ₜ[k] op (ε i)) := by
+  -- An arrow is the path `nil.cons b`.
+  rw [Quiver.Hom.toPath, homotopyPath_cons, homotopyPath_nil, LinearMap.zero_apply, zero_add,
+    vertexIdempotent_eq_ofPath]
 
 /-- The contracting homotopy, from the enveloping algebra to `⨁_b kQ eⱼ ⊗_k eᵢ kQ`: the `k`-linear
 map sending `x ⊗ q`, for a path `q`, to `homotopyPath q x`. -/
@@ -300,12 +316,22 @@ theorem arrowTensorDerivation_ofArrow {i j : Q} (b : i ⟶ j) :
     arrowTensorDerivation k Q (ofArrow b) =
       DirectSum.lof 𝒜ᵉ _ _ ⟨i, j, b⟩
         (spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩)) := by
-  rw [arrowTensorDerivation_apply, ofArrow_eq_ofPath, homotopy_tmul, Quiver.Hom.toPath,
-    homotopyPath_cons, homotopyPath_nil, LinearMap.zero_apply, zero_add, arrowTensorProj_apply,
-    ← vertexIdempotent_eq_ofPath]
-  congr 2
-  rw [arrowTensorIdempotent_def, Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← op_mul,
-    vertexIdempotent_mul_self, coe_spanSingletonGenerator]
+  -- The homotopy of `1 ⊗ b` is `1 ⊗ eᵢ` projected to the component of `b`, which is `eⱼ ⊗ eᵢ`.
+  have h : ((1 : 𝒜) ⊗ₜ[k] op (ε i)) * arrowTensorIdempotent k Q ⟨i, j, b⟩ =
+      arrowTensorIdempotent k Q ⟨i, j, b⟩ := by
+    rw [arrowTensorIdempotent_def, Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← op_mul,
+      vertexIdempotent_mul_self]
+  rw [arrowTensorDerivation_apply, ofArrow_eq_ofPath, homotopy_tmul, homotopyPath_toPath,
+    ← arrowTensorProj_mul_arrowTensorIdempotent, h, arrowTensorProj_arrowTensorIdempotent]
+
+/-- The simp-normal form of `TauCeti.PathAlgebra.arrowTensorDerivation_ofArrow`, in which
+`TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
+@[simp]
+theorem arrowTensorDerivation_ofPath_toPath {i j : Q} (b : i ⟶ j) :
+    arrowTensorDerivation k Q (ofPath ⟨i, j, b.toPath⟩) =
+      DirectSum.lof 𝒜ᵉ _ _ ⟨i, j, b⟩
+        (spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩)) := by
+  rw [← ofArrow_eq_ofPath, arrowTensorDerivation_ofArrow]
 
 end Derivation
 
@@ -333,6 +359,17 @@ theorem arrowTensorLift_lof (m : (Σ i j : Q, i ⟶ j) → M) (b : Σ i j : Q, i
     (u : (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) :
     arrowTensorLift k Q m (DirectSum.lof 𝒜ᵉ _ _ b u) = (u : 𝒜ᵉ) • m b := by
   simp [arrowTensorLift]
+
+/-- The lift of a family `m` sends the universal derivation of an arrow `b : i ⟶ j` to
+`(eⱼ ⊗ eᵢ) m_b`. This is not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath`
+rewrites its left-hand side, and `simp` evaluates the resulting form through
+`TauCeti.PathAlgebra.arrowTensorDerivation_ofPath_toPath` and
+`TauCeti.PathAlgebra.arrowTensorLift_lof`. -/
+theorem arrowTensorLift_arrowTensorDerivation_ofArrow (m : (Σ i j : Q, i ⟶ j) → M) {i j : Q}
+    (b : i ⟶ j) :
+    arrowTensorLift k Q m (arrowTensorDerivation k Q (ofArrow b)) =
+      arrowTensorIdempotent k Q ⟨i, j, b⟩ • m ⟨i, j, b⟩ := by
+  rw [arrowTensorDerivation_ofArrow, arrowTensorLift_lof, coe_spanSingletonGenerator]
 
 /-- **Bimodule maps out of `⨁_b kQ eⱼ ⊗_k eᵢ kQ` are determined by their values on the universal
 derivations of the arrows.** -/
@@ -410,10 +447,9 @@ theorem arrowTensorBoundary_mul_vertexTensorIdempotent (b : Σ i j : Q, i ⟶ j)
     arrowTensorBoundary k Q b * vertexTensorIdempotent k Q = arrowTensorBoundary k Q b := by
   obtain ⟨i, j, b⟩ := b
   rw [arrowTensorBoundary, sub_mul,
-    tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (v := i) (by
-      rw [ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent]),
+    tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (ofArrow_mul_vertexIdempotent_self b),
     tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (vertexIdempotent_mul_self j),
-    vertexIdempotent_mul_self, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
+    vertexIdempotent_mul_self, vertexIdempotent_mul_ofArrow_self]
 
 /-! ### The middle term of the resolution -/
 
@@ -635,6 +671,7 @@ theorem exact_arrowTensorDifferential_vertexTensorMul :
 /-- **The boundary of the universal derivation** is `y ⊗ 1 - 1 ⊗ y`: followed by the differential
 of the standard resolution, `∂` is `y ↦ (y ⊗ 1 - 1 ⊗ y)(∑ᵥ eᵥ ⊗ eᵥ)`, with values in
 `kQ ⊗_{kQ₀} kQ`. -/
+@[simp]
 theorem coe_arrowTensorDifferential_arrowTensorDerivation (y : 𝒜) :
     (arrowTensorDifferential k Q (arrowTensorDerivation k Q y) : 𝒜ᵉ) =
       (y ⊗ₜ[k] 1 - 1 ⊗ₜ[k] op y) * vertexTensorIdempotent k Q := by
@@ -696,12 +733,13 @@ theorem arrowTensorLift_arrowTensorDerivation (D : 𝒜 →ₗ[k] M)
       arrowTensorIdempotent k Q ⟨i, j, b⟩ • D (ofArrow b) = D (ofArrow b) := by
     have hl := hD (ε j) (ofArrow b)
     have hr := hD (ofArrow b) (ε i)
-    rw [ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath, ← ofArrow_eq_ofPath, hD₀, smul_zero,
-      add_zero] at hl
-    rw [ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent, ← ofArrow_eq_ofPath, hD₀, smul_zero,
-      zero_add] at hr
-    rw [arrowTensorIdempotent_def, ← mul_one (ε j), ← one_mul (op (ε i)),
-      ← Algebra.TensorProduct.tmul_mul_tmul, mul_smul, ← hr, ← hl]
+    rw [vertexIdempotent_mul_ofArrow_self, hD₀, smul_zero, add_zero] at hl
+    rw [ofArrow_mul_vertexIdempotent_self, hD₀, smul_zero, zero_add] at hr
+    calc arrowTensorIdempotent k Q ⟨i, j, b⟩ • D (ofArrow b)
+        = (ε j ⊗ₜ[k] 1 : 𝒜ᵉ) • ((1 : 𝒜) ⊗ₜ[k] op (ε i)) • D (ofArrow b) := by
+          rw [← mul_smul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul,
+            arrowTensorIdempotent_def]
+      _ = D (ofArrow b) := by rw [← hr, ← hl]
   -- Both sides are `k`-linear in `x`, so they agree as linear maps, compared on the paths.
   have key : (arrowTensorLift k Q (fun b ↦ D (ofArrow b.2.2))).restrictScalars k ∘ₗ
       arrowTensorDerivation k Q = D := by
@@ -713,7 +751,7 @@ theorem arrowTensorLift_arrowTensorDerivation (D : 𝒜 →ₗ[k] M)
         hD₀]
     | @cons t t' q c ih =>
       rw [← ofArrow_mul_ofPath, arrowTensorDerivation_mul, map_add, map_smul, map_smul, ih,
-        arrowTensorDerivation_ofArrow, arrowTensorLift_lof, coe_spanSingletonGenerator, hDb, hD]
+        arrowTensorLift_arrowTensorDerivation_ofArrow, hDb, hD]
   exact LinearMap.congr_fun key x
 
 end PathAlgebra
