@@ -156,7 +156,7 @@ theorem eventually_pow_dvd_finrank_adicCompletion_of_finrank_le {ℓ : ℕ} (h�
     (Ideal.inertiaDeg_pos P (𝓞 E))
   have had : a ≤ d := by
     refine (TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank
-      w.asIdeal P).trans ?_
+      (𝓞 E) P).trans ?_
     rwa [← IsFractionRing.finrank_eq (𝓞 E) E (𝓞 F) F]
   -- Multiplicativity in the tower `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 F` gives `ℓ ^ (j + d) ∣ a * b`; as `a < ℓ ^ d`,
   -- at most `d` factors `ℓ` lie in `a`.
