@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Algebra.Homology.Ext.Basic
+public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.LinearAlgebra.Dual.Opposite
@@ -78,11 +78,13 @@ variable {A : Type*} [Ring A] {P₀ P₁ M : Type*} [AddCommGroup P₀] [Module 
 private lemma exists_comp_eq_of_comp_eq_zero (hexact : Function.Exact p π)
     (hπ : Function.Surjective π) (ψ : Module.Dual A P₀) (hψ : ψ ∘ₗ p = 0) :
     ∃ φ : Module.Dual A M, φ ∘ₗ π = ψ := by
-  refine ⟨(LinearMap.range p).liftQ ψ (by
+  have hker : LinearMap.ker π ≤ LinearMap.ker ψ := by
+    rw [hexact.linearMap_ker_eq]
     rintro _ ⟨y, rfl⟩
-    rw [LinearMap.mem_ker, ← LinearMap.comp_apply, hψ, LinearMap.zero_apply]) ∘ₗ
-      (hexact.linearEquivOfSurjective hπ).symm.toLinearMap, LinearMap.ext fun x ↦ ?_⟩
-  simp
+    exact LinearMap.congr_fun hψ y
+  exact ⟨π.liftOfSurjective hπ ⟨ψ, hker⟩,
+    LinearMap.ext fun x ↦ (LinearMap.comp_apply _ _ _).trans
+      (LinearMap.equivOfSurjective_apply hπ hker)⟩
 
 variable [Module.Finite A P₀] [Module.Projective A P₀]
 
@@ -95,13 +97,6 @@ private noncomputable def rangeDualToModule :
   map_zero' := by simp
   map_add' g g' := by simp [LinearMap.add_comp]
 
-/-- The element of `P₀` underlying `rangeDualToModule` evaluates as `ψ ↦ g (ψ ∘ p)`. -/
-private lemma apply_opDualEvalEquiv_symm_comp_rangeRestrict
-    (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) (ψ : Module.Dual A P₀) :
-    ψ ((opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict)) =
-      g ⟨(p.lcomp Aᵐᵒᵖ A) ψ, LinearMap.mem_range_self _ ψ⟩ :=
-  apply_opDualEvalEquiv_symm A P₀ _ ψ
-
 variable [Module.Finite A P₁] [Module.Projective A P₁]
 
 /-- `rangeDualToModule` kills exactly the functionals on `K` that extend to `P₁*`. -/
@@ -110,19 +105,20 @@ private lemma rangeDualToModule_eq_zero_iff (hexact : Function.Exact p π)
     rangeDualToModule p π g = 0 ↔
       ∃ h : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] A, h ∘ₗ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)).subtype = g := by
   set x := (opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict) with hxdef
-  have hx (ψ : Module.Dual A P₀) : ψ x = g ⟨(p.lcomp Aᵐᵒᵖ A) ψ, LinearMap.mem_range_self _ ψ⟩ :=
-    apply_opDualEvalEquiv_symm_comp_rangeRestrict g ψ
   change π x = 0 ↔ _
   refine ⟨fun h0 ↦ ?_, fun ⟨h, hh⟩ ↦ ?_⟩
   · obtain ⟨y, hy⟩ := (hexact x).1 h0
     refine ⟨opDualEval A P₁ y, LinearMap.ext fun ⟨k, ψ, hk⟩ ↦ ?_⟩
     subst hk
     rw [LinearMap.comp_apply, Submodule.subtype_apply, opDualEval_apply, LinearMap.lcomp_apply, hy,
-      hx]
+      hxdef, apply_opDualEvalEquiv_symm]
+    rfl
   · have hy : x = p ((opDualEvalEquiv A P₁).symm h) :=
       (opDualEval_bijective A P₀).1 (LinearMap.ext fun ψ ↦ by
-        rw [opDualEval_apply, opDualEval_apply, hx, ← hh, LinearMap.comp_apply,
-          Submodule.subtype_apply, ← apply_opDualEvalEquiv_symm A P₁ h, LinearMap.lcomp_apply])
+        rw [opDualEval_apply, opDualEval_apply, hxdef, apply_opDualEvalEquiv_symm, ← hh,
+          LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply,
+          ← apply_opDualEvalEquiv_symm A P₁ h]
+        rfl)
     rw [hy, hexact.apply_apply_eq_zero]
 
 omit [Module.Finite A P₁] [Module.Projective A P₁] in
@@ -141,7 +137,9 @@ private lemma opDualEval_eq_zero_iff (hexact : Function.Exact p π) (hπ : Funct
     let g := (LinearMap.ker (p.lcomp Aᵐᵒᵖ A)).liftQ _ hker ∘ₗ
       (p.lcomp Aᵐᵒᵖ A).quotKerEquivRange.symm.toLinearMap
     refine ⟨g, congrArg π ((opDualEval_bijective A P₀).1 (LinearMap.ext fun ψ ↦ ?_))⟩
-    rw [opDualEval_apply, opDualEval_apply, apply_opDualEvalEquiv_symm_comp_rangeRestrict]
+    rw [opDualEval_apply, opDualEval_apply, apply_opDualEvalEquiv_symm, LinearMap.comp_apply,
+      show (p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ =
+        ⟨(p.lcomp Aᵐᵒᵖ A) ψ, LinearMap.mem_range_self _ ψ⟩ from rfl]
     simp only [g, LinearMap.comp_apply, LinearEquiv.coe_coe,
       LinearMap.quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply, Submodule.liftQ_apply,
       opDualEval_apply]
@@ -149,24 +147,10 @@ private lemma opDualEval_eq_zero_iff (hexact : Function.Exact p π) (hπ : Funct
     refine LinearMap.ext fun φ ↦ ?_
     rw [opDualEval_apply, LinearMap.zero_apply]
     change φ (π ((opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict))) = 0
-    rw [← LinearMap.comp_apply φ π, apply_opDualEvalEquiv_symm_comp_rangeRestrict]
+    rw [← LinearMap.comp_apply φ π, apply_opDualEvalEquiv_symm, LinearMap.comp_apply]
     convert g.map_zero
     ext y
     simp [hexact.apply_apply_eq_zero]
-
-omit [Module.Finite A P₁] [Module.Projective A P₁] in
-/-- A functional on `M*` extends along `π* : M* ⟶ P₀*` exactly when it is an evaluation. -/
-private lemma exists_comp_lcomp_eq_iff (hπ : Function.Surjective π)
-    (g : Module.Dual A M →ₗ[Aᵐᵒᵖ] A) :
-    (∃ h : Module.Dual A P₀ →ₗ[Aᵐᵒᵖ] A, h ∘ₗ π.lcomp Aᵐᵒᵖ A = g) ↔
-      ∃ m, opDualEval A M m = g := by
-  refine ⟨fun ⟨h, hh⟩ ↦ ⟨π ((opDualEvalEquiv A P₀).symm h), ?_⟩, fun ⟨m, hm⟩ ↦ ?_⟩
-  · refine hh ▸ LinearMap.ext fun φ ↦ ?_
-    rw [opDualEval_apply, LinearMap.comp_apply, ← apply_opDualEvalEquiv_symm A P₀ h,
-      LinearMap.lcomp_apply]
-  · obtain ⟨x, rfl⟩ := hπ m
-    exact ⟨opDualEval A P₀ x, hm ▸ LinearMap.ext fun φ ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.lcomp_apply, opDualEval_apply]⟩
 
 end Linear
 
@@ -236,63 +220,49 @@ private lemma dualShortComplex_shortExact (hexact : Function.Exact p π)
 variable [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁]
   [Module.Projective A P₁] [HasExt.{w} (ModuleCat.{u} Aᵐᵒᵖ)]
 
-variable (p) in
-/-- The connecting map `Hom(K, A) ⟶ Ext¹(Tr M, A)` of `0 ⟶ K ⟶ P₁* ⟶ Tr M ⟶ 0`. -/
-private noncomputable def transposeConnecting :
-    (LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) →+
-      Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 1 where
-  toFun g := (transposeShortComplex_shortExact (p := p)).extClass.comp
-    (Ext.mk₀ (ModuleCat.ofHom g)) (add_zero 1)
-  map_zero' := by simp [Ext.mk₀_zero]
-  map_add' g g' := by simp [ModuleCat.ofHom_add, Ext.mk₀_add, Ext.comp_add]
-
-omit [Module.Finite A P₀] [Module.Projective A P₀] in
-variable (p) in
-private lemma transposeConnecting_surjective :
-    Function.Surjective (transposeConnecting.{w} p) := fun e ↦ by
-  obtain ⟨g, rfl⟩ := (transposeShortComplex_shortExact (p := p)).exists_extClass_comp_mk₀_eq e
-  exact ⟨g.hom, rfl⟩
-
-omit [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁]
-  [Module.Projective A P₁] in
-private lemma transposeConnecting_eq_zero_iff
-    (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) :
-    transposeConnecting.{w} p g = 0 ↔
-      ∃ h : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] A, h ∘ₗ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)).subtype = g := by
-  refine ((transposeShortComplex_shortExact (p := p)).extClass_comp_mk₀_eq_zero_iff _).trans
-    ⟨fun ⟨h, hh⟩ ↦ ⟨h.hom, congrArg ModuleCat.Hom.hom hh⟩,
-      fun ⟨h, hh⟩ ↦ ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩⟩
+-- `homBoundary ℤ` uses the `ℤ`-module structure of `Ext` coming from `Linear ℤ`, which is not
+-- definitionally the default `AddCommGroup.toIntModule`; prefer it in this section.
+attribute [local instance high] CategoryTheory.Abelian.Ext.instModule
 
 variable (p π) in
 /-- The first map `Ext¹(Tr M, A) ⟶ M` of the **Auslander–Bridger sequence**
-`0 ⟶ Ext¹(Tr M, A) ⟶ M ⟶ M** ⟶ Ext²(Tr M, A) ⟶ 0`. A class `extClass ∘ g`, with
-`g : K ⟶ A` defined on the image `K` of `p* : P₀* ⟶ P₁*`, goes to the image in `M` of the element
-of `P₀ ≅ P₀**` representing `ψ ↦ g (ψ ∘ p)`. -/
+`0 ⟶ Ext¹(Tr M, A) ⟶ M ⟶ M** ⟶ Ext²(Tr M, A) ⟶ 0`. A class in `Ext¹(Tr M, A)` is represented,
+through `TauCeti.homCokernelEquivExt`, by a functional `g : K ⟶ A` on the image `K` of
+`p* : P₀* ⟶ P₁*`, and goes to the image in `M` of the element of `P₀ ≅ P₀**` representing
+`ψ ↦ g (ψ ∘ p)`. -/
 noncomputable def AuslanderReitenTranspose.extOneToModule (hexact : Function.Exact p π) :
     Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 1 →+ M :=
-  (QuotientAddGroup.lift (transposeConnecting.{w} p).ker (rangeDualToModule p π) fun g hg ↦
-    (rangeDualToModule_eq_zero_iff hexact g).2 ((transposeConnecting_eq_zero_iff g).1 hg)).comp
-    (QuotientAddGroup.quotientKerEquivOfSurjective _
-      (transposeConnecting_surjective p)).symm.toAddMonoidHom
+  ((Submodule.liftQ _ (AddMonoidHom.mk'
+      (fun g : ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)) ⟶ ModuleCat.of Aᵐᵒᵖ A ↦
+        rangeDualToModule p π g.hom) fun g g' ↦ by
+        rw [ModuleCat.hom_add, map_add]).toIntLinearMap
+    (by
+      rintro _ ⟨h, rfl⟩
+      exact (rangeDualToModule_eq_zero_iff hexact _).2 ⟨h.hom, rfl⟩)) ∘ₗ
+    (homCokernelEquivExt ℤ (transposeShortComplex_shortExact (p := p))
+      (ModuleCat.of Aᵐᵒᵖ A)).symm.toLinearMap).toAddMonoidHom
 
-private lemma extOneToModule_transposeConnecting (hexact : Function.Exact p π)
-    (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) :
-    AuslanderReitenTranspose.extOneToModule p π hexact (transposeConnecting.{w} p g) =
-      rangeDualToModule p π g := by
-  simp only [AuslanderReitenTranspose.extOneToModule, AddMonoidHom.coe_comp, Function.comp_apply,
-    AddEquiv.coe_toAddMonoidHom]
-  rw [show (QuotientAddGroup.quotientKerEquivOfSurjective _ (transposeConnecting_surjective p)).symm
-    (transposeConnecting.{w} p g) = (g : _ ⧸ (transposeConnecting.{w} p).ker) from
-    AddEquiv.symm_apply_eq _ |>.2 rfl]
+/-- The first map of the Auslander–Bridger sequence on the connecting image of a functional. -/
+private lemma extOneToModule_homBoundary (hexact : Function.Exact p π)
+    (g : ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)) ⟶ ModuleCat.of Aᵐᵒᵖ A) :
+    AuslanderReitenTranspose.extOneToModule.{w} p π hexact
+        (homBoundary ℤ (transposeShortComplex_shortExact (p := p)) _ g) =
+      rangeDualToModule p π g.hom := by
+  rw [homBoundary_apply]
+  simp only [AuslanderReitenTranspose.extOneToModule, LinearMap.toAddMonoidHom_coe,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [homCokernelEquivExt_symm_comp_mk₀]
   rfl
 
 /-- The first map of the Auslander–Bridger sequence is injective. -/
 theorem AuslanderReitenTranspose.injective_extOneToModule (hexact : Function.Exact p π) :
     Function.Injective (extOneToModule.{w} p π hexact) := by
   refine (injective_iff_map_eq_zero _).2 fun e he ↦ ?_
-  obtain ⟨g, rfl⟩ := transposeConnecting_surjective.{w} p e
-  rw [extOneToModule_transposeConnecting, rangeDualToModule_eq_zero_iff hexact] at he
-  exact (transposeConnecting_eq_zero_iff g).2 he
+  obtain ⟨g, rfl⟩ := homBoundary_surjective ℤ (transposeShortComplex_shortExact (p := p)) _ e
+  rw [extOneToModule_homBoundary, rangeDualToModule_eq_zero_iff hexact] at he
+  obtain ⟨h, hh⟩ := he
+  rw [← LinearMap.mem_ker, ker_homBoundary]
+  exact ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩
 
 /-- **Exactness of the Auslander–Bridger sequence at `M`**: the kernel of evaluation `M ⟶ M**` is
 the image of `Ext¹(Tr M, A)`. -/
@@ -300,11 +270,10 @@ theorem AuslanderReitenTranspose.exact_extOneToModule_opDualEval (hexact : Funct
     (hπ : Function.Surjective π) :
     Function.Exact (extOneToModule.{w} p π hexact) (opDualEval A M) := fun m ↦ by
   rw [opDualEval_eq_zero_iff hexact hπ]
-  refine ⟨fun ⟨g, hg⟩ ↦
-    ⟨transposeConnecting.{w} p g, by rw [extOneToModule_transposeConnecting, hg]⟩,
-    fun ⟨e, he⟩ ↦ ?_⟩
-  obtain ⟨g, rfl⟩ := transposeConnecting_surjective.{w} p e
-  exact ⟨g, by rw [← he, extOneToModule_transposeConnecting]⟩
+  refine ⟨fun ⟨g, hg⟩ ↦ ⟨homBoundary ℤ (transposeShortComplex_shortExact (p := p)) _
+    (ModuleCat.ofHom g), by rw [extOneToModule_homBoundary, ← hg]; rfl⟩, fun ⟨e, he⟩ ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := homBoundary_surjective ℤ (transposeShortComplex_shortExact (p := p)) _ e
+  exact ⟨g.hom, by rw [← he, extOneToModule_homBoundary]⟩
 
 variable (p π) in
 /-- The last map `M** ⟶ Ext²(Tr M, A)` of the **Auslander–Bridger sequence**
@@ -313,34 +282,47 @@ variable (p π) in
 noncomputable def AuslanderReitenTranspose.doubleDualToExtTwo (hexact : Function.Exact p π)
     (hπ : Function.Surjective π) :
     (Module.Dual A M →ₗ[Aᵐᵒᵖ] A) →+
-      Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 2 where
-  toFun g := (transposeShortComplex_shortExact (p := p)).extClass.comp
-    ((dualShortComplex_shortExact hexact hπ).extClass.comp (Ext.mk₀ (ModuleCat.ofHom g))
-      (add_zero 1)) rfl
-  map_zero' := by simp [Ext.mk₀_zero]
-  map_add' g g' := by simp [ModuleCat.ofHom_add, Ext.mk₀_add, Ext.comp_add]
+      Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 2 :=
+  ((Ext.precomp (transposeShortComplex_shortExact (p := p)).extClass (ModuleCat.of Aᵐᵒᵖ A)
+    (show 1 + (0 + 1) = 0 + 2 by lia)).comp
+    (homBoundary ℤ (dualShortComplex_shortExact hexact hπ)
+      (ModuleCat.of Aᵐᵒᵖ A)).toAddMonoidHom).comp
+    (AddMonoidHom.mk' (fun g ↦ (ModuleCat.ofHom g : ModuleCat.of Aᵐᵒᵖ (Module.Dual A M) ⟶
+      ModuleCat.of Aᵐᵒᵖ A)) fun _ _ ↦ rfl)
+
+omit [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁] [Module.Projective A P₁] in
+/-- The last map of the Auslander–Bridger sequence is the composite of the two connecting maps. -/
+private lemma doubleDualToExtTwo_apply (hexact : Function.Exact p π) (hπ : Function.Surjective π)
+    (g : Module.Dual A M →ₗ[Aᵐᵒᵖ] A) :
+    AuslanderReitenTranspose.doubleDualToExtTwo.{w} p π hexact hπ g =
+      Ext.precomp (transposeShortComplex_shortExact (p := p)).extClass (ModuleCat.of Aᵐᵒᵖ A)
+        (show 1 + (0 + 1) = 0 + 2 by lia)
+        (homBoundary ℤ (dualShortComplex_shortExact hexact hπ) _ (ModuleCat.ofHom g)) :=
+  rfl
 
 /-- The last map of the Auslander–Bridger sequence is surjective. -/
 theorem AuslanderReitenTranspose.surjective_doubleDualToExtTwo (hexact : Function.Exact p π)
     (hπ : Function.Surjective π) :
     Function.Surjective (doubleDualToExtTwo.{w} p π hexact hπ) := fun e ↦ by
-  obtain ⟨x, rfl⟩ := ((transposeShortComplex_shortExact (p := p)).bijective_precomp_extClass
-    (Y := ModuleCat.of Aᵐᵒᵖ A) 0).2 e
-  obtain ⟨g, rfl⟩ := (dualShortComplex_shortExact hexact hπ).exists_extClass_comp_mk₀_eq x
-  exact ⟨g.hom, rfl⟩
+  obtain ⟨x, rfl⟩ :=
+    (bijective_precomp_extClass (transposeShortComplex_shortExact (p := p)) _ 0).2 e
+  obtain ⟨g, rfl⟩ := homBoundary_surjective ℤ (dualShortComplex_shortExact hexact hπ) _ x
+  exact ⟨g.hom, doubleDualToExtTwo_apply hexact hπ _⟩
 
 /-- **Exactness of the Auslander–Bridger sequence at `M**`**: the image of evaluation `M ⟶ M**` is
 the kernel of the map to `Ext²(Tr M, A)`. -/
 theorem AuslanderReitenTranspose.exact_opDualEval_doubleDualToExtTwo
     (hexact : Function.Exact p π) (hπ : Function.Surjective π) :
     Function.Exact (opDualEval A M) (doubleDualToExtTwo.{w} p π hexact hπ) := fun g ↦ by
-  rw [Set.mem_range, ← exists_comp_lcomp_eq_iff hπ]
-  have hinj := ((transposeShortComplex_shortExact (p := p)).bijective_precomp_extClass
-    (Y := ModuleCat.of Aᵐᵒᵖ A) 0).1
-  refine (hinj.eq_iff' (map_zero _)).trans
-    (((dualShortComplex_shortExact hexact hπ).extClass_comp_mk₀_eq_zero_iff _).trans
-      ⟨fun ⟨h, hh⟩ ↦ ⟨h.hom, congrArg ModuleCat.Hom.hom hh⟩,
-        fun ⟨h, hh⟩ ↦ ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩⟩)
+  -- The image of evaluation is the image of `(π*)* : P₀** ⟶ M**`.
+  have hrange := map_range_opDualEval A π
+  rw [LinearMap.range_eq_top.2 hπ, Submodule.map_top] at hrange
+  rw [show g ∈ Set.range (opDualEval A M) ↔ g ∈ LinearMap.range (opDualEval A M) from Iff.rfl,
+    hrange, doubleDualToExtTwo_apply, ((bijective_precomp_extClass
+      (transposeShortComplex_shortExact (p := p)) _ 0).1.eq_iff' (map_zero _)),
+    ← LinearMap.mem_ker, ker_homBoundary]
+  exact ⟨fun ⟨h, hh⟩ ↦ ⟨h.hom, congrArg ModuleCat.Hom.hom hh⟩,
+    fun ⟨h, hh⟩ ↦ ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩⟩
 
 /-- **Torsionless modules** (Auslander–Bridger): for a presentation `P₁ ⟶ P₀ ⟶ M ⟶ 0` by finitely
 generated projective modules, evaluation `M ⟶ M**` is injective if and only if
