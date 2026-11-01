@@ -16,7 +16,8 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
 `PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
 `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`).
+(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the diagonal
+and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
 vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
@@ -86,4 +87,26 @@ theorem diagStarAlgHom_apply (s : H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H))
     diagStarAlgHom 𝕜 H ι s w i = s (w i) :=
   (rfl)
 
+@[simp]
+theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : ι) (h : H) :
+    diagStarAlgHom 𝕜 H ι s (PiLp.single 2 j h) = PiLp.single 2 j (s h) := by
+  ext k
+  by_cases hk : k = j
+  · subst hk; simp
+  · simp [hk]
+
 end PiLp
+
+namespace ContinuousLinearMap
+
+variable [Fintype ι] [DecidableEq ι] [CompleteSpace H]
+
+/-- The diagonal amplification of `s` has `s` on the diagonal and `0` off it. -/
+theorem piLpEntry_diagStarAlgHom (s : H →L[𝕜] H) (i j : ι) :
+    (PiLp.diagStarAlgHom 𝕜 H ι s).piLpEntry i j = if i = j then s else 0 := by
+  ext h
+  by_cases hij : i = j
+  · subst hij; simp
+  · simp [hij]
+
+end ContinuousLinearMap

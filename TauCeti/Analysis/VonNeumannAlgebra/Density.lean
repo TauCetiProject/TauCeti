@@ -107,13 +107,9 @@ private theorem diag_mem_centralizer_centralizer
     intro s hs
     have hsT := hT _ (StarSubalgebra.mem_map.mpr ⟨s, hs, rfl⟩)
     ext h
-    have hdiag : PiLp.diagStarAlgHom 𝕜 H ι s (PiLp.single 2 j h) = PiLp.single 2 j (s h) := by
-      ext k
-      by_cases hk : k = j
-      · subst hk; simp
-      · simp [hk]
     have h' := congr_arg (fun w => w i) (DFunLike.congr_fun hsT (PiLp.single 2 j h))
-    simp only [mul_apply_eq_comp, PiLp.diagStarAlgHom_apply, hdiag] at h'
+    simp only [mul_apply_eq_comp, PiLp.diagStarAlgHom_apply, PiLp.diagStarAlgHom_apply_single]
+      at h'
     simpa [mul_apply_eq_comp] using h'
   ext w i
   simp only [mul_apply_eq_comp]
