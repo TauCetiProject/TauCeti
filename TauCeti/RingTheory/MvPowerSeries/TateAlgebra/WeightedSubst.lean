@@ -86,6 +86,7 @@ section Restricted
 variable {r : Fin k → ℝ} {s : τ → ℝ} [∀ j, Fact (0 < s j)]
 
 /-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
+@[simp]
 theorem restrictedAnalyticSubst_zero_apply
     (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
     (f : IsRestricted.subring (R := R) r) :
