@@ -81,7 +81,7 @@ variable {H : Puncture → ℝ → M → ℝ}
 
 /-- Where the cutoff of the end `q` is nonzero, the point lies on the part `±s > 1` of that end,
 and in particular it is not the center of the end. -/
-private theorem one_lt_endSign_mul_re_endCoord {q : Puncture} {w : ℂ}
+theorem one_lt_endSign_mul_re_endCoord {q : Puncture} {w : ℂ}
     (h : smoothTransition (q.endSign * (q.endCoord w).re - 1) ≠ 0) :
     1 < q.endSign * (q.endCoord w).re ∧ w ≠ q.endCenter := by
   have h₁ : 1 < q.endSign * (q.endCoord w).re := by
@@ -90,6 +90,16 @@ private theorem one_lt_endSign_mul_re_endCoord {q : Puncture} {w : ℂ}
   refine ⟨h₁, fun hw => ?_⟩
   rw [hw, re_endCoord] at h₁
   norm_num at h₁
+
+/-- On the part `±s > 0` of the end `q`, the cutoff `β(±s - 1)` of every other end vanishes, since
+distinct ends are disjoint. -/
+theorem smoothTransition_endCoord_cylindricalEndLift_eq_zero {q r : Puncture} (hqr : q ≠ r)
+    {z : ℂ} (hz : 0 < q.endSign * z.re) :
+    smoothTransition (r.endSign * (r.endCoord (q.cylindricalEndLift z)).re - 1) = 0 := by
+  by_contra hc
+  obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
+  exact cylindricalEndLift_ne_cylindricalEndLift hqr hz (by linarith)
+    (r.cylindricalEndLift_endCoord hw).symm
 
 /-- The perturbation is supported in the parts `±s > 1` of the three ends. -/
 theorem exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero {w : ℂ} {x : M}
@@ -115,14 +125,8 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
     have hp : H q (z.im + k) x = H q z.im x := by
       simpa using congrFun (hH.int_mul k z.im) x
     rw [smul_apply, endAngularForm_cylindricalEndLift, hre, him, hp, smul_eq_mul, mul_comm]
-  · -- The cutoffs of the other ends vanish, since distinct ends are disjoint.
-    intro r _ hr
-    have hc : smoothTransition (r.endSign * (r.endCoord (q.cylindricalEndLift z)).re - 1) = 0 := by
-      by_contra hc
-      obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
-      exact cylindricalEndLift_ne_cylindricalEndLift (z := z) (z' := r.endCoord _) hr.symm
-        hz (by linarith) (r.cylindricalEndLift_endCoord hw).symm
-    simp [hc]
+  · intro r _ hr
+    simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr.symm hz]
   · simp
 
 /-- **The perturbation is `H_q(t) dt` far out on each end.** On the part `±s ≥ 2` of the end `q`,

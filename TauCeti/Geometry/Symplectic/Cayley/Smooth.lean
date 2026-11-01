@@ -24,7 +24,10 @@ smooth as well as pointwise compatible.
 `SymplecticForm.Compatible.cayleyPath` joins a compatible structure to any other compatible
 structure, is constant for parameters at most zero and at least one, and is smooth on the
 whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
-proved jointly with external parameters for families expressed in Cayley coordinates. These
+proved jointly with external parameters for families expressed in Cayley coordinates, and
+conversely the Cayley transform of a smooth family of tame structures is smooth
+(`SymplecticForm.Tames.contDiff_cayley`), so prescribed smooth families can be moved into
+Cayley coordinates, interpolated there and moved back. These
 are linear, fixed-form statements; no extension theorem for sections of a tangent bundle is
 asserted here.
 
@@ -122,6 +125,62 @@ theorem Compatible.contDiff_compatibleCayleyEquiv_symm (h₀ : ω.Compatible J�
     ContDiff ℝ n (fun p => LinearMap.toContinuousLinearMap
       (h₀.compatibleCayleyEquiv.symm ⟨(C p).toLinearMap, hC p⟩).val.toLinearMap) :=
   contDiff_iff_contDiffAt.2 fun _ => h₀.contDiffAt_compatibleCayleyEquiv_symm hC hCs.contDiffAt
+
+/-- The denominator `1 - J₀ J` of the Cayley transform of a tame structure is invertible also in
+the continuous-endomorphism ring. -/
+lemma Tames.isUnit_one_sub_toContinuousLinearMap_mul (h₀ : ω.Tames J₀)
+    {J : AlmostComplexStructure V} (h : ω.Tames J) :
+    IsUnit (1 - LinearMap.toContinuousLinearMap J₀.toLinearMap *
+      LinearMap.toContinuousLinearMap J.toLinearMap) := by
+  rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
+  simpa only [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_mul,
+    ContinuousLinearMap.toLinearMap_one, LinearMap.coe_toContinuousLinearMap] using
+    h₀.isUnit_one_sub_mul h
+
+/-- In operator-norm coordinates, the Cayley transform of a tame structure is the same rational
+formula `-(1 + J₀ J)(1 - J₀ J)⁻¹` as its algebraic version. -/
+theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) {J : AlmostComplexStructure V}
+    (h : ω.Tames J) :
+    LinearMap.toContinuousLinearMap (J₀.cayley J) =
+      -((1 + LinearMap.toContinuousLinearMap J₀.toLinearMap *
+          LinearMap.toContinuousLinearMap J.toLinearMap) *
+        Ring.inverse (1 - LinearMap.toContinuousLinearMap J₀.toLinearMap *
+          LinearMap.toContinuousLinearMap J.toLinearMap)) := by
+  apply ContinuousLinearMap.coe_injective
+  have hinv := (h₀.isUnit_one_sub_toContinuousLinearMap_mul h).map_ringInverse
+    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
+  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one,
+    ContinuousLinearMap.toLinearMap_mul, LinearMap.coe_toContinuousLinearMap] at hinv
+  simp only [LinearMap.coe_toContinuousLinearMap, AlmostComplexStructure.cayley_def,
+    ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_mul,
+    ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_one, hinv]
+
+/-- The Cayley transform at a tame base structure preserves smooth parameter families of tame
+structures. Smoothness is in the continuous-endomorphism carrier, including all external
+parameters. -/
+theorem Tames.contDiffAt_cayley (h₀ : ω.Tames J₀) {J : P → AlmostComplexStructure V}
+    (hJ : ∀ p, ω.Tames (J p)) {n : WithTop ℕ∞} {p : P}
+    (hJs : ContDiffAt ℝ n (fun q => LinearMap.toContinuousLinearMap (J q).toLinearMap) p) :
+    ContDiffAt ℝ n (fun q => LinearMap.toContinuousLinearMap (J₀.cayley (J q))) p := by
+  set j₀ := LinearMap.toContinuousLinearMap J₀.toLinearMap
+  set j : P → V →L[ℝ] V := fun q => LinearMap.toContinuousLinearMap (J q).toLinearMap
+  have heq : (fun q => LinearMap.toContinuousLinearMap (J₀.cayley (J q))) =
+      fun q => -((1 + j₀ * j q) * Ring.inverse (1 - j₀ * j q)) :=
+    funext fun q => h₀.toContinuousLinearMap_cayley (hJ q)
+  obtain ⟨u, hu⟩ := h₀.isUnit_one_sub_toContinuousLinearMap_mul (hJ p)
+  have hi : ContDiffAt ℝ n Ring.inverse (1 - j₀ * j p) := by
+    simpa only [hu] using contDiffAt_ringInverse (n := n) ℝ u
+  have hm : ContDiffAt ℝ n (fun q => j₀ * j q) p := contDiffAt_const.mul hJs
+  rw [heq]
+  exact ((contDiffAt_const.add hm).mul (hi.comp p (contDiffAt_const.sub hm))).neg
+
+/-- The Cayley transform at a tame base structure preserves globally smooth parameter families
+of tame structures. -/
+theorem Tames.contDiff_cayley (h₀ : ω.Tames J₀) {J : P → AlmostComplexStructure V}
+    (hJ : ∀ p, ω.Tames (J p)) {n : WithTop ℕ∞}
+    (hJs : ContDiff ℝ n (fun q => LinearMap.toContinuousLinearMap (J q).toLinearMap)) :
+    ContDiff ℝ n (fun q => LinearMap.toContinuousLinearMap (J₀.cayley (J q))) :=
+  contDiff_iff_contDiffAt.2 fun _ => h₀.contDiffAt_cayley hJ hJs.contDiffAt
 
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
