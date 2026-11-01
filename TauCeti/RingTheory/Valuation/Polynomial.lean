@@ -23,10 +23,15 @@ with nonzero constant term evaluated at an element of value less than `1` has va
 the constant term strictly dominates all the others. This is the polynomial estimate used in
 Stichtenoth's proof that valuation rings of algebraic function fields are discrete.
 
-Finally, weighted coefficient bounds of the form
+Weighted coefficient bounds of the form
 `v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` are stable under products, powers and suitable
 composition, and bound the value of the polynomial at `x`. This controls truncated composites of
 power series.
+
+Over a valued field, a nonzero polynomial can be rescaled so that its coefficients have value at
+most `1`, one coefficient is `1`, and all coefficients of higher degree have value below `1`. This
+normalizes the polynomial relations used to bound the fibres of the valuation spectrum of a finite
+algebra over a field.
 
 ## Main results
 
@@ -54,11 +59,6 @@ nothing else, so it is stated here rather than there.
 
 `TauCetiRoadmap/AlgebraicCurves/README.md`, Layer 0: `TauCeti.valuation_aeval_eq_one` is the
 constant-term estimate used in Stichtenoth, Lemma 1.1.7, on the path to existence of places.
-
-`TauCetiRoadmap/AdicEtaleGeometry/README.md`, Layer A1, §A1.2:
-`Valuation.exists_C_mul_coeff_eq_one` normalizes the polynomial relations used in
-`AlgebraicGeometry/AdicSpace/ValuationSpectrum/FiniteAlgebra.lean` to bound the fibres of the
-valuation spectrum of a finite algebra over a field.
 -/
 
 public section
