@@ -79,22 +79,23 @@ theorem le_homogenization_iff {I : HomogeneousIdeal (homogeneousSubmodule (Fin (
 
 /-- Every element of the homogenization of `J` dehomogenizes into `J`. -/
 theorem dehomogenize_mem_of_mem_homogenization {q : MvPolynomial (Fin (n + 1)) R}
-    (hq : q ∈ (J.homogenization i).toIdeal) : dehomogenize i q ∈ J :=
+    (hq : q ∈ J.homogenization i) : dehomogenize i q ∈ J :=
   (J.comap (dehomogenize i)).toIdeal_homogeneousCore_le _ hq
 
 /-- A homogeneous polynomial lies in the homogenization of `J` if and only if its
 dehomogenization lies in `J`. -/
 theorem mem_homogenization_iff_of_isHomogeneous {q : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
     (hq : q.IsHomogeneous d) :
-    q ∈ (J.homogenization i).toIdeal ↔ dehomogenize i q ∈ J :=
+    q ∈ J.homogenization i ↔ dehomogenize i q ∈ J :=
   ⟨dehomogenize_mem_of_mem_homogenization,
     fun h ↦ mem_homogeneousCore_of_homogeneous_of_mem ⟨d, hq⟩ h⟩
 
 /-- A polynomial lies in the homogenization of `J` if and only if each of its homogeneous
 components dehomogenizes into `J`. -/
 theorem mem_homogenization_iff {q : MvPolynomial (Fin (n + 1)) R} :
-    q ∈ (J.homogenization i).toIdeal ↔ ∀ d, dehomogenize i (homogeneousComponent d q) ∈ J := by
-  rw [mem_iff_homogeneousComponent_mem (J.homogenization i).isHomogeneous]
+    q ∈ J.homogenization i ↔ ∀ d, dehomogenize i (homogeneousComponent d q) ∈ J := by
+  rw [← HomogeneousIdeal.mem_iff,
+    mem_iff_homogeneousComponent_mem (J.homogenization i).isHomogeneous]
   exact forall_congr' fun d ↦
     mem_homogenization_iff_of_isHomogeneous (homogeneousComponent_isHomogeneous d q)
 
