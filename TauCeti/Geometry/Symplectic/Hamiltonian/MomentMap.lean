@@ -68,9 +68,11 @@ in the trivial module `ℝ` (`TauCeti.SmoothTwoForm.momentCocycle`). For a nonde
 compatible with restriction of the action. For a closed form, `d(σ(Z_M, Z'_M)) = dμ_{⁅Z, Z'⁆}`
 (`TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_eval₂`), so the cocycle is constant on a preconnected
 manifold (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq`), and it is a Lie algebra
-`2`-cocycle (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_mem_twoCocycle`). Where the cocycle
-vanishes, `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the isotropy algebra `𝔤_x` lies in the coadjoint
-stabilizer of `μ(x)` (`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`).
+`2`-cocycle (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_mem_twoCocycle`). The cocycle
+vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all `Z, Z'`
+(`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`), and then `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the
+isotropy algebra `𝔤_x` lies in the coadjoint stabilizer of `μ(x)`
+(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`).
 
 The first example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -294,7 +296,7 @@ end Nondegenerate
 
 /-- The **differential** `dμ_x : T_x M → 𝔤*` of a moment map at `x`, sending a tangent vector `v`
 to `Z ↦ dμ_Z(v)`. It is linear in `Z` because the moment map identity computes it as
-`dμ_Z(v) = σ(Z_M x, v)` (`TauCeti.SmoothTwoForm.IsMomentMap.differential_eq`). -/
+`dμ_Z(v) = σ(Z_M x, v)` (`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_eq_eval₂`). -/
 def differential (h : σ.IsMomentMap a μ) (x : M) : TangentSpace I x →ₗ[ℝ] Module.Dual ℝ 𝔤 :=
   LinearMap.mk₂ ℝ (fun v Z ↦ mvfderiv I (fun y ↦ μ y Z) x v)
     (fun _ _ _ ↦ map_add _ _ _) (fun _ _ _ ↦ map_smul _ _ _)
@@ -331,15 +333,22 @@ theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :
     InfinitesimalAction.mem_orbitTangent_iff, forall_exists_index, forall_apply_eq_imp_iff,
     SmoothForm.bilinFormAt_apply, h.differential_apply_eq_eval₂, LinearMap.zero_apply]
 
+/-- At a point where the form is nondegenerate, the image of the differential of a moment map is
+the image of the transpose of the orbit map `Z ↦ Z_M(x)`. -/
+theorem range_differential_eq_range_dualMap [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ)
+    {x : M} (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    LinearMap.range (h.differential x) = LinearMap.range (a.eval x).dualMap := by
+  have : LinearMap.range (σ.bilinFormAt x).flip = ⊤ :=
+    LinearMap.range_eq_top.2 ((σ.bilinFormAt x).flip.toDual hσ.flip).surjective
+  rw [h.differential_eq, LinearMap.range_comp, this, Submodule.map_top]
+
 /-- The image of the differential of a moment map at a point where the form is nondegenerate is
 the annihilator of the isotropy algebra: `im dμ_x = 𝔤_x^0`. -/
 theorem range_differential [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ) {x : M}
     (hσ : (σ.bilinFormAt x).Nondegenerate) :
     LinearMap.range (h.differential x) = (a.isotropy x).toSubmodule.dualAnnihilator := by
-  have : LinearMap.range (σ.bilinFormAt x).flip = ⊤ :=
-    LinearMap.range_eq_top.2 ((σ.bilinFormAt x).flip.toDual hσ.flip).surjective
-  rw [h.differential_eq, LinearMap.range_comp, this, Submodule.map_top,
-    LinearMap.range_dualMap_eq_dualAnnihilator_ker, InfinitesimalAction.isotropy_toSubmodule]
+  rw [h.range_differential_eq_range_dualMap hσ, LinearMap.range_dualMap_eq_dualAnnihilator_ker,
+    InfinitesimalAction.isotropy_toSubmodule]
 
 /-- At a point where the form is nondegenerate, the differential of a moment map is surjective
 exactly when the isotropy algebra is trivial, that is, when the action is locally free there. -/
@@ -360,15 +369,12 @@ theorem finrank_ker_differential_add_finrank_orbitTangent [FiniteDimensional ℝ
 
 /-- At a point where the form is nondegenerate, the rank of the differential of a moment map is
 the dimension of the orbit tangent space: `dim (im dμ_x) = dim (𝔤 · x)`. -/
-theorem finrank_range_differential [FiniteDimensional ℝ E] [FiniteDimensional ℝ 𝔤]
-    (h : σ.IsMomentMap a μ) {x : M} (hσ : (σ.bilinFormAt x).Nondegenerate) :
+theorem finrank_range_differential [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ) {x : M}
+    (hσ : (σ.bilinFormAt x).Nondegenerate) :
     Module.finrank ℝ (LinearMap.range (h.differential x)) =
       Module.finrank ℝ (a.orbitTangent x) := by
-  rw [h.range_differential hσ, InfinitesimalAction.isotropy_toSubmodule,
+  rw [h.range_differential_eq_range_dualMap hσ, LinearMap.finrank_range_dualMap_eq_finrank_range,
     InfinitesimalAction.orbitTangent_eq_range]
-  have h₁ := Subspace.finrank_add_finrank_dualAnnihilator_eq (LinearMap.ker (a.eval x))
-  have h₂ := LinearMap.finrank_range_add_finrank_ker (a.eval x)
-  omega
 
 end IsMomentMap
 
@@ -399,6 +405,16 @@ theorem momentCocycle_apply (σ : SmoothTwoForm I M) (a : InfinitesimalAction �
     LinearMap.sub_apply, LinearMap.compl₁₂_apply, InfinitesimalAction.eval_apply,
     SmoothForm.bilinFormAt_apply, LieHom.coe_toLinearMap, LieModule.toEnd_apply_apply,
     LinearEquiv.coe_coe]
+
+/-- The cocycle of `μ` vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all
+`Z, Z'`: the pointwise infinitesimal-equivariance condition. -/
+theorem momentCocycle_eq_zero_iff {x : M} : σ.momentCocycle a μ x = 0 ↔
+    ∀ Z Z' : 𝔤, SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) = μ x ⁅Z, Z'⁆ := by
+  refine ⟨fun hc Z Z' ↦ ?_, fun hc ↦ DFunLike.ext _ _ fun Z ↦ LinearMap.ext fun Z' ↦ ?_⟩
+  · have h0 : σ.momentCocycle a μ x Z Z' = 0 := congr($hc Z Z')
+    rwa [momentCocycle_apply, LinearEquiv.map_eq_zero_iff, sub_eq_zero] at h0
+  · rw [momentCocycle_apply, hc, sub_self, map_zero]
+    rfl
 
 /-- Shifting `μ` by a constant `ν ∈ 𝔤*` changes its cocycle by the coboundary `d ν`, which is
 `(Z, Z') ↦ -ν(⁅Z, Z'⁆)`. -/
@@ -457,10 +473,8 @@ theorem momentCocycle_apply_eq_poissonBracket [FiniteDimensional ℝ E] (h : σ.
 theorem differential_apply_of_momentCocycle_eq_zero (h : σ.IsMomentMap a μ) {x : M}
     (hc : σ.momentCocycle a μ x = 0) (Z : 𝔤) : h.differential x (a Z x) = ⁅Z, μ x⁆ := by
   ext Z'
-  have h0 := congr($hc Z' Z)
-  rw [momentCocycle_apply, ← LieModule.Cohomology.twoCochain_val_apply, ZeroMemClass.coe_zero,
-    LinearMap.zero_apply, LinearMap.zero_apply, LinearEquiv.map_eq_zero_iff, sub_eq_zero] at h0
-  rw [differential_apply_eq_eval₂, h0, Module.Dual.lie_apply, ← lie_skew, map_neg]
+  rw [differential_apply_eq_eval₂, momentCocycle_eq_zero_iff.1 hc, Module.Dual.lie_apply,
+    ← lie_skew, map_neg]
 
 /-- If the cocycle of a moment map vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
 coadjoint stabilizer of `μ(x)`. -/
