@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import TauCeti.RingTheory.DiscreteValuationRing.Kummer
 public import TauCeti.RingTheory.DiscreteValuationRing.UnramifiedBaseChange
 public import TauCeti.RingTheory.Etale.IntegralClosure
+public import TauCeti.RingTheory.LocalRing.Basic
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
 /-!
@@ -58,12 +59,14 @@ private theorem isUnit_intCast_of_notMem {n : ℤ} (hn : n ∉ v.asIdeal) :
 private theorem sub_one_notMem {m : ℤ} (hm : m ∈ v.asIdeal) : m - 1 ∉ v.asIdeal := fun h ↦
   v.isPrime.ne_top ((Ideal.eq_top_iff_one _).mpr (by simpa using v.asIdeal.sub_mem hm h))
 
-/-- The kernel of an `A`-algebra map to the residue field of a local ring `A` is maximal. -/
-private theorem isMaximal_ker_residueField {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B]
-    [Algebra A B] (φ : B →ₐ[A] ResidueField A) : (RingHom.ker φ).IsMaximal :=
-  RingHom.ker_isMaximal_of_surjective φ fun y ↦ by
-    obtain ⟨a, rfl⟩ := residue_surjective y
-    exact ⟨algebraMap A _ a, by rw [AlgHom.commutes, ResidueField.algebraMap_eq]⟩
+/-- Over a local ring `A`, a map `φ` from `A[x] ⧸ (x² + 1)` to the residue field of `A` sending
+`x` to the residue of `c` sends `z` to the residue of `re z + c im z`. -/
+private theorem apply_eq_residue {A : Type*} [CommRing A] [IsLocalRing A] {c : A}
+    (φ : QuadraticAlgebra A (-1) 0 →ₐ[A] ResidueField A)
+    (hφ : φ QuadraticAlgebra.omega = residue A c) (z : QuadraticAlgebra A (-1) 0) :
+    φ z = residue A (z.re + z.im * c) := by
+  conv_lhs => rw [← QuadraticAlgebra.re_smul_add_im_smul z]
+  simp [Algebra.smul_def, hφ]
 
 /-- Over a local ring `A`, let `φ` map `A[x] ⧸ (x² + 1)` to the residue field of `A`, sending `x`
 to the residue of `c`. Every maximal ideal containing `x - c` is the kernel of `φ`. -/
@@ -72,16 +75,13 @@ private theorem eq_ker_of_omega_sub_mem {A : Type*} [CommRing A] [IsLocalRing A]
     (hφ : φ QuadraticAlgebra.omega = residue A c)
     (M : Ideal (QuadraticAlgebra A (-1) 0)) [M.IsMaximal]
     (hM : QuadraticAlgebra.omega - algebraMap A _ c ∈ M) : M = RingHom.ker φ := by
-  refine ((isMaximal_ker_residueField φ).eq_of_le (Ideal.IsMaximal.ne_top ‹_›)
+  refine (φ.ker_isMaximal_residueField.eq_of_le (Ideal.IsMaximal.ne_top ‹_›)
     fun z hz ↦ ?_).symm
   -- Write `z = (re z + c im z) + im z (x - c)`; the first term lies in `𝔪_A`, which `M` contains.
   have hcomap : M.comap (algebraMap A _) = maximalIdeal A :=
     IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A M)
   have hmem : z.re + z.im * c ∈ M.comap (algebraMap A _) := by
-    rw [hcomap, ← residue_eq_zero_iff]
-    rw [RingHom.mem_ker, ← QuadraticAlgebra.re_smul_add_im_smul z, map_add, map_smul, map_smul,
-      map_one, hφ, Algebra.smul_def, Algebra.smul_def, mul_one, ResidueField.algebraMap_eq,
-      ← map_mul, ← map_add] at hz
+    rw [hcomap, ← residue_eq_zero_iff, ← apply_eq_residue φ hφ]
     exact hz
   have hz : z = algebraMap A _ (z.re + z.im * c) +
       z.im • (QuadraticAlgebra.omega - algebraMap A _ c) := by
@@ -99,9 +99,7 @@ private theorem ncard_setOf_isMaximal_quadraticAlgebra {A : Type*} [CommRing A] 
     {M : Ideal (QuadraticAlgebra A (-1) 0) | M.IsMaximal}.ncard = 2 := by
   have hroot (d : A) (hd : d * d + 1 ∈ maximalIdeal A) :
       residue A d * residue A d = (-1 : A) • 1 + (0 : A) • residue A d := by
-    rw [← map_mul, neg_one_smul, zero_smul, add_zero, eq_neg_iff_add_eq_zero,
-      ← map_one (residue A), ← map_add, residue_eq_zero_iff]
-    exact hd
+    simpa [eq_neg_iff_add_eq_zero] using (residue_eq_zero_iff (d * d + 1)).mpr hd
   set φ : QuadraticAlgebra A (-1) 0 →ₐ[A] ResidueField A := QuadraticAlgebra.lift ⟨_, hroot c hc⟩
   set φ' : QuadraticAlgebra A (-1) 0 →ₐ[A] ResidueField A :=
     QuadraticAlgebra.lift ⟨_, hroot (-c) (by rwa [neg_mul_neg])⟩
@@ -111,12 +109,11 @@ private theorem ncard_setOf_isMaximal_quadraticAlgebra {A : Type*} [CommRing A] 
   refine ⟨RingHom.ker φ, RingHom.ker φ', fun h ↦ ?_, Set.ext fun M ↦ ⟨fun hM ↦ ?_, ?_⟩⟩
   · -- `x - c` lies in the first kernel but not in the second, as `2c` is a unit.
     have hx : QuadraticAlgebra.omega - algebraMap A _ c ∈ RingHom.ker φ := by
-      rw [RingHom.mem_ker, map_sub, hφ, AlgHom.commutes, ResidueField.algebraMap_eq, sub_self]
-    rw [h, RingHom.mem_ker, map_sub, hφ', AlgHom.commutes, ResidueField.algebraMap_eq,
-      ← map_sub, residue_eq_zero_iff] at hx
+      simp [apply_eq_residue φ hφ]
+    rw [h, RingHom.mem_ker, apply_eq_residue φ' hφ', residue_eq_zero_iff] at hx
     refine (mem_maximalIdeal _).mp ?_ h2c
-    rw [show 2 * c = -(-c - c) by ring]
-    exact neg_mem hx
+    rw [show 2 * c = -(-c + -c) by ring]
+    exact neg_mem (by simpa using hx)
   · -- `(x - c) (x + c) = -(c² + 1)` lies in every maximal ideal.
     have hM : M.IsMaximal := hM
     have hprod : (QuadraticAlgebra.omega - algebraMap A _ c) *
@@ -135,8 +132,8 @@ private theorem ncard_setOf_isMaximal_quadraticAlgebra {A : Type*} [CommRing A] 
     · exact Or.inl (eq_ker_of_omega_sub_mem φ hφ M hx)
     · exact Or.inr (eq_ker_of_omega_sub_mem φ' hφ' M hx)
   · rintro (rfl | rfl)
-    · exact isMaximal_ker_residueField φ
-    · exact isMaximal_ker_residueField φ'
+    · exact φ.ker_isMaximal_residueField
+    · exact φ'.ker_isMaximal_residueField
 
 /-- In a field `L` over `ℚ`, a square root `i` of `-1` is not rational, so `1` and `i` are
 linearly independent over every subring `A` of `ℚ`. -/
@@ -192,7 +189,7 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
   have hadj : Algebra.adjoin A {β} = ⊤ := by
     apply Subalgebra.map_injective (f := B.val) Subtype.val_injective
     rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
-    rfl
+    simp [β, B]
   have := FaithfulSMul.trans A ℚ L
   have := hf.isDiscreteValuationRing_of_adjoin_eq_top hmo hx hadj
   have : Algebra.IsIntegral A B :=
@@ -237,8 +234,8 @@ theorem test_cyclotomic_three (hv : (3 : ℤ) ∈ v.asIdeal) {ζ : L} (hζ : IsP
       mul_mem (IntermediateField.algebraMap_mem _ _)
         (sub_mem (mem_adjoin_simple_self ℚ _) (one_mem _))
     have hζ : algebraMap ℚ L (1 / 2) * (2 * ζ + 1 - 1) = ζ := by
-      rw [add_sub_cancel_right, ← mul_assoc, ← map_ofNat (algebraMap ℚ L) 2, ← map_mul,
-        one_div_mul_cancel two_ne_zero, map_one, one_mul]
+      have := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
+      simp
     rwa [hζ] at h
   have h2 : IsUnit ((2 : ℕ) : A ⧸ maximalIdeal A) := by
     have := (isUnit_intCast_of_notMem v (sub_one_notMem v hv)).map
