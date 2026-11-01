@@ -282,7 +282,7 @@ private theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
 
 /-- The weight of a pentagon of the exchanged diagram, read in `G` by exchanging the columns `a`
 and `b`. -/
-private theorem pentagonWeight_withTurnRow {u v : GridState n}
+theorem pentagonWeight_withTurnRow {u v : GridState n}
     (Q : GridPentagonBetween a t u v) :
     (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
       ∏ c ∈ G.OColumnsOfSquares
