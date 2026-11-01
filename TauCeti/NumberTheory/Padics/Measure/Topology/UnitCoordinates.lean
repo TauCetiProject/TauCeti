@@ -31,6 +31,27 @@ Remark 3.11, Proposition 3.16 and Remark 3.18.
 public noncomputable section
 
 open ContinuousMap Topology Filter
+open scoped AbstractMeasure
+
+namespace TauCeti
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- Integral unit-coordinate families compatible under pushforward between finite unit groups. -/
+def compatibleUnitCoordinates (p : ℕ) [Fact p.Prime] :
+    Set (∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p]) :=
+  {c | ∀ (m n : ℕ) (h : m ≤ n),
+    (Finsupp.equivFunOnFinite.symm (c n)).mapDomain
+      (ZMod.unitsMap (pow_dvd_pow p h)) = Finsupp.equivFunOnFinite.symm (c m)}
+
+/-- Membership in the compatible families is compatibility at every pair of depths. -/
+@[simp]
+theorem mem_compatibleUnitCoordinates_iff (c : ∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p]) :
+    c ∈ compatibleUnitCoordinates p ↔ ∀ (m n : ℕ) (h : m ≤ n),
+      (Finsupp.equivFunOnFinite.symm (c n)).mapDomain
+        (ZMod.unitsMap (pow_dvd_pow p h)) = Finsupp.equivFunOnFinite.symm (c m) := (Iff.rfl)
+
+end TauCeti
 
 namespace AbstractMeasure
 
@@ -82,10 +103,9 @@ under the pushforwards between finite unit groups. The finite-support conversion
 impose an extra condition, since each unit quotient is finite. -/
 theorem range_unitCoordinates :
     Set.range (unitCoordinates (p := p) (R := ℤ_[p])) =
-      {c | ∀ (m n : ℕ) (h : m ≤ n),
-        (Finsupp.equivFunOnFinite.symm (c n)).mapDomain
-          (ZMod.unitsMap (pow_dvd_pow p h)) = Finsupp.equivFunOnFinite.symm (c m)} := by
+      TauCeti.compatibleUnitCoordinates p := by
   ext c
+  rw [TauCeti.mem_compatibleUnitCoordinates_iff]
   constructor
   · rintro ⟨μ, rfl⟩ m n h
     have hc (k : ℕ) : Finsupp.equivFunOnFinite.symm (unitCoordinates μ k) =
@@ -98,23 +118,6 @@ theorem range_unitCoordinates :
     funext n a
     simp [TauCeti.finiteProjection_ofUnitCoordinates]
 
-/-- Reconstruction of a measure from compatible integral unit coordinates is continuous for
-the product topology on coordinates and the weak topology on measures. -/
-theorem continuous_ofUnitCoordinates :
-    @Continuous _ _ inferInstance
-      (WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
-      (fun c : {c : ∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p] |
-          ∀ (m n : ℕ) (h : m ≤ n),
-            (Finsupp.equivFunOnFinite.symm (c n)).mapDomain
-              (ZMod.unitsMap (pow_dvd_pow p h)) = Finsupp.equivFunOnFinite.symm (c m)} ↦
-        TauCeti.ofUnitCoordinates
-          (fun n ↦ Finsupp.equivFunOnFinite.symm (c.val n)) c.property) := by
-  let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := WeakTopology
-  apply isClosedEmbedding_unitCoordinates_weak.isEmbedding.continuous_iff.mpr
-  convert continuous_subtype_val using 1
-  funext c n a
-  simp [TauCeti.finiteProjection_ofUnitCoordinates]
-
 /-- Joint coordinates record finite unit coefficients at independent coefficient precision
 `r` and group depth `n`. Each target ring has its discrete topology. -/
 def jointUnitCoordinates : D(ℤ_[p]ˣ, ℤ_[p]) →+
@@ -123,11 +126,17 @@ def jointUnitCoordinates : D(ℤ_[p]ˣ, ℤ_[p]) →+
   map_zero' := by ext r n a; simp
   map_add' μ ν := by ext r n a; simp
 
+/-- A joint unit coordinate is the coefficient of the corresponding joint finite projection. -/
+theorem jointUnitCoordinates_apply_eq_jointFiniteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p]))
+    (r n : ℕ) (a : (ZMod (p ^ n))ˣ) :
+    jointUnitCoordinates μ r n a =
+      jointFiniteProjection r (↑(PadicInt.unitsToZModPow (p := p) n)) μ a := (rfl)
+
 @[simp]
 theorem jointUnitCoordinates_apply (μ : D(ℤ_[p]ˣ, ℤ_[p])) (r n : ℕ)
     (a : (ZMod (p ^ n))ˣ) :
     jointUnitCoordinates μ r n a = PadicInt.toZModPow r (unitCoordinates μ n a) := by
-  simp [jointUnitCoordinates]
+  simp [jointUnitCoordinates_apply_eq_jointFiniteProjection, finiteProjection_apply]
 
 /-- Joint finite unit coordinates separate integral measures. -/
 theorem jointUnitCoordinates_injective :
@@ -174,12 +183,34 @@ theorem tendsto_weak_iff_jointFiniteProjection {ι : Type*} {l : Filter ι}
   constructor
   · intro h r n
     have ha (a : (ZMod (p ^ n))ˣ) := h r n a
-    simp only [tendsto_pure, nhds_discrete, jointUnitCoordinates] at ha
+    simp only [tendsto_pure, nhds_discrete,
+      jointUnitCoordinates_apply_eq_jointFiniteProjection] at ha
     filter_upwards [eventually_all.mpr ha] with i hi
     exact Finsupp.ext hi
   · intro h r n a
     rw [nhds_discrete, tendsto_pure]
     filter_upwards [h r n] with i hi
-    exact congrArg (fun c ↦ c a) hi
+    simpa only [jointUnitCoordinates_apply_eq_jointFiniteProjection] using
+      congrArg (fun c ↦ c a) hi
 
 end AbstractMeasure
+
+namespace TauCeti
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- Reconstruction of a measure from compatible integral unit coordinates is continuous for
+the product topology on coordinates and the weak topology on measures. -/
+theorem continuous_ofUnitCoordinates_weak :
+    @Continuous _ _ inferInstance
+      (AbstractMeasure.WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
+      (fun c : compatibleUnitCoordinates p ↦
+        ofUnitCoordinates (fun n ↦ Finsupp.equivFunOnFinite.symm (c.val n))
+          ((mem_compatibleUnitCoordinates_iff c.val).mp c.property)) := by
+  let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := AbstractMeasure.WeakTopology
+  apply AbstractMeasure.isClosedEmbedding_unitCoordinates_weak.isEmbedding.continuous_iff.mpr
+  convert continuous_subtype_val using 1
+  funext c n a
+  simp [finiteProjection_ofUnitCoordinates]
+
+end TauCeti
