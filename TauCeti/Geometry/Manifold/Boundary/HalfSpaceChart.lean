@@ -34,7 +34,8 @@ half-space restrictions of them is a `C^m` manifold with boundary
 
 * `OpenPartialHomeomorph.halfSpaceChart`, with its source, target, apply and inverse laws, and
   `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
-* `OpenPartialHomeomorph.IsExtendTransChart`, with its intro lemma
+* `OpenPartialHomeomorph.IsExtendTransChart`, with its characterisation
+  `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
   `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
   `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
 * `OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
@@ -164,6 +165,14 @@ def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners �
       e = c.extendTrans I Ψ
 
 variable {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] {m : ℕ∞ω}
+
+/-- Characterisation of `OpenPartialHomeomorph.IsExtendTransChart`: `e` is `c.extendTrans I Ψ` for
+a chart `c` from the maximal atlas for `C^m` and a `C^m` homeomorphism `Ψ` with `C^m` inverse. -/
+theorem isExtendTransChart_iff {e : OpenPartialHomeomorph M F} :
+    e.IsExtendTransChart I m ↔ ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
+      c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
+        e = c.extendTrans I Ψ :=
+  Iff.rfl
 
 /-- A chart `c` from the maximal atlas for `C^m`, moved by a `C^m` homeomorphism `Ψ` with `C^m`
 inverse, satisfies `OpenPartialHomeomorph.IsExtendTransChart`. -/
