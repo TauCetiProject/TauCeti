@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber
 
 /-!
 # Relative coordinates on the shifted mapping cone
@@ -24,7 +24,8 @@ compatibility with maps of pairs. In particular these formulas apply to restrict
 maps between complexes of differential forms, where relative cocycles satisfy
 `d a = 0` and `f a = d b`.
 
-The construction uses the projections and inclusions of Mathlib's
+The construction reuses `HomologicalComplex.homotopyCofiber.XEquiv` and the
+projections and inclusions of Mathlib's
 `CochainComplex.mappingCocone`, and the component and naturality lemmas in
 `TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic`.
 
@@ -51,28 +52,25 @@ noncomputable section
 /-- Relative cochain coordinates on the native shifted cone. The second coordinate is
 the negative of `mappingCocone.snd`, so the differential has positive restriction term. -/
 def relativeCoordinates (p q : ℤ) (hpq : p + -1 = q) :
-    (mappingCocone f).X p ≃ₗ[R] K.X p × L.X q where
-  toFun x := ((fst f).f p x, -(snd f).v p q hpq x)
-  invFun x := (inl f).v p p (add_zero p) x.1 -
-    (inr f).1.v q p (by omega) x.2
-  left_inv x := by
-    have h := congrArg (fun g : (mappingCocone f).X p ⟶ (mappingCocone f).X p ↦ g x)
-      (id_X f p q hpq)
-    simpa only [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.comp_apply,
-      ModuleCat.id_apply, map_neg, sub_neg_eq_add] using h
-  right_inv x := by
-    ext <;> simp [← ModuleCat.comp_apply]
-  map_add' x y := by simp [add_comm]
-  map_smul' r x := by simp
+    (mappingCocone f).X p ≃ₗ[R] K.X p × L.X q := by
+  subst hpq
+  exact (homotopyCofiber.XEquiv f (by simp : (ComplexShape.up ℤ).Rel (p + -1) p)).trans
+    ((LinearEquiv.prodComm R _ _).trans
+      ((LinearEquiv.refl R _).prodCongr (LinearEquiv.neg R)))
 
 lemma relativeCoordinates_apply (p q : ℤ) (hpq : p + -1 = q) (x : (mappingCocone f).X p) :
-    relativeCoordinates f p q hpq x = ((fst f).f p x, -(snd f).v p q hpq x) :=
-  (rfl)
+    relativeCoordinates f p q hpq x = ((fst f).f p x, -(snd f).v p q hpq x) := by
+  subst hpq
+  rw [fst_f, snd_v]
+  exact congrArg (fun y : L.X (p + -1) × K.X p ↦ (y.2, -y.1))
+    (homotopyCofiber.XEquiv_apply f (by simp : (ComplexShape.up ℤ).Rel (p + -1) p) x)
 
 lemma relativeCoordinates_symm_apply (p q : ℤ) (hpq : p + -1 = q) (x : K.X p × L.X q) :
     (relativeCoordinates f p q hpq).symm x = (inl f).v p p (add_zero p) x.1 -
-      (inr f).1.v q p (by omega) x.2 :=
-  (rfl)
+      (inr f).1.v q p (by omega) x.2 := by
+  apply (relativeCoordinates f p q hpq).injective
+  rw [LinearEquiv.apply_symm_apply, relativeCoordinates_apply]
+  ext <;> simp [← ModuleCat.comp_apply]
 
 /-- In relative coordinates the shifted cone differential is `(a, b) ↦ (d a, f a - d b)`. -/
 lemma relativeCoordinates_d (p q : ℤ) (hpq : p + -1 = q)
@@ -82,6 +80,7 @@ lemma relativeCoordinates_d (p q : ℤ) (hpq : p + -1 = q)
         f.f p (relativeCoordinates f p q hpq x).1 -
           L.d q p (relativeCoordinates f p q hpq x).2) := by
   subst hpq
+  simp only [relativeCoordinates_apply]
   apply Prod.ext
   · exact congrArg (fun g : (mappingCocone f).X p ⟶ K.X (p + 1) ↦ g x)
       ((fst f).comm p (p + 1)).symm
@@ -91,6 +90,7 @@ lemma relativeCoordinates_d (p q : ℤ) (hpq : p + -1 = q)
     simpa [relativeCoordinates_apply, sub_eq_add_neg, add_comm] using congrArg Neg.neg h
 
 /-- The differential of a pair inserted into the native shifted cone. -/
+@[simp]
 lemma d_relativeCoordinates_symm (p q : ℤ) (hpq : p + -1 = q) (x : K.X p × L.X q) :
     (mappingCocone f).d p (p + 1) ((relativeCoordinates f p q hpq).symm x) =
       (relativeCoordinates f (p + 1) p (by omega)).symm
@@ -131,6 +131,8 @@ lemma relativeCoordinates_symm_mem_range_d_iff (p q r : ℤ)
 
 /-- A map of pairs acts componentwise in relative coordinates. This includes restriction
 and coefficient morphisms whenever they commute with the original map of complexes. -/
+-- Rewrite before `shiftFunctor_map_f'` simplifies the argument.
+@[simp↓]
 lemma relativeCoordinates_map {K' L' : CochainComplex (ModuleCat.{v} R) ℤ}
     (f' : K' ⟶ L') (a : K ⟶ K') (b : L ⟶ L') (comm : f ≫ b = a ≫ f')
     (p q : ℤ) (hpq : p + -1 = q) (x : (mappingCocone f).X p) :
@@ -139,6 +141,8 @@ lemma relativeCoordinates_map {K' L' : CochainComplex (ModuleCat.{v} R) ℤ}
       (a.f p (relativeCoordinates f p q hpq x).1,
         b.f q (relativeCoordinates f p q hpq x).2) := by
   subst hpq
+  rw [relativeCoordinates_apply f' p (p + -1) rfl
+    (((mappingCone.map f f' a b comm)⟦(-1 : ℤ)⟧').f p x), relativeCoordinates_apply]
   apply Prod.ext
   · exact congrArg (fun g : (mappingCocone f).X p ⟶ K'.X p ↦ g x)
       (HomologicalComplex.congr_hom

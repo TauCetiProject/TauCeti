@@ -72,8 +72,9 @@ lemma shiftFunctor_map_mappingCone_map_comp_fst {K₁ L₁ K₂ L₂ : CochainCo
 
 /-- The components of the second projection of the mapping cocone are those of the second
 projection of the mapping cone. -/
-lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p : ℤ) :
-    (snd φ).v p (p + -1) rfl = (mappingCone.snd φ).v (p + -1) (p + -1) (add_zero _) := by
+lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + -1 = q) :
+    (snd φ).v p q hpq = (mappingCone.snd φ).v (p + -1) q (by omega) := by
+  subst hpq
   -- `snd φ` is a left shift of `mappingCone.snd φ`, but its source `mappingCocone φ` is
   -- `(mappingCone φ)⟦-1⟧` only up to unfolding, so it is restated before `leftShift_v` applies.
   change ((mappingCone.snd φ).leftShift (-1) (-1) (zero_add _)).v p (p + -1) rfl = _
@@ -85,28 +86,19 @@ lemma d_snd_v {K L : CochainComplex C ℤ} (f : K ⟶ L) (p : ℤ) :
     (mappingCocone f).d p (p + 1) ≫ (snd f).v (p + 1) p (by omega) =
       -(fst f).f p ≫ f.f p -
         (snd f).v p (p + -1) rfl ≫ L.d (p + -1) p := by
-  have hsnd (i j : ℤ) (hij : i + -1 = j) :
-      (snd f).v i j hij = (mappingCone.snd f).v (i + -1) j (by omega) := by
-    subst hij
-    exact snd_v f i
-  rw [hsnd, hsnd, fst_f]
-  -- Unfold the shifted cone only here, to apply its differential formula.
+  rw [snd_v, snd_v, fst_f]
+  -- Restate the native cocone as the shifted cone so its differential formula applies.
   change ((mappingCone f)⟦(-1 : ℤ)⟧).d p (p + 1) ≫ _ = _
   simp only [shiftFunctor_obj_d', Int.negOnePow_neg, Int.negOnePow_one,
     Units.neg_smul, one_smul, Preadditive.neg_comp]
-  -- Restate the projections in the underlying cofiber so all implicit carriers
-  -- and complex-shape relations normalize before rewriting the shift indices.
-  dsimp only [mappingCone.fst, mappingCone.snd, Cocycle.mk, Cochain.mk,
-    Cochain.v, Cochain.ofHoms, mappingCone, homotopyCofiber]
-  simp only [eqToHom_refl, Category.comp_id]
-  change -(homotopyCofiber f).d (p + -1) (p + 1 + -1) ≫
-      (mappingCone.snd f).v (p + 1 + -1) p (by omega) =
-    -homotopyCofiber.fstX f (p + -1) p (show p + -1 + 1 = p by omega) ≫ f.f p -
-      homotopyCofiber.sndX f (p + -1) ≫ L.d (p + -1) p
-  dsimp only [mappingCone, mappingCone.snd]
-  dsimp only [homotopyCofiber, Cochain.v, Cochain.ofHoms, Cochain.mk]
-  simpa [mappingCone, mappingCone.snd, sub_eq_add_neg, add_comm] using
-    congrArg Neg.neg (homotopyCofiber.d_sndX f (p + -1) p (show p + -1 + 1 = p by omega))
+  have hcomp (i : ℤ) (hi : i = p) :
+      (mappingCone f).d (p + -1) i ≫ (mappingCone.snd f).v i p (by omega) =
+        (mappingCone f).d (p + -1) p ≫ (mappingCone.snd f).v p p (add_zero p) := by
+    subst hi
+    rfl
+  rw [hcomp _ (by omega), mappingCone.d_snd_v f (p + -1) p (by omega)]
+  simp only [neg_add, sub_eq_add_neg]
+  rfl
 
 /-- The second projection of the mapping cocone is natural in commutative squares. -/
 @[reassoc]
