@@ -22,12 +22,15 @@ log-spot variable `y = log s`, with `C(s, t) = u(log s, t)`, it becomes
 
 `u_t + σ² / 2 u_yy + (r - σ² / 2) u_y - r u = 0`,
 
-a backward parabolic equation on the whole line with diffusion `σ² / 2`, drift
-`r - σ² / 2` (the risk-neutral drift of the log-spot) and potential `-r`. These coefficients are
-bounded whenever `σ` and `r` are, which is what makes whole-space parabolic theory applicable to
-the pricing equation. The identities are pointwise: the coefficients `σ` and `r` may be the
-values `σ(s, t)` and `r(t)` of a local volatility and a time-dependent rate at the point under
-consideration.
+an equation on the whole line with diffusion `σ² / 2`, drift `r - σ² / 2` (the risk-neutral
+drift of the log-spot) and potential `-r`. These coefficients are bounded whenever `σ` and `r`
+are. The equation is backward parabolic, and whole-space parabolic existence and uniqueness
+theory applies to it, only under further hypotheses that this file does not impose: uniform
+ellipticity (`σ²` bounded below by a positive constant) and the regularity of the coefficients
+(for instance Hölder continuity) required by the existence theorem used. The identities proved
+here need neither: they are pointwise, assume only local differentiability of the price, and hold
+for arbitrary real `σ` and `r` (including `σ = 0`), which may be the values `σ(s, t)` and `r(t)`
+of a local volatility and a time-dependent rate at the point under consideration.
 
 Both directions of the change of variables are stated: `TauCeti.Finance.pde_comp_log` transports a
 function of the log-spot to a function of the spot, and `TauCeti.Finance.pde_comp_exp` a function
