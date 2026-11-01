@@ -120,9 +120,11 @@ private theorem projectedBivectorSum_neg
     (bivectorBilinear (TauCeti.LieAlgebra.killingQuadraticForm K L)).comp
       (TauCeti.genWeightSpaceProjection K H L (-chi)) |>.compl₂
         (TauCeti.genWeightSpaceProjection K H L chi)
-  have hb := TauCeti.sum_apply_killingDualBasis_eq f b (TauCeti.killingDualBasis b)
+  have hb := f.sum_apply_dualBasis_eq (LieAlgebra.IsKilling.killingForm_nondegenerate K L) b
+    (TauCeti.killingDualBasis b)
   simp only [f, LinearMap.compl₂_apply, LinearMap.comp_apply,
-    TauCeti.killingDualBasis_killingDualBasis] at hb
+    LinearMap.BilinForm.dualBasis_dualBasis _
+      (LinearMap.BilinForm.isSymm_iff.mpr (LieModule.traceForm_isSymm K L L))] at hb
   have hb' : (∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
         (TauCeti.genWeightSpaceProjection K H L (-chi) (b i))
         (TauCeti.genWeightSpaceProjection K H L chi (TauCeti.killingDualBasis b i))) =
