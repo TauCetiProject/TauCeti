@@ -30,24 +30,6 @@ open _root_.PowerSeries
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {d : ℕ}
   {f : R⟦X⟧} {P P' ω : Polynomial R} {U U' e : IsRestricted.subring (R := R) c}
 
-/-- Move an invertible leading coefficient from a polynomial to its restricted-unit factor. -/
-private theorem exists_monic_of_isUnit_leadingCoeff (ha : IsUnit P.leadingCoeff)
-    (hd : P.natDegree = d) (hU : IsUnit U) (hf : f = (P : R⟦X⟧) * (U : R⟦X⟧)) :
-    ∃ e : IsRestricted.subring (R := R) c, IsUnit e ∧
-      (ha.unit⁻¹ • P).IsMonicOfDegree d ∧ (e : R⟦X⟧) = P.leadingCoeff • (U : R⟦X⟧) ∧
-      (e : R⟦X⟧) * ((ha.unit⁻¹ • P : Polynomial R) : R⟦X⟧) = f := by
-  set u := ha.unit
-  have hu : (u : R) = P.leadingCoeff := ha.unit_spec
-  refine ⟨algebraMap R _ u * U, (u.isUnit.map (algebraMap R _)).mul hU,
-    ⟨by rw [Polynomial.natDegree_smul_of_smul_regular P (IsSMulRegular.all _), hd],
-      Polynomial.monic_of_isUnit_leadingCoeff_inv_smul ha⟩, ?_, ?_⟩
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      hu, smul_eq_C_mul]
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      ← smul_eq_C_mul, Units.smul_def, Polynomial.coe_smul,
-      smul_mul_smul_comm, u.mul_inv, one_smul, mul_comm]
-    exact hf.symm
-
 /-- A polynomial-times-restricted-unit factorization of the distinguished degree rescales
 any monic preparation, provided its leading coefficient is a unit. -/
 theorem IsMulDistinguished.eq_smul_and_smul_eq (hf : IsMulDistinguished c d f)
