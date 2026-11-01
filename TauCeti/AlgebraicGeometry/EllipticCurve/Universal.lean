@@ -387,6 +387,20 @@ lemma specialize_X (i : Coeff) :
 @[simp]
 lemma map_specialize : Universal.curve.map W.specialize = W := by ext <;> simp
 
+open MvPolynomial in
+/-- Specialization commutes with base change: specializing at `W.map φ` is specializing at `W`
+and then applying `φ`. -/
+@[simp]
+lemma specialize_map {S : Type*} [CommRing S] (φ : R →+* S) :
+    (W.map φ).specialize = φ.comp W.specialize :=
+  ringHom_ext (fun n ↦ by rw [eq_intCast C, map_intCast, map_intCast]) fun i ↦ by cases i <;> simp
+
+open MvPolynomial in
+/-- Specializing at the universal curve itself is the identity. -/
+@[simp]
+lemma Universal.specialize_curve : Universal.curve.specialize = RingHom.id _ :=
+  ringHom_ext (fun n ↦ by rw [eq_intCast C, map_intCast, map_intCast]) fun i ↦ by cases i <;> simp
+
 /-- `specialize` sends the discriminant of the universal curve to the discriminant of `W`. -/
 @[simp]
 lemma specialize_Δ : W.specialize Universal.curve.Δ = W.Δ := by

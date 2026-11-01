@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
@@ -67,11 +68,9 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] (I : X.
 /-- For the structure of scheme over `k` on `V(I)` given by `V(I) ⟶ X ⟶ Spec k`, the `k`-algebra
 structure on its global functions is the map of global sections of that morphism. -/
 private lemma algebraMap_eq :
-    letI : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
     letI : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
     algebraMap k Γ(I.subscheme, ⊤) =
       ((Scheme.ΓSpecIso (.of k)).inv ≫ (I.subschemeι ≫ X ↘ Spec (.of k)).appTop).hom := by
-  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
   exact RingHom.ext fun r ↦ baseRingToGlobalSections_apply k I.subscheme r
 
 section Finite
@@ -83,8 +82,6 @@ over `k` is finite-dimensional. -/
 private lemma finiteDimensional_cohomology_zero_pushforward :
     FiniteDimensional k (Cohomology ((Scheme.Modules.pushforward I.subschemeι).obj
       (SheafOfModules.unit I.subscheme.ringCatSheaf)) 0) := by
-  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
-  have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
   let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
   let _ : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
   have : Module.Finite k Γ(M, ⊤) :=
@@ -101,7 +98,6 @@ over `k` vanishes, the closed subscheme being affine. -/
 private lemma subsingleton_cohomology_one_pushforward :
     Subsingleton (Cohomology ((Scheme.Modules.pushforward I.subschemeι).obj
       (SheafOfModules.unit I.subscheme.ringCatSheaf)) 1) := by
-  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
   let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
     inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
   let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
@@ -114,8 +110,6 @@ private lemma eulerCharBelow_pushforward (s : Spec (.of k)) :
     eulerCharBelow k X ((Scheme.Modules.pushforward I.subschemeι).obj
       (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 =
       (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
-  have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
   let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
     inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
   rw [Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s 1,

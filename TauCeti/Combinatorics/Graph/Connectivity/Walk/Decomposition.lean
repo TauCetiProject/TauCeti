@@ -233,6 +233,22 @@ theorem mem_edges_iff_exists_append {p : G.Walk x y} {e : β} :
   · rintro ⟨u, v, h, q, r, rfl⟩
     simp [edges_append]
 
+/-- A path whose endpoints are joined by an edge that it traverses consists of that edge alone. -/
+theorem IsPath.eq_toWalk_of_isLink_mem_edges {p : G.Walk x y} (hp : p.IsPath)
+    (h : G.IsLink e x y) (he : e ∈ p.edges) : p = h.toWalk := by
+  obtain ⟨u, v, huv, q, r, rfl⟩ := mem_edges_iff_exists_append.1 he
+  rw [isPath_def, support_append, support_cons, List.tail_cons, List.nodup_append] at hp
+  rcases huv.eq_and_eq_or_eq_and_eq h with ⟨hu, hv⟩ | ⟨hu, hv⟩
+  · subst u
+    subst v
+    rw [(isPath_iff_nil.mp ((isPath_def q).2 hp.1)).eq_nil,
+      (isPath_iff_nil.mp ((isPath_def r).2 hp.2.1)).eq_nil]
+    rw [h.toWalk_eq_cons]
+    rw [nil_append]
+  · subst u
+    subst v
+    exact absurd (hp.2.2 x q.start_mem_support x r.start_mem_support rfl) (by simp)
+
 section Extraction
 
 variable [DecidableEq α]

@@ -24,17 +24,17 @@ of a Jordan curve that are close in the ambient space need not be close *along* 
 individual pair; what makes them close along the curve is that the parametrization by the circle is
 a homeomorphism of a compact space, hence uniformly continuous in both directions.
 
-## Why this is a layer-L5 prerequisite
+## Use in the Carathéodory boundary correspondence
 
-Layer **L5** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) is
-Carathéodory's boundary correspondence for a Jordan domain. Its analytic half runs the length–area
-method on the circular crosscuts of `Conformal/Crosscut.lean`: a crosscut of the disc at a boundary
-point is mapped by the Riemann map to a crosscut of `Ω` whose *endpoints* on `∂Ω` are close, by the
-length–area estimate `TauCeti.exists_diam_image_ball_inter_sphere_le`. To convert that into the
-collar bound `TauCeti.exists_continuousOn_closedBall_eqOn` asks for, one needs the *region* the
-image crosscut cuts off to be small, and that region is bounded by the crosscut together with one of
-the two arcs into which its endpoints cut `∂Ω`. So the missing geometric input is precisely that two
-nearby points of the Jordan curve `∂Ω` cut off an arc of small diameter — which is what this file
+Carathéodory's boundary correspondence for a Jordan domain runs, in its analytic half, the
+length–area method on circular crosscuts (`TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean`):
+a crosscut of the disc at a boundary point is mapped by the Riemann map to a crosscut of `Ω` whose
+*endpoints* on `∂Ω` are close, by the length–area estimate
+`TauCeti.exists_diam_image_ball_inter_sphere_le`. To convert that into the collar bound
+`TauCeti.exists_continuousOn_closedBall_eqOn` asks for, one needs the *region* the image crosscut
+cuts off to be small, and that region is bounded by the crosscut together with one of the two arcs
+into which its endpoints cut `∂Ω`. So the geometric input needed is precisely that two nearby
+points of the Jordan curve `∂Ω` cut off an arc of small diameter — which is what this file
 supplies, at the generality of an arbitrary Jordan curve in a metric space.
 
 ## The argument
