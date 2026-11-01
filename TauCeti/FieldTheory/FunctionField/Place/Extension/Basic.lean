@@ -362,6 +362,14 @@ theorem ord_algebraMap_restrict (f : F) :
     ramificationIdx_def, mul_comm] using
     (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
 
+/-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
+of that place, because the ramification index is a positive factor. -/
+theorem ord_algebraMap_pos_iff (f : F) :
+    0 < P'.ord (algebraMap F F' f) ↔ 0 < (P'.restrict k F).ord f := by
+  have he : (0 : ℤ) < ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
+  rw [ord_algebraMap_restrict k F P' f]
+  exact mul_pos_iff_of_pos_left he
+
 /-- Restriction scales the multiplicative valuation by the ramification index. -/
 theorem valuation_algebraMap_restrict (f : F) :
     P'.valuation (algebraMap F F' f) =

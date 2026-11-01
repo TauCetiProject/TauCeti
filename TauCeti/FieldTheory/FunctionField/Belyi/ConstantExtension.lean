@@ -34,8 +34,7 @@ irreducible polynomial `q` over `k`, still has order one at `P'`. Since its orde
 multiple of the ramification index of `P'` over `Q'`, that index is one.
 
 A Belyi pair defined over a number field `k` therefore gives a Belyi pair over an algebraic closure
-of `k`, or over `ℂ`. This is what a model of a Belyi pair over a field of definition is compared
-with.
+of `k`. This is what a model of a Belyi pair over a field of definition is compared with.
 
 ## Main results
 
@@ -80,22 +79,14 @@ private theorem ramificationIdx_mul_ord_eq (P' : Place k' F') {f : RatFunc k} {f
   rw [← ord_algebraMap_restrict k' (RatFunc k') P', ← hf, ord_algebraMap_restrict k F P',
     ord_algebraMap_restrict k (RatFunc k) (P'.restrict k F), Nat.cast_mul, mul_assoc]
 
-/-- Under the hypotheses of `ramificationIdx_mul_ord_eq`, the two orders have the same sign. -/
-private theorem ord_pos_iff_and_ord_neg_iff (P' : Place k' F') {f : RatFunc k} {f' : RatFunc k'}
+/-- Under the hypothesis of `ramificationIdx_mul_ord_eq`, `f` has a zero at the place of `k(t)`
+below `P'` exactly when `f'` has a zero at the place of `k'(t)` below `P'`. -/
+private theorem ord_restrict_restrict_pos_iff (P' : Place k' F') {f : RatFunc k} {f' : RatFunc k'}
     (hf : algebraMap F F' (algebraMap (RatFunc k) F f) = algebraMap (RatFunc k') F' f') :
-    (0 < (P'.restrict k' (RatFunc k')).ord f' ↔
-        0 < ((P'.restrict k F).restrict k (RatFunc k)).ord f) ∧
-      ((P'.restrict k' (RatFunc k')).ord f' < 0 ↔
-        ((P'.restrict k F).restrict k (RatFunc k)).ord f < 0) := by
-  have h := ramificationIdx_mul_ord_eq P' hf
-  have he' : (0 : ℤ) < ramificationIdx (RatFunc k') P' := by
-    exact_mod_cast ramificationIdx_pos (RatFunc k') P'
-  have he : (0 : ℤ) < (ramificationIdx F P' * ramificationIdx (RatFunc k) (P'.restrict k F) : ℕ) :=
-    by exact_mod_cast Nat.mul_pos (ramificationIdx_pos F P') (ramificationIdx_pos _ _)
-  constructor
-  · rw [← mul_pos_iff_of_pos_left he', h, mul_pos_iff_of_pos_left he]
-  · rw [← neg_pos, ← mul_pos_iff_of_pos_left he', mul_neg, h, ← mul_neg,
-      mul_pos_iff_of_pos_left he, neg_pos]
+    0 < ((P'.restrict k F).restrict k (RatFunc k)).ord f ↔
+      0 < (P'.restrict k' (RatFunc k')).ord f' := by
+  rw [← ord_algebraMap_pos_iff k' (RatFunc k') P', ← hf, ord_algebraMap_pos_iff k F P',
+    ord_algebraMap_pos_iff k (RatFunc k)]
 
 /-- **Extending the constants keeps the fibres over the marked places**: if the variable of `k(t)`
 is carried into `F'` to the variable of `k'(t)`, then a place of `F'` lies, through `F`, over the
@@ -112,12 +103,12 @@ theorem restrict_restrict_eq_markedPlace_iff
     simp only [map_one, map_sub, ht]
   fin_cases i
   · simp only [Fin.zero_eta, markedPlace_zero, ← ord_X_pos_iff]
-    exact (ord_pos_iff_and_ord_neg_iff P' ht).1.symm
+    exact ord_restrict_restrict_pos_iff P' ht
   · simp only [Fin.mk_one, markedPlace_one, ← ord_X_sub_C_pos_iff]
-    exact (ord_pos_iff_and_ord_neg_iff P' ht1).1.symm
-  · simp only [Fin.reduceFinMk, markedPlace_two, ← X_notMem_integers_iff_eq_infty,
-      mem_integers_iff_ord_nonneg, not_le]
-    exact (ord_pos_iff_and_ord_neg_iff P' ht).2.symm
+    exact ord_restrict_restrict_pos_iff P' ht1
+  · simp only [Fin.reduceFinMk, markedPlace_two, ← X_notMem_integers_iff_eq_infty]
+    rw [mem_integers_restrict_iff k (RatFunc k), mem_integers_restrict_iff k F,
+      mem_integers_restrict_iff k' (RatFunc k'), ht]
 
 /-- **Extending the constants keeps the three marked fibres**: a place of `F'` lies, through `F`,
 over one of the three marked places of `k(t)` exactly when it lies over one of the three marked
@@ -169,7 +160,7 @@ theorem IsAlgebraicBelyiPair.of_constantCompositum_eq_top [CharZero k] [CharZero
     have h1 := Place.ramificationIdx_mul_ord_eq P' hqt
     rw [Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) hcomp,
       h.ramificationIdx_eq_one hQ, hQq, Place.ord_adicOfIrreducible_algebraMap_irreducible hq hq,
-      ite_eq_left (Associated.refl q)] at h1
+      ite_eq_left (Associated.refl q), mul_one, Nat.cast_one] at h1
     exact_mod_cast Int.eq_one_of_mul_eq_one_right (Nat.cast_nonneg _) h1
 
 end TauCeti
