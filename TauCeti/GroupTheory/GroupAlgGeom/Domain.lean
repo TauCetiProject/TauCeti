@@ -223,12 +223,6 @@ theorem IsSeparatedBy.isDiscriminatedBy {ιK : G →* K} {ιH : G →* H} (h : I
     Subgroup.normalClosure_le_normal (by simpa using hφk)
   exact hker (hw k hk)
 
-/-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
-theorem IsSeparatedBy.nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
-    (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
-  let ⟨k, hk⟩ := exists_ne (1 : K)
-  ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
-
 /-- **Discrimination is separation plus being a domain** (Baumslag–Myasnikov–Remeslennikov,
 Theorem C1). Over a domain `H` over `G`, a nontrivial group is discriminated by `H` if and only
 if it is separated by `H` and is itself a domain over `G`. For a trivial group the separation
