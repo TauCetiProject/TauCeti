@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.OneObject
 
 /-!
@@ -282,11 +283,8 @@ noncomputable def homotopyToZeroOfId (hc : ∀ j, ∃ i, c.Rel i j) :
 
 /-- The mapping cone of an identity is acyclic. -/
 lemma acyclic_id [∀ i, (homotopyCofiber (𝟙 K)).HasHomology i]
-    (hc : ∀ j, ∃ i, c.Rel i j) : (homotopyCofiber (𝟙 K)).Acyclic := by
-  intro i
-  rw [exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
-  simpa only [homologyMap_id, homologyMap_zero] using
-    (homotopyToZeroOfId K hc).homologyMap_eq i
+    (hc : ∀ j, ∃ i, c.Rel i j) : (homotopyCofiber (𝟙 K)).Acyclic :=
+  (homotopyToZeroOfId K hc).acyclic
 
 end HomologicalComplex.homotopyCofiber
 

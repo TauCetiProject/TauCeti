@@ -111,8 +111,8 @@ theorem geometricBrownianMotion_sub_mul_min (s μ σ θ : ℝ) (W : ℝ≥0 → 
   ring_nf
 
 /-- Up to the horizon `T`, the geometric Brownian motion with drift `μ` driven by `W` is the one
-with drift `r` driven by `W_t + κ t`, `κ = (μ - r) / σ`. In the Black–Scholes market the latter
-driving process is a Brownian motion under the risk-neutral measure `P.tilted (-κ W_T ·)`. -/
+with drift `r` driven by `W_t + κ min(t, T)`, `κ = (μ - r) / σ`. In the Black–Scholes market the
+latter driving process is a Brownian motion under the risk-neutral measure `P.tilted (-κ W_T ·)`. -/
 theorem geometricBrownianMotion_eq_riskNeutral (s μ r : ℝ) {σ : ℝ} (hσ : σ ≠ 0)
     {W : ℝ≥0 → Ω → ℝ} {t T : ℝ≥0} (htT : t ≤ T) (ω : Ω) :
     geometricBrownianMotion s μ σ W t ω = geometricBrownianMotion s r σ
