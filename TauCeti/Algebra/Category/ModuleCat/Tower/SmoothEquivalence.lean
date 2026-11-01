@@ -37,7 +37,9 @@ which rests on the density of `A` in `Â`.
 
 The functors and the equivalence are exposed, so that the image of a module definitionally has the
 same carrier; the formulas for the actions (`TauCeti.ModuleTower.smoothModulesToDiscrete_obj_smul`,
-`TauCeti.ModuleTower.discreteModulesToSmooth_obj_smul`) are stated on that carrier.
+`TauCeti.ModuleTower.discreteModulesToSmooth_obj_smul`) are stated on that carrier. The unit and
+counit of the equivalence are identity maps on carriers
+(`TauCeti.ModuleTower.smoothModulesEquivalence_unitIso_hom_app_hom_apply` and its companions).
 
 ## Main definitions
 
@@ -230,5 +232,40 @@ theorem smoothModulesEquivalence_functor :
 theorem smoothModulesEquivalence_inverse :
     (smoothModulesEquivalence (hJ := hJ) hJr).inverse = discreteModulesToSmooth hJr :=
   (rfl)
+
+/-- The unit of the equivalence is the identity on the underlying abelian group. -/
+@[simp]
+theorem smoothModulesEquivalence_unitIso_hom_app_hom_apply
+    (M : (smoothModules.{w} J).FullSubcategory) (m : M.obj) :
+    dsimp% ((smoothModulesEquivalence (hJ := hJ) hJr).unitIso.hom.app M).hom m = m :=
+  (rfl)
+
+/-- The inverse of the unit of the equivalence is the identity on the underlying abelian group. -/
+@[simp]
+theorem smoothModulesEquivalence_unitIso_inv_app_hom_apply
+    (M : (smoothModules.{w} J).FullSubcategory)
+    (m : ((smoothModulesEquivalence (hJ := hJ) hJr).inverse.obj
+      ((smoothModulesEquivalence hJr).functor.obj M)).obj) :
+    dsimp% ((smoothModulesEquivalence hJr).unitIso.inv.app M).hom m = show M.obj from m :=
+  (rfl)
+
+/-- The counit of the equivalence is the identity on the underlying abelian group. -/
+@[simp]
+theorem smoothModulesEquivalence_counitIso_hom_app_hom_apply :
+    letI := limRing (hJ := hJ) hJr
+    ∀ (M : (discreteModules.{w} (quotients J hJ).lim).FullSubcategory)
+      (m : ((smoothModulesEquivalence hJr).functor.obj
+        ((smoothModulesEquivalence hJr).inverse.obj M)).obj),
+      dsimp% ((smoothModulesEquivalence hJr).counitIso.hom.app M).hom m = show M.obj from m :=
+  fun _ _ ↦ (rfl)
+
+/-- The inverse of the counit of the equivalence is the identity on the underlying abelian
+group. -/
+@[simp]
+theorem smoothModulesEquivalence_counitIso_inv_app_hom_apply :
+    letI := limRing (hJ := hJ) hJr
+    ∀ (M : (discreteModules.{w} (quotients J hJ).lim).FullSubcategory) (m : M.obj),
+      dsimp% ((smoothModulesEquivalence hJr).counitIso.inv.app M).hom m = m :=
+  fun _ _ ↦ (rfl)
 
 end TauCeti.ModuleTower

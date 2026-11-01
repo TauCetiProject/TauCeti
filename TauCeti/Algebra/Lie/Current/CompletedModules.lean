@@ -106,4 +106,37 @@ theorem smoothModulesEquivalence_inverse_obj_smul
   exact ModuleTower.discreteModulesToSmooth_obj_smul
     (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) M b m
 
+/-- The unit of the equivalence is the identity on the underlying abelian group. -/
+@[simp]
+theorem smoothModulesEquivalence_unitIso_hom_app_hom_apply
+    (M : (smoothModules.{v} (orderLeftIdeal Φ hΦ hΦs a)).FullSubcategory) (m : M.obj) :
+    dsimp% ((smoothModulesEquivalence Φ hΦ hΦs a).unitIso.hom.app M).hom m = m :=
+  (rfl)
+
+/-- The inverse of the unit of the equivalence is the identity on the underlying abelian group. -/
+@[simp]
+theorem smoothModulesEquivalence_unitIso_inv_app_hom_apply
+    (M : (smoothModules.{v} (orderLeftIdeal Φ hΦ hΦs a)).FullSubcategory)
+    (m : ((smoothModulesEquivalence Φ hΦ hΦs a).inverse.obj
+      ((smoothModulesEquivalence Φ hΦ hΦs a).functor.obj M)).obj) :
+    dsimp% ((smoothModulesEquivalence Φ hΦ hΦs a).unitIso.inv.app M).hom m = show M.obj from m :=
+  (rfl)
+
+/-- The counit of the equivalence is the identity on the underlying abelian group. -/
+@[simp]
+theorem smoothModulesEquivalence_counitIso_hom_app_hom_apply
+    (M : (discreteModules.{v} (CompletedEnveloping Φ hΦ hΦs a)).FullSubcategory)
+    (m : ((smoothModulesEquivalence Φ hΦ hΦs a).functor.obj
+      ((smoothModulesEquivalence Φ hΦ hΦs a).inverse.obj M)).obj) :
+    dsimp% ((smoothModulesEquivalence Φ hΦ hΦs a).counitIso.hom.app M).hom m = show M.obj from m :=
+  (rfl)
+
+/-- The inverse of the counit of the equivalence is the identity on the underlying abelian
+group. -/
+@[simp]
+theorem smoothModulesEquivalence_counitIso_inv_app_hom_apply
+    (M : (discreteModules.{v} (CompletedEnveloping Φ hΦ hΦs a)).FullSubcategory) (m : M.obj) :
+    dsimp% ((smoothModulesEquivalence Φ hΦ hΦs a).counitIso.inv.app M).hom m = m :=
+  (rfl)
+
 end TauCeti.CurrentAlgebra
