@@ -116,13 +116,8 @@ theorem constantCoeff_hurewicz (x : LazardRing) :
     MvPolynomial.constantCoeff (hurewicz x) = augmentation x := by
   have h : MvPolynomial.constantCoeff.comp hurewicz = augmentation := by
     refine hom_ext ?_
-    have h0 : (MvPolynomial.constantCoeff ∘ fun i : ℕ+ ↦ (MvPolynomial.X i : MvPolynomial ℕ+ ℤ)) =
-        0 := by
-      funext i
-      simp
-    rw [← FormalGroup.map_comp, map_hurewicz, FormalGroup.map_smul,
-      FormalCoordinate.map_ofStrictCoeffs, h0, FormalCoordinate.ofStrictCoeffs_zero, one_smul,
-      FormalGroup.map_𝔾ₐ, map_augmentation]
+    rw [← FormalGroup.map_comp, map_hurewicz, FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ]
+    simp [Function.comp_def, ← Pi.zero_def]
   exact RingHom.congr_fun h x
 
 /-! ### The Hurewicz homomorphism is graded -/
