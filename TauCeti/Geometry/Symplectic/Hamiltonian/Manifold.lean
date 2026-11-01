@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.VectorField.Prod
@@ -36,7 +37,9 @@ inverse flat maps makes the Hamiltonian vector field of a `C^(n+1)` function a `
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`), which is the regularity
 needed to integrate it to a Hamiltonian flow. Rescaling the form by `c ≠ 0` rescales the
 Hamiltonian vector field by `c⁻¹`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
+Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
+(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -71,7 +74,9 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isHamiltonianVectorField_iff_eq`: existence and
   uniqueness of the Hamiltonian vector field.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`: a `C^(n+1)`
-  Hamiltonian has a `C^n` Hamiltonian vector field.
+  Hamiltonian has a `C^n` Hamiltonian vector field, with the version
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` for jointly
+  `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on open preconnected sets of times, with the global case
@@ -217,6 +222,20 @@ theorem hamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt hcf]
 
+/-- **The chain rule for Hamiltonian vector fields.** Post-composing the Hamiltonian with a real
+function `φ` differentiable at `f x` rescales the Hamiltonian vector field at `x` by `φ'(f x)`:
+`X_{φ ∘ f}(x) = φ'(f x) X_f(x)`. -/
+theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : DifferentiableAt ℝ φ (f x))
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+    σ.hamiltonianVectorField (φ ∘ f) x = deriv φ (f x) • σ.hamiltonianVectorField f x := by
+  have hd : mvfderiv I (φ ∘ f) x = deriv φ (f x) • mvfderiv I f x := by
+    ext v
+    rw [mvfderiv_comp_apply_of_differentiableAt hφ hf, fderiv_eq_smul_deriv,
+      smul_apply]
+    -- Both sides are products of two reals, the first read in the tangent space of `ℝ`.
+    exact mul_comm _ _
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hd, map_smul]
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
@@ -262,6 +281,20 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
     ContMDiff I I.tangent n (T% (σ.hamiltonianVectorField f)) :=
   ((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).clm_bundle_apply
     hf.contMDiff_totalSpaceMk_mvfderiv
+
+/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
+a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
+`C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
+`n ≤ ∞`. For `N = ℝ` this is the regularity of the vector field of a time-dependent Hamiltonian,
+which is what is needed to integrate it to a time-dependent Hamiltonian flow. -/
+theorem contMDiff_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
+    (hH : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H)) :
+    ContMDiff (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
+  (((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
+    contMDiff_snd).clm_bundle_apply hH.contMDiff_totalSpaceMk_mvfderiv_uncurry
 
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
