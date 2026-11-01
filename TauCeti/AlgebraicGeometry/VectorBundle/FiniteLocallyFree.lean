@@ -144,7 +144,10 @@ instance : HasBinaryBiproducts (FiniteLocallyFreeSheaf X) :=
 
 variable (X)
 
+-- Exposed so that the underlying sheaf is definitionally Mathlib's free sheaf, whose basis
+-- inclusions `SheafOfModules.ιFree` are morphisms into it.
 /-- The free sheaf on a finite type, as a finite locally free sheaf. -/
+@[expose]
 def free (I : Type u) [Finite I] : FiniteLocallyFreeSheaf X :=
   ⟨_root_.SheafOfModules.free (R := X.ringCatSheaf) I, inferInstance,
     SheafOfModules.isFinitePresentation_free I⟩
@@ -175,10 +178,8 @@ lemma pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeShea
 variable {X} in
 /-- Pullback of a free sheaf, expressed in the finite locally free category. -/
 noncomputable def pullbackFreeIso {Y : Scheme.{u}} (f : X ⟶ Y) (J : Type u) [Finite J] :
-    (pullback f).obj (free Y J) ≅ free X J := by
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
-  exact ObjectProperty.isoMk _
+    (pullback f).obj (free Y J) ≅ free X J :=
+  ObjectProperty.isoMk _
     (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
       SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J ≪≫
       eqToIso (free_obj X J).symm)

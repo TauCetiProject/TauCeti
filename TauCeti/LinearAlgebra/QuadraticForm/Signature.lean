@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.Submodule.Prod
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Definiteness and the signature of a quadratic form
@@ -27,7 +28,8 @@ It also proves that restriction to a subspace cannot increase either index of in
 quotienting a quadratic form by its radical preserves both indices, and that multiplication by a
 positive scalar preserves both indices while multiplication by a negative scalar exchanges them; a
 form which a linear automorphism negates has equal indices.
-Finally, both indices are additive under orthogonal products.
+Finally, both indices are additive under orthogonal products, and an orthogonal family of vectors
+of positive (negative) square has at most as many members as the positive (negative) index.
 
 ## Main results
 
@@ -55,6 +57,9 @@ Finally, both indices are additive under orthogonal products.
   is characterized by vanishing negative index and trivial radical.
 * `QuadraticForm.sigPos_add_sigNeg_of_nondegenerate`: the two indices of inertia of a
   nondegenerate quadratic form add up to the dimension.
+* `LinearMap.BilinForm.card_le_sigPos_toQuadraticMap_of_iIsOrtho` and
+  `LinearMap.BilinForm.card_le_sigNeg_toQuadraticMap_of_iIsOrtho`: an orthogonal family of
+  vectors of positive (negative) square has at most `sigPos` (`sigNeg`) members.
 
 ## References
 
@@ -345,6 +350,40 @@ theorem isPosSemidef_iff_sigNeg_eq_zero (B : LinearMap.BilinForm K M) (hB : B.Is
   rw [isPosSemidef_iff_forall_nonneg B hB]
   simpa only [LinearMap.BilinMap.toQuadraticMap_apply] using
     QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero B.toQuadraticMap
+
+/-- A family of pairwise orthogonal vectors of positive square spans a positive-definite subspace
+of dimension its cardinality, so that cardinality is at most the positive index of inertia. -/
+theorem card_le_sigPos_toQuadraticMap_of_iIsOrtho {ι : Type*} [Fintype ι]
+    (B : LinearMap.BilinForm K M) {v : ι → M} (hv : B.iIsOrtho v)
+    (hpos : ∀ i, 0 < B (v i) (v i)) :
+    Fintype.card ι ≤ _root_.sigPos B.toQuadraticMap := by
+  classical
+  rw [← finrank_span_eq_card (linearIndependent_of_iIsOrtho hv fun i ↦ (hpos i).ne')]
+  apply le_sigPos_of_posDef
+  rintro ⟨x, hx⟩ hx0
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun K).mp hx
+  have hc : c ≠ 0 := by
+    rintro rfl
+    exact hx0 (by simp)
+  have hcv : B.iIsOrtho fun j ↦ c j • v j :=
+    iIsOrtho_def.mpr fun j k hjk ↦ by simp [iIsOrtho_def.mp hv j k hjk]
+  rw [QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply, hcv.apply_sum_sum]
+  refine ((QuadraticMap.posDef_weightedSumSquares_iff _).2 hpos c hc).trans_eq ?_
+  rw [QuadraticMap.weightedSumSquares_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [smul_left, smul_right, smul_eq_mul]
+  ring
+
+/-- A family of pairwise orthogonal vectors of negative square has at most as many members as
+the negative index of inertia. -/
+theorem card_le_sigNeg_toQuadraticMap_of_iIsOrtho {ι : Type*} [Fintype ι]
+    (B : LinearMap.BilinForm K M) {v : ι → M} (hv : B.iIsOrtho v)
+    (hneg : ∀ i, B (v i) (v i) < 0) :
+    Fintype.card ι ≤ _root_.sigNeg B.toQuadraticMap := by
+  have h := card_le_sigPos_toQuadraticMap_of_iIsOrtho (-B) (v := v)
+    (iIsOrtho_def.mpr fun i j hij ↦ by simp [iIsOrtho_def.mp hv i j hij])
+    fun i ↦ by simpa using hneg i
+  rwa [LinearMap.BilinMap.toQuadraticMap_neg, sigPos_neg] at h
 
 /-- The quadratic form of a symmetric bilinear form is positive-definite if and only if the
 bilinear form is positive-semidefinite and nondegenerate. -/
