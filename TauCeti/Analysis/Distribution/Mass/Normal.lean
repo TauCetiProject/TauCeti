@@ -82,6 +82,7 @@ def IsNormal : {k : ℕ} → (𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) �
   | _ + 1, T => mass T ≠ ⊤ ∧ mass (T ∘L extDerivCLM) ≠ ⊤
 
 /-- In degree zero, local normality is local finiteness of the mass. -/
+@[simp]
 theorem isLocallyNormal_finZero_iff {T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] V} :
     IsLocallyNormal T ↔ HasLocallyFiniteMass T :=
   Iff.rfl
@@ -92,6 +93,7 @@ theorem isLocallyNormal_succ_iff {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
   Iff.rfl
 
 /-- In degree zero, normality is finiteness of the mass. -/
+@[simp]
 theorem isNormal_finZero_iff {T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] V} :
     IsNormal T ↔ mass T ≠ ⊤ :=
   Iff.rfl
@@ -237,14 +239,6 @@ section Restriction
 
 variable {Ω' : Opens E} {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
 
-/-- Restricting to an open subset commutes with the boundary. -/
-private theorem comp_monoCLM_comp_extDerivCLM (h : Ω' ≤ Ω)
-    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) :
-    (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ∘L extDerivCLM =
-      (T ∘L extDerivCLM) ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) := by
-  ext ω
-  simp [extDerivCLM_monoCLM h]
-
 /-- **Restriction.** The restriction of a locally normal current to an open subset `Ω' ⊆ Ω` is
 locally normal. -/
 theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) (h : Ω' ≤ Ω) :
@@ -367,7 +361,7 @@ section Point
 
 /-- **Point currents are normal.** For `x ∈ E` and a continuous linear map `ℓ` on `0`-forms, the
 degree-zero point current `ω ↦ ℓ (ω x)` is normal: its mass is at most `‖ℓ‖`, with equality when
-`x ∈ Ω` (`Distribution.mass_apply_apply`). -/
+`x ∈ Ω` and `E` is finite-dimensional (`Distribution.mass_apply_apply`). -/
 theorem isNormal_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
     (ℓ : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] V) (x : E) :
     IsNormal (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
