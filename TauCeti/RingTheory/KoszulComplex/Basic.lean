@@ -128,8 +128,8 @@ theorem zeroEquiv_koszulDifferential_zero (x : ⋀[R]^1 M) :
 theorem oneEquiv_koszulDifferential_one (v : Fin 2 → M) :
     exteriorPower.oneEquiv R M (koszulDifferential φ 1 (exteriorPower.ιMulti R 2 v)) =
       φ (v 0) • v 1 - φ (v 1) • v 0 := by
-  simp [koszulDifferential_ιMulti, Fin.sum_univ_two, sub_eq_add_neg,
-    Fin.tail, Fin.removeNth, Fin.succAbove]
+  simp [koszulDifferential_ιMulti, Fin.sum_univ_two, Fin.removeNth_apply,
+    Fin.tail, sub_eq_add_neg]
 
 /-- The image of the first Koszul differential, transported along `⋀⁰ M ≅ R`, is the image
 of `φ`. -/
