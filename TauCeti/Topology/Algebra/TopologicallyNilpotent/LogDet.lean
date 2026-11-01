@@ -12,10 +12,11 @@ public import TauCeti.Topology.Algebra.TopologicallyNilpotent.ExpLog
 # The logarithm of `det (1 - a A)`
 
 Let `S` be a complete, separated, linearly topologized commutative `ℚ`-algebra, `a : S` a
-topologically nilpotent element, and `A` a square matrix over a field `K` with an algebra map
-`K → S`, whose characteristic polynomial splits over `K`. Then `det (1 - a A)`, the reversed
-characteristic polynomial `Matrix.charpolyRev A` evaluated at `a`, has the series of traces of the
-powers of `A` as its logarithm (`IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits`):
+topologically nilpotent element, and `A` a square matrix over an integral domain `K` with an
+algebra map `K → S`, whose characteristic polynomial splits over `K`. Then `det (1 - a A)`, the
+reversed characteristic polynomial `Matrix.charpolyRev A` evaluated at `a`, has the series of
+traces of the powers of `A` as its logarithm
+(`IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits`):
 
 `log det (1 - a A) = -∑ₖ tr (Aᵏ) aᵏ / k`.
 
@@ -33,8 +34,9 @@ units into sums (`IsTopologicallyNilpotent.hasSum_log_prod_one_sub`).
 
 ## Main results
 
-* `IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits`: for a matrix `A` over a
-  field whose characteristic polynomial splits, `log det (1 - a A) = -∑ₖ tr (Aᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
+* `IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits`: for a matrix `A` over an
+  integral domain whose characteristic polynomial splits,
+  `log det (1 - a A) = -∑ₖ tr (Aᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
 
 ## References
 
@@ -53,11 +55,11 @@ namespace IsTopologicallyNilpotent
 
 variable {a : S}
 
-/-- **The logarithm of `det (1 - a A)`.** For a square matrix `A` over a field `K` whose
-characteristic polynomial splits and a topologically nilpotent `a`, the logarithm of
+/-- **The logarithm of `det (1 - a A)`.** For a square matrix `A` over an integral domain `K`
+whose characteristic polynomial splits and a topologically nilpotent `a`, the logarithm of
 `det (1 - a A)` is `-∑ₖ tr (Aᵏ⁺¹) aᵏ⁺¹ / (k + 1)`. -/
-theorem hasSum_log_aeval_charpolyRev_of_splits {K : Type*} [Field K] [Algebra K S]
-    {n : Type*} [Fintype n] [DecidableEq n] (ha : IsTopologicallyNilpotent a)
+theorem hasSum_log_aeval_charpolyRev_of_splits {K : Type*} [CommRing K] [IsDomain K]
+    [Algebra K S] {n : Type*} [Fintype n] [DecidableEq n] (ha : IsTopologicallyNilpotent a)
     {A : Matrix n n K} (hA : A.charpoly.Splits) :
     HasSum (fun k : ℕ ↦ -(((k + 1 : ℕ) : ℚ)⁻¹ • ((A ^ (k + 1)).trace • a ^ (k + 1))))
       (NormedSpace.log (aeval a A.charpolyRev)) := by

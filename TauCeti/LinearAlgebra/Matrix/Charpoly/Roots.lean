@@ -11,7 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
 # Characteristic roots of matrices
@@ -27,12 +28,13 @@ It also records the determinant form of the spectral mapping theorem: for a poly
 determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
 with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is the case `p = X`.
 
-More generally, when the characteristic polynomial of `A` splits, the characteristic roots of
-`p(A)` are the values `p(λ)` at the characteristic roots `λ` of `A`, counted with algebraic
-multiplicity. So the determinant of `p(A)` is the product of the `p(λ)` and its trace is their
-sum; Mathlib's `Matrix.det_eq_prod_roots_charpoly_of_splits` and
-`Matrix.trace_eq_sum_roots_charpoly_of_splits` are the case `p = X`. In particular `det (1 - X A)`
-factors as `∏ (1 - λ X)`. These are proved by extending the scalars to an algebraic closure.
+More generally, over an integral domain, when the characteristic polynomial of `A` splits, the
+characteristic roots of `p(A)` are the values `p(λ)` at the characteristic roots `λ` of `A`,
+counted with algebraic multiplicity. So the determinant of `p(A)` is the product of the `p(λ)`
+and its trace is their sum; Mathlib's `Matrix.det_eq_prod_roots_charpoly_of_splits` and
+`Matrix.trace_eq_sum_roots_charpoly_of_splits` are the case `p = X`. These are proved by
+extending the scalars to an algebraic closure of the field of fractions. In particular
+`det (1 - X A)`, the reverse of `χ_A = ∏ (X - λ)`, factors as `∏ (1 - λ X)`.
 
 ## Main results
 
@@ -144,13 +146,22 @@ end IsAlgClosed
 
 section Splits
 
-variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {A : Matrix n n K}
+variable {n K : Type*} [Fintype n] [DecidableEq n] [CommRing K] [IsDomain K] {A : Matrix n n K}
 
-/-- Extending the scalars of `A` to an algebra `L` commutes with evaluating a polynomial at `A`. -/
-private theorem map_aeval {L : Type*} [Field L] [Algebra K L] (p : K[X]) :
-    (aeval A p).map (algebraMap K L) = aeval (A.map (algebraMap K L)) (p.map (algebraMap K L)) := by
-  rw [aeval_map_algebraMap]
-  exact (aeval_algHom_apply ((Algebra.ofId K L).mapMatrix (m := n)) A p).symm
+variable (K) in
+/-- The scalars of `K` embed into an algebraic closure of the field of fractions of `K`. -/
+private theorem algebraMap_algebraicClosure_injective :
+    Function.Injective (algebraMap K (AlgebraicClosure (FractionRing K))) := by
+  rw [IsScalarTower.algebraMap_eq K (FractionRing K)]
+  exact (algebraMap (FractionRing K) _).injective.comp (IsFractionRing.injective K _)
+
+/-- When the characteristic polynomial of `A` splits, extending the scalars to an algebraic
+closure of the field of fractions maps the characteristic roots of `A` to those of the extended
+matrix. -/
+private theorem roots_charpoly_map_algebraicClosure (hA : A.charpoly.Splits) :
+    (A.map (algebraMap K (AlgebraicClosure (FractionRing K)))).charpoly.roots =
+      A.charpoly.roots.map (algebraMap K _) := by
+  rw [charpoly_map, hA.roots_map_of_injective (algebraMap_algebraicClosure_injective K)]
 
 /-- **Spectral mapping for determinants.** If the characteristic polynomial of `A` splits, the
 determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
@@ -158,26 +169,27 @@ with algebraic multiplicity. -/
 theorem det_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
     (aeval A p).det = (A.charpoly.roots.map p.eval).prod := by
   -- Pass to an algebraic closure, where `det_aeval_eq_prod_roots_charpoly` applies.
-  let ι := algebraMap K (AlgebraicClosure K)
-  refine ι.injective ?_
-  rw [ι.map_det, RingHom.mapMatrix_apply, map_aeval, det_aeval_eq_prod_roots_charpoly,
-    charpoly_map, hA.roots_map, map_multiset_prod, Multiset.map_map, Multiset.map_map]
-  simp [ι, Function.comp_def, eval_map_algebraMap, aeval_algebraMap_apply]
+  refine algebraMap_algebraicClosure_injective K ?_
+  rw [RingHom.map_det, RingHom.mapMatrix_apply, ← aeval_map, det_aeval_eq_prod_roots_charpoly,
+    roots_charpoly_map_algebraicClosure hA]
+  simp [map_multiset_prod, eval_map, eval₂_at_apply]
 
 /-- **Spectral mapping for characteristic polynomials.** If the characteristic polynomial of `A`
 splits, the characteristic polynomial of `p(A)` is `∏ (X - p(λ))` over the characteristic roots
 `λ` of `A`, counted with algebraic multiplicity. -/
 theorem charpoly_aeval_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) (p : K[X]) :
     (aeval A p).charpoly = (A.charpoly.roots.map fun μ ↦ X - C (p.eval μ)).prod := by
-  -- Compare both sides after extending the scalars to an algebraic closure, which is infinite.
-  let ι := algebraMap K (AlgebraicClosure K)
-  refine Polynomial.map_injective ι ι.injective (Polynomial.funext fun x ↦ ?_)
-  have h : scalar n x - aeval (A.map ι) (p.map ι) = aeval (A.map ι) (C x - p.map ι) := by
+  -- Compare both sides after extending the scalars to an algebraic closure, which is infinite:
+  -- at each `x`, both are `det ((x - p)(A)) = ∏ (x - p(λ))`.
+  refine Polynomial.map_injective _ (algebraMap_algebraicClosure_injective K)
+    (Polynomial.funext fun x ↦ ?_)
+  have h : scalar n x - (aeval A p).map (algebraMap K _) =
+      aeval (A.map (algebraMap K _)) (C x - p.map (algebraMap K _)) := by
+    rw [← aeval_map]
     simp [Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal]
-  rw [← charpoly_map, eval_charpoly, map_aeval, h, det_aeval_eq_prod_roots_charpoly,
-    charpoly_map, hA.roots_map, Polynomial.map_multiset_prod, eval_multiset_prod,
-    Multiset.map_map, Multiset.map_map, Multiset.map_map]
-  simp [Function.comp_def]
+  rw [← charpoly_map, eval_charpoly, h, det_aeval_eq_prod_roots_charpoly,
+    roots_charpoly_map_algebraicClosure hA]
+  simp [Polynomial.map_multiset_prod, eval_multiset_prod, eval_map, eval₂_at_apply]
 
 /-- **Spectral mapping for traces.** If the characteristic polynomial of `A` splits, the trace of
 `p(A)` is the sum of `p(λ)` over the characteristic roots `λ` of `A`, counted with algebraic
@@ -197,23 +209,14 @@ factors `1 - λ X` over the characteristic roots `λ` of `A`, counted with algeb
 multiplicity. -/
 theorem charpolyRev_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) :
     A.charpolyRev = (A.charpoly.roots.map fun μ ↦ 1 - C μ * X).prod := by
-  -- Compare both sides after extending the scalars to an algebraic closure, which is infinite.
-  let ι := algebraMap K (AlgebraicClosure K)
-  refine Polynomial.map_injective ι ι.injective (Polynomial.funext fun x ↦ ?_)
-  -- Evaluating `det (1 - X A)` at `x` gives the determinant of `(1 - x X)(A)`.
-  have h : (evalRingHom x).mapMatrix (1 - (X : (AlgebraicClosure K)[X]) • (A.map ι).map C) =
-      aeval (A.map ι) (1 - C x * X) := by
-    ext i j
-    rcases eq_or_ne i j with rfl | hij <;>
-      simp [*, Algebra.algebraMap_eq_smul_one] <;> ring
-  rw [← charpolyRev_map, charpolyRev, ← coe_evalRingHom, RingHom.map_det, h,
-    det_aeval_eq_prod_roots_charpoly, charpoly_map, hA.roots_map,
-    Polynomial.map_multiset_prod, map_multiset_prod, Multiset.map_map, Multiset.map_map,
-    Multiset.map_map]
-  refine congrArg _ (Multiset.map_congr rfl fun μ _ ↦ ?_)
-  simp only [Function.comp_apply, coe_evalRingHom, eval_sub, eval_one, eval_mul, eval_C, eval_X,
-    Polynomial.map_sub, Polynomial.map_one, Polynomial.map_mul, map_C, map_X]
-  ring
+  -- `det (1 - X A)` is the reverse of `χ_A = ∏ (X - λ)`, and reversal is multiplicative.
+  rw [← reverse_charpoly, hA.eq_prod_roots_of_monic A.charpoly_monic,
+    reverse_multiset_prod_of_monic fun q hq ↦ by
+      obtain ⟨μ, -, rfl⟩ := Multiset.mem_map.1 hq
+      exact monic_X_sub_C μ,
+    Multiset.map_map, roots_multiset_prod_X_sub_C]
+  simpa using congrArg Multiset.prod (Multiset.map_congr rfl fun μ _ ↦ by
+    simpa using reverse_X_pow_sub_C 1 μ)
 
 end Splits
 

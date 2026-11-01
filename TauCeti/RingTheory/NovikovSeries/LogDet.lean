@@ -112,19 +112,21 @@ theorem hasSum_log_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈ posIdea
       (algebraMap L (nonnegSubring L N)).comp ι := by
     ext x
     simp [ψ, algebraMap_apply, map_single]
+  -- `ψ` is semilinear over `ι`.
+  have hψsmul (c : K) (x : nonnegSubring K N) : ψ (c • x) = ι c • ψ x := by
+    rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, ← RingHom.comp_apply ψ, hψalg,
+      RingHom.comp_apply]
   have hu := isTopologicallyNilpotent_of_mem_posIdeal' (aeval_charpolyRev_sub_one_mem_posIdeal ha A)
   have hmap : ψ (aeval a A.charpolyRev) = aeval (ψ a) (A.map ι).charpolyRev := by
-    rw [Matrix.charpolyRev_map, aeval_def, aeval_def, eval₂_map, hom_eval₂, hψalg]
+    rw [map_aeval_eq_aeval_map hψalg.symm, Matrix.charpolyRev_map]
   -- Over `L` the identity holds, and `ψ` maps both sides of the identity over `K` to it.
   have hL := IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits (A := A.map ι)
     (IsTopologicallyNilpotent.map hψc ha') (IsAlgClosed.splits _)
   have key : ψ (∑' k, f k) = ψ (NormedSpace.log (aeval a A.charpolyRev)) := by
     rw [hu.map_log ψ hψc, hmap]
     refine (hsum.hasSum.map ψ hψc).unique (hL.congr_fun fun k ↦ ?_)
-    dsimp only [f, Function.comp_apply]
-    rw [_root_.map_neg, map_rat_smul, Algebra.smul_def (A ^ (k + 1)).trace, _root_.map_mul,
-      _root_.map_pow, ← RingHom.comp_apply ψ, hψalg, RingHom.comp_apply,
-      AddMonoidHom.map_trace ι, Matrix.map_pow, ← Algebra.smul_def]
+    simp only [f, Function.comp_apply, _root_.map_neg, map_rat_smul, hψsmul, _root_.map_pow,
+      AddMonoidHom.map_trace, Matrix.map_pow]
   rw [← hψi key]
   exact hsum.hasSum
 
