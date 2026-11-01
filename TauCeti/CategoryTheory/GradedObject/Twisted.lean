@@ -438,7 +438,7 @@ variable {c C}
 /-- The twisted associator acts on the summand `(X₁ i₁ ⊗ X₂ i₂) ⊗ X₃ i₃` of `(X₁ ⊗ X₂) ⊗ X₃` as
 `c.ω i₁ i₂ i₃` times the associator of `C`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj₃'_associator_hom (X₁ X₂ X₃ : GradedObject I C) (i₁ i₂ i₃ j : I)
+lemma ιTensorObj₃'_associator_hom {X₁ X₂ X₃ : GradedObject I C} (i₁ i₂ i₃ j : I)
     (h : i₁ + i₂ + i₃ = j) :
     ιTensorObj₃' X₁ X₂ X₃ i₁ i₂ i₃ j h ≫
         (@MonoidalCategoryStruct.associator (Twisted c C) _ _ X₁ X₂ X₃).hom j =
@@ -448,7 +448,7 @@ lemma ιTensorObj₃'_associator_hom (X₁ X₂ X₃ : GradedObject I C) (i₁ i
 /-- The inverse of the twisted associator acts on the summand `X₁ i₁ ⊗ X₂ i₂ ⊗ X₃ i₃` of
 `X₁ ⊗ (X₂ ⊗ X₃)` as `(c.ω i₁ i₂ i₃)⁻¹` times the inverse associator of `C`. -/
 @[reassoc (attr := simp)]
-lemma ιTensorObj₃_associator_inv (X₁ X₂ X₃ : GradedObject I C) (i₁ i₂ i₃ j : I)
+lemma ιTensorObj₃_associator_inv {X₁ X₂ X₃ : GradedObject I C} (i₁ i₂ i₃ j : I)
     (h : i₁ + i₂ + i₃ = j) :
     ιTensorObj₃ X₁ X₂ X₃ i₁ i₂ i₃ j h ≫
         (@MonoidalCategoryStruct.associator (Twisted c C) _ _ X₁ X₂ X₃).inv j =
