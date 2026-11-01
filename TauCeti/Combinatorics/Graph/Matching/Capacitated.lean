@@ -123,21 +123,6 @@ theorem IsBipartition.isVertexCover_right {L R : Finset V(G)} (h : G.IsBipartiti
     G.IsVertexCover (R : Set V(G)) :=
   h.symm.isVertexCover_left
 
-/-- A walk between distinct vertices along an arrow family whose arrows carry actual edges linking
-their ends traverses the edge of an arrow, both of whose ends are vertices of the walk. -/
-private theorem exists_inc_mem_vertices {Q : V(G) → V(G) → Type v}
-    (edge : ∀ ⦃x y : V(G)⦄, Q x y → E(G)) (hQ : ∀ ⦃x y : V(G)⦄ (q : Q x y), G.IsLink (edge q) x y)
-    {s t : V(G)} (p : ArrowWalk Q s t) (hst : s ≠ t) :
-    ∃ e : E(G), ∀ v : V(G), G.Inc e v → v ∈ p.vertices := by
-  cases p with
-  | nil => exact absurd rfl hst
-  | cons p q =>
-    refine ⟨edge q, fun v hv ↦ ?_⟩
-    rw [ArrowWalk.vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton]
-    rcases hv.eq_or_eq_of_isLink (hQ q) with h | h
-    · exact .inl (Subtype.ext h ▸ @Quiver.Path.end_mem_vertices _ ⟨Q⟩ _ _ p)
-    · exact .inr (Subtype.ext h)
-
 /-! ### Multiset capacitated matchings -/
 
 variable [Fintype E(G)] {b b' : V(G) → ℕ} {x y : E(G) → ℕ}
@@ -205,17 +190,19 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
   let Q (y z : V(G)) : Type v := {e : E(G) // G.IsLink e y z ∧ y ∈ L}
   obtain ⟨k, s, t, P, X, hs, ht, -, -, hP, hX, hk⟩ :=
     exists_paths_setSeparator_sum_eq (Q := Q) b L R
-  -- Every member of the packing joins `L` to `R`, so it traverses the edge of an arrow.
+  -- Every member of the packing joins `L` to `R`, so it traverses an arrow.
   have hst (i : Fin k) : s i ≠ t i := fun h ↦ disjoint_left.1 hLR.disjoint (hs i) (h ▸ ht i)
-  choose f hf using fun i ↦
-    exists_inc_mem_vertices (Q := Q) (fun _ _ q ↦ q.1) (fun _ _ q ↦ q.2.1) (P i) (hst i)
-  refine ⟨fun e ↦ #{i | f i = e}, X, fun v ↦ ?_, fun e y z he ↦ ?_, ?_⟩
-  · -- The members counted at `v` are members through `v`.
+  choose f hf using fun i ↦ List.exists_mem_of_ne_nil _ ((P i).arrows_ne_nil (hst i))
+  refine ⟨fun e ↦ #{i | (f i).2.2.1 = e}, X, fun v ↦ ?_, fun e y z he ↦ ?_, ?_⟩
+  · -- The members counted at `v` are members through `v`: both ends of the edge of the arrow
+    -- are vertices of the member.
     rw [sum_card_fiberwise_eq_card_filter]
     refine (card_le_card fun i hi ↦ ?_).trans (hP v)
     simp only [mem_filter, mem_univ, true_and, mem_incidentEdges, mem_singleton,
       exists_eq_left] at hi ⊢
-    exact hf i v hi
+    have hv := ArrowWalk.mem_vertices_of_mem_arrows (hf i)
+    rcases hi.eq_or_eq_of_isLink (f i).2.2.2.1 with h | h
+    exacts [Subtype.ext h ▸ hv.1, Subtype.ext h ▸ hv.2]
   · -- The one-arrow walk along `e` meets the separator.
     wlog hy : y ∈ L generalizing y z
     · exact (this z y he.symm (hLR.notMem_left_iff.1 hy |> hLR.mem_left_of_isLink he)).symm
