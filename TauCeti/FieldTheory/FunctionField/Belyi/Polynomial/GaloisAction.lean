@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.Bundled
-import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # The Galois action on polynomial Belyi pairs
@@ -78,12 +77,6 @@ variable {k k' : Type u} [Field k] [CharZero k] [Field k'] [CharZero k']
 section Conj
 
 variable (σ : k ≃+* k') {B : AlgebraicBelyiPair k} {x : B} {q : k[X]}
-
-/-- If `x` generates the function field of `B` over `k`, then it still generates the function
-field of the conjugate of `B` along `σ`, over `k'`. -/
-theorem adjoin_conjRingEquiv_eq_top (hx : k⟮x⟯ = ⊤) : k'⟮conjRingEquiv σ B x⟯ = ⊤ := by
-  simpa using IntermediateField.adjoin_image_eq_top_of_ringEquiv (σ : k →+* k')
-    (conjRingEquiv σ B) (conjRingEquiv_algebraMap σ B) hx
 
 /-- **The conjugate of a polynomial presentation**: if the function `t` is `q(x)` on `B`, then on
 the conjugate of `B` along `σ` it is `q^σ(x)`, where `q^σ = q.map σ` applies `σ` to the
