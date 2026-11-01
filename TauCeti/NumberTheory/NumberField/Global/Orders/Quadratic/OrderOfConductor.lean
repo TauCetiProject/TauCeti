@@ -52,6 +52,8 @@ quadratic character of `K`, with `χ_D(p) = 0` at the ramified primes.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_mul_index_mul_prod` and
   `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_eq`: the class number of
   `O_f` in terms of `h_K`, `f`, the unit index and `χ_D`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_mul_index_eq`: the same
+  formula as a product of the integer local factors `p ^ (v_p(f) - 1) (p - χ_D(p))`.
 
 ## References
 
@@ -165,6 +167,37 @@ theorem card_pic_intAddMulOrder_mul_index_mul_prod (hK : Module.finrank ℚ K = 
         (∏ p ∈ f.primeFactors, (p : ℤ)) ^ 2)) * hT +
       (∏ p ∈ f.primeFactors, (p : ℤ)) ^ 3 * hA +
       (Nat.card (ClassGroup (𝓞 K)) * ∏ p ∈ f.primeFactors, (p : ℤ)) * hU
+
+/-- **The class number of the order of conductor `f` as a product of local factors.** For the
+order `O_f = ℤ + f 𝓞 K` of a quadratic field `K` with discriminant `D`,
+
+`#Pic O_f · [(𝓞 K)ˣ : O_fˣ] = h_K · ∏_{p ∣ f} p ^ (v_p(f) - 1) · (p - χ_D(p))`.
+
+Each local factor is a positive integer, and it is `1` only for `p = 2` with `v_2(f) = 1` and `2`
+split in `K`. -/
+theorem card_pic_intAddMulOrder_mul_index_eq (hK : Module.finrank ℚ K = 2) (f : ℕ) [NeZero f] :
+    (Nat.card (Pic (intAddMulOrder K f)) : ℤ) *
+        (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
+          (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index =
+      Nat.card (ClassGroup (𝓞 K)) * ∏ p ∈ f.primeFactors, (p : ℤ) ^ (f.factorization p - 1) *
+        ((p : ℤ) - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)
+          p) := by
+  have hX : ∏ p ∈ f.primeFactors, (p : ℤ) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦ by
+    exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero
+  -- `f = ∏_{p ∣ f} p ^ v_p(f) = ∏_{p ∣ f} p · ∏_{p ∣ f} p ^ (v_p(f) - 1)`.
+  have hf : (f : ℤ) = (∏ p ∈ f.primeFactors, (p : ℤ)) *
+      ∏ p ∈ f.primeFactors, (p : ℤ) ^ (f.factorization p - 1) := by
+    conv_lhs => rw [Nat.prod_primeFactors_pow_factorization (NeZero.ne f)]
+    push_cast
+    rw [← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun p hp ↦ ?_
+    obtain ⟨hp, hpf, -⟩ := Nat.mem_primeFactors.mp hp
+    rw [← pow_succ', Nat.sub_add_cancel (hp.factorization_pos_of_dvd (NeZero.ne f) hpf)]
+  rw [Finset.prod_mul_distrib]
+  refine mul_right_cancel₀ hX ?_
+  linear_combination card_pic_intAddMulOrder_mul_index_mul_prod hK f +
+    (Nat.card (ClassGroup (𝓞 K)) * ∏ p ∈ f.primeFactors, ((p : ℤ) -
+      fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p)) * hf
 
 /-- **The class number of the order of conductor `f`** (Cox, Theorem 7.24). For the order
 `O_f = ℤ + f 𝓞 K` of a quadratic field `K` with discriminant `D`,

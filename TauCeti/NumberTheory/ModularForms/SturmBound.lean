@@ -19,17 +19,18 @@ For `𝒢 ≤ GL(2, ℝ)` of finite relative index in `𝒮ℒ` with discrete st
 `f = 0`.
 
 The proof lifts the level-one bound `ModularForm.sturm_bound_levelOne` through the norm map:
-the norm of `f` vanishes exactly when `f` does, and by the decomposition
-`TauCeti.ModularForm.qExpansion_one_norm_order_eq` sufficient vanishing of `f` at `∞`
-propagates to the norm.
+the norm of `f` vanishes exactly when `f` does, and the norm-order comparison
+`TauCeti.ModularForm.qExpansion_order_le_qExpansion_norm_order`, derived from the
+decomposition `TauCeti.ModularForm.qExpansion_one_norm_order_eq`, carries sufficient
+vanishing of `f` at `∞` to the norm.
 
 ## Main declarations
 
-* `TauCeti.ModularForm.sturm_bound_finiteIndex`: the Sturm bound for finite relative index.
-* `TauCeti.ModularForm.sturm_bound_finiteIndex_SL2Z`: the classical form for finite-index
+* `ModularForm.sturm_bound_finiteIndex`: the Sturm bound for finite relative index.
+* `ModularForm.sturm_bound_finiteIndex_SL2Z`: the classical form for finite-index
   subgroups of `SL(2, ℤ)`.
-* `TauCeti.ModularForm.eq_of_sturm_bound`: forms agreeing up to the bound are equal.
-* `TauCeti.ModularForm.finiteDimensional_modularForm_finiteIndex`: `ModularForm 𝒢 k` is
+* `ModularForm.eq_of_sturm_bound`: forms agreeing up to the bound are equal.
+* `TauCeti.finiteDimensional_modularForm_finiteIndex`: `ModularForm 𝒢 k` is
   finite-dimensional over `ℂ`.
 
 ## References
@@ -44,34 +45,9 @@ open UpperHalfPlane Complex Function SlashInvariantForm Periodic Subgroup
 
 open scoped ModularForm Topology Filter Manifold MatrixGroups
 
-namespace TauCeti
-
 namespace ModularForm
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex 𝒮ℒ] {k : ℤ} (f : ModularForm 𝒢 k)
-
-private lemma strictWidthInfty_pos_of_finiteRelIndex {𝒢 : Subgroup (GL (Fin 2) ℝ)}
-    [𝒢.IsFiniteRelIndex 𝒮ℒ] [DiscreteTopology 𝒢.strictPeriods] : 0 < 𝒢.strictWidthInfty := by
-  obtain ⟨m', _, hnRw⟩ :=
-    Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty (𝒢 := 𝒢)
-  refine 𝒢.strictWidthInfty_nonneg.lt_of_ne fun heq ↦ ?_
-  rw [← heq, mul_zero] at hnRw
-  exact (by exact_mod_cast Subgroup.integerCuspWidth_pos (𝒢 := 𝒢) : (0 : ℝ) <
-    Subgroup.integerCuspWidth 𝒢).ne' hnRw
-
-private lemma qExpansion_order_le_qExpansion_norm_order [DiscreteTopology 𝒢.strictPeriods] :
-    (qExpansion 𝒢.strictWidthInfty f).order ≤
-      (qExpansion 1 (_root_.ModularForm.norm 𝒮ℒ f)).order := by
-  obtain ⟨m', hm'_pos, hnRw⟩ :=
-    Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty (𝒢 := 𝒢)
-  have hf_w_per : Function.Periodic (⇑f ∘ ofComplex) 𝒢.strictWidthInfty :=
-    SlashInvariantFormClass.periodic_comp_ofComplex f 𝒢.strictWidthInfty_mem_strictPeriods
-  rw [qExpansion_one_norm_order_eq f]
-  refine le_trans ?_ le_self_add
-  rw [hnRw]
-  exact qExpansion_order_le_qExpansion_nat_mul_order strictWidthInfty_pos_of_finiteRelIndex
-    hm'_pos hf_w_per (OnePoint.isBoundedAt_infty_iff.mp
-      (ModularFormClass.bdd_at_cusps f Subgroup.isCusp_infty_of_finiteRelIndex)) f.holo'
 
 /-- **Sturm bound for subgroups of `GL(2, ℝ)` of finite relative index in `SL(2, ℤ)`** with
 discrete strict periods. A modular form of weight `k` whose `q`-expansion at the cusp `∞`
@@ -80,8 +56,8 @@ theorem sturm_bound_finiteIndex [DiscreteTopology 𝒢.strictPeriods]
     (h : (↑((k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12) : ℕ∞) <
       (qExpansion 𝒢.strictWidthInfty f).order) : f = 0 := by
   rw [← FunLike.coe_zero_iff, ← _root_.ModularForm.norm_eq_zero_iff (ℋ := 𝒮ℒ)]
-  exact _root_.ModularForm.sturm_bound_levelOne <|
-    h.trans_le (qExpansion_order_le_qExpansion_norm_order f)
+  exact sturm_bound_levelOne <|
+    h.trans_le (TauCeti.ModularForm.qExpansion_order_le_qExpansion_norm_order f)
 
 /-- **Classical Sturm bound for finite-index subgroups of `SL(2, ℤ)`.** -/
 theorem sturm_bound_finiteIndex_SL2Z {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
@@ -108,9 +84,13 @@ theorem eq_of_sturm_bound [DiscreteTopology 𝒢.strictPeriods]
   refine sturm_bound_finiteIndex (f - g) (lt_of_lt_of_le
     (by exact_mod_cast Nat.lt_succ_self _) (PowerSeries.nat_le_order _ _ fun i hi ↦ ?_))
   rw [FunLike.coe_sub, _root_.ModularForm.qExpansion_sub
-    strictWidthInfty_pos_of_finiteRelIndex 𝒢.strictWidthInfty_mem_strictPeriods,
+    TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex 𝒢.strictWidthInfty_mem_strictPeriods,
     map_sub, sub_eq_zero]
   exact h i (Nat.lt_succ_iff.mp hi)
+
+end ModularForm
+
+namespace TauCeti
 
 /-- **Finite-dimensionality of modular forms.** As a corollary of the Sturm bound, the space
 `ModularForm 𝒢 k` is finite-dimensional over `ℂ` for any subgroup `𝒢 ≤ GL(2, ℝ)` of finite
@@ -122,21 +102,20 @@ instance finiteDimensional_modularForm_finiteIndex
   set N : ℕ := (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1
   refine Module.Finite.of_injective
     (((PowerSeries.trunc N).comp (ModularForm.qExpansionLinearMap
-        strictWidthInfty_pos_of_finiteRelIndex 𝒢.strictWidthInfty_mem_strictPeriods k)).codRestrict
+        Subgroup.strictWidthInfty_pos_of_finiteRelIndex
+        𝒢.strictWidthInfty_mem_strictPeriods k)).codRestrict
       (Polynomial.degreeLT ℂ N) fun f ↦
         Polynomial.mem_degreeLT.mpr (PowerSeries.degree_trunc_lt _ _))
     ((injective_iff_map_eq_zero _).mpr fun f hf ↦ ?_)
-  refine sturm_bound_finiteIndex f (lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self _)
-    (PowerSeries.nat_le_order _ _ fun i hi ↦ ?_))
+  refine ModularForm.sturm_bound_finiteIndex f (lt_of_lt_of_le
+    (by exact_mod_cast Nat.lt_succ_self _) (PowerSeries.nat_le_order _ _ fun i hi ↦ ?_))
   have hval : PowerSeries.trunc N (qExpansion 𝒢.strictWidthInfty f) = 0 := by
     simpa using congrArg Subtype.val hf
   have hcoeff := congrArg (fun p ↦ Polynomial.coeff p i) hval
   rwa [PowerSeries.coeff_trunc, ite_eq_left hi, Polynomial.coeff_zero] at hcoeff
 
-end ModularForm
-
 /-- **Finite-dimensionality of cusp forms.** A cusp form is a modular form, injectively, so this
-is `TauCeti.ModularForm.finiteDimensional_modularForm_finiteIndex` transported along
+is `TauCeti.finiteDimensional_modularForm_finiteIndex` transported along
 `CuspForm.toModularFormₗ`, under exactly the same hypotheses.
 
 It is stated here rather than at its use sites because cusp-form finite-dimensionality is a

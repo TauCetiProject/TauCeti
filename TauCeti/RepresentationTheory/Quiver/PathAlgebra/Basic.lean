@@ -458,6 +458,14 @@ theorem ofPath_mul_vertexIdempotent {a b : Q} (p : _root_.Quiver.Path a b) :
     (ofPath ⟨a, b, p⟩ * vertexIdempotent k a : pathAlgebra k Q) = ofPath ⟨a, b, p⟩ :=
   single_mul_vertexIdempotent (k := k) ⟨a, b, p⟩ 1
 
+/-- The vertex idempotent at the source of a path is absorbed by it in a right-associated
+product. -/
+@[simp]
+theorem ofPath_mul_vertexIdempotent_mul {a b : Q} (p : _root_.Quiver.Path a b)
+    (y : pathAlgebra k Q) :
+    ofPath ⟨a, b, p⟩ * (vertexIdempotent k a * y) = ofPath ⟨a, b, p⟩ * y := by
+  rw [← mul_assoc, ofPath_mul_vertexIdempotent]
+
 /-- A vertex idempotent not at the target of a path annihilates its canonical element on the
 left. -/
 @[simp]
@@ -1287,6 +1295,26 @@ theorem adjoin_vertexIdempotents_union_arrows :
   | single x c => exact single_eq_smul_ofPath x c ▸ S.smul_mem (ofPath_mem x) c
 
 end Generate
+
+section Envelope
+
+open MulOpposite
+open scoped TensorProduct
+
+variable {k : Type w} {Q : Type u} [CommSemiring k] [Quiver.{v} Q]
+
+/-- Two `k`-linear maps out of the enveloping algebra `kQ ⊗[k] kQᵐᵒᵖ` agree once they agree on the
+`x ⊗ q`, for paths `q`. -/
+@[ext]
+theorem tensorProduct_op_linearMap_ext {M : Type*} [AddCommMonoid M] [Module k M]
+    {f g : pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ →ₗ[k] M}
+    (h : ∀ (x : pathAlgebra k Q) {s t : Q} (q : Quiver.Path s t),
+      f (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩)) = g (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩))) : f = g :=
+  TensorProduct.ext <| LinearMap.ext fun x ↦
+    ((pathAlgebraBasis k Q).map (opLinearEquiv k)).ext fun q ↦ by
+      simpa [Module.Basis.map_apply] using h x q.2.2
+
+end Envelope
 
 end PathAlgebra
 

@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 
 import TauCeti.Analysis.AbsoluteValue.Equivalence
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!

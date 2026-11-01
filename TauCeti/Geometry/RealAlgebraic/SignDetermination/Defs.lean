@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.IntegralNormalization
 import Mathlib.Algebra.Order.Group.Finset
 import Mathlib.Basic.Sign.Basic
 import TauCeti.Algebra.Polynomial.Eval.Sign
+import TauCeti.RingTheory.Polynomial.Monic.Normalization
 
 /-! # Polynomial sign counts and Tarski queries
 
@@ -381,10 +382,7 @@ theorem tarskiQuery_integralNormalization {p q r : R[X]} (hp : p ≠ 0)
     tarskiQuery p.integralNormalization r = tarskiQuery p q := by
   classical
   have ha : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hp
-  have hroots : p.integralNormalization.roots = p.roots.map (p.leadingCoeff * ·) := by
-    rw [← roots_C_mul _ ha, mul_comm, integralNormalization_mul_C_leadingCoeff,
-      roots_scaleRoots _ (isUnit_iff_ne_zero.mpr ha)]
-  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum, hroots, Multiset.toFinset_map,
+  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum, roots_integralNormalization, Multiset.toFinset_map,
     Finset.sum_image fun x _ y _ hxy => mul_left_cancel₀ ha hxy]
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [h x (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)).eq_zero]

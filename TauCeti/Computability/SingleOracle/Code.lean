@@ -42,10 +42,15 @@ program uniformly in the oracle.
 
 * `TauCeti.Oracle.Single.Code.primrec₂_pair` and its neighbours: the program constructors are
   primitive recursive on numbers of programs.
+* `TauCeti.Oracle.Single.Code.encode_lt_pair` and its neighbours: the components of a compound
+  program have smaller numbers.
+* `TauCeti.Oracle.Single.Code.primrec_casesOn`: case analysis on programs is primitive recursive.
 * `TauCeti.Oracle.Single.Code.mem_eval_pair`, `TauCeti.Oracle.Single.Code.mem_eval_rfind'`: the
   values of a pairing, and one step of a search.
 * `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
   function as the ordinary code it comes from, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.exists_forall_eval_eq_of_partrec`: every partial recursive function
+  is computed by one program relative to every oracle.
 * `TauCeti.Oracle.Single.Code.exists_code`: adequacy, `Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f`.
 * `TauCeti.Oracle.Single.Code.turingReducible_iff_exists_code`: the same for Turing
   reducibility.
@@ -158,6 +163,35 @@ theorem encodeCode_eq : encode = encodeCode :=
 theorem ofNatCode_eq : ofNat Code = ofNatCode :=
   rfl
 
+/-- The components of a pairing have smaller numbers. -/
+theorem encode_lt_pair (cf cg : Code) :
+    encode cf < encode (pair cf cg) ∧ encode cg < encode (pair cf cg) := by
+  have := Nat.left_le_pair (encodeCode cf) (encodeCode cg)
+  have := Nat.right_le_pair (encodeCode cf) (encodeCode cg)
+  simp only [encodeCode_eq, encodeCode]
+  omega
+
+/-- The components of a composition have smaller numbers. -/
+theorem encode_lt_comp (cf cg : Code) :
+    encode cf < encode (comp cf cg) ∧ encode cg < encode (comp cf cg) := by
+  have := Nat.left_le_pair (encodeCode cf) (encodeCode cg)
+  have := Nat.right_le_pair (encodeCode cf) (encodeCode cg)
+  simp only [encodeCode_eq, encodeCode]
+  omega
+
+/-- The components of a primitive recursion have smaller numbers. -/
+theorem encode_lt_prec (cf cg : Code) :
+    encode cf < encode (prec cf cg) ∧ encode cg < encode (prec cf cg) := by
+  have := Nat.left_le_pair (encodeCode cf) (encodeCode cg)
+  have := Nat.right_le_pair (encodeCode cf) (encodeCode cg)
+  simp only [encodeCode_eq, encodeCode]
+  omega
+
+/-- The component of a search has a smaller number. -/
+theorem encode_lt_rfind' (cf : Code) : encode cf < encode (rfind' cf) := by
+  simp only [encodeCode_eq, encodeCode]
+  omega
+
 /-! ### Primitive recursive constructors -/
 
 section Primrec
@@ -190,6 +224,44 @@ theorem primrec_rfind' : Primrec rfind' :=
   ofNat_iff.2 <| encode_iff.1 <|
     nat_add.comp (nat_add.comp (nat_mul.comp (const 4) <| encode_iff.2 <| Primrec.ofNat Code)
       (const 3)) (const 5)
+
+/-- **Case analysis on programs is primitive recursive**, uniformly in a parameter: the branch
+taken is read off the number of the program, and the branches receive its components. -/
+theorem primrec_casesOn {α σ : Type*} [Primcodable α] [Primcodable σ] {c : α → Code}
+    (hc : Primrec c) {z s l r o : α → σ} (hz : Primrec z) (hs : Primrec s) (hl : Primrec l)
+    (hr : Primrec r) (ho : Primrec o) {pr co pc : α → Code × Code → σ} (hpr : Primrec₂ pr)
+    (hco : Primrec₂ co) (hpc : Primrec₂ pc) {rf : α → Code → σ} (hrf : Primrec₂ rf) :
+    Primrec fun a => Code.casesOn (motive := fun _ => σ) (c a) (z a) (s a) (l a) (r a) (o a)
+      (fun cf cg => pr a (cf, cg)) (fun cf cg => co a (cf, cg)) (fun cf cg => pc a (cf, cg))
+      (rf a) := by
+  -- the components of a compound program with number `4 * q + i + 5`, from `q`
+  let comps : ℕ → Code × Code := fun q => (ofNat Code q.unpair.1, ofNat Code q.unpair.2)
+  have hcomps : Primrec comps :=
+    ((Primrec.ofNat Code).comp (fst.comp Primrec.unpair)).pair
+      ((Primrec.ofNat Code).comp (snd.comp Primrec.unpair))
+  -- branch on the number `m` of the program: a basic instruction, or `m - 5 = 4 * q + i`
+  have hm : Primrec fun a => encode (c a) := encode_iff.2 hc
+  have hi : Primrec fun a => (encode (c a) - 5) % 4 := nat_mod.comp (nat_sub.comp hm (const 5))
+    (const 4)
+  have hq : Primrec fun a => (encode (c a) - 5) / 4 := nat_div.comp (nat_sub.comp hm (const 5))
+    (const 4)
+  have h : Primrec fun a =>
+      if encode (c a) = 0 then z a else if encode (c a) = 1 then s a
+      else if encode (c a) = 2 then l a else if encode (c a) = 3 then r a
+      else if encode (c a) = 4 then o a
+      else if (encode (c a) - 5) % 4 = 0 then pr a (comps ((encode (c a) - 5) / 4))
+      else if (encode (c a) - 5) % 4 = 1 then co a (comps ((encode (c a) - 5) / 4))
+      else if (encode (c a) - 5) % 4 = 2 then pc a (comps ((encode (c a) - 5) / 4))
+      else rf a (ofNat Code ((encode (c a) - 5) / 4)) :=
+    .ite (Primrec.eq.comp hm (const 0)) hz <| .ite (Primrec.eq.comp hm (const 1)) hs <|
+      .ite (Primrec.eq.comp hm (const 2)) hl <| .ite (Primrec.eq.comp hm (const 3)) hr <|
+      .ite (Primrec.eq.comp hm (const 4)) ho <|
+      .ite (Primrec.eq.comp hi (const 0)) (hpr.comp .id (hcomps.comp hq)) <|
+      .ite (Primrec.eq.comp hi (const 1)) (hco.comp .id (hcomps.comp hq)) <|
+      .ite (Primrec.eq.comp hi (const 2)) (hpc.comp .id (hcomps.comp hq)) <|
+      hrf.comp .id ((Primrec.ofNat Code).comp hq)
+  refine h.of_eq fun a => ?_
+  cases c a <;> simp [encodeCode_eq, encodeCode, comps, ofNatCode_eq, Nat.add_mod, Nat.mul_add_div]
 
 end Primrec
 
@@ -454,5 +526,12 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
   | prec cf cg ihf ihg =>
     rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | rfind' cf ihf => rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf]
+
+/-- Every partial recursive function is computed by one program relative to every oracle: the
+query-free program of an ordinary code computing it. -/
+theorem exists_forall_eval_eq_of_partrec {f : ℕ →. ℕ} (hf : Nat.Partrec f) :
+    ∃ c : Code, ∀ O, eval O c = f := by
+  obtain ⟨c, rfl⟩ := Nat.Partrec.Code.exists_code.1 hf
+  exact ⟨c.toSingleOracleCode, fun O => eval_toSingleOracleCode O c⟩
 
 end TauCeti.Oracle.Single.Code

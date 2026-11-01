@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
-public import TauCeti.NumberTheory.LSeries.QuadraticCharacter
+public import TauCeti.NumberTheory.LSeries.Quadratic.Character
 
 /-!
 # Positive continued L-values for fundamental discriminants

@@ -575,4 +575,17 @@ theorem IsSemialgebraic.isSemianalytic {σ : Type*} [Fintype σ] {s : Set (σ �
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_eq_zero)
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_pos) hs
 
+/-- **Substituting analytic functions.** The preimage of a semialgebraic set `S ⊆ A → ℝ` under a map
+`c` whose coordinates `c · a` are analytic on `U` is a Boolean combination of analytic sign
+conditions on `U`. -/
+theorem IsSemialgebraic.isAnalyticBooleanCombination_preimage {A : Type*} {S : Set (A → ℝ)}
+    (hS : IsSemialgebraic S) {U : Set E} {c : E → A → ℝ} (hc : ∀ a, AnalyticOnNhd ℝ (c · a) U) :
+    IsAnalyticBooleanCombination U (c ⁻¹' S) := by
+  have hq (q : MvPolynomial A ℝ) : AnalyticOnNhd ℝ (fun u => MvPolynomial.eval (c u) q) U := by
+    simpa only [MvPolynomial.aeval_eq_eval] using AnalyticOnNhd.aeval_mvPolynomial hc q
+  exact setOf_isSemialgebraic_subset
+    ((isSetAlgebra_setOf_isAnalyticBooleanCombination U).preimage c)
+    (fun q => isAnalyticBooleanCombination_setOf_eq_zero (hq q))
+    (fun q => isAnalyticBooleanCombination_setOf_pos (hq q)) hS
+
 end TauCeti

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Module
 public import TauCeti.Topology.Sheaves.SupportedCohomology
 import TauCeti.Algebra.Homology.Ext.Basic
+import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 
 /-!
 # Cohomology with closed supports for sheaves of modules
@@ -31,6 +32,20 @@ For opens `W' ≤ W` the inclusion of pairs `(W', W' ∖ S) ⟶ (W, W ∖ S)` in
 with the restriction of sections. On an open disjoint from `S` the cohomology with supports
 in `S` vanishes.
 
+*Excision* says that cohomology with supports in `S` only depends on a neighbourhood of `S`: if
+`W' ≤ W` and `S ∩ W ⊆ W'`, the map `Q_S(W') ⟶ Q_S(W)` is an isomorphism, because a section over
+`W'` supported in `S` glues with zero on `W ∖ S` to a unique section over `W` supported in `S`.
+Hence restriction is an `R`-linear isomorphism `H_Sⁿ(W, F) ≃ₗ[R] H_Sⁿ(W', F)`.
+
+For closed subsets `Z ≤ S` the inclusions of pairs `(W, W ∖ S) ⟶ (W, W ∖ Z)` give maps
+`Q_S(W) ⟶ Q_Z(W)`, and since `(W ∖ Z) ∖ S = W ∖ S` the sequence
+`0 ⟶ Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W) ⟶ 0` is short exact. Its long exact `Ext` sequence is the long
+exact sequence of supports
+
+`⋯ ⟶ H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F) ⟶ H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F) ⟶ ⋯`,
+
+whose first map enlarges the support and whose second map is restriction to `W ∖ Z`.
+
 ## Main declarations
 
 * `CategoryTheory.Sheaf.supportedSubmodule F S W`: the `R`-submodule `Γ_S(W, F)`;
@@ -43,7 +58,21 @@ in `S` vanishes.
 * `CategoryTheory.Sheaf.supportedModuleHZeroEquiv`: `H_S⁰(W, F) ≃ₗ[R] Γ_S(W, F)`, natural in `F`
   and compatible with restriction;
 * `CategoryTheory.Sheaf.subsingleton_supportedModuleH_of_le_compl`: `H_Sⁿ(W, F) = 0` when `W` is
-  disjoint from `S`.
+  disjoint from `S`;
+* `CategoryTheory.Sheaf.existsUnique_mem_supportedSubmodule_map_eq`: excision for sections
+  supported in `S`;
+* `TopologicalSpace.Closeds.isIso_supportedFreeModuleSheafFunctor_map`: excision for the sheaves
+  `Q_S(W)`;
+* `CategoryTheory.Sheaf.supportedModuleHExcisionEquiv`: excision
+  `H_Sⁿ(W, F) ≃ₗ[R] H_Sⁿ(W', F)` when `S ∩ W ⊆ W'`;
+* `TopologicalSpace.Closeds.supportedFreeModuleSheafSequence_shortExact`: for `Z ≤ S`, the sequence
+  `0 ⟶ Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W) ⟶ 0` is short exact;
+* `CategoryTheory.Sheaf.supportedModuleHPresheafMap` and `CategoryTheory.Sheaf.supportedModuleHδ`:
+  for `Z ≤ S`, the morphism of presheaves `H_Zⁿ(-, F) ⟶ H_Sⁿ(-, F)` and the connecting map
+  `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports, whose exactness is
+  `CategoryTheory.Sheaf.exact_supportedModuleHPresheafMap_app_supportedModuleHPresheaf_map`,
+  `CategoryTheory.Sheaf.exact_supportedModuleHPresheaf_map_supportedModuleHδ` and
+  `CategoryTheory.Sheaf.exact_supportedModuleHδ_supportedModuleHPresheafMap_app`.
 
 ## References
 
@@ -254,5 +283,257 @@ lemma coe_supportedModuleHZeroEquiv_map (S : Closeds X) {W W' : (Opens X)ᵒᵖ}
       F.obj.map h (F.supportedModuleHZeroEquiv S W.unop x) :=
   coe_relativeFreeModuleYonedaExtZeroEquiv_mk₀_comp _ R (S.complInclusion W'.unop)
     (S.complInclusion W.unop) _ h.unop rfl F x
+
+end CategoryTheory.Sheaf
+
+/-! ### Excision -/
+
+namespace CategoryTheory.Sheaf
+
+variable {R} (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+
+/-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
+`W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique
+section over `W` supported in `S`, namely the one gluing it with zero on `W ∖ S`. -/
+theorem existsUnique_mem_supportedSubmodule_map_eq {S : Closeds X} {W' W : Opens X} (h : W' ≤ W)
+    (hW : W ≤ W' ⊔ S.compl) {s : F.obj.obj (op W')} (hs : s ∈ F.supportedSubmodule S W') :
+    ∃! t : F.obj.obj (op W), t ∈ F.supportedSubmodule S W ∧ F.obj.map (homOfLE h).op t = s := by
+  -- The statement only involves the underlying sheaf of abelian groups `G`, whose sections and
+  -- restriction maps are definitionally those of `F`, so it is the abelian excision for `G`.
+  let G := (sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F
+  have hmem {V : Opens X} {t : F.obj.obj (op V)} :
+      t ∈ F.supportedSubmodule S V ↔ t ∈ G.supportedSections S V :=
+    F.mem_supportedSubmodule_iff.trans G.mem_supportedSections_iff.symm
+  obtain ⟨t, ⟨ht, hts⟩, hu⟩ := G.existsUnique_mem_supportedSections_map_eq h hW (hmem.1 hs)
+  exact ⟨t, ⟨hmem.2 ht, hts⟩, fun t' ⟨ht', hts'⟩ ↦ hu t' ⟨hmem.1 ht', hts'⟩⟩
+
+end CategoryTheory.Sheaf
+
+namespace TopologicalSpace.Closeds
+
+/-- Precomposing the map `Q_S(W') ⟶ Q_S(W)` with the quotient map `R_W' ⟶ Q_S(W')` is the
+quotient map `R_W ⟶ Q_S(W)` precomposed with the map `R_W' ⟶ R_W`. -/
+@[reassoc]
+lemma cokernel_π_supportedFreeModuleSheafFunctor_map (S : Closeds X) {W' W : Opens X}
+    (h : W' ⟶ W) :
+    cokernel.π _ ≫ (S.supportedFreeModuleSheafFunctor R).map h =
+      (freeModuleYonedaSheafFunctor _ R).map h ≫ cokernel.π _ :=
+  cokernel_π_relativeFreeModuleYonedaSheafMap _ R _ _ _ _ _
+
+/-- Excision for the sheaves `Q_S(W)`: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
+`W ≤ W' ⊔ (X ∖ S)`), the map `Q_S(W') ⟶ Q_S(W)` is an isomorphism. -/
+theorem isIso_supportedFreeModuleSheafFunctor_map (S : Closeds X) {W' W : Opens X} (h : W' ≤ W)
+    (hW : W ≤ W' ⊔ S.compl) : IsIso ((S.supportedFreeModuleSheafFunctor R).map (homOfLE h)) :=
+  (isIso_relativeFreeModuleYonedaSheafMap_iff _ R _ _ _ _ _).2 fun F _ hs ↦
+    F.existsUnique_mem_supportedSubmodule_map_eq h hW hs
+
+end TopologicalSpace.Closeds
+
+namespace CategoryTheory.Sheaf
+
+variable {R} (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+
+/-- Excision for cohomology with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
+`W ≤ W' ⊔ (X ∖ S)`), restriction is an `R`-linear isomorphism
+`H_Sⁿ(W, F) ≃ₗ[R] H_Sⁿ(W', F)`. -/
+def supportedModuleHExcisionEquiv (S : Closeds X) {W' W : Opens X} (h : W' ≤ W)
+    (hW : W ≤ W' ⊔ S.compl) (n : ℕ) :
+    F.supportedModuleH S W n ≃ₗ[R] F.supportedModuleH S W' n :=
+  have := S.isIso_supportedFreeModuleSheafFunctor_map R h hW
+  TauCeti.extLinearEquivOfIso R
+    (asIso ((S.supportedFreeModuleSheafFunctor R).map (homOfLE h))).symm (Iso.refl F) n
+
+@[simp]
+lemma supportedModuleHExcisionEquiv_apply (S : Closeds X) {W' W : Opens X} (h : W' ≤ W)
+    (hW : W ≤ W' ⊔ S.compl) {n : ℕ} (x : F.supportedModuleH S W n) :
+    F.supportedModuleHExcisionEquiv S h hW n x =
+      (F.supportedModuleHPresheaf S n).map (homOfLE h).op x := by
+  -- Keep the map `Q_S(W') ⟶ Q_S(W)` folded, so that `asIso_hom` applies.
+  simp [supportedModuleHExcisionEquiv, supportedModuleHPresheaf_map_apply,
+    -Closeds.supportedFreeModuleSheafFunctor_map]
+
+end CategoryTheory.Sheaf
+
+/-! ### The long exact sequence of supports -/
+
+namespace TopologicalSpace.Closeds
+
+variable {R} {Z S : Closeds X}
+
+variable (R) in
+/-- For closed subsets `Z ≤ S`, the natural map `Q_S(W) ⟶ Q_Z(W)` induced by the inclusions of
+pairs `(W, W ∖ S) ⟶ (W, W ∖ Z)`. -/
+def supportedFreeModuleSheafFunctorMap (hZS : Z ≤ S) :
+    S.supportedFreeModuleSheafFunctor R ⟶ Z.supportedFreeModuleSheafFunctor R where
+  app W := relativeFreeModuleYonedaSheafMap _ R (S.complInclusion W) (Z.complInclusion W)
+    (homOfLE (inf_le_inf_left W ((Closeds.complOrderIso X).monotone hZS))) (𝟙 W) rfl
+  -- both composites are induced by morphisms of pairs `(W', W' ∖ S) ⟶ (W, W ∖ Z)`, which agree
+  -- because `Opens X` is a thin category
+  naturality W' W h :=
+    (relativeFreeModuleYonedaSheafMap_comp _ R (S.complInclusion W) (Z.complInclusion W) _ (𝟙 W)
+      rfl (S.complInclusion W') _ h _).trans
+    (relativeFreeModuleYonedaSheafMap_comp _ R (Z.complInclusion W') (Z.complInclusion W) _ h _
+      (S.complInclusion W') _ (𝟙 W') rfl).symm
+
+@[simp, reassoc]
+lemma cokernel_π_supportedFreeModuleSheafFunctorMap_app (hZS : Z ≤ S) (W : Opens X) :
+    cokernel.π _ ≫ (supportedFreeModuleSheafFunctorMap R hZS).app W = cokernel.π _ := by
+  refine (cokernel_π_relativeFreeModuleYonedaSheafMap _ R _ _ _ _ _).trans ?_
+  rw [CategoryTheory.Functor.map_id, Category.id_comp]
+
+@[simp]
+lemma supportedFreeModuleSheafFunctorMap_refl (Z : Closeds X) :
+    supportedFreeModuleSheafFunctorMap R (le_refl Z) = 𝟙 _ :=
+  NatTrans.ext <| funext fun W ↦ relativeFreeModuleYonedaSheafMap_id _ R (Z.complInclusion W)
+
+@[reassoc (attr := simp)]
+lemma supportedFreeModuleSheafFunctorMap_comp {T : Closeds X} (hZS : Z ≤ S) (hST : S ≤ T) :
+    supportedFreeModuleSheafFunctorMap R hST ≫ supportedFreeModuleSheafFunctorMap R hZS =
+      supportedFreeModuleSheafFunctorMap R (hZS.trans hST) :=
+  -- the composite morphism of pairs is the one for `Z ≤ T`, as `Opens X` is a thin category
+  NatTrans.ext <| funext fun W ↦ relativeFreeModuleYonedaSheafMap_comp _ R (S.complInclusion W)
+    (Z.complInclusion W) _ (𝟙 W) rfl (T.complInclusion W) _ (𝟙 W) rfl
+
+/-- For closed subsets `Z ≤ S` and an open `W`, the composite `Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W)`
+vanishes. -/
+@[reassoc]
+lemma supportedFreeModuleSheafFunctor_map_comp_supportedFreeModuleSheafFunctorMap_app
+    (hZS : Z ≤ S) (W : Opens X) :
+    (S.supportedFreeModuleSheafFunctor R).map (Z.complInclusion W) ≫
+      (supportedFreeModuleSheafFunctorMap R hZS).app W = 0 :=
+  TauCeti.comp_eq_zero_of_epi (π₁ := cokernel.π ((freeModuleYonedaSheafFunctor _ R).map
+    (S.complInclusion (W ⊓ Z.compl)))) inferInstance (cokernel.condition _)
+    (cokernel_π_supportedFreeModuleSheafFunctor_map R S _)
+    (cokernel_π_supportedFreeModuleSheafFunctorMap_app hZS W)
+
+variable (R) in
+/-- For closed subsets `Z ≤ S` and an open `W`, the sequence `Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W)`, whose
+first map comes from the inclusion `W ∖ Z ⟶ W` and whose second map compares the supports. -/
+abbrev supportedFreeModuleSheafSequence (hZS : Z ≤ S) (W : Opens X) :
+    ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :=
+  ShortComplex.mk ((S.supportedFreeModuleSheafFunctor R).map (Z.complInclusion W))
+    ((supportedFreeModuleSheafFunctorMap R hZS).app W)
+    (supportedFreeModuleSheafFunctor_map_comp_supportedFreeModuleSheafFunctorMap_app hZS W)
+
+variable (R) in
+/-- For closed subsets `Z ≤ S` and an open `W`, the sequence
+`0 ⟶ Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W) ⟶ 0` is short exact. It is the sequence of relative free
+sheaves of the triple `(W ∖ Z) ∖ S ⟶ W ∖ Z ⟶ W`, as `(W ∖ Z) ∖ S = W ∖ S`. -/
+lemma supportedFreeModuleSheafSequence_shortExact (hZS : Z ≤ S) (W : Opens X) :
+    (supportedFreeModuleSheafSequence R hZS W).ShortExact := by
+  let P := freeModuleYonedaSheafFunctor (Opens.grothendieckTopology X) R
+  -- the inclusion `(W ∖ Z) ∖ S ⟶ W ∖ S` is an isomorphism of opens
+  let e : W ⊓ Z.compl ⊓ S.compl ⟶ W ⊓ S.compl := homOfLE (inf_le_inf_right S.compl inf_le_left)
+  have : IsIso e := homOfLE_isIso_of_eq _ (by rw [inf_assoc,
+    inf_eq_right.2 (show S.compl ≤ Z.compl from (Closeds.complOrderIso X).monotone hZS)])
+  -- the two composites `(W ∖ Z) ∖ S ⟶ W` agree in the thin category `Opens X`
+  have hk : P.map (S.complInclusion (W ⊓ Z.compl) ≫ Z.complInclusion W) =
+      P.map e ≫ P.map (S.complInclusion W) := by
+    rw [← P.map_comp]
+    rfl
+  exact TauCeti.shortExact_of_isColimit_cokernelCofork (P.map_comp _ _).symm inferInstance
+    (cokernelIsCokernel _) (isCokernelEpiComp (cokernelIsCokernel _) _ hk) (cokernelIsCokernel _)
+    (cokernel_π_supportedFreeModuleSheafFunctor_map R S _)
+    (cokernel_π_supportedFreeModuleSheafFunctorMap_app hZS W)
+
+end TopologicalSpace.Closeds
+
+namespace CategoryTheory.Sheaf
+
+variable {R} (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) {Z S : Closeds X}
+
+/-- For closed subsets `Z ≤ S`, the morphism of presheaves `H_Zⁿ(-, F) ⟶ H_Sⁿ(-, F)` enlarging
+the support, induced by the maps `Q_S(W) ⟶ Q_Z(W)`. -/
+def supportedModuleHPresheafMap (hZS : Z ≤ S) (n : ℕ) :
+    F.supportedModuleHPresheaf Z n ⟶ F.supportedModuleHPresheaf S n :=
+  Functor.whiskerRight (NatTrans.op (Closeds.supportedFreeModuleSheafFunctorMap R hZS))
+    ((linearExtFunctor.{u} R _ n).flip.obj F)
+
+@[simp]
+lemma supportedModuleHPresheafMap_app_apply (hZS : Z ≤ S) (n : ℕ) (W : (Opens X)ᵒᵖ)
+    (x : F.supportedModuleH Z W.unop n) :
+    (F.supportedModuleHPresheafMap hZS n).app W x =
+      (Ext.mk₀ ((Closeds.supportedFreeModuleSheafFunctorMap R hZS).app W.unop)).comp x
+        (zero_add n) :=
+  (rfl)
+
+lemma supportedModuleHPresheafMap_refl_app_apply (Z : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ)
+    (x : F.supportedModuleH Z W.unop n) :
+    (F.supportedModuleHPresheafMap (le_refl Z) n).app W x = x := by
+  rw [supportedModuleHPresheafMap_app_apply, Closeds.supportedFreeModuleSheafFunctorMap_refl,
+    NatTrans.id_app, Ext.mk₀_id_comp]
+
+lemma supportedModuleHPresheafMap_app_supportedModuleHPresheafMap_app {T : Closeds X}
+    (hZS : Z ≤ S) (hST : S ≤ T) (n : ℕ) (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH Z W.unop n) :
+    (F.supportedModuleHPresheafMap hST n).app W ((F.supportedModuleHPresheafMap hZS n).app W x) =
+      (F.supportedModuleHPresheafMap (hZS.trans hST) n).app W x := by
+  simp only [supportedModuleHPresheafMap_app_apply]
+  rw [← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀, ← NatTrans.comp_app,
+    Closeds.supportedFreeModuleSheafFunctorMap_comp]
+
+@[simp]
+lemma supportedModuleHPresheafMap_refl (Z : Closeds X) (n : ℕ) :
+    F.supportedModuleHPresheafMap (le_refl Z) n = 𝟙 _ := by
+  ext W x
+  exact F.supportedModuleHPresheafMap_refl_app_apply Z n (op W) x
+
+@[reassoc (attr := simp)]
+lemma supportedModuleHPresheafMap_comp {T : Closeds X} (hZS : Z ≤ S) (hST : S ≤ T) (n : ℕ) :
+    F.supportedModuleHPresheafMap hZS n ≫ F.supportedModuleHPresheafMap hST n =
+      F.supportedModuleHPresheafMap (hZS.trans hST) n := by
+  ext W x
+  exact F.supportedModuleHPresheafMap_app_supportedModuleHPresheafMap_app hZS hST n (op W) x
+
+/-- Under `supportedModuleHZeroEquiv`, enlarging the support in degree zero is the inclusion of
+`Γ_Z(W, F)` in `Γ_S(W, F)`. -/
+lemma coe_supportedModuleHZeroEquiv_supportedModuleHPresheafMap_app (hZS : Z ≤ S) (W : Opens X)
+    (x : F.supportedModuleH Z W 0) :
+    (F.supportedModuleHZeroEquiv S W ((F.supportedModuleHPresheafMap hZS 0).app (op W) x) :
+        F.obj.obj (op W)) =
+      F.supportedModuleHZeroEquiv Z W x :=
+  (coe_relativeFreeModuleYonedaExtZeroEquiv_mk₀_comp _ R (S.complInclusion W)
+    (Z.complInclusion W) _ (𝟙 W) rfl F x).trans <| by
+    rw [op_id, F.obj.map_id, ModuleCat.id_apply, coe_supportedModuleHZeroEquiv_apply]
+
+/-- The connecting map `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports for
+closed subsets `Z ≤ S`: the Yoneda product with the extension class of the short exact sequence
+`0 ⟶ Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W) ⟶ 0`. -/
+def supportedModuleHδ (hZS : Z ≤ S) (W : Opens X) {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    F.supportedModuleH S (W ⊓ Z.compl) n₀ →ₗ[R] F.supportedModuleH Z W n₁ :=
+  Ext.precompOfLinear (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W).extClass R F h
+
+lemma supportedModuleHδ_apply (hZS : Z ≤ S) (W : Opens X) {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁)
+    (x : F.supportedModuleH S (W ⊓ Z.compl) n₀) :
+    F.supportedModuleHδ hZS W h x =
+      (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W).extClass.comp x h :=
+  (rfl)
+
+/-- The long exact sequence of supports
+`⋯ ⟶ H_Zⁿ(W, F) ⟶ H_Sⁿ(W, F) ⟶ H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F) ⟶ ⋯` for closed subsets `Z ≤ S` is
+exact at `H_Sⁿ(W, F)`: a class with supports in `S` comes from a class with supports in `Z`
+exactly when it restricts to zero on `W ∖ Z`. -/
+theorem exact_supportedModuleHPresheafMap_app_supportedModuleHPresheaf_map (hZS : Z ≤ S)
+    (W : Opens X) (n : ℕ) :
+    Function.Exact ((F.supportedModuleHPresheafMap hZS n).app (op W))
+      ((F.supportedModuleHPresheaf S n).map (Z.complInclusion W).op) :=
+  TauCeti.exact_precomp (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W) F n
+
+/-- The long exact sequence of supports for closed subsets `Z ≤ S` is exact at
+`H_Sⁿ(W ∖ Z, F)`: the kernel of the connecting map consists of the restrictions of classes on `W`
+with supports in `S`. -/
+theorem exact_supportedModuleHPresheaf_map_supportedModuleHδ (hZS : Z ≤ S) (W : Opens X)
+    {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    Function.Exact ((F.supportedModuleHPresheaf S n₀).map (Z.complInclusion W).op)
+      (F.supportedModuleHδ hZS W h) :=
+  TauCeti.exact_precomp₁ (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W) F n₀ n₁ h
+
+/-- The long exact sequence of supports for closed subsets `Z ≤ S` is exact at
+`H_Zⁿ⁺¹(W, F)`: a class with supports in `Z` becomes zero with supports in `S` exactly when it
+comes from `H_Sⁿ(W ∖ Z, F)` under the connecting map. -/
+theorem exact_supportedModuleHδ_supportedModuleHPresheafMap_app (hZS : Z ≤ S) (W : Opens X)
+    {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    Function.Exact (F.supportedModuleHδ hZS W h)
+      ((F.supportedModuleHPresheafMap hZS n₁).app (op W)) :=
+  TauCeti.exact_precomp₃ (Closeds.supportedFreeModuleSheafSequence_shortExact R hZS W) F n₀ n₁ h
 
 end CategoryTheory.Sheaf

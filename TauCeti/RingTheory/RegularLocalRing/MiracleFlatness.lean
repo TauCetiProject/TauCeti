@@ -6,37 +6,55 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.RegularLocalRing.FiniteNormal
+public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
+import TauCeti.RingTheory.Flat.LocalCriterion
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
-# Flatness of finite normal algebras in dimension two
+# Miracle flatness
 
-A finite injective local algebra over a two-dimensional regular local ring is free, and hence
-flat, if it is a normal local domain. More generally, a finite torsion-free algebra `B` over a
-two-dimensional regular local ring `A` is free if every localization of `B` at a maximal ideal is
-a normal domain; here `B` need not be local. These are finite cases of miracle flatness.
+Let `R → S` be a local homomorphism of Noetherian local rings with `R` regular and `S`
+Cohen–Macaulay. If `dim S = dim R + dim S ⧸ 𝔪_R S`, then `S` is flat over `R` (Stacks, Lemma
+10.128.1 (00R4)). A regular system of parameters `x₁, …, x_d` of `R` generates `𝔪_R`, and the
+dimension formula says that its image cuts the dimension of `S` down to that of the closed fibre
+`S ⧸ 𝔪_R S`. As `S` is Cohen–Macaulay, the images of the `xᵢ` therefore form an `S`-regular
+sequence (`Module.IsCohenMacaulay.isRegular_map_algebraMap`), and a local homomorphism carrying
+generators of the maximal ideal of the source to a regular sequence is flat
+(`Module.Flat.of_isWeaklyRegular_map_algebraMap`). The algebra `S` need not be finite over `R`;
+this matters for the localizations `B_𝔮` of a finite algebra `B` at its maximal ideals, which are
+in general not finite over `R`.
 
-Both proofs show that a pair `x, y` generating the maximal ideal of `A` is a regular sequence on
-`B`, and then apply `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`. In the local case
-normality of `B` gives this directly. In general `x` is regular because `B` is torsion free, and
-regularity of `y` modulo `x` may be checked after localizing at the maximal ideals `𝔮` of `B`. As
-`A` is factorial, hence integrally closed, going down along `A → B` gives `B_𝔮` dimension two, and
-the normal domain `B_𝔮` is then Cohen–Macaulay, so `x, y` is a regular sequence on `B_𝔮`.
+The file also proves finite normal cases in dimension two, where Cohen–Macaulayness of the target
+comes from normality. A finite injective local algebra over a two-dimensional regular local ring
+is free, and hence flat, if it is a normal local domain. More generally, a finite torsion-free
+algebra `B` over a two-dimensional regular local ring `A` is free if every localization of `B` at
+a maximal ideal is a normal domain; here `B` need not be local.
+
+The two dimension-two proofs show that a pair `x, y` generating the maximal ideal of `A` is a
+regular sequence on `B`, and then apply `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`. In
+the local case normality of `B` gives this directly. In general `x` is regular because `B` is
+torsion free, and regularity of `y` modulo `x` may be checked after localizing at the maximal
+ideals `𝔮` of `B`. As `A` is factorial, hence integrally closed, going down along `A → B` gives
+`B_𝔮` dimension two, and the normal domain `B_𝔮` is then Cohen–Macaulay, so `x, y` is a regular
+sequence on `B_𝔮`.
 
 ## Main results
 
-* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal local algebra is flat.
-* `TauCeti.Algebra.free_of_normal_dim_two`: a finite torsion-free algebra whose localizations at
-  maximal ideals are normal domains is free.
+* `TauCeti.Algebra.flat_of_isCohenMacaulay`: **miracle flatness**, Stacks, Lemma 10.128.1 (00R4).
+* `TauCeti.Algebra.flat_of_normal_dim_two`: a finite injective normal local algebra over a
+  two-dimensional regular local ring is flat.
+* `TauCeti.Algebra.free_of_normal_dim_two`: a finite torsion-free algebra over a two-dimensional
+  regular local ring whose localizations at maximal ideals are normal domains is free.
 
 ## References
 
-* The Stacks Project, Lemma 10.128.1 (00R4), miracle flatness. This file proves finite normal
-  dimension-two cases, rather than the general Cohen–Macaulay statement.
+* [The Stacks Project, Lemma 10.128.1](https://stacks.math.columbia.edu/tag/00R4), miracle
+  flatness. Its induction on `dim R` is packaged here in the regular-sequence form of the local
+  flatness criterion.
 * The Stacks Project, Lemma 58.21.3 (0BMA), whose proof in dimension two needs the flatness of
   finite normal algebras that are not local.
 -/
@@ -46,6 +64,23 @@ public section
 open IsLocalRing Ideal RingTheory.Sequence
 
 namespace TauCeti.Algebra
+
+/-- **Miracle flatness.** Let `R → S` be a local homomorphism of Noetherian local rings with `R`
+regular and `S` Cohen–Macaulay. If `dim S = dim R + dim S ⧸ 𝔪_R S`, then `S` is flat over `R`.
+Here `S` need not be finite over `R`. -/
+@[stacks 00R4]
+theorem flat_of_isCohenMacaulay {R S : Type*} [CommRing R] [IsRegularLocalRing R] [CommRing S]
+    [IsLocalRing S] [IsNoetherianRing S] [Algebra R S] [IsLocalHom (algebraMap R S)]
+    (hS : Module.IsCohenMacaulay S S) (hdim : ringKrullDim S =
+      ringKrullDim R + ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S))) :
+    Module.Flat R S := by
+  -- A regular system of parameters of `R` maps to an `S`-regular sequence.
+  obtain ⟨s, hcard, hspan⟩ :=
+    Submodule.FG.exists_span_finset_card_eq_spanFinrank (maximalIdeal R).fg_of_isNoetherianRing
+  have hofList : ofList s.toList = maximalIdeal R := by simpa [ofList] using hspan
+  refine Module.Flat.of_isWeaklyRegular_map_algebraMap hofList
+    (hS.isRegular_map_algebraMap hofList ?_).toIsWeaklyRegular
+  rw [Finset.length_toList, hcard, IsRegularLocalRing.spanFinrank_maximalIdeal, hdim, add_comm]
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] [IsRegularLocalRing A]
   [Module.Finite A B]

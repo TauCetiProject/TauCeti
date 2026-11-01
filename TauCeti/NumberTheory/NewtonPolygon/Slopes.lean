@@ -55,6 +55,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
 * `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
   elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
   the number of finite slopes.
+* `Polynomial.exists_isFiniteFace_newtonPolygon`: a nonempty Newton polygon has a finite face
+  of every real slope.
 * `Polynomial.count_newtonSlopes_of_isFiniteFace`: the multiplicity of a slope `σ` is the
   width of the face of slope `σ`.
 * `Polynomial.left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt` and
@@ -176,6 +178,13 @@ theorem exists_finiteSlopeData_heights_eq_iff :
     exact ⟨n, hn⟩
   · exact (Set.finite_Iic f.natDegree).subset fun n hn =>
       Set.mem_Iic.mpr (le_of_not_gt fun h => hn (f.newtonPolygon_eq_top_of_natDegree_lt v h))
+
+/-- A nonempty Newton polygon of a polynomial has a finite face of every real slope `σ`. The
+endpoints are absolute indices. -/
+theorem exists_isFiniteFace_newtonPolygon (hf : f.newtonPolygon v ≠ ⊤) (σ : ℝ) :
+    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
+  obtain ⟨d, hd⟩ := (exists_finiteSlopeData_heights_eq_iff f v).2 hf
+  exact hd ▸ d.exists_isFiniteFace_heights σ
 
 /-- The multiplicity of a real slope `σ` among the finite slopes is the width `u - l` of the
 finite face of slope `σ`. The endpoints `l` and `u` are absolute indices, and a singleton face

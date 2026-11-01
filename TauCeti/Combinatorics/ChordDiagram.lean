@@ -63,6 +63,9 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
 * `Equiv.Perm.IsNoncrossingMatching.orbitCount_finRotate_mul_add_orbitCount`,
   `Function.Involutive.orbitCount_finRotate_mul_add_orbitCount_eq_iff`: the bound is attained
   exactly by the noncrossing matchings.
+* `Function.Involutive.isNoncrossingMatching_permCongr_finRotate_iff`,
+  `Function.Involutive.isNoncrossingMatching_permCongr_revPerm_iff`: the noncrossing condition
+  is invariant under rotating and reflecting the boundary circle.
 * `TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_le`,
   `TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_eq_iff`: the same for perfect matchings.
 
@@ -101,6 +104,9 @@ theorem isNoncrossingMatching_iff :
     σ.IsNoncrossingMatching ↔ ∀ ⦃a b : α⦄, a < b → b < σ a → ¬ σ a < σ b :=
   Iff.rfl
 
+instance [Fintype α] (σ : Perm α) : Decidable σ.IsNoncrossingMatching :=
+  decidable_of_iff _ isNoncrossingMatching_iff.symm
+
 /-- A matching fails to be noncrossing exactly when two of its chords interleave. -/
 theorem not_isNoncrossingMatching_iff :
     ¬ σ.IsNoncrossingMatching ↔ ∃ a b, a < b ∧ b < σ a ∧ σ a < σ b := by
@@ -124,7 +130,35 @@ theorem IsNoncrossingMatching.of_forall_apply_eq_or (hσ : σ.IsNoncrossingMatch
 
 end LinearOrder
 
+section Reverse
+
+variable {n : ℕ} {σ : Perm (Fin n)}
+
+/-- Reflecting a noncrossing involution of `Fin n` in the order reversal `Fin.rev`, so that the
+chord `{a, σ a}` becomes `{rev a, rev (σ a)}`, gives a noncrossing involution. -/
+theorem IsNoncrossingMatching.permCongr_revPerm (hσ : σ.IsNoncrossingMatching)
+    (hinv : Function.Involutive σ) : (Fin.revPerm.permCongr σ).IsNoncrossingMatching := by
+  intro a b hab hb hlt
+  simp only [permCongr_apply, Fin.revPerm_symm, Fin.revPerm_apply] at hb hlt
+  -- Reversal turns `a < b < σ' a < σ' b` into `x < y < σ x < σ y` for the partners
+  -- `x = σ (rev b)` and `y = σ (rev a)`.
+  refine hσ (b := σ (Fin.rev a)) (Fin.rev_lt_rev.mp hlt) ?_ ?_
+  · rwa [hinv, ← Fin.lt_rev_iff]
+  · rwa [hinv, hinv, Fin.rev_lt_rev]
+
+end Reverse
+
 end Equiv.Perm
+
+/-- **Noninterleaving is invariant under reflection.** An involution of `Fin n` is noncrossing
+exactly when its reflection in the order reversal `Fin.rev` is. -/
+theorem Function.Involutive.isNoncrossingMatching_permCongr_revPerm_iff {n : ℕ}
+    {σ : Perm (Fin n)} (hinv : Function.Involutive σ) :
+    (Fin.revPerm.permCongr σ).IsNoncrossingMatching ↔ σ.IsNoncrossingMatching := by
+  refine ⟨fun h => ?_, fun h => h.permCongr_revPerm hinv⟩
+  have hinv' : Function.Involutive (Fin.revPerm.permCongr σ) := fun x => by simp [hinv _]
+  have hσ : Fin.revPerm.permCongr (Fin.revPerm.permCongr σ) = σ := Equiv.ext fun x => by simp
+  exact hσ ▸ h.permCongr_revPerm hinv'
 
 /-- An involution of a finite linear order is a noncrossing matching exactly when the partition
 into its orbits, the pairs `{a, σ a}` and the fixed points, is a noncrossing partition. Any
@@ -338,6 +372,25 @@ theorem Function.Involutive.orbitCount_finRotate_mul_add_orbitCount_eq_iff {n : 
   obtain ⟨a, b, hab, hb, hlt⟩ := Perm.not_isNoncrossingMatching_iff.mp hσ
   have := orbitCount_finRotate_mul_add_orbitCount_add_two_le hab hb hlt
   omega
+
+/-- **Noninterleaving is a cyclic condition.** An involution of `Fin n` is noncrossing exactly
+when its rotation by one step around the boundary circle is, the chord `{a, σ a}` becoming
+`{finRotate n a, finRotate n (σ a)}`. So the noncrossing condition depends only on the cyclic order
+of the boundary points, not on where the circle is cut open. -/
+theorem Function.Involutive.isNoncrossingMatching_permCongr_finRotate_iff {n : ℕ}
+    {σ : Perm (Fin n)} (hinv : Function.Involutive σ) :
+    ((finRotate n).permCongr σ).IsNoncrossingMatching ↔ σ.IsNoncrossingMatching := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Subsingleton.elim σ 1]
+  have : NeZero n := ⟨hn.ne'⟩
+  have hinv' : Function.Involutive ((finRotate n).permCongr σ) := fun x => by simp [hinv _]
+  -- Both sides are the boundary-count criterion, and rotating the matching conjugates the
+  -- boundary traversal `finRotate n * σ` by `finRotate n`.
+  rw [← hinv.orbitCount_finRotate_mul_add_orbitCount_eq_iff,
+    ← hinv'.orbitCount_finRotate_mul_add_orbitCount_eq_iff, Equiv.permCongr_eq_mul,
+    show finRotate n * (finRotate n * σ * (finRotate n)⁻¹) =
+      finRotate n * (finRotate n * σ) * (finRotate n)⁻¹ by simp only [mul_assoc],
+    orbitCount_conj, orbitCount_conj]
 
 namespace TauCeti.IsPerfectMatching
 
