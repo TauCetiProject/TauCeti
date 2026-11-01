@@ -62,6 +62,11 @@ theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentEle
   ext v : 1
   simp [Module.End.mul_apply, Matrix.vecMul_vecMul, he.eq]
 
+/-- The entrywise image of an idempotent matrix under a ring homomorphism is idempotent. -/
+theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) (f : A →+* B) : IsIdempotentElem (e.map f) := by
+  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
+
 /-- The range of right multiplication by an idempotent matrix `e` consists of the row vectors
 fixed by `e`. -/
 theorem IsIdempotentElem.mem_range_vecMulLinear_iff {e : Matrix ι ι A} (he : IsIdempotentElem e)

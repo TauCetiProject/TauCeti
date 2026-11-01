@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.Algebra.Module.Projective.Semilinear
+public import TauCeti.LinearAlgebra.Matrix.Idempotent
 public import Mathlib.RingTheory.Finiteness.Cardinality
 
 /-!
@@ -34,12 +35,15 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.lift` and `TauCeti.BalancedExtension.liftEquiv`: the universal
   property. `S`-linear maps `S ⊗_R P → Q` correspond to `f`-semilinear maps `P → Q`, that is, to
   additive maps that are `R`-linear for the action on `Q` restricted along `f`.
-* `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps.
+* `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps, and
+  `TauCeti.BalancedExtension.congr` for `R`-linear equivalences.
 * `TauCeti.BalancedExtension.lid`: extension along the identity, `R ⊗_R P ≃ P`.
 * `TauCeti.BalancedExtension.cancelBaseChange`: extension along a composite,
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
+* `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
+  matrix, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
 
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
@@ -262,6 +266,22 @@ theorem map_comp (g : P →ₗ[R] P') (g' : P' →ₗ[R] P'') :
 theorem map_add (g g' : P →ₗ[R] P') : map f (g + g') = map f g + map f g' :=
   hom_ext fun p ↦ by simp [tmul_add]
 
+variable (f) in
+/-- The `S`-linear equivalence `S ⊗_R P ≃ S ⊗_R P'`, `s ⊗ p ↦ s ⊗ θ p`, induced by an `R`-linear
+equivalence `θ`. This is the `S`-linear form of the additive equivalence
+`TauCeti.BalancedTensorProduct.congr`. -/
+def congr (θ : P ≃ₗ[R] P') : BalancedExtension f P ≃ₗ[S] BalancedExtension f P' :=
+  LinearEquiv.ofLinearMap (map f θ.toLinearMap) (map f θ.symm.toLinearMap)
+    (hom_ext fun p ↦ by simp) (hom_ext fun p ↦ by simp)
+
+@[simp]
+theorem congr_tmul (θ : P ≃ₗ[R] P') (s : S) (p : P) :
+    congr f θ (tmul f s p) = tmul f s (θ p) :=
+  map_tmul _ s p
+
+@[simp]
+theorem congr_symm (θ : P ≃ₗ[R] P') : (congr f θ).symm = congr f θ.symm := (rfl)
+
 end Map
 
 section Identity
@@ -416,6 +436,78 @@ instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) :
   exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
 
 end FiniteProjective
+
+section Idempotent
+
+open Matrix
+
+variable (f) {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
+
+/-- The `f`-semilinear map `Rⁿ e → Sⁿ f(e)` applying `f` to every coordinate. -/
+private def rangeVecMulLinearMap (he : IsIdempotentElem e) :
+    LinearMap.range e.vecMulLinear →ₛₗ[f] LinearMap.range (e.map f).vecMulLinear where
+  toFun v := ⟨f ∘ v, (he.matrix_map f).mem_range_vecMulLinear_iff.2 <| funext fun i ↦ by
+    rw [← RingHom.map_vecMul, he.mem_range_vecMulLinear_iff.1 v.2]
+    rfl⟩
+  map_add' v w := Subtype.ext <| funext fun i ↦ by simp
+  map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
+
+private theorem coe_rangeVecMulLinearMap_apply (he : IsIdempotentElem e)
+    (v : LinearMap.range e.vecMulLinear) :
+    (rangeVecMulLinearMap f he v : ι → S) = f ∘ v := (rfl)
+
+/-- The `S`-linear map `Sⁿ f(e) → S ⊗_R (Rⁿ e)`, `w ↦ ∑ i, wᵢ ⊗ eᵢ`, through the rows `eᵢ`
+of `e`. -/
+private def rangeVecMulLinearInv (he : IsIdempotentElem e) :
+    LinearMap.range (e.map f).vecMulLinear →ₗ[S]
+      BalancedExtension f (LinearMap.range e.vecMulLinear) :=
+  Fintype.linearCombination S (fun i ↦ tmul f 1 ⟨e i, he.row_mem_range_vecMulLinear i⟩) ∘ₗ
+    (LinearMap.range _).subtype
+
+/-- **Extension of the image of an idempotent matrix.** For an idempotent matrix `e` over `R`,
+whose image `Rⁿ e` under right multiplication of row vectors is a finitely generated projective
+module, the extension of scalars along `f` is the image `Sⁿ f(e)` of the matrix `f(e)`:
+`S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`, sending `s ⊗ v` to `i ↦ s * f (v i)`
+(`coe_rangeVecMulLinearEquiv_tmul`). Its inverse sends `w` to `∑ i, wᵢ ⊗ eᵢ`, through the rows
+`eᵢ` of `e` (`rangeVecMulLinearEquiv_symm_apply`). -/
+noncomputable def rangeVecMulLinearEquiv (he : IsIdempotentElem e) :
+    BalancedExtension f (LinearMap.range e.vecMulLinear) ≃ₗ[S]
+      LinearMap.range (e.map f).vecMulLinear :=
+  LinearEquiv.ofLinearMap (lift (rangeVecMulLinearMap f he)) (rangeVecMulLinearInv f he)
+    (LinearMap.ext fun w ↦ Subtype.ext <| by
+      have hw := (he.matrix_map f).mem_range_vecMulLinear_iff.1 w.2
+      rw [vecMul_eq_sum] at hw
+      conv_rhs => rw [LinearMap.id_apply, ← hw]
+      simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Submodule.subtype_apply,
+        Fintype.linearCombination_apply, map_sum, map_smul, lift_tmul, one_smul,
+        Submodule.coe_sum, Submodule.coe_smul, coe_rangeVecMulLinearMap_apply]
+      exact Finset.sum_congr rfl fun i _ ↦ by ext j; simp)
+    (hom_ext fun v ↦ by
+      have hv : v = ∑ i, (v : ι → R) i • ⟨e i, he.row_mem_range_vecMulLinear i⟩ := by
+        ext1
+        rw [Submodule.coe_sum]
+        simp only [Submodule.coe_smul, ← vecMul_eq_sum]
+        exact (he.mem_range_vecMulLinear_iff.1 v.2).symm
+      conv_rhs => rw [LinearMap.id_apply, hv, ← includeRight_apply, map_sum]
+      simp only [LinearMap.comp_apply, lift_tmul, one_smul, rangeVecMulLinearInv,
+        Fintype.linearCombination_apply, Submodule.subtype_apply, map_smulₛₗ, smul_tmul, mul_one,
+        coe_rangeVecMulLinearMap_apply, Function.comp_apply, includeRight_apply])
+
+@[simp]
+theorem coe_rangeVecMulLinearEquiv_tmul (he : IsIdempotentElem e) (s : S)
+    (v : LinearMap.range e.vecMulLinear) :
+    (rangeVecMulLinearEquiv f he (tmul f s v) : ι → S) = fun i ↦ s * f ((v : ι → R) i) := by
+  ext i
+  simp [rangeVecMulLinearEquiv, coe_rangeVecMulLinearMap_apply]
+
+@[simp]
+theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
+    (w : LinearMap.range (e.map f).vecMulLinear) :
+    (rangeVecMulLinearEquiv f he).symm w =
+      ∑ i, tmul f ((w : ι → S) i) ⟨e i, he.row_mem_range_vecMulLinear i⟩ := by
+  simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
+
+end Idempotent
 
 end BalancedExtension
 
