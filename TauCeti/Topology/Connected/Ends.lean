@@ -225,7 +225,7 @@ end EndSequence
 variable (X) in
 /-- The **ends** of a topological space `X`: decreasing sequences of components of complements of
 compact sets, eventually disjoint from every compact set, up to mutual cofinal containment. -/
-@[expose] def EndComponents : Type u :=
+def EndComponents : Type u :=
   Quotient (EndSequence.setoid (X := X))
 
 namespace EndComponents
@@ -350,6 +350,16 @@ noncomputable def EndSequence.ofSections (hK : Monotone K) (hKc : ∀ n, IsCompa
     exact eventually_atTop.2 ⟨m, fun n hn => disjoint_left.2 fun y hy hyL =>
       connectedComponentIn_subset _ _ hy (hK hn (hm hyL))⟩
 
+/-- The `n`-th set of the end sequence of a compatible family is the `n`-th component of the
+family, as a subset of `X \ Kₙ`. -/
+theorem EndSequence.ofSections_apply (hK : Monotone K) (hKc : ∀ n, IsCompact (K n))
+    (hcof : ∀ L : Set X, IsCompact L → ∃ n, L ⊆ K n) (s : (componentComplFunctor K hK).sections)
+    {n : ℕ} {x : ↥(K n)ᶜ} (hx : ConnectedComponents.mk x = s.val (.op n)) :
+    EndSequence.ofSections hK hKc hcof s n = connectedComponentIn (K n)ᶜ x := by
+  rw [← mk_sectionsRep hK s n] at hx
+  exact ((ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq x.2
+    (sectionsRep hK s n).2).1 hx).symm
+
 /-- The end sequence of a compatible family lies, in the complement of `Kₙ`, in the `n`-th
 component of the family. -/
 theorem EndSequence.component_ofSections (hK : Monotone K) (hKc : ∀ n, IsCompact (K n))
@@ -384,6 +394,19 @@ theorem endComponentsEquivSections_apply (hK : Monotone K) (hKc : ∀ n, IsCompa
     (endComponentsEquivSections hK hKc hcof e).val n = e.component (hKc n.unop) := by
   rfl
 
+@[simp]
+theorem endComponentsEquivSections_symm_apply (hK : Monotone K) (hKc : ∀ n, IsCompact (K n))
+    (hcof : ∀ L : Set X, IsCompact L → ∃ n, L ⊆ K n) (s : (componentComplFunctor K hK).sections) :
+    (endComponentsEquivSections hK hKc hcof).symm s = .mk (.ofSections hK hKc hcof s) := by
+  rfl
+
+/-- The end of a compatible family lies, in the complement of `Kₙ`, in the `n`-th component of the
+family. -/
+theorem component_endComponentsEquivSections_symm (hK : Monotone K) (hKc : ∀ n, IsCompact (K n))
+    (hcof : ∀ L : Set X, IsCompact L → ∃ n, L ⊆ K n) (s : (componentComplFunctor K hK).sections)
+    (n : ℕ) : ((endComponentsEquivSections hK hKc hcof).symm s).component (hKc n) = s.val (.op n) :=
+  EndSequence.component_ofSections hK hKc hcof s n
+
 end TauCeti
 
 namespace CompactExhaustion
@@ -396,35 +419,23 @@ noncomputable def endComponentsEquivSections (K : CompactExhaustion X) :
     TauCeti.EndComponents X ≃ (TauCeti.componentComplFunctor K fun _ _ h => K.subset h).sections :=
   TauCeti.endComponentsEquivSections _ K.isCompact fun _ hL => K.exists_superset_of_isCompact hL
 
+@[simp]
+theorem endComponentsEquivSections_apply (K : CompactExhaustion X) (e : TauCeti.EndComponents X)
+    (n : ℕᵒᵖ) : (K.endComponentsEquivSections e).val n = e.component (K.isCompact n.unop) := by
+  rfl
+
+@[simp]
+theorem endComponentsEquivSections_symm_apply (K : CompactExhaustion X)
+    (s : (TauCeti.componentComplFunctor K fun _ _ h => K.subset h).sections) :
+    K.endComponentsEquivSections.symm s =
+      .mk (.ofSections _ K.isCompact (fun _ hL => K.exists_superset_of_isCompact hL) s) := by
+  rfl
+
 end CompactExhaustion
 
 namespace TauCeti
 
 /-! ### The two ends of the real line -/
-
-/-- For `0 ≤ a`, the half-line `(a, ∞)` is the component of `ℝ \ [-a, a]` containing `a + 1`. -/
-theorem connectedComponentIn_compl_Icc_add_one {a : ℝ} (ha : 0 ≤ a) :
-    connectedComponentIn (Icc (-a) a)ᶜ (a + 1) = Ioi a := by
-  refine connectedComponentIn_eq_of_lt (φ := id) (c := 0) isPreconnected_Ioi
-    (fun q hq h => not_lt.2 h.2 hq) (lt_add_one a) (by simp only [id_eq]; linarith)
-    continuousOn_id (fun q hq h => hq ⟨?_, ?_⟩) fun q hq h => ?_
-  all_goals simp only [mem_compl_iff, mem_Icc, not_and, not_le, id_eq] at hq h
-  · linarith
-  · linarith
-  · exact hq (by linarith)
-
-/-- For `0 ≤ a`, the half-line `(-∞, -a)` is the component of `ℝ \ [-a, a]` containing
-`-(a + 1)`. -/
-theorem connectedComponentIn_compl_Icc_neg_add_one {a : ℝ} (ha : 0 ≤ a) :
-    connectedComponentIn (Icc (-a) a)ᶜ (-(a + 1)) = Iio (-a) := by
-  refine connectedComponentIn_eq_of_lt (φ := Neg.neg) (c := 0) isPreconnected_Iio
-    (fun q hq h => not_lt.2 h.1 hq) (by simp only [mem_Iio]; linarith) (by linarith)
-    continuousOn_neg (fun q hq h => hq ⟨?_, ?_⟩) fun q hq h => ?_
-  all_goals simp only [mem_compl_iff, mem_Icc, not_and, not_le, neg_eq_zero] at hq h
-  · linarith
-  · linarith
-  · by_contra h'
-    linarith [hq (not_lt.1 h')]
 
 namespace EndSequence
 
@@ -432,7 +443,8 @@ namespace EndSequence
 noncomputable def realAtTop : EndSequence ℝ where
   toFun n := Ioi n
   exists_eq_connectedComponentIn' n := ⟨Icc (-n) n, isCompact_Icc, n + 1,
-    fun h => by linarith [h.2], (connectedComponentIn_compl_Icc_add_one n.cast_nonneg).symm⟩
+    fun h => by linarith [h.2],
+    (connectedComponentIn_compl_Icc_eq_Ioi (neg_le_self n.cast_nonneg) (lt_add_one _)).symm⟩
   antitone' _ _ h := Ioi_subset_Ioi (Nat.cast_le.2 h)
   eventually_disjoint' K hK := by
     obtain ⟨b, hb⟩ := hK.bddAbove
@@ -444,7 +456,8 @@ noncomputable def realAtTop : EndSequence ℝ where
 noncomputable def realAtBot : EndSequence ℝ where
   toFun n := Iio (-n)
   exists_eq_connectedComponentIn' n := ⟨Icc (-n) n, isCompact_Icc, -(n + 1),
-    fun h => by linarith [h.1], (connectedComponentIn_compl_Icc_neg_add_one n.cast_nonneg).symm⟩
+    fun h => by linarith [h.1],
+    (connectedComponentIn_compl_Icc_eq_Iio (neg_le_self n.cast_nonneg) (by linarith)).symm⟩
   antitone' _ _ h := Iio_subset_Iio (neg_le_neg (Nat.cast_le.2 h))
   eventually_disjoint' K hK := by
     obtain ⟨b, hb⟩ := hK.bddBelow
@@ -465,38 +478,28 @@ theorem realAtBot_apply (n : ℕ) : realAtBot n = Iio (-n : ℝ) := by
 theorem equiv_realAtTop_or_equiv_realAtBot (U : EndSequence ℝ) :
     U ≈ realAtTop ∨ U ≈ realAtBot := by
   obtain ⟨N, hN⟩ := (U.eventually_disjoint (isCompact_singleton (x := (0 : ℝ)))).exists
-  have hne : ∀ q ∈ U N, q ≠ 0 := fun q hq h => disjoint_left.1 hN hq h
-  obtain ⟨p, hp⟩ := U.nonempty N
-  -- the preconnected set `U N` misses `0`, so it lies on one side of `0`
-  have hside : ∀ q ∈ U N, (0 < p ↔ 0 < q) := by
-    intro q hq
-    rcases (hne p hp).lt_or_gt with hp' | hp' <;> rcases (hne q hq).lt_or_gt with hq' | hq'
-    · exact iff_of_false (by linarith) (by linarith)
-    · exact (hne 0 ((U.isPreconnected N).Icc_subset hp hq ⟨hp'.le, hq'.le⟩) rfl).elim
-    · exact (hne 0 ((U.isPreconnected N).Icc_subset hq hp ⟨hq'.le, hp'.le⟩) rfl).elim
-    · exact iff_of_true hp' hq'
+  have hne : ∀ q ∈ U N, id q ≠ 0 := fun q hq h => disjoint_left.1 hN hq h
   -- far enough out, the sequence also misses `[-i, i]`
   have hfar (i : ℕ) : ∃ j ≥ N, Disjoint (U j) (Icc (-i) i) := by
     obtain ⟨j, hj⟩ := ((eventually_ge_atTop N).and
       (U.eventually_disjoint isCompact_Icc)).exists_forall_of_atTop
     exact ⟨j, (hj j le_rfl).1, (hj j le_rfl).2⟩
-  rcases (hne p hp).lt_or_gt with hp' | hp'
-  · refine .inr (Setoid.symm ((realAtBot.equiv_iff_forall_exists_subset U).2 fun i => ?_))
-    obtain ⟨j, hjN, hj⟩ := hfar i
-    refine ⟨j, fun x hx => ?_⟩
-    have hxN := U.antitone hjN hx
-    have hx0 : x < 0 := ((hne x hxN).lt_or_gt.resolve_right fun h =>
-      (lt_asymm hp' ((hside x hxN).2 h)))
-    simp only [realAtBot_apply, mem_Iio]
-    by_contra h
-    exact disjoint_left.1 hj hx ⟨not_lt.1 h, by linarith [(Nat.cast_nonneg i : (0 : ℝ) ≤ i)]⟩
+  -- the preconnected set `U N` misses `0`, so it lies on one side of `0`
+  rcases (U.isPreconnected N).mapsTo_Ioi_or_Iio continuousOn_id hne with h | h
   · refine .inl (Setoid.symm ((realAtTop.equiv_iff_forall_exists_subset U).2 fun i => ?_))
     obtain ⟨j, hjN, hj⟩ := hfar i
     refine ⟨j, fun x hx => ?_⟩
-    have hx0 : 0 < x := (hside x (U.antitone hjN hx)).1 hp'
+    have hx0 : 0 < x := h (U.antitone hjN hx)
     simp only [realAtTop_apply, mem_Ioi]
     by_contra h
     exact disjoint_left.1 hj hx ⟨by linarith [(Nat.cast_nonneg i : (0 : ℝ) ≤ i)], not_lt.1 h⟩
+  · refine .inr (Setoid.symm ((realAtBot.equiv_iff_forall_exists_subset U).2 fun i => ?_))
+    obtain ⟨j, hjN, hj⟩ := hfar i
+    refine ⟨j, fun x hx => ?_⟩
+    have hx0 : x < 0 := h (U.antitone hjN hx)
+    simp only [realAtBot_apply, mem_Iio]
+    by_contra h
+    exact disjoint_left.1 hj hx ⟨not_lt.1 h, by linarith [(Nat.cast_nonneg i : (0 : ℝ) ≤ i)]⟩
 
 /-- The ends of `ℝ` at `+∞` and at `-∞` are different. -/
 theorem not_realAtTop_equiv_realAtBot : ¬ realAtTop ≈ realAtBot := fun h => by
