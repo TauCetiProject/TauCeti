@@ -63,6 +63,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
+* `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
+  over `A`.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
@@ -321,6 +323,13 @@ theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdea
   rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
     (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective]
   let _ := Ideal.Quotient.field (maximalIdeal A)
+  exact instIsSimpleModule _
+
+/-- The residue field of a local ring has length one over the ring. -/
+@[simp]
+theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
+  rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
+    (S := ResidueField A) residue_surjective]
   exact instIsSimpleModule _
 
 end LocalRing

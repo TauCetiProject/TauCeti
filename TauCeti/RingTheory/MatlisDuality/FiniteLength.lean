@@ -57,8 +57,7 @@ essential range, `a ↦ (b ↦ ι (a * b))` is an isomorphism `κ ≅ Hom_R(κ, 
 def residueFieldLinearMapEquiv (hι : Function.Injective ι)
     (hess : IsEssential (LinearMap.range ι)) :
     ResidueField R ≃ₗ[R] (ResidueField R →ₗ[R] E) :=
-  have : IsSimpleModule R (ResidueField R) :=
-    Module.length_eq_one_iff.mp length_quotient_maximalIdeal_eq_one
+  have : IsSimpleModule R (ResidueField R) := Module.length_eq_one_iff.mp length_residueField_eq_one
   LinearEquiv.ofBijective ((LinearMap.mul R (ResidueField R)).compr₂ ι) <| by
     refine ⟨(injective_iff_map_eq_zero _).mpr fun a ha => ?_, fun φ => ?_⟩
     · simpa using hι (by simpa using LinearMap.congr_fun ha 1)
@@ -86,11 +85,15 @@ private theorem length_linearMap_of_isSimpleModule (hι : Function.Injective ι)
     (hess : IsEssential (LinearMap.range ι)) {S : Type w} [AddCommGroup S] [Module R S]
     [IsSimpleModule R S] : Module.length R (S →ₗ[R] E) = 1 := by
   obtain ⟨I, hI, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R S›
-  rw [eq_maximalIdeal hI] at e
-  let e' : S ≃ₗ[R] ResidueField R := e
+  -- `R ⧸ I` is the residue field: `I` is the maximal ideal, the kernel of `residue`.
+  have hker : LinearMap.ker (Algebra.linearMap R (ResidueField R)) = I := by
+    ext r
+    simp [eq_maximalIdeal hI, ResidueField.algebraMap_eq, residue_eq_zero_iff]
+  let e' : S ≃ₗ[R] ResidueField R := e ≪≫ₗ Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ
+    (Algebra.linearMap R (ResidueField R)).quotKerEquivOfSurjective residue_surjective
   rw [(e'.arrowCongr (LinearEquiv.refl R E)).length_eq,
     ← (residueFieldLinearMapEquiv hι hess).length_eq]
-  exact length_quotient_maximalIdeal_eq_one
+  exact length_residueField_eq_one
 
 variable [Small.{v} R]
 
