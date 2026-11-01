@@ -456,7 +456,7 @@ theorem exists_trivialization_orientedFrames [IsContinuousRiemannianBundle F E]
           t (op g • p) = ((t p).1, (t p).2 * g) := by
   have hι : Fintype.card ι = finrank ℝ V := Fact.out
   obtain ⟨T, hx, hT⟩ := exists_trivialization (E := E) (V := V) (hι.symm.trans hF) x
-  obtain ⟨r, hr⟩ := exists_det_eq_neg_one (V := V) (hι ▸ Fintype.card_pos)
+  obtain ⟨r, hr⟩ := Unitary.exists_det_eq_neg_one (V := V) (hι ▸ Fintype.card_pos)
   have hr' : r ∉ specialOrthogonalGroup V :=
     notMem_specialOrthogonalGroup_iff_det_neg.2 (by rw [hr]; norm_num)
   obtain ⟨p₀, hp₀, -⟩ := exists_mem_orientedFrames (s := s) (o := o) hι hF x

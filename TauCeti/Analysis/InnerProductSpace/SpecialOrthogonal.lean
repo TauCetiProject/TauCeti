@@ -20,11 +20,11 @@ its subgroup of transformations of determinant `1`, the special orthogonal group
 bundle of an oriented Riemannian vector bundle.
 
 When `V` is finite-dimensional an orthogonal transformation has determinant `1` or `-1`
-(`Unitary.abs_det_eq_one`), so it is special orthogonal exactly when its determinant is positive
-(`TauCeti.mem_specialOrthogonalGroup_iff_det_pos`) and not special orthogonal exactly when its
-determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). In positive
+(`Unitary.det_eq_one_or_eq_neg_one`), so it is special orthogonal exactly when its determinant is
+positive (`TauCeti.mem_specialOrthogonalGroup_iff_det_pos`) and not special orthogonal exactly when
+its determinant is negative (`TauCeti.notMem_specialOrthogonalGroup_iff_det_neg`). In positive
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
-(`TauCeti.exists_det_eq_neg_one`).
+(`Unitary.exists_det_eq_neg_one`).
 -/
 
 public section
@@ -41,6 +41,23 @@ theorem abs_det_eq_one [FiniteDimensional ℝ V] (g : unitary (V →L[ℝ] V)) :
     |(g : V →L[ℝ] V).det| = 1 := by
   rw [ContinuousLinearMap.det, ← LinearMap.normDet_eq_abs_det]
   exact (linearIsometryEquiv g).toLinearIsometry.normDet_eq_one
+
+/-- An orthogonal transformation of a finite-dimensional real inner product space has determinant
+`1` or `-1`. -/
+theorem det_eq_one_or_eq_neg_one [FiniteDimensional ℝ V] (g : unitary (V →L[ℝ] V)) :
+    (g : V →L[ℝ] V).det = 1 ∨ (g : V →L[ℝ] V).det = -1 :=
+  abs_eq (zero_le_one' ℝ) |>.1 (abs_det_eq_one g)
+
+/-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
+reflection in a hyperplane. -/
+theorem exists_det_eq_neg_one [FiniteDimensional ℝ V] (hV : 0 < Module.finrank ℝ V) :
+    ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V).det = -1 := by
+  obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.1 hV
+  refine ⟨linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection, ?_⟩
+  rw [ContinuousLinearMap.det, coe_symm_linearIsometryEquiv_apply,
+    show (((ℝ ∙ v)ᗮ.reflection : V →L[ℝ] V) : V →ₗ[ℝ] V) = (ℝ ∙ v)ᗮ.reflection.toLinearMap from
+      LinearMap.ext fun _ => by simp,
+    Submodule.det_reflection, Submodule.orthogonal_orthogonal, finrank_span_singleton hv, pow_one]
 
 end Unitary
 
@@ -66,24 +83,13 @@ determinant is positive. -/
 theorem mem_specialOrthogonalGroup_iff_det_pos {g : unitary (V →L[ℝ] V)} :
     g ∈ specialOrthogonalGroup V ↔ 0 < (g : V →L[ℝ] V).det := by
   rw [mem_specialOrthogonalGroup_iff]
-  rcases abs_eq (zero_le_one' ℝ) |>.1 (Unitary.abs_det_eq_one g) with h | h <;> rw [h] <;> norm_num
+  rcases Unitary.det_eq_one_or_eq_neg_one g with h | h <;> rw [h] <;> norm_num
 
 /-- In finite dimension, an orthogonal transformation is not special orthogonal exactly when its
 determinant is negative. -/
 theorem notMem_specialOrthogonalGroup_iff_det_neg {g : unitary (V →L[ℝ] V)} :
     g ∉ specialOrthogonalGroup V ↔ (g : V →L[ℝ] V).det < 0 := by
   rw [mem_specialOrthogonalGroup_iff_det_pos, not_lt]
-  rcases abs_eq (zero_le_one' ℝ) |>.1 (Unitary.abs_det_eq_one g) with h | h <;> rw [h] <;> norm_num
-
-/-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
-reflection in a hyperplane. -/
-theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
-    ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V).det = -1 := by
-  obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.1 hV
-  refine ⟨Unitary.linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection, ?_⟩
-  rw [ContinuousLinearMap.det, Unitary.coe_symm_linearIsometryEquiv_apply]
-  rw [show (((ℝ ∙ v)ᗮ.reflection : V →L[ℝ] V) : V →ₗ[ℝ] V) =
-    (ℝ ∙ v)ᗮ.reflection.toLinearEquiv.toLinearMap from rfl, Submodule.det_reflection,
-    Submodule.orthogonal_orthogonal, finrank_span_singleton hv, pow_one]
+  rcases Unitary.det_eq_one_or_eq_neg_one g with h | h <;> rw [h] <;> norm_num
 
 end TauCeti
