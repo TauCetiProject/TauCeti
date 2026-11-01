@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 public import TauCeti.RingTheory.SerreCondition.Basic
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Cohen–Macaulay schemes and modules
@@ -191,9 +192,7 @@ theorem isCohenMacaulay_iff_forall_satisfiesSerreS :
   refine forall_congr' fun U ↦ and_congr_right fun _ ↦ ?_
   refine ((Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay (R := Γ(X, U))
     (M := Γ(X, U))).trans (forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_)).symm
-  exact ((IsLocalizedModule.iso p.primeCompl (Algebra.linearMap Γ(X, U)
-    (Localization.AtPrime p))).extendScalarsOfIsLocalization p.primeCompl
-    (Localization.AtPrime p)).isCohenMacaulay_iff
+  exact (LocalizedModule.equivLocalization p.primeCompl).isCohenMacaulay_iff
 
 /-- The spectrum of a ring `R` is Cohen–Macaulay exactly when `R` is Noetherian and its
 localization at every prime is Cohen–Macaulay. Stacks, Definition 10.103.12 (0AAH) on the ring

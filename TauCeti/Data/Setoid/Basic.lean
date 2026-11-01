@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Rel
 public import Mathlib.Order.Setoid.Basic
 
 /-!
@@ -17,6 +18,8 @@ This file records small generic additions to Mathlib's `Setoid` API.
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
+* `Setoid.preimage_image_quotientMk_eq_relPreimage`: the saturation of a set is its preimage under
+  the graph of the relation.
 -/
 
 public section
@@ -44,5 +47,13 @@ theorem ofPred_rel_eq_iff {α : Type*} {r : Setoid α} {x y : α} :
     {z | r z x} = {z | r z y} ↔ r x y :=
   ⟨fun h => (Set.ext_iff.mp h x).mp (r.refl' x), fun h =>
     Set.ext fun _ => ⟨fun hx => r.trans' hx h, fun hy => r.trans' hy (r.symm' h)⟩⟩
+
+/-- The saturation `Quotient.mk r ⁻¹' (Quotient.mk r '' s)` of a set `s`, the set of points related
+to a point of `s`, is the preimage of `s` under the graph of `r`. -/
+theorem preimage_image_quotientMk_eq_relPreimage {α : Type*} (r : Setoid α) (s : Set α) :
+    Quotient.mk r ⁻¹' (Quotient.mk r '' s) = SetRel.preimage {p : α × α | r p.1 p.2} s := by
+  ext x
+  simp only [Set.mem_preimage, Set.mem_image, Quotient.eq, SetRel.mem_preimage, Set.mem_ofPred_eq]
+  exact exists_congr fun y ↦ and_congr_right fun _ ↦ ⟨r.symm, r.symm⟩
 
 end Setoid
