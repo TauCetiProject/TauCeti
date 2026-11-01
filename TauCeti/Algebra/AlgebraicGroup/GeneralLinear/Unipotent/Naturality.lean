@@ -11,13 +11,12 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Tangent
 /-!
 # Recognizing exponential curves after a representation
 
-A polynomial one-parameter subgroup with unipotent value `g` at parameter one is necessarily
-`t ↦ exp(t log g)`. This is equality of regular coordinate maps, hence holds on points over
-every value algebra. Its velocity is therefore the finite logarithm of `g`.
-
-In particular, after composing an intrinsic exponential curve with any affine-group
-representation, its velocity is the logarithm of the represented point whenever that point
-is unipotent. The target invariant vector field need not be assumed locally nilpotent.
+This module proves `TauCeti.GeneralLinear.tangentMatrix_derivationComp_eq_log`: the
+differential of a represented intrinsic exponential direction is the finite logarithm of
+the represented point whenever that point is unipotent. The underlying polynomial subgroup
+is identified by `TauCeti.GeneralLinear.eq_nilpotentOneParameterCoordinateMap_log`, and its
+velocity is described by `TauCeti.GeneralLinear.tangentMatrix_curveVelocity_eq_log`.
+The target invariant vector field need not be assumed locally nilpotent.
 This comparison is useful for identifying logarithms computed in different faithful matrix
 realizations. It does not assert that every tangent vector of an arbitrary affine group
 has a polynomial exponential, or that its every point is unipotent.

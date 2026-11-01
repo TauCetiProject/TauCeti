@@ -23,10 +23,15 @@ curve lies in `H` scheme-theoretically by
 the Lie algebra of `H`, and the velocity of `t ↦ exp(tX)` has matrix `X`. No smoothness,
 connectedness or reducedness assumption on `H` is needed.
 
+More generally, a polynomial one-parameter subgroup of `GLₙ` with unipotent value `g` at
+parameter one has velocity matrix `log g`.
+
 ## Main declarations
 
 * `TauCeti.GeneralLinear.tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap`: the
   velocity of `t ↦ exp(tX)` at `t = 0` has matrix `X`.
+* `TauCeti.GeneralLinear.tangentMatrix_curveVelocity_eq_log`: the velocity of a polynomial
+  one-parameter subgroup with unipotent value `g` at parameter one has matrix `log g`.
 * `TauCeti.GeneralLinear.mem_map_lieSubalgebra_of_nilpotentExpUnit_mem`: a nilpotent matrix
   whose exponential lies in a closed subgroup lies in its Lie algebra.
 * `TauCeti.GeneralLinear.log_mem_map_lieSubalgebra`: the logarithm of a unipotent point of a
