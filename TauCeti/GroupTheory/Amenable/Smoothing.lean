@@ -71,6 +71,18 @@ theorem smoothing_nonneg (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h)
     {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ m.smoothing h φ := by
   simpa using m.toPositiveLinearMap.map_nonneg (Lp.convolutionUCB_nonneg hh hφ)
 
+/-- The positive linear functional obtained by smoothing with a nonnegative kernel and
+applying `m`. Normalization of the kernel is not required. -/
+def smoothingPositive (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h) :
+    Lp ℝ ∞ μ →ₚ[ℝ] ℝ :=
+  PositiveLinearMap.mk₀ (m.smoothing h).toLinearMap (fun _ hφ => m.smoothing_nonneg hh hφ)
+
+/-- The positive and continuous smoothed functionals have the same values. -/
+@[simp]
+theorem smoothingPositive_apply (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h)
+    (φ : Lp ℝ ∞ μ) : m.smoothingPositive hh φ = m.smoothing h φ := by
+  rfl
+
 /-- The value on the constant one is the integral of the kernel. -/
 @[simp high]
 theorem smoothing_linftyOne (m : Mean G) (h : Lp ℝ 1 μ) :
@@ -107,10 +119,10 @@ theorem norm_smoothing (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h)
 on all of `L∞`. -/
 theorem IsLeftInvariant.ofLpTop_smoothing {m : Mean G} (hm : m.IsLeftInvariant)
     {h : Lp ℝ 1 μ} (hh : 0 ≤ h) (h₁ : ∫ y, h y ∂μ = 1) :
-    Mean.ofLpTop (PositiveLinearMap.mk₀ (m.smoothing h).toLinearMap
-      (fun _ hφ => m.smoothing_nonneg hh hφ))
-      ((m.smoothing_linftyOne h).trans h₁) = m :=
-  Mean.ext fun f => (ofLpTop_apply _ _ f).trans
-    ((hm.smoothing_toLpTop h f).trans (by rw [h₁, one_mul]))
+    Mean.ofLpTop (m.smoothingPositive hh)
+      (by simpa only [smoothingPositive_apply] using (m.smoothing_linftyOne h).trans h₁) = m := by
+  apply Mean.ext
+  intro f
+  rw [ofLpTop_apply, smoothingPositive_apply, hm.smoothing_toLpTop, h₁, one_mul]
 
 end TauCeti.Mean
