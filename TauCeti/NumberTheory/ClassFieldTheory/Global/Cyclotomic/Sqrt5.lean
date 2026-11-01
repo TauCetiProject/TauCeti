@@ -69,14 +69,6 @@ section Sqrt5
 
 variable {E : Type} [Field E] [NumberField E] [IsGalois ℚ E] {s : E}
 
-omit [IsGalois ℚ E] in
-/-- The Galois group of `ℚ(√5)` is commutative. -/
-private lemma isMulCommutative_of_sq_eq_five (hs : s ^ 2 = 5)
-    (hgen : IntermediateField.adjoin ℚ {s} = ⊤) : IsMulCommutative Gal(E/ℚ) :=
-  .of_comm <| Commute.of_orderOf_dvd_two fun σ ↦ orderOf_dvd_of_pow_eq_one <|
-    Multiquadratic.aut_pow_two_eq_one_of_adjoin_eq_top (d := fun _ : Unit ↦ (5 : ℚ))
-      (fun _ ↦ by rw [hs, map_ofNat]) (by rwa [Set.range_const]) σ
-
 /-- An automorphism representing the Artin symbol of a prime `ℓ ≠ 5` in `ℚ(√5)` fixes `√5`
 exactly when `ℓ ≡ ±1 (mod 5)`. -/
 private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] SeparableClosure ℚ)
@@ -84,7 +76,11 @@ private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] 
     (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
     (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
     σ s = s ↔ Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
-  have := isMulCommutative_of_sq_eq_five hs hgen
+  have hr : ∀ _ : Unit, s ^ 2 = algebraMap ℤ E 5 := fun _ ↦ by simpa using hs
+  have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ s) = ⊤ := by
+    rwa [Set.range_const]
+  have := Multiquadratic.isMulCommutative_of_adjoin_eq_top (d := fun _ : Unit ↦ (5 : ℚ))
+    (fun _ ↦ by rw [hs, map_ofNat]) htop
   obtain ⟨p, hpv⟩ : ∃ p, Ideal.absNorm v.asIdeal = p := ⟨_, rfl⟩
   have : Fact p.Prime := ⟨by
     rw [← hpv, Rat.HeightOneSpectrum.absNorm_asIdeal]
@@ -97,9 +93,6 @@ private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] 
   -- A prime of `ℚ(√5)` above `v`, read as a prime above the rational prime `p`.
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 E)))
   have : Q.LiesOver (Ideal.span {(p : ℤ)}) := hpv ▸ Rat.HeightOneSpectrum.liesOver_span_absNorm v Q
-  have hr : ∀ _ : Unit, s ^ 2 = algebraMap ℤ E 5 := fun _ ↦ by simpa using hs
-  have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ s) = ⊤ := by
-    rwa [Set.range_const]
   rw [hpv]
   by_cases hodd : p = 2
   · subst hodd
@@ -128,26 +121,6 @@ theorem globalArtinMap_Qsqrt5_prime_apply (ι : E →ₐ[ℚ] SeparableClosure �
   · exact (σ.apply_eq_or_eq_neg_of_sq_eq (c := (5 : ℚ)) (by rw [hs, map_ofNat])).resolve_left
       (mt h.mp hc)
 
-/-- The global Artin symbol of a prime `ℓ ≠ 5` in `ℚ(√5)` is trivial exactly when
-`ℓ ≡ ±1 (mod 5)`. -/
-theorem globalArtinMap_Qsqrt5_prime_eq_zero_iff (ι : E →ₐ[ℚ] SeparableClosure ℚ)
-    (hs : s ^ 2 = 5) (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
-    (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) :
-    globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = 0 ↔
-      Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
-  let _ := isMulCommutative_of_sq_eq_five hs hgen
-  obtain ⟨σ, hσ⟩ := Abelianization.equivOfComm.surjective
-    (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v))).toMul
-  have hσ' : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
-      .ofMul (Abelianization.of σ) := by
-    simpa only [Abelianization.equivOfComm_apply, ofMul_toMul] using
-      congrArg Additive.ofMul hσ.symm
-  rw [← globalArtinMap_Qsqrt5_prime_apply_eq_self_iff ι hs hgen v hv hσ', hσ', ofMul_eq_zero,
-    ← map_one Abelianization.of, Abelianization.of_injective.eq_iff]
-  exact ⟨fun h ↦ by simp [h], fun h ↦
-    TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen fun x hx ↦
-      Set.mem_singleton_iff.mp hx ▸ h⟩
-
 /-- **The global Artin symbol in `ℚ(√5)`.** Let `s` generate `E` over `ℚ` with `s² = 5`. Any
 automorphism representing the Artin symbol of a prime `ℓ ≠ 5` is the identity if
 `ℓ ≡ ±1 (mod 5)`, and negates `s` if `ℓ ≡ ±2 (mod 5)`. -/
@@ -163,6 +136,19 @@ theorem globalArtinMap_Qsqrt5_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ) (h
     exact TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen fun x hx ↦
       Set.mem_singleton_iff.mp hx ▸ h
   · rwa [ite_eq_right (by omega)] at h
+
+/-- The global Artin symbol of a prime `ℓ ≠ 5` in `ℚ(√5)` is trivial exactly when
+`ℓ ≡ ±1 (mod 5)`. -/
+theorem globalArtinMap_Qsqrt5_prime_eq_zero_iff (ι : E →ₐ[ℚ] SeparableClosure ℚ)
+    (hs : s ^ 2 = 5) (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
+    (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) :
+    globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = 0 ↔
+      Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
+  refine ⟨fun h ↦ (globalArtinMap_Qsqrt5_prime_apply_eq_self_iff ι hs hgen v hv (σ := 1)
+    (by rw [h, map_one, ofMul_one])).mp rfl, fun hc ↦ ?_⟩
+  obtain ⟨σ, hσ⟩ := Abelianization.exists_eq_ofMul_of
+    (globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)))
+  rw [hσ, (globalArtinMap_Qsqrt5_prime ι hs hgen v hv hσ).1 hc, map_one, ofMul_one]
 
 end Sqrt5
 
