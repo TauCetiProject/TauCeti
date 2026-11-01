@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.HahnSeries.TensorProduct
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 public import TauCeti.RingTheory.LaurentSeries.ContinuousDual.HahnModule
 
 /-!
