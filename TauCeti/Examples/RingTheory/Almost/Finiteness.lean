@@ -99,16 +99,16 @@ example : (zero ℤ).AlmostFP (ℕ →₀ ℤ) :=
   almostFP_zero
 
 example : (zero ℤ).UniformlyAlmostFG (ℕ →₀ ℤ) 0 :=
-  uniformlyAlmostFG_zero_iff.mpr isAlmostZero_zero
+  uniformlyAlmostFG_bound_zero_iff.mpr isAlmostZero_zero
 
 /-! ### The uniform bound `0` -/
 
 -- `V ⧸ m` has uniform bound `0` for every setup, while `ℤ ⧸ 2` does not classically.
 example : S.UniformlyAlmostFG (V ⧸ S.ideal) 0 :=
-  uniformlyAlmostFG_zero_iff.mpr S.isAlmostZero_quotient
+  uniformlyAlmostFG_bound_zero_iff.mpr S.isAlmostZero_quotient
 
 example : ¬ (classical ℤ).UniformlyAlmostFG (ZMod 2) 0 := by
-  rw [uniformlyAlmostFG_zero_iff, isAlmostZero_classical_iff]
+  rw [uniformlyAlmostFG_bound_zero_iff, isAlmostZero_classical_iff]
   exact fun h ↦ zero_ne_one (Subsingleton.elim (0 : ZMod 2) 1)
 
 /-! ### The ideal `m` -/

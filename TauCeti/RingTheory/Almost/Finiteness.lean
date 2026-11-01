@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.RingTheory.Almost.BasicSetup
 
 import Mathlib.RingTheory.Finiteness.Cardinality
+import Mathlib.RingTheory.Finiteness.Ideal
 import TauCeti.Algebra.Module.Projective.Schanuel
 import TauCeti.RingTheory.Ideal.IdempotentFG
 
@@ -29,8 +30,8 @@ An almost zero module is almost finitely presented, and the uniform bound `0` ch
 zero modules. Almost finite generation is invariant under almost isomorphisms. The uniform bound
 is preserved along a map with almost zero cokernel for every setup, and under Gabber–Ramero's
 condition (A), `BasicSetup.IsFilteredPrincipal`, it is invariant under almost isomorphisms with
-the same bound. These invariance statements are what make the notions properties of the almost
-module `N^a` rather than of the representative `N`.
+the same bound. So almost finite generation, and under condition (A) the uniform bound, are
+properties of the almost module `N^a` rather than of the representative `N`.
 
 ## Main definitions
 
@@ -50,9 +51,9 @@ module `N^a` rather than of the representative `N`.
   `TauCeti.Almost.BasicSetup.almostFP_classical_iff`,
   `TauCeti.Almost.BasicSetup.uniformlyAlmostFG_classical_iff`: the classical setup recovers
   `Module.Finite`, `Module.FinitePresentation` and surjections from `Vⁿ`.
-* `TauCeti.Almost.BasicSetup.uniformlyAlmostFG_zero_iff`: the uniform bound `0` means almost zero;
-  `TauCeti.Almost.BasicSetup.IsAlmostZero.almostFP`: almost zero modules are almost finitely
-  presented.
+* `TauCeti.Almost.BasicSetup.uniformlyAlmostFG_bound_zero_iff`: the uniform bound `0` means
+  almost zero; `TauCeti.Almost.BasicSetup.IsAlmostZero.almostFP`: almost zero modules are almost
+  finitely presented.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso.almostFG_iff`: almost finite generation is invariant
   under almost isomorphisms.
 * `TauCeti.Almost.BasicSetup.UniformlyAlmostFG.of_isAlmostZero_quotient_range` and
@@ -171,7 +172,7 @@ theorem almostFP_of_finitePresentation [Module.FinitePresentation V N] : S.Almos
 /-! ### Almost zero modules -/
 
 /-- The uniform bound `0` characterises the almost zero modules. -/
-theorem uniformlyAlmostFG_zero_iff : S.UniformlyAlmostFG N 0 ↔ S.IsAlmostZero N := by
+theorem uniformlyAlmostFG_bound_zero_iff : S.UniformlyAlmostFG N 0 ↔ S.IsAlmostZero N := by
   refine ⟨fun h ↦ isAlmostZero_iff.mpr fun ε hε x ↦ ?_, fun h m₀ hm _ ↦
     ⟨0, by rw [h.smul_top_eq_bot hm]; exact bot_le⟩⟩
   obtain ⟨φ, hφ⟩ := h (Ideal.span {ε}) (by simpa [Ideal.span_le]) (Submodule.fg_span_singleton ε)
@@ -220,25 +221,13 @@ section Invariance
 
 variable {f : M →ₗ[V] N} {K : Ideal V}
 
-/-- An ideal inside `m` multiplies `N` into the range of a map with almost zero cokernel. -/
-private theorem smul_top_le_range (hf : S.IsAlmostZero (N ⧸ range f)) (hK : K ≤ S.ideal) :
-    K • (⊤ : Submodule V N) ≤ range f :=
-  smul_le.mpr fun ε hε y _ ↦ (Submodule.Quotient.mk_eq_zero _).mp <| by
-    rw [Submodule.Quotient.mk_smul, hf.smul_eq_zero (hK hε)]
-
-/-- An ideal inside `m` kills the kernel of a map with almost zero kernel. -/
-private theorem smul_ker_eq_bot (hf : S.IsAlmostZero (ker f)) (hK : K ≤ S.ideal) :
-    K • ker f = ⊥ :=
-  eq_bot_iff.mpr <| smul_le.mpr fun ε hε y hy ↦ by
-    simpa using congrArg Subtype.val (hf.smul_eq_zero (hK hε) ⟨y, hy⟩)
-
 /-- Forward transfer: if `K • M ≤ P` and `f` has almost zero cokernel, then
 `K ^ 2 • N ≤ f(P)`. -/
 private theorem pow_two_smul_top_le_map (hf : S.IsAlmostZero (N ⧸ range f)) (hK : K ≤ S.ideal)
     {P : Submodule V M} (hP : K • (⊤ : Submodule V M) ≤ P) :
     (K ^ 2) • (⊤ : Submodule V N) ≤ P.map f := by
   rw [sq, Submodule.mul_smul]
-  refine (smul_mono_right K (smul_top_le_range hf hK)).trans ?_
+  refine (smul_mono_right K (hf.smul_top_le hK)).trans ?_
   rw [range_eq_map, ← map_smul'']
   exact map_mono hP
 
@@ -252,7 +241,7 @@ private theorem pow_three_smul_top_le (hf : S.IsAlmostZero (ker f)) (hK : K ≤ 
     exact (smul_mono_right K (smul_mono_right K le_top |>.trans hP)).trans hQ
   rw [pow_succ', sq, Submodule.mul_smul, Submodule.mul_smul]
   refine (smul_mono_right K h₁).trans ?_
-  rw [smul_sup, smul_ker_eq_bot hf hK, sup_bot_eq]
+  rw [smul_sup, hf.smul_eq_bot hK, sup_bot_eq]
   exact smul_le_right
 
 /-- Almost finite generation passes along a linear map with almost zero cokernel; in particular
@@ -275,15 +264,11 @@ theorem AlmostFG.of_isAlmostIso (h : S.AlmostFG N) (hf : S.IsAlmostIso f) : S.Al
   obtain ⟨K, hKfg, hK, hm₀⟩ :=
     Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm three_ne_zero
   obtain ⟨P, hPfg, hP⟩ := h K hK hKfg
-  have hKP : (K • P).FG := by
-    obtain ⟨s, rfl⟩ := hKfg
-    obtain ⟨t, rfl⟩ := hPfg
-    rw [span_smul_span]
-    exact fg_span (s.finite_toSet.smul t.finite_toSet)
+  have hKP := Submodule.FG.smul hKfg hPfg
   -- Lift a finite family generating `K • P ≤ range f` along `f`.
   obtain ⟨r, ψ, hψ⟩ := (fg_iff_exists_fin_linearMap _ _).mp hKP
   obtain ⟨χ, hχ⟩ := exists_comp_eq_of_range_le (b := f)
-    (hψ ▸ (smul_mono_right K le_top).trans (smul_top_le_range hcoker hK))
+    (hψ ▸ (smul_mono_right K le_top).trans (hcoker.smul_top_le hK))
   refine ⟨range χ, (fg_iff_exists_fin_linearMap _ _).mpr ⟨r, χ, rfl⟩,
     (smul_mono_left hm₀).trans (pow_three_smul_top_le hker hK hP ?_)⟩
   rw [← range_comp, hχ, hψ]
@@ -321,7 +306,7 @@ theorem UniformlyAlmostFG.iff_of_isAlmostIso (hS : S.IsFilteredPrincipal) (hf : 
     exact ⟨b • v, by simp [mul_smul, smul_comm b z]⟩
   have hrange : range (z • φ) ≤ range f := by
     rintro _ ⟨v, rfl⟩
-    exact smul_top_le_range hcoker hzm (smul_mem_smul (Ideal.mem_span_singleton_self z) mem_top)
+    exact hcoker.smul_top_le hzm (smul_mem_smul (Ideal.mem_span_singleton_self z) mem_top)
   obtain ⟨χ, hχ⟩ := exists_comp_eq_of_range_le hrange
   refine ⟨χ, (smul_mono_left (hm₀.trans (Ideal.pow_right_mono hKz 3))).trans
     (pow_three_smul_top_le hker hzm hφ ?_)⟩

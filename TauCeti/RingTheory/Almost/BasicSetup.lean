@@ -293,8 +293,22 @@ variable {S} in
 /-- An almost zero module is killed by every ideal contained in `m`. -/
 theorem IsAlmostZero.smul_top_eq_bot {M : Type*} [AddCommGroup M] [Module V M]
     (h : S.IsAlmostZero M) {I : Ideal V} (hI : I ≤ S.ideal) : I • (⊤ : Submodule V M) = ⊥ :=
-  eq_bot_iff.mpr <| Submodule.smul_le.mpr fun _ hε x _ ↦
-    (h.smul_eq_zero (hI hε) x).symm ▸ Submodule.zero_mem _
+  Submodule.le_annihilator_iff.mp <| by
+    rw [Submodule.annihilator_top]
+    exact hI.trans (isAlmostZero_iff_le_annihilator.mp h)
+
+variable {S} in
+/-- An almost zero submodule is killed by every ideal contained in `m`. -/
+theorem IsAlmostZero.smul_eq_bot {M : Type*} [AddCommGroup M] [Module V M] {p : Submodule V M}
+    (h : S.IsAlmostZero p) {I : Ideal V} (hI : I ≤ S.ideal) : I • p = ⊥ :=
+  Submodule.le_annihilator_iff.mp (hI.trans (isAlmostZero_iff_le_annihilator.mp h))
+
+variable {S} in
+/-- If `M ⧸ p` is almost zero, then every ideal contained in `m` multiplies `M` into `p`. -/
+theorem IsAlmostZero.smul_top_le {M : Type*} [AddCommGroup M] [Module V M] {p : Submodule V M}
+    (h : S.IsAlmostZero (M ⧸ p)) {I : Ideal V} (hI : I ≤ S.ideal) :
+    I • (⊤ : Submodule V M) ≤ p :=
+  Submodule.smul_le.mpr fun _ hε x _ ↦ (Module.isTorsionBySet_quotient_iff _ _).mp h x _ (hI hε)
 
 variable {S} in
 /-- A module that embeds into an almost zero module is almost zero; in particular, so is every
