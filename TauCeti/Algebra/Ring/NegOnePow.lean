@@ -119,6 +119,14 @@ end NegOnePowSMul
 
 section Parity
 
+/-- The signs of successive triangular numbers differ by the sign of the new summand.
+This identity holds in all integer degrees, including negative degrees. -/
+theorem _root_.Int.negOnePow_mul_succ_div_two_succ (k : ℤ) :
+    ((k + 1) * (k + 1 + 1) / 2).negOnePow =
+      (k + 1).negOnePow * (k * (k + 1) / 2).negOnePow := by
+  have h : (k + 1) * (k + 1 + 1) = k * (k + 1) + (k + 1) * 2 := by ring
+  rw [h, Int.add_mul_ediv_right _ _ (by decide), Int.negOnePow_add, mul_comm]
+
 /-- The product of an integer and one minus that integer is even, so its sign is one. -/
 @[simp]
 theorem _root_.Int.negOnePow_mul_one_sub (n : ℤ) :

@@ -62,7 +62,7 @@ open Set
 variable {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
 
 /-- A piecewise-`C¹` curve avoiding the centre has the Cauchy-kernel principal value. -/
-private theorem IsPiecewiseC1On.cauchyPVExistsAt_inv_sub_of_avoidance
+private theorem _root_.TauCeti.IsPiecewiseC1On.cauchyPVExistsAt_inv_sub_of_avoidance
     (hγ : IsPiecewiseC1On γ a b) (havoid : ∀ t ∈ uIcc a b, γ t ≠ s) :
     CauchyPVExistsAt γ a b (fun z => (z - s)⁻¹) s :=
   cauchyPVExistsAt_of_avoidance hγ.continuousOn havoid

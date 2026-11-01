@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Basic
 import TauCeti.Analysis.ExteriorPower.Plucker
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Height of a subspace in terms of a spanning family
