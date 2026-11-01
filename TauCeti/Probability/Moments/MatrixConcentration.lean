@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues
+public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 public import TauCeti.Probability.Moments.Chebyshev
@@ -23,7 +23,7 @@ Suppose every squared entrywise deviation is integrable with
 
 On a probability space, every deterministic consequence of entrywise `η`-closeness therefore holds
 with probability at least `1 - card m * card n * v / η²`. For square matrices over `ℝ` or `ℂ` the
-entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues` turns this into
+entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues.Basic` turns this into
 simultaneous high-probability control of every sorted eigenvalue, up to the dimension factor
 `card n`. For rectangular matrices over `ℝ` or `ℂ` the entrywise-to-operator comparison of
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm` bounds the operator norm of the Euclidean action of

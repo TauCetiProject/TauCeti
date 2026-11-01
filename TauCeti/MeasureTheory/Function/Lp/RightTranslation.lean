@@ -5,287 +5,336 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
 # Right translation on `Lᵖ` of a locally compact group
 
-Let `μ` be a regular left Haar measure on a locally compact group `G`, and let
-`c(g) = Measure.modularCharacter g`, so that `∫ f (x * g) dμ = c(g) ∫ f dμ`. Right translation of
-functions,
+Let `μ` be a regular left Haar measure on a locally compact group `G`, and write
+`c = MeasureTheory.Measure.modularCharacter`, so that `∫ f (x * g) dμ = c(g) ∫ f dμ`. Right
+translation `x ↦ x * g` scales `‖·‖_p ^ p` by `c(g)`, so the weighted right translation
 
 ```text
-(R_g f)(x) = f (x * g),        R_g R_h = R_(g * h),
+(R_g f)(x) = c(g⁻¹)^(1/p) • f (x * g),        R_g R_h = R_(g * h),
 ```
 
-multiplies the `Lᵖ` norm by `c(g) ^ (1 / p)`. So `R_g` is an isometry whenever `c(g) = 1`, and
-every right translation is an isometry when `G` is unimodular. In general `R_g` still preserves
-`Lᵖ` classes, so it gives a monoid homomorphism
-`MeasureTheory.Lp.rightTranslation μ p 𝕜 : G →* (Lp E p μ →L[𝕜] Lp E p μ)`, which commutes with
-left translation `MeasureTheory.Lp.leftTranslation`.
+is an isometry of `Lᵖ`, with the convention `1/∞ = 0`. On `L¹` it is `f ↦ c(g⁻¹) • f (· * g)`.
+Unlike left translation, it is not given by a measure-preserving map unless `G` is unimodular.
 
-For `1 ≤ p < ∞` right translation is strongly continuous: `g ↦ R_g f` is continuous for every
-`f`, and in particular `‖f (· * g) - f‖_p → 0` as `g → 1`. Left translation is continuous by
-Mathlib's `DomMulAct` theory, which needs an invariant measure; right translation does not
-preserve `μ`, so the argument is redone here. First, the right translates
-`{x | x * g ∈ s}` of a measurable set of finite measure converge to `s` in measure
-(`MeasureTheory.Measure.tendsto_measure_preimage_mul_right_symmDiff_of_regular`). This gives
-continuity on indicators, hence on simple functions, and simple functions are dense in `Lᵖ`.
-Since `c` is continuous with `c(1) = 1`, the operator norm of `R_g` is less than `2` near `1`,
-which passes convergence from simple functions to all of `Lᵖ`. No σ-finiteness of `μ`, no
-second countability and no separation axiom on `G` is assumed.
+We obtain it by conjugating left translation with the *modular inversion*
 
-Continuity of right translation is the input for approximate identities on the right,
-`h * k_U → h` in `L¹` for kernels `k_U` concentrating at `1`, where
-`(h * k)(x) = ∫ y, h (x * y) k (y⁻¹) dμ` averages right translates of `h`.
+```text
+(J f)(x) = c(x)^(1/p) • f x⁻¹,
+```
+
+which is an isometric involution of `Lᵖ` by the inversion formula `μ.inv = μ.withDensity c`.
+Indeed `J L_g J = R_g`, so right translation inherits from left translation the group law and,
+for `p < ∞`, strong continuity: each orbit `g ↦ R_g f` is continuous. By left invariance and
+the inversion formula, the convolution `(h ⋆ k)(x) = ∫ y, h y * k (y⁻¹ * x) dμ` of `L¹`
+functions is `∫ z, k z * c(z) * h (x * z⁻¹) dμ`, an average of the right translates
+`R_(z⁻¹) h` of `h` weighted by `k`. Strong continuity of right translation on `L¹` is therefore
+the input for showing that convolution on the right with kernels concentrated near the
+identity approximates `h`.
+
+No σ-finiteness of `μ` and no countability of `G` is assumed.
 
 ## Main definitions
 
+* `MeasureTheory.Lp.modularInversion μ p 𝕜`: the isometric involution
+  `f ↦ (x ↦ c(x)^(1/p) • f x⁻¹)` of `Lp E p μ`.
 * `MeasureTheory.Lp.rightTranslation μ p 𝕜`: right translation `g ↦ R_g` on `Lp E p μ`, as a
-  monoid homomorphism to continuous linear maps.
+  group homomorphism to linear isometry equivalences.
 
 ## Main results
 
-* `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: `‖f (· * g)‖_p = c(g) ^ (1 / p) ‖f‖_p`.
-* `MeasureTheory.Lp.coeFn_rightTranslation`: `R_g f` is almost everywhere `x ↦ f (x * g)`.
-* `MeasureTheory.Lp.norm_rightTranslation_apply`: `‖R_g f‖ = c(g) ^ (1 / p) ‖f‖`.
-* `MeasureTheory.Lp.rightTranslation_leftTranslation`: right and left translations commute.
+* `TauCeti.eLpNorm_modularCharacter_rpow_smul_comp_inv`: the weighted inversion preserves
+  the `Lᵖ` seminorm.
+* `MeasureTheory.Lp.coeFn_modularInversion`, `MeasureTheory.Lp.coeFn_rightTranslation`: the
+  pointwise formulas, almost everywhere.
+* `MeasureTheory.Lp.modularInversion_modularInversion`: the modular inversion is an involution.
+* `MeasureTheory.Lp.leftTranslation_rightTranslation`: left and right translations commute.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
   for `p < ∞`.
+* `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: the unweighted right translate satisfies
+  `‖f (· * g)‖_p = c(g)^(1/p) ‖f‖_p`.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`: `‖f (· * g) - f‖_p → 0`
   as `g → 1`, for `1 ≤ p < ∞`.
 
 ## References
 
-* G. B. Folland, *A Course in Abstract Harmonic Analysis*, Chapter 2, for continuity of left and
-  right translations in `Lᵖ` of a locally compact group.
-* The density argument follows Mathlib's `MeasureTheory.Lp.compMeasurePreserving_continuous`
-  by Yury Kudryashov, with the invariance of the measure replaced by the scaling by the modular
-  character.
+* G. B. Folland, *A Course in Abstract Harmonic Analysis*, §§2.4–2.5, for the modular function
+  and the continuity of translations in `Lᵖ`.
+* B. Bekka, P. de la Harpe, A. Valette, *Kazhdan's Property (T)*, Appendix A.3.
 -/
 
 public section
 
 noncomputable section
 
-open Filter Topology
-open scoped ENNReal NNReal Pointwise symmDiff
-
-namespace MeasureTheory
+open Filter MeasureTheory MeasureTheory.Measure TauCeti
+open scoped ENNReal NNReal
 
 variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
-  [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] {p : ℝ≥0∞}
+  [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞}
 
-/-- Right translation scales the `Lᵖ` seminorm by `c(g) ^ (1 / p)`, where `c` is the modular
-character, for every function and every exponent. -/
+namespace MeasureTheory
+
+/-- The weighted inversion `x ↦ c(x)^r • f x⁻¹` of an almost everywhere strongly measurable
+function is almost everywhere strongly measurable. -/
+theorem AEStronglyMeasurable.modularCharacter_rpow_smul_comp_inv {f : G → E}
+    (hf : AEStronglyMeasurable f μ) (r : ℝ) :
+    AEStronglyMeasurable (fun x => (modularCharacter x : ℝ) ^ r • f x⁻¹) μ :=
+  (continuous_modularCharacter.measurable.coe_nnreal_real.pow_const r).aestronglyMeasurable.smul
+    (hf.comp_quasiMeasurePreserving (quasiMeasurePreserving_inv_of_regular μ))
+
+end MeasureTheory
+
+namespace TauCeti
+
+/-- The weighted inversion `x ↦ c(x)^(1/p) • f x⁻¹` preserves the `Lᵖ` seminorm of an almost
+everywhere strongly measurable function, for a regular Haar measure. -/
+theorem eLpNorm_modularCharacter_rpow_smul_comp_inv {f : G → E}
+    (hf : AEStronglyMeasurable f μ) :
+    eLpNorm (fun x => (modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹) p μ = eLpNorm f p μ := by
+  have hJf := hf.modularCharacter_rpow_smul_comp_inv p.toReal⁻¹
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero hJf, eLpNorm_exponent_zero hf]
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · -- For `p = ∞` the weight is `1`, and `μ` and `μ.inv` have the same null sets.
+    simp only [ENNReal.toReal_top, inv_zero, Real.rpow_zero, one_smul] at hJf ⊢
+    rw [eLpNorm_exponent_top hJf, eLpNorm_exponent_top hf, eLpNormEssSup_eq_essSup_enorm,
+      eLpNormEssSup_eq_essSup_enorm]
+    have h := (MeasurableEquiv.inv G).measurableEmbedding.essSup_map_measure (μ := μ)
+      (g := fun x => ‖f x‖ₑ)
+    rw [MeasurableEquiv.inv_apply, ← Measure.inv] at h
+    rw [← Function.comp_def (fun x => ‖f x‖ₑ) Inv.inv, ← h]
+    exact le_antisymm (essSup_mono_measure (inv_absolutelyContinuous_of_regular μ))
+      (essSup_mono_measure (absolutelyContinuous_inv_of_regular μ))
+  -- For `0 < p < ∞`, the weight raised to the power `p` is the density `c` of `μ.inv`.
+  have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hJf,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf]
+  congr 1
+  have hweight (x : G) : ‖(modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹‖ₑ ^ p.toReal =
+      modularCharacter x * ‖f x⁻¹‖ₑ ^ p.toReal := by
+    rw [enorm_smul, ENNReal.mul_rpow_of_nonneg _ _ hq.le, Real.enorm_of_nonneg (by positivity),
+      ENNReal.ofReal_rpow_of_nonneg (by positivity) hq.le, ← Real.rpow_mul (by positivity),
+      inv_mul_cancel₀ hq.ne', Real.rpow_one, ENNReal.ofReal_coe_nnreal]
+  have h := lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular (μ := μ)
+    fun y => modularCharacter y⁻¹ * ‖f y‖ₑ ^ p.toReal
+  simp only [inv_inv, ← mul_assoc, ← ENNReal.coe_mul, ← map_mul, mul_inv_cancel, map_one,
+    ENNReal.coe_one, one_mul] at h
+  simp_rw [hweight, h]
+
+end TauCeti
+
+namespace MeasureTheory
+
+/-- The weighted inversion `x ↦ c(x)^(1/p) • f x⁻¹` of an `Lᵖ` function is in `Lᵖ`, for a regular
+Haar measure. -/
+theorem MemLp.modularCharacter_rpow_smul_comp_inv {f : G → E} (hf : MemLp f p μ) :
+    MemLp (fun x => (modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹) p μ :=
+  memLp_iff.2 <| (eLpNorm_modularCharacter_rpow_smul_comp_inv hf.aestronglyMeasurable).trans_lt
+    (memLp_iff.1 hf)
+
+namespace Lp
+
+variable (μ p) (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+  [SMulCommClass ℝ 𝕜 E]
+
+/-- The modular inversion as a linear map, before its involutivity is proved. -/
+private def modularInversionₗ : Lp E p μ →ₗ[𝕜] Lp E p μ where
+  toFun f := (Lp.memLp f).modularCharacter_rpow_smul_comp_inv.toLp _
+  map_add' f f' := by
+    refine Lp.ext ?_
+    filter_upwards [MemLp.coeFn_toLp (Lp.memLp (f + f')).modularCharacter_rpow_smul_comp_inv,
+      Lp.coeFn_add (MemLp.toLp _ (Lp.memLp f).modularCharacter_rpow_smul_comp_inv)
+        (MemLp.toLp _ (Lp.memLp f').modularCharacter_rpow_smul_comp_inv),
+      MemLp.coeFn_toLp (Lp.memLp f).modularCharacter_rpow_smul_comp_inv,
+      MemLp.coeFn_toLp (Lp.memLp f').modularCharacter_rpow_smul_comp_inv,
+      (quasiMeasurePreserving_inv_of_regular μ).ae (Lp.coeFn_add f f')] with x h h' hf hf' hadd
+    rw [h, h', Pi.add_apply, hf, hf', hadd, Pi.add_apply, smul_add]
+  map_smul' k f := by
+    refine Lp.ext ?_
+    filter_upwards [MemLp.coeFn_toLp (Lp.memLp (k • f)).modularCharacter_rpow_smul_comp_inv,
+      Lp.coeFn_smul k (MemLp.toLp _ (Lp.memLp f).modularCharacter_rpow_smul_comp_inv),
+      MemLp.coeFn_toLp (Lp.memLp f).modularCharacter_rpow_smul_comp_inv,
+      (quasiMeasurePreserving_inv_of_regular μ).ae (Lp.coeFn_smul k f)] with x h h' hf hsmul
+    rw [h, RingHom.id_apply, h', Pi.smul_apply, hf, hsmul, Pi.smul_apply, smul_comm]
+
+private theorem coeFn_modularInversionₗ (f : Lp E p μ) :
+    modularInversionₗ μ p 𝕜 f =ᵐ[μ] fun x => (modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹ :=
+  MemLp.coeFn_toLp (Lp.memLp f).modularCharacter_rpow_smul_comp_inv
+
+private theorem modularInversionₗ_involutive :
+    Function.Involutive (modularInversionₗ (E := E) μ p 𝕜) :=
+  fun f => Lp.ext <| by
+    filter_upwards [coeFn_modularInversionₗ μ p 𝕜 (modularInversionₗ μ p 𝕜 f),
+      (quasiMeasurePreserving_inv_of_regular μ).ae (coeFn_modularInversionₗ μ p 𝕜 f)]
+      with x h h'
+    rw [h, h', inv_inv, smul_smul, modularCharacter_rpow_mul_inv, one_smul]
+
+variable [Fact (1 ≤ p)]
+
+/-- The **modular inversion** `(J f)(x) = c(x)^(1/p) • f x⁻¹` on `Lp E p μ` for a regular Haar
+measure `μ`, where `c` is the modular character and `1/∞ = 0`. It is a linear isometric
+involution. -/
+def modularInversion : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ where
+  toLinearEquiv := .ofInvolutive (modularInversionₗ μ p 𝕜) (modularInversionₗ_involutive μ p 𝕜)
+  norm_map' f := by
+    rw [LinearEquiv.coe_ofInvolutive, norm_def, norm_def,
+      eLpNorm_congr_ae (coeFn_modularInversionₗ μ p 𝕜 f),
+      eLpNorm_modularCharacter_rpow_smul_comp_inv (Lp.aestronglyMeasurable f)]
+
+variable {μ p 𝕜}
+
+/-- The modular inversion `J f` is almost everywhere the function `x ↦ c(x)^(1/p) • f x⁻¹`. -/
+theorem coeFn_modularInversion (f : Lp E p μ) :
+    modularInversion μ p 𝕜 f =ᵐ[μ] fun x => (modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹ :=
+  coeFn_modularInversionₗ μ p 𝕜 f
+
+/-- The modular inversion is an involution. -/
+@[simp]
+theorem modularInversion_modularInversion (f : Lp E p μ) :
+    modularInversion μ p 𝕜 (modularInversion μ p 𝕜 f) = f :=
+  modularInversionₗ_involutive μ p 𝕜 f
+
+/-- The modular inversion is its own inverse. -/
+@[simp]
+theorem modularInversion_symm :
+    (modularInversion μ p 𝕜).symm = modularInversion (E := E) μ p 𝕜 :=
+  LinearIsometryEquiv.ext fun f => by
+    rw [LinearIsometryEquiv.symm_apply_eq, modularInversion_modularInversion]
+
+/-- The modular inversion squares to the identity in the group of linear isometry
+equivalences. -/
+@[simp]
+theorem modularInversion_mul_self :
+    modularInversion μ p 𝕜 * modularInversion μ p 𝕜 = (1 : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) :=
+  LinearIsometryEquiv.ext modularInversion_modularInversion
+
+variable (μ p 𝕜)
+
+/-- Right translation `g ↦ R_g` on `Lp E p μ` for a regular Haar measure `μ`, where
+`(R_g f)(x) = c(g⁻¹)^(1/p) • f (x * g)`, `c` is the modular character and `1/∞ = 0`, as a group
+homomorphism to linear isometry equivalences. It is the conjugate `J L_g J` of left translation
+by the modular inversion `J`. -/
+def rightTranslation : G →* (Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) :=
+  (MulAut.conj (modularInversion μ p 𝕜)).toMonoidHom.comp (leftTranslation μ p 𝕜)
+
+variable {μ p 𝕜}
+
+/-- Right translation is left translation conjugated by the modular inversion. -/
+theorem rightTranslation_apply (g : G) (f : Lp E p μ) :
+    rightTranslation μ p 𝕜 g f =
+      modularInversion μ p 𝕜 (leftTranslation μ p 𝕜 g (modularInversion μ p 𝕜 f)) := by
+  simp [rightTranslation, MulAut.conj_apply]
+
+/-- The right translate `R_g f` is almost everywhere the function
+`x ↦ c(g⁻¹)^(1/p) • f (x * g)`. -/
+theorem coeFn_rightTranslation (g : G) (f : Lp E p μ) :
+    rightTranslation μ p 𝕜 g f =ᵐ[μ]
+      fun x => (modularCharacter g⁻¹ : ℝ) ^ p.toReal⁻¹ • f (x * g) := by
+  have hinv := quasiMeasurePreserving_inv_of_regular μ
+  have hmul := (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.comp hinv
+  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜)
+      (leftTranslation μ p 𝕜 g (modularInversion μ p 𝕜 f)),
+    hinv.ae (coeFn_leftTranslation (𝕜 := 𝕜) g (modularInversion μ p 𝕜 f)),
+    hmul.ae (coeFn_modularInversion (𝕜 := 𝕜) f)] with x h h' h''
+  simp only [Function.comp_apply] at h''
+  rw [rightTranslation_apply, h, h', h'', smul_smul, mul_inv_rev, inv_inv, inv_inv]
+  -- The weights combine to `c(x)^(1/p) * c(g⁻¹)^(1/p) * c(x⁻¹)^(1/p) = c(g⁻¹)^(1/p)`.
+  congr 1
+  rw [map_mul, NNReal.coe_mul, Real.mul_rpow (by positivity) (by positivity), mul_left_comm,
+    modularCharacter_rpow_mul_inv, mul_one]
+
+/-- The inverse of right translation by `g` is right translation by `g⁻¹`. -/
+@[simp]
+theorem rightTranslation_symm (g : G) :
+    (rightTranslation μ p 𝕜 g).symm = rightTranslation μ p 𝕜 (E := E) g⁻¹ := by
+  rw [map_inv, LinearIsometryEquiv.inv_def]
+
+/-- Left and right translations commute. -/
+theorem leftTranslation_rightTranslation (g h : G) (f : Lp E p μ) :
+    leftTranslation μ p 𝕜 h (rightTranslation μ p 𝕜 g f) =
+      rightTranslation μ p 𝕜 g (leftTranslation μ p 𝕜 h f) :=
+  Lp.ext <| by
+    filter_upwards [coeFn_leftTranslation (𝕜 := 𝕜) h (rightTranslation μ p 𝕜 g f),
+      (measurePreserving_mul_left μ h⁻¹).quasiMeasurePreserving.ae
+        (coeFn_rightTranslation (𝕜 := 𝕜) g f),
+      coeFn_rightTranslation (𝕜 := 𝕜) g (leftTranslation μ p 𝕜 h f),
+      (quasiMeasurePreserving_mul_right_of_regular μ g).ae
+        (coeFn_leftTranslation (𝕜 := 𝕜) h f)] with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, h₃, h₄, mul_assoc]
+
+/-- **Right translation is strongly continuous** on `Lᵖ` for `p < ∞`: every orbit map
+`g ↦ R_g f` is continuous. -/
+theorem continuous_rightTranslation_apply (hp : p ≠ ∞) (f : Lp E p μ) :
+    Continuous fun g : G => rightTranslation μ p 𝕜 g f := by
+  have : Fact (p ≠ ∞) := ⟨hp⟩
+  simp only [rightTranslation_apply, leftTranslation_apply]
+  exact (modularInversion μ p 𝕜).continuous.comp
+    ((DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const)
+
+end Lp
+
+omit [NormedSpace ℝ E] in
+/-- The unweighted right translate `f (· * g)` has `Lᵖ` seminorm `c(g)^(1/p) ‖f‖_p`, where `c` is
+the modular character, for every function and every exponent. -/
 @[simp]
 theorem eLpNorm_comp_mul_right_of_regular (f : G → E) (g : G) (p : ℝ≥0∞) :
     eLpNorm (fun x => f (x * g)) p μ =
-      (Measure.modularCharacter g ^ p.toReal⁻¹ : ℝ≥0) * eLpNorm f p μ := by
+      (modularCharacter g ^ p.toReal⁻¹ : ℝ≥0) * eLpNorm f p μ := by
   have h := (MeasurableEquiv.mulRight g).measurableEmbedding.eLpNorm_map_measure (g := f) (μ := μ)
     (p := p)
-  have hc : Measure.modularCharacter g ≠ 0 := (Measure.modularCharacterFun_pos g).ne'
-  rw [MeasurableEquiv.coe_mulRight, Measure.map_right_mul_eq_modularCharacter_smul_of_regular,
+  have hc : modularCharacter g ≠ 0 := (modularCharacterFun_pos g).ne'
+  rw [MeasurableEquiv.coe_mulRight, map_right_mul_eq_modularCharacter_smul_of_regular,
     eLpNorm_smul_measure_of_ne_zero' hc] at h
   exact h.symm
 
-/-- Right translation preserves `Lᵖ`. -/
+omit [NormedSpace ℝ E] in
+/-- The unweighted right translate of an `Lᵖ` function is in `Lᵖ`. -/
 theorem MemLp.comp_mul_right_of_regular {f : G → E} (hf : MemLp f p μ) (g : G) :
     MemLp (fun x => f (x * g)) p μ :=
   memLp_iff.2 <| (eLpNorm_comp_mul_right_of_regular f g p).trans_lt <|
     ENNReal.mul_lt_top ENNReal.coe_lt_top hf
 
-/-- A function is in `Lᵖ` exactly when its right translate is. -/
+omit [NormedSpace ℝ E] in
+/-- A function is in `Lᵖ` exactly when its unweighted right translate is. -/
 @[simp]
 theorem memLp_comp_mul_right_iff_of_regular {f : G → E} (g : G) :
     MemLp (fun x => f (x * g)) p μ ↔ MemLp f p μ :=
   ⟨fun h => by simpa [mul_assoc] using h.comp_mul_right_of_regular g⁻¹,
     fun h => h.comp_mul_right_of_regular g⟩
 
-namespace Lp
-
-variable (μ p)
-
-/-- Right translation by `g` on `Lp E p μ`, as an additive map; see `Lp.rightTranslation`. -/
-private def rightTranslationAddHom (g : G) : Lp E p μ →+ Lp E p μ :=
-  AddMonoidHom.mk' (fun f => ((Lp.memLp f).comp_mul_right_of_regular g).toLp fun x => f (x * g))
-    fun f f' => by
-      rw [← MemLp.toLp_add]
-      exact MemLp.toLp_congr _ _
-        ((Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae_eq_comp (coeFn_add f f'))
-
-variable {μ p}
-
-private theorem coeFn_rightTranslationAddHom (g : G) (f : Lp E p μ) :
-    rightTranslationAddHom μ p g f =ᵐ[μ] fun x => f (x * g) :=
-  MemLp.coeFn_toLp ((Lp.memLp f).comp_mul_right_of_regular g)
-
-private theorem norm_rightTranslationAddHom_apply (g : G) (f : Lp E p μ) :
-    ‖rightTranslationAddHom μ p g f‖ = (Measure.modularCharacter g : ℝ) ^ p.toReal⁻¹ * ‖f‖ := by
-  rw [rightTranslationAddHom, AddMonoidHom.mk'_apply, norm_toLp,
-    eLpNorm_comp_mul_right_of_regular, ENNReal.toReal_mul, norm_def]
-  simp
-
-private theorem rightTranslationAddHom_indicatorConstLp {s : Set G} (hs : MeasurableSet s)
-    (hμs : μ s ≠ ∞) (c : E) (g : G) (hμs' : μ ((· * g) ⁻¹' s) ≠ ∞) :
-    rightTranslationAddHom μ p g (indicatorConstLp p hs hμs c) =
-      indicatorConstLp p (measurable_mul_const g hs) hμs' c := by
-  refine ext ?_
-  filter_upwards [coeFn_rightTranslationAddHom g (indicatorConstLp p hs hμs c),
-    indicatorConstLp_coeFn (p := p) (hs := measurable_mul_const g hs) (hμs := hμs') (c := c),
-    (Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae
-      (indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := c))] with x hx hx' hx''
-  rw [hx, hx', hx'']
-  exact (Set.indicator_comp_right (fun x => x * g)).symm
-
-/-- Right translates of an `Lᵖ` class converge to it as `g → 1`, for `1 ≤ p < ∞`. -/
-private theorem tendsto_rightTranslationAddHom_apply_one [Fact (1 ≤ p)] (hp : p ≠ ∞)
-    (f : Lp E p μ) : Tendsto (fun g => rightTranslationAddHom μ p g f) (𝓝 1) (𝓝 f) := by
-  -- For simple functions this reduces, by additivity, to indicators of sets of finite measure.
-  have hsimple (F : simpleFunc E p μ) :
-      Tendsto (fun g => rightTranslationAddHom μ p g (F : Lp E p μ)) (𝓝 1) (𝓝 F) := by
-    induction F using simpleFunc.induction (one_pos.trans_le Fact.out).ne' hp with
-    | @indicatorConst c s hs hμs =>
-      have hμs' (g : G) : μ ((· * g) ⁻¹' s) ≠ ∞ := by
-        rw [Measure.measure_preimage_mul_right_eq_modularCharacter_mul_of_regular]
-        exact ENNReal.mul_ne_top ENNReal.coe_ne_top hμs.ne
-      simp only [simpleFunc.coe_indicatorConst,
-        rightTranslationAddHom_indicatorConstLp hs hμs.ne c _ (hμs' _)]
-      exact tendsto_indicatorConstLp_set hp
-        (Measure.tendsto_measure_preimage_mul_right_symmDiff_of_regular μ hs hμs.ne)
-    | add hf hg _ ihf ihg =>
-      simpa only [AddSubgroup.coe_add, map_add] using ihf.add ihg
-  -- In general, approximate `f` within `ε / 4` by a simple function `F`. Near `1` the norm of
-  -- `R_g` is less than `2`, and `R_g F` is within `ε / 4` of `F`.
-  refine Metric.tendsto_nhds.2 fun ε hε => ?_
-  obtain ⟨F, hfF⟩ :=
-    (simpleFunc.denseRange (E := E) (μ := μ) hp).exists_dist_lt f (by positivity : 0 < ε / 4)
-  have hc : Tendsto (fun g : G => (Measure.modularCharacter g : ℝ) ^ p.toReal⁻¹) (𝓝 1) (𝓝 1) := by
-    simpa using ((NNReal.continuous_coe.comp TauCeti.continuous_modularCharacter).rpow_const
-      fun _ => Or.inr (inv_nonneg.2 ENNReal.toReal_nonneg)).tendsto (1 : G)
-  filter_upwards [hc.eventually (gt_mem_nhds one_lt_two),
-    Metric.tendsto_nhds.1 (hsimple F) _ (by positivity : 0 < ε / 4)] with g hg2 hgF
-  set R := rightTranslationAddHom μ p (E := E) g
-  have h₁ : dist (R f) (R F) ≤ 2 * (ε / 4) := by
-    rw [_root_.dist_eq_norm, ← map_sub, norm_rightTranslationAddHom_apply, ← _root_.dist_eq_norm]
-    exact mul_le_mul hg2.le hfF.le dist_nonneg zero_le_two
-  calc dist (R f) f ≤ dist (R f) (R F) + dist (R F) F + dist (F : Lp E p μ) f :=
-        dist_triangle4 _ _ _ _
-    _ < 2 * (ε / 4) + ε / 4 + ε / 4 := by
-      rw [dist_comm _ f]
-      exact add_lt_add_of_lt_of_le (add_lt_add_of_le_of_lt h₁ hgF) hfF.le
-    _ = ε := by ring
-
-variable (μ p) [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-
-/-- Right translation `g ↦ R_g` on `Lp E p μ` for a regular left Haar measure `μ`, where
-`(R_g f)(x) = f (x * g)`, as a monoid homomorphism to continuous linear maps. -/
-def rightTranslation : G →* (Lp E p μ →L[𝕜] Lp E p μ) where
-  toFun g := LinearMap.mkContinuous
-    { toFun := rightTranslationAddHom μ p g
-      map_add' := map_add _
-      map_smul' c f := by
-        refine ext ?_
-        filter_upwards [coeFn_rightTranslationAddHom g (c • f),
-          coeFn_smul c (rightTranslationAddHom μ p g f), coeFn_rightTranslationAddHom g f,
-          (Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae (coeFn_smul c f)]
-          with x h₁ h₂ h₃ h₄
-        simp [h₁, h₂, h₃, h₄] } _
-    fun f => (norm_rightTranslationAddHom_apply g f).le
-  map_one' := by
-    ext f : 1
-    refine ext ?_
-    filter_upwards [coeFn_rightTranslationAddHom 1 f] with x hx
-    simp [hx]
-  map_mul' g h := by
-    ext f : 1
-    refine ext ?_
-    filter_upwards [coeFn_rightTranslationAddHom (g * h) f,
-      coeFn_rightTranslationAddHom g (rightTranslationAddHom μ p h f),
-      (Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae
-        (coeFn_rightTranslationAddHom h f)] with x hgh hg hh
-    simp [hgh, hg, hh, mul_assoc]
-
-variable {μ p 𝕜}
-
-private theorem rightTranslation_apply_eq (g : G) (f : Lp E p μ) :
-    rightTranslation μ p 𝕜 g f = rightTranslationAddHom μ p g f :=
-  (rfl)
-
-/-- The right translate `R_g f` is almost everywhere the function `x ↦ f (x * g)`. -/
-theorem coeFn_rightTranslation (g : G) (f : Lp E p μ) :
-    rightTranslation μ p 𝕜 g f =ᵐ[μ] fun x => f (x * g) :=
-  rightTranslation_apply_eq (𝕜 := 𝕜) g f ▸ coeFn_rightTranslationAddHom g f
-
-/-- Right translation of the class of an `Lᵖ` function is the class of its right translate. -/
-theorem rightTranslation_toLp {f : G → E} (hf : MemLp f p μ) (g : G) :
-    rightTranslation μ p 𝕜 g (hf.toLp f) = (hf.comp_mul_right_of_regular g).toLp
-      fun x => f (x * g) := by
-  refine ext ?_
-  filter_upwards [coeFn_rightTranslation (𝕜 := 𝕜) g (hf.toLp f), MemLp.coeFn_toLp
-    (hf.comp_mul_right_of_regular g), (Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae
-    (MemLp.coeFn_toLp hf)] with x hx hx' hf'
-  rw [hx, hx', hf']
-
-/-- Right translation of the indicator of a set of finite measure is the indicator of its
-right translate `{x | x * g ∈ s}`. -/
-theorem rightTranslation_indicatorConstLp {s : Set G} (hs : MeasurableSet s) (hμs : μ s ≠ ∞)
-    (c : E) (g : G) (hμs' : μ ((· * g) ⁻¹' s) ≠ ∞) :
-    rightTranslation μ p 𝕜 g (indicatorConstLp p hs hμs c) =
-      indicatorConstLp p (measurable_mul_const g hs) hμs' c :=
-  rightTranslationAddHom_indicatorConstLp hs hμs c g hμs'
-
-/-- Right translation by `g` multiplies `Lᵖ` norms by `c(g) ^ (1 / p)`, where `c` is the modular
-character. -/
-@[simp]
-theorem norm_rightTranslation_apply (g : G) (f : Lp E p μ) :
-    ‖rightTranslation μ p 𝕜 g f‖ = (Measure.modularCharacter g : ℝ) ^ p.toReal⁻¹ * ‖f‖ :=
-  norm_rightTranslationAddHom_apply g f
-
-/-- Right and left translations commute: `R_g (L_h f) = L_h (R_g f)`. -/
-theorem rightTranslation_leftTranslation (g h : G) (f : Lp E p μ) :
-    rightTranslation μ p 𝕜 g (leftTranslation μ p 𝕜 h f) =
-      leftTranslation μ p 𝕜 h (rightTranslation μ p 𝕜 g f) := by
-  refine ext ?_
-  filter_upwards [coeFn_rightTranslation (𝕜 := 𝕜) g (leftTranslation μ p 𝕜 h f),
-    coeFn_leftTranslation (𝕜 := 𝕜) h (rightTranslation μ p 𝕜 g f),
-    (Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae
-      (coeFn_leftTranslation (𝕜 := 𝕜) h f),
-    (measurePreserving_mul_left μ h⁻¹).quasiMeasurePreserving.ae
-      (coeFn_rightTranslation (𝕜 := 𝕜) g f)] with x hr hl hl' hr'
-  rw [hr, hl, hl', hr', mul_assoc]
-
-/-- Right translation is strongly continuous on `Lᵖ` for `p < ∞`: for each `f`, the orbit
-`g ↦ R_g f` is continuous. -/
-theorem continuous_rightTranslation_apply (hp : p ≠ ∞) (f : Lp E p μ) :
-    Continuous fun g => rightTranslation μ p 𝕜 g f := by
-  -- Continuity at `g₀` reduces to continuity at `1`, since `R_g = R_(g₀) ∘ R_(g₀⁻¹ * g)`.
-  refine continuous_iff_continuousAt.2 fun g₀ => ?_
-  have h : Tendsto (fun g => g₀⁻¹ * g) (𝓝 g₀) (𝓝 1) := by
-    simpa using (continuous_const.mul continuous_id).tendsto (f := fun g : G => g₀⁻¹ * g) g₀
-  refine (((rightTranslation μ p 𝕜 g₀).continuous.tendsto f).comp
-    ((tendsto_rightTranslationAddHom_apply_one hp f).comp h)).congr fun g => ?_
-  rw [Function.comp_apply, Function.comp_apply, ← rightTranslation_apply_eq (𝕜 := 𝕜),
-    ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left]
-
-end Lp
-
-/-- The right translates of an `Lᵖ` function converge to it in `Lᵖ` for `1 ≤ p < ∞`, for a
-regular left Haar measure. -/
+open Topology in
+/-- The unweighted right translates of an `Lᵖ` function converge to it in `Lᵖ` for
+`1 ≤ p < ∞`: `‖f (· * g) - f‖_p → 0` as `g → 1`. This is the counterpart for a regular left
+Haar measure of Mathlib's `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`. -/
 theorem MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular {f : G → E} (hf : MemLp f p μ)
     (hp₁ : 1 ≤ p) (hp : p ≠ ∞) :
     Tendsto (fun g => eLpNorm (fun x => f (x * g) - f x) p μ) (𝓝 1) (𝓝 0) := by
   have := Fact.mk hp₁
-  have h := Lp.tendsto_rightTranslationAddHom_apply_one hp (hf.toLp f)
-  rw [tendsto_iff_edist_tendsto_0] at h
-  refine h.congr fun g => ?_
-  rw [Lp.edist_def]
+  -- `f (· * g) = c(g)^(1/p) • R_g f`, and both factors tend to their values at `g = 1`.
+  set F := hf.toLp f
+  set a : G → ℝ := fun g => (modularCharacter g : ℝ) ^ p.toReal⁻¹
+  have ha : Continuous a := (NNReal.continuous_coe.comp continuous_modularCharacter).rpow_const
+    fun _ => Or.inr (inv_nonneg.2 ENNReal.toReal_nonneg)
+  have h : Tendsto (fun g => a g • Lp.rightTranslation μ p ℝ g F - F) (𝓝 1) (𝓝 0) := by
+    simpa [a] using ((ha.tendsto 1).smul
+      ((Lp.continuous_rightTranslation_apply hp F).tendsto 1)).sub_const F
+  refine (enorm_zero (E := Lp E p μ) ▸ (continuous_enorm.tendsto 0).comp h).congr' <|
+    Eventually.of_forall fun g => ?_
+  rw [Function.comp_apply, Lp.enorm_def]
   refine eLpNorm_congr_ae ?_
-  filter_upwards [Lp.coeFn_rightTranslationAddHom g (hf.toLp f), hf.coeFn_toLp,
-    (Measure.quasiMeasurePreserving_mul_right_of_regular μ g).ae hf.coeFn_toLp] with x h₁ h₂ h₃
-  rw [Pi.sub_apply, h₁, h₂, h₃]
+  filter_upwards [Lp.coeFn_sub (a g • Lp.rightTranslation μ p ℝ g F) F,
+    Lp.coeFn_smul (a g) (Lp.rightTranslation μ p ℝ g F),
+    Lp.coeFn_rightTranslation (𝕜 := ℝ) g F, hf.coeFn_toLp,
+    (quasiMeasurePreserving_mul_right_of_regular μ g).ae hf.coeFn_toLp] with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, smul_smul, modularCharacter_rpow_mul_inv,
+    one_smul, h₄, h₅]
 
 end MeasureTheory
