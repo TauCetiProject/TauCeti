@@ -141,10 +141,10 @@ lemma hasDerivAt_sq_div_const (ν z : ℝ) :
 
 /-! ### The chart `t ↦ c + p q / (t ^ 2 + p)` -/
 
-/-- For `0 < q < p`, the chart `t ↦ c + p q / (t ^ 2 + p)` carries `(0, ∞)` onto `(c, c + q)`. -/
-lemma image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hq : 0 < q) (hqp : q < p) :
+/-- For `0 < p` and `0 < q`, the chart `t ↦ c + p q / (t ^ 2 + p)` carries `(0, ∞)` onto
+`(c, c + q)`. -/
+lemma image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hp : 0 < p) (hq : 0 < q) :
     (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) '' Ioi 0 = Ioo c (c + q) := by
-  have hp : 0 < p := hq.trans hqp
   ext x
   refine ⟨fun ⟨t, ht, hx⟩ ↦ ?_, fun ⟨hxc, hxq⟩ ↦ ?_⟩
   · have ht2 : 0 < t ^ 2 := pow_pos ht 2

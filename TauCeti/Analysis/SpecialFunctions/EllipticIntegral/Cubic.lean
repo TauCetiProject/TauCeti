@@ -132,7 +132,7 @@ theorem lintegral_Ioo_inv_sqrt_cubic_eq_agmIntegral (h₃₂ : e₃ < e₂) (h�
   have hp : 0 < p := by linarith
   have hq : 0 < q := by linarith
   have hne (u : ℝ) : u ^ 2 + p ≠ 0 := by positivity
-  have himage := image_add_mul_div_sq_add_Ioi (c := e₃) hq (by linarith : q < p)
+  have himage := image_add_mul_div_sq_add_Ioi (c := e₃) hp hq
   rw [add_sub_cancel] at himage
   rw [← himage]
   refine lintegral_image_inv_sqrt_eq_agmIntegral
