@@ -76,6 +76,8 @@ private theorem isMeagre_image_inter_charts
     exact ⟨z, ⟨hz, hcrit z hz⟩, rfl⟩
   -- The boundaryless extended chart is an open partial homeomorphism.
   let e := (chartAt H' y₀).transHomeomorph J.toHomeomorph
+  -- Both chart constructions have forward map J ∘ chartAt H' y₀: transHomeomorph
+  -- composes with J.toHomeomorph, whose forward map is J, while extChartAt extends by J.
   have he (y : N) : e y = extChartAt J y₀ y := rfl
   have hmem : g '' v ⊆ e.target := by
     rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
