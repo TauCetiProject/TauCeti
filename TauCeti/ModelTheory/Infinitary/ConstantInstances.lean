@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.FormationClosed
 public import TauCeti.ModelTheory.Infinitary.SubstBounds
+public import TauCeti.ModelTheory.Term.Constants
 import Mathlib.Data.Set.Finite.Lemmas
 
 /-!
@@ -42,8 +43,6 @@ truth value.
   the formula holds at the values of the constants.
 * `FirstOrder.Language.BoundedFormulaInf.instConstants_eq_imp_iff` and its companions: the
   instances of the components of a formula are the components of its instance.
-* `FirstOrder.Language.Term.exists_onTerm_subst_eq`: every term of `L[[γ]]` without bound
-  positions is obtained from a term of `L` by substituting constants for its bound positions.
 * `FirstOrder.Language.BoundedFormulaInf.IsAtomic.exists_instConstants_eq`: every atomic formula
   of `L[[γ]]` without bound positions is the instance of an atomic formula of `L`.
 * `FirstOrder.Language.Fragment.FormationClosed.mem_instances_of_isAtomic`: every atomic sentence
@@ -141,6 +140,14 @@ theorem instConstants_rel {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (
   -- is `L[[γ]]` by definition.
   rfl
 
+/-- The instance of a universal formula is the universal formula of the body with the constants
+substituted for the outer bound positions. -/
+@[simp]
+theorem instConstants_all (φ : L.BoundedFormulaInf ι α (n + 1)) :
+    φ.all.instConstants c = (substBounds (liftSubst fun i => (L.con (c i)).term)
+      ((L.lhomWithConstants γ).onBoundedFormulaInf φ)).all := by
+  rw [instConstants_def, LHom.onBoundedFormulaInf_all, substBounds_all]
+
 end ConstructorEqs
 
 /-- An instance at the empty tuple is the image of the formula in `L[[γ]]`. -/
@@ -174,7 +181,6 @@ variable {n : ℕ} {φ : L.BoundedFormulaInf ι α n} {c : Fin n → γ}
 theorem instConstants_eq_falsum_iff : φ.instConstants c = falsum ↔ φ = falsum := by
   refine ⟨fun h => ?_, by rintro rfl; simp⟩
   cases φ <;> simp at h ⊢
-  simp [instConstants_def] at h
 
 /-- An instance is an implication exactly when the formula is an implication whose sides have
 the two sides of the instance as their instances. -/
@@ -187,11 +193,10 @@ theorem instConstants_eq_imp_iff {ψ₁ ψ₂ : L[[γ]].FormulaInf ι α} :
   | imp φ₁ φ₂ =>
     simp only [instConstants_imp, imp.injEq] at h
     exact ⟨φ₁, φ₂, rfl, h⟩
-  | all => simp [instConstants_def] at h
   | _ => simp at h
 
-/-- An instance is a countable disjunction exactly when the formula is a countable disjunction
-whose disjuncts have the disjuncts of the instance as their instances. -/
+/-- An instance is a disjunction over the carrier exactly when the formula is a disjunction over
+the carrier whose disjuncts have the disjuncts of the instance as their instances. -/
 theorem instConstants_eq_iSup_iff {ψs : ι → L[[γ]].FormulaInf ι α} :
     φ.instConstants c = iSup ψs ↔ ∃ φs, φ = iSup φs ∧ ∀ i, (φs i).instConstants c = ψs i := by
   refine ⟨fun h => ?_, by rintro ⟨φs, rfl, hs⟩; simp [hs]⟩
@@ -199,11 +204,10 @@ theorem instConstants_eq_iSup_iff {ψs : ι → L[[γ]].FormulaInf ι α} :
   | iSup φs =>
     simp only [instConstants_iSup, iSup.injEq] at h
     exact ⟨φs, rfl, fun i => congrFun h i⟩
-  | all => simp [instConstants_def] at h
   | _ => simp at h
 
-/-- An instance is a countable conjunction exactly when the formula is a countable conjunction
-whose conjuncts have the conjuncts of the instance as their instances. -/
+/-- An instance is a conjunction over the carrier exactly when the formula is a conjunction over
+the carrier whose conjuncts have the conjuncts of the instance as their instances. -/
 theorem instConstants_eq_iInf_iff {ψs : ι → L[[γ]].FormulaInf ι α} :
     φ.instConstants c = iInf ψs ↔ ∃ φs, φ = iInf φs ∧ ∀ i, (φs i).instConstants c = ψs i := by
   refine ⟨fun h => ?_, by rintro ⟨φs, rfl, hs⟩; simp [hs]⟩
@@ -211,7 +215,19 @@ theorem instConstants_eq_iInf_iff {ψs : ι → L[[γ]].FormulaInf ι α} :
   | iInf φs =>
     simp only [instConstants_iInf, iInf.injEq] at h
     exact ⟨φs, rfl, fun i => congrFun h i⟩
-  | all => simp [instConstants_def] at h
+  | _ => simp at h
+
+/-- An instance is a universal formula `∀ ψ` exactly when the formula is a universal formula
+`∀ φ'` and `ψ` is the body `φ'` with the constants substituted for the outer bound positions. -/
+theorem instConstants_eq_all_iff {ψ : L[[γ]].BoundedFormulaInf ι α 1} :
+    φ.instConstants c = ψ.all ↔ ∃ φ' : L.BoundedFormulaInf ι α (n + 1), φ = φ'.all ∧
+      substBounds (liftSubst fun i => (L.con (c i)).term)
+        ((L.lhomWithConstants γ).onBoundedFormulaInf φ') = ψ := by
+  refine ⟨fun h => ?_, by rintro ⟨φ', rfl, rfl⟩; simp⟩
+  cases φ with
+  | all φ' =>
+    simp only [instConstants_all, all.injEq] at h
+    exact ⟨φ', rfl, h⟩
   | _ => simp at h
 
 /-- If an instance is a universal formula `∀ ψ`, the formula is a universal formula `∀ φ'`, and
@@ -220,76 +236,18 @@ theorem exists_eq_all_of_instConstants_eq_all {ψ : L[[γ]].BoundedFormulaInf ι
     (h : φ.instConstants c = ψ.all) :
     ∃ φ' : L.BoundedFormulaInf ι α (n + 1), φ = φ'.all ∧
       ∀ d : γ, ψ.inst (L.con d).term = φ'.instConstants (Fin.snoc c d) := by
-  cases φ with
-  | all φ' =>
-    simp only [instConstants_def, LHom.onBoundedFormulaInf_all, substBounds_all, all.injEq] at h
-    refine ⟨φ', rfl, fun d => ?_⟩
-    rw [← h, inst_substBounds_liftSubst, instConstants_def]
-    congr 1
-    funext i
-    induction i using Fin.lastCases with
-    | last => simp
-    | cast i => simp
-  | _ => simp at h
+  obtain ⟨φ', rfl, rfl⟩ := instConstants_eq_all_iff.1 h
+  refine ⟨φ', rfl, fun d => ?_⟩
+  rw [inst_substBounds_liftSubst, instConstants_def]
+  congr 1
+  funext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast i => simp
 
 end Inversion
 
 /-! ### Atomic formulas over the constant expansion -/
-
-/-- Every term of `L[[γ]]` whose variables are free variables abstracts to a term of `L`: there is
-a finite set of constants such that, at every tuple listing them, the term is obtained from a
-term of `L` by substituting the constants of the tuple for its bound positions. -/
-private theorem exists_finite_subst_con (t : L[[γ]].Term (α ⊕ Fin 0)) :
-    ∃ S : Set γ, S.Finite ∧ ∀ {n : ℕ} (c : Fin n → γ), S ⊆ Set.range c →
-      ∃ s : L.Term (α ⊕ Fin n), ((L.lhomWithConstants γ).onTerm s).subst
-        (Sum.elim (var ∘ Sum.inl) fun i => (L.con (c i)).term) = t := by
-  induction t with
-  | var a =>
-    rcases a with a | i
-    · exact ⟨∅, Set.finite_empty, fun _ _ => ⟨var (Sum.inl a), rfl⟩⟩
-    · exact i.elim0
-  | @func l f ts ih =>
-    rcases f with f | k
-    · choose S hS hs using ih
-      refine ⟨⋃ i, S i, Set.finite_iUnion hS, fun c hc => ?_⟩
-      choose s hs using fun i => hs i c ((Set.subset_iUnion S i).trans hc)
-      refine ⟨func f s, ?_⟩
-      simp only [LHom.onTerm, Term.subst, lhomWithConstants_onFunction, hs]
-      rfl
-    · cases l with
-      | zero =>
-        refine ⟨{k}, Set.finite_singleton k, fun c hc => ?_⟩
-        obtain ⟨i, hi⟩ := hc rfl
-        refine ⟨var (Sum.inr i), ?_⟩
-        simp only [LHom.onTerm, Term.subst, Sum.elim_inr, hi, Constants.term, Language.con]
-        congr
-        exact funext fun i => i.elim0
-      | succ l => exact isEmptyElim k
-
-/-- **Terms abstract their constants**: a term of `L[[γ]]` whose variables are free variables is
-obtained from a term of `L` by substituting a tuple of constants for its bound positions. -/
-theorem _root_.FirstOrder.Language.Term.exists_onTerm_subst_eq (t : L[[γ]].Term (α ⊕ Fin 0)) :
-    ∃ (n : ℕ) (s : L.Term (α ⊕ Fin n)) (c : Fin n → γ), ((L.lhomWithConstants γ).onTerm s).subst
-      (Sum.elim (var ∘ Sum.inl) fun i => (L.con (c i)).term) = t := by
-  obtain ⟨S, hS, hs⟩ := exists_finite_subst_con t
-  obtain ⟨n, c, hc⟩ := Set.Finite.fin_embedding hS
-  obtain ⟨s, hs⟩ := hs c hc.ge
-  exact ⟨n, s, c, hs⟩
-
-/-- The value of a term of `L` with constants substituted for its bound positions, in an expansion
-of an `L`-structure, is its value at the values of the constants. -/
-theorem _root_.FirstOrder.Language.Term.realize_onTerm_subst_con {M : Type*} [L.Structure M]
-    [L[[γ]].Structure M] [(L.lhomWithConstants γ).IsExpansionOn M] {n : ℕ}
-    (s : L.Term (α ⊕ Fin n)) (c : Fin n → γ) (v : α → M) (xs : Fin 0 → M) :
-    (((L.lhomWithConstants γ).onTerm s).subst
-        (Sum.elim (var ∘ Sum.inl) fun i => (L.con (c i)).term)).realize (Sum.elim v xs) =
-      s.realize (Sum.elim v fun i => (L.con (c i) : M)) := by
-  rw [Term.realize_subst, LHom.realize_onTerm]
-  congr 1
-  funext x
-  rcases x with a | i
-  · rfl
-  · exact Term.realize_constants
 
 /-- **Atomic formulas abstract their constants**: an atomic formula of `L[[γ]]` without bound
 positions is the instance of an atomic formula of `L` at a tuple of constants. -/
@@ -298,15 +256,15 @@ theorem IsAtomic.exists_instConstants_eq {φ : L[[γ]].FormulaInf ι α} (h : φ
       ψ.IsAtomic ∧ ψ.instConstants c = φ := by
   cases h with
   | equal t₁ t₂ =>
-    obtain ⟨S₁, hS₁, hs₁⟩ := exists_finite_subst_con t₁
-    obtain ⟨S₂, hS₂, hs₂⟩ := exists_finite_subst_con t₂
+    obtain ⟨S₁, hS₁, hs₁⟩ := Term.exists_finite_forall_onTerm_subst_eq t₁
+    obtain ⟨S₂, hS₂, hs₂⟩ := Term.exists_finite_forall_onTerm_subst_eq t₂
     obtain ⟨n, c, hc⟩ := Set.Finite.fin_embedding (hS₁.union hS₂)
     obtain ⟨s₁, rfl⟩ := hs₁ c (hc ▸ Set.subset_union_left)
     obtain ⟨s₂, rfl⟩ := hs₂ c (hc ▸ Set.subset_union_right)
     exact ⟨n, BoundedFormulaInf.equal s₁ s₂, c, .equal _ _, by simp⟩
   | @rel l R ts =>
     rcases R with R | R
-    · choose S hS hs using fun i => exists_finite_subst_con (ts i)
+    · choose S hS hs using fun i => Term.exists_finite_forall_onTerm_subst_eq (ts i)
       obtain ⟨n, c, hc⟩ := Set.Finite.fin_embedding (Set.finite_iUnion hS)
       choose s hs using fun i => hs i c (hc ▸ Set.subset_iUnion S i)
       refine ⟨n, BoundedFormulaInf.rel R s, c, .rel _ _, ?_⟩

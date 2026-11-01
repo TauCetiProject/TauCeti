@@ -228,6 +228,12 @@ open Fragment
 
 variable {A : Fragment L} {T : L.Theoryω}
 
+/-- The satisfiable theories made of the sentences of `T`, mapped to `L[[ℕ]]`, and finitely many
+instances of members of `A`: the members of `ofSatisfiable`. -/
+private def satisfiableSets (T : L.Theoryω) (A : Fragment L) : Set L[[ℕ]].Theoryω :=
+  {s | (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
+    s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ s.IsSatisfiable}
+
 /-- The sentences of a theory together with finitely many instances can be written as instances
 at tuples of constants drawn from one finite set. -/
 private theorem exists_finite_constants {σ : L[[ℕ]].Theoryω} (hσ : σ.Finite)
@@ -242,6 +248,14 @@ private theorem exists_finite_constants {σ : L[[ℕ]].Theoryω} (hσ : σ.Finit
     exact ⟨0, ψ, Fin.elim0, instConstants_zero ψ _, fun i => i.elim0⟩
   · exact ⟨n φ hφ, χ φ hφ, d φ hφ, hd φ hφ, fun i => Set.mem_iUnion₂.2 ⟨φ, hφ, i, rfl⟩⟩
 
+/-- In the expansion of an `L`-structure interpreting each Henkin constant `c` as `e c`, the
+constant `L.con c` is interpreted as `e c`. -/
+private theorem con_eq {M : Type*} [L.Structure M] (e : ℕ → M) (c : ℕ) :
+    letI := constantsOn.structure e; (L.con c : M) = e c :=
+  -- `L.con c` is the constant symbol `c` of `constantsOn ℕ`, and `constantsOn.structure e`
+  -- interprets it as `e c`.
+  rfl
+
 /-- The expansion of an `L`-structure interpreting each Henkin constant `c` as `e c` models a
 theory whose sentences are instances of formulas holding at the values of their constants. -/
 private theorem model_of_forall_realize {M : Type*} [L.Structure M] (e : ℕ → M)
@@ -249,9 +263,11 @@ private theorem model_of_forall_realize {M : Type*} [L.Structure M] (e : ℕ →
       (d : Fin n → ℕ), χ.instConstants d = φ ∧ χ.Realize Empty.elim (e ∘ d)) :
     letI := constantsOn.structure e; s.Model M := by
   let := constantsOn.structure e
+  have hcon : ∀ c, (L.con c : M) = e c := con_eq e
   refine Theoryω.model_iff.2 fun φ hφ => ?_
   obtain ⟨n, χ, d, rfl, h⟩ := h φ hφ
-  rwa [SentenceInf.realize_def, realize_instConstants]
+  rw [SentenceInf.realize_def, realize_instConstants]
+  simpa only [hcon, Function.comp_def] using h
 
 /-- In a model of `s` that is the expansion of an `L`-structure interpreting each Henkin
 constant `c` as `e c`, an instance in `s` holds at the values of its constants. -/
@@ -260,8 +276,10 @@ private theorem realize_of_model {M : Type*} [L.Structure M] {e : ℕ → M}
     {χ : L.BoundedFormulaω Empty n} {d : Fin n → ℕ} (h : χ.instConstants d ∈ s) :
     χ.Realize Empty.elim (e ∘ d) := by
   let := constantsOn.structure e
+  have hcon : ∀ c, (L.con c : M) = e c := con_eq e
   have hr := Theoryω.Model.realize_of_mem hM h
-  rwa [SentenceInf.realize_def, realize_instConstants] at hr
+  rw [SentenceInf.realize_def, realize_instConstants] at hr
+  simpa only [hcon, Function.comp_def] using hr
 
 /-- Changing the interpretation of Henkin constants outside a set `F` preserves a model of a
 theory whose sentences are instances at tuples of constants from `F`. -/
@@ -275,20 +293,10 @@ private theorem model_of_eqOn {M : Type*} [L.Structure M] {e e' : ℕ → M} {F 
   have hed : e' ∘ d = e ∘ d := funext fun i => (he (hd i)).symm
   exact ⟨n, χ, d, rfl, hed ▸ realize_of_model hM hφ⟩
 
-/-- A theory that the expansion of a nonempty `L`-structure by an interpretation of the Henkin
-constants models is satisfiable. -/
-private theorem isSatisfiable_of_model {M : Type (max u v)} [L.Structure M] [Nonempty M]
-    (e : ℕ → M) {s : L[[ℕ]].Theoryω} (hM : letI := constantsOn.structure e; s.Model M) :
-    s.IsSatisfiable := by
-  let := constantsOn.structure e
-  exact Theoryω.isSatisfiable_iff.2 ⟨M, inferInstance, inferInstance, hM⟩
-
 /-- A satisfiable theory made of the sentences of `T` and finitely many instances has a nonempty
 model that is the expansion of an `L`-structure by an interpretation `e` of the Henkin
 constants, and its sentences are instances at tuples of constants from a finite set. -/
-private theorem exists_model_of_mem {s : L[[ℕ]].Theoryω}
-    (hs : (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-      s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ s.IsSatisfiable) :
+private theorem exists_model_of_mem {s : L[[ℕ]].Theoryω} (hs : s ∈ satisfiableSets T A) :
     ∃ (M : Type (max u v)) (_ : L.Structure M) (_ : Nonempty M) (e : ℕ → M) (F : Set ℕ),
       F.Finite ∧ (∀ φ ∈ s, ∃ (n : ℕ) (χ : L.BoundedFormulaω Empty n) (d : Fin n → ℕ),
         χ.instConstants d = φ ∧ ∀ i, d i ∈ F) ∧
@@ -307,33 +315,25 @@ private theorem exists_model_of_mem {s : L[[ℕ]].Theoryω}
 /-- Adding a satisfiable instance to a theory made of the sentences of `T` and finitely many
 instances gives a theory of the same kind. -/
 private theorem insert_mem {s : L[[ℕ]].Theoryω} {X : L[[ℕ]].Sentenceω}
-    (hs : (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-      s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ s.IsSatisfiable)
-    (hX : X ∈ A.instances ℕ) (hsat : (insert X s).IsSatisfiable) :
-    (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-      insert X s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ (insert X s).IsSatisfiable := by
+    (hs : s ∈ satisfiableSets T A) (hX : X ∈ A.instances ℕ) (hsat : (insert X s).IsSatisfiable) :
+    insert X s ∈ satisfiableSets T A := by
   obtain ⟨⟨σ, hσ, hσA, rfl⟩, -⟩ := hs
   exact ⟨⟨insert X σ, hσ.insert X, Set.insert_subset hX hσA, (Set.union_insert ..).symm⟩, hsat⟩
 
 /-- Adding an instance true in a nonempty model of such a theory gives a theory of the same
 kind. -/
 private theorem insert_mem_of_model {s : L[[ℕ]].Theoryω} {X : L[[ℕ]].Sentenceω}
-    (hs : (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-      s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ s.IsSatisfiable)
-    (hX : X ∈ A.instances ℕ) {M : Type (max u v)} [L[[ℕ]].Structure M] [Nonempty M]
-    (hM : s.Model M) (hXM : SentenceInf.Realize X M) :
-    (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-      insert X s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ (insert X s).IsSatisfiable :=
-  insert_mem hs hX (Theoryω.isSatisfiable_iff.2
-    ⟨M, inferInstance, inferInstance, Theoryω.model_insert_iff.2 ⟨hXM, hM⟩⟩)
+    (hs : s ∈ satisfiableSets T A) (hX : X ∈ A.instances ℕ) {M : Type (max u v)}
+    [L[[ℕ]].Structure M] [Nonempty M] (hM : s.Model M) (hXM : SentenceInf.Realize X M) :
+    insert X s ∈ satisfiableSets T A :=
+  insert_mem hs hX (Theoryω.model_insert_iff.2 ⟨hXM, hM⟩).isSatisfiable
 
 /-- The sentences of a theory of members of `A` together with finitely many instances are
 instances. -/
 private theorem subset_instances (hT : ∀ φ ∈ T, (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A)
-    {s : L[[ℕ]].Theoryω} (hs : ∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-      s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) :
+    {s : L[[ℕ]].Theoryω} (hs : s ∈ satisfiableSets T A) :
     s ⊆ A.instances ℕ := by
-  obtain ⟨σ, -, hσA, rfl⟩ := hs
+  obtain ⟨⟨σ, -, hσA, rfl⟩, -⟩ := hs
   rintro φ (hφ | hφ)
   · obtain ⟨ψ, hψ, rfl⟩ := LHom.mem_onTheoryω.1 hφ
     exact onBoundedFormulaInf_mem_instances (hT ψ hψ)
@@ -345,8 +345,7 @@ and a finite set of instances of members of `A` at tuples of Henkin constants fo
 property. -/
 def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
     (hT : ∀ φ ∈ T, (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) : ConsistencyProperty L where
-  sets := {s | (∃ σ : L[[ℕ]].Theoryω, σ.Finite ∧ σ ⊆ A.instances ℕ ∧
-    s = (L.lhomWithConstants ℕ).onTheoryω T ∪ σ) ∧ s.IsSatisfiable}
+  sets := satisfiableSets T A
   no_falsum s hs h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     exact SentenceInf.realize_bot.1 (Theoryω.Model.realize_of_mem hM h)
@@ -356,7 +355,7 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
       (Theoryω.Model.realize_of_mem hM h)
   imp s hs φ ψ h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    have hi := subset_instances hT hs.1 h
+    have hi := subset_instances hT hs h
     have hr : SentenceInf.Realize φ M → SentenceInf.Realize ψ M := by
       simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_imp] using
         Theoryω.Model.realize_of_mem hM h
@@ -366,7 +365,7 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
         hM (SentenceInf.realize_not.2 hφ))
   not_imp s hs φ ψ h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    have hi := imp_left_mem_instances (subset_instances hT hs.1 h)
+    have hi := imp_left_mem_instances (subset_instances hT hs h)
     have hr : SentenceInf.Realize φ M ∧ ¬SentenceInf.Realize ψ M := by
       simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_not, realize_imp,
         Classical.not_imp] using Theoryω.Model.realize_of_mem hM h
@@ -375,11 +374,11 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
         (SentenceInf.realize_not.2 hr.2)⟩
   iInf s hs φs h k := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    exact insert_mem_of_model hs (iInf_mem_instances (subset_instances hT hs.1 h) k) hM
+    exact insert_mem_of_model hs (iInf_mem_instances (subset_instances hT hs h) k) hM
       (SentenceInf.realize_iInf.1 (Theoryω.Model.realize_of_mem hM h) k)
   not_iInf s hs φs h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    have hi := hA.not_mem_instances_iff.1 (subset_instances hT hs.1 h)
+    have hi := hA.not_mem_instances_iff.1 (subset_instances hT hs h)
     have hr := SentenceInf.realize_not.1 (Theoryω.Model.realize_of_mem hM h)
     obtain ⟨k, hk⟩ := not_forall.1 (hr ∘ SentenceInf.realize_iInf.2)
     exact ⟨k, insert_mem_of_model hs (hA.not_mem_instances_iff.2 (iInf_mem_instances hi k)) hM
@@ -387,10 +386,10 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
   iSup s hs φs h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     obtain ⟨k, hk⟩ := SentenceInf.realize_iSup.1 (Theoryω.Model.realize_of_mem hM h)
-    exact ⟨k, insert_mem_of_model hs (iSup_mem_instances (subset_instances hT hs.1 h) k) hM hk⟩
+    exact ⟨k, insert_mem_of_model hs (iSup_mem_instances (subset_instances hT hs h) k) hM hk⟩
   not_iSup s hs φs h k := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    have hi := hA.not_mem_instances_iff.1 (subset_instances hT hs.1 h)
+    have hi := hA.not_mem_instances_iff.1 (subset_instances hT hs h)
     have hr := SentenceInf.realize_not.1 (Theoryω.Model.realize_of_mem hM h)
     exact insert_mem_of_model hs (hA.not_mem_instances_iff.2 (iSup_mem_instances hi k)) hM
       (SentenceInf.realize_not.2 fun hk => hr (SentenceInf.realize_iSup.2 ⟨k, hk⟩))
@@ -398,7 +397,7 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     have hr := Theoryω.Model.realize_of_mem hM h
     simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at hr
-    refine insert_mem_of_model hs (inst_mem_instances (subset_instances hT hs.1 h) c) hM ?_
+    refine insert_mem_of_model hs (inst_mem_instances (subset_instances hT hs h) c) hM ?_
     simp only [SentenceInf.realize_def, realize_inst, Term.realize_constants]
     simpa only [Fin.snoc_zero] using hr (L.con c)
   not_all s hs φ h := by
@@ -417,16 +416,16 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
     obtain ⟨e', he'c, he⟩ : ∃ e' : ℕ → M, e' c = m ∧ Set.EqOn e e' F :=
       ⟨Function.update e c m, Function.update_self .., fun k hk =>
         (Function.update_of_ne (ne_of_mem_of_not_mem hk hc) _ _).symm⟩
+    let := constantsOn.structure e'
+    have hcon : ∀ k, (L.con k : M) = e' k := con_eq e'
+    have hed : e' ∘ d = e ∘ d := funext fun i => (he (hd i)).symm
+    have hX : SentenceInf.Realize (φ.inst (L.con c).term).not M := by
+      rw [hinst c, ← instConstants_not, SentenceInf.realize_def, realize_instConstants]
+      simp only [hcon]
+      rwa [← Function.comp_def e', realize_not, Fin.comp_snoc, he'c, hed]
     refine ⟨c, insert_mem hs (hA.not_mem_instances_iff.2
-      (inst_mem_instances (imp_left_mem_instances (subset_instances hT hs.1 h)) c))
-      (isSatisfiable_of_model e' (model_of_forall_realize e' ?_))⟩
-    rintro ψ (rfl | hψ)
-    · refine ⟨n + 1, χ.not, Fin.snoc d c, by rw [instConstants_not, hinst], ?_⟩
-      have hed : e' ∘ d = e ∘ d := funext fun i => (he (hd i)).symm
-      rwa [realize_not, Fin.comp_snoc, he'c, hed]
-    · obtain ⟨k, ψ, d', rfl, hd'⟩ := hF _ hψ
-      have hed : e' ∘ d' = e ∘ d' := funext fun i => (he (hd' i)).symm
-      exact ⟨k, ψ, d', rfl, hed ▸ realize_of_model hM hψ⟩
+      (inst_mem_instances (imp_left_mem_instances (subset_instances hT hs h)) c))
+      (Theoryω.model_insert_iff.2 ⟨hX, model_of_eqOn hF he hM⟩).isSatisfiable⟩
   eq_refl s hs t := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     exact insert_mem_of_model hs (hA.mem_instances_of_isAtomic (.equal _ _)) hM
@@ -451,12 +450,11 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
         e' c = r.realize (Sum.elim Empty.elim (e ∘ d)) ∧ Set.EqOn e e' (F ∪ Set.range d) :=
       ⟨Function.update e c _, Function.update_self .., fun k hk =>
         (Function.update_of_ne (ne_of_mem_of_not_mem hk hc) _ _).symm⟩
-    refine ⟨c, insert_mem hs (hA.mem_instances_of_isAtomic (.equal _ _))
-      (isSatisfiable_of_model e' ?_)⟩
     have hs' := model_of_eqOn hF (he.mono Set.subset_union_left) hM
     let := constantsOn.structure e'
-    have hcon : ∀ k, (L.con k : M) = e' k := fun _ => rfl
-    refine Theoryω.model_insert_iff.2 ⟨?_, hs'⟩
+    have hcon : ∀ k, (L.con k : M) = e' k := con_eq e'
+    refine ⟨c, insert_mem hs (hA.mem_instances_of_isAtomic (.equal _ _))
+      (Theoryω.model_insert_iff.2 ⟨?_, hs'⟩).isSatisfiable⟩
     rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_equal, Term.realize_constants,
       Term.realize_onTerm_subst_con, hcon, he'c]
     simp only [hcon]
@@ -478,9 +476,8 @@ theorem onTheoryω_mem_ofSatisfiable {hA : A.FormationClosed} {hT} (h : T.IsSati
     (L.lhomWithConstants ℕ).onTheoryω T ∈ (ofSatisfiable T A hA hT).sets := by
   refine ⟨⟨∅, Set.finite_empty, Set.empty_subset _, (Set.union_empty _).symm⟩, ?_⟩
   obtain ⟨M, _, hne, hM⟩ := Theoryω.isSatisfiable_iff.1 h
-  refine isSatisfiable_of_model (fun _ => Classical.arbitrary M) ?_
   let := constantsOn.structure fun _ : ℕ => Classical.arbitrary M
-  exact (LHom.onTheoryω_model _ T).2 hM
+  exact ((LHom.onTheoryω_model _ T).2 hM).isSatisfiable
 
 end ofSatisfiable
 
