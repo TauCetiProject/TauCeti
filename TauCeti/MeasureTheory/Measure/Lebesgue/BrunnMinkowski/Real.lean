@@ -169,10 +169,6 @@ theorem volume_add_le_volume_thickening {A : Set ℝ} (hA : A.Nonempty) {ρ : �
     _ ≤ volume (closure A + Metric.ball (0 : ℝ) ρ) :=
         volume_add_volume_le hA.closure isClosed_closure.measurableSet
           ⟨0, Metric.mem_ball_self hρ⟩ measurableSet_ball
-    _ ≤ volume (Metric.thickening ρ A) := by
-        refine measure_mono ?_
-        rintro _ ⟨a, ha, b, hb, rfl⟩
-        rw [← Metric.thickening_closure]
-        exact Metric.mem_thickening_iff.2 ⟨a, ha, by simpa using hb⟩
+    _ = volume (Metric.thickening ρ A) := by rw [add_ball_zero, Metric.thickening_closure]
 
 end TauCeti.Real
