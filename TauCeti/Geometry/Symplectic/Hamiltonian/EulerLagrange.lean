@@ -83,7 +83,7 @@ public section
 
 namespace TauCeti
 
-open ContinuousLinearMap
+open ContinuousLinearMap Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -135,8 +135,7 @@ theorem hasFDerivAt_legendreHamiltonian {L : E × E → ℝ} {w : E × StrongDua
   have h₂ : HasFDerivAt (fun y : E × StrongDual ℝ E ↦ L (y.1, w y))
       ((fderiv ℝ L (z.1, w z)).comp ((fst ℝ E (StrongDual ℝ E)).prod (fderiv ℝ w z))) z :=
     hL.hasFDerivAt.comp z (hasFDerivAt_fst.prodMk hw.hasFDerivAt)
-  rw [show legendreHamiltonian L w = fun y ↦ y.2 (w y) - L (y.1, w y) from
-    funext (legendreHamiltonian_apply L w)]
+  unfold legendreHamiltonian
   refine (h₁.sub h₂).congr_fderiv (ContinuousLinearMap.ext fun δ ↦ ?_)
   -- Split the derivative of `L` into its slices; the fibre slice at `w z` is `p = z.2`.
   have hr := congrArg (fun f : E →L[ℝ] ℝ ↦ f (fderiv ℝ w z δ)) (fderiv_slice_right hL)
@@ -201,31 +200,33 @@ theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField {L : E × E → ℝ}
   rw [hamiltonianVectorField_legendreHamiltonian hw hL hp] at hγ
   exact hγ.fst
 
-/-- **Hamiltonian trajectories are Legendre lifts of Euler–Lagrange solutions.** Let `w` solve the
-momentum for the velocity along an integral curve `γ` of the Hamiltonian vector field of a
-Lagrangian system. Then the position curve `q = γ.1` has velocity `w ∘ γ`, the curve `γ` is the
-Legendre lift `s ↦ FL(q s, q' s)` of `q`, and `q` solves the Euler–Lagrange equation
-`d/dt ∂_v L(q, q') = ∂_q L(q, q')`. -/
+/-- **Hamiltonian trajectories are Legendre lifts of Euler–Lagrange solutions.** Let `γ` be an
+integral curve of the Hamiltonian vector field of a Lagrangian system at time `t`, and let `w`
+solve the momentum for the velocity along `γ` near `t`. Then at `t` the position curve `q = γ.1`
+has velocity `w ∘ γ`, the curve `γ` is the Legendre lift `s ↦ FL(q s, q' s)` of `q`, and `q`
+solves the Euler–Lagrange equation `d/dt ∂_v L(q, q') = ∂_q L(q, q')`. -/
 theorem eulerLagrange_of_hasDerivAt_hamiltonianVectorField {L : E × E → ℝ}
-    {w : E × StrongDual ℝ E → E} {γ : ℝ → E × StrongDual ℝ E}
-    (hγ : ∀ t, HasDerivAt γ ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
+    {w : E × StrongDual ℝ E → E} {γ : ℝ → E × StrongDual ℝ E} {t : ℝ}
+    (hγ : HasDerivAt γ ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
       (legendreHamiltonian L w) (γ t)) t)
-    (hw : ∀ t, DifferentiableAt ℝ w (γ t)) (hL : ∀ t, DifferentiableAt ℝ L ((γ t).1, w (γ t)))
-    (hp : ∀ t, fderiv ℝ (fun v ↦ L ((γ t).1, v)) (w (γ t)) = (γ t).2) (t : ℝ) :
+    (hw : DifferentiableAt ℝ w (γ t)) (hL : DifferentiableAt ℝ L ((γ t).1, w (γ t)))
+    (hp : ∀ᶠ s in 𝓝 t, fderiv ℝ (fun v ↦ L ((γ s).1, v)) (w (γ s)) = (γ s).2) :
     HasDerivAt (fun s ↦ (γ s).1) (w (γ t)) t ∧
       linearLegendreMap L ((γ t).1, w (γ t)) = γ t ∧
       HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L ((γ s).1, u)) (w (γ s)))
         (fderiv ℝ (fun y ↦ L (y, w (γ t))) (γ t).1) t := by
-  have hlift (s : ℝ) : linearLegendreMap L ((γ s).1, w (γ s)) = γ s :=
-    Prod.ext rfl (hp s)
-  refine ⟨hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField (hγ t) (hw t) (hL t) (hp t),
-    hlift t, ?_⟩
+  have hlift : (fun s ↦ linearLegendreMap L ((γ s).1, w (γ s))) =ᶠ[𝓝 t] γ :=
+    hp.mono fun s hs ↦ Prod.ext rfl hs
+  have hlift_t : linearLegendreMap L ((γ t).1, w (γ t)) = γ t := hlift.self_of_nhds
+  refine ⟨hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField hγ hw hL hp.self_of_nhds,
+    hlift_t, ?_⟩
   have hγ' : HasDerivAt (fun s ↦ linearLegendreMap L ((γ s).1, w (γ s)))
       ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
         (legendreHamiltonian L w) (linearLegendreMap L ((γ t).1, w (γ t)))) t := by
-    simpa only [hlift] using hγ t
+    rw [hlift_t]
+    exact hγ.congr_of_eventuallyEq hlift
   exact ((hasDerivAt_linearLegendreMap_iff (q := fun s ↦ (γ s).1) (v := fun s ↦ w (γ s))
-    (by rw [hlift]; exact hw t) (hL t) (by rw [hlift])).1 hγ').2
+    (by rw [hlift_t]; exact hw) hL (by rw [hlift_t])).1 hγ').2
 
 /-- **Conservation of energy.** Let `q` solve the Euler–Lagrange equations with velocity `v` at
 every time, and let `w` recover the velocity from the Legendre lift along the curve, with `w`
