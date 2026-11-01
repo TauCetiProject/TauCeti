@@ -16,8 +16,9 @@ satisfying `t y ≤ A y` entrywise for some nonzero nonnegative vector `y`, whic
 of the Collatz–Wielandt formula.
 
 Without positivity or irreducibility these statements cannot be sharpened: the eigenvector may have
-zero entries, it need not be unique up to scalars, and other nonnegative eigenvectors may belong to
-smaller eigenvalues, as the diagonal matrix with entries `1` and `2` shows. For strictly positive
+zero entries, and other nonnegative eigenvectors may belong to smaller eigenvalues, as the diagonal
+matrix with entries `1` and `2` shows; and it need not be unique up to scalars, as the identity
+matrix of size two shows. For strictly positive
 and for irreducible matrices see `TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive` and
 `TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Irreducible`.
 
@@ -128,27 +129,15 @@ private theorem exists_spectralRadius_eq_aux [Nonempty n] (hA : ∀ i j, 0 ≤ A
     ∃ r : ℝ, 0 ≤ r ∧ spectralRadius ℂ (A.map (↑) : Matrix n n ℂ) = ENNReal.ofReal r ∧
       (∃ v : n → ℝ, 0 ≤ v ∧ v ≠ 0 ∧ A *ᵥ v = r • v) ∧
       ∀ x : ℝ, (∀ (w : n → ℝ) (s : ℝ), (∀ i, 0 < w i) → A *ᵥ w ≤ s • w → x ≤ s) → x ≤ r := by
-  classical
   obtain ⟨r, v, hv, hv1, hAv, hmax⟩ := exists_mulVec_eq_smul_of_nonneg_aux hA
   have hv0 : v ≠ 0 := by
     rintro rfl
     simp at hv1
   have hr : 0 ≤ r := hmax 0 fun w s hw hAw =>
     le_of_smul_le_mulVec hA hw hAw hv hv0 (by simpa using mulVec_nonneg hA hv)
-  refine ⟨r, hr, ?_, ⟨v, hv, hv0, hAv⟩, hmax⟩
-  rw [spectralRadius_eq_of_unital]
-  refine le_antisymm (iSup₂_le fun μ hμ => ?_) ?_
-  · obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ
-    rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
-    exact ENNReal.ofReal_le_ofReal <|
-      hmax _ fun w s hw hAw => norm_le_of_mulVec_le_smul hA hw hAw hz hAz
-  · refine le_iSup₂_of_le (r : ℂ)
-      (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨fun i => v i, ?_, ?_⟩) ?_
-    · obtain ⟨j, hj⟩ := Function.ne_iff.1 hv0
-      exact fun h => hj (by simpa using congrFun h j)
-    · ext i
-      simpa [mulVec, dotProduct] using congrArg Complex.ofReal (congrFun hAv i)
-    · rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm, Complex.norm_real, Real.norm_of_nonneg hr]
+  refine ⟨r, hr, spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le hr hv0 hAv ?_,
+    ⟨v, hv, hv0, hAv⟩, hmax⟩
+  exact fun μ z hz hAz => hmax _ fun w s hw hAw => norm_le_of_mulVec_le_smul hA hw hAw hz hAz
 
 /-- **Perron–Frobenius theorem for nonnegative matrices**: an entrywise nonnegative real square
 matrix has its spectral radius `r`, viewed as a complex matrix, as an eigenvalue, with an
