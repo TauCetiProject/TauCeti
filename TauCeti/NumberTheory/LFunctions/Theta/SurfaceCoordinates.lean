@@ -127,22 +127,18 @@ theorem surfaceScale_eq_iff {x y : realSpace K} (hx : x ∈ normOneSurface K)
   · rintro ⟨hpart, hnorm⟩
     rw [← hpart, ← hnorm, surfaceScale_surfacePart hy]
 
-/-- Joint continuity of radial scaling on positive radial coordinates. -/
-theorem continuousOn_surfaceScale :
-    ContinuousOn (fun p : realSpace K × ℝ ↦ surfaceScale p.1 p.2)
-      (Set.univ ×ˢ Set.Ioi 0) := by
-  apply continuousOn_pi.mpr
-  intro w p hp
-  exact ((continuous_apply w).comp continuous_fst).continuousWithinAt.mul
-    (continuous_snd.continuousAt.rpow_const (Or.inl hp.2.ne')).continuousWithinAt
+/-- Joint continuity of radial scaling on all real radial coordinates. -/
+theorem continuous_surfaceScale :
+    Continuous (fun p : realSpace K × ℝ ↦ surfaceScale p.1 p.2) := by
+  exact continuous_pi fun w ↦ ((continuous_apply w).comp continuous_fst).mul
+    (continuous_snd.rpow_const fun _ ↦ Or.inr (by positivity))
 
-/-- Continuity of normalization on the positive orthant. -/
+/-- Continuity of normalization wherever the archimedean norm is nonzero. -/
 theorem continuousOn_surfacePart :
-    ContinuousOn (surfacePart : realSpace K → realSpace K) {y | ∀ w, 0 < y w} := by
+    ContinuousOn (surfacePart : realSpace K → realSpace K) {y | archNorm y ≠ 0} := by
   apply continuousOn_pi.mpr
-  intro w y hy
+  intro w y hN
   simp only [surfacePart_def, surfaceScale_apply]
-  have hN := (archNorm_pos hy).ne'
   exact ((continuous_apply w).continuousAt.mul
     ((continuous_archNorm.continuousAt.inv₀ hN).rpow_const
       (Or.inl (inv_ne_zero hN)))).continuousWithinAt
@@ -163,15 +159,15 @@ noncomputable def archParamHomeomorphSurfaceProd :
     · exact Subtype.ext (archNorm_surfaceScale_of_mem_normOneSurface p.1.property p.2.property.le)
   continuous_toFun := by
     apply Continuous.prodMk
-    · exact (continuousOn_surfacePart.domRestrict).subtype_mk _
+    · apply Continuous.subtype_mk
+      exact continuousOn_surfacePart.comp_continuous continuous_subtype_val
+        (fun y ↦ (archNorm_pos y.property).ne')
     · exact (continuous_archNorm.comp continuous_subtype_val).subtype_mk _
   continuous_invFun := by
     apply Continuous.subtype_mk
-    apply continuousOn_surfaceScale.comp_continuous
+    exact continuous_surfaceScale.comp
       ((continuous_subtype_val.comp continuous_fst).prodMk
         (continuous_subtype_val.comp continuous_snd))
-    intro p
-    exact ⟨Set.mem_univ _, p.2.property⟩
 
 @[simp]
 theorem archParamHomeomorphSurfaceProd_apply_surface
@@ -188,6 +184,7 @@ theorem archParamHomeomorphSurfaceProd_symm_apply (x : normOneSurface K) (t : Se
     ((archParamHomeomorphSurfaceProd K).symm (x, t) : realSpace K) = surfaceScale x t := (rfl)
 
 /-- Unit scaling acts only on the surface coordinate, not on the radial coordinate. -/
+@[simp]
 theorem surfaceScale_unitScale (u : (𝓞 K)ˣ) (x : realSpace K) (t : ℝ) :
     surfaceScale (unitScale u x) t = unitScale u (surfaceScale x t) := by
   ext w
@@ -196,6 +193,6 @@ theorem surfaceScale_unitScale (u : (𝓞 K)ˣ) (x : realSpace K) (t : ℝ) :
 @[simp]
 theorem surfacePart_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) :
     surfacePart (unitScale u y) = unitScale u (surfacePart y) := by
-  simp [surfacePart_def, surfaceScale_unitScale]
+  simp [surfacePart_def]
 
 end TauCeti.LFunctions
