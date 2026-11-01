@@ -94,23 +94,21 @@ theorem isFullSetOfSections_pi_iff [∀ k, Module.Finite A (B k)] [∀ k, Module
     apply AlgHom.ext
     intro x
     exact (s p.1 p.2).sectionBaseChange_comp_evalAlgHom T x
+  have local_iff (P : Ideal A) [P.IsMaximal] :
+      (IsFullSetOfSections fun p : Σ k, ι k ↦
+        ((s p.1 p.2).comp (Pi.evalAlgHom A B p.1)).sectionBaseChange
+          (Localization.AtPrime P)) ↔
+      ∀ k, IsFullSetOfSections fun i ↦ (s k i).sectionBaseChange (Localization.AtPrime P) := by
+    have : ∀ j, Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[A] B j) :=
+      fun j ↦ Module.free_of_flat_of_isLocalRing
+    exact (transport _).trans (isFullSetOfSections_pi_iff_of_free
+      (fun j i ↦ (s j i).sectionBaseChange (Localization.AtPrime P)))
   constructor
   · intro h k
-    apply IsFullSetOfSections.of_localization_maximal
-    intro P _
-    have : ∀ j, Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[A] B j) :=
-      fun j ↦ Module.free_of_flat_of_isLocalRing
-    exact (isFullSetOfSections_pi_iff_of_free (A := Localization.AtPrime P)
-      (fun j i ↦ (s j i).sectionBaseChange (Localization.AtPrime P))).mp
-        ((transport _).mp (h.baseChange _)) k
+    exact IsFullSetOfSections.of_localization_maximal fun P _ ↦
+      (local_iff P).mp (h.baseChange _) k
   · intro h
-    apply IsFullSetOfSections.of_localization_maximal
-    intro P _
-    have : ∀ j, Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[A] B j) :=
-      fun j ↦ Module.free_of_flat_of_isLocalRing
-    exact (transport _).mpr ((isFullSetOfSections_pi_iff_of_free
-      (A := Localization.AtPrime P)
-      (fun j i ↦ (s j i).sectionBaseChange (Localization.AtPrime P))).mpr
-        fun k ↦ (h k).baseChange _)
+    exact IsFullSetOfSections.of_localization_maximal fun P _ ↦
+      (local_iff P).mpr fun k ↦ (h k).baseChange _
 
 end TauCeti

@@ -367,12 +367,7 @@ map `A → T`, in particular along a faithfully flat one. -/
 theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T]
     (hT : Function.Injective (algebraMap A T))
     (h : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T) : IsFullSetOfSections s := by
-  intro T₀ _ _ _ f
-  let T₀' (P : Ideal A) [P.IsMaximal] := Localization (Algebra.algebraMapSubmonoid T₀ P.primeCompl)
-  refine Module.eq_of_localization_maximal T₀'
-    (fun P ↦ (IsScalarTower.toAlgHom A T₀ (T₀' P)).toLinearMap) _ _ fun P _ ↦ ?_
-  rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  refine algebraMap_norm_eq_algebraMap_prod (A' := Localization.AtPrime P) f ?_
+  refine of_localization_maximal fun P _ ↦ ?_
   -- Over the local ring `A_P` the algebra `B` is free, and `A_P → T_P` is injective, so it is
   -- enough that the base change of `s` to `T_P` through `A_P` is a full set of sections. Through
   -- `T` instead, it is the base change of the full set of sections `h`.
@@ -386,7 +381,7 @@ theorem IsFullSetOfSections.of_baseChange {T : Type w} [CommRing T] [Algebra A T
     convert (isFullSetOfSections_comp_algEquiv_iff e).2 (h.baseChange T') using 2 with i
     ext x
     simp [e, ← IsScalarTower.algebraMap_apply]
-  exact (hP.of_baseChange_of_free (localizationAlgebra_injective _ _ hT)).norm_eq_of_free _
+  exact hP.of_baseChange_of_free (localizationAlgebra_injective _ _ hT)
 
 /-- Over a base change which is injective, being a full set of sections of a finite flat
 algebra can be checked after the base change. -/
