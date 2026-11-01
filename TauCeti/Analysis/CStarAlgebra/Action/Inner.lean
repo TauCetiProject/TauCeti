@@ -92,8 +92,6 @@ time `0`. -/
 private theorem hasDerivAt_cstarAction_zero (h : selfAdjoint A) (a : A) :
     HasDerivAt (fun t : ℝ => cstarAction h (Multiplicative.ofAdd t) a)
       (I • ((h : A) * a - a * h)) 0 := by
-  have hexp (x : A) : HasDerivAt (fun t : ℝ => exp (t • x)) x 0 := by
-    simpa using hasDerivAt_exp_smul_const' (𝕂 := ℝ) x 0
   -- in real time the orbit is `exp (t (i h)) a exp (t (-i h))`
   have horbit : (fun t : ℝ => cstarAction h (Multiplicative.ofAdd t) a) =
       fun t : ℝ => exp (t • (I • (h : A))) * a * exp (t • -(I • (h : A))) := by
@@ -101,8 +99,7 @@ private theorem hasDerivAt_cstarAction_zero (h : selfAdjoint A) (a : A) :
     simp only [cstarAction_apply, toAdd_ofAdd, neg_smul, smul_neg, ← Complex.coe_smul, smul_smul,
       mul_comm I]
   rw [horbit]
-  convert ((hexp _).fun_mul (hasDerivAt_const (0 : ℝ) a)).fun_mul (hexp _) using 1
-  simp [sub_eq_add_neg]
+  exact (hasDerivAt_exp_mul_const_mul_exp_neg (I • (h : A)) a).congr_deriv (by simp [smul_sub])
 
 /-- Every element lies in the domain of the generator of the inner dynamics. -/
 @[simp]
