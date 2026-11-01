@@ -66,9 +66,11 @@ def finiteRootsOfUnityDiagram : (Index p)ᵒᵖ ⥤ FiniteGrp where
   map f := FiniteGrp.ofHom (rootsOfUnityPowOfDvd f.unop.le)
   map_id n := by
     rw [rootsOfUnityPowOfDvd_refl]
+    -- FiniteGrp.ofHom wraps MonoidHom.id as the categorical identity by definition.
     rfl
   map_comp {n m l} f g := by
     rw [← rootsOfUnityPowOfDvd_comp g.unop.le f.unop.le]
+    -- FiniteGrp.ofHom preserves composition by definition of the GrpCat hom wrapper.
     rfl
 
 /-- The inverse system of finite discrete root groups, with orders prime to `p`. -/
@@ -118,9 +120,8 @@ def rootsOfUnityCone : Cone (rootsOfUnityDiagram p R) where
         apply ContinuousMonoidHom.ext
         intro ζ
         apply Subtype.ext
-        simp only [Functor.const_obj_map, ProfiniteGrp.hom_comp,
-          ConcreteCategory.hom_ofHom, ContinuousMonoidHom.coe_comp,
-          Function.comp_apply, rootsOfUnityDiagram_map_apply]
+        simp only [Functor.const_obj_map, ProfiniteGrp.comp_apply,
+          ConcreteCategory.hom_ofHom, rootsOfUnityDiagram_map_apply]
         exact (proj_pow_div ζ f.unop.le).symm }
 
 /-- The cone has the existing Tate module as its vertex. -/
@@ -147,8 +148,7 @@ private def coneLiftHom (s : Cone (rootsOfUnityDiagram p R)) :
       have hw := congrArg (fun f ↦ f.hom x)
         (s.w (homOfLE (x := (⟨n⟩ : Index p)) (y := ⟨m⟩) h).op)
       have hv := congrArg (fun ζ : rootsOfUnity n R ↦ ζ.val) hw
-      simp only [ProfiniteGrp.hom_comp, ContinuousMonoidHom.coe_comp,
-        Function.comp_apply, rootsOfUnityDiagram_map_apply] at hv
+      simp only [ProfiniteGrp.comp_apply, rootsOfUnityDiagram_map_apply] at hv
       exact hv)
 
 private theorem proj_coneLiftHom (s : Cone (rootsOfUnityDiagram p R))
@@ -163,8 +163,9 @@ private def coneLift (s : Cone (rootsOfUnityDiagram p R)) :
       continuous_toFun := continuous_iff.mpr fun m ↦ by
         have hc := (IsLocallyConstant.iff_continuous _).mpr
           (s.π.app (Opposite.op ⟨m⟩)).hom.continuous
-        have heq := funext (proj_coneLiftHom p R s m)
-        exact heq.symm ▸ hc } : s.pt →ₜ* PrimeToPTateModule p R)
+        -- Specify the predicate being transported across the projection equality.
+        exact (congrArg IsLocallyConstant
+          (funext (proj_coneLiftHom p R s m))).mpr hc } : s.pt →ₜ* PrimeToPTateModule p R)
 
 private theorem coneLift_apply (s : Cone (rootsOfUnityDiagram p R)) (x : s.pt) :
     (coneLift p R s).hom x = coneLiftHom p R s x := rfl
@@ -178,8 +179,7 @@ def rootsOfUnityConeIsLimit : IsLimit (rootsOfUnityCone p R) where
     apply ProfiniteGrp.hom_ext
     apply ContinuousMonoidHom.ext
     intro x
-    rw [ProfiniteGrp.hom_comp, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      rootsOfUnityCone_π_app_apply, coneLift_apply]
+    rw [ProfiniteGrp.comp_apply, rootsOfUnityCone_π_app_apply, coneLift_apply]
     exact proj_coneLiftHom p R s n.unop.order x
   uniq s f hf := by
     have hF : f.hom.toMonoidHom = coneLiftHom p R s := by
@@ -188,8 +188,7 @@ def rootsOfUnityConeIsLimit : IsLimit (rootsOfUnityCone p R) where
       apply MonoidHom.ext
       intro x
       have h := congrArg (fun g ↦ (ProfiniteGrp.Hom.hom g) x) (hf (Opposite.op ⟨m⟩))
-      rw [ProfiniteGrp.hom_comp, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-        rootsOfUnityCone_π_app_apply] at h
+      rw [ProfiniteGrp.comp_apply, rootsOfUnityCone_π_app_apply] at h
       exact h
     apply ProfiniteGrp.hom_ext
     apply ContinuousMonoidHom.ext
