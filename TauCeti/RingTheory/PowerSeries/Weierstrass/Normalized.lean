@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Normalization
 
 /-!
 # Constant-one preparation on a closed disc
@@ -21,7 +21,8 @@ The normalised unit satisfies `‖U - 1‖ < 1` in the Gauss norm. Consequently 
 polynomial approximation satisfies the scale-correct bound `‖f - P‖ < ‖f‖`.
 No assumption of entire convergence is made.
 
-The rescaling of the monic preparation follows the construction used in
+The rescaling of the monic preparation uses the shared restricted-series helpers in
+`Weierstrass/Normalization.lean`, extracted from
 `TauCeti.PowerSeries.IsMulDistinguished.exists_isEntirePreparation`; here only
 restrictedness, rather than entire convergence, is required.
 
@@ -102,27 +103,6 @@ theorem IsDiscPreparation.gaussNorm_sub_polynomial_lt (h : IsDiscPreparation r d
     h.eq_mul, gaussNorm_mul_of_isRestricted hr hP U.2, h.gaussNorm_unit hr, mul_one]
   exact (mul_lt_mul_of_pos_left (h.gaussNorm_sub_one_lt hr) hpos).trans_eq (mul_one _)
 
-/-- A constant-one preparation can be made monic by dividing its polynomial by its
-leading coefficient and multiplying its unit by that coefficient. -/
-private theorem IsDiscPreparation.exists_monic (h : IsDiscPreparation r d f P U) :
-    ∃ e : IsRestricted.subring (R := K) r, IsUnit e ∧
-      (P.leadingCoeff⁻¹ • P).IsMonicOfDegree d ∧
-      (e : K⟦X⟧) = P.leadingCoeff • (U : K⟦X⟧) ∧
-      (e : K⟦X⟧) * ((P.leadingCoeff⁻¹ • P : Polynomial K) : K⟦X⟧) = f := by
-  have ha := Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero
-  have hm : (P.leadingCoeff⁻¹ • P).Monic := by
-    simpa only [Units.smul_def, Units.val_inv_eq_inv_val, IsUnit.unit_spec] using
-      Polynomial.monic_of_isUnit_leadingCoeff_inv_smul ha.isUnit
-  refine ⟨algebraMap K _ P.leadingCoeff * U,
-    (ha.isUnit.map (algebraMap K _)).mul h.isUnit,
-    ⟨by rw [Polynomial.natDegree_smul P (inv_ne_zero ha), h.natDegree_eq], hm⟩, ?_, ?_⟩
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      smul_eq_C_mul]
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      ← smul_eq_C_mul, Polynomial.coe_smul, smul_mul_smul_comm,
-      mul_inv_cancel₀ ha, one_smul, mul_comm]
-    exact h.eq_mul.symm
-
 /-- The constant-one preparation rescales every unit-times-monic preparation at the
 last active coefficient. In particular, its monic normalisation is the usual
 Weierstrass polynomial. -/
@@ -132,11 +112,10 @@ theorem IsDiscPreparation.eq_smul_and_smul_eq (h : IsDiscPreparation r d f P U)
     (he : IsUnit e) (hω : ω.IsMonicOfDegree d)
     (heω : (e : K⟦X⟧) * (ω : K⟦X⟧) = f) :
     P = P.leadingCoeff • ω ∧ P.leadingCoeff • (U : K⟦X⟧) = (e : K⟦X⟧) := by
-  obtain ⟨e', he', hω', he'U, he'P⟩ := h.exists_monic
-  obtain ⟨rfl, rfl⟩ := h.isDistinguished.eq_and_eq_of_mul_eq_mul hr he' he hω' hω he'P heω
-  refine ⟨?_, he'U.symm⟩
-  rw [smul_smul, mul_inv_cancel₀ (Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero),
-    one_smul]
+  exact (isMulDistinguished_iff_isUnit.mpr
+    ⟨h.isDistinguished, h.isDistinguished.coeff_ne_zero.isUnit⟩).eq_smul_and_smul_eq hr
+      (Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero).isUnit h.natDegree_eq
+      h.isUnit h.eq_mul he hω heω
 
 /-- Constant-one disc preparations at the last active coefficient are unique. The
 restricted-unit hypotheses are essential; degree and constant coefficient alone do
@@ -144,22 +123,12 @@ not specify the disc polynomial. -/
 theorem IsDiscPreparation.unique (h : IsDiscPreparation r d f P U)
     (h' : IsDiscPreparation r d f P' U') (hr : 0 < r) :
     P = P' ∧ U = U' := by
-  obtain ⟨e, he, hω, heU, heP⟩ := h.exists_monic
-  obtain ⟨e', he', hω', heU', heP'⟩ := h'.exists_monic
-  obtain ⟨hee, hPP⟩ := h.isDistinguished.eq_and_eq_of_mul_eq_mul hr he he' hω hω' heP heP'
-  have ha : P.leadingCoeff = P'.leadingCoeff := by
-    have he0 := congrArg (fun x : IsRestricted.subring (R := K) r =>
-      _root_.PowerSeries.constantCoeff (x : K⟦X⟧)) hee
-    rw [heU, heU', smul_eq_C_mul, smul_eq_C_mul, map_mul, map_mul,
-      constantCoeff_C, constantCoeff_C, h.constantCoeff_eq_one,
-      h'.constantCoeff_eq_one, mul_one, mul_one] at he0
-    exact he0
-  have hmul : P.leadingCoeff • (U : K⟦X⟧) = P.leadingCoeff • (U' : K⟦X⟧) := by
-    rw [ha, ← heU', ← hee, heU, ha]
-  have hne := Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero
-  refine ⟨?_, Subtype.ext ((smul_right_injective K⟦X⟧ hne) hmul)⟩
-  have hu := congrArg (fun q : Polynomial K => P.leadingCoeff • q) hPP
-  simpa only [smul_smul, ← ha, mul_inv_cancel₀ hne, one_smul] using hu
+  exact (isMulDistinguished_iff_isUnit.mpr
+    ⟨h.isDistinguished, h.isDistinguished.coeff_ne_zero.isUnit⟩).eq_and_eq_of_normalized_mul_eq hr
+      (Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero).isUnit
+      (Polynomial.leadingCoeff_ne_zero.mpr h'.polynomial_ne_zero).isUnit
+      h.natDegree_eq h'.natDegree_eq h.coeff_zero_eq_one h'.coeff_zero_eq_one
+      h.isUnit h'.isUnit h.eq_mul h'.eq_mul
 
 /-- A restricted series with constant coefficient one has a constant-one disc
 preparation at its last active coefficient. Completeness is used only to obtain the
@@ -171,27 +140,9 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K]
       IsDiscPreparation r d f P U := by
   obtain ⟨e, ω, he, hω, heω⟩ :=
     hf.exists_isUnit_isMonicOfDegree_mul_eq hf.coeff_ne_zero.isUnit hr hfr
-  have h0 : constantCoeff (e : K⟦X⟧) * ω.coeff 0 = 1 := by
-    rw [← hf0, ← heω, map_mul, ← Polynomial.coeff_coe, coeff_zero_eq_constantCoeff_apply]
-  let a : Kˣ := ⟨constantCoeff (e : K⟦X⟧), ω.coeff 0, h0, by rw [mul_comm]; exact h0⟩
-  let U : IsRestricted.subring (R := K) r := algebraMap K _ (a⁻¹ : Kˣ) * e
-  have hU : (U : K⟦X⟧) = ((a⁻¹ : Kˣ) : K) • (e : K⟦X⟧) := by
-    rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
-      smul_eq_C_mul]
-  refine ⟨a • ω, U, ?_⟩
-  exact
-    { isDistinguished := hf
-      coeff_zero_eq_one := by
-        rw [Units.smul_def, Polynomial.coeff_smul, smul_eq_mul]; exact h0
-      natDegree_eq := by
-        rw [Polynomial.natDegree_smul_of_smul_regular ω (IsSMulRegular.all _), hω.natDegree_eq]
-      constantCoeff_eq_one := by
-        rw [hU, smul_eq_C_mul, map_mul, constantCoeff_C, mul_comm]
-        exact a.mul_inv
-      isUnit := ((a⁻¹).isUnit.map (algebraMap K _)).mul he
-      eq_mul := by
-        rw [hU, Units.smul_def, Polynomial.coe_smul, smul_mul_smul_comm, a.mul_inv,
-          one_smul, mul_comm, heω] }
+  obtain ⟨a, U, hP0, hd, -, hU0, hU, hPU, -⟩ :=
+    exists_normalized_factors_of_mul_eq he hω heω hf0
+  exact ⟨a • ω, U, ⟨hf, hP0, hd, hU0, hU, hPU⟩⟩
 
 /-- Unique constant-one preparation on a closed disc, with the polynomial degree
 given by the greatest active coefficient index. -/
