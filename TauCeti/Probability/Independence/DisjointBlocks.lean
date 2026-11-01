@@ -32,7 +32,9 @@ independence in both σ-algebras.
 * `TauCeti.Probability.indep_blockSigma_of_disjoint` — disjoint blocks of an independent family
   generate independent σ-algebras;
 * `TauCeti.Probability.indepFun_of_measurable_blockSigma` — two random elements measurable for the
-  σ-algebras of disjoint blocks of an independent family are independent.
+  σ-algebras of disjoint blocks of an independent family are independent;
+* `ProbabilityTheory.iIndepFun.indepFun_fun_sumElim` — if `Sum.elim X X'` is independent, the
+  vectors `(Xᵢ)ᵢ` and `(X'ᵢ)ᵢ` are independent.
 -/
 
 public section
@@ -126,3 +128,35 @@ theorem indepFun_of_measurable_blockSigma {μ : Measure Ω} {Z : ∀ i, Ω → �
     hblocks hU.comap_le hV.comap_le
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+variable {Ω ι E : Type*} [MeasurableSpace Ω] [MeasurableSpace E] {μ : Measure Ω}
+  {X X' : ι → Ω → E}
+
+/-- If the family `Sum.elim X X'` is independent, the vectors `(Xᵢ)ᵢ` and `(X'ᵢ)ᵢ` are independent.
+The index type may be infinite. -/
+theorem iIndepFun.indepFun_fun_sumElim (hind : iIndepFun (Sum.elim X X') μ)
+    (hX : ∀ i, Measurable (X i)) (hX' : ∀ i, Measurable (X' i)) :
+    IndepFun (fun ω i ↦ X i ω) (fun ω i ↦ X' i ω) μ := by
+  have hZ : ∀ j, Measurable (Sum.elim X X' j) := by
+    rintro (i | i)
+    exacts [hX i, hX' i]
+  have hS : Set.range (Sum.inl : ι → ι ⊕ ι) ∪ Set.range Sum.inr = Set.univ := by
+    ext (i | i) <;> simp
+  refine TauCeti.Probability.indepFun_of_measurable_blockSigma (Z := fun j ↦ Sum.elim X X' j)
+    (S := Set.range Sum.inl) (T := Set.range Sum.inr) ?_ (fun j _ ↦ hZ j) ?_ ?_ ?_
+  · exact hind.precomp Subtype.val_injective
+  · rw [Set.disjoint_left]
+    rintro _ ⟨i, rfl⟩ ⟨j, hj⟩
+    cases hj
+  · let _ := TauCeti.Probability.blockSigma (fun j ↦ Sum.elim X X' j) (Set.range Sum.inl)
+    exact measurable_pi_iff.2 fun i ↦
+      TauCeti.Probability.measurable_blockSigma_of_mem (Z := fun j ↦ Sum.elim X X' j)
+        (S := Set.range Sum.inl) (i := Sum.inl i) (Set.mem_range_self i)
+  · let _ := TauCeti.Probability.blockSigma (fun j ↦ Sum.elim X X' j) (Set.range Sum.inr)
+    exact measurable_pi_iff.2 fun i ↦
+      TauCeti.Probability.measurable_blockSigma_of_mem (Z := fun j ↦ Sum.elim X X' j)
+        (S := Set.range Sum.inr) (i := Sum.inr i) (Set.mem_range_self i)
+
+end ProbabilityTheory

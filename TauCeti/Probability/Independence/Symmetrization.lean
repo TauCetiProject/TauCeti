@@ -10,14 +10,16 @@ public import Mathlib.Analysis.Convex.Integral
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Distributions.Rademacher
+public import TauCeti.Probability.Independence.DisjointBlocks
 
 /-!
 # The symmetrization inequality
 
 Let `X = (Xᵢ)` be a finite family of real random variables and `X'` an independent copy, all
 defined on one probability space and jointly independent, that is, the family `X ⊕ X'` indexed by
-`ι ⊕ ι` is `iIndepFun` and `Xᵢ`, `X'ᵢ` are identically distributed. Then for every convex
-`Φ : ℝ → ℝ`, centred `Xᵢ` and independent signs `εᵢ`,
+`ι ⊕ ι` is `iIndepFun` and `Xᵢ`, `X'ᵢ` are identically distributed. Let `Φ : ℝ → ℝ` be convex, let
+the `Xᵢ` be integrable and centred, and let `Φ (∑ Xᵢ)` and `Φ (∑ (Xᵢ - X'ᵢ))` be integrable. Let
+`εᵢ` be signs, almost surely `±1`, whose vector is independent of the vector `(Xᵢ - X'ᵢ)ᵢ`. Then
 `E Φ(∑ Xᵢ) ≤ E Φ(∑ (Xᵢ - X'ᵢ)) = E Φ(∑ εᵢ (Xᵢ - X'ᵢ))`.
 
 The inequality is Jensen's inequality for the conditional expectation over `X'`; the equality
@@ -53,6 +55,7 @@ namespace ProbabilityTheory
 variable {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
   {X X' : ι → Ω → ℝ}
 
+omit [IsProbabilityMeasure μ] in
 /-- Swapping the two coordinates `Xᵢ`, `X'ᵢ` of a jointly independent family of independent copies,
 for the indices `i` with `s i = -1`, does not change the law of the family `X ⊕ X'`, hence
 the vector `(sᵢ (Xᵢ - X'ᵢ))ᵢ` has the same law as `(Xᵢ - X'ᵢ)ᵢ` for a fixed sign pattern
@@ -79,11 +82,9 @@ theorem iIndepFun.map_fun_mul_sub_eq_of_identDistrib [Finite ι]
     · simp [σ, Z, h]
     · simpa [σ, Z, h] using (hid i).map_eq
     · simp [σ, Z, h]
-  have hperm : μ.map (fun ω j ↦ Z (σ j) ω) = μ.map (fun ω j ↦ Z j ω) := by
-    rw [(iIndepFun_iff_map_fun_eq_pi_map fun j ↦ (hZ' j).aemeasurable).1
-      (hind.precomp hσ.injective), (iIndepFun_iff_map_fun_eq_pi_map
-        fun j ↦ (hZ j).aemeasurable).1 hind]
-    simp only [hmarg]
+  have hperm : μ.map (fun ω j ↦ Z (σ j) ω) = μ.map (fun ω j ↦ Z j ω) :=
+    (IdentDistrib.pi (fun j ↦ ⟨(hZ' j).aemeasurable, (hZ j).aemeasurable, hmarg j⟩)
+      (hind.precomp hσ.injective) hind).map_eq
   let H : (ι ⊕ ι → ℝ) → ι → ℝ := fun z i ↦ z (Sum.inl i) - z (Sum.inr i)
   have hH : Measurable H := by fun_prop
   have hZm : Measurable fun ω j ↦ Z j ω := Measurable.of_eval hZ
@@ -124,20 +125,17 @@ theorem IndepFun.map_fun_mul_sub_eq_of_identDistrib [Finite ι] {ε : ι → Ω 
   have key : (fun ω i ↦ ε i ω * (X i ω - X' i ω)) =
       H ∘ fun ω ↦ ((fun i ↦ ε i ω), fun i ↦ X i ω - X' i ω) := rfl
   rw [key, ← Measure.map_map hH hpm, hprod]
-  ext A hA
-  rw [Measure.map_apply hH hA, Measure.prod_apply (hH hA)]
-  have hconst : ∀ᵐ s ∂(μ.map fun ω i ↦ ε i ω),
-      (μ.map fun ω i ↦ X i ω - X' i ω) (Prod.mk s ⁻¹' (H ⁻¹' A)) =
-        (μ.map fun ω i ↦ X i ω - X' i ω) A := by
+  have hg : ∀ᵐ s ∂(μ.map fun ω i ↦ ε i ω),
+      (μ.map fun ω i ↦ X i ω - X' i ω).map (fun d i ↦ s i * d i) =
+        μ.map fun ω i ↦ X i ω - X' i ω := by
     filter_upwards [hae] with s hs
     have hg : Measurable fun d : ι → ℝ ↦ fun i ↦ s i * d i := by fun_prop
-    have hmap : (μ.map fun ω i ↦ X i ω - X' i ω).map (fun d i ↦ s i * d i) =
-        μ.map fun ω i ↦ X i ω - X' i ω := by
-      rw [Measure.map_map hg hDm]
-      exact hind.map_fun_mul_sub_eq_of_identDistrib hid hX hX' s hs
-    rw [show Prod.mk s ⁻¹' (H ⁻¹' A) = (fun d i ↦ s i * d i) ⁻¹' A from rfl,
-      ← Measure.map_apply hg hA, hmap]
-  rw [lintegral_congr_ae hconst, lintegral_const, measure_univ, mul_one]
+    rw [Measure.map_map hg hDm]
+    exact hind.map_fun_mul_sub_eq_of_identDistrib hid hX hX' s hs
+  have hmp := (MeasurePreserving.id (μ.map fun ω i ↦ ε i ω)).skew_product
+    (g := fun (s d : ι → ℝ) i ↦ s i * d i) hH hg
+  exact ((measurePreserving_snd (μ := μ.map fun ω i ↦ ε i ω)
+    (ν := μ.map fun ω i ↦ X i ω - X' i ω)).comp hmp).map_eq
 
 /-- For measurable `Φ`, signs independent of the differences `Xᵢ - X'ᵢ` and almost surely equal to
 `±1` do not change the expectation of `Φ (∑ (Xᵢ - X'ᵢ))`:
@@ -161,32 +159,13 @@ theorem IndepFun.integral_comp_sum_mul_sub_eq [Fintype ι] {ε : ι → Ω → �
     _ = ∫ ω, Φ (∑ i, (X i ω - X' i ω)) ∂μ :=
         integral_map hD.aemeasurable hG.aestronglyMeasurable
 
-omit [IsProbabilityMeasure μ] in
-/-- If `X` and `X'` independent, the vectors `(Xᵢ)ᵢ` and `(X'ᵢ)ᵢ` are independent. -/
-theorem iIndepFun.indepFun_fun_sumElim [Finite ι] (hind : iIndepFun (Sum.elim X X') μ)
-    (hX : ∀ i, Measurable (X i)) (hX' : ∀ i, Measurable (X' i)) :
-    IndepFun (fun ω i ↦ X i ω) (fun ω i ↦ X' i ω) μ := by
-  classical
-  have := Fintype.ofFinite ι
-  have hZ : ∀ j, Measurable (Sum.elim X X' j) := by
-    rintro (i | i)
-    exacts [hX i, hX' i]
-  have h := hind.indepFun_finset (Finset.univ.map Function.Embedding.inl)
-    (Finset.univ.map Function.Embedding.inr) (Finset.disjoint_left.2 (by simp)) hZ
-  have hφ : Measurable fun (z : (Finset.univ.map (Function.Embedding.inl : ι ↪ ι ⊕ ι)) → ℝ)
-      (i : ι) ↦ z ⟨Sum.inl i, by simp⟩ := by fun_prop
-  have hψ : Measurable fun (z : (Finset.univ.map (Function.Embedding.inr : ι ↪ ι ⊕ ι)) → ℝ)
-      (i : ι) ↦ z ⟨Sum.inr i, by simp⟩ := by fun_prop
-  exact h.comp hφ hψ
-
 end ProbabilityTheory
 
 open ProbabilityTheory
 
 /-- **Desymmetrization.** If `X` is independent of `X'` as a vector and the `X'ᵢ` are integrable
 and centred, then for convex `Φ` with `Φ (∑ Xᵢ)` and `Φ (∑ (Xᵢ - X'ᵢ))` integrable,
-`E Φ(∑ Xᵢ) ≤ E Φ(∑ (Xᵢ - X'ᵢ))`. The proof is Jensen's inequality for the integral over `X'`
-with `X` frozen. -/
+`E Φ(∑ Xᵢ) ≤ E Φ(∑ (Xᵢ - X'ᵢ))`. -/
 theorem ConvexOn.integral_comp_sum_le_integral_comp_sum_sub {Ω ι : Type*} [MeasurableSpace Ω]
     [Fintype ι] {μ : Measure Ω} [IsProbabilityMeasure μ] {X X' : ι → Ω → ℝ} {Φ : ℝ → ℝ}
     (hΦ : ConvexOn ℝ univ Φ)
@@ -262,21 +241,6 @@ theorem ConvexOn.symmetrization_inequality {Ω ι : Type*} [MeasurableSpace Ω] 
     (fun i ↦ (hid i).integrable_snd (hint i)) (fun i ↦ ?_) h1 h2, ?_⟩
   · rw [← (hid i).integral_eq, h0 i]
   · exact (hindep.integral_comp_sum_mul_sub_eq hind hid hX hX' hε hsign hΦc.measurable).symm
-
-/-- The signs equal `±1` almost surely if they have the Rademacher law. -/
-theorem TauCeti.Probability.ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure {Ω : Type*}
-    [MeasurableSpace Ω] {μ : Measure Ω} {ε : Ω → ℝ} (hε : Measurable ε)
-    (h : μ.map ε = TauCeti.Probability.rademacherMeasure) :
-    ∀ᵐ ω ∂μ, ε ω = 1 ∨ ε ω = -1 := by
-  have hset : MeasurableSet {x : ℝ | x = 1 ∨ x = -1} :=
-    (measurableSet_singleton _).union (measurableSet_singleton _)
-  have hae : ∀ᵐ x ∂TauCeti.Probability.rademacherMeasure, x = 1 ∨ x = -1 := by
-    have hc : MeasurableSet {a : ℝ | ¬(a = 1 ∨ a = -1)} := hset.compl
-    rw [ae_iff, TauCeti.Probability.rademacherMeasure_eq, Measure.add_apply, Measure.smul_apply,
-      Measure.smul_apply, Measure.dirac_apply' _ hc, Measure.dirac_apply' _ hc]
-    norm_num
-  rw [← h] at hae
-  exact (ae_map_iff hε.aemeasurable hset).1 hae
 
 /-- **The symmetrization inequality with Rademacher signs.** With the notation and hypotheses of
 `ConvexOn.symmetrization_inequality`, the signs `εᵢ` may be taken to have the Rademacher law
