@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
@@ -26,6 +27,10 @@ For a Laurent series `f`, `LaurentSeries.trunc N f` retains the terms of exponen
 than `N`. These Laurent polynomials converge to `f` as `N` tends to infinity. Consequently,
 Laurent polynomials are dense in the Laurent-series field for its valuation topology.
 
+The inclusion commutes with the formal derivatives `LaurentPolynomial.derivative` and
+`LaurentSeries.derivative`, so the derivative of Laurent series restricts to that of Laurent
+polynomials.
+
 ## Main definitions
 
 * `LaurentPolynomial.toLaurentSeries`: the inclusion of Laurent polynomials into Laurent series.
@@ -40,6 +45,7 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
   inclusions into Laurent polynomials and power series.
 * `LaurentPolynomial.mem_range_toLaurentSeries_iff`: the image consists exactly of the
   finite-support Laurent series.
+* `LaurentPolynomial.toLaurentSeries_derivative`: the inclusion commutes with differentiation.
 * `LaurentSeries.finite_support_truncLT`: strict truncation of a Laurent series has finite support.
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
@@ -160,6 +166,19 @@ theorem order_toLaurentSeries (p : R[T;T⁻¹]) (hp : p ≠ 0) :
     simpa using h
 
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- The inclusion of Laurent polynomials into Laurent series commutes with differentiation. -/
+@[simp]
+theorem toLaurentSeries_derivative (p : R[T;T⁻¹]) :
+    toLaurentSeries (derivative p) = LaurentSeries.derivative R (toLaurentSeries p) := by
+  ext n
+  simpa using (Int.cast_commute (n + 1) (p.coeff (n + 1))).symm.eq
+
+end Ring
 
 section CommSemiring
 
