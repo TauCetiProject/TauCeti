@@ -83,8 +83,11 @@ theorem Ideal.topologicalClosure_ne_top_of_isOpen_isUnit {A : Type*} [Semiring A
 open.** -/
 theorem Ideal.closure_ne_top_of_isOpen_isUnit {A : Type*} [Ring A] [TopologicalSpace A]
     [IsTopologicalRing A] (hU : IsOpen {a : A | IsUnit a}) {J : Ideal A} (hJ : J ≠ ⊤) :
-    J.closure ≠ ⊤ :=
-  fun h ↦ J.topologicalClosure_ne_top_of_isOpen_isUnit hU hJ (SetLike.ext' (congrArg SetLike.coe h))
+    J.closure ≠ ⊤ := by
+  have h : J.closure = J.topologicalClosure :=
+    SetLike.ext' (by rw [Ideal.coe_closure, Submodule.topologicalClosure_coe])
+  rw [h]
+  exact J.topologicalClosure_ne_top_of_isOpen_isUnit hU hJ
 
 /-- **A maximal ideal of a topological semiring is closed once the unit group is open.** -/
 theorem Ideal.isClosed_of_isMaximal_of_isOpen_isUnit {A : Type*} [Semiring A]
