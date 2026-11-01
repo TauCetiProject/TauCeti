@@ -48,7 +48,8 @@ morphism.
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
 * `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
-  pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
+  pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` (and its
+  whiskered form `CategoryTheory.ExactPairing.whiskerRight_rightMate_evaluation`) and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id` and
   `comp_rightMate`;
 * `CategoryTheory.ExactPairing.rightMate_whiskerLeft`,
@@ -134,6 +135,15 @@ theorem rightMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (f : X ⟶ Y) :
     rightMate pX pY f ▷ X ≫ ε_ X X' = Y' ◁ f ≫ ε_ Y Y' :=
   @rightAdjointMate_comp_evaluation C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
+
+/-- The characteristic property of the right adjoint mate, after a morphism `a : W ⟶ Y'` into the
+dual of the target: evaluating `a` followed by the mate of `f : X ⟶ Y` against `X` is evaluating
+`a` against `Y` after applying `f` to `X`. Morphisms into a right dual are compared in this form
+via `CategoryTheory.ExactPairing.rightHom_ext`. -/
+theorem whiskerRight_rightMate_evaluation {W X X' Y Y' : C} (pX : ExactPairing X X')
+    (pY : ExactPairing Y Y') (a : W ⟶ Y') (f : X ⟶ Y) :
+    a ▷ X ≫ rightMate pX pY f ▷ X ≫ ε_ X X' = W ◁ f ≫ a ▷ Y ≫ ε_ Y Y' := by
+  rw [rightMate_comp_evaluation, whisker_exchange_assoc]
 
 /-- The dual characterization of the right adjoint mate: applying it after the coevaluation of
 `(Y, Y')` is the same as applying `f` after the coevaluation of `(X, X')`. -/
