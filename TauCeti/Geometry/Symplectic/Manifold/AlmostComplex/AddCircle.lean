@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 
 /-!
 # The standard almost complex structure on a torus of two circles
@@ -54,23 +53,6 @@ namespace TauCeti.SmoothAlmostComplexStructure
 
 variable (p q : ℝ) [Fact (0 < p)] [Fact (0 < q)]
 
-/-- The differential of the quotient map sends the tangent vector `(a, b)` of the plane to
-`a ∂_s + b ∂_t`. -/
-private theorem mfderiv_prodMap_coe_apply (z : ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ) z) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
-        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v =
-      (Manifold.tangentSpaceProdEquiv
-        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z)).symm
-        (NormedSpace.fromTangentSpace z v) := by
-  have hd : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
-      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z _ :=
-    ((AddCircle.hasMFDerivAt_coe p z.1).comp z hasFDerivAt_fst.hasMFDerivAt).prodMk
-      ((AddCircle.hasMFDerivAt_coe q z.2).comp z hasFDerivAt_snd.hasMFDerivAt)
-  rw [hd.mfderiv]
-  -- The tangent spaces of the plane and of the torus are `ℝ × ℝ`, and the identifications
-  -- `NormedSpace.fromTangentSpace` and `Manifold.tangentSpaceProdEquiv` with it are the identity.
-  exact (Manifold.tangentSpaceProdEquiv_symm_apply _ _).symm
-
 /-- Tangent vectors at equal points of the torus with the same coordinates in `ℝ × ℝ` keep equal
 coordinates after applying a map of `ℝ × ℝ`. -/
 private theorem tangentSpaceProdEquiv_symm_map_eq {y y' : AddCircle p × AddCircle q} (hy : y = y')
@@ -83,30 +65,17 @@ private theorem tangentSpaceProdEquiv_symm_map_eq {y y' : AddCircle p × AddCirc
   obtain rfl := (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ)) y).symm.injective h
   rfl
 
-/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is a smooth local diffeomorphism. -/
-private theorem isLocalDiffeomorph_prodMap_coe :
-    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) ∞
-      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) := by
-  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-  exact IsLocalDiffeomorph.prodMap (AddCircle.isLocalDiffeomorph_coe p ∞)
-    (AddCircle.isLocalDiffeomorph_coe q ∞)
-
-omit [Fact (0 < p)] [Fact (0 < q)] in
-private theorem surjective_prodMap_coe :
-    Surjective (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
-  QuotientAddGroup.mk_surjective.prodMap QuotientAddGroup.mk_surjective
-
 /-- The standard almost complex structure on the torus `AddCircle p × AddCircle q`, descended from
 the standard structure `(a, b) ↦ (-b, a)` of the plane along the quotient map. In the coordinates
 of the torus it sends `a ∂_s + b ∂_t` to `-b ∂_s + a ∂_t`
 (`TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply`). -/
 def addCircleProd :
     SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q) :=
-  descend (isLocalDiffeomorph_prodMap_coe p q) (surjective_prodMap_coe p q)
+  descend (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞) (AddCircle.surjective_prodMap_coe p q)
     (AlmostComplexStructure.product ℝ).constSmooth fun x x' v v' hx h ↦ by
       -- The differentials of the quotient map are the identity of `ℝ × ℝ`, and the standard
       -- structure of the plane is constant.
-      rw [mfderiv_prodMap_coe_apply, mfderiv_prodMap_coe_apply] at h ⊢
+      rw [AddCircle.mfderiv_prodMap_coe_apply, AddCircle.mfderiv_prodMap_coe_apply] at h ⊢
       rw [AlmostComplexStructure.fromTangentSpace_constSmooth_apply,
         AlmostComplexStructure.fromTangentSpace_constSmooth_apply]
       exact tangentSpaceProdEquiv_symm_map_eq p q hx _ h
@@ -127,7 +96,7 @@ theorem isPseudoholomorphic_prodMap_coe :
     IsPseudoholomorphic (AlmostComplexStructure.product ℝ).constSmooth (addCircleProd p q)
       (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
   isPseudoholomorphic_iff.2 fun z ↦ isPseudoholomorphicAt_iff_mfderiv.2
-    ⟨(isLocalDiffeomorph_prodMap_coe p q z).mdifferentiableAt (by simp),
+    ⟨(AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞ z).mdifferentiableAt (by simp),
       fun w ↦ (addCircleProd_apply_mfderiv p q z w).symm⟩
 
 /-- The standard structure is the only almost complex structure on the torus for which the
@@ -138,8 +107,8 @@ theorem eq_addCircleProd_iff
       IsPseudoholomorphic (AlmostComplexStructure.product ℝ).constSmooth K
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) := by
   refine ⟨fun h ↦ h ▸ isPseudoholomorphic_prodMap_coe p q, fun h ↦ ?_⟩
-  refine (eq_descend_iff (isLocalDiffeomorph_prodMap_coe p q) (surjective_prodMap_coe p q) _ _
-    K).2 fun z v ↦ ?_
+  refine (eq_descend_iff (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞)
+    (AddCircle.surjective_prodMap_coe p q) _ _ K).2 fun z v ↦ ?_
   exact ((isPseudoholomorphic_iff.1 h z).mfderiv_apply_commute v).symm
 
 /-- In the coordinates of the torus, the standard structure sends `a ∂_s + b ∂_t` to
@@ -147,9 +116,9 @@ theorem eq_addCircleProd_iff
 theorem addCircleProd_apply (z : AddCircle p × AddCircle q) (a b : ℝ) :
     addCircleProd p q z ((Manifold.tangentSpaceProdEquiv z).symm (a, b)) =
       (Manifold.tangentSpaceProdEquiv z).symm (-b, a) := by
-  obtain ⟨w, rfl⟩ := surjective_prodMap_coe p q z
+  obtain ⟨w, rfl⟩ := AddCircle.surjective_prodMap_coe p q z
   have h := addCircleProd_apply_mfderiv p q w ((NormedSpace.fromTangentSpace w).symm (a, b))
-  rw [mfderiv_prodMap_coe_apply, mfderiv_prodMap_coe_apply,
+  rw [AddCircle.mfderiv_prodMap_coe_apply, AddCircle.mfderiv_prodMap_coe_apply,
     AlmostComplexStructure.fromTangentSpace_constSmooth_apply,
     ContinuousLinearEquiv.apply_symm_apply, AlmostComplexStructure.product_apply] at h
   exact h

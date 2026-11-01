@@ -58,6 +58,10 @@ factor. -/
 theorem periodicTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) :
     periodicTorus φ hx p = (p.1, closedOrbit φ hx p.2) := (rfl)
 
+/-- The periodic torus is the orbit torus of the closed suspension orbit. -/
+theorem periodicTorus_eq_orbitTorus : periodicTorus φ hx = orbitTorus φ hx :=
+  funext fun p ↦ by rw [periodicTorus_apply, orbitTorus_apply]
+
 /-- The image is the product of the independent time circle with the closed suspension orbit. -/
 theorem range_periodicTorus :
     range (periodicTorus φ hx) = univ ×ˢ range (closedOrbit φ hx) := by
@@ -112,28 +116,6 @@ section Smooth
 variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
   {φ : M ≃ₘ⟮I, I⟯ M} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
 
-/-- The tangent map preserves the independent time direction and sends the orbit direction
-to the suspension vector field. -/
-theorem mfderiv_periodicTorus (p : UnitAddCircle × AddCircle (d : ℝ))
-    (v : ℝ × ℝ) :
-    mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (periodicTorus φ hx) p v =
-      (Manifold.tangentSpaceProdEquiv _).symm
-        (v.1, v.2 • timeVectorField φ (closedOrbit φ hx p.2)) := by
-  have hγ : mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) p.2 v.2 =
-      v.2 • timeVectorField φ (closedOrbit φ hx p.2) := by
-    have h := congrArg (fun L : ℝ →L[ℝ] TangentSpace (𝓘(ℝ).prod I)
-      (closedOrbit φ hx p.2) ↦ L v.2) (mfderiv_closedOrbit hx p.2)
-    simp only [ContinuousLinearMap.smulRight_apply, one_apply_eq_self] at h
-    convert! h using 1
-  have h := Manifold.mfderiv_prodMap_apply (I := 𝓘(ℝ)) (J := 𝓘(ℝ))
-    (I' := 𝓘(ℝ)) (J' := 𝓘(ℝ).prod I) (f := id) (g := closedOrbit φ hx) (p := p)
-    mdifferentiableAt_id ((contMDiff_closedOrbit hx).mdifferentiableAt (by simp))
-    ((v.1 : ℝ), (v.2 : ℝ))
-  -- The source circle tangent spaces are the real model lines.
-  erw [Manifold.tangentSpaceProdEquiv_symm_apply] at h
-  simp only [mfderiv_id, hγ] at h
-  convert! h using 1
-
 variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
 /-- The fiber two-form vanishes on the periodic torus: both of its mapping-torus tangent
@@ -144,9 +126,13 @@ theorem mpullback_periodicTorus_fiberForm :
       (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ)) = 0 := by
   apply SmoothBundleForm.ext_eval₂
   intro p v w
-  rw [SmoothForm.eval₂_mpullback]
+  obtain ⟨⟨a, b⟩, rfl⟩ : ∃ u : ℝ × ℝ, (Manifold.tangentSpaceProdEquiv p).symm u = v :=
+    (Manifold.tangentSpaceProdEquiv p).symm.surjective v
+  obtain ⟨⟨a', b'⟩, rfl⟩ : ∃ u : ℝ × ℝ, (Manifold.tangentSpaceProdEquiv p).symm u = w :=
+    (Manifold.tangentSpaceProdEquiv p).symm.surjective w
+  rw [SmoothForm.eval₂_mpullback, periodicTorus_eq_orbitTorus]
   -- Circle tangent spaces are the real model lines; `erw` unfolds their type synonyms.
-  erw [mfderiv_periodicTorus, mfderiv_periodicTorus,
+  erw [mfderiv_orbitTorus_apply, mfderiv_orbitTorus_apply,
     SmoothForm.eval₂_mpullback_snd]
   simp only [ContinuousLinearEquiv.apply_symm_apply]
   erw [SmoothBundleForm.eval₂_smul_left, eval₂_fiberForm_timeVectorField_left]
@@ -162,22 +148,27 @@ theorem mpullback_periodicTorus_suspensionForm :
         (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
   apply SmoothBundleForm.ext_eval₂
   intro p v w
+  obtain ⟨⟨a, b⟩, rfl⟩ : ∃ u : ℝ × ℝ, (Manifold.tangentSpaceProdEquiv p).symm u = v :=
+    (Manifold.tangentSpaceProdEquiv p).symm.surjective v
+  obtain ⟨⟨a', b'⟩, rfl⟩ : ∃ u : ℝ × ℝ, (Manifold.tangentSpaceProdEquiv p).symm u = w :=
+    (Manifold.tangentSpaceProdEquiv p).symm.surjective w
   have htime (c : ℝ) :
-      (timeForm φ).1 (closedOrbit φ hx p.2)
-        ![c • timeVectorField φ (closedOrbit φ hx p.2)] = c := by
+      (timeForm φ).1 (orbitTorus φ hx p).2
+        ![c • timeVectorField φ (orbitTorus φ hx p).2] = c := by
     simp only [timeForm_apply, Matrix.cons_val_zero, map_smul]
     rw [mfderiv_proj_timeVectorField]
     exact mul_one c
-  rw [SmoothForm.eval₂_mpullback]
+  rw [SmoothForm.eval₂_mpullback, periodicTorus_eq_orbitTorus]
   -- Circle tangent spaces are the real model lines; `erw` unfolds their type synonyms.
-  erw [mfderiv_periodicTorus, mfderiv_periodicTorus,
+  erw [mfderiv_orbitTorus_apply, mfderiv_orbitTorus_apply,
     eval₂_suspensionForm, SmoothForm.eval₂_wedge_one_one]
   simp only [ContinuousLinearEquiv.apply_symm_apply]
   erw [htime, htime, SmoothBundleForm.eval₂_smul_left,
     eval₂_fiberForm_timeVectorField_left]
   simp only [smul_zero, add_zero, SmoothForm.mpullback_fst_apply,
-    SmoothForm.mpullback_snd_apply, AddCircle.timeForm_apply]
-  erw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
+    SmoothForm.mpullback_snd_apply, AddCircle.timeForm_apply, Matrix.cons_val_zero]
+  erw [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+  -- Both sides are `a * b' - a' * b`, up to reducing the vector and pair projections.
   rfl
 
 /-- Evaluation of the pulled-back suspension form in the circle's real tangent coordinates is

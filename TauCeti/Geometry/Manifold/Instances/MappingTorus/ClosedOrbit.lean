@@ -454,10 +454,18 @@ theorem mfderiv_orbitTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) (a b
         ((Manifold.tangentSpaceProdEquiv p).symm (a, b)) =
       (Manifold.tangentSpaceProdEquiv (orbitTorus φ hx p)).symm
         (a, b • timeVectorField φ (orbitTorus φ hx p).2) := by
-  rw [orbitTorus, Manifold.mfderiv_prodMap_apply mdifferentiableAt_id
+  -- The closed orbit sends the unit tangent vector of its circle to `T`.
+  have hT : (1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx p.2)) b =
+      b • timeVectorField φ (closedOrbit φ hx p.2) := by
+    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self]
+  have hγ : mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) p.2 b =
+      b • timeVectorField φ (closedOrbit φ hx p.2) := by
+    rw [mfderiv_closedOrbit]
+    exact hT
+  rw [orbitTorus_apply, orbitTorus, Manifold.mfderiv_prodMap_apply mdifferentiableAt_id
     (((contMDiff_closedOrbit (n := ∞) hx) p.2).mdifferentiableAt (by simp)), mfderiv_id,
-    mfderiv_closedOrbit]
-  -- The two sides agree componentwise by definition: `id a = a` and `(smulRight 1 T) b = b • T`.
+    ContinuousLinearMap.id_apply, hγ]
+  -- The base points `(id s, γ θ)` and `(s, γ θ)` and the pair projections agree by reduction.
   rfl
 
 end OrbitTorusDerivative

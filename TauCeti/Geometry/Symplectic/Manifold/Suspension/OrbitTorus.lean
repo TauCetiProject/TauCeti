@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Horizontal
 
 /-!
 # Orbit tori are pseudoholomorphic
@@ -98,7 +99,7 @@ theorem isPseudoholomorphicAt_orbitTorus_iff (p : UnitAddCircle × AddCircle (d 
       -- The first components are real numbers, where scalar multiplication is multiplication.
       exact Prod.ext (by ring : a = a * 1 + b * 0) (by simp)
     -- `J` is linear, `J ∂_s = T` and hence `J T = J (J ∂_s) = -∂_s`.
-    have hT : J q T = -S := by rw [← h, SmoothAlmostComplexStructure.apply_apply]
+    have hT : J q T = -S := apply_symm_zero_timeVectorField h
     beta_reduce at h hT ⊢
     rw [hsplit, hsplit, map_add, map_smul, map_smul, h, hT, smul_neg, neg_smul, add_comm]
 
