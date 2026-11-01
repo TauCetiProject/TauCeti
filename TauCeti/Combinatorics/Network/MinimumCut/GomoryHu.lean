@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Network.MinimumCut.CutTree
 public import TauCeti.Combinatorics.Network.MinimumCut.Noncrossing
 import Mathlib.Combinatorics.SimpleGraph.Star
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # Existence of Gomory–Hu cut trees
@@ -62,12 +63,6 @@ otherwise.
 -/
 
 variable {T : SimpleGraph V} {X : Finset V} {r x y : V}
-
-/-- Membership of the ends of an edge in a set is unchanged by naming the ends in either order. -/
-private theorem mem_iff_mem_of_sym2_eq {S : Finset V} {a b c d : V} (h : s(a, b) = s(c, d))
-    (hcd : c ∈ S ↔ d ∈ S) : a ∈ S ↔ b ∈ S := by
-  rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  exacts [hcd, hcd.symm]
 
 variable [DecidableEq V]
 
@@ -186,9 +181,9 @@ private theorem hub_notMem_edgeSide (hy : T.Adj r y) (hyx : y ≠ x) (z : V) :
 private theorem edgeSide_rewire_of_ne {a b : V} (hab : T.Adj a b) (ha : a ≠ r) (hb : b ≠ r) :
     (rewire T X r x).edgeSide a b = T.edgeSide a b := by
   have hxr : T.Adj x r := (hx r).mpr rfl
-  have hne {y : V} : s(y, r) ≠ s(a, b) := fun h ↦ by
-    rcases Sym2.eq_iff.mp h with ⟨-, h⟩ | ⟨-, h⟩
-    exacts [hb h.symm, ha h.symm]
+  have hne {y : V} : s(y, r) ≠ s(a, b) :=
+    Sym2.ne_of_mem_notMem (Sym2.mem_mk_right y r) <| by
+      simpa only [Sym2.mem_iff, not_or] using ⟨ha.symm, hb.symm⟩
   have hrx : r ∈ T.edgeSide a b ↔ x ∈ T.edgeSide a b := (hxr.mem_edgeSide_iff hne).symm
   refine edgeSide_eq_of_forall_adj (connected_rewire hT.connected hxr.ne.symm).preconnected
     (self_mem_edgeSide T a b)
@@ -196,8 +191,8 @@ private theorem edgeSide_rewire_of_ne {a b : V} (hab : T.Adj a b) (ha : a ≠ r)
     fun c d hcd hcd' ↦ ?_
   rcases rewire_adj_cases hcd with ⟨hcd, -, -⟩ | h | ⟨y, hy, -, h⟩
   · exact hcd.mem_edgeSide_iff hcd'
-  · exact mem_iff_mem_of_sym2_eq h hrx
-  · refine mem_iff_mem_of_sym2_eq h ?_
+  · exact (Sym2.iff_iff_of_mk_eq h).mpr hrx
+  · refine (Sym2.iff_iff_of_mk_eq h).mpr ?_
     have hyr : y ∈ T.edgeSide a b ↔ r ∈ T.edgeSide a b := hy.symm.mem_edgeSide_iff hne
     rcases hub_eq_or X r x y with h' | h' <;> rw [h']
     exacts [hyr, hyr.trans hrx]
@@ -214,11 +209,10 @@ private theorem edgeSide_rewire_hub (hy : T.Adj r y) (hyx : y ≠ x) :
   refine edgeSide_eq_of_forall_adj (connected_rewire hT.connected hxr.ne.symm).preconnected
     (self_mem_edgeSide T y r) (hhub y) fun c d hcd hcd' ↦ ?_
   rcases rewire_adj_cases hcd with ⟨hcd, hc, hd⟩ | h | ⟨y', hy', -, h⟩
-  · refine hcd.mem_edgeSide_iff fun h ↦ ?_
-    rcases Sym2.eq_iff.mp h with ⟨-, h⟩ | ⟨h, -⟩
-    exacts [hd h, hc h]
-  · exact mem_iff_mem_of_sym2_eq h ⟨fun h ↦ absurd h hrS, fun h ↦ absurd h hxS⟩
-  · refine mem_iff_mem_of_sym2_eq h ⟨fun h' ↦ absurd h' ?_, fun h' ↦ absurd h' (hhub y')⟩
+  · exact hcd.mem_edgeSide_iff_of_ne hc hd
+  · exact (Sym2.iff_iff_of_mk_eq h).mpr ⟨fun h ↦ absurd h hrS, fun h ↦ absurd h hxS⟩
+  · refine (Sym2.iff_iff_of_mk_eq h).mpr
+      ⟨fun h' ↦ absurd h' ?_, fun h' ↦ absurd h' (hhub y')⟩
     exact hbr.notMem_edgeSide_of_adj hy' fun h' ↦ hcd' (h' ▸ h)
 
 /-- If every branch of `T` at `r` lies on one side of `X`, then after the step the side of `x`
@@ -232,13 +226,10 @@ private theorem edgeSide_rewire_self (hxX : x ∈ X) (hrX : r ∉ X)
   rcases rewire_adj_cases hcd with ⟨hcd, hc, hd⟩ | h | ⟨y, -, -, h⟩
   · -- An edge away from `r` lies inside a single branch at `r`.
     obtain ⟨y, hy, hcy⟩ := (hT.connected.preconnected r c).exists_adj_mem_edgeSide hc
-    have hdy : d ∈ T.edgeSide y r := by
-      refine (hcd.mem_edgeSide_iff fun h ↦ ?_).mp hcy
-      rcases Sym2.eq_iff.mp h with ⟨-, h⟩ | ⟨h, -⟩
-      exacts [hd h, hc h]
+    have hdy : d ∈ T.edgeSide y r := (hcd.mem_edgeSide_iff_of_ne hc hd).mp hcy
     exact (hbranch hy c hcy).trans (hbranch hy d hdy).symm
   · exact absurd (h.trans Sym2.eq_swap) hcd'
-  · refine mem_iff_mem_of_sym2_eq h ?_
+  · refine (Sym2.iff_iff_of_mk_eq h).mpr ?_
     by_cases hyX : y ∈ X
     · rw [hub_of_mem hyX]
       exact iff_of_true hyX hxX
@@ -306,23 +297,6 @@ private theorem IsPartialCutTree.mem_iff_of_mem_edgeSide [Preorder K] {f : Finse
 variable [DecidableEq V] [AddCommMonoid K] [LinearOrder K] [IsOrderedCancelAddMonoid K]
   {f : Finset V → K}
 
-omit [IsOrderedCancelAddMonoid K] in
-/-- If `S` is a minimum `y`–`r` cut avoiding `x`, and some minimum `r`–`x` cut avoids `y`, then `S`
-is also a minimum `y`–`x` cut. This follows from the ultrametric inequality through `r`. -/
-private theorem IsMinimum.reattach (hf : ∀ S, f Sᶜ = f S) {S X : Finset V} {r x y : V}
-    (hS : IsMinimum f {y} {r} S) (hX : IsMinimum f {r} {x} X) (hyX : y ∉ X) (hxS : x ∉ S) :
-    IsMinimum f {y} {x} S := by
-  obtain ⟨hyS, -⟩ := isAdmissible_singleton.mp hS.admissible
-  obtain ⟨hrX, -⟩ := isAdmissible_singleton.mp hX.admissible
-  have hyx : y ≠ x := fun h ↦ hxS (h ▸ hyS)
-  have hle : pairMinimumValue f y r ≤ pairMinimumValue f r x := by
-    rw [hX.pairMinimumValue_eq, ← hf X]
-    exact pairMinimumValue_le f (mem_compl.mpr hyX) (by simpa using hrX)
-  rw [isMinimum_singleton_iff_pairMinimumValue_eq]
-  refine ⟨hyS, hxS, le_antisymm ?_ (pairMinimumValue_le f hyS hxS)⟩
-  rw [← hS.pairMinimumValue_eq]
-  exact (le_min le_rfl hle).trans (min_pairMinimumValue_le f hyx r)
-
 /-- One step of the construction: a partial cut tree absorbs any vertex outside its
 representatives. -/
 private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
@@ -342,8 +316,10 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
     (fun _ ⟨a, b, ha, hb, hab, h⟩ ↦ ⟨a, b, h ▸ hP.isMinimum ha hb hab⟩) hrx
     (by
       rintro _ ⟨u, v, hu, hv, -, rfl⟩
-      refine hxr.symm.mem_edgeSide_iff fun h ↦ ?_
-      rcases Sym2.eq_iff.mp h with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> contradiction)
+      refine hxr.symm.mem_edgeSide_iff <|
+        Sym2.ne_of_mem_notMem (Sym2.mem_mk_right r x) ?_
+      simpa only [Sym2.mem_iff, not_or] using
+        ⟨fun h ↦ hxR (h ▸ hu), fun h ↦ hxR (h ▸ hv)⟩)
   obtain ⟨hrX, hxX⟩ := isAdmissible_singleton.mp hX.admissible
   have hrX' : r ∉ Xᶜ := by simpa using hrX
   have hxX' : x ∈ Xᶜ := mem_compl.mpr hxX

@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Data.Fintype.Card
 public import TauCeti.Data.Finset.Laminar
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # The two sides of an edge
@@ -147,6 +148,13 @@ theorem Adj.mem_edgeSide_iff {y z : V} (h : G.Adj y z) (he : s(y, z) ≠ s(u, v)
   exact ⟨fun hy ↦ mem_edgeSide.mpr ((mem_edgeSide.mp hy).trans hadj.reachable),
     fun hz ↦ mem_edgeSide.mpr ((mem_edgeSide.mp hz).trans hadj.reachable.symm)⟩
 
+/-- An edge whose ends both differ from `v` has both ends on the side of `u` for `s(u, v)`, or
+neither. -/
+theorem Adj.mem_edgeSide_iff_of_ne {y z : V} (h : G.Adj y z) (hy : y ≠ v) (hz : z ≠ v) :
+    y ∈ G.edgeSide u v ↔ z ∈ G.edgeSide u v :=
+  h.mem_edgeSide_iff <| (Sym2.ne_of_mem_notMem (Sym2.mem_mk_right u v) <| by
+    simpa only [Sym2.mem_iff, not_or] using ⟨hy.symm, hz.symm⟩).symm
+
 /-- The side of `u` for `s(u, v)` is contained in every set that contains `u` and that no edge
 other than `s(u, v)` leaves. -/
 theorem edgeSide_subset {S : Finset V} (hu : u ∈ S)
@@ -178,9 +186,9 @@ theorem edgeSide_eq_of_forall_adj (hG : G.Preconnected) {S : Finset V} (hu : u �
 /-- If `s(y, r)` is a bridge, every other neighbour of `r` lies off the side of `y`. -/
 theorem IsBridge.notMem_edgeSide_of_adj {r y z : V} (h : G.IsBridge s(y, r)) (hz : G.Adj r z)
     (hzy : z ≠ y) : z ∉ G.edgeSide y r := by
-  have hne : s(z, r) ≠ s(r, y) := fun h ↦ by
-    rcases Sym2.eq_iff.mp h with ⟨h, -⟩ | ⟨h, -⟩
-    exacts [hz.ne h.symm, hzy h]
+  have hne : s(z, r) ≠ s(r, y) :=
+    Sym2.ne_of_mem_notMem (Sym2.mem_mk_left z r) <| by
+      simpa only [Sym2.mem_iff, not_or] using ⟨hz.ne.symm, hzy⟩
   exact fun hz' ↦ Finset.disjoint_left.mp h.disjoint_edgeSide hz'
     ((hz.symm.mem_edgeSide_iff hne).mpr (self_mem_edgeSide G r y))
 
@@ -196,9 +204,7 @@ theorem Reachable.exists_adj_mem_edgeSide {r z : V} (h : G.Reachable r z) (hz : 
     by_cases ha : a = r
     · exact ⟨b, ha ▸ hab, self_mem_edgeSide G b r⟩
     obtain ⟨y, hy, hay⟩ := ih ha
-    refine ⟨y, hy, (hab.mem_edgeSide_iff fun h ↦ ?_).mp hay⟩
-    rcases Sym2.eq_iff.mp h with ⟨-, h⟩ | ⟨h, -⟩
-    exacts [hz h, ha h]
+    exact ⟨y, hy, (hab.mem_edgeSide_iff_of_ne ha hz).mp hay⟩
 
 /-- In a tree, the sides of two edges never cross: the bipartitions obtained by deleting tree
 edges form a non-crossing family. -/
