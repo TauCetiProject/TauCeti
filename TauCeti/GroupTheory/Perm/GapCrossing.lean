@@ -103,6 +103,13 @@ theorem card_filter_upRank_lt {S : Finset (Fin L)} (hS : ∀ x ∈ S, (x : ℕ) 
   rw [← card_image_of_injOn ((upRank_injOn σ).mono fun x hx ↦ hS x (mem_filter.1 hx).1), hfi,
     card_range]
 
+/-- The rank of a forward-moved point is less than the number of forward-moved points. -/
+theorem upRank_lt_card {x : Fin L} (hx : (x : ℕ) < σ x) :
+    upRank σ x < #{y : Fin L | (y : ℕ) < σ y} := by
+  rw [← mem_range, ← image_upRank σ (fun y hy ↦ (mem_filter.1 hy).2)
+    fun _ _ y hy _ ↦ by simpa using hy]
+  exact mem_image_of_mem _ (by simpa using hx)
+
 /-- The products of a sequence along the ranks of the forward-moved points are its products over
 an initial segment. -/
 theorem prod_upRank {M : Type*} [CommMonoid M] (β : ℕ → M) :

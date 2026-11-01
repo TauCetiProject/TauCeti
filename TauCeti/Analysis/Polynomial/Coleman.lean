@@ -226,9 +226,7 @@ private theorem norm_prod_colemanDBounded_term_le_sum {ρ β γ : ℕ → ℝ} {
   have hβ₀ (t : ℕ) : 0 ≤ β t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hβ t 0)
   have hγ₀ (t : ℕ) : 0 ≤ γ t := nonneg_of_norm_coeff_mul_pow_le (hρ₀ t) (hγ t (L + 1) (by omega))
   have hx₀S : x₀ ∈ S := mem_filter.2 ⟨mem_univ _, hx₀⟩
-  have hr : σ.upRank x₀ ∈ range #S := by
-    rw [← Perm.image_upRank σ (fun x hx ↦ (mem_filter.1 hx).2) fun x _ y hy _ ↦ by simpa using hy]
-    exact mem_image_of_mem _ hx₀S
+  have hr : σ.upRank x₀ ∈ range #S := mem_range.2 (σ.upRank_lt_card hx₀)
   refine (norm_prod_colemanDBounded_term_le hρ₀ hρ hP hband).trans ?_
   calc ∏ x ∈ S, ‖B.coeff (σ x - x)‖ * ρ (σ.upRank x) ^ ((σ x : ℕ) - x)
       ≤ ∏ x ∈ S, Function.update β (σ.upRank x₀) (γ (σ.upRank x₀)) (σ.upRank x) := by
