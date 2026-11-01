@@ -6,19 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.Flasque.Locality
-public import Mathlib.CategoryTheory.Limits.FunctorCategory.Shapes.Products
+public import TauCeti.CategoryTheory.Limits.FunctorCategory.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.Topology.Sheaves.Limits
 
 /-!
-# Finite products of flasque sheaves and local twists
+# Products of flasque sheaves and local twists
 
 A presheaf is flasque when all of its restriction maps are epimorphisms. This file shows that
 flasqueness is stable under finite products, for presheaves and sheaves valued in a category with
 zero morphisms and finite biproducts, such as abelian groups or modules over a ring. The
-restriction maps of a product of presheaves are the products of the restriction maps, and in such a
-category a finite product of epimorphisms is an epimorphism (`CategoryTheory.Limits.Pi.map_epi`).
+restriction maps of a product of presheaves are the products of the restriction maps
+(`CategoryTheory.Limits.piObjIso_hom_naturality`), and in such a category a finite product of
+epimorphisms is an epimorphism (`CategoryTheory.Limits.Pi.map_epi`). A product of any size of
+presheaves whose restriction maps are split epimorphisms is flasque in any category with these
+products, since a product of split epimorphisms is split; this applies to products of skyscraper
+sheaves, such as Godement sheaves.
 
 Combined with the locality of flasqueness in the form `TopCat.Sheaf.isFlasque_of_locally_iso` (a
 sheaf which is locally isomorphic to a flasque sheaf is flasque), this gives the criterion used for
@@ -29,6 +33,8 @@ is locally free of finite rank, is flasque (`TopCat.Sheaf.isFlasque_of_locally_i
 ## Main declarations
 
 * `TopCat.Presheaf.isFlasque_piObj`: a finite product of flasque presheaves is flasque;
+* `TopCat.Presheaf.isFlasque_piObj_of_isSplitEpi`: a product of presheaves with split epimorphic
+  restriction maps is flasque;
 * `TopCat.Sheaf.isFlasque_piObj`: a finite product of flasque sheaves is flasque;
 * `TopCat.Sheaf.isFlasque_of_locally_iso_pi`: a sheaf which is locally isomorphic to a finite
   power of a flasque sheaf is flasque.
@@ -51,6 +57,8 @@ variable {X : TopCat.{u}}
 
 namespace Presheaf
 
+section Finite
+
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasFiniteBiproducts C]
   {J : Type w} [Finite J]
 
@@ -59,12 +67,23 @@ biproducts is flasque. -/
 instance isFlasque_piObj (F : J → Presheaf C X) [∀ j, (F j).IsFlasque] : (∏ᶜ F).IsFlasque where
   epi {U V} i := by
     -- Under `piObjIso`, the restriction map of the product is the product of restriction maps.
-    have : (∏ᶜ F).map i =
-        (piObjIso F U).hom ≫ Limits.Pi.map (fun j ↦ (F j).map i) ≫ (piObjIso F V).inv := by
-      rw [← Category.assoc, Iso.eq_comp_inv]
-      ext j
-      simp [piObjIso_hom_comp_π]
-    rw [this]
+    rw [(Iso.eq_comp_inv _).2 (piObjIso_hom_naturality F i)]
+    infer_instance
+
+end Finite
+
+/-- A product, of any size, of presheaves all of whose restriction maps are split epimorphisms is
+flasque. Products of skyscraper presheaves valued in a category with a zero object are of this
+form. -/
+theorem isFlasque_piObj_of_isSplitEpi {C : Type*} [Category* C] {J : Type w}
+    [HasLimitsOfShape (Discrete J) C] (F : J → Presheaf C X)
+    (hF : ∀ (j : J) {U V : (Opens X)ᵒᵖ} (i : U ⟶ V), IsSplitEpi ((F j).map i)) :
+    (∏ᶜ F).IsFlasque where
+  epi {U V} i := by
+    have : IsSplitEpi (Limits.Pi.map fun j ↦ (F j).map i) :=
+      ⟨⟨Limits.Pi.map fun j ↦ have := hF j i; section_ ((F j).map i), by ext; simp⟩⟩
+    -- Under `piObjIso`, the restriction map of the product is the product of restriction maps.
+    rw [(Iso.eq_comp_inv _).2 (piObjIso_hom_naturality F i)]
     infer_instance
 
 end Presheaf
