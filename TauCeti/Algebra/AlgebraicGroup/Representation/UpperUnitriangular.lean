@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Scheme
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
 
 /-!
 # Representations with upper-unitriangular coefficient matrices
@@ -25,6 +26,8 @@ a closed subgroup of `U_n`.
 
 This is the coordinate-algebra bridge used by the upper-unitriangular embedding characterization in
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding`.
+Differentiating such a representation gives a nilpotent tangent matrix. For a faithful
+representation, every invariant tangent derivation is consequently locally nilpotent.
 
 ## Main declarations
 
@@ -292,3 +295,44 @@ end GroupScheme
 end
 
 end TauCeti.Comodule
+
+namespace Derivation
+
+open TauCeti
+
+variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
+  [AddCommMonoid M] [Module R M] [Comodule R H M] {n : ℕ}
+
+/-- Differentiating an upper-unitriangular representation gives a nilpotent matrix over
+any commutative base ring. No characteristic or reducedness assumption is needed. -/
+theorem isNilpotent_tangentMatrix_comp_coordinateBialgHom
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (b : Module.Basis (Fin n) R M)
+    (hb : (Comodule.coefficientMatrix (C := H) b).IsUpperUnitriangular) :
+    IsNilpotent (GeneralLinear.tangentMatrix n
+      (derivationComp (Comodule.coordinateBialgHom (H := H) b) d)) := by
+  apply Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero
+  · intro i j hij
+    rw [GeneralLinear.tangentMatrix_apply, algEquivSelf_derivationComp_apply]
+    erw [Comodule.coordinateBialgHom_X, hb.isUpperTriangular hij]
+    simp
+    -- The two zeroes have differently indexed counit coefficient types.
+    rfl
+  · intro i
+    rw [GeneralLinear.tangentMatrix_apply, algEquivSelf_derivationComp_apply]
+    erw [Comodule.coordinateBialgHom_X, hb.apply_diag]
+    simp
+    rfl
+
+/-- A faithful upper-unitriangular representation makes every invariant tangent derivation
+locally nilpotent on the coordinate ring, over any commutative base ring. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isUpperUnitriangular
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (b : Module.Basis (Fin n) R M)
+    (hb : (Comodule.coefficientMatrix (C := H) b).IsUpperUnitriangular)
+    (hf : Function.Surjective (Comodule.coordinateBialgHom (H := H) b)) :
+    ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 :=
+  BialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_surjective
+    (Comodule.coordinateBialgHom (H := H) b) hf d
+    (GeneralLinear.exists_iterate_leftInvariantDerivation_eq_zero n _
+      (d.isNilpotent_tangentMatrix_comp_coordinateBialgHom b hb))
+
+end Derivation
