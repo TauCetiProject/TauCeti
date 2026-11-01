@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
 public import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -53,29 +51,13 @@ theorem IsTopRegularOverPolyad.edit_of_card_editedOn_le
   · have hU : Subpolyad3.unionSupport Q = ∅ :=
       subset_empty.1 (hP ▸ Subpolyad3.unionSupport_subset Q)
     simp [hU, H'.relativeDensity_of_support_eq_empty c hP, hε.le]
-  have hPpos : (0 : ℝ) < #P.support := Nat.cast_pos.2 hP.card_pos
-  have hUpos : (0 : ℝ) < #(Subpolyad3.unionSupport Q) :=
-    (mul_pos hε hPpos).trans_le hQ
-  -- Edits on every test are bounded by the edits on the whole polyad.
-  have hd (A : Finset {x : Fin 3 → V // Function.Injective x}) (hA : A ⊆ P.support) :
-      |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A ≤ η * #P.support := by
-    have hc : |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A ≤
-        (#(H.editedOn H' A) : ℝ) := by
-      exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_editedOn H' c A
-    apply hc.trans (le_trans ?_ hedit)
-    exact_mod_cast card_le_card (H.editedOn_mono H' hA)
   have hwhole : |(H.relativeDensity c P : ℝ) - H'.relativeDensity c P| ≤ η := by
-    rw [relativeDensity_def, relativeDensity_def]
-    exact (mul_le_mul_iff_left₀ hPpos).1 (by simpa [mul_comm] using hd P.support Subset.rfl)
+    simpa [relativeDensity_def] using H.abs_relDensityOn_sub_le_div_of_card_editedOn_le H' c
+      (Subset.rfl (s := P.support)) zero_lt_one hη (by simp) hedit
   have htest : |(H.relDensityOn c (Subpolyad3.unionSupport Q) : ℝ) -
-      H'.relDensityOn c (Subpolyad3.unionSupport Q)| ≤ η / ε := by
-    apply (mul_le_mul_iff_left₀ hUpos).1
-    calc
-      _ ≤ η * #P.support := by
-        simpa [mul_comm] using hd _ (Subpolyad3.unionSupport_subset Q)
-      _ = η / ε * (ε * #P.support) := by field_simp
-      _ ≤ η / ε * #(Subpolyad3.unionSupport Q) := by gcongr
-      _ = _ := by ring
+      H'.relDensityOn c (Subpolyad3.unionSupport Q)| ≤ η / ε :=
+    H.abs_relDensityOn_sub_le_div_of_card_editedOn_le H' c
+      (Subpolyad3.unionSupport_subset Q) hε hη hQ hedit
   -- Compare the old and new densities on the test and on the parent support.
   have hδε : δ ≤ ε := by
     have := div_nonneg hη hε.le

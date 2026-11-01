@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Rat.Cast.Order
 
 /-!
 # Relative color densities and their stability under edits
@@ -34,6 +35,8 @@ the number of supported edited triples `editedOn`, defined in
 * `TauCeti.Colored3Graph.sum_relDensityOn`: on a nonempty support the densities sum to one.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_mul_card_le_card_editedOn`: the count-scaled
   density change is bounded by the supported edit count.
+* `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_editedOn_le`: an `η`-fraction
+  of edits on a support changes density on an `ε`-fraction subsupport by at most `η / ε`.
 -/
 
 public section
@@ -86,6 +89,30 @@ theorem abs_relDensityOn_sub_mul_card_le_card_editedOn (H H' : Colored3Graph κ 
       H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
   · simp [h]
   · split_ifs <;> simp
+
+/-- Recoloring at most an `η`-fraction of `B` changes the density on any subsupport `A`
+carrying at least an `ε`-fraction of `B` by at most `η / ε`. Empty supports are allowed. -/
+theorem abs_relDensityOn_sub_le_div_of_card_editedOn_le (H H' : Colored3Graph κ V) (c : κ)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} {ε η : ℝ}
+    (hAB : A ⊆ B) (hε : 0 < ε) (hη : 0 ≤ η) (hsize : ε * #B ≤ #A)
+    (hedit : (#(H.editedOn H' B) : ℝ) ≤ η * #B) :
+    |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| ≤ η / ε := by
+  obtain rfl | hB := B.eq_empty_or_nonempty
+  · have hA := subset_empty.1 hAB
+    simp [hA, relDensityOn_def, div_nonneg hη hε.le]
+  have hBpos : (0 : ℝ) < #B := Nat.cast_pos.2 hB.card_pos
+  have hd : |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A ≤
+      (#(H.editedOn H' A) : ℝ) := by
+    exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_editedOn H' c A
+  have hmono : (#(H.editedOn H' A) : ℝ) ≤ #(H.editedOn H' B) := by
+    exact_mod_cast card_le_card (H.editedOn_mono H' hAB)
+  apply (le_div_iff₀ hε).2
+  apply (mul_le_mul_iff_left₀ hBpos).1
+  calc
+    _ = |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * (ε * #B) := by ac_rfl
+    _ ≤ |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A :=
+      mul_le_mul_of_nonneg_left hsize (abs_nonneg _)
+    _ ≤ η * #B := hd.trans (hmono.trans hedit)
 
 /-- Relative densities are nonnegative. -/
 theorem relDensityOn_nonneg (H : Colored3Graph κ V) (c : κ)
