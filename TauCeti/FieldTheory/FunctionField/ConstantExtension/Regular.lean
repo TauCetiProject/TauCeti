@@ -44,8 +44,8 @@ For the domain property, first let `K / k` be algebraic and let `L` be the separ
 in `K`. Exact constants make `L ⊗[k] F` a domain, and `K ⊗[k] F` is reduced. Since `K / L` is purely
 inseparable, every element of `K ⊗[k] F` has a positive power in `L ⊗[k] F`, so `K ⊗[k] F` is a
 domain (`TauCeti.IsPurelyInseparable.isDomain_tensorProduct`). For an arbitrary `K`, embed an
-algebraic closure `k̄` of `k` in an algebraic closure `K̄` of `K`. Then `F ⊗[k] K` embeds in
-`K̄ ⊗[k] F = K̄ ⊗[k̄] (k̄ ⊗[k] F)`, the tensor product of two domains over an algebraically closed
+algebraic closure `C` of `k` in an algebraic closure `Ω` of `K`. Then `F ⊗[k] K` embeds in
+`Ω ⊗[k] F = Ω ⊗[C] (C ⊗[k] F)`, the tensor product of two domains over an algebraically closed
 field, which is a domain (`TauCeti.isDomain_tensorProduct_of_isAlgClosed`). A domain `A` is handled
 through its fraction field in the same way.
 
@@ -113,14 +113,14 @@ extension of `k`. -/
 theorem isDomain_tensorProduct_of_separating (hex : IsIntegrallyClosedIn k F) {x : F}
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (A : Type*) [CommRing A] [IsDomain A]
     [Algebra k A] : IsDomain (F ⊗[k] A) := by
-  -- Embed an algebraic closure `k̄` of `k` in an algebraic closure `Ω` of the fraction field of `A`
+  -- Embed an algebraic closure `C` of `k` in an algebraic closure `Ω` of the fraction field of `A`
   let Ω := AlgebraicClosure (FractionRing A)
   let j : AlgebraicClosure k →ₐ[k] Ω := IsAlgClosed.lift
   algebraize [j.toRingHom]
   have : IsScalarTower k (AlgebraicClosure k) Ω :=
     IsScalarTower.of_algebraMap_eq fun c ↦ (j.commutes c).symm
   have := isDomain_tensorProduct_of_separating_of_isAlgebraic hex hx (AlgebraicClosure k)
-  -- `Ω ⊗[k] F = Ω ⊗[k̄] (k̄ ⊗[k] F)` is a domain, as `k̄` is algebraically closed
+  -- `Ω ⊗[k] F = Ω ⊗[C] (C ⊗[k] F)` is a domain, as `C` is algebraically closed
   have : IsDomain (Ω ⊗[k] F) :=
     (Algebra.TensorProduct.cancelBaseChange k (AlgebraicClosure k) Ω Ω F).symm.toMulEquiv.isDomain
   -- `F ⊗[k] A` embeds in `Ω ⊗[k] F`, since `F` is flat over the field `k`
