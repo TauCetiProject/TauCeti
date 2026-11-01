@@ -96,7 +96,7 @@ theorem legendreEc_eq_one_add_mul_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
   have hsq : (2 * √((1 - c) / (1 + c)) / (1 + (1 - c) / (1 + c))) ^ 2 = k ^ 2 := by
     rw [div_pow, mul_pow, sq_sqrt hq₀]
     field_simp
-    nlinarith [hcsq]
+    linear_combination -4 * hcsq
   have hE := legendreEc_two_mul_sqrt_div_one_add hq₀ hq₁
   have hK : legendreK k = (1 + (1 - c) / (1 + c)) *
       legendreK ((1 - c) / (1 + c)) := by
@@ -108,6 +108,7 @@ theorem legendreEc_eq_one_add_mul_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     · rw [h, legendreEc_neg]
   rw [harg] at hE
   field_simp at hE hK ⊢
-  nlinarith
+  apply mul_left_cancel₀ hp.ne'
+  linear_combination hE / 2 + c * hK
 
 end TauCeti.Real
