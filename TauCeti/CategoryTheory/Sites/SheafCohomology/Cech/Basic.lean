@@ -71,6 +71,8 @@ be added or removed.
 * `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
   indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
 * `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
+* `TauCeti.CategoryTheory.cechComplexMap_naturality`: the map induced by a morphism of families is
+  natural in `P`.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
   invariant under isomorphisms of presheaves.
 
@@ -220,12 +222,6 @@ theorem cechComplexFunctor_obj_d_comp_π (n : ℕ) (k : Fin (n + 2) → ι) :
   -- the coface map `δ m` unfolds to a `Pi.lift`
   exact (Preadditive.zsmul_comp _ _ _).trans <| congrArg _ <| Pi.lift_comp_π _ _
 
-/-- The Čech complex of an empty family is zero in every degree: its terms are products indexed
-by the empty type of maps `Fin (n + 1) → ι`. -/
-theorem isZero_cechComplexFunctor_obj_X [IsEmpty ι] (n : ℕ) :
-    IsZero (((cechComplexFunctor U).obj P).X n) :=
-  (IsZero.iff_id_eq_zero _).2 <| Pi.hom_ext _ _ fun (a : Fin (n + 1) → ι) ↦ isEmptyElim (a 0)
-
 /-! ### Maps of presheaves -/
 
 /-- A morphism of presheaves `α : P ⟶ Q` acts on the Čech complexes factorwise: the factor of
@@ -261,7 +257,6 @@ noncomputable def cechComplexMap (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduc
 
 /-- The factor of `(cechComplexMap P φ).f n` indexed by `a` is the factor of `Č(V, P)` indexed by
 `φ.f ∘ a`, restricted along the product of the morphisms `φ.φ (a j)`. -/
-@[reassoc]
 theorem cechComplexMap_f_π (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ)
     (a : Fin (n + 1) → ι) :
     (cechComplexMap P φ).f n ≫ Pi.π _ a =
@@ -292,11 +287,11 @@ theorem cechComplexMap_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     (cechComplexFunctor V).map α ≫ cechComplexMap Q φ =
       cechComplexMap P φ ≫ (cechComplexFunctor U).map α := by
-  -- both sides are induced by maps of cosimplicial objects, which agree by naturality of `α`
+  -- both are induced by the same map of cosimplicial objects, by naturality of `α`
   refine ((alternatingCofaceMapComplex A).map_comp _ _).symm.trans <|
     (congrArg (alternatingCofaceMapComplex A).map ?_).trans
       ((alternatingCofaceMapComplex A).map_comp _ _)
-  ext m : 2
+  ext : 2
   exact (((FormalCoproduct.evalOp C A).map α).naturality _).symm
 
 /-- A morphism of families which is the identity on indices, given by morphisms
