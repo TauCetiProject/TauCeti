@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -47,8 +48,9 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `TauCeti.enorm_integral_mul_le`: Hölder's inequality `‖∫ u v‖ ≤ ‖u‖_p ‖v‖_q` for an integral.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top`: the duality bound
   for `q < ∞`.
-* `MeasureTheory.MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le`: the duality bound for
-  `q = ∞` on a σ-finite measure space.
+* `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le` and
+  `MeasureTheory.MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le`: the duality bound for
+  `q = ∞` on a σ-finite measure space, the first without assuming `h ∈ L^∞` in advance.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le`: the duality bound for every
   `1 ≤ q ≤ ∞` on a σ-finite measure space.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
@@ -198,15 +200,17 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
     _ ≤ ε / 2 + (C + ε / 2) := by gcongr
     _ = C + ε := by rw [add_comm, add_assoc, ENNReal.add_halves]
 
-/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, if `h ∈ L^∞`
-satisfies `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. -/
-theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h : α → 𝕜}
-    (hh : MemLp h ∞ μ) {C : ℝ≥0∞}
+/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, let `h` be almost
+everywhere strongly measurable and integrable on every set of finite measure. If `h` satisfies
+`‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. In particular `h ∈ L^∞`
+as soon as `C < ∞`. -/
+theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ]
+    {h : α → 𝕜} (hmeas : AEStronglyMeasurable h μ)
+    (hint : ∀ s, MeasurableSet s → μ s < ∞ → IntegrableOn h s μ) {C : ℝ≥0∞}
     (hC : ∀ g : SimpleFunc α 𝕜, MemLp g 1 μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
     eLpNorm h ∞ μ ≤ C := by
   by_contra! hlt
   obtain ⟨t, hCt, htN⟩ := exists_between hlt
-  have hmeas := hh.aestronglyMeasurable
   set h' := hmeas.mk h
   have hhh' : h =ᵐ[μ] h' := hmeas.ae_eq_mk
   -- The set `{t < ‖h‖}` has positive measure, so by σ-finiteness it contains a set `F` of
@@ -221,11 +225,10 @@ theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h
     rw [hx]
     simpa using hx'
   obtain ⟨F, hFm, hFE, hFpos, hFtop⟩ := Measure.exists_subset_measure_lt_top hE hEpos
-  have : IsFiniteMeasure (μ.restrict F) := isFiniteMeasure_restrict.2 hFtop.ne
   -- The case `q = 1`, applied to `1_F h`, bounds `∫_F ‖h‖` by `C μ(F)`.
   have hk : MemLp (F.indicator h) 1 μ := by
-    rw [memLp_indicator_iff_restrict hFm.nullMeasurableSet]
-    exact (hh.restrict F).mono_exponent le_top
+    rw [memLp_indicator_iff_restrict hFm.nullMeasurableSet, memLp_one_iff_integrable]
+    exact hint F hFm hFtop
   have hkC : eLpNorm (F.indicator h) 1 μ ≤ C * μ F := by
     refine hk.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top (q' := ∞) ENNReal.one_ne_top
       fun g _ => ?_
@@ -260,6 +263,15 @@ theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h
     rw [hx]
     exact (hFE hxF).le
   exact ((ENNReal.mul_le_mul_iff_left hFpos.ne' hFtop.ne).1 (hlow.trans hkC)).not_gt hCt
+
+/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, if `h ∈ L^∞`
+satisfies `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. -/
+theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h : α → 𝕜}
+    (hh : MemLp h ∞ μ) {C : ℝ≥0∞}
+    (hC : ∀ g : SimpleFunc α 𝕜, MemLp g 1 μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
+    eLpNorm h ∞ μ ≤ C :=
+  hh.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le
+    (fun s _ hs => have : Fact (μ s < ∞) := ⟨hs⟩; (hh.restrict s).integrable le_top) hC
 
 /-- **Norming by simple functions.** On a σ-finite measure space, let `q` and `q'` be Hölder
 conjugate. If `h ∈ L^q` satisfies `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function
