@@ -110,6 +110,7 @@ theorem cauchyTransform_of_im_ne_zero (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ)) 
     cauchyTransform u χ z = (2 * π * I)⁻¹ * u.complexPairing (cauchyKernel χ 1 hz) := by
   simp [cauchyTransform, hz]
 
+@[simp]
 theorem cauchyTransform_of_im_eq_zero (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ)) {z : ℂ} (hz : z.im = 0) :
     cauchyTransform u χ z = 0 := by
   simp [cauchyTransform, hz]
