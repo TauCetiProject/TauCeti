@@ -109,7 +109,7 @@ theorem of_hasGoingDown_of_quotient_map_maximalIdeal [IsRegularLocalRing R] [IsL
     Ideal.spanFinrank_map_le_of_fg _ (IsNoetherian.noetherian _)
   rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at hS
   refine .of_spanFinrank_maximalIdeal_le S ?_
-  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal (R := R),
+  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal R,
     ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R),
     ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S ⧸ I), add_comm]
   exact_mod_cast hS.trans (Nat.add_le_add_left hI _)

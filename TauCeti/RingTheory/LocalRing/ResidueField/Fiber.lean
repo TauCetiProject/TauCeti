@@ -43,15 +43,14 @@ of `b`. -/
 @[simp]
 theorem algEquivAux₂_algebraMap_one_tmul (Q : Ideal (p.Fiber B)) [Q.IsPrime] (b : B) :
     algEquivAux₂ p Q (algebraMap _ (Localization.AtPrime Q) ((1 : p.ResidueField) ⊗ₜ[R] b)) =
-      Ideal.Quotient.mk _ (algebraMap B (Localization.AtPrime (Q.comap includeRight)) b) := by
+      algebraMap B (Localization.AtPrime (Q.comap includeRight) ⧸ _) b := by
   -- `algEquivAux₂` is the restriction of scalars to `R` of a composite of `B`-algebra
   -- isomorphisms; unfold it and use that each factor commutes with the maps from `B`.
   let : Algebra B (p.Fiber B) := rightAlgebra
   unfold algEquivAux₂
   simp only [AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply]
   rw [← AlgEquiv.restrictScalars_apply B, ← right_algebraMap_apply,
-    ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes, AlgEquiv.commutes,
-    Ideal.Quotient.mk_algebraMap]
+    ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes, AlgEquiv.commutes]
 
 /-- The local ring `(κ(p) ⊗[R] B)_Q` of the fibre ring at a prime `Q`, lying over the prime `q`
 of `B`, is isomorphic to `B_q ⧸ p B_q`, where `p B_q` is the extension of `p` along `R → B_q`.
@@ -70,7 +69,7 @@ theorem localizationAtPrimeEquivQuotientMap_algebraMap_one_tmul (Q : Ideal (p.Fi
     [Q.IsPrime] (b : B) :
     localizationAtPrimeEquivQuotientMap p Q
         (algebraMap _ (Localization.AtPrime Q) ((1 : p.ResidueField) ⊗ₜ[R] b)) =
-      Ideal.Quotient.mk _ (algebraMap B (Localization.AtPrime (Q.comap includeRight)) b) := by
-  simp [localizationAtPrimeEquivQuotientMap, -Ideal.Quotient.mk_algebraMap]
+      algebraMap B (Localization.AtPrime (Q.comap includeRight) ⧸ _) b := by
+  simp [localizationAtPrimeEquivQuotientMap, ← Ideal.Quotient.mk_algebraMap]
 
 end Ideal.Fiber

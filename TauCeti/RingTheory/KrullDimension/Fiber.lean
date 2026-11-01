@@ -215,6 +215,7 @@ theorem ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal 
     Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
   exact (Ideal.isPrime_map_quotientMk_of_isPrime hle).ne_top
 
+variable (R) in
 open IsLocalRing in
 /-- **The dimension formula for local homomorphisms with going down.** For a local homomorphism
 `R → S` of Noetherian local rings satisfying going down, for instance a flat one, the Krull
@@ -243,7 +244,7 @@ theorem ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq [IsLocalRing R] [
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     ringKrullDim S = ringKrullDim R := by
   have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
-  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal (R := R), h,
+  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal R, h,
     ringKrullDim_eq_zero_of_isField ((Ideal.Quotient.maximal_ideal_iff_isField_quotient _).mp
       (maximalIdeal.isMaximal S)), add_zero]
 
