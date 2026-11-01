@@ -61,6 +61,27 @@ def totalSpaceResidueFieldHomEquiv :
     (Scheme.Modules.unitHomEquivTop _).trans
       (Scheme.Modules.residueFieldPullbackSectionsEquiv x E.obj).symm.toEquiv
 
+/-- A point of `𝕍(E)` over `x` is sent to the vector of the fibre corresponding to the global
+section of `ι^* E` given by its section `𝒪 ⟶ ι^* E`. -/
+theorem totalSpaceResidueFieldHomEquiv_apply
+    (f : Over.mk (X.fromSpecResidueField x) ⟶
+      (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E)) :
+    totalSpaceResidueFieldHomEquiv E x f =
+      (Scheme.Modules.residueFieldPullbackSectionsEquiv x E.obj).symm
+        (Scheme.Modules.unitHomEquivTop _
+          (totalSpaceHomEquiv E (Over.mk (X.fromSpecResidueField x)) f)) :=
+  (rfl)
+
+/-- A vector `v` of the fibre is sent to the point of `𝕍(E)` over `x` whose section `𝒪 ⟶ ι^* E`
+is the global section of `ι^* E` corresponding to `v`. -/
+theorem totalSpaceResidueFieldHomEquiv_symm_apply
+    (v : X.residueField x ⊗[X.presheaf.stalk x] E.obj.presheaf.stalk x) :
+    (totalSpaceResidueFieldHomEquiv E x).symm v =
+      (totalSpaceHomEquiv E (Over.mk (X.fromSpecResidueField x))).symm
+        ((Scheme.Modules.unitHomEquivTop _).symm
+          (Scheme.Modules.residueFieldPullbackSectionsEquiv x E.obj v)) :=
+  (rfl)
+
 /-- The point of `𝕍(E)` over `x` given by the vector `c ⊗ s_x`, for a section `s` of `E` over an
 open `V ∋ x`, is the point whose section of `ι^* E` is `c` times the pullback of `s` along
 `ι : Spec κ(x) ⟶ X`. -/

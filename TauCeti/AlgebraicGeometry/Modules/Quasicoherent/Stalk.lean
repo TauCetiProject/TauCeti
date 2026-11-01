@@ -54,19 +54,9 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     IsLocalizedModule (hU.primeIdealOf x).asIdeal.primeCompl (M.germₗ x) where
   map_units s := by
     have := hU.isLocalization_stalk x
-    -- `s` acts on `M_x` through its germ, which is a unit of `𝒪_{X,x}`.
-    obtain ⟨u, hu⟩ := IsLocalization.map_units (X.presheaf.stalk x) s
-    have key (m : M.presheaf.stalk x) :
-        algebraMap Γ(X, U) (Module.End Γ(X, U) (M.presheaf.stalk x)) s m =
-          (u : X.presheaf.stalk x) • m := by
-      rw [Module.algebraMap_end_apply, section_smul_stalk_def, hu,
-        TopCat.Presheaf.stalk_open_algebraMap]
-    rw [Module.End.isUnit_iff]
-    refine ⟨fun a b h ↦ ?_, fun b ↦ ⟨(↑u⁻¹ : X.presheaf.stalk x) • b, ?_⟩⟩
-    · rw [key, key] at h
-      simpa only [smul_smul, Units.inv_mul, one_smul] using
-        congrArg ((↑u⁻¹ : X.presheaf.stalk x) • ·) h
-    · rw [key, smul_smul, Units.mul_inv, one_smul]
+    -- `M_x` is an `𝒪_{X,x}`-module, and `𝒪_{X,x}` is the localization of `Γ(X, U)` at `x`.
+    exact (isLocalizedModule_id (hU.primeIdealOf x).asIdeal.primeCompl (M.presheaf.stalk x)
+      (X.presheaf.stalk x)).map_units s
   surj y := by
     obtain ⟨V, hxV, m, rfl⟩ := M.presheaf.exists_germ_eq y
     obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ x.2
