@@ -55,18 +55,23 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
 
+omit [FiniteDimensional ℂ W] [Fact (finrank ℝ V = 4)] in
+private theorem continuous_algHom_apply (w : W) :
+    Continuous (fun a ↦ ρ a w) := by
+  simpa [Function.comp_def, LinearMap.applyₗ_apply_apply] using
+    IsModuleTopology.continuous_of_linearMap
+    (((LinearMap.applyₗ (R := ℂ) w).restrictScalars ℝ).comp ρ.toLinearMap)
+
 omit [FiniteDimensional ℂ W] in
 /-- The Spin half-spin representation is continuous at each fixed spinor for the Clifford
 subtype topology. -/
 @[fun_prop]
 theorem continuous_halfSpinRep_apply_const (ψ : eigenspace (ρ (chirality Q o)) ε) :
     Continuous (fun s : spinGroup Q ↦ halfSpinRep o ρ ε s ψ) := by
-  have h := IsModuleTopology.continuous_of_linearMap
-    (((LinearMap.applyₗ (R := ℂ) (ψ : W)).restrictScalars ℝ).comp ρ.toLinearMap)
-  exact continuous_induced_rng.mpr <| by
-    simpa only [Function.comp_def, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-      LinearMap.applyₗ_apply_apply, AlgHom.toLinearMap_apply, coe_halfSpinRep_apply] using
-      h.comp continuous_subtype_val
+  apply continuous_induced_rng.mpr
+  simpa [Function.comp_def, coe_halfSpinRep_apply] using
+    (continuous_algHom_apply ρ (ψ : W)).comp
+    (continuous_subtype_val : Continuous (fun s : spinGroup Q ↦ s.val))
 
 /-- The Spin half-spin representation varies continuously in operator norm. -/
 @[fun_prop]
@@ -136,18 +141,14 @@ function of the real vector. -/
 @[fun_prop]
 theorem continuous_halfSpinCliffordMul :
     Continuous (fun v : V ↦ (halfSpinCliffordMul o ρ ε v).toContinuousLinearMap) := by
-  let : FiniteDimensional ℝ V := FiniteDimensional.of_finrank_eq_succ
+  have : FiniteDimensional ℝ V := FiniteDimensional.of_finrank_eq_succ
     (Fact.out : finrank ℝ V = 4)
-  let : IsModuleTopology ℝ V := isModuleTopologyOfFiniteDimensional
+  have : IsModuleTopology ℝ V := isModuleTopologyOfFiniteDimensional
   apply continuous_clm_apply.mpr
   intro ψ
   apply continuous_induced_rng.mpr
-  have h := IsModuleTopology.continuous_of_linearMap
-    (((LinearMap.applyₗ (R := ℂ) (ψ : W)).restrictScalars ℝ).comp ρ.toLinearMap)
-  simpa only [Function.comp_def, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-    LinearMap.applyₗ_apply_apply, AlgHom.toLinearMap_apply,
-    LinearMap.coe_toContinuousLinearMap',
-    coe_halfSpinCliffordMul_apply_apply] using h.comp (continuous_ι Q)
+  simpa [Function.comp_def, coe_halfSpinCliffordMul_apply_apply] using
+    (continuous_algHom_apply ρ (ψ : W)).comp (continuous_ι Q)
 
 /-- Clifford multiplication is jointly continuous in the real vector and the half-spinor. -/
 @[fun_prop]
