@@ -50,6 +50,10 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 
 ## Main results
 
+* `TauCeti.FormalScheme.Spf.quotientSheaf_obj_obj`,
+  `TauCeti.FormalScheme.Spf.quotientSheaf_obj_map`,
+  `TauCeti.FormalScheme.Spf.quotientTransition_hom_app`: the sections, restriction maps and
+  reduction maps over an arbitrary open, in terms of the structure sheaves of the quotients.
 * `TauCeti.FormalScheme.Spf.quotientTransition_self`,
   `TauCeti.FormalScheme.Spf.quotientTransition_comp`: the reduction maps are functorial.
 * `TauCeti.FormalScheme.Spf.quotientSheafGlobalSectionsIso_inv_comp_quotientTransition`: on
@@ -87,14 +91,40 @@ noncomputable def quotientInclusion (hJ : IsAdic J) :
     PrimeSpectrum.Top (A ⧸ J) ⟶ TopCat.of (carrier A) :=
   TopCat.ofHom ⟨_, (homeomorphSpecQuotient hJ).symm.continuous⟩
 
+/-- `quotientInclusion` sends a prime of `A ⧸ J` to its image under the inverse of
+`homeomorphSpecQuotient`. -/
+@[simp]
+theorem quotientInclusion_apply (hJ : IsAdic J) (q : PrimeSpectrum (A ⧸ J)) :
+    quotientInclusion hJ q = (homeomorphSpecQuotient hJ).symm q := by
+  simp [quotientInclusion]
+
 /-- The structure sheaf of `Spec (A ⧸ J)`, for an ideal of definition `J`, transported to the
 underlying space of `Spf A` along `quotientInclusion`. Its sections over an open `U` of `Spf A`
-are the sections of the structure sheaf of `Spec (A ⧸ J)` over the corresponding open. -/
-noncomputable def quotientSheaf (hJ : IsAdic J) :
+are the sections of the structure sheaf of `Spec (A ⧸ J)` over the corresponding open. It is
+exposed so that its sections and restriction maps can be stated as those of `Spec (A ⧸ J)`. -/
+@[expose] noncomputable def quotientSheaf (hJ : IsAdic J) :
     Sheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat :=
   (TopCat.Sheaf.pushforward CommRingCat (quotientInclusion hJ)).obj (Spec.structureSheaf (A ⧸ J))
 
-private theorem map_quotientInclusion_subset (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
+/-- The sections of `O_J` over an open `U` of `Spf A` are the sections of the structure sheaf of
+`Spec (A ⧸ J)` over the preimage of `U` under `quotientInclusion`. This rewrites a type, so it is
+not `@[simp]`. -/
+theorem quotientSheaf_obj_obj (hJ : IsAdic J) (U : (Opens (carrier A))ᵒᵖ) :
+    (quotientSheaf hJ).obj.obj U =
+      (Spec.structureSheaf (A ⧸ J)).obj.obj ((Opens.map (quotientInclusion hJ)).op.obj U) :=
+  rfl
+
+/-- The restriction maps of `O_J` are those of the structure sheaf of `Spec (A ⧸ J)` along
+`quotientInclusion`. -/
+@[simp]
+theorem quotientSheaf_obj_map (hJ : IsAdic J) {U V : (Opens (carrier A))ᵒᵖ} (i : U ⟶ V) :
+    (quotientSheaf hJ).obj.map i =
+      (Spec.structureSheaf (A ⧸ J)).obj.map ((Opens.map (quotientInclusion hJ)).op.map i) :=
+  rfl
+
+/-- For ideals of definition `J ≤ K`, the preimage of an open `U` of `Spf A` in `Spec (A ⧸ K)` lies
+over its preimage in `Spec (A ⧸ J)` under the closed immersion `Spec (A ⧸ K) → Spec (A ⧸ J)`. -/
+theorem map_quotientInclusion_subset (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
     (U : Opens (carrier A)) :
     ((Opens.map (quotientInclusion hK)).obj U).1 ⊆
       PrimeSpectrum.comap (Ideal.Quotient.factor hJK) ⁻¹'
@@ -111,6 +141,17 @@ noncomputable def quotientTransition (hJ : IsAdic J) (hK : IsAdic K) (hJK : J �
         (map_quotientInclusion_subset hJ hK hJK U.unop))
       naturality _ _ _ := CommRingCat.hom_ext <|
         (StructureSheaf.comap_comp_map _ _ _ _).trans (StructureSheaf.map_comp_comap _ _ _ _).symm }
+
+/-- On sections over an open `U`, the reduction map `O_J → O_K` is the map of structure sheaves
+induced by the quotient map `A ⧸ J → A ⧸ K`. -/
+@[simp]
+theorem quotientTransition_hom_app (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
+    (U : (Opens (carrier A))ᵒᵖ) :
+    (quotientTransition hJ hK hJK).hom.app U =
+      CommRingCat.ofHom (StructureSheaf.comap (Ideal.Quotient.factor hJK) _ _
+        (map_quotientInclusion_subset hJ hK hJK U.unop)) := by
+  unfold quotientTransition
+  rfl
 
 /-- The reduction map `O_J → O_J` is the identity. -/
 @[simp]
