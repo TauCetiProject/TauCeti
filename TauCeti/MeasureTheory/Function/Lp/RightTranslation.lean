@@ -313,7 +313,8 @@ theorem memLp_comp_mul_right_iff_of_regular {f : G → E} (g : G) :
 open Topology in
 /-- The unweighted right translates of an `Lᵖ` function converge to it in `Lᵖ` for
 `1 ≤ p < ∞`: `‖f (· * g) - f‖_p → 0` as `g → 1`. This is the counterpart for a regular left
-Haar measure of Mathlib's `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`. -/
+Haar measure of `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub` in
+`TauCeti/MeasureTheory/Function/Lp/Translation.lean`. -/
 theorem MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular {f : G → E} (hf : MemLp f p μ)
     (hp₁ : 1 ≤ p) (hp : p ≠ ∞) :
     Tendsto (fun g => eLpNorm (fun x => f (x * g) - f x) p μ) (𝓝 1) (𝓝 0) := by
