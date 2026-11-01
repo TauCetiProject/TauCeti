@@ -175,11 +175,12 @@ private theorem tateNodeErr_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) :
         ∑' n : ℕ, -(((q : K) ^ (n + 1) * (u : K)⁻¹) ^ 2 /
           (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 3) - divisorSumAt 1 (q : K) := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := summable_tateTerms q hq u
+  have hneg (t : K) : t / (1 - t) ^ 2 + -t / (1 - t) ^ 3 = -(t ^ 2 / (1 - t) ^ 3) := by
+    linear_combination div_one_sub_sq_add_sq_div_one_sub_cube t
   rw [tateNodeErr, tateUniformizationX_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u,
     ← div_one_sub_sq_add_sq_div_one_sub_cube,
     tsum_congr fun n ↦ (div_one_sub_sq_add_sq_div_one_sub_cube ((q : K) ^ (n + 1) * u)).symm,
-    tsum_congr fun n ↦
-      (div_one_sub_sq_add_neg_div_one_sub_cube ((q : K) ^ (n + 1) * (u : K)⁻¹)).symm,
+    tsum_congr fun n ↦ (hneg ((q : K) ^ (n + 1) * (u : K)⁻¹)).symm,
     h₁.tsum_add h₂, h₃.tsum_add h₄]
   ring
 
@@ -191,7 +192,8 @@ private theorem summable_tateNodeErr (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
       (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 3)) := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := summable_tateTerms q hq u
   exact ⟨(h₁.add h₂).congr fun n ↦ div_one_sub_sq_add_sq_div_one_sub_cube _,
-    (h₃.add h₄).congr fun n ↦ div_one_sub_sq_add_neg_div_one_sub_cube _⟩
+    (h₃.add h₄).congr fun n ↦ by
+      linear_combination div_one_sub_sq_add_sq_div_one_sub_cube ((q : K) ^ (n + 1) * (u : K)⁻¹)⟩
 
 /-- **The error near the node is small.** If `‖q‖ ≤ ‖u‖² < 1`, then `X(u) + Y(u)` differs from
 `u / (1 - u)³` by at most `‖q‖`. -/
