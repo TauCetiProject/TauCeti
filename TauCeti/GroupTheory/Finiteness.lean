@@ -221,14 +221,12 @@ theorem CommGroup.exists_finiteIndex_isMulTorsionFree (G : Type*) [CommGroup G] 
   obtain ⟨g, hg⟩ := x.2
   -- `x = g ^ n` has finite order, so `g` is torsion and its `n`-th power is trivial
   have hgn : IsOfFinOrder (g ^ n) := by
-    rw [← powMonoidHom_apply, hg, ← orderOf_pos_iff, Subgroup.orderOf_coe]
-    exact hfin.orderOf_pos
+    simpa [← hg] using Submonoid.isOfFinOrder_coe.2 hfin
   have hg' : g ∈ _root_.CommGroup.torsion G :=
     (isOfFinOrder_pow.1 hgn).resolve_right Nat.card_pos.ne'
   refine hx (Subtype.ext ?_)
-  rw [← hg, powMonoidHom_apply, OneMemClass.coe_one]
-  have h := pow_card_eq_one' (x := (⟨g, hg'⟩ : _root_.CommGroup.torsion G))
-  rwa [Subtype.ext_iff, SubmonoidClass.coe_pow, OneMemClass.coe_one] at h
+  rw [← hg]
+  exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨g, hg'⟩ : _root_.CommGroup.torsion G)))
 
 end TauCeti
 

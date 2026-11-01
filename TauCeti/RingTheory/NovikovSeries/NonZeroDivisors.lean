@@ -126,14 +126,13 @@ theorem ofAddMonoidAlgebra_mem_nonZeroDivisors_of_finiteIndex
     obtain ⟨v, hv0, hv⟩ := Matrix.exists_mulVec_eq_zero_iff.2 h0
     obtain ⟨y, hy⟩ := cosetBasis_equivFun_symm_mem_range (N := N) K Quotient.out
       QuotientAddGroup.out_eq' v
+    have hyv : ⇑(b.repr (ofAddMonoidAlgebra y)) = ofAddMonoidAlgebra ∘ v := by
+      rw [hy]
+      exact b.equivFun.apply_symm_apply _
     have hay : a * y = 0 := by
-      refine ofAddMonoidAlgebra_injective (N := N) ?_
-      rw [_root_.map_mul, map_zero, hy]
-      refine b.equivFun.injective ?_
-      rw [map_zero, Module.Basis.equivFun_apply, ← Algebra.leftMulMatrix_mulVec_repr,
-        ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply, hA, RingHom.mapMatrix_apply]
-      ext q
-      rw [← RingHom.map_mulVec, hv, Pi.zero_apply, map_zero, Pi.zero_apply]
+      refine ofAddMonoidAlgebra_injective (N := N) (b.repr.injective (Finsupp.ext fun q => ?_))
+      rw [_root_.map_mul, ← Algebra.leftMulMatrix_mulVec_repr, hyv, hA]
+      simp [← RingHom.map_mulVec, hv]
     have hy0 : ι ∘ v = 0 := b.equivFun.symm.injective
       (by rw [← hy, mem_nonZeroDivisors_iff_left.1 ha y hay, map_zero, map_zero])
     exact hv0 (funext fun q => ofAddMonoidAlgebra_injective (N := N.comp K.subtype)
