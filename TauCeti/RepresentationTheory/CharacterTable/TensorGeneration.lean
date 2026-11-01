@@ -200,6 +200,15 @@ theorem exists_pos_finrank_hom_tensorPower (V X : FDRep ℂ G)
     Finset.sum_ite_eq', Finset.mem_univ, ite_true, inv_one, char_one] at heval
   exact (Nat.cast_ne_zero.mpr hX.ne') heval
 
+/-- **Burnside–Brauer, conjugacy-class bound.** Every nonzero finite-dimensional complex
+representation has a nonzero map into a tensor power of a faithful representation, with exponent
+strictly smaller than the number of conjugacy classes. -/
+theorem exists_pos_finrank_hom_tensorPower_lt_card_conjClasses (V X : FDRep ℂ G)
+    (hV : Function.Injective V.ρ) (hX : 0 < Module.finrank ℂ X) :
+    ∃ n < Nat.card (ConjClasses G), 0 < Module.finrank ℂ (X ⟶ V.tensorPower n) := by
+  obtain ⟨n, hn, hm⟩ := exists_pos_finrank_hom_tensorPower V X hV hX
+  exact ⟨n, hn.trans_le V.characterValueCount_le_card_conjClasses, hm⟩
+
 /-- Every irreducible complex representation embeds into one of the first tensor powers of a
 faithful representation. -/
 theorem exists_mono_tensorPower (V X : FDRep ℂ G) [Simple X]
