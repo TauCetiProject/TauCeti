@@ -22,12 +22,12 @@ primes in both fields and checks that they are compatible under restriction.
 
 For `ℚ(√5)`, given by a generator `s` with `s² = 5`, the global Artin symbol of a prime `ℓ ≠ 5`
 fixes `s` when `ℓ ≡ ±1 (mod 5)` and negates it when `ℓ ≡ ±2 (mod 5)`
-(`globalArtinMap_Qsqrt5_prime_apply`). In particular it is trivial exactly at the primes
-`ℓ ≡ ±1 (mod 5)` (`globalArtinMap_Qsqrt5_prime_eq_zero_iff`). The symbol is an arithmetic
-Frobenius by `globalArtinMap_isArithFrobAt`. At an odd prime, a Frobenius multiplies `s` by the
-Legendre symbol `(5/ℓ)`, and quadratic reciprocity turns `(5/ℓ) = 1` into `ℓ ≡ ±1 (mod 5)`. At
-`ℓ = 2` it negates `s`, since `5 ≡ 5 (mod 8)`. The prime `2` is unramified because
-`5 ≡ 1 (mod 4)`.
+(`globalArtinMap_Qsqrt5_prime_apply`, `globalArtinMap_Qsqrt5_prime`). In particular it is trivial
+exactly at the primes `ℓ ≡ ±1 (mod 5)` (`globalArtinMap_Qsqrt5_prime_eq_zero_iff`). The symbol is
+an arithmetic Frobenius by `globalArtinMap_isArithFrobAt`. At an odd prime, a Frobenius
+multiplies `s` by the Legendre symbol `(5/ℓ)`, and quadratic reciprocity turns `(5/ℓ) = 1` into
+`ℓ ≡ ±1 (mod 5)`. At `ℓ = 2` it negates `s`, since `5 ≡ 5 (mod 8)`. The prime `2` is unramified
+because `5 ≡ 1 (mod 4)`.
 
 For `ℚ(ζ₅)`, the symbol of `ℓ ≠ 5` is the automorphism with cyclotomic coordinate `ℓ mod 5`
 (`galEquivZMod_globalArtinMap_prime`). It fixes the quadratic subfield exactly when `ℓ` is a
@@ -42,6 +42,8 @@ non-involutive check is `globalArtinMap_zeta5_two`.
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.globalArtinMap_Qsqrt5_prime`: the Artin symbol of `ℓ ≠ 5` in
+  `ℚ(√5)` is trivial if `ℓ ≡ ±1 (mod 5)` and negates `√5` if `ℓ ≡ ±2 (mod 5)`.
 * `TauCeti.ClassFieldTheory.globalArtinMap_Qsqrt5_prime_apply`: the action of the Artin symbol of
   `ℓ ≠ 5` on `√5`.
 * `TauCeti.ClassFieldTheory.globalArtinMap_Qsqrt5_prime_eq_zero_iff`: the Artin symbol of `ℓ ≠ 5`
@@ -71,8 +73,9 @@ omit [IsGalois ℚ E] in
 /-- The Galois group of `ℚ(√5)` is commutative. -/
 private lemma isMulCommutative_of_sq_eq_five (hs : s ^ 2 = 5)
     (hgen : IntermediateField.adjoin ℚ {s} = ⊤) : IsMulCommutative Gal(E/ℚ) :=
-  isMulCommutative_algEquiv_of_adjoin_eq_top
-    (fun x hx ↦ ⟨5, by rw [Set.mem_singleton_iff.mp hx, hs, map_ofNat]⟩) hgen
+  .of_comm <| Commute.of_orderOf_dvd_two fun σ ↦ orderOf_dvd_of_pow_eq_one <|
+    Multiquadratic.aut_pow_two_eq_one_of_adjoin_eq_top (d := fun _ : Unit ↦ (5 : ℚ))
+      (fun _ ↦ by rw [hs, map_ofNat]) (by rwa [Set.range_const]) σ
 
 /-- An automorphism representing the Artin symbol of a prime `ℓ ≠ 5` in `ℚ(√5)` fixes `√5`
 exactly when `ℓ ≡ ±1 (mod 5)`. -/
@@ -93,15 +96,7 @@ private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] 
     exact_mod_cast this
   -- A prime of `ℚ(√5)` above `v`, read as a prime above the rational prime `p`.
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 E)))
-  have : Q.LiesOver (Ideal.span {(p : ℤ)}) := by
-    have hpQ : (p : 𝓞 E) ∈ Q := by
-      have hpv' : (p : 𝓞 ℚ) ∈ v.asIdeal :=
-        (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd v).mpr hpv.dvd
-      simpa using (Ideal.mem_of_liesOver Q v.asIdeal (p : 𝓞 ℚ)).mp hpv'
-    rw [Ideal.liesOver_iff]
-    refine Ideal.IsMaximal.eq_of_le (Int.ideal_span_isMaximal_of_prime p)
-      Ideal.IsPrime.ne_top' ?_
-    simpa [Ideal.span_singleton_le_iff_mem, Ideal.mem_comap] using hpQ
+  have : Q.LiesOver (Ideal.span {(p : ℤ)}) := hpv ▸ Rat.HeightOneSpectrum.liesOver_span_absNorm v Q
   have hr : ∀ _ : Unit, s ^ 2 = algebraMap ℤ E 5 := fun _ ↦ by simpa using hs
   have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ s) = ⊤ := by
     rwa [Set.range_const]
@@ -152,6 +147,22 @@ theorem globalArtinMap_Qsqrt5_prime_eq_zero_iff (ι : E →ₐ[ℚ] SeparableClo
   exact ⟨fun h ↦ by simp [h], fun h ↦
     TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen fun x hx ↦
       Set.mem_singleton_iff.mp hx ▸ h⟩
+
+/-- **The global Artin symbol in `ℚ(√5)`.** Let `s` generate `E` over `ℚ` with `s² = 5`. Any
+automorphism representing the Artin symbol of a prime `ℓ ≠ 5` is the identity if
+`ℓ ≡ ±1 (mod 5)`, and negates `s` if `ℓ ≡ ±2 (mod 5)`. -/
+theorem globalArtinMap_Qsqrt5_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ) (hs : s ^ 2 = 5)
+    (hgen : IntermediateField.adjoin ℚ {s} = ⊤) (v : HeightOneSpectrum (𝓞 ℚ))
+    (hv : (5 : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
+    (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Abelianization.of σ)) :
+    (Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 → σ = 1) ∧
+      (Ideal.absNorm v.asIdeal % 5 = 2 ∨ Ideal.absNorm v.asIdeal % 5 = 3 → σ s = -s) := by
+  have h := globalArtinMap_Qsqrt5_prime_apply ι hs hgen v hv hσ
+  refine ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
+  · rw [ite_eq_left hc] at h
+    exact TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top hgen fun x hx ↦
+      Set.mem_singleton_iff.mp hx ▸ h
+  · rwa [ite_eq_right (by omega)] at h
 
 end Sqrt5
 
