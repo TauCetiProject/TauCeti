@@ -30,6 +30,8 @@ therefore a compatible system of residues modulo `𝔪ⁿ`, that is, an element 
 
 * `TauCeti.annihilator_torsionBySet_of_injective`: if `E` is injective and contains a copy of
   `κ`, then the annihilator of `E[J]` is `J`, for every ideal `J`.
+* `TauCeti.IsInjectiveEnvelope.mem_primaryComponent`: every element of `E` is killed by a power
+  of `𝔪`, the hypothesis of `TauCeti.AdicCompletion.torsionModule`.
 * `TauCeti.IsInjectiveEnvelope.exists_eq_smul_subtype`: for an ideal `J` with `R ⧸ J` of finite
   length, every linear map `E[J] → E` is the inclusion multiplied by a scalar.
 * `TauCeti.IsInjectiveEnvelope.adicCompletionEquivEnd`: the `R`-algebra isomorphism
@@ -88,7 +90,7 @@ variable [IsNoetherianRing R]
 namespace IsInjectiveEnvelope
 
 /-- Every element of an injective envelope of the residue field is killed by a power of `𝔪`. -/
-private theorem mem_primaryComponent (hι : IsInjectiveEnvelope ι) (x : E) :
+theorem mem_primaryComponent (hι : IsInjectiveEnvelope ι) (x : E) :
     x ∈ (maximalIdeal R).primaryComponent E :=
   hι.isEssential_range.primaryComponent_maximalIdeal_eq_top ▸ mem_top
 
