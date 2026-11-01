@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.Real
+import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # Additive Haar measures on real normed spaces
@@ -25,7 +26,8 @@ itself is controlled by the distance between the centres. The measure of an affi
 `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
-closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension.
+closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
+to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
 
 ## Main results
 
@@ -61,6 +63,8 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
+* `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
+  `RCLike` field.
 -/
 
 public section
@@ -311,6 +315,40 @@ theorem _root_.ContinuousLinearMap.abs_det_le_opNorm_pow
     mu.addHaar_closedBall 0 zero_le_one, one_pow, ENNReal.ofReal_one, one_mul] at h
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 <|
     (ENNReal.mul_le_mul_iff_left (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne).1 h
+
+/-- The norm of `z : 𝕜` raised to `finrank ℝ 𝕜` bounds its field norm over `ℝ` from below: the
+field norm of `z⁻¹` is the determinant of multiplication by `z⁻¹`, whose operator norm is at most
+`‖z⁻¹‖`. -/
+private theorem norm_pow_finrank_le_abs_algebraNorm {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
+    ‖z‖ ^ finrank ℝ 𝕜 ≤ |Algebra.norm ℝ z| := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp [finrank_pos.ne']
+  have h := (ContinuousLinearMap.mul ℝ 𝕜 z⁻¹).abs_det_le_opNorm_pow
+  have hdet : (ContinuousLinearMap.mul ℝ 𝕜 z⁻¹).det = Algebra.norm ℝ z⁻¹ := by
+    rw [Algebra.norm_apply]
+    rfl
+  have hinv : Algebra.norm ℝ z⁻¹ = (Algebra.norm ℝ z)⁻¹ :=
+    eq_inv_of_mul_eq_one_left <| by rw [← map_mul, inv_mul_cancel₀ hz, map_one]
+  rw [hdet, hinv, abs_inv] at h
+  have hN : 0 < |Algebra.norm ℝ z| := by simp [hz]
+  have := h.trans <| pow_le_pow_left₀ (norm_nonneg _)
+    (ContinuousLinearMap.opNorm_mul_apply_le ℝ 𝕜 z⁻¹) _
+  rwa [norm_inv, inv_pow, inv_le_inv₀ hN (by positivity)] at this
+
+/-- **The determinant is bounded by the operator norm** over an `RCLike` field: `‖det f‖ ≤ ‖f‖ ^ n`
+for a linear endomorphism `f` of a normed space of finite dimension `n`. Restricting scalars to `ℝ`
+turns the determinant into its field norm, which `abs_det_le_opNorm_pow` bounds. -/
+theorem _root_.ContinuousLinearMap.norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] (f : E →L[𝕜] E) :
+    ‖f.det‖ ≤ ‖f‖ ^ finrank 𝕜 E := by
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  have : IsScalarTower ℝ 𝕜 E := ⟨fun r c x ↦ by simp [Algebra.smul_def, mul_smul]⟩
+  have : FiniteDimensional ℝ E := Module.Finite.trans 𝕜 E
+  have h := (f.restrictScalars ℝ).abs_det_le_opNorm_pow
+  have hdet : (f.restrictScalars ℝ).det = Algebra.norm ℝ f.det := LinearMap.det_restrictScalars
+  rw [hdet, ContinuousLinearMap.norm_restrictScalars, ← finrank_mul_finrank ℝ 𝕜 E, pow_mul'] at h
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 <|
+    (norm_pow_finrank_le_abs_algebraNorm f.det).trans h
 
 end TauCeti
 

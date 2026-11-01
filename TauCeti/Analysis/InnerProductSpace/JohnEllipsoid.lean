@@ -7,8 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.Algebra.Module.Determinant
-public import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Inscribed ellipsoids of maximal volume
@@ -16,21 +16,23 @@ public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 An ellipsoid centred at `0` in a finite-dimensional inner product space `E` is the image `T(B)` of
 the closed unit ball `B` under a linear automorphism `T` of `E`. Over `ℝ` the volume of `T(B)` is
 `|det T|` times that of `B` (`MeasureTheory.Measure.addHaar_image_continuousLinearMap`), so
-among the ellipsoids contained in a set `K` the ones of maximal volume are those maximizing
-`‖det T‖`; over `ℂ` the real volume factor is `‖det T‖ ^ 2`, with the same maximizers. This file
-proves that for a compact neighbourhood `K` of `0` such a maximizer exists and is invertible, and
-that the linear change of variables by its inverse moves `K` into **John's position**: the unit
-ball itself is then an inscribed ellipsoid of maximal volume. This is the position in which John's
-theorem describes the contact points of `K` with the unit sphere.
+among the ellipsoids centred at `0` contained in a set `K` the ones of maximal volume are those
+maximizing `‖det T‖`; over `ℂ` the real volume factor is `‖det T‖ ^ 2`, with the same maximizers.
+This file proves that for a compact neighbourhood `K` of `0` such a maximizer exists and is
+invertible, and that the linear change of variables by its inverse moves `K` into **John's
+position**: the unit ball itself is then an inscribed ellipsoid of maximal volume among the
+ellipsoids centred at `0`. For a symmetric convex body `K` this is the John ellipsoid of `K`, and
+this is the position in which John's theorem describes the contact points of `K` with the unit
+sphere.
 
 Existence of the maximizer uses no inner product, so it is stated for linear images of the unit
 ball of any finite-dimensional normed space over a proper field: the linear maps sending the unit
 ball into a compact set form a compact set (`IsCompact.isCompact_setOf_mapsTo`), on which the
 continuous function `‖det T‖` attains its maximum, and a neighbourhood of `0` contains a nonzero
 multiple of the unit ball. These images are ellipsoids when the norm comes from an inner product.
-In that case the unit ball is itself in John's position, because a linear map sending it into
-itself has determinant of norm at most `1` (`LinearMap.norm_det_le_pow_of_norm_apply_le`, a form of
-Hadamard's inequality).
+Over `ℝ` or `ℂ` the unit ball of any finite-dimensional normed space is itself in John's position,
+because a linear map sending it into itself has operator norm at most `1`, hence determinant of
+norm at most `1` (`ContinuousLinearMap.norm_det_le_opNorm_pow`).
 
 ## Main definitions
 
@@ -47,8 +49,8 @@ Hadamard's inequality).
   in `K`.
 * `IsCompact.exists_isJohnPosition_preimage`: every compact neighbourhood of `0` is moved into
   John's position by a linear equivalence.
-* `TauCeti.isJohnPosition_closedBall`: the unit ball of a finite-dimensional inner product space is
-  in John's position.
+* `TauCeti.isJohnPosition_closedBall`: over an `RCLike` field, the unit ball of a
+  finite-dimensional normed space is in John's position.
 * `TauCeti.IsJohnPosition.addHaar_image_le`: over `ℝ`, in John's position no linear image of the
   unit ball contained in `K` has larger volume than the unit ball.
 
@@ -71,8 +73,9 @@ variable (𝕜 : Type*) {E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCom
 
 /-- A set `K` is in **John's position** if the closed unit ball `B` is contained in `K` and every
 linear map sending `B` into `K` has determinant of norm at most `1`, the determinant of the
-identity. In an inner product space this says that `B` is an ellipsoid of maximal volume
-contained in `K`. -/
+identity. In an inner product space this says that `B` has maximal volume among the ellipsoids
+centred at `0` contained in `K`; for a symmetric convex body `K` this makes `B` the John ellipsoid
+of `K`. -/
 structure IsJohnPosition (K : Set E) : Prop where
   /-- The closed unit ball is contained in `K`. -/
   closedBall_subset : closedBall (0 : E) 1 ⊆ K
@@ -116,8 +119,8 @@ variable [ProperSpace 𝕜] [FiniteDimensional 𝕜 E]
 /-- **Existence of an inscribed ellipsoid of maximal volume.** A compact neighbourhood `K` of `0`
 in a finite-dimensional normed space over a proper field contains the image of the closed unit
 ball under a linear equivalence `T` whose determinant has maximal norm among all linear maps
-sending the unit ball into `K`. In an inner product space, `T(B)` is an ellipsoid of maximal
-volume contained in `K`. -/
+sending the unit ball into `K`. In an inner product space, `T(B)` has maximal volume among the
+ellipsoids centred at `0` contained in `K`. -/
 theorem _root_.IsCompact.exists_isMaxOn_norm_det {K : Set E} (hK : IsCompact K)
     (hK0 : K ∈ 𝓝 (0 : E)) :
     ∃ T : E ≃L[𝕜] E, MapsTo T (closedBall 0 1) K ∧
@@ -156,21 +159,21 @@ theorem _root_.IsCompact.exists_isJohnPosition_preimage {K : Set E} (hK : IsComp
 
 end Normed
 
-section InnerProductSpace
+section RCLike
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [FiniteDimensional 𝕜 E]
 
-/-- The closed unit ball of a finite-dimensional inner product space is in John's position: a
-linear map sending the unit ball into itself has determinant of norm at most `1`. -/
+/-- Over an `RCLike` field, the closed unit ball of a finite-dimensional normed space is in John's
+position: a linear map sending the unit ball into itself has operator norm at most `1`, hence
+determinant of norm at most `1`. -/
 theorem isJohnPosition_closedBall : IsJohnPosition 𝕜 (closedBall (0 : E) 1) := by
   refine ⟨subset_rfl, fun S hS ↦ ?_⟩
   have h : ‖S‖ ≤ 1 := ContinuousLinearMap.opNorm_le_of_unit_norm zero_le_one fun x hx ↦
     mem_closedBall_zero_iff.1 <| hS <| mem_closedBall_zero_iff.2 hx.le
-  simpa using LinearMap.norm_det_le_pow_of_norm_apply_le (A := (S : E →ₗ[𝕜] E)) (c := 1)
-    fun x ↦ by simpa using (S.le_opNorm x).trans (mul_le_of_le_one_left (norm_nonneg x) h)
+  simpa using S.norm_det_le_opNorm_pow.trans (pow_le_one₀ (norm_nonneg S) h)
 
-end InnerProductSpace
+end RCLike
 
 section Real
 

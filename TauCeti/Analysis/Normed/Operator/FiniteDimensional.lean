@@ -117,11 +117,7 @@ theorem IsCompact.isCompact_setOf_mapsTo {K : Set F} (hK : IsCompact K) {s : Set
   obtain ⟨R, hR, hKR⟩ := hK.isBounded.subset_closedBall_lt 0 0
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   refine Metric.isCompact_of_isClosed_isBounded ?_ ?_
-  · have h : {T : E →L[𝕜] F | MapsTo T s K} = ⋂ x ∈ s, (fun T : E →L[𝕜] F ↦ T x) ⁻¹' K := by
-      ext T
-      simp [MapsTo]
-    rw [h]
-    exact isClosed_biInter fun x _ ↦ hK.isClosed.preimage (continuous_eval_const x)
+  · exact hK.isClosed.setOfPred_mapsTo fun x _ ↦ continuous_eval_const x
   · -- On the shell `ε / ‖c‖ ≤ ‖x‖ < ε`, which lies in `s`, the bound `‖T x‖ ≤ R` gives
     -- `‖T‖ ≤ R ‖c‖ / ε`.
     refine (isBounded_closedBall (x := (0 : E →L[𝕜] F)) (r := R * ‖c‖ / ε)).subset fun T hT ↦ ?_
