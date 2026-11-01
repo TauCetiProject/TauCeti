@@ -53,6 +53,7 @@ private theorem perfect_image_of_perfect (h : X ≃ₜ Y) {C : Set X} (hC : Perf
       AccPt.map (hC.acc x hx) h.continuous.continuousAt h.injective⟩
 
 /-- The image of a set under a homeomorphism is perfect exactly when the set is perfect. -/
+@[simp]
 theorem perfect_image (h : X ≃ₜ Y) {C : Set X} : Perfect (h '' C) ↔ Perfect C := by
   refine ⟨fun hC => ?_, perfect_image_of_perfect h⟩
   simpa [Set.image_image] using perfect_image_of_perfect h.symm hC
