@@ -80,7 +80,7 @@ theorem exists_testFunction_normalized_delta_derivative_eq_two_pow {Ω : Opens �
       rw [add_comm]
     rw [heq, iteratedDeriv_eq_iterate, iter_deriv_inv_linear]
     simp
-  rw [smul_apply, Distribution.iterate_lineDerivOp_apply,
+  rw [smul_apply, Distribution.iterate_lineDerivOp_apply_apply,
     Distribution.delta_apply, TestFunction.coe_iterate_lineDerivOp_one, hd]
   have hn : (n.factorial : ℝ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
   simp only [smul_eq_mul]
