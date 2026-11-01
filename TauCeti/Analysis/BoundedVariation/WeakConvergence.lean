@@ -62,29 +62,8 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
       (𝓝 (∫ x : Ω, ⟪f x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u)) := by
   obtain rfl | hl := l.eq_or_neBot
   · exact tendsto_bot
-  -- Lower semicontinuity transfers the compact mass bounds to the limit on smaller open sets.
-  have hufin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞ := by
-    intro K hK hKΩ
-    obtain ⟨L, hL, hKL, hLΩ⟩ := exists_compact_between hK Ω.isOpen hKΩ
-    let U : Opens E := ⟨interior L, isOpen_interior⟩
-    have hUΩ : U ≤ Ω := interior_subset.trans hLΩ
-    obtain ⟨C, hC⟩ := hbound L hL hLΩ
-    have hL' : IsCompact (((↑) : Ω → E) ⁻¹' L) :=
-      Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hL (by simpa using hLΩ)
-    have htv : ∀ᶠ i in l, totalVariationOn μ U (v i) ≤ ENNReal.ofReal C := by
-      filter_upwards [hC] with i hi
-      have hmass : variationMeasure μ Ω (v i) (((↑) : Ω → E) ⁻¹' L) ≤
-          ENNReal.ofReal C := by
-        rw [← ENNReal.ofReal_toReal hL'.measure_lt_top.ne]
-        exact ENNReal.ofReal_le_ofReal hi
-      rw [← variationMeasure_preimage_coe (hv i) (hvfin i) hUΩ]
-      exact (measure_mono (preimage_mono interior_subset)).trans hmass
-    refine ⟨U, hKL, ne_top_of_le_ne_top (b := ENNReal.ofReal C) ENNReal.ofReal_ne_top ?_⟩
-    refine (totalVariationOn_le_liminf_of_tendsto_integral (Ω := U) fun ψ => ?_).trans
-      (liminf_le_of_frequently_le' htv.frequently)
-    simpa only [monoCLM_apply, le_refl, hUΩ, and_self, ite_true] using
-      hconv (monoCLM ℝ ψ : 𝓓(Ω, ℝ))
+  have hufin := forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral
+    hv hvfin hbound hconv
   -- Approximate the continuous field on a fixed compact neighbourhood of its support.
   obtain ⟨δ, hδ, hδΩ⟩ := hc.exists_cthickening_subset_open Ω.isOpen hs
   let K := cthickening δ (tsupport f)
@@ -114,6 +93,7 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
     (∫ x : Ω, ⟪ψ x, polarDensity μ Ω (v i) x⟫ ∂variationMeasure μ Ω (v i))
     (∫ x : Ω, ⟪ψ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u) _).trans_lt ?_
   have hleft' := hleft.trans (mul_le_mul_of_nonneg_left (hi.trans (le_max_left C 0)) hη.le)
+  -- The three errors sum to η * M < η * (M + 1) = ε, since η > 0.
   have hsum : η * max C 0 + η +
       η * (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K) < ε := by
     have hηeq : η * (M + 1) = ε := div_mul_cancel₀ _ (ne_of_gt (by positivity : 0 < M + 1))
@@ -126,7 +106,7 @@ open neighbourhood of every compact subset of the domain, implies local weak-* c
 the vector derivative measures. Local finiteness of the limit's variation follows from these
 bounds; it is not an additional hypothesis. The conclusion uses continuous fields compactly
 supported in the domain, not only smooth test fields. -/
-theorem tendsto_integral_inner_polarDensity_of_tendsto_L1_loc
+theorem tendsto_integral_inner_polarDensity_of_tendsto_lintegral_enorm_sub
     {ι : Type*} {l : Filter ι} {v : ι → E → ℝ} {u : E → ℝ}
     (hv : ∀ i, LocallyIntegrableOn (v i) Ω μ)
     (hvfin : ∀ i K, IsCompact K → K ⊆ Ω →
