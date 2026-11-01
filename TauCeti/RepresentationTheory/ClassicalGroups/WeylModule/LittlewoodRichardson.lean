@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.RepresentationTheory.ClassicalGroups.UnitaryTrick
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Differential
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Laurent
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 public import TauCeti.RepresentationTheory.Rep.DirectSum.Character
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
 
 /-!
-# Tensor products of Weyl modules: the Littlewood–Richardson rule for `GL n ℂ`
+# Tensor products of Weyl modules: the Littlewood–Richardson rule for `GL n ℂ` and `𝔤𝔩ₙ`
 
 For Young diagrams `λ` and `μ`, the tensor product of the Weyl modules
 `𝕊^λ(ℂⁿ) = TauCeti.weylModuleOfShape ℂ n λ` and `𝕊^μ(ℂⁿ)`, as a representation of `GL n ℂ`,
@@ -60,12 +62,36 @@ variables vanish. On the torus the character of `V_λ` is the Laurent polynomial
 `(∏ᵢ tᵢ) ^ a · s_{λ₀}(t)` (`TauCeti.char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly`), and
 the proof is otherwise the one above.
 
+Indexing the decomposition by Littlewood–Richardson tableaux instead
+(`TauCeti.nonempty_equiv_tprod_weylRepOfShape_lrTableau`) and restricting it to the partitions `ν`
+with at most `n` rows, it differentiates to the Lie algebra `𝔤𝔩ₙ(ℂ)`. A rational representation
+differentiates to a `𝔤𝔩ₙ`-module (`TauCeti.IsRationalRep.differential`), compatibly with
+equivalences, tensor products and direct sums, and the Weyl module `𝕊^ν(ℂⁿ)` of a diagram with at
+most `n` rows differentiates to the named irreducible `L(ν) = TauCeti.glIrreducible n ν` of highest
+weight the row lengths of `ν`. This gives **the Littlewood–Richardson rule for `𝔤𝔩ₙ`**: for Young
+diagrams `λ` and `μ` with at most `n` rows,
+
+`L(λ) ⊗ L(μ) ≅ ⨁_ν L(ν) ^ c^ν_{λμ}`, with `c^ν_{λμ} = Nat.card (LRTableau λ ν μ)`,
+
+the sum running over the partitions `ν` of `|λ| + |μ|` with at most `n` rows
+(`TauCeti.nonempty_lieModuleEquiv_tensorProduct_glIrreducible`). Since the `L(ν)` of distinct
+diagrams with at most `n` rows are not isomorphic, the multiplicity of `L(ν)` in `L(λ) ⊗ L(μ)` is
+the Littlewood–Richardson coefficient for every diagram `ν` with at most `n` rows, and in particular
+vanishes unless `λ ⊆ ν` and `|ν| = |λ| + |μ|`
+(`TauCeti.isotypicMultiplicity_tensorProduct_glIrreducible`).
+
 ## Main results
 
 * `TauCeti.nonempty_equiv_tprod_weylRepOfShape`: **the Littlewood–Richardson rule for `GL n ℂ`**,
-  the decomposition of `𝕊^λ(ℂⁿ) ⊗ 𝕊^μ(ℂⁿ)` as an equivalence of representations.
+  the decomposition of `𝕊^λ(ℂⁿ) ⊗ 𝕊^μ(ℂⁿ)` as an equivalence of representations;
+  `TauCeti.nonempty_equiv_tprod_weylRepOfShape_lrTableau` is the same decomposition indexed by
+  Littlewood–Richardson tableaux.
 * `TauCeti.nonempty_equiv_tprod_rationalWeylRep`: the Littlewood–Richardson rule for the rational
   Weyl modules `V_λ ⊗ V_μ` of two dominant weights.
+* `TauCeti.nonempty_lieModuleEquiv_tensorProduct_glIrreducible`: **the Littlewood–Richardson rule
+  for `𝔤𝔩ₙ`**, the decomposition of `L(λ) ⊗ L(μ)` as an equivalence of `𝔤𝔩ₙ`-modules.
+* `TauCeti.isotypicMultiplicity_tensorProduct_glIrreducible`: **the multiplicity of `L(ν)` in
+  `L(λ) ⊗ L(μ)` is `Nat.card (LRTableau λ ν μ)`.**
 
 ## References
 
@@ -79,7 +105,9 @@ public section
 
 namespace TauCeti
 
-open Finset MvPolynomial YoungDiagram
+open Finset MvPolynomial YoungDiagram TensorProduct
+
+open scoped DirectSum
 
 variable (n : ℕ)
 
@@ -190,5 +218,153 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
   refine Fintype.sum_congr _ _ fun ν => ?_
   simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.2, sum_const, card_univ,
     Fintype.card_subtype, map_nsmul, mul_smul_comm]
+
+/-- **The Littlewood–Richardson rule for `GL n ℂ`, with Littlewood–Richardson tableaux.** The
+tensor product of the Weyl modules of two Young diagrams `λ` and `μ` is equivalent to the direct
+sum of the Weyl modules `𝕊^ν(ℂⁿ)`, one for each partition `ν` of `|λ| + |μ|` with at most `n` rows
+and each Littlewood–Richardson tableau of shape `ν / λ` and content `μ`. So `𝕊^ν(ℂⁿ)` occurs with
+multiplicity the Littlewood–Richardson coefficient `c^ν_{λμ} = Nat.card (LRTableau λ ν μ)`. -/
+theorem nonempty_equiv_tprod_weylRepOfShape_lrTableau (lam μ : YoungDiagram) :
+    Nonempty (Representation.Equiv ((weylRepOfShape ℂ n lam).tprod (weylRepOfShape ℂ n μ))
+      (Representation.directSum fun p : Σ ν : {ν : (lam.card + μ.card).Partition //
+            (ofPartition ν).colLen 0 ≤ n}, LRTableau lam (ofPartition ν.1) μ =>
+        weylRepOfShape ℂ n (ofPartition p.1.1))) := by
+  -- The additive groups are supplied as in `TauCeti.nonempty_equiv_tprod_weylRepOfShape`.
+  let _ (p : Σ ν : {ν : (lam.card + μ.card).Partition // (ofPartition ν).colLen 0 ≤ n},
+      LRTableau lam (ofPartition ν.1) μ) :
+      AddCommGroup (weylModuleOfShape ℂ n (ofPartition p.1.1)).toSubmodule :=
+    inferInstance
+  let _ : AddCommGroup (TensorProduct ℂ (weylModuleOfShape ℂ n lam).toSubmodule
+      (weylModuleOfShape ℂ n μ).toSubmodule) :=
+    TensorProduct.addCommGroup (R := ℂ) (M := (weylModuleOfShape ℂ n lam).toSubmodule)
+      (N := (weylModuleOfShape ℂ n μ).toSubmodule)
+  let _ (ν : (lam.card + μ.card).Partition) : Fintype (LRTableau lam (ofPartition ν) μ) :=
+    Fintype.ofFinite _
+  refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
+    ((isPolynomialRep_weylRepOfShape n lam).tprod
+      (isPolynomialRep_weylRepOfShape n μ)).isRationalRep
+    (IsRationalRep.directSum fun p =>
+      (isPolynomialRep_weylRepOfShape n (ofPartition p.1.1)).isRationalRep)
+    fun t => ?_
+  -- As in `TauCeti.nonempty_equiv_tprod_weylRepOfShape`, `Representation.char_tensor` is applied
+  -- up to unfolding of the additive group of the tensor product.
+  refine (congrFun (Representation.char_tensor (V := (weylModuleOfShape ℂ n lam).toSubmodule)
+    (W := (weylModuleOfShape ℂ n μ).toSubmodule) (weylRepOfShape ℂ n lam)
+    (weylRepOfShape ℂ n μ)) (diagGL t)).trans ?_
+  rw [Pi.mul_apply, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
+    char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, ← eval_mul,
+    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau, map_sum,
+    Representation.char_directSum, Fintype.sum_sigma]
+  -- The partitions with more than `n` rows contribute nothing: their Schur polynomials vanish.
+  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n,
+    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ n} => _) fun ν => by
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero, map_zero],
+    add_zero]
+  refine Fintype.sum_congr _ _ fun ν => ?_
+  simp only [map_nsmul, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, sum_const,
+    card_univ, Nat.card_eq_fintype_card]
+
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- **The Littlewood–Richardson rule for `𝔤𝔩ₙ`.** For Young diagrams `λ` and `μ` with at most `n`
+rows, the tensor product of the irreducible `𝔤𝔩ₙ(ℂ)`-modules `L(λ) = glIrreducible n λ` and `L(μ)`
+of highest weights the row-length vectors of `λ` and `μ` is the direct sum of the modules `L(ν)`,
+one for each partition `ν` of `|λ| + |μ|` with at most `n` rows and each Littlewood–Richardson
+tableau of shape `ν / λ` and content `μ`. So `L(ν)` occurs with multiplicity the
+Littlewood–Richardson coefficient `c^ν_{λμ} = Nat.card (LRTableau λ ν μ)`. -/
+theorem nonempty_lieModuleEquiv_tensorProduct_glIrreducible {lam μ : YoungDiagram}
+    (hlam : lam.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n) :
+    Nonempty ((glIrreducible n fun i ↦ (lam.rowLen i : ℂ)) ⊗[ℂ]
+        (glIrreducible n fun i ↦ (μ.rowLen i : ℂ)) ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
+      ⨁ p : Σ ν : {ν : (lam.card + μ.card).Partition // (ofPartition ν).colLen 0 ≤ n},
+          LRTableau lam (ofPartition ν.1) μ,
+        glIrreducible n fun i ↦ ((ofPartition p.1.1).rowLen i : ℂ)) := by
+  let ι := Σ ν : {ν : (lam.card + μ.card).Partition // (ofPartition ν).colLen 0 ≤ n},
+    LRTableau lam (ofPartition ν.1) μ
+  let _ (p : ι) : AddCommGroup (weylModuleOfShape ℂ n (ofPartition p.1.1)).toSubmodule :=
+    inferInstance
+  let _ : AddCommGroup (weylModuleOfShape ℂ n lam).toSubmodule := inferInstance
+  let _ : AddCommGroup (weylModuleOfShape ℂ n μ).toSubmodule := inferInstance
+  have hlam' := (isPolynomialRep_weylRepOfShape n lam).isRationalRep
+  have hμ' := (isPolynomialRep_weylRepOfShape n μ).isRationalRep
+  have hν (p : ι) := (isPolynomialRep_weylRepOfShape n (ofPartition p.1.1)).isRationalRep
+  obtain ⟨φ⟩ := nonempty_equiv_tprod_weylRepOfShape_lrTableau n lam μ
+  obtain ⟨e₁⟩ := nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible hlam
+  obtain ⟨e₂⟩ := nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible hμ
+  have e (p : ι) := (nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible p.1.2).some
+  -- Differentiate: `L(λ) ⊗ L(μ) ≅ 𝕊^λ ⊗ 𝕊^μ ≅ ⨁ 𝕊^ν ≅ ⨁ L(ν)`, the two middle modules carrying the
+  -- differentials of the tensor product and of the direct sum.
+  let _ := LieRingModule.compLieHom
+    ((weylModuleOfShape ℂ n lam).toSubmodule ⊗[ℂ] (weylModuleOfShape ℂ n μ).toSubmodule)
+    (hlam'.tprod hμ').differential
+  let _ := LieRingModule.compLieHom
+    (⨁ p : ι, (weylModuleOfShape ℂ n (ofPartition p.1.1)).toSubmodule)
+    (IsRationalRep.directSum hν).differential
+  exact ⟨((hlam'.tprodLieModuleEquiv hμ' e₁ e₂).symm.trans
+    (IsRationalRep.lieModuleEquivOfEquiv (hlam'.tprod hμ') (IsRationalRep.directSum hν) φ)).trans
+    (IsRationalRep.directSumLieModuleEquiv hν e)⟩
+
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- **The Littlewood–Richardson coefficients are the tensor-product multiplicities of `𝔤𝔩ₙ`.** For
+Young diagrams `λ`, `μ` and `ν` with at most `n` rows, the irreducible `𝔤𝔩ₙ(ℂ)`-module
+`L(ν) = glIrreducible n ν` occurs in `L(λ) ⊗ L(μ)` with multiplicity the Littlewood–Richardson
+coefficient `c^ν_{λμ} = Nat.card (LRTableau λ ν μ)`: this is the dimension of the space of
+`𝔤𝔩ₙ`-module maps `L(ν) → L(λ) ⊗ L(μ)`. In particular it is zero unless `λ ⊆ ν` and
+`|ν| = |λ| + |μ|`. -/
+theorem isotypicMultiplicity_tensorProduct_glIrreducible {lam μ ν : YoungDiagram}
+    (hlam : lam.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n) (hν : ν.colLen 0 ≤ n) :
+    LieModule.isotypicMultiplicity ℂ (Matrix (Fin n) (Fin n) ℂ)
+      ((glIrreducible n fun i ↦ (lam.rowLen i : ℂ)) ⊗[ℂ]
+        glIrreducible n fun i ↦ (μ.rowLen i : ℂ))
+      (glIrreducible n fun i ↦ (ν.rowLen i : ℂ)) = Nat.card (LRTableau lam ν μ) := by
+  classical
+  -- The row-length vector of a Young diagram is a dominant weight, so its carrier is irreducible.
+  have hdom (κ : YoungDiagram) : IsGlDominantIntegral fun i : Fin n ↦ (κ.rowLen i : ℂ) :=
+    isGlDominantIntegral_iff.mpr fun i j hij ↦
+      ⟨κ.rowLen i - κ.rowLen j, by rw [Nat.cast_sub (κ.rowLen_anti _ _ (by omega))]⟩
+  have hirr (κ : YoungDiagram) := isIrreducible_glIrreducible (K := ℂ) (hdom κ)
+  -- The carrier of `ν` is the carrier of another diagram `κ` with at most `n` rows only if
+  -- `κ = ν`: the two highest weights agree, and they determine the diagrams.
+  have hiff (κ : YoungDiagram) (hκ : κ.colLen 0 ≤ n) :
+      Nonempty ((glIrreducible n fun i ↦ (ν.rowLen i : ℂ)) ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
+        glIrreducible n fun i ↦ (κ.rowLen i : ℂ)) ↔ κ = ν := by
+    rw [nonempty_lieModuleEquiv_glIrreducible_iff (hdom ν) (hdom κ)]
+    refine ⟨fun hw ↦ ?_, fun h ↦ h ▸ rfl⟩
+    have hweight : weightOfShape n κ = weightOfShape n ν := Subtype.ext <| funext fun i ↦ by
+      rw [weightOfShape_apply, weightOfShape_apply]
+      exact_mod_cast (congrFun hw i).symm
+    rw [← shape_weightOfShape hκ, ← shape_weightOfShape hν, hweight]
+  let _ (ν' : (lam.card + μ.card).Partition) : Fintype (LRTableau lam (ofPartition ν') μ) :=
+    Fintype.ofFinite _
+  -- Pass to the direct sum decomposition, where each summand `L(ν')` contributes `1` if `ν' = ν`
+  -- and `0` otherwise.
+  obtain ⟨e⟩ := nonempty_lieModuleEquiv_tensorProduct_glIrreducible n hlam hμ
+  rw [LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv e,
+    LieModule.isotypicMultiplicity_directSum _ fun p ↦
+      have := hirr ν
+      have := hirr (ofPartition p.1.1)
+      TauCeti.LieModule.finite_lieModuleHom_of_isIrreducible,
+    Fintype.sum_sigma]
+  have hterm (ν' : {ν' : (lam.card + μ.card).Partition // (ofPartition ν').colLen 0 ≤ n}) :
+      LieModule.isotypicMultiplicity ℂ (Matrix (Fin n) (Fin n) ℂ)
+          (glIrreducible n fun i ↦ ((ofPartition ν'.1).rowLen i : ℂ))
+          (glIrreducible n fun i ↦ (ν.rowLen i : ℂ)) =
+        if ofPartition ν'.1 = ν then 1 else 0 := by
+    have := hirr ν
+    have := hirr (ofPartition ν'.1)
+    rw [LieModule.isotypicMultiplicity_def, TauCeti.LieModule.finrank_lieModuleHom]
+    exact if_congr (hiff _ ν'.2) rfl rfl
+  simp only [hterm, sum_const, card_univ, ← Nat.card_eq_fintype_card, smul_eq_mul, mul_ite,
+    mul_one, mul_zero]
+  by_cases hcard : ν.card = lam.card + μ.card
+  · -- Exactly one summand has shape `ν`.
+    let ν₀ : {ν' : (lam.card + μ.card).Partition // (ofPartition ν').colLen 0 ≤ n} :=
+      ⟨ν.toPartition hcard, by rwa [ofPartition_toPartition]⟩
+    rw [Fintype.sum_eq_single ν₀ fun ν' hne ↦ ite_eq_right_iff.mpr fun h ↦ (hne (Subtype.ext
+      (ofPartition_injective (h.trans (ofPartition_toPartition hcard).symm)))).elim]
+    simp only [ν₀, ofPartition_toPartition hcard, ↓reduceIte]
+  · -- No summand has shape `ν`, and there is no tableau of shape `ν / λ` and content `μ`.
+    rw [@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard)]
+    refine Fintype.sum_eq_zero _ fun ν' ↦ ite_eq_right_iff.mpr fun h ↦ (hcard ?_).elim
+    rw [← h, card_ofPartition]
 
 end TauCeti

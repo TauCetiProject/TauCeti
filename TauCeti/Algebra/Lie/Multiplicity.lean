@@ -59,7 +59,8 @@ enveloping-algebra dictionary lives,
 ## Main results
 
 * `LieModule.isotypicMultiplicity_eq_sum_of_isInternal`: **the multiplicity is additive over a
-  finite decomposition of `M` into Lie submodules.**
+  finite decomposition of `M` into Lie submodules.** `LieModule.isotypicMultiplicity_directSum` is
+  the same for a finite external direct sum.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton`: the zero module occurs with
   multiplicity zero.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton_codomain`: everything occurs in the zero
@@ -105,6 +106,8 @@ universe u v w w₁ w₂ w₃
 namespace LieModule
 
 open Module (finrank)
+
+open scoped DirectSum
 
 /-! ### The multiplicity of an irreducible module -/
 
@@ -198,6 +201,18 @@ theorem isotypicMultiplicity_eq_sum_of_isInternal (N : ι → LieSubmodule K L M
     isotypicMultiplicity K L M S = ∑ i, isotypicMultiplicity K L (N i) S := by
   rw [isotypicMultiplicity_def,
     TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal S N h hfin]
+  simp_rw [isotypicMultiplicity_def]
+
+omit [DecidableEq ι] [LieModule K L S] in
+/-- **Multiplicity is additive over a finite external direct sum.** -/
+theorem isotypicMultiplicity_directSum (P : ι → Type w₃) [∀ i, AddCommGroup (P i)]
+    [∀ i, Module K (P i)] [∀ i, LieRingModule L (P i)] [∀ i, LieModule K L (P i)]
+    (hfin : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ P i)) :
+    isotypicMultiplicity K L (⨁ i, P i) S = ∑ i, isotypicMultiplicity K L (P i) S := by
+  classical
+  let _ : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ P i) := hfin
+  rw [isotypicMultiplicity_def,
+    (TauCeti.LieModule.lieModuleHomDirectSumEquiv K L S P).finrank_eq, Module.finrank_pi_fintype]
   simp_rw [isotypicMultiplicity_def]
 
 end Additivity
