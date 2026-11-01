@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
+public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 
 /-!
 # Markov moves and Markov equivalence of braids
@@ -37,6 +38,8 @@ than blackboard writhe.
 * `TauCeti.IsMarkovMove`: the generating moves, three constructors for the two moves —
   conjugation, and stabilization in each of its two signs.
 * `TauCeti.MarkovEquiv`: Markov equivalence, the equivalence relation they generate.
+* `TauCeti.MarkovBraid.liftWord`: a function of braid words, evaluated at a chosen word
+  representing the braid.
 
 ## Main results
 
@@ -54,6 +57,8 @@ than blackboard writhe.
 * `TauCeti.MarkovEquiv.equivalence`: Markov equivalence is an equivalence relation.
 * `TauCeti.MarkovEquiv.induction`: the induction principle that makes the `Prop`-valued
   definition of Markov equivalence usable outside this file.
+* `TauCeti.MarkovEquiv.liftWord_eq`: a function of braid words which only depends on the braid
+  and is unchanged by cyclic rotation and stabilization of words gives a Markov invariant.
 
 ## Implementation notes
 
@@ -259,6 +264,89 @@ theorem MarkovEquiv.componentCount_eq {β γ : MarkovBraid} (h : MarkovEquiv β 
     β.componentCount = γ.componentCount :=
   h.induction (fun hmove ↦ hmove.componentCount_eq) (fun _ ↦ rfl) (fun _ ih ↦ ih.symm)
     (fun _ _ ih ih' ↦ ih.trans ih')
+
+/-! ### Invariants read from braid words
+
+An invariant of closed braids is often computed from a word representing the braid. It descends to
+`TauCeti.MarkovBraid` through a chosen representing word, and is a Markov invariant as soon as it
+only depends on the braid and is unchanged by cyclic rotation and stabilization of words. -/
+
+namespace MarkovBraid
+
+variable {α : Sort*} (f : ∀ n, BraidWord (n + 1) → α)
+
+/-- A function of braid words, evaluated at a chosen word representing the braid. When `f` only
+depends on the braid a word represents, every representing word computes it
+(`TauCeti.MarkovBraid.liftWord_eq_of_toBraid_eq`). -/
+noncomputable def liftWord (β : MarkovBraid) : α :=
+  f β.predStrands (BraidWord.toBraid_surjective β.braid).choose
+
+variable {f}
+
+/-- A function of braid words which only depends on the braid is computed on a braid by any word
+representing it. -/
+theorem liftWord_eq_of_toBraid_eq
+    (hf : ∀ {n} {w w' : BraidWord (n + 1)}, w.toBraid = w'.toBraid → f n w = f n w')
+    {β : MarkovBraid} {w : BraidWord (β.predStrands + 1)} (hw : w.toBraid = β.braid) :
+    β.liftWord f = f β.predStrands w :=
+  hf ((BraidWord.toBraid_surjective β.braid).choose_spec.trans hw.symm)
+
+/-- A function of braid words which only depends on the braid takes its value on a word at the
+braid the word represents. -/
+theorem liftWord_mk
+    (hf : ∀ {n} {w w' : BraidWord (n + 1)}, w.toBraid = w'.toBraid → f n w = f n w')
+    {n : ℕ} (w : BraidWord (n + 1)) :
+    liftWord f ⟨n, w.toBraid⟩ = f n w :=
+  liftWord_eq_of_toBraid_eq hf (β := ⟨n, w.toBraid⟩) rfl
+
+end MarkovBraid
+
+section LiftWord
+
+open BraidWord
+
+variable {α : Sort*} {f : ∀ n, BraidWord (n + 1) → α}
+
+/-- A single Markov move does not change a function of braid words which only depends on the
+braid and is unchanged by cyclic rotation and stabilization of words. -/
+theorem IsMarkovMove.liftWord_eq
+    (hf : ∀ {n} {w w' : BraidWord (n + 1)}, w.toBraid = w'.toBraid → f n w = f n w')
+    (hrot : ∀ {n} (w : BraidWord (n + 1)) (k : ℕ), f n (w.rotate k) = f n w)
+    (hstab : ∀ {n} (w : BraidWord (n + 1)) (ε : ℤˣ), f (n + 1) (w.stabilize ε) = f n w)
+    {β γ : MarkovBraid} (h : IsMarkovMove β γ) : β.liftWord f = γ.liftWord f := by
+  cases h with
+  | conj b c =>
+    -- Conjugation by a word `u` is undone by rotating `u` to the end of the word.
+    obtain ⟨w, rfl⟩ := toBraid_surjective b
+    obtain ⟨u, rfl⟩ := toBraid_surjective c
+    let uInv : BraidWord _ := u.reverse.map fun x ↦ (x.1, -x.2)
+    have huInv : uInv.toBraid = u.toBraid⁻¹ := toBraid_reverse_map_neg u
+    have hrot' := hrot (u ++ (w ++ uInv)) u.length
+    rw [List.rotate_append_length_eq] at hrot'
+    rw [MarkovBraid.liftWord_mk hf,
+      MarkovBraid.liftWord_eq_of_toBraid_eq hf (w := u ++ (w ++ uInv))
+        (by rw [toBraid_append, toBraid_append, huInv, mul_assoc]), ← hrot']
+    exact hf (by rw [toBraid_append, toBraid_append, huInv, inv_mul_cancel_right])
+  | stabilize b =>
+    obtain ⟨w, rfl⟩ := toBraid_surjective b
+    rw [MarkovBraid.liftWord_eq_of_toBraid_eq hf (w := w.stabilize 1) (by simp), hstab,
+      MarkovBraid.liftWord_mk hf]
+  | stabilizeInv b =>
+    obtain ⟨w, rfl⟩ := toBraid_surjective b
+    rw [MarkovBraid.liftWord_eq_of_toBraid_eq hf (w := w.stabilize (-1)) (by simp), hstab,
+      MarkovBraid.liftWord_mk hf]
+
+/-- **A function of braid words which only depends on the braid and is unchanged by cyclic
+rotation and stabilization of words gives a Markov invariant.** -/
+theorem MarkovEquiv.liftWord_eq
+    (hf : ∀ {n} {w w' : BraidWord (n + 1)}, w.toBraid = w'.toBraid → f n w = f n w')
+    (hrot : ∀ {n} (w : BraidWord (n + 1)) (k : ℕ), f n (w.rotate k) = f n w)
+    (hstab : ∀ {n} (w : BraidWord (n + 1)) (ε : ℤˣ), f (n + 1) (w.stabilize ε) = f n w)
+    {β γ : MarkovBraid} (h : MarkovEquiv β γ) : β.liftWord f = γ.liftWord f :=
+  h.induction (fun hmove ↦ hmove.liftWord_eq hf hrot hstab) (fun _ ↦ rfl)
+    (fun _ ih ↦ ih.symm) (fun _ _ ih ih' ↦ ih.trans ih')
+
+end LiftWord
 
 /-- The trivial braid on one strand and the single crossing on two strands are Markov equivalent,
 by one stabilization. Informally, these are the two smallest braid presentations of the unknot. -/

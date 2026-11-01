@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 public import TauCeti.KnotTheory.Signature
 public import TauCeti.KnotTheory.TristramLevine.Basic
 
+import TauCeti.Data.List.AppendCons
 import TauCeti.Data.List.Rotate
 
 /-!
@@ -439,21 +440,13 @@ variable (u v : BraidWord n) (i : Fin (n - 1)) (ε ε' : ℤˣ)
 private theorem levelAt_append_cons_sign (k : ℕ) :
     (u ++ (i, ε) :: v).levelAt k = (u ++ (i, ε') :: v).levelAt k := by
   rw [levelAt_def, levelAt_def]
-  rcases lt_trichotomy k u.length with hk | rfl | hk
-  · rw [List.getElem?_append_left hk, List.getElem?_append_left hk]
+  rcases eq_or_ne k u.length with rfl | hk
   · simp
-  · rw [List.getElem?_append_right hk.le, List.getElem?_append_right hk.le]
-    obtain ⟨j, hj⟩ : ∃ j, k - u.length = j + 1 := ⟨k - u.length - 1, by omega⟩
-    rw [hj, List.getElem?_cons_succ, List.getElem?_cons_succ]
+  · rw [List.getElem?_append_cons_of_ne u v _ _ hk]
 
 private theorem signAt_append_cons_sign {k : ℕ} (hk : k ≠ u.length) :
     (u ++ (i, ε) :: v).signAt k = (u ++ (i, ε') :: v).signAt k := by
-  rw [signAt_def, signAt_def]
-  rcases Nat.lt_or_gt_of_ne hk with hk | hk
-  · rw [List.getElem?_append_left hk, List.getElem?_append_left hk]
-  · rw [List.getElem?_append_right hk.le, List.getElem?_append_right hk.le]
-    obtain ⟨j, hj⟩ : ∃ j, k - u.length = j + 1 := ⟨k - u.length - 1, by omega⟩
-    rw [hj, List.getElem?_cons_succ, List.getElem?_cons_succ]
+  rw [signAt_def, signAt_def, List.getElem?_append_cons_of_ne u v _ _ hk]
 
 /-- A position other than `u.length` of `u ++ x :: v` holds a letter of `u ++ v`. -/
 private theorem exists_mem_of_levelAt_append_cons {x : Fin (n - 1) × ℤˣ} {k l : ℕ}
@@ -462,13 +455,10 @@ private theorem exists_mem_of_levelAt_append_cons {x : Fin (n - 1) × ℤˣ} {k 
   rw [levelAt_def, Option.map_eq_some_iff] at h
   obtain ⟨y, hy, rfl⟩ := h
   refine ⟨y, ?_, rfl⟩
-  rcases Nat.lt_or_gt_of_ne hk with hk | hk
-  · rw [List.getElem?_append_left hk] at hy
-    exact List.mem_append_left _ (List.mem_of_getElem? hy)
-  · rw [List.getElem?_append_right hk.le] at hy
-    obtain ⟨j, hj⟩ : ∃ j, k - u.length = j + 1 := ⟨k - u.length - 1, by omega⟩
-    rw [hj, List.getElem?_cons_succ] at hy
-    exact List.mem_append_right _ (List.mem_of_getElem? hy)
+  -- The entry at `k` stays `y` when the letter at `u.length` is replaced by one other than `y`.
+  rw [List.getElem?_append_cons_of_ne u v x (y.1, -y.2) hk] at hy
+  have hne : y ≠ (y.1, -y.2) := fun h ↦ units_ne_neg_self y.2 (congrArg Prod.snd h)
+  simpa [hne] using List.mem_of_getElem? hy
 
 /-- If no letter of `u ++ v` lies on level `i`, no loop of `u ++ (i, ε) :: v` runs through the
 letter `(i, ε)`: it is alone on its level. -/

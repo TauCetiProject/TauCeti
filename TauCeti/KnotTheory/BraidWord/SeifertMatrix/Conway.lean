@@ -63,8 +63,8 @@ zero row and column to the Seifert matrix, and makes `Δ` vanish.
   `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert` and
   `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_stabilize`: Artin relations, free
   insertion on a level in use, and stabilization keep the Seifert determinant.
-* `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert_of_not_exists`: free insertion
-  on an unused level makes it vanish.
+* `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert_eq_zero_of_not_exists`: free
+  insertion on an unused level makes it vanish.
 * `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_skein`: the Seifert determinant of
   closed braids satisfies the Conway skein relation.
 
@@ -139,12 +139,12 @@ theorem seifertConwayDeterminant_seifertMatrix_insert (u v : BraidWord n) (i : F
 
 /-- Inserting an inverse pair of letters on a level carrying no letter makes the Seifert
 determinant vanish: the Seifert matrix gains a zero row and column. -/
-theorem seifertConwayDeterminant_seifertMatrix_insert_of_not_exists (u v : BraidWord n)
+theorem seifertConwayDeterminant_seifertMatrix_insert_eq_zero_of_not_exists (u v : BraidWord n)
     (i : Fin (n - 1)) (ε : ℤˣ) (h : ¬∃ x ∈ u ++ v, x.1 = i) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.seifertConwayDeterminant = 0 := by
   obtain ⟨ι, hι⟩ := exists_seifertMatrix_insert_eq_fromBlocks u v i ε h
   rw [← seifertConwayDeterminant_submatrix_equiv_self _ ι, hι,
-    seifertConwayDeterminant_fromBlocks_zero]
+    seifertConwayDeterminant_fromBlocks_zero, seifertConwayDeterminant_zero, mul_zero]
 
 /-- Markov stabilization keeps the Seifert determinant. -/
 theorem seifertConwayDeterminant_seifertMatrix_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
