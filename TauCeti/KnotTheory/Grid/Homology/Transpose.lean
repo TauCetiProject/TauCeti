@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Transpose
-public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 
 /-!
 # The diagonal reflection on unblocked grid homology

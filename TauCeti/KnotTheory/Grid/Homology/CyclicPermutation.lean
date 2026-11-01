@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.CyclicPermutation
 public import TauCeti.KnotTheory.Grid.Grading.CyclicPermutation
-public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 
 /-!
 # Invariance of `GH⁻` under cyclic permutation
@@ -35,7 +35,7 @@ both equivalences preserve the Alexander grading of `GH⁻`
 are graded `R[U]`-isomorphisms of degree zero
 (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_relabelRows_finRotate`,
 `GridDiagram.IsKnot.unblockedHomologyIsomorphic_relabelColumns_finRotate`), so the invariants `τ`
-agree (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`).
+agree (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`, in `Homology/Tau.lean`).
 The corresponding statements for fully blocked grid homology are in `Homology/Symmetry.lean`.
 
 ## Main definitions

@@ -22,10 +22,11 @@ grid concordance invariant from the top non-torsion degree.
 Two knot grids, possibly of different sizes, have isomorphic `GH⁻` as Alexander-graded
 `R[U]`-modules when some `R[U]`-linear equivalence between their homologies preserves the
 Alexander grading (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic`). This relation is reflexive,
-symmetric and transitive. The maps that grid moves induce on `GH⁻` are not `R[U]`-linear on the
-nose: they are semilinear along a ring homomorphism of the polynomial rings in the grid variables,
-such as a renaming of the variables. Any such map that commutes with the evaluation `V_j ↦ U`, is
-bijective and preserves the Alexander grading witnesses the relation
+symmetric and transitive. The maps that grid moves induce on `GH⁻` are initially packaged as
+semilinear maps over the polynomial rings in the grid variables, along a ring homomorphism such as
+a renaming of the variables. When that homomorphism commutes with the evaluation `V_j ↦ U`, the
+underlying function is `R[U]`-linear, so such a map that is bijective and preserves the Alexander
+grading witnesses the relation
 (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap`). This is the form in which the
 grid-move invariance theorems for `GH⁻` are stated.
 
