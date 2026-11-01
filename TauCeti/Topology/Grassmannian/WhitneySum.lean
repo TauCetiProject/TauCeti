@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Fin.Interleave
 public import TauCeti.Topology.Grassmannian.Tautological
 public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
-public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Interleaved Whitney sums of finite Grassmannians
@@ -27,6 +27,13 @@ API, and the existing open frame-span quotient of finite Grassmannians. The tota
 comparison uses `TauCeti.bundleHomeomorph`, whose inverse-continuity theorem applies to
 finite-dimensional bundle models. These constructions include zero ranks and empty
 Grassmannians.
+
+## References
+
+* A. Hatcher, *Vector Bundles and K-Theory*, §1.1 (direct sums) and §1.2,
+  proof of Theorem 1.16, pp. 29–30 (tautological pullback identification and disjoint
+  odd/even coordinate embeddings). We use zero-based coordinates, with the first
+  input in even positions.
 -/
 
 public section
@@ -49,12 +56,12 @@ noncomputable def whitneySum (f : finiteFullRankFrame 𝕜 k a)
       (LinearMap.ker_eq_bot.2 interleaveLinearMap_injective)).comp _
         finSumFinEquiv.symm.injective⟩
 
-@[simp] theorem whitneySum_inl (f : finiteFullRankFrame 𝕜 k a)
+@[simp] theorem whitneySum_castAdd (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) (i : Fin k) :
     (whitneySum f g).1 (Fin.castAdd l i) =
       interleaveLinearMap 𝕜 𝕜 a b (f.1 i, 0) := by simp [whitneySum]
 
-@[simp] theorem whitneySum_inr (f : finiteFullRankFrame 𝕜 k a)
+@[simp] theorem whitneySum_natAdd (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) (i : Fin l) :
     (whitneySum f g).1 (Fin.natAdd k i) =
       interleaveLinearMap 𝕜 𝕜 a b (0, g.1 i) := by simp [whitneySum]
@@ -108,7 +115,7 @@ theorem mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
 
 /-- An interleaved vector lies in the sum plane exactly when both components lie in their
 respective input planes. -/
-@[simp] theorem interleave_mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
+@[simp] theorem interleaveLinearMap_mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) (v : Fin a → 𝕜) (w : Fin b → 𝕜) :
     interleaveLinearMap 𝕜 𝕜 a b (v, w) ∈ (whitneySum V W).1 ↔ v ∈ V.1 ∧ w ∈ W.1 := by
   simp only [coe_whitneySum, Submodule.mem_map, interleaveLinearMap_injective.eq_iff,
@@ -120,14 +127,11 @@ respective input planes. -/
     frameSpan (f.whitneySum g) = whitneySum (frameSpan f) (frameSpan g) := by
   apply Subtype.ext
   simp only [coe_frameSpan, coe_whitneySum, finiteFullRankFrame.whitneySum]
-  have hr := EquivLike.range_comp
-    (fun j ↦ interleaveLinearMap 𝕜 𝕜 a b
-      (Sum.elim (fun i ↦ (f.1 i, 0)) (fun i ↦ (0, g.1 i)) j))
-    (finSumFinEquiv.symm : Fin (k + l) ≃ Fin k ⊕ Fin l)
-  simp only [Function.comp_def] at hr
-  rw [hr, range_comp', Submodule.span_image, Sum.elim_range]
+  rw [← Function.comp_def (fun j ↦ interleaveLinearMap 𝕜 𝕜 a b
+      (Sum.elim (fun i ↦ (f.1 i, 0)) (fun i ↦ (0, g.1 i)) j)) finSumFinEquiv.symm,
+    EquivLike.range_comp, range_comp', ← Submodule.map_span]
   congr 1
-  simpa only [← range_comp, Function.comp_def, LinearMap.inl_apply, LinearMap.inr_apply] using
+  simpa [Sum.elim_range, ← range_comp, Function.comp_def] using
     (LinearMap.span_inl_union_inr (R := 𝕜) (s := range f.1) (t := range g.1))
 
 /-- The finite-stage Whitney sum is continuous for the frame-quotient topologies. -/
@@ -153,42 +157,20 @@ fibre of the sum plane. The coordinate identification with Euclidean space is re
 noncomputable def whitneySumTautologicalEquiv (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) :
     (Tautological 𝕜 k a V × Tautological 𝕜 l b W) ≃L[𝕜]
-      Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W) := by
-  let f : (Tautological 𝕜 k a V × Tautological 𝕜 l b W) →ₗ[𝕜]
       Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W) :=
-    { toFun := fun v ↦ ⟨WithLp.toLp 2 (interleaveLinearMap 𝕜 𝕜 a b
-        (WithLp.ofLp v.1.1, WithLp.ofLp v.2.1)), by
-        simpa only [Submodule.range_starProjection, mem_toEuclidean,
-          WithLp.ofLp_toLp, interleave_mem_whitneySum_iff] using
-          And.intro v.1.2 v.2.2⟩
-      map_add' v w := Subtype.ext <| congrArg (WithLp.toLp 2)
-        ((interleaveLinearMap 𝕜 𝕜 a b).map_add
-          (WithLp.ofLp v.1.1, WithLp.ofLp v.2.1) (WithLp.ofLp w.1.1, WithLp.ofLp w.2.1))
-      map_smul' r v := Subtype.ext <| congrArg (WithLp.toLp 2)
-        ((interleaveLinearMap 𝕜 𝕜 a b).map_smul r (WithLp.ofLp v.1.1, WithLp.ofLp v.2.1)) }
-  apply LinearEquiv.toContinuousLinearEquiv (LinearEquiv.ofBijective f ?_)
-  constructor
-  · intro v w h
-    have hh := congrArg (fun z ↦ WithLp.ofLp z.1) h
-    have hi := interleaveLinearMap_injective hh
-    exact Prod.ext (Subtype.ext (WithLp.ofLp_injective 2 (congrArg Prod.fst hi)))
-      (Subtype.ext (WithLp.ofLp_injective 2 (congrArg Prod.snd hi)))
-  · intro z
-    have hz : WithLp.ofLp z.1 ∈ (whitneySum V W).1 := by
-      simpa only [Submodule.range_starProjection, mem_toEuclidean] using z.2
-    obtain ⟨v, hv, w, hw, h⟩ := (mem_whitneySum_iff V W _).1 hz
-    refine ⟨(⟨WithLp.toLp 2 v, ?_⟩, ⟨WithLp.toLp 2 w, ?_⟩), ?_⟩
-    · simpa only [Submodule.range_starProjection, mem_toEuclidean, WithLp.ofLp_toLp] using hv
-    · simpa only [Submodule.range_starProjection, mem_toEuclidean, WithLp.ofLp_toLp] using hw
-    · apply Subtype.ext
-      exact WithLp.ofLp_injective 2 h
+  ((((((tautologicalEquiv 𝕜 k a V).prodCongr (tautologicalEquiv 𝕜 l b W)).trans
+    (V.1.prodEquiv W.1).symm).trans
+    (Submodule.equivMapOfInjective _ interleaveLinearMap_injective (V.1.prod W.1))).trans
+    (LinearEquiv.ofEq _ _ (coe_whitneySum V W).symm)).trans
+    (tautologicalEquiv 𝕜 (k + l) (2 * max a b) (whitneySum V W)).symm).toContinuousLinearEquiv
 
 /-- The tautological comparison interleaves the underlying coordinate vectors. -/
 @[simp] theorem whitneySumTautologicalEquiv_apply (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) (v : Tautological 𝕜 k a V × Tautological 𝕜 l b W) :
     (whitneySumTautologicalEquiv V W v : EuclideanSpace 𝕜 (Fin (2 * max a b))) =
-      WithLp.toLp 2 (interleaveLinearMap 𝕜 𝕜 a b (WithLp.ofLp v.1.1, WithLp.ofLp v.2.1)) :=
-  (rfl)
+      WithLp.toLp 2 (interleaveLinearMap 𝕜 𝕜 a b (WithLp.ofLp v.1.1, WithLp.ofLp v.2.1)) := by
+  simp [whitneySumTautologicalEquiv, LinearEquiv.coe_toContinuousLinearEquiv',
+    LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply]
 
 /-- The inverse tautological comparison reads the first vector from the even coordinates. -/
 @[simp] theorem whitneySumTautologicalEquiv_symm_fst (V : finiteGrassmannian 𝕜 k a)
@@ -252,88 +234,44 @@ theorem continuous_whitneySumTautologicalEquiv :
 
 noncomputable section
 
--- Native pullbacks supply additive monoids and modules, but not the inherited group and
--- topological-module instances needed by the bundle inverse-continuity theorem. These local
--- instances install exactly those inherited structures on the three tautological pullbacks.
-/-- The first tautological pullback inherits its fibrewise additive groups. -/
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    AddCommGroup ((Prod.fst *ᵖ (Tautological 𝕜 k a)) q) :=
-  inferInstanceAs (AddCommGroup (Tautological 𝕜 k a q.1))
-
-/-- The second tautological pullback inherits its fibrewise additive groups. -/
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    AddCommGroup ((Prod.snd *ᵖ (Tautological 𝕜 l b)) q) :=
-  inferInstanceAs (AddCommGroup (Tautological 𝕜 l b q.2))
-
-/-- The tautological pullback along the sum inherits its fibrewise additive groups. -/
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    AddCommGroup (((fun q ↦ whitneySum q.1 q.2) *ᵖ
-      (Tautological 𝕜 (k + l) (2 * max a b))) q) :=
-  inferInstanceAs (AddCommGroup (Tautological 𝕜 (k + l) (2 * max a b) (whitneySum q.1 q.2)))
-
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    IsTopologicalAddGroup ((Prod.fst *ᵖ (Tautological 𝕜 k a)) q) :=
-  inferInstanceAs (IsTopologicalAddGroup (Tautological 𝕜 k a q.1))
-
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    IsTopologicalAddGroup ((Prod.snd *ᵖ (Tautological 𝕜 l b)) q) :=
-  inferInstanceAs (IsTopologicalAddGroup (Tautological 𝕜 l b q.2))
-
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    IsTopologicalAddGroup (((fun q ↦ whitneySum q.1 q.2) *ᵖ
-      (Tautological 𝕜 (k + l) (2 * max a b))) q) :=
-  inferInstanceAs (IsTopologicalAddGroup
-    (Tautological 𝕜 (k + l) (2 * max a b) (whitneySum q.1 q.2)))
-
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    ContinuousSMul 𝕜 ((Prod.fst *ᵖ (Tautological 𝕜 k a)) q) :=
-  inferInstanceAs (ContinuousSMul 𝕜 (Tautological 𝕜 k a q.1))
-
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    ContinuousSMul 𝕜 ((Prod.snd *ᵖ (Tautological 𝕜 l b)) q) :=
-  inferInstanceAs (ContinuousSMul 𝕜 (Tautological 𝕜 l b q.2))
-
-local instance (q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) :
-    ContinuousSMul 𝕜 (((fun q ↦ whitneySum q.1 q.2) *ᵖ
-      (Tautological 𝕜 (k + l) (2 * max a b))) q) :=
-  inferInstanceAs (ContinuousSMul 𝕜
-    (Tautological 𝕜 (k + l) (2 * max a b) (whitneySum q.1 q.2)))
-
 /-- Pull back the first tautological fibre bundle to the product base. -/
-local instance : FiberBundle (Fin k → 𝕜)
+instance : FiberBundle (Fin k → 𝕜)
     ((Prod.fst : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b → _) *ᵖ
       (Tautological 𝕜 k a)) :=
   FiberBundle.pullback (⟨Prod.fst, continuous_fst⟩ :
     C(finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b, finiteGrassmannian 𝕜 k a))
 
 /-- Pull back the second tautological fibre bundle to the product base. -/
-local instance : FiberBundle (Fin l → 𝕜)
+instance : FiberBundle (Fin l → 𝕜)
     ((Prod.snd : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b → _) *ᵖ
       (Tautological 𝕜 l b)) :=
   FiberBundle.pullback (⟨Prod.snd, continuous_snd⟩ :
     C(finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b, finiteGrassmannian 𝕜 l b))
 
 /-- Pull back the tautological fibre bundle along the finite-stage sum. -/
-local instance : FiberBundle (Fin (k + l) → 𝕜)
+instance : FiberBundle (Fin (k + l) → 𝕜)
     ((fun q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b ↦ whitneySum q.1 q.2)
       *ᵖ (Tautological 𝕜 (k + l) (2 * max a b))) :=
   FiberBundle.pullback (⟨fun q ↦ whitneySum q.1 q.2, continuous_whitneySum⟩ :
     C(finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b,
       finiteGrassmannian 𝕜 (k + l) (2 * max a b)))
 
-local instance : VectorBundle 𝕜 (Fin k → 𝕜)
+/-- The first tautological pullback is a vector bundle on the product base. -/
+instance : VectorBundle 𝕜 (Fin k → 𝕜)
     ((Prod.fst : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b → _) *ᵖ
       (Tautological 𝕜 k a)) :=
   VectorBundle.pullback 𝕜 (⟨Prod.fst, continuous_fst⟩ :
     C(finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b, finiteGrassmannian 𝕜 k a))
 
-local instance : VectorBundle 𝕜 (Fin l → 𝕜)
+/-- The second tautological pullback is a vector bundle on the product base. -/
+instance : VectorBundle 𝕜 (Fin l → 𝕜)
     ((Prod.snd : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b → _) *ᵖ
       (Tautological 𝕜 l b)) :=
   VectorBundle.pullback 𝕜 (⟨Prod.snd, continuous_snd⟩ :
     C(finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b, finiteGrassmannian 𝕜 l b))
 
-local instance : VectorBundle 𝕜 (Fin (k + l) → 𝕜)
+/-- The tautological pullback along the sum is a vector bundle. -/
+instance : VectorBundle 𝕜 (Fin (k + l) → 𝕜)
     ((fun q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b ↦ whitneySum q.1 q.2)
       *ᵖ (Tautological 𝕜 (k + l) (2 * max a b))) :=
   VectorBundle.pullback 𝕜 (⟨fun q ↦ whitneySum q.1 q.2, continuous_whitneySum⟩ :
@@ -355,7 +293,7 @@ noncomputable def whitneySumTautologicalHomeomorph :
     (fun q ↦ whitneySumTautologicalEquiv q.1 q.2) continuous_whitneySumTautologicalEquiv
 
 /-- The total-space comparison is the specified linear equivalence on every fibre. -/
-theorem whitneySumTautologicalHomeomorph_apply
+@[simp] theorem whitneySumTautologicalHomeomorph_apply
     (p : TotalSpace ((Fin k → 𝕜) × (Fin l → 𝕜))
       ((Prod.fst *ᵖ (Tautological 𝕜 k a)) ×ᵇ (Prod.snd *ᵖ (Tautological 𝕜 l b)))) :
     whitneySumTautologicalHomeomorph p =
@@ -365,7 +303,7 @@ theorem whitneySumTautologicalHomeomorph_apply
   apply bundleHomeomorph_apply
 
 /-- The inverse total-space comparison uses the inverse linear equivalence on every fibre. -/
-theorem whitneySumTautologicalHomeomorph_symm_apply
+@[simp] theorem whitneySumTautologicalHomeomorph_symm_apply
     (p : TotalSpace (Fin (k + l) → 𝕜)
       ((fun q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b ↦ whitneySum q.1 q.2)
         *ᵖ (Tautological 𝕜 (k + l) (2 * max a b)))) :
@@ -374,21 +312,6 @@ theorem whitneySumTautologicalHomeomorph_symm_apply
         ((whitneySumTautologicalEquiv p.proj.1 p.proj.2).symm p.2) := by
   unfold whitneySumTautologicalHomeomorph
   apply bundleHomeomorph_symm_apply
-
-/-- The tautological comparison covers the identity of the product base. -/
-@[simp] theorem whitneySumTautologicalHomeomorph_proj
-    (p : TotalSpace ((Fin k → 𝕜) × (Fin l → 𝕜))
-      ((Prod.fst *ᵖ (Tautological 𝕜 k a)) ×ᵇ (Prod.snd *ᵖ (Tautological 𝕜 l b)))) :
-    (whitneySumTautologicalHomeomorph p).proj = p.proj := by
-  rw [whitneySumTautologicalHomeomorph_apply]
-
-/-- The inverse tautological comparison also covers the identity of the product base. -/
-@[simp] theorem whitneySumTautologicalHomeomorph_symm_proj
-    (p : TotalSpace (Fin (k + l) → 𝕜)
-      ((fun q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b ↦ whitneySum q.1 q.2)
-        *ᵖ (Tautological 𝕜 (k + l) (2 * max a b)))) :
-    (whitneySumTautologicalHomeomorph.symm p).proj = p.proj := by
-  rw [whitneySumTautologicalHomeomorph_symm_apply]
 
 end
 

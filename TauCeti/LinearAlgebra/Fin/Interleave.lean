@@ -14,7 +14,8 @@ public import TauCeti.Topology.Algebra.Module.ExtendByZero
 Embed two finite coordinate spaces in one by placing the first in the even positions and the
 second in the odd positions, filling unused positions with zero. The ambient dimension is
 `2 * max a b`, so this convention is compatible with enlarging either input space. This is the
-coordinate injection used for block sums of finite Grassmannians.
+coordinate injection used for block sums of finite Grassmannians; see the references in
+`TauCeti.Topology.Grassmannian.WhitneySum` for the classical disjoint-coordinate construction.
 
 The linear construction uses Mathlib's `Function.ExtendByZero.linearMap` and
 `LinearEquiv.sumArrowLequivProdArrow`.
