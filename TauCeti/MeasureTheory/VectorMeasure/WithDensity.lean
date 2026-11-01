@@ -30,16 +30,17 @@ against `ν`. A change of `g` on a `ν`-null set does not change `ν.withDensity
 change the integral (`MeasureTheory.VectorMeasure.integral_withDensityᵥ_congr_ae`).
 
 The density may also be taken with respect to a vector measure `μ`: Mathlib's
-`μ.withDensity g B` is the vector measure `s ↦ ∫ᵛ x in s, g x ∂[B; μ]`. Its variation is at most
-`‖B‖` times `|μ|.withDensity ‖g‖ₑ`, so it is finite and absolutely continuous with respect to
-`|μ|`. For a scalar measure `μ` and a scalar density `g`, the weighted measure
-`g · μ = μ.withDensity g (mul ℝ 𝕜)` has variation exactly `|μ|.withDensity ‖g‖ₑ`, is bounded by
-`M • |μ|` when `‖g‖ ≤ M`, and satisfies the change-of-density formula
+`μ.withDensity g B` is the vector measure `s ↦ ∫ᵛ x in s, g x ∂[B; μ]` when `g` is integrable
+against `μ`, and `0` otherwise. Its variation is at most `‖B‖` times `|μ|.withDensity ‖g‖ₑ`, so it
+is finite and absolutely continuous with respect to `|μ|`. For a scalar measure `μ`, consider the
+weighted measure `g · μ = μ.withDensity g (mul ℝ 𝕜)`. Its variation is at most `M • |μ|` when
+`‖g‖ ≤ M` holds `|μ|`-a.e. For a density `g` integrable against `μ`, `g · μ` has variation exactly
+`|μ|.withDensity ‖g‖ₑ` and satisfies the change-of-density formula
 
 `∫ᵛ x, f x ∂[mul ℝ 𝕜; g · μ] = ∫ᵛ x, f x * g x ∂[mul ℝ 𝕜; μ]`.
 
-Consequently `h · (g · μ) = (h * g) · μ`, and a constant density `c` gives `c • μ`. A change of
-`g` on a `|μ|`-null set does not change `g · μ` (Mathlib's
+Consequently `h · (g · μ) = (h * g) · μ` for such `g`, and, when `|μ|` is finite, a constant
+density `c` gives `c • μ`. A change of `g` on a `|μ|`-null set does not change `g · μ` (Mathlib's
 `MeasureTheory.VectorMeasure.withDensity_congr`). Weighted measures of this kind describe the
 matrix elements of a Borel functional calculus: the scalar measure of `⟪ξ, g(a) ψ⟫` is `g` times
 that of `⟪ξ, ψ⟫`.
@@ -237,20 +238,17 @@ density `‖g‖ₑ` with respect to the variation of `μ`. -/
 theorem variation_withDensity_le_smul (μ : VectorMeasure X F) (g : X → E)
     (B : E →L[ℝ] F →L[ℝ] G) :
     (μ.withDensity g B).variation ≤ ‖B‖₊ • μ.variation.withDensity fun x => ‖g x‖ₑ := by
-  by_cases hg : μ.Integrable g
-  · refine variation_le_of_forall_enorm_le fun s hs => ?_
-    rw [withDensity_apply hg, Measure.smul_apply, MeasureTheory.withDensity_apply _ hs,
-      ← variation_restrict hs, ENNReal.smul_def, smul_eq_mul, ← enorm_eq_nnnorm]
-    exact enorm_integral_le_lintegral_enorm
-  · rw [withDensity_of_not_integrable hg, variation_zero]
-    exact Measure.zero_le _
+  refine variation_WithDensity_le.trans (Measure.le_iff.2 fun s hs => ?_)
+  rw [MeasureTheory.withDensity_apply _ hs, Measure.smul_apply,
+    MeasureTheory.withDensity_apply _ hs, ← lintegral_smul_measure, ← Measure.restrict_smul]
+  exact lintegral_mono' (Measure.restrict_mono le_rfl (variation_transpose_le μ B)) le_rfl
 
 /-- The variation of a vector measure with density with respect to `μ` is absolutely continuous
 with respect to the variation of `μ`. -/
 theorem variation_withDensity_absolutelyContinuous (μ : VectorMeasure X F) (g : X → E)
     (B : E →L[ℝ] F →L[ℝ] G) : (μ.withDensity g B).variation ≪ μ.variation :=
-  (Measure.absolutelyContinuous_of_le_smul (variation_withDensity_le_smul μ g B)).trans
-    (withDensity_absolutelyContinuous _ _)
+  (Measure.absolutelyContinuous_of_le variation_WithDensity_le).trans
+    ((withDensity_absolutelyContinuous _ _).trans (absolutelyContinuous_variation_transpose μ B))
 
 /-- A vector measure with density with respect to a vector measure has finite variation. This
 holds for every density: a non-integrable density gives the zero vector measure. -/
