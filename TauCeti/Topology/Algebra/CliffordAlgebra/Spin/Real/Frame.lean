@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OrthonormalBasis
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Frame
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Projection
 
 /-!
@@ -38,6 +39,9 @@ bundles.
   consists of `1` and `-1`.
 * `OrthonormalBasis.isCoveringMap_realCliffordSpinFrameProjection`: in positive dimension it is a
   covering map.
+* `OrthonormalBasis.realCliffordSpinFrameProjection_eq_conj` and
+  `OrthonormalBasis.exists_realCliffordSpinFrameProjection_eq_conj`: changing to an equally
+  oriented frame conjugates the frame projection by the projection of a Spin element.
 
 ## References
 
@@ -53,7 +57,7 @@ open CliffordAlgebra TauCeti TauCeti.CliffordAlgebra
 namespace OrthonormalBasis
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
-  {n : ℕ} (b : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = ‖v‖ ^ 2)
+  {n : ℕ} (b b' : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = ‖v‖ ^ 2)
 
 /-- The Spin projection of the form `Q v = ‖v‖²` written in the orthonormal frame `b`: the frame
 identification of the Spin group of `Q` with `Spin(n)`, followed by the projection between the
@@ -85,12 +89,13 @@ theorem coe_realCliffordSpinFrameProjection_apply (x : spinGroup Q) :
       LinearMap.toMatrix b.toBasis b.toBasis
         ((spinToSpecialOrthogonal Q x : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V) := by
   ext i j
-  -- Transport the coordinate Spin projection back to `V` along the frame isometry.
-  rw [realCliffordSpinFrameProjection_apply, realCliffordSpinContinuousMulEquivUnitsRange_apply,
-    realCliffordSpinToSpecialOrthogonalRange_apply_toUnits,
-    ← QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal]
-  simp [LinearMap.toMatrix_apply,
-    -QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal]
+  -- The frame isometry sends `b j` to the `j`-th coordinate vector and intertwines the vector
+  -- actions of `x` and of its image in `Spin(n)`.
+  have h := (b.isometryEquivRealCliffordFormZero hQ).toIsometry.spinGroupMap_spinVectorAction x
+    (b j)
+  simp only [QuadraticMap.IsometryEquiv.toIsometry_apply,
+    isometryEquivRealCliffordFormZero_apply_self] at h
+  simp [realCliffordSpinFrameProjection_apply, LinearMap.toMatrix_apply, h]
 
 /-- The frame projection is onto the special-orthogonal carrier. -/
 theorem realCliffordSpinFrameProjection_surjective :
@@ -107,8 +112,36 @@ theorem realCliffordSpinFrameProjection_eq_one_iff [NeZero n] (x : spinGroup Q) 
   rw [realCliffordSpinFrameProjection_apply, realCliffordSpinContinuousMulEquivUnitsRange_apply,
     realCliffordSpinToSpecialOrthogonalRange_eq_one_iff]
   simp only [Units.ext_iff, spinGroup.val_toUnits_apply, Units.val_one, Units.val_neg,
-    QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_one_iff,
+    OneMemClass.coe_eq_one, EmbeddingLike.map_eq_one_iff,
     QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_neg_one_iff]
+
+/-- If the Spin element `s` acts on coordinates by the transition from the frame `b` to the frame
+`b'`, then the frame projection along `b'` is the one along `b` conjugated by the carrier
+projection of `s`. -/
+theorem realCliffordSpinFrameProjection_eq_conj (s : realCliffordSpinGroupZero n)
+    (hs : ∀ v, spinVectorAction (realCliffordForm n 0) s
+      (b.isometryEquivRealCliffordFormZero hQ v) = b'.isometryEquivRealCliffordFormZero hQ v)
+    (x : spinGroup Q) :
+    b'.realCliffordSpinFrameProjection hQ x =
+      realCliffordSpinToSpecialOrthogonalRange n
+          (realCliffordSpinContinuousMulEquivUnitsRange n s) *
+        b.realCliffordSpinFrameProjection hQ x *
+          (realCliffordSpinToSpecialOrthogonalRange n
+            (realCliffordSpinContinuousMulEquivUnitsRange n s))⁻¹ := by
+  simp only [realCliffordSpinFrameProjection_apply,
+    b.spinGroupEquiv_isometryEquivRealCliffordFormZero_eq_conj b' hQ s hs, map_mul, map_inv]
+
+/-- For two orthonormal frames `b` and `b'` with the same orientation, the frame projections along
+`b` and `b'` differ by an inner automorphism of the special-orthogonal carrier. -/
+theorem exists_realCliffordSpinFrameProjection_eq_conj
+    (h : b.toBasis.orientation = b'.toBasis.orientation) :
+    ∃ g : MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)),
+      ∀ x : spinGroup Q,
+        b'.realCliffordSpinFrameProjection hQ x =
+          g * b.realCliffordSpinFrameProjection hQ x * g⁻¹ := by
+  obtain ⟨s, hs⟩ := (b.exists_spinVectorAction_eq_iff_orientation_eq b' hQ).mpr h
+  exact ⟨_, b.realCliffordSpinFrameProjection_eq_conj b' hQ s hs⟩
 
 /-- In positive dimension, the frame projection is a covering map. -/
 theorem isCoveringMap_realCliffordSpinFrameProjection [NeZero n] :

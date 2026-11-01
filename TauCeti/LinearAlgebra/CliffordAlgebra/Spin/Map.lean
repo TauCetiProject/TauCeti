@@ -31,15 +31,17 @@ action.
   isometry.
 * `QuadraticMap.IsometryEquiv.spinGroupEquiv` is the group equivalence induced by a quadratic
   isometry equivalence.
-* `QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_one_iff` and
-  `QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_neg_one_iff` show that this equivalence
-  preserves the elements lying over `1` and `-1`.
+* `QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_neg_one_iff` shows that this equivalence
+  preserves the elements lying over `-1`.
 * `spinGroup.map_vectorAction` identifies the Clifford map induced by a Spin element's
   vector action with conjugation.
 * `spinGroup.spinGroupEquiv_vectorAction` identifies its induced Spin automorphism with
   `MulAut.conj`.
 * `QuadraticMap.IsometryEquiv.spinGroupEquiv_eq_conj` restates this for an arbitrary isometric
   automorphism that agrees with the vector action of a Spin element.
+* `QuadraticMap.IsometryEquiv.spinGroupEquiv_apply_eq_conj`: if a Spin element `s` carries one
+  isometry equivalence to another through its vector action, the two induced Spin equivalences
+  differ by conjugation by `s`.
 * `QuadraticMap.Isometry.spinGroupMap_injective_of_leftInverse` proves injectivity when the
   isometry has an isometric left inverse.
 * `QuadraticMap.Isometry.spinGroupMap_spinVectorAction` proves naturality of the Spin vector
@@ -188,19 +190,14 @@ theorem spinGroupEquiv_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
   MulEquiv.ext fun x ↦
     (DFunLike.congr_fun (e₂₃.toIsometry.spinGroupMap_comp e₁₂.toIsometry) x).symm
 
-/-- The Spin equivalence induced by an isometry equivalence sends `x` to an element lying over `1`
-exactly when `x` lies over `1`. -/
-theorem coe_spinGroupEquiv_eq_one_iff (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
-    (e.spinGroupEquiv x : CliffordAlgebra Q₂) = 1 ↔ (x : CliffordAlgebra Q₁) = 1 := by
-  rw [OneMemClass.coe_eq_one, OneMemClass.coe_eq_one, EmbeddingLike.map_eq_one_iff]
-
 /-- The Spin equivalence induced by an isometry equivalence sends `x` to an element lying over
 `-1` exactly when `x` lies over `-1`. -/
 theorem coe_spinGroupEquiv_eq_neg_one_iff (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
     (e.spinGroupEquiv x : CliffordAlgebra Q₂) = -1 ↔ (x : CliffordAlgebra Q₁) = -1 := by
-  rw [spinGroupEquiv_apply, Isometry.coe_spinGroupMap_apply,
-    ← CliffordAlgebra.equivOfIsometry_apply, ← map_one (CliffordAlgebra.equivOfIsometry e),
-    ← map_neg, EquivLike.apply_eq_iff_eq]
+  -- On the Clifford algebra, the Spin equivalence is the injective map `equivOfIsometry e`, which
+  -- fixes `-1`.
+  have h : (e.spinGroupEquiv x : CliffordAlgebra Q₂) = CliffordAlgebra.equivOfIsometry e x := rfl
+  exact h ▸ (CliffordAlgebra.equivOfIsometry e).injective.eq_iff' (by simp)
 
 end QuadraticMap.IsometryEquiv
 
@@ -264,6 +261,17 @@ theorem spinGroupEquiv_eq_conj (e : Q.IsometryEquiv Q) (g : spinGroup Q)
       rw [TauCeti.QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv,
         CliffordAlgebra.coe_spinToOrthogonal_apply, h]
   rw [he, spinGroup.spinGroupEquiv_vectorAction]
+
+/-- If the vector action of a Spin element `s` carries the isometry equivalence `e` to `e'`, then
+the Spin equivalence induced by `e'` is the one induced by `e` followed by conjugation by `s`. -/
+theorem spinGroupEquiv_apply_eq_conj {N : Type*} [AddCommGroup N] [Module R N]
+    {P : QuadraticForm R N} (e e' : P.IsometryEquiv Q) (s : spinGroup Q)
+    (h : ∀ v, CliffordAlgebra.spinVectorAction Q s (e v) = e' v) (x : spinGroup P) :
+    e'.spinGroupEquiv x = s * e.spinGroupEquiv x * s⁻¹ := by
+  have ht : (e.symm.trans e').spinGroupEquiv = MulAut.conj s :=
+    (e.symm.trans e').spinGroupEquiv_eq_conj s fun m ↦ by simpa using h (e.symm m)
+  have he : e' = e.trans (e.symm.trans e') := DFunLike.ext _ _ fun v ↦ by simp
+  rw [he, spinGroupEquiv_trans, MulEquiv.trans_apply, ht, MulAut.conj_apply]
 
 end QuadraticMap.IsometryEquiv
 

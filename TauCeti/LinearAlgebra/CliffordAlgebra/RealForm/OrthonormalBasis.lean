@@ -127,24 +127,37 @@ variable (hQ : ∀ v, Q v = ‖v‖ ^ 2)
 /-- The coordinates `v ↦ (b.repr v i)ᵢ` of an orthonormal basis `b`, as an isometry from a form
 `Q v = ‖v‖²` to the positive-definite coordinate form `realCliffordForm n 0`. -/
 def isometryEquivRealCliffordFormZero : Q.IsometryEquiv (realCliffordForm n 0) where
+  -- `realCliffordForm n 0` lives on `Fin (n + 0) → ℝ`, which is `Fin n → ℝ` by definition, so the
+  -- coordinate equivalence `V ≃ₗ[ℝ] (Fin n → ℝ)` of `b` serves as the underlying linear map.
   toLinearEquiv := b.toBasis.equivFun
   map_app' v := by
     rw [hQ, ← b.repr.norm_map, EuclideanSpace.real_norm_sq_eq,
       realCliffordForm_zero_eq_weightedSumSquares_one]
     simp [QuadraticMap.weightedSumSquares_apply, sq]
 
+/-- The linear equivalence underlying `OrthonormalBasis.isometryEquivRealCliffordFormZero` is the
+coordinate equivalence of `b`. -/
+@[simp]
+theorem isometryEquivRealCliffordFormZero_toLinearEquiv :
+    (b.isometryEquivRealCliffordFormZero hQ).toLinearEquiv = b.toBasis.equivFun := by
+  rw [isometryEquivRealCliffordFormZero]
+
 /-- `OrthonormalBasis.isometryEquivRealCliffordFormZero` takes the coordinates of a vector in the
 basis `b`. -/
 @[simp]
 theorem isometryEquivRealCliffordFormZero_apply (v : V) (i : Fin (n + 0)) :
-    b.isometryEquivRealCliffordFormZero hQ v i = b.repr v i :=
-  (congrFun (b.toBasis.equivFun_apply v) i).trans (b.coe_toBasis_repr_apply v i)
+    b.isometryEquivRealCliffordFormZero hQ v i = b.repr v i := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    isometryEquivRealCliffordFormZero_toLinearEquiv]
+  simp
 
 /-- The inverse of `OrthonormalBasis.isometryEquivRealCliffordFormZero` sends `x` to
 `∑ i, x i • b i`. -/
 theorem isometryEquivRealCliffordFormZero_symm_apply (x : Fin (n + 0) → ℝ) :
-    (b.isometryEquivRealCliffordFormZero hQ).symm x = ∑ i, x i • b i :=
-  (b.toBasis.equivFun_symm_apply x).trans (by simp)
+    (b.isometryEquivRealCliffordFormZero hQ).symm x = ∑ i, x i • b i := by
+  rw [QuadraticMap.IsometryEquiv.symm_apply_eq]
+  ext i
+  simp [Pi.single_apply]
 
 /-- `OrthonormalBasis.isometryEquivRealCliffordFormZero` sends `b i` to the `i`-th coordinate
 vector. -/
