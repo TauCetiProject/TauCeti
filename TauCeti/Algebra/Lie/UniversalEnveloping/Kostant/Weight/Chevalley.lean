@@ -318,9 +318,8 @@ theorem chevalleyTorusPoints_tmul_of_isCartanWeightVector {A : Type*} [CommRing 
       (UniversalEnvelopingAlgebra.representation ℚ L L) μ (m : L))
     (s : Weight ℚ H L → Aˣ) (a : A) :
     (hx.chevalleyTorusPoints A s).val (a ⊗ₜ[ℤ] m) = ((torusCharacter s μ : A) * a) ⊗ₜ[ℤ] m :=
-  UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector x (corootFamily H)
+  UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector (corootFamily H)
     (UniversalEnvelopingAlgebra.representation ℚ L L) _
-    hx.kostantForm_apply_mem_rootCorootSpan
     hx.chevalleyWeightBasisFin hx.chevalleyWeightFin
     hx.isCartanWeightVector_chevalleyWeightBasisFin hm s a
 

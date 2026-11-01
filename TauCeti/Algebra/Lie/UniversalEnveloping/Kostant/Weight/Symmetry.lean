@@ -109,28 +109,9 @@ theorem weight_eq_of_repr_invariantRestrict_ne_zero
     simpa only [AddEquiv.coe_invariantRestrict_apply, LinearEquiv.coe_toAddEquiv,
       LinearEquiv.coe_addEquiv_apply] using
       (isCartanWeightVector_equiv_iff h ρ ρ θ σ hθ (wt j) (b j : V)).2 (hwt j)
-  -- The weight basis itself restricts the Cartan operators to the lattice; no stability
-  -- under root operators or the full Kostant form is needed.
-  let f (k : κ) : Module.End ℤ M := b.constr ℤ fun x => wt x k • b x
-  have hf (k : κ) (v : M) : ((f k v : M) : V) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h k)) (v : V) := by
-    have heq : M.subtype.toIntLinearMap.comp (f k) =
-        ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h k))).restrictScalars ℤ).comp
-          M.subtype.toIntLinearMap := by
-      apply b.ext
-      intro x
-      simp only [LinearMap.comp_apply, f, Module.Basis.constr_basis,
-        AddMonoidHom.coe_toIntLinearMap, AddSubgroup.subtype_apply, AddSubgroup.coe_zsmul,
-        LinearMap.restrictScalars_apply, (isCartanWeightVector_iff h ρ).1 (hwt x) k,
-        Int.cast_smul_eq_zsmul]
-    exact LinearMap.congr_fun heq v
   have hw : wt i = wt j ∘ σ.symm := by
     by_contra hne
-    apply hij
-    exact b.repr_eq_zero_of_weight_ne (f := f)
-      (fun x k => b.constr_basis ℤ _ x)
-      (fun k => Subtype.ext (by rw [hf, (isCartanWeightVector_iff h ρ).1 hv k,
-        AddSubgroup.coe_zsmul, Int.cast_smul_eq_zsmul])) hne
+    exact hij (repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt hv hne)
   intro k
   simpa using congr_fun hw (σ k)
 
