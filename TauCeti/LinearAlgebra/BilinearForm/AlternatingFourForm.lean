@@ -130,7 +130,7 @@ private theorem neg_apply_apply_eq (hF : ∀ a b c d, B (m a b) (m c d) = F ![a,
     (a b c d : V) : (-B) (m a b) (m c d) = (-F) ![a, b, c, d] := by
   simp [hF]
 
-variable [LinearOrder K] [IsStrictOrderedRing K] [FiniteDimensional K N]
+variable (B) [LinearOrder K] [IsStrictOrderedRing K] [FiniteDimensional K N]
 
 /-- **A nonzero alternating four-form of pairings forces a positive index of inertia of at least
 three.** If the pairings `B (m a b) (m c d)` of a product `m : V → V → N` form a nonzero alternating
@@ -157,7 +157,8 @@ theorem three_le_sigNeg_toQuadraticMap_of_alternatingMap
     (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
     (hF₀ : F ≠ 0) : 3 ≤ sigNeg B.toQuadraticMap := by
   simpa [BilinMap.toQuadraticMap_neg] using
-    three_le_sigPos_toQuadraticMap_of_alternatingMap (neg_apply_apply_eq hF) (neg_ne_zero.2 hF₀)
+    three_le_sigPos_toQuadraticMap_of_alternatingMap (-B) (neg_apply_apply_eq hF)
+      (neg_ne_zero.2 hF₀)
 
 /-- **Vanishing of fourfold pairings when the positive index of inertia is small.** If the
 pairings `B (m a b) (m c d)` of a product `m : V → V → N` form an alternating four-form and the
@@ -167,7 +168,7 @@ theorem apply_eq_zero_of_alternatingMap_of_sigPos_lt_three
     (hsig : sigPos B.toQuadraticMap < 3) (a b c d : V) : B (m a b) (m c d) = 0 := by
   have hF₀ : F = 0 := by
     by_contra hF₀
-    exact (three_le_sigPos_toQuadraticMap_of_alternatingMap hF hF₀).not_gt hsig
+    exact (B.three_le_sigPos_toQuadraticMap_of_alternatingMap hF hF₀).not_gt hsig
   rw [hF, hF₀, _root_.zero_apply]
 
 /-- **Vanishing of fourfold pairings when the negative index of inertia is small.** If the
@@ -176,7 +177,7 @@ negative index of inertia of `B` is at most two, then all of these pairings vani
 theorem apply_eq_zero_of_alternatingMap_of_sigNeg_lt_three
     (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
     (hsig : sigNeg B.toQuadraticMap < 3) (a b c d : V) : B (m a b) (m c d) = 0 := by
-  simpa using apply_eq_zero_of_alternatingMap_of_sigPos_lt_three (neg_apply_apply_eq hF)
+  simpa using apply_eq_zero_of_alternatingMap_of_sigPos_lt_three (-B) (neg_apply_apply_eq hF)
     (by simpa [BilinMap.toQuadraticMap_neg] using hsig) a b c d
 
 end LinearMap.BilinForm
