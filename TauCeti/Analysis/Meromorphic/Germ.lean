@@ -81,6 +81,23 @@ theorem coe_mem_meromorphicGerms {f : 𝕜 → 𝕜} :
 
 namespace meromorphicGerms
 
+/-- The punctured germ of a function meromorphic at the centre. -/
+def mk (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a) : meromorphicGerms 𝕜 a :=
+  ⟨(f : Germ (𝓝[≠] a) 𝕜), coe_mem_meromorphicGerms.mpr hf⟩
+
+@[simp]
+theorem coe_mk (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a) :
+    ((mk f hf : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = f := (rfl)
+
+/-- The local coordinate germ vanishing at the centre. -/
+def coordinate (a : 𝕜) : meromorphicGerms 𝕜 a :=
+  mk (fun z ↦ z - a) ((MeromorphicAt.id a).sub (.const a a))
+
+@[simp]
+theorem coe_coordinate :
+    ((coordinate a : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
+      (fun z ↦ z - a : 𝕜 → 𝕜) := (rfl)
+
 /-- Scalars act on meromorphic germs through constant functions. -/
 instance : Algebra 𝕜 (meromorphicGerms 𝕜 a) :=
   RingHom.toAlgebra
@@ -99,7 +116,11 @@ theorem coe_algebraMap (c : 𝕜) :
 @[simp, norm_cast]
 theorem coe_smul (c : 𝕜) (φ : meromorphicGerms 𝕜 a) :
     ((c • φ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
-      c • (φ : Germ (𝓝[≠] a) 𝕜) := (rfl)
+      c • (φ : Germ (𝓝[≠] a) 𝕜) := by
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap, ← hφ, ← Germ.coe_smul]
+  exact (Germ.coe_mul (fun _ ↦ c) f).symm.trans
+    (Germ.coe_eq.mpr (.of_forall fun _ ↦ by simp [smul_eq_mul]))
 
 /-- The inverse of a meromorphic germ is its pointwise inverse. -/
 instance : Inv (meromorphicGerms 𝕜 a) where
@@ -130,6 +151,19 @@ instance instField : Field (meromorphicGerms 𝕜 a) where
   inv_zero := Subtype.ext <| by
     rw [coe_inv, ZeroMemClass.coe_zero, ← Germ.coe_zero, ← Germ.coe_inv]
     exact Germ.coe_eq.2 (.of_forall fun _ ↦ inv_zero)
+  -- Constant rational casts keep rational scalar multiplication compatible with the algebra.
+  nnratCast q := algebraMap 𝕜 _ (q : 𝕜)
+  nnratCast_def q := by
+    -- Default division is multiplication by the pointwise inverse; evaluate its constants.
+    apply Subtype.ext
+    apply Germ.coe_eq.mpr
+    exact .of_forall fun _ ↦ by simpa [div_eq_mul_inv] using (NNRat.cast_def q : (q : 𝕜) = _)
+  ratCast q := algebraMap 𝕜 _ (q : 𝕜)
+  ratCast_def q := by
+    -- Default division is multiplication by the pointwise inverse; evaluate its constants.
+    apply Subtype.ext
+    apply Germ.coe_eq.mpr
+    exact .of_forall fun _ ↦ by simpa [div_eq_mul_inv] using (Rat.cast_def q : (q : 𝕜) = _)
   nnqsmul := _
   nnqsmul_def _ _ := rfl
   qsmul := _
