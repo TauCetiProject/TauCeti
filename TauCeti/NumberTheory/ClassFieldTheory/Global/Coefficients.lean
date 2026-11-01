@@ -368,19 +368,24 @@ variable (K) in
 def ideleCoeffOf (E : Ω) : Additive (IdeleGroup (𝓞 E) E) →+ IdeleCoeff K :=
   (DirectLimit.Monoid.of (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K) E).toAdditive
 
+/-- `ideleCoeffOf` is the canonical map into the direct limit, read additively. -/
+private theorem ideleCoeffOf_ofMul_eq_of (E : Ω) (a : IdeleGroup (𝓞 E) E) :
+    ideleCoeffOf K E (.ofMul a) =
+      .ofMul (DirectLimit.Monoid.of (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K) E a) :=
+  -- `MonoidHom.toAdditive` applies the homomorphism under `Additive.ofMul`.
+  MonoidHom.toAdditive_apply_apply _ _
+
 /-- An idele of `E` is the class of the pair `⟨E, a⟩` in the direct limit. -/
 private theorem ideleCoeffOf_ofMul (E : Ω) (a : IdeleGroup (𝓞 E) E) :
     ideleCoeffOf K E (.ofMul a) = .ofMul
-      (⟦⟨E, a⟩⟧ : DirectLimit (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K)) :=
-  congrArg Additive.ofMul <|
-    DirectLimit.Monoid.of_apply (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) E a
+      (⟦⟨E, a⟩⟧ : DirectLimit (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K)) := by
+  rw [ideleCoeffOf_ofMul_eq_of, DirectLimit.Monoid.of_apply]
 
 /-- An idele of `E` and its extension to `E'` are the same idele of `Kˢ`. -/
 @[simp]
 theorem ideleCoeffOf_ideleTransition {E E' : Ω} (h : E ≤ E') (a : IdeleGroup (𝓞 E) E) :
-    ideleCoeffOf K E' (.ofMul (ideleTransition K E E' h a)) = ideleCoeffOf K E (.ofMul a) :=
-  congrArg Additive.ofMul <|
-    DirectLimit.Monoid.of_f (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) h a
+    ideleCoeffOf K E' (.ofMul (ideleTransition K E E' h a)) = ideleCoeffOf K E (.ofMul a) := by
+  rw [ideleCoeffOf_ofMul_eq_of, ideleCoeffOf_ofMul_eq_of, DirectLimit.Monoid.of_f]
 
 /-- **Every idele of `Kˢ` is an idele of a finite Galois subextension.** -/
 theorem exists_ideleCoeffOf_eq (x : IdeleCoeff K) :
@@ -391,10 +396,13 @@ theorem exists_ideleCoeffOf_eq (x : IdeleCoeff K) :
 /-- An idele of `E` vanishes in the ideles of `Kˢ` exactly when its extension to some larger
 finite Galois subextension is trivial. -/
 theorem ideleCoeffOf_eq_zero_iff {E : Ω} {a : IdeleGroup (𝓞 E) E} :
-    ideleCoeffOf K E (.ofMul a) = 0 ↔ ∃ (E' : Ω) (h : E ≤ E'), ideleTransition K E E' h a = 1 :=
-  (ideleCoeffOf_ofMul E a).symm ▸ Additive.toMul.injective.eq_iff.symm.trans
-    (DirectLimit.exists_eq_one (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K)
-      ⟨E, a⟩)
+    ideleCoeffOf K E (.ofMul a) = 0 ↔ ∃ (E' : Ω) (h : E ≤ E'), ideleTransition K E E' h a = 1 := by
+  rw [ideleCoeffOf_ofMul]
+  -- The zero of `IdeleCoeff K` is `Additive.ofMul 1`, for the identity `1` of the direct limit.
+  change Additive.ofMul _ = Additive.ofMul 1 ↔ _
+  rw [Additive.ofMul.injective.eq_iff]
+  exact DirectLimit.exists_eq_one (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K)
+    ⟨E, a⟩
 
 /-- Two homomorphisms out of the ideles of `Kˢ` agree once they agree on the ideles of every
 finite Galois subextension. -/
@@ -419,6 +427,18 @@ def IdeleCoeff.lift {M : Type*} [AddCommMonoid M]
       (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E))
       fun E E' h a ↦ congrArg Multiplicative.ofAdd (hφ E E' h a)
 
+/-- `IdeleCoeff.lift` is the universal property of the direct limit, read additively. -/
+private theorem IdeleCoeff.lift_ofMul {M : Type*} [AddCommMonoid M]
+    (φ : ∀ E : Ω, Additive (IdeleGroup (𝓞 E) E) →+ M) (hφ)
+    (x : DirectLimit (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K)) :
+    IdeleCoeff.lift K φ hφ (.ofMul x : IdeleCoeff K) =
+      (DirectLimit.Monoid.lift (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K)
+        (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E))
+        (fun E E' h a ↦ congrArg Multiplicative.ofAdd (hφ E E' h a)) x).toAdd :=
+  -- `MonoidHom.toAdditiveLeft` applies the homomorphism under `Additive.toMul` and
+  -- `Multiplicative.toAdd`.
+  MonoidHom.toAdditiveLeft_apply_apply _ _
+
 /-- The homomorphism induced by compatible homomorphisms out of the ideles of the finite Galois
 subextensions restricts to each of them on the ideles of that subextension. -/
 @[simp]
@@ -426,9 +446,13 @@ theorem IdeleCoeff.lift_ideleCoeffOf {M : Type*} [AddCommMonoid M]
     (φ : ∀ E : Ω, Additive (IdeleGroup (𝓞 E) E) →+ M) (hφ) (E : Ω)
     (a : Additive (IdeleGroup (𝓞 E) E)) :
     IdeleCoeff.lift K φ hφ (ideleCoeffOf K E a) = φ E a := by
-  unfold IdeleCoeff.lift
-  exact DirectLimit.Monoid.lift_of (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K)
-    (P := Multiplicative M) _ _ E a.toMul
+  rw [← ofMul_toMul a, ideleCoeffOf_ofMul_eq_of, IdeleCoeff.lift_ofMul]
+  -- This is `lift_of` under `Multiplicative.toAdd`: `AddMonoidHom.toMultiplicativeRight (φ E)`
+  -- applies `φ E` under `Additive.ofMul` and `Multiplicative.ofAdd`. `rw [lift_of]` fails since
+  -- the compatibility proof inside `lift` only typechecks up to this unfolding.
+  exact congrArg Multiplicative.toAdd <| DirectLimit.Monoid.lift_of
+    (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) (P := Multiplicative M) _ _ E
+    a.toMul
 
 /-- **The Galois action on the ideles of `Kˢ`**: `g ∈ G_K` acts on the ideles of `E` through its
 restriction to `Gal(E/K)`. -/

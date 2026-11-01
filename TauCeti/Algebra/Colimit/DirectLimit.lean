@@ -102,11 +102,11 @@ theorem hom_ext {g₁ g₂ : DirectLimit G f →* P}
 single component. -/
 theorem exists_subset_range_of (s : Finset (DirectLimit G f)) :
     ∃ i, (s : Set (DirectLimit G f)) ⊆ Set.range (of G f i) := by
-  refine Directed.exists_mem_subset_of_finset_subset_biUnion (fun i j => ?_) fun z _ => ?_
-  · -- The images increase along the directed index set, by compatibility with the transitions.
-    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
-    exact ⟨k, by rintro _ ⟨x, rfl⟩; exact ⟨f i k hik x, of_f hik x⟩,
-      by rintro _ ⟨x, rfl⟩; exact ⟨f j k hjk x, of_f hjk x⟩⟩
+  refine Directed.exists_mem_subset_of_finset_subset_biUnion
+    (directed_of_isDirected_le fun i j hij => ?_) fun z _ => ?_
+  · -- The images increase along the index set, by compatibility with the transitions.
+    rintro _ ⟨x, rfl⟩
+    exact ⟨f i j hij x, of_f hij x⟩
   · obtain ⟨i, x, rfl⟩ := exists_eq_mk f z
     exact Set.mem_iUnion.2 ⟨i, x, rfl⟩
 
