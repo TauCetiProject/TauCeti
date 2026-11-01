@@ -127,7 +127,8 @@ theorem residueDual_of_single (g : HahnModule ℤ R (Module.Dual R V)) (n : ℤ)
 
 /-- On scalar series times constant vectors and covectors, the contraction-residue pairing
 is the scalar residue pairing times evaluation of the covector. -/
-theorem residueDual_smul_single_zero_smul_single_zero (a b : LaurentSeries R)
+theorem _root_.LaurentSeries.residueDual_smul_single_zero_smul_single_zero
+    (a b : LaurentSeries R)
     (ℓ : Module.Dual R V) (v : V) :
     residueDual (a • of R (single (0 : ℤ) ℓ)) (b • of R (single (0 : ℤ) v)) =
       (a * b).coeff (-1) * ℓ v := by

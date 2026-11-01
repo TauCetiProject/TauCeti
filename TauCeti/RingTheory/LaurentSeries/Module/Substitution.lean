@@ -32,7 +32,9 @@ noncomputable section
 open HahnSeries TensorProduct TauCeti
 open scoped LaurentSeries PowerSeries
 
-namespace HahnModule
+namespace TauCeti.HahnModule
+
+open _root_.HahnModule
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V]
@@ -54,9 +56,8 @@ def subst : HahnModule ℤ K V →ₗ[K] HahnModule ℤ K V :=
       (tensorProductEquiv ℤ K V).symm.toLinearMap.restrictScalars K
 
 /-- On a scalar series times a constant vector, substitution acts only on the scalar series. -/
-@[simp]
 theorem subst_smul_single_zero (f : K⸨X⸩) (v : V) :
-    HahnModule.subst hφ hφ₀ (f • of K (single 0 v)) =
+    subst hφ hφ₀ (f • of K (single 0 v)) =
       LaurentSeries.substAlgHom hφ hφ₀ f • of K (single (0 : ℤ) v) := by
   have ht : (tensorProductEquiv ℤ K V).symm (f • of K (single 0 v)) = f ⊗ₜ[K] v :=
     (tensorProductEquiv ℤ K V).symm_apply_eq.mpr (by simp)
@@ -91,19 +92,25 @@ theorem coeff_subst {ι : Type*} [Fintype ι] (b : Module.Basis ι K V)
 
 /-- Substituting `X` is the identity on module-valued Laurent series. -/
 @[simp]
-theorem subst_X (x : HahnModule ℤ K V) :
+theorem _root_.HahnModule.subst_X (x : HahnModule ℤ K V) :
     subst PowerSeries.constantCoeff_X PowerSeries.X_ne_zero x = x := by
   have heq : subst (V := V) PowerSeries.constantCoeff_X PowerSeries.X_ne_zero = LinearMap.id :=
-    linearMap_ext_smul_single_zero (R := K) fun f v ↦ by simp
+    linearMap_ext_smul_single_zero (R := K) fun f v ↦ by simp [subst_smul_single_zero]
   exact DFunLike.congr_fun heq x
 
+private theorem subst_eq_self_of_eq_X (h : φ = PowerSeries.X) (x : HahnModule ℤ K V) :
+    subst hφ hφ₀ x = x := by
+  subst φ
+  exact _root_.HahnModule.subst_X x
+
 /-- Substitution is semilinear for the substitution of scalar Laurent series. -/
+@[simp]
 theorem subst_smul (f : K⸨X⸩) (x : HahnModule ℤ K V) :
     subst hφ hφ₀ (f • x) = LaurentSeries.substAlgHom hφ hφ₀ f • subst hφ hφ₀ x := by
   obtain ⟨z, rfl⟩ := (tensorProductEquiv ℤ K V).surjective x
   induction z using TensorProduct.inductionOn with
-  | tmul a v => simp [← mul_smul]
-  | add z w hz hw => simp only [map_add, smul_add, hz, hw]
+  | tmul a v => simp [← mul_smul, subst_smul_single_zero]
+  | add z w hz hw => simp only [map_add, _root_.smul_add, hz, hw]
 
 /-- Successive substitutions on module-valued series agree with substitution by the
 composite parameter. -/
@@ -150,14 +157,9 @@ theorem subst_map {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K
 theorem subst_inv_subst (φ : FormalCoordinate K) (x : HahnModule ℤ K V) :
     subst φ⁻¹.constantCoeff_toPowerSeries φ⁻¹.toPowerSeries_ne_zero
       (subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero x) = x := by
-  have heq : (subst (V := V) φ⁻¹.constantCoeff_toPowerSeries φ⁻¹.toPowerSeries_ne_zero).comp
-      (subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero) = LinearMap.id := by
-    apply linearMap_ext_smul_single_zero (R := K)
-    intro f v
-    simp only [LinearMap.comp_apply, subst_smul_single_zero, LinearMap.id_apply]
-    rw [← LaurentSeries.coe_substAlgEquiv φ, ← LaurentSeries.coe_substAlgEquiv φ⁻¹,
-      ← LaurentSeries.substAlgEquiv_symm, AlgEquiv.symm_apply_apply]
-  exact DFunLike.congr_fun heq x
+  rw [subst_subst]
+  exact subst_eq_self_of_eq_X _ _ (by
+    simpa only [FormalCoordinate.toPowerSeries_mul] using φ.toPowerSeries_mul_inv) x
 
 /-- A formal coordinate acts invertibly on finite-dimensional module-valued Laurent series.
 The action is linear over the coefficient field and semilinear over the Laurent field. -/
@@ -192,7 +194,8 @@ theorem substEquiv_mul (φ ψ : FormalCoordinate K) :
 theorem substEquiv_one : substEquiv (V := V) (1 : FormalCoordinate K) = LinearEquiv.refl K _ := by
   apply LinearEquiv.ext
   intro x
-  exact subst_X x
+  rw [substEquiv_apply]
+  exact subst_eq_self_of_eq_X _ _ FormalCoordinate.toPowerSeries_one x
 
 /-- A substitution of order `e` maps the lattice `U_a(V)` into `U_(e a)(V)`. -/
 theorem subst_mem_lattice {a : ℤ} {x : HahnModule ℤ K V}
@@ -245,7 +248,8 @@ variable [TopologicalSpace K] [DiscreteTopology K]
 /-- Under a parameter substitution of order `e`, the contraction-residue pairing on
 module-valued series, with the Jacobian on the dual series, is multiplied by `e`.
 This holds in every characteristic, including when `e` vanishes in `K`. -/
-theorem residueDual_subst (g : HahnModule ℤ K (Module.Dual K V)) (x : HahnModule ℤ K V) :
+theorem residueDual_derivative_smul_subst_eq_nsmul
+    (g : HahnModule ℤ K (Module.Dual K V)) (x : HahnModule ℤ K V) :
     residueDual (_root_.LaurentSeries.derivative K (φ : K⸨X⸩) • subst hφ hφ₀ g)
       (subst hφ hφ₀ x) = φ.order.toNat • residueDual g x := by
   obtain ⟨z, rfl⟩ := (tensorProductEquiv ℤ K (Module.Dual K V)).surjective g
@@ -255,7 +259,8 @@ theorem residueDual_subst (g : HahnModule ℤ K (Module.Dual K V)) (x : HahnModu
     induction w using TensorProduct.inductionOn with
     | tmul b v =>
       simp only [tensorProductEquiv_apply, tensorProductToHahnModule_tmul,
-        subst_smul_single_zero, ← mul_smul, residueDual_smul_single_zero_smul_single_zero]
+        subst_smul_single_zero, ← mul_smul,
+        _root_.LaurentSeries.residueDual_smul_single_zero_smul_single_zero]
       have hres := LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul
         hφ hφ₀ (a * b)
       rw [map_mul] at hres
@@ -266,18 +271,19 @@ theorem residueDual_subst (g : HahnModule ℤ K (Module.Dual K V)) (x : HahnModu
     | add u w hu hw =>
       simp only [map_add, hu, hw, nsmul_add]
   | add z w hz hw =>
-    simp only [map_add, smul_add, residueDual_add, add_apply,
-      hz, hw, nsmul_add]
+    simp only [map_add, _root_.smul_add, residueDual_add, add_apply,
+      hz, hw]
 
 /-- Formal coordinate changes preserve module-valued residue duality, when the dual
 series transforms as a one-form rather than a scalar series. -/
-theorem residueDual_subst_coordinate (φ : FormalCoordinate K)
+theorem residueDual_derivative_smul_subst_coordinate (φ : FormalCoordinate K)
     (g : HahnModule ℤ K (Module.Dual K V)) (x : HahnModule ℤ K V) :
     residueDual (_root_.LaurentSeries.derivative K (φ.toPowerSeries : K⸨X⸩) •
       subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero g)
       (subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero x) = residueDual g x := by
-  simpa using residueDual_subst φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero g x
+  simpa using residueDual_derivative_smul_subst_eq_nsmul
+    φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero g x
 
 end Residue
 
-end HahnModule
+end TauCeti.HahnModule

@@ -155,7 +155,8 @@ theorem tensorProductEquiv_symm_single [Module.Free R V] [Module.Finite R V]
 
 /-- For finite free coefficients, linear maps on module-valued Hahn series are determined
 by scalar series times constant vectors. -/
-theorem linearMap_ext_smul_single_zero [Module.Free R V] [Module.Finite R V]
+theorem _root_.TauCeti.HahnModule.linearMap_ext_smul_single_zero
+    [Module.Free R V] [Module.Finite R V]
     {M : Type*} [AddCommMonoid M] [Module R M]
     {f g : HahnModule Γ R V →ₗ[R] M}
     (h : ∀ (a : HahnSeries Γ R) (v : V), f (a • of R (single 0 v)) =
