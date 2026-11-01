@@ -12,12 +12,8 @@ import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.DeRham.RealLine
 import TauCeti.Geometry.Manifold.DeRham.Sphere
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Topology.Algebra.Module.FiniteDimension
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 
 /-!
@@ -50,7 +46,9 @@ on the complement `E \ closedBall 0 r`. That complement deformation retracts ont
   and the same cut-off shows that a nontrivial combination of the two forms has a compactly
   supported primitive. Hence `H^n_c(E)` has rank at most one. Integration vanishes on compactly
   supported exact forms by Stokes' theorem and takes the value `±1` on a normalized bump function
-  times a determinant form, so it is an isomorphism. The cases `n = 0` (a point) and `n = 1` (the
+  times a determinant form
+  (`TauCeti.exists_compactlySupportedClosedForms_integralTopForm_eq_one`), so it is an
+  isomorphism. The cases `n = 0` (a point) and `n = 1` (the
   line, `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`) are treated
   separately.
 
@@ -60,6 +58,8 @@ on the complement `E \ closedBall 0 r`. That complement deformation retracts ont
   `k ≠ dim E`.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`: integration
   `H^n_c(E) → ℝ` is bijective for `n = dim E`, for every orientation of `E`.
+* `TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`: the resulting isomorphism
+  `H^n_c(E) ≃ₗ[ℝ] ℝ`.
 * `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`: `H^k_c(E)` is one-dimensional
   for `k = dim E` and zero otherwise.
 
@@ -313,12 +313,10 @@ private theorem rank_compactlySupportedDeRhamCohomology_finrank_le_one :
   · -- A one-dimensional space is a copy of the real line.
     rw [h]
     let Φ := (ContinuousLinearEquiv.ofFinrankEq (h.trans (finrank_self ℝ).symm)).toDiffeomorph
-    let o : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
-      Manifold.Orientation.model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
     refine Cardinal.lift_le_one_iff.mp <|
       (compactlySupportedDeRhamCohomology.equivOfDiffeomorph Φ 1).lift_rank_eq.symm.trans_le ?_
-    rw [Cardinal.lift_le_one_iff, (compactlySupportedDeRhamCohomologyRealEquiv o).rank_eq,
-      rank_self]
+    rw [Cardinal.lift_le_one_iff,
+      (compactlySupportedDeRhamCohomologyRealEquiv Manifold.Orientation.real).rank_eq, rank_self]
   · -- Transfer from the Euclidean space of the same dimension.
     have := rank_compactlySupportedDeRhamCohomology_innerProductSpace_le_one
       (E := EuclideanSpace ℝ (Fin (finrank ℝ E))) (by rwa [finrank_euclideanSpace_fin])
@@ -331,37 +329,17 @@ private theorem rank_compactlySupportedDeRhamCohomology_finrank_le_one :
 de Rham cohomology. -/
 private theorem exists_integral_ne_zero {n : ℕ} (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
     ∃ c, compactlySupportedDeRhamCohomology.integral o c ≠ 0 := by
-  let : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
   have hn : finrank ℝ E = n := by simpa using o.card_eq.symm
   let b : Module.Basis (Fin n) ℝ E := Module.finBasisOfFinrankEq ℝ E hn
-  let f : E → ℝ := (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : E)).normed b.addHaar
-  let D : E [⋀^Fin n]→L[ℝ] ℝ := AlternatingMap.toContinuousAlternatingMap b.det
-  let φ : RoughForm 𝓘(ℝ, E) E ℝ n := fun x ↦ f x • D
-  have hs : IsSmoothForm 𝓘(ℝ, E) ∞ φ :=
-    isSmoothForm_modelSpace_iff.mpr ((ContDiffBump.contDiff_normed _).smul contDiff_const)
-  have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ) :=
-    (ContDiffBump.hasCompactSupport_normed _).isCompact.of_isClosed_subset
-      (isClosed_tsupport _) (tsupport_smul_subset_left f fun _ ↦ D)
-  let ψ : compactlySupportedClosedForms 𝓘(ℝ, E) E n :=
-    ⟨⟨φ, hs.mem_smoothBundleForms⟩, (mem_compactlySupportedClosedForms _).mpr
-      ⟨(mem_compactlySupportedForms _).mpr hc, mem_closedForms_of_finrank_le _ hn.le _⟩⟩
-  -- Against the orientation of `b`, the integral of `φ` is the integral of the normalized bump.
-  let o₀ : Manifold.Orientation 𝓘(ℝ, E) E (Fin n) :=
-    Manifold.Orientation.model b.orientation (by simp [hn])
-  have hφb (x : E) : φ x b = f x := by
-    have h : (f x • D) b = f x := by simp [D, Module.Basis.det_self]
-    -- `φ x` is `f x • D` read in the tangent fibre at `x`, which is `E` by definition.
-    exact h
-  have h₁ : integralTopForm o₀ φ = 1 := by
-    rw [integralTopForm_model_eq_integral _ _ (hs.of_le (by simp)) hc b rfl, funext hφb]
-    exact ContDiffBump.integral_normed _
+  obtain ⟨ψ, h₁⟩ := exists_compactlySupportedClosedForms_integralTopForm_eq_one b
   refine ⟨compactlySupportedDeRhamCohomology.mk _ n ψ, ?_⟩
   rw [compactlySupportedDeRhamCohomology.integral_mk]
-  rcases Manifold.Orientation.eq_or_eq_neg o o₀ with rfl | rfl
-  · exact h₁ ▸ one_ne_zero
-  · rw [integralTopForm_neg]
-    exact h₁ ▸ neg_ne_zero.mpr one_ne_zero
+  rcases Manifold.Orientation.eq_or_eq_neg o
+    (Manifold.Orientation.model b.orientation (Module.finrank_eq_card_basis b).symm) with rfl | rfl
+  · rw [h₁]
+    exact one_ne_zero
+  · rw [integralTopForm_neg, h₁]
+    exact neg_ne_zero.mpr one_ne_zero
 
 /-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For every orientation `o` of a
 finite-dimensional real normed space `E`, integration `H^n_c(E) → ℝ` is bijective, where
@@ -374,21 +352,37 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_normedSpace {n : �
   obtain ⟨c, hc⟩ := exists_integral_ne_zero E o
   -- Every class is a multiple of one class `v₀`, and integration does not vanish on `v₀`.
   obtain ⟨v₀, hv₀⟩ := rank_le_one_iff.mp (rank_compactlySupportedDeRhamCohomology_finrank_le_one E)
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦
-    ⟨(y / compactlySupportedDeRhamCohomology.integral o c) • c, by
-      rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hc]⟩⟩
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
+    LinearMap.surjective fun h ↦ hc (LinearMap.congr_fun h c)⟩
   obtain ⟨a, rfl⟩ := hv₀ x
   obtain ⟨b, rfl⟩ := hv₀ c
   rw [map_smul, smul_eq_mul] at hx hc
   rw [(mul_eq_zero.mp hx).resolve_right (right_ne_zero_of_mul hc), zero_smul]
 
+/-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For an orientation `o` of a
+finite-dimensional real normed space `E`, integration is a linear isomorphism
+`H^n_c(E) ≃ₗ[ℝ] ℝ`, where `n = dim E`. -/
+def compactlySupportedDeRhamCohomologyNormedSpaceEquiv {n : ℕ}
+    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
+    compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n ≃ₗ[ℝ] ℝ :=
+  LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_normedSpace E o)
+
+/-- The isomorphism `H^n_c(E) ≃ₗ[ℝ] ℝ` is integration. -/
+@[simp]
+theorem compactlySupportedDeRhamCohomologyNormedSpaceEquiv_apply {n : ℕ}
+    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n))
+    (x : compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n) :
+    compactlySupportedDeRhamCohomologyNormedSpaceEquiv E o x =
+      compactlySupportedDeRhamCohomology.integral o x :=
+  LinearEquiv.ofBijective_apply _ _
+
 /-- **The top compactly supported de Rham cohomology of `ℝⁿ` is a line.** On a
 finite-dimensional real normed space `E`, `H^n_c(E)` is one-dimensional for `n = dim E`. -/
 theorem finrank_compactlySupportedDeRhamCohomology_normedSpace_self :
     finrank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E (finrank ℝ E)) = 1 :=
-  (LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_normedSpace E
+  (compactlySupportedDeRhamCohomologyNormedSpaceEquiv E
     (Manifold.Orientation.model (Module.finBasisOfFinrankEq ℝ E rfl).orientation
-      (Fintype.card_fin _)))).finrank_eq.trans (finrank_self ℝ)
+      (Fintype.card_fin _))).finrank_eq.trans (finrank_self ℝ)
 
 /-- **The compactly supported de Rham cohomology of `ℝⁿ`.** On a finite-dimensional real normed
 space `E`, `H^k_c(E)` is one-dimensional in degree `k = dim E` and zero in every other degree. -/

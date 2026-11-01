@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Manifold.DeRham.Wedge
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -34,6 +37,9 @@ representative formula pairs it with the class of the constant function `1` to g
   manifold, the exterior derivative of a compactly supported form integrates to zero.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral`: integration `H^n_c(M) → ℝ`, computed on
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
+* `TauCeti.exists_compactlySupportedClosedForms_integralTopForm_eq_one`: on a finite-dimensional
+  real normed space, a normalized bump function times a determinant form integrates to one, so
+  integration on compactly supported top cohomology is nonzero.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
@@ -118,6 +124,34 @@ theorem integral_neg (o : Manifold.Orientation I M (Fin n)) : integral (-o) = -i
   rw [LinearMap.neg_apply, integral_mk, integral_mk, integralTopForm_neg]
 
 end compactlySupportedDeRhamCohomology
+
+/-- On a finite-dimensional real normed space with a basis `b`, some compactly supported closed
+top form integrates to one against the orientation of `b`: a normalized bump function times the
+determinant of `b`. -/
+theorem exists_compactlySupportedClosedForms_integralTopForm_eq_one
+    (b : Module.Basis (Fin n) ℝ E) :
+    ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, E) E n,
+      integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) b.orientation
+        (Module.finrank_eq_card_basis b).symm) φ.1.1 = 1 := by
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  have hn : Module.finrank ℝ E = n := by rw [Module.finrank_eq_card_basis b, Fintype.card_fin]
+  let f : E → ℝ := (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : E)).normed b.addHaar
+  let D : E [⋀^Fin n]→L[ℝ] ℝ := AlternatingMap.toContinuousAlternatingMap b.det
+  let φ : RoughForm 𝓘(ℝ, E) E ℝ n := fun x ↦ f x • D
+  have hs : IsSmoothForm 𝓘(ℝ, E) ∞ φ :=
+    isSmoothForm_modelSpace_iff.mpr ((ContDiffBump.contDiff_normed _).smul contDiff_const)
+  have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ) :=
+    (ContDiffBump.hasCompactSupport_normed _).isCompact.of_isClosed_subset
+      (isClosed_tsupport _) (tsupport_smul_subset_left f fun _ ↦ D)
+  refine ⟨⟨⟨φ, hs.mem_smoothBundleForms⟩, (mem_compactlySupportedClosedForms _).mpr
+    ⟨(mem_compactlySupportedForms _).mpr hc, mem_closedForms_of_finrank_le _ hn.le _⟩⟩, ?_⟩
+  have hφb (x : E) : φ x b = f x := by
+    have h : (f x • D) b = f x := by simp [D, Module.Basis.det_self]
+    -- `φ x` is `f x • D` read in the tangent fibre at `x`, which is `E` by definition.
+    exact h
+  rw [integralTopForm_model_eq_integral _ _ (hs.of_le (by simp)) hc b rfl, funext hφb]
+  exact ContDiffBump.integral_normed _
 
 variable (I M) in
 /-- The Poincaré pairing `H^k_dR(M) → H^l_c(M) → ℝ` on an oriented boundaryless manifold of
