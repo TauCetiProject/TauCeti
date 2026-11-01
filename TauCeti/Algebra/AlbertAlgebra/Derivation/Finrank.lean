@@ -28,7 +28,7 @@ octonion `a` in the `j`-th off-diagonal slot. The count runs through the linear 
 
 * **Its range has dimension `24`.** A derivation sends `Eᵢ` into the two slots touching it
   (`TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero` and
-  `TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_offDiag_self`), and kills
+  `TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_offDiag_self_eq_zero`), and kills
   `1 = E₀ + E₁ + E₂`, so `D E₀` and `D E₁` have opposite entries in their common slot. That leaves
   three free octonions. All of them occur: since `J` is a Jordan algebra, the commutators
   `⁅L_{Eᵢ}, L_{Fⱼ(x)}⁆` of multiplication operators are derivations
@@ -81,20 +81,6 @@ private theorem sum_derivation_apply_diagIdempotent :
   rw [← map_add, ← map_add, ← Fin.sum_univ_three, sum_diagIdempotent,
     derivationLieAlgebra.apply_one_eq_zero]
 
-/-! ### Inner derivations -/
-
-variable (R) in
-/-- The inner derivation `⁅L_A, L_B⁆` of the Jordan algebra `H₃(𝕆)`, as an element of
-`Der H₃(𝕆)`. -/
-private def jordanInnerDerivation (A B : AlbertAlgebra R) :
-    derivationLieAlgebra R (AlbertAlgebra R) :=
-  ⟨⁅(LinearMap.mulLeft R A : Module.End R (AlbertAlgebra R)), LinearMap.mulLeft R B⁆,
-    lie_mulLeft_mulLeft_mem_derivationLieAlgebra R A B⟩
-
-private theorem jordanInnerDerivation_apply (A B X : AlbertAlgebra R) :
-    (jordanInnerDerivation R A B : Module.End R (AlbertAlgebra R)) X = A * (B * X) - B * (A * X) :=
-  by simp [jordanInnerDerivation, Ring.lie_def]
-
 /-! ### The values on the diagonal frame -/
 
 variable (R) in
@@ -137,15 +123,15 @@ private theorem range_frameMap_le :
   rintro _ ⟨D, rfl⟩
   have hsum := congrArg (fun X : AlbertAlgebra R => X.offDiag 2)
     (sum_derivation_apply_diagIdempotent D)
-  simp only [add_offDiag, Pi.add_apply, derivation_apply_diagIdempotent_offDiag_self,
+  simp only [add_offDiag, Pi.add_apply, derivation_apply_diagIdempotent_offDiag_self_eq_zero,
     add_zero, zero_offDiag, Pi.zero_apply] at hsum
   refine ⟨(((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R 0)).offDiag 1,
     ((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R 0)).offDiag 2,
     ((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R 1)).offDiag 0), ?_⟩
   have hU := derivation_apply_diagIdempotent_diag_eq_zero D 0
   have hV := derivation_apply_diagIdempotent_diag_eq_zero D 1
-  have hU0 := derivation_apply_diagIdempotent_offDiag_self D 0
-  have hV1 := derivation_apply_diagIdempotent_offDiag_self D 1
+  have hU0 := derivation_apply_diagIdempotent_offDiag_self_eq_zero D 0
+  have hV1 := derivation_apply_diagIdempotent_offDiag_self_eq_zero D 1
   refine Prod.ext (AlbertAlgebra.ext ?_ (funext fun k => ?_))
     (AlbertAlgebra.ext ?_ (funext fun k => ?_))
   · simp [frameTarget, frameMap, hU]
@@ -169,8 +155,7 @@ private theorem jordanInnerDerivation_diagIdempotent_offDiagSingle_apply (i j m 
 private theorem range_frameTarget_le :
     LinearMap.range (frameTarget R) ≤ LinearMap.range (frameMap R) := by
   rintro _ ⟨⟨a, b, c⟩, rfl⟩
-  have h2 : ⅟(2 : R) * 4 = 2 := by
-    rw [show (4 : R) = 2 * 2 by norm_num, ← mul_assoc, invOf_mul_self', one_mul]
+  have h2 : ⅟(2 : R) * 4 = 2 := by linear_combination (2 : R) * invOf_mul_self' (2 : R)
   refine ⟨jordanInnerDerivation R (diagIdempotent R 2) (offDiagSingle 1 ((4 : R) • a)) -
     jordanInnerDerivation R (diagIdempotent R 0) (offDiagSingle 2 ((4 : R) • b)) -
     jordanInnerDerivation R (diagIdempotent R 1) (offDiagSingle 0 ((4 : R) • c)), ?_⟩
@@ -242,10 +227,9 @@ private theorem slotMap_conj_mul (hD : frameMap R D = 0) (i : Fin 3) (x y : Octo
     slotMap D (i + 2) (Octonion.conj (x * y)) =
       Octonion.conj (slotMap D i x * y + x * slotMap D (i + 1) y) := by
   have h := derivationLieAlgebra.leibniz D (offDiagSingle i x) (offDiagSingle (i + 1) y)
-  rw [derivation_apply_offDiagSingle hD i x, derivation_apply_offDiagSingle hD (i + 1) y,
-    offDiagSingle_mul_offDiagSingle_add_one, offDiagSingle_mul_offDiagSingle_add_one,
-    offDiagSingle_mul_offDiagSingle_add_one, map_smul,
-    derivation_apply_offDiagSingle hD (i + 2)] at h
+  rw [derivation_apply_offDiagSingle hD i x, derivation_apply_offDiagSingle hD (i + 1) y] at h
+  simp only [offDiagSingle_mul_offDiagSingle_add_one, map_smul] at h
+  rw [derivation_apply_offDiagSingle hD (i + 2)] at h
   have h' := congrArg (fun Y : AlbertAlgebra R => (2 : R) • Y.offDiag (i + 2)) h
   simpa [slotMap, smul_smul, map_add] using h'
 
@@ -253,12 +237,11 @@ private theorem slotMap_conj_mul (hD : frameMap R D = 0) (i : Fin 3) (x y : Octo
 private theorem slotMap_skew (hD : frameMap R D = 0) (j : Fin 3) (a b : Octonion R) :
     β (slotMap D j a) b + β a (slotMap D j b) = 0 := by
   have h := derivationLieAlgebra.leibniz D (offDiagSingle j a) (offDiagSingle j b)
-  rw [derivation_apply_offDiagSingle hD j a, derivation_apply_offDiagSingle hD j b,
-    offDiagSingle_mul_offDiagSingle, offDiagSingle_mul_offDiagSingle,
-    offDiagSingle_mul_offDiagSingle, map_smul, map_add, derivation_apply_diagIdempotent_eq_zero hD,
-    derivation_apply_diagIdempotent_eq_zero hD, add_zero, smul_zero, ← add_smul] at h
+  rw [derivation_apply_offDiagSingle hD j a, derivation_apply_offDiagSingle hD j b] at h
   have h' := congrArg (fun Y : AlbertAlgebra R => Y.diag (j + 1)) h
-  fin_cases j <;> simpa [slotMap] using h'.symm
+  fin_cases j <;>
+    simpa [slotMap, offDiagSingle_mul_offDiagSingle, derivation_apply_diagIdempotent_eq_zero hD,
+      add_smul] using h'.symm
 
 /-- **A derivation killing the frame is determined by its action on one slot**: if it kills the
 slot `0`, then the local triality relations force its actions on the two other slots to be
@@ -269,7 +252,7 @@ private theorem eq_zero_of_slotMap_zero (hD : frameMap R D = 0) (h0 : slotMap D 
   -- The relation through the slot `0`: `f₁ x * y + x * f₂ y = 0`.
   have r₀ (x y : Octonion R) : slotMap D 1 x * y + x * slotMap D 2 y = 0 := by
     have h := slotMap_conj_mul hD 1 x y
-    rw [show (1 : Fin 3) + 2 = 0 from rfl, h0, LinearMap.zero_apply] at h
+    simp only [Fin.reduceAdd, h0, LinearMap.zero_apply] at h
     simpa using congrArg Octonion.conj h.symm
   set c := slotMap D 1 1 with hc_def
   have hf₂ (y : Octonion R) : slotMap D 2 y = -(c * y) := by
@@ -284,9 +267,8 @@ private theorem eq_zero_of_slotMap_zero (hD : frameMap R D = 0) (h0 : slotMap D 
   -- The relation through the slot `1` at `x = y = 1` gives `c = conj (f₂ 1) = -c`.
   have hc : r = 0 := by
     have h := slotMap_conj_mul hD 2 1 1
-    rw [show (2 : Fin 3) + 2 = 1 from rfl, show (2 : Fin 3) + 1 = 0 from rfl, h0,
-      LinearMap.zero_apply, hf₂, mul_one, mul_zero, add_zero, mul_one, mul_one,
-      Octonion.conj_one, ← hc_def, hr] at h
+    simp only [Fin.isValue, Fin.reduceAdd, mul_one, Octonion.conj_one, ← hc_def, hr, hf₂, h0,
+      LinearMap.zero_apply, mul_zero, add_zero, map_neg, map_smul] at h
     have ha : r = -r := by simpa using congrArg Octonion.a h
     have h2 : (2 : R) * r = 0 := by linear_combination ha
     simpa using congrArg (⅟(2 : R) * ·) h2
@@ -308,8 +290,8 @@ private theorem eq_zero_of_slotMap_zero (hD : frameMap R D = 0) (h0 : slotMap D 
 private theorem frameMap_jordanInnerDerivation_offDiagSingle_zero (a b : Octonion R) :
     frameMap R (jordanInnerDerivation R (offDiagSingle 0 a) (offDiagSingle 0 b)) = 0 := by
   refine Prod.ext ?_ ?_ <;>
-    simp [frameMap, jordanInnerDerivation_apply, mul_comm (offDiagSingle 0 _) (diagIdempotent R _),
-      mul_smul_comm, mul_comm (offDiagSingle 0 a) (offDiagSingle 0 b)]
+    simp [frameMap, mul_comm (offDiagSingle 0 _) (diagIdempotent R _), mul_smul_comm,
+      mul_comm (offDiagSingle 0 a) (offDiagSingle 0 b)]
 
 /-- **The inner derivation of two entries of the slot `0` acts on that slot by a rank-two skew
 map**: `⁅L_{F₀ a}, L_{F₀ b}⁆ (F₀ c) = β(b, c) F₀ a - β(a, c) F₀ b`. -/

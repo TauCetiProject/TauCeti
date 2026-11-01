@@ -17,6 +17,11 @@ In a commutative Jordan algebra `A` over a ring in which `2` is invertible, the 
 `TauCeti/Algebra/AlbertAlgebra/Derivation/Finrank.lean` uses to show that its derivation algebra has
 dimension `52`.
 
+## Main definitions
+
+* `TauCeti.jordanInnerDerivation R a b`: the inner derivation `⁅L_a, L_b⁆`, bundled as an element
+  of `TauCeti.derivationLieAlgebra R A`.
+
 ## Main results
 
 * `TauCeti.lie_mulLeft_mulLeft_mem_derivationLieAlgebra`: `⁅L_a, L_b⁆` is a derivation.
@@ -91,5 +96,17 @@ theorem lie_mulLeft_mulLeft_mem_derivationLieAlgebra (a b : A) :
     rw [e₁, e₂, e₃, e₄, e₅, e₆, e₇, e₈, e₉, sub_mul, mul_sub]
     abel
   rw [key, h₁, h₂, neg_zero, add_zero]
+
+variable (R) in
+/-- **The inner derivation** `⁅L_a, L_b⁆ = L_a L_b - L_b L_a` of two elements `a` and `b` of a
+commutative Jordan algebra, as an element of the derivation algebra. -/
+def jordanInnerDerivation (a b : A) : derivationLieAlgebra R A :=
+  ⟨⁅(LinearMap.mulLeft R a : Module.End R A), LinearMap.mulLeft R b⁆,
+    lie_mulLeft_mulLeft_mem_derivationLieAlgebra R a b⟩
+
+@[simp]
+theorem jordanInnerDerivation_apply (a b x : A) :
+    (jordanInnerDerivation R a b : Module.End R A) x = a * (b * x) - b * (a * x) := by
+  simp [jordanInnerDerivation, Ring.lie_def]
 
 end TauCeti

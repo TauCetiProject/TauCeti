@@ -865,10 +865,11 @@ theorem finrank_imaginary (R : Type*) [CommRing R] [StrongRankCondition R] :
 
 /-! ### Nondegeneracy of the norm form and the nucleus -/
 
-/-- **The symmetric bilinear form of the norm is nondegenerate** when `2` is invertible: pairing
-with the four kinds of basis vector of the Zorn model reads off the four entries of an octonion. -/
+/-- **The symmetric bilinear form of the norm is nondegenerate** when `2` is invertible. -/
 theorem nondegenerate_associated_normQuadraticForm [Invertible (2 : R)] :
     (QuadraticMap.associated (normQuadraticForm R)).Nondegenerate := by
+  -- Pairing with the four kinds of basis vector of the Zorn model reads off the four entries of an
+  -- octonion.
   refine (QuadraticForm.associated_isSymm R (normQuadraticForm R)).isRefl
     |>.nondegenerate_iff_separatingLeft.mpr fun x hx => ?_
   have hp (y : Octonion R) : QuadraticMap.polar (normQuadraticForm R) x y = 0 := by
@@ -887,10 +888,11 @@ theorem nondegenerate_associated_normQuadraticForm [Invertible (2 : R)] :
 
 /-- **The nucleus of the split octonions is the scalars**: an octonion `c` that associates with
 every pair of octonions in the middle position, `(x c) y = x (c y)`, is a scalar multiple of `1`.
-Products against the vector entries already force the vector entries of `c` to vanish and its two
-diagonal entries to agree. -/
+-/
 theorem exists_eq_smul_one_of_forall_mul_mul_eq {c : Octonion R}
     (h : ∀ x y : Octonion R, x * c * y = x * (c * y)) : ∃ r : R, c = r • 1 := by
+  -- Products against the vector entries already force the vector entries of `c` to vanish and its
+  -- two diagonal entries to agree.
   have key (i j : Fin 3) := h ⟨0, 0, Pi.single i 1, 0⟩ ⟨0, 0, 0, Pi.single j 1⟩
   have v₀ : c.v 0 = 0 := by simpa [cross_apply] using congrArg (fun z => z.v 0) (key 1 1)
   have v₁ : c.v 1 = 0 := by simpa [cross_apply] using congrArg (fun z => z.v 1) (key 0 0)

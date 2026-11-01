@@ -77,7 +77,7 @@ ring for the trace-zero subspace.
 * `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiagSingle`: the **Peirce relation** between the
   diagonal frame and the off-diagonal slots: `Eᵢ` annihilates its opposite slot and halves the other
   two. `TauCeti.AlbertAlgebra.diagIdempotent_mul_diag_self`,
-  `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiag_self` and
+  `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiag_self_eq_zero` and
   `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiag_of_ne` read the same relation off the entries of
   an arbitrary product `Eᵢ ∘ X`.
 * `TauCeti.AlbertAlgebra.offDiagSingle_mul_offDiagSingle` and
@@ -555,7 +555,7 @@ associated with the octonion norm multiplies the sum of the two other diagonal i
 
 /-- **`Eᵢ` kills the `i`-th slot of a product with it**: the `i`-th slot sits in position
 `(i + 1, i + 2)`, away from the support of `Eᵢ`. -/
-theorem diagIdempotent_mul_offDiag_self [CommRing R] [Invertible (2 : R)] (i : Fin 3)
+theorem diagIdempotent_mul_offDiag_self_eq_zero [CommRing R] [Invertible (2 : R)] (i : Fin 3)
     (X : AlbertAlgebra R) : (diagIdempotent R i * X).offDiag i = 0 := by
   fin_cases i <;> simp
 
