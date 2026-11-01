@@ -74,39 +74,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   {α : SmoothForm I M ℝ 1} {x : M}
 
-/-- If `X` is a basis of the tangent space at `x` and `α (X j) ≠ 0`, the vectors
-`X i - (α (X i) / α (X j)) X j`, `i ≠ j`, form a basis of `ker α_x`. -/
-private theorem isBasis_kerDistribution [FiniteDimensional ℝ E] {ι : Type*} [Fintype ι]
-    {X : ι → TangentSpace I x} (hX : LinearIndependent ℝ X)
-    (hcard : Fintype.card ι = finrank ℝ E) {j : ι} (hj : α.1 x ![X j] ≠ 0) :
-    LinearIndependent ℝ (fun i : {i // i ≠ j} ↦
-        X i - (α.1 x ![X i] / α.1 x ![X j]) • X j) ∧
-      Submodule.span ℝ (range fun i : {i // i ≠ j} ↦
-        X i - (α.1 x ![X i] / α.1 x ![X j]) • X j) = α.kerDistribution x := by
-  classical
-  set c : ι → ℝ := update (fun i ↦ -(α.1 x ![X i] / α.1 x ![X j])) j 0
-  have hli : LinearIndependent ℝ (fun i : {i // i ≠ j} ↦
-      X i - (α.1 x ![X i] / α.1 x ![X j]) • X j) := by
-    have h := (linearIndependent_add_smul_iff (v := X) (c := c) (update_self _ _ _)).2 hX
-    convert h.comp Subtype.val Subtype.val_injective using 1
-    ext i
-    simp [c, update_of_ne i.2, sub_eq_add_neg]
-  -- Read `α_x` as a linear functional `a`, whose kernel is `ker α_x`.
-  set a := (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-  have ha (v : TangentSpace I x) : a v = α.1 x ![v] := degreeOneEquiv_coe_apply α x v
-  have ha0 : a ≠ 0 := fun h ↦ hj (by rw [← ha, h, LinearMap.zero_apply])
-  refine ⟨hli, Submodule.eq_of_le_of_finrank_eq ?_ ?_⟩
-  · rw [Submodule.span_le]
-    rintro _ ⟨i, rfl⟩
-    rw [SetLike.mem_coe, mem_kerDistribution, ← ha, map_sub, map_smul, ha, ha, smul_eq_mul,
-      div_mul_cancel₀ _ hj, sub_self]
-  · have hker := Module.Dual.finrank_ker_add_one_of_ne_zero ha0
-    rw [finrank_span_eq_card hli, kerDistribution_def, Fintype.card_subtype_compl,
-      Fintype.card_subtype_eq, hcard]
-    -- The tangent space at `x` is the model space `E`.
-    change _ + 1 = finrank ℝ E at hker
-    exact Nat.sub_eq_of_eq_add hker.symm
-
 /-- **The kernel of a one-form is a smooth hyperplane field near a point where the form does not
 vanish.** If `α_x ≠ 0`, then on an open neighbourhood of `x` the distribution `ker α` has a `C^n`
 local frame of `dim E - 1` vector fields. -/
@@ -139,8 +106,20 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
   have hU : IsOpen U :=
     (ha j).continuousOn.isOpen_inter_preimage e.open_baseSet isOpen_compl_singleton
   let Y : {i // i ≠ j} → Π y : M, TangentSpace I y := fun i ↦ F i - (a i / a j) • F j
-  have hY {y : M} (hy : y ∈ U) := isBasis_kerDistribution (α := α) (X := (F · y))
-    (hF.linearIndependent hy.1) (Fintype.card_fin _) hy.2
+  -- At `y ∈ U`, the vectors `Y i y` are those of `Module.Dual.span_sub_div_smul_eq_ker` for the
+  -- covector `α_y` and the basis `F · y`.
+  have hY {y : M} (hy : y ∈ U) : LinearIndependent ℝ (fun i ↦ Y i y) ∧
+      Submodule.span ℝ (range fun i ↦ Y i y) = α.kerDistribution y := by
+    have hf (v : TangentSpace I y) := degreeOneEquiv_coe_apply α y v
+    have hFy := hF.linearIndependent hy.1
+    have hjy : (degreeOneEquiv α y : TangentSpace I y →ₗ[ℝ] ℝ) (F j y) ≠ 0 := by
+      rw [hf]
+      exact hy.2
+    have h := Module.Dual.span_sub_div_smul_eq_ker _ hFy (Fintype.card_fin _) hjy
+    have h' := Module.Dual.linearIndependent_sub_div_smul
+      (degreeOneEquiv α y : TangentSpace I y →ₗ[ℝ] ℝ) hFy j
+    simp only [hf, ← kerDistribution_def] at h h'
+    exact ⟨h', h⟩
   let σ : {i // i ≠ j} ≃ Fin (finrank ℝ E - 1) := Fintype.equivFinOfCardEq <| by
     rw [Fintype.card_subtype_compl, Fintype.card_subtype_eq, Fintype.card_fin]
   refine ⟨U, hU, ⟨hxe, hj⟩, Y ∘ σ.symm, fun k ↦ ?_, fun hy ↦ ?_, fun hy ↦ ?_⟩
@@ -195,8 +174,7 @@ theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx
   have hC := RoughForm.apply_mlieBracket_eq_neg_mextDeriv (α.mdifferentiableAt x) (hd u) (hd v)
     (hK u) (hK v)
   rw [hX.extend_apply_self, hX.extend_apply_self] at hC
-  rw [hL, map_neg, Submodule.mkQ_apply, Submodule.liftQ_apply, degreeOneEquiv_coe_apply, hC,
-    neg_neg]
+  simp [hL, degreeOneEquiv_coe_apply, hC]
 
 /-- **The contact condition at a point is Levi nondegeneracy.** A smooth one-form `α` is a contact
 form at `x` exactly when `α_x ≠ 0` and the Levi form of `ξ = ker α` is nondegenerate at `x`: the
