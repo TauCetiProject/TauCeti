@@ -32,9 +32,9 @@ neighbourhood of the image (`Projectivization.contMDiffOn_linearProjection`), wh
 inverse of the Veronese map near `[v]`
 (`Projectivization.leftInvOn_linearProjection_veroneseLocalInverse`), so its differential is
 injective (`Projectivization.isImmersion_map_comp_veronese`). Since projective space is compact
-and the Veronese map of positive degree is injective, it is a closed embedding, and hence a closed
-analytic embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
-`Projectivization.isClosedEmbedding_map_comp_veronese`).
+and the Veronese map of positive degree is injective, it is a closed embedding
+(`Projectivization.isClosedEmbedding_map_comp_veronese`), and hence a closed analytic embedding
+(`Projectivization.isSmoothEmbedding_map_comp_veronese`).
 
 ## Main results
 
@@ -43,9 +43,9 @@ analytic embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
 * `Projectivization.contMDiff_map_comp_veronese`: the Veronese map, read through an injective
   linear map, is `C^r` for every `r`, including the analytic order `ω`.
 * `Projectivization.isImmersion_map_comp_veronese`: for positive degree it is an immersion.
-* `Projectivization.isClosedEmbedding_map_comp_veronese` and
-  `Projectivization.isSmoothEmbedding_map_comp_veronese`: for positive degree it is a closed
-  embedding and a `C^r` embedding, over `ℝ` or `ℂ`.
+* `Projectivization.isSmoothEmbedding_map_comp_veronese`: for positive degree it is a `C^r`
+  embedding over `ℝ` or `ℂ`, with closed image by
+  `Projectivization.isClosedEmbedding_map_comp_veronese`.
 
 ## References
 
@@ -122,14 +122,6 @@ theorem isImmersion_map_comp_veronese (hd : d ≠ 0)
       (hs.mem_nhds hx)).mdifferentiableAt hr0)
     (Filter.eventuallyEq_of_mem ((isOpen_affineOpen i).mem_nhds hi)
       (leftInvOn_linearProjection_veroneseLocalInverse hf hg i))
-
-/-- For positive degree, the Veronese map read through an injective linear map is a closed
-embedding: projective space is compact and the map is continuous and injective. -/
-theorem isClosedEmbedding_map_comp_veronese (hd : d ≠ 0)
-    (f : (Fin (veroneseDim (m + 1) d) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (hf : Injective f) :
-    IsClosedEmbedding (map f hf ∘ veronese 𝕜 d) :=
-  (contMDiff_map_comp_veronese f hf 0).continuous.isClosedEmbedding
-    ((map_injective f hf).comp (veronese_injective hd))
 
 /-- **The Veronese map is a closed analytic embedding.** For positive degree, the Veronese map read
 through an injective linear map is a `C^r` embedding for every `r ≥ 1`, including the analytic

@@ -25,6 +25,8 @@ subset of the target projective space.
 * `Projectivization.continuous_veronese`: the Veronese map is continuous.
 * `Projectivization.isClosedEmbedding_veronese`: over `ℝ` or `ℂ`, the Veronese map of positive
   degree is a closed embedding.
+* `Projectivization.isClosedEmbedding_map_comp_veronese`: the same holds for the Veronese map read
+  through an injective linear map into another space of homogeneous coordinates.
 
 ## References
 
@@ -67,5 +69,13 @@ degree is a homeomorphism of projective space onto its image, which is closed. -
 theorem isClosedEmbedding_veronese {𝕜 : Type*} [RCLike 𝕜] {d : ℕ} (hd : d ≠ 0) :
     Topology.IsClosedEmbedding (veronese (N := N) 𝕜 d) :=
   (continuous_veronese d).isClosedEmbedding (veronese_injective hd)
+
+/-- For positive degree, the Veronese map read through an injective linear map is a closed
+embedding: projective space is compact and the map is continuous and injective. -/
+theorem isClosedEmbedding_map_comp_veronese {𝕜 : Type*} [RCLike 𝕜] {M d : ℕ} (hd : d ≠ 0)
+    (f : (Fin (veroneseDim N d) → 𝕜) →ₗ[𝕜] Fin M → 𝕜) (hf : Function.Injective f) :
+    Topology.IsClosedEmbedding (map f hf ∘ veronese 𝕜 d) :=
+  ((continuous_map hf (LinearMap.continuous_on_pi f)).comp
+    (continuous_veronese d)).isClosedEmbedding ((map_injective f hf).comp (veronese_injective hd))
 
 end Projectivization
