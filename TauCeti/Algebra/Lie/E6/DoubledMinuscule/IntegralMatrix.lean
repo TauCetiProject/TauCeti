@@ -131,6 +131,18 @@ theorem rootIntMatrix_apply (j : Fin 6 ⊕ Fin 6) (a b : Fin 54) :
     rep_kostantForm_mem_lattice j matrixBasis
     (rep_rootGenerator_matrixBasis_eq_smul j b) a
 
+/-- The integral root matrix is the raising or lowering matrix transported from block
+coordinates to the carrier's numbered matrix coordinates. -/
+theorem rootIntMatrix_eq_reindex (k : Fin 6 ⊕ Fin 6) :
+    rootIntMatrix k = Matrix.reindex matrixIndexEquiv matrixIndexEquiv
+      (Sum.elim raisingMatrix loweringMatrix k) := by
+  ext a b
+  cases k <;>
+    simp only [rootIntMatrix_apply, Matrix.reindex_apply, Matrix.submatrix_apply,
+      Sum.elim_inl, Sum.elim_inr, raisingMatrix_apply, loweringMatrix_apply,
+      matrixWeight_apply, Equiv.symm_apply_eq]
+  all_goals split_ifs <;> simp_all
+
 /-- A numbered root operator has nonzero entries only at its signed simple-root weight
 difference. The weights are integral, before any change of coefficient ring. -/
 theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin 6 ⊕ Fin 6) {a b : Fin 54}
