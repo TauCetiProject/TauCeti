@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.MatrixAction
 public import TauCeti.Topology.Covering.Quotient
