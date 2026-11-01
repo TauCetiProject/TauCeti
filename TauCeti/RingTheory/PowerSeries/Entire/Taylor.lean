@@ -40,6 +40,8 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 * `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
 * `taylor_zero`: translation by `0` is the identity.
 * `PowerSeries.IsEntire.taylor`: the translate of an entire series is entire.
+* `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
+  entire series.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasseDeriv_taylor`: Hasse derivatives commute with translation.
 * `PowerSeries.IsEntire.taylor_taylor`: `taylor b (taylor a f) = taylor (b + a) f`.
@@ -127,6 +129,20 @@ private theorem norm_coeff_hasseDeriv_mul_pow_le_max (f : R⟦X⟧) (a : R) (n m
 section Complete
 
 variable [CompleteSpace R]
+
+/-- Taylor translation is additive on entire series. -/
+theorem IsEntire.taylor_add {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
+    taylor a (f + g) = taylor a f + taylor a g := by
+  ext n
+  rw [coeff_taylor, map_add, (hf.hasseDeriv n).evalAt_add (hg.hasseDeriv n), map_add,
+    coeff_taylor, coeff_taylor]
+
+/-- Taylor translation commutes with scalar multiplication of entire series. -/
+theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
+    taylor a (c • f) = c • taylor a f := by
+  ext n
+  rw [coeff_taylor, map_smul, (hf.hasseDeriv n).evalAt_smul, coeff_smul, coeff_taylor,
+    smul_eq_mul]
 
 /-- **The Taylor identity.** For an entire series `f`, the Taylor translate at `a` evaluated at
 `b` is `f(b + a)`. -/
