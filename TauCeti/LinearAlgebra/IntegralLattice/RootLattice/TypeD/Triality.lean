@@ -94,6 +94,10 @@ private def trialityLinearEquiv : (Fin 4 → ℚ) ≃ₗ[ℚ] Fin 4 → ℚ :=
     (LinearMap.ext trialityLinearMap_apply_apply_apply)
     (LinearMap.ext trialityLinearMap_apply_apply_apply)
 
+private theorem trialityLinearEquiv_apply (x : Fin 4 → ℚ) :
+    trialityLinearEquiv x = trialityLinearMap x :=
+  (rfl)
+
 /-- Triality maps the checkerboard carrier into itself: with `h` half the coordinate sum, the
 image `(h, h - x₂ - x₃, h - x₁ - x₃, h - x₀ - x₃)` is integral, of coordinate sum `2 (h - x₃)`. -/
 private theorem trialityLinearMap_mem_checkerboardCarrier {x : Fin 4 → ℚ}
@@ -124,14 +128,23 @@ noncomputable def checkerboardTriality :
     { toLinearEquiv := trialityLinearEquiv
       map_app' x y := by
         rw [checkerboardLattice_form_apply, checkerboardLattice_form_apply]
+        simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, trialityLinearEquiv_apply]
         exact sum_trialityLinearMap_mul_trialityLinearMap x y }
   map_carrier := by
     rw [checkerboardLattice_carrier]
+    -- Images are wrapped in the `ℤ`-restriction of the isometry structure under construction,
+    -- which no rewrite lemma reaches. They unfold to `trialityLinearMap`, so both inclusions are
+    -- proved with the `trialityLinearMap` lemmas.
     refine le_antisymm ?_ fun x hx ↦ ⟨trialityLinearMap (trialityLinearMap x),
       trialityLinearMap_mem_checkerboardCarrier (trialityLinearMap_mem_checkerboardCarrier hx),
       trialityLinearMap_apply_apply_apply x⟩
     rintro _ ⟨x, hx, rfl⟩
+    change trialityLinearMap x ∈ checkerboardCarrier 4
     exact trialityLinearMap_mem_checkerboardCarrier hx
+
+private theorem checkerboardTriality_eq_trialityLinearMap (x : Fin 4 → ℚ) :
+    checkerboardTriality x = trialityLinearMap x :=
+  (rfl)
 
 /-- The coordinate formula of triality: the matrix `½ [[1, 1, 1, 1], [1, 1, -1, -1],
 [1, -1, 1, -1], [-1, 1, 1, -1]]`. -/
@@ -154,7 +167,8 @@ theorem checkerboardTriality_checkerboardSimpleRoot (i : Fin 4) :
 /-- **Triality has order three.** -/
 theorem checkerboardTriality_pow_three : checkerboardTriality ^ 3 = 1 :=
   Isometry.ext fun x ↦ by
-    simp only [pow_three, Isometry.mul_apply, Isometry.one_apply]
+    simp only [pow_three, Isometry.mul_apply, Isometry.one_apply,
+      checkerboardTriality_eq_trialityLinearMap]
     exact trialityLinearMap_apply_apply_apply x
 
 /-! ## The action on the discriminant group -/
@@ -207,6 +221,9 @@ theorem discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminant
   have hω₂ : ω ^ 2 * ω ^ 2 = ω := by linear_combination ω * hω3
   fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, finFourEquiv_apply,
     Matrix.cons_val]
+  -- The quaternary isometry takes values in the carrier of the discriminant quadratic module,
+  -- which is the discriminant group only up to unfolding, so the class computations above are
+  -- applied with `exact` rather than `rw`.
   · rw [mul_zero, map_zero]
     exact checkerboardTriality.discriminantGroupEquiv.map_zero
   · rw [mul_one, typeD4QuaternaryDiscriminantQuadraticIsometry_one,
@@ -272,25 +289,8 @@ theorem discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry
         (ω ^ 2 * typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
   -- Both glue identifications factor through the quaternary coordinates of the checkerboard
   -- discriminant group.
-  have hfactor (x : (D 4).glueAlphabet ht) :
-      (D 4).glueAlphabetIsometry hv ht x =
-        (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.discriminantGroupEquiv
-          (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω
-            (typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
-    rw [glueAlphabetIsometry_D_apply_of_even 4 hv ht (by decide),
-      typeD4QuaternaryDiscriminantQuadraticIsometry_apply,
-      typeD4GlueAlphabetQuaternaryIsometry_apply]
-    exact congrArg _ (congrArg _ (AddEquiv.symm_apply_apply _ _).symm)
-  have hconj (z : (checkerboardLattice 4).DiscriminantGroup) :
-      (typeD4Triality ht).discriminantGroupEquiv
-          ((rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.discriminantGroupEquiv z) =
-        (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.discriminantGroupEquiv
-          (checkerboardTriality.discriminantGroupEquiv z) := by
-    rw [← Isometry.discriminantGroupHom_apply, typeD4Triality,
-      Isometry.discriminantGroupHom_conjMulEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-      LinearEquiv.symm_apply_apply, Isometry.discriminantGroupHom_apply]
-  rw [hfactor, hfactor]
-  refine (hconj _).trans (congrArg _ ((
+  rw [glueAlphabetIsometry_D_four_apply hF hω, glueAlphabetIsometry_D_four_apply hF hω]
+  refine (Isometry.discriminantGroupEquiv_conjMulEquiv_apply _ _ _).trans (congrArg _ ((
     discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry
       hF hω _).trans ?_))
   rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
