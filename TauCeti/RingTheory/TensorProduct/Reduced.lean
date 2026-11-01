@@ -57,7 +57,7 @@ instance isReduced_tensorProduct_of_isSeparable {k : Type*} [Field k] {A L : Typ
 
 /-- Let `F / E` be a separable algebraic extension of fields over `k`. If `E ⊗[k] A` is reduced,
 then so is `F ⊗[k] A`. -/
-theorem isReduced_tensorProduct_of_isReduced_of_isSeparable (k : Type*) [Field k] {E F : Type*}
+theorem isReduced_tensorProduct_of_isReduced_of_isSeparable (k : Type*) [CommRing k] {E F : Type*}
     [Field E] [Field F] [Algebra k E] [Algebra E F] [Algebra k F] [IsScalarTower k E F]
     [Algebra.IsSeparable E F] (A : Type*) [CommRing A] [Algebra k A] [hE : IsReduced (E ⊗[k] A)] :
     IsReduced (F ⊗[k] A) := by

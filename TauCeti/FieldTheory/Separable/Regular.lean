@@ -17,13 +17,13 @@ import TauCeti.RingTheory.TensorProduct.Reduced
 # Separably generated fields with exact constants are regular
 
 Let `F / k` be a field extension with a **separating element**: some `x ∈ F` is transcendental
-over `k` and `F` is separable algebraic over `k(x)`. Then `F ⊗[k] K` is reduced for every field
-extension `K / k`, so `F` is geometrically reduced over `k`. If `F` is geometrically reduced and
-`k` is algebraically closed in `F` (exact constants), then `F ⊗[k] K` is a domain for every field
-extension `K / k`, and more generally `F ⊗[k] A` is a domain for every `k`-algebra `A` that is a
-domain: in the language of Weil and Lang, `F` is a *regular* extension of `k`. For a function
-field `F`, this says that the curve with function field `F` stays integral after every extension
-of the constants.
+over `k` and `F` is separable algebraic over `k(x)`. Then `F ⊗[k] K` is reduced for every
+`k`-algebra `K` that is a domain, so `F` is geometrically reduced over `k`. If `F` is
+geometrically reduced and `k` is algebraically closed in `F` (exact constants), then `F ⊗[k] K` is
+a domain for every field extension `K / k`, and more generally `F ⊗[k] A` is a domain for every
+`k`-algebra `A` that is a domain: in the language of Weil and Lang, `F` is a *regular* extension
+of `k`. For a function field `F`, this says that the curve with function field `F` stays integral
+after every extension of the constants.
 
 Both hypotheses are needed. Over `k = ℝ`, the field `ℂ(x)` has the separating element `x`, but
 `ℂ(x) ⊗[ℝ] ℂ` is not a domain since the constants `ℂ` are not exact. Over an imperfect field, exact
@@ -52,7 +52,7 @@ A domain `A` is handled through its fraction field in the same way.
 ## Main results
 
 * `TauCeti.isReduced_tensorProduct_of_separating`: a separating element makes `F ⊗[k] K` reduced
-  for every field extension `K / k`.
+  for every `k`-algebra `K` that is a domain.
 * `TauCeti.isGeometricallyReduced_of_separating`: hence `F` is geometrically reduced over `k`.
 * `TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced`: if `F` is geometrically reduced with
   exact constants, then `F ⊗[k] A` is a domain for every `k`-algebra `A` that is a domain, in
@@ -74,10 +74,10 @@ namespace TauCeti
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- **A separating element makes the field geometrically reduced.** If `x ∈ F` is transcendental
-over `k` and `F` is separable algebraic over `k(x)`, then `F ⊗[k] K` is reduced for every field
-extension `K / k`. -/
+over `k` and `F` is separable algebraic over `k(x)`, then `F ⊗[k] K` is reduced for every
+`k`-algebra `K` that is a domain, in particular for every field extension `K / k`. -/
 theorem isReduced_tensorProduct_of_separating {x : F} (hx : Transcendental k x)
-    [Algebra.IsSeparable k⟮x⟯ F] (K : Type*) [Field K] [Algebra k K] :
+    [Algebra.IsSeparable k⟮x⟯ F] (K : Type*) [CommRing K] [IsDomain K] [Algebra k K] :
     IsReduced (F ⊗[k] K) :=
   -- `k(x) ⊗[k] K` is reduced, as `k(x)` is a rational function field over `k`
   isReduced_tensorProduct_of_isReduced_of_isSeparable k (E := k⟮x⟯) K (hE :=
