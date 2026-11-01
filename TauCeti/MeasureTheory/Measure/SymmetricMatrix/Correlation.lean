@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import TauCeti.Analysis.Matrix.PartialCorrelation
+public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Measure
@@ -39,6 +40,12 @@ matrix), and all its coordinates lie in `(-1, 1)`, so it has positive finite vol
 is the region of positive-semidefinite correlation matrices, and its frontier, the
 positive-semidefinite correlation matrices with zero determinant, is Lebesgue-null.
 
+Partial correlations parametrize this region: the forward map
+`TauCeti.correlationCoordinatesOfPartialCorrelation` is a bijection from the open cube
+`(-1, 1) ^ J` onto `TauCeti.posDefCorrelationRegion p`, and its inverse takes the Cholesky factor
+of a positive-definite correlation matrix and reads off its partial correlations with
+`TauCeti.partialCorrelationOfCholesky`.
+
 ## Main declarations
 
 * `TauCeti.correlationMatrix` — the unit-diagonal symmetric matrix with prescribed strictly lower
@@ -58,6 +65,11 @@ positive-semidefinite correlation matrices with zero determinant, is Lebesgue-nu
   forward map, smooth and injective on the open cube, with values in the positive-definite region.
 * `TauCeti.coe_correlationMatrix_correlationCoordinatesOfPartialCorrelation` — reconstruction of
   partial-correlation Gram matrices from their correlation coordinates on the closed cube.
+* `TauCeti.bijOn_correlationCoordinatesOfPartialCorrelation`,
+  `TauCeti.image_correlationCoordinatesOfPartialCorrelation` — the forward map is a bijection from
+  the open cube onto the positive-definite region. Its inverse reads the partial correlations off
+  the Cholesky factor
+  (`TauCeti.correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_cholesky`).
 * `TauCeti.volume_posDefCorrelationRegion_pos`, `TauCeti.volume_posDefCorrelationRegion_lt_top`.
 * `TauCeti.closure_posDefCorrelationRegion` — the closure is the positive-semidefinite region.
 * `TauCeti.frontier_posDefCorrelationRegion`, `TauCeti.volume_frontier_posDefCorrelationRegion` —
@@ -369,6 +381,53 @@ theorem contDiffOn_correlationCoordinatesOfPartialCorrelation :
   intro ij
   simp only [correlationCoordinatesOfPartialCorrelation_apply]
   exact contDiffOn_pi.1 (contDiffOn_pi.1 contDiffOn_partialCorrelationGram ij.1.1) ij.1.2
+
+/-- The Cholesky factor of a positive-definite correlation matrix has unit-length rows. -/
+private theorem sum_sq_cholesky_correlationMatrix {x : strictLowerTriangle p → ℝ}
+    (hx : x ∈ posDefCorrelationRegion p) (i : Fin p) :
+    ∑ j, (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 i j ^ 2 = 1 := by
+  have h := congrFun (congrFun
+    (cholesky_mul_transpose ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩) i) i
+  simpa [Matrix.mul_apply, sq] using h
+
+/-- The partial correlations of the Cholesky factor of a positive-definite correlation matrix
+lie in the open cube. -/
+theorem abs_partialCorrelationOfCholesky_cholesky_lt_one {x : strictLowerTriangle p → ℝ}
+    (hx : x ∈ posDefCorrelationRegion p) (ij : strictLowerTriangle p) :
+    |partialCorrelationOfCholesky
+      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 ij| < 1 :=
+  abs_partialCorrelationOfCholesky_lt_one (cholesky _).2.2
+    (sum_sq_cholesky_correlationMatrix hx) ij
+
+/-- The partial correlations of the Cholesky factor of a positive-definite correlation matrix
+are sent back to that matrix by the partial-correlation forward map. -/
+theorem correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_cholesky
+    {x : strictLowerTriangle p → ℝ} (hx : x ∈ posDefCorrelationRegion p) :
+    correlationCoordinatesOfPartialCorrelation
+      (partialCorrelationOfCholesky
+        (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1) = x := by
+  funext ⟨⟨i, j⟩, hji⟩
+  rw [correlationCoordinatesOfPartialCorrelation_apply, partialCorrelationGram_def,
+    partialCorrelationCholesky_partialCorrelationOfCholesky (cholesky _).2.1 (cholesky _).2.2
+      (sum_sq_cholesky_correlationMatrix hx), cholesky_mul_transpose]
+  exact coe_correlationMatrix_apply_of_gt x hji
+
+/-- The partial-correlation forward map is a bijection from the open cube onto the
+positive-definite correlation region. -/
+theorem bijOn_correlationCoordinatesOfPartialCorrelation :
+    BijOn (correlationCoordinatesOfPartialCorrelation (p := p)) {z | ∀ ij, |z ij| < 1}
+      (posDefCorrelationRegion p) :=
+  ⟨mapsTo_correlationCoordinatesOfPartialCorrelation,
+    injOn_correlationCoordinatesOfPartialCorrelation, fun _ hx ↦
+      ⟨_, abs_partialCorrelationOfCholesky_cholesky_lt_one hx,
+        correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_cholesky hx⟩⟩
+
+/-- The image of the open cube under the partial-correlation forward map is the
+positive-definite correlation region. -/
+theorem image_correlationCoordinatesOfPartialCorrelation :
+    correlationCoordinatesOfPartialCorrelation ''
+        {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} = posDefCorrelationRegion p :=
+  bijOn_correlationCoordinatesOfPartialCorrelation.image_eq
 
 /-- Every off-diagonal entry of a positive-definite correlation matrix lies in `(-1, 1)`: its
 `2 × 2` principal minor `1 - x (i, j) ^ 2` is positive. -/
