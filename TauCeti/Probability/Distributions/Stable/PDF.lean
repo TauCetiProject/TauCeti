@@ -91,8 +91,7 @@ theorem integrable_charFun_stableMeasure (α β : ℝ) (hs : 0 < s) (m : ℝ) :
       (ae_of_all _ fun t ↦ (norm_charFun_stableMeasure h.1 h.2 s m t).le)
   · rw [stableMeasure_of_invalid (by
       simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using h)]
-    rw [show charFun (0 : Measure ℝ) = 0 from funext fun _ ↦ charFun_zero_measure]
-    exact integrable_zero ℝ ℂ volume
+    exact (integrable_zero ℝ ℂ volume).congr (ae_of_all _ fun _ ↦ charFun_zero_measure.symm)
 
 /-! ### The density -/
 
@@ -129,21 +128,26 @@ theorem stablePDFReal_of_invalid (h : α ≤ 0 ∨ 2 < α ∨ 1 < |β|) (s : ℝ
   simp [stablePDFReal_def, Measure.charFunDensity_def, stableMeasure_of_invalid h,
     charFun_zero_measure]
 
-/-- At scale zero a stable law of valid shape is a Dirac mass, whose characteristic function has
-modulus one and is not integrable; the stable density vanishes. -/
+/-- At scale zero the stable density vanishes. For a valid shape the law is a Dirac mass, whose
+characteristic function has modulus one and is not integrable; for an invalid shape the law is
+zero. -/
 @[simp]
-theorem stablePDFReal_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (m x : ℝ) :
-    stablePDFReal α β 0 m x = 0 := by
-  refine Measure.charFunDensity_of_not_integrable (fun h ↦ ?_) x
-  have h1 : Integrable (fun _ : ℝ ↦ (1 : ℝ)) := h.norm.congr (ae_of_all _ fun t ↦ by
-    simp [norm_charFun_stableMeasure hα hβ, Real.zero_rpow hα.1.ne'])
-  simp only [integrable_const_iff, one_ne_zero, false_or] at h1
-  simpa [Real.volume_univ] using measure_lt_top (volume : Measure ℝ) univ
+theorem stablePDFReal_zero_scale (α β m x : ℝ) : stablePDFReal α β 0 m x = 0 := by
+  by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  · obtain ⟨hα, hβ⟩ := hv
+    refine Measure.charFunDensity_of_not_integrable (fun h ↦ ?_) x
+    have h1 : Integrable (fun _ : ℝ ↦ (1 : ℝ)) := h.norm.congr (ae_of_all _ fun t ↦ by
+      simp [norm_charFun_stableMeasure hα hβ, Real.zero_rpow hα.1.ne'])
+    simp only [integrable_const_iff, one_ne_zero, false_or] at h1
+    simpa [Real.volume_univ] using measure_lt_top (volume : Measure ℝ) univ
+  · exact stablePDFReal_of_invalid
+      (by simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using hv) 0 m x
 
 /-- The stable density is nonnegative. -/
 theorem stablePDFReal_nonneg (α β : ℝ) (s : ℝ≥0) (m x : ℝ) : 0 ≤ stablePDFReal α β s m x :=
   Measure.charFunDensity_nonneg x
 
+@[simp]
 theorem toReal_stablePDF (α β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     (stablePDF α β s m x).toReal = stablePDFReal α β s m x :=
   ENNReal.toReal_ofReal (stablePDFReal_nonneg α β s m x)

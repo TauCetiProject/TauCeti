@@ -65,14 +65,6 @@ section InnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
-omit [FiniteDimensional ℝ V] in
-/-- The rescaled characteristic function `v ↦ φ((-2π) • v)` of a finite measure has a
-positive-semidefinite subtraction kernel. -/
-private theorem posSemidef_charFun_neg_two_pi_smul (μ : Measure V) [IsFiniteMeasure μ] :
-    Matrix.PosSemidef fun a b : V ↦ charFun μ ((-2 * π) • (a - b)) := by
-  simpa only [TauCeti.integral_fourierAtom_eq_charFun_neg_two_pi_smul] using
-    TauCeti.posSemidef_fourierConventionCharFun_sub (ν := μ)
-
 /-- **Fourier inversion for measures.** A finite measure on a finite-dimensional real
 inner-product space whose characteristic function `φ` is integrable has density
 `(𝓕⁻ (v ↦ φ((-2π) • v))).re` with respect to Lebesgue measure. -/
@@ -83,7 +75,8 @@ theorem eq_withDensity_re_fourierInv_charFun {μ : Measure V} [IsFiniteMeasure �
   set F : V → ℂ := fun v ↦ charFun μ ((-2 * π) • v)
   have hF (v : V) : ∫ q, TauCeti.fourierAtom v q ∂μ = F v :=
     TauCeti.integral_fourierAtom_eq_charFun_neg_two_pi_smul v
-  have hpd : Matrix.PosSemidef fun a b : V ↦ F (a - b) := posSemidef_charFun_neg_two_pi_smul μ
+  have hpd : Matrix.PosSemidef fun a b : V ↦ F (a - b) :=
+    TauCeti.posSemidef_charFun_neg_two_pi_smul_sub
   have hint : Integrable F := h.comp_smul TauCeti.neg_two_pi_ne_zero
   have hcont : Continuous F := continuous_charFun.comp (continuous_const_smul _)
   have := isFiniteMeasure_withDensity_ofReal
@@ -108,19 +101,19 @@ theorem charFunDensity_def (μ : Measure ℝ) (x : ℝ) :
 
 variable {μ : Measure ℝ}
 
-private theorem norm_cexp_mul_charFun (x t : ℝ) :
+/-- The Fourier phase `exp (-i t x)` does not change the modulus of the characteristic function. -/
+theorem norm_cexp_mul_charFun (x t : ℝ) :
     ‖cexp (-(t * x * I)) * charFun μ t‖ = ‖charFun μ t‖ := by
   rw [norm_mul, Complex.norm_exp]
   simp
 
-private theorem integrable_cexp_mul_charFun_iff [IsFiniteMeasure μ] (x : ℝ) :
-    Integrable (fun t : ℝ ↦ cexp (-(t * x * I)) * charFun μ t) ↔ Integrable (charFun μ) := by
-  have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ cexp (-(t * x * I)) * charFun μ t) :=
-    ((by fun_prop : Continuous fun t : ℝ ↦ cexp (-(t * x * I))).mul
-      continuous_charFun).aestronglyMeasurable
-  exact ⟨fun h ↦ h.mono continuous_charFun.aestronglyMeasurable
-      (ae_of_all _ fun t ↦ (norm_cexp_mul_charFun x t).ge),
-    fun h ↦ h.mono hmeas (ae_of_all _ fun t ↦ (norm_cexp_mul_charFun x t).le)⟩
+/-- The integrand of `charFunDensity μ x` is integrable exactly when the characteristic function
+is. -/
+theorem integrable_cexp_mul_charFun_iff [IsFiniteMeasure μ] (x : ℝ) :
+    Integrable (fun t : ℝ ↦ cexp (-(t * x * I)) * charFun μ t) ↔ Integrable (charFun μ) :=
+  integrable_congr' ((by fun_prop : Continuous fun t : ℝ ↦ cexp (-(t * x * I))).mul
+    continuous_charFun).aestronglyMeasurable continuous_charFun.aestronglyMeasurable
+    (ae_of_all _ (norm_cexp_mul_charFun x))
 
 /-- Without integrability of the characteristic function, the inversion density vanishes. -/
 theorem charFunDensity_of_not_integrable [IsFiniteMeasure μ] (h : ¬ Integrable (charFun μ))
@@ -130,7 +123,7 @@ theorem charFunDensity_of_not_integrable [IsFiniteMeasure μ] (h : ¬ Integrable
 
 /-- The inversion density is the real part of the inverse Fourier transform, in Mathlib's `2π`
 convention, of `v ↦ φ((-2π) • v)`: substitute `t = -2πv`. -/
-private theorem charFunDensity_eq_re_fourierInv (μ : Measure ℝ) (x : ℝ) :
+theorem charFunDensity_eq_re_fourierInv (μ : Measure ℝ) (x : ℝ) :
     charFunDensity μ x = (𝓕⁻ (fun v : ℝ ↦ charFun μ ((-2 * π) • v)) x).re := by
   have h := integral_comp_mul_left (fun t : ℝ ↦ cexp (-(t * x * I)) * charFun μ t) (-2 * π)
   rw [abs_inv, abs_mul, abs_neg, abs_two, abs_of_pos Real.pi_pos] at h
@@ -145,7 +138,8 @@ private theorem charFunDensity_eq_re_fourierInv (μ : Measure ℝ) (x : ℝ) :
 theorem charFunDensity_nonneg [IsFiniteMeasure μ] (x : ℝ) : 0 ≤ charFunDensity μ x := by
   by_cases h : Integrable (charFun μ)
   · rw [charFunDensity_eq_re_fourierInv]
-    exact TauCeti.fourierInv_re_nonneg_of_posSemidef _ (posSemidef_charFun_neg_two_pi_smul μ)
+    exact TauCeti.fourierInv_re_nonneg_of_posSemidef _
+      TauCeti.posSemidef_charFun_neg_two_pi_smul_sub
       (h.comp_smul TauCeti.neg_two_pi_ne_zero) (continuous_charFun.comp (continuous_const_smul _))
       x
   · rw [charFunDensity_of_not_integrable h]

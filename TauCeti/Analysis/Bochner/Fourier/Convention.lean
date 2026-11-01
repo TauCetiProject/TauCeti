@@ -39,6 +39,8 @@ function API item asking for "a stated Fourier-convention conversion lemma betwe
   convolution of finite measures into multiplication.
 * `TauCeti.posSemidef_fourierConventionCharFun_sub`: the Fourier-convention
   translation-invariant kernel of a finite measure is positive definite.
+* `TauCeti.posSemidef_charFun_neg_two_pi_smul_sub`: the same kernel written as
+  `charFun ν ((-2π) • (a - b))`.
 * `TauCeti.Measure.ext_of_forall_integral_fourierAtom_eq`: a finite measure is determined by its
   Fourier-convention transform — the uniqueness half of Bochner's theorem.
 
@@ -133,6 +135,14 @@ theorem posSemidef_fourierConventionCharFun_sub :
     congr 1
     simp [smul_sub]
   exact heq ▸ h
+
+/-- The rescaled characteristic function `v ↦ charFun ν ((-2π) • v)` of a finite measure has a
+positive-semidefinite subtraction kernel. This is `posSemidef_fourierConventionCharFun_sub`
+written through Mathlib's characteristic function. -/
+theorem posSemidef_charFun_neg_two_pi_smul_sub :
+    Matrix.PosSemidef fun a b : W => MeasureTheory.charFun ν ((-2 * Real.pi) • (a - b)) := by
+  simpa only [integral_fourierAtom_eq_charFun_neg_two_pi_smul] using
+    posSemidef_fourierConventionCharFun_sub (ν := ν)
 
 section Topology
 
