@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
 public import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
 public import TauCeti.Algebra.Homology.CochainComplex.AcyclicSubcomplex
+public import TauCeti.CategoryTheory.MorphismProperty.Cokernel
 
 import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Subobject
 import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
@@ -24,8 +25,10 @@ import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 # Testing K-injectivity on small acyclic complexes
 
 Let `C` be a Grothendieck abelian category. A cochain complex `I` of injective objects of `C` is
-K-injective as soon as every map from an acyclic complex in a suitable *essentially small* family
-to `I` is null-homotopic, rather than every map from an arbitrary acyclic complex. This reduces the
+K-injective as soon as every `1`-cocycle from a complex in a suitable family of acyclic complexes
+to `I` is a coboundary, that is, every map from such a complex to `I[1]` is null-homotopic, rather
+than requiring this for every acyclic complex. Given a separator of `C`, the family can be chosen
+essentially small (`CategoryTheory.IsSeparator.exists_isKInjective_iff`). This reduces the
 construction of K-injective replacements of unbounded complexes to a transfinite construction
 which only has to kill a set of maps.
 
@@ -38,7 +41,7 @@ family (`CategoryTheory.IsSeparator.exists_bounded_nonzero_acyclic_subcomplex`).
 
 * `CochainComplex.exists_transfiniteCompositionOfShape_of_quasiIso`: every monomorphism of
   cochain complexes which is a quasi-isomorphism is a transfinite composition of monomorphisms
-  whose cokernels satisfy `S`.
+  whose cokernels satisfy `S` (the morphism property `S.monoWithCokernel`).
 * `CochainComplex.isKInjective_of_forall_eq_δ`: if `I` has injective terms and every `1`-cocycle
   from a complex satisfying `S` to `I` is a coboundary, then `I` is K-injective.
 * `CategoryTheory.IsSeparator.exists_isKInjective_iff`: given a separator of `C`, there is a
@@ -48,9 +51,9 @@ family (`CategoryTheory.IsSeparator.exists_bounded_nonzero_acyclic_subcomplex`).
 
 ## Implementation notes
 
-A morphism `I ⟶ 0` has the right lifting property with respect to a monomorphism `i` whose
-cokernel has only coboundaries as `1`-cocycles to `I`: the degreewise extensions of a map along
-`i` differ from a chain map by such a cocycle
+For a complex `I` of injective objects, a morphism `I ⟶ 0` has the right lifting property with
+respect to a monomorphism `i` whose cokernel has only coboundaries as `1`-cocycles to `I`: the
+degreewise extensions of a map along `i` differ from a chain map by such a cocycle
 (`CochainComplex.hasLiftingProperty_of_forall_eq_δ`, built on Joël Riou's obstruction cocycle
 `CochainComplex.Lifting.cocycle₁`). The class of morphisms with the left lifting property with
 respect to `I ⟶ 0` is stable under transfinite composition, so it suffices to write a
@@ -83,19 +86,10 @@ section Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 
-variable (S : ObjectProperty (CochainComplex C ℤ)) [S.IsClosedUnderIsomorphisms]
+variable {S : ObjectProperty (CochainComplex C ℤ)} [S.IsClosedUnderIsomorphisms]
 
 namespace KInjectiveCriterion
 
-/-- The monomorphisms whose cokernel satisfies `S` are stable under isomorphisms of arrows. -/
-private lemma prop_of_arrow_iso {A B A' B' : CochainComplex C ℤ} {f : A ⟶ B} {f' : A' ⟶ B'}
-    (e : Arrow.mk f ≅ Arrow.mk f') (hf : (monomorphisms _ ⊓ fun _ _ g ↦ S (cokernel g)) f) :
-    (monomorphisms _ ⊓ fun _ _ g ↦ S (cokernel g)) f' :=
-  ⟨(monomorphisms _).arrow_mk_iso_iff e |>.1 hf.1,
-    S.prop_of_iso (cokernel.mapIso f f' (Arrow.leftFunc.mapIso e) (Arrow.rightFunc.mapIso e)
-      (Arrow.w e.hom).symm) hf.2⟩
-
-variable {S}
 variable (hS : ∀ M : CochainComplex C ℤ, M.Acyclic → ¬ IsZero M →
   ∃ (N : CochainComplex C ℤ) (i : N ⟶ M), Mono i ∧ ¬ IsZero N ∧ N.Acyclic ∧ S N)
 
@@ -107,7 +101,7 @@ inclusion `A ⟶ A'` satisfies `S`. -/
 private lemma exists_larger_subobject {X : CochainComplex C ℤ} (A : Subobject X) (hA : A ≠ ⊤)
     (hA' : QuasiIso A.arrow) :
     ∃ (A' : Subobject X) (h : A < A'), QuasiIso A'.arrow ∧
-      (monomorphisms _ ⊓ fun _ _ g ↦ S (cokernel g)) (Subobject.ofLE A A' h.le) := by
+      S.monoWithCokernel (Subobject.ofLE A A' h.le) := by
   induction A using Subobject.ind with | _ f
   have hf : QuasiIso f := by
     rw [← Subobject.underlyingIso_hom_comp_eq_mk] at hA'
@@ -140,8 +134,9 @@ private lemma exists_larger_subobject {X : CochainComplex C ℤ} (A : Subobject 
     Subobject.mk_lt_mk_of_comm u (pullback.lift_fst _ _ _) hu''', ?_, ?_⟩
   · rw [← Subobject.underlyingIso_hom_comp_eq_mk]
     infer_instance
-  · refine prop_of_arrow_iso S ?_ ⟨inferInstanceAs (Mono u), S.prop_of_iso
-      (hu''.gIsCokernel.coconePointUniqueUpToIso (colimit.isColimit _)) hSN⟩
+  · refine (S.monoWithCokernel.arrow_mk_iso_iff ?_).1 ((ObjectProperty.mem_monoWithCokernel_iff u).2
+      ⟨inferInstance, S.prop_of_iso
+        (hu''.gIsCokernel.coconePointUniqueUpToIso (colimit.isColimit _)) hSN⟩)
     refine Arrow.isoMk (Subobject.underlyingIso f).symm
       (Subobject.underlyingIso (pullback.fst _ _)).symm ?_
     simp [← cancel_mono (Subobject.mk (pullback.fst (cokernel.π f) j)).arrow, u]
@@ -181,20 +176,20 @@ private lemma quasiIso_largerSubobject_arrow (A : Subobject X) (hA : QuasiIso A.
     exact (exists_larger_subobject hS A hA' hA).choose_spec.choose_spec.1
 
 private lemma prop_ofLE_largerSubobject (A : Subobject X) (hA : A ≠ ⊤) (hA' : QuasiIso A.arrow) :
-    (monomorphisms _ ⊓ fun _ _ g ↦ S (cokernel g))
+    S.monoWithCokernel
       (Subobject.ofLE A (largerSubobject hS A) (le_largerSubobject hS A)) := by
   have h := (exists_larger_subobject hS A hA hA').choose_spec.choose_spec.2
-  refine prop_of_arrow_iso S (Arrow.isoMk (Iso.refl _) (Subobject.isoOfEq _ _
+  refine (S.monoWithCokernel.arrow_mk_iso_iff (Arrow.isoMk (Iso.refl _) (Subobject.isoOfEq _ _
     (by rw [largerSubobject, dite_eq_left ⟨hA, hA'⟩])) ?_ :
       Arrow.mk (Subobject.ofLE A _ (exists_larger_subobject hS A hA hA').choose_spec.choose.le) ≅
-        Arrow.mk (Subobject.ofLE A (largerSubobject hS A) (le_largerSubobject hS A))) h
+        Arrow.mk (Subobject.ofLE A (largerSubobject hS A) (le_largerSubobject hS A)))).1 h
   simp
 
 end KInjectiveCriterion
 
 section Grothendieck
 
-variable [IsGrothendieckAbelian.{w} C] {S}
+variable [IsGrothendieckAbelian.{w} C]
   (hS : ∀ M : CochainComplex C ℤ, M.Acyclic → ¬ IsZero M →
     ∃ (N : CochainComplex C ℤ) (i : N ⟶ M), Mono i ∧ ¬ IsZero N ∧ N.Acyclic ∧ S N)
 
@@ -218,13 +213,6 @@ private noncomputable def functorToMonoOver : J ⥤ MonoOver X where
 /-- The transfinite iteration of `largerSubobject`, as a functor to complexes. -/
 private noncomputable abbrev functor : J ⥤ CochainComplex C ℤ :=
   functorToMonoOver hS A₀ J ⋙ MonoOver.forget _ ⋙ Over.forget _
-
-private lemma functorToMonoOver_map_hom_left {j j' : J} (f : j ⟶ j') :
-    ((functorToMonoOver hS A₀ J).map f).hom.left =
-      Subobject.ofLE (transfiniteIterate (largerSubobject hS) j A₀)
-        (transfiniteIterate (largerSubobject hS) j' A₀)
-          (transfiniteIterate_mono hS A₀ J (leOfHom f)) :=
-  rfl
 
 private lemma functor_map {j j' : J} (f : j ⟶ j') :
     (functor hS A₀ J).map f = Subobject.ofLE (transfiniteIterate (largerSubobject hS) j A₀)
@@ -262,37 +250,40 @@ private lemma quasiIso_transfiniteIterate_arrow (hA₀ : QuasiIso A₀.arrow) (j
     rw [quasiIsoAt_iff_isIso_homologyMap]
     let i₀ : Set.Iio m := ⟨⊥, hm.bot_lt⟩
     let H := HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) n
-    have hle {j j' : J} (h : j ≤ j') : transfiniteIterate (largerSubobject hS) j A₀ ≤
-        transfiniteIterate (largerSubobject hS) j' A₀ :=
-      transfiniteIterate_mono hS A₀ J h
     have hF : ((Set.principalSegIio m).monotone.functor ⋙ functor hS A₀ J ⋙ H)
         |>.IsEventuallyConstantFrom i₀ := fun k φ ↦ by
       have := ih _ i₀.2
       have := ih _ k.2
-      have : QuasiIso (Subobject.ofLE _ _ (hle (leOfHom φ)) ≫
+      have : QuasiIso (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J (leOfHom φ)) ≫
           (transfiniteIterate (largerSubobject hS) k.1 A₀).arrow) := by
         rw [Subobject.ofLE_arrow]
         infer_instance
-      have := quasiIso_of_comp_right (Subobject.ofLE _ _ (hle (leOfHom φ)))
+      have hφ := quasiIso_of_comp_right
+        (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J (leOfHom φ)))
         (transfiniteIterate (largerSubobject hS) k.1 A₀).arrow
-      -- by definition, the diagram sends `φ` to the homology map of the inclusion
-      exact (inferInstance : IsIso (HomologicalComplex.homologyMap
-        (Subobject.ofLE _ _ (hle (leOfHom φ))) n))
-    -- by definition, the leg at `i₀` of the colimit cocone is the homology map of the inclusion
-    have : IsIso (HomologicalComplex.homologyMap (Subobject.ofLE _ _ (hle i₀.2.le)) n) :=
-      hF.isIso_ι_of_isColimit (isColimitOfPreserves H hc)
+      have : QuasiIso ((functor hS A₀ J).map ((Set.principalSegIio m).monotone.functor.map φ)) := by
+        rw [functor_map]
+        exact hφ
+      rw [Functor.comp_map, Functor.comp_map, HomologicalComplex.homologyFunctor_map]
+      exact (quasiIsoAt_iff_isIso_homologyMap _ n).1 ((quasiIso_iff _).1 this n)
+    have hι := hF.isIso_ι_of_isColimit (isColimitOfPreserves H hc)
+    rw [Functor.mapCocone_ι_app, PrincipalSeg.cocone_ι_app, HomologicalComplex.homologyFunctor_map,
+      functor_map] at hι
     have := ih _ i₀.2
-    refine IsIso.of_isIso_fac_left (f := HomologicalComplex.homologyMap
-      (Subobject.ofLE _ _ (hle i₀.2.le)) n) (h := HomologicalComplex.homologyMap
-        (transfiniteIterate (largerSubobject hS) i₀.1 A₀).arrow n) ?_
-    rw [← HomologicalComplex.homologyMap_comp, Subobject.ofLE_arrow]
+    have : IsIso (HomologicalComplex.homologyMap
+        (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)) n ≫
+          HomologicalComplex.homologyMap (transfiniteIterate (largerSubobject hS) m A₀).arrow
+            n) := by
+      rw [← HomologicalComplex.homologyMap_comp, Subobject.ofLE_arrow]
+      infer_instance
+    exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ hι this
 
 variable {J} in
 /-- The transfinite iteration up to `j`, as a transfinite composition, provided it does not reach
 `⊤` before `j`. -/
 private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : QuasiIso A₀.arrow)
     (j : J) (hj : ∀ k < j, transfiniteIterate (largerSubobject hS) k A₀ ≠ ⊤) :
-    (monomorphisms _ ⊓ fun _ _ g ↦ S (cokernel g)).TransfiniteCompositionOfShape (Set.Iic j)
+    S.monoWithCokernel.TransfiniteCompositionOfShape (Set.Iic j)
       ((functor hS A₀ J).map (homOfLE bot_le : ⊥ ⟶ j)) where
   F := (Set.initialSegIic j).monotone.functor ⋙ functor hS A₀ J
   isoBot := Iso.refl _
@@ -313,10 +304,11 @@ private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : Quasi
         largerSubobject hS (transfiniteIterate (largerSubobject hS) k.1 A₀) := by
       rw [Set.Iic.succ_eq_of_not_isMax hk,
         transfiniteIterate_succ _ _ _ (Set.not_isMax_coe _ hk)]
-    refine prop_of_arrow_iso S (Arrow.isoMk (Iso.refl _) (Subobject.isoOfEq _ _ heq.symm) ?_ :
-      Arrow.mk (Subobject.ofLE _ _ (le_largerSubobject hS _)) ≅
-        Arrow.mk (((Set.initialSegIic j).monotone.functor ⋙ functor hS A₀ J).map
-          (homOfLE (Order.le_succ k))))
+    refine (S.monoWithCokernel.arrow_mk_iso_iff
+      (Arrow.isoMk (Iso.refl _) (Subobject.isoOfEq _ _ heq.symm) ?_ :
+        Arrow.mk (Subobject.ofLE _ _ (le_largerSubobject hS _)) ≅
+          Arrow.mk (((Set.initialSegIic j).monotone.functor ⋙ functor hS A₀ J).map
+            (homOfLE (Order.le_succ k))))).1
       (prop_ofLE_largerSubobject hS _ (hj _ hk')
         (quasiIso_transfiniteIterate_arrow hS A₀ J hA₀ k.1))
     exact (Category.id_comp _).trans (Subobject.ofLE_comp_ofLE _ _ _ _ _).symm
@@ -345,8 +337,7 @@ monomorphisms whose cokernels satisfy `S`. -/
 theorem exists_transfiniteCompositionOfShape_of_quasiIso {A X : CochainComplex C ℤ} (f : A ⟶ X)
     [Mono f] [QuasiIso f] :
     ∃ (J : Type w) (_ : LinearOrder J) (_ : OrderBot J) (_ : SuccOrder J) (_ : WellFoundedLT J),
-      Nonempty ((monomorphisms _ ⊓ fun _ _ g ↦ S (cokernel g)).TransfiniteCompositionOfShape
-        J f) := by
+      Nonempty (S.monoWithCokernel.TransfiniteCompositionOfShape J f) := by
   have hA₀ : QuasiIso (Subobject.mk f).arrow := by
     rw [← Subobject.underlyingIso_hom_comp_eq_mk]
     infer_instance
@@ -387,8 +378,9 @@ theorem isKInjective_of_forall_eq_δ (I : CochainComplex C ℤ) [∀ n, Injectiv
   have hp : degreewiseEpiWithInjectiveKernel (0 : I ⟶ 0) := fun n ↦
     (Abelian.epiWithInjectiveKernel_iff_of_isZero _
       ((HomologicalComplex.eval C _ n).map_isZero (isZero_zero _))).2 inferInstance
-  exact transfiniteCompositionsOfShape_le_llp_rlp _ _ _ h.mem _ fun _ _ g ⟨_, hg⟩ ↦
-    hasLiftingProperty_of_forall_eq_δ g _ hp (KernelFork.IsLimit.ofId _ rfl) (hI _ hg)
+  exact transfiniteCompositionsOfShape_le_llp_rlp _ _ _ h.mem _ fun _ _ g hg ↦ by
+    obtain ⟨_, hg⟩ := (ObjectProperty.mem_monoWithCokernel_iff g).1 hg
+    exact hasLiftingProperty_of_forall_eq_δ g _ hp (KernelFork.IsLimit.ofId _ rfl) (hI _ hg)
 
 end Grothendieck
 
