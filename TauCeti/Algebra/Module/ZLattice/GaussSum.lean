@@ -439,6 +439,7 @@ theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) •
 
 /-- Complex conjugation negates the coefficient of the Gauss sum over `L^∨ / cL`:
 `conj (∑_y e(a ‖y‖² / (2c))) = ∑_y e(-a ‖y‖² / (2c))`. -/
+@[simp]
 theorem conj_dualGaussSum (a : ℤ) (c : ℕ)
     [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
     starRingEnd ℂ (dualGaussSum L hL a c) = dualGaussSum L hL (-a) c := by
