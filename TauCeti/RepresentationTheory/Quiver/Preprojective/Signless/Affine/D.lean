@@ -154,6 +154,7 @@ private theorem affineDMatrix_pred (hj : 1 ≤ j) (hi : j + 1 = i) (hin : i ≤ 
 end Evaluation
 
 /-- The affine `Dₙ` matrices vanish off the edges of the diagram. -/
+@[simp]
 theorem affineDMatrix_eq_zero_of_not_adj {n : ℕ} (hn : 4 ≤ n)
     {i j : Fin (AffineDynkinType.D n).nodes} (h : ¬(AffineDynkinType.D n).graph.Adj i j) :
     affineDMatrix k n i j = 0 := by

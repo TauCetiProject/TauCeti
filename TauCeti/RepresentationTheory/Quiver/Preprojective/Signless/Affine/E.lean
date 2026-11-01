@@ -141,6 +141,7 @@ def affineE6Matrix (i j : Fin AffineDynkinType.E6.nodes) : Matrix (Fin 3) (Fin 3
   | _, _ => 0
 
 /-- The matrices of the affine `E₆` representation vanish off the edges of the diagram. -/
+@[simp]
 theorem affineE6Matrix_eq_zero_of_not_adj {i j : Fin AffineDynkinType.E6.nodes}
     (h : ¬AffineDynkinType.E6.graph.Adj i j) : affineE6Matrix i j = 0 := by
   revert i j
@@ -205,6 +206,7 @@ def affineE7Matrix (i j : Fin AffineDynkinType.E7.nodes) : Matrix (Fin 4) (Fin 4
   | _, _ => 0
 
 /-- The matrices of the affine `E₇` representation vanish off the edges of the diagram. -/
+@[simp]
 theorem affineE7Matrix_eq_zero_of_not_adj {i j : Fin AffineDynkinType.E7.nodes}
     (h : ¬AffineDynkinType.E7.graph.Adj i j) : affineE7Matrix i j = 0 := by
   revert i j
@@ -303,6 +305,7 @@ def affineE8Matrix (i j : Fin AffineDynkinType.E8.nodes) : Matrix (Fin 6) (Fin 6
   | _, _ => 0
 
 /-- The matrices of the affine `E₈` representation vanish off the edges of the diagram. -/
+@[simp]
 theorem affineE8Matrix_eq_zero_of_not_adj {i j : Fin AffineDynkinType.E8.nodes}
     (h : ¬AffineDynkinType.E8.graph.Adj i j) : affineE8Matrix i j = 0 := by
   revert i j
