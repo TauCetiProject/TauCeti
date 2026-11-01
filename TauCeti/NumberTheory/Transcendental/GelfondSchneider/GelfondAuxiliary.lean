@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Exp.ExponentialPolynomial
 
+import TauCeti.Algebra.CharZero.RatCast
 import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
@@ -62,22 +63,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [CharZero K]
 
-/-- For irrational `β`, the frequencies `(a + 1) + (b + 1) β` of Gelfond's auxiliary function,
-`a, b < q`, are pairwise distinct. -/
-private theorem injective_gelfond_frequency {β : K} (hβ : ∀ r : ℚ, (r : K) ≠ β) (q : ℕ) :
-    Function.Injective fun p : Fin q × Fin q ↦ ((p.1 + 1 : ℕ) : K) + (p.2 + 1 : ℕ) * β := by
-  rintro ⟨a, b⟩ ⟨a', b'⟩ h
-  dsimp only at h
-  by_cases hb : (b : ℕ) = b'
-  · rw [hb, add_left_inj, Nat.cast_inj, add_left_inj] at h
-    rw [Fin.ext h, Fin.ext hb]
-  · have hb' : ((b' : ℕ) : K) - b ≠ 0 := sub_ne_zero.2 (Nat.cast_injective.ne (Ne.symm hb))
-    refine absurd ?_ (hβ (((a : ℚ) - a') / ((b' : ℚ) - b)))
-    push_cast
-    rw [div_eq_iff hb']
-    push_cast at h
-    linear_combination h
-
 /-- **The first nonvanishing derivative of Gelfond's auxiliary function, algebraic form.** Let
 `K` be a field of characteristic zero, let `α, γ ∈ K` be nonzero and `β ∈ K` irrational, and let
 `η : Fin q → Fin q → K` be nonzero. Put
@@ -105,7 +90,11 @@ theorem exists_gelfond_value_ne_zero {α β γ : K} (hα : α ≠ 0) (hγ : γ �
   obtain ⟨k, hk, hne⟩ := exists_lt_card_sum_mul_pow_ne_zero (s := univ)
     (θ := fun p : Fin q × Fin q ↦ ((p.1 + 1 : ℕ) : K) + (p.2 + 1 : ℕ) * β)
     (w := fun p ↦ η p.1 p.2 * (α ^ ((p.1 + 1 : ℕ) * t₁) * γ ^ ((p.2 + 1 : ℕ) * t₁)))
-    (injective_gelfond_frequency hβ q).injOn
+    (by
+      rintro ⟨a, b⟩ - ⟨a', b'⟩ - h
+      simpa [Fin.val_inj] using ratCast_add_ratCast_mul_injective hβ
+        (a₁ := ((a + 1 : ℕ), (b + 1 : ℕ)))
+        (a₂ := ((a' + 1 : ℕ), (b' + 1 : ℕ))) (by simpa using h))
     ⟨(a, b), mem_univ _, mul_ne_zero hab (mul_ne_zero (pow_ne_zero _ hα) (pow_ne_zero _ hγ))⟩
   have hk' : y k t₁ ≠ 0 := by
     rw [Fintype.sum_prod_type] at hne
