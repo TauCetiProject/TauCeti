@@ -10,14 +10,14 @@ public import TauCeti.Geometry.RealAlgebraic.CAD.Existence
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image
 
 /-!
-# Semialgebraic coefficient images of real polynomial models
+# Semialgebraic coefficient images of polynomial models
 
-The finite monomial coefficient image of a real jointly polynomial model is semialgebraic.
-More generally, restricting parameters to any semialgebraic set still gives a semialgebraic
-coefficient image. Each coefficient coordinate is a polynomial in the parameters, so the
-Tarski–Seidenberg theorem applies through `TauCeti.IsSemialgebraic.image_eval`. The real
-projection theorem is supplied by `TauCeti.Geometry.RealAlgebraic.CAD.Existence`; no projection
-closure hypothesis is imposed on callers.
+Over a commutative ring with a linear order and semialgebraic projection closure, the finite
+monomial coefficient image of a jointly polynomial model is semialgebraic. Restricting parameters
+to any semialgebraic set still gives a semialgebraic coefficient image. Each coefficient coordinate
+is a polynomial in the parameters, so `TauCeti.IsSemialgebraic.image_eval` applies. Over `ℝ`,
+projection closure is supplied automatically by `TauCeti.Geometry.RealAlgebraic.CAD.Existence`;
+callers need no additional hypothesis.
 
 These statements concern the faithful finite coefficient coordinates, not a semialgebraic
 structure on the ambient space of all functions. They do not assert that the coefficient image
@@ -35,12 +35,13 @@ namespace TauCeti.Neuromanifold
 
 open MvPolynomial
 
+variable {R : Type*} [CommRing R] [LinearOrder R] [HasSemialgebraicProjections R]
 variable {W X J : Type*} [Finite W] [Finite X] [Fintype J]
 
-/-- The finite coefficient image of a real jointly polynomial model restricted to a
-semialgebraic parameter set is semialgebraic. -/
+/-- Given projection closure, the finite coefficient image of a jointly polynomial model
+restricted to a semialgebraic parameter set is semialgebraic. -/
 theorem isSemialgebraic_image_polynomialCoefficientCoordinates
-    (P : J → MvPolynomial (W ⊕ X) ℝ) {s : Set (W → ℝ)} (hs : IsSemialgebraic s) :
+    (P : J → MvPolynomial (W ⊕ X) R) {s : Set (W → R)} (hs : IsSemialgebraic s) :
     IsSemialgebraic (polynomialCoefficientCoordinates P '' s) := by
   have hcoords : polynomialCoefficientCoordinates P =
       fun w i => eval w ((inputPolynomial P i.1).coeff i.2) := by
@@ -49,10 +50,10 @@ theorem isSemialgebraic_image_polynomialCoefficientCoordinates
   rw [hcoords]
   exact hs.image_eval _
 
-/-- The full finite coefficient image of every real jointly polynomial model is semialgebraic,
-without a closed-image assumption. -/
+/-- Given projection closure, the full finite coefficient image of every jointly polynomial model
+is semialgebraic, without a closed-image assumption. -/
 theorem isSemialgebraic_range_polynomialCoefficientCoordinates
-    (P : J → MvPolynomial (W ⊕ X) ℝ) :
+    (P : J → MvPolynomial (W ⊕ X) R) :
     IsSemialgebraic (Set.range (polynomialCoefficientCoordinates P)) := by
   simpa only [Set.image_univ] using
     isSemialgebraic_image_polynomialCoefficientCoordinates P isSemialgebraic_univ
