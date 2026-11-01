@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.Completion
 public import TauCeti.Topology.Algebra.Algebra.Center
+public import TauCeti.Topology.Algebra.LinearTopology
 
 /-!
 # The center of the completed enveloping algebra at a fixed level
@@ -19,10 +20,10 @@ This file develops the properties of this completed center which precede any cen
 * **Closedness and completeness.** Since `Û` is a Hausdorff topological ring, its center is closed
   (`Subalgebra.isClosed_center`), and complete since `Û` is.
 * **Its topology.** The elements of the center whose image in `U / I_n` vanishes form an ideal
-  `Z ∩ ker π_n` of the commutative center (`TauCeti.CurrentAlgebra.centerOrderIdeal`), although
-  `ker π_n` is only a left ideal of `Û`: a central element times an element of `ker π_n` lies in
-  `ker π_n`. These ideals decrease and form a basis of neighbourhoods of zero for the subspace
-  topology, so the center is a complete commutative ring with a linear topology.
+  `Z ∩ ker π_n` of the commutative center (`TauCeti.CurrentAlgebra.centerOrderIdeal`), the
+  preimage of the left ideal `ker π_n` of `Û`. These ideals decrease and form a basis of
+  neighbourhoods of zero for the subspace topology, so the center is a complete commutative ring
+  with a linear topology (`IsLinearTopology.subringClass`).
 * **Centrality is detected on the current generators.** The images of the currents `u ∈ L((t))`
   topologically generate `Û`, since they generate `U` as an algebra and the image of `U` is dense
   (`TauCeti.CurrentAlgebra.topologicalClosure_adjoin_range_envelopingι`). Hence an element of `Û`
@@ -79,25 +80,22 @@ local notation "Û" => CompletedEnveloping Φ hΦ hΦs a
 /-! ### The topology of the center -/
 
 /-- **The ideal `Z ∩ ker (Û → U / I_n)` of the completed center**: the central elements whose image
-in `U / I_n` vanishes. It is an ideal of the commutative center, although the kernel of the
-projection is only a left ideal of `Û`. -/
-def centerOrderIdeal (n : ℕ) : Ideal (Subalgebra.center R Û) where
-  carrier := {z | (z : Û) ∈ completedOrderLeftIdeal Φ hΦ hΦs a n}
-  add_mem' := add_mem
-  zero_mem' := zero_mem _
-  smul_mem' w _ hz := (completedOrderLeftIdeal Φ hΦ hΦs a n).smul_mem (w : Û) hz
+in `U / I_n` vanishes, that is, the preimage of the left ideal `ker (Û → U / I_n)` under the
+inclusion of the center. -/
+def centerOrderIdeal (n : ℕ) : Ideal (Subalgebra.center R Û) :=
+  Ideal.comap (Subalgebra.center R Û).val (completedOrderLeftIdeal Φ hΦ hΦs a n)
 
 variable {Φ hΦ hΦs a} in
 @[simp]
 theorem mem_centerOrderIdeal {n : ℕ} {z : Subalgebra.center R Û} :
     z ∈ centerOrderIdeal Φ hΦ hΦs a n ↔ (orderQuotientTower Φ hΦ hΦs a).limπ n z = 0 :=
-  mem_completedOrderLeftIdeal
+  Ideal.mem_comap.trans mem_completedOrderLeftIdeal
 
 /-- The ideals `Z ∩ ker (Û → U / I_n)` decrease as `n` grows. -/
 theorem centerOrderIdeal_antitone : Antitone (centerOrderIdeal Φ hΦ hΦs a) :=
-  fun _ _ h _ hz ↦ mem_centerOrderIdeal.2 <| LinearMap.mem_ker.1 <|
+  fun _ _ h ↦ Ideal.comap_mono fun _ hx ↦ mem_completedOrderLeftIdeal.2 <| LinearMap.mem_ker.1 <|
     (orderQuotientTower Φ hΦ hΦs a).ker_limπ_antitone h <|
-      LinearMap.mem_ker.2 (mem_centerOrderIdeal.1 hz)
+      LinearMap.mem_ker.2 (mem_completedOrderLeftIdeal.1 hx)
 
 /-- The ideals `Z ∩ ker (Û → U / I_n)` form a basis of neighbourhoods of zero in the completed
 center. -/
@@ -106,10 +104,6 @@ theorem hasBasis_nhds_zero_center :
       fun n ↦ (centerOrderIdeal Φ hΦ hΦs a n : Set (Subalgebra.center R Û)) := by
   rw [nhds_subtype, ZeroMemClass.coe_zero]
   exact (hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).comap _
-
-/-- The topology of the completed center is linear for the ideals `Z ∩ ker (Û → U / I_n)`. -/
-instance : IsLinearTopology (Subalgebra.center R Û) (Subalgebra.center R Û) :=
-  .mk_of_hasBasis _ (hasBasis_nhds_zero_center Φ hΦ hΦs a)
 
 /-! ### Centrality on generators -/
 
@@ -146,9 +140,8 @@ variable {M N : ModuleCat.{v} (CentralQuotient R (centralElement Φ hΦ hΦs) a)
 theorem limSmul_smul_of_mem_center {z : Û} (hz : z ∈ Subalgebra.center R Û) (b : UK) (m : M) :
     ModuleTower.limSmul hM z (b • m) = b • ModuleTower.limSmul hM z m := by
   -- `b` acts as its image in `Û`, which commutes with `z`.
-  have hb (m' : M) : b • m' = ModuleTower.limSmul hM (toCompletedEnveloping Φ hΦ hΦs a b) m' := by
-    rw [coe_toCompletedEnveloping, ModuleTower.limSmul_toLimQuotients]
-  rw [hb, hb, ← limSmul_mul, ← limSmul_mul, Subalgebra.mem_center_iff.1 hz]
+  rw [← limSmul_toCompletedEnveloping hM, ← limSmul_toCompletedEnveloping hM, ← mul_limSmul,
+    ← mul_limSmul, Subalgebra.mem_center_iff.1 hz]
 
 /-- **The action of the completed center on a smooth module.** A central element of `Û` acts on a
 module over `U` which is smooth for the left ideals `I_n` by an endomorphism of `U`-modules. -/
@@ -157,8 +150,8 @@ def centerToModuleEnd : Subalgebra.center R Û →+* Module.End UK M where
     { toFun := ModuleTower.limSmul hM z
       map_add' := ModuleTower.limSmul_add hM z
       map_smul' := limSmul_smul_of_mem_center hM z.2 }
-  map_one' := LinearMap.ext fun m ↦ (ModuleTower.limSmul_toLimQuotients hM 1 m).trans (one_smul _ m)
-  map_mul' z w := LinearMap.ext fun m ↦ limSmul_mul hM z w m
+  map_one' := LinearMap.ext (one_limSmul hM)
+  map_mul' z w := LinearMap.ext fun m ↦ mul_limSmul hM z w m
   map_zero' := LinearMap.ext fun m ↦ ModuleTower.zero_limSmul hM m
   map_add' z w := LinearMap.ext fun m ↦ ModuleTower.add_limSmul hM z w m
 
@@ -171,7 +164,7 @@ theorem centerToModuleEnd_apply (z : Subalgebra.center R Û) (m : M) :
 theorem limSmul_centerToModuleEnd (x : Û) (z : Subalgebra.center R Û) (m : M) :
     ModuleTower.limSmul hM x (centerToModuleEnd hM z m) =
       centerToModuleEnd hM z (ModuleTower.limSmul hM x m) := by
-  rw [centerToModuleEnd_apply, centerToModuleEnd_apply, ← limSmul_mul, ← limSmul_mul,
+  rw [centerToModuleEnd_apply, centerToModuleEnd_apply, ← mul_limSmul, ← mul_limSmul,
     Subalgebra.mem_center_iff.1 z.2 x]
 
 /-- The action of the completed center is natural: linear maps between smooth modules commute
