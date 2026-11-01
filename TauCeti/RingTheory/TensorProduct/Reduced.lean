@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.RingTheory.Etale.Field
 import TauCeti.RingTheory.FiniteType.Tensor.Product
+import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -39,7 +40,7 @@ namespace TauCeti
 
 /-- Extending the scalars of a reduced algebra by a separable algebraic field extension gives a
 reduced algebra. Neither factor needs to be finite or finitely generated. -/
-theorem isReduced_tensorProduct_of_isSeparable (k : Type*) [Field k] (A L : Type*) [CommRing A]
+instance isReduced_tensorProduct_of_isSeparable {k : Type*} [Field k] {A L : Type*} [CommRing A]
     [Algebra k A] [IsReduced A] [Field L] [Algebra k L] [Algebra.IsSeparable k L] :
     IsReduced (A ⊗[k] L) := by
   -- Finitely generated subalgebras of `L` are finite separable field extensions, hence étale,
@@ -60,11 +61,8 @@ theorem isReduced_tensorProduct_of_isReduced_of_isSeparable (k : Type*) [Field k
     [Field E] [Field F] [Algebra k E] [Algebra E F] [Algebra k F] [IsScalarTower k E F]
     [Algebra.IsSeparable E F] (A : Type*) [CommRing A] [Algebra k A] [hE : IsReduced (E ⊗[k] A)] :
     IsReduced (F ⊗[k] A) := by
-  have := isReduced_tensorProduct_of_isSeparable E (E ⊗[k] A) F
-  -- `F ⊗[k] A = F ⊗[E] (E ⊗[k] A)`
-  let e : F ⊗[k] A ≃+* (E ⊗[k] A) ⊗[E] F :=
-    (Algebra.TensorProduct.cancelBaseChange k E F F A).symm.toRingEquiv.trans
-      (Algebra.TensorProduct.comm E F (E ⊗[k] A)).toRingEquiv
+  -- `F ⊗[k] A = (E ⊗[k] A) ⊗[E] F`
+  let e := tensorProductEquivBaseChange k E F A
   exact isReduced_of_injective e e.injective
 
 variable (k : Type*) [Field k] [PerfectField k]
@@ -75,7 +73,6 @@ instance instIsGeometricallyReducedOfPerfectField
     (A : Type*) [CommRing A] [Algebra k A] [IsReduced A] :
     Algebra.IsGeometricallyReduced k A := by
   rw [Algebra.isGeometricallyReduced_field_iff]
-  have := isReduced_tensorProduct_of_isSeparable k A (AlgebraicClosure k)
   exact isReduced_of_injective (Algebra.TensorProduct.comm k (AlgebraicClosure k) A)
     (Algebra.TensorProduct.comm k (AlgebraicClosure k) A).injective
 

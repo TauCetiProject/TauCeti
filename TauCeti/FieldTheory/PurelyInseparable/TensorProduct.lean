@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.RingTheory.Unramified.Field
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # The tensor square of a purely inseparable extension
@@ -91,9 +92,7 @@ theorem isDomain_tensorProduct {k : Type*} [Field k] [Algebra k K] [Algebra k L]
     [IsScalarTower k K L] (A : Type*) [CommRing A] [Algebra k A] [hK : IsDomain (K ⊗[k] A)]
     [hL : IsReduced (L ⊗[k] A)] : IsDomain (L ⊗[k] A) := by
   -- `L ⊗[k] A = (K ⊗[k] A) ⊗[K] L`, in which every element has a positive power in `K ⊗[k] A`
-  let e : L ⊗[k] A ≃+* (K ⊗[k] A) ⊗[K] L :=
-    (Algebra.TensorProduct.cancelBaseChange k K L L A).symm.toRingEquiv.trans
-      (Algebra.TensorProduct.comm K L (K ⊗[k] A)).toRingEquiv
+  let e := tensorProductEquivBaseChange k K L A
   have : IsReduced ((K ⊗[k] A) ⊗[K] L) := isReduced_of_injective e.symm e.symm.injective
   have hinj : Function.Injective (algebraMap (K ⊗[k] A) ((K ⊗[k] A) ⊗[K] L)) :=
     Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K L).injective
@@ -103,9 +102,9 @@ theorem isDomain_tensorProduct {k : Type*} [Field k] [Algebra k K] [Algebra k L]
     obtain ⟨m, hm, c, hc⟩ := IsPurelyInseparable.exists_pow_mem_range_tensorProduct a
     obtain ⟨n, hn, d, hd⟩ := IsPurelyInseparable.exists_pow_mem_range_tensorProduct b
     -- `a ^ (m n) b ^ (m n) = 0` comes from `c ^ n d ^ m = 0` in the domain `K ⊗[k] A`
+    have hab' : (a * b) ^ (m * n) = 0 := by rw [hab, zero_pow (by positivity)]
     have hcd : c ^ n * d ^ m = 0 := hinj <| by
-      rw [map_mul, map_pow, map_pow, hc, hd, ← pow_mul, ← pow_mul, mul_comm m n, ← mul_pow, hab,
-        zero_pow (by positivity), map_zero]
+      simpa only [map_mul, map_pow, hc, hd, map_zero, ← pow_mul, mul_comm m n, mul_pow] using hab'
     rcases mul_eq_zero.mp hcd with h | h
     · exact .inl (IsReduced.eq_zero a ⟨m, by rw [← hc, pow_eq_zero_iff hn.ne' |>.mp h, map_zero]⟩)
     · exact .inr (IsReduced.eq_zero b ⟨n, by rw [← hd, pow_eq_zero_iff hm.ne' |>.mp h, map_zero]⟩)
