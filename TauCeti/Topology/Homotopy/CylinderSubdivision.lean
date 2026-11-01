@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.UniformSpace.DiagonalRadius
-public import TauCeti.Topology.Order.Interval.Subdivision
+public import TauCeti.Topology.MetricSpace.ContinuousRadius
+public import TauCeti.Topology.UnitInterval
 
 /-!
 # Locally terminating subdivisions of a cylinder
@@ -23,7 +23,7 @@ size. This file does not construct the local bundle transports or their composit
 
 The construction uses Mathlib's `Set.Icc.addNSMul`, with its endpoint clipping, followed by
 minimum with the desired endpoint. Continuous radii come from the parameterized diagonal
-neighbourhood theorem in `TauCeti.Topology.UniformSpace.DiagonalRadius`.
+neighbourhood theorem in `TauCeti.Topology.MetricSpace.ContinuousRadius`.
 -/
 
 public section
@@ -35,12 +35,14 @@ namespace TauCeti
 variable {X : Type*} [TopologicalSpace X] [NormalSpace X] [ParacompactSpace X]
 
 /-- A diagonal neighbourhood admits continuous cylinder subdivisions with the prescribed
-clipped-time formula. Successive times stay in the neighbourhood, and the sequence is
+clipped-time formula and the radius property for all pairs within distance `δ x`.
+Successive times stay in the neighbourhood, and the sequence is
 stationary at the desired endpoint locally uniformly in both the base and the endpoint. -/
 theorem exists_continuous_cylinder_subdivision {W : Set (X × I × I)} (hW : IsOpen W)
     (hdiag : ∀ (x : X) (t : I), (x, t, t) ∈ W) :
     ∃ δ : C(X, ℝ), ∃ τ : ℕ → C(X × I, I),
       (∀ x, δ x ∈ Ioo 0 1) ∧
+      (∀ (x : X) (s t : I), dist s t ≤ δ x → (x, s, t) ∈ W) ∧
       (∀ n x t, (τ n (x, t) : ℝ) = min (t : ℝ) (n * δ x / 2)) ∧
       (∀ x t, τ 0 (x, t) = 0) ∧
       (∀ n x t, (x, τ n (x, t), τ (n + 1) (x, t)) ∈ W) ∧
@@ -53,17 +55,18 @@ theorem exists_continuous_cylinder_subdivision {W : Set (X × I × I)} (hW : IsO
   have hcp (n : ℕ) : Continuous (p n) := (Icc.continuous_addNSMul zero_le_one n).comp hcstep
   let τ (n : ℕ) : C(X × I, I) :=
     ⟨fun z ↦ min z.2 (p n z.1), continuous_snd.min ((hcp n).comp continuous_fst)⟩
+  -- Record evaluation through the bundled continuous map once, for all subsequent rewrites.
+  have hτ (n : ℕ) (x : X) (t : I) : τ n (x, t) = min t (p n x) := (rfl)
   have hformula (n : ℕ) (x : X) (t : I) :
       (τ n (x, t) : ℝ) = min (t : ℝ) (n * δ x / 2) := by
-    have hn : 0 ≤ (n : ℝ) * step x := mul_nonneg n.cast_nonneg (hstep x).le
-    -- Reduce the native endpoint clipping; the minimum with t already clips at 1.
-    simp only [τ, p, ContinuousMap.coe_mk, (Set.mono_coe I).map_min, Icc.addNSMul, coe_projIcc,
-      zero_add, nsmul_eq_mul, max_eq_right (le_min zero_le_one hn), ← min_assoc,
-      min_eq_left t.2.2]
+    -- The minimum with t already clips at 1, so the native endpoint clipping disappears.
+    rw [hτ, (Set.mono_coe I).map_min]
+    simp only [p, Icc.coe_addNSMul zero_le_one (hstep x).le, zero_add, nsmul_eq_mul,
+      ← min_assoc, min_eq_left t.2.2]
     congr 1
     dsimp [step]
     ring
-  refine ⟨δ, τ, hδ, hformula, ?_, ?_, ?_⟩
+  refine ⟨δ, τ, hδ, hδW, hformula, ?_, ?_, ?_⟩
   · intro x t
     apply Subtype.ext
     simpa [hformula] using min_eq_right t.2.1
@@ -78,17 +81,17 @@ theorem exists_continuous_cylinder_subdivision {W : Set (X × I × I)} (hW : IsO
           abs_min_sub_min_le_max _ _ _ _
         _ ≤ step x := max_le (by simpa using (hstep x).le) (by
           simpa only [abs_sub_comm] using hgap)
-    apply hδW
-    -- Subtype distances are the ambient real distances.
-    exact (show dist (τ n (x, t)) (τ (n + 1) (x, t)) ≤ step x from by
-      simpa only [Subtype.dist_eq, Real.dist_eq, τ, ContinuousMap.coe_mk,
-        (Set.mono_coe I).map_min] using hmin).trans (by dsimp [step]; linarith [(hδ x).1])
+    have hdist : dist (τ n (x, t)) (τ (n + 1) (x, t)) ≤ step x := by
+      simpa only [hτ, Subtype.dist_eq, Real.dist_eq, (Set.mono_coe I).map_min] using hmin
+    exact hδW x _ _ (hdist.trans (by dsimp [step]; linarith [(hδ x).1]))
   · intro x
-    obtain ⟨N, hN⟩ := Icc.eventually_addNSMul_eq_right zero_le_one hcstep.continuousAt
+    obtain ⟨N, hN⟩ := Icc.exists_eventually_addNSMul_eq_right zero_le_one hcstep.continuousAt
       (hstep x)
     refine ⟨N, ?_⟩
     filter_upwards [hN] with y hy n hn t
-    have hp : p n y = 1 := Subtype.ext (hy n hn)
-    exact (congrArg (min t) hp).trans (min_eq_left (unitInterval.le_one t))
+    have hp : p n y = 1 := by
+      apply Subtype.ext
+      simpa only [p, Icc.coe_one] using hy n hn
+    rw [hτ, hp, min_eq_left unitInterval.le_one']
 
 end TauCeti
