@@ -70,6 +70,8 @@ capacity; for residual capacities these are augmenting walks.
   `B`, traversing only arrows of the walk.
 * `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
   a cycle.
+* `TauCeti.ArrowWalk.exists_eq_comp_cons_comp_of_mem_arrows`: a walk that traverses a specified
+  arrow splits at that arrow.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
   bottleneck is the minimum of the capacities along the walk.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
@@ -283,6 +285,21 @@ theorem IsCycle.nodup_arrows {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.
 theorem IsCycle.arrows_ne_nil {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows ≠ [] :=
   fun h ↦ hc.1.ne' (arrows_eq_nil_iff.1 h)
 
+/-- Closing a directed path by an arrow from its target to its source produces a directed cycle. -/
+theorem IsPath.isCycle_cons {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (e : Q t s) :
+    (p.cons e).IsCycle := by
+  have hne : p.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p
+  have hhead : p.vertices = s :: p.vertices.tail := by
+    conv_lhs => rw [← List.cons_head_tail hne]
+    rw [@Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p hne]
+  rw [isPath_def, hhead, List.nodup_cons] at hp
+  rw [isCycle_def]
+  refine ⟨by simp, ?_⟩
+  rw [vertices_cons, List.concat_eq_append, hhead]
+  -- The head and final copy of `s` are the permitted repeated cycle endpoint.
+  change (p.vertices.tail ++ [s]).Nodup
+  exact hp.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp.1)
+
 /-- An initial segment of a path is a path. -/
 theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
     (hp : (p.comp p').IsPath) : p.IsPath := by
@@ -335,6 +352,26 @@ theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsP
       | cons q' e'' =>
         exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q')
           hp.of_cons.target_notMem_vertices_of_cons
+
+/-- A walk that traverses a specified arrow splits into the part before that arrow, the arrow
+itself, and the part after it. -/
+theorem exists_eq_comp_cons_comp_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t}
+    {e : Q x y} (he : ⟨x, y, e⟩ ∈ p.arrows) :
+    ∃ (p₁ : ArrowWalk Q s x) (p₂ : ArrowWalk Q y t),
+      p = p₁.comp (((nil x).cons e).comp p₂) := by
+  induction p with
+  | nil => simp at he
+  | @cons z w p a ih =>
+    -- The path recursor exposes the current arrow through its local quiver instance.
+    change Q z w at a
+    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | he
+    · obtain ⟨p₁, p₂, rfl⟩ := ih he
+      exact ⟨p₁, p₂.cons a, by simp only [Quiver.Path.comp_cons]⟩
+    · obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 he
+      obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 (eq_of_heq he)
+      obtain rfl := eq_of_heq he
+      exact ⟨p, nil y, rfl⟩
 
 /-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
 arrows of the walk. -/
