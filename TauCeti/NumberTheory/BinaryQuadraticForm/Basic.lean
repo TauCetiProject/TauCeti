@@ -362,6 +362,13 @@ theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
   apply hf
   exact ⟨f.b, by simp [discrim_def, _root_.discrim, ha, pow_two]⟩
 
+/-- A form of nonsquare discriminant has nonzero last coefficient. -/
+theorem c_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
+    (hf : ¬ IsSquare f.discrim) : f.c ≠ 0 := by
+  intro hc
+  apply hf
+  exact ⟨f.b, by simp [discrim_def, _root_.discrim, hc, pow_two]⟩
+
 /-- A nonsquare discriminant is nonzero, since `0 = 0 * 0` is a square. This lets results stated
 under `[NeZero D]` apply under the standing assumption `[Fact (¬ IsSquare D)]`. -/
 instance neZero_of_fact_not_isSquare {D : ℤ} [Fact (¬ IsSquare D)] : NeZero D :=
