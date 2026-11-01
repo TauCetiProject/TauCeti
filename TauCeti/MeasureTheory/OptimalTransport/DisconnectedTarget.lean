@@ -7,8 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier
 public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
-import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
-import TauCeti.Probability.HasLaw
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
 # Brenier maps onto a disconnected target
@@ -26,8 +25,8 @@ equality, and that map has no representative continuous on the source ball.
 
 The obstruction is topological rather than variational: no transport map from the connected ball
 onto the split target is continuous on the ball, by
-`ProbabilityTheory.HasLaw.not_continuousOn`, since a continuous map would carry the ball into a
-single one of the two pieces.
+`ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn`, since a continuous
+map would carry the ball into a single one of the two pieces.
 
 ## Main results
 
@@ -66,17 +65,13 @@ theorem not_continuousOn_of_hasLaw_uniformBallMeasure (hR : 0 < R) (hr : 0 ≤ r
     ¬ContinuousOn T (ball c R) := by
   have := isProbabilityMeasure_uniformBallMeasure (c := a) hr
   have := isProbabilityMeasure_uniformBallMeasure (c := b) hr'
-  -- Every point of the open ball lies in the support of the uniform law on it.
-  have hsupp : ball c R ⊆ (uniformBallMeasure c R).support := fun x hx =>
-    (Measure.mem_support_iff_forall x).2 fun U hU => by
-      rw [uniformBallMeasure_apply hR.ne']
-      exact ENNReal.div_pos
-        (Measure.measure_pos_of_mem_nhds volume (Filter.inter_mem (isOpen_ball.mem_nhds hx) hU)).ne'
-        measure_ball_lt_top.ne
   have hnull (d : E) (ρ : ℝ) : uniformBallMeasure d ρ (closedBall d ρ)ᶜ = 0 :=
     ae_iff.1 (ae_mem_closedBall_uniformBallMeasure d ρ)
-  refine hT.not_continuousOn (convex_ball c R).isPreconnected (ae_mem_ball_uniformBallMeasure hR)
-    hsupp isClosed_closedBall isClosed_closedBall (closedBall_disjoint_closedBall hab) ?_ ?_ ?_
+  intro hTc
+  refine (hT.measure_eq_zero_or_measure_eq_zero_of_continuousOn (convex_ball c R).isPreconnected
+    (ae_mem_ball_uniformBallMeasure hR)
+    (ball_subset_closedBall.trans (support_uniformBallMeasure hR.le).ge) hTc isClosed_closedBall
+    isClosed_closedBall (closedBall_disjoint_closedBall hab) ?_).elim ?_ ?_
   · simp only [Measure.smul_apply, Measure.add_apply, smul_eq_mul, compl_union]
     rw [measure_mono_null inter_subset_left (hnull a r),
       measure_mono_null inter_subset_right (hnull b r'), add_zero, mul_zero]
@@ -104,9 +99,9 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_not_continuousOn (h
   have := isProbabilityMeasure_uniformBallMeasure (c := c) hR.le
   have := isProbabilityMeasure_uniformBallMeasure (c := a) hr
   have := isProbabilityMeasure_uniformBallMeasure (c := b) hr'
-  have : IsProbabilityMeasure ν := ⟨by
-    simp only [ν, Measure.smul_apply, Measure.add_apply, measure_univ, smul_eq_mul]
-    rw [one_add_one_eq_two, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top]⟩
+  have : IsProbabilityMeasure ν := by
+    simp only [ν, smul_add]
+    exact TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul ENNReal.inv_two_add_inv_two _ _
   -- The quadratic cost is finite: both laws have finite second moments.
   have hν2 : MemLp id 2 ν := ((memLp_id_uniformBallMeasure a r 2).add_measure
     (memLp_id_uniformBallMeasure b r' 2)).smul_measure (ENNReal.inv_ne_top.2 two_ne_zero)
@@ -116,11 +111,8 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_not_continuousOn (h
     rw [(isCoupling_prod _ _).lintegral_norm_sub_sq_div_two (memLp_id_uniformBallMeasure c R 2)
       hν2]
     exact ENNReal.ofReal_ne_top
-  have hac : uniformBallMeasure c R ≪ volume := by
-    rw [uniformBallMeasure_of_ne_zero hR.ne']
-    exact cond_absolutelyContinuous
-  obtain ⟨u, hconv, hlsc, hbot, -, hopt, -⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient hac hfin
+  obtain ⟨u, hconv, hlsc, hbot, -, hopt, -⟩ := exists_isKantorovichOptimalTransportMap_gradient
+    (uniformBallMeasure_absolutelyContinuous hR.ne') hfin
   exact ⟨u, hconv, hlsc, hbot, hopt, fun S hS =>
     not_continuousOn_of_hasLaw_uniformBallMeasure hR hr hr' hab (hopt.toHasLaw.congr hS)⟩
 

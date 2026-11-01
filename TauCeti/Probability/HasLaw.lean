@@ -51,9 +51,9 @@ is the topological reason why optimal transport maps onto disconnected targets a
   non-Dirac law under a Dirac measure;
 * `ProbabilityTheory.HasLaw.mapsTo_support_of_continuousOn` — a map continuous on a carrier of
   `μ` inside its support sends that carrier into the support of its law;
-* `ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn` and
-  `ProbabilityTheory.HasLaw.not_continuousOn` — a map continuous on a preconnected such carrier
-  has a law that does not charge both of two disjoint closed sets carrying it.
+* `ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn` — a map
+  continuous on a preconnected such carrier has a law that does not charge both of two disjoint
+  closed sets carrying it.
 
 Mathlib's `ProbabilityTheory.hasLaw_dirac_iff` is the statement for a Dirac *target*; the results
 here are about a Dirac *source*, which is what `dirac_source` records in their names.
@@ -156,7 +156,7 @@ theorem not_hasLaw_dirac_source_of_forall_ne_dirac (hν : ∀ y : Y, ν ≠ Meas
 
 section Topology
 
-variable [TopologicalSpace X] [TopologicalSpace Y] [OpensMeasurableSpace Y] {s : Set X}
+variable [TopologicalSpace X] [TopologicalSpace Y] {s : Set X}
 
 /-- **A continuous transport map sends its domain into the support of its law.** Let `T` be
 continuous on a set `s` carrying `μ` and contained in the support of `μ`. Then `T` maps all of
@@ -171,8 +171,9 @@ theorem _root_.ProbabilityTheory.HasLaw.mapsTo_support_of_continuousOn (h : HasL
   calc 0 < μ V := (Measure.mem_support_iff_forall x).1 (hsμ hx) V hV
     _ = μ (V ∩ s) := (measure_inter_conull (ae_iff.1 hμs)).symm
     _ ≤ μ (T ⁻¹' U) := measure_mono hVs
-    _ = ν U := by
-      rw [← h.map_eq, Measure.map_apply_of_aemeasurable h.aemeasurable hU.measurableSet]
+    _ ≤ ν U := h.map_eq ▸ Measure.le_map_apply h.aemeasurable U
+
+variable [OpensMeasurableSpace Y]
 
 /-- **A continuous map from a connected source cannot split its law.** Let `T` be continuous on
 a preconnected set `s` carrying `μ` and contained in the support of `μ`. If the law `ν` of `T` is
@@ -185,8 +186,8 @@ theorem _root_.ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_co
   have hnull : ∀ {C D : Set Y}, IsClosed D → Set.MapsTo T s C → Disjoint C D → ν D = 0 :=
     fun {C D} hD hTC hCD => by
       rw [← h.map_eq, Measure.map_apply_of_aemeasurable h.aemeasurable hD.measurableSet]
-      exact measure_mono_null (show T ⁻¹' D ⊆ {x | x ∉ s} from
-        fun x hx hxs => hCD.notMem_of_mem_left (hTC hxs) hx) (ae_iff.1 hμs)
+      refine measure_mono_null ?_ (ae_iff.1 hμs)
+      exact fun x hx hxs => hCD.notMem_of_mem_left (hTC hxs) hx
   have hsub := isPreconnected_iff_subset_of_disjoint_closed.1 (hs.image T hT) A B hA hB
     ((h.mapsTo_support_of_continuousOn hμs hsμ hT).mono_right
       (Measure.support_subset_of_isClosed (hA.union hB) (mem_ae_iff.2 hνAB))).image_subset
@@ -194,16 +195,6 @@ theorem _root_.ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_co
   rcases hsub with hsA | hsB
   · exact Or.inr (hnull hB (Set.mapsTo_iff_image_subset.2 hsA) hAB)
   · exact Or.inl (hnull hA (Set.mapsTo_iff_image_subset.2 hsB) hAB.symm)
-
-/-- **No continuous transport from a connected source onto a split law.** No map with law `ν`
-under `μ` is continuous on a preconnected set `s` carrying `μ` and contained in its support, when
-`ν` is carried by two disjoint closed sets and charges both. -/
-theorem _root_.ProbabilityTheory.HasLaw.not_continuousOn (h : HasLaw T ν μ)
-    (hs : IsPreconnected s) (hμs : ∀ᵐ x ∂μ, x ∈ s) (hsμ : s ⊆ μ.support) {A B : Set Y}
-    (hA : IsClosed A) (hB : IsClosed B) (hAB : Disjoint A B) (hνAB : ν (A ∪ B)ᶜ = 0)
-    (hνA : ν A ≠ 0) (hνB : ν B ≠ 0) : ¬ContinuousOn T s := fun hT =>
-  (h.measure_eq_zero_or_measure_eq_zero_of_continuousOn hs hμs hsμ hT hA hB hAB hνAB).elim
-    hνA hνB
 
 end Topology
 
