@@ -51,7 +51,7 @@ theorem intervalIntegrable_one_add_mul_sin_sq_rpow_neg_half (c a b : ℝ) :
 /-- **Imaginary-modulus transformation** (DLMF 19.7.5): the complete first-kind integral
 with radicand `1 + c² sin² θ` is `K(c / √(1 + c²)) / √(1 + c²)`.
 The integral converges for every real `c`. -/
-theorem legendreK_imaginary_modulus (c : ℝ) :
+theorem integral_one_add_mul_sin_sq_rpow_neg_half_eq_legendreK_div_sqrt (c : ℝ) :
     (∫ θ in (0 : ℝ)..π / 2, (1 + c ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) =
       legendreK (c / √(1 + c ^ 2)) / √(1 + c ^ 2) := by
   have hpos : 0 < 1 + c ^ 2 := by positivity
