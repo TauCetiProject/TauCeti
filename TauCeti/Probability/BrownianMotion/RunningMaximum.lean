@@ -21,7 +21,8 @@ right-continuous before a horizon `T`. This file shows that the running maxima
 of an exponential martingale and of a real power of a geometric Brownian motion
 `S_t = s exp ((μ - σ² / 2) t + σ W_t)`, `s ≥ 0`, have finite expectation, for every real `θ` and
 `q`. For `q > 0` this is a finite `q`-th moment of the running maximum `sup_{t ≤ T} S_t`; for
-`q < 0` it is a finite `q`-th moment of the running minimum. For a function `V` of polynomial
+`q < 0` and `s > 0` it is a finite `q`-th moment of the running minimum. (For `s = 0` and `q < 0`
+the bound holds only through the convention `0 ^ q = 0`.) For a function `V` of polynomial
 growth, `|V(x, t)| ≤ A (1 + x ^ p)` with `p ≥ 0`, these bounds dominate `|V(S_t, t)|` uniformly in
 `t ≤ T` by an integrable random variable. This is the domination, and hence the uniform
 integrability, used to pass to the limit in stopped expectations `E[V(S_{t ∧ τ}, t ∧ τ)]` along
@@ -102,11 +103,8 @@ theorem lintegral_iSup_rpow_geometricBrownianMotion_lt_top (hW : IsFilteredPreBr
   refine lintegral_iSup_ofReal_lt_top_of_le_mul (by positivity) (C := s ^ q * exp (|c| * T))
     (fun ω t ht ↦ ?_) (hW.lintegral_iSup_exponentialMartingale_lt_top hcont (q * σ))
   rw [rpow_geometricBrownianMotion hs]
-  have hct : c * t ≤ |c| * T :=
-    (mul_le_mul_of_nonneg_right (le_abs_self c) t.coe_nonneg).trans
-      (mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.2 ht) (abs_nonneg c))
-  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (exp_le_exp.2 hct)
-    (rpow_nonneg hs q)) (exponentialMartingale_pos _ W t ω).le
+  gcongr
+  exacts [(exponentialMartingale_pos _ W t ω).le, le_abs_self c]
 
 /-- **The running maximum of geometric Brownian motion is integrable.** If the paths of `W` are
 almost surely right-continuous before `T`, then `E[sup_{t ≤ T} S_t] < ∞`, where

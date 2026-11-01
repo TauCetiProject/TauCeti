@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Martingale.OptionalStopping
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
-public import TauCeti.Topology.Order.LeftRight
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
 
 /-!
 # Doob's maximal inequality over finite sets and in continuous time
@@ -22,9 +22,8 @@ submartingale `f`, a time `T` and `ε : ℝ≥0`:
   and separable (for instance `ℝ≥0`), `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T]`.
 
 The event `{∃ t ≤ T, ε < f_t}` need not be measurable; `P` is applied to it as an outer measure.
-The running maximum `sup_{t ≤ T} f_t` of a process whose values `f_t` are almost everywhere
-measurable is itself almost everywhere measurable under the same right-continuity hypothesis, since
-it agrees almost everywhere with a supremum over countably many times.
+Under the same right-continuity hypothesis the running maximum `sup_{t ≤ T} f_t` is almost
+everywhere measurable (`MeasureTheory.aemeasurable_iSup_le_ofReal`).
 
 A weak-type bound of this kind controls the running maximum in every `Lᵖ` with `p < 1`. The file
 records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. Applied to `f = g²`, it
@@ -37,8 +36,6 @@ this is how the running maximum of an exponential martingale is shown to be inte
   set of times.
 * `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`: the maximal inequality over all times
   `t ≤ T`, for right-continuous paths.
-* `MeasureTheory.aemeasurable_iSup_le_ofReal`: the running maximum of a process with almost
-  everywhere measurable values and right-continuous paths is almost everywhere measurable.
 * `MeasureTheory.Submartingale.lintegral_iSup_sqrt_le`: the bound on `E[sup_{t ≤ T} √f_t]`.
 
 ## References
@@ -110,28 +107,6 @@ section ContinuousTime
 
 variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
 
-/-- The running maximum `sup_{t ≤ T} X_t` of a process whose values `X_t` are almost everywhere
-measurable and whose paths are almost surely right-continuous before `T` is almost everywhere
-measurable: it agrees almost everywhere with the supremum over a countable set of times. -/
-theorem _root_.MeasureTheory.aemeasurable_iSup_le_ofReal [TopologicalSpace.SeparableSpace ι]
-    {X : ι → Ω → ℝ} (hX : ∀ t, AEMeasurable (X t) μ) {T : ι}
-    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ X u ω) (Ioi t) t) :
-    AEMeasurable (fun ω ↦ ⨆ t ≤ T, ENNReal.ofReal (X t ω)) μ := by
-  obtain ⟨D, hDc, hD⟩ := TopologicalSpace.exists_countable_dense ι
-  set S : Set ι := insert T (D ∩ Iic T)
-  have : Countable S := ((hDc.mono inter_subset_left).insert T).to_subtype
-  refine (AEMeasurable.iSup fun s : S ↦ (hX s).ennreal_ofReal).congr ?_
-  filter_upwards [hcont] with ω hω
-  refine le_antisymm (iSup_le fun ⟨s, hs⟩ ↦ le_iSup₂_of_le s ?_ le_rfl) ?_
-  · rcases hs with rfl | ⟨-, hs⟩
-    exacts [le_rfl, hs]
-  refine iSup₂_le fun t htT ↦ le_of_forall_lt fun a ha ↦ ?_
-  have hatop : a ≠ ∞ := ha.ne_top
-  rw [← ENNReal.ofReal_toReal hatop, ENNReal.ofReal_lt_ofReal_iff'] at ha
-  obtain ⟨s, hs, has⟩ := hD.exists_mem_insert_inter_Iic_lt hω htT ha.1
-  refine lt_of_lt_of_le ?_ (le_iSup _ (⟨s, hs⟩ : S))
-  rwa [← ENNReal.ofReal_toReal hatop, ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg]
-
 /-- **Doob's maximal inequality in continuous time.** Let `f` be a nonnegative submartingale
 indexed by a densely ordered separable time set, such as `ℝ≥0`, whose paths are almost surely
 right-continuous at every time before `T`. Then `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T]`. -/
@@ -142,9 +117,9 @@ theorem mul_measure_exists_le_lt_le [TopologicalSpace.SeparableSpace ι] [IsFini
   classical
   -- By right-continuity the event is, up to a null set, the union over the finite subsets `F` of
   -- a countable set `S` of times `≤ T`, dense below `T`; this union is directed.
-  obtain ⟨D, hDc, hD⟩ := TopologicalSpace.exists_countable_dense ι
-  set S : Set ι := insert T (D ∩ Iic T)
-  have : Countable S := ((hDc.mono inter_subset_left).insert T).to_subtype
+  obtain ⟨S, hSc, hST, hS⟩ :=
+    TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
+  have := hSc.to_subtype
   let A : Finset S → Set Ω := fun F ↦ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}
   have hA : ∀ F, ε * μ (A F) ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) := fun F ↦ by
     refine le_trans ?_ (hf.mul_measure_exists_mem_le_le hnonneg ε
@@ -153,14 +128,13 @@ theorem mul_measure_exists_le_lt_le [TopologicalSpace.SeparableSpace ι] [IsFini
       rintro ω ⟨t, ht, hεt⟩
       exact ⟨t, Finset.mem_map_of_mem _ ht, hεt⟩
     · obtain ⟨⟨s, hs⟩, -, rfl⟩ := Finset.mem_map.1 ht
-      rcases hs with rfl | ⟨-, hs⟩
-      exacts [le_rfl, hs]
+      exact hST hs
   have hdir : Directed (· ⊆ ·) A := fun F₁ F₂ ↦ ⟨F₁ ∪ F₂,
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_left _ ht, h⟩,
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_right _ ht, h⟩⟩
   have hsub : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ᵐ[μ] ⋃ F, A F := by
     filter_upwards [hcont] with ω hω ⟨t, htT, hεt⟩
-    obtain ⟨s, hs, hεs⟩ := hD.exists_mem_insert_inter_Iic_lt hω htT hεt
+    obtain ⟨s, hs, hεs⟩ := hS hω htT hεt
     exact mem_iUnion.2 ⟨{⟨s, hs⟩}, ⟨s, hs⟩, Finset.mem_singleton_self _, hεs.le⟩
   calc ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ε * μ (⋃ F, A F) := by
         gcongr 1

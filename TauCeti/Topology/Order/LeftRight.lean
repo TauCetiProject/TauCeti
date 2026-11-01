@@ -19,6 +19,8 @@ countable, this replaces a supremum over uncountably many times by a countable o
 
 * `Dense.exists_mem_insert_inter_Iic_lt`: a value of `g` above `a` at a time `t ≤ T` is matched
   by a value above `a` at `T` or at a point of `D ∩ (-∞, T]`.
+* `TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt`: in a separable space, one
+  countable set of times `≤ T` serves for every function right-continuous before `T`.
 -/
 
 public section
@@ -40,3 +42,15 @@ theorem Dense.exists_mem_insert_inter_Iic_lt {D : Set ι} (hD : Dense D) {g : ι
     exact ⟨s, Or.inr ⟨hsD, hs.2.le.trans (min_le_right _ _)⟩,
       hsub ⟨hs.1, hs.2.trans_le (min_le_left _ _)⟩⟩
   · exact ⟨t, mem_insert _ _, ha⟩
+
+/-- In a separable space, every `T` has a countable set `S` of points `≤ T` such that whenever `g`
+is right-continuous at every point before `T` and `a < g t` for some `t ≤ T`, also `a < g s` for
+some `s ∈ S`. One may take `S = {T} ∪ (D ∩ (-∞, T])` for a countable dense set `D`. -/
+theorem TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt [SeparableSpace ι] (T : ι) :
+    ∃ S : Set ι, S.Countable ∧ S ⊆ Iic T ∧ ∀ ⦃g : ι → α⦄,
+      (∀ t < T, ContinuousWithinAt g (Ioi t) t) →
+        ∀ ⦃t⦄, t ≤ T → ∀ ⦃a⦄, a < g t → ∃ s ∈ S, a < g s :=
+  let ⟨D, hDc, hD⟩ := exists_countable_dense ι
+  ⟨insert T (D ∩ Iic T), (hDc.mono inter_subset_left).insert T,
+    insert_subset_iff.2 ⟨le_rfl, inter_subset_right⟩,
+    fun _ hg _ htT _ ha ↦ hD.exists_mem_insert_inter_Iic_lt hg htT ha⟩
