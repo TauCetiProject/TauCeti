@@ -297,6 +297,7 @@ theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜
 
 /-- Along a constant curve, the unrestricted moving-chart candidate is the ordinary derivative of
 the field. -/
+@[simp]
 theorem alongCurve_const (x : M) (W : 𝕜 → E) (t : 𝕜) :
     alongCurve cov (fun _ : 𝕜 ↦ x) W t = deriv W t :=
   (alongCurveWithin_univ cov _ W t).symm.trans
