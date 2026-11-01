@@ -26,14 +26,14 @@ at every prime, regularity ascends from a regular ring `R` to a flat Noetherian 
 fibres `κ(p) ⊗[R] S` are regular rings, for instance to a Noetherian regular algebra in the sense
 of `TauCeti.Excellence.RegularAlgebraMap`.
 
-When the maximal ideal of `R` generates the maximal ideal of `S`, so that the closed fibre is a
-field, `R` is regular if and only if `S` is: the maximal ideals of `R` and `S` need the same number
-of generators, and `R` and `S` have the same Krull dimension. The descent of regularity applies for
-instance to the completion of a Noetherian local ring. Formally unramified local homomorphisms
-essentially of finite type satisfy this hypothesis on the maximal ideals, so regularity ascends
-along local homomorphisms of this kind which are flat, such as the localizations of étale algebras
-at primes. This is the local input for showing that an algebra smooth over a regular ring is
-regular.
+When `R → S` is moreover flat and the maximal ideal of `R` generates the maximal ideal of `S`, so
+that the closed fibre is a field, `R` is regular if and only if `S` is: the maximal ideals of `R`
+and `S` need the same number of generators, and `R` and `S` have the same Krull dimension. The
+descent of regularity applies for instance to the completion of a Noetherian local ring. Formally
+unramified local homomorphisms essentially of finite type satisfy this hypothesis on the maximal
+ideals, so regularity ascends along local homomorphisms of this kind which are flat, such as the
+localizations of étale algebras at primes. This is the local input for showing that an algebra
+smooth over a regular ring is regular.
 
 ## Main declarations
 
