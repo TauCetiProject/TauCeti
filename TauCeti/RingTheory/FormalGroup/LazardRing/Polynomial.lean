@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Independence
+-- Proof-only: maps out of a polynomial ring lift along surjections.
+import TauCeti.Algebra.MvPolynomial.Lift
 -- Proof-only: injective graded ring homomorphisms reflect homogeneity.
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 -- Proof-only: the graded Nakayama lemma for generators.
@@ -27,11 +29,11 @@ whose classes generate `I ⧸ I²` generate `L` over `L₀ = ℤ`.
 The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `xₙ` is given degree `2n`.
 
 Since `L` is a polynomial ring, ring homomorphisms out of `L` lift along surjective ring
-homomorphisms: choose preimages of the images of the generators. By the universal property of `L`,
+homomorphisms (`MvPolynomial.exists_comp_eq_of_surjective`). By the universal property of `L`,
 every commutative formal group law over `S` is therefore the base change of a commutative formal
 group law over `R` along any surjection `R →+* S`. This is the use Lubin and Tate make of Lazard's
-theorem: formal group laws over `A ⧸ I` lift to `A`, so deformations of a formal group law exist
-over every ring surjecting onto its coefficient ring.
+theorem: commutative formal group laws over `A ⧸ I` lift to `A`, so deformations of a commutative
+formal group law exist over every ring surjecting onto its coefficient ring.
 
 ## Main definitions
 
@@ -154,16 +156,10 @@ theorem mvPolynomialEquiv_mem_grading_iff {p : MvPolynomial ℕ+ ℤ} {n : ℕ} 
 theorem exists_comp_eq_of_surjective {R S : Type*} [CommRing R] [CommRing S] {f : R →+* S}
     (hf : Function.Surjective f) (g : LazardRing →+* S) :
     ∃ g' : LazardRing →+* R, f.comp g' = g := by
-  -- Send the generator `xₙ` to a preimage of `g xₙ`.
-  let g' : LazardRing →+* R :=
-    (MvPolynomial.aeval (Function.surjInv hf ∘ g ∘ generator)).toRingHom.comp
-      mvPolynomialEquiv.symm.toRingEquiv.toRingHom
-  refine ⟨g', ?_⟩
-  have h : (f.comp g').comp mvPolynomialEquiv.toRingEquiv.toRingHom =
-      g.comp mvPolynomialEquiv.toRingEquiv.toRingHom :=
-    MvPolynomial.ringHom_ext (fun _ ↦ by simp) fun n ↦ by
-      simp [g', Function.surjInv_eq hf]
-  exact (RingHom.cancel_right mvPolynomialEquiv.surjective).1 h
+  obtain ⟨g', hg'⟩ := MvPolynomial.exists_comp_eq_of_surjective (f := f.toIntAlgHom) hf
+    (g.toIntAlgHom.comp mvPolynomialEquiv.toAlgHom)
+  refine ⟨g'.toRingHom.comp mvPolynomialEquiv.symm.toRingEquiv.toRingHom, RingHom.ext fun x ↦ ?_⟩
+  simpa using DFunLike.congr_fun hg' (mvPolynomialEquiv.symm x)
 
 end TauCeti.LazardRing
 
