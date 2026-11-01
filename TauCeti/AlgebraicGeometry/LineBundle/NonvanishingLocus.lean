@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 
 /-!
@@ -44,6 +45,8 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
   invariant under isomorphisms of invertible sheaves;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
   basic open set of the regular function `r`.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.range_nonvanishingLocus_eq_of_mk_eq`: isomorphic line
+  bundles have the same nonvanishing loci of global sections.
 
 ## References
 
@@ -296,3 +299,22 @@ theorem nonvanishingLocus_unit {U : X.Opens} (r : Γ(X, U)) :
     exact (inf_eq_left.mpr (X.basicOpen_le r)).symm
 
 end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti.AlgebraicGeometry.LineBundleClass
+
+universe u
+
+variable {X : Scheme.{u}}
+
+/-- Isomorphic line bundles have the same nonvanishing loci of global sections: the set of opens
+`X_s`, for `s` a global section, depends only on the line-bundle class. -/
+theorem range_nonvanishingLocus_eq_of_mk_eq {L L' : InvertibleSheaf X} (h : mk L = mk L') :
+    Set.range (L.obj.nonvanishingLocus (U := ⊤)) =
+      Set.range (L'.obj.nonvanishingLocus (U := ⊤)) := by
+  obtain ⟨e⟩ := mk_eq_mk_iff.mp h
+  ext V
+  exact ⟨fun ⟨s, hs⟩ ↦ ⟨e.hom.app ⊤ s, (Scheme.Modules.nonvanishingLocus_hom_app e s).trans hs⟩,
+    fun ⟨s, hs⟩ ↦
+      ⟨e.symm.hom.app ⊤ s, (Scheme.Modules.nonvanishingLocus_hom_app e.symm s).trans hs⟩⟩
+
+end TauCeti.AlgebraicGeometry.LineBundleClass

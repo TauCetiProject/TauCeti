@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 
 /-!
@@ -39,8 +38,6 @@ on every affine scheme, and so is every torsion class there
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.LineBundleClass.range_nonvanishingLocus_eq_of_mk_eq`: isomorphic line
-  bundles have the same nonvanishing loci of global sections.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_pos_forall_mk_eq`: the defining
   sections can be taken in any line bundle representing the relevant power.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.of_pow`: if a positive power `aⁿ` is ample,
@@ -65,17 +62,6 @@ namespace TauCeti.AlgebraicGeometry.LineBundleClass
 universe u
 
 variable {X : Scheme.{u}}
-
-/-- Isomorphic line bundles have the same nonvanishing loci of global sections: the set of opens
-`X_s`, for `s` a global section, depends only on the line-bundle class. -/
-theorem range_nonvanishingLocus_eq_of_mk_eq {L L' : InvertibleSheaf X} (h : mk L = mk L') :
-    Set.range (L.obj.nonvanishingLocus (U := ⊤)) =
-      Set.range (L'.obj.nonvanishingLocus (U := ⊤)) := by
-  obtain ⟨e⟩ := mk_eq_mk_iff.mp h
-  ext V
-  exact ⟨fun ⟨s, hs⟩ ↦ ⟨e.hom.app ⊤ s, (Scheme.Modules.nonvanishingLocus_hom_app e s).trans hs⟩,
-    fun ⟨s, hs⟩ ↦
-      ⟨e.symm.hom.app ⊤ s, (Scheme.Modules.nonvanishingLocus_hom_app e.symm s).trans hs⟩⟩
 
 /-- A line-bundle class `a` on `X` is **ample** if `X` is quasi-compact and every point `x` lies in
 the nonvanishing locus `X_s` of a global section `s` of a line bundle of class `aⁿ`, for some
