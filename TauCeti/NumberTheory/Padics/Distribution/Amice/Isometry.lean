@@ -25,14 +25,14 @@ The proof writes Amice's map as a matrix over `ℤ_p` and applies the criterion
 `Matrix.toZeroAtInftySMulLinearIsometryEquiv` for triangular perturbations of the identity.
 Write `n = pʰ q + r` with `r < pʰ`. Modulo `p`, the expansion of `e_{h,n}` on the disc of a
 natural centre `a < pʰ` vanishes in degrees above `q`
-(`TauCeti.dvd_coeff_amicePolynomial_of_div_lt`), vanishes entirely when `a < r`
-(`TauCeti.dvd_coeff_amicePolynomial_of_lt_mod`), and has a unit coefficient in degree `q` when
-`a = r` (`TauCeti.isUnit_coeff_amicePolynomial_mod`). Order the coordinates `(a, j)` of `LA_h(E)`
-by the degree `j` first and then by *decreasing* centre `a`, so that `(a, j)` comes at position
-`pʰ j + (pʰ - 1 - a)`; this reversal of the centres is the passage from Colmez's centres `-a`,
-`1 ≤ a ≤ pʰ`, to the natural residue representatives used by `LA_h`. Reindex Amice's index `n`
-in the same way. In these coordinates the coefficient of `e_{h,n}` at its own position `(r, q)` is
-a unit, and every coefficient below the diagonal is divisible by `p`.
+(`TauCeti.norm_coeff_amicePolynomial_lt_one_of_div_lt`), vanishes entirely when `a < r`
+(`TauCeti.norm_coeff_amicePolynomial_lt_one_of_mod_lt`), and has a unit coefficient in degree `q`
+when `a = r` (`TauCeti.norm_coeff_amicePolynomial_mod_div`). Order the coordinates `(a, j)` of
+`LA_h(E)` by the degree `j` first and then by *decreasing* centre `a`, so that `(a, j)` comes at
+position `pʰ j + (pʰ - 1 - a)`; this reversal of the centres is the passage from Colmez's centres
+`-a`, `1 ≤ a ≤ pʰ`, to the natural residue representatives used by `LA_h`. Reindex Amice's index
+`n` in the same way. In these coordinates the coefficient of `e_{h,n}` at its own position
+`(r, q)` is a unit, and every coefficient below the diagonal is divisible by `p`.
 
 ## Main definitions
 
@@ -127,17 +127,18 @@ private theorem tendsto_amiceMatrix (h k : ℕ) :
 /-- The diagonal entries of `amiceMatrix` are units. -/
 private theorem isUnit_amiceMatrix (h i : ℕ) : IsUnit (amiceMatrix p h i i) := by
   rw [amiceMatrix, val_coordEquiv_fst, coordEquiv_snd, ← rev_div h i]
-  exact isUnit_coeff_amicePolynomial_mod h (rev p h i)
+  exact PadicInt.isUnit_iff.mpr (norm_coeff_amicePolynomial_mod_div h (rev p h i))
 
 /-- The entries of `amiceMatrix` below the diagonal are divisible by `p`. -/
 private theorem dvd_amiceMatrix (h : ℕ) {i k : ℕ} (hki : k < i) :
     (p : ℤ_[p]) ∣ amiceMatrix p h i k := by
   have hP : 0 < p ^ h := pow_pos hp.out.pos h
-  rw [amiceMatrix, val_coordEquiv_fst, coordEquiv_snd]
+  rw [amiceMatrix, val_coordEquiv_fst, coordEquiv_snd, ← PadicInt.norm_lt_one_iff_dvd]
   rcases (Nat.div_le_div_right (c := p ^ h) hki.le).lt_or_eq with hlt | heq
-  · exact dvd_coeff_amicePolynomial_of_div_lt (Nat.mod_lt _ hP) (by rwa [rev_div])
+  · exact norm_coeff_amicePolynomial_lt_one_of_div_lt _ (by rwa [rev_div])
   · -- In the same block, `k` has the smaller residue, so `rev i` has the smaller residue.
-    refine dvd_coeff_amicePolynomial_of_lt_mod ?_ _
+    refine norm_coeff_amicePolynomial_lt_one_of_mod_lt ?_ _
+    rw [Nat.mod_mod]
     have hk := Nat.div_add_mod k (p ^ h)
     have hi := Nat.div_add_mod i (p ^ h)
     have hi' := Nat.mod_lt i hP
