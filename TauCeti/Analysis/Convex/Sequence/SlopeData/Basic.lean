@@ -300,7 +300,7 @@ theorem heights_start_add (k : ℕ) :
 
 /-- Truncation preserves heights on the interval from the anchor to its endpoint. -/
 @[simp]
-theorem truncate_heights_start_add (n : ℕ) {k : ℕ} (hk : k ≤ n) :
+theorem heights_truncate_start_add (n : ℕ) {k : ℕ} (hk : k ≤ n) :
     (d.truncate n).heights (d.start + k) = d.heights (d.start + k) := by
   have h := (d.truncate n).heights_start_add (k := k) (by simpa using hk)
   have hs : (d.truncate n).slope = fun i : Fin (d.truncate n).length => d.slope i :=

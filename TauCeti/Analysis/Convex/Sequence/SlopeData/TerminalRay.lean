@@ -153,23 +153,16 @@ theorem heights_eq_top_iff {n : ℕ} : d.heights n = ⊤ ↔ n < d.prefix.start 
 theorem heights_start : d.heights d.prefix.start = (d.prefix.initialHeight : WithTop Γ) := by
   rw [heights_def, ← expand_start, InfiniteSlopeData.heights_start, expand_initialHeight]
 
-private theorem sum_range_expand_slope {k : ℕ} (hk : k ≤ d.prefix.expand.length) :
-    ∑ i ∈ Finset.range k, d.expand.slope i = prefixSum k d.prefix.expand.slope := by
-  have hs := prefixSum_eq_sum_range (n := d.prefix.expand.length) k d.expand.slope
-  have he : (fun i : Fin d.prefix.expand.length => d.expand.slope i) =
-      d.prefix.expand.slope := funext fun i => d.expand_slope_of_lt i.isLt
-  rw [he, min_eq_left hk] at hs
-  exact hs.symm
-
 /-- On the prefix interval, the heights agree with the finite compressed prefix. -/
 theorem heights_eq_prefix {k : ℕ} (hk : k ≤ d.prefix.expand.length) :
     d.heights (d.prefix.start + k) = d.prefix.heights (d.prefix.start + k) := by
-  calc
-    _ = ((d.prefix.initialHeight + prefixSum k d.prefix.expand.slope : Γ) : WithTop Γ) := by
-      simpa [heights_def, d.sum_range_expand_slope hk] using d.expand.heights_start_add k
-    _ = _ := by
-      simpa [FiniteCompressedSlopeData.heights_def] using
-        (d.prefix.expand.heights_start_add hk).symm
+  have hp : d.prefix.expand = d.expand.truncate d.prefix.expand.length := by
+    apply FiniteSlopeData.ext_of_slope (by simp) (by simp) (by simp)
+    intro i
+    simpa only [InfiniteSlopeData.truncate_slope, Fin.val_cast] using
+      (d.expand_slope_of_lt i.isLt).symm
+  rw [heights_def, ← expand_start, ← d.expand.heights_truncate_start_add _ hk,
+    ← hp, FiniteCompressedSlopeData.heights_def, expand_start]
 
 /-- Beyond the join, each further step adds the ray slope to the endpoint height
 of the finite prefix. The offset `k` is relative to the join, not the anchor. -/
