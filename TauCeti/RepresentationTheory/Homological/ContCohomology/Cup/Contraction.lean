@@ -42,9 +42,6 @@ carry an invariant cocycle to cohomologous cocycles
 
 ## Main results
 
-* `TopRep.ResolutionContraction.cochainClass_eq_of_ι_comp_eq`: maps of degree `n` from a
-  contracted complex into the coinduced resolution, commuting with the differentials and agreeing
-  on the augmentation, give invariant cocycles the same class.
 * `TopRep.ResolutionContraction.comparison_f_pairing_ι`: the comparison of a left product with an
   augmented element is an Alexander–Whitney product.
 * `TopRep.ResolutionContraction.cohomologyClass_pairing`: the class of a product of invariant
@@ -71,72 +68,6 @@ universe u v w
 variable {k : Type u} {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 namespace ResolutionContraction
-
-section Shift
-
-variable [Ring k] [TopologicalSpace k] [LocallyCompactSpace G] {X Z : TopRep.{max v w} k G}
-  {J : CochainComplex (TopRep.{max v w} k G) ℕ} (c : ResolutionContraction X J)
-
-/-- The coinduced resolution of `Z` with its degrees lowered by `n`: its degree-`p` term is the
-degree-`(p + n)` term `C(G, Cᵖ⁺ⁿ)` of `TopRep.resolution' Z`. -/
-private noncomputable abbrev shiftedResolution (Z : TopRep.{max v w} k G) (n : ℕ) :
-    CochainComplex (TopRep.{max v w} k G) ℕ :=
-  CochainComplex.of (fun p ↦ coind₁ (resolutionX Z (p + n)))
-    (fun p ↦ (resolution' Z).d (p + n) (p + 1 + n))
-    (fun _ ↦ (resolution' Z).d_comp_d _ _ _)
-
-/-- A family of maps of degree `n` commuting with the differentials, as a chain map into the
-shifted resolution. -/
-private noncomputable def shiftedHom {n : ℕ} (φ : ∀ p, J.X p ⟶ (resolution' Z).X (p + n))
-    (hφ : ∀ p, φ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ φ (p + 1)) :
-    J ⟶ shiftedResolution Z n where
-  f := φ
-  comm' i j hij := by
-    obtain rfl : i + 1 = j := hij
-    simpa only [shiftedResolution, CochainComplex.of_d] using hφ i
-
-/-- **Uniqueness of comparisons of degree `n`.** Let `φ` and `ψ` be families of equivariant maps
-`Jᵖ ⟶ C^{p + n}` into the coinduced resolution of `Z`, raising degrees by `n` and commuting with
-the differentials, that agree on the augmentation of a contraction `c` of `J`. Then they carry an
-invariant cocycle of `J` to cohomologous homogeneous cocycles of `Z`. -/
-theorem cochainClass_eq_of_ι_comp_eq {n : ℕ} (φ ψ : ∀ p, J.X p ⟶ (resolution' Z).X (p + n))
-    (hφ : ∀ p, φ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ φ (p + 1))
-    (hψ : ∀ p, ψ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ ψ (p + 1))
-    (h : c.ι ≫ φ 0 = c.ι ≫ ψ 0) {p : ℕ} (a : (J.X p).ρ.invariants)
-    (ha : (J.d p (p + 1)).hom (a : (J.X p).V) = 0)
-    (hφa : ((homogeneousCochains Z).d (p + n) (p + n + 1)).hom ((φ p).hom.mapInvariants a) = 0)
-    (hψa : ((homogeneousCochains Z).d (p + n) (p + n + 1)).hom ((ψ p).hom.mapInvariants a) = 0) :
-    Z.cochainClass (p + n) ((φ p).hom.mapInvariants a) hφa =
-      Z.cochainClass (p + n) ((ψ p).hom.mapInvariants a) hψa := by
-  cases p with
-  | zero =>
-    -- a degree-zero cocycle is augmented, where `φ` and `ψ` agree
-    congr 1
-    refine Subtype.ext ?_
-    have ha' := c.ι_proj_of_d_eq_zero ha
-    simp only [ContIntertwiningMap.mapInvariants_apply]
-    rw [← ha', ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, h]
-  | succ p =>
-    let H := c.nullHomotopy (shiftedHom φ hφ - shiftedHom ψ hψ) (by
-      rw [HomologicalComplex.sub_f_apply, Preadditive.comp_sub]
-      exact sub_eq_zero.2 h)
-    refine cochainClass_eq_of_sub_eq_d (j := p + n) (by omega) hφa hψa
-      ((H.hom (p + 1) p).hom.mapInvariants a) (Subtype.ext ?_)
-    have hc := H.comm (p + 1)
-    rw [dNext_eq H.hom (show (ComplexShape.up ℕ).Rel (p + 1) (p + 2) from rfl),
-      prevD_eq H.hom (show (ComplexShape.up ℕ).Rel p (p + 1) from rfl)] at hc
-    have ha' : (J.d (p + 1) (p + 2)).hom (a : (J.X (p + 1)).V) = 0 := ha
-    have hca := congrArg (fun f ↦ f.hom (a : (J.X (p + 1)).V)) hc
-    simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.zero_f, add_zero, hom_sub,
-      hom_add, ContIntertwiningMap.sub_apply, ContIntertwiningMap.add_apply,
-      ConcreteCategory.comp_apply, ha', map_zero, zero_add, shiftedHom,
-      CochainComplex.of_d] at hca
-    rw [Functor.mapHomologicalComplex_obj_d, invariantsFunctor_map_hom, Submodule.coe_sub,
-      ContIntertwiningMap.mapInvariants_apply, ContIntertwiningMap.mapInvariants_apply,
-      ContIntertwiningMap.mapInvariants_apply, ContIntertwiningMap.mapInvariants_apply]
-    exact hca
-
-end Shift
 
 section Pairing
 
@@ -222,9 +153,9 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
     (hhom : ∀ q x w,
       c₃.hom (0 + q) (μ 0 (q + 1) (c₁.ι.hom x) w) = μ 0 q (c₁.ι.hom x) (c₂.hom q w))
     {p q : ℕ} (a : (J₁.X p).ρ.invariants) (ha : (J₁.d p (p + 1)).hom (a : (J₁.X p).V) = 0)
-    (b : (J₂.X q).ρ.invariants) (hb : (J₂.d q (q + 1)).hom (b : (J₂.X q).V) = 0)
-    (hab : (J₃.d (p + q) (p + q + 1)).hom (μ p q a b) = 0) :
-    c₃.cohomologyClass ⟨μ p q a b, fun g ↦ by rw [← hρ, a.2 g, b.2 g]⟩ hab =
+    (b : (J₂.X q).ρ.invariants) (hb : (J₂.d q (q + 1)).hom (b : (J₂.X q).V) = 0) :
+    c₃.cohomologyClass ⟨μ p q a b, fun g ↦ by rw [← hρ, a.2 g, b.2 g]⟩
+        (by rw [show p + q + 1 = p + 1 + q by omega, hd p q a b hb, ha, LinearMap.map_zero₂]) =
       P.cup p q (c₁.cohomologyClass a ha) (c₂.cohomologyClass b hb) := by
   set β := (c₂.comparison.f q).hom.mapInvariants b
   -- multiplication by `b` on the right, and by `β` on the right
@@ -282,8 +213,7 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
     (fun r ↦ c₁.comparison.f r ≫ R r)
     (fun r ↦ by rw [Category.assoc, c₃.comparison.comm, ← Category.assoc, hL, Category.assoc])
     (fun r ↦ by rw [Category.assoc, hR, ← Category.assoc, c₁.comparison.comm, Category.assoc])
-    h0 a ha (by rw [e₁]; exact c₃.d_mapInvariants_comparison_f _ hab) (by rw [e₂]; exact hab')
-    using 2
+    h0 a ha using 2
   · exact e₁.symm
   · exact e₂.symm
 
