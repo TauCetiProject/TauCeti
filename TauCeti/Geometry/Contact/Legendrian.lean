@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph
 
 /-!
 # Isotropic maps and Legendrian immersions
@@ -36,9 +37,11 @@ when `g` is an exact Lagrangian immersion with primitive `h`
 (`TauCeti.SmoothForm.isLegendrianImmersion_contactization_iff`). This is the correspondence
 between exact Lagrangian immersions and their Legendrian lifts. For the cotangent bundle
 `W = T*M`, whose contactization is the space of one-jets `J¹M = T*M × ℝ`, the section
-`x ↦ (s x, g x)` defined by a smooth covector field `s` and a function `g` is a Legendrian immersion
-exactly when `g` is smooth and `s = dg`
-(`TauCeti.CotangentBundle.isLegendrianImmersion_section_iff`). In particular the one-jet
+`x ↦ (β_x, g x)` defined by a smooth one-form `β` and a function `g` is a Legendrian immersion
+exactly when `g` is smooth and `β = dg`
+(`TauCeti.CotangentBundle.isLegendrianImmersion_section_iff`), since the section of `T*M` defined
+by `β` is then an exact Lagrangian graph
+(`TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`). In particular the one-jet
 `j¹g : x ↦ (dg_x, g x)` of a smooth function is a Legendrian immersion
 (`TauCeti.CotangentBundle.isLegendrianImmersion_oneJet`).
 
@@ -276,18 +279,14 @@ theorem isLegendrianImmersion_contactization_iff
       omega
     have hE := (SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_of_finrank (hσ := hσ) rfl
       hg hinj hdim').2 ⟨hh, (isIsotropicMap_contactization_iff hg₁ hh₁).1 hL.isIsotropicMap⟩
-    refine ⟨⟨?_, hE.isLagrangianMap.isIsotropicMap, hdim'⟩, hE⟩
-    exact TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun y ↦
-      (hg.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (Set.mem_univ y)
-        (by simp)).2 (hinj y)
+    exact ⟨⟨hg.isImmersion_of_injective_mfderiv (by simp) hinj, hE.isLagrangianMap.isIsotropicMap,
+      hdim'⟩, hE⟩
   · rintro ⟨hg, -, hh, hpull⟩
     have hg' := hg.isImmersion.contMDiff
     refine ⟨?_, (isIsotropicMap_contactization_iff (hg'.mdifferentiable (by simp))
       (hh.mdifferentiable (by simp))).2 hpull, by rw [hdim, hg.two_mul_finrank]⟩
     -- The pair is an immersion, since its first component is.
-    refine TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun y ↦
-      ((hg'.prodMk hh).contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ
-        (Set.mem_univ y) (by simp)).2 ?_
+    refine (hg'.prodMk hh).isImmersion_of_injective_mfderiv (by simp) fun y ↦ ?_
     rw [mfderiv_prodMk ((hg' y).mdifferentiableAt (by simp)) ((hh y).mdifferentiableAt (by simp))]
     exact fun v w hvw ↦ hg.isImmersion.mfderiv_injective (by simp) y (congrArg Prod.fst hvw)
 
@@ -317,46 +316,46 @@ theorem oneJet_apply (g : M → ℝ) (x : M) :
 
 variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] [I.Boundaryless]
 
-/-- **Legendrian sections of the space of one-jets.** Let `s` be a smooth field of covectors on
-`M` and `g` a real function. The section `x ↦ (s x, g x)` of `J¹M = T*M × ℝ` is a Legendrian
-immersion for the contact form `dz - λ` exactly when `g` is smooth and `s` is its differential, that
-is when the section is the one-jet of `g`. -/
-theorem isLegendrianImmersion_section_iff {s : (x : M) → TangentSpace I x →L[ℝ] ℝ}
-    (hs : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (s x))
-    {g : M → ℝ} :
+/-- **Legendrian sections of the space of one-jets.** Let `β` be a smooth one-form on `M` and `g`
+a real function. The section `x ↦ (β_x, g x)` of `J¹M = T*M × ℝ` is a Legendrian immersion for the
+contact form `dz - λ` exactly when `g` is smooth and `β = dg`, that is when the section is the
+one-jet of `g`. -/
+theorem isLegendrianImmersion_section_iff (β : SmoothForm I M ℝ 1) {g : M → ℝ} :
     (liouvilleForm I M).contactization.IsLegendrianImmersion I
-        (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (s x), g x)) ↔
-      ContMDiff I 𝓘(ℝ) ∞ g ∧ s = mvfderiv I g := by
+        (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv β x), g x)) ↔
+      ContMDiff I 𝓘(ℝ) ∞ g ∧ β.1 = mextDeriv (RoughForm.ofFunction I g) := by
   have hσ : SmoothTwoForm.IsNondegenerate (-mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1
       (liouvilleForm I M)) := by
     rw [← symplecticForm_eq_neg_mextDerivₗ]
     exact isSymplectic_symplecticForm.isNondegenerate
-  -- The Liouville form pulls back along the section to `s`, and `dg` is `mvfderiv I g`.
-  have hpull : mpullback I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (s x))
-      (liouvilleForm I M).1 = mextDeriv (RoughForm.ofFunction I g) ↔ s = mvfderiv I g := by
-    rw [funext_iff, funext_iff]
-    refine forall_congr' fun x ↦ ?_
-    rw [mpullback_liouvilleForm_section ((hs x).mdifferentiableAt (by simp)),
-      mextDeriv_ofFunction]
-    exact (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0).injective.eq_iff
-  rw [SmoothForm.isLegendrianImmersion_contactization_iff hσ]
-  refine ⟨fun h ↦ ⟨h.2.contMDiff_primitive, hpull.1 h.2.mpullback_eq⟩, fun ⟨hg, hsg⟩ ↦ ?_⟩
-  have hLI : hσ.IsLagrangianImmersion I fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (s x) := by
-    refine ⟨?_, ?_, ?_⟩
-    · -- The bundle projection is a smooth left inverse of the section.
-      exact hs.isImmersion_of_leftInverse (by simp)
-        (fun x ↦ (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt
-          one_ne_zero) fun _ ↦ rfl
-    · exact SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv rfl hs
-        (hg.of_le (by simp)) (hpull.2 hsg)
-    · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
-  exact ⟨hLI, hLI.isLagrangianMap, hg, hpull.2 hsg⟩
+  refine (SmoothForm.isLegendrianImmersion_contactization_iff hσ).trans
+    (Iff.trans ?_ (isExactLagrangianMap_section_iff β))
+  -- The canonical symplectic form is `-dλ`, so the two exact Lagrangian predicates agree.
+  simp only [symplecticForm_eq_neg_mextDerivₗ]
+  refine ⟨And.right, fun hE ↦ ⟨⟨?_, hE.isLagrangianMap.isIsotropicMap, ?_⟩, hE⟩⟩
+  · -- The bundle projection is a smooth left inverse of the section.
+    exact (SmoothForm.degreeOneEquiv β).contMDiff.isImmersion_of_leftInverse (by simp)
+      (fun x ↦ (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt
+        one_ne_zero) fun _ ↦ rfl
+  · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 /-- **One-jets are Legendrian.** The one-jet `j¹g : x ↦ (dg_x, g x)` of a smooth function is a
 Legendrian immersion into the space of one-jets `J¹M = T*M × ℝ` with its contact form `dz - λ`. -/
 theorem isLegendrianImmersion_oneJet {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
-    (liouvilleForm I M).contactization.IsLegendrianImmersion I (oneJet g) :=
-  (isLegendrianImmersion_section_iff hg.contMDiff_totalSpaceMk_mvfderiv).2 ⟨hg, rfl⟩
+    (liouvilleForm I M).contactization.IsLegendrianImmersion I (oneJet g) := by
+  let dg : SmoothForm I M ℝ 1 := mextDerivₗ I 0
+    ⟨RoughForm.ofFunction I g, (isSmoothForm_ofFunction_iff.mpr hg).mem_smoothBundleForms⟩
+  have hdg : dg.1 = mextDeriv (RoughForm.ofFunction I g) := mextDerivₗ_apply I 0 _
+  -- The section defined by the one-form `dg` is the one-jet of `g`.
+  have hj : (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv dg x), g x)) =
+      oneJet g := by
+    funext x
+    have hx : SmoothForm.degreeOneEquiv dg x = mvfderiv I g x := by
+      ext v
+      rw [SmoothForm.degreeOneEquiv_apply_apply, hdg, ← Matrix.vec_single_eq_const,
+        mextDeriv_ofFunction_apply, mvfderiv_apply_eq_mfderiv_apply]
+    rw [oneJet_apply, hx]
+  exact hj ▸ (isLegendrianImmersion_section_iff dg).2 ⟨hg, hdg⟩
 
 end CotangentBundle
 

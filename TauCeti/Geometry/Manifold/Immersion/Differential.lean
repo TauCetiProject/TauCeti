@@ -29,14 +29,16 @@ function theorem on an open neighbourhood.
 The same criterion holds for maps between manifolds without boundary. A normal form of a map read
 in the preferred extended charts is carried back to the manifolds by composing its charts with the
 preferred charts (`Manifold.IsImmersionAtOfComplement.of_writtenInExtChartAt`); on a boundaryless
-model the manifold derivative is the derivative of the map read in these charts. In particular a
-smooth map with a differentiable left inverse, such as a section of a fiber bundle, is an
-immersion (`ContMDiff.isImmersion_of_leftInverse`). A
-parameter-preserving map `(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its
-slice `x ↦ G (p, x)` is one in the sense of differentials, as for the space-time track of a moving
-embedded submanifold. Likewise, postcomposing an immersion with a diffeomorphism onto a manifold
-with a different finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for
-example after exchanging the factors of a product.
+model the manifold derivative is the derivative of the map read in these charts. So, for a
+finite-dimensional target model, a smooth map with injective differential everywhere is an
+immersion (`ContMDiff.isImmersion_of_injective_mfderiv`); in particular a smooth map with a
+differentiable left inverse, such as a section of a fiber bundle, is an immersion
+(`ContMDiff.isImmersion_of_leftInverse`). A parameter-preserving map `(p, x) ↦ (p, G (p, x))` is
+then an immersion at every point where its slice `x ↦ G (p, x)` is one in the sense of
+differentials, as for the space-time track of a moving embedded submanifold. Likewise,
+postcomposing an immersion with a diffeomorphism onto a manifold with a different
+finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for example after
+exchanging the factors of a product.
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -268,14 +270,22 @@ theorem ContMDiffOn.isImmersionAt_iff_injective_mfderiv [FiniteDimensional 𝕜 
 
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
+immersion when its manifold derivative is injective at every point. -/
+theorem ContMDiff.isImmersion_of_injective_mfderiv [FiniteDimensional 𝕜 E']
+    (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hdf : ∀ x, Injective (mfderiv I J f x)) :
+    IsImmersion I J n f :=
+  TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x =>
+    (hf.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ x) hn).mpr (hdf x)
+
+omit [CompleteSpace E] [CompleteSpace E'] in
+/-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
 immersion when it has a left inverse which is differentiable at every point of its range. For
 example, a smooth section of a fiber bundle is an immersion. -/
 theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] (hf : ContMDiff I J n f)
     (hn : 1 ≤ n) {r : N → M} (hr : ∀ x, MDifferentiableAt J I r (f x))
     (hrf : LeftInverse r f) : IsImmersion I J n f := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  refine TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x => ?_
-  refine (hf.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ x) hn).mpr ?_
+  refine hf.isImmersion_of_injective_mfderiv hn fun x => ?_
   -- The differential of `r` at `f x` is a left inverse of the differential of `f` at `x`.
   have hcomp := mfderiv_comp x (hr x) ((hf x).mdifferentiableAt hn0)
   rw [hrf.comp_eq_id, mfderiv_id] at hcomp
@@ -304,9 +314,7 @@ provided that model is finite dimensional. -/
 theorem Diffeomorph.isImmersion_comp [FiniteDimensional 𝕜 EP] (Φ : N ≃ₘ^n⟮J, IP⟯ P)
     (hn : 1 ≤ n) (hf : IsImmersion I J n f) : IsImmersion I IP n (Φ ∘ f) := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  refine TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x => ?_
-  refine ((Φ.contMDiff.comp hf.contMDiff).contMDiffOn.isImmersionAt_iff_injective_mfderiv
-    isOpen_univ (mem_univ x) hn).mpr ?_
+  refine (Φ.contMDiff.comp hf.contMDiff).isImmersion_of_injective_mfderiv hn fun x => ?_
   rw [mfderiv_comp x (Φ.mdifferentiable hn0 _) (hf.contMDiff.mdifferentiableAt hn0),
     ContinuousLinearMap.coe_comp, ← Φ.mfderivToContinuousLinearEquiv_coe hn0]
   exact (Φ.mfderivToContinuousLinearEquiv hn0 (f x)).injective.comp (hf.mfderiv_injective hn0 x)
