@@ -8,12 +8,12 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PrimaryReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 import TauCeti.Algebra.Group.Primary.Card
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
 import TauCeti.GroupTheory.Index.PrimaryComponent
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # The local cokernel of an isogeny at a place prime to its degree
@@ -61,6 +61,10 @@ agree. Finite groups of the same order have `n`-primary components of the same o
 * `TauCeti.Isogeny.Hom.index_range_mul_card_primaryComponent_of_degree_notMem` and
   `TauCeti.Isogeny.Hom.index_range_div_card_ker_of_degree_notMem`: the local cokernel/kernel ratio
   of `f` is the ratio of the orders of the `deg f`-primary components.
+* `WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion` and
+  `WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`: an elliptic equation over
+  `O_u` has good reduction at the ring of integers `𝒪[F_u]`, and its reduction there has as many
+  points as the reduction used by the reduction homomorphism.
 * `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction, compute
   this ratio using only the primary components of the finite reduced point groups.
 * `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic`: at good reduction, the ratio is
@@ -76,6 +80,59 @@ agree. Finite groups of the same order have `n`-primary components of the same o
 public section
 
 open IsDedekindDomain IsLocalRing ValuativeRel
+
+namespace WeierstrassCurve
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A]
+  {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
+  {u : HeightOneSpectrum A} [Finite (A ⧸ u.asIdeal)]
+  (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic]
+
+/-- An elliptic equation over `O_u` has good reduction at the ring of integers `𝒪[F_u]` of the
+valuative relation of `F_u`, which is `O_u`. -/
+instance hasGoodReduction_baseChange_adicCompletion :
+    (C.baseChange (u.adicCompletion F)).HasGoodReduction 𝒪[u.adicCompletion F] := by
+  -- Stating this for every valuation subring `T` equal to `O_u` lets the equality
+  -- `integer_eq_adicCompletionIntegers` be substituted. The coercion of `valuationSubring` to a
+  -- type is by definition that of `Valuation.integer`, which is `𝒪[F_u]`.
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T],
+      u.adicCompletionIntegers F = T → (C.baseChange (u.adicCompletion F)).HasGoodReduction T by
+    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T _ rfl
+  have : (C.baseChange (u.adicCompletion F)).IsIntegral (u.adicCompletionIntegers F) := ⟨C, rfl⟩
+  rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self]
+  exact C.isUnit_Δ
+
+/-- The reduction at `𝒪[F_u]` of an elliptic equation over `O_u` has as many points as its
+reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
+theorem natCard_point_reduction_baseChange_adicCompletion :
+    Nat.card ((C.baseChange (u.adicCompletion F)).reduction 𝒪[u.adicCompletion F]).toAffine.Point =
+      Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
+        (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
+          (residue _)).toAffine.Point := by
+  -- as in `hasGoodReduction_baseChange_adicCompletion`, substitute `𝒪[F_u] = O_u`
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T]
+      [(C.baseChange (u.adicCompletion F)).IsMinimal T], u.adicCompletionIntegers F = T →
+      Nat.card ((C.baseChange (u.adicCompletion F)).reduction T).toAffine.Point =
+        Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
+          (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
+            (residue _)).toAffine.Point by
+    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
+    have hmin : (C.baseChange (u.adicCompletion F)).IsMinimal
+        (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs ((C.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F])
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T _ _ rfl
+  rw [reduction]
+  -- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`
+  rfl
+
+end WeierstrassCurve
 
 namespace TauCeti.Isogeny.Hom
 
@@ -189,40 +246,13 @@ theorem index_range_eq_card_ker_of_isElliptic
     (hf : (f.degree : A) ∉ u.asIdeal) :
     f.pointMapHom.range.index = Nat.card f.pointMapHom.ker := by
   classical
-  -- `O_u` is the ring of integers `𝒪[F_u]` of the valuative relation of `F_u`
-  have hT : u.adicCompletionIntegers F = (valuation (u.adicCompletion F)).valuationSubring :=
-    ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm
-  -- the coercion of `valuationSubring` to a type is by definition that of `Valuation.integer`,
-  -- which is `𝒪[F_u]`
-  have : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
-    inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
-  -- An elliptic equation over `O_u` has good reduction there. Stating this for every valuation
-  -- subring `T` equal to `O_u` lets the equality be substituted, which carries good reduction and
-  -- the number of points of the reduction over to `𝒪[F_u]`.
-  have hgood (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic]
-      (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T]
-      (hT : u.adicCompletionIntegers F = T) :
-      ∃ _ : (C.baseChange (u.adicCompletion F)).HasGoodReduction T,
-        Nat.card ((WeierstrassCurve.integralModel R_u (C.baseChange (u.adicCompletion F))).map
-          (residue R_u)).toAffine.Point =
-          Nat.card ((C.baseChange (u.adicCompletion F)).reduction T).toAffine.Point := by
-    subst hT
-    have : (C.baseChange (u.adicCompletion F)).IsIntegral (u.adicCompletionIntegers F) := ⟨C, rfl⟩
-    refine ⟨(WeierstrassCurve.hasGoodReduction_iff_isUnit_integralModel_Δ _ _).mpr ?_, ?_⟩
-    · rw [WeierstrassCurve.integralModel_baseChange_self]
-      exact C.isUnit_Δ
-    rw [WeierstrassCurve.reduction]
-    -- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`, the ring `R_u`
-    rfl
-  obtain ⟨h₁, hred₁⟩ := hgood C₁ _ hT
-  obtain ⟨h₂, hred₂⟩ := hgood C₂ _ hT
-  have : (C₁.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F] := h₁.toIsMinimal
-  have : (C₂.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F] := h₂.toIsMinimal
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact hf (by simp [degree_zero])
   -- the reductions have the same number of points, hence equinumerous primary components
-  have hcard := hred₁.trans (((toIsogeny hf0).natCard_point_reduction_eq h₁).trans hred₂.symm)
+  have hcard := (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
+    (((toIsogeny hf0).natCard_point_reduction_eq inferInstance).trans
+      C₂.natCard_point_reduction_baseChange_adicCompletion)
   -- `R_u` is `u.adicCompletionIntegers F` by definition
   have : Finite (ResidueField R_u) :=
     inferInstanceAs (Finite (ResidueField (u.adicCompletionIntegers F)))
