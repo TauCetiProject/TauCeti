@@ -27,7 +27,10 @@ point of `𝔸¹_X` with the same coordinate (`comp_totalSpaceTrivialIso_hom_lef
 
 Both statements are the case `I = PUnit` of the corresponding statements for the free sheaf `𝒪_X^I`
 (`totalSpaceFreeIso`, `isAddMonHom_totalSpaceFreeIso_hom` and `totalSpaceFreeHomEquiv`), transported
-along the identification of `InvertibleSheaf.trivial X` with the free sheaf on `PUnit`.
+along the identification `InvertibleSheaf.trivialIsoFree` of `InvertibleSheaf.trivial X` with the
+free sheaf on `PUnit`; in particular the global function of a point is the coordinate of the
+corresponding point of `𝕍(𝒪_X^PUnit)` (`totalSpaceTrivialHomAddEquiv_apply`,
+`totalSpaceTrivialHomAddEquiv_symm_apply`).
 
 ## Main declarations
 
@@ -62,11 +65,6 @@ noncomputable section
 
 variable (X : Scheme.{u})
 
-/-- The trivial invertible sheaf, as a finite locally free sheaf, is the free sheaf on `PUnit`. -/
-private def trivialIsoFree :
-    (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅ free X PUnit :=
-  ObjectProperty.isoMk _ (eqToIso ((InvertibleSheaf.trivial_obj X).trans (free_obj X PUnit).symm))
-
 /-- **The total space of the trivial line bundle is the affine line.** The geometric total space
 `𝕍(𝒪_X) = Spec_X (Sym 𝒪_X^∨)` of the trivial invertible sheaf is isomorphic over `X` to the
 affine line `𝔸¹_X = 𝔸(PUnit; X)`, as additive group schemes
@@ -75,7 +73,7 @@ def totalSpaceTrivialIso :
     (totalSpaceScheme X).obj
         ((InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X)) ≅
       affineSpaceOver X PUnit :=
-  (totalSpaceScheme X).mapIso (trivialIsoFree X) ≪≫ totalSpaceFreeIso X PUnit
+  (totalSpaceScheme X).mapIso (InvertibleSheaf.trivialIsoFree X) ≪≫ totalSpaceFreeIso X PUnit
 
 /-- **The trivial geometric line bundle is the additive group scheme `𝔸¹_X`.** The isomorphism
 `totalSpaceTrivialIso` respects the zero sections and the fibrewise additions, for the group
@@ -86,41 +84,68 @@ instance isAddMonHom_totalSpaceTrivialIso_hom :
       ((MorphismProperty.Over.forget _ _ X).map (totalSpaceTrivialIso X).hom) := by
   -- `totalSpaceTrivialIso` is the map of total spaces induced by an isomorphism of finite locally
   -- free sheaves, a homomorphism of group schemes, followed by `totalSpaceFreeIso`.
-  have h : IsAddMonHom (N' := 𝔸(PUnit.{u + 1}; X).asOver X)
-      ((MorphismProperty.Over.forget _ _ X).map ((totalSpaceScheme X).map (trivialIsoFree X).hom) ≫
-        (MorphismProperty.Over.forget _ _ X).map (totalSpaceFreeIso X PUnit).hom :
-          _ ⟶ 𝔸(PUnit.{u + 1}; X).asOver X) :=
-    instIsAddMonHomComp _ _
-  exact h
+  rw [totalSpaceTrivialIso, Iso.trans_hom, Functor.mapIso_hom, Functor.map_comp]
+  exact instIsAddMonHomComp _ _
 
 variable {X}
 
+open scoped CommRingObj in
 /-- **Points of the trivial line bundle are global functions.** For a scheme `q : T ⟶ X` over `X`,
 the group of morphisms `T ⟶ 𝕍(𝒪_X)` over `X`, for the group structure of the total space, is the
-additive group `Γ(T, ⊤)` of global functions on `T`. A point goes to the coordinate of the
-corresponding point of `𝕍(𝒪_X^PUnit) ≅ 𝔸¹_X` (`totalSpaceFreeHomEquiv`). -/
+additive group `Γ(T, ⊤)` of global functions on `T`: compose with `totalSpaceTrivialIso` and take
+the coordinate of the resulting point of `𝔸¹_X`. -/
 def totalSpaceTrivialHomAddEquiv (T : Over X) :
     (T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj
         ((InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X)))) ≃+
-      Γ(T.left, ⊤) where
-  toEquiv := (((MorphismProperty.Over.forget _ _ X).mapIso
-      ((totalSpaceScheme X).mapIso (trivialIsoFree X))).homToEquiv.trans
-        (totalSpaceFreeHomEquiv PUnit T)).trans (Equiv.funUnique PUnit _)
-  map_add' t₁ t₂ := by
-    -- the map of total spaces induced by `trivialIsoFree` is additive on points, and so are the
-    -- coordinates of points of `𝕍(𝒪_X^PUnit)`
-    simp only [Equiv.toFun_as_coe, Equiv.trans_apply, Iso.homToEquiv_apply, Functor.mapIso_hom,
-      AddMonObj.add_comp, totalSpaceFreeHomEquiv_add, Equiv.funUnique_apply, Pi.add_apply]
+      Γ(T.left, ⊤) :=
+  haveI : IsAddMonHom (N' := 𝔸(PUnit.{u + 1}; X).asOver X)
+      ((MorphismProperty.Over.forget _ _ X).mapIso (totalSpaceTrivialIso X)).hom :=
+    isAddMonHom_totalSpaceTrivialIso_hom X
+  (Hom.addEquivCongrRight (N := 𝔸(PUnit.{u + 1}; X).asOver X)
+    ((MorphismProperty.Over.forget _ _ X).mapIso (totalSpaceTrivialIso X)) T).trans
+      ((AffineSpace.homAsOverRingEquiv (n := PUnit.{u + 1}) T).trans
+        (RingEquiv.piUnique _)).toAddEquiv
 
 /-- The function of a point `t` of the trivial line bundle is the coordinate of the corresponding
 point of `𝕍(𝒪_X^PUnit)`. -/
-private lemma totalSpaceTrivialHomAddEquiv_eq (T : Over X)
+lemma totalSpaceTrivialHomAddEquiv_apply (T : Over X)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj
       ((InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X)))) :
     totalSpaceTrivialHomAddEquiv T t = totalSpaceFreeHomEquiv PUnit T
       (t ≫ (MorphismProperty.Over.forget _ _ X).map
-        ((totalSpaceScheme X).map (trivialIsoFree X).hom)) PUnit.unit :=
-  (rfl)
+        ((totalSpaceScheme X).map (InvertibleSheaf.trivialIsoFree X).hom)) PUnit.unit := by
+  have : IsAddMonHom (N' := 𝔸(PUnit.{u + 1}; X).asOver X)
+      ((MorphismProperty.Over.forget _ _ X).mapIso (totalSpaceTrivialIso X)).hom :=
+    isAddMonHom_totalSpaceTrivialIso_hom X
+  -- `Hom.addEquivCongrRight` is composition with the isomorphism; its `simps` lemma is stated on
+  -- the carrier of an `AddMonCat` object, so it does not rewrite a morphism.
+  have he : Hom.addEquivCongrRight (N := 𝔸(PUnit.{u + 1}; X).asOver X)
+      ((MorphismProperty.Over.forget _ _ X).mapIso (totalSpaceTrivialIso X)) T t =
+        t ≫ ((MorphismProperty.Over.forget _ _ X).mapIso (totalSpaceTrivialIso X)).hom :=
+    rfl
+  -- `totalSpaceTrivialIso` is the map induced by `trivialIsoFree` followed by `totalSpaceFreeIso`.
+  have h : t ≫ ((MorphismProperty.Over.forget _ _ X).mapIso (totalSpaceTrivialIso X)).hom =
+      (t ≫ (MorphismProperty.Over.forget _ _ X).map
+        ((totalSpaceScheme X).map (InvertibleSheaf.trivialIsoFree X).hom)) ≫
+          (MorphismProperty.Over.forget _ _ X).map (totalSpaceFreeIso X PUnit).hom := by
+    simp only [Functor.mapIso_hom, totalSpaceTrivialIso, Iso.trans_hom, Functor.map_comp,
+      Category.assoc]
+  simp only [totalSpaceTrivialHomAddEquiv, AddEquiv.trans_apply, RingEquiv.toAddEquiv_eq_coe,
+    RingEquiv.coe_toAddEquiv, RingEquiv.trans_apply, AffineSpace.homAsOverRingEquiv_apply,
+    RingEquiv.piUnique_apply]
+  exact (congrArg (fun f ↦ AffineSpace.homAsOverEquiv T f PUnit.unit) (he.trans h)).trans
+    (congrFun (homAsOverEquiv_comp_totalSpaceFreeIso_hom PUnit T _) PUnit.unit)
+
+/-- The point of the trivial line bundle with function `c` corresponds to the point of
+`𝕍(𝒪_X^PUnit)` with coordinate `c`. -/
+lemma totalSpaceTrivialHomAddEquiv_symm_apply (T : Over X) (c : Γ(T.left, ⊤)) :
+    (totalSpaceTrivialHomAddEquiv T).symm c =
+      (totalSpaceFreeHomEquiv PUnit T).symm (fun _ ↦ c) ≫
+        (MorphismProperty.Over.forget _ _ X).map
+          ((totalSpaceScheme X).map (InvertibleSheaf.trivialIsoFree X).inv) := by
+  rw [AddEquiv.symm_apply_eq, totalSpaceTrivialHomAddEquiv_apply, Category.assoc,
+    ← Functor.map_comp, ← Functor.map_comp, Iso.inv_hom_id, CategoryTheory.Functor.map_id,
+    CategoryTheory.Functor.map_id, Category.comp_id, Equiv.apply_symm_apply]
 
 /-- **Points of the trivial line bundle are natural in the test scheme.** Composing a point with
 a morphism `g : T' ⟶ T` over `X` pulls back its global function along `g`. -/
@@ -128,7 +153,7 @@ lemma totalSpaceTrivialHomAddEquiv_comp {T' T : Over X} (g : T' ⟶ T)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj
       ((InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X)))) :
     totalSpaceTrivialHomAddEquiv T' (g ≫ t) = g.left.appTop (totalSpaceTrivialHomAddEquiv T t) := by
-  rw [totalSpaceTrivialHomAddEquiv_eq, totalSpaceTrivialHomAddEquiv_eq, Category.assoc,
+  rw [totalSpaceTrivialHomAddEquiv_apply, totalSpaceTrivialHomAddEquiv_apply, Category.assoc,
     totalSpaceFreeHomEquiv_comp, Function.comp_apply]
 
 /-- The isomorphism `𝕍(𝒪_X) ≅ 𝔸¹_X` sends a point `t` of the trivial line bundle over `X` to the
@@ -138,11 +163,17 @@ lemma comp_totalSpaceTrivialIso_hom_left (T : Over X)
       ((InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X)))) :
     t.left ≫ (totalSpaceTrivialIso X).hom.left =
       AffineSpace.homOfVector T.hom fun _ ↦ totalSpaceTrivialHomAddEquiv T t := by
-  have h := comp_totalSpaceFreeIso_hom_left PUnit T
-    (t ≫ (MorphismProperty.Over.forget _ _ X).map ((totalSpaceScheme X).map (trivialIsoFree X).hom))
-  -- The underlying morphism of a composite over `X` is the composite of the underlying morphisms,
-  -- and a function on `PUnit` is the constant function at its value at `PUnit.unit`.
-  exact (Category.assoc _ _ _).symm.trans h
+  -- A function on `PUnit` is the constant function at its value at `PUnit.unit`.
+  have hv : (fun _ : PUnit ↦ totalSpaceTrivialHomAddEquiv T t) =
+      totalSpaceFreeHomEquiv PUnit T (t ≫ (MorphismProperty.Over.forget _ _ X).map
+        ((totalSpaceScheme X).map (InvertibleSheaf.trivialIsoFree X).hom)) := by
+    funext i
+    rw [Unique.eq_default i, totalSpaceTrivialHomAddEquiv_apply]
+  rw [hv, ← comp_totalSpaceFreeIso_hom_left, totalSpaceTrivialIso, Iso.trans_hom,
+    Functor.mapIso_hom, Over.comp_left]
+  -- The underlying morphism of the image of `a` under the forgetful functor is that of `a`.
+  exact (congrArg (t.left ≫ ·) (MorphismProperty.Comma.comp_left _ _)).trans
+    (Category.assoc _ _ _).symm
 
 /-- The inverse isomorphism `𝔸¹_X ≅ 𝕍(𝒪_X)` sends the point of `𝔸¹_X` with coordinate `c` to the
 point of the trivial line bundle whose global function is `c`. -/

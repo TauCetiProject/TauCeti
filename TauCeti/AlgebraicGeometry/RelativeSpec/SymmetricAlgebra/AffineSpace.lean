@@ -201,20 +201,18 @@ lemma relativeSpecSymmetricAlgebraFreeHomEquiv_add (T : Over X)
     relativeSpecSymmetricAlgebraFreeHomEquiv I T (t₁ + t₂) =
       relativeSpecSymmetricAlgebraFreeHomEquiv I T t₁ +
         relativeSpecSymmetricAlgebraFreeHomEquiv I T t₂ := by
-  refine (congrArg (T.hom.freeHomPushforwardEquiv I)
-    (relativeSpecSymmetricAlgebraHomEquiv_add _ T t₁ t₂)).trans ?_
   funext i
-  refine (Scheme.Hom.freeHomPushforwardEquiv_apply _ I _ i).trans ?_
-  refine Eq.trans ?_ (Pi.add_apply (relativeSpecSymmetricAlgebraFreeHomEquiv I T t₁)
-    (relativeSpecSymmetricAlgebraFreeHomEquiv I T t₂) i).symm
-  refine Eq.trans ?_ (congrArg₂ (· + ·)
-    (Scheme.Hom.freeHomPushforwardEquiv_apply _ I (relativeSpecSymmetricAlgebraHomEquiv _ T t₁) i)
-    (Scheme.Hom.freeHomPushforwardEquiv_apply _ I (relativeSpecSymmetricAlgebraHomEquiv _ T t₂)
-      i)).symm
-  refine Eq.trans ?_ (map_add _ _ _)
-  -- The value of a sum of module maps on a basis section is, by definition of the sum of
-  -- morphisms of sheaves of modules, the sum of their values.
-  exact congrArg _ rfl
+  rw [relativeSpecSymmetricAlgebraFreeHomEquiv_apply, relativeSpecSymmetricAlgebraHomEquiv_add,
+    Pi.add_apply, relativeSpecSymmetricAlgebraFreeHomEquiv_apply,
+    relativeSpecSymmetricAlgebraFreeHomEquiv_apply, Scheme.Hom.freeHomPushforwardEquiv_apply,
+    Scheme.Hom.freeHomPushforwardEquiv_apply]
+  -- The sum of module maps given by `relativeSpecSymmetricAlgebraHomEquiv_add` is typed in
+  -- `linearFunctionalsPresheaf`, so `freeHomPushforwardEquiv_apply` applies to it only as a term.
+  -- Its value on a basis section is, by definition of the sum of morphisms of sheaves of modules
+  -- (`SheafOfModules.add_val`, `PresheafOfModules.add_app`), the sum of the values; Mathlib states
+  -- no lemma for `SheafOfModules.sectionsMap` of a sum.
+  exact (Scheme.Hom.freeHomPushforwardEquiv_apply _ I _ i).trans
+    ((congrArg _ rfl).trans (map_add _ _ _))
 
 /-- The point of `𝔸(I; X)` corresponding to a point `t` of `Spec_X (Sym 𝒪_X^I)` under the
 isomorphism `relativeSpecSymmetricAlgebraFreeIso` has the coordinates of `t`. -/

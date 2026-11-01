@@ -198,6 +198,11 @@ instance isAddMonHom_totalSpaceFreeIso_hom :
         (MorphismProperty.Over.forget _ _ X).map (relativeSpecSymmetricAlgebraFreeIso X I).hom :
           _ ⟶ 𝔸(I; X).asOver X) :=
     instIsAddMonHomComp _ _
+  -- The goal's morphism is this composite by definition of `totalSpaceFreeIso` (`Iso.trans_hom`,
+  -- `Functor.mapIso_hom`, `Iso.op_hom` and `Functor.map_comp`). These cannot be rewritten in the
+  -- goal: its forgetful functor carries the morphism property `IsAffineHom`, which makes the
+  -- rewrite motive ill-typed, and `simp` unfolds past the composite, losing the intermediate
+  -- group structure that `instIsAddMonHomComp` needs.
   exact h
 
 /-- The coordinates of a sum of points of `𝕍(𝒪_X^I)` are the sums of their coordinates. -/
