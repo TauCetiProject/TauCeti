@@ -21,11 +21,6 @@ The normalised unit satisfies `‖U - 1‖ < 1` in the Gauss norm. Consequently 
 polynomial approximation satisfies the scale-correct bound `‖f - P‖ < ‖f‖`.
 No assumption of entire convergence is made.
 
-The rescaling of the monic preparation uses the shared restricted-series helpers in
-`Weierstrass/Normalization.lean`, extracted from
-`TauCeti.PowerSeries.IsMulDistinguished.exists_isEntirePreparation`; here only
-restrictedness, rather than entire convergence, is required.
-
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.2, Theorem 1.
@@ -56,7 +51,7 @@ structure IsDiscPreparation (r : ℝ) (d : ℕ) (f : K⟦X⟧) (P : Polynomial K
   /-- The polynomial has the specified degree. -/
   natDegree_eq : P.natDegree = d
   /-- The restricted cofactor has constant coefficient one. -/
-  constantCoeff_eq_one : constantCoeff (U : K⟦X⟧) = 1
+  constantCoeff_unit_eq_one : constantCoeff (U : K⟦X⟧) = 1
   /-- The cofactor is a unit on the whole closed disc. -/
   isUnit : IsUnit U
   /-- The factorisation of the original series. -/
@@ -67,26 +62,36 @@ theorem IsDiscPreparation.polynomial_ne_zero (h : IsDiscPreparation r d f P U) :
   intro hP
   simpa [hP] using h.coeff_zero_eq_one
 
+/-- The leading coefficient of a disc preparation's polynomial factor is a unit. -/
+theorem IsDiscPreparation.isUnit_leadingCoeff (h : IsDiscPreparation r d f P U) :
+    IsUnit P.leadingCoeff :=
+  (Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero).isUnit
+
+/-- A disc preparation is multiplicatively distinguished at its polynomial degree. -/
+theorem IsDiscPreparation.isMulDistinguished (h : IsDiscPreparation r d f P U) :
+    IsMulDistinguished r d f :=
+  isMulDistinguished_iff_isUnit.mpr
+    ⟨h.isDistinguished, h.isDistinguished.coeff_ne_zero.isUnit⟩
+
 /-- Both normalised factors, and hence their product, have constant coefficient one. -/
-theorem IsDiscPreparation.constantCoeff (h : IsDiscPreparation r d f P U) :
+theorem IsDiscPreparation.constantCoeff_eq_one (h : IsDiscPreparation r d f P U) :
     constantCoeff f = 1 := by
   rw [h.eq_mul, map_mul, ← coeff_zero_eq_constantCoeff_apply, Polynomial.coeff_coe,
-    h.coeff_zero_eq_one, h.constantCoeff_eq_one, one_mul]
+    h.coeff_zero_eq_one, h.constantCoeff_unit_eq_one, one_mul]
 
 /-- The normalised restricted unit has Gauss norm one. -/
 theorem IsDiscPreparation.gaussNorm_unit (h : IsDiscPreparation r d f P U)
     (hr : 0 < r) : (U : K⟦X⟧).gaussNorm norm r = 1 := by
   have hU := isDistinguished_zero_of_isUnit hr h.isUnit
   rw [← hU.norm_coeff_mul_pow_eq, pow_zero, mul_one,
-    coeff_zero_eq_constantCoeff_apply, h.constantCoeff_eq_one, norm_one]
+    coeff_zero_eq_constantCoeff_apply, h.constantCoeff_unit_eq_one, norm_one]
 
 /-- The unit of a constant-one disc preparation is strictly within one of the identity
-in the Gauss norm. Restrictedness upgrades the strict coefficient inequalities to a
-strict bound on the supremum. -/
+in the Gauss norm. -/
 theorem IsDiscPreparation.gaussNorm_sub_one_lt (h : IsDiscPreparation r d f P U)
     (hr : 0 < r) : ((U : K⟦X⟧) - 1).gaussNorm norm r < 1 := by
   have hU := isDistinguished_zero_of_isUnit hr h.isUnit
-  simpa [trunc_one_left, coeff_zero_eq_constantCoeff_apply, h.constantCoeff_eq_one,
+  simpa [trunc_one_left, coeff_zero_eq_constantCoeff_apply, h.constantCoeff_unit_eq_one,
     h.gaussNorm_unit hr] using hU.gaussNorm_sub_trunc_lt hr U.2
 
 /-- The error in replacing a series by its constant-one disc polynomial is strictly
@@ -112,10 +117,8 @@ theorem IsDiscPreparation.eq_smul_and_smul_eq (h : IsDiscPreparation r d f P U)
     (he : IsUnit e) (hω : ω.IsMonicOfDegree d)
     (heω : (e : K⟦X⟧) * (ω : K⟦X⟧) = f) :
     P = P.leadingCoeff • ω ∧ P.leadingCoeff • (U : K⟦X⟧) = (e : K⟦X⟧) := by
-  exact (isMulDistinguished_iff_isUnit.mpr
-    ⟨h.isDistinguished, h.isDistinguished.coeff_ne_zero.isUnit⟩).eq_smul_and_smul_eq hr
-      (Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero).isUnit h.natDegree_eq
-      h.isUnit h.eq_mul he hω heω
+  exact h.isMulDistinguished.eq_smul_and_smul_eq hr h.isUnit_leadingCoeff h.natDegree_eq
+    h.isUnit h.eq_mul he hω heω
 
 /-- Constant-one disc preparations at the last active coefficient are unique. The
 restricted-unit hypotheses are essential; degree and constant coefficient alone do
@@ -123,16 +126,13 @@ not specify the disc polynomial. -/
 theorem IsDiscPreparation.unique (h : IsDiscPreparation r d f P U)
     (h' : IsDiscPreparation r d f P' U') (hr : 0 < r) :
     P = P' ∧ U = U' := by
-  exact (isMulDistinguished_iff_isUnit.mpr
-    ⟨h.isDistinguished, h.isDistinguished.coeff_ne_zero.isUnit⟩).eq_and_eq_of_normalized_mul_eq hr
-      (Polynomial.leadingCoeff_ne_zero.mpr h.polynomial_ne_zero).isUnit
-      (Polynomial.leadingCoeff_ne_zero.mpr h'.polynomial_ne_zero).isUnit
-      h.natDegree_eq h'.natDegree_eq h.coeff_zero_eq_one h'.coeff_zero_eq_one
-      h.isUnit h'.isUnit h.eq_mul h'.eq_mul
+  exact h.isMulDistinguished.eq_and_eq_of_normalized_mul_eq hr
+    h.isUnit_leadingCoeff h'.isUnit_leadingCoeff
+    h.natDegree_eq h'.natDegree_eq h.coeff_zero_eq_one h'.coeff_zero_eq_one
+    h.isUnit h'.isUnit h.eq_mul h'.eq_mul
 
 /-- A restricted series with constant coefficient one has a constant-one disc
-preparation at its last active coefficient. Completeness is used only to obtain the
-underlying Weierstrass preparation. -/
+preparation at its last active coefficient. -/
 theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K]
     (hf : IsDistinguished r d f) (hr : 0 < r) (hfr : f.IsRestricted r)
     (hf0 : constantCoeff f = 1) :
@@ -140,6 +140,8 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K]
       IsDiscPreparation r d f P U := by
   obtain ⟨e, ω, he, hω, heω⟩ :=
     hf.exists_isUnit_isMonicOfDegree_mul_eq hf.coeff_ne_zero.isUnit hr hfr
+  -- Use the constant-one rescaling from
+  -- `IsMulDistinguished.exists_isEntirePreparation`, without entire convergence.
   obtain ⟨a, U, hP0, hd, -, hU0, hU, hPU, -⟩ :=
     exists_normalized_factors_of_mul_eq he hω heω hf0
   exact ⟨a • ω, U, ⟨hf, hP0, hd, hU0, hU, hPU⟩⟩

@@ -10,15 +10,16 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 /-!
 # Rescaling Weierstrass factors
 
-This file shares the algebraic normalization arguments used by disc and entire preparation.
-Over an ultrametric normed commutative ring, a polynomial with unit leading coefficient
-can be made monic by rescaling its restricted-unit cofactor. Conversely, if the product
-has constant coefficient one, a monic preparation can be rescaled so that both factors have
-constant coefficient one. Comparison and uniqueness use monic Weierstrass uniqueness.
-No entire-convergence or completeness hypothesis is needed for these rescalings.
+Over an ultrametric normed commutative ring, a polynomial-times-restricted-unit
+factorization with unit leading coefficient and distinguished degree is a scalar rescaling
+of any monic preparation (`IsMulDistinguished.eq_smul_and_smul_eq`). Such factorizations
+are unique when the polynomial factors have constant coefficient one. A monic preparation
+of a constant-one series can also be rescaled so that both factors have constant coefficient
+one. No entire-convergence or completeness hypothesis is needed for these rescalings.
 
-The construction is extracted from the normalized entire preparation development,
-following R. F. Coleman, *p-adic Banach spaces and families of modular forms*, Appendix A3.
+## References
+
+* R. F. Coleman, *p-adic Banach spaces and families of modular forms*, Appendix A3.
 -/
 
 public section
@@ -37,7 +38,8 @@ theorem IsMulDistinguished.eq_smul_and_smul_eq (hf : IsMulDistinguished c d f)
     (hPU : f = (P : R⟦X⟧) * (U : R⟦X⟧)) (he : IsUnit e) (hω : ω.IsMonicOfDegree d)
     (heω : (e : R⟦X⟧) * (ω : R⟦X⟧) = f) :
     P = P.leadingCoeff • ω ∧ P.leadingCoeff • (U : R⟦X⟧) = (e : R⟦X⟧) := by
-  obtain ⟨e', he', hω', he'U, he'P⟩ := exists_monic_of_isUnit_leadingCoeff ha hd hU hPU
+  obtain ⟨e', he', hω', he'U, he'P⟩ :=
+    exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff ha hd hU hPU
   obtain ⟨rfl, rfl⟩ := hf.eq_and_eq_of_mul_eq_of_mul_eq hc he' he hω' hω he'P heω
   refine ⟨?_, he'U.symm⟩
   rw [Units.smul_def, smul_smul, ha.mul_val_inv, one_smul]
@@ -50,7 +52,8 @@ theorem IsMulDistinguished.eq_and_eq_of_normalized_mul_eq (hf : IsMulDistinguish
     (hP0 : P.coeff 0 = 1) (hP0' : P'.coeff 0 = 1) (hU : IsUnit U) (hU' : IsUnit U')
     (hPU : f = (P : R⟦X⟧) * (U : R⟦X⟧)) (hPU' : f = (P' : R⟦X⟧) * (U' : R⟦X⟧)) :
     P = P' ∧ U = U' := by
-  obtain ⟨e', he', hω', he'U, he'P⟩ := exists_monic_of_isUnit_leadingCoeff ha' hd' hU' hPU'
+  obtain ⟨e', he', hω', he'U, he'P⟩ :=
+    exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff ha' hd' hU' hPU'
   obtain ⟨hP, hG⟩ := hf.eq_smul_and_smul_eq hc ha hd hU hPU he' hω' he'P
   set ω := ha'.unit⁻¹ • P' with hω
   -- The constant coefficient of the common monic polynomial is inverse to both leading
@@ -70,8 +73,7 @@ theorem IsMulDistinguished.eq_and_eq_of_normalized_mul_eq (hf : IsMulDistinguish
     exact ha.smul_left_cancel.mp hG
 
 /-- Rescale monic restricted-unit factors of a constant-one series so that both factors
-have constant coefficient one. The resulting cofactor is explicitly a scalar multiple of
-the original, allowing additional convergence properties to be transported by callers. -/
+have constant coefficient one. The resulting cofactor is a scalar multiple of the original. -/
 theorem exists_normalized_factors_of_mul_eq (he : IsUnit e) (hω : ω.IsMonicOfDegree d)
     (heω : (e : R⟦X⟧) * (ω : R⟦X⟧) = f) (hf0 : constantCoeff f = 1) :
     ∃ (a : Rˣ) (U : IsRestricted.subring (R := R) c),

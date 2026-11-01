@@ -45,8 +45,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
-* `TauCeti.PowerSeries.exists_monic_of_isUnit_leadingCoeff`: move a unit leading coefficient
-  from a polynomial factor to its restricted-unit cofactor.
+* `TauCeti.PowerSeries.exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff`: move a unit
+  leading coefficient from a polynomial factor to its restricted-unit cofactor.
 -/
 
 public section
@@ -213,7 +213,8 @@ theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero {s : ℕ}
   · exact (hr n (by omega)).symm
 
 /-- Move an invertible leading coefficient from a polynomial to its restricted-unit factor. -/
-theorem exists_monic_of_isUnit_leadingCoeff {d : ℕ} {f : PowerSeries R} {P : Polynomial R}
+theorem exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff
+    {d : ℕ} {f : PowerSeries R} {P : Polynomial R}
     {U : PowerSeries.IsRestricted.subring (R := R) c} (ha : IsUnit P.leadingCoeff)
     (hd : P.natDegree = d) (hU : IsUnit U)
     (hf : f = (P : PowerSeries R) * (U : PowerSeries R)) :
