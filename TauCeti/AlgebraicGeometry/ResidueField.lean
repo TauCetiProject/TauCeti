@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Residue fields of schemes and their behaviour under base change
@@ -88,18 +89,32 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
 /-- A morphism surjective on stalks induces isomorphisms on residue fields. -/
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
     (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by
-  apply (ConcreteCategory.isIso_iff_bijective _).mpr
-  refine ⟨(f.residueFieldMap x).hom.injective, ?_⟩
-  have h := (X.residue_surjective x).comp (f.stalkMap_surjective x)
-  rw [← ConcreteCategory.coe_comp, ← Scheme.residue_residueFieldMap] at h
-  rw [ConcreteCategory.coe_comp] at h
-  exact Function.Surjective.of_comp h
+  exact (ConcreteCategory.isIso_iff_bijective _).mpr
+    ((TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mp
+      (f.residueDegree_eq_one_of_surjectiveOnStalks x))
+
+/-- If a morphism and its composite preserve the residue field at a point, the second
+morphism preserves the residue field at the image point. In particular, this cancels an
+open immersion from a composite. -/
+theorem Scheme.Hom.isIso_residueFieldMap_of_comp {X Y Z : Scheme.{u}}
+    (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) [IsIso (f.residueFieldMap x)]
+    [IsIso ((f ≫ g).residueFieldMap x)] : IsIso (g.residueFieldMap (f x)) := by
+  have h : IsIso ((f ≫ g).residueFieldMap x) := inferInstance
+  rw [Scheme.residueFieldMap_comp] at h
+  exact (isIso_comp_right_iff _ (f.residueFieldMap x)).mp h
 
 namespace Scheme.Pullback
 
 open Limits
 
 variable {X Y S : Scheme.{u}} {f : X ⟶ S} {g : Y ⟶ S}
+
+/-- Tensoring with an unchanged residue field leaves the other residue field unchanged. -/
+instance Triplet.isIso_tensorInl (T : Triplet f g) [IsIso (g.residueFieldMap T.y)] :
+    IsIso T.tensorInl := by
+  -- Expose the pushout inclusion so that stability of isomorphisms under pushout applies.
+  dsimp only [Triplet.tensorInl, Triplet.tensor]
+  infer_instance
 
 /-- If the residue field of `y` is unchanged over the base, a pair `(x, y)` has at most one
 lift to the fibre product. -/
@@ -108,9 +123,9 @@ theorem eq_of_fst_eq_snd_eq_of_isIso {z z' : ↑(pullback f g)}
     (hy : pullback.snd f g z = pullback.snd f g z')
     [IsIso (g.residueFieldMap (pullback.snd f g z'))] : z = z' := by
   let T := Triplet.ofPoint z'
-  have : IsIso (g.residueFieldMap T.y) := ‹_›
-  have : IsIso T.tensorInl := by
-    dsimp only [Triplet.tensorInl, Triplet.tensor]
+  have : IsIso (g.residueFieldMap T.y) := by
+    have hy : T.y = pullback.snd f g z' := Triplet.ofPoint_y z'
+    rw [hy]
     infer_instance
   have : Subsingleton (Spec T.tensor) :=
     (Scheme.homeoOfIso (asIso (Spec.map T.tensorInl))).injective.subsingleton
@@ -128,23 +143,17 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
     [IsIso (g.residueFieldMap (pullback.snd f g z))] :
     IsIso ((pullback.fst f g).residueFieldMap z) := by
   let T := Triplet.ofPoint z
-  have : IsIso (g.residueFieldMap T.y) := ‹_›
-  have : IsIso T.tensorInl := by
-    dsimp only [Triplet.tensorInl, Triplet.tensor]
+  have : IsIso (g.residueFieldMap T.y) := by
+    have hy : T.y = pullback.snd f g z := Triplet.ofPoint_y z
+    rw [hy]
     infer_instance
   have : SurjectiveOnStalks (T.SpecTensorTo ≫ pullback.fst f g) := by
     rw [T.specTensorTo_fst]
     infer_instance
   have : SurjectiveOnStalks T.SpecTensorTo := .of_comp _ (pullback.fst f g)
-  have h : IsIso ((T.SpecTensorTo ≫ pullback.fst f g).residueFieldMap (SpecOfPoint z)) :=
-    inferInstance
-  rw [Scheme.residueFieldMap_comp] at h
-  have h' := (isIso_comp_right_iff
-    ((pullback.fst f g).residueFieldMap (T.SpecTensorTo (SpecOfPoint z)))
-    (T.SpecTensorTo.residueFieldMap (SpecOfPoint z))).mp h
+  have h := T.SpecTensorTo.isIso_residueFieldMap_of_comp (pullback.fst f g) (SpecOfPoint z)
   have hz : T.SpecTensorTo (SpecOfPoint z) = z := SpecTensorTo_SpecOfPoint z
-  rw [hz] at h'
-  exact h'
+  rwa [hz] at h
 
 end Scheme.Pullback
 

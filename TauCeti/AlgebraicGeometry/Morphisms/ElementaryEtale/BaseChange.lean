@@ -98,9 +98,8 @@ theorem Scheme.Hom.exists_finite_open_baseChange {X S U U' : Scheme.{u}}
       rw [Scheme.Hom.residueFieldMap_congr hjfst, isIso_comp_left_iff,
         Scheme.residueFieldMap_comp, Scheme.residueFieldMap_comp]
       exact IsIso.comp_isIso' (IsIso.comp_isIso' hr inferInstance) inferInstance
-    rw [Scheme.residueFieldMap_comp] at this
     rw [hejz]
-    exact (isIso_comp_right_iff _ (j.residueFieldMap z)).mp this
+    exact j.isIso_residueFieldMap_of_comp (pullback.fst f (ψ ≫ φ)) z
   · intro w hw
     obtain ⟨t, rfl⟩ := (Scheme.homeoOfIso e).surjective w
     have htu : pullback.snd g ψ t = u' := by
