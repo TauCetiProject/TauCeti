@@ -17,6 +17,10 @@ into the cycles of a complex `K` defines a morphism of complexes `K.fromGraded e
 `e i` on cycles (`HomologicalComplex.iCyclesIso_inv_cyclesMap_fromGraded`). It is surjective on
 homology when every `e i` is an epimorphism (`HomologicalComplex.epi_homologyMap_fromGraded`).
 Such morphisms are the first step in the construction of resolutions by attaching cells.
+
+More generally, the homology of any complex in a degree where both differentials vanish is the
+term in that degree, so it is projective when that term is
+(`HomologicalComplex.projective_homology_of_d_eq_zero`).
 -/
 
 public section
@@ -40,6 +44,14 @@ instance hasHomology_graded (E : ι → C) (i : ι) : (graded c E).HasHomology i
   ShortComplex.hasHomology_of_zeros _ _ _
 
 variable {c}
+
+/-- If the differentials into and out of degree `i` vanish, the homology in degree `i` is the
+term in degree `i`, so it is projective when that term is. -/
+lemma projective_homology_of_d_eq_zero (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]
+    [Projective (K.X i)] (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
+    Projective (K.homology i) :=
+  Projective.of_iso ((K.iCyclesIso i (c.next i) rfl h₂).symm ≪≫
+    K.isoHomologyπ (c.prev i) i rfl h₁) inferInstance
 
 variable (K : HomologicalComplex C c) [∀ i, K.HasHomology i] {E : ι → C}
   (e : ∀ i, E i ⟶ K.cycles i)
