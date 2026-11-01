@@ -53,7 +53,7 @@ variable [∀ j, CompactSpace (F.obj j)] [∀ j, PrespectralSpace (F.obj j)]
 
 /-- The inverse images of the compact opens at compact prespectral quasiseparated stages
 form a basis of a cofiltered limit along spectral maps. -/
-theorem isTopologicalBasis_compactOpen_of_isLimit :
+theorem isTopologicalBasis_isOpen_isCompact_preimage_of_isLimit :
     IsTopologicalBasis {U : Set c.pt | ∃ (j : J) (V : Set (F.obj j)),
       IsOpen V ∧ IsCompact V ∧ U = c.π.app j ⁻¹' V} := by
   simpa [and_assoc] using isTopologicalBasis_cofiltered_limit.{u, v, w} F c hc
@@ -67,13 +67,14 @@ theorem isTopologicalBasis_compactOpen_of_isLimit :
 /-- Every compact open of a cofiltered limit of compact prespectral quasiseparated spaces
 along spectral maps descends to a compact open at one stage. The limiting cone may be any
 chosen limit cone. -/
-theorem exists_compactOpen_preimage_of_isLimit {U : Set c.pt} (hUo : IsOpen U)
+theorem exists_isOpen_isCompact_preimage_of_isLimit {U : Set c.pt} (hUo : IsOpen U)
     (hUc : IsCompact U) :
     ∃ (j : J) (V : Set (F.obj j)), IsOpen V ∧ IsCompact V ∧ U = c.π.app j ⁻¹' V := by
   classical
   let B := {U : Set c.pt | ∃ (j : J) (V : Set (F.obj j)),
     IsOpen V ∧ IsCompact V ∧ U = c.π.app j ⁻¹' V}
-  have hb : IsTopologicalBasis B := isTopologicalBasis_compactOpen_of_isLimit F hF c hc
+  have hb : IsTopologicalBasis B :=
+    isTopologicalBasis_isOpen_isCompact_preimage_of_isLimit F hF c hc
   obtain ⟨s, hs, rfl⟩ := eq_finite_iUnion_of_isTopologicalBasis_of_isCompact_open
     (fun V : B ↦ (V : Set c.pt)) (by simpa using hb) U hUc hUo
   clear hUo hUc
@@ -100,13 +101,13 @@ variable [∀ j, SpectralSpace (F.obj j)]
 
 /-- Every constructible subset of a cofiltered spectral limit descends to a constructible
 subset at one stage. -/
-theorem exists_constructible_preimage_of_isLimit {U : Set c.pt} (hU : IsConstructible U) :
+theorem exists_isConstructible_preimage_of_isLimit {U : Set c.pt} (hU : IsConstructible U) :
     ∃ (j : J) (V : Set (F.obj j)), IsConstructible V ∧ U = c.π.app j ⁻¹' V := by
   have := spectralSpace_of_isLimit F hF c hc
   induction hU using IsConstructible.empty_union_induction with
   | open_retrocompact U hUo hUc =>
     obtain ⟨j, V, hVo, hVc, hV⟩ :=
-      exists_compactOpen_preimage_of_isLimit F hF c hc hUo hUc.isCompact
+      exists_isOpen_isCompact_preimage_of_isLimit F hF c hc hUo hUc.isCompact
     exact ⟨j, V, hVc.isConstructible hVo, hV⟩
   | union U hU V hV ihU ihV =>
     obtain ⟨i, Ui, hUi, rfl⟩ := ihU
@@ -114,12 +115,8 @@ theorem exists_constructible_preimage_of_isLimit {U : Set c.pt} (hU : IsConstruc
     let k := IsCofiltered.min i j
     let a : k ⟶ i := IsCofiltered.minToLeft i j
     let b : k ⟶ j := IsCofiltered.minToRight i j
-    have hpre {l m : J} (f : l ⟶ m) {W : Set (F.obj m)} (hW : IsConstructible W) :
-        IsConstructible (F.map f ⁻¹' W) :=
-      hW.preimage (hF f).continuous fun _ hWo hWc ↦
-        ((hF f).isCompact_preimage_of_isOpen hWo hWc.isCompact).isRetrocompact
-          (hWo.preimage (hF f).continuous)
-    refine ⟨k, F.map a ⁻¹' Ui ∪ F.map b ⁻¹' Vj, (hpre a hUi).union (hpre b hVj), ?_⟩
+    refine ⟨k, F.map a ⁻¹' Ui ∪ F.map b ⁻¹' Vj,
+      ((hF a).isConstructible_preimage hUi).union ((hF b).isConstructible_preimage hVj), ?_⟩
     simp only [preimage_union, ← preimage_comp, ← coe_comp, c.w]
   | compl U hU ih =>
     obtain ⟨j, V, hV, rfl⟩ := ih

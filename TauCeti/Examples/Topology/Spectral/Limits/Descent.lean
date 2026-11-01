@@ -44,6 +44,7 @@ example :
     have : ∀ j, Finite (F.obj j) := fun j ↦
       inferInstanceAs (Finite (Profinite.IndexFunctor.obj C (· ∈ j.unop)))
     have : ∀ j, SpectralSpace (F.obj j) := fun j ↦ by
+      -- The forgetful functor keeps the carrier and topology of each profinite stage.
       have : T2Space (F.obj j) := inferInstanceAs
         (T2Space ((Profinite.indexFunctor hC).obj j))
       exact {}
@@ -51,17 +52,20 @@ example :
       ⟨(F.map f).hom.continuous, fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
     have hUc : IsConstructible ((Subtype.val : C → (ℕ → Bool)) ⁻¹' U) :=
       hU.preimage_of_isOpenEmbedding isOpen_univ.isOpenEmbedding_subtypeVal
-    obtain ⟨j, V, _, hV⟩ := TopCat.exists_constructible_preimage_of_isLimit F
+    obtain ⟨j, V, _, hV⟩ := TopCat.exists_isConstructible_preimage_of_isLimit F
       (fun f ↦ hF f) c hc hUc
     refine ⟨j.unop, Subtype.val '' V, fun x ↦ ?_⟩
     have hx := Set.ext_iff.mp hV (⟨x, mem_univ x⟩ : C)
     refine hx.trans ?_
-    -- The specified cone projects by restricting the sequence to the finite coordinate set.
+    have hπ : (c.π.app j ⟨x, mem_univ x⟩).val = fun i : j.unop ↦ x i := by
+      -- `mapCone` preserves the underlying projection; `indexCone` uses `IndexFunctor.π_app`,
+      -- whose underlying function is coordinate restriction to `j.unop`.
+      rfl
     constructor
     · intro h
-      exact ⟨_, h, rfl⟩
+      exact ⟨_, h, hπ⟩
     · rintro ⟨y, hy, he⟩
-      have he' : y = c.π.app j ⟨x, mem_univ x⟩ := Subtype.ext he
+      have he' : y = c.π.app j ⟨x, mem_univ x⟩ := Subtype.ext (he.trans hπ.symm)
       exact (he' ▸ hy : c.π.app j ⟨x, mem_univ x⟩ ∈ V)
   refine ⟨fun _ hU ↦ hfinite hU, fun x ↦ ?_⟩
   -- A modification outside the chosen coordinates has the same projection but is not `x`.
