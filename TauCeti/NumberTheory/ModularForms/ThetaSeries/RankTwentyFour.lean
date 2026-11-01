@@ -33,6 +33,22 @@ public section
 open UpperHalfPlane ModularForm EisensteinSeries
 open scoped MatrixGroups
 
+namespace TauCeti
+
+private lemma qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
+    qExpansion 1
+      (ModularForm.mcast (by norm_num : (3 : ℤ) * 4 = 12) (E₄.pow 3) +
+        c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
+      qExpansion 1 E₄ ^ 3 + c • qExpansion 1 ModularForm.discriminant := by
+  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
+      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
+        CuspForm.coe_discriminant
+  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
+    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
+  simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ]
+
+end TauCeti
+
 namespace ZLattice.IsEven
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -46,9 +62,6 @@ theorem thetaForm_eq_E₄_cube_add_smul_discriminant (hL : IsEven L) (hU : IsUni
       ModularForm.mcast (by norm_num : (3 : ℤ) * 4 = 12) (E₄.pow 3) +
         ((representationNumber L 2 : ℂ) - 720) •
           CuspForm.toModularFormₗ CuspForm.discriminant := by
-  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
-      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
-        CuspForm.coe_discriminant
   have hq : qExpansion 1
       (thetaForm hL hU (k := 12) hr -
         (ModularForm.mcast (by norm_num : (3 : ℤ) * 4 = 12) (E₄.pow 3) +
@@ -56,11 +69,9 @@ theorem thetaForm_eq_E₄_cube_add_smul_discriminant (hL : IsEven L) (hU : IsUni
             CuspForm.toModularFormₗ CuspForm.discriminant) : ModularForm 𝒮ℒ 12) =
       qExpansion 1 (thetaSeries L) - (qExpansion 1 E₄ ^ 3 +
         ((representationNumber L 2 : ℂ) - 720) • qExpansion 1 ModularForm.discriminant) := by
-    rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL]
-    rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL]
-    rw [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
-    simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL,
-      ZLattice.coe_thetaForm (k := 12) hL hU hr, hΔ]
+    rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
+      TauCeti.qExpansion_E₄_cube_add_smul_discriminant,
+      ZLattice.coe_thetaForm (k := 12) hL hU hr]
   apply sub_eq_zero.mp
   apply ModularForm.sturm_bound_levelOne_nat (k := 12)
   refine lt_of_lt_of_le (by norm_num) (PowerSeries.nat_le_order _ 2 ?_)
@@ -92,15 +103,11 @@ theorem qExpansion_thetaSeries_eq_E₄_cube_add_smul_discriminant (hL : IsEven L
     (hU : IsUnimodular L) (hr : Module.finrank ℝ E = 24) :
     qExpansion 1 (thetaSeries L) = qExpansion 1 E₄ ^ 3 +
       ((representationNumber L 2 : ℂ) - 720) • qExpansion 1 ModularForm.discriminant := by
-  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
-      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
-        CuspForm.coe_discriminant
   have h := congrArg (fun f : ModularForm 𝒮ℒ 12 ↦ qExpansion 1 f)
     (hL.thetaForm_eq_E₄_cube_add_smul_discriminant hU hr)
-  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
-    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL] at h
-  simpa only [ZLattice.coe_thetaForm (k := 12) hL hU hr, coe_mcast,
-    ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ] using h
+  rw [TauCeti.qExpansion_E₄_cube_add_smul_discriminant,
+    ZLattice.coe_thetaForm (k := 12) hL hU hr] at h
+  exact h
 
 /-- In rank `24`, the numbers of vectors of squared norms `2` and `4` satisfy
 `r_L(4) + 24 r_L(2) = 196560`. -/
