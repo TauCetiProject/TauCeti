@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Filtered.Connected
 public import Mathlib.CategoryTheory.Limits.FormalCoproducts.Basic
 public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Topology.Sets.OpenCover
+public import Mathlib.Topology.ShrinkingLemma
 
 /-!
 # Small cofinal systems of open covers
@@ -26,6 +27,11 @@ filteredness of the category of actual refinement functions. They provide small 
 categories for colimits of cover-dependent invariants whose transition maps are independent of
 refinement functions.
 Finite covers retain repeated members and include the empty cover of the empty space.
+
+On a normal space, a finite open cover `U` and a point-neighborhood cover have a common
+point-neighborhood refinement `W`, with `W x ⊆ U (τ x)`, in which `x ∈ U (τ z)` whenever `W x`
+meets `W z` (`PointOpenCover.exists_refinement_mem_of_mem_of_mem`). It is obtained from a
+shrinking of `U` (`exists_subset_iUnion_closure_subset`).
 
 The cover-refinement description follows the Stacks Project, Cohomology of Sheaves, §20.15
 (tag 09UY). Finite cofinality is the compactness argument of J. Pardon, arXiv:1309.2370v6,
@@ -104,6 +110,35 @@ theorem exists_refinement {ι : Type u} (U : ι → Opens X) (hU : IsOpenCover U
   classical
   choose a ha using hU.exists_mem
   exact ⟨⟨fun x ↦ U (a x), ha⟩, ⟨⟨a, fun _ ↦ 𝟙 _⟩⟩⟩
+
+/-- On a normal space, a finite open cover `U` and a point-neighborhood cover `N` admit a common
+point-neighborhood refinement `W`, with members `W x ⊆ U (τ x)`, such that whenever `W x` meets
+`W z`, the point `x` lies in `U (τ z)`. This is the refinement that kills locally vanishing Čech
+cochains of finite covers. -/
+theorem exists_refinement_mem_of_mem_of_mem [NormalSpace X] {ι : Type*} [Finite ι]
+    {U : ι → Opens X} (hU : IsOpenCover U) (N : PointOpenCover X) :
+    ∃ (W : PointOpenCover X) (τ : X → ι), (∀ x, W.opens x ≤ N.opens x) ∧
+      (∀ x, W.opens x ≤ U (τ x)) ∧ ∀ x z y, y ∈ W.opens x → y ∈ W.opens z → x ∈ U (τ z) := by
+  -- Shrink `U` to `V` with `closure (V i) ⊆ U i`. The neighborhood `W x` lies in each `V i`
+  -- containing `x` and avoids each `closure (V i)` not containing `x`; `x ∈ V (τ x)`.
+  obtain ⟨V, hV, hVo, hVU⟩ := exists_subset_iUnion_closure_subset isClosed_univ
+    (fun i ↦ (U i).isOpen) (fun _ _ ↦ Set.toFinite _) hU.iSup_set_eq_univ.ge
+  choose τ hτ using fun x ↦ Set.mem_iUnion.1 (hV (Set.mem_univ x))
+  let W (x : X) : Set X := (⋂ (i) (_ : x ∈ V i), V i) ∩
+    (⋂ (i) (_ : x ∉ closure (V i)), (closure (V i))ᶜ) ∩ N.opens x
+  have hWV {x : X} {i : ι} (h : x ∈ V i) : W x ⊆ V i := fun _ hy ↦ Set.mem_iInter₂.1 hy.1.1 i h
+  have hWcl {x : X} {i : ι} (h : x ∉ closure (V i)) : W x ⊆ (closure (V i))ᶜ :=
+    fun _ hy ↦ Set.mem_iInter₂.1 hy.1.2 i h
+  have hWo (x : X) : IsOpen (W x) :=
+    ((isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦ hVo i).inter
+      (isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦
+        isClosed_closure.isOpen_compl)).inter (N.opens x).isOpen
+  refine ⟨⟨fun x ↦ ⟨W x, hWo x⟩, fun x ↦
+      ⟨⟨Set.mem_iInter₂.2 fun _ h ↦ h, Set.mem_iInter₂.2 fun _ h ↦ h⟩, N.mem_opens x⟩⟩,
+    τ, fun x _ hy ↦ hy.2, fun x ↦ (hWV (hτ x)).trans (subset_closure.trans (hVU (τ x))),
+    fun x z y hx hz ↦ hVU _ ?_⟩
+  by_contra h
+  exact hWcl h hx (subset_closure (hWV (hτ z) hz))
 
 end PointOpenCover
 
