@@ -111,9 +111,8 @@ private theorem isAlt_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).IsAlt := by
   exact isAlt_stdSymplecticBilinForm k m _
 
 /-- The standard symplectic form in `Fin (m + m)` coordinates is nondegenerate. -/
-private theorem nondegenerate_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).Nondegenerate := by
-  rw [toBilin'_JFin_eq_congr]
-  exact (stdSymplecticBilinForm_nondegenerate k m).congr _
+private theorem nondegenerate_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).Nondegenerate :=
+  nondegenerate_JFin.toBilin'
 
 /-- Read through the symplectic coordinate morphism, the general-linear matrix of a point of
 `Sp₂ₘ` is its symplectic matrix. -/

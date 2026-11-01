@@ -20,7 +20,9 @@ scalar ring: two nonzero vectors give the same point exactly when one is a unit 
 other (`Projectivization.mk'_eq_mk'_iff`), so the saturation of a set of nonzero vectors is the
 union of its unit translates (`Projectivization.preimage_image_mk'`). These two lemmas are
 from Zayn Blore's Mathlib pull request
-[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
+[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
+two nonzero vectors give the same point exactly when the first lies on the line spanned by the
+second (`Projectivization.mk_eq_mk_iff_mem_span`).
 
 The projectivization of a vector space of dimension at most one, such as
 `Projectivization K (Fin 1 → K)`, has at most one point
@@ -54,6 +56,13 @@ for the action of `Kˣ` on `{ v : V // v ≠ 0 }`. -/
 theorem mk'_eq_mk'_iff (v w : { v : V // v ≠ 0 }) :
     mk' K v = mk' K w ↔ ∃ a : Kˣ, a • w = v := by
   simp only [mk'_eq_mk, mk_eq_mk_iff, Subtype.ext_iff, Units.smul_coe]
+
+variable {K} in
+/-- Two nonzero vectors give the same projective point exactly when the first lies on the line
+spanned by the second. -/
+theorem mk_eq_mk_iff_mem_span {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
+    mk K v hv = mk K w hw ↔ v ∈ K ∙ w := by
+  rw [mk_eq_mk_iff', Submodule.mem_span_singleton]
 
 /-- The saturation of a set of nonzero vectors under `mk'` is the union of its translates by the
 units of `K`. -/

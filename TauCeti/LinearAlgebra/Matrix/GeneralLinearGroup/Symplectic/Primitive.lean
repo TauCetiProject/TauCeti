@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transitivity
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.LinearAlgebra.Matrix.Nondegenerate
+public import TauCeti.LinearAlgebra.Projectivization.Basic
 
 /-!
 # The symplectic group acts primitively on projective space
@@ -23,7 +24,8 @@ on the other points, the points `⟨x⟩ ≠ ⟨u⟩` with `ω(u, x) = 0` and th
 orbits are reached by symplectic transvections fixing `u`: if `ω(u, x) = ω(u, y)` and
 `ω(y, x) ≠ 0`, then the transvection along `y - x` with parameter `ω(y, x)⁻¹` fixes `u` and sends
 `x` to `y`, and two such steps connect any two vectors `x, y` off the line of `u` with
-`ω(u, x) = ω(u, y)` (`TauCeti.GLSymplecticFin.exists_smul_eq_smul_eq_of_dotProduct_JFin_mulVec_eq`).
+`ω(u, x) = ω(u, y)`
+(`TauCeti.GLSymplecticFin.exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq`).
 
 A block containing `⟨u⟩` and another point is therefore a union of `⟨u⟩` with whole orbits of the
 stabilizer. If it contains the points not orthogonal to `⟨u⟩`, it also contains a point orthogonal
@@ -37,9 +39,9 @@ symplectic group.
 
 ## Main results
 
-* `TauCeti.GLSymplecticFin.nondegenerate_JFin`: the standard alternating form is nondegenerate.
-* `TauCeti.GLSymplecticFin.exists_smul_eq_smul_eq_of_dotProduct_JFin_mulVec_eq`: the stabilizer
-  of a vector `u` moves `x` to `y` whenever both lie off the line of `u` and `ω(u, x) = ω(u, y)`.
+* `TauCeti.GLSymplecticFin.exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq`: the
+  stabilizer of a vector `u` moves `x` to `y` whenever both lie off the line of `u` and
+  `ω(u, x) = ω(u, y)`.
 * `TauCeti.GLSymplecticFin.isPreprimitive`: `Sp_{2m}(K)` acts primitively on `ℙ K V`.
 
 ## References
@@ -57,44 +59,29 @@ namespace TauCeti.GLSymplecticFin
 
 universe u
 
-/-- **The standard alternating form is nondegenerate**: `J` is invertible, its determinant being
-that of Mathlib's `Matrix.J`. -/
-theorem nondegenerate_JFin {R : Type u} [CommRing R] {m : ℕ} : (JFin m R).Nondegenerate :=
-  .of_det_mem_nonZeroDivisors <| by
-    rw [JFin_eq_submatrix, det_submatrix_equiv_self]
-    exact (isUnit_det_J _ _).mem_nonZeroDivisors
-
 variable {K : Type u} [Field K] {m : ℕ}
-
-/-- The symplectic transvection `τ_{v,c}` sends `x` to `x + c ω(v, x) v`, read through the action
-of the symplectic group on vectors. -/
-private theorem symplecticTransvection_smul_vector (v : Fin (m + m) → K) (c : K)
-    (x : Fin (m + m) → K) :
-    symplecticTransvection v c • x = x + (c * (v ⬝ᵥ (JFin m K *ᵥ x))) • v := by
-  rw [Subgroup.smul_def, Units.smul_def, Matrix.smul_eq_mulVec,
-    coe_symplecticTransvection_mulVec]
 
 /-- **One transvection step.** If `ω(y, x) ≠ 0` and `ω(u, x) = ω(u, y)`, the transvection along
 `y - x` with parameter `ω(y, x)⁻¹` fixes `u` and sends `x` to `y`. -/
-private theorem exists_smul_eq_smul_eq_of_ne_zero {u x y : Fin (m + m) → K}
+private theorem exists_smul_eq_self_and_smul_eq_of_ne_zero {u x y : Fin (m + m) → K}
     (h : u ⬝ᵥ (JFin m K *ᵥ x) = u ⬝ᵥ (JFin m K *ᵥ y)) (hyx : y ⬝ᵥ (JFin m K *ᵥ x) ≠ 0) :
     ∃ g : GLSymplecticFin m K, g • u = u ∧ g • x = y := by
-  refine ⟨symplecticTransvection (y - x) (y ⬝ᵥ (JFin m K *ᵥ x))⁻¹, ?_, ?_⟩
-  · rw [symplecticTransvection_smul_vector, sub_dotProduct, dotProduct_JFin_mulVec_eq_neg u y,
-      dotProduct_JFin_mulVec_eq_neg u x, h, sub_self, mul_zero, zero_smul, add_zero]
-  · rw [symplecticTransvection_smul_vector, sub_dotProduct, dotProduct_JFin_mulVec_self, sub_zero,
-      inv_mul_cancel₀ hyx, one_smul, add_sub_cancel]
+  refine ⟨symplecticTransvection (y - x) (y ⬝ᵥ (JFin m K *ᵥ x))⁻¹, ?_, ?_⟩ <;>
+    rw [Subgroup.smul_def, Units.smul_def, Matrix.smul_eq_mulVec]
+  · rw [coe_symplecticTransvection_mulVec]
+    simp [sub_dotProduct, dotProduct_JFin_mulVec_eq_neg u x, dotProduct_JFin_mulVec_eq_neg u y, h]
+  · exact coe_symplecticTransvection_sub_mulVec hyx
 
 /-- **The stabilizer of a vector `u` is transitive on each level set of `ω(u, ·)` off the line of
 `u`.** If neither `x` nor `y` is a multiple of `u` and `ω(u, x) = ω(u, y)`, a product of at most
 two symplectic transvections fixes `u` and sends `x` to `y`. For `u = 0` this is the transitivity
 of `Sp_{2m}(K)` on nonzero vectors. -/
-theorem exists_smul_eq_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fin (m + m) → K}
+theorem exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fin (m + m) → K}
     (hx : x ∉ K ∙ u) (hy : y ∉ K ∙ u) (h : u ⬝ᵥ (JFin m K *ᵥ x) = u ⬝ᵥ (JFin m K *ᵥ y)) :
     ∃ g : GLSymplecticFin m K, g • u = u ∧ g • x = y := by
   by_cases hyx : y ⬝ᵥ (JFin m K *ᵥ x) = 0
   swap
-  · exact exists_smul_eq_smul_eq_of_ne_zero h hyx
+  · exact exists_smul_eq_self_and_smul_eq_of_ne_zero h hyx
   -- Pass through `z = x + w` with `ω(u, w) = 0` and `w` orthogonal to neither `x` nor `y`.
   obtain ⟨w, hwu, hwx, hwy⟩ : ∃ w, u ⬝ᵥ (JFin m K *ᵥ w) = 0 ∧ x ⬝ᵥ (JFin m K *ᵥ w) ≠ 0 ∧
       y ⬝ᵥ (JFin m K *ᵥ w) ≠ 0 := by
@@ -106,14 +93,11 @@ theorem exists_smul_eq_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fin (m + m)
           by simp [mulVec_add, h₁, hw₂y]⟩
       · exact ⟨w₂, hw₂u, h₂, hw₂y⟩
     · exact ⟨w₁, hw₁u, hw₁x, h₁⟩
-  have hz : u ⬝ᵥ (JFin m K *ᵥ x) = u ⬝ᵥ (JFin m K *ᵥ (x + w)) := by
-    rw [mulVec_add, dotProduct_add, hwu, add_zero]
-  obtain ⟨g₁, hg₁u, hg₁x⟩ := exists_smul_eq_smul_eq_of_ne_zero hz (by
-    rw [add_dotProduct, dotProduct_JFin_mulVec_self, zero_add, dotProduct_JFin_mulVec_eq_neg,
-      neg_ne_zero]
-    exact hwx)
-  obtain ⟨g₂, hg₂u, hg₂z⟩ := exists_smul_eq_smul_eq_of_ne_zero (hz.symm.trans h) (by
-    rwa [mulVec_add, dotProduct_add, hyx, zero_add])
+  have hz : u ⬝ᵥ (JFin m K *ᵥ x) = u ⬝ᵥ (JFin m K *ᵥ (x + w)) := by simp [mulVec_add, hwu]
+  obtain ⟨g₁, hg₁u, hg₁x⟩ := exists_smul_eq_self_and_smul_eq_of_ne_zero hz (by
+    simpa [add_dotProduct, dotProduct_JFin_mulVec_eq_neg x w] using hwx)
+  obtain ⟨g₂, hg₂u, hg₂z⟩ := exists_smul_eq_self_and_smul_eq_of_ne_zero (hz.symm.trans h) (by
+    simpa [mulVec_add, hyx] using hwy)
   exact ⟨g₂ * g₁, by rw [mul_smul, hg₁u, hg₂u], by rw [mul_smul, hg₁x, hg₂z]⟩
 
 /-- The symplectic group moves the point of a vector `v` to the point of `g • v`. This is
@@ -126,12 +110,13 @@ private theorem smul_mk (g : GLSymplecticFin m K) {v : Fin (m + m) → K} (hv : 
 
 /-- A vector off the line of `u` is nonzero. -/
 private theorem ne_zero_of_notMem_span {u x : Fin (m + m) → K} (hx : x ∉ K ∙ u) : x ≠ 0 :=
-  fun h ↦ hx (h ▸ Submodule.zero_mem _)
+  (ne_of_mem_of_not_mem (Submodule.zero_mem _) hx).symm
 
-/-- Two vectors define the same projective point exactly when one is a multiple of the other. -/
-private theorem mk_eq_mk_iff_mem_span {u x : Fin (m + m) → K} (hu : u ≠ 0) (hx : x ≠ 0) :
-    Projectivization.mk K x hx = Projectivization.mk K u hu ↔ x ∈ K ∙ u := by
-  rw [Projectivization.mk_eq_mk_iff', Submodule.mem_span_singleton]
+/-- A vector `z` not orthogonal to `u` is not a multiple of a vector `a` orthogonal to `u`. -/
+private theorem notMem_span_of_dotProduct_JFin_mulVec {u a z : Fin (m + m) → K}
+    (ha : u ⬝ᵥ (JFin m K *ᵥ a) = 0) (hz : u ⬝ᵥ (JFin m K *ᵥ z) ≠ 0) : z ∉ K ∙ a := fun hza ↦ by
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hza
+  simp [mulVec_smul, ha] at hz
 
 /-- **A block contains each orbit of a point stabilizer that it meets.** If a block contains `⟨u⟩`
 and another point `⟨x⟩`, it contains every point `⟨y⟩ ≠ ⟨u⟩` with `ω(u, y)` vanishing exactly when
@@ -150,7 +135,7 @@ private theorem mk_mem_of_isBlock {B : Set (ℙ K (Fin (m + m) → K))}
       refine ⟨u ⬝ᵥ (JFin m K *ᵥ x) / u ⬝ᵥ (JFin m K *ᵥ y), div_ne_zero hx₀ hy₀, ?_⟩
       rw [mulVec_smul, dotProduct_smul, smul_eq_mul, div_mul_cancel₀ _ hy₀]
   have hay' : a • y ∉ K ∙ u := (Submodule.smul_mem_iff _ ha).not.mpr hy
-  obtain ⟨g, hgu, hgx⟩ := exists_smul_eq_smul_eq_of_dotProduct_JFin_mulVec_eq hx hay' hay
+  obtain ⟨g, hgu, hgx⟩ := exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq hx hay' hay
   have hgB : g • B = B := hB.smul_eq_of_mem huB (by simpa only [smul_mk, hgu] using huB)
   have hmk : Projectivization.mk K y (ne_zero_of_notMem_span hy) =
       g • Projectivization.mk K x (ne_zero_of_notMem_span hx) := by
@@ -170,10 +155,10 @@ instance isPreprimitive : IsPreprimitive (GLSymplecticFin m K) (ℙ K (Fin (m + 
     induction p using Projectivization.ind with | h u hu =>
     induction q using Projectivization.ind with | h x hx₀ =>
     induction r using Projectivization.ind with | h y hy₀ =>
-    have hx : x ∉ K ∙ u := (mk_eq_mk_iff_mem_span hu hx₀).not.mp (Ne.symm hpq)
+    have hx : x ∉ K ∙ u := (Projectivization.mk_eq_mk_iff_mem_span hx₀ hu).not.mp (Ne.symm hpq)
     by_cases hyu : y ∈ K ∙ u
-    · rwa [(mk_eq_mk_iff_mem_span hu hy₀).mpr hyu]
-    have hu' : u ∉ K ∙ x := (mk_eq_mk_iff_mem_span hx₀ hu).not.mp hpq
+    · rwa [(Projectivization.mk_eq_mk_iff_mem_span hy₀ hu).mpr hyu]
+    have hu' : u ∉ K ∙ x := (Projectivization.mk_eq_mk_iff_mem_span hu hx₀).not.mp hpq
     by_cases hux : u ⬝ᵥ (JFin m K *ᵥ x) = 0
     · -- `⟨x⟩` is orthogonal to `⟨u⟩`, so `B` contains every point orthogonal to `⟨u⟩`.
       by_cases huy : u ⬝ᵥ (JFin m K *ᵥ y) = 0
@@ -181,15 +166,11 @@ instance isPreprimitive : IsPreprimitive (GLSymplecticFin m K) (ℙ K (Fin (m + 
       -- A point `⟨s⟩` orthogonal to `⟨x⟩` but not to `⟨u⟩` lies in the block of `⟨x⟩`, which
       -- is `B`.
       obtain ⟨s, hsx, hsu⟩ := nondegenerate_JFin.exists_ortho_and_not_ortho_of_notMem_span hu'
-      have hs : s ∉ K ∙ x := fun hs ↦ by
-        obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hs
-        exact hsu (by rw [mulVec_smul, dotProduct_smul, hux, smul_zero])
-      have hsB := mk_mem_of_isBlock hB hx₀ hu' hs hq hp
-        (iff_of_true (by rw [dotProduct_JFin_mulVec_eq_neg, hux, neg_zero]) hsx)
-      have hs' : s ∉ K ∙ u := fun hs ↦ by
-        obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hs
-        exact hsu (by rw [mulVec_smul, dotProduct_smul, dotProduct_JFin_mulVec_self, smul_zero])
-      exact mk_mem_of_isBlock hB hu hs' hyu hp hsB (iff_of_false hsu huy)
+      have hsB := mk_mem_of_isBlock hB hx₀ hu' (notMem_span_of_dotProduct_JFin_mulVec hux hsu) hq
+        hp (iff_of_true (by simp [dotProduct_JFin_mulVec_eq_neg u x, hux]) hsx)
+      exact mk_mem_of_isBlock hB hu
+        (notMem_span_of_dotProduct_JFin_mulVec (dotProduct_JFin_mulVec_self u) hsu) hyu hp hsB
+        (iff_of_false hsu huy)
     · -- `⟨x⟩` is not orthogonal to `⟨u⟩`, so `B` contains every point not orthogonal to `⟨u⟩`.
       by_cases huy : u ⬝ᵥ (JFin m K *ᵥ y) = 0
       swap
@@ -199,20 +180,18 @@ instance isPreprimitive : IsPreprimitive (GLSymplecticFin m K) (ℙ K (Fin (m + 
       -- If `⟨y⟩` is not orthogonal to `⟨x⟩`, it lies in the block of `⟨x⟩`, which is `B`.
       have hyx : ∀ z, u ⬝ᵥ (JFin m K *ᵥ z) = 0 → z ∉ K ∙ u → z ∉ K ∙ x := fun z hz hzu hzx ↦ by
         obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hzx
-        rw [mulVec_smul, dotProduct_smul, smul_eq_mul] at hz
-        rw [(mul_eq_zero.mp hz).resolve_right hux, zero_smul] at hzu
-        exact hzu (Submodule.zero_mem _)
+        obtain rfl : c = 0 := by simpa [mulVec_smul, hux] using hz
+        simp at hzu
       by_cases hxy : x ⬝ᵥ (JFin m K *ᵥ y) = 0
       swap
       · exact mk_mem_of_isBlock hB hx₀ hu' (hyx y huy hyu) hq hp (iff_of_false hxu hxy)
       -- Otherwise `⟨y + u⟩` is orthogonal to `⟨u⟩` but not to `⟨x⟩`: it lies in `B`, and `⟨y⟩` is
       -- in the same orbit of the stabilizer of `⟨u⟩`.
-      have hsu : u ⬝ᵥ (JFin m K *ᵥ (y + u)) = 0 := by
-        rw [mulVec_add, dotProduct_add, huy, dotProduct_JFin_mulVec_self, add_zero]
+      have hsu : u ⬝ᵥ (JFin m K *ᵥ (y + u)) = 0 := by simp [mulVec_add, huy]
       have hs : y + u ∉ K ∙ u := fun hs ↦
         hyu (by simpa using Submodule.sub_mem _ hs (Submodule.mem_span_singleton_self u))
       have hsB := mk_mem_of_isBlock hB hx₀ hu' (hyx _ hsu hs) hq hp (iff_of_false hxu (by
-        rwa [mulVec_add, dotProduct_add, hxy, zero_add]))
+        simpa [mulVec_add, hxy] using hxu))
       exact mk_mem_of_isBlock hB hu hs hyu hp hsB (iff_of_true hsu huy)
 
 end TauCeti.GLSymplecticFin
