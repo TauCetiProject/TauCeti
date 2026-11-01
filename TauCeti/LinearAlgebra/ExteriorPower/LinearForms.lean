@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
-public import Mathlib.Order.Fin.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
+public import TauCeti.Order.Hom.PowersetCard
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Adjugate
@@ -28,14 +28,14 @@ A family of forms indexed by a linearly ordered type `κ` gives a family of wedg
 `p`-subsets of `κ`. Biorthogonality passes to the wedges: if `l i (y j) = δ i j`, then the wedge of
 the forms indexed by `T` takes the value `δ T T'` on the Plücker vector of the vectors indexed by
 `T'`. Over a field this shows that the wedges of linearly independent forms are linearly
-independent, and so are the Plücker vectors of the `p`-subfamilies of a linearly independent
-family of vectors.
+independent. The Plücker vectors of the `p`-subfamilies of a linearly independent family of
+vectors are independent too, by Mathlib's `exteriorPower.ιMulti_family_linearIndependent_field`.
 
 For a basis `x 0, …, x (N - 1)` of `K^ι` and `k + p = N`, the span `TauCeti.wedgeSpan k p x` of the
 Plücker vectors of the `p`-subfamilies of `x` that meet the first `k` indices depends only on the
 span of `x 0, …, x (k - 1)`, and determines it. It is the kernel of the wedge of the last `p`
 coordinate forms of the basis, a hyperplane that misses the Plücker vector of the top block
-`x k, …, x (N - 1)`.
+`x k, …, x (N - 1)`, indexed by `TauCeti.topBlock`.
 
 These are the exterior powers of a system of forms on which Schmidt's Subspace Theorem runs its
 argument in `⋀^p`: an approximation domain of the forms `l` gives one of the wedges, and the
@@ -47,7 +47,6 @@ subspace found in `⋀^p` is converted back to a subspace of `K^ι` through `wed
 * `TauCeti.wedgeForms l p`: the wedges of a family of forms, indexed by the `p`-subsets.
 * `TauCeti.wedgeSpan k p x`: the span of the Plücker vectors of the `p`-subfamilies of `x` that
   meet the first `k` indices.
-* `TauCeti.topBlock h`: for `h : k + p = N`, the top block `{k, …, N - 1}` as a `p`-subset.
 
 ## Main results
 
@@ -184,11 +183,13 @@ independent family `x`, the Plücker vectors of its `p`-subfamilies. -/
 theorem linearIndependent_plucker_comp [Finite ι] {K : Type*} [Field K] {x : κ → ι → K}
     (hx : LinearIndependent K x) (p : ℕ) :
     LinearIndependent K fun J : powersetCard κ p ↦ plucker (x ∘ ofFinEmbEquiv.symm J) := by
-  have := Fintype.ofFinite ι
-  obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  refine .of_pairwise_dual_eq_zero_one _ (wedgeForms f p) (fun T T' hTT' ↦ ?_) fun T ↦ ?_
-  · simp [wedgeForms_plucker_comp_eq_ite hf, hTT']
-  · simp [wedgeForms_plucker_comp_eq_ite hf]
+  -- read off the coordinates of the exterior products in the standard basis
+  let e := Finsupp.lcoeFun.comp ((Pi.basisFun K ι).exteriorPower p).repr.toLinearMap
+  have he : LinearMap.ker e = ⊥ := LinearMap.ker_eq_bot.2 fun _ _ h ↦
+    ((Pi.basisFun K ι).exteriorPower p).repr.injective (DFunLike.coe_injective h)
+  convert (exteriorPower.ιMulti_family_linearIndependent_field (n := p) hx).map' e he using 1
+  ext J s
+  simp [e, plucker_eq_repr_ιMulti, exteriorPower.ιMulti_family]
 
 /-! ### The wedges of a basis that meet the first `k` indices -/
 
@@ -216,33 +217,6 @@ theorem wedgeSpan_le_iff {k : ℕ} {x : Fin N → ι → R} {U : Submodule R (po
         plucker (x ∘ ofFinEmbEquiv.symm J) ∈ U := by
   rw [wedgeSpan, Submodule.span_le, Set.image_subset_iff]
   exact Iff.rfl
-
-/-- **The top block** `{k, …, N - 1}` of the indices of `Fin N`, for `k + p = N`, as a
-`p`-subset. -/
-def topBlock {k : ℕ} (h : k + p = N) : powersetCard (Fin N) p :=
-  ofFinEmbEquiv ((Fin.natAddOrderEmb k).trans (Fin.castOrderIso h).toOrderEmbedding)
-
-/-- The `a`-th index of the top block, in increasing order, is `k + a`. -/
-@[simp]
-theorem val_ofFinEmbEquiv_symm_topBlock {k : ℕ} (h : k + p = N) (a : Fin p) :
-    (ofFinEmbEquiv.symm (topBlock h) a : ℕ) = k + a := by
-  simp [topBlock]
-
-/-- An index lies in the top block exactly when it is at least `k`. -/
-@[simp]
-theorem mem_topBlock {k : ℕ} (h : k + p = N) {j : Fin N} : j ∈ topBlock h ↔ k ≤ (j : ℕ) := by
-  rw [← mem_range_ofFinEmbEquiv_symm_iff_mem]
-  refine ⟨?_, fun hj ↦ ⟨⟨j - k, by omega⟩, Fin.ext ?_⟩⟩
-  · rintro ⟨a, rfl⟩
-    simp
-  · simp only [val_ofFinEmbEquiv_symm_topBlock]
-    omega
-
-/-- **A `p`-subset other than the top block meets the first `k` indices.** -/
-theorem exists_lt_of_ne_topBlock {k : ℕ} (h : k + p = N) {J : powersetCard (Fin N) p}
-    (hJ : J ≠ topBlock h) : ∃ j ∈ J, (j : ℕ) < k := by
-  by_contra! hc
-  exact hJ (eq_iff_subset.2 fun j hj ↦ (mem_topBlock h).2 (hc j hj))
 
 variable [Fintype ι] {K : Type*} [Field K] {x : Fin (Fintype.card ι) → ι → K}
   {f : Fin (Fintype.card ι) → Dual K (ι → K)}
@@ -382,13 +356,11 @@ theorem finrank_wedgeSpan_add_one (hx : LinearIndependent K x) {k : ℕ}
     (h : k + p = Fintype.card ι) :
     finrank K (wedgeSpan k p x) + 1 = Fintype.card (powersetCard ι p) := by
   obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  rw [wedgeSpan_eq_ker hf h]
-  have hrange : LinearMap.range (wedgeForms f p (topBlock h)) = ⊤ :=
-    LinearMap.range_eq_top.2 fun a ↦ ⟨a • plucker (x ∘ ofFinEmbEquiv.symm (topBlock h)),
-      by simp [wedgeForms_plucker_comp_eq_ite hf]⟩
-  have := LinearMap.finrank_range_add_finrank_ker (wedgeForms f p (topBlock h))
-  rw [hrange, finrank_top, finrank_self, finrank_fintype_fun_eq_card] at this
-  omega
+  rw [wedgeSpan_eq_ker hf h, Dual.finrank_ker_add_one_of_ne_zero, finrank_fintype_fun_eq_card]
+  -- the kernel form takes the value `1` on the wedge of the top block
+  intro h₀
+  simpa [wedgeForms_plucker_comp_eq_ite hf] using
+    congr($h₀ (plucker (x ∘ ofFinEmbEquiv.symm (topBlock h))))
 
 end WedgeSpan
 
