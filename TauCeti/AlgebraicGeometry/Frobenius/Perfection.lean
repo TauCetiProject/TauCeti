@@ -101,7 +101,7 @@ theorem bijective_comp_SpecMap [IsPRadical φ.hom p] (hA : (p : A) = 0) :
     (ΓSpec.adjunction.homEquiv_naturality_right _ φ.op).symm
   have h : Function.Bijective fun g : B ⟶ Γ(Y, ⊤) ↦ φ ≫ g :=
     (ConcreteCategory.homEquiv (X := A) (Y := Γ(Y, ⊤))).symm.bijective.comp <|
-      (IsPRadical.bijective_comp φ.hom p hA natCast_eq_zero).comp
+      (IsPRadical.bijective_comp φ.hom p hA).comp
         (ConcreteCategory.homEquiv (X := B) (Y := Γ(Y, ⊤))).bijective
   convert (e A).bijective.comp (h.comp (e B).symm.bijective) using 1
   ext1 f

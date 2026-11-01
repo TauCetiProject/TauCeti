@@ -27,8 +27,8 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 
 * `IsPRadical.isIntegral`: a `p`-radical ring map is integral.
 * `IsPRadical.isHomeomorph_comap`: a `p`-radical ring map induces a homeomorphism of prime spectra.
-* `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring in which `p = 0`, then
-  precomposition with a `p`-radical map `i : K →+* L` is a bijection `(L →+* M) → (K →+* M)`.
+* `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring, then precomposition
+  with a `p`-radical map `i : K →+* L` is a bijection `(L →+* M) → (K →+* M)`.
 
 ## References
 
@@ -60,10 +60,10 @@ theorem isHomeomorph_comap [NeZero p] : IsHomeomorph (PrimeSpectrum.comap i) :=
     ((IsPRadical.ker_le i p).trans pNilradical_le_nilradical)
 
 /-- **Ring maps into a perfect ring extend uniquely along a `p`-radical map.** If `p = 0` in `K`
-and `M` is a perfect ring in which `p = 0`, then `f ↦ f.comp i` is a bijection from
-`L →+* M` to `K →+* M`. The ring `M` may be the zero ring. -/
-theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p]
-    (hM : (p : M) = 0) : Function.Bijective fun f : L →+* M ↦ f.comp i := by
+and `M` is a perfect ring, then `f ↦ f.comp i` is a bijection from `L →+* M` to `K →+* M`. The
+ring `M` may be the zero ring. -/
+theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p] :
+    Function.Bijective fun f : L →+* M ↦ f.comp i := by
   rcases subsingleton_or_nontrivial M with hM' | hM'
   · -- Over the zero ring, both sets of ring maps are singletons.
     refine ⟨fun f g _ ↦ RingHom.ext fun _ ↦ Subsingleton.elim _ _, fun j ↦ ?_⟩
@@ -73,8 +73,13 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p]
         map_mul' _ _ := Subsingleton.elim _ _
         map_zero' := rfl
         map_add' _ _ := Subsingleton.elim _ _ }, RingHom.ext fun _ ↦ Subsingleton.elim _ _⟩
-  have : CharP M p := (CharP.charP_iff_prime_eq_zero hp.out).2 hM
-  refine ⟨IsPRadical.injective_comp_of_perfect M i p, fun j ↦ ?_⟩
+  -- Any ring map `K →+* M` forces `p = 0` in `M`.
+  have hM (j : K →+* M) : CharP M p :=
+    (CharP.charP_iff_prime_eq_zero hp.out).2 (by rw [← map_natCast j, hK, map_zero])
+  refine ⟨fun f g hfg ↦ ?_, fun j ↦ ?_⟩
+  · have := hM (f.comp i)
+    exact IsPRadical.injective_comp_of_perfect M i p hfg
+  have := hM j
   have : Nontrivial K := j.domain_nontrivial
   have : CharP K p := (CharP.charP_iff_prime_eq_zero hp.out).2 hK
   -- `L` is nonzero: otherwise `1` lies in the kernel of `i`, so `1` would be `p`-nilpotent.
