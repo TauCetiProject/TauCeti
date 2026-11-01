@@ -31,7 +31,7 @@ it is so in degree `0`. In degree `0` this holds whenever the chain map lies ove
 
 ## Main results
 
-* `TauCeti.comap_smul_top_le_of_comp_eq_mkQ_zeroEquiv`: a map out of `⋀⁰ M` lifting the
+* `LinearMap.comap_smul_top_le_of_comp_eq_mkQ_zeroEquiv`: a map out of `⋀⁰ M` lifting the
   augmentation `⋀⁰ M ≅ R → R ⧸ I` is injective modulo `I`.
 * `Module.Basis.comap_smul_top_le_of_comp_koszulDifferential`: a map compatible with the Koszul
   differential and a differential landing in `I` times its target is injective modulo `I` in
@@ -50,7 +50,7 @@ noncomputable section
 
 universe u v
 
-namespace TauCeti
+namespace LinearMap
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
 
@@ -75,7 +75,7 @@ theorem comap_smul_top_le_of_comp_eq_mkQ_zeroEquiv {F : Type*} [AddCommGroup F] 
     exact Submodule.smul_mem_smul he Submodule.mem_top
   rwa [smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply] at key
 
-end TauCeti
+end LinearMap
 
 open TauCeti
 

@@ -215,7 +215,7 @@ theorem finrank_cotangentSpace_le_of_hasProjectiveDimensionLE {R : Type u} [Comm
   -- In degree `0`, `α` lies over the augmentation `ε`, so it is injective modulo `𝔪`; here `K₀`
   -- is `⋀⁰ Rⁿ` by definition of `koszulComplex`.
   have hα0 : (𝔪 • ⊤ : Submodule R (F.complex.X 0)).comap (α.f 0).hom ≤ 𝔪 • ⊤ :=
-    comap_smul_top_le_of_comp_eq_mkQ_zeroEquiv (α.f 0).hom (F.π.f 0).hom
+    (α.f 0).hom.comap_smul_top_le_of_comp_eq_mkQ_zeroEquiv (F.π.f 0).hom
       congr(($(ChainComplex.liftToAugmented_f_zero_comp (koszulComplex φ) (F.π.f 0)
         F.complex_d_comp_π_f_zero F.exact₀ F.exact_succ ε hε)).hom)
   -- If `d < n`, then `Fₙ = 0`, but `α` is injective modulo `𝔪` on `⋀ⁿ Rⁿ ≅ R`.
