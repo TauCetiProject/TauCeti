@@ -269,6 +269,12 @@ lemma unitHomMappingSpaceEquiv_apply (X Y : SymmetricSpectrum)
       (levelSmashUnitIso X).inv ≫ ((levelSmashMappingSpaceAdjunction X).homEquiv _ _).symm g := by
   simp [unitHomMappingSpaceEquiv]
 
+/-- A spectrum map `X ⟶ Y` gives the vertex of `Map(X, Y)` adjoint to `X ∧ S⁰ ≅ X ⟶ Y`. -/
+lemma unitHomMappingSpaceEquiv_symm_apply (X Y : SymmetricSpectrum) (f : X ⟶ Y) :
+    (unitHomMappingSpaceEquiv X Y).symm f =
+      (levelSmashMappingSpaceAdjunction X).homEquiv _ _ ((levelSmashUnitIso X).hom ≫ f) := by
+  simp [unitHomMappingSpaceEquiv]
+
 end SymmetricSpectrum
 
 end TauCeti
