@@ -330,9 +330,11 @@ theorem const_mul (hf : RightFueterAt f q) (a : ℍ) : RightFueterAt (fun x ↦ 
 
 end RightFueterAt
 
+@[simp]
 theorem leftFueterAt_const (c q : ℍ) : LeftFueterAt (fun _ ↦ c) q :=
   ⟨0, hasFDerivAt_const c q, map_zero _⟩
 
+@[simp]
 theorem rightFueterAt_const (c q : ℍ) : RightFueterAt (fun _ ↦ c) q :=
   ⟨0, hasFDerivAt_const c q, map_zero _⟩
 
