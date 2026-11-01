@@ -288,9 +288,10 @@ private theorem stableCharacteristicExponent_im_dslope {u : ℝ} (hu : u ≠ 0)
   have hc := hasDerivAt_cos_pi_mul_div_two_one
   by_cases hα : α = 1
   · subst α
-    simp only [stableCharacteristicExponent_one, Complex.sub_im, Complex.neg_im,
-      Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re, Complex.I_im, Complex.I_re,
-      mul_one, mul_zero, add_zero, dslope_same, hd.deriv, hc.deriv, rpow_one]
+    have him : (stableCharacteristicExponent 1 β u).im = -(2 * β / π * u * log |u|) := by
+      simp [stableCharacteristicExponent_one]
+    rw [him]
+    simp only [dslope_same, hd.deriv, hc.deriv, rpow_one]
     simp only [mul_one, sin_pi_div_two]
     have hm : β * Real.sign u * (|u| * log |u|) = β * u * log |u| := by
       calc
@@ -298,11 +299,12 @@ private theorem stableCharacteristicExponent_im_dslope {u : ℝ} (hu : u ≠ 0)
         _ = _ := by rw [hsign]
     rw [← mul_div_assoc (β * Real.sign u), hm]
     field_simp
-    ring
-  · rw [stableCharacteristicExponent_of_ne_one_of_ne_zero hα β hu]
-    simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
-      Complex.I_im, Complex.I_re, mul_one, mul_zero, add_zero, zero_add,
-      dslope_of_ne _ hα, slope_def_field, rpow_one, mul_one, cos_pi_div_two, sub_zero,
+  · have hpow : u * |u| ^ (α - 1) = Real.sign u * |u| ^ α := by
+      rw [Real.rpow_sub_one (abs_ne_zero.mpr hu), ← mul_div_assoc,
+        div_eq_iff (abs_ne_zero.mpr hu)]
+      linear_combination -(|u| ^ α) * hsign
+    rw [stableCharacteristicExponent_im_of_ne_one hα, hpow]
+    simp only [dslope_of_ne _ hα, slope_def_field, rpow_one, mul_one, cos_pi_div_two, sub_zero,
       div_div_div_cancel_right₀ (sub_ne_zero.mpr hα), tan_eq_sin_div_cos]
     linear_combination (β * sin (π * α / 2) / cos (π * α / 2)) * hsign
 
@@ -351,13 +353,12 @@ theorem continuous_stableCharacteristicExponent_params (u : ℝ) :
       have hangle := (ha.const_mul π).div_const 2
       have htan := (continuous_sin.continuousAt.comp hangle).div
         (continuous_cos.continuousAt.comp hangle) hcos
+      have hpow := continuousAt_const.rpow (ha.sub_const 1) (Or.inl (abs_ne_zero.mpr hu))
       have hcont := continuous_snd.continuousAt.mul htan |>.mul
-          ((hp.continuousAt.const_mul (Real.sign u)).sub_const u)
+          ((hpow.const_mul u).sub_const u)
       apply hcont.congr_of_eventuallyEq
       filter_upwards [ha.eventually_ne hα1] with p hp1
-      simp only [stableCharacteristicExponent_of_ne_one_of_ne_zero hp1 _ hu,
-        Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
-        Complex.I_im, Complex.I_re, mul_one, mul_zero, add_zero, zero_add, tan_eq_sin_div_cos,
+      simp only [stableCharacteristicExponent_im_of_ne_one hp1, tan_eq_sin_div_cos,
         Pi.mul_apply, Pi.div_apply, Function.comp_apply]
   have h : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
       ((-|u| ^ p.1.1 : ℝ) : ℂ) + (stableCharacteristicExponent p.1.1 p.2 u).im * Complex.I)
