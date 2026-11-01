@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
+public import TauCeti.Topology.Instances.Matrix
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -15,12 +16,15 @@ import Mathlib.Analysis.SpecificLimits.Basic
 
 The special linear group `SL(n, R)` carries the topology induced from the matrices, which is the
 product topology on the entries. So a sequence, or more generally a function along any filter,
-converges in `SL(n, R)` exactly when each of its entries converges.
+converges in `SL(n, R)` exactly when each of its entries converges. For the same reason `SL(n, R)`
+acts jointly continuously on column vectors.
 
 ## Main results
 
 * `Matrix.SpecialLinearGroup.tendsto_iff_tendsto_apply`: convergence in `SL(n, R)` is entrywise
   convergence.
+* `Matrix.SpecialLinearGroup.instContinuousSMulVec`: `SL(n, R)` acts jointly continuously on
+  column vectors.
 * `Matrix.SpecialLinearGroup.exists_tendsto_dilation_conj`: a sequence in `SL(2, ℝ)` whose diagonal
   entries converge to those of a diagonal matrix `D`, and whose off-diagonal products tend to `0`,
   converges to `D` after conjugating each term by a suitable power of a dilation.
@@ -41,6 +45,12 @@ theorem tendsto_iff_tendsto_apply {l : Filter α} {M : α → SpecialLinearGroup
     Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) := by
   exact (IsInducing.subtypeVal (t := {A : Matrix n n R | A.det = 1})).tendsto_nhds_iff.trans <|
     tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
+
+/-- When addition and multiplication are continuous on `R`, `SL(n, R)` acts jointly continuously
+on column vectors, by restricting the action of all square matrices. -/
+instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
+    ContinuousSMul (SpecialLinearGroup n R) (n → R) :=
+  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtype_val rfl
 
 /-- If the diagonal entries of a sequence of matrices of `SL(2, ℝ)` converge to those of a diagonal
 matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each term by a
