@@ -65,9 +65,10 @@ namespace Circle
 /-- **Lifts through `exp` are unique up to a constant.** On a preconnected space, two continuous
 real functions with the same exponential differ by a constant. -/
 theorem exists_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A] [PreconnectedSpace A]
-    [Nonempty A] {G G' : A → ℝ} (hG : Continuous G) (hG' : Continuous G')
+    {G G' : A → ℝ} (hG : Continuous G) (hG' : Continuous G')
     (h : ∀ a, exp (G a) = exp (G' a)) : ∃ c : ℝ, ∀ a, G a = G' a + c := by
-  obtain ⟨a₀⟩ := ‹Nonempty A›
+  rcases isEmpty_or_nonempty A with hA | ⟨⟨a₀⟩⟩
+  · exact ⟨0, isEmptyElim⟩
   refine ⟨G a₀ - G' a₀, fun a ↦ ?_⟩
   have := isCoveringMap_exp.const_of_comp (g := fun a ↦ G a - G' a) (hG.sub hG')
     (fun a a' ↦ by simp [exp_sub, h]) a a₀
@@ -76,12 +77,13 @@ theorem exists_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A] [Preconn
 /-- On a preconnected space, a continuous real function whose exponential is invariant under a
 continuous self-map `τ` changes under `τ` by a constant integer multiple of `2π`. -/
 theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
-    [PreconnectedSpace A] [Nonempty A] {G : A → ℝ} (hG : Continuous G) {τ : A → A}
+    [PreconnectedSpace A] {G : A → ℝ} (hG : Continuous G) {τ : A → A}
     (hτ : Continuous τ) (h : ∀ a, exp (G (τ a)) = exp (G a)) :
     ∃ m : ℤ, ∀ a, G (τ a) = G a + m * (2 * π) := by
+  rcases isEmpty_or_nonempty A with hA | ⟨⟨a₀⟩⟩
+  · exact ⟨0, isEmptyElim⟩
   obtain ⟨c, hc⟩ := exists_forall_eq_add_of_exp_eq (hG.comp hτ) hG h
   replace hc : ∀ a, G (τ a) = G a + c := hc
-  obtain ⟨a₀⟩ := ‹Nonempty A›
   have hexp : exp c = 1 := by
     have := h a₀
     rwa [hc a₀, exp_add, mul_eq_left] at this
