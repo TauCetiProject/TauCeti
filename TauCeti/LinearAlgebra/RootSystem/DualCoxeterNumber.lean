@@ -54,6 +54,7 @@ positive roots gives `2 + ⟨2ρ, θ^∨⟩`. The negative roots contribute the 
   `⟨ρ, θ^∨⟩ = h^∨ - 1`, with `RootPairing.Base.sum_pairingIn_highestRoot_right_posRootsFinset`
   the integer form `∑_{α > 0} ⟨α, θ^∨⟩ = 2 (h^∨ - 1)`.
 * `RootPairing.Base.two_le_dualCoxeterNumber`: `2 ≤ h^∨`.
+* `RootPairing.Base.cast_dualCoxeterNumber_ne_zero`: `h^∨ ≠ 0` in the coefficient ring.
 * `RootPairing.Base.sum_pairingIn_highestRoot_right_sq`: `∑_α ⟨α, θ^∨⟩² = 4 h^∨`, an identity of
   integers.
 * `RootPairing.Base.corootForm_coroot_highestRoot`: `P.CorootForm θ^∨ θ^∨ = 4 h^∨`.
@@ -130,6 +131,12 @@ theorem two_le_dualCoxeterNumber : 2 ≤ b.dualCoxeterNumber := by
   rw [isPos_iff] at h
   rw [dualCoxeterNumber_def]
   omega
+
+/-- **The dual Coxeter number is nonzero in the coefficient ring**, which has characteristic zero.
+-/
+theorem cast_dualCoxeterNumber_ne_zero : (b.dualCoxeterNumber : R) ≠ 0 := by
+  have := b.two_le_dualCoxeterNumber
+  exact_mod_cast (show b.dualCoxeterNumber ≠ 0 by omega)
 
 variable [P.IsIrreducible]
 
