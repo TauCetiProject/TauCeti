@@ -168,7 +168,7 @@ end Cochains
 
 section Differential
 
-variable {𝕜 A M : Type*} [NormedField 𝕜] [NonUnitalRing A] [Module 𝕜 A]
+variable {𝕜 A M : Type*} [NormedField 𝕜] [NonUnitalNonAssocRing A] [Module 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
   [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousMul A]
   [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
@@ -198,6 +198,17 @@ theorem continuousMatrixCyclicCochainExtension_coboundary {n : ℕ}
     coe_continuousCyclicHochschildCoboundary,
     continuousMatrixCochainExtension_hochschildCoboundary]
 
+end Differential
+
+section Cocycles
+
+variable {𝕜 A M : Type*} [NormedField 𝕜] [NonUnitalRing A] [Module 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+  [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousMul A]
+  [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
+  (ι : Type*) [Fintype ι]
+
 /-- Continuous cyclic cocycles extend to continuous cyclic cocycles on matrices. -/
 theorem continuousMatrixCyclicCochainExtension_mem_cocycles {n : ℕ}
     {φ : continuousCyclicCochains 𝕜 A M n} (hφ : φ ∈ continuousCyclicCocycles 𝕜 A M n) :
@@ -222,7 +233,7 @@ theorem continuousMatrixCyclicCochainExtension_mem_coboundaries {n : ℕ}
       ⟨continuousMatrixCyclicCochainExtension ι n ψ,
         (continuousMatrixCyclicCochainExtension_coboundary ι ψ).symm⟩
 
-end Differential
+end Cocycles
 
 section Cohomology
 
