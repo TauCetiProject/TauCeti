@@ -292,34 +292,6 @@ section Affine
 
 variable [Finite V]
 
-/-- The affine diagram `E₆` is bipartite, coloured by the parity of the distance to node `0`. -/
-private theorem isBipartite_graph_E6 : AffineDynkinType.E6.graph.IsBipartite :=
-  ⟨.mk ![0, 1, 0, 1, 0, 1, 0] fun {i j} h ↦ by
-    rw [AffineDynkinType.graph_E6_adj] at h
-    fin_cases i <;> fin_cases j <;> revert h <;> decide⟩
-
-/-- The affine diagram `E₇` is bipartite, coloured by the parity of the distance to node `0`. -/
-private theorem isBipartite_graph_E7 : AffineDynkinType.E7.graph.IsBipartite :=
-  ⟨.mk ![0, 1, 1, 0, 1, 1, 0, 1] fun {i j} h ↦ by
-    rw [AffineDynkinType.graph_E7_adj] at h
-    fin_cases i <;> fin_cases j <;> revert h <;> decide⟩
-
-/-- The affine diagram `E₈` is bipartite, coloured by the parity of the distance to node `0`. -/
-private theorem isBipartite_graph_E8 : AffineDynkinType.E8.graph.IsBipartite :=
-  ⟨.mk ![0, 1, 1, 0, 1, 0, 1, 0, 1] fun {i j} h ↦ by
-    rw [AffineDynkinType.graph_E8_adj] at h
-    fin_cases i <;> fin_cases j <;> revert h <;> decide⟩
-
-/-- The affine diagram `Dₙ` is bipartite: the path `0 - 1 - ⋯ - (n - 2)` is coloured by parity,
-and the leaves `n - 1` at node `1` and `n` at node `n - 3` take the other colour. -/
-private theorem isBipartite_graph_D {n : ℕ} (hn : 4 ≤ n) :
-    (AffineDynkinType.D n).graph.IsBipartite := by
-  refine ⟨.mk (fun i ↦ ⟨if (i : ℕ) ≤ n - 2 then (i : ℕ) % 2 else if (i : ℕ) = n - 1 then 0
-    else n % 2, by split_ifs <;> omega⟩) fun {i j} h ↦ ?_⟩
-  have hij := (AffineDynkinType.graph_D_adj hn (i := i) (j := j)).1 h
-  simp only [ne_eq, Fin.mk.injEq]
-  split_ifs <;> omega
-
 /-- The closed walk `0 → 3 → 0 → 1 → 0 → 1 → 0` at the trivalent node of the affine diagram `E₆`,
 in product order: the product of the backtracks through `1`, `1` and `3`. -/
 private def affineE6Walk : Fin 6 → AffineDynkinType.E6.graph.Dart :=
@@ -353,7 +325,7 @@ theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_of_trace_eq_one affineE6Matrix
     (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj) sum_affineE6Matrix_mul_affineE6Matrix f
-    isBipartite_graph_E6
+    AffineDynkinType.isBipartite_graph_E6
     (n := 4) (by norm_num) (u := affineE6Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE6Walk, mul_assoc] using trace_affineE6Matrix_backtracks)
 
@@ -369,7 +341,7 @@ theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_of_trace_eq_one affineE7Matrix
     (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj) sum_affineE7Matrix_mul_affineE7Matrix f
-    isBipartite_graph_E7
+    AffineDynkinType.isBipartite_graph_E7
     (n := 6) (by norm_num) (u := affineE7Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE7Walk, mul_assoc] using trace_affineE7Matrix_backtracks)
 
@@ -385,7 +357,7 @@ theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_of_trace_eq_one affineE8Matrix
     (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj) sum_affineE8Matrix_mul_affineE8Matrix f
-    isBipartite_graph_E8
+    AffineDynkinType.isBipartite_graph_E8
     (n := 10) (by norm_num) (u := affineE8Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE8Walk, mul_assoc] using trace_affineE8Matrix_backtracks)
 
@@ -409,7 +381,7 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContaine
     (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
   refine not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
     (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
-    (sum_affineDMatrix_mul_affineDMatrix k hn) f (isBipartite_graph_D hn)
+    (sum_affineDMatrix_mul_affineDMatrix k hn) f (AffineDynkinType.isBipartite_graph_D hn)
     (n := 2) (by norm_num)
     (u := ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩])
     (fun i ↦ by fin_cases i <;> rfl) ?_
