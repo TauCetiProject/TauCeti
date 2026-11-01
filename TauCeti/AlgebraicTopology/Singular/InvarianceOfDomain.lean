@@ -42,6 +42,8 @@ manifold.
   boundary modelled on finite-dimensional real normed spaces of the same dimension.
 * `Continuous.isOpenEmbedding_of_injective`: a continuous injection between such manifolds is an
   open embedding.
+* `Continuous.surjective_of_injective`: a continuous injection of a compact manifold into a
+  connected manifold of the same dimension is surjective.
 * `Homeomorph.coe_apply_mem_interior_iff` and `Homeomorph.coe_apply_mem_frontier_iff`: a
   homeomorphism between subsets of such manifolds matches their interiors and their frontiers.
 
@@ -198,6 +200,18 @@ theorem Continuous.isOpenEmbedding_of_injective {f : M → N} (hf : Continuous f
     (hinj : Injective f) (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding f :=
   .of_continuous_injective_isOpenMap hf hinj fun _ hU ↦
     hU.image_of_continuousOn_of_injOn hf.continuousOn hinj.injOn hEF
+
+/-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
+be topological manifolds without boundary, charted on finite-dimensional real normed spaces of the
+same dimension, with `M` compact and nonempty and `N` Hausdorff and connected. Then a continuous
+injection `M → N` is surjective: its image is open by invariance of domain, and closed as a compact
+subset of a Hausdorff space. -/
+theorem Continuous.surjective_of_injective [CompactSpace M] [Nonempty M] [T2Space N]
+    [PreconnectedSpace N] {f : M → N} (hf : Continuous f) (hinj : Injective f)
+    (hEF : finrank ℝ E = finrank ℝ F) : Surjective f :=
+  range_eq_univ.1 <| IsClopen.eq_univ
+    ⟨(isCompact_range hf).isClosed, (hf.isOpenEmbedding_of_injective hinj hEF).isOpen_range⟩
+    (range_nonempty f)
 
 namespace Homeomorph
 

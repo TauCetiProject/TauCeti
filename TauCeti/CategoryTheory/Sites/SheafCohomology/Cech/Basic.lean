@@ -71,6 +71,8 @@ be added or removed.
 * `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
   indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
 * `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
+* `TauCeti.CategoryTheory.cechComplexMap_naturality`: the map induced by a morphism of families is
+  natural in `P`.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
   invariant under isomorphisms of presheaves.
 
@@ -277,6 +279,20 @@ theorem cechComplexMap_comp {ι' : Type w} {W : ι' → C}
   simp only [cechComplexMap, CategoryTheory.Functor.map_comp, NatTrans.rightOp_comp,
     Functor.whiskerRight_comp]
   exact (alternatingCofaceMapComplex A).map_comp _ _
+
+/-- `cechComplexMap` is natural in the presheaf: for `α : P ⟶ Q`, applying `α` and then
+restricting along a morphism of families is restricting and then applying `α`. -/
+@[reassoc]
+theorem cechComplexMap_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechComplexFunctor V).map α ≫ cechComplexMap Q φ =
+      cechComplexMap P φ ≫ (cechComplexFunctor U).map α := by
+  -- both are induced by the same map of cosimplicial objects, by naturality of `α`
+  refine ((alternatingCofaceMapComplex A).map_comp _ _).symm.trans <|
+    (congrArg (alternatingCofaceMapComplex A).map ?_).trans
+      ((alternatingCofaceMapComplex A).map_comp _ _)
+  ext : 2
+  exact (((FormalCoproduct.evalOp C A).map α).naturality _).symm
 
 /-- A morphism of families which is the identity on indices, given by morphisms
 `φ i : U i ⟶ W i`, induces an isomorphism of Čech complexes `Č(W, P) ⟶ Č(U, P)` as soon as `P`
