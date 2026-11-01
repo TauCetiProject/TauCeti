@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClassQuotient
+public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClass.Quotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.Correspondence
 
@@ -153,28 +153,19 @@ class field at the conductor, which factors through the congruence description `
 because the two surjections out of `Cl_𝔣` have the same kernel
 (`ker_rayClassArtinMap_ringClassField`). -/
 def ringClassArtinEquiv : Pic O ≃* Gal(ringClassField O/K) :=
-  MulEquiv.ofBijective
-    (O.rayClassToPic.liftOfSurjective O.rayClassToPic_surjective
-      ⟨rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O),
-        (ker_rayClassArtinMap_ringClassField O).ge⟩)
-    ⟨(injective_iff_map_eq_one _).2 fun y hy ↦ by
-      obtain ⟨x, rfl⟩ := O.rayClassToPic_surjective y
-      rw [MonoidHom.liftOfRightInverse_comp_apply] at hy
-      rw [← MonoidHom.mem_ker, ← ker_rayClassArtinMap_ringClassField O]
-      exact MonoidHom.mem_ker.2 hy,
-    fun σ ↦ by
-      obtain ⟨x, rfl⟩ := rayClassArtinMap_surjective (isAdmissibleModulus_ringClassField O) σ
-      exact ⟨O.rayClassToPic x, MonoidHom.liftOfRightInverse_comp_apply _ _
-        (Function.rightInverse_surjInv O.rayClassToPic_surjective) _ x⟩⟩
+  (QuotientGroup.quotientKerEquivOfSurjective _ O.rayClassToPic_surjective).symm.trans
+    (QuotientGroup.liftEquiv _ (rayClassArtinMap_surjective (isAdmissibleModulus_ringClassField O))
+      (ker_rayClassArtinMap_ringClassField O).symm)
 
 /-- **`ringClassArtinEquiv` factors the ray-class Artin map**: the image of the Picard class of a
 ray class `x` of the conductor is the ray-class Artin symbol of `x`. -/
 @[simp]
 theorem ringClassArtinEquiv_rayClassToPic (x : RayClassGroup O.conductorModulus) :
     ringClassArtinEquiv O (O.rayClassToPic x) =
-      rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O) x :=
-  MonoidHom.liftOfRightInverse_comp_apply _ _
-    (Function.rightInverse_surjInv O.rayClassToPic_surjective) _ x
+      rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O) x := by
+  have : (QuotientGroup.quotientKerEquivOfSurjective _ O.rayClassToPic_surjective).symm
+      (O.rayClassToPic x) = x := (MulEquiv.symm_apply_eq _).2 rfl
+  rw [ringClassArtinEquiv, MulEquiv.trans_apply, this, QuotientGroup.liftEquiv_coe]
 
 /-- **On idele classes, ring-class reciprocity is the global Artin map**: the image of the
 ring-class quotient of `c ∈ C_K` is the global Artin symbol of `c` in the ring class field. -/
