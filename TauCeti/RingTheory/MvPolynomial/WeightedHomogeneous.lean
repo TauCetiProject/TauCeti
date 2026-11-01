@@ -192,28 +192,10 @@ theorem isWeightedHomogeneous_of_isHomogeneous_aeval {w : σ → ℕ} {g : σ �
     (hg : ∀ i, (g i).IsHomogeneous (w i)) (hinj : Function.Injective (aeval (R := R) g))
     {φ : MvPolynomial σ R} {m : ℕ} (h : (aeval g φ).IsHomogeneous m) :
     φ.IsWeightedHomogeneous w m := by
-  classical
-  -- The substitution of the weight-`n` component of `φ` is homogeneous of degree `n`, so the
-  -- degree-`m` part of the substitution of `φ` is the substitution of its weight-`m` component.
-  set s := (weightedHomogeneousComponent_finsupp (w := w) φ).toFinset
-  have hsum : ∑ n ∈ s, weightedHomogeneousComponent w n φ = φ := by
-    rw [← finsum_eq_sum _ (weightedHomogeneousComponent_finsupp φ),
-      sum_weightedHomogeneousComponent]
-  have hcomp (n : ℕ) : (aeval g (weightedHomogeneousComponent w n φ)).IsHomogeneous n :=
-    (weightedHomogeneousComponent_isWeightedHomogeneous n φ).aeval hg
-  have key : aeval g φ = aeval g (weightedHomogeneousComponent w m φ) := by
-    calc aeval g φ = homogeneousComponent m (aeval g φ) := (homogeneousComponent_eq_self h).symm
-      _ = ∑ n ∈ s, homogeneousComponent m (aeval g (weightedHomogeneousComponent w n φ)) := by
-        conv_lhs => rw [← hsum]
-        rw [map_sum, map_sum]
-      _ = homogeneousComponent m (aeval g (weightedHomogeneousComponent w m φ)) := by
-        refine Finset.sum_eq_single m (fun n _ hn => ?_) fun hm => ?_
-        · simp [homogeneousComponent_of_mem (hcomp n), hn.symm]
-        · have hzero : weightedHomogeneousComponent w m φ = 0 := by
-            by_contra hne
-            exact hm ((Set.Finite.mem_toFinset _).mpr hne)
-          rw [hzero, map_zero, map_zero]
-      _ = aeval g (weightedHomogeneousComponent w m φ) := homogeneousComponent_eq_self (hcomp m)
+  -- The degree-`m` part of the substitution of `φ` is the substitution of its weight-`m`
+  -- component.
+  have key : aeval g φ = aeval g (weightedHomogeneousComponent w m φ) :=
+    (homogeneousComponent_eq_self h).symm.trans (weightedHomogeneousComponent_aeval hg φ m)
   rw [hinj key]
   exact weightedHomogeneousComponent_isWeightedHomogeneous m φ
 

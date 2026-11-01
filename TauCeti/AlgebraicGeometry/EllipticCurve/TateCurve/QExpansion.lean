@@ -67,34 +67,12 @@ namespace TauCeti
 /-- The invariant `c₄ = 1 + 240 ∑ σ₃(n) qⁿ` of the Tate curve is the `q`-expansion of `E₄`. -/
 theorem map_tateCurve_c₄_eq_qExpansion_E₄ :
     tateCurve.c₄.map (Int.castRingHom ℂ) = qExpansion 1 E₄ := by
-  -- The coefficient `-8 / B₄` of `σ₃(n)` in `E₄` is read off its `q`-coefficient `240`.
-  have h₁ := E_qExpansion_coeff (k := 4) (by norm_num) ⟨2, rfl⟩ 1
-  rw [E₄_qExpansion_coeff_one] at h₁
-  ext m
-  rw [coeff_map, E_qExpansion_coeff (k := 4) (by norm_num) ⟨2, rfl⟩, tateCurve_c₄, map_add,
-    coeff_one, coeff_ofNat_mul, coeff_divisorSumSeries]
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  · simp only [hm, ite_false, zero_add, eq_intCast] at h₁ ⊢
-    norm_num at h₁
-    push_cast
-    linear_combination (σ 3 m : ℂ) * h₁
+  rw [tateCurve_c₄, TauCeti.ModularForm.qExpansion_E₄_eq]
 
 /-- The invariant `c₆ = -1 + 504 ∑ σ₅(n) qⁿ` of the Tate curve is the `q`-expansion of `-E₆`. -/
 theorem map_tateCurve_c₆_eq_neg_qExpansion_E₆ :
     tateCurve.c₆.map (Int.castRingHom ℂ) = -qExpansion 1 E₆ := by
-  -- The coefficient `-12 / B₆` of `σ₅(n)` in `E₆` is read off its `q`-coefficient `-504`.
-  have h₁ := E_qExpansion_coeff (k := 6) (by norm_num) ⟨3, rfl⟩ 1
-  rw [E₆_qExpansion_coeff_one] at h₁
-  ext m
-  rw [coeff_map, map_neg, E_qExpansion_coeff (k := 6) (by norm_num) ⟨3, rfl⟩, tateCurve_c₆,
-    map_add, map_neg, coeff_one, coeff_ofNat_mul, coeff_divisorSumSeries]
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  · simp only [hm, ite_false, neg_zero, zero_add, eq_intCast] at h₁ ⊢
-    norm_num at h₁
-    push_cast
-    linear_combination (σ 5 m : ℂ) * h₁
+  rw [tateCurve_c₆, TauCeti.ModularForm.qExpansion_E₆_eq, ← map_neg, neg_sub, sub_eq_neg_add]
 
 /-- The discriminant of the Tate curve is the `q`-expansion of the modular discriminant `Δ`. -/
 theorem map_tateCurve_Δ_eq_qExpansion_discriminant :
@@ -106,6 +84,11 @@ theorem map_tateCurve_Δ_eq_qExpansion_discriminant :
   ext n
   simp [coeff_ofNat_mul]
 
+/-- The `q`-expansion is additive in the modular form, so it commutes with integer multiples. -/
+private theorem qExpansion_zsmul {k : ℤ} (n : ℤ) (F : ModularForm 𝒮ℒ k) :
+    qExpansion 1 ⇑(n • F) = n • qExpansion 1 F :=
+  map_zsmul (qExpansionAddHom one_pos one_mem_strictPeriods_SL k) n F
+
 /-- The polynomials in the Weierstrass coefficients whose Tate expansion is the `q`-expansion of a
 level-one modular form of weight `k`. They form a graded family under multiplication. -/
 private def tateGraded (k : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) where
@@ -115,13 +98,12 @@ private def tateGraded (k : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) where
   add_mem' := by
     rintro f g ⟨F, hF⟩ ⟨G, hG⟩
     exact ⟨F + G, by
-      rw [← qExpansionAddHom_apply one_pos one_mem_strictPeriods_SL, map_add,
-        qExpansionAddHom_apply, qExpansionAddHom_apply, hF, hG, map_add, map_add]⟩
+      rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL, hF, hG,
+        map_add, map_add]⟩
   smul_mem' := by
     rintro n f ⟨F, hF⟩
     refine ⟨n • F, ?_⟩
-    rw [← qExpansionAddHom_apply one_pos one_mem_strictPeriods_SL, map_zsmul,
-      qExpansionAddHom_apply, hF, map_zsmul, map_zsmul]
+    rw [qExpansion_zsmul, hF, map_zsmul, map_zsmul]
 
 private instance : SetLike.GradedMonoid tateGraded where
   one_mem := ⟨ModularForm.mcast Nat.cast_zero.symm 1, by
@@ -136,8 +118,8 @@ private theorem c₄_mem_tateGraded : Universal.curve.c₄ ∈ tateGraded 4 :=
   ⟨E₄, by rw [specialize_c₄, map_tateCurve_c₄_eq_qExpansion_E₄]⟩
 
 private theorem c₆_mem_tateGraded : Universal.curve.c₆ ∈ tateGraded 6 :=
-  ⟨-E₆, by rw [specialize_c₆, map_tateCurve_c₆_eq_neg_qExpansion_E₆, ← qExpansionAddHom_apply
-    one_pos one_mem_strictPeriods_SL, map_neg, qExpansionAddHom_apply]⟩
+  ⟨-E₆, by rw [specialize_c₆, map_tateCurve_c₆_eq_neg_qExpansion_E₆, FunLike.coe_neg,
+    ModularForm.qExpansion_neg one_pos one_mem_strictPeriods_SL]⟩
 
 private theorem Δ_mem_tateGraded : Universal.curve.Δ ∈ tateGraded 12 :=
   ⟨ModularForm.mcast rfl (CuspForm.discriminant : ModularForm 𝒮ℒ 12), by
@@ -233,8 +215,8 @@ theorem _root_.ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq 
   set a₀ := constantCoeff P
   set F' := F - a₀ • G
   have hF' : qExpansion 1 F' = (P - a₀ • tateCurve.specialize g).map (Int.castRingHom ℂ) := by
-    rw [← qExpansionAddHom_apply one_pos one_mem_strictPeriods_SL, map_sub, map_zsmul,
-      qExpansionAddHom_apply, qExpansionAddHom_apply, hP, hG, map_sub, map_zsmul]
+    rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
+      qExpansion_zsmul, hP, hG, map_sub, map_zsmul]
   have hcusp : (qExpansion 1 F').coeff 0 = 0 := by
     rw [hF', coeff_map, coeff_zero_eq_constantCoeff_apply]
     simp [hg₀, a₀]
