@@ -11,9 +11,10 @@ import TauCeti.AlgebraicGeometry.ResidueField
 /-!
 # Persistence of elementary étale localization
 
-An open finite neighbourhood isolated over a point remains such a neighbourhood after a further
-base change which preserves the residue field at that point. In particular, the neighbourhoods
-in elementary étale localization can be refined by further elementary étale neighbourhoods.
+An open finite neighbourhood isolated over a point, whose distinguished point has unchanged
+residue field over the original source, remains such a neighbourhood after a further base change
+which preserves the residue field at the base point. In particular, the neighbourhoods in
+elementary étale localization can be refined by further elementary étale neighbourhoods.
 
 `Scheme.Hom.exists_finite_open_baseChange` gives the open in the new fibre product, its unique
 point over the distinguished base point, and the unchanged residue field over the original source.
@@ -34,10 +35,11 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- An open finite neighbourhood with a unique point over `u` persists under any base change
-preserving the residue field at `u`. If its distinguished point has unchanged residue field over
-`X`, so does the distinguished point of the new open. This is the persistence assertion in
-Stacks, Lemma 37.41.1; neither the original nor the further base change needs to be étale. -/
+/-- Given an open finite neighbourhood `V` whose unique point `v` over `u` has unchanged residue
+field over `X`, any base change preserving the residue field at `u` yields such a neighbourhood
+with a unique distinguished point and unchanged residue field over `X`. This is the persistence
+assertion in Stacks, Lemma 37.41.1; neither the original nor the further base change needs to be
+étale. -/
 @[stacks 02LK "persistence under further elementary étale neighbourhoods"]
 theorem Scheme.Hom.exists_finite_open_baseChange {X S U U' : Scheme.{u}}
     (f : X ⟶ S) (φ : U ⟶ S) (V : (pullback f φ).Opens) (v : V.toScheme) (u : U)
