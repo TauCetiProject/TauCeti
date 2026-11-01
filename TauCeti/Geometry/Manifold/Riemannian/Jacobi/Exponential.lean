@@ -64,48 +64,25 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- The family of radial geodesics `t ↦ exp_p (t v + q (t w))` whose variation field at `q = 0`
-is `t ↦ d(exp_p)_{t v} (t w)`. -/
+/-- The radial variation `t ↦ exp_p (t (v + q w))` whose variation field at `q = 0` is
+`t ↦ d(exp_p)_{t v} (t w)`. -/
 private abbrev radialFamily (p : M) (v w : TangentSpace I p) (q t : ℝ) : M :=
-  riemannianExp I M p (t • v + q • t • w)
-
-/-- Each curve of the radial family is the maximal geodesic with initial velocity `v + q w`. -/
-private theorem radialFamily_eq_maximalGeodesic (p : M) (v w : TangentSpace I p) (q : ℝ) :
-    radialFamily (I := I) p v w q = maximalGeodesic I M p (v + q • w) := by
-  funext t
-  rw [radialFamily, ← riemannianExp_smul, smul_add, smul_comm t q w]
-
-omit [I.Boundaryless] [T2Space M] in
-/-- The curve of the radial family at `q = 0` is the radial geodesic `t ↦ exp_p (t v)`. -/
-private theorem radialFamily_zero (p : M) (v w : TangentSpace I p) :
-    radialFamily (I := I) p v w 0 = fun t : ℝ ↦ riemannianExp I M p (t • v) := by
-  funext t
-  simp only [radialFamily, zero_smul, add_zero]
-
-/-- The radial family is smooth near `{0} × J`, where `J` is the maximal geodesic interval
-of `v`. -/
-private theorem contMDiffAt_radialFamily {p : M} {v : TangentSpace I p} (w : TangentSpace I p)
-    {t : ℝ} (ht : t ∈ geodesicInterval I M p v) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ radialFamily (I := I) p v w z.1 z.2) (0, t) := by
-  have hexp : ContMDiffAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
-      ((fun z : ℝ × ℝ ↦ z.2 • v + z.1 • z.2 • w) (0, t)) := by
-    simpa using contMDiffAt_riemannianExp (mem_geodesicInterval_iff_smul_mem_expDomain.1 ht)
-  have hlin : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, TangentSpace I p) ∞
-      (fun z : ℝ × ℝ ↦ z.2 • v + z.1 • z.2 • w) (0, t) :=
-    (contMDiff_iff_contDiff.2
-      ((contDiff_snd.smul contDiff_const).add
-        (contDiff_fst.smul (contDiff_snd.smul contDiff_const)))).contMDiffAt
-  exact hexp.comp (0, t) hlin
+  riemannianExp I M p (t • (v + q • w))
 
 /-- The variation field of the radial family is the differential of the exponential map. -/
 private theorem variationField_radialFamily {p : M} {v : TangentSpace I p}
     (w : TangentSpace I p) {t : ℝ} (ht : t ∈ geodesicInterval I M p v) :
     variationField I (radialFamily (I := I) p v w) t =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w) := by
+  have hfun : (fun q : ℝ ↦ radialFamily (I := I) p v w q t) =
+      fun q : ℝ ↦ riemannianExp I M p (t • v + q • t • w) :=
+    funext fun q ↦ by rw [radialFamily, smul_add, smul_comm t q w]
   have h := curveVelocity_riemannianExp_add_smul (I := I) (M := M) (v := t • v) (w := t • w)
     (u := 0) (by simpa using mem_geodesicInterval_iff_smul_mem_expDomain.1 ht)
   rw [zero_smul, add_zero] at h
-  rw [variationField_apply]
+  -- The goal is stated in the fibre over `exp_p (t • (v + 0 • w))`, while the differential lives
+  -- in the fibre over `exp_p (t • v)`; both fibres are `E`, so `h` closes it.
+  rw [variationField_apply, hfun]
   exact h
 
 /-- **The differential of the exponential map along a ray is a Jacobi field.** For
@@ -115,20 +92,13 @@ theorem isJacobiFieldOn_mfderiv_riemannianExp (p : M) (v w : TangentSpace I p) :
     IsJacobiFieldOn I (fun t : ℝ ↦ riemannianExp I M p (t • v))
       (fun t ↦ mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w))
       (geodesicInterval I M p v) := by
-  have hgeod : ∀ t ∈ geodesicInterval I M p v, ∀ᶠ q in 𝓝 (0 : ℝ),
-      acceleration (leviCivitaConnection I M) (radialFamily (I := I) p v w q) t = 0 := by
-    intro t ht
-    -- `t` stays in the maximal geodesic interval of `v + q w` for `q` near `0`.
-    have hcont : Continuous fun q : ℝ ↦ t • (v + q • w) := by fun_prop
-    have hmem : ∀ᶠ q in 𝓝 (0 : ℝ), t • (v + q • w) ∈ expDomain I M p :=
-      hcont.continuousAt.preimage_mem_nhds ((isOpen_expDomain p).mem_nhds
-        (by simpa using mem_geodesicInterval_iff_smul_mem_expDomain.1 ht))
-    filter_upwards [hmem] with q hq
-    rw [radialFamily_eq_maximalGeodesic]
-    exact acceleration_maximalGeodesic_eq_zero (mem_geodesicInterval_iff_smul_mem_expDomain.2 hq)
+  have hF : ∀ q t : ℝ, radialFamily (I := I) p v w q t = riemannianExp I M p (t • (v + q • w)) :=
+    fun _ _ ↦ rfl
   have hJ := isJacobiFieldOn_variationField isOpen_geodesicInterval
-    (fun t ht ↦ (contMDiffAt_radialFamily w ht).of_le (by norm_cast)) hgeod
-  rw [radialFamily_zero] at hJ
+    (fun t ht ↦ (contMDiffAt_radialVariation hF (u := 0)
+      (by simpa using mem_geodesicInterval_iff_smul_mem_expDomain.1 ht)).of_le (by norm_cast))
+    (fun t ht ↦ eventually_acceleration_radialVariation_eq_zero hF ht)
+  rw [radialVariation_zero hF] at hJ
   exact hJ.congr fun t ht ↦ (variationField_radialFamily w ht).symm
 
 /-- The variation field of the radial family has covariant derivative `w` at `t = 0`. -/
@@ -139,25 +109,17 @@ private theorem alongCurve_variationField_radialFamily_zero (p : M) (v w : Tange
     rw [minSmoothness_of_isRCLikeNormedField]
     infer_instance
   set F := radialFamily (I := I) p v w
+  have hF : ∀ q t : ℝ, F q t = riemannianExp I M p (t • (v + q • w)) := fun _ _ ↦ rfl
   -- Exchange the two covariant derivatives with the symmetry lemma.
   rw [variationField_def, alongCurve_curveVelocity_comm (leviCivitaConnection I M)
     ((isTorsionFree_iff_torsion_eq_zero _).2 (torsion_leviCivitaConnection_eq_zero I))
-    (f := F) (u := 0) (v := 0) ((contMDiffAt_radialFamily w zero_mem_geodesicInterval).of_le
-      (by simp))]
+    (f := F) (u := 0) (v := 0) ((contMDiffAt_radialVariation hF (by simp)).of_le (by simp))]
   -- At `t = 0` the transverse curve is constant at `p`, with initial velocities `v + q w`.
-  have hbase : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := by
-    funext q
-    simp [F, radialFamily]
-  have hvel (q : ℝ) : (curveVelocity I (F q) 0 : TangentSpace I p) = v + q • w := by
-    have hF : F q = fun s : ℝ ↦ riemannianExp I M p (s • (v + q • w)) :=
-      (radialFamily_eq_maximalGeodesic p v w q).trans
-        (funext fun s ↦ (riemannianExp_smul p _ s).symm)
-    rw [hF, curveVelocity_riemannianExp_smul (by simp)]
-    -- `mfderiv_congr_point` moves the base point of the differential from `0 • (v + q • w)` to `0`
-    exact (DFunLike.congr_fun (mfderiv_congr_point (I := 𝓘(ℝ, TangentSpace I p)) (I' := I)
-      (f := riemannianExp I M p) (zero_smul ℝ (v + q • w))) _).trans
-      (mfderiv_riemannianExp_apply_zero p _)
-  rw [hbase]
+  -- The fibres `TangentSpace I (F q 0)` and `TangentSpace I p` are both `E`, so the velocities
+  -- are read in `TangentSpace I p`.
+  have hvel (q : ℝ) : (curveVelocity I (F q) 0 : TangentSpace I p) = v + q • w :=
+    curveVelocity_riemannianExp_smul_zero p (v + q • w)
+  rw [funext (radialVariation_apply_zero hF)]
   exact (alongCurve_congr _ (fun _ ↦ p) (fun q ↦ curveVelocity I (F q) 0)
     (W := fun q : ℝ ↦ (v + q • w : TangentSpace I p))
     (Eventually.of_forall hvel)).trans (alongCurve_const_of_hasDerivAt _ p
@@ -169,15 +131,20 @@ theorem alongCurveWithin_mfderiv_riemannianExp_zero (p : M) (v w : TangentSpace 
       (fun t ↦ mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w))
       (geodesicInterval I M p v) 0 = w := by
   set F := radialFamily (I := I) p v w
+  have hF : ∀ q t : ℝ, F q t = riemannianExp I M p (t • (v + q • w)) := fun _ _ ↦ rfl
   have h0 : (0 : ℝ) ∈ geodesicInterval I M p v := zero_mem_geodesicInterval
-  -- Near `t = 0` the field is the variation field of the radial family.
+  -- Near `t = 0` the field is the variation field of the radial family. The differential lives in
+  -- `TangentSpace I (exp_p (t • v))` and is read in the fibre `TangentSpace I (F 0 t)`; both
+  -- fibres are `E`.
   have hfield : ∀ᶠ t in 𝓝 (0 : ℝ),
       (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w) :
         TangentSpace I (F 0 t)) = variationField I F t := by
     filter_upwards [isOpen_geodesicInterval.mem_nhds h0] with t ht
     exact (variationField_radialFamily w ht).symm
+  -- Rewriting the curve to `F 0` also moves the fibres of the field to those over `F 0`, which
+  -- are again `E`.
   rw [alongCurveWithin_of_mem_nhds _ _ _ (isOpen_geodesicInterval.mem_nhds h0),
-    ← radialFamily_zero p v w]
+    ← radialVariation_zero hF]
   exact (alongCurve_congr _ (F 0) _ hfield).trans
     (alongCurve_variationField_radialFamily_zero p v w)
 
