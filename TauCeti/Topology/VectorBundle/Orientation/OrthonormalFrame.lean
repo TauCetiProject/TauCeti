@@ -81,6 +81,12 @@ def toOrientationCover (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle F 
     VectorBundleOrientationCover F E ι :=
   ⟨p.proj, Orientation.map ι p.frame.toLinearEquiv o⟩
 
+/-- The point of the orientation double cover given by a frame: its base point, with the
+orientation transported from `o` by the frame. -/
+theorem toOrientationCover_def (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle F E V) :
+    toOrientationCover o p = ⟨p.proj, Orientation.map ι p.frame.toLinearEquiv o⟩ :=
+  (rfl)
+
 @[simp]
 theorem proj_toOrientationCover (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle F E V) :
     (toOrientationCover o p).proj = p.proj :=
