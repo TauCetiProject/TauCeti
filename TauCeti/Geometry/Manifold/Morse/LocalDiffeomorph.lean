@@ -47,44 +47,31 @@ variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologi
   [TopologicalSpace M'] [ChartedSpace H M'] {n : WithTop ℕ∞} [IsManifold I n M]
   [IsManifold I n M'] {π : M → M'} {x : M}
 
-/-- Near a point `x` where `π` is a local diffeomorphism, the preferred chart of `M'` at `π x`
-pulls back to a chart `e` of the maximal atlas of `M` at `x`, in which the coordinate expression of
-every `g ∘ π` is the coordinate expression of `g` in that preferred chart. -/
-private theorem exists_mem_maximalAtlas_comp_eventuallyEq (hπ : IsLocalDiffeomorphAt I I n π x) :
-    ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧
-      e.extend I x = (chartAt H (π x)).extend I (π x) ∧ ∀ g : M' → ℝ,
-        (g ∘ π) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)]
-          g ∘ ((chartAt H (π x)).extend I).symm := by
-  obtain ⟨e, he, hx, heq⟩ := hπ.exists_mem_maximalAtlas_eventuallyEq
-    (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
-  set c := chartAt H (π x)
-  -- On a neighbourhood of `x`, the extended chart `e` is the extended chart `c` after `π`.
-  have hext : ∀ᶠ y in 𝓝 x, y ∈ e.source ∧ π y ∈ c.source ∧ e.extend I y = c.extend I (π y) := by
-    filter_upwards [heq, e.open_source.mem_nhds hx, hπ.contMDiffAt.continuousAt.preimage_mem_nhds
-      (c.open_source.mem_nhds (mem_chart_source H (π x)))] with y hy hye hyc
-    exact ⟨hye, hyc, by simp only [OpenPartialHomeomorph.extend_coe, comp_apply, hy]⟩
-  refine ⟨e, he, hx, hext.self_of_nhds.2.2, fun g ↦ ?_⟩
-  rw [← e.map_extend_nhds_of_boundaryless hx, EventuallyEq, eventually_map]
-  filter_upwards [hext] with y ⟨hye, hyc, hy⟩
-  simp only [comp_apply, e.extend_left_inv hye]
-  rw [hy, c.extend_left_inv hyc]
-
 /-- **Criticality under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
-with `1 ≤ n` and `f` is differentiable at `π x`, then `x` is a critical point of `f ∘ π` exactly
-when `π x` is a critical point of `f`. -/
+with `1 ≤ n`, then `x` is a critical point of `f ∘ π` exactly when `π x` is a critical point of
+`f`. -/
 theorem _root_.IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff
-    (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 1 ≤ n) {f : M' → ℝ}
-    (hf : MDifferentiableAt I 𝓘(ℝ) f (π x)) :
+    (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 1 ≤ n) {f : M' → ℝ} :
     x ∈ criticalPoints I (f ∘ π) ↔ π x ∈ criticalPoints I f := by
-  obtain ⟨e, he, hx, hpt, hcomp⟩ := exists_mem_maximalAtlas_comp_eventuallyEq hπ
-  rw [mem_criticalPoints, mem_criticalPoints,
-    mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le hn he) hx
-      (hf.comp x (hπ.mdifferentiableAt (zero_lt_one.trans_le hn).ne')),
-    mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le hn (IsManifold.chart_mem_maximalAtlas (π x)))
-      (mem_chart_source H (π x)) hf,
-    (hcomp f).fderiv_eq, hpt]
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f (π x)
+  · obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
+      (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
+    rw [mem_criticalPoints, mem_criticalPoints,
+      mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
+        (IsManifold.maximalAtlas_subset_of_le hn he) hx (hf.comp x (hπ.mdifferentiableAt hn0)),
+      mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
+        (IsManifold.maximalAtlas_subset_of_le hn (IsManifold.chart_mem_maximalAtlas (π x)))
+        (mem_chart_source H (π x)) hf,
+      (hcomp f).fderiv_eq, hpt]
+  -- Near `π x`, `f` is `f ∘ π` after a local inverse of `π`, so `f ∘ π` is not differentiable at
+  -- `x` either, and both derivatives vanish by convention.
+  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := fun h ↦ hf <|
+    (h.comp_of_eq (π x) (hπ.mdifferentiableAt_localInverse hn0)
+      (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
+      (hπ.localInverse_eventuallyEq_right.fun_comp f).symm
+  simp only [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf,
+    mfderiv_zero_of_not_mdifferentiableAt hfπ]
 
 /-- **Nondegeneracy under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `2 ≤ n`, then `x` is a nondegenerate critical point of `f ∘ π` exactly when `π x` is a
@@ -95,7 +82,8 @@ theorem _root_.IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_if
       IsManifoldNondegenerateCriticalPoint I f (π x) := by
   have : IsManifold I 2 M := IsManifold.of_le hn
   have : IsManifold I 2 M' := IsManifold.of_le hn
-  obtain ⟨e, he, hx, hpt, hcomp⟩ := exists_mem_maximalAtlas_comp_eventuallyEq hπ
+  obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
+    (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
   rw [isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le hn he) hx,
     isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
@@ -112,9 +100,9 @@ theorem _root_.IsLocalDiffeomorphAt.manifoldMorseIndex_comp
   have : IsManifold I 2 M := IsManifold.of_le hn
   have : IsManifold I 2 M' := IsManifold.of_le hn
   have hcrit' : x ∈ criticalPoints I (f ∘ π) :=
-    (hπ.mem_criticalPoints_comp_iff (one_le_two.trans hn) (hf.mdifferentiableAt two_ne_zero)).2
-      hcrit
-  obtain ⟨e, he, hx, hpt, hcomp⟩ := exists_mem_maximalAtlas_comp_eventuallyEq hπ
+    (hπ.mem_criticalPoints_comp_iff (one_le_two.trans hn)).2 hcrit
+  obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
+    (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le hn he) hx (hf.comp x (hπ.contMDiffAt.of_le hn))
       (mem_criticalPoints.1 hcrit'),

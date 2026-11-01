@@ -74,6 +74,11 @@ structure IsPrimitiveOn (φ : RoughForm I M F 1) (g : M → F) (U : Set M) : Pro
 
 variable {φ ψ : RoughForm I M F 1} {g h : M → F} {U V : Set M}
 
+/-- A differentiable function whose differential is `φ` is a primitive of `φ` on the whole space. -/
+theorem isPrimitiveOn_univ_of_mextDeriv_eq (hg : MDifferentiable I 𝓘(ℝ, F) g)
+    (h : mextDeriv (RoughForm.ofFunction I g) = φ) : IsPrimitiveOn φ g univ :=
+  ⟨isOpen_univ, hg.mdifferentiableOn, fun y _ ↦ congrFun h y⟩
+
 theorem IsPrimitiveOn.mono (hg : IsPrimitiveOn φ g U) (hV : IsOpen V) (hVU : V ⊆ U) :
     IsPrimitiveOn φ g V :=
   ⟨hV, hg.mdifferentiableOn.mono hVU, fun y hy ↦ hg.mextDeriv_eq y (hVU hy)⟩

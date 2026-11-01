@@ -25,6 +25,11 @@ one-form are isolated and there are finitely many in every compact set. On a smo
 boundaryless manifold, the exact-form comparison identifies this notion with the existing
 Morse-function predicate.
 
+Morse one-forms pull back along smooth local diffeomorphisms, and descend along surjective ones.
+If `π` is a smooth local diffeomorphism and `g` is a potential with `dg = π^* α` for a Morse
+one-form `α`, then `g` is a Morse function whose critical set is the preimage under `π` of the
+zeros of `α`, with the Morse index at `x` equal to that of any local primitive of `α` at `π x`.
+
 ## References
 
 * A. Pajitnov, *Circle-valued Morse Theory*, de Gruyter 2006, Chapter 1.
@@ -184,32 +189,29 @@ omit [IsManifold I 1 M] in
 /-- **Critical points of a lifted potential.** If `π` is a local diffeomorphism and `g` is a
 differentiable function with `dg = π^* α`, the critical points of `g` are the preimages of the
 zeros of `α`. -/
-theorem criticalPoints_eq_preimage_of_mextDeriv_eq_mpullback {n : WithTop ℕ∞}
-    (hπ : IsLocalDiffeomorph I I n π) (hn : n ≠ 0) (hg : MDifferentiable I 𝓘(ℝ) g)
+theorem _root_.IsLocalDiffeomorph.criticalPoints_eq_preimage_of_mextDeriv_eq_mpullback
+    {n : WithTop ℕ∞} (hπ : IsLocalDiffeomorph I I n π) (hn : n ≠ 0) (hg : MDifferentiable I 𝓘(ℝ) g)
     (hdg : mextDeriv (RoughForm.ofFunction I g) = mpullback I I π α) :
     criticalPoints I g = π ⁻¹' {y | α y = 0} := by
-  have hp : IsPrimitiveOn (mpullback I I π α) g univ :=
-    ⟨isOpen_univ, hg.mdifferentiableOn, fun y _ ↦ congrFun hdg y⟩
   ext x
-  rw [← hp.eq_zero_iff_mem_criticalPoints (mem_univ x), (hπ x).mpullback_apply_eq_zero_iff hn,
-    mem_preimage, mem_ofPred_eq]
+  rw [← (isPrimitiveOn_univ_of_mextDeriv_eq hg hdg).eq_zero_iff_mem_criticalPoints (mem_univ x),
+    (hπ x).mpullback_apply_eq_zero_iff hn, mem_preimage, mem_ofPred_eq]
 
 variable [IsManifold I ∞ M] [IsManifold I ∞ N] [I.Boundaryless]
 
 /-- **Morse one-forms pull back along local diffeomorphisms.** The pullback of a Morse one-form
-along a smooth local diffeomorphism is a Morse one-form. Each zero `x` of the pullback lies over
-a zero `π x` of the form, and a local primitive `f` near `π x` lifts to the local primitive
-`f ∘ π` near `x`. -/
+along a smooth local diffeomorphism is a Morse one-form. -/
 theorem IsMorseOneForm.mpullback (hα : IsMorseOneForm α) (hπ : IsLocalDiffeomorph I I ∞ π) :
     IsMorseOneForm (mpullback I I π α) := by
-  refine ⟨hα.isSmoothForm.mpullback (hπ.contMDiff.of_le (by simp)), ?_, fun x hx ↦ ?_⟩
-  · rw [← mpullback_mextDeriv (hπ.contMDiff.of_le (by simp))
-      ((isSmoothBundleForm_def 1 α).mpr (hα.isSmoothForm.contMDiff.of_le (by simp))),
-      hα.mextDeriv_eq_zero, mpullback_zero]
-  · rw [(hπ x).mpullback_apply_eq_zero_iff (by simp)] at hx
-    obtain ⟨f, U, hxU, hf, hcrit⟩ := hα.exists_nondegenerate_primitive (π x) hx
-    exact ⟨f ∘ π, π ⁻¹' U, hxU, hf.mpullback (hπ.contMDiff.mdifferentiable (by simp)),
-      ((hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)).2 hcrit⟩
+  refine ⟨hα.isSmoothForm.mpullback (hπ.contMDiff.of_le (by simp)),
+    (hα.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero hα.mextDeriv_eq_zero
+      (hπ.contMDiff.of_le (by simp)), fun x hx ↦ ?_⟩
+  -- Each zero `x` of the pullback lies over a zero `π x` of the form, and a local primitive `f`
+  -- near `π x` lifts to the local primitive `f ∘ π` near `x`.
+  rw [(hπ x).mpullback_apply_eq_zero_iff (by simp)] at hx
+  obtain ⟨f, U, hxU, hf, hcrit⟩ := hα.exists_nondegenerate_primitive (π x) hx
+  exact ⟨f ∘ π, π ⁻¹' U, hxU, hf.mpullback (hπ.contMDiff.mdifferentiable (by simp)),
+    ((hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)).2 hcrit⟩
 
 /-- **Morse one-forms descend along surjective local diffeomorphisms.** For a surjective smooth
 local diffeomorphism `π`, a one-form is Morse exactly when its pullback along `π` is. -/
@@ -249,11 +251,9 @@ theorem IsMorseOneForm.manifoldMorseIndex_eq_of_mextDeriv_eq_mpullback (hα : Is
     (hdg : mextDeriv (RoughForm.ofFunction I g) = TauCeti.mpullback I I π α) {x : N}
     (hf : IsPrimitiveOn α f U) (hxU : π x ∈ U) (hx : α (π x) = 0) :
     manifoldMorseIndex I g x = manifoldMorseIndex I f (π x) := by
-  have hp : IsPrimitiveOn (TauCeti.mpullback I I π α) g univ :=
-    ⟨isOpen_univ, hg.mdifferentiableOn, fun y _ ↦ congrFun hdg y⟩
   have hcrit := hα.isManifoldNondegenerateCriticalPoint hf hxU hx
-  rw [hp.manifoldMorseIndex_eq (hf.mpullback (hπ.contMDiff.mdifferentiable (by simp)))
-      (mem_univ x) hxU,
+  rw [(isPrimitiveOn_univ_of_mextDeriv_eq hg hdg).manifoldMorseIndex_eq
+      (hf.mpullback (hπ.contMDiff.mdifferentiable (by simp))) (mem_univ x) hxU,
     (hπ x).manifoldMorseIndex_comp (by simp) hcrit.contMDiffAt hcrit.mem_criticalPoints]
 
 end Pullback
