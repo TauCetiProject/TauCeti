@@ -357,6 +357,12 @@ end GradientTranslation
 
 /-! ### Dilation on the whole space -/
 
+/-- The whole-space restriction of an additive Haar measure is an additive Haar measure. -/
+instance instIsAddHaarMeasureRestrictTop {G : Type*} [MeasurableSpace G] [TopologicalSpace G]
+    [AddGroup G] {μ : Measure G} [μ.IsAddHaarMeasure] :
+    (μ.restrict (⊤ : Opens G)).IsAddHaarMeasure := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : μ.IsAddHaarMeasure)
+
 section Dilation
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -364,9 +370,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [Fact (1 ≤ q)] {r : ℝ}
 
 open Module
-
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
 
 /-- Passing a dilated whole-space test function `φ (r⁻¹ • ·)` to `Lᵖ` gives `r ^ (n / p)` times
 the normalized dilation of its class, where `n` is the dimension of `E`. -/
@@ -397,9 +400,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [Fact (1 ≤ q)] {r : ℝ}
 
 open Module
-
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
 
 /-- Passing the gradient of a dilated whole-space test function `φ (r⁻¹ • ·)` to `Lᵖ` gives
 `r ^ (n / p - 1)` times the normalized dilation of the gradient's class, where `n` is the

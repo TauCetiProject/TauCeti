@@ -61,18 +61,13 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)] {r s : ℝ}
 
-/-- The whole-space restriction of an additive Haar measure is an additive Haar measure. -/
-local instance isAddHaarMeasure_restrict_top_d1p0Dilation :
-    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
-
 /-- The normalized `Lᵖ` dilation of a test-function gradient is the gradient of the test function
 `r ^ (1 - n / p) • φ (r⁻¹ • ·)`. -/
-private theorem dilateLp_gradientTestFunctionLp (hr : 0 < r)
-    (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+private theorem dilateLp_gradientTestFunctionLp (hr : 0 < r) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     (mu.restrict (⊤ : Opens E)).dilateLp p r hr (gradientTestFunctionLp p phi) =
-      gradientTestFunctionLp p
-        (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) • dilateTestFunction hr.ne' hVO phi) := by
+      gradientTestFunctionLp p (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) •
+        dilateTestFunction hr.ne' (show MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)
+          from fun _ _ ↦ Opens.mem_top _) phi) := by
   rw [gradientTestFunctionLp_smul, gradientTestFunctionLp_dilateTestFunction, smul_smul,
     ← Real.rpow_add hr,
     show 1 - (finrank ℝ E : ℝ) / p.toReal + ((finrank ℝ E : ℝ) / p.toReal - 1) = 0 by ring,
@@ -85,9 +80,8 @@ theorem dilateLp_mem_d1p0Submodule (hr : 0 < r) {u : Lp E p (mu.restrict (⊤ : 
   rw [coe_d1p0Submodule] at hu
   refine closure_minimal ?_ ((d1p0Submodule mu ⊤ p).isClosed.preimage
     ((mu.restrict (⊤ : Opens E)).dilateLp p r hr).continuous) hu
-  have hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E) := fun _ _ ↦ Opens.mem_top _
   rintro _ ⟨phi, rfl⟩
-  rw [Set.mem_preimage, dilateLp_gradientTestFunctionLp hr hVO, coe_d1p0Submodule]
+  rw [Set.mem_preimage, dilateLp_gradientTestFunctionLp hr, coe_d1p0Submodule]
   exact subset_closure (mem_range_self _)
 
 namespace D1p0
@@ -130,11 +124,12 @@ theorem coe_dilate (hr : 0 < r) (u : D1p0 mu ⊤ p) :
   (rfl)
 
 /-- On test functions, the homogeneous Sobolev dilation is `φ ↦ r ^ (1 - n / p) • φ (r⁻¹ • ·)`. -/
-theorem dilate_ofTestFunctionₗ (hr : 0 < r)
-    (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+@[simp↓]
+theorem dilate_ofTestFunctionₗ (hr : 0 < r) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     dilate mu p r hr (ofTestFunctionₗ mu ⊤ p phi) =
       ofTestFunctionₗ mu ⊤ p (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) •
-        dilateTestFunction hr.ne' hVO phi) := by
+        dilateTestFunction hr.ne' (show MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)
+          from fun _ _ ↦ Opens.mem_top _) phi) := by
   apply Subtype.ext
   rw [coe_dilate, coe_ofTestFunctionₗ, coe_ofTestFunctionₗ, dilateLp_gradientTestFunctionLp]
 
@@ -151,6 +146,7 @@ theorem dilate_mul (hr : 0 < r) (hs : 0 < s) (u : D1p0 mu ⊤ p) :
     LinearIsometryEquiv.trans_apply]
 
 /-- The inverse of a homogeneous Sobolev dilation is the dilation by the inverse factor. -/
+@[simp]
 theorem dilate_symm (hr : 0 < r) :
     (dilate mu p r hr).symm = dilate mu p r⁻¹ (inv_pos.2 hr) :=
   LinearIsometryEquiv.ext fun _ ↦ (rfl)
@@ -159,31 +155,20 @@ theorem dilate_symm (hr : 0 < r) :
 the homogeneous Sobolev space to the normalized dilation by `r` of the represented function in
 the Sobolev-conjugate `L^{p⋆}` space, since `1 - n / p = -n / p⋆`. In particular, dilations
 preserve the `L^{p⋆}` norm of the represented function as well as the gradient norm. -/
+@[simp↓]
 theorem sobolevEmbeddingL_dilate {pstar : ENNReal} (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (hr : 0 < r) (u : D1p0 mu ⊤ p) :
     letI := Fact.mk (one_le_of_inv_add_eq_inv hexp)
     sobolevEmbeddingL hexp (dilate mu p r hr u) =
       (mu.restrict (⊤ : Opens E)).dilateLp pstar r hr (sobolevEmbeddingL hexp u) := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  -- The exponent identity `n / p⋆ + 1 = n / p` behind the matching powers of `r`.
-  have hexp' : (finrank ℝ E : ℝ) / pstar.toReal + 1 = (finrank ℝ E : ℝ) / p.toReal := by
-    have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
-    have hn : finrank ℝ E ≠ 0 := by
-      rintro hn
-      rw [hn, Nat.cast_zero, ENNReal.inv_zero, add_top] at hexp
-      exact hp (ENNReal.inv_eq_top.1 hexp.symm)
-    have hpinv : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hp
-    have h := congrArg ENNReal.toReal hexp
-    rw [ENNReal.toReal_add (ne_top_of_le_ne_top hpinv (hexp ▸ le_self_add))
-      (ne_top_of_le_ne_top hpinv (hexp ▸ le_add_self)), ENNReal.toReal_inv, ENNReal.toReal_inv,
-      ENNReal.toReal_inv, ENNReal.toReal_natCast] at h
-    rw [div_eq_mul_inv, div_eq_mul_inv, ← h, mul_add, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hn)]
+  have hexp' := natCast_div_toReal_add_one_of_inv_add_inv_eq_inv
+    (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hexp
   refine (denseRange_ofTestFunctionₗ (mu := mu) (Omega := ⊤) (p := p)).induction_on u
     (isClosed_eq ((sobolevEmbeddingL hexp).continuous.comp (dilate mu p r hr).continuous)
       (((mu.restrict (⊤ : Opens E)).dilateLp pstar r hr).continuous.comp
         (sobolevEmbeddingL hexp).continuous)) fun phi ↦ ?_
-  have hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E) := fun _ _ ↦ Opens.mem_top _
-  rw [dilate_ofTestFunctionₗ hr hVO, sobolevEmbeddingL_ofTestFunctionₗ hpstar,
+  rw [dilate_ofTestFunctionₗ hr, sobolevEmbeddingL_ofTestFunctionₗ hpstar,
     sobolevEmbeddingL_ofTestFunctionₗ hpstar, testFunctionLp_smul,
     testFunctionLp_dilateTestFunction, smul_smul, ← Real.rpow_add hr, ← hexp',
     show 1 - ((finrank ℝ E : ℝ) / pstar.toReal + 1) + (finrank ℝ E : ℝ) / pstar.toReal = 0 by ring,

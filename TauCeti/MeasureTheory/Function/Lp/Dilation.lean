@@ -161,6 +161,7 @@ theorem dilateLp_mul (hr : 0 < r) (hs : 0 < s) :
     Real.mul_rpow hr.le hs.le, mul_inv, mul_comm s⁻¹ r⁻¹]
 
 /-- The inverse of the dilation by `r` is the dilation by `r⁻¹`. -/
+@[simp]
 theorem dilateLp_symm (hr : 0 < r) :
     (dilateLp (F := F) μ p r hr).symm = dilateLp μ p r⁻¹ (inv_pos.2 hr) := by
   refine LinearIsometryEquiv.ext fun f ↦ (dilateLp μ p r hr).injective ?_
