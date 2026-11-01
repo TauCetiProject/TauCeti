@@ -32,7 +32,7 @@ values.
 
 * `TauCeti.LSeries.tendsto_tsum_term_mul_fourier` and
   `TauCeti.LSeries.tendsto_integral_vertical` are two of the three one-sided limits; the third,
-  for the pole term, is the general `TauCeti.tendsto_integral_exp_mul`.
+  for the pole term, comes from the general `TauCeti.tendsto_setIntegral_exp_smul`.
 * `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary` is the identity they
   combine into, and
   `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
@@ -169,8 +169,15 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary (hx : 0 < x)
     (∑' n : ℕ, _root_.LSeries.term a sigma n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) -
       A * (((x ^ (1 - sigma) : ℝ) : ℂ) * ∫ u in Ici (-Real.log x),
         (Real.exp (-u * (sigma - 1)) : ℂ) * 𝓕 psi (u / (2 * π)))) ?_ ?_
-  · exact (tendsto_tsum_term_mul_fourier hFsum).sub
-      ((tendsto_integral_exp_mul hx hFint).const_mul A)
+  · have hrpow : Tendsto (fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ)) (𝓝[>] 1) (𝓝 1) := by
+      have hcont : Continuous fun sigma : ℝ ↦ ((x ^ (1 - sigma) : ℝ) : ℂ) := by
+        simp only [Real.rpow_def_of_pos hx]
+        fun_prop
+      simpa using (hcont.tendsto 1).mono_left nhdsWithin_le_nhds
+    have hint := (tendsto_setIntegral_exp_smul hFint).mono_left
+      (nhdsWithin_mono _ Ioi_subset_Ici_self)
+    simpa only [Complex.real_smul, one_mul] using
+      (tendsto_tsum_term_mul_fourier hFsum).sub ((hrpow.mul hint).const_mul A)
   · refine (tendsto_integral_vertical hx hG hpsi hsupp).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with sigma hsigma
     exact (key sigma hsigma).symm
