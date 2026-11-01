@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
 /-!
 # Products of bilinear forms
@@ -17,7 +18,8 @@ counterpart of `QuadraticMap.prod`, and it is the form an orthogonal direct sum 
 modules carries.
 
 Symmetry and nondegeneracy are componentwise. In particular, a vector is in the radical of the
-product exactly when both of its components are in the radicals of the factors.
+product exactly when both of its components are in the radicals of the factors. A product of
+perfect pairings is a perfect pairing.
 
 ## Main declarations
 
@@ -26,6 +28,7 @@ product exactly when both of its components are in the radicals of the factors.
   are.
 * `LinearMap.BilinForm.nondegenerate_prod_iff`: the product form is nondegenerate exactly when
   both factors are.
+* `LinearMap.BilinForm.instIsPerfPairProd`: a product of perfect pairings is a perfect pairing.
 -/
 
 public section
@@ -72,5 +75,29 @@ theorem nondegenerate_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.Bili
         (hCl x.2 fun z ↦ by simpa using hx (0, z))
     · exact fun y hy ↦ Prod.ext (hBr y.1 fun z ↦ by simpa using hy (z, 0))
         (hCr y.2 fun z ↦ by simpa using hy (0, z))
+
+/-- The product form identifies the product module with its dual when both factors identify their
+modules with their duals. -/
+private theorem bijective_prod {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N}
+    (hB : Function.Bijective B) (hC : Function.Bijective C) : Function.Bijective (B.prod C) := by
+  refine ⟨fun x y hxy ↦ Prod.ext (hB.1 (LinearMap.ext fun z ↦ ?_))
+    (hC.1 (LinearMap.ext fun z ↦ ?_)), fun f ↦ ?_⟩
+  · simpa using LinearMap.congr_fun hxy (z, 0)
+  · simpa using LinearMap.congr_fun hxy (0, z)
+  obtain ⟨a, ha⟩ := hB.2 (f.comp (LinearMap.inl R M N))
+  obtain ⟨b, hb⟩ := hC.2 (f.comp (LinearMap.inr R M N))
+  refine ⟨(a, b), LinearMap.prod_ext (LinearMap.ext fun z ↦ ?_) (LinearMap.ext fun z ↦ ?_)⟩
+  · simpa using LinearMap.congr_fun ha z
+  · simpa using LinearMap.congr_fun hb z
+
+/-- A product of perfect pairings is a perfect pairing. -/
+instance instIsPerfPairProd {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N}
+    [B.IsPerfPair] [C.IsPerfPair] : (B.prod C).IsPerfPair where
+  bijective_left := bijective_prod (IsPerfPair.bijective_left B) (IsPerfPair.bijective_left C)
+  bijective_right := by
+    have : LinearMap.flip (B.prod C) = prod (LinearMap.flip B) (LinearMap.flip C) :=
+      LinearMap.ext₂ fun _ _ ↦ by simp
+    rw [this]
+    exact bijective_prod (IsPerfPair.bijective_right B) (IsPerfPair.bijective_right C)
 
 end LinearMap.BilinForm

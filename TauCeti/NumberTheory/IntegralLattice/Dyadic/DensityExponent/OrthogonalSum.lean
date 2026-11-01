@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Prod
 public import TauCeti.NumberTheory.IntegralLattice.Dyadic.DensityExponent.JordanSplitting
 public import TauCeti.NumberTheory.IntegralLattice.Dyadic.DensityExponent.Sum
-public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 import TauCeti.NumberTheory.IntegralLattice.JordanSplitting
 
 /-!
@@ -61,7 +60,7 @@ the products `N i × N' i` is the sum of the profiles of the splittings `N` and 
 theorem IsJordanSplitting.dyadicJordanProfile_prod (h : B.IsJordanSplitting π N)
     (h' : C.IsJordanSplitting π N') (hB : B.IsSymm) (hC : C.IsSymm) (hπ : π ≠ 0)
     (hπ' : ¬IsUnit π) :
-    (h.prod h' hB hC (mem_nonZeroDivisors_of_ne_zero hπ)).dyadicJordanProfile
+    (h.prod h').dyadicJordanProfile
         (isSymm_prod_iff.mpr ⟨hB, hC⟩) hπ hπ' =
       h.dyadicJordanProfile hB hπ hπ' + h'.dyadicJordanProfile hC hπ hπ' := by
   ext i
@@ -69,12 +68,7 @@ theorem IsJordanSplitting.dyadicJordanProfile_prod (h : B.IsJordanSplitting π N
     have : Module.Finite R (N i) := h.finite i
     have : Module.Free R (N' i) := h'.free i
     have : Module.Finite R (N' i) := h'.finite i
-    have hinj : Function.Injective ((N i).subtype.prodMap (N' i).subtype) :=
-      Prod.map_injective.mpr ⟨(N i).injective_subtype, (N' i).injective_subtype⟩
-    have hrank := LinearMap.finrank_range_of_inj hinj
-    rw [LinearMap.range_prodMap, Submodule.range_subtype, Submodule.range_subtype,
-      Module.finrank_prod] at hrank
-    simp [hrank]
+    simp [(Submodule.prodEquiv (N i) (N' i)).finrank_eq, Module.finrank_prod]
   · rw [TauCeti.DyadicJordanProfile.add_typeI, Finset.mem_union,
       IsJordanSplitting.mem_dyadicJordanProfile_typeI_iff_exists,
       IsJordanSplitting.mem_dyadicJordanProfile_typeI_iff_exists,
@@ -103,8 +97,7 @@ theorem dyadicJordanProfile_orthogonalSum {L : IntegralLattice V} {M : IntegralL
   obtain ⟨N, hN⟩ := L.exists_isJordanSplitting_localIntegralForm 2 hL
   obtain ⟨N', hN'⟩ := M.exists_isJordanSplitting_localIntegralForm 2 hM
   rw [Nat.cast_ofNat] at hN hN'
-  have hprod := hN.prod hN' (L.isSymm_localIntegralForm 2) (M.isSymm_localIntegralForm 2)
-    (mem_nonZeroDivisors_of_ne_zero two_ne_zero)
+  have hprod := hN.prod hN'
   have hsum := hprod.map_isometryEquiv (L.localOrthogonalSumIsometry M 2).symm
   rw [dyadicJordanProfile_eq hsum, dyadicJordanProfile_eq hN, dyadicJordanProfile_eq hN',
     ← hN.dyadicJordanProfile_prod hN']
