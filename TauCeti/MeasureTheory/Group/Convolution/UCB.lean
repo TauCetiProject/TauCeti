@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 public import TauCeti.Topology.Algebra.Group.UCB.Basic
 
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -35,9 +36,18 @@ multiplication. Indeed, by left invariance of `μ`,
 ```
 
 so `|(h ⋆ φ) (u * x) - (h ⋆ φ) x| ≤ ‖h (u * ·) - h‖₁ ‖φ‖∞`, and left translation is continuous
-on `L¹(G, μ)`. The resulting operator `MeasureTheory.Lp.convolutionUCB h : L∞(G, μ) →L[ℝ] UCB G`
-has norm at most `‖h‖₁`, depends linearly on `h`, is positive when `h ≥ 0`, and sends the
-constant one to the constant `∫ h dμ`.
+on `L¹(G, μ)`. Left translation of `φ` instead moves to the kernel as a weighted right translation,
+
+```text
+h ⋆ (φ (g⁻¹ * ·)) = (c(g) * h (· * g⁻¹)) ⋆ φ,
+```
+
+by the right-translation formula `∫ f (x * g) dμ = c(g) ∫ f dμ` for the modular character `c`.
+The new kernel is again nonnegative of integral one when `h` is.
+
+The resulting operator `MeasureTheory.Lp.convolutionUCB h : L∞(G, μ) →L[ℝ] UCB G` has norm at
+most `‖h‖₁`, depends linearly on `h`, is positive when `h ≥ 0`, and sends the constant one to the
+constant `∫ h dμ`.
 
 The point evaluation needs no σ-finiteness of `μ`: for each `x`, the map `y ↦ y⁻¹ * x` is the
 composite of inversion and right translation, which preserve the null sets of a regular Haar
@@ -58,6 +68,8 @@ means on `UCB G` with invariant means on `L∞(G, μ)`.
 * `MeasureTheory.Lp.convolutionUCB_apply`: the formula `(h ⋆ φ) x = ∫ y, h y * φ (y⁻¹ * x) ∂μ`,
   and `MeasureTheory.Lp.convolutionUCB_apply_of_ae_eq` for arbitrary representatives.
 * `MeasureTheory.Lp.convolutionUCB_apply_mul`: `(h ⋆ φ) (u * x) = (h (u * ·) ⋆ φ) x`.
+* `MeasureTheory.Lp.convolutionUCB_leftTranslation`: `h ⋆ L_g φ = R_(g⁻¹) h ⋆ φ`, where
+  `(R_(g⁻¹) h)(z) = c(g) * h (z * g⁻¹)` for the modular character `c`.
 * `MeasureTheory.Lp.norm_convolutionUCB_le`: the operator norm is at most `‖h‖₁`.
 * `MeasureTheory.Lp.continuous_convolutionUCB`: `h ⋆ ·` depends continuously on `h ∈ L¹(G, μ)`.
 * `MeasureTheory.Lp.convolutionUCB_nonneg`: `h ⋆ φ ≥ 0` when `h ≥ 0` and `φ ≥ 0`.
@@ -305,5 +317,25 @@ theorem convolutionUCB_linftyOne (h : Lp ℝ 1 μ) :
   refine UCB.ext fun x => ?_
   rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) coeFn_linftyOne x]
   simp
+
+/-- Left translation of `φ` moves to the kernel as a right translation:
+`h ⋆ L_g φ = R_(g⁻¹) h ⋆ φ`, where `(R_(g⁻¹) h)(z) = c(g) * h (z * g⁻¹)` and `c` is the modular
+character. The new kernel is nonnegative when `h` is (`MeasureTheory.Lp.rightTranslation_mono`)
+and has the same integral (`MeasureTheory.Lp.integral_rightTranslation`). -/
+theorem convolutionUCB_leftTranslation (h : Lp ℝ 1 μ) (g : G) (φ : Lp ℝ ∞ μ) :
+    convolutionUCB h (leftTranslation μ ∞ ℝ g φ) =
+      convolutionUCB (rightTranslation μ 1 ℝ g⁻¹ h) φ := by
+  refine UCB.ext fun x => ?_
+  rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) (coeFn_leftTranslation g φ),
+    convolutionUCB_apply_of_ae_eq (coeFn_rightTranslation g⁻¹ h) (ae_eq_refl _)]
+  -- Substitute `y ↦ y * g⁻¹`, which scales the integral by `c(g⁻¹) = c(g)⁻¹`.
+  have hsub := integral_mul_right_eq_modularCharacter_smul_of_regular (μ := μ)
+    (fun y => h y * φ (g⁻¹ * (y⁻¹ * x))) g⁻¹
+  simp only [mul_inv_rev, inv_inv, mul_assoc, inv_mul_cancel_left, smul_eq_mul] at hsub
+  have hc : (modularCharacter g : ℝ) * modularCharacter g⁻¹ = 1 := by
+    simpa using modularCharacter_rpow_mul_inv 1 g
+  simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, inv_inv, smul_eq_mul, mul_assoc,
+    integral_const_mul, hsub]
+  rw [← mul_assoc, hc, one_mul]
 
 end MeasureTheory.Lp
