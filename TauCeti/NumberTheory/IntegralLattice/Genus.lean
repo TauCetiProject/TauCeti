@@ -151,17 +151,17 @@ theorem isEven_iff (h : L.SameGenus M) : L.IsEven ↔ M.IsEven := by
     isEven_iff_forall_two_dvd_localIntegralForm_apply_self]
   exact (h.localIntegralForm_equivalent 2).forall_two_dvd_apply_self_iff
 
-/-- **The scale ideal is a genus invariant.** Localization at `p` extends the scale ideal to
-`ℤ_[p]`, isometric localizations have equal scale ideals, and an ideal of `ℤ` is determined by
-its extensions to all `ℤ_[p]`. -/
+/-- **The scale ideal is a genus invariant.** -/
 theorem scaleIdeal_eq (h : L.SameGenus M) : L.scaleIdeal = M.scaleIdeal :=
+  -- Localization at `p` extends the scale ideal to `ℤ_[p]`, isometric localizations have equal
+  -- scale ideals, and an ideal of `ℤ` is determined by its extensions to all `ℤ_[p]`.
   Int.ideal_eq_iff_forall_map_padicInt_eq.mpr fun p _ ↦ by
     rw [← localScaleIdeal_eq_map, ← localScaleIdeal_eq_map]
     exact (h.localIntegralForm_equivalent p).scaleIdeal_eq
 
-/-- **The norm ideal is a genus invariant**, by the same argument as
-`TauCeti.IntegralLattice.SameGenus.scaleIdeal_eq`. -/
+/-- **The norm ideal is a genus invariant.** -/
 theorem normIdeal_eq (h : L.SameGenus M) : L.normIdeal = M.normIdeal :=
+  -- The same localization argument as for `scaleIdeal_eq`.
   Int.ideal_eq_iff_forall_map_padicInt_eq.mpr fun p _ ↦ by
     rw [← localNormIdeal_eq_map, ← localNormIdeal_eq_map]
     exact (h.localIntegralForm_equivalent p).normIdeal_eq
