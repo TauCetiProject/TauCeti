@@ -33,7 +33,8 @@ the complementarity of two different parts through points that cover the whole s
 the determination of a partition by its parts through each point, the factor of the part through
 a point in a product over the parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
-the parts through each point, the fact that a refinement with no more parts than the coarser
+the parts through each point, the constancy of the coarse part and of membership in a union of
+parts on each part of a partition, the fact that a refinement with no more parts than the coarser
 partition is equal to it, the parts through a point of the finest and the coarsest partitions,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
 point of each part), the part of a point in a linear order as its part before the last point of that
@@ -44,7 +45,8 @@ the fine and coarse parts through them, the fact that a set with at most two ele
 partitions other than the finest and the coarsest, the partition
 `Finpartition.pairPartition` with one pair part and singletons elsewhere, the partition
 `Finpartition.splitPartition` into a subset and its complement, the position of the parts of
-`Finpartition.atomise` relative to the sets it cuts along, and the pullback `Finpartition.comap`
+`Finpartition.atomise`, and of its common refinements with other partitions, relative to the sets
+it cuts along, and the pullback `Finpartition.comap`
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
@@ -340,6 +342,25 @@ theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
     rw [Q.part_eq_of_mem hC (hPC (P.mem_part_self.2 ha))]
     exact hPC
   · simp [P.part_eq_empty.2 ha]
+
+/-- Points lying in a common part of a refinement lie in a common part of the coarser
+partition. -/
+theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) :
+    Q.part a = Q.part b := by
+  by_cases ha : a ∈ s
+  · have hb : b ∈ P.part a := hab ▸ P.mem_part (P.part_nonempty.1 (hab ▸ P.part_nonempty.2 ha))
+    exact (Q.part_eq_of_mem (Q.part_mem.2 ha) (part_mono h a hb)).symm
+  · have hb : b ∉ s := P.part_eq_empty.1 (hab ▸ P.part_eq_empty.2 ha)
+    rw [Q.part_eq_empty.2 ha, Q.part_eq_empty.2 hb]
+
+/-- Membership in a union of parts is constant on each part. -/
+theorem mem_iff_mem_of_part_eq_part {X : Finset α} (hX : ∀ C ∈ P.parts, C ⊆ X ∨ Disjoint C X)
+    {a b : α} (ha : a ∈ s) (hab : P.part a = P.part b) : a ∈ X ↔ b ∈ X := by
+  have ha' := P.mem_part ha
+  have hb : b ∈ P.part a := hab ▸ P.mem_part (P.part_nonempty.1 (hab ▸ P.part_nonempty.2 ha))
+  rcases hX _ (P.part_mem.2 ha) with hs | hd
+  · exact iff_of_true (hs ha') (hs hb)
+  · exact iff_of_false (disjoint_left.1 hd ha') (disjoint_left.1 hd hb)
 
 /-- In the partition of `s` into one part, the part through each point of `s` is `s`. -/
 @[simp]
@@ -696,6 +717,13 @@ theorem subset_or_disjoint_of_mem_atomise {F : Finset (Finset α)} {t u : Finset
   · exact Or.inl fun i hi ↦ ((Finset.mem_filter.1 hi).2 u hu).1 huR
   · exact Or.inr <| Finset.disjoint_left.2 fun i hi hiu ↦
       huR (((Finset.mem_filter.1 hi).2 u hu).2 hiu)
+
+/-- Each part of a common refinement `P ⊓ atomise s F` lies inside or outside each member of
+`F`. -/
+theorem subset_or_disjoint_of_mem_inf_atomise {P : Finpartition s} {F : Finset (Finset α)}
+    {t u : Finset α} (ht : t ∈ (P ⊓ atomise s F).parts) (hu : u ∈ F) : t ⊆ u ∨ Disjoint t u := by
+  obtain ⟨T, hT, htT⟩ := (inf_le_right : P ⊓ atomise s F ≤ atomise s F) ht
+  exact (subset_or_disjoint_of_mem_atomise hT hu).imp htT.trans (Disjoint.mono_left htT)
 
 end Atomise
 

@@ -120,10 +120,8 @@ theorem exists_refinement_weightedEnergy_add_sq_lt (P : Finpartition (univ : Fin
     -- Both sides of the rectangle are unions of parts of the refinement, which therefore
     -- predicts the rectangle exactly.
     have hunion {X : Finset V} (hX : X ∈ ({A, B} : Finset (Finset V))) :
-        ∀ C ∈ (P ⊓ R).parts, C ⊆ X ∨ Disjoint C X := by
-      intro C hC
-      obtain ⟨T, hT, hCT⟩ := (inf_le_right : P ⊓ R ≤ R) hC
-      exact (subset_or_disjoint_of_mem_atomise hT hX).imp hCT.trans (Disjoint.mono_left hCT)
+        ∀ C ∈ (P ⊓ R).parts, C ⊆ X ∨ Disjoint C X :=
+      fun _ hC ↦ subset_or_disjoint_of_mem_inf_atomise hC hX
     have hclose := G.abs_steppedCount_sub_steppedCount_le (inf_le_left : P ⊓ R ≤ P)
       (ε := ε ^ 2) (by linarith) A B
     rw [G.steppedCount_eq_card_interedges _ (hunion (by simp)) (hunion (by simp)),
