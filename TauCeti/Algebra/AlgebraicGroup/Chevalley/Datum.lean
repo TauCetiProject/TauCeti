@@ -262,7 +262,7 @@ theorem torus_comp_groupSchemeι :
 
 /-- **The torus of a Chevalley datum is a closed subgroup of its group scheme**, because its
 coordinate weights span the character lattice. -/
-theorem isClosedImmersion_torus : IsClosedImmersion D.torus.hom.hom.left :=
+instance isClosedImmersion_torus : IsClosedImmersion D.torus.hom.hom.left :=
   UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral _ _ _ _ _ _ _ _
     D.span_range_coordinateWeight_eq_top
 

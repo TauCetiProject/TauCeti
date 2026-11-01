@@ -53,6 +53,13 @@ noncomputable section
 
 variable (t : DynkinType) (ht : t.Valid)
 
+/-- The finite-ordinal Geck weights span the root lattice. -/
+theorem span_range_geckWeightFin_eq_rootSpan :
+    Submodule.span ℤ (Set.range (t.geckWeightFin ht)) =
+      (t.simplyConnectedRootDatum ht).rootSpan ℤ :=
+  (congrArg (Submodule.span ℤ) (t.range_geckWeightFin ht)).trans
+    (t.span_range_geckWeight_eq_span_range_root ht)
+
 /-- **The Geck module as a Chevalley datum.** The representation is Geck's matrix representation
 of the pinned Lie algebra, the lattice is the integral coordinate lattice with its standard basis,
 whose weights are zero and the roots, and the chosen basis of the root lattice they span is the
@@ -73,16 +80,41 @@ basis of simple roots. -/
   weightLatticeBasis :=
     (((t.simplyConnectedBase ht).toWeightBasisInt).reindex
       (t.simpleSupportEquivSimplyConnectedBase ht).symm).map
-      (LinearEquiv.ofEq _ _ (by
-        rw [range_geckWeightFin, span_range_geckWeight_eq_span_range_root]))
+      (LinearEquiv.ofEq _ _ (t.span_range_geckWeightFin_eq_rootSpan ht).symm)
+
+/-- The rank of the Geck datum is the Geck dimension. -/
+@[simp]
+theorem geckChevalleyDatum_dim : (t.geckChevalleyDatum ht).dim = t.geckDim ht :=
+  (rfl)
+
+/-- The representation of the Geck datum is Geck's matrix representation. -/
+@[simp]
+theorem geckChevalleyDatum_representation :
+    (t.geckChevalleyDatum ht).representation = t.geckRepresentation ht :=
+  (rfl)
+
+/-- The lattice of the Geck datum is the integral coordinate lattice. -/
+@[simp]
+theorem geckChevalleyDatum_lattice :
+    (t.geckChevalleyDatum ht).lattice = (t.geckCoordinateLattice ht).toAddSubgroup :=
+  (rfl)
+
+/-- The weight basis of the Geck datum is the finite-ordinal coordinate basis. -/
+@[simp]
+theorem geckChevalleyDatum_basis :
+    (t.geckChevalleyDatum ht).basis = t.geckCoordinateBasisFin ht :=
+  (rfl)
+
+/-- The weights of the Geck datum are the finite-ordinal Geck weights. -/
+@[simp]
+theorem geckChevalleyDatum_weight : (t.geckChevalleyDatum ht).weight = t.geckWeightFin ht :=
+  (rfl)
 
 /-- **The weight lattice of the Geck datum is the root lattice.** -/
+@[simp]
 theorem geckChevalleyDatum_weightLattice :
-    (t.geckChevalleyDatum ht).weightLattice = (t.simplyConnectedRootDatum ht).rootSpan ℤ := by
-  rw [ChevalleyDatum.weightLattice_def]
-  -- The weights of the datum are, by definition, the finite-ordinal Geck weights.
-  exact (congrArg (Submodule.span ℤ) (t.range_geckWeightFin ht)).trans
-    (t.span_range_geckWeight_eq_span_range_root ht)
+    (t.geckChevalleyDatum ht).weightLattice = (t.simplyConnectedRootDatum ht).rootSpan ℤ :=
+  (t.geckChevalleyDatum ht).weightLattice_def.trans (t.span_range_geckWeightFin_eq_rootSpan ht)
 
 /-- **The chosen basis of the weight lattice of the Geck datum consists of the simple roots**,
 in the Bourbaki numbering. -/
@@ -90,9 +122,8 @@ in the Bourbaki numbering. -/
 theorem coe_geckChevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
     ((t.geckChevalleyDatum ht).weightLatticeBasis i : Fin t.rank → ℤ) =
       (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
-  rw [geckChevalleyDatum, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply,
-    Module.Basis.reindex_apply, Equiv.symm_symm, RootPairing.Base.coe_toWeightBasisInt_apply,
-    coe_simpleSupportEquivSimplyConnectedBase]
+  rw [geckChevalleyDatum, Module.Basis.map_apply]
+  simp [RootPairing.Base.coe_toWeightBasisInt_apply]
 
 end
 
