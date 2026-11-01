@@ -80,15 +80,13 @@ theorem isPartiallySemialgebraic_graphOn_regionBetweenMap
       val p.2 0 ≤ p.1.2 ∧ p.1.2 ≤ val p.2 1 ∧
       height p.2 = val p.2 2 + (p.1.2 - val p.2 0) / (val p.2 1 - val p.2 0) *
         (val p.2 3 - val p.2 2)} := by
-    have hS := isSemialgebraic_interpolation_constraint
+    have hS := isSemialgebraic_interpolation_constraint (R := ℝ)
       (Sum.inr (Sum.inr 0) : Unit ⊕ I) (.inr (.inr 1)) (.inr (.inr 2))
       (.inr (.inr 3)) (.inl ()) (.inr (.inl (.inr ())))
     have h := hS.isAnalyticCoeffBooleanCombination_preimage_sumElim
       (c := fun p : E × ℝ => fun _ : Unit => p.2) (U := univ)
       (fun _ => analyticOnNhd_snd)
-    refine isPartiallySemialgebraic_iff.2 fun p => partiallySemialgebraicAt_def.2
-      ⟨univ, univ_mem, _, h, ?_⟩
-    rfl
+    exact h.isPartiallySemialgebraic
   let R : Set ((E × ℝ) × (I → ℝ)) := {p |
     p.1.1 ∈ U ∧ g p.1.1 = y p.2 ∧ φ p.1.1 = val p.2 0 ∧ φ' p.1.1 = val p.2 1 ∧
     y p.2 ∈ T ∧ ψ (y p.2) = val p.2 2 ∧ ψ' (y p.2) = val p.2 3 ∧

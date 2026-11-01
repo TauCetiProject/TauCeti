@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -27,14 +26,15 @@ namespace TauCeti
 /-- The closed-interval interpolation relation is semialgebraic. When the source endpoints
 coincide, the formula selects the lower target endpoint, with no condition on the upper one.
 The coordinate indices need not be distinct, and their type need not be finite. -/
-theorem isSemialgebraic_interpolation_constraint {ι : Type*}
-    (a b c d t s : ι) : IsSemialgebraic {z : ι → ℝ |
+theorem isSemialgebraic_interpolation_constraint {R ι : Type*}
+    [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    (a b c d t s : ι) : IsSemialgebraic {z : ι → R |
       z a ≤ z t ∧ z t ≤ z b ∧ z s = z c + (z t - z a) / (z b - z a) * (z d - z c)} := by
-  have h₁ := isSemialgebraic_eval_le (R := ℝ) (X a) (X t)
-  have h₂ := isSemialgebraic_eval_le (R := ℝ) (X t) (X b)
-  have h₃ := isSemialgebraic_eval_eq (R := ℝ) (X b) (X a)
-  have h₄ := isSemialgebraic_eval_eq (R := ℝ) (X s) (X c)
-  have h₅ := isSemialgebraic_eval_eq (R := ℝ)
+  have h₁ := isSemialgebraic_eval_le (R := R) (X a) (X t)
+  have h₂ := isSemialgebraic_eval_le (R := R) (X t) (X b)
+  have h₃ := isSemialgebraic_eval_eq (R := R) (X b) (X a)
+  have h₄ := isSemialgebraic_eval_eq (R := R) (X s) (X c)
+  have h₅ := isSemialgebraic_eval_eq (R := R)
     ((X s - X c) * (X b - X a)) ((X t - X a) * (X d - X c))
   convert h₁.inter (h₂.inter ((h₃.inter h₄).union (h₃.compl.inter h₅))) using 1
   ext z

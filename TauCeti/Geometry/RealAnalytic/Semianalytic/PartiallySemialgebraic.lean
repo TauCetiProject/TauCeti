@@ -603,19 +603,26 @@ theorem IsPartiallySemialgebraic.partiallySemialgebraicAt {s : Set (E × (ι →
     (hs : IsPartiallySemialgebraic s) (u : E) : PartiallySemialgebraicAt s u :=
   hs u
 
+/-- A Boolean combination of polynomial zero and positivity sets with coefficients analytic
+on the whole base is partially semialgebraic. -/
+theorem IsAnalyticCoeffBooleanCombination.isPartiallySemialgebraic
+    {s : Set (E × (ι → ℝ))} (hs : IsAnalyticCoeffBooleanCombination univ s) :
+    IsPartiallySemialgebraic s :=
+  fun _ => ⟨univ, univ_mem, s, hs, rfl⟩
+
 /-- The zero set of a polynomial in the fibre with coefficients analytic on `E` is partially
 semialgebraic. -/
 theorem IsAnalyticCoeffPolynomialOn.isPartiallySemialgebraic_setOf_eq_zero
     {f : E × (ι → ℝ) → ℝ} (hf : IsAnalyticCoeffPolynomialOn univ f) :
     IsPartiallySemialgebraic {p | f p = 0} :=
-  fun _ => ⟨univ, univ_mem, _, hf.isAnalyticCoeffBooleanCombination_setOf_eq_zero, rfl⟩
+  hf.isAnalyticCoeffBooleanCombination_setOf_eq_zero.isPartiallySemialgebraic
 
 /-- The positivity set of a polynomial in the fibre with coefficients analytic on `E` is partially
 semialgebraic. -/
 theorem IsAnalyticCoeffPolynomialOn.isPartiallySemialgebraic_setOf_pos
     {f : E × (ι → ℝ) → ℝ} (hf : IsAnalyticCoeffPolynomialOn univ f) :
     IsPartiallySemialgebraic {p | 0 < f p} :=
-  fun _ => ⟨univ, univ_mem, _, hf.isAnalyticCoeffBooleanCombination_setOf_pos, rfl⟩
+  hf.isAnalyticCoeffBooleanCombination_setOf_pos.isPartiallySemialgebraic
 
 variable (E ι) in
 /-- The partially semialgebraic sets form an algebra of sets. -/
