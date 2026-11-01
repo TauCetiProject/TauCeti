@@ -691,25 +691,6 @@ private lemma edist_rpow_two_div_rpow_eq (d : ℝ≥0∞) (τ : ℝ≥0) :
   rw [ENNReal.rpow_two, show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one, ← mul_div_assoc,
     ENNReal.mul_div_mul_left _ _ two_ne_zero ENNReal.ofNat_ne_top]
 
-/-- **Action bound by accumulated penalties.** Along eventually positive time steps tending
-to zero, half the quadratic action of a limit curve is bounded by the lower limit of the
-accumulated penalties of the piecewise constant interpolants. Only the lower-limit bound
-on pairwise distances is required, not the minimizing movement property. -/
-theorem curveAction_div_two_le_liminf_sum_edist_sq_div
-    {Y : Type*} [TopologicalSpace Y] [WeakPseudoEMetricSpace Y]
-    {ι : Type*} {f : Filter ι} [f.IsCountablyGenerated] {σ : ι → ℝ≥0} {W : ι → ℕ → Y}
-    (hσ : ∀ᶠ i in f, 0 < σ i) (hσ0 : Tendsto σ f (𝓝 0)) (hT : 0 ≤ T)
-    (hu : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T,
-      edist (u s) (u t) ≤ liminf (fun i ↦ edist (W i ⌈s / σ i⌉₊) (W i ⌈t / σ i⌉₊)) f) :
-    curveAction 2 u 0 T / 2 ≤ liminf (fun i ↦ ∑ n ∈ Finset.range ⌈T / σ i⌉₊,
-      edist (W i n) (W i (n + 1)) ^ 2 / (2 * σ i)) f := by
-  rcases f.eq_or_neBot with rfl | _
-  · simp
-  have h := curveAction_le_liminf_sum_edist_rpow one_lt_two hσ hσ0 hT hu
-  simp only [edist_rpow_two_div_rpow_eq, ← Finset.mul_sum] at h
-  rw [ENNReal.liminf_const_mul_of_ne_top ENNReal.ofNat_ne_top] at h
-  exact ENNReal.div_le_of_le_mul' h
-
 /-- Under the hypotheses of
 `TauCeti.exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent`, the
 discrete `2`-actions of the minimizing movement sequences up to time `T` have finite lower limit.
