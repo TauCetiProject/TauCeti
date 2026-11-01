@@ -80,6 +80,7 @@ theorem integral_coe_vonMisesFisherNaturalMeasure (f : E ≃ₗᵢ[ℝ] F) (η :
       f (∫ x : sphere (0 : E) 1, (x : E) ∂vonMisesFisherNaturalMeasure η) := by
   rw [← f.map_vonMisesFisherNaturalMeasure,
     integral_map (f.continuous.measurable.subtype_map _).aemeasurable (by fun_prop)]
+  simp only [Subtype.map_coe]
   exact f.toLinearIsometry.integral_comp_comm _
 
 end LinearIsometryEquiv
