@@ -23,8 +23,9 @@ the outer conjugation restores the shape -- and it satisfies
 `balance H K (K x) (K y) = star (balance H K x y)`
 
 as soon as `K ∘ K` is a scalar of modulus one, which an arbitrary `H` need not.  That is the
-only property balancing adds: being Hermitian, nonnegative, and definite off the origin all pass
-from `H` to `balance H K` unchanged.
+only property balancing adds: being Hermitian and being nonnegative pass from `H` to
+`balance H K` unchanged, and for nonnegative `H` so does being definite off the origin, since
+`balance H K x x` is nonzero wherever `H x x` is.
 
 The construction and its compatibility are plain star-ring algebra, so they are stated over a
 commutative star semiring.  Nonnegativity and definiteness off the origin need an order on the
@@ -40,9 +41,10 @@ scalars compatible with the star, and are stated over a commutative star-ordered
 * `LinearMap.balance_apply`: the defining formula of the balanced form.
 * `LinearMap.balance_map_map`: the balanced form is compatible with the map it was balanced
   against, once that map squares to a scalar of modulus one.
-* `LinearMap.isSymm_balance`, `LinearMap.isNonneg_balance` and
-  `LinearMap.balance_apply_self_ne_zero`: balancing preserves Hermitian symmetry, nonnegativity,
-  and definiteness off the origin.
+* `LinearMap.isSymm_balance` and `LinearMap.isNonneg_balance`: balancing preserves Hermitian
+  symmetry and nonnegativity.
+* `LinearMap.balance_apply_self_ne_zero`: for nonnegative `H`, the balanced form is nonzero on the
+  diagonal wherever `H` is, so balancing preserves definiteness off the origin.
 -/
 
 public section
@@ -106,13 +108,14 @@ theorem isNonneg_balance {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.IsNonneg)
     rw [balance_apply, starRingEnd_apply, (hH.nonneg (K x)).star_eq]
     exact add_nonneg (hH.nonneg x) (hH.nonneg (K x))
 
-/-- The balanced form is definite off the origin if `H` is: the first summand is already nonzero
-and the second is nonnegative. -/
+/-- For nonnegative `H`, the balanced form is nonzero on the diagonal wherever `H` is: both
+summands are nonnegative and the first is nonzero.  In particular, balancing a nonnegative form
+that is definite off the origin gives a form that is again definite off the origin. -/
 theorem balance_apply_self_ne_zero {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.IsNonneg)
-    (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) (K : V →ₛₗ[starRingEnd R] V) {x : V} (hx : x ≠ 0) :
+    (K : V →ₛₗ[starRingEnd R] V) {x : V} (hx : H x x ≠ 0) :
     balance H K x x ≠ 0 := by
   rw [balance_apply, starRingEnd_apply, (hH.nonneg (K x)).star_eq]
-  exact fun h ↦ hdef x hx ((add_eq_zero_iff_of_nonneg (hH.nonneg x) (hH.nonneg (K x))).1 h).1
+  exact fun h ↦ hx ((add_eq_zero_iff_of_nonneg (hH.nonneg x) (hH.nonneg (K x))).1 h).1
 
 end StarOrderedRing
 

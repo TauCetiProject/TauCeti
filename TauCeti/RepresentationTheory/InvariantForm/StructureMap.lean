@@ -457,11 +457,11 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
   · -- Left separation: a vector killed by `B` has `balance H K (K x) (K x) = 0`.
     intro x hx
     by_contra hx0
-    exact balance_apply_self_ne_zero hHnonneg hdef K (hKne hx0) (by simpa using hx (K x))
+    exact balance_apply_self_ne_zero hHnonneg K (hdef _ (hKne hx0)) (by simpa using hx (K x))
   · -- Right separation: pairing against `K y` gives `balance H K y y = 0`.
     intro y hy
     by_contra hy0
-    refine balance_apply_self_ne_zero hHnonneg hdef K hy0 ?_
+    refine balance_apply_self_ne_zero hHnonneg K (hdef _ hy0) ?_
     have h := hy (K y)
     rw [LinearMap.comp_apply, hKsq y, map_smulₛₗ, LinearMap.smul_apply, Complex.conj_ofReal,
       smul_eq_mul, mul_eq_zero] at h
