@@ -11,7 +11,7 @@ import TauCeti.Probability.Distributions.Uniform.Sphere.Dirichlet
 import TauCeti.Probability.Distributions.Beta.Square
 import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 
 /-!
 # Signed coordinates of a uniform sphere point
@@ -156,19 +156,12 @@ theorem map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E)
   let d := Module.finrank ℝ E
   let i : Fin d := ⟨0, lt_of_lt_of_le (by norm_num) hd⟩
   have : Nontrivial (Fin d) := Fin.nontrivial_iff_two_le.mpr hd
-  let g := (stdOrthonormalBasis ℝ E).repr
-  let w : EuclideanSpace ℝ (Fin d) := ‖v‖ • EuclideanSpace.single i 1
-  have hnorm : ‖g v‖ = ‖w‖ := by simp [w, g, norm_smul]
-  let f := g.trans (Submodule.reflection (ℝ ∙ (g v - w))ᗮ)
+  obtain ⟨f, hcoord⟩ := TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval v i
   let fs : sphere (0 : E) 1 → sphere (0 : EuclideanSpace ℝ (Fin d)) 1 :=
     Subtype.map f (fun x hx ↦ by simpa using hx)
   have hfs : Measurable fs := f.continuous.measurable.subtype_map _
   have hmap : (uniformSphereMeasure E).map fs =
       uniformSphereMeasure (EuclideanSpace ℝ (Fin d)) := f.map_uniformSphereMeasure
-  have hfv : f v = w := Submodule.reflection_sub hnorm
-  have hcoord (x : E) : ⟪v, x⟫ = ‖v‖ * (f x) i := by
-    rw [← f.inner_map_map, hfv]
-    simp [w, real_inner_smul_left, EuclideanSpace.inner_single_left]
   calc
     _ = (((uniformSphereMeasure E).map fs).map
         (fun u ↦ u.val i)).map (fun x ↦ ‖v‖ * x) := by

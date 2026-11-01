@@ -6,9 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 
 /-!
-# Coordinates in a complex orthonormal basis
+# Orthonormal coordinates
+
+In a finite-dimensional real inner product space, an orthonormal coordinate system can be
+chosen so that the inner product with a given vector is its norm times any prescribed coordinate.
+`TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval` constructs it from
+`stdOrthonormalBasis` and Mathlib's `Submodule.reflection_sub`.
 
 Let `b` be an orthonormal basis, indexed by a finite type `ι`, of a complex inner product space
 `E`, so that every `v : E` has the complex coordinates `⟪b j, v⟫`.
@@ -32,6 +38,27 @@ Let `b` be an orthonormal basis, indexed by a finite type `ι`, of a complex inn
 -/
 
 public section
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace
+
+/-- Choose orthonormal coordinates in which the inner product with `v` is its norm times the
+prescribed coordinate. This also holds for `v = 0`. -/
+theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] (v : E) (i : Fin (Module.finrank ℝ E)) :
+    ∃ f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)),
+      ∀ x, ⟪v, x⟫ = ‖v‖ * f x i := by
+  let g := (stdOrthonormalBasis ℝ E).repr
+  let w : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := ‖v‖ • EuclideanSpace.single i 1
+  have hnorm : ‖g v‖ = ‖w‖ := by simp [w, g, norm_smul]
+  let f := g.trans (Submodule.reflection (ℝ ∙ (g v - w))ᗮ)
+  have hfv : f v = w := Submodule.reflection_sub hnorm
+  refine ⟨f, fun x ↦ ?_⟩
+  rw [← f.inner_map_map, hfv]
+  simp [w, real_inner_smul_left, EuclideanSpace.inner_single_left]
+
+end TauCeti
 
 open Complex ComplexConjugate
 open scoped InnerProductSpace

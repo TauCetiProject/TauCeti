@@ -11,14 +11,16 @@ import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.Uniform.Sphere.Dirichlet
 import TauCeti.Probability.Distributions.Beta.Product
 import TauCeti.Probability.Distributions.Beta.Square
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 
 /-!
 # Coordinates and projections of a uniform ball point
 
 In dimension `d ≥ 1`, a coordinate `Xᵢ` of a uniform point of the centered unit ball satisfies
 `(Xᵢ + 1) / 2 ∼ Beta ((d + 1) / 2) ((d + 1) / 2)`. Real linear observables of any uniform ball
-law are affine images of this symmetric Beta law. Their cdfs and quantiles follow from the
-incomplete Beta function and its inverse, including constant observables and balls of radius zero.
+law are affine images of this symmetric Beta law. For nonconstant projections of positive-radius
+balls, their cdfs follow from the incomplete Beta function. Quantiles follow from its inverse,
+including constant observables and balls of radius zero.
 
 The squared coordinate is the product of the independent squared radius and squared sphere
 coordinate. The Beta product identity identifies its law; antipodal symmetry then determines
@@ -124,7 +126,7 @@ theorem map_eval_uniformBallMeasure (i : ι) :
       _ = ((uniformBallMeasure (0 : EuclideanSpace ℝ ι) 1).map (fun x ↦ -x)).map
           (fun x ↦ x i) := by
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
-        rfl
+        simp only [Function.comp_def, PiLp.neg_apply]
       _ = _ := by rw [hneg]
   · calc
       _ = ((betaMeasure (((Fintype.card ι : ℝ) + 1) / 2)
@@ -194,14 +196,7 @@ theorem map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 ≤ r) (v : E) :
   have : Nontrivial E := ⟨⟨v, 0, hv⟩⟩
   let d := Module.finrank ℝ E
   let i : Fin d := ⟨0, Module.finrank_pos⟩
-  let g := (stdOrthonormalBasis ℝ E).repr
-  let w : EuclideanSpace ℝ (Fin d) := ‖v‖ • EuclideanSpace.single i 1
-  have hnorm : ‖g v‖ = ‖w‖ := by simp [w, g, norm_smul]
-  let f := g.trans (Submodule.reflection (ℝ ∙ (g v - w))ᗮ)
-  have hfv : f v = w := Submodule.reflection_sub hnorm
-  have hcoord (x : E) : ⟪v, x⟫ = ‖v‖ * (f x) i := by
-    rw [← f.inner_map_map, hfv]
-    simp [w, real_inner_smul_left, EuclideanSpace.inner_single_left]
+  obtain ⟨f, hcoord⟩ := TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval v i
   have hunit : (uniformBallMeasure (0 : E) 1).map (fun x ↦ ⟪v, x⟫) =
       (betaMeasure (((d : ℝ) + 1) / 2) (((d : ℝ) + 1) / 2)).map
         (fun x ↦ ‖v‖ * (-1 + 2 * x)) := by
@@ -232,6 +227,16 @@ theorem map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 ≤ r) (v : E) :
       dsimp
       ring
 
+private theorem map_inner_uniformBallMeasure_affine (c : E) {r : ℝ} (hr : 0 ≤ r) (v : E) :
+    (uniformBallMeasure c r).map (fun x ↦ ⟪v, x⟫) =
+      (betaMeasure (((Module.finrank ℝ E : ℝ) + 1) / 2)
+        (((Module.finrank ℝ E : ℝ) + 1) / 2)).map
+          (fun y ↦ (⟪v, c⟫ - r * ‖v‖) + (2 * (r * ‖v‖)) * y) := by
+  rw [map_inner_uniformBallMeasure c hr v]
+  congr 1
+  ext y
+  ring
+
 /-- For a nonconstant projection of a positive-radius ball, the cdf is the symmetric
 incomplete Beta cdf in its affine coordinate. -/
 theorem cdf_map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 < r) {v : E}
@@ -242,9 +247,7 @@ theorem cdf_map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 < r) {v : E}
         ((x - (⟪v, c⟫ - r * ‖v‖)) / (2 * (r * ‖v‖))) := by
   have ha : 0 < ((Module.finrank ℝ E : ℝ) + 1) / 2 := by positivity
   have := isProbabilityMeasureBeta ha ha
-  have hfun : (fun y : ℝ ↦ ⟪v, c⟫ + r * ‖v‖ * (-1 + 2 * y)) =
-      fun y ↦ (⟪v, c⟫ - r * ‖v‖) + (2 * (r * ‖v‖)) * y := by ext y; ring
-  rw [map_inner_uniformBallMeasure c hr.le v, hfun,
+  rw [map_inner_uniformBallMeasure_affine c hr.le v,
     cdf_map_affine_of_pos (by positivity), cdf_betaMeasure_eq ha ha]
 
 /-- Quantiles of a real linear observable of a uniform ball point, including zero radius
@@ -256,13 +259,11 @@ theorem quantile_map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 ≤ r) (
         (((Module.finrank ℝ E : ℝ) + 1) / 2) (((Module.finrank ℝ E : ℝ) + 1) / 2) u) := by
   have ha : 0 < ((Module.finrank ℝ E : ℝ) + 1) / 2 := by positivity
   have := isProbabilityMeasureBeta ha ha
-  rw [map_inner_uniformBallMeasure c hr v]
+  rw [map_inner_uniformBallMeasure_affine c hr v]
   by_cases hrv : r * ‖v‖ = 0
   · simp [hrv, Measure.map_const, Measure.quantile_dirac _ hu.1 hu.2.le]
   have hpos : 0 < r * ‖v‖ := lt_of_le_of_ne (mul_nonneg hr (norm_nonneg _)) (Ne.symm hrv)
-  have hfun : (fun y : ℝ ↦ ⟪v, c⟫ + r * ‖v‖ * (-1 + 2 * y)) =
-      fun y ↦ (⟪v, c⟫ - r * ‖v‖) + (2 * (r * ‖v‖)) * y := by ext y; ring
-  rw [hfun, quantile_map_affine_pos (by positivity) hu.1 hu.2,
+  rw [quantile_map_affine_pos (by positivity) hu.1 hu.2,
     quantile_betaMeasure ha ha hu]
   ring
 
