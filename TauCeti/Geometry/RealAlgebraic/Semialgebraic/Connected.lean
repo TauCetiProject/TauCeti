@@ -40,19 +40,10 @@ private theorem IsSemialgebraic.exists_finite_isConnected_partition_fin {n : ℕ
     {s : Set (Fin n → ℝ)} (hs : IsSemialgebraic s) :
     ∃ 𝒞 : Set (Set (Fin n → ℝ)), 𝒞.Finite ∧ 𝒞.PairwiseDisjoint id ∧
       (∀ t ∈ 𝒞, IsConnected t ∧ IsSemialgebraic t) ∧ ⋃₀ 𝒞 = s := by
-  classical
-  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
-  obtain ⟨𝒟, h𝒟, hp⟩ := exists_isCAD_signInvariant (Finset.univ.image p)
-  -- each cell of `𝒟` lies in the set or misses it
-  have hsub (E) (hE : E ∈ 𝒟) := subset_or_disjoint_setOf_sign (f := fun i x ↦ eval x (p i))
-    (fun i ↦ hp _ (Finset.mem_image_of_mem _ (Finset.mem_univ i)) E hE) Φ
-  refine ⟨{E ∈ 𝒟 | E ⊆ {x | Φ fun i ↦ SignType.sign (eval x (p i))}},
-    h𝒟.finite.subset (sep_subset _ _),
+  obtain ⟨𝒟, h𝒟, hsub⟩ := hs.exists_isCAD_subset_or_disjoint
+  exact ⟨{E ∈ 𝒟 | E ⊆ s}, h𝒟.finite.subset (sep_subset _ _),
     h𝒟.isPartition.pairwiseDisjoint.subset (sep_subset _ _),
-    fun E hE ↦ ⟨h𝒟.isConnected hE.1, h𝒟.isSemialgebraic hE.1⟩,
-    Subset.antisymm (sUnion_subset fun E hE ↦ hE.2) fun y hy ↦ ?_⟩
-  obtain ⟨E, hE, hyE⟩ := mem_sUnion.1 (h𝒟.isPartition.sUnion_eq_univ ▸ mem_univ y)
-  exact ⟨E, ⟨hE, (hsub E hE).resolve_right fun hd ↦ disjoint_left.1 hd hyE hy⟩, hyE⟩
+    fun E hE ↦ ⟨h𝒟.isConnected hE.1, h𝒟.isSemialgebraic hE.1⟩, h𝒟.sUnion_sep_subset hsub⟩
 
 /-- **Connected decomposition of semialgebraic sets.** A semialgebraic subset of `σ → ℝ`, for a
 finite index type `σ`, is the union of finitely many pairwise disjoint connected semialgebraic

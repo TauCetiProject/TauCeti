@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Golay
+public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Code.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ConstructionA
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Labels
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
@@ -52,7 +54,10 @@ Gluing the orthogonal sum `R` of twenty-four `A₁` root lattices along the glue
 `TauCeti.a1TwentyFourthLattice` of rank `24`, whose carrier is the set of dual vectors of `R` with
 glue word in the Golay code (`TauCeti.mem_a1TwentyFourthLattice_carrier_iff`), and whose norm-`2`
 vectors span exactly `R` (`TauCeti.span_vectorsOfNorm_two_a1TwentyFourthLattice`). In particular
-this lattice is rootful, so it is not the Leech lattice.
+this lattice is rootful, so it is not the Leech lattice. Doubling and permuting simple-root
+coordinates gives the explicit isometry `TauCeti.a1TwentyFourthConstructionAIsometry` to
+`TauCeti.BinaryGolay.constructionALattice`; its base-lattice discriminant map is exactly
+`TauCeti.a1TableToGolayIsometry`.
 
 ## References
 
@@ -307,6 +312,13 @@ noncomputable def a1TwentyFourthLattice : IntegralLattice (Fin 24 → Fin (A 1).
   gluedLattice (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1) (fun _ ↦ valid_A.mpr le_rfl)
     a1TwentyFourGlueSubgroup isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic
 
+/-- The named `A₁²⁴` lattice is gluing along the checked binary glue subgroup. -/
+theorem a1TwentyFourthLattice_def :
+    a1TwentyFourthLattice =
+      gluedLattice (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+        (fun _ ↦ valid_A.mpr le_rfl) a1TwentyFourGlueSubgroup
+        isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic := (rfl)
+
 /-- **The carrier of `A₁²⁴`**: a vector lies in the glued lattice exactly when it lies in the
 dual of the orthogonal sum of twenty-four `A₁` root lattices and the glue word of its
 discriminant class, read in Golay coordinates, is a word of the extended binary Golay code. -/
@@ -366,5 +378,114 @@ theorem span_vectorsOfNorm_two_a1TwentyFourthLattice :
       a1TwentyFourthLattice.vectorsOfNorm 2) = a1TwentyFourthRootLattice.carrier :=
   span_vectorsOfNorm_two_gluedLattice _ _ _ _ isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic
     (fun _ ↦ four_le_sum_glueMinimum_of_mem_a1TwentyFourGlueSubgroup) (by norm_num)
+
+/-! ### Comparison with Golay Construction A -/
+
+/-- The base-lattice isometry from `A₁²⁴` in table order to the zero-code binary
+Construction A lattice in Golay order: double and permute the simple-root coordinates. -/
+noncomputable def a1TableRootToZeroIsometry :
+    IntegralLattice.Isometry a1TwentyFourthRootLattice (ConstructionA.zeroLattice 2 (Fin 24)) :=
+  (Isometry.piCongrLeft (fun _ : Fin 24 ↦ (A 1).rootLattice (isSimplyLaced_A 1))
+    a1TableToGolayPerm.symm).trans (a1ZeroLatticeIsometry (Fin 24))
+
+/-- The destination coordinate `j` reads table coordinate `a1TableToGolayPerm j`, doubled. -/
+-- Use the root-lattice index type so rewriting needs no transport along `rank_A`.
+theorem a1TableRootToZeroIsometry_apply (x : Fin 24 → Fin (A 1).rank → ℚ) (j : Fin 24) :
+    a1TableRootToZeroIsometry x j = 2 * x (a1TableToGolayPerm j) ⟨0, by decide⟩ := by
+  rw [a1TableRootToZeroIsometry, Isometry.trans_apply, a1ZeroLatticeIsometry_apply]
+  have h := Isometry.piCongrLeft_apply_apply
+    (fun _ : Fin 24 ↦ (A 1).rootLattice (isSimplyLaced_A 1))
+    a1TableToGolayPerm.symm x (a1TableToGolayPerm j)
+  exact congrArg (fun z : Fin (A 1).rank → ℚ ↦ 2 * z ⟨0, by decide⟩) (by simpa using h)
+
+/-- The discriminant map of the base-lattice isometry is the prescribed quadratic
+isometry from table glue words to binary Golay coordinates. -/
+-- As with `finrank_a1TwentyFourthLattice`, `rank_A` simplifies the left-hand side's type.
+theorem discriminantEquiv_a1TableRootToZeroIsometry_glueWordIsometry
+    (w : a1TwentyFourGlueModule) :
+    ConstructionA.discriminantEquiv 2 (Fin 24)
+      (a1TableRootToZeroIsometry.discriminantGroupEquiv
+        (glueWordIsometry (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+          (fun _ ↦ valid_A.mpr le_rfl) w)) = a1TableToGolayIsometry w := by
+  have hn := (Isometry.discriminantQuadraticIsometry_apply
+    (Isometry.piCongrLeft (fun _ : Fin 24 ↦ (A 1).rootLattice (isSimplyLaced_A 1))
+      a1TableToGolayPerm.symm) _ _).symm.trans
+    (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry
+      (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+      (fun _ ↦ valid_A.mpr le_rfl) a1TableToGolayPerm.symm w)
+  rw [a1TableRootToZeroIsometry, Isometry.discriminantGroupEquiv_trans]
+  refine (congrArg (ConstructionA.discriminantEquiv 2 (Fin 24))
+    (LinearEquiv.trans_apply _)).trans ?_
+  refine (congrArg (fun z ↦ ConstructionA.discriminantEquiv 2 (Fin 24)
+    ((a1ZeroLatticeIsometry (Fin 24)).discriminantGroupEquiv z)) hn).trans ?_
+  refine (discriminantEquiv_a1ZeroLatticeIsometry_glueWordIsometry (Fin 24) _).trans ?_
+  funext j
+  rw [a1TableToGolayIsometry_apply, typeA1GlueAlphabetZModStandardIsometry_apply]
+  have h := Equiv.piCongrLeft_apply_apply
+    (fun _ : Fin 24 ↦ ((A 1).glueAlphabet (isSimplyLaced_A 1)).carrier)
+    a1TableToGolayPerm.symm w (a1TableToGolayPerm j)
+  simpa using h
+
+private theorem map_a1TableDiscriminantSubgroup :
+    (a1TwentyFourGlueSubgroup.map
+      (glueWordIsometry (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+        (fun _ ↦ valid_A.mpr le_rfl)).toAddEquiv.toAddMonoidHom).map
+      a1TableRootToZeroIsometry.discriminantGroupEquiv.toAddEquiv.toAddMonoidHom =
+        ConstructionA.codeInZeroLatticeDiscriminantGroup 2 (Fin 24)
+          BinaryGolay.code.toAddSubgroup := by
+  let f := (glueWordIsometry (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+    (fun _ ↦ valid_A.mpr le_rfl)).toAddEquiv.toAddMonoidHom
+  let g := a1TableRootToZeroIsometry.discriminantGroupEquiv.toAddEquiv.toAddMonoidHom
+  let d := (ConstructionA.discriminantEquiv 2 (Fin 24)).toAddEquiv.toAddMonoidHom
+  have hc : d.comp (g.comp f) = a1TableToGolayIsometry.toAddEquiv.toAddMonoidHom := by
+    apply AddMonoidHom.ext
+    intro w
+    exact discriminantEquiv_a1TableRootToZeroIsometry_glueWordIsometry w
+  apply AddSubgroup.map_injective (f := d)
+    (ConstructionA.discriminantEquiv 2 (Fin 24)).injective
+  calc
+    ((a1TwentyFourGlueSubgroup.map f).map g).map d =
+        a1TwentyFourGlueSubgroup.map (d.comp (g.comp f)) :=
+      (congrArg (AddSubgroup.map d) (AddSubgroup.map_map _ g f)).trans
+        (AddSubgroup.map_map _ d (g.comp f))
+    _ = a1TwentyFourGlueSubgroup.map a1TableToGolayIsometry.toAddEquiv.toAddMonoidHom :=
+      congrArg (fun h ↦ a1TwentyFourGlueSubgroup.map h) hc
+    _ = BinaryGolay.code.toAddSubgroup := map_a1TwentyFourGlueSubgroup_a1TableToGolayIsometry
+    _ = _ := (ConstructionA.map_codeInZeroLatticeDiscriminantGroup 2 (Fin 24) _).symm
+
+/-- The `A₁²⁴` glue lattice is explicitly isometric to binary Golay Construction A.
+The ambient map doubles and permutes simple-root coordinates. -/
+noncomputable def a1TwentyFourthConstructionAIsometry :
+    IntegralLattice.Isometry a1TwentyFourthLattice BinaryGolay.constructionALattice := by
+  let hC := BinaryGolay.isIsotropic_code
+  let hD := (ConstructionA.isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff
+    2 (Fin 24) even_two BinaryGolay.code.toAddSubgroup).mpr hC
+  let e := a1TableRootToZeroIsometry.ofIsotropicSubgroups
+    (isEven_pi_rootLattice (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1))
+    (ConstructionA.isEven_zeroLattice 2 (Fin 24) even_two)
+    (((glueWordIsometry (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+      (fun _ ↦ valid_A.mpr le_rfl)).isIsotropic_map_iff _ _).mpr
+        isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic)
+    hD map_a1TableDiscriminantSubgroup
+  exact (Isometry.ofEq (a1TwentyFourthLattice_def.trans
+    (gluedLattice_def _ _ _ _ _))).trans
+    (e.trans (Isometry.ofEq
+      ((ConstructionA.ofIsotropicSubgroup_codeInZeroLatticeDiscriminantGroup_eq_integralLattice
+        2 (Fin 24) even_two BinaryGolay.code.toAddSubgroup hC).trans
+          BinaryGolay.constructionALattice_eq_integralLattice.symm)))
+
+/-- The isometry to Golay Construction A doubles table coordinate `p[j]` in destination
+coordinate `j`, where `p = a1TableToGolayPerm`. -/
+-- Not a simp lemma: `rank_A` first normalizes the ambient index type.
+theorem a1TwentyFourthConstructionAIsometry_apply
+    (x : Fin 24 → Fin (A 1).rank → ℚ) (j : Fin 24) :
+    a1TwentyFourthConstructionAIsometry x j =
+      2 * x (a1TableToGolayPerm j) ⟨0, by decide⟩ := by
+  unfold a1TwentyFourthConstructionAIsometry
+  -- The isotropy proofs use discriminant quadratic-module carriers, while their
+  -- subgroups are typed on the underlying discriminant groups; `erw` identifies these.
+  erw [Isometry.trans_apply, Isometry.ofEq_apply, Isometry.trans_apply,
+    Isometry.ofEq_apply, Isometry.ofIsotropicSubgroups_apply]
+  exact a1TableRootToZeroIsometry_apply x j
 
 end TauCeti
