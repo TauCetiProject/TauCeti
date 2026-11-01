@@ -50,6 +50,7 @@ coordinate by `u`.
 
 ## Main results
 
+* `TauCeti.puiseuxField.isGalois`: the Puiseux field is Galois over `K⸨X⸩`.
 * `TauCeti.puiseuxField.continuous_kummer`: the Kummer action is continuous for the Krull
   topology, for every coefficient field.
 * `TauCeti.puiseuxField.galEquivTateModule_symm_apply`: the inverse of `galEquivTateModule` is the
@@ -106,6 +107,15 @@ theorem continuous_kummer : Continuous (kummer K) := by
 section RootsOfUnity
 
 variable [∀ n : ℕ+, HasEnoughRootsOfUnity K n]
+
+/-- The Puiseux field is Galois over `K⸨X⸩` when `K` contains a primitive `n`-th root of unity for
+every `n > 0`: it is the union of the levels, each of which is Galois over `K⸨X⸩`. -/
+instance isGalois : IsGalois K⸨X⸩ (puiseuxField K) := by
+  have : IsGalois K⸨X⸩ (⊤ : IntermediateField K⸨X⸩ (puiseuxField K)) := by
+    have (d : ℕ+) : Algebra.IsSeparable K⸨X⸩ (level K d) := (isGalois_level K d).to_isSeparable
+    rw [← iSup_level K]
+    exact isGalois_iff.mpr ⟨isSeparable_iSup .., normal_iSup _ _ _⟩
+  exact IsGalois.of_algEquiv topEquiv
 
 /-- The root of unity by which (the restriction to level `n` of) a Galois automorphism of the
 Puiseux field multiplies `t ^ (1 / n)`. -/
