@@ -52,6 +52,13 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   | nil => simp
   | cons p e ih => simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
 
+/-- A path traverses as many darts as its length. -/
+@[simp] theorem Path.length_darts {a b : Γ.V} (p : Γ.Path a b) :
+    (Path.darts Γ p).length = p.length := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
 /-- A traversed dart separates a path into a prefix, that dart, and a suffix. -/
 theorem Path.exists_eq_cons_comp_of_mem_darts {a b : Γ.V} (p : Γ.Path a b)
     {e : Γ.E} (he : e ∈ Path.darts Γ p) :
@@ -157,6 +164,12 @@ private theorem isReduced_pair_comp {a b c d : Γ.V}
         isReduced_pair_comp]
       simp only [reverse_val, Γ.rev_rev, Path.isReduced_cons_cons]
       exact (and_congr (ne_comm : Γ.rev f.1 ≠ e.1 ↔ e.1 ≠ Γ.rev f.1) ih).trans and_comm
+
+/-- A suffix of a reduced concatenation is reduced. -/
+theorem Path.IsReduced.of_comp_right {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
+    (hp : Path.IsReduced Γ (p.comp q)) : Path.IsReduced Γ q := by
+  rw [← Path.isReduced_reverse, Quiver.Path.reverse_comp] at hp
+  exact (Path.isReduced_reverse Γ q).mp (hp.of_comp_left Γ)
 
 /-- Traversing a rose petal and then its reverse is a backtrack. -/
 theorem rose_not_isReduced_backtrack {α : Type*} (a : α) :
