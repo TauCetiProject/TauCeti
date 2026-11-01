@@ -195,7 +195,7 @@ private theorem descentTransport (hlam : lam ∈ dominantChamber P b) {x : P.wey
         (by rw [RelSeries.head_snoc, hc]) (by rw [RelSeries.last_snoc, hDl])
       -- `d(C)` divides `⟨sᵢ x λ - y λ, αᵢ^∨⟩ = -⟨x λ, αᵢ^∨⟩ - ⟨y λ, αᵢ^∨⟩`.
       have hd := bondGcd_dvd_sub hlam C (P.coroot' i)
-      rw [hc, coroot'_simple_mul_smul] at hd
+      rw [hc, coroot'_simple_mul_smul_eq_neg] at hd
       have key := natAbs_gcd_eq_of_dvd_sub hd
       rw [Int.natAbs_neg, Int.natAbs_natCast] at key
       rw [hD₀, bondGcd_snoc, hc, reflectionBond_smul_simple_mul_smul,

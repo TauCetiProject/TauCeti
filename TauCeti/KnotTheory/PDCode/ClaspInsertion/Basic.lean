@@ -70,6 +70,8 @@ with a crossing; an insertion involving a crossing-free circle is not treated he
 
 * `TauCeti.PDCode.crossingComponentCount_insertClasp`: the insertion keeps the number of
   components.
+* `TauCeti.PDCode.stateLoopCount_insertClasp`: the circles of a state of the new code, in terms
+  of a state of the old code.
 * `TauCeti.PDCode.kauffmanBracket_insertClasp`: the insertion leaves the Kauffman bracket
   unchanged.
 * `TauCeti.PDCode.mirror_insertClasp`: mirroring the new code inserts the clasp with the other
@@ -756,31 +758,29 @@ private theorem smoothingChoice_insertClasp_last (s : Fin (n + 2) → Bool) :
       (s (Fin.last (n + 1)) == !b) := by
   cases hs : s (Fin.last (n + 1)) <;> cases b <;> simp [hs]
 
-/-- The number of circles left by a state of the old crossings once the two cut arcs are
-reconnected, `p` to `q` and the other end of one to the other end of the other. -/
-private noncomputable def claspLoopCount (s : Fin n → Bool) : ℕ :=
-  orbitCount (D.smoothingTurn (D.smoothingChoice s) * (D.edgePair.reconnect p q).val) / 2 +
-    D.crossinglessComponentCount
-
-private theorem one_le_claspLoopCount (s : Fin n → Bool) : 1 ≤ claspLoopCount D p q s := by
+private theorem one_le_orbitCount_reconnect_div_two_add (s : Fin n → Bool) :
+    1 ≤ orbitCount (D.smoothingTurn (D.smoothingChoice s) * (D.edgePair.reconnect p q).val) / 2 +
+      D.crossinglessComponentCount := by
   have hpos : 0 < orbitCount (D.smoothingTurn (D.smoothingChoice s) *
       (D.edgePair.reconnect p q).val) := by
     let _ : Nonempty (Fin (4 * n)) := ⟨p⟩
     exact Equiv.Perm.orbitCount_pos _
   obtain ⟨k, hk⟩ := (D.isPerfectMatching_smoothingTurn (D.smoothingChoice s)).even_orbitCount_mul
     (D.edgePair.reconnect p q).prop
-  rw [claspLoopCount]
   omega
 
 /-- **Circles after clasp insertion.** A state of the new code whose choices at the
 two new crossings smooth them back into the two cut arcs leaves as many circles as its restriction
-to the old crossings. Every other state leaves the circles of the reconnected arcs, one more when
-it also cuts off the circle through the two short arcs of the clasp. -/
-private theorem stateLoopCount_insertClasp (s : Fin (n + 2) → Bool) :
+to the old crossings. Every other state leaves the circles of the old state with the cut arcs
+reconnected, `p` to `q` and the other end of one to the other end of the other
+(`TauCeti.PerfectMatching.reconnect`), one more when it also cuts off the circle through the two
+short arcs of the clasp. -/
+theorem stateLoopCount_insertClasp (s : Fin (n + 2) → Bool) :
     (D.insertClasp p q b hqp hqe).stateLoopCount s =
       if (s (Fin.last n).castSucc == b) = false ∧ (s (Fin.last (n + 1)) == !b) = false then
         D.stateLoopCount (Fin.init (Fin.init s))
-      else claspLoopCount D p q (Fin.init (Fin.init s)) +
+      else orbitCount (D.smoothingTurn (D.smoothingChoice (Fin.init (Fin.init s))) *
+          (D.edgePair.reconnect p q).val) / 2 + D.crossinglessComponentCount +
         if (s (Fin.last n).castSucc == b) = true ∧ (s (Fin.last (n + 1)) == !b) = true then 1
         else 0 := by
   rw [stateLoopCount_def, statePerm_def, smoothingTurn_insertClasp,
@@ -792,7 +792,7 @@ private theorem stateLoopCount_insertClasp (s : Fin (n + 2) → Bool) :
   have hmk : PerfectMatching.mk D.edgePair.val D.edgePair.prop.apply_apply
       D.edgePair.prop.apply_ne = D.edgePair := Subtype.ext (PerfectMatching.val_mk _ _ _)
   rw [hmk]
-  split_ifs <;> simp_all [stateLoopCount_def, statePerm_def, claspLoopCount]
+  split_ifs <;> simp_all [stateLoopCount_def, statePerm_def]
   omega
 
 /-- **Algebraic clasp insertion keeps the number of components.** -/
@@ -812,8 +812,9 @@ private theorem stateLoopCount_insertClasp (s : Fin (n + 2) → Bool) :
       (Fin.snocEquiv fun _ => Bool)).sum_comp]
   simp only [Fintype.sum_prod_type, Fintype.sum_bool, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun s _ => ?_
-  obtain ⟨k, hk⟩ : ∃ k, claspLoopCount D p q s = k + 1 :=
-    ⟨_, (Nat.succ_pred_eq_of_pos (one_le_claspLoopCount D p q s)).symm⟩
+  obtain ⟨k, hk⟩ : ∃ k, orbitCount (D.smoothingTurn (D.smoothingChoice s) *
+      (D.edgePair.reconnect p q).val) / 2 + D.crossinglessComponentCount = k + 1 :=
+    ⟨_, (Nat.succ_pred_eq_of_pos (one_le_orbitCount_reconnect_div_two_add D p q s)).symm⟩
   simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.refl_apply, Prod.map_apply,
     Fin.snocEquiv, Equiv.coe_fn_mk, stateLoopCount_insertClasp, Fin.init_snoc,
     Fin.snoc_castSucc, Fin.snoc_last, stateWeight_snoc, hk]

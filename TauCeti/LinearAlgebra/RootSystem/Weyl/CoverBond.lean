@@ -51,9 +51,12 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
   `TauCeti.reflectionBond_simple_smul_one_smul`: a simple reflection `sᵢ` off the walls through `λ`
   covers the identity, with bond `⟨λ, αᵢ^∨⟩`.
 * `TauCeti.reflectionBond_smul_simple_mul_smul`: the bond of `x λ` and `sᵢ x λ` is
-  `-⟨x λ, αᵢ^∨⟩`; `TauCeti.coroot'_simple_mul_smul` says `⟨sᵢ x λ, αᵢ^∨⟩ = -⟨x λ, αᵢ^∨⟩`.
+  `-⟨x λ, αᵢ^∨⟩`.
 * `TauCeti.natAbs_reflectionBond_mul_smul_mul_smul`: left multiplication by a Weyl group element
   preserves the bond of a cover, up to sign.
+* `TauCeti.reflectionBond_simple_mul_smul_smul` and
+  `TauCeti.reflectionBond_simple_mul_smul_simple_mul_smul`: the bond of `sᵢ u` and `u` is
+  `⟨u λ, αᵢ^∨⟩`, and `sᵢ` preserves the bond of a cover `y ⋖ x` unless `y λ = (sᵢ x) λ`.
 * `TauCeti.reflectionBond_smul_add`: translating `λ` by a weight killed by the simple coroots
   does not change the bonds between its orbit weights.
 
@@ -200,15 +203,8 @@ left descent of the minimal coset representative `x`, this is the bond of the co
 theorem reflectionBond_smul_simple_mul_smul (i : b.support) (x : P.weylGroup) :
     P.reflectionBond b (x • lam) (((weylCoxeterSystem P b).simple i * x) • lam) =
       -P.coroot' i (x • lam) := by
-  rw [mul_smul, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul]
+  rw [simple_mul_smul_eq_reflection]
   exact reflectionBond_reflection (b.isPos_of_mem_support i.2) _
-
-omit [P.flip.IsReduced] in
-/-- The pairing of `(sᵢ x) λ` with the simple coroot `αᵢ^∨` is `-⟨x λ, αᵢ^∨⟩`. -/
-theorem coroot'_simple_mul_smul (i : b.support) (x : P.weylGroup) :
-    P.coroot' i (((weylCoxeterSystem P b).simple i * x) • lam) = -P.coroot' i (x • lam) := by
-  rw [mul_smul, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul,
-    coroot'_reflection_self]
 
 omit [P.flip.IsReduced] in
 /-- **The bond of `sᵢ λ` and `λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `⟨λ, αᵢ^∨⟩ ≠ 0`
@@ -220,6 +216,42 @@ theorem reflectionBond_simple_smul_one_smul (i : b.support) :
   rw [CoxeterSystem.simple_mul_simple_self] at h
   rw [h, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul,
     coroot'_reflection_self, neg_neg]
+
+omit [P.flip.IsReduced] in
+/-- **The bond of `(sᵢ u) λ` and `u λ` is `⟨u λ, αᵢ^∨⟩`**, for a simple root `αᵢ` and every `u` in
+the Weyl group. When `⟨u λ, αᵢ^∨⟩ > 0` this is the bond of the cover `u ⋖ sᵢ u` of `W / W_λ`
+(`TauCeti.minimalCosetRepCovBy_simple_mul_of_coroot'_pos`); when it vanishes, both sides vanish. -/
+theorem reflectionBond_simple_mul_smul_smul (i : b.support) (u : P.weylGroup) :
+    P.reflectionBond b (((weylCoxeterSystem P b).simple i * u) • lam) (u • lam) =
+      P.coroot' i (u • lam) := by
+  simpa only [mul_smul, one_smul] using reflectionBond_simple_smul_one_smul (lam := u • lam) i
+
+/-- **A simple reflection preserves the bond of a cover it does not reverse.** If `y ⋖ x` in
+`W / W_λ` and `y λ ≠ (sᵢ x) λ`, then the bond of `(sᵢ x) λ` and `(sᵢ y) λ` is the bond
+`b_λ(x, y)`. -/
+theorem reflectionBond_simple_mul_smul_simple_mul_smul (hlam : lam ∈ dominantChamber P b)
+    {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) {i : b.support}
+    (hne : y • lam ≠ ((weylCoxeterSystem P b).simple i * x) • lam) :
+    P.reflectionBond b (((weylCoxeterSystem P b).simple i * x) • lam)
+        (((weylCoxeterSystem P b).simple i * y) • lam) =
+      P.reflectionBond b (x • lam) (y • lam) := by
+  obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
+  have hxy := smul_ne_smul_of_minimalCosetRepCovBy hlam h
+  -- The positive root label `β` of the cover is not `αᵢ`, so `sᵢ β` is positive.
+  have hβi : β ≠ i := by
+    rintro rfl
+    exact hne (by rw [simple_mul_smul_eq_reflection, hβx])
+  -- `(sᵢ y) λ` is the reflection of `(sᵢ x) λ` in the positive root `sᵢ β`.
+  have hγ : P.reflection (P.reflectionPerm i β) (P.reflection i (x • lam)) =
+      P.reflection i (y • lam) := by
+    rw [reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
+      reflection_same, hβx]
+  have hne' : P.reflection i (y • lam) ≠ P.reflection i (x • lam) :=
+    fun h' ↦ hxy ((P.reflection i).injective h')
+  rw [simple_mul_smul_eq_reflection, simple_mul_smul_eq_reflection,
+    reflectionBond_eq_coroot' (hβ.reflectionPerm i.2 hβi) hγ hne', ← coroot'_reflection,
+    reflection_same, reflectionBond_eq_coroot' hβ hβx hxy]
 
 end
 

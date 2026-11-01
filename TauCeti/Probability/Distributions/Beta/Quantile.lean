@@ -9,18 +9,25 @@ public import TauCeti.Probability.Distributions.Beta.Cdf
 public import TauCeti.Probability.Quantile
 
 /-!
-# Quantiles of Beta laws
+# Quantiles and powers of Beta laws
 
 This file computes the lower quantile of a Beta probability measure with positive shape
 parameters. At an interior probability level `u`, it is the inverse regularized incomplete Beta
 function `inverseRegularizedIncompleteBeta a b u`. Consequently its one-sided endpoint limits are
 the endpoints `0` and `1` of the Beta law's support.
 
+For a `Beta(a, 1)` variable, raising to a positive real power `p` gives the law `Beta(a / p, 1)`.
+In particular, squaring halves the first shape parameter. These transformations follow from
+the power-function quantile and identify powers of normalized uniform-ball radii.
+
 ## Main results
 
 * `TauCeti.Probability.quantile_betaMeasure` gives the explicit quantile formula;
 * `TauCeti.Probability.quantile_betaMeasure_one_right` gives the power-function quantile
   `u ^ a⁻¹` when the second shape parameter is one;
+* `TauCeti.Probability.betaMeasure_map_rpow_one_right` and
+  `TauCeti.Probability.betaMeasure_map_sq_one_right` give the positive-power and square laws
+  when the second shape parameter is one;
 * `TauCeti.Probability.tendsto_quantile_betaMeasure_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_betaMeasure_nhdsLT_one` give its endpoint limits.
 -/
@@ -58,6 +65,30 @@ theorem quantile_betaMeasure_one_right (ha : 0 < a) (hu : u ∈ Ioo 0 1) :
   rw [quantile_betaMeasure ha one_pos hu]
   conv_lhs => rw [← hu']
   exact inverseRegularizedIncompleteBeta_regularizedIncompleteBeta ha one_pos hq.1 hq.2
+
+/-- Raising a Beta variable with second shape one to a positive real power divides its first
+shape by that power. -/
+@[simp]
+theorem betaMeasure_map_rpow_one_right {a p : ℝ} (ha : 0 < a) (hp : 0 < p) :
+    (betaMeasure a 1).map (fun x ↦ x ^ p) = betaMeasure (a / p) 1 := by
+  have := isProbabilityMeasureBeta ha one_pos
+  have := isProbabilityMeasureBeta (div_pos ha hp) one_pos
+  rw [← Measure.map_quantile_volume_Ioo (betaMeasure a 1),
+    Measure.map_map (by fun_prop) (Measure.measurable_quantile _),
+    ← Measure.map_quantile_volume_Ioo (betaMeasure (a / p) 1)]
+  apply Measure.map_congr
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
+  simp only [Function.comp_apply, quantile_betaMeasure_one_right ha hu,
+    quantile_betaMeasure_one_right (div_pos ha hp) hu]
+  rw [← Real.rpow_mul hu.1.le]
+  congr 1
+  simp [div_eq_mul_inv, mul_comm]
+
+/-- Squaring a Beta variable with second shape one halves its first shape. -/
+@[simp]
+theorem betaMeasure_map_sq_one_right {a : ℝ} (ha : 0 < a) :
+    (betaMeasure a 1).map (fun x ↦ x ^ 2) = betaMeasure (a / 2) 1 := by
+  simpa only [Real.rpow_two] using betaMeasure_map_rpow_one_right ha two_pos
 
 /-- Beta quantiles tend to the lower support endpoint `0` as the probability level tends to zero
 from above. -/
