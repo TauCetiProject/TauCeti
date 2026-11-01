@@ -39,6 +39,8 @@ global sections `F(X)`.
   of every presheaf vanishes in every degree.
 * `TauCeti.Topology.cechCohomologyZeroIso_hom`: the identification in degree `0` is the
   augmentation of the Čech complex of any point-neighborhood cover, followed by its structure map.
+* `TauCeti.Topology.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0` is
+  natural in the sheaf.
 
 ## References
 
@@ -96,5 +98,14 @@ theorem cechCohomologyZeroIso_hom (U : PointOpenCover X) :
   TauCeti.CategoryTheory.cechCohomologyZeroIso_hom PointOpenCover.toFormalCoproduct
     (fun _ _ h ↦ h) isTerminalTop F.obj
     (fun U ↦ quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U.opens U.isOpenCover F) U
+
+/-- The identification of the degree `0` Čech cohomology of a sheaf with its global sections is
+natural in the sheaf. -/
+@[reassoc]
+theorem cechCohomologyZeroIso_hom_naturality {G : Sheaf (Opens.grothendieckTopology X) A}
+    (f : F ⟶ G) :
+    f.hom.app (op ⊤) ≫ (cechCohomologyZeroIso G).hom =
+      (cechCohomologyZeroIso F).hom ≫ (cechCohomology X A 0).map f.hom :=
+  TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality _ _ isTerminalTop F.obj f.hom _ _
 
 end TauCeti.Topology

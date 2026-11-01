@@ -287,15 +287,12 @@ theorem cechComplexMap_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     (cechComplexFunctor V).map α ≫ cechComplexMap Q φ =
       cechComplexMap P φ ≫ (cechComplexFunctor U).map α := by
-  ext n : 1
-  refine Pi.hom_ext _ _ fun a ↦ ?_
-  -- both sides are the factor indexed by `φ.f ∘ a`, followed by `α` and the restriction along `φ`
-  exact (Category.assoc _ _ _).trans <| (_ ≫= cechComplexMap_f_π Q φ n a).trans <|
-    (Category.assoc _ _ _).symm.trans <| (cechComplexFunctor_map_f_π V P α n _ =≫ _).trans <|
-      (Category.assoc _ _ _).trans <| (_ ≫= (α.naturality _).symm).trans <|
-        (Category.assoc _ _ _).symm.trans <| ((cechComplexMap_f_π P φ n a).symm =≫ _).trans <|
-          (Category.assoc _ _ _).trans <| (_ ≫= (cechComplexFunctor_map_f_π U P α n a).symm).trans
-            (Category.assoc _ _ _).symm
+  -- both are induced by the same map of cosimplicial objects, by naturality of `α`
+  refine ((alternatingCofaceMapComplex A).map_comp _ _).symm.trans <|
+    (congrArg (alternatingCofaceMapComplex A).map ?_).trans
+      ((alternatingCofaceMapComplex A).map_comp _ _)
+  ext : 2
+  exact (((FormalCoproduct.evalOp C A).map α).naturality _).symm
 
 /-- A morphism of families which is the identity on indices, given by morphisms
 `φ i : U i ⟶ W i`, induces an isomorphism of Čech complexes `Č(W, P) ⟶ Č(U, P)` as soon as `P`

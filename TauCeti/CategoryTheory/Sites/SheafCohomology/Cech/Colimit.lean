@@ -48,6 +48,8 @@ the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
   are compatible with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.isZero_cechCohomology_obj`: the Čech cohomology vanishes if every family
   of the system is empty.
+* `TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0`
+  is natural in the presheaf.
 
 ## References
 
@@ -219,6 +221,24 @@ theorem cechCohomologyZeroIso_hom (h : ∀ j, QuasiIsoAt (cechAugmentation (E j)
   (Category.id_comp _).symm.trans <| (Category.assoc _ _ _).symm.trans <|
     (colimit.isoColimitCocone_ι_inv ⟨_, isColimitConstCocone J (P.obj (op T))⟩ j =≫ _).trans <|
       (HasColimit.ι_isoOfNatIso_hom _ j).trans (Category.assoc _ _ _)
+
+/-- The identification of degree `0` Čech cohomology with `P(T)` is natural in `P`. -/
+@[reassoc]
+theorem cechCohomologyZeroIso_hom_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
+    (hP : ∀ j, QuasiIsoAt (cechAugmentation (E j).obj hT P) 0)
+    (hQ : ∀ j, QuasiIsoAt (cechAugmentation (E j).obj hT Q) 0) :
+    α.app (op T) ≫ (cechCohomologyZeroIso E hE hT Q hQ).hom =
+      (cechCohomologyZeroIso E hE hT P hP).hom ≫ (cechCohomology A E hE 0).map α := by
+  obtain ⟨j⟩ : Nonempty J := inferInstance
+  rw [cechCohomologyZeroIso_hom E hE hT P hP j, cechCohomologyZeroIso_hom E hE hT Q hQ j]
+  -- the augmentation and the structure map at `j` are both natural in the presheaf
+  exact (HomologicalComplex.singleObjHomologySelfIso_inv_naturality_assoc _ _ _ _).symm.trans <|
+    (_ ≫= ((HomologicalComplex.homologyMap_comp_assoc _ _ 0 _).symm.trans <|
+      (congrArg (HomologicalComplex.homologyMap · 0 ≫ _)
+        (cechAugmentation_naturality _ hT P α).symm).trans <|
+          (HomologicalComplex.homologyMap_comp_assoc _ _ 0 _).trans <|
+            (_ ≫= (cechCohomologyι E hE 0 j).naturality α).trans
+              (Category.assoc _ _ _).symm)).trans (Category.assoc _ _ _).symm
 
 end Zero
 

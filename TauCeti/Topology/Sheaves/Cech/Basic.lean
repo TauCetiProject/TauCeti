@@ -220,7 +220,7 @@ theorem isSheafFor_ofArrows_of_iSup_eq_top {A : Type*} [Category* A]
   exact ⟨U i, isTerminalTop.from _, Sieve.le_generate _ _ _ (Presieve.ofArrows.mk i), hi⟩
 
 /-- For a sheaf on `X` and a family of opens covering `X`, the augmentation of the Čech complex
-is a quasi-isomorphism in degree `0`: the degree `0` Čech cohomology is the group of global
+is a quasi-isomorphism in degree `0`: the degree `0` Čech cohomology is the object of global
 sections. -/
 theorem quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top {A : Type*} [Category* A] [Preadditive A]
     [HasProducts.{u} A] [HasZeroObject A] [CategoryWithHomology A]
