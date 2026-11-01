@@ -36,8 +36,9 @@ Consequently, for dense `S`:
 * `exists_not_baireMeasurableSet_colorClass`: a coloring of `gSGraph S` by countably many colors
   has a color class without the Baire property, so `orientedGS S` has no countable Borel
   coloring (`not_hasCountableBorelColoring_orientedGS`) and `gSGraph S` has no measurable
-  coloring by `ℕ`; neither has any relation receiving a measurable map that sends the oriented
-  edges to related pairs (`not_hasCountableBorelColoring_of_orientedGS_hom`);
+  coloring by `ℕ`; and no relation `G` receiving a measurable map that sends the oriented edges
+  of `orientedGS S` to pairs of `G` has a countable Borel coloring
+  (`not_hasCountableBorelColoring_of_orientedGS_hom`);
 * `isMeagre_setOf_comp_of_forall_gSGraph_adj`: if a measurable map `φ` sends the edges of
   `gSGraph S` to inequivalent pairs of an equivalence relation `E` with measurable classes, then
   every section `{b | E (φ a) (φ b)}` of the pulled-back relation is meagre.
