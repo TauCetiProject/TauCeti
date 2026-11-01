@@ -72,11 +72,13 @@ are the preimage of the extended binary Golay code under the same coordinate per
 theorem a1TwentyFourthGlueSubgroup_eq_a1TwentyFourGlueSubgroup :
     a1TwentyFourthGlueSubgroup = a1TwentyFourGlueSubgroup := by
   ext w
+  -- Both Golay isometries read a word through the same coordinate permutation.
+  have hperm : a1TwentyFourthDestinationToSource = a1TableToGolayPerm :=
+    Equiv.ext fun j ↦ by rw [a1TwentyFourthDestinationToSource_apply, coe_a1TableToGolayPerm]
   have hgolay : (a1TwentyFourthGolayIsometry w : Fin 24 → ZMod 2) = a1TableToGolayIsometry w := by
     funext j
     rw [a1TwentyFourthGolayIsometry_apply, a1TableToGolayIsometry_apply,
-      typeA1GlueAlphabetZModStandardIsometry_apply, a1TwentyFourthDestinationToSource_apply,
-      coe_a1TableToGolayPerm]
+      typeA1GlueAlphabetZModStandardIsometry_apply, hperm]
   have hmem : w ∈ a1TwentyFourthGlueSubgroup ↔ a1TwentyFourthGolayIsometry w ∈
       a1TwentyFourthGlueSubgroup.map a1TwentyFourthGolayIsometry.toAddEquiv :=
     (AddSubgroup.mem_map_iff_mem (EquivLike.injective _)).symm
@@ -115,25 +117,23 @@ theorem map_glueSubgroup_a1TwentyFourth :
 /-- **The table glue subgroup of `A₁²⁴` has the displayed order `4096`.** -/
 theorem natCard_glueSubgroup_a1TwentyFourth :
     Nat.card a1TwentyFourth.glueSubgroup = a1TwentyFourth.glueOrder :=
-  (Nat.card_congr (a1TwentyFourthGlueModuleIsometry.toAddEquiv.addSubgroupMap _).toEquiv).trans <|
-    by rw [map_glueSubgroup_a1TwentyFourth, natCard_a1TwentyFourthGlueSubgroup]; rfl
+  (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_a1TwentyFourth).trans <| by
+    rw [natCard_a1TwentyFourthGlueSubgroup]; rfl
 
 /-- **The table glue subgroup of `A₁²⁴` is a quadratic Lagrangian.** -/
 theorem isLagrangian_glueSubgroup_a1TwentyFourth :
-    a1TwentyFourth.glueModule.IsLagrangian a1TwentyFourth.glueSubgroup := by
-  rw [← a1TwentyFourthGlueModuleIsometry.isLagrangian_map_iff, map_glueSubgroup_a1TwentyFourth]
-  exact isLagrangian_a1TwentyFourthGlueSubgroup
+    a1TwentyFourth.glueModule.IsLagrangian a1TwentyFourth.glueSubgroup :=
+  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_a1TwentyFourth).mpr
+    isLagrangian_a1TwentyFourthGlueSubgroup
 
 /-- **Every nonzero word of the table glue subgroup of `A₁²⁴` has glue minimum at least `4`.** -/
 theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_a1TwentyFourth
     {w : a1TwentyFourth.glueModule} (hw : w ∈ a1TwentyFourth.glueSubgroup) (hw0 : w ≠ 0) :
     4 ≤ ∑ i, (a1TwentyFourth.componentType i).glueMinimum
-      (a1TwentyFourth.isSimplyLaced_componentType i) (w i) := by
-  refine (four_le_sum_glueMinimum_of_mem_a1TwentyFourGlueSubgroup ?_
-    ((map_ne_zero_iff _ a1TwentyFourthGlueModuleIsometry.injective).mpr hw0)).trans_eq
-      (sum_glueMinimum_glueModuleIsometry _ _ _ _ w)
-  rw [← a1TwentyFourthGlueSubgroup_eq_a1TwentyFourGlueSubgroup, ← map_glueSubgroup_a1TwentyFourth]
-  exact AddSubgroup.mem_map_of_mem _ hw
+      (a1TwentyFourth.isSimplyLaced_componentType i) (w i) :=
+  le_sum_glueMinimum_of_map_glueModuleIsometry
+    (map_glueSubgroup_a1TwentyFourth.trans a1TwentyFourthGlueSubgroup_eq_a1TwentyFourGlueSubgroup)
+    four_le_sum_glueMinimum_of_mem_a1TwentyFourGlueSubgroup hw hw0
 
 /-! ### `A₂¹²` -/
 
@@ -162,14 +162,14 @@ theorem map_glueSubgroup_a2Twelfth :
 
 /-- **The table glue subgroup of `A₂¹²` has the displayed order `729`.** -/
 theorem natCard_glueSubgroup_a2Twelfth : Nat.card a2Twelfth.glueSubgroup = a2Twelfth.glueOrder :=
-  (Nat.card_congr (a2TwelfthGlueModuleIsometry.toAddEquiv.addSubgroupMap _).toEquiv).trans <| by
-    rw [map_glueSubgroup_a2Twelfth, natCard_a2TwelfthGlueSubgroup]; rfl
+  (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth).trans <| by
+    rw [natCard_a2TwelfthGlueSubgroup]; rfl
 
 /-- **The table glue subgroup of `A₂¹²` is a quadratic Lagrangian.** -/
 theorem isLagrangian_glueSubgroup_a2Twelfth :
-    a2Twelfth.glueModule.IsLagrangian a2Twelfth.glueSubgroup := by
-  rw [← a2TwelfthGlueModuleIsometry.isLagrangian_map_iff, map_glueSubgroup_a2Twelfth]
-  exact isLagrangian_a2TwelfthGlueSubgroup
+    a2Twelfth.glueModule.IsLagrangian a2Twelfth.glueSubgroup :=
+  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth).mpr
+    isLagrangian_a2TwelfthGlueSubgroup
 
 /-! ### `D₄⁶` -/
 
@@ -288,25 +288,22 @@ theorem map_glueSubgroup_d4Sixth :
 
 /-- **The table glue subgroup of `D₄⁶` has the displayed order `64`.** -/
 theorem natCard_glueSubgroup_d4Sixth : Nat.card d4Sixth.glueSubgroup = d4Sixth.glueOrder :=
-  (Nat.card_congr (d4SixthGlueModuleIsometry.toAddEquiv.addSubgroupMap _).toEquiv).trans <| by
-    rw [map_glueSubgroup_d4Sixth, natCard_d4SixGlueSubgroup]; rfl
+  (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_d4Sixth).trans <| by
+    rw [natCard_d4SixGlueSubgroup]; rfl
 
 /-- **The table glue subgroup of `D₄⁶` is a quadratic Lagrangian.** -/
 theorem isLagrangian_glueSubgroup_d4Sixth :
-    d4Sixth.glueModule.IsLagrangian d4Sixth.glueSubgroup := by
-  rw [← d4SixthGlueModuleIsometry.isLagrangian_map_iff, map_glueSubgroup_d4Sixth]
-  exact isLagrangian_d4SixGlueSubgroup
+    d4Sixth.glueModule.IsLagrangian d4Sixth.glueSubgroup :=
+  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_d4Sixth).mpr
+    isLagrangian_d4SixGlueSubgroup
 
 /-- **Every nonzero word of the table glue subgroup of `D₄⁶` has glue minimum at least `4`.** -/
 theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_d4Sixth {w : d4Sixth.glueModule}
     (hw : w ∈ d4Sixth.glueSubgroup) (hw0 : w ≠ 0) :
     4 ≤ ∑ i, (d4Sixth.componentType i).glueMinimum (d4Sixth.isSimplyLaced_componentType i)
-      (w i) := by
-  refine (four_le_sum_glueMinimum_of_mem_d4SixGlueSubgroup ?_
-    ((map_ne_zero_iff _ d4SixthGlueModuleIsometry.injective).mpr hw0)).trans_eq
-      (sum_glueMinimum_glueModuleIsometry _ _ _ _ w)
-  rw [← map_glueSubgroup_d4Sixth]
-  exact AddSubgroup.mem_map_of_mem _ hw
+      (w i) :=
+  le_sum_glueMinimum_of_map_glueModuleIsometry map_glueSubgroup_d4Sixth
+    four_le_sum_glueMinimum_of_mem_d4SixGlueSubgroup hw hw0
 
 /-! ### `A₁₁ D₇ E₆` -/
 
@@ -353,26 +350,23 @@ theorem map_glueSubgroup_a11d7e6 :
 
 /-- **The table glue subgroup of `A₁₁ D₇ E₆` has the displayed order `12`.** -/
 theorem natCard_glueSubgroup_a11d7e6 : Nat.card a11d7e6.glueSubgroup = a11d7e6.glueOrder :=
-  (Nat.card_congr (a11d7e6GlueModuleIsometry.toAddEquiv.addSubgroupMap _).toEquiv).trans <| by
-    rw [map_glueSubgroup_a11d7e6, natCard_a11d7e6GlueSubgroup]; rfl
+  (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_a11d7e6).trans <| by
+    rw [natCard_a11d7e6GlueSubgroup]; rfl
 
 /-- **The table glue subgroup of `A₁₁ D₇ E₆` is a quadratic Lagrangian.** -/
 theorem isLagrangian_glueSubgroup_a11d7e6 :
-    a11d7e6.glueModule.IsLagrangian a11d7e6.glueSubgroup := by
-  rw [← a11d7e6GlueModuleIsometry.isLagrangian_map_iff, map_glueSubgroup_a11d7e6]
-  exact isLagrangian_a11d7e6GlueSubgroup
+    a11d7e6.glueModule.IsLagrangian a11d7e6.glueSubgroup :=
+  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_a11d7e6).mpr
+    isLagrangian_a11d7e6GlueSubgroup
 
 /-- **Every nonzero word of the table glue subgroup of `A₁₁ D₇ E₆` has glue minimum at
 least `4`.** -/
 theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_a11d7e6 {w : a11d7e6.glueModule}
     (hw : w ∈ a11d7e6.glueSubgroup) (hw0 : w ≠ 0) :
     4 ≤ ∑ i, (a11d7e6.componentType i).glueMinimum (a11d7e6.isSimplyLaced_componentType i)
-      (w i) := by
-  refine (four_le_sum_glueMinimum_of_mem_a11d7e6GlueSubgroup ?_
-    ((map_ne_zero_iff _ a11d7e6GlueModuleIsometry.injective).mpr hw0)).trans_eq
-      (sum_glueMinimum_glueModuleIsometry _ _ _ _ w)
-  rw [← map_glueSubgroup_a11d7e6]
-  exact AddSubgroup.mem_map_of_mem _ hw
+      (w i) :=
+  le_sum_glueMinimum_of_map_glueModuleIsometry map_glueSubgroup_a11d7e6
+    four_le_sum_glueMinimum_of_mem_a11d7e6GlueSubgroup hw hw0
 
 end RootfulNiemeierType
 

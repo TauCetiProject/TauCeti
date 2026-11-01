@@ -53,7 +53,8 @@ computations by `decide`.
 * `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row.
 * `TauCeti.RootfulNiemeierType.glueModuleIsometry`: the glue words of a row as the glue words of
   an explicit family of its components, with `map_glueSubgroup_glueModuleIsometry` describing
-  `H_r` in these coordinates.
+  `H_r` in these coordinates; the lemmas `*_of_map_glueModuleIsometry` transfer the order, the
+  Lagrangian property and glue-minimum bounds from a subgroup identified with `H_r` there.
 
 ## References
 
@@ -335,6 +336,36 @@ theorem map_glueSubgroup_glueModuleIsometry :
     refine ⟨w, mem_glueGenerators_iff.mpr ?_, rfl⟩
     rw [(decodeGlueWord_eq_some_iff _ _ _ _).mp hv] at hl
     exact (encodeGlueWord_glueModuleIsometry r ht hn h w) ▸ hl
+
+variable {r ht hn h}
+  {H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i))}
+
+/-- If the table glue subgroup is `H` in the coordinates of an explicit family, the two subgroups
+have the same order. -/
+theorem natCard_glueSubgroup_of_map_glueModuleIsometry
+    (hH : r.glueSubgroup.map (r.glueModuleIsometry ht hn h).toAddEquiv = H) :
+    Nat.card r.glueSubgroup = Nat.card H :=
+  hH ▸ (AddSubgroup.card_map_of_injective (r.glueModuleIsometry ht hn h).injective).symm
+
+/-- If the table glue subgroup is `H` in the coordinates of an explicit family, it is a quadratic
+Lagrangian exactly when `H` is. -/
+theorem isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry
+    (hH : r.glueSubgroup.map (r.glueModuleIsometry ht hn h).toAddEquiv = H) :
+    r.glueModule.IsLagrangian r.glueSubgroup ↔
+      (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsLagrangian H := by
+  rw [← (r.glueModuleIsometry ht hn h).isLagrangian_map_iff, hH]
+
+/-- If the table glue subgroup is `H` in the coordinates of an explicit family, a lower bound on
+the glue minimum `μ(w)` of the nonzero words of `H` holds for the nonzero words of the table glue
+subgroup. -/
+theorem le_sum_glueMinimum_of_map_glueModuleIsometry
+    (hH : r.glueSubgroup.map (r.glueModuleIsometry ht hn h).toAddEquiv = H) {m : ℚ}
+    (hm : ∀ {v}, v ∈ H → v ≠ 0 → m ≤ ∑ i, (t i).glueMinimum (ht i) (v i))
+    {w : r.glueModule} (hw : w ∈ r.glueSubgroup) (hw0 : w ≠ 0) :
+    m ≤ ∑ i, (r.componentType i).glueMinimum (r.isSimplyLaced_componentType i) (w i) :=
+  (hm (hH ▸ AddSubgroup.mem_map_of_mem _ hw)
+    ((map_ne_zero_iff _ (r.glueModuleIsometry ht hn h).injective).mpr hw0)).trans_eq
+      (sum_glueMinimum_glueModuleIsometry r ht hn h w)
 
 end glueModuleIsometry
 
