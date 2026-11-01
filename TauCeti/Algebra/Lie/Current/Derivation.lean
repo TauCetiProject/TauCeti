@@ -298,8 +298,9 @@ private theorem dualMap_mul_sub_mul (h : R⸨X⸩) (u v : C) :
     simp only [TrivSqZeroExt.snd_sub, DualNumber.snd_mul, fst_dualMap, snd_dualMap,
       TrivSqZeroExt.snd_add, TrivSqZeroExt.algebraMap_eq_inl', TrivSqZeroExt.snd_inl, add_zero,
       LieDerivation.apply_lie_eq_add, map_add]
-    rw [show ∀ p q r s : UK, p + q - (r + s) = (p - s) + (q - r) from fun _ _ _ _ ↦ by abel,
-      envelopingι_mul_sub_mul, envelopingι_mul_sub_mul, add_add_add_comm, hres, add_zero]
+    have h₁ := envelopingι_mul_sub_mul Φ hΦ hΦs a u (vectorFieldDerivation R L h v)
+    have h₂ := envelopingι_mul_sub_mul Φ hΦ hΦs a (vectorFieldDerivation R L h u) v
+    linear_combination (norm := abel) h₁ + h₂ + hres
 
 /-- The algebra morphism `U(ĝ) / (ι K - a) → (U(ĝ) / (ι K - a))[ε]` lifting
 `u ↦ ι u + ε ι(h u')`. -/
