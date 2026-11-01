@@ -53,25 +53,25 @@ These are the relations satisfied at the branch node of the `E₆`, `E₇` and `
 backtracks into their arms of lengths one and two, in the preprojective algebra: the backtrack into
 the third arm, of length two for `E₆`, three for `E₇` and four for `E₈`, is `-(x + y)`.
 
-For `(x + y) ^ 3 = 0` and for `(x + y) ^ 4 = 0` the reduced words also control the cyclic quotient
-`A / [A, A]` of the ambient ring: if `x`, `y`, `y ^ 2` and the powers `(x + y) ^ j` for
-`2 ≤ j < 4` are sums of commutators and `2` and `3` are units, then so is every product of a
-positive number of factors from `{x, y}`. This is the step at the branch node in the vanishing of
-the cyclic quotient of the `E₆` and `E₇` preprojective algebras in positive degrees.
+For `(x + y) ^ 4 = 0` the reduced words also control the cyclic quotient `A / [A, A]` of the
+ambient ring: if `x`, `y`, `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` are sums of commutators and `2`
+and `3` are units, then so is every product of a positive number of factors from `{x, y}`. Since
+`(x + y) ^ 3 = 0` implies `(x + y) ^ 4 = 0`, this also covers the cube-zero case. This is the step
+at the branch node in the vanishing of the cyclic quotient of the `E₆` and `E₇` preprojective
+algebras in positive degrees.
 
 ## Main results
 
 * `TauCeti.span_pair_pow_six_eq_bot`: if `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, then the
   sixth power of the span of `{x, y}` is zero.
-* `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow`: if moreover `x`, `y`, `y ^ 2` and
-  `(x + y) ^ 2` are sums of commutators and `2` and `3` are units, then every product of a positive
-  number of factors from `{x, y}` is a sum of commutators.
 * `TauCeti.span_pair_pow_fifteen_eq_bot`: if `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, then
   the fifteenth power of the span of `{x, y}` is zero.
 * `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four`: if `x ^ 2 = 0`,
   `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, if `x`, `y`, `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` are sums
   of commutators, and if `2` and `3` are units, then every product of a positive number of factors
   from `{x, y}` is a sum of commutators.
+* `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow`: the same conclusion if `(x + y) ^ 3 = 0`,
+  assuming only `x`, `y`, `y ^ 2` and `(x + y) ^ 2` are sums of commutators.
 -/
 
 public section
@@ -155,105 +155,6 @@ theorem span_pair_pow_six_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y
   intro w hw
   have hw' : w ∈ span ℤ {x, y} ^ 6 := span_pow (R := ℤ) {x, y} 6 ▸ subset_span hw
   rwa [h6, mem_bot] at hw'
-
-/-- **Words in a square-zero and a cube-zero element with a cube-zero sum are sums of
-commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, and suppose that `x`, `y`,
-`y ^ 2` and `(x + y) ^ 2` lie in the commutator submodule `[B, B]`. If `2` and `3` are units in
-`k`, then every product of a positive number of factors from `{x, y}` lies in `[B, B]`.
-
-Up to rotation the reduced words are `x y`, `x y y`, `x y x y` and `x y x y y`, besides the
-words with a rotation containing `x x` or `y y y`. Twice `x y` is `(x + y) ^ 2 - y ^ 2` up to
-commutators, and three times `x y y` is minus `x y x` up to commutators, by the expansion of
-`(x + y) ^ 3`; these are the places where `2` and `3` must be units. Multiplying the expansion by
-`x` and by `y ^ 2` on the left gives the two longer words. -/
-theorem mem_commutatorSubmodule_of_mem_span_pair_pow {B : Type*} [Ring B] {k : Type*} [Semiring k]
-    [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k)) (hx : x ^ 2 = 0)
-    (hy : y ^ 3 = 0) (hxy : (x + y) ^ 3 = 0) (hx₀ : x ∈ commutatorSubmodule k B)
-    (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
-    (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) {t : ℕ} {w : B}
-    (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B := by
-  let C := commutatorSubmodule k B
-  have hxx : x * x = 0 := by rw [← sq, hx]
-  have hyyy : y * y * y = 0 := by rw [← pow_three', hy]
-  -- The expansion of `(x + y) ^ 3` with the words containing `x x` or `y y y` removed.
-  have r₀ (a : B) : a * x * x = 0 := by rw [mul_assoc, hxx, mul_zero]
-  have r₁ (a : B) : a * y * y * y = 0 := by rw [mul_assoc, mul_assoc, ← mul_assoc y, hyyy, mul_zero]
-  have hT : x * y * x + x * y * y + y * x * y + y * y * x = 0 := by
-    have h : (x + y) ^ 3 = x * x * x + x * x * y + x * y * x + x * y * y + y * x * x +
-        y * x * y + y * y * x + y * y * y := by
-      noncomm_ring
-    simpa only [hxy, hxx, hyyy, r₀, zero_mul, zero_add, add_zero, eq_comm] using h
-  -- The commutator submodule is closed under negation.
-  have hneg {a : B} (h : a ∈ C) : -a ∈ C := neg_mem_commutatorSubmodule h
-  -- Rotations: a product lies in `[B, B]` exactly when its rotation does.
-  have hrot {a b : B} (h : b * a ∈ commutatorSubmodule k B) : a * b ∈ commutatorSubmodule k B :=
-    mul_mem_commutatorSubmodule_comm.2 h
-  have hzero {a : B} (h : a = 0) : a ∈ commutatorSubmodule k B := h ▸ zero_mem _
-  have hxyx : x * y * x ∈ commutatorSubmodule k B :=
-    hrot (hzero (by rw [← mul_assoc, hxx, zero_mul]))
-  -- Twice `x y` is `(x + y) ^ 2 - y ^ 2` plus the commutator `x y - y x`.
-  have hxy₀ : x * y ∈ commutatorSubmodule k B := by
-    have h : (2 : k) • (x * y) = (x + y) ^ 2 + -y ^ 2 + (x * y - y * x) := by
-      rw [two_smul, sq, sq]
-      simp only [mul_add, add_mul, hxx]
-      abel
-    have hmem : (2 : k) • (x * y) ∈ commutatorSubmodule k B := by
-      rw [h]
-      exact add_mem (add_mem hs (hneg hy₁)) (mul_sub_mul_mem_commutatorSubmodule k B x y)
-    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
-  -- Three times `x y y` is minus `x y x` plus two commutators.
-  have hxyy : x * y * y ∈ commutatorSubmodule k B := by
-    have h : (3 : k) • (x * y * y) = -(x * y * x) + (x * (y * y) - y * y * x) +
-        (x * y * y - y * (x * y)) := by
-      rw [show (3 : k) = 2 + 1 by norm_num, add_smul, two_smul, one_smul]
-      linear_combination (norm := skip) hT
-      noncomm_ring
-    have hmem : (3 : k) • (x * y * y) ∈ commutatorSubmodule k B := by
-      rw [h]
-      exact add_mem (add_mem (hneg hxyx) (mul_sub_mul_mem_commutatorSubmodule k B _ _))
-        (mul_sub_mul_mem_commutatorSubmodule k B _ _)
-    exact (Submodule.smul_mem_iff_of_isUnit _ h3).1 hmem
-  -- `x y x y` is minus `x y y x`, which rotates into `x x y y = 0`.
-  have hxyxy : x * y * x * y ∈ commutatorSubmodule k B := by
-    have h : x * y * x * y = -(x * y * y * x) := by
-      linear_combination (norm := skip) x * hT
-      simp only [mul_add, ← mul_assoc, hxx, zero_mul]
-      noncomm_ring
-    rw [h]
-    exact hneg (hrot (hzero (by rw [← mul_assoc, ← mul_assoc, hxx, zero_mul, zero_mul])))
-  -- `x y x y y` rotates into `y y x y x`, which is minus `y y x y y`, which rotates into
-  -- `x y y y y = 0`.
-  have hxyxyy : x * y * x * y * y ∈ commutatorSubmodule k B := by
-    have h : y * y * (x * y * x) = -(y * y * (x * y * y)) := by
-      linear_combination (norm := skip) y * y * hT
-      simp only [mul_add, ← mul_assoc, hyyy, zero_mul]
-      noncomm_ring
-    have hrot₁ : y * y * (x * y * y) ∈ commutatorSubmodule k B :=
-      hrot (hzero (by simp only [← mul_assoc, r₁, zero_mul]))
-    have hmem : y * y * (x * y * x) ∈ commutatorSubmodule k B := h ▸ hneg hrot₁
-    rw [show x * y * x * y * y = x * y * x * (y * y) by noncomm_ring]
-    exact hrot hmem
-  -- Every reduced word of positive length lies in `[B, B]`.
-  have hwords : ∀ b ∈ cubeZeroWords x y t, b ∈ commutatorSubmodule k B := by
-    rcases Nat.lt_or_ge t 5 with ht | ht
-    · interval_cases t <;>
-        simp only [cubeZeroWords, Set.forall_mem_insert, Set.forall_mem_singleton]
-      · exact ⟨hx₀, hy₀⟩
-      · exact ⟨hxy₀, hrot hxy₀, by rwa [sq] at hy₁⟩
-      · exact ⟨hxyx, hxyy, by rw [mul_assoc]; exact hrot hxyy⟩
-      · refine ⟨hxyxy, ?_⟩
-        rw [show y * x * y * y = y * (x * y * y) by noncomm_ring]
-        exact hrot (hzero (r₁ x))
-      · exact hxyxyy
-    · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 5 := ⟨t - 5, by omega⟩
-      simp [cubeZeroWords]
-  have hle := span_pair_pow_succ_le_span_cubeZeroWords hx hy hxy t hw
-  clear hw
-  induction hle using Submodule.span_induction with
-  | mem b hb => exact hwords b hb
-  | zero => exact zero_mem _
-  | add a b _ _ ha hb => exact add_mem ha hb
-  | smul n a _ ha => exact zsmul_mem_commutatorSubmodule ha n
 
 /-- **A square-zero and a cube-zero element with a fifth-power-zero sum.** If `x ^ 2 = 0`,
 `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, then every product of fifteen factors from `{x, y}`
@@ -597,5 +498,21 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
   | zero => exact zero_mem _
   | add a b _ _ ha hb => exact add_mem ha hb
   | smul n a _ ha => exact zsmul_mem_commutatorSubmodule ha n
+
+/-- **Words in a square-zero and a cube-zero element with a cube-zero sum are sums of
+commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, and suppose that `x`, `y`,
+`y ^ 2` and `(x + y) ^ 2` lie in the commutator submodule `[B, B]`. If `2` and `3` are units in
+`k`, then every product of a positive number of factors from `{x, y}` lies in `[B, B]`.
+
+This is the case `(x + y) ^ 3 = 0` of
+`mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four`. -/
+theorem mem_commutatorSubmodule_of_mem_span_pair_pow {B : Type*} [Ring B] {k : Type*} [Semiring k]
+    [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k)) (hx : x ^ 2 = 0)
+    (hy : y ^ 3 = 0) (hxy : (x + y) ^ 3 = 0) (hx₀ : x ∈ commutatorSubmodule k B)
+    (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
+    (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) {t : ℕ} {w : B}
+    (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B :=
+  mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four h2 h3 hx hy
+    (by rw [pow_succ, hxy, zero_mul]) hx₀ hy₀ hy₁ hs (hxy ▸ zero_mem _) hw
 
 end TauCeti
