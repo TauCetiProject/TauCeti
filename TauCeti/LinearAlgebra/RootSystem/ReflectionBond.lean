@@ -88,4 +88,23 @@ theorem reflectionBond_self [NoZeroDivisors R] (x : M) : P.reflectionBond b x x 
     exact CharZero.eq_neg_self_iff.mp hc
   · exact reflectionBond_eq_zero_of_not_exists h
 
+/-- **Translating by a weight on every wall leaves bonds unchanged.** If every coroot vanishes on
+`χ`, as for a central weight, every reflection fixes `χ`, so `s_β (x + χ) = y + χ` exactly when
+`s_β x = y`, with the same pairing `⟨y + χ, β^∨⟩ = ⟨y, β^∨⟩`. -/
+theorem reflectionBond_add_add [P.IsReduced] [NoZeroDivisors R] {χ : M}
+    (hχ : ∀ i, P.coroot' i χ = 0) (x y : M) :
+    P.reflectionBond b (x + χ) (y + χ) = P.reflectionBond b x y := by
+  have hrefl (i : ι) (z : M) : P.reflection i (z + χ) = P.reflection i z + χ := by
+    rw [reflection_apply, reflection_apply, map_add, hχ, add_zero]
+    abel
+  by_cases hxy : y = x
+  · simp [hxy]
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · obtain ⟨β, hβ, h⟩ := h
+    rw [reflectionBond_eq_coroot' hβ h hxy,
+      reflectionBond_eq_coroot' hβ (by rw [hrefl, h]) (by simpa using hxy), map_add, hχ, add_zero]
+  · rw [reflectionBond_eq_zero_of_not_exists h, reflectionBond_eq_zero_of_not_exists]
+    rintro ⟨β, hβ, h'⟩
+    exact h ⟨β, hβ, by simpa [hrefl] using h'⟩
+
 end RootPairing

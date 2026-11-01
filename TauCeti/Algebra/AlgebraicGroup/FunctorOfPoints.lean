@@ -43,7 +43,8 @@ the inverse.
   and `A` a commutative `R`-algebra, `WithConv (H →ₐ[R] A)` is a group, commutative when `H`
   is cocommutative.
 * `AlgHom.mapValue`: post-composition with `φ : A →ₐ[R] B` as a monoid homomorphism of
-  convolution monoids, with `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
+  convolution monoids, with `AlgHom.ofConv_comp_mapValue` describing it on underlying
+  homomorphisms, `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
   information when `φ` does not.
 * `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
@@ -154,6 +155,12 @@ lemma mapValue_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
     mapValue φ f = toConv (φ.comp f.ofConv) := by
   delta mapValue
   rfl
+
+/-- On underlying homomorphisms, `mapValue φ` is post-composition with `φ`, as functions. -/
+lemma ofConv_comp_mapValue (φ : A →ₐ[R] B) :
+    ofConv ∘ mapValue (H := H) φ = (fun f : H →ₐ[R] A ↦ φ.comp f) ∘ ofConv := by
+  ext f h
+  simp
 
 /-- `mapValue` preserves the identity: `mapValue (𝟙 A)` is the identity monoid homomorphism. -/
 @[simp]
