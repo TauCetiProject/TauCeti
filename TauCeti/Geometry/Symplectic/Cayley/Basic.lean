@@ -393,6 +393,13 @@ lemma Compatible.cayleyEquiv_self (h₀ : ω.Compatible J₀) :
     h₀.cayleyEquiv ⟨J₀, h₀.tames⟩ = ⟨0, h₀.tames.zero_mem_cayleyBall⟩ :=
   Subtype.ext (by simp)
 
+/-- Tame structures with the same Cayley coordinate at a compatible base structure are equal. -/
+lemma Compatible.eq_of_cayley_eq (h₀ : ω.Compatible J₀)
+    {J' : AlmostComplexStructure V} (h : ω.Tames J) (h' : ω.Tames J')
+    (heq : J₀.cayley J = J₀.cayley J') : J = J' := by
+  exact congrArg Subtype.val (h₀.cayleyEquiv.injective (a₁ := ⟨J, h⟩) (a₂ := ⟨J', h'⟩)
+    (Subtype.ext heq))
+
 /-- The defect of self-adjointness of the Cayley transform `C` of `J`, evaluated on `P a` and
 `P b` with `P = 1 - J₀ J`, is twice the defect of symmetry of `ω(·, J ·)` on `a` and `b`. -/
 private lemma Compatible.cayley_selfAdjoint_defect (h₀ : ω.Compatible J₀) (h : ω.Tames J)
@@ -454,6 +461,14 @@ theorem Compatible.cayley_mem_compatibleCayleyBall_iff (h₀ : ω.Compatible J�
   rw [compatibleCayleyBall, Set.mem_inter_iff, SetLike.mem_coe,
     LinearMap.mem_selfAdjointSubmodule, h₀.isSelfAdjoint_cayley_iff h, compatible_iff]
   exact ⟨fun hC => ⟨hC.2, h⟩, fun hJ => ⟨h₀.cayley_mem_cayleyBall h, hJ.1⟩⟩
+
+/-- Multiplying a compatible Cayley coordinate by a scalar between zero and one stays in the
+compatible Cayley ball. -/
+theorem Compatible.smul_cayley_mem_compatibleCayleyBall (h₀ : ω.Compatible J₀)
+    (h : ω.Compatible J) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
+    t • J₀.cayley J ∈ ω.compatibleCayleyBall J₀ :=
+  h₀.tames.convex_compatibleCayleyBall.smul_mem_of_zero_mem
+    h₀.tames.zero_mem_compatibleCayleyBall ((h₀.cayley_mem_compatibleCayleyBall_iff h.tames).2 h) ht
 
 /-- For an `ω`-compatible `J₀`, the Cayley transform `J ↦ -(1 + J₀ J)(1 - J₀ J)⁻¹` is a bijection
 from the `ω`-compatible complex structures onto the compatible Cayley ball of `J₀`. Its inverse is
