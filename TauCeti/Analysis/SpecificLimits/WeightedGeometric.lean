@@ -51,8 +51,8 @@ theorem summable_mul_norm_pow_succ {ι E : Type*} [SeminormedAddGroup E] {r : ι
   set S := (Filter.eventually_cofinite.1 hfar).toFinset
   set δ : ℝ := max (1 - ε) (S.sup fun i ↦ ‖r i‖₊ : ℝ≥0)
   have hδ1 : δ < 1 := max_lt (by linarith) <| by
-    exact_mod_cast (Finset.sup_lt_iff one_pos).2 fun i hi ↦ by
-      simp only [S, Set.Finite.mem_toFinset, not_imp] at hi
+    exact_mod_cast (Finset.sup_lt_iff (by simp)).2 fun i hi ↦ by
+      simp only [S, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_imp] at hi
       exact_mod_cast h1 i hi.1
   have hδ (i) (hi : w i ≠ 0) : ‖r i‖ ≤ δ := by
     by_cases hS : i ∈ S
