@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.FreeMonoid.Basic
+public import Mathlib.Combinatorics.Quiver.Path.Decomposition
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 
 /-!
@@ -189,13 +190,9 @@ theorem Path.mem_iff_mem_of_forall_mem_darts {S : Set Γ.E} {R : Set Γ.V}
 /-- A path from a vertex set `R` to its complement has a dart from `R` to its complement. -/
 theorem Path.exists_boundary_dart {a b : Γ.V} (p : Γ.Path a b) (R : Set Γ.V)
     (ha : a ∈ R) (hb : b ∉ R) : ∃ e ∈ Path.darts Γ p, Γ.src e ∈ R ∧ Γ.tgt e ∉ R := by
-  induction p with
-  | nil => exact absurd ha hb
-  | @cons b c p f ih =>
-    by_cases hb' : b ∈ R
-    · exact ⟨f.1, by simp, by rwa [f.2.1], by rwa [f.2.2]⟩
-    · obtain ⟨e, he, h⟩ := ih hb'
-      exact ⟨e, by simp [he], h⟩
+  obtain ⟨u, hu, v, hv, e, p₁, p₂, rfl⟩ :=
+    Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem p R ha hb
+  exact ⟨e.1, by simp, by rwa [e.2.1], by rwa [e.2.2]⟩
 
 section Restrict
 
