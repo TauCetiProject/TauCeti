@@ -9,8 +9,6 @@ public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
 public import TauCeti.Topology.Sheaves.Flasque.Basic
 
-import TauCeti.Algebra.Homology.Ext.AcyclicResolution
-
 /-!
 # Sheaf cohomology with closed supports
 

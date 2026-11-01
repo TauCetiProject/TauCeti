@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
+public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
@@ -37,8 +37,8 @@ gives zero exactly when it is a coboundary (`CochainComplex.extMk_succ_eq_zero_i
 
 ## Main results
 
-* `CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`: dimension shifting along a
-  short exact sequence whose middle term is acyclic for `P`.
+* `CochainComplex.resolutionExtClass_postcomp_bijective`: dimension shifting along the truncated
+  resolution, from `CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`.
 * `CochainComplex.extMk_add`, `CochainComplex.extMk_surjective`,
   `CochainComplex.extMk_zero_eq_zero_iff` and `CochainComplex.extMk_succ_eq_zero_iff`: `extMk`
   is additive and identifies `Extⁿ(P, F)` with the cohomology of `Hom(P, K)`.
@@ -54,23 +54,6 @@ public section
 open CategoryTheory Limits Abelian
 
 universe w v u
-
-namespace CategoryTheory.ShortComplex.ShortExact
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {S : ShortComplex C}
-
-/-- **Dimension shifting.** If `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is short exact and
-`Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish, then the connecting map
-`Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` is bijective. -/
-theorem extClass_postcomp_bijective (hS : S.ShortExact) (P : C) {n m : ℕ} (h : n + 1 + 1 = m)
-    (h₁ : Subsingleton (Ext.{w} P S.X₂ (n + 1))) (h₂ : Subsingleton (Ext.{w} P S.X₂ m)) :
-    Function.Bijective (hS.extClass.postcomp P h) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ P hS x h hx
-    rw [Subsingleton.elim z 0, Ext.zero_comp]
-  · exact Ext.covariant_sequence_exact₁ P hS x (Subsingleton.elim _ _) h
-
-end CategoryTheory.ShortComplex.ShortExact
 
 namespace CochainComplex
 
