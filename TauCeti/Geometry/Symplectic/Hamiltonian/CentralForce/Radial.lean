@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Pair
+import TauCeti.Analysis.InnerProductSpace.QuadraticForm.TwoVector
 
 /-!
 # Radial reduction of central-force motion
@@ -26,8 +26,10 @@ The kinetic energy splits as `‖p‖² = p_r² + ℓ² / r²`, so
 `H(q, p) = p_r² / (2m) + U_ℓ(r)`, with the *effective potential* `U_ℓ(r) = ℓ² / (2 m r²) + U(r)`
 
 (`TauCeti.effectivePotential`). The squared angular momentum `ℓ²` Poisson-commutes with `H` in
-every dimension. Fixing its value, the radial motion is the one-dimensional Hamiltonian system on
-the half-line `r > 0` with phase space `ℝ × ℝ` and *reduced Hamiltonian*
+every dimension
+(`TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`). Fixing its
+value, the radial motion is the one-dimensional Hamiltonian system on the half-line `r > 0` with
+phase space `ℝ × ℝ` and *reduced Hamiltonian*
 
 `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)`,
 
@@ -61,11 +63,8 @@ Two consequences describe the qualitative radial motion:
 ## Main results
 
 * `TauCeti.centralForceHamiltonian_radialProjection`: `H(q, p) = H_ℓ(r, p_r)`.
-* `TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`:
-  conservation of `ℓ²`, `{ℓ², H} = 0`.
-* `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
-* `TauCeti.stdSymplecticForm_hamiltonianVectorField_effectivePotential`: the reduced Hamilton
-  equations `r' = p_r / m`, `p_r' = ℓ² / (m r³) - U'(r)`.
+* `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`: the
+  reduced Hamilton equations `r' = p_r / m`, `p_r' = ℓ² / (m r³) - U'(r)`.
 * `TauCeti.fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian`: the radial
   projection carries `X_H` to `X_{H_ℓ}`.
 * `TauCeti.hasDerivAt_radialProjection_comp`: integral curves of `H` project to integral curves
@@ -73,8 +72,8 @@ Two consequences describe the qualitative radial motion:
 * `TauCeti.effectivePotential_le_centralForceHamiltonian`,
   `TauCeti.centralForceHamiltonian_eq_effectivePotential_iff`: the effective potential bounds the
   energy, with equality exactly at the radial turning points.
-* `TauCeti.stdSymplecticForm_hamiltonianVectorField_effectivePotential_eq_zero_iff`: the
-  equilibria of the reduced system are the critical points of the effective potential.
+* `stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_eq_zero_iff`:
+  the equilibria of the reduced system are the critical points of the effective potential.
 * `TauCeti.forall_hasDerivAt_circularMotion_iff`: circular motions solve Hamilton's equations
   exactly at the critical points of the effective potential.
 
@@ -220,20 +219,7 @@ theorem centralForceHamiltonian_eq_effectivePotential_iff {m ℓ : ℝ} (hm : m 
     centralForceHamiltonian_effectivePotential_apply (norm_nonneg _), effectivePotential, add_assoc]
   simp [hm]
 
-/-! ### Derivatives of the squared angular momentum and of the radial projection -/
-
-/-- The partial gradients of the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` are
-`∇_q ℓ² = 2 ‖p‖² q - 2 ⟪q, p⟫ p` and `∇_p ℓ² = 2 ‖q‖² p - 2 ⟪q, p⟫ q`. -/
-theorem hasFDerivAt_sq_sub_inner_sq (x : V × V) :
-    HasFDerivAt (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
-      ((innerSL ℝ ((2 * ‖x.2‖ ^ 2) • x.1 - (2 * ⟪x.1, x.2⟫_ℝ) • x.2)).coprod
-        (innerSL ℝ ((2 * ‖x.1‖ ^ 2) • x.2 - (2 * ⟪x.1, x.2⟫_ℝ) • x.1))) x := by
-  have h12 := (hasFDerivAt_fst (p := x)).inner ℝ (hasFDerivAt_snd (p := x))
-  refine ((((hasFDerivAt_fst (p := x)).norm_sq).mul (hasFDerivAt_snd (p := x)).norm_sq).sub
-    (h12.mul h12)).congr_of_eventuallyEq (.of_forall fun y ↦ by simp [sq]) |>.congr_fderiv
-    (ContinuousLinearMap.ext fun v ↦ ?_)
-  simp [real_inner_comm]
-  ring
+/-! ### The derivative of the radial projection -/
 
 /-- Away from the collision set, the derivative of the radial projection `(q, p) ↦ (‖q‖, p_r)`
 sends `(δq, δp)` to `(⟪q, δq⟫ / ‖q‖, ⟪p / ‖q‖ - (⟪q, p⟫ / ‖q‖³) q, δq⟫ + ⟪q / ‖q‖, δp⟫)`. -/
@@ -293,7 +279,12 @@ its radial projection is the point `(r₀, 0)`. -/
 theorem radialProjection_circularMotion (m : ℝ) {r₀ : ℝ} (hr₀ : 0 ≤ r₀) (ω : ℝ) {u w : V}
     (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (huw : ⟪u, w⟫_ℝ = 0) (t : ℝ) :
     radialProjection (circularMotion m r₀ ω u w t) = (r₀, 0) := by
-  have h := norm_smul_add_smul_eq_one hu hw huw (Real.cos_sq_add_sin_sq (ω * t))
+  have h : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
+    have h2 := norm_smul_add_smul_sq (𝕜 := ℝ) (by simpa using huw) (Real.cos (ω * t))
+      (Real.sin (ω * t))
+    simp only [RCLike.ofReal_real_eq_id, id, hu, hw, one_pow, mul_one,
+      Real.cos_sq_add_sin_sq] at h2
+    exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h2
   simp only [circularMotion, radialProjection, radialMomentum, norm_smul, h, Real.norm_eq_abs,
     abs_of_nonneg hr₀, mul_one, Prod.mk.injEq, true_and]
   simp only [inner_smul_left, inner_smul_right, inner_add_left, inner_add_right,
@@ -306,9 +297,13 @@ theorem sq_sub_inner_sq_circularMotion (m r₀ ω : ℝ) {u w : V} (hu : ‖u‖
     ‖(circularMotion m r₀ ω u w t).1‖ ^ 2 * ‖(circularMotion m r₀ ω u w t).2‖ ^ 2 -
         ⟪(circularMotion m r₀ ω u w t).1, (circularMotion m r₀ ω u w t).2⟫_ℝ ^ 2 =
       (m * r₀ ^ 2 * ω) ^ 2 := by
-  have h₁ := norm_smul_add_smul_eq_one hu hw huw (Real.cos_sq_add_sin_sq (ω * t))
-  have h₂ := norm_smul_add_smul_eq_one hu hw huw (a := -Real.sin (ω * t)) (b := Real.cos (ω * t))
-    (by rw [neg_sq, Real.sin_sq_add_cos_sq])
+  have h₁ := norm_smul_add_smul_sq (𝕜 := ℝ) (by simpa using huw) (Real.cos (ω * t))
+    (Real.sin (ω * t))
+  have h₂ := norm_smul_add_smul_sq (𝕜 := ℝ) (by simpa using huw) (-Real.sin (ω * t))
+    (Real.cos (ω * t))
+  simp only [RCLike.ofReal_real_eq_id, id, hu, hw, one_pow, mul_one, neg_sq,
+    Real.cos_sq_add_sin_sq, Real.sin_sq_add_cos_sq] at h₁ h₂
+  rw [pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h₁ h₂
   simp only [circularMotion, norm_smul, h₁, h₂, Real.norm_eq_abs, mul_one, mul_pow, sq_abs,
     inner_smul_left, inner_smul_right, inner_add_left, inner_add_right, real_inner_self_eq_norm_sq,
     hu, hw, huw, real_inner_comm u w, RCLike.conj_to_real]
@@ -316,55 +311,13 @@ theorem sq_sub_inner_sq_circularMotion (m r₀ ω : ℝ) {u w : V} (hu : ‖u‖
 
 variable [FiniteDimensional ℝ V]
 
-/-! ### Conservation of the squared angular momentum -/
-
-/-- **Conservation of the squared angular momentum.** Away from the collision set, the squared
-length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every
-central-force Hamiltonian, in every dimension. -/
-theorem stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian {m : ℝ}
-    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
-    (stdSymplecticForm (V := V)).poissonBracket
-      (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2)
-      (centralForceHamiltonian m U) x = 0 := by
-  rw [stdSymplecticForm_poissonBracket (hasFDerivAt_sq_sub_inner_sq x)
-    (hasFDerivAt_centralForceHamiltonian hU hq)]
-  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  simp only [inner_sub_left, real_inner_smul_left, real_inner_smul_right,
-    real_inner_self_eq_norm_sq, real_inner_comm x.1 x.2]
-  field_simp
-  ring
-
-/-- **Conservation of the squared angular momentum along the motion.** Let `γ` be an integral
-curve of the Hamiltonian vector field of a central-force Hamiltonian on a preconnected open set `s`
-of times, avoiding the collision set, with `U` differentiable along it. Then the squared angular
-momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` takes the same value at all times `t₀, t ∈ s`. -/
-theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
-    (hs : IsOpen s) (hs' : IsPreconnected s)
-    (hγ : ∀ t ∈ s, HasDerivAt γ
-      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
-    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
-    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    ‖(γ t).1‖ ^ 2 * ‖(γ t).2‖ ^ 2 - ⟪(γ t).1, (γ t).2⟫_ℝ ^ 2 =
-      ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 := by
-  -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
-  have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivAt
-      ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) 0 t := by
-    have h := (hasFDerivAt_sq_sub_inner_sq (γ t)).comp_hasDerivAt t (hγ t ht)
-    rwa [← (hasFDerivAt_sq_sub_inner_sq (γ t)).fderiv,
-      ← SymplecticForm.poissonBracket_eq_fderiv,
-      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
-        (hU t ht).hasDerivAt (hq t ht)] at h
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun t ht ↦ (hderiv t ht).differentiableAt.differentiableWithinAt)
-    (fun t ht ↦ (hderiv t ht).deriv) ht ht₀
-
 /-! ### The reduced Hamiltonian system -/
 
 /-- **Hamilton's equations for the radial motion.** On the half-line `r > 0`, the Hamiltonian
 vector field of the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
 `(p_r / m, ℓ² / (m r³) - U'(r))`. -/
-theorem stdSymplecticForm_hamiltonianVectorField_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ}
-    {U' r : ℝ} (hU : HasDerivAt U U' r) (hr : 0 < r) (p_r : ℝ) :
+theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
+    {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ} (hU : HasDerivAt U U' r) (hr : 0 < r) (p_r : ℝ) :
     (stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) =
       (p_r / m, ℓ ^ 2 / (m * r ^ 3) - U') := by
@@ -380,12 +333,14 @@ theorem stdSymplecticForm_hamiltonianVectorField_effectivePotential {m ℓ : ℝ
 /-- **Equilibria of the radial motion.** For a nonzero mass, the reduced Hamiltonian vector field
 vanishes at `(r, p_r)`, `r > 0`, exactly when `p_r = 0` and `r` is a critical point of the
 effective potential. These are the circular orbits of radius `r`. -/
-theorem stdSymplecticForm_hamiltonianVectorField_effectivePotential_eq_zero_iff {m ℓ : ℝ}
-    (hm : m ≠ 0) {U : ℝ → ℝ} {U' r : ℝ} (hU : HasDerivAt U U' r) (hr : 0 < r) (p_r : ℝ) :
+theorem
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_eq_zero_iff
+    {m ℓ : ℝ} (hm : m ≠ 0) {U : ℝ → ℝ} {U' r : ℝ} (hU : HasDerivAt U U' r) (hr : 0 < r)
+    (p_r : ℝ) :
     (stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) = 0 ↔
       p_r = 0 ∧ HasDerivAt (effectivePotential m ℓ U) 0 r := by
-  rw [stdSymplecticForm_hamiltonianVectorField_effectivePotential hU hr,
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential hU hr,
     hasDerivAt_effectivePotential_zero_iff hU hr.ne']
   simp [hm, sub_eq_zero, eq_comm (a := U')]
 
@@ -406,7 +361,8 @@ theorem fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian {
   have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
   rw [(hasFDerivAt_radialProjection hq).fderiv,
     stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU hq, radialProjection,
-    stdSymplecticForm_hamiltonianVectorField_effectivePotential hU (norm_pos_iff.2 hq), hℓ]
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential hU
+      (norm_pos_iff.2 hq), hℓ]
   ext
   · simp [real_inner_smul_right, radialMomentum]
     field_simp
