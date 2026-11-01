@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Extension
 import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
@@ -17,9 +16,7 @@ For a field extension `k' / k`, the rational function field `k'(X)` is the const
 extension `k(X) · k'` of `k(X)`, for any `k(X)`-algebra structure on `k'(X)` sending `X` to `X`.
 A polynomial over `k` is carried to the same polynomial over `k'`; in particular, in
 characteristic `p`, `X ^ p - a` becomes `(X - b) ^ p` when `b ^ p = a`. When `k' / k` is finite,
-the place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`. In any
-algebraic extension of `k(X)`, a place lies over the place of an irreducible polynomial exactly
-when that polynomial vanishes there.
+the place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`.
 
 ## Main results
 
@@ -30,8 +27,6 @@ when that polynomial vanishes there.
   `k` is that polynomial with its coefficients mapped into `k'`.
 * `TauCeti.algebraMap_ratFunc_algebraMap_X_pow_sub_C`: in characteristic `p`, `X ^ p - a` becomes
   `(X - b) ^ p` in `k'(X)` when `b ^ p = a`.
-* `TauCeti.Place.restrict_eq_adicOfIrreducible_iff`: a place of an algebraic extension of `k(X)`
-  lies over the place of an irreducible polynomial `q` exactly when `q` vanishes there.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
   infinity of `k(X)` exactly when it is the place at infinity of `k'(X)`.
 -/
@@ -91,25 +86,6 @@ theorem algebraMap_ratFunc_algebraMap_X_pow_sub_C [Algebra k k']
     map_C, ← hb, ← map_pow, sub_pow_char, ← C_pow]
 
 namespace Place
-
-section Restrict
-
-variable {F' : Type*} [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra (RatFunc k) F']
-variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k (RatFunc k) F']
-variable [Algebra.IsIntegral (RatFunc k) F']
-
-open Polynomial in
-/-- **A place lies over the place of an irreducible polynomial `q` of `k(X)` exactly when `q`
-vanishes there**, in any algebraic extension of `k(X)`. -/
-theorem restrict_eq_adicOfIrreducible_iff {q : k[X]} (hq : Irreducible q) (Q : Place k' F') :
-    Q.restrict k (RatFunc k) = adicOfIrreducible hq ↔
-      0 < Q.ord (algebraMap (RatFunc k) F' (algebraMap k[X] (RatFunc k) q)) := by
-  rw [← ord_algebraMap_pos_iff hq, ord_algebraMap_restrict k (RatFunc k) Q]
-  have he : (0 : ℤ) < ramificationIdx (RatFunc k) Q := by
-    exact_mod_cast ramificationIdx_pos (RatFunc k) Q
-  exact ⟨fun h ↦ mul_pos he h, fun h ↦ pos_of_mul_pos_right h he.le⟩
-
-end Restrict
 
 variable [Algebra k k'] [FiniteDimensional k k']
 variable [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]

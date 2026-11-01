@@ -81,6 +81,7 @@ variable [Algebra.IsIntegral (RatFunc k) (RatFunc K)]
 
 /-- **The place `t = c` of `K(t)` is the only place over the place `t = c` of `k(t)`**, for
 `c ∈ k`. -/
+@[simp]
 theorem restrict_eq_adicOfIrreducible_X_sub_C_iff
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (c : k)
     (Q : Place K (RatFunc K)) :
@@ -91,6 +92,7 @@ theorem restrict_eq_adicOfIrreducible_X_sub_C_iff
 
 /-- **The place `t = c` of `K(t)` has ramification index `1`** over the place `t = c` of
 `k(t)`. -/
+@[simp]
 theorem ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (c : k) :
     ramificationIdx (RatFunc k) (adicOfIrreducible (irreducible_X_sub_C (algebraMap k K c))) =
@@ -107,6 +109,7 @@ theorem ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap
 
 /-- **The relative degree of the place `t = c` of `K(t)` over `k(t)` is `[K : k]`**: both places
 are rational, so the residue extension is the constant extension `K / k`. -/
+@[simp]
 theorem relativeDegree_adicOfIrreducible_X_sub_C_algebraMap
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (c : k) :
     relativeDegree k (RatFunc k) (adicOfIrreducible (irreducible_X_sub_C (algebraMap k K c))) =
@@ -120,6 +123,7 @@ theorem relativeDegree_adicOfIrreducible_X_sub_C_algebraMap
 /-- **The place `t = c` of `k(t)` is unramified in `K(t)` exactly when `K / k` is separable.** The
 only place above it has ramification index `1` in either case, and its residue extension is
 `K / k`. -/
+@[simp]
 theorem isUnramified_adicOfIrreducible_X_sub_C_iff
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (c : k) :
     (adicOfIrreducible (irreducible_X_sub_C c)).IsUnramified (k' := K) (F' := RatFunc K) ↔
@@ -200,6 +204,7 @@ variable
 open Place
 
 /-- **The conorm of the place `t = c` of `k(t)` is the place `t = c` of `K(t)`.** -/
+@[simp]
 theorem conorm_ofPoint_adicOfIrreducible_X_sub_C
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (c : k) :
     conorm K (RatFunc K) (AlgebraicGeometry.WeilDivisor.ofPoint
