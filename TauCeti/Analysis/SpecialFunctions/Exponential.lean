@@ -36,8 +36,6 @@ of the conjugation formula in a complex Banach algebra.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 * R. M. Wilcox, *Exponential Operators and Parameter Differentiation in Quantum Physics*, Journal
   of Mathematical Physics 8 (1967), 962–982.
 -/
