@@ -31,8 +31,8 @@ Consequently, a tower whose transitions are surjective from some index on has va
 
 ## Main declarations
 
-* `TauCeti.ModuleTower.subsequenceRestriction`, `TauCeti.ModuleTower.subsequenceSum`: the maps
-  of products, with `TauCeti.ModuleTower.subsequenceSum_comp_shift`.
+* `TauCeti.ModuleTower.subsequenceSum`: the map of products, intertwining the shift maps with
+  `TauCeti.ModuleTower.subsequenceRestriction` (`TauCeti.ModuleTower.subsequenceSum_comp_shift`).
 * `TauCeti.ModuleTower.limOneSubsequenceEquiv`: `lim¹ A ≃ lim¹ (A ∘ φ)`, induced by
   `subsequenceSum`.
 * `TauCeti.ModuleTower.limOneSubsequenceEquiv_comp_connecting`: compatibility with the
@@ -61,15 +61,6 @@ variable {R : Type u} [Ring R]
 section Subsequence
 
 variable (F : ModuleTower.{v} R) (φ : ℕ →o ℕ)
-
-/-- Restriction of a product family along `φ`. -/
-def subsequenceRestriction : F.Product →ₗ[R] (F.subsequence φ).Product :=
-  LinearMap.pi fun n ↦ LinearMap.proj (φ n)
-
-@[simp]
-theorem subsequenceRestriction_apply (x : F.Product) (n : ℕ) :
-    F.subsequenceRestriction φ x n = x (φ n) :=
-  (rfl)
 
 /-- The map of products sending `x` to the family whose `n`-th term is the sum of the images in
 `A_{φ n}` of the coordinates `x_k`, `φ n ≤ k < φ (n + 1)`. It intertwines the shift maps with
@@ -301,13 +292,6 @@ section Naturality
 
 variable {F G H : ModuleTower.{v} R} (φ : ℕ →o ℕ) (hφ : ∀ n, ∃ m, n ≤ φ m)
 
-/-- Restriction along `φ` commutes with the product map of a morphism of towers. -/
-theorem subsequenceRestriction_natural_apply (f : F ⟶ G) (x : F.Product) :
-    G.subsequenceRestriction φ (productMap f x) =
-      productMap (Functor.whiskerLeft φ.monotone.functor.op f) (F.subsequenceRestriction φ x) := by
-  funext n
-  simp [productMap_apply]
-
 /-- `subsequenceSum` commutes with the product map of a morphism of towers. -/
 theorem subsequenceSum_natural_apply (f : F ⟶ G) (x : F.Product) :
     G.subsequenceSum φ (productMap f x) =
@@ -351,7 +335,8 @@ theorem limOneSubsequenceEquiv_comp_connecting :
   refine (connecting_apply _ _ _ _ _ _ (G.subsequenceRestriction φ b) ?_
     (F.subsequenceSum φ a) ?_).symm
   · rw [← subsequenceRestriction_natural_apply, hb]
-    exact funext fun n ↦ (H.coe_limSubsequenceEquiv_apply φ hφ z n).symm
+    exact funext fun n ↦ (subsequenceRestriction_apply H φ _ n).trans
+      (H.coe_limSubsequenceEquiv_apply φ hφ z n).symm
   · rw [← subsequenceSum_natural_apply, ha, subsequenceSum_shift]
 
 end Naturality
