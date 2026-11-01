@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Rational values of the logarithmic gauge
@@ -16,7 +15,8 @@ Let `ϖ` be a multiplicative pseudo-uniformiser of a seminormed ring `R`, so tha
 power of `‖ϖ‖`: for every `x` with `‖x‖ ≠ 0` there are integers `m` and `n > 0` with
 `‖x‖ ^ n = ‖ϖ‖ ^ m`. Equivalently, the logarithmic gauge `v_ϖ(x) = log ‖x‖ / log ‖ϖ‖` is rational
 wherever it is finite, and such a witness computes it as `v_ϖ(x) = m / n`. This is the case for
-a discretely normed field such as `ℚ_[p]`, where the nonzero norms are integer powers of `‖ϖ‖`.
+a discretely normed field such as `ℚ_[p]`, where the nonzero norms are rational powers of `‖ϖ‖`,
+and integer powers when `‖ϖ‖` generates the value group.
 It also holds for the algebraic closure of `ℚ_[p]`, whose nonzero norms are rational powers of
 `p`, although that field is not discretely normed.
 
@@ -145,15 +145,6 @@ private theorem map_ratLogGauge (x : R) :
   · rw [WithTop.map_coe]
     exact (isCommensurable_iff_exists_rat.1 hϖ x hx).choose_spec.symm
 
-/-- Two values in `WithTop ℚ` with the same real image are equal. -/
-private theorem map_cast_injective : Function.Injective (WithTop.map ((↑) : ℚ → ℝ)) :=
-  WithTop.map_injective Rat.cast_injective
-
-/-- Comparing values in `WithTop ℚ` through their real images. -/
-private theorem map_cast_le_map_cast {a b : WithTop ℚ} :
-    a.map ((↑) : ℚ → ℝ) ≤ b.map ((↑) : ℚ → ℝ) ↔ a ≤ b :=
-  WithTop.map_le_iff _ Rat.cast_le
-
 variable [NormMulClass R] [IsUltrametricDist R]
 
 /-- For a multiplicative ultrametric norm commensurable with `ϖ`, the **rational-valued additive
@@ -162,12 +153,15 @@ valuation** normalised by `v_ϖ(ϖ) = 1`. Its real image is the logarithmic gaug
 (`ratAddValuation_eq_coe_iff`). -/
 noncomputable def ratAddValuation : AddValuation R (WithTop ℚ) :=
   AddValuation.of (ratLogGauge hϖ)
-    (map_cast_injective <| by rw [map_ratLogGauge, WithTop.map_top, logGauge_zero])
-    (map_cast_injective <| by rw [map_ratLogGauge, logGauge_one]; simp)
+    (WithTop.map_injective (Rat.cast_injective (α := ℝ)) <| by
+      rw [map_ratLogGauge, WithTop.map_top, logGauge_zero])
+    (WithTop.map_injective (Rat.cast_injective (α := ℝ)) <| by
+      rw [map_ratLogGauge, logGauge_one]; simp)
     (fun x y ↦ by
-      simpa only [min_le_iff, ← map_cast_le_map_cast, map_ratLogGauge] using
-        ϖ.min_le_logGauge_add x y)
-    (fun x y ↦ map_cast_injective <| by
+      rw [min_le_iff]
+      simpa only [← WithTop.map_le_iff ((↑) : ℚ → ℝ) Rat.cast_le, map_ratLogGauge, min_le_iff]
+        using ϖ.min_le_logGauge_add x y)
+    (fun x y ↦ WithTop.map_injective (Rat.cast_injective (α := ℝ)) <| by
       rw [← Rat.coe_castHom, WithTop.map_add, Rat.coe_castHom, map_ratLogGauge, map_ratLogGauge,
         map_ratLogGauge, logGauge_mul])
 
@@ -187,7 +181,7 @@ theorem ratAddValuation_eq_top_iff : ϖ.ratAddValuation hϖ x = ⊤ ↔ ‖x‖ 
 theorem ratAddValuation_eq_coe_iff {q : ℚ} :
     ϖ.ratAddValuation hϖ x = q ↔ ‖x‖ = ‖(ϖ.unit : R)‖ ^ (q : ℝ) := by
   rw [← logGauge_eq_coe_iff, ← map_ratAddValuation hϖ, ← WithTop.map_coe ((↑) : ℚ → ℝ) q,
-    map_cast_injective.eq_iff]
+    (WithTop.map_injective Rat.cast_injective).eq_iff]
 
 /-- An element of nonzero norm has norm `‖ϖ‖ ^ v_ϖ(x)`. -/
 theorem norm_eq_rpow_ratAddValuation (hx : ‖x‖ ≠ 0) :
@@ -216,7 +210,7 @@ theorem ratAddValuation_eq_intCast {m : ℤ} (h : ‖x‖ = ‖(ϖ.unit : R)‖ 
 /-- The rational valuation reverses the order of the norm. -/
 theorem ratAddValuation_le_ratAddValuation_iff {y : R} :
     ϖ.ratAddValuation hϖ x ≤ ϖ.ratAddValuation hϖ y ↔ ‖y‖ ≤ ‖x‖ := by
-  rw [← map_cast_le_map_cast, map_ratAddValuation, map_ratAddValuation,
+  rw [← WithTop.map_le_iff ((↑) : ℚ → ℝ) Rat.cast_le, map_ratAddValuation, map_ratAddValuation,
     logGauge_le_logGauge_iff]
 
 /-- The rational valuation of `ϖ` is one. -/
@@ -244,7 +238,7 @@ theorem eq_ratAddValuation {w : AddValuation R (WithTop ℚ)}
 theorem ratAddValuation_eq_map_mul {ϖ' : PseudoUniformizer R} (hϖ' : ϖ'.IsCommensurable) {s : ℚ}
     (hs : ϖ.ratAddValuation hϖ (ϖ'.unit : R) = s) (x : R) :
     ϖ.ratAddValuation hϖ x = (ϖ'.ratAddValuation hϖ' x).map (s * ·) := by
-  apply map_cast_injective
+  apply WithTop.map_injective (Rat.cast_injective (α := ℝ))
   have ht : ϖ.logGauge (ϖ'.unit : R) = ((s : ℝ) : WithTop ℝ) := by
     rw [← map_ratAddValuation hϖ, hs, WithTop.map_coe]
   rw [map_ratAddValuation, logGauge_eq_map_mul ϖ' ht, ← map_ratAddValuation hϖ', WithTop.map_map,
