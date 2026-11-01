@@ -236,6 +236,11 @@ def continuousSecondCohomologyMk :
     continuousTwoCocycle R L M →ₗ[R] continuousSecondCohomology R L M :=
   (continuousTwoCoboundary R L M).mkQ
 
+/-- The cohomology quotient map is the submodule quotient map. -/
+theorem continuousSecondCohomologyMk_eq_mkQ :
+    continuousSecondCohomologyMk R L M = (continuousTwoCoboundary R L M).mkQ :=
+  (rfl)
+
 variable {R L M}
 
 theorem mem_continuousTwoCocycle_iff {c : twoCochain R L M} :

@@ -71,11 +71,9 @@ theorem continuousTwoCocycleMap_mem_continuousTwoCoboundary (e : M →ₗ[R] M')
 linear map of discrete trivial coefficient modules. -/
 def continuousSecondCohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L) (hφ : Continuous φ) :
     continuousSecondCohomology R L M →ₗ[R] continuousSecondCohomology R L' M' :=
-  continuousSecondCohomologyLift
-    ((continuousSecondCohomologyMk R L' M').comp (continuousTwoCocycleMap e φ hφ))
-    (fun _ hc => (continuousSecondCohomologyMk_eq_zero_iff _).mpr
-      (mem_continuousTwoCoboundary_iff.mp
-        (continuousTwoCocycleMap_mem_continuousTwoCoboundary e φ hφ hc)))
+  (continuousTwoCoboundary R L M).mapQ (continuousTwoCoboundary R L' M')
+    (continuousTwoCocycleMap e φ hφ)
+    (fun _ hc => continuousTwoCocycleMap_mem_continuousTwoCoboundary e φ hφ hc)
 
 /-- The induced map sends the class of `c` to the class of its transformed cocycle. -/
 @[simp]
@@ -83,7 +81,8 @@ theorem continuousSecondCohomologyMap_mk (e : M →ₗ[R] M') (φ : L' →ₗ⁅
     (hφ : Continuous φ) (c : continuousTwoCocycle R L M) :
     continuousSecondCohomologyMap e φ hφ (continuousSecondCohomologyMk R L M c) =
       continuousSecondCohomologyMk R L' M' (continuousTwoCocycleMap e φ hφ c) := by
-  rw [continuousSecondCohomologyMap, continuousSecondCohomologyLift_mk, LinearMap.comp_apply]
+  rw [continuousSecondCohomologyMk_eq_mkQ, continuousSecondCohomologyMk_eq_mkQ]
+  exact Submodule.mapQ_apply _ _ _ c
 
 /-- Identity maps on the Lie algebra and coefficients induce the identity on continuous
 two-cocycles. -/
@@ -100,11 +99,7 @@ theorem continuousTwoCocycleMap_id :
 theorem continuousSecondCohomologyMap_id :
     continuousSecondCohomologyMap (LinearMap.id : M →ₗ[R] M) (LieHom.id : L →ₗ⁅R⁆ L)
       (by exact continuous_id) = LinearMap.id := by
-  apply continuousSecondCohomology_hom_ext
-  ext c
-  simp only [LinearMap.comp_apply, continuousSecondCohomologyMap_mk]
-  exact congrArg (continuousSecondCohomologyMk R L M)
-    (LinearMap.congr_fun continuousTwoCocycleMap_id c)
+  simp only [continuousSecondCohomologyMap, continuousTwoCocycleMap_id, Submodule.mapQ_id]
 
 section Composition
 
@@ -118,9 +113,10 @@ theorem continuousTwoCocycleMap_comp (e : M →ₗ[R] M') (e' : M' →ₗ[R] M''
     (φ : L' →ₗ⁅R⁆ L) (ψ : L'' →ₗ⁅R⁆ L') (hφ : Continuous φ) (hψ : Continuous ψ) :
     (continuousTwoCocycleMap e' ψ hψ).comp (continuousTwoCocycleMap e φ hφ) =
       continuousTwoCocycleMap (e'.comp e) (φ.comp ψ) (by exact hφ.comp hψ) := by
-  ext c : 1
-  apply Subtype.ext
-  exact LinearMap.congr_fun (twoCochainMap_comp e e' φ ψ) c
+  simpa only [continuousTwoCocycleMap, twoCochainMap_comp] using
+    (LinearMap.restrict_comp
+      (fun _ hc => twoCochainMap_mem_continuousTwoCocycle e hφ hc)
+      (fun _ hc => twoCochainMap_mem_continuousTwoCocycle e' hψ hc)).symm
 
 /-- Functoriality of continuous second cohomology: coefficient maps compose in the same order,
 while Lie algebra maps compose in the reverse order. -/
@@ -128,11 +124,12 @@ theorem continuousSecondCohomologyMap_comp (e : M →ₗ[R] M') (e' : M' →ₗ[
     (φ : L' →ₗ⁅R⁆ L) (ψ : L'' →ₗ⁅R⁆ L') (hφ : Continuous φ) (hψ : Continuous ψ) :
     (continuousSecondCohomologyMap e' ψ hψ).comp (continuousSecondCohomologyMap e φ hφ) =
       continuousSecondCohomologyMap (e'.comp e) (φ.comp ψ) (by exact hφ.comp hψ) := by
-  apply continuousSecondCohomology_hom_ext
-  ext c
-  simp only [LinearMap.comp_apply, continuousSecondCohomologyMap_mk]
-  exact congrArg (continuousSecondCohomologyMk R L'' M'')
-    (LinearMap.congr_fun (continuousTwoCocycleMap_comp e e' φ ψ hφ hψ) c)
+  simpa only [continuousSecondCohomologyMap, continuousTwoCocycleMap_comp] using
+    (Submodule.mapQ_comp (continuousTwoCoboundary R L M)
+      (continuousTwoCoboundary R L' M') (continuousTwoCoboundary R L'' M'')
+      (continuousTwoCocycleMap e φ hφ) (continuousTwoCocycleMap e' ψ hψ)
+      (fun _ hc => continuousTwoCocycleMap_mem_continuousTwoCoboundary e φ hφ hc)
+      (fun _ hc => continuousTwoCocycleMap_mem_continuousTwoCoboundary e' ψ hψ hc)).symm
 
 end Composition
 
@@ -168,6 +165,22 @@ theorem continuousSecondCohomologyEquiv_symm_toLinearMap (e : M ≃ₗ[R] M')
     (φ : L' ≃ₗ⁅R⁆ L) (hφ : Continuous φ) (hφ' : Continuous φ.symm) :
     (continuousSecondCohomologyEquiv e φ hφ hφ').symm.toLinearMap =
       continuousSecondCohomologyMap e.symm.toLinearMap φ.symm.toLieHom hφ' :=
+  (rfl)
+
+/-- Applying cohomology transport is pullback and coefficient pushforward. -/
+@[simp]
+theorem continuousSecondCohomologyEquiv_apply (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
+    (hφ : Continuous φ) (hφ' : Continuous φ.symm) (x : continuousSecondCohomology R L M) :
+    continuousSecondCohomologyEquiv e φ hφ hφ' x =
+      continuousSecondCohomologyMap e.toLinearMap φ.toLieHom hφ x :=
+  (rfl)
+
+/-- Applying inverse cohomology transport uses the inverse Lie and coefficient equivalences. -/
+@[simp]
+theorem continuousSecondCohomologyEquiv_symm_apply (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
+    (hφ : Continuous φ) (hφ' : Continuous φ.symm) (x : continuousSecondCohomology R L' M') :
+    (continuousSecondCohomologyEquiv e φ hφ hφ').symm x =
+      continuousSecondCohomologyMap e.symm.toLinearMap φ.symm.toLieHom hφ' x :=
   (rfl)
 
 end TauCeti.LieModule.Cohomology
