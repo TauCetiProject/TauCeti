@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 public import TauCeti.FieldTheory.RatFunc.Map
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -41,8 +42,6 @@ are built on top of this transport.
 
 ## Main results
 
-* `TauCeti.Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C`: conjugation carries the
-  place `t = a` to the place `t = σ a`.
 * `TauCeti.Place.equivOfRingEquiv_mapRingEquiv_markedPlace`: conjugation fixes the marked places.
 * `TauCeti.IsAlgebraicBelyiPair.of_mapRingEquiv`: the conjugate of an algebraic Belyi pair is an
   algebraic Belyi pair.
@@ -65,19 +64,6 @@ namespace TauCeti
 namespace Place
 
 variable {k k' : Type*} [Field k] [Field k'] (σ : k ≃+* k')
-
-/-- **Conjugation moves the place `t = a` to the place `t = σ a`**: the bijection between the
-places of `k(t)` and those of `k'(t)` induced by the coefficient map of `σ : k ≃+* k'` carries
-the zero of `t - a` to the zero of `t - σ a`. -/
-@[simp]
-theorem equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C (a : k) :
-    equivOfRingEquiv σ (RatFunc.mapRingEquiv σ) (RatFunc.mapRingEquiv_algebraMap_const σ)
-      (adicOfIrreducible (Polynomial.irreducible_X_sub_C a)) =
-      adicOfIrreducible (Polynomial.irreducible_X_sub_C (σ a)) := by
-  refine ord_X_sub_C_pos_iff.mp ?_
-  rw [ord_equivOfRingEquiv, RatFunc.mapRingEquiv_symm, map_sub, RatFunc.mapRingEquiv_X,
-    RatFunc.mapRingEquiv_C, RingEquiv.symm_apply_apply]
-  exact ord_X_sub_C_pos_iff.mpr rfl
 
 /-- **Conjugation fixes the marked places**: the bijection between the places of `k(t)` and
 those of `k'(t)` induced by the coefficient map of `σ : k ≃+* k'` carries the marked place
