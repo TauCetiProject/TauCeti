@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Comass of forms and mass of `k`-vectors
@@ -39,6 +40,8 @@ relates that norm to the two norms of geometric measure theory.
 
 * `ContinuousAlternatingMap.le_opNorm_mul_norm_ιMulti`: `‖ω v‖ ≤ ‖ω‖ * ‖v₁ ∧ ⋯ ∧ vₖ‖`.
 * `ContinuousAlternatingMap.opNorm_le_iff_le_mul_norm_ιMulti`: the operator norm is the comass.
+* `ContinuousAlternatingMap.norm_eq_norm_apply_orthonormalBasis`: the comass of a top-degree form
+  is the norm of its value on an orthonormal basis.
 * `exteriorPower.norm_formDualEquiv_ιMulti`: the mass of a wedge of vectors is its volume.
 * `exteriorPower.norm_le_norm_formDualEquiv`, `exteriorPower.norm_formDualEquiv_le`: the mass of
   `k`-vectors is comparable with the inner product norm.
@@ -113,6 +116,28 @@ theorem opNorm_le_iff_le_mul_norm_ιMulti {ω : E [⋀^Fin k]→L[ℝ] F} {C : �
     ‖ω‖ ≤ C ↔ ∀ v : Fin k → E, ‖ω v‖ ≤ C * ‖ιMulti ℝ k v‖ := by
   refine ⟨fun h v ↦ (ω.le_opNorm_mul_norm_ιMulti v).trans (by gcongr), fun h ↦ ?_⟩
   exact ω.opNorm_le_bound hC fun v ↦ (h v).trans (by gcongr; exact norm_ιMulti_le_prod_norm v)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The comass of a top-degree form** is the norm of its value on any orthonormal basis `b`.
+In particular a real top-degree form has comass `|ω b|`. -/
+theorem norm_eq_norm_apply_orthonormalBasis {ι : Type*} [Fintype ι] (ω : E [⋀^ι]→L[ℝ] F)
+    (b : OrthonormalBasis ι ℝ E) : ‖ω‖ = ‖ω b‖ := by
+  classical
+  refine le_antisymm (ω.opNorm_le_bound (norm_nonneg _) fun v ↦ ?_) ?_
+  · obtain ⟨g, hg, hgv⟩ := exists_dual_vector'' ℝ (ω v)
+    have hgb : |g (ω b)| ≤ ‖ω b‖ :=
+      (g.le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _) hg)
+    calc ‖ω v‖ = g (ω v) := by simpa using hgv.symm
+      _ = b.toBasis.det v * g (ω b) := by
+        simpa using (g.compContinuousAlternatingMap ω).apply_eq_det_mul b.toBasis v
+      _ ≤ ‖b.toBasis.det v‖ * |g (ω b)| := by
+        rw [Real.norm_eq_abs, ← abs_mul]
+        exact le_abs_self _
+      _ ≤ ‖ω b‖ * ∏ i, ‖v i‖ := by
+        rw [mul_comm]
+        gcongr
+        exact b.norm_det_le_prod_norm v
+  · simpa [b.norm_eq_one] using ω.le_opNorm b
 
 end ContinuousAlternatingMap
 

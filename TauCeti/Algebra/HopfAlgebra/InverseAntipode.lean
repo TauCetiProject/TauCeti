@@ -15,6 +15,10 @@ is its inverse linear map. It reverses multiplication, and its two inverse laws
 allow the contragredient actions through `S` and `S⁻¹` to cancel on mixed double
 duals. No commutativity or star structure is assumed.
 
+Bijectivity holds in particular when `S²` is an inner automorphism `a ↦ g a g⁻¹`
+(`antipode_bijective_of_antipode_antipode`), as for the group-like element `K⁻¹` of
+`U_q(sl₂)`.
+
 The construction uses Mathlib's `LinearEquiv.ofBijective`. See C. Kassel,
 *Quantum Groups*, Chapter III, for inverse-antipode duality.
 -/
@@ -26,6 +30,16 @@ namespace TauCeti.HopfAlgebra
 open _root_.HopfAlgebra
 
 variable {R H : Type*} [CommSemiring R] [Semiring H] [_root_.HopfAlgebra R H]
+
+/-- If the square of the antipode is the inner automorphism `a ↦ g a g⁻¹` of a unit `g`, then
+the antipode is bijective. -/
+theorem antipode_bijective_of_antipode_antipode {g : Hˣ}
+    (hg : ∀ a : H, antipode R (antipode R a) = g * a * ↑g⁻¹) :
+    Function.Bijective (antipode R : H →ₗ[R] H) := by
+  have h : Function.Bijective ((antipode R : H →ₗ[R] H) ∘ antipode R) := by
+    simpa only [Function.comp_def, hg] using
+      (Units.mulRight_bijective g⁻¹).comp (Units.mulLeft_bijective g)
+  exact ⟨.of_comp h.1, .of_comp h.2⟩
 
 /-- The inverse linear map of an explicitly bijective antipode. -/
 def inverseAntipode (hS : Function.Bijective (antipode R : H →ₗ[R] H)) : H →ₗ[R] H :=

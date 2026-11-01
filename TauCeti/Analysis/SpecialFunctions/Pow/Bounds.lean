@@ -43,7 +43,8 @@ This reads off the growth of consecutive continued-fraction denominators from th
 bound `1 / (q (q + q')) < |ξ - p / q|`.
 
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
-`2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces.
+`2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
+weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 
 ## Main results
 
@@ -60,6 +61,7 @@ For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditiv
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
+* `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 -/
 
 public section
@@ -205,5 +207,11 @@ theorem one_add_norm_add_rpow_le {E : Type*} [SeminormedAddGroup E] {s : ℝ} (h
           exact le_add_of_nonneg_left (Real.rpow_nonneg hx s)
         · rw [max_eq_left h]
           exact le_add_of_nonneg_right (Real.rpow_nonneg hy s)
+
+/-- The weight `1 + ‖x‖` is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`. -/
+theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
+    1 + ‖x + y‖ ≤ (1 + ‖x‖) * (1 + ‖y‖) := by
+  nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
+    mul_nonneg (norm_nonneg x) (norm_nonneg y)]
 
 end TauCeti
