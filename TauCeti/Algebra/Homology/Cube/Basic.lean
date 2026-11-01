@@ -186,6 +186,14 @@ of height `#S = r`. -/
 def cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.cubeComplex.X r ⟶ F.obj S.1 :=
   biproduct.π (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
 
+/-- The biproduct projection agrees with the vertex projection under the term identification. -/
+@[reassoc (attr := simp)]
+lemma eqToHom_comp_cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    eqToHom (F.cubeComplex_X r) ≫
+      biproduct.π (fun T : {T : Finset ι // (#T : ℤ) = r} ↦ F.obj T.1) S =
+        F.cubeComplexπ S :=
+  Category.id_comp _
+
 /-- Transporting a cube term to an equal height preserves each vertex inclusion. -/
 @[reassoc (attr := simp)]
 lemma cubeComplexι_comp_XIsoOfEq_hom {r r' : ℤ} (h : r = r')

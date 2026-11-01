@@ -238,6 +238,37 @@ theorem ι_comp_khovanovComplexXIso_inv {i : ℤ}
   rw [← cancel_mono (D.khovanovComplexXIso hD R j i).hom]
   simp
 
+/-- Projecting the term comparison onto a quantum piece gives the state projection. -/
+@[reassoc (attr := simp)]
+theorem khovanovComplexXIso_hom_comp_π {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    (D.khovanovComplexXIso hD R j i).hom ≫
+      biproduct.π (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
+        ModuleCat.of R ((Khovanov.circleQuantumGrading R
+          (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
+            (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S =
+      D.khovanovComplexπ hD R j S ≫
+        eqToHom (D.resolutionCube_obj_normalized hD R j S.1) := by
+  dsimp only [khovanovComplexXIso, Iso.trans]
+  rw [eqToIso.hom, ← eqToHom_trans (D.khovanovComplex_X hD R j i)
+    ((D.toPDCode.resolutionCube hD R
+      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplex_X _)]
+  simp only [khovanovComplexπ, Category.assoc, biproduct.mapIso_hom, biproduct.map_π,
+    eqToIso.hom, Functor.eqToHom_comp_cubeComplexπ_assoc]
+
+/-- The inverse term comparison projects a quantum piece onto its state vertex. -/
+@[reassoc (attr := simp)]
+theorem khovanovComplexXIso_inv_comp_π {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    (D.khovanovComplexXIso hD R j i).inv ≫ D.khovanovComplexπ hD R j S =
+      biproduct.π (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
+        ModuleCat.of R ((Khovanov.circleQuantumGrading R
+          (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
+            (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S ≫
+        eqToHom (D.resolutionCube_obj_normalized hD R j S.1).symm := by
+  rw [← cancel_epi (D.khovanovComplexXIso hD R j i).hom]
+  simp
+
 /-- The normalized differential on a state is the sum of the saddle edges with the original
 cube signs. Each cube edge is identified with its actual saddle by
 `PDCode.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι`. -/
