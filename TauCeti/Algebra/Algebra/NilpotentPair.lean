@@ -230,7 +230,8 @@ commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, and suppose t
 `y ^ 2` and `(x + y) ^ 2` lie in the commutator submodule `[B, B]`. If `2` and `3` are units in
 `k`, then every element of a positive power of the integer span of `{x, y}` lies in `[B, B]`. -/
 theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B : Type*}
-    [Ring B] {k : Type*} [Ring k] [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k))
+    [Ring B] {k : Type*} [Semiring k] [Module k B] {x y : B} (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k))
     (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 3 = 0) (hx₀ : x ∈ commutatorSubmodule k B)
     (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
     (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) {t : ℕ} (ht : 0 < t) {w : B}
@@ -257,6 +258,11 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B
     (Submodule.smul_mem_iff_of_isUnit _ hc).1 h
   have hrot {a b : B} (h : b * a ∈ C) : a * b ∈ C := mul_mem_commutatorSubmodule_comm.2 h
   have hcomm (a b : B) : a * b - b * a ∈ C := mul_sub_mul_mem_commutatorSubmodule k B a b
+  -- `C` is closed under negation and subtraction even when `k` is only a semiring.
+  have hneg {a : B} (h : a ∈ C) : -a ∈ C := neg_mem_commutatorSubmodule h
+  have hsub {a b : B} (ha : a ∈ C) (hb : b ∈ C) : a - b ∈ C := by
+    rw [sub_eq_add_neg]
+    exact add_mem ha (hneg hb)
   -- The representatives of the cyclic words of length two to five.
   have c₂ : y * y ∈ C := by rwa [sq] at hy₁
   have c₃ : x * y ∈ C := by
@@ -266,7 +272,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B
       noncomm_ring
       simp [hxx]
     rw [h]
-    exact sub_mem (sub_mem hs c₂) (hcomm y x)
+    exact hsub (hsub hs c₂) (hcomm y x)
   have c₄ : x * (y * y) ∈ C := by
     refine hunit h3 ?_
     have hxyx : x * (y * x) ∈ C := hrot (by rw [mul_assoc, hxx, mul_zero]; exact zero_mem _)
@@ -278,14 +284,14 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B
         ← sub_eq_zero, ← h₀]
       noncomm_ring
     rw [h]
-    exact sub_mem (sub_mem (neg_mem hxyx) (hcomm _ _)) (hcomm _ _)
+    exact hsub (hsub (hneg hxyx) (hcomm _ _)) (hcomm _ _)
   have c₅ : x * (y * (x * y)) ∈ C := by
     have h : x * (y * (x * y)) = -(x * (y * (y * x))) := by
       have h₀ := hT x
       simp only [r₁, zero_add] at h₀
       exact eq_neg_of_add_eq_zero_left h₀
     rw [h]
-    refine neg_mem (hrot ?_)
+    refine hneg (hrot ?_)
     simp only [mul_assoc, hxx, mul_zero]
     exact zero_mem _
   have c₆ : x * (y * (x * (y * y))) ∈ C := by
@@ -300,7 +306,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B
       rw [two_smul, ← sub_eq_zero, ← h₀]
       noncomm_ring
     rw [h]
-    exact sub_mem (neg_mem hfirst) (hcomm _ _)
+    exact hsub (hneg hfirst) (hcomm _ _)
   -- Every word of length at most five rotates into a vanishing word or a representative.
   have hword (n : ℕ) (hn : 0 < n) (hn₅ : n ≤ 5) (v : B) (hv : v ∈ ({x, y} : Set B) ^ n) :
       v ∈ C := by
@@ -338,7 +344,12 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B
     | mem v hv => exact hword t ht (by omega) v hv
     | zero => exact zero_mem _
     | add a b _ _ ha hb => exact add_mem ha hb
-    | smul n a _ ha => exact zsmul_mem ha n
+    | smul n a _ ha =>
+      obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+      · rw [natCast_zsmul]
+        exact nsmul_mem ha m
+      · rw [neg_zsmul, natCast_zsmul]
+        exact hneg (nsmul_mem ha m)
   · obtain ⟨e, rfl⟩ : ∃ e, t = 6 + e := ⟨t - 6, by omega⟩
     rw [pow_add, span_pair_pow_six_eq_bot hx hy hxy, bot_mul, mem_bot] at hw
     rw [hw]
