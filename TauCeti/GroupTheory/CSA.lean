@@ -20,8 +20,10 @@ exactly when it is commutative transitive and every nonidentity element commutin
 conjugates `g * x * g⁻¹` commutes with `g`. A failure of either condition is witnessed by a
 nonidentity element together with a nontrivial commutator, so both conditions pass to any group
 in which every pair of nonidentity elements survives under one homomorphism to a CSA group. This
-is how fully residually free groups inherit the CSA property from free groups. These properties
-are useful for the centralizers and equations of free groups and limit groups.
+is how fully residually free groups inherit the CSA property from free groups. In a torsion-free
+CSA group, conjugates of nonzero powers of `u ≠ 1` by `y` and `y'` commute exactly when
+`y⁻¹ * y'` centralizes `u`. These properties are useful for the centralizers and equations of free
+groups and limit groups.
 
 The definition follows Baumslag, Myasnikov and Remeslennikov, *Algebraic geometry over groups I*,
 §§1–2.
@@ -167,6 +169,50 @@ theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
     exact (hG.centralizer_isTISubgroup hx1).conj_notMem hg hyx hy1
       (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
   exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
+
+/-- Conjugates of powers of `u` by `y` and `y'` commute when `y⁻¹ * y'` centralizes `u`. -/
+theorem commute_conj_zpow_of_inv_mul_mem_centralizer {u y y' : G} (e e' : ℤ)
+    (hy : y⁻¹ * y' ∈ Subgroup.centralizer {u}) :
+    Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
+  have hc : Commute (y⁻¹ * y') (u ^ e') :=
+    (Commute.zpow_right (Subgroup.mem_centralizer_singleton_iff.1 hy) e')
+  have : y' * u ^ e' * y'⁻¹ = y * u ^ e' * y⁻¹ := by
+    calc y' * u ^ e' * y'⁻¹ = y * ((y⁻¹ * y') * u ^ e' * (y⁻¹ * y')⁻¹) * y⁻¹ := by group
+      _ = y * u ^ e' * y⁻¹ := by rw [hc.eq, mul_inv_cancel_right]
+  rw [this, Commute.conj_iff]
+  exact Commute.zpow_zpow_self u e e'
+
+/-- In a torsion-free CSA group, conjugates of nonzero powers of `u ≠ 1` by `y` and `y'` do not
+commute unless `y⁻¹ * y'` centralizes `u`. -/
+theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u y y' : G}
+    (hu : u ≠ 1) {e e' : ℤ} (he : e ≠ 0) (he' : e' ≠ 0)
+    (hy : y⁻¹ * y' ∉ Subgroup.centralizer {u}) :
+    ¬Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
+  intro h
+  have hu' : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
+  refine hy (hG.mem_centralizer_of_commute_conj (zpow_mem hu' e)
+    (fun h => he ((IsMulTorsionFree.zpow_eq_one_iff_right hu).1 h)) (zpow_mem hu' e')
+    (fun h => he' ((IsMulTorsionFree.zpow_eq_one_iff_right hu).1 h)) ?_)
+  rw [← Commute.conj_iff y]
+  convert h using 1
+  group
+
+/-- In a CSA group, if some element lies outside the centralizer `C_G(u)` of `u ≠ 1`, then `G` is
+not covered by two left cosets `a * C_G(u)` and `b * C_G(u)`; this uses malnormality of
+`C_G(u)`. -/
+theorem IsCSA.exists_inv_mul_notMem_centralizer (hG : IsCSA G) {u g : G} (hu : u ≠ 1)
+    (hg : g ∉ Subgroup.centralizer {u}) (a b : G) :
+    ∃ W, a⁻¹ * W ∉ Subgroup.centralizer {u} ∧ b⁻¹ * W ∉ Subgroup.centralizer {u} := by
+  have hu' : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
+  by_cases hd : a⁻¹ * b ∈ Subgroup.centralizer {u}
+  · refine ⟨a * g, by simpa using hg, fun h => hg ?_⟩
+    simpa [mul_assoc] using mul_mem hd h
+  · -- `W = a * u * (a⁻¹ * b)`: then `b⁻¹ * W` is a conjugate of `u` by an element outside
+    -- `C_G(u)`.
+    refine ⟨a * u * (a⁻¹ * b), fun h => hd ?_, fun h => ?_⟩
+    · simpa [mul_assoc] using mul_mem (inv_mem hu') h
+    · exact (hG.centralizer_isTISubgroup hu).conj_notMem (g := (a⁻¹ * b)⁻¹)
+        (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
 
 /-- In a torsion-free commutative-transitive group, a nonidentity element is not conjugate to its
 inverse. -/

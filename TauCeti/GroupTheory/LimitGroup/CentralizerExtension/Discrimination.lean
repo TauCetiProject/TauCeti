@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.BigPowers
 public import TauCeti.GroupTheory.CSA
-public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension
+public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
 public import Mathlib.Order.Filter.AtTopBot.Basic
 
@@ -107,31 +107,6 @@ private theorem conjs_eq_nil_iff : ∀ {B : G} {l : List (G × ℤ)},
 
 variable {u}
 
-/-- Conjugates of nonzero powers of `u ≠ 1` by `y` and `y'` do not commute unless `y⁻¹ * y'`
-centralizes `u`. -/
-private theorem not_commute_conj (hG : IsCSA G) [IsMulTorsionFree G] (hu : u ≠ 1) {y y' : G}
-    {e e' : ℤ} (he : e ≠ 0) (he' : e' ≠ 0) (hy : y⁻¹ * y' ∉ centralizer {u}) :
-    ¬Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
-  intro h
-  have hu' : u ∈ centralizer {u} := mem_centralizer_singleton_iff.2 rfl
-  refine hy (hG.mem_centralizer_of_commute_conj (zpow_mem hu' e)
-    (fun h => he ((IsMulTorsionFree.zpow_eq_one_iff_right hu).1 h)) (zpow_mem hu' e')
-    (fun h => he' ((IsMulTorsionFree.zpow_eq_one_iff_right hu).1 h)) ?_)
-  rw [← Commute.conj_iff y]
-  convert h using 1
-  group
-
-/-- Conjugates of powers of `u` by `y` and `y'` commute when `y⁻¹ * y'` centralizes `u`. -/
-private theorem commute_conj {y y' : G} (e e' : ℤ) (hy : y⁻¹ * y' ∈ centralizer {u}) :
-    Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
-  have hc : Commute (y⁻¹ * y') (u ^ e') :=
-    (Commute.zpow_right (mem_centralizer_singleton_iff.1 hy) e')
-  have : y' * u ^ e' * y'⁻¹ = y * u ^ e' * y⁻¹ := by
-    calc y' * u ^ e' * y'⁻¹ = y * ((y⁻¹ * y') * u ^ e' * (y⁻¹ * y')⁻¹) * y⁻¹ := by group
-      _ = y * u ^ e' * y⁻¹ := by rw [hc.eq, mul_inv_cancel_right]
-  rw [this, Commute.conj_iff]
-  exact Commute.zpow_zpow_self u e e'
-
 /-- For a list alternating between pairs `(b, 0)` with `b ∉ C_G(u)` and pairs `(c, e)` with
 `c ∈ C_G(u)` and `e ≠ 0`, consecutive entries of `conjs u B l` do not commute, and if `l` starts
 with a pair `(b, 0)` the first entry of `conjs u B l` is a conjugate of a power of `u` by `B * y`
@@ -173,117 +148,7 @@ private theorem isChain_conjs_aux (hG : IsCSA G) [IsMulTorsionFree G] (hu : u �
           have := ((List.isChain_cons_cons.1 halt).1).not.1 hp
           simpa using this
         obtain ⟨y, hy, e, he, rfl⟩ := ihh q (by simp) hq H hH
-        exact not_commute_conj hG hu hp he (by simpa [mul_assoc] using hy)
-
-/-- If some element lies outside `C_G(u)`, then `C_G(u)` is not covered by two left cosets
-`a * C_G(u)` and `b * C_G(u)`; this uses malnormality of `C_G(u)`. -/
-private theorem exists_inv_mul_notMem_centralizer (hG : IsCSA G) (hu : u ≠ 1) {g : G}
-    (hg : g ∉ centralizer {u}) (a b : G) :
-    ∃ W, a⁻¹ * W ∉ centralizer {u} ∧ b⁻¹ * W ∉ centralizer {u} := by
-  have hu' : u ∈ centralizer {u} := mem_centralizer_singleton_iff.2 rfl
-  by_cases hd : a⁻¹ * b ∈ centralizer {u}
-  · refine ⟨a * g, by simpa using hg, fun h => hg ?_⟩
-    simpa [mul_assoc] using mul_mem hd h
-  · -- `W = a * u * (a⁻¹ * b)`: then `b⁻¹ * W` is a conjugate of `u` by an element outside
-    -- `C_G(u)`.
-    refine ⟨a * u * (a⁻¹ * b), fun h => hd ?_, fun h => ?_⟩
-    · simpa [mul_assoc] using mul_mem (inv_mem hu') h
-    · exact (hG.centralizer_isTISubgroup hu).conj_notMem (g := (a⁻¹ * b)⁻¹)
-        (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
-
-/-- Consecutive entries of `Hs ++ Y :: (Hs⁻¹ reversed ++ [Z])` do not commute, provided this
-holds within `Hs`, at the junction of the last entry of `Hs` with `Y`, and at the junction of the
-first entry of `Hs` with `Z`. -/
-private theorem isChain_append_cons_reverse {H₁ : G} {Hs : List G} {Y Z : G}
-    (hc : (H₁ :: Hs).IsChain fun x y => ¬Commute x y)
-    (hY : ¬Commute ((H₁ :: Hs).getLast (List.cons_ne_nil _ _)) Y) (hZ : ¬Commute H₁ Z) :
-    ((H₁ :: Hs) ++ Y :: (((H₁ :: Hs).map (·⁻¹)).reverse ++ [Z])).IsChain
-      fun x y => ¬Commute x y := by
-  refine List.isChain_append.2 ⟨hc, List.isChain_cons.2 ⟨?_, List.isChain_append.2
-    ⟨?_, List.isChain_singleton _, ?_⟩⟩, ?_⟩
-  · intro x hx
-    rw [List.head?_append, List.head?_reverse, List.getLast?_map,
-      List.getLast?_eq_some_getLast (List.cons_ne_nil _ _)] at hx
-    simp only [Option.map_some, Option.some_or, Option.mem_def, Option.some.injEq] at hx
-    rw [← hx, Commute.inv_right_iff]
-    exact fun h => hY h.symm
-  · rw [List.isChain_reverse, List.isChain_map]
-    exact hc.imp fun x y h h' => h (Commute.inv_inv_iff.1 h').symm
-  · intro x hx y hy
-    simp only [List.getLast?_reverse, List.head?_map, List.head?_cons, Option.map_some,
-      Option.mem_def, Option.some.injEq] at hx
-    simp only [List.head?_cons, Option.mem_def, Option.some.injEq] at hy
-    rw [← hx, ← hy, Commute.inv_left_iff]
-    exact hZ
-  · intro x hx y hy
-    rw [List.getLast?_eq_some_getLast (List.cons_ne_nil _ _), Option.mem_def,
-      Option.some.injEq] at hx
-    simp only [List.head?_cons, Option.mem_def, Option.some.injEq] at hy
-    rw [← hx, ← hy]
-    exact hY
-
-/-- The core of the argument: if `H₁, …, Hₘ` (`m ≥ 1`) are conjugates of nonzero powers of
-`u ≠ 1`, consecutive ones not commuting, then `H₁ ^ k ⋯ Hₘ ^ k * z ≠ 1` for all large `k`. -/
-private theorem exists_prod_map_pow_mul_ne_one (hG : IsCSA G) (hBP : IsBP G) (hu : u ≠ 1)
-    {Hs : List G} (hne : Hs ≠ [])
-    (hconj : ∀ H ∈ Hs, ∃ y : G, ∃ e : ℤ, e ≠ 0 ∧ H = y * u ^ e * y⁻¹)
-    (hc : Hs.IsChain fun x y => ¬Commute x y) (z : G) :
-    ∃ N : ℕ, ∀ k, N ≤ k → (Hs.map (· ^ k)).prod * z ≠ 1 := by
-  have := hBP.isMulTorsionFree
-  have hconj1 : ∀ {y : G} {e : ℤ}, e ≠ 0 → y * u ^ e * y⁻¹ ≠ 1 := fun he h => he <|
-    (IsMulTorsionFree.zpow_eq_one_iff_right hu).1 (by simpa using h)
-  have hne1 : ∀ H ∈ Hs, H ≠ 1 := fun H hH => by
-    obtain ⟨y, e, he, rfl⟩ := hconj H hH
-    exact hconj1 he
-  rcases Hs with _ | ⟨H₁, _ | ⟨H₂, rest⟩⟩
-  · exact absurd rfl hne
-  · -- A single conjugate: `H₁ ^ k = z⁻¹` holds for at most one `k`, by torsion-freeness.
-    by_cases hk : ∃ k : ℕ, H₁ ^ k * z = 1
-    · obtain ⟨k₀, hk₀⟩ := hk
-      refine ⟨k₀ + 1, fun k hk h => ?_⟩
-      simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at h
-      have := (IsMulTorsionFree.pow_right_inj (hne1 H₁ (by simp))).1
-        ((mul_eq_one_iff_eq_inv.1 h).trans (mul_eq_one_iff_eq_inv.1 hk₀).symm)
-      omega
-    · push Not at hk
-      exact ⟨0, fun k _ => by simpa using hk k⟩
-  · -- Several conjugates: if `P = H₁ ^ k ⋯ Hₘ ^ k` equals `z⁻¹`, then
-    -- `P * Y ^ k * P⁻¹ * Z ^ k = 1` for `Y = W * u * W⁻¹` and `Z = z⁻¹ * Y⁻¹ * z`, which the big
-    -- powers property excludes once `W` is chosen so that `Y` commutes with neither `Hₘ` nor
-    -- `z * H₁ * z⁻¹`.
-    set Hs := H₁ :: H₂ :: rest
-    obtain ⟨y₁, e₁, he₁, hH₁⟩ := hconj H₁ (by simp [Hs])
-    obtain ⟨y₂, e₂, -, hH₂⟩ := hconj H₂ (by simp [Hs])
-    obtain ⟨ym, em, hem, hHm⟩ := hconj (Hs.getLast (by simp [Hs])) (List.getLast_mem _)
-    have hg : y₁⁻¹ * y₂ ∉ centralizer {u} := fun h =>
-      (List.isChain_cons_cons.1 hc).1 (hH₁ ▸ hH₂ ▸ commute_conj e₁ e₂ h)
-    obtain ⟨W, hW₁, hW₂⟩ := exists_inv_mul_notMem_centralizer hG hu hg ym (z * y₁)
-    set Y := W * u ^ (1 : ℤ) * W⁻¹
-    set Z := z⁻¹ * W * u ^ (-1 : ℤ) * (z⁻¹ * W)⁻¹
-    obtain ⟨N, hN⟩ := hBP.exists_prod_map_pow_ne_one
-      (l := Hs ++ Y :: ((Hs.map (·⁻¹)).reverse ++ [Z])) (by simp)
-      (by
-        simp only [List.mem_append, List.mem_cons, List.mem_reverse, List.mem_map,
-          List.not_mem_nil, or_false]
-        rintro x (hx | rfl | ⟨H, hH, rfl⟩ | rfl)
-        · exact hne1 x hx
-        · exact hconj1 one_ne_zero
-        · exact inv_ne_one.2 (hne1 H hH)
-        · exact hconj1 (by norm_num))
-      (isChain_append_cons_reverse hc
-        (by rw [hHm]; exact not_commute_conj hG hu hem one_ne_zero hW₁)
-        (by
-          rw [hH₁]
-          exact not_commute_conj hG hu he₁ (by norm_num) (by simpa [mul_assoc] using hW₂)))
-    refine ⟨N, fun k hk h => hN k hk ?_⟩
-    have hP : (Hs.map (· ^ k)).prod = z⁻¹ := eq_inv_of_mul_eq_one_left h
-    have hrev : ((Hs.map (·⁻¹)).reverse.map (· ^ k)).prod = (Hs.map (· ^ k)).prod⁻¹ := by
-      rw [List.prod_inv_reverse, List.map_reverse, List.map_map, List.map_map]
-      simp [Function.comp_def, inv_pow]
-    simp only [List.map_append, List.map_cons, List.prod_append, List.prod_cons,
-      List.map_nil, List.prod_nil, mul_one, hrev, hP, inv_inv, Y, Z, conj_pow, zpow_one,
-      zpow_neg_one, inv_pow]
-    group
+        exact hG.not_commute_conj_zpow hu hp he (by simpa [mul_assoc] using hy)
 
 end Prefixes
 
@@ -323,7 +188,8 @@ private theorem retraction_of_letter (k : ℕ) (a : Σ b, CentralizerExtFactor u
     rw [of_true_eq, map_mul, map_zpow, retraction_of, retraction_t]
     simp [letterPair, ← zpow_natCast, ← zpow_mul, mul_comm]
 
-/-- The letters of a normal word of `G(u, ℤ)` lie outside `C_G(u)`: a letter of `G` gives a pair
+/-- The letters of a normal word of `G(u, ℤ)` lie outside the image of `C_G(u)` in their factor: a
+letter of `G` gives a pair
 `(b, 0)` with `b ∉ C_G(u)` and a letter of `C_G(u) × ℤ` a pair `(c, e)` with `c ∈ C_G(u)` and
 `e ≠ 0`. -/
 private theorem letterPair_snd_eq_zero_iff
@@ -409,7 +275,7 @@ theorem eventually_retraction_ne_one (hG : IsCSA G) (hBP : IsBP G) (hu : u ≠ 1
     lift k to ℕ using hk
     rw [← hxw, retraction_prod, hHs, List.map_nil, List.prod_nil, one_mul]
     exact hz
-  · obtain ⟨N, hN⟩ := exists_prod_map_pow_mul_ne_one hG hBP hu hHs
+  · obtain ⟨N, hN⟩ := hBP.exists_prod_map_pow_mul_ne_one hG hu hHs
       (exists_eq_conj_of_mem_conjs u) (isChain_conjs_aux hG hu hl halt).1 _
     refine eventually_atTop.2 ⟨N, fun k hk => ?_⟩
     lift k to ℕ using by omega
