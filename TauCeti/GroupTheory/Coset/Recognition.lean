@@ -67,12 +67,4 @@ theorem eq_centralizer_of_check (hg : Subgroup.closure (Set.range g) = ⊤)
   · intro i hi
     exact hrep i (Subgroup.mem_centralizer_singleton_iff.mp hi)
 
-/-- A certified table with distinct named cosets gives the exact subgroup index. -/
-theorem index_eq_of_check (hg : Subgroup.closure (Set.range g) = ⊤)
-    (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
-    (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H)
-    (hinj : Function.Injective (T.point g ((1 : G) : G ⧸ H))) : H.index = k := by
-  rw [Subgroup.index_eq_card, ← Nat.card_fin k]
-  exact (Nat.card_eq_of_bijective _ ⟨hinj, T.surjective_point hg hT hrels hstab⟩).symm
-
 end TauCeti.CosetTable
