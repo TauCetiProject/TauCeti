@@ -485,6 +485,16 @@ theorem reconnect_val_eq_mul_swap_mul_swap :
   rw [reconnect_val, Equiv.permCongr_eq_mul, Equiv.swap_inv,
     Equiv.mul_swap_eq_swap_mul D.val, D.apply_apply, Equiv.swap_comm b]
 
+omit hba in
+/-- A function constant along the arcs of `D` and taking the same value at `a` and `b` is
+constant along the arcs of the reconnection: each new arc runs along old arcs and the join of `a`
+with `b`. -/
+theorem apply_reconnect_val {β : Type*} {f : α → β} (hf : ∀ x, f (D.val x) = f x)
+    (hab : f a = f b) (x : α) : f ((D.reconnect a b).val x) = f x := by
+  have hσ (y : α) : f (Equiv.swap (D.val a) b y) = f y :=
+    Equiv.apply_swap_eq_self ((hf a).trans hab) y
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, hσ, hf, hσ]
+
 end Reconnect
 
 end PerfectMatching
