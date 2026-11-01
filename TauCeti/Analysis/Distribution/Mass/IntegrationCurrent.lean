@@ -23,13 +23,12 @@ of `[[Ω]]` is the volume of `Ω` and that its mass measure is the volume measur
 the Euclidean model of the comparison between the mass measure of a top-dimensional integration
 current and the Riemannian volume.
 
-The upper bound is the domination `|[[Ω]] ω| ≤ ∫ ‖ω‖`. For the lower bound, a scalar test `ψ` with
-`|ψ| ≤ 1` gives the test form `ψ • det_b` in an orthonormal basis `b`, which has comass `|ψ|`
-pointwise and on which `[[Ω]]` is `± ∫ ψ`. The supremum of these integrals is the volume of `Ω`
-by `MeasureTheory.LocallyIntegrableOn.iSup_ofReal_integral_apply_eq_setLIntegral_enorm`.
-Neither the orientation nor the regularity `n` of the tests affects the result. The local mass on
-an open set `U` is the volume of `Ω ∩ U`, so `[[Ω]]` has locally finite mass, and the uniqueness
-of the mass measure identifies it with the volume.
+The upper bounds `|[[Ω]] ω| ≤ ∫ ‖ω‖` and `localMass [[Ω]] U ≤ vol(U)`, and hence locally finite
+mass, hold for every `m`: when `m` is not the dimension of `E` the current is zero. The equalities
+for the mass, the local mass and the mass measure assume `finrank ℝ E = m`. None of the results
+depends on the orientation `o` or on the regularity `n` of the test forms. The local mass equality
+is stated for open `U`. The mass measure lives on the subtype `Ω`, the domain of the test forms,
+and is the restriction `volume.comap (↑)` of the volume of `E` to `Ω`.
 
 ## Main declarations
 
