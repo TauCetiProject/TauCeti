@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Nonneg.Basic
 public import Mathlib.Basic.NNReal.Defs
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
-import Mathlib.Algebra.Order.Archimedean.Real.Basic
 
 /-!
 # Nonnegative coefficients for finite flows
