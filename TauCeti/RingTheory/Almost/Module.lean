@@ -44,6 +44,9 @@ classical setup `(V, V)` almostification is an equivalence of categories.
 * `TauCeti.Almost.mono_toAlmost_map_iff`, `TauCeti.Almost.epi_toAlmost_map_iff` and
   `TauCeti.Almost.toAlmost_map_eq_zero_iff`: `f^a` is a monomorphism, an epimorphism or zero iff
   the kernel, the cokernel or the image of `f` is almost zero.
+* `TauCeti.Almost.preservesFiniteLimits_comp_toAlmost_iff` and
+  `TauCeti.Almost.preservesFiniteColimits_comp_toAlmost_iff`: a functor `G` out of almost modules
+  is left (right) exact iff `toAlmost S ⋙ G` is.
 * `TauCeti.Almost.exists_exact_comp_toAlmost_iso_iff`: an exact functor out of `ModuleCat V` factors
   through `toAlmost S` by an exact functor iff it kills the almost zero modules.
 
@@ -143,6 +146,19 @@ theorem toAlmost_map_eq_zero_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
   rw [ObjectProperty.SerreClassLocalization.map_eq_zero_iff (toAlmost S) S.almostZero,
     S.almostZero.prop_iff_of_iso (Abelian.imageIsoImage f ≪≫ ModuleCat.imageIsoRange f),
     BasicSetup.almostZero_iff]
+
+/-- A functor `G` out of almost `V`-modules into an abelian category is left exact iff its
+composite `M ↦ G(M^a)` with almostification is left exact. -/
+theorem preservesFiniteLimits_comp_toAlmost_iff {D : Type*} [Category* D] [Abelian D]
+    (G : Module S ⥤ D) : PreservesFiniteLimits (toAlmost S ⋙ G) ↔ PreservesFiniteLimits G :=
+  ObjectProperty.SerreClassLocalization.preservesFiniteLimits_comp_iff (toAlmost S) S.almostZero G
+
+/-- A functor `G` out of almost `V`-modules into an abelian category is right exact iff its
+composite `M ↦ G(M^a)` with almostification is right exact. -/
+theorem preservesFiniteColimits_comp_toAlmost_iff {D : Type*} [Category* D] [Abelian D]
+    (G : Module S ⥤ D) : PreservesFiniteColimits (toAlmost S ⋙ G) ↔ PreservesFiniteColimits G :=
+  ObjectProperty.SerreClassLocalization.preservesFiniteColimits_comp_iff (toAlmost S) S.almostZero
+    G
 
 /-- **Exact functors out of almost modules.** An exact functor `F` from `V`-modules to an abelian
 category factors as `toAlmost S ⋙ G` for an exact functor `G` out of almost `V`-modules iff `F`
