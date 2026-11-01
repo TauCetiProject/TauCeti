@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
-import Mathlib.Analysis.SpecialFunctions.Exponential
-import TauCeti.Analysis.Calculus.FDeriv.Submodule
 
 /-!
 # Unitary exponentials and exponential lines
@@ -43,8 +41,6 @@ group; the geometric statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean
   involution.
 * `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint`: **an exponential line lies in the
   unitary group exactly when its generator is skew-adjoint.**
-* `TauCeti.mem_of_forall_exp_smul_mem`: the linear counterpart, in a complete normed real algebra
-  without star: a closed real subspace containing a whole exponential line contains its generator.
 -/
 
 public section
@@ -65,24 +61,6 @@ theorem star_exp_eq_exp_neg_of_exp_mem_unitary {y : R} (h : exp y ∈ unitary R)
   simpa only [Ring.inverse_exp] using Ring.mul_inverse_cancel _ (isUnit_exp y)
 
 end Rat
-
-section Subspace
-
-variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
-
-attribute [local instance] TauCeti.normedAlgebraRatOfReal
-
-/-- **A closed subspace containing an exponential line contains its generator.** If a closed real
-subspace `S` contains `exp (t • x)` for every real `t`, then it contains `x`, the velocity of the
-line at `0`. -/
-theorem mem_of_forall_exp_smul_mem {S : Submodule ℝ R} (hS : IsClosed (S : Set R)) {x : R}
-    (h : ∀ t : ℝ, exp (t • x) ∈ S) : x ∈ S := by
-  have hderiv : HasDerivAt (fun t : ℝ ↦ exp (t • x)) x 0 := by
-    simpa using hasDerivAt_exp_smul_const x (0 : ℝ)
-  simpa using hderiv.hasFDerivAt.apply_mem_of_eventually_sub_mem hS
-    (.of_forall fun t ↦ S.sub_mem (h t) (h 0)) 1
-
-end Subspace
 
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R] [StarRing R]
   [ContinuousStar R] [StarModule ℝ R]

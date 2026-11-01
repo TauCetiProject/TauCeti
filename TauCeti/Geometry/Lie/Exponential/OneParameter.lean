@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import TauCeti.Geometry.Lie.Exponential.Units.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
 
 /-!
 # One-parameter subgroups from the Banach algebra exponential
@@ -30,6 +31,8 @@ abstract Lie-group exponential map.
 * `TauCeti.expUnitHom_injective`: distinct velocities generate distinct one-parameter subgroups.
 * `TauCeti.expUnitHom_inj`: the resulting equality normal form.
 * `TauCeti.eq_of_forall_exp_smul_eq`: agreeing exponential lines have equal generators.
+* `TauCeti.mem_of_forall_exp_smul_mem`: a closed real subspace containing a whole exponential line
+  contains its generator.
 * `TauCeti.existsUnique_eq_expUnitHom`: a continuous one-parameter subgroup of `Rˣ` whose
   underlying curve is differentiable at `0` is `expUnitHom x` for a unique `x : R`.
 
@@ -150,6 +153,16 @@ theorem eq_of_forall_exp_smul_eq {x y : R}
   apply Units.ext
   rw [← ofAdd_toAdd t]
   simpa only [expUnitHom_apply, expUnit_coe] using h (Multiplicative.toAdd t)
+
+/-- **A closed subspace containing an exponential line contains its generator.** If a closed real
+subspace `S` contains `exp (t • x)` for every real `t`, then it contains `x`, the velocity of the
+line at `0`. -/
+theorem mem_of_forall_exp_smul_mem {S : Submodule ℝ R} (hS : IsClosed (S : Set R)) {x : R}
+    (h : ∀ t : ℝ, NormedSpace.exp (t • x) ∈ S) : x ∈ S := by
+  have hderiv : HasDerivAt (fun t : ℝ ↦ NormedSpace.exp (t • x)) x 0 := by
+    simpa using hasDerivAt_exp_smul_const x (0 : ℝ)
+  simpa using hderiv.hasFDerivAt.apply_mem_of_eventually_sub_mem hS
+    (.of_forall fun t ↦ S.sub_mem (h t) (h 0)) 1
 
 /-- **The differentiable one-parameter subgroups of `Rˣ` are exactly the exponentials.** A
 continuous one-parameter subgroup whose underlying curve is differentiable at `0` is

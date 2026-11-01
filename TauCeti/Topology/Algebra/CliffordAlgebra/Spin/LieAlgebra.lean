@@ -30,8 +30,8 @@ The same holds for the Spin group of a nondegenerate quadratic form on a complex
 `CliffordAlgebra Q`. The exponential lines are still real, `t ↦ exp (t • x)` with `t : ℝ`, but
 the Lie algebra they cut out is the complex quadratic Lie subalgebra. In particular it is stable
 under complex scalars, so the real Lie algebra of the complex Spin group is the underlying real Lie
-algebra of a complex one. Every nondegenerate complex quadratic space is isometric to such a
-coordinate space.
+algebra of a complex one. (Every finite-dimensional nondegenerate complex quadratic space is
+isometric to such a coordinate space; this remark is not formalized here.)
 
 ## Main results
 
@@ -63,176 +63,93 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 attribute [local instance] starModule_of_trivialStar
 
-private theorem forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero
-    (p q : ℕ) [NeZero (p + q)] (x : CliffordAlgebra (realCliffordForm p q)) :
-    (∀ t : ℝ, TauCeti.expUnit (t • x) ∈
-        (spinGroup.toUnits (Q := realCliffordForm p q)).range) ↔
-      x ∈ even (realCliffordForm p q) ∧
-        reverse x = -x ∧
-        ∀ v : Fin (p + q) → ℝ, x * ι (realCliffordForm p q) v -
-          ι (realCliffordForm p q) v * x ∈
-            LinearMap.range (ι (realCliffordForm p q)) := by
-  let Q := realCliffordForm p q
-  have hQ : Q.Nondegenerate := nondegenerate_realCliffordForm p q
+/-! ### The shared exponential-line arguments -/
+
+section Abstract
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+
+/-- For a homomorphism from a trivial group into the units, an exponential line lies in its range
+exactly when its generator vanishes. -/
+private theorem forall_expUnit_smul_mem_range_iff_eq_zero {G : Type*} [Group G] [Subsingleton G]
+    (f : G →* Aˣ) (x : A) : (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ f.range) ↔ x = 0 := by
+  refine ⟨fun h ↦ TauCeti.eq_of_forall_exp_smul_eq fun t ↦ ?_, by rintro rfl t; exact ⟨1, by simp⟩⟩
+  obtain ⟨s, hs⟩ := h t
+  rw [Subsingleton.elim s 1, map_one] at hs
+  simpa only [TauCeti.expUnit_coe, Units.val_one, smul_zero, exp_zero] using
+    (congrArg Units.val hs).symm
+
+variable [StarRing A] [ContinuousStar A] [StarModule ℝ A]
+
+/-- An exponential line consists of unitaries lying in a closed subalgebra `E` whose conjugation
+preserves a closed subspace `V` exactly when its generator lies in `E`, is skew-adjoint, and
+brackets `V` into itself. -/
+private theorem forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff {E : Subalgebra ℝ A}
+    (hE : IsClosed (E : Set A)) {V : Submodule ℝ A} (hV : IsClosed (V : Set A)) (x : A) :
+    (∀ t : ℝ, exp (t • x) ∈ unitary A ∧ exp (t • x) ∈ E ∧
+        ∀ y ∈ V, exp (t • x) * y * star (exp (t • x)) ∈ V) ↔
+      x ∈ E ∧ star x = -x ∧ ∀ y ∈ V, x * y - y * x ∈ V := by
   constructor
-  · intro hline
-    have hspin (t : ℝ) : exp (t • x) ∈ spinGroup Q := by
-      have hu := (mem_spinGroup_toUnits_range_iff
-        (TauCeti.expUnit (t • x))).mp (hline t)
-      simpa only [Q, TauCeti.expUnit_coe] using hu
-    have hcarrier (t : ℝ) :
-        exp (t • x) ∈ unitary (CliffordAlgebra Q) ∧
-          exp (t • x) ∈ even Q ∧
-          ∀ v, involute (Q := Q) (exp (t • x)) * ι Q v * star (exp (t • x)) ∈
-            LinearMap.range (ι Q) :=
-      (mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ
-        hQ.exists_isUnit).mp (hspin t)
-    have heven : x ∈ even Q :=
-      TauCeti.mem_of_forall_exp_smul_mem (S := (even Q).toSubmodule)
-        (Submodule.isClosed_of_isModuleTopology _) fun t ↦ (hcarrier t).2.1
-    have hstar : star x = -x :=
+  · intro h
+    refine ⟨TauCeti.mem_of_forall_exp_smul_mem (S := Subalgebra.toSubmodule E) hE
+        fun t ↦ (h t).2.1,
       skewAdjoint.mem_iff.mp <|
-        (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint x).mp fun t ↦ (hcarrier t).1
-    have hreverse : reverse x = -x := by
-      rw [reverse_eq_star_of_mem_even ⟨x, heven⟩]
-      exact hstar
-    refine ⟨heven, hreverse, ?_⟩
-    have hflow : ∀ (t : ℝ) (y : CliffordAlgebra Q), y ∈ LinearMap.range (ι Q) →
-        exp (t • x) * y * exp (-(t • x)) ∈ LinearMap.range (ι Q) := by
-      intro t y hy
-      obtain ⟨w, rfl⟩ := hy
-      have hact := (hcarrier t).2.2 w
-      have hexpEven : exp (t • x) ∈ even Q := (hcarrier t).2.1
-      have hscaled : star (t • x) = -(t • x) := by
-        rw [CliffordAlgebra.star_smul, hstar, smul_neg]
-      have hinvolute : involute (Q := Q) (exp (t • x)) = exp (t • x) :=
-        involute_eq_of_mem_even (by
-          rw [← even_toSubmodule Q]
-          exact hexpEven)
-      rw [hinvolute, star_exp, hscaled] at hact
-      exact hact
-    have hcomm := (TauCeti.Lie.forall_exp_smul_mul_mem_iff_forall_commutator_mem x
-      (Submodule.isClosed_of_isModuleTopology (LinearMap.range (ι Q)))).mp hflow
-    intro v
-    simpa only [Q] using hcomm (ι Q v) ⟨v, rfl⟩
-  · rintro ⟨heven, hreverse, hcomm⟩ t
-    rw [mem_spinGroup_toUnits_range_iff, TauCeti.expUnit_coe]
-    rw [mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit]
-    have hstar : star x = -x := by
-      rw [← reverse_eq_star_of_mem_even ⟨x, heven⟩]
-      exact hreverse
-    have hexpEven : exp (t • x) ∈ even Q := by
-      apply NormedSpace.exp_mem (s := even Q)
-        (Submodule.isClosed_of_isModuleTopology (even Q).toSubmodule)
-      exact (even Q).toSubmodule.smul_mem t heven
-    have hunitary : exp (t • x) ∈ unitary (CliffordAlgebra Q) :=
+        (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint x).mp fun t ↦ (h t).1,
+      (TauCeti.Lie.forall_exp_smul_mul_mem_iff_forall_commutator_mem x hV).mp fun t y hy ↦ ?_⟩
+    simpa only [TauCeti.star_exp_eq_exp_neg_of_exp_mem_unitary (h t).1] using (h t).2.2 y hy
+  · rintro ⟨hxE, hstar, hcomm⟩ t
+    have hunitary : exp (t • x) ∈ unitary A :=
       (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint x).mpr
         (skewAdjoint.mem_iff.mpr hstar) t
-    refine ⟨hunitary, hexpEven, ?_⟩
-    intro v
-    have hflow := (TauCeti.Lie.forall_exp_smul_mul_mem_iff_forall_commutator_mem x
-      (Submodule.isClosed_of_isModuleTopology (LinearMap.range (ι Q)))).mpr
-        (fun y hy ↦ by
-          obtain ⟨w, rfl⟩ := hy
-          simpa only [Q] using hcomm w) t (ι Q v) ⟨v, rfl⟩
-    have hscaled : star (t • x) = -(t • x) := by
-      rw [CliffordAlgebra.star_smul, hstar, smul_neg]
-    have hinvolute : involute (Q := Q) (exp (t • x)) = exp (t • x) :=
-      involute_eq_of_mem_even (by
-        rw [← even_toSubmodule Q]
-        exact hexpEven)
-    simpa only [TauCeti.expUnit_coe, hinvolute, star_exp, hscaled] using hflow
+    refine ⟨hunitary, NormedSpace.exp_mem hE (E.smul_mem hxE t), fun y hy ↦ ?_⟩
+    rw [TauCeti.star_exp_eq_exp_neg_of_exp_mem_unitary hunitary]
+    exact (TauCeti.Lie.forall_exp_smul_mul_mem_iff_forall_commutator_mem x hV).mpr hcomm t y hy
 
-/-! ### Complex coordinate spaces: the two dimension cases -/
+end Abstract
 
-section Complex
+section Algebraic
 
-variable {n : ℕ} (Q : QuadraticForm ℂ (Fin n → ℂ))
+/-- On even elements reversal is Clifford conjugation, so the conditions of
+`forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff` are the intrinsic quadratic conditions. -/
+private theorem mem_even_and_star_eq_neg_and_commutator_mem_iff {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
+    (x ∈ even Q ∧ star x = -x ∧
+        ∀ y ∈ LinearMap.range (ι Q), x * y - y * x ∈ LinearMap.range (ι Q)) ↔
+      x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q) := by
+  refine and_congr_right fun he ↦ and_congr ?_
+    ⟨fun h v ↦ h _ ⟨v, rfl⟩, fun h ↦ by rintro _ ⟨v, rfl⟩; exact h v⟩
+  rw [reverse_eq_star_of_mem_even ⟨x, he⟩]
 
-/-- The nontrivial case: here `Q` has an anisotropic vector, so membership in the Spin group is
-unitarity, evenness and preservation of the generating vectors under twisted conjugation. -/
-private theorem forall_expUnit_smul_mem_complexSpinGroup_iff_of_nontrivial
-    [Nontrivial (Fin n → ℂ)] (hQ : Q.Nondegenerate) (x : CliffordAlgebra Q) :
-    (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ (spinGroup.toUnits (Q := Q)).range) ↔
-      x ∈ even Q ∧ reverse x = -x ∧
-        ∀ v : Fin n → ℂ, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q) := by
-  have hι : IsClosed ((LinearMap.range (ι Q)).restrictScalars ℝ : Set (CliffordAlgebra Q)) :=
-    Submodule.isClosed_of_isModuleTopology (LinearMap.range (ι Q))
-  have hinvolute {t : ℝ} (h : exp (t • x) ∈ even Q) :
-      involute (Q := Q) (exp (t • x)) = exp (t • x) :=
-    involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact h)
-  constructor
-  · intro hline
-    have hcarrier (t : ℝ) :
-        exp (t • x) ∈ unitary (CliffordAlgebra Q) ∧ exp (t • x) ∈ even Q ∧
-          ∀ v, involute (Q := Q) (exp (t • x)) * ι Q v * star (exp (t • x)) ∈
-            LinearMap.range (ι Q) := by
-      refine (mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ
-        hQ.exists_isUnit).mp ?_
-      simpa only [TauCeti.expUnit_coe] using
-        (mem_spinGroup_toUnits_range_iff (TauCeti.expUnit (t • x))).mp (hline t)
-    have heven : x ∈ even Q :=
-      TauCeti.mem_of_forall_exp_smul_mem (S := (even Q).toSubmodule.restrictScalars ℝ)
-        (Submodule.isClosed_of_isModuleTopology (even Q).toSubmodule) fun t ↦ (hcarrier t).2.1
-    have hstar : star x = -x :=
-      skewAdjoint.mem_iff.mp <|
-        (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint x).mp fun t ↦ (hcarrier t).1
-    refine ⟨heven, by rw [reverse_eq_star_of_mem_even ⟨x, heven⟩, hstar], ?_⟩
-    have hflow : ∀ (t : ℝ) (y : CliffordAlgebra Q),
-        y ∈ (LinearMap.range (ι Q)).restrictScalars ℝ →
-          exp (t • x) * y * exp (-(t • x)) ∈ (LinearMap.range (ι Q)).restrictScalars ℝ := by
-      rintro t _ ⟨w, rfl⟩
-      have hact := (hcarrier t).2.2 w
-      rwa [hinvolute (hcarrier t).2.1,
-        TauCeti.star_exp_eq_exp_neg_of_exp_mem_unitary (hcarrier t).1] at hact
-    intro v
-    exact (TauCeti.Lie.forall_exp_smul_mul_mem_iff_forall_commutator_mem x hι).mp hflow
-      (ι Q v) ⟨v, rfl⟩
-  · rintro ⟨heven, hreverse, hcomm⟩ t
-    rw [mem_spinGroup_toUnits_range_iff, TauCeti.expUnit_coe,
-      mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit]
-    have hstar : star x = -x := by
-      rw [← reverse_eq_star_of_mem_even ⟨x, heven⟩, hreverse]
-    have hexpEven : exp (t • x) ∈ even Q :=
-      (Subalgebra.mem_restrictScalars ℝ).mp <| NormedSpace.exp_mem (R := ℝ)
-        (s := (even Q).restrictScalars ℝ)
-        (Submodule.isClosed_of_isModuleTopology (even Q).toSubmodule)
-        (((even Q).restrictScalars ℝ).smul_mem heven t)
-    have hunitary : exp (t • x) ∈ unitary (CliffordAlgebra Q) :=
-      (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint x).mpr
-        (skewAdjoint.mem_iff.mpr hstar) t
-    refine ⟨hunitary, hexpEven, fun v ↦ ?_⟩
-    have hflow := (TauCeti.Lie.forall_exp_smul_mul_mem_iff_forall_commutator_mem x hι).mpr
-      (by rintro _ ⟨w, rfl⟩; exact hcomm w) t (ι Q v) ⟨v, rfl⟩
-    rwa [hinvolute hexpEven, TauCeti.star_exp_eq_exp_neg_of_exp_mem_unitary hunitary]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [Invertible (2 : K)] (Q : QuadraticForm K V)
+
+/-- For a nondegenerate form with an anisotropic vector, membership in the Spin group is
+unitarity, evenness and preservation of the generating vectors under conjugation. -/
+private theorem mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem (hQ : Q.Nondegenerate)
+    (hv : ∃ v, IsUnit (Q v)) (e : CliffordAlgebra Q) :
+    e ∈ spinGroup Q ↔ e ∈ unitary (CliffordAlgebra Q) ∧ e ∈ even Q ∧
+      ∀ y ∈ LinearMap.range (ι Q), e * y * star e ∈ LinearMap.range (ι Q) := by
+  rw [mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ hv]
+  refine and_congr_right fun _ ↦ and_congr_right fun he ↦ ?_
+  rw [involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact he)]
+  exact ⟨fun h ↦ by rintro _ ⟨m, rfl⟩; exact h m, fun h m ↦ h _ ⟨m, rfl⟩⟩
 
 attribute [local instance 100] LieRing.ofAssociativeRing in
-/-- The zero-dimensional case: the Spin group is trivial and the conditions force `x = 0`. -/
-private theorem forall_expUnit_smul_mem_complexSpinGroup_iff_of_subsingleton
-    [Subsingleton (Fin n → ℂ)] (hQ : Q.Nondegenerate) (x : CliffordAlgebra Q) :
-    (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ (spinGroup.toUnits (Q := Q)).range) ↔
-      x ∈ even Q ∧ reverse x = -x ∧
-        ∀ v : Fin n → ℂ, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q) := by
-  constructor
-  · intro hline
-    have hx : x = 0 := TauCeti.eq_of_forall_exp_smul_eq fun t ↦ by
-      obtain ⟨s, hs⟩ := hline t
-      rw [Subsingleton.elim s 1, map_one] at hs
-      simpa only [TauCeti.expUnit_coe, Units.val_one, smul_zero, exp_zero] using
-        (congrArg (fun u : (CliffordAlgebra Q)ˣ ↦ (u : CliffordAlgebra Q)) hs).symm
-    subst x
-    simp
-  · intro hx
-    have hxq : x ∈ quadraticLieSubalgebra Q :=
-      (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι Q
-        hQ).mpr (by simpa only [Ring.lie_def] using hx)
-    have hle : (quadraticLieSubalgebra Q).toSubmodule ≤ ⊥ :=
-      quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b ↦ by
-        simp [Subsingleton.elim a 0, Subsingleton.elim b 0]
-    rw [(Submodule.mem_bot ℂ).mp (hle hxq)]
-    exact fun t ↦ ⟨1, by simp⟩
+/-- Over the zero space the quadratic conditions force `x = 0`. -/
+private theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subsingleton V]
+    (hQ : Q.Nondegenerate) (x : CliffordAlgebra Q) :
+    (x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q)) ↔
+      x = 0 := by
+  refine ⟨fun hx ↦ ?_, by rintro rfl; simp⟩
+  have hxq : x ∈ quadraticLieSubalgebra Q :=
+    (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι Q
+      hQ).mpr (by simpa only [Ring.lie_def] using hx)
+  have hle : (quadraticLieSubalgebra Q).toSubmodule ≤ ⊥ :=
+    quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b ↦ by
+      simp [Subsingleton.elim a 0, Subsingleton.elim b 0]
+  exact (Submodule.mem_bot K).mp (hle hxq)
 
-end Complex
+end Algebraic
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -249,48 +166,16 @@ forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_even_and_reverse_eq_neg_an
         ∀ v : Fin (p + q) → ℝ, x * ι (realCliffordForm p q) v -
           ι (realCliffordForm p q) v * x ∈
             LinearMap.range (ι (realCliffordForm p q)) := by
-  rcases p with _ | p
-  · rcases q with _ | q
-    · let Q := realCliffordForm 0 0
-      let _ : Subsingleton (Fin 0 → ℝ) :=
-        ⟨fun a b ↦ funext fun i ↦ Fin.elim0 i⟩
-      constructor
-      · intro hline
-        have hexp (t : ℝ) : exp (t • x) = 1 := by
-          obtain ⟨s, hs⟩ := hline t
-          have hs_one : s = 1 := Subsingleton.elim _ _
-          subst s
-          have hs' := congrArg
-            (fun u : (CliffordAlgebra Q)ˣ ↦ (u : CliffordAlgebra Q)) hs
-          simpa only [TauCeti.expUnit_coe, map_one, Units.val_one] using hs'.symm
-        have hderiv : HasDerivAt (fun t : ℝ ↦ exp (t • x)) x 0 := by
-          simpa using hasDerivAt_exp_smul_const x (0 : ℝ)
-        have hderiv_zero : HasDerivAt (fun t : ℝ ↦ exp (t • x)) 0 0 := by
-          simpa only [hexp] using
-            (hasDerivAt_const (x := (0 : ℝ)) (c := (1 : CliffordAlgebra Q)))
-        have hx : x = 0 := hderiv.unique hderiv_zero
-        subst x
-        simp
-      · intro hx
-        have hxq : x ∈ quadraticLieSubalgebra Q :=
-          (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι
-            Q (nondegenerate_realCliffordForm 0 0)).mpr (by
-              simpa only [Q, Ring.lie_def, Nat.add_zero] using hx)
-        have hle : (quadraticLieSubalgebra Q).toSubmodule ≤ ⊥ :=
-          quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b ↦ by
-            have ha : a = 0 := funext fun i ↦ Fin.elim0 i
-            have hb : b = 0 := funext fun i ↦ Fin.elim0 i
-            subst a
-            subst b
-            simp
-        have hx_zero : x = 0 := (Submodule.mem_bot ℝ).mp (hle hxq)
-        subst x
-        intro t
-        exact ⟨1, by simp⟩
-    · let _ : NeZero (0 + (q + 1)) := ⟨by simp⟩
-      exact forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero 0 (q + 1) x
-  · let _ : NeZero ((p + 1) + q) := ⟨by simp⟩
-    exact forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero (p + 1) q x
+  have hQ := nondegenerate_realCliffordForm p q
+  rcases subsingleton_or_nontrivial (Fin (p + q) → ℝ) with _ | _
+  · exact (forall_expUnit_smul_mem_range_iff_eq_zero _ x).trans
+      (mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero _ hQ x).symm
+  · simp only [mem_spinGroup_toUnits_range_iff, TauCeti.expUnit_coe,
+      mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem _ hQ hQ.exists_isUnit]
+    exact (forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff
+      (Submodule.isClosed_of_isModuleTopology (even (realCliffordForm p q)).toSubmodule)
+      (Submodule.isClosed_of_isModuleTopology (LinearMap.range (ι (realCliffordForm p q)))) x).trans
+        (mem_even_and_star_eq_neg_and_commutator_mem_iff _ x)
 
 /-- An exponential line lies in a real Spin group exactly when its generator is a
 quadratic Clifford element. -/
@@ -342,8 +227,15 @@ forall_expUnit_smul_mem_complexSpinGroup_iff_mem_even_and_reverse_eq_neg_and_lie
       x ∈ even Q ∧ reverse x = -x ∧ ∀ v : Fin n → ℂ, ⁅x, ι Q v⁆ ∈ LinearMap.range (ι Q) := by
   simp only [Ring.lie_def]
   rcases subsingleton_or_nontrivial (Fin n → ℂ) with _ | _
-  · exact forall_expUnit_smul_mem_complexSpinGroup_iff_of_subsingleton Q hQ x
-  · exact forall_expUnit_smul_mem_complexSpinGroup_iff_of_nontrivial Q hQ x
+  · exact (forall_expUnit_smul_mem_range_iff_eq_zero _ x).trans
+      (mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero Q hQ x).symm
+  · simp only [mem_spinGroup_toUnits_range_iff, TauCeti.expUnit_coe,
+      mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem Q hQ hQ.exists_isUnit]
+    exact (forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff (E := (even Q).restrictScalars ℝ)
+      (Submodule.isClosed_of_isModuleTopology (even Q).toSubmodule)
+      (V := (LinearMap.range (ι Q)).restrictScalars ℝ)
+      (Submodule.isClosed_of_isModuleTopology (LinearMap.range (ι Q))) x).trans
+        (mem_even_and_star_eq_neg_and_commutator_mem_iff Q x)
 
 /-- An exponential line lies in the Spin group of a nondegenerate quadratic form on `ℂⁿ` exactly
 when its generator is a quadratic Clifford element. -/

@@ -28,6 +28,8 @@ groups inside it.
 
 ## Main results
 
+* `CliffordAlgebra.isClosedEmbedding_leftMulMatrix`: for a quadratic form on `𝕜ⁿ`, the
+  left-regular matrix representation is a closed embedding for the module topology.
 * `CliffordAlgebra.instNormedRingRealCliffordAlgebra` gives `Cliff(p, q)` a normed-ring structure.
 * `CliffordAlgebra.instNormOneClassRealCliffordAlgebra` proves that the unit has norm one.
 * `CliffordAlgebra.instNormedAlgebraRealCliffordAlgebra` makes it a real normed algebra.
@@ -53,6 +55,18 @@ namespace CliffordAlgebra
 open TauCeti
 open scoped Matrix.Norms.Operator
 
+/-- For a quadratic form on a coordinate space `𝕜ⁿ` over a complete nontrivially normed field, the
+left-regular matrix representation in the Clifford basis of the standard basis is a closed
+embedding for the module topology of the Clifford algebra. Both the real and the complex normed
+structures below transport their norm along it without changing the topology. -/
+theorem isClosedEmbedding_leftMulMatrix {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [Invertible (2 : 𝕜)] {n : ℕ} (Q : QuadraticForm 𝕜 (Fin n → 𝕜)) :
+    Topology.IsClosedEmbedding (Algebra.leftMulMatrix (basis Q (Pi.basisFun 𝕜 (Fin n)))) := by
+  let b := basis Q (Pi.basisFun 𝕜 (Fin n))
+  have hinjective : Function.Injective (Algebra.leftMulMatrix b).toLinearMap :=
+    Algebra.leftMulMatrix_injective b
+  exact LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.mpr hinjective)
+
 /-- The metric induced by the left-regular matrix norm on a real Clifford algebra. Its topology
 is the existing module topology. -/
 noncomputable instance instMetricSpaceRealCliffordAlgebra (p q : ℕ) :
@@ -62,11 +76,8 @@ noncomputable instance instMetricSpaceRealCliffordAlgebra (p q : ℕ) :
   let induced := NormedRing.induced (CliffordAlgebra (realCliffordForm p q))
     (Matrix (Finset (Fin (p + q))) (Finset (Fin (p + q))) ℝ) f
     (Algebra.leftMulMatrix_injective b)
-  apply induced.toMetricSpace.replaceTopology
-  have hinjective : Function.Injective f.toLinearMap :=
-    Algebra.leftMulMatrix_injective b
-  exact (LinearMap.isClosedEmbedding_of_injective
-    (LinearMap.ker_eq_bot.mpr hinjective)).isEmbedding.eq_induced
+  exact induced.toMetricSpace.replaceTopology
+    (isClosedEmbedding_leftMulMatrix _).isEmbedding.eq_induced
 
 /-- A real Clifford algebra is a normed ring for its left-regular matrix norm. -/
 noncomputable instance instNormedRingRealCliffordAlgebra (p q : ℕ) :
@@ -127,11 +138,8 @@ noncomputable instance instMetricSpaceComplexCliffordAlgebra :
   let f := Algebra.leftMulMatrix b
   let induced := NormedRing.induced (CliffordAlgebra Q) (Matrix (Finset (Fin n)) (Finset (Fin n)) ℂ)
     f (Algebra.leftMulMatrix_injective b)
-  apply induced.toMetricSpace.replaceTopology
-  have hinjective : Function.Injective f.toLinearMap :=
-    Algebra.leftMulMatrix_injective b
-  exact (LinearMap.isClosedEmbedding_of_injective
-    (LinearMap.ker_eq_bot.mpr hinjective)).isEmbedding.eq_induced
+  exact induced.toMetricSpace.replaceTopology
+    (isClosedEmbedding_leftMulMatrix _).isEmbedding.eq_induced
 
 /-- The Clifford algebra of a quadratic form on `ℂⁿ` is a normed ring for its left-regular matrix
 norm. -/
