@@ -160,26 +160,12 @@ theorem exists_properClassToNarrowPic_mul_properClassToNarrowPic_eq
         properClassToNarrowPic D hD hpos (Quotient.mk'' h) := by
   induction q₁ using Quotient.inductionOn with | h f₀ => ?_
   induction q₂ using Quotient.inductionOn with | h g₀ => ?_
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f₀.2
-  obtain ⟨hgD, hgp⟩ := (mem_primitiveForms D _).mp g₀.2
-  obtain ⟨γ, δ, a, a', B, C, -, hγ, hδ⟩ := exists_smul_eq_united hfp hgp (hfD.trans hgD.symm)
-  have hγp := (isPrimitive_smul_iff _ γ).mpr hfp
-  have hδp := (isPrimitive_smul_iff _ δ).mpr hgp
-  rw [hγ] at hγp
-  rw [hδ] at hδp
-  have hhD : (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim = D := by
-    rw [← discrim_mk_mul_left, ← hγ, discrim_smul, hfD]
-  have hf : ((γ • f₀ : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ :=
-    (SubMulAction.val_smul γ f₀).trans hγ
-  have hg : ((δ • g₀ : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ :=
-    (SubMulAction.val_smul δ g₀).trans hδ
-  let h : primitiveForms D :=
-    ⟨⟨a * a', B, C⟩, (mem_primitiveForms D _).mpr ⟨hhD, isPrimitive_mk_mul_of_isPrimitive hγp hδp⟩⟩
+  obtain ⟨γ, δ, a, a', B, C, h, hf, hg, hh, -⟩ := exists_picClass_mul_picClass_eq D hD f₀ g₀
   refine ⟨a, a', B, C, γ • f₀, δ • g₀, h, orbitRel.Quotient.quotient_smul_eq,
-    orbitRel.Quotient.quotient_smul_eq, hf, hg, rfl, ?_⟩
+    orbitRel.Quotient.quotient_smul_eq, hf, hg, hh, ?_⟩
   rw [← orbitRel.Quotient.quotient_smul_eq (g := γ) (a := f₀),
     ← orbitRel.Quotient.quotient_smul_eq (g := δ) (a := g₀)]
-  exact properClassToNarrowPic_mk_mul_of_united D hD hpos hf hg rfl
+  exact properClassToNarrowPic_mk_mul_of_united D hD hpos hf hg hh
 
 /-- **The principal proper class has trivial narrow class.** -/
 theorem properClassToNarrowPic_principalForm :
