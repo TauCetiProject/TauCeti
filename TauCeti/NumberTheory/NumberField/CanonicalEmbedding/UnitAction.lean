@@ -69,6 +69,12 @@ theorem eq_one_of_unitSMul_mixedEmbedding_eq [NumberField K] {x : K} (hx : x ≠
     mul_eq_right₀ hx] at h
   exact Units.val_eq_one.mp (RingOfIntegers.coe_injective (h.trans (map_one _).symm))
 
+end TauCeti.NumberField.Units
+
+namespace Units
+
+variable {K : Type*} [Field K]
+
 open scoped nonZeroDivisors in
 /-- Multiplication by a unit preserves every fractional-ideal lattice in the mixed space. -/
 @[simp↓]
@@ -85,7 +91,7 @@ theorem unitSMul_mem_idealLattice_iff (u : (𝓞 K)ˣ)
   have hx' := h u⁻¹ hx
   rwa [inv_smul_smul] at hx'
 
-end TauCeti.NumberField.Units
+end Units
 
 open NumberField.mixedEmbedding
 

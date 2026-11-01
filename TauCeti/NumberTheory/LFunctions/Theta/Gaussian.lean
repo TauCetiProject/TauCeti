@@ -171,12 +171,13 @@ theorem latticeTheta_eq_one_add (L : Submodule ℤ (mixedSpace K)) [DiscreteTopo
 
 /-- The theta series of an ideal lattice descends to the quotient of positive parameters
 by the unit action. No restriction on the unit rank is needed. -/
+@[simp]
 theorem latticeTheta_unitScale (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (u : (𝓞 K)ˣ)
     (y : realSpace K) :
     latticeTheta (idealLattice K I) (unitScale u y) = latticeTheta (idealLattice K I) y := by
   let e : idealLattice K I ≃ idealLattice K I :=
-    { toFun x := ⟨u • (x : mixedSpace K), (unitSMul_mem_idealLattice_iff u I x).mpr x.prop⟩
-      invFun x := ⟨u⁻¹ • (x : mixedSpace K), (unitSMul_mem_idealLattice_iff u⁻¹ I x).mpr x.prop⟩
+    { toFun x := ⟨u • (x : mixedSpace K), (u.unitSMul_mem_idealLattice_iff I x).mpr x.prop⟩
+      invFun x := ⟨u⁻¹ • (x : mixedSpace K), ((u⁻¹).unitSMul_mem_idealLattice_iff I x).mpr x.prop⟩
       left_inv x := Subtype.ext (inv_smul_smul u (x : mixedSpace K))
       right_inv x := Subtype.ext (smul_inv_smul u (x : mixedSpace K)) }
   simp only [latticeTheta_def]
