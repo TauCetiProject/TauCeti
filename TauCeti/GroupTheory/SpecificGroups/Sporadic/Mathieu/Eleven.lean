@@ -380,10 +380,10 @@ private theorem le_closure_transversal :
   have hS : {r | ∃ j, 0 ≤ j ∧ j < 0 + 4 ∧ r ∈ transversal j} =
       {r | ∃ i < 4, r ∈ transversal i} := by
     simp
-  have ha := TauCeti.inv_mul_mem_closure_of_sift
-    (show TauCeti.sift (Fin.ofNat 11) transversal 0 4 1 aTable = true by decide +kernel)
-  have hb := TauCeti.inv_mul_mem_closure_of_sift
-    (show TauCeti.sift (Fin.ofNat 11) transversal 0 4 1 bTable = true by decide +kernel)
+  have hsa : TauCeti.sift (Fin.ofNat 11) transversal 0 4 1 aTable = true := by decide +kernel
+  have hsb : TauCeti.sift (Fin.ofNat 11) transversal 0 4 1 bTable = true := by decide +kernel
+  have ha := TauCeti.inv_mul_mem_closure_of_sift hsa
+  have hb := TauCeti.inv_mul_mem_closure_of_sift hsb
   rw [inv_one, one_mul, hS] at ha hb
   rw [M11_def, Subgroup.closure_le, Set.insert_subset_iff, Set.singleton_subset_iff]
   exact ⟨aTable_eq ▸ ha, bTable_eq ▸ hb⟩
