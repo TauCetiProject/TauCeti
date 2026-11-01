@@ -100,16 +100,13 @@ theorem mem_blockCutCutVertices_iff (x : G.BlockCutVertex) :
 
 /-- The two kinds of block--cut vertices partition the whole vertex type. -/
 theorem blockCutBlocks_union_blockCutCutVertices :
-    G.blockCutBlocks ∪ G.blockCutCutVertices = univ := by
-  ext x
-  rcases x with B | v <;> simp [blockCutBlocks, blockCutCutVertices]
+    G.blockCutBlocks ∪ G.blockCutCutVertices = univ :=
+  Set.range_inl_union_range_inr
 
 /-- The block and cut-vertex parts of the block--cut graph are disjoint. -/
 theorem disjoint_blockCutBlocks_blockCutCutVertices :
-    Disjoint G.blockCutBlocks G.blockCutCutVertices := by
-  rw [Set.disjoint_left]
-  rintro x ⟨B, rfl⟩ ⟨v, h⟩
-  simp at h
+    Disjoint G.blockCutBlocks G.blockCutCutVertices :=
+  Set.isCompl_range_inl_range_inr.disjoint
 
 /-- The displayed block and cut-vertex parts form a bipartition of the block--cut incidence
 graph. -/
@@ -173,22 +170,5 @@ def neighborSetCutVertexEquiv (v : G.CutVertex) :
     · rfl
     · simp at hx
   right_inv B := rfl
-
-/-- A finite graph has only finitely many blocks. -/
-instance [Finite V] : Finite G.BlockVertex :=
-  Finite.of_injective Subtype.val Subtype.val_injective
-
-/-- A finite graph has only finitely many cut vertices. -/
-instance [Finite V] : Finite G.CutVertex :=
-  Finite.of_injective Subtype.val Subtype.val_injective
-
-/-- If the original vertex type is finite, then the block--cut vertex type is finite. -/
-instance [Finite V] : Finite G.BlockCutVertex := by
-  let _ := Fintype.ofFinite G.BlockVertex
-  let _ := Fintype.ofFinite G.CutVertex
-  let h : Fintype G.BlockCutVertex := {
-    elems := Finset.univ.disjSum Finset.univ
-    complete := by rintro (_ | _) <;> simp }
-  exact @Fintype.finite _ h
 
 end SimpleGraph
