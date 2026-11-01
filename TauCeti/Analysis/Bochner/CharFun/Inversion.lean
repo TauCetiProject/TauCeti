@@ -89,9 +89,9 @@ end InnerProductSpace
 /-! ### The real line -/
 
 /-- The **inversion density** of a measure `μ` on `ℝ` with characteristic function `φ`:
-`x ↦ (2π)⁻¹ * Re ∫ t, exp (-i t x) * φ(t) dt`. When `φ` is integrable and `μ` is finite this is
-a density of `μ` (`eq_withDensity_charFunDensity`); otherwise the integral diverges and the
-function vanishes. -/
+`x ↦ (2π)⁻¹ * Re ∫ t, exp (-i t x) * φ(t) dt`. When `μ` is finite and `φ` is integrable this is
+a density of `μ` (`eq_withDensity_charFunDensity`); when `μ` is finite and `φ` is not integrable,
+the integral diverges and the function vanishes (`charFunDensity_of_not_integrable`). -/
 def charFunDensity (μ : Measure ℝ) (x : ℝ) : ℝ :=
   (2 * π)⁻¹ * (∫ t : ℝ, cexp (-(t * x * I)) * charFun μ t).re
 
