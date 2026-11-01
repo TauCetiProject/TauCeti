@@ -30,9 +30,9 @@ either variable changes `G` by an integer multiple of `2π`, which is constant b
 connected; call these integers `m` and `n`. Then `G` differs from the linear map
 `(x, y) ↦ m x + n y` by a function periodic in both variables, and the straight-line homotopy
 between them descends to the torus, from `g` to the monomial `(a, b) ↦ a ^ m * b ^ n`. The
-integers are determined by the homotopy class: lifting a homotopy between two monomials to
-`[0, 1] × ℝ × ℝ`, the change under translation by a period is again constant, and it computes the
-exponents at both ends.
+integers are determined by the homotopy class: restricted to the `(p, q)` curve on the torus, the
+monomial is a loop in the circle of degree `m p + n q`, and the degree is invariant under homotopy
+(`Circle.degree_eq_of_homotopy`).
 
 The matrix of a self-map `f` is `ContinuousMap.torusMatrix f`. Two self-maps are homotopic
 exactly when their matrices agree (`ContinuousMap.homotopic_iff_torusMatrix_eq`), the matrix of a
@@ -122,20 +122,10 @@ private theorem monomial_cover (m n : ℤ) (v : ℝ × ℝ) :
     monomial m n (cover v) = Circle.exp (m * v.1 + n * v.2) := by
   simp [Circle.exp_add]
 
-/-- A lift through `exp` of a monomial read on `ℝ × ℝ` changes by `2π m` under translation by
-`(2π, 0)` and by `2π n` under translation by `(0, 2π)`. -/
-private theorem lift_add_of_monomial {m n : ℤ} {G : ℝ × ℝ → ℝ} (hG : Continuous G)
-    (h : ∀ v, Circle.exp (G v) = monomial m n (cover v)) (v : ℝ × ℝ) :
-    G (v + (2 * π, 0)) = G v + m * (2 * π) ∧ G (v + (0, 2 * π)) = G v + n * (2 * π) := by
-  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq
-    (G' := fun v : ℝ × ℝ ↦ m * v.1 + n * v.2) hG (by fun_prop) fun v ↦ by rw [h, monomial_cover]
-  constructor <;>
-  · simp only [hc, Prod.fst_add, Prod.snd_add]
-    ring
-
 /-! ### Every coordinate is homotopic to a monomial -/
 
-/-- The covering `ℝ × ℝ → S¹ × S¹` with a parameter in `[0, 1]`, along which homotopies are read. -/
+/-- The covering `ℝ × ℝ → S¹ × S¹` with a parameter in `[0, 1]`, through which homotopies
+descend. -/
 private def intervalCover : C(unitInterval × (ℝ × ℝ), unitInterval × (Circle × Circle)) :=
   ⟨Prod.map id cover, by unfold cover; fun_prop⟩
 
@@ -213,54 +203,31 @@ private theorem exists_homotopic_monomial (g : C(Circle × Circle, Circle)) :
     (τ := fun v ↦ v + (0, 2 * π)) (by fun_prop) (hper _ (by simp))
   exact ⟨m, n, homotopic_monomial_of_lift G.continuous hG' hm hn⟩
 
-/-- **Homotopic monomials have the same exponents.** -/
+/-- The monomial `(a, b) ↦ a ^ m * b ^ n`, restricted to the `(p, q)` curve on the torus, is a loop
+in the circle of degree `m p + n q`. -/
+private theorem degree_map_torusCurve (m n p q : ℤ) :
+    Circle.degree ((torusCurve p q).map (monomial m n).continuous) = m * p + n * q := by
+  refine Circle.degree_eq_of_sub_eq _
+    (θ := fun t : unitInterval ↦ m * (2 * π * (p * t)) + n * (2 * π * (q * t))) (by fun_prop)
+    (fun t ↦ ?_) ?_
+  · rw [Path.map_coe, comp_apply, torusCurve_apply]
+    exact (monomial_cover m n (2 * π * (p * t), 2 * π * (q * t))).symm
+  · simp only [Set.Icc.coe_one, Set.Icc.coe_zero]
+    push_cast
+    ring
+
+/-- **Homotopic monomials have the same exponents.** A homotopy between the monomials restricts
+along the `(p, q)` curve to a homotopy of loops, so their degrees `m p + n q` agree. -/
 private theorem eq_of_homotopic_monomial {m n m' n' : ℤ}
     (h : (monomial m n).Homotopic (monomial m' n')) :
     m = m' ∧ n = n' := by
   obtain ⟨K⟩ := h
-  -- Lift the homotopy, read on `[0, 1] × ℝ × ℝ`, starting from the linear lift of the monomial.
-  let Kc : C(unitInterval × (ℝ × ℝ), Circle) := K.toContinuousMap.comp intervalCover
-  let ℓ : C(ℝ × ℝ, ℝ) := ⟨fun v ↦ m * v.1 + n * v.2, by fun_prop⟩
-  have h0 (v : ℝ × ℝ) : Kc (0, v) = Circle.exp (ℓ v) := by
-    simp only [Kc, ContinuousMap.comp_apply, intervalCover_apply,
-      ContinuousMap.Homotopy.coe_toContinuousMap, K.apply_zero, monomial_cover, ℓ,
-      ContinuousMap.coe_mk]
-  let L := Circle.isCoveringMap_exp.liftHomotopy Kc ℓ h0
-  have hL (p : unitInterval × (ℝ × ℝ)) : Circle.exp (L p) = Kc p :=
-    congrFun (Circle.isCoveringMap_exp.liftHomotopy_lifts Kc ℓ h0) p
-  have hL0 (v : ℝ × ℝ) : L (0, v) = ℓ v := Circle.isCoveringMap_exp.liftHomotopy_zero Kc ℓ h0 v
-  have hL1 (v : ℝ × ℝ) : Circle.exp (L (1, v)) = monomial m' n' (cover v) := by
-    rw [hL]
-    simp only [Kc, ContinuousMap.comp_apply, intervalCover_apply,
-      ContinuousMap.Homotopy.coe_toContinuousMap, K.apply_one]
-  have hKc (c : ℝ × ℝ) (hc : cover c = 1) (p : unitInterval × (ℝ × ℝ)) :
-      Circle.exp (L (p.1, p.2 + c)) = Circle.exp (L p) := by
-    rw [hL, hL]
-    simp only [Kc, ContinuousMap.comp_apply, intervalCover_apply]
-    rw [cover_add, hc, mul_one]
-  -- The change of the lift under translation by a period is constant on `[0, 1] × ℝ × ℝ`.
-  have key (c : ℝ × ℝ) (hc : cover c = 1) : L (1, c) - L (1, 0) = ℓ c - ℓ 0 := by
-    obtain ⟨k, hk⟩ := Circle.exists_int_forall_eq_add_of_exp_eq L.continuous
-      (τ := fun p : unitInterval × (ℝ × ℝ) ↦ (p.1, p.2 + c)) (by fun_prop) (hKc c hc)
-    have h₁ := hk (1, 0)
-    have h₀ := hk (0, 0)
-    simp only [zero_add] at h₁ h₀
-    rw [hL0, hL0] at h₀
-    linarith
-  -- At the end of the homotopy, the lift is a lift of the second monomial.
-  obtain ⟨hm, hn⟩ := lift_add_of_monomial (L.continuous.comp (by fun_prop :
-    Continuous fun v : ℝ × ℝ ↦ ((1 : unitInterval), v))) hL1 0
-  have k₁ := key (2 * π, 0) (by simp)
-  have k₂ := key (0, 2 * π) (by simp)
-  simp only [Function.comp_apply, zero_add] at hm hn
-  simp only [ℓ, ContinuousMap.coe_mk, Prod.fst_zero, Prod.snd_zero, mul_zero, add_zero,
-    zero_add, sub_zero] at k₁ k₂
-  have hπ : (2 * π) ≠ 0 := by positivity
-  constructor
-  · have : (m' : ℝ) * (2 * π) = m * (2 * π) := by linarith
-    exact_mod_cast (mul_right_cancel₀ hπ this).symm
-  · have : (n' : ℝ) * (2 * π) = n * (2 * π) := by linarith
-    exact_mod_cast (mul_right_cancel₀ hπ this).symm
+  have key (p q : ℤ) : m * p + n * q = m' * p + n' * q := by
+    rw [← degree_map_torusCurve, ← degree_map_torusCurve]
+    exact Circle.degree_eq_of_homotopy _ _
+      (K.toContinuousMap.comp ⟨fun x ↦ (x.1, torusCurve p q x.2), by fun_prop⟩)
+      (fun t ↦ by simp) (fun t ↦ by simp) (fun s ↦ by simp [Circle.exp_two_pi_mul_int])
+  simpa using And.intro (key 1 0) (key 0 1)
 
 /-- The two coordinates of the monomial self-map of a matrix are the monomials of its rows. -/
 private theorem prodMk_monomial (M : Matrix (Fin 2) (Fin 2) ℤ) :
