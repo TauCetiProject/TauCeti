@@ -13,13 +13,13 @@ import TauCeti.Geometry.Manifold.RegularValue.Fibre
 /-!
 # The integral formula for the degree near a regular value
 
-Let `f : M → N` be a `C¹` map from a compact boundaryless manifold to a Hausdorff manifold of the
-same dimension, with orientations `o` of `M` and `o'` of `N`, and let `y` be a regular value of
-`f`. The fibre over `y` is finite and `f` is a local diffeomorphism at each of its points. Near
-`y`, the preimage of a small neighbourhood `V` of `y` is therefore a finite disjoint union of open
-sheets, each carried diffeomorphically onto its image by `f`, and on each sheet `f` either
-preserves or reverses orientation, according to its orientation sign at the point of the fibre.
-This is the *stack of records* over `y`.
+Let `f : M → N` be a `C¹` map from a compact Hausdorff boundaryless manifold to a Hausdorff manifold
+modelled on the same space, with orientations `o` of `M` and `o'` of `N`, and let `y` be a regular
+value of `f`. The fibre over `y` is finite and `f` is a local diffeomorphism at each of its points.
+Near `y`, the preimage of a small neighbourhood `V` of `y` is therefore a finite disjoint union of
+open sheets, each carried diffeomorphically onto its image by `f`, and on each sheet `f` either
+preserves or reverses orientation, according to its orientation sign at the point of the fibre. This
+is the *stack of records* over `y`.
 
 Splitting the pullback `f^*φ` of an integrable top form `φ` supported in `V` along the sheets and
 changing variables on each of them gives
@@ -27,8 +27,8 @@ $$\int_M f^*\varphi = \deg_y(f) \int_N \varphi,$$
 where `deg_y(f)` is the signed count `TauCeti.degreeAtRegularValue o o' f y` of the fibre
 (`TauCeti.exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul`). This is the
 local computation in the proof that, between compact connected oriented manifolds, the signed
-count does not depend on the regular value and computes `∫_M f^*φ / ∫_N φ` for every top form
-[Lee, Thm. 17.35].
+count does not depend on the regular value and satisfies `∫_M f^*φ = deg · ∫_N φ` for every top
+form [Lee, Thm. 17.35].
 
 ## Main results
 
@@ -61,7 +61,7 @@ variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Finite
 
 open Manifold.Orientation
 
-/-- **The stack of records.** Over a regular value `y` of a `C¹` map `f` from a compact
+/-- **The stack of records.** Over a regular value `y` of a `C¹` map `f` from a compact Hausdorff
 boundaryless manifold to a Hausdorff manifold, the points `x` of the fibre have pairwise disjoint
 open neighbourhoods, the sources of open partial homeomorphisms `e x` agreeing with `f`, on which
 the orientation sign of `f` is constant; and `y` has a neighbourhood whose preimage is covered by
@@ -91,31 +91,66 @@ private theorem exists_stack_of_records [CompactSpace M] [T2Space M] [T2Space N]
     obtain ⟨Φ, hxΦ, hfΦ⟩ := hlh x rfl
     obtain ⟨W, hWsub, hWo, hxW⟩ := mem_nhds_iff.mp
       (inter_mem ((hU x).2.mem_nhds (hU x).1)
-        (hld.eventually_orientationSign_eq (o := o) (o' := o')))
+        (eventually_orientationSign_eq (o := o) (o' := o') hf.contMDiffAt ⟨D, hD⟩))
     refine ⟨Φ.restrOpen W hWo, ⟨hxΦ, hxW⟩, fun z _ ↦ congrFun hfΦ z,
       fun z hz ↦ (hWsub hz.2).1, fun z hz ↦ (hWsub hz.2).2⟩
   choose e hxe hfe hU' hsgn using key
   refine ⟨e, hxe, hfe, hsgn, fun x x' hxx' ↦ ?_, ?_⟩
   · exact (hUd x.2 x'.2 (Subtype.coe_injective.ne hxx')).mono (hU' x) (hU' x')
-  -- The points outside the sheets form a compact set whose image misses `y`.
-  set C := (⋃ x, (e x).source)ᶜ
-  have hC : IsCompact (f '' C) :=
-    ((isOpen_iUnion fun x ↦ (e x).open_source).isClosed_compl.isCompact).image hf.continuous
-  refine ⟨(⋂ x, (e x).target) ∩ (f '' C)ᶜ, inter_mem
-    (Filter.iInter_mem.mpr fun x ↦ (e x).open_target.mem_nhds ?_)
-    (hC.isClosed.isOpen_compl.mem_nhds ?_), fun x ↦ inter_subset_left.trans (iInter_subset _ x),
-    fun z hz ↦ ?_⟩
-  · rw [← (hs x).mp x.2, hfe x (hxe x)]
-    exact (e x).map_source (hxe x)
-  · rintro ⟨z, hzC, hzy⟩
-    exact hzC (mem_iUnion.mpr ⟨⟨z, (hs z).mpr hzy⟩, hxe _⟩)
-  · by_contra hz'
-    exact hz.2 ⟨z, hz', rfl⟩
+  -- Since `f` is a closed map, the fibres near `y` stay inside the open union of the sheets.
+  have hE := hf.continuous.isClosedMap.eventually_nhds_fiber (p := (· ∈ ⋃ x, (e x).source)) y
+    fun z hz ↦ (isOpen_iUnion fun x ↦ (e x).open_source).mem_nhds
+      (mem_iUnion.mpr ⟨⟨z, (hs z).mpr hz⟩, hxe _⟩)
+  refine ⟨(⋂ x, (e x).target) ∩ {y' | ∀ z ∈ f ⁻¹' {y'}, z ∈ ⋃ x, (e x).source}, inter_mem
+    (Filter.iInter_mem.mpr fun x ↦ (e x).open_target.mem_nhds ?_) hE,
+    fun x ↦ inter_subset_left.trans (iInter_subset _ x), fun z hz ↦ hz.2 z rfl⟩
+  rw [← (hs x).mp x.2, hfe x (hxe x)]
+  exact (e x).map_source (hxe x)
+
+/-- **One sheet of the stack of records.** Let `e` be an open partial homeomorphism agreeing with
+`f` on its source, on which the orientation sign of `f` is constant, equal to its value at a
+regular point `x`. For an integrable top form `φ` supported in the target of `e`, a form `ψ`
+vanishing off the source of `e` and agreeing there with `f^*φ` is integrable, and
+`∫_M ψ = sign_x(f) · ∫_N φ`. -/
+private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    (hf : ContMDiff I J 1 f) (e : OpenPartialHomeomorph M N) (hfe : EqOn f e e.source) {x : M}
+    (hx : IsRegularPoint I J f x)
+    (hsgn : ∀ z ∈ e.source, orientationSign o o' f z = orientationSign o o' f x)
+    {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
+    (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
+    (hψ0 : ∀ z ∉ e.source, ψ z = 0) (hψφ : ∀ z ∈ e.source, ψ z = mpullback I J f φ z) :
+    IntegrableTopForm ψ ∧
+      integralTopForm o ψ = orientationSign o o' f x * integralTopForm o' φ := by
+  set K := _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ
+  -- `ψ` vanishes off the source and `f^*φ` vanishes off `f ⁻¹' K`, so the support of `ψ` lies in
+  -- `e.symm '' K`. That set is compact, hence closed since `M` is Hausdorff, and lies in the
+  -- source.
+  have hK : IsCompact (e.symm '' K) :=
+    hφ.isCompact.image_of_continuousOn (e.continuousOn_symm.mono hφt)
+  have hψs : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source := by
+    refine (closure_minimal (fun z hz ↦ ?_) hK.isClosed).trans
+      (image_subset_iff.mpr fun q hq ↦ e.map_target (hφt hq))
+    have hzs : z ∈ e.source := by_contra fun h ↦ hz (hψ0 z h)
+    have hfz : f z ∈ K := by_contra fun h ↦ hz ((hψφ z hzs).trans
+      (mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport h)))
+    exact ⟨f z, hfz, by rw [hfe hzs, e.left_inv hzs]⟩
+  have hmd : ∀ z ∈ e.source, MDifferentiableAt I J f z :=
+    fun z _ ↦ hf.mdifferentiable one_ne_zero z
+  refine ⟨e.integrableTopForm_of_eq_mpullback hfe hmd hφ hφt hψs hψφ, ?_⟩
+  -- Change variables according to the orientation sign on the sheet.
+  rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o') hx with h | h
+  · rw [h, Int.cast_one, one_mul]
+    exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe hmd
+      (fun z hz ↦ orientationSign_eq_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
+  · rw [h, Int.cast_neg, Int.cast_one, neg_one_mul]
+    exact e.integralTopForm_of_eq_mpullback_of_isOrientationReversingAt hfe hmd
+      (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
 
 /-- **The integral formula for the degree near a regular value.** Let `f : M → N` be a `C¹` map
-from a compact boundaryless manifold to a Hausdorff manifold modelled on the same space, with
-orientations `o` and `o'`, and let `y` be a regular value of `f`. Then `y` has a neighbourhood `V`
-such that every integrable top form `φ` on `N` supported in `V` satisfies
+from a compact Hausdorff boundaryless manifold to a Hausdorff manifold modelled on the same space,
+with orientations `o` and `o'`, and let `y` be a regular value of `f`. Then `y` has a neighbourhood
+`V` such that every integrable top form `φ` on `N` supported in `V` satisfies
 `∫_M f^*φ = deg_y(f) · ∫_N φ`, where `deg_y(f)` is the signed count of the fibre over `y`. -/
 theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [CompactSpace M]
     [T2Space M] [T2Space N] [BoundarylessManifold I M] (o : Manifold.Orientation I M (Fin k))
@@ -143,20 +178,9 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [C
     simp only [ψ, indicator_of_notMem hz, zero_smul]
   have hpull_zero (z : M) (hz : f z ∉ K) : mpullback I J f φ z = 0 :=
     mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport hz)
-  -- On each sheet the support of `ψ x` lies in the compact image of `K` under the inverse.
-  have hK (x : s) : IsCompact ((e x).symm '' K) :=
-    hφ.isCompact.image_of_continuousOn ((e x).continuousOn_symm.mono (hφV.trans (hVt x)))
-  have hψK (x : s) : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (ψ x) ⊆ (e x).symm '' K := by
-    refine closure_minimal (fun z hz ↦ ?_) (hK x).isClosed
-    have hzs : z ∈ (e x).source := by_contra fun h ↦ hz (hψ_zero x z h)
-    have hfz : f z ∈ K := by_contra fun h ↦ hz ((hψ_eq x z hzs).trans (hpull_zero z h))
-    exact ⟨f z, hfz, by rw [hfe x hzs, (e x).left_inv hzs]⟩
-  have hψs (x : s) : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (ψ x) ⊆ (e x).source :=
-    (hψK x).trans (image_subset_iff.mpr fun q hq ↦ (e x).map_target (hVt x (hφV hq)))
-  have hψc (x : s) : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (ψ x)) :=
-    (hK x).of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) _) (hψK x)
-  have hmd (x : s) : ∀ z ∈ (e x).source, MDifferentiableAt I J f z :=
-    fun z _ ↦ hf.mdifferentiable one_ne_zero z
+  -- Each part is integrable, with integral the orientation sign at `x` times `∫_N φ`.
+  have hsheet (x : s) := integrableTopForm_and_integralTopForm_sheet o o' hf (e x) (hfe x)
+    (hy.isRegularPoint ((hs x).mp x.2)) (hsgn x) hφ (hφV.trans (hVt x)) (hψ_zero x) (hψ_eq x)
   -- The sheets decompose `f^*φ`.
   have hsum : mpullback I J f φ = ∑ x, ψ x := by
     funext z
@@ -170,23 +194,8 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [C
       refine hpull_zero z fun hfz ↦ ?_
       obtain ⟨x, hx⟩ := mem_iUnion.mp (hVs (hφV hfz))
       exact hz x hx
-  -- On each sheet, change variables according to the orientation sign.
-  have hint (x : s) :
-      integralTopForm o (ψ x) = orientationSign o o' f x * integralTopForm o' φ := by
-    rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o')
-      (hy.isRegularPoint ((hs x).mp x.2)) with h | h
-    · rw [h, Int.cast_one, one_mul]
-      exact (e x).integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe x) (hmd x)
-        (fun z hz ↦ orientationSign_eq_one_iff.mp ((hsgn x z hz).trans h)) hφ
-        (hφV.trans (hVt x)) (hψs x) (hψ_eq x)
-    · rw [h, Int.cast_neg, Int.cast_one, neg_one_mul]
-      exact (e x).integralTopForm_of_eq_mpullback_of_isOrientationReversingAt (hfe x) (hmd x)
-        (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn x z hz).trans h)) hφ
-        (hφV.trans (hVt x)) (hψs x) (hψ_eq x)
-  rw [hsum, integralTopForm_sum o ψ Finset.univ fun x _ ↦
-      (e x).integrableTopForm_of_eq_mpullback (hfe x) (hmd x) hφ (hψc x) (hψs x) (hψ_eq x),
-    degreeAtRegularValue_eq_sum hs, Int.cast_sum, Finset.sum_mul,
-    ← Finset.sum_coe_sort s]
-  exact Finset.sum_congr rfl fun x _ ↦ hint x
+  rw [hsum, integralTopForm_sum o ψ Finset.univ fun x _ ↦ (hsheet x).1,
+    degreeAtRegularValue_eq_sum hs, Int.cast_sum, Finset.sum_mul, ← Finset.sum_coe_sort s]
+  exact Finset.sum_congr rfl fun x _ ↦ (hsheet x).2
 
 end TauCeti

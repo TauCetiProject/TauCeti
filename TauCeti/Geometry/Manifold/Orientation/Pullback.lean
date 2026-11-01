@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.RegularValue.Open
 
 /-!
 # Pulling back orientations
@@ -54,9 +54,9 @@ spaces glued from oriented pieces, such as the connected sum.
   functoriality.
 * `IsLocalDiffeomorphAt.eventually_mapOrientation_eq`: tangent orientations carried from an
   orientation by a local diffeomorphism are locally constant.
-* `IsLocalDiffeomorphAt.eventually_isOrientationPreservingAt`,
-  `IsLocalDiffeomorphAt.eventually_isOrientationReversingAt`: a local diffeomorphism that
-  preserves (reverses) orientation at a point does so at every nearby point.
+* `TauCeti.Manifold.Orientation.eventually_isOrientationPreservingAt`,
+  `TauCeti.Manifold.Orientation.eventually_isOrientationReversingAt`: a `C¹` map that preserves
+  (reverses) orientation at a point does so at every nearby point.
 
 ## References
 
@@ -325,31 +325,34 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_mapOrientation_eq {n : WithTop �
   filter_upwards [hback, hkey] with y hby hky hy
   rw [← hky, hby hy, hkey.self_of_nhds]
 
-/-- **Orientation preservation is an open condition at local diffeomorphisms.** If a `C^n` local
-diffeomorphism `f` at `a`, `n ≠ 0`, preserves the orientations `o` and `o'` at `a`, then it
-preserves them at every point near `a`. -/
-theorem _root_.IsLocalDiffeomorphAt.eventually_isOrientationPreservingAt {n : WithTop ℕ∞}
-    [NeZero n] {f : M → M'} {a : M} (hf : IsLocalDiffeomorphAt I I' n f a)
+/-- **Orientation preservation is an open condition.** If a map `f` that is `C¹` at `a` preserves
+the orientations `o` and `o'` at `a`, then it preserves them at every point near `a`. -/
+theorem eventually_isOrientationPreservingAt {f : M → M'} {a : M} (hf : ContMDiffAt I I' 1 f a)
     {o : Orientation I M ι} {o' : Orientation I' M' ι}
     (ho : IsOrientationPreservingAt o o' f a) :
     ∀ᶠ x in 𝓝 a, IsOrientationPreservingAt o o' f x := by
-  have hn : n ≠ 0 := NeZero.ne n
-  have hn1 : 1 ≤ n := ENat.one_le_iff_ne_zero_withTop.mpr hn
   classical
-  -- The derivative of `f` as an equivalence at the points where `f` is a local diffeomorphism;
-  -- elsewhere any equivalence will do, and we use the one at `a`.
+  -- Near `a` the derivative stays invertible, since `M` and `M'` have the same dimension.
+  have hdim : finrank ℝ E = finrank ℝ E' := o.card_eq.symm.trans o'.card_eq
+  have hinv : ∀ᶠ x in 𝓝 a, (mfderiv I I' f x).IsInvertible :=
+    (((isRegularPoint_iff_isInvertible_mfderiv hdim).mpr ho.isInvertible_mfderiv
+      ).eventually_isRegularPoint hf le_rfl).mono fun x hx ↦
+        (isRegularPoint_iff_isInvertible_mfderiv hdim).mp hx
+  -- The derivative of `f` as an equivalence at the points where it is invertible; elsewhere any
+  -- equivalence will do, and we use the one at `a`.
   let D : ∀ x, TangentSpace I x ≃L[ℝ] TangentSpace I' (f x) := fun x ↦
-    if hx : IsLocalDiffeomorphAt I I' n f x then hx.mfderivToContinuousLinearEquiv hn
-    else hf.mfderivToContinuousLinearEquiv hn
+    if hx : (mfderiv I I' f x).IsInvertible then hx.choose
+    else ho.isInvertible_mfderiv.choose
   have hD : ∀ᶠ x in 𝓝 a, (D x : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) =
-      mfderiv I I' f x := hf.eventually.mono fun x hx ↦ by simp [D, hx]
+      mfderiv I I' f x := hinv.mono fun x hx ↦ by
+        simp only [D, hx, ↓reduceDIte]; exact hx.choose_spec
   -- Both `o` and the orientations read back from `o'` along `D` are locally constant near `a`
   -- in the preferred trivialization at `a`, and they agree at `a`.
   have h' := o'.toVectorBundleOrientation.eventually_mapOrientation_eq o'.card_eq
     (trivializationAt E' (TangentSpace I') (f a)) (FiberBundle.mem_baseSet_trivializationAt' (f a))
   simp only [toVectorBundleOrientation_apply] at h'
-  have hback := eventually_mapOrientation_map_symm_eq (hf.contMDiffAt.of_le hn1) D hD o.card_eq
-    (fun x ↦ o'.orientationAt (f x)) ((hf.contMDiffAt.continuousAt.tendsto).eventually h')
+  have hback := eventually_mapOrientation_map_symm_eq hf D hD o.card_eq
+    (fun x ↦ o'.orientationAt (f x)) ((hf.continuousAt.tendsto).eventually h')
   have hloc := o.toVectorBundleOrientation.eventually_mapOrientation_eq o.card_eq
     (trivializationAt E (TangentSpace I) a) (FiberBundle.mem_baseSet_trivializationAt' a)
   simp only [toVectorBundleOrientation_apply] at hloc
@@ -368,15 +371,13 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_isOrientationPreservingAt {n : Wi
   rw [ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm] at h
   exact (Equiv.symm_apply_eq _).mp h |>.symm
 
-/-- **Orientation reversal is an open condition at local diffeomorphisms.** If a `C^n` local
-diffeomorphism `f` at `a`, `n ≠ 0`, reverses the orientations `o` and `o'` at `a`, then it
-reverses them at every point near `a`. -/
-theorem _root_.IsLocalDiffeomorphAt.eventually_isOrientationReversingAt {n : WithTop ℕ∞}
-    [NeZero n] {f : M → M'} {a : M} (hf : IsLocalDiffeomorphAt I I' n f a)
+/-- **Orientation reversal is an open condition.** If a map `f` that is `C¹` at `a` reverses the
+orientations `o` and `o'` at `a`, then it reverses them at every point near `a`. -/
+theorem eventually_isOrientationReversingAt {f : M → M'} {a : M} (hf : ContMDiffAt I I' 1 f a)
     {o : Orientation I M ι} {o' : Orientation I' M' ι}
     (ho : IsOrientationReversingAt o o' f a) :
     ∀ᶠ x in 𝓝 a, IsOrientationReversingAt o o' f x := by
   simpa only [isOrientationPreservingAt_neg_right] using
-    hf.eventually_isOrientationPreservingAt ((isOrientationPreservingAt_neg_right o o' f a).mpr ho)
+    eventually_isOrientationPreservingAt hf ((isOrientationPreservingAt_neg_right o o' f a).mpr ho)
 
 end TauCeti.Manifold.Orientation
