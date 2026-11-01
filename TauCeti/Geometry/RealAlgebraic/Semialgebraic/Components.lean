@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Connected
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Local
 public import TauCeti.Topology.ConnectedComponents
-import Mathlib.Topology.LocallyFinite
 
 /-!
 # Connected components of locally semialgebraic sets
