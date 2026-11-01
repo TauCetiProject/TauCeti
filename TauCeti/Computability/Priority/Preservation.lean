@@ -13,7 +13,7 @@ public import TauCeti.Computability.Priority.Breach
 
 In a priority construction, a stage computation `Φ_{e,s}^{A_s}(x)` persists in the limit when
 nothing enters the enumeration below its use after stage `s`
-(`TauCeti.Oracle.Single.Code.evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh`). This is
+(`TauCeti.Oracle.Single.Code.evaln_setAnswers_stageLimit_eq_some_of_forall_notMem_fresh`). This is
 the case when the requirement protecting the computation is not injured after that stage, provided
 its restraint covers the use at every later stage. The covering premise is needed because
 restraints can drop: once the protected interval no longer contains the use, an entry below the use
@@ -26,8 +26,8 @@ it in both senses.
 
 In the namespace `TauCeti.Oracle.Single.Code`:
 
-* `evaln_indicator_stageLimit_eq_some_of_injuriesAt_eq_empty`,
-  `evaln_indicator_stageLimit_eq_some_of_injuriesAt_usePrefixRestraint_eq_empty`: preservation
+* `evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_eq_empty`,
+  `evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_usePrefixRestraint_eq_empty`: preservation
   of a stage computation whose use stays covered by a restraint that is not injured,
   respectively whose use prefix is not breached.
 
@@ -51,12 +51,12 @@ against the set oracle of `A s` succeed. Suppose that at every later stage requi
 injured, and every address below the use of the run lies in its protected interval: the restraint
 is active, `some b`, with the address at most `b`. Then the run succeeds with the same output and
 use against the set oracle of the limit. -/
-theorem evaln_indicator_stageLimit_eq_some_of_injuriesAt_eq_empty (hA : Monotone A)
-    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d)
+theorem evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_eq_empty (hA : Monotone A)
+    (h : evaln (setAnswers (A s)) k c n = some d)
     (hr : ∀ t, s ≤ t → ∀ z, z < d.use → ∃ b, r e t = some b ∧ z ≤ b)
     (hI : ∀ t, s ≤ t → injuriesAt A r e t = ∅) :
-    evaln (fun z => some ((stageLimit A).indicator 1 z)) k c n = some d :=
-  evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh hA h fun t ht z hz =>
+    evaln (setAnswers (stageLimit A)) k c n = some d :=
+  evaln_setAnswers_stageLimit_eq_some_of_forall_notMem_fresh hA h fun t ht z hz =>
     have ⟨_, hb, hzb⟩ := hr t ht z hz
     notMem_fresh_of_injuriesAt_eq_empty (hI t ht) hb hzb
 
@@ -65,12 +65,12 @@ let a run against the set oracle of `A s` succeed. Suppose that at every later s
 of requirement `e` is not breached, and every address below the use of the run lies strictly below
 its restraint: the restraint is active, `some b`, with the address less than `b`. Then the run
 succeeds with the same output and use against the set oracle of the limit. -/
-theorem evaln_indicator_stageLimit_eq_some_of_injuriesAt_usePrefixRestraint_eq_empty
-    (hA : Monotone A) (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d)
+theorem evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_usePrefixRestraint_eq_empty
+    (hA : Monotone A) (h : evaln (setAnswers (A s)) k c n = some d)
     (hr : ∀ t, s ≤ t → ∀ z, z < d.use → ∃ b, r e t = some b ∧ z < b)
     (hI : ∀ t, s ≤ t → injuriesAt A (usePrefixRestraint r) e t = ∅) :
-    evaln (fun z => some ((stageLimit A).indicator 1 z)) k c n = some d :=
-  evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh hA h fun t ht z hz =>
+    evaln (setAnswers (stageLimit A)) k c n = some d :=
+  evaln_setAnswers_stageLimit_eq_some_of_forall_notMem_fresh hA h fun t ht z hz =>
     have ⟨_, hb, hzb⟩ := hr t ht z hz
     notMem_fresh_of_injuriesAt_usePrefixRestraint_eq_empty (hI t ht) hb hzb
 

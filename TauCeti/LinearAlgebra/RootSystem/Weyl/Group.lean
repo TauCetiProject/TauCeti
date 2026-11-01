@@ -125,6 +125,12 @@ lemma coroot'_reflectionPerm_self
   rw [coroot', P.coroot_reflectionPerm, P.coreflection_apply_self]
   simp
 
+/-- Reflecting a root in itself negates its root functional on the coweight space. -/
+@[simp]
+lemma root'_reflectionPerm_self (i : ι) : P.root' (P.reflectionPerm i i) = -P.root' i := by
+  rw [root', P.root_reflectionPerm, P.reflection_apply_self]
+  simp
+
 /-- A reflection reverses the sign of its own coroot functional. -/
 @[grind =]
 lemma coroot'_reflection_self (i : ι) (x : M) :

@@ -31,6 +31,8 @@ index by one, and transfers the polynomial identities of
 ## Main results
 
 * `TauCeti.qInt_add_two`: the recurrence `[n + 2] = δ [n + 1] - [n]`.
+* `TauCeti.qInt_add_two_mul_inverse`: the recurrence divided by a unit `[n + 1]`, the scalar
+  identity behind the Jones–Wenzl recursion.
 * `TauCeti.qInt_add_add_one`: `[m + n + 1] = [m + 1] [n + 1] - [m] [n]`.
 * `TauCeti.qInt_mul`: `[mn]` at `δ` is `[m]` at `δ` times `[n]` at `Cₘ(δ)`, where `Cₘ` is the
   rescaled Chebyshev polynomial of the first kind, so that `Cₘ(q + q⁻¹) = qᵐ + q⁻ᵐ`.
@@ -89,6 +91,13 @@ theorem qInt_add_two (δ : R) (n : ℕ) :
   have h : ((n + 2 : ℕ) : ℤ) - 1 = n + 1 := by push_cast; ring
   rw [qInt_def, h, S_add_one]
   simp [qInt_def]
+
+/-- The recurrence divided by `[n + 1]`: `[n + 2] / [n + 1] = δ - [n] / [n + 1]` when `[n + 1]` is
+a unit, with division `Ring.inverse`. -/
+theorem qInt_add_two_mul_inverse (δ : R) (n : ℕ) (h : IsUnit (qInt R δ (n + 1))) :
+    qInt R δ (n + 2) * Ring.inverse (qInt R δ (n + 1)) =
+      δ - qInt R δ n * Ring.inverse (qInt R δ (n + 1)) := by
+  rw [qInt_add_two, sub_mul, mul_assoc, Ring.mul_inverse_cancel _ h, mul_one]
 
 /-- The **addition formula** for quantum integers: `[m + n + 1] = [m + 1] [n + 1] - [m] [n]`. -/
 theorem qInt_add_add_one (δ : R) (m n : ℕ) :

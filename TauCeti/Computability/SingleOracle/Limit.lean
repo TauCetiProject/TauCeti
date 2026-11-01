@@ -40,11 +40,11 @@ consequences, for requirements that are not injured, are in
 * `TauCeti.Oracle.Single.Code.exists_eventually_evaln_eq_some_of_mem_eval`: every value of a
   program relative to the limit oracle is eventually found by the stage computations, with fuel
   growing along any clock tending to infinity.
-* `TauCeti.Oracle.Single.Code.exists_eventually_evaln_indicator_eq_some_of_mem_eval`: a
+* `TauCeti.Oracle.Single.Code.exists_eventually_evaln_setAnswers_eq_some_of_mem_eval`: a
   convergent computation relative to the limit of a monotone enumeration is eventually found by
   the stage computations against the finite stages.
-* `TauCeti.Oracle.Single.Code.evaln_indicator_eq_some_of_forall_notMem_fresh`,
-  `TauCeti.Oracle.Single.Code.evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh`:
+* `TauCeti.Oracle.Single.Code.evaln_setAnswers_eq_some_of_forall_notMem_fresh`,
+  `TauCeti.Oracle.Single.Code.evaln_setAnswers_stageLimit_eq_some_of_forall_notMem_fresh`:
   **preservation**, a stage computation below whose use nothing enters persists at a later stage
   when nothing enters up to that stage, and against the limit set when nothing ever enters.
 
@@ -99,15 +99,15 @@ variable {A : ℕ → Finset ℕ}
 of the limit of monotone finite stages `A s` has the value `y`, then a single run with output `y`
 and a fixed use succeeds, from some stage on, against the set oracle of `A s` with fuel `t s`, for
 any clock `t` tending to infinity. -/
-theorem exists_eventually_evaln_indicator_eq_some_of_mem_eval (hA : Monotone A) {t : ℕ → ℕ}
+theorem exists_eventually_evaln_setAnswers_eq_some_of_mem_eval (hA : Monotone A) {t : ℕ → ℕ}
     (ht : Tendsto t atTop atTop) {y : ℕ}
     (h : y ∈ eval (fun z => Part.some ((stageLimit A).indicator 1 z)) c n) :
     ∃ d : Halt, d.output = y ∧
-      ∀ᶠ s in atTop, evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) (t s) c n = some d :=
-  exists_eventually_evaln_eq_some_of_mem_eval (σ := fun z => some ((stageLimit A).indicator 1 z))
+      ∀ᶠ s in atTop, evaln (setAnswers (A s)) (t s) c n = some d :=
+  exists_eventually_evaln_eq_some_of_mem_eval (σ := setAnswers (stageLimit A))
     (by simp) (converges_iff_eventually.2 fun z =>
       (converges_iff_eventually.1 (converges_indicator_stageLimit hA 1) z).mono fun _ hs => by
-        rw [hs]) ht h
+        rw [setAnswers_apply, setAnswers_apply, hs]) ht h
 
 /-! ### From the approximations to the limit oracle -/
 
@@ -116,22 +116,22 @@ variable {s : ℕ}
 /-- **Preservation at later stages.** Under monotone stages, if a run against the set oracle of
 `A s` succeeds and no number below its use enters from stage `s` up to a later stage `t`, then it
 succeeds with the same output and use against the set oracle of `A t`. -/
-theorem evaln_indicator_eq_some_of_forall_notMem_fresh (hA : Monotone A)
-    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d) {t : ℕ}
+theorem evaln_setAnswers_eq_some_of_forall_notMem_fresh (hA : Monotone A)
+    (h : evaln (setAnswers (A s)) k c n = some d) {t : ℕ}
     (hst : s ≤ t) (hfresh : ∀ t', s ≤ t' → t' < t → ∀ z, z < d.use → z ∉ fresh A t') :
-    evaln (fun z => some ((A t : Set ℕ).indicator 1 z)) k c n = some d :=
-  evaln_eq_some_of_eqOn h fun z hz => congrArg some <|
-    Set.indicator_eq_indicator (agrees_of_no_fresh_below hA hst hfresh z hz) rfl
+    evaln (setAnswers (A t)) k c n = some d :=
+  evaln_eq_some_of_eqOn h <| eqOn_setAnswers_iff.2 fun z hz =>
+    agrees_of_no_fresh_below hA hst hfresh z hz
 
 /-- **Preservation in the limit.** Under monotone stages, if a run against the set oracle of `A s`
 succeeds and no number below its use enters after stage `s`, then it succeeds with the same output
 and use against the set oracle of the limit. -/
-theorem evaln_indicator_stageLimit_eq_some_of_forall_notMem_fresh (hA : Monotone A)
-    (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d)
+theorem evaln_setAnswers_stageLimit_eq_some_of_forall_notMem_fresh (hA : Monotone A)
+    (h : evaln (setAnswers (A s)) k c n = some d)
     (hfresh : ∀ t, s ≤ t → ∀ z, z < d.use → z ∉ fresh A t) :
-    evaln (fun z => some ((stageLimit A).indicator 1 z)) k c n = some d :=
-  evaln_eq_some_of_eqOn h fun z hz => congrArg some <|
-    Set.indicator_eq_indicator (limit_agrees_of_no_fresh_below hA hfresh z hz) rfl
+    evaln (setAnswers (stageLimit A)) k c n = some d :=
+  evaln_eq_some_of_eqOn h <| eqOn_setAnswers_iff.2 fun z hz =>
+    limit_agrees_of_no_fresh_below hA hfresh z hz
 
 end Oracle.Single.Code
 
