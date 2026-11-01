@@ -23,6 +23,8 @@ action by a scalar tower.
 
 The construction is shared by homogeneous splittings, polynomial-linear retractions, and the
 degree-zero lift that makes projective underlying modules projective in the graded category.
+Likewise, a map of degree `r` with values in the range of an injective degree-zero map factors
+through it by a map of degree `r`: take the degree-`r` part of any ungraded factorization.
 
 ## References
 
@@ -299,6 +301,25 @@ theorem homogeneousPartOfGradedSMul_comp (f : N →ₗ[A] P) (r : ℤ) {g : M �
       (H.homogeneousPartOfGradedSMul I 𝒜 f r).comp g := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   exact homogeneousPartAddHom_comp_apply_of_mem G H I f.toAddMonoidHom r hg hx
+
+-- The graded scalar pieces `𝒜` make the degree-`r` part of an ungraded factorization linear.
+include 𝒜 in
+/-- **Homogeneous factorization through an injective map.** If `f` is injective and homogeneous
+of degree zero, then a map of degree `r` whose range lies in the range of `f` factors through `f`
+by a map of degree `r`. -/
+theorem exists_isHomogeneous_comp_eq_of_injective {f : M →ₗ[A] N} (hf : Function.Injective f)
+    (hf₀ : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece 0) {χ : P →ₗ[A] N} {r : ℤ}
+    (hχ : TauCeti.LinearMap.IsHomogeneous χ I.piece H.piece r)
+    (hrange : _root_.LinearMap.range χ ≤ _root_.LinearMap.range f) :
+    ∃ a : P →ₗ[A] M, TauCeti.LinearMap.IsHomogeneous a I.piece G.piece r ∧ f.comp a = χ := by
+  -- Injectivity gives an ungraded factorization; its degree-`r` part is still a factorization.
+  let a₀ : P →ₗ[A] M := (LinearEquiv.ofInjective f hf).symm.toLinearMap.comp
+    (χ.codRestrict (_root_.LinearMap.range f) fun x ↦ hrange (_root_.LinearMap.mem_range_self χ x))
+  have ha₀ : f.comp a₀ = χ := _root_.LinearMap.ext fun x ↦ by simp [a₀]
+  refine ⟨I.homogeneousPartOfGradedSMul G 𝒜 a₀ r,
+    I.isHomogeneous_homogeneousPartOfGradedSMul G 𝒜 a₀ r, ?_⟩
+  rw [I.comp_homogeneousPartOfGradedSMul G 𝒜 H a₀ r hf₀, add_zero, ha₀,
+    I.homogeneousPartOfGradedSMul_eq_self H 𝒜 χ r hχ]
 
 end GradedSMul
 
