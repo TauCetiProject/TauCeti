@@ -10,9 +10,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
 # Riemannian volume forms
@@ -27,7 +27,8 @@ characterization is that it evaluates to `1` on every positively oriented orthon
 For a `C^n` metric on a `C^(n+1)` manifold the volume form is a `C^n` form
 (`TauCeti.isSmoothForm_riemannianVolumeForm`): in the frame of a tangent trivialization its value
 is `±√(det g)`, the chart volume density `TauCeti.chartVolumeDensity`, with a sign that is
-locally constant because the orientation is.
+locally constant because the orientation is. On the coordinate frame of a chart this is
+`TauCeti.exists_eventually_riemannianVolumeForm_chartLocalFrame_eq`.
 
 ## References
 
@@ -153,6 +154,34 @@ private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin 
   split_ifs with h
   · exact (o.orientationAt y).volumeForm_apply_eq_sqrt_det_gram _ (hor.2 h)
   · exact (o.orientationAt y).volumeForm_apply_eq_neg_sqrt_det_gram _ (mt hor.1 h)
+
+/-- **The volume form in a coordinate frame.** Near `x`, the volume form evaluated on the
+coordinate frame of the chart at `x`, reindexed along `σ`, is `±√(det g)`: the chart volume
+density times a sign that does not depend on the point. -/
+theorem exists_eventually_riemannianVolumeForm_chartLocalFrame_eq
+    (o : Manifold.Orientation I M (Fin m)) (σ : Fin (finrank ℝ E) ≃ Fin m) (x : M) :
+    ∃ c : ℝ, (c = 1 ∨ c = -1) ∧ ∀ᶠ y in 𝓝 x,
+      riemannianVolumeForm o y (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) =
+        c * chartVolumeDensity (I := I) x y := by
+  classical
+  set e := trivializationAt E (TangentSpace I) x
+  set b := (Module.finBasis ℝ E).reindex σ
+  have hm : finrank ℝ E = m := by simpa using o.card_eq.symm
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  have hframe (y : M) (hy : y ∈ e.baseSet) :
+      (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) = e.basisAt b hy := by
+    funext i
+    rw [TauCeti.Manifold.basisAt_apply, Riemannian.Tensor.chartLocalFrame_eq_symmL,
+      Module.Basis.reindex_apply]
+  have hconst := o.toVectorBundleOrientation.eventually_mapOrientation_eq (by simp [hm]) e hx
+  simp only [Manifold.Orientation.toVectorBundleOrientation_apply] at hconst
+  by_cases hP : b.orientation = e.mapOrientation (Fin m) hx (o.orientationAt x)
+  · refine ⟨1, Or.inl rfl, ?_⟩
+    filter_upwards [hconst, e.open_baseSet.mem_nhds hx] with y hy hyb
+    rw [hframe y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_left hP, one_mul]
+  · refine ⟨-1, Or.inr rfl, ?_⟩
+    filter_upwards [hconst, e.open_baseSet.mem_nhds hx] with y hy hyb
+    rw [hframe y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_right hP, neg_one_mul]
 
 variable {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
