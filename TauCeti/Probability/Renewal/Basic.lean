@@ -55,7 +55,8 @@ on which Mathlib's `iIndepFun_infinitePi` constructs the increments.
 * `TauCeti.Probability.ae_tendsto_arrival_atTop`, `TauCeti.Probability.ae_renewalCount_lt_top` —
   i.i.d. increments that are not almost surely zero do not explode.
 * `TauCeti.Probability.hasLaw_arrival` — for i.i.d. increments with law `F`, the `n`-th arrival
-  time has law the convolution power `F^{∗n}`.
+  time has law the convolution power `F^{∗n}`, and `TauCeti.Probability.hasLaw_arrival_shift`, the
+  same for the process restarted at the `m`-th arrival.
 * `TauCeti.Probability.map_renewalCount_eq_infinitePi_map` — the law of a count is computed on the
   canonical product space.
 
@@ -91,6 +92,12 @@ lemma arrival_zero (ω : Ω) : arrival T 0 ω = 0 := by
 
 lemma arrival_succ (n : ℕ) (ω : Ω) : arrival T (n + 1) ω = arrival T n ω + T n ω := by
   simp [arrival_def, Finset.sum_range_succ]
+
+/-- The `(m + k)`-th arrival time is the `m`-th one plus the `k`-th arrival time of the renewal
+process restarted at the `m`-th arrival, whose increments are `T m, T (m + 1), …`. -/
+lemma arrival_add (m k : ℕ) (ω : Ω) :
+    arrival T (m + k) ω = arrival T m ω + arrival (fun i ↦ T (m + i)) k ω := by
+  simp [arrival_def, Finset.sum_range_add]
 
 /-- The arrival times are nondecreasing. -/
 lemma monotone_arrival (ω : Ω) : Monotone fun n ↦ arrival T n ω :=
@@ -291,6 +298,15 @@ theorem hasLaw_arrival (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n)
   simpa [hsum] using
     hindep.hasLaw_finset_sum_convolutionPower (fun i ↦ ⟨(hid i).aemeasurable_fst, (hid i).map_eq⟩)
       (Finset.range n)
+
+/-- For independent increments with common law `F = P.map (T 0)`, the renewal process restarted at
+the `m`-th arrival, with increments `T m, T (m + 1), …`, has the same arrival-time laws: its `k`-th
+arrival time `arrival T (m + k) - arrival T m` has law `F^{∗k}`. -/
+theorem hasLaw_arrival_shift (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+    (m k : ℕ) : HasLaw (arrival (fun i ↦ T (m + i)) k) ((P.map (T 0)).convolutionPower k) P := by
+  have h := hasLaw_arrival (hindep.precomp (g := (m + ·)) (add_right_injective m))
+    (fun i ↦ (hid (m + i)).trans (hid (m + 0)).symm) k
+  rwa [(hid (m + 0)).map_eq] at h
 
 /-- **Transfer to the canonical product space.** For independent, identically distributed
 increments, the law of `renewalCount T t` is the law of the count of the coordinate process under
