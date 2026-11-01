@@ -127,7 +127,7 @@ theorem heckeTrace_one_strand (b : BraidGroup 1) : heckeTrace ⟨0, b⟩ q z l C
 variable {q z l C}
 
 /-- **Positive stabilization leaves the normalized trace unchanged**: the new crossing multiplies
-the trace by `z`, the exponent sum by `l` and the strand factor by `C`. -/
+the trace by `z`, the writhe factor `l ^ w` by `l` and the strand factor by `C`. -/
 theorem heckeTrace_stabilize (hpos : C * l * z = 1) (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, strandIncl b * sigma (Fin.last n)⟩ q z l C = heckeTrace ⟨n, b⟩ q z l C := by
   simp only [heckeTrace_def, map_mul, braidHom_strandIncl, braidHom_sigma, Units.val_mul,
@@ -137,7 +137,7 @@ theorem heckeTrace_stabilize (hpos : C * l * z = 1) (b : BraidGroup (n + 1)) :
     ocneanuTrace R q z (braidHom R q (n + 1) b) * hpos
 
 /-- **Negative stabilization leaves the normalized trace unchanged**: the new crossing multiplies
-the trace by `z - (q - q⁻¹)`, the exponent sum by `l⁻¹` and the strand factor by `C`. -/
+the trace by `z - (q - q⁻¹)`, the writhe factor `l ^ w` by `l⁻¹` and the strand factor by `C`. -/
 theorem heckeTrace_stabilizeInv (hneg : C * ↑l⁻¹ * (z - ((q : R) - ↑q⁻¹)) = 1)
     (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, strandIncl b * (sigma (Fin.last n))⁻¹⟩ q z l C =
