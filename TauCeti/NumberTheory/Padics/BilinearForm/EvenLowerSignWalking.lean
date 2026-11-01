@@ -107,7 +107,7 @@ private theorem even_lower_block_extension {a : ℤ_[2]} (ha : IsUnit a) :
   simp [Matrix.toBilin'_apply, Fin.sum_univ_three, hg, he] at hf ⊢
   linear_combination hf
 
-/-- The orthogonal basis with columns `(-a,1,0), (-a,0,1), (2a,2,1)` exhibits
+/-- The basis with columns `(-a,1,0), (-a,0,1), (2a,2,1)` exhibits
 `U ⊕ ⟨2a⟩` as an even unimodular binary block orthogonal to `⟨10a⟩`. -/
 private theorem even_lower_hyperbolic {a : ℤ_[2]} (ha : IsUnit a) :
     (toBilin' !![0, 1, 0; 1, 0, 0; 0, 0, 2 * a]).Equivalent
