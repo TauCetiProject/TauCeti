@@ -130,7 +130,7 @@ theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (
     push Not at hlength
     exact hpq (Walk.eq_of_length_le_one hlength.1 (by simpa using hlength.2))
 
-/-- The two arcs obtained by splitting a cycle at a vertex are internally disjoint paths with the
+/-- The two arcs obtained by splitting a cycle at a vertex are internally disjoint walks with the
 same endpoints. -/
 theorem IsCycle.takeUntil_internallyDisjoint_dropUntil_reverse [DecidableEq V]
     {c : G.Walk s s} (hc : c.IsCycle)
