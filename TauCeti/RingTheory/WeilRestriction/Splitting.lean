@@ -40,6 +40,8 @@ the one through which the Weil restriction is formed.
   lying over `τ`.
 * `TauCeti.Algebra.WeilRestriction.splittingEquiv_apply`: the `τ`-component of a point `x` is the
   point `homEquiv x` of `C` followed by `b ⊗ ω ↦ τ b * ω`.
+* `TauCeti.Algebra.WeilRestriction.productMap_homEquiv_splittingEquiv_symm_apply`: the inverse
+  sends a family `f` to the point whose `τ`-component is `f τ`.
 * `TauCeti.Algebra.WeilRestriction.splittingEquiv_comp_map`: the splitting is natural in `C`.
 * `TauCeti.Algebra.WeilRestriction.splittingEquiv_algEquiv_comp`: the splitting is equivariant for
   the automorphisms of `Ω` over `K`.
@@ -81,6 +83,16 @@ theorem splittingEquiv_apply (x : WeilRestriction K B C →ₐ[K] Ω) (τ : B �
     (splittingEquiv K B C Ω x τ : C →+* Ω) c =
       Algebra.TensorProduct.productMap τ (AlgHom.id K Ω) (homEquiv K B C Ω x c) := by
   rw [splittingEquiv, Equiv.trans_apply, Algebra.Etale.algHomTensorProductEquivPi_apply]
+
+/-- The point of `Res_{B/K} C` attached to a family `f` of points has `τ`-component `f τ`:
+following `homEquiv` of it by `b ⊗ ω ↦ τ b * ω` gives `f τ`. This is not a `simp` lemma, since
+`simp` unfolds `homEquiv` on its left-hand side through `homEquiv_apply`. -/
+theorem productMap_homEquiv_splittingEquiv_symm_apply
+    (f : (τ : B →ₐ[K] Ω) → {f : C →+* Ω // f.comp (algebraMap B C) = τ}) (τ : B →ₐ[K] Ω)
+    (c : C) :
+    Algebra.TensorProduct.productMap τ (AlgHom.id K Ω)
+      (homEquiv K B C Ω ((splittingEquiv K B C Ω).symm f) c) = (f τ : C →+* Ω) c := by
+  rw [← splittingEquiv_apply, Equiv.apply_symm_apply]
 
 /-- **Naturality of the splitting in `C`.** The components of the image of a point under the
 map of Weil restrictions induced by `φ : C →ₐ[B] D` are the components of the point composed
