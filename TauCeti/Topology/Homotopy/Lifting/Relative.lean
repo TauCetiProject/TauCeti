@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ContinuousMap.ApplyProdMk
-public import TauCeti.Topology.Homotopy.Lifting
+public import TauCeti.Topology.Homotopy.Lifting.Basic
 
 /-!
 # Lifting from zero-set strong deformation retracts
