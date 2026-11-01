@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.RegionBetween
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.PartiallySemialgebraic.Projection
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.PartiallySemialgebraic.Substitution
 public import TauCeti.Topology.Order.RegionBetween
@@ -35,28 +36,6 @@ public section
 open Filter MvPolynomial Set Topology
 
 namespace TauCeti
-
--- This finite-coordinate relation is used only to encode the interpolation constraints.
-private theorem isSemialgebraic_interpolation_constraint {ι : Type*}
-    (a b c d t s : ι) : IsSemialgebraic {z : ι → ℝ |
-      z a ≤ z t ∧ z t ≤ z b ∧ z s = z c + (z t - z a) / (z b - z a) * (z d - z c)} := by
-  have h₁ := isSemialgebraic_eval_le (R := ℝ) (X a) (X t)
-  have h₂ := isSemialgebraic_eval_le (R := ℝ) (X t) (X b)
-  have h₃ := isSemialgebraic_eval_eq (R := ℝ) (X b) (X a)
-  have h₄ := isSemialgebraic_eval_eq (R := ℝ) (X s) (X c)
-  have h₅ := isSemialgebraic_eval_eq (R := ℝ)
-    ((X s - X c) * (X b - X a)) ((X t - X a) * (X d - X c))
-  convert h₁.inter (h₂.inter ((h₃.inter h₄).union (h₃.compl.inter h₅))) using 1
-  ext z
-  simp only [mem_ofPred_eq, mem_inter_iff, mem_union, mem_compl_iff,
-    map_mul, map_sub, eval_X]
-  by_cases h : z b = z a
-  · simp [h]
-  · simp only [h, false_and, not_false_eq_true, true_and, false_or, and_congr_right_iff]
-    intro _ _
-    have hne : z b - z a ≠ 0 := sub_ne_zero.mpr h
-    field_simp
-    constructor <;> intro heq <;> nlinarith [heq]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ι : Type*}
   {g : E → ι → ℝ} {φ φ' : E → ℝ} {ψ ψ' : (ι → ℝ) → ℝ}
