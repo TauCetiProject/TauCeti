@@ -49,7 +49,9 @@ All in the namespace `TauCeti.PDCode`:
   degree `j - |S|` piece of the circle tensor of the resolution of `S`, included by
   `resolutionCubeι`.
 * `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι`: along the edge from `S` to
-  `S ∪ {a}` the cube acts by the saddle map at the crossing `a`.
+  `S ∪ {a}` the cube acts by the saddle map at the crossing `a`;
+  `resolutionCube_map_homOfLE_comp_resolutionCubeι_of_covBy` is the same along any edge
+  `S ⋖ T`.
 
 ## References
 
@@ -295,6 +297,21 @@ theorem resolutionCube_map_homOfLE_insert_comp_resolutionCubeι {S : Finset (Fin
   -- one at `a`.
   exact LinearMap.congr_fun
     (resolutionCubeEdgeMap_eq D hD R (covBy_insert ha) ha (mem_insert_self a S)) x.1
+
+/-- Along an edge `S ⋖ T` of the cube, adding the crossing `a`, the cube of resolutions acts by the
+saddle map `TauCeti.PDCode.resolutionEdgeMap` at `a`. -/
+@[reassoc]
+theorem resolutionCube_map_homOfLE_comp_resolutionCubeι_of_covBy {S T : Finset (Fin n)}
+    (h : S ⋖ T) {a : Fin n} (haS : a ∉ S) (haT : a ∈ T) :
+    (D.resolutionCube hD R j).map (homOfLE h.le) ≫ D.resolutionCubeι hD R j T =
+      D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom
+        (D.resolutionEdgeMap (cubeState_eq_of_covBy h haS haT)
+          (cubeState_ne_of_notMem_of_mem haS haT)
+          (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two (cubeState_eq_of_covBy h haS haT)
+            (cubeState_ne_of_notMem_of_mem haS haT)) R) := by
+  obtain ⟨b, hb, rfl⟩ := h.exists_finset_insert
+  obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
+  exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j haS
 
 /-! ### The unnormalized Khovanov complex -/
 
