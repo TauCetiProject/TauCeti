@@ -148,8 +148,12 @@ theorem isZero_cechCohomology_obj_of_locallyZero [CompactSpace X] [NormalSpace X
       (((cechComplexFunctor U.opens).obj P).homologyπ n k) = 0 :=
     (ConcreteCategory.comp_apply _ _ k).symm.trans <| by
       rw [HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply, hk, map_zero]
-  rw [← homologyMap_cechComplexMap_comp_cechCohomologyι_app PointOpenCover.toFormalCoproduct
-    (fun _ _ h ↦ h) n (⟨φ ≫ ψ⟩ : U ≤ W) (φ ≫ ψ) P]
+  replace key : (cechComplexHomologyMap (ModuleCat.{u} R) n (φ ≫ ψ)).app P
+      (((cechComplexFunctor U.opens).obj P).homologyπ n k) = 0 :=
+    (ConcreteCategory.congr_hom (cechComplexHomologyMap_app _ n (φ ≫ ψ) P) _).trans key
+  rw [← (NatTrans.comp_app _ _ P).symm.trans (NatTrans.congr_app
+    (cechComplexHomologyMap_comp_cechCohomologyι (ModuleCat.{u} R) PointOpenCover.toFormalCoproduct
+      (fun _ _ h ↦ h) n (⟨φ ≫ ψ⟩ : U ≤ W) (φ ≫ ψ)) P)]
   exact (ConcreteCategory.comp_apply _ _ _).trans <|
     ((congrArg _ key).trans (map_zero _)).trans (LinearMap.zero_apply _).symm
 
