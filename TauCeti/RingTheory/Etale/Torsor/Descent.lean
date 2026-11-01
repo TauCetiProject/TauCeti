@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Etale.Torsor.Trivial
 import Mathlib.RingTheory.Etale.Descent
-import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.RingTheory.Flat.Descent
 
 /-!
@@ -36,8 +35,6 @@ and `TauCeti.Algebra.IsFiniteEtaleTorsor.trivial`.
 
 ## Main results
 
-* `TauCeti.Algebra.IsFiniteEtaleTorsor.of_algEquiv`: torsors are invariant under `G`-equivariant
-  isomorphisms of algebras.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.of_baseChange`,
   `TauCeti.Algebra.isFiniteEtaleTorsor_baseChange_iff`: faithfully flat descent of torsors.
 * `TauCeti.Algebra.isFiniteEtaleTorsor_iff_exists_algEquiv_pi`: torsors are the fpqc-locally
@@ -58,26 +55,6 @@ variable {G A B : Type*} [Group G] [Finite G] [CommRing A] [CommRing B] [Algebra
   [MulSemiringAction G B] [SMulCommClass G A B]
 
 namespace IsFiniteEtaleTorsor
-
-/-- A `G`-equivariant isomorphism of algebras carries finite étale `G`-torsors to finite étale
-`G`-torsors. -/
-theorem of_algEquiv {C : Type*} [CommRing C] [Algebra A C] [MulSemiringAction G C]
-    [SMulCommClass G A C] [h : IsFiniteEtaleTorsor G A B] (e : B ≃ₐ[A] C)
-    (he : ∀ (g : G) (b : B), e (g • b) = g • e b) : IsFiniteEtaleTorsor G A C := by
-  have := h.etale
-  have := h.finite
-  have := h.faithfullyFlat
-  refine ⟨.of_equiv e, .equiv e.toLinearEquiv, .of_linearEquiv _ _ e.symm.toLinearEquiv, ?_⟩
-  -- The Galois map of `C` is that of `B`, read through `e ⊗ e` and `e` in each coordinate.
-  let eG : (G → B) ≃ₐ[A] (G → C) := AlgEquiv.piCongrRight fun _ ↦ e
-  have hcomp : ⇑(MulSemiringAction.tensorToPi A C G) ∘ ⇑(Algebra.TensorProduct.congr e e) =
-      ⇑eG ∘ ⇑(MulSemiringAction.tensorToPi A B G) := by
-    funext z
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
-    | tmul b b' => funext g; simp [eG, he]
-  rw [← Function.Bijective.of_comp_iff _ (Algebra.TensorProduct.congr e e).bijective, hcomp]
-  exact eG.bijective.comp h.bijective_tensorToPi
 
 attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
 
