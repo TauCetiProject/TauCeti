@@ -52,26 +52,6 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
 
-/-- Regard a finite set contained in the actual vertex set as a finite set of actual vertices. -/
-private def actualFinset (S : Finset α) (hS : (S : Set α) ⊆ V(G)) : Finset V(G) :=
-  S.attach.map
-    { toFun := fun x : {x // x ∈ S} ↦ ⟨x.1, hS x.2⟩
-      inj' := by
-        intro x y h
-        apply Subtype.ext
-        exact congrArg (fun z : V(G) ↦ z.1) h }
-
-@[simp]
-private theorem mem_actualFinset {S : Finset α} {hS : (S : Set α) ⊆ V(G)} {x : V(G)} :
-    x ∈ actualFinset (G := G) S hS ↔ x.1 ∈ S := by
-  constructor
-  · rw [actualFinset, mem_map]
-    rintro ⟨y, -, hy⟩
-    exact hy ▸ y.2
-  · intro hx
-    rw [actualFinset, mem_map]
-    exact ⟨⟨x, hx⟩, by simp, Subtype.ext rfl⟩
-
 /-! ### Vertex-capacitated packings -/
 
 /-- **Weak duality for vertex-capacitated set-to-set packings.** A family of walks, each from a
@@ -107,21 +87,21 @@ theorem exists_paths_setSeparator_sum_eq [Finite V(G)] [DecidableEq α] (c : α 
       (∀ x, #{i | x ∈ (P i).support} ≤ c x) ∧ (X : Set α) ⊆ V(G) ∧
       (∀ a ∈ A, ∀ b ∈ B, ¬(G.deleteVerts X).Reachable a b) ∧ ∑ x ∈ X, c x = k := by
   classical
-  let A' := actualFinset (G := G) A hA
-  let B' := actualFinset (G := G) B hB
+  let A' := A.subtype (· ∈ V(G))
+  let B' := B.subtype (· ∈ V(G))
   obtain ⟨k, a, b, P, X, ha, hb, hpath, hint, hPv, hX, hk⟩ :=
     TauCeti.exists_paths_setSeparator_sum_eq (Q := G.BidirectedHom) (fun x ↦ c x) A' B'
   refine ⟨k, fun i ↦ a i, fun i ↦ b i, fun i ↦ (P i).toGraphWalk,
     X.map (Function.Embedding.subtype _), fun i ↦ ?_, fun i ↦ ?_,
     fun i ↦ (P i).isPath_toGraphWalk_iff.2 (hpath i), ?_, ?_, map_subtype_subset X, ?_, ?_⟩
-  · exact mem_actualFinset.1 (ha i)
-  · exact mem_actualFinset.1 (hb i)
+  · exact Finset.mem_subtype.1 (ha i)
+  · exact Finset.mem_subtype.1 (hb i)
   · intro i x hx hxa hxb
     obtain ⟨hxG, hxP⟩ := (P i).mem_support_toGraphWalk_iff.1 hx
     have hi := hint i ⟨x, hxG⟩ hxP
       (fun h ↦ hxa (congrArg Subtype.val h)) (fun h ↦ hxb (congrArg Subtype.val h))
-    exact ⟨fun hxA ↦ hi.1 (mem_actualFinset.2 hxA),
-      fun hxB ↦ hi.2 (mem_actualFinset.2 hxB)⟩
+    exact ⟨fun hxA ↦ hi.1 (Finset.mem_subtype.2 hxA),
+      fun hxB ↦ hi.2 (Finset.mem_subtype.2 hxB)⟩
   · intro x
     by_cases hxG : x ∈ V(G)
     · refine (card_le_card fun i hi ↦ ?_).trans (hPv ⟨x, hxG⟩)
@@ -131,8 +111,8 @@ theorem exists_paths_setSeparator_sum_eq [Finite V(G)] [DecidableEq α] (c : α 
         hxG ((P i).mem_support_toGraphWalk_iff.1 hi).1)]
       exact Nat.zero_le _
   · intro x hxA y hyB hxy
-    have hxA' : (⟨x, hA hxA⟩ : V(G)) ∈ A' := mem_actualFinset.2 hxA
-    have hyB' : (⟨y, hB hyB⟩ : V(G)) ∈ B' := mem_actualFinset.2 hyB
+    have hxA' : (⟨x, hA hxA⟩ : V(G)) ∈ A' := Finset.mem_subtype.2 hxA
+    have hyB' : (⟨y, hB hyB⟩ : V(G)) ∈ B' := Finset.mem_subtype.2 hyB
     apply hX _ hxA' _ hyB'
     have hxy' := (reachableAvoiding_bidirectedHom_iff
       (G := G) (Y := (X.map (Function.Embedding.subtype _) : Set α))
