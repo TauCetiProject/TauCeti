@@ -24,9 +24,13 @@ product `A × B` whose second factor is the target of `p`, precomposed with `Pro
 characterises the `C^m` maps `A × B → N`, such as flows on a quotient manifold.
 
 Precomposing an open embedding or a `C^n` local diffeomorphism out of a normed space `E` with a
-linear isometry of `E` gives again an open embedding or a `C^n` local diffeomorphism
-(`Topology.IsOpenEmbedding.comp_linearIsometryEquiv`,
-`IsLocalDiffeomorph.comp_linearIsometryEquiv`).
+continuous linear automorphism of `E` gives again an open embedding or a `C^n` local
+diffeomorphism (`Topology.IsOpenEmbedding.comp_continuousLinearEquiv`,
+`IsLocalDiffeomorph.comp_continuousLinearEquiv`). Their special cases for a linear isometry `R`
+are stated for `e ∘ R` itself (`Topology.IsOpenEmbedding.comp_linearIsometryEquiv`,
+`IsLocalDiffeomorph.comp_linearIsometryEquiv`): the coercion of `R` to a continuous linear
+equivalence is not reducibly equal to `R`, so instances built from the general statements would not
+apply to `e ∘ R`.
 
 ## Main results
 
@@ -146,25 +150,38 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_comp_prodMap_iff {m : ℕ∞ω} {g :
 
 end Prod
 
-section LinearIsometryEquiv
+section ContinuousLinearEquiv
 
 /-- A map out of a normed space `E` which is an open embedding remains one when precomposed with
-a linear isometry of `E`. -/
+a continuous linear automorphism of `E`. -/
+theorem _root_.Topology.IsOpenEmbedding.comp_continuousLinearEquiv {X : Type*}
+    [TopologicalSpace X] {e : E → X} (h : Topology.IsOpenEmbedding e) (L : E ≃L[𝕜] E) :
+    Topology.IsOpenEmbedding (e ∘ L) :=
+  h.comp L.toHomeomorph.isOpenEmbedding
+
+/-- A `C^n` local diffeomorphism out of a normed space `E` remains one when precomposed with a
+continuous linear automorphism of `E`. -/
+theorem _root_.IsLocalDiffeomorph.comp_continuousLinearEquiv {e : E → M}
+    (d : IsLocalDiffeomorph 𝓘(𝕜, E) I n e) (L : E ≃L[𝕜] E) :
+    IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ L) := fun v ↦ by
+  have hL := (L.toContDiffDiffeomorph n).isLocalDiffeomorph v
+  rw [ContinuousLinearEquiv.coe_toContDiffDiffeomorph] at hL
+  exact hL.comp (hg := d (L v))
+
+/-- The special case of `Topology.IsOpenEmbedding.comp_continuousLinearEquiv` for a linear isometry
+`R`, stated for `e ∘ R` itself rather than for its continuous linear equivalence. -/
 theorem _root_.Topology.IsOpenEmbedding.comp_linearIsometryEquiv {X : Type*}
     [TopologicalSpace X] {e : E → X} (h : Topology.IsOpenEmbedding e) (R : E ≃ₗᵢ[𝕜] E) :
     Topology.IsOpenEmbedding (e ∘ R) :=
-  h.comp R.toHomeomorph.isOpenEmbedding
+  h.comp_continuousLinearEquiv R.toContinuousLinearEquiv
 
-/-- A `C^n` local diffeomorphism out of a normed space `E` remains one when precomposed with a
-linear isometry of `E`. -/
+/-- The special case of `IsLocalDiffeomorph.comp_continuousLinearEquiv` for a linear isometry `R`,
+stated for `e ∘ R` itself rather than for its continuous linear equivalence. -/
 theorem _root_.IsLocalDiffeomorph.comp_linearIsometryEquiv {e : E → M}
     (d : IsLocalDiffeomorph 𝓘(𝕜, E) I n e) (R : E ≃ₗᵢ[𝕜] E) :
-    IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ R) := fun v ↦ by
-  have hR := (R.toContinuousLinearEquiv.toContDiffDiffeomorph n).isLocalDiffeomorph v
-  simp only [ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hR
-  exact hR.comp (hg := d (R v))
+    IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ R) :=
+  d.comp_continuousLinearEquiv R.toContinuousLinearEquiv
 
-end LinearIsometryEquiv
+end ContinuousLinearEquiv
 
 end TauCeti

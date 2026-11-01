@@ -32,11 +32,9 @@ real number by which the derivative multiplies.
 On the model space `E` itself, every orientation is constant once the tangent spaces are identified
 with `E` (`orientationAt_eq_orientationAt`), so a continuous linear automorphism of `E` preserves
 or reverses every orientation of `E` according to the sign of its determinant
-(`isOrientationPreservingAt_of_det_pos`, `isOrientationReversingAt_of_det_neg`). In particular a
-linear isometry of `E` of determinant `-1` reverses every orientation of `E`
-(`isOrientationReversingAt_of_det_eq_neg_one`), and precomposing with it exchanges preservation and
-reversal (`isOrientationPreservingAt_comp_of_det_eq_neg_one`,
-`isOrientationReversingAt_comp_of_det_eq_neg_one`).
+(`isOrientationPreservingAt_of_det_pos`, `isOrientationReversingAt_of_det_neg`). In particular
+precomposing with an automorphism of negative determinant exchanges preservation and reversal
+(`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
 -/
 
 public section
@@ -478,31 +476,23 @@ theorem isOrientationReversingAt_of_det_neg (o : Manifold.Orientation 𝓘(ℝ, 
   rw [map_tangentEquiv, _root_.Orientation.map_neg, ← modelOrientationAt, hL,
     modelOrientationAt_eq o x (L x)]
 
-/-- A linear isometry of `E` of determinant `-1` reverses every orientation of `E`, at every
-point. -/
-theorem isOrientationReversingAt_of_det_eq_neg_one (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
-    {R : E ≃ₗᵢ[ℝ] E} (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) (x : E) :
-    IsOrientationReversingAt o o R x :=
-  isOrientationReversingAt_of_det_neg o R.toContinuousLinearEquiv
-    (by rw [← LinearEquiv.coe_det]; exact hR.trans_lt (by norm_num)) x
-
-/-- Precomposing a map which reverses orientations at `R x` with a linear isometry `R` of `E` of
-determinant `-1` gives a map which preserves them at `x`. -/
-theorem isOrientationPreservingAt_comp_of_det_eq_neg_one [IsManifold I 1 M]
+/-- Precomposing a map which reverses orientations at `L x` with a continuous linear automorphism
+`L` of `E` of negative determinant gives a map which preserves them at `x`. -/
+theorem isOrientationPreservingAt_comp_of_det_neg [IsManifold I 1 M]
     {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation I M ι} {e : E → M}
-    {R : E ≃ₗᵢ[ℝ] E} {x : E} (he : IsOrientationReversingAt oE oM e (R x))
-    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) :
-    IsOrientationPreservingAt oE oM (e ∘ R) x :=
-  he.comp (isOrientationReversingAt_of_det_eq_neg_one oE hR x)
+    {L : E ≃L[ℝ] E} {x : E} (he : IsOrientationReversingAt oE oM e (L x))
+    (hL : LinearMap.det (L : E →ₗ[ℝ] E) < 0) :
+    IsOrientationPreservingAt oE oM (e ∘ L) x :=
+  he.comp (isOrientationReversingAt_of_det_neg oE L hL x)
 
-/-- Precomposing a map which preserves orientations at `R x` with a linear isometry `R` of `E` of
-determinant `-1` gives a map which reverses them at `x`. -/
-theorem isOrientationReversingAt_comp_of_det_eq_neg_one [IsManifold I 1 M]
+/-- Precomposing a map which preserves orientations at `L x` with a continuous linear automorphism
+`L` of `E` of negative determinant gives a map which reverses them at `x`. -/
+theorem isOrientationReversingAt_comp_of_det_neg [IsManifold I 1 M]
     {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation I M ι} {e : E → M}
-    {R : E ≃ₗᵢ[ℝ] E} {x : E} (he : IsOrientationPreservingAt oE oM e (R x))
-    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) :
-    IsOrientationReversingAt oE oM (e ∘ R) x :=
-  he.comp_reversing (isOrientationReversingAt_of_det_eq_neg_one oE hR x)
+    {L : E ≃L[ℝ] E} {x : E} (he : IsOrientationPreservingAt oE oM e (L x))
+    (hL : LinearMap.det (L : E →ₗ[ℝ] E) < 0) :
+    IsOrientationReversingAt oE oM (e ∘ L) x :=
+  he.comp_reversing (isOrientationReversingAt_of_det_neg oE L hL x)
 
 end ModelSpace
 

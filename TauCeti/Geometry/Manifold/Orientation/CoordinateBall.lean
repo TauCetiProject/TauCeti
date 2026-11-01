@@ -49,7 +49,11 @@ theorem exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt
   · exact ⟨e, he0, he, de, hp⟩
   -- A reversing ball is corrected by a reflection of `E`.
   obtain ⟨R, hR⟩ := TauCeti.exists_det_eq_neg_one (F := E)
-  exact ⟨e ∘ R, by simpa using he0, he.comp_linearIsometryEquiv R, de.comp_linearIsometryEquiv R,
-    isOrientationPreservingAt_comp_of_det_eq_neg_one (by simpa using hr) hR⟩
+  let L := R.toContinuousLinearEquiv
+  have hL : LinearMap.det (L : E →ₗ[ℝ] E) < 0 := by
+    rw [← LinearEquiv.coe_det]; exact hR.trans_lt (by norm_num)
+  exact ⟨e ∘ L, by simpa using he0, he.comp_continuousLinearEquiv L,
+    de.comp_continuousLinearEquiv L,
+    isOrientationPreservingAt_comp_of_det_neg (by simpa using hr) hL⟩
 
 end TauCeti.Manifold.Orientation
