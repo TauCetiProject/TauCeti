@@ -32,6 +32,8 @@ sets, and equals the constant one at `univ`.
   `c • 1_s` is `c • linftyIndicator μ s hs`.
 * `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
   values at the classes `linftyIndicator μ s hs`.
+* `PositiveLinearMap.ext_linftyIndicator`: the same for positive linear functionals on real `L∞`,
+  which are automatically continuous.
 -/
 
 public section
@@ -155,5 +157,23 @@ theorem ext_linftyIndicator {E : Type*} [AddCommGroup E] [Module ℝ E] [Topolog
     SimpleFunc.denseRange_toLpTop.equalizer hf hg (congrArg DFunLike.coe hsimple)
 
 end LinearMap
+
+namespace PositiveLinearMap
+
+open MeasureTheory TauCeti
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- A positive linear functional on real `L∞` is determined by its values at the indicators of
+measurable sets. -/
+theorem ext_linftyIndicator {M N : Lp ℝ ∞ μ →ₚ[ℝ] ℝ}
+    (h : ∀ s (hs : MeasurableSet s), M (linftyIndicator μ s hs) = N (linftyIndicator μ s hs)) :
+    M = N := by
+  have := LinearMap.ext_linftyIndicator (f := M.toLinearMap) (g := N.toLinearMap)
+    M.continuous_lpTop N.continuous_lpTop h
+  ext φ
+  exact LinearMap.congr_fun this φ
+
+end PositiveLinearMap
 
 end

@@ -56,8 +56,6 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
 
 ## Main results
 
-* `PositiveLinearMap.ext_linftyIndicator`: a positive functional on `L∞` is determined by its
-  values at indicators.
 * `PositiveLinearMap.ofAddContentLpTop_linftyIndicator` and
   `PositiveLinearMap.ofAddContentLpTop_toAddContentLpTop`: the two constructions are inverse.
 * `PositiveLinearMap.ofAddContentLpTop_congr`: contents agreeing on measurable sets give the same
@@ -138,20 +136,6 @@ open MeasureTheory TauCeti
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
-/-- A positive linear functional on real `L∞` is continuous. -/
-theorem continuous_lpTop (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) : Continuous M :=
-  continuous_of_forall_le_norm_smul M Lp.le_norm_smul_linftyOne
-
-/-- A positive linear functional on real `L∞` is determined by its values at the indicators of
-measurable sets. -/
-theorem ext_linftyIndicator {M N : Lp ℝ ∞ μ →ₚ[ℝ] ℝ}
-    (h : ∀ s (hs : MeasurableSet s), M (linftyIndicator μ s hs) = N (linftyIndicator μ s hs)) :
-    M = N := by
-  have := LinearMap.ext_linftyIndicator (f := M.toLinearMap) (g := N.toLinearMap)
-    M.continuous_lpTop N.continuous_lpTop h
-  ext φ
-  exact LinearMap.congr_fun this φ
-
 /-- The content of a positive functional is nonnegative. -/
 theorem toAddContentLpTop_nonneg (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (s : Set α) :
     0 ≤ M.toLinearMap.toAddContentLpTop s := by
@@ -211,22 +195,11 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 
 /-- The integral against a nonnegative content vanishing on null sets is positive. -/
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
-  -- For `0 ≤ φ`, the class `‖φ‖ • 1 - φ` has norm at most `‖φ‖`.
-  have hnorm : ‖‖φ‖ • (linftyOne : Lp ℝ ∞ μ) - φ‖ ≤ ‖φ‖ := by
-    refine Lp.norm_top_le_of_ae_bound (norm_nonneg φ) ?_
-    filter_upwards [Lp.coeFn_sub (‖φ‖ • (linftyOne : Lp ℝ ∞ μ)) φ,
-      Lp.coeFn_smul ‖φ‖ (linftyOne : Lp ℝ ∞ μ), coeFn_linftyOne (μ := μ),
-      (Lp.coeFn_nonneg φ).2 hφ, Lp.ae_norm_le_norm_top φ] with x hsub hsmul h1 h0 hx
-    rw [hsub, Pi.sub_apply, hsmul, Pi.smul_apply, h1, smul_eq_mul, mul_one]
-    rw [Real.norm_eq_abs, abs_le] at hx ⊢
-    have := h0
-    simp only [Pi.zero_apply] at this
-    constructor <;> linarith
   have h₁ : integral μ ν linftyOne = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
-  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_) hnorm
-  change |integral μ ν ψ| ≤ integral μ ν linftyOne * ‖ψ‖
-  rw [h₁, ← Real.norm_eq_abs]
+  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_)
+    (Lp.norm_norm_smul_linftyOne_sub_le_of_nonneg hφ)
+  rw [ContinuousLinearMap.coe_coe, h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν₀ hνμ ψ
 
 variable (ν) in
