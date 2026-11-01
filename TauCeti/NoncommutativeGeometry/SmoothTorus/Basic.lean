@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PSeries
+public import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
@@ -96,16 +97,14 @@ theorem weight_zero : weight 0 = 1 := by
 theorem weight_neg (x : ℤ × ℤ) : weight (-x) = weight x := by
   simp [weight]
 
-private theorem one_add_abs_add_le (a b : ℝ) : 1 + |a + b| ≤ (1 + |a|) * (1 + |b|) := by
-  nlinarith [abs_add_le a b, abs_nonneg a, abs_nonneg b, mul_nonneg (abs_nonneg a) (abs_nonneg b)]
-
 /-- The weight is submultiplicative. -/
 theorem weight_add_le (x y : ℤ × ℤ) : weight (x + y) ≤ weight x * weight y := by
   simp only [weight, Prod.fst_add, Prod.snd_add, Int.cast_add]
   calc (1 + |(x.1 : ℝ) + y.1|) * (1 + |(x.2 : ℝ) + y.2|)
       ≤ ((1 + |(x.1 : ℝ)|) * (1 + |(y.1 : ℝ)|)) * ((1 + |(x.2 : ℝ)|) * (1 + |(y.2 : ℝ)|)) :=
-        mul_le_mul (one_add_abs_add_le _ _) (one_add_abs_add_le _ _) (by positivity)
-          (by positivity)
+        mul_le_mul (by simpa only [Real.norm_eq_abs] using one_add_norm_add_le (x.1 : ℝ) y.1)
+          (by simpa only [Real.norm_eq_abs] using one_add_norm_add_le (x.2 : ℝ) y.2)
+          (by positivity) (by positivity)
     _ = (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) * ((1 + |(y.1 : ℝ)|) * (1 + |(y.2 : ℝ)|)) := by
         ring
 
@@ -202,8 +201,23 @@ theorem twist_mul_twist_add (x y z : ℤ × ℤ) :
   push_cast
   ring
 
+@[simp]
 theorem twist_neg_neg (y z : ℤ × ℤ) : twist θ (-y) (-z) = twist θ y z := by
   simp [twist_apply]
+
+/-- Negating the first argument inverts the twisting phase. -/
+theorem twist_neg_left (y z : ℤ × ℤ) : twist θ (-y) z = (twist θ y z)⁻¹ := by
+  rw [twist_apply, twist_apply, ← AddChar.map_neg_eq_inv]
+  congr 1
+  push_cast [Prod.snd_neg]
+  ring
+
+/-- Negating the second argument inverts the twisting phase. -/
+theorem twist_neg_right (y z : ℤ × ℤ) : twist θ y (-z) = (twist θ y z)⁻¹ := by
+  rw [twist_apply, twist_apply, ← AddChar.map_neg_eq_inv]
+  congr 1
+  push_cast [Prod.fst_neg]
+  ring
 
 /-! ### The algebra -/
 
@@ -397,13 +411,6 @@ private theorem mul_smul' (r : ℂ) (a b : SmoothNoncommutativeTorus θ) :
   simp only [coeff_mul, coeff_smul, Pi.smul_apply, smul_eq_mul, ← tsum_mul_left]
   exact tsum_congr fun _ ↦ by ring
 
-/-- The reindexing `(u, y) ↦ (y, u - y)` used to regroup the double sums in associativity. -/
-private def shearEquiv : (ℤ × ℤ) × (ℤ × ℤ) ≃ (ℤ × ℤ) × (ℤ × ℤ) where
-  toFun p := (p.2, p.1 - p.2)
-  invFun p := (p.1 + p.2, p.1)
-  left_inv p := by simp
-  right_inv p := by simp
-
 private theorem mul_assoc' (a b c : SmoothNoncommutativeTorus θ) : a * b * c = a * (b * c) := by
   ext x
   -- Both sides are sums of `F (y, v)` over pairs, with `y + v + w = x`.
@@ -416,17 +423,21 @@ private theorem mul_assoc' (a b c : SmoothNoncommutativeTorus θ) : a * b * c = 
         (fun _ ↦ norm_nonneg _)).mul_right C).of_norm_bounded fun p ↦ ?_
     simp only [hF_def, norm_mul, Circle.norm_coe, mul_one]
     exact mul_le_mul_of_nonneg_left (hC _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))
-  have hG : Summable (F ∘ shearEquiv) := shearEquiv.summable_iff.2 hF
+  -- the reindexing `(u, y) ↦ (y, u - y)` regroups the double sums
+  let e : (ℤ × ℤ) × (ℤ × ℤ) ≃ (ℤ × ℤ) × (ℤ × ℤ) :=
+    (Equiv.prodComm _ _).trans (Equiv.prodCongrRight fun y ↦ Equiv.subRight y)
+  have hG : Summable (F ∘ e) := e.summable_iff.2 hF
   calc (a * b * c).coeff x
-      = ∑' u, ∑' y, (F ∘ shearEquiv) (u, y) := by
+      = ∑' u, ∑' y, (F ∘ e) (u, y) := by
         rw [coeff_mul]
         refine tsum_congr fun u ↦ ?_
         rw [coeff_mul, ← tsum_mul_right, ← tsum_mul_right]
         refine tsum_congr fun y ↦ ?_
-        simp only [hF_def, Function.comp_apply, shearEquiv, Equiv.coe_fn_mk,
-          add_sub_cancel, sub_sub_sub_cancel_right, Circle.coe_mul]
+        simp only [hF_def, e, Function.comp_apply, Equiv.trans_apply, Equiv.prodComm_apply,
+          Prod.swap_prod_mk, Equiv.prodCongrRight_apply, Equiv.subRight_apply, add_sub_cancel,
+          sub_sub_sub_cancel_right, Circle.coe_mul]
         ring
-    _ = ∑' p, F p := by rw [← hG.tsum_prod]; exact shearEquiv.tsum_eq F
+    _ = ∑' p, F p := by rw [← hG.tsum_prod]; exact e.tsum_eq F
     _ = ∑' y, ∑' v, F (y, v) := hF.tsum_prod
     _ = (a * (b * c)).coeff x := by
         rw [coeff_mul]
@@ -474,21 +485,12 @@ theorem coeff_star (a : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
   (rfl)
 
 private theorem conj_twist (y z : ℤ × ℤ) : conj (twist θ y z : ℂ) = twist θ (-y) z := by
-  rw [← Circle.coe_inv_eq_conj, twist_apply, twist_apply, ← AddChar.map_neg_eq_inv]
-  congr 2
-  push_cast [Prod.fst_add, Prod.snd_add, Prod.fst_neg, Prod.snd_neg, Prod.fst_sub, Prod.snd_sub]
-  ring
+  rw [← Circle.coe_inv_eq_conj, twist_neg_left]
 
 private theorem star_star' (a : SmoothNoncommutativeTorus θ) : star (star a) = a := by
   ext x
   rw [coeff_star, coeff_star, map_mul, conj_conj, conj_twist, mul_assoc, ← Circle.coe_mul,
-    twist_neg_neg, neg_neg]
-  -- `twist θ (-x) (-x) * twist θ x x` is `twist θ x x⁻¹ * twist θ x x`.
-  rw [show twist θ (-x) x = (twist θ x x)⁻¹ by
-    rw [twist_apply, twist_apply, ← AddChar.map_neg_eq_inv]
-    congr 1
-    push_cast [Prod.fst_add, Prod.snd_add, Prod.fst_neg, Prod.snd_neg, Prod.fst_sub, Prod.snd_sub]
-    ring]
+    twist_neg_neg, neg_neg, twist_neg_left]
   simp
 
 private theorem star_mul' (a b : SmoothNoncommutativeTorus θ) : star (a * b) = star b * star a := by
@@ -516,12 +518,13 @@ instance : StarRing (SmoothNoncommutativeTorus θ) where
 instance : StarModule ℂ (SmoothNoncommutativeTorus θ) where
   star_smul c a := by ext x; simp [coeff_star, mul_assoc]
 
+@[simp]
 theorem star_single (x : ℤ × ℤ) (c : ℂ) :
     star (single x c : SmoothNoncommutativeTorus θ) = single (-x) (conj c * twist θ x x) := by
   ext y
   rw [coeff_star]
   rcases eq_or_ne y (-x) with rfl | hy
-  · simp [twist_neg_neg]
+  · simp
   · have : -y ≠ x := fun h ↦ hy (by rw [← h, neg_neg])
     simp [this, hy]
 
@@ -558,6 +561,7 @@ theorem U₂_mul_U₁ :
     (U₂ θ * U₁ θ : SmoothNoncommutativeTorus θ) = (𝐞 θ : ℂ) • (U₁ θ * U₂ θ) := by
   simp [single_mul_single, twist_apply]
 
+@[simp]
 theorem coe_U₁_zpow (m : ℤ) : ((U₁ θ ^ m : unitary _) : SmoothNoncommutativeTorus θ) =
     single (m, 0) 1 := by
   induction m using Int.induction_on with
@@ -570,6 +574,7 @@ theorem coe_U₁_zpow (m : ℤ) : ((U₁ θ ^ m : unitary _) : SmoothNoncommutat
       star_single, single_mul_single]
     simp [twist_apply, sub_eq_add_neg]
 
+@[simp]
 theorem coe_U₂_zpow (n : ℤ) : ((U₂ θ ^ n : unitary _) : SmoothNoncommutativeTorus θ) =
     single (0, n) 1 := by
   induction n using Int.induction_on with
@@ -618,12 +623,7 @@ theorem trace_mul_comm (a b : SmoothNoncommutativeTorus θ) :
   rw [trace_apply, trace_apply, coeff_mul, coeff_mul, ← (Equiv.neg (ℤ × ℤ)).tsum_eq]
   refine tsum_congr fun y ↦ ?_
   simp only [Equiv.neg_apply, zero_sub, neg_neg]
-  rw [mul_comm (a.coeff (-y)) (b.coeff y)]
-  congr 1
-  simp only [twist_apply]
-  congr 3
-  push_cast [Prod.fst_add, Prod.snd_add, Prod.fst_neg, Prod.snd_neg, Prod.fst_sub, Prod.snd_sub]
-  ring
+  rw [mul_comm (a.coeff (-y)) (b.coeff y), twist_neg_left, twist_neg_right]
 
 /-- `τ (star a * a)` is the sum of the squared moduli of the coefficients of `a`. -/
 theorem trace_star_mul_self (a : SmoothNoncommutativeTorus θ) :
@@ -632,11 +632,7 @@ theorem trace_star_mul_self (a : SmoothNoncommutativeTorus θ) :
   refine tsum_congr fun y ↦ ?_
   simp only [Equiv.neg_apply, coeff_star, neg_neg, zero_sub, ofReal_pow]
   have h : (twist θ (-y) (-y) : ℂ) * twist θ (-y) y = 1 := by
-    rw [← Circle.coe_mul, twist_apply, twist_apply, ← AddChar.map_add_eq_mul, ← Circle.coe_one,
-      ← AddChar.map_zero_eq_one 𝐞]
-    congr 2
-    push_cast [Prod.fst_add, Prod.snd_add, Prod.fst_neg, Prod.snd_neg, Prod.fst_sub, Prod.snd_sub]
-    ring
+    rw [← Circle.coe_mul, twist_neg_neg, twist_neg_left, mul_inv_cancel, Circle.coe_one]
   rw [← mul_conj']
   linear_combination (conj (a.coeff y) * a.coeff y) * h
 
