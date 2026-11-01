@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import TauCeti.LinearAlgebra.RootSystem.AffineCartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
-public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
-import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # The fundamental alcove of a base

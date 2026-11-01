@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.AffineCartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ExtendedAffine.Alcove
-import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # The action of `Ω` on the walls of the fundamental alcove
