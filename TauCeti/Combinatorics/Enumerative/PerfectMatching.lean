@@ -482,29 +482,8 @@ with the other end `D.val a` of the arc at `a`, then `a` with the other end `D.v
 `b`. -/
 theorem reconnect_val_eq_mul_swap_mul_swap :
     (D.reconnect a b).val = D.val * Equiv.swap a (D.val b) * Equiv.swap b (D.val a) := by
-  obtain rfl | hba := eq_or_ne b a
-  · rw [reconnect_self, mul_assoc, Equiv.swap_mul_self, mul_one]
-  have hab : D.val b ≠ D.val a := fun h => hba (D.val.injective h)
-  refine Equiv.ext fun x => ?_
-  simp only [Equiv.Perm.mul_apply]
-  by_cases hxa : x = a
-  · subst x
-    rw [Equiv.swap_apply_of_ne_of_ne hba.symm (D.apply_ne a).symm, Equiv.swap_apply_left,
-      D.apply_apply, reconnect_val_self hba]
-  by_cases hxb : x = b
-  · subst x
-    rw [Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne (D.apply_ne a) hab.symm,
-      D.apply_apply, reconnect_val_right hba]
-  by_cases hxa' : x = D.val a
-  · subst x
-    rw [Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne hba (D.apply_ne b).symm,
-      reconnect_val_val_self hba]
-  by_cases hxb' : x = D.val b
-  · subst x
-    rw [Equiv.swap_apply_of_ne_of_ne (D.apply_ne b) hab, Equiv.swap_apply_right,
-      reconnect_val_val_right hba]
-  rw [Equiv.swap_apply_of_ne_of_ne hxb hxa', Equiv.swap_apply_of_ne_of_ne hxa hxb',
-    reconnect_val_of_ne hxa hxb hxa' hxb']
+  rw [reconnect_val, Equiv.permCongr_eq_mul, Equiv.swap_inv,
+    Equiv.mul_swap_eq_swap_mul D.val, D.apply_apply, Equiv.swap_comm b]
 
 end Reconnect
 
@@ -766,7 +745,7 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
   -- Reconnecting differs from `D` by two transpositions.
   have hval : (D.reconnect a (T a)).val =
       D.val * swap a (D.val (T a)) * swap (D.val a) (T a) := by
-    rw [reconnect_val, permCongr_eq_mul, swap_inv, mul_swap_eq_swap_mul D.val, D.apply_apply]
+    rw [reconnect_val_eq_mul_swap_mul_swap, swap_comm (T a)]
   -- Each transposition joins two consecutive points of one orbit, so each cuts that orbit.
   have hs₁ : (T * D.val).SameCycle (D.val (T a)) a := ⟨1, by simp [hT]⟩
   have hs₂ : (T * D.val * swap a (D.val (T a))).SameCycle (D.val a) (T a) :=
