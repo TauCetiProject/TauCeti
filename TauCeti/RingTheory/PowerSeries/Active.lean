@@ -34,6 +34,10 @@ coefficients. The order comparison needs only a seminormed ring; the interval st
 a normed ring to ensure that a nonzero series has positive Gauss norm and that the norm is
 attained at interior radii.
 
+Near the unit radius, a series with coefficients in the closed unit ball whose first coefficient
+of norm one has index `s` has `s` as its unique dominant index: the finitely many earlier
+coefficients have norm less than one, and the later ones carry smaller powers of the radius.
+
 ## References
 
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué complet*,
@@ -164,6 +168,49 @@ theorem IsLowestDominant.le_of_le (hi : IsLowestDominant r i f) (hj : IsLowestDo
       hi.gaussNorm_pos hi.norm_coeff_mul_pow_eq hj.norm_coeff_mul_pow_eq
 
 end SeminormedRing
+
+section UnitRadius
+
+open scoped Topology
+
+variable {R : Type*} [SeminormedRing R] {s : ℕ} {f : PowerSeries R}
+
+/-- **The unique dominant coefficient near the unit radius.** If every coefficient of `f` has norm
+at most one, the coefficient in degree `s` has norm one and every earlier coefficient has norm less
+than one, then for all radii `r < 1` close enough to one, `s` is both the distinguished and the
+lowest dominant degree of `f` at `r`: the weighted coefficient in degree `s` is the only one
+attaining the Gauss norm `rˢ`. -/
+theorem eventually_isDistinguished_and_isLowestDominant (h1 : ∀ n, ‖f.coeff n‖ ≤ 1)
+    (hs : ‖f.coeff s‖ = 1) (hlt : ∀ n < s, ‖f.coeff n‖ < 1) :
+    ∀ᶠ r in 𝓝[<] (1 : ℝ), IsDistinguished r s f ∧ IsLowestDominant r s f := by
+  -- Near one, `rᵏ` exceeds each of the finitely many norms `‖aₙ‖ < 1` with `n < s`.
+  have hev : ∀ᶠ r in 𝓝[<] (1 : ℝ), ∀ n ∈ Finset.range s, ‖f.coeff n‖ < r ^ (s - n) := by
+    rw [Finset.eventually_all]
+    intro n hn
+    have ht : Tendsto (fun r : ℝ ↦ r ^ (s - n)) (𝓝 1) (𝓝 1) := by
+      simpa using (continuous_pow (s - n)).tendsto (1 : ℝ)
+    exact nhdsWithin_le_nhds (ht.eventually (lt_mem_nhds (hlt n (Finset.mem_range.mp hn))))
+  filter_upwards [hev, Ioo_mem_nhdsLT zero_lt_one] with r hr ⟨hr0, hr1⟩
+  have key : ∀ m, m ≠ s → ‖f.coeff m‖ * r ^ m < r ^ s := by
+    intro m hm
+    rcases hm.lt_or_gt with h | h
+    · calc ‖f.coeff m‖ * r ^ m < r ^ (s - m) * r ^ m :=
+            mul_lt_mul_of_pos_right (hr m (Finset.mem_range.mpr h)) (pow_pos hr0 _)
+        _ = r ^ s := by rw [← pow_add, Nat.sub_add_cancel h.le]
+    · calc ‖f.coeff m‖ * r ^ m ≤ 1 * r ^ m :=
+            mul_le_mul_of_nonneg_right (h1 m) (pow_nonneg hr0.le _)
+        _ < r ^ s := by rw [one_mul]; exact pow_lt_pow_right_of_lt_one₀ hr0 hr1 h
+  have hg : f.gaussNorm norm r = r ^ s := by
+    rw [gaussNorm_eq_of_forall_le (s := s) fun m ↦ ?_, hs, one_mul]
+    rcases eq_or_ne m s with rfl | hm
+    · exact le_rfl
+    · rw [hs, one_mul]
+      exact (key m hm).le
+  have hss : ‖f.coeff s‖ * r ^ s = f.gaussNorm norm r := by rw [hg, hs, one_mul]
+  exact ⟨⟨hss, fun m hm ↦ hg ▸ key m hm.ne'⟩,
+    ⟨hg ▸ pow_pos hr0 s, hss, fun m hm ↦ hg ▸ key m hm.ne⟩⟩
+
+end UnitRadius
 
 section NormedRing
 

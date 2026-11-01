@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DiscreteValuationRing
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+import TauCeti.Analysis.Normed.Ring.UnitBall
+import TauCeti.RingTheory.PowerSeries.Active
 
 /-!
 # Formal and normed Weierstrass preparation near the unit radius
@@ -53,16 +55,18 @@ ultrametric ring with multiplicative norm, but no completeness. Over a discrete 
 dividing out the uniformiser power `π ^ μ(g)` reduces a nonzero series to the case of a unit
 coefficient, whose least index is the λ-invariant.
 
+The comparison of norms on `O` (`TauCeti.norm_map_eq_one_iff_isUnit`,
+`TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`), restrictedness and units inside the unit disc
+(`PowerSeries.isRestricted_map_of_abs_lt_one`, `TauCeti.PowerSeries.isUnit_mk_map`) and the
+unique dominant coefficient near the unit radius
+(`TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant`) need no local ring or
+preparation theory, and live in `TauCeti.Analysis.Normed.Ring.UnitBall`,
+`TauCeti.RingTheory.PowerSeries.TateAlgebra` and `TauCeti.RingTheory.PowerSeries.Active`.
+
 ## Main results
 
-* `TauCeti.norm_map_eq_one_iff_isUnit` and `TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`: units
-  of `O` map to norm one and the maximal ideal is exactly the preimage of the open unit ball.
-* `PowerSeries.isRestricted_map_of_abs_lt_one` and `TauCeti.PowerSeries.isUnit_mk_map`:
-  series over `O` are restricted inside the unit disc, and formal units stay units of every
-  ring of restricted series there.
-* `TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant` and
-  `TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant_map`: near the unit radius,
-  the least coefficient of norm one, respectively the formal degree, is the unique dominant index.
+* `TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant_map`: near the unit radius,
+  the formal degree is the unique dominant index.
 * `PowerSeries.IsWeierstrassFactorization.eventually_isDistinguished_map` and
   `PowerSeries.IsWeierstrassFactorization.eventually_eq_map_of_mul_eq`: near the unit radius,
   the image of a formal Weierstrass factorization `g = P * h` is distinguished of degree `deg P`,
@@ -85,110 +89,9 @@ public section
 
 open Filter Topology IsLocalRing
 
-namespace PowerSeries
-
-variable {O R : Type*} [Semiring O] [NormedRing R] {φ : O →+* R}
-
-/-- A series whose coefficients map into the closed unit ball of a normed ring is restricted at
-every radius of absolute value less than one. -/
-theorem isRestricted_map_of_abs_lt_one (hφ : ∀ x, ‖φ x‖ ≤ 1) (g : PowerSeries O) {r : ℝ}
-    (hr : |r| < 1) :
-    (g.map φ).IsRestricted r :=
-  HasGaussNorm.isRestricted_of_abs_lt
-    ⟨1, Set.forall_mem_range.mpr fun n ↦ by simpa using hφ (g.coeff n)⟩ hr
-
-end PowerSeries
-
 namespace TauCeti
 
-section LocalRing
-
-variable {O R : Type*} [CommRing O] [IsLocalRing O] [SeminormedRing R] [NormOneClass R]
-  {φ : O →+* R}
-
-/-- A ring homomorphism from a local ring into the closed unit ball of a normed ring, mapping the
-maximal ideal into the open unit ball, maps exactly the units to elements of norm one. -/
-theorem norm_map_eq_one_iff_isUnit (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1)
-    {x : O} : ‖φ x‖ = 1 ↔ IsUnit x := by
-  refine ⟨fun h ↦ by_contra fun hx ↦ (hm x (by rwa [mem_maximalIdeal, mem_nonunits_iff])).ne h,
-    fun ⟨u, hu⟩ ↦ ?_⟩
-  subst hu
-  refine le_antisymm (hφ _) ?_
-  calc (1 : ℝ) = ‖φ ↑u * φ ↑u⁻¹‖ := by rw [← map_mul, Units.mul_inv, map_one, norm_one]
-    _ ≤ ‖φ ↑u‖ * ‖φ ↑u⁻¹‖ := norm_mul_le _ _
-    _ ≤ ‖φ ↑u‖ * 1 := mul_le_mul_of_nonneg_left (hφ _) (norm_nonneg _)
-    _ = ‖φ ↑u‖ := mul_one _
-
-/-- A ring homomorphism from a local ring into the closed unit ball of a normed ring, mapping the
-maximal ideal into the open unit ball, pulls the open unit ball back to the maximal ideal. -/
-theorem norm_map_lt_one_iff_mem_maximalIdeal (hφ : ∀ x, ‖φ x‖ ≤ 1)
-    (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) {x : O} : ‖φ x‖ < 1 ↔ x ∈ maximalIdeal O := by
-  refine ⟨fun h ↦ ?_, hm x⟩
-  rw [mem_maximalIdeal, mem_nonunits_iff, ← norm_map_eq_one_iff_isUnit hφ hm]
-  exact h.ne
-
-end LocalRing
-
 namespace PowerSeries
-
-section SeminormedRing
-
-variable {R : Type*} [SeminormedRing R] {s : ℕ} {f : _root_.PowerSeries R}
-
-/-- **The unique dominant coefficient near the unit radius.** If every coefficient of `f` has norm
-at most one, the coefficient in degree `s` has norm one and every earlier coefficient has norm less
-than one, then for all radii `r < 1` close enough to one, `s` is both the distinguished and the
-lowest dominant degree of `f` at `r`: the weighted coefficient in degree `s` is the only one
-attaining the Gauss norm `rˢ`. -/
-theorem eventually_isDistinguished_and_isLowestDominant (h1 : ∀ n, ‖f.coeff n‖ ≤ 1)
-    (hs : ‖f.coeff s‖ = 1) (hlt : ∀ n < s, ‖f.coeff n‖ < 1) :
-    ∀ᶠ r in 𝓝[<] (1 : ℝ), IsDistinguished r s f ∧ IsLowestDominant r s f := by
-  -- Near one, `rᵏ` exceeds each of the finitely many norms `‖aₙ‖ < 1` with `n < s`.
-  have hev : ∀ᶠ r in 𝓝[<] (1 : ℝ), ∀ n ∈ Finset.range s, ‖f.coeff n‖ < r ^ (s - n) := by
-    rw [Finset.eventually_all]
-    intro n hn
-    have ht : Tendsto (fun r : ℝ ↦ r ^ (s - n)) (𝓝 1) (𝓝 1) := by
-      simpa using (continuous_pow (s - n)).tendsto (1 : ℝ)
-    exact nhdsWithin_le_nhds (ht.eventually (lt_mem_nhds (hlt n (Finset.mem_range.mp hn))))
-  filter_upwards [hev, Ioo_mem_nhdsLT zero_lt_one] with r hr ⟨hr0, hr1⟩
-  have key : ∀ m, m ≠ s → ‖f.coeff m‖ * r ^ m < r ^ s := by
-    intro m hm
-    rcases hm.lt_or_gt with h | h
-    · calc ‖f.coeff m‖ * r ^ m < r ^ (s - m) * r ^ m :=
-            mul_lt_mul_of_pos_right (hr m (Finset.mem_range.mpr h)) (pow_pos hr0 _)
-        _ = r ^ s := by rw [← pow_add, Nat.sub_add_cancel h.le]
-    · calc ‖f.coeff m‖ * r ^ m ≤ 1 * r ^ m :=
-            mul_le_mul_of_nonneg_right (h1 m) (pow_nonneg hr0.le _)
-        _ < r ^ s := by rw [one_mul]; exact pow_lt_pow_right_of_lt_one₀ hr0 hr1 h
-  have hg : f.gaussNorm norm r = r ^ s := by
-    rw [gaussNorm_eq_of_forall_le (s := s) fun m ↦ ?_, hs, one_mul]
-    rcases eq_or_ne m s with rfl | hm
-    · exact le_rfl
-    · rw [hs, one_mul]
-      exact (key m hm).le
-  have hss : ‖f.coeff s‖ * r ^ s = f.gaussNorm norm r := by rw [hg, hs, one_mul]
-  exact ⟨⟨hss, fun m hm ↦ hg ▸ key m hm.ne'⟩,
-    ⟨hg ▸ pow_pos hr0 s, hss, fun m hm ↦ hg ▸ key m hm.ne⟩⟩
-
-end SeminormedRing
-
-section Restricted
-
-variable {O R : Type*} [Semiring O] [NormedRing R] {φ : O →+* R}
-
-/-- **A formal unit is a unit of every ring of series restricted inside the unit disc.** If `φ`
-maps into the closed unit ball, the image of a unit `u` of `O⟦X⟧` is a unit of the ring of series
-restricted at any radius of absolute value less than one, with inverse the image of `u⁻¹`. -/
-theorem isUnit_mk_map [IsUltrametricDist R] (hφ : ∀ x, ‖φ x‖ ≤ 1) {u : _root_.PowerSeries O}
-    (hu : IsUnit u) {r : ℝ} (hr : |r| < 1) :
-    IsUnit (⟨u.map φ, u.isRestricted_map_of_abs_lt_one hφ hr⟩ :
-      _root_.PowerSeries.IsRestricted.subring (R := R) r) := by
-  obtain ⟨u, rfl⟩ := hu
-  exact ⟨⟨⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ _ hr⟩,
-    ⟨_, _root_.PowerSeries.isRestricted_map_of_abs_lt_one hφ (↑u⁻¹ : _root_.PowerSeries O) hr⟩,
-    Subtype.ext (by simp [← map_mul]), Subtype.ext (by simp [← map_mul])⟩, rfl⟩
-
-end Restricted
 
 section LocalRing
 
