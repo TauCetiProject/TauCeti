@@ -68,13 +68,7 @@ theorem exists_fixed_lift_of_torus_twist (ψ : G →* H)
     {q m : ℕ} (hq : 1 < q) (hm : 0 < m) (hθ : ∀ t, (⇑θ)^[m] t = t)
     (hf : ∀ t, f t = θ t ^ q) {y : H} (hy : F' y = y) :
     ∃ x : G, F x = x ∧ ψ x = y := by
-  obtain ⟨n, hn⟩ := hsurj y
-  have hd : n / F n ∈ j.range := by
-    rw [hker, mem_ker, map_div, hψ, hn, hy, div_self']
-  obtain ⟨t, ht⟩ := j.exists_fixed_inv_mul_of_surjective_commutatorMap f F hj
-    (f.surjective_commutatorMap_of_torus_twist θ hq hm hθ hf) hd
-  refine ⟨(j t)⁻¹ * n, ht, ?_⟩
-  have htker : ψ (j t) = 1 := mem_ker.mp (hker ▸ ⟨t, rfl⟩)
-  simp [htker, hn]
+  exact ψ.exists_fixed_lift_of_surjective_commutatorMap j hker f F F' hψ hj hsurj
+    (f.surjective_commutatorMap_of_torus_twist θ hq hm hθ hf) hy
 
 end MonoidHom

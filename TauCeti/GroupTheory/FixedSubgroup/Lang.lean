@@ -91,6 +91,23 @@ theorem exists_fixed_inv_mul_of_surjective_commutatorMap (ι : T →* G)
     _ = (n / F n) * F n := by rw [hc]
     _ = ι t * ((ι t)⁻¹ * n) := by simp
 
+/-- An equivariant surjection admits fixed lifts if its kernel is parametrized by an
+invariant group with surjective Lang map. The parametrization need not be injective. -/
+theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
+    (ψ : G →* H) (j : T →* G) (hker : j.range = ψ.ker)
+    (f : T →* T) (F : G →* G) (F' : H →* H)
+    (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
+    (hsurj : Function.Surjective ψ) (hf : Function.Surjective (commutatorMap f))
+    {y : H} (hy : F' y = y) :
+    ∃ x : G, F x = x ∧ ψ x = y := by
+  obtain ⟨n, hn⟩ := hsurj y
+  have hd : n / F n ∈ j.range := by
+    rw [hker, mem_ker, map_div, hψ, hn, hy, div_self']
+  obtain ⟨t, ht⟩ := j.exists_fixed_inv_mul_of_surjective_commutatorMap f F hj hf hd
+  refine ⟨(j t)⁻¹ * n, ht, ?_⟩
+  have htker : ψ (j t) = 1 := mem_ker.mp (hker ▸ ⟨t, rfl⟩)
+  simp [htker, hn]
+
 end Group
 
 end MonoidHom
