@@ -59,6 +59,8 @@ Everything is stated over an arbitrary commutative ring `R` and an arbitrary uni
 * `TauCeti.MarkovBraid.burauAlexander_conj`,
   `TauCeti.MarkovBraid.burauAlexander_stabilize` and
   `TauCeti.MarkovBraid.burauAlexander_stabilizeInv`: the effect of each Markov move.
+* `TauCeti.MarkovBraid.burauAlexander_strandIncl`: the invariant vanishes on a braid with an
+  uncrossed strand, whose closure is split.
 * `TauCeti.MarkovEquiv.associated_burauAlexander`: Markov-equivalent braids have associated
   invariants.
 * `TauCeti.MarkovBraid.burauAlexander_sigma_pow_three`: the trefoil value `-t (t ^ 2 - t + 1)`.
@@ -241,6 +243,17 @@ theorem burauAlexander_conj (t : Rˣ) (b c : BraidGroup (n + 1)) :
     (geom_vecMul_burau_sub_one t b) (burau_mulVec_one t c) (vecMul_burau_geom t c)
     (Matrix.isUnit_iff_isUnit_det _ |>.mp (burau (n + 1) t c).isUnit) (by simp)
     (by simpa using t.isUnit.pow n)
+
+/-- **Adding an uncrossed strand makes the invariant vanish.** Deleting the new strand's row and
+column of `burau (strandIncl b) - 1` leaves `burau b - 1`, which is singular. Informally, the
+closure of `strandIncl b` is the split union of the closure of `b` with an unknot. -/
+@[simp]
+theorem burauAlexander_strandIncl (t : Rˣ) (b : BraidGroup (n + 1)) :
+    burauAlexander (R := R) ⟨n + 1, BraidGroup.strandIncl b⟩ t = 0 := by
+  rw [burauAlexander_def]
+  simp only [Matrix.submatrix_sub, Pi.sub_apply]
+  rw [submatrix_burau_strandIncl, Matrix.submatrix_one _ (Fin.castSucc_injective _),
+    det_burau_sub_one]
 
 /-- **Markov move II, positive stabilization, multiplies the invariant by `-t`.** -/
 theorem burauAlexander_stabilize (t : Rˣ) (b : BraidGroup (n + 1)) :

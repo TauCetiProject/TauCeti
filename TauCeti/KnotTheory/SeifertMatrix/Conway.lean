@@ -30,7 +30,10 @@ of Seifert surfaces for a diagram skein triple is asserted here.
   Chapters 6 and 8, especially Theorem 8.6 (the Conway-normalized skein relation).
 
 The determinant is unchanged by reindexing and by a congruence `V ↦ P V Pᵀ` with
-`(det P)² = 1`, such as an integral change of basis of the first homology of the surface.
+`(det P)² = 1`, such as an integral change of basis of the first homology of the surface. It is
+also unchanged by transposition and by the elementary row and column enlargements, so it is an
+invariant of S-equivalence in every matrix size, and it vanishes once zero rows and columns are
+added, as for the Seifert matrix of a disconnected surface.
 
 The normalization comparison uses `TauCeti.KnotTheory.alexander`. The minor calculation uses
 `Matrix.det_updateCol_last_single` and Mathlib's column multilinearity of the determinant.
@@ -74,6 +77,12 @@ theorem map_eval₂_seifertConwayMatrix {S : Type*} [CommRing S]
   simp only [map_apply, seifertConwayMatrix_apply, map_sub, map_mul, eval₂_T, eval₂_C,
     sub_apply, smul_apply, smul_eq_mul, transpose_apply, zpow_one, zpow_neg_one]
 
+/-- Doubling Laurent exponents sends `T k` to `T (2 * k)`. -/
+private theorem mapDomainRingHom_two_T (k : ℤ) :
+    AddMonoidAlgebra.mapDomainRingHom R (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T k) = T (2 * k) := by
+  rw [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single]
+  rfl
+
 /-- Doubling Laurent exponents in the Alexander matrix and multiplying by `s⁻¹` gives
 `s V - s⁻¹ Vᵀ`. -/
 private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι ι R) :
@@ -83,16 +92,12 @@ private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι �
   ext i j : 2
   simp only [seifertConwayMatrix_apply, smul_apply, smul_eq_mul, map_apply,
     TauCeti.KnotTheory.alexanderMatrix_apply, map_sub, map_mul]
-  have hT (k : ℤ) : AddMonoidAlgebra.mapDomainRingHom R
-      (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T k) = T (2 * k) := by
-    rw [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single]
-    rfl
   have hC (a : R) : AddMonoidAlgebra.mapDomainRingHom R
       (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (C a) = C a := by
     rw [← single_eq_C, AddMonoidAlgebra.mapDomainRingHom_apply,
       AddMonoidAlgebra.mapDomain_single]
     rfl
-  rw [hT, hC, hC, mul_sub, ← mul_assoc, ← T_add]
+  rw [mapDomainRingHom_two_T, hC, hC, mul_sub, ← mul_assoc, ← T_add]
   norm_num
 
 /-- Signed inversion transposes the half-power Seifert matrix. -/
@@ -191,6 +196,54 @@ theorem seifertConwayDeterminant_eq_map_alexander (V : Matrix ι ι R) {g : ℕ}
   congr 1
   simp only [hcard, Nat.cast_mul, Nat.cast_ofNat]
   omega
+
+/-! ### S-equivalence moves -/
+
+/-- Transposing a Seifert matrix keeps the Seifert determinant: `s Vᵀ - s⁻¹ V` is the transpose
+of `s V - s⁻¹ Vᵀ`. -/
+@[simp]
+theorem seifertConwayDeterminant_transpose (V : Matrix ι ι R) :
+    Vᵀ.seifertConwayDeterminant = V.seifertConwayDeterminant := by
+  have h : Vᵀ.seifertConwayMatrix = V.seifertConwayMatrixᵀ := by
+    ext i j : 2
+    simp
+  rw [seifertConwayDeterminant_def, h, det_transpose, seifertConwayDeterminant_def]
+
+/-- **A column enlargement keeps the Seifert determinant**, in every matrix size: the two new
+rows and columns contribute a factor `s²` to the Alexander determinant `det(V - t Vᵀ)`, which the
+normalization `s^(-size)` absorbs. -/
+@[simp]
+theorem seifertConwayDeterminant_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
+    (TauCeti.KnotTheory.enlargeColumn V ξ).seifertConwayDeterminant =
+      V.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_def, seifertConwayDeterminant_def,
+    seifertConwayMatrix_eq_smul_map_alexanderMatrix,
+    seifertConwayMatrix_eq_smul_map_alexanderMatrix, det_smul, det_smul,
+    ← RingHom.mapMatrix_apply, ← RingHom.map_det, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+    TauCeti.KnotTheory.det_alexanderMatrix_enlargeColumn, map_mul, mapDomainRingHom_two_T,
+    Fintype.card_sum, Fintype.card_fin, T_pow, T_pow, ← mul_assoc, ← T_add]
+  congr 2
+  push_cast
+  ring
+
+/-- **A row enlargement keeps the Seifert determinant.** It is the transpose of a column
+enlargement of the transpose. -/
+@[simp]
+theorem seifertConwayDeterminant_enlargeRow (V : Matrix ι ι R) (η : ι → R) :
+    (TauCeti.KnotTheory.enlargeRow V η).seifertConwayDeterminant =
+      V.seifertConwayDeterminant := by
+  rw [TauCeti.KnotTheory.enlargeRow_def, seifertConwayDeterminant_transpose,
+    seifertConwayDeterminant_enlargeColumn, seifertConwayDeterminant_transpose]
+
+/-- Adding zero rows and columns makes the Seifert determinant vanish. For the Seifert matrix of a
+disconnected surface this is the vanishing of the Conway polynomial of a split link. -/
+theorem seifertConwayDeterminant_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
+    [Nonempty κ] (V : Matrix ι ι R) :
+    (fromBlocks V 0 0 (0 : Matrix κ κ R)).seifertConwayDeterminant = 0 := by
+  have h : (fromBlocks V 0 0 (0 : Matrix κ κ R)).seifertConwayMatrix =
+      fromBlocks V.seifertConwayMatrix 0 0 0 := by
+    ext (i | i) (j | j) <;> simp
+  rw [seifertConwayDeterminant_def, h, det_fromBlocks_zero₂₁, Matrix.det_zero, mul_zero]
 
 /-- Changing a diagonal entry by `r` changes the half-power Seifert matrix in that entry
 by `r (s - s⁻¹)`. -/
