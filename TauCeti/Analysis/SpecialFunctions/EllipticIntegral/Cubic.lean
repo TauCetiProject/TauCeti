@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Gauss
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.Calculus.RealCharts
 
 /-!
 # Integrals of the inverse square root of a real cubic with three real roots
@@ -33,12 +33,14 @@ the AGM integral with `K(k) / √(e₁ - e₃)`.
 
 ## Main results
 
+* `TauCeti.Real.setOf_cubic_pos`: for `e₃ < e₂ < e₁`, `D` is positive exactly on
+  `(e₃, e₂) ∪ (e₁, ∞)`.
 * `TauCeti.Real.lintegral_Ioi_inv_sqrt_cubic_eq_agmIntegral` and
   `TauCeti.Real.lintegral_Ioo_inv_sqrt_cubic_eq_agmIntegral`: both integrals equal the AGM
   integral of the axes `√(e₁ - e₂)` and `√(e₁ - e₃)`.
 * `TauCeti.Real.lintegral_Ioi_inv_sqrt_cubic_eq_legendreK` and
   `TauCeti.Real.lintegral_Ioo_inv_sqrt_cubic_eq_legendreK`: both integrals equal
-  `K(k) / √(e₁ - e₃)`.
+  `K(k) / √(e₁ - e₃)`, via `TauCeti.Real.agmIntegral_sqrt_sub_eq_legendreK`.
 
 ## References
 
@@ -75,6 +77,28 @@ private theorem lintegral_image_inv_sqrt_eq_agmIntegral {f f' D : ℝ → ℝ} {
 
 variable {e₁ e₂ e₃ : ℝ}
 
+/-- For `e₃ < e₂ < e₁`, the cubic `4 (x - e₁)(x - e₂)(x - e₃)` is positive exactly on
+`(e₃, e₂) ∪ (e₁, ∞)`. -/
+theorem setOf_cubic_pos (h₃₂ : e₃ < e₂) (h₂₁ : e₂ < e₁) :
+    {x : ℝ | 0 < 4 * (x - e₁) * (x - e₂) * (x - e₃)} = Ioo e₃ e₂ ∪ Ioi e₁ := by
+  ext x
+  simp only [mem_ofPred_eq, mem_union, mem_Ioo, mem_Ioi]
+  constructor
+  · intro h
+    by_contra hc
+    rcases le_or_gt x e₃ with h3 | h3
+    · have : 0 < (x - e₁) * (x - e₂) := mul_pos_of_neg_of_neg (by linarith) (by linarith)
+      nlinarith
+    · have h2 : e₂ ≤ x := le_of_not_gt fun h2 ↦ hc (Or.inl ⟨h3, h2⟩)
+      have h1 : x ≤ e₁ := le_of_not_gt fun h1 ↦ hc (Or.inr h1)
+      have : 0 ≤ (x - e₂) * (x - e₃) := mul_nonneg (by linarith) (by linarith)
+      nlinarith
+  · rintro (⟨h3, h2⟩ | h1)
+    · have : 0 < (x - e₁) * (x - e₂) := mul_pos_of_neg_of_neg (by linarith) (by linarith)
+      nlinarith
+    · have : 0 < (x - e₁) * (x - e₂) := mul_pos (by linarith) (by linarith)
+      nlinarith
+
 /-- **The cubic integral over `(e₁, ∞)` is an AGM integral.** For `e₂, e₃ < e₁`,
 `∫_{(e₁, ∞)} (4 (x - e₁)(x - e₂)(x - e₃))^(-1/2) dx` is the AGM integral of the axes
 `√(e₁ - e₂)` and `√(e₁ - e₃)`. -/
@@ -82,13 +106,10 @@ theorem lintegral_Ioi_inv_sqrt_cubic_eq_agmIntegral (h₂ : e₂ < e₁) (h₃ :
     ∫⁻ x in Ioi e₁, ENNReal.ofReal (√(4 * (x - e₁) * (x - e₂) * (x - e₃)))⁻¹ =
       ENNReal.ofReal (agmIntegral √(e₁ - e₂) √(e₁ - e₃)) := by
   have himage : (fun t : ℝ ↦ e₁ + t ^ 2) '' Ioi 0 = Ioi e₁ := by
-    ext x
-    refine ⟨fun ⟨t, ht, hx⟩ ↦ ?_, fun hx ↦ ?_⟩
-    · rw [← hx, mem_Ioi]
-      have : 0 < t ^ 2 := pow_pos ht 2
-      linarith
-    · have hx : 0 < x - e₁ := sub_pos.2 hx
-      exact ⟨√(x - e₁), sqrt_pos.2 hx, by simp only [sq_sqrt hx.le]; ring⟩
+    have hsq := image_sq_div_const_Ioi one_pos (y := 0) le_rfl
+    simp only [div_one, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hsq
+    have h := image_image (e₁ + ·) (· ^ 2) (Ioi (0 : ℝ))
+    rwa [hsq, image_const_add_Ioi, add_zero, eq_comm] at h
   rw [← himage]
   refine lintegral_image_inv_sqrt_eq_agmIntegral (f' := fun t ↦ 2 * t)
     (sqrt_pos.2 (sub_pos.2 h₂)) (sqrt_pos.2 (sub_pos.2 h₃))
@@ -97,27 +118,6 @@ theorem lintegral_Ioi_inv_sqrt_cubic_eq_agmIntegral (h₂ : e₂ < e₁) (h₃ :
   · simpa using ((hasDerivAt_pow 2 t).const_add e₁).hasDerivWithinAt
   · exact (sq_eq_sq₀ (le_of_lt hs) (le_of_lt ht)).1 (by simpa using hst)
   · rw [sq_sqrt (sub_pos.2 h₂).le, sq_sqrt (sub_pos.2 h₃).le]
-    ring
-
-/-- For `0 < q < p`, the map `t ↦ c + p q / (t² + p)` sends `(0, ∞)` onto `(c, c + q)`. -/
-private theorem image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hq : 0 < q) (hqp : q < p) :
-    (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) '' Ioi 0 = Ioo c (c + q) := by
-  have hp : 0 < p := hq.trans hqp
-  ext x
-  refine ⟨fun ⟨t, ht, hx⟩ ↦ ?_, fun ⟨hxc, hxq⟩ ↦ ?_⟩
-  · have ht2 : 0 < t ^ 2 := pow_pos ht 2
-    have hlt : p * q / (t ^ 2 + p) < q := by
-      rw [div_lt_iff₀ (by positivity)]
-      nlinarith
-    rw [← hx]
-    exact ⟨by linarith [show 0 < p * q / (t ^ 2 + p) by positivity], by linarith⟩
-  · have hx : 0 < x - c := sub_pos.2 hxc
-    have hlt : p < p * q / (x - c) := by
-      rw [lt_div_iff₀ hx]
-      nlinarith
-    refine ⟨√(p * q / (x - c) - p), sqrt_pos.2 (by linarith), ?_⟩
-    simp only [sq_sqrt (by linarith : 0 ≤ p * q / (x - c) - p), sub_add_cancel]
-    field_simp
     ring
 
 /-- **The cubic integral over `(e₃, e₂)` is an AGM integral.** For `e₃ < e₂ < e₁`,
@@ -160,7 +160,7 @@ theorem lintegral_Ioo_inv_sqrt_cubic_eq_agmIntegral (h₃₂ : e₃ < e₂) (h�
 
 /-- The AGM integral of the axes `√(e₁ - e₂)` and `√(e₁ - e₃)` is `K(k) / √(e₁ - e₃)`, where
 `k = √((e₂ - e₃) / (e₁ - e₃))`. -/
-private theorem agmIntegral_sqrt_sub_eq_legendreK (h₃₂ : e₃ ≤ e₂) (h₂₁ : e₂ < e₁) :
+theorem agmIntegral_sqrt_sub_eq_legendreK (h₃₂ : e₃ ≤ e₂) (h₂₁ : e₂ < e₁) :
     agmIntegral √(e₁ - e₂) √(e₁ - e₃) =
       legendreK √((e₂ - e₃) / (e₁ - e₃)) / √(e₁ - e₃) := by
   rw [agmIntegral_eq_legendreK_div (sqrt_pos.2 (sub_pos.2 h₂₁)) (sqrt_le_sqrt (by linarith)),

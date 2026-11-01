@@ -22,7 +22,9 @@ special-function computations.
   `u ↦ u / (1 - u)` on intervals below `1`;
 * `TauCeti.image_sq_div_const_Ioi`, `TauCeti.injOn_sq_div_const_Ioi`, and
   `TauCeti.hasDerivAt_sq_div_const` describe the square chart `z ↦ z ^ 2 / ν` on positive
-  half-lines.
+  half-lines;
+* `TauCeti.image_add_mul_div_sq_add_Ioi` describes the chart `t ↦ c + p q / (t ^ 2 + p)` on the
+  positive half-line.
 -/
 
 public section
@@ -136,5 +138,28 @@ lemma injOn_sq_div_const_Ioi (hν : ν ≠ 0) :
 lemma hasDerivAt_sq_div_const (ν z : ℝ) :
     HasDerivAt (fun x : ℝ => x ^ 2 / ν) (2 * z / ν) z := by
   simpa using ((hasDerivAt_id z).pow 2).div_const ν
+
+/-! ### The chart `t ↦ c + p q / (t ^ 2 + p)` -/
+
+/-- For `0 < q < p`, the chart `t ↦ c + p q / (t ^ 2 + p)` carries `(0, ∞)` onto `(c, c + q)`. -/
+lemma image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hq : 0 < q) (hqp : q < p) :
+    (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) '' Ioi 0 = Ioo c (c + q) := by
+  have hp : 0 < p := hq.trans hqp
+  ext x
+  refine ⟨fun ⟨t, ht, hx⟩ ↦ ?_, fun ⟨hxc, hxq⟩ ↦ ?_⟩
+  · have ht2 : 0 < t ^ 2 := pow_pos ht 2
+    have hlt : p * q / (t ^ 2 + p) < q := by
+      rw [div_lt_iff₀ (by positivity)]
+      nlinarith
+    rw [← hx]
+    exact ⟨by linarith [show 0 < p * q / (t ^ 2 + p) by positivity], by linarith⟩
+  · have hx : 0 < x - c := sub_pos.2 hxc
+    have hlt : p < p * q / (x - c) := by
+      rw [lt_div_iff₀ hx]
+      nlinarith
+    refine ⟨√(p * q / (x - c) - p), Real.sqrt_pos.2 (by linarith), ?_⟩
+    simp only [Real.sq_sqrt (by linarith : 0 ≤ p * q / (x - c) - p), sub_add_cancel]
+    field_simp
+    ring
 
 end TauCeti
