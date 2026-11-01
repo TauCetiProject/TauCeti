@@ -29,11 +29,15 @@ This advances Deliverable A, Layer 1 of
 ## Main definitions
 
 * `TauCeti.Lie.tangentAd`: the resulting tangent Lie algebra automorphism.
+* `MonoidHom.groupLieAlgebraMap`: the differential at the identity of a group homomorphism, as a
+  continuous linear map between tangent Lie algebras.
 
 ## Main results
 
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
+* `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism differentiable at the
+  identity intertwines the adjoint actions, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
 
 ## References
 
@@ -57,6 +61,46 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+
+section Hom
+
+variable {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+  {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+
+/-- The differential `dφ : Lie(K) → Lie(G)` at the identity of a group homomorphism `φ : K →* G`,
+as a continuous linear map between the tangent Lie algebras. It is zero when `φ` is not
+differentiable at the identity. -/
+def _root_.MonoidHom.groupLieAlgebraMap (φ : K →* G) (J : ModelWithCorners 𝕜 F HK)
+    (I : ModelWithCorners 𝕜 E H) : GroupLieAlgebra J K →L[𝕜] GroupLieAlgebra I G :=
+  mfderiv J I φ 1
+
+/-- The differential at the identity of `φ`, applied to `ξ`. -/
+theorem _root_.MonoidHom.groupLieAlgebraMap_apply (φ : K →* G) (J : ModelWithCorners 𝕜 F HK)
+    (ξ : GroupLieAlgebra J K) : φ.groupLieAlgebraMap J I ξ = mfderiv J I φ 1 ξ :=
+  (rfl)
+
+/-- The differential of the identity homomorphism is the identity. -/
+@[simp]
+theorem _root_.MonoidHom.groupLieAlgebraMap_id :
+    (MonoidHom.id G).groupLieAlgebraMap I I = ContinuousLinearMap.id 𝕜 (GroupLieAlgebra I G) := by
+  ext ξ
+  rw [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.coe_id, mfderiv_id]
+
+/-- **The chain rule at the identity.** The differential of a composite of homomorphisms that are
+differentiable at the identity is the composite of their differentials. -/
+theorem _root_.MonoidHom.groupLieAlgebraMap_comp {F' HK' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] [TopologicalSpace HK'] {J' : ModelWithCorners 𝕜 F' HK'} {K' : Type*}
+    [TopologicalSpace K'] [ChartedSpace HK' K'] [Group K'] {J : ModelWithCorners 𝕜 F HK}
+    (ψ : K →* G) (φ : K' →* K) (hψ : MDifferentiableAt J I ψ 1)
+    (hφ : MDifferentiableAt J' J φ 1) :
+    (ψ.comp φ).groupLieAlgebraMap J' I =
+      (ψ.groupLieAlgebraMap J I).comp (φ.groupLieAlgebraMap J' J) := by
+  ext ξ
+  exact (mfderiv_comp_apply_of_eq (1 : K') hψ hφ (map_one φ) ξ).trans <|
+    (ψ.groupLieAlgebraMap_apply J _).symm.trans <|
+      congrArg (ψ.groupLieAlgebraMap J I) (φ.groupLieAlgebraMap_apply J' ξ).symm
+
+end Hom
 
 section Differential
 
@@ -126,6 +170,32 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (x := conjDiffeomorph (I := I) (n := 1) h 1) (x' := 1)
     (by simp)]
   rfl
+
+/-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` that is
+differentiable at the identity intertwines the adjoint actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`,
+where `dφ` is the differential of `φ` at the identity. -/
+theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [LieGroup J 1 K] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1) (k : K)
+    (ξ : GroupLieAlgebra J K) :
+    φ.groupLieAlgebraMap J I (adjointContinuousLinearMap (I := J) k ξ) =
+      adjointContinuousLinearMap (I := I) (φ k) (φ.groupLieAlgebraMap J I ξ) := by
+  have hfun : (φ : K → G) ∘ conjDiffeomorph (I := J) (n := 1) k =
+      conjDiffeomorph (I := I) (n := 1) (φ k) ∘ φ := by
+    funext y
+    simp
+  have hcomp := mfderiv_comp_apply_of_eq (1 : K) hφ
+    ((conjDiffeomorph (I := J) (n := 1) k).mdifferentiable one_ne_zero 1) (by simp) ξ
+  have hcomp' := mfderiv_comp_apply_of_eq (1 : K)
+    ((conjDiffeomorph (I := I) (n := 1) (φ k)).mdifferentiable one_ne_zero 1) hφ (map_one φ) ξ
+  -- Each side is a composite of two differentials at the identity; the two composites are the
+  -- differentials of `φ ∘ conj_k = conj_{φ k} ∘ φ`.
+  exact (φ.groupLieAlgebraMap_apply J _).trans <|
+    (congrArg (mfderiv J I φ 1) (adjointContinuousLinearMap_apply (I := J) k ξ)).trans <|
+    hcomp.symm.trans <| (DFunLike.congr_fun (mfderiv_congr (I := J) (I' := I) hfun) ξ).trans <|
+      hcomp'.trans <| (adjointContinuousLinearMap_apply (I := I) (φ k) _).symm.trans <|
+        congrArg (adjointContinuousLinearMap (I := I) (φ k)) (φ.groupLieAlgebraMap_apply J ξ).symm
 
 @[simp]
 private theorem conjDiffeomorph_inv (g : G) :

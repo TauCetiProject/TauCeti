@@ -39,6 +39,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_mulRightInvariantVectorField`: each orbit map `g ↦ g • x` relates the
   right-invariant vector field of `ξ` on `G` to `ξ_M`.
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
+* `MonoidHom.fundamentalVectorField_groupLieAlgebraMap`: for an action through a homomorphism
+  `φ : K →* G`, the fundamental vector field of `ξ ∈ Lie(K)` is that of `dφ ξ ∈ Lie(G)`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
@@ -214,6 +216,26 @@ theorem fundamentalVectorField_prod
       congrArg Prod.fst h
   · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_snd, Prod.smul_def] using
       congrArg Prod.snd h
+
+/-- **Fundamental vector fields along a homomorphism.** Let `K` act on `M` through a homomorphism
+`φ : K →* G` that is differentiable at the identity, `k • x = φ k • x`. Then the fundamental vector
+field of `ξ ∈ Lie(K)` is that of its image `dφ ξ ∈ Lie(G)`. For instance, the fundamental vector
+fields of the restriction of an action to a Lie subgroup are those of the ambient action. -/
+theorem _root_.MonoidHom.fundamentalVectorField_groupLieAlgebraMap
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [MulAction K M] [ContMDiffSMul I I' 1 G M] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (ξ : GroupLieAlgebra J K) :
+    fundamentalVectorField I' (φ.groupLieAlgebraMap J I ξ) =
+      (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x) := by
+  funext x
+  have horbit : (fun k : K ↦ k • x) = (fun g : G ↦ g • x) ∘ φ := funext fun k ↦ hsmul k x
+  have hcomp := mfderiv_comp_apply_of_eq (1 : K) ((ContMDiffSMul.contMDiff_smul_const (I := I)
+    (I' := I') (n := 1) x).mdifferentiableAt one_ne_zero) hφ (map_one φ) ξ
+  rw [φ.groupLieAlgebraMap_apply]
+  exact (fundamentalVectorField_apply (I := I) (G := G) (I' := I') _ x).trans <| hcomp.symm.trans <|
+    (congrArg (fun f : K → M ↦ mfderiv J I' f 1 ξ) horbit.symm).trans
+      (fundamentalVectorField_apply (I := J) (G := K) (I' := I') ξ x).symm
 
 end Field
 
