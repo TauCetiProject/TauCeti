@@ -64,8 +64,9 @@ theorem exists_map_eq_of_projectiveSeminorm_lt {f : E →ₗ[𝕜] E'} {g : F �
   set T := ∑ i, (‖x i‖ + ‖y i‖ + 1)
   have hT : 0 ≤ T := Finset.sum_nonneg fun _ _ ↦ by positivity
   -- Lift every factor up to an error `η ≤ 1` in norm, chosen so that `S + η * T < c`.
-  set η := min 1 ((c - S) / (T + 1))
-  have hη : 0 < η := lt_min one_pos (div_pos (sub_pos.2 hc) (by linarith))
+  obtain ⟨δ, hδ, hδT⟩ := exists_pos_mul_lt (sub_pos.2 hc) T
+  set η := min 1 δ
+  have hη : 0 < η := lt_min one_pos hδ
   have hη₁ : η ≤ 1 := min_le_left _ _
   choose a hfa ha using fun i ↦ TauCeti.exists_apply_eq_norm_lt_add hf (x i) hη
   choose b hgb hb using fun i ↦ TauCeti.exists_apply_eq_norm_lt_add hg (y i) hη
@@ -77,11 +78,8 @@ theorem exists_map_eq_of_projectiveSeminorm_lt {f : E →ₗ[𝕜] E'} {g : F �
         nlinarith [norm_nonneg (x i), norm_nonneg (y i)]
     _ = S + η * T := by rw [Finset.sum_add_distrib, Finset.mul_sum]
     _ < c := by
-        have h₁ : η * T ≤ (c - S) / (T + 1) * T := by gcongr; exact min_le_right _ _
-        have h₂ : (c - S) / (T + 1) * T < c - S := by
-          rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]
-          nlinarith
-        linarith
+        have h : η * T ≤ δ * T := by gcongr; exact min_le_right _ _
+        linarith [mul_comm T δ]
 
 end TensorProduct
 

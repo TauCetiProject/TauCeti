@@ -86,8 +86,9 @@ than `r`. With `Submodule.norm_mkQL_le`, this says that it is a metric quotient 
 theorem ball_subset_image_mkQL_ball (S : Submodule 𝕜 E) (r : ℝ) :
     Metric.ball (0 : E ⧸ S) r ⊆ S.mkQL '' Metric.ball 0 r := by
   intro x hx
-  obtain ⟨m, rfl, hm⟩ := QuotientAddGroup.norm_lt_iff.1 (mem_ball_zero_iff.1 hx)
-  exact ⟨m, mem_ball_zero_iff.2 hm, rfl⟩
+  have hx' : ‖x‖ < r := mem_ball_zero_iff.1 hx
+  obtain ⟨m, rfl, hm⟩ := Submodule.Quotient.norm_mk_lt x (sub_pos.2 hx')
+  exact ⟨m, mem_ball_zero_iff.2 (by linarith), by simp⟩
 
 end Submodule
 

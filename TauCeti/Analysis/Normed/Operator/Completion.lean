@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
+public import TauCeti.Analysis.Normed.Group.BallSphere
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Operator norms of bounded maps extended to completions
@@ -35,10 +37,6 @@ extension to the completions has the same property.
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
 * `ContinuousLinearMap.norm_fromCompletion`: `‖f.fromCompletion‖ = ‖f‖`.
-* `TauCeti.exists_apply_eq_norm_lt_add`: a map lifting open balls about `0` lifts each `y` to a
-  vector of norm less than `‖y‖ + ε`.
-* `ContinuousLinearMap.image_ball_eq_ball`: a metric quotient map maps each open ball about `0`
-  onto the open ball of the same radius.
 * `ContinuousLinearMap.ball_subset_image_completion_ball` and
   `ContinuousLinearMap.image_completion_ball`: the extension of a metric quotient map to the
   completions is a metric quotient map.
@@ -54,20 +52,6 @@ extension to the completions has the same property.
 public section
 
 open UniformSpace
-
-namespace TauCeti
-
-variable {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
-
-/-- If `f` lifts every vector of norm less than `r` to a vector of norm less than `r`, then every
-`y` is `f x` for some `x` with `‖x‖ < ‖y‖ + ε`, for each `ε > 0`. -/
-theorem exists_apply_eq_norm_lt_add {f : E → F}
-    (hf : ∀ r, Metric.ball (0 : F) r ⊆ f '' Metric.ball 0 r) (y : F) {ε : ℝ} (hε : 0 < ε) :
-    ∃ x, f x = y ∧ ‖x‖ < ‖y‖ + ε := by
-  obtain ⟨x, hx, rfl⟩ := hf _ (mem_ball_zero_iff.2 (lt_add_of_pos_right ‖y‖ hε))
-  exact ⟨x, rfl, mem_ball_zero_iff.1 hx⟩
-
-end TauCeti
 
 namespace ContinuousLinearMap
 
@@ -98,16 +82,6 @@ theorem norm_fromCompletion [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂]
     | ih x => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using f.le_opNorm x
   · simpa only [fromCompletion_apply_coe, Completion.norm_coe] using f.fromCompletion.le_opNorm x
 
-/-- A **metric quotient map** maps each open ball onto the open ball of the same radius: if
-`‖q‖ ≤ 1` and `q` lifts every vector of norm less than `r` to a vector of norm less than `r`,
-then `q` maps each open ball about `0` onto the open ball of the same radius. -/
-theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
-    (h : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) (r : ℝ) :
-    q '' Metric.ball 0 r = Metric.ball 0 r := by
-  refine subset_antisymm ?_ (h r)
-  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnnorm]
-  simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
-
 /-- If `f` lifts every vector of norm less than `r` to a vector of norm less than `r`, then so
 does its extension `f.completion` to the completions. -/
 theorem ball_subset_image_completion_ball {f : E →SL[σ₁₂] F}
@@ -116,12 +90,8 @@ theorem ball_subset_image_completion_ball {f : E →SL[σ₁₂] F}
   intro w hw
   rw [mem_ball_zero_iff] at hw
   -- Choose `δ > 0` with `(1 + δ + δ) * ‖w‖ < r`.
-  obtain ⟨δ, hδ, hδr⟩ : ∃ δ > 0, (1 + δ + δ) * ‖w‖ < r := by
-    refine ⟨(r - ‖w‖) / (2 * (‖w‖ + 1)), by have := norm_nonneg w; positivity, ?_⟩
-    have h : (r - ‖w‖) / (2 * (‖w‖ + 1)) * ‖w‖ * 2 < r - ‖w‖ := by
-      rw [div_mul_eq_mul_div, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
-      nlinarith [norm_nonneg w]
-    linarith
+  obtain ⟨δ, hδ, hδw⟩ := exists_pos_mul_lt (sub_pos.2 hw) (2 * ‖w‖)
+  have hδr : (1 + δ + δ) * ‖w‖ < r := by linarith
   -- Points of `F` lift with constant `1 + δ`, so points of the completion lift with `1 + δ + δ`.
   let g := f.completion.toLinearMap.toAddMonoidHom.mkNormedAddGroupHom ‖f.completion‖
     f.completion.le_opNorm
