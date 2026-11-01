@@ -141,6 +141,17 @@ theorem exists_toGerm_eq {s : Set ℂ} (g : holomorphicGerms s) :
   apply Subtype.ext
   simpa only [coe_ofFun] using hfg
 
+/-- Two holomorphic germs have representatives on a common open neighbourhood. -/
+theorem exists_toGerm_eq₂ {s : Set ℂ} (a b : holomorphicGerms s) :
+    ∃ (U : Opens ℂ) (hs : s ⊆ U) (f g : holomorphicFunctions U),
+      HolomorphicFunctions.toGerm hs f = a ∧ HolomorphicFunctions.toGerm hs g = b := by
+  obtain ⟨U, hsU, f, rfl⟩ := exists_toGerm_eq a
+  obtain ⟨V, hsV, g, rfl⟩ := exists_toGerm_eq b
+  have hs : s ⊆ (U ⊓ V : Opens ℂ) := fun z hz => ⟨hsU hz, hsV hz⟩
+  refine ⟨U ⊓ V, hs, HolomorphicFunctions.restrict inf_le_left f,
+    HolomorphicFunctions.restrict inf_le_right g, ?_, ?_⟩ <;>
+    rw [HolomorphicFunctions.toGerm_restrict]
+
 section Lift
 
 variable {s : Set ℂ} {B : Type*} [Semiring B] [Algebra ℂ B]
@@ -176,19 +187,11 @@ def lift : holomorphicGerms s →ₐ[ℂ] B where
   map_one' := by
     rw [← map_one (HolomorphicFunctions.toGerm (U := ⊤) (subset_univ s)), liftFun_toGerm, map_one]
   map_add' a b := by
-    obtain ⟨U, hsU, f, rfl⟩ := exists_toGerm_eq a
-    obtain ⟨V, hsV, g, rfl⟩ := exists_toGerm_eq b
-    let hs : s ⊆ (U ⊓ V : Opens ℂ) := fun z hz => ⟨hsU hz, hsV hz⟩
-    rw [← HolomorphicFunctions.toGerm_restrict hs inf_le_left f,
-      ← HolomorphicFunctions.toGerm_restrict hs inf_le_right g, ← map_add, liftFun_toGerm]
-    simp only [liftFun_toGerm, map_add]
+    obtain ⟨U, hs, f, g, rfl, rfl⟩ := exists_toGerm_eq₂ a b
+    rw [← map_add, liftFun_toGerm, liftFun_toGerm, liftFun_toGerm, map_add]
   map_mul' a b := by
-    obtain ⟨U, hsU, f, rfl⟩ := exists_toGerm_eq a
-    obtain ⟨V, hsV, g, rfl⟩ := exists_toGerm_eq b
-    let hs : s ⊆ (U ⊓ V : Opens ℂ) := fun z hz => ⟨hsU hz, hsV hz⟩
-    rw [← HolomorphicFunctions.toGerm_restrict hs inf_le_left f,
-      ← HolomorphicFunctions.toGerm_restrict hs inf_le_right g, ← map_mul, liftFun_toGerm]
-    simp only [liftFun_toGerm, map_mul]
+    obtain ⟨U, hs, f, g, rfl, rfl⟩ := exists_toGerm_eq₂ a b
+    rw [← map_mul, liftFun_toGerm, liftFun_toGerm, liftFun_toGerm, map_mul]
   commutes' c := by
     rw [← AlgHom.commutes (HolomorphicFunctions.toGerm (U := ⊤) (subset_univ s)) c,
       liftFun_toGerm, AlgHom.commutes]
