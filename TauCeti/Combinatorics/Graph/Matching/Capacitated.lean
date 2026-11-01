@@ -99,7 +99,7 @@ theorem IsVertexCover.exists_mem_inc {C : Set V(G)} (hC : G.IsVertexCover C) (e 
   isVertexCover_iff_forall_exists_inc.1 hC e
 
 /-- A superset of a vertex cover is a vertex cover. -/
-theorem IsVertexCover.mono {C D : Set V(G)} (hC : G.IsVertexCover C) (hCD : C ⊆ D) :
+theorem IsVertexCover.subset {C D : Set V(G)} (hC : G.IsVertexCover C) (hCD : C ⊆ D) :
     G.IsVertexCover D :=
   fun _ _ _ he ↦ (hC he).imp (@hCD _) (@hCD _)
 
@@ -113,10 +113,15 @@ theorem isVertexCover_univ : G.IsVertexCover Set.univ :=
 theorem isVertexCover_empty_iff : G.IsVertexCover ∅ ↔ E(G) = ∅ := by
   simp [isVertexCover_iff_forall_exists_inc, Set.eq_empty_iff_forall_notMem]
 
-/-- Either side of a bipartition is a vertex cover. -/
+/-- The side `L` of a bipartition is a vertex cover. -/
 theorem IsBipartition.isVertexCover_left {L R : Finset V(G)} (h : G.IsBipartition L R) :
     G.IsVertexCover (L : Set V(G)) :=
   fun _ _ _ he ↦ (h.isLink he).imp And.left And.right
+
+/-- The side `R` of a bipartition is a vertex cover. -/
+theorem IsBipartition.isVertexCover_right {L R : Finset V(G)} (h : G.IsBipartition L R) :
+    G.IsVertexCover (R : Set V(G)) :=
+  h.symm.isVertexCover_left
 
 /-- A walk between distinct vertices along an arrow family whose arrows carry actual edges linking
 their ends traverses the edge of an arrow, both of whose ends are vertices of the walk. -/

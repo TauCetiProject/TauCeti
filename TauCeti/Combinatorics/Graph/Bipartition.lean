@@ -19,9 +19,8 @@ be empty; loops are excluded, since the two ends of a loop coincide.
 The sides are finite sets of actual vertices, so that sums of vertex capacities over a side, or
 over a part of it, are finite sums; in particular a multigraph with a bipartition has finitely many
 actual vertices. Since every actual edge has exactly one end in each side, summing over one side the
-values of the edges incident with each vertex counts every actual edge exactly once. This is the
-incidence count behind the matching theorems for bipartite multigraphs: the total usage of either
-side by a multiset of edges is its size.
+values of the edges incident with each vertex counts every actual edge exactly once, so the total
+usage of either side by edge multiplicities equals their sum.
 
 ## Main definitions
 
