@@ -32,6 +32,16 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
+private lemma sum_range_eq_zero_of_ne_one (hχ : χ ≠ 1) :
+    ∑ n ∈ range N, χ n = 0 := by
+  calc
+    _ = ∑ a : ZMod N, χ a := by
+      exact sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
+        (by simp) (fun a _ ↦ mem_range.mpr a.val_lt)
+        (fun n hn ↦ ZMod.val_natCast_of_lt (mem_range.mp hn))
+        (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
+    _ = 0 := χ.sum_eq_zero_of_ne_one hχ
+
 private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
     ‖∑ n ∈ range N, χ (k * N + n : ℕ) / ((k * N + n : ℕ) : ℂ)‖ ≤
       (k : ℝ)⁻¹ - (k + 1 : ℝ)⁻¹ := by
@@ -40,23 +50,15 @@ private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
   -- Subtract the reciprocal of the right endpoint using cancellation over a full period.
   have hcancel : ∑ n ∈ range N, χ n * (((k + 1) * N : ℕ) : ℂ)⁻¹ = 0 := by
     rw [← sum_mul]
-    have hz : ∑ n ∈ range N, χ n = 0 := by
-      cases N with
-      | zero => exact (NeZero.ne 0 rfl).elim
-      | succ N =>
-        convert χ.sum_eq_zero_of_ne_one hχ using 1
-        rw [← Fin.sum_univ_eq_sum_range]
-        apply sum_congr rfl
-        intro a ha
-        exact congrArg χ (Fin.cast_val_eq_self a)
-    rw [hz, zero_mul]
+    rw [sum_range_eq_zero_of_ne_one χ hχ, zero_mul]
   have hrewrite : (∑ n ∈ range N, χ (k * N + n : ℕ) / ((k * N + n : ℕ) : ℂ)) =
       ∑ n ∈ range N, χ n *
         (((k * N + n : ℕ) : ℂ)⁻¹ - (((k + 1) * N : ℕ) : ℂ)⁻¹) := by
     simp only [mul_sub, sum_sub_distrib, hcancel, sub_zero, div_eq_mul_inv]
     apply sum_congr rfl
     intro n hn
-    simp
+    -- Character values are periodic modulo the level N.
+    simp [Nat.cast_add, Nat.cast_mul]
   rw [hrewrite]
   calc
     _ ≤ ∑ n ∈ range N, ‖χ n *
@@ -79,10 +81,11 @@ private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
       have hnorm : ‖(((k * N + n : ℕ) : ℂ)⁻¹ -
           (((k + 1) * N : ℕ) : ℂ)⁻¹)‖ =
           ((k * N + n : ℕ) : ℝ)⁻¹ - (((k + 1) * N : ℕ) : ℝ)⁻¹ := by
-        rw [← Complex.ofReal_natCast, ← Complex.ofReal_inv,
-          ← Complex.ofReal_natCast (((k + 1) * N)), ← Complex.ofReal_inv,
-          ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg]
-        exact sub_nonneg.mpr hleft
+        have hcast : (((k * N + n : ℕ) : ℂ)⁻¹ - (((k + 1) * N : ℕ) : ℂ)⁻¹) =
+            ((((k * N + n : ℕ) : ℝ)⁻¹ - (((k + 1) * N : ℕ) : ℝ)⁻¹) : ℝ) := by
+          push_cast
+          rfl
+        rw [hcast, Complex.norm_real, Real.norm_of_nonneg (sub_nonneg.mpr hleft)]
       rw [norm_mul, hnorm]
       exact (mul_le_of_le_one_left (sub_nonneg.mpr hleft) (χ.norm_le_one n)).trans
         (sub_le_sub_right hright _)
