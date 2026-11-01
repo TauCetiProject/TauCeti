@@ -101,6 +101,17 @@ theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
   simpa only [mvfderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
     ContinuousLinearEquiv.coe_coe, map_add] using h
 
+/-- The derivative of a graph map, evaluated in the product tangent space. -/
+theorem _root_.MDifferentiableAt.mfderiv_prodMk_id_apply {u : F → M} {x : F}
+    (hu : MDifferentiableAt 𝓘(𝕜, F) I u x) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mfderiv 𝓘(𝕜, F) (𝓘(𝕜, F).prod I) (fun y ↦ (y, u y)) x v =
+      (v, mfderiv 𝓘(𝕜, F) I u x v) := by
+  have h := mfderiv_prodMk mdifferentiableAt_id hu
+  rw [mfderiv_id] at h
+  -- The product tangent fibre and the pair of factor tangent fibres share the product model.
+  -- Evaluating the bundled derivative equation records this identification explicitly.
+  exact congrArg (fun L ↦ L v) h
+
 /-- The chain rule along the graph of a manifold-valued map on a normed space, splitting the
 result into the derivative in the domain variable and the derivative in the manifold variable. -/
 theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M → F'} {x : F}
@@ -113,12 +124,15 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ((NormedSpace.fromTangentSpace x).symm v)
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
-  -- Product tangent spaces use the product model; `erw` exposes this identification.
-  erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id,
-    ContinuousLinearMap.prod_apply (ContinuousLinearMap.id 𝕜 (TangentSpace 𝓘(𝕜, F) x))
-      (mfderiv 𝓘(𝕜, F) I u x),
-    ContinuousLinearMap.id_apply (R₁ := 𝕜) (M₁ := TangentSpace 𝓘(𝕜, F) x)] at hc
-  erw [hf.mvfderiv_prod_eq_add_apply, mvfderiv_eq_fderiv] at hc
+  simp only [id_eq] at hc
+  rw [hu.mfderiv_prodMk_id_apply] at hc
+  -- Supply the graph vector in the product tangent fibre explicitly, rather than asking
+  -- rewriting to match the product model against the pair of tangent fibres.
+  have hs := hf.mvfderiv_prod_eq_add_apply
+    (v := ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm v,
+      mfderiv 𝓘(𝕜, F) I u x ((NormedSpace.fromTangentSpace x).symm v)))
+  have hc := hc.trans hs
+  rw [mvfderiv_eq_fderiv] at hc
   simp only [ContinuousLinearMap.coe_comp, Function.comp_def,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
