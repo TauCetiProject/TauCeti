@@ -18,10 +18,12 @@ piece of it in `sᵢ`, so the directions `τ` of that piece become `sᵢ τ`. Wh
 a Lakshmibai–Seshadri path is a question about saturated chains of `W / W_λ`, their bonds and the
 simple reflection `sᵢ`. This file proves the statements about chains that this needs.
 
-**Single cosets and covers.** If `H(u) ≠ 0` then `sᵢ u` is again a minimal coset representative,
-and if `H(u) > 0` then `u ⋖ sᵢ u`, with bond `H(u)`. If `y ⋖ x` and `H(x)`, `H(y)` are both
-positive, or both negative, then `sᵢ y ⋖ sᵢ x` with the same bond: the positive root label `β`
-becomes `sᵢ β`, which is positive because `β ≠ αᵢ`. A cover crossing the wall from
+**Single cosets and covers.** These statements are proved upstream, in
+`TauCeti.LinearAlgebra.RootSystem.Weyl.ParabolicQuotient` and
+`TauCeti.LinearAlgebra.RootSystem.Weyl.CoverBond`. If `H(u) ≠ 0` then `sᵢ u` is again a minimal
+coset representative, and if `H(u) > 0` then `u ⋖ sᵢ u`, with bond `H(u)`. If `y ⋖ x` and `H(x)`,
+`H(y)` are both positive, or both negative, then `sᵢ y ⋖ sᵢ x` with the same bond: the positive
+root label `β` becomes `sᵢ β`, which is positive because `β ≠ αᵢ`. A cover crossing the wall from
 `H(x) ≤ 0` to `H(y) > 0` is `y ⋖ sᵢ y`, that is `x = sᵢ y`; the opposite crossing
 `H(x) < 0 ≤ H(y)` is `TauCeti.reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg`.
 
@@ -54,16 +56,6 @@ the direction `τ` splits into `sᵢ τ ⋗ τ`, a cover with bond `H(τ)`.
 
 ## Main results
 
-* `TauCeti.isMinimalCosetRep_simple_mul_of_coroot'_ne_zero`,
-  `TauCeti.minimalCosetRepCovBy_simple_mul_of_coroot'_pos` and
-  `TauCeti.reflectionBond_simple_mul_smul_smul`: off the wall, `sᵢ u` is minimal, and
-  `u ⋖ sᵢ u` with bond `H(u)` when `H(u) > 0`.
-* `TauCeti.minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos`,
-  `TauCeti.minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg` and
-  `TauCeti.reflectionBond_simple_mul_smul_simple_mul_smul`: **`sᵢ` carries covers on one side of
-  the wall to covers, with the same bond**.
-* `TauCeti.eq_simple_mul_of_minimalCosetRepCovBy_of_coroot'_nonpos`: a cover crossing the wall
-  from `H ≤ 0` to `H > 0` is given by `sᵢ`.
 * `CoxeterSystem.MinimalCosetRepChain.bondGcd_simpleMul` and
   `CoxeterSystem.MinimalCosetRepChain.isAChain_simpleMul_iff`: the reflected chain has the same
   bond gcd and the same `a`-chain condition.
@@ -96,163 +88,6 @@ namespace TauCeti
 open RootPairing CoxeterSystem
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
-
-section
-
-variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {P : _root_.RootPairing ι R M N} {b : P.Base} [Finite ι]
-  [P.IsCrystallographic] [P.IsReduced] {lam : M}
-
-/-- Left multiplication by the simple reflection `sᵢ` acts on orbit weights as the reflection in
-`αᵢ`. -/
-private theorem simple_mul_smul_eq_reflection (i : b.support) (u : P.weylGroup) :
-    ((weylCoxeterSystem P b).simple i * u) • lam = P.reflection i (u • lam) := by
-  rw [mul_smul, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul]
-
-/-- `⟨(sᵢ u) λ, αᵢ^∨⟩ = -⟨u λ, αᵢ^∨⟩`. -/
-private theorem coroot'_simple_mul_smul_eq_neg (i : b.support) (u : P.weylGroup) :
-    P.coroot' i (((weylCoxeterSystem P b).simple i * u) • lam) = -P.coroot' i (u • lam) := by
-  rw [simple_mul_smul_eq_reflection, coroot'_reflection_self]
-
-/-- **The bond of `(sᵢ u) λ` and `u λ` is `⟨u λ, αᵢ^∨⟩`**, for a simple root `αᵢ` and every `u` in
-the Weyl group. When `⟨u λ, αᵢ^∨⟩ > 0` this is the bond of the cover `u ⋖ sᵢ u` of `W / W_λ`
-(`TauCeti.minimalCosetRepCovBy_simple_mul_of_coroot'_pos`); when it vanishes, both sides vanish. -/
-theorem reflectionBond_simple_mul_smul_smul (i : b.support) (u : P.weylGroup) :
-    P.reflectionBond b (((weylCoxeterSystem P b).simple i * u) • lam) (u • lam) =
-      P.coroot' i (u • lam) := by
-  simpa only [mul_smul, one_smul] using reflectionBond_simple_smul_one_smul (lam := u • lam) i
-
-/-- **A simple reflection off the wall keeps a minimal coset representative minimal.** If `u` is a
-minimal coset representative of `W / W_λ` and `⟨u λ, αᵢ^∨⟩ ≠ 0`, then `sᵢ u` is a minimal coset
-representative too. -/
-theorem isMinimalCosetRep_simple_mul_of_coroot'_ne_zero {u : P.weylGroup}
-    (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u) {i : b.support}
-    (hi : P.coroot' i (u • lam) ≠ 0) :
-    (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam)
-      ((weylCoxeterSystem P b).simple i * u) := by
-  -- By Deodhar's lemma the alternative is `sᵢ u = u sⱼ` with `sⱼ` fixing `λ`; then `sᵢ` would
-  -- fix `u λ`.
-  refine (hu.simple_mul_or_exists_eq_mul_simple _ i).resolve_right ?_
-  rintro ⟨j, hj, h⟩
-  refine hi (CharZero.eq_neg_self_iff.mp ?_)
-  rw [← coroot'_simple_mul_smul_eq_neg, h, mul_smul, weylCoxeterSystem_simple,
-    ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hj)]
-
-variable [P.flip.IsReduced]
-
-/-- **A simple reflection on the positive side of its wall covers.** If `u` is a minimal coset
-representative of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, then `u ⋖ sᵢ u`. Its bond is `⟨u λ, αᵢ^∨⟩`, by
-`TauCeti.reflectionBond_simple_mul_smul_smul`. -/
-theorem minimalCosetRepCovBy_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantChamber P b)
-    {u : P.weylGroup}
-    (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u) {i : b.support}
-    (hi : 0 < P.coroot' i (u • lam)) :
-    (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) u
-      ((weylCoxeterSystem P b).simple i * u) := by
-  have hd : ¬(weylCoxeterSystem P b).IsLeftDescent u i := fun h ↦
-    (coroot'_smul_nonpos_of_isLeftDescent hlam h).not_gt hi
-  have hlen := (weylCoxeterSystem P b).not_isLeftDescent_iff.mp hd
-  exact minimalCosetRepCovBy_iff.mpr ⟨hu, isMinimalCosetRep_simple_mul_of_coroot'_ne_zero hu hi.ne',
-    ((weylCoxeterSystem P b).bruhatStep_simple_mul i (by omega)).bruhatLE, hlen.symm⟩
-
-/-- **`sᵢ` moves covers on the positive side of its wall up.** If `y ⋖ x` in `W / W_λ` with
-`⟨x λ, αᵢ^∨⟩ > 0` and `⟨y λ, αᵢ^∨⟩ > 0`, then `sᵢ y ⋖ sᵢ x`. -/
-theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos
-    (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) {i : b.support}
-    (hy : 0 < P.coroot' i (y • lam)) (hx : 0 < P.coroot' i (x • lam)) :
-    (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
-      ((weylCoxeterSystem P b).simple i * y) ((weylCoxeterSystem P b).simple i * x) := by
-  have hdx : ¬(weylCoxeterSystem P b).IsLeftDescent x i := fun hd ↦
-    (coroot'_smul_nonpos_of_isLeftDescent hlam hd).not_gt hx
-  have hdy : ¬(weylCoxeterSystem P b).IsLeftDescent y i := fun hd ↦
-    (coroot'_smul_nonpos_of_isLeftDescent hlam hd).not_gt hy
-  have := (weylCoxeterSystem P b).not_isLeftDescent_iff.mp hdx
-  have := (weylCoxeterSystem P b).not_isLeftDescent_iff.mp hdy
-  have := h.length_add_one_eq
-  -- Both lengths go up by one, and the lifting property gives `sᵢ y ≤ sᵢ x`.
-  exact minimalCosetRepCovBy_iff.mpr
-    ⟨isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_left hy.ne',
-      isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_right hx.ne',
-      h.bruhatLE.simple_mul_of_not_isLeftDescent i hdx, by omega⟩
-
-/-- **`sᵢ` moves covers on the negative side of its wall down.** If `y ⋖ x` in `W / W_λ` with
-`⟨x λ, αᵢ^∨⟩ < 0` and `⟨y λ, αᵢ^∨⟩ < 0`, then `sᵢ y ⋖ sᵢ x`. -/
-theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg
-    (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) {i : b.support}
-    (hy : P.coroot' i (y • lam) < 0) (hx : P.coroot' i (x • lam) < 0) :
-    (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
-      ((weylCoxeterSystem P b).simple i * y) ((weylCoxeterSystem P b).simple i * x) := by
-  have hdx : (weylCoxeterSystem P b).IsLeftDescent x i := by
-    by_contra hd
-    exact (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hx
-  have hdy : (weylCoxeterSystem P b).IsLeftDescent y i := by
-    by_contra hd
-    exact (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hy
-  have := (weylCoxeterSystem P b).isLeftDescent_iff.mp hdx
-  have := (weylCoxeterSystem P b).isLeftDescent_iff.mp hdy
-  have := h.length_add_one_eq
-  -- Both lengths go down by one, and the lifting property gives `sᵢ y ≤ sᵢ x`.
-  exact minimalCosetRepCovBy_iff.mpr
-    ⟨isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_left hy.ne,
-      isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_right hx.ne,
-      (h.bruhatLE.simple_mul_of_isLeftDescent i hdx).bruhatLE_simple_mul
-        ((weylCoxeterSystem P b).isLeftDescent_iff_not_isLeftDescent_mul.mp hdy), by omega⟩
-
-/-- **A simple reflection preserves the bond of a cover it does not reverse.** If `y ⋖ x` in
-`W / W_λ` and `y λ ≠ (sᵢ x) λ`, then the bond of `(sᵢ x) λ` and `(sᵢ y) λ` is the bond
-`b_λ(x, y)`. -/
-theorem reflectionBond_simple_mul_smul_simple_mul_smul (hlam : lam ∈ dominantChamber P b)
-    {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) {i : b.support}
-    (hne : y • lam ≠ ((weylCoxeterSystem P b).simple i * x) • lam) :
-    P.reflectionBond b (((weylCoxeterSystem P b).simple i * x) • lam)
-        (((weylCoxeterSystem P b).simple i * y) • lam) =
-      P.reflectionBond b (x • lam) (y • lam) := by
-  obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
-  have hxy := smul_ne_smul_of_minimalCosetRepCovBy hlam h
-  -- The positive root label `β` of the cover is not `αᵢ`, so `sᵢ β` is positive.
-  have hβi : β ≠ i := by
-    rintro rfl
-    exact hne (by rw [simple_mul_smul_eq_reflection, hβx])
-  -- `(sᵢ y) λ` is the reflection of `(sᵢ x) λ` in the positive root `sᵢ β`.
-  have hγ : P.reflection (P.reflectionPerm i β) (P.reflection i (x • lam)) =
-      P.reflection i (y • lam) := by
-    rw [reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
-      reflection_same, hβx]
-  have hne' : P.reflection i (y • lam) ≠ P.reflection i (x • lam) :=
-    fun h' ↦ hxy ((P.reflection i).injective h')
-  rw [simple_mul_smul_eq_reflection, simple_mul_smul_eq_reflection,
-    reflectionBond_eq_coroot' (hβ.reflectionPerm i.2 hβi) hγ hne', ← coroot'_reflection,
-    reflection_same, reflectionBond_eq_coroot' hβ hβx hxy]
-
-/-- **A cover leaving the nonpositive side of a simple wall is given by the simple reflection.** If
-`y ⋖ x` in `W / W_λ` with `⟨x λ, αᵢ^∨⟩ ≤ 0 < ⟨y λ, αᵢ^∨⟩`, then `x = sᵢ y`. -/
-theorem eq_simple_mul_of_minimalCosetRepCovBy_of_coroot'_nonpos
-    (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) (i : b.support)
-    (hx : P.coroot' i (x • lam) ≤ 0) (hy : 0 < P.coroot' i (y • lam)) :
-    x = (weylCoxeterSystem P b).simple i * y := by
-  set cs := weylCoxeterSystem P b
-  -- `y ⋖ sᵢ y`, and the lifting property gives `sᵢ y ≤ x`; the cover `y ⋖ x` forces equality.
-  have hcov := minimalCosetRepCovBy_simple_mul_of_coroot'_pos hlam h.isMinimalCosetRep_left hy
-  have hle : cs.BruhatLE (cs.simple i * y) x := by
-    by_cases hd : cs.IsLeftDescent x i
-    · exact h.bruhatLE.simple_mul_of_isLeftDescent i hd
-    -- Otherwise `sᵢ` fixes `x λ`, so `sᵢ x` lies in the coset of `x`.
-    have h0 : P.coroot' i (x • lam) = 0 :=
-      le_antisymm hx (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd)
-    have hmem : x⁻¹ * (cs.simple i * x) ∈ cs.parabolic (P.wallIndices b lam) := by
-      rw [inv_mul_mem_parabolic_wallIndices_iff hlam, simple_mul_smul_eq_reflection,
-        P.reflection_apply, h0, zero_smul, sub_zero]
-    refine hcov.isMinimalCosetRep_right.bruhatLE_of_bruhatLE_mul cs hmem ?_
-    rw [mul_inv_cancel_left]
-    exact h.bruhatLE.simple_mul_of_not_isLeftDescent i hd
-  exact ((h.eq_or_eq _ hcov.isMinimalCosetRep_right hcov.bruhatLE hle).resolve_left
-    hcov.ne.symm).symm
-
-end
 
 /-! ### Reflecting a saturated chain -/
 
@@ -377,48 +212,16 @@ theorem IsAChain.exists_mul_coroot'_last_eq_intCast (hlam : lam ∈ dominantCham
     (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) ≤ 0)
     (hlast : 0 < P.coroot' i (C.last.1 • lam)) :
     ∃ z : ℤ, a * P.coroot' i (C.last.1 • lam) = z := by
-  -- Induction on the length. If the first cover `x₁ ⋖ x₀` leaves the side `≤ 0`, then
-  -- `x₀ = sᵢ x₁`, so `a ⟨x₁ λ, αᵢ^∨⟩` is an integer, and the rest of `C` changes the pairing by an
-  -- `a`-integral amount. Otherwise drop `x₀`.
-  suffices key : ∀ n (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)),
-      C.length = n → IsAChain a lam C → P.coroot' i (C.head.1 • lam) ≤ 0 →
-        0 < P.coroot' i (C.last.1 • lam) → ∃ z : ℤ, a * P.coroot' i (C.last.1 • lam) = z from
-    key _ C rfl hC hhead hlast
-  intro n
-  induction n with
-  | zero =>
-    intro C hn _ hhead hlast
-    have := C.subsingleton_of_length_eq_zero hn C.last_mem C.head_mem
-    rw [this] at hlast
-    exact absurd hhead hlast.not_ge
-  | succ n ih =>
-    intro C hn hC hhead hlast
-    have h1 : 1 < C.length + 1 := by omega
-    by_cases hle : P.coroot' i ((C ⟨1, h1⟩).1 • lam) ≤ 0
-    · -- Drop the first element.
-      simpa using ih (C.drop ⟨1, h1⟩) (by simp only [RelSeries.drop_length]; omega) (hC.drop _)
-        (by simpa using hle) (by simpa using hlast)
-    -- The first cover `x₁ ⋖ x₀` is `x₁ ⋖ sᵢ x₁`.
-    have hcov := C.minimalCosetRepCovBy ⟨0, by omega⟩
-    simp only [Fin.castSucc_mk, Fin.succ_mk, zero_add] at hcov
-    have heq : C.head.1 = (weylCoxeterSystem P b).simple i * (C ⟨1, h1⟩).1 :=
-      eq_simple_mul_of_minimalCosetRepCovBy_of_coroot'_nonpos hlam hcov i hhead (lt_of_not_ge hle)
-    -- So `a ⟨x₀ λ, αᵢ^∨⟩ = -a ⟨x₁ λ, αᵢ^∨⟩` is an integer.
-    obtain ⟨z₁, hz₁⟩ := (isAChain_iff_forall_coroot' hlam).mp hC ⟨0, by omega⟩ i
-      (b.isPos_of_mem_support i.2) (by
-        simp only [Fin.castSucc_mk, Fin.succ_mk, zero_add]
-        -- `C.head` is `C 0` by definition.
-        rw [show (C ⟨0, by omega⟩).1 = C.head.1 from rfl, heq, simple_mul_smul_eq_reflection,
-          reflection_same])
-    simp only [Fin.castSucc_mk] at hz₁
-    -- `C.head` is `C 0` by definition.
-    rw [show (C ⟨0, by omega⟩).1 = C.head.1 from rfl, heq, coroot'_simple_mul_smul_eq_neg] at hz₁
-    -- The rest of the chain changes the pairing by an `a`-integral amount.
-    obtain ⟨z₂, hz₂⟩ := (hC.drop ⟨1, h1⟩).exists_mul_sub_eq_intCast hlam (P.coroot' i)
-    simp only [RelSeries.head_drop, RelSeries.last_drop] at hz₂
-    refine ⟨-z₁ - z₂, ?_⟩
-    push_cast at hz₁ hz₂ ⊢
-    linear_combination -hz₁ - hz₂
+  -- `a ⟨x₀ λ, αᵢ^∨⟩` is an integer: it vanishes, or the chain starts on the negative side.
+  obtain ⟨z₁, hz₁⟩ : ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+    rcases hhead.lt_or_eq with hneg | hzero
+    · exact hC.exists_mul_coroot'_eq_intCast hlam i hneg hlast.le
+    · exact ⟨0, by simp [hzero]⟩
+  -- The chain changes the pairing by an `a`-integral amount.
+  obtain ⟨z₂, hz₂⟩ := hC.exists_mul_sub_eq_intCast hlam (P.coroot' i)
+  refine ⟨z₁ - z₂, ?_⟩
+  push_cast at hz₁ hz₂ ⊢
+  linear_combination hz₁ - hz₂
 
 /-- **An `a`-chain ending at a nonintegral positive pairing stays on the positive side.** If
 `C : x₀ ⋗ ⋯ ⋗ x_l` is an `a`-chain of `W / W_λ` with `⟨x_l λ, αᵢ^∨⟩ > 0` and `a ⟨x_l λ, αᵢ^∨⟩` not
