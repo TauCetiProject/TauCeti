@@ -271,14 +271,13 @@ theorem realPointsLift_tmul (c : ℂ) (w : realPoints K) :
     realPointsLift K (c ⊗ₜ[ℝ] w) = c • (w : V) :=
   (rfl)
 
-/-- The lift is surjective once `K` is involutive: `v` is hit by
-`1 ⊗ₜ conjRealPart K v + I ⊗ₜ conjImaginaryPart K v`. -/
+/-- The lift is surjective once `K` is involutive: its image is the complex span of the real
+points, which is all of `V` (`TauCeti.span_realPoints_eq_top`). -/
 theorem realPointsLift_surjective (hK : Function.Involutive K) :
-    Function.Surjective (realPointsLift K) := fun v =>
-  ⟨1 ⊗ₜ[ℝ] ⟨conjRealPart K v, conjRealPart_mem hK v⟩ +
-      Complex.I ⊗ₜ[ℝ] ⟨conjImaginaryPart K v, conjImaginaryPart_mem hK v⟩, by
-    rw [map_add, realPointsLift_tmul, realPointsLift_tmul, one_smul]
-    exact conjRealPart_add_I_smul_conjImaginaryPart v⟩
+    Function.Surjective (realPointsLift K) := by
+  rw [← LinearMap.range_eq_top, realPointsLift, LinearMap.range_liftBaseChange,
+    Submodule.range_subtype]
+  exact span_realPoints_eq_top hK
 
 /-- The lift is injective for **any** conjugate-linear `K`: only its surjectivity uses that `K` is
 involutive.  This is `LinearMap.liftBaseChange_complex_injective_of_conj` for the inclusion of

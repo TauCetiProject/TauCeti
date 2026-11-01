@@ -30,9 +30,8 @@ complex structure (`Module.complexToReal`), so that the criterion applies to spa
 The criterion is then specialised to real points.  If a conjugate-linear involution `K` of `V`
 fixes exactly the values of an injective map `f`, then `f` is a complexification
 (`LinearMap.isBaseChange_complex_of_conj`): injectivity is
-`LinearMap.liftBaseChange_complex_injective_of_conj`, and every vector is the sum of its real part
-and `I` times its imaginary part relative to `K`
-(`TauCeti.conjRealPart_add_I_smul_conjImaginaryPart`).
+`LinearMap.liftBaseChange_complex_injective_of_conj`, and the real points of `K` span `V` over `ℂ`
+(`TauCeti.span_realPoints_eq_top`).
 In a complex star module the skew-adjoint vectors `v⋆ = -v` are the vectors fixed by `v ↦ -v⋆`, so
 a real-linear isomorphism onto them exhibits `V` as their complexification
 (`LinearMap.isBaseChange_complex_of_star_eq_neg`), and likewise for the skew-adjoint vectors of a
@@ -123,18 +122,16 @@ theorem isBaseChange_complex_iff :
 /-- **The real points of a conjugation are a real form.**  A real-linear map that is injective and
 maps onto the vectors fixed by a conjugate-linear involution `K` exhibits `V` as the
 complexification of its source.  Injectivity of the complexified map is
-`LinearMap.liftBaseChange_complex_injective_of_conj`, and surjectivity is the decomposition
-`v = TauCeti.conjRealPart K v + I • TauCeti.conjImaginaryPart K v` into two fixed vectors. -/
+`LinearMap.liftBaseChange_complex_injective_of_conj`, and surjectivity is that the fixed vectors
+span `V` over `ℂ` (`TauCeti.span_realPoints_eq_top`). -/
 theorem isBaseChange_complex_of_conj {K : V →ₛₗ[starRingEnd ℂ] V} (hK : Function.Involutive K)
     (hf : Function.Injective f) (hfix : ∀ x, K (f x) = f x)
     (hsurj : ∀ v, K v = v → ∃ x, f x = v) : IsBaseChange ℂ f := by
   refine IsBaseChange.iff_liftBaseChange_bijective.2
-    ⟨f.liftBaseChange_complex_injective_of_conj hf hfix, fun v ↦ ?_⟩
-  obtain ⟨x, hx⟩ := hsurj _ (TauCeti.mem_realPoints.1 (TauCeti.conjRealPart_mem hK v))
-  obtain ⟨y, hy⟩ := hsurj _ (TauCeti.mem_realPoints.1 (TauCeti.conjImaginaryPart_mem hK v))
-  refine mem_range.1 (f.mem_range_liftBaseChange_complex_iff.2 ⟨x, y, ?_⟩)
-  rw [hx, hy]
-  exact TauCeti.conjRealPart_add_I_smul_conjImaginaryPart v
+    ⟨f.liftBaseChange_complex_injective_of_conj hf hfix, ?_⟩
+  -- The image is the complex span of the values of `f`, which contain the spanning real points.
+  rw [← range_eq_top, range_liftBaseChange, eq_top_iff, ← TauCeti.span_realPoints_eq_top hK]
+  exact Submodule.span_mono fun v hv ↦ mem_range.2 (hsurj v (TauCeti.mem_realPoints.1 hv))
 
 variable [StarAddMonoid V] [StarModule ℂ V]
 
@@ -162,10 +159,15 @@ theorem isBaseChange_complex_codRestrict_of_star_eq_neg {P : Submodule ℂ V}
   let K : P.restrictScalars ℝ →ₛₗ[starRingEnd ℂ] P.restrictScalars ℝ :=
     { toFun v := ⟨-star (v : V), P.neg_mem (hP _ v.2)⟩
       map_add' v w := Subtype.ext (by simp [add_comm])
+      -- The `ℂ`-action on `P.restrictScalars ℝ` is `P`'s action, transported by the instance
+      -- `Submodule.restrictScalars.origModule`; no simp lemma moves the coercion through it,
+      -- so `show` unfolds the coercion of `c • v` by definition.
       map_smul' c v := Subtype.ext (show -star (c • (v : V)) = (starRingEnd ℂ c) • -star (v : V)
         by simp) }
   refine isBaseChange_complex_of_conj _ (K := K) (fun v ↦ Subtype.ext (by simp [K]))
     (fun x y h ↦ hf (congrArg Subtype.val h))
+    -- `hfP` lands in `P` rather than in `P.restrictScalars ℝ`, so `LinearMap.codRestrict_apply`
+    -- does not match up to reducible unfolding; `show` unfolds `K` and the corestriction.
     (fun x ↦ Subtype.ext (show -star (f x) = f x by simp [hskew])) fun v hv ↦ ?_
   obtain ⟨x, hx⟩ := hsurj v v.2 (by
     simpa [K, neg_eq_iff_eq_neg] using congrArg Subtype.val hv)

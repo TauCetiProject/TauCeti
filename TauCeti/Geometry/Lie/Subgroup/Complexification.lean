@@ -187,7 +187,13 @@ private theorem coe_liftBaseChange_specialUnitary
         (unitsLieAlgebraLieEquiv_coe_mem_sl n)).liftBaseChange ℂ u : Matrix n n ℂ) =
       (specialUnitaryToMatrix n).liftBaseChange ℂ u := by
   induction u with
-  | tmul c X => rw [LinearMap.liftBaseChange_tmul, LieHom.liftBaseChange_tmul]; rfl
+  | tmul c X =>
+    -- The `ℂ`-action on the corestriction to `sl n ℂ` is the one transported from `sl n ℂ` by
+    -- `Submodule.restrictScalars.origModule`, and the membership proof lands in `sl n ℂ` rather
+    -- than its restriction of scalars, so `simp` cannot move the coercion inside; `rfl` unfolds
+    -- the coercion of the corestricted value by definition.
+    rw [LinearMap.liftBaseChange_tmul, LieHom.liftBaseChange_tmul]
+    rfl
   | add u v hu hv => simp only [map_add, Submodule.coe_add, hu, hv]
 
 /-- The complexified inclusion of the Lie algebra of `SU(n)` into `𝔤𝔩(n, ℂ)` is injective. -/
