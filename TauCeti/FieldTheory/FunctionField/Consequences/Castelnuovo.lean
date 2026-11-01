@@ -14,7 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import Mathlib.FieldTheory.Normal.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.ResidueField
 import TauCeti.FieldTheory.FunctionField.Different.Separating
 import TauCeti.FieldTheory.FunctionField.Different.Tame

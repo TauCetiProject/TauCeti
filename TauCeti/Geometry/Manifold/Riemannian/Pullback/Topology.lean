@@ -135,7 +135,7 @@ most two converge uniformly as `g` tends to `g₀` in the chart C² topology. -/
 private theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pullback
     {f : M → N} (hf : ContMDiff I J (∞ + 1) f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
     (g₀ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) (x' : M) {m : ℕ}
-    (hm : m < 3) {z₀ : E} (hz₀ : z₀ ∈ (extChartAt I x').target) :
+    (hm : (m : ℕ∞) ≤ 2) {z₀ : E} (hz₀ : z₀ ∈ (extChartAt I x').target) :
     ∃ B ∈ 𝓝 z₀, TendstoUniformlyOn
       (fun g z ↦ iteratedFDeriv ℝ m ((g.pullback f hf hinj).toNondegenerateMetric.chartMetric x') z)
       (fun z ↦ iteratedFDeriv ℝ m ((g₀.pullback f hf hinj).toNondegenerateMetric.chartMetric x') z)
@@ -202,8 +202,8 @@ private theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pu
       (fun g z ↦ iteratedFDerivWithin ℝ j (φ g) (extChartAt J x).target (τ z)) (fun _ ↦ 0)
       (𝓝 g₀) B := by
     refine Metric.tendstoUniformlyOn_iff.mpr fun δ hδ ↦ ?_
-    filter_upwards [Metric.tendstoUniformlyOn_iff.mp ((tendsto_chartC2_iff (g := fun g ↦ g)).mp
-      tendsto_id x ⟨j, by omega⟩ Kx hKx) δ hδ] with g hg z hz
+    filter_upwards [Metric.tendstoUniformlyOn_iff.mp ((tendsto_chartCk_iff 2 (g := fun g ↦ g)).mp
+      tendsto_id x j ((Nat.cast_le.2 hj).trans hm) Kx hKx) δ hδ] with g hg z hz
     have hτz := hmaps (hBW hz)
     have hnhds := (isOpen_extChartAt_target x).mem_nhds hτz
     rw [iteratedFDerivWithin_of_isOpen j (isOpen_extChartAt_target x) hτz,
@@ -231,7 +231,7 @@ theorem continuous_pullback_chartC2 {f : M → N} (hf : ContMDiff I J (∞ + 1) 
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) :
     Continuous (fun g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y) ↦
       g.pullback f hf hinj) := by
-  refine continuous_iff_continuousAt.mpr fun g₀ ↦ tendsto_chartC2_iff.mpr fun x' m K hK ↦ ?_
+  refine continuous_iff_continuousAt.mpr fun g₀ ↦ (tendsto_chartCk_iff 2).mpr fun x' m hm K hK ↦ ?_
   -- Uniform convergence holds near every point of the open chart target, hence on its compact
   -- subsets.
   have hloc : TendstoLocallyUniformlyOn
@@ -240,7 +240,7 @@ theorem continuous_pullback_chartC2 {f : M → N} (hf : ContMDiff I J (∞ + 1) 
       (𝓝 g₀) (extChartAt I x').target :=
     tendstoLocallyUniformlyOn_of_forall_exists_nhds fun z hz ↦
       let ⟨B, hB, h⟩ := exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pullback
-        hf hinj g₀ x' m.isLt hz
+        hf hinj g₀ x' hm hz
       ⟨B, mem_nhdsWithin_of_mem_nhds hB, h⟩
   exact (((tendstoLocallyUniformlyOn_iff_forall_isCompact (isOpen_extChartAt_target x')).mp hloc
     (Subtype.val '' K) (image_subset_iff.mpr fun z _ ↦ z.2)

@@ -12,6 +12,7 @@ import TauCeti.RingTheory.Huber.Completion.Basic
 
 import TauCeti.RingTheory.Huber.AdicHom.Completion
 import TauCeti.Topology.Algebra.UniformRing
+import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
@@ -230,6 +231,39 @@ theorem hom_ext {S : Type*} [Semiring S] [TopologicalSpace S] [T2Space S]
     (hC : f.comp (inr A B C) = g.comp (inr A B C)) : f = g := by
   apply Completion.ringHom_ext_of_continuous hf hg
   exact Algebra.TensorProduct.ringHom_ext hB hC
+
+section OpenQuotient
+
+variable {A' B' C' : Type*} [CommRing A'] [CommRing B'] [CommRing C'] [Algebra A' B']
+  [Algebra A' C'] [TopologicalSpace A'] [TopologicalSpace B'] [TopologicalSpace C']
+  [IsTopologicalRing A'] [IsTopologicalRing B'] [IsTopologicalRing C']
+  [IsAdicHom (algebraMap A' B')] [IsAdicHom (algebraMap A' C')]
+
+/-- **Completion preserves open quotient maps of tensor products.** A continuous ring map `F` of
+completed tensor rings which, on algebraic tensors, is an open quotient map `f` for the two
+tensor topologies, is itself an open quotient map. Huber rings have countable bases of open
+subgroups at zero, so this is the completion of an open surjection of first-countable
+nonarchimedean groups (`AddMonoidHom.surjective_completion`). -/
+theorem isOpenQuotientMap_of_comp_toCompletion
+    (F : CompletedTensor A B C →+* CompletedTensor A' B' C') (hF : Continuous F)
+    (f : B ⊗[A] C →+* B' ⊗[A'] C')
+    (hf : letI := tensorTopology A B C
+      letI := tensorTopology A' B' C'
+      IsOpenQuotientMap f)
+    (hFf : F.comp (toCompletion A B C) = (toCompletion A' B' C').comp f) :
+    IsOpenQuotientMap F := by
+  have hfc : Continuous f := hf.continuous
+  have hFeq : (F : Completion (B ⊗[A] C) → Completion (B' ⊗[A'] C')) =
+      f.toAddMonoidHom.completion hfc :=
+    Completion.ext hF (AddMonoidHom.continuous_completion _ hfc) fun x ↦
+      (RingHom.congr_fun hFf x).trans (AddMonoidHom.completion_coe f.toAddMonoidHom hfc x).symm
+  refine ⟨?_, hF, ?_⟩
+  · rw [hFeq]
+    exact f.toAddMonoidHom.surjective_completion hfc hf.surjective hf.isOpenMap
+  · rw [hFeq]
+    exact f.toAddMonoidHom.isOpenMap_completion hfc hf.isOpenMap
+
+end OpenQuotient
 
 variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
   [NonarchimedeanRing R] [CompleteSpace R] [T0Space R]

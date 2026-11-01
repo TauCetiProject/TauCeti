@@ -45,6 +45,9 @@ from totally acyclic complexes in an arbitrary abelian category.
 * `CategoryTheory.GorensteinProjective.exactStructure_isProjective_iff` and
   `CategoryTheory.GorensteinProjective.exactStructure_isInjective_iff`: the relative projectives
   and the relative injectives are the projective objects of `C`.
+* `CategoryTheory.GorensteinProjective.exactStructure_isProjective_factorsThrough_iff`: a morphism
+  factors through a relative projective exactly when it factors through a projective object of
+  `C`, so the stable category is the quotient by morphisms factoring through projectives.
 * `CategoryTheory.GorensteinProjective.exactStructure_isFrobenius`: the exact structure is
   Frobenius.
 
@@ -194,6 +197,19 @@ theorem exactStructure_isFrobenius : (exactStructure C).IsFrobenius where
   enoughInjectives := exactStructure_enoughInjectives
   projective_iff_injective X := by
     rw [exactStructure_isProjective_iff, exactStructure_isInjective_iff]
+
+/-- A morphism of Gorenstein-projective objects factors through a relatively projective object
+exactly when it factors through a projective object of `C`. -/
+theorem exactStructure_isProjective_factorsThrough_iff {X Y : GorensteinProjective C}
+    (f : X ⟶ Y) :
+    (exactStructure C).isProjective.FactorsThrough f ↔ (isProjective C).FactorsThrough f.hom := by
+  simp only [ObjectProperty.factorsThrough_iff]
+  refine ⟨fun ⟨Z, hZ, i, p, hf⟩ ↦ ⟨Z.obj, (exactStructure_isProjective_iff Z).1 hZ, i.hom, p.hom,
+    by rw [hf, ObjectProperty.FullSubcategory.comp_hom]⟩, fun ⟨Z, hZ, i, p, hf⟩ ↦ ?_⟩
+  have : Projective Z := hZ
+  exact ⟨⟨Z, isGorensteinProjective_of_projective Z⟩,
+    (exactStructure_isProjective_iff _).2 hZ, ObjectProperty.homMk i, ObjectProperty.homMk p,
+    ObjectProperty.hom_ext _ hf⟩
 
 end GorensteinProjective
 

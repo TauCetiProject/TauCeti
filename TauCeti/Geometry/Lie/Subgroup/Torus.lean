@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Classification
+public import TauCeti.Geometry.Lie.Subgroup.Embedded
+public import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Kronecker
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import Mathlib.GroupTheory.NoncommCoprod
@@ -41,8 +44,11 @@ finite-dimensional real Lie group `G`:
   Lie algebra contains its own; in particular a torus is determined by its Lie algebra.
 * `TauCeti.Lie.IsTorus.exists_isMaximalTorus_le` and `TauCeti.Lie.exists_isMaximalTorus`: every
   torus is contained in a maximal torus; in particular maximal tori exist.
+* `TauCeti.Lie.IsTorus.elim`: a torus is a compact connected commutative Lie group modelled on
+  its Lie algebra.
 * `TauCeti.Lie.IsTorus.nonempty_continuousMulEquiv_pi_circle`: a torus is a product of circles,
   with one factor for each dimension of its Lie algebra.
+* `TauCeti.Lie.IsTorus.exists_closedZpowers_eq`: a torus has a topological generator.
 * `TauCeti.Lie.IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer`: the centralizer of a maximal
   torus of a compact Lie group has the Lie algebra of the torus.
 * `TauCeti.Lie.IsMaximalTorus.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero`: a derivation
@@ -209,23 +215,55 @@ theorem exists_isMaximalTorus : ∃ T : Subgroup G, IsMaximalTorus T :=
 
 end Existence
 
-/-- A torus is isomorphic as a topological group to a product of circles, with one factor for
-each dimension of its Lie algebra. The ambient Lie group need not be compact. -/
-theorem IsTorus.nonempty_continuousMulEquiv_pi_circle {T : Subgroup G} (hT : IsTorus T) :
-    Nonempty (T ≃ₜ* (Fin (Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T)) → Circle)) := by
+/-- **A torus is a compact connected commutative Lie group** modelled on its Lie algebra: to
+prove a statement about a torus `T`, one may assume these structures on `T`. -/
+theorem IsTorus.elim {T : Subgroup G} (hT : IsTorus T) {P : Prop}
+    (h : ∀ d : EmbeddedLieSubgroupData I T (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
+      let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) T).toSubmodule T := d.chartedSpace
+      let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) ∞ T := d.lieGroup
+      ∀ [FiniteDimensional ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule]
+        [IsTopologicalGroup G] [CompactSpace T] [ConnectedSpace T] [IsMulCommutative T], P) :
+    P := by
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation
       (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
   obtain ⟨d⟩ :=
     nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hT.isClosed
-  let F := (lieSubalgebraOfSubgroup (I := I) T).toSubmodule
-  let _ : ChartedSpace F T := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, F) ∞ T := d.lieGroup
-  let _ : CompactSpace T := isCompact_iff_compactSpace.mp hT.isCompact
-  let _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isConnected
-  let _ : IsMulCommutative T := hT.isMulCommutative
-  exact TauCeti.nonempty_continuousMulEquiv_pi_circle (I := 𝓘(ℝ, F))
+  have _ : CompactSpace T := isCompact_iff_compactSpace.mp hT.isCompact
+  have _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isConnected
+  have _ : IsMulCommutative T := hT.isMulCommutative
+  exact h d
+
+/-- A torus is isomorphic as a topological group to a product of circles, with one factor for
+each dimension of its Lie algebra. The ambient Lie group need not be compact. -/
+theorem IsTorus.nonempty_continuousMulEquiv_pi_circle {T : Subgroup G} (hT : IsTorus T) :
+    Nonempty (T ≃ₜ* (Fin (Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T)) → Circle)) :=
+  hT.elim (I := I) fun d => by
+    intros
+    exact TauCeti.nonempty_continuousMulEquiv_pi_circle
+      (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule))
+
+section Generator
+
+variable (I)
+include I
+
+/-- **A torus has a topological generator**: an element whose closed cyclic subgroup is the
+torus. -/
+theorem IsTorus.exists_closedZpowers_eq [IsTopologicalGroup G] {T : Subgroup G}
+    (hT : IsTorus T) : ∃ t ∈ T, closedZpowers t = T :=
+  hT.elim (I := I) fun d => by
+    intros
+    obtain ⟨t, ht⟩ :=
+      exists_closedZpowers_eq_top 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (G := T)
+    refine ⟨t, t.2, ?_⟩
+    -- The closed cyclic subgroup of `t` in `T`, which is compact, pushes forward to the closed
+    -- cyclic subgroup of `t` in `G`.
+    rw [← T.coe_subtype, ← T.subtype.map_closedZpowers continuous_subtype_val
+      (isClosed_closedZpowers t).isCompact, ht, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
+
+end Generator
 
 variable [CompactSpace G]
 

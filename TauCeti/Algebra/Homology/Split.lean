@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.Algebra.Homology.Boundaries
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
@@ -113,19 +114,8 @@ lemma projective_cycles_of_isSplitMono (i : ι) [K.HasHomology i] [Projective (K
 variable [∀ i, K.HasHomology i]
 
 /-- The complex with the homology objects of `K` as terms and zero differentials. -/
-@[expose, simps X]
-def homologyComplex : HomologicalComplex C c where
-  X i := K.homology i
-  d _ _ := 0
-
-/-- The complex of homology objects has zero differentials. -/
-@[simp]
-lemma homologyComplex_d (i j : ι) : K.homologyComplex.d i j = 0 :=
-  rfl
-
-/-- The complex of homology objects has homology in every degree. -/
-instance hasHomology_homologyComplex (i : ι) : K.homologyComplex.HasHomology i :=
-  ShortComplex.hasHomology_of_zeros _ _ _
+abbrev homologyComplex : HomologicalComplex C c :=
+  graded c fun i ↦ K.homology i
 
 variable [∀ i, IsSplitMono (K.iCycles i)]
 
@@ -362,7 +352,7 @@ of such a complex are its homology, so by `HomotopyEquiv.toHomologyIso` they are
 `K`. -/
 theorem exists_homotopyEquiv_d_eq_zero :
     ∃ L : HomologicalComplex C c, (∀ i j, L.d i j = 0) ∧ Nonempty (HomotopyEquiv K L) :=
-  ⟨K.homologyComplex, K.homologyComplex_d, ⟨homotopyEquiv K⟩⟩
+  ⟨K.homologyComplex, fun _ _ ↦ rfl, ⟨homotopyEquiv K⟩⟩
 
 end Abelian
 

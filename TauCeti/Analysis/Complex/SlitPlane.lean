@@ -21,6 +21,11 @@ and translating a point of `slitPlane ∪ {0}` by a positive one lands in the sl
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
+For `x` in the slit plane, `‖t + x‖` grows at least linearly in the real number `t ≥ 0`; this
+controls integrands of the form `(t + x) ^ s` over `t ∈ (0, ∞)`, such as those of Carlson's
+symmetric elliptic integrals.
+For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t > 0` and the term
+`x / (t + x) · t` stays bounded.
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
@@ -34,6 +39,8 @@ is a principal logarithm.
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
+* `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
 -/
 
@@ -160,16 +167,41 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
 
+/-- For `x ∈ slitPlane`, `‖t + x‖` grows at least linearly: `c (1 + t) ≤ ‖t + x‖` for `t ≥ 0`. -/
+theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlane) :
+    ∃ c, 0 < c ∧ ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖(t : ℂ) + x‖ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+  refine ⟨c, hc, fun t ht => ?_⟩
+  rw [add_comm (t : ℂ)]
+  exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
+
+/-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` is bounded for `t > 0`. -/
+theorem exists_norm_div_ofReal_add_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 0 < t → ‖x / ((t : ℂ) + x) * t‖ ≤ C := by
+  rcases hx with hx | hx
+  · obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+    refine ⟨‖x‖ / c, by positivity, fun t ht => ?_⟩
+    have hpos : 0 < ‖(t : ℂ) + x‖ := lt_of_lt_of_le (by positivity) (h t ht.le)
+    rw [norm_mul, norm_div, Complex.norm_real, Real.norm_of_nonneg ht.le, div_mul_eq_mul_div,
+      div_le_div_iff₀ hpos hc]
+    have := h t ht.le
+    nlinarith [norm_nonneg x]
+  · exact ⟨0, le_rfl, fun t _ => by simp [Set.mem_singleton_iff.mp hx]⟩
+
+/-- For `x ∈ slitPlane ∪ {0}` and any `a : ℂ`, the quotient `a / (t + x)` is continuous in the
+real variable `t > 0`. -/
+theorem continuousOn_div_ofReal_add {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (a : ℂ) :
+    ContinuousOn (fun t : ℝ => a / ((t : ℂ) + x)) (Set.Ioi 0) := fun _ ht =>
+  (continuousAt_const.div (Complex.continuous_ofReal.add continuous_const).continuousAt
+    (slitPlane_ne_zero (ofReal_add_mem_slitPlane_of_mem_union hx ht))).continuousWithinAt
+
 /-- For `p ∈ slitPlane`, the reciprocal `(t + p)⁻¹` is `O((1 + t)⁻¹)` uniformly in `t ≥ 0`. -/
 theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
     ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + p)⁻¹‖ ≤ C * (1 + t)⁻¹ := by
-  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hp
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hp
   refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
-  have h1 : c * (1 + t) ≤ ‖(t : ℂ) + p‖ := by
-    rw [add_comm (t : ℂ)]
-    exact h p (Metric.mem_ball_self hc) ⟨t, ht⟩
   rw [norm_inv, ← mul_inv]
-  exact inv_anti₀ (by positivity) h1
+  exact inv_anti₀ (by positivity) (h t ht)
 
 end TauCeti
 

@@ -230,26 +230,6 @@ section Continuity
 
 variable {X : Type*} [TopologicalSpace X]
 
-namespace Continuous
-
-/-- A continuous principal coefficient field gives a continuous field of principal bilinear
-forms. -/
-lemma matrixBilinearForm {a : X → Matrix n n ℝ} (ha : Continuous a) :
-    Continuous (fun x => PDE.matrixBilinearForm (a x)) :=
-  continuous_matrixBilinearForm.comp ha
-
-end Continuous
-
-namespace ContinuousOn
-
-/-- A continuous principal coefficient field on a set gives a continuous field of principal
-bilinear forms on that set. -/
-lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : ContinuousOn a s) :
-    ContinuousOn (fun x => PDE.matrixBilinearForm (a x)) s :=
-  continuous_matrixBilinearForm.comp_continuousOn ha
-
-end ContinuousOn
-
 /-- A coefficient field is continuous on a set as soon as its matrix bilinear forms vary
 continuously there: the entry `aⁱʲ(x)` is the value of `matrixBilinearForm (a x)` on the `i`-th
 and `j`-th standard basis vectors. -/
@@ -970,3 +950,29 @@ end Calculus
 end PDE
 
 end TauCeti
+
+namespace Continuous
+
+variable {n : Type*} [Fintype n]
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A continuous principal coefficient field gives a continuous field of principal bilinear
+forms. -/
+lemma matrixBilinearForm {a : X → Matrix n n ℝ} (ha : Continuous a) :
+    Continuous (fun x => TauCeti.PDE.matrixBilinearForm (a x)) :=
+  TauCeti.PDE.continuous_matrixBilinearForm.comp ha
+
+end Continuous
+
+namespace ContinuousOn
+
+variable {n : Type*} [Fintype n]
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A continuous principal coefficient field on a set gives a continuous field of principal
+bilinear forms on that set. -/
+lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : ContinuousOn a s) :
+    ContinuousOn (fun x => TauCeti.PDE.matrixBilinearForm (a x)) s :=
+  TauCeti.PDE.continuous_matrixBilinearForm.comp_continuousOn ha
+
+end ContinuousOn

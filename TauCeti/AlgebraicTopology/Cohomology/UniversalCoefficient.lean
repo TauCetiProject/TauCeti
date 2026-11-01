@@ -57,6 +57,8 @@ is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
+* `TopPair.isZero_singularCohomology_of_isZero_singularHomology`: relative cohomology vanishes in
+  degree `n` when relative homology vanishes up to degree `n`.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -266,6 +268,16 @@ theorem singularKronecker_bijective_of_projective_homology_lt
   -- `Hⱼ(X, A; R)` is by definition the homology of the relative singular chain complex, whose
   -- terms are retracts of the absolute singular chain modules, hence projective.
   exact TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt n h
+
+/-- **Relative cohomology vanishes up to the degree where relative homology does**: for a
+projective coefficient module `R`, if `Hⱼ(X, A; R) = 0` for `j ≤ n`, then
+`Hⁿ(X, A; R, M) = 0` for every module `M`. -/
+theorem isZero_singularCohomology_of_isZero_singularHomology [Linear k (ModuleCat.{w} k)] (n : ℕ)
+    (h : ∀ j ≤ n, IsZero (P.singularHomology R j)) : IsZero (P.singularCohomology R k M n) := by
+  have : Subsingleton (P.singularHomology R n ⟶ M) := ⟨(h n le_rfl).eq_of_src⟩
+  have := (P.singularKronecker_bijective_of_projective_homology_lt R M n fun j hj ↦
+    (h j hj.le).projective).1.subsingleton
+  exact ModuleCat.isZero_of_subsingleton _
 
 variable [hP : ∀ n, Projective (P.singularHomology R n)]
 

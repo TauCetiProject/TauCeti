@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Module.Submodule.Pointwise
@@ -30,14 +31,17 @@ Powers of a topologically nilpotent scalar absorb elements of the ambient ring i
 subring. For submodules over that subring, they absorb the ambient span element by element,
 and a single exponent absorbs a finitely generated submodule. These facts compare the
 power-scaled filtrations of finite spanning lattices; they need only separately continuous
-multiplication on the ambient ring. Scalar absorption is supplied by
-`exists_mul_pow_mem_of_isTopologicallyNilpotent`.
+multiplication on the ambient ring. In particular, inverting a topologically nilpotent element
+that is a unit in the ambient ring recovers the ambient ring from any open subring containing it.
+Scalar absorption is supplied by `exists_mul_pow_mem_of_isTopologicallyNilpotent`.
 
 ## Main results
 
 * `Subring.topologicalClosure_coe`: `↑S.topologicalClosure = closure ↑S`.
 * `isOpen_integralClosure_toSubring`: the integral closure of an open subring is open.
 * `Ideal.isOpen_comap_subtype_iff`: an ideal is open exactly when its trace on an open subring is.
+* `Subring.isLocalizationAway_of_isOpen`: an open subring containing a topologically nilpotent
+  unit recovers the ambient ring by inverting that element.
 * `Subring.exists_pow_smul_mem`: a power carries an element of the ambient span into a
   submodule over the open subring.
 * `Subring.exists_pow_smul_le` and `Subring.exists_pow_smul_le_pow_smul`: the uniform and
@@ -96,6 +100,16 @@ open scoped Topology Pointwise
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
   {M : Type*} [AddCommMonoid M] [Module A M]
+
+/-- Inverting a topologically nilpotent unit in an open subring recovers the ambient ring.
+No boundedness, completeness, or integrally closedness is needed. -/
+theorem isLocalizationAway_of_isOpen (S : Subring A) (hS : IsOpen (S : Set A)) (s : S)
+    (hs : IsTopologicallyNilpotent (s : A)) (hu : IsUnit (s : A)) :
+    IsLocalization.Away s A := by
+  refine IsLocalization.Away.mk s hu (fun x ↦ ?_) (fun a b hab ↦ ?_)
+  · obtain ⟨n, hn⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hs hS x
+    exact ⟨n, ⟨_, hn⟩, rfl⟩
+  · exact ⟨0, by simpa using Subtype.ext hab⟩
 
 /-- A power of a topologically nilpotent scalar `s ∈ S` carries any element of the `A`-span
 of `M₀` into `M₀`. No spanning hypothesis on the whole module is needed. -/

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -30,7 +31,9 @@ uniquely to the localisation.
 Consequently a *strictly Henselian* local ring, one whose residue field is separably closed, has
 no nonsplit finite étale covers (`TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`): a faithfully
 flat finite étale algebra has a `k`-point because `k` is separably closed, and this lifts to a
-section. Such rings need be neither fields nor reduced.
+section. Such rings need be neither fields nor reduced. As the spectrum of a local ring is
+connected, every finite étale algebra over a strictly Henselian local ring is moreover a finite
+product of copies of the base (`Algebra.IsFiniteSplit.of_henselianLocalRing`).
 
 ## Main results
 
@@ -40,6 +43,8 @@ section. Such rings need be neither fields nor reduced.
   arbitrary base `R` and a Henselian local `R`-algebra `S`.
 * `TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`: a Henselian local ring with separably
   closed residue field has no nonsplit finite étale covers.
+* `Algebra.IsFiniteSplit.of_henselianLocalRing`: over such a ring every finite étale algebra is a
+  finite product of copies of the base.
 
 ## References
 
@@ -129,21 +134,10 @@ variable {R S A : Type*} [CommRing R] [CommRing S] [HenselianLocalRing S] [Algeb
 theorem comp_bijective_of_algebra :
     Function.Bijective
       ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
-        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) := by
+        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) :=
   -- Base change `A` to the étale `S`-algebra `S ⊗[R] A` and apply `comp_bijective` over `S`.
-  have h : Function.Bijective
-      ((Algebra.ofId S (ResidueField S)).comp :
-        (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] ResidueField S) :=
-    comp_bijective (R := S) (S := S ⊗[R] A)
-  have hcomp : ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
-      (A →ₐ[R] S) → A →ₐ[R] ResidueField S) =
-      (AlgHom.liftEquiv R S A (ResidueField S)).symm ∘
-        (Algebra.ofId S (ResidueField S)).comp ∘ AlgHom.liftEquiv R S A S := by
-    ext f a
-    simp
-  rw [hcomp]
-  exact (AlgHom.liftEquiv R S A (ResidueField S)).symm.bijective.comp
-    (h.comp (AlgHom.liftEquiv R S A S).bijective)
+  (AlgHom.restrictScalars_comp_bijective_iff R A (Algebra.ofId S (ResidueField S))).mpr
+    (comp_bijective (R := S) (S := S ⊗[R] A))
 
 end Relative
 
@@ -158,5 +152,13 @@ instance IsFiniteEtaleSplit.of_henselianLocalRing (R : Type u) [CommRing R] [Hen
     have ⟨ψ⟩ := IsFiniteEtaleSplit.nonempty_algHom (ResidueField R) T
     have ⟨φ, _⟩ := (HenselianLocalRing.comp_bijective (R := R) (S := T)).2 ψ
     ⟨φ⟩
+
+/-- **Finite étale algebras over a strictly Henselian local ring split**: over a Henselian local
+ring `R` with separably closed residue field, every finite étale `R`-algebra is `R`-isomorphic to
+a finite product `Fin n → R` of copies of `R`. -/
+theorem _root_.Algebra.IsFiniteSplit.of_henselianLocalRing (R : Type u) [CommRing R]
+    [HenselianLocalRing R] [IsSepClosed (ResidueField R)] (T : Type*) [CommRing T] [Algebra R T]
+    [Algebra.Etale R T] [Module.Finite R T] : Algebra.IsFiniteSplit R T :=
+  .of_isFiniteEtaleSplit T
 
 end TauCeti

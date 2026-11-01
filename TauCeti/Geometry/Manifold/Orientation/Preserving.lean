@@ -242,6 +242,40 @@ theorem IsOrientationPreservingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
   · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, h, h']
     simp only [Function.comp_apply]
 
+/-- Two orientations of `M'` from which a map preserves orientation at `x`, from the same
+orientation of `M`, agree at `f x`. -/
+theorem IsOrientationPreservingAt.orientationAt_eq [IsManifold I 1 M] [IsManifold I' 1 M']
+    {o : Manifold.Orientation I M ι} {o' o'' : Manifold.Orientation I' M' ι} {f : M → M'}
+    {x : M} (h' : IsOrientationPreservingAt o o' f x) (h'' : IsOrientationPreservingAt o o'' f x) :
+    o'.orientationAt (f x) = o''.orientationAt (f x) := by
+  obtain ⟨D, hD, hDo⟩ := h'
+  rwa [← hDo, ← isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD]
+
+/-- A differentiable map `f` preserves orientations at `x` when `g ∘ f` does and `g` preserves
+orientations at `f x`. -/
+theorem IsOrientationPreservingAt.of_comp [IsManifold I 1 M] [IsManifold I' 1 M']
+    [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}
+    {o' : Manifold.Orientation I' M' ι} {o'' : Manifold.Orientation I'' M'' ι}
+    {f : M → M'} {g : M' → M''} {x : M}
+    (hgg : IsOrientationPreservingAt o' o'' g (f x))
+    (hgf : IsOrientationPreservingAt o o'' (g ∘ f) x) (hf : MDifferentiableAt I I' f x) :
+    IsOrientationPreservingAt o o' f x := by
+  obtain ⟨e, he, h⟩ := hgf
+  obtain ⟨e', he', h'⟩ := hgg
+  refine ⟨e.trans e'.symm, ?_, ?_⟩
+  · -- `e' ∘ mfderiv f x = mfderiv (g ∘ f) x = e`, so `mfderiv f x = e'⁻¹ ∘ e`.
+    have hcomp : (e' : TangentSpace I' (f x) →L[ℝ] TangentSpace I'' (g (f x))).comp
+        (mfderiv I I' f x) = (e : TangentSpace I x →L[ℝ] TangentSpace I'' ((g ∘ f) x)) := by
+      rw [he', he, mfderiv_comp x (mdifferentiableAt_of_isInvertible_mfderiv ⟨e', he'⟩) hf]
+    ext v
+    have hv := congrArg (fun L ↦ L v) hcomp
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at hv
+    simp [← hv]
+  · rw [ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, h,
+      Function.comp_apply, ← h',
+      ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
+      Equiv.symm_apply_apply]
+
 /-- The composition of two orientation-reversing maps preserves orientations at a point. -/
 theorem IsOrientationReversingAt.comp [IsManifold I 1 M] [IsManifold I' 1 M']
     [IsManifold I'' 1 M''] {o : Manifold.Orientation I M ι}

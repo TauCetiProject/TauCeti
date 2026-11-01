@@ -52,6 +52,9 @@ A function continuous on a compact set is bounded there, so for a measure finite
 it lies in every `Lᵖ` on each measurable subset of that compact set.
 In particular, the squared norm of a continuous compactly supported function is integrable.
 
+For a locally finite measure, the indicator of a constant on a set that is null-measurable for
+the restriction of the measure to `s` is locally integrable on `s`.
+
 A real function with values in `[0, 1]` almost everywhere on a measurable set agrees almost
 everywhere there with a function that is locally integrable on the whole space and everywhere
 `[0, 1]`-valued: clamp it to `[0, 1]` and extend it by zero.
@@ -66,6 +69,8 @@ everywhere there with a function that is locally integrable on the whole space a
   a compact set and its small translates by a globally integrable function.
 * `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
   compact open subdomains.
+* `TauCeti.locallyIntegrableOn_indicator_const`: the indicator of a constant on a null-measurable
+  set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
   zero extension when the support avoids the added boundary.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
@@ -193,6 +198,14 @@ theorem locallyIntegrableOn_iff_forall_isCompact_closure :
     exact hf.filter_mono nhdsWithin_le_nhds
 
 end RelativelyCompactSubdomains
+
+/-- For a locally finite measure, the indicator of a constant on a set `t` that is null-measurable
+for the restriction of the measure to `s` is locally integrable on `s`. -/
+theorem locallyIntegrableOn_indicator_const {F : Type*} [NormedAddCommGroup F]
+    [IsLocallyFiniteMeasure μ] {s t : Set X} (ht : NullMeasurableSet t (μ.restrict s)) (c : F) :
+    LocallyIntegrableOn (t.indicator fun _ => c) s μ :=
+  (((locallyIntegrable_const c).indicator (measurableSet_toMeasurable _ t)).locallyIntegrableOn
+    s).congr (indicator_ae_eq_of_ae_eq_set ht.toMeasurable_ae_eq)
 
 /-- A real function with values in `[0, 1]` almost everywhere on a measurable set `s` agrees almost
 everywhere on `s` with a function that is locally integrable on the whole space and everywhere

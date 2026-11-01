@@ -224,6 +224,12 @@ theorem isTopologicallyNilpotent_iff_forall_pointNorm_lt_one (hA : IsAffinoidAlg
     {f : A} : IsTopologicallyNilpotent f ↔ ∀ x, pointNorm K x f < 1 := by
   rw [hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one, hA.supSeminorm_lt_iff one_pos]
 
+/-- A power-bounded element lies in `A°°` exactly when its supremum seminorm is less than one. -/
+theorem mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra K A)
+    {a : Huber.powerBoundedSubring A} :
+    a ∈ Huber.topologicallyNilpotentIdeal A ↔ supSeminorm K (a : A) < 1 := by
+  rw [Huber.mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one]
+
 /-- **A ring of definition with reduced quotient is the unit ball of the supremum seminorm.** Let
 `B` be an open bounded subring of an affinoid algebra with a complete ultrametric algebra norm,
 and `ϖ ∈ B` an element which is topologically nilpotent and left regular in `A`, for instance a

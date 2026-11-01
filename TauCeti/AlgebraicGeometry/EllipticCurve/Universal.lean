@@ -28,6 +28,7 @@ commutative ring is the base change of that curve.
 
 ## Main definitions
 
+* `WeierstrassCurve.coefficientWeight`: the weights `1, 2, 3, 4, 6` of `A₁, A₂, A₃, A₄, A₆`.
 * `WeierstrassCurve.Universal.curve`: the universal Weierstrass curve, over `ℤ[A₁,⋯,A₆]`.
 * `WeierstrassCurve.Universal.Poly`, `.Ring`, `.Field`: the polynomial ring `ℤ[A₁,⋯,A₆,X,Y]`, its
   quotient by the Weierstrass polynomial, and that quotient's field of fractions; `polyToField` is
@@ -55,8 +56,10 @@ commutative ring is the base change of that curve.
   of `pointedCurve` — the universal curve really is pointed.
 * `WeierstrassCurve.map_specialize`: every Weierstrass curve is a specialization of the universal
   one.
-* `WeierstrassCurve.specialize_Δ`: `specialize` sends the discriminant of the universal curve to
-  the discriminant of `W`.
+* `WeierstrassCurve.specialize_Δ`, `specialize_c₄`, `specialize_c₆`: `specialize` sends the
+  discriminant and the invariants `c₄`, `c₆` of the universal curve to those of `W`.
+* `WeierstrassCurve.specialize_mk_smul`: the scaling `(u, 0, 0, 0)` multiplies the coordinate
+  `aᵢ` by `u⁻ⁱ`, where `i` is the weight `coefficientWeight` of `Aᵢ`.
 * `WeierstrassCurve.Universal.map_ringEval`: pushing the universal curve over
   `Universal.Ring` along `ringEval` returns `W`, so one identity **over `curveRing`** is the same
   identity for every curve and every point on it. Note the restriction: `ringEval` maps out of
@@ -95,7 +98,8 @@ reads `Authors: Junyan Xu`. **Most** declarations here come from that file: the 
 and the bulk of the `Universal` namespace (`curve`, `Poly`, `Ring`, `Field`, `polyToField`,
 `pointedCurve`, `Affine.point`, `Jacobian.point`, `curvePoly` and `curveRing` with their lemmas),
 and the specialization API (`specialize`, `polyEval`, `ringEval` with their compatibility lemmas).
-`map_polyToField` is new; upstream that identity is definitional. The `CharZero Universal.Ring`
+`map_polyToField`, `coefficientWeight`, `specialize_c₄`, `specialize_c₆` and `specialize_mk_smul`
+are new; upstream that identity is definitional. The `CharZero Universal.Ring`
 instance replaces the source's `Poly.two_ne_zero` and `Field.two_ne_zero`, and Mathlib derives
 `CharZero Universal.Field` from it through `IsFractionRing.charZero`. The source's three opening
 lemmas, `CoordinateRing.algebraMap_poly_injective`, `CoordinateRing.algebraMap_injective'` and
@@ -154,6 +158,27 @@ inductive Coeff : Type | A₁ : Coeff | A₂ : Coeff | A₃ : Coeff | A₄ : Coe
 /-- The five coefficient indices form a finite type, so `ℤ[A₁,⋯,A₆]` and its localisations are
 Noetherian rings. -/
 instance : Fintype Coeff := derive_fintype% _
+
+/-- The weight of a coefficient of a Weierstrass curve: `aᵢ` has weight `i`, so that `a₁`, `a₂`,
+`a₃`, `a₄`, `a₆` have weights `1`, `2`, `3`, `4`, `6`. The scaling `(x, y) ↦ (u²x, u³y)` divides
+`aᵢ` by `uⁱ`, and the invariants `c₄`, `c₆`, `Δ` are weighted homogeneous of weights `4`, `6`,
+`12` for these weights. -/
+def coefficientWeight : Coeff → ℕ
+  | .A₁ => 1
+  | .A₂ => 2
+  | .A₃ => 3
+  | .A₄ => 4
+  | .A₆ => 6
+
+@[simp] lemma coefficientWeight_A₁ : coefficientWeight .A₁ = 1 := (rfl)
+
+@[simp] lemma coefficientWeight_A₂ : coefficientWeight .A₂ = 2 := (rfl)
+
+@[simp] lemma coefficientWeight_A₃ : coefficientWeight .A₃ = 3 := (rfl)
+
+@[simp] lemma coefficientWeight_A₄ : coefficientWeight .A₄ = 4 := (rfl)
+
+@[simp] lemma coefficientWeight_A₆ : coefficientWeight .A₆ = 6 := (rfl)
 
 namespace Universal
 
@@ -366,6 +391,27 @@ lemma map_specialize : Universal.curve.map W.specialize = W := by ext <;> simp
 @[simp]
 lemma specialize_Δ : W.specialize Universal.curve.Δ = W.Δ := by
   simp only [← map_Δ, map_specialize]
+
+/-- `specialize` sends the invariant `c₄` of the universal curve to the invariant `c₄` of `W`. -/
+@[simp]
+lemma specialize_c₄ : W.specialize Universal.curve.c₄ = W.c₄ := by
+  simp only [← map_c₄, map_specialize]
+
+/-- `specialize` sends the invariant `c₆` of the universal curve to the invariant `c₆` of `W`. -/
+@[simp]
+lemma specialize_c₆ : W.specialize Universal.curve.c₆ = W.c₆ := by
+  simp only [← map_c₆, map_specialize]
+
+open MvPolynomial in
+/-- The scaling `(x, y) ↦ (u²x, u³y)`, the change of variables `(u, 0, 0, 0)`, multiplies the
+coordinate `aᵢ` by `u⁻ⁱ`. -/
+theorem specialize_mk_smul (u : Rˣ) (f : MvPolynomial Coeff ℤ) :
+    ((⟨u, 0, 0, 0⟩ : VariableChange R) • W).specialize f =
+      aeval (fun i ↦ ↑u⁻¹ ^ coefficientWeight i * W.specialize (X i)) f := by
+  refine congrFun (congrArg DFunLike.coe (ringHom_ext (fun n ↦ ?_) fun i ↦ ?_)) f
+  · rw [eq_intCast C, map_intCast, map_intCast]
+  · cases i <;> simp [variableChange_a₁, variableChange_a₂, variableChange_a₃,
+      variableChange_a₄, variableChange_a₆]
 
 namespace Universal
 
