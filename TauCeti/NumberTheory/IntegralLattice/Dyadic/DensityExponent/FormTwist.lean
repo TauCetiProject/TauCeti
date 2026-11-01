@@ -76,18 +76,14 @@ up one, preserving the constituent ranks and parity types. -/
 theorem dyadicJordanProfile_two_smul :
     ((2 : ℤ) • L).dyadicJordanProfile = L.dyadicJordanProfile.shift := by
   obtain ⟨N, hN⟩ := L.exists_isJordanSplitting_localIntegralForm 2 L.form_nondegenerate
-  -- Form twisting preserves the carrier and its localization. The identity linear
-  -- equivalence identifies these carriers; simp also identifies the cast of 2 in ℤ_[2].
-  let e : ((2 : ℤ_[2]) • L.localIntegralForm 2).IsometryEquiv
-      (((2 : ℤ) • L).localIntegralForm 2) :=
-    { toLinearEquiv := LinearEquiv.refl _ _
-      map_app' x y := by simp }
-  have hN' := hN.uniformizer_smul.map_isometryEquiv e
+  -- The localization equality identifies the form twist on the unchanged carrier;
+  -- the cast lemmas identify the uniformizer with the scalar cast from ℤ.
+  have hN' := hN.uniformizer_smul
+  rw [Nat.cast_ofNat, ← Int.cast_ofNat, ← localIntegralForm_smul] at hN'
   rw [dyadicJordanProfile_eq hN', dyadicJordanProfile_eq hN]
-  exact (hN'.dyadicJordanProfile_eq_of_equivalent _ _ _ hN.uniformizer_smul
-    ((L.isSymm_localIntegralForm 2).smul (2 : ℤ_[2])) ⟨e.symm⟩).trans
-      (hN.dyadicJordanProfile_uniformizer_smul (L.isSymm_localIntegralForm 2)
-        two_ne_zero PadicInt.not_isUnit_two)
+  simpa only [localIntegralForm_smul, Int.cast_ofNat, Nat.cast_ofNat] using
+    hN.dyadicJordanProfile_uniformizer_smul (L.isSymm_localIntegralForm 2)
+      two_ne_zero PadicInt.not_isUnit_two
 
 /-- Cho's exponent `N_Q` increases by the scale-shift correction under a form twist by `2`. -/
 theorem nQ_dyadicJordanProfile_two_smul :
