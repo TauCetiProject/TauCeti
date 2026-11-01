@@ -338,32 +338,23 @@ theorem support_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).support = ((p.toBidirected x.2).vertices.map f.vertexEquiv).unattach := by
   rw [mapWalk, ArrowWalk.support_toGraphWalk, vertices_mapPath]
 
+private theorem mem_unattach_iff {X : Type*} {P : X → Prop} (a : Subtype P)
+    (l : List (Subtype P)) : (a : X) ∈ l.unattach ↔ a ∈ l := by
+  rw [List.mem_unattach]
+  constructor
+  · rintro ⟨_, h⟩
+    simpa using h
+  · intro h
+    exact ⟨a.2, h⟩
+
 /-- A vertex occurs on a transported walk exactly when its inverse image occurs on the original
 walk. -/
 @[simp]
 theorem vertexEquiv_mem_support_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (z : G.vertexSet) :
     (f.vertexEquiv z : α') ∈ (f.mapWalk p).support ↔ (z : α) ∈ p.support := by
-  have hleft :
-      (f.vertexEquiv z : α') ∈
-          ((p.toBidirected x.2).vertices.map f.vertexEquiv).unattach ↔
-        f.vertexEquiv z ∈ (p.toBidirected x.2).vertices.map f.vertexEquiv := by
-    rw [List.mem_unattach]
-    constructor
-    · rintro ⟨_, h⟩
-      simpa using h
-    · intro h
-      exact ⟨(f.vertexEquiv z).2, h⟩
-  have hright :
-      (z : α) ∈ (p.toBidirected x.2).vertices.unattach ↔
-        z ∈ (p.toBidirected x.2).vertices := by
-    rw [List.mem_unattach]
-    constructor
-    · rintro ⟨_, h⟩
-      simpa using h
-    · intro h
-      exact ⟨z.2, h⟩
-  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.2, hleft, hright,
+  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.2, mem_unattach_iff,
+    mem_unattach_iff,
     List.mem_map_of_injective f.vertexEquiv.injective]
 
 private theorem edges_mapWalk_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
@@ -388,42 +379,18 @@ walk. -/
 theorem edgeEquiv_mem_edges_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (e : G.edgeSet) :
     (f.edgeEquiv e : β') ∈ (f.mapWalk p).edges ↔ (e : β) ∈ p.edges := by
-  have hleft :
-      (f.edgeEquiv e : β') ∈ (p.edgesAttach.map f.edgeEquiv).unattach ↔
-        f.edgeEquiv e ∈ p.edgesAttach.map f.edgeEquiv := by
-    rw [List.mem_unattach]
-    constructor
-    · rintro ⟨_, h⟩
-      simpa using h
-    · intro h
-      exact ⟨(f.edgeEquiv e).2, h⟩
-  have hright : (e : β) ∈ p.edgesAttach.unattach ↔ e ∈ p.edgesAttach := by
-    rw [List.mem_unattach]
-    constructor
-    · rintro ⟨_, h⟩
-      simpa using h
-    · intro h
-      exact ⟨e.2, h⟩
-  rw [edges_mapWalk, ← Walk.edgesAttach_unattach p, hleft, hright,
+  rw [edges_mapWalk, ← Walk.edgesAttach_unattach p, mem_unattach_iff, mem_unattach_iff,
     List.mem_map_of_injective f.edgeEquiv.injective]
 
 /-- Walk transport preserves and reflects trails. -/
 @[simp]
 theorem isTrail_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).IsTrail ↔ p.IsTrail := by
-  rw [Walk.isTrail_def, edges_mapWalk, Walk.isTrail_def]
-  constructor
-  · intro h
-    have hmap : (p.edgesAttach.map f.edgeEquiv).Nodup := h.of_map Subtype.val
-    have hattach : p.edgesAttach.Nodup := hmap.of_map f.edgeEquiv
-    have hunattach : p.edgesAttach.unattach.Nodup := hattach.map Subtype.val_injective
-    rw [Walk.edgesAttach_unattach] at hunattach
-    exact hunattach
-  · intro h
-    have hattachVal : p.edgesAttach.unattach.Nodup := by
-      simpa only [Walk.edgesAttach_unattach] using h
-    have hattach : p.edgesAttach.Nodup := hattachVal.of_map Subtype.val
-    exact (hattach.map f.edgeEquiv.injective).map Subtype.val_injective
+  rw [Walk.isTrail_def, edges_mapWalk, Walk.isTrail_def, List.unattach,
+    List.nodup_map_iff Subtype.val_injective,
+    List.nodup_map_iff f.edgeEquiv.injective,
+    ← List.nodup_map_iff Subtype.val_injective]
+  exact Iff.of_eq (congrArg List.Nodup (Walk.edgesAttach_unattach p))
 
 /-- Walk transport preserves and reflects paths. -/
 @[simp]

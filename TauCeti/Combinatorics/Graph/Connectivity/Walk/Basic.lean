@@ -112,10 +112,19 @@ def edges {x y : α} : G.Walk x y → List β
   | .nil => []
   | .cons e _ p => e :: p.edges
 
+/-- Every edge traversed by a walk is an actual edge of the ambient graph. -/
+theorem edges_subset_edgeSet (p : G.Walk x y) :
+    ∀ ⦃e : β⦄, e ∈ p.edges → e ∈ E(G) := by
+  induction p with
+  | nil => simp [edges]
+  | cons e h p ih =>
+      intro f hf
+      simp only [edges, List.mem_cons] at hf
+      exact hf.elim (fun hfe => hfe ▸ h.edge_mem) (fun hfp => ih hfp)
+
 /-- The edges traversed by a walk, as actual edges. -/
-def edgesAttach {x y : α} : (p : G.Walk x y) → List G.edgeSet
-  | .nil => []
-  | .cons e h p => ⟨e, h.edge_mem⟩ :: p.edgesAttach
+def edgesAttach {x y : α} (p : G.Walk x y) : List G.edgeSet :=
+  p.edges.attachWith (fun e ↦ e ∈ G.edgeSet) fun _ he ↦ p.edges_subset_edgeSet he
 
 @[simp]
 theorem edgesAttach_nil : (nil : G.Walk x x).edgesAttach = [] :=
@@ -129,9 +138,7 @@ theorem edgesAttach_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
 /-- Forgetting actual-edge membership from `edgesAttach` gives the edge list. -/
 @[simp]
 theorem edgesAttach_unattach (p : G.Walk x y) : p.edgesAttach.unattach = p.edges := by
-  induction p with
-  | nil => rfl
-  | cons e h p ih => simp [edgesAttach, edges, ih]
+  simp [edgesAttach]
 
 @[simp, grind =]
 theorem length_nil : (nil : G.Walk x x).length = 0 := (rfl)
@@ -268,16 +275,6 @@ theorem eq_nil_iff_nil {p : G.Walk x x} : p = nil ↔ p.Nil := by
   cases p <;> simp
 
 alias ⟨_, Nil.eq_nil⟩ := eq_nil_iff_nil
-
-/-- Every edge traversed by a walk is an actual edge of the ambient graph. -/
-theorem edges_subset_edgeSet (p : G.Walk x y) :
-    ∀ ⦃e : β⦄, e ∈ p.edges → e ∈ E(G) := by
-  induction p with
-  | nil => simp
-  | cons e h p ih =>
-      intro f hf
-      simp only [edges_cons, List.mem_cons] at hf
-      exact hf.elim (fun hfe => hfe ▸ h.edge_mem) (fun hfp => ih hfp)
 
 /-- Every vertex on a walk starting at an actual vertex is an actual vertex of the ambient graph. -/
 theorem support_subset_vertexSet (p : G.Walk x y) (hx : x ∈ V(G)) :
