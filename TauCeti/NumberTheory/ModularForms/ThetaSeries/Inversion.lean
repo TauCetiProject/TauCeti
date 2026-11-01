@@ -119,9 +119,8 @@ theorem thetaSeries_slash_S (hk : finrank ℝ E = 2 * k) :
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **The inversion law applied twice**: if `dim E = 2k`, then in weight `k`,
-`(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`, computed through `Θ_{L^∨}` with the constants
-`(-i)^k (covol L)⁻¹` and `(-i)^k (covol L^∨)⁻¹`. This agrees with the action of `S² = -1`, which
-acts on weight `k` by `(-1)^k`; in odd weight it is not trivial, as for the lattice `ℤ²` in weight
+`(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`. This agrees with the action of `S² = -1`, which acts on
+weight `k` by `(-1)^k`; in odd weight it is not trivial, as for the lattice `ℤ²` in weight
 one. -/
 theorem thetaSeries_slash_S_slash_S (hk : finrank ℝ E = 2 * k) :
     (thetaSeries L ∣[(k : ℤ)] ModularGroup.S) ∣[(k : ℤ)] ModularGroup.S =
@@ -129,12 +128,13 @@ theorem thetaSeries_slash_S_slash_S (hk : finrank ℝ E = 2 * k) :
   -- The statement involves no measure; the inversion law uses the Borel volume.
   borelize E
   have hc : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_ne_zero L MeasureTheory.volume)
+  have hI : (-I) ^ k * (-I) ^ k = (-1 : ℂ) ^ k := by rw [← mul_pow, neg_mul_neg, I_mul_I]
   rw [thetaSeries_slash_S L hk, ModularForm.SL_smul_slash, thetaSeries_slash_S (dual L) hk,
     dual_dual, covolume_dual, smul_smul]
   congr 1
   push_cast
+  rw [← hI]
   field_simp
-  rw [← pow_mul, mul_comm, pow_mul, neg_sq, I_sq]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 variable {L} in

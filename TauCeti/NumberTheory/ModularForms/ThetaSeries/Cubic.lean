@@ -29,7 +29,7 @@ law of theta series reads `Θ_{ℤ b}(-1/τ) = (-i τ)^k Θ_{ℤ b}(τ)`
 function, `jacobiTheta_S_smul`, is a half-integral weight statement carrying the principal branch
 of `(-i τ)^{1/2}`; its square is integral weight. In rank two the two laws compare directly:
 `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²` follows from the lattice inversion law, which is
-proved by Poisson summation over the lattice (`UpperHalfPlane.jacobiTheta_S_smul_sq`). This
+proved by Poisson summation over the lattice (`jacobiTheta_S_smul_sq`). This
 checks the exponent `π i ‖v‖² τ` and the constant `(covol L)⁻¹ (-i)^k τ^k` of the lattice
 inversion law against the classical rank-one formula.
 
@@ -38,7 +38,7 @@ inversion law against the classical rank-one formula.
 * `ZLattice.thetaSeries_span_orthonormalBasis`: `Θ_{ℤ b} = jacobiTheta ^ n`.
 * `ZLattice.thetaSeries_span_orthonormalBasis_S_smul`: in dimension `2k`,
   `Θ_{ℤ b}(-1/τ) = (-i τ)^k Θ_{ℤ b}(τ)`.
-* `UpperHalfPlane.jacobiTheta_S_smul_sq`: `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²`, from the
+* `jacobiTheta_S_smul_sq`: `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²`, from the
   lattice inversion law in rank two.
 
 ## References
@@ -57,16 +57,6 @@ namespace ZLattice
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {ι : Type*} [Fintype ι]
   (b : OrthonormalBasis ι ℝ E)
 
-/-- The vector of the cubic lattice `ℤ b` with integer coordinates `m` has squared norm
-`∑ i, (m i)²`. -/
-private theorem norm_sq_restrictScalars_equivFun_symm (m : ι → ℤ) :
-    ‖((b.toBasis.restrictScalars ℤ).equivFun.symm m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
-  rw [← b.sum_sq_inner_right]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← b.repr_apply_apply, ← b.coe_toBasis_repr_apply,
-    ← b.toBasis.restrictScalars_repr_apply ℤ, ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  simp
-
 /-- **The theta series of a cubic lattice is a power of Jacobi's theta function**: for an
 orthonormal basis `b` indexed by `ι`, `Θ_{ℤ b}(τ) = jacobiTheta(τ) ^ |ι|`. -/
 theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
@@ -74,14 +64,25 @@ theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
   have hs : Summable fun m : ℤ ↦ ‖cexp (π * I * (m : ℂ) ^ 2 * τ)‖ := by
     simpa [jacobiTheta₂_term] using
       summable_norm_iff.mpr ((summable_jacobiTheta₂_term_iff 0 τ).mpr τ.im_pos)
-  rw [jacobiTheta, ← Finset.card_univ, ← Finset.prod_const,
-    TauCeti.prod_tsum_of_summable_norm fun _ ↦ hs, thetaSeries_apply, ← b.coe_toBasis,
-    ← (b.toBasis.restrictScalars ℤ).equivFun.symm.toEquiv.tsum_eq]
+  have hpow : jacobiTheta τ ^ Fintype.card ι = ∏ _ : ι, jacobiTheta τ := by simp
+  rw [hpow, jacobiTheta, TauCeti.prod_tsum_of_summable_norm fun _ ↦ hs, thetaSeries_apply,
+    ← b.coe_toBasis, ← (b.toBasis.restrictScalars ℤ).equivFun.symm.toEquiv.tsum_eq]
   refine tsum_congr fun m ↦ ?_
-  rw [LinearEquiv.coe_toEquiv, norm_sq_restrictScalars_equivFun_symm, ← Complex.exp_sum]
+  -- The lattice vector with coordinates `m` is `∑ i, (m i : ℝ) • b i`, of squared norm
+  -- `∑ i, (m i)²` by orthonormality.
+  have hv : ((b.toBasis.restrictScalars ℤ).equivFun.symm m : E) = ∑ i, (m i : ℝ) • b i := by
+    rw [Basis.equivFun_symm_apply, Submodule.coe_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    -- The `ℤ`-action on the span is the one of `Basis.restrictScalars`, so `coe_smul` only
+    -- matches up to instances.
+    erw [Submodule.coe_smul]
+    rw [Basis.restrictScalars_apply, b.coe_toBasis, Int.cast_smul_eq_zsmul]
+  have hn : ‖((b.toBasis.restrictScalars ℤ).equivFun.symm m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
+    rw [hv]
+    simpa using b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (m i : ℝ)) Finset.univ
+  rw [LinearEquiv.coe_toEquiv, hn, ← Complex.exp_sum]
   push_cast
-  congr 1
-  rw [Finset.mul_sum, Finset.sum_mul]
+  simp only [Finset.mul_sum, Finset.sum_mul]
 
 variable {k : ℕ}
 
@@ -100,10 +101,8 @@ theorem thetaSeries_span_orthonormalBasis_S_smul (hk : Fintype.card ι = 2 * k) 
 
 /-- **The square of the inversion law of Jacobi's theta function**,
 `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²`. This is the square of Mathlib's half-integral weight
-law `jacobiTheta_S_smul`; here it is the rank-two case of the inversion law of cubic lattices,
-`ZLattice.thetaSeries_span_orthonormalBasis_S_smul`, which confirms the normalisation of the
-lattice inversion law against the classical one. -/
-theorem _root_.UpperHalfPlane.jacobiTheta_S_smul_sq (τ : ℍ) :
+law `jacobiTheta_S_smul`. -/
+theorem _root_.jacobiTheta_S_smul_sq (τ : ℍ) :
     jacobiTheta (ModularGroup.S • τ : ℍ) ^ 2 = -I * τ * jacobiTheta τ ^ 2 := by
   have h := thetaSeries_span_orthonormalBasis_S_smul (EuclideanSpace.basisFun (Fin 2) ℝ)
     (k := 1) (by simp) τ
