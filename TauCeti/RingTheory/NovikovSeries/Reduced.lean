@@ -22,10 +22,9 @@ This supplies reducedness before passing to total quotient rings: retaining
 finite deck torsion can introduce zero divisors, but does not introduce nilpotents
 over `ℤ`. No field or finite-product decomposition is asserted here.
 
-The argument uses the full finite leading term in the group ring, not a single
-leading coefficient. If a nonzero series had square zero, its nonzero leading
-term would have square zero as well. The converse follows from the injective
-coefficient-preserving group-ring inclusion.
+The reducedness equivalence holds for every semiring `R`, additive monoid `H`,
+and period homomorphism `N : H →+ ℝ`: `NovikovSeries R H N` is reduced exactly
+when `AddMonoidAlgebra R H` is reduced.
 
 ## References
 
@@ -42,8 +41,11 @@ namespace TauCeti.NovikovSeries
 
 variable {R H : Type*} [Semiring R] [AddMonoid H] {N : H →+ ℝ}
 
-/-- Period-controlled completion preserves reducedness of the group ring.
-All terms tied at the least period are retained in the argument. -/
+/- The argument uses the full finite leading term in the group ring, not a single
+leading coefficient. If a nonzero series had square zero, its nonzero leading
+term would have square zero as well. -/
+/-- Period-controlled completion preserves reducedness of `AddMonoidAlgebra R H`
+for every semiring `R`, additive monoid `H`, and period homomorphism `N : H →+ ℝ`. -/
 instance instIsReduced [IsReduced (AddMonoidAlgebra R H)] :
     IsReduced (NovikovSeries R H N) := by
   rw [isReduced_iff_pow_one_lt 2 one_lt_two]
@@ -62,6 +64,7 @@ theorem isReduced_iff :
     IsReduced (NovikovSeries R H N) ↔ IsReduced (AddMonoidAlgebra R H) := by
   constructor
   · intro h
+    -- The injective coefficient-preserving group-ring inclusion reflects reducedness.
     exact isReduced_of_injective (ofAddMonoidAlgebra (N := N))
       ofAddMonoidAlgebra_injective
   · intro h
