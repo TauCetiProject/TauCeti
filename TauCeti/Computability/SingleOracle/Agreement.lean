@@ -330,15 +330,6 @@ open Primrec
 
 variable {α : Type*} [Primcodable α] {σ : α → ℕ → Option ℕ} {g : α → ℕ → ℕ}
 
-/-- A supremum over `Finset.range n` in `ℕ` is the right fold of `max` over `List.range n`. -/
-private theorem sup_range_eq_foldr_max (f : ℕ → ℕ) (n : ℕ) :
-    (Finset.range n).sup f = (List.range n).foldr (fun x a => max (f x) a) 0 := by
-  have h (l : List ℕ) : l.foldr (fun x a => max (f x) a) 0 = l.toFinset.sup f := by
-    induction l with
-    | nil => simp
-    | cons a l ih => simp [ih]
-  rw [h, show (List.range n).toFinset = Finset.range n by ext; simp]
-
 /-- Agreement is primitive recursive, uniformly in a parameter `a` on which the answers `σ a` and
 the target `g a` depend primitive recursively, and in the fuel, the program and the argument. -/
 theorem primrecPred_agreesAt (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
@@ -377,7 +368,11 @@ theorem primrec_agreementRestraint (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
       ((snd.comp (snd.comp fst)).pair snd)))
   refine (list_foldr (list_range.comp (Primrec.succ.comp (primrec_agreementLength hσ hg))) (const 0)
     (nat_max.comp (huse.comp fst (fst.comp snd)) (snd.comp snd)).to₂).of_eq fun p => ?_
-  rw [agreementRestraint, sup_range_eq_foldr_max]
+  -- the fold of `max` is the supremum over the image of the range under `stageUse`
+  dsimp only
+  rw [agreementRestraint, ← List.foldr_map, ← Nat.bot_eq_zero, List.foldr_sup_eq_sup_toFinset]
+  exact (congrArg (Finset.sup · id) (by ext; simp)).trans
+    (Finset.sup_image (Finset.range _) (stageUse (σ p.1) p.2.1 p.2.2) id)
 
 /-- The length of agreement of a run against a finite set, with a finite set as target, is
 primitive recursive in their binary codes, the fuel and the program. -/
