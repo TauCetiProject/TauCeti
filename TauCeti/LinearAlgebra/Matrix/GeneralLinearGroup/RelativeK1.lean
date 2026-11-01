@@ -36,8 +36,8 @@ Relative `K₁` is the group paired with the relative cyclic cohomology of `A` b
 
 ## Main results
 
-* `TauCeti.relativeAlgebraicK1.mk_mem`: an invertible matrix over `A⁺` with identity scalar part
-  has a relative class.
+* `TauCeti.AlgebraicK1.mk_mem_relativeAlgebraicK1`: an invertible matrix over `A⁺` with identity
+  scalar part has a relative class.
 * `TauCeti.relativeAlgebraicK1.projection_coe`,
   `TauCeti.relativeAlgebraicK1.projection_map_algebraMap`: the projection is the identity on
   relative classes and kills the classes of scalar matrices.
@@ -69,26 +69,26 @@ homomorphism `K₁(A⁺) → K₁(R)` induced by the augmentation of the forced 
 def relativeAlgebraicK1 : Subgroup (AlgebraicK1 (Unitization R A)) :=
   (AlgebraicK1.map (Unitization.fstHom R A : Unitization R A →+* R)).ker
 
-namespace relativeAlgebraicK1
-
 variable {R A}
 
 /-- A class of `A⁺` is relative exactly when the augmentation sends it to the trivial class. -/
 @[simp]
-theorem mem_iff {x : AlgebraicK1 (Unitization R A)} :
+theorem mem_relativeAlgebraicK1_iff {x : AlgebraicK1 (Unitization R A)} :
     x ∈ relativeAlgebraicK1 R A ↔
       AlgebraicK1.map (Unitization.fstHom R A : Unitization R A →+* R) x = 1 :=
   MonoidHom.mem_ker
 
 /-- An invertible matrix over `A⁺` whose scalar part is the identity matrix has a relative
 class. -/
-theorem mk_mem {n : ℕ} {u : GL (Fin n) (Unitization R A)}
+theorem AlgebraicK1.mk_mem_relativeAlgebraicK1 {n : ℕ} {u : GL (Fin n) (Unitization R A)}
     (hu : (Unitization.fstHom R A : Unitization R A →+* R).mapMatrix
       (u : Matrix (Fin n) (Fin n) (Unitization R A)) = 1) :
     AlgebraicK1.mk (Unitization R A) n u ∈ relativeAlgebraicK1 R A := by
-  rw [mem_iff, AlgebraicK1.map_mk]
+  rw [mem_relativeAlgebraicK1_iff, AlgebraicK1.map_mk]
   convert map_one (AlgebraicK1.mk R n)
   exact Units.ext hu
+
+namespace relativeAlgebraicK1
 
 /-- The augmentation is a left inverse of the scalar inclusion on algebraic `K₁`. -/
 @[simp]
@@ -119,7 +119,7 @@ theorem coe_projection_apply (x : AlgebraicK1 (Unitization R A)) :
 @[simp]
 theorem projection_coe (x : relativeAlgebraicK1 R A) : projection R A x = x := by
   ext
-  simp [coe_projection_apply, (mem_iff.1 x.2)]
+  simp [coe_projection_apply, (mem_relativeAlgebraicK1_iff.1 x.2)]
 
 /-- The projection kills the classes of scalar matrices. -/
 @[simp]
@@ -146,9 +146,9 @@ induced map of forced unitizations. -/
 def map (f : A →ₙₐ[R] B) : relativeAlgebraicK1 R A →* relativeAlgebraicK1 R B :=
   ((AlgebraicK1.map (Unitization.map f : Unitization R A →+* Unitization R B)).comp
     (relativeAlgebraicK1 R A).subtype).codRestrict _ fun x ↦ by
-      rw [mem_iff, MonoidHom.comp_apply, ← MonoidHom.comp_apply, ← AlgebraicK1.map_comp,
-        ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
-      exact mem_iff.1 x.2
+      rw [mem_relativeAlgebraicK1_iff, MonoidHom.comp_apply, ← MonoidHom.comp_apply,
+        ← AlgebraicK1.map_comp, ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
+      exact mem_relativeAlgebraicK1_iff.1 x.2
 
 /-- The induced homomorphism of relative `K₁` is the induced homomorphism of `K₁(A⁺)`. -/
 @[simp]

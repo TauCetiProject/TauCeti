@@ -73,8 +73,9 @@ theorem AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero (m : ℕ) (y
   obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk y
   obtain ⟨φ, rfl⟩ := relativeCyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
   rw [AlgebraicK1.map_mk, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
-    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk,
-    RingHom.coe_units_map_mapMatrix_inv, RingHom.coe_units_map_mapMatrix]
+    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
+  simp only [Units.coe_map_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    RingHom.mapMatrix_apply]
   -- Both entries `u⁻¹ - 1` and `u - 1` of the pairing are scalar matrices.
   convert smul_zero _
   convert matrixCochainExtension_map_algebraMap_eq_zero (φ : relativeCyclicCochains ℂ A M _)
