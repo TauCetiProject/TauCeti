@@ -39,8 +39,9 @@ node `xy = 0`. This is the linear model of the Hardy decomposition at a node.
   for `‖a‖ ≤ 1` (and `0` otherwise).
 * `TauCeti.CircleSobolev.neckGraph s E a`: the pairs `(F, G)` of elements of `H^s` with
   `F₋ₙ = -aⁿ Gₙ` and `G₋ₙ = -aⁿ Fₙ` for every `n > 0`.
-* `TauCeti.CircleSobolev.neckPoint a (P, Q)`: the element
-  `(P - neckTransfer a Q, Q - neckTransfer a P)` of the neck graph with nonnegative parts `(P, Q)`.
+* `TauCeti.CircleSobolev.neckPoint a (P, Q)`: the pair
+  `(P - neckTransfer a Q, Q - neckTransfer a P)` with nonnegative parts `(P, Q)`; for `‖a‖ ≤ 1` it
+  lies in the neck graph.
 
 ## Main statements
 
@@ -502,9 +503,9 @@ theorem isCompl_neckGraph (ha : ‖a‖ ≤ 1) :
 
 /-! ### The neck graph as a graph over the nonnegative Laurent subspaces -/
 
-/-- The element `(P - neckTransfer a Q, Q - neckTransfer a P)` of the neck graph with nonnegative
-parts `(P, Q)` (`CircleSobolev.neckPoint_mem_neckGraph`,
-`CircleSobolev.indicatorProj_sub_neckTransfer`). -/
+/-- The pair `(P - neckTransfer a Q, Q - neckTransfer a P)`, whose nonnegative parts are `(P, Q)`
+(`CircleSobolev.indicatorProj_sub_neckTransfer`). For `‖a‖ ≤ 1` it lies in the neck graph
+(`CircleSobolev.neckPoint_mem_neckGraph`). -/
 def neckPoint (a : ℂ) (PQ : supported s E (Set.Ici 0) × supported s E (Set.Ici 0)) :
     CircleSobolev s E × CircleSobolev s E :=
   ((PQ.1 : CircleSobolev s E) - neckTransfer a PQ.2,

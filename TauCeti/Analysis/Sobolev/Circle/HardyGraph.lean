@@ -101,9 +101,9 @@ variable [hs : Fact (1 / 2 < s)]
 
 variable (s) in
 /-- The nonlinear Hardy equation of the plumbing node, in the variables
-`z = ((a, p, q), (P, Q))`: the difference between `(1 + p, 1 + q)` and the nonnegative parts of
-`e^F` and `e^G`, for the element `(F, G)` of the neck graph with nonnegative parts `(P, Q)`, written
-so that it vanishes at the origin. -/
+`z = ((a, p, q), (P, Q))`: the nonnegative parts of `e^F` and `e^G` minus `(p, q)`, for
+`(F, G) = neckPoint a (P, Q)`. Its value at the origin is `(1, 1)`, and the Hardy problem is the
+equation `hardyEquation s z = hardyEquation s 0` (`hardyEquation_eq_iff`). -/
 private def hardyEquation
     (z : (ℂ × (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0))) ×
       (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0))) :
@@ -158,8 +158,8 @@ private theorem isInvertible_fderiv_hardyEquation :
   rw [h.unique hasFDerivAt_hardyEquation_zero, ← ContinuousLinearEquiv.coe_refl]
   exact ContinuousLinearMap.isInvertible_equiv
 
-/-- The Hardy equation vanishes exactly when the neck-graph element with nonnegative parts `PQ`
-solves the nonlinear Hardy problem with data `y = (a, p, q)`. -/
+/-- The Hardy equation takes its value `(1, 1)` at the origin exactly when `neckPoint a PQ` has
+nonnegative parts of `e^F`, `e^G` equal to `1 + p`, `1 + q`, for the data `y = (a, p, q)`. -/
 private theorem hardyEquation_eq_iff
     (y : ℂ × (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)))
     (PQ : supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) :
