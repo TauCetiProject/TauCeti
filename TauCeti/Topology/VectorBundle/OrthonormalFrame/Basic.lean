@@ -119,6 +119,13 @@ theorem mk_eq_mk_iff {b : B} {φ ψ : V ≃ₗᵢ[ℝ] E b} :
   · rintro rfl
     rfl
 
+/-- A frame equals the frame over any base point equal to its own, transported to that point. -/
+theorem eq_mk_of_proj_eq {b : B} (p : OrthonormalFrameBundle F E V) (h : p.proj = b) :
+    p = ⟨b, (h ▸ p.frame : V ≃ₗᵢ[ℝ] E b)⟩ := by
+  cases p
+  cases h
+  rfl
+
 section Action
 
 variable [CompleteSpace V]
