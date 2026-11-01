@@ -13,12 +13,8 @@ import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.DeRham.RealLine
 import TauCeti.Geometry.Manifold.DeRham.Sphere
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Topology.Algebra.Module.FiniteDimension
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 
 /-!
@@ -329,31 +325,6 @@ private theorem rank_compactlySupportedDeRhamCohomology_le_one {k : ℕ} (hkE : 
       ((compactlySupportedDeRhamCohomology.equivOfDiffeomorph Φ (k + 2)).lift_rank_eq.symm.trans_le
         (Cardinal.lift_le_one_iff.mpr h))
 
-/-- A compactly supported closed top form on `E` with integral one against the constant
-orientation of a basis `b`: a normalized bump function times the determinant of `b`. -/
-private theorem exists_integralTopForm_model_eq_one (b : Module.Basis (Fin (finrank ℝ E)) ℝ E) :
-    ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, E) E (finrank ℝ E),
-      integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) b.orientation (by simp))
-        φ.1.1 = 1 := by
-  let _ : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  let f : E → ℝ := (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : E)).normed b.addHaar
-  let D : E [⋀^Fin (finrank ℝ E)]→L[ℝ] ℝ := AlternatingMap.toContinuousAlternatingMap b.det
-  let φ : RoughForm 𝓘(ℝ, E) E ℝ (finrank ℝ E) := fun x ↦ f x • D
-  have hs : IsSmoothForm 𝓘(ℝ, E) ∞ φ :=
-    isSmoothForm_modelSpace_iff.mpr (ContDiffBump.contDiff_normed _ |>.smul contDiff_const)
-  have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin (finrank ℝ E)]→L[ℝ] ℝ) φ) :=
-    (ContDiffBump.hasCompactSupport_normed _).isCompact.of_isClosed_subset
-      (isClosed_tsupport _) (tsupport_smul_subset_left f fun _ ↦ D)
-  refine ⟨⟨⟨φ, hs.mem_smoothBundleForms⟩, (mem_compactlySupportedClosedForms _).mpr
-    ⟨(mem_compactlySupportedForms _).mpr hc, mem_closedForms_of_finrank_le _ le_rfl _⟩⟩, ?_⟩
-  have hφb (x : E) : φ x b = f x := by
-    have h : (f x • D) b = f x := by simp [D, Module.Basis.det_self]
-    -- `φ x` is `f x • D` read in the tangent fibre at `x`, which is `E` by definition.
-    exact h
-  rw [integralTopForm_model_eq_integral _ _ (hs.of_le (by simp)) hc b rfl, funext hφb]
-  exact ContDiffBump.integral_normed _
-
 variable {E} in
 /-- **Top compactly supported cohomology of `ℝⁿ`.** On a real normed space `E` of finite
 dimension `n`, integration `H^n_c(E) → ℝ` against any orientation `o` of `E` is bijective. -/
@@ -362,7 +333,7 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_normedSpace
     Function.Bijective (compactlySupportedDeRhamCohomology.integral o) := by
   -- The class `x₁` of a bump form has nonzero integral.
   let b := Module.finBasis ℝ E
-  obtain ⟨φ₁, hφ₁⟩ := exists_integralTopForm_model_eq_one E b
+  obtain ⟨φ₁, hφ₁⟩ := exists_integralTopForm_model_eq_one (E := E) b
   set x₁ := compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) _ φ₁
   have hx₁ : compactlySupportedDeRhamCohomology.integral o x₁ ≠ 0 := by
     rw [compactlySupportedDeRhamCohomology.integral_mk]
