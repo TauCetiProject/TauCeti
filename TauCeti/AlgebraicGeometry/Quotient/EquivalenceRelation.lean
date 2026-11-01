@@ -33,10 +33,10 @@ case, in terms of schemes:
 The ring-theoretic input is `TauCeti.RingTheory.Invariant.EquivalenceRelation.Quotient`: `A` is a
 finite, finitely presented and faithfully flat `C`-module, and `A ⊗[C] A → B`,
 `x ⊗ y ↦ s x * t y`, is bijective. The latter says that the square formed by `C → A` twice, `s`
-and `t` is a pushout of commutative rings (`RingHom.IsSpecEquivRel.isPushout`), which `Spec` turns
-into a pullback. A flat surjective morphism locally of finite presentation is an effective
-epimorphism and generates an fppf covering sieve, so both coequalizer statements follow from the
-kernel pair.
+and `t` is a pushout of commutative rings (`RingHom.IsSpecEquivRel.isPushout`, in that file),
+which `Spec` turns into a pullback. A flat surjective morphism locally of finite presentation is
+an effective epimorphism and generates an fppf covering sieve, so both coequalizer statements
+follow from the kernel pair.
 
 ## Main results
 
@@ -61,18 +61,6 @@ namespace RingHom.IsSpecEquivRel
 variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] {t : A →+* B}
   (h : (algebraMap A B).IsSpecEquivRel t) [Module.Finite A B] [Module.Projective A B]
 include h
-
-/-- **The relation is a pushout of rings.** If `Spec B ⇉ Spec A` is an equivalence relation with
-`B` finite projective over `A` through `s`, and `C = {a : s a = t a}` is the ring of invariants,
-then the square formed by the inclusion `C → A` (twice), `s` and `t` is a pushout of commutative
-rings: `B` is `A ⊗[C] A`, with `s` and `t` the two inclusions. -/
-theorem isPushout :
-    IsPushout (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))
-      (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))
-      (CommRingCat.ofHom (algebraMap A B)) (CommRingCat.ofHom t) :=
-  (CommRingCat.isPushout_tensorProduct _ A A).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
-    (AlgEquiv.ofBijective _ h.bijective_tensorProductMap).toRingEquiv.toCommRingCatIso
-    (by simp) (by simp) (by ext; simp) (by ext; simp)
 
 /-- **The relation is the kernel pair of the quotient map.** If `Spec B ⇉ Spec A` is an
 equivalence relation with `B` finite projective over `A` through `s`, and `C = {a : s a = t a}`

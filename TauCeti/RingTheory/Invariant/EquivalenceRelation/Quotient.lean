@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Ring.Constructions
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
@@ -25,7 +26,8 @@ quotient of `Spec A` by the relation, as in SGA 3, Exposé V, Théorème 4.1, in
   `Spec A ⟶ Spec C` is finite locally free and surjective;
 * the map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, is an isomorphism of `A`-algebras
   (`RingHom.IsSpecEquivRel.bijective_tensorProductMap`), so that the relation is the kernel pair
-  `Spec A ×_{Spec C} Spec A` of the quotient map.
+  `Spec A ×_{Spec C} Spec A` of the quotient map. Equivalently, the square formed by `C → A`
+  twice, `s` and `t` is a pushout of commutative rings (`RingHom.IsSpecEquivRel.isPushout`).
 
 No hypothesis is made on `C`. The case of a local ring of invariants is
 `TauCeti.RingTheory.Invariant.EquivalenceRelation.Local`, and the general case reduces to it by
@@ -47,6 +49,7 @@ finiteness and finite presentation descend from `A ⊗[C] A ≅ B` along `C → 
 
 * `RingHom.IsSpecEquivRel.bijective_tensorProductMap`: the map `A ⊗[C] A → B`,
   `x ⊗ y ↦ s x * t y`, is bijective, so that `A ⊗[C] A ≃ₐ[A] B`.
+* `RingHom.IsSpecEquivRel.isPushout`: the relation is a pushout of commutative rings.
 * `RingHom.IsSpecEquivRel.flat` and `RingHom.IsSpecEquivRel.faithfullyFlat`: `A` is faithfully
   flat over `C`.
 * `RingHom.IsSpecEquivRel.finite`, `RingHom.IsSpecEquivRel.finitePresentation` and
@@ -62,7 +65,7 @@ public section
 
 universe u
 
-open TensorProduct
+open CategoryTheory Limits TensorProduct
 
 namespace RingHom.IsSpecEquivRel
 
@@ -179,6 +182,18 @@ theorem bijective_tensorProductMap : Function.Bijective (tensorProductMap t) := 
     simp
   rw [hmap]
   exact (h.free_and_bijective_baseChange (Localization.AtPrime P)).2
+
+/-- **The relation is a pushout of rings.** If `Spec B ⇉ Spec A` is an equivalence relation with
+`B` finite projective over `A` through `s`, and `C = {a : s a = t a}` is the ring of invariants,
+then the square formed by the inclusion `C → A` (twice), `s` and `t` is a pushout of commutative
+rings: `B` is `A ⊗[C] A`, with `s` and `t` the two inclusions. -/
+theorem isPushout :
+    IsPushout (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))
+      (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))
+      (CommRingCat.ofHom (algebraMap A B)) (CommRingCat.ofHom t) :=
+  (CommRingCat.isPushout_tensorProduct _ A A).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (AlgEquiv.ofBijective _ h.bijective_tensorProductMap).toRingEquiv.toCommRingCatIso
+    (by simp) (by simp) (by ext; simp) (by ext; simp)
 
 /-- **The quotient map is finite.** If `Spec B ⇉ Spec A` is an equivalence relation with `B`
 finite projective over `A` through `s`, then `A` is a finite module over the ring of invariants
