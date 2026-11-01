@@ -43,25 +43,23 @@ namespace LeftRegularNorm
 private noncomputable def algEquiv : A ≃ₐ[𝕜] LeftRegularNorm 𝕜 A :=
   AlgEquiv.ofInjective (AlgHom.Lmul 𝕜 A) (AlgHom.Lmul_injective 𝕜 A)
 
-private theorem norm_algEquiv (a : A) :
-    ‖algEquiv 𝕜 A a‖ = ‖ContinuousLinearMap.mul 𝕜 A a‖ := by
-  simp only [algEquiv]
-  rw [← AlgHom.coe_Lmul]
-  exact congrArg norm (AlgEquiv.ofInjective_apply
-    (AlgHom.Lmul 𝕜 A) (AlgHom.Lmul_injective 𝕜 A) a)
+private theorem algEquiv_apply_coe (a : A) :
+    (algEquiv 𝕜 A a : A →L[𝕜] A) = ContinuousLinearMap.mul 𝕜 A a := by
+  simp only [algEquiv, AlgEquiv.ofInjective_apply, AlgHom.coe_Lmul]
 
 /-- The original algebra and its left regular renorming are boundedly algebra isomorphic.
 The forward map is contractive and the inverse is bounded by the original norm of one. -/
-noncomputable def equiv : A ≃A[𝕜] LeftRegularNorm 𝕜 A := by
+noncomputable def equiv : A ≃A[𝕜] LeftRegularNorm 𝕜 A :=
   let e := algEquiv 𝕜 A
-  exact { e with
+  { e with
     continuous_toFun := AddMonoidHomClass.continuous_of_bound e 1 fun a ↦ by
-      rw [one_mul, norm_algEquiv]
+      rw [one_mul, AddSubgroupClass.coe_norm, algEquiv_apply_coe]
       exact ContinuousLinearMap.opNorm_mul_apply_le 𝕜 A a
     continuous_invFun := AddMonoidHomClass.continuous_of_bound e.symm ‖(1 : A)‖ fun x ↦ by
       have h := ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one
         (𝕜 := 𝕜) (e.symm x)
-      rw [← norm_algEquiv, e.apply_symm_apply] at h
+      rw [← algEquiv_apply_coe, e.apply_symm_apply,
+        ← AddSubgroupClass.coe_norm] at h
       simpa only [mul_comm] using h }
 
 /-- The equivalence sends an element to its bounded left multiplication operator. -/
@@ -69,7 +67,7 @@ noncomputable def equiv : A ≃A[𝕜] LeftRegularNorm 𝕜 A := by
 theorem equiv_apply_coe (a : A) :
     (equiv 𝕜 A a : A →L[𝕜] A) = ContinuousLinearMap.mul 𝕜 A a := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv]
-  simp only [equiv, algEquiv, AlgEquiv.ofInjective_apply, AlgHom.coe_Lmul]
+  exact algEquiv_apply_coe 𝕜 A a
 
 /-- The original element corresponding to an operator in the renormed algebra is its
 value at the original identity. -/
@@ -95,22 +93,19 @@ theorem norm_le_norm_equiv_mul_norm_one (a : A) :
   rw [norm_equiv]
   exact ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one a
 
-/-- The lower comparison in division form for a nonzero algebra. -/
-theorem div_norm_one_le_norm_equiv [Nontrivial A] (a : A) :
+/-- The lower comparison in division form, including for the zero algebra. -/
+theorem div_norm_one_le_norm_equiv (a : A) :
     ‖a‖ / ‖(1 : A)‖ ≤ ‖equiv 𝕜 A a‖ :=
-  (div_le_iff₀ (norm_pos_iff.mpr one_ne_zero)).2
+  div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _)
     (norm_le_norm_equiv_mul_norm_one 𝕜 A a)
 
 /-- The equivalent left regular norm is complete whenever the original norm is complete. -/
 instance [CompleteSpace A] : CompleteSpace (LeftRegularNorm 𝕜 A) := by
-  have h : AntilipschitzWith ‖(1 : A)‖₊ (ContinuousLinearMap.mul 𝕜 A) :=
-    (ContinuousLinearMap.mul 𝕜 A).antilipschitz_of_bound fun a ↦ by
-      simpa only [coe_nnnorm, mul_comm] using
-        ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one (𝕜 := 𝕜) a
-  have hc : IsClosed ((AlgHom.Lmul 𝕜 A).range : Set (A →L[𝕜] A)) := by
-    simpa only [AlgHom.coe_range, AlgHom.coe_Lmul] using
-      h.isClosed_range (ContinuousLinearMap.mul 𝕜 A).uniformContinuous
-  exact hc.completeSpace_coe
+  -- Fix the inherited normed structure before synthesizing the uniform additive group.
+  let : NormedRing (LeftRegularNorm 𝕜 A) := inferInstance
+  exact (completeSpace_congr (e := (equiv 𝕜 A).toEquiv)
+    (ContinuousAlgEquiv.isUniformEmbedding (E₁ := A) (E₂ := LeftRegularNorm 𝕜 A)
+      (equiv 𝕜 A))).1 inferInstance
 
 end LeftRegularNorm
 
