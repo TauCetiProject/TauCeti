@@ -221,9 +221,9 @@ variable {R V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommGrou
 coefficientwise image of `f ∈ V((t))` is pairing the coefficientwise transpose image of `g` in
 `V*((t))` with `f`. -/
 theorem residueDual_of_map (u : V →ₗ[R] W) (g : HahnModule ℤ R (Module.Dual R W))
-    (f : HahnModule ℤ R V) : residueDual g (of R (((of R).symm f).map u)) =
-      residueDual (of R (((of R).symm g).map u.dualMap)) f := by
-  simp only [residueDual_apply, Equiv.symm_apply_apply, map_coeff, LinearMap.dualMap_apply]
+    (f : HahnModule ℤ R V) : residueDual g (u.hahnModuleMap f) =
+      residueDual (u.dualMap.hahnModuleMap g) f := by
+  simp only [residueDual_apply, coeff_hahnModuleMap, LinearMap.dualMap_apply]
 
 end LinearMap
 

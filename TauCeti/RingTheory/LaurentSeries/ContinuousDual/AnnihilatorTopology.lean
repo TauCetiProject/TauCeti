@@ -201,7 +201,9 @@ noncomputable def hahnModuleDualMap (u : V →ₗ[R] W) :
   refine ((hasBasis_nhds_zero R W).tendsto_iff (hasBasis_nhds_zero R V)).mpr
     fun a _ ↦ ⟨a, trivial, fun ℓ hℓ ↦ ?_⟩
   rw [SetLike.mem_coe, mem_annihilatorLattice_iff] at hℓ ⊢
-  exact fun x hx ↦ hℓ (u.hahnModuleMap_mem_lattice hx)
+  intro x hx
+  apply hℓ
+  simpa only [ContinuousLinearMap.coe_coe, hahnModuleMap_apply] using u.of_map_mem_lattice hx
 
 @[simp]
 theorem hahnModuleDualMap_apply (u : V →ₗ[R] W) (ℓ : HahnModule ℤ R W →L[R] R)
@@ -231,6 +233,6 @@ theorem hahnModuleDualMap_residueDual (u : V →ₗ[R] W) (g : HahnModule ℤ R 
     u.hahnModuleDualMap (residueDual g) = residueDual (u.dualMap.hahnModuleMap g) := by
   apply ContinuousLinearMap.ext
   intro f
-  simpa only [hahnModuleDualMap_apply, hahnModuleMap_apply] using u.residueDual_of_map g f
+  simpa only [hahnModuleDualMap_apply] using u.residueDual_of_map g f
 
 end LinearMap
