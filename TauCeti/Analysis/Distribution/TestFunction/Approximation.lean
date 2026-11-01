@@ -121,7 +121,11 @@ theorem ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le {f : E → F}
           fderiv ℝ f) x := by
       rw [hφ, (hfc.hasFDerivAt_convolution_right _
         ρ.continuous_normed.locallyIntegrable hf x).fderiv, convolution_def, convolution_def]
-      congr 1 with t v
+      -- Both kernels multiply `fderiv ℝ f (x - t) v` by the bump value at `t`.
+      refine congrArg _ (funext fun t => ContinuousLinearMap.ext fun v => ?_)
+      simp only [ContinuousLinearMap.precompR_apply, ContinuousLinearMap.compL_apply,
+        ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.lsmul_apply,
+        smul_apply]
     rw [hD]
     exact ρ.dist_normed_convolution_le hDf.aestronglyMeasurable fun y hy =>
       (hDfη ((mem_ball.mp hy).trans_le ((min_le_left _ _).trans (min_le_right _ _)))).le
