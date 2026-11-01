@@ -97,6 +97,11 @@ theorem converges_iff_tendsto :
 theorem Converges.unique (h : Converges f g) (h' : Converges f g') : g = g' :=
   funext fun x => ((h x).and (h' x)).exists.elim fun _ hs => hs.1.symm.trans hs.2
 
+/-- If the value at `x` no longer changes from stage `s` on, it is the limit at `x`. -/
+theorem Converges.apply_eq_of_forall_le (h : Converges f g) {x : α} {s : ℕ}
+    (hs : ∀ t, s ≤ t → f t x = f s x) : f s x = g x :=
+  ((h x).and (eventually_ge_atTop s)).exists.elim fun _ ht => (hs _ ht.2).symm.trans ht.1
+
 /-- A constant sequence converges to its value. -/
 @[simp]
 theorem converges_const (g : α → β) : Converges (fun _ => g) g :=

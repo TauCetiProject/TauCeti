@@ -472,7 +472,7 @@ private lemma bijective_toLim : Function.Bijective (toLim L K k).hom := by
     refine mem_locallyFiniteChains.2 <| isLocallyFiniteChain_iff.2 fun p ↦ ?_
     obtain ⟨n, hn⟩ := K.exists_mem_nhds p
     obtain ⟨a, ha⟩ := exists_towerCoeff_eq L K (((relativeChainComplexTower L K).term k).limπ n x)
-    refine ⟨K n, hn, (finite_setOf_twistedChainComplexCoeff_ne_zero L a).subset ?_⟩
+    refine ⟨K n, hn, (finite_support_twistedChainComplexCoeff L a).subset ?_⟩
     rintro σ ⟨hσ, hσK⟩
     rw [Set.mem_ofPred_eq, ← ha σ hσK, hc x n σ hσK]
     exact hσ

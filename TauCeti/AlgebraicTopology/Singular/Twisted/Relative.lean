@@ -251,7 +251,7 @@ lemma twistedChainComplex_ext_coeff {y y' : (P.twistedChainComplex L).X k}
     simpa [sub_eq_zero] using h σ hσ
   -- Expand `a - a'` along its finitely many nonzero coefficients.
   rw [← LocalCoefficientSystem.sum_ιTwistedChainComplex_twistedChainComplexCoeff L (a - a')
-    (s := (LocalCoefficientSystem.finite_setOf_twistedChainComplexCoeff_ne_zero L
+    (s := (LocalCoefficientSystem.finite_support_twistedChainComplexCoeff L
       (a - a')).toFinset) fun ρ hρ ↦ by simpa using hρ, map_sum]
   refine Finset.sum_eq_zero fun σ _ ↦ ?_
   by_cases hσ : Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map
