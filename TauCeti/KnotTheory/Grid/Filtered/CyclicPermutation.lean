@@ -100,8 +100,7 @@ theorem filteredDifferential_relabelRows_finRotate :
     ⟨y.relabelRows (finRotate n).symm, by simp⟩
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lsingle_apply,
     GridChain.relabelRowsEquiv_single, filteredDifferential_single_apply,
-    GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
-    GridState.relabelRows_refl, filteredCoefficient_relabelRows_finRotate]
+    GridChain.relabelRowsEquiv_apply_relabelRows, filteredCoefficient_relabelRows_finRotate]
 
 /-- The chain relabeling by a cyclic permutation of the rows intertwines the filtered
 differentials pointwise. -/
@@ -139,8 +138,7 @@ theorem filteredDifferential_relabelColumns_finRotate :
     ⟨y.relabelColumns (finRotate n).symm, by simp⟩
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply,
     GridChain.relabelColumnsRenameEquiv_single, map_one, filteredDifferential_single_apply,
-    GridChain.relabelColumnsRenameEquiv_apply, GridState.relabelColumns_relabelColumns,
-    Equiv.self_trans_symm, GridState.relabelColumns_refl,
+    LinearEquiv.coe_coe, GridChain.relabelColumnsRenameEquiv_apply_relabelColumns,
     filteredCoefficient_relabelColumns_finRotate, one_mul]
 
 /-- The chain relabeling by a cyclic permutation of the columns, followed by renaming the
@@ -167,18 +165,9 @@ theorem relabelRowsEquiv_finRotate_mem_alexanderFiltration_iff {a : ℤ} {c : Gr
     GridChain.relabelRowsEquiv (finRotate n) c ∈
         (G.relabelRows (finRotate n)).alexanderFiltration R a ↔
       c ∈ G.alexanderFiltration R a := by
-  rw [mem_alexanderFiltration, mem_alexanderFiltration]
-  refine ⟨fun h x e he => ?_, fun h x e he => ?_⟩
-  · have h' := h (x.relabelRows (finRotate n)) e
-    simp only [GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows,
-      Equiv.self_trans_symm, GridState.relabelRows_refl, alexanderℤ_relabelRows_finRotate] at h'
-    exact h' he
-  · obtain ⟨x, rfl⟩ : ∃ x', x'.relabelRows (finRotate n) = x :=
-      ⟨x.relabelRows (finRotate n).symm, by simp⟩
-    simp only [GridChain.relabelRowsEquiv_apply, GridState.relabelRows_relabelRows,
-      Equiv.self_trans_symm, GridState.relabelRows_refl] at he
-    rw [alexanderℤ_relabelRows_finRotate]
-    exact h x e he
+  rw [mem_alexanderFiltration, mem_alexanderFiltration,
+    GridChain.forall_mem_support_relabelRowsEquiv_iff]
+  simp only [alexanderℤ_relabelRows_finRotate]
 
 /-- Relabeling the grid states along a cyclic permutation of the rows carries each level of the
 Alexander filtration of `G` onto the same level of the row-permuted diagram. -/
@@ -200,24 +189,9 @@ theorem relabelColumnsRenameEquiv_finRotate_mem_alexanderFiltration_iff {a : ℤ
     GridChain.relabelColumnsRenameEquiv R (finRotate n) c ∈
         (G.relabelColumns (finRotate n)).alexanderFiltration R a ↔
       c ∈ G.alexanderFiltration R a := by
-  classical
-  rw [mem_alexanderFiltration, mem_alexanderFiltration]
-  refine ⟨fun h x e he => ?_, fun h x e he => ?_⟩
-  · have h' := h (x.relabelColumns (finRotate n)) (Finsupp.mapDomain (finRotate n) e)
-    rw [← LinearEquiv.coe_coe, GridChain.relabelColumnsRenameEquiv_apply,
-      GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm,
-      GridState.relabelColumns_refl, support_rename_of_injective (finRotate n).injective,
-      alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain] at h'
-    exact h' (Finset.mem_image_of_mem _ he)
-  · rw [← LinearEquiv.coe_coe, GridChain.relabelColumnsRenameEquiv_apply,
-      support_rename_of_injective (finRotate n).injective, Finset.mem_image] at he
-    obtain ⟨e, he, rfl⟩ := he
-    obtain ⟨x, rfl⟩ : ∃ x', x'.relabelColumns (finRotate n) = x :=
-      ⟨x.relabelColumns (finRotate n).symm, by simp⟩
-    rw [GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm,
-      GridState.relabelColumns_refl] at he
-    rw [alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain]
-    exact h x e he
+  rw [mem_alexanderFiltration, mem_alexanderFiltration,
+    GridChain.forall_mem_support_relabelColumnsRenameEquiv_iff]
+  simp only [alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain]
 
 /-- Relabeling the grid states along a cyclic permutation of the columns, and renaming the
 variables along the same permutation, carries each level of the Alexander filtration of `G` onto
