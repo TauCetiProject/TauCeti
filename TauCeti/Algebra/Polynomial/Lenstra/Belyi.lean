@@ -31,7 +31,8 @@ Together: for every field endomorphism `σ ≠ id` of a field `K` algebraic over
 `AlgebraicClosure ℚ`, there is a Belyi polynomial `P` over `K` such that no affine change of
 variable carries `P` to its conjugate `P^σ`. Polynomial Belyi maps related by an affine change
 of variable are exactly the isomorphic ones, so this is the polynomial form of the faithfulness
-of the action of `Gal(ℚ̄/ℚ)` on Belyi maps, and hence on dessins d'enfants (trees, here).
+of the action of the absolute Galois group of `ℚ` on Belyi maps, and hence on dessins d'enfants
+(trees, here).
 
 ## Main results
 
