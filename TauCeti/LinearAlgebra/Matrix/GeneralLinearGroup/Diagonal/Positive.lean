@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
+-- The units of an ordered field are infinite, hence nontrivial, which the diagonal-normalizer API
+-- used for the normalizer of the positive diagonal subgroup needs, in proofs only.
+import Mathlib.Algebra.CharZero.Infinite
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -33,6 +37,8 @@ Over `𝕜 = ℝ` this is the factor `A` of the Iwasawa decomposition `GL n ℝ 
   `t i` is positive.
 * `TauCeti.centralizer_posDiagonalSubgroup`: the centralizer of the positive diagonal subgroup in
   `GL n 𝕜` is the diagonal torus, since positive diagonal matrices separate the coordinates.
+* `TauCeti.normalizer_posDiagonalSubgroup`: the normalizer of the positive diagonal subgroup in
+  `GL n 𝕜` is the normalizer of the diagonal torus, the group of monomial matrices.
 -/
 
 public section
@@ -120,5 +126,46 @@ theorem centralizer_posDiagonalSubgroup (n : ℕ) :
   have hcomm := congrArg Units.val (Subgroup.mem_centralizer_iff.mp hg _ ht)
   rw [Units.val_mul, Units.val_mul, diagGL_coe] at hcomm
   exact apply_eq_zero_of_commute_diagonal hcomm (by simp [t, Pi.mulSingle_eq_of_ne hij.symm])
+
+section Normalizer
+
+variable {n : ℕ}
+
+/-- Conjugation by an invertible matrix normalizing the diagonal torus keeps the positive diagonal
+subgroup inside itself. -/
+private theorem mul_mul_inv_mem_posDiagonalSubgroup {g : GL (Fin n) 𝕜}
+    (hg : g ∈ Subgroup.normalizer (diagonalTorus 𝕜 n : Set (GL (Fin n) 𝕜)))
+    {a : GL (Fin n) 𝕜} (ha : a ∈ posDiagonalSubgroup (Fin n) 𝕜) :
+    g * a * g⁻¹ ∈ posDiagonalSubgroup (Fin n) 𝕜 := by
+  obtain ⟨t, rfl⟩ :=
+    mem_diagonalTorus_iff_exists_diagGL.mp (posDiagonalSubgroup_le_diagonalTorus 𝕜 n ha)
+  have hconj := diagonalNormalizer_mul_diagGL_mul_inv ⟨g, hg⟩ t
+  rw [Subgroup.coe_mk] at hconj
+  rw [hconj, diagGL_mem_posDiagonalSubgroup_iff]
+  exact fun i => diagGL_mem_posDiagonalSubgroup_iff.mp ha _
+
+variable (𝕜 n) in
+/-- **The normalizer of the positive diagonal subgroup is the normalizer of the diagonal torus**:
+an invertible matrix normalizes the positive diagonal matrices exactly when it is monomial. -/
+theorem normalizer_posDiagonalSubgroup :
+    Subgroup.normalizer (posDiagonalSubgroup (Fin n) 𝕜 : Set (GL (Fin n) 𝕜)) =
+      Subgroup.normalizer (diagonalTorus 𝕜 n : Set (GL (Fin n) 𝕜)) := by
+  refine le_antisymm (fun g hg => ?_) fun g hg =>
+    Subgroup.mem_normalizer_iff.mpr fun a => ⟨mul_mul_inv_mem_posDiagonalSubgroup hg, fun ha => ?_⟩
+  · -- The positive diagonal matrix with `2` at `i` and `1` elsewhere separates `i` from `j`.
+    have hsep (i j : Fin n) (hij : i ≠ j) : ∃ t : Fin n → 𝕜ˣ,
+        g * diagGL t * g⁻¹ ∈ diagonalTorus 𝕜 n ∧ t i ≠ t j := by
+      let t : Fin n → 𝕜ˣ := Pi.mulSingle i (Units.mk0 2 two_ne_zero)
+      have ht : diagGL t ∈ posDiagonalSubgroup (Fin n) 𝕜 :=
+        diagGL_mem_posDiagonalSubgroup_iff.mpr fun m => by
+          rcases eq_or_ne m i with rfl | hm <;> simp [t, *]
+      refine ⟨t, posDiagonalSubgroup_le_diagonalTorus 𝕜 n
+        ((Subgroup.mem_normalizer_iff.mp hg _).mp ht), ?_⟩
+      simp [t, Pi.mulSingle_eq_of_ne hij.symm, Units.ext_iff]
+    obtain ⟨d, σ, rfl⟩ := exists_eq_diagGL_mul_permutationGL_of_forall_ne hsep
+    exact mem_normalizer_diagonalTorus_iff_exists.mpr ⟨d, σ, rfl⟩
+  · simpa [mul_assoc] using mul_mul_inv_mem_posDiagonalSubgroup (inv_mem hg) ha
+
+end Normalizer
 
 end TauCeti

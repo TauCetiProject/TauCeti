@@ -17,15 +17,17 @@ import Mathlib.Data.Finite.Perm
 # The restricted Weyl group of the general linear group
 
 Let `𝕜` be a linearly ordered field with a star operation, such as `ℝ`. In `G = GL n 𝕜` take
-the compact subgroup `K = unitarySubgroup (GL (Fin n) 𝕜)` (for `𝕜 = ℝ`, the orthogonal group
-`O(n)`) and the positive diagonal subgroup `A = TauCeti.posDiagonalSubgroup (Fin n) 𝕜`, the
-`A` of the Iwasawa decomposition `G = K A N` and of the `KAK` decomposition. The **restricted
-Weyl group** of `G` is the quotient `W = N_K(A) / Z_K(A)` of the normalizer of `A` in `K` by the
-centralizer of `A` in `K`. (Knapp writes these groups `M' = N_K(𝔞)` and `M = Z_K(𝔞)`, through the
-Lie algebra `𝔞` of `A`; here they are defined through the group `A` itself.) This file proves
-that `W` is the symmetric group on the `n` coordinates
+the unitary subgroup `K = unitarySubgroup (GL (Fin n) 𝕜)` and the positive diagonal subgroup
+`A = TauCeti.posDiagonalSubgroup (Fin n) 𝕜`, and let `W = N_K(A) / Z_K(A)` be the quotient of the
+normalizer of `A` in `K` by the centralizer of `A` in `K`. This file proves, algebraically and
+over any such field, that `W` is the symmetric group on the `n` coordinates
 (`TauCeti.unitaryNormalizerPosDiagonalQuotientMulEquivPerm`), acting on `A` by permuting the
 diagonal entries (`TauCeti.unitaryNormalizerPosDiagonal_mul_diagGL_mul_inv`).
+
+For `𝕜 = ℝ`, `K` is the compact orthogonal group `O(n)` and `A` is the `A` of the Iwasawa
+decomposition `G = K A N` and of the `KAK` decomposition, so `W` is the **restricted Weyl group**
+of `GL n ℝ`. (Knapp writes these groups `M' = N_K(𝔞)` and `M = Z_K(𝔞)`, through the Lie algebra
+`𝔞` of `A`; here they are defined through the group `A` itself.)
 
 The computation reduces to the one for the diagonal torus `D` of `GL n 𝕜` in
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer`. The positive diagonal
@@ -48,8 +50,6 @@ in `K`.
 
 ## Main results
 
-* `TauCeti.normalizer_posDiagonalSubgroup`: in `GL n 𝕜`, normalizing `A` is normalizing the
-  diagonal torus.
 * `TauCeti.unitaryNormalizerPosDiagonal_eq`: `N_K(A)` is the normalizer of the diagonal torus in
   `K`.
 * `TauCeti.mem_unitaryNormalizerPosDiagonal_iff`: the elements of `N_K(A)` are the elements of `K`
@@ -75,41 +75,6 @@ open Matrix
 namespace TauCeti
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {n : ℕ}
-
-/-- Conjugation by an invertible matrix normalizing the diagonal torus keeps the positive diagonal
-subgroup inside itself. -/
-private theorem mul_mul_inv_mem_posDiagonalSubgroup {g : GL (Fin n) 𝕜}
-    (hg : g ∈ Subgroup.normalizer (diagonalTorus 𝕜 n : Set (GL (Fin n) 𝕜)))
-    {a : GL (Fin n) 𝕜} (ha : a ∈ posDiagonalSubgroup (Fin n) 𝕜) :
-    g * a * g⁻¹ ∈ posDiagonalSubgroup (Fin n) 𝕜 := by
-  obtain ⟨t, rfl⟩ :=
-    mem_diagonalTorus_iff_exists_diagGL.mp (posDiagonalSubgroup_le_diagonalTorus 𝕜 n ha)
-  have hconj := diagonalNormalizer_mul_diagGL_mul_inv ⟨g, hg⟩ t
-  rw [Subgroup.coe_mk] at hconj
-  rw [hconj, diagGL_mem_posDiagonalSubgroup_iff]
-  exact fun i => diagGL_mem_posDiagonalSubgroup_iff.mp ha _
-
-variable (𝕜 n) in
-/-- **The normalizer of the positive diagonal subgroup is the normalizer of the diagonal torus**:
-an invertible matrix normalizes the positive diagonal matrices exactly when it is monomial. -/
-theorem normalizer_posDiagonalSubgroup :
-    Subgroup.normalizer (posDiagonalSubgroup (Fin n) 𝕜 : Set (GL (Fin n) 𝕜)) =
-      Subgroup.normalizer (diagonalTorus 𝕜 n : Set (GL (Fin n) 𝕜)) := by
-  refine le_antisymm (fun g hg => ?_) fun g hg =>
-    Subgroup.mem_normalizer_iff.mpr fun a => ⟨mul_mul_inv_mem_posDiagonalSubgroup hg, fun ha => ?_⟩
-  · -- The positive diagonal matrix with `2` at `i` and `1` elsewhere separates `i` from `j`.
-    have hsep (i j : Fin n) (hij : i ≠ j) : ∃ t : Fin n → 𝕜ˣ,
-        g * diagGL t * g⁻¹ ∈ diagonalTorus 𝕜 n ∧ t i ≠ t j := by
-      let t : Fin n → 𝕜ˣ := Pi.mulSingle i (Units.mk0 2 two_ne_zero)
-      have ht : diagGL t ∈ posDiagonalSubgroup (Fin n) 𝕜 :=
-        diagGL_mem_posDiagonalSubgroup_iff.mpr fun m => by
-          rcases eq_or_ne m i with rfl | hm <;> simp [t, *]
-      refine ⟨t, posDiagonalSubgroup_le_diagonalTorus 𝕜 n
-        ((Subgroup.mem_normalizer_iff.mp hg _).mp ht), ?_⟩
-      simp [t, Pi.mulSingle_eq_of_ne hij.symm, Units.ext_iff]
-    obtain ⟨d, σ, rfl⟩ := exists_eq_diagGL_mul_permutationGL_of_forall_ne hsep
-    exact mem_normalizer_diagonalTorus_iff_exists.mpr ⟨d, σ, rfl⟩
-  · simpa [mul_assoc] using mul_mul_inv_mem_posDiagonalSubgroup (inv_mem hg) ha
 
 variable [StarRing 𝕜]
 
