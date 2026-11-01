@@ -42,8 +42,7 @@ variable {A : Type u} [Category.{v} A] [HasZeroMorphisms A]
 /-- A strictly bounded cochain complex is zero outside any interval supplied by its bounds. -/
 theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.X n) := by
-  rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hn
-  rcases hn with h | h
+  obtain h | h : n < a ∨ b < n := by simp only [Finset.mem_Icc] at hn; omega
   exacts [K.isZero_of_isStrictlyGE a n h, K.isZero_of_isStrictlyLE b n h]
 
 /-- The homology of a cochain complex is zero outside any interval supplied by its cohomological
@@ -51,8 +50,7 @@ bounds. -/
 theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsGE a]
     [K.IsLE b] {n : ℤ} [K.HasHomology n] (hn : n ∉ Finset.Icc a b) :
     IsZero (K.homology n) := by
-  rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hn
-  rcases hn with h | h
+  obtain h | h : n < a ∨ b < n := by simp only [Finset.mem_Icc] at hn; omega
   exacts [K.isZero_of_isGE a n h, K.isZero_of_isLE b n h]
 
 end CochainComplex
