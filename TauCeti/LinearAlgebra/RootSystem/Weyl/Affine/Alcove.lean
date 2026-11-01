@@ -342,6 +342,7 @@ theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃�
   obtain ⟨w, hw⟩ : f.linear ∈
       MonoidHom.range ((Equiv.weightHom P.flip).domRestrict P.flip.weylGroup) := by
     rw [range_weylGroup_weightHom]
+    -- `P.flip.reflection` is `P.coreflection` by definition.
     exact hl
   have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
   have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
