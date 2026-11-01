@@ -195,10 +195,15 @@ private theorem summingENorm_one_le_ofReal_mul_norm {K : ℝ} (hK0 : 0 ≤ K)
       (continuous_pi fun i ↦ T.continuous.comp (continuous_apply i)))
   -- The family `x` is given by the simple functions `g i`, jointly by `SimpleFunc.pi g`.
   set g : Fin n → SimpleFunc α 𝕜 := fun i ↦ Lp.simpleFunc.toSimpleFunc ⟨x i, hx i trivial⟩
+  -- `g i` represents `x i`, the underlying `Lp` class of the subtype element `⟨x i, _⟩`.
+  have hg (i : Fin n) : x i =ᵐ[μ] g i :=
+    (Lp.simpleFunc.toSimpleFunc_eq_toFun ⟨x i, hx i trivial⟩).symm
+  have hG : Integrable (SimpleFunc.pi g) μ := by
+    rw [SimpleFunc.coe_pi]
+    exact integrable_pi_iff.2 fun i ↦ memLp_one_iff_integrable.1 (Lp.simpleFunc.memLp _)
   rw [PiLp.norm_eq_of_L1]
-  exact sum_norm_apply_le_of_simpleFunc (hK n) T (SimpleFunc.pi g)
-    (integrable_pi_iff.2 fun i ↦ memLp_one_iff_integrable.1 (Lp.simpleFunc.memLp _)) x
-    fun i ↦ (Lp.simpleFunc.toSimpleFunc_eq_toFun ⟨x i, hx i trivial⟩).symm
+  exact sum_norm_apply_le_of_simpleFunc (hK n) T (SimpleFunc.pi g) hG x fun i ↦ by
+    simpa only [SimpleFunc.pi_apply] using hg i
 
 /-- **Grothendieck's theorem.** Every bounded operator `T` from `L¹(μ)` into an inner product space
 over an `RCLike` field is absolutely `1`-summing, with `π₁(T) ≤ 16 ‖T‖`. Over `ℝ`,
