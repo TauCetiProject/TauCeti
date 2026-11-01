@@ -95,20 +95,33 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ((NormedSpace.fromTangentSpace x).symm v)
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
-  -- Both `erw` steps unfold `TangentSpace` to match the product-model instances:
+  -- The `erw` steps unfold `TangentSpace` to match the product-model instances:
   -- `TangentSpace (𝓘(𝕜, F).prod I) (x, u x)` and
   -- `TangentSpace 𝓘(𝕜, F) x × TangentSpace I (u x)` both reduce to `F × E`.
-  erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id] at hc
+  erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id,
+    ContinuousLinearMap.prod_apply (ContinuousLinearMap.id 𝕜 (TangentSpace 𝓘(𝕜, F) x))
+      (mfderiv 𝓘(𝕜, F) I u x) ((NormedSpace.fromTangentSpace x).symm v)] at hc
+  erw [ContinuousLinearMap.id_apply (R₁ := 𝕜) (M₁ := TangentSpace 𝓘(𝕜, F) x)
+    ((NormedSpace.fromTangentSpace x).symm v)] at hc
+  simp only [NormedSpace.fromTangentSpace_symm_apply] at hc
   erw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_prod_eq_add_apply hf,
-    mfderiv_eq_fderiv] at hc
-  -- For `exact`, `ContinuousLinearMap.prod` evaluates componentwise and its identity
-  -- component returns the input, so the two projections are `v` and `mfderiv u x v`.
-  -- `ContinuousLinearMap.comp` evaluates by composition, and `fromTangentSpace` and
-  -- its inverse are identities on vectors, removing the source `F` and target `F'`
-  -- tangent conversions introduced by `mfderiv_eq_fderiv`. Finally, `Function.uncurry`
-  -- and composition reduce to the displayed functions; the second partial derivative
-  -- is definitionally the evaluation of `mvfderiv I (f x)`.
-  exact hc
+    ← mvfderiv_apply_eq_mfderiv_apply (fun y ↦ f y (u x)) x] at hc
+  erw [mvfderiv_eq_fderiv,
+    ContinuousLinearMap.comp_apply (fderiv 𝕜 (fun y ↦ f y (u x)) x)
+      (NormedSpace.fromTangentSpace x).toContinuousLinearMap v,
+    ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v] at hc
+  -- Transport the tangent-fibre addition explicitly to the vector-space addition.
+  -- Fully specified evaluations keep `erw` from matching a different tangent identification.
+  have hc' := congrArg (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (f x (u x))) hc
+  erw [(NormedSpace.fromTangentSpace (𝕜 := 𝕜) (f x (u x))).map_add
+    (fderiv 𝕜 (fun y ↦ f y (u x)) x v)
+    (mfderiv I 𝓘(𝕜, F') (f x) (u x) (mfderiv 𝓘(𝕜, F) I u x v))] at hc'
+  erw [NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) (f x (u x))
+      (fderiv 𝕜 (fun y ↦ f y (u y)) x v),
+    NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) (f x (u x))
+      (fderiv 𝕜 (fun y ↦ f y (u x)) x v)] at hc'
+  simpa only [NormedSpace.fromTangentSpace_apply, Function.comp_def,
+    Function.uncurry_apply_pair, id_eq, mvfderiv_apply_eq_mfderiv_apply] using hc'
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on

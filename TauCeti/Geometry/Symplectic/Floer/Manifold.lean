@@ -204,11 +204,18 @@ theorem fromTangentSpace_perturbedMFDeriv_constSmooth_apply (ω : SymplecticForm
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z v : ℝ × ℝ) :
     NormedSpace.fromTangentSpace (u z) (ω.constSmooth.perturbedMFDeriv Ks Kt u z v) =
       ω.perturbedFDeriv Ks Kt u z v := by
-  rw [NormedSpace.fromTangentSpace_apply, SmoothTwoForm.perturbedMFDeriv_apply,
-    perturbedFDeriv_apply, hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth]
-  -- The source and target tangent identifications are identities on a model space.
-  rw [mfderiv_eq_fderiv]
-  rfl
+  have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z
+        ((NormedSpace.fromTangentSpace z).symm v) =
+      (NormedSpace.fromTangentSpace (u z)).symm (fderiv ℝ u z v) := by
+    simp only [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hd' := congrArg (NormedSpace.fromTangentSpace (u z)) hd
+  rw [ContinuousLinearEquiv.apply_symm_apply] at hd'
+  rw [SmoothTwoForm.perturbedMFDeriv_apply, map_sub, map_sub, map_smul, map_smul,
+    perturbedFDeriv_apply]
+  erw [hd']
+  rw [NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
+    hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth]
 
 /-- The intrinsic energy density for a constant form agrees with the vector-space density. -/
 @[simp]
