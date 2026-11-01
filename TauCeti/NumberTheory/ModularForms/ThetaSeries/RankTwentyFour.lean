@@ -81,10 +81,8 @@ theorem thetaForm_eq_E₄_cube_add_smul_discriminant (hL : IsEven L) (hU : IsUni
   · simp [-PowerSeries.coeff_zero_eq_constantCoeff, hL.qExpansion_thetaSeries_coeff_zero,
       pow_succ, PowerSeries.coeff_mul, E_qExpansion_coeff_zero _ ⟨2, rfl⟩,
       TauCeti.ModularForm.discriminant_qExpansion_coeff_zero]
-  · simp [hL.qExpansion_thetaSeries_coeff, pow_succ, PowerSeries.coeff_mul,
-      Finset.Nat.antidiagonal_succ, E₄_qExpansion_coeff_one,
-      E_qExpansion_coeff_zero _ ⟨2, rfl⟩, discriminant_qExpansion_coeff_one]
-    ring
+  · simp [hL.qExpansion_thetaSeries_coeff, TauCeti.ModularForm.E₄_cube_qExpansion_coeff_one,
+      discriminant_qExpansion_coeff_one]
 
 /-- As functions on the upper half-plane, `Θ_L = E₄³ + (r_L(2) - 720) Δ` in rank `24`. -/
 theorem thetaSeries_eq_E₄_cube_add_mul_discriminant (hL : IsEven L) (hU : IsUnimodular L)
@@ -116,10 +114,10 @@ theorem representationNumber_four_add_twenty_four_mul (hL : IsEven L) (hU : IsUn
     representationNumber L 4 + 24 * representationNumber L 2 = 196560 := by
   have h := congrArg (PowerSeries.coeff 2)
     (hL.qExpansion_thetaSeries_eq_E₄_cube_add_smul_discriminant hU hr)
-  norm_num [hL.qExpansion_thetaSeries_coeff, pow_succ, PowerSeries.coeff_mul,
-    Finset.Nat.antidiagonal_succ, E₄_qExpansion_coeff_one,
-    TauCeti.ModularForm.E₄_qExpansion_coeff_two, E_qExpansion_coeff_zero _ ⟨2, rfl⟩,
-    TauCeti.ModularForm.discriminant_qExpansion_coeff_two] at h
+  rw [hL.qExpansion_thetaSeries_coeff, Nat.cast_ofNat,
+    (by norm_num : (2 : ℝ) * 2 = 4), map_add, PowerSeries.coeff_smul,
+    TauCeti.ModularForm.E₄_cube_qExpansion_coeff_two,
+    TauCeti.ModularForm.discriminant_qExpansion_coeff_two, smul_eq_mul] at h
   have hc : (representationNumber L 4 : ℂ) + 24 * representationNumber L 2 = 196560 := by
     linear_combination h
   exact_mod_cast hc

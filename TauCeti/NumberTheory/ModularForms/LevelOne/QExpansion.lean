@@ -62,6 +62,16 @@ theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
   norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
     Nat.prime_two.divisors]
 
+/-- The linear coefficient of `E₄³` is `720`. -/
+theorem E₄_cube_qExpansion_coeff_one : (qExpansion 1 E₄ ^ 3).coeff 1 = 720 := by
+  norm_num [pow_succ, PowerSeries.coeff_mul, Finset.Nat.antidiagonal_succ,
+    E₄_qExpansion_coeff_one, E_qExpansion_coeff_zero _ ⟨2, rfl⟩]
+
+/-- The quadratic coefficient of `E₄³` is `179280`. -/
+theorem E₄_cube_qExpansion_coeff_two : (qExpansion 1 E₄ ^ 3).coeff 2 = 179280 := by
+  norm_num [pow_succ, PowerSeries.coeff_mul, Finset.Nat.antidiagonal_succ,
+    E₄_qExpansion_coeff_one, E₄_qExpansion_coeff_two, E_qExpansion_coeff_zero _ ⟨2, rfl⟩]
+
 /-- The `q³`-coefficient of `E₄` is `240 σ₃(3) = 6720`. -/
 theorem E₄_qExpansion_coeff_three : (qExpansion 1 E₄).coeff 3 = 6720 := by
   norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
