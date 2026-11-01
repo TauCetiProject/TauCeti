@@ -32,7 +32,8 @@ particular `ℙ_y(the visit indexed by k exists) = ρ_y ^ k`
 This yields the dichotomy between recurrent and transient states.
 
 * If `ρ_y = 1`, then almost surely a chain that visits `y` at all visits it infinitely often,
-  whatever its initial law (`MeasureTheory.Measure.ae_infinite_setOf_eq_markovChainLaw`).
+  whatever its initial law
+  (`MeasureTheory.Measure.ae_infinite_setOf_eq_of_exists_eq_markovChainLaw`).
 * If `ρ_y < 1`, then almost surely the chain visits `y` only finitely often, whatever its initial
   law (`MeasureTheory.Measure.ae_finite_setOf_eq_markovChainLaw`).
 * Started at `y`, the chain visits `y` infinitely often almost surely exactly when `ρ_y = 1`
@@ -41,6 +42,12 @@ This yields the dichotomy between recurrent and transient states.
   `TauCeti.Probability.markovChainLaw_eq_map_pathOfExcursions` at a state with `ρ_y = 1`.
 
 No countability of the state space is needed: measurable singletons suffice.
+
+Two path-space facts about hitting times of the coordinate process are used along the way: the
+event that a hitting time is finite is measurable
+(`TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top`), and the path enters a set after
+time `m + n` exactly when the path shifted by `n` enters it after time `m`
+(`TauCeti.Probability.hittingAfter_shift_iterate_ne_top_iff`).
 
 ## References
 
@@ -52,6 +59,29 @@ public section
 
 open Filter MeasureTheory ProbabilityTheory TauCeti.Probability
 open scoped ENNReal Topology
+
+namespace TauCeti.Probability
+
+variable {α : Type*}
+
+/-- The coordinate process enters `s` at some time at least `m + n` exactly when the path shifted
+by `n` enters `s` at some time at least `m`. -/
+theorem hittingAfter_shift_iterate_ne_top_iff (s : Set α) (m n : ℕ) (x : ℕ → α) :
+    hittingAfter (fun k (x : ℕ → α) => x k) s (m + n) x ≠ ⊤ ↔
+      hittingAfter (fun k (x : ℕ → α) => x k) s m ((shift α)^[n] x) ≠ ⊤ := by
+  simp only [ne_eq, not_iff_not, hittingAfter_eq_top_iff, shift_iterate_apply]
+  exact ⟨fun h j hj => h (j + n) (by omega), fun h j hj => by
+    simpa [Nat.sub_add_cancel (show n ≤ j by omega)] using h (j - n) (by omega)⟩
+
+/-- The event that the coordinate process enters a measurable set `s` at some time at least `m`
+is measurable. -/
+theorem measurableSet_hittingAfter_coord_ne_top [MeasurableSpace α] {s : Set α}
+    (hs : MeasurableSet s) (m : ℕ) :
+    MeasurableSet {x : ℕ → α | hittingAfter (fun k (x : ℕ → α) => x k) s m x ≠ ⊤} :=
+  ((measurableSet_singleton ⊤).preimage
+    (Filtration.adapted_piLE.isStoppingTime_hittingAfter (n := m) hs).measurable').compl
+
+end TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
@@ -74,9 +104,7 @@ theorem markovChainLaw_successiveVisit_succ_ne_top [IsFiniteMeasure ν] (y : α)
     Filtration.adapted_piLE.isStoppingTime_successiveVisit (measurableSet_singleton y) k
   have hθ : Measurable θ :=
     measurable_stoppedValue_of_countable (fun n => measurable_shift_iterate n) hτ.measurable'
-  have hB : MeasurableSet B := ((measurableSet_singleton ⊤).preimage
-    (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-      (measurableSet_singleton y)).measurable').compl
+  have hB : MeasurableSet B := measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 1
   -- On `{τ = n}` the next visit is the first entrance after `n + 1`, that is, the first return of
   -- the path seen from time `n`; off `{τ < ∞}` there is no next visit either.
   have hset : {x | successiveVisit X y (k + 1) x ≠ ⊤} = Set.univ ∩ {x | τ x ≠ ⊤} ∩ θ ⁻¹' B := by
@@ -88,11 +116,9 @@ theorem markovChainLaw_successiveVisit_succ_ne_top [IsFiniteMeasure ν] (y : α)
     · obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx
       have hθx : θ x = (shift α)^[n] x := by
         simp only [θ, stoppedValue, ← hn, WithTop.untopD_coe]
-      rw [successiveVisit_succ_eq_hittingAfter (n := n) (by simp [τ, ← hn]), hθx]
-      simp only [hx, ne_eq, not_false_eq_true, true_and, not_iff_not, hittingAfter_eq_top_iff,
-        shift_iterate_apply, Set.mem_singleton_iff, X]
-      exact ⟨fun h j hj => h (j + n) (by omega), fun h j hj => by
-        simpa [Nat.sub_add_cancel (show n ≤ j by omega)] using h (j - n) (by omega)⟩
+      rw [successiveVisit_succ_eq_hittingAfter (n := n) (by simp [τ, ← hn]), hθx, add_comm n 1]
+      simpa only [hx, ne_eq, not_false_eq_true, true_and] using
+        hittingAfter_shift_iterate_ne_top_iff {y} 1 n x
   have hy : ∀ x ∈ Set.univ ∩ {x | τ x ≠ ⊤}, stoppedValue X τ x = y := by
     rintro x ⟨-, hx⟩
     obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx
@@ -119,7 +145,7 @@ theorem markovChainLaw_successiveVisit_ne_top [IsFiniteMeasure ν] (y : α) (k :
 /-- **Return with probability one gives infinitely many visits.** If the chain started at `y`
 returns to `y` almost surely, then under every finite initial law, almost surely the chain visits
 `y` infinitely often as soon as it visits `y` at all. -/
-theorem ae_infinite_setOf_eq_markovChainLaw [IsFiniteMeasure ν] {y : α}
+theorem ae_infinite_setOf_eq_of_exists_eq_markovChainLaw [IsFiniteMeasure ν] {y : α}
     (h : markovChainLaw (dirac y) κ
       {x | hittingAfter (fun n (x : ℕ → α) => x n) {y} 1 x ≠ ⊤} = 1) :
     ∀ᵐ x ∂markovChainLaw ν κ, (∃ n, x n = y) → {n | x n = y}.Infinite := by
@@ -185,9 +211,8 @@ theorem markovChainLaw_dirac_successiveVisit_ne_top (y : α) (k : ℕ) :
   -- The chain started at `y` enters `y` at time zero.
   have h₀ : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n (x : ℕ → α) => x n) {y} 0 x ≠ ⊤} = 1 := by
-    refine (mem_ae_iff_prob_eq_one ((measurableSet_singleton ⊤).preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (measurableSet_singleton y)).measurable').compl).1 ?_
+    refine (mem_ae_iff_prob_eq_one
+      (measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0)).1 ?_
     filter_upwards [markovChainLaw_dirac_ae_apply_zero κ y] with x hx htop
     exact hittingAfter_eq_top_iff.1 htop 0 le_rfl hx
   rw [Measure.markovChainLaw_successiveVisit_ne_top (Measure.dirac y) κ, h₀, one_mul]
@@ -205,7 +230,7 @@ theorem ae_infinite_setOf_eq_markovChainLaw_dirac_iff (y : α) :
       (lt_of_le_of_ne prob_le_one hne)
     obtain ⟨x, h₁, h₂⟩ := (hinf.and hfin).exists
     exact h₁ h₂
-  · filter_upwards [Measure.ae_infinite_setOf_eq_markovChainLaw (Measure.dirac y) κ h,
+  · filter_upwards [Measure.ae_infinite_setOf_eq_of_exists_eq_markovChainLaw (Measure.dirac y) κ h,
       markovChainLaw_dirac_ae_apply_zero κ y] with x hx h₀
     exact hx ⟨0, h₀⟩
 
