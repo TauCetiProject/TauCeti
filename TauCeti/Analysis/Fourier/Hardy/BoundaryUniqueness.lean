@@ -15,8 +15,8 @@ public import TauCeti.MeasureTheory.Measure.AddCircle
 
 A nonzero boundary Hardy function `x ∈ H²` is nonzero almost everywhere on the circle. This is
 the boundary uniqueness behind Coburn's alternative for Toeplitz operators: the product of two
-nonzero Hardy functions is nonzero almost everywhere, so a symbol `a` with `a f ḡ = 0` almost
-everywhere for nonzero Hardy functions `f` and `g` vanishes almost everywhere.
+nonzero Hardy functions is nonzero almost everywhere, so a symbol `a` with `a * f * conj g = 0`
+almost everywhere for nonzero Hardy functions `f` and `g` vanishes almost everywhere.
 
 ## Implementation notes
 
