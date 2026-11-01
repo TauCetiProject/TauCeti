@@ -647,8 +647,8 @@ theorem exists_tateUniformizationY_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
     linear_combination h'
 
 /-- **The line through three points of the Tate curve, on the quotient.** For classes `x, y` in
-`Kˣ / q^ℤ` with `x, y, x y ≠ 1` there is a line `y = μ x + ν` that passes through the Tate
-coordinates of a nonidentity class `w` exactly when `w` is `x`, `y` or `(x y)⁻¹`. -/
+`Kˣ / q^ℤ` with `x, y, x y ≠ 1` there is a line `Y = μ X + ν` that passes through the Tate
+coordinates `(X, Y)` of a nonidentity class `w` exactly when `w` is `x`, `y` or `(x y)⁻¹`. -/
 theorem exists_tateQuotientCoordinates_snd_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1)
     {x y : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1) (hy : y ≠ 1) (hxy : x * y ≠ 1) :
     ∃ μ ν : K, ∀ w : Kˣ ⧸ Subgroup.zpowers q, w ≠ 1 →
