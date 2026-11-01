@@ -231,7 +231,7 @@ theorem instIsContinuousRiemannianBundleProd [IsManifold I 1 M] [IsManifold J 1 
   let _ : IsContMDiffRiemannianBundle J 0 F (fun y : N ↦ TangentSpace J y) :=
     IsContinuousRiemannianBundle.toIsContMDiffZero
   have := (isWarpedProduct_one (I := I) (J := J) (M := M) (N := N)).isContMDiffRiemannianBundle
-    (n := 0) contMDiff_const (fun _ ↦ one_ne_zero)
+    (n := 0) contMDiff_const
   exact IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I.prod J) (n := 0)
 
 scoped[TauCeti] attribute [instance] Manifold.instIsContinuousRiemannianBundleProd
@@ -242,7 +242,7 @@ theorem instIsContMDiffRiemannianBundleProd {n : ℕ∞ω} [IsManifold I 1 M] [I
     [IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y)] :
     IsContMDiffRiemannianBundle (I.prod J) n (E × F)
       (fun p : M × N ↦ TangentSpace (I.prod J) p) :=
-  isWarpedProduct_one.isContMDiffRiemannianBundle contMDiff_const (fun _ ↦ one_ne_zero)
+  isWarpedProduct_one.isContMDiffRiemannianBundle contMDiff_const
 
 scoped[TauCeti] attribute [instance] Manifold.instIsContMDiffRiemannianBundleProd
 

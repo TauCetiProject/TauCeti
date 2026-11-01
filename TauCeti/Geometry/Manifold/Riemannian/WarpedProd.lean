@@ -46,7 +46,7 @@ that they apply both to the construction below and to any metric shown to have t
 
 * `TauCeti.Manifold.isWarpedProduct_of_eq`: the warped product metric is a warped product.
 * `TauCeti.Manifold.IsWarpedProduct.isContMDiffRiemannianBundle`: a warped product of `C^n`
-  metrics with a nowhere vanishing `C^n` warping function is `C^n`.
+  metrics with a `C^n` warping function is `C^n`.
 
 ## References
 
@@ -169,14 +169,17 @@ variable
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N] {n : ℕ∞ω}
 
-/-- The warped product of `C^n` Riemannian metrics on `M` and `N` with a nowhere vanishing `C^n`
-warping function `f : M → ℝ` is a `C^n` Riemannian metric on `M × N`. -/
-def warpedProdTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) n f) (hf₀ : ∀ x, f x ≠ 0)
+/-- The warped inner product of `C^n` Riemannian metrics with a `C^n` warping function is a `C^n`
+section. No nonvanishing hypothesis on the warping function is needed. -/
+private theorem contMDiff_warpedProdTangentInner
+    (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f)
     (g₂ : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) :
-    ContMDiffRiemannianMetric (I.prod J) n (E × F) (fun p : M × N ↦ TangentSpace (I.prod J) p) :=
-  { g₁.toRiemannianMetric.warpedProdTangentSpace f hf₀ g₂.toRiemannianMetric with
-  contMDiff p₀ := by
+    ContMDiff (I.prod J) ((I.prod J).prod 𝓘(ℝ, E × F →L[ℝ] E × F →L[ℝ] ℝ)) n
+      (fun p ↦ TotalSpace.mk' (E × F →L[ℝ] E × F →L[ℝ] ℝ) p
+        (RiemannianMetric.warpedProdTangentInner g₁.toRiemannianMetric f g₂.toRiemannianMetric
+          p)) :=
+  fun p₀ ↦ by
     rw [contMDiffAt_section]
     have h₁ := g₁.contMDiff p₀.1
     have h₂ := g₂.contMDiff p₀.2
@@ -205,7 +208,7 @@ def warpedProdTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M �
       ContinuousLinearMap.coprodEquivL_apply_apply, Pi.smul_apply', smul_apply, smul_eq_mul]
     rw [inCoordinates_apply_eq₂ hq₁ hq₁ (by simp), inCoordinates_apply_eq₂ hq₂ hq₂ (by simp)]
     simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-      LinearMap.id_apply, RiemannianMetric.warpedProdTangentSpace_inner]
+      LinearMap.id_apply, RiemannianMetric.warpedProdTangentInner_apply]
     rw [← Trivialization.symmL_apply (R := ℝ) _ hq, ← Trivialization.symmL_apply (R := ℝ) _ hq,
       ← Trivialization.symmL_apply (R := ℝ) _ hq₁, ← Trivialization.symmL_apply (R := ℝ) _ hq₁,
       ← Trivialization.symmL_apply (R := ℝ) _ hq₂, ← Trivialization.symmL_apply (R := ℝ) _ hq₂]
@@ -215,7 +218,15 @@ def warpedProdTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M �
     -- The two sides now differ only by `gᵢ.toRiemannianMetric.inner = gᵢ.inner`, which holds by
     -- definition of `ContMDiffRiemannianMetric.toRiemannianMetric`.
     rfl
-  }
+
+/-- The warped product of `C^n` Riemannian metrics on `M` and `N` with a nowhere vanishing `C^n`
+warping function `f : M → ℝ` is a `C^n` Riemannian metric on `M × N`. -/
+def warpedProdTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) n f) (hf₀ : ∀ x, f x ≠ 0)
+    (g₂ : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) :
+    ContMDiffRiemannianMetric (I.prod J) n (E × F) (fun p : M × N ↦ TangentSpace (I.prod J) p) :=
+  { g₁.toRiemannianMetric.warpedProdTangentSpace f hf₀ g₂.toRiemannianMetric with
+    contMDiff := contMDiff_warpedProdTangentInner g₁ hf g₂ }
 
 /-- The warped product of `C^n` Riemannian metrics pairs tangent vectors factor by factor, with
 the second factor rescaled by the square of the warping function. -/
@@ -282,21 +293,22 @@ theorem isWarpedProduct_of_eq [RiemannianBundle (fun p : M × N ↦ TangentSpace
 variable [IsManifold I 1 M] [IsManifold J 1 N]
   [RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)]
 
-/-- A warped product of `C^n` metrics with a nowhere vanishing `C^n` warping function is a `C^n`
-metric. -/
+/-- A warped product of `C^n` metrics with a `C^n` warping function is a `C^n` metric. -/
 theorem IsWarpedProduct.isContMDiffRiemannianBundle {n : ℕ∞ω} {f : M → ℝ}
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y)]
-    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) n f) (hf₀ : ∀ x, f x ≠ 0) :
+    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) n f) :
     IsContMDiffRiemannianBundle (I.prod J) n (E × F)
       (fun p : M × N ↦ TangentSpace (I.prod J) p) := by
-  let g := (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := n) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)).warpedProdTangentSpace f hf hf₀
-      (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := J) (n := n) (F := F)
-        (V := fun y : N ↦ TangentSpace J y))
-  refine ⟨g.inner, g.contMDiff, fun p v w ↦ ?_⟩
-  rw [h.inner_eq, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner,
+  refine ⟨_, ContMDiffRiemannianMetric.contMDiff_warpedProdTangentInner
+    (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := n) (F := E)
+      (V := fun x : M ↦ TangentSpace I x)) hf
+    (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := J) (n := n) (F := F)
+      (V := fun y : N ↦ TangentSpace J y)), fun p v w ↦ ?_⟩
+  rw [h.inner_eq, RiemannianMetric.warpedProdTangentInner_apply]
+  simp only [ContMDiffRiemannianMetric.toRiemannianMetric,
+    ContinuousRiemannianMetric.toRiemannianMetric,
+    ContMDiffRiemannianMetric.toContinuousRiemannianMetric,
     ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
   -- The fiber inner products of the factors are by definition their installed metrics.
   rfl
