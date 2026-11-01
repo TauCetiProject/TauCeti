@@ -9,8 +9,11 @@ public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 public import TauCeti.RingTheory.DiscreteValuationRing.AdjoinRoot
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
+import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.Data.Set.Card
+import Mathlib.FieldTheory.KummerPolynomial
+import TauCeti.Algebra.CharP.Two
 import TauCeti.RingTheory.LocalRing.Quotient
 
 /-!
@@ -109,27 +112,10 @@ then the reduction of `X ^ 2 + t X - s` is irreducible. -/
 theorem irreducible_map_residue_quadratic [IsLocalRing R] {t s : R} (ht : t ∈ maximalIdeal R)
     (hs : ∀ a : ResidueField R, a ^ 2 ≠ residue R s) :
     Irreducible ((quadratic t s).map (residue R)) := by
-  rw [map_quadratic, (residue_eq_zero_iff t).mpr ht,
-    (monic_quadratic _ _).irreducible_iff_roots_eq_zero_of_degree_le_three
-      (natDegree_quadratic _ _).ge (by rw [natDegree_quadratic]; norm_num)]
-  refine Multiset.eq_zero_of_forall_notMem fun a ha ↦ hs a ?_
-  rw [mem_roots (monic_quadratic _ _).ne_zero, IsRoot.def, eval, eval₂_quadratic] at ha
-  simpa [sub_eq_zero] using ha
-
-/-- In a domain of characteristic two, two roots of `X ^ 2 + t X - s` are equal or differ by `t`. -/
-private theorem eq_or_eq_add_of_sq_add_mul_eq {S : Type*} [CommRing S] [IsDomain S]
-    (h2 : (2 : S) = 0) {t s a b : S} (ha : a ^ 2 + t * a = s) (hb : b ^ 2 + t * b = s) :
-    b = a ∨ b = a + t := by
-  have h : (b + a) * (b + a + t) = 0 := by linear_combination hb + ha + (a * b + s) * h2
-  rcases mul_eq_zero.mp h with h | h
-  · exact Or.inl (by linear_combination h - a * h2)
-  · exact Or.inr (by linear_combination h - (a + t) * h2)
+  simpa [quadratic, (residue_eq_zero_iff t).mpr ht] using
+    X_pow_sub_C_irreducible_of_prime Nat.prime_two hs
 
 variable {A : Type*} [CommRing A]
-
-/-- The target of a ring homomorphism out of a ring of characteristic two has `2 = 0`. -/
-private theorem two_eq_zero [CharP A 2] {B : Type*} [Semiring B] (f : A →+* B) : (2 : B) = 0 := by
-  rw [← map_ofNat f 2, CharTwo.two_eq_zero, map_zero]
 
 /-- The ring `A[y] = A[Y] ⧸ (Y ^ 2 + t Y - s)`. -/
 abbrev RingY (t s : A) : Type _ := AdjoinRoot (quadratic t s)
@@ -206,7 +192,6 @@ squaring is additive, and `y ^ 2 ≡ s`, `z ^ 2 ≡ u`. -/
 theorem exists_sq_sub_algebraMap_mem_span (x : RingYZ t s u) :
     ∃ a : A, x ^ 2 - algebraMap A _ a ∈ Ideal.span {algebraMap A (RingYZ t s u) t} := by
   set I := Ideal.span {algebraMap A (RingYZ t s u) t}
-  have h2 := two_eq_zero (algebraMap A (RingYZ t s u))
   -- The elements whose square is congruent to an element of `A` form a subalgebra.
   let S : Subalgebra A (RingYZ t s u) :=
     { carrier := {x | ∃ a : A, x ^ 2 - algebraMap A _ a ∈ I}
@@ -222,9 +207,9 @@ theorem exists_sq_sub_algebraMap_mem_span (x : RingYZ t s u) :
         rintro x x' ⟨a, ha⟩ ⟨a', ha'⟩
         refine ⟨a + a', ?_⟩
         have : (x + x') ^ 2 - algebraMap A _ (a + a') =
-            (x ^ 2 - algebraMap A _ a) + (x' ^ 2 - algebraMap A _ a') + x * x' * 2 := by
+            (x ^ 2 - algebraMap A _ a) + (x' ^ 2 - algebraMap A _ a') + (x * x' + x * x') := by
           rw [map_add]; ring
-        rw [this, h2, mul_zero, add_zero]
+        rw [this, TauCeti.add_self_eq_zero_of_charTwo A, add_zero]
         exact I.add_mem ha ha'
       algebraMap_mem' := fun a ↦ ⟨a ^ 2, by simp⟩ }
   have hy : y t s u ∈ S := ⟨s, by
@@ -245,7 +230,7 @@ private noncomputable def translateY (a : A) (ha : a * (a + t) = 0) :
       rw [← map_add, ← map_mul, ha, map_zero]
     simp only [eval₂_quadratic, RingHom.coe_coe, Algebra.ofId_apply]
     linear_combination y_sq_add_mul_y t s u + ha' +
-      y t s u * algebraMap A _ a * two_eq_zero (algebraMap A (RingYZ t s u)))
+      TauCeti.add_self_eq_zero_of_charTwo A (y t s u * algebraMap A _ a))
 
 /-- In characteristic two, `y ↦ y + a`, `z ↦ z + b` defines an `A`-algebra endomorphism of `B`
 when `a (a + t) = 0` and `b (b + t) = 0`, that is when `y + a` and `z + b` are again roots. -/
@@ -256,7 +241,7 @@ private noncomputable def translate (a b : A) (ha : a * (a + t) = 0) (hb : b * (
       rw [← map_add, ← map_mul, hb, map_zero]
     simp only [eval₂_quadratic, RingHom.coe_coe, AlgHom.commutes]
     linear_combination z_sq_add_mul_z t s u + hb' +
-      z t s u * algebraMap A _ b * two_eq_zero (algebraMap A (RingYZ t s u)))
+      TauCeti.add_self_eq_zero_of_charTwo A (z t s u * algebraMap A _ b))
 
 private theorem translate_y (a b : A) (ha hb) :
     translate t s u a b ha hb (y t s u) = y t s u + algebraMap A _ a := by
@@ -271,14 +256,32 @@ private theorem translate_z (a b : A) (ha hb) :
 private noncomputable def translateEquiv (a b : A) (ha : a * (a + t) = 0)
     (hb : b * (b + t) = 0) : RingYZ t s u ≃ₐ[A] RingYZ t s u :=
   have h : (translate t s u a b ha hb).comp (translate t s u a b ha hb) = .id A _ :=
-    algHom_ext t s u
-      (by rw [AlgHom.comp_apply, translate_y, map_add, translate_y, AlgHom.commutes, add_assoc,
-        ← map_add, ← two_mul, CharTwo.two_eq_zero, zero_mul, map_zero, add_zero, AlgHom.id_apply])
-      (by rw [AlgHom.comp_apply, translate_z, map_add, translate_z, AlgHom.commutes, add_assoc,
-        ← map_add, ← two_mul, CharTwo.two_eq_zero, zero_mul, map_zero, add_zero, AlgHom.id_apply])
+    algHom_ext t s u (AlgHom.apply_apply_of_apply_eq_add_algebraMap _ (translate_y t s u a b ha hb))
+      (AlgHom.apply_apply_of_apply_eq_add_algebraMap _ (translate_z t s u a b ha hb))
   .ofAlgHom _ _ h h
 
 end Generators
+
+section PurelyInseparable
+
+variable [IsLocalRing A] [CharP A 2] {t s u : A}
+
+/-- **The residue field extension is purely inseparable**: the square of every element of `B` is
+congruent to an element of `A` modulo `t`. -/
+theorem isPurelyInseparable_residueField_ringYZ (ht : t ∈ maximalIdeal A)
+    [IsLocalRing (RingYZ t s u)] [IsLocalHom (algebraMap A (RingYZ t s u))] :
+    IsPurelyInseparable (ResidueField A) (ResidueField (RingYZ t s u)) := by
+  have : CharP (ResidueField A) 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero
+    (one_add_one_eq_two (R := ResidueField A) ▸ TauCeti.add_self_eq_zero_of_charTwo A 1)
+  refine (isPurelyInseparable_iff_pow_mem _ 2).mpr fun c ↦ ?_
+  obtain ⟨x, rfl⟩ := residue_surjective c
+  obtain ⟨a, ha⟩ := exists_sq_sub_algebraMap_mem_span t s u x
+  refine ⟨1, residue A a, ?_⟩
+  rw [pow_one, ResidueField.algebraMap_residue, ← map_pow, eq_comm, ← sub_eq_zero, ← map_sub,
+    residue_eq_zero_iff]
+  exact (Ideal.span_singleton_le_iff_mem _).mpr (map_nonunit _ _ ht) ha
+
+end PurelyInseparable
 
 /-! ### `B` is a discrete valuation ring with uniformizer `t` -/
 
@@ -322,7 +325,7 @@ private theorem irreducible_map_residue_quadratic_ringYZ [IsLocalRing (RingY t s
   set b := f.coeff 1
   have hroot := AdjoinRoot.eval₂_root (quadratic t s)
   rw [eval₂_quadratic, ← AdjoinRoot.algebraMap_eq] at hroot
-  have h2 := two_eq_zero (algebraMap A (RingY t s))
+  have h2 := TauCeti.add_self_eq_zero_of_charTwo A (1 : RingY t s)
   set r := AdjoinRoot.root (quadratic t s)
   have key : aeval r (C b * X + C a) ^ 2 =
       algebraMap A _ (a ^ 2 + s * b ^ 2) - algebraMap A _ t * (algebraMap A _ b ^ 2 * r) := by
@@ -355,8 +358,8 @@ theorem isDiscreteValuationRing_ringYZ [IsDomain (RingYZ t s u)] :
   (monic_quadratic _ _).isDiscreteValuationRing_adjoinRoot
     (irreducible_map_residue_quadratic_ringYZ ht hs hu)
 
-/-- The maximal ideal of `A` generates the maximal ideal of `B`, so `B / t B` is the residue field
-of `B`. -/
+/-- The maximal ideal of `A` generates the maximal ideal of `B`, so `B / 𝔪_A B` is the residue
+field of `B`; when `t` is a uniformizer of `A`, this is `B / t B`. -/
 theorem maximalIdeal_ringYZ [IsLocalRing (RingYZ t s u)] :
     maximalIdeal (RingYZ t s u) = (maximalIdeal A).map (algebraMap A (RingYZ t s u)) := by
   have := isLocalRing_ringY ht hs
@@ -399,21 +402,6 @@ theorem irreducible_algebraMap_ringYZ (ht : Irreducible t)
   exact TauCeti.IsDiscreteValuationRing.irreducible_algebraMap_of_map_maximalIdeal_eq
     (maximalIdeal_ringYZ hmem hs hu).symm ht
 
-/-- **The residue field extension is purely inseparable**: the square of every element of `B` is
-congruent to an element of `A` modulo `t`. -/
-theorem isPurelyInseparable_residueField_ringYZ (ht : t ∈ maximalIdeal A)
-    [IsLocalRing (RingYZ t s u)] [IsLocalHom (algebraMap A (RingYZ t s u))] :
-    IsPurelyInseparable (ResidueField A) (ResidueField (RingYZ t s u)) := by
-  have : CharP (ResidueField A) 2 :=
-    CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero (two_eq_zero (residue A))
-  refine (isPurelyInseparable_iff_pow_mem _ 2).mpr fun c ↦ ?_
-  obtain ⟨x, rfl⟩ := residue_surjective c
-  obtain ⟨a, ha⟩ := exists_sq_sub_algebraMap_mem_span t s u x
-  refine ⟨1, residue A a, ?_⟩
-  rw [pow_one, ResidueField.algebraMap_residue, ← map_pow, eq_comm, ← sub_eq_zero, ← map_sub,
-    residue_eq_zero_iff]
-  exact (Ideal.span_singleton_le_iff_mem _).mpr (map_nonunit _ _ ht) ha
-
 end DiscreteValuationRing
 
 /-! ### The automorphisms and the ramification groups -/
@@ -433,16 +421,16 @@ include ht hs hu
 theorem algEquiv_apply_y (σ : RingYZ t s u ≃ₐ[A] RingYZ t s u) :
     σ (y t s u) = y t s u ∨ σ (y t s u) = y t s u + algebraMap A _ t := by
   have := isDomain_ringYZ ht hs hu
-  refine eq_or_eq_add_of_sq_add_mul_eq (two_eq_zero (algebraMap A (RingYZ t s u)))
-    (y_sq_add_mul_y t s u) ?_
+  have := CharP.of_ringHom_of_ne_zero (algebraMap A (RingYZ t s u)) 2 two_ne_zero
+  refine TauCeti.eq_or_eq_add_of_sq_add_mul_eq_of_charTwo (y_sq_add_mul_y t s u) ?_
   simpa using congr(σ $(y_sq_add_mul_y t s u))
 
 /-- Every `A`-algebra automorphism of `B` moves `z` by `0` or by `t`. -/
 theorem algEquiv_apply_z (σ : RingYZ t s u ≃ₐ[A] RingYZ t s u) :
     σ (z t s u) = z t s u ∨ σ (z t s u) = z t s u + algebraMap A _ t := by
   have := isDomain_ringYZ ht hs hu
-  refine eq_or_eq_add_of_sq_add_mul_eq (two_eq_zero (algebraMap A (RingYZ t s u)))
-    (z_sq_add_mul_z t s u) ?_
+  have := CharP.of_ringHom_of_ne_zero (algebraMap A (RingYZ t s u)) 2 two_ne_zero
+  refine TauCeti.eq_or_eq_add_of_sq_add_mul_eq_of_charTwo (z_sq_add_mul_z t s u) ?_
   simpa using congr(σ $(z_sq_add_mul_z t s u))
 
 /-- **The inertia group is everything**: every `A`-algebra automorphism of `B` acts trivially on
@@ -503,8 +491,7 @@ theorem isKleinFour_algEquiv : IsKleinFour (RingYZ t s u ≃ₐ[A] RingYZ t s u)
       σ (σ X) = X := by
     rcases hX with h | h
     · rw [h, h]
-    · rw [h, map_add, h, AlgEquiv.commutes, add_assoc, ← two_mul,
-        two_eq_zero (algebraMap A (RingYZ t s u)), zero_mul, add_zero]
+    · exact AlgHom.apply_apply_of_apply_eq_add_algebraMap σ.toAlgHom h
   have hsq (σ : RingYZ t s u ≃ₐ[A] RingYZ t s u) : σ ^ 2 = 1 :=
     AlgEquiv.coe_toAlgHom_injective <| algHom_ext t s u
       (by simpa [sq] using hinv σ (algEquiv_apply_y hmem hs hu σ))

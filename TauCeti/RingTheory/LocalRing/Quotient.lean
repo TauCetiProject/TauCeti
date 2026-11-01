@@ -164,7 +164,10 @@ variable {R S : Type*} [CommRing R] [IsLocalRing R] [CommRing S] [IsLocalRing S]
 
 /-- **Residue degree of a finite free extension in which the maximal ideal stays maximal.** If
 `S` is a finite free extension of the local ring `R` and the maximal ideal of `R` generates the
-maximal ideal of `S`, then the residue field extension has degree `[S : R]`. -/
+maximal ideal of `S`, then the residue field extension has degree `[S : R]`.
+
+The proof is adapted from that of Mathlib's `IsLocalRing.finrank_eq_finrank_residueField`, the
+étale special case, and goes through Mathlib's `IsLocalRing.finrank_quotient_map`. -/
 theorem finrank_residueField_eq_finrank [Module.Free R S] [Module.Finite R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     finrank (ResidueField R) (ResidueField S) = finrank R S := by
