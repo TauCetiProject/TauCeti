@@ -221,8 +221,9 @@ private theorem cubic_reciprocity_of_dvd_intCast {π : 𝓞 K} (hπ : IsPrimaryE
         (y₁ := hu.unit) (y₂ := -1) (by simpa using hγ)
         (by simpa using (isPrimaryEisenstein_intCast_iff (K := K) (a := -1)).mpr (by decide))
       simpa using congrArg Units.val this
-    rw [span_singleton_eq_top.mpr hu, powerResidueSymbolIdeal_top, hγ', map_neg,
-      powerResidueSymbolIdeal_neg (by decide), map_one, MulChar.map_one]
+    -- Both symbols are trivial: `(-1 / π)_3 = 1` and `γ 𝓞 K` is the unit ideal.
+    rw [span_singleton_eq_top.mpr hu, powerResidueSymbolIdeal_top, hγ']
+    simp [powerResidueSymbolIdeal_neg (show Odd 3 by decide)]
   | h₃ β ρ _ hρ ih =>
     intro γ hβγ hγ hγA
     obtain ⟨u, rfl⟩ := hβγ
@@ -252,11 +253,17 @@ private theorem cubic_reciprocity_of_dvd_intCast {π : 𝓞 K} (hπ : IsPrimaryE
       intro h
       rw [h, mul_zero, zero_dvd_iff, Int.cast_eq_zero] at hγA
       exact hA (hγA ▸ dvd_zero 3)
-    rw [span_singleton_neg, ← span_singleton_mul_span_singleton,
-      powerResidueSymbolIdeal_mul_right (by simpa using hρ'p.ne_zero) (by simpa using hδ0),
-      ← hπ.cubic_reciprocity hρ' hp hρ'p hN,
-      ← ih δ ⟨-(w⁻¹ * u), by rw [hδ, mul_comm]⟩ hδ' hδA, map_neg,
-      powerResidueSymbolIdeal_neg (by decide), map_mul, map_mul]
+    -- Reciprocity for the prime `ρ'`, and the induction hypothesis for `δ`.
+    have hrec := hπ.cubic_reciprocity hρ' hp hρ'p hN
+    have hih := ih δ ⟨-(w⁻¹ * u), by rw [hδ, mul_comm]⟩ hδ' hδA
+    -- The symbol at `γ 𝓞 K = ρ' 𝓞 K * δ 𝓞 K` is the product of the symbols at the factors.
+    have hmul : powerResidueSymbolIdeal (span {-(ρ * w * δ)}) 3 (Ideal.Quotient.mk _ π) =
+        powerResidueSymbolIdeal (span {ρ * w}) 3 (Ideal.Quotient.mk _ π) *
+          powerResidueSymbolIdeal (span {δ}) 3 (Ideal.Quotient.mk _ π) := by
+      rw [span_singleton_neg, ← span_singleton_mul_span_singleton]
+      exact powerResidueSymbolIdeal_mul_right (by simpa using hρ'p.ne_zero) (by simpa using hδ0) _
+    rw [hmul, ← hrec, ← hih]
+    simp [powerResidueSymbolIdeal_neg (show Odd 3 by decide)]
 
 /-- **Cubic reciprocity between a primary prime and a rational integer.** Let `K = ℚ(ζ₃)`, so that
 `𝓞 K = ℤ[ω]`, let `π` be a primary prime of `𝓞 K` and let `A` be a rational integer prime to `3`.
@@ -303,7 +310,7 @@ example {ζ : K} (hζ : IsPrimitiveRoot ζ 3) {P : Ideal (𝓞 K)} [P.IsMaximal]
   norm_num
 
 /- Cubic reciprocity against the negative composite integer `-10 = -2 · 5`: the symbol at
-`-10 𝓞 K = 10 𝓞 K` is read at the product of the inert prime `2` and the split prime `5`. -/
+`-10 𝓞 K = 10 𝓞 K` is read at the product of the inert primes `2` and `5`. -/
 example {π : 𝓞 K} (hπ : TauCeti.IsPrimaryEisenstein π) (hp : Prime π) :
     powerResidueSymbolIdeal (span {π}) 3 (Ideal.Quotient.mk _ ((-10 : ℤ) : 𝓞 K)) =
       powerResidueSymbolIdeal (span {((10 : ℤ) : 𝓞 K)}) 3 (Ideal.Quotient.mk _ π) := by
