@@ -29,12 +29,13 @@ polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degr
 (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
-those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x - y` has order
-at least `n` then `xᵏ - yᵏ` has order at least `n + k - 1` (`MvPowerSeries.le_order_pow_sub_pow`).
-Substitution is Lipschitz for the order: if `a i - b i` has order at least `n` for all `i`, then
-`f(a) - f(b)` has order at least `n + k - 1` when `f` has order at least `k`
-(`MvPowerSeries.le_order_subst_sub_subst`), and in degrees at most `n` it agrees with the linear
-part `∑ᵢ fᵢ (a i - b i)` of `f` applied to the differences
+those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
+zero constant coefficient and `x - y` has order at least `n`, then `xᵏ - yᵏ` has order at least
+`n + k - 1` for `k ≥ 1` (`MvPowerSeries.le_order_pow_sub_pow`). Substitution is Lipschitz for the
+order: if every `a i` and `b i` has zero constant coefficient and `a i - b i` has order at least
+`n` for all `i`, then `f(a) - f(b)` has order at least `n + k - 1` when `f` has order at least `k`
+(`MvPowerSeries.le_order_subst_sub_subst`), and under the same hypotheses, in degrees at most `n`
+it agrees with the linear part `∑ᵢ fᵢ (a i - b i)` of `f` applied to the differences
 (`MvPowerSeries.coeff_subst_sub_subst_of_degree_le`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
