@@ -38,19 +38,23 @@ namespace MvPolynomial
 
 variable {σ : Type*} [Fintype σ]
 
+private def sphereCoord (i : σ) : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
+  ⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp continuous_subtype_val⟩
+
+@[simp]
+private theorem sphereCoord_apply (i : σ)
+    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) : sphereCoord i x = x.val i := (rfl)
+
 /-- Restriction of a real polynomial to the Euclidean unit sphere, as a continuous function. -/
 def sphereEval : MvPolynomial σ ℝ →ₐ[ℝ] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
-  aeval fun i ↦ ⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp
-    continuous_subtype_val⟩
+  aeval sphereCoord
 
 @[simp]
 theorem sphereEval_apply (p : MvPolynomial σ ℝ)
     (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
     sphereEval p x = eval (fun i ↦ x.val i) p := by
-  convert comp_aeval_apply
-    (fun i ↦ (⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp
-      continuous_subtype_val⟩ : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ)))
-    (ContinuousMap.evalAlgHom ℝ ℝ x) p using 1 <;> rfl
+  rw [sphereEval, ← ContinuousMap.evalAlgHom_apply ℝ ℝ x, comp_aeval_apply]
+  simp only [ContinuousMap.evalAlgHom_apply, sphereCoord_apply, aeval_eq_eval]
 
 /-- The squared-norm polynomial restricts to the constant function one. -/
 @[simp]
@@ -87,7 +91,12 @@ theorem IsHomogeneous.eq_zero_of_sphereEval_eq_zero {p : MvPolynomial σ ℝ} {d
     simpa [hx, hz] using hscale
   · have hnonzero : (WithLp.toLp 2 x : EuclideanSpace ℝ σ) ≠ 0 := by
       simpa using hx
-    rw [hp.eval_eq_norm_pow_mul_sphereEval hnonzero, h]
+    have hcoord : (fun i ↦ (WithLp.toLp 2 x : EuclideanSpace ℝ σ) i) = x := by
+      ext i
+      exact PiLp.toLp_apply 2 (fun _ : σ ↦ ℝ) x i
+    have hrad := hp.eval_eq_norm_pow_mul_sphereEval hnonzero
+    rw [hcoord] at hrad
+    rw [hrad, h]
     simp
 
 /-- Polynomials of the same homogeneous degree are determined by their restrictions to the
@@ -103,41 +112,41 @@ theorem IsHomogeneous.sphereEval_inj {p q : MvPolynomial σ ℝ} {d : ℕ}
     rfl
 
 /-- The linear restriction of harmonic homogeneous polynomials to the Euclidean unit sphere. -/
-def harmonicSphereRestriction (d : ℕ) :
+def harmonicSphereRestriction (σ : Type*) [Fintype σ] (d : ℕ) :
     harmonicSubmodule σ ℝ d →ₗ[ℝ] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
   sphereEval.toLinearMap.comp (harmonicSubmodule σ ℝ d).subtype
 
 omit [Nonempty σ] in
+/-- Harmonic restriction agrees with polynomial evaluation as a continuous function. -/
 @[simp]
-theorem harmonicSphereRestriction_apply (d : ℕ) (p : harmonicSubmodule σ ℝ d)
-    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
-    harmonicSphereRestriction d p x = eval (fun i ↦ x.val i) p :=
-  sphereEval_apply p x
+theorem harmonicSphereRestriction_coe (d : ℕ) (p : harmonicSubmodule σ ℝ d) :
+    harmonicSphereRestriction σ d p = sphereEval (p : MvPolynomial σ ℝ) := (rfl)
 
 /-- Restriction loses no harmonic homogeneous polynomial, in any degree. -/
 theorem harmonicSphereRestriction_injective (d : ℕ) :
-    Function.Injective (harmonicSphereRestriction (σ := σ) d) := by
+    Function.Injective (harmonicSphereRestriction σ d) := by
   intro p q h
   apply Subtype.ext
   exact ((mem_harmonicSubmodule_iff.1 p.property).1.sphereEval_inj
-    (mem_harmonicSubmodule_iff.1 q.property).1).1 h
+    (mem_harmonicSubmodule_iff.1 q.property).1).1
+    (by simpa only [harmonicSphereRestriction_coe] using h)
 
 /-- The spherical image has the same dimension as the harmonic polynomial space. -/
 theorem finrank_range_harmonicSphereRestriction (d : ℕ) :
-    Module.finrank ℝ (LinearMap.range (harmonicSphereRestriction (σ := σ) d)) =
+    Module.finrank ℝ (LinearMap.range (harmonicSphereRestriction σ d)) =
       Module.finrank ℝ (harmonicSubmodule σ ℝ d) :=
   LinearMap.finrank_range_of_inj (harmonicSphereRestriction_injective d)
 
 /-- The dimension of the restricted harmonic polynomials of degree `e + 2` in `n` variables
 is `n.multichoose (e + 2) - n.multichoose e`. -/
 theorem finrank_range_harmonicSphereRestriction_add_two (e : ℕ) :
-    Module.finrank ℝ (LinearMap.range (harmonicSphereRestriction (σ := σ) (e + 2))) =
+    Module.finrank ℝ (LinearMap.range (harmonicSphereRestriction σ (e + 2))) =
       (Fintype.card σ).multichoose (e + 2) - (Fintype.card σ).multichoose e := by
   rw [finrank_range_harmonicSphereRestriction, finrank_harmonicSubmodule_add_two]
 
 /-- Constants and linear polynomials retain their full homogeneous dimension on the sphere. -/
 theorem finrank_range_harmonicSphereRestriction_of_le_one {d : ℕ} (hd : d ≤ 1) :
-    Module.finrank ℝ (LinearMap.range (harmonicSphereRestriction (σ := σ) d)) =
+    Module.finrank ℝ (LinearMap.range (harmonicSphereRestriction σ d)) =
       (Fintype.card σ).multichoose d := by
   rw [finrank_range_harmonicSphereRestriction, finrank_harmonicSubmodule_of_le_one hd]
 
