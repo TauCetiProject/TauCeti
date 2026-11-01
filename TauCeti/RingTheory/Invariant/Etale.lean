@@ -81,7 +81,8 @@ private theorem exists_mem_span_smul_sub_forall_smul_notMem [Finite G] (q : Idea
     have hxJ : x ∈ J := Ideal.mem_iInf.mpr fun g ↦ by
       obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem (fun g : {g : G // g ≠ 1} ↦
         g.1 • (h⁻¹ • b _ (hconj g)) - h⁻¹ • b _ (hconj g)) (Finset.mem_univ g)
-      rw [show x = _ from hc]
+      simp only [x]
+      rw [hc]
       exact Ideal.mul_mem_right _ _ (Ideal.subset_span ⟨_, rfl⟩)
     have hx := Ideal.mem_comap.mp (hsub hxJ)
     simp only [x, map_prod] at hx
@@ -113,9 +114,7 @@ theorem exists_span_smul_sub_eq_top_of_inertia_eq_bot [Finite G] (q : Ideal B) [
   have := Fintype.ofFinite G
   obtain ⟨t, htJ, ht⟩ := exists_mem_span_smul_sub_forall_smul_notMem q hq
   -- The norm `r = ∏_h h • t` is invariant, lies outside `q`, and is divisible by `t`.
-  let r : FixedPoints.subring B G := ⟨∏ h : G, h • t, fun g ↦ by
-    rw [Finset.smul_prod']
-    exact Fintype.prod_equiv (Equiv.mulLeft g) _ _ fun h ↦ (mul_smul g h t).symm⟩
+  let r : FixedPoints.subring B G := ⟨∏ h : G, h • t, fun g ↦ Finset.smul_prod_perm t g⟩
   have hrq : (r : B) ∉ q := fun hmem ↦ by
     obtain ⟨h, -, hh⟩ := (Ideal.IsPrime.prod_mem_iff (p := q)).mp hmem
     exact ht h hh
@@ -157,7 +156,8 @@ private theorem isEtaleAt_fixedPoints_of_inertia_eq_bot [Finite G] (q : Ideal B)
   have : Algebra.FormallyEtale (FixedPoints.subring B G) (Localization.Away (r : B)) :=
     .of_equiv ((IsLocalization.algEquiv (Submonoid.powers (r : B)) S
       (Localization.Away (r : B))).restrictScalars (FixedPoints.subring B G))
-  exact Algebra.basicOpen_subset_etaleLocus_iff.mpr this (show ⟨q, ‹_›⟩ ∈ _ from hrq)
+  exact Algebra.mem_etaleLocus_iff.mp (Algebra.basicOpen_subset_etaleLocus_iff.mpr this
+    ((PrimeSpectrum.mem_basicOpen _ ⟨q, ‹_›⟩).mpr hrq))
 
 /-- **The quotient by a finite group is étale at points with trivial inertia.** Let a finite
 group `G` act on a commutative ring `B`, and let `R → B` be injective with image the invariants
