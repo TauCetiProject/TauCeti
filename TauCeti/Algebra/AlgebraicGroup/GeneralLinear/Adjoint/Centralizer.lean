@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Comodule
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Centralizer
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
@@ -239,151 +240,40 @@ theorem centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal
         ((coordinateHopfAlgebraAlgEquiv k n).toAlgHom.comp (coordinateRingMap k n)) := by
   apply le_antisymm
   · -- The quotient by the extended commutation equations is a point of the centralizer.
-    intro p hp
     have h := (centralizerHopfIdeal_le_ker_iff_centralizerIdeal_le_ker x
       (Ideal.Quotient.mkₐ k ((MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)).map
         ((coordinateHopfAlgebraAlgEquiv k n).toAlgHom.comp (coordinateRingMap k n))))).2
       (fun q hq ↦ by
-        rw [RingHom.mem_ker, AlgHom.comp_assoc, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-          Ideal.Quotient.eq_zero_iff_mem]
-        exact Ideal.mem_map_of_mem _ hq) hp
-    rwa [RingHom.mem_ker, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem] at h
+        rw [AlgHom.comp_assoc, RingHom.mem_ker, AlgHom.comp_apply, ← RingHom.mem_ker,
+          ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
+        exact Ideal.mem_map_of_mem _ hq)
+    rwa [← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker] at h
   · -- The quotient by the centralizer ideal kills the commutation equations.
     rw [Ideal.map_le_iff_le_comap]
-    intro p hp
     have h := (centralizerHopfIdeal_le_ker_iff_centralizerIdeal_le_ker x
       (Ideal.Quotient.mkₐ k (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal)).1
-      (fun q hq ↦ by
-        rwa [RingHom.mem_ker, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]) hp
-    rwa [RingHom.mem_ker, AlgHom.comp_assoc, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem] at h
-
-/-- The coordinate ring of the centralizer of the matrix of `x` in the matrix affine space,
-localized at the generic determinant. -/
-private abbrev CentralizerAway
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :=
-  Localization.Away (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x))
-    (Matrix.mvPolynomialX (Fin n) (Fin n) k).det)
-
-private theorem isUnit_det_centralizerAway
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
-    IsUnit (((IsScalarTower.toAlgHom k _ (CentralizerAway x)).comp
-      (Ideal.Quotient.mkₐ k (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x))))
-        (Matrix.mvPolynomialX (Fin n) (Fin n) k).det) := by
-  rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', Ideal.Quotient.mkₐ_eq_mk]
-  exact IsLocalization.Away.algebraMap_isUnit _
-
-/-- The map `O(GLₙ) → (O(Mₙ) ⧸ J)[det⁻¹]` induced by the quotient map, where `J` is the
-centralizer ideal of the matrix of `x`. -/
-private noncomputable def toCentralizerAway
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
-    coordinateHopfAlgebra k n →ₐ[k] CentralizerAway x :=
-  (IsLocalization.Away.liftAlgHom (S := CoordinateRing k n)
-      (Matrix.mvPolynomialX (Fin n) (Fin n) k).det
-      (f := (IsScalarTower.toAlgHom k _ (CentralizerAway x)).comp
-        (Ideal.Quotient.mkₐ k (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x))))
-      (isUnit_det_centralizerAway x)).comp
-    (coordinateHopfAlgebraAlgEquiv k n).symm.toAlgHom
-
-private theorem toCentralizerAway_coordinateRingMap
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
-    (p : MatrixMonoid.CoordinateRing k (Fin n)) :
-    toCentralizerAway x (coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n p)) =
-      algebraMap _ (CentralizerAway x)
-        (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)) p) := by
-  rw [toCentralizerAway, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply,
-    coordinateRingMap_apply, IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift_eq]
-  rfl
-
-/-- The map `O(Mₙ) ⧸ J → O(C_GL(X))` induced by `O(Mₙ) → O(GLₙ)`. -/
-private noncomputable def ofCentralizerQuotient
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
-    (MatrixMonoid.CoordinateRing k (Fin n) ⧸
-        MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)) →ₐ[k]
-      coordinateHopfAlgebra k n ⧸ (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal :=
-  Ideal.Quotient.liftₐ _
-    (((Ideal.Quotient.mkₐ k _).comp (coordinateHopfAlgebraAlgEquiv k n).toAlgHom).comp
-      (coordinateRingMap k n)) fun p hp ↦ by
-    rw [AlgHom.comp_assoc, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem, centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal]
-    exact Ideal.mem_map_of_mem _ hp
-
-private theorem ofCentralizerQuotient_mk
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
-    (p : MatrixMonoid.CoordinateRing k (Fin n)) :
-    ofCentralizerQuotient x
-        (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)) p) =
-      Ideal.Quotient.mk _ (coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n p)) :=
-  (rfl)
-
-/-- The map `(O(Mₙ) ⧸ J)[det⁻¹] → O(C_GL(X))`, extending `ofCentralizerQuotient` across the
-localization, since the determinant is a unit in `O(GLₙ)`. -/
-private noncomputable def ofCentralizerAway
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
-    CentralizerAway x →ₐ[k]
-      coordinateHopfAlgebra k n ⧸ (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal :=
-  IsLocalization.Away.liftAlgHom
-    (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x))
-      (Matrix.mvPolynomialX (Fin n) (Fin n) k).det) (f := ofCentralizerQuotient x) <| by
-    rw [ofCentralizerQuotient_mk, coordinateRingMap_apply]
-    exact ((IsLocalization.Away.algebraMap_isUnit (S := CoordinateRing k n)
-      (Matrix.mvPolynomialX (Fin n) (Fin n) k).det).map
-      (coordinateHopfAlgebraAlgEquiv k n)).map
-        (Ideal.Quotient.mk (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal)
-
-private theorem ofCentralizerAway_algebraMap_mk
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
-    (p : MatrixMonoid.CoordinateRing k (Fin n)) :
-    ofCentralizerAway x (algebraMap _ (CentralizerAway x)
-        (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)) p)) =
-      Ideal.Quotient.mk _ (coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n p)) := by
-  rw [ofCentralizerAway, IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift_eq]
-  exact ofCentralizerQuotient_mk x p
-
-/-- The map `O(C_GL(X)) → (O(Mₙ) ⧸ J)[det⁻¹]` induced by `toCentralizerAway`. -/
-private noncomputable def quotientToCentralizerAway
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
-    coordinateHopfAlgebra k n ⧸ (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal
-      →ₐ[k] CentralizerAway x :=
-  Ideal.Quotient.liftₐ _ (toCentralizerAway x) fun a ha ↦ by
-    rw [centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal] at ha
-    refine RingHom.mem_ker.1 <|
-      (Ideal.map_le_iff_le_comap (K := RingHom.ker (toCentralizerAway x))).2
-        (fun p hp ↦ ?_) ha
-    rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-      toCentralizerAway_coordinateRingMap, Ideal.Quotient.eq_zero_iff_mem.2 hp, map_zero]
-
-private theorem quotientToCentralizerAway_mk_coordinateRingMap
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
-    (p : MatrixMonoid.CoordinateRing k (Fin n)) :
-    quotientToCentralizerAway x
-        (Ideal.Quotient.mk _ (coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n p))) =
-      algebraMap _ (CentralizerAway x)
-        (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)) p) :=
-  toCentralizerAway_coordinateRingMap x p
+      (by rw [← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker])
+    intro p hp
+    have hp' := h hp
+    rw [Ideal.mem_comap]
+    rwa [AlgHom.comp_assoc, RingHom.mem_ker, AlgHom.comp_apply, ← RingHom.mem_ker,
+      ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker] at hp'
 
 /-- **The centralizer of a matrix in `GLₙ` is the determinant locus of its centralizer.** The
 coordinate ring of the centralizer `C_GL(X)` of `x` is the localization at the generic
 determinant of the coordinate ring `O(Mₙ) ⧸ J` of the centralizer of `X` in the matrix affine
 space, where `J` is generated by the linear equations `G X = X G`. Thus `C_GL(X)` is the open
-locus `det ≠ 0` in the closed subscheme of `Mₙ` of matrices commuting with `X`. -/
+locus `det ≠ 0` in the closed subscheme of `Mₙ` of matrices commuting with `X`. This is
+`quotientMapAlgEquivAway` for the centralizer ideal, through
+`centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal`. -/
 noncomputable def quotientCentralizerHopfIdealAlgEquiv
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
     (coordinateHopfAlgebra k n ⧸ (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal) ≃ₐ[k]
       Localization.Away
         (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x))
           (Matrix.mvPolynomialX (Fin n) (Fin n) k).det) :=
-  AlgEquiv.ofAlgHom (quotientToCentralizerAway x) (ofCentralizerAway x)
-    (IsLocalization.algHom_ext (Submonoid.powers
-        (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x))
-          (Matrix.mvPolynomialX (Fin n) (Fin n) k).det)) <| Ideal.Quotient.algHom_ext _ <|
-      MvPolynomial.algHom_ext fun ij ↦ by
-        simp only [AlgHom.comp_apply, Algebra.algHom, IsScalarTower.coe_toAlgHom',
-          Ideal.Quotient.mkₐ_eq_mk, AlgHom.coe_id, id_eq]
-        rw [ofCentralizerAway_algebraMap_mk, quotientToCentralizerAway_mk_coordinateRingMap])
-    (Ideal.Quotient.algHom_ext _ <| coordinateHopfAlgebra_algHom_ext k n fun i j ↦ by
-      simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, AlgHom.coe_id, id_eq]
-      rw [quotientToCentralizerAway_mk_coordinateRingMap, ofCentralizerAway_algebraMap_mk])
+  (Ideal.quotientEquivAlgOfEq k (centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal x)).trans
+    (quotientMapAlgEquivAway _)
 
 /-- The equivalence sends the class of a polynomial coordinate function on `Mₙ`, read in
 `O(GLₙ)`, to the class of the same function. -/
@@ -395,8 +285,8 @@ theorem quotientCentralizerHopfIdealAlgEquiv_mk_coordinateRingMap
         (Ideal.Quotient.mk _ (coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n p))) =
       algebraMap _ _
         (Ideal.Quotient.mk (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)) p) := by
-  rw [quotientCentralizerHopfIdealAlgEquiv, ← AlgEquiv.coe_toAlgHom, AlgEquiv.toAlgHom_ofAlgHom,
-    quotientToCentralizerAway_mk_coordinateRingMap]
+  rw [quotientCentralizerHopfIdealAlgEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk,
+    quotientMapAlgEquivAway_mk_coordinateRingMap]
 
 /-- The inverse equivalence sends the class of a polynomial coordinate function on `Mₙ` to the
 class of the same function in `O(GLₙ)`. -/
