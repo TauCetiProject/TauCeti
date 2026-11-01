@@ -25,27 +25,51 @@ namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   {B : BilinForm R M} {π : R} {N : ℕ → Submodule R M}
 
 /-- Multiplication by `π` shifts a Jordan splitting up one scale, with zero constituent
 at scale zero. Neither symmetry nor nondegeneracy is needed for this construction. -/
-theorem IsJordanSplitting.smul_uniformizer (h : B.IsJordanSplitting π N) :
+theorem IsJordanSplitting.uniformizer_smul (h : B.IsJordanSplitting π N) :
     (π • B).IsJordanSplitting π (fun | 0 => ⊥ | i + 1 => N i) where
   isInternal := by
-    refine (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr ⟨?_, ?_⟩
-    · intro i
+    -- Shift and unshift the direct sum explicitly: the lattice characterization of
+    -- internality needs additive inverses, whereas recomposition works over semirings.
+    let S : ℕ → Submodule R M := fun | 0 => ⊥ | i + 1 => N i
+    let E := DirectSum.toModule (M := fun i ↦ N i) R ℕ (DirectSum ℕ (fun i ↦ S i))
+      (fun i ↦ DirectSum.lof R ℕ (fun i ↦ S i) (i + 1))
+    let F := DirectSum.toModule (M := fun i ↦ S i) R ℕ (DirectSum ℕ (fun i ↦ N i))
+      (fun | 0 => 0 | i + 1 => DirectSum.lof R ℕ (fun i ↦ N i) i)
+    have hFE : F.comp E = LinearMap.id := by
+      apply DirectSum.linearMap_ext
+      intro i
+      ext x
+      simp [E, F]
+    have hEF : E.comp F = LinearMap.id := by
+      apply DirectSum.linearMap_ext
+      intro i
       cases i with
-      | zero => exact disjoint_bot_left
+      | zero =>
+        ext x
+        have hx : x = 0 := Subsingleton.elim _ _
+        simp [hx]
       | succ i =>
-        apply (h.isInternal.submodule_iSupIndep i).mono_right
-        refine iSup₂_le fun j hj ↦ ?_
-        cases j with
-        | zero => exact bot_le
-        | succ j => exact le_iSup₂_of_le j (by omega) le_rfl
-    · apply eq_top_iff.mpr
-      rw [← h.isInternal.submodule_iSup_eq_top]
-      exact iSup_le fun i ↦ le_iSup (fun | 0 => (⊥ : Submodule R M) | j + 1 => N j) (i + 1)
+        ext x
+        simp [E, F]
+    have hcoe : (DirectSum.coeLinearMap S).comp E = DirectSum.coeLinearMap N := by
+      apply DirectSum.linearMap_ext
+      intro i
+      ext x
+      simp [E]
+    have hleft : Function.LeftInverse F E := fun x ↦ LinearMap.congr_fun hFE x
+    have hright : Function.RightInverse F E := fun x ↦ LinearMap.congr_fun hEF x
+    have hE : Function.Bijective E := ⟨hleft.injective, hright.surjective⟩
+    -- IsInternal uses additive recomposition; coeLinearMap has the same underlying map.
+    have hInternal := h.isInternal
+    change Function.Bijective (DirectSum.coeLinearMap N) at hInternal
+    change Function.Bijective (DirectSum.coeLinearMap S)
+    apply (Function.Bijective.of_comp_iff _ hE).mp
+    simpa only [← LinearMap.coe_comp, hcoe] using hInternal
   apply_eq_zero := by
     intro i j hij x hx y hy
     cases i with
@@ -60,7 +84,7 @@ theorem IsJordanSplitting.smul_uniformizer (h : B.IsJordanSplitting π N) :
     | zero =>
       exact isModular_of_subsingleton
     | succ i =>
-      simpa only [smul_restrict, pow_succ'] using
+      simpa only [restrict_smul, pow_succ'] using
         (h.isModular i).smul π
 
 end LinearMap.BilinForm

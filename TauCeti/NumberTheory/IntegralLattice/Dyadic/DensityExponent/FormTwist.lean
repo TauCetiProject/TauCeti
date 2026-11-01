@@ -44,9 +44,9 @@ variable {R M : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
 /-- The profile of a Jordan splitting multiplied by its uniformizer is the shift of the
 original profile. In particular the parity of each constituent is measured at its new scale,
 not by divisibility by the uniformizer alone. -/
-theorem IsJordanSplitting.dyadicJordanProfile_smul_uniformizer
+theorem IsJordanSplitting.dyadicJordanProfile_uniformizer_smul
     (h : B.IsJordanSplitting π N) (hB : B.IsSymm) (hπ : π ≠ 0) (hπ' : ¬IsUnit π) :
-    h.smul_uniformizer.dyadicJordanProfile (hB.smul π) hπ hπ' =
+    h.uniformizer_smul.dyadicJordanProfile (hB.smul π) hπ hπ' =
       (h.dyadicJordanProfile hB hπ hπ').shift := by
   ext i
   · cases i with
@@ -54,10 +54,10 @@ theorem IsJordanSplitting.dyadicJordanProfile_smul_uniformizer
     | succ i => simp
   · cases i with
     | zero =>
-      rw [h.smul_uniformizer.mem_dyadicJordanProfile_typeI_iff_exists]
+      rw [h.uniformizer_smul.mem_dyadicJordanProfile_typeI_iff_exists]
       simp
     | succ i =>
-      rw [h.smul_uniformizer.mem_dyadicJordanProfile_typeI_iff_exists,
+      rw [h.uniformizer_smul.mem_dyadicJordanProfile_typeI_iff_exists,
         TauCeti.DyadicJordanProfile.mem_shift_typeI_succ_iff,
         h.mem_dyadicJordanProfile_typeI_iff_exists]
       simp only [LinearMap.smul_apply, smul_eq_mul, pow_succ' π (i + 1),
@@ -73,34 +73,34 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 /-- Twisting a nondegenerate integral lattice's form by `2` shifts every dyadic Jordan scale
 up one, preserving the constituent ranks and parity types. -/
 @[simp]
-theorem dyadicJordanProfile_smul_two :
+theorem dyadicJordanProfile_two_smul :
     ((2 : ℤ) • L).dyadicJordanProfile = L.dyadicJordanProfile.shift := by
   obtain ⟨N, hN⟩ := L.exists_isJordanSplitting_localIntegralForm 2 L.form_nondegenerate
-  have hN' : (((2 : ℤ) • L).localIntegralForm 2).IsJordanSplitting 2
-      (fun | 0 => ⊥ | i + 1 => N i) := by
-    rw [localIntegralForm_smul]
-    -- The carriers agree; reconcile their inherited tensor-product instances.
-    convert! hN.smul_uniformizer using 1
+  -- Form twisting preserves the carrier and its localization. The identity linear
+  -- equivalence identifies these carriers; simp also identifies the cast of 2 in ℤ_[2].
+  let e : ((2 : ℤ_[2]) • L.localIntegralForm 2).IsometryEquiv
+      (((2 : ℤ) • L).localIntegralForm 2) :=
+    { toLinearEquiv := LinearEquiv.refl _ _
+      map_app' x y := by simp }
+  have hN' := hN.uniformizer_smul.map_isometryEquiv e
   rw [dyadicJordanProfile_eq hN', dyadicJordanProfile_eq hN]
-  refine (hN'.dyadicJordanProfile_eq_of_equivalent _ _ _ hN.smul_uniformizer
-    ((L.isSymm_localIntegralForm 2).smul (2 : ℤ_[2])) ?_).trans ?_
-  · exact ⟨{ toLinearEquiv := LinearEquiv.refl _ _
-             map_app' x y := by simp }⟩
-  · exact hN.dyadicJordanProfile_smul_uniformizer (L.isSymm_localIntegralForm 2)
-      two_ne_zero PadicInt.not_isUnit_two
+  exact (hN'.dyadicJordanProfile_eq_of_equivalent _ _ _ hN.uniformizer_smul
+    ((L.isSymm_localIntegralForm 2).smul (2 : ℤ_[2])) ⟨e.symm⟩).trans
+      (hN.dyadicJordanProfile_uniformizer_smul (L.isSymm_localIntegralForm 2)
+        two_ne_zero PadicInt.not_isUnit_two)
 
 /-- Cho's exponent `N_Q` increases by the scale-shift correction under a form twist by `2`. -/
-theorem nQ_dyadicJordanProfile_smul_two :
+theorem nQ_dyadicJordanProfile_two_smul :
     ((2 : ℤ) • L).dyadicJordanProfile.nQ =
       L.dyadicJordanProfile.nQ + L.dyadicJordanProfile.shiftCorrection := by
-  rw [dyadicJordanProfile_smul_two, DyadicJordanProfile.nQ_shift]
+  rw [dyadicJordanProfile_two_smul, DyadicJordanProfile.nQ_shift]
 
 /-- Cho's density exponent `N` increases by the scale-shift correction under a form twist
 by `2`. -/
-theorem densityExponent_dyadicJordanProfile_smul_two :
+theorem densityExponent_dyadicJordanProfile_two_smul :
     ((2 : ℤ) • L).dyadicJordanProfile.densityExponent =
       L.dyadicJordanProfile.densityExponent + L.dyadicJordanProfile.shiftCorrection := by
-  rw [dyadicJordanProfile_smul_two, DyadicJordanProfile.densityExponent_shift]
+  rw [dyadicJordanProfile_two_smul, DyadicJordanProfile.densityExponent_shift]
 
 end TauCeti.IntegralLattice
 

@@ -59,7 +59,7 @@ namespace LinearMap.BilinForm
 
 /-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
 @[simp]
-theorem smul_restrict {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     (r : R) (B : LinearMap.BilinForm R M) (N : Submodule R M) :
     (r • B).restrict N = r • B.restrict N := by
   ext x y
