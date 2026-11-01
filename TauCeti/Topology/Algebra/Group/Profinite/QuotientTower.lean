@@ -62,6 +62,8 @@ to some finite level `A n`, and the finite levels are cofinal among all the fini
   factors through some level by a homomorphism.
 * `TauCeti.FiniteQuotientTower.mapOfLE_toQuotient`: factoring the quotient maps through a level is
   compatible with the quotient homomorphisms `Γ ⧸ U → Γ ⧸ V`.
+* `TauCeti.FiniteQuotientTower.mapDomain_toQuotient_eq`: the pushforward of a compatible family
+  to `Γ ⧸ U` does not depend on the level used.
 
 ## References
 
@@ -355,6 +357,23 @@ family at the lower level. -/
 theorem mem_compatibleFamilies {R : Type*} [Semiring R] {c : ∀ n, A n →₀ R} :
     c ∈ T.compatibleFamilies R ↔ ∀ ⦃m n : ℕ⦄ (h : m ≤ n), (c n).mapDomain (T.t h) = c m :=
   Iff.rfl
+
+variable {T} in
+/-- The pushforward of a compatible family to `Γ ⧸ U` does not depend on the level of the tower
+through which `Γ → Γ ⧸ U` is factored. -/
+theorem mapDomain_toQuotient_eq {R : Type*} [Semiring R] {c : ∀ n, A n →₀ R}
+    (hc : c ∈ T.compatibleFamilies R) {U : Subgroup Γ} [U.Normal] {m n : ℕ}
+    (hm : (T.ker m : Subgroup Γ) ≤ U) (hn : (T.ker n : Subgroup Γ) ≤ U) :
+    (c m).mapDomain (T.toQuotient hm) = (c n).mapDomain (T.toQuotient hn) := by
+  -- Both sides are the pushforward of the coefficients at the common deeper level `max m n`.
+  have key {k l : ℕ} (hkl : k ≤ l) (hk : (T.ker k : Subgroup Γ) ≤ U) :
+      (c k).mapDomain (T.toQuotient hk) =
+        (c l).mapDomain (T.toQuotient (le_trans (α := Subgroup Γ) (T.ker_antitone hkl) hk)) := by
+    rw [← mem_compatibleFamilies.mp hc hkl, ← Finsupp.mapDomain_comp]
+    congr 1
+    ext a
+    simp
+  rw [key (le_max_left m n) hm, key (le_max_right m n) hn]
 
 end FiniteQuotientTower
 

@@ -44,17 +44,21 @@ needs no topology on `O`. A change of generator `γ ↦ γ ^ u` is the substitut
 
 ## Main results
 
+* `TauCeti.Iwasawa.towerProj_of_ofAdd`: the projection onto `O[ℤ/pⁿ]` sends a group element
+  `a ∈ ℤ_p` to its reduction modulo `pⁿ`.
 * `TauCeti.Iwasawa.towerProj_completedCoordinate`: the projection onto `O[ℤ/pⁿ]` is the level
   coordinate.
-* `TauCeti.Iwasawa.completedCoordinate_X`, `TauCeti.Iwasawa.completedCoordinate_one_add_X_pow`:
-  `T ↦ γ - 1` and `(1 + T) ^ k ↦ γ ^ k`.
+* `TauCeti.Iwasawa.completedCoordinate_X`, `TauCeti.Iwasawa.completedCoordinate_one_add_X`,
+  `TauCeti.Iwasawa.completedCoordinate_one_add_X_pow`: `T ↦ γ - 1`, `1 + T ↦ γ` and
+  `(1 + T) ^ k ↦ γ ^ k`.
 * `TauCeti.Iwasawa.completedCoordinate_unique`: an `O`-algebra map `O⟦T⟧ → O[[ℤ_p]]` sending `T`
   to `γ - 1` is the completed coordinate.
 * `TauCeti.Iwasawa.completedCoordinate_injective`,
   `TauCeti.Iwasawa.completedCoordinate_surjective`: over a noetherian `O` the completed
   coordinate is bijective.
-* `TauCeti.Iwasawa.completedCoordinate_eq_powerSeriesCoordinate`: over `ℤ_p` it is the
-  power-series coordinate attached to `γ`.
+* `TauCeti.Iwasawa.completedCoordinate_eq_powerSeriesCoordinate`,
+  `TauCeti.Iwasawa.completedCoordinateEquiv_eq_powerSeriesCoordinate`: over `ℤ_p` it is the
+  power-series coordinate attached to `γ`, as a map and as an isomorphism.
 
 ## References
 
@@ -82,8 +86,18 @@ tower of `ℤ_p`. It sends `T` to `γ - 1` for the topological generator `γ = 1
 (`completedCoordinate_unique`). -/
 noncomputable def completedCoordinate :
     O⟦X⟧ →ₐ[O] completedGroupAlgebra O (Multiplicative ℤ_[p]) :=
-  completedGroupAlgebra.towerLift (FiniteQuotientTower.padicTower p) (f := levelCoordinate hp)
+  completedGroupAlgebra.towerLift (FiniteQuotientTower.padicTower p) (levelCoordinate hp)
     fun _ _ h F ↦ by rw [← levelTransition_apply, levelTransition_levelCoordinate]
+
+omit [IsLocalRing O] [IsAdicComplete (maximalIdeal O) O] in
+/-- The projection of `O[[ℤ_p]]` onto `O[ℤ/pⁿ]` sends a group element `a ∈ ℤ_p` to its
+reduction modulo `pⁿ`. This is the simp normal form, reached through
+`completedGroupAlgebra.towerProj_of` and `FiniteQuotientTower.padicTower_q_ofAdd`. -/
+theorem towerProj_of_ofAdd (n : ℕ) (a : ℤ_[p]) :
+    towerProj O (FiniteQuotientTower.padicTower p) n
+        (of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd a)) =
+      MonoidAlgebra.single (Multiplicative.ofAdd (PadicInt.toZModPow n a)) 1 := by
+  rw [completedGroupAlgebra.towerProj_of, FiniteQuotientTower.padicTower_q_ofAdd]
 
 /-- **The finite levels of the completed coordinate**: its projection onto `O[ℤ/pⁿ]` is the
 level coordinate. -/
@@ -98,18 +112,20 @@ theorem towerProj_completedCoordinate (n : ℕ) (F : O⟦X⟧) :
 @[simp]
 theorem completedCoordinate_X :
     completedCoordinate hp X = of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd 1) - 1 :=
-  completedGroupAlgebra.ext_towerProj (T := FiniteQuotientTower.padicTower p) fun n ↦ by
-    have hq : (FiniteQuotientTower.padicTower p).q n (Multiplicative.ofAdd 1) =
-        Multiplicative.ofAdd 1 := Multiplicative.toAdd.injective (by simp)
-    simp [hq]
+  completedGroupAlgebra.ext_towerProj (T := FiniteQuotientTower.padicTower p) fun n ↦ by simp
+
+/-- The completed coordinate sends `1 + T` to the topological generator `γ = [1]` of `ℤ_p`. -/
+@[simp]
+theorem completedCoordinate_one_add_X :
+    completedCoordinate hp (1 + X) = of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd 1) := by
+  rw [map_add, map_one, completedCoordinate_X, add_sub_cancel]
 
 /-- The completed coordinate sends `(1 + T) ^ k` to the group element `γ ^ k = [k]`. -/
 @[simp]
 theorem completedCoordinate_one_add_X_pow (k : ℕ) :
     completedCoordinate hp ((1 + X) ^ k) =
       of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd (k : ℤ_[p])) := by
-  rw [map_pow, map_add, map_one, completedCoordinate_X, add_sub_cancel, ← map_pow, ← ofAdd_nsmul,
-    nsmul_one]
+  rw [map_pow, completedCoordinate_one_add_X, ← map_pow, ← ofAdd_nsmul, nsmul_one]
 
 /-- **Uniqueness of the completed coordinate.** An `O`-algebra map `O⟦T⟧ → O[[ℤ_p]]` sending `T`
 to `γ - 1` is the completed coordinate; no continuity is assumed. -/
@@ -168,8 +184,7 @@ theorem completedCoordinateEquiv_symm_of_ofAdd_natCast [IsNoetherianRing O] (k :
 theorem completedCoordinateEquiv_symm_of_ofAdd_one [IsNoetherianRing O] :
     (completedCoordinateEquiv hp).symm (of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd 1)) =
       1 + X := by
-  rw [AlgEquiv.symm_apply_eq, coe_completedCoordinateEquiv, map_add,
-    map_one (completedCoordinate hp), completedCoordinate_X, add_sub_cancel]
+  rw [AlgEquiv.symm_apply_eq, coe_completedCoordinateEquiv, completedCoordinate_one_add_X]
 
 /-- **Comparison with the power-series coordinate.** Over `O = ℤ_p`, the completed coordinate is
 the power-series coordinate `ℤ_p⟦T⟧ ≃ₐ[ℤ_p] ℤ_p[[ℤ_p]]` attached to the topological generator
@@ -179,5 +194,17 @@ theorem completedCoordinate_eq_powerSeriesCoordinate (hp : (p : ℤ_[p]) ∈ max
       (completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
         (topologicallyGenerates_ofAdd_one_padicInt p)).toAlgHom :=
   (completedCoordinate_unique hp (by simp)).symm
+
+/-- **Comparison with the power-series coordinate, as isomorphisms.** Over `O = ℤ_p`, the
+isomorphism `completedCoordinateEquiv hp` is the power-series coordinate attached to the
+topological generator `γ = 1` of `ℤ_p`. -/
+theorem completedCoordinateEquiv_eq_powerSeriesCoordinate
+    (hp : (p : ℤ_[p]) ∈ maximalIdeal ℤ_[p]) :
+    completedCoordinateEquiv hp =
+      completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
+        (topologicallyGenerates_ofAdd_one_padicInt p) :=
+  AlgEquiv.coe_toAlgHom_injective <| by
+    rw [← completedCoordinate_eq_powerSeriesCoordinate hp]
+    exact AlgHom.coe_fn_injective (coe_completedCoordinateEquiv hp)
 
 end TauCeti.Iwasawa

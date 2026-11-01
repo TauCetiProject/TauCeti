@@ -16,13 +16,15 @@ The completed group algebra `R[[Γ]]` is the inverse limit of the group algebras
 all open normal subgroups `U` of `Γ`. When the compact group `Γ` carries a tower of finite
 quotients `q n : Γ → A n` (`TauCeti.FiniteQuotientTower`), the kernels of the levels are cofinal
 among the open normal subgroups, so the countably many group algebras `R[A n]` already describe
-`R[[Γ]]`. This file records the two halves of that description.
+`R[[Γ]]`. This file records both directions of that description.
 
 * Each level gives an `R`-algebra projection `towerProj R T n : R[[Γ]] → R[A n]`, the projection
   onto `R[Γ ⧸ ker q n]` read through the isomorphism `Γ ⧸ ker q n ≃ A n` induced by `q n`. The
   projections are compatible with the transition maps, the projection onto any `R[Γ ⧸ U]` factors
   through a level whose kernel lies in `U`, and an element of `R[[Γ]]`, or an algebra map into it,
   is determined by its tower projections.
+* A family of coefficients `c n : A n →₀ R` compatible with the transition maps is the family of
+  tower projections of an element `towerMk T c hc` of `R[[Γ]]`.
 * A family of `R`-algebra maps `f n : B → R[A n]`, compatible with the transition maps, assembles
   into an `R`-algebra map `towerLift T f hf : B → R[[Γ]]` whose tower projections are the `f n`.
 
@@ -34,6 +36,8 @@ Iwasawa algebra `R[[ℤ_p]]`.
 
 * `TauCeti.completedGroupAlgebra.towerProj R T n`: the projection `R[[Γ]] →ₐ[R] R[A n]` onto the
   `n`-th level of the tower `T`.
+* `TauCeti.completedGroupAlgebra.towerMk T c hc`: the element of `R[[Γ]]` with tower projections
+  given by a compatible family of coefficients `c`.
 * `TauCeti.completedGroupAlgebra.towerLift T f hf`: the `R`-algebra map into `R[[Γ]]` assembled
   from a compatible family `f n : B →ₐ[R] R[A n]`.
 
@@ -48,6 +52,8 @@ Iwasawa algebra `R[[ℤ_p]]`.
 * `TauCeti.completedGroupAlgebra.ext_towerProj`,
   `TauCeti.completedGroupAlgebra.algHom_ext_towerProj`: elements of `R[[Γ]]`, and algebra maps
   into it, are determined by their tower projections.
+* `TauCeti.completedGroupAlgebra.towerProj_towerMk`,
+  `TauCeti.completedGroupAlgebra.proj_towerMk`: the projections of `towerMk T c hc`.
 * `TauCeti.completedGroupAlgebra.towerProj_towerLift`,
   `TauCeti.completedGroupAlgebra.proj_towerLift`: the projections of `towerLift T f hf`.
 
@@ -126,62 +132,83 @@ theorem algHom_ext_towerProj [CompactSpace Γ] {B : Type*} [Semiring B] [Algebra
     (h : ∀ n, (towerProj R T n).comp g₁ = (towerProj R T n).comp g₂) : g₁ = g₂ :=
   AlgHom.ext fun b ↦ ext_towerProj fun n ↦ AlgHom.congr_fun (h n) b
 
+
+variable [CompactSpace Γ]
+
+section Mk
+
+variable (T) in
+/-- **The element of the completed group algebra with prescribed tower projections.** A family of
+coefficients `c n : A n →₀ R` on the levels of a tower of finite quotients of a compact group `Γ`,
+compatible with the transition maps, is the family of tower projections of an element of `R[[Γ]]`
+(`towerProj_towerMk`). Its projection onto `R[Γ ⧸ U]` is pushed forward from any level whose
+kernel lies in `U` (`proj_towerMk`). -/
+noncomputable def towerMk (c : ∀ n, A n →₀ R) (hc : c ∈ T.compatibleFamilies R) :
+    completedGroupAlgebra R Γ :=
+  mk R Γ (fun U ↦ ofCoeff <| Finsupp.mapDomain
+      (T.toQuotient (T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen).choose_spec)
+      (c (T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen).choose))
+    fun U V hUV ↦ coeff_injective <| by
+      have hU := (T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen).choose_spec
+      rw [coeff_mapDomain, coeff_ofCoeff, coeff_ofCoeff, ← Finsupp.mapDomain_comp,
+        ← FiniteQuotientTower.mapDomain_toQuotient_eq hc (le_trans (α := Subgroup Γ) hU hUV)]
+      congr 1
+      funext a
+      exact T.mapOfLE_toQuotient hU hUV a
+
+/-- The projection of `towerMk T c hc` onto `R[Γ ⧸ U]` is `c n` pushed forward along the map
+`A n → Γ ⧸ U`, for any level `n` whose kernel lies in `U`. -/
+theorem proj_towerMk {c : ∀ n, A n →₀ R} (hc : c ∈ T.compatibleFamilies R) {n : ℕ}
+    {U : OpenNormalSubgroup Γ} (h : T.ker n ≤ U) :
+    proj R Γ U (towerMk T c hc) =
+      ofCoeff ((c n).mapDomain (T.toQuotient (U := U.toSubgroup) h)) := by
+  rw [towerMk, proj_mk, FiniteQuotientTower.mapDomain_toQuotient_eq hc _ h]
+
+/-- **The tower projections of `towerMk T c hc` are the coefficients `c n`.** -/
+@[simp]
+theorem towerProj_towerMk {c : ∀ n, A n →₀ R} (hc : c ∈ T.compatibleFamilies R) (n : ℕ) :
+    towerProj R T n (towerMk T c hc) = ofCoeff (c n) := by
+  refine mapDomain_injective (T.toQuotient_injective n) (coeff_injective ?_)
+  rw [← proj_eq_mapDomain_towerProj le_rfl, proj_towerMk hc le_rfl, coeff_mapDomain,
+    coeff_ofCoeff, coeff_ofCoeff]
+
+end Mk
+
 section Lift
 
 variable {B : Type*} [Semiring B] [Algebra R B] {f : ∀ n, B →ₐ[R] MonoidAlgebra R (A n)}
   (hf : ∀ ⦃m n : ℕ⦄ (h : m ≤ n) (b : B), mapDomain (T.t h) (f n b) = f m b)
 include hf
 
-/-- Pushing a compatible family forward to `R[Γ ⧸ U]` does not depend on the level used, among
-those whose kernel lies in `U`. -/
-private theorem mapDomain_toQuotient_eq {U : Subgroup Γ} [U.Normal] {m n : ℕ}
-    (hm : (T.ker m : Subgroup Γ) ≤ U) (hn : (T.ker n : Subgroup Γ) ≤ U) (b : B) :
-    mapDomain (T.toQuotient hm) (f m b) = mapDomain (T.toQuotient hn) (f n b) := by
-  have key {m n : ℕ} (h : m ≤ n) (hm : (T.ker m : Subgroup Γ) ≤ U)
-      (hn : (T.ker n : Subgroup Γ) ≤ U) :
-      mapDomain (T.toQuotient hm) (f m b) = mapDomain (T.toQuotient hn) (f n b) := by
-    rw [← hf h, mapDomain_mapDomain]
-    congr 1
-    funext a
-    exact T.toQuotient_t h hm a
-  rcases le_total m n with h | h
-  · exact key h hm hn
-  · exact (key h hn hm).symm
-
-variable [CompactSpace Γ]
-
-variable (T) in
+variable (T f) in
 /-- **The universal property of the completed group algebra along a tower.** A family of
 `R`-algebra maps `f n : B →ₐ[R] R[A n]` into the levels of a tower of finite quotients of a compact
 group `Γ`, compatible with the transition maps, assembles into an `R`-algebra map
 `B →ₐ[R] R[[Γ]]` whose tower projections are the `f n` (`towerProj_towerLift`). It is the unique
 such map (`algHom_ext_towerProj`). -/
-noncomputable def towerLift : B →ₐ[R] completedGroupAlgebra R Γ :=
-  lift R Γ (fun U ↦ (mapDomainAlgHom R R (T.toQuotient
-      (T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen).choose_spec)).comp
-      (f (T.exists_ker_le_of_isOpen (U := U.toSubgroup) U.isOpen).choose))
-    fun U V hUV b ↦ by
-      simp only [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_mapDomain]
-      rw [show (QuotientGroup.mapOfLE hUV ∘ T.toQuotient _) = T.toQuotient _ from
-        funext (T.mapOfLE_toQuotient _ hUV)]
-      exact mapDomain_toQuotient_eq hf _ _ b
+noncomputable def towerLift : B →ₐ[R] completedGroupAlgebra R Γ where
+  toFun b := towerMk T (fun n ↦ (f n b).coeff)
+    (FiniteQuotientTower.mem_compatibleFamilies.mpr fun _ _ h ↦ by rw [← coeff_mapDomain, hf h])
+  map_one' := ext_towerProj (T := T) fun n ↦ by simp
+  map_mul' a b := ext_towerProj (T := T) fun n ↦ by simp
+  map_zero' := ext_towerProj (T := T) fun n ↦ by simp
+  map_add' a b := ext_towerProj (T := T) fun n ↦ by simp
+  commutes' r := ext_towerProj (T := T) fun n ↦ by simp
+
+/-- **The tower projections of `towerLift T f hf` are the maps `f n`.** -/
+@[simp]
+theorem towerProj_towerLift (n : ℕ) (b : B) : towerProj R T n (towerLift T f hf b) = f n b := by
+  simp [towerLift]
 
 /-- The projection of `towerLift T f hf` onto `R[Γ ⧸ U]` is `f n` followed by the map induced by
 `A n → Γ ⧸ U`, for any level `n` whose kernel lies in `U`. -/
 theorem proj_towerLift {n : ℕ} {U : OpenNormalSubgroup Γ} (h : T.ker n ≤ U) (b : B) :
-    proj R Γ U (towerLift T hf b) = mapDomain (T.toQuotient (U := U.toSubgroup) h) (f n b) := by
-  rw [towerLift, proj_lift, AlgHom.comp_apply, mapDomainAlgHom_apply]
-  exact mapDomain_toQuotient_eq hf _ _ b
-
-/-- **The tower projections of `towerLift T f hf` are the maps `f n`.** -/
-@[simp]
-theorem towerProj_towerLift (n : ℕ) (b : B) : towerProj R T n (towerLift T hf b) = f n b := by
-  refine mapDomain_injective (T.toQuotient_injective n) ?_
-  rw [← proj_eq_mapDomain_towerProj le_rfl, proj_towerLift hf le_rfl]
+    proj R Γ U (towerLift T f hf b) = mapDomain (T.toQuotient (U := U.toSubgroup) h) (f n b) := by
+  rw [proj_eq_mapDomain_towerProj h, towerProj_towerLift]
 
 /-- The tower projections of `towerLift T f hf` are the maps `f n`, as algebra maps. -/
 @[simp]
-theorem towerProj_comp_towerLift (n : ℕ) : (towerProj R T n).comp (towerLift T hf) = f n :=
+theorem towerProj_comp_towerLift (n : ℕ) : (towerProj R T n).comp (towerLift T f hf) = f n :=
   AlgHom.ext (towerProj_towerLift hf n)
 
 end Lift
