@@ -249,8 +249,7 @@ theorem IsFreelyIndependent.freeCumulant_sum (h : IsFreelyIndependent φ B) (hφ
   -- is the sum over all label assignments `r` of the cumulants of the words `x ↦ a (r x) x`.
   have : Nonempty (Fin #s) := ⟨⟨0, card_pos.2 hs⟩⟩
   have he : ∀ b : α → A, freeCumulant φ b s = freeCumulant φ (b ∘ s.orderEmbOfFin rfl) univ :=
-    fun b => by rw [freeCumulant_comp_of_strictMonoOn φ
-      ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _), image_orderEmbOfFin_univ]
+    fun b => freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ b s
   simp_rw [he, ← freeCumulantMultilinear_apply,
     comp_def, MultilinearMap.map_sum_finset, freeCumulantMultilinear_apply]
   -- Only the constant assignments contribute: a non-constant one gives a mixed cumulant.
