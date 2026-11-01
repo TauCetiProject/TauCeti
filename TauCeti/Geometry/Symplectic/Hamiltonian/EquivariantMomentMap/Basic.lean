@@ -77,6 +77,8 @@ maps of an action are exactly the shifts of any one of them by coadjoint-invaria
 * `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: for a
   preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
   cocycle vanishes at one point is coadjoint-equivariant.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`: conversely, the cocycle of
+  a group-level moment map vanishes at every point.
 
 ## References
 
@@ -385,6 +387,24 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
   simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply, map_zero, zero_apply]
 
 end IsMomentMap
+
+namespace IsEquivariantMomentMap
+
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+
+/-- **A group-level moment map is infinitesimally equivariant**: its cocycle vanishes at every
+point, `σ(ξ_M, η_M) = μ_{⁅ξ, η⁆}`. The defect of an equivariant moment map vanishes identically,
+and the cocycle is its derivative at the identity. -/
+theorem momentCocycle_eq_zero (h : σ.IsEquivariantMomentMap μ) (x : M) :
+    σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0 := by
+  refine momentCocycle_eq_zero_iff.2 fun ξ η ↦ ?_
+  have hθ : (fun g : G ↦ momentDefect μ g x ξ) = fun _ ↦ 0 := funext fun g ↦ by
+    rw [momentDefect_eq_zero_iff.2 (h.apply_smul g x), LinearMap.zero_apply]
+  have hd := h.toIsMomentMap.mvfderiv_momentDefect_one x ξ η
+  rw [hθ, mvfderiv_const, momentCocycle_apply, LinearEquiv.apply_symm_apply] at hd
+  exact (sub_eq_zero.1 (by simpa using hd.symm))
+
+end IsEquivariantMomentMap
 
 end SmoothTwoForm
 
