@@ -96,6 +96,16 @@ theorem besselI_eq_rpow_mul (ν x : ℝ) :
   push_cast at hF ⊢
   rw [Complex.mul_re, hF, mul_zero, sub_zero]
 
+/-- For `x > 0`, the regularized hypergeometric value `₀F₁(; a; x² / 4)` is
+`(x / 2) ^ (1 - a) * I_{a-1}(x)`. -/
+theorem regularizedHGFun_zero_singleton_eq_rpow_mul_besselI (a : ℝ) {x : ℝ} (hx : 0 < x) :
+    (Complex.regularizedHGFun 0 {(a : ℂ)} (x ^ 2 / 4 : ℝ)).re =
+      (x / 2) ^ (1 - a) * besselI (a - 1) x := by
+  have hx2 : 0 < x / 2 := by positivity
+  have harg : (x / 2) ^ 2 = x ^ 2 / 4 := by ring
+  rw [besselI_eq_rpow_mul, sub_add_cancel, ← mul_assoc, ← rpow_add hx2]
+  simp [harg]
+
 /-- For `x > 0`, `I_ν(x)` is the sum of its power series
 `∑ⱼ (x / 2) ^ (2 j + ν) / (j! Γ(j + ν + 1))`. -/
 theorem hasSum_besselI (ν : ℝ) {x : ℝ} (hx : 0 < x) :

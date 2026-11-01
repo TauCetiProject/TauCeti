@@ -79,10 +79,11 @@ private lemma integral_sq_inner_vmf_hypergeometric (hd : 2 ≤ Module.finrank �
     rw [mgf_inner_vonMisesFisherNaturalMeasure,
       integral_exp_inner_uniformSphereMeasure_eq_regularizedHGFun hd,
       integral_exp_inner_uniformSphereMeasure_eq_regularizedHGFun hd]
-    have hb : 0 < b := by
-      dsimp [b]
-      exact div_pos (by exact_mod_cast (by omega : 0 < Module.finrank ℝ E)) two_pos
-    simpa [H, b, q] using mul_div_mul_left (H b (q t)) (H b (q 0)) (Gamma_pos_of_pos hb).ne'
+    have hb : 0 < b := div_pos (Nat.cast_pos.mpr (lt_of_lt_of_le zero_lt_two hd)) two_pos
+    have hcancel : Gamma b * H b (q t) / (Gamma b * H b (q 0)) =
+        H b (q t) / H b (q 0) :=
+      mul_div_mul_left _ _ (Gamma_pos_of_pos hb).ne'
+    simpa only [H, b, q, zero_smul, add_zero] using hcancel
   have hdom : (0 : ℝ) ∈ interior (integrableExpSet
       (fun x : sphere (0 : E) 1 ↦ ⟪θ, (x : E)⟫) (vonMisesFisherNaturalMeasure η)) := by simp
   have hm := iteratedDeriv_mgf_zero hdom 2
@@ -111,15 +112,12 @@ private lemma integral_sq_inner_vmf (hd : 2 ≤ Module.finrank ℝ E)
   let k := ‖η‖
   have hk : 0 < k := norm_pos_iff.mpr hη
   have hp : 0 < k / 2 := by positivity
-  have hb : 0 < b := by
-    dsimp [b]
-    exact div_pos (by exact_mod_cast (by omega : 0 < Module.finrank ℝ E)) two_pos
+  have hb : 0 < b := div_pos (Nat.cast_pos.mpr (lt_of_lt_of_le zero_lt_two hd)) two_pos
   let H := fun (a : ℝ) ↦ (Complex.regularizedHGFun 0 {(a : ℂ)} (k ^ 2 / 4 : ℝ)).re
   have hH (a : ℝ) : H a = besselI (a - 1) k / (k / 2) ^ (a - 1) := by
-    rw [besselI_eq_rpow_mul]
-    have harg : (k / 2) ^ 2 = k ^ 2 / 4 := by ring
-    simp only [sub_add_cancel, harg]
-    exact (mul_div_cancel_left₀ (H a) (rpow_pos_of_pos hp _).ne').symm
+    dsimp only [H]
+    rw [regularizedHGFun_zero_singleton_eq_rpow_mul_besselI a hk,
+      ← neg_sub a 1, rpow_neg hp.le, ← div_eq_inv_mul]
   have hI : besselI (b - 1) k ≠ 0 := (besselI_pos (by linarith) hk).ne'
   have hrec := besselI_sub_besselI b hk.ne'
   have hpow : (k / 2) ^ b = (k / 2) ^ (b - 1) * (k / 2) := by
@@ -142,12 +140,11 @@ private lemma integral_sq_inner_vmf (hd : 2 ≤ Module.finrank ℝ E)
   simp only [horder, add_sub_cancel_right]
   rw [hpow, hpow']
   have hp' : (k / 2) ^ (b - 1) ≠ 0 := (rpow_pos_of_pos hp _).ne'
-  field_simp [hI, hk.ne', hp']
-  field_simp at hrec
-  nlinarith [hrec]
+  linear_combination (norm := (field_simp [hI, hk.ne', hp']; ring))
+    -(⟪η, θ⟫ ^ 2 / (besselI (b - 1) k * k ^ 2)) * hrec
 
 /-- The mixed second moment under a nonzero natural parameter. All products here are
-integrable by `memLp_inner_vonMisesFisherNaturalMeasure` and `MemLp.integrable_mul`. -/
+integrable by continuity on the compact sphere. -/
 theorem integral_inner_mul_inner_vonMisesFisherNaturalMeasure
     (hd : 2 ≤ Module.finrank ℝ E) {η : E} (hη : η ≠ 0) (u v : E) :
     let d := (Module.finrank ℝ E : ℝ)
@@ -159,10 +156,8 @@ theorem integral_inner_mul_inner_vonMisesFisherNaturalMeasure
   have hint (w : E) := (memLp_inner_vonMisesFisherNaturalMeasure η w 2).integrable_sq
   have hproduct : Integrable (fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫)
       (vonMisesFisherNaturalMeasure η) := by
-    refine ((memLp_inner_vonMisesFisherNaturalMeasure η u 2).integrable_mul
-      (memLp_inner_vonMisesFisherNaturalMeasure η v 2)).congr ?_
-    filter_upwards with x
-    exact Pi.mul_apply _ _ x
+    have hc : Continuous (fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫) := by fun_prop
+    exact hc.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
   have hsqadd : Integrable (fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ ^ 2 + ⟪v, (x : E)⟫ ^ 2)
       (vonMisesFisherNaturalMeasure η) := by
     refine ((hint u).add (hint v)).congr ?_
