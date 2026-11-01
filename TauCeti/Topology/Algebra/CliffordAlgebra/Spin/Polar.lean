@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RealPower
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Complexification
+public import TauCeti.Topology.Algebra.CliffordAlgebra.RealPower
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
@@ -24,9 +24,11 @@ functional calculus of its matrix (`Algebra.leftMulMatrixRpow`). For `g` in the 
 powers are Spin elements
 (`CliffordAlgebra.leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup`), and they are
 self-adjoint
-(`CliffordAlgebra.complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self`).
+(`CliffordAlgebra.complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self`). They are
+jointly continuous in `g` and `t`
+(`CliffordAlgebra.continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self`).
 
-This file proves that `(g, t) ↦ (g† g) ^ t` is jointly continuous, and that the polar deformation
+This file proves that the polar deformation
 
   `H(t, g) = g (g† g) ^ (-t / 2)`,  `0 ≤ t ≤ 1`,
 
@@ -40,8 +42,6 @@ of the Spin elements fixed by complex conjugation of the coefficients.
 
 ## Main results
 
-* `CliffordAlgebra.continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self`: the real powers
-  `(g† g) ^ t` are jointly continuous in the unit `g` and the exponent `t`.
 * `CliffordAlgebra.spinPolarRetraction`: the retraction `g ↦ g (g† g) ^ (-1/2)` of the Spin group
   onto its unitary part.
 * `CliffordAlgebra.spinPolarHomotopyRel`: the polar deformation, a homotopy from the identity to
@@ -64,21 +64,6 @@ namespace CliffordAlgebra
 
 variable {V I : Type*} [AddCommGroup V] [Module ℝ V] [LinearOrder I] [Fintype I]
   {Q : QuadraticForm ℝ V} {b : Module.Basis I ℝ V}
-
-/-- **The real powers of `g† g` are jointly continuous** in the unit `g` and the exponent `t`, where
-`g† = complexConj (reverse g)` and the powers are taken through the matrix of `g† * g` in the
-ordered-product basis of a real orthonormal basis. -/
-theorem continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1) :
-    ContinuousOn (fun p : CliffordAlgebra (Q.baseChange ℂ) × ℝ ↦
-        Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-          (complexConj Q (reverse p.1) * p.1) p.2)
-      ({g | IsUnit g} ×ˢ Set.univ) := by
-  have : FiniteDimensional ℝ V := b.finiteDimensional_of_finite
-  have hf : Continuous fun p : CliffordAlgebra (Q.baseChange ℂ) × ℝ ↦
-      (complexConj Q (reverse p.1) * p.1, p.2) := by fun_prop
-  exact Algebra.continuousOn_leftMulMatrixRpow.comp hf.continuousOn
-    fun p hp ↦ isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self hb hQ hp.1
 
 /-! ### The polar deformation of the Spin group -/
 

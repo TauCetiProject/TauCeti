@@ -42,10 +42,6 @@ a Spin element (`CliffordAlgebra.complexConj_reverse_mem_spinGroup`). So all the
   a Spin element with positive semidefinite matrix are Spin elements.
 * `CliffordAlgebra.leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup`: for a real
   orthonormal basis, the real powers of `g† * g` are Spin elements for every Spin element `g`.
-* `CliffordAlgebra.complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self`: the real
-  powers of `g† g` are self-adjoint.
-* `CliffordAlgebra.complexConj_reverse_mul_self_mul_leftMulMatrixRpow`: the positive-form norm of
-  `g (g† g) ^ s` is `(g† g) ^ (2 s + 1)`, for a unit `g`.
 
 ## References
 
@@ -125,58 +121,5 @@ theorem leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup {V I : Type
     (QuadraticForm.Nondegenerate.baseChange (QuadraticMap.nondegenerate_of_isOrthoᵢ hb
       (by simp [hQ])))
     _ (mul_mem (complexConj_reverse_mem_spinGroup g.2) g.2) hM t
-
-section Adjoint
-
-variable {V I : Type*} [AddCommGroup V] [Module ℝ V] [LinearOrder I] [Fintype I]
-  {Q : QuadraticForm ℝ V} {b : Module.Basis I ℝ V}
-
-/-- The matrix of `g† * g` is strictly positive for a unit `g`, where `g† = complexConj (reverse g)`
-and the matrix is taken in the ordered-product basis of a real orthonormal basis. -/
-theorem isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
-    {g : CliffordAlgebra (Q.baseChange ℂ)} (hg : IsUnit g) :
-    IsStrictlyPositive (Algebra.leftMulMatrix (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-      (complexConj Q (reverse g) * g)) :=
-  (posDef_toMatrix_mulLeft_complexConj_reverse_mul_self hb hQ hg).isStrictlyPositive
-
-/-- **The real powers of `g† g` are self-adjoint**: `((g† g) ^ s)† = (g† g) ^ s`, where
-`g† = complexConj (reverse g)` and the powers are taken through the matrix of `g† * g` in the
-ordered-product basis of a real orthonormal basis. -/
-theorem complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
-    (g : CliffordAlgebra (Q.baseChange ℂ)) (s : ℝ) :
-    complexConj Q (reverse (Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-        (complexConj Q (reverse g) * g) s)) =
-      Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-        (complexConj Q (reverse g) * g) s := by
-  apply Algebra.leftMulMatrix_injective (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-  rw [← Algebra.toMatrix_lmul_eq, toMatrix_mulLeft_complexConj_reverse hb hQ,
-    Algebra.toMatrix_lmul_eq, Algebra.leftMulMatrix_leftMulMatrixRpow]
-  exact CFC.rpow_nonneg.isSelfAdjoint
-
-/-- The positive-form norm of `g (g† g) ^ s` is `(g† g) ^ (2 s + 1)`, for a unit `g`, where
-`g† = complexConj (reverse g)` and the powers are taken through the matrix of `g† * g` in the
-ordered-product basis of a real orthonormal basis. -/
-theorem complexConj_reverse_mul_self_mul_leftMulMatrixRpow
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
-    {g : CliffordAlgebra (Q.baseChange ℂ)} (hg : IsUnit g) (s : ℝ) :
-    complexConj Q (reverse (g * Algebra.leftMulMatrixRpow
-        (basis (Q.baseChange ℂ) (b.baseChange ℂ)) (complexConj Q (reverse g) * g) s)) *
-        (g * Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-          (complexConj Q (reverse g) * g) s) =
-      Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-        (complexConj Q (reverse g) * g) (s + 1 + s) := by
-  have hpos := isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self hb hQ hg
-  have hu : IsUnit (complexConj Q (reverse g) * g) := by
-    have hM := hpos.isUnit
-    rw [← Algebra.toMatrix_lmul_eq, LinearMap.isUnit_toMatrix_iff] at hM
-    exact Algebra.lmul_isUnit_iff.1 hM
-  rw [Algebra.leftMulMatrixRpow_add hu, Algebra.leftMulMatrixRpow_add hu,
-    Algebra.leftMulMatrixRpow_one hpos.nonneg, reverse.map_mul, map_mul,
-    complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self hb hQ]
-  simp only [mul_assoc]
-
-end Adjoint
 
 end CliffordAlgebra
