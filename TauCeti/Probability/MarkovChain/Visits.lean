@@ -104,6 +104,12 @@ private theorem setOf_successiveVisit_succ_ne_top (y : α) (k : ℕ) :
 variable [MeasurableSpace α] [MeasurableSingletonClass α] (ν : Measure α) (κ : Kernel α α)
   [IsMarkovKernel κ]
 
+/-- The chain is at `y` at time `n` with probability `((κ ^ n) ∘ₘ ν) {y}`. -/
+private theorem markovChainLaw_setOf_apply_eq_comp (n : ℕ) (y : α) :
+    markovChainLaw ν κ {x | x n = y} = ((κ ^ n) ∘ₘ ν) {y} := by
+  rw [← markovChainLaw_map_eval, map_apply (measurable_pi_apply n) (measurableSet_singleton y)]
+  simp only [Set.preimage, Set.mem_singleton_iff]
+
 /-- **The visits of a chain to a state have a geometric tail.** The visit to `y` indexed by `k`,
 counting the first entrance as visit zero, exists with probability
 `ℙ_ν(H_y < ∞) · ρ_y ^ k`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return probability of `y`. -/
@@ -263,11 +269,7 @@ theorem tsum_pow_apply_singleton_self (y : α) :
       (1 - markovChainLaw (Measure.dirac y) κ
         {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤})⁻¹ := by
   have hn : ∀ n, (κ ^ n) y {y} = markovChainLaw (Measure.dirac y) κ {x | x n = y} := fun n => by
-    rw [← markovChainKernel_map_eval κ n, map_apply _ (measurable_pi_apply n),
-      markovChainKernel_apply,
-      Measure.map_apply (measurable_pi_apply n) (measurableSet_singleton y)]
-    -- The preimage of `{y}` under evaluation at `n` is `{x | x n = y}` by definition.
-    rfl
+    rw [Measure.markovChainLaw_setOf_apply_eq_comp, Measure.dirac_bind (κ ^ n).measurable]
   simp_rw [hn, Measure.tsum_markovChainLaw_setOf_apply_eq,
     Measure.markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
 
@@ -279,12 +281,7 @@ theorem tsum_pow_comp_apply_singleton (ν : Measure α) [IsFiniteMeasure ν] (y 
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         ∑' n : ℕ, (κ ^ n) y {y} := by
   rw [tsum_pow_apply_singleton_self, ← Measure.tsum_markovChainLaw_setOf_apply_eq]
-  congr 1
-  funext n
-  rw [← Measure.markovChainLaw_map_eval,
-    Measure.map_apply (measurable_pi_apply n) (measurableSet_singleton y)]
-  -- The preimage of `{y}` under evaluation at `n` is `{x | x n = y}` by definition.
-  rfl
+  simp_rw [Measure.markovChainLaw_setOf_apply_eq_comp]
 
 /-- **The recurrence criterion.** The chain started at `y` returns to `y` almost surely exactly when
 the mean number of visits `∑ n, (κ ^ n) y {y}` is infinite. -/
