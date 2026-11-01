@@ -117,7 +117,7 @@ private theorem exists_mul_mem_integralClosure (hO' : O'.comap (algebraMap K L) 
     exact (mul_le_of_le_one_right' (pow_le_one' ((valuation_le_one_iff _ _).mpr hxO') n)).trans_lt
       (valuation_apply_lt_one_of_comap_eq hO' (hgt n))
   refine ⟨aeval x (divX^[j] q), ?_, isIntegral_mul_aeval_iterate_divX hqx j, ?_⟩ <;>
-    rw [← iterate_divX_succ_mul_X_add_C, map_add, map_mul, aeval_X, aeval_C, mul_comm _ x]
+    rw [aeval_iterate_divX]
   · exact (isIntegral_mul_aeval_iterate_divX hqx (j + 1)).add isIntegral_algebraMap
   · have hu : O'.valuation (algebraMap O L (q.coeff j)) = 1 := by
       rw [IsScalarTower.algebraMap_apply O K L]

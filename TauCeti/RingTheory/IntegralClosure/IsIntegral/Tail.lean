@@ -74,14 +74,13 @@ theorem isIntegral_mul_aeval_iterate_divX {p : R[X]} {x : S} (hx : aeval x p = 0
     intro k hk
     -- the value `c` of `divX^[k] p` at `x` is integral, by the tail at `k + 1`
     have hc : IsIntegral R (aeval x (divX^[k] p)) := by
-      rw [← iterate_divX_succ_mul_X_add_C, map_add, map_mul, aeval_X, aeval_C, mul_comm]
+      rw [aeval_iterate_divX]
       exact (ih (k + 1) (by omega)).add (isIntegral_algebraMap (R := R) (A := S))
     -- over the integral closure, `x` is a root of `c X^k + L`
     let c : integralClosure R S := ⟨_, hc⟩
     set L := p - X ^ k * divX^[k] p
     have hroot : aeval x (C c * X ^ k + L.map (algebraMap R (integralClosure R S))) = 0 := by
-      rw [map_add, aeval_map_algebraMap, map_mul, aeval_C, Subalgebra.algebraMap_apply, map_pow,
-        aeval_X, map_sub, map_mul, map_pow, aeval_X, hx, mul_comm, zero_sub, add_neg_cancel]
+      simp [c, L, aeval_map_algebraMap, hx, mul_comm (x ^ k)]
     have := isIntegral_smul_of_aeval_C_mul_X_pow_add
       (degree_map_le.trans_lt (degree_sub_X_pow_mul_iterate_divX_lt k p)) hroot
     rw [Subalgebra.smul_def, smul_eq_mul, mul_comm] at this

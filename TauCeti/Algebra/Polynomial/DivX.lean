@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.Algebra.Polynomial.Reverse
 
@@ -104,6 +105,13 @@ theorem iterate_divX_reflect {m : ℕ} {q : R[X]} (hq : q.natDegree ≤ m) :
     split_ifs <;> first | omega | rfl
 
 end Semiring
+
+/-- One Horner step for the iterates of `divX`, evaluated at a point: the value of the `m`-th
+iterate at `x` is recovered from the value of the next one and the coefficient of `Xᵐ`. -/
+theorem aeval_iterate_divX [CommSemiring R] {S : Type*} [Semiring S] [Algebra R S] (x : S)
+    (m : ℕ) (p : R[X]) :
+    aeval x (divX^[m] p) = x * aeval x (divX^[m + 1] p) + algebraMap R S (p.coeff m) := by
+  rw [← iterate_divX_succ_mul_X_add_C, ← X_mul, map_add, map_mul, aeval_X, aeval_C]
 
 /-- The iterates of `divX` commute with subtraction. -/
 @[simp]
