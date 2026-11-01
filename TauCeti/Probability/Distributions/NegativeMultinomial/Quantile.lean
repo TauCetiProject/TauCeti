@@ -63,10 +63,6 @@ private theorem map_cast_sum_negativeMultinomialMeasure (hr : 0 ≤ r) (hp₀ : 
   rw [← map_sum_negativeMultinomialMeasure hr hp₀ hp,
     Measure.map_map measurable_from_nat (by fun_prop), Function.comp_def]
 
-/-- The stopping probability of a valid negative-multinomial parameter is at most one. -/
-private theorem stoppingProbability_le_one (hp : p₀ + ∑ i, (p i : ℝ) = 1) : p₀ ≤ 1 :=
-  hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
-
 /-! ### Coordinates -/
 
 /-- For positive shape, a natural number is the lower quantile of the count in category `i` of a
@@ -115,9 +111,10 @@ theorem quantile_map_cast_sum_negativeMultinomialMeasure_eq_iff (hr : 0 < r) (hp
     ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile u =
         k ↔
       IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p₀} k := by
+  have hp₀_le_one : p₀ ≤ 1 :=
+    hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
   rw [map_cast_sum_negativeMultinomialMeasure hr.le hp₀ hp,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ (stoppingProbability_le_one hp)
-      hu]
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ hp₀_le_one hu]
 
 /-- As the level tends to zero from above, the quantiles of the total count of a
 negative-multinomial law tend to zero. -/
@@ -126,9 +123,10 @@ theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsGT_zero (hr
     Tendsto
       ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile
       (𝓝[>] 0) (𝓝 0) := by
+  have hp₀_le_one : p₀ ≤ 1 :=
+    hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
   rw [map_cast_sum_negativeMultinomialMeasure hr hp₀ hp]
-  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero hr hp₀
-    (stoppingProbability_le_one hp)
+  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero hr hp₀ hp₀_le_one
 
 /-- As the level tends to one from below, the quantiles of the total count of a
 negative-multinomial law tend to positive infinity, unless the shape vanishes or the stopping
@@ -139,8 +137,9 @@ theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsLT_one (hr 
       (((negativeMultinomialMeasure r p₀ p).map
         (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile v : EReal))
       (𝓝[<] 1) (𝓝 (if r = 0 ∨ p₀ = 1 then (0 : EReal) else ⊤)) := by
+  have hp₀_le_one : p₀ ≤ 1 :=
+    hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
   rw [map_cast_sum_negativeMultinomialMeasure hr hp₀ hp]
-  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr hp₀
-    (stoppingProbability_le_one hp)
+  exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr hp₀ hp₀_le_one
 
 end TauCeti.Probability

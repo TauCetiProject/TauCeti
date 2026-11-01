@@ -47,11 +47,6 @@ private theorem map_cast_eval_dirichletMultinomialMeasure (ha : ∀ i, 0 < a i) 
   rw [← map_eval_dirichletMultinomialMeasure ha n i,
     Measure.map_map measurable_from_nat (measurable_pi_apply i), Function.comp_def]
 
-/-- The total concentration of the categories other than `i` is positive. -/
-private theorem sum_ne_pos (ha : ∀ i, 0 < a i) (i : ι) : 0 < ∑ j with j ≠ i, a j := by
-  obtain ⟨j, hj⟩ := exists_ne i
-  exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
-
 /-- A natural number is the lower quantile of the count in category `i` of a Dirichlet-multinomial
 law exactly when it is the least count whose beta-binomial cumulative sum, with shapes `a i` and
 `∑ j ≠ i, a j`, reaches the level. -/
@@ -61,8 +56,11 @@ theorem quantile_map_cast_eval_dirichletMultinomialMeasure_eq_iff (ha : ∀ i, 0
       IsLeast {m : ℕ | u ≤ ∑ j ∈ Finset.Iic m,
         n.choose j * beta (a i + j) ((∑ l with l ≠ i, a l) + (n - j)) /
           beta (a i) (∑ l with l ≠ i, a l)} k := by
+  obtain ⟨j, hj⟩ := exists_ne i
+  have hsum : 0 < ∑ j with j ≠ i, a j :=
+    Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
   rw [map_cast_eval_dirichletMultinomialMeasure ha,
-    quantile_map_cast_betaBinomialMeasure_eq_iff (ha i) (sum_ne_pos ha i) hu]
+    quantile_map_cast_betaBinomialMeasure_eq_iff (ha i) hsum hu]
 
 omit [DecidableEq ι] in
 /-- As the level tends to zero from above, the quantiles of a Dirichlet-multinomial coordinate
@@ -73,8 +71,11 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsGT_zero
       (((dirichletMultinomialMeasure n a).map (fun x ↦ (x i : ℝ))).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
   classical
+  obtain ⟨j, hj⟩ := exists_ne i
+  have hsum : 0 < ∑ j with j ≠ i, a j :=
+    Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
   rw [map_cast_eval_dirichletMultinomialMeasure ha]
-  exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsGT_zero (ha i) (sum_ne_pos ha i) n
+  exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsGT_zero (ha i) hsum n
 
 omit [DecidableEq ι] in
 /-- As the level tends to one from below, the quantiles of a Dirichlet-multinomial coordinate
@@ -85,7 +86,10 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsLT_one
       (((dirichletMultinomialMeasure n a).map (fun x ↦ (x i : ℝ))).quantile u : EReal))
       (𝓝[<] 1) (𝓝 (n : EReal)) := by
   classical
+  obtain ⟨j, hj⟩ := exists_ne i
+  have hsum : 0 < ∑ j with j ≠ i, a j :=
+    Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
   rw [map_cast_eval_dirichletMultinomialMeasure ha]
-  exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsLT_one (ha i) (sum_ne_pos ha i) n
+  exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsLT_one (ha i) hsum n
 
 end TauCeti.Probability
