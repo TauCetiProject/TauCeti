@@ -17,9 +17,12 @@ Let `K` be a field and `V = Kⁿ` with its standard symmetric bilinear form. The
 action `TauCeti.brauerActionOrth` on `V ⊗ V` sends them to the identity, the flip of the two tensor
 factors, and the map `x ⊗ y ↦ ⟨x, y⟩ ∑ⱼ eⱼ ⊗ eⱼ`. These operators commute with the diagonal action
 `g ↦ g ⊗ g` of the orthogonal group `O(n, K)` (`TauCeti.range_brauerActionOrth_le_centralizer`).
-This file proves the converse on two strands: every operator on `V ⊗ V` commuting with every
-`g ⊗ g` is a combination of the identity, `σ` and `e`, so the image of `B₂(n)` is exactly the
-commutant of `O(n, K)` (`TauCeti.range_brauerActionOrth_two_eq_centralizer`). This is the
+This file proves the converse on two strands when `2 ≠ 0` in `K` and the unit circle of `K` has a
+point `(c, s)` with `c s ≠ 0`, in particular in characteristic zero: every operator on `V ⊗ V`
+commuting with every `g ⊗ g` is a combination of the identity, `σ` and `e`, so the image of `B₂(n)`
+is exactly the commutant of `O(n, K)`
+(`TauCeti.range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one`, and
+`TauCeti.range_brauerActionOrth_two_eq_centralizer` in characteristic zero). This is the
 two-strand case of Brauer's description of the commutant of the orthogonal group on
 `V^{⊗k}`, the first fundamental theorem of invariant theory for `O(n)`.
 
@@ -121,18 +124,12 @@ private theorem apply_comp_perm_eq
         (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) * M)
     (σ : Equiv.Perm (Fin n)) (v u : Fin 2 → Fin n) :
     M (fun i ↦ σ (v i)) (fun i ↦ σ (u i)) = M v u := by
-  have hσ : (σ.toPEquiv.toMatrix : Matrix (Fin n) (Fin n) K) ∈
-      Matrix.orthogonalGroup (Fin n) K := by
-    rw [mem_orthogonalGroup_iff', ← PEquiv.toMatrix_symm, ← PEquiv.toMatrix_trans,
-      ← Equiv.toPEquiv_symm, ← Equiv.toPEquiv_trans, Equiv.symm_trans_self, Equiv.toPEquiv_refl,
-      PEquiv.toMatrix_refl]
-  have h := hM ⟨_, hσ⟩
+  have h := hM ⟨_, permMatrix_mem_orthogonalGroup K σ⟩
   simp only [kroneckerPower_toMatrix_toPEquiv, PEquiv.mul_toMatrix_toPEquiv,
     PEquiv.toMatrix_toPEquiv_mul] at h
-  have e (w : Fin 2 → Fin n) : Equiv.piCongrRight (fun _ ↦ σ) w = fun i ↦ σ (w i) :=
-    funext fun i ↦ by simp
   have h' := (congrFun (congrFun h v) (Equiv.piCongrRight (fun _ ↦ σ) u)).symm
-  rwa [submatrix_apply, submatrix_apply, id, id, Equiv.symm_apply_apply, e, e] at h'
+  change M (Equiv.piCongrRight (fun _ ↦ σ) v) (Equiv.piCongrRight (fun _ ↦ σ) u) = M v u
+  simpa [submatrix_apply] using h'
 
 /-- The diagonal projection of `(Kⁿ)^{⊗2}` onto the span of the basis tensors `eₐ ⊗ eₐ`. -/
 private abbrev diagProj (K : Type*) [Field K] (n : ℕ) : Matrix (Fin 2 → Fin n) (Fin 2 → Fin n) K :=
@@ -285,6 +282,7 @@ private theorem exists_eq_smul_add_smul_add_smul (h2 : (2 : K) ≠ 0) {c s : K}
     (fun g ↦ (((hN g _).smul_left q).add_left ((hN g _).smul_left r)).add_left
       ((hN g _).smul_left p)) hy, zero_smul, add_zero]
 
+variable (K) in
 /-- **Brauer duality on the tensor square.** Over a field `K` with `2 ≠ 0` that has a point
 `(c, s)` of the unit circle with `c ≠ 0` and `s ≠ 0`, the image of the Brauer algebra `B₂(n)` in
 the endomorphisms of `(Kⁿ)^{⊗2}` is the commutant of the diagonal action of the orthogonal group:
@@ -313,13 +311,14 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one (n : ℕ) 
   rw [← Matrix.toLin_toMatrix b b T, hqrp]
   simp [b, brauerActionOrth_of]
 
+variable (K) in
 /-- **Brauer duality on the tensor square in characteristic zero.** Over a field of
 characteristic zero, the image of the Brauer algebra `B₂(n)` in the endomorphisms of `(Kⁿ)^{⊗2}`
 is the commutant of the diagonal action of the orthogonal group. -/
 theorem range_brauerActionOrth_two_eq_centralizer [CharZero K] (n : ℕ) :
     (brauerActionOrth K n 2).range =
       Subalgebra.centralizer K (Set.range ((stdOrthogonalRep K n).tensorPower 2)) :=
-  range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one n two_ne_zero
+  range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one K n two_ne_zero
     (c := 3 / 5) (s := 4 / 5) (by norm_num) (by norm_num) (by norm_num)
 
 end TauCeti
