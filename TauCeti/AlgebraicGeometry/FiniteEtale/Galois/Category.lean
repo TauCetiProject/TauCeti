@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Galois.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Conservative
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Quotient
+public import TauCeti.CategoryTheory.Galois.FiberFunctorIso
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
 
 /-!
@@ -41,6 +42,8 @@ two points of `Y` with values in a field and the same image in the quotient diff
   geometric fibre functors preserve quotients by finite groups.
 * `PreGaloisCategory.FiberFunctor (FiniteEtaleScheme.fiber x)` when `S` is connected.
 * `GaloisCategory (FiniteEtaleScheme S)` when `S` is connected.
+* `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`: when `S` is connected, any two geometric fibre
+  functors are isomorphic, so any two geometric points are joined by an étale path.
 
 ## References
 
@@ -112,5 +115,12 @@ instance [ConnectedSpace S] : GaloisCategory (FiniteEtaleScheme S) where
     let x := Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K))) ≫
       S.fromSpecResidueField p
     exact ⟨fiber x, inferInstance⟩
+
+/-- **Any two geometric points of a connected scheme are joined by an étale path**: their
+geometric fibre functors on finite étale schemes are isomorphic. The geometric points may have
+different separably closed fields. -/
+theorem nonempty_fiber_iso [ConnectedSpace S] {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
+    (x : Spec (.of Ω) ⟶ S) (y : Spec (.of Ω') ⟶ S) : Nonempty (fiber x ≅ fiber y) :=
+  FiberFunctor.nonempty_iso _ _
 
 end TauCeti.FiniteEtaleScheme

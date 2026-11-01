@@ -22,7 +22,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Three
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Two
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Lyons
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyThree
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.McLaughlin
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Monster
@@ -127,7 +127,21 @@ theorem presentation_matchesMetadata (s : SporadicName) :
   | B => exact Sporadic.BabyMonster.matchesMetadata_presentation
   | M => exact Sporadic.Monster.presentation_matchesMetadata
 
+/-- The presentation selected for `M₁₁` is the transcribed presentation
+`TauCeti.Sporadic.m11Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
+
+/-- The presentation selected for `M₂₄` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.m24Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic.m24Presentation :=
+  (rfl)
 
 end TauCeti

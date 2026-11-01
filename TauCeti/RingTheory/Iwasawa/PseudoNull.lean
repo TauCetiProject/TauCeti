@@ -172,6 +172,11 @@ theorem IsPseudoNull.of_exact {N P : Type*} [AddCommGroup N] [Module A N] [AddCo
   rw [Module.support_of_exact hfg hf hg] at h𝔭
   exact h𝔭.elim hM.one_lt_height hP.one_lt_height
 
+/-- A product of two pseudo-null modules is pseudo-null. -/
+theorem IsPseudoNull.prod {N : Type*} [AddCommGroup N] [Module A N] (hM : IsPseudoNull A M)
+    (hN : IsPseudoNull A N) : IsPseudoNull A (M × N) :=
+  hM.of_exact .inl_snd LinearMap.inl_injective LinearMap.snd_surjective hN
+
 /-- In a short exact sequence over a noetherian ring, the middle term is pseudo-null iff both
 outer terms are. -/
 theorem isPseudoNull_iff_of_exact [IsNoetherianRing A] {N P : Type*} [AddCommGroup N] [Module A N]
