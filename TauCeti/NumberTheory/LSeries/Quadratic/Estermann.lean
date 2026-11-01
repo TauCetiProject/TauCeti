@@ -9,17 +9,19 @@ public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Character
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair
 import Mathlib.NumberTheory.LegendreSymbol.ZModChar
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.LSeries.Estermann
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 
 /-!
 # Estermann's comparison of two quadratic characters
 
-For quadratic Dirichlet characters `χ` and `ψ` whose product `χ.mul ψ` is nonprincipal, set
-`F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)`. Its Dirichlet coefficients are nonnegative and its
-residue at `1` is `λ = L(1, χ) L(1, ψ) L(1, χ.mul ψ)`. Estermann's inequality therefore bounds `λ`
-from below at any `σ ∈ [7/8, 1)` with `F(σ) ≤ 0`, in terms of a bound for the three `L`-functions
-on the disc `|s - 2| ≤ 3/2`.
+For quadratic Dirichlet characters `χ` and `ψ` such that `χ`, `ψ` and `χ.mul ψ` are all
+nonprincipal, set `F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)`. Its Dirichlet coefficients are
+nonnegative and its only pole is a simple one at `1`, of residue
+`λ = L(1, χ) L(1, ψ) L(1, χ.mul ψ)`. Estermann's inequality therefore bounds `λ` from below at any
+`σ ∈ [7/8, 1)` with `F(σ) ≤ 0`, in terms of a bound for the three `L`-functions on the disc
+`|s - 2| ≤ 3/2`.
 
 Such a `σ` can be chosen once and for all, together with one character `χ`, for every `ψ`. Either
 some nontrivial quadratic `L`-function has a real zero `β` just to the left of `1`, in which case
@@ -30,10 +32,10 @@ computed.
 
 ## Main results
 
-* `DirichletCharacter.exists_estermann_lower_bound`: the lower bound for the product of the
+* `TauCeti.exists_estermann_lower_bound`: the lower bound for the product of the
   three values at `1`, with an absolute constant, at any point where `F` is nonpositive.
-* `DirichletCharacter.exists_forall_re_riemannZeta_mul_LFunction_nonpos`: for every `δ > 0` there
-  are `β ∈ (1 - δ, 1)` and a nontrivial quadratic character `χ` with `F(β) ≤ 0` for all `ψ`.
+* `TauCeti.exists_forall_re_riemannZeta_mul_LFunction_nonpos`: for every `δ > 0` there are
+  `β ∈ (1 - δ, 1)` and a nontrivial quadratic character `χ` with `F(β) ≤ 0` for all `ψ`.
 
 ## References
 
@@ -48,7 +50,8 @@ open scoped ComplexOrder Topology
 
 namespace DirichletCharacter
 
-/-- The entire function `(s - 1) ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)`. -/
+/-- The function `(s - 1) ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)`, which is entire when `χ`, `ψ` and
+`χ.mul ψ` are all nonprincipal. -/
 private noncomputable def pairProduct {M N : ℕ} [NeZero M] [NeZero N]
     (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N) (s : ℂ) : ℂ :=
   LFunctionTrivChar₁ 1 s * (χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s)
@@ -81,6 +84,12 @@ private lemma re_pairProduct_one (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) (
   simp [pairProduct, mul_re, mul_im, him hχ hχ₁, him hψ hψ₁, him (isQuadratic_mul hχ hψ) hχψ]
 
 end Pair
+
+end DirichletCharacter
+
+namespace TauCeti
+
+open DirichletCharacter
 
 /-- **The two-character comparison.** There is an absolute constant `C > 0` with the following
 property. Let `χ` and `ψ` be nontrivial quadratic characters with `χ.mul ψ` nonprincipal, let `B`
@@ -168,4 +177,4 @@ theorem exists_forall_re_riemannZeta_mul_LFunction_nonpos {δ : ℝ} (hδ : 0 < 
       mul_re, ← hPim, mul_zero, sub_zero]
     exact (mul_neg_of_neg_of_pos hζβ hPre).le
 
-end DirichletCharacter
+end TauCeti

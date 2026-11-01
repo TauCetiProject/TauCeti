@@ -7,10 +7,10 @@ module
 
 public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
 /-!
-# Positivity of the `L`-function of a quadratic character on `[1, ∞)`
+# Positivity of quadratic `L`-functions on `[1, ∞)` and down to the first real zero
 
 A quadratic Dirichlet character `χ` takes only the values `0`, `1` and `-1`. At a real point
 `s > 1` every Euler factor `(1 - χ(p) p⁻ˢ)⁻¹` is then a positive real number, and the logarithmic

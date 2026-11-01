@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.NumberTheory.LSeries.Convergence
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.NumberTheory.LSeries.Positivity
+import TauCeti.Analysis.Complex.CauchyEstimate
 import TauCeti.NumberTheory.LSeries.Positivity
 
 /-!
@@ -26,9 +26,9 @@ bounds `F(σ)` from below in terms of `λ`, with a loss polynomial in `B` of exp
 
 Conversely, a point `σ` with `F(σ) ≤ 0` forces the residue `λ` to be large. Applied to
 `ζ(s) L(s, χ) L(s, ψ) L(s, χ ψ)` for quadratic characters, this is the step of Siegel's theorem
-that turns a real zero of one `L`-function into a lower bound for `L(1, ψ)` for all the others. No
-contour integration is involved: the disc `|s - 2| ≤ 3/2` lies in `Re s ≥ 1/2`, so bounds for
-`L`-functions in that half-plane suffice.
+that turns a real zero of one `L`-function into a lower bound for the product
+`L(1, χ) L(1, ψ) L(1, χ ψ)`, uniform in `ψ`. No contour integration is involved: the disc
+`|s - 2| ≤ 3/2` lies in `Re s ≥ 1/2`, so bounds for `L`-functions in that half-plane suffice.
 
 ## Main results
 
@@ -36,7 +36,7 @@ contour integration is involved: the disc `|s - 2| ≤ 3/2` lies in `Re s ≥ 1/
   `N` of the Taylor expansion.
 * `TauCeti.LSeries.estermann_inequality_rpow`: the inequality with `N` optimized,
   `F(σ) ≥ 1/2 - 2 λ (32 B)^{4 (1 - σ)} / (1 - σ)` for `7/8 ≤ σ < 1`.
-* `TauCeti.LSeries.le_re_apply_one_of_re_div_nonpos`: if `F(σ) ≤ 0`, then
+* `TauCeti.LSeries.estermann_lower_bound`: if `F(σ) ≤ 0`, then
   `λ ≥ (1 - σ) / (4 (32 B)^{4 (1 - σ)})`.
 
 ## References
@@ -53,10 +53,6 @@ open scoped ComplexOrder Topology
 namespace TauCeti.LSeries
 
 variable {a : ℕ → ℂ} {H : ℂ → ℂ}
-
-private lemma differentiable_dslope_one (hH : Differentiable ℂ H) :
-    Differentiable ℂ (dslope H 1) :=
-  differentiableOn_univ.mp ((differentiableOn_dslope Filter.univ_mem).mpr hH.differentiableOn)
 
 /-- The `n`-th derivative at `2` of `(H(s) - H(1)) / (s - 1)` is that of the Dirichlet series
 minus `H(1)` times that of `1 / (s - 1)`. -/
@@ -82,56 +78,30 @@ private lemma iteratedDeriv_dslope_eq (hH : Differentiable ℂ H)
     have : (2 : ℂ) - 1 ≠ 0 := by norm_num
     fun_prop (disch := assumption)
   rw [hev.iteratedDeriv_eq n,
-    iteratedDeriv_add (differentiable_dslope_one hH).contDiff.contDiffAt hinvd,
+    iteratedDeriv_add (hH.dslope 1).contDiff.contDiffAt hinvd,
     iteratedDeriv_const_mul_field, hinv, add_sub_cancel_right]
 
-/-- Cauchy's estimate for `(H(s) - H(1)) / (s - 1)` on the circle `|s - 2| = 3/2`, on which
-`|s - 1| ≥ 1/2`. -/
-private lemma norm_iteratedDeriv_dslope_le (hH : Differentiable ℂ H) {B : ℝ}
-    (hB : ∀ s ∈ closedBall (2 : ℂ) (3 / 2), ‖H s‖ ≤ B) (n : ℕ) :
-    ‖iteratedDeriv n (dslope H 1) 2‖ ≤ n ! * (4 * B) / (3 / 2) ^ n := by
-  refine norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le n (by norm_num)
-    (differentiable_dslope_one hH).diffContOnCl fun z hz ↦ ?_
-  have hz2 : ‖z - 2‖ = 3 / 2 := mem_sphere_iff_norm.mp hz
-  have hz1 : 1 / 2 ≤ ‖z - 1‖ := by
-    have h := norm_sub_le (z - 1) 1
-    rw [show z - 1 - 1 = z - 2 by ring, hz2, norm_one] at h
-    linarith
-  have hne : z ≠ 1 := fun h ↦ by norm_num [h] at hz1
-  have h1 : ‖H 1‖ ≤ B := hB 1 (by rw [mem_closedBall_iff_norm]; norm_num)
-  have hz' : ‖H z‖ ≤ B := hB z (sphere_subset_closedBall hz)
-  have hB₀ : 0 ≤ B := (norm_nonneg _).trans h1
-  rw [dslope_of_ne _ hne, slope_def_field, norm_div, div_le_iff₀ (by linarith)]
-  nlinarith [norm_sub_le (H z) (H 1)]
-
-/-- The Taylor terms of `(H(s) - H(1)) / (s - 1)` at `2` decay geometrically at `σ ∈ [7/8, 1)`. -/
-private lemma norm_taylor_term_le (hH : Differentiable ℂ H) {B : ℝ}
+/-- The Taylor terms of `(H(s) - H(1)) / (s - 1)` at `2` decay geometrically at `σ ∈ [7/8, 1)`, by
+Cauchy's estimate on the circle `|s - 2| = 3/2`, on which `|s - 1| ≥ 1/2`. -/
+private lemma norm_taylor_term_dslope_le (hH : Differentiable ℂ H) {B : ℝ}
     (hB : ∀ s ∈ closedBall (2 : ℂ) (3 / 2), ‖H s‖ ≤ B) {σ : ℝ} (hσ : 7 / 8 ≤ σ) (hσ₁ : σ < 1)
     (n : ℕ) :
     ‖(n ! : ℂ)⁻¹ • ((σ : ℂ) - 2) ^ n • iteratedDeriv n (dslope H 1) 2‖ ≤
       4 * B * (3 / 4) ^ n := by
   have hB₀ : 0 ≤ B := (norm_nonneg _).trans (hB 2 (mem_closedBall_self (by norm_num)))
+  have hnorm : ‖(1 : ℂ) - 2‖ = 1 := by norm_num
+  have hC (z : ℂ) (hz : z ∈ sphere (2 : ℂ) (3 / 2)) : ‖dslope H 1 z‖ ≤ 4 * B := by
+    have h := norm_dslope_le_of_mem_sphere (mem_ball_iff_norm.mpr (by rw [hnorm]; norm_num)) hB hz
+    rwa [hnorm, show 2 * B / (3 / 2 - 1) = 4 * B by ring] at h
   have hnorm2 : ‖(σ : ℂ) - 2‖ = 2 - σ := by
     rw [← ofReal_ofNat, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_sub_comm,
       abs_of_pos (by linarith)]
-  have hfac : (0 : ℝ) < n ! := by positivity
-  have hpow : (2 - σ) ^ n * (2 / 3) ^ n ≤ (3 / 4) ^ n := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (mul_nonneg (by linarith) (by norm_num)) (by linarith) n
-  have hC := norm_iteratedDeriv_dslope_le hH hB n
-  have hdiv : n ! * (4 * B) / (3 / 2) ^ n = n ! * ((2 / 3) ^ n * (4 * B)) := by
-    rw [div_eq_mul_inv, ← inv_pow]
-    norm_num
-    ring
-  simp only [norm_smul, norm_inv, Complex.norm_natCast, norm_pow, hnorm2]
-  rw [inv_mul_le_iff₀ hfac]
-  have ht : 0 ≤ 2 - σ := by linarith
-  calc (2 - σ) ^ n * ‖iteratedDeriv n (dslope H 1) 2‖
-      ≤ (2 - σ) ^ n * (n ! * ((2 / 3) ^ n * (4 * B))) := by
-        rw [← hdiv]
-        gcongr
-    _ = n ! * (4 * B * ((2 - σ) ^ n * (2 / 3) ^ n)) := by ring
-    _ ≤ n ! * (4 * B * (3 / 4) ^ n) := by gcongr
+  refine (norm_taylor_term_le_of_forall_mem_sphere_norm_le (by norm_num)
+    (hH.dslope 1).diffContOnCl hC σ n).trans ?_
+  rw [hnorm2]
+  have hratio : (2 - σ) / (3 / 2) ≤ 3 / 4 := by linarith
+  have hratio₀ : 0 ≤ (2 - σ) / (3 / 2) := by linarith
+  gcongr
 
 /-- The `n`-th Taylor coefficient at `2` of `LSeries a`, in powers of `2 - s`. -/
 private noncomputable def taylorCoeff (a : ℕ → ℂ) (n : ℕ) : ℝ :=
@@ -239,8 +209,8 @@ theorem estermann_inequality (ha : 0 ≤ a) (ha₁ : a 1 = 1)
     {N : ℕ} (hN : N ≠ 0) :
     1 - 16 * B * (3 / 4) ^ N - (H 1).re * (2 - σ) ^ N / (1 - σ) ≤ (H σ).re / (σ - 1) := by
   have htail := norm_sub_le_of_geometric_bound_of_hasSum (r := 3 / 4) (by norm_num)
-    (norm_taylor_term_le hH hB hσ hσ₁) (hasSum_taylorSeries_of_entire
-      (differentiable_dslope_one hH) 2 (σ : ℂ)) N
+    (norm_taylor_term_dslope_le hH hB hσ hσ₁) (hasSum_taylorSeries_of_entire
+      (hH.dslope 1) 2 (σ : ℂ)) N
   have hG : (∑ n ∈ Finset.range N,
       ((n ! : ℂ)⁻¹ • ((σ : ℂ) - 2) ^ n • iteratedDeriv n (dslope H 1) 2).re) -
       16 * B * (3 / 4) ^ N ≤ (dslope H 1 σ).re := by
