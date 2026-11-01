@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Submonoid.Finsupp
 public import TauCeti.Algebra.MonoidAlgebra.Grading
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Homogeneous
-public import TauCeti.RingTheory.MvPolynomial.ToricIdeal
+public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
