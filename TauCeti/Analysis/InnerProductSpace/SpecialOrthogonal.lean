@@ -54,9 +54,15 @@ theorem exists_det_eq_neg_one [FiniteDimensional ℝ V] (hV : 0 < Module.finrank
     ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V).det = -1 := by
   obtain ⟨v, hv⟩ := Module.finrank_pos_iff_exists_ne_zero.1 hV
   refine ⟨linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection, ?_⟩
-  rw [ContinuousLinearMap.det, coe_symm_linearIsometryEquiv_apply,
-    show (((ℝ ∙ v)ᗮ.reflection : V →L[ℝ] V) : V →ₗ[ℝ] V) = (ℝ ∙ v)ᗮ.reflection.toLinearMap from
-      LinearMap.ext fun _ => by simp,
+  -- `ContinuousLinearMap.det` is the determinant of the underlying linear map, while
+  -- `Submodule.det_reflection` is stated for the linear-equivalence coercion of the reflection.
+  -- Mathlib has no lemma identifying the two underlying linear maps, so compare them pointwise.
+  have hcoe : (((ℝ ∙ v)ᗮ.reflection : V →L[ℝ] V) : V →ₗ[ℝ] V) =
+      (ℝ ∙ v)ᗮ.reflection.toLinearMap :=
+    LinearMap.ext fun x => by
+      rw [ContinuousLinearMap.coe_coe, LinearIsometryEquiv.coe_coe'', LinearEquiv.coe_coe,
+        LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, hcoe,
     Submodule.det_reflection, Submodule.orthogonal_orthogonal, finrank_span_singleton hv, pow_one]
 
 end Unitary
