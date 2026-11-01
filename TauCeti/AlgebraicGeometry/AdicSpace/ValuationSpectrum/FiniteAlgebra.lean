@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
+import TauCeti.RingTheory.Valuation.Polynomial
 
 /-!
 # Fibres of the valuation spectrum of a finite algebra over a field
@@ -38,6 +39,8 @@ incomparable: there is `x` with `w₂(x) ≤ 1 < w₁(x)`. Then a normalized pol
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.linearIndependent_of_valuation`: elements separating points of the
+  fibre are linearly independent over `K`.
 * `TauCeti.ValuationSpectrum.finite_comap_preimage_singleton`: the fibre of
   `Spv L → Spv K` over any point is finite.
 * `TauCeti.ValuationSpectrum.ncard_comap_preimage_singleton_le_finrank`: it has at most
@@ -62,64 +65,11 @@ namespace ValuationSpectrum
 
 variable {K L : Type*} [Field K] [CommRing L] [Algebra K L]
 
-/-- On the fibre over `v`, the valuation of a point compares images of elements of `K` as `v`
-compares the elements themselves. -/
-private theorem valuation_algebraMap_le_iff {v : Spv K} {w : Spv L}
-    (hw : comap (algebraMap K L) w = v) (a b : K) :
-    w.valuation (algebraMap K L a) ≤ w.valuation (algebraMap K L b) ↔
-      v.valuation a ≤ v.valuation b := by
-  rw [valuation_le_iff, valuation_le_iff, ← hw, comap_vle]
-
-private theorem valuation_algebraMap_le_one_iff {v : Spv K} {w : Spv L}
-    (hw : comap (algebraMap K L) w = v) (a : K) :
-    w.valuation (algebraMap K L a) ≤ 1 ↔ v.valuation a ≤ 1 := by
-  simpa using valuation_algebraMap_le_iff hw a 1
-
-private theorem valuation_algebraMap_lt_one_iff {v : Spv K} {w : Spv L}
-    (hw : comap (algebraMap K L) w = v) (a : K) :
-    w.valuation (algebraMap K L a) < 1 ↔ v.valuation a < 1 := by
-  simpa [not_le] using (valuation_algebraMap_le_iff hw 1 a).not
-
-/-- A nonzero polynomial over `K` can be rescaled so that its coefficients have `v`-value at most
-`1`, its coefficient in some degree `D` is `1`, and its coefficients of degree above `D` have
-`v`-value below `1`. -/
-private theorem exists_normalized (v : Spv K) {P : K[X]} (hP : P ≠ 0) :
-    ∃ c : K, ∃ D : ℕ, (C c * P).coeff D = 1 ∧ (∀ n, v.valuation ((C c * P).coeff n) ≤ 1) ∧
-      ∀ n, D < n → v.valuation ((C c * P).coeff n) < 1 := by
-  classical
-  set f : ℕ → _ := fun n ↦ v.valuation (P.coeff n)
-  obtain ⟨n₀, -, hn₀⟩ := Finset.exists_max_image (Finset.range (P.natDegree + 1)) f
-    ⟨0, by simp⟩
-  have hmax₀ : ∀ k, f k ≤ f n₀ := fun k ↦ by
-    by_cases hk : k ≤ P.natDegree
-    · exact hn₀ k (by simpa [Nat.lt_succ_iff] using hk)
-    · simp [f, coeff_eq_zero_of_natDegree_lt (not_le.mp hk)]
-  -- the largest degree at which the coefficient has maximal `v`-value
-  set S := (Finset.range (P.natDegree + 1)).filter fun n ↦ ∀ k, f k ≤ f n
-  have hpos : ∀ n, (∀ k, f k ≤ f n) → f n ≠ 0 := fun n hn h ↦ by
-    have := hn P.natDegree
-    rw [h, le_zero_iff] at this
-    exact leadingCoeff_ne_zero.mpr hP ((map_eq_zero _).mp this)
-  have hmemS : ∀ n, (∀ k, f k ≤ f n) → n ∈ S := fun n hn ↦ by
-    refine Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (Nat.lt_succ_of_le ?_), hn⟩
-    exact le_natDegree_of_ne_zero fun h ↦ hpos n hn (by simp [f, h])
-  have hS : S.Nonempty := ⟨n₀, hmemS n₀ hmax₀⟩
-  set D := S.max' hS
-  have hD : ∀ k, f k ≤ f D := (Finset.mem_filter.mp (S.max'_mem hS)).2
-  have hcD : P.coeff D ≠ 0 := fun h ↦ hpos D hD (by simp [f, h])
-  have hfD : 0 < f D := pos_iff_ne_zero.mpr (hpos D hD)
-  refine ⟨(P.coeff D)⁻¹, D, by simp [hcD], fun n ↦ ?_, fun n hn ↦ ?_⟩
-  · rw [coeff_C_mul, map_mul, map_inv₀]
-    exact inv_mul_le_one_of_le₀ (hD n) hfD.le
-  · rw [coeff_C_mul, map_mul, map_inv₀]
-    refine (inv_mul_lt_one₀ hfD).mpr (lt_of_not_ge fun h ↦ ?_)
-    exact (S.le_max' n (hmemS n fun k ↦ (hD k).trans h)).not_gt hn
-
 /-- **Linear independence of separated elements.** If points `wᵢ` of `Spv L` over `v` and
 elements `eᵢ ∈ L` satisfy `wᵢ(eᵢ) = 1` and `wⱼ(eᵢ) < 1` for `j ≠ i`, then the `eᵢ` are linearly
 independent over `K`: in a relation, the term whose coefficient has the largest `v`-value
 dominates all others at the matching point. -/
-private theorem linearIndependent_of_valuation (v : Spv K) {ι : Type*} (w : ι → Spv L)
+theorem linearIndependent_of_valuation (v : Spv K) {ι : Type*} (w : ι → Spv L)
     (hw : ∀ i, comap (algebraMap K L) (w i) = v) (e : ι → L) (he : ∀ i, (w i).valuation (e i) = 1)
     (hlt : ∀ i j, i ≠ j → (w j).valuation (e i) < 1) : LinearIndependent K e := by
   classical
@@ -140,7 +90,7 @@ private theorem linearIndependent_of_valuation (v : Spv K) {ι : Type*} (w : ι 
     rw [Algebra.smul_def, map_mul]
     calc (w i₀).valuation (algebraMap K L (g j)) * (w i₀).valuation (e j)
         ≤ (w i₀).valuation (algebraMap K L (g i₀)) * (w i₀).valuation (e j) :=
-          mul_le_mul_left ((valuation_algebraMap_le_iff (hw i₀) _ _).mpr
+          mul_le_mul_left ((valuation_map_le_iff (hw i₀) _ _).mpr
             (hmax j (Finset.mem_of_mem_erase hj))) _
       _ < (w i₀).valuation (algebraMap K L (g i₀)) :=
           mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr hc) (hlt j i₀ (Finset.ne_of_mem_erase hj))
@@ -153,12 +103,12 @@ variable [Module.Finite K L]
 
 /-- **The detecting element.** For every `x ∈ L` there is `u ∈ L` such that, at every point `w` of
 `Spv L` over `v`, `w(u) < 1` if `w(x) ≤ 1` and `w(u) = 1` if `w(x) > 1`. It is built from a
-polynomial relation for `x` over `K`, normalized by `exists_normalized`. -/
+polynomial relation for `x` over `K`, normalized by `Valuation.exists_C_mul_coeff_eq_one`. -/
 private theorem exists_detector (v : Spv K) (x : L) :
     ∃ u : L, ∀ w : Spv L, comap (algebraMap K L) w = v →
       (w.valuation x ≤ 1 → w.valuation u < 1) ∧ (1 < w.valuation x → w.valuation u = 1) := by
   have hint : IsIntegral K x := Algebra.IsIntegral.isIntegral x
-  obtain ⟨c, D, hcD, hle, hlt⟩ := exists_normalized v (minpoly.ne_zero hint)
+  obtain ⟨c, D, hcD, hle, hlt⟩ := v.valuation.exists_C_mul_coeff_eq_one (minpoly.ne_zero hint)
   set P := C c * minpoly K x
   have hPx : aeval x P = 0 := by simp [P]
   set M := P.natDegree
@@ -167,7 +117,7 @@ private theorem exists_detector (v : Spv K) (x : L) :
   · -- every term has a coefficient of value `< 1`
     refine Valuation.map_sum_lt _ one_ne_zero fun k _ ↦ ?_
     rw [map_mul, map_pow]
-    exact mul_lt_one_of_lt_of_le ((valuation_algebraMap_lt_one_iff hw _).mpr (hlt _ (by omega)))
+    exact mul_lt_one_of_lt_of_le ((valuation_map_lt_one_iff hw _).mpr (hlt _ (by omega)))
       (pow_le_one' hx _)
   · -- `x ^ D * u = -(c₀ + c₁ x + ⋯ + c_D x ^ D)`, dominated by its last term
     have hsplit : x ^ D * ∑ k ∈ Finset.range M, a (D + 1 + k) * x ^ (k + 1) =
@@ -186,26 +136,17 @@ private theorem exists_detector (v : Spv K) (x : L) :
       Valuation.map_sum_lt _ (pow_ne_zero _ hx0) fun n hn ↦ by
         rw [map_mul, map_pow]
         calc w.valuation (a n) * w.valuation x ^ n ≤ 1 * w.valuation x ^ n :=
-              mul_le_mul_left ((valuation_algebraMap_le_one_iff hw _).mpr (hle n)) _
+              mul_le_mul_left ((valuation_map_le_one_iff hw _).mpr (hle n)) _
           _ < w.valuation x ^ D := by
               rw [one_mul]
               exact pow_lt_pow_right₀ hx (Finset.mem_range.mp hn)
     have htop : w.valuation (a D * x ^ D) = w.valuation x ^ D := by
-      rw [map_mul, map_pow, show a D = 1 by simp [a, hcD], map_one, one_mul]
+      simp [a, hcD]
     have hsum : w.valuation (∑ n ∈ Finset.range (D + 1), a n * x ^ n) = w.valuation x ^ D := by
       rw [Finset.sum_range_succ, Valuation.map_add_eq_of_lt_right _ (htop ▸ hlow), htop]
     have := congrArg w.valuation hsplit
     rw [map_mul, map_pow, Valuation.map_neg, hsum] at this
     exact (mul_eq_left₀ (pow_ne_zero _ hx0)).mp this
-
-/-- An element that is a unit modulo the maximal support `𝔮` of the points under consideration
-has an inverse modulo `𝔮`, whose valuation is the inverse at each of these points. -/
-private theorem exists_valuation_mul_eq_one {q : Ideal L} (hq : q.IsMaximal) {b : L}
-    (hb : b ∉ q) : ∃ y : L, ∀ w : Spv L, w.supp = q → w.valuation y * w.valuation b = 1 := by
-  obtain ⟨y, i, hi, hyi⟩ := hq.exists_inv hb
-  refine ⟨y, fun w hw ↦ ?_⟩
-  rw [← map_mul, ← w.valuation.map_add_supp (y * b) (s := i)
-    (by rwa [← supp_eq_valuation_supp, hw]), hyi, map_one]
 
 /-- **Incomparability.** Two distinct points of `Spv L` over `v` with the same support are
 incomparable: some `x` has `w₂(x) ≤ 1 < w₁(x)`. -/
