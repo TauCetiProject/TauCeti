@@ -183,14 +183,6 @@ theorem map_demazureOperator (φ : AddMonoidAlgebra ℤ M →+* F) (i : ι)
   linear_combination (1 - φ (single (P.root i) 1)) * hloc +
     φ (mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv g) * hunit
 
-omit [AddCommGroup M] in
-/-- `Fin.prod_univ_succ` for the positions of a word `i :: ω`. The length `(i :: ω).length` is
-`ω.length + 1` by definition, but not syntactically, so `simp` does not apply `Fin.prod_univ_succ`
-to it directly. -/
-private lemma prod_univ_cons (i : ι) (ω : List ι) (g : Fin (i :: ω).length → F) :
-    ∏ k, g k = g 0 * ∏ k : Fin ω.length, g k.succ :=
-  Fin.prod_univ_succ g
-
 /-- Reindexing along `w` and then along `sᵢ` is reindexing along `sᵢ w`. -/
 private lemma mapDomainRingEquiv_reflection_mapDomain_smul (i : ι) (w : P.weylGroup)
     (f : AddMonoidAlgebra ℤ M) :
@@ -245,9 +237,9 @@ theorem map_prod_map_demazureOperator_apply (φ : AddMonoidAlgebra ℤ M →+* F
       fun _ ↦ rfl)
     rw [Fintype.sum_prod_type, Fintype.sum_bool, add_comm, Finset.sum_div, Finset.sum_div]
     congr 1 <;> refine Finset.sum_congr rfl fun ε _ ↦ ?_ <;>
-      simp only [Fin.consEquiv_apply, subwordProd_cons, prod_univ_cons, subwordRoot_cons_zero,
-        subwordRoot_cons_succ, Bool.false_eq_true, ↓reduceIte, one_mul, one_smul, neg_neg, div_div,
-        RingHom.comp_apply, s, RingEquiv.coe_toRingHom,
+      simp only [Fin.consEquiv_apply, subwordProd_cons, List.length_cons, Fin.prod_univ_succ,
+        subwordRoot_cons_zero, subwordRoot_cons_succ, Bool.false_eq_true, ↓reduceIte, one_mul,
+        one_smul, neg_neg, div_div, RingHom.comp_apply, s, RingEquiv.coe_toRingHom,
         mapDomainRingEquiv_reflection_mapDomain_smul, AddMonoidAlgebra.mapDomainRingEquiv_single,
         map_neg]
     · simp only [LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply, weylGroup.ofIdx_smul,
