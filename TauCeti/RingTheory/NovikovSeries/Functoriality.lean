@@ -280,9 +280,9 @@ theorem continuous_map : Continuous (map ρ φ hφ) := by
 
 end Topology
 
-section ComapTopology
+section ComapFiltration
 
-variable [AddGroup H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+variable [AddGroup H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddGroup R]
   (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
 
 /-- If `φ` rescales periods by `c > 0`, the restriction sends the period neighbourhood
@@ -292,6 +292,13 @@ theorem comap_mem_periodFiltration {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (�
     comap φ hφ hker b ∈ periodFiltration R N C :=
   mem_periodFiltration.2 fun _ hh =>
     coeff_comap_eq_zero_of_lt φ hφ hker hc hcφ (mem_periodFiltration.1 hb) hh
+
+end ComapFiltration
+
+section ComapTopology
+
+variable [AddGroup H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+  (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
 
 /-- The restriction of Novikov series is continuous for the period topologies. -/
 @[fun_prop]

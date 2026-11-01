@@ -285,6 +285,13 @@ theorem orbitZeta_eq_mapRingHom_eulerProduct (hpos : ∀ i, 0 < N (γ i))
   rw [orbitZeta_eq_eulerProduct hpos hfin ε σ hε, mapRingHom_eulerProduct _ _ _ hpos hfin]
   simp
 
+/-- A natural multiple of a monomial with rational coefficient is the monomial whose rational
+coefficient is scaled by that multiple. -/
+private theorem nsmul_single_algebraMap (n : ℕ) (h : H) (q : ℚ) :
+    n • (single h (algebraMap ℚ K q) : NovikovSeries K H N) =
+      single h (algebraMap ℚ K (n * q)) := by
+  rw [smul_single, nsmul_eq_mul, ← map_natCast (algebraMap ℚ K) n, ← _root_.map_mul]
+
 /-- **Repeated orbits.** The orbit logarithm of the family in which the `i`-th orbit is listed
 `c i` times is the orbit logarithm of the original family with the signs of the `i`-th orbit
 multiplied by `c i`. -/
@@ -308,8 +315,7 @@ theorem orbitLog_sigma (hpos : ∀ i, 0 < N (γ i))
       (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
         NovikovSeries K H N) = ∑ _j : Fin (c p.1),
       single ((p.2 + 1) • γ p.1) (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) := by
-    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_single, nsmul_eq_mul,
-      ← map_natCast (algebraMap ℚ K) (c p.1), ← _root_.map_mul]
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_single_algebraMap]
     congr 2
     push_cast
     ring
@@ -374,6 +380,7 @@ private theorem index_smul_comap_orbitLog (hpos : ∀ i, 0 < N (γ i))
     rintro ⟨i, n⟩ hp
     rw [comap_single_of_notMem_range, smul_zero]
     rintro ⟨k, hk⟩
+    rw [AddSubgroup.subtype_apply] at hk
     obtain ⟨j, hj⟩ := (QuotientAddGroup.addOrderOf_mk_dvd_iff_nsmul_mem K _ _).2
       (hk ▸ k.2 : (n + 1) • γ i ∈ K)
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (n := j) (by rintro rfl; simp at hj)
@@ -390,8 +397,7 @@ private theorem index_smul_comap_orbitLog (hpos : ∀ i, 0 < N (γ i))
   have hdvd : addOrderOf (γ i : H ⧸ K) ∣ K.index := addOrderOf_dvd_natCard _
   simp only [Function.comp_apply, g, hdk]
   rw [← AddSubgroup.coe_nsmul_liftClass, ← AddSubgroup.subtype_apply,
-    comap_single_of_injective _ _ _ Subtype.val_injective, smul_single, nsmul_eq_mul,
-    ← map_natCast (algebraMap ℚ R), ← _root_.map_mul]
+    comap_single_of_injective _ _ _ Subtype.val_injective, nsmul_single_algebraMap]
   congr 2
   have hd : (addOrderOf (γ i : H ⧸ K) : ℚ) ≠ 0 := by exact_mod_cast (hd₀ i).ne'
   rw [Int.cast_mul, Int.cast_natCast, Nat.cast_div hdvd hd]
