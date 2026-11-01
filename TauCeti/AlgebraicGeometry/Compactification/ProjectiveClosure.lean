@@ -61,9 +61,10 @@ namespace DenseCompactification
 variable {R : Type u} [CommRing R] {n : ℕ} (J : Ideal (MvPolynomial (Fin n) R))
 
 /-- **The projective closure of an affine scheme of finite type.** For an ideal `J` of
-`R[Y₀, …, Yₙ₋₁]`, the standard chart `D₊(X₀)` of `Proj (R[X₀, …, Xₙ] ⧸ Jʰ)` is a dense
-compactification of `Spec (R[Y₀, …, Yₙ₋₁] ⧸ J) ⟶ Spec R`, where `Jʰ` is the homogenization of `J`
-with respect to `X₀`. -/
+`R[Y₀, …, Yₙ₋₁]`, the projective scheme `Proj (R[X₀, …, Xₙ] ⧸ Jʰ)`, where `Jʰ` is the
+homogenization of `J` with respect to `X₀`, together with the embedding of
+`Spec (R[Y₀, …, Yₙ₋₁] ⧸ J)` as its standard chart `D₊(X₀)`, is a dense compactification of
+`Spec (R[Y₀, …, Yₙ₋₁] ⧸ J) ⟶ Spec R`. -/
 -- As for `projectiveLine.denseCompactification`, the ambient scheme and both maps must reduce
 -- so that consumers can use the chart and the structure map without transports.
 @[expose, implicit_reducible]
