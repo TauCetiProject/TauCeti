@@ -61,6 +61,12 @@ theorem finSubOneAddOneLinearEquiv_apply (v : Fin N → 𝕜) (i : Fin (N - 1 + 
     finSubOneAddOneLinearEquiv 𝕜 N v i = v (Fin.cast (Nat.sub_one_add_one (NeZero.ne N)) i) :=
   (rfl)
 
+@[simp]
+theorem finSubOneAddOneLinearEquiv_symm_apply (v : Fin (N - 1 + 1) → 𝕜) (i : Fin N) :
+    (finSubOneAddOneLinearEquiv 𝕜 N).symm v i =
+      v (Fin.cast (Nat.sub_one_add_one (NeZero.ne N)).symm i) :=
+  (rfl)
+
 /-- The homeomorphism `ℙ 𝕜 (Fin N → 𝕜) ≃ₜ ℙ 𝕜 (Fin (N - 1 + 1) → 𝕜)` reindexing homogeneous
 coordinates along the canonical identification `Fin N ≃ Fin (N - 1 + 1)`. -/
 noncomputable def finSubOneAddOneHomeomorph : ℙ 𝕜 (Fin N → 𝕜) ≃ₜ ℙ 𝕜 (Fin (N - 1 + 1) → 𝕜) where

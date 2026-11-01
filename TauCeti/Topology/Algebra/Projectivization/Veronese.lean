@@ -78,4 +78,18 @@ theorem coe_veroneseHomeomorph_apply {d : ℕ} (hd : d ≠ 0) (x : ℙ ℂ (Fin 
     (veroneseHomeomorph hd x : ℙ ℂ (Fin (veroneseDim N d) → ℂ)) = veronese ℂ d x :=
   (rfl)
 
+/-- The Veronese map undoes the inverse of `veroneseHomeomorph`. -/
+@[simp]
+theorem veronese_veroneseHomeomorph_symm_apply {d : ℕ} (hd : d ≠ 0)
+    (y : complexProjectiveZeroLocus (veroneseRelation ℂ N d)) :
+    veronese ℂ d ((veroneseHomeomorph hd).symm y) = y := by
+  rw [← coe_veroneseHomeomorph_apply hd, Homeomorph.apply_symm_apply]
+
+/-- The inverse of `veroneseHomeomorph` recovers a point from its image under the Veronese map. -/
+@[simp]
+theorem veroneseHomeomorph_symm_apply_veronese {d : ℕ} (hd : d ≠ 0) (x : ℙ ℂ (Fin N → ℂ))
+    (hx : veronese ℂ d x ∈ complexProjectiveZeroLocus (veroneseRelation ℂ N d)) :
+    (veroneseHomeomorph hd).symm ⟨veronese ℂ d x, hx⟩ = x :=
+  (veroneseHomeomorph hd).symm_apply_eq.2 rfl
+
 end Projectivization
