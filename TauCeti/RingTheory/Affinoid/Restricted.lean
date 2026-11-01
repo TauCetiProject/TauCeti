@@ -7,12 +7,10 @@ module
 
 public import TauCeti.RingTheory.Affinoid.FiniteQuotient
 public import TauCeti.RingTheory.Affinoid.Continuity
-public import TauCeti.RingTheory.Affinoid.SupSeminorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
-import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 
 /-!
@@ -44,8 +42,6 @@ of the variables need only be power-bounded, not of norm at most one.
 ## Main results
 
 * `TauCeti.IsAffinoidAlgebra.isRestricted_subring`: `A⟨X₁, …, Xₘ⟩` is affinoid.
-* `TauCeti.IsAffinoidAlgebra.pointNorm_quotientMk_X_le_one`: each variable has absolute value at
-  most one at every classical point of a quotient of `A⟨X₁, …, Xₘ⟩`.
 * `TauCeti.IsAffinoidAlgebra.algHom_ext_isRestricted_subring`: `K`-algebra maps
   `A⟨X₁, …, Xₘ⟩ → B` agreeing on `A` and on the variables are equal.
 * `TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`: a `K`-algebra map
@@ -100,19 +96,6 @@ theorem isRestricted_subring {τ : Type*} [Finite τ] (hA : IsAffinoidAlgebra K 
       (IsRestricted.subring (R := K) (Sum.elim (fun _ : τ ↦ (1 : ℝ)) fun _ : Fin n ↦ 1)) :=
     hrad ▸ isAffinoidAlgebra_tate
   exact hT.of_surjective ψ ((restrictedMap_surjective _ _ hC).comp e.surjective)
-
-/-- **The variables have absolute value at most one.** For an affinoid algebra `A` with a complete
-ultrametric algebra norm and an ideal `I` of `A⟨X₁, …, Xₖ⟩`, each variable `Xᵢ` has absolute value
-at most one at every classical point of `A⟨X₁, …, Xₖ⟩ ⧸ I`. -/
-theorem pointNorm_quotientMk_X_le_one {k : ℕ} (hA : IsAffinoidAlgebra K A)
-    {I : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
-    (x : MaximalSpectrum (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ I)) (i : Fin k) :
-    pointNorm K x (Ideal.Quotient.mk I ⟨X i, isRestricted_X _ i⟩) ≤ 1 := by
-  -- The variable is power-bounded in `A⟨X⟩`, whose points include the points of the quotient.
-  have hT := hA.isRestricted_subring (τ := Fin k)
-  rw [← Ideal.Quotient.mkₐ_eq_mk K, ← (hT.quotient I).pointNorm_maximalSpectrumComap]
-  exact (hT.pointNorm_le_supSeminorm _ _).trans
-    (hT.isPowerBounded_iff_supSeminorm_le_one.mp (isPowerBounded_X i))
 
 variable {k : ℕ} (hA : IsAffinoidAlgebra K A) {B : Type*} [NormedCommRing B] [NormedAlgebra K B]
   [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B)
