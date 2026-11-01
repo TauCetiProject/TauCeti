@@ -209,8 +209,10 @@ def cechCohomologyDesc {P : Cᵒᵖ ⥤ A} {Y : A}
       ι :=
         { app := f
           naturality _ j h :=
-            (NatTrans.congr_app (cechCohomologyDiagram_map A E hE n h (hE (leOfHom h)).some) P
-              =≫ f j).trans ((hf (leOfHom h) _).trans (Category.comp_id _).symm) } }
+            -- the transition map at `P` is the map induced by any morphism of families
+            ((NatTrans.congr_app (cechCohomologyDiagram_map A E hE n h (hE (leOfHom h)).some)
+              P).trans (cechComplexHomologyMap_app ..) =≫ f j).trans
+                ((hf (leOfHom h) _).trans (Category.comp_id _).symm) } }
 
 /-- The map out of the Čech cohomology induced by a compatible family restricts to that family
 along each structure map. -/
