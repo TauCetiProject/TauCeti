@@ -126,10 +126,8 @@ private theorem renewalMeasure_map_Icc_add_le (hT : ∀ n, Measurable (T n))
   -- The restarted process is independent of `E m`.
   have hindep_E (m k : ℕ) : P (E m ∩ arrival (fun i ↦ T (m + i)) k ⁻¹' Iic h) =
       P (E m) * F.convolutionPower k (Iic h) := by
-    have hI : Indep (blockSigma T (Iio m)) (blockSigma T (Ici m)) P := by
-      rw [blockSigma_def, blockSigma_def]
-      exact indep_iSup_of_disjoint (fun i ↦ (hT i).comap_le) hindep.iIndep
-        (Iio_disjoint_Ici le_rfl)
+    have hI : Indep (blockSigma T (Iio m)) (blockSigma T (Ici m)) P :=
+      indep_blockSigma_of_disjoint hindep hT (Iio_disjoint_Ici le_rfl)
     have hD : Measurable[blockSigma T (Ici m)] (arrival (fun i ↦ T (m + i)) k) :=
       measurable_arrival_of_lt fun i _ ↦ measurable_blockSigma_of_mem (by simp)
     rw [(Indep_iff _ _ P).1 hI _ _ (measurableSet_firstArrivalGE m) (hD measurableSet_Iic),
