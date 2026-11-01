@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
+import TauCeti.MeasureTheory.MeasurableSpace.Quotient
 
 /-!
 # Borel reducibility and smooth equivalence relations
@@ -31,9 +32,10 @@ Further facts:
 * a reduction to a relation with Borel graph pulls the graph back, so a smooth relation is Borel;
 * a reduction induces an injection of quotients, so `F` has at least as many classes as `E`;
 * equality on a standard Borel space `X` reduces to equality on a standard Borel space `Y` iff
-  `#X ≤ #Y`. Below the continuum this is any injection, as a countable standard Borel space is
-  discrete; above it, the Borel isomorphism theorem identifies the two spaces. In particular,
-  for uncountable standard Borel `Y`, smoothness is reducibility to equality on `Y`;
+  `#X ≤ #Y`. If `X` is countable, any injection works, as a countable standard Borel space is
+  discrete; otherwise both spaces are uncountable and the Borel isomorphism theorem identifies
+  them. In particular, for uncountable standard Borel `Y`, smoothness is reducibility to equality
+  on `Y`;
 * a relation with countably many classes, each measurable, is smooth, and it is bireducible
   with equality on its quotient, whose σ-algebra is then discrete;
 * a Cantor antichain for `E` is a reduction of equality on Cantor space to `E`.
@@ -267,37 +269,12 @@ theorem isSmooth_iff_borelReducible_bot [StandardBorelSpace Y] (hY : ¬ Countabl
 
 /-! ### Countably many classes -/
 
-/-- If every class of `E` is measurable, then the quotient σ-algebra on `Quotient E` has
-measurable singletons. -/
-theorem measurableSingletonClass_quotient (hE : ∀ x, MeasurableSet {y | E x y}) :
-    MeasurableSingletonClass (Quotient E) := by
-  refine ⟨fun q => ?_⟩
-  induction q using Quotient.ind with | _ x => ?_
-  refine measurableSet_quotient.2 ?_
-  have : (Quotient.mk'' : X → Quotient E) ⁻¹' {Quotient.mk E x} = {y | E x y} := by
-    ext y
-    exact ⟨fun h => E.symm (Quotient.exact h), fun h => Quotient.sound (E.symm h)⟩
-  rw [this]
-  exact hE x
-
 /-- **Countably many measurable classes give a smooth relation.** If `E` has countably many
 classes, each measurable, then `E` is smooth. -/
 theorem isSmooth_of_countable_quotient [Countable (Quotient E)]
     (hE : ∀ x, MeasurableSet {y | E x y}) : E.IsSmooth := by
   have := measurableSingletonClass_quotient hE
-  refine isSmooth_iff_countablySeparated.2 <| countablySeparated_def.2
-    ⟨⟨range singleton, countable_range _, ?_, ?_⟩⟩
-  · rintro _ ⟨q, rfl⟩
-    exact .singleton q
-  · intro q _ r _ h
-    exact ((h {q} ⟨q, rfl⟩).1 rfl).symm
-
-/-- If `E` has countably many classes, each measurable, then every subset of `Quotient E` is
-measurable for the quotient σ-algebra. -/
-theorem discreteMeasurableSpace_quotient [Countable (Quotient E)]
-    (hE : ∀ x, MeasurableSet {y | E x y}) : DiscreteMeasurableSpace (Quotient E) :=
-  have := measurableSingletonClass_quotient hE
-  inferInstance
+  exact isSmooth_iff_countablySeparated.2 inferInstance
 
 /-- If `E` has countably many classes, each measurable, then `E` is Borel bireducible with
 equality on its quotient: the quotient map is a reduction one way, and a choice of
