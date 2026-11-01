@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
@@ -21,9 +21,12 @@ import TauCeti.Analysis.Complex.UniformLimit
 # Bounded holomorphic maps on an open set
 
 For an open subset `U` of a complex normed space `V` and a complex normed space `E`,
-`boundedHolomorphicFunctions U E` is the space `H^∞(U, E)` of bounded holomorphic maps
+`boundedHolomorphicFunctions E U` is the space `H^∞(U, E)` of bounded holomorphic maps
 `U → E`, as a complex subspace of the bounded continuous maps `U →ᵇ E` with the supremum norm.
-Holomorphy can be checked on any ambient representative `V → E`.
+Holomorphy can be checked on any ambient representative `V → E`. An ambient map that is
+holomorphic and bounded on `U` gives an element (`TauCeti.BoundedHolomorphicFunctions.of`), and
+every element has the zero extension `TauCeti.BoundedHolomorphicFunctions.extend` as a canonical
+ambient representative.
 
 When `E` is complete, `H^∞(U, E)` is closed in `U →ᵇ E`
 (`TauCeti.isClosed_boundedHolomorphicFunctions`), hence a Banach space. Restriction to a smaller
@@ -39,8 +42,8 @@ injective:
   is equicontinuous by the Cauchy estimate
   `TauCeti.BoundedHolomorphicFunctions.dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem
   applies on the compact set.
-* **Injectivity (identity theorem).** If `V` is finite-dimensional and every connected component
-  of `U` meets `U'`, restriction is injective
+* **Injectivity (identity theorem).** If `V` is finite-dimensional, `E` is complete, and every
+  connected component of `U` meets `U'`, restriction is injective
   (`TauCeti.BoundedHolomorphicFunctions.restrict_injective`).
 
 ## References
@@ -88,6 +91,13 @@ theorem mem_boundedHolomorphicFunctions_iff_of_eqOn {U : Opens V} {f : U →ᵇ 
     exact hk.congr fun z hz => (hgf ⟨z, hz⟩).trans (hkf ⟨z, hz⟩).symm
   · exact fun hg => ⟨g, hg, hgf⟩
 
+/-- Equivalently, the extension by zero is holomorphic on `U`. -/
+theorem mem_boundedHolomorphicFunctions_iff_extend {U : Opens V} {f : U →ᵇ E} :
+    f ∈ boundedHolomorphicFunctions E U ↔
+      DifferentiableOn ℂ (Function.extend Subtype.val f (fun _ => 0)) U :=
+  mem_boundedHolomorphicFunctions_iff_of_eqOn fun z =>
+    Subtype.val_injective.extend_apply f (fun _ => 0) z
+
 /-- For complete `E`, the bounded holomorphic maps form a closed subspace of the bounded
 continuous maps: a uniform limit of holomorphic maps is holomorphic. -/
 theorem isClosed_boundedHolomorphicFunctions [CompleteSpace E] (U : Opens V) :
@@ -95,12 +105,12 @@ theorem isClosed_boundedHolomorphicFunctions [CompleteSpace E] (U : Opens V) :
   refine isClosed_of_closure_subset fun f hf => ?_
   obtain ⟨F, hF, hFf⟩ := mem_closure_iff_seq_limit.mp hf
   choose G hG hGF using hF
-  have hext : ∀ z : U, Function.extend Subtype.val f 0 z = f z :=
-    Subtype.val_injective.extend_apply f 0
-  refine (mem_boundedHolomorphicFunctions_iff_of_eqOn hext).mpr ?_
+  have hext : ∀ z : U, Function.extend Subtype.val f (fun _ => 0) z = f z :=
+    Subtype.val_injective.extend_apply f (fun _ => 0)
+  refine mem_boundedHolomorphicFunctions_iff_extend.mpr ?_
   refine TendstoUniformlyOn.differentiableOn (l := atTop) ?_ (Eventually.of_forall hG) U.isOpen
   rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
-  have hcomp : (Function.extend Subtype.val f 0 ∘ (↑) : U → E) = f := funext hext
+  have hcomp : (Function.extend Subtype.val f (fun _ => 0) ∘ (↑) : U → E) = f := funext hext
   have hcoe : (fun n (z : U) => G n z) = fun n => ⇑(F n) := funext fun n => funext (hGF n)
   have hT := tendsto_iff_tendstoUniformly.mp hFf
   rw [← hcomp, ← hcoe] at hT
@@ -114,31 +124,84 @@ namespace BoundedHolomorphicFunctions
 
 variable {U U' U'' : Opens V}
 
+/-- Restrict an ambient map, holomorphic on `U` and bounded there by `C`, to an element of
+`H^∞(U, E)`. -/
+def of (U : Opens V) (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ)
+    (hC : ∀ z ∈ U, ‖g z‖ ≤ C) : boundedHolomorphicFunctions E U :=
+  ⟨.ofNormedAddCommGroup (fun z : U => g z) hg.continuousOn.domRestrict C fun z => hC z z.2,
+    g, hg, fun _ => rfl⟩
+
+@[simp]
+theorem of_apply (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ) (hC : ∀ z ∈ U, ‖g z‖ ≤ C)
+    (z : U) : (of U g hg C hC : U →ᵇ E) z = g z := (rfl)
+
+/-- The ambient representative obtained by extending by zero. -/
+noncomputable def extend (f : boundedHolomorphicFunctions E U) : V → E :=
+  Function.extend Subtype.val (f : U →ᵇ E) (fun _ => 0)
+
+@[simp]
+theorem extend_apply (f : boundedHolomorphicFunctions E U) (z : U) :
+    extend f z = (f : U →ᵇ E) z :=
+  Subtype.val_injective.extend_apply _ _ _
+
+/-- The zero extension vanishes outside `U`. -/
+@[simp]
+theorem extend_apply_of_notMem (f : boundedHolomorphicFunctions E U) {z : V} (hz : z ∉ U) :
+    extend f z = 0 := by
+  rw [extend, Function.extend_apply']
+  rintro ⟨w, rfl⟩
+  exact hz w.property
+
+/-- The zero extension is holomorphic on `U`. -/
+theorem differentiableOn_extend (f : boundedHolomorphicFunctions E U) :
+    DifferentiableOn ℂ (extend f) U :=
+  mem_boundedHolomorphicFunctions_iff_extend.mp f.property
+
+/-- The zero extension is bounded everywhere by the supremum norm. -/
+theorem norm_extend_apply_le (f : boundedHolomorphicFunctions E U) (z : V) :
+    ‖extend f z‖ ≤ ‖f‖ := by
+  by_cases hz : z ∈ U
+  · rw [extend_apply f ⟨z, hz⟩]
+    exact norm_coe_le_norm (f : U →ᵇ E) ⟨z, hz⟩
+  · rw [extend_apply_of_notMem f hz, norm_zero]
+    exact norm_nonneg _
+
+/-- Recovering a bounded holomorphic map from its zero extension does not change it. -/
+@[simp]
+theorem of_extend (f : boundedHolomorphicFunctions E U) :
+    of U (extend f) (differentiableOn_extend f) ‖(f : U →ᵇ E)‖
+      (fun z _ => (norm_extend_apply_le f z).trans_eq (Submodule.norm_coe f).symm) = f :=
+  Subtype.ext (BoundedContinuousFunction.ext fun z => by simp)
+
 /-- **Cauchy estimate.** On a ball of radius `R` inside `U`, a bounded holomorphic map `f` is
 Lipschitz at the centre with constant `2 * ‖f‖ / R`. -/
 theorem dist_apply_le_of_ball_subset (f : boundedHolomorphicFunctions E U) {x z : U} {R : ℝ}
     (hR : ball (x : V) R ⊆ U) (hz : dist z x < R) :
     dist ((f : U →ᵇ E) z) ((f : U →ᵇ E) x) ≤ 2 * ‖f‖ / R * dist z x := by
-  obtain ⟨g, hg, hgf⟩ := f.2
-  have hbound : ∀ y (hy : y ∈ ball (x : V) R), ‖g y‖ ≤ ‖f‖ := fun y hy =>
-    (hgf ⟨y, hR hy⟩).symm ▸ norm_coe_le_norm (f : U →ᵇ E) ⟨y, hR hy⟩
+  rw [Subtype.dist_eq] at hz ⊢
   have hx : (x : V) ∈ ball (x : V) R := mem_ball_self (dist_nonneg.trans_lt hz)
-  rw [← hgf z, ← hgf x]
-  refine Complex.dist_le_div_mul_dist_of_mapsTo_ball (hg.mono hR) (fun y hy => ?_) hz
-  rw [mem_closedBall]
-  linarith [dist_le_norm_add_norm (g y) (g x), hbound y hy, hbound x hx]
+  rw [← extend_apply f z, ← extend_apply f x]
+  exact Complex.dist_le_div_mul_dist_of_mapsTo_ball ((differentiableOn_extend f).mono hR)
+    (mapsTo_closedBall_of_forall_norm_le (fun y _ => norm_extend_apply_le f y) hx)
+    (mem_ball.mpr hz)
 
 /-- Restriction of bounded holomorphic maps to a smaller open set. -/
 noncomputable def restrict (h : U' ≤ U) :
     boundedHolomorphicFunctions E U →L[ℂ] boundedHolomorphicFunctions E U' :=
   ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.2⟩, continuous_subtype_val.subtype_mk _⟩).comp
     (boundedHolomorphicFunctions E U).subtypeL).codRestrict _ fun f => by
-    obtain ⟨g, hg, hgf⟩ := f.2
-    exact ⟨g, hg.mono h, fun z => hgf ⟨z, h z.2⟩⟩
+    exact ⟨extend f, (differentiableOn_extend f).mono h, fun z => extend_apply f ⟨z, h z.2⟩⟩
 
 @[simp]
 theorem restrict_apply (h : U' ≤ U) (f : boundedHolomorphicFunctions E U) (z : U') :
     (restrict h f : U' →ᵇ E) z = (f : U →ᵇ E) ⟨z, h z.2⟩ := (rfl)
+
+/-- Restriction agrees with restricting the same ambient representative. -/
+@[simp]
+theorem restrict_of (h : U' ≤ U) (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ)
+    (hC : ∀ z ∈ U, ‖g z‖ ≤ C) :
+    restrict h (of U g hg C hC) = of U' g (hg.mono h) C fun z hz => hC z (h hz) :=
+  Subtype.ext (BoundedContinuousFunction.ext fun z => by simp)
 
 /-- Restriction does not increase the supremum norm. -/
 theorem norm_restrict_apply_le (h : U' ≤ U) (f : boundedHolomorphicFunctions E U) :
@@ -200,7 +263,8 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
   refine (isCompactOperator_iff_exists_mem_nhds_image_subset_compact _).mpr
     ⟨closedBall 0 1, closedBall_mem_nhds _ one_pos, _, hcomp, ?_⟩
   rintro _ ⟨f, hf, rfl⟩
-  exact ⟨_, subset_closure ⟨f, hf, rfl⟩, rfl⟩
+  exact ⟨_, subset_closure ⟨f, hf, rfl⟩,
+    BoundedContinuousFunction.ext fun z => (restrict_apply (hU'K.trans hKU) f z).symm⟩
 
 /-- Restriction to an open set with compact closure inside `U` is a compact operator. -/
 theorem isCompactOperator_restrict_of_isCompact_closure [ProperSpace E]
@@ -214,17 +278,17 @@ theorem restrict_injective [FiniteDimensional ℂ V] [CompleteSpace E] (h : U' �
     (hU' : ∀ x ∈ U, (connectedComponentIn (U : Set V) x ∩ U').Nonempty) :
     Function.Injective (restrict (E := E) h) := by
   refine (injective_iff_map_eq_zero _).mpr fun f hf => ?_
-  obtain ⟨g, hg, hgf⟩ := f.2
-  have hg' := hg.analyticOnNhd_of_finiteDimensional U.isOpen
-  -- `g` vanishes on `U'`, hence near a point of `U'` in each component of `U`.
-  have hzero : ∀ z ∈ U', g z = 0 := fun z hz => by
-    rw [hgf ⟨z, h hz⟩, ← restrict_apply h f ⟨z, hz⟩, hf]
-    rfl
+  have hg' := (differentiableOn_extend f).analyticOnNhd_of_finiteDimensional U.isOpen
+  -- The zero extension of `f` vanishes on `U'`, hence near a point of `U'` in each component
+  -- of `U`.
+  have hzero : ∀ z ∈ U', extend f z = 0 := fun z hz => by
+    rw [extend_apply f ⟨z, h hz⟩, ← restrict_apply h f ⟨z, hz⟩, hf]
+    simp
   refine Subtype.ext (BoundedContinuousFunction.ext fun x => ?_)
   obtain ⟨y, hyx, hyU'⟩ := hU' x x.2
-  have hev : g =ᶠ[𝓝 y] 0 :=
+  have hev : extend f =ᶠ[𝓝 y] 0 :=
     eventually_of_mem (U'.isOpen.mem_nhds hyU') fun z hz => hzero z hz
-  rw [← hgf x]
+  rw [← extend_apply f x]
   exact (hg'.mono (connectedComponentIn_subset _ _)).eqOn_zero_of_preconnected_of_eventuallyEq_zero
     isPreconnected_connectedComponentIn hyx hev (mem_connectedComponentIn x.2)
 
