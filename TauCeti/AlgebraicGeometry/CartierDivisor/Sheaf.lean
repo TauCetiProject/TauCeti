@@ -435,6 +435,10 @@ def toInvertibleSheaf (D : CartierDivisor X) : InvertibleSheaf X :=
 lemma toInvertibleSheaf_obj (D : CartierDivisor X) : D.toInvertibleSheaf.obj = D.sheaf :=
   (rfl)
 
+/-- The divisor sheaf `𝒪_X(D)` is quasicoherent. -/
+instance isQuasicoherent_sheaf (D : CartierDivisor X) : D.sheaf.IsQuasicoherent :=
+  InvertibleSheaf.isQuasicoherent_obj D.toInvertibleSheaf
+
 end CartierDivisor
 
 end Scheme
