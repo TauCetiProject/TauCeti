@@ -35,8 +35,6 @@ among the even unimodular lattices of a given rank.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_e8PowLattice_two`: `Θ_{E₈ ⊕ E₈} = E₄²`.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardPlusLattice_sixteen`:
   `Θ_{D₁₆⁺} = E₄²`.
-* `TauCeti.IntegralLattice.map_realModel_ne_realModel`: if two positive definite rational lattices
-  are not isometric, no real linear isometry carries the real model of one onto that of the other.
 * `TauCeti.IntegralLattice.not_forall_exists_map_eq_of_thetaSeries_eq`: there are even unimodular
   full lattices with equal theta series that are not carried onto each other by any linear
   isometry of the ambient spaces.
@@ -55,7 +53,7 @@ open ModularForm
 
 namespace TauCeti.IntegralLattice
 
-variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
 /-! ### The theta series -/
 
@@ -81,15 +79,6 @@ theorem thetaSeries_realModel_checkerboardPlusLattice_sixteen :
     (isUnimodular_checkerboardPlusLattice _ _) (by simp)
 
 /-! ### Non-isometry -/
-
-/-- **Non-isometric lattices have non-isometric real models**: if the positive definite rational
-lattices `M` and `N` are not isometric, no real linear isometry of the ambient spaces carries the
-real model of `M` onto that of `N`. -/
-theorem map_realModel_ne_realModel {M : IntegralLattice V} {N : IntegralLattice W}
-    {hM : M.IsPosDef} {hN : N.IsPosDef} (hMN : IsEmpty (M.Isometry N))
-    (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] N.RealModelSpace hN) :
-    (M.realModel hM).map (f.toLinearEquiv.restrictScalars ℤ).toLinearMap ≠ N.realModel hN :=
-  fun hf ↦ hMN.false (Isometry.ofRealModel f hf)
 
 /-- **The theta series does not determine the lattice.** There are even unimodular full lattices
 `L ⊆ E` and `M ⊆ F` with `Θ_L = Θ_M` such that no linear isometry `E ≃ F` carries `L` onto `M`:
