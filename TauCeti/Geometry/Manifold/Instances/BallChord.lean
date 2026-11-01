@@ -134,26 +134,4 @@ def hemisphereChordDiffeomorph :
       exact coe_hemisphereChord_symm_apply_snd p y
     exact hx'.prodMk ht
 
-/-- Chord coordinates send `(x, t)` to the point at height `t` on the chord through `x`. -/
-@[simp]
-theorem coe_hemisphereChordDiffeomorph_apply
-    (q : hemisphereOpens p × Icc (-1 : ℝ) 1) :
-    ((hemisphereChordDiffeomorph (n := n) p q : closedBall (0 : E) 1) : E) =
-      chordPoint p q.1.1 q.2 := coe_hemisphereChord_apply p q
-
-/-- The first inverse coordinate is the upper end of the chord through the given point. -/
-@[simp]
-theorem coe_hemisphereChordDiffeomorph_symm_apply_fst (y : chordBallOpens p) :
-    ((((hemisphereChordDiffeomorph (n := n) p).symm y).1 : sphere (0 : E) 1) : E) =
-      (y : E) + (√(1 - ‖(y : E)‖ ^ 2 + ⟪(y : E), (p : E)⟫ ^ 2) - ⟪(y : E), (p : E)⟫) • (p : E) :=
-  coe_hemisphereChord_symm_apply_fst p y
-
-/-- The second inverse coordinate is the height divided by the positive half-length of the
-chord. -/
-@[simp]
-theorem coe_hemisphereChordDiffeomorph_symm_apply_snd (y : chordBallOpens p) :
-    (((hemisphereChordDiffeomorph (n := n) p).symm y).2 : ℝ) =
-      ⟪(y : E), (p : E)⟫ / √(1 - ‖(y : E)‖ ^ 2 + ⟪(y : E), (p : E)⟫ ^ 2) :=
-  coe_hemisphereChord_symm_apply_snd p y
-
 end TauCeti
