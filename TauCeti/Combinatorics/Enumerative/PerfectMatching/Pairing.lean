@@ -28,23 +28,10 @@ open Finset
 
 namespace Finpartition
 
-variable {α : Type*} [DecidableEq α] {s : Finset α} {P : Finpartition s}
-
-/-- In a pair partition, each point has a unique distinct partner in its block. -/
-theorem IsPairing.existsUnique_mem_part_ne (hP : P.IsPairing) {a : α} (ha : a ∈ s) :
-    ∃! b, b ∈ P.part a ∧ b ≠ a := by
-  obtain ⟨x, y, hxy, hpart⟩ := card_eq_two.mp (isPairing_iff.mp hP _ (P.part_mem.mpr ha))
-  have ha' := P.mem_part ha
-  rw [hpart] at ha' ⊢
-  rcases (by simpa only [mem_insert, mem_singleton] using ha' : a = x ∨ a = y) with rfl | rfl
-  · exact ⟨y, by simp [hxy.symm], by simp_all⟩
-  · exact ⟨x, by simp [hxy], by simp_all⟩
-
-variable [Fintype α] {P : Finpartition (univ : Finset α)}
+variable {α : Type*} [Fintype α] [DecidableEq α] {P : Finpartition (univ : Finset α)}
 
 /-- The perfect matching associated to a pair partition sends each point to the other
 point of its block. The unique-partner search is computable. -/
-@[expose]
 def IsPairing.toPerfectMatching (hP : P.IsPairing) : TauCeti.PerfectMatching α := by
   let f (a : α) := (P.part a).choose (· ≠ a) (hP.existsUnique_mem_part_ne (mem_univ a))
   have hf (a : α) : f a ∈ P.part a ∧ f a ≠ a :=
@@ -85,7 +72,6 @@ section Finite
 variable {α : Type*} [Fintype α] [DecidableEq α]
 
 /-- The partition into the two-element orbits of a perfect matching. -/
-@[expose]
 def toFinpartition (D : PerfectMatching α) : Finpartition (univ : Finset α) :=
   letI : DecidableRel (Equiv.Perm.SameCycle.setoid D.val) :=
     inferInstanceAs (DecidableRel D.val.SameCycle)
@@ -96,6 +82,16 @@ theorem mem_part_toFinpartition (D : PerfectMatching α) (a b : α) :
     b ∈ D.toFinpartition.part a ↔ a = b ∨ a = D.val b := by
   simp only [toFinpartition, Finpartition.mem_part_ofSetoid_iff_rel]
   exact D.prop.involutive.sameCycle_iff a b
+
+/-- The matching partition is its orbit partition for any orbit decision procedure. -/
+theorem toFinpartition_eq_ofSetoid (D : PerfectMatching α)
+    [DecidableRel (Equiv.Perm.SameCycle.setoid D.val)] :
+    D.toFinpartition = Finpartition.ofSetoid (Equiv.Perm.SameCycle.setoid D.val) := by
+  apply Finpartition.ext_of_part
+  intro a _
+  ext b
+  simp only [mem_part_toFinpartition, Finpartition.mem_part_ofSetoid_iff_rel]
+  exact (D.prop.involutive.sameCycle_iff a b).symm
 
 /-- The block through `a` is the pair consisting of `a` and its partner. -/
 @[simp]
@@ -137,7 +133,6 @@ theorem _root_.Finpartition.IsPairing.toFinpartition_toPerfectMatching
 
 /-- Perfect matchings are equivalent to partitions into pairs, with no ordering required
 on the finite underlying type. -/
-@[expose]
 def pairingEquiv : PerfectMatching α ≃ {P : Finpartition (univ : Finset α) // P.IsPairing} where
   toFun D := ⟨D.toFinpartition, D.isPairing_toFinpartition⟩
   invFun P := P.2.toPerfectMatching
@@ -147,12 +142,12 @@ def pairingEquiv : PerfectMatching α ≃ {P : Finpartition (univ : Finset α) /
 /-- The forward conversion of the equivalence is the orbit partition. -/
 @[simp]
 theorem pairingEquiv_apply_coe (D : PerfectMatching α) :
-    (pairingEquiv D).val = D.toFinpartition := rfl
+    (pairingEquiv D).val = D.toFinpartition := (rfl)
 
 /-- The inverse conversion sends each point to its distinct block partner. -/
 @[simp]
-theorem pairingEquiv_symm_apply_val (P : {P : Finpartition (univ : Finset α) // P.IsPairing}) :
-    (pairingEquiv.symm P).val = P.2.toPerfectMatching.val := rfl
+theorem pairingEquiv_symm_apply (P : {P : Finpartition (univ : Finset α) // P.IsPairing}) :
+    pairingEquiv.symm P = P.2.toPerfectMatching := (rfl)
 
 end Finite
 

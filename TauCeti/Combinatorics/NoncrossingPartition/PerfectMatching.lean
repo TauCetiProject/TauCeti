@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.ChordDiagram
 public import TauCeti.Combinatorics.NoncrossingPartition.Catalan
-public import TauCeti.Order.Partition.PerfectMatching
+public import TauCeti.Combinatorics.Enumerative.PerfectMatching.Pairing
 
 /-!
 # Noncrossing perfect matchings as pair partitions
@@ -33,17 +33,17 @@ variable {α : Type*} [Fintype α] [LinearOrder α]
 /-- The orbit-partition conversion preserves and reflects noncrossing. -/
 theorem isNoncrossing_toFinpartition_iff (D : PerfectMatching α) :
     D.toFinpartition.IsNoncrossing ↔ D.val.IsNoncrossingMatching := by
-  let : DecidableRel (Equiv.Perm.SameCycle.setoid D.val) :=
-    inferInstanceAs (DecidableRel D.val.SameCycle)
-  simpa only [toFinpartition] using D.prop.involutive.isNoncrossingMatching_iff.symm
+  classical
+  rw [toFinpartition_eq_ofSetoid]
+  exact D.prop.involutive.isNoncrossingMatching_iff.symm
 
 /-- Noncrossing perfect matchings are equivalent to noncrossing pair partitions.
 The forward map sends an arc to its two-element block. -/
-@[expose]
 def noncrossingPairingEquiv :
     {D : PerfectMatching α // D.val.IsNoncrossingMatching} ≃
       {P : NoncrossingPartition (univ : Finset α) // P.val.IsPairing} :=
-  (pairingEquiv.subtypeEquiv fun D => D.isNoncrossing_toFinpartition_iff.symm).trans
+  (pairingEquiv.subtypeEquiv fun D => by
+    simpa only [pairingEquiv_apply_coe] using D.isNoncrossing_toFinpartition_iff.symm).trans
     ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
       ((Equiv.subtypeEquivRight fun _ => and_comm).trans
         (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm))
@@ -52,16 +52,18 @@ def noncrossingPairingEquiv :
 @[simp]
 theorem noncrossingPairingEquiv_apply_coe
     (D : {D : PerfectMatching α // D.val.IsNoncrossingMatching}) :
-    (noncrossingPairingEquiv D).val.val = D.val.toFinpartition := rfl
+    (noncrossingPairingEquiv D).val.val = D.val.toFinpartition := by
+  simp [noncrossingPairingEquiv]
 
 /-- The inverse noncrossing equivalence recovers the unique block partners. -/
 @[simp]
 theorem noncrossingPairingEquiv_symm_apply_val
     (P : {P : NoncrossingPartition (univ : Finset α) // P.val.IsPairing}) :
-    (noncrossingPairingEquiv.symm P).val = P.prop.toPerfectMatching := rfl
+    (noncrossingPairingEquiv.symm P).val = P.prop.toPerfectMatching := by
+  simp [noncrossingPairingEquiv]
 
 /-- A finite linear order with `2 * n` points has `catalan n` noncrossing perfect matchings. -/
-theorem card_noncrossing_eq_catalan {n : ℕ} (hn : Fintype.card α = 2 * n) :
+theorem card_isNoncrossingMatching_eq_catalan {n : ℕ} (hn : Fintype.card α = 2 * n) :
     Nat.card {D : PerfectMatching α // D.val.IsNoncrossingMatching} = catalan n := by
   rw [Nat.card_congr (noncrossingPairingEquiv (α := α)), Nat.card_eq_fintype_card]
   exact NoncrossingPartition.card_isPairing_eq_catalan (by simpa using hn)
