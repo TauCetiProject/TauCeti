@@ -45,19 +45,6 @@ universe u
 
 variable {n : ℕ} (D : OrientedPDCode n)
 
-/-- A cube vertex `S` has normalized cochain degree `|S| - n₋`. -/
-@[simp]
-theorem stateCochainDegree_cubeState (S : Finset (Fin n)) :
-    D.stateCochainDegree (PDCode.cubeState S) = (#S : ℤ) - D.negativeCrossingCount := by
-  rw [stateCochainDegree_def, PDCode.filter_cubeState_eq_false]
-
-/-- A cube vertex `S` has quantum shift `|S| + n₊ - 2n₋`. -/
-@[simp]
-theorem stateQuantumShift_cubeState (S : Finset (Fin n)) :
-    D.stateQuantumShift (PDCode.cubeState S) =
-      (#S : ℤ) + D.positiveCrossingCount - 2 * D.negativeCrossingCount := by
-  rw [stateQuantumShift_def, PDCode.filter_cubeState_eq_false]
-
 variable (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 
 /-- The normalized Khovanov complex of a planar oriented diagram. Quantum degree `j` uses
