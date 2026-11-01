@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Swap
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # Coordinate rotations in the special orthogonal group
@@ -42,11 +42,11 @@ vector, sends the `j`-th basis vector to the negative of the `i`-th basis vector
 remaining basis vectors. -/
 def coordinateRotation (i j : n) (hij : i ≠ j) : Matrix.specialOrthogonalGroup n R :=
   ⟨Matrix.swap R i j * Matrix.diagonal (Function.update 1 j (-1)), by
-    refine mem_specialOrthogonalGroup_iff.2 ⟨?_, ?_⟩
-    · refine Submonoid.mul_mem _ ?_ (diagonal_mem_unitary.2 <| Pi.mem_unitary_iff.2 fun a => ?_)
-      · rw [mem_orthogonalGroup_iff', transpose_swap, swap_mul_self]
-      · rcases eq_or_ne a j with rfl | h <;> simp [*, Unitary.mem_iff]
-    · simp [det_mul, swap, det_permutation, hij, Finset.prod_update_of_mem]⟩
+    rw [← coe_orthogonalDiagonalReflection, mem_specialOrthogonalGroup_iff, det_mul,
+      det_orthogonalDiagonalReflection]
+    refine ⟨Submonoid.mul_mem _ ?_ (orthogonalDiagonalReflection R j).2, ?_⟩
+    · rw [mem_orthogonalGroup_iff', transpose_swap, swap_mul_self]
+    · simp [swap, det_permutation, hij]⟩
 
 /-- The underlying matrix of a coordinate rotation is the signed swap matrix used in its
 definition. -/
