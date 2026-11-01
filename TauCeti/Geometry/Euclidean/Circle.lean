@@ -44,21 +44,12 @@ theorem coe_circleSphereHomeomorph (t : AddCircle (2 * π)) :
 theorem circleSphereHomeomorph_coe (t : ℝ) :
     (circleSphereHomeomorph t : EuclideanSpace ℝ (Fin 2)) =
       WithLp.toLp 2 ![cos t, sin t] := by
-  have ht : ((Real.Angle.toCircle (t : Real.Angle)) : ℂ) =
+  have ht : ((Real.Angle.toCircle (t : AddCircle (2 * π))) : ℂ) =
       (cos t : ℂ) + sin t * Complex.I := by
-    simpa only [Real.Angle.cos_coe, Real.Angle.sin_coe] using
+    simpa only [Real.Angle.cos_coe, Real.Angle.sin_coe] using!
       Real.Angle.coe_toCircle (t : Real.Angle)
-  rw [coe_circleSphereHomeomorph]
-  ext i
-  fin_cases i
-  · have h := congrArg Complex.re ht
-    simp only [Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im, mul_zero, zero_mul, sub_zero, add_zero] at h
-    exact h
-  · have h := congrArg Complex.im ht
-    simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im, mul_zero, mul_one, add_zero, zero_add] at h
-    exact h
+  rw [coe_circleSphereHomeomorph, WithLp.ext_iff, Complex.orthonormalBasisOneI_repr_apply, ht]
+  simp [Complex.cos_ofReal_re, Complex.sin_ofReal_re]
 
 /-- The inner product of the two parametrized directions is the cosine of their angle difference. -/
 @[simp]
