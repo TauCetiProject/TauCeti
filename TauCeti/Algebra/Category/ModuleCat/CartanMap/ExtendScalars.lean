@@ -149,6 +149,7 @@ theorem finiteProjectiveModulesK0Extend_id :
 
 /-- Extension of scalars along a composite `g ∘ f` induces the composite of the extensions along
 `f` and along `g`. -/
+@[simp]
 theorem finiteProjectiveModulesK0Extend_comp (g : S →+* T) :
     (g.comp f).finiteProjectiveModulesK0Extend =
       g.finiteProjectiveModulesK0Extend.comp f.finiteProjectiveModulesK0Extend :=

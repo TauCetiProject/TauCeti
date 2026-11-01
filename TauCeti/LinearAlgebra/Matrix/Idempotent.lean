@@ -78,6 +78,16 @@ theorem IsIdempotentElem.row_mem_range_vecMulLinear {e : Matrix ι ι A} (he : I
     (i : ι) : e i ∈ range e.vecMulLinear := by
   rw [he.mem_range_vecMulLinear_iff, ← Matrix.mul_apply_eq_vecMul, he.eq]
 
+/-- A vector `v` in the range of an idempotent matrix `e` is the combination `∑ i, vᵢ • eᵢ` of
+the rows `eᵢ` of `e`. -/
+theorem IsIdempotentElem.eq_sum_smul_row {e : Matrix ι ι A} (he : IsIdempotentElem e)
+    (v : range e.vecMulLinear) :
+    v = ∑ i, (v : ι → A) i • (⟨e i, he.row_mem_range_vecMulLinear i⟩ : range e.vecMulLinear) := by
+  ext1
+  rw [Submodule.coe_sum]
+  simp only [Submodule.coe_smul, ← vecMul_eq_sum]
+  exact (he.mem_range_vecMulLinear_iff.1 v.2).symm
+
 omit [Fintype ι] in
 /-- A linear map from the range of an idempotent matrix `f` to row vectors is right multiplication
 by the matrix of its values on the rows of `f`. -/

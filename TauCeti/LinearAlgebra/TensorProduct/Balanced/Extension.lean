@@ -474,24 +474,16 @@ noncomputable def rangeVecMulLinearEquiv (he : IsIdempotentElem e) :
     BalancedExtension f (LinearMap.range e.vecMulLinear) ≃ₗ[S]
       LinearMap.range (e.map f).vecMulLinear :=
   LinearEquiv.ofLinearMap (lift (rangeVecMulLinearMap f he)) (rangeVecMulLinearInv f he)
-    (LinearMap.ext fun w ↦ Subtype.ext <| by
-      have hw := (he.matrix_map f).mem_range_vecMulLinear_iff.1 w.2
-      rw [vecMul_eq_sum] at hw
-      conv_rhs => rw [LinearMap.id_apply, ← hw]
-      simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Submodule.subtype_apply,
-        Fintype.linearCombination_apply, map_sum, map_smul, lift_tmul, one_smul,
-        Submodule.coe_sum, Submodule.coe_smul, coe_rangeVecMulLinearMap_apply]
-      exact Finset.sum_congr rfl fun i _ ↦ by ext j; simp)
+    (LinearMap.ext fun w ↦ by
+      conv_rhs => rw [LinearMap.id_apply, (he.matrix_map f).eq_sum_smul_row w]
+      simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Fintype.linearCombination_apply,
+        map_sum, map_smul, lift_tmul, one_smul]
+      rfl)
     (hom_ext fun v ↦ by
-      have hv : v = ∑ i, (v : ι → R) i • ⟨e i, he.row_mem_range_vecMulLinear i⟩ := by
-        ext1
-        rw [Submodule.coe_sum]
-        simp only [Submodule.coe_smul, ← vecMul_eq_sum]
-        exact (he.mem_range_vecMulLinear_iff.1 v.2).symm
-      conv_rhs => rw [LinearMap.id_apply, hv, ← includeRight_apply, map_sum]
+      conv_rhs => rw [LinearMap.id_apply, he.eq_sum_smul_row v, ← includeRight_apply, map_sum]
       simp only [LinearMap.comp_apply, lift_tmul, one_smul, rangeVecMulLinearInv,
-        Fintype.linearCombination_apply, Submodule.subtype_apply, map_smulₛₗ, smul_tmul, mul_one,
-        coe_rangeVecMulLinearMap_apply, Function.comp_apply, includeRight_apply])
+        Fintype.linearCombination_apply, map_smulₛₗ, includeRight_apply, smul_tmul, mul_one]
+      rfl)
 
 @[simp]
 theorem coe_rangeVecMulLinearEquiv_tmul (he : IsIdempotentElem e) (s : S)
