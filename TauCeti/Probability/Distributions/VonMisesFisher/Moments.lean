@@ -252,12 +252,14 @@ private lemma integral_sq_inner_vmf (hd : 2 ≤ Module.finrank ℝ E)
 integrable by continuity on the compact sphere. -/
 theorem integral_inner_mul_inner_vonMisesFisherNaturalMeasure
     (hd : 2 ≤ Module.finrank ℝ E) {η : E} (hη : η ≠ 0) (u v : E) :
-    let d := (Module.finrank ℝ E : ℝ)
-    let A := besselI (d / 2) ‖η‖ / besselI (d / 2 - 1) ‖η‖
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫
         ∂vonMisesFisherNaturalMeasure η =
-      A / ‖η‖ * ⟪u, v⟫ +
-        (1 - d * A / ‖η‖) * (⟪η, u⟫ / ‖η‖) * (⟪η, v⟫ / ‖η‖) := by
+      besselI ((Module.finrank ℝ E : ℝ) / 2) ‖η‖ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ / ‖η‖ * ⟪u, v⟫ +
+        (1 - (Module.finrank ℝ E : ℝ) *
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) ‖η‖ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖) / ‖η‖) *
+          (⟪η, u⟫ / ‖η‖) * (⟪η, v⟫ / ‖η‖) := by
   have hint (w : E) := (memLp_inner_vonMisesFisherNaturalMeasure η w 2).integrable_sq
   have hproduct := integrable_inner_mul_inner_vonMisesFisherNaturalMeasure η u v
   have hsqadd : Integrable (fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ ^ 2 + ⟪v, (x : E)⟫ ^ 2)
@@ -276,30 +278,33 @@ theorem integral_inner_mul_inner_vonMisesFisherNaturalMeasure
     integral_add (hint u) (hint v), integral_const_mul,
     integral_sq_inner_vmf hd hη u, integral_sq_inner_vmf hd hη v] at hsum
   simp only [norm_add_sq_real, inner_add_right] at hsum
-  dsimp only at hsum ⊢
   linear_combination hsum / 2
 
-/-- The von Mises–Fisher second-moment tensor, evaluated on any two vectors. For positive
-concentration it is `(A/κ) I + (1-d A/κ) m mᵀ`; at zero it is the uniform tensor `I/d`. -/
+/-- At positive concentration, the von Mises–Fisher second-moment tensor evaluated on any
+two vectors is `(A/κ) I + (1-d A/κ) m mᵀ`, where `A = I_{d/2}(κ) / I_{d/2-1}(κ)`. -/
 theorem integral_inner_mul_inner_vonMisesFisherMeasure (hd : 2 ≤ Module.finrank ℝ E)
-    (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ) (u v : E) :
-    let d := (Module.finrank ℝ E : ℝ)
-    let A := besselI (d / 2) κ / besselI (d / 2 - 1) κ
+    (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 < κ) (u v : E) :
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫
         ∂vonMisesFisherMeasure m κ =
-      if κ = 0 then ⟪u, v⟫ / d else
-        A / κ * ⟪u, v⟫ + (1 - d * A / κ) * ⟪(m : E), u⟫ * ⟪(m : E), v⟫ := by
-  have : Nontrivial E := ⟨⟨m, 0, ne_zero_of_mem_sphere one_ne_zero m⟩⟩
-  by_cases hzero : κ = 0
-  · subst κ
-    simp
-  have hκ : 0 < κ := lt_of_le_of_ne hκ (Ne.symm hzero)
-  simp only [hzero, ↓reduceIte]
+      besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ / κ * ⟪u, v⟫ +
+        (1 - (Module.finrank ℝ E : ℝ) *
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) / κ) *
+          ⟪(m : E), u⟫ * ⟪(m : E), v⟫ := by
   have hη : κ • (m : E) ≠ 0 := smul_ne_zero hκ.ne' (ne_zero_of_mem_sphere one_ne_zero m)
   have hnorm : ‖κ • (m : E)‖ = κ := by simp [norm_smul, abs_of_pos hκ]
   rw [vonMisesFisherMeasure_of_nonneg m hκ.le]
   simpa only [hnorm, real_inner_smul_left, mul_div_cancel_left₀ _ hκ.ne'] using
     integral_inner_mul_inner_vonMisesFisherNaturalMeasure hd hη u v
+
+/-- At zero concentration, the second-moment tensor is the uniform tensor `I/d`. -/
+theorem integral_inner_mul_inner_vonMisesFisherMeasure_zero
+    (m : sphere (0 : E) 1) (u v : E) :
+    ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫
+        ∂vonMisesFisherMeasure m 0 = ⟪u, v⟫ / (Module.finrank ℝ E : ℝ) := by
+  have : Nontrivial E := ⟨⟨m, 0, ne_zero_of_mem_sphere one_ne_zero m⟩⟩
+  simp
 
 end TauCeti.Probability
 
@@ -307,21 +312,36 @@ namespace ProbabilityTheory.HasLaw
 
 open TauCeti.Probability
 
-/-- The second-moment tensor of a sphere-valued von Mises–Fisher random variable, paired
-with arbitrary ambient vectors. The source measure needs no additional normalization. -/
+/-- At positive concentration, the second-moment tensor of a sphere-valued von Mises–Fisher
+random variable, paired with arbitrary ambient vectors. The source measure needs no additional
+normalization. -/
 theorem integral_inner_mul_inner_vonMisesFisherMeasure
     {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → sphere (0 : E) 1} {m : sphere (0 : E) 1} {κ : ℝ}
     (hX : HasLaw X (vonMisesFisherMeasure m κ) P) (hd : 2 ≤ Module.finrank ℝ E)
-    (hκ : 0 ≤ κ) (u v : E) :
-    let d := (Module.finrank ℝ E : ℝ)
-    let A := besselI (d / 2) κ / besselI (d / 2 - 1) κ
+    (hκ : 0 < κ) (u v : E) :
     ∫ ω, ⟪u, (X ω : E)⟫ * ⟪v, (X ω : E)⟫ ∂P =
-      if κ = 0 then ⟪u, v⟫ / d else
-        A / κ * ⟪u, v⟫ + (1 - d * A / κ) * ⟪(m : E), u⟫ * ⟪(m : E), v⟫ := by
-  dsimp only
+      besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ / κ * ⟪u, v⟫ +
+        (1 - (Module.finrank ℝ E : ℝ) *
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) / κ) *
+          ⟪(m : E), u⟫ * ⟪(m : E), v⟫ := by
   rw [← TauCeti.Probability.integral_inner_mul_inner_vonMisesFisherMeasure hd m hκ u v]
+  simpa only [Function.comp_def] using hX.integral_comp
+    (f := fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫) (by fun_prop)
+
+/-- At zero concentration, the second moment of a sphere-valued von Mises–Fisher random
+variable is the uniform-sphere second moment. -/
+theorem integral_inner_mul_inner_vonMisesFisherMeasure_zero
+    {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → sphere (0 : E) 1} {m : sphere (0 : E) 1}
+    (hX : HasLaw X (vonMisesFisherMeasure m 0) P) (u v : E) :
+    ∫ ω, ⟪u, (X ω : E)⟫ * ⟪v, (X ω : E)⟫ ∂P =
+      ⟪u, v⟫ / (Module.finrank ℝ E : ℝ) := by
+  rw [← TauCeti.Probability.integral_inner_mul_inner_vonMisesFisherMeasure_zero m u v]
   simpa only [Function.comp_def] using hX.integral_comp
     (f := fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫) (by fun_prop)
 
