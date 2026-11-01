@@ -16,9 +16,12 @@ A locally finite family of sets stays locally finite when it is reindexed along 
 projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
 the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
-finitely many locally finite families is locally finite (`LocallyFinite.iUnion`). The topological
-support of a locally finite sum of functions lies in the union of their topological supports
-(`LocallyFinite.tsupport_finsum_subset`).
+finitely many locally finite families is locally finite (`LocallyFinite.iUnion`). A compact set
+has a neighbourhood meeting only finitely many members of a locally finite family
+(`LocallyFinite.exists_mem_nhdsSet_finite`), so the images of the members under a closed map with
+compact fibres, such as a proper map, again form a locally finite family
+(`LocallyFinite.image_of_isClosedMap`). The topological support of a locally finite sum of
+functions lies in the union of their topological supports (`LocallyFinite.tsupport_finsum_subset`).
 
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
@@ -32,7 +35,7 @@ constructed with Mathlib's `exists_continuous_forall_mem_convex_of_local_const`.
 
 public section
 
-open Set
+open Set Topology
 
 namespace LocallyFinite
 
@@ -91,6 +94,30 @@ protected theorem iUnion [Finite κ] {f : κ → ι → Set X} (hf : ∀ k, Loca
   intro x
   filter_upwards [Filter.eventually_all.2 fun k ↦ hf k x] with t ht
   simpa only [iUnion_inter, nonempty_iUnion, ofPred_exists] using finite_iUnion ht
+
+/-- A locally finite family has, around every compact set, a neighbourhood meeting only finitely
+many of its members. -/
+theorem exists_mem_nhdsSet_finite (hf : LocallyFinite f) {K : Set X} (hK : IsCompact K) :
+    ∃ W ∈ 𝓝ˢ K, {i | (f i ∩ W).Nonempty}.Finite := by
+  refine hK.induction_on ⟨∅, by simp, by simp⟩ (fun s t hst ⟨W, hW, hfin⟩ ↦
+    ⟨W, nhdsSet_mono hst hW, hfin⟩) (fun s t ⟨W, hW, hfin⟩ ⟨W', hW', hfin'⟩ ↦
+    ⟨W ∪ W', union_mem_nhdsSet hW hW', (hfin.union hfin').subset fun i ↦ by
+      simp [inter_union_distrib_left]⟩)
+    fun x _ ↦ ?_
+  obtain ⟨U, hU, hfin⟩ := hf x
+  exact ⟨interior U, mem_nhdsWithin_of_mem_nhds (interior_mem_nhds.2 hU), interior U,
+    isOpen_interior.mem_nhdsSet.2 subset_rfl,
+    hfin.subset fun i ⟨y, hyi, hyU⟩ ↦ ⟨y, hyi, interior_subset hyU⟩⟩
+
+/-- The image of a locally finite family under a closed map with compact fibres is locally finite.
+This applies in particular to proper maps. -/
+theorem image_of_isClosedMap {Y : Type*} [TopologicalSpace Y] {g : X → Y} (hf : LocallyFinite f)
+    (hg : IsClosedMap g) (hfib : ∀ y, IsCompact (g ⁻¹' {y})) :
+    LocallyFinite fun i ↦ g '' f i := by
+  intro y
+  obtain ⟨W, hW, hfin⟩ := hf.exists_mem_nhdsSet_finite (hfib y)
+  obtain ⟨V, hV, hVW⟩ := Filter.mem_comap.1 (hg.comap_nhds_le hW)
+  exact ⟨V, hV, hfin.subset fun i ⟨_, ⟨x, hx, rfl⟩, hxV⟩ ↦ ⟨x, hx, hVW hxV⟩⟩
 
 /-- The topological multiplicative support of a product of functions with locally finite
 multiplicative supports lies in the union of their topological multiplicative supports. -/

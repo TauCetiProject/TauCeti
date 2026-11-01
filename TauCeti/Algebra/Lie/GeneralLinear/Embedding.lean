@@ -31,6 +31,8 @@ unless `f` is surjective, so it is a Lie algebra homomorphism but not an algebra
 
 * `TauCeti.glEmbedding_single`: a matrix unit goes to the matrix unit at the image indices.
 * `TauCeti.glEmbedding_apply_apply`: the entries in the range of `f` are those of the source.
+* `TauCeti.glEmbedding_apply_apply_of_notMem_range_left` and
+  `TauCeti.glEmbedding_apply_apply_of_notMem_range_right`: the other entries vanish.
 * `TauCeti.glEmbedding_eq_sum_single`: the image as a sum of matrix units.
 * `TauCeti.glEmbedding_injective`: the embedding is injective.
 * `TauCeti.glEmbedding_refl` and `TauCeti.glEmbedding_trans`: the embeddings compose along
@@ -94,6 +96,20 @@ theorem glEmbedding_eq_sum_single (f : m ↪ n) (A : Matrix m m R) :
 theorem glEmbedding_apply_apply (f : m ↪ n) (A : Matrix m m R) (a b : m) :
     glEmbedding R f A (f a) (f b) = A a b := by
   simp [glEmbedding_eq_sum_single, Matrix.sum_apply, single_apply, ite_and]
+
+/-- The rows of the corner embedding outside the image of the injection vanish. -/
+theorem glEmbedding_apply_apply_of_notMem_range_left (f : m ↪ n) (A : Matrix m m R) {a : n}
+    (ha : a ∉ Set.range f) (b : n) : glEmbedding R f A a b = 0 := by
+  simp only [glEmbedding_eq_sum_single, Matrix.sum_apply]
+  exact Finset.sum_eq_zero fun x _ => Finset.sum_eq_zero fun y _ =>
+    single_apply_of_row_ne (fun h => ha ⟨x, h⟩) _ _ _
+
+/-- The columns of the corner embedding outside the image of the injection vanish. -/
+theorem glEmbedding_apply_apply_of_notMem_range_right (f : m ↪ n) (A : Matrix m m R) (a : n)
+    {b : n} (hb : b ∉ Set.range f) : glEmbedding R f A a b = 0 := by
+  simp only [glEmbedding_eq_sum_single, Matrix.sum_apply]
+  exact Finset.sum_eq_zero fun x _ => Finset.sum_eq_zero fun y _ =>
+    single_apply_of_col_ne _ _ (fun h => hb ⟨y, h⟩) _
 
 /-- The corner embedding is injective. -/
 theorem glEmbedding_injective (f : m ↪ n) : Function.Injective (glEmbedding R f) := by

@@ -106,7 +106,7 @@ theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : 
         (tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional C _).symm
     _ ≤ ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 := by
         gcongr with n
-        exact T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le V _ n
+        exact T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
 
 variable [CompleteSpace E]
 
@@ -154,7 +154,7 @@ private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertB
       (C.singularValue n : ℝ≥0∞) ^ 2 + ((δ * (2 * T.singularValue n + 1) : ℝ≥0) : ℝ≥0∞) := by
     have h₁ := hV n (Finset.mem_range.mp hn)
     have h₂ : (C.singularValue n : ℝ) ≤ T.singularValue n :=
-      T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le V _ n
+      T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
     have hδ1' : (δ : ℝ) ≤ 1 := hδ1
     rw [← ENNReal.coe_pow, ← ENNReal.coe_pow, ← ENNReal.coe_add, ENNReal.coe_le_coe,
       ← NNReal.coe_le_coe]

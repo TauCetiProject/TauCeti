@@ -53,4 +53,15 @@ theorem Hom.eq_of_isFolded_of_reachable (hT : T.IsFolded)
     · simpa only [f.graphHom.map_src, g.graphHom.map_src] using hV (S.graph.src e)
     · exact (f.map_label e).trans (g.map_label e).symm
 
+/-- A label-preserving morphism from a folded graph that is injective on vertices is also
+injective on darts. -/
+theorem Hom.injective_mapE_of_injective_mapV (f : S.Hom T) (hS : S.IsFolded)
+    (hf : Function.Injective f.graphHom.mapV) : Function.Injective f.graphHom.mapE := by
+  intro e d h
+  apply (S.isFolded_def.mp hS) e d
+  · apply hf
+    exact (f.graphHom.map_src e).symm.trans
+      ((congrArg T.graph.src h).trans (f.graphHom.map_src d))
+  · exact (f.map_label e).symm.trans ((congrArg T.label h).trans (f.map_label d))
+
 end TauCeti.StallingsGraph
