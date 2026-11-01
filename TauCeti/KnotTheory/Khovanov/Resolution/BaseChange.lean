@@ -80,29 +80,15 @@ section Cube
 variable {n : ℕ} (D : PDCode n) (hD : D.IsPlanar) {R S : Type u} [CommRing R] [CommRing S]
   (f : R →+* S) (j : ℤ)
 
-/-- The vertex `T` of the degree-`j` cube of resolutions, identified through its inclusion
-with the degree `j - |T|` piece of the circle tensor of the resolution of `T`. -/
-private def resolutionCubeVertexEquiv (R : Type u) [CommRing R] (T : Finset (Fin n)) :
-    (D.resolutionCube hD R j).obj T ≃ₗ[R]
-      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState T))).piece (j - #T) :=
-  (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j T)).trans
-    (LinearEquiv.ofEq _ _ (D.range_resolutionCubeι hD R j T))
-
-private theorem coe_resolutionCubeVertexEquiv (R : Type u) [CommRing R] (T : Finset (Fin n))
-    (x : (D.resolutionCube hD R j).obj T) :
-    (resolutionCubeVertexEquiv D hD j R T x : Khovanov.CircleTensor R _) =
-      D.resolutionCubeι hD R j T x :=
-  (rfl)
-
 /-- The component at the vertex `T` of the comparison of cubes of resolutions: scalar
 extension of the degree `j - |T|` piece of the circle tensor of the resolution of `T`. -/
 private def resolutionCubeBaseChangeApp (T : Finset (Fin n)) :
     (D.resolutionCube hD R j ⋙ ModuleCat.extendScalars f).obj T ≅
       (D.resolutionCube hD S j).obj T :=
   letI := f.toAlgebra
-  ((resolutionCubeVertexEquiv D hD j R T).baseChange R S ≪≫ₗ
+  ((D.resolutionCubeVertexEquiv hD R j T).baseChange R S ≪≫ₗ
     Khovanov.circlePieceBaseChange R S (D.ResolvedCircle (cubeState T)) (j - #T) ≪≫ₗ
-      (resolutionCubeVertexEquiv D hD j S T).symm).toModuleIso
+      (D.resolutionCubeVertexEquiv hD S j T).symm).toModuleIso
 
 private theorem resolutionCubeι_resolutionCubeBaseChangeApp_tmul (T : Finset (Fin n)) (a : S)
     (x : (D.resolutionCube hD R j).obj T) :
@@ -111,9 +97,9 @@ private theorem resolutionCubeι_resolutionCubeBaseChangeApp_tmul (T : Finset (F
       Khovanov.circleBaseChange R S _ (a ⊗ₜ[R] D.resolutionCubeι hD R j T x) := by
   let := f.toAlgebra
   -- The component is, by definition, scalar extension of the vertex identified with its piece.
-  calc _ = D.resolutionCubeι hD S j T ((resolutionCubeVertexEquiv D hD j S T).symm
+  calc _ = D.resolutionCubeι hD S j T ((D.resolutionCubeVertexEquiv hD S j T).symm
         (Khovanov.circlePieceBaseChange R S _ _
-          (a ⊗ₜ[R] resolutionCubeVertexEquiv D hD j R T x))) := (rfl)
+          (a ⊗ₜ[R] D.resolutionCubeVertexEquiv hD R j T x))) := (rfl)
     _ = _ := by
       rw [← coe_resolutionCubeVertexEquiv, LinearEquiv.apply_symm_apply,
         Khovanov.subtype_circlePieceBaseChange, LinearMap.baseChange_tmul,
@@ -136,6 +122,12 @@ private theorem resolutionCubeBaseChangeApp_naturality {T U : Finset (Fin n)} (h
   have hS := congr($(D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD S j ha)
     ((resolutionCubeBaseChangeApp D hD f j T).hom ((1 : S) ⊗ₜ[R] x)))
   rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.ofHom_apply] at hR hS
+  -- `ModuleCat.ExtendScalars.hom_ext` states the goal on `1 ⊗ₜ[R] x` with `S` as the left
+  -- factor, not `(ModuleCat.restrictScalars f).obj S`, so `ModuleCat.comp_apply` and
+  -- `ModuleCat.ExtendScalars.map_tmul` do not rewrite it: the goal is not type-correct at
+  -- instance transparency. The outer calc steps unfold the composites, and the functor
+  -- `(D.resolutionCube hD R j ⋙ ModuleCat.extendScalars f).map g`, which sends `1 ⊗ x` to
+  -- `1 ⊗ (D.resolutionCube hD R j).map g x`, by `rfl`.
   calc _ = D.resolutionCubeι hD S j (insert a T)
         ((resolutionCubeBaseChangeApp D hD f j (insert a T)).hom
           ((1 : S) ⊗ₜ[R] (D.resolutionCube hD R j).map (homOfLE h.le) x)) := (rfl)
