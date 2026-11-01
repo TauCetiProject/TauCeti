@@ -50,7 +50,8 @@ theorem tendsto_iff_tendsto_apply {l : Filter α} {M : α → SpecialLinearGroup
 on column vectors, by restricting the action of all square matrices. -/
 instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
     ContinuousSMul (SpecialLinearGroup n R) (n → R) :=
-  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtype_val rfl
+  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtype_val
+    (SpecialLinearGroup.smul_def _ _)
 
 /-- If the diagonal entries of a sequence of matrices of `SL(2, ℝ)` converge to those of a diagonal
 matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each term by a

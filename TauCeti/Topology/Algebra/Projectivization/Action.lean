@@ -70,9 +70,9 @@ instance instContinuousSMulPSL :
   continuous_smul := by
     rw [(QuotientGroup.isOpenQuotientMap_mk.prodMap
       IsOpenQuotientMap.id).isQuotientMap.continuous_iff]
-    -- The class of `g ∈ SL(n, K)` acts as `g` does
-    -- (`Matrix.ProjectiveSpecialLinearGroup.smul_proj_mk`).
-    exact continuous_smul (M := Matrix.SpecialLinearGroup n K) (X := ℙ K (n → K))
+    -- The class of `g ∈ SL(n, K)` acts as `g` does.
+    exact continuous_smul.congr fun p ↦
+      (Matrix.ProjectiveSpecialLinearGroup.smul_proj_mk p.1 p.2).symm
 
 end Field
 
