@@ -23,10 +23,11 @@ and in particular, at `φ = π / 2`, the complete integrals `K(k)`, `E(k)` and `
 corresponding integrals over `[0, 1]`. All three forms hold for every modulus `k` and every
 characteristic `α2`.
 
-All three algebraic integrands are singular at `t = ±1`, so the complete integrals are improper.
-The integrability statements below show that these integrals are genuine and not junk values: on
-`[-1, 1]` the algebraic integrands are integrable, for `k ^ 2 < 1` (and `α2 < 1` for the third
-kind) in the first and third cases and for every `k` in the second.
+For `k ^ 2 < 1` (and `α2 < 1` for the third kind) the three algebraic integrands are singular at
+`t = ±1`, so the complete integrals are improper. The integrability statements below show that
+these integrals are genuine and not junk values: on `[-1, 1]` the algebraic integrands are
+integrable, for `k ^ 2 < 1` (and `α2 < 1` for the third kind) in the first and third cases and for
+every `k` in the second.
 
 ## Main statements
 
@@ -42,9 +43,11 @@ kind) in the first and third cases and for every `k` in the second.
 
 Mathlib's monotone change of variables `intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg`
 and its integrability counterpart `intervalIntegral.integrable_deriv_smul_comp_iff_of_deriv_nonneg`,
-applied to `t = sin θ` on `[-π/2, π/2]`, need no continuity of the integrand in `t`: after
-multiplication by `cos θ`, each algebraic integrand at `t = sin θ` is the trigonometric integrand,
-which is continuous.
+applied to `t = sin θ` on `[-π/2, π/2]`, need no continuity of the integrand in `t`. On the open
+interval `(-π/2, π/2)`, each algebraic integrand at `t = sin θ`, multiplied by `cos θ`, is the
+trigonometric integrand, for every `k` and `α2`; this gives the identities. The integrability
+statements also use continuity of the trigonometric integrand, which holds for `k ^ 2 < 1` (and
+`α2 < 1`) in the first and third cases and for every `k` in the second.
 
 ## References
 
@@ -161,16 +164,17 @@ theorem legendrePi_eq_integral_algebraic {φ : ℝ} (k α2 : ℝ) (hφ : |φ| �
 /-! ### The complete integrals -/
 
 /-- **The algebraic form of the complete integral of the first kind**:
-`K(k) = ∫₀¹ ((1 - t²)(1 - k² t²))^(-1/2) dt`, an improper integral at `t = 1`, integrable for
-`k ^ 2 < 1` by `integrableOn_legendreF_algebraic_integrand`. -/
+`K(k) = ∫₀¹ ((1 - t²)(1 - k² t²))^(-1/2) dt`. For `k ^ 2 < 1` this is an improper integral at
+`t = 1` of an integrable function, by `integrableOn_legendreF_algebraic_integrand`. -/
 theorem legendreK_eq_integral_algebraic (k : ℝ) :
     legendreK k = ∫ t in (0 : ℝ)..1, ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ) := by
   rw [legendreK_def, legendreF_eq_integral_algebraic k (abs_of_pos pi_div_two_pos).le,
     sin_pi_div_two]
 
 /-- **The algebraic form of the complete integral of the second kind**:
-`E(k) = ∫₀¹ (1 - k² t²)^(1/2) (1 - t²)^(-1/2) dt`, an improper integral at `t = 1`, integrable
-by `integrableOn_legendreE_algebraic_integrand`. -/
+`E(k) = ∫₀¹ (1 - k² t²)^(1/2) (1 - t²)^(-1/2) dt`. The integrand is integrable for every `k`, by
+`integrableOn_legendreE_algebraic_integrand`; for `k ^ 2 < 1` the integral is improper at
+`t = 1`. -/
 theorem legendreEc_eq_integral_algebraic (k : ℝ) :
     legendreEc k =
       ∫ t in (0 : ℝ)..1, (1 - k ^ 2 * t ^ 2) ^ (1 / 2 : ℝ) * (1 - t ^ 2) ^ (-1 / 2 : ℝ) := by
@@ -178,8 +182,8 @@ theorem legendreEc_eq_integral_algebraic (k : ℝ) :
     sin_pi_div_two]
 
 /-- **The algebraic form of the complete integral of the third kind**:
-`Π(k, α²) = ∫₀¹ (1 - α² t²)⁻¹ ((1 - t²)(1 - k² t²))^(-1/2) dt`, an improper integral at
-`t = 1`, integrable for `k ^ 2 < 1` and `α2 < 1` by
+`Π(k, α²) = ∫₀¹ (1 - α² t²)⁻¹ ((1 - t²)(1 - k² t²))^(-1/2) dt`. For `k ^ 2 < 1` and `α2 < 1`
+this is an improper integral at `t = 1` of an integrable function, by
 `integrableOn_legendrePi_algebraic_integrand`. -/
 theorem legendrePic_eq_integral_algebraic (k α2 : ℝ) :
     legendrePic k α2 = ∫ t in (0 : ℝ)..1,
@@ -195,8 +199,8 @@ theorem integrableOn_legendreF_algebraic_integrand {k : ℝ} (hk : k ^ 2 < 1) :
     IntegrableOn (fun t ↦ ((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ)) (Icc (-1) 1) :=
   integrableOn_Icc_of_eqOn (eqOn_legendreF_integrand k) (continuous_legendreF_integrand hk)
 
-/-- The algebraic integrand `(1 - k² t²)^(1/2) (1 - t²)^(-1/2)` of the second kind is integrable on
-`[-1, 1]`, despite its singularities at `t = ±1`. -/
+/-- For every `k`, the algebraic integrand `(1 - k² t²)^(1/2) (1 - t²)^(-1/2)` of the second kind
+is integrable on `[-1, 1]`, including for `k ^ 2 < 1`, where it is singular at `t = ±1`. -/
 theorem integrableOn_legendreE_algebraic_integrand (k : ℝ) :
     IntegrableOn (fun t ↦ (1 - k ^ 2 * t ^ 2) ^ (1 / 2 : ℝ) * (1 - t ^ 2) ^ (-1 / 2 : ℝ))
       (Icc (-1) 1) :=
