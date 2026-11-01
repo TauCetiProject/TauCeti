@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 
 /-!
 # Orders of rational functions at codimension-one points
@@ -26,7 +27,10 @@ Elementary facts about `Scheme.ord` itself are recorded first: the order of one 
 function regular on `U` has nonnegative order at every point of `U`
 (`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
 element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
-quotient (`Scheme.ord_algebraMap_stalk`).
+quotient (`Scheme.ord_algebraMap_stalk`). More generally, at a codimension-one generization `η`
+of a point `x`, the order of a nonzero germ at `x` is the `Ring.ord` of its image in `𝒪_{X,η}`
+(`Scheme.ord_algebraMap_stalk_of_specializes`), and in particular it is nonnegative
+(`Scheme.ord_algebraMap_stalk_nonneg`).
 
 Where the local ring at a codimension-one point is a discrete valuation ring, `orderAt` is
 surjective onto `ℤ` (`SchemeWeilDivisor.exists_orderAt_eq`): the powers of a uniformizer supply
@@ -94,6 +98,22 @@ theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1) {c : X.presheaf
   rw [X.ord_eq_iff hx hne, ← hn, ENat.toNat_natCast]
   simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
   rw [Ring.ordFrac_eq_ord _ hc, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
+
+/-- At a codimension-one generization `η` of `x`, the order of a nonzero germ at `x` is the
+order of vanishing `Ring.ord` of its image in the one-dimensional local ring `𝒪_{X,η}`. -/
+theorem ord_algebraMap_stalk_of_specializes {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
+    {b : X.presheaf.stalk x} (hb : b ≠ 0) :
+    X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η =
+      (Ring.ord (X.presheaf.stalk η) ((X.presheaf.stalkSpecializes h).hom b)).toNat := by
+  rw [← algebraMap_stalkSpecializes h,
+    ord_algebraMap_stalk hη ((map_ne_zero_iff _ (stalkSpecializes_injective h)).mpr hb)]
+
+/-- A nonzero germ at `x` has nonnegative order at every codimension-one generization of `x`. -/
+theorem ord_algebraMap_stalk_nonneg {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
+    {b : X.presheaf.stalk x} (hb : b ≠ 0) :
+    0 ≤ X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η := by
+  rw [ord_algebraMap_stalk_of_specializes hη h hb]
+  exact Int.natCast_nonneg _
 
 end Scheme
 
