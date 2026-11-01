@@ -15,7 +15,7 @@ import Mathlib.Tactic.Linarith
 If at most an `η`-fraction of a polyad's supported triples are recolored, the density on a
 test carrying an `ε`-fraction of its support changes by at most `η / ε`; the density on the
 whole polyad changes by at most `η`. Consequently `(δ, r)`-top regularity survives with
-positive parameter `ε` whenever `δ + η + η / ε ≤ ε`. For positive `δ` and `0 ≤ η ≤ 1`, the parameter
+positive parameter `ε` whenever `δ + η + η / ε ≤ ε`. For positive `δ` and `0 ≤ η`, the parameter
 `δ + 2 * √η` suffices, independently of the rank and the number of top colors.
 
 These estimates control the regularity error incurred by editing a coloring, including the
@@ -76,20 +76,24 @@ theorem IsTopRegularOverPolyad.edit_of_card_editedOn_le
       linarith
     _ ≤ ε := by rw [abs_sub_comm] at htest; linarith
 
-/-- An edit fraction `η ≤ 1` worsens the regularity parameter by at most `2 * √η`, at any
-rank. The old parameter is positive; empty polyad supports are allowed. -/
+/-- A nonnegative edit fraction `η` worsens the regularity parameter by at most `2 * √η`,
+at any rank. The old parameter is positive; empty polyad supports are allowed. -/
 theorem IsTopRegularOverPolyad.edit_sqrt (h : H.IsTopRegularOverPolyad P δ r)
-    (hδ : 0 < δ) (hη : 0 ≤ η) (hη₁ : η ≤ 1)
+    (hδ : 0 < δ) (hη : 0 ≤ η)
     (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support) :
     H'.IsTopRegularOverPolyad P (δ + 2 * Real.sqrt η) r := by
-  have hs := Real.sqrt_nonneg η
-  have hs₂ := Real.sq_sqrt hη
-  have hs₁ : Real.sqrt η ≤ 1 := (Real.sqrt_le_one).2 hη₁
-  have hε : 0 < δ + 2 * Real.sqrt η := by positivity
-  apply h.edit_of_card_editedOn_le hε hη ?_ hedit
-  have hdiv : η / (δ + 2 * Real.sqrt η) ≤ Real.sqrt η := by
-    apply (div_le_iff₀ hε).2
+  by_cases hη₁ : η ≤ 1
+  · have hs := Real.sqrt_nonneg η
+    have hs₂ := Real.sq_sqrt hη
+    have hs₁ : Real.sqrt η ≤ 1 := (Real.sqrt_le_one).2 hη₁
+    have hε : 0 < δ + 2 * Real.sqrt η := by positivity
+    apply h.edit_of_card_editedOn_le hε hη ?_ hedit
+    have hdiv : η / (δ + 2 * Real.sqrt η) ≤ Real.sqrt η := by
+      apply (div_le_iff₀ hε).2
+      nlinarith
     nlinarith
-  nlinarith
+  · have hs₁ : 1 ≤ Real.sqrt η := by
+      simpa using Real.sqrt_le_sqrt (le_of_not_ge hη₁)
+    exact isTopRegularOverPolyad_of_one_le (H := H') (P := P) (r := r) (by linarith)
 
 end TauCeti.Colored3Graph
