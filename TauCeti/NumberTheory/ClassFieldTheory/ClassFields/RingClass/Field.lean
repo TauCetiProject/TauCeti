@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClassQuotient
+public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClass.Quotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.Correspondence
 
@@ -18,9 +18,9 @@ Let `O` be an order of conductor `𝔣` in a quadratic field `K`. The kernel of 
 quotient `ringClassIdeleQuotient O : C_K → Pic O` is an open subgroup of finite index of the idele
 class group (`ringClassNormSubgroup O`), so the global class-field correspondence attaches to it a
 unique finite abelian extension of `K` inside `Kˢ` with that norm group: the **ring class field**
-`ringClassField O hK`. It is the class field of the value of `globalClassField` at
-`ringClassNormSubgroup O`, not an independent construction, and its arithmetic is read off from
-the correspondence and from ray-class reciprocity.
+`ringClassField O hK` (`eq_ringClassField_of_range_ideleClassNormMap`). It is the class field of
+the value of `globalClassField` at `ringClassNormSubgroup O`, not an independent construction, and
+its arithmetic is read off from the correspondence and from ray-class reciprocity.
 
 * Its idele-class norm group is the kernel of the ring-class quotient
   (`range_ideleClassNormMap_ringClassField`). That kernel contains the ray subgroup of the
@@ -29,7 +29,8 @@ the correspondence and from ray-class reciprocity.
   every prime not dividing the conductor (`isUnramifiedAt_ringClassField`).
 * The ray-class Artin map of the ring class field at the conductor has kernel the kernel of the
   congruence description `NumberFieldOrder.rayClassToPic : Cl_𝔣 → Pic O`, so it descends to an
-  isomorphism `ringClassArtinEquiv O hK : Pic O ≃* Gal(ringClassField O hK / K)`. On idele classes
+  isomorphism `ringClassArtinEquiv O hK : Pic O ≃* Gal(ringClassField O hK / K)`
+  (`gal_ringClassField_equiv_pic`). On idele classes
   it is the global Artin map (`ringClassArtinEquiv_ringClassIdeleQuotient`), and the degree of the
   ring class field is the order of `Pic O` (`finrank_ringClassField`).
 * The ideal form of reciprocity, `ringClassArtinMap O hK`, is defined on the invertible proper
@@ -60,8 +61,11 @@ generator congruent to a rational integer modulo `f`
 
 * `TauCeti.ClassFieldTheory.range_ideleClassNormMap_ringClassField`: the norm group of the ring
   class field is the kernel of the ring-class quotient.
+* `TauCeti.ClassFieldTheory.eq_ringClassField_of_range_ideleClassNormMap`: the ring class field is
+  the only finite abelian extension of `K` in `Kˢ` with that norm group.
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_ringClassField`: the conductor of `O` is admissible
   for the ring class field.
+* `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: `Gal(ringClassField O hK / K) ≃* Pic O`.
 * `TauCeti.ClassFieldTheory.finrank_ringClassField`: `[ringClassField O hK : K] = #Pic O`.
 * `TauCeti.ClassFieldTheory.ringClassArtinMap_eq_one_iff`,
   `TauCeti.ClassFieldTheory.ringClassArtinMap_surjective`: ideal-form ring-class reciprocity.
@@ -100,8 +104,9 @@ theorem ringClassNormSubgroup_toSubgroup :
 /-- **The ring class field of an order `O` in a quadratic field `K`**: the class field in `Kˢ` of
 the kernel of the ring-class quotient `C_K → Pic O` under the global class-field correspondence,
 that is, the unique finite abelian extension of `K` in `Kˢ` whose idele-class norm group is that
-kernel (`range_ideleClassNormMap_ringClassField`). The hypothesis `_hK` records that the ring class
-field is asserted only for orders in quadratic fields; the construction does not consume it. -/
+kernel (`range_ideleClassNormMap_ringClassField`, `eq_ringClassField_of_range_ideleClassNormMap`).
+The hypothesis `_hK` records that the ring class field is asserted only for orders in quadratic
+fields; the construction does not consume it. -/
 def ringClassField (_hK : Module.finrank ℚ K = 2) : IntermediateField K (SeparableClosure K) :=
   classField K (globalClassField (ringClassNormSubgroup O)).1
 
@@ -135,6 +140,19 @@ theorem range_ideleClassNormMap_ringClassField :
       (ringClassIdeleQuotient O).ker :=
   (globalNormSubgroup_eq_range_classField K _).symm.trans
     (globalClassField_normSubgroup (ringClassNormSubgroup O))
+
+/-- **The ring class field is determined by its norm group**: a finite abelian extension of `K` in
+`Kˢ` whose idele-class norm group is the kernel of the ring-class quotient is the ring class field
+of `O`. -/
+theorem eq_ringClassField_of_range_ideleClassNormMap (L : IntermediateField K (SeparableClosure K))
+    [NumberField L] [IsAbelianGalois K L]
+    (hL : (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range =
+      (ringClassIdeleQuotient O).ker) :
+    L = ringClassField O hK := by
+  obtain ⟨V, rfl⟩ := (exists_classField_eq_iff L).2
+    ⟨Module.Finite.of_restrictScalars_finite ℚ K L, inferInstance⟩
+  rw [ringClassField_def, (globalClassField_eq_iff _ ⟨V, isAbelianGalois_classField_iff.1 ‹_›⟩).2
+    ((globalNormSubgroup_eq_range_classField K V).trans hL)]
 
 /-- **The conductor of `O` is admissible for its ring class field**: the ray subgroup of the
 conductor lies in the kernel of the ring-class quotient, which is the norm group. -/
@@ -177,9 +195,7 @@ of the conductor is its ray-class Artin symbol. -/
 theorem ringClassArtinEquiv_rayClassToPic (x : RayClassGroup O.conductorModulus) :
     ringClassArtinEquiv O hK (O.rayClassToPic x) =
       rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O hK) x := by
-  rw [ringClassArtinEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    QuotientGroup.quotientKerEquivOfSurjective_symm_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-    QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+  simp [ringClassArtinEquiv, QuotientGroup.quotientKerEquivOfSurjective_symm_apply]
 
 /-- **Ring-class reciprocity on idele classes**: the Artin symbol of the image in `Pic O` of an
 idele class `c` is the global Artin symbol of `c` for the ring class field. -/
@@ -189,6 +205,11 @@ theorem ringClassArtinEquiv_ringClassIdeleQuotient (c : IdeleClassGroup (𝓞 K)
       ideleClassArtinMap K (ringClassField O hK) c := by
   rw [ringClassIdeleQuotient_apply, ringClassArtinEquiv_rayClassToPic,
     rayClassArtinMap_rayClassQuotient]
+
+/-- **The Galois group of the ring class field of `O` is isomorphic to the Picard group of `O`**,
+through the inverse of the ring-class Artin isomorphism `ringClassArtinEquiv`. -/
+theorem gal_ringClassField_equiv_pic : Nonempty (Gal(ringClassField O hK/K) ≃* Pic O) :=
+  ⟨(ringClassArtinEquiv O hK).symm⟩
 
 /-- **The degree of the ring class field of `O` is the order of the Picard group of `O`.** -/
 theorem finrank_ringClassField :
@@ -237,20 +258,9 @@ theorem ncard_primesOver_ringClassField_eq_finrank_iff
     ((I : Ideal (𝓞 K)).primesOver (𝓞 (ringClassField O hK))).ncard =
         Module.finrank K (ringClassField O hK) ↔
       ∃ β ∈ O.toRingOfIntegers, (I : Ideal (𝓞 K)) = Ideal.span {β} := by
-  -- `𝔭` is a finite place outside the support of the conductor, so it is unramified.
-  have hcop := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hcop.1⟩
-  have hur : ∀ (Q : Ideal (𝓞 (ringClassField O hK))) [Q.IsPrime]
-      [Q.LiesOver (I : Ideal (𝓞 K))], Algebra.IsUnramifiedAt (𝓞 K) Q := fun Q _ _ ↦
-    have : Q.LiesOver v.asIdeal := ‹_›
-    isUnramifiedAt_ringClassField O hK (v := v) (fun hv ↦ hcop.2 v hv dvd_rfl) Q
-  -- The Artin symbol of `𝔭` is the class of the Artin symbol of the Picard class of `𝔭 ∩ O`.
-  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty ((I : Ideal (𝓞 K)).primesOver
-    (𝓞 (ringClassField O hK))))
-  rw [← NumberField.artinSymbol_eq_one_iff_ncard_primesOver_eq_finrank _ hur,
-    NumberField.artinSymbol_eq_mk_of_isArithFrobAt _ hur Q _
-      (isArithFrobAt_ringClassArtinEquiv_picClass O hK I Q),
-    ConjClasses.one_eq_mk_one, ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left,
-    MulEquiv.map_eq_one_iff, picClass_eq_one_iff]
+  rw [ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one
+      (isAdmissibleModulus_ringClassField O hK),
+    ← ringClassArtinEquiv_rayClassToPic, rayClassToPic_idealClass, MulEquiv.map_eq_one_iff,
+    picClass_eq_one_iff]
 
 end TauCeti.ClassFieldTheory

@@ -43,7 +43,9 @@ composed with the ray class of an ideal prime to `𝔪`, is
 (`rayClassArtinMap_comp_rayClassMk`). This is the **splitting law**: the ray-class Artin symbol
 of a prime ideal `𝔭` prime to `𝔪` is an arithmetic Frobenius at every prime of `L` above `𝔭`
 (`isArithFrobAt_rayClassArtinMap_idealClass`), and its conjugacy class is the Artin symbol of `𝔭`
-(`rayClassArtinMap_idealClass`).
+(`rayClassArtinMap_idealClass`). In particular `𝔭` splits completely in `L` exactly when its
+ray-class Artin symbol is trivial
+(`ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one`).
 
 ## Main definitions
 
@@ -65,6 +67,8 @@ of a prime ideal `𝔭` prime to `𝔪` is an arithmetic Frobenius at every prim
   ray-class Artin map is the ideal-theoretic Artin map.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_rayClassArtinMap_idealClass`,
   `TauCeti.ClassFieldTheory.rayClassArtinMap_idealClass`: the splitting law.
+* `TauCeti.ClassFieldTheory.ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one`:
+  a prime ideal prime to `𝔪` splits completely exactly when its ray-class Artin symbol is trivial.
 
 ## References
 
@@ -210,5 +214,24 @@ theorem rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪) [(I : Ideal
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty ((I : Ideal (𝓞 K)).primesOver (𝓞 L)))
   exact (artinSymbol_eq_mk_of_isArithFrobAt _ hur Q _
     (isArithFrobAt_rayClassArtinMap_idealClass h I Q)).symm
+
+/-- **The splitting criterion for an admissible modulus**: a prime ideal `𝔭` of `K` prime to `𝔪`
+splits completely in `L`, that is, has `[L : K]` primes above it, exactly when the ray-class Artin
+symbol of its ray class is trivial. -/
+theorem ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one
+    (I : integralIdealsPrimeTo 𝔪) [(I : Ideal (𝓞 K)).IsMaximal] :
+    ((I : Ideal (𝓞 K)).primesOver (𝓞 L)).ncard = Module.finrank K L ↔
+      rayClassArtinMap 𝔪 h (idealClass 𝔪 I) = 1 := by
+  -- `𝔭` is a finite place outside the support of `𝔪`, so `L/K` is unramified above it.
+  have hcop := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+  let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hcop.1⟩
+  have hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))],
+      Algebra.IsUnramifiedAt (𝓞 K) Q := fun Q _ _ ↦
+    -- `v.asIdeal` is `I` by definition, so the instance transfers.
+    have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
+    h.isUnramifiedAway v (fun hv ↦ hcop.2 v hv dvd_rfl) Q
+  rw [← artinSymbol_eq_one_iff_ncard_primesOver_eq_finrank _ hur,
+    ← rayClassArtinMap_idealClass h I hur, ConjClasses.one_eq_mk_one,
+    ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left]
 
 end TauCeti.ClassFieldTheory
