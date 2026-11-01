@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import TauCeti.Analysis.Convex.Sequence.Derivative
 public import TauCeti.Analysis.Convex.Sequence.Vertex
-public import TauCeti.RingTheory.PowerSeries.GaussNorm.Restriction
 
 /-!
 # Active coefficients and finite Newton faces
