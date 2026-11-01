@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
-public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
@@ -44,10 +43,6 @@ fixed tuples of model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_app
 * `TauCeti.RoughForm.hodgeStar_hodgeStar_of_even`,
   `TauCeti.RoughForm.alternatingFormInner_hodgeStar_left`: in an even middle degree the star is
   an involution and is pointwise self-adjoint.
-* `TauCeti.SmoothForm.hodgeStar_mem_compactlySupportedForms`: the star preserves compact support.
-* `TauCeti.SmoothForm.isSmoothForm_inner_smul_riemannianVolumeForm`,
-  `TauCeti.SmoothForm.isCompact_tsupport_inner_smul_riemannianVolumeForm`: the density
-  `⟨α, β⟩ vol` of smooth forms is a smooth top form, compactly supported when `α` or `β` is.
 
 ## References
 
@@ -144,6 +139,27 @@ theorem tsupport_hodgeStar_subset (o : Manifold.Orientation I M (Fin m)) (hkl : 
   refine closure_mono fun x hx hφ ↦ hx ?_
   rw [hodgeStar_apply]
   exact (congrArg _ hφ).trans (map_zero _)
+
+/-- The top form `⟨α, β⟩ vol` is supported in the support of `α`. -/
+theorem tsupport_inner_smul_riemannianVolumeForm_subset (o : Manifold.Orientation I M (Fin m))
+    (α β : RoughForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
+        (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
+          riemannianVolumeForm o x) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α :=
+  -- Supports are read in the model fibre; state the vanishing in the tangent fibre at `x`.
+  closure_mono fun x hx hα ↦ hx
+    (by simp [show α x = 0 from hα] :
+      alternatingFormInner (TangentSpace I x) k (α x) (β x) • riemannianVolumeForm o x = 0)
+
+/-- The top form `⟨α, β⟩ vol` is compactly supported when `α` is. -/
+theorem isCompact_tsupport_inner_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+    (α β : RoughForm I M ℝ k) (hα : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
+      (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
+        riemannianVolumeForm o x)) :=
+  hα.of_isClosed_subset (_root_.isClosed_tsupport _)
+    (tsupport_inner_smul_riemannianVolumeForm_subset o α β)
 
 /-- The wedge `α ∧ ⋆β` is compactly supported when `α` or `β` is. -/
 theorem isCompact_tsupport_wedge_hodgeStar {j : ℕ} (o : Manifold.Orientation I M (Fin m))
@@ -311,44 +327,19 @@ theorem inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar (o : Manifold.Orienta
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   simp only [Function.comp_def, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
 
-/-- Reversing the orientation negates the Hodge star of smooth forms. -/
-@[simp]
-theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
-    (α : SmoothForm I M ℝ k) : hodgeStar (-o) hkl α = -hodgeStar o hkl α :=
-  Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
-
-/-! ### Compact support -/
-
-/-- The Hodge star of smooth forms preserves compact support. -/
-theorem hodgeStar_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
-    (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
-    hodgeStar o hkl α ∈ compactlySupportedForms I M l := by
-  rw [mem_compactlySupportedForms, coe_hodgeStar]
-  exact ((mem_compactlySupportedForms I).1 hα).of_isClosed_subset (isClosed_tsupport _)
-    (RoughForm.tsupport_hodgeStar_subset o hkl α.1)
-
-/-- The density `⟨α, β⟩ vol` of two smooth `k`-forms on an oriented Riemannian manifold of
-dimension `m = k + l` is a smooth top form. -/
+/-- The top form `⟨α, β⟩ vol` of two smooth forms is smooth. -/
 theorem isSmoothForm_inner_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
     (hkl : k + l = m) (α β : SmoothForm I M ℝ k) :
     IsSmoothForm I ∞ (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
       riemannianVolumeForm o x) := by
   rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl]
-  exact isSmoothForm _
+  exact SmoothForm.isSmoothForm _
 
-/-- The density `⟨α, β⟩ vol` of two smooth `k`-forms on an oriented Riemannian manifold of
-dimension `m = k + l` is compactly supported when `α` or `β` is. -/
-theorem isCompact_tsupport_inner_smul_riemannianVolumeForm
-    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α β : SmoothForm I M ℝ k}
-    (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
-    IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
-      (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
-        riemannianVolumeForm o x)) := by
-  rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl, ← mem_compactlySupportedForms I,
-    cast_mem_compactlySupportedForms_iff I hkl, mem_compactlySupportedForms, coe_wedge,
-    coe_hodgeStar]
-  rw [mem_compactlySupportedForms, mem_compactlySupportedForms] at h
-  exact RoughForm.isCompact_tsupport_wedge_hodgeStar o hkl α.1 β.1 h
+/-- Reversing the orientation negates the Hodge star of smooth forms. -/
+@[simp]
+theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α : SmoothForm I M ℝ k) : hodgeStar (-o) hkl α = -hodgeStar o hkl α :=
+  Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
 
 end SmoothForm
 
