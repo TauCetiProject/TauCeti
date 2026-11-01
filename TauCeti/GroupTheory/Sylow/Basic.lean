@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Sylow
 
 /-!
-# Sylow subgroups of prime order
+# Sylow subgroups and conjugacy of prime-power order elements
 
 When a prime `p` divides the order of a finite group exactly once, its Sylow `p`-subgroups have
 order `p`. This is the form in which Sylow's theorems are applied to groups such as `S₅`, whose
@@ -16,10 +16,13 @@ order `120` is divisible by `5` but not by `25`, and to their subgroups.
 
 The file also records that `p` times the number of Sylow `p`-subgroups divides the order of the
 group whenever `p` does. When `p ^ 2` does not divide the order, any two elements of order `p`
-generate conjugate subgroups.
+generate conjugate subgroups. More generally, every element of prime-power order is conjugate
+to an element of any chosen Sylow subgroup for that prime.
 
 ## Main results
 
+* `Sylow.exists_isConj_of_orderOf_dvd_pow`: an element of prime-power order has a conjugate
+  in any chosen Sylow subgroup.
 * `Sylow.card_eq_of_dvd_of_not_sq_dvd`: a Sylow `p`-subgroup has order `p` when `p` divides the
   order of the group but `p ^ 2` does not.
 * `Sylow.mul_card_sylow_dvd_card`: if `p` divides the order of the group, then so does `p` times
@@ -33,7 +36,23 @@ public section
 
 namespace Sylow
 
-variable {G : Type*} [Group G] [Finite G] {p : ℕ} [hp : Fact p.Prime]
+variable {G : Type*} [Group G] {p : ℕ} [hp : Fact p.Prime]
+
+/-- Every element of prime-power order is conjugate to an element of any chosen Sylow subgroup
+for that prime. Only finiteness of the set of Sylow subgroups is needed. -/
+theorem exists_isConj_of_orderOf_dvd_pow [Finite (Sylow p G)]
+    (P : Sylow p G) {g : G} {n : ℕ} (hg : orderOf g ∣ p ^ n) :
+    ∃ x : P, IsConj (x : G) g := by
+  have hcyc : IsPGroup p (Subgroup.zpowers g) :=
+    IsPGroup.of_card_dvd_pow ((Nat.card_zpowers g).symm ▸ hg)
+  obtain ⟨Q, hQ⟩ := hcyc.exists_le_sylow
+  obtain ⟨c, hc⟩ := MulAction.exists_smul_eq G Q P
+  have hmem : c * g * c⁻¹ ∈ (P : Subgroup G) := by
+    rw [← hc, Sylow.coe_subgroup_smul, ← MulAut.conj_apply]
+    exact Subgroup.smul_mem_pointwise_smul _ _ _ (hQ (Subgroup.mem_zpowers g))
+  exact ⟨⟨c * g * c⁻¹, hmem⟩, (isConj_iff.mpr ⟨c, rfl⟩).symm⟩
+
+variable [Finite G]
 
 /-- A Sylow `p`-subgroup has order `p` when `p` divides the order of the group exactly once. -/
 theorem card_eq_of_dvd_of_not_sq_dvd (P : Sylow p G) (hdvd : p ∣ Nat.card G)
@@ -75,16 +94,10 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   have hcard : p ^ (Nat.card G).factorization p = p := by
     rw [← P.card_eq_multiplicity, P.card_eq_of_dvd_of_not_sq_dvd (hg ▸ orderOf_dvd_natCard g) hsq]
   let Pg := Sylow.ofCard (Subgroup.zpowers g) (by rw [Nat.card_zpowers, hcard, hg])
-  let Ph := Sylow.ofCard (Subgroup.zpowers h) (by rw [Nat.card_zpowers, hcard, hh])
-  obtain ⟨y, hy⟩ := MulAction.exists_smul_eq G Ph Pg
-  refine ⟨y, ?_⟩
-  have hmem : y * h * y⁻¹ ∈ ((y • Ph : Sylow p G) : Subgroup G) := by
-    rw [Sylow.coe_subgroup_smul, ← MulAut.conj_apply]
-    exact Subgroup.smul_mem_pointwise_smul _ _ _ (by
-      simp only [Ph, Sylow.coe_ofCard]
-      exact Subgroup.mem_zpowers h)
-  rw [hy] at hmem
+  obtain ⟨x, hx⟩ := Pg.exists_isConj_of_orderOf_dvd_pow (g := h) (n := 1) (by simp [hh])
+  obtain ⟨y, hy⟩ := isConj_iff.mp hx.symm
+  have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
   simp only [Pg, Sylow.coe_ofCard] at hmem
-  exact hmem
+  exact ⟨y, hy ▸ hmem⟩
 
 end TauCeti
