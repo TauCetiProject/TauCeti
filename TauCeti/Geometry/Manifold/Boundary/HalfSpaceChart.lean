@@ -28,17 +28,13 @@ model, read in the model vector space and moved by a homeomorphism
 atlas and moved by `C^m` homeomorphisms with `C^m` inverses, are recorded by
 `OpenPartialHomeomorph.IsExtendTransChart`. A charted space on `s` all of whose charts are
 half-space restrictions of them is a `C^m` manifold with boundary
-(`OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`).
+(`TauCeti.isManifold_of_forall_mem_atlas_halfSpaceChart`).
 
 ## Main declarations
 
 * `OpenPartialHomeomorph.halfSpaceChart`, with its source, target, apply and inverse laws, and
   `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
-* `OpenPartialHomeomorph.IsExtendTransChart`, with its characterisation
-  `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
-  `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
-  `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
-* `OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
+* `TauCeti.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
   restrictions of smoothly moved charts from the maximal atlas makes `s` a manifold with boundary.
 
 ## References
@@ -148,49 +144,11 @@ theorem contDiffOn_halfSpaceChart_symm_trans {m : ℕ∞ω}
 
 end HalfSpaceChart
 
-section ExtendTrans
+end OpenPartialHomeomorph
 
-variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H]
-  [TopologicalSpace M] [ChartedSpace H M]
+namespace TauCeti
 
-/-- `e` is a chart `c.extendTrans I Ψ`: a chart `c` of `M` from its maximal atlas for `C^m`, read in
-the model vector space `E` and moved to `F` by a `C^m` homeomorphism `Ψ` with `C^m` inverse. The
-transition maps between such charts are `C^m`
-(`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`). -/
-def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners 𝕜 E H)
-    [I.Boundaryless] (m : ℕ∞ω) : Prop :=
-  ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
-    c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
-      e = c.extendTrans I Ψ
-
-variable {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] {m : ℕ∞ω}
-
-/-- Characterisation of `OpenPartialHomeomorph.IsExtendTransChart`: `e` is `c.extendTrans I Ψ` for
-a chart `c` from the maximal atlas for `C^m` and a `C^m` homeomorphism `Ψ` with `C^m` inverse. -/
-theorem isExtendTransChart_iff {e : OpenPartialHomeomorph M F} :
-    e.IsExtendTransChart I m ↔ ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
-      c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
-        e = c.extendTrans I Ψ :=
-  Iff.rfl
-
-/-- A chart `c` from the maximal atlas for `C^m`, moved by a `C^m` homeomorphism `Ψ` with `C^m`
-inverse, satisfies `OpenPartialHomeomorph.IsExtendTransChart`. -/
-theorem isExtendTransChart_extendTrans {c : OpenPartialHomeomorph M H}
-    (hc : c ∈ IsManifold.maximalAtlas I m M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 m Ψ)
-    (hΨ' : ContDiff 𝕜 m Ψ.symm) : (c.extendTrans I Ψ).IsExtendTransChart I m :=
-  ⟨c, Ψ, hc, hΨ, hΨ', rfl⟩
-
-/-- The transition map between two charts satisfying `OpenPartialHomeomorph.IsExtendTransChart`
-for `C^m` is `C^m`. -/
-theorem IsExtendTransChart.contDiffOn_comp_symm {e₁ e₂ : OpenPartialHomeomorph M F}
-    (he₁ : e₁.IsExtendTransChart I m) (he₂ : e₂.IsExtendTransChart I m) :
-    ContDiffOn 𝕜 m (e₂ ∘ e₁.symm) (e₁.symm ≫ₕ e₂).source := by
-  obtain ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩ := he₁
-  obtain ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩ := he₂
-  exact contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂
-
-end ExtendTrans
+open OpenPartialHomeomorph
 
 section IsManifold
 
@@ -215,4 +173,4 @@ theorem isManifold_of_forall_mem_atlas_halfSpaceChart {m : ℕ∞ω} {n : ℕ} {
 
 end IsManifold
 
-end OpenPartialHomeomorph
+end TauCeti

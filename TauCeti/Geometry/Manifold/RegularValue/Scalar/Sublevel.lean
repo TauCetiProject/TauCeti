@@ -90,8 +90,7 @@ public section
 
 open Function Metric Module Set
 open OpenPartialHomeomorph (coe_halfSpaceChart_apply coe_halfSpaceChart_symm_apply
-  halfSpaceChart_source halfSpaceChart_target isExtendTransChart_extendTrans
-  isManifold_of_forall_mem_atlas_halfSpaceChart)
+  halfSpaceChart_source halfSpaceChart_target isExtendTransChart_extendTrans)
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
@@ -383,7 +382,7 @@ private theorem interiorChart_target {U : Set M} (hU : IsOpen U) (hn : finrank �
 
 /-- An interior chart is a restriction of a chart of `M` from its maximal atlas, read in `ℝⁿ⁺¹` by a
 smooth homeomorphism with smooth inverse. -/
-private theorem exists_interiorChart_eq_extendTrans {m : ℕ∞ω} [IsManifold I m M] {U : Set M}
+private theorem isExtendTransChart_interiorChart {m : ℕ∞ω} [IsManifold I m M] {U : Set M}
     (hU : IsOpen U) (hn : finrank ℝ E = n + 1) {x : M} (hx : x ∈ U) :
     (interiorChart I hU hn hx).IsExtendTransChart I m := by
   refine isExtendTransChart_extendTrans (restr_mem_maximalAtlas _
@@ -628,7 +627,7 @@ private theorem exists_scalarRegularSublevelChartAt_eq_halfSpaceChart {m : ℕ�
   have hxa : f x ≤ a := x.2
   rcases hxa.lt_or_eq with hx | hx
   · exact ⟨_, _, x,
-      exists_interiorChart_eq_extendTrans (isOpen_Iio.preimage (hfm.of_le hm).continuous) hn _,
+      isExtendTransChart_interiorChart (isOpen_Iio.preimage (hfm.of_le hm).continuous) hn _,
       scalarRegularSublevelChartAt_of_lt _ hreg hn hx⟩
   · exact ⟨_, _, x, isExtendTransChart_restrFaceChart hm hfm _ isOpen_univ _,
       scalarRegularSublevelChartAt_of_eq _ hreg hn hx⟩
@@ -1103,7 +1102,7 @@ private theorem exists_scalarRegularBandChartAt_eq_halfSpaceChart {m : ℕ∞ω}
       (isOpen_Ioi.preimage (hfm.of_le hm).continuous) _,
       scalarRegularBandChartAt_of_eq_right _ hn ha hb hab hxb⟩
   · exact ⟨_, _, x,
-      exists_interiorChart_eq_extendTrans (isOpen_Ioo.preimage (hfm.of_le hm).continuous) hn _,
+      isExtendTransChart_interiorChart (isOpen_Ioo.preimage (hfm.of_le hm).continuous) hn _,
       scalarRegularBandChartAt_of_ne _ hn ha hb hxa hxb⟩
 
 /-- **A band between regular values is a manifold with boundary.** If `f` is `C^m`, `m ≥ 1`, and
