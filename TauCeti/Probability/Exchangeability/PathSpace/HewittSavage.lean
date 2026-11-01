@@ -256,7 +256,7 @@ theorem exchangeableSigma_trivial_of_infinitePi (P : ProbabilityMeasure α) {s :
     (Measure.infinitePi fun _ : ℕ => (P : Measure α)) s = 0 ∨
       (Measure.infinitePi fun _ : ℕ => (P : Measure α)) s = 1 := by
   have hzeroOne := hewittSavage_trivial_of_iIndep (iIndepFun_eval_infinitePi _)
-    (fun n => identDistrib_eval_infinitePi (P : Measure α) n 0) hs
+    (fun n => (P : Measure α).identDistrib_eval_infinitePi n 0) hs
   rwa [pathLaw_coord] at hzeroOne
 
 end HewittSavage

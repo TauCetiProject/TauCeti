@@ -178,7 +178,7 @@ theorem renewalMeasure_Icc_add_le (t h : ℝ≥0) :
   set P := Measure.infinitePi fun _ : ℕ ↦ μ
   have hT : ∀ n, Measurable fun w : ℕ → ℝ≥0 ↦ w n := measurable_pi_apply
   have hindep : iIndepFun _ P := TauCeti.Probability.iIndepFun_eval_infinitePi _
-  have hid (n : ℕ) : IdentDistrib _ _ P P := TauCeti.Probability.identDistrib_eval_infinitePi μ n 0
+  have hid (n : ℕ) : IdentDistrib _ _ P P := μ.identDistrib_eval_infinitePi n 0
   have hmap : ∀ n, P.map (fun w ↦ w n) = μ := fun n ↦ infinitePi_map_eval _ n
   simpa only [hmap 0] using TauCeti.Probability.renewalMeasure_map_Icc_add_le hT hindep hid t h
 

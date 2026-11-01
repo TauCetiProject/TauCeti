@@ -27,6 +27,19 @@ public section
 
 open MeasureTheory ProbabilityTheory
 
+namespace MeasureTheory.Measure
+
+/-- The coordinates of a sample from the power `Measure.infinitePi fun _ => μ` of a probability
+law `μ` are identically distributed, each with law `μ`. -/
+theorem identDistrib_eval_infinitePi {ι β : Type*} [MeasurableSpace β] (μ : Measure β)
+    [IsProbabilityMeasure μ] (i j : ι) :
+    IdentDistrib (fun x : ι → β => x i) (fun x => x j) (Measure.infinitePi fun _ => μ)
+      (Measure.infinitePi fun _ => μ) :=
+  ⟨(measurable_pi_apply i).aemeasurable, (measurable_pi_apply j).aemeasurable, by
+    rw [Measure.infinitePi_map_eval, Measure.infinitePi_map_eval]⟩
+
+end MeasureTheory.Measure
+
 namespace TauCeti.Probability
 
 variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
@@ -35,15 +48,6 @@ variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 theorem iIndepFun_eval_infinitePi (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)] :
     iIndepFun (fun i (x : ∀ j, α j) => x i) (Measure.infinitePi P) :=
   iIndepFun_infinitePi (X := fun i : ι => (id : α i → α i)) fun _ => measurable_id
-
-/-- The coordinates of a sample from the power `Measure.infinitePi fun _ => μ` of a probability
-law `μ` are identically distributed, each with law `μ`. -/
-theorem identDistrib_eval_infinitePi {β : Type*} [MeasurableSpace β] (μ : Measure β)
-    [IsProbabilityMeasure μ] (i j : ι) :
-    IdentDistrib (fun x : ι → β => x i) (fun x => x j) (Measure.infinitePi fun _ => μ)
-      (Measure.infinitePi fun _ => μ) :=
-  ⟨(measurable_pi_apply i).aemeasurable, (measurable_pi_apply j).aemeasurable, by
-    rw [Measure.infinitePi_map_eval, Measure.infinitePi_map_eval]⟩
 
 /-- Restrictions to disjoint coordinate sets are independent under a product probability law. -/
 theorem indepFun_domRestrict_infinitePi (P : ∀ i, Measure (α i))

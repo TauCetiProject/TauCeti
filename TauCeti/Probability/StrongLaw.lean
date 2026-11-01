@@ -99,7 +99,7 @@ theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : 
     ((heval i).integrable_comp hint.1).2 hint
   have hident : ∀ i : ℕ,
       IdentDistrib (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x 0)) P P := fun i =>
-    (identDistrib_eval_infinitePi Q i 0).comp hf
+    (Q.identDistrib_eval_infinitePi i 0).comp hf
   have hindep : ∀ i j : ℕ, i ≠ j →
       IndepFun (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x j)) P :=
     fun _ _ hij =>
