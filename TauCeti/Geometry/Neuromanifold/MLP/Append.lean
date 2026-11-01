@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Neuromanifold.Basic
+public import TauCeti.Geometry.Neuromanifold.Composition
 public import TauCeti.Geometry.Neuromanifold.MLP.Basic
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Logic.Equiv.Fin.Basic
@@ -35,7 +35,10 @@ corresponding composites of realized functions of the parts (`realizedFunctions_
 Conversely, `MLPSpec.append A B σ` concatenates two specifications of positive depth, joining
 them with the activation `σ`. Its upper part is `B` and its junction activation is `σ`; its
 lower part is `A` exactly when the output width of `A` is the input width of `B`
-(`lowerLayers_append`); otherwise the concatenation uses the input width of `B` at the junction.
+(`lowerLayers_append`); otherwise the concatenation uses the input width of `B` at the junction,
+and its lower part still has the other widths and all the hidden activations of `A`. Below the
+junction the widths and hidden activations of the concatenation are those of `A`, and from the
+junction on those of `B` (`append_width_castAdd`, `append_activation_natAdd`, …).
 Every specification of depth `(L + 1) + (M + 1)` is the concatenation of its two parts
 (`append_lowerLayers_upperLayers`).
 
@@ -112,21 +115,22 @@ specification. -/
 theorem layerActivation_castAdd_castSucc (C : MLPSpec K (L + 1 + (M + 1))) (i : Fin L) :
     C.layerActivation (Fin.castAdd (M + 1) i.castSucc) =
       C.lowerLayers.layerActivation i.castSucc := by
-  rw [layerActivation_castSucc, C.layerActivation_of_lt _ (by simp; omega)]
-  rfl
+  rw [layerActivation_castSucc, C.layerActivation_of_lt _ (by simp; omega), lowerLayers_activation]
+  exact congrArg C.activation (Fin.ext rfl)
 
 /-- The output layer of the lower part applies the junction activation in the specification. -/
 theorem layerActivation_castAdd_last (C : MLPSpec K (L + 1 + (M + 1))) :
     C.layerActivation (Fin.castAdd (M + 1) (Fin.last L)) = C.junctionActivation := by
-  rw [C.layerActivation_of_lt _ (by simp)]
-  rfl
+  rw [C.layerActivation_of_lt _ (by simp), junctionActivation_def]
+  exact congrArg C.activation (Fin.ext rfl)
 
 /-- A layer of the upper part applies the activation it has in the specification. -/
 theorem layerActivation_natAdd (C : MLPSpec K (L + 1 + (M + 1))) (i : Fin (M + 1)) :
     C.layerActivation (Fin.natAdd (L + 1) i) = C.upperLayers.layerActivation i := by
   by_cases h : i.val + 1 < M + 1
-  · rw [C.upperLayers.layerActivation_of_lt i h, C.layerActivation_of_lt _ (by simp; omega)]
-    rfl
+  · rw [C.upperLayers.layerActivation_of_lt i h, C.layerActivation_of_lt _ (by simp; omega),
+      upperLayers_activation]
+    exact congrArg C.activation (Fin.ext rfl)
   · rw [C.upperLayers.layerActivation_of_val_add_one_eq i (by omega),
       C.layerActivation_of_val_add_one_eq _ (by simp; omega)]
 
@@ -301,17 +305,30 @@ theorem realizeWeights_splitWeights_symm (C : MLPSpec K (L + 1 + (M + 1)))
   -- The two sides agree after unfolding `Function.comp` and `Pi.map`.
   rfl
 
+/-- A model that, after an identification of its parameters with pairs, realizes the composites
+`g p₂ ∘ a ∘ f p₁` realizes the composites of functions realized by `f` and `g` joined by `a`. This
+is `realizedFunctions_compose` for the composite of `f` with `g` precomposed with `a`. -/
+private theorem realizedFunctions_eq_image2_of_equiv {P P₁ P₂ X Y Y' Z : Type*}
+    {F : P → X → Z} (e : P ≃ P₁ × P₂) {f : P₁ → X → Y} {g : P₂ → Y' → Z} (a : Y → Y')
+    (h : ∀ p₁ p₂, F (e.symm (p₁, p₂)) = g p₂ ∘ a ∘ f p₁) :
+    realizedFunctions F =
+      Set.image2 (fun f' g' => g' ∘ a ∘ f') (realizedFunctions f) (realizedFunctions g) := by
+  have hc : F ∘ e.symm = compose f fun p₂ => g p₂ ∘ a := funext fun p =>
+    (h p.1 p.2).trans (compose_apply f (fun p₂ => g p₂ ∘ a) p).symm
+  have hg : realizedFunctions (fun p₂ => g p₂ ∘ a) = (· ∘ a) '' realizedFunctions g :=
+    (realizedFunctions_def _).trans ((Set.range_comp (· ∘ a) g).trans
+      (congrArg _ (realizedFunctions_def g).symm))
+  rw [realizedFunctions_def, ← e.symm.surjective.range_comp, hc, ← realizedFunctions_def,
+    realizedFunctions_compose, hg, Set.image2_image_right]
+  simp only [Function.comp_assoc]
+
 /-- The functions realized by a specification of depth `(L + 1) + (M + 1)` are the composites of
 functions realized by its parts, joined by the junction activation. -/
 theorem realizedFunctions_realize (C : MLPSpec K (L + 1 + (M + 1))) :
     realizedFunctions C.realize =
       Set.image2 (fun f g => g ∘ Pi.map (fun _ => C.junctionActivation) ∘ f)
         (realizedFunctions C.lowerLayers.realize) (realizedFunctions C.upperLayers.realize) :=
-  (realizedFunctions_def _).trans <| (C.splitParameters.symm.surjective.range_comp _).symm.trans <|
-    (congrArg Set.range (funext fun p : _ × _ => C.realize_splitParameters_symm p.1 p.2)).trans <|
-      (Set.image2_range (fun f g => g ∘ Pi.map (fun _ => C.junctionActivation) ∘ f)
-        C.lowerLayers.realize C.upperLayers.realize).symm.trans <|
-        congrArg₂ (Set.image2 _) (realizedFunctions_def _).symm (realizedFunctions_def _).symm
+  realizedFunctions_eq_image2_of_equiv C.splitParameters _ C.realize_splitParameters_symm
 
 /-- The functions realized by a specification of depth `(L + 1) + (M + 1)` on bias-free
 parameters are the composites of functions realized by its parts on bias-free parameters, joined
@@ -321,12 +338,7 @@ theorem realizedFunctions_realizeWeights (C : MLPSpec K (L + 1 + (M + 1))) :
       Set.image2 (fun f g => g ∘ Pi.map (fun _ => C.junctionActivation) ∘ f)
         (realizedFunctions C.lowerLayers.realizeWeights)
         (realizedFunctions C.upperLayers.realizeWeights) :=
-  (realizedFunctions_def _).trans <| (C.splitWeights.symm.surjective.range_comp _).symm.trans <|
-    (congrArg Set.range
-      (funext fun p : _ × _ => C.realizeWeights_splitWeights_symm p.1 p.2)).trans <|
-      (Set.image2_range (fun f g => g ∘ Pi.map (fun _ => C.junctionActivation) ∘ f)
-        C.lowerLayers.realizeWeights C.upperLayers.realizeWeights).symm.trans <|
-        congrArg₂ (Set.image2 _) (realizedFunctions_def _).symm (realizedFunctions_def _).symm
+  realizedFunctions_eq_image2_of_equiv C.splitWeights _ C.realizeWeights_splitWeights_symm
 
 end Evaluation
 
@@ -339,46 +351,104 @@ is the input width of `B`; it agrees with `A` when the output width of `A` is th
 `B`. -/
 def append (A : MLPSpec K (L + 1)) (B : MLPSpec K (M + 1)) (σ : K → K) :
     MLPSpec K (L + 1 + (M + 1)) where
-  width := (Fin.append (Fin.init A.width) B.width : Fin (L + 1 + (M + 2)) → ℕ)
+  width := (Fin.append (fun i => A.width i.castSucc) B.width : Fin (L + 1 + (M + 2)) → ℕ)
   activation := Fin.append (Fin.snoc (α := fun _ => K → K) (A.activation : Fin L → K → K) σ)
     B.activation
 
+variable (A : MLPSpec K (L + 1)) (B : MLPSpec K (M + 1)) (σ : K → K)
+
+/-- Below the junction, the widths of a concatenation are those of its first factor. -/
+@[simp]
+theorem append_width_castAdd (i : Fin (L + 1)) :
+    (A.append B σ).width (Fin.castAdd (M + 2) i) = A.width i.castSucc :=
+  Fin.append_left (fun i => A.width i.castSucc) B.width i
+
+/-- From the junction on, the widths of a concatenation are those of its second factor. -/
+@[simp]
+theorem append_width_natAdd (i : Fin (M + 2)) :
+    (A.append B σ).width (Fin.natAdd (L + 1) i) = B.width i :=
+  Fin.append_right (fun i => A.width i.castSucc) B.width i
+
+/-- Below the junction, the hidden activations of a concatenation are those of its first
+factor. -/
+@[simp]
+theorem append_activation_castAdd_castSucc (j : Fin L) :
+    (A.append B σ).activation (Fin.castAdd M j.castSucc) = A.activation j :=
+  (Fin.append_left (Fin.snoc (α := fun _ => K → K) A.activation σ) B.activation
+    j.castSucc).trans (Fin.snoc_castSucc (α := fun _ => K → K) _ _ _)
+
+/-- At the junction, the hidden activation of a concatenation is the joining activation. -/
+@[simp]
+theorem append_activation_castAdd_last :
+    (A.append B σ).activation (Fin.castAdd M (Fin.last L)) = σ :=
+  (Fin.append_left (Fin.snoc (α := fun _ => K → K) A.activation σ) B.activation
+    (Fin.last L)).trans (Fin.snoc_last (α := fun _ => K → K) _ _)
+
+/-- Above the junction, the hidden activations of a concatenation are those of its second
+factor. -/
+@[simp]
+theorem append_activation_natAdd (j : Fin M) :
+    (A.append B σ).activation (Fin.natAdd (L + 1) j) = B.activation j :=
+  Fin.append_right (Fin.snoc (α := fun _ => K → K) A.activation σ) B.activation j
+
 /-- The upper part of a concatenation is its second factor. -/
 @[simp]
-theorem upperLayers_append (A : MLPSpec K (L + 1)) (B : MLPSpec K (M + 1)) (σ : K → K) :
-    (A.append B σ).upperLayers = B :=
-  MLPSpec.ext (funext fun i => Fin.append_right (Fin.init A.width) B.width i)
-    (funext fun j => Fin.append_right (Fin.snoc (α := fun _ => K → K) A.activation σ)
-      B.activation j)
+theorem upperLayers_append : (A.append B σ).upperLayers = B :=
+  MLPSpec.ext (funext fun i => (upperLayers_width _ i).trans (append_width_natAdd A B σ i))
+    (funext fun j => (upperLayers_activation _ j).trans (append_activation_natAdd A B σ j))
 
 /-- The junction activation of a concatenation is the activation joining its factors. -/
 @[simp]
-theorem junctionActivation_append (A : MLPSpec K (L + 1)) (B : MLPSpec K (M + 1)) (σ : K → K) :
-    (A.append B σ).junctionActivation = σ :=
-  (Fin.append_left _ _ _).trans (Fin.snoc_last (α := fun _ => K → K) _ _)
+theorem junctionActivation_append : (A.append B σ).junctionActivation = σ :=
+  (junctionActivation_def _).trans (append_activation_castAdd_last A B σ)
+
+/-- The hidden activations of the lower part of a concatenation are those of its first factor,
+whatever the boundary widths. -/
+@[simp]
+theorem lowerLayers_append_activation : (A.append B σ).lowerLayers.activation = A.activation :=
+  funext fun j => ((lowerLayers_activation _ j).trans (congrArg (A.append B σ).activation
+    (Fin.ext rfl))).trans (append_activation_castAdd_castSucc A B σ j)
+
+/-- Below its output layer, the widths of the lower part of a concatenation are those of its
+first factor, whatever the boundary widths. -/
+theorem lowerLayers_append_width_castSucc (i : Fin (L + 1)) :
+    (A.append B σ).lowerLayers.width i.castSucc = A.width i.castSucc :=
+  ((lowerLayers_width _ i.castSucc).trans (congrArg (A.append B σ).width (Fin.ext rfl))).trans
+    (append_width_castAdd A B σ i)
+
+/-- The output width of the lower part of a concatenation is the input width of its second
+factor. -/
+theorem lowerLayers_append_width_last :
+    (A.append B σ).lowerLayers.width (Fin.last (L + 1)) = B.width 0 :=
+  ((lowerLayers_width _ _).trans (congrArg (A.append B σ).width (Fin.ext rfl))).trans
+    (append_width_natAdd A B σ 0)
 
 /-- The lower part of a concatenation is its first factor, when the output width of the first
 factor is the input width of the second. -/
-theorem lowerLayers_append (A : MLPSpec K (L + 1)) (B : MLPSpec K (M + 1)) (σ : K → K)
-    (h : A.width (Fin.last (L + 1)) = B.width 0) : (A.append B σ).lowerLayers = A := by
-  refine MLPSpec.ext (funext fun i => ?_) (funext fun j => ?_)
-  · induction i using Fin.lastCases with
-    | last => exact (Fin.append_right (Fin.init A.width) B.width (0 : Fin (M + 2))).trans h.symm
-    | cast j => exact Fin.append_left (Fin.init A.width) B.width j
-  · exact (Fin.append_left (Fin.snoc (α := fun _ => K → K) A.activation σ) B.activation
-      j.castSucc).trans (Fin.snoc_castSucc (α := fun _ => K → K) _ _ _)
+theorem lowerLayers_append (h : A.width (Fin.last (L + 1)) = B.width 0) :
+    (A.append B σ).lowerLayers = A := by
+  refine MLPSpec.ext (funext fun i => ?_) (lowerLayers_append_activation A B σ)
+  induction i using Fin.lastCases with
+  | last => exact (lowerLayers_append_width_last A B σ).trans h.symm
+  | cast i => exact lowerLayers_append_width_castSucc A B σ i
 
 /-- Every specification of depth `(L + 1) + (M + 1)` is the concatenation of its lower and upper
 parts, joined by its junction activation. -/
 @[simp]
 theorem append_lowerLayers_upperLayers (C : MLPSpec K (L + 1 + (M + 1))) :
     C.lowerLayers.append C.upperLayers C.junctionActivation = C := by
-  have h : Fin.snoc (α := fun _ => K → K) C.lowerLayers.activation C.junctionActivation =
-      fun j => C.activation (Fin.castAdd M j) :=
-    Fin.snoc_init_self (α := fun _ => K → K) (q := fun j => C.activation (Fin.castAdd M j))
-  refine MLPSpec.ext (Fin.append_castAdd_natAdd (m := L + 1) (n := M + 2) (f := C.width)) ?_
-  exact (congrArg (Fin.append · C.upperLayers.activation) h).trans
-    (Fin.append_castAdd_natAdd (m := L + 1) (n := M) (f := C.activation))
+  refine MLPSpec.ext (funext fun i => ?_) (funext fun j => ?_)
+  · refine Fin.addCases (m := L + 1) (n := M + 2) (fun i => ?_) (fun i => ?_) i
+    · rw [append_width_castAdd, lowerLayers_width]
+      exact congrArg C.width (Fin.ext rfl)
+    · rw [append_width_natAdd, upperLayers_width]
+  · refine Fin.addCases (m := L + 1) (n := M) (fun j => ?_) (fun j => ?_) j
+    · induction j using Fin.lastCases with
+      | last => rw [append_activation_castAdd_last, junctionActivation_def]
+      | cast j =>
+        rw [append_activation_castAdd_castSucc, lowerLayers_activation]
+        exact congrArg C.activation (Fin.ext rfl)
+    · rw [append_activation_natAdd, upperLayers_activation]
 
 end MLPSpec
 
