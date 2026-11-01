@@ -32,6 +32,8 @@ differentiates it in the mean, for formulas over intervals whose bounds may be i
   `|x| → ∞`, for the standard Gaussian density `φ`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument at positive variance.
+* `TauCeti.Probability.integrable_gaussianPDFReal_smul_of_integrable` — integrability against
+  `gaussianReal μ v` at positive variance gives Lebesgue integrability against the density.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFRealEReal` — as a function of the mean `μ`, the
   density at an extended point `e` has derivative `(e - μ) / v` times the density.
 
@@ -99,6 +101,17 @@ theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
       ring_nf
   convert hq.exp.const_mul (Real.sqrt (2 * π * (v : ℝ)))⁻¹ using 1
   · ring_nf
+
+/-- At positive variance, integrability against `gaussianReal μ v` gives Lebesgue integrability
+of the function weighted by the Gaussian density. -/
+theorem integrable_gaussianPDFReal_smul_of_integrable {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {g : ℝ → E}
+    (hg : MeasureTheory.Integrable g (gaussianReal μ v)) :
+    MeasureTheory.Integrable (fun x => gaussianPDFReal μ v x • g x) := by
+  rw [gaussianReal_of_var_ne_zero μ hv,
+    MeasureTheory.integrable_withDensity_iff_integrable_smul' (measurable_gaussianPDF μ v)
+      (MeasureTheory.ae_of_all _ fun _ => gaussianPDF_lt_top)] at hg
+  simpa only [toReal_gaussianPDF] using hg
 
 /-! ### The Gaussian density at an extended point -/
 
