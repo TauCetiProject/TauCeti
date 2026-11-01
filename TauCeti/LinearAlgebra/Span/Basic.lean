@@ -12,7 +12,6 @@ import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Tactic.Abel
 
 /-!
 # Finite spans and singleton spans
@@ -144,16 +143,16 @@ theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
     span R (z '' Set.Iio j) = span R (x '' Set.Iio j) := by
   refine le_antisymm (span_le.2 ?_) ?_
   · rintro _ ⟨l, hl, rfl⟩
-    rw [show z l = (z l - x l) + x l by abel]
-    exact add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
-      (subset_span ⟨l, hl, rfl⟩)
+    have hmem := add_mem (span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (h l))
+      (subset_span (R := R) ⟨l, hl, rfl⟩)
+    rwa [sub_add_cancel] at hmem
   induction j using WellFoundedLT.induction with
   | _ j ih =>
     rw [span_le]
     rintro _ ⟨l, hl, rfl⟩
-    rw [show x l = z l - (z l - x l) by abel]
-    exact sub_mem (subset_span ⟨l, hl, rfl⟩) <|
+    have hmem := sub_mem (subset_span (R := R) (Set.mem_image_of_mem z hl)) <|
       span_mono (Set.image_mono (Set.Iio_subset_Iio hl.le)) (ih l hl (h l))
+    rwa [sub_sub_cancel] at hmem
 
 end Unitriangular
 

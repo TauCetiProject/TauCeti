@@ -14,7 +14,6 @@ import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
 import TauCeti.LinearAlgebra.Span.Basic
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -82,30 +81,6 @@ private theorem Iio_eq_setOf_val_lt {n : ℕ} (j : Fin n) :
     Set.Iio j = {l : Fin n | l.val < j.val} :=
   Set.ext fun _ ↦ Fin.lt_def
 
-/-- One elimination step: if the pivot `q` maximizes `v (·) / s` in its column, then subtracting
-`p / q` times that column from a column bounded by `M` (in units of the row weights `s`, `t`)
-keeps it bounded by `c * M`. -/
-private theorem apply_sub_div_mul_le {v : AbsoluteValue K ℝ} {c : ℝ} (hc : 0 ≤ c)
-    (hv : ∀ a b, v (a + b) ≤ c * max (v a) (v b)) {a b p q : K} {s t M : ℝ} (hs : 0 < s)
-    (ht : 0 < t) (hq : 0 < v q) (ha : v a ≤ s * M) (hp : v p ≤ t * M)
-    (hb : v b / s ≤ v q / t) : v (a - p / q * b) ≤ c * (s * M) := by
-  have hM : 0 ≤ M := (mul_nonneg_iff_of_pos_left ht).mp ((v.nonneg _).trans hp)
-  have hratio : v b / v q ≤ s / t := by
-    rw [div_le_div_iff₀ hs ht] at hb
-    rw [div_le_div_iff₀ hq ht]
-    linarith
-  have hsub : v (p / q * b) ≤ s * M := by
-    rw [map_mul, map_div₀, div_mul_eq_mul_div, mul_div_assoc]
-    calc v p * (v b / v q) ≤ (t * M) * (s / t) :=
-          mul_le_mul hp hratio (div_nonneg (v.nonneg _) hq.le) (mul_nonneg ht.le hM)
-      _ = s * M := by field_simp [ht.ne']
-  calc v (a - p / q * b) ≤ c * max (v a) (v (-(p / q * b))) := by
-        rw [sub_eq_add_neg]
-        exact hv _ _
-    _ ≤ c * (s * M) := by
-        rw [map_neg_eq_map]
-        exact mul_le_mul_of_nonneg_left (max_le ha hsub) hc
-
 /-- **Elimination with partial pivoting at one place.** If the forms `L r` separate the points of
 `V` and `x 0, …, x (n - 1)` are independent in the triangular sense, then there are vectors
 `z j ∈ x j + span (x l, l < j)` and rows `π j` with `L (π i) (z j) = 0` for `i < j` and
@@ -145,13 +120,13 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
         (smul_mem _ _ (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
     have hx'ind (j : Fin n) : x' j ∉ span K (x' '' Set.Iio j) := fun h ↦ by
       refine hx j.succ ?_
-      rw [show x j.succ = x' j + t j • x 0 by simp [hx']]
-      exact add_mem (hspan j h) (smul_mem _ _ (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
+      have hmem := add_mem (hspan j h) (smul_mem _ (t j) (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
+      simp only [hx', sub_add_cancel] at hmem
+      exact hmem
     have hM' (j : Fin n) (r : ρ) : v (L r (x' j)) ≤ ν r * (c * M j.succ) := by
       have h := apply_sub_div_mul_le (zero_le_one.trans hc) hv (hν r) (hν r₀) hpos (hM j.succ r)
         (hM j.succ r₀) (hr₀ r)
-      rw [show L r (x' j) = L r (x j.succ) - L r₀ (x j.succ) / L r₀ (x 0) * L r (x 0) by
-        simp [hx', ht]]
+      simp only [hx', ht, map_sub, map_smul, smul_eq_mul]
       linarith
     obtain ⟨z', π', hz', hzero', hpiv', hbd'⟩ :=
       exists_triangular v hc hv L hL hν n x' hx'ind (fun j ↦ c * M j.succ) hM'
@@ -169,9 +144,10 @@ private theorem exists_triangular {ρ : Type*} [Finite ρ] (v : AbsoluteValue K 
     · cases j using Fin.cases with
       | zero => simp
       | succ j =>
-        rw [Fin.cons_succ, show z' j - x j.succ = (z' j - x' j) - t j • x 0 by
-          simp only [hx']; abel]
-        exact sub_mem (hspan j (hz' j)) (smul_mem _ _ (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
+        have hmem := sub_mem (hspan j (hz' j))
+          (smul_mem _ (t j) (subset_span ⟨0, Fin.succ_pos j, rfl⟩))
+        simp only [hx', sub_sub, sub_add_cancel] at hmem
+        simpa only [Fin.cons_succ] using hmem
     · cases j using Fin.cases with
       | zero => exact absurd hij (Fin.not_lt_zero i)
       | succ j =>
