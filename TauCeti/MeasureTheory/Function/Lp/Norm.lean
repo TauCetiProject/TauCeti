@@ -24,6 +24,8 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.norm_le_of_ae_bound_top`: an almost everywhere bound bounds the `L∞` norm,
+  with no finiteness assumption on the measure.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
@@ -81,18 +83,21 @@ namespace MeasureTheory
 
 open scoped ENNReal
 
+/-- An element of `L∞` which is bounded by `C` almost everywhere has norm at most `C`. Unlike
+`MeasureTheory.Lp.norm_le_of_ae_bound`, no finiteness of the measure is required. -/
+theorem Lp.norm_le_of_ae_bound_top {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {C : ℝ} (hC : 0 ≤ C)
+    (hf : ∀ᵐ x ∂m, ‖f x‖ ≤ C) : ‖f‖ ≤ C := by
+  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
+  exact ENNReal.toReal_le_of_le_ofReal hC (eLpNormEssSup_le_of_ae_bound hf)
+
 /-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
 of nonzero measure. -/
 theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
     [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {c : ℝ} (hc_nonneg : 0 ≤ c)
-    (hc : c < ‖f‖) : m {x | c < ‖f x‖} ≠ 0 := by
-  intro hms
-  have hae : ∀ᵐ x ∂m, ‖f x‖ ≤ c :=
-    (measure_eq_zero_iff_ae_notMem.mp hms).mono fun x hx ↦ le_of_not_gt hx
-  have hf_le : ‖f‖ ≤ c := by
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
-    exact ENNReal.toReal_le_of_le_ofReal hc_nonneg (eLpNormEssSup_le_of_ae_bound hae)
-  exact (not_lt_of_ge hf_le) hc
+    (hc : c < ‖f‖) : m {x | c < ‖f x‖} ≠ 0 := fun hms ↦
+  (Lp.norm_le_of_ae_bound_top hc_nonneg
+    ((measure_eq_zero_iff_ae_notMem.mp hms).mono fun _ hx ↦ le_of_not_gt hx)).not_gt hc
 
 /-- For `0 < p < ∞`, the integral of the `p`-th power of the pointwise norm of an `Lᵖ` function
 is the `p`-th power of its `Lᵖ` norm. -/

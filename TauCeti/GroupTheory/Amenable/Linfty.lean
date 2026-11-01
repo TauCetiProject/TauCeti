@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.MeasureTheory.Function.Lp.AddContent
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 public import TauCeti.RepresentationTheory.Compact.Haar
 
 /-!
-# Invariant means on `L∞` restrict to invariant means on `UCB`
+# Invariant means on `L∞`, finitely additive probabilities, and `UCB`
 
 Let `μ` be a left-invariant measure on the Borel sets of a topological group `G`, for instance
 a left Haar measure. Taking almost-everywhere classes, `f ↦ [f]`, is a positive linear map
@@ -25,6 +26,13 @@ Consequently a positive linear functional `M` on `L∞(G, μ)` with `M 1 = 1` re
 So a topological group is amenable as soon as `L∞` of some left-invariant measure carries a
 left-invariant mean; this is one implication of the characterization of amenable locally compact
 groups by invariant means on Haar `L∞`.
+
+Positive functionals on `L∞(G, μ)` correspond to nonnegative finitely additive set functions on
+the measurable sets which vanish on `μ`-null sets, by `M ↦ (s ↦ M [1_s])`
+(`MeasureTheory.AddContent.linftyIntegral`). Since left translation maps `[1_s]` to `[1_(g • s)]`,
+a functional is left invariant exactly when its set function is. Hence `L∞(G, μ)` carries a
+left-invariant mean exactly when the measurable sets carry a left-invariant finitely additive
+probability vanishing on `μ`-null sets, and such a probability also makes `G` amenable.
 
 For a compact group, integration against the normalized Haar measure `TauCeti.haarProb G` is
 such a mean on `L∞`, by left invariance of Haar measure. Hence every compact topological group
@@ -41,6 +49,12 @@ is amenable, for its given topology.
   left-invariant mean.
 * `TauCeti.Amenable.of_lpTop`: a topological group with a left-invariant normalized positive
   functional on `L∞` of a left-invariant measure is amenable.
+* `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: a positive functional on `L∞` is left
+  invariant exactly when its set function `s ↦ M [1_s]` is.
+* `TauCeti.exists_linftyMean_iff_exists_invariantContent`: `L∞(G, μ)` carries a left-invariant
+  mean exactly when the measurable sets carry a left-invariant finitely additive probability
+  vanishing on `μ`-null sets.
+* `TauCeti.Amenable.of_invariantContent`: such a probability makes a topological group amenable.
 * `TauCeti.Amenable.of_compactSpace`: every compact topological group is amenable.
 
 ## References
@@ -54,7 +68,7 @@ public section
 noncomputable section
 
 open MeasureTheory BoundedContinuousFunction
-open scoped ENNReal BoundedContinuousFunction
+open scoped ENNReal BoundedContinuousFunction Pointwise
 
 namespace TauCeti
 
@@ -92,6 +106,89 @@ translation. -/
 theorem Amenable.of_lpTop [μ.IsMulLeftInvariant] (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M linftyOne = 1)
     (h : ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) : Amenable G :=
   (amenable_iff G).2 ⟨Mean.ofLpTop M hM, Mean.isLeftInvariant_ofLpTop hM h⟩
+
+end TauCeti
+
+namespace PositiveLinearMap
+
+open MeasureTheory
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
+  [μ.IsMulLeftInvariant]
+
+/-- A positive functional on `L∞(μ)` is invariant under left translation exactly when its set
+function `s ↦ M [1_s]` is invariant under left multiplication of measurable sets. -/
+theorem forall_apply_leftTranslation_eq_iff (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
+    (∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
+      ∀ (g : G) s, MeasurableSet s →
+        M.toLinearMap.linftyContent (g • s) = M.toLinearMap.linftyContent s := by
+  refine ⟨fun h g s hs => ?_, fun h g => ?_⟩
+  · rw [LinearMap.linftyContent_apply _ hs, LinearMap.linftyContent_apply _ (hs.const_smul g),
+      ← Lp.leftTranslation_linftyIndicator]
+    exact h g _
+  · -- `φ ↦ M (L_g φ)` is a positive functional with the same set function as `M`.
+    let Mg : Lp ℝ ∞ μ →ₚ[ℝ] ℝ :=
+      { toLinearMap := M.toLinearMap ∘ₗ (Lp.leftTranslation μ ∞ ℝ g).toLinearMap
+        monotone' := fun _ _ hφ => M.monotone' (Lp.leftTranslation_mono g hφ) }
+    have hMg : Mg = M := ext_linftyIndicator fun s hs => by
+      have := h g s hs
+      rw [LinearMap.linftyContent_apply _ hs, LinearMap.linftyContent_apply _ (hs.const_smul g),
+        ← Lp.leftTranslation_linftyIndicator] at this
+      -- `Mg ψ` is `M (L_g ψ)` by construction.
+      exact this
+    exact fun φ => DFunLike.congr_fun hMg φ
+
+end PositiveLinearMap
+
+namespace TauCeti
+
+open MeasureTheory
+
+section Content
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
+  [μ.IsMulLeftInvariant]
+
+/-- `L∞` of a left-invariant measure `μ` carries a left-invariant positive functional `M` with
+`M 1 = 1` exactly when the measurable sets carry a left-invariant finitely additive probability
+`ν` which vanishes on `μ`-null sets. The correspondence is `ν s = M [1_s]`. -/
+theorem exists_linftyMean_iff_exists_invariantContent :
+    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+        ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
+      ∃ ν : AddContent ℝ≥0∞ {s : Set G | MeasurableSet s}, ν Set.univ = 1 ∧
+        (∀ s, MeasurableSet s → μ s = 0 → ν s = 0) ∧
+        ∀ (g : G) s, MeasurableSet s → ν (g • s) = ν s := by
+  constructor
+  · rintro ⟨M, hM1, hM⟩
+    refine ⟨M.toLinearMap.linftyContent.ofReal fun _ => M.linftyContent_nonneg, ?_, ?_, ?_⟩
+    · simpa using congrArg ENNReal.ofReal hM1
+    · intro s hs hμs
+      simp [LinearMap.linftyContent_of_measure_eq_zero _ hs hμs]
+    · intro g s hs
+      simp [(M.forall_apply_leftTranslation_eq_iff.1 hM) g s hs]
+  · rintro ⟨ν, hν1, hνμ, hνg⟩
+    have hfin : ∀ s ∈ {s : Set G | MeasurableSet s}, ν s ≠ ∞ := fun s hs =>
+      ne_top_of_le_ne_top (hν1 ▸ ENNReal.one_ne_top) (addContent_mono
+        isSetRing_setOf_measurableSet.isSetSemiring hs MeasurableSet.univ (Set.subset_univ s))
+    let M := AddContent.linftyIntegral (ν := ν.toReal hfin) (μ := μ)
+      (fun s _ => AddContent.toReal_nonneg ν hfin s) fun s hs hμs => by simp [hνμ s hs hμs]
+    refine ⟨M, by simp [M, hν1], M.forall_apply_leftTranslation_eq_iff.2 fun g s hs => ?_⟩
+    rw [LinearMap.linftyContent_linftyIntegral _ _ hs,
+      LinearMap.linftyContent_linftyIntegral _ _ (hs.const_smul g), AddContent.toReal_apply,
+      AddContent.toReal_apply, hνg g s hs]
+
+end Content
+
+/-- A topological group is amenable if, for some left-invariant measure `μ` on its Borel sets,
+the measurable sets carry a left-invariant finitely additive probability vanishing on `μ`-null
+sets. -/
+theorem Amenable.of_invariantContent {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
+    [μ.IsMulLeftInvariant] (ν : AddContent ℝ≥0∞ {s : Set G | MeasurableSet s})
+    (hν1 : ν Set.univ = 1) (hνμ : ∀ s, MeasurableSet s → μ s = 0 → ν s = 0)
+    (hνg : ∀ (g : G) s, MeasurableSet s → ν (g • s) = ν s) : Amenable G :=
+  have ⟨M, hM1, hM⟩ := exists_linftyMean_iff_exists_invariantContent.2 ⟨ν, hν1, hνμ, hνg⟩
+  Amenable.of_lpTop (μ := μ) M hM1 hM
 
 end TauCeti
 

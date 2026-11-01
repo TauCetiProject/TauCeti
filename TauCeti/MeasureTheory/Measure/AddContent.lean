@@ -33,6 +33,7 @@ unlike measures, they cannot be replaced by countably additive set functions on 
   ordered values is bounded by its total mass, so an `ℝ≥0∞`-valued one is finite when its total
   mass is. A content on all subsets takes complements to differences with the total mass, for
   values in an additive group, or for `ℝ≥0∞` values at sets of finite content.
+* `MeasureTheory.isSetRing_setOf_measurableSet`: the measurable sets also form a ring of sets.
 * `MeasureTheory.AddContent.map` pushes a content forward along a map, with identity and
   composition laws. Pushforward along an equivariant map preserves invariance under a group
   action, and invariance of a content on all subsets is invariance under pushforward by every
@@ -60,6 +61,13 @@ theorem isSetRing_univ : IsSetRing (univ : Set (Set α)) where
   empty_mem := mem_univ _
   union_mem _ _ _ _ := mem_univ _
   sdiff_mem _ _ _ _ := mem_univ _
+
+/-- The measurable sets of a measurable space form a ring of sets. -/
+theorem isSetRing_setOf_measurableSet [MeasurableSpace α] :
+    IsSetRing {s : Set α | MeasurableSet s} where
+  empty_mem := MeasurableSet.empty
+  union_mem _ _ := MeasurableSet.union
+  sdiff_mem _ _ := MeasurableSet.diff
 
 section Ring
 
