@@ -18,7 +18,8 @@ factors in the degrees `n i`. Mathlib proves this for a uniform bound `n`
 what is needed to read off the top coefficient of a determinant whose columns have different
 degree bounds.
 
-This file also groups products of linear factors according to their constant terms.
+This file also groups products of linear factors according to their constant terms, and records
+that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term.
 -/
 
 public section
@@ -26,6 +27,21 @@ public section
 namespace Polynomial
 
 open Finset
+
+section Semiring
+
+variable {R : Type*} [Semiring R]
+
+/-- The polynomial `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term. -/
+theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
+    (∑ j ∈ range N, C (c j) * X ^ (N - j)).coeff 0 = 0 := by
+  rw [finsetSum_coeff]
+  refine sum_eq_zero fun j hj ↦ ?_
+  rw [coeff_C_mul_X_pow, ite_eq_right_iff]
+  have := mem_range.1 hj
+  omega
+
+end Semiring
 
 variable {ι R : Type*} [CommSemiring R]
 

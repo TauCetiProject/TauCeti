@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Meromorphic.Order
+public import TauCeti.Algebra.Polynomial.BigOperators
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 public import TauCeti.Analysis.Meromorphic.Germ
@@ -41,6 +42,7 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 
 ## Main declarations
 
+* `Polynomial.meromorphicAt_eval_inv_sub`: a polynomial in `(z - a)⁻¹` is meromorphic at `a`.
 * `TauCeti.meromorphicOrderAt_eval_inv_sub`: the order at `a` of `z ↦ P((z - a)⁻¹)`.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
@@ -68,7 +70,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 𝕜}
 /-! ### Polynomials in the inverse coordinate -/
 
 /-- A polynomial in the inverse coordinate `(z - a)⁻¹` is meromorphic at `a`. -/
-theorem meromorphicAt_eval_inv_sub (P : 𝕜[X]) (a : 𝕜) :
+theorem _root_.Polynomial.meromorphicAt_eval_inv_sub (P : 𝕜[X]) (a : 𝕜) :
     MeromorphicAt (fun z ↦ P.eval (z - a)⁻¹) a := by
   induction P using Polynomial.induction_on' with
   | add P Q hP hQ =>
@@ -126,15 +128,6 @@ theorem inv_pow_sub_mul_eq_eval_inv_sub_add (h : 𝕜 → 𝕜) (N : ℕ) {z : �
   rw [eval_mul, eval_C, eval_pow, eval_X, smul_eq_mul, hjN, inv_pow]
   field_simp
 
-/-- The polynomial `Σ_{j<N} c_j X ^ (N - j)` has no constant term. -/
-private theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → 𝕜) (N : ℕ) :
-    (∑ j ∈ Finset.range N, C (c j) * X ^ (N - j)).coeff 0 = 0 := by
-  rw [finsetSum_coeff]
-  refine Finset.sum_eq_zero fun j hj ↦ ?_
-  rw [coeff_C_mul_X_pow, ite_eq_right_iff]
-  have := Finset.mem_range.1 hj
-  omega
-
 namespace meromorphicGerms
 
 /-! ### Evaluation at the inverse coordinate -/
@@ -147,7 +140,7 @@ def evalInvSub : 𝕜[X] →+* meromorphicGerms 𝕜 a :=
     fun P ↦ coe_mem_meromorphicGerms.2 (meromorphicAt_eval_inv_sub P a)
 
 @[simp]
-theorem coe_evalInvSub (P : 𝕜[X]) :
+theorem _root_.Polynomial.coe_evalInvSub (P : 𝕜[X]) :
     (evalInvSub a P : Germ (𝓝[≠] a) 𝕜) = (fun z ↦ P.eval (z - a)⁻¹ : 𝕜 → 𝕜) :=
   (rfl)
 
