@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Bounds
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solver
-import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic
 
 /-!
 # Completeness of the cyclotomic Dixon solver
@@ -118,21 +117,17 @@ theorem exists_bounded_exact_character_table :
       ∀ i k j, ((out.omega i k).coeff j).natAbs ≤ centralCoefficientBound G e := by
   have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   let τ := finCongr d.numClasses_eq_card_conjClasses
-  choose table omega htable homega _ hbound using
+  choose table omega htable homega _ _ hbound using
     exists_exact_character_and_central_values (G := G) e he
   refine ⟨⟨fun i k ↦ omega (τ i) (d.classOf k), fun i k ↦ table (τ i) (d.classOf k),
     fun i ↦ characterDegree ℂ (τ i)⟩,
     d.isCyclotomicCharacterTableSpec_of_complexEmbedding_eq e (fun _ _ ↦ homega _ _)
-      (fun _ _ ↦ htable _ _), ?_, fun i k j ↦ ?_⟩
-  · ext i C
-    obtain ⟨i, rfl⟩ := τ.surjective i
-    obtain ⟨k, rfl⟩ := d.equivConjClasses.surjective C
-    rw [d.equivConjClasses_apply]
-    exact (d.complexTableOfCyclotomic_apply_classOf e _ i k).trans (htable _ _)
-  · rw [centralCoefficientBound_def]
-    refine (hbound (τ i) (d.classOf k) j).trans (Nat.mul_le_mul_right _ ?_)
-    rw [← d.card_classFinset]
-    exact Finset.card_le_univ _
+      (fun _ _ ↦ htable _ _), ?_, fun _ _ _ ↦ hbound _ _ _⟩
+  ext i C
+  obtain ⟨i, rfl⟩ := τ.surjective i
+  obtain ⟨k, rfl⟩ := d.equivConjClasses.surjective C
+  rw [d.equivConjClasses_apply]
+  exact (d.complexTableOfCyclotomic_apply_classOf e _ i k).trans (htable _ _)
 
 /-- **The solver is complete at every strong Dixon prime.** The cyclotomic Dixon solver returns a
 table at all Dixon prime data beyond twice the central coefficient bound, whatever the primitive
