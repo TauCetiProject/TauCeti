@@ -136,8 +136,7 @@ theorem isInvolutiveComplexDistribution_eigenspace_I_iff :
       have h := hV y hy
       rw [← one_tmul_realPart_add_I_tmul_imaginaryPart _ (V y),
         AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff] at h
-      conv_lhs => rw [← one_tmul_realPart_add_I_tmul_imaginaryPart _ (V y), h]
-      simp
+      exact complexification_ext (by simp) (by simp [h])
     rw [complexMlieBracket_congr (hsec hZ) (hsec hW)]
     refine (J.complexMlieBracket_mem_eigenspace_I_iff
       ((hZre x hx).mdifferentiableAt (hU.mem_nhds hx))

@@ -45,7 +45,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
 * `TauCeti.realPart` and `TauCeti.imaginaryPart`: the two real coordinates of a vector of a
-  complexification; `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it.
+  complexification; `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
+  `TauCeti.complexification_ext` says the two coordinates determine the vector.
 
 ## Main statements
 
@@ -408,15 +409,26 @@ theorem one_tmul_realPart_add_I_tmul_imaginaryPart (u : ℂ ⊗[ℝ] W) :
   obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
   simp
 
+variable {W} in
+/-- **Extensionality in a complexification**: a vector of `ℂ ⊗[ℝ] W` is determined by its real
+and imaginary parts. -/
+theorem complexification_ext {u v : ℂ ⊗[ℝ] W} (hre : realPart W u = realPart W v)
+    (him : imaginaryPart W u = imaginaryPart W v) : u = v := by
+  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart W u,
+    ← one_tmul_realPart_add_I_tmul_imaginaryPart W v, hre, him]
+
+variable {W} in
+/-- Two vectors of `ℂ ⊗[ℝ] W` are equal exactly when their real and imaginary parts are. -/
+theorem complexification_ext_iff {u v : ℂ ⊗[ℝ] W} :
+    u = v ↔ realPart W u = realPart W v ∧ imaginaryPart W u = imaginaryPart W v :=
+  ⟨fun h ↦ h ▸ ⟨rfl, rfl⟩, fun h ↦ complexification_ext h.1 h.2⟩
+
 /-- The two real coordinates of `1 ⊗ₜ w₁ + I ⊗ₜ w₂` are `w₁` and `w₂`. -/
 @[simp]
 theorem one_tmul_add_I_tmul_inj {w₁ w₂ w₁' w₂' : W} :
     1 ⊗ₜ[ℝ] w₁ + Complex.I ⊗ₜ[ℝ] w₂ = 1 ⊗ₜ[ℝ] w₁' + Complex.I ⊗ₜ[ℝ] w₂' ↔
       w₁ = w₁' ∧ w₂ = w₂' := by
-  refine ⟨fun h ↦ ⟨by simpa using congrArg (realPart W) h,
-    by simpa using congrArg (imaginaryPart W) h⟩, ?_⟩
-  rintro ⟨rfl, rfl⟩
-  rfl
+  simp [complexification_ext_iff]
 
 /-- Multiplication by a complex scalar `c` in the real coordinates of a complexification:
 `c • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (re c • v - im c • w) + I ⊗ₜ (re c • w + im c • v)`. -/
