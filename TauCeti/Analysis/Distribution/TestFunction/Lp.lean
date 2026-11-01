@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 
 /-!
 # Test functions in `Lᵖ` spaces
@@ -48,37 +49,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   {Ω : Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
   {p : ℝ≥0∞} {μ : Measure Ω}
 
-omit [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The preimage in `Ω` of a compact subset of `Ω` is compact. -/
-private theorem isCompact_preimage_coe {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    IsCompact ((↑) ⁻¹' K : Set Ω) :=
-  Subtype.isCompact_iff.2 <| by rwa [image_preimage_eq_of_subset (by simpa using hKΩ)]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The restriction of a test function on `Ω` to `Ω` has compact support. -/
-theorem hasCompactSupport_restrict (φ : 𝓓^{n}(Ω, F)) : HasCompactSupport fun x : Ω => φ x :=
-  HasCompactSupport.intro (isCompact_preimage_coe φ.hasCompactSupport.isCompact φ.tsupport_subset)
-    fun _ hx => image_eq_zero_of_notMem_tsupport hx
-
-/-- The restriction of a test function on `Ω` to `Ω` is strongly measurable. -/
-private theorem aestronglyMeasurable_restrict (φ : 𝓓^{n}(Ω, F)) :
-    AEStronglyMeasurable (fun x : Ω => φ x) μ :=
-  ((φ.continuous.comp continuous_subtype_val).stronglyMeasurable_of_hasCompactSupport
-    (hasCompactSupport_restrict φ)).aestronglyMeasurable
-
 /-- The restriction of a test function on `Ω` to `Ω` lies in `Lᵖ(μ)` for every measure `μ` on `Ω`
 that is finite on compact sets. -/
 theorem memLp_restrict [IsFiniteMeasureOnCompacts μ] (φ : 𝓓^{n}(Ω, F)) :
-    MemLp (fun x : Ω => φ x) p μ :=
-  (φ.continuous.comp continuous_subtype_val).memLp_of_hasCompactSupport
-    (hasCompactSupport_restrict φ)
+    MemLp (fun x : Ω => φ x) p μ := by
+  rw [← funext (toCompactlySupportedContinuousMap_apply φ)]
+  exact (map_continuous _).memLp_of_hasCompactSupport
+    φ.toCompactlySupportedContinuousMap.hasCompactSupport
 
 /-- The `Lᵖ(μ)` norm of a test function supported in a compact `K ⊆ Ω` is at most
 `μ (Ω ∩ K) ^ (1 / p)` times its sup norm. -/
 private theorem eLpNorm_restrict_le (φ : 𝓓^{n}(Ω, F)) {K : Set E} (hφK : tsupport φ ⊆ K) :
     eLpNorm (fun x : Ω => φ x) p μ ≤
       μ ((↑) ⁻¹' K) ^ p.toReal⁻¹ * ENNReal.ofReal ‖(φ : E →ᵇ F)‖ := by
-  have hm := aestronglyMeasurable_restrict (μ := μ) φ
+  have hm : AEStronglyMeasurable (fun x : Ω => φ x) μ :=
+    (φ.stronglyMeasurable.comp_measurable measurable_subtype_coe).aestronglyMeasurable
   rw [← eLpNorm_restrict_eq_of_support_subset (s := (↑) ⁻¹' K) hm
       fun x hx => hφK (subset_tsupport _ hx),
     ← Measure.restrict_apply_univ]
@@ -87,7 +72,7 @@ private theorem eLpNorm_restrict_le (φ : 𝓓^{n}(Ω, F)) {K : Set E} (hφK : t
 
 /-- A continuous function with compact support in `Ω` is the `Lᵖ(μ)` limit of test functions. -/
 private theorem exists_eLpNorm_sub_le [IsFiniteMeasureOnCompacts μ] [FiniteDimensional ℝ E]
-    [CompleteSpace F] {g : Ω → F}
+    [CompleteSpace F] (hp : p ≠ ∞) {g : Ω → F}
     (hg : Continuous g) (hgc : HasCompactSupport g) {ε : ℝ≥0∞} (hε : ε ≠ 0) :
     ∃ φ : 𝓓^{n}(Ω, F), eLpNorm (g - fun x : Ω => φ x) p μ ≤ ε := by
   -- Mollify the extension of `g` by zero, inside a closed thickening `K'` of its support.
@@ -96,31 +81,25 @@ private theorem exists_eLpNorm_sub_le [IsFiniteMeasureOnCompacts μ] [FiniteDime
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen
     (image_subset_iff.2 fun x _ => x.2)
   set K' := cthickening δ K
-  set M := μ ((↑) ⁻¹' K') ^ p.toReal⁻¹
+  set M := μ ((↑) ⁻¹' K') ^ (1 / p.toReal)
   have hM : M ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    (isCompact_preimage_coe hK.cthickening hδΩ).measure_ne_top
+    (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK.cthickening
+      (by simpa using hδΩ)).measure_ne_top
   obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt hM hε
   obtain ⟨φ, hφK', hφ⟩ := (hgc.continuous_extend_zero Ω.isOpen hg).exists_testFunction_dist_le hK
     (hgc.tsupport_extend_zero_subset continuous_subtype_val) hδ hδΩ (NNReal.coe_pos.2 hη)
   refine ⟨⟨φ, φ.contDiff.of_le (WithTop.coe_le_coe.2 le_top), φ.hasCompactSupport,
     φ.tsupport_subset⟩, ?_⟩
   -- The error is supported in `K'` and bounded by `η` there.
-  have hm : AEStronglyMeasurable (g - fun x : Ω => φ x) μ :=
-    ((hg.sub (φ.continuous.comp continuous_subtype_val)).stronglyMeasurable_of_hasCompactSupport
-      (hgc.sub (hasCompactSupport_restrict (n := ⊤) φ))).aestronglyMeasurable
-  have hsupp : Function.support (g - fun x : Ω => φ x) ⊆ (↑) ⁻¹' K' := by
-    intro x hx
-    by_contra hxK'
-    refine hx ?_
-    have hg0 : g x = 0 := image_eq_zero_of_notMem_tsupport fun h =>
-      hxK' (self_subset_cthickening K (mem_image_of_mem _ h))
-    simp [hg0, image_eq_zero_of_notMem_tsupport fun h => hxK' (hφK' h)]
   simp only [coe_mk]
-  rw [← eLpNorm_restrict_eq_of_support_subset hm hsupp]
-  refine (eLpNorm_le_of_ae_bound (C := η) hm.restrict (ae_of_all _ fun x => ?_)).trans ?_
-  · rw [Pi.sub_apply, ← dist_eq_norm, dist_comm]
+  refine (eLpNorm_sub_le_of_dist_bdd μ hp
+    (measurable_subtype_coe isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
+    (hg.sub (φ.continuous.comp continuous_subtype_val)).aestronglyMeasurable (fun x => ?_)
+    (fun x hx => self_subset_cthickening K (mem_image_of_mem _ (subset_tsupport _ hx)))
+    fun x hx => hφK' (subset_tsupport _ hx)).trans ?_
+  · rw [dist_comm]
     simpa [Subtype.val_injective.extend_apply] using hφ x
-  · rw [Measure.restrict_apply_univ, ENNReal.ofReal_coe_nnreal, mul_comm]
+  · rw [ENNReal.ofReal_coe_nnreal]
     exact hηε.le
 
 variable [Fact (1 ≤ p)]
@@ -136,7 +115,9 @@ private theorem hasLocallyFiniteMass_memLp_toLp :
   refine Distribution.hasLocallyFiniteMass_def.2 fun K hK hKΩ =>
     ⟨(μ ((↑) ⁻¹' K) ^ p.toReal⁻¹).toReal, ENNReal.toReal_nonneg, fun φ hφK => ?_⟩
   have hfin : μ ((↑) ⁻¹' K) ^ p.toReal⁻¹ ≠ ⊤ :=
-    ENNReal.rpow_ne_top_of_nonneg (by positivity) (isCompact_preimage_coe hK hKΩ).measure_ne_top
+    ENNReal.rpow_ne_top_of_nonneg (by positivity)
+      (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK
+        (by simpa using hKΩ)).measure_ne_top
   rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal (norm_nonneg (φ : E →ᵇ F)), ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top hfin ENNReal.ofReal_ne_top)
     (eLpNorm_restrict_le φ hφK)
@@ -148,8 +129,12 @@ topology. -/
 def toLp : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p μ :=
   let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p μ :=
     { toFun φ := (memLp_restrict φ).toLp _
-      map_add' φ ψ := by rw [← MemLp.toLp_add]; rfl
-      map_smul' c φ := by rw [RingHom.id_apply, ← MemLp.toLp_const_smul]; rfl }
+      map_add' φ ψ := by
+        rw [← MemLp.toLp_add]
+        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
+      map_smul' c φ := by
+        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp)) }
   ⟨L, Distribution.HasLocallyFiniteMass.continuous hasLocallyFiniteMass_memLp_toLp⟩
 
 /-- `toLp p μ φ` is the `Lᵖ(μ)` class of the restriction of `φ` to `Ω`. -/
@@ -159,7 +144,8 @@ theorem toLp_apply (φ : 𝓓^{n}(Ω, F)) :
 
 variable (p μ) in
 /-- The class of a test function in `Lᵖ(μ)` satisfies an order-zero bound on each compact subset
-of `Ω`: its norm is at most `μ (Ω ∩ K) ^ (1 / p)` times the sup norm. -/
+of `Ω`: on the tests supported in a compact `K ⊆ Ω`, its norm is at most a constant depending on
+`K` times the sup norm. -/
 theorem hasLocallyFiniteMass_toLp :
     Distribution.HasLocallyFiniteMass (toLp p μ : 𝓓^{n}(Ω, F) → Lp F p μ) := by
   rw [show ⇑(toLp p μ : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p μ) = _ from funext toLp_apply]
@@ -175,7 +161,7 @@ variable (μ) in
 theorem enorm_toLp_one (φ : 𝓓^{n}(Ω, F)) :
     ‖toLp 1 μ φ‖ₑ = ∫⁻ x, ‖φ x‖ₑ ∂μ := by
   rw [Lp.enorm_def, eLpNorm_congr_ae (coeFn_toLp φ), eLpNorm_one_eq_lintegral_enorm]
-  exact aestronglyMeasurable_restrict φ
+  exact (memLp_restrict (p := 1) φ).aestronglyMeasurable
 
 end FiniteOnCompacts
 
@@ -188,7 +174,7 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   -- Approximate `f` by a continuous function with compact support, and that by a test function.
   obtain ⟨g, hgc, hfg, hg, hgp⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
     (ENNReal.half_pos hε.ne').ne'
-  obtain ⟨φ, hφ⟩ := exists_eLpNorm_sub_le (n := n) (p := p) (μ := μ) hg hgc
+  obtain ⟨φ, hφ⟩ := exists_eLpNorm_sub_le (n := n) (μ := μ) hp hg hgc
     (ENNReal.half_pos hε.ne').ne'
   refine ⟨_, mem_range_self φ, ?_⟩
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,

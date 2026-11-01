@@ -433,15 +433,22 @@ mass is continuous for the test-function topology, so it is a distribution of or
 theorem HasLocallyFiniteMass.continuous {L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V}
     (hL : HasLocallyFiniteMass L) : Continuous L := by
   refine (TestFunction.continuous_iff_continuous_comp L).2 fun K hK => ?_
-  obtain ⟨C, -, hC⟩ := hL K K.isCompact hK
+  obtain ⟨C, -, hC⟩ := hasLocallyFiniteMass_def.1 hL K K.isCompact hK
   -- On the tests supported in `K`, `L` is bounded by `C` times the sup norm.
   let LK : 𝓓^{n}_{K}(E, F) →ₗ[ℝ] V := L ∘ₗ (TestFunction.ofSupportedInCLM ℝ hK).toLinearMap
+  have hLK (ψ : 𝓓^{n}_{K}(E, F)) :
+      ‖LK ψ‖ ≤ C * ‖ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ ψ‖ := by
+    have hψ : ((TestFunction.ofSupportedIn hK ψ : 𝓓^{n}(Ω, F)) : E →ᵇ F) =
+        ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ ψ :=
+      BoundedContinuousFunction.ext fun x => by simp
+    rw [← hψ]
+    simpa [LK] using hC (TestFunction.ofSupportedIn hK ψ) (by simpa using ψ.tsupport_subset)
   have hB := (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ :
     𝓓^{n}_{K}(E, F) →L[ℝ] E →ᵇ F).continuous.tendsto 0
   rw [map_zero, tendsto_zero_iff_norm_tendsto_zero] at hB
   refine continuous_of_continuousAt_zero LK ?_
   rw [ContinuousAt, map_zero, tendsto_zero_iff_norm_tendsto_zero]
-  exact squeeze_zero (fun _ => norm_nonneg _) (fun ψ => hC _ ψ.tsupport_subset)
+  exact squeeze_zero (fun _ => norm_nonneg _) hLK
     (by simpa using hB.const_mul C)
 
 end LocallyFinite

@@ -34,7 +34,7 @@ have locally finite mass.
 * `Distribution.extendL1_toLp`, `Distribution.norm_extendL1_le`, `Distribution.extendL1_unique`:
   it extends `T`, has norm at most one, and is the only continuous extension.
 * `Distribution.massRestrict`: the Borel restriction `T ⌞ A`.
-* `Distribution.enorm_massRestrict_eq_indicatorToL1_le`: `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`.
+* `Distribution.enorm_massRestrict_apply_le`: `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`.
 * `Distribution.mass_massRestrict_le`, `Distribution.massMeasure_massRestrict_le`: the mass
   bounds `M(T ⌞ A) ≤ ‖T‖ A` and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
 
@@ -70,28 +70,12 @@ does not have locally finite mass, `‖T‖` is zero and so is this functional. 
 def extendL1 (T : 𝓕) : Lp F 1 (massMeasure T) →L[ℝ] ℝ :=
   (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ).extendOfNorm (TestFunction.toLp 1 (massMeasure T)).toLinearMap
 
-private theorem extendL1_def (T : 𝓕) :
-    extendL1 T =
-      (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ).extendOfNorm (TestFunction.toLp 1 (massMeasure T)).toLinearMap :=
-  (rfl)
-
-/-- The domination of `T` by its mass measure, in `L¹` form. -/
-private theorem norm_apply_le_norm_toLp (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
-    ‖T φ‖ ≤ ‖TestFunction.toLp 1 (massMeasure T) φ‖ := by
-  rw [← enorm_le_iff_norm_le, TestFunction.enorm_toLp_one]
-  exact enorm_apply_le_lintegral_massMeasure hT φ
-
 /-- The domination of `T` by its mass measure, in the form used by `LinearMap.extendOfNorm`. -/
 private theorem norm_apply_le_one_mul (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
-    ‖(T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) φ‖ ≤ 1 * ‖(TestFunction.toLp 1 (massMeasure T)).toLinearMap φ‖ :=
-  (norm_apply_le_norm_toLp hT φ).trans_eq (one_mul _).symm
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [NormedSpace ℝ F] in
-/-- Every element of `L¹` of the zero measure is zero. -/
-private theorem eq_zero_of_measure_eq_zero {μ : Measure Ω} (hμ : μ = 0) (f : Lp F 1 μ) :
-    f = 0 := by
-  subst hμ
-  exact Lp.eq_zero_iff_ae_eq_zero.2 (by simp [Filter.EventuallyEq])
+    ‖(T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) φ‖ ≤ 1 * ‖(TestFunction.toLp 1 (massMeasure T)).toLinearMap φ‖ := by
+  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← enorm_le_iff_norm_le,
+    TestFunction.enorm_toLp_one]
+  exact enorm_apply_le_lintegral_massMeasure hT φ
 
 variable {A B : Set Ω}
 
@@ -126,7 +110,7 @@ variable [CompleteSpace F]
 @[simp]
 theorem extendL1_toLp (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     extendL1 T (TestFunction.toLp 1 (massMeasure T) φ) = T φ := by
-  rw [extendL1_def]
+  rw [extendL1]
   exact LinearMap.extendOfNorm_eq (f := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ))
     (TestFunction.denseRange_toLp ENNReal.one_ne_top)
     ⟨1, norm_apply_le_one_mul hT⟩ φ
@@ -134,11 +118,16 @@ theorem extendL1_toLp (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
 /-- **Mass bound for the extension.** `|extendL1 T f| ≤ ∫ ‖f‖ d‖T‖`. -/
 theorem norm_extendL1_apply_le (f : Lp F 1 (massMeasure T)) : ‖extendL1 T f‖ ≤ ‖f‖ := by
   by_cases hT : HasLocallyFiniteMass T
-  · rw [extendL1_def]
+  · rw [extendL1]
     simpa using LinearMap.norm_extendOfNorm_apply_le (f := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ))
       (TestFunction.denseRange_toLp ENNReal.one_ne_top) 1
       (norm_apply_le_one_mul hT) f
-  · simp [eq_zero_of_measure_eq_zero (massMeasure_of_not_hasLocallyFiniteMass hT) f]
+  · -- Without locally finite mass `‖T‖ = 0`, so `L¹(‖T‖; F)` is trivial.
+    obtain rfl : f = 0 := by
+      revert f
+      rw [massMeasure_of_not_hasLocallyFiniteMass hT]
+      exact fun f => norm_eq_zero.1 (Lp.norm_measure_zero f)
+    simp
 
 /-- The extension of `T` to `L¹(‖T‖; F)` has norm at most one. -/
 theorem norm_extendL1_le : ‖extendL1 T‖ ≤ 1 :=
@@ -150,7 +139,7 @@ with `T` on test functions is `extendL1 T`. -/
 theorem extendL1_unique (hT : HasLocallyFiniteMass T) (S : Lp F 1 (massMeasure T) →L[ℝ] ℝ)
     (hS : ∀ φ : 𝓓^{n}(Ω, F), S (TestFunction.toLp 1 (massMeasure T) φ) = T φ) :
     extendL1 T = S := by
-  rw [extendL1_def]
+  rw [extendL1]
   exact LinearMap.extendOfNorm_unique (f := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ))
     (TestFunction.denseRange_toLp ENNReal.one_ne_top) 1 (norm_apply_le_one_mul hT) S
     (LinearMap.ext hS)
@@ -169,14 +158,10 @@ private theorem hasLocallyFiniteMass_comp_indicatorToL1 (hA : MeasurableSet A) :
 measurable set `A ⊆ Ω`: the continuous linear map `φ ↦ extendL1 T (1_A φ)` on test functions,
 where `1_A φ` is integrated against the mass measure `‖T‖`. It has locally finite mass
 (`Distribution.hasLocallyFiniteMass_massRestrict`) and is dominated by `‖T‖` restricted to `A`
-(`Distribution.enorm_massRestrict_eq_indicatorToL1_le`). -/
+(`Distribution.enorm_massRestrict_apply_le`). -/
 def massRestrict (T : 𝓕) (hA : MeasurableSet A) : 𝓓^{n}(Ω, F) →L[ℝ] ℝ :=
   ⟨(extendL1 T).toLinearMap ∘ₗ indicatorToL1 T hA,
     (hasLocallyFiniteMass_comp_indicatorToL1 hA).continuous⟩
-
-private theorem massRestrict_eq_indicatorToL1 (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
-    massRestrict T hA φ = extendL1 T (indicatorToL1 T hA φ) :=
-  (rfl)
 
 /-- `(T ⌞ A) φ` is the value of `extendL1 T` on the class of `1_A φ` in `L¹(‖T‖; F)`. -/
 theorem massRestrict_apply (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
@@ -185,8 +170,12 @@ theorem massRestrict_apply (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
         (A.indicator fun x : Ω => φ x)) :=
   (rfl)
 
+private theorem massRestrict_eq_indicatorToL1 (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
+    massRestrict T hA φ = extendL1 T (indicatorToL1 T hA φ) := by
+  rw [massRestrict_apply, indicatorToL1, LinearMap.coe_mk, AddHom.coe_mk]
+
 /-- **Domination of the Borel restriction.** `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`. -/
-theorem enorm_massRestrict_eq_indicatorToL1_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
+theorem enorm_massRestrict_apply_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     ‖massRestrict T hA φ‖ₑ ≤ ∫⁻ x in A, ‖φ x‖ₑ ∂massMeasure T := by
   rw [← enorm_indicatorToL1 hA, massRestrict_eq_indicatorToL1, enorm_le_iff_norm_le]
   exact norm_extendL1_apply_le _
@@ -197,28 +186,24 @@ theorem hasLocallyFiniteMass_massRestrict (hA : MeasurableSet A) :
   rw [show ⇑(massRestrict T hA) = _ from funext (massRestrict_eq_indicatorToL1 hA)]
   exact hasLocallyFiniteMass_comp_indicatorToL1 hA
 
-/-- **Mass of a Borel restriction.** `M(T ⌞ A) ≤ ‖T‖ A`; in particular a Borel restriction to a
-set of finite `‖T‖`-measure has finite mass. -/
-theorem mass_massRestrict_le (hA : MeasurableSet A) :
-    mass (massRestrict T hA) ≤ massMeasure T A := by
-  refine mass_le_iff.2 fun φ hφ => (enorm_massRestrict_eq_indicatorToL1_le hA φ).trans ?_
-  calc ∫⁻ x in A, ‖φ x‖ₑ ∂massMeasure T ≤ ∫⁻ _ in A, 1 ∂massMeasure T :=
-        lintegral_mono fun x => by
-          rw [← ofReal_norm, ← ENNReal.ofReal_one]
-          exact ENNReal.ofReal_le_ofReal (hφ x)
-    _ = massMeasure T A := by simp
-
 /-- **Mass measure of a Borel restriction.** `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`. -/
 theorem massMeasure_massRestrict_le (hA : MeasurableSet A) :
     massMeasure (massRestrict T hA) ≤ (massMeasure T).restrict A := by
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  exact massMeasure_le_of_enorm_apply_le _ (enorm_massRestrict_eq_indicatorToL1_le hA)
+  exact massMeasure_le_of_enorm_apply_le _ (enorm_massRestrict_apply_le hA)
+
+/-- **Mass of a Borel restriction.** `M(T ⌞ A) ≤ ‖T‖ A`; in particular a Borel restriction to a
+set of finite `‖T‖`-measure has finite mass. -/
+theorem mass_massRestrict_le (hA : MeasurableSet A) :
+    mass (massRestrict T hA) ≤ massMeasure T A := by
+  rw [← massMeasure_univ (hasLocallyFiniteMass_massRestrict hA)]
+  simpa using Measure.le_iff'.1 (massMeasure_massRestrict_le hA) univ
 
 /-- A Borel restriction to a `‖T‖`-null set is zero. -/
 theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) :
     massRestrict T hA = 0 := by
   ext φ
-  have h := enorm_massRestrict_eq_indicatorToL1_le (T := T) hA φ
+  have h := enorm_massRestrict_apply_le (T := T) hA φ
   rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure, nonpos_iff_eq_zero,
     enorm_eq_zero] at h
   simpa using h
@@ -234,7 +219,7 @@ theorem massRestrict_union (hA : MeasurableSet A) (hB : MeasurableSet B) (hAB : 
   exact MemLp.toLp_congr _ _ (.of_eq (indicator_union_of_disjoint hAB _))
 
 /-- The restriction of `T` to all of `Ω` is `T`. -/
-theorem massRestrict_univ (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
+theorem massRestrict_univ_apply (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     massRestrict T MeasurableSet.univ φ = T φ := by
   rw [massRestrict_eq_indicatorToL1, ← extendL1_toLp hT φ, TestFunction.toLp_apply]
   congr 1
