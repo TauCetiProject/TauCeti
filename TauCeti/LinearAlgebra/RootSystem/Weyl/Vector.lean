@@ -61,6 +61,8 @@ positive coroot is not merely positive but at least `1`, being a positive intege
   moves as `ρ` does, `w d - d = -∑_{α > 0, w⁻¹ α < 0} α`, as soon as `2` is a non-zero-divisor on
   the weight space. No halving is needed, so this applies to integral weight lattices in which `ρ`
   does not exist.
+* `TauCeti.sum_inversionsFinset_mul_ofIdx_inv`: the inversion sum is a cocycle,
+  `∑_{α > 0, (w sᵢ)⁻¹ α < 0} α = ∑_{α > 0, w⁻¹ α < 0} α + w αᵢ`, again without halving.
 * `TauCeti.coroot'_twoWeylVector_eq_two_mul_height_flip` and
   `TauCeti.coroot'_weylVector_eq_height_flip`: `⟨2ρ, α^∨⟩ = 2 ht(α^∨)` and `⟨ρ, α^∨⟩ = ht(α^∨)` for
   an arbitrary root `α`, the general form of the two preceding identities.
@@ -277,6 +279,27 @@ theorem smul_sub_eq_neg_sum_inversionsFinset_of_forall_coroot'_eq_one {d : M}
   generalize w • d = a at h ⊢
   generalize w • twoWeylVector P b = t at h h'
   linear_combination (norm := module) h + h'
+
+/-- **The inversion sum is a cocycle**: for a simple root `αᵢ`,
+`∑_{α > 0, (w sᵢ)⁻¹ α < 0} α = ∑_{α > 0, w⁻¹ α < 0} α + w αᵢ`, as soon as `2` is a non-zero-divisor
+on `M`. By `TauCeti.smul_weylVector_sub_weylVector` this is `w sᵢ ρ - ρ = (w ρ - ρ) - w αᵢ`; it is
+proved for twice both sides, through `2ρ`, so it applies to integral weight lattices in which `ρ`
+does not exist. -/
+theorem sum_inversionsFinset_mul_ofIdx_inv {i : ι} (hi : i ∈ b.support)
+    (h2 : IsSMulRegular M (2 : R)) (w : P.weylGroup) :
+    ∑ j ∈ inversionsFinset P b (w * RootPairing.weylGroup.ofIdx P i)⁻¹, P.root j =
+      ∑ j ∈ inversionsFinset P b w⁻¹, P.root j + w • P.root i := by
+  refine h2 ?_
+  have h₁ := smul_twoWeylVector_sub_twoWeylVector P b (w * RootPairing.weylGroup.ofIdx P i)
+  have h₂ := smul_twoWeylVector_sub_twoWeylVector P b w
+  rw [mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul,
+    reflection_twoWeylVector P b hi, smul_sub, smul_comm w (2 : R)] at h₁
+  dsimp only
+  -- `linear_combination` would read the Weyl-group scalars as coefficients, so the two translates
+  -- are made atoms first.
+  generalize w • twoWeylVector P b = t at h₁ h₂
+  generalize w • P.root i = a at h₁ ⊢
+  linear_combination (norm := module) h₁ - h₂
 
 end Substitute
 
