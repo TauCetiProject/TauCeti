@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.MvPolynomial.IrreducibleQuadratic
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 public import TauCeti.RingTheory.Ideal.Height
 
 /-!
