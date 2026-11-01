@@ -11,16 +11,20 @@ public import TauCeti.Topology.Algebra.Module.LinearTopology.Splitting
 /-!
 # Cocycle models of split topological extensions
 
-A linear section of a Lie algebra extension with abelian kernel identifies the extension
-with the cocycle model of Mathlib's `LieAlgebra.Extension.twoCocycleOf`. The identification
-sends `(x, m)` to `s x + incl m`, preserves the inclusion and projection, and does not assert
-that the section is a Lie homomorphism.
+This file builds on `LieAlgebra.Extension.ofTwoCocycleEquiv` from
+`TauCeti.Algebra.Lie.Extension.Basic`, the algebraic comparison sending `(x, m)` to
+`s x + incl m` for a linear section of a Lie algebra extension with abelian kernel.
 
-If the section and projection are continuous and the kernel is discrete, this identification
-is a homeomorphism for the discrete-coefficient topology on the cocycle model. Continuity of
-the bracket then implies continuity of the native cocycle. In particular, strict surjections
-from linearly topologized vector spaces with abelian discrete kernel and jointly continuous
-bracket admit such continuous cocycle models. This permits continuous cocycle classification
+For a continuous section and projection with discrete kernel,
+`LieAlgebra.Extension.continuous_ofTwoCocycleEquiv` and
+`LieAlgebra.Extension.continuous_ofTwoCocycleEquiv_symm` prove continuity in both directions
+for the discrete-coefficient topology on the cocycle model.
+`LieAlgebra.Extension.ofTwoCocycleContinuousLinearEquiv` bundles the continuous linear
+comparison. With a continuous bracket,
+`LieAlgebra.Extension.twoCocycleOf_mem_continuousTwoCocycle` proves continuity of the native
+cocycle. Finally, `LieAlgebra.Extension.exists_continuous_cocycleModel` supplies continuous
+cocycle models for strict surjections from linearly topologized vector spaces with abelian
+discrete kernel and jointly continuous bracket. This permits continuous cocycle classification
 to be applied to actual extensions, not only to extensions already presented as sheared products.
 
 The cocycle and its induced module structure are consumed directly from Mathlib's
@@ -79,8 +83,8 @@ theorem continuous_ofTwoCocycleEquiv (hsc : Continuous s) :
   obtain ⟨⟨x, m⟩, rfl⟩ := (ofProd (E.twoCocycleOf hs)).surjective v
   simp
 
-/-- The inverse comparison is continuous because its quotient coordinate is continuous
-and its kernel coordinate is locally constant. -/
+/-- For a continuous projection and a continuous section with discrete kernel, the inverse
+comparison into the discrete-coefficient cocycle model is continuous. -/
 theorem continuous_ofTwoCocycleEquiv_symm (hp : Continuous E.proj) (hsc : Continuous s) :
     letI := E.ringModuleOf
     letI := E.lieModuleOf
