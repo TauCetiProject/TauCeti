@@ -98,9 +98,7 @@ theorem exists_eq_kernelPoint_eval (G : Type v) [Finite G]
   have hf : e f ∈ Ideal.comap (Pi.evalRingHom (fun _ : G ↦ k) g) p.asIdeal ↔
       e.symm (e f) ∈ x.asIdeal :=
     Ideal.ext_iff.mp (congrArg PrimeSpectrum.asIdeal hp) (e f)
-  rw [Ideal.mem_comap, Ideal.eq_bot_of_prime p.asIdeal, Ideal.mem_bot, AlgEquiv.symm_apply_apply,
-    Pi.evalRingHom_apply] at hf
-  rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, AlgHom.coe_toRingHom, eval_apply, ← hf]
+  simpa [e, Ideal.eq_bot_of_prime p.asIdeal] using hf.symm
 
 variable {H : Type w} [CommRing H] [Bialgebra k H]
 
