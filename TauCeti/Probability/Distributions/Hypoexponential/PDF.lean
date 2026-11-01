@@ -393,24 +393,6 @@ end Law
 
 /-! ### Distinct and equal rates -/
 
-/-- With pairwise distinct rates, every pole `r i` is simple, so the Erlang terms attached to it
-collapse to the single term of order one, with weight `∏ j ≠ i, r j / (r j - r i)`. -/
-theorem sum_hypoexponentialCoeff_div_pow_mul_of_injective [DecidableEq ι]
-    (hinj : Function.Injective r) {i : ι} (hi : r i ≠ 0) (f : ℕ → ℝ) :
-    ∑ k ∈ Icc 1 #{j | r j = r i}, hypoexponentialCoeff r (r i) k / r i ^ k * f k =
-      (∏ j ∈ univ.erase i, r j / (r j - r i)) * f 1 := by
-  have hfilter : ({j | r j = r i} : Finset ι) = {i} := by
-    ext j
-    simp [hinj.eq_iff]
-  have hne : ({j | r j ≠ r i} : Finset ι) = univ.erase i := by
-    ext j
-    simp [hinj.ne_iff]
-  have hA := hypoexponentialCoeff_card r (r i)
-  rw [hfilter, card_singleton, hne] at hA
-  rw [hfilter, card_singleton, Icc_self, sum_singleton, hA,
-    ← mul_prod_erase univ r (mem_univ i), prod_div_distrib]
-  field_simp
-
 /-- **Distinct rates.** For pairwise distinct positive rates, the density at `x > 0` is
 `∑ i, r i * exp (-(r i * x)) * ∏ j ≠ i, r j / (r j - r i)`. -/
 theorem hypoexponentialPDFReal_of_injective [DecidableEq ι] (hr : ∀ i, 0 < r i)
