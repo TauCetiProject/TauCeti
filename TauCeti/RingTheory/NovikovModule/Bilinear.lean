@@ -235,6 +235,21 @@ theorem kernelProduct_apply_val_eq_zero {a : NovikovModule R F₁} {b : NovikovM
   have h₀ := hn _ _ _ (right_ne_zero_of_mul hq)
   linarith
 
+/-- A kernel product sends a pair of generators to the corresponding entry of the kernel. -/
+@[simp]
+theorem kernelProduct_ofFinsupp_single_val (p₁ : S₁) (p₂ : S₂) :
+    (kernelProduct hn hfin (ofFinsupp F₁ (Finsupp.single p₁ 1))
+      (ofFinsupp F₂ (Finsupp.single p₂ 1))).val = n p₁ p₂ := by
+  classical
+  ext p₀
+  rw [kernelProduct_apply_val, finsum_eq_single _ (p₁, p₂) fun q hq => by
+    obtain ⟨q₁, q₂⟩ := q
+    by_cases h₁ : q₁ = p₁
+    · have h₂ : q₂ ≠ p₂ := fun h₂ => hq (by rw [h₁, h₂])
+      simp [Finsupp.single_apply, Ne.symm h₂]
+    · simp [Finsupp.single_apply, Ne.symm h₁]]
+  simp
+
 section Comp
 
 variable {S₃ : Type*} {F₃ : S₃ → ℝ} {C' C'' : ℝ}

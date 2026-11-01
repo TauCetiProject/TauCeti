@@ -56,7 +56,11 @@ kernel-product continuity results are new.
 * The instances `T2Space`, `CompleteSpace`, `NonarchimedeanAddGroup` and `ContinuousConstSMul`.
 * `TauCeti.NovikovModule.continuous_of_forall_mem_potentialFiltration`: an additive map sending
   some `U_D` into each `U_E` is continuous.
+* `TauCeti.NovikovModule.continuous_of_mem_potentialFiltration_add`: an additive map sending
+  each `U_D` into `U_(D + C)` is continuous.
 * `TauCeti.NovikovModule.denseRange_ofFinsupp`: finite combinations are dense.
+* `TauCeti.NovikovModule.addHom_ext`, `TauCeti.NovikovModule.lhom_ext`: continuous additive or
+  linear maps agreeing on single generators are equal.
 * `TauCeti.NovikovModule.continuousSMul_module`: the Novikov scalar action is continuous.
 * `TauCeti.NovikovModule.continuous_kernelMap`: kernel maps are continuous.
 * `TauCeti.NovikovModule.continuous_kernelProduct`: kernel products are jointly continuous.
@@ -126,6 +130,16 @@ theorem smul_mem_potentialFiltration (c : R) (ha : a ∈ potentialFiltration R F
 theorem sub_ofFinsupp_trunc_mem_potentialFiltration (C : ℝ) (a : NovikovModule R F) :
     a - ofFinsupp F (trunc C a) ∈ potentialFiltration R F C := fun s hs => by
   simp [trunc_apply_of_lt hs]
+
+/-- A finite combination supported at one generator vanishes above the potential of that
+generator. -/
+theorem ofFinsupp_single_mem_potentialFiltration (p : S) (r : R) :
+    ofFinsupp F (Finsupp.single p r) ∈ potentialFiltration R F (F p) :=
+  mem_potentialFiltration.2 fun s hs => by
+    have hps : p ≠ s := by
+      rintro rfl
+      exact lt_irrefl _ hs
+    simp [hps]
 
 end Filtration
 
@@ -247,6 +261,16 @@ theorem continuous_of_forall_mem_potentialFiltration {S' 𝓕 : Type*} {F' : S' 
     exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun E _ =>
       (hf E).imp fun _ hD => ⟨trivial, hD⟩
 
+/-- An additive map between completed combinations with potential shift `C`, that is, sending
+each `U_D` into `U_(D + C)`, is continuous for the potential-cutoff topologies. -/
+theorem continuous_of_mem_potentialFiltration_add {S' 𝓕 : Type*} {F' : S' → ℝ} {C : ℝ}
+    [FunLike 𝓕 (NovikovModule R F) (NovikovModule R F')]
+    [AddMonoidHomClass 𝓕 (NovikovModule R F) (NovikovModule R F')] {f : 𝓕}
+    (hf : ∀ D a, a ∈ potentialFiltration R F D → f a ∈ potentialFiltration R F' (D + C)) :
+    Continuous f :=
+  continuous_of_forall_mem_potentialFiltration f fun E =>
+    ⟨E - C, fun a ha => by simpa using hf _ a ha⟩
+
 /-- The potential-cutoff topology is nonarchimedean: the open subgroups `U_C` form a basis of
 neighbourhoods of `0`. -/
 instance : NonarchimedeanAddGroup (NovikovModule R F) where
@@ -307,6 +331,27 @@ theorem tendsto_ofFinsupp_trunc (a : NovikovModule R F) :
 theorem denseRange_ofFinsupp : DenseRange (ofFinsupp (R := R) F) :=
   fun a => mem_closure_of_tendsto (tendsto_ofFinsupp_trunc a)
     (Eventually.of_forall fun _ => mem_range_self _)
+
+/-- Continuous additive maps from completed combinations to a Hausdorff space are equal if they
+agree on all finite combinations supported at one generator. -/
+theorem addHom_ext {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [T2Space M]
+    {f g : NovikovModule R F →+ M} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ p r, f (ofFinsupp F (Finsupp.single p r)) = g (ofFinsupp F (Finsupp.single p r))) :
+    f = g := by
+  have key : f.comp (ofFinsupp F : (S →₀ R) →ₗ[R] _).toAddMonoidHom =
+      g.comp (ofFinsupp F : (S →₀ R) →ₗ[R] _).toAddMonoidHom :=
+    Finsupp.addHom_ext h
+  exact DFunLike.coe_injective <| denseRange_ofFinsupp.equalizer hf hg <|
+    funext fun a => DFunLike.congr_fun key a
+
+/-- Continuous linear maps from completed combinations to a Hausdorff module are equal if they
+agree on every generator. -/
+theorem lhom_ext {M : Type*} [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T2Space M]
+    {f g : NovikovModule R F →ₗ[R] M} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ p, f (ofFinsupp F (Finsupp.single p 1)) = g (ofFinsupp F (Finsupp.single p 1))) :
+    f = g :=
+  LinearMap.toAddMonoidHom_injective <| addHom_ext hf hg fun p r => by
+    simp only [LinearMap.toAddMonoidHom_coe, ← Finsupp.smul_single_one p r, map_smul, h p]
 
 end Topology
 
@@ -399,8 +444,7 @@ theorem kernelMap_mem_potentialFiltration {D : ℝ} {a : NovikovModule R F₁}
 /-- A kernel map is continuous for the potential-cutoff topologies. -/
 @[fun_prop]
 theorem continuous_kernelMap : Continuous (kernelMap hm hmfin) :=
-  continuous_of_forall_mem_potentialFiltration _ fun D =>
-    ⟨D - C, fun a ha => by simpa using kernelMap_mem_potentialFiltration hm hmfin ha⟩
+  continuous_of_mem_potentialFiltration_add fun _ _ => kernelMap_mem_potentialFiltration hm hmfin
 
 end KernelMap
 

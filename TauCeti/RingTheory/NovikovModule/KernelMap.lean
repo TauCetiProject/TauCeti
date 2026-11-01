@@ -144,6 +144,16 @@ theorem kernelMap_apply_val_eq_sum (a : NovikovModule R F₁) (p₀ : S₀) {s :
   exact finsum_eq_sum_of_support_subset _ fun p₁ hp =>
     hs p₁ (left_ne_zero_of_mul hp) (right_ne_zero_of_mul hp)
 
+/-- A kernel map sends a generator to its row of the kernel. -/
+@[simp]
+theorem kernelMap_ofFinsupp_single_val (p₁ : S₁) :
+    (kernelMap hm hmfin (ofFinsupp F₁ (Finsupp.single p₁ 1))).val = m p₁ := by
+  classical
+  ext p₀
+  rw [kernelMap_apply_val, finsum_eq_single _ p₁ fun p hp => by
+    simp [Ne.symm hp]]
+  simp
+
 /-- The map shifts potential cutoffs by the constant of the potential bound: if `a` vanishes
 above `D`, then its image vanishes above `D + C`. -/
 theorem kernelMap_apply_val_eq_zero {a : NovikovModule R F₁} {D : ℝ}
