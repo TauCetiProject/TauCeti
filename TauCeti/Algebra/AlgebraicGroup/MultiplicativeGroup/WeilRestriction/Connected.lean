@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 import Mathlib.RingTheory.Localization.Away.Basic
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
+import TauCeti.Algebra.Polynomial.Homogenize
 import TauCeti.FieldTheory.Minpoly
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -39,14 +40,15 @@ and points. Over an algebraically closed extension `Ω` of `k`, an `Ω`-point is
 `n = deg p`, put
 
 ```text
-ρ(s) = ∑ᵢ pᵢ sⁿ⁻ⁱ (s - 1)ⁱ.
+ρ(s) = ∑ᵢ pᵢ sⁿ⁻ⁱ (s - 1)ⁱ,
 ```
 
-Then `1 - s + s u` divides `ρ(s)`, while `ρ(0) = ± pₙ` and `ρ(1) = p₀` are nonzero. Hence
-`s ↦ 1 - s + s u` is a point of `Res_{B/k} 𝔾ₘ` with values in the domain `Ω[s][1/ρ]`, joining the
-identity at `s = 0` to `u` at `s = 1`. An idempotent takes the value `0` or `1` on such a path, so
-every idempotent of the geometric coordinate ring has the same value at every `Ω`-point. By the
-Nullstellensatz it is `0` or `1`.
+the binary homogenization of `p` of degree `n` evaluated at `(s - 1, s)`. Then `1 - s + s u`
+divides `ρ(s)` (`Polynomial.sub_mul_dvd_eval_homogenize`), while `ρ(0) = ± pₙ` and `ρ(1) = p₀`
+are nonzero. Hence `s ↦ 1 - s + s u` is a point of `Res_{B/k} 𝔾ₘ` with values in the domain
+`Ω[s][1/ρ]`, joining the identity at `s = 0` to `u` at `s = 1`. An idempotent takes the value `0`
+or `1` on such a path, so every idempotent of the geometric coordinate ring has the same value at
+every `Ω`-point. By the Nullstellensatz it is `0` or `1`.
 
 ## References
 
@@ -67,46 +69,53 @@ section PathPolynomial
 
 variable {K : Type*} [CommRing K]
 
-/-- The polynomial `ρ(s) = ∑ᵢ pᵢ sⁿ⁻ⁱ (s - 1)ⁱ`, with `n` the degree of `p`. When `p`
-annihilates `u`, it is divisible by `1 - s + s u`. -/
+/-- The polynomial `ρ(s) = F(s - 1, s) = ∑ᵢ pᵢ sⁿ⁻ⁱ (s - 1)ⁱ`, where `F` is the binary
+homogenization of `p` of degree `n = natDegree p`. When `p` annihilates `u`, it is divisible by
+`1 - s + s u`. -/
 private noncomputable def pathPolynomial (p : K[X]) : K[X] :=
-  ∑ i ∈ Finset.range (p.natDegree + 1), C (p.coeff i) * X ^ (p.natDegree - i) * (X - 1) ^ i
+  MvPolynomial.aeval ![X - 1, X] (p.homogenize p.natDegree)
+
+private theorem eval₂_pathPolynomial {S : Type*} [CommRing S] (κ : K →+* S) (p : K[X]) (s : S) :
+    (pathPolynomial p).eval₂ κ s =
+      MvPolynomial.eval ![s - 1, s] ((p.map κ).homogenize p.natDegree) := by
+  rw [homogenize_map, MvPolynomial.eval_map, pathPolynomial, ← coe_eval₂RingHom,
+    MvPolynomial.map_aeval, MvPolynomial.coe_eval₂Hom]
+  congr 1
+  · ext a
+    simp
+  · ext i
+    fin_cases i <;> simp
 
 /-- If `p` annihilates `u`, then `1 - s + s u` divides `ρ(s)`. -/
 private theorem dvd_eval₂_pathPolynomial {S : Type*} [CommRing S] (κ : K →+* S) (p : K[X])
     {s u : S} (hu : p.eval₂ κ u = 0) :
     1 - s + s * u ∣ (pathPolynomial p).eval₂ κ s := by
-  have hzero : ∑ i ∈ Finset.range (p.natDegree + 1),
-      κ (p.coeff i) * s ^ (p.natDegree - i) * (s * u) ^ i = 0 := by
-    rw [← mul_zero (s ^ p.natDegree), ← hu, eval₂_eq_sum_range, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [← pow_sub_mul_pow s (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))]
-    ring
-  have hsum : (pathPolynomial p).eval₂ κ s = ∑ i ∈ Finset.range (p.natDegree + 1),
-      κ (p.coeff i) * s ^ (p.natDegree - i) * ((s - 1) ^ i - (s * u) ^ i) := by
-    simp only [mul_sub, Finset.sum_sub_distrib, hzero, sub_zero, pathPolynomial,
-      eval₂_finsetSum, eval₂_mul, eval₂_C, eval₂_pow, eval₂_sub, eval₂_X,
-      eval₂_one]
-  rw [hsum]
-  refine Finset.dvd_sum fun i _ ↦ Dvd.dvd.mul_left ?_ _
-  have h := sub_dvd_pow_sub_pow (s - 1) (s * u) i
-  rwa [show s - 1 - s * u = -(1 - s + s * u) by ring, neg_dvd] at h
+  have h := sub_mul_dvd_eval_homogenize (p := p.map κ) (by rwa [IsRoot, eval_map])
+    natDegree_map_le ![s - 1, s]
+  rw [eval₂_pathPolynomial]
+  rwa [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero,
+    show s - 1 - u * s = -(1 - s + s * u) by ring, neg_dvd] at h
 
 private theorem eval_one_pathPolynomial (p : K[X]) : (pathPolynomial p).eval 1 = p.coeff 0 := by
-  rw [pathPolynomial, eval_finsetSum, Finset.sum_eq_single 0]
+  rw [← eval₂_id, eval₂_pathPolynomial, Polynomial.map_id]
+  simp only [homogenize, map_sum, MvPolynomial.eval_monomial]
+  simp_rw [Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero _), Fin.prod_univ_two]
+  rw [Finset.sum_eq_single (0, p.natDegree)]
   · simp
-  · intro i _ hi
-    simp [zero_pow hi]
+  · rintro ⟨i, j⟩ hij hne
+    have : i ≠ 0 := by rintro rfl; simp_all
+    simp [zero_pow this]
   · simp
 
 private theorem eval_zero_pathPolynomial (p : K[X]) :
     (pathPolynomial p).eval 0 = (-1) ^ p.natDegree * p.leadingCoeff := by
-  rw [pathPolynomial, eval_finsetSum, Finset.sum_eq_single p.natDegree]
+  rw [← eval₂_id, eval₂_pathPolynomial, Polynomial.map_id]
+  simp only [homogenize, map_sum, MvPolynomial.eval_monomial]
+  simp_rw [Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero _), Fin.prod_univ_two]
+  rw [Finset.sum_eq_single (p.natDegree, 0)]
   · simp [mul_comm]
-  · intro i hi hne
-    have : p.natDegree - i ≠ 0 := by
-      have := Finset.mem_range.mp hi
-      omega
+  · rintro ⟨i, j⟩ hij hne
+    have : j ≠ 0 := by rintro rfl; simp_all
     simp [zero_pow this]
   · simp
 
