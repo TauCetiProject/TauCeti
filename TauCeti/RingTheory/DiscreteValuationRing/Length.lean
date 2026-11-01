@@ -31,7 +31,7 @@ theorem length_quotient_eq_multiplicity (I : Ideal R) (hI : I ≠ ⊥) :
     intro hzero
     apply hI
     rw [← span_singleton_generator I, hzero, span_singleton_zero]
-  rw [← span_singleton_generator I]
+  rw [← span_singleton_generator I, ← Ring.ord]
   exact (Ring.ord_eq_addVal _).trans
     (TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hgen)
 

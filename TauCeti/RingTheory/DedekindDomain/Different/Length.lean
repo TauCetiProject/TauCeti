@@ -47,11 +47,7 @@ noncomputable def quotientDifferentIdealEquivTraceDualQuotient {δ : B}
       ((Submodule.traceDual A K (1 : Submodule B L)) ⧸
         (1 : Submodule B L).comap (Submodule.traceDual A K (1 : Submodule B L)).subtype) := by
   let e := equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ
-  have hδ0 : δ ≠ 0 := by
-    intro h
-    exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa [h] using hδ)
-  have hδL : algebraMap B L δ ≠ 0 := by
-    simpa using (IsFractionRing.injective B L).ne hδ0
+  have hδL := algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) (L := L) hδ
   refine Submodule.Quotient.equiv _ _ e ?_
   ext x
   rw [Submodule.mem_map]
@@ -75,14 +71,11 @@ theorem quotientDifferentIdealEquivTraceDualQuotient_mk {δ : B}
     (hx : (x : L) * algebraMap B L δ = algebraMap B L b) :
     quotientDifferentIdealEquivTraceDualQuotient hδ (Ideal.Quotient.mk _ b) =
       Submodule.Quotient.mk x := by
-  have hδ0 : δ ≠ 0 := by
-    intro h
-    exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa [h] using hδ)
-  have hδL : algebraMap B L δ ≠ 0 := by
-    simpa using (IsFractionRing.injective B L).ne hδ0
   have he : equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ b = x := by
-    apply Subtype.ext
-    rw [equivTraceDualOfDifferentIdealEqSpan_apply, ← hx, mul_div_cancel_right₀ _ hδL]
+    apply (equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ).symm.injective
+    rw [LinearEquiv.symm_apply_apply]
+    apply IsFractionRing.injective B L
+    rw [equivTraceDualOfDifferentIdealEqSpan_symm_apply, hx]
   -- The quotient map is induced by the division equivalence.
   exact congrArg Submodule.Quotient.mk he
 
