@@ -79,6 +79,14 @@ noncomputable def finSubOneAddOneHomeomorph : ℙ 𝕜 (Fin N → 𝕜) ≃ₜ �
   continuous_toFun := continuous_map _ (LinearMap.continuous_on_pi _)
   continuous_invFun := continuous_map _ (LinearMap.continuous_on_pi _)
 
+/-- The reindexing homeomorphism is the map of projective spaces induced by the reindexing linear
+equivalence. -/
+theorem coe_finSubOneAddOneHomeomorph :
+    ⇑(finSubOneAddOneHomeomorph 𝕜 N) =
+      map (finSubOneAddOneLinearEquiv 𝕜 N : (Fin N → 𝕜) →ₗ[𝕜] Fin (N - 1 + 1) → 𝕜)
+        (LinearEquiv.injective _) :=
+  (rfl)
+
 /-- The reindexing homeomorphism in homogeneous coordinates. -/
 @[simp]
 theorem finSubOneAddOneHomeomorph_mk (v : Fin N → 𝕜) (hv : v ≠ 0) :

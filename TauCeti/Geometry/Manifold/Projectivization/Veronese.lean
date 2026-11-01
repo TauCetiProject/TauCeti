@@ -109,9 +109,9 @@ theorem contMDiff_veronese (d : ℕ) (r : ℕ∞ω) :
     ContMDiff 𝓘(𝕜, Fin m → 𝕜) 𝓘(𝕜, Fin (veroneseDim (m + 1) d - 1) → 𝕜) r
       (veronese (N := m + 1) 𝕜 d) :=
   -- After reindexing, the Veronese map is read through the reindexing linear equivalence.
-  contMDiff_finChartedSpace_iff.2 ⟨continuous_veronese d,
-    contMDiff_map_comp_veronese (finSubOneAddOneLinearEquiv 𝕜 (veroneseDim (m + 1) d)).toLinearMap
-      (LinearEquiv.injective _) r⟩
+  contMDiff_finChartedSpace_iff.2 ⟨continuous_veronese d, by
+    rw [coe_finSubOneAddOneHomeomorph]
+    exact contMDiff_map_comp_veronese _ (LinearEquiv.injective _) r⟩
 
 end NontriviallyNormedField
 
