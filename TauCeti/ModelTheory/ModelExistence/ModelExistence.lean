@@ -22,7 +22,7 @@ under unions of increasing chains is used.
 
 ## Main results
 
-* `FirstOrder.Language.ConsistencyProperty.limit_henkinComplete`: the limit of a surjective
+* `FirstOrder.Language.ConsistencyProperty.henkinComplete_limit`: the limit of a surjective
   request schedule, starting from an enumerated member, is Henkin complete.
 * `FirstOrder.Language.ConsistencyProperty.model_existence`: a countable member has a countable
   nonempty model, in any universe, whose elements are all named by Henkin constants.
@@ -46,7 +46,7 @@ variable {L : FirstOrder.Language.{u, v}}
 
 /-- The limit of a fair enumeration starting from a member of a consistency property is
 Henkin complete. The enumeration of the starting set may include sentences outside it. -/
-theorem limit_henkinComplete (C : ConsistencyProperty L) {s : L[[ℕ]].Theoryω}
+theorem henkinComplete_limit (C : ConsistencyProperty L) {s : L[[ℕ]].Theoryω}
     (hs : s ∈ C.sets) {e : ℕ → L[[ℕ]].Sentenceω} (he : s ⊆ Set.range e)
     {q : ℕ → Request L} (hq : Function.Surjective q) : HenkinComplete (C.limit s e q) where
   imp _ _ := C.limit_imp hs he hq
@@ -70,7 +70,7 @@ theorem model_existence [Countable (Σ n, L.Functions n)] [Countable (Σ n, L.Re
       Function.Surjective (fun c : ℕ => (L.con c : M)) := by
   obtain ⟨e, he⟩ := Set.countable_iff_exists_subset_range.1 hsc
   obtain ⟨q, hq⟩ := exists_surjective_nat (Request L)
-  have hH := C.limit_henkinComplete hs he hq
+  have hH := C.henkinComplete_limit hs he hq
   have hM : s.Model hH.TermModel :=
     (hH.model (C.bot_notMem_limit hs) (fun _ => C.not_notMem_limit hs)).mono C.subset_limit
   -- The term model lives in `Type`; lifting it realizes the arbitrary target universe.

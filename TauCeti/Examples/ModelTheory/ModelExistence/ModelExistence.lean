@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.ModelTheory.Basic
 import TauCeti.ModelTheory.ModelExistence.ModelExistence
 import TauCeti.ModelTheory.Infinitary.Encoding
 
@@ -37,10 +38,6 @@ example (M : Type w) [L[[ℕ]].Structure M]
         (φ.IsAtomic ∨ ∃ ψ : L[[ℕ]].Sentenceω, ψ.IsAtomic ∧ φ = ψ.not) ∧
           SentenceInf.Realize φ M} N ∧
       Function.Surjective (fun c : ℕ => (L.con c : N)) := by
-  have : Countable (Σ n, L[[ℕ]].Relations n) :=
-    (Sum.inr_injective (α := Σ n, L[[ℕ]].Functions n)).countable
-  have : Countable (Σ n, L[[ℕ]].Functions n) :=
-    (Sum.inl_injective (β := Σ n, L[[ℕ]].Relations n)).countable
   have hA : {φ : L[[ℕ]].Sentenceω | φ.IsAtomic}.Countable :=
     Set.countable_coe_iff.1 (BoundedFormulaInf.countable_subtype_isAtomic
       (L := L[[ℕ]]) (ι := ℕ) (α := Empty) (n := 0))
