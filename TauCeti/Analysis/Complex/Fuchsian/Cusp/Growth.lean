@@ -109,8 +109,7 @@ theorem isBoundedAtImInfty_cuspTwist_inv_smul (D : Γ.CuspDatum) (k : ℤ) (f : 
     funext z
     exact cuspTwist_inv_smul D k f z
   rw [hscaled]
-  exact TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_zpow_mul_of_isBigO
-    D.width k hbound
+  exact (TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_zpow_mul_iff D.width k).2 hbound
 
 /-- The q-extension after twisting by an integer power of the cusp coordinate. Under the
 corresponding hypothesis of `analyticAt_twistedExtension_zero`, it is analytic at zero. -/
