@@ -296,6 +296,11 @@ private def chartSectionsHom (S : Finset κ) :
   (Finsupp.liftAddHom (chartSectionHom b m S)).comp
     (Finsupp.supported R R (chartExponents m S)).subtype.toAddMonoidHom
 
+private lemma chartSectionsHom_eq_sum {S : Finset κ}
+    (f : Finsupp.supported R R (chartExponents m S)) :
+    chartSectionsHom b m S f = ∑ e ∈ f.1.support, chartSectionHom b m S e (f.1 e) :=
+  Finsupp.liftAddHom_apply _ _
+
 private lemma chartSectionsHom_eq_const {S : Finset κ}
     (f : Finsupp.supported R R (chartExponents m S))
     {j : ℕ} (hj : ∀ e ∈ f.1.support, ∀ i ∈ S, 0 ≤ e i + j) (hjm : 0 ≤ (j : ℤ) * S.card + m) :
@@ -308,16 +313,12 @@ private lemma chartSectionsHom_eq_const {S : Finset κ}
             (hj e he) ▸ monomial_mem b _))
         (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S)) _
         (basicOpen_le_basicOpen_pow b S j) := by
-  have h : chartSectionsHom b m S f = ∑ e ∈ f.1.support, chartSectionHom b m S e (f.1 e) :=
-    Finsupp.liftAddHom_apply _ _
   refine Proj.twistingSheaf.ext fun x ↦ ?_
-  rw [h]
-  refine (Proj.twistingSheaf.sum_apply _ _ x).trans <|
-    (Finset.sum_congr rfl fun e he ↦ ?_).trans (Localization.mk_sum _ _ _).symm
-  rw [chartSectionHom_apply b ((Finsupp.mem_supported R f.1).1 f.2 he) (hj e he)]
-  -- the value of a fraction at `x` is that fraction in the localization at `x`, which is
-  -- `Proj.twistingSheaf.const_apply`, true by `rfl`
-  rfl
+  rw [chartSectionsHom_eq_sum]
+  refine (Proj.twistingSheaf.sum_apply _ _ x).trans <| (Finset.sum_congr rfl fun e he ↦ ?_).trans <|
+    (Localization.mk_sum _ _ _).symm.trans (Proj.twistingSheaf.const_apply _ _ _ _ _ _ x).symm
+  rw [chartSectionHom_apply b ((Finsupp.mem_supported R f.1).1 f.2 he) (hj e he), chartSection]
+  exact Proj.twistingSheaf.const_apply _ _ _ _ _ _ x
 
 /-- On a nonempty chart, distinct Laurent monomials give linearly independent sections: the
 coordinates are nonzerodivisors, so clearing denominators loses nothing. -/
@@ -423,14 +424,12 @@ private lemma chartSectionsHom_surjective {S : Finset κ} (hS : S.Nonempty) :
     exact MvPolynomial.as_sum p
   refine Proj.twistingSheaf.ext fun x ↦ ?_
   rw [h]
-  -- the value of `r / (∏_{i ∈ S} xᵢ)ᵏ` at `x` is the fraction `r / (∏_{i ∈ S} xᵢ)ᵏ` by
-  -- `Proj.twistingSheaf.const_apply`, which holds by `rfl`
-  refine (Proj.twistingSheaf.sum_apply _ _ x).trans <| (Finset.sum_congr rfl fun d hd ↦ ?_).trans
-    ((Localization.mk_sum _ _ _).symm.trans (by rw [← hr']; rfl))
+  refine (Proj.twistingSheaf.sum_apply _ _ x).trans <| (Finset.sum_congr rfl fun d hd ↦ ?_).trans <|
+    (Localization.mk_sum _ _ _).symm.trans <| (congrArg (Localization.mk · _) hr'.symm).trans
+      (Proj.twistingSheaf.const_apply _ _ _ _ _ _ x).symm
   rw [chartSectionHom_apply b (shiftExponent_mem_chartExponents (hdeg d hd))
-    (add_shiftExponent_nonneg S k d)]
-  -- both sides are fractions in the localization at `x`, by `Proj.twistingSheaf.const_apply`
-  change Localization.mk _ _ = Localization.mk _ _
+    (add_shiftExponent_nonneg S k d), chartSection]
+  refine (Proj.twistingSheaf.const_apply _ _ _ _ _ _ x).trans ?_
   rw [numeratorExponent_shiftExponent (hdeg d hd)]
 
 end Chart
@@ -468,16 +467,13 @@ private def laurentToSections :
   app S := AddCommGrpCat.ofHom (chartSectionsHom b m (ofDual S.unop))
   naturality S S' f := by
     ext ⟨g, hg⟩
-    -- the maps of `laurentPresheaf` are inclusions, which do not change the Laurent polynomial
-    change chartSectionsHom b m _ ⟨g, _⟩ = (Proj.twistingSheaf 𝒜 m).presheaf.map _
-      (chartSectionsHom b m _ ⟨g, hg⟩)
     have hmem : ∀ e ∈ g.support, e ∈ chartExponents m (ofDual S.unop) :=
       fun e he ↦ (Finsupp.mem_supported R g).1 hg he
-    rw [show chartSectionsHom b m (ofDual S.unop) ⟨g, hg⟩ =
-        ∑ e ∈ g.support, chartSectionHom b m _ e (g e) from Finsupp.liftAddHom_apply _ _, map_sum,
-      show chartSectionsHom b m (ofDual S'.unop) _ =
-        ∑ e ∈ g.support, chartSectionHom b m _ e (g e) from Finsupp.liftAddHom_apply _ _]
-    refine Finset.sum_congr rfl fun e he ↦ ?_
+    -- the maps of `laurentPresheaf` are inclusions, which do not change the Laurent polynomial
+    let φ := ((sectionsPresheaf (R := R) (M := M) m).map ((chartFunctor b).map f.unop).op).hom
+    refine (chartSectionsHom_eq_sum b (S := ofDual S'.unop) ⟨g, _⟩).trans <|
+      (Finset.sum_congr rfl fun e he ↦ ?_).trans <| (map_sum φ _ _).symm.trans
+        (congrArg φ (chartSectionsHom_eq_sum b ⟨g, hg⟩).symm)
     have he' : e ∈ chartExponents m (ofDual S'.unop) :=
       chartExponents_mono (leOfHom f.unop) (hmem e he)
     rw [chartSectionHom_apply b (hmem e he) (fun i _ ↦ le_exponentBound e i),
@@ -485,9 +481,24 @@ private def laurentToSections :
     exact (res_chartSection b (leOfHom ((chartFunctor b).map f.unop)) (hmem e he) he' _ _ _).symm
 
 omit [Fintype κ] [DecidableEq κ] in
+private lemma chartFunctor_obj (S : (Finset κ)ᵒᵈ) :
+    (chartFunctor b).obj S = Proj.basicOpen 𝒜 (coordProd b (ofDual S)) :=
+  rfl
+
+omit [Fintype κ] [DecidableEq κ] in
 private lemma chartFunctor_obj_singleton (i : κ) :
     (chartFunctor b).obj (toDual {i}) = Proj.basicOpen 𝒜 (ι R M (b i)) := by
-  simp [chartFunctor, coordProd]
+  simp [chartFunctor_obj, coordProd]
+
+omit [Fintype κ] in
+/-- The product of the charts of the coordinates `a 0, …, a n` in the category of finite sets of
+coordinates is the set of these coordinates, by
+`CategoryTheory.Limits.CompleteLattice.finite_product_eq_finset_image_inf`. -/
+private lemma ofDual_pi_toDual_singleton {n : ℕ} (a : Fin (n + 1) → κ) :
+    ofDual (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)) = Finset.univ.image a := by
+  rw [CompleteLattice.finite_product_eq_finset_image_inf (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ))
+    a, Finset.ofDual_inf]
+  exact Finset.sup_singleton_eq_self _
 
 omit [Fintype κ] [DecidableEq κ] in
 private lemma isAffineOpen_inf_chartFunctor_obj_singleton (s : Finset κ) (hs : s.Nonempty) :
@@ -513,18 +524,12 @@ private lemma isIso_cechComplexFunctor_map_laurentToSections :
       (laurentToSections b m)) := by
   have (n : ℕ) : IsIso (((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
       (laurentToSections b m)).f n) := by
-    have e : ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
-        (laurentToSections b m)).f n = Limits.Pi.map fun a : Fin (n + 1) → κ ↦
-          (laurentToSections b m).app (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ))) :=
-      Pi.hom_ext _ _ fun a ↦ (cechComplexFunctor_map_f_π _ _ _ n a).trans
-        (Pi.map_π (fun a : Fin (n + 1) → κ ↦ (laurentToSections b m).app
-          (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)))) a).symm
     have (a : Fin (n + 1) → κ) : IsIso ((laurentToSections b m).app
         (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)))) :=
       isIso_laurentToSections_app b m
         ⟨a 0, Finset.singleton_subset_iff.1
           (leOfHom (Pi.π (fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)) 0))⟩
-    rw [e]
+    rw [cechComplexFunctor_map_f]
     exact Pi.map_isIso _
   exact HomologicalComplex.Hom.isIso_of_components _
 
@@ -634,21 +639,17 @@ private lemma homologyMap_negSupportProj_univ {q : ℕ}
     HomologicalComplex.homologyMap
       ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
         (negSupportProj (R := R) m Finset.univ)) q = 0 := by
-  refine HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero _ _ (Pi.hom_ext _ _ fun a ↦
-    (cechComplexFunctor_map_f_π _ _ _ q a).trans (Eq.trans ?_ zero_comp.symm))
+  refine HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero _ _ ?_
+  rw [cechComplexFunctor_map_f]
+  refine Pi.hom_ext _ _ fun a ↦ (Pi.map_π _ a).trans (Eq.trans ?_ zero_comp.symm)
   -- no Laurent monomial over a product of `q + 1` charts has all exponents negative
   have hno : ∀ e ∈ chartExponents m (ofDual (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ))),
       negSupport e ≠ Finset.univ := by
     rintro e ⟨hsum, hneg⟩ huniv
     rcases h with h | h
-    · -- a finite product of finite sets of coordinates is their union
-      rw [CompleteLattice.finite_product_eq_finset_image_inf (J := Fin (q + 1))
-        (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) a, Finset.ofDual_inf] at hneg
-      have hsub : negSupport e ⊆ Finset.univ.image (a : Fin (q + 1) → κ) :=
-        hneg.trans (Finset.sup_singleton_eq_self _).le
-      have := (Finset.card_le_card hsub).trans Finset.card_image_le
-      rw [huniv, Finset.card_univ, Finset.card_univ, Fintype.card_fin] at this
-      change Fintype.card κ ≤ q + 1 at this
+    · have := (Finset.card_le_card (hneg.trans (ofDual_pi_toDual_singleton (n := q) a).le)).trans
+        Finset.card_image_le
+      rw [huniv, Finset.card_univ, Finset.card_fin] at this
       omega
     · have hlt : ∀ i, e i ≤ -1 := fun i ↦ by
         have := mem_negSupport.1 (huniv ▸ Finset.mem_univ i : i ∈ negSupport e)
@@ -674,19 +675,7 @@ private lemma isZero_homology_laurentCech {q : ℕ} (hq : 0 < q)
   rw [zero_add] at h ⊢
   have hsum : ∑ T : Finset κ, (cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
       (negSupportProj (R := R) m T) = 𝟙 (laurentCech (R := R) (κ := κ) m) := by
-    ext n : 1
-    rw [show (∑ T : Finset κ, (cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
-        (negSupportProj (R := R) m T)).f n = ∑ T : Finset κ,
-          ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
-            (negSupportProj (R := R) m T)).f n from
-        map_sum (HomologicalComplex.Hom.fAddMonoidHom n) _ _, HomologicalComplex.id_f]
-    refine Pi.hom_ext _ _ fun a ↦ (Preadditive.sum_comp _ _ _).trans <|
-      (Finset.sum_congr rfl fun T _ ↦ cechComplexFunctor_map_f_π _ _ _ n a).trans <|
-        (Preadditive.comp_sum _ _ _).symm.trans ?_
-    have happ (S) : ∑ T : Finset κ, (negSupportProj (R := R) m T).app S = 𝟙 _ := by
-      rw [← NatTrans.app_sum, sum_negSupportProj, NatTrans.id_app]
-    exact (congrArg (fun g ↦ _ ≫ g) (happ _)).trans
-      ((Category.comp_id _).trans (Category.id_comp _).symm)
+    rw [← Functor.map_sum, sum_negSupportProj, CategoryTheory.Functor.map_id]
   rw [IsZero.iff_id_eq_zero, ← HomologicalComplex.homologyMap_id, ← hsum,
     ← HomologicalComplex.homologyFunctor_map, Functor.map_sum]
   refine Finset.sum_eq_zero fun T _ ↦ ?_
@@ -716,14 +705,9 @@ private theorem subsingleton_cohomology_twistingSheaf_aux [Fintype κ] {m : ℤ}
   have hG (n : ℕ) (a : Fin (n + 1) → κ) : Nonempty ((∏ᶜ fun j ↦ (chartFunctor b).obj (toDual {a j}))
       ⟶ (chartFunctor b).obj (∏ᶜ fun j ↦ toDual {a j})) := by
     refine ⟨homOfLE ?_⟩
-    -- `chartFunctor` sends a set of coordinates to the basic open of their product
-    change _ ≤ Proj.basicOpen 𝒜 (coordProd b _)
-    rw [basicOpen_coordProd]
+    rw [chartFunctor_obj, basicOpen_coordProd, ofDual_pi_toDual_singleton]
     refine Finset.le_inf fun i hi ↦ ?_
-    -- a finite product of finite sets of coordinates is their union
-    rw [CompleteLattice.finite_product_eq_finset_image_inf
-      (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) a, Finset.ofDual_inf] at hi
-    obtain ⟨j, rfl⟩ : ∃ j, i = a j := by simpa using hi
+    obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 hi
     exact (leOfHom (Pi.π _ j)).trans (chartFunctor_obj_singleton b (a j)).le
   exact (AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology
       (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
