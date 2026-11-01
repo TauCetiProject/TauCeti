@@ -146,15 +146,13 @@ theorem coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket :
   rw [coeff_enhancedStateSum D R, PDCode.homologyEulerChar_khovanovBracket, Finset.mul_sum]
   -- Reindex the sum over the states by the vertices `S` of the cube, the state of `S` having the
   -- `B`-smoothing exactly at the crossings of `S`.
-  have hbij : Function.Bijective (PDCode.cubeState (n := n)) :=
-    Function.bijective_iff_has_inverse.2 ⟨fun s ↦ {i | s i = false},
-      PDCode.filter_cubeState_eq_false, fun s ↦ by funext i; simp [PDCode.cubeState_apply]⟩
-  refine (Fintype.sum_bijective _ hbij _ _ fun S ↦ ?_).symm
+  refine (Fintype.sum_bijective _ PDCode.cubeState_bijective _ _ fun S ↦ ?_).symm
   have hj : j - (D.positiveCrossingCount - 2 * D.negativeCrossingCount) - #S =
       j - (#S + D.positiveCrossingCount - 2 * D.negativeCrossingCount) := by
     ring
-  rw [stateCochainDegree_def, stateQuantumShift_def, PDCode.filter_cubeState_eq_false, hj,
-    Int.negOnePow_sub, Units.smul_def, smul_eq_mul, Units.val_mul]
+  -- The quantum degree sits inside the type of the `finrank`, so it is matched by `rw`.
+  rw [stateQuantumShift_def, PDCode.filter_cubeState_eq_false, hj]
+  simp [stateCochainDegree_def, Int.negOnePow_sub, Units.smul_def]
   ring
 
 /-- **The Jones polynomial as the Euler characteristic of Khovanov cohomology.** For a nonempty
