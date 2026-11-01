@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.Dyadic
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.Data.Nat.Log
 
 /-!
 # The Haar basis of `Lᵖ([0, 1])`
@@ -79,19 +80,22 @@ theorem haarFun_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
 
 /-- For `0 < n`, the Haar function `hₙ` vanishes outside the dyadic cell numbered `n`. -/
 theorem haarFun_eq_zero {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∉ dyadicCell n) : haarFun n x = 0 := by
-  have h0 : x ∉ dyadicCell (2 * n + 0) := mt (mem_dyadicCell_of_mem_two_mul_add hn two_pos) hx
+  have h0 : x ∉ dyadicCell (2 * n) := fun h =>
+    hx (by simpa using mem_dyadicCell_div_two (by omega) h)
   have h1 : x ∉ dyadicCell (2 * n + 1) := mt (mem_dyadicCell_of_mem_two_mul_add hn one_lt_two) hx
-  rw [add_zero] at h0
   simp [haarFun_of_ne_zero hn.ne', h0, h1]
 
 /-- For `0 < n`, the Haar function `hₙ` is `1` on the dyadic cell numbered `2 * n`. -/
 theorem haarFun_eq_one {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∈ dyadicCell (2 * n)) :
     haarFun n x = 1 := by
-  have hlog : Nat.log 2 (2 * n) = Nat.log 2 (2 * n + 1) := by
-    rw [← add_zero (2 * n), log_two_mul_add hn two_pos, add_zero, log_two_mul_add hn one_lt_two]
-  have h1 : x ∉ dyadicCell (2 * n + 1) :=
-    Set.disjoint_left.1 (disjoint_dyadicCell hlog (by omega)) hx
+  have h1 : x ∉ dyadicCell (2 * n + 1) := Set.disjoint_left.1 (disjoint_dyadicCell_two_mul hn) hx
   simp [haarFun_of_ne_zero hn.ne', hx, h1]
+
+/-- For `0 < n`, the Haar function `hₙ` is `-1` on the dyadic cell numbered `2 * n + 1`. -/
+theorem haarFun_eq_neg_one {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∈ dyadicCell (2 * n + 1)) :
+    haarFun n x = -1 := by
+  have h0 : x ∉ dyadicCell (2 * n) := Set.disjoint_right.1 (disjoint_dyadicCell_two_mul hn) hx
+  simp [haarFun_of_ne_zero hn.ne', hx, h0]
 
 /-- The Haar functions take values in `{-1, 0, 1}`. -/
 theorem norm_haarFun_le (n : ℕ) (x : I) : ‖haarFun n x‖ ≤ 1 := by
@@ -133,8 +137,8 @@ theorem integral_haarFun {n : ℕ} (hn : 0 < n) : ∫ x, haarFun n x = 0 := by
   rw [integral_sub (hint _) (hint _),
     integral_indicator_one (measurableSet_dyadicCell _),
     integral_indicator_one (measurableSet_dyadicCell _), Measure.real, Measure.real,
-    volume_dyadicCell (by omega), volume_dyadicCell (by omega), ← add_zero (2 * n),
-    log_two_mul_add hn two_pos, add_zero, log_two_mul_add hn one_lt_two, sub_self]
+    volume_dyadicCell (by omega), volume_dyadicCell (by omega), Nat.log_base_mul one_lt_two hn.ne',
+    Nat.log_mul_add one_lt_two hn.ne' one_lt_two, sub_self]
 
 /-- **The Haar functions are martingale differences.** For `0 < n`, the Haar function `hₙ` has
 conditional expectation zero given the dyadic filtration at step `n`: it is supported in the atom
@@ -180,6 +184,13 @@ theorem dyadicProj_ae_eq {N : ℕ} (hN : N ≠ 0) (f : Lp ℝ p (volume : Measur
   rw [dyadicProj_of_ne_zero p hN]
   exact condExpLp_ae_eq f
 
+/-- For `N ≠ 0`, the dyadic averaging projection of `f` is a.e. the conditional expectation of any
+a.e. representative `g` of `f`. -/
+theorem dyadicProj_ae_eq_of_ae_eq {N : ℕ} (hN : N ≠ 0) {f : Lp ℝ p (volume : Measure I)}
+    {g : I → ℝ} (hfg : f =ᵐ[volume] g) :
+    dyadicProj p N f =ᵐ[volume] volume[g | dyadicFiltration N] :=
+  (dyadicProj_ae_eq hN f).trans (condExp_congr_ae hfg)
+
 variable (p) in
 /-- The dyadic averaging projections are contractions. -/
 theorem norm_dyadicProj_le (N : ℕ) : ‖dyadicProj p N‖ ≤ 1 := by
@@ -190,6 +201,7 @@ theorem norm_dyadicProj_le (N : ℕ) : ‖dyadicProj p N‖ ≤ 1 := by
 
 variable (p) in
 /-- **The composition law of the dyadic averaging projections.** -/
+@[simp]
 theorem dyadicProj_dyadicProj (n m : ℕ) (f : Lp ℝ p (volume : Measure I)) :
     dyadicProj p n (dyadicProj p m f) = dyadicProj p (min n m) f := by
   rcases eq_or_ne n 0 with rfl | hn
@@ -207,11 +219,15 @@ theorem dyadicProj_dyadicProj (n m : ℕ) (f : Lp ℝ p (volume : Measure I)) :
     · rw [min_eq_right h]
       exact (condExp_of_stronglyMeasurable (dyadicFiltration.le n)
         (stronglyMeasurable_condExp.mono (dyadicFiltration.mono h)) integrable_condExp).eventuallyEq
-  refine Lp.ext ?_
-  filter_upwards [dyadicProj_ae_eq hn (dyadicProj p m f),
-    condExp_congr_ae (m := dyadicFiltration n) (dyadicProj_ae_eq hm f), key,
-    dyadicProj_ae_eq hnm f] with x h1 h2 h3 h4
-  rw [h1, h2, h3, h4]
+  exact Lp.ext ((dyadicProj_ae_eq_of_ae_eq hn (dyadicProj_ae_eq hm f)).trans
+    (key.trans (dyadicProj_ae_eq hnm f).symm))
+
+variable (p) in
+/-- The composition law of the dyadic averaging projections, as operators. -/
+@[simp]
+theorem dyadicProj_comp_dyadicProj (n m : ℕ) :
+    dyadicProj p n ∘L dyadicProj p m = dyadicProj p (min n m) :=
+  ContinuousLinearMap.ext (dyadicProj_dyadicProj p n m)
 
 /-- **The dyadic averaging projections converge strongly to the identity** on `Lᵖ(I)`,
 `1 ≤ p < ∞`. -/
@@ -226,24 +242,19 @@ theorem tendsto_dyadicProj (hp : p ≠ ∞) (f : Lp ℝ p (volume : Measure I)) 
 private theorem dyadicProj_succ_haarFun (n : ℕ) :
     dyadicProj p (n + 1) ((memLp_haarFun p n).toLp (haarFun n)) =
       (memLp_haarFun p n).toLp (haarFun n) := by
-  refine Lp.ext ?_
-  filter_upwards [dyadicProj_ae_eq n.succ_ne_zero ((memLp_haarFun p n).toLp (haarFun n)),
-    condExp_congr_ae (m := dyadicFiltration (n + 1)) (memLp_haarFun p n).coeFn_toLp,
-    (memLp_haarFun p n).coeFn_toLp] with x h1 h2 h3
-  rw [h1, h2, h3, condExp_of_stronglyMeasurable (dyadicFiltration.le _)
+  refine Lp.ext ((dyadicProj_ae_eq_of_ae_eq n.succ_ne_zero (memLp_haarFun p n).coeFn_toLp).trans ?_)
+  rw [condExp_of_stronglyMeasurable (dyadicFiltration.le _)
     (measurable_haarFun_dyadicFiltration n).stronglyMeasurable
     ((memLp_haarFun 1 n).integrable le_rfl)]
+  exact (memLp_haarFun p n).coeFn_toLp.symm
 
 /-- The Haar function `hₙ` is annihilated by the dyadic averaging projection of rank `n`. -/
 private theorem dyadicProj_haarFun_self (n : ℕ) :
     dyadicProj p n ((memLp_haarFun p n).toLp (haarFun n)) = 0 := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
-  refine Lp.ext ?_
-  filter_upwards [dyadicProj_ae_eq hn.ne' ((memLp_haarFun p n).toLp (haarFun n)),
-    condExp_congr_ae (m := dyadicFiltration n) (memLp_haarFun p n).coeFn_toLp,
-    condExp_haarFun hn, Lp.coeFn_zero ℝ p (volume : Measure I)] with x h1 h2 h3 h4
-  rw [h1, h2, h3, h4]
+  exact Lp.ext (((dyadicProj_ae_eq_of_ae_eq hn.ne' (memLp_haarFun p n).coeFn_toLp).trans
+    (condExp_haarFun hn)).trans (Lp.coeFn_zero ℝ p (volume : Measure I)).symm)
 
 /-- The Haar function `hₙ` is fixed by the dyadic averaging projections of rank above `n`, and
 annihilated by the others. -/

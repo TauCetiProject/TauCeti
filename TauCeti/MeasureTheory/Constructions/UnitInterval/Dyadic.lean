@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.Probability.Process.Filtration
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
+import TauCeti.Data.Nat.Log
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.Probability.Martingale.Convergence
 
@@ -187,19 +188,18 @@ theorem dyadicCell_zero : dyadicCell 0 = ∅ :=
     rw [mem_dyadicCell.1 hx]
     positivity)
 
-/-- The halves of a positively numbered dyadic cell lie one level below it. -/
-theorem log_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
-    Nat.log 2 (2 * n + e) = Nat.log 2 n + 1 := by
-  rw [Nat.log_of_one_lt_of_le one_lt_two (by omega)]
-  congr 2
-  omega
-
 /-- Distinct dyadic cells of the same level are disjoint. -/
 theorem disjoint_dyadicCell {m n : ℕ} (h : Nat.log 2 m = Nat.log 2 n) (hmn : m ≠ n) :
     Disjoint (dyadicCell m) (dyadicCell n) :=
   Set.disjoint_left.2 fun x hm hn => hmn <| by
     rw [mem_dyadicCell] at hm hn
     rw [← hm, ← hn, h]
+
+/-- The two halves of a positively numbered dyadic cell are disjoint. -/
+theorem disjoint_dyadicCell_two_mul {n : ℕ} (hn : 0 < n) :
+    Disjoint (dyadicCell (2 * n)) (dyadicCell (2 * n + 1)) :=
+  disjoint_dyadicCell (by rw [Nat.log_base_mul one_lt_two hn.ne',
+    Nat.log_mul_add one_lt_two hn.ne' one_lt_two]) (by omega)
 
 /-- A positively numbered dyadic cell is a cell of the equipartition of its level. -/
 theorem dyadicCell_eq_preimage_cellIdx {n : ℕ} (hn : 0 < n) :
