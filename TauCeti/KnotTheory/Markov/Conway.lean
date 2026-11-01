@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.ConwayPolynomial
+public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Polynomial.Conway
 public import TauCeti.KnotTheory.Markov.Basic
 
 /-!
@@ -20,8 +20,8 @@ equal Conway polynomials.
 This is the Seifert-matrix algorithm on the braid presentation. No geometric correspondence
 between braid closures and smooth links is assumed.
 
-The shared word-invariant descent in `TauCeti.KnotTheory.Markov.Basic` follows the signature
-construction in `TauCeti.KnotTheory.Markov.TristramLevine`.
+The word-invariant descent uses `TauCeti.MarkovBraid.liftWord` from
+`TauCeti.KnotTheory.Markov.Basic`.
 
 ## References
 

@@ -27,12 +27,15 @@ components of the closure. The framing-preserving equivalence on framed braid cl
 constructed in `TauCeti.KnotTheory.Markov.Framed`, using Seifert-relative coefficients rather
 than blackboard writhe. `TauCeti.MarkovBraid.liftWord` descends word-independent functions to
 braids; invariance under word rotation and both stabilizations then gives Markov invariance.
+This shared descent abstracts the signature construction in
+`TauCeti.KnotTheory.Markov.TristramLevine`.
 
 ## Main definitions
 
 * `TauCeti.MarkovBraid`: a braid together with the number of strands it is a braid on.
 * `TauCeti.FramedMarkovBraid`: a braid closure with an integer framing coefficient on each
   component; its `forgetFraming` projection drops those coefficients.
+* `TauCeti.MarkovBraid.liftWord`: descend a word-independent function to braids.
 * `TauCeti.MarkovBraid.componentCount`: the number of components of the closure of the braid,
   computed as the number of orbits of the underlying permutation of the strands.
 * `TauCeti.IsMarkovMove`: the generating moves, three constructors for the two moves —
@@ -41,6 +44,8 @@ braids; invariance under word rotation and both stabilizations then gives Markov
 
 ## Main results
 
+* `TauCeti.IsMarkovMove.liftWord_eq` and `TauCeti.MarkovEquiv.liftWord_eq`: word independence,
+  rotation invariance, and stabilization invariance give a Markov invariant.
 * `TauCeti.MarkovBraid.componentCount_conj`, `TauCeti.MarkovBraid.componentCount_stabilize` and
   `TauCeti.MarkovBraid.componentCount_stabilizeInv`: each move separately preserves the number of
   components of the closure.
@@ -295,8 +300,7 @@ theorem liftWord_mk
 end MarkovBraid
 
 /-- Word independence, cyclic rotation invariance, and invariance under either stabilization
-make the lifted word function invariant under a single Markov move. The conjugation argument
-is the one used for the Tristram–Levine signature. -/
+make the lifted word function invariant under a single Markov move. -/
 theorem IsMarkovMove.liftWord_eq {α : Sort*} (f : ∀ {n}, BraidWord (n + 1) → α)
     (hf : ∀ {n} {w w' : BraidWord (n + 1)}, w.toBraid = w'.toBraid → f w = f w')
     (hrot : ∀ {n} (w : BraidWord (n + 1)) (k : ℕ), f (w.rotate k) = f w)

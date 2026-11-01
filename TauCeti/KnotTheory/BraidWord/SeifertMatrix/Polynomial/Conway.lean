@@ -143,8 +143,8 @@ theorem conwayPolynomial_eq_of_artinStep {w w' : BraidWord (n + 1)} (h : ArtinSt
       simp only [List.map_append, List.map_cons, List.mem_append, List.mem_cons] <;> grind only
   · intro _
     obtain ⟨e, P, hP, he⟩ := exists_seifertMatrix_of_artinStep h
-    rw [he, Matrix.conwayPolynomial_submatrix_equiv_self,
-      Matrix.conwayPolynomial_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP)]
+    rw [he, Matrix.conwayPolynomial_congruence_submatrix_equiv_of_det_sq_eq_one _ e
+      (Int.isUnit_sq hP)]
 
 /-- Equivalent words compute the same Conway polynomial. -/
 theorem WordEquiv.conwayPolynomial_eq {w w' : BraidWord (n + 1)} (h : WordEquiv w w') :
@@ -165,8 +165,8 @@ theorem conwayPolynomial_append_singleton (x : Fin (n + 1 - 1) × ℤˣ)
   · simp [or_comm]
   · intro _
     obtain ⟨e, P, hP, he⟩ := exists_seifertMatrix_append_singleton x v
-    rw [he, Matrix.conwayPolynomial_submatrix_equiv_self,
-      Matrix.conwayPolynomial_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP)]
+    rw [he, Matrix.conwayPolynomial_congruence_submatrix_equiv_of_det_sq_eq_one _ e
+      (Int.isUnit_sq hP)]
 
 /-- Cyclic rotation preserves the corrected Conway polynomial. -/
 @[simp]
@@ -194,10 +194,7 @@ theorem conwayPolynomial_nil : conwayPolynomial (n := n) [] = if n = 0 then 1 el
   cases n with
   | zero =>
     rw [conwayPolynomial_of_forall _ (fun i => Fin.elim0 i)]
-    have : IsEmpty (seifertLoops (n := 1) []) := ⟨fun x => by
-      have hx := ((isSeifertLoop_iff _).mp ((mem_seifertLoops _).mp x.2)).2.1
-      exact Nat.not_lt_zero _ hx⟩
-    simp
+    simpa using Matrix.conwayPolynomial_of_isEmpty (seifertMatrix (n := 1) [])
   | succ n =>
     rw [conwayPolynomial_of_not_exists _ ⟨0, by omega⟩ (by simp)]
     simp

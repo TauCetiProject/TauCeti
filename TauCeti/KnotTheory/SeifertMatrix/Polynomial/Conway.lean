@@ -203,6 +203,14 @@ theorem conwayPolynomial_congruence_of_det_sq_eq_one {P : Matrix ι ι R}
   Matrix.conwayPolynomial_eq_of_alexander_eq _ _ rfl
     (alexander_congruence_of_det_sq_eq_one V hP)
 
+/-- A congruence whose determinant squares to one, followed by bijective reindexing,
+preserves the canonical Conway polynomial. -/
+theorem conwayPolynomial_congruence_submatrix_equiv_of_det_sq_eq_one
+    {κ : Type*} [Fintype κ] [DecidableEq κ] {P : Matrix ι ι R}
+    (V : Matrix ι ι R) (e : κ ≃ ι) (hP : P.det ^ 2 = 1) :
+    ((P * V * Pᵀ).submatrix e e).conwayPolynomial = V.conwayPolynomial := by
+  rw [conwayPolynomial_submatrix_equiv_self, conwayPolynomial_congruence_of_det_sq_eq_one V hP]
+
 /-- Changing the diagonal entry at `x` by `r` changes the Conway polynomial by
 `-r X` times the polynomial of the minor with the row and column of `x` deleted. In particular,
 decreasing it by one gives the usual positive Conway skein factor `X`. -/
