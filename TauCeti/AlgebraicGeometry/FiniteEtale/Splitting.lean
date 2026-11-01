@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
-public import TauCeti.AlgebraicGeometry.PullbackSpecMap
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.RingTheory.Etale.Splitting
 
 /-!
