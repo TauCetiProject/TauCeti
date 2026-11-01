@@ -189,28 +189,15 @@ theorem pullbackMap_add (a b : A ⟶ D) : pullbackMap f (a + b) = pullbackMap f 
 instance : (pullbackFunctor 𝕜 f).Additive where
   map_add {_ _ a b} := pullbackMap_add f a b
 
-/-- The chart operators of the comparison between a core and its pullback along the identity,
-in either direction: both cores have the same charts and transitions. -/
-private def pullbackIdOperator (A : FiniteRankBundleCore 𝕜 B) (i j : B) :
-    C(↥(A.core.baseSet i ∩ A.core.baseSet j), (Fin A.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) :=
-  ⟨(A.core.baseSet i ∩ A.core.baseSet j).domRestrict (A.core.coordChange i j),
-    (A.core.continuousOn_coordChange i j).domRestrict⟩
-
-private theorem pullbackIdOperator_compatible (A : FiniteRankBundleCore 𝕜 B) (i i' j j' x : B)
-    (hi : x ∈ A.core.baseSet i) (hi' : x ∈ A.core.baseSet i') (hj : x ∈ A.core.baseSet j)
-    (hj' : x ∈ A.core.baseSet j') (v : Fin A.rank → 𝕜) :
-    A.core.coordChange j j' x (pullbackIdOperator A i j ⟨x, hi, hj⟩ v) =
-      pullbackIdOperator A i' j' ⟨x, hi', hj'⟩ (A.core.coordChange i i' x v) :=
-  (A.core.coordChange_comp i j j' x ⟨⟨hi, hj⟩, hj'⟩ v).trans
-    (A.core.coordChange_comp i i' j' x ⟨⟨hi, hi'⟩, hj'⟩ v).symm
-
 /-- A core is isomorphic to its pullback along the identity, by maps that are the identity
 on every fibre. -/
 def pullbackIdIso (A : FiniteRankBundleCore 𝕜 B) : A.pullback (ContinuousMap.id B) ≅ A where
-  hom := ⟨pullbackIdOperator A, pullbackIdOperator_compatible A⟩
-  inv := ⟨pullbackIdOperator A, pullbackIdOperator_compatible A⟩
+  -- Both cores have the same charts and transitions, so the identity's operators serve.
+  hom := ⟨(CoordinateHom.id A.core).operator, (CoordinateHom.id A.core).compatible⟩
+  inv := ⟨(CoordinateHom.id A.core).operator, (CoordinateHom.id A.core).compatible⟩
   hom_inv_id := hom_ext fun x => by
     rw [fiberMap_comp, fiberMap_id, CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]
+    simp only [CoordinateHom.operator_id]
     -- The two operators are the transitions between the chart at `x` and the preferred chart.
     refine ContinuousLinearMap.ext fun v => ?_
     exact (A.core.coordChange_comp x (A.core.indexAt x) x x
@@ -219,6 +206,7 @@ def pullbackIdIso (A : FiniteRankBundleCore 𝕜 B) : A.pullback (ContinuousMap.
       (A.core.coordChange_self x x ((A.pullback (.id B)).core.mem_baseSet_at x) v)
   inv_hom_id := hom_ext fun x => by
     rw [fiberMap_comp, fiberMap_id, CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]
+    simp only [CoordinateHom.operator_id]
     -- The two operators are the transitions between the preferred chart and the chart at `x`.
     refine ContinuousLinearMap.ext fun v => ?_
     exact (A.core.coordChange_comp (A.core.indexAt x) x (A.core.indexAt x) x
@@ -229,12 +217,14 @@ def pullbackIdIso (A : FiniteRankBundleCore 𝕜 B) : A.pullback (ContinuousMap.
 @[simp] theorem fiberMap_pullbackIdIso_hom (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     (pullbackIdIso A).hom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
   rw [CoordinateHom.fiberMap_def]
+  simp only [pullbackIdIso, CoordinateHom.operator_id]
   -- The operator is the transition from the chart at `x` to the preferred chart at `x`.
   exact (congrArg (A.core.coordChange x · x) (A.indexAt_eq x)).trans (coordChange_self A x)
 
 @[simp] theorem fiberMap_pullbackIdIso_inv (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     (pullbackIdIso A).inv.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
   rw [CoordinateHom.fiberMap_def]
+  simp only [pullbackIdIso, CoordinateHom.operator_id]
   -- The operator is the transition from the preferred chart at `x` to the chart at `x`.
   exact (congrArg (A.core.coordChange · x x) (A.indexAt_eq x)).trans (coordChange_self A x)
 
