@@ -111,10 +111,11 @@ theorem projectiveClosure_p :
 end DenseCompactification
 
 /-- **Affine Nagata compactification.** A morphism of finite type between affine schemes has a
-dense compactification: present the coordinate ring of the source as a quotient of a polynomial
-ring over that of the target and take the projective closure. -/
+dense compactification. -/
 theorem nonempty_denseCompactification_of_isAffine {X S : Scheme.{u}} (f : X ⟶ S) [IsAffine X]
     [IsAffine S] [LocallyOfFiniteType f] : Nonempty (DenseCompactification f) := by
+  -- Present the coordinate ring of the source as a quotient of a polynomial ring over that of the
+  -- target and take the projective closure.
   have hf : f.appTop.hom.FiniteType :=
     (HasRingHomProperty.iff_of_isAffine (P := @LocallyOfFiniteType)).mp inferInstance
   let := f.appTop.hom.toAlgebra

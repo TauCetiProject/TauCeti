@@ -107,8 +107,9 @@ theorem map_dehomogenize_homogenization :
   exact mem_map_of_mem _ ((mem_homogenization_iff_of_isHomogeneous hq).mpr hp)
 
 /-- **The homogenization is saturated with respect to `Xᵢ`.** -/
+@[simp]
 theorem X_mul_mem_homogenization_iff {q : MvPolynomial (Fin (n + 1)) R} :
-    X i * q ∈ (J.homogenization i).toIdeal ↔ q ∈ (J.homogenization i).toIdeal := by
+    X i * q ∈ J.homogenization i ↔ q ∈ J.homogenization i := by
   refine ⟨fun h ↦ mem_homogenization_iff.mpr fun d ↦ ?_, Ideal.mul_mem_left _ _⟩
   -- The component of degree `d + 1` of `Xᵢ q` is `Xᵢ` times the component of degree `d` of `q`.
   have hc : homogeneousComponent (d + 1) (q * X i) = homogeneousComponent d q * X i := by
