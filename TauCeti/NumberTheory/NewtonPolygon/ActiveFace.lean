@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import TauCeti.Analysis.Convex.Sequence.Derivative
 public import TauCeti.Analysis.Convex.Sequence.Vertex
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.Restriction
 
 /-!
 # Active coefficients and finite Newton faces
@@ -49,21 +50,16 @@ series has a finite nonempty face. -/
 theorem exists_isFiniteFace_newtonPolygon_of_hasGaussNorm
     (hf : f.HasGaussNorm norm (b ^ τ)) (hf0 : f ≠ 0) (hστ : σ < τ) :
     ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
-  have hr : f.IsRestricted (b ^ σ) := hf.isRestricted_of_abs_lt (by
-    rw [abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)]
-    exact (Real.rpow_lt_rpow_left_iff hb).mpr hστ)
+  have hr := hf.isRestricted_rpow_of_lt hb hστ
   obtain ⟨d, hd⟩ := supportingValue_ne_bot_iff.mp
     ((hasGaussNorm_iff_supportingValue_ne_bot f v hb hv τ).mp hf)
   have he := f.isLowerConvexEnvelope_newtonPolygon
     (isAdmissible_iff.mpr ⟨d, τ, hd⟩)
-  have htransfer {s e : ℝ} (hs : IsSupportingLine (fun n => v (f.coeff n)) s e) :
-      IsSupportingLine (f.newtonPolygon v) s e := by
-    rw [isSupportingLine_iff, he.supportingValue_eq]
-    exact isSupportingLine_iff.mp hs
   obtain ⟨c, i, hc, hi⟩ :=
     exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv hr hf0
   exact (f.isConvexSeq_newtonPolygon v).exists_isFiniteFace_of_finite_supportingFace
-    (htransfer hc) ((htransfer (isSupportingLine_iff_forall.mpr hd)).finite_supportingFace hστ c)
+    (he.isSupportingLine_iff.mpr hc)
+    ((he.isSupportingLine_iff.mpr (isSupportingLine_iff_forall.mpr hd)).finite_supportingFace hστ c)
     ⟨i, he.supportingFace_subset hc hi⟩
 
 /-- A finite Newton face identifies the first and last active coefficients even at a
@@ -81,9 +77,7 @@ theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
     ((supportingValue_eq_coe_of_mem_supportingFace hc
       (hcf.symm.subset ⟨le_rfl, hface.left_le_right⟩)).symm.trans
       (supportingValue_newtonPolygon_eq_neg_logb_gaussNorm f v hb hv hG hf0))
-  have hc' : IsSupportingLine (fun n => v (f.coeff n)) σ c := by
-    rw [isSupportingLine_iff, ← he.supportingValue_eq]
-    exact isSupportingLine_iff.mp hc
+  have hc' := he.isSupportingLine_iff.mp hc
   have hl : IsLeast (supportingFace (fun n => v (f.coeff n)) σ c) l :=
     (he.isLeast_supportingFace_iff hc').mp
       ⟨hcf.symm.subset ⟨le_rfl, hface.left_le_right⟩, fun n hn => (hcf.subset hn).1⟩
@@ -95,16 +89,15 @@ theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
   exact ⟨(isLowestDominant_iff_isLeast_supportingFace f v hb hv hG hf0 l).mpr hl,
     (isDistinguished_iff_isGreatest_supportingFace f v hb hv hG hf0 u).mpr hu⟩
 
-/-- At a radius strictly below one with bounded weighted coefficients, the finite Newton
-face has endpoints `l, u` exactly when these are the first and last active coefficients. -/
+/-- At a radius `b ^ σ` strictly below a radius `b ^ τ` with bounded weighted coefficients,
+the finite Newton face has endpoints `l, u` exactly when these are the first and last active
+coefficients. -/
 theorem isFiniteFace_newtonPolygon_iff (hf : f.HasGaussNorm norm (b ^ τ))
     (hf0 : f ≠ 0) (hστ : σ < τ) {l u : ℕ} :
     IsFiniteFace (f.newtonPolygon v) σ l u ↔
       TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f := by
-  have hr : f.IsRestricted (b ^ σ) := hf.isRestricted_of_abs_lt (by
-    rw [abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)]
-    exact (Real.rpow_lt_rpow_left_iff hb).mpr hστ)
+  have hr := hf.isRestricted_rpow_of_lt hb hστ
   have hG := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hr
   have hactive {i j : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ i j) :=
     isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hG hf0 hface
@@ -117,8 +110,9 @@ theorem isFiniteFace_newtonPolygon_iff (hf : f.HasGaussNorm norm (b ^ τ))
   exact hface
 
 /-- The left derivative of the real Newton supporting value is minus the first active
-coefficient index. The radius is strictly below one with bounded weighted coefficients. -/
-theorem hasDerivWithinAt_supportingValue_newtonPolygon_left
+coefficient index. The radius `b ^ σ` lies strictly below a radius `b ^ τ` with bounded
+weighted coefficients. -/
+theorem hasDerivWithinAt_supportingValue_newtonPolygon_toReal_left
     (hf : f.HasGaussNorm norm (b ^ τ)) (hστ : σ < τ) {l : ℕ}
     (hl : TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f) :
     HasDerivWithinAt (fun s => (supportingValue (f.newtonPolygon v) s).toReal)
@@ -130,8 +124,9 @@ theorem hasDerivWithinAt_supportingValue_newtonPolygon_left
   exact hface.hasDerivWithinAt_supportingValue_toReal_left (f.isConvexSeq_newtonPolygon v)
 
 /-- The right derivative of the real Newton supporting value is minus the last active
-coefficient index. The radius is strictly below one with bounded weighted coefficients. -/
-theorem hasDerivWithinAt_supportingValue_newtonPolygon_right
+coefficient index. The radius `b ^ σ` lies strictly below a radius `b ^ τ` with bounded
+weighted coefficients. -/
+theorem hasDerivWithinAt_supportingValue_newtonPolygon_toReal_right
     (hf : f.HasGaussNorm norm (b ^ τ)) (hστ : σ < τ) {u : ℕ}
     (hu : TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f) :
     HasDerivWithinAt (fun s => (supportingValue (f.newtonPolygon v) s).toReal)
@@ -144,7 +139,7 @@ theorem hasDerivWithinAt_supportingValue_newtonPolygon_right
 
 /-- In the interior of the boundedness range, the real Newton supporting value is
 differentiable exactly when its first and last active coefficients coincide. -/
-theorem differentiableAt_supportingValue_newtonPolygon_iff
+theorem differentiableAt_supportingValue_newtonPolygon_toReal_iff
     (hf : f.HasGaussNorm norm (b ^ τ)) (hστ : σ < τ) {l u : ℕ}
     (hl : TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f)
     (hu : TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f) :
