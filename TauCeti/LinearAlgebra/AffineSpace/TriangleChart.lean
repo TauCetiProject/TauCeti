@@ -101,12 +101,11 @@ theorem triangleChart_apply_zero_half (a b c : P) :
 
 theorem triangleChart_apply_half_half (a b c : P) :
     triangleChart k a b c (1 / 2, 1 / 2) = midpoint k c b := by
-  rw [triangleChart_apply, midpoint, AffineMap.lineMap_apply, eq_vadd_iff_vsub_eq,
-    vadd_vsub_assoc, ← vsub_sub_vsub_cancel_right b c a, smul_sub, ← neg_vsub_eq_vsub_rev c a,
-    one_div, ← invOf_eq_inv]
-  match_scalars
-  · rfl
-  · linear_combination mul_invOf_self (2 : k)
+  simp only [triangleChart_apply, midpoint, AffineMap.lineMap_apply, eq_vadd_iff_vsub_eq,
+    vadd_vsub_assoc, ← vsub_sub_vsub_cancel_right b c a, ← neg_vsub_eq_vsub_rev c a, invOf_eq_inv]
+  have : (2 : k) ≠ 0 := Invertible.ne_zero 2
+  match_scalars <;> field_simp
+  ring
 
 end Midpoint
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 public import TauCeti.Analysis.Convex.Combination
+public import TauCeti.Analysis.Normed.Affine.AddTorsor
+public import TauCeti.Analysis.Normed.Affine.Simplex
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
 public import TauCeti.LinearAlgebra.AffineSpace.TriangleChart
@@ -108,13 +110,14 @@ end Chart
 
 section Plane
 
-/-- A linear inequality satisfied on a set of points of the plane holds on its convex hull. -/
+/-- `IsLinearMap.le_of_mem_convexHull` for the linear form `(s, t) ↦ u * s + v * t` on the plane,
+in the form used below. -/
 private theorem le_of_mem_convexHull {s : Set (ℝ × ℝ)} (u v w : ℝ)
     (hs : ∀ q ∈ s, u * q.1 + v * q.2 ≤ w) {p : ℝ × ℝ} (hp : p ∈ convexHull ℝ s) :
     u * p.1 + v * p.2 ≤ w :=
-  convexHull_min (t := {q : ℝ × ℝ | u * q.1 + v * q.2 ≤ w}) hs (convex_halfSpace_le
+  IsLinearMap.le_of_mem_convexHull (f := fun q : ℝ × ℝ => u * q.1 + v * q.2)
     ⟨fun x y => by simp only [Prod.fst_add, Prod.snd_add]; ring,
-     fun r x => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring⟩ w) hp
+     fun r x => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring⟩ hs hp
 
 /-! The four triangles of the midpoint subdivision of the triangle with vertices `(0, 0)`, `(1, 0)`
 and `(0, 1)`, and their intersections with the sides met along the way. -/
@@ -281,35 +284,7 @@ section Steps
 
 variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P]
 
-/-- A Δ-move read in a chart of the plane: the vertices of the edge and the new vertex are the
-images of affinely independent points `x`, `y`, `z`, and every other edge meets the image of
-their convex hull only at the images of `x` and `y`. -/
-private theorem isDeltaMove_of_chart {m : ℕ} {q : Polygon P m} {j : Fin m} {w : P}
-    {φ : ℝ × ℝ →ᵃ[ℝ] P} (hφ : Injective φ) {x y z : ℝ × ℝ}
-    (hx : q j = φ x) (hy : q (finRotate m j) = φ y) (hz : w = φ z)
-    (hind : AffineIndependent ℝ ![x, y, z])
-    (hedge : ∀ k ≠ j, q.edgeSet ℝ k ∩ φ '' convexHull ℝ {x, y, z} ⊆ φ '' {x, y}) :
-    q.IsDeltaMove ℝ j w := by
-  have hind' : AffineIndependent ℝ ![q j, q (finRotate m j), w] := by
-    rw [hx, hy, hz]
-    convert hind.map' φ hφ using 1
-    funext k
-    fin_cases k <;> rfl
-  refine ⟨hind', fun k hk => ?_⟩
-  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ hφ (x := x) (y := y) (z := z)
-    (by rw [← hx, ← hy, ← hz]), hx, hy, ← image_pair]
-  exact hedge k hk
-
 variable {n : ℕ} {poly : Polygon P n} {i : Fin n} {c : P}
-
-/-- The triangle of a Δ-move is the image of the standard triangle under the chart of its
-plane. -/
-private theorem IsDeltaMove.closedInterior_eq_image (h : poly.IsDeltaMove ℝ i c) :
-    h.triangle.closedInterior = triangleChart ℝ (poly i) (poly (finRotate n i)) c ''
-      convexHull ℝ {((0 : ℝ), (0 : ℝ)), (1, 0), (0, 1)} :=
-  Affine.Triangle.closedInterior_eq_image_convexHull _ (triangleChart_injective h.affineIndependent)
-    (by rw [IsDeltaMove.triangle_points, triangleChart_apply_zero_zero,
-      triangleChart_apply_one_zero, triangleChart_apply_zero_one])
 
 /-- The edges of the polygon other than the one replaced by a Δ-move meet the image of a part `X`
 of the standard triangle only at the images of the vertices `(0, 0)` and `(1, 0)` lying in `X`,
@@ -420,34 +395,6 @@ private theorem IsDeltaMove.isDeltaMove_corner_c (h : poly.IsDeltaMove ℝ i c) 
 
 end Steps
 
-/-! ### Reindexing the intermediate polygons -/
-
-section Reindex
-
-variable {P : Type*} {n : ℕ}
-
-/-- The polygon `⋯ a y z x b ⋯` built by inserting `x`, then `y` before it, then `z` after `y`,
-is also built by inserting `y`, then `z` after it, then `x` after `z`. -/
-private theorem insertVertex_insertVertex_insertVertex_middle (poly : Polygon P n) (i : Fin n)
-    (x y z : P) :
-    ((poly.insertVertex i x).insertVertex i.castSucc y).insertVertex i.castSucc.succ z =
-      ((poly.insertVertex i y).insertVertex i.succ z).insertVertex i.succ.succ x := by
-  refine congrArg Polygon.mk (funext fun j => ?_)
-  simp only [insertVertex_apply, Fin.val_succ, Fin.val_castSucc]
-  split_ifs <;> first | rfl | omega
-
-/-- The polygon `⋯ a y w z b ⋯` built by inserting `y`, then `z` after it, then `w` between
-them, is also built by inserting `w`, then `z` after it, then `y` before `w`. -/
-private theorem insertVertex_insertVertex_insertVertex_corner (poly : Polygon P n) (i : Fin n)
-    (y z w : P) :
-    ((poly.insertVertex i y).insertVertex i.succ z).insertVertex i.succ.castSucc w =
-      ((poly.insertVertex i w).insertVertex i.succ z).insertVertex i.castSucc.castSucc y := by
-  refine congrArg Polygon.mk (funext fun j => ?_)
-  simp only [insertVertex_apply, Fin.val_succ, Fin.val_castSucc]
-  split_ifs <;> first | rfl | omega
-
-end Reindex
-
 end Polygon
 
 /-! ### Sizes and positions of the four triangles -/
@@ -458,23 +405,6 @@ section Metric
 
 variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpace P]
   [NormedAddTorsor V P] {n : ℕ} {poly : Polygon P n} {i : Fin n} {c : P}
-
-/-- A triangle whose three sides have length at most `δ` has all distances between its vertices at
-most `δ`. -/
-private theorem forall_dist_points_le {t : Affine.Triangle ℝ P} {x y z : P}
-    (ht : t.points = ![x, y, z]) {δ : ℝ} (hδ : 0 ≤ δ) (hxy : dist x y ≤ δ) (hxz : dist x z ≤ δ)
-    (hyz : dist y z ≤ δ) : ∀ k l, dist (t.points k) (t.points l) ≤ δ := by
-  intro k l
-  rw [ht]
-  fin_cases k <;> fin_cases l <;>
-    first
-    | simpa using hδ
-    | simpa using hxy
-    | simpa using hxz
-    | simpa using hyz
-    | simpa [dist_comm] using hxy
-    | simpa [dist_comm] using hxz
-    | simpa [dist_comm] using hyz
 
 /-- A triangle whose vertices are among the vertices and midpoints of the sides of the triangle of
 a Δ-move lies in that triangle. -/
@@ -522,14 +452,6 @@ private theorem half_mul_le {d δ : ℝ} (h : d ≤ 2 * δ) : ‖(2 : ℝ)‖⁻
   rw [Real.norm_two]
   linarith
 
-/-- Two midpoints sharing an endpoint are at distance at most `δ` when their other endpoints are
-at distance at most `2 * δ`. -/
-private theorem dist_midpoint_midpoint_le_of_le {x y z : P} {δ : ℝ} (h : dist y z ≤ 2 * δ) :
-    dist (midpoint ℝ x y) (midpoint ℝ x z) ≤ δ := by
-  have := dist_midpoint_midpoint_le' (𝕜 := ℝ) x y x z
-  rw [dist_self, zero_add, Real.norm_two] at this
-  linarith
-
 end Metric
 
 end Polygon
@@ -573,8 +495,8 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
   have hcb : dist c (poly (finRotate n i)) ≤ 2 * δ := by simpa [hpts, dist_comm] using hδ 1 2
   have hδ₀ : 0 ≤ δ := by linarith [dist_nonneg (x := poly i) (y := c)]
   have hac_cb : dist (midpoint ℝ (poly i) c) (midpoint ℝ c (poly (finRotate n i))) ≤ δ := by
-    rw [midpoint_comm (poly i) c]
-    exact dist_midpoint_midpoint_le_of_le hab
+    rw [midpoint_comm (poly i) c, dist_midpoint_midpoint_same_left]
+    exact half_mul_le hab
   -- The four Δ-moves of the midpoint subdivision.
   have h₁ := h.isDeltaMove_corner_a
   have h₂ := h.isDeltaMove_middle
@@ -613,7 +535,10 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
   have c₁ : Relation.EqvGen r ⟨n, poly, hp⟩ p₁ := by
     have hm := h.triangleChart_mem_closedInterior (X := (1 / 2, 0)) (by simp)
     rw [triangleChart_apply_half_zero] at hm
-    exact hsub ⟨n, poly, hp⟩ i _ ⟨1 / 2, ⟨by norm_num, by norm_num⟩, lineMap_one_half _ _⟩ hm hs₁
+    have hmem : midpoint ℝ (poly i) (poly (finRotate n i)) ∈ poly.edgeSet ℝ i := by
+      rw [edgeSet]
+      exact wbtw_midpoint ℝ _ _
+    exact hsub ⟨n, poly, hp⟩ i _ hmem hm hs₁
   -- The Δ-move across `a m_ab m_ac`.
   have c₂ : Relation.EqvGen r p₁ p₂ := by
     have ht : h₁.triangle.points = ![poly i, midpoint ℝ (poly i) (poly (finRotate n i)),
@@ -621,9 +546,9 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
       rw [IsDeltaMove.triangle_points, insertVertex_apply_castSucc_self, Fin.finRotate_castSucc,
         insertVertex_apply_succ_self]
     exact hΔ p₁ _ _ h₁ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (forall_dist_points_le ht hδ₀ ((dist_left_midpoint _ _).trans_le (half_mul_le hab))
+      (Affine.Triangle.dist_points_le ht hδ₀ ((dist_left_midpoint _ _).trans_le (half_mul_le hab))
         ((dist_left_midpoint _ _).trans_le (half_mul_le hac))
-        (dist_midpoint_midpoint_le_of_le (by rwa [dist_comm])))
+        ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le (by rwa [dist_comm]))))
   -- The Δ-move across `m_ac m_ab m_cb`.
   have c₃ : Relation.EqvGen r p₂ p₃ := by
     have ht : h₂.triangle.points = ![midpoint ℝ (poly i) c,
@@ -631,10 +556,10 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
       rw [IsDeltaMove.triangle_points, insertVertex_apply_succ_self,
         insertVertex_apply_finRotate_succ_self, Fin.finRotate_castSucc,
         insertVertex_apply_succ_self]
-    refine hΔ p₂ _ _ h₂ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (forall_dist_points_le ht hδ₀ (dist_midpoint_midpoint_le_of_le hcb) hac_cb ?_)
-    rw [midpoint_comm (poly i), midpoint_comm c]
-    exact dist_midpoint_midpoint_le_of_le hac
+    exact hΔ p₂ _ _ h₂ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
+      (Affine.Triangle.dist_points_le ht hδ₀
+        ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le hcb)) hac_cb
+        ((dist_midpoint_midpoint_same_right _ _ _).trans_le (half_mul_le hac)))
   -- The Δ-move across `m_cb b m_ab`, read backwards from `p₃`.
   have c₄ : Relation.EqvGen r p₄ p₃ := by
     have ht : h₃.triangle.points = ![midpoint ℝ c (poly (finRotate n i)), poly (finRotate n i),
@@ -643,10 +568,11 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
         insertVertex_apply_finRotate_succ_self, insertVertex_apply_finRotate_succ_self]
     have hmid : dist (midpoint ℝ c (poly (finRotate n i)))
         (midpoint ℝ (poly i) (poly (finRotate n i))) ≤ δ := by
-      rw [midpoint_comm c, midpoint_comm (poly i)]
-      exact dist_midpoint_midpoint_le_of_le (by rwa [dist_comm])
+      rw [dist_midpoint_midpoint_same_right]
+      exact half_mul_le (by rwa [dist_comm])
     have hr := hΔ p₄ _ _ h₃ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (forall_dist_points_le ht hδ₀ ((dist_midpoint_right _ _).trans_le (half_mul_le hcb)) hmid
+      (Affine.Triangle.dist_points_le ht hδ₀
+        ((dist_midpoint_right _ _).trans_le (half_mul_le hcb)) hmid
         ((dist_right_midpoint _ _).trans_le (half_mul_le hab)))
     rwa [show p₄.deltaMove i.succ.succ _ h₃ = p₃ from (mk_eq_mk _ _).2 e₃.symm] at hr
   -- The Δ-move across `m_ac m_cb c`.
@@ -656,7 +582,7 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
       rw [IsDeltaMove.triangle_points, insertVertex_apply_castSucc_self,
         insertVertex_apply_succ_self, Fin.finRotate_castSucc, insertVertex_apply_succ_self]
     exact hΔ p₄ _ _ h₄ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (forall_dist_points_le ht hδ₀ hac_cb
+      (Affine.Triangle.dist_points_le ht hδ₀ hac_cb
         ((dist_midpoint_right _ _).trans_le (half_mul_le hac))
         ((dist_midpoint_left _ _).trans_le (half_mul_le hcb)))
   -- Subdividing `[a, c]` at `m_ac` gives `p₅` back from `p₆`.

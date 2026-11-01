@@ -41,7 +41,8 @@ The closed interior of a simplex is the convex hull of its vertices
 of a vector space under an injective affine map `f`, the closed interior is the image under `f` of
 the convex hull of the `x i` (`Affine.Simplex.closedInterior_eq_image_convexHull`, and
 `Affine.Triangle.closedInterior_eq_image_convexHull` for triangles), so questions about a simplex
-can be settled in coordinates.
+can be settled in coordinates. In coordinates, a bound `f x ≤ w` by a linear map `f` that holds
+at the vertices holds on the whole convex hull (`IsLinearMap.le_of_mem_convexHull`).
 
 ## References
 
@@ -53,6 +54,18 @@ public section
 
 open Finset
 open scoped Pointwise
+
+section LinearBound
+
+variable {𝕜 E β : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+  [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β] [PosSMulMono 𝕜 β]
+
+/-- A bound `f q ≤ w` by a linear map `f` that holds on a set `s` holds on its convex hull. -/
+theorem IsLinearMap.le_of_mem_convexHull {f : E → β} (hf : IsLinearMap 𝕜 f) {s : Set E} {w : β}
+    (hs : ∀ q ∈ s, f q ≤ w) {p : E} (hp : p ∈ convexHull 𝕜 s) : f p ≤ w :=
+  convexHull_min (t := {q | f q ≤ w}) hs (convex_halfSpace_le hf w) hp
+
+end LinearBound
 
 variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
   [Module 𝕜 E]
