@@ -48,12 +48,13 @@ permuted diagram.
   intertwines the filtered differentials.
 * `TauCeti.GridDiagram.filteredDifferential_relabelColumns_finRotate`: the column relabeling,
   followed by renaming the variables, intertwines the filtered differentials.
-* `TauCeti.OddComponentGridDiagram.relabelRowsEquiv_mem_alexanderFiltration_iff`,
-  `TauCeti.OddComponentGridDiagram.relabelColumnsRenameEquiv_mem_alexanderFiltration_iff`: the two
-  relabelings preserve and reflect every level of the Alexander filtration.
-* `TauCeti.OddComponentGridDiagram.map_relabelRowsEquiv_alexanderFiltration`,
-  `TauCeti.OddComponentGridDiagram.map_relabelColumnsRenameEquiv_alexanderFiltration`: they carry
-  each level of the Alexander filtration onto the corresponding level of the permuted diagram.
+* `TauCeti.OddComponentGridDiagram.relabelRowsEquiv_finRotate_mem_alexanderFiltration_iff`,
+  `TauCeti.OddComponentGridDiagram.relabelColumnsRenameEquiv_finRotate_mem_alexanderFiltration_iff`:
+  the two relabelings preserve and reflect every level of the Alexander filtration.
+* `TauCeti.OddComponentGridDiagram.map_relabelRowsEquiv_finRotate_alexanderFiltration`,
+  `TauCeti.OddComponentGridDiagram.map_relabelColumnsRenameEquiv_finRotate_alexanderFiltration`:
+  they carry each level of the Alexander filtration onto the corresponding level of the permuted
+  diagram.
 
 ## References
 
@@ -162,7 +163,7 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
 variable {G R} in
 /-- Relabeling the grid states along a cyclic permutation of the rows preserves and reflects each
 level of the Alexander filtration. -/
-theorem relabelRowsEquiv_mem_alexanderFiltration_iff {a : ℤ} {c : GridChainMinus R n} :
+theorem relabelRowsEquiv_finRotate_mem_alexanderFiltration_iff {a : ℤ} {c : GridChainMinus R n} :
     GridChain.relabelRowsEquiv (finRotate n) c ∈
         (G.relabelRows (finRotate n)).alexanderFiltration R a ↔
       c ∈ G.alexanderFiltration R a := by
@@ -182,19 +183,20 @@ theorem relabelRowsEquiv_mem_alexanderFiltration_iff {a : ℤ} {c : GridChainMin
 /-- Relabeling the grid states along a cyclic permutation of the rows carries each level of the
 Alexander filtration of `G` onto the same level of the row-permuted diagram. -/
 @[simp]
-theorem map_relabelRowsEquiv_alexanderFiltration (a : ℤ) :
+theorem map_relabelRowsEquiv_finRotate_alexanderFiltration (a : ℤ) :
     (G.alexanderFiltration R a).map (GridChain.relabelRowsEquiv (finRotate n)).toLinearMap =
       (G.relabelRows (finRotate n)).alexanderFiltration R a := by
   ext c
   rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap,
-    ← relabelRowsEquiv_mem_alexanderFiltration_iff, LinearEquiv.coe_coe,
+    ← relabelRowsEquiv_finRotate_mem_alexanderFiltration_iff, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply]
 
 variable {G R} in
 /-- Relabeling the grid states along a cyclic permutation of the columns, and renaming the
 variables along the same permutation, preserves and reflects each level of the Alexander
 filtration. -/
-theorem relabelColumnsRenameEquiv_mem_alexanderFiltration_iff {a : ℤ} {c : GridChainMinus R n} :
+theorem relabelColumnsRenameEquiv_finRotate_mem_alexanderFiltration_iff {a : ℤ}
+    {c : GridChainMinus R n} :
     GridChain.relabelColumnsRenameEquiv R (finRotate n) c ∈
         (G.relabelColumns (finRotate n)).alexanderFiltration R a ↔
       c ∈ G.alexanderFiltration R a := by
@@ -221,13 +223,13 @@ theorem relabelColumnsRenameEquiv_mem_alexanderFiltration_iff {a : ℤ} {c : Gri
 variables along the same permutation, carries each level of the Alexander filtration of `G` onto
 the same level of the column-permuted diagram. -/
 @[simp]
-theorem map_relabelColumnsRenameEquiv_alexanderFiltration (a : ℤ) :
+theorem map_relabelColumnsRenameEquiv_finRotate_alexanderFiltration (a : ℤ) :
     (G.alexanderFiltration R a).map
         (GridChain.relabelColumnsRenameEquiv R (finRotate n)).toLinearMap =
       (G.relabelColumns (finRotate n)).alexanderFiltration R a := by
   ext c
   rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap,
-    ← relabelColumnsRenameEquiv_mem_alexanderFiltration_iff, LinearEquiv.coe_coe,
+    ← relabelColumnsRenameEquiv_finRotate_mem_alexanderFiltration_iff, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply]
 
 end OddComponentGridDiagram
