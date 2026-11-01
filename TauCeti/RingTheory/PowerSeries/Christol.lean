@@ -26,15 +26,15 @@ operators `Λ_r = PowerSeries.cartier K q r`, `r < q`
 (`PowerSeries.exists_natDegree_le_aeval_eq_zero_of_finite_cartier_stable`); the generating series of
 the `q`-kernel form such a set. Let `M_j` be the `K[X]`-span of the powers `h ^ q ^ j`, `h ∈ T`.
 Every `h ∈ T` is `∑_{r < q} X ^ r (Λ_r h) ^ q`, and raising this to the power `q ^ j`, a ring
-endomorphism of `K⟦X⟧`, shows `M_j ≤ M_{j + 1}`. So the `m + 1` series `f ^ q ^ j`, `j ≤ m`, lie
-in `M_m`, which is spanned by `m = |T|` elements; they are therefore linearly dependent over
-`K[X]`. A relation `∑_{j ≤ m} cⱼ f ^ q ^ j = 0` with some `cⱼ ≠ 0` is `f` times the value at `f` of
-the nonzero polynomial `∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`.
+endomorphism of `K⟦X⟧`, shows `M_j ≤ M_{j + 1}`
+(`PowerSeries.pow_card_pow_mem_span_of_cartier_stable` in `TauCeti.RingTheory.PowerSeries.Cartier`).
+So the `m + 1` series `f ^ q ^ j`, `j ≤ m`, lie in `M_m`, which is spanned by `m = |T|` elements;
+they are therefore linearly dependent over `K[X]`. A relation `∑_{j ≤ m} cⱼ f ^ q ^ j = 0` with
+some `cⱼ ≠ 0` is `f` times the value at `f` of the nonzero polynomial
+`∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`.
 
 ## Main results
 
-* `PowerSeries.pow_card_pow_mem_span_of_cartier_stable`: for `h` in a Cartier-stable set `T` and
-  `j ≤ m`, the power `h ^ q ^ j` lies in the `K[X]`-span of the powers `g ^ q ^ m`, `g ∈ T`.
 * `PowerSeries.exists_natDegree_le_aeval_eq_zero_of_finite_cartier_stable`: a power series lying in
   a finite Cartier-stable set `T` is a root of a nonzero polynomial of degree at most
   `q ^ |T| - 1`.
@@ -59,43 +59,6 @@ open scoped PowerSeries
 namespace PowerSeries
 
 variable {K : Type*} [Field K] [Fintype K]
-
-/-- Over a finite field `K` with `q` elements, let `T` be a set of power series that is stable under
-the Cartier operators `cartier K q r` with `r < q`. For `h ∈ T` and `j ≤ m`, the power `h ^ q ^ j`
-lies in the `K[X]`-span of the powers `g ^ q ^ m` with `g ∈ T`. -/
-theorem pow_card_pow_mem_span_of_cartier_stable {T : Set K⟦X⟧}
-    (hTq : ∀ h ∈ T, ∀ r < Fintype.card K, cartier K (Fintype.card K) r h ∈ T) {h : K⟦X⟧}
-    (hh : h ∈ T) {j m : ℕ} (hjm : j ≤ m) :
-    h ^ Fintype.card K ^ j ∈ Submodule.span K[X] ((· ^ Fintype.card K ^ m) '' T) := by
-  set q := Fintype.card K
-  -- The `q ^ j`-th power map is the `j`-th iterate of the `K`-algebra endomorphism `expand q`.
-  set F : K⟦X⟧ →ₐ[K] K⟦X⟧ := expand q Fintype.card_ne_zero
-  have hFj (j : ℕ) (h : K⟦X⟧) : (F ^ j) h = h ^ q ^ j := by
-    induction j with
-    | zero => simp
-    | succ j ih =>
-      rw [pow_succ', AlgHom.mul_apply, ih, FiniteField.PowerSeries.expand_card, ← pow_mul,
-        ← pow_succ]
-  -- The spans `M j` of the powers `h ^ q ^ j` with `h ∈ T` increase with `j`.
-  set M : ℕ → Submodule K[X] K⟦X⟧ := fun j ↦ Submodule.span K[X] ((· ^ q ^ j) '' T)
-  have hM : Monotone M := by
-    refine monotone_nat_of_le_succ fun j ↦ Submodule.span_le.mpr ?_
-    rintro _ ⟨h, hh, rfl⟩
-    -- Apply the `q ^ j`-th power map to `h = ∑_{r < q} X ^ r * (Λ_r h) ^ q`.
-    have hsum := congrArg (F ^ j) (eq_sum_X_pow_mul_cartier_pow h)
-    rw [hFj, map_sum] at hsum
-    beta_reduce
-    rw [SetLike.mem_coe, hsum]
-    refine Submodule.sum_mem _ fun r hr ↦ ?_
-    have hterm : (F ^ j) (X ^ r * cartier K q r h ^ q) =
-        ((Polynomial.X : K[X]) ^ (q ^ j * r)) • cartier K q r h ^ q ^ (j + 1) := by
-      rw [map_mul, map_pow, map_pow, hFj, hFj, ← pow_mul, ← pow_mul, ← pow_succ, Algebra.smul_def,
-        algebraMap_apply', Algebra.algebraMap_self, map_id, id_eq, Polynomial.coe_pow,
-        Polynomial.coe_X]
-    rw [hterm]
-    exact Submodule.smul_mem _ _ <|
-      Submodule.subset_span ⟨_, hTq h hh r (Finset.mem_range.mp hr), rfl⟩
-  exact hM hjm (Submodule.subset_span ⟨h, hh, rfl⟩)
 
 /-- Over a finite field `K` with `q` elements, let `T` be a finite set of power series that is
 stable under the Cartier operators `cartier K q r` with `r < q`. Every `f ∈ T` is a root of a
