@@ -73,7 +73,7 @@ theorem star_piecewise_const [AddMonoid β] [StarAddMonoid β] (c : β) {A : Set
 
 /-- A finite family of simple functions `f i : α →ₛ β i`, as one simple function into the
 product `∀ i, β i`. Its fibres are the intersections of the fibres of the `f i`. -/
-@[expose] def pi {ι : Type*} [Finite ι] {β : ι → Type*} (f : ∀ i, SimpleFunc α (β i)) :
+def pi {ι : Type*} [Finite ι] {β : ι → Type*} (f : ∀ i, SimpleFunc α (β i)) :
     SimpleFunc α (∀ i, β i) where
   toFun a i := f i a
   measurableSet_fiber' w := by
@@ -90,11 +90,11 @@ product `∀ i, β i`. Its fibres are the intersections of the fibres of the `f 
 @[simp]
 theorem coe_pi {ι : Type*} [Finite ι] {β : ι → Type*} (f : ∀ i, SimpleFunc α (β i)) :
     ⇑(pi f) = fun a i ↦ f i a :=
-  rfl
+  (rfl)
 
 /-- The value of `pi f` at `a` is the family of the values `f i a`. -/
 theorem pi_apply {ι : Type*} [Finite ι] {β : ι → Type*} (f : ∀ i, SimpleFunc α (β i)) (a : α) :
     pi f a = fun i ↦ f i a :=
-  rfl
+  (rfl)
 
 end MeasureTheory.SimpleFunc
