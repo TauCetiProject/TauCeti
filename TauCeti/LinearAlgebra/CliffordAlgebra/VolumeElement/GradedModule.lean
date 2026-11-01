@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
-public import TauCeti.LinearAlgebra.Eigenspace.TensorInvolution
+public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
 public import TauCeti.RingTheory.Morita.ModuleEnd
 -- Private: transporting eigenspaces along the evaluation isomorphism.
 import TauCeti.LinearAlgebra.Eigenspace.Transport
@@ -36,7 +36,7 @@ becomes the tensor grading:
 `γ (T s) = T' (Γ s)`  for `T' = γ_W ∘ T`,  that is,  `γ ↔ Γ_S ⊗ γ_W`.
 
 Combined with the eigenspaces of a tensor product of involutions
-(`TauCeti.eigenspaceTensorMapEquiv`), the even and odd parts of `E` are
+(`Module.End.eigenspaceTensorMapEquiv`), the even and odd parts of `E` are
 
 `E^{γ = 1} ≃ S⁺ ⊗ W⁺ × S⁻ ⊗ W⁻`,  `E^{γ = -1} ≃ S⁺ ⊗ W⁻ × S⁻ ⊗ W⁺`
 
@@ -49,7 +49,7 @@ carries the Clifford action `c(w) ⊗ 1` and the tensor grading `Γ ⊗ γ_A`, w
 every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting grading is `1 ⊗ γ_A`
 (`CliffordAlgebra.twistingGrading_map_lsmul_complexVolume_apply`): it acts on the twisting factor
 `A` by the given grading, while the chirality acts by `Γ ⊗ 1`. Its even part
-`S⁺ ⊗ A⁺ ⊕ S⁻ ⊗ A⁻` and odd part `S⁺ ⊗ A⁻ ⊕ S⁻ ⊗ A⁺` are `TauCeti.eigenspaceTensorMapEquiv` for
+`S⁺ ⊗ A⁺ ⊕ S⁻ ⊗ A⁻` and odd part `S⁺ ⊗ A⁻ ⊕ S⁻ ⊗ A⁺` are `Module.End.eigenspaceTensorMapEquiv` for
 `Γ` and `γ_A`.
 
 ## Main definitions
@@ -63,6 +63,7 @@ every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting g
 * `CliffordAlgebra.apply_smul_eq_involute_smul`: an operator anticommuting with every vector
   intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.complexVolume_smul_twistingGrading`: `γ = Γ γ_W`.
+* `CliffordAlgebra.eigenspaceTwistingGradingEquiv_apply`: the components of an eigenvector of `γ`.
 * `CliffordAlgebra.isotypicEval_map_twistingGrading`: evaluation intertwines `Γ ⊗ γ_W` with `γ`.
 * `CliffordAlgebra.map_lsmul_complexVolume_ι_smul`: the graded twist is a graded module.
 * `CliffordAlgebra.twistingGrading_map_lsmul_complexVolume_apply`: its twisting grading is
@@ -146,14 +147,14 @@ include hQ
 /-- **The grading factors through the chirality**: `γ = Γ γ_W`. -/
 theorem complexVolume_smul_twistingGrading (ψ : E) :
     complexVolume Q o • twistingGrading o hn γ hγ ψ = γ ψ := by
-  rw [twistingGrading_apply, ← apply_complexVolume_smul o hn hγ, ← mul_smul,
-    complexVolume_mul_self o hQ, one_smul]
+  rw [twistingGrading_apply, ← apply_complexVolume_smul o hn hγ,
+    complexVolume_smul_complexVolume_smul o hQ]
 
 /-- The twisting grading of an involutive grading is an involution. -/
 theorem twistingGrading_involutive (hγ₂ : Function.Involutive γ) :
     Function.Involutive (twistingGrading o hn γ hγ) := fun ψ ↦ by
   rw [twistingGrading_apply, twistingGrading_apply, apply_complexVolume_smul o hn hγ, hγ₂,
-    ← mul_smul, complexVolume_mul_self o hQ, one_smul]
+    complexVolume_smul_complexVolume_smul o hQ]
 
 /-! ### The multiplicity space of a graded module -/
 
@@ -171,8 +172,17 @@ theorem isotypicEval_map_twistingGrading (x : S ⊗[ℂ] (S →ₗ[CliffordAlgeb
   | tmul s T =>
     rw [map_tmul, isotypicEval_tmul, isotypicEval_tmul, LinearMap.compRight_apply,
       LinearMap.comp_apply, twistingGrading_apply, Algebra.lsmul_coe, ← LinearMap.map_smul,
-      ← mul_smul, complexVolume_mul_self o hQ, one_smul]
+      complexVolume_smul_complexVolume_smul o hQ]
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+
+omit [Module ℂ S] [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S] in
+/-- Postcomposition with the twisting grading of an involutive grading is an involution of the
+multiplicity space `Hom_Cℓ(S, E)`. -/
+theorem compRight_twistingGrading_involutive (hγ₂ : Function.Involutive γ) :
+    Function.Involutive (LinearMap.compRight (M := S) ℂ (twistingGrading o hn γ hγ)) :=
+  fun T ↦ LinearMap.ext fun s ↦ by
+    simp only [LinearMap.compRight_apply, LinearMap.comp_apply,
+      twistingGrading_involutive o hn hγ hQ hγ₂ (T s)]
 
 variable [Module.Finite ℂ S]
   (h : Function.Bijective
@@ -197,13 +207,28 @@ def eigenspaceTwistingGradingEquiv (hγ₂ : Function.Involutive γ) {μ : ℂ} 
   (e.ofSubmodule' (eigenspace γ μ)).symm ≪≫ₗ
     (LinearEquiv.ofEq _ _ (eigenspace_eq_comap_of_intertwine (e := e)
       (fun x ↦ by simpa [e] using isotypicEval_map_twistingGrading o hn hγ hQ x) μ).symm) ≪≫ₗ
-    eigenspaceTensorMapEquiv _ _
-      (fun s ↦ by
-        simp only [Algebra.lsmul_coe, ← mul_smul, complexVolume_mul_self o hQ, one_smul])
-      (fun T ↦ LinearMap.ext fun s ↦ by
-        simp only [LinearMap.compRight_apply, LinearMap.comp_apply,
-          twistingGrading_involutive o hn hγ hQ hγ₂ (T s)])
-      hμ
+    eigenspaceTensorMapEquiv _ _ (lsmul_complexVolume_involutive o hQ)
+      (compRight_twistingGrading_involutive o hn hγ hQ hγ₂) hμ
+
+/-- The forward map of `CliffordAlgebra.eigenspaceTwistingGradingEquiv` inverts evaluation and
+then applies the tensor products of the eigenspace projections of `Γ` and of the twisting grading
+on the multiplicity space, as in `Module.End.eigenspaceTensorMapEquiv_apply`. -/
+theorem eigenspaceTwistingGradingEquiv_apply (hγ₂ : Function.Involutive γ) {μ : ℂ}
+    (hμ : μ * μ = 1) (z : eigenspace γ μ) :
+    eigenspaceTwistingGradingEquiv o hn hγ hQ h hγ₂ hμ z =
+      (TensorProduct.map
+          (eigenProjOfInvolutive (lsmul_complexVolume_involutive o hQ) (one_mul 1))
+          (eigenProjOfInvolutive (compRight_twistingGrading_involutive o hn hγ hQ hγ₂) hμ)
+          ((isotypicTensorEquivOfBijective h).symm z),
+        TensorProduct.map
+          (eigenProjOfInvolutive (lsmul_complexVolume_involutive o hQ)
+            ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
+          (eigenProjOfInvolutive (compRight_twistingGrading_involutive o hn hγ hQ hγ₂)
+            ((neg_mul_neg μ μ).trans hμ))
+          ((isotypicTensorEquivOfBijective h).symm z)) := by
+  simp only [eigenspaceTwistingGradingEquiv, LinearEquiv.trans_apply]
+  rw [eigenspaceTensorMapEquiv_apply]
+  rfl
 
 /-- The inverse of `CliffordAlgebra.eigenspaceTwistingGradingEquiv` is evaluation, `s ⊗ T ↦ T s`,
 on both summands. -/
@@ -256,8 +281,8 @@ theorem twistingGrading_map_lsmul_complexVolume_apply (hQ : ∀ v, Q v = -‖v�
       γA.lTensor S z := by
   induction z using TensorProduct.inductionOn with
   | tmul s a =>
-    simp only [twistingGrading_apply, smul_tmul', map_tmul, Algebra.lsmul_coe, ← mul_smul,
-      complexVolume_mul_self o hQ, one_smul, LinearMap.lTensor_tmul]
+    simp only [twistingGrading_apply, smul_tmul', map_tmul, Algebra.lsmul_coe,
+      complexVolume_smul_complexVolume_smul o hQ, LinearMap.lTensor_tmul]
   | add x y hx hy => rw [map_add, hx, hy, map_add]
 
 end Twist
