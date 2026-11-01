@@ -16,6 +16,8 @@ count for the trace of `ker f` on a subspace on which `f` does not vanish.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
 algebra is finite-dimensional is itself finite-dimensional.
+Linearly independent functionals, as many as the dimension, span the dual space and
+so separate points.
 
 ## Main results
 
@@ -30,6 +32,8 @@ algebra is finite-dimensional is itself finite-dimensional.
   is the kernel of a nonzero functional.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is.
+* `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
+  as the dimension, have no common zero but `0`.
 -/
 
 public section
@@ -118,3 +122,21 @@ theorem of_finite_end (K S : Type*) [Field K] [AddCommGroup S] [Module K S]
     fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
 
 end Module.Finite
+
+namespace LinearIndependent
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [Fintype ι]
+
+/-- Linearly independent linear forms, as many as the dimension, have no common zero but `0`. -/
+theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : LinearIndependent K L)
+    (hcard : Fintype.card ι = Module.finrank K V) {z : V} (hz : ∀ i, L i z = 0) : z = 0 := by
+  have hspan := hL.span_eq_top_of_card_eq_finrank' <| by rwa [Subspace.dual_finrank_eq]
+  have hz' : z ∈ (Submodule.span K (Set.range L)).dualCoannihilator := by
+    rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span]
+    rintro _ ⟨i, rfl⟩
+    exact hz i
+  rw [hspan] at hz'
+  simpa using hz'
+
+end LinearIndependent
