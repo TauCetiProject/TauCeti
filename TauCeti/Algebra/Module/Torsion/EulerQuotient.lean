@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Snake
 import TauCeti.GroupTheory.Index.Exact
+import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.LinearMap.Cardinality
 
 /-!
@@ -35,7 +36,9 @@ the kernel and of the cokernel of multiplication by `r`.
 Over the Iwasawa algebra `Λ = O⟦T⟧` the maps with finite kernel and cokernel are the
 pseudo-isomorphisms, and `r` is typically `ω_n = (1 + T) ^ pⁿ - 1`, for which `M ⧸ ω_n M` and
 `M[ω_n]` are the coinvariants and the invariants of the subgroup of index `pⁿ` of `Γ ≅ ℤ_p`. The
-invariance is what lets the order of `M ⧸ ω_n M` be computed on an elementary module.
+invariance is what lets the Euler quotient `#(M ⧸ ω_n M) / #M[ω_n]` be computed on an elementary
+module, and the finiteness of `M ⧸ ω_n M` and of `M[ω_n]` be read off there; the individual orders
+need not agree.
 
 ## Main results
 
@@ -195,11 +198,6 @@ section FiniteKerCoker
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (φ : M →ₗ[R] N)
 
-/-- The short exact sequence `0 → ker φ → M → range φ → 0` of a linear map. -/
-private theorem exact_subtype_rangeRestrict :
-    Exact (LinearMap.ker φ).subtype φ.rangeRestrict := by
-  rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, range_subtype]
-
 variable [Finite (LinearMap.ker φ)] [Finite (N ⧸ LinearMap.range φ)]
 include φ
 
@@ -207,7 +205,7 @@ include φ
 `M[r]` is finite iff `N[r]` is. -/
 theorem finite_torsionBy_iff_of_finite_ker_of_finite_coker :
     Finite (torsionBy R M r) ↔ Finite (torsionBy R N r) :=
-  (finite_torsionBy_iff_of_exact_of_finite_left r (exact_subtype_rangeRestrict φ)
+  (finite_torsionBy_iff_of_exact_of_finite_left r φ.exact_subtype_rangeRestrict
     (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict).trans
     (finite_torsionBy_iff_of_exact_of_finite_right r
       (LinearMap.exact_subtype_mkQ (LinearMap.range φ)) (LinearMap.range φ).injective_subtype)
@@ -216,7 +214,7 @@ theorem finite_torsionBy_iff_of_finite_ker_of_finite_coker :
 multiplication by `r`: `M ⧸ rM` is finite iff `N ⧸ rN` is. -/
 theorem finite_quotSMulTop_iff_of_finite_ker_of_finite_coker :
     Finite (QuotSMulTop r M) ↔ Finite (QuotSMulTop r N) :=
-  (finite_quotSMulTop_iff_of_exact_of_finite_left r (exact_subtype_rangeRestrict φ)
+  (finite_quotSMulTop_iff_of_exact_of_finite_left r φ.exact_subtype_rangeRestrict
     φ.surjective_rangeRestrict).trans
     (finite_quotSMulTop_iff_of_exact_of_finite_right r
       (LinearMap.exact_subtype_mkQ (LinearMap.range φ)) (LinearMap.range φ).injective_subtype
@@ -231,7 +229,7 @@ theorem natCard_quotSMulTop_mul_natCard_torsionBy_of_finite_ker_of_finite_coker 
       Nat.card (QuotSMulTop r N) * Nat.card (torsionBy R M r) := by
   -- factor `φ` as `M ↠ range φ ↪ N`
   have h₁ := natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_left r
-    (exact_subtype_rangeRestrict φ) (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict
+    φ.exact_subtype_rangeRestrict (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict
   have h₂ := natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_right r
     (LinearMap.exact_subtype_mkQ (LinearMap.range φ)) (LinearMap.range φ).injective_subtype
     (LinearMap.range φ).mkQ_surjective
@@ -246,7 +244,7 @@ theorem natCard_quotSMulTop_mul_natCard_torsionBy_of_finite_ker_of_finite_coker 
       _ = _ := by rw [h₂]; ring
   · -- the `r`-torsion of `M`, of `range φ` and of `N` is infinite
     have hM : ¬ Finite (torsionBy R M r) := fun h ↦ hP <|
-      (finite_torsionBy_iff_of_exact_of_finite_left r (exact_subtype_rangeRestrict φ)
+      (finite_torsionBy_iff_of_exact_of_finite_left r φ.exact_subtype_rangeRestrict
         (LinearMap.ker φ).injective_subtype φ.surjective_rangeRestrict).1 h
     have hN : ¬ Finite (torsionBy R N r) := (finite_torsionBy_iff_of_finite_ker_of_finite_coker r
       φ).not.1 hM

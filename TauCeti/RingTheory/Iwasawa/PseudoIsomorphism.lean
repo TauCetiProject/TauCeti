@@ -347,8 +347,11 @@ theorem IsPseudoIsomorphism.finite_quotSMulTop_iff (hf : IsPseudoIsomorphism f) 
 /-- **The Euler quotient is invariant under pseudo-isomorphism.** Over a noetherian local ring of
 dimension two with finite residue field, such as `O⟦T⟧`, a pseudo-isomorphism `M → N` satisfies
 `#(M ⧸ rM) / #M[r] = #(N ⧸ rN) / #N[r]` for every scalar `r`. Both sides are `0` when the torsion
-groups are infinite. For `r = ω_n` this reduces the orders of the coinvariants and invariants at
-level `n` of a finitely generated module to those of an elementary module. -/
+groups are infinite. For `r = ω_n` this lets the Euler quotient `#(M ⧸ ω_n M) / #M[ω_n]` of a
+finitely generated module be computed on an elementary module, while the finiteness of the
+coinvariants `M ⧸ ω_n M` and of the invariants `M[ω_n]` transfers by
+`IsPseudoIsomorphism.finite_quotSMulTop_iff` and `IsPseudoIsomorphism.finite_torsionBy_iff`;
+the individual orders need not agree. -/
 theorem IsPseudoIsomorphism.natCard_quotSMulTop_div_natCard_torsionBy_eq
     (hf : IsPseudoIsomorphism f) :
     (Nat.card (QuotSMulTop r M) : ℚ) / Nat.card (Submodule.torsionBy A M r) =
