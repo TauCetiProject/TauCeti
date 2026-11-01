@@ -484,6 +484,12 @@ theorem limComparison_limMap (f : Hom A B) (a : A.lim) :
     rw [coe_limComparison_apply, ModuleTower.coe_limMap_apply, coe_limComparison_apply,
       productMap_toNatTrans_productEquiv, Hom.coe_limMap_apply]
 
+/-- The naturality square of `limComparison`, as an equality of homomorphisms. -/
+theorem limComparison_comp_limMap (f : Hom A B) :
+    B.limComparison.toAddMonoidHom.comp f.limMap =
+      (ModuleTower.limMap f.toNatTrans).toAddMonoidHom.comp A.limComparison.toAddMonoidHom :=
+  AddMonoidHom.ext (limComparison_limMap f)
+
 /-- The homomorphism `lim¹ A → lim¹ B` induced by a morphism of towers. -/
 def Hom.limOneMap (f : Hom A B) : A.limOne →+ B.limOne :=
   QuotientAddGroup.map _ _ f.onProduct <| by
@@ -503,6 +509,12 @@ theorem limOneComparison_limOneMap (f : Hom A B) (x : A.limOne) :
   induction x using QuotientAddGroup.induction_on
   rw [Hom.limOneMap_mk, limOneComparison_mk, limOneComparison_mk, ModuleTower.limOneMap_mk,
     productMap_toNatTrans_productEquiv]
+
+/-- The naturality square of `limOneComparison`, as an equality of homomorphisms. -/
+theorem limOneComparison_comp_limOneMap (f : Hom A B) :
+    B.limOneComparison.toAddMonoidHom.comp f.limOneMap =
+      (ModuleTower.limOneMap f.toNatTrans).toAddMonoidHom.comp A.limOneComparison.toAddMonoidHom :=
+  AddMonoidHom.ext (limOneComparison_limOneMap f)
 
 /-- The identity morphism of a tower acts identically on `lim¹`. -/
 @[simp]
@@ -542,10 +554,7 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app n))
     (hfg : ∀ n, Function.Exact (f.app n) (g.app n)) :
     Function.Exact f.limMap g.limMap :=
   (Function.Exact.iff_of_ladder_addEquiv A.limComparison B.limComparison C.limComparison
-    (g₁₂ := (ModuleTower.limMap f.toNatTrans).toAddMonoidHom)
-    (g₂₃ := (ModuleTower.limMap g.toNatTrans).toAddMonoidHom)
-    (AddMonoidHom.ext fun a ↦ (limComparison_limMap f a).symm)
-    (AddMonoidHom.ext fun a ↦ (limComparison_limMap g a).symm)).1
+    (limComparison_comp_limMap f).symm (limComparison_comp_limMap g).symm).1
     (ModuleTower.exact_limMap (f.toNatTrans_app_injective hf)
       (f.exact_toNatTrans_app g hfg))
 
@@ -554,25 +563,19 @@ theorem exact_limOneMap (hfg : ∀ n, Function.Exact (f.app n) (g.app n))
     (hg : ∀ n, Function.Surjective (g.app n)) :
     Function.Exact f.limOneMap g.limOneMap :=
   (Function.Exact.iff_of_ladder_addEquiv A.limOneComparison B.limOneComparison
-    C.limOneComparison (g₁₂ := (ModuleTower.limOneMap f.toNatTrans).toAddMonoidHom)
-    (g₂₃ := (ModuleTower.limOneMap g.toNatTrans).toAddMonoidHom)
-    (AddMonoidHom.ext fun x ↦ (limOneComparison_limOneMap f x).symm)
-    (AddMonoidHom.ext fun x ↦ (limOneComparison_limOneMap g x).symm)).1
+    C.limOneComparison (limOneComparison_comp_limOneMap f).symm
+    (limOneComparison_comp_limOneMap g).symm).1
     (ModuleTower.exact_limOneMap (f.exact_toNatTrans_app g hfg)
       (g.toNatTrans_app_surjective hg))
 
 /-- `lim¹ B → lim¹ C` is surjective when every `Bₙ → Cₙ` is. -/
 theorem limOneMap_surjective (hg : ∀ n, Function.Surjective (g.app n)) :
     Function.Surjective g.limOneMap := by
-  have : ⇑g.limOneMap = C.limOneComparison.symm ∘ ModuleTower.limOneMap g.toNatTrans ∘
-      B.limOneComparison := by
-    ext x
-    rw [Function.comp_apply, Function.comp_apply, ← limOneComparison_limOneMap,
-      AddEquiv.symm_apply_apply]
-  rw [this]
-  exact C.limOneComparison.symm.surjective.comp <|
-    (ModuleTower.limOneMap_surjective (g.toNatTrans_app_surjective hg)).comp
-      B.limOneComparison.surjective
+  refine (EquivLike.comp_surjective _ C.limOneComparison).1 ?_
+  convert (ModuleTower.limOneMap_surjective (g.toNatTrans_app_surjective hg)).comp
+    B.limOneComparison.surjective using 1
+  -- The coercion of a composite of homomorphisms is the composite of the coercions by definition.
+  exact congrArg DFunLike.coe (limOneComparison_comp_limOneMap g)
 
 variable (hf : ∀ n, Function.Injective (f.app n)) (hfg : ∀ n, Function.Exact (f.app n) (g.app n))
   (hg : ∀ n, Function.Surjective (g.app n))
@@ -596,6 +599,15 @@ theorem limOneComparison_connecting (c : C.lim) :
         (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg) (C.limComparison c) :=
   A.limOneComparison.apply_symm_apply _
 
+/-- The square relating `connecting` to the connecting map of the towers of `ℤ`-modules, as an
+equality of homomorphisms. -/
+theorem limOneComparison_comp_connecting :
+    A.limOneComparison.toAddMonoidHom.comp (connecting f g hf hfg hg) =
+      (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
+        (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg)).toAddMonoidHom.comp
+        C.limComparison.toAddMonoidHom :=
+  AddMonoidHom.ext (limOneComparison_connecting f g hf hfg hg)
+
 /-- **The connecting map of the six-term sequence.** If `b` lifts the compatible family `c` of
 `C` and `f(a) = δ(b)`, then `c` is sent to the class of `a` in `lim¹ A`. -/
 theorem connecting_apply (c : C.lim) (b : ∀ n, B.obj n) (hb : g.onProduct b = c)
@@ -603,33 +615,22 @@ theorem connecting_apply (c : C.lim) (b : ∀ n, B.obj n) (hb : g.onProduct b = 
     connecting f g hf hfg hg c = QuotientAddGroup.mk a :=
   A.limOneComparison.injective <| by
     rw [limOneComparison_connecting, limOneComparison_mk]
-    refine ModuleTower.connecting_apply _ _ (f.toNatTrans_app_injective hf)
-      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg) _ (B.productEquiv b) ?_
-      (A.productEquiv a) ?_
+    refine ModuleTower.connecting_apply _ _ _ _ _ _ (B.productEquiv b) ?_ (A.productEquiv a) ?_
     · rw [productMap_toNatTrans_productEquiv, hb, coe_limComparison_apply]
     · rw [productMap_toNatTrans_productEquiv, ha, shift_productEquiv]
 
 /-- Exactness of `lim B → lim C → lim¹ A`. -/
 theorem exact_limMap_connecting : Function.Exact g.limMap (connecting f g hf hfg hg) :=
   (Function.Exact.iff_of_ladder_addEquiv B.limComparison C.limComparison A.limOneComparison
-    (g₁₂ := (ModuleTower.limMap g.toNatTrans).toAddMonoidHom)
-    (g₂₃ := (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
-      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg)).toAddMonoidHom)
-    (AddMonoidHom.ext fun a ↦ (limComparison_limMap g a).symm)
-    (AddMonoidHom.ext fun c ↦ (limOneComparison_connecting f g hf hfg hg c).symm)).1
-    (ModuleTower.exact_limMap_connecting _ _ (f.toNatTrans_app_injective hf)
-      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg))
+    (limComparison_comp_limMap g).symm (limOneComparison_comp_connecting f g hf hfg hg).symm).1
+    (ModuleTower.exact_limMap_connecting _ _ _ _ _)
 
 /-- Exactness of `lim C → lim¹ A → lim¹ B`. -/
 theorem exact_connecting_limOneMap : Function.Exact (connecting f g hf hfg hg) f.limOneMap :=
   (Function.Exact.iff_of_ladder_addEquiv C.limComparison A.limOneComparison B.limOneComparison
-    (g₁₂ := (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
-      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg)).toAddMonoidHom)
-    (g₂₃ := (ModuleTower.limOneMap f.toNatTrans).toAddMonoidHom)
-    (AddMonoidHom.ext fun c ↦ (limOneComparison_connecting f g hf hfg hg c).symm)
-    (AddMonoidHom.ext fun x ↦ (limOneComparison_limOneMap f x).symm)).1
-    (ModuleTower.exact_connecting_limOneMap _ _ (f.toNatTrans_app_injective hf)
-      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg))
+    (limOneComparison_comp_connecting f g hf hfg hg).symm
+    (limOneComparison_comp_limOneMap f).symm).1
+    (ModuleTower.exact_connecting_limOneMap _ _ _ _ _)
 
 end Exact
 
