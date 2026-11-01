@@ -114,6 +114,24 @@ private theorem firstPartSum_eq_coeff_subst {C M : R⟦X⟧} {n : ℕ}
     (hlt'.le.trans (hk ▸ ht)) _ rfl
   exact mem_filter.2 ⟨hmt hne, (hm y (mem_filter.1 hy).1).trans_lt (mem_filter.1 hy).2⟩
 
+/-- Let `C` have constant coefficient `1`, and assume that the total weight of the noncrossing
+partitions of every set of fewer than `|s|` positions is the coefficient of `M` at its size. Then
+the total weight of the noncrossing partitions of `s` is the coefficient of `C(z M(z))` at `|s|`. -/
+private theorem sum_prod_coeff_eq_coeff_subst {C M : R⟦X⟧} (hC : constantCoeff C = 1)
+    (s : Finset α) (hZ : ∀ u : Finset α, #u < #s →
+      ∑ P : NoncrossingPartition u, ∏ B ∈ P.1.parts, coeff #B C = coeff #u M) :
+    ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B C = coeff #s (C.subst (X * M)) := by
+  obtain rfl | hs := s.eq_empty_or_nonempty
+  · -- The constant coefficient of `C(z M(z))` is `C(0) = 1`, the weight of the empty partition.
+    have h0 : constantCoeff (C.subst (X * M)) = constantCoeff C :=
+      constantCoeff_subst_of_constantCoeff_zero (S := R) (by simp [← constantCoeff_eq]) C
+    rw [card_empty, coeff_zero_eq_constantCoeff_apply, h0, hC, Fintype.sum_unique,
+      parts_eq_empty, prod_empty]
+  rw [← firstPartSum_eq_coeff_subst hZ s (s.min' hs) (fun y hy => s.min'_le y hy)
+    (fun _ => s.min'_mem hs) le_rfl C, firstPartSum]
+  exact sum_congr rfl fun π _ =>
+    π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C
+
 /-- *The moment–cumulant functional equation, coefficientwise.* Let `C` be a formal power series
 with constant coefficient `1` and let `M` satisfy `M(z) = C(z M(z))`. Then for every finite set `s`
 of positions in a linear order, the sum over the noncrossing partitions `π` of `s` of the products
@@ -124,18 +142,7 @@ theorem sum_prod_coeff_eq_coeff_of_subst_eq {C M : R⟦X⟧} (hC : constantCoeff
     ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B C = coeff #s M := by
   induction hn : #s using Nat.strong_induction_on generalizing s with
   | _ n ih =>
-  obtain rfl | hs := s.eq_empty_or_nonempty
-  · -- The constant coefficient of `C(z M(z))` is `C(0) = 1`.
-    have h0 : constantCoeff (C.subst (X * M)) = constantCoeff C :=
-      constantCoeff_subst_of_constantCoeff_zero (S := R) (by simp [← constantCoeff_eq]) C
-    rw [← hn, card_empty, ← hM, coeff_zero_eq_constantCoeff_apply, h0, hC,
-      Fintype.sum_unique, parts_eq_empty, prod_empty]
-  have h := firstPartSum_eq_coeff_subst (C := C) (M := M) (fun u hu => ih _ hu u rfl) s
-    (s.min' hs) (fun y hy => s.min'_le y hy) (fun _ => s.min'_mem hs) hn.le C
-  rw [hM, hn] at h
-  rw [← h, firstPartSum]
-  exact sum_congr rfl fun π _ =>
-    π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C
+  rw [sum_prod_coeff_eq_coeff_subst hC s fun u hu => ih _ (hn ▸ hu) u rfl, hM, hn]
 
 /-- *The moment–cumulant functional equation* as a characterisation. Let `C` be a formal power
 series with constant coefficient `1`, and let `α` be an infinite linear order. Then `M` satisfies
@@ -148,15 +155,6 @@ theorem subst_X_mul_eq_iff [Infinite α] {C M : R⟦X⟧} (hC : constantCoeff C 
   refine ⟨fun hM => sum_prod_coeff_eq_coeff_of_subst_eq hC hM, fun h => ?_⟩
   ext n
   obtain ⟨s, rfl⟩ := Infinite.exists_subset_card_eq α n
-  obtain rfl | hs := s.eq_empty_or_nonempty
-  · -- The constant coefficient of `C(z M(z))` is `C(0) = 1`, the weight of the empty partition.
-    have h0 : constantCoeff (C.subst (X * M)) = constantCoeff C :=
-      constantCoeff_subst_of_constantCoeff_zero (S := R) (by simp [← constantCoeff_eq]) C
-    rw [← h ∅, card_empty, coeff_zero_eq_constantCoeff_apply, h0, hC, Fintype.sum_unique,
-      parts_eq_empty, prod_empty]
-  rw [← firstPartSum_eq_coeff_subst (fun u _ => h u) s (s.min' hs) (fun y hy => s.min'_le y hy)
-    (fun _ => s.min'_mem hs) le_rfl C, ← h s, firstPartSum]
-  exact (sum_congr rfl fun π _ =>
-    π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C).symm
+  exact (sum_prod_coeff_eq_coeff_subst hC s fun u _ => h u).symm.trans (h s)
 
 end TauCeti.NoncrossingPartition
