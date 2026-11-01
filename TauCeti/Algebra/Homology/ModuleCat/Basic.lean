@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ConcreteCategory
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
@@ -52,6 +53,17 @@ exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of c
 that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
+
+For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes of modules, the connecting map
+sends the class of a cycle of `X₃` with lift `x₂` to the class of the cycle of `X₁` mapping to
+`d x₂` (`CategoryTheory.ShortComplex.ShortExact.moduleCat_δ_homologyπ`). Conversely, if a cycle
+`z₁` of `X₁` represents the image of a class `x₃` under the connecting map, then `x₃` is
+represented by the image of an element `x₂` of `X₂` whose differential is exactly the image of
+`z₁` (`CategoryTheory.ShortComplex.ShortExact.moduleCat_exists_d_eq_of_δ_eq`), and such `x₂` is
+unique up to boundaries and images of cycles of `X₁`
+(`CategoryTheory.ShortComplex.ShortExact.moduleCat_exists_sub_eq_d_add`). For the chains of a
+pair of spaces, this produces chains relative to a subspace with a prescribed boundary in the
+subspace, such as fundamental chains of a manifold with boundary.
 -/
 
 public section
@@ -524,5 +536,86 @@ theorem moduleCat_δ_homologyπ (i j : ι) (hij : c.Rel i j) (z₃ : S.X₃.cycl
       (HomologicalComplex.i_cyclesMk (C := ModuleCat R) S.X₁ _ (c.next j) rfl _)
   rw [h₃, h₁] at key
   exact key
+
+/-- **Lifting a class along a prescribed boundary.** Let `x₃` be a degree-`i` homology class of
+`S.X₃` and `z₁` a degree-`j` cycle of `S.X₁` whose class is the image of `x₃` under the connecting
+map. Then some element `x₂` of `S.X₂` in degree `i` has differential the image of `z₁`, and maps
+onto a cycle of `S.X₃` representing `x₃`. This is the converse of `moduleCat_δ_homologyπ`: the
+boundary of the lift is prescribed on the nose, not only up to a boundary. -/
+theorem moduleCat_exists_d_eq_of_δ_eq (i j : ι) (hij : c.Rel i j) (x₃ : S.X₃.homology i)
+    (z₁ : S.X₁.cycles j) (h : (hS.δ i j hij).hom x₃ = (S.X₁.homologyπ j).hom z₁) :
+    ∃ (x₂ : S.X₂.X i) (z₃ : S.X₃.cycles i),
+      (S.X₂.d i j).hom x₂ = (S.f.f j).hom ((S.X₁.iCycles j).hom z₁) ∧
+        (S.g.f i).hom x₂ = (S.X₃.iCycles i).hom z₃ ∧ (S.X₃.homologyπ i).hom z₃ = x₃ := by
+  have hSi := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i
+  have hSj := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS j
+  have : Epi (S.g.f i) := hSi.epi_g
+  have : Mono (S.f.f j) := hSj.mono_f
+  -- Represent `x₃` by a cycle `z₃` and lift it to `y₂` in `S.X₂`.
+  obtain ⟨z₃, rfl⟩ := S.X₃.moduleCat_homologyπ_surjective i x₃
+  obtain ⟨y₂, hy₂⟩ := (ModuleCat.epi_iff_surjective (S.g.f i)).1 inferInstance
+    ((S.X₃.iCycles i).hom z₃)
+  -- The differential of `y₂` dies in `S.X₃`, so it comes from an element `y₁` of `S.X₁`.
+  have hdy₂ : (S.g.f j).hom ((S.X₂.d i j).hom y₂) = 0 := by
+    rw [← HomologicalComplex.Hom.comm_apply, hy₂, ← ModuleCat.comp_apply,
+      HomologicalComplex.iCycles_d]
+    rfl
+  obtain ⟨y₁, hy₁⟩ : ∃ y₁ : S.X₁.X j, (S.f.f j).hom y₁ = (S.X₂.d i j).hom y₂ :=
+    (ShortComplex.moduleCat_exact_iff _).1 hSj.exact _ hdy₂
+  have hdy₁ : (S.X₁.d j (c.next j)).hom y₁ = 0 :=
+    hS.d_eq_zero_of_f_eq_d_apply i j y₂ y₁ hy₁ _
+  -- By `moduleCat_δ_homologyπ`, `z₁` and `y₁` are homologous: `z₁ - y₁ = d b`.
+  have hδ := hS.moduleCat_δ_homologyπ i j hij z₃ y₂ hy₂
+    (S.X₁.moduleCatCyclesMk y₁ (c.next j) rfl hdy₁)
+    (by rw [HomologicalComplex.iCycles_moduleCatCyclesMk]; exact hy₁)
+  rw [h, ← sub_eq_zero, ← map_sub] at hδ
+  obtain ⟨b, hb⟩ := (S.X₁.moduleCat_homologyπ_eq_zero_iff (c.prev_eq' hij) _).1 hδ
+  have hb' : (S.X₁.d i j).hom b = (S.X₁.iCycles j).hom z₁ - y₁ := by
+    have := congrArg (S.X₁.iCycles j).hom hb
+    rwa [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i, map_sub,
+      HomologicalComplex.iCycles_moduleCatCyclesMk] at this
+  -- Correct the lift by the image of `b`.
+  refine ⟨y₂ + (S.f.f i).hom b, z₃, ?_, ?_, rfl⟩
+  · rw [map_add, ← hy₁, HomologicalComplex.Hom.comm_apply, hb', map_sub, add_sub_cancel]
+  · rw [map_add, hy₂, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, S.zero]
+    simp
+
+include hS in
+/-- **Lifts along a prescribed boundary are unique up to boundaries and cycles of `S.X₁`.** Let
+`x₂, x₂'` be elements of `S.X₂` in degree `i` with the same differential, whose images in `S.X₃`
+are homologous cycles. Then `x₂ - x₂'` is the sum of a boundary and the image of a cycle of
+`S.X₁`. -/
+theorem moduleCat_exists_sub_eq_d_add (i j p : ι) (hp : c.prev i = p)
+    (x₂ x₂' : S.X₂.X i) (hd : (S.X₂.d i j).hom x₂ = (S.X₂.d i j).hom x₂')
+    (z₃ z₃' : S.X₃.cycles i) (hx₂ : (S.g.f i).hom x₂ = (S.X₃.iCycles i).hom z₃)
+    (hx₂' : (S.g.f i).hom x₂' = (S.X₃.iCycles i).hom z₃')
+    (hz : (S.X₃.homologyπ i).hom z₃ = (S.X₃.homologyπ i).hom z₃') :
+    ∃ (b : S.X₂.X p) (a : S.X₁.X i), (S.X₁.d i j).hom a = 0 ∧
+      x₂ - x₂' = (S.X₂.d p i).hom b + (S.f.f i).hom a := by
+  have hSi := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i
+  have hSj := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS j
+  have hSp := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS p
+  have : Epi (S.g.f p) := hSp.epi_g
+  have : Mono (S.f.f j) := hSj.mono_f
+  -- The cycles `z₃` and `z₃'` differ by the boundary of some `b₃`, which lifts to `b`.
+  rw [← sub_eq_zero, ← map_sub] at hz
+  obtain ⟨b₃, hb₃⟩ := (S.X₃.moduleCat_homologyπ_eq_zero_iff hp _).1 hz
+  obtain ⟨b, rfl⟩ := (ModuleCat.epi_iff_surjective (S.g.f p)).1 inferInstance b₃
+  -- Then `x₂ - x₂' - d b` dies in `S.X₃`, so it is the image of some `a`.
+  have hdb : (S.X₃.d p i).hom ((S.g.f p).hom b) =
+      (S.X₃.iCycles i).hom z₃ - (S.X₃.iCycles i).hom z₃' := by
+    have := congrArg (S.X₃.iCycles i).hom hb₃
+    rwa [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i, map_sub] at this
+  have hker : (S.g.f i).hom (x₂ - x₂' - (S.X₂.d p i).hom b) = 0 := by
+    rw [map_sub, map_sub, hx₂, hx₂', ← HomologicalComplex.Hom.comm_apply, hdb, sub_self]
+  obtain ⟨a, ha⟩ : ∃ a : S.X₁.X i, (S.f.f i).hom a = x₂ - x₂' - (S.X₂.d p i).hom b :=
+    (ShortComplex.moduleCat_exact_iff _).1 hSi.exact _ hker
+  refine ⟨b, a, ?_, ?_⟩
+  · -- The image of `d a` is `d (x₂ - x₂' - d b) = 0`, and `S.f` is injective.
+    apply (ModuleCat.mono_iff_injective (S.f.f j)).1 inferInstance
+    rw [← HomologicalComplex.Hom.comm_apply, ha, map_sub, map_sub, hd, sub_self,
+      HomologicalComplex.d_comp_d_apply, sub_zero, map_zero]
+  · rw [ha]
+    abel
 
 end CategoryTheory.ShortComplex.ShortExact
