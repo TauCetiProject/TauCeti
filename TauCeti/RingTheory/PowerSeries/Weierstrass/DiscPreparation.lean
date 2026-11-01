@@ -80,7 +80,7 @@ theorem IsDiscPreparation.constantCoeff_eq_one (h : IsDiscPreparation r d f P U)
     h.coeff_zero_eq_one, h.constantCoeff_unit_eq_one, one_mul]
 
 /-- The normalised restricted unit has Gauss norm one. -/
-theorem IsDiscPreparation.gaussNorm_unit (h : IsDiscPreparation r d f P U)
+theorem IsDiscPreparation.gaussNorm_unit_eq_one (h : IsDiscPreparation r d f P U)
     (hr : 0 < r) : (U : K⟦X⟧).gaussNorm norm r = 1 := by
   have hU := isDistinguished_zero_of_isUnit hr h.isUnit
   rw [← hU.norm_coeff_mul_pow_eq, pow_zero, mul_one,
@@ -92,7 +92,7 @@ theorem IsDiscPreparation.gaussNorm_sub_one_lt (h : IsDiscPreparation r d f P U)
     (hr : 0 < r) : ((U : K⟦X⟧) - 1).gaussNorm norm r < 1 := by
   have hU := isDistinguished_zero_of_isUnit hr h.isUnit
   simpa [trunc_one_left, coeff_zero_eq_constantCoeff_apply, h.constantCoeff_unit_eq_one,
-    h.gaussNorm_unit hr] using hU.gaussNorm_sub_trunc_lt hr U.2
+    h.gaussNorm_unit_eq_one hr] using hU.gaussNorm_sub_trunc_lt hr U.2
 
 /-- The error in replacing a series by its constant-one disc polynomial is strictly
 smaller than the Gauss norm of the series, not necessarily smaller than one. -/
@@ -105,7 +105,7 @@ theorem IsDiscPreparation.gaussNorm_sub_polynomial_lt (h : IsDiscPreparation r d
   have herr : f - (P : K⟦X⟧) = (P : K⟦X⟧) * ((U : K⟦X⟧) - 1) := by
     rw [h.eq_mul, mul_sub, mul_one]
   rw [herr, gaussNorm_mul_of_isRestricted hr hP (U.2.sub (isRestricted_one r)),
-    h.eq_mul, gaussNorm_mul_of_isRestricted hr hP U.2, h.gaussNorm_unit hr, mul_one]
+    h.eq_mul, gaussNorm_mul_of_isRestricted hr hP U.2, h.gaussNorm_unit_eq_one hr, mul_one]
   exact (mul_lt_mul_of_pos_left (h.gaussNorm_sub_one_lt hr) hpos).trans_eq (mul_one _)
 
 /-- The constant-one preparation rescales every unit-times-monic preparation at the
