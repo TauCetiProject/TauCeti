@@ -79,7 +79,7 @@ theorem IsSAGBIBasis.exists_aeval_eq_support_le
 /-- If an element of a SAGBI subalgebra is zero or has leading exponent below `a`, it has an
 expression all of whose substituted monomials have leading exponent strictly below `a`.
 The zero case is certified by the empty support, including when `a = 0`. -/
-theorem IsSAGBIBasis.exists_aeval_eq_of_degree_lt
+theorem IsSAGBIBasis.exists_aeval_eq_support_lt
     (h : m.IsSAGBIBasis (Set.range b) A) (hb : ∀ i, b i ≠ 0) (hf : f ∈ A)
     {a : σ →₀ ℕ} (hfa : f = 0 ∨ m.degree f ≺[m] a) :
     ∃ Q : MvPolynomial ι k, aeval b Q = f ∧
@@ -92,7 +92,7 @@ theorem IsSAGBIBasis.exists_aeval_eq_of_degree_lt
 /-- **Necessary bounded SAGBI certificates.** Every coefficient-one binomial relation among
 leading monomials of a monic SAGBI family admits a polynomial zero-subduction expression
 strictly below its common exponent. Exact-zero substitutions admit the zero expression. -/
-theorem IsSAGBIBasis.exists_bounded_binomial_subduction
+theorem IsSAGBIBasis.exists_aeval_eq_aeval_monomial_sub_monomial_support_lt
     (h : m.IsSAGBIBasis (Set.range b) A) (hb : ∀ i, m.Monic (b i))
     (u v : ι →₀ ℕ) (huv : Finsupp.linearCombination ℕ (m.degree ∘ b) u =
       Finsupp.linearCombination ℕ (m.degree ∘ b) v) :
@@ -104,7 +104,7 @@ theorem IsSAGBIBasis.exists_bounded_binomial_subduction
     apply (Algebra.adjoin_le h.subset)
     rw [← aeval_range]
     exact AlgHom.mem_range_self _ _
-  exact h.exists_aeval_eq_of_degree_lt (fun i ↦ (hb i).ne_zero) hf
+  exact h.exists_aeval_eq_support_lt (fun i ↦ (hb i).ne_zero) hf
     (m.aeval_monomial_sub_monomial_eq_zero_or_degree_lt hb u v huv)
 
 end MonomialOrder
