@@ -115,11 +115,8 @@ theorem isSemialgebraicOn_of_polynomial_relation_of_not_nullified {σ : Type*} [
   convert hG.preimage_eval
     (Fin.cons (MvPolynomial.X (Sum.inr ())) (fun j ↦ MvPolynomial.X (Sum.inl j))) using 1
   ext z
-  simp only [Equiv.sumArrowEquivProdArrow, Function.comp_def, Equiv.coe_fn_mk, mem_preimage,
-    mem_graphOn, funext_iff, Fin.tail_def, Function.comp_apply, preimage_ofPred_eq,
-    Fin.cons_succ, eval_X, Fin.cons_zero, mem_ofPred_eq, and_congr_right_iff, S]
-  intro _
-  exact ⟨fun h ↦ h (), fun h u ↦ by cases u; exact h⟩
+  rw [mem_preimage_sumArrowEquivProdArrow_scalar_graphOn]
+  simp [Fin.tail_def, S, Function.comp_def]
 
 /-- A continuous function satisfying a single nonzero polynomial relation on an open
 semialgebraic domain has semialgebraic graph, including over nullified fibres. -/
@@ -134,10 +131,8 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
   let t := s ∩ {x | eval x (P.coeff j) ≠ 0}
   have ht : IsSemialgebraic t := hs.inter (isSemialgebraic_eval_ne_zero (P.coeff j))
   have hts : t ⊆ s := inter_subset_left
-  have hst : s ⊆ closure t := by
-    have h := hso.closure_inter (s := {x | eval x (P.coeff j) ≠ 0})
-    simpa only [(P.coeff j).dense_setOf_eval_ne_zero hj |>.closure_eq, univ_inter,
-      inter_comm, inter_univ] using h
+  have hst : s ⊆ closure t :=
+    (P.coeff j).dense_setOf_eval_ne_zero hj |>.open_subset_closure_inter hso
   have hG := isSemialgebraicOn_of_polynomial_relation_of_not_nullified ht (hf.mono hts) P
     (fun x hx hzero ↦ hx.2 (by
       simpa only [Polynomial.coeff_map, Polynomial.coeff_zero] using
@@ -145,16 +140,21 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
     (fun x hx ↦ hrel x hx.1)
   let e := Homeomorph.sumArrowHomeomorphProdArrow (X := ℝ) (ι := σ) (ι' := Unit)
   have he : ⇑e = ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) := by
-    -- This homeomorphism equips precisely the graph-encoding equivalence with its topology.
-    rfl
+    funext z
+    apply Prod.ext <;> funext i <;> simp [e]
+  have hfst (z : σ ⊕ Unit → ℝ) : (e z).1 = z ∘ Sum.inl := by
+    ext i
+    simp [e]
   have hcl := (continuousOn_pi.mpr (fun _ : Unit ↦ hf)).closure_graphOn_inter hts hst
   refine isSemialgebraicOn_def.mpr ⟨hs, ?_⟩
   have hsemi := hG.graph.closure.inter (hs.preimage_comp Sum.inl)
   rw [← he, ← e.preimage_closure] at hsemi
   convert hsemi using 1
   ext z
-  have hz := Set.ext_iff.mp hcl (e z)
-  simpa [he, Equiv.sumArrowEquivProdArrow, Function.comp_def] using hz.symm
+  have hz := Set.ext_iff.mp (congrArg (fun S ↦ e ⁻¹' S) hcl) z
+  rw [he, mem_preimage_sumArrowEquivProdArrow_scalar_graphOn] at hz
+  rw [mem_preimage_sumArrowEquivProdArrow_scalar_graphOn]
+  simpa only [← he, mem_preimage, mem_inter_iff, mem_prod, mem_univ, and_true, hfst] using hz.symm
 
 /-- **The local Nash graph criterion.** A scalar function is a Nash germ at `x` exactly when
 it is analytic there and its graph is semialgebraic on some open semialgebraic neighbourhood. -/
