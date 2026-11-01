@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.Current.ResidueCocycle
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
 -- Non-public: used only inside proofs.
-import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
@@ -45,13 +44,14 @@ continuously. When `Ψ` spans the invariant forms, every continuous 2-cocycle is
 zero, the continuous second cohomology of its formal loop algebra is one-dimensional, spanned by
 the residue class of the Killing form.
 
-The classification extends to an arbitrary vector space `Z` of coefficients with trivial action, of
-any dimension: `z ↦ [c_Ψ ⊗ z]`, the class of `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Ψ(x, y) • z`, is a linear
-equivalence from `Z` onto the continuous second cohomology with coefficients in `Z`. Injectivity
-follows from the scalar case, since linear functionals separate the points of `Z`. For surjectivity,
-each functional `φ` turns a continuous cocycle `c` into a scalar one, which is `t_φ • c_Ψ` up to a
-coboundary. The scalars `t_φ` are the values `φ z` at a single vector `z`, read off from the values
-of `c` at `(x_{-1}, y_1)` and `(x_0, y_0)`. Since formal currents are perfect, the difference
+When `Ψ` is nonzero and spans the invariant forms, the classification extends to an arbitrary
+vector space `Z` of coefficients with trivial action, of any dimension: `z ↦ [c_Ψ ⊗ z]`, the class
+of `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Ψ(x, y) • z`, is a linear equivalence from `Z` onto the continuous
+second cohomology with coefficients in `Z`. Injectivity follows from the scalar case, since linear
+functionals separate the points of `Z`. For surjectivity, each functional `φ` turns a continuous
+cocycle `c` into a scalar one, which is `t_φ • c_Ψ` up to a coboundary. The scalars `t_φ` are the
+values `φ z` at a single vector `z`, read off from the values of `c` at `(x_{-1}, y_1)` and
+`(x_0, y_0)`. Since formal currents are perfect, the difference
 `c - c_Ψ ⊗ z` is then the coboundary of a one-cochain with values in `Z`, which vanishes on the
 currents of order at least `2 N` when `c` vanishes on pairs of currents of order at least `N`. No
 finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
@@ -76,18 +76,16 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
 * `TauCeti.CurrentAlgebra.exists_eq_smul_twoCochainOfBilinear_add_d₁₂`: when `Ψ` spans the
   invariant forms, every continuous 2-cocycle is a multiple of the residue cocycle of `Ψ` plus a
   continuous coboundary.
-* `TauCeti.CurrentAlgebra.exists_eq_residueClass`: every continuous class is a residue class.
-* `TauCeti.CurrentAlgebra.exists_eq_smul_residueClass`: the residue class of a spanning form spans
-  continuous second cohomology.
 * `TauCeti.CurrentAlgebra.residueClassMap`: the residue class `z ↦ [c_Φ ⊗ z]` with coefficients
   in a module `Z` with trivial action.
 * `TauCeti.CurrentAlgebra.residueClassMap_injective`: it is injective for a nonzero form over a
   characteristic-zero domain and projective `Z`.
-* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: every continuous
-  2-cocycle with values in a vector space `Z` is a residue cocycle `c_Ψ ⊗ z` plus a continuous
-  coboundary.
-* `TauCeti.CurrentAlgebra.residueClassEquiv`: the linear equivalence `z ↦ [c_Ψ ⊗ z]` from any
-  vector space `Z` onto continuous second cohomology with coefficients in `Z`.
+* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`: for a nonzero form
+  `Ψ` spanning the invariant forms, every continuous 2-cocycle with values in a vector space `Z` is
+  a residue cocycle `c_Ψ ⊗ z` plus a continuous coboundary.
+* `TauCeti.CurrentAlgebra.residueClassEquiv`: for a nonzero form `Ψ` spanning the invariant forms,
+  the linear equivalence `z ↦ [c_Ψ ⊗ z]` from any vector space `Z` onto continuous second
+  cohomology with coefficients in `Z`.
 * `TauCeti.CurrentAlgebra.finrank_continuousSecondCohomology_eq_one`: for a simple Lie algebra
   over an algebraically closed field of characteristic zero, continuous second cohomology of
   formal currents is one-dimensional.
@@ -199,7 +197,7 @@ theorem residueClass_smul (r : R) {Φ : LinearMap.BilinForm R L} (hΦ : Φ.lieIn
   simp only [residueClass_eq_mk, ← map_smul]
   congr 1
   refine Subtype.ext ?_
-  simpa using congrArg Subtype.val (twoCocycleOfBilinear_smul R L r Φ hΦ hΦs hrΦ hrΦs)
+  simpa using twoCochainOfBilinear_smul R L r Φ hΦs hrΦs
 
 /-- **The residue class of a nonzero form is torsion-free.** Over a characteristic-zero domain, a
 multiple `t • [c_Φ]` of the residue class of a nonzero invariant symmetric form vanishes in
@@ -419,11 +417,11 @@ theorem exists_eq_twoCochainOfBilinear_add_d₁₂ {c : twoCochain K (currentAlg
 
 /-- **Every continuous 2-cocycle on formal currents is a multiple of a spanning residue cocycle up
 to a continuous coboundary.** Under the hypotheses of `exists_eq_twoCochainOfBilinear_add_d₁₂`,
-let `Ψ` be an invariant symmetric form on `L` spanning the invariant forms. Every continuous
-2-cocycle with trivial coefficients on formal currents is `t • c_Ψ + d₁₂ f` for a scalar `t` and a
-continuous one-cochain `f`. -/
+let `Ψ` be a symmetric form on `L` spanning the invariant forms. Every continuous 2-cocycle with
+trivial coefficients on formal currents is `t • c_Ψ + d₁₂ f` for a scalar `t` and a continuous
+one-cochain `f`. -/
 theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
-    (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
+    (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
     {c : twoCochain K (currentAlgebra K L) (TrivialLieModule K (currentAlgebra K L) K)}
     (hc : c ∈ continuousTwoCocycle K (currentAlgebra K L)
@@ -433,52 +431,19 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
       c = t • twoCochainOfBilinear K L Ψ hΨs + d₁₂ K _ _ f := by
   obtain ⟨Φ, hΦ, hΦs, f, hf, rfl⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ hc
   obtain ⟨t, rfl⟩ := hspan Φ hΦ
-  refine ⟨t, f, hf, ?_⟩
-  rw [← twoCocycleOfBilinear_coe K L (t • Ψ) hΦ hΦs, twoCocycleOfBilinear_smul K L t Ψ hΨ hΨs,
-    Submodule.coe_smul, twoCocycleOfBilinear_coe]
-
-/-- **Every continuous class is a residue class.** Under the hypotheses of
-`exists_eq_twoCochainOfBilinear_add_d₁₂`, every class in the continuous second cohomology of formal
-currents with trivial coefficients is the residue class of an invariant symmetric form on `L`. -/
-theorem exists_eq_residueClass
-    (a : continuousSecondCohomology K (currentAlgebra K L)
-      (TrivialLieModule K (currentAlgebra K L) K)) :
-    ∃ (Ψ : LinearMap.BilinForm K L) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm),
-      a = residueClass K L Ψ hΨ hΨs := by
-  obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨Ψ, hΨ, hΨs, f, hf, hc⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ c.2
-  refine ⟨Ψ, hΨ, hΨs, ?_⟩
-  rw [residueClass_eq_mk, eq_comm, continuousSecondCohomologyMk_eq_iff]
-  exact ⟨-f, neg_mem hf, by
-    simp only [map_neg, AddSubgroupClass.coe_sub, hc]
-    abel⟩
-
-/-- **The continuous second cohomology of formal currents is spanned by the residue class.**
-Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, every class in the
-continuous second cohomology of formal currents with trivial coefficients is a multiple of the
-residue class of `Ψ`. -/
-theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
-    (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (a : continuousSecondCohomology K (currentAlgebra K L)
-      (TrivialLieModule K (currentAlgebra K L) K)) :
-    ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
-  obtain ⟨Φ, hΦ, hΦs, rfl⟩ := exists_eq_residueClass a
-  obtain ⟨t, rfl⟩ := hspan Φ hΦ
-  exact ⟨t, residueClass_smul t hΨ hΨs hΦ hΦs⟩
+  exact ⟨t, f, hf, by rw [twoCochainOfBilinear_smul K L t Ψ hΨs hΦs]⟩
 
 variable {Z : Type*} [AddCommGroup Z] [Module K Z]
 
 /-- **Every continuous 2-cocycle with discrete coefficients is a residue cocycle up to a continuous
 coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, assume
-moreover that `Ψ` is nonzero on some bracket, and let `Z` be any vector space with trivial action,
-of arbitrary dimension. Every continuous 2-cocycle on formal
-currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f` for a vector `z` and a continuous one-cochain `f`.
--/
+moreover that `Ψ` is nonzero, and let `Z` be any vector space with trivial action, of arbitrary
+dimension. Every continuous 2-cocycle on formal currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f`
+for a vector `z` and a continuous one-cochain `f`. -/
 theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
-    (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
+    (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0) {c : twoCochain K (currentAlgebra K L)
+    (hΨ0 : Ψ ≠ 0) {c : twoCochain K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z)}
     (hc : c ∈ continuousTwoCocycle K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z)) :
@@ -489,7 +454,7 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   -- Each functional `φ` on the coefficients turns `c` into a scalar continuous cocycle, which by
   -- the scalar classification is `t φ • c_Ψ + d₁₂ (f φ)` with `f φ` continuous.
   choose t f _ hcf using fun φ : Module.Dual K (TrivialLieModule K (currentAlgebra K L) Z) ↦
-    exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨ hΨs hspan
+    exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨs hspan
       (twoCochainMap_id_mem_continuousTwoCocycle (eK.symm.toLinearMap ∘ₗ φ) hc)
   have hcf_apply (φ) (a b : currentAlgebra K L) :
       φ (c a b) = t φ * residuePairing K L Ψ a b - eK (f φ ⁅a, b⁆) := by
@@ -498,8 +463,8 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   -- `(x_{-1}, y_1)` and `(x_0, y_0)`: these pairs have the same bracket, so coboundaries take the
   -- same value on both, while the residue cochain differs by `Ψ(x, y) ≠ 0`.
   obtain ⟨x, y, hxy⟩ : ∃ x y : L, Ψ x y ≠ 0 := by
-    obtain ⟨x₁, x₂, y, h⟩ := hne
-    exact ⟨_, y, h⟩
+    by_contra! h
+    exact hΨ0 (LinearMap.ext₂ h)
   set a₁ : currentAlgebra K L := HahnSeries.single (-1) 1 ⊗ₜ x
   set b₁ : currentAlgebra K L := HahnSeries.single 1 1 ⊗ₜ y
   set a₀ : currentAlgebra K L := HahnSeries.single 0 1 ⊗ₜ x
@@ -544,11 +509,11 @@ with coefficients in any vector space `Z` with trivial action is surjective. -/
 theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0) :
+    (hΨ0 : Ψ ≠ 0) :
     Function.Surjective (residueClassMap K L Ψ hΨ hΨs (Z := Z)) := by
   intro a
   obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨ hΨs hspan hne c.2
+  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan hΨ0 c.2
   refine ⟨z, ?_⟩
   rw [residueClassMap_apply, continuousSecondCohomologyMk_eq_iff]
   exact ⟨-f, neg_mem hf, by
@@ -564,22 +529,18 @@ equivalence from `Z` onto the continuous second cohomology of formal currents wi
 noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0) :
+    (hΨ0 : Ψ ≠ 0) :
     Z ≃ₗ[K] continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z) :=
-  have hΨ0 : Ψ ≠ 0 := by
-    rintro rfl
-    obtain ⟨x, y, z, h⟩ := hne
-    exact h rfl
   LinearEquiv.ofBijective (residueClassMap K L Ψ hΨ hΨs)
-    ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan hne⟩
+    ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan hΨ0⟩
 
 @[simp]
 theorem residueClassEquiv_apply {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0) (z : Z) :
-    residueClassEquiv Z hΨ hΨs hspan hne z = residueClassMap K L Ψ hΨ hΨs z :=
+    (hΨ0 : Ψ ≠ 0) (z : Z) :
+    residueClassEquiv Z hΨ hΨs hspan hΨ0 z = residueClassMap K L Ψ hΨ hΨs z :=
   (rfl)
 
 variable (K L) in
@@ -595,7 +556,8 @@ theorem finrank_continuousSecondCohomology_eq_one [IsAlgClosed K]
   (residueClassEquiv K (_root_.LieModule.traceForm_lieInvariant K L L)
     (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))
     (fun _ hΦ ↦ TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ)
-    exists_killingForm_lie_ne_zero).finrank_eq.symm.trans (Module.finrank_self K)
+    (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L).ne_zero).finrank_eq.symm.trans
+    (Module.finrank_self K)
 
 end Classification
 

@@ -43,6 +43,8 @@ forms.
   forms have distinct residue classes.
 * `TauCeti.CurrentAlgebra.invariantFormsResidueClass_surjective`: every continuous class is the
   residue class of an invariant symmetric form.
+* `TauCeti.CurrentAlgebra.exists_eq_smul_residueClass`: the residue class of a spanning form spans
+  continuous second cohomology.
 
 ## References
 
@@ -100,8 +102,28 @@ algebra. Then every class in the continuous second cohomology of formal currents
 coefficients is the residue class of an invariant symmetric form. -/
 theorem invariantFormsResidueClass_surjective :
     Function.Surjective (invariantFormsResidueClass K L) := fun a ↦ by
-  obtain ⟨Ψ, hΨ, hΨs, rfl⟩ := exists_eq_residueClass a
-  exact ⟨⟨Ψ, mem_invariantForms_iff.mpr ⟨hΨ, hΨs⟩⟩, invariantFormsResidueClass_apply _⟩
+  obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
+  obtain ⟨Ψ, hΨ, hΨs, f, hf, hc⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ c.2
+  refine ⟨⟨Ψ, mem_invariantForms_iff.mpr ⟨hΨ, hΨs⟩⟩, ?_⟩
+  rw [invariantFormsResidueClass_apply, residueClass_eq_mk, continuousSecondCohomologyMk_eq_iff]
+  exact ⟨-f, neg_mem hf, by
+    simp only [map_neg, AddSubgroupClass.coe_sub, hc]
+    abel⟩
+
+/-- **The continuous second cohomology of formal currents is spanned by the residue class.**
+Under the hypotheses of `invariantFormsResidueClass_surjective`, let `Ψ` be an invariant symmetric
+form on `L` spanning the invariant forms. Then every class in the continuous second cohomology of
+formal currents with trivial coefficients is a multiple of the residue class of `Ψ`. -/
+theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
+    (hΨs : Ψ.IsSymm)
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
+    (a : continuousSecondCohomology K (currentAlgebra K L)
+      (TrivialLieModule K (currentAlgebra K L) K)) :
+    ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
+  obtain ⟨⟨Φ, hΦ⟩, rfl⟩ := invariantFormsResidueClass_surjective a
+  obtain ⟨hΦi, hΦs⟩ := mem_invariantForms_iff.mp hΦ
+  obtain ⟨t, rfl⟩ := hspan Φ hΦi
+  exact ⟨t, residueClass_smul t hΨ hΨs _ _⟩
 
 variable (K L)
 
