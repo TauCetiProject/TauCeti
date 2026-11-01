@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyConstant.Basic
-public import Mathlib.Topology.Sets.Opens
+public import Mathlib.Topology.Sets.Closeds
 
 /-!
-# Fibers of a locally constant function as open sets
+# Fibers of a locally constant function as clopen sets
 
-The fibers `f⁻¹{a}` of a locally constant function `f : X → α` are open
-(`IsLocallyConstant.isOpen_fiber`). This file packages them as elements of `Opens X`
-(`LocallyConstant.fiberOpens`), so that they can index restrictions of sheaves, and records that
-they cover `X`.
+The fibers `f⁻¹{a}` of a locally constant function `f : X → α` are clopen
+(`IsLocallyConstant.isClopen_fiber`). This file packages them as elements of `Clopens X`
+(`LocallyConstant.fiberClopens`). Their underlying open sets `(f.fiberClopens a).toOpens` can
+index restrictions of sheaves, and they cover `X`.
 -/
 
 public section
@@ -25,22 +25,23 @@ namespace LocallyConstant
 
 variable {X α : Type*} [TopologicalSpace X]
 
-/-- The fiber `f⁻¹{a}` of a locally constant function `f`, as an open subset of `X`. -/
-def fiberOpens (f : LocallyConstant X α) (a : α) : Opens X :=
-  ⟨f ⁻¹' {a}, f.isLocallyConstant.isOpen_fiber a⟩
+/-- The fiber `f⁻¹{a}` of a locally constant function `f`, as a clopen subset of `X`. -/
+def fiberClopens (f : LocallyConstant X α) (a : α) : Clopens X :=
+  ⟨f ⁻¹' {a}, f.isLocallyConstant.isClopen_fiber a⟩
 
 @[simp]
-theorem mem_fiberOpens {f : LocallyConstant X α} {a : α} {x : X} :
-    x ∈ f.fiberOpens a ↔ f x = a :=
+theorem mem_fiberClopens {f : LocallyConstant X α} {a : α} {x : X} :
+    x ∈ f.fiberClopens a ↔ f x = a :=
   (Iff.rfl)
 
 @[simp]
-theorem coe_fiberOpens (f : LocallyConstant X α) (a : α) :
-    (f.fiberOpens a : Set X) = f ⁻¹' {a} :=
+theorem coe_fiberClopens (f : LocallyConstant X α) (a : α) :
+    (f.fiberClopens a : Set X) = f ⁻¹' {a} :=
   (rfl)
 
-/-- The fibers of a locally constant function cover its domain. -/
-theorem iSup_fiberOpens (f : LocallyConstant X α) : ⨆ a, f.fiberOpens a = ⊤ :=
-  top_unique fun x _ ↦ Opens.mem_iSup.2 ⟨f x, mem_fiberOpens.2 rfl⟩
+/-- The fibers of a locally constant function, as open sets, cover its domain. -/
+theorem iSup_toOpens_fiberClopens (f : LocallyConstant X α) :
+    ⨆ a, (f.fiberClopens a).toOpens = ⊤ :=
+  top_unique fun x _ ↦ Opens.mem_iSup.2 ⟨f x, mem_fiberClopens.2 rfl⟩
 
 end LocallyConstant

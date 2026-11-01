@@ -56,8 +56,9 @@ variable {X : Scheme.{u}}
 to the fiber `r⁻¹{n}` and pushed forward to `X`. -/
 abbrev locallyConstantExteriorPowerFactor (r : LocallyConstant X ℕ) (n : ℕ) :
     X.Modules ⥤ X.Modules :=
-  SheafOfModules.exteriorPower X.sheaf n ⋙ restrictFunctor (Scheme.Opens.ι (r.fiberOpens n)) ⋙
-    pushforward (Scheme.Opens.ι (r.fiberOpens n))
+  SheafOfModules.exteriorPower X.sheaf n ⋙
+    restrictFunctor (Scheme.Opens.ι (r.fiberClopens n).toOpens) ⋙
+    pushforward (Scheme.Opens.ι (r.fiberClopens n).toOpens)
 
 /-- The exterior power `⋀^r M` of an `𝒪_X`-module `M` in a locally constant degree
 `r : X → ℕ`: the `𝒪_X`-module whose restriction to each open set `r⁻¹{n}` is the `n`-th exterior
@@ -111,28 +112,29 @@ theorem isIso_locallyConstantExteriorPowerπ_app_app (r : LocallyConstant X ℕ)
     bijective_app_π_of_subsingleton _ n V fun m hm ↦ ?_
   -- The sections over `V` of the `m`-th factor are those of a module on `r⁻¹{m}` over the
   -- preimage of `V`, which is empty; they form a module over the zero ring `Γ(r⁻¹{m}, ∅)`.
-  have h : (Scheme.Opens.ι (r.fiberOpens m)) ⁻¹ᵁ V = ⊥ :=
-    eq_bot_iff.2 fun x hx ↦ hm ((LocallyConstant.mem_fiberOpens.1 x.2).symm.trans (hV x.1 hx))
+  have h : (Scheme.Opens.ι (r.fiberClopens m).toOpens) ⁻¹ᵁ V = ⊥ :=
+    eq_bot_iff.2 fun x hx ↦ hm ((LocallyConstant.mem_fiberClopens.1 x.2).symm.trans (hV x.1 hx))
   -- The `m`-th factor is by definition the composite `⋀ᵐ ⋙ restrict ⋙ pushforward`. Neither
   -- `rw` nor `simp` can apply `Functor.comp_obj` to it: `SheafOfModules.exteriorPower X.sheaf m`
   -- only type-checks after unfolding the type of `X.sheaf`, beyond instance transparency. So the
   -- composite is unfolded by `change`.
-  change Subsingleton Γ((pushforward (Scheme.Opens.ι (r.fiberOpens m))).obj _, V)
+  change Subsingleton Γ((pushforward (Scheme.Opens.ι (r.fiberClopens m).toOpens)).obj _, V)
   rw [pushforward_obj_obj]
-  exact h ▸ Module.subsingleton Γ((Scheme.Opens.toScheme (r.fiberOpens m)), ⊥) _
+  exact h ▸ Module.subsingleton Γ((Scheme.Opens.toScheme (r.fiberClopens m).toOpens), ⊥) _
 
 /-- The unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}})` of the restriction--pushforward adjunction,
 as a natural transformation into the `n`-th factor of `⋀^r`. -/
 private def factorι (r : LocallyConstant X ℕ) (n : ℕ) :
     SheafOfModules.exteriorPower X.sheaf n ⟶ locallyConstantExteriorPowerFactor r n where
-  app _ := (restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app _
-  naturality _ _ _ := (restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.naturality _
+  app _ := (restrictAdjunction (Scheme.Opens.ι (r.fiberClopens n).toOpens)).unit.app _
+  naturality _ _ _ :=
+    (restrictAdjunction (Scheme.Opens.ι (r.fiberClopens n).toOpens)).unit.naturality _
 
 private theorem isIso_factorι_app_app (r : LocallyConstant X ℕ) (M : X.Modules) {n : ℕ}
     {V : X.Opens} (hV : ∀ x ∈ V, r x = n) :
     IsIso (Scheme.Modules.Hom.app ((factorι r n).app M) V) :=
-  isIso_restrictAdjunction_unit_app_app (r.fiberOpens n) _ fun x hx ↦
-    LocallyConstant.mem_fiberOpens.2 (hV x hx)
+  isIso_restrictAdjunction_unit_app_app (r.fiberClopens n).toOpens _ fun x hx ↦
+    LocallyConstant.mem_fiberClopens.2 (hV x hx)
 
 /-- Over an open `U` on which `r` is constantly `n`, the restricted unit
 `(⋀ⁿ M)|_U ⟶ ((r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}}))|_U` is an isomorphism, naturally in `M`. -/
@@ -150,8 +152,9 @@ private def restrictFactorιIso (r : LocallyConstant X ℕ) {n : ℕ} (U : X.Ope
 private lemma restrictFactorιIso_hom_app (r : LocallyConstant X ℕ) {n : ℕ} (U : X.Opens)
     (hU : ∀ x ∈ U, r x = n) (M : X.Modules) :
     (restrictFactorιIso r U hU).hom.app M =
-      (restrictFunctor U.ι).map ((restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
-        ((SheafOfModules.exteriorPower X.sheaf n).obj M)) :=
+      (restrictFunctor U.ι).map
+        ((restrictAdjunction (Scheme.Opens.ι (r.fiberClopens n).toOpens)).unit.app
+          ((SheafOfModules.exteriorPower X.sheaf n).obj M)) :=
   -- By construction, the forward map is the whiskered unit `factorι r n`.
   (rfl)
 
@@ -186,8 +189,9 @@ factor, read through the restricted unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ 
 lemma restrictLocallyConstantExteriorPowerIso_hom_app_comp (r : LocallyConstant X ℕ) {n : ℕ}
     (U : X.Opens) (hU : ∀ x ∈ U, r x = n) (M : X.Modules) :
     (restrictLocallyConstantExteriorPowerIso r U hU).hom.app M ≫
-        (restrictFunctor U.ι).map ((restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
-          ((SheafOfModules.exteriorPower X.sheaf n).obj M)) =
+        (restrictFunctor U.ι).map
+          ((restrictAdjunction (Scheme.Opens.ι (r.fiberClopens n).toOpens)).unit.app
+            ((SheafOfModules.exteriorPower X.sheaf n).obj M)) =
       (restrictFunctor U.ι).map ((locallyConstantExteriorPowerπ r n).app M) := by
   -- The isomorphism is the restricted projection followed by the inverse of the restricted
   -- unit `restrictFactorιIso`, whose forward map is the second factor on the left.
@@ -210,7 +214,7 @@ private def factorιIso (r : LocallyConstant X ℕ) {n : ℕ} (hr : ∀ x, r x =
 private lemma factorιIso_hom_app (r : LocallyConstant X ℕ) {n : ℕ} (hr : ∀ x, r x = n)
     (M : X.Modules) :
     (factorιIso r hr).hom.app M =
-      (restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
+      (restrictAdjunction (Scheme.Opens.ι (r.fiberClopens n).toOpens)).unit.app
         ((SheafOfModules.exteriorPower X.sheaf n).obj M) :=
   -- By construction, the forward map is `factorι r n`.
   (rfl)
@@ -239,7 +243,7 @@ unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}})`. -/
 lemma locallyConstantExteriorPowerIso_hom_app_comp (r : LocallyConstant X ℕ) {n : ℕ}
     (hr : ∀ x, r x = n) (M : X.Modules) :
     (locallyConstantExteriorPowerIso r hr).hom.app M ≫
-        (restrictAdjunction (Scheme.Opens.ι (r.fiberOpens n))).unit.app
+        (restrictAdjunction (Scheme.Opens.ι (r.fiberClopens n).toOpens)).unit.app
           ((SheafOfModules.exteriorPower X.sheaf n).obj M) =
       (locallyConstantExteriorPowerπ r n).app M := by
   -- The isomorphism is the projection followed by the inverse of the unit `factorιIso`, whose

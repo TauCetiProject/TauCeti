@@ -48,14 +48,14 @@ namespace FiniteLocallyFreeSheaf
 
 /-- The pullback of `⋀^r E` to the open set `r⁻¹{n}` is the pullback of `⋀ⁿ E`. -/
 private def pullbackFiberIso (r : LocallyConstant X ℕ) (n : ℕ) (M : X.Modules) :
-    (Scheme.Modules.pullback (Scheme.Opens.ι (r.fiberOpens n))).obj
+    (Scheme.Modules.pullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).obj
         ((locallyConstantExteriorPower r).obj M) ≅
-      (Scheme.Modules.pullback (Scheme.Opens.ι (r.fiberOpens n))).obj
+      (Scheme.Modules.pullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).obj
         ((SheafOfModules.exteriorPower X.sheaf n).obj M) :=
-  ((restrictFunctorIsoPullback (Scheme.Opens.ι (r.fiberOpens n))).app _).symm ≪≫
-    (restrictLocallyConstantExteriorPowerIso r (r.fiberOpens n)
-      fun _ hx ↦ LocallyConstant.mem_fiberOpens.1 hx).app M ≪≫
-    (restrictFunctorIsoPullback (Scheme.Opens.ι (r.fiberOpens n))).app _
+  ((restrictFunctorIsoPullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).app _).symm ≪≫
+    (restrictLocallyConstantExteriorPowerIso r (r.fiberClopens n).toOpens
+      fun _ hx ↦ LocallyConstant.mem_fiberClopens.1 hx).app M ≪≫
+    (restrictFunctorIsoPullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).app _
 
 /-- The exterior power `⋀^r E` of a finite locally free sheaf in a locally constant degree `r` is
 finite locally free: over each open set `r⁻¹{n}` it is the finite locally free sheaf `⋀ⁿ E`. -/
@@ -63,9 +63,11 @@ theorem isFiniteLocallyFree_locallyConstantExteriorPower (r : LocallyConstant X 
     (E : FiniteLocallyFreeSheaf X) :
     Scheme.Modules.isFiniteLocallyFree X ((locallyConstantExteriorPower r).obj E.obj) := by
   rw [isFiniteLocallyFree_iff_forall_pullback
-    (X.openCoverOfIsOpenCover r.fiberOpens (IsOpenCover.mk r.iSup_fiberOpens))]
+    (X.openCoverOfIsOpenCover (fun n ↦ (r.fiberClopens n).toOpens)
+      (IsOpenCover.mk r.iSup_toOpens_fiberClopens))]
   intro (n : ℕ)
-  have h := ((pullback (Scheme.Opens.ι (r.fiberOpens n))).obj ((exteriorPower X n).obj E)).property
+  have h := ((pullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).obj
+    ((exteriorPower X n).obj E)).property
   rw [pullback_obj_obj, exteriorPower_obj_obj] at h
   exact (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso (pullbackFiberIso r n E.obj).symm h
 
@@ -101,9 +103,10 @@ lemma locallyConstantExteriorPower_map_hom (r : LocallyConstant X ℕ)
 /-- The pullback of `⋀^r E` to the open set `r⁻¹{n}` is the pullback of `⋀ⁿ E`, as finite
 locally free sheaves. -/
 private def pullbackFiberIso' (r : LocallyConstant X ℕ) (n : ℕ) (E : FiniteLocallyFreeSheaf X) :
-    ((pullback (Scheme.Opens.ι (r.fiberOpens n))).obj
+    ((pullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).obj
         ((locallyConstantExteriorPower X r).obj E)).obj ≅
-      ((pullback (Scheme.Opens.ι (r.fiberOpens n))).obj ((exteriorPower X n).obj E)).obj :=
+      ((pullback (Scheme.Opens.ι (r.fiberClopens n).toOpens)).obj
+        ((exteriorPower X n).obj E)).obj :=
   eqToIso (by rw [pullback_obj_obj, locallyConstantExteriorPower_obj_obj]) ≪≫
     pullbackFiberIso r n E.obj ≪≫ eqToIso (by rw [pullback_obj_obj, exteriorPower_obj_obj])
 
@@ -113,12 +116,13 @@ theorem rank_locallyConstantExteriorPower_apply (r : LocallyConstant X ℕ)
     (E : FiniteLocallyFreeSheaf X) (x : X) :
     ((locallyConstantExteriorPower X r).obj E).rank x = (E.rank x).choose (r x) := by
   -- Compute the rank after pulling back to the open set `r⁻¹{r x}` containing `x`.
-  let y : Scheme.Opens.toScheme (r.fiberOpens (r x)) := ⟨x, LocallyConstant.mem_fiberOpens.2 rfl⟩
+  let y : Scheme.Opens.toScheme (r.fiberClopens (r x)).toOpens :=
+    ⟨x, LocallyConstant.mem_fiberClopens.2 rfl⟩
   calc ((locallyConstantExteriorPower X r).obj E).rank x
-      = ((pullback (Scheme.Opens.ι (r.fiberOpens (r x)))).obj
+      = ((pullback (Scheme.Opens.ι (r.fiberClopens (r x)).toOpens)).obj
           ((locallyConstantExteriorPower X r).obj E)).rank y :=
         by rw [rank_pullback_apply, Scheme.Opens.ι_apply]
-    _ = ((pullback (Scheme.Opens.ι (r.fiberOpens (r x)))).obj
+    _ = ((pullback (Scheme.Opens.ι (r.fiberClopens (r x)).toOpens)).obj
           ((exteriorPower X (r x)).obj E)).rank y := by
         rw [rank_eq_of_iso (pullbackFiberIso' r (r x) E)]
     _ = (E.rank x).choose (r x) :=
