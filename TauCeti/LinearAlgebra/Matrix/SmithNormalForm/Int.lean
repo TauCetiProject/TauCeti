@@ -15,7 +15,8 @@ import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
 -- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
--- `eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2` classification below.
+-- `TauCeti.fin_two_eq_of_normalize_eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2`
+-- classification below.
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
 import TauCeti.Algebra.GCDMonoid.Fin2Tuple
 import Mathlib.Data.Int.GCD
@@ -858,7 +859,7 @@ private theorem exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff_of_pos
     simpa [Fin.prod_univ_two] using prod_eq_det_of_mul_mul_eq_diagonal hA_snf
   have hprodB : dB 0 * dB 1 = B.det := by
     simpa [Fin.prod_univ_two] using prod_eq_det_of_mul_mul_eq_diagonal hB_snf
-  have hd : dA = dB := eq_of_dvd_of_dvd_of_mul_eq_mul
+  have hd : dA = dB := TauCeti.fin_two_eq_of_normalize_eq_of_dvd_of_dvd_of_mul_eq_mul
     (Int.normalize_of_nonneg (hdA_pos 0).le) (Int.normalize_of_nonneg (hdB_pos 0).le)
     (hdA_pos 0).ne'
     (dvd_diag_of_dvd_entries B (dA 0) dB LB RB hB_snf ((hdvd _).mp hdA_A) 0)
