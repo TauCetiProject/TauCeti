@@ -116,6 +116,18 @@ theorem FiniteHolomorphicMap.finite_support_localMultiplicity_sub_one
   intro x hx
   simpa only [mem_support, Nat.sub_ne_zero_iff_lt, mem_ofPred_eq] using hx
 
+/-- In any ring, the local ramification orders of a finite holomorphic map from a compact
+connected Riemann surface have finite support. -/
+theorem FiniteHolomorphicMap.finite_support_cast_localMultiplicity_sub_one
+    {R : Type*} [Ring R] (f : FiniteHolomorphicMap X Y) :
+    (support fun x ↦ (localMultiplicity f x : R) - 1).Finite := by
+  have hcast : (support fun x ↦ ((localMultiplicity f x - 1 : ℕ) : R)).Finite := by
+    refine f.finite_support_localMultiplicity_sub_one.subset ?_
+    intro x hx
+    simp only [mem_support] at hx ⊢
+    exact fun h ↦ hx (by rw [h, Nat.cast_zero])
+  simpa only [Nat.cast_sub (localMultiplicity_pos f _), Nat.cast_one] using hcast
+
 /-- In any ring, the ramification degree of a finite holomorphic map from a compact connected
 Riemann surface is the sum of the local multiplicities minus one, with subtraction in the ring. -/
 theorem cast_ramificationDegree {R : Type*} [Ring R] (f : FiniteHolomorphicMap X Y) :

@@ -62,10 +62,8 @@ theorem ramificationDegree_add_finsum_orbifoldDefect (h : Δ ≤ Γ) [Δ.IsFinit
       orbifoldDefect (compactifiedQuotientMap h x)
   have hR : HasFiniteSupport fun x : Δ.CompactifiedQuotient =>
       (localMultiplicity (compactifiedQuotientMap h) x : ℝ) - 1 := by
-    have hcast : (support fun x => ((localMultiplicity f x - 1 : ℕ) : ℝ)).Finite :=
-      f.finite_support_localMultiplicity_sub_one.subset fun x hx => Nat.cast_ne_zero.mp hx
-    simp only [Nat.cast_sub (localMultiplicity_pos f _), Nat.cast_one] at hcast
-    simpa only [HasFiniteSupport, f, coe_compactifiedQuotientFiniteHolomorphicMap] using hcast
+    simpa only [HasFiniteSupport, f, coe_compactifiedQuotientFiniteHolomorphicMap] using
+      f.finite_support_cast_localMultiplicity_sub_one (R := ℝ)
   have hpoint (x : Δ.CompactifiedQuotient) :
       (localMultiplicity (compactifiedQuotientMap h) x : ℝ) - 1 + orbifoldDefect x = w x := by
     have hid := localMultiplicity_mul_one_sub_orbifoldDefect h x

@@ -121,7 +121,7 @@ theorem localMultiplicity_mul_one_sub_orbifoldDefect (h : Δ ≤ Γ)
       have hcard' : (Nat.card (stabilizer Δ z) : ℝ) * ellipticRamificationIndex h z =
           Nat.card (stabilizer Γ z) := by exact_mod_cast hcard
       field_simp
-      nlinarith
+      linear_combination hcard'
 
 /-- Summing target defects upstairs with local-multiplicity weights multiplies their sum by
 the subgroup index. Only finiteness of the target's cusp and elliptic sets is needed. -/
