@@ -192,8 +192,9 @@ theorem lt_log_div_log_of_rpow_lt {q q' p t : ℝ} (hq : 2 ≤ q) (hqq' : q ≤ 
   rw [lt_div_iff₀ hlog]
   nlinarith
 
-/-- For `1 < q`, `0 < δ` and `0 ≤ r ≤ 1`, `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`:
-for `r < 1` by strict convexity of `t ↦ t ^ q`, and for `r = 1` because `2 - δ < 2`. -/
+/-- For `1 < q`, `0 < δ ≤ 1` and `0 ≤ r ≤ 1`,
+`min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`: for `r < 1` by strict convexity of
+`t ↦ t ^ q`, and for `r = 1` because `0 ≤ 2 - δ < 2`. -/
 theorem min_rpow_lt_two_rpow_sub_one_mul {q δ r : ℝ} (hq : 1 < q) (hδ : 0 < δ)
     (hδ1 : δ ≤ 1) (hr0 : 0 ≤ r) (hr1 : r ≤ 1) :
     min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q) := by
