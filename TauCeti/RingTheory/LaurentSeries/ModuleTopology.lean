@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.LaurentSeries.Lattice
 public import TauCeti.RingTheory.HahnSeries.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
-public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.UniformSpace.Pi
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
@@ -35,26 +34,29 @@ open scoped LaurentSeries
 
 namespace Module.Basis
 
-variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
-
 /-- Use the coefficientwise action in the tensor product, as in the Hahn-module comparison.
 The default Laurent algebra has a propositionally equal action. -/
-private local instance instCoefficientAlgebra : Algebra K K⸨X⸩ := HahnSeries.instAlgebra
+private local instance instCoefficientAlgebra {R : Type*} [CommSemiring R] : Algebra R R⸨X⸩ :=
+  HahnSeries.instAlgebra
+
+section Algebra
+
+variable {R V ι : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V] [Finite ι]
 
 /-- Scalar coordinate series in a finite basis of the coefficient space. -/
-def laurentSeriesEquiv (b : Basis ι K V) : HahnModule ℤ K V ≃ₗ[K⸨X⸩] (ι → K⸨X⸩) :=
-  (LinearEquiv.ofBijective (tensorProductToHahnModule ℤ K V)
-    (tensorProductToHahnModule_bijective_of_basis b)).symm ≪≫ₗ (b.baseChange K⸨X⸩).equivFun
+def laurentSeriesEquiv (b : Basis ι R V) : HahnModule ℤ R V ≃ₗ[R⸨X⸩] (ι → R⸨X⸩) :=
+  (LinearEquiv.ofBijective (tensorProductToHahnModule ℤ R V)
+    (tensorProductToHahnModule_bijective_of_basis b)).symm ≪≫ₗ (b.baseChange R⸨X⸩).equivFun
 
 /-- The coefficient of a scalar coordinate series is the corresponding coordinate of the
 vector coefficient. -/
 @[simp]
-theorem coeff_laurentSeriesEquiv (b : Basis ι K V) (x : HahnModule ℤ K V) (i : ι) (n : ℤ) :
-    (b.laurentSeriesEquiv x i).coeff n = b.repr (((of K).symm x).coeff n) i := by
+theorem coeff_laurentSeriesEquiv (b : Basis ι R V) (x : HahnModule ℤ R V) (i : ι) (n : ℤ) :
+    (b.laurentSeriesEquiv x i).coeff n = b.repr (((of R).symm x).coeff n) i := by
   obtain ⟨z, rfl⟩ := (tensorProductToHahnModule_bijective_of_basis b).surjective x
-  have hz : b.laurentSeriesEquiv (tensorProductToHahnModule ℤ K V z) =
-      (b.baseChange K⸨X⸩).equivFun z :=
-    congrArg (b.baseChange K⸨X⸩).equivFun (LinearEquiv.symm_apply_apply _ z)
+  have hz : b.laurentSeriesEquiv (tensorProductToHahnModule ℤ R V z) =
+      (b.baseChange R⸨X⸩).equivFun z :=
+    congrArg (b.baseChange R⸨X⸩).equivFun (LinearEquiv.symm_apply_apply _ z)
   rw [hz]
   clear hz
   induction z using TensorProduct.inductionOn with
@@ -63,9 +65,9 @@ theorem coeff_laurentSeriesEquiv (b : Basis ι K V) (x : HahnModule ℤ K V) (i 
 
 /-- In a finite coefficient basis, the lattice condition is a condition on every scalar
 coordinate series, with the same lower bound. -/
-theorem mem_lattice_iff_laurentSeriesEquiv (b : Basis ι K V) (x : HahnModule ℤ K V) (a : ℤ) :
-    x ∈ TauCeti.HahnModule.lattice K V a ↔
-      ∀ i, b.laurentSeriesEquiv x i ∈ TauCeti.LaurentSeries.lattice K K a := by
+theorem mem_lattice_iff_laurentSeriesEquiv (b : Basis ι R V) (x : HahnModule ℤ R V) (a : ℤ) :
+    x ∈ TauCeti.HahnModule.lattice R V a ↔
+      ∀ i, b.laurentSeriesEquiv x i ∈ TauCeti.LaurentSeries.lattice R R a := by
   simp only [TauCeti.HahnModule.mem_lattice_iff, TauCeti.LaurentSeries.mem_lattice_iff,
     coeff_laurentSeriesEquiv]
   constructor
@@ -73,6 +75,10 @@ theorem mem_lattice_iff_laurentSeriesEquiv (b : Basis ι K V) (x : HahnModule �
     simp [h n hn]
   · intro h n hn
     exact b.repr.injective (Finsupp.ext fun i ↦ by simpa using h i n hn)
+
+end Algebra
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
 
 /-- Every scalar coordinate projection is continuous for the lattice topology. -/
 theorem continuous_laurentSeriesEquiv_apply (b : Basis ι K V) (i : ι) :
@@ -116,20 +122,6 @@ theorem coeff_laurentSeriesContinuousLinearEquiv (b : Basis ι K V) (x : HahnMod
   b.coeff_laurentSeriesEquiv x i n
 
 end Module.Basis
-
-namespace TauCeti.HahnModule
-
-variable (R V : Type*) [Ring R] [AddCommGroup V] [Module R V]
-
-/-- The additive uniformity associated to the lattice topology. -/
-instance instUniformSpace : UniformSpace (HahnModule ℤ R V) :=
-  IsTopologicalAddGroup.rightUniformSpace _
-
-/-- The lattice uniformity makes module-valued Laurent series a uniform additive group. -/
-instance instIsUniformAddGroup : IsUniformAddGroup (HahnModule ℤ R V) :=
-  isUniformAddGroup_of_addCommGroup
-
-end TauCeti.HahnModule
 
 namespace Module.Basis
 

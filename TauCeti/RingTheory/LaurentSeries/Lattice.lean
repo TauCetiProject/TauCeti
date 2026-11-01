@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.Topology.Algebra.FilterBasis
+public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.RingTheory.HahnSeries.Multiplication
@@ -482,6 +483,14 @@ noncomputable instance instTopologicalSpace : TopologicalSpace (HahnModule ℤ R
 
 instance : IsTopologicalAddGroup (HahnModule ℤ R V) :=
   (latticeFilterBasis R V).isTopologicalAddGroup
+
+/-- The additive uniformity associated to the lattice topology. -/
+noncomputable instance instUniformSpace : UniformSpace (HahnModule ℤ R V) :=
+  IsTopologicalAddGroup.rightUniformSpace _
+
+/-- The lattice uniformity makes module-valued Laurent series a uniform additive group. -/
+instance instIsUniformAddGroup : IsUniformAddGroup (HahnModule ℤ R V) :=
+  isUniformAddGroup_of_addCommGroup
 
 /-- The lattices `U_a(V)` form a basis of neighbourhoods of zero in `HahnModule ℤ R V`. -/
 theorem hasBasis_nhds_zero_lattice :
