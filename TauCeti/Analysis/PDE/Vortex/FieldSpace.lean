@@ -273,7 +273,7 @@ theorem vacuumField_mem_framedFieldSpace (f : ContDiffBump (0 : ℝ)) (s : ℝ) 
   rw [mem_framedFieldSpace, ← neg_sub]
   refine Submodule.neg_mem _ (mem_sobolevFields_of_hasCompactSupport ?_
     (hasCompactSupport_referenceField_zero_sub_vacuumField f) s)
-  rw [show vacuumField = fun _ ↦ !₂[(0 : ℝ), 0, 1 / 2, 0] from funext vacuumField_apply]
+  rw [funext vacuumField_apply]
   exact (contDiff_referenceField f 0).sub contDiff_const
 
 /-! ### Behaviour at infinity -/
