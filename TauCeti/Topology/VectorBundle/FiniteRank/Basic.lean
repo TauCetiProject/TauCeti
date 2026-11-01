@@ -61,6 +61,14 @@ namespace FiniteRankBundleCore
 
 variable {𝕜 B}
 
+/-- The transition from a point's own chart to itself is the identity. -/
+@[simp] theorem coordChange_self (A : FiniteRankBundleCore 𝕜 B) (x : B) :
+    A.core.coordChange x x x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+  apply ContinuousLinearMap.ext
+  intro v
+  simpa only [A.indexAt_eq, ContinuousLinearMap.id_apply] using
+    A.core.coordChange_self (A.core.indexAt x) x (A.core.mem_baseSet_at x) v
+
 /-- The category of point-indexed finite-rank cores, with genuine coordinate bundle morphisms. -/
 instance : Category (FiniteRankBundleCore 𝕜 B) where
   Hom A D := CoordinateHom A.core D.core
