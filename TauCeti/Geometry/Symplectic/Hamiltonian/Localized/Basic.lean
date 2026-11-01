@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Localized.Manifold
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Localized Hamiltonians with prescribed vector field
@@ -16,8 +17,8 @@ neighborhood of that point. The Hamiltonian itself can be chosen to vanish at th
 
 This supplies localized coefficient variations for inhomogeneous Cauchy–Riemann equations.
 Localization is in the product of the parameter and target spaces, so distinct domain points
-can be separated even when their target images coincide. This is a constant-symplectic-form
-coordinate construction, not a manifold extension or a transversality theorem.
+can be separated even when their target images coincide. This specializes the manifold
+construction to a constant symplectic form; it is not a transversality theorem.
 
 This is the vector-space specialization of the manifold realization theorem, applied to the
 constant smooth two-form associated to `ω`.
@@ -50,8 +51,7 @@ theorem exists_contDiff_hamiltonianVectorField_eq (ω : SymplecticForm V)
     SmoothTwoForm.exists_contMDiff_hamiltonianVectorField_eq (J := 𝓘(ℝ, P))
       (σ := ω.constSmooth) p x ((isNondegenerate_constSmooth ω).isInvertible_flat x) v hU
   refine ⟨K, ?_, hKc, hKU, hK0, ?_⟩
-  · simpa +instances only [← modelWithCornersSelf_prod, chartedSpaceSelf_prod,
-      contMDiff_iff_contDiff] using hK
+  · exact contMDiff_iff_contDiff.mp (contMDiff_prod_modelWithCornersSelf_iff.mp hK)
   · rw [hamiltonianVectorField_constSmooth] at hKv
     exact hKv
 
