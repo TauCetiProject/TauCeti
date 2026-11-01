@@ -39,8 +39,8 @@ than excluding it.
   image of `R`.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
   and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
-* `TauCeti.Quaternion.im_eq_zero_iff_forall_commute`: under the same hypotheses, a quaternion is a
-  scalar iff it commutes with every quaternion.
+* `TauCeti.Quaternion.im_eq_zero_iff_forall_commute`: if `2` is left regular in `R`, a quaternion is
+  a scalar iff it commutes with every quaternion.
 * `TauCeti.Quaternion.im_inv_eq_zero_iff`: over a linearly ordered field, the inverse of a
   quaternion is a scalar iff the quaternion is.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
@@ -169,17 +169,18 @@ divisors in which `2 ≠ 0`, the centre of `ℍ[R]` is exactly the image of `R`.
 instance instIsCentral [NoZeroDivisors R] [NeZero (2 : R)] : Algebra.IsCentral R ℍ[R] :=
   ⟨(center_eq_bot fun _ _ h ↦ mul_left_cancel₀ (NeZero.ne (2 : R)) h).le⟩
 
-/-- **A quaternion is a scalar exactly when it commutes with every quaternion**, over a commutative
-ring with no zero divisors in which `2 ≠ 0`. This is `TauCeti.Quaternion.instIsCentral` phrased
-through the imaginary part. -/
-theorem im_eq_zero_iff_forall_commute [NoZeroDivisors R] [NeZero (2 : R)] :
+/-- **A quaternion is a scalar exactly when it commutes with every quaternion**, as soon as `2` is a
+left regular element of `R`. This is `TauCeti.Quaternion.center_eq_bot` phrased through the
+imaginary part. -/
+theorem im_eq_zero_iff_forall_commute (h2 : IsLeftRegular (2 : R)) :
     x.im = 0 ↔ ∀ y, Commute x y := by
   refine ⟨fun hx y ↦ ?_, fun hx ↦ ?_⟩
   · rw [← _root_.Quaternion.re_add_im x, hx, add_zero]
     exact _root_.Quaternion.coe_commute _ _
   · have hcenter : x ∈ Subalgebra.center R ℍ[R] :=
       Subalgebra.mem_center_iff.mpr fun y ↦ (hx y).symm.eq
-    obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hcenter)
+    rw [center_eq_bot h2] at hcenter
+    obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp hcenter
     simp
 
 end CommRing
@@ -192,7 +193,8 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x : ℍ[
 ordered field. By `TauCeti.Quaternion.im_eq_zero_iff_forall_commute` both sides say the element is
 central, and `x⁻¹` commutes with `y` exactly when `x` does. -/
 theorem im_inv_eq_zero_iff : x⁻¹.im = 0 ↔ x.im = 0 := by
-  simp only [im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
+  simp only [im_eq_zero_iff_forall_commute (two_ne_zero (α := R)).isUnit.isRegular.left,
+    Commute.inv_left_iff₀]
 
 end LinearOrderedField
 

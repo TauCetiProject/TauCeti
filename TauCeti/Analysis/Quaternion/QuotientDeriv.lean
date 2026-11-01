@@ -416,7 +416,8 @@ theorem im_eq_zero_of_hasRightQuotientFDerivAt (hb : HasLeftQuotientFDerivAt f q
     (ha : HasRightQuotientFDerivAt f q a) : b.im = 0 := by
   have hD := hb.hasFDerivAt.unique ha.hasFDerivAt
   obtain rfl := hb.eq_of_hasRightQuotientFDerivAt ha
-  exact Quaternion.im_eq_zero_iff_forall_commute.mpr fun h ↦
+  exact (Quaternion.im_eq_zero_iff_forall_commute
+    (two_ne_zero (α := ℝ)).isUnit.isRegular.left).mpr fun h ↦
     (commute_iff_eq b h).mpr (by simpa using (DFunLike.congr_fun hD h).symm)
 
 end HasLeftQuotientFDerivAt
@@ -470,7 +471,7 @@ theorem _root_.HasFDerivAt.rightQuotientDifferentiableAt_iff {D : ℍ →L[ℝ] 
 /-- `x * h * y = h * x * y` for every `h` exactly when `y = 0` or `x` is real. -/
 private theorem forall_mul_mul_eq_iff {x y : ℍ} :
     (∀ h, x * h * y = h * x * y) ↔ y = 0 ∨ x.im = 0 := by
-  rw [Quaternion.im_eq_zero_iff_forall_commute]
+  rw [Quaternion.im_eq_zero_iff_forall_commute (two_ne_zero (α := ℝ)).isUnit.isRegular.left]
   refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hy h ↦
     (commute_iff_eq x h).mpr (mul_right_cancel₀ hy (H h)), ?_⟩
   rintro (rfl | hx) h
@@ -480,7 +481,7 @@ private theorem forall_mul_mul_eq_iff {x y : ℍ} :
 /-- `y * h * x = y * x * h` for every `h` exactly when `y = 0` or `x` is real. -/
 private theorem forall_mul_mul_eq_iff' {x y : ℍ} :
     (∀ h, y * h * x = y * x * h) ↔ y = 0 ∨ x.im = 0 := by
-  rw [Quaternion.im_eq_zero_iff_forall_commute]
+  rw [Quaternion.im_eq_zero_iff_forall_commute (two_ne_zero (α := ℝ)).isUnit.isRegular.left]
   refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hy h ↦ ?_, ?_⟩
   · exact (commute_iff_eq x h).mpr (mul_left_cancel₀ hy (by simpa only [mul_assoc] using H h)).symm
   rintro (rfl | hx) h
