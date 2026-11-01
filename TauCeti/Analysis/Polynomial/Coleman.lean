@@ -319,19 +319,12 @@ theorem norm_coeff_colemanDBounded_sub_le {B' P' : R[X]} {L k : ℕ} {ρ β γ :
     exact norm_prod_colemanDBounded_term_le_sum hρ₀ hρ hP' hβ' hγ' hband hx₀ hL
   · -- all forward moves have length at most `L`, so the two terms pick the same coefficients
     push Not at hlong
-    -- the backward moves have the same total length as the forward ones
-    have hflow : ∑ y : Fin (n + m), ((y : ℕ) - σ y) = ∑ y : Fin (n + m), ((σ y : ℕ) - y) := by
-      have h := Equiv.sum_comp σ fun y : Fin (n + m) ↦ ((y : ℕ) : ℤ)
-      have hy (y : Fin (n + m)) : (((y : ℕ) - σ y : ℕ) : ℤ) =
-          (((σ y : ℕ) - y : ℕ) : ℤ) + ((y : ℕ) : ℤ) - ((σ y : ℕ) : ℤ) := by omega
-      zify
-      rw [sum_congr rfl fun y _ ↦ hy y, sum_sub_distrib, sum_add_distrib, h, add_sub_cancel_right]
     have hback (x : Fin (n + m)) : (x : ℕ) - σ x ≤ #S * L := by
       calc (x : ℕ) - σ x ≤ ∑ y : Fin (n + m), ((y : ℕ) - σ y) :=
             single_le_sum (f := fun y : Fin (n + m) ↦ (y : ℕ) - σ y)
               (fun _ _ ↦ Nat.zero_le _) (mem_univ x)
         _ = ∑ y ∈ S, ((σ y : ℕ) - y) := by
-            rw [hflow, hS, sum_filter_of_ne fun y _ h ↦ by omega]
+            rw [σ.sum_sub_apply_eq_sum_apply_sub, hS, sum_filter_of_ne fun y _ h ↦ by omega]
         _ ≤ #S * L := by
             simpa using sum_le_card_nsmul S _ L hlong
     rw [sub_eq_zero.2, norm_zero]
