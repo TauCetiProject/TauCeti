@@ -18,11 +18,9 @@ so that products and inverses of the generators compute directly. Multiplication
 follows Mathlib's convention, `(σ * τ) x = σ (τ x)`.
 
 The generators have orders `3` and `4`, and their product has order `14`.
-The model acts transitively: a finite spanning tree of generator edges connects
-every point to `0`. Every edge and its decreasing depth are kernel-checked;
-induction on depth proves reachability. Thus the first basic orbit in an
-order computation has length `276`. No order of the group or relationship with
-a presented group is asserted here.
+The model acts transitively, so the first basic orbit in an order computation has
+length `276`. No order of the group or relationship with a presented group is
+asserted here.
 
 ## Main declarations
 
@@ -288,6 +286,8 @@ private def orbitTree (i : Fin 276) : ℕ × Fin 276 × Bool :=
     |>.getD (i.val / 23) #[]
     |>.getD (i.val % 23) (0, 0, false)
 
+/- Every nonroot edge and its decreasing depth are kernel-checked.
+Induction on depth then proves that every point is reachable from `0`. -/
 private theorem orbitTree_step : ∀ i : Fin 276, i ≠ 0 →
     (orbitTree (orbitTree i).2.1).1 < (orbitTree i).1 ∧
       (if (orbitTree i).2.2 then a else b) (orbitTree i).2.1 = i := by
