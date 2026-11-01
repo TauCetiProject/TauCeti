@@ -29,7 +29,7 @@ weighted sum of all component densities and the mixture is absolutely continuous
 The remaining results are the categorical-mixture presentation, parameter measurability,
 finite-mixture integration, the moment-generating function of every linear observable (with
 domain all of `ℝ`), the characteristic function, the mean `∑ k, pₖ • mₖ`, and the law of total
-covariance `∑ k, pₖ • (Sₖ + (mₖ - m̄)(mₖ - m̄)ᵀ)` with `m̄` the mean.
+covariance `∑ k, pₖ • (Sₖ + (mₖ - μ)(mₖ - μ)ᵀ)` with `μ` the mean.
 
 ## References
 
