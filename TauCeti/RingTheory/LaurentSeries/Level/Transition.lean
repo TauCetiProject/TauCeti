@@ -105,6 +105,7 @@ theorem toPuiseux_transition (h : n ∣ m) (x : Level K n) :
 
 /-- On the actual levels of the Puiseux field, the transition map from level `n` to level `m` is
 the inclusion of level `n` into level `m`. -/
+@[simp]
 theorem levelEquiv_transition (h : n ∣ m) (x : Level K n) :
     puiseuxField.levelEquiv K m (transition K h x) =
       IntermediateField.inclusion (puiseuxField.level_le_level_of_dvd K h)
@@ -179,6 +180,7 @@ theorem residue_transition (h : n ∣ m) (x : Level K n) :
 /-- **Residues along embeddings of levels.** For every `K⸨t⸩`-algebra map `φ` from level `n` to
 level `m`, the residue of `φ(x) dt` on level `m` is `m / n` times the residue of `x dt` on level
 `n`. -/
+@[simp]
 theorem residue_algHom_apply (φ : Level K n →ₐ[K⸨X⸩] Level K m) (x : Level K n) :
     residue K m (φ x) = ((m : ℕ) / n) • residue K n x := by
   obtain ⟨h, η, rfl⟩ := exists_eq_transition_comp_kummer φ
