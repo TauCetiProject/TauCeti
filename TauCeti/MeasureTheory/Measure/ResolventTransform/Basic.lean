@@ -115,8 +115,8 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
       ring
     simp only [resolvent, Ring.inverse_eq_inv']
     push_cast
-    change ((a : ℂ) + (b : ℂ) * x - z)⁻¹ =
-      (b : ℂ)⁻¹ * ((x : ℂ) - (z - a) / b)⁻¹
+    -- `resolvent` unfolds with `algebraMap ℝ ℂ`; restore the plain coercion so `hfactor` matches.
+    simp only [Complex.coe_algebraMap]
     rw [hfactor, mul_inv_rev]
     ring
   calc
