@@ -44,8 +44,6 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
   noncrossing.
 * `Finpartition.IsNoncrossing.restrict` — restricting a noncrossing partition of `s` to a subset
   of `s` gives a noncrossing partition.
-* `Finpartition.IsNoncrossing.copy` — transporting a noncrossing partition along an equality of
-  finsets gives a noncrossing partition.
 * `Finpartition.IsNoncrossing.bind` — juxtaposing noncrossing partitions of the parts of a
   noncrossing partition gives a noncrossing partition.
 * `Finpartition.IsNoncrossing.extend_singleton` — adding a singleton part to a noncrossing
@@ -158,13 +156,6 @@ theorem IsNoncrossing.restrict (hP : P.IsNoncrossing) (hts : t ≤ s) :
   obtain ⟨-, C, hC, rfl⟩ := hC
   rw [inf_eq_inter, mem_inter] at ha hb hc hd
   rw [hP B hB C hC a ha.1 b hb.1 c hc.1 d hd.1 hab hbc hcd]
-
-/-- Transporting a noncrossing partition of `s` along an equality `s = t` gives a noncrossing
-partition of `t`. -/
-theorem IsNoncrossing.copy (hP : P.IsNoncrossing) (h : s = t) : (P.copy h).IsNoncrossing :=
-  isNoncrossing_iff.2 fun B hB C hC => by
-    rw [copy_parts] at hB hC
-    exact hP B hB C hC
 
 /-- Juxtaposing noncrossing partitions of the parts of a noncrossing partition gives a noncrossing
 partition. -/

@@ -42,8 +42,8 @@ particular, when `A` is itself complete, Hausdorff and uniform, `ι` is an isomo
 * `TauCeti.Huber.toUniformization_eq_zero_iff`: `ι x = 0` if and only if `|x|_sp = 0`.
 * `TauCeti.Huber.Uniformization.ringHom_ext`: continuous homomorphisms out of `A^u` are
   determined on the image of `ι`.
-* `TauCeti.Huber.isHomeomorph_toUniformization`: for complete Hausdorff uniform `A`, `ι` is a
-  homeomorphism.
+* `TauCeti.Huber.isHomeomorph_toUniformization_iff`: for complete Hausdorff `A`, `ι` is a
+  homeomorphism if and only if `A` is uniform.
 * `TauCeti.Huber.Pair.uniformization_plus`: `A^{u+}` is the closure of `ι(A⁺)`.
 * `TauCeti.Huber.Pair.Hom.uniformizationLift_comp_uniformizationHom` and
   `TauCeti.Huber.Pair.Hom.ext_uniformization`: the universal property of the uniformization.
@@ -145,6 +145,14 @@ theorem ringHom_ext {C : Type*} [Semiring C] [TopologicalSpace C] [T2Space C]
 
 end Uniformization
 
+/-- If the uniformization map `ι : A → A^u` is a homeomorphism, then `A` is uniform, since `A^u`
+is. The converse holds for complete Hausdorff `A` (`TauCeti.Huber.isHomeomorph_toUniformization`).
+-/
+theorem IsUniform.of_isHomeomorph_toUniformization (h : IsHomeomorph (toUniformization A)) :
+    IsUniform A :=
+  let e := RingEquiv.ofBijective (toUniformization A) h.bijective
+  IsUniform.of_ringEquiv e.symm (e.toEquiv.continuous_symm_iff.mpr h.isOpenMap) h.continuous
+
 end Ring
 
 section Complete
@@ -164,6 +172,12 @@ theorem isHomeomorph_toUniformization [CompleteSpace A] [T0Space A] [IsUniform A
   exact (Homeomorph.mk ⟨toUniformization A, r, fun x ↦ by simp [r],
     RingHom.congr_fun hιr⟩ continuous_toUniformization
     hr).isHomeomorph
+
+/-- **A complete Hausdorff Tate ring is its own uniformization exactly when it is uniform**: the
+uniformization map `ι : A → A^u` is a homeomorphism if and only if `A` is uniform. -/
+theorem isHomeomorph_toUniformization_iff [CompleteSpace A] [T0Space A] :
+    IsHomeomorph (toUniformization A) ↔ IsUniform A :=
+  ⟨IsUniform.of_isHomeomorph_toUniformization, fun _ ↦ isHomeomorph_toUniformization⟩
 
 end Complete
 
