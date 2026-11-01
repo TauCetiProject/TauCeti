@@ -33,7 +33,7 @@ By the formula for free cumulants with products as arguments, the left-hand side
 cumulants of the noncrossing partitions of the interlaced positions whose join with the pairs
 `{(x, false), (x, true)}` is the partition into one part. Again only the interlaced partitions of
 `π` and `π' ≤ K(π)` contribute, and among them the join condition singles out `π' = K(π)`
-(`TauCeti.NoncrossingPartition.sup_comap_fst_bot_eq_top_iff`).
+(`TauCeti.NoncrossingPartition.sup_interlacePairs_eq_top_iff`).
 
 No traciality is needed. For `s = ∅` both sides are `1`, and for `s = {x}` the cumulant formula is
 `φ (a_x b_x) = φ (a_x) φ (b_x)`.
@@ -68,22 +68,6 @@ variable {R A ι α : Type*} [CommRing R] [Semiring A] [Algebra R A] [LinearOrde
 `b x` at the bar `(x, true)` after it. -/
 private def interlaceWord (a b : α → A) (p : α ×ₗ Bool) : A :=
   bif (ofLex p).2 then b (ofLex p).1 else a (ofLex p).1
-
-/-- The interlaced positions of `s` over a position `x ∈ s` are the position `(x, false)` and the
-bar `(x, true)`. -/
-private theorem filter_interlace_fst_eq {x : α} (hx : x ∈ s) :
-    {p ∈ s.interlace | (ofLex p).1 = x} = {toLex (x, false), toLex (x, true)} := by
-  ext p
-  obtain ⟨⟨y, c⟩, rfl⟩ := toLex.surjective p
-  simp only [mem_filter, mem_interlace, ofLex_toLex, mem_insert, mem_singleton]
-  cases c <;> simp +contextual [hx]
-
-/-- The first coordinates of the interlaced positions of `s` are the positions of `s`. -/
-private theorem image_interlace_fst :
-    s.interlace.image (fun p => (ofLex p).1) = s := by
-  ext x
-  simp only [mem_image, mem_interlace]
-  exact ⟨fun ⟨p, hp, hpx⟩ => hpx ▸ hp, fun hx => ⟨toLex (x, false), hx, rfl⟩⟩
 
 /-- Grouping the interlaced word along the first coordinate gives the letters `a x * b x`. -/
 private theorem fiberProd_interlaceWord (a b : α → A) {x : α} (hx : x ∈ s) :
@@ -212,7 +196,8 @@ theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partit
         (s.interlace.image fun p => (ofLex p).1) := by
     rw [image_interlace_fst]
     exact freeCumulant_congr φ fun x hx => (fiberProd_interlaceWord a b hx).symm
-  rw [hgroup, freeCumulant_fiberProd_eq_sum_prod φ _ hf]
+  rw [hgroup, freeCumulant_fiberProd_eq_sum_prod φ _ hf,
+    NoncrossingPartition.comap_fst_bot_eq_interlacePairs]
   simp_rw [partitionCumulant_eq_prod_freeCumulant]
   -- By freeness only the interlaced partitions of `π` and `π' ≤ K(π)` contribute, and their join
   -- with the pairs is the partition into one part exactly when `π' = K(π)`.
@@ -223,7 +208,7 @@ theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partit
       Finpartition.isNoncrossing_interlace_iff.2 ⟨π.2, (NoncrossingPartition.kreweras π).2, hK π⟩⟩)
     (fun π _ _ => by
       simp only [mem_filter, mem_univ, true_and]
-      exact (NoncrossingPartition.sup_comap_fst_bot_eq_top_iff (P := π) rfl le_rfl).2 rfl)
+      exact (NoncrossingPartition.sup_interlacePairs_eq_top_iff (P := π) rfl le_rfl).2 rfl)
     (fun π _ _ π' _ _ hππ' => Subtype.ext (Finpartition.interlace_inj.1
       (congrArg Subtype.val hππ')).1) (fun σ hσ hne => ?_)
     (fun π _ _ => (prod_freeCumulant_interlace a b _ _).symm)
@@ -231,7 +216,7 @@ theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partit
     (forall_mem_part_snd_eq_of_prod_ne_zero h hφ hij ha hb hne)
   obtain ⟨hP, hQ, hQK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.2)
   have hQK : (⟨Q, hQ⟩ : NoncrossingPartition s) = NoncrossingPartition.kreweras ⟨P, hP⟩ :=
-    (NoncrossingPartition.sup_comap_fst_bot_eq_top_iff (P := ⟨P, hP⟩) (Q := ⟨Q, hQ⟩) hPQ
+    (NoncrossingPartition.sup_interlacePairs_eq_top_iff (P := ⟨P, hP⟩) (Q := ⟨Q, hQ⟩) hPQ
       (by rwa [← Subtype.coe_le_coe, NoncrossingPartition.coe_kreweras])).1
       (by simpa only [mem_filter, mem_univ, true_and] using hσ)
   refine ⟨⟨P, hP⟩, mem_univ _, ?_, Subtype.ext ?_⟩
