@@ -57,6 +57,8 @@ periods (`TauCeti.torusFamilyAffineMap_mk_eq_mk_iff`).
   affine map.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction`: the affine action is free when the action on
   the base is free.
+* `TauCeti.faithfulSMul_torusFamilyAffineMulAction`: the affine action is faithful when the action
+  on the base is faithful.
 * `TauCeti.continuousConstSMul_torusFamilyAffineMulAction`,
   `TauCeti.properlyDiscontinuousSMul_torusFamilyAffineMulAction`: continuity and proper
   discontinuity of the affine action.
@@ -230,6 +232,19 @@ def torusFamilyAffineProjectionHom :
 @[simp] theorem coe_torusFamilyAffineProjectionHom :
     ⇑(torusFamilyAffineProjectionHom R hone hmul P ρ hP b hb hbone hbmul) =
       torusFamilyProjection P := (rfl)
+
+/-- **Faithfulness of the affine action.** The affine action on the family of tori is faithful
+when the action on the base is: two elements acting alike on the family act alike on the base,
+since the projection of the family is equivariant and every point of the base is the image of
+the zero of its fibre. -/
+theorem faithfulSMul_torusFamilyAffineMulAction [FaithfulSMul Γ Y] :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    FaithfulSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  refine ⟨fun h ↦ eq_of_smul_eq_smul (α := Y) fun y ↦ ?_⟩
+  simpa [hb] using congrArg (torusFamilyProjection P) (h (Quotient.mk _ (y, 0)))
 
 /-! ### Topology of the affine action -/
 
