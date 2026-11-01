@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.Martingale.OptionalStopping
 public import Mathlib.Analysis.SpecificLimits.Basic
+public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
+public import TauCeti.Topology.Order.LeftRight
 
 /-!
 # Doob's maximal inequality over finite sets and in continuous time
@@ -20,9 +22,9 @@ submartingale `f`, a time `T` and `ε : ℝ≥0`:
   and separable (for instance `ℝ≥0`), `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T]`.
 
 The event `{∃ t ≤ T, ε < f_t}` need not be measurable; `P` is applied to it as an outer measure.
-The running maximum `sup_{t ≤ T} f_t` itself is almost everywhere measurable under the same
-right-continuity hypothesis, since it agrees almost everywhere with a supremum over countably many
-times.
+The running maximum `sup_{t ≤ T} f_t` of a process whose values `f_t` are almost everywhere
+measurable is itself almost everywhere measurable under the same right-continuity hypothesis, since
+it agrees almost everywhere with a supremum over countably many times.
 
 A weak-type bound of this kind controls the running maximum in every `Lᵖ` with `p < 1`. The file
 records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. Applied to `f = g²`, it
@@ -35,8 +37,8 @@ this is how the running maximum of an exponential martingale is shown to be inte
   set of times.
 * `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`: the maximal inequality over all times
   `t ≤ T`, for right-continuous paths.
-* `MeasureTheory.aemeasurable_iSup_le_ofReal`: the running maximum of a process with
-  right-continuous paths is almost everywhere measurable.
+* `MeasureTheory.aemeasurable_iSup_le_ofReal`: the running maximum of a process with almost
+  everywhere measurable values and right-continuous paths is almost everywhere measurable.
 * `MeasureTheory.Submartingale.lintegral_iSup_sqrt_le`: the bound on `E[sup_{t ≤ T} √f_t]`.
 
 ## References
@@ -108,22 +110,9 @@ section ContinuousTime
 
 variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
 
-/-- If `g` is right-continuous at every time before `T` and `a < g t` for some `t ≤ T`, then
-`a < g s` for some `s` in `{T} ∪ (D ∩ (-∞, T])`, for any dense set `D`. -/
-private theorem exists_mem_insert_inter_Iic_lt {D : Set ι} (hD : Dense D) {g : ι → ℝ} {T t : ι}
-    (hg : ∀ t < T, ContinuousWithinAt g (Ioi t) t) (htT : t ≤ T) {a : ℝ} (ha : a < g t) :
-    ∃ s ∈ insert T (D ∩ Iic T), a < g s := by
-  rcases htT.lt_or_eq with htT | rfl
-  · obtain ⟨u, hu, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' htT).1
-      ((hg t htT).preimage_mem_nhdsWithin (Ioi_mem_nhds ha))
-    obtain ⟨s, hsD, hs⟩ := hD.exists_between (lt_min hu htT)
-    exact ⟨s, Or.inr ⟨hsD, hs.2.le.trans (min_le_right _ _)⟩,
-      hsub ⟨hs.1, hs.2.trans_le (min_le_left _ _)⟩⟩
-  · exact ⟨t, mem_insert _ _, ha⟩
-
-/-- The running maximum `sup_{t ≤ T} X_t` of a process with almost surely right-continuous paths
-before `T` is almost everywhere measurable: it agrees almost everywhere with the supremum over a
-countable set of times. -/
+/-- The running maximum `sup_{t ≤ T} X_t` of a process whose values `X_t` are almost everywhere
+measurable and whose paths are almost surely right-continuous before `T` is almost everywhere
+measurable: it agrees almost everywhere with the supremum over a countable set of times. -/
 theorem _root_.MeasureTheory.aemeasurable_iSup_le_ofReal [TopologicalSpace.SeparableSpace ι]
     {X : ι → Ω → ℝ} (hX : ∀ t, AEMeasurable (X t) μ) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ X u ω) (Ioi t) t) :
@@ -139,7 +128,7 @@ theorem _root_.MeasureTheory.aemeasurable_iSup_le_ofReal [TopologicalSpace.Separ
   refine iSup₂_le fun t htT ↦ le_of_forall_lt fun a ha ↦ ?_
   have hatop : a ≠ ∞ := ha.ne_top
   rw [← ENNReal.ofReal_toReal hatop, ENNReal.ofReal_lt_ofReal_iff'] at ha
-  obtain ⟨s, hs, has⟩ := exists_mem_insert_inter_Iic_lt hD hω htT ha.1
+  obtain ⟨s, hs, has⟩ := hD.exists_mem_insert_inter_Iic_lt hω htT ha.1
   refine lt_of_lt_of_le ?_ (le_iSup _ (⟨s, hs⟩ : S))
   rwa [← ENNReal.ofReal_toReal hatop, ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg]
 
@@ -171,34 +160,13 @@ theorem mul_measure_exists_le_lt_le [TopologicalSpace.SeparableSpace ι] [IsFini
     fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_right _ ht, h⟩⟩
   have hsub : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ᵐ[μ] ⋃ F, A F := by
     filter_upwards [hcont] with ω hω ⟨t, htT, hεt⟩
-    obtain ⟨s, hs, hεs⟩ := exists_mem_insert_inter_Iic_lt hD hω htT hεt
+    obtain ⟨s, hs, hεs⟩ := hD.exists_mem_insert_inter_Iic_lt hω htT hεt
     exact mem_iUnion.2 ⟨{⟨s, hs⟩}, ⟨s, hs⟩, Finset.mem_singleton_self _, hεs.le⟩
   calc ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ε * μ (⋃ F, A F) := by
         gcongr 1
         exact measure_mono_ae hsub
     _ = ⨆ F, ε * μ (A F) := by rw [hdir.measure_iUnion, ENNReal.mul_iSup]
     _ ≤ _ := iSup_le hA
-
-/-- A nonnegative extended real is at most `1 + ∑ₖ 2^(k+1) 1{2^k < y}`. -/
-private theorem le_one_add_tsum_pow_indicator (y : ℝ≥0∞) :
-    y ≤ 1 + ∑' k : ℕ, if (2 : ℝ≥0∞) ^ k < y then 2 ^ (k + 1) else 0 := by
-  set R : ℝ≥0∞ := 1 + ∑' k : ℕ, if (2 : ℝ≥0∞) ^ k < y then 2 ^ (k + 1) else 0
-  by_contra! hR
-  -- If `R < y`, then inductively `2^k < y` and `2^(k+1) ≤ R` for every `k`, so `R = ∞`.
-  have hk : ∀ k : ℕ, (2 : ℝ≥0∞) ^ k < y := by
-    intro k
-    induction k with
-    | zero => exact lt_of_le_of_lt (by simp [R]) hR
-    | succ k ih =>
-      refine lt_of_le_of_lt (le_trans ?_ le_add_self) hR
-      exact le_trans (by simp [ih]) (ENNReal.le_tsum k)
-  have hRtop : R ≠ ∞ := hR.ne_top
-  obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hRtop
-  have h2 : (2 : ℝ≥0∞) ^ (n + 1) ≤ R :=
-    le_trans (by simp [hk n]) ((ENNReal.le_tsum n).trans le_add_self)
-  have : (n : ℝ≥0∞) < 2 ^ (n + 1) := by
-    exact_mod_cast (Nat.lt_two_pow_self).trans (Nat.pow_lt_pow_right (by norm_num) (by omega))
-  exact (hn.trans (this.trans_le h2)).false
 
 /-- **The running maximum of the square root of a submartingale is integrable.** For a
 nonnegative submartingale `f` whose paths are almost surely right-continuous before `T`,
@@ -214,30 +182,36 @@ theorem lintegral_iSup_sqrt_le [TopologicalSpace.SeparableSpace ι] [IsFiniteMea
   -- The level sets `{2^k < Y} = {∃ t ≤ T, 4^k < f_t}` have measure at most `E / 4^k`.
   have hlevel : ∀ k : ℕ, (2 : ℝ≥0∞) ^ (k + 1) * μ {ω | 2 ^ k < Y ω} ≤ 2 * 2⁻¹ ^ k * E := by
     intro k
+    -- `2^k = √(4^k)`, read in `ℝ≥0∞`.
+    have hsqrt : (2 : ℝ≥0∞) ^ k = ENNReal.ofReal √((4 ^ k : ℝ≥0) : ℝ) := by
+      have : √((4 ^ k : ℝ≥0) : ℝ) = 2 ^ k := by
+        rw [Real.sqrt_eq_iff_mul_self_eq_of_pos (by positivity), ← mul_pow]
+        norm_num
+      rw [this, ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
     have hset : {ω | 2 ^ k < Y ω} = {ω | ∃ t ≤ T, ((4 ^ k : ℝ≥0) : ℝ) < f t ω} := by
       ext ω
-      simp only [Y, mem_ofPred_eq, lt_iSup_iff, exists_prop]
-      refine exists_congr fun t ↦ and_congr_right fun _ ↦ ?_
-      rw [show (2 : ℝ≥0∞) ^ k = ENNReal.ofReal √(4 ^ k) by
-        rw [show (4 : ℝ) ^ k = (2 ^ k) ^ 2 by rw [← pow_mul, mul_comm, pow_mul]; norm_num,
-          Real.sqrt_sq (by positivity), ENNReal.ofReal_pow (by norm_num)]; simp,
+      simp only [Y, mem_ofPred_eq, lt_iSup_iff, exists_prop, hsqrt,
         ENNReal.ofReal_lt_ofReal_iff_of_nonneg (Real.sqrt_nonneg _),
-        Real.sqrt_lt_sqrt_iff (by positivity)]
-      push_cast
-      rfl
+        Real.sqrt_lt_sqrt_iff (NNReal.coe_nonneg _)]
     have hmax := hf.mul_measure_exists_le_lt_le hnonneg hcont (4 ^ k)
     rw [← hset] at hmax
-    have h4 : (2 : ℝ≥0∞) ^ (k + 1) = 2 * 2⁻¹ ^ k * ((4 ^ k : ℝ≥0) : ℝ≥0∞) := by
-      rw [ENNReal.coe_pow, show ((4 : ℝ≥0) : ℝ≥0∞) = 2 * 2 by norm_num, mul_pow, ← mul_assoc,
-        mul_assoc 2, ← mul_pow, ENNReal.inv_mul_cancel (by norm_num) (by norm_num), one_pow,
-        mul_one, pow_succ, mul_comm]
-    rw [h4, mul_assoc]
+    -- `2^(k+1) = 2 · 2⁻ᵏ · 4^k`, since `2⁻ᵏ · 2ᵏ = 1` and `4^k = 2^k · 2^k`.
+    have hinv : (2 : ℝ≥0∞)⁻¹ ^ k * 2 ^ k = 1 := by
+      rw [← mul_pow, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_pow]
+    have h4 : ((4 ^ k : ℝ≥0) : ℝ≥0∞) = 2 ^ k * 2 ^ k := by
+      push_cast
+      rw [← mul_pow]
+      norm_num
+    have hpow : (2 : ℝ≥0∞) ^ (k + 1) = 2 * 2⁻¹ ^ k * ((4 ^ k : ℝ≥0) : ℝ≥0∞) :=
+      calc (2 : ℝ≥0∞) ^ (k + 1) = 2 * (2⁻¹ ^ k * 2 ^ k) * 2 ^ k := by rw [hinv]; ring
+        _ = 2 * 2⁻¹ ^ k * ((4 ^ k : ℝ≥0) : ℝ≥0∞) := by rw [h4]; ring
+    rw [hpow, mul_assoc]
     gcongr
   -- Replace the level sets by measurable supersets of the same measure.
   set B : ℕ → Set Ω := fun k ↦ toMeasurable μ {ω | 2 ^ k < Y ω}
   calc ∫⁻ ω, Y ω ∂μ
       ≤ ∫⁻ ω, 1 + ∑' k : ℕ, (B k).indicator (fun _ ↦ (2 : ℝ≥0∞) ^ (k + 1)) ω ∂μ := by
-        refine lintegral_mono fun ω ↦ (le_one_add_tsum_pow_indicator (Y ω)).trans ?_
+        refine lintegral_mono fun ω ↦ (ENNReal.le_one_add_tsum_pow_indicator (Y ω)).trans ?_
         gcongr with k
         split_ifs with h
         · rw [indicator_of_mem (subset_toMeasurable μ _ h)]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Geometric
 public import TauCeti.Probability.Martingale.MaximalInequality
+import TauCeti.MeasureTheory.Integral.Lebesgue.Supremum
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 
 /-!
@@ -65,22 +66,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {W : ℝ≥0 → Ω → ℝ}
 
-/-- If `X_t ≤ C Y_t` for all `t ≤ T`, with `C ≥ 0`, then a finite expected running maximum of `Y`
-bounds that of `X`. -/
-private theorem lintegral_iSup_lt_top_of_le {X Y : ℝ≥0 → Ω → ℝ} {T : ℝ≥0} {C : ℝ} (hC : 0 ≤ C)
-    (hXY : ∀ ω, ∀ t ≤ T, X t ω ≤ C * Y t ω)
-    (hY : ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (Y t ω) ∂P < ∞) :
-    ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (X t ω) ∂P < ∞ := by
-  calc ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (X t ω) ∂P
-      ≤ ∫⁻ ω, ENNReal.ofReal C * ⨆ t ≤ T, ENNReal.ofReal (Y t ω) ∂P := by
-        refine lintegral_mono fun ω ↦ iSup₂_le fun t ht ↦ ?_
-        refine (ENNReal.ofReal_le_ofReal (hXY ω t ht)).trans ?_
-        rw [ENNReal.ofReal_mul hC]
-        exact mul_le_mul_right (le_iSup₂ (f := fun t _ ↦ ENNReal.ofReal (Y t ω)) t ht) _
-    _ = ENNReal.ofReal C * ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (Y t ω) ∂P :=
-        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
-    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top hY
-
 /-- **The running maximum of an exponential martingale is integrable.** If the paths of `W` are
 almost surely right-continuous before `T`, then `E[sup_{t ≤ T} exp (θ W_t - θ² t / 2)] < ∞`. -/
 theorem lintegral_iSup_exponentialMartingale_lt_top (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -89,7 +74,7 @@ theorem lintegral_iSup_exponentialMartingale_lt_top (hW : IsFilteredPreBrownianR
     ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (exponentialMartingale θ W t ω) ∂P < ∞ := by
   have := hW.isGaussianProcess.isProbabilityMeasure
   -- `Z^θ_t = exp (θ² t / 2) √(Z^{2θ}_t)`, and `Z^{2θ}` is a nonnegative martingale.
-  refine lintegral_iSup_lt_top_of_le (exp_pos (θ ^ 2 * T / 2)).le
+  refine lintegral_iSup_ofReal_lt_top_of_le_mul (exp_pos (θ ^ 2 * T / 2)).le
     (Y := fun t ω ↦ √(exponentialMartingale (2 * θ) W t ω)) (fun ω t ht ↦ ?_) ?_
   · rw [exponentialMartingale_def, exponentialMartingale_def, ← exp_half, ← exp_add]
     gcongr
@@ -114,7 +99,7 @@ theorem lintegral_iSup_rpow_geometricBrownianMotion_lt_top (hW : IsFilteredPreBr
     ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal (geometricBrownianMotion s μ σ W t ω ^ q) ∂P < ∞ := by
   -- `S_t ^ q = s ^ q exp (c t) Z^{qσ}_t`, and `exp (c t) ≤ exp (|c| T)` for `t ≤ T`.
   set c := q * μ + q * (q - 1) * σ ^ 2 / 2
-  refine lintegral_iSup_lt_top_of_le (by positivity) (C := s ^ q * exp (|c| * T))
+  refine lintegral_iSup_ofReal_lt_top_of_le_mul (by positivity) (C := s ^ q * exp (|c| * T))
     (fun ω t ht ↦ ?_) (hW.lintegral_iSup_exponentialMartingale_lt_top hcont (q * σ))
   rw [rpow_geometricBrownianMotion hs]
   have hct : c * t ≤ |c| * T :=
