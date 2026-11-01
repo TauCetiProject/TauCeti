@@ -133,55 +133,6 @@ variable {B : Type u₃} [Bicategory.{w₃, v₃} B] {Γ : Type u₁} [Category.
 
 /-! ### Pulling back along the identity functor -/
 
-/-- The strong transformation `(𝟭 Γ).toPseudofunctor.comp F ⟶ F` with identity components and
-naturality isomorphisms given by the unitors. -/
--- The body is exposed so that the components and naturality isomorphisms of this transformation
--- can be stated by `simps`, and unfolded in the naturality conditions of the transformations
--- between precomposition pseudofunctors below.
-@[expose, simps]
-def pullbackIdHom (F : LocallyDiscrete Γ ⥤ᵖ B) : (𝟭 Γ).toPseudofunctor.comp F ⟶ F where
-  app x := 𝟙 (F.obj x)
-  naturality φ := ρ_ (F.map φ) ≪≫ (λ_ (F.map φ)).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact (by simp : ∀ {a b : B} (X : a ⟶ b),
-      𝟙 X ▷ 𝟙 b ≫ (ρ_ X ≪≫ (λ_ X).symm).hom = (ρ_ X ≪≫ (λ_ X).symm).hom ≫ 𝟙 a ◁ 𝟙 X) _
-  -- After identifying the unit and composition comparisons of the pullback with those of `F`,
-  -- the conditions are those of the identity transformation of `F`.
-  naturality_id x := by
-    rw [toPseudofunctor_id_comp_mapId]
-    exact (StrongTrans.id F).naturality_id x
-  naturality_comp φ ψ := by
-    rw [toPseudofunctor_id_comp_mapComp]
-    exact (StrongTrans.id F).naturality_comp φ ψ
-
-/-- The strong transformation `F ⟶ (𝟭 Γ).toPseudofunctor.comp F` with identity components and
-naturality isomorphisms given by the unitors. -/
--- The body is exposed so that the components and naturality isomorphisms of this transformation
--- can be stated by `simps`, and unfolded in the naturality conditions of the transformations
--- between precomposition pseudofunctors below.
-@[expose, simps]
-def pullbackIdInv (F : LocallyDiscrete Γ ⥤ᵖ B) : F ⟶ (𝟭 Γ).toPseudofunctor.comp F where
-  app x := 𝟙 (F.obj x)
-  naturality φ := ρ_ (F.map φ) ≪≫ (λ_ (F.map φ)).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact (by simp : ∀ {a b : B} (X : a ⟶ b),
-      𝟙 X ▷ 𝟙 b ≫ (ρ_ X ≪≫ (λ_ X).symm).hom = (ρ_ X ≪≫ (λ_ X).symm).hom ≫ 𝟙 a ◁ 𝟙 X) _
-  -- As in `pullbackIdHom`.
-  naturality_id x := by
-    rw [toPseudofunctor_id_comp_mapId]
-    exact (StrongTrans.id F).naturality_id x
-  naturality_comp φ ψ := by
-    rw [toPseudofunctor_id_comp_mapComp]
-    exact (StrongTrans.id F).naturality_comp φ ψ
-
 variable (B Γ) in
 /-- The strong transformation `precomp B (𝟭 Γ).toPseudofunctor ⟶ Pseudofunctor.id _` with
 components `F.pullbackIdHom`. Its naturality isomorphisms are given by the unitors. -/
@@ -258,58 +209,6 @@ lemma precompIdEquiv_inv : (precompIdEquiv B Γ).inv = precompIdInv B Γ :=
   (rfl)
 
 /-! ### Pulling back along a composite functor -/
-
-/-- The strong transformation from the pullback along `f ⋙ g` to the pullback along `g` and then
-along `f`, with identity components and naturality isomorphisms given by the unitors. -/
--- The body is exposed so that the components and naturality isomorphisms of this transformation
--- can be stated by `simps`, and unfolded in the naturality conditions of the transformations
--- between precomposition pseudofunctors below.
-@[expose, simps]
-def pullbackCompHom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : LocallyDiscrete Λ' ⥤ᵖ B) :
-    (f ⋙ g).toPseudofunctor.comp F ⟶ f.toPseudofunctor.comp (g.toPseudofunctor.comp F) where
-  app x := 𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩)
-  naturality φ := ρ_ (F.map (g.map (f.map φ.as)).toLoc) ≪≫ (λ_ _).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact (by simp : ∀ {a b : B} (X : a ⟶ b),
-      𝟙 X ▷ 𝟙 b ≫ (ρ_ X ≪≫ (λ_ X).symm).hom = (ρ_ X ≪≫ (λ_ X).symm).hom ≫ 𝟙 a ◁ 𝟙 X) _
-  -- After identifying the unit and composition comparisons of the two pullbacks, the conditions
-  -- are those of the identity transformation of the pullback along `f ⋙ g`.
-  naturality_id x := by
-    rw [← toPseudofunctor_comp_comp_mapId]
-    exact (StrongTrans.id ((f ⋙ g).toPseudofunctor.comp F)).naturality_id x
-  naturality_comp φ ψ := by
-    rw [← toPseudofunctor_comp_comp_mapComp]
-    exact (StrongTrans.id ((f ⋙ g).toPseudofunctor.comp F)).naturality_comp φ ψ
-
-/-- The strong transformation from the pullback along `g` and then along `f` to the pullback
-along `f ⋙ g`, with identity components and naturality isomorphisms given by the unitors. -/
--- The body is exposed so that the components and naturality isomorphisms of this transformation
--- can be stated by `simps`, and unfolded in the naturality conditions of the transformations
--- between precomposition pseudofunctors below.
-@[expose, simps]
-def pullbackCompInv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') (F : LocallyDiscrete Λ' ⥤ᵖ B) :
-    f.toPseudofunctor.comp (g.toPseudofunctor.comp F) ⟶ (f ⋙ g).toPseudofunctor.comp F where
-  app x := 𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩)
-  naturality φ := ρ_ (F.map (g.map (f.map φ.as)).toLoc) ≪≫ (λ_ _).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    -- The two sides mention `F.map φ` and the definitionally equal image of `φ` under the
-    -- pullback, so the identity is applied by unification.
-    exact (by simp : ∀ {a b : B} (X : a ⟶ b),
-      𝟙 X ▷ 𝟙 b ≫ (ρ_ X ≪≫ (λ_ X).symm).hom = (ρ_ X ≪≫ (λ_ X).symm).hom ≫ 𝟙 a ◁ 𝟙 X) _
-  -- As in `pullbackCompHom`, with the roles of the two pullbacks exchanged.
-  naturality_id x := by
-    rw [toPseudofunctor_comp_comp_mapId]
-    exact (StrongTrans.id (f.toPseudofunctor.comp (g.toPseudofunctor.comp F))).naturality_id x
-  naturality_comp φ ψ := by
-    rw [toPseudofunctor_comp_comp_mapComp]
-    exact (StrongTrans.id
-      (f.toPseudofunctor.comp (g.toPseudofunctor.comp F))).naturality_comp φ ψ
 
 -- The unit and composition comparisons of the composite of two precomposition pseudofunctors
 -- have identity components.
