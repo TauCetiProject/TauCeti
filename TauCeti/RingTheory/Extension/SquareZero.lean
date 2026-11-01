@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.Algebra.FiveLemma
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.RingTheory.Ideal.Maps
@@ -137,14 +137,17 @@ theorem toAlgHom_injective : Function.Injective (toAlgHom : Hom E F → E.Ring �
 
 /-- The five lemma for square-zero extensions: a morphism of extensions of `B` by `M` is
 bijective. -/
-theorem bijective (f : Hom E F) : Function.Bijective f.toAlgHom := by
-  refine ⟨(injective_iff_map_eq_zero f.toAlgHom).2 fun x hx ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨m, rfl⟩ := (E.exact x).1 (by rw [← f.π_toAlgHom, hx, map_zero])
-    rw [f.toAlgHom_ι, F.ι_eq_zero_iff] at hx
-    simp [hx]
-  · obtain ⟨x, hx⟩ := E.π_surjective (F.π y)
-    obtain ⟨m, hm⟩ := (F.exact (y - f.toAlgHom x)).1 (by simp [hx])
-    exact ⟨x + E.ι m, by simp [hm]⟩
+theorem bijective (f : Hom E F) : Function.Bijective f.toAlgHom :=
+  -- Mathlib's five lemma for the exact rows `M →0→ M →ι→ E →π→ B →0→ B`, with identity maps
+  -- on the outer four terms and `f` in the middle.
+  AddMonoidHom.bijective_of_surjective_of_bijective_of_bijective_of_injective
+    0 E.ι E.π.toAddMonoidHom 0 0 F.ι F.π.toAddMonoidHom 0 (.id M) (.id M)
+    f.toAlgHom.toAddMonoidHom (.id B) (.id B) (by ext; simp) (by ext; simp) (by ext; simp)
+    (by ext; simp) (fun _ ↦ by simp [eq_comm (a := (0 : M))]) E.exact
+    (fun b ↦ iff_of_true rfl (E.π_surjective b))
+    (fun _ ↦ by simp [eq_comm (a := (0 : M))]) F.exact
+    (fun b ↦ iff_of_true rfl (F.π_surjective b))
+    Function.surjective_id Function.bijective_id Function.bijective_id Function.injective_id
 
 /-- The `A`-algebra isomorphism underlying a morphism of square-zero extensions. -/
 noncomputable def toAlgEquiv (f : Hom E F) : E.Ring ≃ₐ[A] F.Ring :=
