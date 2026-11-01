@@ -13,10 +13,10 @@ public import TauCeti.Data.Finsupp.MonomialOrder.Weight
 
 A zero remainder has a finite standard representation. Keeping the leading exponents of its
 polynomials and the degree bounds in that representation requires only finitely many strict
-monomial comparisons. For a finite Gröbner basis, collect these comparisons for all its
-S-polynomials. Any monomial order satisfying the collected comparisons has the same Gröbner
-basis and the same entire ideal of leading terms, not just the same leading terms of the chosen
-generators.
+monomial comparisons. For a finite Gröbner basis whose nonzero members have unit leading
+coefficients, collect these comparisons for all its S-polynomials. Any monomial order satisfying
+the collected comparisons has the same Gröbner basis and the same entire ideal of leading terms,
+not just the same leading terms of the chosen generators.
 
 The comparisons also admit a strictly positive integral weight vector. They give finite strict
 linear inequalities whose solutions certify stability: every monomial order respecting those
@@ -28,9 +28,11 @@ original order on all monomials, and no weight-initial form is identified with a
 * `MonomialOrder.IsRemainder.exists_finset_comparisons`: finite comparisons preserving a zero
   remainder and the leading exponents of its finite divisor set.
 * `MonomialOrder.IsGroebnerBasis.exists_finset_comparisons`: finite comparisons preserving a
-  finite Gröbner basis and its leading-term ideal.
+  finite Gröbner basis whose nonzero members have unit leading coefficients, and its leading-term
+  ideal.
 * `MonomialOrder.IsGroebnerBasis.exists_pos_weight_preserving`: a strictly positive integral
-  weight whose strict comparisons suffice for the same stability conclusion.
+  weight whose strict comparisons preserve a finite Gröbner basis whose nonzero members have unit
+  leading coefficients, and its leading-term ideal.
 
 ## References
 
