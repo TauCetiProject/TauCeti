@@ -29,12 +29,13 @@ a finite union of open sets, induction on the number of sets shows that
 `Hₙ(E|_W, E₀|_W) = 0` for `n < r` whenever `W` is a finite union of open sets each lying in the base
 set of a linear trivialization (`TauCeti.isZero_singularHomology_thomPairOver_biUnion`). In
 particular the relative homology of the Thom pair `(E, E₀)` vanishes below the rank over a compact
-base (`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`).
+base (`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`). The extension to arbitrary
+bases, with exact filtered colimits of coefficients, is in
+`TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion`.
 
 By the universal coefficient theorem, the same holds for the relative cohomology with projective
-coefficients (`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`,
-`TauCeti.isZero_singularCohomology_thomPair_of_compactSpace`). This is the vanishing that the
-construction of a Thom class by Mayer–Vietoris over a finite trivializing cover uses: since
+coefficients (`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`). This is the vanishing
+that the construction of a Thom class by Mayer–Vietoris over a finite trivializing cover uses: since
 `Hʳ⁻¹(E|_{U ∩ V}, E₀|_{U ∩ V}) = 0`, a class over `U ∪ V` is determined by its restrictions to
 `U` and `V`.
 
@@ -50,9 +51,8 @@ construction of a Thom class by Mayer–Vietoris over a finite trivializing cove
 * `TauCeti.isZero_singularHomology_thomPairOver_biUnion`: `Hₙ(E|_W, E₀|_W) = 0` for `n < r` over a
   finite union `W` of trivializing open sets.
 * `TauCeti.isZero_singularHomology_thomPair_of_compactSpace`: `Hₙ(E, E₀) = 0` for `n < r` over a
-  compact base.
-* `TauCeti.isZero_singularCohomology_thomPairOver_biUnion`,
-  `TauCeti.isZero_singularCohomology_thomPair_of_compactSpace`: the same for relative cohomology
+  compact base, without a filtered-colimit hypothesis on coefficients.
+* `TauCeti.isZero_singularCohomology_thomPairOver_biUnion`: the same for relative cohomology
   with projective coefficients.
 
 ## References
@@ -265,13 +265,6 @@ theorem isZero_singularCohomology_thomPairOver_biUnion {ι : Type*} (s : Finset 
     IsZero ((thomPairOver F E (⋃ i ∈ s, W i)).singularCohomology R' k M' n) :=
   TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R' M' n fun _ hj ↦
     isZero_singularHomology_thomPairOver_biUnion R' s hWo hWe (hj.trans_lt hn)
-
-/-- **The relative cohomology of the Thom pair of a vector bundle over a compact base vanishes
-below the rank**: `Hⁿ(E, E₀; R, M) = 0` for `n < dim F`, for `R` projective. -/
-theorem isZero_singularCohomology_thomPair_of_compactSpace [CompactSpace B] [VectorBundle ℝ F E]
-    {n : ℕ} (hn : n < finrank ℝ F) : IsZero ((thomPair F E).singularCohomology R' k M' n) :=
-  TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R' M' n fun _ hj ↦
-    isZero_singularHomology_thomPair_of_compactSpace R' (hj.trans_lt hn)
 
 end Cohomology
 
