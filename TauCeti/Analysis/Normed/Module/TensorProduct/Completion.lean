@@ -118,6 +118,11 @@ theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : ProjectiveTens
     mapL f g u = ProjectiveTensor.mapL f g u :=
   ContinuousLinearMap.completion_apply_coe _ u
 
+/-- The induced operator is the extension of `ProjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (ProjectiveTensor.mapL f g).completion :=
+  (rfl)
+
 /-- The operator induced by `f` and `g` on completed projective tensor products has norm at most
 `‖f‖ * ‖g‖`. -/
 theorem norm_mapL_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ ≤ ‖f‖ * ‖g‖ :=
@@ -224,6 +229,11 @@ noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
 theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
     mapL f g u = InjectiveTensor.mapL f g u :=
   ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The induced operator is the extension of `InjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (InjectiveTensor.mapL f g).completion :=
+  (rfl)
 
 /-- The operator induced by `f` and `g` on completed injective tensor products has norm at most
 `‖f‖ * ‖g‖`. -/
