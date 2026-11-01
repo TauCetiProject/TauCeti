@@ -86,7 +86,7 @@ namespace TauCeti.CurrentAlgebra
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "UK" => CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a
 
 /-- The tower `U / I_0 ← U / I_1 ← U / I_2 ← ⋯` of the quotients of `U(ĝ) / (ι K - a)` by the left
 ideals of high-order currents, with the quotient maps as transitions. -/
