@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Algebra.Order.Field.Pi
+public import TauCeti.Analysis.Matrix.MulVecNorm
 public import TauCeti.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Connected
@@ -263,16 +264,6 @@ theorem exists_mulVec_eq_smul_of_pos [Nonempty n] (hA : ∀ i j, 0 < A i j) :
   have h := mulVec_pos hA hx hx0 i₀
   rw [heig] at h
   exact pos_of_mul_pos_left h (hx i₀)
-
-/-- For an entrywise nonnegative real matrix `A` and a complex eigenvector `z` for `μ`, the moduli
-of the entries of `z` satisfy `‖μ‖ ‖z‖ ≤ A ‖z‖`, by the triangle inequality. -/
-private theorem norm_smul_le_mulVec_norm (hA : ∀ i j, 0 ≤ A i j) {μ : ℂ} {z : n → ℂ}
-    (hAz : A.map (↑) *ᵥ z = μ • z) : ‖μ‖ • (fun i => ‖z i‖) ≤ A *ᵥ fun i => ‖z i‖ := by
-  intro i
-  calc ‖μ‖ * ‖z i‖ = ‖(A.map (↑) *ᵥ z) i‖ := by simp [hAz]
-    _ ≤ ∑ j, ‖((A i j : ℝ) : ℂ) * z j‖ := norm_sum_le _ _
-    _ = (A *ᵥ fun i => ‖z i‖) i := by
-      simp [mulVec, dotProduct, Complex.norm_real, abs_of_nonneg (hA i _)]
 
 /-- If `A v ≤ r v` for a vector `v` with strictly positive entries and an entrywise nonnegative
 real matrix `A`, then `r` bounds the modulus of every complex eigenvalue. -/

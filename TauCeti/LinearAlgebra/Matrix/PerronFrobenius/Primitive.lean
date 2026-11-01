@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Irreducible.Defs
+public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
 
 /-!
@@ -13,9 +14,10 @@ public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
 
 A square real matrix `A` is primitive (`Matrix.IsPrimitive`) when its entries are nonnegative and
 some power `A ^ k` with `k > 0` is strictly positive. Every later power is then strictly positive
-too. A primitive matrix is irreducible (`Matrix.IsPrimitive.isIrreducible`), so the theorem for
-irreducible matrices applies: it has a Perron root `r > 0` with an eigenvector `v` whose entries
-are strictly positive (`Matrix.IsIrreducible.exists_mulVec_eq_smul`), `r` is its spectral radius
+too (`Matrix.pow_apply_pos_of_le`). A primitive matrix is irreducible
+(`Matrix.IsPrimitive.isIrreducible`), so the theorem for irreducible matrices applies: it has a
+Perron root `r > 0` with an eigenvector `v` whose entries are strictly positive
+(`Matrix.IsIrreducible.exists_mulVec_eq_smul`), `r` is its spectral radius
 (`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), and `r` is a simple root of the characteristic
 polynomial (`Matrix.IsIrreducible.rootMultiplicity_charpoly_eq_one`).
 
@@ -29,8 +31,6 @@ matrices `A ^ k` and `A ^ (k + 1)`: an eigenvalue `μ` of modulus `r` has `μ ^ 
 
 ## Main results
 
-* `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
-  for some `k > 0`, then so is `A ^ m` for every `m ≥ k`.
 * `Matrix.IsPrimitive.eq_of_norm_eq_of_mulVec_eq_smul`: the Perron root of a primitive matrix is
   its only complex eigenvalue of maximal modulus.
 * `Matrix.IsPrimitive.norm_lt_of_mulVec_eq_smul` and `Matrix.IsPrimitive.norm_lt_of_mem_spectrum`:
@@ -50,31 +50,6 @@ open scoped Matrix
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-section StrictOrderedSemiring
-
-variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix n n R}
-
-/-- If `A` is entrywise nonnegative and its power `A ^ k`, for some `k > 0`, is strictly positive,
-then every power `A ^ m` with `m ≥ k` is strictly positive. -/
-theorem pow_apply_pos_of_le (hA : ∀ i j, 0 ≤ A i j) {k : ℕ} (hk : 0 < k)
-    (hAk : ∀ i j, 0 < (A ^ k) i j) {m : ℕ} (hkm : k ≤ m) : ∀ i j, 0 < (A ^ m) i j := by
-  -- Every row of `A` has a positive entry, since `A ^ k = A * A ^ (k - 1)` does.
-  have hrow : ∀ i, ∃ l, 0 < A i l := fun i => by
-    have h := hAk i i
-    rw [← Nat.sub_add_cancel hk, pow_succ', mul_apply] at h
-    obtain ⟨l, -, hl⟩ := Finset.exists_ne_zero_of_sum_ne_zero h.ne'
-    exact ⟨l, (hA i l).lt_of_ne' (left_ne_zero_of_mul hl)⟩
-  induction m, hkm using Nat.le_induction with
-  | base => exact hAk
-  | succ m _ ih =>
-    intro i j
-    obtain ⟨l, hl⟩ := hrow i
-    rw [pow_succ', mul_apply]
-    exact Finset.sum_pos' (fun l _ => mul_nonneg (hA i l) (ih l j).le)
-      ⟨l, Finset.mem_univ l, mul_pos hl (ih l j)⟩
-
-end StrictOrderedSemiring
 
 section Real
 
