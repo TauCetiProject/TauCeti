@@ -55,6 +55,6 @@ quotient topology of `PSL(2, 𝕜) = SL(2, 𝕜) ⧸ {±1}`. For `𝕜 = ℂ` th
 `PSL(2, ℂ)` on the Riemann sphere. -/
 instance instContinuousSMulPSL : ContinuousSMul PSL(2, 𝕜) (OnePoint 𝕜) :=
   (diffeomorphProjectivization 𝕜 0).toHomeomorph.isInducing.continuousSMul continuous_id
-    fun {_ x} ↦ by simpa using equivProjectivization_pslSmul x
+    fun {_ x} ↦ by simpa using equivProjectivization_psl_smul x
 
 end OnePoint
