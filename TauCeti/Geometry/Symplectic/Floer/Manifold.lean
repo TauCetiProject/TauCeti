@@ -200,7 +200,7 @@ theorem hamiltonianCurvature_constSmooth (ω : SymplecticForm V)
 
 /-- Under the canonical target tangent identification the intrinsic perturbed derivative
 for a constant form is the vector-space perturbed derivative. -/
-theorem perturbedMFDeriv_constSmooth_apply (ω : SymplecticForm V)
+theorem fromTangentSpace_perturbedMFDeriv_constSmooth_apply (ω : SymplecticForm V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z v : ℝ × ℝ) :
     NormedSpace.fromTangentSpace (u z) (ω.constSmooth.perturbedMFDeriv Ks Kt u z v) =
       ω.perturbedFDeriv Ks Kt u z v := by
@@ -216,7 +216,7 @@ theorem floerEnergyDensity_constSmooth (ω : SymplecticForm V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ω.constSmooth.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks Kt u z := by
   rw [SmoothTwoForm.floerEnergyDensity_def, floerEnergyDensity_def,
-    fromTangentSpace_constSmooth_apply, perturbedMFDeriv_constSmooth_apply,
-    perturbedMFDeriv_constSmooth_apply]
+    fromTangentSpace_constSmooth_apply, fromTangentSpace_perturbedMFDeriv_constSmooth_apply,
+    fromTangentSpace_perturbedMFDeriv_constSmooth_apply]
 
 end TauCeti.SymplecticForm
