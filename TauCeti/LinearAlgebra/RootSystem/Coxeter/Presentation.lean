@@ -54,8 +54,9 @@ its simple root is an inversion of the word, and the reflection in it deletes a 
   inversions.
 * `TauCeti.isReduced_weylCoxeterSystem_iff`: a word is reduced exactly when the element it spells
   has as many inversions as the word has letters.
-* `RootPairing.exists_isReduced_forall_isLeftDescent`: a reduced word spells an element of which
-  every simple reflection is a left descent, the longest element of the Weyl group.
+* `RootPairing.exists_isReduced_forall_isLeftDescent`: some reduced word spells an element of which
+  every simple reflection is a left descent (a reduced word of the longest element of the Weyl
+  group).
 * `RootPairing.weylCoxeterSystem_isReflection_ofIdx`: the reflection in every root, simple or not,
   is a reflection of the Coxeter system.
 * `RootPairing.bruhatStep_ofIdx_mul_iff_mem_inversions`: for a positive root `β`, `s_β w → w` is an
