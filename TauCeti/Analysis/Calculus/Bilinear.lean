@@ -122,7 +122,7 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
 
 /-- If a family `A` of continuous linear maps is continuous at `p`, then `(x, q) ↦ A q x` is
 differentiable at `(0, p)`, with derivative `(x, q) ↦ A p x`. No differentiability in `q` is
-needed: the variation of `A q` is applied to `x`, which vanishes at `(0, p)`. -/
+needed. -/
 theorem _root_.ContinuousAt.hasFDerivAt_clm_apply_zero {P : Type*} [NormedAddCommGroup P]
     [NormedSpace 𝕜 P] {A : P → E →L[𝕜] F} {p : P} (hA : ContinuousAt A p) :
     HasFDerivAt (fun q : E × P ↦ A q.2 q.1) ((A p).comp (ContinuousLinearMap.fst 𝕜 E P))

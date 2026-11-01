@@ -28,7 +28,7 @@ instance on the Whitehead link `TauCeti.whiteheadLink`.
 * `TauCeti.SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_sphere`: the same for a smooth
   link presentation in `S³`.
 * `TauCeti.SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`:
-  for either orientation of `ℝ⁴`, the neighbourhoods can be chosen to preserve orientation at their
+  for any orientation of `E`, the neighbourhoods can be chosen to preserve orientation at their
   core points, as the surgery coefficients of rational surgery on the link require.
 
 ## References

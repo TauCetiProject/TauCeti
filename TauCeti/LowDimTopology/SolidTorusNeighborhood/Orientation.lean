@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.Orientation
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -275,8 +276,8 @@ private theorem coreReading_comp_conjDisc (Φ : SolidTorus → E) :
       SolidTorus.coreReading_of_not_norm_le _ hv']
 
 /-- A unit vector `p` followed by the images of `(1, 0)`, `(i, 0)` and `(0, 1)` under an
-injective linear map `L : ℂ × ℝ → E` valued in `(ℝ ∙ p)ᗮ` is a basis of `E`, so the volume form
-does not vanish on it. -/
+injective linear map `L : ℂ × ℝ → E` valued in `(ℝ ∙ p)ᗮ` is linearly independent, so the volume
+form does not vanish on it. -/
 private theorem volumeForm_ne_zero_of_injective {p : E} (hp : ‖p‖ = 1) {L : ℂ × ℝ →L[ℝ] E}
     (hL : Injective L) (horth : ∀ v, ⟪p, L v⟫ = 0) (o : Orientation ℝ E (Fin 4)) :
     o.volumeForm ![p, L (1, 0), L (I, 0), L (0, 1)] ≠ 0 := by
@@ -302,18 +303,11 @@ private theorem volumeForm_ne_zero_of_injective {p : E} (hp : ‖p‖ = 1) {L : 
       have := Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle hmem)
       rw [real_inner_self_eq_norm_sq, hp] at this
       norm_num at this
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 3
-  have hcard : Fintype.card (Fin 4) = finrank ℝ E := by simp [Fact.out (p := finrank ℝ E = 4)]
-  let b : OrthonormalBasis (Fin 4) ℝ E := (stdOrthonormalBasis ℝ E).reindex (finCongr hcard.symm)
-  rw [← abs_ne_zero, o.volumeForm_robust' b]
-  exact abs_ne_zero.2 (b.toBasis.is_basis_iff_det.1
-    ⟨hli, hli.span_eq_top_of_card_eq_finrank hcard⟩).ne_zero
+  exact Orientation.volumeForm_apply_ne_zero_iff.2 hli
 
 /-- **Orientation-preserving solid torus neighbourhoods of knots.** For either orientation `o` of
 `E`, every `C²` embedded circle `f` in the unit sphere `S³` of `E` has a solid torus neighbourhood
-inside any prescribed neighbourhood of its image which preserves orientation at its core point.
-If a neighbourhood with nondegenerate derivative at the core reverses the orientation, its
-precomposition with the reflection `(u, w) ↦ (conj u, w)` of the solid torus preserves it. -/
+inside any prescribed neighbourhood of its image which preserves orientation at its core point. -/
 theorem exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore
     {f : Circle → sphere (0 : E) 1} (hf : ContMDiff (𝓡 1) (𝓡 3) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) (𝓡 3) f z)) (hinj : Injective f)

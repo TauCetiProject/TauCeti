@@ -145,9 +145,8 @@ theorem isWeeksManifold_congr (e : Y ≃ₜ Y') : IsWeeksManifold Y ↔ IsWeeksM
   ⟨fun hY ↦ hY.of_homeomorph e, fun hY ↦ hY.of_homeomorph e.symm⟩
 
 /-- **A Weeks manifold exists.** The Dehn surgery on the Whitehead link with coefficients `5` and
-`5 / 2` exists as a compact Hausdorff space: the components of the link have disjoint solid torus
-neighbourhoods preserving orientation at their core points, and the link exterior has a Dehn
-filling along these slopes. -/
+`5 / 2`, along solid torus neighbourhoods preserving orientation at their core points, exists as
+a compact Hausdorff space. -/
 theorem exists_isWeeksManifold :
     ∃ (Y : Type) (_ : TopologicalSpace Y), CompactSpace Y ∧ T2Space Y ∧ IsWeeksManifold Y := by
   obtain ⟨Φ, h, hΦ⟩ :=

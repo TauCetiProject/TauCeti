@@ -95,7 +95,7 @@ theorem exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading
   · rintro _ ⟨q, rfl⟩
     exact hΨU (mem_range_self q)
   -- Read in `E`, the inverse chart `G` is smooth with injective derivative, valued in the tangent
-  -- spaces of the sphere since `‖G y‖ = 1` for every `y`.
+  -- spaces of the sphere.
   set G := ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' 3 p).symm
   have hcG : (fun q ↦ ((c.symm ∘ Ψ) q : E)) = G ∘ Ψ := by
     funext q
@@ -103,16 +103,6 @@ theorem exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading
   set y₀ := Ψ (0, 1)
   have hG : HasFDerivAt G (fderiv ℝ G y₀) y₀ :=
     ((contDiff_coe_comp_stereographic'_symm p (k := 1)).differentiable one_ne_zero y₀).hasFDerivAt
-  have horth : ∀ w, ⟪G y₀, fderiv ℝ G y₀ w⟫ = 0 := by
-    have hconst : (fun y ↦ ‖G y‖ ^ 2) = fun _ ↦ (1 : ℝ) := by
-      funext y
-      simp [G, norm_eq_of_mem_sphere]
-    have h := hG.norm_sq
-    rw [hconst] at h
-    intro w
-    have := congrArg (fun L : EuclideanSpace ℝ (Fin 3) →L[ℝ] ℝ ↦ L w)
-      (h.unique (hasFDerivAt_const (1 : ℝ) y₀))
-    simpa using this
   have hread : SolidTorus.coreReading (G ∘ Ψ) =ᶠ[𝓝 0] G ∘ SolidTorus.coreReading Ψ :=
     SolidTorus.coreReading_comp_eventuallyEq G Ψ
   refine ⟨(fderiv ℝ G y₀).comp LΨ, ?_, (injective_fderiv_coe_comp_stereographic'_symm p y₀).comp
@@ -124,7 +114,7 @@ theorem exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading
     exact hG'.comp 0 hLΨ
   · have h0 : ((c.symm ∘ Ψ) (0, 1) : E) = G y₀ := congrFun hcG (0, 1)
     rw [h0]
-    exact horth (LΨ v)
+    exact inner_fderiv_coe_comp_stereographic'_symm p y₀ (LΨ v)
 
 /-- Every `C²` embedded circle in a unit three-sphere has a solid torus neighbourhood inside
 any prescribed neighbourhood of its image. -/

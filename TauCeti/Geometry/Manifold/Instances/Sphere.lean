@@ -66,9 +66,10 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
   smooth embedding of the model space into the sphere.
 * `TauCeti.coe_comp_stereographic'_symm`, `TauCeti.contDiff_coe_comp_stereographic'_symm`,
-  `TauCeti.injective_fderiv_coe_comp_stereographic'_symm`: read in the ambient space, the inverse
-  of a stereographic chart is `stereoInvFunAux` precomposed with a linear isometry, so it is smooth
-  with injective derivative.
+  `TauCeti.injective_fderiv_coe_comp_stereographic'_symm`,
+  `TauCeti.inner_fderiv_coe_comp_stereographic'_symm`: read in the ambient space, the inverse of a
+  stereographic chart is `stereoInvFunAux` precomposed with a linear isometry, so it is smooth with
+  injective derivative valued in the tangent spaces of the sphere.
 * `TauCeti.compl_singleton_sup_compl_singleton_neg_eq_top`: the complements of two antipodal
   points cover the sphere.
 * `TauCeti.stereographicDiffeomorph`, `TauCeti.stereographicPuncturedDiffeomorph`: stereographic
@@ -218,6 +219,24 @@ theorem injective_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
   rw [h.fderiv]
   exact (injective_fderiv_stereoInvFunAux_comp_coe (norm_eq_of_mem_sphere v) _).comp
     U.symm.injective
+
+/-- Read in the ambient space, the derivative of the inverse of a stereographic chart at `y` is
+orthogonal to its value at `y`: it is valued in the tangent space of the sphere there. -/
+theorem inner_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
+    (y w : EuclideanSpace ℝ (Fin n)) :
+    ⟪(((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y,
+      fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y w⟫_ℝ = 0 := by
+  set G := ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm
+  have hG : HasFDerivAt G (fderiv ℝ G y) y :=
+    ((contDiff_coe_comp_stereographic'_symm v (k := 1)).differentiable one_ne_zero y).hasFDerivAt
+  -- Differentiate `‖G y‖ ^ 2 = 1`.
+  have hconst : (fun y ↦ ‖G y‖ ^ 2) = fun _ ↦ (1 : ℝ) := by
+    funext y
+    simp [G, norm_eq_of_mem_sphere]
+  have h := hG.norm_sq
+  rw [hconst] at h
+  simpa using congrArg (fun L : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ ↦ L w)
+    (h.unique (hasFDerivAt_const (1 : ℝ) y))
 
 /-- Stereographic projection from `v` is a chart in the maximal atlas of the sphere, at every
 regularity. -/
