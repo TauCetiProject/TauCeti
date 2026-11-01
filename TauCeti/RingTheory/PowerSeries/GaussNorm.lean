@@ -30,11 +30,9 @@ nonarchimedean ring, a pair of distinguished degrees produces a dominant coeffic
 as soon as the two distinguished coefficients multiply without loss of norm; this is automatic
 when the norm is multiplicative, and the Gauss norm is then multiplicative on restricted series.
 
-The distinguished degree is the datum Weierstrass division and preparation for Tate algebras are
-organised around. Distinguishedness and its product law need only a seminormed coefficient ring;
-nonzero restricted series attain a distinguished degree over a normed ring. No completeness
-hypothesis is needed for these norm identities. The radius is any positive real number, including
-the unit radius of the usual Tate algebra.
+Distinguished degrees govern Weierstrass division and preparation for Tate algebras.
+Distinguishedness and its product law need only a seminormed ring; attainment for nonzero restricted
+series needs a normed ring. No completeness is needed, and any positive radius is allowed.
 
 Over a complete seminormed ring, summable Gauss norms ensure summability in every coefficient.
 Over any normed ring, the coefficientwise `tsum`s of such a family of restricted series form a
@@ -49,14 +47,11 @@ values in `ℝ≥0` on the ring of restricted series, `gaussValuation`, whose su
 Pulled back to the Tate algebra at radii at most one, these valuations give the Gauss points of the
 closed unit disc.
 
-At a positive radius, the Gauss norm of a nonzero restricted series is attained in a finite nonempty
-set of degrees. Its largest element is the distinguished degree, and its smallest is the *lowest
-dominant degree* (`IsLowestDominant`); both are additive on products. Recording one of them next to
-the Gauss norm refines `gaussValuation` to a valuation with values in the lexicographically ordered
-group `ℝ≥0ˣ ×ₗ ℤ`: `gaussValuationAbove` records the distinguished degree and `gaussValuationBelow`
-the negated lowest dominant degree. They are the Gauss norms at a radius infinitesimally above and
-infinitesimally below `c`, and pulled back to the Tate algebra they give refined points of the
-closed unit disc next to its Gauss points.
+At a positive radius, a nonzero restricted series has finitely many active degrees. Their maximum
+is the distinguished degree and their minimum the *lowest dominant degree* (`IsLowestDominant`);
+both are additive on products. Adjoining the former or the negated latter to `gaussValuation` gives
+`gaussValuationAbove` or `gaussValuationBelow`, valued in `ℝ≥0ˣ ×ₗ ℤ`. They represent radii
+infinitesimally above or below `c`, giving refined Tate-algebra points next to the Gauss points.
 
 ## Main definitions
 
@@ -135,6 +130,11 @@ theorem _root_.Polynomial.IsMonicOfDegree.coeff_coe_self {R : Type*} [Semiring R
 section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
+
+/-- A bound on the tail suffices for boundedness of all weighted coefficients. -/
+theorem hasGaussNorm_of_tail_le {N : ℕ} {δ : ℝ}
+    (hf : ∀ n, N ≤ n → ‖f.coeff n‖ * c ^ n ≤ δ) : f.HasGaussNorm norm c :=
+  (isBoundedUnder_of_eventually_le (eventually_atTop.mpr ⟨N, hf⟩)).bddAbove_range
 
 /-- Coefficientwise convergence to zero implies Gauss-norm convergence when the weighted
 coefficient norms are bounded by one null sequence, uniformly over the family. -/
