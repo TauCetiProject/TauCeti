@@ -309,10 +309,15 @@ theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : Sm
 back. -/
 @[simp]
 theorem mpullback_mpullback_symm (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I M F k) :
-    mpullback φ φ.contMDiff (mpullback φ.symm φ.symm.contMDiff β) = β := by
-  rw [← LinearMap.comp_apply, ← mpullback_comp]
-  have hid : ⇑φ.symm ∘ ⇑φ = id := funext φ.symm_apply_apply
-  simp only [hid, mpullback_id, LinearMap.id_apply]
+    mpullback φ φ.contMDiff (mpullback φ.symm φ.symm.contMDiff β) = β :=
+  mpullback_symm_eq_of_mpullback_eq (φ := φ.symm) rfl
+
+/-- Pulling a form back along a diffeomorphism `φ` and then along its inverse gives the form back.
+-/
+@[simp]
+theorem mpullback_symm_mpullback (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I' M' F k) :
+    mpullback φ.symm φ.symm.contMDiff (mpullback φ φ.contMDiff β) = β :=
+  mpullback_symm_eq_of_mpullback_eq rfl
 
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}

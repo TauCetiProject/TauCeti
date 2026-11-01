@@ -157,24 +157,28 @@ theorem contMDiff_unit :
       (⟨x, x, 𝟙 x⟩ : Quiver.Total (ActionCategory G X)) :=
   (contMDiff_arrows_iff I n).2 ⟨continuous_unit G X, contMDiff_id⟩
 
+variable {G X} in
+/-- Near an arrow `f`, every arrow has the label of `f`, so there its target is the translate of
+its source by that fixed label. -/
+theorem eventually_back_right_eq_smul (f : Quiver.Total (ActionCategory G X)) :
+    ∀ᶠ a in 𝓝 f, a.right.back = f.hom.hom • a.left.back := by
+  filter_upwards [((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl]
+    with a ha
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at ha
+  rw [← ha]
+  exact a.hom.map_val.symm
+
 /-- The target map of the action groupoid of a discrete monoid acting by `C^n` maps is `C^n`. -/
 theorem contMDiff_target [ContMDiffConstSMul I n G X] :
     ContMDiff I I n
       (Quiver.Total.right : Quiver.Total (ActionCategory G X) → ActionCategory G X) := by
   rw [contMDiff_objects_iff]
   intro f
-  -- Near `f` every arrow has the label of `f`, so there the target is the translate of the source
-  -- by that fixed label.
-  have hlabel : ∀ᶠ a in 𝓝 f, a.hom.hom = f.hom.hom :=
-    ((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl
   have hsmooth : ContMDiff I I n fun a : Quiver.Total (ActionCategory G X) ↦
       f.hom.hom • a.left.back := by
     simpa [Function.comp_def] using (contMDiff_const_smul f.hom.hom).comp
       ((objectDiffeomorph I n G X).contMDiff.comp (isLocalDiffeomorph_source I n G X).contMDiff)
-  refine (hsmooth f).congr_of_eventuallyEq ?_
-  filter_upwards [hlabel] with a ha
-  rw [← ha]
-  exact a.hom.map_val.symm
+  exact (hsmooth f).congr_of_eventuallyEq (eventually_back_right_eq_smul f)
 
 variable {G X} in
 /-- Composition in the action groupoid of a discrete monoid is `C^n`: composing two `C^n` families
