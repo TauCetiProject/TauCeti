@@ -26,8 +26,9 @@ neck where both perturbations are cylindrical, the pushforward of the perturbati
 coordinates (`TauCeti.Floer.pairOfPantsPerturbation_plumbingMap`). The glued datum
 `TauCeti.Floer.plumbedPerturbation` uses the pushforward on the half `Re z > L/2` of the end `q`
 and the perturbation of `S` elsewhere. It restricts to each of the two given perturbations away
-from a collar of width `2` at the end of each piece, and for `L > 4`, when these two regions
-overlap in an open neck, it is smooth on the four-punctured sphere. Its four ends therefore carry
+from a collar of width `2` at the end of each piece. For `L > 4`, when these two regions overlap
+in an open neck, and for period-one Hamiltonians of class `C^n` (smooth ones, taking `n = ∞`), it
+is of class `C^n` on the four-punctured sphere. Its four ends therefore carry
 the two input Hamiltonians of `S'` at `c_q` and `ψ(1)`, and the remaining input and output
 Hamiltonians of `S`.
 
@@ -43,8 +44,9 @@ Hamiltonians of `S`.
   `q`, the glued datum is the perturbation of the receiving pair of pants.
 * `TauCeti.Floer.plumbedPerturbation_plumbingMap`: off the collar `Re z < 2 - L` of the end at
   `∞`, the pullback of the glued datum along `ψ` is the perturbation of the inserted pair of pants.
-* `TauCeti.Floer.contMDiffAt_plumbedPerturbation`: the glued datum is smooth on the four-punctured
-  sphere.
+* `TauCeti.Floer.contMDiffAt_plumbedPerturbation`: for `L > 4` and period-one Hamiltonians of
+  class `C^n`, the glued datum is of class `C^n` on the four-punctured sphere; smooth Hamiltonians
+  give a smooth datum.
 
 ## References
 
