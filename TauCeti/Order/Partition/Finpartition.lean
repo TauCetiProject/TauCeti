@@ -30,7 +30,8 @@ and the fact that it is inverse to restricting a refinement to the parts of the 
 the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the complementarity of two different parts through points that cover the whole set,
-the determination of a partition by its parts through each point, the factor of the part through
+the determination of a partition by its parts through each point, the invariance of these parts
+under transport along an equality of finsets, the factor of the part through
 a point in a product over the parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
 the parts through each point, the fact that a refinement with no more parts than the coarser
@@ -331,6 +332,13 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
     ∑ x ∈ s, f (P.part x) = ∑ A ∈ P.parts, #A • f A := by
   rw [P.sum_apply_part_of_subset subset_rfl]
   exact Finset.sum_congr rfl fun A hA => by rw [Finset.inter_eq_right.2 (P.le hA)]
+
+/-- Transporting a finite partition along an equality of finsets keeps the part through each
+point. -/
+@[simp]
+theorem part_copy {t : Finset α} (P : Finpartition s) (h : s = t) : (P.copy h).part = P.part := by
+  subst h
+  rfl
 
 /-- Refining a partition shrinks the part containing each point. -/
 @[gcongr]

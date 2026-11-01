@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Prod.Lex.Basic
+public import TauCeti.Combinatorics.NoncrossingPartition.Comap
 public import TauCeti.Combinatorics.NoncrossingPartition.Kreweras
 
 /-!
@@ -24,6 +25,11 @@ Kreweras complement of `P` (`Finpartition.isNoncrossing_interlace_iff`). Every p
 interlaced positions none of whose parts meets both positions and bars is of this form
 (`Finpartition.exists_eq_interlace`), and `P`, `Q` are determined by it
 (`Finpartition.interlace_inj`).
+
+The pairs `{x, x̄}` of a position and the bar after it are the fibres of the projection of the
+interlaced positions to `s`. Pulling back along this projection, the join of `P.interlace Q` with
+these pairs is the partition into one part exactly when `P ⊔ Q` is
+(`TauCeti.NoncrossingPartition.interlace_sup_comap_bot_eq_top_iff`).
 
 These partitions index the moment–cumulant expansion of the alternating products
 `a₁b₁a₂b₂⋯aₙbₙ` of two free families: the noncrossing partitions of the interlaced word that do not
@@ -47,6 +53,9 @@ noncrossing partition of the `b`-letters below the Kreweras complement of `π`.
   and its image consists of the partitions none of whose parts meets both positions and bars.
 * `Finpartition.isNoncrossing_interlace_iff` — `P.interlace Q` is noncrossing exactly when `P` and
   `Q` are noncrossing and `Q ≤ P.kreweras`.
+* `TauCeti.NoncrossingPartition.interlace_sup_comap_bot_eq_top_iff` — for noncrossing `P`, `Q`
+  with `P.interlace Q` noncrossing, its join with the pairs `{x, x̄}` is `1` exactly when
+  `P ⊔ Q = 1`.
 
 ## References
 
@@ -79,6 +88,13 @@ theorem mem_interlace {s : Finset α} {p : α ×ₗ Bool} : p ∈ s.interlace �
 theorem toLex_mem_interlace {s : Finset α} {x : α} {b : Bool} :
     toLex (x, b) ∈ s.interlace ↔ x ∈ s :=
   mem_interlace
+
+/-- Forgetting whether an interlaced position of `s` is a position or a bar gives back `s`. -/
+theorem image_fst_interlace [DecidableEq α] (s : Finset α) :
+    s.interlace.image (fun p => (ofLex p).1) = s := by
+  ext x
+  simp only [mem_image, mem_interlace]
+  exact ⟨fun ⟨p, hp, hpx⟩ => hpx ▸ hp, fun hx => ⟨toLex (x, false), hx, rfl⟩⟩
 
 end Finset
 
@@ -340,3 +356,82 @@ theorem isNoncrossing_interlace_iff :
 end Noncrossing
 
 end Finpartition
+
+namespace TauCeti.NoncrossingPartition
+
+variable {α : Type*} [LinearOrder α] {s : Finset α}
+
+/-- Joining the interlaced partition of `P` and `Q` with the pairs `{x, x̄}` of a position and the
+bar after it gives the partition of the interlaced positions into one part exactly when `P ⊔ Q` is
+the partition of `s` into one part. The pairs `{x, x̄}` are the fibres of the projection
+`(x, b) ↦ x` from the interlaced positions to `s`. -/
+theorem interlace_sup_comap_bot_eq_top_iff {P Q : NoncrossingPartition s}
+    (hPQ : (P.1.interlace Q.1).IsNoncrossing)
+    (hf : MonotoneOn (fun p : α ×ₗ Bool => (ofLex p).1) s.interlace) :
+    (⟨P.1.interlace Q.1, hPQ⟩ : NoncrossingPartition s.interlace) ⊔ comap hf ⊥ = ⊤ ↔
+      P ⊔ Q = ⊤ := by
+  have h : s.interlace.image (fun p : α ×ₗ Bool => (ofLex p).1) = s := s.image_fst_interlace
+  -- The interlaced partition lies below the pullback of `ρ` exactly when `P` and `Q` lie below `ρ`.
+  have key (ρ : Finpartition (s.interlace.image fun p : α ×ₗ Bool => (ofLex p).1)) :
+      P.1.interlace Q.1 ≤ ρ.comap (fun p : α ×ₗ Bool => (ofLex p).1) ↔
+        (∀ x, P.1.part x ⊆ ρ.part x) ∧ ∀ x, Q.1.part x ⊆ ρ.part x := by
+    rw [Finpartition.le_iff_forall_part_subset]
+    refine ⟨fun hle => ⟨fun x y hy => ?_, fun x y hy => ?_⟩, fun ⟨hP, hQ⟩ p q hq => ?_⟩
+    · have hx : x ∈ s := P.1.part_nonempty.1 ⟨y, hy⟩
+      have hyx := hle (toLex (x, false)) (by
+        rw [Finpartition.part_interlace_false hx]
+        exact mem_image_of_mem _ hy)
+      exact ((Finpartition.mem_part_comap (toLex_mem_interlace.2 hx)).1 hyx).2
+    · have hx : x ∈ s := Q.1.part_nonempty.1 ⟨y, hy⟩
+      have hyx := hle (toLex (x, true)) (by
+        rw [Finpartition.part_interlace_true hx]
+        exact mem_image_of_mem _ hy)
+      exact ((Finpartition.mem_part_comap (toLex_mem_interlace.2 hx)).1 hyx).2
+    · obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
+      have hx : x ∈ s := toLex_mem_interlace.1 ((P.1.interlace Q.1).part_nonempty.1 ⟨q, hq⟩)
+      rw [Finpartition.mem_part_comap (toLex_mem_interlace.2 hx)]
+      cases b
+      · rw [Finpartition.part_interlace_false hx] at hq
+        obtain ⟨y, hy, rfl⟩ := mem_image.1 hq
+        exact ⟨toLex_mem_interlace.2 (P.1.part_subset x hy), hP x hy⟩
+      · rw [Finpartition.part_interlace_true hx] at hq
+        obtain ⟨y, hy, rfl⟩ := mem_image.1 hq
+        exact ⟨toLex_mem_interlace.2 (Q.1.part_subset x hy), hQ x hy⟩
+  constructor
+  · -- The pullback of `P ⊔ Q` lies above the interlaced partition and the pairs, so it is `1`.
+    intro hσ
+    have hle : (⟨P.1.interlace Q.1, hPQ⟩ : NoncrossingPartition s.interlace) ≤
+        comap hf ⟨(P ⊔ Q).1.copy h.symm, (P ⊔ Q).2.copy h.symm⟩ := by
+      rw [← Subtype.coe_le_coe, coe_comap, key, Finpartition.part_copy]
+      exact ⟨Finpartition.part_mono (Subtype.coe_le_coe.2 (le_sup_left : P ≤ P ⊔ Q)),
+        Finpartition.part_mono (Subtype.coe_le_coe.2 (le_sup_right : Q ≤ P ⊔ Q))⟩
+    have htop := top_le_iff.1 (hσ ▸ sup_le hle ((comap hf).monotone bot_le))
+    rw [← comap_top hf, (comap hf).injective.eq_iff] at htop
+    refine Subtype.ext (Finpartition.ext_of_part fun x hx => ?_)
+    have hpart := congrArg (fun ρ : NoncrossingPartition _ => ρ.1.part x) htop
+    simp only [Finpartition.part_copy, coe_top] at hpart
+    rw [hpart, coe_top, Finpartition.part_top hx, Finpartition.part_top (h.symm ▸ hx), h]
+  · -- The join is the pullback of some `ρ` above `P` and `Q`, so `ρ` is `1`.
+    intro hPQtop
+    obtain ⟨ρ, hρ⟩ := exists_comap_eq_iff.2
+      (le_sup_right : comap hf ⊥ ≤ ⟨P.1.interlace Q.1, hPQ⟩ ⊔ comap hf ⊥)
+    obtain ⟨hPρ, hQρ⟩ := (key ρ.1).1 (by
+      rw [← coe_comap hf, hρ]
+      exact Subtype.coe_le_coe.2 (le_sup_left : (⟨P.1.interlace Q.1, hPQ⟩ :
+        NoncrossingPartition s.interlace) ≤ _ ⊔ comap hf ⊥))
+    have hρtop : (⟨ρ.1.copy h, ρ.2.copy h⟩ : NoncrossingPartition s) = ⊤ :=
+      top_le_iff.1 (hPQtop ▸ sup_le
+        (Subtype.coe_le_coe.1 (Finpartition.le_iff_forall_part_subset.2 (by
+          rw [Finpartition.part_copy]
+          exact hPρ)))
+        (Subtype.coe_le_coe.1 (Finpartition.le_iff_forall_part_subset.2 (by
+          rw [Finpartition.part_copy]
+          exact hQρ))))
+    rw [← hρ, ← comap_top hf]
+    congr 1
+    refine Subtype.ext (Finpartition.ext_of_part fun x hx => ?_)
+    have hpart := congrArg (fun ρ : NoncrossingPartition s => ρ.1.part x) hρtop
+    simp only [Finpartition.part_copy, coe_top] at hpart
+    rw [hpart, coe_top, Finpartition.part_top hx, Finpartition.part_top (h ▸ hx), h]
+
+end TauCeti.NoncrossingPartition
