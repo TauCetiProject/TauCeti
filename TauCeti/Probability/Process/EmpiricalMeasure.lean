@@ -24,9 +24,9 @@ matches the shape used in limit theorems.
 There is one construction, not three: the probability measures are *defined* from the finite
 measure, and the sequence form as a specialization, so they can never drift apart.
 
-The API covers evaluation, integration, pushforward, measurability and finite support. Values are
-counted with multiplicity: the empirical measure depends only on the multiset of values, so it is
-invariant under reindexing, and the empirical measure of a concatenation is the average of the
+The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
+Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
+so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
 empirical measures of its pieces weighted by their sizes. The finite-population form is used by
 quantitative sampling arguments and, applied to eigenvalues, defines empirical spectral measures of
 matrices. The sequence form is the process-level input to the empirical-measure form of de
@@ -318,6 +318,17 @@ theorem lintegral_empiricalMeasureOfFintype {x : κ → α} {f : α → ℝ≥0�
     ∫⁻ y, f y ∂(empiricalMeasureOfFintype x : Measure α) =
       ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (x i) := by
   simp [lintegral_finsetSum_measure, lintegral_dirac' _ hf, Finset.mul_sum]
+
+/-- Finite empirical probability measures depend continuously on the population for the weak
+topology. Colliding values retain their multiplicities. -/
+@[fun_prop]
+theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasurableSpace α] :
+    Continuous (empiricalMeasureOfFintype : (κ → α) → ProbabilityMeasure α) := by
+  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.mpr
+  intro f
+  simp_rw [integral_empiricalMeasureOfFintype f.continuous.stronglyMeasurable]
+  exact (continuous_finsetSum _ fun i _ => f.continuous.comp (continuous_apply i)).const_smul
+    ((Fintype.card κ : ℝ)⁻¹)
 
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
