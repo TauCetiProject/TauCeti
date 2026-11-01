@@ -25,6 +25,9 @@ reducibility of these oracles.
 
 * `ManyOneReducible.turingReducible_oracle`: a many-one reduction of sets gives a Turing reduction
   of their oracles.
+* `Set.partrec_oracle_iff`: partial computability of a set oracle is equivalent to computability
+  of membership.
+* `Set.turingReducible_empty_iff`: reducibility to the empty oracle characterizes computable sets.
 
 ## References
 
@@ -44,6 +47,38 @@ noncomputable def oracle (A : Set ℕ) : ℕ →. ℕ :=
 @[simp]
 theorem oracle_apply (A : Set ℕ) (n : ℕ) : A.oracle n = Part.some (A.indicator 1 n) :=
   (rfl)
+
+/-- The empty set answers zero on every input. -/
+@[simp]
+theorem oracle_empty : (∅ : Set ℕ).oracle = fun _ => Part.some 0 := by
+  ext n
+  simp
+
+/-- A set oracle is partial computable exactly when membership in the set is computable. -/
+@[simp]
+theorem partrec_oracle_iff (A : Set ℕ) : Partrec A.oracle ↔ ComputablePred (· ∈ A) := by
+  classical
+  constructor
+  · intro h
+    have hχ : Computable (A.indicator 1 : ℕ → ℕ) :=
+      h.of_eq_tot fun n => by simp
+    refine Computable.computablePred <|
+      (Primrec.beq.to_comp.comp hχ (Computable.const 1)).of_eq fun n => ?_
+    by_cases hn : n ∈ A <;> simp [hn]
+  · intro h
+    exact ((h.ite (Computable.const 1) (Computable.const 0)).partrec).of_eq fun n => by
+      by_cases hn : n ∈ A <;> simp [hn]
+
+/-- The empty oracle is Turing reducible to every oracle. -/
+theorem empty_turingReducible (A : Set ℕ) : TuringReducible (∅ : Set ℕ).oracle A.oracle := by
+  rw [oracle_empty]
+  exact (Computable.const 0).partrec.turingReducible
+
+/-- A set is Turing reducible to the empty oracle exactly when its membership is computable. -/
+theorem turingReducible_empty_iff (A : Set ℕ) :
+    TuringReducible A.oracle (∅ : Set ℕ).oracle ↔ ComputablePred (· ∈ A) := by
+  rw [oracle_empty, ← partrec_oracle_iff]
+  exact ⟨TuringReducible.partrec_of_const, Partrec.turingReducible⟩
 
 end Set
 
