@@ -22,9 +22,10 @@ measurable sets which vanishes on `μ`-null sets therefore extends uniquely to a
 vanishing on `μ`-null sets. Its value at a null-measurable set `s` is `m (toMeasurable μ s)`
 (`MeasureTheory.AddContent.completion`).
 
-Conversely, a content on a ring of sets restricts to any smaller family of sets
-(`MeasureTheory.AddContent.trim`), and restriction to the measurable sets is inverse to the
-extension. So contents on the measurable sets and on the null-measurable sets that vanish on null
+Conversely, a content on the null-measurable sets restricts to the measurable sets
+(`MeasureTheory.AddContent.map` along `id`), and the extension of this restriction recovers the
+content, if it vanishes on null sets and, by convention, on sets that are not null-measurable.
+So contents on the measurable sets and on the null-measurable sets that vanish on null
 sets are the same thing. This is the form in which finitely additive set functions on the Borel
 sets of a group and on the measurable sets of its completed Haar measure correspond, for instance
 to describe the positive functionals on `L∞`. The extension preserves nonnegativity and
@@ -32,7 +33,6 @@ invariance under a group action preserving `μ`.
 
 ## Main definitions
 
-* `MeasureTheory.AddContent.trim`: the restriction of a content to a smaller family of sets.
 * `MeasureTheory.AddContent.completion`: the extension of a content on the measurable sets,
   vanishing on `μ`-null sets, to the `μ`-null-measurable sets.
 
@@ -42,9 +42,10 @@ invariance under a group action preserving `μ`.
   sets that agree almost everywhere.
 * `MeasureTheory.AddContent.completion_apply`: the extension takes the value `m t` at a
   null-measurable set that agrees almost everywhere with a measurable set `t`.
-* `MeasureTheory.AddContent.completion_unique`, `MeasureTheory.AddContent.completion_trim`: the
-  extension is the only content on the null-measurable sets extending `m` and vanishing on null
-  sets.
+* `MeasureTheory.AddContent.completion_unique`, `MeasureTheory.AddContent.completion_map_id`:
+  any content on the null-measurable sets extending `m` and vanishing on null sets agrees with
+  the extension at every null-measurable set, and equals it if it also vanishes, by convention,
+  on sets that are not null-measurable.
 * `MeasureTheory.AddContent.forall_completion_smul_eq_iff`: the extension is invariant under a
   measure-preserving group action exactly when `m` is invariant on measurable sets.
 -/
@@ -73,27 +74,6 @@ theorem addContent_congr_ae {F : Type*} [FunLike F (Set α) ℝ≥0∞] [OuterMe
       hm _ (hC.sdiff_mem hu hv) huv, add_zero]
   rw [key hs ht (ae_eq_set.1 hst).1, key ht hs (ae_eq_set.1 hst).2, inter_comm]
 
-section Trim
-
-variable [AddCommMonoid G] {D : Set (Set α)}
-
-namespace AddContent
-
-/-- The restriction of a content on `C` to a smaller family `D ⊆ C` of sets, with the same
-values. -/
-def trim (m : AddContent G C) (h : D ⊆ C) : AddContent G D where
-  toFun := m
-  empty' := addContent_empty
-  sUnion' _ hI hdis hU := addContent_sUnion (hI.trans h) hdis (h hU)
-
-@[simp]
-theorem trim_apply (m : AddContent G C) (h : D ⊆ C) (s : Set α) : m.trim h s = m s :=
-  (rfl)
-
-end AddContent
-
-end Trim
-
 variable [MeasurableSpace α] {μ : Measure α}
 
 /-- The null-measurable sets of a measure form a ring of sets. -/
@@ -101,11 +81,6 @@ theorem isSetRing_nullMeasurableSet : IsSetRing {s : Set α | NullMeasurableSet 
   empty_mem := nullMeasurableSet_empty
   union_mem _ _ hs ht := NullMeasurableSet.union hs ht
   sdiff_mem _ _ hs ht := NullMeasurableSet.diff hs ht
-
-/-- Measurable sets are null-measurable, as a family of sets. -/
-theorem setOf_measurableSet_subset_setOf_nullMeasurableSet :
-    {s : Set α | MeasurableSet s} ⊆ {s : Set α | NullMeasurableSet s μ} :=
-  fun _ hs => MeasurableSet.nullMeasurableSet hs
 
 namespace AddContent
 
@@ -142,11 +117,18 @@ def completion (hm : ∀ s, MeasurableSet s → μ s = 0 → m s = 0) :
         ← addContent_union_add_inter isSetRing_measurableSet hs' ht', hm _ (hs'.inter ht') hnull,
         add_zero]
 
+open Classical in
+/-- The value of the extension of `m`: `m (toMeasurable μ s)` at a null-measurable set `s`, and
+zero elsewhere. -/
+theorem completion_apply_eq_ite (s : Set α) :
+    m.completion μ hm s = if NullMeasurableSet s μ then m (toMeasurable μ s) else 0 :=
+  (rfl)
+
 /-- The extension of `m` takes the value `m t` at a null-measurable set that agrees almost
 everywhere with a measurable set `t`. -/
 theorem completion_apply (hs : NullMeasurableSet s μ) (ht : MeasurableSet t) (hst : s =ᵐ[μ] t) :
     m.completion μ hm s = m t := by
-  unfold completion
+  rw [completion_apply_eq_ite]
   exact (ite_eq_left hs).trans <| addContent_congr_ae isSetRing_measurableSet hm
     (measurableSet_toMeasurable μ s) ht (hs.toMeasurable_ae_eq.trans hst)
 
@@ -158,15 +140,17 @@ theorem completion_apply_of_measurableSet (hs : MeasurableSet s) : m.completion 
 /-- The extension of `m` is zero at a set that is not null-measurable, by convention. -/
 theorem completion_of_not_nullMeasurableSet (hs : ¬NullMeasurableSet s μ) :
     m.completion μ hm s = 0 := by
-  unfold completion
+  rw [completion_apply_eq_ite]
   exact ite_eq_right hs
 
 /-- The extension of `m` vanishes on `μ`-null sets. -/
 theorem completion_of_measure_eq_zero (hs : μ s = 0) : m.completion μ hm s = 0 := by
   rw [m.completion_apply (.of_null hs) MeasurableSet.empty (ae_eq_empty.2 hs), addContent_empty]
 
-/-- The extension of `m` is the only content on the null-measurable sets that agrees with `m` on
-measurable sets and vanishes on null sets. -/
+/-- Any content on the null-measurable sets that agrees with `m` on measurable sets and vanishes
+on null sets agrees with the extension of `m` at every null-measurable set. See
+`completion_map_id` for equality of contents, under the convention that the content vanishes on
+sets that are not null-measurable. -/
 theorem completion_unique {m' : AddContent G {s : Set α | NullMeasurableSet s μ}}
     (hm' : ∀ s, μ s = 0 → m' s = 0) (h : ∀ s, MeasurableSet s → m' s = m s)
     (hs : NullMeasurableSet s μ) : m.completion μ hm s = m' s := by
@@ -177,13 +161,13 @@ theorem completion_unique {m' : AddContent G {s : Set α | NullMeasurableSet s �
 
 /-- A content on the null-measurable sets vanishing on null sets, and by convention on sets that
 are not null-measurable, is the extension of its restriction to the measurable sets. -/
-theorem completion_trim (m' : AddContent G {s : Set α | NullMeasurableSet s μ})
+theorem completion_map_id (m' : AddContent G {s : Set α | NullMeasurableSet s μ})
     (hm' : ∀ s, μ s = 0 → m' s = 0) (h' : ∀ s, ¬NullMeasurableSet s μ → m' s = 0) :
-    (m'.trim setOf_measurableSet_subset_setOf_nullMeasurableSet).completion μ
-      (fun s _ hs => (m'.trim_apply _ s).trans (hm' s hs)) = m' := by
+    (m'.map id fun _ hu => MeasurableSet.nullMeasurableSet hu).completion μ
+      (fun s _ hs => (map_apply ..).trans (hm' s hs)) = m' := by
   ext s
   by_cases hs : NullMeasurableSet s μ
-  · exact completion_unique _ hm' (fun _ _ => (trim_apply ..).symm) hs
+  · exact completion_unique _ hm' (fun _ _ => (map_apply ..).symm) hs
   · rw [completion_of_not_nullMeasurableSet _ hs, h' s hs]
 
 /-- The extension of a nonnegative content is nonnegative. -/
