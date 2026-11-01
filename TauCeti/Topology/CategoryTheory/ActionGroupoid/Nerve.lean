@@ -161,7 +161,7 @@ variable (G X) in
 /-- The coarse map `B(G ⋉ X) → X / G` from the fat classifying space of an action groupoid to its
 orbit space, sending a point of a simplex to the orbit of any vertex of that simplex
 (`coarseMap_ι`). -/
-def coarseMap :
+@[expose] def coarseMap :
     fatClassifyingSpace (ActionCategory G X) ⟶ TopCat.of (MulAction.orbitRel.Quotient G X) :=
   fatRealization.augment (coarseAugmentation G X)
 

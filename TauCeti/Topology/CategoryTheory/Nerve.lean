@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import TauCeti.AlgebraicTopology.FatRealization
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # The topological nerve of a category and its fat classifying space
@@ -32,6 +33,11 @@ The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realizati
 (`TauCeti.fatRealization`) of the underlying semi-simplicial space, obtained by forgetting
 degeneracies along `SemiSimplexCategory.toSimplexCategory`.
 
+A functor `φ : C ⥤ D` whose action on total arrows (`Prefunctor.mapTotal`) is continuous induces
+a map of topological nerves `TauCeti.topologicalNerveMap` and of fat classifying spaces
+`TauCeti.fatClassifyingSpaceMap`. If it is an embedding on total arrows, it induces levelwise
+embeddings (`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`).
+
 ## References
 
 * G. Segal, *Classifying spaces and spectral sequences*, Publ. Math. IHÉS **34** (1968), 105–112.
@@ -46,7 +52,7 @@ universe v u
 
 namespace CategoryTheory.ComposableArrows
 
-variable {C : Type u} [Category.{v} C] {n : ℕ}
+variable {C : Type u} [Category.{v} C] {D : Type*} [Category D] {n : ℕ}
 
 /-- The arrow of a string of composable arrows from its `i`-th to its `j`-th object, as a total
 arrow of `C`. For `i = j` this is the identity arrow of the `i`-th object. -/
@@ -74,6 +80,23 @@ theorem totalArrow_whiskerLeft {m : ℕ} (F : ComposableArrows C m)
   have h : Φ.map (homOfLE hij) = homOfLE (Φ.monotone hij) := Subsingleton.elim _ _
   simp only [totalArrow, whiskerLeft, Functor.comp_obj, Functor.comp_map, h]
 
+/-- An arrow of the image of a string under a functor is the image of the arrow of the string. -/
+@[simp]
+theorem totalArrow_mapComposableArrows_obj (φ : C ⥤ D) (F : ComposableArrows C n)
+    (i j : Fin (n + 1)) (hij : i ≤ j) :
+    ((φ.mapComposableArrows n).obj F).totalArrow i j hij =
+      φ.toPrefunctor.mapTotal (F.totalArrow i j hij) :=
+  (rfl)
+
+/-- A string of composable arrows is determined by its arrows. -/
+theorem totalArrow_injective {F G : ComposableArrows C n}
+    (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
+  refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
+  rw [show g = homOfLE g.le from Subsingleton.elim _ _]
+  have := h i j g.le
+  simp only [totalArrow, Quiver.Total.mk.injEq] at this
+  exact this.2.2
+
 variable [TopologicalSpace (Quiver.Total C)]
 
 /-- The topology on strings of `n` composable arrows: the coarsest topology making each arrow of
@@ -100,6 +123,25 @@ theorem continuous_whiskerLeft {m : ℕ} (Φ : Fin (n + 1) ⥤ Fin (m + 1)) :
     Continuous fun F : ComposableArrows C m ↦ F.whiskerLeft Φ :=
   continuous_iff.2 fun i j hij ↦ by
     simpa only [totalArrow_whiskerLeft] using continuous_totalArrow _ _ _
+
+variable [TopologicalSpace (Quiver.Total D)]
+
+/-- A functor that is continuous on total arrows is continuous on strings of composable arrows. -/
+theorem continuous_mapComposableArrows_obj {φ : C ⥤ D} (hφ : Continuous φ.toPrefunctor.mapTotal) :
+    Continuous (φ.mapComposableArrows n).obj :=
+  continuous_iff.2 fun i j hij ↦ hφ.comp (continuous_totalArrow i j hij)
+
+/-- A functor that is an embedding on total arrows is an embedding on strings of composable
+arrows. -/
+theorem isEmbedding_mapComposableArrows_obj {φ : C ⥤ D} (hφ : IsEmbedding φ.toPrefunctor.mapTotal) :
+    IsEmbedding (φ.mapComposableArrows n).obj := by
+  refine ⟨⟨?_⟩, fun F G h ↦ totalArrow_injective fun i j hij ↦ hφ.injective ?_⟩
+  · simp only [instTopologicalSpace, induced_iInf, induced_compose]
+    refine iInf_congr fun i ↦ iInf_congr fun j ↦ iInf_congr fun hij ↦ ?_
+    rw [hφ.eq_induced, induced_compose]
+    rfl
+  · simpa only [totalArrow_mapComposableArrows_obj] using
+      congrArg (fun F ↦ totalArrow F i j hij) h
 
 end CategoryTheory.ComposableArrows
 
@@ -136,5 +178,36 @@ variable (C)
 realization of its topological nerve, with degeneracies forgotten. -/
 @[expose] def fatClassifyingSpace : TopCat.{max u v} :=
   fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C)
+
+variable {C} {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
+
+/-- The map of topological nerves induced by a functor that is continuous on total arrows. -/
+@[expose] def topologicalNerveMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
+    topologicalNerve C ⟶ topologicalNerve D where
+  app Δ := TopCat.ofHom ⟨(nerveMap φ).app Δ,
+    ComposableArrows.continuous_mapComposableArrows_obj hφ⟩
+  naturality _ _ f := by
+    ext F
+    rfl
+
+/-- The map of topological nerves induced by a functor applies the functor to each string. -/
+@[simp]
+theorem topologicalNerveMap_app_apply (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal)
+    (Δ : SimplexCategoryᵒᵖ) (F : ComposableArrows C Δ.unop.len) :
+    (topologicalNerveMap φ hφ).app Δ F = (φ.mapComposableArrows _).obj F := (rfl)
+
+/-- The underlying function of a component of the map of topological nerves induced by a functor
+applies the functor to strings. -/
+theorem coe_topologicalNerveMap_app (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal)
+    (Δ : SimplexCategoryᵒᵖ) :
+    ⇑((topologicalNerveMap φ hφ).app Δ) = (φ.mapComposableArrows Δ.unop.len).obj := (rfl)
+
+/-- The map of fat classifying spaces induced by a functor that is continuous on total arrows: the
+fat realization of the induced map of topological nerves. It is an abbreviation so that the API
+of `TauCeti.fatRealization.map` applies directly. -/
+abbrev fatClassifyingSpaceMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
+    fatClassifyingSpace C ⟶ fatClassifyingSpace D :=
+  fatRealization.map
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op (topologicalNerveMap φ hφ))
 
 end TauCeti
