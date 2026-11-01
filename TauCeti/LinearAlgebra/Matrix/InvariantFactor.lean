@@ -5,16 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.LinearAlgebra.Matrix.Divisibility
 public import TauCeti.LinearAlgebra.Matrix.Minor
-import Mathlib.Data.Fin.Tuple.Sort
-import Mathlib.LinearAlgebra.Matrix.Basis
-import Mathlib.LinearAlgebra.Matrix.Nondegenerate
-import TauCeti.RingTheory.Valuation.AddValuation
+public import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 
 /-!
 # Invariant factors and the valuations of minors
@@ -30,8 +26,8 @@ valuation ring, the least valuation of a `k × k` minor of `A` is therefore
 are needed here; the principal minors alone need not attain the minimum.
 
 Over a discrete valuation ring, every square matrix of nonzero determinant has such a Smith
-normal form. This is Mathlib's `Submodule.exists_smith_normal_form_of_rank_eq` applied to the
-image lattice, after reordering the diagonal by valuation.
+normal form: `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`.
 
 These valuations are the slopes of the Hodge polygon of the endomorphism `A` of the lattice
 `Rⁿ`, and the minor bounds are the input to the comparison of this Hodge polygon with the Newton
@@ -50,10 +46,6 @@ polygon of `det (1 - X A)` in `TauCeti.NumberTheory.NewtonPolygon.Lattice`.
 * `Matrix.prefixSum_le_valuation_principalMinor_of_mul_mul_eq_diagonal`: in particular it bounds
   the valuations of the principal `k × k` minors from below.
 * `Matrix.valuation_det_eq_sum_of_mul_mul_eq_diagonal`: `v (det A) = ∑ i, v (s i)`.
-* `Matrix.exists_mul_mul_eq_diagonal_of_det_ne_zero`: over a principal ideal domain, a square
-  matrix of nonzero determinant is equivalent to a diagonal matrix.
-* `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing`: over a discrete valuation ring,
-  the diagonal can be chosen to be a divisibility chain.
 
 ## References
 
@@ -112,25 +104,14 @@ section InvariantFactor
 
 variable {R : Type*} [CommRing R] {n : ℕ} {A L Q : Matrix (Fin n) (Fin n) R} {s : Fin n → R}
 
-/-- The leading `k × k` minor of `diagonal s` is the product of the first `k` entries. -/
-private theorem det_submatrix_diagonal_castLE {k : ℕ} (hk : k ≤ n) :
-    ((diagonal s).submatrix (Fin.castLE hk) (Fin.castLE hk)).det =
-      ∏ j : Fin k, s (Fin.castLE hk j) := by
-  rw [submatrix_diagonal _ _ (Fin.castLE_injective hk), det_diagonal, Function.comp_def]
-
-/-- From a Smith normal form `L * A * Q = diagonal s` with `L`, `Q` of unit determinant,
-`A` is recovered as `L⁻¹ * diagonal s * Q⁻¹`. -/
-private theorem eq_inv_mul_diagonal_mul_inv (hL : IsUnit L.det) (hQ : IsUnit Q.det)
-    (h : L * A * Q = diagonal s) : A = L⁻¹ * diagonal s * Q⁻¹ := by
-  simp [← h, Matrix.mul_assoc, mul_nonsing_inv _ hQ, nonsing_inv_mul_cancel_left _ _ hL]
-
 /-- **The leading invariant factors divide the minors.** If `L * A * Q = diagonal s` with `L`, `Q`
 of unit determinant and `s` a divisibility chain, then the product of the first `k` entries of `s`
 divides every `k × k` minor of `A`, on arbitrary rows and columns. -/
 theorem prod_dvd_det_submatrix_of_mul_mul_eq_diagonal (hL : IsUnit L.det) (hQ : IsUnit Q.det)
     (hs : ∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) (h : L * A * Q = diagonal s) {k : ℕ} (hk : k ≤ n)
     (f g : Fin k → Fin n) : ∏ j : Fin k, s (Fin.castLE hk j) ∣ (A.submatrix f g).det := by
-  rw [eq_inv_mul_diagonal_mul_inv hL hQ h]
+  rw [← GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq (nonsingInvUnit L hL)
+    (nonsingInvUnit Q hQ) h]
   refine dvd_det_submatrix_mul_mul (fun f' g' ↦ ?_) _ _ f g
   simpa using prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal hs
     (c₂ := 1) (fun _ _ _ ↦ dvd_rfl) 1 hk f' g'
@@ -143,16 +124,10 @@ of the `k × k` minors of `A`. -/
 theorem dvd_prod_of_mul_mul_eq_diagonal (h : L * A * Q = diagonal s) {k : ℕ} (hk : k ≤ n)
     {c : R} (hc : ∀ f g : Fin k → Fin n, c ∣ (A.submatrix f g).det) :
     c ∣ ∏ j : Fin k, s (Fin.castLE hk j) := by
-  rw [← det_submatrix_diagonal_castLE hk, ← h]
+  rw [← det_submatrix_diagonal s (Fin.castLE_injective hk), ← h]
   exact dvd_det_submatrix_mul_mul hc L Q _ _
 
 variable {Γ₀ : Type*} [LinearOrderedAddCommMonoidWithTop Γ₀] {v : AddValuation R Γ₀}
-
-/-- The valuation of the product of the first `k` entries of `s` is the prefix sum of their
-valuations. -/
-private theorem valuation_prod_castLE {k : ℕ} (hk : k ≤ n) :
-    v (∏ j : Fin k, s (Fin.castLE hk j)) = prefixSum k fun i ↦ v (s i) := by
-  rw [AddValuation.map_prod, prefixSum_eq_sum_castLE hk]
 
 /-- **Lower bound for the valuations of the minors.** For a valuation which is nonnegative on the
 whole ring and a Smith normal form `L * A * Q = diagonal s`, every `k × k` minor of `A` has
@@ -161,7 +136,7 @@ theorem prefixSum_le_valuation_det_submatrix_of_mul_mul_eq_diagonal (hv : ∀ x,
     (hL : IsUnit L.det) (hQ : IsUnit Q.det) (hs : ∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j)
     (h : L * A * Q = diagonal s) {k : ℕ} (hk : k ≤ n) (f g : Fin k → Fin n) :
     (prefixSum k fun i ↦ v (s i)) ≤ v (A.submatrix f g).det := by
-  rw [← valuation_prod_castLE hk]
+  rw [← v.map_prod_castLE hk]
   exact AddValuation.map_le_map_of_dvd hv
     (prod_dvd_det_submatrix_of_mul_mul_eq_diagonal hL hQ hs h hk f g)
 
@@ -177,7 +152,7 @@ theorem exists_valuation_det_submatrix_eq_prefixSum_of_mul_mul_eq_diagonal (hv :
     v (A.submatrix p.1 p.2).det) ⟨(Fin.castLE hk, Fin.castLE hk), mem_univ _⟩
   refine ⟨p.1, p.2, le_antisymm ?_
     (prefixSum_le_valuation_det_submatrix_of_mul_mul_eq_diagonal hv hL hQ hs h hk _ _)⟩
-  rw [← valuation_prod_castLE hk, ← det_submatrix_diagonal_castLE hk, ← h]
+  rw [← v.map_prod_castLE hk, ← det_submatrix_diagonal s (Fin.castLE_injective hk), ← h]
   exact le_valuation_det_submatrix_mul_mul hv (fun f g ↦ hp (f, g) (mem_univ _)) L Q _ _
 
 /-- **Lower bound for the valuations of the principal minors.** For a valuation which is
@@ -206,64 +181,5 @@ theorem valuation_det_eq_sum_of_mul_mul_eq_diagonal (hv : ∀ x, 0 ≤ v x) (hL 
   exact hdet
 
 end InvariantFactor
-
-/-! ### Existence of Smith normal forms -/
-
-section Existence
-
-variable {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
-
-/-- **Diagonalisation over a principal ideal domain.** A square matrix of nonzero determinant over
-a principal ideal domain is equivalent to a diagonal matrix: there are `L`, `Q` of unit
-determinant with `L * A * Q = diagonal s`. -/
-theorem exists_mul_mul_eq_diagonal_of_det_ne_zero [IsPrincipalIdealRing R]
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι R) (hA : A.det ≠ 0) :
-    ∃ (L Q : Matrix ι ι R) (s : ι → R),
-      IsUnit L.det ∧ IsUnit Q.det ∧ L * A * Q = diagonal s := by
-  set e := Pi.basisFun R ι
-  have hinj : Function.Injective A.mulVecLin := fun x y hxy ↦
-    mulVec_injective_of_det_ne_zero hA (by simpa using hxy)
-  obtain ⟨b, s, c, hc⟩ := Submodule.exists_smith_normal_form_of_rank_eq e
-    (LinearMap.finrank_range_of_inj hinj)
-  -- transport the basis `c` of the image back to the source along `A`
-  set r := c.map (LinearEquiv.ofInjective A.mulVecLin hinj).symm
-  have hr (i : ι) : A.mulVecLin (r i) = s i • b i := by
-    rw [← hc i]
-    exact congrArg Subtype.val ((LinearEquiv.ofInjective A.mulVecLin hinj).apply_symm_apply (c i))
-  have hdiag : LinearMap.toMatrix r b A.mulVecLin = diagonal s := by
-    ext i j
-    rw [LinearMap.toMatrix_apply, hr, map_smul, b.repr_self, diagonal_apply]
-    by_cases hij : i = j
-    · subst hij
-      simp
-    · simp [hij]
-  refine ⟨b.toMatrix e, e.toMatrix r, s, ?_, ?_, ?_⟩
-  · exact isUnit_det_of_right_inverse (b.toMatrix_mul_toMatrix_flip e)
-  · exact isUnit_det_of_right_inverse (e.toMatrix_mul_toMatrix_flip r)
-  · have hA' : LinearMap.toMatrix e e A.mulVecLin = A := by
-      rw [LinearMap.toMatrix_eq_toMatrix', ← Matrix.toLin'_apply', LinearMap.toMatrix'_toLin']
-    rw [← hdiag, ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix r e b e, hA']
-
-/-- **Smith normal form over a discrete valuation ring.** A square matrix of nonzero determinant
-over a discrete valuation ring has a Smith normal form: there are `L`, `Q` of unit determinant and
-a divisibility chain `s₀ ∣ s₁ ∣ ⋯` with `L * A * Q = diagonal s`. -/
-theorem exists_smith_normal_form_of_isDiscreteValuationRing [IsDiscreteValuationRing R]
-    (A : Matrix (Fin n) (Fin n) R) (hA : A.det ≠ 0) :
-    ∃ (L Q : Matrix (Fin n) (Fin n) R) (s : Fin n → R), IsUnit L.det ∧ IsUnit Q.det ∧
-      (∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) ∧ L * A * Q = diagonal s := by
-  obtain ⟨L, Q, s, hL, hQ, h⟩ := exists_mul_mul_eq_diagonal_of_det_ne_zero A hA
-  -- reorder the diagonal by increasing valuation
-  set σ := Tuple.sort (IsDiscreteValuationRing.addVal R ∘ s)
-  refine ⟨L.submatrix σ id, Q.submatrix id σ, s ∘ σ, ?_, ?_, fun i j hij ↦ ?_, ?_⟩
-  · rw [det_permute]
-    exact (σ.sign.isUnit.map (Int.castRingHom R)).mul hL
-  · rw [det_permute']
-    exact (σ.sign.isUnit.map (Int.castRingHom R)).mul hQ
-  · exact IsDiscreteValuationRing.addVal_le_iff_dvd.mp
-      (Tuple.monotone_sort (IsDiscreteValuationRing.addVal R ∘ s) hij)
-  · rw [← submatrix_id_id A, ← submatrix_mul L A σ id id Function.bijective_id,
-      ← submatrix_mul (L * A) Q σ id σ Function.bijective_id, h, submatrix_diagonal_equiv]
-
-end Existence
 
 end Matrix

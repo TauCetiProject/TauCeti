@@ -58,6 +58,8 @@ determinant of its restriction to the rows and columns indexed by a finite set o
   zero.
 * `Matrix.principalMinor_eq_of_diagonal_intertwining`: principal minors are unchanged by
   intertwining with a diagonal matrix whose entries are regular.
+* `Matrix.det_submatrix_diagonal`: the minor of a diagonal matrix on an injective choice of the
+  same rows and columns is the product of the chosen diagonal entries.
 -/
 
 public section
@@ -228,6 +230,12 @@ theorem principalMinor_eq_of_diagonal_intertwining {A B : Matrix ι ι R} {d : �
   rw [← det_mul_row (fun i : s ↦ d i) (A.submatrix Subtype.val Subtype.val),
     ← det_mul_column (fun i : s ↦ d i) (B.submatrix Subtype.val Subtype.val)]
   exact congrArg Matrix.det hmatrix
+
+/-- The minor of a diagonal matrix on the same injective choice `e` of rows and columns is the
+product of the chosen diagonal entries. -/
+theorem det_submatrix_diagonal [Fintype ι] (d : κ → R) {e : ι → κ}
+    (he : Function.Injective e) : ((diagonal d).submatrix e e).det = ∏ i, d (e i) := by
+  rw [submatrix_diagonal _ _ he, det_diagonal, Function.comp_def]
 
 end Principal
 

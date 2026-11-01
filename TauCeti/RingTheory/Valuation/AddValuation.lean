@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.RingTheory.Valuation.Basic
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Additive valuations of finite products
@@ -24,6 +25,8 @@ zero.
 ## Main results
 
 * `AddValuation.map_prod`: `v (∏ i ∈ s, f i) = ∑ i ∈ s, v (f i)`.
+* `AddValuation.map_prod_castLE`: the valuation of the product of the first `k` entries of a
+  tuple is the prefix sum of their valuations.
 * `AddValuation.map_neg_one_pow`: `v ((-1) ^ k) = 0`.
 * `AddValuation.map_eq_zero_of_isUnit`, `AddValuation.map_le_map_of_dvd`: for an additive valuation
   which is nonnegative on the whole ring, units have valuation `0` and divisors have smaller
@@ -47,6 +50,12 @@ theorem map_prod {ι : Type*} (s : Finset ι) (f : ι → R) :
   induction s using Finset.cons_induction with
   | empty => simp [v.map_one]
   | cons a s ha ih => rw [Finset.prod_cons, Finset.sum_cons, v.map_mul, ih]
+
+/-- The valuation of the product of the first `k` entries of `s : Fin n → R` is the prefix sum of
+length `k` of their valuations. -/
+theorem map_prod_castLE {n k : ℕ} (hk : k ≤ n) (s : Fin n → R) :
+    v (∏ j : Fin k, s (Fin.castLE hk j)) = TauCeti.prefixSum k fun i ↦ v (s i) := by
+  rw [map_prod, TauCeti.prefixSum_eq_sum_castLE hk]
 
 /-- For an additive valuation which is nonnegative on the whole ring, units have valuation `0`. -/
 theorem map_eq_zero_of_isUnit {v : AddValuation R Γ₀} (hv : ∀ x, 0 ≤ v x) {u : R} (hu : IsUnit u) :
