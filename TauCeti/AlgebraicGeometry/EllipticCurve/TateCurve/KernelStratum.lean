@@ -241,9 +241,8 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
     congrArg Subtype.val (ContractingWith.fixedPoint_isFixedPt hF)
   -- the fixed point is not `1`, where the step is the constant `c ≠ 1`
   have hv₁ : ((U v : Kˣ) : K) ≠ 1 := fun h ↦ by
-    have h' := hv
-    simp [kernelStep, h] at h'
-    exact hc₁ (h'.trans (by simpa [U] using h))
+    have hc' : kernelStep q (U v) c = c := by simp [kernelStep, h]
+    exact hc₁ (hc'.symm.trans (hv.trans (by simpa [U] using h)))
   exact ⟨U v, hv₁, hU v, one_sub_mul_tateUniformizationY_eq_of_kernelStep_eq q (U v)
     (sub_ne_zero.mpr (Ne.symm hv₁)) hv⟩
 
