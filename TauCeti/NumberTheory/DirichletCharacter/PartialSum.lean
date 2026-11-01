@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.Data.Nat.Periodic
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # Partial sums of nonprincipal Dirichlet characters
@@ -25,23 +26,21 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N]
 
+/-- The sum of a nonprincipal character over a full period vanishes. -/
+theorem sum_range_level_eq_zero {R : Type*} [CommRing R] [IsDomain R]
+    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) : ∑ k ∈ range N, χ k = 0 := by
+  rw [← Fin.sum_univ_eq_sum_range]
+  simpa only [RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv, ZMod.finEquiv_apply] using
+    ((ZMod.finEquiv N).toEquiv.sum_comp χ).trans (MulChar.sum_eq_zero_of_ne_one hχ)
+
 /-- The partial sum of a nonprincipal character depends only on the endpoint modulo its level. -/
 theorem sum_range_eq_sum_range_mod {R : Type*} [CommRing R] [IsDomain R]
     (χ : DirichletCharacter R N) (hχ : χ ≠ 1) (n : ℕ) :
     ∑ k ∈ range n, χ k = ∑ k ∈ range (n % N), χ k := by
-  have hzero : ∑ k ∈ range N, χ k = 0 := by
-    rw [← Fin.sum_univ_eq_sum_range]
-    have hcast (i : Fin N) : ZMod.finEquiv N i = (i.val : ZMod N) := by
-      -- The equivalence is defined by the successor presentation of `ZMod`.
-      cases N with
-      | zero => exact (NeZero.ne 0 rfl).elim
-      | succ N => exact (Fin.cast_val_eq_self i).symm
-    simpa only [RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv, hcast] using
-      ((ZMod.finEquiv N).toEquiv.sum_comp χ).trans (MulChar.sum_eq_zero_of_ne_one hχ)
   have hperiod : Function.Periodic (fun n : ℕ ↦ ∑ k ∈ range n, χ k) N := by
     intro n
     dsimp only
-    rw [add_comm n N, sum_range_add, hzero, zero_add]
+    rw [add_comm n N, sum_range_add, χ.sum_range_level_eq_zero hχ, zero_add]
     simp
   exact (hperiod.map_mod_nat n).symm
 

@@ -47,22 +47,7 @@ private theorem sum_isBigO_one (hχ : χ ≠ 1) :
 theorem integrableOn_sum_mul_cpow (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) := by
-  have hloc : LocallyIntegrableOn
-      (fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1)) * (∑ k ∈ Icc 1 ⌊t⌋₊, χ k)) (Set.Ici 1) := by
-    refine locallyIntegrableOn_mul_sum_Icc (fun k : ℕ ↦ χ k) zero_le_one
-      (g := fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1))) ?_
-    refine ContinuousOn.locallyIntegrableOn (fun t ht ↦ ?_) measurableSet_Ici
-    exact (continuousAt_ofReal_cpow_const _ _
-      (.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
-  refine ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
-    zero_lt_one).const_mul (N : ℝ)).mono'
-      (by simpa only [mul_comm] using
-        (hloc.mono_set Set.Ioi_subset_Ici_self).aestronglyMeasurable) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
-  simp only [neg_re, add_re, one_re]
-  exact mul_le_mul_of_nonneg_right (χ.norm_sum_Icc_le_level hχ _) (Real.rpow_nonneg
-    (zero_lt_one.trans ht).le _)
+  exact TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _ (χ.norm_sum_Icc_le_level hχ) hs
 
 /-- Partial summation represents the continued L-function of a nonprincipal character on the
 whole half-plane `Re(s) > 0`. -/
@@ -88,26 +73,7 @@ theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
 `‖L(s, χ)‖ ≤ N ‖s‖ / Re(s)`. For a primitive character, `N` is the conductor. -/
 theorem norm_LFunction_le_level_mul_norm_div_re (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     ‖χ.LFunction s‖ ≤ (N : ℝ) * ‖s‖ / s.re := by
-  rw [χ.LFunction_eq_mul_integral hχ hs, norm_mul]
-  have hbound : ‖∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) *
-      (t : ℂ) ^ (-(s + 1))‖ ≤ (N : ℝ) / s.re := by
-    calc
-      _ ≤ ∫ t in Set.Ioi (1 : ℝ), (N : ℝ) * t ^ (-(s.re + 1)) := by
-        refine norm_integral_le_of_norm_le
-          ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
-            zero_lt_one).const_mul (N : ℝ)) ?_
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-        rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
-        simp only [neg_re, add_re, one_re]
-        exact mul_le_mul_of_nonneg_right (χ.norm_sum_Icc_le_level hχ _) (Real.rpow_nonneg
-          (zero_lt_one.trans ht).le _)
-      _ = (N : ℝ) / s.re := by
-        rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) zero_lt_one,
-          Real.one_rpow]
-        congr 1
-        ring
-  calc
-    _ ≤ ‖s‖ * ((N : ℝ) / s.re) := mul_le_mul_of_nonneg_left hbound (norm_nonneg _)
-    _ = (N : ℝ) * ‖s‖ / s.re := by ring
+  rw [χ.LFunction_eq_mul_integral hχ hs]
+  exact TauCeti.LSeries.norm_mul_integral_le_of_bound _ (χ.norm_sum_Icc_le_level hχ) hs
 
 end DirichletCharacter
