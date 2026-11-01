@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.DeRham.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import Mathlib.RingTheory.SimpleModule.Rank
 
 /-!
 # Compactly supported de Rham cohomology of `ℝⁿ`
@@ -81,6 +82,25 @@ open Set TopologicalSpace Metric Module Filter
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
+
+/-- For every orientation `o` of a finite-dimensional real normed space `E` of dimension `n`,
+integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral `±1`. -/
+private theorem compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
+    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
+    ∃ v, compactlySupportedDeRhamCohomology.integral o v ≠ 0 := by
+  have hn : Fintype.card (Fin n) = finrank ℝ E := o.card_eq
+  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using hn.symm)
+  obtain ⟨φ₀, hφ₀⟩ := exists_compactlySupportedClosedForms_integralTopForm_model_eq_one b hn
+  refine ⟨compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) n φ₀, ?_⟩
+  -- `o` is the constant orientation of `b` or its opposite, so the integral is `±1`.
+  rw [compactlySupportedDeRhamCohomology.integral_mk]
+  rcases Manifold.Orientation.eq_or_eq_neg o (Manifold.Orientation.model b.orientation hn)
+    with rfl | rfl
+  · rw [hφ₀]
+    exact one_ne_zero
+  · rw [integralTopForm_neg, hφ₀]
+    norm_num
 
 section InnerProductSpace
 
@@ -249,29 +269,25 @@ private theorem exists_smul_add_smul_mem_exactCompactlySupportedForms_top {n : �
   refine ⟨a, b, hab, ?_⟩
   -- So `a η + b θ` is exact on `U`, and a cut-off at infinity gives a compactly supported
   -- primitive of `a φ + b ψ`.
-  rw [← map_smul, ← map_smul, ← map_add, deRhamCohomology.mk_eq_zero_iff, Submodule.coe_add,
-    Submodule.coe_smul, Submodule.coe_smul, hcη, hcθ, ← map_smul, ← map_smul, ← map_add] at h0
+  have h0 : SmoothForm.mpullback (Opens.inclusion hUW) (contMDiff_inclusion hUW) (a • η + b • θ) ∈
+      exactForms 𝓘(ℝ, E) U (n + 1) := by
+    simpa only [Submodule.coe_add, Submodule.coe_smul, hcη, hcθ, map_add, map_smul] using
+      (deRhamCohomology.mk_eq_zero_iff _ _ (a • cη + b • cθ)).mp
+        (by rwa [map_add, map_smul, map_smul])
   obtain ⟨ρ, hρ, hρU, hρc⟩ := exists_cutoff_compl_closedBall (E := E) R
-  have key :=
+  simpa only [map_add, map_smul] using
     mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForms hUW hρ hρU hρc h0
-  rwa [map_add, map_smul, map_smul] at key
 
 /-- On a real inner product space `E` of dimension `n + 2`, the top compactly supported de Rham
 cohomology `H^(n+2)_c(E)` is one-dimensional. -/
 private theorem finrank_compactlySupportedDeRhamCohomology_innerProductSpace {n : ℕ}
     (hE : finrank ℝ E = n + 2) :
     finrank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E (n + 2)) = 1 := by
-  -- The class `v₀` of a bump form with integral one is nonzero.
+  -- A class `v₀` with nonzero integral is nonzero.
   have hn : Fintype.card (Fin (n + 2)) = finrank ℝ E := by simp [hE]
-  obtain ⟨φ₀, hφ₀⟩ := exists_compactlySupportedClosedForms_integralTopForm_model_eq_one
-    (Module.finBasisOfFinrankEq ℝ E hE) hn
-  set v₀ := compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) (n + 2) φ₀
-  have hv₀ : v₀ ≠ 0 := fun h ↦ by
-    have := congrArg (compactlySupportedDeRhamCohomology.integral
-      (Manifold.Orientation.model (I := 𝓘(ℝ, E)) (Module.finBasisOfFinrankEq ℝ E hE).orientation
-        hn)) h
-    rw [compactlySupportedDeRhamCohomology.integral_mk, hφ₀, map_zero] at this
-    exact one_ne_zero this
+  obtain ⟨v₀, hv₀⟩ := compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace
+    (Manifold.Orientation.model (Module.finBasisOfFinrankEq ℝ E hE).orientation hn)
+  replace hv₀ : v₀ ≠ 0 := fun h ↦ hv₀ (by rw [h, map_zero])
   refine (finrank_eq_one_iff_of_nonzero' v₀ hv₀).mpr fun w ↦ ?_
   -- Read `w` and `v₀` on the open subset `⊤`, where any two top classes are dependent.
   let e := compactlySupportedDeRhamCohomology.equivOfDiffeomorph
@@ -280,15 +296,14 @@ private theorem finrank_compactlySupportedDeRhamCohomology_innerProductSpace {n 
   obtain ⟨ψ, hψ⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ (n + 2) (e v₀)
   obtain ⟨a, b, hab, h⟩ := exists_smul_add_smul_mem_exactCompactlySupportedForms_top hE φ.2 ψ.2
   have h0 : a • w + b • v₀ = 0 := e.injective <| by
-    rw [map_add, map_smul, map_smul, ← hφ, ← hψ, ← map_smul, ← map_smul, ← map_add, map_zero,
-      compactlySupportedDeRhamCohomology.mk_eq_zero_iff]
-    exact h
+    simpa [← hφ, ← hψ] using
+      (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ _ (a • φ + b • ψ)).mpr h
   have ha : a ≠ 0 := by
     rintro rfl
     rw [zero_smul, zero_add, smul_eq_zero] at h0
     exact hv₀ (h0.resolve_left (hab.resolve_left (not_not.mpr rfl)))
   refine ⟨-(a⁻¹ * b), ?_⟩
-  rw [neg_smul, mul_smul, ← smul_neg, ← eq_neg_of_add_eq_zero_left h0, inv_smul_smul₀ ha]
+  linear_combination (norm := match_scalars <;> field_simp <;> ring) (-a⁻¹) • h0
 
 end InnerProductSpace
 
@@ -342,28 +357,11 @@ bijective. -/
 theorem compactlySupportedDeRhamCohomology.bijective_integral_normedSpace {n : ℕ}
     (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
     Function.Bijective (compactlySupportedDeRhamCohomology.integral o) := by
-  have hn : Fintype.card (Fin n) = finrank ℝ E := o.card_eq
-  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using hn.symm)
-  obtain ⟨φ₀, hφ₀⟩ := exists_compactlySupportedClosedForms_integralTopForm_model_eq_one b hn
-  set v₀ := compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) n φ₀
-  -- `o` is the constant orientation of `b` or its opposite, so `v₀` has integral `±1`.
-  have hv₀ : compactlySupportedDeRhamCohomology.integral o v₀ ≠ 0 := by
-    rw [compactlySupportedDeRhamCohomology.integral_mk]
-    rcases Manifold.Orientation.eq_or_eq_neg o (Manifold.Orientation.model b.orientation hn)
-      with rfl | rfl
-    · rw [hφ₀]
-      exact one_ne_zero
-    · rw [integralTopForm_neg, hφ₀]
-      norm_num
-  -- `H^n_c(E)` is a line, spanned by `v₀`.
-  have hspan := (finrank_eq_one_iff_of_nonzero' v₀ fun h ↦ hv₀ (by rw [h, map_zero])).mp
-    (finrank_compactlySupportedDeRhamCohomology_normedSpace E (by simpa using hn.symm))
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦
-    ⟨(y / compactlySupportedDeRhamCohomology.integral o v₀) • v₀, by
-      rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hv₀]⟩⟩
-  obtain ⟨c, rfl⟩ := hspan x
-  rw [map_smul, smul_eq_mul, mul_eq_zero] at hx
-  rw [hx.resolve_right hv₀, zero_smul]
+  have : IsSimpleModule ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n) :=
+    isSimpleModule_iff_finrank_eq_one.mpr
+      (finrank_compactlySupportedDeRhamCohomology_normedSpace E (by simpa using o.card_eq.symm))
+  obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace o
+  exact LinearMap.bijective_of_ne_zero fun h ↦ hv (by rw [h, LinearMap.zero_apply])
 
 /-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For an orientation `o` of a
 finite-dimensional real normed space `E` of dimension `n`, integration is a linear isomorphism
