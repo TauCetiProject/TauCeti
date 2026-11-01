@@ -59,14 +59,18 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
 /-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
 is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
 theorem exists_Icc_subset_uIcc_disjoint {α : Type*} [LinearOrder α] [TopologicalSpace α]
-    [OrderTopology α] [DenselyOrdered α] [NoMinOrder α] [NoMaxOrder α] {a b t : α} {s : Set α}
+    [OrderTopology α] [DenselyOrdered α] {a b t : α} {s : Set α}
     (hs : IsClosed s) (ht : t ∈ Ioo (min a b) (max a b)) (hts : t ∉ s) :
     ∃ c d : α, t ∈ Ioo c d ∧ Icc c d ⊆ uIcc a b ∧ Disjoint s (Ioo c d) := by
   have hmem : Ioo (min a b) (max a b) \ s ∈ 𝓝 t := (isOpen_Ioo.sdiff hs).mem_nhds ⟨ht, hts⟩
-  obtain ⟨c, d, -, hnhds, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds hmem
-  refine ⟨c, d, interior_Icc (a := c) (b := d) ▸ mem_interior_iff_mem_nhds.mpr hnhds,
-    fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hsub hx).1),
-    disjoint_right.mpr fun x hx => (hsub (Ioo_subset_Icc_self hx)).2⟩
+  obtain ⟨l, u, ⟨hlt, htu⟩, hsub⟩ :=
+    (mem_nhds_iff_exists_Ioo_subset' ⟨_, ht.1⟩ ⟨_, ht.2⟩).mp hmem
+  obtain ⟨c, hlc, hct⟩ := exists_between hlt
+  obtain ⟨d, htd, hdu⟩ := exists_between htu
+  have hcd : Icc c d ⊆ Ioo (min a b) (max a b) \ s :=
+    fun x hx => hsub ⟨hlc.trans_le hx.1, hx.2.trans_lt hdu⟩
+  refine ⟨c, d, ⟨hct, htd⟩, fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hcd hx).1),
+    disjoint_right.mpr fun x hx => (hcd (Ioo_subset_Icc_self hx)).2⟩
 
 /-- A nonempty compact subset `K` of an open interval `Ioo a b` lies in the interior `Ioo c d` of
 a closed interval `Icc c d ⊆ Ioo a b`. This is the interval form of `exists_compact_between`. -/
