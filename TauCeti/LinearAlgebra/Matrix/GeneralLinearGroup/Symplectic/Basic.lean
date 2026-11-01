@@ -322,6 +322,42 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
+namespace GLSymplecticFin
+
+section CommRing
+
+variable {m R}
+
+/-- A nonzero vector has nonzero pairing with some vector in the standard symplectic space. -/
+theorem exists_dotProduct_JFin_mulVec_ne_zero {x : Fin (m + m) → R} (hx : x ≠ 0) :
+    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 := by
+  have hJx : JFin m R *ᵥ x ≠ 0 := by
+    intro h
+    have hh := congrArg (fun v => JFin m R *ᵥ v) h
+    rw [mulVec_mulVec, JFin_mul_self] at hh
+    simp only [neg_mulVec, one_mulVec, mulVec_zero, neg_eq_zero] at hh
+    exact hx hh
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hJx
+  exact ⟨Pi.single i 1, by simpa using hi⟩
+
+/-- Two nonzero vectors have a common vector pairing nontrivially with both, over any
+commutative ring. In particular, this includes the field with two elements. -/
+theorem exists_dotProduct_JFin_mulVec_ne_zero_pair {x y : Fin (m + m) → R}
+    (hx : x ≠ 0) (hy : y ≠ 0) :
+    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 ∧ z ⬝ᵥ (JFin m R *ᵥ y) ≠ 0 := by
+  obtain ⟨v, hv⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
+  obtain ⟨w, hw⟩ := exists_dotProduct_JFin_mulVec_ne_zero hy
+  by_cases hvy : v ⬝ᵥ (JFin m R *ᵥ y) = 0
+  · by_cases hwx : w ⬝ᵥ (JFin m R *ᵥ x) = 0
+    · exact ⟨v + w, by simpa [add_dotProduct, hwx] using hv,
+        by simpa [add_dotProduct, hvy] using hw⟩
+    · exact ⟨w, hwx, hw⟩
+  · exact ⟨v, hv, hvy⟩
+
+end CommRing
+
+end GLSymplecticFin
+
 variable {m R} in
 /-- A scalar matrix preserving the transported alternating form has scalar a square root of one,
 provided the form is nonempty: the relation reads `c ^ 2 • J = J`, and `J` has an entry equal to
