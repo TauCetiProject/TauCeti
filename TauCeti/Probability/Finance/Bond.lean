@@ -40,6 +40,11 @@ self-financing equation `V_t = V₀ + ∫₀ᵗ a_u dS_u + ∫₀ᵗ b_u dβ_u`.
 * S. E. Shreve, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer, 2004,
   §4.5.
 * I. Karatzas, S. E. Shreve, *Methods of Mathematical Finance*, Springer, 1998, §1.1.
+* sqrt-of-2, prior formalization of the money-market account in the closed, unmerged
+  [TauCeti#21062](https://github.com/TauCetiProject/TauCeti/pull/21062), commit
+  `93d0676c1dcb7243355fafc92c46eb7cea7bc999`. The definition `TauCeti.Finance.bondPrice` and
+  the statement shapes of `TauCeti.Finance.bondPrice_eq_mul_exp_integral` and
+  `TauCeti.Finance.integral_mul_bondPrice` are adapted from it.
 -/
 
 public section
