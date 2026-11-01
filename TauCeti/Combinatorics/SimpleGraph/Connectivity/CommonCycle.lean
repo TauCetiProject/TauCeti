@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Fan
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Common cycles in two-vertex-connected graphs
@@ -31,12 +32,11 @@ namespace SimpleGraph
 variable {V : Type u} {G : SimpleGraph V}
 
 /-- Two distinct vertices of a two-vertex-connected finite graph lie on a common cycle. -/
-theorem IsVertexConnected.exists_isCycle_support [Finite V] (hG : G.IsVertexConnected 2)
+theorem IsVertexConnected.exists_isCycle_mem_support [Finite V] (hG : G.IsVertexConnected 2)
     {u v : V} (huv : u ≠ v) : ∃ c : G.Walk u u, c.IsCycle ∧ v ∈ c.support := by
   have hcard : 2 < Nat.card V := by
-    have := Fintype.ofFinite V
     have h := hG.add_one_le_card
-    rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card] at h
+    rw [ENat.card_eq_coe_natCard] at h
     exact_mod_cast h
   obtain ⟨P, hPinj, hP, hPdisj⟩ :=
     (isVertexConnected_iff_forall_exists_paths hcard).1 hG u v huv
@@ -52,18 +52,17 @@ theorem IsVertexConnected.exists_isCycle_support [Finite V] (hG : G.IsVertexConn
 
 /-- On a finite vertex type with at least three vertices, two-vertex-connectivity is equivalent to
 every pair of distinct vertices lying on a common cycle. -/
-theorem isVertexConnected_two_iff_forall_exists_isCycle_support [Finite V]
+theorem isVertexConnected_two_iff_forall_exists_isCycle_mem_support [Finite V]
     (hcard : 3 ≤ Nat.card V) :
     G.IsVertexConnected 2 ↔
       ∀ u v, u ≠ v → ∃ c : G.Walk u u, c.IsCycle ∧ v ∈ c.support := by
   constructor
-  · exact fun hG u v huv ↦ hG.exists_isCycle_support huv
+  · exact fun hG u v huv ↦ hG.exists_isCycle_mem_support huv
   · intro hcyc
     classical
     rw [isVertexConnected_def]
     refine ⟨?_, fun u v ↦ ?_⟩
-    · have := Fintype.ofFinite V
-      rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card]
+    · rw [ENat.card_eq_coe_natCard]
       exact_mod_cast hcard
     · obtain rfl | huv := eq_or_ne u v
       · exact .rfl
@@ -83,7 +82,7 @@ theorem isVertexConnected_two_iff_forall_exists_isCycle_support [Finite V]
 
 /-- In a two-vertex-connected finite graph, a vertex outside an edge and that edge lie on a
 common cycle. -/
-theorem IsVertexConnected.exists_isCycle_mem_edges_of_not_mem [Finite V]
+private theorem IsVertexConnected.exists_isCycle_mem_edges_of_notMem [Finite V]
     (hG : G.IsVertexConnected 2) {v : V} {e : Sym2 V} (he : e ∈ G.edgeSet) (hv : v ∉ e) :
     ∃ c : G.Walk v v, c.IsCycle ∧ e ∈ c.edges := by
   classical
@@ -100,19 +99,13 @@ theorem IsVertexConnected.exists_isCycle_mem_edges_of_not_mem [Finite V]
   have hvU : v ∉ U := by simp [U, hva, hvb]
   obtain ⟨u, P, huinj, huU, hP, hint, hdisj⟩ := hG.exists_fan hvU (by simp [U, hab])
   have hu01 : u 0 ≠ u 1 := huinj.ne (by decide)
-  have hu0e : u 0 ∈ e := by
-    have h := huU 0
+  have hue : ∀ i, u i ∈ e := fun i ↦ by
+    have h := huU i
     simp only [U, mem_insert, mem_singleton] at h
     obtain h | h := h
     · exact h ▸ Sym2.out_fst_mem e
     · exact h ▸ Sym2.out_snd_mem e
-  have hu1e : u 1 ∈ e := by
-    have h := huU 1
-    simp only [U, mem_insert, mem_singleton] at h
-    obtain h | h := h
-    · exact h ▸ Sym2.out_fst_mem e
-    · exact h ▸ Sym2.out_snd_mem e
-  have heq : s(u 0, u 1) = e := (Sym2.mem_and_mem_iff hu01).1 ⟨hu0e, hu1e⟩ |>.symm
+  have heq : s(u 0, u 1) = e := (Sym2.mem_and_mem_iff hu01).1 ⟨hue 0, hue 1⟩ |>.symm
   have hadj : G.Adj (u 0) (u 1) := by
     rw [← G.mem_edgeSet, heq]
     exact he
@@ -130,9 +123,7 @@ theorem IsVertexConnected.exists_isCycle_mem_edges_of_not_mem [Finite V]
     have hxv := hdisj (by decide : (0 : Fin 2) ≠ 1) x
       (List.mem_of_mem_tail hx0) hx1
     subst x
-    have hnodup := (hP 0).support_nodup
-    rw [← (P 0).cons_tail_support, List.nodup_cons] at hnodup
-    exact hnodup.1 hx0
+    exact (hP 0).start_notMem_tail_support hx0
   refine ⟨(P 0).append q, (hP 0).isCycle_append hq htail ?_, ?_⟩
   · right
     simp only [q, Walk.length_cons, Walk.length_reverse]
@@ -157,13 +148,13 @@ theorem IsVertexConnected.exists_isCycle_mem_edges [Finite V]
     obtain ⟨w, -, hw⟩ := exists_mem_notMem_of_card_lt_card (s := e.toFinset) (t := univ) (by
       rw [hedge, card_univ, ← Nat.card_eq_fintype_card]
       have hcard := hG.add_one_le_card
-      rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card] at hcard
+      rw [ENat.card_eq_coe_natCard] at hcard
       exact_mod_cast hcard)
-    obtain ⟨c, hc, hec⟩ := hG.exists_isCycle_mem_edges_of_not_mem he
+    obtain ⟨c, hc, hec⟩ := hG.exists_isCycle_mem_edges_of_notMem he
       (by simpa [Sym2.mem_toFinset] using hw)
     have hvc : v ∈ c.support := c.mem_support_of_mem_edges hec hv
     exact ⟨c.rotate v hvc, hc.rotate hvc, by simpa using (c.rotate_edges v hvc).mem_iff.2 hec⟩
-  · exact hG.exists_isCycle_mem_edges_of_not_mem he hv
+  · exact hG.exists_isCycle_mem_edges_of_notMem he hv
 
 /-- In a connected finite graph with at least three vertices, two-vertex-connectivity is
 equivalent to every vertex and every edge lying on a common cycle. -/
@@ -175,11 +166,10 @@ theorem isVertexConnected_two_iff_forall_exists_isCycle_mem_edges [Finite V]
   constructor
   · exact fun hG v _ he ↦ hG.exists_isCycle_mem_edges v he
   · intro hcyc
-    apply (isVertexConnected_two_iff_forall_exists_isCycle_support hcard).2
+    apply (isVertexConnected_two_iff_forall_exists_isCycle_mem_support hcard).2
     intro u v huv
     have hcardEN : (3 : ℕ∞) ≤ ENat.card V := by
-      have := Fintype.ofFinite V
-      rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card]
+      rw [ENat.card_eq_coe_natCard]
       exact_mod_cast hcard
     obtain ⟨w, hwv, -⟩ := ENat.exists_ne_ne_of_three_le hcardEN v v
     obtain ⟨x, hvx⟩ := (hconn.preconnected v w).nonempty_neighborSet_left hwv.symm

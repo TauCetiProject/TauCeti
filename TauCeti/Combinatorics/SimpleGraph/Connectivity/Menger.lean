@@ -110,6 +110,12 @@ theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjo
 theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
   ⟨.symm, .symm⟩
 
+/-- The start of a path does not occur in the tail of its support. -/
+theorem IsPath.start_notMem_tail_support (hp : p.IsPath) : s ∉ p.support.tail := by
+  have hnodup := hp.support_nodup
+  rw [← p.cons_tail_support, List.nodup_cons] at hnodup
+  exact hnodup.1
+
 /-- Two distinct internally disjoint paths form a cycle when one is traversed in reverse. -/
 theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (hp : p.IsPath)
     (hq : q.IsPath) (hpq : p ≠ q) : (p.append q.reverse).IsCycle := by
@@ -119,13 +125,9 @@ theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (
     have hxq' : x ∈ q.support := List.mem_of_mem_dropLast (by simpa using hxq)
     obtain hxs | hxt := h x (List.mem_of_mem_tail hxp) hxq'
     · subst x
-      have hnodup := hp.support_nodup
-      rw [← p.cons_tail_support, List.nodup_cons] at hnodup
-      exact hnodup.1 hxp
+      exact hp.start_notMem_tail_support hxp
     · subst x
-      have hnodup := (Walk.isPath_reverse_iff q |>.2 hq).support_nodup
-      rw [← q.reverse.cons_tail_support, List.nodup_cons] at hnodup
-      exact hnodup.1 hxq
+      exact (Walk.isPath_reverse_iff q |>.2 hq).start_notMem_tail_support hxq
   · by_contra hlength
     push Not at hlength
     exact hpq (Walk.eq_of_length_le_one hlength.1 (by simpa using hlength.2))
