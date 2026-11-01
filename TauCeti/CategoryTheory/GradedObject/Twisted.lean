@@ -34,14 +34,14 @@ preserves colimits in `ModuleCat k`.
   for the trivial action, bundled.
 * `CategoryTheory.GradedObject.Monoidal.scaleTensorObj₃`: the endomorphism of
   `X₁ ⊗ (X₂ ⊗ X₃)` acting on the summand `X₁ i₁ ⊗ X₂ i₂ ⊗ X₃ i₃` by a scalar `u i₁ i₂ i₃`.
-* `TauCeti.GradedObject.Twisted c C`: a type synonym for `GradedObject I C`, carrying the monoidal
+* `TauCeti.TwistedGradedObject c C`: a type synonym for `GradedObject I C`, carrying the monoidal
   structure whose associator is twisted by the cocycle `c`.
 
 ## Main statements
 
-* `TauCeti.GradedObject.Twisted.instMonoidalCategory`: the twisted associator, together with
+* `TauCeti.TwistedGradedObject.instMonoidalCategory`: the twisted associator, together with
   Mathlib's tensor product and unitors of graded objects, forms a monoidal category.
-* `TauCeti.GradedObject.Twisted.ιTensorObj₃'_associator_hom`: the twisted associator acts on the
+* `TauCeti.TwistedGradedObject.ιTensorObj₃'_associator_hom`: the twisted associator acts on the
   summand `(X₁ i₁ ⊗ X₂ i₂) ⊗ X₃ i₃` as `ω i₁ i₂ i₃` times the associator of `C`.
 
 ## References
@@ -377,7 +377,7 @@ end Triangle
 
 end CategoryTheory.GradedObject.Monoidal
 
-namespace TauCeti.GradedObject
+namespace TauCeti
 
 open CategoryTheory.GradedObject CategoryTheory.GradedObject.Monoidal
 
@@ -389,13 +389,14 @@ twisted by the normalized `3`-cocycle `c`. The intended example is `I = Additive
 by `c`, although the monoidal instance there still needs tensoring on the right to preserve
 colimits in `ModuleCat k`. -/
 @[expose]
-def Twisted (_c : TwistingCocycle I R) (C : Type*) : Type _ := GradedObject I C
+def TwistedGradedObject (_c : GradedObject.TwistingCocycle I R) (C : Type*) : Type _ :=
+  GradedObject I C
 
-namespace Twisted
+namespace TwistedGradedObject
 
-variable (c : TwistingCocycle I R) (C : Type*) [Category* C]
+variable (c : GradedObject.TwistingCocycle I R) (C : Type*) [Category* C]
 
-instance : Category (Twisted c C) := inferInstanceAs (Category (GradedObject I C))
+instance : Category (TwistedGradedObject c C) := inferInstanceAs (Category (GradedObject I C))
 
 variable [MonoidalCategory C] [Preadditive C] [Linear R C] [MonoidalPreadditive C]
   [MonoidalLinear R C]
@@ -410,7 +411,7 @@ variable [MonoidalCategory C] [Preadditive C] [Linear R C] [MonoidalPreadditive 
 /-- The monoidal structure on graded objects with associator twisted by a normalized `3`-cocycle:
 Mathlib's tensor product and unitors of graded objects, with the associator
 `CategoryTheory.GradedObject.Monoidal.twistedAssociator`. -/
-instance instMonoidalCategory : MonoidalCategory (Twisted c C) where
+instance instMonoidalCategory : MonoidalCategory (TwistedGradedObject c C) where
   tensorObj (X Y : GradedObject I C) := Monoidal.tensorObj X Y
   tensorHom {X₁ Y₁ X₂ Y₂ : GradedObject I C} f g := Monoidal.tensorHom (X₁ := X₁) (X₂ := Y₁)
     (Y₁ := X₂) (Y₂ := Y₂) f g
@@ -443,43 +444,48 @@ instance instMonoidalCategory : MonoidalCategory (Twisted c C) where
 
 variable {c C}
 
-/-- The tensor product of `Twisted c C` is Mathlib's tensor product of graded objects. -/
+/-- The tensor product of `TwistedGradedObject c C` is Mathlib's tensor product of graded
+objects. -/
 lemma tensorObj_eq (X Y : GradedObject I C) :
-    MonoidalCategoryStruct.tensorObj (C := Twisted c C) X Y = Monoidal.tensorObj X Y :=
+    MonoidalCategoryStruct.tensorObj (C := TwistedGradedObject c C) X Y = Monoidal.tensorObj X Y :=
   rfl
 
-/-- The tensor product of morphisms of `Twisted c C` is Mathlib's one for graded objects. -/
+/-- The tensor product of morphisms of `TwistedGradedObject c C` is Mathlib's one for graded
+objects. -/
 lemma tensorHom_eq {X₁ X₂ Y₁ Y₂ : GradedObject I C} (f : X₁ ⟶ X₂) (g : Y₁ ⟶ Y₂) :
-    MonoidalCategoryStruct.tensorHom (C := Twisted c C) f g = Monoidal.tensorHom f g :=
+    MonoidalCategoryStruct.tensorHom (C := TwistedGradedObject c C) f g = Monoidal.tensorHom f g :=
   rfl
 
-/-- Left whiskering in `Twisted c C` is Mathlib's one for graded objects. -/
+/-- Left whiskering in `TwistedGradedObject c C` is Mathlib's one for graded objects. -/
 lemma whiskerLeft_eq (X : GradedObject I C) {Y₁ Y₂ : GradedObject I C} (f : Y₁ ⟶ Y₂) :
-    MonoidalCategoryStruct.whiskerLeft (C := Twisted c C) X f = Monoidal.whiskerLeft X f :=
+    MonoidalCategoryStruct.whiskerLeft (C := TwistedGradedObject c C) X f =
+      Monoidal.whiskerLeft X f :=
   rfl
 
-/-- Right whiskering in `Twisted c C` is Mathlib's one for graded objects. -/
+/-- Right whiskering in `TwistedGradedObject c C` is Mathlib's one for graded objects. -/
 lemma whiskerRight_eq {X₁ X₂ : GradedObject I C} (f : X₁ ⟶ X₂) (Y : GradedObject I C) :
-    MonoidalCategoryStruct.whiskerRight (C := Twisted c C) f Y = Monoidal.whiskerRight f Y :=
+    MonoidalCategoryStruct.whiskerRight (C := TwistedGradedObject c C) f Y =
+      Monoidal.whiskerRight f Y :=
   rfl
 
-/-- The unit object of `Twisted c C` is Mathlib's unit of graded objects. -/
-lemma tensorUnit_eq : 𝟙_ (Twisted c C) = (Monoidal.tensorUnit : GradedObject I C) :=
+/-- The unit object of `TwistedGradedObject c C` is Mathlib's unit of graded objects. -/
+lemma tensorUnit_eq : 𝟙_ (TwistedGradedObject c C) = (Monoidal.tensorUnit : GradedObject I C) :=
   rfl
 
-/-- The left unitor of `Twisted c C` is Mathlib's left unitor of graded objects. -/
+/-- The left unitor of `TwistedGradedObject c C` is Mathlib's left unitor of graded objects. -/
 lemma leftUnitor_eq (X : GradedObject I C) :
-    MonoidalCategoryStruct.leftUnitor (C := Twisted c C) X = Monoidal.leftUnitor X :=
+    MonoidalCategoryStruct.leftUnitor (C := TwistedGradedObject c C) X = Monoidal.leftUnitor X :=
   rfl
 
-/-- The right unitor of `Twisted c C` is Mathlib's right unitor of graded objects. -/
+/-- The right unitor of `TwistedGradedObject c C` is Mathlib's right unitor of graded objects. -/
 lemma rightUnitor_eq (X : GradedObject I C) :
-    MonoidalCategoryStruct.rightUnitor (C := Twisted c C) X = Monoidal.rightUnitor X :=
+    MonoidalCategoryStruct.rightUnitor (C := TwistedGradedObject c C) X = Monoidal.rightUnitor X :=
   rfl
 
-/-- The associator of `Twisted c C` is the associator of graded objects twisted by `c`. -/
+/-- The associator of `TwistedGradedObject c C` is the associator of graded objects twisted by
+`c`. -/
 lemma associator_eq (X₁ X₂ X₃ : GradedObject I C) :
-    MonoidalCategoryStruct.associator (C := Twisted c C) X₁ X₂ X₃ =
+    MonoidalCategoryStruct.associator (C := TwistedGradedObject c C) X₁ X₂ X₃ =
       twistedAssociator c.ω X₁ X₂ X₃ :=
   rfl
 
@@ -489,7 +495,7 @@ lemma associator_eq (X₁ X₂ X₃ : GradedObject I C) :
 lemma ιTensorObj₃'_associator_hom {X₁ X₂ X₃ : GradedObject I C} (i₁ i₂ i₃ j : I)
     (h : i₁ + i₂ + i₃ = j) :
     ιTensorObj₃' X₁ X₂ X₃ i₁ i₂ i₃ j h ≫
-        (@MonoidalCategoryStruct.associator (Twisted c C) _ _ X₁ X₂ X₃).hom j =
+        (@MonoidalCategoryStruct.associator (TwistedGradedObject c C) _ _ X₁ X₂ X₃).hom j =
       (c.ω i₁ i₂ i₃ : R) • ((α_ _ _ _).hom ≫ ιTensorObj₃ X₁ X₂ X₃ i₁ i₂ i₃ j h) :=
   ιTensorObj₃'_twistedAssociator_hom c.ω X₁ X₂ X₃ i₁ i₂ i₃ j h
 
@@ -499,11 +505,11 @@ lemma ιTensorObj₃'_associator_hom {X₁ X₂ X₃ : GradedObject I C} (i₁ i
 lemma ιTensorObj₃_associator_inv {X₁ X₂ X₃ : GradedObject I C} (i₁ i₂ i₃ j : I)
     (h : i₁ + i₂ + i₃ = j) :
     ιTensorObj₃ X₁ X₂ X₃ i₁ i₂ i₃ j h ≫
-        (@MonoidalCategoryStruct.associator (Twisted c C) _ _ X₁ X₂ X₃).inv j =
+        (@MonoidalCategoryStruct.associator (TwistedGradedObject c C) _ _ X₁ X₂ X₃).inv j =
       (((c.ω i₁ i₂ i₃)⁻¹ : Rˣ) : R) •
         ((α_ _ _ _).inv ≫ ιTensorObj₃' X₁ X₂ X₃ i₁ i₂ i₃ j h) :=
   ιTensorObj₃_twistedAssociator_inv c.ω X₁ X₂ X₃ i₁ i₂ i₃ j h
 
-end Twisted
+end TwistedGradedObject
 
-end TauCeti.GradedObject
+end TauCeti
