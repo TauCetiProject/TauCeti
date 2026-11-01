@@ -277,10 +277,8 @@ theorem foldedGramMatrix_apply_eq_sum_div_card (hσ : B.reindex σ σ = B)
     {j : I} (hj : σ.SameCycle j P.out) :
     B.foldedGramMatrix σ O P =
       ((∑ i with σ.SameCycle i O.out, B i j : ℤ) : ℚ) / #{i | σ.SameCycle i O.out} := by
-  have hP : (#{j | σ.SameCycle j P.out} : ℚ) ≠ 0 := by
-    have : 0 < #{j | σ.SameCycle j P.out} :=
-      card_pos.2 ⟨P.out, by simp [Equiv.Perm.SameCycle.refl]⟩
-    positivity
+  have hP : (#{j | σ.SameCycle j P.out} : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (σ.card_sameCycle_out_pos P).ne'
   -- Each column sum over `O` at a vertex of `P` is the one at `j`.
   have hcol : ∀ j' ∈ ({j' | σ.SameCycle j' P.out} : Finset I),
       ∑ i with σ.SameCycle i O.out, (B i j' : ℚ) =
@@ -309,8 +307,7 @@ theorem foldingSymmetrizer_pos (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) : 0 < B.foldingSymmetrizer σ O := by
   have hc : (0 : ℚ) < B.foldingScale σ O := by exact_mod_cast foldingScale_pos hB hdiag hoff hσ O
-  have hO : 0 < #{i | σ.SameCycle i O.out} :=
-    card_pos.2 ⟨O.out, by simp [Equiv.Perm.SameCycle.refl]⟩
+  have hO := σ.card_sameCycle_out_pos O
   rw [foldingSymmetrizer_def]
   positivity
 
@@ -322,10 +319,8 @@ theorem foldingSymmetrizer_mul_foldedCartanMatrix (hB : B.PosDef) (hdiag : ∀ i
     B.foldingSymmetrizer σ O * B.foldedCartanMatrix σ O P = B.foldedGramMatrix σ O P := by
   have hc : (B.foldingScale σ O : ℚ) ≠ 0 := by
     exact_mod_cast (foldingScale_pos hB hdiag hoff hσ O).ne'
-  have hO : (#{i | σ.SameCycle i O.out} : ℚ) ≠ 0 := by
-    have : 0 < #{i | σ.SameCycle i O.out} :=
-      card_pos.2 ⟨O.out, by simp [Equiv.Perm.SameCycle.refl]⟩
-    positivity
+  have hO : (#{i | σ.SameCycle i O.out} : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (σ.card_sameCycle_out_pos O).ne'
   rw [foldedGramMatrix_apply_eq_sum_div_card hσ O (Equiv.Perm.SameCycle.refl σ P.out),
     foldedCartanMatrix_apply, foldingSymmetrizer_def]
   push_cast

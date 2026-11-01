@@ -160,6 +160,11 @@ open _root_.Finset Matrix
 
 variable {I : Type*} [Fintype I] [DecidableEq I] (σ : Perm I)
 
+/-- A cycle of `σ` has at least one element. -/
+theorem card_sameCycle_out_pos (O : Quotient (SameCycle.setoid σ)) :
+    0 < #{j | σ.SameCycle j O.out} :=
+  card_pos.2 ⟨O.out, by simp [SameCycle.refl]⟩
+
 /-- The folded simple root `β_O = |O|⁻¹ ∑_{i ∈ O} αᵢ` of a `σ`-orbit `O` of vertices: the mean of
 the coordinate vectors of the vertices in `O`, as a vector of coordinates in the basis `αᵢ`. -/
 def orbitMean (O : Quotient (SameCycle.setoid σ)) : I → ℚ :=
@@ -188,7 +193,7 @@ theorem linearIndependent_orbitMean : LinearIndependent ℚ σ.orbitMean :=
   TauCeti.linearIndependent_of_dotProduct_diagonal (w := fun O ↦ Pi.single O.out 1)
     (c := fun O ↦ (#{j | σ.SameCycle j O.out} : ℚ)⁻¹)
     (fun O ↦ (IsRegular.of_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr
-      (card_pos.2 ⟨O.out, by simp [SameCycle.refl]⟩).ne'))).right)
+      (σ.card_sameCycle_out_pos O).ne'))).right)
     (fun O ↦ by simp [orbitMean_apply, SameCycle.refl])
     (fun O P hOP ↦ by
       have : ¬σ.SameCycle P.out O.out := fun h ↦
