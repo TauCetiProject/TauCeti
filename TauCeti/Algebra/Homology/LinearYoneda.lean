@@ -59,7 +59,8 @@ singular cohomology is obtained from the one of chain complexes.
 * `ChainComplex.shortExact_map_linearYonedaObjFunctor`: for `X` with projective terms, `Hom(X, -)`
   preserves short exact sequences.
 * `TauCeti.ChainComplex.linearYonedaObjSingle₀Iso`: `Hom(-, Y)` sends the chain complex `X[0]`
-  concentrated in degree zero to the cochain complex `Hom(X, Y)[0]`.
+  concentrated in degree zero to the cochain complex `Hom(X, Y)[0]`. It follows the unmerged Tau
+  Ceti pull request https://github.com/TauCetiProject/TauCeti/pull/20882.
 -/
 
 public section

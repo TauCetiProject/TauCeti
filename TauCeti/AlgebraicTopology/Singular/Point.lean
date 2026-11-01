@@ -23,11 +23,11 @@ additive functor. Applying `Hom(-, M)` to it computes the singular cohomology of
 arbitrary coefficients (`TauCeti.pointSingularCochainHomotopyEquiv`), without projectivity or
 injectivity assumptions.
 
-The singular simplicial set of a point is the constant simplicial set on it
-(Mathlib's `TopCat.toSSetIsoConst`), and the constant augmented simplicial object has an extra
-degeneracy (`SimplicialObject.Augmented.ExtraDegeneracy.const`), whose alternating face map
-complex therefore contracts onto its augmentation
-(`SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv`). The construction of the
+A point is totally disconnected, so Mathlib identifies its singular chains with the alternating
+constant complex on the coefficients summed over the point
+(`AlgebraicTopology.singularChainComplexFunctorIsoOfTotallyDisconnectedSpace`), and that complex
+contracts onto its degree-zero term (`ChainComplex.alternatingConstHomotopyEquiv`, from the extra
+degeneracy `SimplicialObject.Augmented.ExtraDegeneracy.const`). The construction of the
 contraction, and of its cochain counterpart, follows the unmerged Tau Ceti pull request
 https://github.com/TauCetiProject/TauCeti/pull/20882.
 
@@ -38,6 +38,8 @@ https://github.com/TauCetiProject/TauCeti/pull/20882.
 * `TauCeti.ιChainComplex_pointSingularChainHomotopyEquiv_hom_f_zero` and
   `TauCeti.pointSingularChainHomotopyEquiv_inv_f_zero`: the forward map is the augmentation and
   the inverse is the inclusion of the unique vertex.
+* `TauCeti.isIso_pointSingularChainHomotopyEquiv_hom_f_zero`: in degree zero the augmentation is
+  an isomorphism.
 * `TauCeti.pointSingularChainHomotopyEquiv_hom_naturality`: the augmentation is natural in the
   coefficients.
 
@@ -67,12 +69,44 @@ degree zero. The forward map is the augmentation and the inverse is the inclusio
 vertex. -/
 def pointSingularChainHomotopyEquiv :
     HomotopyEquiv ((TopCat.toSSet.obj X).chainComplex R) ((ChainComplex.single₀ C).obj R) :=
-  (HomotopyEquiv.ofIso ((alternatingFaceMapComplex C).mapIso
-    (Functor.isoWhiskerRight (TopCat.toSSetIsoConst X) (sigmaConst.obj R) ≪≫
-      Functor.constComp _ _ _))).trans
-    ((SimplicialObject.Augmented.ExtraDegeneracy.const (∐ fun _ : X ↦ R)).homotopyEquiv.trans
-      (HomotopyEquiv.ofIso ((ChainComplex.single₀ C).mapIso
-        (coproductUniqueIso fun _ : X ↦ R))))
+  (HomotopyEquiv.ofIso (singularChainComplexFunctorIsoOfTotallyDisconnectedSpace C R X)).trans
+    ((ChainComplex.alternatingConstHomotopyEquiv _).trans
+      (HomotopyEquiv.ofIso ((ChainComplex.single₀ C).mapIso (coproductUniqueIso fun _ : X ↦ R))))
+
+omit [HasCoproducts C] in
+/-- In degree zero, the contraction of the alternating constant complex is the identification of
+its degree-zero term with that of the single complex. -/
+private lemma alternatingConstHomotopyEquiv_hom_f_zero (Y : C) :
+    (ChainComplex.alternatingConstHomotopyEquiv Y).hom.f 0 =
+      (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 Y).inv := by
+  -- Mathlib states no degree-zero formula for this contraction. By definition it is the
+  -- degree-zero component of the identity identification `alternatingFaceMapComplexConst`,
+  -- followed by the augmentation of the constant augmented simplicial object.
+  change 𝟙 Y ≫ (AlternatingFaceMapComplex.ε.app (SimplicialObject.Augmented.const.obj Y)).f 0 = _
+  simp only [AlternatingFaceMapComplex.ε_app_f_zero, SimplicialObject.Augmented.const_obj_hom,
+    NatTrans.id_app, ChainComplex.single₀ObjXSelf, Iso.refl_inv]
+  exact Category.id_comp _
+
+omit [HasZeroObject C] in
+/-- Mathlib's identification of the singular chains of a point with the alternating constant
+complex sends the summand of a singular vertex to the summand of the point. -/
+private lemma ιChainComplex_totallyDisconnectedSpaceIso_hom_f_zero
+    (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
+    (TopCat.toSSet.obj X).ιChainComplex σ ≫
+        (singularChainComplexFunctorIsoOfTotallyDisconnectedSpace C R X).hom.f 0 =
+      Sigma.ι (fun _ : X ↦ R) default := by
+  -- Mathlib states no degree-zero formula for this isomorphism. By definition it is the map of
+  -- alternating face map complexes induced by `TopCat.toSSetIsoConst`, followed by the identity
+  -- identification `alternatingFaceMapComplexConst`.
+  change _ ≫ ((alternatingFaceMapComplex C).map
+      (Functor.whiskerRight (TopCat.toSSetIsoConst X).hom (sigmaConst.obj R) ≫
+        (Functor.constComp _ _ _).hom)).f 0 ≫ 𝟙 _ = _
+  simp only [SSet.ιChainComplex, Functor.map_comp, HomologicalComplex.comp_f,
+    alternatingFaceMapComplex_map_f, Functor.whiskerRight_app, sigmaConst_obj_map,
+    Functor.constComp_hom_app]
+  refine (congrArg _ ((Category.comp_id _).trans (Category.comp_id _))).trans ?_
+  rw [Sigma.ι_comp_map', Category.id_comp]
+  exact congrArg _ (Subsingleton.elim (α := X) _ _)
 
 /-- The augmentation sends the summand of the unique singular vertex of a point identically to
 the coefficients. -/
@@ -81,9 +115,25 @@ lemma ιChainComplex_pointSingularChainHomotopyEquiv_hom_f_zero
     (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫ (pointSingularChainHomotopyEquiv R X).hom.f 0 =
       (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 R).inv := by
-  simp [SimplicialObject.Augmented.const, pointSingularChainHomotopyEquiv,
-    HomotopyEquiv.ofIso, SimplicialObject.Augmented.ExtraDegeneracy.homotopyEquiv,
-    SSet.ιChainComplex, sigmaConst, Sigma.map', Functor.constComp]
+  rw [pointSingularChainHomotopyEquiv, HomotopyEquiv.trans_hom, HomotopyEquiv.trans_hom,
+    HomologicalComplex.comp_f, HomologicalComplex.comp_f, alternatingConstHomotopyEquiv_hom_f_zero]
+  refine (Category.assoc _ _ _).symm.trans ?_
+  refine (congrArg (· ≫ _)
+    (ιChainComplex_totallyDisconnectedSpaceIso_hom_f_zero R X σ)).trans ?_
+  simp only [HomotopyEquiv.ofIso, Functor.mapIso_hom, ChainComplex.single₀_map_f_zero,
+    ChainComplex.single₀ObjXSelf, Iso.refl_inv]
+  exact (congrArg _ (Category.id_comp _)).trans
+    ((ι_coproductUniqueIso_hom _ _).trans (eqToHom_refl _ _))
+
+/-- In degree zero, the augmentation of the singular chains of a point is an isomorphism. -/
+instance isIso_pointSingularChainHomotopyEquiv_hom_f_zero :
+    IsIso ((pointSingularChainHomotopyEquiv R X).hom.f 0) := by
+  rw [pointSingularChainHomotopyEquiv, HomotopyEquiv.trans_hom, HomotopyEquiv.trans_hom,
+    HomologicalComplex.comp_f, HomologicalComplex.comp_f, alternatingConstHomotopyEquiv_hom_f_zero]
+  exact IsIso.comp_isIso' (inferInstanceAs
+    (IsIso ((singularChainComplexFunctorIsoOfTotallyDisconnectedSpace C R X).hom.f 0)))
+    (IsIso.comp_isIso' (Iso.isIso_inv _) (inferInstanceAs
+      (IsIso (((ChainComplex.single₀ C).mapIso (coproductUniqueIso fun _ : X ↦ R)).hom.f 0))))
 
 /-- The inverse of the contraction of the singular chains of a point includes the coefficients
 as the summand of the unique singular vertex. -/
@@ -91,16 +141,6 @@ lemma pointSingularChainHomotopyEquiv_inv_f_zero (σ : (TopCat.toSSet.obj X) _�
     (pointSingularChainHomotopyEquiv R X).inv.f 0 =
       (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 R).hom ≫
         (TopCat.toSSet.obj X).ιChainComplex σ := by
-  have : Subsingleton ((TopCat.toSSet.obj X) _⦋0⦌) := (X.toSSetObjEquiv _).subsingleton
-  -- In degree zero the augmentation is an isomorphism: the summand of the unique vertex is all
-  -- of the zero-chains, and the augmentation maps it identically onto the coefficients.
-  have : IsIso ((pointSingularChainHomotopyEquiv R X).hom.f 0) :=
-    ⟨(HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 R).hom ≫
-        (TopCat.toSSet.obj X).ιChainComplex σ, by
-      ext τ
-      rw [Subsingleton.elim τ σ, ιChainComplex_pointSingularChainHomotopyEquiv_hom_f_zero_assoc]
-      simp, by rw [Category.assoc, ιChainComplex_pointSingularChainHomotopyEquiv_hom_f_zero,
-        Iso.hom_inv_id]⟩
   -- The homotopy `inv ≫ hom ≃ 𝟙` has no room to act in degree zero of `R[0]`.
   have h := (pointSingularChainHomotopyEquiv R X).homotopyInvHomId.comm 0
   rw [Homotopy.prevD_chainComplex, Homotopy.dNext_zero_chainComplex] at h

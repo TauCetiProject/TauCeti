@@ -39,9 +39,16 @@ to the cup-length lower bound for the Lusternik–Schnirelmann category.
   `TauCeti.pointSingularCochainHomotopyEquiv_hom_f_zero_apply`, its formula in degree zero.
 * `TauCeti.isZero_singularCohomology_point`: `Hⁿ(pt; M) = 0` for `n ≠ 0`.
 * `TauCeti.singularCohomologyPointZeroIso`: `H⁰(pt; M) ≅ Hom(R, M)`, by evaluation on the unique
-  vertex (`TauCeti.singularCohomologyPointZeroIso_hom_homologyπ_apply`).
+  vertex (`TauCeti.singularCohomologyPointZeroIso_hom_homologyπ_apply`), with inverse sending
+  `e` to the class of the constant cocycle (`TauCeti.singularCohomologyPointZeroIso_inv_apply`).
+  It is natural in both coefficients
+  (`TauCeti.singularCohomologyPointZeroIso_hom_naturality_right` and
+  `TauCeti.singularCohomologyPointZeroIso_hom_naturality_left`).
 * `TopCat.singularCohomologyMap_eq_zero_of_nullhomotopic` and
   `TauCeti.isZero_singularCohomology_of_contractibleSpace`.
+
+The cochain contraction follows the unmerged Tau Ceti pull request
+https://github.com/TauCetiProject/TauCeti/pull/20882.
 
 ## References
 
@@ -140,12 +147,71 @@ lemma singularCohomologyPointZeroIso_hom_homologyπ_apply (σ : (TopCat.toSSet.o
 
 /-- The class of the constant zero-cocycle with value `e : R ⟶ M`, for instance the unit of the
 cup product, corresponds to `e` in the degree-zero singular cohomology of a point. -/
+@[simp]
 lemma singularCohomologyPointZeroIso_hom_constSingularCocycle (e : R ⟶ M) :
     (singularCohomologyPointZeroIso R k M X).hom
         ((X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e)) = e := by
   rw [singularCohomologyPointZeroIso_hom_homologyπ_apply R k M X
     ((X.toSSetObjEquiv _).symm (ContinuousMap.const _ default))]
   simp
+
+/-- The inverse comparison sends `e : R ⟶ M` to the class of the constant zero-cocycle with
+value `e` in the degree-zero singular cohomology of a point. -/
+@[simp]
+lemma singularCohomologyPointZeroIso_inv_apply (e : R ⟶ M) :
+    (singularCohomologyPointZeroIso R k M X).inv e =
+      (X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e) := by
+  conv_lhs => rw [← singularCohomologyPointZeroIso_hom_constSingularCocycle R k M X e]
+  exact Iso.hom_inv_id_apply _ _
+
+/-- The comparison of the degree-zero singular cohomology of a point with `Hom(R, M)` is natural in
+the target coefficients: postcomposing cochains with `g : M ⟶ M'` corresponds to postcomposition
+with `g` on `Hom(R, M)`. -/
+@[reassoc]
+lemma singularCohomologyPointZeroIso_hom_naturality_right {M' : C} (g : M ⟶ M') :
+    HomologicalComplex.homologyMap
+        (((TopCat.toSSet.obj X).chainComplex R).linearYonedaObjMap k g) 0 ≫
+        (singularCohomologyPointZeroIso R k M' X).hom =
+      (singularCohomologyPointZeroIso R k M X).hom ≫ ModuleCat.ofHom (Linear.rightComp k R g) := by
+  let σ : (TopCat.toSSet.obj X) _⦋0⦌ := (X.toSSetObjEquiv _).symm (ContinuousMap.const _ default)
+  rw [← cancel_epi ((X.singularCochainComplex R k M).homologyπ 0),
+    HomologicalComplex.homologyπ_naturality_assoc]
+  ext a
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
+    singularCohomologyPointZeroIso_hom_homologyπ_apply R k M' X σ,
+    singularCohomologyPointZeroIso_hom_homologyπ_apply R k M X σ]
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  -- The cochain map postcomposes with `g` (`ChainComplex.linearYonedaObjMap_f_hom_apply`), and
+  -- so does `Linear.rightComp`; its statement is typed in the cochain module, so it is applied
+  -- as a term.
+  exact (congrArg ((TopCat.toSSet.obj X).ιChainComplex σ ≫ ·)
+    (ChainComplex.linearYonedaObjMap_f_hom_apply k ((TopCat.toSSet.obj X).chainComplex R) g 0
+      ((X.singularCochainComplex R k M).iCycles 0 a))).trans (Category.assoc _ _ _).symm
+
+/-- The comparison of the degree-zero singular cohomology of a point with `Hom(R, M)` is natural in
+the source coefficients: precomposing cochains with the chain map induced by `f : R' ⟶ R`
+corresponds to precomposition with `f` on `Hom(R, M)`. -/
+@[reassoc]
+lemma singularCohomologyPointZeroIso_hom_naturality_left {R' : C} (f : R' ⟶ R) :
+    HomologicalComplex.homologyMap ((ChainComplex.linearYonedaFunctor k M).map
+        (((SSet.chainComplexFunctor C).map f).app (TopCat.toSSet.obj X)).op) 0 ≫
+        (singularCohomologyPointZeroIso R' k M X).hom =
+      (singularCohomologyPointZeroIso R k M X).hom ≫ ModuleCat.ofHom (Linear.leftComp k M f) := by
+  let σ : (TopCat.toSSet.obj X) _⦋0⦌ := (X.toSSetObjEquiv _).symm (ContinuousMap.const _ default)
+  -- The complexes `(linearYonedaFunctor k M).obj _` and `X.singularCochainComplex R' k M` agree
+  -- only after unfolding the exposed `linearYonedaFunctor`, so `rw` cannot see through the
+  -- source of `homologyMap`; the steps that cross it are applied as terms.
+  refine (cancel_epi ((X.singularCochainComplex R k M).homologyπ 0)).1
+    ((HomologicalComplex.homologyπ_naturality_assoc _ _ _).trans ?_)
+  ext a
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
+    singularCohomologyPointZeroIso_hom_homologyπ_apply R k M X σ]
+  refine (singularCohomologyPointZeroIso_hom_homologyπ_apply R' k M X σ _).trans ?_
+  refine (congrArg (_ ≫ ·)
+    (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ 0) a)).trans ?_
+  -- The cochain map precomposes with the chain map induced by `f`, which sends the summand of
+  -- `σ` with coefficients `R'` to that with coefficients `R` after `f`.
+  exact SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc _ _ _
 
 end Point
 
