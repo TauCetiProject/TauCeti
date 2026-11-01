@@ -304,14 +304,26 @@ instance (p : ℤ) : Module.Free R ((circleQuantumGrading R ι).piece p) :=
 instance (p : ℤ) : Module.Finite R ((circleQuantumGrading R ι).piece p) :=
   .of_basis (circlePieceBasis R ι p)
 
+/-- When `l₀` is the only labelling of degree `p`, the labellings of degree `p` form a singleton
+with element `l₀`. -/
+@[instance_reducible]
+private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+
+private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    ((uniqueLabelingOfDegree h).default : ι → Bool) = l₀ :=
+  rfl
+
 variable (R) in
 /-- When `l₀` is the only labelling of degree `p`, the degree-`p` piece of the circle tensor is free
 of rank one: the coordinate along `l₀` identifies it with `R`. -/
 noncomputable def circlePieceEquivOfUnique {p : ℤ} (l₀ : ι → Bool)
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
     (circleQuantumGrading R ι).piece p ≃ₗ[R] R :=
-  letI : Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
-    ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+  letI := uniqueLabelingOfDegree h
   (circlePieceBasis R ι p).equivFun ≪≫ₗ LinearEquiv.funUnique _ R R
 
 /-- The identification of a rank-one piece with `R` reads off the coordinate along the unique
@@ -320,9 +332,9 @@ labelling of that degree. -/
 theorem circlePieceEquivOfUnique_apply {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (x : (circleQuantumGrading R ι).piece p) :
     circlePieceEquivOfUnique R l₀ h x = (circleBasis R ι).repr x l₀ := by
-  simp [circlePieceEquivOfUnique, LinearEquiv.funUnique, Module.Basis.equivFun_apply]
-  -- The `default` labelling of the local `Unique` instance is `l₀` by construction.
-  rfl
+  rw [circlePieceEquivOfUnique, LinearEquiv.trans_apply, LinearEquiv.funUnique_apply,
+    Function.eval, Module.Basis.equivFun_apply, circlePieceBasis_repr_apply,
+    coe_default_uniqueLabelingOfDegree]
 
 /-- The inverse identification sends a scalar to that multiple of the basis vector of the unique
 labelling of that degree. -/

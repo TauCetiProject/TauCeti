@@ -151,6 +151,22 @@ instance : Module.Free R ((D.khovanovComplex hD R j).homology 0) :=
 instance : Module.Finite R ((D.khovanovComplex hD R j).homology 0) :=
   .equiv (D.khovanovComplexHomologyZeroIso hD R j).toLinearEquiv.symm
 
+/-- The Khovanov homology of a crossing-free diagram vanishes in bidegree `(0, j)` when no labelling
+of its resolved circles has quantum degree `j`. -/
+theorem isZero_homology_khovanovComplex_zero_of_labelingQuantumDegree_ne
+    (h : ∀ l, Khovanov.labelingQuantumDegree
+      (D.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) l ≠ j) :
+    IsZero ((D.khovanovComplex hD R j).homology 0) := by
+  refine IsZero.of_iso ?_ (D.khovanovComplexHomologyZeroIso hD R j)
+  rw [ModuleCat.isZero_of_iff_subsingleton, Submodule.subsingleton_iff_eq_bot]
+  exact Khovanov.circleQuantumGrading_piece_eq_bot h
+
+/-- A crossing-free diagram has one resolved circle for each of its components. -/
+theorem card_resolvedCircle_cubeState_empty :
+    Fintype.card (D.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) =
+      D.crossinglessComponentCount := by
+  rw [PDCode.card_resolvedCircle, PDCode.stateLoopCount_eq_crossinglessComponentCount]
+
 /-- **The graded rank of the Khovanov homology of an unlink**: for a crossing-free diagram with
 `k` circles, the rank of the homology in bidegree `(0, j)` is the coefficient of `q ^ j` in
 `(q + q⁻¹) ^ k`. -/
@@ -159,7 +175,7 @@ theorem coeff_pow_eq_finrank_homology_khovanovComplex [Nontrivial R] :
       Module.finrank R ((D.khovanovComplex hD R j).homology 0) := by
   have h := Khovanov.coeff_pow_eq_finrank_circleQuantumGrading_piece R
     (ι := D.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) j
-  rw [PDCode.card_resolvedCircle, PDCode.stateLoopCount_eq_crossinglessComponentCount] at h
+  rw [card_resolvedCircle_cubeState_empty] at h
   rw [h, (D.khovanovComplexHomologyZeroIso hD R j).toLinearEquiv.finrank_eq]
 
 section Empty
@@ -169,9 +185,8 @@ variable (hD : empty.toPDCode.IsPlanar)
 /-- The empty diagram has no resolved circles. -/
 private theorem isEmpty_resolvedCircle_empty :
     IsEmpty (empty.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) := by
-  rw [← Fintype.card_eq_zero_iff, PDCode.card_resolvedCircle,
-    PDCode.stateLoopCount_eq_crossinglessComponentCount, ← card_crossinglessComponents,
-    crossinglessComponents_empty, Multiset.card_zero]
+  rw [← Fintype.card_eq_zero_iff, card_resolvedCircle_cubeState_empty,
+    ← card_crossinglessComponents, crossinglessComponents_empty, Multiset.card_zero]
 
 /-- The only labelling of the circles of the empty diagram has quantum degree `0`. -/
 private theorem labelingQuantumDegree_empty_eq_zero_iff
@@ -186,17 +201,36 @@ def khovanovComplexHomologyEmptyIso :
   khovanovComplexHomologyZeroIso empty hD R 0 ≪≫
     (Khovanov.circlePieceEquivOfUnique R _ labelingQuantumDegree_empty_eq_zero_iff).toModuleIso
 
+/-- The identification of the homology of the empty diagram with `R` reads off the coordinate of a
+cocycle along the empty labelling. -/
+@[reassoc (attr := simp)]
+theorem homologyπ_khovanovComplexHomologyEmptyIso_hom :
+    (empty.khovanovComplex hD R 0).homologyπ 0 ≫ (khovanovComplexHomologyEmptyIso R hD).hom =
+      (empty.khovanovComplex hD R 0).iCycles 0 ≫ (khovanovComplexXZeroIso empty hD R 0).hom ≫
+        ModuleCat.ofHom ((Khovanov.circleBasis R _).coord (fun _ ↦ false) ∘ₗ
+          ((Khovanov.circleQuantumGrading R _).piece 0).subtype) := by
+  ext
+  simp [khovanovComplexHomologyEmptyIso]
+
+/-- The homology class corresponding to `r : R` in the homology of the empty diagram is the
+multiple `r` of the basis vector of the empty labelling. -/
+@[simp]
+theorem coe_khovanovComplexHomologyZeroIso_hom_khovanovComplexHomologyEmptyIso_inv (r : R) :
+    Subtype.val (p := (· ∈ (Khovanov.circleQuantumGrading R _).piece 0))
+        ((khovanovComplexHomologyZeroIso empty hD R 0).hom
+          ((khovanovComplexHomologyEmptyIso R hD).inv r)) =
+      r • Khovanov.circleBasis R _ fun _ ↦ false := by
+  simp [khovanovComplexHomologyEmptyIso]
+
 /-- **The Khovanov homology of the empty link vanishes outside bidegree `(0, 0)`.** -/
 theorem isZero_homology_khovanovComplex_empty {i j : ℤ} (hij : i ≠ 0 ∨ j ≠ 0) :
     IsZero ((empty.khovanovComplex hD R j).homology i) := by
   by_cases hi : i = 0
   · subst hi
-    refine IsZero.of_iso ?_ (khovanovComplexHomologyZeroIso empty hD R j)
-    rw [ModuleCat.isZero_of_iff_subsingleton, Submodule.subsingleton_iff_eq_bot]
-    refine Khovanov.circleQuantumGrading_piece_eq_bot fun l hl ↦ ?_
-    have := isEmpty_resolvedCircle_empty
-    simp [Khovanov.labelingQuantumDegree_def] at hl
-    exact hij.resolve_left (not_not.2 rfl) hl.symm
+    refine isZero_homology_khovanovComplex_zero_of_labelingQuantumDegree_ne empty hD R j
+      fun l hl ↦ (Khovanov.abs_labelingQuantumDegree_le l).not_gt ?_
+    rw [hl, Fintype.card_eq_zero_iff.2 isEmpty_resolvedCircle_empty, Nat.cast_zero, abs_pos]
+    exact hij.resolve_left (not_not.2 rfl)
   · exact isZero_homology_khovanovComplex_of_ne_zero empty hD R j hi
 
 end Empty
@@ -208,8 +242,8 @@ variable (o : Bool) (hD : (unknot o).toPDCode.IsPlanar)
 /-- A crossing-free unknot has exactly one resolved circle. -/
 private theorem card_resolvedCircle_unknot :
     Fintype.card ((unknot o).toPDCode.ResolvedCircle (PDCode.cubeState ∅)) = 1 := by
-  rw [PDCode.card_resolvedCircle, PDCode.stateLoopCount_eq_crossinglessComponentCount,
-    ← card_crossinglessComponents, crossinglessComponents_unknot, Multiset.card_singleton]
+  rw [card_resolvedCircle_cubeState_empty, ← card_crossinglessComponents,
+    crossinglessComponents_unknot, Multiset.card_singleton]
 
 /-- The quantum degree of a labelling of the only circle `x` of an unknot is `1` for the label `1`
 and `-1` for the label `X`. -/
@@ -241,15 +275,40 @@ def khovanovComplexHomologyUnknotIso {j : ℤ} (hj : j = 1 ∨ j = -1) :
       · simpa using labelingQuantumDegree_unknot_eq_iff o l false
       · simpa using labelingQuantumDegree_unknot_eq_iff o l true).toModuleIso
 
+/-- The identification of the homology of the unknot in quantum degree `j = ±1` with `R` reads off
+the coordinate of a cocycle along the labelling `1` (for `j = 1`) or `X` (for `j = -1`) of its
+circle. -/
+@[reassoc (attr := simp)]
+theorem homologyπ_khovanovComplexHomologyUnknotIso_hom {j : ℤ} (hj : j = 1 ∨ j = -1) :
+    ((unknot o).khovanovComplex hD R j).homologyπ 0 ≫
+        (khovanovComplexHomologyUnknotIso R o hD hj).hom =
+      ((unknot o).khovanovComplex hD R j).iCycles 0 ≫
+        (khovanovComplexXZeroIso (unknot o) hD R j).hom ≫
+          ModuleCat.ofHom ((Khovanov.circleBasis R _).coord (fun _ ↦ decide (j = -1)) ∘ₗ
+            ((Khovanov.circleQuantumGrading R _).piece j).subtype) := by
+  ext
+  simp [khovanovComplexHomologyUnknotIso]
+
+/-- The homology class corresponding to `r : R` in the homology of the unknot in quantum degree
+`j = ±1` is the multiple `r` of the basis vector of the labelling `1` (for `j = 1`) or `X` (for
+`j = -1`) of its circle. -/
+@[simp]
+theorem coe_khovanovComplexHomologyZeroIso_hom_khovanovComplexHomologyUnknotIso_inv {j : ℤ}
+    (hj : j = 1 ∨ j = -1) (r : R) :
+    Subtype.val (p := (· ∈ (Khovanov.circleQuantumGrading R _).piece j))
+        ((khovanovComplexHomologyZeroIso (unknot o) hD R j).hom
+          ((khovanovComplexHomologyUnknotIso R o hD hj).inv r)) =
+      r • Khovanov.circleBasis R _ fun _ ↦ decide (j = -1) := by
+  simp [khovanovComplexHomologyUnknotIso]
+
 /-- **The Khovanov homology of the unknot vanishes outside bidegrees `(0, 1)` and `(0, -1)`.** -/
 theorem isZero_homology_khovanovComplex_unknot {i j : ℤ} (hij : i ≠ 0 ∨ (j ≠ 1 ∧ j ≠ -1)) :
     IsZero (((unknot o).khovanovComplex hD R j).homology i) := by
   by_cases hi : i = 0
   · subst hi
     have hj := hij.resolve_left (not_not.2 rfl)
-    refine IsZero.of_iso ?_ (khovanovComplexHomologyZeroIso (unknot o) hD R j)
-    rw [ModuleCat.isZero_of_iff_subsingleton, Submodule.subsingleton_iff_eq_bot]
-    refine Khovanov.circleQuantumGrading_piece_eq_bot fun l hl ↦ ?_
+    refine isZero_homology_khovanovComplex_zero_of_labelingQuantumDegree_ne (unknot o) hD R j
+      fun l hl ↦ ?_
     obtain ⟨x, -, hdeg⟩ := exists_labelingQuantumDegree_unknot o l
     cases h : l x <;> simp_all
   · exact isZero_homology_khovanovComplex_of_ne_zero (unknot o) hD R j hi
