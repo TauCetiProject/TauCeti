@@ -39,8 +39,8 @@ open Complex Filter Topology
 variable {a : ℕ → ℂ} {s : ℂ}
 
 /-- A Dirichlet series summable at `s` is continuous on the closed half-plane
-`{z | s.re ≤ z.re}`, including its boundary line `{z | z.re = s.re}`, on which Mathlib's
-`LSeries_differentiableOn` says nothing. -/
+`{z | s.re ≤ z.re}`, including its boundary line `{z | z.re = s.re}`. When
+`s.re = abscissaOfAbsConv a`, Mathlib's `LSeries_differentiableOn` says nothing on that line. -/
 theorem continuousOn_LSeries (hs : LSeriesSummable a s) :
     ContinuousOn (LSeries a) {z : ℂ | s.re ≤ z.re} :=
   continuousOn_tsum
