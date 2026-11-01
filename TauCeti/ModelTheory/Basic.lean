@@ -48,10 +48,11 @@ instance Countable.countable_relations [Countable L.Symbols] : Countable (Σ n, 
   Function.Injective.countable
     (f := (Sum.inr : (Σ n, L.Relations n) → L.Symbols)) Sum.inr_injective
 
-/-- A nonempty type carries some `L`-structure: send every function symbol to a fixed element and
-make every relation empty. -/
+/-- A nonempty type carries some `L`-structure: Mathlib's `Inhabited.trivialStructure` for a
+chosen element. -/
 instance nonempty_structure_of_nonempty (M : Type*) [Nonempty M] : Nonempty (L.Structure M) :=
-  ⟨⟨fun _ _ => Classical.arbitrary M, fun _ _ => False⟩⟩
+  letI := Classical.inhabited_of_nonempty' (α := M)
+  ⟨Inhabited.trivialStructure L⟩
 
 /-- Every type, including the empty one, carries some structure for a relational language: make
 every relation empty. -/
