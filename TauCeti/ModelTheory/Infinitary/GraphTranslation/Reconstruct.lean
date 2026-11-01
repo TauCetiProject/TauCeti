@@ -48,6 +48,8 @@ other direction, the reconstruction of the graph expansion of an `L`-structure i
   models the graph axioms of every set of function symbols.
 * `FirstOrder.Language.relationsIn_graphAxioms`: the graph axioms of `F` mention exactly the graph
   relations of the symbols in `F`.
+* `FirstOrder.Language.relMap_graph_funMap_reconstructStructure`: where the graph relation of `f`
+  relates `xs` to some value, the reconstruction sends `xs` to such a value.
 * `FirstOrder.Language.funMap_reconstructStructure_eq_iff`: where the graph relation of `f` relates
   `xs` to exactly one value, the reconstruction sends `xs` to that value.
 * `FirstOrder.Language.BoundedFormulaInf.realize_relationalize_reconstructStructure`: on a model of
@@ -238,9 +240,10 @@ variable (L) (M : Type w) [L.graphLanguage.Structure M] [Nonempty M]
 
 /-- The **reconstruction** of an `L`-structure from a structure for the graph language on a
 nonempty carrier: a relation symbol of `L` is interpreted by its base relation, and a function
-symbol `f` sends `xs` to a chosen `y` with `G_f(xs, y)`, or to an arbitrary element if there is
-none. Where the graph relation of `f` is the graph of a function, the reconstruction interprets
-`f` by that function (`funMap_reconstructStructure_eq_iff`). -/
+symbol `f` sends `xs` to a chosen `y` with `G_f(xs, y)`
+(`relMap_graph_funMap_reconstructStructure`), or to an arbitrary element if there is none. Where
+the graph relation of `f` is the graph of a function, the reconstruction interprets `f` by that
+function (`funMap_reconstructStructure_eq_iff`). -/
 @[instance_reducible]
 noncomputable def reconstructStructure : L.Structure M where
   funMap f xs := Classical.epsilon fun y =>
@@ -256,6 +259,14 @@ theorem relMap_reconstructStructure {k : ℕ} (R : L.Relations k) (xs : Fin k �
       RelMap (L := L.graphLanguage) (GraphRelation.base R) xs :=
   Iff.rfl
 
+/-- Where the graph relation of `f` relates `xs` to some value, the reconstruction sends `xs` to
+such a value. -/
+theorem relMap_graph_funMap_reconstructStructure {k : ℕ} {f : L.Functions k} {xs : Fin k → M}
+    (h : ∃ y, RelMap (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc xs y)) :
+    RelMap (L := L.graphLanguage) (GraphRelation.graph f)
+      (Fin.snoc xs ((reconstructStructure L M).funMap f xs)) :=
+  Classical.epsilon_spec h
+
 /-- Where the graph relation of `f` relates `xs` to exactly one value, the reconstruction sends
 `xs` to that value. -/
 theorem funMap_reconstructStructure_eq_iff {k : ℕ} {f : L.Functions k} {xs : Fin k → M}
@@ -263,7 +274,7 @@ theorem funMap_reconstructStructure_eq_iff {k : ℕ} {f : L.Functions k} {xs : F
     {y : M} :
     (reconstructStructure L M).funMap f xs = y ↔
       RelMap (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc xs y) := by
-  have hε := Classical.epsilon_spec h.exists
+  have hε := relMap_graph_funMap_reconstructStructure h.exists
   exact ⟨fun hy => hy ▸ hε, fun hy => h.unique hε hy⟩
 
 /-- On a model of the graph axioms of `F`, the graph expansion of the reconstruction interprets
