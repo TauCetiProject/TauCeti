@@ -217,8 +217,7 @@ variable {hker : ∀ x : X, germKernel G x ≤ (toPermHom G X).ker}
 /-- If every germ kernel is the kernel of the action, that is, if every element acting as the
 identity near some point acts trivially on all of `X`, the projection
 `TauCeti.effectiveActionFunctor` onto the action groupoid of the faithful quotient action of
-`G ⧸ ker` factors through the effective quotient. For an action by continuous maps this functor is
-an equivalence. -/
+`G ⧸ ker` factors through the effective quotient, and this functor is an equivalence. -/
 @[expose] def Effective.toQuotientKer (hker : ∀ x : X, germKernel G x ≤ (toPermHom G X).ker) :
     Effective G X ⥤ ActionCategory (G ⧸ (toPermHom G X).ker) X :=
   Effective.lift (effectiveActionFunctor G X) fun _ _ f f' h ↦ by
@@ -253,6 +252,19 @@ instance : (Effective.toQuotientKer hker).Full :=
 instance : (Effective.toQuotientKer hker).EssSurj where
   mem_essImage y := ⟨Effective.objEquiv G X y.back,
     ⟨eqToIso ((effectiveActionFunctor_obj G X y.back).trans (ActionCategory.back_coe y))⟩⟩
+
+instance : (Effective.toQuotientKer hker).Faithful :=
+  Functor.faithful_of_comp_essSurj _ (toEffective G X) fun x _ φ ψ h ↦ by
+    obtain ⟨f, rfl⟩ := (toEffective G X).map_surjective φ
+    obtain ⟨f', rfl⟩ := (toEffective G X).map_surjective ψ
+    have h' : (effectiveActionFunctor G X).map f = (effectiveActionFunctor G X).map f' :=
+      (Effective.toQuotientKer_map_toEffective_map f).symm.trans
+        (h.trans (Effective.toQuotientKer_map_toEffective_map f'))
+    refine CategoryTheory.Quotient.sound _ (germRel_iff_mem_germKernel.mpr
+      (ker_toPermHom_le_germKernel x.back (QuotientGroup.eq (s := (toPermHom G X).ker).mp ?_)))
+    simpa only [effectiveActionFunctor_map_hom] using congrArg (fun f ↦ f.hom) h'
+
+instance : (Effective.toQuotientKer hker).IsEquivalence where
 
 end Faithful
 
@@ -339,24 +351,5 @@ theorem Effective.stabilizerQuotientMulEquivAut_mk (x : X) (g : stabilizer G x) 
     Effective.stabilizerQuotientMulEquivAut G x (QuotientGroup.mk g) =
       Effective.stabilizerToAut G x g :=
   (rfl)
-
-section Faithful
-
-variable {hker : ∀ x : X, germKernel G x ≤ (toPermHom G X).ker}
-
-instance : (Effective.toQuotientKer hker).Faithful :=
-  Functor.faithful_of_comp_essSurj _ (toEffective G X) fun x _ φ ψ h ↦ by
-    obtain ⟨f, rfl⟩ := (toEffective G X).map_surjective φ
-    obtain ⟨f', rfl⟩ := (toEffective G X).map_surjective ψ
-    have h' : (effectiveActionFunctor G X).map f = (effectiveActionFunctor G X).map f' :=
-      (Effective.toQuotientKer_map_toEffective_map f).symm.trans
-        (h.trans (Effective.toQuotientKer_map_toEffective_map f'))
-    refine (toEffective_map_eq_iff_mem_germKernel (G := G)).mpr
-      (ker_toPermHom_le_germKernel x.back (QuotientGroup.eq (s := (toPermHom G X).ker).mp ?_))
-    simpa only [effectiveActionFunctor_map_hom] using congrArg (fun f ↦ f.hom) h'
-
-instance : (Effective.toQuotientKer hker).IsEquivalence where
-
-end Faithful
 
 end TauCeti.ActionGroupoid
