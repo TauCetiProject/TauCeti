@@ -343,7 +343,7 @@ theorem operatorAbs_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
     (e.toLinearEquiv.conj T).operatorAbs = e.toLinearEquiv.conj T.operatorAbs := by
   have h := operatorAbs_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
   rw [operatorAbs_linearIsometry_comp, LinearIsometryEquiv.symm_symm,
-    LinearIsometryEquiv.toLinearMap_toLinearIsometry] at h
+    show e.toLinearIsometry.toLinearMap = e.toLinearEquiv from rfl] at h
   rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
     h, comp_assoc]
 
@@ -351,7 +351,8 @@ theorem operatorAbs_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
 theorem polarFactor_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
     (e.toLinearEquiv.conj T).polarFactor = e.toLinearEquiv.conj T.polarFactor := by
   have h := polarFactor_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
-  rw [polarFactor_linearIsometry_comp, LinearIsometryEquiv.toLinearMap_toLinearIsometry] at h
+  rw [polarFactor_linearIsometry_comp,
+    show e.toLinearIsometry.toLinearMap = e.toLinearEquiv from rfl] at h
   rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
     h, comp_assoc]
 
