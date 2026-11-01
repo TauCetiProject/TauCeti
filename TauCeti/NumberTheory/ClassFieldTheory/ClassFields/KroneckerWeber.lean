@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Rec
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.NormLimitation
 public import TauCeti.NumberTheory.NumberField.Global.Cyclotomic.RayClass
 
+import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RaySubgroup
+
 /-!
 # The norm group of `ℚ(ζ_n)/ℚ` and the Kronecker–Weber theorem
 
@@ -146,9 +148,8 @@ theorem nonempty_algHom_iff_abelianConductor_dvd_ratModulus (F : Type) [Field F]
     [IsCyclotomicExtension {n} ℚ F] :
     Nonempty (E →ₐ[ℚ] F) ↔ abelianConductor ℚ E ∣ ratModulus n (NeZero.ne n) := by
   have := IsCyclotomicExtension.isGalois {n} ℚ F
-  rw [← range_ideleClassNormMap_le_iff_nonempty_algHom,
-    range_ideleClassNormMap_eq_raySubgroup_ratModulus n F, ← isAdmissibleModulus_iff,
-    isAdmissibleModulus_iff_abelianConductor_dvd]
+  exact nonempty_algHom_iff_abelianConductor_dvd_of_range_eq E
+    (range_ideleClassNormMap_eq_raySubgroup_ratModulus n F)
 
 /-- **A finite abelian extension `E/ℚ` embeds in `ℚ(ζ_n)` exactly when the absolute norm of the
 finite part of its conductor divides `n`.** -/

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Conductor
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.KroneckerWeber
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.SubgroupConductor.Rat
 
+import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RaySubgroup
 import TauCeti.NumberTheory.Cyclotomic.OddLevel
 
 /-!
@@ -24,7 +25,9 @@ for odd `m` the fields `ℚ(ζ_{2m})` and `ℚ(ζ_m)` coincide, so a level `2m` 
 
 For the cyclotomic field `F = ℚ(ζ_n)` itself, the norm group is the ray subgroup of `(n)·∞`, so the
 conductor of `F/ℚ` is the conductor of the trivial subgroup of the ray class group modulo `(n)·∞`
-(`abelianConductor_eq_rayClassConductor_bot`). Hence the conductor of `ℚ(ζ_n)/ℚ` is trivial for
+(`abelianConductor_eq_rayClassConductor_bot`). So it is the conductor
+`NumberField.Chebotarev.cyclotomicConductor ℚ F n` of the cyclotomic Artin map
+(`abelianConductor_eq_cyclotomicConductor`), and hence the conductor of `ℚ(ζ_n)/ℚ` is trivial for
 `n ≤ 2` (`abelianConductor_eq_one_of_le_two`), `(n)·∞` for `n > 2` with `n ≢ 2 mod 4`
 (`abelianConductor_eq_ratModulus`), and `(n / 2)·∞` for `n > 2` with `n ≡ 2 mod 4`
 (`abelianConductor_eq_ratModulus_of_mod_four_eq_two`).
@@ -37,6 +40,8 @@ conductor of `F/ℚ` is the conductor of the trivial subgroup of the ray class g
   cyclotomic level is not `2` modulo `4`.
 * `TauCeti.ClassFieldTheory.abelianConductor_eq_rayClassConductor_bot`: the conductor of
   `ℚ(ζ_n)/ℚ` is the conductor of the trivial subgroup of the ray class group modulo `(n)·∞`.
+* `TauCeti.ClassFieldTheory.abelianConductor_eq_cyclotomicConductor`: the conductor of
+  `ℚ(ζ_n)/ℚ` is the conductor of its cyclotomic Artin map.
 * `TauCeti.ClassFieldTheory.abelianConductor_eq_one_of_le_two`,
   `TauCeti.ClassFieldTheory.abelianConductor_eq_ratModulus` and
   `TauCeti.ClassFieldTheory.abelianConductor_eq_ratModulus_of_mod_four_eq_two`: the conductor of
@@ -102,43 +107,34 @@ section Cyclotomic
 
 variable (n : ℕ) [NeZero n] (F : Type) [Field F] [NumberField F] [IsCyclotomicExtension {n} ℚ F]
 
-/-- For a divisor `𝔫` of `𝔪`, the ray subgroup of `𝔫` lies in that of `𝔪` exactly when the
-transition map from `𝔪` to `𝔫` is injective: both ray subgroups are kernels of the surjective ray
-class map modulo `𝔪`, composed with the transition map in the case of `𝔫`. -/
-private theorem raySubgroup_le_raySubgroup_iff {𝔪 𝔫 : Modulus ℚ} (h : 𝔫 ∣ 𝔪) :
-    raySubgroup 𝔫 ≤ raySubgroup 𝔪 ↔ (classMap h).ker ≤ ⊥ := by
-  rw [← ker_rayClassQuotient, ← ker_rayClassQuotient, ← classMap_comp_rayClassQuotient h,
-    ← MonoidHom.comap_ker, ← MonoidHom.comap_bot (rayClassQuotient 𝔪),
-    Subgroup.comap_le_comap_of_surjective (rayClassQuotient_surjective 𝔪)]
-
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is the conductor of the trivial subgroup of the ray class group
-modulo `(n)·∞`**: the norm group of `ℚ(ζ_n)` is the ray subgroup of `(n)·∞`, so for a divisor `𝔫`
-of `(n)·∞` both conductors divide `𝔫` exactly when the transition map from `(n)·∞` to `𝔫` is
-injective. -/
+modulo `(n)·∞`**: the norm group of `ℚ(ζ_n)` is the ray subgroup of `(n)·∞`. -/
 theorem abelianConductor_eq_rayClassConductor_bot :
     abelianConductor ℚ F =
-      Subgroup.rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n (NeZero.ne n)))) := by
-  have key {𝔫 : Modulus ℚ} (h : 𝔫 ∣ ratModulus n (NeZero.ne n)) :
-      abelianConductor ℚ F ∣ 𝔫 ↔ (classMap h).ker ≤ ⊥ := by
-    rw [← isAdmissibleModulus_iff_abelianConductor_dvd, isAdmissibleModulus_iff,
-      range_ideleClassNormMap_eq_raySubgroup_ratModulus n F, raySubgroup_le_raySubgroup_iff h]
-  have hdvd :=
-    (isAdmissibleModulus_iff_abelianConductor_dvd _).mp (isAdmissibleModulus_ratModulus n F)
-  exact Modulus.dvd_antisymm
-    ((key (Subgroup.rayClassConductor_dvd ⊥)).mpr (Subgroup.ker_classMap_rayClassConductor_le ⊥))
-    ((Subgroup.rayClassConductor_dvd_iff hdvd ⊥).mpr ((key hdvd).mp (Modulus.dvd_refl _)))
+      Subgroup.rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n (NeZero.ne n)))) :=
+  abelianConductor_eq_rayClassConductor_bot_of_range_eq
+    (range_ideleClassNormMap_eq_raySubgroup_ratModulus n F)
+
+/-- **The conductor of `ℚ(ζ_n)/ℚ` is the conductor of its cyclotomic Artin map**: over `ℚ` both
+are the conductor of the trivial subgroup of the ray class group modulo `(n)·∞`. -/
+theorem abelianConductor_eq_cyclotomicConductor [IsGalois ℚ F] :
+    abelianConductor ℚ F = NumberField.Chebotarev.cyclotomicConductor ℚ F n :=
+  (abelianConductor_eq_rayClassConductor_bot n F).trans
+    (NumberField.Chebotarev.cyclotomicConductor_rat_eq_rayClassConductor_bot F).symm
 
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is trivial** for `n ≤ 2`. -/
 theorem abelianConductor_eq_one_of_le_two (h2 : n ≤ 2) :
     abelianConductor ℚ F = Modulus.one ℚ := by
-  rw [abelianConductor_eq_rayClassConductor_bot n F,
-    Subgroup.rayClassConductor_bot_ratModulus_of_le_two h2]
+  have := IsCyclotomicExtension.isGalois {n} ℚ F
+  rw [abelianConductor_eq_cyclotomicConductor n F,
+    NumberField.Chebotarev.cyclotomicConductor_rat_of_le_two F h2]
 
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is `(n)·∞`** for `n > 2` not equal to `2` modulo `4`. -/
 theorem abelianConductor_eq_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
     abelianConductor ℚ F = ratModulus n (NeZero.ne n) := by
-  rw [abelianConductor_eq_rayClassConductor_bot n F,
-    Subgroup.rayClassConductor_bot_ratModulus h2 h4]
+  have := IsCyclotomicExtension.isGalois {n} ℚ F
+  rw [abelianConductor_eq_cyclotomicConductor n F,
+    NumberField.Chebotarev.cyclotomicConductor_rat F h2 h4]
 
 omit [NeZero n] in
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is `(n / 2)·∞`** for `n > 2` equal to `2` modulo `4`, as
@@ -146,8 +142,9 @@ omit [NeZero n] in
 theorem abelianConductor_eq_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
     abelianConductor ℚ F = ratModulus (n / 2) (by omega) := by
   have : NeZero n := ⟨by omega⟩
-  rw [abelianConductor_eq_rayClassConductor_bot n F,
-    Subgroup.rayClassConductor_bot_ratModulus_of_mod_four_eq_two h2 h4]
+  have := IsCyclotomicExtension.isGalois {n} ℚ F
+  rw [abelianConductor_eq_cyclotomicConductor n F,
+    NumberField.Chebotarev.cyclotomicConductor_rat_of_mod_four_eq_two F h2 h4]
 
 end Cyclotomic
 
