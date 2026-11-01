@@ -363,7 +363,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {q : ENNReal} [Fact (1 ≤ q)] {r : ℝ}
 
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
+local instance instIsAddHaarMeasureRestrictTopDilate :
+    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
 
 /-- Passing a dilated whole-space test function to `Lᵖ` dilates its class: `φ (r⁻¹ • ·)` has
@@ -396,7 +397,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {q : ENNReal} [Fact (1 ≤ q)] {r : ℝ}
 
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
+local instance instIsAddHaarMeasureRestrictTopGradientDilate :
+    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
 
 /-- Taking the gradient's `Lᵖ` class intertwines whole-space dilation: the gradient of

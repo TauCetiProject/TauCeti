@@ -46,7 +46,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)] {r s : ℝ}
 
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
+local instance D1p0.instIsAddHaarMeasureRestrictTopDilate :
+    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
 
 /-- The isometric `Lᵖ` dilate of a test-function gradient is the gradient of the dilated test
