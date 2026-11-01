@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
-public import TauCeti.RingTheory.MvPolynomial.ToricIdeal
+public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 
 /-!
 # Monic normalization of SAGBI generators
