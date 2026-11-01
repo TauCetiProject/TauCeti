@@ -209,7 +209,7 @@ theorem injective_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
   set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
     (ne_zero_of_mem_unit_sphere v)).repr
   rw [coe_comp_stereographic'_symm, ← Function.comp_assoc,
-    show (U.symm : _ → _) = U.symm.toContinuousLinearEquiv from rfl,
+    ← LinearIsometryEquiv.coe_toContinuousLinearEquiv U.symm,
     ContinuousLinearEquiv.comp_right_fderiv]
   exact (injective_fderiv_stereoInvFunAux_comp_coe (norm_eq_of_mem_sphere v) _).comp
     U.symm.injective

@@ -332,17 +332,16 @@ theorem isOrientationPreservingAtCore_comp_conjDisc_iff :
   refine ⟨fun h ↦ ?_, IsOrientationPreservingAtCore.comp_conjDisc_of_neg⟩
   have h' := IsOrientationPreservingAtCore.comp_conjDisc_of_neg (Φ := Φ ∘ SolidTorus.conjDisc)
     (o := -o) (by convert h; exact neg_neg o)
-  rwa [Function.comp_assoc, show (SolidTorus.conjDisc ∘ SolidTorus.conjDisc : _ → _) = id from
-    funext SolidTorus.conjDisc_conjDisc, Function.comp_id] at h'
+  rwa [Function.comp_assoc, Function.Involutive.comp_self SolidTorus.conjDisc_conjDisc,
+    Function.comp_id] at h'
 
 /-! ### Orientation-preserving neighbourhoods of knots -/
 
-/-- A unit vector `p` followed by the images of `(1, 0)`, `(i, 0)` and `(0, 1)` under an
-injective linear map `L : ℂ × ℝ → E` valued in `(ℝ ∙ p)ᗮ` is linearly independent, so the volume
-form does not vanish on it. -/
-private theorem volumeForm_ne_zero_of_injective {p : E} (hp : ‖p‖ = 1) {L : ℂ × ℝ →L[ℝ] E}
-    (hL : Injective L) (horth : ∀ v, ⟪p, L v⟫ = 0) (o : Orientation ℝ E (Fin 4)) :
-    o.volumeForm ![p, L (1, 0), L (I, 0), L (0, 1)] ≠ 0 := by
+omit [Fact (finrank ℝ E = 4)] in
+/-- An injective linear map `L : ℂ × ℝ → E` sends `(1, 0)`, `(i, 0)` and `(0, 1)` to a linearly
+independent family. -/
+private theorem linearIndependent_apply_one_I_snd {L : ℂ × ℝ →L[ℝ] E} (hL : Injective L) :
+    LinearIndependent ℝ ![L (1, 0), L (I, 0), L (0, 1)] := by
   -- `(1, 0)`, `(i, 0)` and `(0, 1)` are linearly independent in `ℂ × ℝ`.
   have hstd : LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
     refine Fintype.linearIndependent_iff.2 fun g hg i ↦ ?_
@@ -351,13 +350,9 @@ private theorem volumeForm_ne_zero_of_injective {p : E} (hp : ‖p‖ = 1) {L : 
     · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.re) hg
     · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
     · simpa using congrArg Prod.snd hg
-  have hcomp : LinearIndependent ℝ ![L (1, 0), L (I, 0), L (0, 1)] := by
-    convert hstd.map' (L : ℂ × ℝ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hL) using 1
-    ext i
-    fin_cases i <;> simp
-  refine Orientation.volumeForm_apply_ne_zero_iff.2
-    (hcomp.finCons_of_inner_eq_zero (norm_ne_zero_iff.1 (by simp [hp])) fun i ↦ ?_)
-  fin_cases i <;> exact horth _
+  convert hstd.map' (L : ℂ × ℝ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hL) using 1
+  ext i
+  fin_cases i <;> simp
 
 /-- **Orientation-preserving solid torus neighbourhoods of knots.** For either orientation `o` of
 `E`, every `C²` embedded circle `f` in the unit sphere `S³` of `E` has a solid torus neighbourhood
@@ -370,8 +365,12 @@ theorem exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore
       IsOrientationPreservingAtCore Φ o := by
   obtain ⟨Φ, hΦ, hΦU, L, hL, hLinj, horth⟩ :=
     exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading hf himm hinj hU
-  rcases (volumeForm_ne_zero_of_injective (norm_eq_of_mem_sphere (Φ (0, 1))) hLinj horth
-    o).lt_or_gt with hneg | hpos
+  -- The outward normal followed by the derivative on the standard frame is a basis.
+  have hne : o.volumeForm ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] ≠ 0 :=
+    Orientation.volumeForm_apply_ne_zero_iff.2 ((linearIndependent_apply_one_I_snd
+      hLinj).finCons_of_inner_eq_zero (ne_zero_of_mem_unit_sphere _) fun i ↦ by
+        fin_cases i <;> exact horth _)
+  rcases hne.lt_or_gt with hneg | hpos
   · exact ⟨Φ ∘ SolidTorus.conjDisc, hΦ.comp_conjDisc, (Set.range_comp_subset_range _ _).trans hΦU,
       isOrientationPreservingAtCore_comp_conjDisc_iff.2
         (isOrientationPreservingAtCore_neg_iff.2 ⟨L, hL, hneg⟩)⟩

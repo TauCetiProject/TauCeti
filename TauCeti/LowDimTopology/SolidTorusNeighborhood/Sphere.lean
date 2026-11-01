@@ -118,14 +118,12 @@ theorem exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading
   refine ⟨c.symm ∘ Ψ, hback ▸ hΨ.comp he, ?_, ?_⟩
   · rintro _ ⟨q, rfl⟩
     exact hΨU (mem_range_self q)
-  have hcΨ : (fun q ↦ ((c.symm ∘ Ψ) q : E)) = fun q ↦ ((stereographic' 3 p).symm (Ψ q) : E) := by
-    funext q
+  have hcΨ : ∀ q, ((c.symm ∘ Ψ) q : E) = ((stereographic' 3 p).symm (Ψ q) : E) := by
     simp [hc]
   obtain ⟨L, hL, hLinj, horth⟩ :=
     exists_hasFDerivAt_coreReading_stereographic'_symm_comp p hLΨ hLΨinj
-  refine ⟨L, by rwa [hcΨ], hLinj, fun v ↦ ?_⟩
-  rw [show ((c.symm ∘ Ψ) (0, 1) : E) = (stereographic' 3 p).symm (Ψ (0, 1)) from
-    congrFun hcΨ (0, 1)]
+  refine ⟨L, by simpa only [hcΨ] using hL, hLinj, fun v ↦ ?_⟩
+  rw [hcΨ]
   exact horth v
 
 /-- Every `C²` embedded circle in a unit three-sphere has a solid torus neighbourhood inside
