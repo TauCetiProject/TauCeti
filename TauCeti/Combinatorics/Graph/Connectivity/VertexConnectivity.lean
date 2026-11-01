@@ -50,11 +50,6 @@ abbrev IsVertexConnected (G : Graph α β) (k : ℕ) : Prop :=
 noncomputable abbrev vertexConnectivity (G : Graph α β) : ℕ∞ :=
   G.toSimpleGraph.vertexConnectivity
 
-/-- Vertex connectivity is the supremum of its natural thresholds. -/
-theorem vertexConnectivity_def :
-    G.vertexConnectivity = ⨆ (k : ℕ) (_ : G.IsVertexConnected k), (k : ℕ∞) := by
-  exact SimpleGraph.vertexConnectivity_def
-
 /-- Vertex reachability can be tested by native vertex deletion. Deleted sets may contain
 points outside the actual vertex set; those points cannot obstruct reachability. -/
 theorem isVertexReachable_iff {s t : V(G)} : G.IsVertexReachable k s t ↔
@@ -62,8 +57,11 @@ theorem isVertexReachable_iff {s t : V(G)} : G.IsVertexReachable k s t ↔
       (G.deleteVerts X).Reachable s t := by
   rw [IsVertexReachable, SimpleGraph.isVertexReachable_def]
   refine ⟨fun h X hX hs ht ↦ ?_, fun h X hX hs ht ↦ ?_⟩
-  · exact (toSimpleGraph_reachable_induce_compl_iff hs ht).mp
-      (h ((encard_preimage_val_le_encard_right V(G) X).trans_lt hX) hs ht)
+  · -- The bridge's set builder is definitionally the complement of the preimage of `X`;
+    -- its subtype endpoints retain `s` and `t`.
+    exact (toSimpleGraph_reachable_induce_compl_iff hs ht).mp
+      (h ((encard_preimage_val_le_encard_right V(G) X).trans_lt hX)
+        (by simpa using hs) (by simpa using ht))
   · have hs' : (s : α) ∉ Subtype.val '' X := by simpa using hs
     have ht' : (t : α) ∉ Subtype.val '' X := by simpa using ht
     have hr := (toSimpleGraph_reachable_induce_compl_iff hs' ht').mpr
@@ -71,7 +69,20 @@ theorem isVertexReachable_iff {s t : V(G)} : G.IsVertexReachable k s t ↔
     have hsub : {v : V(G) | (v : α) ∉ Subtype.val '' X} ⊆ Xᶜ := by
       intro v hv
       simpa using hv
+    -- The induced inclusion keeps the underlying vertices, so its endpoints are
+    -- definitionally `⟨s, hs⟩` and `⟨t, ht⟩`; only their membership proofs change.
     exact hr.map (G.toSimpleGraph.induceHomOfLE hsub).toHom
+
+/-- Every pair of actual vertices is `0`-vertex-reachable. -/
+protected theorem IsVertexReachable.zero {s t : V(G)} : G.IsVertexReachable 0 s t := by
+  simpa only [IsVertexReachable, Nat.cast_zero] using
+    (SimpleGraph.IsVertexReachable.zero : G.toSimpleGraph.IsVertexReachable 0 s t)
+
+/-- Vertex reachability is antitone in its threshold. -/
+@[gcongr]
+theorem IsVertexReachable.anti (hkl : k ≤ l) {s t : V(G)}
+    (h : G.IsVertexReachable l s t) : G.IsVertexReachable k s t :=
+  SimpleGraph.IsVertexReachable.anti (Nat.cast_le.mpr hkl) h
 
 /-- The threshold `1` for vertex reachability is native multigraph reachability. -/
 @[simp]
@@ -79,11 +90,10 @@ theorem isVertexReachable_one {s t : V(G)} :
     G.IsVertexReachable 1 s t ↔ G.Reachable s t :=
   SimpleGraph.isVertexReachable_one.trans toSimpleGraph_reachable_iff
 
-/-- The structural definition of global vertex connectivity: a size condition and local
-vertex reachability between every pair of actual vertices. -/
-theorem isVertexConnected_def : G.IsVertexConnected k ↔
-    (k : ℕ∞) + 1 ≤ ENat.card V(G) ∧ ∀ s t : V(G), G.IsVertexReachable k s t :=
-  SimpleGraph.isVertexConnected_def
+/-- A positive vertex-reachability threshold implies native multigraph reachability. -/
+theorem IsVertexReachable.reachable (hk : k ≠ 0) {s t : V(G)}
+    (h : G.IsVertexReachable k s t) : G.Reachable s t :=
+  isVertexReachable_one.mp (h.anti (Nat.one_le_iff_ne_zero.mpr hk))
 
 @[simp]
 theorem isVertexConnected_zero : G.IsVertexConnected 0 ↔ V(G).Nonempty :=
@@ -95,6 +105,12 @@ actual vertices. In particular, a singleton with any number of loops is not 1-co
 theorem isVertexConnected_one : G.IsVertexConnected 1 ↔ G.Connected ∧ V(G).Nontrivial := by
   rw [IsVertexConnected, Nat.cast_one, SimpleGraph.isVertexConnected_one,
     ← connected_iff_toSimpleGraph_connected, Set.nontrivial_coe_sort]
+
+/-- A positive vertex-connectivity threshold implies native multigraph connectedness. -/
+theorem IsVertexConnected.connected (hk : k ≠ 0) (h : G.IsVertexConnected k) :
+    G.Connected :=
+  (isVertexConnected_one.mp (SimpleGraph.IsVertexConnected.anti
+    (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hk) h)).1
 
 /-- Vertex connectivity is antitone in its threshold. -/
 @[gcongr]
@@ -115,12 +131,12 @@ theorem IsVertexReachable.mono (hGH : G ≤ H) {s t : V(G)}
 Allowing additional isolated vertices would make this statement false. -/
 theorem IsVertexConnected.mono (hGH : G ≤ H) (hV : V(G) = V(H))
     (h : G.IsVertexConnected k) : H.IsVertexConnected k := by
-  rw [isVertexConnected_def] at h ⊢
+  rw [IsVertexConnected, SimpleGraph.isVertexConnected_def] at h ⊢
   refine ⟨?_, fun s t ↦ ?_⟩
   · simpa only [← hV] using h.1
   · have hs : (s : α) ∈ V(G) := hV.symm ▸ s.property
     have ht : (t : α) ∈ V(G) := hV.symm ▸ t.property
-    exact (h.2 ⟨s, hs⟩ ⟨t, ht⟩).mono hGH
+    exact IsVertexReachable.mono hGH (h.2 ⟨s, hs⟩ ⟨t, ht⟩)
 
 /-- On a nonempty actual vertex set, the numerical invariant records exactly the thresholds at
 which the multigraph is vertex-connected. No finiteness assumption is needed. -/
@@ -132,31 +148,36 @@ theorem isVertexConnected_iff_le_vertexConnectivity [Nonempty V(G)] (k : ℕ) :
 @[gcongr]
 theorem vertexConnectivity_mono (hGH : G ≤ H) (hV : V(G) = V(H)) :
     G.vertexConnectivity ≤ H.vertexConnectivity := by
-  rw [vertexConnectivity_def, vertexConnectivity_def]
-  exact iSup_mono fun _ ↦ iSup_mono' fun hk ↦ ⟨hk.mono hGH hV, le_rfl⟩
-
-/-- Empty actual vertex sets have vertex connectivity zero. -/
-theorem vertexConnectivity_of_isEmpty [IsEmpty V(G)] : G.vertexConnectivity = 0 :=
-  SimpleGraph.vertexConnectivity_of_isEmpty
-
-/-- Vertex connectivity is bounded by the number of actual vertices. -/
-theorem vertexConnectivity_le_card : G.vertexConnectivity ≤ ENat.card V(G) :=
-  SimpleGraph.vertexConnectivity_le_card
+  rw [vertexConnectivity, vertexConnectivity, SimpleGraph.vertexConnectivity_def,
+    SimpleGraph.vertexConnectivity_def]
+  exact iSup_mono fun _ ↦ iSup_mono' fun hk ↦
+    ⟨IsVertexConnected.mono hGH hV hk, le_rfl⟩
 
 /-- A multigraph with finitely many actual vertices has finite vertex connectivity, even when
 its ambient types or its actual edge set are infinite. -/
 theorem vertexConnectivity_ne_top [Finite V(G)] : G.vertexConnectivity ≠ ⊤ :=
   SimpleGraph.vertexConnectivity_ne_top
 
-/-- On a nonempty actual vertex set, connectivity plus one is at most its cardinality. -/
-theorem vertexConnectivity_add_one_le_card [Nonempty V(G)] :
-    G.vertexConnectivity + 1 ≤ ENat.card V(G) :=
-  SimpleGraph.vertexConnectivity_add_one_le_card
-
 /-- A multigraph on at most one actual vertex has vertex connectivity zero, independently of
 its loops and edge multiplicities. -/
 theorem vertexConnectivity_of_subsingleton [Subsingleton V(G)] : G.vertexConnectivity = 0 :=
   SimpleGraph.vertexConnectivity_of_subsingleton
+
+/-- Local vertex reachability agrees with the simple-graph predicate on
+`Graph.ofSimpleGraph`. -/
+@[simp]
+theorem isVertexReachable_ofSimpleGraph_iff (H : SimpleGraph α) (k : ℕ)
+    (s t : V(Graph.ofSimpleGraph H)) :
+    (Graph.ofSimpleGraph H).IsVertexReachable k s t ↔ H.IsVertexReachable k s t := by
+  rw [isVertexReachable_iff, SimpleGraph.isVertexReachable_iff_exists_walk]
+  constructor
+  · intro h X hX hs ht
+    obtain ⟨p, -, hp⟩ := reachable_deleteVerts_iff_exists_walk.mp (h hX hs ht)
+    exact ⟨p.toSimpleGraph, by simpa only [Walk.support_toSimpleGraph] using hp⟩
+  · intro h X hX hs ht
+    obtain ⟨p, hp⟩ := h hX hs ht
+    exact reachable_deleteVerts_iff_exists_walk.mpr
+      ⟨p.toGraph, by simp, by simpa only [SimpleGraph.Walk.support_toGraph] using hp⟩
 
 /-- The vertex-connectivity predicates agree with the simple-graph predicates on
 `Graph.ofSimpleGraph`. -/

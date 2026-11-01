@@ -165,23 +165,25 @@ theorem isVertexReachable_of_pairwise_internallyDisjoint {n : ℕ} {P : Fin n �
   rw [Set.encard_coe_eq_coe_finsetCard, Nat.cast_lt] at hs
   exact hs.not_ge hle
 
-/-- Graph isomorphisms preserve vertex reachability. -/
+/-- Injective graph homomorphisms preserve vertex reachability. -/
 theorem IsVertexReachable.map {W : Type*} {H : SimpleGraph W}
-    (h : G.IsVertexReachable k u v) (e : G ≃g H) :
-    H.IsVertexReachable k (e u) (e v) := by
+    (h : G.IsVertexReachable k u v) (f : G →g H) (hf : Function.Injective f) :
+    H.IsVertexReachable k (f u) (f v) := by
   rw [isVertexReachable_iff_exists_walk] at h ⊢
   intro S hS hu hv
-  obtain ⟨p, hp⟩ := h
-    ((Set.encard_preimage_of_bijective e.bijective S).trans_lt hS) hu hv
-  refine ⟨p.map e.toHom, ?_⟩
+  have hpre : (f ⁻¹' S).encard ≤ S.encard :=
+    Set.encard_le_encard_of_injOn (Set.mapsTo_preimage f S) hf.injOn
+  obtain ⟨p, hp⟩ := h (hpre.trans_lt hS) (by simpa using hu) (by simpa using hv)
+  refine ⟨p.map f, ?_⟩
   simp only [Walk.support_map, List.mem_map]
   rintro _ ⟨x, hx, rfl⟩
-  exact hp x hx
+  simpa using hp x hx
 
 /-- Vertex reachability is invariant under graph isomorphism. -/
 theorem Iso.isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
     H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v :=
-  ⟨fun h ↦ by simpa using h.map e.symm, fun h ↦ h.map e⟩
+  ⟨fun h ↦ by simpa using h.map e.symm.toHom e.symm.injective,
+    fun h ↦ h.map e.toHom e.injective⟩
 
 /-! ### Vertex connectivity -/
 
@@ -262,7 +264,7 @@ theorem Iso.isVertexConnected_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H)
   simp only [isVertexConnected_def, ← ENat.card_congr e.toEquiv]
   exact and_congr_right fun _ ↦
     ⟨fun h u v ↦ e.isVertexReachable_iff.mp (h (e u) (e v)),
-      fun h x y ↦ by simpa using (h (e.symm x) (e.symm y)).map e⟩
+      fun h x y ↦ by simpa using (h (e.symm x) (e.symm y)).map e.toHom e.injective⟩
 
 /-! ### The numerical invariant -/
 
@@ -322,8 +324,9 @@ theorem vertexConnectivity_add_one_le_card [Nonempty V] :
 theorem vertexConnectivity_of_subsingleton [Subsingleton V] : G.vertexConnectivity = 0 := by
   cases isEmpty_or_nonempty V
   · exact vertexConnectivity_of_isEmpty
-  · have h : G.vertexConnectivity + 1 ≤ (0 : ℕ∞) + 1 :=
-      vertexConnectivity_add_one_le_card.trans ENat.card_le_one
+  · have h : G.vertexConnectivity + 1 ≤ (0 : ℕ∞) + 1 := by
+      rw [zero_add]
+      exact vertexConnectivity_add_one_le_card.trans ENat.card_le_one
     exact le_antisymm ((ENat.add_le_add_iff_right ENat.one_ne_top).mp h) bot_le
 
 /-- The complete graph on `V` has vertex connectivity `ENat.card V - 1`. -/

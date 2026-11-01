@@ -202,6 +202,18 @@ theorem forall_reachable_deleteVerts_iff_exists_paths [Finite V(G)] (hst : s ≠
       Nat.cast_le] at this
     omega
 
+/-- **Weak duality for vertex reachability.** Internally vertex-disjoint native walks
+make their actual endpoints vertex-reachable, without finiteness or nonadjacency assumptions. -/
+theorem isVertexReachable_of_pairwise_internallyDisjoint {s t : V(G)} {n : ℕ}
+    {P : Fin n → G.Walk s t}
+    (hP : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) :
+    G.IsVertexReachable n s t := by
+  rw [isVertexReachable_iff]
+  intro X hX hs ht
+  by_contra hn
+  have hle := card_le_encard_of_not_reachable_deleteVerts hP s.property hs ht hn
+  exact hX.not_ge (by simpa using hle)
+
 /-- **Menger's theorem for the vertex-reachability predicate.** For distinct nonadjacent actual
 vertices of a multigraph with finitely many actual vertices, `k`-vertex-reachability is equivalent
 to the existence of `k` internally vertex-disjoint native paths. No finite-edge assumption is
@@ -210,13 +222,10 @@ theorem isVertexReachable_iff_exists_paths [Finite V(G)] {s t : V(G)}
     (hst : s ≠ t) (hadj : ¬G.Adj s t) (k : ℕ) :
     G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
       Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
-  rw [isVertexReachable_iff]
-  refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ X hX hs ht ↦ ?_⟩
-  · exact (forall_reachable_deleteVerts_iff_exists_paths
-      (Subtype.val_injective.ne hst) hadj k).mp fun X hs ht hX ↦
-        h (by simpa using hX) hs ht
-  · by_contra hn
-    have hle := card_le_encard_of_not_reachable_deleteVerts hP s.property hs ht hn
-    exact hX.not_ge (by simpa using hle)
+  refine ⟨fun h ↦ ?_, fun ⟨_, _, hP⟩ ↦ isVertexReachable_of_pairwise_internallyDisjoint hP⟩
+  rw [isVertexReachable_iff] at h
+  exact (forall_reachable_deleteVerts_iff_exists_paths
+    (Subtype.val_injective.ne hst) hadj k).mp fun X hs ht hX ↦
+      h (by simpa using hX) (by simpa using hs) (by simpa using ht)
 
 end Graph

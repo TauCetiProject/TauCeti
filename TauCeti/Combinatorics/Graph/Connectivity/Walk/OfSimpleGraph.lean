@@ -273,6 +273,7 @@ theorem Reachable.toSimpleGraph_reachable {x y : α} (h : G.Reachable x y) :
       · exact SimpleGraph.Adj.reachable ⟨fun h ↦ hne (congrArg Subtype.val h), e, hxy⟩
 
 /-- Reachability in the underlying simple graph is reachability by an edge-labelled walk. -/
+@[simp]
 theorem toSimpleGraph_reachable_iff {u v : V(G)} :
     G.toSimpleGraph.Reachable u v ↔ G.Reachable u v := by
   refine ⟨?_, fun h ↦ h.toSimpleGraph_reachable⟩

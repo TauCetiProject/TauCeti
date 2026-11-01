@@ -62,23 +62,17 @@ theorem deleteVerts_mono_left {G H : Graph α β} (hGH : G ≤ H) (X : Set α) :
 remaining actual vertices. -/
 def toSimpleGraphDeleteVertsIso (G : Graph α β) (X : Set α) :
     (G.deleteVerts X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} where
-  toEquiv :=
-    { toFun := fun v ↦ by
-        have hv : (v : α) ∈ V(G) ∧ (v : α) ∉ X := by
-          simpa only [vertexSet_deleteVerts, mem_sdiff] using v.property
-        exact ⟨⟨v, hv.1⟩, hv.2⟩
-      invFun := fun v ↦ ⟨v.val.val, by
-        simpa only [vertexSet_deleteVerts, mem_sdiff, mem_ofPred_eq] using
-          And.intro v.val.property v.property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+  toEquiv := (Equiv.subtypeEquivRight fun _ ↦ by
+    simp only [vertexSet_deleteVerts, mem_sdiff, mem_ofPred_eq]).trans
+      (Equiv.Set.sep V(G) (· ∉ X))
   map_rel_iff' := by
     intro u v
     simp only [SimpleGraph.induce_adj, toSimpleGraph_adj, Graph.Adj, deleteVerts_isLink]
     have hu := u.property
     have hv := v.property
     simp only [vertexSet_deleteVerts, mem_sdiff] at hu hv
-    simp [hu.2, hv.2, Subtype.ext_iff]
+    simp [Equiv.Set.sep, Equiv.subtypeSubtypeEquivSubtypeInter, hu.2, hv.2,
+      Subtype.ext_iff]
 
 @[simp]
 theorem coe_toSimpleGraphDeleteVertsIso_apply (G : Graph α β) (X : Set α)
