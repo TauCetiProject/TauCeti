@@ -31,11 +31,21 @@ variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGrou
 
 /-- Subtracting a common vector `b` from every argument of an alternating map leaves the original
 value minus the values in which `b` replaces one argument. -/
-theorem map_sub_const {n : ℕ} (f : M [⋀^Fin n]→ₗ[R] N) (v : Fin n → M) (b : M) :
-    f (fun i ↦ v i - b) = f v - ∑ i, f (update v i b) := by
+theorem map_sub_const {ι : Type*} [Fintype ι] [DecidableEq ι] (f : M [⋀^ι]→ₗ[R] N) (v : ι → M)
+    (b : M) : f (fun i ↦ v i - b) = f v - ∑ i, f (update v i b) := by
+  -- Index the arguments by `Fin n` along `Fintype.equivFin ι`, and induct on `n`.
+  suffices H : ∀ (n : ℕ) (f : M [⋀^Fin n]→ₗ[R] N) (v : Fin n → M),
+      f (fun i ↦ v i - b) = f v - ∑ i, f (update v i b) by
+    set σ := Fintype.equivFin ι
+    have h := H _ (f.domDomCongr σ) (v ∘ σ.symm)
+    simp only [domDomCongr_apply, update_comp_equiv] at h
+    simp only [comp_def, Equiv.symm_apply_apply] at h
+    rw [h, Equiv.sum_comp σ.symm fun i ↦ f (update v i b)]
+  intro n
   induction n with
-  | zero => simp [Subsingleton.elim (fun i ↦ v i - b) v]
+  | zero => intro f v; simp [Subsingleton.elim (fun i ↦ v i - b) v]
   | succ n ih =>
+    intro f v
     -- Split off the first argument and apply the induction hypothesis to the two curried maps.
     have hb := ih (f.curryLeft b) (Fin.tail v)
     have h0 := ih (f.curryLeft (v 0)) (Fin.tail v)
@@ -48,14 +58,18 @@ theorem map_sub_const {n : ℕ} (f : M [⋀^Fin n]→ₗ[R] N) (v : Fin n → M)
       cases i using Fin.cases <;> simp [Fin.tail]
     rw [hv, ← curryLeft_apply_apply, map_sub, sub_apply, curryLeft_apply_apply,
       curryLeft_apply_apply, h0, hb, hz, sub_zero, Fin.sum_univ_succ]
-    have hc : Matrix.vecCons (v 0) (Fin.tail v) = v := Fin.cons_self_tail v
+    have hc : Matrix.vecCons (v 0) (Fin.tail v) = v := by
+      ext i
+      cases i using Fin.cases <;> simp [Fin.tail]
     have hu0 : update v 0 b = Matrix.vecCons b (Fin.tail v) := by
-      rw [← hc, Matrix.vecCons, Fin.update_cons_zero]
-      rfl
+      ext i
+      cases i using Fin.cases <;> simp [Fin.tail]
     have hus (i : Fin n) :
         update v i.succ b = Matrix.vecCons (v 0) (update (Fin.tail v) i b) := by
-      rw [← hc, Matrix.vecCons, ← Fin.cons_update]
-      rfl
+      ext k
+      cases k using Fin.cases with
+      | zero => simp [(Fin.succ_ne_zero i).symm]
+      | succ k => simp [Fin.tail, update_apply]
     simp only [hc, hu0, hus]
     abel
 

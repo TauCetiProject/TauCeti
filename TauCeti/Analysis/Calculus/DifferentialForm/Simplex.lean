@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Geometry.Convex.FullSimplex
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.TangentCone.Real
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
@@ -65,38 +64,54 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-! ### Two readings of the face opposite the origin -/
-
-section Faces
-
-variable {p : ℕ}
-
-/-- The affine symmetry of `Δᵖ` cycling the vertices `0, …, j` reads the face of `Δᵖ⁺¹` opposite
-the origin in the coordinates obtained by deleting the `j`-th one. -/
-private theorem simplexMapAmbient_cycleRange_symm (j : Fin (p + 1))
-    (y : EuclideanSpace ℝ (Fin p)) :
-    simplexMapAmbient j.cycleRange.symm y =
-      toLp 2 fun k ↦ (j.insertNth (1 - ∑ k, y k) y.ofLp : Fin (p + 1) → ℝ) k.succ := by
-  ext m
-  rw [simplexMapAmbient_apply_of_injective j.cycleRange.symm.injective _
-    (j.cycleRange.symm_apply_apply m.succ)]
-  simp
-
-/-- The point of the face of `Δᵖ⁺¹` opposite the origin whose coordinates other than the `j`-th are
-those of `y` is the image under the face map of the cycled point of `Δᵖ`. -/
-private theorem toLp_insertNth_eq_simplexMapAmbient (j : Fin (p + 1))
-    (y : EuclideanSpace ℝ (Fin p)) :
-    toLp 2 (j.insertNth (1 - ∑ k, y k) y.ofLp) =
-      simplexMapAmbient (Fin.succAbove 0) (simplexMapAmbient j.cycleRange.symm y) := by
-  rw [simplexMapAmbient_succAbove_zero, simplexMapAmbient_cycleRange_symm]
-  set x : Fin (p + 1) → ℝ := j.insertNth (1 - ∑ k, y k) y.ofLp
-  have hx : ∑ i, x i = 1 := by
-    simp [x, Fin.sum_univ_succAbove _ j]
-  rw [Fin.sum_univ_succ] at hx
-  ext m
-  cases m using Fin.cases <;> simp [← hx]
-
-end Faces
+omit [CompleteSpace F] in
+/-- **Slicing the standard simplex along a coordinate.** The integral over `Δᵖ⁺¹` of a function
+continuous on it is the iterated integral that first integrates along the `j`-th coordinate, over
+`0 ≤ t ≤ 1 - ∑ k, y k`, and then over the remaining coordinates `y` in the coordinate simplex. -/
+private theorem setIntegral_fullSimplex_eq_iterated {p : ℕ}
+    {D : EuclideanSpace ℝ (Fin (p + 1)) → F} (hD : ContinuousOn D (fullSimplex (p + 1)))
+    (j : Fin (p + 1)) :
+    ∫ x in fullSimplex (p + 1), D x = ∫ y in coordinateSimplex (Fin p),
+      ∫ t in Icc 0 (1 - ∑ k, y k), D (toLp 2 (j.insertNth t y)) := by
+  -- Transport the integral over `Δ` to the coordinate simplex of `Fin (p + 1) → ℝ`, then split off
+  -- the `j`-th coordinate.
+  set Δ := fullSimplex (p + 1)
+  have hΔc : IsCompact Δ := isCompact_fullSimplex _
+  set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (p + 1) ↦ ℝ) j
+  set Γ := e.symm.trans (MeasurableEquiv.toLp 2 (Fin (p + 1) → ℝ))
+  have hΓ : MeasurePreserving Γ :=
+    (PiLp.volume_preserving_toLp _).comp
+      (volume_preserving_piFinSuccAbove (fun _ : Fin (p + 1) ↦ ℝ) j).symm
+  have hΓγ (q : ℝ × (Fin p → ℝ)) : Γ q = toLp 2 (j.insertNth q.1 q.2) := by
+    simp [Γ, e, MeasurableEquiv.piFinSuccAbove_symm_apply]
+  set S : Set (ℝ × (Fin p → ℝ)) := Γ ⁻¹' Δ
+  have hmem (y : Fin p → ℝ) (t : ℝ) :
+      (t, y) ∈ S ↔ y ∈ coordinateSimplex (Fin p) ∧ t ∈ Icc 0 (1 - ∑ k, y k) := by
+    rw [mem_preimage, hΓγ]
+    exact toLp_insertNth_mem_fullSimplex_iff j t y
+  have hSm : MeasurableSet S := hΔc.isClosed.measurableSet.preimage Γ.measurable
+  have hint : IntegrableOn (fun q ↦ D (Γ q)) S :=
+    (hΓ.integrableOn_comp_preimage Γ.measurableEmbedding).2 (hD.integrableOn_compact hΔc)
+  have hslice (y : Fin p → ℝ) : ∫ t, S.indicator (fun q ↦ D (Γ q)) (t, y) =
+      (coordinateSimplex (Fin p)).indicator
+        (fun y ↦ ∫ t in Icc 0 (1 - ∑ k, y k), D (toLp 2 (j.insertNth t y))) y := by
+    by_cases hy : y ∈ coordinateSimplex (Fin p)
+    · rw [indicator_of_mem hy, ← integral_indicator measurableSet_Icc]
+      congr 1 with t
+      by_cases ht : t ∈ Icc 0 (1 - ∑ k, y k)
+      · rw [indicator_of_mem ((hmem y t).2 ⟨hy, ht⟩), indicator_of_mem ht, hΓγ]
+      · rw [indicator_of_notMem (fun h ↦ ht ((hmem y t).1 h).2), indicator_of_notMem ht]
+    · rw [indicator_of_notMem hy]
+      exact integral_eq_zero_of_ae (Filter.Eventually.of_forall fun t ↦
+        indicator_of_notMem (fun h ↦ hy ((hmem y t).1 h).1) _)
+  calc ∫ x in Δ, D x = ∫ q in S, D (Γ q) :=
+        (hΓ.setIntegral_preimage_emb Γ.measurableEmbedding D Δ).symm
+    _ = ∫ q, S.indicator (fun q ↦ D (Γ q)) q := (integral_indicator hSm).symm
+    _ = ∫ y, ∫ t, S.indicator (fun q ↦ D (Γ q)) (t, y) :=
+        integral_prod_symm _ ((integrable_indicator_iff hSm).2 hint)
+    _ = _ := by
+        simp_rw [hslice]
+        exact integral_indicator (isClosed_coordinateSimplex _).measurableSet
 
 /-- **The fundamental theorem of calculus along a coordinate of the standard simplex.** For a
 function `g` that is `C¹` on `Δᵖ⁺¹`, the integral over `Δᵖ⁺¹` of its partial derivative in the
@@ -110,8 +125,8 @@ theorem _root_.ContDiffOn.integral_fderivWithin_fullSimplex {p : ℕ}
       ∫ y in fullSimplex p, (g (toLp 2 (j.insertNth (1 - ∑ k, y k) y.ofLp)) -
         g (toLp 2 (j.insertNth 0 y.ofLp))) := by
   -- Along the segment `t ↦ γ y t` through `Δᵖ⁺¹` in the direction `e_j`, the fundamental theorem
-  -- of calculus computes the integral of the partial derivative (`hftc`); Fubini over the
-  -- splitting `ℝᵖ⁺¹ ≃ ℝ × ℝᵖ` at the `j`-th coordinate assembles these segment integrals.
+  -- of calculus computes the integral of the partial derivative (`hftc`); slicing `Δᵖ⁺¹` along the
+  -- `j`-th coordinate assembles these segment integrals.
   set Δ := fullSimplex (p + 1)
   set D : EuclideanSpace ℝ (Fin (p + 1)) → F :=
     fun x ↦ fderivWithin ℝ g Δ x (EuclideanSpace.single j 1)
@@ -119,24 +134,14 @@ theorem _root_.ContDiffOn.integral_fderivWithin_fullSimplex {p : ℕ}
   have hγ (y : Fin p → ℝ) (t : ℝ) : γ y t = γ y 0 + t • EuclideanSpace.single j 1 := by
     ext i
     cases i using j.succAboveCases <;> simp [γ, Fin.insertNth_apply_succAbove]
-  have hmem (y : Fin p → ℝ) (t : ℝ) :
-      γ y t ∈ Δ ↔ y ∈ coordinateSimplex (Fin p) ∧ t ∈ Icc 0 (1 - ∑ k, y k) := by
-    simp only [Δ, γ, mem_fullSimplex_iff, mem_coordinateSimplex, mem_Icc, j.forall_iff_succAbove,
-      Fin.sum_univ_succAbove _ j, Fin.insertNth_apply_same,
-      Fin.insertNth_apply_succAbove]
-    constructor
-    · rintro ⟨⟨ht, hy⟩, hs⟩; exact ⟨⟨hy, by linarith⟩, ht, by linarith⟩
-    · rintro ⟨⟨hy, -⟩, ht, hs⟩; exact ⟨⟨ht, hy⟩, by linarith⟩
-  have hΔc : IsCompact Δ := isCompact_fullSimplex _
-  have hΔu : UniqueDiffOn ℝ Δ :=
-    uniqueDiffOn_convex (convex_fullSimplex _) (nonempty_interior_fullSimplex _)
   have hDc : ContinuousOn D Δ :=
     (ContinuousLinearMap.apply ℝ F (EuclideanSpace.single j 1)).continuous.comp_continuousOn
-      (hg.continuousOn_fderivWithin hΔu le_rfl)
+      (hg.continuousOn_fderivWithin (uniqueDiffOn_fullSimplex _) le_rfl)
   have hftc (y : Fin p → ℝ) (hy : y ∈ coordinateSimplex (Fin p)) :
       ∫ t in Icc 0 (1 - ∑ k, y k), D (γ y t) = g (γ y (1 - ∑ k, y k)) - g (γ y 0) := by
     have hL : 0 ≤ 1 - ∑ k, y k := sub_nonneg.2 ((mem_coordinateSimplex _ _).1 hy).2
-    have hmaps : MapsTo (γ y) (Icc 0 (1 - ∑ k, y k)) Δ := fun t ht ↦ (hmem y t).2 ⟨hy, ht⟩
+    have hmaps : MapsTo (γ y) (Icc 0 (1 - ∑ k, y k)) Δ := fun t ht ↦
+      (toLp_insertNth_mem_fullSimplex_iff j t y).2 ⟨hy, ht⟩
     have hγd (t : ℝ) : HasDerivAt (γ y) (EuclideanSpace.single j 1) t := by
       rw [show γ y = fun t ↦ γ y 0 + t • EuclideanSpace.single j 1 from funext (hγ y)]
       simpa using ((hasDerivAt_id t).smul_const
@@ -150,48 +155,13 @@ theorem _root_.ContDiffOn.integral_fderivWithin_fullSimplex {p : ℕ}
       exact (hgd.comp_hasDerivWithinAt t (hγd t).hasDerivWithinAt hmaps).hasDerivAt
         (Icc_mem_nhds ht.1 ht.2)
     · exact (hDc.comp hγc.continuousOn hmaps).intervalIntegrable_of_Icc hL
-  -- Transport the integral over `Δ` to the coordinate simplex of `Fin (p + 1) → ℝ`, then split off
-  -- the `j`-th coordinate.
-  set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (p + 1) ↦ ℝ) j
-  set Γ := e.symm.trans (MeasurableEquiv.toLp 2 (Fin (p + 1) → ℝ))
-  have hΓ : MeasurePreserving Γ :=
-    (PiLp.volume_preserving_toLp _).comp
-      (volume_preserving_piFinSuccAbove (fun _ : Fin (p + 1) ↦ ℝ) j).symm
-  have hΓγ (q : ℝ × (Fin p → ℝ)) : Γ q = γ q.2 q.1 := by
-    simp [Γ, e, γ, MeasurableEquiv.piFinSuccAbove_symm_apply]
-  set S : Set (ℝ × (Fin p → ℝ)) := Γ ⁻¹' Δ
-  have hSm : MeasurableSet S := hΔc.isClosed.measurableSet.preimage Γ.measurable
-  have hint : IntegrableOn (fun q ↦ D (Γ q)) S :=
-    (hΓ.integrableOn_comp_preimage Γ.measurableEmbedding).2 (hDc.integrableOn_compact hΔc)
-  have hslice (y : Fin p → ℝ) : ∫ t, S.indicator (fun q ↦ D (Γ q)) (t, y) =
-      (coordinateSimplex (Fin p)).indicator
-        (fun y ↦ ∫ t in Icc 0 (1 - ∑ k, y k), D (γ y t)) y := by
-    by_cases hy : y ∈ coordinateSimplex (Fin p)
-    · rw [indicator_of_mem hy, ← integral_indicator measurableSet_Icc]
-      congr 1 with t
-      by_cases ht : t ∈ Icc 0 (1 - ∑ k, y k)
-      · exact (indicator_of_mem ((hmem y t).2 ⟨hy, ht⟩ : (t, y) ∈ S) _).trans
-          (indicator_of_mem ht fun t ↦ D (γ y t)).symm
-      · exact (indicator_of_notMem (fun h ↦ ht ((hmem y t).1 h).2) _).trans
-          (indicator_of_notMem ht fun t ↦ D (γ y t)).symm
-    · rw [indicator_of_notMem hy]
-      exact integral_eq_zero_of_ae (Filter.Eventually.of_forall fun t ↦
-        indicator_of_notMem (fun h ↦ hy ((hmem y t).1 h).1) _)
-  calc ∫ x in Δ, D x = ∫ q in S, D (Γ q) :=
-        (hΓ.setIntegral_preimage_emb Γ.measurableEmbedding D Δ).symm
-    _ = ∫ q, S.indicator (fun q ↦ D (Γ q)) q := (integral_indicator hSm).symm
-    _ = ∫ y, ∫ t, S.indicator (fun q ↦ D (Γ q)) (t, y) :=
-        integral_prod_symm _ ((integrable_indicator_iff hSm).2 hint)
-    _ = ∫ y in coordinateSimplex (Fin p), (g (γ y (1 - ∑ k, y k)) - g (γ y 0)) := by
-        simp_rw [hslice]
-        rw [integral_indicator (isClosed_coordinateSimplex _).measurableSet]
-        exact setIntegral_congr_fun (isClosed_coordinateSimplex _).measurableSet hftc
-    _ = _ := by
-        have hΔp : ofLp ⁻¹' coordinateSimplex (Fin p) = fullSimplex p := by
-          ext y
-          simp
-        rw [← (PiLp.volume_preserving_ofLp (Fin p)).setIntegral_preimage_emb
-          (MeasurableEquiv.toLp 2 (Fin p → ℝ)).symm.measurableEmbedding, hΔp]
+  have hΔp : ofLp ⁻¹' coordinateSimplex (Fin p) = fullSimplex p := by
+    ext y
+    simp
+  rw [setIntegral_fullSimplex_eq_iterated hDc j,
+    setIntegral_congr_fun (isClosed_coordinateSimplex _).measurableSet hftc,
+    ← (PiLp.volume_preserving_ofLp (Fin p)).setIntegral_preimage_emb
+      (MeasurableEquiv.toLp 2 (Fin p → ℝ)).symm.measurableEmbedding, hΔp]
 
 omit [CompleteSpace F] in
 /-- Reading the face of `Δᵖ⁺¹` opposite the origin through the coordinates other than the `j`-th
@@ -203,7 +173,6 @@ private theorem setIntegral_toLp_insertNth_eq {p : ℕ} (j : Fin (p + 1))
   simp_rw [toLp_insertNth_eq_simplexMapAmbient]
   exact (simplexMapAmbient j.cycleRange.symm).setIntegral_comp_of_image_eq volume
     (isCompact_fullSimplex p).isClosed.measurableSet
-    (Measure.measure_pos_of_nonempty_interior _ (nonempty_interior_fullSimplex p)).ne'
     (isCompact_fullSimplex p).measure_lt_top.ne (image_simplexMapAmbient_perm _)
     fun z ↦ G (simplexMapAmbient (Fin.succAbove 0) z)
 
@@ -224,8 +193,7 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_fullSimplex {p : ℕ}
   set g : Fin (p + 1) → EuclideanSpace ℝ (Fin (p + 1)) → F := fun j x ↦ ω x (j.removeNth e)
   have hg (j : Fin (p + 1)) : ContDiffOn ℝ 1 (g j) Δ :=
     (ContinuousAlternatingMap.apply ℝ _ F (j.removeNth e)).contDiff.comp_contDiffOn hω
-  have hΔu : UniqueDiffOn ℝ Δ :=
-    uniqueDiffOn_convex (convex_fullSimplex _) (nonempty_interior_fullSimplex _)
+  have hΔu : UniqueDiffOn ℝ Δ := uniqueDiffOn_fullSimplex _
   -- Integrability of the integrands below: all are continuous on compact simplices.
   have hint (j : Fin (p + 1)) {A : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin (p + 1))}
       (hA : Continuous A) (hAm : MapsTo A (fullSimplex p) Δ) :

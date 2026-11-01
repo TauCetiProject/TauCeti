@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+public import Mathlib.Analysis.Calculus.TangentCone.Real
+public import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -26,7 +28,9 @@ vertices, read on full-dimensional simplices, is the restriction of the continuo
 `simplexMapAmbient` of the ambient Euclidean spaces; the face inclusions are the case of the
 coface vertex maps `Fin.succAbove`. In coordinates, the face map omitting the vertex `e_j` inserts a
 zero `j`-th coordinate, and the face map omitting the origin puts the missing barycentric weight in
-front; a permutation of the vertices induces an affine symmetry of the simplex.
+front; a permutation of the vertices induces an affine symmetry of the simplex. Cycling the
+vertices relates the two readings of the face opposite the origin: through the coordinates other
+than the `j`-th one, and through the last coordinates as the face map does.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -64,6 +68,22 @@ theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Non
     ← Homeomorph.preimage_interior]
   exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
     (EuclideanSpace.equiv (Fin p) ℝ).surjective
+
+/-- The full-dimensional simplex is a set of unique differentiability. -/
+theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
+  uniqueDiffOn_convex (convex_fullSimplex p) (nonempty_interior_fullSimplex p)
+
+/-- The point of `ℝᵖ⁺¹` obtained by inserting `t` as the `j`-th coordinate of `y` lies in the
+full-dimensional simplex exactly when `y` lies in the coordinate simplex and `t` lies between `0`
+and the unused part `1 - ∑ k, y k` of the coordinate sum. -/
+theorem toLp_insertNth_mem_fullSimplex_iff {p : ℕ} (j : Fin (p + 1)) (t : ℝ) (y : Fin p → ℝ) :
+    WithLp.toLp 2 (j.insertNth t y) ∈ fullSimplex (p + 1) ↔
+      y ∈ coordinateSimplex (Fin p) ∧ t ∈ Set.Icc 0 (1 - ∑ k, y k) := by
+  simp only [mem_fullSimplex_iff, mem_coordinateSimplex, Set.mem_Icc, j.forall_iff_succAbove,
+    Fin.sum_univ_succAbove _ j, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
+  constructor
+  · rintro ⟨⟨ht, hy⟩, hs⟩; exact ⟨⟨hy, by linarith⟩, ht, by linarith⟩
+  · rintro ⟨⟨hy, -⟩, ht, hs⟩; exact ⟨⟨ht, hy⟩, by linarith⟩
 
 /-- Adding the missing zeroth weight identifies the full-dimensional and barycentric simplices. -/
 noncomputable def fullSimplexEquivStdSimplex (p : ℕ) :
@@ -254,6 +274,29 @@ theorem simplexMapAmbient_succAbove_zero (y : EuclideanSpace ℝ (Fin p)) :
   ext m
   rw [simplexMapAmbient_apply_of_injective (Fin.succAbove_right_injective) _
     (Fin.succAbove_zero_apply m)]
+
+/-- The affine symmetry of `Δᵖ` cycling the vertices `0, …, j` reads the face of `Δᵖ⁺¹` opposite
+the origin in the coordinates obtained by deleting the `j`-th one. -/
+theorem simplexMapAmbient_cycleRange_symm (j : Fin (p + 1)) (y : EuclideanSpace ℝ (Fin p)) :
+    simplexMapAmbient j.cycleRange.symm y =
+      WithLp.toLp 2 fun k ↦ (j.insertNth (1 - ∑ k, y k) y.ofLp : Fin (p + 1) → ℝ) k.succ := by
+  ext m
+  rw [simplexMapAmbient_apply_of_injective j.cycleRange.symm.injective _
+    (j.cycleRange.symm_apply_apply m.succ)]
+  simp
+
+/-- The point of the face of `Δᵖ⁺¹` opposite the origin whose coordinates other than the `j`-th are
+those of `y` is the image under the face map of the cycled point of `Δᵖ`. -/
+theorem toLp_insertNth_eq_simplexMapAmbient (j : Fin (p + 1)) (y : EuclideanSpace ℝ (Fin p)) :
+    WithLp.toLp 2 (j.insertNth (1 - ∑ k, y k) y.ofLp) =
+      simplexMapAmbient (Fin.succAbove 0) (simplexMapAmbient j.cycleRange.symm y) := by
+  rw [simplexMapAmbient_succAbove_zero, simplexMapAmbient_cycleRange_symm]
+  set x : Fin (p + 1) → ℝ := j.insertNth (1 - ∑ k, y k) y.ofLp
+  have hx : ∑ i, x i = 1 := by
+    simp [x, Fin.sum_univ_succAbove _ j]
+  rw [Fin.sum_univ_succ] at hx
+  ext m
+  cases m using Fin.cases <;> simp [← hx]
 
 /-- The linear part of the face map omitting the vertex `e_j` sends `e_k` to `e_{j.succAbove k}`.
 -/

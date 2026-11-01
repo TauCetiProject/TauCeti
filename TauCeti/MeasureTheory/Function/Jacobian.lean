@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.Analysis.Calculus.FDeriv.Affine
 
 /-!
-# Pushforward bounds from a lower bound on the Jacobian
+# Change of variables: pushforward bounds and affine invariance of set integrals
 
 Let `f` be injective and differentiable on a null-measurable subset `s` of a finite-dimensional real
 normed space with an additive Haar measure `μ`. Mathlib's change of variables formula
@@ -26,9 +26,10 @@ Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate fo
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
 the Jacobian is needed, but a Jacobian that may vanish gives no such bound.
 
-A continuous affine map `T` carrying a measurable set `s` of positive finite measure onto itself
-preserves integrals over `s`: its linear part has determinant `±1`, because the image of `s` has
-`|det|` times the measure of `s`, so the change of variables formula has no Jacobian factor
+A continuous affine map `T` carrying a measurable set `s` of finite measure onto itself preserves
+integrals over `s`. When `s` is not null, the linear part of `T` has determinant `±1`, because the
+image of `s` has `|det|` times the measure of `s`, so the change of variables formula has no
+Jacobian factor
 (`ContinuousAffineMap.setIntegral_comp_of_image_eq`). This is how a symmetry of a polytope, such as
 a permutation of the vertices of a simplex, acts on integrals over it.
 
@@ -39,7 +40,7 @@ a permutation of the vertices of a simplex, acts on integrals over it.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
 * `ContinuousAffineMap.setIntegral_comp_of_image_eq`: integrals over `s` are invariant under a
-  continuous affine map carrying `s` onto itself, when `s` has positive finite measure.
+  continuous affine map carrying `s` onto itself, when `s` has finite measure.
 -/
 
 public section
@@ -104,11 +105,14 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
 
 /-- **Integrals over a set are invariant under an affine self-map of it.** If a continuous affine
-map `T` carries a measurable set `s` of positive finite measure onto itself, then
+map `T` carries a measurable set `s` of finite measure onto itself, then
 `∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ` for every `g`. -/
-theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s) (h₀ : μ s ≠ 0)
-    (h₁ : μ s ≠ ∞) (hT : T '' s = s) (g : E → F) :
+theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s) (hμ : μ s ≠ ∞)
+    (hT : T '' s = s) (g : E → F) :
     ∫ x in s, g (T x) ∂μ = ∫ x in s, g x ∂μ := by
+  -- On a null set both integrals vanish.
+  by_cases h₀ : μ s = 0
+  · simp [Measure.restrict_eq_zero.2 h₀]
   have hd : ∀ x ∈ s, HasFDerivWithinAt T T.contLinear s x := fun _ _ ↦ T.hasFDerivWithinAt
   -- A singular linear part would collapse `s` to a null set.
   have hdet : (T.contLinear : E →L[ℝ] E).det ≠ 0 := fun h ↦
@@ -123,7 +127,7 @@ theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hs : MeasurableSet s
   have habs : |(T.contLinear : E →L[ℝ] E).det| = 1 := by
     have h := lintegral_abs_det_fderiv_eq_addHaar_image μ hs hd hinj
     rw [hT, setLIntegral_const] at h
-    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ h₁).1 h)
+    exact ENNReal.ofReal_eq_one.1 ((ENNReal.mul_eq_right h₀ hμ).1 h)
   calc ∫ x in s, g (T x) ∂μ = ∫ x in s, |(T.contLinear : E →L[ℝ] E).det| • g (T x) ∂μ := by
         simp [habs]
     _ = ∫ x in T '' s, g x ∂μ :=
