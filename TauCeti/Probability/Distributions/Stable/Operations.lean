@@ -58,7 +58,7 @@ parameters give the zero measure on both sides. For valid parameters and `b = 0`
 Dirac mass at `a`. -/
 @[simp]
 theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
-    (h : b ≠ 0 ∨ (α ∈ Ioc 0 2 ∧ |β| ≤ 1)) :
+    (h : b ≠ 0 ∨ (0 < α ∧ α ≤ 2) ∧ |β| ≤ 1) :
     (stableMeasure α β s m).map (fun x ↦ a + b * x) =
       stableMeasure α (Real.sign b * β) (‖b‖₊ * s) (a + b * m) := by
   by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
@@ -96,7 +96,7 @@ theorem stableMeasure_map_neg (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
 /-- Affine transport of a stable random variable. For `b ≠ 0` no validity hypothesis is
 needed; for valid parameters this includes constant maps. -/
 theorem hasLaw_affine_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → ℝ} {s : ℝ≥0} {m : ℝ} (a b : ℝ) (h : b ≠ 0 ∨ (α ∈ Ioc 0 2 ∧ |β| ≤ 1))
+    {X : Ω → ℝ} {s : ℝ≥0} {m : ℝ} (a b : ℝ) (h : b ≠ 0 ∨ (0 < α ∧ α ≤ 2) ∧ |β| ≤ 1)
     (hX : HasLaw X (stableMeasure α β s m) P) :
     HasLaw (fun ω ↦ a + b * X ω)
       (stableMeasure α (Real.sign b * β) (‖b‖₊ * s) (a + b * m)) P :=
