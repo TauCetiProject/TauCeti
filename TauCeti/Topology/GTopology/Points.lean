@@ -80,7 +80,7 @@ theorem point_map_pointElement (x : X) {U V : B} (f : U ⟶ V) (hx : x ∈ ι U)
 
 /-- The forgetful functor from admissible neighbourhoods of a point to admissible opens. -/
 @[simps!]
-abbrev neighbourhoodInclusion (x : X) : {U : B // x ∈ ι U} ⥤ B :=
+abbrev nhdsInclusion (x : X) : {U : B // x ∈ ι U} ⥤ B :=
   (Subtype.mono_coe _).functor
 
 section Fibers
@@ -90,82 +90,62 @@ variable {A : Type w} [Category.{t} A] [HasColimitsOfSize.{v, v} A]
 
 /-- The cocone of germs into the fiber of the classical site point, indexed by admissible
 neighbourhoods of that point. -/
-noncomputable def neighbourhoodCocone : Cocone ((neighbourhoodInclusion (ι := ι) x).op ⋙ P) where
+noncomputable def nhdsCocone : Cocone ((nhdsInclusion (ι := ι) x).op ⋙ P) where
   pt := (G.point x).presheafFiber.obj P
   ι.app U := (G.point x).toPresheafFiber U.unop.1 (G.pointElement x U.unop.2) P
   ι.naturality _ V f :=
     ((G.point x).toPresheafFiber_w
-      ((neighbourhoodInclusion (ι := ι) x).map f.unop)
+      ((nhdsInclusion (ι := ι) x).map f.unop)
         (G.pointElement x V.unop.2) P).trans (Category.comp_id _).symm
 
 /-- The fiber at a classical site point satisfies the colimit universal property for
 admissible neighbourhoods. This holds for presheaves, without a sheaf hypothesis. -/
-noncomputable def isColimitNeighbourhoodCocone :
-    IsColimit (G.neighbourhoodCocone x P) where
-  desc c := (G.point x).presheafFiberDesc
-    (fun U h ↦ c.ι.app (op ⟨U, h.down.down⟩))
-    (fun {U V} f h ↦ c.w (homOfLE (leOfHom f) :
-      (⟨U, h.down.down⟩ : {U : B // x ∈ ι U}) ⟶
-        ⟨V, ι.monotone (leOfHom f) h.down.down⟩).op)
-  fac c U := by
-    exact (G.point x).toPresheafFiber_presheafFiberDesc _ _ _ _
-  uniq c m hm := by
-    apply (G.point x).presheafFiber_hom_ext
-    intro U h
-    have hf := (G.point x).toPresheafFiber_presheafFiberDesc
-      (fun V h ↦ c.ι.app (op ⟨V, h.down.down⟩))
+noncomputable def isColimitNhdsCocone : IsColimit (G.nhdsCocone x P) := by
+  let desc (c : Cocone ((nhdsInclusion (ι := ι) x).op ⋙ P)) :=
+    (G.point x).presheafFiberDesc
+      (fun U h ↦ c.ι.app (op ⟨U, h.down.down⟩))
       (fun {U V} f h ↦ c.w (homOfLE (leOfHom f) :
         (⟨U, h.down.down⟩ : {U : B // x ∈ ι U}) ⟶
-          ⟨V, ι.monotone (leOfHom f) h.down.down⟩).op) U h
-    exact (congrArg (fun z ↦ (G.point x).toPresheafFiber U z P ≫ m)
-      (G.pointElement_down x U h)).symm.trans
-        ((hm (op ⟨U, h.down.down⟩)).trans hf.symm)
+          ⟨V, ι.monotone (leOfHom f) h.down.down⟩).op)
+  refine { desc := desc, fac := ?_, uniq := ?_ }
+  · intro c U
+    -- Op/unop and subtype eta identify the reconstructed neighbourhood with U.
+    exact (G.point x).toPresheafFiber_presheafFiberDesc _ _ _ _
+  · intro c m hm
+    apply (G.point x).presheafFiber_hom_ext
+    intro U h
+    simp [desc, ← hm, nhdsCocone, G.pointElement_down x U h]
 
 /-- The canonical identification of a classical site fiber with the colimit over admissible
 neighbourhoods. -/
-noncomputable def neighbourhoodColimitIso :
-    (G.point x).presheafFiber.obj P ≅ colimit ((neighbourhoodInclusion (ι := ι) x).op ⋙ P) :=
-  (G.isColimitNeighbourhoodCocone x P).coconePointUniqueUpToIso (colimit.isColimit _)
+noncomputable def nhdsColimitIso :
+    (G.point x).presheafFiber.obj P ≅ colimit ((nhdsInclusion (ι := ι) x).op ⋙ P) :=
+  (G.isColimitNhdsCocone x P).coconePointUniqueUpToIso (colimit.isColimit _)
 
 /-- The comparison carries the site germ of a section to its neighbourhood-colimit germ. -/
 @[simp, reassoc (attr := simp)]
-theorem toPresheafFiber_neighbourhoodColimitIso_hom (U : B) (hx : x ∈ ι U) :
-    (G.point x).toPresheafFiber U (G.pointElement x hx) P ≫
-      (G.neighbourhoodColimitIso x P).hom =
-        colimit.ι ((neighbourhoodInclusion (ι := ι) x).op ⋙ P) (op ⟨U, hx⟩) :=
-  (G.isColimitNeighbourhoodCocone x P).comp_coconePointUniqueUpToIso_hom
-    (colimit.isColimit _) (op ⟨U, hx⟩)
+theorem toPresheafFiber_nhdsColimitIso_hom (U : B) (h : (G.point x).fiber.obj U) :
+    (G.point x).toPresheafFiber U h P ≫ (G.nhdsColimitIso x P).hom =
+      colimit.ι ((nhdsInclusion (ι := ι) x).op ⋙ P) (op ⟨U, h.down.down⟩) :=
+  (G.isColimitNhdsCocone x P).comp_coconePointUniqueUpToIso_hom
+    (colimit.isColimit _) (op ⟨U, h.down.down⟩)
 
 /-- The inverse comparison carries a neighbourhood-colimit germ to the site germ. -/
 @[simp, reassoc (attr := simp)]
-theorem colimit_ι_neighbourhoodColimitIso_inv (U : B) (hx : x ∈ ι U) :
-    colimit.ι ((neighbourhoodInclusion (ι := ι) x).op ⋙ P) (op ⟨U, hx⟩) ≫
-      (G.neighbourhoodColimitIso x P).inv =
-        (G.point x).toPresheafFiber U (G.pointElement x hx) P :=
-  (G.isColimitNeighbourhoodCocone x P).comp_coconePointUniqueUpToIso_inv
-    (colimit.isColimit _) (op ⟨U, hx⟩)
+theorem colimit_ι_nhdsColimitIso_inv (U : B) (h : (G.point x).fiber.obj U) :
+    colimit.ι ((nhdsInclusion (ι := ι) x).op ⋙ P) (op ⟨U, h.down.down⟩) ≫
+      (G.nhdsColimitIso x P).inv = (G.point x).toPresheafFiber U h P :=
+  (G.isColimitNhdsCocone x P).comp_coconePointUniqueUpToIso_inv
+    (colimit.isColimit _) (op ⟨U, h.down.down⟩)
 
 /-- The neighbourhood-colimit comparison is natural in the presheaf. -/
 @[reassoc]
-theorem neighbourhoodColimitIso_naturality {Q : Bᵒᵖ ⥤ A} (f : P ⟶ Q) :
-    (G.point x).presheafFiber.map f ≫ (G.neighbourhoodColimitIso x Q).hom =
-      (G.neighbourhoodColimitIso x P).hom ≫
-        colimMap (Functor.whiskerLeft (neighbourhoodInclusion (ι := ι) x).op f) := by
-  apply (G.point x).presheafFiber_hom_ext
-  intro U h
-  calc
-    _ = f.app (op U) ≫ (G.point x).toPresheafFiber U h Q ≫
-        (G.neighbourhoodColimitIso x Q).hom :=
-      (Category.assoc _ _ _).symm.trans
-        (congrArg (· ≫ (G.neighbourhoodColimitIso x Q).hom)
-          ((G.point x).toPresheafFiber_naturality f U h)) |>.trans (Category.assoc _ _ _)
-    _ = _ := by
-      have hP := G.toPresheafFiber_neighbourhoodColimitIso_hom x P U h.down.down
-      have hQ := G.toPresheafFiber_neighbourhoodColimitIso_hom x Q U h.down.down
-      rw [G.pointElement_down x U h] at hP hQ
-      rw [hQ, ← Category.assoc, hP]
-      exact (ι_colimMap (Functor.whiskerLeft (neighbourhoodInclusion (ι := ι) x).op f)
-        (op ⟨U, h.down.down⟩)).symm
+theorem nhdsColimitIso_naturality {Q : Bᵒᵖ ⥤ A} (f : P ⟶ Q) :
+    (G.point x).presheafFiber.map f ≫ (G.nhdsColimitIso x Q).hom =
+      (G.nhdsColimitIso x P).hom ≫
+        colimMap (Functor.whiskerLeft (nhdsInclusion (ι := ι) x).op f) := by
+  ext U h
+  simp
 
 end Fibers
 
@@ -177,7 +157,7 @@ variable {Y : TopCat.{v}} {A : Type w} [Category.{v} A] [HasColimitsOfSize.{v, v
 
 -- The G-site and the topological site bundle membership differently; the underlying
 -- neighbourhoods and their inclusion order are identical.
-private def topologicalNeighbourhoodOrderIso (x : Y) :
+private def topologicalNhdsOrderIso (x : Y) :
     {U : Opens Y // x ∈ opensEmbedding Y U} ≃o OpenNhds x where
   toFun U := ⟨U.1, by simpa using U.2⟩
   invFun U := ⟨U.1, by simpa using U.2⟩
@@ -185,41 +165,39 @@ private def topologicalNeighbourhoodOrderIso (x : Y) :
   right_inv _ := rfl
   map_rel_iff' := Iff.rfl
 
-private def topologicalNeighbourhoodDiagramIso (x : Y) (P : Y.Presheaf A) :
-    (topologicalNeighbourhoodOrderIso x).equivalence.op.functor ⋙
+private def topologicalNhdsDiagramIso (x : Y) (P : Y.Presheaf A) :
+    (topologicalNhdsOrderIso x).equivalence.op.functor ⋙
         (OpenNhds.inclusion x).op ⋙ P ≅
-      (neighbourhoodInclusion (ι := opensEmbedding Y) x).op ⋙ P :=
+      (nhdsInclusion (ι := opensEmbedding Y) x).op ⋙ P :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _)
     (fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm)
 
-private noncomputable def topologicalNeighbourhoodColimitIso (x : Y) (P : Y.Presheaf A) :
-    colimit ((neighbourhoodInclusion (ι := opensEmbedding Y) x).op ⋙ P) ≅ P.stalk x :=
-  HasColimit.isoOfEquivalence (topologicalNeighbourhoodOrderIso x).equivalence.op
-    (topologicalNeighbourhoodDiagramIso x P)
+private noncomputable def topologicalNhdsColimitIso (x : Y) (P : Y.Presheaf A) :
+    colimit ((nhdsInclusion (ι := opensEmbedding Y) x).op ⋙ P) ≅ P.stalk x :=
+  HasColimit.isoOfEquivalence (topologicalNhdsOrderIso x).equivalence.op
+    (topologicalNhdsDiagramIso x P)
 
 @[simp]
-private theorem colimit_ι_topologicalNeighbourhoodColimitIso_hom (x : Y) (P : Y.Presheaf A)
+private theorem colimit_ι_topologicalNhdsColimitIso_hom (x : Y) (P : Y.Presheaf A)
     (U : Opens Y) (hx : x ∈ opensEmbedding Y U) :
-    colimit.ι ((neighbourhoodInclusion (ι := opensEmbedding Y) x).op ⋙ P) (op ⟨U, hx⟩) ≫
-        (topologicalNeighbourhoodColimitIso x P).hom =
+    colimit.ι ((nhdsInclusion (ι := opensEmbedding Y) x).op ⋙ P) (op ⟨U, hx⟩) ≫
+        (topologicalNhdsColimitIso x P).hom =
       P.germ U x (by simpa using hx) :=
-  (HasColimit.ι_isoOfEquivalence_hom (topologicalNeighbourhoodOrderIso x).equivalence.op
-    (topologicalNeighbourhoodDiagramIso x P) (op ⟨U, hx⟩)).trans (Category.id_comp _)
+  (HasColimit.ι_isoOfEquivalence_hom (topologicalNhdsOrderIso x).equivalence.op
+    (topologicalNhdsDiagramIso x P) (op ⟨U, hx⟩)).trans (Category.id_comp _)
 
 /-- For the G-topology of ordinary open covers, the classical site fiber is Mathlib's
 ordinary stalk. -/
 noncomputable def topologicalStalkIso (x : Y) (P : Y.Presheaf A) :
     ((topological Y).point x).presheafFiber.obj P ≅ P.stalk x :=
-  ((topological Y).neighbourhoodColimitIso x P).trans
-    (topologicalNeighbourhoodColimitIso x P)
+  ((topological Y).nhdsColimitIso x P).trans (topologicalNhdsColimitIso x P)
 
 /-- The topological comparison preserves germs of sections. -/
 @[simp, reassoc (attr := simp)]
 theorem toPresheafFiber_topologicalStalkIso_hom (x : Y) (P : Y.Presheaf A)
-    (U : Opens Y) (hx : x ∈ U) :
-    ((topological Y).point x).toPresheafFiber U
-        ((topological Y).pointElement x (by simpa using hx)) P ≫
-      (topologicalStalkIso x P).hom = P.germ U x hx := by
+    (U : Opens Y) (h : ((topological Y).point x).fiber.obj U) :
+    ((topological Y).point x).toPresheafFiber U h P ≫
+      (topologicalStalkIso x P).hom = P.germ U x (by simpa using h.down.down) := by
   simp [topologicalStalkIso, Iso.trans_hom, ← Category.assoc]
 
 /-- The inverse topological comparison preserves germs of sections. -/
@@ -229,8 +207,18 @@ theorem germ_topologicalStalkIso_inv (x : Y) (P : Y.Presheaf A)
     P.germ U x hx ≫ (topologicalStalkIso x P).inv =
       ((topological Y).point x).toPresheafFiber U
         ((topological Y).pointElement x (by simpa using hx)) P := by
-  rw [← toPresheafFiber_topologicalStalkIso_hom x P U hx]
-  simp
+  rw [Iso.comp_inv_eq, toPresheafFiber_topologicalStalkIso_hom]
+
+/-- The topological stalk comparison is natural in the presheaf. -/
+@[reassoc]
+theorem topologicalStalkIso_naturality (x : Y) {P Q : Y.Presheaf A} (f : P ⟶ Q) :
+    ((topological Y).point x).presheafFiber.map f ≫ (topologicalStalkIso x Q).hom =
+      (topologicalStalkIso x P).hom ≫ (stalkFunctor A x).map f := by
+  ext U h
+  rw [GrothendieckTopology.Point.toPresheafFiber_naturality_assoc,
+    toPresheafFiber_topologicalStalkIso_hom]
+  -- Reassociation must unfold stalk to identify it with the stalk functor's object.
+  erw [← Category.assoc, toPresheafFiber_topologicalStalkIso_hom, stalkFunctor_map_germ]
 
 end Topological
 
