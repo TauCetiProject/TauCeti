@@ -7,6 +7,8 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SpecialLinearFrobenius
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.GraphAutomorphism
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Transvection
+public import TauCeti.FieldTheory.Finite.Frobenius
 
 /-!
 # The finite-field descent of the graph-twisted Frobenius of the special linear group
@@ -51,6 +53,11 @@ description of the special linear matrices with coordinates in it from
 
 * `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff`: the finite fixed
   points are the isometries of determinant one of the form of Gram matrix `Q`.
+* `TauCeti.ValidLieTypeIndex.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup`:
+  the same statement as an equality with the special isometry group `Matrix.specialIsometryGroup`.
+* `TauCeti.ValidLieTypeIndex.exists_mem_fixedSubgroup_coe_eq_unitaryTransvection`:
+  the unitary transvections `Matrix.unitaryTransvection` along isotropic vectors, with parameters
+  `a + (-1) ^ r a ^ q = 0`, lie in the finite special unitary group.
 * `TauCeti.ValidLieTypeIndex.specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup`: the
   coefficient extension carries the finite fixed subgroup onto the fixed subgroup over the closure.
 
@@ -121,6 +128,54 @@ theorem mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff (r : ℕ)
     typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq,
     SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.coe_GL_coe_matrix,
     SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, hσ]
+
+/-- **The finite special unitary group is a special isometry group.** The fixed points of the
+graph-twisted Frobenius of `SL_{r+1}(𝔽_{q²})` are the special isometries of the sesquilinear form
+of Gram matrix `Q` relative to the involution `x ↦ x ^ q`, with `Q` the signed reversal matrix.
+Since `Qᵀ = (-1) ^ r • Q` (`TauCeti.transpose_typeAGraphConjugator`), this form is
+`(-1) ^ r`-Hermitian. -/
+theorem fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup (r : ℕ) :
+    fixedSubgroup (d.galoisFieldTwistedFrobenius r) =
+      (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+          Matrix (Fin (r + 1)) (Fin (r + 1))
+            (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
+        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
+          d.fieldExponent) := by
+  have hσ : ⇑(iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
+      d.characteristic d.fieldExponent) = (· ^ d.fieldOrder) :=
+    funext fun x ↦ by rw [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow]
+  ext g
+  rw [mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff, Matrix.mem_specialIsometryGroup_iff, hσ]
+
+/-- **Unitary transvections in the finite special unitary group.** Let `Q` be the signed reversal
+matrix and `σ` the involution `x ↦ x ^ q` of the field with `q²` elements. For a vector `v` with
+`h(v, v) = 0` and a parameter `a` with `a + (-1) ^ r σ(a) = 0`, the unitary transvection
+`x ↦ x + a h(v, x) v` of the form `h` of Gram matrix `Q` is a point of `SL_{r+1}(𝔽_{q²})` fixed by
+the graph-twisted Frobenius. -/
+theorem exists_mem_fixedSubgroup_coe_eq_unitaryTransvection (r : ℕ)
+    {v : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2)}
+    (hv : (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
+        d.fieldExponent ∘ v) ⬝ᵥ
+          ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+            Matrix (Fin (r + 1)) (Fin (r + 1))
+              (GaloisField d.characteristic (d.fieldExponent * 2))) *ᵥ v) = 0)
+    {a : GaloisField d.characteristic (d.fieldExponent * 2)}
+    (ha : a + (-1) ^ r * iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
+      d.characteristic d.fieldExponent a = 0) :
+    ∃ g ∈ fixedSubgroup (d.galoisFieldTwistedFrobenius r),
+      (g : Matrix (Fin (r + 1)) (Fin (r + 1))
+          (GaloisField d.characteristic (d.fieldExponent * 2))) =
+        (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+          Matrix (Fin (r + 1)) (Fin (r + 1))
+            (GaloisField d.characteristic (d.fieldExponent * 2))).unitaryTransvection
+          (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
+            d.characteristic d.fieldExponent) v a := by
+  have hσ := FiniteField.iterateFrobenius_involutive (K := GaloisField d.characteristic
+    (d.fieldExponent * 2)) (GaloisField.card d.characteristic (d.fieldExponent * 2)
+      (mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+  rw [fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
+  exact Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ
+    (by rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]) hv ha
 
 /-! ### Descent to the closure -/
 

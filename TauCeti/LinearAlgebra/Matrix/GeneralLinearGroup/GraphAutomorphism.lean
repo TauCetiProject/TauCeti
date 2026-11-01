@@ -46,6 +46,8 @@ carrier.
   negative simple-root subgroup.
 * `TauCeti.typeAGraphAutomorphism_transvectionUnit_of_ne`: the equation on the root subgroup of an
   arbitrary root `ε_i - ε_j`, where the parameter is rescaled by the sign `(-1) ^ (i + j + 1)`.
+* `TauCeti.transpose_typeAGraphConjugator`: the signed reversal matrix satisfies
+  `Qᵀ = (-1) ^ r • Q`.
 * `TauCeti.typeAGraphAutomorphism_diagGL`: the automorphism reverses and inverts diagonal entries.
 * `TauCeti.typeAGraphAutomorphism_apply_apply`: the signed entrywise formula on the inverse matrix.
 * `TauCeti.typeAGraphAutomorphism_mem_upperTriangularGroup_iff`: preservation of
@@ -145,6 +147,31 @@ theorem map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) 
   apply Units.ext
   ext i j
   simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
+
+/-- Entrywise base change carries the signed reversal matrix to the signed reversal matrix, read
+on matrices. -/
+@[simp]
+theorem map_coe_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A).map f =
+      (typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) := by
+  ext i j
+  simp [apply_ite f]
+
+/-- The signed reversal matrix is symmetric for even `r` and antisymmetric for odd `r`:
+`Qᵀ = (-1) ^ r • Q`. -/
+theorem transpose_typeAGraphConjugator (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ =
+      (-1 : A) ^ r • (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) := by
+  ext i j
+  rw [transpose_apply, Matrix.smul_apply, typeAGraphConjugator_apply, typeAGraphConjugator_apply,
+    smul_eq_mul]
+  by_cases h : j = i.rev
+  · subst h
+    have hi : (i : ℕ) ≤ r := Nat.lt_succ_iff.mp i.isLt
+    rw [ite_eq_left (Fin.rev_rev i).symm, ite_eq_left rfl, Fin.val_rev, ← pow_add,
+      show r + 1 - (i + 1) = r - i by omega, show r + i = (r - i) + 2 * i by omega, pow_add,
+      pow_mul, neg_one_sq, one_pow, mul_one]
+  · rw [ite_eq_right fun h' ↦ h (by rw [h', Fin.rev_rev]), ite_eq_right h, mul_zero]
 
 end Ring
 

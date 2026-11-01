@@ -24,7 +24,9 @@ characteristic.
 
 On a finite field of order `p ^ 2` the Frobenius automorphism `frobeniusEquiv K p`, sending `x`
 to `x ^ p`, is an involution. This is the field automorphism behind Hermitian duality of codes
-over the field of four elements.
+over the field of four elements. More generally, on a field of order `p ^ (2 e)` the map
+`x ↦ x ^ p ^ e` is an involution, the conjugation defining Hermitian forms and unitary groups over
+finite fields.
 
 ## Main definitions
 
@@ -44,6 +46,8 @@ over the field of four elements.
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
 * `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of order `p ^ 2`, the Frobenius
   automorphism `x ↦ x ^ p` is an involution.
+* `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (e * 2)`, the map
+  `x ↦ x ^ p ^ e` is an involution.
 
 ## Mathematical context
 
@@ -148,6 +152,16 @@ theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
   intro x
   simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
     RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
+
+/-- On a field of order `p ^ (e * 2)`, the `p ^ e`-power Frobenius `x ↦ x ^ p ^ e` is an
+involution: it is the nontrivial automorphism of the quadratic extension of the subfield of order
+`p ^ e`. -/
+theorem iterateFrobenius_involutive {e : ℕ} (hK : Nat.card K = p ^ (e * 2)) :
+    Function.Involutive (iterateFrobenius K p e) := by
+  let := Fintype.ofFinite K
+  intro x
+  rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,
+    Nat.card_eq_fintype_card, FiniteField.pow_card]
 
 end Involutive
 
