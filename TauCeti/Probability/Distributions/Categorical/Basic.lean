@@ -31,9 +31,10 @@ category `i` by the one-hot count vector `Pi.single i 1` identifies the categori
 one-trial multinomial law.  These facts make categorical measures usable as finite mixing laws and
 connect them to the existing multinomial API.
 
-For real-valued labels, measurable-set masses and the cdf sum the weights over the
-corresponding fibres, including repeated labels. The positive-weight labels form a finite
-carrying set, each of whose points has nonzero mass.
+For labels in a measurable space, measurable-set masses sum the weights over the corresponding
+fibres, including repeated labels. With measurable singletons, the positive-weight labels form a
+finite carrying set, each of whose points has nonzero mass. For real labels, the cdf gives the
+corresponding cumulative sum.
 
 ## Main results
 
@@ -213,12 +214,13 @@ section Labels
 open Set
 
 variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
+  {β : Type*} [MeasurableSpace β]
 
 open Classical in
 /-- The mass of a measurable set of labels is the sum of all category weights with a label
 in that set. In particular, repeated labels have their weights added. -/
-theorem measureReal_map_categoricalMeasure_apply (p : StdSimplex ℝ≥0 I) (f : I → ℝ)
-    {s : Set ℝ} (hs : MeasurableSet s) :
+theorem measureReal_map_categoricalMeasure_apply (p : StdSimplex ℝ≥0 I) (f : I → β)
+    {s : Set β} (hs : MeasurableSet s) :
     ((categoricalMeasure p).map f).real s = ∑ i with f i ∈ s, (p.weights i : ℝ) := by
   rw [← integral_indicator_one hs, integral_map (measurable_of_finite f).aemeasurable (by fun_prop),
     integral_categoricalMeasure]
@@ -231,8 +233,10 @@ theorem cdf_map_categoricalMeasure (p : StdSimplex ℝ≥0 I) (f : I → ℝ) (x
   rw [cdf_eq_real, measureReal_map_categoricalMeasure_apply p f measurableSet_Iic]
   simp only [mem_Iic]
 
+open Classical in
 /-- A labeled categorical law is carried by the image of its positive-weight categories. -/
-theorem ae_mem_image_support_map_categoricalMeasure (p : StdSimplex ℝ≥0 I) (f : I → ℝ) :
+theorem ae_mem_image_support_map_categoricalMeasure [MeasurableSingletonClass β]
+    (p : StdSimplex ℝ≥0 I) (f : I → β) :
     ∀ᵐ x ∂(categoricalMeasure p).map f, x ∈ p.weights.support.image f := by
   classical
   apply (ae_map_iff (measurable_of_finite f).aemeasurable (by measurability)).2
@@ -244,9 +248,10 @@ theorem ae_mem_image_support_map_categoricalMeasure (p : StdSimplex ℝ≥0 I) (
     simp only [ae_dirac_eq]
     exact Finset.mem_image_of_mem f (Finsupp.mem_support_iff.mpr hi)
 
+open Classical in
 /-- Every positive-weight label has nonzero mass, even when several categories share it. -/
-theorem map_categoricalMeasure_singleton_ne_zero (p : StdSimplex ℝ≥0 I) (f : I → ℝ)
-    {x : ℝ} (hx : x ∈ p.weights.support.image f) :
+theorem map_categoricalMeasure_singleton_ne_zero [MeasurableSingletonClass β]
+    (p : StdSimplex ℝ≥0 I) (f : I → β) {x : β} (hx : x ∈ p.weights.support.image f) :
     (categoricalMeasure p).map f {x} ≠ 0 := by
   classical
   obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hx
