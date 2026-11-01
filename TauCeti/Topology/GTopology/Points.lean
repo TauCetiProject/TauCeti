@@ -132,7 +132,7 @@ theorem toPresheafFiber_nhdsColimitIso_hom (U : B) (h : (G.point x).fiber.obj U)
 
 /-- The inverse comparison carries a neighbourhood-colimit germ to the site germ. -/
 @[simp, reassoc (attr := simp)]
-theorem colimit_ι_nhdsColimitIso_inv (U : B) (h : (G.point x).fiber.obj U) :
+theorem ι_nhdsColimitIso_inv (U : B) (h : (G.point x).fiber.obj U) :
     colimit.ι ((nhdsInclusion (ι := ι) x).op ⋙ P) (op ⟨U, h.down.down⟩) ≫
       (G.nhdsColimitIso x P).inv = (G.point x).toPresheafFiber U h P :=
   (G.isColimitNhdsCocone x P).comp_coconePointUniqueUpToIso_inv
@@ -178,7 +178,7 @@ private noncomputable def topologicalNhdsColimitIso (x : Y) (P : Y.Presheaf A) :
     (topologicalNhdsDiagramIso x P)
 
 @[simp]
-private theorem colimit_ι_topologicalNhdsColimitIso_hom (x : Y) (P : Y.Presheaf A)
+private theorem ι_topologicalNhdsColimitIso_hom (x : Y) (P : Y.Presheaf A)
     (U : Opens Y) (hx : x ∈ opensEmbedding Y U) :
     colimit.ι ((nhdsInclusion (ι := opensEmbedding Y) x).op ⋙ P) (op ⟨U, hx⟩) ≫
         (topologicalNhdsColimitIso x P).hom =
