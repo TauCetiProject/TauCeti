@@ -47,8 +47,8 @@ theorem eigenspace_dualMap_eq_dualAnnihilator (h2 : IsUnit (2 : R)) {T : End R M
     ext x
     -- `x - μ T x` lies in the `-μ`-eigenspace of `T`, so `φ x = μ φ (T x)`.
     have hy : x - μ • T x ∈ eigenspace T (-μ) := by
-      rw [mem_eigenspace_iff, map_sub, map_smul, hT x, smul_sub, smul_smul, neg_mul, hμ,
-        neg_one_smul, neg_smul]
+      rw [mem_eigenspace_iff]
+      simp [hT x, smul_sub, smul_smul, hμ]
       abel
     have h₁ := hφ _ hy
     rw [map_sub, map_smul, smul_eq_mul, sub_eq_zero] at h₁

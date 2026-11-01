@@ -44,9 +44,10 @@ it need not be finite-dimensional or irreducible.
   `(-1) ^ ⌊n / 2⌋ Γ_Sᵀ`.
 * `AlgHom.eigenspace_cliffordReverseDual_complexVolume`: the `μ`-eigenspace of `Γ` on the
   reverse dual is the annihilator of the `-(-1) ^ ⌊n / 2⌋ μ`-eigenspace of `Γ` on `S`.
-* `AlgHom.cliffordReverseDualEigenspaceEquiv`: restriction identifies the `μ`-eigenspace of
-  `Γ` on the reverse dual with the dual of the `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of `Γ` on `S`, and
-  `AlgHom.finrank_eigenspace_cliffordReverseDual_complexVolume` gives the dimension count.
+* `AlgHom.cliffordReverseDualComplexVolumeEigenspaceEquiv`: restriction identifies the
+  `μ`-eigenspace of `Γ` on the reverse dual with the dual of the `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of
+  `Γ` on `S`, and `AlgHom.finrank_eigenspace_cliffordReverseDual_complexVolume` gives the
+  dimension count.
 
 ## References
 
@@ -76,6 +77,11 @@ theorem cliffordReverseDual_complexVolume :
   ext φ s
   simp [cliffordReverseDual_apply_apply, reverse_complexVolume]
 
+/-- Multiplying a sign `μ = ±1` by a power of `-1` gives a sign. -/
+private theorem neg_one_pow_mul_eq_one_or_neg_one {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) (k : ℕ) :
+    (-1) ^ k * μ = 1 ∨ (-1) ^ k * μ = -1 := by
+  rcases neg_one_pow_eq_or ℂ k with h | h <;> rcases hμ with rfl | rfl <;> simp [h]
+
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -103,17 +109,16 @@ theorem eigenspace_cliffordReverseDual_complexVolume {μ : ℂ} (hμ : μ = 1 �
     (cliffordReverseDual ρ (complexVolume Q o)).eigenspace μ =
       ((ρ (complexVolume Q o)).eigenspace (-((-1) ^ (n / 2) * μ))).dualAnnihilator := by
   have hinv := involutive_complexVolume ρ o hQ
+  have hμ' : μ * μ = 1 := by rcases hμ with rfl | rfl <;> norm_num
   rcases neg_one_pow_eq_or ℂ (n / 2) with h | h
   · rw [cliffordReverseDual_complexVolume, h, one_smul, one_mul]
-    exact eigenspace_dualMap_eq_dualAnnihilator two_ne_zero.isUnit hinv
-      (by rcases hμ with rfl | rfl <;> norm_num)
+    exact eigenspace_dualMap_eq_dualAnnihilator two_ne_zero.isUnit hinv hμ'
   · have hneg : Function.Involutive (-ρ (complexVolume Q o)) := fun s ↦ by
       simp [hinv s]
     have hdual : cliffordReverseDual ρ (complexVolume Q o) = (-ρ (complexVolume Q o)).dualMap := by
       ext φ s
       simp [h]
-    rw [hdual, eigenspace_dualMap_eq_dualAnnihilator two_ne_zero.isUnit hneg
-        (by rcases hμ with rfl | rfl <;> norm_num)]
+    rw [hdual, eigenspace_dualMap_eq_dualAnnihilator two_ne_zero.isUnit hneg hμ']
     congr 1
     ext s
     simp [h, neg_eq_iff_eq_neg]
@@ -123,20 +128,44 @@ identifies the `μ`-eigenspace of `Γ` on the reverse dual with the dual of the
 `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of `Γ` on `S`. In dimension `2ℓ` this identifies the half-spinors
 of the reverse dual with the duals of the half-spinors of `S`, exchanging the labels when `ℓ` is
 odd. -/
-def cliffordReverseDualEigenspaceEquiv {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
+def cliffordReverseDualComplexVolumeEigenspaceEquiv {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     (cliffordReverseDual ρ (complexVolume Q o)).eigenspace μ ≃ₗ[ℂ]
       Dual ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) :=
   (LinearEquiv.ofEq _ _ (eigenspace_cliffordReverseDual_complexVolume ρ o hQ hμ)).trans
-    (Submodule.dualAnnihilatorEquivOfIsCompl _ _ (isCompl_eigenspace_complexVolume_neg ρ o hQ (by
-      rcases neg_one_pow_eq_or ℂ (n / 2) with h | h <;> rcases hμ with rfl | rfl <;> simp [h])))
+    (Submodule.dualAnnihilatorEquivOfIsCompl _ _ (isCompl_eigenspace_complexVolume_neg ρ o hQ
+      (neg_one_pow_mul_eq_one_or_neg_one hμ (n / 2))))
 
-/-- The identification `AlgHom.cliffordReverseDualEigenspaceEquiv` restricts a functional. -/
+/-- The identification `AlgHom.cliffordReverseDualComplexVolumeEigenspaceEquiv` restricts a
+functional. -/
 @[simp]
-theorem cliffordReverseDualEigenspaceEquiv_apply {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
+theorem cliffordReverseDualComplexVolumeEigenspaceEquiv_apply {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
     (φ : (cliffordReverseDual ρ (complexVolume Q o)).eigenspace μ)
     (s : (ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) :
-    cliffordReverseDualEigenspaceEquiv ρ o hQ hμ φ s = (φ : Dual ℂ S) s := by
-  simp [cliffordReverseDualEigenspaceEquiv]
+    cliffordReverseDualComplexVolumeEigenspaceEquiv ρ o hQ hμ φ s = (φ : Dual ℂ S) s := by
+  simp [cliffordReverseDualComplexVolumeEigenspaceEquiv]
+
+/-- The inverse of `AlgHom.cliffordReverseDualComplexVolumeEigenspaceEquiv` agrees with the
+given functional on the `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of `Γ` on `S`. -/
+@[simp]
+theorem coe_cliffordReverseDualComplexVolumeEigenspaceEquiv_symm_apply_of_mem {μ : ℂ}
+    (hμ : μ = 1 ∨ μ = -1)
+    (ψ : Dual ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ))) {s : S}
+    (hs : s ∈ (ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) :
+    ((cliffordReverseDualComplexVolumeEigenspaceEquiv ρ o hQ hμ).symm ψ : Dual ℂ S) s =
+      ψ ⟨s, hs⟩ := by
+  simpa [cliffordReverseDualComplexVolumeEigenspaceEquiv] using
+    LinearMap.ofIsCompl_apply_left (φ := ψ) (ψ := 0) _ ⟨s, hs⟩
+
+/-- The inverse of `AlgHom.cliffordReverseDualComplexVolumeEigenspaceEquiv` vanishes on the
+`-(-1) ^ ⌊n / 2⌋ μ`-eigenspace of `Γ` on `S`: it extends a functional by zero. -/
+@[simp]
+theorem coe_cliffordReverseDualComplexVolumeEigenspaceEquiv_symm_apply_of_mem_neg {μ : ℂ}
+    (hμ : μ = 1 ∨ μ = -1)
+    (ψ : Dual ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ))) {s : S}
+    (hs : s ∈ (ρ (complexVolume Q o)).eigenspace (-((-1) ^ (n / 2) * μ))) :
+    ((cliffordReverseDualComplexVolumeEigenspaceEquiv ρ o hQ hμ).symm ψ : Dual ℂ S) s = 0 := by
+  simpa [cliffordReverseDualComplexVolumeEigenspaceEquiv] using
+    LinearMap.ofIsCompl_apply_right (φ := ψ) (ψ := 0) _ ⟨s, hs⟩
 
 /-- For `μ = ±1`, the `μ`-eigenspace of `Γ` on the reverse dual has the dimension of the
 `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of `Γ` on `S`. As usual for `Module.finrank`, both sides are `0`
@@ -145,7 +174,8 @@ theorem finrank_eigenspace_cliffordReverseDual_complexVolume {μ : ℂ}
     (hμ : μ = 1 ∨ μ = -1) :
     finrank ℂ ((cliffordReverseDual ρ (complexVolume Q o)).eigenspace μ) =
       finrank ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) := by
-  rw [(cliffordReverseDualEigenspaceEquiv ρ o hQ hμ).finrank_eq, Subspace.dual_finrank_eq]
+  rw [(cliffordReverseDualComplexVolumeEigenspaceEquiv ρ o hQ hμ).finrank_eq,
+    Subspace.dual_finrank_eq]
 
 end Form
 

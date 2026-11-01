@@ -42,15 +42,8 @@ variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] (p q : Submodu
 annihilating `q` with the functionals on `p`. The inverse extends a functional on `p` by zero
 on `q`. -/
 noncomputable def dualAnnihilatorEquivOfIsCompl (h : IsCompl p q) :
-    q.dualAnnihilator ≃ₗ[R] Module.Dual R p where
-  toFun φ := p.dualRestrict φ
-  map_add' _ _ := map_add _ _ _
-  map_smul' _ _ := map_smul _ _ _
-  invFun ψ := ⟨LinearMap.ofIsCompl h ψ 0, (mem_dualAnnihilator _).2 fun x hx ↦ by
-    simpa using LinearMap.ofIsCompl_apply_right h (φ := ψ) (ψ := 0) ⟨x, hx⟩⟩
-  left_inv φ := Subtype.ext <| LinearMap.ofIsCompl_eq h (fun _ ↦ rfl) fun x ↦
-    (((mem_dualAnnihilator _).1 φ.2) x x.2).symm
-  right_inv ψ := by ext x; simp
+    q.dualAnnihilator ≃ₗ[R] Module.Dual R p :=
+  q.dualQuotEquivDualAnnihilator.symm ≪≫ₗ (q.quotientEquivOfIsCompl p h.symm).symm.dualMap
 
 /-- The identification of `q.dualAnnihilator` with `Module.Dual R p` restricts a functional
 to `p`. -/
@@ -64,7 +57,11 @@ zero on `q`. -/
 @[simp]
 theorem coe_dualAnnihilatorEquivOfIsCompl_symm_apply (h : IsCompl p q) (ψ : Module.Dual R p) :
     ((dualAnnihilatorEquivOfIsCompl p q h).symm ψ : Module.Dual R V) = LinearMap.ofIsCompl h ψ 0 :=
-  (rfl)
+  (LinearMap.ofIsCompl_eq h
+    (fun x ↦ congrArg ψ (quotientEquivOfIsCompl_apply_mk_right h.symm x).symm)
+    fun x ↦ by
+      change 0 = ψ (q.quotientEquivOfIsCompl p h.symm (Quotient.mk (x : V)))
+      rw [(Quotient.mk_eq_zero q).2 x.2, map_zero, map_zero]).symm
 
 end IsCompl
 
