@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # Integrals of test functions against measures finite on compact sets
@@ -26,7 +28,9 @@ sets, the integral of `φ` against `ν` is bounded by the sup norm:
 
 This is the estimate showing that integration against such a measure is a distribution of order
 zero. Through a continuous bilinear map, a test function also pairs integrably with every
-function that is locally integrable for a measure on `Ω`.
+function that is locally integrable for a measure on `Ω`; in particular, integration against two
+locally finite measures absolutely continuous with respect to `ρ` is integration against their
+Radon–Nikodym derivatives with respect to `ρ`.
 
 Every nonempty open subset of the domain also contains a nonnegative integral-one test, for any
 locally finite measure positive on nonempty open sets. The construction normalizes Mathlib's
@@ -49,8 +53,18 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
 
+* `TestFunction.lintegral_enorm_le_mul_measure_preimage`: `∫ ‖φ‖ dν ≤ a ν(U)` for a test
+  function `φ` supported in `U` with `‖φ‖ ≤ a`.
+
 * `TestFunction.integrable_bilin_subtype`: `x ↦ B (φ x) (g x)` is integrable for `g` locally
   integrable for a measure on `Ω`.
+
+* `TestFunction.integrable_apply_of_locallyIntegrable`: `x ↦ τ(x) (φ x)` is integrable for a
+  locally integrable field `τ` of continuous linear maps.
+
+* `TestFunction.integral_sub_integral_eq_integral_mul_sub_rnDeriv`: integration against two
+  locally finite measures as integration against their densities with respect to a reference
+  measure.
 
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
@@ -58,7 +72,7 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped Distributions BoundedContinuousFunction CompactlySupported
+open scoped Distributions BoundedContinuousFunction CompactlySupported ENNReal
 
 namespace TestFunction
 
@@ -114,6 +128,17 @@ theorem norm_integral_le_measureReal_mul_norm (φ : 𝓓(Ω, F)) {K : Set E} (hK
   exact norm_setIntegral_le_of_norm_le_const hK'.measure_lt_top fun x _ => by
     simpa using (φ : E →ᵇ F).norm_coe_le_norm x
 
+/-- A test function supported in `U` with `‖φ‖ ≤ a` has `∫ ‖φ‖ dν ≤ a ν(Ω ∩ U)`. -/
+theorem lintegral_enorm_le_mul_measure_preimage (φ : 𝓓^{n}(Ω, F)) (ν : Measure Ω) {U : Set E}
+    (hU : MeasurableSet U) (hφU : tsupport φ ⊆ U) {a : ℝ≥0∞} (hφ : ∀ x, ‖φ x‖ₑ ≤ a) :
+    ∫⁻ x, ‖φ x‖ₑ ∂ν ≤ a * ν ((↑) ⁻¹' U) := by
+  rw [← lintegral_indicator_const (measurable_subtype_coe hU)]
+  refine lintegral_mono fun x => ?_
+  by_cases hx : (x : E) ∈ U
+  · simpa [Set.indicator_of_mem (Set.mem_preimage.2 hx)] using hφ x
+  · simp [Set.indicator_of_notMem fun h => hx (Set.mem_preimage.1 h),
+      image_eq_zero_of_notMem_tsupport fun h => hx (hφU h)]
+
 /-- A test function on `Ω` pairs integrably, through a continuous bilinear map `B`, with every
 function `g` that is locally integrable for a measure on the subspace `Ω`. -/
 theorem integrable_bilin_subtype [OpensMeasurableSpace E] {F₂ F₃ : Type*} [NormedAddCommGroup F₂]
@@ -130,6 +155,31 @@ theorem integrable_bilin_subtype [OpensMeasurableSpace E] {F₂ F₃ : Type*} [N
   rw [hf] at hon
   refine (integrableOn_iff_integrable_of_support_subset fun x hx => ?_).1 hon
   exact subset_tsupport _ fun hφx => hx (by simp [(congrFun hf x).symm.trans hφx])
+
+/-- The pairing `x ↦ τ(x) (φ x)` of a test function `φ` on `Ω` with a field `τ` of continuous
+linear maps on `F`, locally integrable for a measure on the subspace `Ω`, is integrable. -/
+theorem integrable_apply_of_locallyIntegrable [OpensMeasurableSpace E] {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {ν : Measure Ω} {τ : Ω → F →L[ℝ] G}
+    (hτ : LocallyIntegrable τ ν) (φ : 𝓓^{n}(Ω, F)) : Integrable (fun x => τ x (φ x)) ν :=
+  integrable_bilin_subtype (ContinuousLinearMap.apply ℝ G) hτ φ
+
+/-- Integration of a test function against the difference of two locally finite measures `ν₁` and
+`ν₂`, absolutely continuous with respect to `ρ`, is integration against the difference of their
+Radon–Nikodym derivatives with respect to `ρ`. -/
+theorem integral_sub_integral_eq_integral_mul_sub_rnDeriv [FiniteDimensional ℝ E] [BorelSpace E]
+    {ν₁ ν₂ ρ : Measure Ω} [IsLocallyFiniteMeasure ν₁] [IsLocallyFiniteMeasure ν₂]
+    [SigmaFinite ρ] (h₁ : ν₁ ≪ ρ) (h₂ : ν₂ ≪ ρ) (ψ : 𝓓(Ω, ℝ)) :
+    ∫ x, ψ x ∂ν₁ - ∫ x, ψ x ∂ν₂ =
+      ∫ x, ψ x * ((ν₁.rnDeriv ρ x).toReal - (ν₂.rnDeriv ρ x).toReal) ∂ρ := by
+  have hint (ν : Measure Ω) [IsLocallyFiniteMeasure ν] :
+      Integrable (fun x => (ν.rnDeriv ρ x).toReal * ψ x) ρ :=
+    (ψ.integrable_bilin_subtype (ContinuousLinearMap.mul ℝ ℝ)
+      (Measure.locallyIntegrable_toReal_rnDeriv (μ := ν))).congr
+        (ae_of_all _ fun x => by simp [mul_comm])
+  rw [← integral_toReal_rnDeriv_mul h₁, ← integral_toReal_rnDeriv_mul h₂,
+    ← integral_sub (hint ν₁) (hint ν₂)]
+  congr with x
+  ring
 
 section IntegralOne
 

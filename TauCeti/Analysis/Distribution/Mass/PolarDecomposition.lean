@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Mass.Measure
-import Mathlib.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.OrderZero
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Function.AEOpNorm
 import TauCeti.MeasureTheory.Integral.Lebesgue.OpenSet
 
 /-!
@@ -70,25 +70,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [FiniteDimensional ℝ F] {Ω : Opens E} {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, F) ℝ]
   [LinearMapClass 𝓕 ℝ 𝓓(Ω, F) ℝ] {T : 𝓕}
 
-omit [FiniteDimensional ℝ F] in
-/-- A field of functionals on a separable space that is bounded by `C` in each direction, almost
-everywhere, is bounded by `C` in norm almost everywhere. -/
-private theorem ae_norm_le_of_forall_ae_norm_apply_le [SeparableSpace F] {X : Type*}
-    [MeasurableSpace X] {μ : Measure X} {τ : X → StrongDual ℝ F} {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ v, ∀ᵐ x ∂μ, ‖τ x v‖ ≤ C * ‖v‖) : ∀ᵐ x ∂μ, ‖τ x‖ ≤ C := by
-  filter_upwards [ae_all_iff.2 fun n => h (denseSeq F n)] with x hx
-  refine ContinuousLinearMap.opNorm_le_bound _ hC fun v => ?_
-  exact (denseRange_denseSeq F).induction_on v
-    (isClosed_le (τ x).continuous.norm (continuous_const.mul continuous_norm)) hx
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The pairing `x ↦ τ(x) (φ x)` of a locally integrable field `τ` of functionals on `F` with a
-test `φ` is integrable. -/
-private theorem integrable_apply_of_locallyIntegrable {μ : Measure Ω} {τ : Ω → StrongDual ℝ F}
-    (hτ : LocallyIntegrable τ μ) (φ : 𝓓(Ω, F)) : Integrable (fun x => τ x (φ x)) μ :=
-  (integrable_bilin_subtype (NormedSpace.inclusionInDoubleDual ℝ F) hτ φ).congr
-    (ae_of_all _ fun x => by simp)
-
 section Existence
 
 variable (hT : HasLocallyFiniteMass T)
@@ -139,11 +120,16 @@ private theorem exists_le_one [ContinuousMapClass 𝓕 𝓓(Ω, F) ℝ] :
   have := Ω.isOpen.locallyCompactSpace
   set lam := massMeasure T
   let b := Module.finBasis ℝ F
-  -- The densities of the scalar distributions `ψ ↦ T (ψ bᵢ)` with respect to `‖T‖`.
-  choose h hm hle hh using fun i => exists_eq_integral_mul_of_enorm_apply_le
-    ((⟨LinearMap.ofClass T, map_continuous T⟩ : 𝓓(Ω, F) →L[ℝ] ℝ) ∘L
-      postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i))) lam ‖b i‖₊
-    (enorm_apply_postcompCLM_le hT (b i))
+  -- The scalar distributions `ψ ↦ T (ψ bᵢ)`.
+  let S (i) : 𝓓'(Ω, ℝ) := (⟨LinearMap.ofClass T, map_continuous T⟩ : 𝓓(Ω, F) →L[ℝ] ℝ) ∘L
+    postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i))
+  have hS (i) (ψ : 𝓓(Ω, ℝ)) :
+      S i ψ = T (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)) ψ) := by
+    -- The composition and the bundling of `T` as a continuous linear map unfold definitionally.
+    rfl
+  -- Their densities with respect to `‖T‖`.
+  choose h hm hle hh using fun i => exists_eq_integral_mul_of_enorm_apply_le (S i) lam ‖b i‖₊
+    fun ψ => hS i ψ ▸ enorm_apply_postcompCLM_le hT (b i) ψ
   have hloc (i) : LocallyIntegrable (h i) lam :=
     (locallyIntegrable_const (b i)).mono (hm i).aestronglyMeasurable ((hle i).mono fun x hx => by
       rwa [enorm_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm] at hx)
@@ -162,14 +148,16 @@ private theorem exists_le_one [ContinuousMapClass 𝓕 𝓓(Ω, F) ℝ] :
     calc T φ = ∑ i, T (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)) (ψ i)) := by
           conv_lhs => rw [hφ]
           rw [map_sum]
-      _ = ∑ i, ∫ x, ψ i x * h i x ∂lam := Finset.sum_congr rfl fun i _ => hh i (ψ i)
+      _ = ∑ i, ∫ x, ψ i x * h i x ∂lam :=
+          Finset.sum_congr rfl fun i _ => (hS i (ψ i)).symm.trans (hh i (ψ i))
       _ = ∫ x, τ x (φ x) ∂lam := by
           rw [← integral_finsetSum _ fun i _ => hint i]
           congr with x
           simp [hτv, ψ, c]
   have hτl : LocallyIntegrable τ lam := locallyIntegrable_iff.2 fun K hK =>
     integrable_finsetSum _ fun i _ => ((hloc i).integrableOn_isCompact hK).smul_const _
-  refine ⟨τ, by fun_prop, ae_norm_le_of_forall_ae_norm_apply_le zero_le_one fun v => ?_, hrep⟩
+  refine ⟨τ, by fun_prop, TauCeti.ae_norm_le_of_forall_ae_norm_apply_le zero_le_one fun v => ?_,
+    hrep⟩
   filter_upwards [ae_enorm_apply_le hT hτl hrep v] with x hx
   rw [one_mul]
   rwa [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_le_ofReal_iff (norm_nonneg _)] at hx

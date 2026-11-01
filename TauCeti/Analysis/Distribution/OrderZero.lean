@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Regular
 import TauCeti.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.AELeOfIntegral
@@ -56,9 +55,6 @@ bounds `|f|` by `c` times the density of `λ`, and normalizing by that density
   only if it is the difference of the integrals against two regular measures on `Ω`.
 * `Distribution.exists_eq_integral_mul_of_enorm_apply_le`: a distribution dominated by a measure
   is integration against a bounded density with respect to it.
-* `TestFunction.integral_sub_integral_eq_integral_mul_sub_rnDeriv`: integration against two
-  locally finite measures as integration against their densities with respect to a reference
-  measure.
 
 ## References
 
@@ -336,37 +332,6 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
 
 /-! ### Densities with respect to a dominating measure -/
 
-omit hT in
-/-- Integration of a test function against the difference of two locally finite measures `ν₁` and
-`ν₂`, absolutely continuous with respect to `ρ`, is integration against the difference of their
-Radon–Nikodym derivatives with respect to `ρ`. -/
-theorem _root_.TestFunction.integral_sub_integral_eq_integral_mul_sub_rnDeriv [MeasurableSpace E]
-    [BorelSpace E] {ν₁ ν₂ ρ : Measure Ω} [IsLocallyFiniteMeasure ν₁] [IsLocallyFiniteMeasure ν₂]
-    [SigmaFinite ρ] (h₁ : ν₁ ≪ ρ) (h₂ : ν₂ ≪ ρ) (ψ : 𝓓(Ω, ℝ)) :
-    ∫ x, ψ x ∂ν₁ - ∫ x, ψ x ∂ν₂ =
-      ∫ x, ψ x * ((ν₁.rnDeriv ρ x).toReal - (ν₂.rnDeriv ρ x).toReal) ∂ρ := by
-  have hint (ν : Measure Ω) [IsLocallyFiniteMeasure ν] :
-      Integrable (fun x => (ν.rnDeriv ρ x).toReal * ψ x) ρ :=
-    (ψ.integrable_bilin_subtype (ContinuousLinearMap.mul ℝ ℝ)
-      (Measure.locallyIntegrable_toReal_rnDeriv (μ := ν))).congr
-        (ae_of_all _ fun x => by simp [mul_comm])
-  rw [← integral_toReal_rnDeriv_mul h₁, ← integral_toReal_rnDeriv_mul h₂,
-    ← integral_sub (hint ν₁) (hint ν₂)]
-  congr with x
-  ring
-
-omit hT [FiniteDimensional ℝ E] in
-/-- A test function supported in `U` with `|ψ| ≤ a` has `∫ |ψ| dλ ≤ a λ(Ω ∩ U)`. -/
-private theorem lintegral_enorm_le_mul_measure_preimage [MeasurableSpace E] (lam : Measure Ω)
-    {U : Set E} (hU : MeasurableSet U) (ψ : 𝓓(Ω, ℝ)) (hψU : tsupport ψ ⊆ U) {a : ℝ≥0∞}
-    (hψ : ∀ x, ‖ψ x‖ₑ ≤ a) : ∫⁻ x, ‖ψ x‖ₑ ∂lam ≤ a * lam ((↑) ⁻¹' U) := by
-  rw [← lintegral_indicator_const (measurable_subtype_coe hU)]
-  refine lintegral_mono fun x => ?_
-  by_cases hx : (x : E) ∈ U
-  · simpa [indicator_of_mem (Set.mem_preimage.2 hx)] using hψ x
-  · simp [indicator_of_notMem fun h => hx (Set.mem_preimage.1 h),
-      image_eq_zero_of_notMem_tsupport fun h => hx (hψU h)]
-
 omit hT [FiniteDimensional ℝ E] in
 /-- A distribution dominated by a measure `λ` finite on compact sets, `|S ψ| ≤ c ∫ |ψ| dλ`, has
 order zero. -/
@@ -378,8 +343,8 @@ private theorem forall_exists_abs_le_of_enorm_apply_le [MeasurableSpace E] [Bore
   have hK' : IsCompact (((↑) : Ω → E) ⁻¹' K) :=
     Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)
   refine ⟨c * lam.real ((↑) ⁻¹' K), fun ψ hψK => ?_⟩
-  have h := (hS ψ).trans (mul_le_mul_right (lintegral_enorm_le_mul_measure_preimage lam
-    hK.measurableSet ψ hψK (a := ‖(ψ : E →ᵇ ℝ)‖ₑ) fun x => by
+  have h := (hS ψ).trans (mul_le_mul_right (ψ.lintegral_enorm_le_mul_measure_preimage lam
+    hK.measurableSet hψK (a := ‖(ψ : E →ᵇ ℝ)‖ₑ) fun x => by
       simpa [enorm_eq_nnnorm] using (ψ : E →ᵇ ℝ).nnnorm_coe_le_nnnorm x) _)
   have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
     (ENNReal.mul_ne_top enorm_ne_top hK'.measure_lt_top.ne)) h
@@ -426,8 +391,8 @@ theorem exists_eq_integral_mul_of_enorm_apply_le [MeasurableSpace E] [BorelSpace
         rw [hrep]
         simp [mul_comm]
       rw [this]
-      refine (hS ψ).trans (mul_le_mul_right ((lintegral_enorm_le_mul_measure_preimage lam
-        U.isOpen.measurableSet ψ hψU (a := 1) fun x => ?_).trans_eq (one_mul _)) _)
+      refine (hS ψ).trans (mul_le_mul_right ((ψ.lintegral_enorm_le_mul_measure_preimage lam
+        U.isOpen.measurableSet hψU (a := 1) fun x => ?_).trans_eq (one_mul _)) _)
       simpa [← ofReal_norm] using hψ x
   -- Normalize `f` by the density of `λ`.
   refine ⟨fun x => (lam.rnDeriv ρ x).toReal⁻¹ * f x,
