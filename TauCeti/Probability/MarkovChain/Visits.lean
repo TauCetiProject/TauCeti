@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
 public import TauCeti.Probability.MarkovChain.StrongMarkov
 public import TauCeti.Probability.Process.SuccessiveVisits
 public import TauCeti.Probability.Process.Excursion.MarkovChain
@@ -72,25 +73,7 @@ open ProbabilityTheory TauCeti.Probability
 
 open scoped ENNReal
 
-/-- Summing the indicator of a set with value one counts its elements. -/
-private theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
-    ∑' b, s.indicator (fun _ => (1 : ℝ≥0∞)) b = s.encard := by
-  rw [← ENNReal.tsum_set_one, tsum_subtype _ fun _ => (1 : ℝ≥0∞)]
-
 namespace MeasureTheory.Measure
-
-/-- The mean number of indices `k` with `P k x` is `∑' k, μ {x | P k x}`. This swap of sum and
-integral needs no Markov property. -/
-private theorem lintegral_encard_setOf_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
-    {P : ℕ → β → Prop} (hP : ∀ k, MeasurableSet {x | P k x}) :
-    ∫⁻ x, ({k | P k x}.encard : ℝ≥0∞) ∂μ = ∑' k, μ {x | P k x} := by
-  have hcount : ∀ x, ({k | P k x}.encard : ℝ≥0∞) = ∑' k, {x | P k x}.indicator (fun _ => 1) x :=
-    fun x => by
-    rw [← ENNReal.tsum_indicator_one]
-    exact tsum_congr fun k => by simp only [Set.indicator, Set.mem_ofPred_eq]
-  simp_rw [hcount]
-  rw [lintegral_tsum fun k => (measurable_const.indicator (hP k)).aemeasurable]
-  simp_rw [lintegral_indicator_const (hP _), one_mul]
 
 variable {α : Type*}
 
