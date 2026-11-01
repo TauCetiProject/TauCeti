@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Div
-public import Mathlib.Algebra.Polynomial.Identities
-public import Mathlib.LinearAlgebra.Matrix.Nonsingular
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.Algebra.Polynomial.Identities
+public import TauCeti.LinearAlgebra.Matrix.Divisibility
+public import TauCeti.LinearAlgebra.Matrix.Nonsingular
 public import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
@@ -69,12 +69,6 @@ open Matrix
 
 variable {R : Type*} {ι : Type*} [CommRing R] (π : R) [Fintype ι] [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- A matrix preserves coordinatewise divisibility. -/
-private theorem dvd_mulVec_apply {d : R} (N : Matrix ι ι R) {v : ι → R} (hv : ∀ i, d ∣ v i)
-    (i : ι) : d ∣ (N *ᵥ v) i :=
-  Finset.dvd_sum fun j _ ↦ (hv j).mul_left _
-
 section Complete
 
 variable [IsAdicComplete (Ideal.span {π}) R]
@@ -104,7 +98,7 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (�
     fun k hk i ↦ by
       rw [hu_succ, hTdef]
       simp only [Pi.sub_apply, sub_sub_cancel_left, dvd_neg]
-      exact dvd_mulVec_apply _ hk i
+      exact dvd_mulVec_apply hk _ i
   have key : ∀ k, (∀ i, π ∣ u k i - u₀ i) ∧ ∀ i, π ^ (k + 1) ∣ A (u k) i := by
     intro k
     induction k with
@@ -149,7 +143,7 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (�
     · simp
     have h1 := hA (u k) L (key k).1 hLclass k hk (hL' k) i
     have h2 := (pow_dvd_pow π (Nat.le_succ k)).trans ((key k).2 i)
-    have h3 := dvd_mulVec_apply M (v := L - u k) (fun j ↦ by simpa using hL' k j) i
+    have h3 := dvd_mulVec_apply (v := L - u k) (fun j ↦ by simpa using hL' k j) M i
     have h4 := (pow_dvd_pow π (Nat.le_succ k)).trans h1
     simpa only [sub_add_cancel] using dvd_add (dvd_add h4 h3) h2
   refine ⟨L, ⟨hLclass, hAL⟩, fun v ⟨hv, hAv⟩ ↦ ?_⟩
@@ -164,7 +158,7 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (A : (ι → R) → (�
         simpa only [zero_add, pow_one, sub_sub_sub_cancel_right] using dvd_sub (hv i) (hLclass i)
       have h1 := hA L v hLclass hv k hk ih
       simp only [hAL, hAv, Pi.zero_apply, sub_self, zero_sub, dvd_neg] at h1
-      have h2 := dvd_mulVec_apply M⁻¹ h1
+      have h2 := dvd_mulVec_apply h1 M⁻¹
       rwa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hM, Matrix.one_mulVec] at h2
   funext i
   refine sub_eq_zero.1 (IsHausdorff.haus (I := Ideal.span {π}) inferInstance _ fun k ↦ ?_)
@@ -194,10 +188,10 @@ private theorem pow_succ_dvd_sub_of_pow_dvd (hπ : IsLeftRegular π) {A : (ι �
   -- `π ^ (n + k + 1)` divides `J (x' - x)`, hence `M J (x' - x) = π ^ k (x' - x)`.
   have hJ (j : ι) : π ^ (n + k + 1) ∣ (J *ᵥ (x' - x)) j := by
     simpa using dvd_sub (hAxx' j) (hA x x' hx hx' n hn hxx' j)
-  have hMJv := dvd_mulVec_apply M hJ i
-  rw [Matrix.mulVec_mulVec, hMJ, Matrix.smul_mulVec, Matrix.one_mulVec, Pi.smul_apply,
-    smul_eq_mul, show n + k + 1 = k + (n + 1) by omega, pow_add] at hMJv
-  exact (hπ.pow k).dvd_cancel_left.mp hMJv
+  have hMJv := dvd_mulVec_apply hJ M i
+  simp only [Matrix.mulVec_mulVec, hMJ, Matrix.smul_mulVec, Matrix.one_mulVec, Pi.smul_apply,
+    smul_eq_mul] at hMJv
+  exact (hπ.pow k).dvd_cancel_left.mp (by rwa [← pow_add, show k + (n + 1) = n + k + 1 by omega])
 
 /-- **Error bound for the quantitative Newton method.** Let `π` be a non-zero-divisor, let `J`
 linearise `A` on the class `t + π ^ (k + 1) R^ι`, gaining `k + 1` powers of `π`, and let
@@ -263,41 +257,37 @@ theorem IsAdicComplete.existsUnique_eq_zero_of_mul_eq_pow_smul
   have hkey (v v' : ι → R) :
       M *ᵥ (A (x v') - A (x v) - J *ᵥ (x v' - x v)) =
         M *ᵥ A (x v') - M *ᵥ A (x v) - π ^ (2 * k + 1) • (v' - v) := by
-    rw [Matrix.mulVec_sub, Matrix.mulVec_sub, Matrix.mulVec_mulVec, hMJ, Matrix.smul_mulVec,
-      Matrix.one_mulVec, hxsub, smul_smul, ← pow_add, show k + (k + 1) = 2 * k + 1 by omega]
+    simp only [Matrix.mulVec_sub, Matrix.mulVec_mulVec, hMJ, Matrix.smul_mulVec, Matrix.one_mulVec,
+      hxsub, smul_smul, ← pow_add]
+    rw [show k + (k + 1) = 2 * k + 1 by omega]
   have hx0 : x 0 = t := by simp [hx]
   have hdiv (v : ι → R) (i : ι) : π ^ (2 * k + 1) ∣ (M *ᵥ A (x v)) i := by
-    have h1 := dvd_mulVec_apply M (v := A (x v) - A (x 0) - J *ᵥ (x v - x 0))
-      (hA (x 0) (x v) (hxt 0) (hxt v) (k + 1) le_rfl fun j ↦ by simp [hxsub']) i
+    have h1 := dvd_mulVec_apply (v := A (x v) - A (x 0) - J *ᵥ (x v - x 0))
+      (hA (x 0) (x v) (hxt 0) (hxt v) (k + 1) le_rfl fun j ↦ by simp [hxsub']) M i
     rw [hkey, hx0] at h1
     have h2 := (pow_dvd_pow π (by omega : 2 * k + 1 ≤ k + 1 + k + 1)).trans h1
-    have h3 := dvd_mulVec_apply M ht i
+    have h3 := dvd_mulVec_apply ht M i
     simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_zero] at h2
     convert dvd_add (dvd_add h2 h3) (dvd_mul_right (π ^ (2 * k + 1)) (v i)) using 1
     ring
   choose G hG using hdiv
   have hGlin (v v' : ι → R) (n : ℕ) (hvv' : ∀ i, π ^ n ∣ v' i - v i) (i : ι) :
       π ^ (n + 1) ∣ G v' i - G v i - (v' i - v i) := by
-    have h1 := dvd_mulVec_apply M (v := A (x v') - A (x v) - J *ᵥ (x v' - x v))
+    have h1 := dvd_mulVec_apply (v := A (x v') - A (x v) - J *ᵥ (x v' - x v))
       (hA (x v) (x v') (hxt v) (hxt v') (n + k + 1) (by omega) fun j ↦ by
         rw [hxsub', add_assoc, pow_add, mul_comm]
-        exact mul_dvd_mul_left _ (hvv' j)) i
-    rw [hkey, Pi.sub_apply, Pi.sub_apply, hG, hG, Pi.smul_apply, smul_eq_mul, ← mul_sub, ← mul_sub,
-      show n + k + 1 + k + 1 = 2 * k + 1 + (n + 1) by omega, pow_add] at h1
+        exact mul_dvd_mul_left _ (hvv' j)) M i
+    simp only [hkey, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, hG, ← mul_sub] at h1
+    rw [show n + k + 1 + k + 1 = 2 * k + 1 + (n + 1) by omega, pow_add] at h1
     exact (hπ.pow _).dvd_cancel_left.mp h1
   -- Newton's method with a unit Jacobian produces a zero of `G`, hence one of `M A`.
   obtain ⟨w, ⟨-, hw⟩, -⟩ := IsAdicComplete.existsUnique_eq_zero_of_isUnit_det π G
     (M := 1) (by simp) (-G 0) (fun i ↦ by simpa using hGlin 0 (-G 0) 0 (by simp) i)
     fun v v' _ _ n _ hvv' i ↦ by simpa using hGlin v v' n hvv' i
   have hMA : M *ᵥ A (x w) = 0 := funext fun i ↦ by rw [hG, hw, Pi.zero_apply, mul_zero]
-  -- `M * J = π ^ k • 1` is nonsingular, hence so is `M`, so `M A (x w) = 0` forces `A (x w) = 0`.
-  have hM : Function.Injective M.mulVec := by
-    rw [← Matrix.isLeftRegular_iff_mulVec_injective, Matrix.isLeftRegular_iff_nonsingular]
-    refine (Matrix.nonsingular_mul_iff (B := J).mp ?_).1
-    rw [hMJ, Matrix.nonsingular_iff_det_mem_nonZeroDivisors, Matrix.det_smul, Matrix.det_one,
-      mul_one, ← isRegular_iff_mem_nonZeroDivisors, ← isLeftRegular_iff_isRegular]
-    exact (hπ.pow k).pow _
-  have hAw : A (x w) = 0 := hM (by rw [hMA, Matrix.mulVec_zero])
+  -- `M * J = π ^ k • 1` makes `M` injective, so `M A (x w) = 0` forces `A (x w) = 0`.
+  have hAw : A (x w) = 0 := Matrix.mulVec_injective_of_mul_eq_smul_one (hπ.pow k) hMJ
+    (by rw [hMA, Matrix.mulVec_zero])
   exact ⟨x w, ⟨hxt w, hAw⟩, fun u ⟨hu, hAu⟩ ↦
     eq_of_eq_zero_of_mul_eq_pow_smul hπ hMJ hA (hxt w) hu hAw hAu⟩
 
@@ -309,23 +299,6 @@ open Polynomial
 
 variable {π} {f : R[X]} {k : ℕ} {t : R}
 
-/-- Taylor's estimate behind Hensel's lemma: on the class `t + π ^ (k + 1) R`, the derivative at
-`t` linearises a polynomial, gaining `k + 1` powers of `π`. -/
-private theorem pow_dvd_eval_sub_eval_sub_mul {x x' : R} (hx : π ^ (k + 1) ∣ x - t) {n : ℕ}
-    (hn : k + 1 ≤ n) (hxx' : π ^ n ∣ x' - x) :
-    π ^ (n + k + 1) ∣ f.eval x' - f.eval x - f.derivative.eval t * (x' - x) := by
-  obtain ⟨c, hc⟩ := f.binomExpansion x (x' - x)
-  rw [add_sub_cancel] at hc
-  have h : f.eval x' - f.eval x - f.derivative.eval t * (x' - x) =
-      (f.derivative.eval x - f.derivative.eval t) * (x' - x) + c * (x' - x) ^ 2 := by
-    rw [hc]
-    ring
-  rw [h, show n + k + 1 = k + 1 + n by omega, pow_add]
-  refine dvd_add (mul_dvd_mul (hx.trans (sub_dvd_eval_sub _ _ _)) hxx') (dvd_mul_of_dvd_right ?_ c)
-  rw [← pow_add]
-  exact (pow_dvd_pow π (by omega : k + 1 + n ≤ n * 2)).trans
-    (by rw [pow_mul]; exact pow_dvd_pow_of_dvd hxx' 2)
-
 /-- Taylor's estimate for a polynomial, restated for its evaluation map on `Unit`-indexed coordinate
 families and the `1 × 1` Jacobian `f'(t)`: the linearisation hypothesis of the quantitative Newton
 method. -/
@@ -333,7 +306,9 @@ private theorem pow_dvd_evalUnit_sub (x x' : Unit → R) (hx : ∀ i, π ^ (k + 
     (n : ℕ) (hn : k + 1 ≤ n) (hxx' : ∀ i, π ^ n ∣ x' i - x i) (i : Unit) :
     π ^ (n + k + 1) ∣ f.eval (x' i) - f.eval (x i) -
       ((Matrix.of fun _ _ ↦ f.derivative.eval t : Matrix Unit Unit R) *ᵥ (x' - x)) i := by
-  simpa [Matrix.mulVec, dotProduct] using pow_dvd_eval_sub_eval_sub_mul (hx i) hn (hxx' i)
+  have h := f.mul_dvd_eval_sub_eval_sub_mul (hx i) (pow_dvd_pow π hn) (hxx' i)
+  rw [← pow_add, show k + 1 + n = n + k + 1 by omega] at h
+  simpa [Matrix.mulVec, dotProduct] using h
 
 /-- The scalar matrix of a `Unit`-indexed Jacobian `f'(t)` with a cofactor `m`. -/
 private theorem of_mul_of_eq_pow_smul {m : R} (hm : π ^ k = f.derivative.eval t * m) :

@@ -25,20 +25,21 @@ example (a : ℤ_[2]) (ha : 8 ∣ a - 1) : ∃! u : ℤ_[2], 4 ∣ u - 1 ∧ u ^
   have : IsAdicComplete (Ideal.span {(2 : ℤ_[2])}) ℤ_[2] := by
     rw [show ((2 : ℤ_[2])) = ((2 : ℕ) : ℤ_[2]) by norm_num, ← PadicInt.maximalIdeal_eq_span_p]
     infer_instance
-  have h4 : (4 : ℤ_[2]) = 2 ^ (1 + 1) := by norm_num
-  obtain ⟨u, ⟨hu, hfu⟩, huniq⟩ := IsAdicComplete.existsUnique_eval_eq_zero_of_dvd_pow
-    (f := X ^ 2 - C a) (t := 1) (k := 1) (IsRegular.of_ne_zero two_ne_zero).left
-    ⟨1, by simp; norm_num⟩
-    (by simpa [dvd_sub_comm] using (show (8 : ℤ_[2]) = 2 ^ (2 * 1 + 1) by norm_num) ▸ ha)
-  refine ⟨u, ⟨by simpa using h4 ▸ hu, by simpa [sub_eq_zero] using hfu⟩,
-    fun y ⟨hy, hya⟩ ↦ huniq y ⟨by simpa using h4 ▸ hy, by simp [hya]⟩⟩
+  have hd : (X ^ 2 - C a).derivative.eval 1 ∣ (2 : ℤ_[2]) ^ 1 := by norm_num
+  have ha' : (2 : ℤ_[2]) ^ (2 * 1 + 1) ∣ (X ^ 2 - C a).eval 1 := by
+    norm_num
+    simpa [dvd_sub_comm] using ha
+  have h4 : (2 : ℤ_[2]) ^ (1 + 1) = 4 := by norm_num
+  simpa [h4, sub_eq_zero, eq_comm] using IsAdicComplete.existsUnique_eval_eq_zero_of_dvd_pow
+    (IsRegular.of_ne_zero two_ne_zero).left hd ha'
 
 -- The error bound: if `a ≡ 1 mod 2 ^ e` with `e ≥ 3`, that root is `≡ 1 mod 2 ^ (e - 1)`.
 example (a : ℤ_[2]) {e : ℕ} (he : 3 ≤ e) (ha : 2 ^ e ∣ a - 1) {u : ℤ_[2]} (hu : 4 ∣ u - 1)
-    (hua : u ^ 2 = a) : 2 ^ (e - 1) ∣ u - 1 :=
-  pow_dvd_sub_of_eval_eq_zero_of_dvd_pow (f := X ^ 2 - C a) (t := 1) (k := 1)
-    (IsRegular.of_ne_zero two_ne_zero).left ⟨1, by simp; norm_num⟩ he
-    (by simpa [dvd_sub_comm] using ha)
-    (by simpa using (show (4 : ℤ_[2]) = 2 ^ (1 + 1) by norm_num) ▸ hu) (by simp [hua])
+    (hua : u ^ 2 = a) : 2 ^ (e - 1) ∣ u - 1 := by
+  have hd : (X ^ 2 - C a).derivative.eval 1 ∣ (2 : ℤ_[2]) ^ 1 := by norm_num
+  have ha' : 2 ^ e ∣ (X ^ 2 - C a).eval 1 := by simpa [dvd_sub_comm] using ha
+  have hu' : (2 : ℤ_[2]) ^ (1 + 1) ∣ u - 1 := by norm_num [hu]
+  exact pow_dvd_sub_of_eval_eq_zero_of_dvd_pow (IsRegular.of_ne_zero two_ne_zero).left hd he ha'
+    hu' (by simp [hua])
 
 end TauCeti.Examples
