@@ -19,7 +19,8 @@ particular every relation `dz = c dt` in `Ω[F⁄k]` becomes the identity `(e z)
 Laurent series.
 
 If `e` sends `t` to the variable `X`, then `(e t)' = 1`, so `dt ≠ 0`. This is how a Laurent
-expansion certifies that an element of a function field is separating.
+expansion certifies that `dt ≠ 0`; when `Ω[F⁄k]` is one-dimensional (for instance when a function
+field `F / k` is separably generated), this makes `t` separating.
 
 ## Main results
 
@@ -49,9 +50,9 @@ theorem derivative_algHom_eq_mul_of_D_eq_smul {k F A : Type*} [CommRing k] [Comm
     rw [Algebra.smul_def, map_mul, AlgHom.commutes, laurentSeries_algebraMap_mul_eq_smul]
   have _ : IsScalarTower k F (LaurentSeries A) := ⟨fun a z f ↦ by
     -- The induced algebra acts by multiplication with the expansion of the scalar.
-    change e (a • z) * f = a • (e z * f)
-    rw [hek, ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul,
-      mul_assoc]⟩
+    rw [Algebra.smul_def (A := LaurentSeries A) (a • z), Algebra.smul_def (A := LaurentSeries A) z,
+      RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, hek,
+      ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul, mul_assoc]⟩
   -- The source of the Laurent derivation uses algebra scalars, while its target uses
   -- coefficientwise scalars. Both actions factor through `A`, giving scalar compatibility.
   have _ : @IsScalarTower k A (LaurentSeries A)
@@ -72,8 +73,7 @@ theorem derivative_algHom_eq_mul_of_D_eq_smul {k F A : Type*} [CommRing k] [Comm
   simp only [D', Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
     laurentSeriesDerivation_apply, Algebra.smul_def] at h'
   -- The scalar action of the induced algebra is multiplication by the expansion.
-  change LaurentSeries.derivative A (e z) = e c * LaurentSeries.derivative A (e t) at h'
-  exact h'
+  rwa [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] at h'
 
 /-- **A Laurent variable has a nonzero differential.** If a `k`-algebra map `e : F → A((X))` into
 Laurent series over a nontrivial `k`-algebra `A` sends `t` to the variable `X`, then `dt ≠ 0` in
