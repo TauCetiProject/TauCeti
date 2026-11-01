@@ -105,6 +105,12 @@ theorem mk_mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {v : V} (hv : v �
     mk K v hv ∈ linearProjectionDomain G ↔ G v ≠ 0 := by
   simp [linearProjectionDomain, LinearMap.mem_ker]
 
+/-- A point lies in the domain of `Projectivization.linearProjection G` iff `G` does not vanish
+on its representative. -/
+theorem mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {y : Projectivization K V} :
+    y ∈ linearProjectionDomain G ↔ G y.rep ≠ 0 := by
+  simpa only [mk_rep] using mk_mem_linearProjectionDomain_iff G y.rep_nonzero
+
 /-- The map `[v] ↦ [G v]` of projective spaces induced by a linear map `G`, on the set
 `Projectivization.linearProjectionDomain G` of points where `G` does not vanish; it sends the
 projectivized kernel of `G` to an arbitrary point. For surjective `G` it is the projection from
