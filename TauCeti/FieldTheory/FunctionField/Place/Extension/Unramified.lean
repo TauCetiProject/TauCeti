@@ -55,6 +55,9 @@ unramified in it; for finite maps of curves `f : X → Y` and `g : Y → Z` the 
 
 ## Main results
 
+* `TauCeti.Place.not_isUnramified_of_degree_eq_one`: a place of degree one is not unramified once
+  the constants contain a purely inseparable element outside `k`, whatever the ramification
+  indices are.
 * `TauCeti.Place.isUnramified_iff_of_algEquiv`: unramifiedness is invariant under an isomorphism
   of the upstairs field over the base field.
 * `TauCeti.Place.isUnramified_tower_iff`: **a place is unramified in a tower exactly when it is
@@ -145,6 +148,18 @@ def branchPlaces : Set (Place k F) :=
 theorem mem_branchPlaces_iff {P : Place k F} :
     P ∈ branchPlaces k' F' ↔ ¬P.IsUnramified (k' := k') (F' := F') :=
   Iff.rfl
+
+/-- **A rational place is not unramified in a purely inseparable extension of constants**: if `P`
+has degree one and `k'` contains `α ∉ k` with `α ^ (q ^ n) ∈ k`, then `P` is not unramified in
+`F' / k'`, whatever the ramification indices are. -/
+theorem not_isUnramified_of_degree_eq_one {P : Place k F} (hP : P.degree = 1) (q : ℕ)
+    [ExpChar k q] {α : k'} (hα : α ∉ (algebraMap k k').range) {n : ℕ}
+    (hn : α ^ q ^ n ∈ (algebraMap k k').range) :
+    ¬ P.IsUnramified (k' := k') (F' := F') := by
+  intro hU
+  obtain ⟨P', hP'⟩ := hU.exists_restrict_eq
+  exact not_isSeparable_residueField_of_degree_eq_one P' (hP' ▸ hP) q hα hn
+    (hU.isSeparable hP')
 
 end Definition
 
