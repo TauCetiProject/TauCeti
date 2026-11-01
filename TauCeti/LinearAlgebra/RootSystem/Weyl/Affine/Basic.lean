@@ -79,6 +79,9 @@ hyperplanes are moved by integer amounts.
 * `RootPairing.intCast_lt_root'_apply_iff_of_mem_affineWeylGroup`: over an ordered ring, the
   affine Weyl group preserves the relation of lying on the same side of each affine root
   hyperplane.
+* `RootPairing.root'_apply_ne_intCast_of_exists_root'_apply_eq_add_intCast` and
+  `RootPairing.intCast_lt_root'_apply_iff_of_exists_root'_apply_eq_add_intCast`: the same two
+  statements for any map permuting the affine roots, shared with the extended affine Weyl group.
 
 ## References
 
@@ -264,34 +267,13 @@ theorem mem_affineWeylGroup_iff {f : N ≃ᵃ[R] N} :
   constructor
   · intro hf
     let S : Subgroup (N ≃ᵃ[R] N) :=
-      { carrier := {f | f.linear ∈ Subgroup.closure (range P.coreflection) ∧
-          f 0 ∈ P.corootSpan ℤ}
-        one_mem' := by
-          refine ⟨?_, by simp⟩
-          rw [← AffineEquiv.linearHom_apply, map_one]
-          exact one_mem _
-        mul_mem' := by
-          rintro f g ⟨hf, hf0⟩ ⟨hg, hg0⟩
-          refine ⟨?_, ?_⟩
-          · rw [← AffineEquiv.linearHom_apply, map_mul]
-            exact mul_mem hf hg
-          · rw [AffineEquiv.coe_mul, comp_apply, AffineEquiv.apply_eq_linear_add f (g 0)]
-            exact add_mem (P.mem_corootSpan_of_mem_closure_range_coreflection hf hg0) hf0
-        inv_mem' := by
-          rintro f ⟨hf, hf0⟩
-          have hlin : f⁻¹.linear = f.linear⁻¹ := by
-            rw [← AffineEquiv.linearHom_apply, map_inv, AffineEquiv.linearHom_apply]
-          refine ⟨hlin ▸ inv_mem hf, ?_⟩
-          have h : f⁻¹ 0 = f⁻¹.linear (-f 0) := by
-            have h := AffineEquiv.apply_eq_linear_add f.symm (f 0)
-            rw [f.symm_apply_apply 0] at h
-            rw [map_neg]
-            exact eq_neg_of_add_eq_zero_right h.symm
-          rw [h, hlin]
-          exact P.mem_corootSpan_of_mem_closure_range_coreflection (inv_mem hf) (neg_mem hf0) }
-    refine (Subgroup.closure_le S).mpr ?_ hf
+      AffineEquiv.semidirectSubgroup (Subgroup.closure (range P.coreflection))
+        (P.corootSpan ℤ).toAddSubgroup fun _ hw _ hv ↦
+          P.mem_corootSpan_of_mem_closure_range_coreflection hw hv
+    refine AffineEquiv.mem_semidirectSubgroup_iff.mp ((Subgroup.closure_le S).mpr ?_ hf)
     rintro _ ⟨⟨i, k⟩, rfl⟩
-    refine ⟨by simpa using Subgroup.subset_closure (mem_range_self i), ?_⟩
+    refine AffineEquiv.mem_semidirectSubgroup_iff.mpr
+      ⟨by simpa using Subgroup.subset_closure (mem_range_self i), ?_⟩
     rw [affineCoreflection_apply, map_zero, zero_add, Int.cast_smul_eq_zsmul]
     exact Submodule.smul_mem _ k (Submodule.subset_span (mem_range_self i))
   · rintro ⟨hl, h0⟩
@@ -332,14 +314,34 @@ theorem exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup [P.IsCrystallog
   rw [AffineEquiv.apply_eq_linear_add f x, map_add, hj', ← hm]
   simp
 
+/-- A map of the coweight space that permutes the affine roots, carrying each root functional
+`αⱼ` to `αⱼ' + m` with `m` an integer, preserves the set of points lying on no affine root
+hyperplane `αⱼ = m`. -/
+theorem root'_apply_ne_intCast_of_exists_root'_apply_eq_add_intCast {f : N → N}
+    (hf : ∀ j, ∃ (j' : ι) (m : ℤ), ∀ x, P.root' j (f x) = P.root' j' x + m) {x : N}
+    (hx : ∀ (j : ι) (m : ℤ), P.root' j x ≠ m) (j : ι) (m : ℤ) : P.root' j (f x) ≠ m := by
+  obtain ⟨j', m', h⟩ := hf j
+  intro h'
+  exact hx j' (m - m') (by push_cast; linear_combination (h x).symm.trans h')
+
+/-- Over an ordered ring, a map of the coweight space that permutes the affine roots, carrying
+each root functional `αⱼ` to `αⱼ' + m` with `m` an integer, preserves the relation of lying on the
+same side of each affine root hyperplane `αⱼ = m`. -/
+theorem intCast_lt_root'_apply_iff_of_exists_root'_apply_eq_add_intCast [PartialOrder R]
+    [IsOrderedAddMonoid R] {f : N → N}
+    (hf : ∀ j, ∃ (j' : ι) (m : ℤ), ∀ x, P.root' j (f x) = P.root' j' x + m) {x y : N}
+    (h : ∀ (j : ι) (m : ℤ), (m : R) < P.root' j y ↔ (m : R) < P.root' j x) (j : ι) (m : ℤ) :
+    (m : R) < P.root' j (f y) ↔ (m : R) < P.root' j (f x) := by
+  obtain ⟨j', m', hm⟩ := hf j
+  simpa only [hm, Int.cast_sub, sub_lt_iff_lt_add] using h j' (m - m')
+
 /-- For a crystallographic pairing, the affine Weyl group preserves the set of points lying on no
 affine root hyperplane `αⱼ = m` (for a real root system, the union of the open alcoves). -/
 theorem root'_apply_ne_intCast_of_mem_affineWeylGroup [P.IsCrystallographic]
     {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup) {x : N}
-    (hx : ∀ (j : ι) (m : ℤ), P.root' j x ≠ m) (j : ι) (m : ℤ) : P.root' j (f x) ≠ m := by
-  obtain ⟨j', m', h⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf j
-  intro h'
-  exact hx j' (m - m') (by push_cast; linear_combination (h x).symm.trans h')
+    (hx : ∀ (j : ι) (m : ℤ), P.root' j x ≠ m) (j : ι) (m : ℤ) : P.root' j (f x) ≠ m :=
+  P.root'_apply_ne_intCast_of_exists_root'_apply_eq_add_intCast
+    (P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf) hx j m
 
 /-- For a crystallographic pairing over an ordered ring, the affine Weyl group preserves the
 relation of lying on the same side of each affine root hyperplane `αⱼ = m`: if `x` and `y` are on
@@ -347,8 +349,8 @@ the same side of every such hyperplane, so are `f x` and `f y`. -/
 theorem intCast_lt_root'_apply_iff_of_mem_affineWeylGroup [PartialOrder R] [IsOrderedAddMonoid R]
     [P.IsCrystallographic] {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup) {x y : N}
     (h : ∀ (j : ι) (m : ℤ), (m : R) < P.root' j y ↔ (m : R) < P.root' j x) (j : ι) (m : ℤ) :
-    (m : R) < P.root' j (f y) ↔ (m : R) < P.root' j (f x) := by
-  obtain ⟨j', m', hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf j
-  simpa only [hm, Int.cast_sub, sub_lt_iff_lt_add] using h j' (m - m')
+    (m : R) < P.root' j (f y) ↔ (m : R) < P.root' j (f x) :=
+  P.intCast_lt_root'_apply_iff_of_exists_root'_apply_eq_add_intCast
+    (P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf) h j m
 
 end RootPairing

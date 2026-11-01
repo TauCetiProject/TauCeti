@@ -52,6 +52,15 @@ theorem fwdDiffCLM_apply (f : C(ℤ_[p], E)) (x : ℤ_[p]) :
 theorem coe_fwdDiffCLM (f : C(ℤ_[p], E)) :
     ⇑(fwdDiffCLM E f) = fwdDiff 1 f := (rfl)
 
+variable {E} in
+/-- Iterating the continuous difference operator gives the iterated forward difference. -/
+theorem _root_.ContinuousMap.coe_iterate_fwdDiffCLM (f : C(ℤ_[p], E)) (n : ℕ) :
+    ⇑((fwdDiffCLM E)^[n] f) = (fwdDiff 1)^[n] f := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp only [Function.iterate_succ_apply', coe_fwdDiffCLM, ih]
+
 @[simp]
 theorem fwdDiffCLM_const (c : E) :
     fwdDiffCLM E (ContinuousMap.const ℤ_[p] c) = 0 := by
@@ -108,6 +117,15 @@ variable [CompleteSpace E]
 theorem mahlerEquiv_fwdDiffCLM (f : C(ℤ_[p], E)) (n : ℕ) :
     mahlerEquiv E (fwdDiffCLM E f) n = mahlerEquiv E f (n + 1) := by
   simp only [mahlerEquiv_apply, coe_fwdDiffCLM, Function.iterate_succ_apply]
+
+variable {E} in
+/-- Iterated translation differences shift the Mahler coefficients by the number of iterations. -/
+@[simp]
+theorem _root_.ContinuousMap.mahlerEquiv_iterate_fwdDiffCLM (f : C(ℤ_[p], E)) (n k : ℕ) :
+    mahlerEquiv E ((fwdDiffCLM E)^[n] f) k = mahlerEquiv E f (n + k) := by
+  simp only [mahlerEquiv_apply, ContinuousMap.coe_iterate_fwdDiffCLM,
+    ← Function.iterate_add_apply]
+  rw [Nat.add_comm]
 
 /-- The normalized discrete primitive: insert a zero before the Mahler coefficients.
 It is a linear isometry, rather than merely an algebraic choice of a preimage. -/
