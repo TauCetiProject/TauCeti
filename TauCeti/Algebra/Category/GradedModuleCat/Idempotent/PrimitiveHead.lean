@@ -25,7 +25,8 @@ degree-zero corner `f A₀ f` need not be the line `k f`: it is isomorphic to th
 division algebra `End_A(Sf)`, so its dimension is `dim_k End_A(Sf)`, the constant graded dimension
 of `f • Sf`. A second primitive idempotent
 `f'` whose ungraded left ideal `A f'` is not isomorphic to `A f` kills `Sf`: otherwise `A f'`
-would cover `Sf` as well, and projective covers are unique.
+would cover `Sf` as well, and projective covers are unique. In particular the heads of such `f`
+and `f'` are not isomorphic, even as ungraded modules.
 
 For a complete family of orthogonal primitive idempotents `eᵢ` of degree zero with pairwise
 nonisomorphic left ideals `A eᵢ`, the heads `Sᵢ` therefore satisfy the hypotheses of the general
@@ -41,6 +42,8 @@ semisimplicity of `A₀` and nonnegativity of the grading, so the field need not
   cover.
 * `TauCeti.smul_gradedPositiveMulQuotient_eq_zero`: a primitive idempotent with nonisomorphic left
   ideal kills `A f / A₊f`.
+* `TauCeti.isEmpty_linearEquiv_gradedPositiveMulQuotient`: primitive idempotents with
+  nonisomorphic left ideals have nonisomorphic heads.
 * `TauCeti.smulGradedDimension_gradedPositiveMulQuotient_self`: `gdim(f • Sf) = dim_k End_A(Sf)`.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent`:
   the heads of a complete family of primitive idempotents exhaust the simple finite graded
@@ -177,6 +180,21 @@ theorem smulGradedDimension_gradedPositiveMulQuotient_eq_zero {f f' : A}
       exact smul_gradedPositiveMulQuotient_eq_zero hneg hf hf₀ hf' hnoniso z
   ext p
   simp [GradedModuleCat.coeff_smulGradedDimension, hbot]
+
+/-- **Heads of primitive idempotents with nonisomorphic left ideals are nonisomorphic**, even as
+ungraded modules: `f'` fixes the nonzero class of `f'` in `A f' / A₊f'`, but kills `A f / A₊f`. -/
+theorem isEmpty_linearEquiv_gradedPositiveMulQuotient {f f' : A} (hf : IsPrimitiveIdempotent f)
+    (hf₀ : f ∈ 𝒜 0) (hf' : IsPrimitiveIdempotent f') (hf'₀ : f' ∈ 𝒜 0)
+    (hnoniso : IsEmpty ((Ideal.span {f} : Ideal A) ≃ₗ[A] (Ideal.span {f'} : Ideal A))) :
+    IsEmpty (gradedPositiveMulQuotient 𝒜 hf₀ ≃ₗ[A] gradedPositiveMulQuotient 𝒜 hf'₀) := by
+  refine ⟨fun φ => gradedPositiveMulQuotientMk_spanSingletonGenerator_ne_zero hneg hf'₀
+    hf'.ne_zero ?_⟩
+  have hgen : f' • spanSingletonGenerator f' = spanSingletonGenerator f' :=
+    Subtype.ext (by simp [hf'.isIdempotentElem.eq])
+  set y := gradedPositiveMulQuotientMk hf'₀ (spanSingletonGenerator f')
+  calc y = f' • y := by rw [← map_smul, hgen]
+    _ = φ (f' • φ.symm y) := by rw [map_smul, LinearEquiv.apply_symm_apply]
+    _ = 0 := by rw [smul_gradedPositiveMulQuotient_eq_zero hneg hf hf₀ hf' hnoniso, map_zero]
 
 /-- **The graded dimension of `f • (A f / A₊f)` is the constant `dim_k End_A(A f / A₊f)`**, the
 dimension of a division algebra by Schur, which need not be one over a field that does not split

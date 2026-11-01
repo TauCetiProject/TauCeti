@@ -18,6 +18,7 @@ the entry of an insertion at one of them in the other position, and compares upd
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
 send the last position to the last position. The image of an initial segment under `Fin.cons`
 is obtained by inserting the first entry into the corresponding image for the tail.
+A tuple of length three is determined by its three entries.
 
 ## Main results
 
@@ -50,6 +51,7 @@ is obtained by inserting the first entry into the corresponding image for the ta
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
   the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
+* `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
 -/
 
 public section
@@ -236,5 +238,16 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
 theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
     (i : Fin (n + 1)) (z : Fin n → α) : insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
   fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
+
+/-- A tuple of length three is determined by its three entries. -/
+theorem injective_apply_zero_one_two {α : Type*} :
+    Function.Injective fun x : Fin 3 → α ↦ (x 0, x 1, x 2) := by
+  intro x y h
+  simp only [Prod.mk.injEq] at h
+  funext m
+  match m with
+  | 0 => exact h.1
+  | 1 => exact h.2.1
+  | 2 => exact h.2.2
 
 end Fin

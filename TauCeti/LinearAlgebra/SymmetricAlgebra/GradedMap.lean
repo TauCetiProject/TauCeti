@@ -23,7 +23,8 @@ algebra `⨁ n, 𝒜 n`, the lift into the degree-one summand is degree-preservi
 In particular, a linear map `M → N` induces a degree-preserving map of symmetric algebras, the
 graded lift into the degree-one part of `Sym N`; its underlying map is `SymmetricAlgebra.map`. The
 bundled graded map allows linear equivalences to act on the projective spectrum of the symmetric
-algebra.
+algebra. Conversely, an algebra homomorphism of symmetric algebras is induced by a unique linear
+map exactly when the images of its generators lie in degree one (`existsUnique_map_eq_iff`).
 -/
 
 public section
@@ -162,5 +163,27 @@ theorem gradedMap_gradedZeroRingHom (f : M →ₗ[R] M) :
     (by simpa [homogeneousSubmodule] using a.property)
   simp only [GradedRingHom.gradedZeroRingHom_apply_coe, gradedMap_apply, RingHom.id_apply]
   rw [← hr, AlgHom.commutes]
+
+/-- An algebra homomorphism of symmetric algebras is induced by a unique linear map exactly
+when the images of the generators lie in degree one. -/
+theorem existsUnique_map_eq_iff
+    (φ : SymmetricAlgebra R M →ₐ[R] SymmetricAlgebra R N) :
+    (∃! f : M →ₗ[R] N, map R f = φ) ↔
+      ∀ m, φ (ι R M m) ∈ homogeneousSubmodule R N 1 := by
+  constructor
+  · rintro ⟨f, rfl, _⟩ m
+    simp
+  · intro hφ
+    let g : M →ₗ[R] homogeneousSubmodule R N 1 :=
+      (φ.toLinearMap.comp (ι R M)).codRestrict _ hφ
+    let f : M →ₗ[R] N := (homogeneousSubmoduleOneEquiv R N).toLinearMap.comp g
+    have hf (m : M) : ι R N (f m) = φ (ι R M m) :=
+      ι_homogeneousSubmoduleOneEquiv_apply R N (g m)
+    refine ⟨f, ((map_unique R f φ).mp fun m ↦ (hf m).symm).symm, ?_⟩
+    intro f' hf'
+    apply LinearMap.ext
+    intro m
+    apply ι_injective R N
+    exact ((map_apply_ι R f' m).symm.trans (AlgHom.congr_fun hf' _)).trans (hf m).symm
 
 end SymmetricAlgebra

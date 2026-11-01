@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 public import TauCeti.LinearAlgebra.End.NilpotentCentralizer
-import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
 
 /-!
 # Dimensions of nilpotent orbits in `sl n`
@@ -58,16 +57,14 @@ theorem finrank_ker_ad_sl_add_one_eq_sum_sq_conjugate_parts (hn : (Fintype.card 
     finrank K (LinearMap.ker (ad K (SpecialLinear.sl n K) x)) + 1 =
       ((jordanPartition (toLinAlgEquiv' (x : Matrix n n K)) hx).conjugate.parts.map
         (· ^ 2)).sum := by
-  -- The kernel of `ad x` on matrices is the centralizer of `x`, which the algebra isomorphism
-  -- `Matrix.toLinAlgEquiv'` carries to the centralizer of the corresponding endomorphism.
+  -- The kernel of `ad x` on matrices is the centralizer of `x`.
   have hker : LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) =
       Subalgebra.toSubmodule (Subalgebra.centralizer K {(x : Matrix n n K)}) := by
     ext y
     simp [Subalgebra.mem_centralizer_iff, LieRing.of_associative_ring_bracket, sub_eq_zero,
       eq_comm]
   rw [finrank_ker_ad_sl_add_one hn, hker, Subalgebra.finrank_toSubmodule,
-    (toLinAlgEquiv'.subalgebraMap _).toLinearEquiv.finrank_eq, AlgEquiv.map_centralizer,
-    Set.image_singleton, Module.End.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+    Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
 
 /-- **The dimension of a nilpotent orbit in `sl n`.** If the size of the matrices is nonzero in
 `K`, the tangent space `[sl n K, x]` to the adjoint orbit of a nilpotent `x` has dimension
