@@ -7,25 +7,21 @@ module
 
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.GroupTheory.ResiduallyFinite
+import TauCeti.GroupTheory.Finiteness
 
 /-!
 # Finitely generated residually finite groups are Hopfian
 
-A homomorphism out of a finitely generated monoid is determined by its values on a finite
-generating set, so there are only finitely many homomorphisms from a finitely generated monoid to
-a finite monoid.
+Malcev's theorem: a surjective endomorphism `f` of a finitely generated residually finite group
+`G` is injective. Indeed, for a finite quotient `π : G →* Q`, precomposition with `f` is an
+injective self-map of the set `G →* Q`, which is finite because a finitely generated group has
+only finitely many homomorphisms to a finite one (`Monoid.FG.finite_monoidHom`). It is therefore a
+bijection, so `π` factors through `f` and kills its kernel. Residual finiteness then forces the
+kernel to be trivial. Free groups of finite rank are therefore Hopfian, which is how one
+recognizes that a surjection between free groups of the same finite rank is an isomorphism.
 
-Malcev's theorem follows: a surjective endomorphism `f` of a finitely generated residually finite
-group `G` is injective. Indeed, for a finite quotient `π : G →* Q`, precomposition with `f` is an
-injective self-map of the finite set `G →* Q`, hence a bijection, so `π` factors through `f` and
-kills its kernel. Residual finiteness then forces the kernel to be trivial. Free groups of finite
-rank are therefore Hopfian, which is how one recognizes that a surjection between free groups of
-the same finite rank is an isomorphism.
+## Main result
 
-## Main results
-
-* `Monoid.FG.finite_monoidHom`: there are finitely many homomorphisms from a finitely generated
-  monoid to a finite monoid.
 * `Group.ResiduallyFinite.injective_of_surjective`: a surjective endomorphism of a finitely
   generated residually finite group is injective.
 
@@ -36,15 +32,6 @@ the same finite rank is an isomorphism.
 -/
 
 public section
-
-/-- There are finitely many homomorphisms from a finitely generated monoid to a finite monoid,
-since a homomorphism is determined by its values on a finite generating set. -/
-instance Monoid.FG.finite_monoidHom {M N : Type*} [Monoid M] [Monoid.FG M] [Monoid N]
-    [Finite N] : Finite (M →* N) := by
-  obtain ⟨S, hS, hSfin⟩ := Monoid.fg_iff.mp ‹_›
-  have := hSfin.to_subtype
-  refine Finite.of_injective (fun f : M →* N => fun s : S => f s) fun f g hfg => ?_
-  exact MonoidHom.eq_of_eqOn_denseM hS fun s hs => congr_fun hfg ⟨s, hs⟩
 
 namespace Group.ResiduallyFinite
 

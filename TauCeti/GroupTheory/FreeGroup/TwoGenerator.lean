@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.GroupTheory.FreeGroup.Reduce
+import TauCeti.GroupTheory.FreeGroup.Basis
 import TauCeti.GroupTheory.FreeGroup.Rank
 import TauCeti.GroupTheory.FreeGroup.ResiduallyP
 import TauCeti.GroupTheory.ResiduallyFinite
@@ -24,9 +25,9 @@ two-generated subgroup of a free group is trivial, infinite cyclic, or free of r
 The proof is the classical one. The subgroup `H = ⟨a, b⟩` is free by the Nielsen–Schreier theorem,
 say on a basis `ι`. As `H` is the image of `FreeGroup (Fin 2)`, the basis `ι` has at most two
 elements (`FreeGroupBasis.card_le_of_surjective`). It has at least two since `H` is not
-commutative. Hence `H ≃* FreeGroup (Fin 2)`, and the surjection `FreeGroup (Fin 2) →* H` becomes a
-surjective endomorphism of `FreeGroup (Fin 2)`, which is injective because finitely generated
-residually finite groups are Hopfian.
+commutative (`FreeGroupBasis.nontrivial_of_not_commute`). Hence `H ≃* FreeGroup (Fin 2)`, and
+the surjection `FreeGroup (Fin 2) →* H` becomes a surjective endomorphism of `FreeGroup (Fin 2)`,
+which is injective because finitely generated residually finite groups are Hopfian.
 
 ## Main results
 
@@ -55,16 +56,6 @@ namespace IsFreeGroup
 
 variable {F : Type*} [Group F] [IsFreeGroup F]
 
-/-- If two elements of a subgroup `H` of a free group do not commute, the basis of `H` has at
-least two elements. -/
-private theorem not_subsingleton_generators_of_not_commute {H : Subgroup F} {a b : F} (ha : a ∈ H)
-    (hb : b ∈ H) (h : ¬Commute a b) : ¬Subsingleton (Generators H) := by
-  intro hι
-  have : IsMulCommutative (FreeGroup (Generators H)) :=
-    FreeGroup.isMulCommutative_iff_subsingleton.mpr hι
-  have : IsMulCommutative H := (basis H).repr.symm.surjective.isMulCommutative
-  exact h (congrArg Subtype.val (this.is_comm.comm (⟨a, ha⟩ : H) ⟨b, hb⟩))
-
 /-- **Two noncommuting elements of a free group freely generate a free group of rank two.** -/
 theorem injective_lift_of_not_commute {a b : F} (h : ¬Commute a b) :
     Function.Injective (FreeGroup.lift ![a, b]) := by
@@ -75,9 +66,9 @@ theorem injective_lift_of_not_commute {a b : F} (h : ¬Commute a b) :
   have hle := (basis φ.range).card_le_of_surjective hsurj
   rw [Nat.card_fin] at hle
   have hge : ¬Nat.card (Generators φ.range) ≤ 1 := by
-    rw [Finite.card_le_one_iff_subsingleton]
-    exact not_subsingleton_generators_of_not_commute ⟨FreeGroup.of 0, by simp [φ]⟩
-      ⟨FreeGroup.of 1, by simp [φ]⟩ h
+    rw [Finite.card_le_one_iff_subsingleton, not_subsingleton_iff_nontrivial]
+    exact (basis φ.range).nontrivial_of_not_commute (x := ⟨a, FreeGroup.of 0, by simp [φ]⟩)
+      (y := ⟨b, FreeGroup.of 1, by simp [φ]⟩) fun hc => h (congrArg Subtype.val hc.eq)
   let e : Generators φ.range ≃ Fin 2 := Finite.equivFinOfCardEq (by omega)
   -- Identifying the range with `FreeGroup (Fin 2)`, `φ` becomes a surjective endomorphism.
   let ψ : FreeGroup (Fin 2) →* FreeGroup (Fin 2) :=

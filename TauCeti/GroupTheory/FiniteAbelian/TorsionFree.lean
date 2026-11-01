@@ -69,11 +69,10 @@ theorem Subgroup.exists_mulEquiv_closure_of_pairwise_commute {G : Type*} [Group 
   classical
   have := isMulCommutative_closure hs
   -- The elements of `s`, as elements of the subgroup they generate, generate it.
-  let t : Finset (closure (s : Set G)) := s.attach.image fun x => ⟨x.1, subset_closure x.2⟩
+  let t : Finset (closure (s : Set G)) := s.preimage Subtype.val Subtype.val_injective.injOn
   have ht : closure (t : Set (closure (s : Set G))) = ⊤ := by
-    rw [eq_top_iff, ← map_subtype_le_map_subtype, MonoidHom.map_closure, ← MonoidHom.range_eq_map,
-      range_subtype]
-    refine closure_le _ |>.mpr fun x hx => subset_closure ?_
-    exact ⟨⟨x, subset_closure hx⟩, by simpa [t] using hx, rfl⟩
+    rw [Finset.coe_preimage]
+    exact closure_closure_coe_preimage
   obtain ⟨k, hk, he⟩ := CommGroup.equiv_multiplicative_fin_int_of_isMulTorsionFree ht
-  exact ⟨k, hk.trans (Finset.card_image_le.trans s.card_attach.le), he⟩
+  exact ⟨k, hk.trans (Finset.card_le_card_of_injOn Subtype.val (fun x hx => by simpa [t] using hx)
+    Subtype.val_injective.injOn), he⟩
