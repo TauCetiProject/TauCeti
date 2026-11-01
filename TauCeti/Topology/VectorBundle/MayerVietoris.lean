@@ -496,6 +496,19 @@ private theorem singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap {W W'
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E (h hb)) n x := by
   rw [← TopPair.singularCohomologyMap_comp_apply, fiberThomPairOverMap_comp_thomPairOverMap]
 
+variable (F E) in
+omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] in
+/-- The fibre inclusion over `b` into the Thom pair `(E, E₀)`, followed by the inclusion of the
+pair over the whole base into the pair over a set `W'` covering the base, is the fibre inclusion
+into the pair over any `W ⊆ W'` containing `b`, followed by the inclusion of the pair over `W`
+into the pair over `W'`. -/
+theorem fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap {W W' : Set B}
+    (h : univ ⊆ W') (h' : W ⊆ W') {b : B} (hb : b ∈ W) :
+    fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E h =
+      fiberThomPairOverMap F E hb ≫ thomPairOverMap F E h' := by
+  rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
+    fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
+
 omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- Restricting a class to a smaller set and then to a still smaller one is restricting it to the
@@ -679,13 +692,10 @@ theorem exists_isThomClass_of_compactSpace [CompactSpace B] [VectorBundle ℝ F 
     _ x, isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩⟩
   obtain ⟨c, hct, hbc⟩ := mem_iUnion₂.1 (ht (mem_univ b))
   -- The fibre over `b` factors through the Thom pair over the trivializing set `(e c).baseSet`.
-  have hfib : fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht =
-      fiberThomPairOverMap F E hbc ≫ thomPairOverMap F E
-        (Finset.subset_set_biUnion_of_mem (f := fun c ↦ (e c).baseSet) hct) := by
-    rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
-      fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
-  rw [← TopPair.singularCohomologyMap_comp_apply, hfib, TopPair.singularCohomologyMap_comp_apply,
-    hx c hct, hu c b hbc]
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    fiberThomPairMap_comp_thomPairOverUnivIso_inv_comp_thomPairOverMap F E ht
+      (Finset.subset_set_biUnion_of_mem (f := fun c ↦ (e c).baseSet) hct) hbc,
+    TopPair.singularCohomologyMap_comp_apply, hx c hct, hu c b hbc]
   exact (mapEquiv ((e c).fiberPairIso ℝ hbc)).span_singleton_apply_eq_top_iff.2 hg
 
 end TauCeti
