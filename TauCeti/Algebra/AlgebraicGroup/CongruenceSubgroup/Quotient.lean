@@ -8,9 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Smooth
 public import TauCeti.NumberTheory.LocalField.Henselian
-import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.Smooth.AdicCompletion
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # Successive quotients of congruence subgroups
@@ -257,15 +257,6 @@ section DiscreteValuationRing
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   {H : Type*} [CommRing H] [_root_.HopfAlgebra O H]
 
-/-- The graded piece `m ^ n / m ^ (n + 1)` of a discrete valuation ring has as many elements as
-its residue field. -/
-private theorem natCard_map_maximalIdeal_pow (n : ℕ) :
-    Nat.card ((maximalIdeal O ^ n).map (Ideal.Quotient.mk (maximalIdeal O ^ (n + 1)))) =
-      Nat.card (ResidueField O) :=
-  (Nat.card_congr (((maximalIdeal O).quotEquivPowQuotPowSuccEquiv
-    (IsPrincipalIdealRing.principal _) IsDiscreteValuationRing.not_a_field' n).trans
-      ((maximalIdeal O).powQuotPowSuccEquivMapMkPowSuccPow n))).symm
-
 /-- **Indices of the congruence filtration of a smooth group.** Let `𝒢 = Spec H` be an affine group
 over a complete discrete valuation ring `O` with maximal ideal `m` and residue field `κ`, with `H`
 formally smooth and of finite type over `O`, and let `d` be the rank of the free `O`-module
@@ -289,7 +280,7 @@ theorem natCard_quotient_congruenceSubgroup_pow_succ [IsAdicComplete (maximalIde
     Nat.card_congr Multiplicative.toAdd,
     Nat.card_congr ((Module.finBasis O (CotangentSpace O H)).constr O).symm.toEquiv,
     Nat.card_fun, Nat.card_eq_fintype_card (α := Fin _), Fintype.card_fin,
-    natCard_map_maximalIdeal_pow]
+    TauCeti.IsDiscreteValuationRing.natCard_map_maximalIdeal_pow]
 
 end DiscreteValuationRing
 
