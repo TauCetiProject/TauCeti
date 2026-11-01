@@ -36,7 +36,8 @@ which is onto (the translations by `P∨` lie in `W_ext`). Thus `W_aff ∩ W_ext
 this specializes to the classical statement: `W_aff` is normal in `W_ext`, with quotient
 `W_ext / W_aff ≃ P∨ / Q∨`.
 
-Since `W_aff` is transitive on the alcoves, the stabilizer of the fundamental alcove in `W_ext`
+For a finite, reduced, irreducible, crystallographic pairing over an archimedean linearly ordered
+field, `W_aff` is transitive on the alcoves, so the stabilizer of the fundamental alcove in `W_ext`
 still maps onto `P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerToQuotient_surjective`, in
 `TauCeti.LinearAlgebra.RootSystem.Weyl.ExtendedAffine.Alcove`). Classically `W_aff` acts simply
 transitively on the alcoves, which makes this an isomorphism; that step is not taken here.
@@ -45,7 +46,10 @@ Like `W_aff`, the group `W_ext` permutes the affine root hyperplanes `αⱼ = m`
 the affine function `αⱼ` to `αⱼ' + m` for a root `αⱼ'` and an integer `m`
 (`RootPairing.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup`). This needs no
 crystallographic hypothesis, because the translations of `W_ext` are integral on the roots by
-definition.
+definition. Hence `W_ext` preserves the set of points lying on no affine root hyperplane
+(`RootPairing.root'_apply_ne_intCast_of_mem_extendedAffineWeylGroup`) and, over an ordered ring,
+the relation of lying on the same side of each of them
+(`RootPairing.intCast_lt_root'_apply_iff_of_mem_extendedAffineWeylGroup`).
 
 ## Main definitions
 
@@ -66,6 +70,10 @@ definition.
   `W_aff ∩ W_ext`.
 * `RootPairing.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup`: `W_ext`
   permutes the affine roots.
+* `RootPairing.root'_apply_ne_intCast_of_mem_extendedAffineWeylGroup` and
+  `RootPairing.intCast_lt_root'_apply_iff_of_mem_extendedAffineWeylGroup`: `W_ext` preserves the
+  set of points lying on no affine root hyperplane, and the relation of lying on the same side of
+  each of them.
 
 ## References
 
@@ -143,6 +151,24 @@ theorem exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup {f : N 
   obtain ⟨j', hj'⟩ := P.exists_root'_apply_eq_of_mem_closure_range_coreflection hf.1 j
   obtain ⟨m, hm⟩ := P.mem_coweightLattice.1 hf.2 j
   exact ⟨j', m, fun x ↦ by rw [AffineEquiv.apply_eq_linear_add f x, map_add, hj', hm]⟩
+
+/-- The extended affine Weyl group preserves the set of points lying on no affine root hyperplane
+`αⱼ = m` (for a real root system, the union of the open alcoves). -/
+theorem root'_apply_ne_intCast_of_mem_extendedAffineWeylGroup {f : N ≃ᵃ[R] N}
+    (hf : f ∈ P.extendedAffineWeylGroup) {x : N} (hx : ∀ (j : ι) (m : ℤ), P.root' j x ≠ m)
+    (j : ι) (m : ℤ) : P.root' j (f x) ≠ m :=
+  P.root'_apply_ne_intCast_of_exists_root'_apply_eq_add_intCast
+    (P.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup hf) hx j m
+
+/-- Over an ordered ring, the extended affine Weyl group preserves the relation of lying on the
+same side of each affine root hyperplane `αⱼ = m`: if `x` and `y` are on the same side of every
+such hyperplane, so are `f x` and `f y`. -/
+theorem intCast_lt_root'_apply_iff_of_mem_extendedAffineWeylGroup [PartialOrder R]
+    [IsOrderedAddMonoid R] {f : N ≃ᵃ[R] N} (hf : f ∈ P.extendedAffineWeylGroup) {x y : N}
+    (h : ∀ (j : ι) (m : ℤ), (m : R) < P.root' j y ↔ (m : R) < P.root' j x) (j : ι) (m : ℤ) :
+    (m : R) < P.root' j (f y) ↔ (m : R) < P.root' j (f x) :=
+  P.intCast_lt_root'_apply_iff_of_exists_root'_apply_eq_add_intCast
+    (P.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup hf) h j m
 
 /-! ### The quotient by the affine Weyl group -/
 

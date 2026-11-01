@@ -120,12 +120,10 @@ theorem apply_mem_fundamentalAlcove_of_mem_extendedAffineWeylGroup {f : N ≃ᵃ
     (hf : f ∈ P.extendedAffineWeylGroup) {x y : N} (hx : x ∈ fundamentalAlcove P b)
     (hfx : f x ∈ fundamentalAlcove P b) (hy : y ∈ fundamentalAlcove P b) :
     f y ∈ fundamentalAlcove P b := by
-  refine (mem_fundamentalAlcove_iff_of_mem hfx).mpr fun j k ↦ ?_
-  obtain ⟨j', m, hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup hf j
-  obtain ⟨h₁, h₂⟩ := (mem_fundamentalAlcove_iff_of_mem hx).mp hy j' (k - m)
-  push_cast at h₁ h₂
-  rw [hm, hm]
-  exact ⟨by simpa only [sub_lt_iff_lt_add] using h₁, fun h ↦ h₂ (by rw [← h]; ring)⟩
+  have hy' := (mem_fundamentalAlcove_iff_of_mem hx).mp hy
+  exact (mem_fundamentalAlcove_iff_of_mem hfx).mpr fun j k ↦
+    ⟨P.intCast_lt_root'_apply_iff_of_mem_extendedAffineWeylGroup hf (fun j k ↦ (hy' j k).1) j k,
+      P.root'_apply_ne_intCast_of_mem_extendedAffineWeylGroup hf (fun j k ↦ (hy' j k).2) j k⟩
 
 /-- **An element of the extended affine Weyl group stabilizes the fundamental alcove as soon as it
 carries one point of the alcove into the alcove.** -/
@@ -199,12 +197,9 @@ theorem exists_mem_affineWeylGroup_mul_mem_fundamentalAlcoveStabilizer {f : N �
     ∃ g ∈ P.affineWeylGroup, g * f ∈ P.fundamentalAlcoveStabilizer b := by
   obtain ⟨x, hx⟩ := fundamentalAlcove_nonempty b
   -- `f x` lies on no affine root hyperplane, since `f` permutes them.
-  have hfx (j : ι) (k : ℤ) : P.root' j (f x) ≠ k := by
-    obtain ⟨j', m, hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup hf j
-    rw [hm]
-    intro h
-    exact root'_ne_intCast_of_mem_fundamentalAlcove hx j' (k - m) (by push_cast; rw [← h]; ring)
-  obtain ⟨g, hg, hgfx⟩ := exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove b hfx
+  obtain ⟨g, hg, hgfx⟩ := exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove b
+    (P.root'_apply_ne_intCast_of_mem_extendedAffineWeylGroup hf
+      (root'_ne_intCast_of_mem_fundamentalAlcove hx))
   exact ⟨g, hg, (mem_fundamentalAlcoveStabilizer_iff_apply_mem hx).mpr
     ⟨mul_mem (P.affineWeylGroup_le_extendedAffineWeylGroup hg) hf, hgfx⟩⟩
 
