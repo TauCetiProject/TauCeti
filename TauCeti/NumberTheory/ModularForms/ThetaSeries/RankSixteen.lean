@@ -12,27 +12,31 @@ public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Eisenstein
 /-!
 # The theta series does not determine the lattice
 
-The lattices `E₈ ⊕ E₈` (`TauCeti.IntegralLattice.e8PowLattice 2`) and `D₁₆⁺`
-(`TauCeti.IntegralLattice.checkerboardPlusLattice 16`) are positive definite, even and unimodular
-of rank `16`. Every even unimodular lattice of rank `16` has theta series `E₄²`
-(`ZLattice.IsEven.thetaSeries_eq_E₄_sq`), so the real models of these two lattices have the same
-theta series.
+Every even unimodular lattice of rank `16` has theta series `E₄²`
+(`ZLattice.IsEven.thetaSeries_eq_E₄_sq`). Transferred to the real model of a positive definite
+rational lattice, this applies to `E₈ ⊕ E₈` (`TauCeti.IntegralLattice.e8PowLattice 2`) and `D₁₆⁺`
+(`TauCeti.IntegralLattice.checkerboardPlusLattice (8 * 2) _`), which are even and unimodular of rank
+`16`, so their real models have the same theta series. The index of `D₁₆⁺` is written `8 * 2`
+rather than `16` on purpose: this is the form in which
+`TauCeti.IntegralLattice.isEmpty_isometry_e8PowLattice_checkerboardPlusLattice` states the
+non-isometry at `k = 2`, so the two halves below are about the same term.
 
-They are nevertheless not isometric: the roots of `E₈ ⊕ E₈` span it, while those of `D₁₆⁺` lie in
-the checkerboard lattice `D₁₆` of index two
-(`TauCeti.IntegralLattice.isEmpty_isometry_e8PowLattice_checkerboardPlusLattice`). A real linear
-isometry carrying one real model onto the other would induce an isometry of the rational lattices
+The two lattices are nevertheless not isometric: the roots of `E₈ ⊕ E₈` span it, while those of
+`D₁₆⁺` lie in the checkerboard lattice `D₁₆` of index two. A real linear isometry carrying one real
+model onto the other would induce an isometry of the rational lattices
 (`TauCeti.IntegralLattice.Isometry.ofRealModel`), so no such isometry exists. Together these say
 that the theta series of a positive definite lattice does not determine its isometry class, even
 among the even unimodular lattices of a given rank.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.thetaSeries_realModel_eq_E₄_sq`: the real model of an even unimodular
+  positive definite rational lattice of rank `16` has theta series `E₄²`.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_e8PowLattice_two`: `Θ_{E₈ ⊕ E₈} = E₄²`.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardPlusLattice_sixteen`:
   `Θ_{D₁₆⁺} = E₄²`.
-* `TauCeti.IntegralLattice.map_realModel_e8PowLattice_ne_realModel_checkerboardPlusLattice`: for
-  `k ≥ 2`, no real linear isometry carries the real model of `E₈^k` onto that of `D_{8k}⁺`.
+* `TauCeti.IntegralLattice.map_realModel_ne_realModel`: if two positive definite rational lattices
+  are not isometric, no real linear isometry carries the real model of one onto that of the other.
 * `TauCeti.IntegralLattice.not_forall_exists_map_eq_of_thetaSeries_eq`: there are even unimodular
   full lattices with equal theta series that are not carried onto each other by any linear
   isometry of the ambient spaces.
@@ -51,55 +55,41 @@ open ModularForm
 
 namespace TauCeti.IntegralLattice
 
-/-! ### The real models are even unimodular -/
-
-private theorem isEven_realModel_e8PowLattice_two :
-    ZLattice.IsEven ((e8PowLattice 2).realModel (isPosDef_e8PowLattice 2)) :=
-  ((e8PowLattice 2).isEven_realModel_iff _).mpr (isEven_e8PowLattice 2)
-
-private theorem isUnimodular_realModel_e8PowLattice_two :
-    ZLattice.IsUnimodular ((e8PowLattice 2).realModel (isPosDef_e8PowLattice 2)) :=
-  ((e8PowLattice 2).isUnimodular_realModel_iff _).mpr (isUnimodular_e8PowLattice 2)
-
-private theorem isEven_realModel_checkerboardPlusLattice_sixteen :
-    ZLattice.IsEven ((checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).realModel
-      (isPosDef_checkerboardPlusLattice _ _)) :=
-  ((checkerboardPlusLattice _ _).isEven_realModel_iff _).mpr (isEven_checkerboardPlusLattice _ _)
-
-private theorem isUnimodular_realModel_checkerboardPlusLattice_sixteen :
-    ZLattice.IsUnimodular ((checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).realModel
-      (isPosDef_checkerboardPlusLattice _ _)) :=
-  ((checkerboardPlusLattice _ _).isUnimodular_realModel_iff _).mpr
-    (isUnimodular_checkerboardPlusLattice _ _)
+variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
 /-! ### The theta series -/
+
+/-- **The theta series of an even unimodular lattice of rank `16` is `E₄²`**, for the real model of
+a positive definite rational lattice. -/
+theorem thetaSeries_realModel_eq_E₄_sq {M : IntegralLattice V} (hM : M.IsPosDef)
+    (heM : M.IsEven) (huM : M.IsUnimodular) (hV : Module.finrank ℚ V = 16) :
+    ZLattice.thetaSeries (M.realModel hM) = E₄ ^ 2 :=
+  ((M.isEven_realModel_iff hM).mpr heM).thetaSeries_eq_E₄_sq
+    ((M.isUnimodular_realModel_iff hM).mpr huM)
+    (by rw [RealModelSpace.finrank_eq, finrank_carrier, hV])
 
 /-- **The theta series of `E₈ ⊕ E₈` is `E₄²`.** -/
 theorem thetaSeries_realModel_e8PowLattice_two :
     ZLattice.thetaSeries ((e8PowLattice 2).realModel (isPosDef_e8PowLattice 2)) = E₄ ^ 2 :=
-  isEven_realModel_e8PowLattice_two.thetaSeries_eq_E₄_sq isUnimodular_realModel_e8PowLattice_two
-    (by simp [RealModelSpace.finrank_eq, finrank_carrier])
+  thetaSeries_realModel_eq_E₄_sq _ (isEven_e8PowLattice 2) (isUnimodular_e8PowLattice 2) (by simp)
 
 /-- **The theta series of `D₁₆⁺` is `E₄²`.** -/
 theorem thetaSeries_realModel_checkerboardPlusLattice_sixteen :
     ZLattice.thetaSeries ((checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).realModel
       (isPosDef_checkerboardPlusLattice _ _)) = E₄ ^ 2 :=
-  isEven_realModel_checkerboardPlusLattice_sixteen.thetaSeries_eq_E₄_sq
-    isUnimodular_realModel_checkerboardPlusLattice_sixteen
-    (by simp [RealModelSpace.finrank_eq, finrank_carrier])
+  thetaSeries_realModel_eq_E₄_sq _ (isEven_checkerboardPlusLattice _ _)
+    (isUnimodular_checkerboardPlusLattice _ _) (by simp)
 
 /-! ### Non-isometry -/
 
-/-- **The real models of `E₈^k` and `D_{8k}⁺` are not isometric for `k ≥ 2`**: no real linear
-isometry of the ambient spaces carries the real model of `E₈^k` onto that of `D_{8k}⁺`. -/
-theorem map_realModel_e8PowLattice_ne_realModel_checkerboardPlusLattice {k : ℕ} (hk : 2 ≤ k)
-    (f : (e8PowLattice k).RealModelSpace (isPosDef_e8PowLattice k) ≃ₗᵢ[ℝ]
-      (checkerboardPlusLattice (8 * k) (dvd_mul_right 8 k)).RealModelSpace
-        (isPosDef_checkerboardPlusLattice _ _)) :
-    ((e8PowLattice k).realModel _).map (f.toLinearEquiv.restrictScalars ℤ).toLinearMap ≠
-      (checkerboardPlusLattice (8 * k) (dvd_mul_right 8 k)).realModel _ :=
-  fun hf ↦ (isEmpty_isometry_e8PowLattice_checkerboardPlusLattice hk).false
-    (Isometry.ofRealModel f hf)
+/-- **Non-isometric lattices have non-isometric real models**: if the positive definite rational
+lattices `M` and `N` are not isometric, no real linear isometry of the ambient spaces carries the
+real model of `M` onto that of `N`. -/
+theorem map_realModel_ne_realModel {M : IntegralLattice V} {N : IntegralLattice W}
+    {hM : M.IsPosDef} {hN : N.IsPosDef} (hMN : IsEmpty (M.Isometry N))
+    (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] N.RealModelSpace hN) :
+    (M.realModel hM).map (f.toLinearEquiv.restrictScalars ℤ).toLinearMap ≠ N.realModel hN :=
+  fun hf ↦ hMN.false (Isometry.ofRealModel f hf)
 
 /-- **The theta series does not determine the lattice.** There are even unimodular full lattices
 `L ⊆ E` and `M ⊆ F` with `Θ_L = Θ_M` such that no linear isometry `E ≃ F` carries `L` onto `M`:
@@ -112,11 +102,15 @@ theorem not_forall_exists_map_eq_of_thetaSeries_eq :
       ZLattice.IsEven M → ZLattice.IsUnimodular M →
       ZLattice.thetaSeries L = ZLattice.thetaSeries M →
       ∃ f : E ≃ₗᵢ[ℝ] F, L.map (f.toLinearEquiv.restrictScalars ℤ).toLinearMap = M := fun h ↦
-  have ⟨f, hf⟩ := h _ _ _ _ isEven_realModel_e8PowLattice_two
-    isUnimodular_realModel_e8PowLattice_two isEven_realModel_checkerboardPlusLattice_sixteen
-    isUnimodular_realModel_checkerboardPlusLattice_sixteen
+  have ⟨f, hf⟩ := h _ _ _ _
+    (((e8PowLattice 2).isEven_realModel_iff _).mpr (isEven_e8PowLattice 2))
+    (((e8PowLattice 2).isUnimodular_realModel_iff _).mpr (isUnimodular_e8PowLattice 2))
+    (((checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).isEven_realModel_iff
+      (isPosDef_checkerboardPlusLattice _ _)).mpr (isEven_checkerboardPlusLattice _ _))
+    (((checkerboardPlusLattice (8 * 2) (dvd_mul_right 8 2)).isUnimodular_realModel_iff
+      (isPosDef_checkerboardPlusLattice _ _)).mpr (isUnimodular_checkerboardPlusLattice _ _))
     (thetaSeries_realModel_e8PowLattice_two.trans
       thetaSeries_realModel_checkerboardPlusLattice_sixteen.symm)
-  map_realModel_e8PowLattice_ne_realModel_checkerboardPlusLattice le_rfl f hf
+  map_realModel_ne_realModel (isEmpty_isometry_e8PowLattice_checkerboardPlusLattice le_rfl) f hf
 
 end TauCeti.IntegralLattice
