@@ -16,8 +16,7 @@ isomorphism `e : T ≅ U` between the two functors `T` and `U` that the pseudofu
 `f`, as the composite `ρ_ T ≪≫ e ≪≫ (λ_ U).symm : T ≫ 𝟙 _ ≅ 𝟙 _ ≫ U`.
 
 This file reduces the conditions on such data to componentwise identities between the natural
-isomorphisms `e`: the naturality condition at identity `2`-cells
-(`Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id`), the unit and composition conditions
+isomorphisms `e`: the unit and composition conditions
 (`Cat.rightUnitor_trans_leftUnitor_symm_naturality_id`,
 `Cat.rightUnitor_trans_leftUnitor_symm_naturality_comp`), and the condition on an invertible
 modification with unitor components from a composite of two such transformations to the identity
@@ -28,18 +27,11 @@ of composite pseudofunctors, which `simp` and `rw` do not see through.
 
 public section
 
-universe w v w₁ v₁ u₁
+universe w v
 
 namespace CategoryTheory
 
 open Bicategory
-
-/-- The naturality condition of a strong transformation at an identity `2`-cell. -/
-lemma Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id {B : Type u₁}
-    [Bicategory.{w₁, v₁} B] {a b b' c : B} (u : a ⟶ b) (v : b ⟶ c) (u' : a ⟶ b') (v' : b' ⟶ c)
-    (θ : u ≫ v ⟶ u' ≫ v') :
-    𝟙 u ▷ v ≫ θ = θ ≫ u' ◁ 𝟙 v' := by
-  simp
 
 namespace Cat
 

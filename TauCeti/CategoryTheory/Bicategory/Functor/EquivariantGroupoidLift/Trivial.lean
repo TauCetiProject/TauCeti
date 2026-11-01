@@ -7,6 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Basic
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Monoidal.Action.Pseudofunctor
 public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 
 /-!
@@ -17,13 +19,14 @@ actions of a monoid `H` along a category `Γ` contains in particular a coherent 
 `Γ`: its transport functors form a pseudofunctor `LocallyDiscrete Γ ⥤ᵖ Cat`
 (`TauCeti.EquivariantGroupoidLift.transportPseudofunctor`). This file goes the other way when
 `H` acts trivially. A pseudofunctor `F : LocallyDiscrete Γ ⥤ᵖ Cat` gives a lift
-`F.toEquivariantGroupoidLift H` of the trivial actions of `H` on the categories `F p`: its joint
-pseudofunctor is the composite of `F` with the projection `Γ × SingleObj H ⥤ Γ`, and its fiber
-comparisons have identity components. Its transport pseudofunctor recovers `F`: there are strong
-transformations in both directions between them with identity components, whose naturality
-isomorphisms identify the transport functor along `g` with `F g`, and both composites are
-isomorphic to identities by invertible modifications with unitor components. So the transport
-pseudofunctor and `F` are equivalent in the bicategory of pseudofunctors.
+`F.toEquivariantGroupoidLift H` of the trivial actions (`TauCeti.trivialAction`) of `H` on the
+categories `F p`: its joint pseudofunctor is the composite of `F` with the projection
+`Γ × SingleObj H ⥤ Γ`, and its fiber comparisons have identity components. Its transport
+pseudofunctor recovers `F`: there are strong transformations in both directions between them with
+identity components, whose naturality isomorphisms identify the transport functor along `g` with
+`F g`, and both composites are isomorphic to identities by invertible modifications with unitor
+components. So the transport pseudofunctor and `F` are equivalent in the bicategory of
+pseudofunctors.
 
 For the trivial monoid this compares coherent transport along `Γ` without a symmetry group with
 equivariant lifts: every pseudofunctor on `Γ` is, up to these strong transformations, the
@@ -35,8 +38,6 @@ central composition isomorphisms it is the `2`-cocycle condition of
 
 ## Main declarations
 
-* `TauCeti.trivialAction H D`: the trivial action of `H` on a category `D`, with identity action
-  functors and identity unit and composition comparisons;
 * `CategoryTheory.Pseudofunctor.restrictFiberFst`: the comparison, with identity components and
   naturality isomorphisms given by the unit comparison of `F`, between the restriction of the
   composite of `F` with the projection to the fiber `{p} × SingleObj H` and the trivial action
@@ -66,27 +67,6 @@ central composition isomorphisms it is the `2`-cocycle condition of
 public section
 
 universe w v u₂ v₁ u₁
-
-namespace TauCeti
-
-open CategoryTheory Bicategory
-
-variable (H : Type u₂) [Monoid H]
-
-/-- The trivial categorical action of a monoid `H` on a category `D`, as a pseudofunctor
-`LocallyDiscrete (SingleObj H) ⥤ᵖ Cat`: every element of `H` acts by the identity functor, and
-the unit and composition comparisons are identities. -/
--- This is reducible so that its value `fiber (fun p ↦ trivialAction H (D p)) p` is `D p` at
--- reducible transparency. The transport functors of lifts of trivial actions are then functors
--- between the categories `D p` for `rw` and `simp`, not only up to unfolding.
-abbrev trivialAction (D : Cat.{v, w}) : LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w} where
-  obj _ := D
-  map _ := 𝟙 D
-  map₂ _ := 𝟙 _
-  mapId _ := Iso.refl _
-  mapComp _ _ := (λ_ _).symm
-
-end TauCeti
 
 namespace CategoryTheory.Pseudofunctor
 
