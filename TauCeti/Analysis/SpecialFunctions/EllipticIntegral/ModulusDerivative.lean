@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Elementary
-import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # Continuity and derivatives of Legendre's integrals in the modulus
@@ -24,18 +23,21 @@ This file studies Legendre's elliptic integrals as functions of the modulus `k`.
 * **Derivatives** (DLMF §19.4). For `k ≠ 0` and `k ^ 2 < 1`, with
   `k′² = 1 - k²` and `Δ = √(1 - k² sin² φ)`,
   `∂F/∂k = (E - k′² F) / (k k′²) - k sin φ cos φ / (k′² Δ)` and `∂E/∂k = (E - F) / k`. At `φ = π/2`
-  these become `K′(k) = (E(k) - k′² K(k)) / (k k′²)` and `E′(k) = (E(k) - K(k)) / k`. At `k = 0`
+  these become `dK/dk = (E(k) - k′² K(k)) / (k k′²)` and `dE/dk = (E(k) - K(k)) / k`. At `k = 0`
   every derivative in the modulus vanishes.
 
 The integrals are differentiated under the integral sign
-(`TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn`). For the first kind, the integrand of the
-derivative is rewritten as a difference of the integrands of `Π(φ, k, k²)` and `F(φ, k)`, and the
-evaluation `TauCeti.Real.legendrePi_modulus_sq` of `Π(φ, k, k²)` in terms of `E(φ, k)` supplies the
-integration by parts. For the second kind, the integrand of the derivative is already the
-difference of the integrands of `E(φ, k)` and `F(φ, k)`, divided by `k`.
+(`TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn`), using the smoothness
+`TauCeti.contDiffOn_one_sub_sq_mul_sin_sq_rpow` of the integrands. For the first kind, the
+integrand of the derivative is rewritten as a difference of the integrands of `Π(φ, k, k²)` and
+`F(φ, k)`, and the evaluation `TauCeti.Real.legendrePi_modulus_sq` of `Π(φ, k, k²)` in terms of
+`E(φ, k)` supplies the integration by parts. For the second kind, the integrand of the derivative
+is already the difference of the integrands of `E(φ, k)` and `F(φ, k)`, divided by `k`.
 
 These formulas are the input to Legendre's differential equations for `K` and `E` and to the proof
-of Legendre's relation `E K′ + E′ K - K K′ = π/2` by differentiation.
+by differentiation of Legendre's relation
+`E(k) K(k′) + E(k′) K(k) - K(k) K(k′) = π/2` for `0 < k < 1`, where `k′ = √(1 - k²)` is the
+complementary modulus.
 
 ## Main statements
 
@@ -68,20 +70,6 @@ private theorem singleton_prod_subset_setOf_fst_sq_lt_one {k : ℝ} (hk : k ^ 2 
     {k} ×ˢ uIcc a b ⊆ {z : ℝ × ℝ | z.1 ^ 2 < 1} := fun z hz ↦ by
   simpa [mem_singleton_iff.mp hz.1] using hk
 
-private theorem contDiffOn_one_sub_sq_mul_sin_sq_rpow (p : ℝ) :
-    ContDiffOn ℝ 1 (fun z : ℝ × ℝ ↦ (1 - z.1 ^ 2 * sin z.2 ^ 2) ^ p)
-      {z : ℝ × ℝ | z.1 ^ 2 < 1} :=
-  (by fun_prop : ContDiff ℝ 1 fun z : ℝ × ℝ ↦ 1 - z.1 ^ 2 * sin z.2 ^ 2).contDiffOn
-    |>.rpow_const_of_ne fun z hz ↦ (one_sub_mul_sin_sq_pos hz z.2).ne'
-
-/-- The partial derivative in the modulus of `(1 - k² sin² θ) ^ p`. -/
-private theorem hasDerivAt_one_sub_sq_mul_sin_sq_rpow {k : ℝ} (hk : k ^ 2 < 1) (p θ : ℝ) :
-    HasDerivAt (fun k ↦ (1 - k ^ 2 * sin θ ^ 2) ^ p)
-      (-(2 * p * k * sin θ ^ 2 * (1 - k ^ 2 * sin θ ^ 2) ^ (p - 1))) k := by
-  have h := (((hasDerivAt_pow 2 k).mul_const (sin θ ^ 2)).const_sub 1).rpow_const
-    (p := p) (Or.inl (one_sub_mul_sin_sq_pos hk θ).ne')
-  exact h.congr_deriv (by push_cast; ring)
-
 /-- **Differentiation in the modulus under the integral sign.** For `k ^ 2 < 1` and every real
 exponent `p`, the derivative in `k` of `∫ θ in a..b, (1 - k² sin² θ) ^ p` is
 `∫ θ in a..b, -2 p k sin² θ (1 - k² sin² θ) ^ (p - 1)`. The cases `p = -1/2` and `p = 1/2` over
@@ -89,7 +77,7 @@ exponent `p`, the derivative in `k` of `∫ θ in a..b, (1 - k² sin² θ) ^ p` 
 theorem hasDerivAt_integral_one_sub_sq_mul_sin_sq_rpow {k : ℝ} (hk : k ^ 2 < 1) (p a b : ℝ) :
     HasDerivAt (fun k ↦ ∫ θ in a..b, (1 - k ^ 2 * sin θ ^ 2) ^ p)
       (∫ θ in a..b, -(2 * p * k * sin θ ^ 2 * (1 - k ^ 2 * sin θ ^ 2) ^ (p - 1))) k := by
-  have hG := contDiffOn_one_sub_sq_mul_sin_sq_rpow p
+  have hG := contDiffOn_one_sub_sq_mul_sin_sq_rpow (n := 1) p
   obtain ⟨-, h⟩ := hasDerivAt_intervalIntegral_of_contDiffOn isOpen_setOf_fst_sq_lt_one hG
     (singleton_prod_subset_setOf_fst_sq_lt_one hk a b)
   refine h.congr_deriv (integral_congr fun θ _ ↦ ?_)
