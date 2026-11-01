@@ -471,6 +471,46 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
   · rw [(hn z).2.2.2] at hv
     simp [hψ, ← hv]
 
+/-- Let `ψ` be a continuous family of continuous linear maps `ψ z : ℂ → V` along a `C²` immersed
+circle `f`, with `ψ 1` injective and valued in the normal plane at `1`. For `r ≠ 0`, the tube
+`(u, t) ↦ f (exp (t i)) + r • ψ (exp (t i)) u` is differentiable at the origin with injective
+derivative `(u, t) ↦ t • τ + r • ψ 1 u`, for the velocity `τ` of `f` at `1`. -/
+private theorem exists_hasFDerivAt_tube {f : Circle → V} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 2 f)
+    (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z)) {ψ : Circle → ℂ →L[ℝ] V}
+    (hψc : Continuous ψ) (hψn : ∀ w, ψ 1 w ∈ normalSubspace (𝓡 1) f 1) (hψinj : Injective (ψ 1))
+    {r : ℝ} (hr : r ≠ 0) :
+    ∃ L : ℂ × ℝ →L[ℝ] V,
+      HasFDerivAt (fun v : ℂ × ℝ => f (Circle.exp v.2) + r • ψ (Circle.exp v.2) v.1) L 0 ∧
+        Injective L := by
+  -- The first term has derivative `t ↦ t • τ`, and the second is linear in `u` with coefficients
+  -- continuous in `t`.
+  set τ := tangentVector f 1
+  have hγ : HasDerivAt (f ∘ Circle.exp) τ 0 := by
+    have hd : ContDiff ℝ 2 (f ∘ Circle.exp) :=
+      contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
+    have := (hd.differentiable two_ne_zero 0).hasDerivAt
+    rwa [← tangentVector_circleExp, Circle.exp_zero] at this
+  have hA : ContinuousAt (fun t : ℝ => r • ψ (Circle.exp t)) 0 :=
+    ((hψc.comp Circle.exp.continuous).const_smul r).continuousAt
+  have hlin : HasFDerivAt (fun q : ℂ × ℝ => (r • ψ (Circle.exp q.2)) q.1)
+      ((r • ψ (Circle.exp 0)).comp (ContinuousLinearMap.fst ℝ ℂ ℝ)) 0 := by
+    simpa only [Prod.mk_zero_zero] using hA.hasFDerivAt_clm_apply_zero
+  have hcore := (HasFDerivAt.comp (x := (0 : ℂ × ℝ)) (g := f ∘ Circle.exp)
+    hγ.hasFDerivAt (hasFDerivAt_snd (𝕜 := ℝ) (E := ℂ) (F := ℝ))).add hlin
+  refine ⟨_, hcore.congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => by simp),
+    (injective_iff_map_eq_zero _).2 fun x hx => ?_⟩
+  -- `τ` is nonzero and orthogonal to the normal plane containing the values of `ψ 1`.
+  obtain ⟨hτ, hτn⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff hf himm 1
+  replace hx : x.2 • τ + r • ψ 1 x.1 = 0 := by simpa using hx
+  have ht : x.2 = 0 := by
+    have hτψ : ⟪τ, ψ 1 x.1⟫ = 0 := (hτn _).1 (hψn x.1)
+    have h := congrArg (fun y => ⟪τ, y⟫) hx
+    simp only [inner_add_right, real_inner_smul_right, hτψ, real_inner_self_eq_norm_sq,
+      mul_zero, add_zero, inner_zero_right] at h
+    exact (mul_eq_zero.mp h).resolve_right (pow_ne_zero 2 (norm_ne_zero_iff.mpr hτ))
+  rw [ht, zero_smul, zero_add, smul_eq_zero] at hx
+  exact Prod.ext (hψinj ((hx.resolve_left hr).trans (map_zero _).symm)) ht
+
 /-- **Solid torus neighbourhoods of knots in `ℝ³`, with their derivative at the core.** A `C²`
 embedded circle `f` in `ℝ³` has a solid torus neighbourhood `Φ` inside any neighbourhood of its
 image, whose reading `(u, t) ↦ Φ (u, exp (t i))` at the core point `(0, 1)`
@@ -530,37 +570,12 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
     refine interior_subset (hδU (mem_thickening_iff.mpr ⟨f q.2, mem_range_self _, ?_⟩))
     rw [dist_eq_norm, add_sub_cancel_left]
     exact (hle q).trans_lt hrδ
-  · -- Near the origin the reading is `(u, t) ↦ f (exp (t i)) + r • ψ (exp (t i)) u`: the first
-    -- term has derivative `t ↦ t • τ` for the velocity `τ` of `f` at `1`, and the second is linear
-    -- in `u` with coefficients continuous in `t`.
-    set τ := tangentVector f 1
-    have hγ : HasDerivAt (f ∘ Circle.exp) τ 0 := by
-      have hd : ContDiff ℝ 2 (f ∘ Circle.exp) :=
-        contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
-      have := (hd.differentiable two_ne_zero 0).hasDerivAt
-      rwa [← tangentVector_circleExp, Circle.exp_zero] at this
-    have hA : ContinuousAt (fun t : ℝ => r • ψ (Circle.exp t)) 0 :=
-      ((hψc.comp Circle.exp.continuous).const_smul r).continuousAt
-    have hlin : HasFDerivAt (fun q : ℂ × ℝ => (r • ψ (Circle.exp q.2)) q.1)
-        ((r • ψ (Circle.exp 0)).comp (ContinuousLinearMap.fst ℝ ℂ ℝ)) 0 := by
-      simpa only [Prod.mk_zero_zero] using hA.hasFDerivAt_clm_apply_zero
-    have hcore := (HasFDerivAt.comp (x := (0 : ℂ × ℝ)) (g := f ∘ Circle.exp)
-      hγ.hasFDerivAt (hasFDerivAt_snd (𝕜 := ℝ) (E := ℂ) (F := ℝ))).add hlin
-    refine ⟨_, hcore.congr_of_eventuallyEq ?_, (injective_iff_map_eq_zero _).2 fun x hx => ?_⟩
-    · filter_upwards [SolidTorus.eventually_coreReading_eq
-        (fun q : SolidTorus => f q.2 + r • ψ q.2 q.1)] with v ⟨_, hv⟩
-      simp [hv]
-    · -- `τ` is nonzero and orthogonal to the normal plane containing the values of `ψ 1`.
-      obtain ⟨hτ, hτn⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff hf himm 1
-      replace hx : x.2 • τ + r • ψ 1 x.1 = 0 := by simpa using hx
-      have ht : x.2 = 0 := by
-        have hτψ : ⟪τ, ψ 1 x.1⟫ = 0 := (hτn _).1 ((hψ 1).1 x.1)
-        have h := congrArg (fun y => ⟪τ, y⟫) hx
-        simp only [inner_add_right, real_inner_smul_right, hτψ, real_inner_self_eq_norm_sq,
-          mul_zero, add_zero, inner_zero_right] at h
-        exact (mul_eq_zero.mp h).resolve_right (pow_ne_zero 2 (norm_ne_zero_iff.mpr hτ))
-      rw [ht, zero_smul, zero_add, smul_eq_zero] at hx
-      exact Prod.ext ((hψ 1).2.2.1 ((hx.resolve_left hr.ne').trans (map_zero _).symm)) ht
+  · -- Near the origin the reading is the tube `(u, t) ↦ f (exp (t i)) + r • ψ (exp (t i)) u`.
+    obtain ⟨L, hL, hLinj⟩ := exists_hasFDerivAt_tube hf himm hψc (hψ 1).1 (hψ 1).2.2.1 hr.ne'
+    refine ⟨L, hL.congr_of_eventuallyEq ?_, hLinj⟩
+    filter_upwards [SolidTorus.eventually_coreReading_eq
+      (fun q : SolidTorus => f q.2 + r • ψ q.2 q.1)] with v ⟨_, hv⟩
+    simp [hv]
 
 /-- **Solid torus neighbourhoods of knots in `ℝ³`.** A `C²` embedded circle in `ℝ³` has a solid
 torus neighbourhood inside any neighbourhood of its image. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # Solid torus neighbourhoods of knots in the three-sphere
@@ -46,6 +47,29 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [Fact (finrank ℝ E = 3 + 1)]
+
+/-- If the reading of `Ψ : D² × S¹ → ℝ³` at its core point (`TauCeti.SolidTorus.coreReading`) has
+an injective derivative at the origin, then so has the reading in `E` of its image under an inverse
+stereographic chart, and that derivative is valued in the tangent space of the sphere at the core
+point. -/
+private theorem exists_hasFDerivAt_coreReading_stereographic'_symm_comp (p : sphere (0 : E) 1)
+    {Ψ : SolidTorus → EuclideanSpace ℝ (Fin 3)} {LΨ : ℂ × ℝ →L[ℝ] EuclideanSpace ℝ (Fin 3)}
+    (hLΨ : HasFDerivAt (SolidTorus.coreReading Ψ) LΨ 0) (hinj : Injective LΨ) :
+    ∃ L : ℂ × ℝ →L[ℝ] E,
+      HasFDerivAt (SolidTorus.coreReading fun q ↦ ((stereographic' 3 p).symm (Ψ q) : E)) L 0 ∧
+        Injective L ∧ ∀ v, ⟪((stereographic' 3 p).symm (Ψ (0, 1)) : E), L v⟫ = 0 := by
+  -- Read in `E`, the inverse chart `G` is smooth with injective derivative.
+  let G := ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' 3 p).symm
+  have hG : HasFDerivAt G (fderiv ℝ G (Ψ (0, 1))) (SolidTorus.coreReading Ψ 0) := by
+    rw [SolidTorus.coreReading_zero]
+    exact ((contDiff_coe_comp_stereographic'_symm p (k := 1)).differentiable one_ne_zero
+      _).hasFDerivAt
+  refine ⟨(fderiv ℝ G (Ψ (0, 1))).comp LΨ, (hG.comp 0 hLΨ).congr_of_eventuallyEq
+    (SolidTorus.coreReading_comp_eventuallyEq G Ψ),
+    (injective_fderiv_coe_comp_stereographic'_symm p _).comp hinj, fun v ↦ ?_⟩
+  -- `G` takes values in the unit sphere, so its derivative is orthogonal to its value.
+  exact inner_fderiv_eq_zero_of_eventually_norm_eq (ψ := G) (w := Ψ (0, 1))
+    (.of_forall fun y ↦ by simp [G, norm_eq_of_mem_sphere]) (LΨ v)
 
 /-- **Solid torus neighbourhoods of knots in the three-sphere, with their derivative at the core.**
 Every `C²` embedded circle `f` in a unit three-sphere has a solid torus neighbourhood `Φ` inside
@@ -94,27 +118,15 @@ theorem exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading
   refine ⟨c.symm ∘ Ψ, hback ▸ hΨ.comp he, ?_, ?_⟩
   · rintro _ ⟨q, rfl⟩
     exact hΨU (mem_range_self q)
-  -- Read in `E`, the inverse chart `G` is smooth with injective derivative, valued in the tangent
-  -- spaces of the sphere.
-  set G := ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' 3 p).symm
-  have hcG : (fun q ↦ ((c.symm ∘ Ψ) q : E)) = G ∘ Ψ := by
+  have hcΨ : (fun q ↦ ((c.symm ∘ Ψ) q : E)) = fun q ↦ ((stereographic' 3 p).symm (Ψ q) : E) := by
     funext q
-    simp [G, hc]
-  set y₀ := Ψ (0, 1)
-  have hG : HasFDerivAt G (fderiv ℝ G y₀) y₀ :=
-    ((contDiff_coe_comp_stereographic'_symm p (k := 1)).differentiable one_ne_zero y₀).hasFDerivAt
-  have hread : SolidTorus.coreReading (G ∘ Ψ) =ᶠ[𝓝 0] G ∘ SolidTorus.coreReading Ψ :=
-    SolidTorus.coreReading_comp_eventuallyEq G Ψ
-  refine ⟨(fderiv ℝ G y₀).comp LΨ, ?_, (injective_fderiv_coe_comp_stereographic'_symm p y₀).comp
-    hLΨinj, fun v ↦ ?_⟩
-  · rw [hcG]
-    refine HasFDerivAt.congr_of_eventuallyEq ?_ hread
-    have hG' : HasFDerivAt G (fderiv ℝ G y₀) (SolidTorus.coreReading Ψ 0) := by
-      rwa [SolidTorus.coreReading_zero]
-    exact hG'.comp 0 hLΨ
-  · have h0 : ((c.symm ∘ Ψ) (0, 1) : E) = G y₀ := congrFun hcG (0, 1)
-    rw [h0]
-    exact inner_fderiv_coe_comp_stereographic'_symm p y₀ (LΨ v)
+    simp [hc]
+  obtain ⟨L, hL, hLinj, horth⟩ :=
+    exists_hasFDerivAt_coreReading_stereographic'_symm_comp p hLΨ hLΨinj
+  refine ⟨L, by rwa [hcΨ], hLinj, fun v ↦ ?_⟩
+  rw [show ((c.symm ∘ Ψ) (0, 1) : E) = (stereographic' 3 p).symm (Ψ (0, 1)) from
+    congrFun hcΨ (0, 1)]
+  exact horth v
 
 /-- Every `C²` embedded circle in a unit three-sphere has a solid torus neighbourhood inside
 any prescribed neighbourhood of its image. -/

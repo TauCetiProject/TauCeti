@@ -70,6 +70,7 @@ vanish on it. If it is negative, precomposing with the reflection `(u, w) ↦ (c
 
 * `TauCeti.IsOrientationPreservingAtCore Φ o`: the solid torus `Φ` preserves orientation at the
   point `(0, 1)` of its core, for the boundary orientation of `S³` induced by `o`.
+* `TauCeti.SolidTorus.conjDisc`: the reflection `(u, w) ↦ (conj u, w)` of the solid torus.
 
 ## Main results
 
@@ -80,6 +81,10 @@ vanish on it. If it is negative, precomposing with the reflection `(u, w) ↦ (c
 * `TauCeti.IsOrientationPreservingAtCore.not_neg`: `Φ` does not preserve both orientations.
 * `TauCeti.isOrientationPreservingAtCore_unknotSolidTorus`: the standard solid torus
   neighbourhood of the unknot preserves the standard orientation.
+* `TauCeti.IsSolidTorusNeighborhood.comp_conjDisc`,
+  `TauCeti.isOrientationPreservingAtCore_comp_conjDisc_iff`: reflecting the disc of a solid torus
+  neighbourhood gives a solid torus neighbourhood of the same loop with the opposite orientation at
+  its core point.
 * `TauCeti.exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore`: every `C²` embedded
   circle in `S³` has solid torus neighbourhoods preserving either orientation at their core point,
   inside any neighbourhood of its image.
@@ -214,38 +219,59 @@ theorem isOrientationPreservingAtCore_unknotSolidTorus :
   rw [coe_unknotSolidTorus_zero_one, h₁, hI, ht, volumeForm_single_zero_two_three_one]
   exact one_pos
 
-/-! ### Orientation-preserving neighbourhoods of knots -/
+/-! ### Reflecting the disc -/
 
-/-- The reflection `(u, w) ↦ (conj u, w)` of the solid torus. -/
-private def conjDisc (p : SolidTorus) : SolidTorus :=
-  (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
+/-- The reflection `(u, w) ↦ (conj u, w)` of the solid torus. Precomposing a solid torus with it
+reverses its orientation at the core point
+(`TauCeti.isOrientationPreservingAtCore_comp_conjDisc_iff`). -/
+def SolidTorus.conjDisc : SolidTorus ≃ₜ SolidTorus where
+  toFun p := (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
+  invFun p := (Complex.conjLIE.toLinearIsometry.unitClosedBallMap p.1, p.2)
+  left_inv p := Prod.ext (Subtype.ext (by simp)) rfl
+  right_inv p := Prod.ext (Subtype.ext (by simp)) rfl
+  continuous_toFun :=
+    ((LinearIsometry.continuous_unitClosedBallMap _).comp continuous_fst).prodMk continuous_snd
+  continuous_invFun :=
+    ((LinearIsometry.continuous_unitClosedBallMap _).comp continuous_fst).prodMk continuous_snd
 
+namespace SolidTorus
+
+/-- The reflection conjugates the disc coordinate. -/
 @[simp]
-private theorem coe_conjDisc_fst (p : SolidTorus) : ((conjDisc p).1 : ℂ) = conj (p.1 : ℂ) := by
+theorem coe_conjDisc_fst (p : SolidTorus) : ((conjDisc p).1 : ℂ) = conj (p.1 : ℂ) := by
   simp [conjDisc]
 
+/-- The reflection keeps the circle coordinate. -/
 @[simp]
-private theorem conjDisc_snd (p : SolidTorus) : (conjDisc p).2 = p.2 :=
+theorem conjDisc_snd (p : SolidTorus) : (conjDisc p).2 = p.2 :=
   (rfl)
 
-private theorem conjDisc_conjDisc (p : SolidTorus) : conjDisc (conjDisc p) = p :=
+/-- The reflection is an involution. -/
+@[simp]
+theorem conjDisc_conjDisc (p : SolidTorus) : conjDisc (conjDisc p) = p :=
+  conjDisc.symm_apply_apply p
+
+/-- The reflection fixes the core circle. -/
+@[simp]
+theorem conjDisc_zero (z : Circle) : conjDisc (0, z) = (0, z) :=
   Prod.ext (Subtype.ext (by simp)) (by simp)
+
+end SolidTorus
 
 /-- Precomposing a solid torus neighbourhood with the reflection `(u, w) ↦ (conj u, w)` gives a
 solid torus neighbourhood of the same loop. -/
-private theorem IsSolidTorusNeighborhood.comp_conjDisc {X : Type*} [TopologicalSpace X]
+theorem IsSolidTorusNeighborhood.comp_conjDisc {X : Type*} [TopologicalSpace X]
     {f : Circle → X} {Φ : SolidTorus → X} (h : IsSolidTorusNeighborhood f Φ) :
-    IsSolidTorusNeighborhood f (Φ ∘ conjDisc) where
-  isEmbedding := h.isEmbedding.comp
-    ((LinearIsometry.isEmbedding_unitClosedBallMap _).prodMap Topology.IsEmbedding.id)
+    IsSolidTorusNeighborhood f (Φ ∘ SolidTorus.conjDisc) where
+  isEmbedding := h.isEmbedding.comp SolidTorus.conjDisc.isEmbedding
   apply_zero z := by
-    rw [← h.apply_zero z, Function.comp_apply]
-    exact congrArg Φ (Prod.ext (Subtype.ext (by simp)) (by simp))
+    rw [Function.comp_apply, SolidTorus.conjDisc_zero, h.apply_zero]
   isOpen_image := by
-    have himage : conjDisc '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} =
+    have himage : SolidTorus.conjDisc '' {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} =
         {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} := by
       ext p
-      refine ⟨?_, fun hp ↦ ⟨conjDisc p, by simpa using hp, conjDisc_conjDisc p⟩⟩
+      refine ⟨?_, fun hp ↦ ⟨SolidTorus.conjDisc p, by simpa using hp,
+        SolidTorus.conjDisc_conjDisc p⟩⟩
       rintro ⟨q, hq, rfl⟩
       simpa using hq
     rw [Set.image_comp, himage]
@@ -263,7 +289,7 @@ omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 4)] in
 /-- The reading at the core of `Φ` precomposed with the reflection `(u, w) ↦ (conj u, w)` is the
 reading of `Φ` precomposed with `(u, t) ↦ (conj u, t)`. -/
 private theorem coreReading_comp_conjDisc (Φ : SolidTorus → E) :
-    SolidTorus.coreReading (Φ ∘ conjDisc) =
+    SolidTorus.coreReading (Φ ∘ SolidTorus.conjDisc) =
       SolidTorus.coreReading Φ ∘ conjProd := by
   funext v
   by_cases hv : ‖v.1‖ ≤ 1
@@ -275,35 +301,63 @@ private theorem coreReading_comp_conjDisc (Φ : SolidTorus → E) :
     rw [SolidTorus.coreReading_of_not_norm_le _ hv, Function.comp_apply,
       SolidTorus.coreReading_of_not_norm_le _ hv']
 
+/-- If `Φ` preserves the opposite orientation at its core point, then its precomposition with the
+reflection `(u, w) ↦ (conj u, w)` preserves the orientation. -/
+private theorem IsOrientationPreservingAtCore.comp_conjDisc_of_neg
+    (h : IsOrientationPreservingAtCore Φ (-o)) :
+    IsOrientationPreservingAtCore (Φ ∘ SolidTorus.conjDisc) o := by
+  obtain ⟨L, hL, hneg⟩ := isOrientationPreservingAtCore_neg_iff.1 h
+  refine ⟨L.comp conjProd, ?_, ?_⟩
+  · have hread := coreReading_comp_conjDisc fun q ↦ (Φ q : E)
+    simp only [Function.comp_def] at hread ⊢
+    rw [hread]
+    have hL' : HasFDerivAt (SolidTorus.coreReading fun q ↦ (Φ q : E)) L (conjProd 0) := by
+      rwa [map_zero]
+    exact hL'.comp 0 conjProd.hasFDerivAt
+  · -- The reflection negates the derivative on `(i, 0)` and fixes it on `(1, 0)` and `(0, 1)`.
+    set w := ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)]
+    have hw : ![((Φ ∘ SolidTorus.conjDisc) (0, 1) : E), L.comp conjProd (1, 0),
+        L.comp conjProd (I, 0), L.comp conjProd (0, 1)] = Function.update w 2 (-w 2) := by
+      ext i : 1
+      fin_cases i <;> simp [w, ← map_neg, Prod.neg_mk]
+    rw [hw, o.volumeForm.map_update_neg, Function.update_eq_self]
+    exact neg_pos.2 hneg
+
+/-- Reflecting the disc reverses orientation at the core: `Φ` precomposed with the reflection
+`(u, w) ↦ (conj u, w)` preserves the orientation `o` at its core point exactly when `Φ` preserves
+the opposite orientation `-o`. -/
+theorem isOrientationPreservingAtCore_comp_conjDisc_iff :
+    IsOrientationPreservingAtCore (Φ ∘ SolidTorus.conjDisc) o ↔
+      IsOrientationPreservingAtCore Φ (-o) := by
+  refine ⟨fun h ↦ ?_, IsOrientationPreservingAtCore.comp_conjDisc_of_neg⟩
+  have h' := IsOrientationPreservingAtCore.comp_conjDisc_of_neg (Φ := Φ ∘ SolidTorus.conjDisc)
+    (o := -o) (by convert h; exact neg_neg o)
+  rwa [Function.comp_assoc, show (SolidTorus.conjDisc ∘ SolidTorus.conjDisc : _ → _) = id from
+    funext SolidTorus.conjDisc_conjDisc, Function.comp_id] at h'
+
+/-! ### Orientation-preserving neighbourhoods of knots -/
+
 /-- A unit vector `p` followed by the images of `(1, 0)`, `(i, 0)` and `(0, 1)` under an
 injective linear map `L : ℂ × ℝ → E` valued in `(ℝ ∙ p)ᗮ` is linearly independent, so the volume
 form does not vanish on it. -/
 private theorem volumeForm_ne_zero_of_injective {p : E} (hp : ‖p‖ = 1) {L : ℂ × ℝ →L[ℝ] E}
     (hL : Injective L) (horth : ∀ v, ⟪p, L v⟫ = 0) (o : Orientation ℝ E (Fin 4)) :
     o.volumeForm ![p, L (1, 0), L (I, 0), L (0, 1)] ≠ 0 := by
+  -- `(1, 0)`, `(i, 0)` and `(0, 1)` are linearly independent in `ℂ × ℝ`.
   have hstd : LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
     refine Fintype.linearIndependent_iff.2 fun g hg i ↦ ?_
-    simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, Prod.smul_mk, Prod.mk_add_mk,
-      smul_zero, add_zero, zero_add, Prod.mk_eq_zero, Complex.ext_iff] at hg
-    obtain ⟨⟨h₀, h₁⟩, h₂⟩ := hg
-    simp at h₀ h₁ h₂
-    fin_cases i <;> simp [h₀, h₁, h₂]
-  have hli : LinearIndependent ℝ ![p, L (1, 0), L (I, 0), L (0, 1)] := by
-    have hcomp := hstd.map' (L : ℂ × ℝ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hL)
-    refine linearIndependent_finCons.2 ⟨?_, fun hmem ↦ ?_⟩
-    · convert hcomp using 1
-      ext i
-      fin_cases i <;> rfl
-    · have hle : Submodule.span ℝ (Set.range ![L (1, 0), L (I, 0), L (0, 1)]) ≤ (ℝ ∙ p)ᗮ := by
-        rw [Submodule.span_le]
-        rintro _ ⟨i, rfl⟩
-        rw [SetLike.mem_coe, Submodule.mem_orthogonal_singleton_iff_inner_right]
-        fin_cases i <;> exact horth _
-      have := Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle hmem)
-      rw [real_inner_self_eq_norm_sq, hp] at this
-      norm_num at this
-  exact Orientation.volumeForm_apply_ne_zero_iff.2 hli
+    rw [Fin.sum_univ_three] at hg
+    fin_cases i
+    · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.re) hg
+    · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
+    · simpa using congrArg Prod.snd hg
+  have hcomp : LinearIndependent ℝ ![L (1, 0), L (I, 0), L (0, 1)] := by
+    convert hstd.map' (L : ℂ × ℝ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hL) using 1
+    ext i
+    fin_cases i <;> simp
+  refine Orientation.volumeForm_apply_ne_zero_iff.2
+    (hcomp.finCons_of_inner_eq_zero (norm_ne_zero_iff.1 (by simp [hp])) fun i ↦ ?_)
+  fin_cases i <;> exact horth _
 
 /-- **Orientation-preserving solid torus neighbourhoods of knots.** For either orientation `o` of
 `E`, every `C²` embedded circle `f` in the unit sphere `S³` of `E` has a solid torus neighbourhood
@@ -318,28 +372,9 @@ theorem exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore
     exists_isSolidTorusNeighborhood_sphere_hasFDerivAt_coreReading hf himm hinj hU
   rcases (volumeForm_ne_zero_of_injective (norm_eq_of_mem_sphere (Φ (0, 1))) hLinj horth
     o).lt_or_gt with hneg | hpos
-  · -- Reflecting the disc negates the derivative on `(i, 0)` and fixes it on `(1, 0)`, `(0, 1)`.
-    refine ⟨Φ ∘ conjDisc, hΦ.comp_conjDisc, (Set.range_comp_subset_range _ _).trans hΦU,
-      L.comp conjProd, ?_, ?_⟩
-    · have hread := coreReading_comp_conjDisc fun q ↦ (Φ q : E)
-      simp only [Function.comp_def] at hread ⊢
-      rw [hread]
-      have hL' : HasFDerivAt (SolidTorus.coreReading fun q ↦ (Φ q : E)) L (conjProd 0) := by
-        rwa [map_zero]
-      exact hL'.comp 0 conjProd.hasFDerivAt
-    · have hcore : ((Φ ∘ conjDisc) (0, 1) : E) = Φ (0, 1) :=
-        congrArg _ (congrArg Φ (Prod.ext (Subtype.ext (by simp)) (by simp)))
-      have hvec : ![((Φ ∘ conjDisc) (0, 1) : E), L.comp conjProd (1, 0),
-          L.comp conjProd (I, 0), L.comp conjProd (0, 1)] =
-          Function.update ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] 2 (-L (I, 0)) := by
-        rw [hcore]
-        ext i : 1
-        fin_cases i <;> simp [← map_neg, Prod.neg_mk]
-      rw [hvec, o.volumeForm.map_update_neg]
-      have := Function.update_eq_self (2 : Fin 4) ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)]
-      simp only [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] at this
-      rw [this]
-      exact neg_pos.2 hneg
+  · exact ⟨Φ ∘ SolidTorus.conjDisc, hΦ.comp_conjDisc, (Set.range_comp_subset_range _ _).trans hΦU,
+      isOrientationPreservingAtCore_comp_conjDisc_iff.2
+        (isOrientationPreservingAtCore_neg_iff.2 ⟨L, hL, hneg⟩)⟩
   · exact ⟨Φ, hΦ, hΦU, L, hL, hpos⟩
 
 end TauCeti

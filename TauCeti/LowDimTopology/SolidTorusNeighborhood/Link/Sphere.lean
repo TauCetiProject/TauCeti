@@ -27,7 +27,8 @@ instance on the Whitehead link `TauCeti.whiteheadLink`.
   finite family of pairwise disjoint `C²` embedded circles in `S³`.
 * `TauCeti.SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_sphere`: the same for a smooth
   link presentation in `S³`.
-* `TauCeti.SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`:
+* `TauCeti.exists_isSolidTorusLinkNeighborhood_sphere_isOrientationPreservingAtCore`,
+  `TauCeti.SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`:
   for any orientation of `E`, the neighbourhoods can be chosen to preserve orientation at their
   core points, as the surgery coefficients of rational surgery on the link require.
 
@@ -67,21 +68,33 @@ theorem SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_sphere {n : ℕ}
     (fun i z => (L i).isImmersion.mfderiv_injective (by simp) z)
     (fun i => (L i).isEmbedding.injective) L.pairwiseDisjoint_range
 
-/-- A smooth link presentation in the unit three-sphere of `E` admits pairwise disjoint solid-torus
-neighbourhoods of all its labeled components, each preserving orientation at its core point for a
+/-- A finite family of pairwise disjoint `C²` embedded circles in the unit three-sphere of `E` has
+pairwise disjoint solid-torus neighbourhoods, each preserving orientation at its core point for a
 given orientation `o` of `E`. These are the neighbourhoods in which the surgery coefficients of
 rational surgery on the link (`TauCeti.IsSolidTorusLinkNeighborhood.surgerySlope`) have their
 usual sign. -/
+theorem exists_isSolidTorusLinkNeighborhood_sphere_isOrientationPreservingAtCore [Finite ι]
+    {f : ι → Circle → sphere (0 : E) 1} (hf : ∀ i, ContMDiff (𝓡 1) (𝓡 3) 2 (f i))
+    (himm : ∀ i z, Injective (mfderiv (𝓡 1) (𝓡 3) (f i) z)) (hinj : ∀ i, Injective (f i))
+    (hdisj : Pairwise (Disjoint on fun i => range (f i))) (o : Orientation ℝ E (Fin 4)) :
+    ∃ Φ : ι → SolidTorus → sphere (0 : E) 1,
+      IsSolidTorusLinkNeighborhood f Φ ∧ ∀ i, IsOrientationPreservingAtCore (Φ i) o :=
+  exists_isSolidTorusLinkNeighborhood_and_of_forall_nhdsSet hdisj fun i _ hU =>
+    let ⟨Φ, hΦ, hΦU, ho⟩ :=
+      exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore (hf i) (himm i) (hinj i) o hU
+    ⟨Φ, hΦ, ho, hΦU⟩
+
+/-- A smooth link presentation in the unit three-sphere of `E` admits pairwise disjoint solid-torus
+neighbourhoods of all its labeled components, each preserving orientation at its core point for a
+given orientation `o` of `E`. -/
 theorem SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore
     {n : ℕ} (L : SmoothLinkEmbedding (𝓡 3) (sphere (0 : E) 1) n)
     (o : Orientation ℝ E (Fin 4)) :
     ∃ Φ : Fin n → SolidTorus → sphere (0 : E) 1,
       IsSolidTorusLinkNeighborhood (fun i => L i) Φ ∧ ∀ i, IsOrientationPreservingAtCore (Φ i) o :=
-  exists_isSolidTorusLinkNeighborhood_and_of_forall_nhdsSet L.pairwiseDisjoint_range
-    fun i _ hU =>
-      let ⟨Φ, hΦ, hΦU, ho⟩ := exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore
-        ((L i).contMDiff.of_le (by simp)) ((L i).isImmersion.mfderiv_injective (by simp))
-        (L i).isEmbedding.injective o hU
-      ⟨Φ, hΦ, ho, hΦU⟩
+  exists_isSolidTorusLinkNeighborhood_sphere_isOrientationPreservingAtCore
+    (fun i => (L i).contMDiff.of_le (by simp))
+    (fun i z => (L i).isImmersion.mfderiv_injective (by simp) z)
+    (fun i => (L i).isEmbedding.injective) L.pairwiseDisjoint_range o
 
 end TauCeti
