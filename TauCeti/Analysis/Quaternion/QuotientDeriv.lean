@@ -398,12 +398,6 @@ theorem hasRightQuotientFDerivAt_iff_tendsto_mul_inv :
 
 /-! ### Simultaneous left and right slopes -/
 
-/-- A quaternion commutes with every quaternion exactly when it is real. -/
-private theorem forall_mul_comm_iff_im_eq_zero {p : ℍ} : (∀ h, p * h = h * p) ↔ p.im = 0 := by
-  rw [← Quaternion.mem_center_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h,
-    Subalgebra.mem_center_iff]
-  exact forall_congr' fun _ ↦ eq_comm
-
 namespace HasLeftQuotientFDerivAt
 
 /-- If `f` has left slope `b` and right slope `a` at the same point, then `b = a`: both are the
@@ -418,8 +412,8 @@ theorem im_eq_zero_of_hasRightQuotientFDerivAt (hb : HasLeftQuotientFDerivAt f q
     (ha : HasRightQuotientFDerivAt f q a) : b.im = 0 := by
   have hD := hb.hasFDerivAt.unique ha.hasFDerivAt
   obtain rfl := hb.eq_of_hasRightQuotientFDerivAt ha
-  exact forall_mul_comm_iff_im_eq_zero.mp fun h ↦
-    (by simpa using DFunLike.congr_fun hD h : h * b = b * h).symm
+  exact (Quaternion.forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h).mp
+    fun h ↦ (by simpa using DFunLike.congr_fun hD h : h * b = b * h).symm
 
 end HasLeftQuotientFDerivAt
 
@@ -472,33 +466,6 @@ theorem _root_.HasFDerivAt.rightQuotientDifferentiableAt_iff {D : ℍ →L[ℝ] 
   rw [← hD.fderiv]
   exact rightQuotientDifferentiableAt_iff_hasRightQuotientFDerivAt_fderiv
 
-/-- The commutator with `p` followed by right multiplication by `c` vanishes identically exactly
-when `c = 0` or `p` is real. -/
-private theorem forall_sub_mul_eq_zero_iff {p c : ℍ} :
-    (∀ h, (p * h - h * p) * c = 0) ↔ c = 0 ∨ p.im = 0 := by
-  rw [← forall_mul_comm_iff_im_eq_zero]
-  refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hc h ↦ ?_, ?_⟩
-  · exact sub_eq_zero.mp ((mul_eq_zero.mp (H h)).resolve_right hc)
-  · rintro (rfl | H) h
-    · exact mul_zero _
-    · rw [H, sub_self, zero_mul]
-
-/-- Left multiplication by `c` of the commutator with `p` vanishes identically exactly when `c = 0`
-or `p` is real. -/
-private theorem forall_mul_sub_eq_zero_iff {p c : ℍ} :
-    (∀ h, c * (h * p - p * h) = 0) ↔ c = 0 ∨ p.im = 0 := by
-  rw [← forall_mul_comm_iff_im_eq_zero]
-  refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hc h ↦ ?_, ?_⟩
-  · exact (sub_eq_zero.mp ((mul_eq_zero.mp (H h)).resolve_left hc)).symm
-  · rintro (rfl | H) h
-    · exact zero_mul _
-    · rw [H, sub_self, mul_zero]
-
-/-- A quaternion is real exactly when its inverse is. -/
-private theorem im_inv_eq_zero_iff {p : ℍ} : p⁻¹.im = 0 ↔ p.im = 0 := by
-  simp_rw [← forall_mul_comm_iff_im_eq_zero, ← commute_iff_eq]
-  exact ⟨fun H h ↦ by simpa using (H h).inv_left₀, fun H h ↦ (H h).inv_left₀⟩
-
 namespace HasLeftQuotientFDerivAt
 
 /-- **Left product criterion.** If `f` and `g` have left slopes `b` and `c` at `q`, their product
@@ -507,7 +474,7 @@ theorem mul_iff (hf : HasLeftQuotientFDerivAt f q b) (hg : HasLeftQuotientFDeriv
     HasLeftQuotientFDerivAt (fun x ↦ f x * g x) q (b * g q + f q * c) ↔
       c = 0 ∨ (f q).im = 0 := by
   rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).hasLeftQuotientFDerivAt_iff,
-    ← forall_sub_mul_eq_zero_iff]
+    ← Quaternion.forall_sub_mul_eq_zero_iff]
   refine forall_congr' fun h ↦ ?_
   rw [← sub_eq_zero, iff_iff_eq]
   congr 1
@@ -535,7 +502,8 @@ theorem inv_iff (hf : HasLeftQuotientFDerivAt f q b) (hq : f q ≠ 0) :
       ((-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
         ((ContinuousLinearMap.mul ℝ ℍ).flip b)) q :=
     (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
-  rw [hD.hasLeftQuotientFDerivAt_iff, ← im_inv_eq_zero_iff, ← forall_sub_mul_eq_zero_iff]
+  rw [hD.hasLeftQuotientFDerivAt_iff, ← Quaternion.im_inv_eq_zero_iff,
+    ← Quaternion.forall_sub_mul_eq_zero_iff]
   refine forall_congr' fun h ↦ ?_
   have key : (-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
         ((ContinuousLinearMap.mul ℝ ℍ).flip b) h - h * -((f q)⁻¹ * b * (f q)⁻¹) =
@@ -571,7 +539,7 @@ theorem mul_iff (hf : HasRightQuotientFDerivAt f q a) (hg : HasRightQuotientFDer
     HasRightQuotientFDerivAt (fun x ↦ f x * g x) q (a * g q + f q * c) ↔
       a = 0 ∨ (g q).im = 0 := by
   rw [(hf.hasFDerivAt.fun_mul' hg.hasFDerivAt).hasRightQuotientFDerivAt_iff,
-    ← forall_mul_sub_eq_zero_iff]
+    ← Quaternion.forall_mul_sub_eq_zero_iff]
   refine forall_congr' fun h ↦ ?_
   rw [← sub_eq_zero, iff_iff_eq]
   congr 1
@@ -599,7 +567,8 @@ theorem inv_iff (hf : HasRightQuotientFDerivAt f q a) (hq : f q ≠ 0) :
       ((-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
         (ContinuousLinearMap.mul ℝ ℍ a)) q :=
     (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
-  rw [hD.hasRightQuotientFDerivAt_iff, ← im_inv_eq_zero_iff, ← forall_mul_sub_eq_zero_iff]
+  rw [hD.hasRightQuotientFDerivAt_iff, ← Quaternion.im_inv_eq_zero_iff,
+    ← Quaternion.forall_mul_sub_eq_zero_iff]
   refine forall_congr' fun h ↦ ?_
   have key : (-ContinuousLinearMap.mulLeftRight ℝ ℍ (f q)⁻¹ (f q)⁻¹).comp
         (ContinuousLinearMap.mul ℝ ℍ a) h - -((f q)⁻¹ * a * (f q)⁻¹) * h =
