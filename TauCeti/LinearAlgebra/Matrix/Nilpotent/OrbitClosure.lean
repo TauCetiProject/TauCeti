@@ -109,7 +109,7 @@ theorem zeroLocus_vanishingIdeal_orbit_eq_image_setOf_isNilpotent_of_jordanParti
       Function.uncurry '' {Y : Matrix n n K | IsNilpotent Y} := by
   ext y
   let Y : Matrix n n K := Function.curry y
-  have hy : Function.uncurry Y = y := rfl
+  have hy : Function.uncurry Y = y := Function.uncurry_curry y
   constructor
   · intro hY
     exact ⟨Y, isNilpotent_of_forall_rank_pow_le hR
@@ -120,7 +120,7 @@ theorem zeroLocus_vanishingIdeal_orbit_eq_image_setOf_isNilpotent_of_jordanParti
 
 /-- The Zariski closure of a subregular nilpotent class is the complement of the regular
 class inside the nilpotent locus, as an equality of sets of matrix points. -/
-theorem zeroLocus_vanishingIdeal_orbit_eq_image_diff_of_jordanPartition_parts_eq_pair
+theorem zeroLocus_vanishingIdeal_orbit_eq_image_setOf_isNilpotent_diff_orbit_of_parts_eq_pair
     {R S : Matrix n n K} (hR : IsNilpotent R) (hS : IsNilpotent S)
     (hreg : jordanPartition (toLin' R) ((isNilpotent_toLin'_iff R).2 hR) =
       Nat.Partition.indiscrete _)
@@ -133,7 +133,7 @@ theorem zeroLocus_vanishingIdeal_orbit_eq_image_diff_of_jordanPartition_parts_eq
           Set (Matrix n n K))) := by
   ext y
   let Y : Matrix n n K := Function.curry y
-  have hy : Function.uncurry Y = y := rfl
+  have hy : Function.uncurry Y = y := Function.uncurry_curry y
   constructor
   · intro h
     have hY := isNilpotent_of_forall_rank_pow_le hS
