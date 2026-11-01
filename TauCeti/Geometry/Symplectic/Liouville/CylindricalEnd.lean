@@ -20,13 +20,8 @@ on the cylindrical end `M \ W` and that the Liouville field is `r ∂_r` there, 
 So a Hamiltonian linear at infinity is smooth on the part of the cylindrical end where it equals
 `a r + b`, and there its Hamiltonian vector field can be computed from `dr`.
 
-Smoothness comes from the implicit function theorem. Write `W = {f ≤ c}` with `df(Z) > 0` along
-the boundary `f⁻¹(c)`. Near a point `x₀` outside `W`, the time `τ = log r(x)` is the solution of
-`f(ψ_{-τ}(x)) = c`, and the derivative of the left side in `τ` is `-df(Z) ≠ 0` at the boundary
-point `ψ_{-τ}(x₀)`. Since the flow is jointly smooth, the implicit function theorem
-(`ContDiffAt.implicitFunction`), applied in a chart at `x₀`, gives a smooth solution `τ(x)` near
-`x₀`, and `r = e^τ` there. At the boundary of `W` the radial coordinate is only continuous: it is
-constant on `W` and grows like `e^t` along the outgoing trajectories.
+At the boundary of `W` the radial coordinate is only continuous: it is constant on `W` and grows
+like `e^t` along the outgoing trajectories.
 
 The identity `dr(Z) = r` is the infinitesimal form of `r(ψ_s x) = e^s r(x)`.
 
@@ -66,6 +61,12 @@ domain `W`, the radial coordinate is smooth at every point outside `W`. -/
 theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
     ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleRadialCoordinate Z W) x := by
+  -- Smoothness comes from the implicit function theorem. Write `W = {f ≤ c}` with `df(Z) > 0`
+  -- along the boundary `f⁻¹(c)`. Near `x ∉ W`, the time `τ = log r(x')` is the solution of
+  -- `f(ψ_{-τ}(x')) = c`, and the derivative of the left side in `τ` is `-df(Z) ≠ 0` at the
+  -- boundary point `ψ_{-τ}(x)`. Since the flow is jointly smooth, the implicit function theorem
+  -- (`ContDiffAt.implicitFunction`), applied in a chart at `x`, gives a smooth solution `τ(x')`
+  -- near `x`, and `r = e^τ` there.
   have hZs := h.contMDiff_of_interior_eq hZ
   have hc := h.isCompleteVectorField hZ
   have hflow : ContMDiff (𝓘(ℝ, ℝ).prod I) I (⊤ : ℕ∞) (fun p : ℝ × M ↦ flowOf Z p.1 p.2) := by
