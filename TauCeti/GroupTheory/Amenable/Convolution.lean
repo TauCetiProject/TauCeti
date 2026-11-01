@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.OrbitIntegral
-public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
 public import TauCeti.MeasureTheory.Group.Convolution.UCB
 
 /-!
@@ -28,9 +27,7 @@ mean `m` on `UCB G` interacts with this smoothing.
   `m ((L_g h) ⋆ φ) = m (h ⋆ φ)`.
 * Convolution is associative across `L¹` and `L∞`: for kernels `h, k ∈ L¹(G, μ)`, smoothing `φ`
   by the `L¹` convolution `h ⋆ k` (`MeasureTheory.Lp.convolutionL`) is smoothing `φ` by `k` and
-  then the class of `k ⋆ φ` in `L∞` by `h`. Since `h ⋆ k = ∫ y, h y • L_y k ∂μ` is an
-  `L¹`-valued integral and `φ ↦ u ⋆ φ` depends continuously and linearly on the kernel `u`, both
-  sides are the orbit integral `∫ y, h y • L_y (k ⋆ φ) ∂μ`; no Fubini theorem is needed. Hence
+  then the class of `k ⋆ φ` in `L∞` by `h` (`MeasureTheory.Lp.convolutionUCB_convolutionL`). Hence
   `m ((h ⋆ k) ⋆ φ) = (∫ h dμ) * m (k ⋆ φ)`.
 
 Together with `h ⋆ (L_g φ) = (R_(g⁻¹) h) ⋆ φ`
@@ -47,8 +44,6 @@ not to depend on the choice of such a kernel.
   `m (h ⋆ ψ) = (∫ h dμ) * m ψ` for `ψ ∈ UCB G`.
 * `TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_leftTranslation`: a left-invariant mean
   satisfies `m ((L_g h) ⋆ φ) = m (h ⋆ φ)`.
-* `MeasureTheory.Lp.convolutionUCB_convolutionL`: mixed associativity, `(h ⋆ k) ⋆ φ = h ⋆ (k ⋆ φ)`
-  for `h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`.
 * `TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_convolutionL`: a left-invariant mean
   satisfies `m ((h ⋆ k) ⋆ φ) = (∫ h dμ) * m (k ⋆ φ)`.
 
@@ -80,19 +75,6 @@ theorem convolutionUCB_toLpTop (h : Lp ℝ 1 μ) (ψ : UCB G) :
   rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _)
       (BoundedContinuousFunction.coeFn_toLpTop μ (ψ : G →ᵇ ℝ)) x,
     UCB.integral_smul_leftTranslation_apply (L1.integrable_coeFn h)]
-
-/-- **Mixed associativity of convolution**: `(h ⋆ k) ⋆ φ = h ⋆ (k ⋆ φ)` for kernels
-`h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`. Here `h ⋆ k` is the convolution in `L¹(G, μ)`, and on the
-right `h` is convolved with the class in `L∞(G, μ)` of the function `k ⋆ φ ∈ UCB G`. -/
-theorem convolutionUCB_convolutionL (h k : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) :
-    convolutionUCB (convolutionL μ 1 ENNReal.one_ne_top h k) φ =
-      convolutionUCB h (BoundedContinuousFunction.toLpTop μ ℝ (convolutionUCB k φ : G →ᵇ ℝ)) := by
-  -- Push the continuous linear map `u ↦ u ⋆ φ` inside the integral defining `h ⋆ k`.
-  have hint := ((convolutionUCBL (μ := μ)).flip φ).integral_comp_comm
-    (integrable_smul_leftTranslation ENNReal.one_ne_top (L1.integrable_coeFn h) k)
-  simp only [ContinuousLinearMap.flip_apply, map_smul, convolutionUCBL_apply,
-    convolutionUCB_leftTranslation_apply] at hint
-  rw [convolutionUCB_toLpTop, hint, convolutionL_apply]
 
 end MeasureTheory.Lp
 
