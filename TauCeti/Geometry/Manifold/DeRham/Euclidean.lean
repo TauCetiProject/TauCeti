@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.DeRham.RealLine
 import TauCeti.Geometry.Manifold.DeRham.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.RingTheory.SimpleModule.Rank
@@ -215,17 +216,6 @@ private theorem subsingleton_compactlySupportedDeRhamCohomology_innerProductSpac
       (mem_exactCompactlySupportedForms_top hk hkE φ.2)
   exact (compactlySupportedDeRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop (⊤ : Opens E) rfl) k).toEquiv.subsingleton
-
-/-- Any two vectors of a one-dimensional real vector space satisfy a nontrivial linear relation. -/
-private theorem exists_smul_add_smul_eq_zero_of_finrank_eq_one {V : Type*} [AddCommGroup V]
-    [Module ℝ V] (hV : finrank ℝ V = 1) (x y : V) :
-    ∃ a b : ℝ, (a ≠ 0 ∨ b ≠ 0) ∧ a • x + b • y = 0 := by
-  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
-  have hxy : ¬LinearIndependent ℝ ![x, y] := fun h ↦ by
-    simpa [hV] using h.fintype_card_le_finrank
-  simp only [LinearIndependent.pair_iff, not_forall, not_and_or] at hxy
-  obtain ⟨a, b, h, hab⟩ := hxy
-  exact ⟨a, b, hab, h⟩
 
 /-- On a real inner product space `E` of dimension `n + 2`, read as the open subset `⊤` of itself,
 any two compactly supported closed top forms have a nontrivial linear combination that is the
