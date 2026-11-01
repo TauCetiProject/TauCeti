@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
 
+import TauCeti.Geometry.Euclidean.Inversion
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.ContMDiff.Sum
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
@@ -42,6 +43,12 @@ which carries two orientation-compatible balls of a connected manifold into one 
 centres by a diffeomorphism, this shows that the connected sum does not depend on its balls
 (`TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt`).
 
+* **Rotating both balls.** For a linear isometry `ρ` of `E`, the connected sum along `e₁ ∘ ρ` and
+  `e₂ ∘ ρ` is diffeomorphic to the connected sum along `e₁` and `e₂`, by the identity on both
+  punctured summands, as `ρ` commutes with the inversion in the unit sphere
+  (`TauCeti.ConnectedSum.nonempty_diffeomorph_of_comp_linearIsometryEquiv`). So only the
+  orientation of `E` relative to which both balls are compared matters, not its choice.
+
 The homeomorphism `TauCeti.ConnectedSum.congrLeftHomeomorph` needs the image of a closed ball under
 `e₂` to be closed, so `E` is proper (finite-dimensional) and `N` is Hausdorff.
 
@@ -59,6 +66,8 @@ The homeomorphism `TauCeti.ConnectedSum.congrLeftHomeomorph` needs the image of 
   `TauCeti.ConnectedSum.nonempty_diffeomorph_of_eventuallyEq`: connected sums along balls carried
   into one another near their centres by homeomorphisms or diffeomorphisms of the summands are
   homeomorphic or diffeomorphic.
+* `TauCeti.ConnectedSum.nonempty_diffeomorph_of_comp_linearIsometryEquiv`: rotating both balls by
+  a linear isometry of `E` does not change the connected sum.
 
 ## References
 
@@ -469,5 +478,97 @@ theorem nonempty_diffeomorph_of_eventuallyEq [ProperSpace E] [T2Space N] [T2Spac
   exact ⟨(congrLeftDiffeomorph h₁ h₁' h₂ d₁ d₁' d₂ φ hφ).trans <|
     (commDiffeomorph h₁' h₂ d₁' d₂).trans <|
     (congrLeftDiffeomorph h₂ h₂' h₁' d₂ d₂' d₁' ψ hψ).trans (commDiffeomorph h₂' h₁' d₂' d₁')⟩
+
+/-! ### Rotating both balls -/
+
+section LinearIsometry
+
+variable {e₁ e₁' : E → M} {e₂ e₂' : E → N} (ρ : E ≃ₗᵢ[ℝ] E)
+
+/-- The punctured summand of a ball does not change when the ball is precomposed with a linear
+isometry. -/
+private theorem puncture_le (hρ : ∀ v, e₁' v = e₁ (ρ v)) : puncture e₁ ≤ puncture e₁' := by
+  intro x hx
+  refine mem_puncture.2 ?_
+  rw [hρ, map_zero]
+  exact mem_puncture.1 hx
+
+/-- The map between the connected sums along `e₁, e₂` and along `e₁ ∘ ρ, e₂ ∘ ρ` which is the
+identity on both punctured summands. -/
+private def linearIsometryMap (hρ₁ : ∀ v, e₁' v = e₁ (ρ v)) (hρ₂ : ∀ v, e₂' v = e₂ (ρ v))
+    (h₁' : Injective e₁') (h₂' : Injective e₂') :
+    ConnectedSum e₁ e₂ → ConnectedSum e₁' e₂' :=
+  lift (inl e₁' e₂' ∘ Opens.inclusion (puncture_le ρ hρ₁))
+    (inr e₁' e₂' ∘ Opens.inclusion (puncture_le ρ hρ₂)) fun v hv _ _ ↦ by
+      refine (inl_eq_inr_iff h₁' h₂').2 ⟨ρ.symm v, by simpa using hv, ?_, ?_⟩
+      · simp [hρ₁]
+      · -- `ρ` commutes with the inversion in the unit sphere.
+        simp only [hρ₂]
+        rw [← ρ.coe_toLinearIsometry, LinearIsometry.map_inversion ρ.toLinearIsometry]
+        simp
+
+private theorem linearIsometryMap_comp_mk (hρ₁ : ∀ v, e₁' v = e₁ (ρ v))
+    (hρ₂ : ∀ v, e₂' v = e₂ (ρ v)) (h₁' : Injective e₁') (h₂' : Injective e₂') :
+    linearIsometryMap ρ hρ₁ hρ₂ h₁' h₂' ∘ mk e₁ e₂ =
+      mk e₁' e₂' ∘ Sum.map (Opens.inclusion (puncture_le ρ hρ₁))
+        (Opens.inclusion (puncture_le ρ hρ₂)) := by
+  ext (x | y) <;> simp [linearIsometryMap]
+
+private theorem linearIsometryMap_linearIsometryMap (hρ₁ : ∀ v, e₁' v = e₁ (ρ v))
+    (hρ₂ : ∀ v, e₂' v = e₂ (ρ v)) (h₁ : Injective e₁) (h₂ : Injective e₂) (h₁' : Injective e₁')
+    (h₂' : Injective e₂') (p : ConnectedSum e₁ e₂) :
+    linearIsometryMap ρ.symm (fun v ↦ by rw [hρ₁, ρ.apply_symm_apply])
+      (fun v ↦ by rw [hρ₂, ρ.apply_symm_apply]) h₁ h₂
+      (linearIsometryMap ρ hρ₁ hρ₂ h₁' h₂' p) = p := by
+  obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p <;> simp [linearIsometryMap]
+
+variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞}
+  [ChartedSpace H M] [ChartedSpace H N] [IsManifold I n M] [IsManifold I n N]
+
+/-- The identity on the punctured summands is `C^n` between the charts of the two connected
+sums. -/
+private theorem contMDiff_linearIsometryMap (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (h₁' : IsOpenEmbedding e₁') (h₂' : IsOpenEmbedding e₂')
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂)
+    (d₁' : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁') (d₂' : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂')
+    (hρ₁ : ∀ v, e₁' v = e₁ (ρ v)) (hρ₂ : ∀ v, e₂' v = e₂ (ρ v)) :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) h₁' h₂'
+    ContMDiff I I n (linearIsometryMap ρ hρ₁ hρ₂ h₁'.injective h₂'.injective) := by
+  let := chartedSpace (H := H) h₁ h₂
+  let := chartedSpace (H := H) h₁' h₂'
+  have := isManifold h₁ h₂ d₁ d₂
+  have := isManifold h₁' h₂' d₁' d₂'
+  rw [← (isLocalDiffeomorph_mk h₁ h₂ d₁ d₂).contMDiff_comp_iff (mk_surjective e₁ e₂) le_rfl,
+    linearIsometryMap_comp_mk]
+  exact (isLocalDiffeomorph_mk h₁' h₂' d₁' d₂').contMDiff.comp
+    ((contMDiff_inclusion _).sumMap (contMDiff_inclusion _))
+
+/-- **Rotating both balls does not change the connected sum.** For a linear isometry `ρ` of `E`,
+the connected sum along `e₁` and `e₂` is `C^n` diffeomorphic to the connected sum along
+`e₁' = e₁ ∘ ρ` and `e₂' = e₂ ∘ ρ`, by the identity on both punctured summands: `ρ` commutes with
+the inversion in the unit sphere, so the same points are glued. -/
+theorem nonempty_diffeomorph_of_comp_linearIsometryEquiv (h₁ : IsOpenEmbedding e₁)
+    (h₂ : IsOpenEmbedding e₂) (h₁' : IsOpenEmbedding e₁') (h₂' : IsOpenEmbedding e₂')
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂)
+    (d₁' : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁') (d₂' : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂')
+    (hρ₁ : ∀ v, e₁' v = e₁ (ρ v)) (hρ₂ : ∀ v, e₂' v = e₂ (ρ v)) :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) h₁' h₂'
+    Nonempty (ConnectedSum e₁ e₂ ≃ₘ^n⟮I, I⟯ ConnectedSum e₁' e₂') := by
+  have hρ₁' (v : E) : e₁ v = e₁' (ρ.symm v) := by simp [hρ₁]
+  have hρ₂' (v : E) : e₂ v = e₂' (ρ.symm v) := by simp [hρ₂]
+  let := chartedSpace (H := H) h₁ h₂
+  let := chartedSpace (H := H) h₁' h₂'
+  exact ⟨{ toFun := linearIsometryMap ρ hρ₁ hρ₂ h₁'.injective h₂'.injective
+           invFun := linearIsometryMap ρ.symm hρ₁' hρ₂' h₁.injective h₂.injective
+           left_inv := linearIsometryMap_linearIsometryMap ρ hρ₁ hρ₂ h₁.injective h₂.injective _ _
+           right_inv := fun p ↦ by
+             obtain ⟨x | y, rfl⟩ := mk_surjective e₁' e₂' p <;> simp [linearIsometryMap]
+           contMDiff_toFun := contMDiff_linearIsometryMap ρ h₁ h₂ h₁' h₂' d₁ d₂ d₁' d₂' hρ₁ hρ₂
+           contMDiff_invFun :=
+             contMDiff_linearIsometryMap ρ.symm h₁' h₂' h₁ h₂ d₁' d₂' d₁ d₂ hρ₁' hρ₂' }⟩
+
+end LinearIsometry
 
 end TauCeti.ConnectedSum
