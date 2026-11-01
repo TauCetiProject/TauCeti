@@ -127,6 +127,18 @@ theorem mk_surjective : Function.Surjective (mk Q hQ) :=
 theorem ker_mk : (mk Q hQ).ker = spinCKernel Q hQ :=
   QuotientGroup.ker_mk' _
 
+/-- Every fibre of `Spin(Q) × Circle → Spinᶜ(Q)` has exactly two elements. -/
+theorem card_fiber_mk (x : spinCGroup Q hQ) : Nat.card ((mk Q hQ) ⁻¹' {x}) = 2 := by
+  rw [Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective (mk_surjective Q hQ) x), ker_mk]
+  have heq : (spinCKernel Q hQ : Set (spinGroup Q × Circle)) =
+      {1, (spinGroup.negOne Q hQ, -1)} := by
+    ext p
+    simp [mem_spinCKernel_iff]
+  refine (Nat.card_congr (Set.equivOfEq heq)).trans ?_
+  exact Set.ncard_pair (by
+    intro h
+    exact spinGroup.negOne_ne_one Q hQ (congrArg Prod.fst h).symm)
+
 /-- `[-1, -1] = 1` in `Spinᶜ(Q)`. -/
 @[simp]
 theorem mk_negOne_neg_one : mk Q hQ (spinGroup.negOne Q hQ, -1) = 1 := by
@@ -283,6 +295,31 @@ theorem toSpecialOrthogonal_prod_det_surjective
   refine ⟨mk Q hQ (s, Circle.exp (Complex.arg z / 2)), ?_⟩
   rw [MonoidHom.prod_apply, toSpecialOrthogonal_mk, det_mk, ← Circle.exp_nsmul, nsmul_eq_mul,
     Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero, Circle.exp_arg]
+
+/-- Every fibre of the frame-and-determinant map has two elements when it is surjective and
+the form is nondegenerate in positive finite dimension. -/
+theorem card_fiber_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
+    (hQn : Q.Nondegenerate)
+    (hsurj : Function.Surjective ((toSpecialOrthogonal Q hQ).prod (det Q hQ)))
+    (y : TauCeti.QuadraticMap.specialOrthogonalGroup Q × Circle) :
+    Nat.card (((toSpecialOrthogonal Q hQ).prod (det Q hQ)) ⁻¹' {y}) = 2 := by
+  have : Nontrivial M := by
+    by_contra hM
+    let _ : Subsingleton M := not_nontrivial_iff_subsingleton.mp hM
+    apply hQ
+    ext v
+    simpa only [Subsingleton.elim v 0, zero_apply] using Q.map_zero
+  rw [Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective hsurj y)]
+  have heq : (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)) =
+      {1, ofCircle Q hQ (-1)} := by
+    ext x
+    simp [mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn]
+  refine (Nat.card_congr (Set.equivOfEq heq)).trans ?_
+  exact Set.ncard_pair (by
+    intro h
+    have hone : ofCircle Q hQ (1 : Circle) = 1 := map_one _
+    exact Circle.neg_ne_self (1 : Circle)
+      ((ofCircle_injective Q hQ) (h.symm.trans hone.symm)))
 
 end spinCGroup
 
