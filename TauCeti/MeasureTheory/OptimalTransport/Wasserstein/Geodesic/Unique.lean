@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.DisplacementInterpolation
 import Mathlib.Analysis.InnerProductSpace.Convex
 
 /-!
@@ -90,27 +90,19 @@ theorem eqOn_of_isGeodesicSegment_of_ae_subsingleton (hp1 : 1 < p) (hp : p ≠ �
     {γ γ' : ℝ → WassersteinSpace p X} (h : IsGeodesicSegment γ μ ν)
     (h' : IsGeodesicSegment γ' μ ν) : EqOn γ γ' (Icc 0 1) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans hp1).ne'
-  -- Each geodesic segment is the curve of laws of a dynamic plan on geodesic paths whose endpoint
-  -- law is an optimal coupling of `μ` and `ν`, hence is `π`.
-  have hplan {c : ℝ → WassersteinSpace p X} (hc : IsGeodesicSegment c μ ν) :
-      ∃ η : Measure C(I, X), IsProbabilityMeasure η ∧ (∀ᵐ γ ∂η, γ ∈ geodesicPaths X) ∧
-        (∀ t : I, η.timeMarginal t = ((c t : ProbabilityMeasure X) : Measure X)) ∧
-        η.endpointLaw = π := by
-    obtain ⟨η, hηP, hη, hmarg, hopt⟩ :=
-      exists_ae_mem_geodesicPaths_of_isGeodesicSegment hp1 hp hc
-    have hcoup := η.isCoupling_map_timeMarginal 0 1
-    rw [← Measure.endpointLaw_def, hmarg, hmarg, Icc.coe_zero, Icc.coe_one, hc.source,
-      hc.target] at hcoup
-    exact ⟨η, hηP, hη, hmarg,
-      hπ _ ((isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 ⟨hcoup, hopt⟩)⟩
-  obtain ⟨η, hηP, hη, hmarg, hηπ⟩ := hplan h
-  obtain ⟨η', -, hη', hmarg', hη'π⟩ := hplan h'
-  -- The two plans have the same endpoint law `π`, so they are equal.
-  have heq : η = η' := Measure.eq_of_endpointLaw_eq_of_ae_subsingleton hη hη'
-    (hηπ.trans hη'π.symm) (hηπ ▸ hgeo)
+  have hμ := (isGeodesicSegment_iff_isDisplacementInterpolation hp1 hp (γ := γ)).1
+    (by simpa only [h.source, h.target] using h)
+  have hν := (isGeodesicSegment_iff_isDisplacementInterpolation hp1 hp (γ := γ')).1
+    (by simpa only [h'.source, h'.target] using h')
+  have heq := hμ.eq_of_ae_subsingleton hν
+    (by simp only [Icc.coe_zero, h.source, h'.source])
+    (by simp only [Icc.coe_one, h.target, h'.target])
+    (fun π' hcoup hopt ↦ hπ _
+      ((isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 (by
+        simpa only [Icc.coe_zero, Icc.coe_one, h.source, h.target] using
+          And.intro hcoup hopt))) hgeo
   intro t ht
-  refine ext (ProbabilityMeasure.toMeasure_injective ?_)
-  rw [← hmarg ⟨t, ht⟩, ← hmarg' ⟨t, ht⟩, heq]
+  exact ext (congrFun heq ⟨t, ht⟩)
 
 end Polish
 
