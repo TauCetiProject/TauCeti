@@ -46,6 +46,8 @@ thus a canonical representative of the a.e. class of `s`.
   `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
+* `TauCeti.hasDensityAt_preimage_add_right` and `TauCeti.essentialInterior_preimage_add_right`:
+  translation invariance for a right-invariant measure on a normed group.
 
 ## References
 
@@ -394,5 +396,33 @@ theorem essentialInterior_essentialInterior (hs : NullMeasurableSet s μ) :
   essentialInterior_congr_ae (essentialInterior_ae_eq hs)
 
 end Lebesgue
+
+/-! ### Translation invariance -/
+
+section Translation
+
+variable {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G] [MeasurableAdd G]
+  {μ : Measure G} [μ.IsAddRightInvariant] {s : Set G} {x w : G} {d : ℝ≥0∞}
+
+/-- For a right-invariant measure, the density of the translate `(· + w) ⁻¹' s` at `x` is the
+density of `s` at `x + w`. -/
+@[simp]
+theorem hasDensityAt_preimage_add_right :
+    HasDensityAt μ ((· + w) ⁻¹' s) x d ↔ HasDensityAt μ s (x + w) d := by
+  have h (r : ℝ) : μ ((· + w) ⁻¹' s ∩ closedBall x r) / μ (closedBall x r) =
+      μ (s ∩ closedBall (x + w) r) / μ (closedBall (x + w) r) := by
+    have hball : closedBall x r = (· + w) ⁻¹' closedBall (x + w) r := by
+      rw [preimage_add_right_closedBall, add_sub_cancel_right]
+    rw [hball, ← preimage_inter, measure_preimage_add_right, measure_preimage_add_right]
+  simp only [hasDensityAt_iff, h]
+
+/-- For a right-invariant measure, the essential interior of a translate is the translate of the
+essential interior. -/
+@[simp]
+theorem essentialInterior_preimage_add_right :
+    essentialInterior μ ((· + w) ⁻¹' s) = (· + w) ⁻¹' essentialInterior μ s :=
+  ext fun _ => hasDensityAt_preimage_add_right
+
+end Translation
 
 end TauCeti

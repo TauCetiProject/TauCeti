@@ -41,6 +41,8 @@ conditions on single coordinates, such as polydiscs, are measured.
   components of `a` along `K` and `Kᗮ`.
 * `MeasureTheory.Measure.addHaar_setOf_fst_eq`: a hyperplane `{a} × E` of the Euclidean product
   `ℝ × E` is null for every additive Haar measure.
+* `MeasureTheory.Measure.addHaar_setOf_inner_eq`: an affine hyperplane `{x | ⟪x, ν⟫ = c}` is null
+  for every additive Haar measure.
 * `PiLp.volume_preserving_symm_measurableEquiv_toLp`: the volume of `PiLp 2 F` is the product of
   the volumes of the factors.
 
@@ -146,6 +148,23 @@ theorem addHaar_setOf_fst_eq (μ : Measure (WithLp 2 (ℝ × E))) [μ.IsAddHaarM
     simp at hmem
   rw [← hs]
   exact addHaar_affineSubspace μ s hne
+
+open scoped RealInnerProductSpace in
+/-- An affine hyperplane `{x | ⟪x, ν⟫ = c}`, for `ν ≠ 0`, is a null set for every additive Haar
+measure. -/
+theorem addHaar_setOf_inner_eq (μ : Measure E) [μ.IsAddHaarMeasure] {ν : E} (hν : ν ≠ 0)
+    (c : ℝ) : μ {x | ⟪x, ν⟫ = c} = 0 := by
+  rcases Set.eq_empty_or_nonempty {x : E | ⟪x, ν⟫ = c} with h | ⟨x₀, hx₀⟩
+  · rw [h, measure_empty]
+  -- The hyperplane is a translate of the orthogonal complement of `ν`.
+  have hs : {x : E | ⟪x, ν⟫ = c} = (· + -x₀) ⁻¹' ((ℝ ∙ ν)ᗮ : Submodule ℝ E) := by
+    ext x
+    have hx₀' : ⟪ν, x₀⟫ = c := by rw [real_inner_comm]; exact hx₀
+    simp [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_add_right, real_inner_comm ν,
+      hx₀', add_neg_eq_zero]
+  rw [hs, measure_preimage_add_right]
+  refine addHaar_submodule μ _ fun h => hν ?_
+  rwa [Submodule.orthogonal_eq_top_iff, Submodule.span_singleton_eq_bot] at h
 
 end MeasureTheory.Measure
 
