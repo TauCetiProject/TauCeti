@@ -226,7 +226,7 @@ omit [∀ ij, ChartedSpace H (D.V ij)] [∀ i, IsManifold I n (D.U i)]
   [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n' (D'.U i)]
   [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n'' (D''.U i)] in
 /-- Composing two families of piece maps preserves agreement of their images on overlaps. -/
-theorem mapContMDiffMap_comp_compatible
+theorem _root_.TopCat.GlueData.mapContMDiffMap_comp_compatible
     (a : D.J → D'.J) (b : D'.J → D''.J)
     (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
     (g : ∀ j, C^m⟮I', D'.U j; I'', D''.U (b j)⟯)
@@ -262,14 +262,14 @@ theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n'') (hm'' : m ≤ n'')
     letI := D''.chartedSpace H''
     (h'.mapContMDiffMap hm' h'' hm'' b g hg).comp (h.mapContMDiffMap hm h' hm' a f hf) =
       h.mapContMDiffMap hm h'' hm'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-        (mapContMDiffMap_comp_compatible a b f g hf hg) := by
+        (GlueData.mapContMDiffMap_comp_compatible a b f g hf hg) := by
   let := D.chartedSpace H
   let := D'.chartedSpace H'
   let := D''.chartedSpace H''
   apply D.contMDiffMap_ext
   intro i x
   rw [h.mapContMDiffMap_ι hm h'' hm'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-    (mapContMDiffMap_comp_compatible a b f g hf hg) i x]
+    (GlueData.mapContMDiffMap_comp_compatible a b f g hf hg) i x]
   simp only [ContMDiffMap.comp_apply, mapContMDiffMap_ι, Function.comp_apply]
 
 end Maps
