@@ -27,6 +27,13 @@ presheaf of `Spa(B, B⁺)` to be a sheaf, which is part of the data of the defin
 * `TauCeti.PreAdicSpace.chartLocally`: the morphisms chart-locally induced by morphisms of Huber
   pairs satisfying a given property.
 
+## Main results
+
+* `TauCeti.PreAdicSpace.chartLocally_mono`: a weaker property of morphisms of Huber pairs gives a
+  weaker chart-local property, with the same charts.
+* `TauCeti.PreAdicSpace.chartLocally_respectsIso`: every chart-local property is invariant under
+  isomorphisms of the source and of the target.
+
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.48.
@@ -107,6 +114,73 @@ theorem chartLocally_iff
           T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
             Y.ofRestrict _ :=
   Iff.rfl
+
+section
+
+variable {Q Q' : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [IsHuberRing A] {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+  [IsHuberRing B] {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop}
+
+/-- **Monotonicity**: if every morphism of Huber pairs satisfying `Q` satisfies `Q'`, then every
+chart-locally `Q` morphism is chart-locally `Q'`, with the same charts. -/
+theorem chartLocally_mono
+    (h : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+      {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+      {S : Pair A} {T : Pair B} (φ : Pair.Hom S T), Q φ → Q' φ)
+    {X Y : PreAdicSpace.{u}} {f : X ⟶ Y} (hf : chartLocally Q f) : chartLocally Q' f := by
+  refine (chartLocally_iff _).mpr fun x ↦ ?_
+  obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
+    hsheaf, eU, eV, hfac⟩ := (chartLocally_iff _).mp hf x
+  exact ⟨U, hx, V, hUV, A, inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP,
+    B, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, T, P', hP', φ, h φ hφ, hsheaf, eU, eV, hfac⟩
+
+variable {X Y : PreAdicSpace.{u}}
+
+/-- Precomposing a chart-locally `Q` morphism with an isomorphism gives a chart-locally `Q`
+morphism: over the same opens of the target, `e` identifies the restrictions of the two sources. -/
+private theorem chartLocally_iso_hom_comp {X' : PreAdicSpace.{u}} (e : X' ≅ X) {f : X ⟶ Y}
+    (hf : chartLocally Q f) : chartLocally Q (e.hom ≫ f) := by
+  refine (chartLocally_iff _).mpr fun x ↦ ?_
+  obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
+    hsheaf, eU, eV, hfac⟩ := (chartLocally_iff _).mp hf (e.hom.base x)
+  refine ⟨(Opens.map e.hom.base).obj U, hx, V, fun y hy ↦ hUV hy, A, inferInstance,
+    inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
+    hsheaf, (restrictIso e.symm U).symm ≪≫ eU, eV, ?_⟩
+  rw [Iso.trans_hom, Iso.symm_hom, Category.assoc, ← hfac, restrictIso_inv_ofRestrict_assoc]
+  -- `e.symm.inv` is `e.hom` (`Iso.symm_inv`, a `rfl`-lemma); it also occurs in the open restricted
+  -- to, so `rw` cannot rewrite it on one side only
+  rfl
+
+/-- Postcomposing a chart-locally `Q` morphism with an isomorphism `e : Y ≅ Y'` gives a
+chart-locally `Q` morphism: `e` carries the opens of the definition to opens of `Y'`, identifying
+the restrictions of `Y` and `Y'` to them. -/
+private theorem chartLocally_comp_iso_hom {Y' : PreAdicSpace.{u}} (e : Y ≅ Y') {f : X ⟶ Y}
+    (hf : chartLocally Q f) : chartLocally Q (f ≫ e.hom) := by
+  refine (chartLocally_iff _).mpr fun x ↦ ?_
+  obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
+    hsheaf, eU, eV, hfac⟩ := (chartLocally_iff _).mp hf x
+  -- `e⁻¹(e(V)) = V`
+  have key := Opens.map_hom_obj_map_inv_obj (forgetToTop.mapIso e) V
+  simp only [Functor.mapIso_hom, Functor.mapIso_inv, forgetToTop_map] at key
+  refine ⟨U, hx, (Opens.map e.inv.base).obj V, fun y hy ↦ ?_, A, inferInstance, inferInstance,
+    inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ, hsheaf, eU,
+    (restrictIso e V).symm ≪≫ eV, ?_⟩
+  · have hy' : f.base y ∈ ((Opens.map e.hom.base).obj ((Opens.map e.inv.base).obj V)) :=
+      key.symm ▸ hUV hy
+    exact hy'
+  · rw [reassoc_of% hfac]
+    simp
+
+/-- **Being chart-locally `Q` is invariant under isomorphisms** of the source and of the target,
+for every property `Q` of morphisms of Huber pairs. -/
+instance chartLocally_respectsIso : MorphismProperty.RespectsIso (chartLocally.{u} Q) :=
+  MorphismProperty.RespectsIso.mk _ (fun e _ hf ↦ chartLocally_iso_hom_comp e hf)
+    (fun e _ hf ↦ chartLocally_comp_iso_hom e hf)
+
+end
 
 end PreAdicSpace
 
