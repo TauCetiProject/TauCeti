@@ -64,8 +64,6 @@ Markov property.
   added strand with the previous one does not change the trace.
 * `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`: the spin-model trace satisfies the
   abstract Markov-trace predicate.
-* `TauCeti.TemperleyLieb.markovTrace_jonesWenzl`: its value on the Jones–Wenzl projection is
-  the quantum dimension.
 
 ## References
 
@@ -512,12 +510,6 @@ theorem isMarkovTrace_markovTrace :
     fun _ x y ↦ markovTrace_mul_comm q hδ x y,
     fun _ x ↦ markovTrace_strandIncl q hδ x,
     fun _ x ↦ markovTrace_strandIncl_mul_e_last q hδ x⟩
-
-/-- The spin-model trace of the Jones–Wenzl projection is its quantum dimension. -/
-theorem markovTrace_jonesWenzl
-    (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) :
-    markovTrace q hδ (jonesWenzl δ n) = qInt R δ (n + 1) :=
-  (isMarkovTrace_markovTrace q hδ).map_jonesWenzl n h
 
 end MarkovTrace
 
