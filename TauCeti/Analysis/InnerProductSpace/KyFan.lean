@@ -42,6 +42,8 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.norm_sum_inner_le_kyFanSum`: Ky Fan's maximum principle, the upper bound.
 * `LinearMap.sum_re_inner_apply_le_kyFanSum`: the corresponding upper bound for the real parts
   of the diagonal pairings.
+* `LinearMap.sum_antitone_mul_re_inner_le_sum_mul_singularValues`: the same bound with the
+  diagonal pairings weighted by an antitone nonnegative sequence.
 * `LinearMap.exists_orthonormal_sum_inner_eq_kyFanSum`: the leading singular pairs attain it.
 * `LinearMap.norm_sum_inner_add_inner_le_kyFanSum`: the upper bound for families transformed by two
   pairs of symmetric operators whose squared norms add up to at most the identity.
@@ -258,6 +260,41 @@ theorem sum_re_inner_apply_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[�
         RCLike.re (∑ i : ι, inner 𝕜 (u i) (A (v i))) := by rw [← map_sum]
     _ ≤ ‖∑ i : ι, inner 𝕜 (u i) (A (v i))‖ := RCLike.re_le_norm _
     _ ≤ A.kyFanSum (Fintype.card ι) := A.norm_sum_inner_le_kyFanSum hu hv
+
+/-- **Weighted Ky Fan trace core.** If the partial real diagonal pairings of two orthonormal
+families are bounded by the Ky Fan sums, pairing them with weights that are antitone on the first
+`n` indices and nonnegative at the last one is bounded by the same weighted pairing with the
+singular values. -/
+theorem sum_antitone_mul_re_inner_le_sum_mul_singularValues (B : E →ₗ[𝕜] F) {n : ℕ}
+    (u : Fin n → F) (v : Fin n → E) (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v)
+    {w : ℕ → ℝ} (hw : ∀ i, i + 1 < n → w (i + 1) ≤ w i) (hw0 : 0 ≤ w (n - 1)) :
+    ∑ i : Fin n, w i * RCLike.re ⟪u i, B (v i)⟫ ≤
+      ∑ i : Fin n, w i * B.singularValues i := by
+  let f : ℕ → ℝ := fun i ↦
+    if hi : i < n then RCLike.re ⟪u ⟨i, hi⟩, B (v ⟨i, hi⟩)⟫ else 0
+  let g : ℕ → ℝ := fun i ↦ B.singularValues i
+  have hfg : ∀ k ≤ n, ∑ i ∈ Finset.range k, f i ≤ ∑ i ∈ Finset.range k, g i := by
+    intro k hk
+    have hsum : ∑ i : Fin k, f i =
+        ∑ i : Fin k, RCLike.re ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫ := by
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      have hcast : (⟨(i : ℕ), lt_of_lt_of_le i.isLt hk⟩ : Fin n) = Fin.castLE hk i := by
+        exact Fin.ext rfl
+      simp [f, hcast, lt_of_lt_of_le i.isLt hk]
+    have hreal : ∑ i ∈ Finset.range k, f i ≤ B.kyFanSum k := by
+      calc
+        _ = ∑ i : Fin k, f i := by rw [Fin.sum_univ_eq_sum_range]
+        _ = ∑ i : Fin k,
+            RCLike.re ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫ := hsum
+        _ ≤ B.kyFanSum k := by
+          simpa only [Fintype.card_fin] using B.sum_re_inner_apply_le_kyFanSum
+            (fun i ↦ u (Fin.castLE hk i)) (fun i ↦ v (Fin.castLE hk i))
+            (hu.comp _ (Fin.castLE_injective hk)) (hv.comp _ (Fin.castLE_injective hk))
+    simpa [LinearMap.kyFanSum_def, g] using hreal
+  have hcross := TauCeti.sum_range_mul_le_sum_range_mul (w := w) hfg hw hw0
+  rw [← Fin.sum_univ_eq_sum_range (fun i ↦ w i * f i),
+    ← Fin.sum_univ_eq_sum_range (fun i ↦ w i * g i)] at hcross
+  simpa [f, g] using hcross
 
 /-- **Ky Fan's maximum principle**, attainment: the first `k` right singular vectors and the
 corresponding unit left singular vectors, completed where the singular value vanishes, are
