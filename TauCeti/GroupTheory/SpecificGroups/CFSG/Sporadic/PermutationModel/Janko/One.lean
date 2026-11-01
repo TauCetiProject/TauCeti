@@ -227,12 +227,8 @@ theorem exists_surjective_J1 :
     ∃ f : SporadicName.J1.Group →* J1, Function.Surjective f := by
   unfold SporadicName.Group
   rw [SporadicName.presentation_J1]
-  let f := Sporadic.j1Presentation.homEquiv.symm ⟨J1.presentationGenerators, J1.relators_hold⟩
-  have hf : f.range = J1 := by
-    exact (Sporadic.j1Presentation.range_homEquiv_symm _).trans
-      J1.closure_range_presentationGenerators
-  rw [← hf]
-  exact ⟨f.rangeRestrict, f.rangeRestrict_surjective⟩
+  exact Sporadic.j1Presentation.exists_surjective_of_closure_range_eq
+    ⟨J1.presentationGenerators, J1.relators_hold⟩ J1.closure_range_presentationGenerators
 
 /-- The transcribed presentation of `J₁` does not collapse to the trivial group. -/
 instance nontrivial_group_J1 : Nontrivial SporadicName.J1.Group := by

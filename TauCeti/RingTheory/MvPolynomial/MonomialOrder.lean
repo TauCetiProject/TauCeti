@@ -14,7 +14,8 @@ public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 This file collects facts about leading monomials of multivariate polynomials for a monomial order
 `m` on `σ →₀ ℕ`: comparisons of degrees with their `WithBot` forms, the degree of a monomial
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
-under a change of coefficients, leading data of renamed polynomials, elimination orders and the
+under a change of coefficients, leading data of the weighted homogeneous component containing
+the leading monomial, leading data of renamed polynomials, elimination orders and the
 lexicographic ones among them, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
@@ -36,6 +37,11 @@ the images of the generators of the Lazard ring in a polynomial ring.
   is at most its degree.
 * `MonomialOrder.withBotDegree_sub_lt`: if `q` has degree at most that of `f ≠ 0` and the same
   coefficient of `X^(deg f)`, then `f - q` has smaller degree than `f`.
+* `MvPolynomial.monomial_mem_iff_monomial_one_mem`: a set closed under scalar multiplication
+  contains `c X^a` for a unit `c` if and only if it contains `X^a`.
+* `MonomialOrder.leadingTerm_mem_iff`: a set closed under scalar multiplication contains the
+  leading term of a polynomial with unit leading coefficient if and only if it contains its
+  leading monomial.
 * `MonomialOrder.toSyn_degree_monomial_mul_le`: `c X^a * b` has degree at most `a + deg b`.
 * `MonomialOrder.monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial`: if `b₀` has a unit
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
@@ -45,6 +51,8 @@ the images of the generators of the Lazard ring in a polynomial ring.
   `MonomialOrder.leadingTerm_map_of_injective`, `MonomialOrder.sPolynomial_map_of_injective`: an
   injective coefficient map `φ` preserves leading monomials and commutes with leading
   coefficients, leading terms and S-polynomials.
+* `MonomialOrder.leadingTerm_weightedHomogeneousComponent_weight_degree`: the weighted
+  homogeneous component of `f` containing its leading monomial has the leading term of `f`.
 * `MonomialOrder.degree_rename`, `MonomialOrder.leadingCoeff_rename` and
   `MonomialOrder.leadingTerm_rename`: renaming the variables along a relabeling which carries one
   monomial order to another commutes with leading monomials, coefficients and terms; such a
@@ -60,6 +68,19 @@ the images of the generators of the Lazard ring in a polynomial ring.
 public section
 
 open MvPolynomial
+
+/-- A set of polynomials closed under scalar multiplication (for example a submodule or a
+subalgebra) contains a monomial with unit coefficient if and only if it contains the
+corresponding monomial with coefficient one. -/
+theorem MvPolynomial.monomial_mem_iff_monomial_one_mem {σ R S : Type*} [CommSemiring R]
+    [SetLike S (MvPolynomial σ R)] [SMulMemClass S R (MvPolynomial σ R)]
+    {a : σ →₀ ℕ} {c : R} (C : S) (hc : IsUnit c) :
+    monomial a c ∈ C ↔ monomial a 1 ∈ C := by
+  obtain ⟨u, rfl⟩ := hc
+  have h : monomial a (u : R) = (u : R) • monomial a 1 := by simp [smul_monomial]
+  rw [h]
+  refine ⟨fun hu => ?_, SMulMemClass.smul_mem _⟩
+  simpa [smul_smul] using SMulMemClass.smul_mem ((u⁻¹ : Rˣ) : R) hu
 
 namespace MonomialOrder
 
@@ -91,6 +112,15 @@ theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R
     (b : MvPolynomial σ R) : m.toSyn (m.degree (monomial a c * b)) ≤ m.toSyn (a + m.degree b) := by
   rw [map_add]
   exact m.toSyn_degree_mul_le.trans (by gcongr; exact m.degree_monomial_le c)
+
+/-- A set of polynomials closed under scalar multiplication (for example a submodule or a
+subalgebra) contains the leading term of a polynomial with unit leading coefficient if and only
+if it contains its leading monomial. -/
+theorem leadingTerm_mem_iff [CommSemiring R] {S : Type*} [SetLike S (MvPolynomial σ R)]
+    [SMulMemClass S R (MvPolynomial σ R)] {f : MvPolynomial σ R} (C : S)
+    (hf : IsUnit (m.leadingCoeff f)) :
+    m.leadingTerm f ∈ C ↔ monomial (m.degree f) 1 ∈ C := by
+  rw [leadingTerm, monomial_mem_iff_monomial_one_mem C hf]
 
 /-- **Cancellation of leading terms by an S-polynomial.** If `b₀` has unit leading coefficient
 `u₀` and `deg b₀ ≤ a + deg b`, the difference between `X^a * b` and `lc b` times the normalized
@@ -177,6 +207,54 @@ theorem sPolynomial_map_of_injective [CommRing R] [CommRing S] {φ : R →+* S}
     m.leadingCoeff_map_of_injective hφ]
 
 end Map
+
+section WeightedHomogeneous
+
+open Finsupp
+
+variable {M : Type*} [AddCommMonoid M] [CommSemiring R] (w : σ → M)
+
+/-- The weighted homogeneous component of `f` whose weight is that of the leading monomial of `f`
+has the same leading monomial as `f`. -/
+@[simp]
+theorem degree_weightedHomogeneousComponent_weight_degree (f : MvPolynomial σ R) :
+    m.degree (weightedHomogeneousComponent w (weight w (m.degree f)) f) = m.degree f := by
+  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hsupp := support_weightedHomogeneousComponent (w := w) (weight w (m.degree f)) f
+  refine m.toSyn.injective (le_antisymm (m.degree_le_iff.2 fun c hc ↦ ?_) (m.le_degree ?_))
+  · rw [hsupp] at hc
+    exact m.le_degree (Finset.mem_filter.1 hc).1
+  · rw [hsupp]
+    exact Finset.mem_filter.2 ⟨m.degree_mem_support hf, rfl⟩
+
+/-- The weighted homogeneous component of `f` containing its leading monomial has the same leading
+coefficient as `f`. -/
+@[simp]
+theorem leadingCoeff_weightedHomogeneousComponent_weight_degree (f : MvPolynomial σ R) :
+    m.leadingCoeff (weightedHomogeneousComponent w (weight w (m.degree f)) f) =
+      m.leadingCoeff f := by
+  classical
+  simp [leadingCoeff, coeff_weightedHomogeneousComponent]
+
+/-- The weighted homogeneous component of `f` containing its leading monomial has the same leading
+term as `f`. -/
+@[simp]
+theorem leadingTerm_weightedHomogeneousComponent_weight_degree (f : MvPolynomial σ R) :
+    m.leadingTerm (weightedHomogeneousComponent w (weight w (m.degree f)) f) =
+      m.leadingTerm f := by
+  simp [leadingTerm]
+
+/-- The weighted homogeneous component of `f` containing its leading monomial is weighted
+homogeneous of the weight of its own leading monomial. -/
+theorem isWeightedHomogeneous_weightedHomogeneousComponent_weight_degree (f : MvPolynomial σ R) :
+    IsWeightedHomogeneous w (weightedHomogeneousComponent w (weight w (m.degree f)) f)
+      (weight w (m.degree (weightedHomogeneousComponent w (weight w (m.degree f)) f))) := by
+  rw [degree_weightedHomogeneousComponent_weight_degree]
+  exact weightedHomogeneousComponent_isWeightedHomogeneous _ _
+
+end WeightedHomogeneous
 
 section Rename
 

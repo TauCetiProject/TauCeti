@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Interval.Set.UnorderedInterval
-public import TauCeti.Combinatorics.NoncrossingPartition.Basic
+public import TauCeti.Combinatorics.NoncrossingPartition.Rotate
 import Mathlib.Data.Finset.Max
 
 /-!
@@ -30,6 +30,12 @@ partition of the bars complementary to `P`
 exchanges the partition into singletons with the partition into one part, and a noncrossing
 partition `P` of a nonempty set `s` and its complement have `#s + 1` parts in total.
 
+On `NC(n)`, the noncrossing partitions of `Fin n`, the bars after the positions are themselves
+positions of a rotated interlaced sequence `ā₁ < a₂ < ā₂ < ⋯ < āₙ < a₁`, and noncrossing is
+invariant under rotation. Applying the complement twice therefore moves every part one step back
+around the circle: `K(K(π))` is the inverse rotation of `π`. Hence `K` is a bijection of `NC(n)`,
+indeed an order anti-automorphism, with inverse `σ ↦ rotate n (K(σ))`.
+
 The Kreweras complement indexes the formulas for the free cumulants and the moments of products
 of two free families in terms of the cumulants and moments of the two families.
 
@@ -38,6 +44,8 @@ of two free families in terms of the cumulants and moments of the two families.
 * `Finpartition.kreweras P` — the Kreweras complement of a finite partition `P` of `s`, as a
   partition of the bars after the positions of `s`.
 * `TauCeti.NoncrossingPartition.kreweras π` — the Kreweras complement as a map `NC(s) → NC(s)`.
+* `TauCeti.NoncrossingPartition.krewerasOrderIso n` — the Kreweras complement as an order
+  isomorphism from `NC(n)` onto its order dual.
 
 ## Main results
 
@@ -53,6 +61,12 @@ of two free families in terms of the cumulants and moments of the two families.
   `P` of a nonempty set `s`, `#P.parts + #(K(P)).parts = #s + 1`.
 * `TauCeti.NoncrossingPartition.isGreatest_kreweras` — `K(π)` is the largest noncrossing partition
   of the bars complementary to `π`.
+* `TauCeti.NoncrossingPartition.kreweras_kreweras` — on `NC(n)`, `K(K(π))` is the inverse rotation
+  `(rotate n).symm π`.
+* `TauCeti.NoncrossingPartition.kreweras_rotate` — the complement commutes with the rotation.
+* `TauCeti.NoncrossingPartition.kreweras_bijective`,
+  `TauCeti.NoncrossingPartition.kreweras_le_kreweras_iff` — on `NC(n)` the complement is a
+  bijection and reverses refinement in both directions.
 
 ## References
 
@@ -306,5 +320,115 @@ theorem kreweras_top : kreweras (⊤ : NoncrossingPartition s) = ⊥ :=
 theorem card_parts_add_card_parts_kreweras (π : NoncrossingPartition s) (hs : s.Nonempty) :
     #(π : Finpartition s).parts + #(kreweras π : Finpartition s).parts = #s + 1 :=
   π.2.card_parts_add_card_parts_kreweras hs
+
+/-! ### The square of the Kreweras complement on `NC(n)` -/
+
+section Fin
+
+variable {n : ℕ}
+
+/-- The inverse rotation of `π` refines `K(K(π))`: two positions whose successors lie in a common
+part of `π` lie in a common part of `K(K(π))`. A chord of `K(π)` between the bars after `a < b`
+that separated them would separate the successors as well. -/
+private theorem rotate_symm_le_kreweras_kreweras
+    (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    (rotate n).symm π ≤ kreweras (kreweras π) := by
+  cases n with
+  | zero => exact (Subsingleton.elim _ _).le
+  | succ n =>
+  refine Subtype.coe_le_coe.1 ?_
+  rw [coe_kreweras, coe_kreweras]
+  refine Finpartition.le_kreweras_iff.2 fun x y hy a b hb => ?_
+  rw [mem_part_rotate_symm] at hy
+  have hK := (Finpartition.mem_part_kreweras_iff.1 hb).2.2
+  have hval (i : Fin (n + 1)) :
+      (finRotate (n + 1) i : ℕ) = if (i : ℕ) = n then 0 else (i : ℕ) + 1 := by
+    rw [coe_finRotate]
+    simp only [Fin.ext_iff, Fin.val_last]
+  constructor
+  · rintro ⟨hax, hxb, hby⟩
+    have h := hK _ _ hy (by
+      simp only [Set.mem_uIoc, Fin.lt_def, Fin.le_def, hval] at hax hxb hby ⊢
+      split_ifs <;> omega)
+    simp only [Set.mem_uIoc, Fin.lt_def, Fin.le_def, hval] at hax hxb hby h
+    have := y.is_lt
+    split_ifs at h <;> omega
+  · rintro ⟨hxa, hay, hyb⟩
+    have h := hK _ _ (Finpartition.mem_part_comm.1 hy) (by
+      simp only [Set.mem_uIoc, Fin.lt_def, Fin.le_def, hval] at hxa hay hyb ⊢
+      have := b.is_lt
+      split_ifs <;> omega)
+    simp only [Set.mem_uIoc, Fin.lt_def, Fin.le_def, hval] at hxa hay hyb h
+    have := b.is_lt
+    split_ifs at h <;> omega
+
+/-- The square of the Kreweras complement on `NC(n)` is the inverse rotation: the parts of
+`K(K(π))` are the parts of `π` moved along `i ↦ i - 1`, with `0` going to the last position. -/
+@[simp]
+theorem kreweras_kreweras (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    kreweras (kreweras π) = (rotate n).symm π := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · exact Subsingleton.elim _ _
+  -- `(rotate n).symm π` refines `K(K(π))`, and both have as many parts as `π`.
+  refine (Subtype.ext (Finpartition.eq_of_le_of_card_parts_le
+    (rotate_symm_le_kreweras_kreweras π) ?_)).symm
+  have hne : (univ : Finset (Fin n)).Nonempty := univ_nonempty_iff.2 ⟨⟨0, hn⟩⟩
+  have h₁ := card_parts_add_card_parts_kreweras π hne
+  have h₂ := card_parts_add_card_parts_kreweras (kreweras π) hne
+  rw [parts_rotate_symm, card_image_of_injective _ (map_injective _)]
+  omega
+
+/-- The Kreweras complement commutes with the rotation of `NC(n)`. -/
+theorem kreweras_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    kreweras (rotate n π) = rotate n (kreweras π) := by
+  have h := kreweras_kreweras (kreweras (rotate n π))
+  rw [kreweras_kreweras (rotate n π), OrderIso.symm_apply_apply] at h
+  rw [h, OrderIso.apply_symm_apply]
+
+/-- The Kreweras complement on `NC(n)` reverses refinement in both directions. -/
+@[simp]
+theorem kreweras_le_kreweras_iff {π σ : NoncrossingPartition (univ : Finset (Fin n))} :
+    kreweras π ≤ kreweras σ ↔ σ ≤ π :=
+  ⟨fun h => by simpa using kreweras_antitone h, fun h => kreweras_antitone h⟩
+
+/-- The Kreweras complement is a bijection of `NC(n)`; its inverse is `σ ↦ rotate n (K(σ))`. -/
+theorem kreweras_bijective :
+    Function.Bijective (kreweras : NoncrossingPartition (univ : Finset (Fin n)) → _) :=
+  ⟨fun _ _ h => le_antisymm (kreweras_le_kreweras_iff.1 h.ge) (kreweras_le_kreweras_iff.1 h.le),
+    fun σ => ⟨rotate n (kreweras σ), by
+      rw [kreweras_rotate, kreweras_kreweras, OrderIso.apply_symm_apply]⟩⟩
+
+/-- The Kreweras complement on `NC(n)` is injective. -/
+@[simp]
+theorem kreweras_inj {π σ : NoncrossingPartition (univ : Finset (Fin n))} :
+    kreweras π = kreweras σ ↔ π = σ :=
+  kreweras_bijective.1.eq_iff
+
+variable (n) in
+/-- The Kreweras complement as an order isomorphism from `NC(n)` onto its order dual, so an order
+anti-automorphism of `NC(n)`. Its inverse sends `σ` to `rotate n (K(σ))`. -/
+noncomputable def krewerasOrderIso :
+    NoncrossingPartition (univ : Finset (Fin n)) ≃o (NoncrossingPartition (univ : Finset (Fin n)))ᵒᵈ
+    where
+  toFun π := OrderDual.toDual (kreweras π)
+  invFun σ := rotate n (kreweras (OrderDual.ofDual σ))
+  left_inv π := by simp
+  right_inv σ := by simp [kreweras_rotate]
+  map_rel_iff' := by simp
+
+/-- The order isomorphism `krewerasOrderIso n` sends `π` to its Kreweras complement. -/
+@[simp]
+theorem krewerasOrderIso_apply (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    krewerasOrderIso n π = OrderDual.toDual (kreweras π) :=
+  (rfl)
+
+/-- The inverse of `krewerasOrderIso n` sends `σ` to the rotation of its Kreweras complement. -/
+@[simp]
+theorem krewerasOrderIso_symm_apply
+    (σ : (NoncrossingPartition (univ : Finset (Fin n)))ᵒᵈ) :
+    (krewerasOrderIso n).symm σ = rotate n (kreweras (OrderDual.ofDual σ)) :=
+  (rfl)
+
+end Fin
 
 end TauCeti.NoncrossingPartition
