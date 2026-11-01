@@ -15,8 +15,8 @@ A homeomorphism `e : M ≃ₜ N` conjugates self-homeomorphisms of `M` into self
 by `φ ↦ e ∘ φ ∘ e⁻¹`. Because this preserves composition, it is a group isomorphism
 `(M ≃ₜ M) ≃* (N ≃ₜ N)` between the self-homeomorphism groups. This file records that isomorphism,
 `Homeomorph.homeoCongr`, its pointwise action, and its functoriality: it is the identity on
-`Homeomorph.refl`, respects `Homeomorph.trans` and `Homeomorph.symm`, and sends inverses to
-inverses.
+`Homeomorph.refl` and respects `Homeomorph.trans` and `Homeomorph.symm`. Being a `MulEquiv`, it
+sends inverses to inverses by the generic `map_inv`.
 
 This is the topological analogue of `Equiv.permCongr` (`Mathlib/Logic/Equiv/Defs.lean`), the
 conjugation isomorphism of permutation groups, and is the target of the forgetful naturality of the
@@ -51,23 +51,19 @@ self-homeomorphism groups: `homeoCongr e φ = e ∘ φ ∘ e⁻¹`. This is the 
 def homeoCongr (e : M ≃ₜ N) : (M ≃ₜ M) ≃* (N ≃ₜ N) where
   toFun φ := (e.symm.trans φ).trans e
   invFun ψ := (e.trans ψ).trans e.symm
-  left_inv φ := by ext x; simp
-  right_inv ψ := by ext x; simp
-  map_mul' φ ψ := by ext x; simp
+  left_inv _ := by ext; simp
+  right_inv _ := by ext; simp
+  map_mul' _ _ := by ext; simp
 
 /-- The conjugating isomorphism acts pointwise by `homeoCongr e φ x = e (φ (e.symm x))`. -/
 @[simp, grind =]
 theorem homeoCongr_apply_apply (e : M ≃ₜ N) (φ : M ≃ₜ M) (x : N) :
     homeoCongr e φ x = e (φ (e.symm x)) := (rfl)
 
-/-- The inverse of `homeoCongr e φ` is `homeoCongr e φ⁻¹`, since conjugation is a homomorphism. -/
-theorem homeoCongr_inv (e : M ≃ₜ N) (φ : M ≃ₜ M) :
-    (homeoCongr e φ)⁻¹ = homeoCongr e φ⁻¹ := (map_inv (homeoCongr e) φ).symm
-
 /-- Conjugating by the identity homeomorphism is the identity isomorphism. -/
 @[simp]
 theorem homeoCongr_refl : homeoCongr (Homeomorph.refl M) = MulEquiv.refl (M ≃ₜ M) := by
-  ext φ x
+  ext
   simp
 
 /-- Conjugation is functorial: conjugating by a composite homeomorphism is the composite of the
@@ -75,13 +71,13 @@ conjugating isomorphisms. -/
 @[simp]
 theorem homeoCongr_trans (e : M ≃ₜ N) (e' : N ≃ₜ P) :
     homeoCongr (e.trans e') = (homeoCongr e).trans (homeoCongr e') := by
-  ext φ x
+  ext
   simp
 
 /-- The isomorphism conjugating by `e.symm` is the inverse of the one conjugating by `e`. -/
 @[simp, grind =]
 theorem homeoCongr_symm (e : M ≃ₜ N) : (homeoCongr e).symm = homeoCongr e.symm := by
-  ext ψ x
+  ext
   rfl
 
 end Homeomorph
