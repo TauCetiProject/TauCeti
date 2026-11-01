@@ -35,6 +35,8 @@ specialization.
 * `TauCeti.simplyBlockedRingHom`: setting `V_i` to zero, as a ring homomorphism.
 * `TauCeti.simplyBlockedSpecialization`: coefficientwise specialization of `GC⁻` at `V_i = 0`.
 * `TauCeti.simplyBlockedRenameEquiv`: rename surviving variables and transport the blocked column.
+* `TauCeti.simplyBlockedRenameRingHomInvPair`, `TauCeti.simplyBlockedRenameRingHomInvPairSymm`:
+  the renaming and its inverse form a `RingHomInvPair`.
 * `TauCeti.simplyBlockedMap`: the endomorphism of `GC^` induced by an endomorphism of `GC⁻`.
 * `TauCeti.GridDiagram.simplyBlockedRectangles`: the empty, `X`-avoiding rectangles which also
   avoid the chosen `O`-marking.
@@ -142,6 +144,28 @@ noncomputable def simplyBlockedRenameEquiv {n m : ℕ} (R : Type*) [CommSemiring
     MvPolynomial {c : Fin n // c ≠ i} R ≃ₐ[R]
       MvPolynomial {c : Fin m // c ≠ e i} R :=
   renameEquiv R (e.subtypeEquiv fun _ => not_congr e.injective.eq_iff.symm)
+
+/-- Renaming the surviving variables and its inverse form a `RingHomInvPair`, so that maps
+semilinear along the renaming can be inverted. -/
+noncomputable instance simplyBlockedRenameRingHomInvPair {n m : ℕ} (R : Type*)
+    [CommSemiring R] (e : Fin n ≃ Fin m) (i : Fin n) :
+    RingHomInvPair
+      ((simplyBlockedRenameEquiv R e i).toRingEquiv :
+        MvPolynomial {c : Fin n // c ≠ i} R →+* MvPolynomial {c : Fin m // c ≠ e i} R)
+      ((simplyBlockedRenameEquiv R e i).toRingEquiv.symm :
+        MvPolynomial {c : Fin m // c ≠ e i} R →+* MvPolynomial {c : Fin n // c ≠ i} R) :=
+  RingHomInvPair.of_ringEquiv _
+
+/-- The inverse renaming of the surviving variables and the forward renaming form a
+`RingHomInvPair`. -/
+noncomputable instance simplyBlockedRenameRingHomInvPairSymm {n m : ℕ} (R : Type*)
+    [CommSemiring R] (e : Fin n ≃ Fin m) (i : Fin n) :
+    RingHomInvPair
+      ((simplyBlockedRenameEquiv R e i).toRingEquiv.symm :
+        MvPolynomial {c : Fin m // c ≠ e i} R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+      ((simplyBlockedRenameEquiv R e i).toRingEquiv :
+        MvPolynomial {c : Fin n // c ≠ i} R →+* MvPolynomial {c : Fin m // c ≠ e i} R) :=
+  RingHomInvPair.of_ringEquiv_symm _
 
 /-- A surviving variable is renamed by the underlying column equivalence. -/
 @[simp]
