@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Height
-import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -155,38 +154,12 @@ end AddError
 
 section Leading
 
-/-- The degree-`n` part of the additivity defect of `g`, as a polynomial. -/
-private noncomputable def leadingError (n : ℕ) (g : PowerSeries R) : MvPolynomial (Fin 2) R :=
-  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))
-
-private theorem coe_leadingError (n : ℕ) (g : PowerSeries R) :
-    (leadingError F n g : MvPowerSeries (Fin 2) R) = homogeneousComponent n (addError F g) := by
-  ext d
-  rw [MvPolynomial.coeff_coe, leadingError, MvPolynomial.coeff_homogeneousComponent,
-    coeff_homogeneousComponent]
-  split_ifs with hd
-  · exact coeff_truncTotal _ (by omega)
-  · rfl
-
-/-- If the additivity defect of `g` vanishes below degree `n`, its degree-`n` part at a family `x`
-of series without constant term is the polynomial `leadingError F n g` evaluated at the linear
-parts of `x`. -/
-private theorem homogeneousComponent_subst_addError {τ : Type*} {n : ℕ} {g : PowerSeries R}
-    (hn : n ≤ (addError F g).order) {x : Fin 2 → MvPowerSeries τ R} (hx : HasSubst x)
-    (hx₀ : ∀ i, constantCoeff (x i) = 0) {l : Fin 2 → MvPolynomial τ R}
-    (hl : ∀ i, homogeneousComponent 1 (x i) = l i) :
-    homogeneousComponent n ((addError F g).subst x) =
-      (MvPolynomial.aeval l (leadingError F n g) : MvPowerSeries τ R) := by
-  rw [homogeneousComponent_subst_of_le_order hn hx hx₀, ← coe_leadingError, subst_coe]
-  simp_rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
-    (leadingError F n g) (f := l)).symm
-
 variable {F}
 
 /-- The degree-`n` part of the additivity defect is an additive 2-cocycle. -/
 private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
-    (hn : n ≤ (addError F g).order) : (leadingError F n g).IsAddCocycle₂ := by
+    (hn : n ≤ (addError F g).order) :
+    (homogeneousComponentPoly n (addError F g)).IsAddCocycle₂ := by
   have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := R) i
   have hX₀ (i : Fin 3) := constantCoeff_X (R := R) i
   have hF₀ (i j : Fin 3) :
@@ -195,10 +168,10 @@ private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
       (fun s ↦ by fin_cases s <;> simp) F.toPowerSeries, F.zero_constantCoeff, map_zero]
   have h := congrArg (homogeneousComponent n) (addError_cocycle F g)
   rw [map_add, map_add,
-    homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 0) (hX 1))
+    homogeneousComponent_subst_eq_coe_aeval hn (hasSubst_finTwo (hX 0) (hX 1))
       (l := ![MvPolynomial.X 0, MvPolynomial.X 1]) (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
-    homogeneousComponent_subst_addError F hn
+    homogeneousComponent_subst_eq_coe_aeval hn
       (hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2))
       (l := ![MvPolynomial.X 0 + MvPolynomial.X 1, MvPolynomial.X 2])
       (fun i ↦ by fin_cases i <;> simp [hF₀])
@@ -206,7 +179,7 @@ private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
         fin_cases i <;>
           simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
             F.lin_coeff_Y (hX₀ 0) (hX₀ 1), homogeneousComponent_one_X]),
-    homogeneousComponent_subst_addError F hn
+    homogeneousComponent_subst_eq_coe_aeval hn
       (hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2)))
       (l := ![MvPolynomial.X 0, MvPolynomial.X 1 + MvPolynomial.X 2])
       (fun i ↦ by fin_cases i <;> simp [hF₀])
@@ -214,7 +187,7 @@ private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
         fin_cases i <;>
           simp [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X
             F.lin_coeff_Y (hX₀ 1) (hX₀ 2), homogeneousComponent_one_X]),
-    homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 1) (hX 2))
+    homogeneousComponent_subst_eq_coe_aeval hn (hasSubst_finTwo (hX 1) (hX 2))
       (l := ![MvPolynomial.X 1, MvPolynomial.X 2]) (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X])] at h
   rw [MvPolynomial.isAddCocycle₂_iff]
@@ -222,25 +195,14 @@ private theorem isAddCocycle₂_leadingError {n : ℕ} {g : PowerSeries R}
 
 /-- The degree-`n` part of the additivity defect is symmetric when `F` is commutative. -/
 private theorem isSymmetric_leadingError [F.IsComm] {n : ℕ} {g : PowerSeries R}
-    (hn : n ≤ (addError F g).order) : (leadingError F n g).IsSymmetric := by
+    (hn : n ≤ (addError F g).order) :
+    (homogeneousComponentPoly n (addError F g)).IsSymmetric := by
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0] (leadingError F n g) =
-      leadingError F n g := by
-    refine MvPolynomial.coe_inj.mp ?_
-    rw [← homogeneousComponent_subst_addError F hn (hasSubst_finTwo (hX 1) (hX 0))
-      (fun i ↦ by fin_cases i <;> simp)
-      (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
-      subst_addError_X_one_X_zero, coe_leadingError]
-  intro e
-  rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
-  · simp
-  · have hswap : (MvPolynomial.X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
-        ![MvPolynomial.X 1, MvPolynomial.X 0] := by
-      funext i
-      fin_cases i <;> simp
-    rw [MvPolynomial.rename_eq_aeval, hswap]
-    exact h
-
+  refine MvPolynomial.isSymmetric_of_aeval_swap (MvPolynomial.coe_inj.mp ?_)
+  rw [← homogeneousComponent_subst_eq_coe_aeval hn (hasSubst_finTwo (hX 1) (hX 0))
+    (fun i ↦ by fin_cases i <;> simp)
+    (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]),
+    subst_addError_X_one_X_zero, coe_homogeneousComponentPoly]
 
 end Leading
 
@@ -266,7 +228,8 @@ degree-`n` part of `g([p]_F(X)) - p g(X) = 0` is `c ∑_{j < p} C_n(j X, X) = -c
 private theorem eq_zero_of_leadingError_eq_smul_lazardCocycle {p : ℕ} (hp : p.Prime)
     (hF : F.nsmulSeries p = 0) {k : ℕ} (hk : k ≠ 0) {g : PowerSeries R}
     (hg : PowerSeries.constantCoeff g = 0) (hn : p ^ k ≤ (addError F g).order) {c : R}
-    (hc : leadingError F (p ^ k) g = c • TauCeti.lazardCocycle (p ^ k) R) : c = 0 := by
+    (hc : homogeneousComponentPoly (p ^ k) (addError F g) = c • TauCeti.lazardCocycle (p ^ k) R) :
+    c = 0 := by
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
   -- the defects `Φ([j]_F(X), X)`, `j < p`, sum to `g([p]_F(X)) - p g(X) = 0`
   have hsum := F.subst_nsmulSeries_eq_nsmul_add_sum hg p
@@ -281,7 +244,7 @@ private theorem eq_zero_of_leadingError_eq_smul_lazardCocycle {p : ℕ} (hp : p.
           ![(j : MvPolynomial Unit R) * MvPolynomial.X (), MvPolynomial.X ()]
           (TauCeti.lazardCocycle (p ^ k) R)) := by
     rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-      homogeneousComponent_subst_addError F hn (F.hasSubst_nsmulSeries_X j)
+      homogeneousComponent_subst_eq_coe_aeval hn (F.hasSubst_nsmulSeries_X j)
       (fun i ↦ by fin_cases i; exacts [F.constantCoeff_nsmulSeries j, PowerSeries.constantCoeff_X])
       (fun i ↦ ?_), hc, _root_.map_smul]
     fin_cases i
@@ -309,9 +272,8 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
     ∃ c : R, ((n + 1 : ℕ) : ℕ∞) ≤ (addError F (g - c • PowerSeries.X ^ n)).order ∧
       ∀ k, n = p ^ k → c = 0 := by
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
-  have hh : (leadingError F n g).IsHomogeneous n :=
-    MvPolynomial.homogeneousComponent_isHomogeneous _ _
-  obtain ⟨r, hr⟩ := TauCeti.exists_eq_smul_lazardCocycle (by omega) hh
+  obtain ⟨r, hr⟩ := TauCeti.exists_eq_smul_lazardCocycle (by omega)
+    (isHomogeneous_homogeneousComponentPoly n _)
     (isSymmetric_leadingError hn) (isAddCocycle₂_leadingError hn)
   by_cases hpow : ∃ k, n = p ^ k
   · obtain ⟨k, rfl⟩ := hpow
@@ -322,7 +284,7 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
     refine ⟨0, ?_, fun _ _ ↦ rfl⟩
     rw [zero_smul, sub_zero]
     refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
-    rw [← coe_leadingError, hr, hr₀, zero_smul, MvPolynomial.coe_zero]
+    rw [← coe_homogeneousComponentPoly, hr, hr₀, zero_smul, MvPolynomial.coe_zero]
   · -- `d_n` is prime to `p`, hence a unit in `R`, and `r C_n = (r d_n⁻¹) ((X + Y)ⁿ - Xⁿ - Yⁿ)`
     have hd : IsUnit ((TauCeti.lazardGcd n : ℕ) : R) := by
       have hcop : (TauCeti.lazardGcd n).Coprime p := Nat.Coprime.symm <|
@@ -331,8 +293,9 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
       have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
         simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
       rwa [hpR, isCoprime_zero_right] at this
-    have hc : leadingError F n g = (r * ↑hd.unit⁻¹) • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n -
-        MvPolynomial.X 0 ^ n - MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R) := by
+    have hc : homogeneousComponentPoly n (addError F g) =
+        (r * ↑hd.unit⁻¹) • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n -
+          MvPolynomial.X 0 ^ n - MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R) := by
       rw [hr, ← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega), ← Nat.cast_smul_eq_nsmul R,
         smul_smul, mul_assoc, hd.val_inv_mul, mul_one]
     set c := r * ↑hd.unit⁻¹
@@ -343,8 +306,8 @@ private theorem exists_le_order_addError_sub_smul_X_pow [F.IsComm] {p : ℕ} (hp
       rw [addError_sub]
       exact le_order_sub hn (le_order_addError F hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [addError_sub, map_sub, homogeneousComponent_addError_smul_X_pow, ← coe_leadingError, hc,
-      sub_self]
+    rw [addError_sub, map_sub, homogeneousComponent_addError_smul_X_pow,
+      ← coe_homogeneousComponentPoly, hc, sub_self]
 
 end PSeries
 

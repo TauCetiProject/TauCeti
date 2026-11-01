@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Height
--- Proof-only: permutations of `Fin 2`, substitution into a formal group law, the symmetric
--- 2-cocycle lemma, and orders and lowest-degree components of substitutions.
-import TauCeti.Data.Fin.Basic
+-- Proof-only: substitution into a formal group law, the symmetric 2-cocycle lemma, and orders
+-- and lowest-degree components of substitutions.
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -71,21 +70,22 @@ variable {R : Type*} [CommRing R] (F G : FormalGroup R)
 
 section Leading
 
-/-- The degree-`n` part of `F - G`, as a polynomial. -/
-private noncomputable def leadingDiff (n : ℕ) : MvPolynomial (Fin 2) R :=
-  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (F.toPowerSeries - G.toPowerSeries))
-
-private theorem coe_leadingDiff (n : ℕ) :
-    (leadingDiff F G n : MvPowerSeries (Fin 2) R) =
-      homogeneousComponent n (F.toPowerSeries - G.toPowerSeries) := by
-  ext d
-  rw [MvPolynomial.coeff_coe, leadingDiff, MvPolynomial.coeff_homogeneousComponent,
-    coeff_homogeneousComponent]
-  split_ifs with hd
-  · exact coeff_truncTotal _ (by omega)
-  · rfl
-
 variable {F G}
+
+/-- A pair of series without constant coefficient has entries without constant coefficient. -/
+private theorem constantCoeff_pair_eq_zero {τ : Type*} {x y : MvPowerSeries τ R}
+    (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) (i : Fin 2) :
+    constantCoeff (![x, y] i) = 0 := by
+  fin_cases i <;> simp [hx, hy]
+
+/-- `F(x, y) - G(x', y') = (F - G)(x, y) + (G(x, y) - G(x', y'))`. -/
+private theorem subst_pair_sub_subst_pair_eq {τ : Type*} {x y x' y' : MvPowerSeries τ R}
+    (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) :
+    F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y'] =
+      (F.toPowerSeries - G.toPowerSeries).subst ![x, y] +
+        (G.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']) := by
+  rw [subst_sub (hasSubst_of_constantCoeff_zero (constantCoeff_pair_eq_zero hx hy))]
+  ring
 
 /-- If `x - x'` and `y - y'` have order at least `n`, so does `F(x, y) - G(x', y')`, provided
 `F - G` does. -/
@@ -94,16 +94,12 @@ private theorem le_order_subst_pair_sub_subst_pair {τ : Type*} {n : ℕ}
     (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) (hx' : constantCoeff x' = 0)
     (hy' : constantCoeff y' = 0) (hxx' : n ≤ (x - x').order) (hyy' : n ≤ (y - y').order) :
     (n : ℕ∞) ≤ (F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']).order := by
-  have hxy₀ (i : Fin 2) : constantCoeff (![x, y] i) = 0 := by fin_cases i <;> simp [hx, hy]
-  have hxy₀' (i : Fin 2) : constantCoeff (![x', y'] i) = 0 := by fin_cases i <;> simp [hx', hy']
+  have hxy₀ := constantCoeff_pair_eq_zero hx hy
+  have hxy₀' := constantCoeff_pair_eq_zero hx' hy'
   have hxy := hasSubst_of_constantCoeff_zero hxy₀
-  have hxy' := hasSubst_of_constantCoeff_zero hxy₀'
-  rw [show F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y'] =
-      (F.toPowerSeries - G.toPowerSeries).subst ![x, y] +
-        (G.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']) by
-    rw [subst_sub hxy]; ring]
-  refine le_order_add ?_ (le_order_subst_sub_subst hxy hxy' hxy₀' (fun i ↦ by
-    fin_cases i <;> simpa) _)
+  rw [subst_pair_sub_subst_pair_eq hx hy]
+  refine le_order_add ?_ (le_order_subst_sub_subst hxy (hasSubst_of_constantCoeff_zero hxy₀')
+    hxy₀' (fun i ↦ by fin_cases i <;> simpa) _)
   calc (n : ℕ∞) = 1 * n := (one_mul _).symm
     _ ≤ _ := (mul_le_mul' (le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (hxy₀ i))
       hn).trans (le_order_subst hxy _)
@@ -120,32 +116,26 @@ private theorem homogeneousComponent_subst_pair_sub_subst_pair {τ : Type*} {n :
     {lx ly : MvPolynomial τ R} (hlx : homogeneousComponent 1 x = lx)
     (hly : homogeneousComponent 1 y = ly) :
     homogeneousComponent n (F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']) =
-      (MvPolynomial.aeval ![lx, ly] (leadingDiff F G n) : MvPowerSeries τ R) +
-        homogeneousComponent n (x - x') + homogeneousComponent n (y - y') := by
-  have hxy₀ (i : Fin 2) : constantCoeff (![x, y] i) = 0 := by fin_cases i <;> simp [hx, hy]
-  have hxy₀' (i : Fin 2) : constantCoeff (![x', y'] i) = 0 := by fin_cases i <;> simp [hx', hy']
+      (MvPolynomial.aeval ![lx, ly]
+          (homogeneousComponentPoly n (F.toPowerSeries - G.toPowerSeries)) :
+        MvPowerSeries τ R) + homogeneousComponent n (x - x') + homogeneousComponent n (y - y') := by
+  have hxy₀ := constantCoeff_pair_eq_zero hx hy
+  have hxy₀' := constantCoeff_pair_eq_zero hx' hy'
   have hxy := hasSubst_of_constantCoeff_zero hxy₀
-  have hxy' := hasSubst_of_constantCoeff_zero hxy₀'
-  rw [show F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y'] =
-      (F.toPowerSeries - G.toPowerSeries).subst ![x, y] +
-        (G.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']) by
-    rw [subst_sub hxy]; ring]
-  rw [map_add, homogeneousComponent_subst_of_le_order hn hxy hxy₀, ← coe_leadingDiff, subst_coe,
-    homogeneousComponent_subst_sub_subst hn₀ hxy hxy' hxy₀' (fun i ↦ by fin_cases i <;> simpa),
+  rw [subst_pair_sub_subst_pair_eq hx hy, map_add,
+    homogeneousComponent_subst_eq_coe_aeval hn hxy hxy₀ (l := ![lx, ly])
+      (fun i ↦ by fin_cases i <;> simp [hlx, hly]),
+    homogeneousComponent_subst_sub_subst hn₀ hxy (hasSubst_of_constantCoeff_zero hxy₀') hxy₀'
+      (fun i ↦ by fin_cases i <;> simpa),
     Fin.sum_univ_two, G.lin_coeff_X, G.lin_coeff_Y, one_smul, one_smul, add_assoc]
-  congr 1
-  have hl : (fun i ↦ homogeneousComponent 1 (![x, y] i)) =
-      fun i ↦ ((![lx, ly] i : MvPolynomial τ R) : MvPowerSeries τ R) := by
-    funext i
-    fin_cases i <;> simp [hlx, hly]
-  rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
-    (leadingDiff F G n) (f := ![lx, ly])).symm
+  -- `![x, y] 0 - ![x', y'] 0` and `![x, y] 1 - ![x', y'] 1` reduce to `x - x'` and `y - y'`
+  rfl
 
 /-- The degree-`n` part of `F - G` is an additive 2-cocycle when `F - G` has order at least
 `n ≠ 0`. -/
 private theorem isAddCocycle₂_leadingDiff {n : ℕ} (hn₀ : n ≠ 0)
-    (hn : n ≤ (F.toPowerSeries - G.toPowerSeries).order) : (leadingDiff F G n).IsAddCocycle₂ := by
+    (hn : n ≤ (F.toPowerSeries - G.toPowerSeries).order) :
+    (homogeneousComponentPoly n (F.toPowerSeries - G.toPowerSeries)).IsAddCocycle₂ := by
   have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := R) i
   have hX₀ (i : Fin 3) := constantCoeff_X (R := R) i
   have hc (H : FormalGroup R) (i j : Fin 3) :
@@ -168,7 +158,8 @@ private theorem isAddCocycle₂_leadingDiff {n : ℕ} (hn₀ : n ≠ 0)
         G.toPowerSeries.subst ![X i, X j]).order ∧
       homogeneousComponent n (F.toPowerSeries.subst ![(X i : MvPowerSeries (Fin 3) R), X j] -
         G.toPowerSeries.subst ![X i, X j]) =
-        ((MvPolynomial.aeval ![MvPolynomial.X i, MvPolynomial.X j] (leadingDiff F G n) :
+        ((MvPolynomial.aeval ![MvPolynomial.X i, MvPolynomial.X j]
+          (homogeneousComponentPoly n (F.toPowerSeries - G.toPowerSeries)) :
           MvPolynomial (Fin 3) R) : MvPowerSeries (Fin 3) R) := by
     refine ⟨le_order_subst_pair_sub_subst_pair hn (hX₀ i) (hX₀ j) (hX₀ i) (hX₀ j) (by simp)
       (by simp), ?_⟩
@@ -192,32 +183,18 @@ private theorem isAddCocycle₂_leadingDiff {n : ℕ} (hn₀ : n ≠ 0)
 /-- The degree-`n` part of `F - G` is symmetric when `F` and `G` are commutative and `F - G` has
 order at least `n`. -/
 private theorem isSymmetric_leadingDiff [F.IsComm] [G.IsComm] {n : ℕ}
-    (hn : n ≤ (F.toPowerSeries - G.toPowerSeries).order) : (leadingDiff F G n).IsSymmetric := by
+    (hn : n ≤ (F.toPowerSeries - G.toPowerSeries).order) :
+    (homogeneousComponentPoly n (F.toPowerSeries - G.toPowerSeries)).IsSymmetric := by
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   have h10 := hasSubst_finTwo (hX 1) (hX 0)
   have hsymm : (F.toPowerSeries - G.toPowerSeries).subst ![X 1, X 0] =
       F.toPowerSeries - G.toPowerSeries := by
     rw [subst_sub h10, F.comm' (hX 1) (hX 0), G.comm' (hX 1) (hX 0), finTwo_X_eq_X, subst_self]
     rfl
-  have hlin : (fun i ↦ homogeneousComponent 1
-      ((![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) i)) = ![X 1, X 0] := by
-    funext i
-    fin_cases i <;> simp [homogeneousComponent_one_X]
-  have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0] (leadingDiff F G n) =
-      leadingDiff F G n := by
-    have := homogeneousComponent_subst_of_le_order hn h10 (fun i ↦ by fin_cases i <;> simp)
-    rw [hsymm, hlin, ← coe_leadingDiff, ← MvPolynomial.coe_X, ← MvPolynomial.coe_X,
-      subst_coe_pair_eq_coe_aeval] at this
-    exact MvPolynomial.coe_inj.mp this.symm
-  intro e
-  rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
-  · simp
-  · have hswap : (MvPolynomial.X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
-        ![MvPolynomial.X 1, MvPolynomial.X 0] := by
-      funext i
-      fin_cases i <;> simp
-    rw [MvPolynomial.rename_eq_aeval, hswap]
-    exact h
+  refine MvPolynomial.isSymmetric_of_aeval_swap (MvPolynomial.coe_inj.mp ?_)
+  rw [← homogeneousComponent_subst_eq_coe_aeval hn h10 (fun i ↦ by fin_cases i <;> simp)
+    (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]), hsymm,
+    coe_homogeneousComponentPoly]
 
 end Leading
 
@@ -234,9 +211,9 @@ theorem exists_homogeneousComponent_sub_eq_smul_lazardCocycle [F.IsComm] [G.IsCo
     rw [homogeneousComponent_zero, map_sub, F.zero_constantCoeff, G.zero_constantCoeff, sub_zero,
       map_zero, zero_smul, MvPolynomial.coe_zero]
   obtain ⟨c, hc⟩ := TauCeti.exists_eq_smul_lazardCocycle hn₀
-    (MvPolynomial.homogeneousComponent_isHomogeneous _ _) (isSymmetric_leadingDiff hn)
+    (isHomogeneous_homogeneousComponentPoly n _) (isSymmetric_leadingDiff hn)
     (isAddCocycle₂_leadingDiff hn₀ hn)
-  exact ⟨c, by rw [← coe_leadingDiff]; exact congrArg _ hc⟩
+  exact ⟨c, by rw [← coe_homogeneousComponentPoly]; exact congrArg _ hc⟩
 
 /-- The multiplication series of formal group laws agreeing below degree `n ≠ 0` agree below
 degree `n`, and the degree-`n` part of `[m]_F(X) - [m]_G(X)` is `∑_{j < m} Δ(j X, X)`, where `Δ`
@@ -247,7 +224,8 @@ private theorem nsmulSeries_sub_nsmulSeries {n : ℕ} (hn₀ : n ≠ 0)
       homogeneousComponent n (F.nsmulSeries m - G.nsmulSeries m : MvPowerSeries Unit R) =
         ((∑ j ∈ Finset.range m, MvPolynomial.aeval
           ![(j : MvPolynomial Unit R) * MvPolynomial.X (), MvPolynomial.X ()]
-            (leadingDiff F G n) : MvPolynomial Unit R) : MvPowerSeries Unit R) := by
+            (homogeneousComponentPoly n (F.toPowerSeries - G.toPowerSeries)) :
+          MvPolynomial Unit R) : MvPowerSeries Unit R) := by
   induction m with
   | zero => simp
   | succ m ih =>
@@ -281,16 +259,19 @@ theorem coeff_nsmulSeries_sub_coeff_nsmulSeries {p : ℕ} (hp : p.Prime) (hpR : 
         MvPowerSeries (Fin 2) R)) :
     PowerSeries.coeff (p ^ k) (G.nsmulSeries p) - PowerSeries.coeff (p ^ k) (F.nsmulSeries p) =
       c := by
-  have hP : leadingDiff F G (p ^ k) = c • TauCeti.lazardCocycle (p ^ k) R :=
-    MvPolynomial.coe_inj.mp ((coe_leadingDiff F G _).trans hc)
+  have hP : homogeneousComponentPoly (p ^ k) (F.toPowerSeries - G.toPowerSeries) =
+      c • TauCeti.lazardCocycle (p ^ k) R :=
+    MvPolynomial.coe_inj.mp ((coe_homogeneousComponentPoly _ _).trans hc)
   have h := (nsmulSeries_sub_nsmulSeries F G (pow_ne_zero k hp.ne_zero) hn p).2
   simp_rw [hP, _root_.map_smul] at h
   rw [← Finset.smul_sum, TauCeti.sum_aeval_natCast_mul_lazardCocycle hp
     (by rw [← map_natCast (MvPolynomial.C (σ := Unit)), hpR, map_zero]) hk] at h
   have h' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k))) h
   rw [coeff_homogeneousComponent, Finsupp.degree_single, ite_eq_left rfl] at h'
-  simp [MvPolynomial.coeff_X_pow] at h'
-  linear_combination -h'
+  have h'' : PowerSeries.coeff (p ^ k) (F.nsmulSeries p) -
+      PowerSeries.coeff (p ^ k) (G.nsmulSeries p) = -c := by
+    simpa [MvPolynomial.coeff_X_pow] using h'
+  linear_combination -h''
 
 /-- **Agreement propagates through degree `pᵏ` when the `p`-series agree there.** Let `p` be a prime
 with `p = 0` in `R`. If commutative formal group laws `F` and `G` agree below degree `pᵏ` and the

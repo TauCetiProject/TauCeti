@@ -26,6 +26,9 @@ import TauCeti.Algebra.MvPolynomial.Fin.Three
 -- Proof-only: rescaling the values of the homogeneous `C_n`, and computing them over `ℤ`.
 import Mathlib.RingTheory.MvPolynomial.Tower
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
+-- Proof-only: the permutations of `Fin 2`, for symmetry of two-variable polynomials.
+import Mathlib.Tactic.FinCases
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The Lazard symmetric 2-cocycles `C_n(X, Y)`
@@ -67,6 +70,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   where `c_{a,b}` is the coefficient of `XᵃYᵇ` in `f`.
 * `MvPolynomial.IsAddCocycle₂.coeff_single_one_eq_zero`: the coefficient of `Yⁿ` in an additive
   2-cocycle vanishes for `n ≠ 0`.
+* `MvPolynomial.isSymmetric_of_aeval_swap`: a two-variable polynomial with `f(Y, X) = f(X, Y)` is
+  symmetric.
 * `TauCeti.lazardGcd_eq_minFac_of_isPrimePow`, `TauCeti.lazardGcd_eq_one_of_not_isPrimePow`:
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
 * `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≠ 0` and a prime `p`, `p ∣ d_n` exactly when `n` is a
@@ -171,6 +176,19 @@ theorem coeff_single_one_eq_zero (hf : f.IsAddCocycle₂) {n : ℕ} (hn : n ≠ 
 end IsAddCocycle₂
 
 end IsAddCocycle₂
+
+/-- A two-variable polynomial `f(X, Y)` with `f(Y, X) = f(X, Y)` is symmetric. -/
+theorem isSymmetric_of_aeval_swap {f : MvPolynomial (Fin 2) R} (h : aeval ![X 1, X 0] f = f) :
+    f.IsSymmetric := by
+  intro e
+  rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
+  · simp
+  · have hswap : (X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
+        ![X 1, X 0] := by
+      funext i
+      fin_cases i <;> simp
+    rw [rename_eq_aeval, hswap]
+    exact h
 
 end MvPolynomial
 
