@@ -104,27 +104,25 @@ theorem detLineCongr_ιMulti (e : V ≃ₗ[R] W) (v : Fin (finrank R V) → V) :
 @[simp]
 theorem coe_detLineCongr (e : V ≃ₗ[R] W) (x : detLine R V) :
     (detLineCongr e x : ExteriorAlgebra R W) = ExteriorAlgebra.map e.toLinearMap x := by
-  rw [detLineCongr, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply, ← LinearEquiv.coe_coe,
-    exteriorPower_toLinearMap, exteriorPower.coe_map]
+  rw [detLineCongr, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact exteriorPower.coe_map _ x
 
 @[simp]
 theorem detLineCongr_refl : detLineCongr (LinearEquiv.refl R V) = LinearEquiv.refl R _ := by
   ext x
-  rw [coe_detLineCongr, LinearEquiv.refl_toLinearMap, ExteriorAlgebra.map_id, AlgHom.id_apply,
-    LinearEquiv.refl_apply]
+  simp
 
 @[simp]
 theorem detLineCongr_trans (e : V ≃ₗ[R] W) (e' : W ≃ₗ[R] U) :
     detLineCongr (e.trans e') = (detLineCongr e).trans (detLineCongr e') := by
   ext x
-  rw [LinearEquiv.trans_apply, coe_detLineCongr, coe_detLineCongr, coe_detLineCongr,
-    LinearEquiv.coe_trans, ← ExteriorAlgebra.map_comp_map, AlgHom.comp_apply]
+  simp [← LinearEquiv.comp_coe, ← ExteriorAlgebra.map_comp_map]
 
 @[simp]
 theorem detLineCongr_symm (e : V ≃ₗ[R] W) : (detLineCongr e).symm = detLineCongr e.symm := by
   refine LinearEquiv.ext fun x ↦ ?_
-  rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans,
-    LinearEquiv.symm_trans_self, detLineCongr_refl, LinearEquiv.refl_apply]
+  rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
+  simp
 
 end LinearEquiv
 
@@ -256,12 +254,9 @@ theorem detLineCongr_refl :
 theorem detLineCongr_trans (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {k : M'' →ₗ[R] N''} (e₁ : M ≃ₗ[R] M')
     (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) (e₁' : M' ≃ₗ[R] M'')
     (e₂' : N' ≃ₗ[R] N'') (h' : k ∘ₗ e₁'.toLinearMap = e₂'.toLinearMap ∘ₗ g) :
-    f.detLineCongr (e₁.trans e₁') (e₂.trans e₂')
-      (by rw [LinearEquiv.coe_trans, LinearEquiv.coe_trans, ← comp_assoc, h', comp_assoc, h,
-        comp_assoc]) =
+    f.detLineCongr (e₁.trans e₁') (e₂.trans e₂') (comp_trans_eq_of_comp_eq h h') =
       (f.detLineCongr e₁ e₂ h).trans (g.detLineCongr e₁' e₂' h') := by
-  have h'' : k ∘ₗ (e₁.trans e₁').toLinearMap = (e₂.trans e₂').toLinearMap ∘ₗ f := by
-    rw [LinearEquiv.coe_trans, LinearEquiv.coe_trans, ← comp_assoc, h', comp_assoc, h, comp_assoc]
+  have h'' := comp_trans_eq_of_comp_eq h h'
   have hk : (e₁.trans e₁').ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq _ _ h'') =
       (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq _ _ h)).trans
         (e₁'.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq _ _ h')) := by
@@ -272,9 +267,7 @@ theorem detLineCongr_trans (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {k : M'' �
   refine LinearEquiv.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
-    rw [LinearEquiv.trans_apply, detLineCongr_tmul, detLineCongr_tmul, detLineCongr_tmul, hk, hc,
-      LinearEquiv.detLineCongr_trans, LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply,
-      LinearEquiv.trans_symm, LinearEquiv.coe_trans, comp_assoc]
+    simp [hk, hc, comp_assoc]
   | add a b ha hb => rw [map_add, ha, hb, map_add]
 
 /-- Transport along the inverse of a commuting square is the inverse of the transport. -/
