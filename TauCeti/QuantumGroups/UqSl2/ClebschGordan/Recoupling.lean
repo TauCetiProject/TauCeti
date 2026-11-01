@@ -7,6 +7,7 @@ module
 
 public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Projection
 public import TauCeti.Algebra.Bialgebra.Module.Pi
+public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Recoupling three signed ladder modules
@@ -18,9 +19,7 @@ isomorphisms, using the existing normalized Clebsch–Gordan maps at each vertex
 coproduct tensor associator. Its coordinate formula composes inclusions on one side with
 projections on the other, without choosing any additional normalizations.
 
-This is the module-level change of decomposition underlying the quantum 6j symbols. It does
-not yet extract the scalar matrices on fixed simple multiplicity spaces or prove their
-pentagon identity.
+This is the module-level change of decomposition underlying the quantum 6j symbols.
 
 ## References
 
@@ -83,52 +82,28 @@ Clebsch–Gordan inclusions, tensoring the first inclusion with the identity. -/
     clebschGordanLeftEquiv hq (Pi.single i (Pi.single j x)) =
       tensorMap ℂ (UqSl2 q) (clebschGordanInclusion hq i) LinearMap.id
         (clebschGordanInclusion hq j x) := by
-  have hsingle :
-      (LinearEquiv.piCongrRight fun i : Fin (min m n + 1) =>
-        clebschGordanEquiv (m := m + n - 2 * (i : ℕ)) (ε := ε * δ) (n := p) (δ := ζ) hq)
-        (Pi.single i (Pi.single j x)) = Pi.single i (clebschGordanInclusion hq j x) := by
-    funext k
-    simpa only [LinearEquiv.piCongrRight_apply, clebschGordanEquiv_single] using
-      Pi.apply_single (fun i : Fin (min m n + 1) =>
-        clebschGordanEquiv (m := m + n - 2 * (i : ℕ)) (ε := ε * δ) (n := p) (δ := ζ) hq)
-        (fun _ => map_zero _) i (Pi.single j x) k
-  simp only [clebschGordanLeftEquiv, LinearEquiv.trans_apply, hsingle,
+  simp only [clebschGordanLeftEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.piCongrRight_single, clebschGordanEquiv_single,
     piLeft_symm_single, tensorCongr_apply]
-  have hcomp : (clebschGordanEquiv (m := m) (ε := ε) (n := n) (δ := δ) hq).toLinearMap.comp
-      (LinearMap.single _ _ i) = clebschGordanInclusion hq i := by
-    ext y
-    simp
-  rw [← LinearMap.comp_apply, ← tensorMap_comp, hcomp]
+  rw [← LinearMap.comp_apply, ← tensorMap_comp, clebschGordanEquiv_comp_single]
   simp
 
 /-- On one right channel the decomposition is the composite of its two normalized
-Clebsch–Gordan inclusions, tensoring the first inclusion with the identity. -/
+Clebsch–Gordan inclusions, tensoring the identity on `L_m^ε` with the right-pair inclusion. -/
 @[simp] theorem clebschGordanRightEquiv_single (hq : IsGenericQuantumParameter q)
     (i : Fin (min n p + 1)) (j : Fin (min m (n + p - 2 * (i : ℕ)) + 1))
     (x : LadderModule q (m + (n + p - 2 * (i : ℕ)) - 2 * (j : ℕ)) (ε * (δ * ζ))) :
     clebschGordanRightEquiv hq (Pi.single i (Pi.single j x)) =
       tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq i)
         (clebschGordanInclusion hq j x) := by
-  have hsingle :
-      (LinearEquiv.piCongrRight fun i : Fin (min n p + 1) =>
-        clebschGordanEquiv (m := m) (ε := ε) (n := n + p - 2 * (i : ℕ)) (δ := δ * ζ) hq)
-        (Pi.single i (Pi.single j x)) = Pi.single i (clebschGordanInclusion hq j x) := by
-    funext k
-    simpa only [LinearEquiv.piCongrRight_apply, clebschGordanEquiv_single] using
-      Pi.apply_single (fun i : Fin (min n p + 1) =>
-        clebschGordanEquiv (m := m) (ε := ε) (n := n + p - 2 * (i : ℕ)) (δ := δ * ζ) hq)
-        (fun _ => map_zero _) i (Pi.single j x) k
-  simp only [clebschGordanRightEquiv, LinearEquiv.trans_apply, hsingle,
+  simp only [clebschGordanRightEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.piCongrRight_single, clebschGordanEquiv_single,
     piRight_symm_single, tensorCongr_apply]
-  have hcomp : (clebschGordanEquiv (m := n) (ε := δ) (n := p) (δ := ζ) hq).toLinearMap.comp
-      (LinearMap.single _ _ i) = clebschGordanInclusion hq i := by
-    ext y
-    simp
-  rw [← LinearMap.comp_apply, ← tensorMap_comp, hcomp]
+  rw [← LinearMap.comp_apply, ← tensorMap_comp, clebschGordanEquiv_comp_single]
   simp
 
 /-- Right-associated channel extraction is the composite of the two binary projections. -/
-theorem clebschGordanRightEquiv_symm_apply (hq : IsGenericQuantumParameter q)
+@[simp] theorem clebschGordanRightEquiv_symm_apply (hq : IsGenericQuantumParameter q)
     (x : Tensor ℂ (UqSl2 q) (LadderModule q m ε)
       (Tensor ℂ (UqSl2 q) (LadderModule q n δ) (LadderModule q p ζ)))
     (i : Fin (min n p + 1)) (j : Fin (min m (n + p - 2 * (i : ℕ)) + 1)) :
@@ -142,7 +117,7 @@ theorem clebschGordanRightEquiv_symm_apply (hq : IsGenericQuantumParameter q)
   | hadd x y hx hy => simp only [map_add, Pi.add_apply, hx, hy]
 
 /-- Left-associated channel extraction is the composite of the two binary projections. -/
-theorem clebschGordanLeftEquiv_symm_apply (hq : IsGenericQuantumParameter q)
+@[simp] theorem clebschGordanLeftEquiv_symm_apply (hq : IsGenericQuantumParameter q)
     (x : Tensor ℂ (UqSl2 q)
       (Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ)) (LadderModule q p ζ))
     (i : Fin (min m n + 1)) (j : Fin (min (m + n - 2 * (i : ℕ)) p + 1)) :

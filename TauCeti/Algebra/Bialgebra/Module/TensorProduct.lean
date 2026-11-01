@@ -265,6 +265,33 @@ noncomputable def tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
     (by ext m n; simp) (by ext m n; simp)
 
 variable {M N} in
+/-- The underlying linear map of a tensor isomorphism is the tensor product of the maps. -/
+@[simp] theorem toLinearMap_tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
+    (tensorCongr R H f g).toLinearMap = tensorMap R H f.toLinearMap g.toLinearMap := (rfl)
+
+variable {M N} in
+/-- Inverting a tensor isomorphism tensors the inverse isomorphisms. -/
+@[simp] theorem tensorCongr_symm (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
+    (tensorCongr R H f g).symm = tensorCongr R H f.symm g.symm := by
+  rfl
+
+/-- Tensoring identity isomorphisms gives the identity isomorphism. -/
+@[simp] theorem tensorCongr_refl :
+    tensorCongr R H (LinearEquiv.refl H M) (LinearEquiv.refl H N) =
+      LinearEquiv.refl H (Tensor R H M N) := by
+  apply LinearEquiv.toLinearMap_injective
+  simp
+
+variable {M N} in
+/-- Tensor products of module isomorphisms preserve composition. -/
+theorem tensorCongr_trans (f : M ≃ₗ[H] M') (f' : M' ≃ₗ[H] M'')
+    (g : N ≃ₗ[H] N') (g' : N' ≃ₗ[H] N'') :
+    tensorCongr R H (f.trans f') (g.trans g') =
+      (tensorCongr R H f g).trans (tensorCongr R H f' g') := by
+  apply LinearEquiv.toLinearMap_injective
+  simp only [toLinearMap_tensorCongr, LinearEquiv.coe_trans, tensorMap_comp]
+
+variable {M N} in
 /-- The tensor isomorphism has underlying map the tensor product of the two maps. -/
 theorem tensorCongr_apply (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (x : Tensor R H M N) :
     tensorCongr R H f g x = tensorMap R H f.toLinearMap g.toLinearMap x := (rfl)
@@ -274,13 +301,6 @@ variable {M N} in
 @[simp] theorem tensorCongr_tmul (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (m : M) (n : N) :
     tensorCongr R H f g (tmul R H m n) = tmul R H (f m) (g n) := by
   simp [tensorCongr]
-
-variable {M N} in
-/-- The inverse tensor isomorphism acts by the two inverse maps on pure tensors. -/
-@[simp] theorem tensorCongr_symm_tmul (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (m : M') (n : N') :
-    (tensorCongr R H f g).symm (tmul R H m n) = tmul R H (f.symm m) (g.symm n) := by
-  apply (tensorCongr R H f g).injective
-  simp
 
 end Action
 
