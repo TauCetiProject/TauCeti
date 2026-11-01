@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.FormalGroup.Hom
 public import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
 
+import TauCeti.RingTheory.MvPowerSeries.Substitution
+
 /-!
 # Homomorphisms on topologically nilpotent points
 
@@ -16,6 +18,8 @@ complete Hausdorff linearly topologized coefficient algebra `A`. Its value is th
 series `∑ fₙ xⁿ`. Zero constant term ensures that this value is again topologically nilpotent.
 These maps preserve identities and composition and commute with continuous algebra maps.
 Consequently, a formal group isomorphism induces a natural additive equivalence on points.
+On power-series points, applying a homomorphism also commutes with substitution
+(`TauCeti.FormalGroupHom.applyPoint_substPointHom`).
 
 The comparison with native power-series points identifies this evaluation action with formal
 substitution. No topology or continuity assumption on the coefficient ring is needed: it is
@@ -124,6 +128,15 @@ theorem toTopNilpotentPointHom_pointEquiv [UniformSpace R] [DiscreteUniformity R
   ext
   simp only [val_toTopNilpotentPointHom, FormalGroup.val_pointEquivTopNilpotentPoint,
     applyPoint_val, PowerSeries.eval₂, PowerSeries.subst_def, subst_eq_eval₂]
+
+/-- Applying a homomorphism of formal group laws to points commutes with substitution. -/
+theorem applyPoint_substPointHom (f : FormalGroupHom F G) {σ τ : Type*}
+    {a : σ → MvPowerSeries τ R} (ha : HasSubst a) (x : F.Point σ) :
+    f.applyPoint (F.substPointHom ha x) = G.substPointHom ha (f.applyPoint x) :=
+  Subtype.ext <| by
+    rw [applyPoint_val, FormalGroup.val_substPointHom, FormalGroup.val_substPointHom,
+      applyPoint_val]
+    exact (subst_powerSeriesSubst ha x.prop f.toPowerSeries).symm
 
 end FormalGroupHom
 

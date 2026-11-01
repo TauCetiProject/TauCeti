@@ -30,8 +30,8 @@ system does not get that hypothesis for free; what it has to supply is the domin
 ## Main definitions
 
 * `TauCeti.primePowerWeight` is the standard logarithmic prime-power weight, the value `log N(𝔭)`
-  at `𝔭 ^ k` for every `k ≥ 1`.  It is the real form of the ideal von Mangoldt function of Layer 2
-  on the prime powers.
+  at `𝔭 ^ k` for every `k ≥ 1`.  It is the real form of the ideal von Mangoldt function
+  `TauCeti.IdealArithmeticFunction.vonMangoldt` on the prime powers.
 * `TauCeti.primePsi` is its inclusive summatory function over the prime powers whose base lies in
   `S`: the number-field analogue of Chebyshev's `ψ`.
 * `TauCeti.HasNegligibleHigherPrimePowers K S` says that `ψ - ϑ` is `o(x)`.
@@ -48,7 +48,7 @@ system does not get that hypothesis for free; what it has to supply is the domin
   `#S · log x` to `ψ`, with `TauCeti.primePsi_isBigO_log_of_finite` and
   `TauCeti.primePsi_isLittleO_of_finite` its asymptotic forms.
 * `TauCeti.standardPrimePowerRemoval` proves `HasNegligibleHigherPrimePowers K S` for every `S`,
-  from the Layer 5 estimate `ψ(x) - ϑ(x) = O(√x log² x)`.
+  from the estimate `ψ(x) - ϑ(x) = O(√x log² x)` of `HigherPrimePowers.lean`.
 * `TauCeti.primeTheta_asymptotic_of_primePsi` and
   `TauCeti.primePsi_asymptotic_of_primeTheta` transfer a linear asymptotic across that difference,
   with `TauCeti.primeTheta_isEquivalent_of_primePsi` the equivalence form for a nonzero density.
@@ -57,21 +57,16 @@ system does not get that hypothesis for free; what it has to supply is the domin
   (`TauCeti.primeVonMangoldtCoeff_nonneg`) and supported on the prime powers
   (`TauCeti.primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow`).
 * `TauCeti.normCoeff_vonMangoldt` identifies the coefficient system of the full prime carrier with
-  the Layer 1 regrouping of the Layer 2 ideal von Mangoldt function.
+  the norm regrouping `TauCeti.normCoeff` of the ideal von Mangoldt function.
 * `TauCeti.primeVonMangoldtCoeff_rat_natGenerator_pow` evaluates the coefficient system of any set
   of primes of `𝓞 ℚ` at a prime power, and `TauCeti.primeVonMangoldtCoeff_rat_le` bounds it by
   Mathlib's von Mangoldt function `Λ`.
 
-## Roadmap role
+## Use
 
-This is Layer **10.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`: "For the fixed
-standard nonnegative logarithmic prime-power weight, use Layer 5 to prove
-`standardPrimePowerRemoval : HasNegligibleHigherPrimePowers K S` and make
-`primeTheta_asymptotic_of_primePsi` consume that named estimate."  It also supplies the arithmetic
-half of Layer **10.1**, "Define `primePsi` with all prime powers present": the exact nonnegative
-von Mangoldt coefficient system and the identity presenting `ψ` as its partial sum, which is the
-shape in which a Tauberian theorem delivers its conclusion.  The analytic boundary package and
-the resulting prime-number-theorem transfer are in
+The exact nonnegative von Mangoldt coefficient system and the identity presenting `ψ` as its
+partial sum are the shape in which a Tauberian theorem delivers its conclusion. The analytic
+boundary package and the resulting prime-number-theorem transfer are in
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/Prime/Boundary.lean`.
 
 ## References
@@ -84,7 +79,8 @@ The rational-prime case of `ψ`, `ϑ` and their difference is Mathlib's
 `Mathlib/NumberTheory/Chebyshev.lean`, whose `Chebyshev.theta_le_psi` and
 `Chebyshev.abs_psi_sub_theta_le_sqrt_mul_log` are the analogues of
 `TauCeti.primeTheta_le_primePsi` and `TauCeti.standardPrimePowerRemoval`; nothing is transported
-from there, since the estimate consumed here is proved over prime ideals in Layer 5.
+from there, since the estimate consumed here is proved over prime ideals in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/HigherPrimePowers.lean`.
 -/
 
 public section

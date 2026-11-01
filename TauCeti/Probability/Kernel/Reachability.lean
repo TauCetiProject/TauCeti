@@ -35,6 +35,21 @@ def Reaches (κ : Kernel S S) (x y : S) : Prop :=
 def Communicates (κ : Kernel S S) (x y : S) : Prop :=
     κ.Reaches x y ∧ κ.Reaches y x
 
+/-- The communicating class of a state consists of all states communicating with it. -/
+def communicatingClass (κ : Kernel S S) (x : S) : Set S :=
+  {y | κ.Communicates x y}
+
+/-- Membership in a communicating class is communication with its representative. -/
+@[simp]
+theorem mem_communicatingClass_iff (x y : S) :
+    y ∈ κ.communicatingClass x ↔ κ.Communicates x y := (Iff.rfl)
+
+/-- Communicating classes are measurable on countable spaces with measurable singletons. -/
+@[measurability]
+theorem measurableSet_communicatingClass [Countable S] [MeasurableSingletonClass S]
+    (κ : Kernel S S) (x : S) : MeasurableSet (κ.communicatingClass x) :=
+  (Set.to_countable _).measurableSet
+
 /-- `Communicates` unfolds to mutual reachability of the two states. -/
 theorem communicates_def (x y : S) : κ.Communicates x y ↔ κ.Reaches x y ∧ κ.Reaches y x :=
     Iff.rfl

@@ -111,6 +111,35 @@ theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
   ext x
   exact h n x
 
+/-- Linear maps on two tensor-word factors separated by a module agree if they agree on
+pure words in both factors. -/
+theorem linearMap_ext_threefold {B X N : Type*}
+    [AddCommMonoid B] [Module R B] [AddCommMonoid X] [Module R X]
+    [AddCommMonoid N] [Module R N]
+    {f g : (TensorWords R M ⊗[R] X) ⊗[R] TensorWords R B →ₗ[R] N}
+    (h : ∀ (i j : ℕ) (a : Fin i → M) (x : X) (b : Fin j → B),
+      f ((of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
+        of R B j (PiTensorProduct.tprod R b)) =
+      g ((of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
+        of R B j (PiTensorProduct.tprod R b))) : f = g := by
+  apply TensorProduct.ext'
+  intro u v
+  suffices hv : (TensorProduct.curry f).flip v =
+      (TensorProduct.curry g).flip v from LinearMap.congr_fun hv u
+  apply TensorProduct.ext'
+  intro w x
+  have hw : (TensorProduct.curry ((TensorProduct.curry f).flip v)).flip x =
+      (TensorProduct.curry ((TensorProduct.curry g).flip v)).flip x := by
+    apply linearMap_ext
+    intro i a
+    have hv : TensorProduct.curry f (of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) =
+        TensorProduct.curry g (of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) := by
+      apply linearMap_ext
+      intro j b
+      exact h i j a x b
+    exact LinearMap.congr_fun hv v
+  exact LinearMap.congr_fun hw w
+
 /-- Project tensor words to a fixed tensor length. -/
 noncomputable def component (n : ℕ) : TensorWords R M →ₗ[R] TensorPower R n M :=
   DirectSum.component R ℕ (fun n ↦ TensorPower R n M) n
