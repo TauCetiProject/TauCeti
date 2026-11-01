@@ -61,8 +61,8 @@ given in reference coordinates by the matrix formula, and every Novikov-bilinear
 finitely generated modules is the product of the matrix of its values on the reference basis
 (`NovikovModule.eq_novikovProductOfMatrix`). In Floer theory, the entries are the count series
 `∑_A #M(x₁, x₂, x₀; A) e^(-A)` of the reference generator triples, with `A` measured against the
-reference caps; once these series are constructed, their product is the pair-of-pants product on
-the completed complexes.
+reference caps, and the product of this matrix is the pair-of-pants product on the completed
+complexes.
 
 Composing a product with kernel maps, on either input or on the output, gives the product of the
 composite kernel (`NovikovModule.kernelMap_kernelProduct`,
@@ -103,7 +103,7 @@ identity between kernels, which is what counting the ends of one-dimensional mod
 * `TauCeti.NovikovModule.kernelMatrix_kernelOfMatrix`,
   `TauCeti.NovikovModule.kernelOfMatrix_kernelMatrix`: invariant kernels and matrices of Novikov
   series determine each other.
-* `TauCeti.NovikovModule.exists_potential_le_kernelOfMatrix`,
+* `TauCeti.NovikovModule.exists_potential_le_of_kernelOfMatrix_ne_zero`,
   `TauCeti.NovikovModule.potential_le_of_kernelOfMatrix_ne_zero`: potential bounds for the kernel
   of a matrix.
 * `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix`: the matrix formula for the product of
@@ -718,7 +718,7 @@ include hF₁ hF₂ hF₀ in
 /-- **Every finite matrix of Novikov series has a supported kernel.** With finitely many orbits,
 the kernel of any matrix of Novikov series obeys a potential bound with some constant `C`, since
 the periods of the support of each of the finitely many entries are bounded below. -/
-theorem exists_potential_le_kernelOfMatrix [Finite ι₁] [Finite ι₂] [Finite ι₀] :
+theorem exists_potential_le_of_kernelOfMatrix_ne_zero [Finite ι₁] [Finite ι₂] [Finite ι₀] :
     ∃ C, ∀ p₁ p₂ p₀, kernelOfMatrix r₁ r₂ r₀ M p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C := by
   choose b hb using fun q : ι₁ × ι₂ × ι₀ => (M q.1 q.2.1 q.2.2).bddBelow_image_support
   obtain ⟨C, hC⟩ := (Set.finite_range fun q : ι₁ × ι₂ × ι₀ =>
@@ -825,7 +825,7 @@ def novikovProductOfMatrix :
     NovikovModule R F₁ →ₗ[NovikovSeries R H N] NovikovModule R F₂ →ₗ[NovikovSeries R H N]
       NovikovModule R F₀ :=
   novikovKernelProduct hF₁ hF₂ hF₀
-    (exists_potential_le_kernelOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M).choose_spec
+    (exists_potential_le_of_kernelOfMatrix_ne_zero hF₁ hF₂ hF₀ r₁ r₂ r₀ M).choose_spec
     (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ M) (kernelOfMatrix_vadd_fst r₁ r₂ r₀ M)
     (kernelOfMatrix_vadd_snd r₁ r₂ r₀ M)
 
@@ -857,12 +857,13 @@ theorem coordinates_novikovProductOfMatrix [Fintype ι₁] [Fintype ι₂] (a : 
     coordinates hF₀ r₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M a b) k =
       ∑ i, ∑ j, coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j * M i j k := by
   rw [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ M
-      (exists_potential_le_kernelOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M).choose_spec,
+      (exists_potential_le_of_kernelOfMatrix_ne_zero hF₁ hF₂ hF₀ r₁ r₂ r₀ M).choose_spec,
     coordinates_kernelProduct hF₁ hF₂ hF₀ _ _ (kernelOfMatrix_vadd_fst r₁ r₂ r₀ M)
       (kernelOfMatrix_vadd_snd r₁ r₂ r₀ M), kernelMatrix_kernelOfMatrix]
 
 /-- The product of two reference basis vectors has the `(i, j)` entries of the matrix as its
 coordinates: `eᵢ ⋆ eⱼ = ∑ₖ Mᵢⱼₖ eₖ`. -/
+@[simp]
 theorem coordinates_novikovProductOfMatrix_basis (i : ι₁) (j : ι₂) (k : ι₀) :
     coordinates hF₀ r₀
       (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M (basis hF₁ r₁ i) (basis hF₂ r₂ j)) k =
