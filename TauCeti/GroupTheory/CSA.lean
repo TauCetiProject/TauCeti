@@ -192,15 +192,15 @@ theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransit
   rw [hgx.eq, mul_inv_cancel_right] at hg
   exact hxx (mul_eq_one_iff_eq_inv.2 hg)
 
-/-- A torsion-free commutative-transitive group has unique roots: if `x ^ n = y ^ n` with
-`n ≠ 0` and `y ≠ 1`, then `x` and `y` both commute with the nonidentity element `y ^ n`, hence
-with each other. -/
+/-- A torsion-free commutative-transitive group has unique roots: for all `x` and `y`, if
+`x ^ n = y ^ n` with `n ≠ 0`, then `x = y`. -/
 theorem IsCommTransitive.hasUniqueRoots [IsMulTorsionFree G] (hG : IsCommTransitive G) :
     HasUniqueRoots G where
   pow_left_injective n hn x y hxy := by
     dsimp only at hxy
     obtain rfl | hy := eq_or_ne y 1
     · rwa [one_pow, pow_eq_one_iff_left hn] at hxy
+    -- Both `x` and `y` commute with the nonidentity element `y ^ n`, hence with each other.
     have hyn : y ^ n ≠ 1 := (pow_eq_one_iff_left hn).not.2 hy
     have hcomm : Commute x y :=
       hG x (y ^ n) y hyn (by rw [← hxy]; exact Commute.self_pow x n) (Commute.pow_self y n)
