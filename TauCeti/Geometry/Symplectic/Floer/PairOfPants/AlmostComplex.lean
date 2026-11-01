@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
-public import TauCeti.Geometry.Symplectic.Cayley
+public import TauCeti.Geometry.Symplectic.Cayley.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.Algebra.SMul
@@ -157,8 +157,8 @@ pair-of-pants structure at the point with end coordinates `z = s + i t` is `J q 
 theorem pairOfPantsAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
     (hJp : Function.Periodic (J q) 1) {z : ℂ} (hz : 2 ≤ q.endSign * z.re) (x : M) :
     pairOfPantsAlmostComplex h₀ J hJ (q.cylindricalEndLift z) x = J q z.im x := by
-  rw [← h₀.cayley_inj (tames_pairOfPantsAlmostComplex h₀ _ x) (hJ q z.im x),
-    cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos h₀ hJp (by linarith),
+  refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ _ x) (hJ q z.im x) ?_
+  rw [cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos h₀ hJp (by linarith),
     smoothTransition.one_of_one_le (by linarith), one_smul]
 
 /-- The pair-of-pants structure differs from `J₀` only on the parts `±s > 1` of the three ends. -/
@@ -166,7 +166,7 @@ theorem exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne (h₀ : ω.Comp
     {w : ℂ} {x : M} (h : pairOfPantsAlmostComplex h₀ J hJ w x ≠ J₀) :
     ∃ (q : Puncture) (z : ℂ), 1 < q.endSign * z.re ∧ q.cylindricalEndLift z = w := by
   by_contra! hne
-  refine h ((h₀.cayley_inj (tames_pairOfPantsAlmostComplex h₀ w x) h₀.tames).mp ?_)
+  refine h (h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ w x) h₀.tames ?_)
   rw [cayley_pairOfPantsAlmostComplex, AlmostComplexStructure.cayley_self]
   refine Finset.sum_eq_zero fun q _ => ?_
   by_cases hc : smoothTransition (q.endSign * (q.endCoord w).re - 1) = 0
