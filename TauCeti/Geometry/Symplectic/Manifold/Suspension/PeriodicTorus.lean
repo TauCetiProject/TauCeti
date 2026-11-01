@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Horizontal
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
