@@ -128,6 +128,12 @@ variable {n : ℕ}
 theorem cubeState_injective : Function.Injective (cubeState (n := n)) := fun S T h ↦ by
   rw [← filter_cubeState_eq_false S, ← filter_cubeState_eq_false T, h]
 
+/-- The vertices of the cube correspond bijectively to the states: the state `s` is the state of
+the vertex formed by its `B`-smoothings. -/
+theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
+  ⟨cubeState_injective, fun s ↦
+    ⟨({i | s i = false} : Finset (Fin n)), by funext i; simp [cubeState_apply]⟩⟩
+
 /-- Along an edge `S ⋖ T` of the cube, the states of `S` and `T` agree away from the added
 crossing `a ∈ T \ S`. -/
 theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (haS : a ∉ S)
