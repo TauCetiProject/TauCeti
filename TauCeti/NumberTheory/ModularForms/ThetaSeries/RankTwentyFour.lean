@@ -37,7 +37,7 @@ namespace TauCeti
 
 private lemma qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
     qExpansion 1
-      (ModularForm.mcast (by norm_num : (3 : ℤ) * 4 = 12) (E₄.pow 3) +
+      (ModularForm.mcast (by norm_num) (E₄.pow 3) +
         c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
       qExpansion 1 E₄ ^ 3 + c • qExpansion 1 ModularForm.discriminant := by
   have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
@@ -51,6 +51,9 @@ end TauCeti
 
 namespace ZLattice.IsEven
 
+-- The natural-weight APIs `thetaForm` and `sturm_bound_levelOne_nat` use `k = 12`:
+-- `2 * 12 = 24` and `((12 : ℕ) : ℤ) = 12` hold by definitional equality.
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L]
 
@@ -59,12 +62,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 theorem thetaForm_eq_E₄_cube_add_smul_discriminant (hL : IsEven L) (hU : IsUnimodular L)
     (hr : Module.finrank ℝ E = 24) :
     thetaForm hL hU (k := 12) hr =
-      ModularForm.mcast (by norm_num : (3 : ℤ) * 4 = 12) (E₄.pow 3) +
+      ModularForm.mcast (by norm_num) (E₄.pow 3) +
         ((representationNumber L 2 : ℂ) - 720) •
           CuspForm.toModularFormₗ CuspForm.discriminant := by
   have hq : qExpansion 1
       (thetaForm hL hU (k := 12) hr -
-        (ModularForm.mcast (by norm_num : (3 : ℤ) * 4 = 12) (E₄.pow 3) +
+        (ModularForm.mcast (by norm_num) (E₄.pow 3) +
           ((representationNumber L 2 : ℂ) - 720) •
             CuspForm.toModularFormₗ CuspForm.discriminant) : ModularForm 𝒮ℒ 12) =
       qExpansion 1 (thetaSeries L) - (qExpansion 1 E₄ ^ 3 +
@@ -78,9 +81,9 @@ theorem thetaForm_eq_E₄_cube_add_smul_discriminant (hL : IsEven L) (hU : IsUni
   intro n hn
   rw [hq]
   interval_cases n
-  · simp [-PowerSeries.coeff_zero_eq_constantCoeff, hL.qExpansion_thetaSeries_coeff_zero,
-      pow_succ, PowerSeries.coeff_mul, E_qExpansion_coeff_zero _ ⟨2, rfl⟩,
-      TauCeti.ModularForm.discriminant_qExpansion_coeff_zero]
+  · simp only [map_sub, map_add, PowerSeries.coeff_smul,
+      hL.qExpansion_thetaSeries_coeff_zero, TauCeti.ModularForm.E₄_cube_qExpansion_coeff_zero,
+      TauCeti.ModularForm.discriminant_qExpansion_coeff_zero, smul_zero, add_zero, sub_self]
   · simp [hL.qExpansion_thetaSeries_coeff, TauCeti.ModularForm.E₄_cube_qExpansion_coeff_one,
       discriminant_qExpansion_coeff_one]
 
@@ -91,9 +94,11 @@ theorem thetaSeries_eq_E₄_cube_add_mul_discriminant (hL : IsEven L) (hU : IsUn
       ((representationNumber L 2 : ℂ) - 720) * ModularForm.discriminant τ := by
   have h := congrFun (congrArg DFunLike.coe
     (hL.thetaForm_eq_E₄_cube_add_smul_discriminant hU hr)) τ
-  simpa only [coe_thetaForm, FunLike.coe_add, FunLike.coe_smul, coe_mcast, coe_pow,
-    Pi.add_apply, Pi.smul_apply, Pi.pow_apply, CuspForm.toModularFormₗ_apply,
-    CuspForm.coe_discriminant, smul_eq_mul, congrFun (coe_pow E₄ 3) τ] using h
+  -- At a point, coercions reduce to evaluation before `coe_pow` can match the function;
+  -- its pointwise instance rewrites the bundled power without unfolding its definition.
+  simpa only [coe_thetaForm, FunLike.coe_add, FunLike.coe_smul, coe_mcast,
+    Pi.add_apply, Pi.smul_apply, CuspForm.toModularFormₗ_apply,
+    CuspForm.coe_discriminant, smul_eq_mul, congrFun (coe_pow E₄ 3) τ, Pi.pow_apply] using h
 
 /-- The power series identity for a rank-`24` even unimodular lattice. Its coefficients
 express every representation number in terms of `E₄³`, Ramanujan's tau function, and `r_L(2)`. -/
@@ -114,10 +119,9 @@ theorem representationNumber_four_add_twenty_four_mul (hL : IsEven L) (hU : IsUn
     representationNumber L 4 + 24 * representationNumber L 2 = 196560 := by
   have h := congrArg (PowerSeries.coeff 2)
     (hL.qExpansion_thetaSeries_eq_E₄_cube_add_smul_discriminant hU hr)
-  rw [hL.qExpansion_thetaSeries_coeff, Nat.cast_ofNat,
-    (by norm_num : (2 : ℝ) * 2 = 4), map_add, PowerSeries.coeff_smul,
+  norm_num [hL.qExpansion_thetaSeries_coeff, PowerSeries.coeff_smul,
     TauCeti.ModularForm.E₄_cube_qExpansion_coeff_two,
-    TauCeti.ModularForm.discriminant_qExpansion_coeff_two, smul_eq_mul] at h
+    TauCeti.ModularForm.discriminant_qExpansion_coeff_two] at h
   have hc : (representationNumber L 4 : ℂ) + 24 * representationNumber L 2 = 196560 := by
     linear_combination h
   exact_mod_cast hc
