@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Height.MvPolynomial
 public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import TauCeti.NumberTheory.Padics.PadicValNat
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Heights of integer tuples and integer polynomials over `ℚ`
@@ -35,6 +36,9 @@ height estimates such as Roth's lemma.
   at most its height.
 * `Rat.mulHeight₁_le_max_one_abs_mul_den`: conversely, `H(q) ≤ max(1, |q|) den(q)`.
 * `Rat.mulHeight₁_intCast_div_le`: `H(x / y) ≤ max(|x|, |y|)` for integers `x` and `y ≠ 0`.
+* `MvPolynomial.IsHomogeneous.max_abs_le_abs_eval_rpow_mul_mulHeight₁`: conversely, if `F` is an
+  integer binary form of degree `n ≠ 0` with `F(x, y) ≠ 0`, then
+  `max(|x|, |y|) ≤ |F(x, y)| ^ (1 / n) H(x / y)`.
 * `Rat.abs_padicValRat_mul_log_le_logHeight₁`, `Rat.abs_padicValRat_le_logHeight₁_div_log_two`:
   the `p`-adic valuation of a rational number is bounded by its logarithmic height,
   `|v_p(q)| log p ≤ h(q)`, and hence `|v_p(q)| ≤ h(q) / log 2`.
@@ -336,3 +340,50 @@ theorem logHeight_map_intCast_le_log (hP : P ≠ 0) {B : ℝ}
     fun n ↦ by simpa [toFinsupp_apply] using hB n
 
 end Polynomial
+
+namespace MvPolynomial.IsHomogeneous
+
+/-- **The size of an integer point from the height of its ratio.** Let `F` be a binary form of
+degree `n ≠ 0` with integer coefficients and let `x, y` be integers with `F(x, y) ≠ 0`. Then
+`max(|x|, |y|) ≤ |F(x, y)| ^ (1 / n) H(x / y)`. In particular a height bound for the ratios
+`x / y` of the solutions of a Thue equation `F(x, y) = m` bounds the solutions themselves. -/
+theorem max_abs_le_abs_eval_rpow_mul_mulHeight₁ {F : MvPolynomial (Fin 2) ℤ} {n : ℕ}
+    (hF : F.IsHomogeneous n) (hn : n ≠ 0) {x y : ℤ} (h : eval ![x, y] F ≠ 0) :
+    max |(x : ℝ)| |(y : ℝ)| ≤
+      |(eval ![x, y] F : ℝ)| ^ (1 / (n : ℝ)) * mulHeight₁ ((x : ℚ) / y) := by
+  classical
+  -- Write `![x, y] = d • w` with `d = gcd(x, y)` and `gcd(w) = 1`.
+  obtain ⟨w, hvw, hw⟩ := Finset.univ.extract_gcd ![x, y] Finset.univ_nonempty
+  set d := Finset.univ.gcd ![x, y]
+  have hdw : ![x, y] = d • w := _root_.funext fun i ↦ by simp [← hvw i (Finset.mem_univ i)]
+  have heval : eval ![x, y] F = d ^ n * eval w F := by rw [hdw, hF.eval_smul, smul_eq_mul]
+  have hd : d ≠ 0 := by
+    rintro hd
+    rw [heval, hd, zero_pow hn, zero_mul] at h
+    exact h rfl
+  -- `|d| ≤ |F(x, y)| ^ (1 / n)`, since `dⁿ` divides `F(x, y) ≠ 0`.
+  have hdF : |(d : ℝ)| ≤ |(eval ![x, y] F : ℝ)| ^ (1 / (n : ℝ)) := by
+    have hdn : |(d : ℝ)| ^ n ≤ |(eval ![x, y] F : ℝ)| := by
+      rw [heval, Int.cast_mul, abs_mul, Int.cast_pow, abs_pow]
+      refine le_mul_of_one_le_right (by positivity) ?_
+      exact_mod_cast Int.one_le_abs (right_ne_zero_of_mul (heval ▸ h))
+    rw [one_div, ← Real.pow_rpow_inv_natCast (abs_nonneg (d : ℝ)) hn]
+    exact Real.rpow_le_rpow (by positivity) hdn (by positivity)
+  -- `H(x / y) = max(|w 0|, |w 1|)`, since `x / y = w 0 / w 1` with `w` coprime.
+  have hH : mulHeight₁ ((x : ℚ) / y) = ((⨆ i, |w i| : ℤ) : ℝ) := by
+    have hcast : ![(x : ℚ), y] = (d : ℚ) • (((↑) : ℤ → ℚ) ∘ w) := by
+      ext i
+      rw [Pi.smul_apply, Function.comp_apply, smul_eq_mul, ← Int.cast_mul,
+        ← hvw i (Finset.mem_univ i)]
+      fin_cases i <;> simp
+    rw [mulHeight₁_div_eq_mulHeight, hcast, mulHeight_smul_eq_mulHeight _ (Int.cast_ne_zero.mpr hd),
+      Rat.mulHeight_eq_max_abs_of_gcd_eq_one hw]
+  have hcoord (i : Fin 2) : |((![x, y] i : ℤ) : ℝ)| ≤ |(d : ℝ)| * mulHeight₁ ((x : ℚ) / y) := by
+    rw [hdw, Pi.smul_apply, smul_eq_mul, Int.cast_mul, abs_mul, hH]
+    refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+    rw [← Int.cast_abs]
+    exact_mod_cast le_ciSup (Finite.bddAbove_range fun i ↦ |w i|) i
+  refine (max_le (by simpa using hcoord 0) (by simpa using hcoord 1)).trans ?_
+  exact mul_le_mul_of_nonneg_right hdF (mulHeight₁_nonneg _)
+
+end MvPolynomial.IsHomogeneous

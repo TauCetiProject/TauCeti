@@ -7,7 +7,10 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
 /-!
@@ -31,10 +34,17 @@ If `X` is a quasicategory, every horn `Λ[n, i]` with `0 < i` in `Hom^R_X(x, y)`
 can be filled. (That the remaining horns can also be filled, making `Hom^R_X(x, y)` a Kan complex,
 is Joyal's theorem on special outer horns, which this file does not prove.)
 
+If `X` is strict Segal, for instance the nerve of a category, then every simplex of
+`Hom^R_X(x, y)` is totally degenerate: its spine consists of degenerate edges at `x` followed by
+a single edge to `y`. Hence `Hom^R_X(x, y)` is the discrete simplicial set on the edges from `x`
+to `y`.
+
 ## Main definitions
 
 * `SSet.rightMappingSpace X x y`: the right mapping space `Hom^R_X(x, y)`.
 * `SSet.rightMappingSpace.obj₀Equiv`: its vertices are the edges from `x` to `y`.
+* `SSet.rightMappingSpace.constEdgeIso`: for a strict Segal simplicial set, `Hom^R_X(x, y)` is
+  the discrete simplicial set on the edges from `x` to `y`.
 
 ## Main results
 
@@ -268,6 +278,81 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
 instance quasicategory [X.Quasicategory] :
     (X.rightMappingSpace x y : SSet.{u}).Quasicategory where
   hornFilling' _ _ σ₀ h0 _ := hornFilling h0.ne' σ₀
+
+/-! ### Strict Segal simplicial sets -/
+
+section IsStrictSegal
+
+/-- In the right mapping space of a strict Segal simplicial set, every simplex is the totally
+degenerate simplex at its last vertex. -/
+private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
+    (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
+    s = (X.rightMappingSpace x y : SSet.{u}).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
+      ((X.rightMappingSpace x y : SSet.{u}).map
+        (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s) := by
+  refine Subtype.ext ((map_eq_of_isStrictSegal (joinVertex.map
+    (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0 ≫ SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)))
+    mkOfSucc_last_comp_joinVertex_map mkOfSucc_castSucc_comp_joinVertex_map (s.1 : X _⦋n + 1⦌)
+    ((mem_rightMappingSpace_iff _).1 s.2).1).symm.trans ?_)
+  -- The simplicial operators of `Hom^R_X(x, y)` act on `X` through `joinVertex`.
+  rw [Functor.map_comp]
+  exact Functor.map_comp_apply X (joinVertex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n))).op
+    (joinVertex.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0)).op _
+
+/-- The right mapping spaces of a strict Segal simplicial set, such as the nerve of a category,
+are discrete: sending an edge from `x` to `y` to the totally degenerate simplices at the
+corresponding vertex is an isomorphism from the discrete simplicial set on these edges. -/
+instance isIso_constHomEquiv_symm [X.IsStrictSegal] :
+    IsIso ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  rintro ⟨⟨n⟩⟩
+  rw [isIso_iff_bijective]
+  -- The comparison sends an edge to the totally degenerate simplex at the corresponding vertex.
+  have happ (e : X.Edge x y) :
+      ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm).app (op ⦋n⦌) e =
+        (X.rightMappingSpace x y : SSet.{u}).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
+          (obj₀Equiv.symm e) := by
+    rw [← constHomEquiv_symm_app_zero (X.Edge x y) obj₀Equiv.symm e]
+    exact (NatTrans.naturality_apply ((constHomEquiv (X.Edge x y)).symm obj₀Equiv.symm)
+      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
+      (e : ((Functor.const SimplexCategoryᵒᵖ).obj (X.Edge x y)).obj (op ⦋0⦌)))
+  refine ⟨fun e e' h ↦ ?_, fun s ↦ ⟨obj₀Equiv ((X.rightMappingSpace x y : SSet.{u}).map
+    (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s), ?_⟩⟩
+  · -- The last vertex of the totally degenerate simplex at a vertex is that vertex.
+    have h' := congrArg ((X.rightMappingSpace x y : SSet.{u}).map
+      (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op) ((happ e).symm.trans (h.trans (happ e')))
+    simp only [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim
+      (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n) ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _),
+      op_id] at h'
+    exact obj₀Equiv.symm.injective (by simpa using h')
+  · rw [happ, Equiv.symm_apply_apply]
+    exact (eq_map_const_of_isStrictSegal s).symm
+
+variable (x y) in
+/-- The right mapping space `Hom^R_X(x, y)` of a strict Segal simplicial set, such as the nerve of
+a category, is the discrete simplicial set on the edges from `x` to `y`. -/
+noncomputable def constEdgeIso [X.IsStrictSegal] :
+    (Functor.const SimplexCategoryᵒᵖ).obj (X.Edge x y) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
+  asIso ((constHomEquiv (X.Edge x y)).symm obj₀Equiv.symm)
+
+/-- On vertices, the discreteness isomorphism sends an edge to the corresponding vertex of
+`Hom^R_X(x, y)`. -/
+@[simp]
+theorem constEdgeIso_hom_app_zero [X.IsStrictSegal] (e : X.Edge x y) :
+    dsimp% (constEdgeIso x y).hom.app (op ⦋0⦌) e = obj₀Equiv.symm e :=
+  constHomEquiv_symm_app_zero (X.Edge x y) obj₀Equiv.symm e
+
+/-- On vertices, the inverse of the discreteness isomorphism sends a vertex of `Hom^R_X(x, y)` to
+the corresponding edge. -/
+@[simp]
+theorem constEdgeIso_inv_app_zero [X.IsStrictSegal]
+    (s : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    dsimp% (constEdgeIso x y).inv.app (op ⦋0⦌) s = obj₀Equiv s := by
+  apply obj₀Equiv.symm.injective
+  rw [Equiv.symm_apply_apply, ← constEdgeIso_hom_app_zero]
+  simp
+
+end IsStrictSegal
 
 end rightMappingSpace
 
