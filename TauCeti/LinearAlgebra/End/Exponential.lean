@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Nilpotent.Log
 public import TauCeti.LinearAlgebra.End.JordanChain.Partition
-import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
 # Jordan type under the finite exponential
@@ -44,36 +43,39 @@ variable {R V : Type*} [Semiring R] [AddCommGroup V] [Module R V] [Module ℚ V]
 theorem ker_pow_exp_sub_one (f : End R V) (hf : IsNilpotent f) (k : ℕ) :
     LinearMap.ker ((exp f - 1) ^ k) = LinearMap.ker (f ^ k) := by
   obtain ⟨u, hu, heq⟩ := hf.exists_commute_mul_eq_exp_sub_one
-  rw [← heq, hu.mul_pow, (hu.pow_pow k k).eq]
+  rw [← heq, hu.mul_pow, (hu.pow_pow k k).eq, Module.End.mul_eq_comp]
   exact LinearMap.ker_comp_of_ker_eq_bot _
-    (LinearMap.GeneralLinearGroup.toLinearEquiv (u ^ k)).ker
+    (LinearMap.ker_eq_bot_of_injective ((Module.End.isUnit_iff _).1 (u.isUnit.pow k)).1)
 
 /-- Exponentiation preserves every range in the nilpotent filtration. -/
 @[simp]
 theorem range_pow_exp_sub_one (f : End R V) (hf : IsNilpotent f) (k : ℕ) :
     LinearMap.range ((exp f - 1) ^ k) = LinearMap.range (f ^ k) := by
   obtain ⟨u, hu, heq⟩ := hf.exists_commute_mul_eq_exp_sub_one
-  rw [← heq, hu.mul_pow]
+  rw [← heq, hu.mul_pow, Module.End.mul_eq_comp]
   exact LinearMap.range_comp_of_range_eq_top _
-    (LinearMap.GeneralLinearGroup.toLinearEquiv (u ^ k)).range
+    (LinearMap.range_eq_top_of_surjective _ ((Module.End.isUnit_iff _).1 (u.isUnit.pow k)).2)
+
+/-- Exponentiating the finite logarithm of a unipotent endomorphism recovers it. -/
+@[simp]
+theorem exp_log (u : End R V) (hu : IsNilpotent (u - 1)) : exp (log u) = u := by
+  -- Rational scalars act on endomorphisms even when they do not act on R.
+  -- Algebra.ofModule preserves the ambient rational module structure.
+  let : Algebra ℚ (End R V) :=
+    Algebra.ofModule smul_mul_assoc fun r f g => (smul_comm r f g).symm
+  exact IsNilpotent.exp_log hu
 
 /-- Taking the finite logarithm preserves every kernel in the unipotent filtration. -/
 @[simp]
 theorem ker_pow_log (u : End R V) (hu : IsNilpotent (u - 1)) (k : ℕ) :
     LinearMap.ker (log u ^ k) = LinearMap.ker ((u - 1) ^ k) := by
-  -- Rational scalars act on endomorphisms even when they do not act on the coefficient semiring.
-  let : Algebra ℚ (End R V) :=
-    Algebra.ofModule smul_mul_assoc fun r f g => (smul_comm r f g).symm
-  simpa only [exp_log hu] using (ker_pow_exp_sub_one (log u) (isNilpotent_log hu) k).symm
+  simpa only [exp_log u hu] using (ker_pow_exp_sub_one (log u) (isNilpotent_log hu) k).symm
 
 /-- Taking the finite logarithm preserves every range in the unipotent filtration. -/
 @[simp]
 theorem range_pow_log (u : End R V) (hu : IsNilpotent (u - 1)) (k : ℕ) :
     LinearMap.range (log u ^ k) = LinearMap.range ((u - 1) ^ k) := by
-  -- Use the rational action on endomorphisms, not on the coefficient semiring.
-  let : Algebra ℚ (End R V) :=
-    Algebra.ofModule smul_mul_assoc fun r f g => (smul_comm r f g).symm
-  simpa only [exp_log hu] using (range_pow_exp_sub_one (log u) (isNilpotent_log hu) k).symm
+  simpa only [exp_log u hu] using (range_pow_exp_sub_one (log u) (isNilpotent_log hu) k).symm
 
 section FiniteDimensional
 
