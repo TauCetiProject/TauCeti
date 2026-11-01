@@ -268,6 +268,20 @@ private theorem algebraMap_norm_eq_algebraMap_prod [Module.Finite A B] {A' T T' 
     ((forall_norm_eq_prod_cancelBaseChange_iff (A' := A')).1 H), map_prod]
   simp
 
+-- When `T'` is in the universe of `A'`, fullness supplies the norm identity after transporting
+-- freeness through the two base changes.
+private theorem IsFullSetOfSections.algebraMap_norm_eq_prod [Module.Finite A B]
+    {A' T' : Type u} [CommRing A'] [Algebra A A'] {T : Type*} [CommRing T] [Algebra A T]
+    [Module.Free T (T ⊗[A] B)] [CommRing T'] [Algebra T T'] [Algebra A' T'] [Algebra A T']
+    [IsScalarTower A A' T'] [IsScalarTower A T T']
+    (h : IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A') (f : T ⊗[A] B) :
+    algebraMap T T' (Algebra.norm T f) = algebraMap T T' (∏ i, (s i).sectionBaseChange T f) := by
+  have : Module.Free T' (T' ⊗[A] B) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T T' T' B).toLinearEquiv
+  have : Module.Free T' (T' ⊗[A'] (A' ⊗[A] B)) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A A' T' T' B).symm.toLinearEquiv
+  exact algebraMap_norm_eq_algebraMap_prod f (h T')
+
 /-- **Zariski locality.** If `t` generates the unit ideal of `A` and the base changes of `s` to the
 localizations `A[1/r]`, `r ∈ t`, are full sets of sections, then `s` is a full set of sections. -/
 theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
@@ -279,12 +293,7 @@ theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
   refine Module.eq_of_isLocalized_span t ht (Mₚ := T')
     (f := fun r ↦ (IsScalarTower.toAlgHom A T (T' r)).toLinearMap) _ _ fun r ↦ ?_
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  have : Module.Free (T' r) (T' r ⊗[A] B) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T (T' r) (T' r) B).toLinearEquiv
-  have : Module.Free (T' r) (T' r ⊗[Localization.Away r.1] (Localization.Away r.1 ⊗[A] B)) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.Away r.1) (T' r) (T' r)
-      B).symm.toLinearEquiv
-  exact algebraMap_norm_eq_algebraMap_prod f (h r (T' r))
+  exact (h r).algebraMap_norm_eq_prod f
 
 /-- A family of sections of a finite algebra is full if it is full after localization at
 every maximal ideal of the base. -/
@@ -298,13 +307,7 @@ theorem IsFullSetOfSections.of_localization_maximal [Module.Finite A B]
   refine Module.eq_of_localization_maximal T'
     (fun P ↦ (IsScalarTower.toAlgHom A T (T' P)).toLinearMap) _ _ fun P _ ↦ ?_
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
-  have : Module.Free (T' P) (T' P ⊗[A] B) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T (T' P) (T' P) B).toLinearEquiv
-  have : Module.Free (T' P)
-      (T' P ⊗[Localization.AtPrime P] (Localization.AtPrime P ⊗[A] B)) :=
-    .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.AtPrime P)
-      (T' P) (T' P) B).symm.toLinearEquiv
-  exact algebraMap_norm_eq_algebraMap_prod f (h P (T' P))
+  exact (h P).algebraMap_norm_eq_prod f
 
 /-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
 full set of sections of a finite algebra if and only if, after every base change `A → T`
