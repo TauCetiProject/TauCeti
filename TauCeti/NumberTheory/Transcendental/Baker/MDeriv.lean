@@ -9,9 +9,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Data.Matrix.Mul
 public import TauCeti.Analysis.Complex.PartialDeriv
-import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # Mixed partial derivatives of entire functions on `ℂⁿ`
@@ -131,6 +129,19 @@ private theorem listDeriv_const_mul (c : ℂ) (l : List (Fin n)) (σ : Fin n →
   | nil => rfl
   | cons i l ih => rw [listDeriv_cons, listDeriv_cons, ih, iterate_partialDeriv_const_mul]
 
+private theorem listDeriv_single_one {l : List (Fin n)} (hl : l.Nodup) (i : Fin n)
+    (f : (Fin n → ℂ) → ℂ) :
+    listDeriv l (Pi.single i 1) f = if i ∈ l then partialDeriv i f else f := by
+  induction l with
+  | nil => rfl
+  | cons j l ih =>
+    obtain ⟨hjl, hl⟩ := List.nodup_cons.mp hl
+    rw [listDeriv_cons, ih hl]
+    by_cases hij : i = j
+    · subst hij
+      simp [hjl]
+    · simp [hij]
+
 private theorem listDeriv_partialDeriv (hf : Differentiable ℂ f) (l : List (Fin n))
     (σ : Fin n → ℕ) (i : Fin n) :
     listDeriv l σ (partialDeriv i f) = partialDeriv i (listDeriv l σ f) := by
@@ -198,10 +209,11 @@ theorem mDeriv_mDeriv {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) 
     mDeriv σ (mDeriv τ f) = mDeriv (σ + τ) f :=
   listDeriv_listDeriv hf _ σ τ
 
-/-- The mixed partial derivative of multi-order `eᵢ` of an entire function is `∂ᵢ`. -/
-theorem mDeriv_single_one {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (i : Fin n) :
+/-- The mixed partial derivative of multi-order `eᵢ` is `∂ᵢ`. -/
+theorem mDeriv_single_one (f : (Fin n → ℂ) → ℂ) (i : Fin n) :
     mDeriv (Pi.single i 1) f = partialDeriv i f := by
-  simpa using mDeriv_add_single hf 0 i
+  rw [mDeriv_eq_listDeriv, listDeriv_single_one (List.nodup_finRange n)]
+  simp
 
 /-- `D^σ` is additive on entire functions. -/
 theorem mDeriv_add {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
@@ -231,45 +243,6 @@ section Product
 
 variable {g : Fin n → ℂ → ℂ}
 
-private theorem differentiable_iteratedDeriv {h : ℂ → ℂ} (hh : Differentiable ℂ h) (k : ℕ) :
-    Differentiable ℂ (iteratedDeriv k h) :=
-  (hh.contDiff (n := ⊤)).differentiable_iteratedDeriv k (by simp)
-
-private theorem partialDeriv_prod (hg : ∀ i, Differentiable ℂ (g i)) (j : Fin n) :
-    partialDeriv j (fun z ↦ ∏ i, g i (z i)) = fun z ↦ ∏ i, update g j (deriv (g j)) i (z i) := by
-  ext z
-  have hd : DifferentiableAt ℂ (fun z : Fin n → ℂ ↦ ∏ i, g i (z i)) z :=
-    (HasFDerivAt.finsetProd fun i _ ↦
-      ((hg i) (z i)).hasFDerivAt.comp z (hasFDerivAt_apply i z)).differentiableAt
-  rw [partialDeriv_eq_deriv_update hd]
-  have hsplit (h : ℂ → ℂ) (s : ℂ) : ∏ i, update g j h i (update z j s i) =
-      h s * ∏ i ∈ univ \ {j}, g i (z i) := by
-    rw [← prod_update_of_mem (mem_univ j) (fun i ↦ g i (z i)) (h s)]
-    refine prod_congr rfl fun i _ ↦ ?_
-    by_cases hij : i = j
-    · subst hij; simp
-    · simp [hij]
-  have hfun : (fun s ↦ ∏ i, g i (update z j s i)) = fun s ↦ g j s * ∏ i ∈ univ \ {j}, g i (z i) :=
-    funext fun s ↦ by simpa using hsplit (g j) s
-  have hR := hsplit (deriv (g j)) (z j)
-  rw [update_eq_self] at hR
-  rw [hfun, hR, deriv_mul_const ((hg j) _)]
-
-private theorem iterate_partialDeriv_prod (hg : ∀ i, Differentiable ℂ (g i)) (j : Fin n)
-    (k : ℕ) : (partialDeriv j)^[k] (fun z ↦ ∏ i, g i (z i)) =
-      fun z ↦ ∏ i, update g j (iteratedDeriv k (g j)) i (z i) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have hgk : ∀ i, Differentiable ℂ (update g j (iteratedDeriv k (g j)) i) := by
-      intro i
-      by_cases hij : i = j
-      · subst hij
-        simpa using differentiable_iteratedDeriv (hg i) k
-      · simpa [hij] using hg i
-    rw [iterate_succ_apply', ih, partialDeriv_prod hgk, update_idem, update_self,
-      iteratedDeriv_succ]
-
 /-- **Mixed partial derivatives of a separated product.** If `g₀, …, g_{n-1}` are entire
 functions of one variable, then `D^σ (z ↦ ∏ᵢ gᵢ(zᵢ)) = z ↦ ∏ᵢ gᵢ^{(σᵢ)}(zᵢ)`. -/
 theorem mDeriv_prod (hg : ∀ i, Differentiable ℂ (g i)) (σ : Fin n → ℕ) :
@@ -285,7 +258,7 @@ theorem mDeriv_prod (hg : ∀ i, Differentiable ℂ (g i)) (σ : Fin n → ℕ) 
       have hgl : ∀ i, Differentiable ℂ (if i ∈ l then iteratedDeriv (σ i) (g i) else g i) := by
         intro i
         split_ifs
-        · exact differentiable_iteratedDeriv (hg i) _
+        · exact (hg i).iteratedDeriv _
         · exact hg i
       rw [listDeriv_cons, ih hl g hg, iterate_partialDeriv_prod hgl]
       ext z

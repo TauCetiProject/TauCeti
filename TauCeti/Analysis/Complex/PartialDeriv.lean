@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
@@ -25,6 +26,9 @@ on entire functions.
 * `TauCeti.differentiable_partialDeriv`: a partial derivative of an entire function is entire.
 * `TauCeti.partialDeriv_comm`: partial derivatives of an entire function commute.
 * `TauCeti.partialDeriv_add`, `TauCeti.partialDeriv_const_mul`: `∂ᵢ` is linear.
+* `TauCeti.partialDeriv_prod`, `TauCeti.iterate_partialDeriv_prod`: for a separated product
+  `z ↦ ∏ⱼ gⱼ(zⱼ)` of entire functions of one variable, `∂ᵢ^k` differentiates the `i`-th factor
+  `k` times.
 -/
 
 public section
@@ -71,21 +75,10 @@ theorem partialDeriv_zero_fun (i : Fin n) : partialDeriv i (0 : (Fin n → ℂ) 
 
 variable {f g : (Fin n → ℂ) → ℂ}
 
-/-- An entire function on `ℂⁿ` is `C^k` for every `k`. -/
-private theorem contDiff_of_differentiable (hf : Differentiable ℂ f) {k : WithTop ℕ∞} :
-    ContDiff ℂ k f :=
-  contDiffOn_univ.mp (hf.differentiableOn.contDiffOn_of_finiteDimensional isOpen_univ)
-
-/-- The derivative of an entire function on `ℂⁿ` is entire. -/
-private theorem differentiable_fderiv (hf : Differentiable ℂ f) :
-    Differentiable ℂ (fderiv ℂ f) :=
-  ((contDiff_of_differentiable hf (k := 2)).fderiv_right (m := 1) (by norm_num)).differentiable
-    one_ne_zero
-
 /-- A partial derivative of an entire function is entire. -/
 theorem differentiable_partialDeriv (hf : Differentiable ℂ f) (i : Fin n) :
     Differentiable ℂ (partialDeriv i f) :=
-  (differentiable_fderiv hf).clm_apply (differentiable_const _)
+  hf.fderiv_of_finiteDimensional.clm_apply (differentiable_const _)
 
 /-- **Partial derivatives of an entire function commute.** -/
 theorem partialDeriv_comm (hf : Differentiable ℂ f) (i j : Fin n) :
@@ -93,11 +86,11 @@ theorem partialDeriv_comm (hf : Differentiable ℂ f) (i j : Fin n) :
   have key (k l : Fin n) (z : Fin n → ℂ) : partialDeriv k (partialDeriv l f) z =
       fderiv ℂ (fderiv ℂ f) z (Pi.single k 1) (Pi.single l 1) := by
     rw [partialDeriv_apply, partialDeriv_def l f,
-      fderiv_clm_apply (differentiable_fderiv hf z) (differentiableAt_const _)]
+      fderiv_clm_apply (hf.fderiv_of_finiteDimensional z) (differentiableAt_const _)]
     simp
   ext z
   rw [key, key]
-  exact (contDiff_of_differentiable hf (k := 2)).contDiffAt.isSymmSndFDerivAt (by simp) _ _
+  exact (hf.contDiff_of_finiteDimensional (n := 2)).contDiffAt.isSymmSndFDerivAt (by simp) _ _
 
 /-- `∂ᵢ` is additive on entire functions. -/
 theorem partialDeriv_add (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (i : Fin n) :
@@ -109,8 +102,9 @@ theorem partialDeriv_add (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
 theorem partialDeriv_const_mul (c : ℂ) (i : Fin n) :
     partialDeriv i (fun z ↦ c * f z) = fun z ↦ c * partialDeriv i f z := by
   ext z
-  rw [partialDeriv_apply, show (fun z ↦ c * f z) = c • f from rfl, fderiv_const_smul_field]
-  rfl
+  simp_rw [← smul_eq_mul]
+  rw [← Pi.smul_def, partialDeriv_apply, partialDeriv_apply, fderiv_const_smul_field]
+  simp
 
 /-! ### Iterated partial derivatives in one direction -/
 
@@ -146,5 +140,60 @@ theorem iterate_partialDeriv_const_mul (c : ℂ) (i : Fin n) (k : ℕ) :
   induction k with
   | zero => rfl
   | succ k ih => rw [iterate_succ_apply', iterate_succ_apply', ih, partialDeriv_const_mul]
+
+/-! ### Separated products -/
+
+section Product
+
+variable {g : Fin n → ℂ → ℂ}
+
+/-- An iterated derivative of a complex differentiable function `f : ℂ → E` is complex
+differentiable. -/
+theorem _root_.Differentiable.iteratedDeriv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) (k : ℕ) :
+    Differentiable ℂ (iteratedDeriv k f) :=
+  (hf.contDiff (n := ⊤)).differentiable_iteratedDeriv k (by simp)
+
+/-- The partial derivative `∂ⱼ` of a separated product `z ↦ ∏ᵢ gᵢ(zᵢ)` of entire functions of one
+variable replaces the factor `gⱼ` by its derivative. -/
+theorem partialDeriv_prod (hg : ∀ i, Differentiable ℂ (g i)) (j : Fin n) :
+    partialDeriv j (fun z ↦ ∏ i, g i (z i)) = fun z ↦ ∏ i, update g j (deriv (g j)) i (z i) := by
+  ext z
+  have hd : DifferentiableAt ℂ (fun z : Fin n → ℂ ↦ ∏ i, g i (z i)) z :=
+    (HasFDerivAt.finsetProd fun i _ ↦
+      ((hg i) (z i)).hasFDerivAt.comp z (hasFDerivAt_apply i z)).differentiableAt
+  rw [partialDeriv_eq_deriv_update hd]
+  have hsplit (h : ℂ → ℂ) (s : ℂ) : ∏ i, update g j h i (update z j s i) =
+      h s * ∏ i ∈ Finset.univ \ {j}, g i (z i) := by
+    rw [← Finset.prod_update_of_mem (Finset.mem_univ j) (fun i ↦ g i (z i)) (h s)]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    by_cases hij : i = j
+    · subst hij; simp
+    · simp [hij]
+  have hfun : (fun s ↦ ∏ i, g i (update z j s i)) =
+      fun s ↦ g j s * ∏ i ∈ Finset.univ \ {j}, g i (z i) :=
+    funext fun s ↦ by simpa using hsplit (g j) s
+  have hR := hsplit (deriv (g j)) (z j)
+  rw [update_eq_self] at hR
+  rw [hfun, hR, deriv_mul_const ((hg j) _)]
+
+/-- The iterated partial derivative `∂ⱼ^k` of a separated product `z ↦ ∏ᵢ gᵢ(zᵢ)` of entire
+functions of one variable replaces the factor `gⱼ` by its `k`-th derivative. -/
+theorem iterate_partialDeriv_prod (hg : ∀ i, Differentiable ℂ (g i)) (j : Fin n) (k : ℕ) :
+    (partialDeriv j)^[k] (fun z ↦ ∏ i, g i (z i)) =
+      fun z ↦ ∏ i, update g j (iteratedDeriv k (g j)) i (z i) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hgk : ∀ i, Differentiable ℂ (update g j (iteratedDeriv k (g j)) i) := by
+      intro i
+      by_cases hij : i = j
+      · subst hij
+        simpa using (hg i).iteratedDeriv k
+      · simpa [hij] using hg i
+    rw [iterate_succ_apply', ih, partialDeriv_prod hgk, update_idem, update_self,
+      iteratedDeriv_succ]
+
+end Product
 
 end TauCeti
