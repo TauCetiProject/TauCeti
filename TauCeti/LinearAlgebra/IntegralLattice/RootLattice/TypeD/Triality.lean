@@ -132,14 +132,13 @@ noncomputable def checkerboardTriality :
         exact sum_trialityLinearMap_mul_trialityLinearMap x y }
   map_carrier := by
     rw [checkerboardLattice_carrier]
-    -- Images are wrapped in the `ℤ`-restriction of the isometry structure under construction,
-    -- which no rewrite lemma reaches. They unfold to `trialityLinearMap`, so both inclusions are
-    -- proved with the `trialityLinearMap` lemmas.
+    -- Images under the `ℤ`-restriction of the isometry structure under construction unfold
+    -- definitionally to `trialityLinearMap`, so both inclusions are proved with the
+    -- `trialityLinearMap` lemmas.
     refine le_antisymm ?_ fun x hx ↦ ⟨trialityLinearMap (trialityLinearMap x),
       trialityLinearMap_mem_checkerboardCarrier (trialityLinearMap_mem_checkerboardCarrier hx),
       trialityLinearMap_apply_apply_apply x⟩
     rintro _ ⟨x, hx, rfl⟩
-    change trialityLinearMap x ∈ checkerboardCarrier 4
     exact trialityLinearMap_mem_checkerboardCarrier hx
 
 private theorem checkerboardTriality_eq_trialityLinearMap (x : Fin 4 → ℚ) :
@@ -165,6 +164,7 @@ theorem checkerboardTriality_checkerboardSimpleRoot (i : Fin 4) :
     norm_num
 
 /-- **Triality has order three.** -/
+@[simp]
 theorem checkerboardTriality_pow_three : checkerboardTriality ^ 3 = 1 :=
   Isometry.ext fun x ↦ by
     simp only [pow_three, Isometry.mul_apply, Isometry.one_apply,
@@ -273,6 +273,7 @@ theorem typeD4Triality_single (i : Fin 4) :
   rfl
 
 /-- **Triality has order three.** -/
+@[simp]
 theorem typeD4Triality_pow_three : typeD4Triality ht ^ 3 = 1 := by
   rw [typeD4Triality, ← map_pow, checkerboardTriality_pow_three, map_one]
 

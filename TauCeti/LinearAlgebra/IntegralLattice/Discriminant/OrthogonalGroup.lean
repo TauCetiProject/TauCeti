@@ -200,6 +200,7 @@ theorem discriminantGroupHom_conjMulEquiv (e : Isometry L M) (g : Isometry L L) 
 
 /-- Pointwise form of `discriminantGroupHom_conjMulEquiv`: the conjugate of `g` by `e : L ≅ M`
 acts on the image under `e` of a discriminant class as `e` applied to the action of `g`. -/
+@[simp]
 theorem discriminantGroupEquiv_conjMulEquiv_apply (e : Isometry L M) (g : Isometry L L)
     (z : L.DiscriminantGroup) :
     (e.conjMulEquiv g).discriminantGroupEquiv (e.discriminantGroupEquiv z) =
