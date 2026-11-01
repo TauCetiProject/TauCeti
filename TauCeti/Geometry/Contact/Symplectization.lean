@@ -112,10 +112,7 @@ theorem symplectization_apply (α : SmoothForm I M ℝ 1) (p : ℝ × M)
     α.symplectization.1 p ![v] =
       Real.exp p.1 * α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
   simp only [coe_symplectization, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    mpullback_apply, mfderiv_snd, Matrix.vec_single_eq_const,
-    Manifold.tangentSpaceProdEquiv_apply]
-  -- Both sides read off the second component of `v`.
-  rfl
+    mpullback_snd_apply, Matrix.vec_single_eq_const]
 
 variable (I) in
 /-- The exterior derivative of the symplectization form `eᵗ α` is `eᵗ (dt ∧ α + dα)`: it takes the
@@ -135,10 +132,7 @@ theorem mextDeriv_symplectization_apply (α : SmoothForm I M ℝ 1) (p : ℝ × 
   -- The pulled-back form evaluates on the second components.
   have hβ (u : TangentSpace (𝓘(ℝ).prod I) p) :
       β.1 p ![u] = α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p u).2] := by
-    simp only [β, mpullback_apply, mfderiv_snd, Matrix.vec_single_eq_const,
-      Manifold.tangentSpaceProdEquiv_apply]
-    -- Both sides read off the second component of `u`.
-    rfl
+    simp only [β, mpullback_snd_apply, Matrix.vec_single_eq_const]
   -- Its exterior derivative is `dα` on the second components, by naturality.
   have hdβ : mextDeriv β.1 p ![v, w] =
       mextDeriv α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2,
@@ -191,8 +185,11 @@ private theorem bilinFormAt_mextDerivₗ_symplectization (α : SmoothForm I M �
   rw [bilinFormAt_apply, eval₂_mextDerivₗ_symplectization, LinearMap.BilinForm.congr_apply,
     LinearMap.smul_apply, LinearMap.smul_apply, Module.Dual.symplectizationForm_apply,
     degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, bilinFormAt_apply, smul_eq_mul]
-  -- The splitting is built from identity maps, so both sides read off the same components.
-  rfl
+  -- The inverse of the splitting sends `u` to its two components `(s, v)`.
+  simp only [ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.prodCongr_symm,
+    ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_symm,
+    ContinuousLinearEquiv.coe_refl', id_eq]
 
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the
 symplectization form is nondegenerate exactly when `α` is a contact form. -/
@@ -204,15 +201,13 @@ theorem isNondegenerate_mextDerivₗ_symplectization_iff {α : SmoothForm I M �
         (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p v w = 0) → v = 0) ↔
         Module.Dual.IsContact (degreeOneEquiv α p.2 : TangentSpace I p.2 →ₗ[ℝ] ℝ)
           ((mextDerivₗ I 1 α).bilinFormAt p.2) := by
-    rw [Module.Dual.isContact_iff_nondegenerate_symplectizationForm,
-      ← TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
-      ← LinearMap.BilinForm.nondegenerate_congr_iff
-        (((NormedSpace.fromTangentSpace (𝕜 := ℝ) p.1).symm.prodCongr
-          (ContinuousLinearEquiv.refl ℝ (TangentSpace I p.2))).trans
-          (Manifold.tangentSpaceProdEquiv p).symm).toLinearEquiv,
-      ← bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.Nondegenerate,
-      (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
-    simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
+    trans ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate
+    · rw [LinearMap.BilinForm.Nondegenerate,
+        (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
+      simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
+    rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
+      TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
+      Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
   rw [SmoothTwoForm.isNondegenerate_iff_separatingLeft, isContactForm_def]
   exact ⟨fun h x ↦ (key ((0 : ℝ), x)).1 (h ((0 : ℝ), x)), fun h p ↦ (key p).2 (h p.2)⟩
 
