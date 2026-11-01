@@ -61,6 +61,21 @@ theorem isEmbedding_mapTotal_restrict : IsEmbedding (restrict U).toPrefunctor.ma
   exact (arrowHomeomorph M X).symm.isEmbedding.comp
     ((IsEmbedding.id.prodMap IsEmbedding.subtypeVal).comp (arrowHomeomorph M U).isEmbedding)
 
+/-- For an open invariant subset `U`, the nerve of `M ⋉ U` is levelwise an open subspace of the
+nerve of `M ⋉ X`. -/
+theorem isOpenEmbedding_topologicalNerveMap_restrict (hU : IsOpen (U : Set X))
+    (Δ : SimplexCategoryᵒᵖ) :
+    IsOpenEmbedding
+      ((topologicalNerveMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous).app Δ) := by
+  rw [coe_topologicalNerveMap_app]
+  refine ⟨ComposableArrows.isEmbedding_mapComposableArrows_obj (isEmbedding_mapTotal_restrict U),
+    ?_⟩
+  -- The level of the topological nerve is `ComposableArrows` with its composite topology.
+  have : IsOpen (range ((restrict U).mapComposableArrows Δ.unop.len).obj) := by
+    rw [range_mapComposableArrows_obj_restrict]
+    exact hU.preimage continuous_back_obj_zero
+  exact this
+
 end Monoid
 
 variable {G X : Type u} [Group G] [MulAction G X] [TopologicalSpace G] [TopologicalSpace X]
@@ -78,21 +93,6 @@ theorem range_topologicalNerveMap_restrict (m : SemiSimplexCategoryᵒᵖ) :
   rintro ⟨x, hx, hxF⟩
   obtain ⟨g, rfl⟩ := Quotient.exact (hxF.trans (coarseAugmentation_app_apply m F))
   simpa using U.smul_mem g⁻¹ hx
-
-/-- For an open invariant subset `U`, the nerve of `G ⋉ U` is levelwise an open subspace of the
-nerve of `G ⋉ X`. -/
-theorem isOpenEmbedding_topologicalNerveMap_restrict (hU : IsOpen (U : Set X))
-    (Δ : SimplexCategoryᵒᵖ) :
-    IsOpenEmbedding
-      ((topologicalNerveMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous).app Δ) := by
-  rw [coe_topologicalNerveMap_app]
-  refine ⟨ComposableArrows.isEmbedding_mapComposableArrows_obj (isEmbedding_mapTotal_restrict U),
-    ?_⟩
-  -- The level of the topological nerve is `ComposableArrows` with its composite topology.
-  have : IsOpen (range ((restrict U).mapComposableArrows Δ.unop.len).obj) := by
-    rw [range_mapComposableArrows_obj_restrict]
-    exact hU.preimage continuous_back_obj_zero
-  exact this
 
 /-- **Open restriction.** For a `G`-invariant open subset `U`, the map of fat classifying spaces
 induced by the inclusion `G ⋉ U ⥤ G ⋉ X` is an open embedding. -/
