@@ -650,15 +650,25 @@ theorem mulTower_map_apply (p : ℤ) (n : ℕ) (x : ℤ) : (mulTower p).map n x 
 /-- The multiplication-by-`p` tower of abelian groups is isomorphic to the tower of `ℤ`-modules
 `ModuleTower.multiplicationTower p`, by the identity in each degree. -/
 def mulTowerIso (p : ℤ) : (mulTower p).toModuleFunctor ≅ ModuleTower.multiplicationTower p :=
-  -- both towers have the terms `ℤ`, so the identity is natural once checked on transitions
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦
-    (NatTrans.ofOpSequence (F := (mulTower p).toModuleFunctor)
-      (G := ModuleTower.multiplicationTower p) (fun _ ↦ 𝟙 _) fun n ↦ by
-        ext
-        simp only [Tower.toModuleFunctor, ModuleTower.multiplicationTower,
-          Functor.ofOpSequence_map_homOfLE_succ]
-        -- both sides compute `1 * p`
-        rfl).naturality f
+  -- both towers have the terms `ℤ` and the transitions `x ↦ x * p`, so the identity commutes
+  -- with the transitions in either direction
+  have key (n : ℕ) (x : ℤ) :
+      ((mulTower p).toModuleFunctor.map (homOfLE (n.le_add_right 1)).op).hom x =
+        ((ModuleTower.multiplicationTower p).map (homOfLE (n.le_add_right 1)).op).hom x := by
+    rw [← ModuleTower.transition_def, ← ModuleTower.transition_def]
+    -- `x * p` and `LinearMap.toSpanSingleton ℤ ℤ p x = x • p` agree by definition on `ℤ`
+    exact ((mulTower p).transition_toModuleFunctor_apply n x).trans
+      (LinearMap.congr_fun (ModuleTower.multiplicationTower_transition p n) x).symm
+  { hom := NatTrans.ofOpSequence (fun _ ↦ 𝟙 _) fun n ↦ ModuleCat.hom_ext <| LinearMap.ext (key n)
+    inv := NatTrans.ofOpSequence (fun _ ↦ 𝟙 _) fun n ↦
+      ModuleCat.hom_ext <| LinearMap.ext fun x ↦ (key n x).symm }
+
+/-- The components of `mulTowerIso p` are the identity of `ℤ`. -/
+@[simp]
+theorem mulTowerIso_hom_app_apply (p : ℤ) (n : ℕ) (x : ℤ) :
+    ((mulTowerIso p).hom.app (op n)).hom x = x :=
+  -- the components of `NatTrans.ofOpSequence` are the given identities
+  (rfl)
 
 /-- The multiplication-by-`p` tower has vanishing limit for every integer `p` that is not a
 unit. -/
@@ -686,13 +696,8 @@ def limOneMulTowerEquiv : (mulTower p).limOne ≃+ ℤ_[p] ⧸ (Int.castAddHom �
 theorem limOneMulTowerEquiv_mk (a : ℕ → ℤ) :
     limOneMulTowerEquiv p (QuotientAddGroup.mk a) =
       QuotientAddGroup.mk (∑' n, (p : ℤ_[p]) ^ n * (a n : ℤ_[p])) := by
-  simp only [limOneMulTowerEquiv, AddEquiv.trans_apply, Tower.limOneComparison_mk,
-    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-    ModuleTower.limOneEquivOfIso_apply, ModuleTower.limOneMap_mk,
-    ModuleTower.limOneMultiplicationTowerEquiv_mk, ModuleTower.padicSum_apply,
+  simp [limOneMulTowerEquiv, ModuleTower.padicSum_apply,
     ModuleTower.multiplicationTowerProductEquiv_apply, ModuleTower.productMap_apply]
-  -- the components of `mulTowerIso p` and of `productEquiv` are identities
-  rfl
 
 /-- `lim¹` of the multiplication-by-`p` tower is nonzero. -/
 instance nontrivial_limOne_mulTower : Nontrivial (mulTower p).limOne :=
