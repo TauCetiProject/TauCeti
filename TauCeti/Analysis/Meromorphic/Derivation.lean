@@ -49,41 +49,33 @@ private theorem coe_differentiate {φ : meromorphicGerms 𝕜 a} {f : 𝕜 → �
   (congrArg (Germ.map' deriv (fun {_ _} h ↦ h.nhdsNE_deriv)) hφ).trans
     (Germ.map'_coe deriv (fun {_ _} h ↦ h.nhdsNE_deriv) f)
 
+private theorem differentiate_mk {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
+    differentiate (mk f hf) = mk (deriv f) hf.deriv :=
+  Subtype.ext ((coe_differentiate (coe_mk f hf)).trans (coe_mk (deriv f) hf.deriv).symm)
+
 /-- Differentiation of meromorphic germs, as a `𝕜`-derivation, where scalars act by
 constant functions. -/
 def derivation : Derivation 𝕜 (meromorphicGerms 𝕜 a) (meromorphicGerms 𝕜 a) where
   toFun := differentiate
   map_add' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-    obtain ⟨g, hg, hψ⟩ := mem_meromorphicGerms_iff.mp ψ.2
-    apply Subtype.ext
-    rw [coe_differentiate (f := f + g) (by rw [Subring.coe_add, ← hφ, ← hψ, Germ.coe_add]),
-      Subring.coe_add, coe_differentiate hφ.symm, coe_differentiate hψ.symm, ← Germ.coe_add]
-    apply Germ.coe_eq.mpr
+    obtain ⟨f, hf, rfl⟩ := exists_mk φ
+    obtain ⟨g, hg, rfl⟩ := exists_mk ψ
+    simp only [← mk_add, differentiate_mk, mk_eq_mk_iff]
     filter_upwards [hf.eventually_analyticAt, hg.eventually_analyticAt] with z hfz hgz
     exact deriv_add hfz.differentiableAt hgz.differentiableAt
   map_smul' c φ := by
-    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-    apply Subtype.ext
-    rw [coe_differentiate (f := c • f) (by rw [coe_smul, ← hφ, Germ.coe_smul]),
-      coe_smul, coe_differentiate hφ.symm, ← Germ.coe_smul]
-    apply Germ.coe_eq.mpr
+    obtain ⟨f, hf, rfl⟩ := exists_mk φ
+    simp only [← mk_smul, differentiate_mk, mk_eq_mk_iff]
     exact .of_forall fun z ↦ deriv_const_smul_field c f
   map_one_eq_zero' := by
-    apply Subtype.ext
-    simp only [LinearMap.coe_mk, AddHom.coe_mk]
-    rw [coe_differentiate (f := 1) (by rw [Subring.coe_one, Germ.coe_one]),
-      ZeroMemClass.coe_zero, ← Germ.coe_zero]
-    exact Germ.coe_eq.mpr (.of_forall fun z ↦ deriv_const z (1 : 𝕜))
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, ← mk_one, differentiate_mk, ← mk_zero,
+      mk_eq_mk_iff]
+    exact .of_forall fun z ↦ deriv_const z (1 : 𝕜)
   leibniz' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-    obtain ⟨g, hg, hψ⟩ := mem_meromorphicGerms_iff.mp ψ.2
-    apply Subtype.ext
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul]
-    rw [coe_differentiate (f := f * g) (by rw [Subring.coe_mul, ← hφ, ← hψ, Germ.coe_mul]),
-      Subring.coe_add, Subring.coe_mul, Subring.coe_mul, coe_differentiate hφ.symm,
-      coe_differentiate hψ.symm, ← hφ, ← hψ, ← Germ.coe_mul, ← Germ.coe_mul, ← Germ.coe_add]
-    apply Germ.coe_eq.mpr
+    obtain ⟨f, hf, rfl⟩ := exists_mk φ
+    obtain ⟨g, hg, rfl⟩ := exists_mk ψ
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul, ← mk_mul, ← mk_add,
+      differentiate_mk, mk_eq_mk_iff]
     filter_upwards [hf.eventually_analyticAt, hg.eventually_analyticAt] with z hfz hgz
     rw [deriv_mul hfz.differentiableAt hgz.differentiableAt]
     simp only [Pi.mul_apply, Pi.add_apply]
@@ -101,16 +93,17 @@ theorem coe_derivation {φ : meromorphicGerms 𝕜 a} {f : 𝕜 → 𝕜}
 @[simp]
 theorem derivation_mk {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
     derivation (mk f hf) = mk (deriv f) hf.deriv :=
-  Subtype.ext ((coe_derivation (coe_mk f hf)).trans (coe_mk (deriv f) hf.deriv).symm)
+  differentiate_mk hf
 
 /-- The coordinate germ has derivative one. In particular differentiation on the germ field
 is nonzero. -/
 @[simp]
 theorem derivation_coordinate :
     derivation (coordinate a) = 1 := by
-  apply Subtype.ext
-  rw [coe_derivation coe_coordinate, Subring.coe_one, ← Germ.coe_one]
-  exact Germ.coe_eq.mpr (.of_forall fun z ↦ by simp)
+  have hcoord : coordinate a = mk (fun z ↦ z - a) ((MeromorphicAt.id a).sub (.const a a)) :=
+    Subtype.ext (coe_coordinate.trans (coe_mk _ _).symm)
+  rw [hcoord, derivation_mk, ← mk_one, mk_eq_mk_iff]
+  exact .of_forall fun z ↦ by simp
 
 /-- The chain rule on meromorphic germ fields. Pullback by an analytic coordinate map
 intertwines differentiation up to multiplication by its derivative germ. -/
@@ -118,14 +111,8 @@ theorem derivation_pullback (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga 
     (ht : Tendsto g (𝓝[≠] a) (𝓝[≠] b)) (φ : meromorphicGerms 𝕜 b) :
     derivation (pullback g hg hga ht φ) =
       pullback g hg hga ht (derivation φ) * mk (deriv g) hg.meromorphicAt.deriv := by
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-  have hpull : ((pullback g hg hga ht φ : meromorphicGerms 𝕜 a) :
-      Germ (𝓝[≠] a) 𝕜) = (f ∘ g : 𝕜 → 𝕜) := by
-    rw [coe_pullback, ← hφ, Germ.coe_compTendsto]
-  apply Subtype.ext
-  rw [coe_derivation hpull, Subring.coe_mul, coe_pullback, coe_derivation hφ.symm,
-    Germ.coe_compTendsto, coe_mk, ← Germ.coe_mul]
-  apply Germ.coe_eq.mpr
+  obtain ⟨f, hf, rfl⟩ := exists_mk φ
+  simp only [pullback_mk, derivation_mk, ← mk_mul, mk_eq_mk_iff]
   filter_upwards [ht.eventually hf.eventually_analyticAt,
     nhdsWithin_le_nhds hg.eventually_analyticAt] with z hfz hgz
   exact deriv_comp z hfz.differentiableAt hgz.differentiableAt

@@ -75,6 +75,15 @@ theorem pullback_algebraMap (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga 
   apply Subtype.ext
   rw [coe_pullback, coe_algebraMap, coe_algebraMap, Germ.const_compTendsto]
 
+/-- Pullback of a representative is represented by composition. -/
+@[simp]
+theorem pullback_mk (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : g a = b)
+    (ht : Tendsto g (𝓝[≠] a) (𝓝[≠] b)) (f : 𝕜 → 𝕜) (hf : MeromorphicAt f b) :
+    pullback g hg hga ht (mk f hf) =
+      mk (f ∘ g) (by rw [← hga] at hf; exact hf.comp_analyticAt hg) := by
+  apply Subtype.ext
+  simp only [coe_pullback, coe_mk, Germ.coe_compTendsto]
+
 /-- Pullback along the identity fixes every meromorphic germ. -/
 @[simp]
 theorem pullback_id (φ : meromorphicGerms 𝕜 a) :
