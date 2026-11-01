@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Module.Rat
-import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Algebra.Lie.Rat
 import TauCeti.Algebra.Module.LinearMap.Iterate
 import TauCeti.RingTheory.PowerSeries.Exp
@@ -111,15 +111,7 @@ theorem inv_factorial_smul_iterate_apply_lie (n : ℕ) (x y : L) :
   subst n
   rw [TauCeti.rat_smul_lie, TauCeti.lie_rat_smul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul,
     smul_smul]
-  congr 1
-  have h : ((ij.1 + ij.2).choose ij.1 * ij.1 ! * ij.2 ! : ℚ) = (ij.1 + ij.2)! := by
-    have := Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right ij.1 ij.2)
-    rw [Nat.add_sub_cancel_left] at this
-    exact_mod_cast this
-  have hc : ((ij.1 + ij.2).choose ij.1 : ℚ) ≠ 0 := by
-    exact_mod_cast (Nat.choose_pos (Nat.le_add_right ij.1 ij.2)).ne'
-  rw [← h]
-  field_simp
+  rw [Nat.inv_factorial_mul_choose _ _ _ rfl]
 
 end Iterate
 
@@ -127,7 +119,8 @@ section TaylorExp
 
 variable (D : LieDerivation R L L) (hD : ∀ x, ∃ n, D^[n] x = 0)
 
-/-- The finite Taylor sum `∑ Dⁱ x / i!`, truncated where an iterate of `D` first kills `x`. -/
+/-- The finite Taylor sum `∑ Dⁱ x / i!`, truncated at some iterate of `D` that kills `x` (a choice
+from `hD`). -/
 private noncomputable def taylorSum (x : L) : L :=
   ∑ i ∈ range (hD x).choose, (i ! : ℚ)⁻¹ • D^[i] x
 
