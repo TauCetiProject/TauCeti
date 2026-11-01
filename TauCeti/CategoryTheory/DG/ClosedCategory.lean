@@ -355,9 +355,6 @@ variable {E}
 /-- A functor out of the closed degree-zero category which identifies closed morphisms with the
 same class in `H⁰` descends to the DG homotopy category. On objects it is `F` applied to the
 underlying DG object, and it sends the class of a closed morphism `f` to `F.map f`. -/
--- Exposed because statements about descended functors in importing modules, such as their
--- `map` lemmas, only typecheck when this object map reduces.
-@[expose]
 noncomputable def lift (F : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C ⥤ E)
     (hF : ∀ ⦃X Y⦄ (f g : X ⟶ Y),
       (dgClosedToHomotopy R).map f = (dgClosedToHomotopy R).map g → F.map f = F.map g) :
@@ -388,17 +385,28 @@ theorem lift_obj_of (X : C) :
       F.obj (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X) :=
   (rfl)
 
-/-- The descended functor sends the class of a closed morphism to its image under `F`. -/
+/-- The descended functor agrees with `F` on the image of a closed object. -/
+theorem lift_obj_dgClosedToHomotopy_obj
+    (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
+    (lift R F hF).obj ((dgClosedToHomotopy R).obj X) = F.obj X :=
+  (rfl)
+
+/-- The descended functor sends the class of a closed morphism to its image under `F`,
+transported along `lift_obj_dgClosedToHomotopy_obj`. -/
 theorem lift_map_dgClosedToHomotopy_map
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
-    (lift R F hF).map ((dgClosedToHomotopy R).map f) = F.map f :=
-  hF _ _ (Functor.map_preimage _ _)
+    (lift R F hF).map ((dgClosedToHomotopy R).map f) =
+      eqToHom (lift_obj_dgClosedToHomotopy_obj R F hF X) ≫ F.map f ≫
+        eqToHom (lift_obj_dgClosedToHomotopy_obj R F hF Y).symm := by
+  -- Both transports are identities, since `lift` takes `X` to `F.obj X` on the nose.
+  exact (hF _ _ (Functor.map_preimage _ _)).trans
+    ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- The descended functor restricts to `F` along the quotient functor. -/
 noncomputable def dgClosedToHomotopyCompLiftIso : dgClosedToHomotopy R ⋙ lift R F hF ≅ F :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
-    simp only [Functor.comp_map, lift_map_dgClosedToHomotopy_map, Iso.refl_hom]
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  NatIso.ofComponents (fun X ↦ eqToIso (lift_obj_dgClosedToHomotopy_obj R F hF X)) fun f ↦ by
+    rw [Functor.comp_map, lift_map_dgClosedToHomotopy_map]
+    simp
 
 end DGHomotopyCategory
 

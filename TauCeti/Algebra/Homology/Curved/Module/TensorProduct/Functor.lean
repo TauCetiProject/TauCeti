@@ -82,8 +82,6 @@ noncomputable abbrev tensorCochainComplexMap {M M' : CurvedDGRightModuleCat.{u, 
 
 /-- Tensoring closed curved right modules with the curved left module `N`: a curved right module
 `M` goes to the balanced tensor complex `M ⊗_A N`, and a closed morphism `f` to `f ⊗ 1`. -/
--- Exposed because the public `map` lemmas below only typecheck when the object map reduces.
-@[expose]
 noncomputable def tensorCochainComplexFunctor :
     ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) ⥤
       CochainComplex (ModuleCat.{u} R) ℤ where
@@ -114,13 +112,17 @@ theorem tensorCochainComplexFunctor_obj (M : CurvedDGRightModuleCat.{u, u, u} h)
       BalancedTensorProduct.curvedCochainComplex M.isCurvedDGRightModule hN :=
   (rfl)
 
-/-- The functor sends a closed morphism `f` to `f ⊗ 1`. -/
+/-- The functor sends a closed morphism `f` to `f ⊗ 1`, transported along
+`tensorCochainComplexFunctor_obj`. -/
 @[simp]
 theorem tensorCochainComplexFunctor_map {M M' : CurvedDGRightModuleCat.{u, u, u} h}
     (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M') :
-    (tensorCochainComplexFunctor hN).map f = tensorCochainComplexMap hN f :=
-  (rfl)
+    (tensorCochainComplexFunctor hN).map f =
+      eqToHom (tensorCochainComplexFunctor_obj hN M) ≫ tensorCochainComplexMap hN f ≫
+        eqToHom (tensorCochainComplexFunctor_obj hN M').symm :=
+  -- Both transports are identities, since the object map is the balanced tensor complex.
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- **Homotopy invariance.** Closed morphisms with the same class in the curved homotopy category
 have homotopic images: an odd homotopy `k` from `f` to `g` gives the homotopy `k ⊗ 1`. -/
@@ -139,8 +141,6 @@ theorem homotopic_tensorCochainComplexFunctor_map {M M' : CurvedDGRightModuleCat
         using sub_eq_iff_eq_add.mp (hk x))⟩
 
 /-- Tensoring with the curved left module `N`, descended to the curved homotopy category. -/
--- Exposed because the public `map` lemmas below only typecheck when the object map reduces.
-@[expose]
 noncomputable def tensorHomotopyFunctor :
     DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h) ⥤
       HomotopyCategory (ModuleCat.{u} R) (ComplexShape.up ℤ) :=
@@ -161,16 +161,26 @@ noncomputable def dgClosedToHomotopyCompTensorHomotopyFunctorIso :
 theorem tensorHomotopyFunctor_obj_of (M : CurvedDGRightModuleCat.{u, u, u} h) :
     (tensorHomotopyFunctor hN).obj (DGHomotopyCategory.of R M) =
       (HomotopyCategory.quotient _ _).obj
-        (BalancedTensorProduct.curvedCochainComplex M.isCurvedDGRightModule hN) :=
-  (rfl)
+        (BalancedTensorProduct.curvedCochainComplex M.isCurvedDGRightModule hN) := by
+  rw [tensorHomotopyFunctor, DGHomotopyCategory.lift_obj_of, Functor.comp_obj,
+    tensorCochainComplexFunctor_obj]
 
-/-- The descended functor sends the class of a closed morphism `f` to the class of `f ⊗ 1`. -/
+/-- The descended functor sends the class of a closed morphism `f` to the class of `f ⊗ 1`,
+transported along `tensorHomotopyFunctor_obj_of`. -/
 theorem tensorHomotopyFunctor_map_dgClosedToHomotopy_map
     {M M' : CurvedDGRightModuleCat.{u, u, u} h}
     (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M') :
     (tensorHomotopyFunctor hN).map ((dgClosedToHomotopy R).map f) =
-      (HomotopyCategory.quotient _ _).map (tensorCochainComplexMap hN f) :=
-  DGHomotopyCategory.lift_map_dgClosedToHomotopy_map R _ _ f
+      eqToHom (tensorHomotopyFunctor_obj_of hN M) ≫
+        (HomotopyCategory.quotient _ _).map (tensorCochainComplexMap hN f) ≫
+          eqToHom (tensorHomotopyFunctor_obj_of hN M').symm := by
+  change (DGHomotopyCategory.lift R _ _).map _ = _
+  rw [DGHomotopyCategory.lift_map_dgClosedToHomotopy_map, Functor.comp_map,
+    tensorCochainComplexFunctor_map, Functor.map_comp, Functor.map_comp, eqToHom_map,
+    eqToHom_map]
+  -- The two sides differ only in how the endpoints of the transports are written.
+  simp only [eqToHom_trans_assoc, Category.assoc, eqToHom_trans]
+  rfl
 
 end TauCeti.CurvedDGRightModuleCat
