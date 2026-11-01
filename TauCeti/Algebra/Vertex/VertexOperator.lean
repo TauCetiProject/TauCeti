@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Vertex.VertexOperator
 public import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.Tactic.Module
 
 /-!
 # Extensionality and locality of vertex operators
@@ -46,6 +47,10 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 * V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.1 and §2.3, for formal distributions and
   locality.
 * E. Frenkel, D. Ben-Zvi, *Vertex Algebras and Algebraic Curves*, 2nd ed., §1.2.
+* S. Carnahan, leanprover-community/mathlib4#25822, a prospective Mathlib development of vertex
+  algebras, whose order-bounded locality predicate `IsLocalToOrderLeq`, stated through
+  compositions of two-variable Hahn series, is mirrored coefficientwise by
+  `VertexOperator.IsLocalOfOrder`.
 -/
 
 public section
@@ -92,21 +97,21 @@ theorem succ (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder B (N + 1) := by
     (fun i j ↦ (-1 : ℤ) ^ j • (A[[m + i]] * B[[n + j]] - B[[n + j]] * A[[m + i]])) N]
   have h₁ := h m (n + 1)
   have h₂ := h (m + 1) n
-  -- Normalize the shifted indices and binomial coefficients of the two rank-`N` sums.
+  -- Rewrite each rank-`N + 1` sum as a rank-`N` sum at shifted indices.
   have e₁ : ∀ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ (ij.2 + 1) •
       (A[[m + ij.1]] * B[[n + ↑(ij.2 + 1)]] - B[[n + ↑(ij.2 + 1)]] * A[[m + ij.1]]) =
       -(N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
         (A[[m + ij.1]] * B[[n + 1 + ij.2]] - B[[n + 1 + ij.2]] * A[[m + ij.1]])) := by
     intro ij _
-    rw [pow_succ, mul_neg_one, neg_smul, smul_neg, Nat.cast_add, Nat.cast_one,
-      add_comm (ij.2 : ℤ) 1, ← add_assoc]
+    rw [show n + ↑(ij.2 + 1) = n + 1 + ij.2 by push_cast; ring, pow_succ]
+    module
   have e₂ : ∀ ij ∈ antidiagonal N, N.choose ij.2 • (-1 : ℤ) ^ ij.2 •
       (A[[m + ↑(ij.1 + 1)]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ↑(ij.1 + 1)]]) =
       N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
         (A[[m + 1 + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + 1 + ij.1]]) := by
     intro ij hij
-    rw [Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, Nat.cast_add, Nat.cast_one,
-      add_comm (ij.1 : ℤ) 1, ← add_assoc]
+    rw [Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm,
+      show m + ↑(ij.1 + 1) = m + 1 + ij.1 by push_cast; ring]
   rw [sum_congr rfl e₁, sum_congr rfl e₂, sum_neg_distrib, h₁, h₂, neg_zero, add_zero]
 
 /-- Locality is monotone in the order. -/
@@ -125,11 +130,11 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
       (-(-1 : ℤ) ^ N) • (N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
         (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]])) := by
     intro ij hij
-    have hN : (-1 : ℤ) ^ N * (-1) ^ ij.2 = (-1) ^ ij.1 := by
-      rw [← (mem_antidiagonal.1 hij), pow_add, mul_assoc, ← pow_add, ← two_mul, pow_mul,
-        neg_one_sq, one_pow, mul_one]
-    rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm,
-      smul_comm (-(-1 : ℤ) ^ N), smul_smul, neg_mul, hN, neg_smul, ← smul_neg, neg_sub]
+    have hN : (-1 : ℤ) ^ ij.1 = (-1) ^ N * (-1) ^ ij.2 := by
+      rw [← mem_antidiagonal.1 hij]
+      simp [pow_add, mul_assoc, ← mul_pow]
+    rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, hN]
+    module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
 
 end IsLocalOfOrder

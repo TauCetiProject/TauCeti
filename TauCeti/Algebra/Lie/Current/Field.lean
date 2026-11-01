@@ -54,8 +54,6 @@ and no topology are used: each coefficient of each field applied to a vector is 
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.currentField`: the current field `J^x(z)` of a smooth action.
-* `TauCeti.CurrentAlgebra.envelopingAction`: the action of the currents on a module over
-  `U(ĝ) / (ι K - a)`.
 
 ## Main results
 
@@ -72,6 +70,9 @@ and no topology are used: each coefficient of each field applied to a vector is 
   fields of an affine Kac--Moody algebra and their locality.
 * E. Frenkel, *Langlands Correspondence for Loop Groups*, §2.2 and §3.1.
 * V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.5.
+* S. Carnahan, leanprover-community/mathlib4#25822, a prospective Mathlib development of vertex
+  algebras, which sketches the affine vertex operator `of_coeff fun n v => x t^n • v` built here
+  as `TauCeti.CurrentAlgebra.currentField` and states that these fields are mutually local.
 -/
 
 public section
@@ -86,8 +87,6 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 namespace TauCeti.CurrentAlgebra
 
 variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
-
-local notation "C" => currentAlgebra R L
 
 section Field
 
@@ -164,12 +163,10 @@ any two current fields are mutually local of order `2`: `(z - w)² [J^x(z), J^y(
 theorem isLocalOfOrder_currentField (x y : L) :
     (currentField σ hσ x).IsLocalOfOrder (currentField σ hσ y) 2 := by
   refine VertexOperator.isLocalOfOrder_iff.2 fun m n ↦ ?_
+  -- All three index pairs `(m + i, n + j)` with `i + j = 2` have the same sum `m + n + 2`.
+  have hmn (i j : ℕ) (h : i + j = 2) : m + i + (n + j) = m + n + 2 := by lia
   simp only [Nat.sum_antidiagonal_succ, Nat.antidiagonal_zero, sum_singleton,
-    ncoeff_currentField_mul_sub_mul Φ a hσ hσc]
-  have h₁ : m + ((0 + 1 + 1 : ℕ) : ℤ) + (n + ((0 : ℕ) : ℤ)) = m + n + 2 := by push_cast; ring
-  have h₂ : m + ((0 + 1 : ℕ) : ℤ) + (n + ((0 + 1 : ℕ) : ℤ)) = m + n + 2 := by push_cast; ring
-  have h₃ : m + ((0 : ℕ) : ℤ) + (n + ((0 + 1 + 1 : ℕ) : ℤ)) = m + n + 2 := by push_cast; ring
-  rw [h₁, h₂, h₃]
+    ncoeff_currentField_mul_sub_mul Φ a hσ hσc, hmn]
   -- The central terms are integer multiples of `a Φ(x, y)`.
   have hc (k : ℤ) : algebraMap R (Module.End R M) (a * k * Φ x y) =
       k • algebraMap R (Module.End R M) (a * Φ x y) := by
@@ -189,29 +186,6 @@ local notation "UK" => UniversalEnvelopingAlgebra.CentralQuotient R (centralElem
 
 variable [Module (UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
   [IsScalarTower R (UniversalEnvelopingAlgebra.CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
-
-/-- The action of the currents on a module over `U(ĝ) / (ι K - a)`: `u` acts by its current
-generator. -/
-def envelopingAction : C →ₗ[R] Module.End R M :=
-  (Algebra.lsmul R R M).toLinearMap ∘ₗ envelopingι Φ hΦ hΦs a
-
-/-- A current acts by its current generator. -/
-@[simp]
-theorem envelopingAction_apply (u : C) (m : M) :
-    envelopingAction (M := M) Φ hΦ hΦs a u m = envelopingι Φ hΦ hΦs a u • m :=
-  (rfl)
-
-/-- The action of the currents on a module over `U(ĝ) / (ι K - a)` satisfies the commutator
-relations `[u, v] = ⁅u, v⁆ + a Res(u dv)`. -/
-theorem envelopingAction_mul_sub_mul (u v : C) :
-    envelopingAction (M := M) Φ hΦ hΦs a u * envelopingAction Φ hΦ hΦs a v -
-        envelopingAction Φ hΦ hΦs a v * envelopingAction Φ hΦ hΦs a u =
-      envelopingAction Φ hΦ hΦs a ⁅u, v⁆ +
-        algebraMap R (Module.End R M) (a * residuePairing R L Φ u v) := by
-  have h := congrArg (Algebra.lsmul R R M) (envelopingι_mul_sub_mul Φ hΦ hΦs a u v)
-  simp only [map_sub, map_mul, map_add, AlgHom.commutes] at h
-  simpa only [envelopingAction, LinearMap.coe_comp, Function.comp_apply,
-    AlgHom.toLinearMap_apply, map_mul] using h
 
 /-- The action of the currents on a module over `U(ĝ) / (ι K - a)` is smooth exactly when the
 module is smooth for the left ideals `I_N` of high-order currents. -/
