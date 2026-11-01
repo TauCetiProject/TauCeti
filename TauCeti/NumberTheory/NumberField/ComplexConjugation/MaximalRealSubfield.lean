@@ -38,6 +38,8 @@ coefficients in the class number one problem.
   is the image of `F` in `K`.
 * `NumberField.CMExtension.mem_range_algebraMap_iff_star_eq`: for a CM extension `K / F`, an
   element of `K` comes from `F` exactly when its image under a given complex embedding is real.
+* `NumberField.CMExtension.minpoly_eq_map_minpoly_of_star_eq`: for a CM extension `K / F` inside
+  `ℂ`, the minimal polynomial over `K` of a real complex number is its minimal polynomial over `F`.
 
 ## References
 
@@ -95,5 +97,19 @@ theorem mem_range_algebraMap_iff_star_eq (φ : K →+* ℂ) (x : K) :
   have := IsCMField.ofCMExtension F K
   rw [← IsCMField.mem_maximalRealSubfield_iff_star_eq, maximalRealSubfield_eq_fieldRange F K,
     RingHom.mem_fieldRange, Set.mem_range]
+
+variable {F K} in
+/-- **Minimal polynomials of real numbers over a CM extension.** If `K / F` is a CM extension with
+`F ⊆ K ⊆ ℂ` and `x` is a real complex number, the minimal polynomial of `x` over `K` is its
+minimal polynomial over `F`. -/
+theorem minpoly_eq_map_minpoly_of_star_eq [Algebra F ℂ] [Algebra K ℂ] [IsScalarTower F K ℂ]
+    {x : ℂ} (hx : star x = x) : minpoly K x = (minpoly F x).map (algebraMap F K) := by
+  have := IsCMField.ofCMExtension F K
+  by_cases hint : IsIntegral F x
+  · refine (minpoly.map_algebraMap hint ((lifts_iff_coeff_lifts _).mpr fun n ↦ ?_)).symm
+    have := IsCMField.coeff_minpoly_mem_maximalRealSubfield (K := K) hx n
+    rwa [maximalRealSubfield_eq_fieldRange F K, RingHom.mem_fieldRange, ← Set.mem_range] at this
+  · rw [minpoly.eq_zero hint, Polynomial.map_zero,
+      minpoly.eq_zero fun h ↦ hint (isIntegral_trans (R := F) x h)]
 
 end NumberField.CMExtension

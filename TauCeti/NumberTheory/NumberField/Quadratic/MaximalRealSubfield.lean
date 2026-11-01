@@ -90,15 +90,11 @@ theorem RingOfIntegers.mem_range_algebraMap_iff_star_eq (φ : K →+* ℂ) (x : 
 
 /-- **Minimal polynomials of real numbers over an imaginary quadratic field.** For an imaginary
 quadratic field `K ⊆ ℂ` and a real complex number `x`, the minimal polynomial of `x` over `K` is
-its minimal polynomial over `ℚ`. -/
+its minimal polynomial over `ℚ`. This is the case `F = ℚ` of
+`NumberField.CMExtension.minpoly_eq_map_minpoly_of_star_eq`. -/
 theorem minpoly_eq_map_minpoly_rat_of_star_eq [Algebra K ℂ] {x : ℂ} (hx : star x = x) :
-    minpoly K x = (minpoly ℚ x).map (algebraMap ℚ K) := by
-  by_cases hint : IsIntegral ℚ x
-  · refine (minpoly.map_algebraMap hint ((lifts_iff_coeff_lifts _).mpr fun n ↦ ?_)).symm
-    have := IsCMField.coeff_minpoly_mem_maximalRealSubfield (K := K) hx n
-    rwa [maximalRealSubfield_eq_fieldRange, RingHom.mem_fieldRange, ← Set.mem_range] at this
-  · rw [minpoly.eq_zero hint, Polynomial.map_zero,
-      minpoly.eq_zero fun h ↦ hint (isIntegral_trans (R := ℚ) x h)]
+    minpoly K x = (minpoly ℚ x).map (algebraMap ℚ K) :=
+  CMExtension.minpoly_eq_map_minpoly_of_star_eq hx
 
 /-- **Minimal polynomials of real algebraic integers over an imaginary quadratic field.** For an
 imaginary quadratic field `K ⊆ ℂ` and a real algebraic integer `x`, the minimal polynomial of `x`
