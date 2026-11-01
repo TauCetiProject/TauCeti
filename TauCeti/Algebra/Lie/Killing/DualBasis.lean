@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Killing
-public import TauCeti.LinearAlgebra.BilinearForm.DualBasis
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 
 /-!
 # Dual bases for the Killing form
@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.DualBasis
 For a Lie algebra with nondegenerate Killing form, every basis has a Killing-dual basis. The
 coordinate identities and the basis-independent contraction of a bilinear map against a basis and
 its dual hold for every nondegenerate bilinear form; they live in
-`TauCeti.LinearAlgebra.BilinearForm.DualBasis` and apply to the Killing-dual basis directly. This
+`TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` and apply to the Killing-dual basis directly. This
 file adds the fact that uses the Lie structure: the canonical contraction is invariant under the
 adjoint action, because the Killing form is.
 
@@ -42,7 +42,7 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
 /-- The basis of `L` **dual to `b` under the Killing form**: `κ (killingDualBasis b i) (b j)` is
 `1` when `i = j` and `0` otherwise. It abbreviates `(killingForm K L).dualBasis` with the
 nondegeneracy supplied by `LieAlgebra.IsKilling`, so Mathlib's `LinearMap.BilinForm.dualBasis` API
-and the expansions in `TauCeti.LinearAlgebra.BilinearForm.DualBasis` apply to it unchanged. -/
+and the expansions in `TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` apply to it unchanged. -/
 noncomputable abbrev killingDualBasis {ι : Type*} [DecidableEq ι] [Finite ι]
     (b : Module.Basis ι K L) : Module.Basis ι K L :=
   (killingForm K L).dualBasis (IsKilling.killingForm_nondegenerate K L) b

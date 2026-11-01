@@ -29,7 +29,7 @@ Those extra hypotheses are needed only for that application; centrality, the sta
 needs nothing beyond a nondegenerate Killing form.
 
 Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They are developed in
-`TauCeti.LinearAlgebra.BilinearForm.DualBasis` and `TauCeti.Algebra.Lie.Killing.DualBasis` and
+`TauCeti.LinearAlgebra.BilinearForm.Dual.Basis` and `TauCeti.Algebra.Lie.Killing.DualBasis` and
 applied here.
 
 * `Ω` does not depend on the basis.  The mechanism is `LinearMap.sum_apply_dualBasis_eq`:
