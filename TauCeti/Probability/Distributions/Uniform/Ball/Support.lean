@@ -18,9 +18,8 @@ Boundary points belong to the support even though the law is concentrated on the
 The same formula includes the point mass at radius zero, the zero measure at negative radii,
 and zero-dimensional spaces.
 
-The positive-radius case uses the existing uniform density and
-`MeasureTheory.Measure.support_withDensity_eq_closure`; the closure of a normed-space ball
-is its closed ball whenever the radius is nonzero.
+For positive radii, the closed ball is also the closure of the uniform density's nonzero locus
+(see `MeasureTheory.Measure.support_withDensity_eq_closure`).
 -/
 
 public section
