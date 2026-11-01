@@ -53,6 +53,8 @@ automorphism of `k(t)` permutes the three marked places
 
 ## Main results
 
+* `TauCeti.Place.notMem_zeroOneInfty_iff`: the unmarked places are those at which `t` and
+  `t - 1` both have order zero.
 * `TauCeti.isAlgebraicBelyiPair_iff`: the characterization by unramified places, and
   `TauCeti.isAlgebraicBelyiPair_iff_branchPlaces_subset`: the same statement as containment of the
   branch places of `F / k(t)` in the three marked places.
@@ -147,15 +149,27 @@ theorem range_markedPlace : Set.range (markedPlace k) = zeroOneInfty k := by
   ext P
   simp [mem_zeroOneInfty_iff, Fin.exists_fin_succ, eq_comm]
 
+/-- **The marked places are the zeros and poles of `t` and `t - 1`**: a place of `k(t)` is none of
+`t = 0`, `t = 1` and `t = ∞` exactly when both `t` and `t - 1` have order zero there. -/
+theorem notMem_zeroOneInfty_iff {P : Place k (RatFunc k)} :
+    P ∉ zeroOneInfty k ↔ P.ord RatFunc.X = 0 ∧ P.ord (RatFunc.X - 1) = 0 := by
+  have hC : (RatFunc.X - 1 : RatFunc k) = RatFunc.X - RatFunc.C 1 := by rw [map_one]
+  refine ⟨fun hP ↦ ?_, fun ⟨h0, h1⟩ hP ↦ ?_⟩
+  · simp only [mem_zeroOneInfty_iff, not_or] at hP
+    exact ⟨ord_X_eq_zero_of_ne hP.1 hP.2.2, hC ▸ ord_X_sub_C_eq_zero_of_ne 1 hP.2.1 hP.2.2⟩
+  rcases hP with rfl | rfl | rfl
+  · simp at h0
+  · rw [hC, ord_adicOfIrreducible_X_sub_C_self] at h1
+    exact one_ne_zero h1
+  · simp at h0
+
 /-- Away from `0`, `1` and `∞`, the function `t (t - 1)` is a unit. -/
 theorem valuation_X_mul_X_sub_one_of_notMem_zeroOneInfty {P : Place k (RatFunc k)}
     (hP : P ∉ zeroOneInfty k) : P.valuation (RatFunc.X * (RatFunc.X - 1)) = 1 := by
-  simp only [mem_zeroOneInfty_iff, not_or] at hP
-  have h1 := ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
-  rw [map_one RatFunc.C] at h1
+  obtain ⟨h0, h1⟩ := notMem_zeroOneInfty_iff.mp hP
   have hX1 : (RatFunc.X - 1 : RatFunc k) ≠ 0 := by simpa using RatFunc.X_sub_C_ne_zero (1 : k)
-  rw [map_mul, valuation_eq_exp_neg_ord _ RatFunc.X_ne_zero, valuation_eq_exp_neg_ord _ hX1,
-    ord_X_eq_zero_of_ne hP.1 hP.2.2, h1, neg_zero, WithZero.exp_zero, one_mul]
+  rw [map_mul, valuation_eq_exp_neg_ord _ RatFunc.X_ne_zero, valuation_eq_exp_neg_ord _ hX1, h0,
+    h1, neg_zero, WithZero.exp_zero, one_mul]
 
 end Place
 

@@ -42,6 +42,7 @@ the periods is assumed.
 
 * `TauCeti.NovikovModule.kernelMap`: the linear map given by a supported kernel.
 * `TauCeti.NovikovModule.kernelComp`: the composite of two kernels.
+* `TauCeti.NovikovModule.toKernel`: the matrix coefficients of a linear map.
 * `TauCeti.NovikovModule.novikovKernelMap`: the map of an invariant kernel, as a linear map over
   the Novikov ring.
 
@@ -147,6 +148,16 @@ theorem kernelMap_apply_val_eq_sum (a : NovikovModule R F₁) (p₀ : S₀) {s :
   exact finsum_eq_sum_of_support_subset _ fun p₁ hp =>
     hs p₁ (left_ne_zero_of_mul hp) (right_ne_zero_of_mul hp)
 
+/-- A kernel map sends a generator to its row of the kernel. -/
+@[simp]
+theorem kernelMap_ofFinsupp_single_val (p₁ : S₁) :
+    (kernelMap hm hmfin (ofFinsupp F₁ (Finsupp.single p₁ 1))).val = m p₁ := by
+  classical
+  ext p₀
+  rw [kernelMap_apply_val, finsum_eq_single _ p₁ fun p hp => by
+    simp [Ne.symm hp]]
+  simp
+
 /-- The map shifts potential cutoffs by the constant of the potential bound: if `a` vanishes
 above `D`, then its image vanishes above `D + C`. -/
 theorem kernelMap_apply_val_eq_zero {a : NovikovModule R F₁} {D : ℝ}
@@ -239,6 +250,37 @@ theorem kernelMap_inj {C' : ℝ} {m' : S₁ → S₀ → R}
     simp
 
 end Map
+
+section Kernel
+
+variable {R S₁ S₀ : Type*} [Semiring R] {F₁ : S₁ → ℝ} {F₀ : S₀ → ℝ}
+
+/-- The kernel of a linear map of completed combinations: the coefficient of the output
+generator `p₀` in the image of the input generator `p₁`. -/
+def toKernel (f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀) (p₁ : S₁) (p₀ : S₀) : R :=
+  (f (ofFinsupp F₁ (Finsupp.single p₁ 1))).val p₀
+
+variable {f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀}
+
+@[simp]
+theorem toKernel_apply (p₁ : S₁) (p₀ : S₀) :
+    toKernel f p₁ p₀ = (f (ofFinsupp F₁ (Finsupp.single p₁ 1))).val p₀ :=
+  (rfl)
+
+/-- Each row of the kernel of a linear map is a completed combination. -/
+theorem toKernel_mem (f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀) (p₁ : S₁) :
+    toKernel f p₁ ∈ NovikovModule R F₀ :=
+  (f _).property
+
+/-- The kernel of a kernel map is its kernel. -/
+@[simp]
+theorem toKernel_kernelMap {C : ℝ} {m : S₁ → S₀ → R}
+    (hm : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C)
+    (hmfin : ∀ p₁, m p₁ ∈ NovikovModule R F₀) : toKernel (kernelMap hm hmfin) = m := by
+  ext p₁ p₀
+  rw [toKernel_apply, kernelMap_ofFinsupp_single_val]
+
+end Kernel
 
 section Comp
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent
+public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.ComponentAut
 public import Mathlib.GroupTheory.Index
 
 /-!
