@@ -74,11 +74,11 @@ open Finset PowerSeries
 
 namespace TauCeti
 
-variable {R A : Type*} [CommRing R]
+variable {R A : Type*}
 
-section Monoid
+section MomentSeries
 
-variable [Monoid A] (φ : A → R) (a : A)
+variable [Semiring R] [Monoid A] (φ : A → R) (a : A)
 
 /-- The *moment series* `M(z) = ∑_{n ≥ 0} φ (a ^ n) z ^ n` of `a` with respect to `φ`. Its
 constant coefficient is `φ 1`, which is `1` for a normalised `φ`. -/
@@ -94,6 +94,20 @@ theorem coeff_momentSeries (n : ℕ) : coeff n (momentSeries φ a) = φ (a ^ n) 
 @[simp]
 theorem constantCoeff_momentSeries : constantCoeff (momentSeries φ a) = φ 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_momentSeries, pow_zero]
+
+end MomentSeries
+
+/-- Rescaling `a` by `c` rescales its moment series: `M_{c a}(z) = M_a(c z)`. -/
+theorem momentSeries_smul [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (c : R)
+    (a : A) : momentSeries φ (c • a) = rescale c (momentSeries φ a) := by
+  ext n
+  rw [coeff_momentSeries, coeff_rescale, coeff_momentSeries, smul_pow, map_smul, smul_eq_mul]
+
+variable [CommRing R]
+
+section Monoid
+
+variable [Monoid A] (φ : A → R) (a : A)
 
 /-- The *free cumulant series* `C(z) = 1 + ∑_{n ≥ 1} κ_n(a, …, a) z ^ n` of `a` with respect to
 `φ`, whose `n`-th coefficient is the free cumulant of the constant word of length `n`. -/
@@ -129,8 +143,7 @@ theorem coeff_one_freeCumulantSeries : coeff 1 (freeCumulantSeries φ a) = φ a 
 `κ₂(a, a) = φ (a ^ 2) - φ a ^ 2`. -/
 theorem coeff_two_freeCumulantSeries :
     coeff 2 (freeCumulantSeries φ a) = φ (a ^ 2) - φ a ^ 2 := by
-  rw [coeff_freeCumulantSeries, show (univ : Finset (Fin 2)) = {0, 1} by decide,
-    freeCumulant_pair φ _ Fin.zero_lt_one, sq, sq]
+  rw [coeff_freeCumulantSeries, univ_fin2, freeCumulant_pair φ _ Fin.zero_lt_one, sq, sq]
 
 /-- The *R-series* `R(z) = ∑_{n ≥ 0} κ_{n+1}(a, …, a) z ^ n` of `a` with respect to `φ`, the
 formal R-transform, so that `C(z) = 1 + z R(z)`. -/
@@ -230,12 +243,6 @@ end Monoid
 section Algebra
 
 variable [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
-
-/-- Rescaling `a` by `c` rescales its moment series: `M_{c a}(z) = M_a(c z)`. -/
-theorem momentSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
-    momentSeries φ (c • a) = rescale c (momentSeries φ a) := by
-  ext n
-  rw [coeff_momentSeries, coeff_rescale, coeff_momentSeries, smul_pow, map_smul, smul_eq_mul]
 
 /-- Rescaling `a` by `c` rescales its free cumulant series: `C_{c a}(z) = C_a(c z)`, since
 `κ_n` is multilinear. -/
