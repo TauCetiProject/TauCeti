@@ -132,12 +132,6 @@ theorem mem_J1_iff (g : Equiv.Perm (Fin 266)) :
     g ∈ J1 ↔ ∀ H : Subgroup (Equiv.Perm (Fin 266)), J1.a ∈ H → J1.b ∈ H → g ∈ H := by
   simp [J1_def, Subgroup.mem_closure, Set.insert_subset_iff, Set.singleton_subset_iff]
 
-instance : Nontrivial J1 := by
-  have ha : J1.a ≠ 1 := by decide +kernel
-  refine nontrivial_of_ne (⟨J1.a, ?_⟩ : J1) 1 (fun h => ha (congrArg Subtype.val h))
-  rw [J1_def]
-  exact Subgroup.subset_closure (by simp)
-
 namespace J1
 
 @[simp]
@@ -146,55 +140,59 @@ theorem a_mem : a ∈ J1 := Subgroup.subset_closure (by simp)
 @[simp]
 theorem b_mem : b ∈ J1 := Subgroup.subset_closure (by simp)
 
+instance : Nontrivial J1 :=
+  (Subgroup.nontrivial_iff_exists_ne_one J1).2 ⟨a, a_mem, by decide +kernel⟩
+
 /-- The presentation generators act by the inverses of the ATLAS generators, converting the
 source's left-to-right products to Mathlib's composition convention. -/
-def presentationGenerators : Fin Sporadic.j1Presentation.generatorCount → Equiv.Perm (Fin 266) :=
+def presentationImage : Fin Sporadic.j1Presentation.generatorCount → Equiv.Perm (Fin 266) :=
   fun i => if i.val = 0 then a⁻¹ else b⁻¹
 
 @[simp]
-theorem presentationGenerators_zero : presentationGenerators ⟨0, by simp⟩ = a⁻¹ := (rfl)
+theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := (rfl)
 
 @[simp]
-theorem presentationGenerators_one : presentationGenerators ⟨1, by simp⟩ = b⁻¹ := (rfl)
+theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
 -- Separate kernel checks keep each declaration within the default heartbeat budget.
 private theorem relator_zero :
-    Relator.eval presentationGenerators (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
+    Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_zero,
-    Relator.eval_pow, Relator.eval_gen, presentationGenerators_zero]
+    Relator.eval_pow, Relator.eval_gen, presentationImage_zero]
   decide +kernel
 
 private theorem relator_one :
-    Relator.eval presentationGenerators (Sporadic.j1Presentation.transcribed[1]'(by simp)) = 1 := by
+    Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[1]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
-    Relator.eval_pow, Relator.eval_gen, presentationGenerators_one]
+    Relator.eval_pow, Relator.eval_gen, presentationImage_one]
   decide +kernel
 
 private theorem relator_two :
-    Relator.eval presentationGenerators (Sporadic.j1Presentation.transcribed[2]'(by simp)) = 1 := by
+    Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[2]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
-    presentationGenerators_zero, presentationGenerators_one]
+    presentationImage_zero, presentationImage_one]
   decide +kernel
 
 private theorem relator_three :
-    Relator.eval presentationGenerators (Sporadic.j1Presentation.transcribed[3]'(by simp)) = 1 := by
+    Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[3]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
-    presentationGenerators_zero, presentationGenerators_one]
+    presentationImage_zero, presentationImage_one]
   decide +kernel
 
 private theorem relator_four :
-    Relator.eval presentationGenerators (Sporadic.j1Presentation.transcribed[4]'(by simp)) = 1 := by
+    Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[4]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
-    presentationGenerators_zero, presentationGenerators_one]
+    presentationImage_zero, presentationImage_one]
   decide +kernel
 
 /-- All five transcribed relators hold on the inverse ATLAS pair. -/
-theorem relators_hold (t : Relator (Fin Sporadic.j1Presentation.generatorCount))
+theorem lift_presentationImage_toFreeGroup_eq_one
+    (t : Relator (Fin Sporadic.j1Presentation.generatorCount))
     (ht : t ∈ Sporadic.j1Presentation.transcribed) :
-    FreeGroup.lift presentationGenerators t.toFreeGroup = 1 := by
+    FreeGroup.lift presentationImage t.toFreeGroup = 1 := by
   rw [Relator.lift_toFreeGroup]
   obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp ht
   have hi5 : i < 5 := by simpa using hi
@@ -206,9 +204,9 @@ theorem relators_hold (t : Relator (Fin Sporadic.j1Presentation.generatorCount))
   · exact relator_four
 
 /-- The satisfying assignment generates exactly the ATLAS model, not a proper subgroup. -/
-theorem closure_range_presentationGenerators :
-    Subgroup.closure (Set.range presentationGenerators) = J1 := by
-  have hrange : Set.range presentationGenerators = {a⁻¹, b⁻¹} := by
+theorem closure_range_presentationImage :
+    Subgroup.closure (Set.range presentationImage) = J1 := by
+  have hrange : Set.range presentationImage = {a⁻¹, b⁻¹} := by
     exact Set.range_ite_const ⟨⟨0, by simp⟩, rfl⟩ ⟨⟨1, by simp⟩, by decide⟩
   rw [hrange, J1_def]
   simpa only [Set.inv_insert, Set.inv_singleton] using
@@ -228,7 +226,8 @@ theorem exists_surjective_J1 :
   unfold SporadicName.Group
   rw [SporadicName.presentation_J1]
   exact Sporadic.j1Presentation.exists_surjective_of_closure_range_eq
-    ⟨J1.presentationGenerators, J1.relators_hold⟩ J1.closure_range_presentationGenerators
+    ⟨J1.presentationImage, J1.lift_presentationImage_toFreeGroup_eq_one⟩
+    J1.closure_range_presentationImage
 
 /-- The transcribed presentation of `J₁` does not collapse to the trivial group. -/
 instance nontrivial_group_J1 : Nontrivial SporadicName.J1.Group := by
