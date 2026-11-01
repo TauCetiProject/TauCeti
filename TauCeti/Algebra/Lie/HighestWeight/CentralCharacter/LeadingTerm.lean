@@ -47,7 +47,7 @@ homogeneous Lie invariant `p` of degree `n` it agrees with the Chevalley restric
 * `TauCeti.cartanProjection_prod_map_ι_sub_mem_pbwFiltrationPrevious`: its leading term on words.
 * `TauCeti.cartanProjection_pbwHomogeneousSymmetrization_sub_mem_pbwFiltrationPrevious`: its
   leading term on symmetrizations is the Chevalley restriction.
-* `TauCeti.hcProjection_mem_wordFiltration` and
+* `TauCeti.hcProjection_mem_wordFiltration`, `TauCeti.hcProjection_mem_wordFiltrationPrevious` and
   `TauCeti.hcProjection_sub_lieCartanRestriction_mem_wordFiltrationPrevious`: the same for the
   Harish-Chandra projection, in `S(H)`.
 
@@ -171,6 +171,15 @@ theorem hcProjection_mem_wordFiltration {n : ℕ} {z : Subalgebra.center K (U L)
   rw [hcProjection_apply,
     UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltration_iff]
   exact cartanProjection_mem_pbwFiltration b hz
+
+/-- A central element of PBW degree below `n` has Harish-Chandra projection of degree below `n`
+in `S(H)`. -/
+theorem hcProjection_mem_wordFiltrationPrevious {n : ℕ} {z : Subalgebra.center K (U L)}
+    (hz : (z : U L) ∈ UniversalEnvelopingAlgebra.pbwFiltrationPrevious K L n) :
+    hcProjection b z ∈ Algebra.wordFiltrationPrevious (SymmetricAlgebra.ι K H) n := by
+  rw [hcProjection_apply,
+    UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff]
+  exact cartanProjection_mem_pbwFiltrationPrevious b hz
 
 end Filtration
 

@@ -67,8 +67,6 @@ is the least period of `x`.
 * `TauCeti.SmoothMappingTorus.isImmersion_closedOrbit`,
   `TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit_iff`: `γ` is an immersion, and it is a
   smooth embedding exactly when `d` is the least period of `x`.
-* `TauCeti.SmoothMappingTorus.mfderiv_orbitTorus_apply`: the differential of the orbit torus sends
-  `a ∂_s + b ∂_θ` to `a ∂_s + b T`.
 * `TauCeti.SmoothMappingTorus.range_orbitTorus`,
   `TauCeti.SmoothMappingTorus.isSmoothEmbedding_orbitTorus_iff`: the orbit torus has image
   `(ℝ / ℤ) × range γ`, and it is a smooth embedding exactly when `d` is the least period of `x`.
@@ -441,34 +439,6 @@ theorem isSmoothEmbedding_orbitTorus_iff [I.Boundaryless] [FiniteDimensional ℝ
   exact Manifold.IsSmoothEmbedding.id.prodMap ((isSmoothEmbedding_closedOrbit_iff h hn).2 hd)
 
 end OrbitTorus
-
-section OrbitTorusDerivative
-
-variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
-  {φ : M ≃ₘ⟮I, I⟯ M} {x : M} {d : ℕ} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
-
-/-- The differential of the orbit torus sends `a ∂_s + b ∂_θ` to `a ∂_s + b T`, where `T = ∂_t` is
-the suspension vector field. -/
-theorem mfderiv_orbitTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) (a b : ℝ) :
-    mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ hx) p
-        ((Manifold.tangentSpaceProdEquiv p).symm (a, b)) =
-      (Manifold.tangentSpaceProdEquiv (orbitTorus φ hx p)).symm
-        (a, b • timeVectorField φ (orbitTorus φ hx p).2) := by
-  -- The closed orbit sends the unit tangent vector of its circle to `T`.
-  have hT : (1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx p.2)) b =
-      b • timeVectorField φ (closedOrbit φ hx p.2) := by
-    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self]
-  have hγ : mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) p.2 b =
-      b • timeVectorField φ (closedOrbit φ hx p.2) := by
-    rw [mfderiv_closedOrbit]
-    exact hT
-  rw [orbitTorus_apply, orbitTorus, Manifold.mfderiv_prodMap_apply mdifferentiableAt_id
-    (((contMDiff_closedOrbit (n := ∞) hx) p.2).mdifferentiableAt (by simp)), mfderiv_id,
-    ContinuousLinearMap.id_apply, hγ]
-  -- The base points `(id s, γ θ)` and `(s, γ θ)` and the pair projections agree by reduction.
-  rfl
-
-end OrbitTorusDerivative
 
 end SmoothMappingTorus
 
