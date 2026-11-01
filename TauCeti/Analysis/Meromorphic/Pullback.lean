@@ -67,6 +67,14 @@ theorem coe_pullback (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : g a =
     ((pullback g hg hga ht φ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
       (φ : Germ (𝓝[≠] b) 𝕜).compTendsto g ht := (rfl)
 
+/-- Pullback fixes scalar germs. -/
+@[simp]
+theorem pullback_algebraMap (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : g a = b)
+    (ht : Tendsto g (𝓝[≠] a) (𝓝[≠] b)) (c : 𝕜) :
+    pullback g hg hga ht (algebraMap 𝕜 _ c) = algebraMap 𝕜 _ c := by
+  apply Subtype.ext
+  rw [coe_pullback, coe_algebraMap, coe_algebraMap, Germ.const_compTendsto]
+
 /-- Pullback along the identity fixes every meromorphic germ. -/
 @[simp]
 theorem pullback_id (φ : meromorphicGerms 𝕜 a) :
