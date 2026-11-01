@@ -53,6 +53,8 @@ pairs of parts, this is the energy increment of the regularity lemma for pair-co
   energy.
 * `TauCeti.PairColorSystem.card_mul_sq_pairColorDensity_sub_le_sum`: Cauchy–Schwarz on a rectangle
   whose sides are unions of parts.
+* `TauCeti.PairColorSystem.mul_card_le_sum_densityDeviation_sq_of_witness`: the deviation gain on
+  a single block from one resolved witness rectangle.
 * `TauCeti.PairColorSystem.energy_increment_of_witnesses`: the quantitative energy gain from a
   family of resolved witness rectangles.
 
@@ -284,6 +286,50 @@ theorem energy_mono_of_refines : S.energy P ≤ S.energy Q := by
   rw [← sub_nonneg, ← S.densityDeviation_sq h]
   exact div_nonneg (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sq_nonneg _) (Nat.cast_nonneg _)
 
+omit h in
+/-- **A resolved witness forces a gain on its block.** Let `A ×ˢ B` be a block of parts of `P`,
+and let `X ×ˢ Y ⊆ A ×ˢ B` be a rectangle whose sides are unions of parts of `Q`. If the rectangle
+has at least an `α`-fraction of the ordered distinct pairs of the block, and its density of `c` is
+at least `δ` away from that of the block, then the squared deviations of the block densities of
+`Q` from those of `P`, summed over the colors and over the ordered distinct pairs of the block,
+total at least `α δ²` times the number of those pairs. -/
+theorem mul_card_le_sum_densityDeviation_sq_of_witness {A B X Y : Finset V} (hA : A ∈ P.parts)
+    (hB : B ∈ P.parts) (hXA : X ⊆ A) (hYB : Y ⊆ B) (hX : ∀ C ∈ Q.parts, C ⊆ X ∨ Disjoint C X)
+    (hY : ∀ C ∈ Q.parts, C ⊆ Y ∨ Disjoint C Y) (c : κ) {α δ : ℝ} (hδ : 0 ≤ δ)
+    (hsize : α * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤ #((X ×ˢ Y).filter fun p => p.1 ≠ p.2))
+    (hdev : δ ≤ |(pairColorDensity S c X Y : ℝ) - pairColorDensity S c A B|) :
+    α * δ ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
+      ∑ x ∈ (A ×ˢ B).filter (fun p => p.1 ≠ p.2), ∑ k,
+        ((pairColorDensity S k (Q.part x.1) (Q.part x.2) : ℝ) -
+          pairColorDensity S k (P.part x.1) (P.part x.2)) ^ 2 := by
+  set T := (A ×ˢ B).filter fun p ↦ p.1 ≠ p.2
+  set U := (X ×ˢ Y).filter fun p ↦ p.1 ≠ p.2
+  have hUT : U ⊆ T := filter_subset_filter _ (product_subset_product hXA hYB)
+  have hsq : δ ^ 2 ≤ ((pairColorDensity S c X Y : ℝ) - pairColorDensity S c A B) ^ 2 := by
+    simpa only [sq_abs] using pow_le_pow_left₀ hδ hdev 2
+  -- The size and deviation bounds give `α δ² #T ≤ #U · dev²`; Cauchy–Schwarz on the resolved
+  -- rectangle bounds this by the deviations of the fine densities over `U`, where the coarse
+  -- density is constant, and finally we enlarge to all colors and to the whole block.
+  calc α * δ ^ 2 * #T = δ ^ 2 * (α * #T) := by ring
+    _ ≤ δ ^ 2 * #U := mul_le_mul_of_nonneg_left hsize (sq_nonneg _)
+    _ ≤ #U * ((pairColorDensity S c X Y : ℝ) - pairColorDensity S c A B) ^ 2 := by
+      nlinarith [Nat.cast_nonneg (α := ℝ) #U]
+    _ ≤ ∑ x ∈ U, ((pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
+        pairColorDensity S c A B) ^ 2 :=
+      S.card_mul_sq_pairColorDensity_sub_le_sum hX hY c _
+    _ = ∑ x ∈ U, ((pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
+        pairColorDensity S c (P.part x.1) (P.part x.2)) ^ 2 := by
+      refine sum_congr rfl fun x hx ↦ ?_
+      obtain ⟨hx, -⟩ := mem_filter.1 (hUT hx)
+      obtain ⟨hx₁, hx₂⟩ := mem_product.1 hx
+      rw [P.part_eq_of_mem hA hx₁, P.part_eq_of_mem hB hx₂]
+    _ ≤ _ := by
+      refine (sum_le_sum fun x _ ↦ single_le_sum
+        (f := fun k ↦ ((pairColorDensity S k (Q.part x.1) (Q.part x.2) : ℝ) -
+          pairColorDensity S k (P.part x.1) (P.part x.2)) ^ 2)
+        (fun k _ ↦ sq_nonneg _) (mem_univ c)).trans ?_
+      exact sum_le_sum_of_subset_of_nonneg hUT fun x _ _ ↦ sum_nonneg fun k _ ↦ sq_nonneg _
+
 /-- **Resolved witnesses force an energy gain.** Let `Q` refine `P`, and let `B` be a family of
 pairs of parts of `P`. For each block `A ×ˢ B` in the family choose a color and a rectangle
 `X ×ˢ Y ⊆ A ×ˢ B` whose sides are unions of parts of `Q`. If each rectangle has at least an
@@ -307,30 +353,9 @@ theorem energy_increment_of_witnesses (B : Finset (Finset V × Finset V))
   let d : V × V → κ → ℝ := fun x k ↦ ((pairColorDensity S k (Q.part x.1) (Q.part x.2) : ℝ) -
     pairColorDensity S k (P.part x.1) (P.part x.2)) ^ 2
   have hlocal (AB : Finset V × Finset V) (hAB : AB ∈ B) :
-      α * δ ^ 2 * #(T AB) ≤ ∑ x ∈ T AB, ∑ k, d x k := by
-    set U := (X AB ×ˢ Y AB).filter fun p ↦ p.1 ≠ p.2
-    have hUT : U ⊆ T AB := filter_subset_filter _ (product_subset_product (hXsub AB hAB)
-      (hYsub AB hAB))
-    have hsq : δ ^ 2 ≤ ((pairColorDensity S (c AB) (X AB) (Y AB) : ℝ) -
-        pairColorDensity S (c AB) AB.1 AB.2) ^ 2 := by
-      simpa only [sq_abs] using pow_le_pow_left₀ hδ (hdev AB hAB) 2
-    calc α * δ ^ 2 * #(T AB) = δ ^ 2 * (α * #(T AB)) := by ring
-      _ ≤ δ ^ 2 * #U := mul_le_mul_of_nonneg_left (hsize AB hAB) (sq_nonneg _)
-      _ ≤ #U * ((pairColorDensity S (c AB) (X AB) (Y AB) : ℝ) -
-          pairColorDensity S (c AB) AB.1 AB.2) ^ 2 := by
-        nlinarith [Nat.cast_nonneg (α := ℝ) #U]
-      _ ≤ ∑ x ∈ U, ((pairColorDensity S (c AB) (Q.part x.1) (Q.part x.2) : ℝ) -
-          pairColorDensity S (c AB) AB.1 AB.2) ^ 2 :=
-        S.card_mul_sq_pairColorDensity_sub_le_sum (hX AB hAB) (hY AB hAB) (c AB) _
-      _ = ∑ x ∈ U, d x (c AB) := by
-        refine sum_congr rfl fun x hx ↦ ?_
-        obtain ⟨hx, -⟩ := mem_filter.1 (hUT hx)
-        obtain ⟨hx₁, hx₂⟩ := mem_product.1 hx
-        simp only [d, P.part_eq_of_mem (hB AB hAB).1 hx₁, P.part_eq_of_mem (hB AB hAB).2 hx₂]
-      _ ≤ ∑ x ∈ T AB, ∑ k, d x k := by
-        refine (sum_le_sum fun x _ ↦ single_le_sum (f := d x)
-          (fun k _ ↦ sq_nonneg _) (mem_univ (c AB))).trans ?_
-        exact sum_le_sum_of_subset_of_nonneg hUT fun x _ _ ↦ sum_nonneg fun k _ ↦ sq_nonneg _
+      α * δ ^ 2 * #(T AB) ≤ ∑ x ∈ T AB, ∑ k, d x k :=
+    S.mul_card_le_sum_densityDeviation_sq_of_witness (hB AB hAB).1 (hB AB hAB).2 (hXsub AB hAB)
+      (hYsub AB hAB) (hX AB hAB) (hY AB hAB) (c AB) hδ (hsize AB hAB) (hdev AB hAB)
   -- Blocks of distinct pairs of parts are disjoint.
   have hdisj : (B : Set (Finset V × Finset V)).PairwiseDisjoint T := by
     intro AB hAB AB' hAB' hne

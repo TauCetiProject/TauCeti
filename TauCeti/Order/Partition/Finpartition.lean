@@ -343,12 +343,19 @@ theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
     exact hPC
   · simp [P.part_eq_empty.2 ha]
 
+/-- If a point of `s` has the same part as `b`, then `b` lies in that part. -/
+theorem mem_part_of_part_eq_part {a b : α} (ha : a ∈ s) (hab : P.part a = P.part b) :
+    b ∈ P.part a := by
+  have hb : b ∈ s := by rw [← P.part_nonempty, ← hab, P.part_nonempty]; exact ha
+  rw [hab]
+  exact P.mem_part hb
+
 /-- Points lying in a common part of a refinement lie in a common part of the coarser
 partition. -/
 theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) :
     Q.part a = Q.part b := by
   by_cases ha : a ∈ s
-  · have hb : b ∈ P.part a := hab ▸ P.mem_part (P.part_nonempty.1 (hab ▸ P.part_nonempty.2 ha))
+  · have hb : b ∈ P.part a := P.mem_part_of_part_eq_part ha hab
     exact (Q.part_eq_of_mem (Q.part_mem.2 ha) (part_mono h a hb)).symm
   · have hb : b ∉ s := P.part_eq_empty.1 (hab ▸ P.part_eq_empty.2 ha)
     rw [Q.part_eq_empty.2 ha, Q.part_eq_empty.2 hb]
@@ -357,7 +364,7 @@ theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) 
 theorem mem_iff_mem_of_part_eq_part {X : Finset α} (hX : ∀ C ∈ P.parts, C ⊆ X ∨ Disjoint C X)
     {a b : α} (ha : a ∈ s) (hab : P.part a = P.part b) : a ∈ X ↔ b ∈ X := by
   have ha' := P.mem_part ha
-  have hb : b ∈ P.part a := hab ▸ P.mem_part (P.part_nonempty.1 (hab ▸ P.part_nonempty.2 ha))
+  have hb : b ∈ P.part a := P.mem_part_of_part_eq_part ha hab
   rcases hX _ (P.part_mem.2 ha) with hs | hd
   · exact iff_of_true (hs ha') (hs hb)
   · exact iff_of_false (disjoint_left.1 hd ha') (disjoint_left.1 hd hb)
