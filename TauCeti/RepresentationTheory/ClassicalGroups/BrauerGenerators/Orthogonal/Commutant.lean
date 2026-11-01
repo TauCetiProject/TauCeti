@@ -128,8 +128,10 @@ private theorem apply_comp_perm_eq
   simp only [kroneckerPower_toMatrix_toPEquiv, PEquiv.mul_toMatrix_toPEquiv,
     PEquiv.toMatrix_toPEquiv_mul] at h
   have h' := (congrFun (congrFun h v) (Equiv.piCongrRight (fun _ ↦ σ) u)).symm
-  change M (Equiv.piCongrRight (fun _ ↦ σ) v) (Equiv.piCongrRight (fun _ ↦ σ) u) = M v u
-  simpa [submatrix_apply] using h'
+  have hpi (w : Fin 2 → Fin n) : Equiv.piCongrRight (fun _ ↦ σ) w = fun i ↦ σ (w i) :=
+    funext (Equiv.piCongrRight_apply _ w)
+  simp only [submatrix_apply, Equiv.symm_apply_apply, id_eq] at h'
+  simpa only [hpi] using h'
 
 /-- The diagonal projection of `(Kⁿ)^{⊗2}` onto the span of the basis tensors `eₐ ⊗ eₐ`. -/
 private abbrev diagProj (K : Type*) [Field K] (n : ℕ) : Matrix (Fin 2 → Fin n) (Fin 2 → Fin n) K :=

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Scalar, diagonal and determinant facts for orthogonal matrices
@@ -96,12 +97,12 @@ end TauCeti
 
 namespace Matrix
 
-/-- A permutation matrix is orthogonal: its transpose is the permutation matrix of the inverse
-permutation. -/
+/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitaryGroup` for the
+trivial star operation `starRingOfComm`, which defines `Matrix.orthogonalGroup`. -/
 theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (R : Type*)
-    [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R := by
-  rw [mem_orthogonalGroup_iff', transpose_permMatrix, ← permMatrix_mul, mul_inv_cancel,
-    permMatrix_one]
+    [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
+  letI := starRingOfComm (R := R)
+  permMatrix_mem_unitaryGroup σ
 
 end Matrix
 
