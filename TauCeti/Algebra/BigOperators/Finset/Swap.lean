@@ -34,11 +34,16 @@ theorem sum_swap_apply_add {ι M : Type*} [DecidableEq ι] [AddCommMonoid M] (F 
   obtain rfl | hne := eq_or_ne x y
   · simp
   have hy' : y ∈ s.erase x := Finset.mem_erase.2 ⟨hne.symm, hy⟩
-  rw [← Finset.add_sum_erase _ _ hx, ← Finset.add_sum_erase _ _ hy',
-    ← Finset.add_sum_erase _ _ hx, ← Finset.add_sum_erase _ _ hy',
+  -- Split off the terms at `x` and `y`, for an arbitrary summand.
+  have split (G : ι → M) : ∑ k ∈ s, G k = G x + (G y + ∑ k ∈ (s.erase x).erase y, G k) := by
+    rw [Finset.add_sum_erase _ _ hy', Finset.add_sum_erase _ _ hx]
+  -- Away from `x` and `y` the transposition acts trivially.
+  have rest : ∑ k ∈ (s.erase x).erase y, F k (Equiv.swap x y k) =
+      ∑ k ∈ (s.erase x).erase y, F k k :=
     Finset.sum_congr rfl fun k hk => by
       rw [Equiv.swap_apply_of_ne_of_ne (Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hk))
-        (Finset.ne_of_mem_erase hk)],
+        (Finset.ne_of_mem_erase hk)]
+  rw [split fun k => F k (Equiv.swap x y k), split fun k => F k k, rest,
     Equiv.swap_apply_left, Equiv.swap_apply_right]
   abel
 
