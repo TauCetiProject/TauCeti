@@ -208,8 +208,8 @@ theorem restrict_eq_adicOfIrreducible_X_pow_sub_C_iff
   exact ⟨fun h ↦ pos_of_mul_pos_right h (Nat.cast_nonneg p),
     fun h ↦ mul_pos (by exact_mod_cast hp.out.pos) h⟩
 
-/-- **The place of `t ^ p - a` is totally ramified in `K(t)`**: the place `t = b` of `K(t)` above
-it has ramification index `p`, for `a` not a `p`-th power in `k` and `b ^ p = a`. -/
+/-- **The place `t = b` of `K(t)` has ramification index `p` over the place of `t ^ p - a`**, for
+`a` not a `p`-th power in `k` and `b ^ p = a`. -/
 theorem ramificationIdx_adicOfIrreducible_X_sub_C_of_pow_eq
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) (ha : ∀ c : k, c ^ p ≠ a)
     (hb : b ^ p = algebraMap k K a) :
