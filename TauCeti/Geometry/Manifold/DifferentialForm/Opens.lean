@@ -240,13 +240,13 @@ end RoughForm
 /-- On a product `U × M` of an open subset `U` of a normed space `F` with a manifold `M`, the
 exterior derivative of the first coordinate, read in `F`, reads the first coordinate of a tangent
 vector. -/
+@[simp]
 theorem mextDeriv_ofFunction_coe_fst_apply {U : Opens F} (z : U × M)
     (v : TangentSpace (𝓘(ℝ, F).prod I) z) :
     mextDeriv (RoughForm.ofFunction (𝓘(ℝ, F).prod I) fun z : U × M ↦ (z.1 : F)) z ![v] =
       v.1 := by
   have h : (fun z : U × M ↦ (z.1 : F)) = Subtype.val ∘ Prod.fst := rfl
-  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    mvfderiv_apply_eq_mfderiv_apply, h, mfderiv_comp z
+  rw [mextDeriv_ofFunction_apply, h, mfderiv_comp z
       (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
     ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]

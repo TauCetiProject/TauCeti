@@ -42,8 +42,9 @@ differentiable function is closed exactly when the function is locally constant.
 * `TauCeti.mextDerivWithin_add`, `TauCeti.mextDerivWithin_smul`: linearity.
 * `TauCeti.mextDerivWithin_eq_extDerivWithin`, `TauCeti.mextDeriv_eq_extDeriv`: over the model
   space, the manifold exterior derivative is the flat one.
-* `TauCeti.mextDerivWithin_ofFunction`, `TauCeti.mextDeriv_ofFunction`: the exterior derivative
-  of a function is its manifold derivative.
+* `TauCeti.mextDerivWithin_ofFunction`, `TauCeti.mextDeriv_ofFunction`,
+  `TauCeti.mextDeriv_ofFunction_apply`: the exterior derivative of a function is its manifold
+  derivative.
 * `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
   exactly when the function is locally constant.
 * `TauCeti.mextDeriv_ofFunction_snd_apply`: the differential of the second coordinate of `M × F`
@@ -374,6 +375,13 @@ theorem mextDeriv_ofFunction (f : M → F) (x : M) :
   rw [← mextDerivWithin_univ, mextDerivWithin_ofFunction f (uniqueMDiffWithinAt_univ I),
     mvfderivWithin_univ]
 
+/-- The exterior derivative of the `0`-form of a function, evaluated on a tangent vector, is the
+manifold derivative of the function applied to that vector. -/
+theorem mextDeriv_ofFunction_apply (f : M → F) (x : M) (v : TangentSpace I x) :
+    mextDeriv (RoughForm.ofFunction I f) x ![v] = mfderiv I 𝓘(ℝ, F) f x v := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
+
 /-- A function which near `x` differs by a constant from a function `g` differentiable at `x` has
 the same exterior derivative at `x` as `g`. -/
 theorem mextDeriv_ofFunction_eq_of_eventuallyEq_add_const {f g : M → F} {x : M} {c : F}
@@ -430,10 +438,10 @@ theorem mextDeriv_ofFunction_add {f g : M → F} (hf : MDifferentiable I 𝓘(�
 
 /-- On a product `M × F` with a normed space `F`, the exterior derivative of the second coordinate
 reads the second coordinate of a tangent vector. -/
+@[simp]
 theorem mextDeriv_ofFunction_snd_apply (z : M × F) (v : TangentSpace (I.prod 𝓘(ℝ, F)) z) :
     mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, F)) fun z : M × F ↦ z.2) z ![v] = v.2 := by
-  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    mvfderiv_apply_eq_mfderiv_apply, mfderiv_snd]
+  rw [mextDeriv_ofFunction_apply, mfderiv_snd]
   -- Tangent vectors of `M × F` are pairs.
   rfl
 

@@ -397,8 +397,7 @@ theorem eval₂_totalForm_mfderiv_mk (p : PositivePeriod) (x : AddCircle (p : �
     have hc := mfderiv_comp_apply x
       (contMDiff_periodReal (n := 1).mdifferentiableAt one_ne_zero (x := mk p x)) (hmk x) w
     rw [hconst, mfderiv_const, zero_apply] at hc
-    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-      mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
+    rw [mextDeriv_ofFunction_apply]
     exact hc.symm
   rw [SmoothBundleForm.eval₂_apply, coe_totalForm, RoughForm.wedge_apply_one_one, hη, hp,
     zero_mul, sub_zero]
