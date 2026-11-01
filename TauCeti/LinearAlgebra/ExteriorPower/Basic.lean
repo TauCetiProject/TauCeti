@@ -46,6 +46,8 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
 * `exteriorPower.map_bijective`: a bijective linear map induces bijections of exterior powers.
+* `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
+  factors of an exterior product.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
@@ -267,6 +269,22 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
     map_surjective hf.2⟩
 
 end Bijective
+
+/-! ### Exterior powers of equal degree -/
+
+section OfEq
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Exterior powers of equal degree are equal, and the identification renumbers the factors of an
+exterior product. -/
+theorem ofEq_ιMulti {n m : ℕ} (h : n = m) (v : Fin n → M) :
+    LinearEquiv.ofEq _ _ (congrArg (⋀[R]^· M) h) (ιMulti R n v) =
+      ιMulti R m (v ∘ Fin.cast h.symm) := by
+  subst h
+  rfl
+
+end OfEq
 
 end exteriorPower
 

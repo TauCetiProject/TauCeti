@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.LinearMap.Ker
+public import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Determinant lines of modules and of linear maps
@@ -14,7 +16,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 The *determinant line* of a module `V` of rank `n` is its top exterior power `⋀ⁿ V`
 (`TauCeti.detLine`). For a finite free module it is free of rank one. A linear isomorphism
 `e : V ≃ W` induces an isomorphism of determinant lines sending `v₁ ∧ ⋯ ∧ vₙ` to
-`e v₁ ∧ ⋯ ∧ e vₙ` (`TauCeti.detLineCongr`), functorially. A module of rank zero has determinant
+`e v₁ ∧ ⋯ ∧ e vₙ` (`LinearEquiv.detLineCongr`), functorially. A module of rank zero has determinant
 line canonically `R`, the empty wedge product going to `1`
 (`TauCeti.detLineEquivOfFinrankEqZero`).
 
@@ -33,7 +35,7 @@ carried out here. This file sets up the pointwise object:
 ## Main definitions
 
 * `TauCeti.detLine R V`: the top exterior power `⋀[R]^(finrank R V) V`.
-* `TauCeti.detLineCongr`: the isomorphism of determinant lines induced by `V ≃ₗ[R] W`.
+* `LinearEquiv.detLineCongr`: the isomorphism of determinant lines induced by `V ≃ₗ[R] W`.
 * `TauCeti.detLineEquivOfFinrankEqZero`: the determinant line of a rank-zero module is `R`.
 * `LinearMap.detLine f`: the determinant line `det (ker f) ⊗ (det (N ⧸ range f))^*` of `f`.
 * `LinearMap.detLineEquivOfBijective`: the determinant line of a bijective map is `R`.
@@ -42,13 +44,10 @@ carried out here. This file sets up the pointwise object:
 ## Main results
 
 * `TauCeti.finrank_detLine`: the determinant line of a finite free module has rank one.
-* `TauCeti.detLineCongr_refl`, `TauCeti.detLineCongr_trans`, `TauCeti.detLineCongr_symm`: the
-  induced isomorphisms are functorial.
+* `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
+  `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
   finite-dimensional kernel and cokernel has dimension one.
-* `LinearMap.map_ker_eq_ker_of_comp_eq` and `LinearMap.map_range_eq_range_of_comp_eq`: in a
-  commuting square of linear maps whose horizontal sides are isomorphisms, these carry kernel onto
-  kernel and range onto range.
 * `LinearMap.detLineCongr_refl` and `LinearMap.detLineCongr_trans`: transport along commuting
   squares is functorial.
 
@@ -66,20 +65,6 @@ noncomputable section
 
 open Module TensorProduct
 
-namespace exteriorPower
-
-variable {R : Type*} [CommRing R] {V : Type*} [AddCommGroup V] [Module R V]
-
-/-- Exterior powers of equal degree are equal, and the identification renumbers the factors of an
-exterior product. -/
-theorem ofEq_ιMulti {n m : ℕ} (h : n = m) (v : Fin n → V) :
-    LinearEquiv.ofEq _ _ (congrArg (⋀[R]^· V) h) (ιMulti R n v) =
-      ιMulti R m (v ∘ Fin.cast h.symm) := by
-  subst h
-  rfl
-
-end exteriorPower
-
 namespace TauCeti
 
 variable (R : Type*) [CommRing R] (V : Type*) [AddCommGroup V] [Module R V]
@@ -93,10 +78,17 @@ theorem finrank_detLine [Nontrivial R] [Module.Free R V] [Module.Finite R V] :
     finrank R (detLine R V) = 1 := by
   simp [detLine]
 
-variable {R V} {W U : Type*} [AddCommGroup W] [Module R W] [AddCommGroup U] [Module R U]
+end TauCeti
+
+namespace LinearEquiv
+
+open TauCeti
+
+variable {R : Type*} [CommRing R] {V W U : Type*} [AddCommGroup V] [Module R V]
+  [AddCommGroup W] [Module R W] [AddCommGroup U] [Module R U]
 
 /-- The isomorphism of determinant lines `det V ≃ det W` induced by a linear isomorphism
-`e : V ≃ W`. It sends `v₁ ∧ ⋯ ∧ vₙ` to `e v₁ ∧ ⋯ ∧ e vₙ` (`TauCeti.detLineCongr_ιMulti`). -/
+`e : V ≃ W`. It sends `v₁ ∧ ⋯ ∧ vₙ` to `e v₁ ∧ ⋯ ∧ e vₙ` (`LinearEquiv.detLineCongr_ιMulti`). -/
 def detLineCongr (e : V ≃ₗ[R] W) : detLine R V ≃ₗ[R] detLine R W :=
   (LinearEquiv.ofLinearMap (exteriorPower.map _ e.toLinearMap)
       (exteriorPower.map _ e.symm.toLinearMap)
@@ -113,8 +105,9 @@ theorem detLineCongr_ιMulti (e : V ≃ₗ[R] W) (v : Fin (finrank R V) → V) :
     exteriorPower.map_apply_ιMulti, exteriorPower.ofEq_ιMulti e.finrank_eq]
   rfl
 
-/-- Under the inclusion of the determinant line into the exterior algebra, `TauCeti.detLineCongr`
-is the algebra map induced by `e`. -/
+/-- Under the inclusion of the determinant line into the exterior algebra,
+`LinearEquiv.detLineCongr` is the algebra map induced by `e`. -/
+@[simp]
 theorem coe_detLineCongr (e : V ≃ₗ[R] W) (x : detLine R V) :
     (detLineCongr e x : ExteriorAlgebra R W) = ExteriorAlgebra.map e.toLinearMap x := by
   simp only [detLineCongr, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
@@ -138,6 +131,12 @@ theorem detLineCongr_symm (e : V ≃ₗ[R] W) : (detLineCongr e).symm = detLineC
   refine LinearEquiv.ext fun x ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans,
     LinearEquiv.symm_trans_self, detLineCongr_refl, LinearEquiv.refl_apply]
+
+end LinearEquiv
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] {V : Type*} [AddCommGroup V] [Module R V]
 
 /-- The determinant line of a module of rank zero is `R`: the empty exterior product goes to `1`
 (`TauCeti.detLineEquivOfFinrankEqZero_ιMulti`). -/
@@ -200,60 +199,42 @@ theorem detLineEquivOfBijective_tmul_ιMulti [Nontrivial R] (hf : Function.Bijec
   congr 1
   rw [LinearEquiv.symm_apply_eq, TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
 
-/-- In a commuting square `g ∘ e₁ = e₂ ∘ f` with `e₁` and `e₂` linear isomorphisms, `e₁` carries the
-kernel of `f` onto that of `g`. -/
-theorem map_ker_eq_ker_of_comp_eq {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
-    (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) :
-    (ker f).map e₁.toLinearMap = ker g := by
-  ext y
-  have hy := LinearMap.congr_fun h (e₁.symm y)
-  simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    LinearEquiv.apply_symm_apply] at hy
-  rw [Submodule.mem_map_equiv, mem_ker, mem_ker, ← e₂.map_eq_zero_iff, ← hy]
-
-/-- In a commuting square `g ∘ e₁ = e₂ ∘ f` with `e₁` and `e₂` linear isomorphisms, `e₂` carries the
-range of `f` onto that of `g`. -/
-theorem map_range_eq_range_of_comp_eq {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
-    (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) :
-    (range f).map e₂.toLinearMap = range g := by
-  rw [← range_comp, ← h, range_comp, LinearEquiv.range, Submodule.map_top]
-
 /-- The transport of determinant lines along a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps
 with `e₁` and `e₂` linear isomorphisms. It is the tensor product of the isomorphism of kernel
 determinant lines induced by `e₁` and the dual of the inverse of the isomorphism of cokernel
 determinant lines induced by `e₂` (`LinearMap.detLineCongr_tmul`). -/
-def detLineCongr {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
+def detLineCongr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
     (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) : f.detLine ≃ₗ[R] g.detLine :=
   TensorProduct.congr
-    (TauCeti.detLineCongr (e₁.ofSubmodules _ _ (map_ker_eq_ker_of_comp_eq e₁ e₂ h)))
-    (TauCeti.detLineCongr
-      (Submodule.Quotient.equiv _ _ e₂ (map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.dualMap
+    (LinearEquiv.detLineCongr (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁ e₂ h)))
+    (LinearEquiv.detLineCongr
+      (Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.dualMap
 
 @[simp]
-theorem detLineCongr_tmul {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
-    (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) (x : TauCeti.detLine R (ker f))
-    (φ : Dual R (TauCeti.detLine R (N ⧸ range f))) :
-    detLineCongr e₁ e₂ h (x ⊗ₜ φ) =
-      TauCeti.detLineCongr (e₁.ofSubmodules _ _ (map_ker_eq_ker_of_comp_eq e₁ e₂ h)) x ⊗ₜ
-        (φ ∘ₗ (TauCeti.detLineCongr (Submodule.Quotient.equiv _ _ e₂
-          (map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.toLinearMap) :=
+theorem detLineCongr_tmul (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M')
+    (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f)
+    (x : TauCeti.detLine R (ker f)) (φ : Dual R (TauCeti.detLine R (N ⧸ range f))) :
+    f.detLineCongr e₁ e₂ h (x ⊗ₜ φ) =
+      LinearEquiv.detLineCongr (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁ e₂ h)) x ⊗ₜ
+        (φ ∘ₗ (LinearEquiv.detLineCongr (Submodule.Quotient.equiv _ _ e₂
+          (f.map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.toLinearMap) :=
   (rfl)
 
 /-- Transport along the identity square is the identity. -/
 @[simp]
 theorem detLineCongr_refl
     (h : f ∘ₗ (LinearEquiv.refl R M).toLinearMap = (LinearEquiv.refl R N).toLinearMap ∘ₗ f) :
-    detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N) h = LinearEquiv.refl R _ := by
+    f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N) h = LinearEquiv.refl R _ := by
   have hk : (LinearEquiv.refl R M).ofSubmodules (ker f) (ker f)
-      (map_ker_eq_ker_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N) h) =
-        LinearEquiv.refl R _ := by
-    ext; rfl
-  have hc : Submodule.Quotient.equiv (range f) (range f) (LinearEquiv.refl R N)
-      (map_range_eq_range_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N) h) =
+      (f.map_ker_eq_ker_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N) h) =
         LinearEquiv.refl R _ := by
     ext x
-    induction x using Submodule.Quotient.induction_on
-    rfl
+    simp only [LinearEquiv.ofSubmodules_apply, LinearEquiv.refl_apply]
+  have hc : Submodule.Quotient.equiv (range f) (range f) (LinearEquiv.refl R N)
+      (f.map_range_eq_range_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N) h) =
+        LinearEquiv.refl R _ := by
+    rw [Submodule.Quotient.equiv_refl]
+    exact LinearEquiv.toLinearMap_injective (Submodule.linearMap_qext _ (by ext; simp))
   refine LinearEquiv.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
@@ -262,27 +243,24 @@ theorem detLineCongr_refl
   | add a b ha hb => rw [map_add, ha, hb, map_add]
 
 /-- Transport along the composite of two commuting squares is the composite of the transports. -/
-theorem detLineCongr_trans {g : M' →ₗ[R] N'} {k : M'' →ₗ[R] N''} (e₁ : M ≃ₗ[R] M')
+theorem detLineCongr_trans (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {k : M'' →ₗ[R] N''} (e₁ : M ≃ₗ[R] M')
     (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) (e₁' : M' ≃ₗ[R] M'')
     (e₂' : N' ≃ₗ[R] N'') (h' : k ∘ₗ e₁'.toLinearMap = e₂'.toLinearMap ∘ₗ g)
     (h'' : k ∘ₗ (e₁.trans e₁').toLinearMap = (e₂.trans e₂').toLinearMap ∘ₗ f) :
-    detLineCongr (e₁.trans e₁') (e₂.trans e₂') h'' =
-      (detLineCongr e₁ e₂ h).trans (detLineCongr e₁' e₂' h') := by
-  have hk : (e₁.trans e₁').ofSubmodules _ _ (map_ker_eq_ker_of_comp_eq _ _ h'') =
-      (e₁.ofSubmodules _ _ (map_ker_eq_ker_of_comp_eq _ _ h)).trans
-        (e₁'.ofSubmodules _ _ (map_ker_eq_ker_of_comp_eq _ _ h')) := by
-    ext; rfl
-  have hc : Submodule.Quotient.equiv _ _ (e₂.trans e₂') (map_range_eq_range_of_comp_eq _ _ h'') =
-      (Submodule.Quotient.equiv _ _ e₂ (map_range_eq_range_of_comp_eq _ _ h)).trans
-        (Submodule.Quotient.equiv _ _ e₂' (map_range_eq_range_of_comp_eq _ _ h')) := by
+    f.detLineCongr (e₁.trans e₁') (e₂.trans e₂') h'' =
+      (f.detLineCongr e₁ e₂ h).trans (g.detLineCongr e₁' e₂' h') := by
+  have hk : (e₁.trans e₁').ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq _ _ h'') =
+      (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq _ _ h)).trans
+        (e₁'.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq _ _ h')) := by
     ext x
-    induction x using Submodule.Quotient.induction_on
-    rfl
+    simp only [LinearEquiv.ofSubmodules_apply, LinearEquiv.trans_apply]
+  have hc := Submodule.Quotient.equiv_trans _ _ _ e₂ e₂' (f.map_range_eq_range_of_comp_eq _ _ h)
+    (g.map_range_eq_range_of_comp_eq _ _ h') (f.map_range_eq_range_of_comp_eq _ _ h'')
   refine LinearEquiv.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
     rw [LinearEquiv.trans_apply, detLineCongr_tmul, detLineCongr_tmul, detLineCongr_tmul, hk, hc,
-      TauCeti.detLineCongr_trans, TauCeti.detLineCongr_trans]
+      LinearEquiv.detLineCongr_trans, LinearEquiv.detLineCongr_trans]
     rfl
   | add a b ha hb => rw [map_add, ha, hb, map_add]
 
