@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Order.Partition.Finpartition
+public import TauCeti.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Data.Finset.Sort
@@ -34,12 +35,16 @@ The cycle of each part is Mathlib's `List.formPerm` of the increasing enumeratio
 ## Main results
 
 * `Finpartition.formPerm_apply_mem_part`, `Finpartition.part_formPerm_apply`: the permutation
-  maps each part to itself.
+  maps each part to itself, and so do its inverse and its powers.
 * `Finpartition.formPerm_apply_of_notMem`: points outside `s` are fixed.
 * `Finpartition.formPerm_apply_eq_iff`: the value of the permutation at a point is the next point
   of its part in increasing cyclic order.
+* `Finpartition.formPerm_symm_apply_eq_iff`: the value of the inverse permutation at a point is
+  the previous point of its part in increasing cyclic order.
 * `Finpartition.formPerm_bot`, `Finpartition.formPerm_top`: the partition into singletons gives
   the identity, and the partition into one part gives the cycle through `s` in increasing order.
+* `Finpartition.formPerm_top_eq_finRotate`: on `Fin n` the partition into one part has permutation
+  `finRotate n`.
 * `Finpartition.formPerm_apply_eq_self_iff`: the fixed points are the singleton parts and the
   points outside `s`.
 * `Finpartition.sameCycle_formPerm_iff`: two points of `s` lie on a common cycle exactly when
@@ -130,16 +135,36 @@ theorem part_formPerm_zpow_apply (k : ℤ) (x : α) : P.part ((P.formPerm ^ k) x
 theorem part_formPerm_pow_apply (k : ℕ) (x : α) : P.part ((P.formPerm ^ k) x) = P.part x := by
   simpa using P.part_formPerm_zpow_apply k x
 
-/-- The permutation of `P` maps a point of `s` to a point of its part. -/
-theorem formPerm_apply_mem_part {x : α} (hx : x ∈ s) : P.formPerm x ∈ P.part x := by
-  rw [← part_formPerm_apply, mem_part_self, ← part_nonempty, part_formPerm_apply,
-    part_nonempty]
-  exact hx
-
 /-- The permutation of `P` maps `s` to itself. -/
 @[simp]
 theorem formPerm_apply_mem_iff {x : α} : P.formPerm x ∈ s ↔ x ∈ s := by
   rw [← part_nonempty, part_formPerm_apply, part_nonempty]
+
+/-- The inverse permutation of `P` maps `s` to itself. -/
+@[simp]
+theorem formPerm_symm_apply_mem_iff {x : α} : P.formPerm.symm x ∈ s ↔ x ∈ s := by
+  rw [← part_nonempty, part_formPerm_symm_apply, part_nonempty]
+
+/-- Every power of the permutation of `P` maps `s` to itself. -/
+@[simp]
+theorem formPerm_zpow_apply_mem_iff (k : ℤ) {x : α} : (P.formPerm ^ k) x ∈ s ↔ x ∈ s := by
+  rw [← part_nonempty, part_formPerm_zpow_apply, part_nonempty]
+
+/-- The permutation of `P` maps a point of `s` to a point of its part. -/
+theorem formPerm_apply_mem_part {x : α} (hx : x ∈ s) : P.formPerm x ∈ P.part x := by
+  rw [← part_formPerm_apply, mem_part_self, formPerm_apply_mem_iff]
+  exact hx
+
+/-- The inverse permutation of `P` maps a point of `s` to a point of its part. -/
+theorem formPerm_symm_apply_mem_part {x : α} (hx : x ∈ s) : P.formPerm.symm x ∈ P.part x := by
+  rw [← part_formPerm_symm_apply, mem_part_self, formPerm_symm_apply_mem_iff]
+  exact hx
+
+/-- Every power of the permutation of `P` maps a point of `s` to a point of its part. -/
+theorem formPerm_zpow_apply_mem_part (k : ℤ) {x : α} (hx : x ∈ s) :
+    (P.formPerm ^ k) x ∈ P.part x := by
+  rw [← part_formPerm_zpow_apply P k, mem_part_self, formPerm_zpow_apply_mem_iff]
+  exact hx
 
 /-- The permutation of `P` fixes every point outside `s`. -/
 theorem formPerm_apply_of_notMem {x : α} (hx : x ∉ s) : P.formPerm x = x := by
@@ -169,9 +194,7 @@ theorem sameCycle_formPerm_iff {x y : α} (hx : x ∈ s) :
     P.formPerm.SameCycle x y ↔ y ∈ P.part x := by
   constructor
   · rintro ⟨k, rfl⟩
-    rw [← part_formPerm_zpow_apply P k x, mem_part_self, ← part_nonempty,
-      part_formPerm_zpow_apply, part_nonempty]
-    exact hx
+    exact P.formPerm_zpow_apply_mem_part k hx
   · intro hy
     have hxl : x ∈ (P.part x).sort := (mem_sort _).2 (P.mem_part hx)
     obtain ⟨i, hi, hix⟩ := List.getElem_of_mem hxl
@@ -227,6 +250,24 @@ theorem formPerm_apply_eq_iff {x z : α} (hx : x ∈ s) :
   · exact absurd (hle hzx _ hy).2 (not_le.2 hxy)
   · exact le_antisymm (hyle hyx z hz).1 (hle hzx _ hy).1
 
+/-- The value of the inverse permutation of `P` at a point `x` of `s` is characterized as the
+point `z` of the part of `x` that precedes `x` in increasing cyclic order: either `z < x` and no
+point of the part lies strictly between them, or `x ≤ z` and the part lies between `x` and `z`,
+so that `x` is the first and `z` the last point of the part. -/
+theorem formPerm_symm_apply_eq_iff {x z : α} (hx : x ∈ s) :
+    P.formPerm.symm x = z ↔ z ∈ P.part x ∧ (z < x → ∀ w ∈ P.part x, w < x → w ≤ z) ∧
+      (x ≤ z → ∀ w ∈ P.part x, x ≤ w ∧ w ≤ z) := by
+  by_cases hz : z ∈ P.part x
+  swap
+  · exact iff_of_false (fun h => hz (h ▸ P.formPerm_symm_apply_mem_part hx)) fun h => hz h.1
+  have hzs : z ∈ s := P.part_subset x hz
+  rw [Equiv.symm_apply_eq, eq_comm, P.formPerm_apply_eq_iff hzs,
+    (P.mem_part_iff_part_eq_part hzs hx).1 hz]
+  simp only [P.mem_part hx, hz, true_and]
+  refine and_congr_left fun _ => imp_congr_right fun _ => forall₂_congr fun w _ => ?_
+  exact ⟨fun h hwx => not_lt.1 fun hzw => (h hzw).not_gt hwx,
+    fun h hzw => not_lt.1 fun hwx => (h hwx).not_gt hzw⟩
+
 /-- The partition of `s` into singletons has the identity permutation. -/
 @[simp]
 theorem formPerm_bot : (⊥ : Finpartition s).formPerm = 1 := by
@@ -243,6 +284,12 @@ theorem formPerm_top : (⊤ : Finpartition s).formPerm = s.sort.formPerm := by
   by_cases hx : x ∈ s
   · rw [formPerm_apply, part_top hx]
   · rw [formPerm_apply_of_notMem _ hx, List.formPerm_apply_of_notMem (by simpa using hx)]
+
+/-- On `Fin n`, the partition into one part has as permutation the rotation `i ↦ i + 1` modulo
+`n`. -/
+theorem formPerm_top_eq_finRotate {n : ℕ} :
+    (⊤ : Finpartition (univ : Finset (Fin n))).formPerm = finRotate n := by
+  rw [formPerm_top, Fin.formPerm_sort_univ]
 
 /-- A finite partition is determined by its permutation. -/
 theorem formPerm_injective : Function.Injective (formPerm : Finpartition s → Perm α) := by

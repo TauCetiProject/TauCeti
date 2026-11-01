@@ -29,8 +29,6 @@ total, fixed points included.
 
 * `Finpartition.IsNoncrossing.formPerm_kreweras`: for noncrossing `P`, the permutation of the
   Kreweras complement is `P.formPerm⁻¹ * (⊤ : Finpartition s).formPerm`.
-* `Finpartition.formPerm_top_eq_finRotate`: on `Fin n` the partition into one part has permutation
-  `finRotate n`.
 * `TauCeti.NoncrossingPartition.formPerm_kreweras`: on `NC(n)`,
   `p_{K(π)} = p_π⁻¹ * finRotate n`.
 * `TauCeti.NoncrossingPartition.orbitCount_formPerm_add_orbitCount_inv_mul_finRotate`: for
@@ -169,21 +167,6 @@ theorem IsNoncrossing.formPerm_kreweras (hP : P.IsNoncrossing) :
         · exact absurd h.1 hkx.not_gt
         · exact absurd (h.1.trans_le h.2) (not_le.1 hwx).not_gt
       · exact hwx (hyle hyx w hws).2
-
-/-- On `Fin n`, the partition into one part has as permutation the rotation `i ↦ i + 1` modulo
-`n`. -/
-theorem formPerm_top_eq_finRotate {n : ℕ} :
-    (⊤ : Finpartition (univ : Finset (Fin n))).formPerm = finRotate n := by
-  ext x
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := x.pos; omega⟩
-  refine congrArg Fin.val (((⊤ : Finpartition (univ : Finset (Fin (m + 1)))).formPerm_apply_eq_iff
-    (mem_univ x)).2 ⟨by simp [part_top], fun h w _ hw => ?_, fun h w _ => ?_⟩)
-  all_goals
-    simp only [Fin.lt_def, Fin.le_def, coe_finRotate] at *
-    split_ifs at * with hl
-  all_goals
-    try rw [Fin.ext_iff, Fin.val_last] at hl
-    omega
 
 end Finpartition
 
