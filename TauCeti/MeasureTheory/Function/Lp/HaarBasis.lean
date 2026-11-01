@@ -105,20 +105,6 @@ theorem norm_haarFun_le (n : ℕ) (x : I) : ‖haarFun n x‖ ≤ 1 := by
     simp only [Set.indicator, Pi.one_apply]
     split_ifs <;> norm_num
 
-@[fun_prop]
-theorem measurable_haarFun (n : ℕ) : Measurable (haarFun n) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · rw [haarFun_zero]
-    exact measurable_const
-  · rw [haarFun_of_ne_zero hn]
-    exact (measurable_const.indicator (measurableSet_dyadicCell _)).sub
-      (measurable_const.indicator (measurableSet_dyadicCell _))
-
-/-- The Haar functions lie in every `Lᵖ(I)`. -/
-theorem memLp_haarFun (p : ℝ≥0∞) (n : ℕ) : MemLp (haarFun n) p :=
-  MemLp.of_bound (measurable_haarFun n).aestronglyMeasurable 1
-    (ae_of_all _ (norm_haarFun_le n))
-
 /-- The Haar function `hₙ` is measurable for the dyadic filtration at step `n + 1`. -/
 theorem measurable_haarFun_dyadicFiltration (n : ℕ) :
     Measurable[dyadicFiltration (n + 1)] (haarFun n) := by
@@ -129,16 +115,23 @@ theorem measurable_haarFun_dyadicFiltration (n : ℕ) :
     exact (measurable_const.indicator (measurableSet_dyadicFiltration_dyadicCell (by omega))).sub
       (measurable_const.indicator (measurableSet_dyadicFiltration_dyadicCell (by omega)))
 
+@[fun_prop]
+theorem measurable_haarFun (n : ℕ) : Measurable (haarFun n) :=
+  (measurable_haarFun_dyadicFiltration n).mono (dyadicFiltration.le _) le_rfl
+
+/-- The Haar functions lie in every `Lᵖ(I)`. -/
+theorem memLp_haarFun (p : ℝ≥0∞) (n : ℕ) : MemLp (haarFun n) p :=
+  MemLp.of_bound (measurable_haarFun n).aestronglyMeasurable 1
+    (ae_of_all _ (norm_haarFun_le n))
+
 /-- For `0 < n`, the Haar function `hₙ` has integral zero. -/
 theorem integral_haarFun {n : ℕ} (hn : 0 < n) : ∫ x, haarFun n x = 0 := by
   have hint (m : ℕ) : Integrable ((dyadicCell m).indicator (1 : I → ℝ)) :=
     (integrable_const (1 : ℝ)).indicator (measurableSet_dyadicCell m)
-  simp only [haarFun_of_ne_zero hn.ne', Pi.sub_apply]
-  rw [integral_sub (hint _) (hint _),
-    integral_indicator_one (measurableSet_dyadicCell _),
-    integral_indicator_one (measurableSet_dyadicCell _), Measure.real, Measure.real,
-    volume_dyadicCell (by omega), volume_dyadicCell (by omega), Nat.log_base_mul one_lt_two hn.ne',
-    Nat.log_mul_add one_lt_two hn.ne' one_lt_two, sub_self]
+  have h0 : volume (dyadicCell (2 * n)) = _ := volume_dyadicCell_two_mul_add (e := 0) hn two_pos
+  have h1 := volume_dyadicCell_two_mul_add hn one_lt_two
+  simp [haarFun_of_ne_zero hn.ne', integral_sub (hint _) (hint _),
+    integral_indicator_one (measurableSet_dyadicCell _), measureReal_def, h0, h1]
 
 /-- **The Haar functions are martingale differences.** For `0 < n`, the Haar function `hₙ` has
 conditional expectation zero given the dyadic filtration at step `n`: it is supported in the atom
@@ -338,7 +331,8 @@ theorem finrank_range_dyadicProj (N : ℕ) :
       (Submodule.subset_span (Finset.mem_coe.2 (Finset.mem_image_of_mem v hn)))
   have : FiniteDimensional ℝ R := Submodule.finiteDimensional_of_le hle
   refine le_antisymm ((Submodule.finrank_mono hle).trans
-    ((finrank_span_finset_le_card _).trans (Finset.card_image_le.trans (by simp; omega)))) ?_
+    ((finrank_span_finset_le_card _).trans
+      (Finset.card_image_le.trans (by rw [Nat.card_Ico]; omega)))) ?_
   have hli : LinearIndependent ℝ fun i : Fin N =>
       (⟨(memLp_haarFun p i).toLp (haarFun i), _, by
         rw [ContinuousLinearMap.coe_coe, dyadicProj_haarFun, ite_eq_left i.2]⟩ : R) :=

@@ -231,6 +231,26 @@ theorem mem_dyadicCell_of_mem_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) 
   have h := mem_dyadicCell_div_two (by omega) hx
   rwa [show (2 * n + e) / 2 = n by omega] at h
 
+/-- A positively numbered dyadic cell is the union of its two halves. -/
+theorem dyadicCell_eq_union {n : ℕ} (hn : 0 < n) :
+    dyadicCell n = dyadicCell (2 * n) ∪ dyadicCell (2 * n + 1) := by
+  refine Set.Subset.antisymm (fun x hx => ?_) (Set.union_subset
+    (fun x => mem_dyadicCell_of_mem_two_mul_add (e := 0) hn two_pos)
+    (fun x => mem_dyadicCell_of_mem_two_mul_add hn one_lt_two))
+  have h := dyadicNum_add_div (Nat.log 2 n) 1 x
+  rw [pow_one, mem_dyadicCell.1 hx] at h
+  rcases (by omega : dyadicNum (Nat.log 2 n + 1) x = 2 * n ∨
+      dyadicNum (Nat.log 2 n + 1) x = 2 * n + 1) with h' | h'
+  exacts [Or.inl (mem_dyadicCell_iff.2 ⟨_, h'⟩), Or.inr (mem_dyadicCell_iff.2 ⟨_, h'⟩)]
+
+/-- Each half of a positively numbered dyadic cell has half its volume. -/
+theorem volume_dyadicCell_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
+    volume (dyadicCell (2 * n + e)) = volume (dyadicCell n) / 2 := by
+  rw [volume_dyadicCell (by omega), volume_dyadicCell hn, Nat.log_mul_add one_lt_two hn.ne' he,
+    pow_succ, Nat.cast_mul, ENNReal.mul_inv (by simp) (by simp), ENNReal.div_eq_inv_mul]
+  push_cast
+  ring
+
 /-- The dyadic cell numbered `n < 2 * N` is measurable for the dyadic filtration at step `N`. -/
 theorem measurableSet_dyadicFiltration_dyadicCell {N n : ℕ} (hn : n < 2 * N) :
     MeasurableSet[dyadicFiltration N] (dyadicCell n) := by
