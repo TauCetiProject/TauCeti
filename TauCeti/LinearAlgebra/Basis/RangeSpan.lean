@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Submodule
 public import Mathlib.LinearAlgebra.Matrix.Basis
 
 /-!
@@ -12,7 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 
 A semilinear map has the same scalar-extended image span when evaluated on a basis as when evaluated
 on its entire domain. Over a coefficient algebra `A` of the scalars, the `A`-span of one basis lies
-in that of another when the change-of-basis matrix has entries in the image of `A`. Through a
+in that of another when the change-of-basis matrix has entries in the image of `A`, and a linear
+endomorphism maps the `A`-span of a basis into itself exactly when its matrix has entries in the
+image of `A`. Through a
 linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, bᵢ)` for a basis `b` of `M₂` span
 the kernel of `u ↦ (L u).1`.
 -/
@@ -56,6 +59,25 @@ theorem span_range_le_span_range_of_forall_toMatrix_mem
   dsimp only
   rw [← ha, IsScalarTower.algebraMap_smul]
   exact Submodule.smul_mem _ a (Submodule.subset_span (Set.mem_range_self i))
+
+/-- A linear endomorphism maps the `A`-span of a basis `b` into itself exactly when every entry of
+its matrix in `b` lies in the image of `A`. -/
+theorem mapsTo_span_range_iff_forall_toMatrix_mem
+    {A S N ι : Type*} [CommRing A] [IsDomain A] [CommRing S] [Nontrivial S] [Algebra A S]
+    [Module.IsTorsionFree A S] [AddCommGroup N] [Module S N] [Module A N] [IsScalarTower A S N]
+    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι S N) (f : N →ₗ[S] N) :
+    Set.MapsTo f (Submodule.span A (Set.range b)) (Submodule.span A (Set.range b)) ↔
+      ∀ i j, LinearMap.toMatrix b b f i j ∈ Set.range (algebraMap A S) := by
+  simp only [LinearMap.toMatrix_apply]
+  refine ⟨fun h i j ↦ (b.mem_span_iff_repr_mem A _).mp (h (Submodule.subset_span ⟨j, rfl⟩)) i,
+    fun h ↦ ?_⟩
+  -- The span is mapped into itself as soon as its generators are.
+  have hle : Submodule.span A (Set.range b) ≤
+      (Submodule.span A (Set.range b)).comap (f.restrictScalars A) := by
+    rw [Submodule.span_le]
+    rintro _ ⟨j, rfl⟩
+    exact (b.mem_span_iff_repr_mem A _).mpr fun i ↦ h i j
+  exact fun x hx ↦ hle hx
 
 /-- Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, bᵢ)` for a basis `b`
 of `M₂` span the kernel of the first component `u ↦ (L u).1`. -/
