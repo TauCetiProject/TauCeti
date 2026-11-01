@@ -90,10 +90,9 @@ theorem ofLaurentPolynomial_injective :
 /-- Exactly the Floer series with finite support lie in the finite Laurent model. -/
 theorem mem_range_ofLaurentPolynomial_iff {a : NovikovRing R ω c} :
     a ∈ Set.range (ofLaurentPolynomial hker hc) ↔ a.support.Finite := by
-  rw [ofLaurentPolynomial, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, Set.range_comp,
-    (AddMonoidAlgebra.mapDomainRingEquiv R (laurentExponent hker hc).symm).surjective.range_eq,
-    Set.image_univ]
+  simp only [ofLaurentPolynomial, RingHom.coe_comp, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom]
+  rw [(AddMonoidAlgebra.mapDomainRingEquiv R (laurentExponent hker hc).symm).surjective.range_comp]
   constructor
   · rintro ⟨p, rfl⟩
     exact (NovikovSeries.mem_range_ofFinsupp_iff).mp ⟨p.coeff, by ext γ; simp⟩
@@ -115,12 +114,12 @@ private theorem laurent_period_rescale (hτ : 0 < τ) :
         a * (Int.castAddHom ℝ) k := by
   refine ⟨τ * chern ω c ((chernEquivInt (ker_le_ker_of_area_eq_mul_chern h) hc).symm 1),
     mul_pos hτ (Int.cast_pos.mpr (chern_chernEquivInt_symm_pos _ hc)), fun k => ?_⟩
-  rw [AddMonoidHom.neg_apply, area_eq_mul_chern h, chern_laurentExponent_symm]
-  simp only [Int.cast_mul, Int.cast_neg, Int.coe_castAddHom]
-  ring
+  rw [AddMonoidHom.neg_apply, area_laurentExponent_symm h hc]
+  simp
 
 /-- Positive monotone Floer coefficients are formal Laurent series in the negative
-positive-Chern generator. Positive valuation rescaling makes the completion well-defined. -/
+positive-Chern generator. The coefficient at a class `γ` becomes the Laurent coefficient at
+`laurentExponent γ`. -/
 def toLaurentSeries (hτ : 0 < τ) : NovikovRing R ω c ≃+* R⸨X⸩ :=
   ((domCongr ℕ
     (laurentExponent (ker_le_ker_of_area_eq_mul_chern h) hc).symm
@@ -134,7 +133,8 @@ theorem coeff_toLaurentSeries (hτ : 0 < τ) (a : NovikovRing R ω c) (k : ℤ) 
       a.coeff ((laurentExponent (ker_le_ker_of_area_eq_mul_chern h) hc).symm k) := by
   simp [toLaurentSeries]
 
-/-- The inverse comparison recovers coefficients without unfolding the ring equivalence. -/
+/-- The coefficient of the inverse image at `γ` is the Laurent coefficient at
+`laurentExponent γ`. -/
 @[simp]
 theorem coeff_toLaurentSeries_symm (hτ : 0 < τ) (f : R⸨X⸩) (γ : PeriodGroup ω c) :
     ((toLaurentSeries h hc hτ).symm f).coeff γ =
