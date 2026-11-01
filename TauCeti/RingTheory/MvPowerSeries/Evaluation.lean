@@ -14,10 +14,16 @@ import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.Data.Finsupp.Weight
 
 /-!
-# Evaluating a multivariate power series at arguments from an adic ideal
+# Congruences, continuity and adic bounds for multivariate power-series evaluation
 
-Let `S` carry the `I`-adic topology for an ideal `I`, and let `f` be a multivariate power series
-evaluated at a family `a : σ → S` through a continuous coefficient map `φ`. This file bounds the
+Evaluation preserves congruences of admissible arguments modulo any closed ideal
+(`eval₂_sub_eval₂_mem`). Consequently, under a linear topology, a fixed series is continuous
+in finitely many continuously varying admissible arguments (`continuous_eval₂_of_continuous`).
+These results require no adic topology or common ideal of definition for the arguments.
+
+For the adic bounds, let `S` carry the `I`-adic topology for an ideal `I`, and let `f` be a
+multivariate power series evaluated at a family `a : σ → S` through a continuous coefficient
+map `φ`. This file bounds the
 value `eval₂ φ a f` by a power of `I`, in the three forms the estimate is used in: the value is
 confined to `I ^ k` as soon as the arguments are and `φ` sends the constant term there, and the
 confinement improves when its coefficient images vanish in low total degree or when `φ` sends every
@@ -57,10 +63,10 @@ the `I`-adic topology on the target, this gives surjective ring homomorphisms fr
 rings onto `I`-adically complete rings, stated without any topology. This is how a complete local
 ring containing a field becomes a quotient of a power series ring over a coefficient field.
 
-Finiteness of `σ` survives in `hasEval_of_finite_of_isTopologicallyNilpotent`, where it is what
-makes the decay condition of
-`HasEval` vacuous; that is the one place the hypothesis does work, and `hasEval_of_mem` inherits
-it from there.
+Finiteness of `σ` makes the decay condition of `HasEval` vacuous in
+`hasEval_of_finite_of_isTopologicallyNilpotent`, and `hasEval_of_mem` inherits it from there.
+In `continuous_eval₂_of_continuous` it instead permits choosing a common neighbourhood for
+all arguments.
 
 ## Main results
 

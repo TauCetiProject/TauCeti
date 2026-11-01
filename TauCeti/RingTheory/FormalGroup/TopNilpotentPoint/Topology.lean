@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Hom
+public import TauCeti.RingTheory.PowerSeries.Evaluation
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # The topology on convergent formal-group points
@@ -13,7 +15,7 @@ public import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Hom
 The topologically nilpotent points of a formal group inherit the subspace topology of their
 coefficient algebra. With this topology they form a Hausdorff topological group. Both evaluation
 of formal-group homomorphisms and change of coefficient algebra are continuous; a formal-group
-isomorphism therefore gives a homeomorphism on points.
+isomorphism therefore gives a continuous additive equivalence on points.
 
 Continuity uses congruences modulo open ideals, not a uniform bound on the nilpotence of all
 points. A fixed series preserves such congruences because each of its monomials does and the
@@ -68,9 +70,9 @@ instance : ContinuousNeg (F.TopNilpotentPoint A) where
   continuous_neg := by
     let _ : UniformSpace R := ⊥
     apply isEmbedding_val.continuous_iff.mpr
-    simp only [Function.comp_def, val_neg_eq_eval₂, PowerSeries.eval₂]
-    exact MvPowerSeries.continuous_eval₂_of_continuous continuous_of_discreteTopology
-      (fun _ ↦ continuous_val) (fun x ↦ PowerSeries.hasEval x.hasEval) F.addInvX
+    simp only [Function.comp_def, val_neg_eq_eval₂]
+    exact PowerSeries.continuous_eval₂_of_continuous continuous_of_discreteTopology
+      continuous_val (fun x ↦ x.hasEval) F.addInvX
 
 /-- Convergent points form a topological group, without a commutativity assumption on the law. -/
 instance : IsTopologicalAddGroup (F.TopNilpotentPoint A) where
@@ -89,7 +91,7 @@ end FormalGroup.TopNilpotentPoint
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] {F G : FormalGroup R}
+variable {R : Type*} [CommRing R] {F G H : FormalGroup R}
 variable {A : Type*} [CommRing A] [Algebra R A] [UniformSpace A] [IsUniformAddGroup A]
   [CompleteSpace A] [T2Space A] [IsTopologicalRing A] [IsLinearTopology A A]
 
@@ -99,30 +101,54 @@ theorem FormalGroupHom.continuous_toTopNilpotentPointHom (f : FormalGroupHom F G
     Continuous (f.toTopNilpotentPointHom A) := by
   let _ : UniformSpace R := ⊥
   apply FormalGroup.TopNilpotentPoint.isEmbedding_val.continuous_iff.mpr
-  simp only [Function.comp_def, FormalGroupHom.val_toTopNilpotentPointHom, PowerSeries.eval₂]
-  exact MvPowerSeries.continuous_eval₂_of_continuous continuous_of_discreteTopology
-    (fun _ ↦ FormalGroup.TopNilpotentPoint.continuous_val)
-    (fun x ↦ PowerSeries.hasEval x.hasEval) f.toPowerSeries
+  simp only [Function.comp_def, FormalGroupHom.val_toTopNilpotentPointHom]
+  exact PowerSeries.continuous_eval₂_of_continuous continuous_of_discreteTopology
+    FormalGroup.TopNilpotentPoint.continuous_val (fun x ↦ x.hasEval) f.toPowerSeries
 
-/-- A formal-group isomorphism gives a homeomorphism on topologically nilpotent points. -/
-noncomputable def FormalGroupIso.toTopNilpotentPointHomeomorph (f : FormalGroupIso F G)
+/-- A formal-group isomorphism gives a continuous additive equivalence on topologically
+nilpotent points. -/
+noncomputable def FormalGroupIso.toTopNilpotentPointContinuousAddEquiv (f : FormalGroupIso F G)
     (A : Type*) [CommRing A] [Algebra R A] [UniformSpace A] [IsUniformAddGroup A]
     [CompleteSpace A] [T2Space A] [IsTopologicalRing A] [IsLinearTopology A A] :
-    F.TopNilpotentPoint A ≃ₜ G.TopNilpotentPoint A where
-  toEquiv := (f.toTopNilpotentPointEquiv A).toEquiv
+    F.TopNilpotentPoint A ≃ₜ+ G.TopNilpotentPoint A where
+  toAddEquiv := f.toTopNilpotentPointEquiv A
   continuous_toFun := f.toHom.continuous_toTopNilpotentPointHom.congr
     (fun x ↦ (f.toTopNilpotentPointEquiv_apply x).symm)
   continuous_invFun := f.invHom.continuous_toTopNilpotentPointHom.congr
     (fun x ↦ (f.toTopNilpotentPointEquiv_symm_apply x).symm)
 
 @[simp]
-theorem FormalGroupIso.toTopNilpotentPointHomeomorph_apply (f : FormalGroupIso F G)
+theorem FormalGroupIso.toTopNilpotentPointContinuousAddEquiv_apply (f : FormalGroupIso F G)
     (x : F.TopNilpotentPoint A) :
-    f.toTopNilpotentPointHomeomorph A x = f.toTopNilpotentPointEquiv A x := (rfl)
+    f.toTopNilpotentPointContinuousAddEquiv A x = f.toTopNilpotentPointEquiv A x := (rfl)
 
 @[simp]
-theorem FormalGroupIso.toTopNilpotentPointHomeomorph_symm_apply (f : FormalGroupIso F G)
+theorem FormalGroupIso.toTopNilpotentPointContinuousAddEquiv_symm_apply (f : FormalGroupIso F G)
     (x : G.TopNilpotentPoint A) :
-    (f.toTopNilpotentPointHomeomorph A).symm x = (f.toTopNilpotentPointEquiv A).symm x := (rfl)
+    (f.toTopNilpotentPointContinuousAddEquiv A).symm x =
+      (f.toTopNilpotentPointEquiv A).symm x := (rfl)
+
+@[simp]
+theorem FormalGroupIso.toTopNilpotentPointContinuousAddEquiv_refl :
+    (FormalGroupIso.refl F).toTopNilpotentPointContinuousAddEquiv A =
+      ContinuousAddEquiv.refl _ := by
+  ext x
+  simp
+
+@[simp]
+theorem FormalGroupIso.toTopNilpotentPointContinuousAddEquiv_symm (f : FormalGroupIso F G) :
+    f.symm.toTopNilpotentPointContinuousAddEquiv A =
+      (f.toTopNilpotentPointContinuousAddEquiv A).symm := by
+  ext x
+  simp
+
+@[simp]
+theorem FormalGroupIso.toTopNilpotentPointContinuousAddEquiv_trans
+    (f : FormalGroupIso F G) (g : FormalGroupIso G H) :
+    (f.trans g).toTopNilpotentPointContinuousAddEquiv A =
+      (f.toTopNilpotentPointContinuousAddEquiv A).trans
+        (g.toTopNilpotentPointContinuousAddEquiv A) := by
+  ext x
+  simp
 
 end TauCeti
