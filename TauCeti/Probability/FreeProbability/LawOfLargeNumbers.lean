@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.FreeProbability.Cumulant.Free
 public import Mathlib.Analysis.SpecificLimits.Basic
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 
 /-!
@@ -19,7 +18,7 @@ of one summand. The moment–cumulant formula then gives the limit without posit
 selfadjointness, or a topology on the algebra.
 
 The centered second moment is exactly the variance divided by `N`. For selfadjoint elements
-in a C⋆-probability space this also proves convergence in the state's GNS seminorm. This is
+in a star-ordered algebra this also proves convergence in the state's GNS seminorm. This is
 not a claim of operator-norm convergence, and the state need not be faithful or tracial.
 The GNS seminorm is Mathlib's `PositiveLinearMap.PreGNS`, with its existing squared-norm
 formula; no new representation or completion is constructed here.
@@ -52,28 +51,10 @@ theorem IsFreelyIndependentElements.freeCumulant_inv_natCast_smul_sum
     freeCumulant φ (fun _ => (N : R)⁻¹ • ∑ j ∈ range N, a j) s =
       (N : R)⁻¹ ^ (#s - 1) * freeCumulant φ (fun _ => a 0) s := by
   classical
-  -- Relabel the positions to use bundled multilinearity, then add the cumulants of the free
-  -- summands. Identical moments give identical cumulants through Möbius inversion.
-  have he (b : α → A) : freeCumulant φ b s =
-      freeCumulantMultilinear φ (b ∘ s.orderEmbOfFin rfl) := by
-    rw [freeCumulantMultilinear_apply, freeCumulant_comp_of_strictMonoOn φ
-      ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _), image_orderEmbOfFin_univ]
-  simp only [Function.comp_def] at he
-  have hc (j : ℕ) : freeCumulant φ (fun _ : α => a j) s =
-      freeCumulant φ (fun _ => a 0) s := by
-    simp only [freeCumulant_eq_sum_mu_mul_partitionMoment, partitionMoment_def]
-    congr 1
-    ext π
-    congr 1
-    apply prod_congr rfl
-    intro B _
-    simpa using hm j #B
-  have hscale := (freeCumulantMultilinear (α := Fin #s) φ).map_smul_univ
-    (fun _ => (N : R)⁻¹) (fun _ => ∑ j ∈ range N, a j)
-  simp only [prod_const, card_univ, Fintype.card_fin, smul_eq_mul] at hscale
-  rw [he, hscale, ← he (fun _ => ∑ j ∈ range N, a j),
+  rw [freeCumulant_smul φ (fun _ => (N : R)⁻¹) (fun _ => ∑ j ∈ range N, a j),
     h.freeCumulant_sum hφ (range N) hs]
-  simp only [hc, sum_const, card_range, nsmul_eq_mul]
+  simp only [freeCumulant_const_eq_of_apply_pow_eq φ (hm _) s, prod_const,
+    sum_const, card_range, nsmul_eq_mul]
   have hn : (N : R) ≠ 0 := Nat.cast_ne_zero.2 hN
   have hk : #s - 1 + 1 = #s := Nat.sub_add_cancel hs.card_pos
   rw [← hk, pow_succ]
@@ -82,7 +63,7 @@ theorem IsFreelyIndependentElements.freeCumulant_inv_natCast_smul_sum
 
 /-- The exact second-moment error of a free average around its common mean. No positivity,
 selfadjointness, or trace is needed for this algebraic identity. -/
-theorem IsFreelyIndependentElements.apply_sq_average_sub_mean
+theorem IsFreelyIndependentElements.apply_average_sub_mean_sq
     (h : IsFreelyIndependentElements φ a) (hφ : φ 1 = 1)
     (hm : ∀ j k, φ (a j ^ k) = φ (a 0 ^ k)) {N : ℕ} (hN : N ≠ 0) :
     φ (((N : R)⁻¹ • ∑ j ∈ range N, a j - algebraMap R A (φ (a 0))) ^ 2) =
@@ -105,7 +86,8 @@ end Algebraic
 
 section Limits
 
-variable {𝕜 A α : Type*} [RCLike 𝕜] [Ring A] [Algebra 𝕜 A] [LinearOrder α]
+variable {𝕜 A α : Type*} [Field 𝕜] [CharZero 𝕜] [TopologicalSpace 𝕜]
+  [IsTopologicalRing 𝕜] [ContinuousSMul ℚ≥0 𝕜] [Ring A] [Algebra 𝕜 A] [LinearOrder α]
   {φ : A →ₗ[𝕜] 𝕜} {a : ℕ → A}
 
 /-- Cumulants of free averages converge to those of the scalar common mean. -/
@@ -129,15 +111,7 @@ theorem IsFreelyIndependentElements.tendsto_freeCumulant_average
     simpa [Algebra.algebraMap_eq_smul_one, hφ] using
       (tendsto_const_nhds : Tendsto (fun _ : ℕ => φ (a 0)) atTop (𝓝 (φ (a 0)))).congr' he.symm
   · have hk : 0 < #s - 1 := by have := one_lt_card_iff_nontrivial.2 hs'; omega
-    have hunit : freeCumulant φ (fun _ : α => algebraMap 𝕜 A (φ (a 0))) s = 0 := by
-      have hz := freeCumulant_add_algebraMap φ (fun _ : α => (0 : A)) hφ
-        (fun _ => φ (a 0)) (one_lt_card_iff_nontrivial.2 hs')
-      have hz0 : freeCumulant φ (fun _ : α => (0 : A)) s = 0 := by
-        obtain ⟨i, hi⟩ := hs
-        simpa only [zero_smul, Function.update_eq_self, zero_mul] using
-          freeCumulant_update_smul φ (fun _ : α => (0 : A)) hi (0 : 𝕜) (0 : A)
-      simpa [hz0] using hz
-    rw [hunit]
+    rw [freeCumulant_algebraMap φ hφ _ (one_lt_card_iff_nontrivial.2 hs')]
     simpa [zero_pow hk.ne'] using
       (((tendsto_inv_atTop_nhds_zero_nat (𝕜 := 𝕜)).pow (#s - 1)).mul_const
         (freeCumulant φ (fun _ => a 0) s)).congr' he.symm
@@ -152,7 +126,8 @@ theorem IsFreelyIndependentElements.tendsto_apply_average_pow
       (𝓝 (φ (a 0) ^ n)) := by
   classical
   rcases eq_or_ne n 0 with rfl | hn
-  · simp [hφ]
+  · simp only [pow_zero, hφ]
+    exact tendsto_const_nhds
   have hlim := tendsto_finsetSum (univ : Finset (NoncrossingPartition (univ : Finset (Fin n))))
     fun π _ => tendsto_finsetProd π.1.parts fun B _ => h.tendsto_freeCumulant_average hφ hm B
   have hmc (x : A) : φ (x ^ n) =
@@ -170,7 +145,8 @@ section GNS
 
 open scoped ComplexOrder
 
-variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+variable {A : Type*} [Ring A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
+  [SelfAdjointDecompose A] [Algebra ℂ A] [StarModule ℂ A]
   {φ : A →ₚ[ℂ] ℂ} {a : ℕ → A}
 
 /-- The squared GNS seminorm of the error of a selfadjoint free average is the variance of
@@ -186,7 +162,7 @@ theorem IsFreelyIndependentElements.norm_toPreGNS_average_sub_mean_sq
     simp [Algebra.algebraMap_eq_smul_one, ← map_star φ, (ha _).star_eq]
   have hid := φ.preGNS_norm_sq
     (φ.toPreGNS ((N : ℂ)⁻¹ • ∑ j ∈ range N, a j - algebraMap ℂ A (φ (a 0))))
-  have hc := h.apply_sq_average_sub_mean hφ hm hN
+  have hc := h.apply_average_sub_mean_sq hφ hm hN
   simp only [LinearMap.coe_ofClass] at hc
   rw [φ.ofPreGNS_toPreGNS, hstar, ← sq, hc, ← Complex.ofReal_pow] at hid
   simpa only [Complex.ofReal_re, Complex.div_natCast_re] using congrArg Complex.re hid
