@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Sheaves.Flasque.Locality
 public import TauCeti.CategoryTheory.Limits.FunctorCategory.Shapes.Products
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.Topology.Sheaves.Limits
@@ -21,8 +22,8 @@ restriction maps of a product of presheaves are the products of the restriction 
 (`CategoryTheory.Limits.piObjIso_hom_naturality`), and in such a category a finite product of
 epimorphisms is an epimorphism (`CategoryTheory.Limits.Pi.map_epi`). A product of any size of
 presheaves whose restriction maps are split epimorphisms is flasque in any category with these
-products, since a product of split epimorphisms is split; this applies to products of skyscraper
-sheaves, such as Godement sheaves.
+products, since a product of split epimorphisms is split (`TauCeti.isSplitEpi_piMap`); this
+applies to products of skyscraper sheaves, such as Godement sheaves.
 
 Combined with the locality of flasqueness in the form `TopCat.Sheaf.isFlasque_of_locally_iso` (a
 sheaf which is locally isomorphic to a flasque sheaf is flasque), this gives the criterion used for
@@ -80,8 +81,7 @@ theorem isFlasque_piObj_of_isSplitEpi {C : Type*} [Category* C] {J : Type w}
     (hF : ∀ (j : J) {U V : (Opens X)ᵒᵖ} (i : U ⟶ V), IsSplitEpi ((F j).map i)) :
     (∏ᶜ F).IsFlasque where
   epi {U V} i := by
-    have : IsSplitEpi (Limits.Pi.map fun j ↦ (F j).map i) :=
-      ⟨⟨Limits.Pi.map fun j ↦ have := hF j i; section_ ((F j).map i), by ext; simp⟩⟩
+    have := fun j ↦ hF j i
     -- Under `piObjIso`, the restriction map of the product is the product of restriction maps.
     rw [(Iso.eq_comp_inv _).2 (piObjIso_hom_naturality F i)]
     infer_instance
