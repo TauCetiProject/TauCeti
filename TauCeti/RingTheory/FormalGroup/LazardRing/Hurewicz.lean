@@ -238,6 +238,7 @@ private theorem coeff_single_hurewicz_generator_self (n : ℕ+) :
 /-- **The image of a generator modulo decomposables**: the image of the generator `xₘ` under the
 Hurewicz homomorphism has coefficient `d_{n+1}` at `bₙ` when `m = n`, and `0` otherwise. That is,
 `xₙ ↦ d_{n+1} bₙ` modulo products of the `bᵢ`. -/
+@[simp]
 theorem coeff_single_hurewicz_generator (m n : ℕ+) :
     (hurewicz (generator m)).coeff (single n 1) = if n = m then (lazardGcd (n + 1) : ℤ) else 0 := by
   split_ifs with h
