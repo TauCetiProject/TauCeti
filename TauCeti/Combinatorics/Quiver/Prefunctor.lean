@@ -109,6 +109,11 @@ theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
 @[expose] def _root_.Prefunctor.mapTotal (φ : Q ⥤q R) (f : Quiver.Total Q) : Quiver.Total R :=
   ⟨φ.obj f.left, φ.obj f.right, φ.map f.hom⟩
 
+/-- The image of a total arrow given by its components is given by their images. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_mk (φ : Q ⥤q R) {a b : Q} (f : a ⟶ b) :
+    φ.mapTotal ⟨a, b, f⟩ = ⟨φ.obj a, φ.obj b, φ.map f⟩ := (rfl)
+
 /-- The source of the image of a total arrow is the image of its source. -/
 @[simp]
 theorem _root_.Prefunctor.mapTotal_left (φ : Q ⥤q R) (f : Quiver.Total Q) :

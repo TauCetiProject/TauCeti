@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
+public import TauCeti.GroupTheory.GroupAction.Hom
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Nerve
 
 /-!
@@ -15,22 +16,25 @@ public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Nerve
 
 Let a topological monoid `G` act on spaces `X` and `Y`. A continuous map `f : X → Y` that is
 equivariant induces the functor `CategoryTheory.ActionCategory.map (MonoidHom.id G) f` of action
-groupoids, which is continuous on total arrows (`TauCeti.ActionGroupoid.continuous_mapTotal_map`),
+groupoids, which is continuous on total arrows (`TauCeti.ActionGroupoid.continuous_mapTotal_map`,
+and jointly in a parameter `TauCeti.ActionGroupoid.continuous_uncurry_mapTotal_map`),
 and hence a map `B(G ⋉ X) → B(G ⋉ Y)` of fat classifying spaces. This file proves that these maps
 are invariant under equivariant homotopy: a homotopy `H` from `f₀` to `f₁` through equivariant
 maps induces a homotopy between the maps of classifying spaces
 (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopy`).
 
 The main application is the local model of an orbifold chart. Suppose that `X` contracts onto a
-point `x` through equivariant maps, so that `x` is a fixed point of `G`. Then the projection
+point `x` through equivariant maps, so that `x` is a fixed point of `G`
+(`ContinuousMap.Homotopy.mem_fixedPoints_of_map_smul`). Then the projection
 `X → *` and the inclusion of `x` induce mutually inverse homotopy equivalences
 `B(G ⋉ X) ≃ₕ B(G ⋉ *)` (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopyEquivOfContraction`),
 where `G ⋉ *` is the point presentation `[*/G]`. Since `x` is fixed, the isotropy group of `x` in
 `G ⋉ X` is all of `G` (`CategoryTheory.ActionCategory.autMulEquivOfMemFixedPoints`), so this
 identifies the classifying space of the chart with that of the isotropy group at its centre. Every
 label is retained, including labels acting trivially, so the equivalence keeps ineffective
-isotropy. A `G`-invariant subset of a real vector space with a linear action, star-convex about
-`0`, such as an invariant ball of an equivariant linear chart, is such a chart
+isotropy. A `G`-invariant subset of a real vector space with an action commuting with real
+scaling, star-convex about `0`, such as an invariant ball of an equivariant linear chart, is such a
+chart
 (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopyEquivOfStarConvex`).
 
 ## References
@@ -44,6 +48,7 @@ public noncomputable section
 
 open CategoryTheory ContinuousMap MulAction
 open CategoryTheory.ActionCategory
+open MulActionHom (constOfMemFixedPoints constOfMemFixedPoints_apply toPUnit)
 
 universe u
 
@@ -54,12 +59,27 @@ section Map
 variable {M N X Y : Type*} [Monoid M] [Monoid N] [MulAction M X] [MulAction N Y]
   [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
 
+/-- The functors of action groupoids induced by a family of equivariant maps along a continuous
+monoid homomorphism, depending continuously on a parameter and the point, are jointly continuous
+in the parameter and the total arrow. -/
+theorem continuous_uncurry_mapTotal_map {T : Type*} [TopologicalSpace T] {φ : M →* N}
+    (hφ : Continuous φ) {f : T → X →ₑ[φ] Y} (hf : Continuous fun p : T × X ↦ f p.1 p.2) :
+    Continuous fun p : T × Quiver.Total (ActionCategory M X) ↦
+      (ActionCategory.map φ (f p.1)).toPrefunctor.mapTotal p.2 :=
+  (arrowHomeomorph N Y).isInducing.continuous_iff.2 <| by
+    -- In label-source coordinates, the arrow `(g, x)` at parameter `s` goes to `(φ g, f s x)`.
+    have : Continuous fun p : T × M × X ↦ (φ p.2.1, f p.1 p.2.2) :=
+      (hφ.comp (continuous_fst.comp continuous_snd)).prodMk
+        (hf.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
+    exact (this.comp (continuous_id.prodMap (arrowHomeomorph M X).continuous)).congr
+      fun _ ↦ by simp
+
 /-- The functor of action groupoids induced by a continuous equivariant map along a continuous
 monoid homomorphism is continuous on total arrows. -/
 theorem continuous_mapTotal_map {φ : M →* N} (hφ : Continuous φ) {f : X →ₑ[φ] Y}
     (hf : Continuous f) : Continuous (ActionCategory.map φ f).toPrefunctor.mapTotal :=
-  (arrowHomeomorph N Y).isInducing.continuous_iff.2 <|
-    ((hφ.prodMap hf).comp (arrowHomeomorph M X).continuous).congr fun _ ↦ by simp
+  (continuous_uncurry_mapTotal_map hφ (f := fun _ : Unit ↦ f) (hf.comp continuous_snd)).comp
+    (.prodMk_right ())
 
 end Map
 
@@ -78,44 +98,33 @@ def fatClassifyingSpaceHomotopy {f₀ f₁ : X →ₑ[MonoidHom.id G] Y} {hf₀ 
         (continuous_mapTotal_map continuous_id hf₁)).hom :=
   -- The stage `s` of `H` is the equivariant map `H (s, ·)`; its functors vary continuously in `s`.
   let Hs (s : unitInterval) : X →ₑ[MonoidHom.id G] Y := ⟨fun x ↦ H (s, x), hH s⟩
-  have hHs_apply (s : unitInterval) (x : X) : Hs s x = H (s, x) := rfl
-  have hHs : Continuous fun p : unitInterval × Quiver.Total (ActionCategory G X) ↦
-      (ActionCategory.map (MonoidHom.id G) (Hs p.1)).toPrefunctor.mapTotal p.2 :=
-    (arrowHomeomorph G Y).isInducing.continuous_iff.2 <|
-      ((continuous_fst.comp ((arrowHomeomorph G X).continuous.comp continuous_snd)).prodMk
-        (H.continuous.comp (continuous_fst.prodMk
-          (continuous_snd.comp ((arrowHomeomorph G X).continuous.comp continuous_snd))))).congr
-        fun _ ↦ by simp [hHs_apply]
   have h₀ : Hs 0 = f₀ := MulActionHom.ext H.apply_zero
   have h₁ : Hs 1 = f₁ := MulActionHom.ext H.apply_one
   (TauCeti.fatClassifyingSpaceHomotopy (fun s ↦ ActionCategory.map (MonoidHom.id G) (Hs s))
-    hHs).cast (by simp only [h₀]) (by simp only [h₁])
+    (continuous_uncurry_mapTotal_map continuous_id (f := Hs) H.continuous)).cast
+    (by simp only [h₀]) (by simp only [h₁])
+
+/-- The homotopy of fat classifying spaces induced by an equivariant homotopy `H` applies, at time
+`s`, the functor induced by the equivariant map `H (s, ·)` to the string of composable arrows of
+each simplex. -/
+theorem fatClassifyingSpaceHomotopy_apply_ι {f₀ f₁ : X →ₑ[MonoidHom.id G] Y}
+    {hf₀ : Continuous f₀} {hf₁ : Continuous f₁} (H : Homotopy ⟨f₀, hf₀⟩ ⟨f₁, hf₁⟩)
+    (hH : ∀ (s : unitInterval) (g : G) (x : X), H (s, g • x) = g • H (s, x))
+    (s : unitInterval) (n : SemiSimplexCategory)
+    (F : ComposableArrows (ActionCategory G X) (SemiSimplexCategory.toSimplexCategory.obj n).len)
+    (t : SemiSimplexCategory.toTop.obj n) :
+    fatClassifyingSpaceHomotopy H hH (s, fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n (((ActionCategory.map (MonoidHom.id G)
+        (⟨fun x ↦ H (s, x), hH s⟩ : X →ₑ[MonoidHom.id G] Y)).mapComposableArrows _).obj F, t) :=
+  TauCeti.fatClassifyingSpaceHomotopy_apply_ι _ _ s n F t
 
 omit [TopologicalSpace G] in
 /-- A point onto which `X` contracts through `G`-equivariant maps is fixed by `G`. -/
-private theorem mem_fixedPoints_of_contraction {x : X}
-    {H : Homotopy (ContinuousMap.id X) (ContinuousMap.const X x)}
+theorem _root_.ContinuousMap.Homotopy.mem_fixedPoints_of_map_smul {x : X}
+    (H : Homotopy (ContinuousMap.id X) (ContinuousMap.const X x))
     (hH : ∀ (s : unitInterval) (g : G) (y : X), H (s, g • y) = g • H (s, y)) :
     x ∈ fixedPoints G X :=
   fun g ↦ by simpa using (hH 1 g x).symm
-
-variable (G X) in
-omit [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y] in
-/-- The `G`-equivariant map from `X` to the point. -/
-private def toPoint : X →ₑ[MonoidHom.id G] PUnit.{u + 1} :=
-  ⟨fun _ ↦ PUnit.unit, fun _ _ ↦ rfl⟩
-
-omit [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y] in
-/-- The `G`-equivariant map from `Y` with constant value a fixed point `x` of `X`. -/
-private def constOfMemFixedPoints {x : X} (hx : x ∈ fixedPoints G X) :
-    Y →ₑ[MonoidHom.id G] X :=
-  ⟨fun _ ↦ x, fun g _ ↦ (hx g).symm⟩
-
-omit [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y] in
-@[simp]
-private theorem constOfMemFixedPoints_apply {x : X} (hx : x ∈ fixedPoints G X) (y : Y) :
-    constOfMemFixedPoints hx y = x :=
-  rfl
 
 variable (G) in
 /-- **The local model of an orbifold chart.** If `H` is a contraction of `X` onto a point `x`
@@ -127,27 +136,31 @@ def fatClassifyingSpaceHomotopyEquivOfContraction (x : X)
     (hH : ∀ (s : unitInterval) (g : G) (y : X), H (s, g • y) = g • H (s, y)) :
     fatClassifyingSpace (ActionCategory G X) ≃ₕ
       fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) where
-  toFun := (fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G) (toPoint G X))
+  toFun := (fatClassifyingSpaceMap
+    (ActionCategory.map (MonoidHom.id G) (toPUnit X (MonoidHom.id G)))
     (continuous_mapTotal_map continuous_id continuous_const)).hom
   invFun := (fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G)
-      (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)))
+      (constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)))
     (continuous_mapTotal_map continuous_id continuous_const)).hom
   left_inv := by
     -- The composite is induced by the constant map onto `x`, which `H` joins to the identity.
-    have hc : ActionCategory.map (MonoidHom.id G) (toPoint G X) ⋙
+    have hc : ActionCategory.map (MonoidHom.id G)
+          (toPUnit X (MonoidHom.id G) : X →ₑ[MonoidHom.id G] PUnit.{u + 1}) ⋙
         ActionCategory.map (MonoidHom.id G)
-          (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) =
+          (constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)) =
         ActionCategory.map (MonoidHom.id G)
-          (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) :=
+          (constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)) :=
       (map_comp _ _ _).trans (congrArg _ (MulActionHom.ext fun _ ↦ rfl))
     exact ⟨(fatClassifyingSpaceHomotopy (f₀ := MulActionHom.id G)
-      (f₁ := constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) (hf₁ := continuous_const)
+      (f₁ := constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)) (hf₁ := continuous_const)
       H hH).symm.cast
         (by rw [← TopCat.hom_comp, ← fatClassifyingSpaceMap_comp]; simp only [hc])
         (by simp only [map_id, fatClassifyingSpaceMap_id, TopCat.hom_id])⟩
   right_inv := by
-    have hp : (toPoint G X).comp (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) =
-        MulActionHom.id G := MulActionHom.ext fun _ ↦ rfl
+    have hp : (toPUnit X (MonoidHom.id G) : X →ₑ[MonoidHom.id G] PUnit.{u + 1}).comp
+        (constOfMemFixedPoints (φ := MonoidHom.id G) (H.mem_fixedPoints_of_map_smul hH)) =
+          MulActionHom.id G :=
+      MulActionHom.ext fun _ ↦ rfl
     rw [← TopCat.hom_comp, ← fatClassifyingSpaceMap_comp]
     simp only [map_comp, hp, map_id, fatClassifyingSpaceMap_id, TopCat.hom_id]
     exact .refl _
@@ -181,12 +194,12 @@ theorem fatClassifyingSpaceHomotopyEquivOfContraction_symm_apply_ι
 section StarConvex
 
 variable {E : Type u} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousSMul ℝ E]
-  [DistribMulAction G E] [SMulCommClass ℝ G E]
+  [MulAction G E] [SMulCommClass ℝ G E]
 
 variable (G) in
-/-- Let `G` act linearly on a real vector space `E`. If a `G`-invariant subset `U` of `E` contains
-`0` and is star-convex about `0`, as an invariant ball of an invariant norm is, then the radial
-contraction `y ↦ (1 - s) • y` is equivariant, so `B(G ⋉ U) ≃ₕ B(G ⋉ *)`. -/
+/-- Let `G` act on a real vector space `E`, commuting with real scaling. If a `G`-invariant subset
+`U` of `E` contains `0` and is star-convex about `0`, as an invariant ball of an invariant norm is,
+then the radial contraction `y ↦ (1 - s) • y` is equivariant, so `B(G ⋉ U) ≃ₕ B(G ⋉ *)`. -/
 def fatClassifyingSpaceHomotopyEquivOfStarConvex (U : SubMulAction G E)
     (hU : StarConvex ℝ 0 (U : Set E)) (h0 : (0 : E) ∈ U) :
     fatClassifyingSpace (ActionCategory G U) ≃ₕ
@@ -200,6 +213,29 @@ def fatClassifyingSpaceHomotopyEquivOfStarConvex (U : SubMulAction G E)
       map_zero_left _ := Subtype.ext (by simp)
       map_one_left _ := Subtype.ext (by simp) }
     fun s g y ↦ Subtype.ext (smul_comm (unitInterval.symm s : ℝ) g (y : E))
+
+/-- The homotopy equivalence `B(G ⋉ U) ≃ₕ B(G ⋉ *)` of a star-convex invariant subset keeps the
+labels of each string of composable arrows and forgets its points. -/
+theorem fatClassifyingSpaceHomotopyEquivOfStarConvex_apply_ι (U : SubMulAction G E)
+    (hU : StarConvex ℝ 0 (U : Set E)) (h0 : (0 : E) ∈ U) (n : SemiSimplexCategory)
+    (F : ComposableArrows (ActionCategory G U) (SemiSimplexCategory.toSimplexCategory.obj n).len)
+    (t : SemiSimplexCategory.toTop.obj n) :
+    fatClassifyingSpaceHomotopyEquivOfStarConvex G U hU h0 (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n
+        ((nerveEquiv G PUnit.{u + 1} _).symm (PUnit.unit, (nerveEquiv G U _ F).2), t) :=
+  fatClassifyingSpaceHomotopyEquivOfContraction_apply_ι F
+
+/-- The inverse of the homotopy equivalence `B(G ⋉ U) ≃ₕ B(G ⋉ *)` of a star-convex invariant
+subset sends a string of composable arrows of `G ⋉ *` to the string at `0` with the same labels. -/
+theorem fatClassifyingSpaceHomotopyEquivOfStarConvex_symm_apply_ι (U : SubMulAction G E)
+    (hU : StarConvex ℝ 0 (U : Set E)) (h0 : (0 : E) ∈ U) (n : SemiSimplexCategory)
+    (F : ComposableArrows (ActionCategory G PUnit.{u + 1})
+      (SemiSimplexCategory.toSimplexCategory.obj n).len)
+    (t : SemiSimplexCategory.toTop.obj n) :
+    (fatClassifyingSpaceHomotopyEquivOfStarConvex G U hU h0).symm (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n
+        ((nerveEquiv G U _).symm (⟨0, h0⟩, (nerveEquiv G PUnit.{u + 1} _ F).2), t) :=
+  fatClassifyingSpaceHomotopyEquivOfContraction_symm_apply_ι F
 
 end StarConvex
 

@@ -246,7 +246,8 @@ def homotopy (φ : unitInterval → (X ⟶ Y))
       continuous_sigma fun n ↦ (ι Y n).continuous.comp <|
         ((hφ n).comp (continuous_snd.prodMk (continuous_fst.comp continuous_fst))).prodMk
           (continuous_snd.comp continuous_fst)
-    exact this.comp (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)
+    exact (this.comp (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)).congr
+      fun ⟨_, n, x, t⟩ ↦ (map_ι _ n x t).symm
   map_zero_left _ := rfl
   map_one_left _ := rfl
 

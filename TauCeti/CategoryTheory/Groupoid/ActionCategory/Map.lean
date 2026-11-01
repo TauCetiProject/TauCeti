@@ -186,7 +186,7 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
       simpa [range_inclusion_obj] using hf.1
     obtain ⟨b, rfl⟩ : r ∈ Set.range (inclusion S).obj := by
       simpa [range_inclusion_obj] using hf.2
-    exact ⟨⟨a, b, (inclusion S).preimage g⟩,
+    exact ⟨⟨a, b, (inclusion S).preimage g⟩, (Prefunctor.mapTotal_mk _ _).trans <|
       congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)⟩
 
 end Inclusion
