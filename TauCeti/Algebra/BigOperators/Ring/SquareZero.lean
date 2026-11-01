@@ -112,9 +112,9 @@ theorem sum_pow_of_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
 
 
 /-- **Multiplication of elementary symmetric sums of square-zero elements.** If the `x i` commute
-pairwise and square to zero on `s`, then the sums `e k` of the products over the `k`-element
-subsets of `s` satisfy `e m * e n = (m + n).choose m • e (m + n)`: they are the divided powers of
-`e 1 = ∑ i ∈ s, x i`, with no division by factorials. -/
+pairwise everywhere and square to zero on `s`, then the sums `e k` of the products over the
+`k`-element subsets of `s` satisfy `e m * e n = (m + n).choose m • e (m + n)`: they are the
+divided powers of `e 1 = ∑ i ∈ s, x i`, with no division by factorials. -/
 theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
     (hc : Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0) (m n : ℕ) :
     (∑ t ∈ s.powersetCard m, t.noncommProd x (hc.set_pairwise _)) *
