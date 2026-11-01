@@ -110,6 +110,20 @@ theorem steinberg_A {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.A n q).Valid)
       GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ :=
   (rfl)
 
+/-- On `Bₙ(q)` the Steinberg endomorphism is that of the graph-twisted assembly, which is in turn
+that of the type-`B` family by `TauCeti.GraphTwistedIndex.steinberg_B`. -/
+theorem steinberg_B {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.B n q).Valid) :
+    steinberg ⟨_, hv⟩ =
+      GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ :=
+  (rfl)
+
+/-- On `Cₙ(q)` the Steinberg endomorphism is that of the graph-twisted assembly, which is in turn
+that of the type-`C` family by `TauCeti.GraphTwistedIndex.steinberg_C`. -/
+theorem steinberg_C {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.C n q).Valid) :
+    steinberg ⟨_, hv⟩ =
+      GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ :=
+  (rfl)
+
 end Branches
 
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action
