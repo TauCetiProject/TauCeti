@@ -143,10 +143,8 @@ theorem minCriticalCount_sphere : minCriticalCount (𝓡 n) (sphere (0 : E) 1) =
   have : Nontrivial (sphere (0 : E) 1) := ⟨⟨v, -v, ne_neg_of_mem_unit_sphere ℝ v⟩⟩
   refine le_antisymm ((minCriticalCount_le (contMDiff_sphereHeight v)).trans_eq ?_)
     two_le_minCriticalCount
-  have hcrit : criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
-    ext x
-    simp [mem_criticalPoints]
-  rw [totalCriticalCount_def, hcrit, encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
+  rw [totalCriticalCount_def, criticalPoints_sphereHeight,
+    encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
 
 end Sphere
 
