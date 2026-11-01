@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.SerreCondition.Basic
 import TauCeti.RingTheory.Localization.LocalizationLocalization
+import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
@@ -61,10 +62,7 @@ theorem isCohenMacaulay_iff_forall_satisfiesSerreS [IsNoetherianRing R] :
   refine Iff.trans ?_
     (Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay (R := R) (M := R)).symm
   refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
-  let e : LocalizedModule p.primeCompl R ≃ₗ[Localization.AtPrime p] Localization.AtPrime p :=
-    (IsLocalizedModule.iso p.primeCompl (Algebra.linearMap R (Localization.AtPrime p))
-      ).extendScalarsOfIsLocalization p.primeCompl _
-  exact e.isCohenMacaulay_iff.symm
+  exact (LocalizedModule.equivLocalization p.primeCompl).isCohenMacaulay_iff.symm
 
 /-- Over a Noetherian local ring, the ring and module definitions of Cohen–Macaulayness agree. -/
 theorem isCohenMacaulay_iff_of_isLocalRing [IsLocalRing R] [IsNoetherianRing R] :
@@ -73,7 +71,9 @@ theorem isCohenMacaulay_iff_of_isLocalRing [IsLocalRing R] [IsNoetherianRing R] 
   · intro h
     let e : R ≃ₐ[R] Localization.AtPrime (IsLocalRing.maximalIdeal R) :=
       IsLocalization.atUnits R (IsLocalRing.maximalIdeal R).primeCompl
-        (fun x ↦ by simpa using! fun a ↦ a)
+        (fun x hx ↦ by
+          simpa only [Ideal.mem_primeCompl_iff, IsLocalRing.mem_maximalIdeal,
+            mem_nonunits_iff, not_not] using hx)
     exact e.toRingEquiv.isCohenMacaulay_self_iff.mpr
       (h.isCohenMacaulay_localization _)
   · intro h
@@ -113,12 +113,8 @@ theorem IsCohenMacaulay.of_isLocalization [IsCohenMacaulay R]
     (M : Submonoid R) (S : Type v) [CommRing S] [Algebra R S] [IsLocalization M S] :
     IsCohenMacaulay S := by
   have := IsLocalization.isNoetherianRing M S inferInstance
-  refine isCohenMacaulay_iff_forall_localization.mpr fun Q _ ↦ ?_
-  let P := Q.comap (algebraMap R S)
-  have : IsLocalization.AtPrime (Localization.AtPrime Q) P :=
-    IsLocalization.isLocalization_isLocalization_atPrime_isLocalization M _ Q
-  exact (IsLocalization.AtPrime.isCohenMacaulay_self_iff P (Localization.AtPrime Q)).mpr
-    (IsCohenMacaulay.isCohenMacaulay_localization P)
+  exact isCohenMacaulay_iff_forall_satisfiesSerreS.mpr fun n ↦
+    (isCohenMacaulay_iff_forall_satisfiesSerreS.mp ‹IsCohenMacaulay R› n).localization_self M S
 
 /-- The canonical localization of a Cohen–Macaulay ring is Cohen–Macaulay. -/
 instance IsCohenMacaulay.localization [IsCohenMacaulay R] (M : Submonoid R) :

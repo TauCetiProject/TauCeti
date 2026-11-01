@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
+public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
@@ -30,6 +31,10 @@ integration and pushforward API applies to them directly. The Hermitian measure 
 characteristic polynomial, not on the basis or on the eigenvector choice, and its pushforward along
 `ℝ → ℂ` is the eigenvalue measure. The eigenvalue measure of a nilpotent matrix is the Dirac mass at
 `0`; this records that roots are counted with algebraic, not geometric, multiplicity.
+
+The spectral measure depends continuously on the Hermitian matrix for the weak topology and
+measurably for the entrywise measurable structure. Thus a measurable random Hermitian matrix
+has a measurable empirical spectral measure, including when eigenvalues collide.
 
 The moments and the resolvent transform of the Hermitian spectral measure are normalized traces:
 `∫ x ^ k dL_A = n⁻¹ Re tr (A ^ k)` and, off the spectrum, `m_{L_A}(z) = n⁻¹ tr (A - z • 1)⁻¹`.
@@ -110,6 +115,22 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     (hA : A.IsHermitian) :
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
+
+/-- The empirical spectral measure depends continuously on the Hermitian matrix for the weak
+topology on probability measures. -/
+@[fun_prop]
+theorem continuous_spectralMeasure :
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+  simp_rw [spectralMeasure_def]
+  exact continuous_empiricalMeasureOfFintype.comp continuous_eigenvalues
+
+/-- The empirical spectral measure is measurable for the entrywise Borel structure on Hermitian
+matrices and the evaluation σ-algebra on probability measures. -/
+@[fun_prop]
+theorem measurable_spectralMeasure [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+  simp_rw [spectralMeasure_def]
+  exact measurable_empiricalMeasureOfFintype.comp measurable_eigenvalues
 
 /-- The spectral measure of a set is the proportion of eigenvalues in it, counted with
 multiplicity. -/

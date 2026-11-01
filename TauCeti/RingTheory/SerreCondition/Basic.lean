@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.CohenMacaulay.Localization
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Module
+import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
@@ -166,9 +167,7 @@ theorem satisfiesSerreS_self_iff : SatisfiesSerreS n R R ↔ ∀ (p : Ideal R) [
     min (n : WithBot ℕ∞) (ringKrullDim (Localization.AtPrime p)) ≤
       (depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) : WithBot ℕ∞) := by
   refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
-  let e : LocalizedModule p.primeCompl R ≃ₗ[Localization.AtPrime p] Localization.AtPrime p :=
-    (IsLocalizedModule.iso p.primeCompl (Algebra.linearMap R (Localization.AtPrime p))
-      ).extendScalarsOfIsLocalization p.primeCompl _
+  let e := LocalizedModule.equivLocalization p.primeCompl
   rw [supportDim_eq_of_equiv e, supportDim_self_eq_ringKrullDim, depth_eq_of_linearEquiv e]
 
 /-- Serre's condition `(S_n)` for a Noetherian ring passes to its localizations: the local rings
