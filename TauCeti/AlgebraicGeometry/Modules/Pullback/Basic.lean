@@ -67,7 +67,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
   without its inverse;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
-  pullbacks;
+  pullbacks, and `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` does so naturally in the
+  module, for any open contained in the preimage;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
   isomorphism exactly when its pullbacks to the members of an open cover are;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
@@ -416,6 +417,26 @@ def restrictPullbackObjIso (V : Y.Opens) (M : Y.Modules) :
     (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
     ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
     (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm
+
+/-- Pullback commutes with restriction to opens, naturally in the module: for opens `V ⊆ Y` and
+`W ⊆ f⁻¹ V`, the restriction of `f^* M` to `W` is the pullback of `M|_V` along
+`f.resLE V W e : W ⟶ V`. For `W = f⁻¹ V` this is the natural form of `restrictPullbackObjIso`. -/
+def restrictPullbackIso (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ V) :
+    pullback f ⋙ restrictFunctor W.ι ≅ restrictFunctor V.ι ⋙ pullback (f.resLE V W e) :=
+  Functor.isoWhiskerLeft (pullback f) (restrictFunctorIsoPullback W.ι) ≪≫
+    pullbackComp W.ι f ≪≫ pullbackCongr (f.resLE_comp_ι e).symm ≪≫
+    (pullbackComp (f.resLE V W e) V.ι).symm ≪≫
+    Functor.isoWhiskerRight (restrictFunctorIsoPullback V.ι).symm (pullback (f.resLE V W e))
+
+/-- The components of `restrictPullbackIso`: both restrictions are identified with pullbacks along
+the open immersions, and `W.ι ≫ f = f.resLE V W e ≫ V.ι`. -/
+lemma restrictPullbackIso_hom_app (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ V) (M : Y.Modules) :
+    (restrictPullbackIso f V W e).hom.app M =
+      (restrictFunctorIsoPullback W.ι).hom.app ((pullback f).obj M) ≫
+        (pullbackComp W.ι f).hom.app M ≫ (pullbackCongr (f.resLE_comp_ι e).symm).hom.app M ≫
+        (pullbackComp (f.resLE V W e) V.ι).inv.app M ≫
+        (pullback (f.resLE V W e)).map ((restrictFunctorIsoPullback V.ι).inv.app M) :=
+  (rfl)
 
 variable (V : Y.Opens)
 
