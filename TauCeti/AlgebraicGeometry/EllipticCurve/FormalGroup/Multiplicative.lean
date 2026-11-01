@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.RingTheory.FormalGroup.Height
 public import TauCeti.RingTheory.FormalGroup.Rescale
 
@@ -24,8 +23,7 @@ multiplicative formal group law rescaled by `-a₁`,
 the multiplicative one: when `a₁` is a unit, `Ê` is the transport of `X + Y + XY` along the
 homothety `T ↦ -a₁⁻¹T`, an isomorphism of formal group laws. At the cusp, `a₁ = 0`, it is the
 additive formal group law. Over a field of characteristic `p`, the formal group has height `1`
-when `a₁ ≠ 0` and height `⊤` at the cusp, so the formal group of the nodal fibre of the Tate
-curve has height `1` in every characteristic, including `2` and `3`.
+when `a₁ ≠ 0` and height `⊤` at the cusp.
 
 The computation uses that a formal group law over a `ℚ`-algebra is determined by its invariant
 differential (`FormalGroup.invariantDifferential_injective`). For `y² + a₁xy = x³` the expansion
@@ -44,8 +42,6 @@ and then over every ring by base change.
 * `WeierstrassCurve.formalGroup_eq_𝔾ₐ`: the formal group law of the cusp `y² = x³` is additive.
 * `WeierstrassCurve.height_formalGroup_eq_one` and `WeierstrassCurve.height_formalGroup_eq_top`:
   over a field of characteristic `p`, the height is `1` when `a₁ ≠ 0` and `⊤` when `a₁ = 0`.
-* `TauCeti.formalGroup_map_constantCoeff_tateCurve`: the formal group law of the Tate
-  curve at `q = 0` is the transport of the multiplicative formal group law along `T ↦ -T`.
 
 ## References
 
@@ -74,8 +70,8 @@ private theorem formalGroup_eq_rescale_𝔾ₘ_of_algebra [Algebra ℚ R] (h₂ 
   rw [map_mul, map_one, ← invariantDifferential_𝔾ₘ, ← invariantDifferential_rescale, map_add,
     map_one, PowerSeries.rescale_X, mul_comm] at h
   convert h using 2
-  rw [formalInvariantDifferentialDenom_def, h₂, h₃, h₄, h₆, PowerSeries.smul_eq_C_mul, map_neg]
-  simp [sub_eq_add_neg]
+  simp [formalInvariantDifferentialDenom_def, h₂, h₃, h₄, h₆, PowerSeries.smul_eq_C_mul,
+    sub_eq_add_neg]
 
 /-- **The formal group of `y² + a₁xy = x³`** is the rescaling by `-a₁` of the multiplicative
 formal group law, that is `Ê(X, Y) = X + Y - a₁XY` (`FormalGroup.rescale_𝔾ₘ_toPowerSeries`). -/
@@ -108,8 +104,8 @@ theorem formalGroup_eq_homothety_smul_𝔾ₘ (u : Rˣ) (h₁ : W.a₁ = u) (h�
 theorem formalGroup_eq_𝔾ₐ (h₁ : W.a₁ = 0) (h₂ : W.a₂ = 0) (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0)
     (h₆ : W.a₆ = 0) : formalGroup W = 𝔾ₐ := by
   refine FormalGroup.ext ?_
-  rw [formalGroup_eq_rescale_𝔾ₘ h₂ h₃ h₄ h₆, rescale_𝔾ₘ_toPowerSeries, h₁, neg_zero, zero_smul,
-    _root_.add_zero, 𝔾ₐ_toPowerSeries]
+  rw [formalGroup_eq_rescale_𝔾ₘ h₂ h₃ h₄ h₆]
+  simp [h₁, 𝔾ₐ_toPowerSeries]
 
 section Height
 
@@ -129,18 +125,3 @@ theorem height_formalGroup_eq_top (h₁ : W.a₁ = 0) (h₂ : W.a₂ = 0) (h₃ 
 end Height
 
 end WeierstrassCurve
-
-namespace TauCeti
-
-open WeierstrassCurve
-
-/-- **The formal group of the Tate curve at `q = 0` is multiplicative**: the Tate curve over
-`ℤ⟦q⟧` reduces at `q = 0` to the nodal cubic `y² + xy = x³`, whose formal group law
-`X + Y - XY` is the transport of `X + Y + XY` along `T ↦ -T`. -/
-theorem formalGroup_map_constantCoeff_tateCurve :
-    formalGroup (tateCurve.map PowerSeries.constantCoeff) =
-      FormalCoordinate.homothety (-1 : ℤˣ) • (𝔾ₘ : FormalGroup ℤ) := by
-  simpa using formalGroup_eq_homothety_smul_𝔾ₘ (W := tateCurve.map PowerSeries.constantCoeff) 1
-    (by simp) (by simp) (by simp) (by simp) (by simp)
-
-end TauCeti

@@ -205,8 +205,7 @@ theorem rescale_𝔾ₘ_toPowerSeries :
       monomial (Finsupp.single 0 1 + Finsupp.single 1 1) 1 := by
     rw [X, X, monomial_mul_monomial, mul_one]
   ext d
-  rw [coeff_rescale, 𝔾ₘ_toPowerSeries, map_add, map_add, map_add, map_add, coeff_smul, hXY,
-    coeff_X, coeff_X, coeff_monomial]
+  simp only [coeff_rescale, 𝔾ₘ_toPowerSeries, map_add, coeff_smul, hXY, coeff_X, coeff_monomial]
   split_ifs <;> simp_all [Finsupp.degree_single]
 
 /-- **The invariant differential of a rescaling**: if `P(T) dT` is the invariant differential of
