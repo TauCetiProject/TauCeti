@@ -98,21 +98,17 @@ private def traceFormKer : Submodule A A where
 /-- **In characteristic zero, the regular trace form of a semisimple algebra is nondegenerate.** -/
 theorem nondegenerate_regularTraceForm [CharZero K] [IsSemisimpleRing A] :
     (regularTraceForm K A).Nondegenerate := by
-  have hsep : (regularTraceForm K A).SeparatingRight := by
-    intro x h
-    obtain ⟨e, he, hspan⟩ := IsSemisimpleRing.ideal_eq_span_idempotent (traceFormKer K A)
-    have hmem (z : A) : z ∈ traceFormKer K A ↔ ∃ a, a * e = z := by
-      rw [hspan, Ideal.mem_span_singleton']
-    obtain ⟨a, rfl⟩ := (hmem x).mp h
-    -- left multiplication by `e` is idempotent with trace `tr(L_{1 e}) = 0`
-    have htr : trace K A (lmul K A e) = 0 := by
-      simpa using (hmem e).mpr ⟨1, one_mul e⟩ 1
-    have he0 : e = 0 := by
-      simpa using congr($((he.map (lmul K A)).eq_zero_of_trace_eq_zero htr) (1 : A))
-    rw [he0, mul_zero]
-  refine ⟨fun x h => hsep x fun y => ?_, hsep⟩
-  rw [regularTraceForm_apply, map_mul, trace_mul_comm, ← map_mul, ← regularTraceForm_apply]
-  exact h y
+  refine .ofSeparatingRight fun x h => ?_
+  obtain ⟨e, he, hspan⟩ := IsSemisimpleRing.ideal_eq_span_idempotent (traceFormKer K A)
+  have hmem (z : A) : z ∈ traceFormKer K A ↔ ∃ a, a * e = z := by
+    rw [hspan, Ideal.mem_span_singleton']
+  obtain ⟨a, rfl⟩ := (hmem x).mp h
+  -- left multiplication by `e` is idempotent with trace `tr(L_{1 e}) = 0`
+  have htr : trace K A (lmul K A e) = 0 := by
+    simpa using (hmem e).mpr ⟨1, one_mul e⟩ 1
+  have he0 : e = 0 := by
+    simpa using congr($((he.map (lmul K A)).eq_zero_of_trace_eq_zero htr) (1 : A))
+  rw [he0, mul_zero]
 
 /-- **The trace-form criterion for semisimplicity**: over a field of characteristic zero, a
 finite-dimensional algebra is semisimple exactly when its regular trace form is nondegenerate. -/

@@ -104,8 +104,10 @@ theorem aeval_discr {R : Type*} [CommRing R] (δ : R) :
   ext D D'
   rw [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, BilinForm.toMatrix_apply,
     Algebra.regularTraceForm_apply, basis_apply, basis_apply]
-  change _ = trace R _ (mulLeft R (of D * of D'))
-  rw [trace_mulLeft_of_mul_of]
+  have hL : Algebra.lmul R (BrauerAlgebra R δ k) (of D * of D') = mulLeft R (of D * of D') :=
+    LinearMap.ext fun x => by
+      rw [Algebra.coe_lmul_eq_mul, mul_apply', mulLeft_apply]
+  rw [hL, trace_mulLeft_of_mul_of]
   simp [traceMulPoly, apply_ite]
 
 /-- **The Brauer algebra is semisimple where the discriminant does not vanish.** Over every field,
