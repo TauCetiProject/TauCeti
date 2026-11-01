@@ -131,8 +131,7 @@ def eigenspaceTensorMapEquiv (hf : Function.Involutive f) (hg : Function.Involut
         invOf_smul_smul])
     (by
       apply LinearMap.prod_ext <;> apply TensorProduct.ext' <;> intro x y <;>
-        simp [eigenspaceTensorIncl, eigenProjOfInvolutive_apply_of_mem,
-          eigenProjOfInvolutive_apply_of_mem_neg, hμ])
+        simp [eigenspaceTensorIncl, hμ])
 
 /-- The forward map of `Module.End.eigenspaceTensorMapEquiv` applies the tensor products of the
 eigenspace projections `½ (1 + f)`, `½ (1 + μ g)` and `½ (1 - f)`, `½ (1 - μ g)`. -/

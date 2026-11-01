@@ -65,6 +65,7 @@ theorem coe_eigenProjOfInvolutive_apply (hg : Function.Involutive g) {μ : k} (h
   simp [eigenProjOfInvolutive, halfOneAdd_def]
 
 /-- The projection onto the `μ`-eigenspace fixes the `μ`-eigenspace. -/
+@[simp]
 theorem eigenProjOfInvolutive_apply_of_mem (hg : Function.Involutive g) {μ : k}
     (hμ : μ * μ = 1) (y : g.eigenspace μ) : eigenProjOfInvolutive hg hμ y = y := by
   apply Subtype.ext
@@ -73,6 +74,7 @@ theorem eigenProjOfInvolutive_apply_of_mem (hg : Function.Involutive g) {μ : k}
 
 /-- The projection onto the `μ`-eigenspace kills the `ν`-eigenspace when `μ ν = -1`, that is, when
 `ν = -μ`. -/
+@[simp]
 theorem eigenProjOfInvolutive_apply_of_mem_neg (hg : Function.Involutive g) {μ ν : k}
     (hμ : μ * μ = 1) (hν : μ * ν = -1) (y : g.eigenspace ν) :
     eigenProjOfInvolutive hg hμ y = 0 := by

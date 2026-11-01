@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
 public import TauCeti.RingTheory.Morita.ModuleEnd
@@ -60,8 +61,6 @@ every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting g
 
 ## Main results
 
-* `CliffordAlgebra.apply_smul_eq_involute_smul`: an operator anticommuting with every vector
-  intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.complexVolume_smul_twistingGrading`: `γ = Γ γ_W`.
 * `CliffordAlgebra.eigenspaceTwistingGradingEquiv_apply`: the components of an eigenvector of `γ`.
 * `CliffordAlgebra.isotypicEval_map_twistingGrading`: evaluation intertwines `Γ ⊗ γ_W` with `γ`.
@@ -82,26 +81,6 @@ noncomputable section
 open Module Module.End TauCeti TensorProduct
 
 namespace CliffordAlgebra
-
-section General
-
-variable {R M E : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M}
-  [AddCommGroup E] [Module R E] [Module (CliffordAlgebra Q) E]
-  [IsScalarTower R (CliffordAlgebra Q) E]
-
-/-- **An operator anticommuting with every vector intertwines the grade involution**: if
-`γ (c(v) ψ) = -c(v) γ ψ` for every vector `v`, then `γ (a ψ) = involute a • γ ψ` for every Clifford
-element `a`. -/
-theorem apply_smul_eq_involute_smul {γ : E →ₗ[R] E}
-    (hγ : ∀ v (ψ : E), γ (ι Q v • ψ) = -(ι Q v • γ ψ)) (a : CliffordAlgebra Q) (ψ : E) :
-    γ (a • ψ) = involute a • γ ψ := by
-  induction a using CliffordAlgebra.induction generalizing ψ with
-  | algebraMap r => rw [AlgHom.commutes, algebraMap_smul, map_smul, algebraMap_smul]
-  | ι v => rw [hγ, involute_ι, neg_smul]
-  | mul a b ha hb => rw [mul_smul, ha, hb, map_mul, mul_smul]
-  | add a b ha hb => rw [add_smul, map_add, ha, hb, map_add, add_smul]
-
-end General
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin n))
@@ -227,8 +206,8 @@ theorem eigenspaceTwistingGradingEquiv_apply (hγ₂ : Function.Involutive γ) {
             ((neg_mul_neg μ μ).trans hμ))
           ((isotypicTensorEquivOfBijective h).symm z)) := by
   simp only [eigenspaceTwistingGradingEquiv, LinearEquiv.trans_apply]
-  rw [eigenspaceTensorMapEquiv_apply]
-  rfl
+  rw [eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply,
+    LinearEquiv.ofSubmodule'_symm_apply, LinearEquiv.restrictScalars_symm_apply]
 
 /-- The inverse of `CliffordAlgebra.eigenspaceTwistingGradingEquiv` is evaluation, `s ⊗ T ↦ T s`,
 on both summands. -/
