@@ -27,6 +27,9 @@ fields on a product manifold.
   through a projection.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
+  `𝕜 × N`.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 -/
@@ -121,9 +124,18 @@ theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
   -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
   exact hd.trans (by ext v; rfl)
 
-end TauCeti
+/-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
+`p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
+theorem _root_.HasDerivAt.mvfderiv_comp_fst_apply {g : 𝕜 → F} {g' : F} {p : 𝕜 × N}
+    (hg : HasDerivAt g g' p.1) (v : TangentSpace (𝓘(𝕜).prod J) p) :
+    mvfderiv (𝓘(𝕜).prod J) (g ∘ Prod.fst) p v =
+      NormedSpace.fromTangentSpace (𝕜 := 𝕜) p.1 v.1 • g' := by
+  rw [TauCeti.mvfderiv_comp_fst_apply, mvfderiv_eq_fderiv, hg.hasFDerivAt.fderiv]
+  -- `ContinuousLinearMap.toSpanSingleton 𝕜 g'` sends `s` to `s • g'`, read through
+  -- `NormedSpace.fromTangentSpace`.
+  rfl
 
-open scoped Manifold
+end TauCeti
 
 section ParameterPreserving
 
