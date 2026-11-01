@@ -20,9 +20,10 @@ The complete integral of the first kind has a logarithmic singularity at `k = 1`
 
 `K(k) - log (4 / k') → 0` as `k → 1⁻`.
 
-The integral of the second kind stays bounded: `E(k) → E(1) = 1`. Consequently
-`(1 - k²) K(k) → 0`. These are the boundary values from which Legendre's relation
-`E K' + E' K - K K' = π / 2` is evaluated, in the limit `k → 0⁺` of its complementary modulus.
+Consequently `(1 - k²) K(k) → 0`, since `k'² log k' → 0`. Separately, the integral of the
+second kind stays bounded: `E(k) → E(1) = 1`. These are the boundary values from which
+Legendre's relation `E K' + E' K - K K' = π / 2` is evaluated, in the limit `k → 0⁺` of its
+complementary modulus.
 
 The singularity is extracted by comparing `K(k)` with the elementary integral
 `∫₀^{π/2} k sin θ (1 - k² sin² θ)^(-1/2) dθ = log ((1 + k) / k')`. Their difference has the
