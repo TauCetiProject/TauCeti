@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Basic
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 
 /-!
 # The stabilization map on simply blocked knot grid homology
