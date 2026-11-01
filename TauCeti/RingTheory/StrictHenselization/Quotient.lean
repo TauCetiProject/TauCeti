@@ -57,7 +57,7 @@ variable (R : Type u) [CommRing R] (I : Ideal R) (Ω : Type u) [CommRing Ω] [Al
 
 /-- The quotient map `R → R ⧸ I` and the identity of `Ω` form a commuting square of pointed
 rings. -/
-private theorem id_comp_algebraMap_eq_comp_mk :
+theorem id_comp_algebraMap_eq_comp_mk :
     (RingHom.id Ω).comp (algebraMap R Ω) = (algebraMap (R ⧸ I) Ω).comp (Ideal.Quotient.mk I) := by
   rw [RingHom.id_comp, IsScalarTower.algebraMap_eq R (R ⧸ I) Ω, Ideal.Quotient.algebraMap_eq]
 
@@ -84,6 +84,11 @@ private noncomputable def quotientHom :
   commutes' r := by
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
     exact map_algebraMap _ _ _ r
+
+private theorem quotientHom_mk (x : algebra R Ω) :
+    quotientHom R I Ω (Ideal.Quotient.mk _ x) =
+      map (Ideal.Quotient.mk I) (RingHom.id Ω) (id_comp_algebraMap_eq_comp_mk R I Ω) x :=
+  Ideal.Quotient.lift_mk _ _ _
 
 /-- The point of the quotient of the colimit over `R`. -/
 private noncomputable def quotientToTarget :
@@ -147,8 +152,9 @@ private noncomputable def quotientResidueFieldEquiv :
 
 private theorem quotientResidueFieldEquiv_residue
     (x : algebra R Ω ⧸ I.map (algebraMap R (algebra R Ω))) :
-    quotientResidueFieldEquiv R I Ω (residue _ x) = quotientToTarget R I Ω x :=
-  rfl
+    quotientResidueFieldEquiv R I Ω (residue _ x) = quotientToTarget R I Ω x := by
+  rw [quotientResidueFieldEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.ofBijective_apply,
+    ResidueField.lift_residue_apply]
 
 private theorem quotientToTarget_lift (b : algebra (R ⧸ I) Ω) :
     quotientToTarget R I Ω (lift (R ⧸ I) Ω (quotientResidueFieldEquiv R I Ω).symm.toAlgHom b) =
@@ -195,10 +201,8 @@ noncomputable def quotientAlgEquiv :
 @[simp]
 theorem quotientAlgEquiv_mk (x : algebra R Ω) :
     quotientAlgEquiv R I Ω (Ideal.Quotient.mk _ x) =
-      map (Ideal.Quotient.mk I) (RingHom.id Ω)
-        (by rw [RingHom.id_comp, IsScalarTower.algebraMap_eq R (R ⧸ I) Ω,
-          Ideal.Quotient.algebraMap_eq]) x :=
-  (rfl)
+      map (Ideal.Quotient.mk I) (RingHom.id Ω) (id_comp_algebraMap_eq_comp_mk R I Ω) x := by
+  rw [quotientAlgEquiv, AlgEquiv.ofAlgHom_apply, quotientHom_mk]
 
 end Field
 
