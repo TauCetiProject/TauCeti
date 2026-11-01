@@ -8,7 +8,9 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RingTheory.Invariant.Free
 import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import TauCeti.Algebra.Algebra.SMulDistribClass
 import TauCeti.Algebra.Group.Action.MulDistribMulAction
+public import TauCeti.LinearAlgebra.TensorProduct.SMulDistribClass
 import TauCeti.RepresentationTheory.NormInvariants
 import TauCeti.RingTheory.Invariant.Basic
 
@@ -59,13 +61,6 @@ invariant `z ∈ B ⊗[A] M` is
 * `TauCeti.MulSemiringAction.baseChangeInvariantsEquiv`: `B ⊗[A] Nᴳ ≃ₗ[B] N`.
 * `TauCeti.MulSemiringAction.invariantsBaseChangeEquiv`: `M ≃ₗ[A] (B ⊗[A] M)ᴳ`.
 
-## Main results
-
-* `TauCeti.MulSemiringAction.smulCommClass_of_smulDistribClass`: a `B`-semilinear action is
-  `A`-linear, so its invariants form an `A`-submodule.
-* `TauCeti.MulSemiringAction.smulDistribClass_tensorProduct`: the action of `G` on the left factor
-  of `B ⊗[A] M` is `B`-semilinear.
-
 ## References
 
 * S. U. Chase, D. K. Harrison and A. Rosenberg, *Galois theory and Galois cohomology of
@@ -77,35 +72,6 @@ public section
 open TensorProduct
 
 namespace TauCeti.MulSemiringAction
-
-section SemilinearAction
-
-variable (A B G : Type*) [CommSemiring A] [Semiring B] [Algebra A B] [Monoid G]
-  [MulSemiringAction G B] [SMulCommClass G A B]
-
-/-- A `B`-semilinear action of `G` on `N` is `A`-linear, since `G` fixes the image of `A`. Thus
-the invariants of `N` form an `A`-submodule. -/
-theorem smulCommClass_of_smulDistribClass (N : Type*) [AddCommMonoid N] [Module A N] [Module B N]
-    [IsScalarTower A B N] [DistribMulAction G N] [SMulDistribClass G B N] :
-    SMulCommClass G A N where
-  smul_comm g a n := by
-    rw [← algebraMap_smul B a n, smul_distrib_smul, smul_algebraMap, algebraMap_smul]
-
-end SemilinearAction
-
-section TensorProduct
-
-variable (A B G : Type*) [CommSemiring A] [CommSemiring B] [Algebra A B] [Monoid G]
-  [MulSemiringAction G B] [SMulCommClass A G B] (M : Type*) [AddCommMonoid M] [Module A M]
-
-/-- The action of `G` on the left factor of `B ⊗[A] M` is `B`-semilinear. -/
-instance smulDistribClass_tensorProduct : SMulDistribClass G B (B ⊗[A] M) where
-  smul_distrib_smul g b z := by
-    induction z using TensorProduct.inductionOn with
-    | tmul x m => simp [smul_tmul', smul_mul']
-    | add x y hx hy => simp only [smul_add, hx, hy]
-
-end TensorProduct
 
 variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G]
   [MulSemiringAction G B] [SMulCommClass G A B]

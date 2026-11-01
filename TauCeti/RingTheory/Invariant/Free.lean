@@ -62,8 +62,6 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
 
 * `TauCeti.MulSemiringAction.tensorToPi R A G`: the `A`-algebra map
   `A ⊗[R] A →ₐ[A] (G → A)`, `a ⊗ b ↦ (a * g • b)_g`.
-* `TauCeti.MulSemiringAction.traceCoord G y`: for invariant ring `R ⊆ A`, the `R`-linear map
-  `b ↦ ∑ g, g • (y * b)` from `A` to `R`.
 
 ## Main results
 
@@ -282,27 +280,6 @@ private theorem sum_sum_smul_mul [Fintype G] [DecidableEq G] {S : Finset (A × A
 section Invariant
 
 variable [Algebra.IsInvariant R A G]
-
-variable (G) in
-/-- For a finite group acting with invariant ring `R ⊆ A`, the `R`-linear map
-`b ↦ ∑ g, g • (y * b)` from `A` to `R`. For `y` the second components of a dual basis family, these
-are its coordinates. -/
-noncomputable def traceCoord [Fintype G] [FaithfulSMul R A] (y : A) : A →ₗ[R] R :=
-  (LinearEquiv.ofInjective (Algebra.linearMap R A)
-      (FaithfulSMul.algebraMap_injective R A)).symm.toLinearMap ∘ₗ
-    (∑ g : G, (MulSemiringAction.toAlgHom R A g).toLinearMap ∘ₗ LinearMap.mulLeft R y).codRestrict
-      _ fun b ↦ by
-        obtain ⟨r, hr⟩ :=
-          Algebra.IsInvariant.isInvariant (A := R) _ (smul_sum_smul (G := G) · (y * b))
-        exact ⟨r, by simpa using hr⟩
-
-@[simp]
-theorem algebraMap_traceCoord [Fintype G] [FaithfulSMul R A] (y b : A) :
-    algebraMap R A (traceCoord G y b) = ∑ g : G, g • (y * b) := by
-  rw [traceCoord, LinearMap.comp_apply, LinearEquiv.coe_coe, ← Algebra.linearMap_apply,
-    ← LinearEquiv.ofInjective_apply (h := FaithfulSMul.algebraMap_injective R A),
-    LinearEquiv.apply_symm_apply]
-  simp [smul_mul']
 
 /-- The inverse of `tensorToPi`, written in terms of the dual basis. -/
 private theorem sum_tmul_eq [Fintype G] [DecidableEq G] {S : Finset (A × A)}

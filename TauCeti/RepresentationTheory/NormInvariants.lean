@@ -20,8 +20,8 @@ the invariants `ρ.invariants`; this file names that factorization.
 
 ## Main results
 
-* `Representation.coe_normInvariants_apply`: the norm into the invariants is
-  `Representation.norm` followed by the inclusion.
+* `Representation.coe_normInvariants_apply`: the norm into the invariants followed by the
+  inclusion is `Representation.norm`.
 -/
 
 public section
