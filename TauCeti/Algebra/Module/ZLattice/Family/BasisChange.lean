@@ -24,15 +24,16 @@ the parameter `y` and of the periods. The reason is that the period coordinates 
 bases differ by the real coordinate change `Module.Basis.realCoordChange b c`, which does not
 involve `P` (`TauCeti.realCoordChange_periodBasis_equivFun`).
 
-The transition map is real-linear on fibres. Nothing here says that a complex family is
-holomorphically trivial.
+On the torus factor, the transition map is induced by the real-linear map
+`Module.Basis.realCoordChange b c` of the covering vector spaces. Nothing here says that a
+complex family is holomorphically trivial.
 
 ## Main results
 
 * `TauCeti.realCoordChange_periodBasis_equivFun`: the period coordinates in the bases `b` and `c`
   differ by the integral change of coordinates.
-* `TauCeti.torusFamilyDiffeomorphProd_basisChange`: the trivialization for `c` is the trivialization
-  for `b` followed by `Module.Basis.torusCoordChange b c` on the torus factor.
+* `TauCeti.torusFamilyDiffeomorphProd_eq_prodMap_torusCoordChange`: the trivialization for `c`
+  is the trivialization for `b` followed by `Module.Basis.torusCoordChange b c` on the torus factor.
 * `TauCeti.coe_torusFamilyDiffeomorphProd_symm_trans`: the transition diffeomorphism between the
   two trivializations is `Prod.map id (Module.Basis.torusCoordChange b c)`.
 
@@ -41,6 +42,11 @@ holomorphically trivial.
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 8 (families of
   complex tori given by period matrices).
+* Tau Ceti PR [#21079](https://github.com/TauCetiProject/TauCeti/pull/21079) (closed, unmerged)
+  proved basis independence for the topological trivialization of a family of tori;
+  `TauCeti.torusFamilyDiffeomorphProd_eq_prodMap_torusCoordChange` and
+  `TauCeti.coe_torusFamilyDiffeomorphProd_symm_trans` move that result to the smooth
+  trivialization.
 -/
 
 public section
@@ -93,7 +99,7 @@ variable {EY : Type*} [NormedAddCommGroup EY] [NormedSpace ℝ EY] {H : Type*} [
 /-- **Basis independence of the smooth trivialization.** The smooth trivialization of a family of
 tori for the `ℤ`-basis `c` is the trivialization for the `ℤ`-basis `b` followed, on the standard
 torus factor, by the fixed change of coordinates `Module.Basis.torusCoordChange b c`. -/
-theorem torusFamilyDiffeomorphProd_basisChange
+theorem torusFamilyDiffeomorphProd_eq_prodMap_torusCoordChange
     (z : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     torusFamilyDiffeomorphProd P c hinj hP z =
@@ -117,7 +123,8 @@ theorem coe_torusFamilyDiffeomorphProd_symm_trans :
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
   ext q : 1
-  rw [Diffeomorph.coe_trans, comp_apply, torusFamilyDiffeomorphProd_basisChange P b c hinj hP,
+  rw [Diffeomorph.coe_trans, comp_apply,
+    torusFamilyDiffeomorphProd_eq_prodMap_torusCoordChange P b c hinj hP,
     Diffeomorph.apply_symm_apply]
 
 end TauCeti

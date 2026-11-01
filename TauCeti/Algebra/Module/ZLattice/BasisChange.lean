@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 
 /-!
@@ -22,7 +22,8 @@ diffeomorphism of the standard tori `ℝ^ι/ℤ^ι ≃ ℝ^κ/ℤ^κ` (`Module.B
 orbit spaces of translation by the standard lattices with their quotient manifold structures.
 
 These are the fixed coordinate changes by which trivializations of a family of tori built from
-two integral bases of its period lattice differ. They are real-linear, not complex-linear.
+two integral bases of its period lattice differ. The torus maps are induced by real-linear maps of
+the covering vector spaces, not complex-linear ones.
 
 ## Main definitions
 
@@ -34,9 +35,10 @@ two integral bases of its period lattice differ. They are real-linear, not compl
 * `Module.Basis.realCoordChange_intCast`: on integral coordinates of `l : Λ` in `b` the coordinate
   change gives the integral coordinates of `l` in `c`.
 * `Module.Basis.realCoordChange_symm`, `Module.Basis.realCoordChange_refl`,
-  `Module.Basis.realCoordChange_trans`: inverse, identity and composition laws, with the
-  corresponding laws `Module.Basis.torusCoordChange_symm`, `Module.Basis.torusCoordChange_refl`
-  and `Module.Basis.torusCoordChange_trans` on standard tori.
+  `Module.Basis.realCoordChange_trans`, `Module.Basis.realCoordChange_realCoordChange`: inverse,
+  identity and composition laws, with the corresponding laws `Module.Basis.torusCoordChange_symm`,
+  `Module.Basis.torusCoordChange_refl`, `Module.Basis.torusCoordChange_trans` and
+  `Module.Basis.torusCoordChange_torusCoordChange` on standard tori.
 * `Module.Basis.map_realCoordChange_span_basisFun`: the coordinate change carries `ℤ^ι` onto `ℤ^κ`.
 * `Module.Basis.torusCoordChange_mk`, `Module.Basis.coe_torusCoordChange`: the diffeomorphism of
   standard tori on representatives, and as an additive equivalence.
@@ -46,6 +48,10 @@ two integral bases of its period lattice differ. They are real-linear, not compl
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 8 (families of
   complex tori given by period matrices, and the effect of a change of lattice basis).
+* Tau Ceti PR [#21079](https://github.com/TauCetiProject/TauCeti/pull/21079) (closed, unmerged)
+  proved basis independence for the topological trivialization of a family of tori; the design of
+  `Module.Basis.realCoordChange` (an integral change-of-basis matrix extended to `ℝ`) and of its
+  `intCast`, `symm`, `refl` and `trans` laws is adapted from it.
 -/
 
 public section
@@ -102,28 +108,20 @@ theorem realCoordChange_trans (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (d : B
   rw [LinearEquiv.trans_apply, realCoordChange_apply, realCoordChange_apply,
     realCoordChange_apply, Matrix.mulVec_mulVec, ← Matrix.map_mul, toMatrix_mul_toMatrix]
 
+/-- Successive real coordinate changes compose, applied to a point. Together with
+`Module.Basis.realCoordChange_refl`, this collapses round trips `b → c → b`. -/
+@[simp]
+theorem realCoordChange_realCoordChange (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (d : Basis η ℤ Λ)
+    (x : ι → ℝ) : realCoordChange c d (realCoordChange b c x) = realCoordChange b d x := by
+  rw [← LinearEquiv.trans_apply, realCoordChange_trans]
+
 /-- Reversing the two bases inverts the real coordinate change. -/
 @[simp]
 theorem realCoordChange_symm (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
     (realCoordChange b c).symm = realCoordChange c b := by
   ext x : 1
-  rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, realCoordChange_trans,
-    realCoordChange_refl, LinearEquiv.refl_apply]
-
-omit [Fintype ι] in
-/-- A point of `ℝ^ι` lies in the standard lattice `ℤ^ι` exactly when it is the vector of
-coordinates in `b` of some `l : Λ`, read in `ℝ`. -/
-private theorem mem_span_basisFun_iff [Finite ι] (b : Basis ι ℤ Λ) {x : ι → ℝ} :
-    x ∈ span ℤ (range (Pi.basisFun ℝ ι)) ↔ ∃ l : Λ, (fun i ↦ (b.repr l i : ℝ)) = x := by
-  have := Fintype.ofFinite ι
-  rw [(Pi.basisFun ℝ ι).mem_span_iff_repr_mem ℤ]
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · choose z hz using h
-    have hrepr : ⇑(b.repr (b.equivFun.symm z)) = z := by
-      rw [← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-    exact ⟨b.equivFun.symm z, funext fun i ↦ by rw [congrFun hrepr i]; exact hz i⟩
-  · rintro ⟨l, rfl⟩ i
-    simp
+  rw [LinearEquiv.symm_apply_eq, realCoordChange_realCoordChange, realCoordChange_refl,
+    LinearEquiv.refl_apply]
 
 /-- The real coordinate change carries the standard lattice `ℤ^ι` into `ℤ^κ`. -/
 private theorem realCoordChange_mem_span_basisFun (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ)
@@ -139,8 +137,7 @@ theorem map_realCoordChange_span_basisFun (b : Basis ι ℤ Λ) (c : Basis κ �
       span ℤ (range (Pi.basisFun ℝ κ)) := by
   refine le_antisymm (map_le_iff_le_comap.2 fun x hx ↦ realCoordChange_mem_span_basisFun b c hx)
     fun x hx ↦ ⟨realCoordChange c b x, realCoordChange_mem_span_basisFun c b hx, ?_⟩
-  rw [LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply, ← realCoordChange_symm,
-    LinearEquiv.symm_apply_apply]
+  simp
 
 variable {n : ℕ∞ω}
 
@@ -180,17 +177,6 @@ theorem torusCoordChange_mk (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (x : ι 
     torusCoordChange b c (n := n) (Quotient.mk _ x) = Quotient.mk _ (realCoordChange b c x) := by
   rw [coe_torusCoordChange, Submodule.orbitRelQuotientCongr_mk, LinearEquiv.restrictScalars_apply]
 
-/-- The inverse of the diffeomorphism of standard tori is the change of coordinates from `c` to
-`b`. -/
-@[simp]
-theorem torusCoordChange_symm (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
-    (torusCoordChange b c (n := n)).symm = torusCoordChange c b := by
-  ext z
-  induction z using Quotient.inductionOn with | h x => ?_
-  rw [← Diffeomorph.toEquiv_coe_symm, Equiv.symm_apply_eq, Diffeomorph.coe_toEquiv,
-    torusCoordChange_mk, torusCoordChange_mk, ← realCoordChange_symm c b,
-    LinearEquiv.symm_apply_apply]
-
 /-- The change of coordinates from a basis to itself is the identity of the standard torus. -/
 @[simp]
 theorem torusCoordChange_refl (b : Basis ι ℤ Λ) :
@@ -199,13 +185,30 @@ theorem torusCoordChange_refl (b : Basis ι ℤ Λ) :
   induction z using Quotient.inductionOn with | h x => ?_
   simp
 
+/-- Successive changes of coordinates of standard tori compose, applied to a point. Together with
+`Module.Basis.torusCoordChange_refl`, this collapses round trips `b → c → b`. -/
+@[simp]
+theorem torusCoordChange_torusCoordChange (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (d : Basis η ℤ Λ)
+    (z : AddAction.orbitRel.Quotient (span ℤ (range (Pi.basisFun ℝ ι))) (ι → ℝ)) :
+    torusCoordChange c d (n := n) (torusCoordChange b c (n := n) z) =
+      torusCoordChange b d (n := n) z := by
+  induction z using Quotient.inductionOn with | h x => ?_
+  simp
+
 /-- Successive changes of coordinates of standard tori compose. -/
 @[simp]
 theorem torusCoordChange_trans (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (d : Basis η ℤ Λ) :
     (torusCoordChange b c (n := n)).trans (torusCoordChange c d) = torusCoordChange b d := by
   ext z
-  induction z using Quotient.inductionOn with | h x => ?_
-  rw [Diffeomorph.coe_trans, Function.comp_apply, torusCoordChange_mk, torusCoordChange_mk,
-    torusCoordChange_mk, ← LinearEquiv.trans_apply, realCoordChange_trans]
+  rw [Diffeomorph.coe_trans, Function.comp_apply, torusCoordChange_torusCoordChange]
+
+/-- The inverse of the diffeomorphism of standard tori is the change of coordinates from `c` to
+`b`. -/
+@[simp]
+theorem torusCoordChange_symm (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
+    (torusCoordChange b c (n := n)).symm = torusCoordChange c b := by
+  ext z
+  rw [← Diffeomorph.toEquiv_coe_symm, Equiv.symm_apply_eq, Diffeomorph.coe_toEquiv,
+    torusCoordChange_torusCoordChange, torusCoordChange_refl, Diffeomorph.coe_refl, id_eq]
 
 end Module.Basis
