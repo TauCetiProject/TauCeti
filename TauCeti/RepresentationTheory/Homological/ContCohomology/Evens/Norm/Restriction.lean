@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.AllDegrees
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Norm.Naturality
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Restriction of the Evens norm along a single double coset, and conjugation
@@ -74,7 +75,6 @@ norm `N_U^G x` along `φ` gives the norm from `ψ⁻¹(U)` of the pullback of `x
 theorem trivialF2Map_evensNorm_of_surjective (φ ψ : H →ₜ* G) (s : G)
     (hψ : ∀ h, ψ h = s⁻¹ * φ h * s)
     (hsurj : Function.Surjective fun h : H ↦ (ψ h : G ⧸ U.toSubgroup))
-    [(U.comap (ψ : H →* G) ψ.continuous).toSubgroup.FiniteIndex]
     [CompactSpace (U.comap (ψ : H →* G) ψ.continuous).toSubgroup]
     [Fintype (H ⧸ (U.comap (ψ : H →* G) ψ.continuous).toSubgroup)] {n : ℕ}
     (x : continuousCohomology n (trivialF2 U.toSubgroup)) :
@@ -90,6 +90,8 @@ theorem trivialF2Map_evensNorm_of_surjective (φ ψ : H →ₜ* G) (s : G)
         (U.isOpen'.mem_nhds U.one_mem)
   -- Pulling back along `φ` and along its conjugate `ψ` agree on the cohomology of `G`.
   rw [← trivialF2Map_eq_of_conj φ ψ s⁻¹ (fun h ↦ by rw [hψ, inv_inv])]
+  -- `ψ.subgroupComap U.toSubgroup` has domain `U.toSubgroup.comap ψ`, which is the underlying
+  -- subgroup of `U.comap ψ _` by `OpenSubgroup.toSubgroup_comap`, an equality that holds by `rfl`.
   exact trivialF2Map_evensNorm (V := U.comap (ψ : H →* G) ψ.continuous) ψ
     (ψ.subgroupComap U.toSubgroup) (ψ.subgroupComap_apply_coe U.toSubgroup)
     (e := QuotientGroup.congrComapOfSurjectiveMk (ψ : H →* G) U.toSubgroup hsurj)
@@ -112,10 +114,10 @@ theorem evensNorm_trivialF2Map_conjHom (V : OpenSubgroup G) [V.toSubgroup.Finite
   -- `conjHom` on it and meets every coset of `U`.
   let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
   have hc (y : G) : c y = g⁻¹ * y * g := by simp [c]
-  obtain rfl : V = U.comap (c : G →* G) c.continuous := by
+  obtain rfl : V = U.comap (c : G →* G) c.continuous := OpenSubgroup.toSubgroup_injective <| by
     ext y
-    rw [← OpenSubgroup.mem_toSubgroup, hVU, Subgroup.mem_map_equiv, MulAut.conj_symm_apply,
-      OpenSubgroup.mem_comap, MonoidHom.coe_ofClass, hc, OpenSubgroup.mem_toSubgroup]
+    rw [hVU, Subgroup.mem_map_equiv]
+    simp [hc]
   have hconj : ContinuousCohomology.conjHom U.toSubgroup _ g hVU = c.subgroupComap U.toSubgroup :=
     ContinuousMonoidHom.ext fun v ↦ Subtype.ext <|
       (ContinuousCohomology.coe_conjHom_apply _ _ g hVU v).trans
@@ -126,11 +128,14 @@ theorem evensNorm_trivialF2Map_conjHom (V : OpenSubgroup G) [V.toSubgroup.Finite
       exact ⟨g * a * g⁻¹, congrArg QuotientGroup.mk ((hc _).trans (by group))⟩) x
   rw [trivialF2Map_id, CategoryTheory.ConcreteCategory.id_apply] at key
   -- Transport `key` back to the degree `[G : V] n`.
-  rw [hconj, key, ← CategoryTheory.ConcreteCategory.comp_apply,
-    ContinuousCohomology.degreeCast_hom_comp_degreeCast_hom, ContinuousCohomology.degreeCast_rfl,
-    CategoryTheory.Iso.refl_hom, CategoryTheory.ConcreteCategory.id_apply]
-  -- The two sides now agree up to implicit arguments that are equal only after unfolding, beyond
-  -- the reducible transparency at which `rw` closes goals.
+  rw [hconj, key, ContinuousCohomology.degreeCast_hom_degreeCast_hom_apply,
+    ContinuousCohomology.degreeCast_rfl, CategoryTheory.Iso.refl_hom,
+    CategoryTheory.ConcreteCategory.id_apply]
+  -- The two sides differ only in the implicit domain of `trivialF2Map`: the left side has
+  -- `(U.comap c _).toSubgroup`, the codomain of `conjHom` that `hconj` rewrites at, and the right
+  -- side has `U.toSubgroup.comap c`, the domain of `ContinuousMonoidHom.subgroupComap`. They agree
+  -- by `OpenSubgroup.toSubgroup_comap`, which unfolds `OpenSubgroup.comap` and so holds by `rfl`
+  -- at default transparency, but not at the reducible transparency at which `rw` closes goals.
   rfl
 
 end OpenSubgroup

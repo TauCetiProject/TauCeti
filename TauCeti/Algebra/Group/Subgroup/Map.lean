@@ -430,45 +430,6 @@ theorem QuotientGroup.congrOfMapEq_mk (e : G ≃* H) {A : Subgroup G} {B : Subgr
     (h : A.map (e : G →* H) = B) (a : G) :
     QuotientGroup.congrOfMapEq e h (QuotientGroup.mk a) = QuotientGroup.mk (e a) := by rfl
 
-/-- **Coset spaces transport along a surjection whose kernel lies in the subgroup.** For `ψ`
-surjective with `ker ψ ≤ A` and `A.map ψ = B`, the map `G ⧸ A → H ⧸ B` induced by `ψ` on
-representatives is a bijection.
-
-Injectivity of `ψ` is not needed: `ker ψ ≤ A` makes the denominator absorb the kernel, so the
-index is unchanged. That is what lets a Hecke decomposition be carried into a group acting
-faithfully on the upper half-plane, where the collapsing of `±1` is the point rather than a
-defect. As with `QuotientGroup.congrOfMapEq`, neither subgroup need be normal. -/
-noncomputable def QuotientGroup.congrOfSurjectiveOfKerLe (ψ : G →* H)
-    (hsurj : Function.Surjective ψ) {A : Subgroup G} {B : Subgroup H}
-    (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) : G ⧸ A ≃ H ⧸ B := by
-  classical
-  -- `ker ψ ≤ A` is exactly what makes `A` the full preimage of `B`, and membership in a preimage
-  -- is the whole content of the coset relation matching on both sides
-  have hcomap : B.comap ψ = A := hmap ▸ Subgroup.comap_map_eq_self hker
-  have key : ∀ a b : G, (a⁻¹ * b ∈ A) ↔ ((ψ a)⁻¹ * ψ b ∈ B) := fun a b ↦ by
-    rw [← hcomap, Subgroup.mem_comap, map_mul, map_inv]
-  refine Equiv.ofBijective (Quotient.map' ψ ?_) ⟨?_, ?_⟩
-  · intro a b hab
-    exact QuotientGroup.leftRel_apply.mpr
-      ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))
-  · intro x y hxy
-    induction x using QuotientGroup.induction_on with | _ a =>
-    induction y using QuotientGroup.induction_on with | _ b =>
-    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
-  · exact Quotient.map_surjective _ hsurj
-
-@[simp]
-theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
-    (hsurj : Function.Surjective ψ) {A : Subgroup G} {B : Subgroup H}
-    (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) (a : G) :
-    QuotientGroup.congrOfSurjectiveOfKerLe ψ hsurj hker hmap (QuotientGroup.mk a) =
-      QuotientGroup.mk (ψ a) := by
-  -- This lemma IS the abstraction barrier: `congrOfSurjectiveOfKerLe` is an `Equiv.ofBijective`
-  -- around `Quotient.map' ψ`, so on a class `⟦a⟧` it evaluates to `⟦ψ a⟧`.
-  -- Downstream code rewrites with this lemma and never sees either wrapper, which is what
-  -- keeps the implementation free to move.
-  rfl
-
 /-- **Coset spaces transport to a preimage.** If `ψ : G →* H` meets every left coset of `B`, that
 is, `G` acts transitively on `H ⧸ B` through `ψ`, then the map `G ⧸ ψ⁻¹(B) → H ⧸ B` induced by
 `ψ` on representatives is a bijection.
@@ -498,5 +459,36 @@ theorem QuotientGroup.congrComapOfSurjectiveMk_mk (ψ : G →* H) (B : Subgroup 
     QuotientGroup.congrComapOfSurjectiveMk ψ B hψ (QuotientGroup.mk a) =
       QuotientGroup.mk (ψ a) :=
   (rfl)
+
+/-- **Coset spaces transport along a surjection whose kernel lies in the subgroup.** For `ψ`
+surjective with `ker ψ ≤ A` and `A.map ψ = B`, the map `G ⧸ A → H ⧸ B` induced by `ψ` on
+representatives is a bijection.
+
+Injectivity of `ψ` is not needed: `ker ψ ≤ A` makes the denominator absorb the kernel, so the
+index is unchanged. That is what lets a Hecke decomposition be carried into a group acting
+faithfully on the upper half-plane, where the collapsing of `±1` is the point rather than a
+defect. As with `QuotientGroup.congrOfMapEq`, neither subgroup need be normal.
+
+This is the special case of `QuotientGroup.congrComapOfSurjectiveMk` where `ψ` is surjective:
+`ker ψ ≤ A` is exactly what makes `A` the full preimage of `B`. -/
+noncomputable def QuotientGroup.congrOfSurjectiveOfKerLe (ψ : G →* H)
+    (hsurj : Function.Surjective ψ) {A : Subgroup G} {B : Subgroup H}
+    (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) : G ⧸ A ≃ H ⧸ B :=
+  (Subgroup.quotientEquivOfEq (hmap ▸ Subgroup.comap_map_eq_self hker).symm).trans
+    (QuotientGroup.congrComapOfSurjectiveMk ψ B (QuotientGroup.mk_surjective.comp hsurj))
+
+@[simp]
+theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
+    (hsurj : Function.Surjective ψ) {A : Subgroup G} {B : Subgroup H}
+    (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) (a : G) :
+    QuotientGroup.congrOfSurjectiveOfKerLe ψ hsurj hker hmap (QuotientGroup.mk a) =
+      QuotientGroup.mk (ψ a) := by
+  -- This lemma IS the abstraction barrier: `congrOfSurjectiveOfKerLe` is a
+  -- `Subgroup.quotientEquivOfEq` followed by `congrComapOfSurjectiveMk`, so on a class `⟦a⟧` it
+  -- evaluates to `⟦ψ a⟧`.
+  -- Downstream code rewrites with this lemma and never sees either wrapper, which is what
+  -- keeps the implementation free to move.
+  rw [QuotientGroup.congrOfSurjectiveOfKerLe, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    QuotientGroup.congrComapOfSurjectiveMk_mk]
 
 end TauCeti
