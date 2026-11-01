@@ -39,6 +39,12 @@ unpaired, and it is the only counted composite with these two rectangles.
 
 ## Main results
 
+* `toRectangleDecomposition_ne_recut_of_right_eq_left` and
+  `toRectangleDecomposition_ne_recut_of_left_eq_right`, in the namespace
+  `TauCeti.GridHexagonCompositeDecomposition`: the recut of two empty rectangles sharing the
+  replaced grid line with opposite orientations, with the two turn rows placed as for a mixed-side
+  pentagon pair, underlies no hexagon composite. They hold for arbitrary turn rows, so they also
+  serve the mixed-side pairs of a crossing change.
 * `TauCeti.GridDiagram.existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair` and
   `TauCeti.GridDiagram.existsUnique_unpairedHexagonComposite_of_initialTerminalPentagonPair`: a
   counted off-diagonal mixed-side pentagon pair has the same underlying rectangle decomposition
@@ -52,6 +58,99 @@ combinatorial link Floer homology*, Section 3.1, Proposition 3.2 (arXiv:math/061
 -/
 
 public section
+
+namespace TauCeti.GridHexagonCompositeDecomposition
+
+variable {n : ℕ} {a s s' : Fin n} {x z : GridState n}
+
+/-- One of the two rectangles under a hexagon composite has the replaced grid line as a side and
+both turn rows among its rows. -/
+private theorem side_turns (F : GridHexagonCompositeDecomposition a s s' x z) :
+    ((F.toRectangleDecomposition.first.left = finRotate n a ∨
+          F.toRectangleDecomposition.first.right = finRotate n a) ∧
+        s ∈ Grid.cIco F.toRectangleDecomposition.first.bottom
+          F.toRectangleDecomposition.first.top ∧
+        s' ∈ Grid.cIco F.toRectangleDecomposition.first.bottom
+          F.toRectangleDecomposition.first.top) ∨
+      ((F.toRectangleDecomposition.second.left = finRotate n a ∨
+          F.toRectangleDecomposition.second.right = finRotate n a) ∧
+        s ∈ Grid.cIco F.toRectangleDecomposition.second.bottom
+          F.toRectangleDecomposition.second.top ∧
+        s' ∈ Grid.cIco F.toRectangleDecomposition.second.bottom
+          F.toRectangleDecomposition.second.top) := by
+  have key {u v : GridState n} (H : GridCommutationHexagonBetween a s s' u v) :=
+    And.intro H.left_eq_or_right_eq <| And.intro
+      (H.pair_subset_cIco_bottom_top (Finset.mem_insert_self _ _))
+      (H.pair_subset_cIco_bottom_top (Finset.mem_insert_of_mem (Finset.mem_singleton_self _)))
+  cases F with
+  | inl F =>
+    rw [toRectangleDecomposition_inl]
+    exact Or.inl (key F.hexagon)
+  | inr F =>
+    rw [toRectangleDecomposition_inr]
+    exact Or.inr (key F.hexagon)
+
+/-- Let the empty rectangles of an off-diagonal decomposition `D` share the grid line
+`finRotate n a`, terminal for the first and initial for the second, as the rectangles of a
+terminal-side pentagon followed by an initial-side one do. If the first rectangle contains the row
+`s` and the rows from its bottom up to the top of the second contain `s'`, then the recut of `D`
+underlies no hexagon composite with turn rows `s` and `s'`: one recut rectangle has no side on the
+grid line, and the other misses one of the two rows. -/
+theorem toRectangleDecomposition_ne_recut_of_right_eq_left {D : GridRectangleDecomposition x z}
+    (hright : D.first.right = finRotate n a) (hleft : D.second.left = finRotate n a)
+    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
+    (hs : s ∈ Grid.cIco D.first.bottom D.first.top)
+    (hs' : s' ∈ Grid.cIco D.first.bottom D.second.top)
+    (F : GridHexagonCompositeDecomposition a s s' x z) :
+    F.toRectangleDecomposition ≠ D.recut hone hfirst hsecond := by
+  intro hF
+  have hdata := D.isRecutOfRightEqLeft_recut (hright.trans hleft.symm) hone hfirst hsecond
+  rw [← hF] at hdata
+  have hl : D.first.left ≠ finRotate n a := fun h => D.first.left_ne_right (h.trans hright.symm)
+  have hr : D.second.right ≠ finRotate n a := fun h => D.second.left_ne_right (hleft.trans h.symm)
+  rcases hdata.recut_geometry hone with
+      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
+    rcases F.side_turns with ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
+  · rw [h1b, h1t] at hturn
+    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs hturn
+  · rw [h2l, h2r] at hside
+    exact hside.elim hl hr
+  · rw [h1l, h1r] at hside
+    exact hside.elim hl hr
+  · rw [h2b, h2t] at hturn'
+    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs' hturn'
+
+/-- Let the empty rectangles of an off-diagonal decomposition `D` share the grid line
+`finRotate n a`, initial for the first and terminal for the second, as the rectangles of an
+initial-side pentagon followed by a terminal-side one do. If the first rectangle contains the row
+`s` and the rows from the bottom of the second up to the top of the first contain `s'`, then the
+recut of `D` underlies no hexagon composite with turn rows `s` and `s'`: one recut rectangle has
+no side on the grid line, and the other misses one of the two rows. -/
+theorem toRectangleDecomposition_ne_recut_of_left_eq_right {D : GridRectangleDecomposition x z}
+    (hleft : D.first.left = finRotate n a) (hright : D.second.right = finRotate n a)
+    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
+    (hs : s ∈ Grid.cIco D.first.bottom D.first.top)
+    (hs' : s' ∈ Grid.cIco D.second.bottom D.first.top)
+    (F : GridHexagonCompositeDecomposition a s s' x z) :
+    F.toRectangleDecomposition ≠ D.recut hone hfirst hsecond := by
+  intro hF
+  have hdata := D.isRecutOfLeftEqRight_recut (hleft.trans hright.symm) hone hfirst hsecond
+  rw [← hF] at hdata
+  have hl : D.second.left ≠ finRotate n a := fun h => D.second.left_ne_right (h.trans hright.symm)
+  have hr : D.first.right ≠ finRotate n a := fun h => D.first.left_ne_right (hleft.trans h.symm)
+  rcases hdata.recut_geometry hone with
+      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
+    rcases F.side_turns with ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
+  · rw [h1b, h1t] at hturn
+    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn hs
+  · rw [h2l, h2r] at hside
+    exact hside.elim hl hr
+  · rw [h1l, h1r] at hside
+    exact hside.elim hl hr
+  · rw [h2b, h2t] at hturn'
+    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn' hs'
+
+end TauCeti.GridHexagonCompositeDecomposition
 
 namespace TauCeti.GridDiagram
 
@@ -238,34 +337,6 @@ private theorem map_swapColumns_reverse_squares {S T : Finset (Fin n × Fin n)} 
   simp only [C.reverse_column, C.reverse_turnRow] at hSa hSb
   simp only [Finset.mk_mem_map_swap_prodCongr_refl_iff, Equiv.swap_apply_left,
     Equiv.swap_apply_right, hSa, hSb, and_self]
-
-/-- One of the two rectangles under a hexagon composite has the replaced grid line as a side and
-both intersection rows among its rows. -/
-private theorem toRectangleDecomposition_side_turns {x z : GridState n}
-    (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
-    ((F.toRectangleDecomposition.first.left = b ∨ F.toRectangleDecomposition.first.right = b) ∧
-        C.turnRow ∈ Grid.cIco F.toRectangleDecomposition.first.bottom
-          F.toRectangleDecomposition.first.top ∧
-        C.oppositeTurnRow ∈ Grid.cIco F.toRectangleDecomposition.first.bottom
-          F.toRectangleDecomposition.first.top) ∨
-      ((F.toRectangleDecomposition.second.left = b ∨
-          F.toRectangleDecomposition.second.right = b) ∧
-        C.turnRow ∈ Grid.cIco F.toRectangleDecomposition.second.bottom
-          F.toRectangleDecomposition.second.top ∧
-        C.oppositeTurnRow ∈ Grid.cIco F.toRectangleDecomposition.second.bottom
-          F.toRectangleDecomposition.second.top) := by
-  have key {u v : GridState n}
-      (H : GridCommutationHexagonBetween a C.turnRow C.oppositeTurnRow u v) :=
-    And.intro H.left_eq_or_right_eq <| And.intro
-      (H.pair_subset_cIco_bottom_top (Finset.mem_insert_self _ _))
-      (H.pair_subset_cIco_bottom_top (Finset.mem_insert_of_mem (Finset.mem_singleton_self _)))
-  cases F with
-  | inl F =>
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
-    exact Or.inl (key F.hexagon)
-  | inr F =>
-    rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
-    exact Or.inr (key F.hexagon)
 
 variable (R : Type*) [CommSemiring R]
 
@@ -586,30 +657,6 @@ private theorem terminalInitial_hexagonRectangle
     H Q.toGridRectangleBetween (hH ▸ hp) hq hHX hQX
   exact ⟨_, hF, by rw [hFD, hH], by rw [hFw, G.pentagonPairWeight_terminalInitial C R, hweight]⟩
 
-/-- The recut of an off-diagonal terminal--initial pair underlies no hexagon composite: one of its
-rectangles has no side on the replaced grid line, and the other misses one of the turn rows. -/
-private theorem terminalInitial_ne_recut (hzx : z ≠ x) (hp : P.IsEmpty) (hq : Q.IsEmpty)
-    (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
-    F.toRectangleDecomposition ≠ G.recutTerminalInitialPentagonPair C P Q hzx hp hq := by
-  intro hF
-  have hdata := G.isRecutOfRightEqLeft_recutTerminalInitialPentagonPair C P Q hzx hp hq
-  rw [← hF] at hdata
-  have hs := P.turn_mem_cIco_bottom_top
-  have hs' := G.terminalInitial_oppositeTurnRow_mem_cIco C P Q
-  have hQright : Q.right ≠ b := by simpa only [C.reverse_column] using Q.right_ne
-  rcases hdata.recut_geometry (G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx) with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
-    rcases G.toRectangleDecomposition_side_turns C F with
-      ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
-  · rw [h1b, h1t] at hturn
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs hturn
-  · rw [h2l, h2r] at hside
-    exact hside.elim P.left_ne hQright
-  · rw [h1l, h1r] at hside
-    exact hside.elim P.left_ne hQright
-  · rw [h2b, h2t] at hturn'
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs' hturn'
-
 end TerminalInitial
 
 /-! ### The matching composite of an initial--terminal pair -/
@@ -740,30 +787,6 @@ private theorem initialTerminal_rectangleHexagon
     P.toGridRectangleBetween H hp (hH ▸ hq) hPX hHX
   exact ⟨_, hF, by rw [hFD, hH], by rw [hFw, G.pentagonPairWeight_initialTerminal C R, hweight]⟩
 
-/-- The recut of an off-diagonal initial--terminal pair underlies no hexagon composite: one of its
-rectangles has no side on the replaced grid line, and the other misses one of the turn rows. -/
-private theorem initialTerminal_ne_recut (hzx : z ≠ x) (hp : P.IsEmpty) (hq : Q.IsEmpty)
-    (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
-    F.toRectangleDecomposition ≠ G.recutInitialTerminalPentagonPair C P Q hzx hp hq := by
-  intro hF
-  have hdata := G.isRecutOfLeftEqRight_recutInitialTerminalPentagonPair C P Q hzx hp hq
-  rw [← hF] at hdata
-  have hs := P.turn_mem_cIco_bottom_top
-  have hs' := G.initialTerminal_oppositeTurnRow_mem_cIco C P Q
-  have hQleft : Q.left ≠ b := by simpa only [C.reverse_column] using Q.left_ne
-  rcases hdata.recut_geometry (G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx) with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
-    rcases G.toRectangleDecomposition_side_turns C F with
-      ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
-  · rw [h1b, h1t] at hturn
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn hs
-  · rw [h2l, h2r] at hside
-    exact hside.elim hQleft P.right_ne
-  · rw [h1l, h1r] at hside
-    exact hside.elim hQleft P.right_ne
-  · rw [h2b, h2t] at hturn'
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn' hs'
-
 end InitialTerminal
 
 /-! ### The matching -/
@@ -797,7 +820,11 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair
   rw [← hFw]
   exact G.existsUnique_unpairedHexagonComposite_of_toRectangleDecomposition_eq C R
     (G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx) hp hq
-    (fun E _ => G.terminalInitial_ne_recut C P Q hzx hp hq E) hF hFD
+    (fun E _ =>
+      GridHexagonCompositeDecomposition.toRectangleDecomposition_ne_recut_of_right_eq_left
+        (D := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩) P.right_eq
+        (Q.left_eq.trans (congrArg (finRotate n) C.reverse_column)) _ hp hq
+        P.turn_mem_cIco_bottom_top (G.terminalInitial_oppositeTurnRow_mem_cIco C P Q) E) hF hFD
 
 /-- A counted off-diagonal pair of an initial-side pentagon and a terminal-side reverse pentagon
 has the same underlying rectangles as exactly one unpaired hexagon composite, and their polynomial
@@ -827,6 +854,10 @@ theorem existsUnique_unpairedHexagonComposite_of_initialTerminalPentagonPair
   rw [← hFw]
   exact G.existsUnique_unpairedHexagonComposite_of_toRectangleDecomposition_eq C R
     (G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx) hp hq
-    (fun E _ => G.initialTerminal_ne_recut C P Q hzx hp hq E) hF hFD
+    (fun E _ =>
+      GridHexagonCompositeDecomposition.toRectangleDecomposition_ne_recut_of_left_eq_right
+        (D := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩) P.left_eq
+        (Q.right_eq.trans (congrArg (finRotate n) C.reverse_column)) _ hp hq
+        P.turn_mem_cIco_bottom_top (G.initialTerminal_oppositeTurnRow_mem_cIco C P Q) E) hF hFD
 
 end TauCeti.GridDiagram
