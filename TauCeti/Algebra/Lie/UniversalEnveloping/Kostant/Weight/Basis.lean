@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+import Mathlib.RingTheory.Localization.Submodule
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
@@ -112,6 +113,34 @@ theorem mem_weightSublattice_iff {μ : κ → ℤ} {x : M} :
   rw [weightSublattice, Submodule.mem_comap, Submodule.restrictScalars_mem,
     mem_jointWeightSpace_iff]
   rfl
+
+/-- The weight slice of a subgroup spanning a rational representation spans the corresponding
+rational joint weight space. No stability or finite-generation assumption is needed. -/
+theorem span_weightSublattice (N : Submodule ℤ V)
+    (hN : Submodule.span ℚ (N : Set V) = ⊤) (μ : κ → ℤ) :
+    Submodule.span ℚ
+        ((fun x : N.toAddSubgroup => (x : V)) ''
+          (weightSublattice h ρ N.toAddSubgroup μ : Set N.toAddSubgroup)) =
+      jointWeightSpace h ρ μ := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    exact (mem_jointWeightSpace_iff h ρ).mpr
+      ((mem_weightSublattice_iff h ρ N.toAddSubgroup).mp hx)
+  · intro x hx
+    have hxN : x ∈ Submodule.span ℚ (N : Set V) := hN.symm ▸ Submodule.mem_top
+    obtain ⟨y, hy, z, hxy⟩ :=
+      (IsLocalization.mem_span_iff (nonZeroDivisors ℤ)).mp hxN
+    have hyN : y ∈ N := by simpa only [Submodule.span_eq] using hy
+    have hzy : (z : ℤ) • x = y := by
+      rw [hxy, ← IsScalarTower.algebraMap_smul ℚ (z : ℤ), smul_smul,
+        IsLocalization.mk'_spec', map_one, one_smul]
+    have hyW : y ∈ jointWeightSpace h ρ μ := by
+      rw [← hzy]
+      exact ((jointWeightSpace h ρ μ).restrictScalars ℤ).smul_mem (z : ℤ) hx
+    rw [hxy]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span
+      ⟨⟨y, hyN⟩, (mem_weightSublattice_iff h ρ N.toAddSubgroup).mpr
+        ((mem_jointWeightSpace_iff h ρ).mp hyW), rfl⟩)
 
 /-! ## Independence of weight vectors -/
 
