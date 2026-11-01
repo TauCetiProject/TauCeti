@@ -381,10 +381,12 @@ private theorem forall_exists_abs_le_of_enorm_apply_le [MeasurableSpace E] [Bore
   have h := (hS ψ).trans (mul_le_mul_right (lintegral_enorm_le_mul_measure_preimage lam
     hK.measurableSet ψ hψK (a := ‖(ψ : E →ᵇ ℝ)‖ₑ) fun x => by
       simpa [enorm_eq_nnnorm] using (ψ : E →ᵇ ℝ).nnnorm_coe_le_nnnorm x) _)
-  rw [← Real.norm_eq_abs]
   have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
     (ENNReal.mul_ne_top enorm_ne_top hK'.measure_lt_top.ne)) h
-  simpa [ENNReal.toReal_mul, measureReal_def, mul_comm, mul_left_comm, mul_assoc] using this
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_enorm, toReal_enorm, ENNReal.coe_toReal,
+    ← measureReal_def, ← mul_assoc] at this
+  rw [← Real.norm_eq_abs, mul_right_comm]
+  exact this
 
 omit hT in
 /-- **Radon–Nikodym theorem for distributions.** Let `λ` be a measure on `Ω`, finite on compact
