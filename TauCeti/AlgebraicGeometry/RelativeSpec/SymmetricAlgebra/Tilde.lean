@@ -40,8 +40,6 @@ associated with the dual module of `P`, so this computes the geometric total spa
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraTildeHomEquiv`: morphisms
   `T ⟶ Spec_{Spec R} (Sym M~)` over `Spec R` are `R`-linear maps from `M` to the global sections
   of `q_* 𝒪_T`, naturally in `T` (`relativeSpecSymmetricAlgebraTildeHomEquiv_comp`);
-* `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv`: for `q : X ⟶ Spec R`,
-  the global sections of `q_* 𝒪_X` are the global functions on `X`, as `R`-modules;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraTildeIso`: the isomorphism
   `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` of affine schemes over `Spec R`.
 
@@ -103,40 +101,6 @@ lemma relativeSpecSymmetricAlgebraTildeHomEquiv_comp {T' T : Over (Spec R)} (g :
     relativeSpecSymmetricAlgebraTildeHomEquiv_apply, relativeSpecSymmetricAlgebraHomEquiv_comp]
   exact tilde.adjunction.homEquiv_naturality_right _ _
 
-/-! ### The comparison with global functions -/
-
-/-- For a scheme `q : X ⟶ Spec R`, the global sections of `q_* 𝒪_X`, as an `R`-module, are the
-global functions on `X`, as an `R`-algebra through `q` (`AlgebraicGeometry.algΓ`). The underlying
-map is the inverse of `pushforwardStructureAlgebraΓRingEquiv`. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv {X : Scheme.{u}}
-    (q : X ⟶ Spec R) :
-    moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward q).obj (𝟙_ X.Modules)) ≃ₗ[R]
-      ((algΓ R).obj (Over.mk q)).unop where
-  toFun x := q.pushforwardStructureAlgebraΓRingEquiv.symm x
-  invFun y := q.pushforwardStructureAlgebraΓRingEquiv y
-  map_add' := map_add q.pushforwardStructureAlgebraΓRingEquiv.symm
-  -- `R` acts on the global sections of a module on `Spec R` through
-  -- `algebraMap R Γ(Spec R, ⊤)`, by definition of `moduleSpecΓFunctor`, and on `Γ(X, ⊤)` through
-  -- its pullback along `q`, by definition of `algΓ`.
-  map_smul' r x := (q.pushforwardStructureAlgebraΓRingEquiv_symm_smul
-    (algebraMap R Γ(Spec R, ⊤) r) x).trans
-      (Algebra.smul_def (A := ((algΓ R).obj (Over.mk q)).unop) r _).symm
-  left_inv := q.pushforwardStructureAlgebraΓRingEquiv.apply_symm_apply
-  right_inv := q.pushforwardStructureAlgebraΓRingEquiv.symm_apply_apply
-
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv_apply
-    {X : Scheme.{u}} (q : X ⟶ Spec R)
-    (x : moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward q).obj (𝟙_ X.Modules))) :
-    q.pushforwardStructureAlgebraΓLinearEquiv x = q.pushforwardStructureAlgebraΓRingEquiv.symm x :=
-  (rfl)
-
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv_symm_apply
-    {X : Scheme.{u}} (q : X ⟶ Spec R) (y : ((algΓ R).obj (Over.mk q)).unop) :
-    q.pushforwardStructureAlgebraΓLinearEquiv.symm y = q.pushforwardStructureAlgebraΓRingEquiv y :=
-  (rfl)
-
 /-- Points of `Spec_{Spec R} (Sym M~)` over `T` are `R`-linear maps `M → Γ(T, ⊤)`. -/
 private def relativeSpecLinearEquiv (T : Over (Spec R)) :
     (T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
@@ -151,7 +115,7 @@ private lemma relativeSpecLinearEquiv_apply (T : Over (Spec R))
         (tildeEquiv.functor.obj M))))) (m : M) :
     relativeSpecLinearEquiv M T t m = T.hom.pushforwardStructureAlgebraΓRingEquiv.symm
       (relativeSpecSymmetricAlgebraTildeHomEquiv M T t m) :=
-  (rfl)
+  T.hom.pushforwardStructureAlgebraΓLinearEquiv_apply _
 
 private lemma relativeSpecLinearEquiv_comp {T' T : Over (Spec R)} (g : T' ⟶ T)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
@@ -279,9 +243,9 @@ lemma appTop_comp_relativeSpecSymmetricAlgebraTildeIso_hom_left_ι (T : Over (Sp
   -- `pointsEquiv M _ (𝟙 _)`, so the left side is
   -- `specLinearEquiv M T (t ≫ pointsEquiv M _ (𝟙 _)) m` (`specLinearEquiv_apply`), and
   -- `t ≫ pointsEquiv M _ (𝟙 _) = pointsEquiv M T t`.
-  LinearMap.congr_fun ((congrArg (specLinearEquiv M T)
+  (LinearMap.congr_fun ((congrArg (specLinearEquiv M T)
     ((pointsEquiv_comp M t (𝟙 _)).symm.trans (congrArg _ (Category.comp_id t)))).trans
-      (specLinearEquiv_pointsEquiv M T t)) m
+      (specLinearEquiv_pointsEquiv M T t)) m).trans (relativeSpecLinearEquiv_apply M T t m)
 
 /-- The linear map of the point `s ≫ e⁻¹` of `Spec_{Spec R} (Sym M~)`, for a point `s` of
 `Spec (Sym_R M)` over `Spec R` and `e` the isomorphism `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)`,
@@ -299,8 +263,9 @@ lemma relativeSpecSymmetricAlgebraTildeHomEquiv_comp_relativeSpecSymmetricAlgebr
   -- The inverse of the isomorphism is by construction the point `(pointsEquiv M _).symm (𝟙 _)`,
   -- so the left side is `relativeSpecLinearEquiv M T (s ≫ (pointsEquiv M _).symm (𝟙 _)) m`
   -- (`relativeSpecLinearEquiv_apply`), and `pointsEquiv` sends that point to `s`.
-  LinearMap.congr_fun ((specLinearEquiv_pointsEquiv M T _).symm.trans
-    (congrArg (specLinearEquiv M T) ((pointsEquiv_comp M s _).trans
-      ((congrArg (s ≫ ·) (Equiv.apply_symm_apply _ _)).trans (Category.comp_id s))))) m
+  (relativeSpecLinearEquiv_apply M T _ m).symm.trans <|
+    LinearMap.congr_fun ((specLinearEquiv_pointsEquiv M T _).symm.trans
+      (congrArg (specLinearEquiv M T) ((pointsEquiv_comp M s _).trans
+        ((congrArg (s ≫ ·) (Equiv.apply_symm_apply _ _)).trans (Category.comp_id s))))) m
 
 end TauCeti.AlgebraicGeometry

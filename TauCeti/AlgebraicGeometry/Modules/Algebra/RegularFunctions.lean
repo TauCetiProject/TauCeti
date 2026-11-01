@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Group.Affine
+public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import TauCeti.AlgebraicGeometry.Modules.Algebra.Pushforward
 
 /-!
@@ -24,7 +26,9 @@ algebras from affine morphisms. For `f : X ⟶ Y`, module maps from the free she
 (`AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv`). For `q : T ⟶ Y` and `f : Y ⟶ X`, the
 identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors gives the comparison
 `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso` of function algebras
-`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T`.
+`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T`. Over an affine base, for `q : X ⟶ Spec R`, the global sections
+of `q_* 𝒪_X` are the global functions on `X` as `R`-modules
+(`AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv`).
 
 ## References
 
@@ -265,6 +269,46 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_inv
     (q : T ⟶ Y) (f : Y ⟶ X) :
     (q.pushforwardStructureAlgebraCompIso f).inv.hom.hom =
       (Scheme.Modules.pushforwardComp q f).inv.app _ :=
+  (rfl)
+
+end
+
+/-! ### Global functions over an affine base -/
+
+noncomputable section
+
+variable {R : CommRingCat.{u}}
+
+/-- For a scheme `q : X ⟶ Spec R`, the global sections of `q_* 𝒪_X`, as an `R`-module, are the
+global functions on `X`, as an `R`-algebra through `q` (`AlgebraicGeometry.algΓ`). The underlying
+map is the inverse of `pushforwardStructureAlgebraΓRingEquiv`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv {X : Scheme.{u}}
+    (q : X ⟶ Spec R) :
+    moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward q).obj (𝟙_ X.Modules)) ≃ₗ[R]
+      ((algΓ R).obj (Over.mk q)).unop where
+  toFun x := q.pushforwardStructureAlgebraΓRingEquiv.symm x
+  invFun y := q.pushforwardStructureAlgebraΓRingEquiv y
+  map_add' := map_add q.pushforwardStructureAlgebraΓRingEquiv.symm
+  -- `R` acts on the global sections of a module on `Spec R` through
+  -- `algebraMap R Γ(Spec R, ⊤)`, by definition of `moduleSpecΓFunctor`, and on `Γ(X, ⊤)` through
+  -- its pullback along `q`, by definition of `algΓ`.
+  map_smul' r x := (q.pushforwardStructureAlgebraΓRingEquiv_symm_smul
+    (algebraMap R Γ(Spec R, ⊤) r) x).trans
+      (Algebra.smul_def (A := ((algΓ R).obj (Over.mk q)).unop) r _).symm
+  left_inv := q.pushforwardStructureAlgebraΓRingEquiv.apply_symm_apply
+  right_inv := q.pushforwardStructureAlgebraΓRingEquiv.symm_apply_apply
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv_apply
+    {X : Scheme.{u}} (q : X ⟶ Spec R)
+    (x : moduleSpecΓFunctor.obj ((Scheme.Modules.pushforward q).obj (𝟙_ X.Modules))) :
+    q.pushforwardStructureAlgebraΓLinearEquiv x = q.pushforwardStructureAlgebraΓRingEquiv.symm x :=
+  (rfl)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓLinearEquiv_symm_apply
+    {X : Scheme.{u}} (q : X ⟶ Spec R) (y : ((algΓ R).obj (Over.mk q)).unop) :
+    q.pushforwardStructureAlgebraΓLinearEquiv.symm y = q.pushforwardStructureAlgebraΓRingEquiv y :=
   (rfl)
 
 end
