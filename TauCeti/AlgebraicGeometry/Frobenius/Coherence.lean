@@ -103,14 +103,6 @@ theorem iterateFrobeniusTwistAddIso_baseChange (m n : ℕ) (f : T ⟶ S) :
           (π.iterateFrobeniusTwistAddIso p hS m n).hom := by
   apply pullback.hom_ext <;> simp [Category.assoc]
 
-/-- At exponent zero, the base-change projection agrees with the ordinary projection after
-the canonical identifications of zeroth twists. -/
-theorem iterateFrobeniusTwistMap_zero (f : T ⟶ S) :
-    π.iterateFrobeniusTwistMap p hS 0 f ≫ (π.iterateFrobeniusTwistZeroIso p hS).hom =
-      ((pullback.snd π f).iterateFrobeniusTwistZeroIso p
-        (natCast_eq_zero_of_hom f hS)).hom ≫ pullback.fst π f := by
-  simp
-
 /-- Base change along the identity agrees with the canonical pullback comparison removing
 that identity base change. -/
 theorem iterateFrobeniusTwistMap_id (n : ℕ) :
