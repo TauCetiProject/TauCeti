@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.KrullDimension
+import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
+import TauCeti.RingTheory.GradedAlgebra.GeneratorDegrees
 import TauCeti.RingTheory.GradedAlgebra.Nakayama
 import TauCeti.RingTheory.GradedAlgebra.Subalgebra
 import TauCeti.RingTheory.KrullDimension.FiniteType
@@ -42,6 +44,17 @@ pseudoreflections form a polynomial algebra (Chevalley, Shephard–Todd); in mod
 characteristic this implication can fail. Regularity of `A` at its vertex bounds the dimension of
 `A₊ ⧸ A₊²` by `dim M`, and lifting a homogeneous basis gives such a family.
 
+Conversely, any polynomial presentation of the invariants is constrained. If, over a field and
+for a finite group, `Sym(M)^G` is a polynomial algebra on invariants `fᵢ`, `i ∈ ι`, then `ι` is
+finite with `dim M` elements, again by Krull dimension
+(`Representation.natCard_eq_finrank_of_bijective_aeval`). Over any nontrivial commutative ring,
+if the `fᵢ` are homogeneous, of degrees `dᵢ`, then each `dᵢ` is positive
+(`Representation.pos_of_algebraicIndependent`), and the multiset of the `dᵢ` does not depend on
+the choice of the `fᵢ` (`Representation.map_univ_eq_of_bijective_aeval`): the number of basic
+invariants of degree `n > 0` is the rank of the degree-`n` part of `A₊ ⧸ A₊²`
+(`TauCeti.GradedAlgebra.finrank_quotient_eq_natCard_of_bijective_aeval`). These are the degrees
+of the basic invariants, attached to the group rather than to a choice of generators.
+
 ## Main results
 
 * `Representation.adjoin_range_eq_top_of_le_span_sup_sq`: homogeneous invariants of positive
@@ -49,12 +62,21 @@ characteristic this implication can fail. Regularity of `A` at its vertex bounds
 * `Representation.algebraicIndependent_of_le_span_sup_sq`: over a field, for a finite group, at
   most `dim M` such invariants are algebraically independent.
 * `Representation.natCard_eq_finrank_of_le_span_sup_sq`: there are then exactly `dim M` of them.
+* `Representation.finite_of_bijective_aeval` and
+  `Representation.natCard_eq_finrank_of_bijective_aeval`: a polynomial presentation of the
+  invariants of a finite group has `dim M` variables.
+* `Representation.pos_of_algebraicIndependent`: algebraically independent homogeneous invariants
+  have positive degree.
+* `Representation.map_univ_eq_of_bijective_aeval`: **the degrees of basic invariants are
+  intrinsic**, as a multiset.
 
 ## References
 
 * R. Kane, *Reflection Groups and Invariant Theory*, CMS Books in Mathematics, Springer (2001),
   §§ 17–18.
 * L. Smith, *Polynomial Invariants of Finite Groups*, A K Peters (1995), § 7.2.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge Studies in Advanced
+  Mathematics 29, Cambridge University Press (1990), § 3.7, for the uniqueness of the degrees.
 -/
 
 public section
@@ -127,6 +149,32 @@ section Field
 variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M] [FiniteDimensional k M]
 variable (ρ : Representation k G M)
 
+/-- A polynomial presentation `k[Xᵢ | i ∈ ι] ≃ Sym(M)^G` of the invariants of a finite group has
+finitely many variables: a polynomial ring in infinitely many variables has infinite Krull
+dimension, while the invariant algebra has dimension `dim M`. -/
+theorem finite_of_bijective_aeval (f : ι → ρ.symmetricAlgebraInvariants)
+    (hf : Function.Bijective (MvPolynomial.aeval (R := k) f)) : Finite ι := by
+  by_contra h
+  rw [not_finite_iff_infinite] at h
+  have := ringKrullDim_eq_of_ringEquiv (RingEquiv.ofBijective (MvPolynomial.aeval f).toRingHom hf)
+  rw [ringKrullDim_mvPolynomial_of_infinite, ringKrullDim_symmetricAlgebraInvariants,
+    ringKrullDim_eq_finrank] at this
+  exact ENat.top_ne_natCast _ (WithBot.coe_inj.1 this)
+
+/-- **The number of basic invariants is the dimension.** If the invariants of a finite group
+acting on a finite-dimensional space `M` form a polynomial algebra on `fᵢ`, `i ∈ ι`, then there
+are exactly `dim M` of them. No homogeneity is needed: the polynomial ring and the invariant
+algebra have the same Krull dimension. -/
+theorem natCard_eq_finrank_of_bijective_aeval (f : ι → ρ.symmetricAlgebraInvariants)
+    (hf : Function.Bijective (MvPolynomial.aeval (R := k) f)) :
+    Nat.card ι = Module.finrank k M := by
+  have := ρ.finite_of_bijective_aeval f hf
+  have h := ringKrullDim_eq_of_ringEquiv
+    (RingEquiv.ofBijective (MvPolynomial.aeval (R := k) f).toRingHom hf)
+  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
+    zero_add, ringKrullDim_symmetricAlgebraInvariants, ringKrullDim_eq_finrank] at h
+  exact_mod_cast h
+
 /-- **Polynomial invariants from the vertex.** Over a field, for a finite group acting on a
 finite-dimensional space `M`, at most `dim M` homogeneous invariants of positive degree whose
 classes span `A₊ ⧸ A₊²` are algebraically independent. Since they also generate the invariant
@@ -160,15 +208,46 @@ theorem natCard_eq_finrank_of_le_span_sup_sq [Finite ι] (f : ι → ρ.symmetri
         ((HomogeneousIdeal.irrelevant (homogeneousSubmodule k M)).toIdeal.under
           ρ.symmetricAlgebraInvariants) ^ 2)
     (hcard : Nat.card ι ≤ Module.finrank k M) :
-    Nat.card ι = Module.finrank k M := by
-  let e := RingEquiv.ofBijective (MvPolynomial.aeval (R := k) f).toRingHom
+    Nat.card ι = Module.finrank k M :=
+  ρ.natCard_eq_finrank_of_bijective_aeval f
     ⟨ρ.algebraicIndependent_of_le_span_sup_sq f d hd hf hspan hcard,
       ρ.surjective_aeval_of_le_span_sup_sq f d hd hf hspan⟩
-  have h := ringKrullDim_eq_of_ringEquiv e
-  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    zero_add, ringKrullDim_symmetricAlgebraInvariants, ringKrullDim_eq_finrank] at h
-  exact_mod_cast h
 
 end Field
+
+section Degrees
+
+variable [CommRing R] [Nontrivial R] [Monoid G] [AddCommGroup M] [Module R M]
+variable (ρ : Representation R G M)
+
+/-- Algebraically independent homogeneous invariants have positive degree: an invariant of degree
+zero is a scalar. In particular, basic invariants have positive degree. -/
+theorem pos_of_algebraicIndependent (f : ι → ρ.symmetricAlgebraInvariants) (d : ι → ℕ)
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hind : AlgebraicIndependent R f) (i : ι) : 0 < d i :=
+  TauCeti.GradedAlgebra.pos_of_algebraicIndependent (homogeneousSubmodule R M)
+    (fun x hx ↦ Algebra.mem_bot.2 ⟨_, algebraMap_homogeneousSubmoduleZeroEquiv_apply R M ⟨x, hx⟩⟩)
+    hf (hind.map' (f := ρ.symmetricAlgebraInvariants.val) Subtype.val_injective) i
+
+/-- **The degrees of basic invariants are intrinsic.** If the invariant algebra `Sym(M)^G` is the
+polynomial algebra on homogeneous invariants `fᵢ` of degrees `dᵢ`, and also on homogeneous
+invariants `gⱼ` of degrees `eⱼ`, both finite families, then the multisets of degrees `{dᵢ}` and
+`{eⱼ}` coincide: the basic invariants are not unique, but their degrees are. -/
+theorem map_univ_eq_of_bijective_aeval {κ : Type*} [Fintype ι] [Fintype κ]
+    (f : ι → ρ.symmetricAlgebraInvariants) (d : ι → ℕ)
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hfb : Function.Bijective (MvPolynomial.aeval (R := R) f))
+    (g : κ → ρ.symmetricAlgebraInvariants) (e : κ → ℕ)
+    (hg : ∀ j, (g j : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (e j))
+    (hgb : Function.Bijective (MvPolynomial.aeval (R := R) g)) :
+    Finset.univ.val.map d = Finset.univ.val.map e := by
+  let := Subalgebra.gradedAlgebra ρ.isHomogeneous_symmetricAlgebraInvariants
+  exact TauCeti.GradedAlgebra.map_univ_eq_of_bijective_aeval
+    (ρ.symmetricAlgebraInvariants.grading (homogeneousSubmodule R M))
+    (ρ.pos_of_algebraicIndependent f d hf hfb.1) (ρ.pos_of_algebraicIndependent g e hg hgb.1)
+    (fun i ↦ (Subalgebra.mem_grading_iff _ _).2 (hf i))
+    (fun j ↦ (Subalgebra.mem_grading_iff _ _).2 (hg j)) hfb hgb
+
+end Degrees
 
 end Representation
