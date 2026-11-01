@@ -120,6 +120,10 @@ every `k`. -/
 def IsRapidDecay (a : ℤ × ℤ → ℂ) : Prop :=
   ∀ k : ℕ, ∃ C, ∀ x, ‖a x‖ * weight x ^ k ≤ C
 
+theorem isRapidDecay_iff {a : ℤ × ℤ → ℂ} :
+    IsRapidDecay a ↔ ∀ k : ℕ, ∃ C, ∀ x, ‖a x‖ * weight x ^ k ≤ C :=
+  Iff.rfl
+
 namespace IsRapidDecay
 
 variable {a b : ℤ × ℤ → ℂ}
@@ -281,6 +285,11 @@ instance : AddCommGroup (SmoothNoncommutativeTorus θ) :=
   coeff_injective.addCommGroup _ coeff_zero coeff_add coeff_neg coeff_sub (fun _ _ ↦ rfl)
     fun _ _ ↦ rfl
 
+@[simp]
+theorem coeff_sum {ι : Type*} (s : Finset ι) (f : ι → SmoothNoncommutativeTorus θ) :
+    (∑ i ∈ s, f i).coeff = ∑ i ∈ s, (f i).coeff :=
+  map_sum (⟨⟨coeff, coeff_zero⟩, coeff_add⟩ : SmoothNoncommutativeTorus θ →+ ℤ × ℤ → ℂ) f s
+
 instance : Module ℂ (SmoothNoncommutativeTorus θ) :=
   coeff_injective.module ℂ ⟨⟨coeff, coeff_zero⟩, coeff_add⟩ coeff_smul
 
@@ -301,7 +310,8 @@ theorem smul_single (x : ℤ × ℤ) (c d : ℂ) :
 
 /-! ### The twisted product -/
 
-private theorem summable_norm_mul_coeff (a b : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
+/-- The terms of the twisted convolution are absolutely summable. -/
+theorem summable_norm_mul_coeff (a b : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
     Summable fun y ↦ ‖a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖ := by
   obtain ⟨C, hC⟩ := b.isRapidDecay_coeff.bddAbove_norm
   refine (a.isRapidDecay_coeff.summable_norm.mul_right C).of_nonneg_of_le
