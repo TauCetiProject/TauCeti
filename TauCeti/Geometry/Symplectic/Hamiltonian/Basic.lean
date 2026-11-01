@@ -72,6 +72,13 @@ theorem eq_hamiltonianVectorField_iff (ω : SymplecticForm V) (H : V → ℝ) (x
     ext v
     exact (h v).trans (ω.apply_hamiltonianVectorField H x v).symm
 
+/-- The Hamiltonian vector field vanishes exactly at the critical points of the Hamiltonian. -/
+@[simp]
+theorem hamiltonianVectorField_eq_zero_iff (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField H x = 0 ↔ fderiv ℝ H x = 0 := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  simp [ContinuousLinearMap.ext_iff, eq_comm]
+
 /-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
 @[simp]
 theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) (x : V) :
