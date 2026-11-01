@@ -5,29 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Replacement
 public import TauCeti.Algebra.Homology.Periodic.GlobalDimension
 
 /-!
 # Periodic complexes of projectives model the periodic derived category
 
 In an abelian category with enough projectives, every periodic complex whose terms have bounded
-projective dimension receives a quasi-isomorphism from a periodic complex with projective terms
-(`TauCeti.PeriodicComplex.exists_quasiIso_of_hasProjectiveDimensionLT`). When every object has
-projective dimension `< d`, periodic complexes of projectives are moreover homotopically
+projective dimension receives a quasi-isomorphism from a periodic complex with projective terms,
+as a special case of `HomologicalComplex.exists_quasiIso_of_hasProjectiveDimensionLT` for complexes
+of any shape in which every index is both the source and the target of a relation. When every
+object has projective dimension `< d`, periodic complexes of projectives are moreover homotopically
 projective, so passage to the periodic derived category is fully faithful on them. Together these
 give the equivalence `K_n(proj C) ≌ D_n(C)` between the full subcategory of the periodic homotopy
 category on the complexes with projective terms and the periodic derived category
 (`TauCeti.PeriodicComplex.DerivedCategory.projectiveEquivalence`). For a finite-dimensional
 algebra `Λ` of finite global dimension, applied to finitely generated modules, this is the
 equivalence `D_n(mod Λ) ≌ K_n(proj Λ)` of Stai.
-
-The replacement is built by induction on the bound on the projective dimension of the terms.
-Cover `X` by a degreewise epimorphism `π : Q ⟶ X` from a complex `Q` with projective terms. The
-terms of its kernel `N` are syzygies of those of `X`, so by induction there is a
-quasi-isomorphism `q : P ⟶ N` from a complex `P` of projectives. The mapping cone of
-`P ⟶ N ⟶ Q` again has projective terms, and maps to `X` by a quasi-isomorphism: it factors
-through the mapping cone of `N ⟶ Q`, which computes the cokernel `X` of `N ⟶ Q`
-(`CategoryTheory.ShortComplex.ShortExact.quasiIso_homotopyCofiberDesc`).
 
 The finite global dimension hypothesis cannot be dropped from the equivalence: over the dual
 numbers `k[ε]`, multiplication by `ε` on `k[ε]` is a periodic complex of free modules which is
@@ -43,8 +37,6 @@ periodic derived category (`TauCeti.not_isHomotopicallyProjective_dualNumberPeri
 
 ## Main results
 
-* `TauCeti.PeriodicComplex.exists_quasiIso_of_hasProjectiveDimensionLT`: periodic complexes with
-  terms of bounded projective dimension have projective replacements.
 * `TauCeti.PeriodicComplex.DerivedCategory.isEquivalence_ι_comp_Qh`: in finite global dimension,
   the periodic Verdier localization restricts to an equivalence on complexes of projectives.
 
@@ -88,51 +80,6 @@ theorem quotient_obj_mem_subcategoryDegreewiseProjective_iff (K : CochainComplex
 
 variable [EnoughProjectives C]
 
-/-- The induction on the bound on the projective dimension of the terms. -/
-private lemma exists_quasiIso_of_hasProjectiveDimensionLT_succ (m : ℕ) :
-    ∀ X : CochainComplex C (ZMod n), (∀ i, HasProjectiveDimensionLT (X.X i) (m + 1)) →
-      ∃ (P : CochainComplex C (ZMod n)) (_ : ∀ i, Projective (P.X i)) (π : P ⟶ X),
-        QuasiIso π := by
-  induction m with
-  | zero =>
-    intro X hX
-    exact ⟨X, fun i ↦ projective_iff_hasProjectiveDimensionLT_one.mpr (hX i), 𝟙 X,
-      inferInstance⟩
-  | succ m ih =>
-    intro X hX
-    obtain ⟨Q, π, hQ, _, -⟩ :=
-      X.exists_projective_contractible_epi_f (fun i ↦ ⟨i + 1, rfl⟩)
-        (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩)
-    have : Epi π := epi_of_epi_f π inferInstance
-    -- The short exact sequence `0 ⟶ ker π ⟶ Q ⟶ X ⟶ 0`.
-    have hS : (ShortComplex.mk (kernel.ι π) π (kernel.condition π)).ShortExact :=
-      { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel π) }
-    have hN (i : ZMod n) : HasProjectiveDimensionLT ((kernel π).X i) (m + 1) :=
-      have := hQ i
-      ((shortExact_iff_degreewise_shortExact _).1 hS i).hasProjectiveDimensionLT_X₁ (m + 1)
-        (hasProjectiveDimensionLT_of_ge (Q.X i) 1 (m + 1) (by lia)) (hX i)
-    obtain ⟨P, _, q, _⟩ := ih (kernel π) hN
-    let α : Arrow.mk (q ≫ kernel.ι π) ⟶ Arrow.mk (kernel.ι π) := Arrow.homMk q (𝟙 Q) (by simp)
-    have : QuasiIso α.left := inferInstanceAs (QuasiIso q)
-    have : QuasiIso α.right := inferInstanceAs (QuasiIso (𝟙 Q))
-    have : QuasiIso (homotopyCofiber.mapArrowHom _ _ (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) α) :=
-      homotopyCofiber.quasiIso_mapArrowHom _ _ _ α
-    have := hS.quasiIso_homotopyCofiberDesc (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩)
-    refine ⟨homotopyCofiber (q ≫ kernel.ι π), fun i ↦ ?_,
-      homotopyCofiber.mapArrowHom _ _ (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) α ≫
-        homotopyCofiber.desc (kernel.ι π) π (Homotopy.ofEq (kernel.condition π)), inferInstance⟩
-    exact Projective.of_iso (homotopyCofiber.XIsoBiprod (q ≫ kernel.ι π) i (i + 1) rfl).symm
-      inferInstance
-
-/-- In an abelian category with enough projectives, a periodic complex whose terms all have
-projective dimension `< d` receives a quasi-isomorphism from a periodic complex with projective
-terms. -/
-theorem exists_quasiIso_of_hasProjectiveDimensionLT (X : CochainComplex C (ZMod n)) (d : ℕ)
-    (hd : ∀ i, HasProjectiveDimensionLT (X.X i) d) :
-    ∃ (P : CochainComplex C (ZMod n)) (_ : ∀ i, Projective (P.X i)) (π : P ⟶ X), QuasiIso π :=
-  exists_quasiIso_of_hasProjectiveDimensionLT_succ d X
-    fun i ↦ hasProjectiveDimensionLT_of_ge _ d (d + 1) (by lia)
-
 /-- In finite global dimension, the classes of periodic complexes of projectives are left
 orthogonal to the acyclic objects of the periodic homotopy category. -/
 theorem subcategoryDegreewiseProjective_le_leftOrthogonal (d : ℕ)
@@ -163,7 +110,8 @@ theorem isEquivalence_ι_comp_Qh (d : ℕ) (hd : ∀ X : C, HasProjectiveDimensi
     ⟨fun Y ↦ by
       obtain ⟨⟨K⟩, ⟨e'⟩⟩ :=
         (Localization.essSurj (Qh C n) (subcategoryAcyclic C n).trW).mem_essImage Y
-      obtain ⟨P, hP, π, _⟩ := exists_quasiIso_of_hasProjectiveDimensionLT K d fun _ ↦ hd _
+      obtain ⟨P, hP, π, _⟩ := HomologicalComplex.exists_quasiIso_of_hasProjectiveDimensionLT
+        (fun i ↦ ⟨i + 1, rfl⟩) (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) K d fun _ ↦ hd _
       let π' := (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map π
       have : IsIso ((Qh C n).map π') := by
         have h : IsIso ((Q C n).map π) := inferInstance
