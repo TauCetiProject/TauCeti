@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transvection
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transitivity
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.LinearAlgebra.Matrix.Nondegenerate
-public import Mathlib.LinearAlgebra.Projectivization.Action
 
 /-!
 # The symplectic group acts primitively on projective space
 
 Let `ω(x, y) = xᵀ J y` be the standard alternating form on `V = Fin (m + m) → K` over a field `K`.
 The standard symplectic group `Sp_{2m}(K)` (`TauCeti.GLSymplecticFin m K`) acts on the projective
-space `ℙ K V`. This file proves that the action is transitive and primitive.
+space `ℙ K V`. This file proves that the action is primitive; transitivity is the instance in
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transitivity`.
 
 Unlike the special linear group, `Sp_{2m}(K)` is not doubly transitive on `ℙ K V` once `m ≥ 2`: it
 preserves the relation `ω(x, y) = 0` between points. The stabilizer of a point `⟨u⟩` has two orbits
@@ -123,16 +123,6 @@ private theorem smul_mk (g : GLSymplecticFin m K) {v : Fin (m + m) → K} (hv : 
     g • Projectivization.mk K v hv =
       Projectivization.mk K (g • v) ((smul_ne_zero_iff_ne g).mpr hv) :=
   Projectivization.smul_mk g hv
-
-/-- **The symplectic group is transitive on the points of projective space.** -/
-instance : IsPretransitive (GLSymplecticFin m K) (ℙ K (Fin (m + m) → K)) where
-  exists_smul_eq p q := by
-    induction p using Projectivization.ind with | h x hx =>
-    induction q using Projectivization.ind with | h y hy =>
-    obtain ⟨g, -, hg⟩ := exists_smul_eq_smul_eq_of_dotProduct_JFin_mulVec_eq (u := 0) (x := x)
-      (y := y) (by rwa [Submodule.span_zero_singleton, Submodule.mem_bot])
-      (by rwa [Submodule.span_zero_singleton, Submodule.mem_bot]) (by simp)
-    exact ⟨g, by simp only [smul_mk, hg]⟩
 
 /-- A vector off the line of `u` is nonzero. -/
 private theorem ne_zero_of_notMem_span {u x : Fin (m + m) → K} (hx : x ∉ K ∙ u) : x ≠ 0 :=
