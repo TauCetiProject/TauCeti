@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.PDE.Vortex.Deformation
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -334,6 +335,36 @@ theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
   refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
   fin_cases i
   exacts [h₀, h₁, h₂, h₃]
+
+/-- `L_x y` is continuous for a continuous field and a `C¹` argument. -/
+theorem continuous_gaugeFixedOperator (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
+    Continuous (gaugeFixedOperator x y) := by
+  have hd (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
+    (((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :).continuous_fderiv
+      one_ne_zero).clm_apply continuous_const
+  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
+  have hyi (i : Fin 4) : Continuous fun z ↦ y z i := by fun_prop
+  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
+  fin_cases i <;> simp only [gaugeAdjoint_def, Fin.isValue, linearizedEquation_apply_zero,
+    linearizedEquation_apply_one, linearizedEquation_apply_two, Nat.succ_eq_add_one,
+    Nat.reduceAdd, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val] <;> fun_prop
+
+/-- The formal adjoint is `C¹` when the background is `C¹` and the argument is `C²`. -/
+theorem contDiff_gaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 2 y) :
+    ContDiff ℝ 1 (gaugeFixedAdjoint x y) := by
+  have hxi (i : Fin 4) : ContDiff ℝ 1 (fun z ↦ x z i) :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx
+  have hyi (i : Fin 4) : ContDiff ℝ 2 (fun z ↦ y z i) :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy
+  have hd (i : Fin 4) (v : ℂ) : ContDiff ℝ 1
+      (fun z ↦ fderiv ℝ (fun w ↦ y w i) z v) :=
+    ((hyi i).fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ 1 (fun z ↦ y z i) := (hyi i).of_le (by norm_num)
+  refine PiLp.contDiff_toLp.comp (contDiff_pi.mpr fun i ↦ ?_)
+  fin_cases i <;> simp only [Fin.isValue, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta,
+    Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val] <;> fun_prop
 
 end Continuity
 
