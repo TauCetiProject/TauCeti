@@ -26,6 +26,12 @@ coefficient heights, so this lets it apply to polynomials over `R⸨X⸩`.
 * `LaurentSeries.realAddVal_eq_top_iff`: only zero has infinite valuation.
 * `LaurentSeries.realAddVal_le_of_coeff_ne_zero`: a nonzero coefficient at `k` bounds the
   valuation by `k`.
+
+The valuation can also be read in the Hahn series with real exponents, through the embedding
+`HahnSeries.embDomainRingHom` along `ℤ → ℝ`: `realAddVal R f` is the order of the image of `f`
+(`LaurentSeries.realAddVal_eq_orderTop_embDomainRingHom`), and it is at least `s` exactly when
+every real exponent of that image is (`LaurentSeries.le_realAddVal_iff_forall_mem_support`).
+`LaurentSeries.coeff_embDomainRingHom_intCast` reads its coefficients at integers.
 -/
 
 public section
@@ -74,5 +80,44 @@ theorem realAddVal_le_of_coeff_ne_zero {f : R⸨X⸩} {k : ℤ} (hk : f.coeff k 
     realAddVal R f ≤ ((k : ℝ) : WithTop ℝ) := by
   rw [realAddVal_of_ne_zero (ne_zero_of_coeff_ne_zero hk), WithTop.coe_le_coe, Int.cast_le]
   exact order_le_of_coeff_ne_zero hk
+
+omit [IsDomain R] in
+/-- Read in the Hahn series with real exponents, a Laurent series has its coefficients at the
+integers. -/
+@[simp]
+theorem coeff_embDomainRingHom_intCast (f : R⸨X⸩) (k : ℤ) :
+    (embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le) f).coeff
+      (k : ℝ) = f.coeff k :=
+  embDomain_coeff
+
+/-- The real valuation of a Laurent series is the order of the series read in the Hahn series with
+real exponents. -/
+theorem realAddVal_eq_orderTop_embDomainRingHom (f : R⸨X⸩) :
+    realAddVal R f =
+      (embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le) f).orderTop
+    := by
+  rw [realAddVal_apply]
+  exact (orderTop_embDomain (f := ⟨⟨Int.castAddHom ℝ, Int.cast_injective⟩, Int.cast_le⟩)
+    (x := f)).symm
+
+/-- A Laurent series whose reading in the Hahn series with real exponents has a nonzero coefficient
+at `r` has valuation at most `r`. -/
+theorem realAddVal_le_of_coeff_embDomainRingHom_ne_zero {f : R⸨X⸩} {r : ℝ}
+    (hr : (embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
+      f).coeff r ≠ 0) :
+    realAddVal R f ≤ (r : WithTop ℝ) := by
+  rw [realAddVal_eq_orderTop_embDomainRingHom]
+  exact orderTop_le_of_coeff_ne_zero hr
+
+/-- The real valuation of a Laurent series is at least `s` exactly when every exponent of the
+series, read in the Hahn series with real exponents, is at least `s`. -/
+theorem le_realAddVal_iff_forall_mem_support {f : R⸨X⸩} {s : ℝ} :
+    (s : WithTop ℝ) ≤ realAddVal R f ↔
+      ∀ r ∈ (embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
+        f).support, s ≤ r := by
+  refine ⟨fun h r hr => WithTop.coe_le_coe.mp
+    (h.trans (realAddVal_le_of_coeff_embDomainRingHom_ne_zero hr)), fun h => ?_⟩
+  rw [realAddVal_eq_orderTop_embDomainRingHom, le_orderTop_iff_forall]
+  exact fun r hr => by_contra fun hne => (WithTop.coe_lt_coe.mp hr).not_ge (h r hne)
 
 end LaurentSeries
