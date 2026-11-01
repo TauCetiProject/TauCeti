@@ -43,6 +43,8 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.quotientDiagram`: the diagram `n ↦ O_{I ^ (n + 1)}`.
 * `TauCeti.FormalScheme.Spf.structureSheaf`: its limit, the structure sheaf of `Spf A`.
 * `TauCeti.FormalScheme.Spf.quotientProjection`: the projection `O_{Spf A} → O_{I ^ (n + 1)}`.
+* `TauCeti.FormalScheme.Spf.sectionsIsoLimit`: the sections of `O_{Spf A}` over an open `U` are
+  the limit of the sections of the thickenings over `U`.
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift`: the morphism into `O_{Spf A}` induced by
   morphisms to the thickenings compatible with the reduction maps.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso`: for `I`-adically complete `A`, the isomorphism
@@ -54,6 +56,10 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
   `TauCeti.FormalScheme.Spf.quotientSheaf_obj_map`,
   `TauCeti.FormalScheme.Spf.quotientTransition_hom_app`: the sections, restriction maps and
   reduction maps over an arbitrary open, in terms of the structure sheaves of the quotients.
+* `TauCeti.FormalScheme.Spf.algebraMap_comp_quotientSheaf_map`,
+  `TauCeti.FormalScheme.Spf.quotientSheafGlobalSectionsIso_inv`: the sections of `O_J` are
+  `A ⧸ J`-algebras, the restriction maps are algebra maps, and the global section corresponding
+  to `a ∈ A ⧸ J` is its image under the algebra map.
 * `TauCeti.FormalScheme.Spf.quotientTransition_self`,
   `TauCeti.FormalScheme.Spf.quotientTransition_comp`: the reduction maps are functorial.
 * `TauCeti.FormalScheme.Spf.quotientSheafGlobalSectionsIso_inv_comp_quotientTransition`: on
@@ -63,6 +69,9 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift_quotientProjection`,
   `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`: morphisms into the structure sheaf correspond
   to compatible families of morphisms to the thickenings.
+* `TauCeti.FormalScheme.Spf.sectionsIsoLimit_inv_comp_quotientProjection`,
+  `TauCeti.FormalScheme.Spf.structureSheaf.sections_hom_ext`: on sections over an open, the limit
+  projections are the projections to the thickenings, and they are jointly injective.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_quotientProjection`: the global section
   corresponding to `a ∈ A` projects to the class of `a` in every `A ⧸ I ^ (n + 1)`.
 
@@ -122,6 +131,22 @@ theorem quotientSheaf_obj_map (hJ : IsAdic J) {U V : (Opens (carrier A))ᵒᵖ} 
       (Spec.structureSheaf (A ⧸ J)).obj.map ((Opens.map (quotientInclusion hJ)).op.map i) :=
   rfl
 
+/-- The sections of `O_J` over every open are `A ⧸ J`-algebras, as sections of the structure sheaf
+of `Spec (A ⧸ J)`. -/
+noncomputable instance (hJ : IsAdic J) (U : (Opens (carrier A))ᵒᵖ) :
+    Algebra (A ⧸ J) ((quotientSheaf hJ).obj.obj U) :=
+  inferInstanceAs (Algebra (A ⧸ J)
+    ((Spec.structureSheaf (A ⧸ J)).obj.obj ((Opens.map (quotientInclusion hJ)).op.obj U)))
+
+/-- The restriction maps of `O_J` are `A ⧸ J`-algebra homomorphisms. -/
+@[reassoc]
+theorem algebraMap_comp_quotientSheaf_map (hJ : IsAdic J) {U V : (Opens (carrier A))ᵒᵖ}
+    (i : U ⟶ V) :
+    CommRingCat.ofHom (algebraMap (A ⧸ J) ((quotientSheaf hJ).obj.obj U)) ≫
+        (quotientSheaf hJ).obj.map i =
+      CommRingCat.ofHom (algebraMap (A ⧸ J) ((quotientSheaf hJ).obj.obj V)) :=
+  StructureSheaf.algebraMap_self_map _ _ _ _
+
 /-- For ideals of definition `J ≤ K`, the preimage of an open `U` of `Spf A` in `Spec (A ⧸ K)` lies
 over its preimage in `Spec (A ⧸ J)` under the closed immersion `Spec (A ⧸ K) → Spec (A ⧸ J)`. -/
 theorem map_quotientInclusion_subset (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
@@ -178,6 +203,12 @@ noncomputable def quotientSheafGlobalSectionsIso (hJ : IsAdic J) :
     (quotientSheaf hJ).obj.obj (op ⊤) ≅ CommRingCat.of (A ⧸ J) :=
   (StructureSheaf.globalSectionsIso (A ⧸ J)).symm
 
+/-- The global section of `O_J` corresponding to `a ∈ A ⧸ J` is its image under the algebra map. -/
+theorem quotientSheafGlobalSectionsIso_inv (hJ : IsAdic J) :
+    (quotientSheafGlobalSectionsIso hJ).inv =
+      CommRingCat.ofHom (algebraMap (A ⧸ J) ((quotientSheaf hJ).obj.obj (op ⊤))) :=
+  (rfl)
+
 /-- On global sections, the reduction map `O_J → O_K` is the quotient map `A ⧸ J → A ⧸ K`. -/
 @[reassoc]
 theorem quotientSheafGlobalSectionsIso_inv_comp_quotientTransition (hJ : IsAdic J) (hK : IsAdic K)
@@ -205,8 +236,9 @@ variable [IsTopologicalRing A] {I : Ideal A}
 
 /-- The diagram `O_I ← O_{I ^ 2} ← O_{I ^ 3} ← ⋯` of the structure sheaves of the thickenings
 `Spec (A ⧸ I ^ (n + 1))`, transported to the underlying space of `Spf A`, with the reduction maps
-as transitions. -/
-noncomputable def quotientDiagram (hI : IsAdic I) :
+as transitions. It is exposed so that its objects and transitions are definitionally the sheaves
+`quotientSheaf` and the maps `quotientTransition`. -/
+@[expose] noncomputable def quotientDiagram (hI : IsAdic I) :
     ℕᵒᵖ ⥤ Sheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat where
   obj n := quotientSheaf (is_ideal_adic_pow hI n.unop.succ_pos)
   map f := quotientTransition _ _ (Ideal.pow_le_pow_right (Nat.succ_le_succ (leOfHom f.unop)))
@@ -267,6 +299,31 @@ theorem structureSheaf.hom_ext (hI : IsAdic I)
     (h : ∀ n, f ≫ quotientProjection hI n = g ≫ quotientProjection hI n) : f = g :=
   limit.hom_ext fun n ↦ h n.unop
 
+/-- The sections of the structure sheaf of `Spf A` over an open `U` are the limit of the sections
+of the thickenings over `U`. -/
+noncomputable def sectionsIsoLimit (hI : IsAdic I) (U : (Opens (carrier A))ᵒᵖ) :
+    (structureSheaf hI).obj.obj U ≅
+      limit (quotientDiagram hI ⋙ sheafToPresheaf _ CommRingCat ⋙
+        (evaluation _ CommRingCat).obj U) :=
+  preservesLimitIso (sheafToPresheaf _ CommRingCat ⋙ (evaluation _ CommRingCat).obj U)
+    (quotientDiagram hI)
+
+/-- Under `sectionsIsoLimit`, the limit projections are the projections to the thickenings. -/
+@[reassoc (attr := simp)]
+theorem sectionsIsoLimit_inv_comp_quotientProjection (hI : IsAdic I) (U : (Opens (carrier A))ᵒᵖ)
+    (n : ℕ) :
+    (sectionsIsoLimit hI U).inv ≫ (quotientProjection hI n).hom.app U = limit.π _ (op n) :=
+  preservesLimitIso_inv_π _ _ _
+
+/-- Homomorphisms into the sections of the structure sheaf of `Spf A` are determined by their
+projections to the sections of the thickenings. -/
+theorem structureSheaf.sections_hom_ext (hI : IsAdic I) {U : (Opens (carrier A))ᵒᵖ}
+    {X : CommRingCat.{u}} {g h : X ⟶ (structureSheaf hI).obj.obj U}
+    (H : ∀ n, g ≫ (quotientProjection hI n).hom.app U = h ≫ (quotientProjection hI n).hom.app U) :
+    g = h :=
+  (isLimitOfPreserves (sheafToPresheaf _ CommRingCat ⋙ (evaluation _ CommRingCat).obj U)
+    (limit.isLimit (quotientDiagram hI))).hom_ext fun n ↦ H n.unop
+
 /-- On global sections, the diagram of the thickenings is the diagram of the quotients
 `A ⧸ I ^ (n + 1)`. -/
 private noncomputable def quotientDiagramGlobalSectionsIso (hI : IsAdic I) :
@@ -282,9 +339,7 @@ variable [IsAdicComplete I A]
 `A` (EGA I, Ch. I, 10.1.3). -/
 noncomputable def globalSectionsIso (hI : IsAdic I) :
     (structureSheaf hI).obj.obj (op ⊤) ≅ CommRingCat.of A :=
-  preservesLimitIso (sheafToPresheaf _ CommRingCat ⋙ (evaluation _ CommRingCat).obj (op ⊤))
-      (quotientDiagram hI) ≪≫
-    HasLimit.isoOfNatIso (quotientDiagramGlobalSectionsIso hI) ≪≫
+  sectionsIsoLimit hI (op ⊤) ≪≫ HasLimit.isoOfNatIso (quotientDiagramGlobalSectionsIso hI) ≪≫
     (limit.isLimit _).conePointUniqueUpToIso (IsAdicComplete.isLimitQuotientPowSuccCone I)
 
 /-- The global section of the structure sheaf of `Spf A` corresponding to `a ∈ A` projects to the
@@ -294,18 +349,16 @@ theorem globalSectionsIso_inv_comp_quotientProjection (hI : IsAdic I) (n : ℕ) 
     (globalSectionsIso hI).inv ≫ (quotientProjection hI n).hom.app (op ⊤) =
       CommRingCat.ofHom (Ideal.Quotient.mk _) ≫
         (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hI n.succ_pos)).inv := by
-  have ha := preservesLimitIso_inv_π
-    (sheafToPresheaf _ CommRingCat ⋙ (evaluation _ CommRingCat).obj (op ⊤)) (quotientDiagram hI)
-    (op n)
   have hb := HasLimit.isoOfNatIso_inv_π (quotientDiagramGlobalSectionsIso hI) (op n)
   have hc := (limit.isLimit _).conePointUniqueUpToIso_inv_comp
     (IsAdicComplete.isLimitQuotientPowSuccCone I) (op n)
   -- Unfold the inverse along its three factors: sections commute with the limit, the diagram of
   -- sections is the diagram of quotients, and `A` is the limit of the quotients. `erw` is needed
-  -- because the sections functor applied to `limit.π` is `(limit.π _ _).hom.app (op ⊤)` only
-  -- up to unfolding `sheafToPresheaf` and evaluation.
-  unfold globalSectionsIso quotientProjection
-  erw [Iso.trans_inv, Iso.trans_inv, Category.assoc, Category.assoc, ha]
+  -- because the coercions of `carrier A` to a topological space in the two inner factors agree
+  -- only up to unfolding `TopCat.of`.
+  unfold globalSectionsIso
+  erw [Iso.trans_inv, Iso.trans_inv, Category.assoc, Category.assoc,
+    sectionsIsoLimit_inv_comp_quotientProjection]
   refine (congrArg (_ ≫ ·) hb).trans ?_
   refine (Category.assoc _ _ _).symm.trans ?_
   exact congrArg (· ≫ _) hc
