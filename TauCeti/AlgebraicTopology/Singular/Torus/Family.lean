@@ -195,10 +195,9 @@ theorem torusFamilyMarking_loopClass
     P y (torusFamilyMarking P hcont hinj y (H₁AddEquivHomology _ (loopClass γ))) =
       Γ 1 - Γ 0 := by
   let _ := periodAddAction P
-  rw [period_torusFamilyMarking, ContinuousMap.singularHomologyMap,
-    homologyMap_H₁AddEquivHomology_loopClass]
+  rw [period_torusFamilyMarking, ContinuousMap.singularHomologyMap_loopClass]
   refine AddSubgroup.orbitRelQuotientFirstHomologyEquiv_loopClass _ _ Γ (funext fun t ↦ ?_)
-  simp only [Function.comp_apply, Path.map_coe, TopCat.hom_ofHom, ContinuousMap.coe_ofClass]
+  simp only [Function.comp_apply, Path.map_coe, ContinuousMap.coe_ofClass]
   rw [eq_comm, Homeomorph.symm_apply_eq]
   ext
   rw [hΓ]
@@ -258,7 +257,7 @@ private theorem exists_loopClass_eq (y : Y)
       rw [← ContinuousMap.singularHomologyMap_comp, Homeomorph.toContinuousMap_comp_symm,
         ContinuousMap.singularHomologyMap_id]
     rw [← hc, ← ha]
-    exact (homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom ⟨h, h.continuous⟩) γ).symm
+    exact (ContinuousMap.singularHomologyMap_loopClass (.ofClass h) γ).symm
 
 /-- **Naturality of the canonical marking under affine maps of fibres.** Let `φ` be a continuous
 map from the fibre over `y` to the fibre over `y'` induced by an affine map of `E`, so that `φ`
@@ -282,7 +281,7 @@ theorem torusFamilyMarking_singularHomologyMap_of_affine {y y' : Y}
       A (P y (torusFamilyMarking P hcont hinj y c)) := by
   obtain ⟨z, γ, Γ, hΓ, rfl⟩ := exists_loopClass_eq P hcont y c
   let Γ' : C(I, E) := ⟨fun t ↦ A (Γ t) + β, (hA.comp Γ.continuous).add continuous_const⟩
-  rw [ContinuousMap.singularHomologyMap, homologyMap_H₁AddEquivHomology_loopClass,
+  rw [ContinuousMap.singularHomologyMap_loopClass,
     torusFamilyMarking_loopClass P hcont hinj y γ Γ hΓ,
     torusFamilyMarking_loopClass P hcont hinj y' _ Γ' fun t ↦ hφ _ _ (hΓ t)]
   simp only [Γ', ContinuousMap.coe_mk, map_sub]

@@ -20,6 +20,8 @@ path, which conjugates loops by the path, does not change their homology classes
 
 ## Main results
 
+* `ContinuousMap.singularHomologyMap_loopClass`: the map induced on first singular homology by a
+  continuous map sends the class of a loop to the class of its image.
 * `TauCeti.HurewiczOne.homologyMap_H₁AddEquivHomology_hurewiczAb`: naturality of the Hurewicz
   map on the abelianized fundamental group.
 * `TauCeti.HurewiczOne.homologyMap_hurewiczHomologyAddEquiv`: the same for the Hurewicz
@@ -154,3 +156,17 @@ theorem hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath [PathConnectedSp
     (hurewicz₁_fundamentalGroupMulEquivOfPath p a)
 
 end TauCeti.HurewiczOne
+
+namespace ContinuousMap
+
+open TauCeti.HurewiczOne
+
+/-- The map induced on first singular homology by a continuous map sends the class of a loop to
+the class of its image. -/
+theorem singularHomologyMap_loopClass {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) {y : Y} (γ : Path y y) :
+    singularHomologyMap ℤ 1 g (H₁AddEquivHomology (TopCat.of Y) (loopClass γ)) =
+      H₁AddEquivHomology (TopCat.of Z) (loopClass (γ.map g.continuous)) :=
+  homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) γ
+
+end ContinuousMap
