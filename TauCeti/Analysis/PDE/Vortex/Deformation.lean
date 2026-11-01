@@ -53,6 +53,45 @@ def equation (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : EuclideanSpace
     fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
       x z 0 * x z 2 - x z 1 * x z 3]
 
+/-- The actual section `α = 2(p + i q)` represented by a real vortex field. -/
+def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
+  2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I)
+
+/-- The section in the real field coordinates. -/
+theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
+
+/-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
+The argument `v` is an actual real tangent vector to the plane. -/
+def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=
+  fderiv ℝ (sectionValue x) z v +
+    I * ((x z 0 * v.re + x z 1 * v.im : ℝ) : ℂ) * sectionValue x z
+
+/-- Coordinate evaluation of the covariant derivative of the actual section. -/
+theorem covariantDerivative_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
+    covariantDerivative x z v = fderiv ℝ (sectionValue x) z v +
+      I * ((x z 0 * v.re + x z 1 * v.im : ℝ) : ℂ) * sectionValue x z := (rfl)
+
+/-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
+def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
+  fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
+
+/-- The curvature coefficient in the oriented coordinate frame `(1, i)`. -/
+theorem curvature_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    curvature x z = fderiv ℝ (fun w ↦ x w 1) z 1 -
+      fderiv ℝ (fun w ↦ x w 0) z I := (rfl)
+
+/-- The physical energy density `|F_a|² + |d_a α|² + (1 - |α|²)²` in the Euclidean plane.
+No finite-energy condition is built into a field's type. -/
+def energyDensity (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
+  curvature x z ^ 2 + ‖covariantDerivative x z 1‖ ^ 2 +
+    ‖covariantDerivative x z I‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2
+
+/-- The physical energy density as a sum of curvature, kinetic and potential terms. -/
+theorem energyDensity_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    energyDensity x z = curvature x z ^ 2 + ‖covariantDerivative x z 1‖ ^ 2 +
+      ‖covariantDerivative x z I‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := (rfl)
+
 /-- The first-order linearization of `equation` at the field `x`, applied to a variation `y`.
 The coordinates of `y` represent `δa = i (y₀ ds + y₁ dt)` and `δα = 2 (y₂ + i y₃)`. -/
 def linearizedEquation (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :

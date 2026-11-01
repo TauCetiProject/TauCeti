@@ -286,31 +286,12 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
   · linear_combination (u z : ℂ).re * h₁ + (u z : ℂ).im * h₂ - equation x z 1 * hn
   · linear_combination -(u z : ℂ).im * h₁ + (u z : ℂ).re * h₂ - equation x z 2 * hn
 
-/-- The actual section `α = 2(p + i q)` represented by a real vortex field. -/
-def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
-  2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I)
-
-/-- The section in the real field coordinates. -/
-theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
-
 /-- The section transforms by the charge-one representation, not its square. -/
 @[simp]
 theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
-  apply Complex.ext <;> simp [sectionValue, gaugeTransform] <;> ring
-
-/-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
-The argument `v` is an actual real tangent vector to the plane. -/
-def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=
-  fderiv ℝ (sectionValue x) z v +
-    I * ((x z 0 * v.re + x z 1 * v.im : ℝ) : ℂ) * sectionValue x z
-
-/-- Coordinate evaluation of the covariant derivative of the actual section. -/
-theorem covariantDerivative_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
-    covariantDerivative x z v = fderiv ℝ (sectionValue x) z v +
-      I * ((x z 0 * v.re + x z 1 * v.im : ℝ) : ℂ) * sectionValue x z := (rfl)
+  apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
 /-- Covariant derivatives transform by multiplication by the circle-valued gauge. -/
 theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
@@ -321,6 +302,7 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     covariantDerivative (gaugeTransform u x) z v =
       (u z : ℂ) * covariantDerivative x z v := by
   have hs : DifferentiableAt ℝ (sectionValue x) z := by
+    rw [funext (sectionValue_apply x)]
     exact (differentiableAt_const (2 : ℂ)).mul
       ((ofRealCLM.differentiableAt.comp z hp).add
         ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
@@ -331,20 +313,11 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
       gaugeForm u z v = gaugeForm u z (v.re • (1 : ℂ) + v.im • I) := by
         rw [Complex.real_smul, Complex.real_smul, mul_one, Complex.re_add_im]
       _ = _ := by simp only [map_add, map_smul, smul_eq_mul]
-  simp only [covariantDerivative, heq, fderiv_fun_mul hu hs, add_apply, smul_apply,
+  simp only [covariantDerivative_apply, heq, fderiv_fun_mul hu hs, add_apply, smul_apply,
     smul_eq_mul, sectionValue_gaugeTransform, gaugeTransform, PiLp.toLp_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, ofReal_add, ofReal_sub, ofReal_mul,
     fderiv_coe_eq_mul_gaugeForm hu, hg]
   ring
-
-/-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
-def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
-  fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
-
-/-- The curvature coefficient in the oriented coordinate frame `(1, i)`. -/
-theorem curvature_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    curvature x z = fderiv ℝ (fun w ↦ x w 1) z 1 -
-      fderiv ℝ (fun w ↦ x w 0) z I := (rfl)
 
 /-- Curvature is unchanged by `C²` gauge transformations. -/
 @[simp]
@@ -356,19 +329,8 @@ theorem curvature_gaugeTransform {u : ℂ → Circle}
     curvature (gaugeTransform u x) z = curvature x z := by
   have hg (v : ℂ) : DifferentiableAt ℝ (fun w ↦ gaugeForm u w v) z :=
     (differentiableAt_gaugeForm hu).clm_apply (differentiableAt_const v)
-  simp [curvature, gaugeTransform, fderiv_fun_sub, hb₀, hb₁, hg, -gaugeForm_apply]
+  simp [curvature_apply, gaugeTransform, fderiv_fun_sub, hb₀, hb₁, hg, -gaugeForm_apply]
   linear_combination fderiv_gaugeForm_symm hu 1 I
-
-/-- The physical energy density `|F_a|² + |d_a α|² + (1 - |α|²)²` in the Euclidean plane.
-No finite-energy condition is built into a field's type. -/
-def energyDensity (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
-  curvature x z ^ 2 + ‖covariantDerivative x z 1‖ ^ 2 +
-    ‖covariantDerivative x z I‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2
-
-/-- The physical energy density as a sum of curvature, kinetic and potential terms. -/
-theorem energyDensity_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    energyDensity x z = curvature x z ^ 2 + ‖covariantDerivative x z 1‖ ^ 2 +
-      ‖covariantDerivative x z I‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := (rfl)
 
 /-- Gauge invariance of the physical energy density; hence any integral finite-energy
 condition is preserved, without decay assumptions on derivatives of the gauge. -/
@@ -378,7 +340,7 @@ theorem energyDensity_gaugeTransform {u : ℂ → Circle}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z)
     (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
     energyDensity (gaugeTransform u x) z = energyDensity x z := by
-  simp [energyDensity, curvature_gaugeTransform hu (hx 0) (hx 1),
+  simp [energyDensity_apply, curvature_gaugeTransform hu (hx 0) (hx 1),
     covariantDerivative_gaugeTransform (hu.differentiableAt (by norm_num)) (hx 2) (hx 3)]
 
 /-- The end framing `α times an inverse winding phase tends to one` is preserved by framed
