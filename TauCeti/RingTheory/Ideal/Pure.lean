@@ -43,4 +43,16 @@ theorem RingHom.flat_iff_forall_exists_eq_mul_of_surjective {R S : Type*}
   let := f.toAlgebra
   let e := Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hf
   rw [RingHom.Flat, ← Module.Flat.equiv_iff e.toLinearEquiv]
+  -- With the induced algebra structure, Algebra.ofId R S has underlying ring map f;
+  -- identify its kernel explicitly before applying the pure-ideal criterion.
+  change (RingHom.ker f).Pure ↔ ∀ x, f x = 0 → ∃ y, f y = 0 ∧ x = x * y
   exact Ideal.pure_iff_forall_exists_eq_mul (RingHom.ker f)
+
+/-- A surjective algebra map is flat exactly when each element of its kernel is fixed by
+multiplication by another element of the kernel. -/
+theorem AlgHom.flat_iff_forall_exists_eq_mul_of_surjective {R A B : Type*}
+    [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    (f : A →ₐ[R] B) (hf : Function.Surjective f) :
+    f.toRingHom.Flat ↔ ∀ x, f x = 0 → ∃ y, f y = 0 ∧ x = x * y := by
+  simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
+    RingHom.flat_iff_forall_exists_eq_mul_of_surjective f.toRingHom hf

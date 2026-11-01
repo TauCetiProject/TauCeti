@@ -238,6 +238,11 @@ theorem mulRight_tmul (b : B) (t : S) :
     (mulRight (b ⊗ₜ[R] t) : B) = b * algebraMap S B t := by
   simp [mulRight]
 
+/-- Multiplication on a self-tensor product is surjective. -/
+theorem lmul'_surjective (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] :
+    Function.Surjective (lmul' R : A ⊗[R] A →ₐ[R] A) :=
+  fun x ↦ ⟨x ⊗ₜ[R] 1, by simp⟩
+
 /-- Multiplication on a self-tensor product is natural in the algebra. -/
 @[simp]
 theorem lmul'_map_self {R A C : Type*} [CommSemiring R] [CommSemiring A]

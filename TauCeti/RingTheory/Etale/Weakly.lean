@@ -49,26 +49,25 @@ theorem of_isColimit {R : Type u} [CommRing R] {J : Type u} [SmallCategory J]
   have (j : J) : Module.Flat R ((F ⋙ G).obj j) :=
     inferInstanceAs (Module.Flat R (F.obj j))
   refine ⟨Module.Flat.of_isColimit (isColimitOfPreserves G hc), ?_⟩
-  apply (RingHom.flat_iff_forall_exists_eq_mul_of_surjective _
-    (fun x ↦ ⟨x ⊗ₜ[R] 1, by simp⟩)).mpr
+  apply (AlgHom.flat_iff_forall_exists_eq_mul_of_surjective _
+    (Algebra.TensorProduct.lmul'_surjective R c.pt)).mpr
   intro x hx
   obtain ⟨i, y, rfl⟩ := CommAlgCat.isColimit_exists_tensor_rep hc hc x
   have hy : c.ι.app i (Algebra.TensorProduct.lmul' R y) = c.ι.app i 0 := by
-    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, Algebra.TensorProduct.lmul'_map_self,
-      map_zero] using hx
+    simpa only [Algebra.TensorProduct.lmul'_map_self, map_zero] using hx
   obtain ⟨j, f, _, hf⟩ := Concrete.isColimit_exists_of_rep_eq F hc _ _ hy
   let z := Algebra.TensorProduct.map (F.map f).hom (F.map f).hom y
   have hz : Algebra.TensorProduct.lmul' R z = 0 := by
     simpa only [z, Algebra.TensorProduct.lmul'_map_self, map_zero] using hf
   obtain ⟨w, hw, hzw⟩ :=
-    (RingHom.flat_iff_forall_exists_eq_mul_of_surjective _
-      (fun x : F.obj j ↦ ⟨x ⊗ₜ[R] 1, by simp⟩)).mp (flat_lmul' R (F.obj j)) z hz
+    (AlgHom.flat_iff_forall_exists_eq_mul_of_surjective _
+      (Algebra.TensorProduct.lmul'_surjective R (F.obj j))).mp (flat_lmul' R (F.obj j)) z hz
   let m := Algebra.TensorProduct.map (c.ι.app j).hom (c.ι.app j).hom
   have hm : m z = Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom y :=
     CommAlgCat.tensorProduct_map_ι_app_map c c f y
   refine ⟨m w, ?_, ?_⟩
-  · simpa only [m, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-      Algebra.TensorProduct.lmul'_map_self, map_zero] using congrArg (c.ι.app j).hom hw
+  · simpa only [m, Algebra.TensorProduct.lmul'_map_self, map_zero] using
+      congrArg (c.ι.app j).hom hw
   · rw [← hm, ← map_mul, ← hzw]
 
 end Algebra.WeaklyEtale
