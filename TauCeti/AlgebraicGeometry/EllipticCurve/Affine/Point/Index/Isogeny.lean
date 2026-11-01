@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PrimaryReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 
+import TauCeti.Algebra.Group.Primary.Card
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
 import TauCeti.GroupTheory.Index.PrimaryComponent
@@ -191,6 +192,8 @@ theorem index_range_eq_card_ker_of_isElliptic
   -- `O_u` is the ring of integers `𝒪[F_u]` of the valuative relation of `F_u`
   have hT : u.adicCompletionIntegers F = (valuation (u.adicCompletion F)).valuationSubring :=
     ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm
+  -- the coercion of `valuationSubring` to a type is by definition that of `Valuation.integer`,
+  -- which is `𝒪[F_u]`
   have : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
     inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
   -- An elliptic equation over `O_u` has good reduction there. Stating this for every valuation
@@ -205,9 +208,12 @@ theorem index_range_eq_card_ker_of_isElliptic
           Nat.card ((C.baseChange (u.adicCompletion F)).reduction T).toAffine.Point := by
     subst hT
     have : (C.baseChange (u.adicCompletion F)).IsIntegral (u.adicCompletionIntegers F) := ⟨C, rfl⟩
-    refine ⟨(WeierstrassCurve.hasGoodReduction_iff_isUnit_integralModel_Δ _ _).mpr ?_, rfl⟩
-    rw [WeierstrassCurve.integralModel_baseChange_self]
-    exact C.isUnit_Δ
+    refine ⟨(WeierstrassCurve.hasGoodReduction_iff_isUnit_integralModel_Δ _ _).mpr ?_, ?_⟩
+    · rw [WeierstrassCurve.integralModel_baseChange_self]
+      exact C.isUnit_Δ
+    rw [WeierstrassCurve.reduction]
+    -- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`, the ring `R_u`
+    rfl
   obtain ⟨h₁, hred₁⟩ := hgood C₁ _ hT
   obtain ⟨h₂, hred₂⟩ := hgood C₂ _ hT
   have : (C₁.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F] := h₁.toIsMinimal
@@ -217,12 +223,13 @@ theorem index_range_eq_card_ker_of_isElliptic
     exact hf (by simp [degree_zero])
   -- the reductions have the same number of points, hence equinumerous primary components
   have hcard := hred₁.trans (((toIsogeny hf0).natCard_point_reduction_eq h₁).trans hred₂.symm)
+  -- `R_u` is `u.adicCompletionIntegers F` by definition
   have : Finite (ResidueField R_u) :=
     inferInstanceAs (Finite (ResidueField (u.adicCompletionIntegers F)))
   have h := index_range_mul_card_primaryComponent_of_degree_notMem u hf
   rw [Nat.card_congr (C₁.primaryReductionAddEquiv hf).toEquiv,
     Nat.card_congr (C₂.primaryReductionAddEquiv hf).toEquiv,
-    AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq hcard f.degree, mul_comm] at h
+    TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq hcard f.degree, mul_comm] at h
   exact Nat.eq_of_mul_eq_mul_left Nat.card_pos h
 
 end GoodReduction
