@@ -50,32 +50,6 @@ namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
-/-- Congruence by the `i`-th row of the identity matrix, read as a real number, is the diagonal
-entry `(i, i)`. -/
-private theorem symmetricFinOneEquiv_symmetricCongruenceLinearMap_row (i : Fin p) :
-    symmetricFinOneEquiv ∘ Matrix.symmetricCongruenceLinearMap
-        ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id) =
-      fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
-  funext A
-  rw [Function.comp_apply, symmetricFinOneEquiv_apply,
-    Matrix.coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero (j := i)
-      fun a ha ↦ by rw [Matrix.submatrix_apply, id_eq, Matrix.one_apply_ne ha.symm],
-    Matrix.submatrix_apply, id_eq, Matrix.one_apply_eq, one_pow, one_mul]
-
-/-- The law of a diagonal entry is the pushforward along the row congruence, read through the
-single-entry identification. -/
-private theorem map_symmetricFinOneEquiv_symmetricCongruenceLinearMap_row (i : Fin p)
-    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) :
-    (μ.map (Matrix.symmetricCongruenceLinearMap
-        ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id))).map
-        symmetricFinOneEquiv =
-      μ.map fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
-  rw [Measure.map_map symmetricFinOneEquiv.continuous.measurable
-    (LinearMap.continuous_of_finiteDimensional _).measurable,
-    symmetricFinOneEquiv_symmetricCongruenceLinearMap_row]
-
 /-! ### Diagonal laws -/
 
 /-- **The diagonal entries of a Gaussian-Gram Wishart matrix are scaled chi-squared.** For a
