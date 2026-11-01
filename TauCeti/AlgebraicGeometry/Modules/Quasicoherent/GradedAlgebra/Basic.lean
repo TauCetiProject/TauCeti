@@ -21,7 +21,12 @@ algebra morphisms, since they are morphisms of commutative monoid objects in gra
 
 The functor `GradedQuasicoherentAlgebra.degree` extracts any homogeneous component as a
 quasicoherent sheaf. In particular, `degreeOne` is the coefficient object from which freely
-generated graded algebras and their associated linear schemes are recovered.
+generated graded algebras and their associated linear schemes are recovered. The unit
+`GradedQuasicoherentAlgebra.one` and the homogeneous multiplications
+`GradedQuasicoherentAlgebra.mul` are morphisms of quasicoherent sheaves between these
+components, satisfying the unit, associativity and commutativity laws and preserved by morphisms
+of graded algebras. These are the data transported along monoidal functors out of
+quasicoherent sheaves, such as pullback.
 
 Conversely, `GradedQuasicoherentAlgebra.ofHomogeneous` builds a graded quasicoherent algebra from
 its homogeneous components, unit and homogeneous multiplications, and
@@ -42,6 +47,10 @@ symmetric algebras of quasicoherent sheaves, enter this category.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degree`: extraction of a homogeneous
   component as a quasicoherent sheaf;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degreeOne`: the degree-one functor;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one` and
+  `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.mul`: the unit and homogeneous
+  multiplications as morphisms of quasicoherent sheaves, with their laws `one_mul`, `mul_one`,
+  `mul_assoc`, `mul_comm`, `one_map` and `map_mul`;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ofHomogeneous`: conversely, the graded
   quasicoherent algebra with given quasicoherent components, unit and homogeneous
   multiplications satisfying these laws;
@@ -138,6 +147,7 @@ theorem hom_ext_of_epi_mul {A B : GradedQuasicoherentAlgebra X} [Epi A.obj.toMon
 
 /-- Extract the degree-`n` component of a graded quasicoherent algebra as a quasicoherent sheaf.
 On morphisms this is the degree-`n` component of the underlying graded algebra morphism. -/
+@[expose]
 def degree (n : ℕ) : GradedQuasicoherentAlgebra X ⥤ QuasicoherentSheaf X where
   obj A := ⟨A.obj.X n, inferInstance⟩
   map f := ⟨f.hom.hom.hom n⟩
@@ -165,6 +175,100 @@ theorem degree_map_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (n : �
 that generates a free graded algebra and therefore the coefficient sheaf of a linear scheme. -/
 abbrev degreeOne : GradedQuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=
   degree (X := X) 1
+
+section Structure
+
+variable (A : GradedQuasicoherentAlgebra X)
+
+/-- The unit `𝒪_X ⟶ A₀` of a graded quasicoherent algebra, as a morphism of quasicoherent
+sheaves into its degree-zero component. -/
+protected def one : 𝟙_ (QuasicoherentSheaf X) ⟶ (degree 0).obj A :=
+  ObjectProperty.homMk A.obj.toMon.one
+
+/-- The homogeneous multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` of a graded quasicoherent algebra, as a
+morphism of quasicoherent sheaves between its homogeneous components. -/
+protected def mul (i j : ℕ) : (degree i).obj A ⊗ (degree j).obj A ⟶ (degree (i + j)).obj A :=
+  ObjectProperty.homMk (A.obj.toMon.mul i j)
+
+/-- The unit of `A`, as a morphism of quasicoherent sheaves, is the unit of the underlying graded
+algebra on modules. -/
+@[simp]
+protected theorem one_hom : A.one.hom = A.obj.toMon.one :=
+  (rfl)
+
+/-- The homogeneous multiplication of `A`, as a morphism of quasicoherent sheaves, is that of the
+underlying graded algebra on modules. -/
+@[simp]
+protected theorem mul_hom (i j : ℕ) : (A.mul i j).hom = A.obj.toMon.mul i j :=
+  (rfl)
+
+/-- Transport between homogeneous components, read on underlying modules. -/
+private lemma eqToHom_degree_obj_hom {i j : ℕ} (h : i = j) :
+    (eqToHom (congrArg (fun n ↦ (degree n).obj A) h)).hom = eqToHom (congrArg A.obj.X h) := by
+  subst h
+  rfl
+
+/-- The unit of a graded quasicoherent algebra is a left identity for homogeneous
+multiplication, up to the identification of the degrees `0 + n` and `n`. -/
+protected theorem one_mul (n : ℕ) :
+    (A.one ▷ (degree n).obj A) ≫ A.mul 0 n =
+      (λ_ ((degree n).obj A)).hom ≫
+        eqToHom (congrArg (fun k ↦ (degree k).obj A) (zero_add n).symm) := by
+  apply ObjectProperty.hom_ext
+  -- Composition, whiskering and unitors of the full monoidal subcategory are those of modules.
+  change (A.obj.toMon.one ▷ A.obj.X n) ≫ A.obj.toMon.mul 0 n = (λ_ (A.obj.X n)).hom ≫ _
+  rw [eqToHom_degree_obj_hom A (zero_add n).symm]
+  exact Mon.one_mul A.obj.toMon n
+
+/-- The unit of a graded quasicoherent algebra is a right identity for homogeneous
+multiplication, up to the identification of the degrees `n + 0` and `n`. -/
+protected theorem mul_one (n : ℕ) :
+    ((degree n).obj A ◁ A.one) ≫ A.mul n 0 =
+      (ρ_ ((degree n).obj A)).hom ≫
+        eqToHom (congrArg (fun k ↦ (degree k).obj A) (add_zero n).symm) := by
+  apply ObjectProperty.hom_ext
+  -- As in `one_mul`, read the full-subcategory structure maps on underlying modules.
+  change (A.obj.X n ◁ A.obj.toMon.one) ≫ A.obj.toMon.mul n 0 = (ρ_ (A.obj.X n)).hom ≫ _
+  rw [eqToHom_degree_obj_hom A (add_zero n).symm]
+  exact Mon.mul_one A.obj.toMon n
+
+/-- Homogeneous multiplication of a graded quasicoherent algebra is associative, up to the
+identification of the degrees `i + j + k` and `i + (j + k)`. -/
+protected theorem mul_assoc (i j k : ℕ) :
+    (A.mul i j ▷ (degree k).obj A) ≫ A.mul (i + j) k =
+      (α_ _ _ _).hom ≫ ((degree i).obj A ◁ A.mul j k) ≫ A.mul i (j + k) ≫
+        eqToHom (congrArg (fun n ↦ (degree n).obj A) (add_assoc i j k).symm) := by
+  apply ObjectProperty.hom_ext
+  -- As in `one_mul`, read the full-subcategory structure maps on underlying modules.
+  change (A.obj.toMon.mul i j ▷ A.obj.X k) ≫ A.obj.toMon.mul (i + j) k =
+    (α_ (A.obj.X i) (A.obj.X j) (A.obj.X k)).hom ≫ (A.obj.X i ◁ A.obj.toMon.mul j k) ≫
+      A.obj.toMon.mul i (j + k) ≫ _
+  rw [eqToHom_degree_obj_hom A (add_assoc i j k).symm]
+  exact Mon.mul_assoc A.obj.toMon i j k
+
+/-- Homogeneous multiplication of a graded quasicoherent algebra is commutative, up to the
+identification of the degrees `i + j` and `j + i`. -/
+protected theorem mul_comm (i j : ℕ) :
+    (β_ ((degree i).obj A) ((degree j).obj A)).hom ≫ A.mul j i =
+      A.mul i j ≫ eqToHom (congrArg (fun n ↦ (degree n).obj A) (add_comm i j)) := by
+  apply ObjectProperty.hom_ext
+  -- As in `one_mul`, read the full-subcategory structure maps on underlying modules.
+  change (β_ (A.obj.X i) (A.obj.X j)).hom ≫ A.obj.toMon.mul j i = A.obj.toMon.mul i j ≫ _
+  rw [eqToHom_degree_obj_hom A (add_comm i j)]
+  exact CommMon.mul_comm A.obj i j
+
+variable {A} {B : GradedQuasicoherentAlgebra X}
+
+/-- A morphism of graded quasicoherent algebras preserves the unit in degree zero. -/
+protected theorem one_map (g : A ⟶ B) : A.one ≫ (degree 0).map g = B.one :=
+  ObjectProperty.hom_ext _ (Mon.one_map g.hom.hom)
+
+/-- A morphism of graded quasicoherent algebras commutes with homogeneous multiplication. -/
+protected theorem map_mul (g : A ⟶ B) (i j : ℕ) :
+    ((degree i).map g ⊗ₘ (degree j).map g) ≫ B.mul i j = A.mul i j ≫ (degree (i + j)).map g :=
+  ObjectProperty.hom_ext _ (Mon.map_mul g.hom.hom i j)
+
+end Structure
 
 section Homogeneous
 

@@ -363,7 +363,9 @@ theorem symmetricAlgebraι_comp_lift (φ : F.obj ⟶ B.X) :
   -- As in `one_liftTotal`, the transports are cancelled with `erw`.
   erw [Category.assoc, Category.assoc, Category.assoc, ιTotal_liftTotal, eqToHom_trans_assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  exact liftDegree_degreeOne φ
+  · exact liftDegree_degreeOne φ
+  -- `erw [eqToHom_refl]` leaves the reflexivity of the cancelled transport as a side goal.
+  · rfl
 
 variable (F B) in
 /-- **The universal property of the symmetric algebra**: morphisms of commutative
@@ -413,9 +415,6 @@ theorem symmetricAlgebraι_naturality {F' : QuasicoherentSheaf X} (g : F' ⟶ F)
   erw [Category.assoc, Category.assoc, Category.assoc, ιTotal_toQuasicoherentAlgebra_map,
     ← Category.assoc g.hom, h, Category.assoc, Category.assoc, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  -- The two sides now differ only in the category instances through which the composites are
-  -- typed.
-  rfl
 
 /-- Precomposing `symmetricAlgebraLift φ` with the map `Sym F' ⟶ Sym F` induced by a morphism
 `g : F' ⟶ F` extends `g ≫ φ`. The left-hand side is stated with `symmetricAlgebra X` unfolded
