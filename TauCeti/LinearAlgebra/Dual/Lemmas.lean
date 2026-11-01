@@ -18,7 +18,8 @@ of a nonzero functional. Since functionals separate points, a vector space whose
 algebra is finite-dimensional is itself finite-dimensional.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
-family of vectors.
+family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
+and so separate points.
 
 ## Main results
 
@@ -37,6 +38,8 @@ family of vectors.
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
   independent family of functionals has a biorthogonal family of vectors.
+* `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
+  as the dimension, have no common zero but `0`.
 -/
 
 public section
@@ -130,6 +133,8 @@ namespace LinearIndependent
 
 open Module
 
+section Biorthogonal
+
 variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [DecidableEq ι]
 
 /-- A linearly independent family of vectors has a **biorthogonal family of functionals**:
@@ -155,5 +160,25 @@ theorem exists_forall_apply_eq_ite_of_dual [FiniteDimensional K V] {f : ι → D
   refine ⟨fun j ↦ (evalEquiv K V).symm (g j), fun i j ↦ ?_⟩
   rw [apply_evalEquiv_symm_apply, hg]
   exact if_congr eq_comm rfl rfl
+
+end Biorthogonal
+
+section Separation
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [Fintype ι]
+
+/-- Linearly independent linear forms, as many as the dimension, have no common zero but `0`. -/
+theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : LinearIndependent K L)
+    (hcard : Fintype.card ι = Module.finrank K V) {z : V} (hz : ∀ i, L i z = 0) : z = 0 := by
+  have hspan := hL.span_eq_top_of_card_eq_finrank' <| by rwa [Subspace.dual_finrank_eq]
+  have hz' : z ∈ (Submodule.span K (Set.range L)).dualCoannihilator := by
+    rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span]
+    rintro _ ⟨i, rfl⟩
+    exact hz i
+  rw [hspan] at hz'
+  simpa using hz'
+
+end Separation
 
 end LinearIndependent
