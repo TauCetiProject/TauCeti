@@ -35,8 +35,6 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
 * `TopPair.twistedChainComplexCoeff`: the coefficient of a relative chain on a simplex whose image
   does not lie in the subspace, with `TopPair.twistedChainComplex_ext_coeff` stating that these
   coefficients determine the relative chain.
-* `TopPair.twistedChainComplexMapOfSubset`: for subsets `A ⊆ B` of a space `X`, the quotient map
-  `C(X, A; L) ⟶ C(X, B; L)` induced by the identity of the twisted chains of `X`.
 * `TopPair.twistedChainComplexCoefficientMap`: change of local coefficients on relative chains,
   with the corresponding `TopPair.twistedHomologyCoefficientMap`.
 * `TopPair.shortExact_twistedChainComplexShortComplex`: the twisted chains of the subspace, of the
@@ -182,7 +180,7 @@ lemma twistedChainComplexπ_f_surjective :
 
 /-- A singular simplex of the ambient space of a pair comes from the subspace exactly when its
 image lies in the subspace. -/
-private lemma mem_range_toSSet_map_app_iff_range_simplexMap_subset
+lemma mem_range_toSSet_map_app_iff_range_simplexMap_subset
     (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) :
     σ ∈ Set.range ((TopCat.toSSet.map P.map).app _) ↔
       Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map := by
@@ -191,6 +189,16 @@ private lemma mem_range_toSSet_map_app_iff_range_simplexMap_subset
   constructor <;> rintro h _ ⟨p, rfl⟩
   · exact h ⟨p.down, rfl⟩
   · exact h ⟨⟨p⟩, rfl⟩
+
+/-- A singular simplex of `X` meets a set `A` exactly when its image does not lie in the subspace
+of the pair `(X, X \ A)`. -/
+lemma not_range_simplexMap_subset_range_ofSubset_compl_map_iff {X : TopCat.{v}} {A : Set X}
+    {σ : (TopCat.toSSet.obj X) _⦋k⦌} :
+    ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range (ofSubset Aᶜ).map ↔
+      (Set.range (TopCat.simplexMap σ) ∩ A).Nonempty := by
+  -- The range of the pair's map lives in `(ofSubset Aᶜ).fst`, which is only definitionally `X`.
+  rw [show (Set.range (ofSubset Aᶜ).map : Set X) = Aᶜ from range_ofSubset_map,
+    Set.subset_compl_iff_disjoint_right, Set.not_disjoint_iff_nonempty_inter]
 
 /-- The summand of a simplex whose image lies in the subspace vanishes in relative twisted
 chains. -/
@@ -248,43 +256,11 @@ lemma twistedChainComplex_ext_coeff {y y' : (P.twistedChainComplex L).X k}
   refine Finset.sum_eq_zero fun σ _ ↦ ?_
   by_cases hσ : Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map
   · rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      P.ιTwistedChainComplex_comp_twistedChainComplexπ_of_range_subset L σ hσ]
-    rfl
+      P.ιTwistedChainComplex_comp_twistedChainComplexπ_of_range_subset L σ hσ, ModuleCat.hom_zero,
+      LinearMap.zero_apply]
   · rw [ha σ hσ, map_zero, map_zero]
 
 end Coeff
-
-section OfSubset
-
-variable {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X)
-
-/-- For subsets `A ⊆ B` of a space `X`, the quotient map `C(X, A; L) ⟶ C(X, B; L)` of relative
-twisted chain complexes induced by the identity of the twisted chains of `X`. -/
-def twistedChainComplexMapOfSubset {A B : Set X} (h : A ⊆ B) :
-    (ofSubset A).twistedChainComplex L ⟶ (ofSubset B).twistedChainComplex L :=
-  (ofSubset A).twistedChainComplexDesc L ((ofSubset B).twistedChainComplexπ L) <| by
-    ext k : 1
-    refine LocalCoefficientSystem.twistedChainComplex_hom_ext _ fun σ ↦ ?_
-    have hσ : Set.range (TopCat.simplexMap
-        ((TopCat.toSSet.map (ofSubset A).map).app _ σ)) ⊆ Set.range (ofSubset B).map := by
-      rintro _ ⟨p, rfl⟩
-      exact ⟨⟨_, h (TopCat.simplexMap σ p).2⟩, rfl⟩
-    -- The ambient space of `ofSubset A` is only definitionally `X`, so the composite is
-    -- assembled as a term rather than by rewriting.
-    exact ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
-      (LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexMap_f _ L k σ)).trans
-      ((ofSubset B).ιTwistedChainComplex_comp_twistedChainComplexπ_of_range_subset L _ hσ))).trans
-      comp_zero.symm
-
-/-- The quotient map between relative twisted chains is induced by the identity of the ambient
-twisted chains. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexπ_comp_twistedChainComplexMapOfSubset {A B : Set X} (h : A ⊆ B) :
-    (ofSubset A).twistedChainComplexπ L ≫ twistedChainComplexMapOfSubset L h =
-      (ofSubset B).twistedChainComplexπ L :=
-  (ofSubset A).twistedChainComplexπ_comp_twistedChainComplexDesc L _ _
-
-end OfSubset
 
 section Coefficients
 
