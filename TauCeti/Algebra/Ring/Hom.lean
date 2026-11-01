@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Commute
 public import Mathlib.Data.Set.Operations
 import Mathlib.Data.Nat.Cast.Basic
+import Mathlib.Data.Set.Function
 
 /-!
 # Multiplicative maps into rings
@@ -27,6 +28,7 @@ Hazewinkel's functional equation.
 * `Set.MapsTo.natCast_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n * x ∈ A` implies `n * f x ∈ B`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: the same for the factor `n ^ k`.
+* `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
 -/
 
 public section
@@ -44,6 +46,13 @@ theorem map_neg_one_eq_one_or_eq_neg_one {M R : Type*} [MulOneClass M] [HasDistr
 end MonoidHom
 
 namespace Set.MapsTo
+
+/-- If a ring endomorphism `f` maps `A` into itself, then so does its power `f ^ n`, which is the
+`n`-th iterate of `f`. -/
+theorem ringHom_pow {R : Type*} [NonAssocSemiring R] {f : R →+* R} {A : Set R}
+    (hf : MapsTo f A A) (n : ℕ) : MapsTo (f ^ n) A A := by
+  rw [RingHom.coe_pow]
+  exact hf.iterate n
 
 /-- If a ring homomorphism `f` maps `A` into `B`, then `n * x ∈ A` implies `n * f x ∈ B` for every
 natural number `n`, since `f` fixes `n`. No closure properties of `A` or `B` are needed. -/

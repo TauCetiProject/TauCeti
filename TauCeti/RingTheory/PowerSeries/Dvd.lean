@@ -38,7 +38,7 @@ theorem C_dvd_iff_dvd_coeff (r : R) (f : R⟦X⟧) : C r ∣ f ↔ ∀ n, r ∣ 
   refine ⟨fun h n ↦ ?_, fun h d ↦ ?_⟩
   · rw [coeff_def Finsupp.single_eq_same]
     exact h _
-  · rw [← coeff_def rfl]
+  · rw [← coeff_def (s := d) (n := d ()) rfl]
     exact h (d ())
 
 end PowerSeries

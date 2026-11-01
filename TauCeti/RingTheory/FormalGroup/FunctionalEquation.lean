@@ -145,7 +145,7 @@ theorem powerSeries_satisfiesFunctionalEquation_iff {f : PowerSeries K} :
   refine ⟨fun hf n ↦ ?_, fun hf d ↦ ?_⟩
   · rw [PowerSeries.coeff_def Finsupp.single_eq_same]
     exact hf _
-  · rw [← PowerSeries.coeff_def (s := d) rfl]
+  · rw [← PowerSeries.coeff_def (s := d) (n := d ()) rfl]
     exact hf _
 
 /-- Solutions of the functional equation are closed under addition. -/
@@ -207,8 +207,7 @@ theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
       simp [r, Nat.factorization_div hdvd, hp.out.factorization_self]
     have hmem : (p : K) ^ (n / p ^ i).factorization p * (σ ^ i) (PowerSeries.coeff (n / p ^ i) f)
         ∈ A :=
-      (RingHom.coe_pow σ i ▸ hσ.iterate i : Set.MapsTo (σ ^ i) A A).natCast_pow_mul_apply_mem
-        (ih _ hlt)
+      (hσ.ringHom_pow i).natCast_pow_mul_apply_mem (ih _ hlt)
     rw [hfac] at hmem
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hir
     obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hi₁
@@ -289,7 +288,7 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
     simp
   rw [hcoeff]
   have hmem : (p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f) ∈ A :=
-    (RingHom.coe_pow σ i ▸ hσ.iterate i : Set.MapsTo (σ ^ i) A A).natCast_pow_mul_apply_mem
+    (hσ.ringHom_pow i).natCast_pow_mul_apply_mem
       (hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
   have : s i * ((σ ^ i) (PowerSeries.coeff m f) * ((p : K) ^ (r + 1) * A.subtype (coeff d E))) =
       ((p : K) * s i) * (((p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f)) *
