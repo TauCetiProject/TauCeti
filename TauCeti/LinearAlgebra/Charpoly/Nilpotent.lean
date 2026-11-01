@@ -37,6 +37,11 @@ rank forces `Q = (1 - μ X) ^ h`
 (`LinearMap.projectiveCharpolyRev_eq_pow_of_isNilpotent_sub_smul_of_isUnit`). These are the
 rank and determinant of the spectral summand at a good zero of order `h` of a Fredholm
 determinant, over coefficient rings with nilpotents.
+
+On a finite projective module, nilpotence of `f` alone makes `det (1 - X f)` a unit polynomial
+(`LinearMap.isUnit_projectiveCharpolyRev_of_isNilpotent`), hence equal to `1` over a reduced ring
+(`LinearMap.projectiveCharpolyRev_eq_one_of_isNilpotent`), without assuming the module free.
+Thus, over a reduced ring, a nilpotent summand contributes nothing to a Fredholm determinant.
 -/
 
 public section
@@ -102,6 +107,40 @@ open scoped TensorProduct
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Finite R M]
   [Module.Projective R M]
+
+/-- On a finite projective module, `det (1 - X f)` is a unit polynomial when `f` is nilpotent. -/
+theorem isUnit_projectiveCharpolyRev_of_isNilpotent {f : Module.End R M} (hf : IsNilpotent f) :
+    IsUnit (projectiveCharpolyRev f) := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  have hx (x : M) : π (σ x) = x := congr($h x)
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h]
+  apply Matrix.isUnit_charpolyRev_of_isNilpotent
+  -- the compression `σ ∘ f ∘ π` is nilpotent because `π ∘ σ = id`
+  have hpow (m : ℕ) : (σ ∘ₗ f ∘ₗ π) ^ (m + 1) = σ ∘ₗ (f ^ (m + 1)) ∘ₗ π := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [pow_succ', ih]
+      refine LinearMap.ext fun x ↦ ?_
+      simp [Module.End.mul_apply, hx, pow_succ' f (m + 1)]
+  obtain ⟨k, hk⟩ := hf
+  have hg : IsNilpotent (σ ∘ₗ f ∘ₗ π) := ⟨k + 1, by rw [hpow, pow_succ, hk, zero_mul]; simp⟩
+  have hmat : toMatrixAlgEquiv (Pi.basisFun R (Fin n)) (σ ∘ₗ f ∘ₗ π) =
+      toMatrix (Pi.basisFun R (Fin n)) (Pi.basisFun R (Fin n)) (σ ∘ₗ f ∘ₗ π) := by
+    ext i j
+    rw [toMatrixAlgEquiv_apply, toMatrix_apply]
+  exact hmat ▸ hg.map (toMatrixAlgEquiv (Pi.basisFun R (Fin n)))
+
+/-- Over a reduced ring, a nilpotent endomorphism of a finite projective module has
+`det (1 - X f) = 1`. Reducedness is needed: over `K[ε]/(ε²)` the nilpotent scalar `ε` on a line
+has `det (1 - X ε) = 1 - ε X`. -/
+theorem projectiveCharpolyRev_eq_one_of_isNilpotent [IsReduced R] {f : Module.End R M}
+    (hf : IsNilpotent f) : projectiveCharpolyRev f = 1 := by
+  have hnil := (Polynomial.isUnit_iff_coeff_isUnit_isNilpotent.1
+    (isUnit_projectiveCharpolyRev_of_isNilpotent hf)).2
+  ext (_ | k)
+  · simp
+  · simpa [coeff_one] using (hnil (k + 1) k.succ_ne_zero).eq_zero
 
 /-- **Constant rank from a unit Taylor coefficient.** Let `f - μ • 1` be nilpotent with
 `μ a = 1`. If the Taylor coefficient of order `h` at `a` of `det (1 - X f)` is a unit, then `M`
