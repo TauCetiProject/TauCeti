@@ -21,10 +21,12 @@ Given a normalized `3`-cocycle `ω : I → I → I → Rˣ`, that is a function 
 `ω i₁ 0 i₃ = 1`, the associator may be twisted by multiplying it by `ω i₁ i₂ i₃` on that summand.
 The cocycle identity is exactly what the pentagon axiom requires, and the normalization is what the
 triangle axiom requires, so the result is again a monoidal category, with the same tensor product
-and unitors. For `I = Additive G` and `C = ModuleCat k` this is the category of `G`-graded vector
-spaces with associator twisted by `ω`: on the one-dimensional objects `δ_g` concentrated in a
-single degree the associator is multiplication by `ω g h j`. Its finite-dimensional, finitely
-supported objects form the pointed category `Vec^ω_G`.
+and unitors. The intended example is `I = Additive G` and `C = ModuleCat k` for a field `k`: the
+category of `G`-graded vector spaces with associator twisted by `ω`, where on the one-dimensional
+objects `δ_g` concentrated in a single degree the associator is multiplication by `ω g h j`, and
+whose finite-dimensional, finitely supported objects form the pointed category `Vec^ω_G`. The
+instance does not yet apply there: it still needs an instance saying that tensoring on the right
+preserves colimits in `ModuleCat k`.
 
 ## Main definitions
 
@@ -47,9 +49,10 @@ supported objects form the pointed category `Vec^ω_G`.
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §2.3
 * `Mathlib/CategoryTheory/GradedObject/Monoidal.lean` (Joël Riou, Kim Morrison), whose
   construction of the associator and proof of the pentagon axiom are followed here, with scalars
+  pulled out through `MonoidalLinear`.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -99,7 +102,7 @@ end TwistingCocycle
 `TauCeti.groupCohomology.IsMulCocycle₃`, which is normalized in the middle variable, as a twisting
 cocycle on `Additive G`. By `TauCeti.groupCohomology.exists_normalized_of_isMulCocycle₃`, every
 `3`-cocycle of a group is cohomologous to one satisfying the normalization. -/
-@[simps]
+@[expose, simps]
 def TwistingCocycle.ofIsMulCocycle₃ {R G : Type*} [CommMonoid R] [Monoid G] [SMul G Rˣ]
     (f : G × G × G → Rˣ) (hf : groupCohomology.IsMulCocycle₃ f)
     (htriv : ∀ (g : G) (x : Rˣ), g • x = x)
@@ -140,6 +143,7 @@ lemma ιTensorObj₃_scaleTensorObj₃ (u : I → I → I → R) (i₁ i₂ i₃
     (ρ₂₃ := ρ₂₃) (X₁ := X₁) (X₂ := X₂) (X₃ := X₃) _ i₁ i₂ i₃ h
 
 /-- The constant scalar `1` acts as the identity. -/
+@[simp]
 lemma scaleTensorObj₃_one :
     scaleTensorObj₃ X₁ X₂ X₃ (fun _ _ _ => (1 : R)) = 𝟙 _ := by
   ext j i₁ i₂ i₃ h
@@ -181,16 +185,16 @@ def twistedAssociator :
     (associator X₁ X₂ X₃).inv
   hom_inv_id := by
     rw [assoc, scaleTensorObj₃_comp_assoc]
-    simp [scaleTensorObj₃_one]
+    simp
   inv_hom_id := by
     rw [assoc, Iso.inv_hom_id_assoc, scaleTensorObj₃_comp]
-    simp [scaleTensorObj₃_one]
+    simp
 
 /-- The twisted associator is Mathlib's associator followed by the scalars `ω`. -/
 lemma twistedAssociator_hom :
     (twistedAssociator ω X₁ X₂ X₃).hom =
       (associator X₁ X₂ X₃).hom ≫ scaleTensorObj₃ X₁ X₂ X₃ fun i₁ i₂ i₃ => (ω i₁ i₂ i₃ : R) :=
-  rfl
+  (rfl)
 
 /-- The inverse of the twisted associator is the scalars `ω⁻¹` followed by the inverse of Mathlib's
 associator. -/
@@ -198,7 +202,7 @@ lemma twistedAssociator_inv :
     (twistedAssociator ω X₁ X₂ X₃).inv =
       scaleTensorObj₃ X₁ X₂ X₃ (fun i₁ i₂ i₃ => (((ω i₁ i₂ i₃)⁻¹ : Rˣ) : R)) ≫
         (associator X₁ X₂ X₃).inv :=
-  rfl
+  (rfl)
 
 /-- The twisted associator acts on the summand `(X₁ i₁ ⊗ X₂ i₂) ⊗ X₃ i₃` as `ω i₁ i₂ i₃` times the
 associator of `C`. -/
@@ -217,10 +221,11 @@ lemma ιTensorObj₃_twistedAssociator_inv (i₁ i₂ i₃ j : I) (h : i₁ + i�
   simp [twistedAssociator_inv]
 
 /-- Twisting by the constant cocycle `1` recovers Mathlib's associator of graded objects. -/
+@[simp]
 lemma twistedAssociator_one :
     twistedAssociator (fun _ _ _ => (1 : Rˣ)) X₁ X₂ X₃ = associator X₁ X₂ X₃ := by
   ext : 1
-  simp [twistedAssociator_hom, scaleTensorObj₃_one]
+  simp [twistedAssociator_hom]
 
 variable {X₁ X₂ X₃} in
 /-- The twisted associator is natural. -/
@@ -379,8 +384,11 @@ open CategoryTheory.GradedObject CategoryTheory.GradedObject.Monoidal
 variable {I : Type*} [AddMonoid I] {R : Type*} [CommSemiring R]
 
 /-- The category of `I`-graded objects of `C`, with the monoidal structure whose associator is
-twisted by the normalized `3`-cocycle `c`. For `I = Additive G` and `C = ModuleCat k` this is the
-category of `G`-graded vector spaces with associator twisted by `c`. -/
+twisted by the normalized `3`-cocycle `c`. The intended example is `I = Additive G` and
+`C = ModuleCat k` for a field `k`, the category of `G`-graded vector spaces with associator twisted
+by `c`, although the monoidal instance there still needs tensoring on the right to preserve
+colimits in `ModuleCat k`. -/
+@[expose]
 def Twisted (_c : TwistingCocycle I R) (C : Type*) : Type _ := GradedObject I C
 
 namespace Twisted
@@ -434,6 +442,46 @@ instance instMonoidalCategory : MonoidalCategory (Twisted c C) where
   triangle (X₁ X₂ : GradedObject I C) := twistedAssociator_triangle c.ω c.ω_zero X₁ X₂
 
 variable {c C}
+
+/-- The tensor product of `Twisted c C` is Mathlib's tensor product of graded objects. -/
+lemma tensorObj_eq (X Y : GradedObject I C) :
+    MonoidalCategoryStruct.tensorObj (C := Twisted c C) X Y = Monoidal.tensorObj X Y :=
+  rfl
+
+/-- The tensor product of morphisms of `Twisted c C` is Mathlib's one for graded objects. -/
+lemma tensorHom_eq {X₁ X₂ Y₁ Y₂ : GradedObject I C} (f : X₁ ⟶ X₂) (g : Y₁ ⟶ Y₂) :
+    MonoidalCategoryStruct.tensorHom (C := Twisted c C) f g = Monoidal.tensorHom f g :=
+  rfl
+
+/-- Left whiskering in `Twisted c C` is Mathlib's one for graded objects. -/
+lemma whiskerLeft_eq (X : GradedObject I C) {Y₁ Y₂ : GradedObject I C} (f : Y₁ ⟶ Y₂) :
+    MonoidalCategoryStruct.whiskerLeft (C := Twisted c C) X f = Monoidal.whiskerLeft X f :=
+  rfl
+
+/-- Right whiskering in `Twisted c C` is Mathlib's one for graded objects. -/
+lemma whiskerRight_eq {X₁ X₂ : GradedObject I C} (f : X₁ ⟶ X₂) (Y : GradedObject I C) :
+    MonoidalCategoryStruct.whiskerRight (C := Twisted c C) f Y = Monoidal.whiskerRight f Y :=
+  rfl
+
+/-- The unit object of `Twisted c C` is Mathlib's unit of graded objects. -/
+lemma tensorUnit_eq : 𝟙_ (Twisted c C) = (Monoidal.tensorUnit : GradedObject I C) :=
+  rfl
+
+/-- The left unitor of `Twisted c C` is Mathlib's left unitor of graded objects. -/
+lemma leftUnitor_eq (X : GradedObject I C) :
+    MonoidalCategoryStruct.leftUnitor (C := Twisted c C) X = Monoidal.leftUnitor X :=
+  rfl
+
+/-- The right unitor of `Twisted c C` is Mathlib's right unitor of graded objects. -/
+lemma rightUnitor_eq (X : GradedObject I C) :
+    MonoidalCategoryStruct.rightUnitor (C := Twisted c C) X = Monoidal.rightUnitor X :=
+  rfl
+
+/-- The associator of `Twisted c C` is the associator of graded objects twisted by `c`. -/
+lemma associator_eq (X₁ X₂ X₃ : GradedObject I C) :
+    MonoidalCategoryStruct.associator (C := Twisted c C) X₁ X₂ X₃ =
+      twistedAssociator c.ω X₁ X₂ X₃ :=
+  rfl
 
 /-- The twisted associator acts on the summand `(X₁ i₁ ⊗ X₂ i₂) ⊗ X₃ i₃` of `(X₁ ⊗ X₂) ⊗ X₃` as
 `c.ω i₁ i₂ i₃` times the associator of `C`. -/
