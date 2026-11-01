@@ -14,8 +14,8 @@ import TauCeti.LinearAlgebra.RootSystem.Height
 
 Let `b` be a base of a finite, reduced, irreducible, crystallographic root pairing `P`, with simple
 roots `αᵢ`, highest root `θ` and fundamental alcove `A` in the coweight space `N`. The walls of `A`
-are the zero sets of the **affine simple roots** (`RootPairing.affineSimpleRoot`), indexed by the
-nodes of the affine Dynkin diagram, `Option b.support`:
+are the zero sets of the **affine simple roots** (`RootPairing.affineSimpleRoot`, defined with the
+fundamental alcove), indexed by the nodes of the affine Dynkin diagram, `Option b.support`:
 
 `a₀ = 1 - θ` at the affine node `0`, and `aᵢ = αᵢ` at a node `i`,
 
@@ -47,16 +47,11 @@ the Weyl group, which preserves the pairing of roots and coroots
 
 ## Main definitions
 
-* `RootPairing.affineSimpleRoot`: the affine simple roots, the affine functions cutting out the
-  walls of the fundamental alcove.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm`: the action of `Ω` on the nodes of the affine
   Dynkin diagram, through its action on the walls of the fundamental alcove.
 
 ## Main results
 
-* `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
-  the set of points at which every affine simple root is positive.
-* `RootPairing.sum_affineMarks_mul_affineSimpleRoot`: the null-root relation `∑ₖ mₖ aₖ = 1`.
 * `RootPairing.affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply`: `a_{σ k}(ω x) = aₖ(x)`.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup`: **the action of `Ω` on
   the walls preserves the affine Cartan matrix.**
@@ -77,70 +72,6 @@ namespace RootPairing
 
 variable {ι R M N : Type*}
 
-/-! ### The affine simple roots -/
-
-section CommRing
-
-variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} (b : P.Base) [CharZero R] [Finite ι] [Nonempty ι]
-
-/-- The **affine simple roots** of a base `b`: the affine functions `a₀ = 1 - θ` at the affine node
-`none`, and `aᵢ = αᵢ` at the node of a simple root `αᵢ`, where `θ = b.highestRoot`. Their zero sets
-are the walls of the fundamental alcove
-(`RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`). -/
-noncomputable def affineSimpleRoot : Option b.support → N → R
-  | none, x => 1 - P.root' b.highestRoot x
-  | some i, x => P.root' i x
-
-@[simp]
-lemma affineSimpleRoot_none (x : N) :
-    affineSimpleRoot b none x = 1 - P.root' b.highestRoot x :=
-  (rfl)
-
-@[simp]
-lemma affineSimpleRoot_some (i : b.support) (x : N) : affineSimpleRoot b (some i) x = P.root' i x :=
-  (rfl)
-
-/-- An affine simple root is the root functional of `RootPairing.Base.affineSimpleRootIndex` plus
-its value at `0`. -/
-lemma affineSimpleRoot_eq_root'_add (k : Option b.support) (x : N) :
-    affineSimpleRoot b k x = P.root' (b.affineSimpleRootIndex k) x + affineSimpleRoot b k 0 := by
-  rcases k with _ | i <;> simp [root'_reflectionPerm_self, sub_eq_neg_add]
-
-/-- Distinct nodes have distinct affine simple roots. -/
-lemma affineSimpleRoot_injective : Function.Injective (affineSimpleRoot b) := by
-  rintro (_ | i) (_ | j) h <;> have h0 := congrFun h 0
-  · rfl
-  · simp at h0
-  · simp at h0
-  · have : P.root i = P.root j :=
-      P.toPerfPair.injective <| LinearMap.ext fun x ↦ by simpa using congrFun h x
-    exact congrArg some (Subtype.ext (P.root.injective this))
-
-/-- **The null-root relation**: `∑ₖ mₖ aₖ = 1`, where the marks `mₖ` are the coefficients of the
-highest root `θ = ∑ mᵢ αᵢ` and `m₀ = 1`. -/
-theorem sum_affineMarks_mul_affineSimpleRoot (x : N) :
-    ∑ k, (b.affineMarks k : R) * affineSimpleRoot b k x = 1 := by
-  have h : P.root' b.highestRoot x =
-      ∑ i : b.support, (b.affineMarks (some i) : R) * P.root' i x := by
-    rw [root', b.root_highestRoot_eq_sum_affineMarks]
-    simp [zsmul_eq_mul]
-  rw [Fintype.sum_option]
-  simp only [Base.affineMarks_none, Int.cast_one, one_mul, affineSimpleRoot_none,
-    affineSimpleRoot_some, h]
-  ring
-
-/-- **The fundamental alcove is the set of points at which every affine simple root is
-positive.** -/
-theorem mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos [PartialOrder R]
-    [IsOrderedAddMonoid R] {x : N} :
-    x ∈ fundamentalAlcove P b ↔ ∀ k, 0 < affineSimpleRoot b k x := by
-  simp only [mem_fundamentalAlcove, Option.forall, affineSimpleRoot_none, sub_pos,
-    affineSimpleRoot_some, Subtype.forall]
-  tauto
-
-end CommRing
-
 /-! ### `Ω` permutes the affine simple roots -/
 
 section Field
@@ -148,26 +79,6 @@ section Field
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} (b : P.Base) [Finite ι] [Nonempty ι]
   [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
-
-omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
-/-- The point `x₀` at which every simple root takes the value `1 / h`, with `h = ht(θ) + 1`, lies in
-the fundamental alcove, and every root `α` takes the value `ht(α) / h` there. -/
-private lemma exists_mem_fundamentalAlcove_root'_eq_height_div :
-    ∃ x₀ ∈ fundamentalAlcove P b,
-      ∀ j, P.root' j x₀ = b.height j / ((b.height b.highestRoot : R) + 1) := by
-  have hD : (0 : R) < b.height b.highestRoot + 1 := by
-    have : (0 : R) < b.height b.highestRoot := by exact_mod_cast b.isPos_highestRoot
-    linarith
-  obtain ⟨x₀, hx₀⟩ := b.exists_forall_root'_eq fun _ ↦ ((b.height b.highestRoot : R) + 1)⁻¹
-  have hx₀' (j : ι) : P.root' j x₀ = b.height j / ((b.height b.highestRoot : R) + 1) := by
-    simpa [zsmul_eq_mul, div_eq_mul_inv] using TauCeti.apply_root_eq_height_zsmul P b
-      (P.toLinearMap.flip x₀).toAddMonoidHom (fun j hj ↦ hx₀ j hj) j
-  refine ⟨x₀, (mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos b).mpr ?_, hx₀'⟩
-  rintro (_ | i)
-  · rw [affineSimpleRoot_none, hx₀', sub_pos, div_lt_one hD]
-    linarith
-  · rw [affineSimpleRoot_some, hx₀', Base.height_one_of_mem_support i.2]
-    simpa using hD
 
 omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
 /-- An element of the extended affine Weyl group carries each affine simple root to an affine root
@@ -256,7 +167,7 @@ private lemma affineSimpleRoot_wallIndex_apply {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.fundamentalAlcoveStabilizer b) (k : Option b.support) (x : N) :
     affineSimpleRoot b (wallIndex b hf k) (f x) = affineSimpleRoot b k x := by
   have := (exists_affineSimpleRoot_comp_eq b (inv_mem hf) k).choose_spec (f x)
-  rw [show f⁻¹ (f x) = x by simp [AffineEquiv.inv_def]] at this
+  simp only [AffineEquiv.inv_def, AffineEquiv.symm_apply_apply] at this
   exact this.symm
 
 private lemma wallIndex_eq_iff {f : N ≃ᵃ[R] N} (hf : f ∈ P.fundamentalAlcoveStabilizer b)
@@ -278,11 +189,11 @@ noncomputable def fundamentalAlcoveStabilizerToPerm :
     { toFun := wallIndex b ω.2
       invFun := wallIndex b (inv_mem ω.2)
       left_inv k := (wallIndex_eq_iff b _).mpr fun x ↦ by
-        rw [← affineSimpleRoot_wallIndex_apply b ω.2 k (ω.1⁻¹ x),
-          show ω.1 (ω.1⁻¹ x) = x by simp [AffineEquiv.inv_def]]
+        rw [← affineSimpleRoot_wallIndex_apply b ω.2 k (ω.1⁻¹ x)]
+        simp only [AffineEquiv.inv_def, AffineEquiv.apply_symm_apply]
       right_inv k := (wallIndex_eq_iff b _).mpr fun x ↦ by
-        rw [← affineSimpleRoot_wallIndex_apply b (inv_mem ω.2) k (ω.1 x),
-          show ω.1⁻¹ (ω.1 x) = x by simp [AffineEquiv.inv_def]] }
+        rw [← affineSimpleRoot_wallIndex_apply b (inv_mem ω.2) k (ω.1 x)]
+        simp only [AffineEquiv.inv_def, AffineEquiv.symm_apply_apply] }
   map_one' := Equiv.Perm.ext fun k ↦
     (wallIndex_eq_iff (l := k) b (1 : P.fundamentalAlcoveStabilizer b).2).mpr fun x ↦ by simp
   map_mul' ω₁ ω₂ := Equiv.Perm.ext fun k ↦

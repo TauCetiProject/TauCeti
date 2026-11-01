@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import TauCeti.LinearAlgebra.RootSystem.AffineCartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
+import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # The fundamental alcove of a base
@@ -50,6 +52,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.fundamentalAlcove`: the open fundamental alcove of a base.
 * `RootPairing.closedFundamentalAlcove`: the closed fundamental alcove, cut out by the
   non-strict inequalities.
+* `RootPairing.affineSimpleRoot`: the affine simple roots `a₀ = 1 - θ` and `aᵢ = αᵢ`, indexed by
+  the nodes of the affine Dynkin diagram, whose zero sets are the walls of the fundamental alcove.
 
 ## Main results
 
@@ -67,8 +71,14 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
   the part of the closed fundamental alcove lying on no affine root hyperplane.
 * `RootPairing.convex_fundamentalAlcove`: the fundamental alcove is convex.
+* `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
+  the set of points at which every affine simple root is positive.
+* `RootPairing.sum_affineMarks_mul_affineSimpleRoot`: the null-root relation `∑ₖ mₖ aₖ = 1`,
+  where the marks `mₖ` are the coefficients of `θ` and `m₀ = 1`.
 * `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove
   is nonempty.
+* `RootPairing.exists_mem_fundamentalAlcove_root'_eq_height_div`: it contains a point at which
+  every root `α` takes the value `ht(α) / (ht(θ) + 1)`.
 
 ## References
 
@@ -232,6 +242,70 @@ end Alcove
 
 end CommRing
 
+/-! ### The affine simple roots -/
+
+section AffineSimpleRoot
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} (b : P.Base) [CharZero R] [Finite ι] [Nonempty ι]
+
+/-- The **affine simple roots** of a base `b`: the affine functions `a₀ = 1 - θ` at the affine node
+`none`, and `aᵢ = αᵢ` at the node of a simple root `αᵢ`, where `θ = b.highestRoot`. Their zero sets
+are the walls of the fundamental alcove
+(`RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`). -/
+noncomputable def affineSimpleRoot : Option b.support → N → R
+  | none, x => 1 - P.root' b.highestRoot x
+  | some i, x => P.root' i x
+
+@[simp]
+lemma affineSimpleRoot_none (x : N) :
+    affineSimpleRoot b none x = 1 - P.root' b.highestRoot x :=
+  (rfl)
+
+@[simp]
+lemma affineSimpleRoot_some (i : b.support) (x : N) : affineSimpleRoot b (some i) x = P.root' i x :=
+  (rfl)
+
+/-- An affine simple root is the root functional of `RootPairing.Base.affineSimpleRootIndex` plus
+its value at `0`. -/
+lemma affineSimpleRoot_eq_root'_add (k : Option b.support) (x : N) :
+    affineSimpleRoot b k x = P.root' (b.affineSimpleRootIndex k) x + affineSimpleRoot b k 0 := by
+  rcases k with _ | i <;> simp [root'_reflectionPerm_self, sub_eq_neg_add]
+
+/-- Distinct nodes have distinct affine simple roots. -/
+lemma affineSimpleRoot_injective : Function.Injective (affineSimpleRoot b) := by
+  rintro (_ | i) (_ | j) h <;> have h0 := congrFun h 0
+  · rfl
+  · simp at h0
+  · simp at h0
+  · have : P.root i = P.root j :=
+      P.toPerfPair.injective <| LinearMap.ext fun x ↦ by simpa using congrFun h x
+    exact congrArg some (Subtype.ext (P.root.injective this))
+
+/-- **The null-root relation**: `∑ₖ mₖ aₖ = 1`, where the marks `mₖ` are the coefficients of the
+highest root `θ = ∑ mᵢ αᵢ` and `m₀ = 1`. -/
+theorem sum_affineMarks_mul_affineSimpleRoot (x : N) :
+    ∑ k, (b.affineMarks k : R) * affineSimpleRoot b k x = 1 := by
+  have h : P.root' b.highestRoot x =
+      ∑ i : b.support, (b.affineMarks (some i) : R) * P.root' i x := by
+    rw [root', b.root_highestRoot_eq_sum_affineMarks]
+    simp [zsmul_eq_mul]
+  rw [Fintype.sum_option]
+  simp only [Base.affineMarks_none, Int.cast_one, one_mul, affineSimpleRoot_none,
+    affineSimpleRoot_some, h]
+  ring
+
+/-- **The fundamental alcove is the set of points at which every affine simple root is
+positive.** -/
+theorem mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos [PartialOrder R]
+    [IsOrderedAddMonoid R] {x : N} :
+    x ∈ fundamentalAlcove P b ↔ ∀ k, 0 < affineSimpleRoot b k x := by
+  simp only [mem_fundamentalAlcove, Option.forall, affineSimpleRoot_none, sub_pos,
+    affineSimpleRoot_some, Subtype.forall]
+  tauto
+
+end AffineSimpleRoot
+
 /-! ### Nonemptiness -/
 
 section Field
@@ -257,6 +331,25 @@ theorem fundamentalAlcove_nonempty [Finite ι] [Nonempty ι] :
     exact Finset.sum_congr rfl fun k hk ↦ by rw [← hx k hk]
   rw [hθ, mul_inv_lt_iff₀ (by positivity)]
   linarith
+
+/-- The point `x₀` at which every simple root takes the value `1 / h`, with `h = ht(θ) + 1`, lies in
+the fundamental alcove, and every root `α` takes the value `ht(α) / h` there. -/
+lemma exists_mem_fundamentalAlcove_root'_eq_height_div [Finite ι] [Nonempty ι] :
+    ∃ x₀ ∈ fundamentalAlcove P b,
+      ∀ j, P.root' j x₀ = b.height j / ((b.height b.highestRoot : R) + 1) := by
+  have hD : (0 : R) < b.height b.highestRoot + 1 := by
+    have : (0 : R) < b.height b.highestRoot := by exact_mod_cast b.isPos_highestRoot
+    linarith
+  obtain ⟨x₀, hx₀⟩ := b.exists_forall_root'_eq fun _ ↦ ((b.height b.highestRoot : R) + 1)⁻¹
+  have hx₀' (j : ι) : P.root' j x₀ = b.height j / ((b.height b.highestRoot : R) + 1) := by
+    simpa [zsmul_eq_mul, div_eq_mul_inv] using TauCeti.apply_root_eq_height_zsmul P b
+      (P.toLinearMap.flip x₀).toAddMonoidHom (fun j hj ↦ hx₀ j hj) j
+  refine ⟨x₀, (mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos b).mpr ?_, hx₀'⟩
+  rintro (_ | i)
+  · rw [affineSimpleRoot_none, hx₀', sub_pos, div_lt_one hD]
+    linarith
+  · rw [affineSimpleRoot_some, hx₀', Base.height_one_of_mem_support i.2]
+    simpa using hD
 
 end Field
 
