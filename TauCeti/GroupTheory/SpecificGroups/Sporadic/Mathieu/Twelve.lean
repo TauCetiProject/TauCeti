@@ -145,14 +145,7 @@ theorem presentationImage_one (h : 1 < SporadicName.M12.presentation.generatorCo
 
 theorem range_presentationImage : Set.range presentationImage = {imageA, imageB} := by
   have h : SporadicName.M12.presentation.generatorCount = 2 := by simp
-  ext σ
-  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨i, rfl⟩
-    by_cases hi : (i : ℕ) = 0 <;> simp [presentationImage, hi]
-  · rintro (rfl | rfl)
-    · exact ⟨⟨0, by omega⟩, presentationImage_zero _⟩
-    · exact ⟨⟨1, by omega⟩, presentationImage_one _⟩
+  exact Set.range_ite_const ⟨⟨0, by omega⟩, rfl⟩ ⟨⟨1, by omega⟩, one_ne_zero⟩
 
 /-- **The relators of `M₁₂` hold in the model.** All three transcribed relators of the
 presentation of `M₁₂` evaluate to `1` at `presentationImage`. -/
