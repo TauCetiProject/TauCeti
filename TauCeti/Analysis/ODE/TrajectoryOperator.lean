@@ -23,11 +23,8 @@ between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary dif
 equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
 the operator agrees almost everywhere with the classical expression `u' + A u`.
 
-On the line, for a path with a `C¹` representative `φ`, the squared norms of the path, of its weak
-derivative and of `D_A u` are the integrals of `‖φ‖²`, `‖φ'‖²` and `‖φ' + A φ‖²`
-(`TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
-`TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral`,
-`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
+On the line, for a path with a `C¹` representative `φ`, the squared norm of `D_A u` is the
+integral of `‖φ' + A φ‖²` (`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
 
 These statements supply the bounded realization to which coercive estimates and compact-error
 criteria can be applied. They do not assert Fredholmness, asymptotic invertibility, or density
@@ -262,7 +259,7 @@ theorem trajectoryOperator_apply_ae_eq_deriv_add
 
 end TauCeti.WeakDerivStep
 
-/-! ### Norms of a path with a `C¹` representative on the line -/
+/-! ### The norm of `D_A` on a path with a `C¹` representative on the line -/
 
 namespace TauCeti.WeakDerivStep
 
@@ -273,26 +270,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
   {u : WeakDerivStep volume ⊤ 2
     (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
   {A : ℝ → F →L[ℝ] F}
-
-/-- The squared `L²` norm of a path is the integral of the squared norm of a representative. -/
-theorem norm_prev_sq_eq_integral
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    ‖prev _ u‖ ^ 2 = ∫ s, ‖φ s‖ ^ 2 := by
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖φ s‖ ^ 2) (hu.mono fun s hs ↦ by rw [hs])]
-  simp
-
-/-- The squared `L²` norm of the weak derivative is that of the classical derivative of a `C¹`
-representative. -/
-theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    ‖weakFDeriv _ u‖ ^ 2 = ∫ s, ‖deriv φ s‖ ^ 2 := by
-  have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
-    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-    fun s _ ↦ hφ.differentiable one_ne_zero s
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖fderiv ℝ φ s‖ ^ 2) (hw.mono fun s hs ↦ by rw [hs])]
-  simp [← toSpanSingleton_deriv]
 
 /-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
 `∫ ‖φ' + A φ‖²`. -/
