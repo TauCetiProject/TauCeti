@@ -16,7 +16,8 @@ The Cartier operator of modulus `q` and index `r` selects coefficients at the in
 `q * n + r`. It is linear in the series. For an actual residue `r < q`, it commutes with
 multiplication by an expanded series, and the expanded Cartier components reconstruct the
 original series. Over a finite field, expansion by its cardinality is the Frobenius power,
-so these identities give the usual Cartier identities used in residue averaging. Consequently,
+so these identities give the usual Cartier identities used in residue averaging, and the `j`-th
+iterate of that expansion is the `q ^ j`-th power map. Consequently,
 for a set `T` of series stable under the Cartier operators of modulus `q = |K|`, the powers
 `h ^ q ^ j` with `h ∈ T` lie in the `K[X]`-span of the powers `g ^ q ^ m` with `g ∈ T` whenever
 `j ≤ m`; this is the linear-algebra step of the proof of Christol's theorem.
@@ -226,6 +227,14 @@ theorem eq_sum_X_pow_mul_cartier_pow (F : PowerSeries K) :
   simpa only [FiniteField.PowerSeries.expand_card] using
     sum_X_pow_mul_expand_cartier (Fintype.card K) Fintype.card_ne_zero F
 
+/-- Over a finite field `K` with `q` elements, the `j`-th iterate of `expand q` is the
+`q ^ j`-th power map. -/
+theorem _root_.FiniteField.PowerSeries.expand_card_pow_apply (j : ℕ) (F : PowerSeries K) :
+    (expand (Fintype.card K) Fintype.card_ne_zero ^ j) F = F ^ Fintype.card K ^ j := by
+  induction j with
+  | zero => simp
+  | succ j ih => simp [pow_succ', ih, FiniteField.PowerSeries.expand_card, pow_mul']
+
 /-- Over a finite field `K` with `q` elements, let `T` be a set of power series that is stable under
 the Cartier operators `cartier K q r` with `r < q`. For `h ∈ T` and `j ≤ m`, the power `h ^ q ^ j`
 lies in the `K[X]`-span of the powers `g ^ q ^ m` with `g ∈ T`. -/
@@ -236,12 +245,8 @@ theorem pow_card_pow_mem_span_of_cartier_stable {T : Set (PowerSeries K)}
   set q := Fintype.card K
   -- The `q ^ j`-th power map is the `j`-th iterate of the `K`-algebra endomorphism `expand q`.
   set F : PowerSeries K →ₐ[K] PowerSeries K := expand q Fintype.card_ne_zero
-  have hFj (j : ℕ) (h : PowerSeries K) : (F ^ j) h = h ^ q ^ j := by
-    induction j with
-    | zero => simp
-    | succ j ih =>
-      rw [pow_succ', AlgHom.mul_apply, ih, FiniteField.PowerSeries.expand_card, ← pow_mul,
-        ← pow_succ]
+  have hFj (j : ℕ) (h : PowerSeries K) : (F ^ j) h = h ^ q ^ j :=
+    FiniteField.PowerSeries.expand_card_pow_apply j h
   -- The spans `M j` of the powers `h ^ q ^ j` with `h ∈ T` increase with `j`.
   set M : ℕ → Submodule (Polynomial K) (PowerSeries K) := fun j ↦
     Submodule.span (Polynomial K) ((· ^ q ^ j) '' T)
@@ -256,8 +261,8 @@ theorem pow_card_pow_mem_span_of_cartier_stable {T : Set (PowerSeries K)}
     refine Submodule.sum_mem _ fun r hr ↦ ?_
     have hterm : (F ^ j) (X ^ r * cartier K q r h ^ q) =
         ((Polynomial.X : Polynomial K) ^ (q ^ j * r)) • cartier K q r h ^ q ^ (j + 1) := by
-      rw [map_mul, map_pow, map_pow, hFj, hFj, ← pow_mul, ← pow_mul, ← pow_succ]
-      simp [Algebra.smul_def, algebraMap_apply']
+      simp [hFj, Algebra.smul_def, algebraMap_apply']
+      ring
     rw [hterm]
     exact Submodule.smul_mem _ _ <|
       Submodule.subset_span ⟨_, hTq h hh r (Finset.mem_range.mp hr), rfl⟩
