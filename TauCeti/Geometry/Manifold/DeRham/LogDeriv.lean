@@ -50,8 +50,9 @@ exponent on exponentials (`TauCeti.mlogDeriv_exp`).
   `TauCeti.mlogDeriv_apply`.
 * `TauCeti.mlogDeriv_eq_of_eventuallyEq_mul_exp`: near a point, if `u = c exp g` then
   `dlog u = dg` there.
-* `TauCeti.isSmoothForm_mlogDeriv`, `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is a `C^n` closed form
-  for a nowhere-vanishing `C^(n+1)` function `u`.
+* `TauCeti.isSmoothForm_mlogDeriv`: `dlog u` is a `C^n` form for a nowhere-vanishing `C^(n+1)`
+  function `u`.
+* `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`.
 * `TauCeti.exp_pathIntegral_mlogDeriv`, `TauCeti.exists_pathIntegral_mlogDeriv_eq_int_mul`: the
   periods of `dlog u` lie in `2πiℤ`.
 * `TauCeti.exists_mlogDeriv_eq_of_forall_pathIntegral_eq_int_mul`: a closed `1`-form with periods
@@ -303,27 +304,14 @@ theorem exists_mlogDeriv_eq_of_forall_pathIntegral_eq_int_mul [FiniteDimensional
   have hloc (x : M) : ∃ g : M → ℂ, ContMDiffAt I 𝓘(ℝ, ℂ) r g x ∧
       (∀ᶠ y in 𝓝 x, exp (f y) = exp (f x - g x) * exp (g y)) ∧
       mextDeriv (RoughForm.ofFunction I g) x = φ x := by
-    obtain ⟨U, hU, ψ, hψ, hdψ⟩ :=
-      exists_mextDeriv_eq_nhds hr hφ (x := x) (Eventually.of_forall fun y ↦ congrFun hclosed y)
-    have hψ' := hψ
-    rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ'
-    refine ⟨fun y ↦ ψ y 0, hψ' x, ?_, ?_⟩
-    · filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := ⊤) hU] with y hy
-      obtain ⟨c, hc, hc₀, hc₁, hcU⟩ := hy
-      have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 c := hc.of_le (by simp)
-      -- Integrate along the chosen curve to `x` followed by the short curve `c` from `x` to `y`.
-      rw [hf_def, exp_pathIntegral_eq_of_forall_pathIntegral_eq_int_mul hφ₀ h (hγ y) (hγ₀ y)
-          (hγ₁ y) ((hγ x).curveConcat hc (hγ₁ x) hc₀)
-          (fun t ht ↦ by rw [curveConcat_of_le (by linarith), hγ₀ x _ (by linarith)])
-          (fun t ht ↦ by rw [curveConcat_of_lt (by linarith), hc₁ _ (by linarith)]),
-        pathIntegral_curveConcat hφ₀ ((hγ x).of_le (by simp)) hc' (hγ₁ x) hc₀,
-        pathIntegral_congr (ψ := mextDeriv ψ) fun t _ ↦ (hdψ _ (hcU t)).symm,
-        pathIntegral_mextDeriv (hψ.of_le (by exact_mod_cast hr)) hc', hc₁ 1 le_rfl,
-        hc₀ 0 le_rfl, ← exp_add]
-      congr 1
-      ring
-    · rw [← RoughForm.eq_ofFunction]
-      exact hdψ x (mem_of_mem_nhds hU)
+    obtain ⟨g, hg, hdg, hδ⟩ := exists_local_primitive_pathIntegral_eq_add_sub hr hφ
+      (Eventually.of_forall fun y ↦ congrFun hclosed y) (hγ x) (hγ₀ x) (hγ₁ x)
+    refine ⟨g, hg, ?_, hdg⟩
+    filter_upwards [hδ] with y ⟨δ, hδ, hδ₀, hδ₁, hδφ⟩
+    rw [hf_def, exp_pathIntegral_eq_of_forall_pathIntegral_eq_int_mul hφ₀ h (hγ y) (hγ₀ y)
+      (hγ₁ y) hδ hδ₀ hδ₁, hδφ, ← exp_add]
+    congr 1
+    ring
   refine ⟨fun y ↦ exp (f y), fun x ↦ ?_, fun x ↦ exp_ne_zero _, ?_, funext fun x ↦ ?_⟩
   · obtain ⟨g, hg, hfg, -⟩ := hloc x
     exact ((contDiff_const.mul Complex.contDiff_exp).contDiffAt.comp_contMDiffAt hg)
