@@ -36,9 +36,10 @@ which is onto (the translations by `P∨` lie in `W_ext`). Thus `W_aff ∩ W_ext
 this specializes to the classical statement: `W_aff` is normal in `W_ext`, with quotient
 `W_ext / W_aff ≃ P∨ / Q∨`.
 
-Classically, for a real irreducible reduced root system, `W_aff` acts simply transitively on the
-alcoves, so this isomorphism restricts to one from the stabilizer of the fundamental alcove in
-`W_ext` onto `P∨ / Q∨`; that step is not taken here.
+Since `W_aff` is transitive on the alcoves, the stabilizer of the fundamental alcove in `W_ext`
+still maps onto `P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerToQuotient_surjective`, in
+`TauCeti.LinearAlgebra.RootSystem.Weyl.ExtendedAffine.Alcove`). Classically `W_aff` acts simply
+transitively on the alcoves, which makes this an isomorphism; that step is not taken here.
 
 Like `W_aff`, the group `W_ext` permutes the affine root hyperplanes `αⱼ = m`: each element carries
 the affine function `αⱼ` to `αⱼ' + m` for a root `αⱼ'` and an integer `m`
