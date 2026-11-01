@@ -21,7 +21,10 @@ maps and, at a common shape `α`, under convolution.
 * **Affine transport.** `a + b * X` has skewness `Real.sign b * β`, scale `‖b‖₊ * s` and
   location `a + b * m`. For `b ≠ 0` this holds for all parameters, valid or not. For valid
   parameters it also covers `b = 0`, where both scale and skewness vanish and the law is the
-  Dirac mass at `a`. Reflection is the case `b = -1`.
+  Dirac mass at `a`; this constant-map identity also follows directly from
+  `MeasureTheory.Measure.map_const`. Invalid stable families and all their pushforwards are zero
+  by `stableMeasure_of_invalid` and `MeasureTheory.Measure.map_zero`. Reflection is the case
+  `b = -1`.
 * **Convolution.** Two stable laws of common shape `α` convolve to a stable law of the same
   shape. Its scale `s` satisfies `s ^ α = s₁ ^ α + s₂ ^ α`, its skewness is the average of the
   skewnesses weighted by `sᵢ ^ α`, and its `S₁` location `stableS1Location α β s m` is the sum of
@@ -82,13 +85,6 @@ theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
   push_cast
   ring_nf
 
-/-- A constant affine image of a valid stable law is the Dirac mass at the constant. -/
-theorem stableMeasure_map_const (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (s : ℝ≥0) (m a : ℝ) :
-    (stableMeasure α β s m).map (fun _ ↦ a) = Measure.dirac a := by
-  rw [show (fun _ : ℝ ↦ a) = fun x ↦ a + 0 * x by funext x; ring,
-    stableMeasure_map_affine (Or.inr ⟨hα, hβ⟩)]
-  simpa using stableMeasure_zero_scale hα (β := 0) (by simp) a
-
 /-- Reflection of a stable law negates its skewness and location. This holds for all
 parameters, since invalid shapes give the zero measure on both sides. -/
 @[simp]
@@ -100,12 +96,6 @@ theorem stableMeasure_map_neg (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
   rw [hneg, stableMeasure_map_affine (Or.inl (by norm_num))]
   simp [Real.sign_neg]
 
-/-- An affine pushforward of an invalid stable family is still the zero measure. -/
-theorem stableMeasure_map_affine_of_invalid
-    (h : α ≤ 0 ∨ 2 < α ∨ 1 < |β|) (s : ℝ≥0) (m a b : ℝ) :
-    (stableMeasure α β s m).map (fun x ↦ a + b * x) = 0 := by
-  rw [stableMeasure_of_invalid h, Measure.map_zero]
-
 /-- Affine transport of a stable random variable. For `b ≠ 0` no validity hypothesis is
 needed; for valid parameters this includes constant maps. -/
 theorem hasLaw_affine_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -116,7 +106,7 @@ theorem hasLaw_affine_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measu
   (HasLaw.mk (by fun_prop) (stableMeasure_map_affine h)).fun_comp hX
 
 /-- Reflection of a random variable with a scalar stable law. -/
-theorem HasLaw.neg_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem hasLaw_neg_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {α β : ℝ} {s : ℝ≥0} {m : ℝ}
     (hX : HasLaw X (stableMeasure α β s m) P) :
     HasLaw (fun ω ↦ -X ω) (stableMeasure α (-β) s (-m)) P :=
