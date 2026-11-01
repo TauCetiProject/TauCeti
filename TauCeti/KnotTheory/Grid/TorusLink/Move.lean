@@ -47,6 +47,7 @@ namespace GridDiagram
 
 /-- The standard grid of the `(1, q + 1)` torus link presents the unknot: it is the diagonal
 reflection of the standard `(q + 1, 1)` torus link grid, which is a standard unknot grid. -/
+@[simp]
 theorem toGridLink_torusLink_zero_left (q : ℕ) :
     (torusLink 0 q).toGridLink = GridLink.unknot := by
   rw [← GridLink.toGridLink_transpose_torusLink, torusLink_zero_right,
