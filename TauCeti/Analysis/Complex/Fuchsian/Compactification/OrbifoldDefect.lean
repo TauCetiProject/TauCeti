@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
-public import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Fiber
 
 /-!
@@ -52,8 +52,7 @@ theorem orbifoldDefect_ofQuotient (q : orbitRel.Quotient Γ ℍ) :
 theorem orbifoldDefect_ofCusp (C : Γ.CuspOrbit) :
     orbifoldDefect (ofCusp C) = 1 := (rfl)
 
-/-- The interior defect is nonzero exactly at the elliptic orbits. This is a rewrite lemma:
-the evaluation simp lemma first expands the defect into the stabilizer-order expression. -/
+/-- The interior defect is nonzero exactly at the elliptic orbits. -/
 theorem orbifoldDefect_ofQuotient_ne_zero_iff (q : orbitRel.Quotient Γ ℍ) :
     orbifoldDefect (ofQuotient q) ≠ 0 ↔ q ∈ Γ.ellipticOrbits := by
   induction q using Quotient.inductionOn' with
@@ -91,7 +90,9 @@ theorem finsum_orbifoldDefect [Finite Γ.CuspOrbit] (hE : Γ.ellipticOrbits.Fini
       ∑ᶠ q ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹) := by
     have hs : support (fun q : orbitRel.Quotient Γ ℍ =>
         (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹)) = Γ.ellipticOrbits :=
-      Set.ext fun q => orbifoldDefect_ofQuotient_ne_zero_iff q
+      Set.ext fun q => by
+        simpa only [mem_support, orbifoldDefect_ofQuotient] using
+          orbifoldDefect_ofQuotient_ne_zero_iff q
     rw [← hs, finsum_mem_support]
   rw [hrestrict, finsum_eq_sum_of_fintype (f := fun _ : Γ.CuspOrbit => (1 : ℝ))]
   simp [add_comm, Nat.card_eq_fintype_card]
@@ -130,31 +131,11 @@ theorem finsum_localMultiplicity_mul_orbifoldDefect (h : Δ ≤ Γ) [Δ.IsFinite
       (localMultiplicity (compactifiedQuotientMap h) x : ℝ) *
         orbifoldDefect (compactifiedQuotientMap h x)) =
       (Δ.subgroupOf Γ).index * ∑ᶠ y : Γ.CompactifiedQuotient, orbifoldDefect y := by
-  let w (x : Δ.CompactifiedQuotient) : ℝ :=
-    (localMultiplicity (compactifiedQuotientMap h) x : ℝ) *
-      orbifoldDefect (compactifiedQuotientMap h x)
-  have hw : (support w).Finite := by
-    refine ((finite_support_orbifoldDefect hE).preimage'
-      (f := compactifiedQuotientMap h) fun y _ => ?_).subset ?_
-    · have := finite_fiber_compactifiedQuotientMap h y
-      have hy : {x | compactifiedQuotientMap h x = y}.Finite := Set.toFinite _
-      simpa only [Set.preimage_singleton] using hy
-    · exact fun x hx => (mul_ne_zero_iff.mp hx).2
-  have hfiber (y : Γ.CompactifiedQuotient) :
-      (∑ᶠ x : {x // compactifiedQuotientMap h x = y}, w x) =
-        (Δ.subgroupOf Γ).index * orbifoldDefect y := by
-    have := finite_fiber_compactifiedQuotientMap h y
-    let := Fintype.ofFinite {x // compactifiedQuotientMap h x = y}
-    have hy (x : {x // compactifiedQuotientMap h x = y}) : compactifiedQuotientMap h x = y :=
-      x.property
-    simp_rw [w, hy]
-    rw [finsum_eq_sum_of_fintype, ← Finset.sum_mul, ← Nat.cast_sum,
-      ← finsum_eq_sum_of_fintype]
-    have he := fiberMultiplicitySum_compactifiedQuotientMap h y
-    rw [fiberMultiplicitySum_def, ← finsum_subtype_eq_finsum_cond] at he
-    exact congrArg (fun n : ℕ => (n : ℝ) * orbifoldDefect y) he
-  rw [← TauCeti.finsum_fiberwise (compactifiedQuotientMap h) w hw]
-  simp_rw [hfiber]
-  exact (mul_finsum _ _).symm
+  apply finsum_localMultiplicity_mul_comp (compactifiedQuotientMap h) _
+    (fiberMultiplicitySum_compactifiedQuotientMap h) (finite_support_orbifoldDefect hE)
+  intro y
+  have := finite_fiber_compactifiedQuotientMap h y
+  simpa only [Set.preimage_singleton] using
+    (Set.toFinite {x | compactifiedQuotientMap h x = y})
 
 end Subgroup.CompactifiedQuotient

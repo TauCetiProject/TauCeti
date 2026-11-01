@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.OrbifoldDefect
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
 public import TauCeti.Analysis.Complex.RiemannSurface.Ramification
-public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
+public import TauCeti.Analysis.Complex.Fuchsian.Covolume
+import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
+import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Cofinite
 
@@ -23,11 +24,8 @@ orbits, with effective stabilizer orders `m`. The compactified quotient map sati
 
 This is the ramification calculation needed to turn the ordinary Riemann–Hurwitz formula
 for the compactified surfaces into multiplicativity of the orbifold Euler characteristic.
-It does not define genus or assume a genus formula. Cofiniteness supplies compactness and
-finiteness of the elliptic and cusp sets by the existing Dirichlet polygon theorems.
-
-The proof sums the local complementary-defect identity and regroups by fibres, whose sums
-of local multiplicities are the subgroup index.
+It does not define genus or assume a genus formula. Cofiniteness of `Γ` implies that of `Δ`,
+and makes the compactified quotient compact with finitely many cusp and elliptic orbits.
 
 ## References
 
@@ -62,30 +60,22 @@ theorem ramificationDegree_add_finsum_orbifoldDefect (h : Δ ≤ Γ) [Δ.IsFinit
   let w (x : Δ.CompactifiedQuotient) : ℝ :=
     (localMultiplicity (compactifiedQuotientMap h) x : ℝ) *
       orbifoldDefect (compactifiedQuotientMap h x)
-  have hR : (support fun x : Δ.CompactifiedQuotient =>
-      localMultiplicity (compactifiedQuotientMap h) x - 1).Finite := by
-    refine f.finite_setOf_one_lt_localMultiplicity.subset ?_
-    intro x hx
-    simpa only [mem_support, Nat.sub_ne_zero_iff_lt,
-      mem_ofPred_eq, f, coe_compactifiedQuotientFiniteHolomorphicMap] using hx
-  have hRcast : (support fun x : Δ.CompactifiedQuotient =>
-      ((localMultiplicity (compactifiedQuotientMap h) x - 1 : ℕ) : ℝ)).Finite :=
-    hR.subset fun x hx => Nat.cast_ne_zero.mp hx
+  have hR : HasFiniteSupport fun x : Δ.CompactifiedQuotient =>
+      (localMultiplicity (compactifiedQuotientMap h) x : ℝ) - 1 := by
+    have hcast : (support fun x => ((localMultiplicity f x - 1 : ℕ) : ℝ)).Finite :=
+      f.finite_support_localMultiplicity_sub_one.subset fun x hx => Nat.cast_ne_zero.mp hx
+    simp only [Nat.cast_sub (localMultiplicity_pos f _), Nat.cast_one] at hcast
+    simpa only [HasFiniteSupport, f, coe_compactifiedQuotientFiniteHolomorphicMap] using hcast
   have hpoint (x : Δ.CompactifiedQuotient) :
-      ((localMultiplicity (compactifiedQuotientMap h) x - 1 : ℕ) : ℝ) + orbifoldDefect x = w x := by
-    have hpos := localMultiplicity_pos f x
-    simp only [f, coe_compactifiedQuotientFiniteHolomorphicMap] at hpos
-    rw [Nat.cast_sub hpos, Nat.cast_one]
+      (localMultiplicity (compactifiedQuotientMap h) x : ℝ) - 1 + orbifoldDefect x = w x := by
     have hid := localMultiplicity_mul_one_sub_orbifoldDefect h x
     dsimp only [w]
     linarith
   have hsum : (ramificationDegree (compactifiedQuotientMap h) : ℝ) +
       ∑ᶠ x : Δ.CompactifiedQuotient, orbifoldDefect x = ∑ᶠ x, w x := by
-    have hcast := map_finsum (Nat.castAddMonoidHom ℝ) hR
-    simp only [Nat.coe_castAddMonoidHom] at hcast
-    rw [ramificationDegree_def, hcast,
-      ← finsum_add_distrib (by simpa only [HasFiniteSupport] using hRcast)
-        (by simpa only [HasFiniteSupport] using hD)]
+    have hcast := cast_ramificationDegree (R := ℝ) f
+    simp only [f, coe_compactifiedQuotientFiniteHolomorphicMap] at hcast
+    rw [hcast, ← finsum_add_distrib hR (by simpa only [HasFiniteSupport] using hD)]
     exact finsum_congr hpoint
   rw [hsum]
   exact finsum_localMultiplicity_mul_orbifoldDefect h hΓ.finite_ellipticOrbits
@@ -93,7 +83,7 @@ theorem ramificationDegree_add_finsum_orbifoldDefect (h : Δ ≤ Γ) [Δ.IsFinit
 /-- **Total ramification through cusp counts and elliptic orders.** For a finite-index inclusion
 of cofinite groups, `R + s_Δ + ∑(1 - 1/m_Δ) = [Γ : Δ] * (s_Γ + ∑(1 - 1/m_Γ))`, where `R`
 is the ramification degree of the induced map of compactified surfaces. -/
-theorem ramificationDegree_eq_orbifold_defect (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
+theorem ramificationDegree_eq_index_mul_cusps_add_elliptic_sub (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
     (hΓ : Γ.IsCofinite) :
     (ramificationDegree (compactifiedQuotientMap h) : ℝ) =
       (Δ.subgroupOf Γ).index * ((Nat.card Γ.CuspOrbit : ℝ) +

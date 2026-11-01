@@ -162,11 +162,8 @@ theorem ramificationDegree_eq_interior_add_cusps
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let w : Δ.CompactifiedQuotient → ℕ := fun x ↦ localMultiplicity (compactifiedQuotientMap h) x - 1
   have hw : (support w).Finite := by
-    refine
-      ((compactifiedQuotientFiniteHolomorphicMap h).finite_setOf_one_lt_localMultiplicity).subset ?_
-    intro x hx
-    simpa only [mem_ofPred_eq, coe_compactifiedQuotientFiniteHolomorphicMap, mem_support, w,
-      Nat.sub_ne_zero_iff_lt] using hx
+    simpa only [w, coe_compactifiedQuotientFiniteHolomorphicMap] using
+      (compactifiedQuotientFiniteHolomorphicMap h).finite_support_localMultiplicity_sub_one
   have hdisj : Disjoint (range (ofQuotient (Γ := Δ))) (range (ofCusp (Γ := Δ))) := by
     rw [← compl_range_ofQuotient]
     exact disjoint_compl_right

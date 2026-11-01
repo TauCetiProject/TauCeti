@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
 import TauCeti.Geometry.Manifold.Complex.Analytic
@@ -105,6 +106,36 @@ theorem fiberMultiplicitySum_def (f : X → Y) (y : Y) :
 theorem fiberMultiplicitySum_eq_sum {y : Y} (hy : (f ⁻¹' {y}).Finite) :
     fiberMultiplicitySum f y = ∑ x ∈ hy.toFinset, localMultiplicity f x :=
   finsum_mem_eq_finite_toFinset_sum _ hy
+
+/-- The projection formula for a finitely supported real weight: if every fibre is finite and
+has multiplicity sum `d`, summing the pulled-back weight with local-multiplicity weights
+multiplies its sum by `d`. -/
+theorem finsum_localMultiplicity_mul_comp (f : X → Y) {d : ℕ}
+    (hf : ∀ y, (f ⁻¹' {y}).Finite) (hd : ∀ y, fiberMultiplicitySum f y = d)
+    {g : Y → ℝ} (hg : (support g).Finite) :
+    (∑ᶠ x, (localMultiplicity f x : ℝ) * g (f x)) = d * ∑ᶠ y, g y := by
+  let w (x : X) : ℝ := (localMultiplicity f x : ℝ) * g (f x)
+  have hw : (support w).Finite := by
+    refine (hg.preimage' (fun y _ ↦ hf y)).subset ?_
+    intro x hx
+    simp only [w, mem_support, mem_preimage] at hx ⊢
+    exact (mul_ne_zero_iff.mp hx).2
+  have hfiber (y : Y) : (∑ᶠ x : {x // f x = y}, w x) = d * g y := by
+    have : Finite {x // f x = y} := by
+      simpa only [Set.preimage_singleton, Set.coe_ofPred] using (hf y).to_subtype
+    let := Fintype.ofFinite {x // f x = y}
+    have hy (x : {x // f x = y}) : f x = y := x.property
+    simp_rw [w, hy]
+    rw [finsum_eq_sum_of_fintype, ← Finset.sum_mul, ← Nat.cast_sum,
+      ← finsum_eq_sum_of_fintype]
+    have he := hd y
+    rw [fiberMultiplicitySum_def] at he
+    simp only [Set.mem_preimage, Set.mem_singleton_iff] at he
+    rw [← finsum_subtype_eq_finsum_cond] at he
+    exact congrArg (fun n : ℕ ↦ (n : ℝ) * g y) he
+  rw [← TauCeti.finsum_fiberwise f w hw]
+  simp_rw [hfiber]
+  exact (mul_finsum _ _).symm
 
 /-- Each local multiplicity at a point of a finite fibre is at most the fibre sum. -/
 theorem localMultiplicity_le_fiberMultiplicitySum {x : X} {y : Y} (hy : (f ⁻¹' {y}).Finite)
