@@ -46,29 +46,12 @@ private noncomputable def quotientForward :
   Ideal.Quotient.lift _ (map (Ideal.Quotient.mk J) (I := I) le_rfl)
     (fun _ hx ↦ RingHom.mem_ker.mp (map_le_ker_quotient I J hx))
 
-private noncomputable def quotientBaseMap :
-    R ⧸ J →+* algebra I ⧸ J.map (algebraMap R (algebra I)) :=
-  Ideal.Quotient.lift J (algebraMap R _) (fun r hr ↦ by
-    rw [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mem_map_of_mem _ hr)
-
-private noncomputable local instance :
-    Algebra (R ⧸ J) (algebra I ⧸ J.map (algebraMap R (algebra I))) :=
-  (quotientBaseMap I J).toAlgebra
-
-private theorem quotientBaseMap_comp :
-    (quotientBaseMap I J).comp (Ideal.Quotient.mk J) =
-      (Ideal.Quotient.mk (J.map (algebraMap R (algebra I)))).comp
-        (algebraMap R (algebra I)) := by
-  ext r
-  rfl
-
 private theorem map_le_quotient_henselian_ideal :
     (I.map (Ideal.Quotient.mk J)).map
         (algebraMap (R ⧸ J) (algebra I ⧸ J.map (algebraMap R (algebra I)))) ≤
       (extended I).map (Ideal.Quotient.mk (J.map (algebraMap R (algebra I)))) := by
-  rw [RingHom.algebraMap_toAlgebra, Ideal.map_map, quotientBaseMap_comp,
-    ← Ideal.map_map]
+  rw [← Ideal.Quotient.algebraMap_eq, Ideal.map_map,
+    ← IsScalarTower.algebraMap_eq, ← Ideal.Quotient.mk_comp_algebraMap, ← Ideal.map_map]
 
 private noncomputable def quotientBackward :
     algebra (I.map (Ideal.Quotient.mk J)) →+*
@@ -80,7 +63,9 @@ private theorem quotientBackward_algebraMap (r : R) :
         (algebraMap (R ⧸ J) (algebra (I.map (Ideal.Quotient.mk J)))
           (Ideal.Quotient.mk J r)) =
       Ideal.Quotient.mk (J.map (algebraMap R (algebra I))) (algebraMap R (algebra I) r) := by
-  exact (lift (map_le_quotient_henselian_ideal I J)).commutes (Ideal.Quotient.mk J r)
+  simpa only [quotientBackward, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+    Ideal.Quotient.algebraMap_quotient_map_quotient] using
+    (lift (map_le_quotient_henselian_ideal I J)).commutes (Ideal.Quotient.mk J r)
 
 private theorem quotientBackward_comp_map :
     (quotientBackward I J).comp (map (Ideal.Quotient.mk J) (I := I) le_rfl) =
@@ -127,7 +112,9 @@ noncomputable def quotientBaseChangeEquiv :
 theorem quotientBaseChangeEquiv_mk (x : algebra I) :
     quotientBaseChangeEquiv I J
         (Ideal.Quotient.mk (J.map (algebraMap R (algebra I))) x) =
-      map (Ideal.Quotient.mk J) (I := I) le_rfl x := (rfl)
+      map (Ideal.Quotient.mk J) (I := I) le_rfl x := by
+  simp only [quotientBaseChangeEquiv, RingEquiv.ofRingHom_apply, quotientForward,
+    Ideal.Quotient.lift_mk]
 
 /-- The inverse comparison sends the image of an element of the original henselization
 to its quotient class. -/
