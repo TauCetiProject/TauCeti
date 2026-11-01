@@ -15,6 +15,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 -- Private: `Module.Finite.of_finite_end` shows that a spinor module is finite-dimensional.
 import TauCeti.LinearAlgebra.Dual.Lemmas
+-- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
@@ -171,9 +173,8 @@ theorem map_basis {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticFo
     (e : Q.IsometryEquiv Q') {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     map e.toIsometry (basis Q b s) = basis Q' (b.map e.toLinearEquiv) s := by
   apply (equivExterior Q').injective
-  rw [equivExterior_map, equivExterior_basis, equivExterior_basis,
-    b.exteriorAlgebra_eq_prod_map_sort, (b.map _).exteriorAlgebra_eq_prod_map_sort, map_list_prod]
-  simp [Function.comp_def]
+  rw [equivExterior_map, equivExterior_basis, equivExterior_basis]
+  exact b.map_exteriorAlgebra s e.toLinearEquiv
 
 /-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
 invertible. -/
