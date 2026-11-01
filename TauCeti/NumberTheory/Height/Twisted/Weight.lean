@@ -100,7 +100,8 @@ theorem localWeightBases_nonempty {L : ι → Module.Dual K V}
     have hset : range (fun i : b.toFinset ↦ f i) = f '' (b.toFinset : Set ι) :=
       (Set.image_eq_range _ _).symm
     rwa [hset, Set.coe_toFinset]
-  exact ⟨b.toFinset, mem_localWeightBases.mpr ⟨hbi', hb'⟩⟩
+  refine ⟨b.toFinset, mem_localWeightBases.mpr ⟨?_, hb'⟩⟩
+  simpa only [Finset.coe_sort_coe] using hbi'.linearIndependent
 
 /-- The minimum weight of a restricted dual basis; its value is `0` if there is no such basis. -/
 def localWeight (L : ι → Module.Dual K V) (c : ι → ℝ) (U : Submodule K V) : ℝ :=
@@ -111,6 +112,13 @@ theorem localWeight_def (L : ι → Module.Dual K V) (c : ι → ℝ) (U : Submo
     localWeight L c U =
       sInf ((fun s : Finset ι ↦ ∑ i ∈ s, c i) '' (localWeightBases L U : Set (Finset ι))) :=
   (rfl)
+
+/-- The local weight is zero when there is no restricted dual basis. -/
+@[simp]
+theorem localWeight_of_localWeightBases_eq_empty {L : ι → Module.Dual K V}
+    {c : ι → ℝ} {U : Submodule K V} (h : localWeightBases L U = ∅) :
+    localWeight L c U = 0 := by
+  simp [localWeight_def, h]
 
 /-- Every eligible dual basis gives an upper bound for the local weight. -/
 theorem localWeight_le_sum {L : ι → Module.Dual K V} (c : ι → ℝ) {U : Submodule K V}
@@ -149,11 +157,14 @@ theorem localWeight_le_iff {L : ι → Module.Dual K V} {U : Submodule K V}
 
 /-- Increasing all the weights cannot decrease the local weight. -/
 theorem localWeight_mono {L : ι → Module.Dual K V} {U : Submodule K V}
-    (h : (localWeightBases L U).Nonempty) {c d : ι → ℝ} (hcd : c ≤ d) :
+    {c d : ι → ℝ} (hcd : c ≤ d) :
     localWeight L c U ≤ localWeight L d U := by
-  obtain ⟨s, hs, heq⟩ := exists_localWeight_eq_sum h d
-  rw [heq]
-  exact (localWeight_le_sum c hs).trans (Finset.sum_le_sum fun i _ ↦ hcd i)
+  classical
+  by_cases h : (localWeightBases L U).Nonempty
+  · obtain ⟨s, hs, heq⟩ := exists_localWeight_eq_sum h d
+    rw [heq]
+    exact (localWeight_le_sum c hs).trans (Finset.sum_le_sum fun i _ ↦ hcd i)
+  · simp [localWeight_of_localWeightBases_eq_empty (Finset.not_nonempty_iff_eq_empty.mp h)]
 
 /-- Adding a constant to every form weight adds that constant times the subspace dimension. -/
 theorem localWeight_add_const {L : ι → Module.Dual K V} {U : Submodule K V}
@@ -178,10 +189,9 @@ theorem finite_range_localWeight (L : ι → Module.Dual K V) (c : ι → ℝ) :
   refine ((Set.finite_range (fun s : Finset ι ↦ ∑ i ∈ s, c i)).insert 0).subset ?_
   rintro _ ⟨U, rfl⟩
   by_cases h : (localWeightBases L U).Nonempty
-  · obtain ⟨s, -, heq⟩ := (h.to_set.image (fun s : Finset ι ↦ ∑ i ∈ s, c i)).csInf_mem
-      ((localWeightBases L U).finite_toSet.image _)
-    exact Or.inr ⟨s, heq⟩
-  · simp [localWeight, Finset.not_nonempty_iff_eq_empty.mp h]
+  · obtain ⟨s, -, heq⟩ := exists_localWeight_eq_sum h c
+    exact Or.inr ⟨s, heq.symm⟩
+  · simp [localWeight_of_localWeightBases_eq_empty (Finset.not_nonempty_iff_eq_empty.mp h)]
 
 /-- The empty family is the only local dual basis of the zero subspace. -/
 @[simp]
@@ -212,7 +222,7 @@ theorem localWeight_zero (L : ι → Module.Dual K V) (U : Submodule K V) :
         (localWeightBases L U : Set (Finset ι)) = {0} := by
       simp [h.to_set]
     rw [localWeight_def, himage, csInf_singleton]
-  · simp [localWeight, Finset.not_nonempty_iff_eq_empty.mp h]
+  · exact localWeight_of_localWeightBases_eq_empty (Finset.not_nonempty_iff_eq_empty.mp h)
 
 /-- A constant weight gives the dimension times that constant. -/
 @[simp]
@@ -223,16 +233,18 @@ theorem localWeight_const {L : ι → Module.Dual K V} {U : Submodule K V}
 
 /-- Nonnegative form weights give nonnegative local weights. -/
 theorem localWeight_nonneg {L : ι → Module.Dual K V} {U : Submodule K V}
-    (h : (localWeightBases L U).Nonempty) {c : ι → ℝ} (hc : 0 ≤ c) :
+    {c : ι → ℝ} (hc : 0 ≤ c) :
     0 ≤ localWeight L c U := by
-  simpa using localWeight_mono h hc
+  simpa using localWeight_mono (L := L) (U := U) hc
 
 /-- For a basis of the ambient dual, the whole space has just the full local dual basis. -/
 @[simp]
-theorem localWeightBases_top [Module.Finite K V] {L : ι → Module.Dual K V}
+theorem localWeightBases_top {L : ι → Module.Dual K V}
     (hLi : LinearIndependent K L) (hL : span K (range L) = ⊤) :
     localWeightBases L (⊤ : Submodule K V) = {Finset.univ} := by
   classical
+  have : Module.Finite K (Module.Dual K V) := Module.Finite.of_basis (Basis.mk hLi hL.ge)
+  have : Module.Finite K V := (Module.finite_dual_iff K).mp inferInstance
   have hcard : Fintype.card ι = finrank K V := by
     have h := finrank_span_eq_card hLi
     rw [hL, finrank_top, Subspace.dual_finrank_eq] at h
@@ -253,7 +265,7 @@ theorem localWeightBases_top [Module.Finite K V] {L : ι → Module.Dual K V}
 
 /-- The local weight of the whole space is the sum of all weights for independent spanning forms. -/
 @[simp]
-theorem localWeight_top [Module.Finite K V] {L : ι → Module.Dual K V}
+theorem localWeight_top {L : ι → Module.Dual K V}
     (hLi : LinearIndependent K L) (hL : span K (range L) = ⊤) (c : ι → ℝ) :
     localWeight L c (⊤ : Submodule K V) = ∑ i, c i := by
   simp [localWeight, localWeightBases_top hLi hL]
@@ -263,20 +275,19 @@ theorem singleton_mem_localWeightBases_span_singleton (L : ι → Module.Dual K 
     {x : V} (hx : x ≠ 0) (i : ι) :
     {i} ∈ localWeightBases L (K ∙ x) ↔ L i x ≠ 0 := by
   classical
-  have hi : LinearIndepOn K (fun j ↦ (L j).comp (K ∙ x).subtype) ({i} : Set ι) ↔
-      L i x ≠ 0 := by
-    rw [linearIndepOn_singleton_iff]
+  rw [mem_localWeightBases_iff_linearIndependent_card]
+  simp only [Finset.card_singleton, finrank_span_singleton hx, and_true]
+  trans LinearIndepOn K (fun j ↦ (L j).comp (K ∙ x).subtype) (({i} : Finset ι) : Set ι)
+  · simpa only [Finset.coe_sort_coe] using
+      (linearIndependent_set_coe_iff (R := K)
+        (v := fun j ↦ (L j).comp (K ∙ x).subtype) (s := (({i} : Finset ι) : Set ι)))
+  · rw [Finset.coe_singleton, linearIndepOn_singleton_iff]
     apply not_congr
     rw [← LinearMap.range_le_ker_iff, Submodule.range_subtype,
       Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker]
-  rw [mem_localWeightBases_iff_linearIndependent_card]
-  simp only [Finset.card_singleton, finrank_span_singleton hx, and_true]
-  have hi' : LinearIndepOn K (fun j ↦ (L j).comp (K ∙ x).subtype)
-      (({i} : Finset ι) : Set ι) ↔ L i x ≠ 0 := by
-    rwa [Finset.coe_singleton]
-  exact hi'
 
-/-- The weight of a nonzero line is the least weight among the forms nonvanishing on it. -/
+/-- The weight of a nonzero line is the infimum of the weights of its nonvanishing forms:
+the least such weight when one exists, and zero otherwise. -/
 theorem localWeight_span_singleton (L : ι → Module.Dual K V) (c : ι → ℝ)
     {x : V} (hx : x ≠ 0) :
     localWeight L c (K ∙ x) = sInf (c '' {i | L i x ≠ 0}) := by
