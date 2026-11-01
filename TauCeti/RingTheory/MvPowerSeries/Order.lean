@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
-public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -22,11 +22,10 @@ constant coefficient, the degree-`p` component of `f(a)` only depends on the deg
 of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
-the polynomial `f_p(X + Y, Z)`. In finitely many variables `f_p` is a polynomial, the degree-`p`
-part of the truncation of `f`, and the degree-`p` component of `f(a)` is its evaluation at the
-linear parts of the `a i` (`MvPowerSeries.homogeneousComponent_subst_eq_aeval`). Substituting
-series without constant coefficient does not lower the order
-(`MvPowerSeries.order_le_order_subst`).
+the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` component is a
+polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
+`f(a)` is that polynomial evaluated at the linear parts of the `a i`
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
 
 Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `f(a)` by `c e`, where
 `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater than `n`
@@ -237,56 +236,48 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
 
 end Subst
 
-section TruncTotal
+section Polynomial
 
-variable {σ R : Type*} [Finite σ] [CommSemiring R]
+variable {σ τ R : Type*} [Finite σ]
 
-/-- The degree-`n` homogeneous component of a power series, read off from its truncation as a
+/-- The degree-`n` homogeneous component of a power series in finitely many variables, as a
 polynomial. -/
-theorem coe_homogeneousComponent_truncTotal (n : ℕ) (f : MvPowerSeries σ R) :
-    ((MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f) : MvPolynomial σ R) :
-      MvPowerSeries σ R) = homogeneousComponent n f := by
+noncomputable def homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial σ R :=
+  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)
+
+@[simp]
+theorem coe_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ) (f : MvPowerSeries σ R) :
+    (homogeneousComponentPolynomial n f : MvPowerSeries σ R) = homogeneousComponent n f := by
   ext d
-  rw [MvPolynomial.coeff_coe, MvPolynomial.coeff_homogeneousComponent,
-    coeff_homogeneousComponent]
+  rw [MvPolynomial.coeff_coe, homogeneousComponentPolynomial,
+    MvPolynomial.coeff_homogeneousComponent, coeff_homogeneousComponent]
   split_ifs with hd
-  · exact coeff_truncTotal f (by omega)
+  · exact coeff_truncTotal _ (by omega)
   · rfl
 
-end TruncTotal
+theorem isHomogeneous_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    (homogeneousComponentPolynomial n f).IsHomogeneous n :=
+  MvPolynomial.homogeneousComponent_isHomogeneous _ _
 
-section SubstTruncTotal
-
-variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-
-/-- **The lowest-degree component of a substitution, as a polynomial.** If `f` has order at least
-`n` and the series `a i` have zero constant coefficient and linear parts `l i`, the degree-`n`
-component of `f(a)` is the degree-`n` part of `f` evaluated at the polynomials `l i`. -/
-theorem homogeneousComponent_subst_eq_aeval [Finite σ] {f : MvPowerSeries σ R} {n : ℕ}
-    (hn : n ≤ f.order) {a : σ → MvPowerSeries τ S} (ha : HasSubst a)
-    (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ S}
+/-- If `f` vanishes below degree `n` and the series `a i` have no constant term, the degree-`n`
+part of `f(a)` is the polynomial degree-`n` part of `f` evaluated at polynomials `l i` equal to the
+linear parts of the `a i`. -/
+theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPowerSeries σ R}
+    (hn : n ≤ f.order) {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ R}
     (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
     homogeneousComponent n (f.subst a) =
-      (MvPolynomial.aeval l (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) :
-        MvPowerSeries τ S) := by
-  rw [homogeneousComponent_subst_of_le_order hn ha ha₀, ← coe_homogeneousComponent_truncTotal,
+      (MvPolynomial.aeval l (homogeneousComponentPolynomial n f) : MvPowerSeries τ R) := by
+  rw [homogeneousComponent_subst_of_le_order hn ha ha₀, ← coe_homogeneousComponentPolynomial,
     subst_coe]
   simp_rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply
-    ((MvPolynomial.coeToMvPowerSeries.algHom S).restrictScalars R)
-    (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) (f := l)).symm
+  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
+    (homogeneousComponentPolynomial n f) (f := l)).symm
 
-/-- Substituting series without constant coefficient does not lower the order. -/
-theorem order_le_order_subst {a : σ → MvPowerSeries τ S} (ha : HasSubst a)
-    (ha₀ : ∀ i, constantCoeff (a i) = 0) (f : MvPowerSeries σ R) :
-    f.order ≤ (f.subst a).order := by
-  refine le_trans ?_ (le_order_subst ha f)
-  calc f.order = 1 * f.order := (one_mul _).symm
-    _ ≤ (⨅ i, (a i).order) * f.order := by
-      gcongr
-      exact le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (ha₀ i)
-
-end SubstTruncTotal
+end Polynomial
 
 section Perturbation
 

@@ -90,9 +90,6 @@ of a completed group algebra attached to two topological generators.
   `PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow'`: for `φ = X + ⋯`, the degree-`n`
   parts of `f (φ)` and of `φ (f)` are `c Xⁿ` when `f` has order at least `n` (and `n ≥ 1` for
   `φ (f)`), for `c` the coefficient of `Xⁿ` in `f`.
-* `PowerSeries.homogeneousComponent_subst_smul_X_pow_sub`: for a two-variable series `f` with
-  linear part `X + Y`, the degree-`n` part of `c f(X, Y)ⁿ - c Xⁿ - c Yⁿ` is
-  `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
@@ -363,31 +360,6 @@ theorem homogeneousComponent_subst_eq_C_mul_X_pow' {f : S⟦X⟧} {φ : R⟦X⟧
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
     homogeneousComponent_subst_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
     Algebra.algebraMap_self, RingHom.id_apply]
-
-/-- The lowest-degree part of the additivity defect `c f(X, Y)ⁿ - c Xⁿ - c Yⁿ` of `c Xⁿ` along a
-two-variable series `f` with zero constant coefficient and linear part `X + Y` is
-`c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
-theorem homogeneousComponent_subst_smul_X_pow_sub {f : MvPowerSeries (Fin 2) S}
-    (h₀ : MvPowerSeries.constantCoeff f = 0)
-    (hX : MvPowerSeries.coeff (Finsupp.single 0 1) f = 1)
-    (hY : MvPowerSeries.coeff (Finsupp.single 1 1) f = 1) (c : R) (n : ℕ) :
-    MvPowerSeries.homogeneousComponent n ((c • X ^ n : R⟦X⟧).subst f -
-        (c • X ^ n : R⟦X⟧).subst (MvPowerSeries.X 0 : MvPowerSeries (Fin 2) S) -
-        (c • X ^ n : R⟦X⟧).subst (MvPowerSeries.X 1 : MvPowerSeries (Fin 2) S)) =
-      ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
-        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) S) : MvPowerSeries (Fin 2) S) := by
-  have hn : (n : ℕ∞) ≤ (c • X ^ n : R⟦X⟧).order :=
-    nat_le_order _ _ fun i hi ↦ by simp [coeff_X_pow, hi.ne]
-  rw [map_sub, map_sub, homogeneousComponent_subst_of_le_order h₀ hn,
-    homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X 0) hn,
-    homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X 1) hn,
-    MvPowerSeries.homogeneousComponent_one_eq_X_add_X hX hY,
-    MvPowerSeries.homogeneousComponent_one_X, MvPowerSeries.homogeneousComponent_one_X]
-  rw [← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
-  simp only [coeff_smul, coeff_X_pow_self, smul_eq_mul, mul_one]
-  simp only [Algebra.smul_def, MvPolynomial.algebraMap_apply, map_mul, map_sub, map_pow, map_add,
-    MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coe_C, MvPolynomial.coe_X,
-    mul_sub]
 
 end Algebra
 
