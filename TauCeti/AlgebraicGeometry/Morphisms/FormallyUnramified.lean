@@ -40,11 +40,18 @@ exactly when it is universally injective
 (`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
 immersion, which is an isomorphism exactly when it is surjective.
 
+For `f` formally unramified and locally of finite type, every residue field extension
+`κ(f x) → κ(x)` is finite (`AlgebraicGeometry.FormallyUnramified.finite_residueField`): this is
+Stacks, Lemma 00UW (2), applied to the stalk map of `f` at `x`. It complements Mathlib's instance
+that these extensions are separable, whose proof it adapts.
+
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
 * The Stacks Project, Tag 05VH (an unramified universally injective morphism is a
   monomorphism).
+* The Stacks Project, Tag 00UW (2) (residue field extensions of an unramified ring map are
+  finite).
 -/
 
 public section
@@ -181,7 +188,9 @@ theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [Formally
 /-- **Residue field extensions of an unramified morphism are finite.** If `f` is formally
 unramified and locally of finite type, then `κ(x)` is a finite extension of `κ(f x)` at every
 point `x`. This is Stacks, Lemma 00UW (2), at the stalks of `f`; Mathlib provides the
-separability of these extensions. -/
+separability of these extensions. The proof is adapted from that of Mathlib's `Algebra.IsSeparable`
+instance for `f.residueFieldMap x` in `Mathlib/AlgebraicGeometry/Morphisms/FormallyUnramified.lean`,
+with finiteness of the residue field extension in place of separability. -/
 instance FormallyUnramified.finite_residueField (f : X ⟶ Y) [FormallyUnramified f]
     [LocallyOfFiniteType f] (x : X) :
     letI := (f.residueFieldMap x).hom.toAlgebra
