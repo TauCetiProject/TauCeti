@@ -50,8 +50,10 @@ Voiculescu; no convergence or analytic inversion is asserted.
   of `z M(z)`, and it is the unique solution of the functional equation.
 * `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` — two normalised functionals give elements
   the same moment series exactly when they give them the same free cumulant series.
-* `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
-  `TauCeti.IsFreelyIndependentElements.rSeries_add` — the R-series is additive on free elements.
+* `TauCeti.IsFreelyIndependent.rSeries_sum` and `TauCeti.IsFreelyIndependent.rSeries_add` — the
+  R-series is additive on elements of freely independent subalgebras, with the element versions
+  `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
+  `TauCeti.IsFreelyIndependentElements.rSeries_add`.
 * `TauCeti.rSeries_smul` and `TauCeti.rSeries_add_algebraMap` — the R-series under dilations and
   translations by scalars.
 
@@ -147,10 +149,16 @@ theorem coeff_rSeries (n : ℕ) :
     coeff n (rSeries φ x) = freeCumulant φ (fun _ => x) (univ : Finset (Fin (n + 1))) := by
   rw [rSeries, coeff_mk]
 
+/-- The coefficient of the free cumulant series at `n + 1` is the coefficient of the R-series at
+`n`. -/
+theorem coeff_succ_freeCumulantSeries (n : ℕ) :
+    coeff (n + 1) (freeCumulantSeries φ x) = coeff n (rSeries φ x) := by
+  rw [coeff_freeCumulantSeries, coeff_rSeries]
+
 /-- The constant coefficient of the R-series is the mean `φ x`. -/
 @[simp]
 theorem constantCoeff_rSeries : constantCoeff (rSeries φ x) = φ x := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rSeries, ← coeff_freeCumulantSeries, zero_add,
+  rw [← coeff_zero_eq_constantCoeff_apply, ← coeff_succ_freeCumulantSeries, zero_add,
     coeff_one_freeCumulantSeries]
 
 /-- The free cumulant series is `C(z) = 1 + z R(z)`. -/
@@ -239,8 +247,8 @@ theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {ψ : A' → 
 theorem rSeries_eq_of_momentSeries_eq {ψ : A' → R} {y : A'}
     (h : momentSeries φ x = momentSeries ψ y) : rSeries φ x = rSeries ψ y := by
   ext n
-  have := congr(coeff (n + 1) $(freeCumulantSeries_eq_of_momentSeries_eq x h))
-  simpa using this
+  rw [← coeff_succ_freeCumulantSeries, ← coeff_succ_freeCumulantSeries,
+    freeCumulantSeries_eq_of_momentSeries_eq x h]
 
 end Cumulant
 
@@ -248,23 +256,41 @@ section Linear
 
 variable [CommRing R] [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
 
+/-- *The R-series is additive on free families*: if each `x k` lies in the subalgebra `B k`, with
+`B` freely independent for a normalised `φ`, then `R_{∑ k ∈ T, x k} = ∑ k ∈ T, R_{x k}`. -/
+theorem IsFreelyIndependent.rSeries_sum {ι : Type*} {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {T : Finset ι} {x : ι → A}
+    (hx : ∀ k ∈ T, x k ∈ B k) :
+    rSeries φ (∑ k ∈ T, x k) = ∑ k ∈ T, rSeries φ (x k) := by
+  ext n
+  rw [coeff_rSeries, map_sum, h.freeCumulant_sum hφ (fun k hk _ _ => hx k hk) univ_nonempty]
+  simp
+
+/-- *The R-series is additive on two free subalgebras*: if `x ∈ B i` and `y ∈ B j` for `i ≠ j`,
+with `B` freely independent for a normalised `φ`, then `R_{x + y} = R_x + R_y`. -/
+theorem IsFreelyIndependent.rSeries_add {ι : Type*} {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {x y : A}
+    (hx : x ∈ B i) (hy : y ∈ B j) :
+    rSeries φ (x + y) = rSeries φ x + rSeries φ y := by
+  ext n
+  rw [coeff_rSeries, map_add, h.freeCumulant_add hφ hij (fun _ _ => hx) (fun _ _ => hy)
+    univ_nonempty, coeff_rSeries, coeff_rSeries]
+
 /-- *The R-series is additive on free elements*: if the elements `c k` are freely independent for
 a normalised `φ`, then `R_{∑ k ∈ T, c k} = ∑ k ∈ T, R_{c k}`. -/
 theorem IsFreelyIndependentElements.rSeries_sum {ι : Type*} {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) :
-    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) := by
-  ext n
-  rw [coeff_rSeries, map_sum, h.freeCumulant_sum hφ T univ_nonempty]
-  simp
+    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) :=
+  (isFreelyIndependentElements_iff.1 h).rSeries_sum hφ fun k _ =>
+    Algebra.self_mem_adjoin_singleton R (c k)
 
 /-- *The R-series is additive on two free elements*: if `c i` and `c j`, for `i ≠ j`, belong to a
 freely independent family for a normalised `φ`, then `R_{c i + c j} = R_{c i} + R_{c j}`. -/
 theorem IsFreelyIndependentElements.rSeries_add {ι : Type*} {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) :
-    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) := by
-  ext n
-  rw [coeff_rSeries, map_add, h.freeCumulant_add hφ hij univ_nonempty, coeff_rSeries,
-    coeff_rSeries]
+    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) :=
+  (isFreelyIndependentElements_iff.1 h).rSeries_add hφ hij
+    (Algebra.self_mem_adjoin_singleton R (c i)) (Algebra.self_mem_adjoin_singleton R (c j))
 
 variable (φ) (x : A)
 
@@ -286,10 +312,8 @@ theorem freeCumulantSeries_smul (c : R) :
 /-- The R-series of `c • x` is `R_{c • x}(z) = c R_x(c z)`. -/
 theorem rSeries_smul (c : R) : rSeries φ (c • x) = c • rescale c (rSeries φ x) := by
   ext n
-  have := congr(coeff (n + 1) $(freeCumulantSeries_smul φ x c))
-  simp only [coeff_freeCumulantSeries, coeff_rescale] at this
-  rw [coeff_rSeries, this, coeff_smul, coeff_rescale, coeff_rSeries, pow_succ', smul_eq_mul,
-    mul_assoc]
+  rw [← coeff_succ_freeCumulantSeries, freeCumulantSeries_smul, coeff_rescale,
+    coeff_succ_freeCumulantSeries, coeff_smul, coeff_rescale, pow_succ', smul_eq_mul, mul_assoc]
 
 variable {φ}
 
