@@ -65,28 +65,11 @@ def finiteRootsOfUnityDiagram : (Index p)ᵒᵖ ⥤ FiniteGrp where
   obj n := FiniteGrp.of (rootsOfUnity n.unop.order R)
   map f := FiniteGrp.ofHom (rootsOfUnityPowOfDvd f.unop.le)
   map_id n := by
-    apply ConcreteCategory.hom_ext
-    intro ζ
-    rw [ConcreteCategory.id_apply, FiniteGrp.ofHom_apply
-      (rootsOfUnityPowOfDvd (M := R) (dvd_refl (n.unop.order : ℕ))) ζ]
-    -- Expose the input carrier after rewriting the bundled morphisms.
-    dsimp only [FiniteGrp.of] at ζ
-    apply Subtype.ext
-    simp [Nat.div_self (Nat.pos_of_ne_zero n.unop.order.2.1)]
+    rw [rootsOfUnityPowOfDvd_refl]
+    rfl
   map_comp {n m l} f g := by
-    apply ConcreteCategory.hom_ext
-    intro ζ
-    -- Explicit inputs let the existing evaluation lemma match the induced-category coercions.
-    rw [ConcreteCategory.comp_apply,
-      FiniteGrp.ofHom_apply (rootsOfUnityPowOfDvd (M := R) (g.unop.le.trans f.unop.le)) ζ,
-      FiniteGrp.ofHom_apply (rootsOfUnityPowOfDvd (M := R) g.unop.le)
-        (FiniteGrp.ofHom (rootsOfUnityPowOfDvd (M := R) f.unop.le) ζ),
-      FiniteGrp.ofHom_apply (rootsOfUnityPowOfDvd (M := R) f.unop.le) ζ]
-    -- Expose the input carrier after rewriting the bundled morphisms.
-    dsimp only [FiniteGrp.of] at ζ
-    apply Subtype.ext
-    rw [coe_rootsOfUnityPowOfDvd_apply, coe_rootsOfUnityPowOfDvd_apply,
-      coe_rootsOfUnityPowOfDvd_apply, ← pow_mul, Nat.div_mul_div f.unop.le g.unop.le]
+    rw [← rootsOfUnityPowOfDvd_comp g.unop.le f.unop.le]
+    rfl
 
 /-- The inverse system of finite discrete root groups, with orders prime to `p`. -/
 -- Expose the finite-level carriers supplied by Mathlib's discrete-topology functor.
