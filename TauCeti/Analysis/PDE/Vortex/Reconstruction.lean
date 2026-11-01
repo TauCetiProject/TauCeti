@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import Mathlib.Analysis.Analytic.Order
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 
 /-!
 # Reconstructing plane vortices from a regularized scalar equation
@@ -116,13 +117,13 @@ private theorem fderiv_scalarField_section {u : ℂ → ℝ} {f : ℂ → ℂ} {
 
 /-- Holomorphicity of the divisor factor solves both real components of `∂bar_a α = 0`,
 without dividing by the section. -/
-theorem equation_scalarField_holomorphic {u : ℂ → ℝ} {f : ℂ → ℂ} {z : ℂ}
+theorem equation_scalarField_apply_one_eq_zero_and_apply_two_eq_zero
+    {u : ℂ → ℝ} {f : ℂ → ℂ} {z : ℂ}
     (hu : DifferentiableAt ℝ u z) (hf : DifferentiableAt ℂ f z) :
     equation (scalarField u f) z 1 = 0 ∧ equation (scalarField u f) z 2 = 0 := by
   have hfr := hf.restrictScalars ℝ
   have hcr : fderiv ℝ f z I = I * fderiv ℝ f z 1 := by
-    rw [hf.fderiv_restrictScalars ℝ]
-    simp [← smul_eq_mul]
+    simpa [smul_eq_mul] using hf.fderiv_restrictScalars_smul ℝ I 1
   have hr := congrArg Complex.re hcr
   have hi := congrArg Complex.im hcr
   simp only [I_mul_re, I_mul_im] at hr hi
@@ -142,7 +143,7 @@ theorem equation_scalarField_holomorphic {u : ℂ → ℝ} {f : ℂ → ℂ} {z 
 
 /-- The curvature defect of the reconstructed field is the defect of the regularized
 scalar equation. -/
-theorem equation_scalarField_curvature {u : ℂ → ℝ} (f : ℂ → ℂ) {z : ℂ}
+theorem equation_scalarField_apply_zero {u : ℂ → ℝ} (f : ℂ → ℂ) {z : ℂ}
     (hu : ContDiffAt ℝ 2 u z) :
     equation (scalarField u f) z 0 =
       -Δ u z + (Real.exp (2 * u z) * ‖f z‖ ^ 2 - 1) / 8 := by
@@ -161,17 +162,18 @@ theorem equation_scalarField_eq_zero_iff {u : ℂ → ℝ} {f : ℂ → ℂ} {z 
     (hu : ContDiffAt ℝ 2 u z) (hf : DifferentiableAt ℂ f z) :
     equation (scalarField u f) z = 0 ↔
       Δ u z = (Real.exp (2 * u z) * ‖f z‖ ^ 2 - 1) / 8 := by
-  have hh := equation_scalarField_holomorphic (hu.differentiableAt (by norm_num)) hf
+  have hh := equation_scalarField_apply_one_eq_zero_and_apply_two_eq_zero
+    (hu.differentiableAt (by norm_num)) hf
   constructor
   · intro h
     have h₀ := congrArg (fun x : EuclideanSpace ℝ (Fin 3) ↦ x 0) h
-    rw [equation_scalarField_curvature f hu] at h₀
+    rw [equation_scalarField_apply_zero f hu] at h₀
     simp only [PiLp.zero_apply] at h₀
     linarith
   · intro h
     ext i
     fin_cases i
-    · simp [equation_scalarField_curvature f hu, h]
+    · simp [equation_scalarField_apply_zero f hu, h]
     · exact hh.1
     · exact hh.2
 
