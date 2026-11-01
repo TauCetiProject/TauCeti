@@ -36,7 +36,8 @@ The valuation can also be read in the Hahn series with real exponents, through t
 `realAddVal R f` is the order of the image of `f` (`LaurentSeries.realAddVal_eq_orderTop_embReal`),
 and it is at least `s` exactly when every real exponent of that image is
 (`LaurentSeries.le_realAddVal_iff_forall_mem_support`). `LaurentSeries.coeff_embReal_intCast`
-reads its coefficients at integers.
+reads its coefficients at integers, and `LaurentSeries.coeff_embReal_of_notMem_range` says they
+vanish elsewhere.
 -/
 
 public section
@@ -109,6 +110,15 @@ theorem coeff_embReal_intCast (f : R⸨X⸩) (k : ℤ) : (embReal R f).coeff (k 
   rw [embReal_apply]
   -- The order embedding `ℤ ↪o ℝ` above sends `k` to `(k : ℝ)` by definition.
   exact embDomain_coeff (a := k)
+
+omit [IsDomain R] in
+/-- Read in the Hahn series with real exponents, a Laurent series has zero coefficients away from
+the integers. -/
+theorem coeff_embReal_of_notMem_range {f : R⸨X⸩} {r : ℝ} (hr : r ∉ Set.range ((↑) : ℤ → ℝ)) :
+    (embReal R f).coeff r = 0 := by
+  rw [embReal_apply]
+  -- The order embedding `ℤ ↪o ℝ` above coerces to `Int.cast` by definition.
+  exact embDomain_of_notMem_range hr
 
 /-- The real valuation of a Laurent series is the order of the series read in the Hahn series with
 real exponents. -/
