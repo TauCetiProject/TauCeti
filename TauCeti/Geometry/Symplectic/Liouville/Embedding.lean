@@ -35,8 +35,10 @@ Exact codimension-zero embeddings compose, with primitives adding along the comp
 (`TauCeti.IsExactLiouvilleEmbedding.comp`), and a Liouville domain lying in the interior of
 another one for the same primitive embeds into it by the identity
 (`TauCeti.isExactLiouvilleEmbedding_id`). For instance, a Liouville domain `W` embeds in this way
-into each truncation `{r ≤ c}`, `c > 1`, of its completion, which is again a Liouville domain
-(`TauCeti.IsLiouvilleCompletion.isExactLiouvilleEmbedding_id_setOf_liouvilleRadialCoordinate_le`).
+into each truncation `{r ≤ c}`, `c > 1`, of its completion: `W` lies in its interior
+(`TauCeti.IsLiouvilleCompletion.subset_interior_setOf_liouvilleRadialCoordinate_le`), and it is
+again a Liouville domain
+(`TauCeti.IsLiouvilleCompletion.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le`).
 
 ## Main definitions
 
@@ -51,8 +53,6 @@ into each truncation `{r ≤ c}`, `c > 1`, of its completion, which is again a L
   diffeomorphism on an open neighbourhood of `W`.
 * `TauCeti.isExactLiouvilleEmbedding_id`, `TauCeti.IsExactLiouvilleEmbedding.comp`: identities
   and composites.
-* `TauCeti.IsLiouvilleCompletion.isExactLiouvilleEmbedding_id_setOf_liouvilleRadialCoordinate_le`:
-  a Liouville domain embeds exactly into the truncations of its completion.
 
 ## References
 
@@ -196,24 +196,11 @@ theorem comp (hφ' : IsExactLiouvilleEmbedding α' W' α'' W'' φ' h')
     have hpull : mpullback I I' φ (mpullback I' I'' φ' α''.1) x =
         mpullback I I' φ (α'.1 + mextDeriv (RoughForm.ofFunction I' h')) x := by
       ext v
-      rw [mpullback_apply, hx', mpullback_apply]
-      rfl
+      simp only [mpullback_apply, hx', Pi.add_apply]
     rw [mpullback_comp_at (hφd x) ((hφ'.contMDiff.mdifferentiable (by simp)) (φ x)), hpull,
       mpullback_add, Pi.add_apply, hx, mpullback_mextDeriv_ofFunction_apply (hφd x) (hh'd _),
       mextDeriv_ofFunction_add hhd (hh'd.comp hφd), Pi.add_apply, add_assoc]
 
 end IsExactLiouvilleEmbedding
-
-/-- **A Liouville domain embeds exactly into the truncations of its completion.** For `c > 1`, the
-identity is an exact codimension-zero embedding, with primitive `0`, of a Liouville domain `W` into
-the truncation `{r ≤ c}` of its completion, itself a Liouville domain for the same form and
-primitive (`TauCeti.IsLiouvilleCompletion.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le`).
--/
-theorem IsLiouvilleCompletion.isExactLiouvilleEmbedding_id_setOf_liouvilleRadialCoordinate_le
-    [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] {ω : SmoothTwoForm I M}
-    {Z : (x : M) → TangentSpace I x} (hW : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 < c) :
-    IsExactLiouvilleEmbedding α W α {x | liouvilleRadialCoordinate Z W x ≤ c} id 0 :=
-  isExactLiouvilleEmbedding_id (hW.subset_interior_setOf_liouvilleRadialCoordinate_le hZ hc)
 
 end TauCeti

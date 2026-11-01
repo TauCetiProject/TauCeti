@@ -338,8 +338,7 @@ theorem subset_interior_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompl
     W ⊆ interior {x | liouvilleRadialCoordinate Z W x ≤ c} := fun x hx ↦
   interior_maximal (fun _ hy ↦ le_of_lt hy)
     (isOpen_lt (h.continuous_liouvilleRadialCoordinate hZ) continuous_const)
-    (show liouvilleRadialCoordinate Z W x < c by
-      rwa [(h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx])
+    (by rw [mem_ofPred_eq, (h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx]; exact hc)
 
 /-- **Linearity at infinity on a completion.** A function is linear at infinity with slope `a`
 exactly when it equals `a r + b` on the region `{r ≥ R}` where the radial coordinate is large. -/
