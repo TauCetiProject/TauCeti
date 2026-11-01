@@ -90,9 +90,8 @@ theorem isCohenMacaulay_self_iff_of_flat :
       ← maximalIdeal_height_eq_ringKrullDim, h, WithBot.coe_add]
   -- All dimensions and depths are natural numbers, with each depth at most its dimension.
   have hnat {d : ℕ∞} {n : ℕ} (h : (d : WithBot ℕ∞) ≤ n) : ∃ c : ℕ, c ≤ n ∧ d = c := by
-    have h' : d ≤ n := by exact_mod_cast h
-    obtain ⟨c, rfl⟩ := ENat.ne_top_iff_exists.1 (ne_top_of_le_ne_top (ENat.natCast_ne_top n) h')
-    exact ⟨c, by exact_mod_cast h', rfl⟩
+    obtain ⟨c, hc, hcn⟩ := ENat.le_natCast_iff.mp (WithBot.coe_le_coe.mp h)
+    exact ⟨c, hcn, hc⟩
   obtain ⟨a, ha⟩ := exists_supportDim_eq_natCast (R := R) (M := R)
   obtain ⟨b, hb⟩ := exists_supportDim_eq_natCast (R := S) (M := S ⧸ I)
   obtain ⟨c, hca, hc⟩ := hnat (ha ▸ depth_le_supportDim (R := R) (M := R))
@@ -129,18 +128,18 @@ theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (
     Localization.isLocalHom_localRingHom _ _ _ _
   refine (isCohenMacaulay_self_iff_of_flat (R := Localization.AtPrime p)).2 ⟨hp, ?_⟩
   -- The closed fibre of `R_p → S_r` is the local ring of `κ(p) ⊗[R] S` at `Q`.
-  have hI : (p.map (algebraMap R S)).map (algebraMap S (Localization.AtPrime r)) =
+  have hI : p.map (algebraMap R (Localization.AtPrime r)) =
       (maximalIdeal (Localization.AtPrime p)).map
         (algebraMap (Localization.AtPrime p) (Localization.AtPrime r)) := by
-    rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_map, Ideal.map_map,
-      ← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq]
+    rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
   set I := (maximalIdeal (Localization.AtPrime p)).map
     (algebraMap (Localization.AtPrime p) (Localization.AtPrime r))
   have : Nontrivial (Localization.AtPrime r ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr
     (map_maximalIdeal_lt_top (algebraMap (Localization.AtPrime p) (Localization.AtPrime r))).ne
   have : IsLocalRing (Localization.AtPrime r ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
   let e : Localization.AtPrime r ⧸ I ≃+* Localization.AtPrime Q :=
-    (Ideal.quotEquivOfEq hI.symm).trans (Ideal.Fiber.algEquivAux₂ p Q).toRingEquiv.symm
+    (Ideal.quotEquivOfEq hI.symm).trans
+      (Ideal.Fiber.localizationAlgEquivQuotient p Q).toRingEquiv.symm
   exact (isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective Ideal.Quotient.mk_surjective).2
     (e.isCohenMacaulay_self_iff.2 (hq Q rfl))
 
