@@ -29,7 +29,9 @@ function theorem on an open neighbourhood.
 The same criterion holds for maps between manifolds without boundary. A normal form of a map read
 in the preferred extended charts is carried back to the manifolds by composing its charts with the
 preferred charts (`Manifold.IsImmersionAtOfComplement.of_writtenInExtChartAt`); on a boundaryless
-model the manifold derivative is the derivative of the map read in these charts. A
+model the manifold derivative is the derivative of the map read in these charts. In particular a
+smooth map with a differentiable left inverse, such as a section of a fiber bundle, is an
+immersion (`ContMDiff.isImmersion_of_leftInverse`). A
 parameter-preserving map `(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its
 slice `x ↦ G (p, x)` is one in the sense of differentials, as for the space-time track of a moving
 embedded submanifold. Likewise, postcomposing an immersion with a diffeomorphism onto a manifold
@@ -263,6 +265,21 @@ theorem ContMDiffOn.isImmersionAt_iff_injective_mfderiv [FiniteDimensional 𝕜 
   have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
+
+omit [CompleteSpace E] [CompleteSpace E'] in
+/-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
+immersion when it has a left inverse which is differentiable at every point of its range. For
+example, a smooth section of a fiber bundle is an immersion. -/
+theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] (hf : ContMDiff I J n f)
+    (hn : 1 ≤ n) {r : N → M} (hr : ∀ x, MDifferentiableAt J I r (f x))
+    (hrf : LeftInverse r f) : IsImmersion I J n f := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x => ?_
+  refine (hf.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ x) hn).mpr ?_
+  -- The differential of `r` at `f x` is a left inverse of the differential of `f` at `x`.
+  have hcomp := mfderiv_comp x (hr x) ((hf x).mdifferentiableAt hn0)
+  rw [hrf.comp_eq_id, mfderiv_id] at hcomp
+  exact LeftInverse.injective (g := mfderiv J I r (f x)) fun v => (DFunLike.congr_fun hcomp v).symm
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
