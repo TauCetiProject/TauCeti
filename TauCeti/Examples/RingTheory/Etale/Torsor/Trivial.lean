@@ -15,9 +15,9 @@ The regular split torsor is tested in arbitrary characteristic and over the zero
 Its three-cycle Galois-map computation distinguishes right translation from its inverse.
 -/
 
-open TensorProduct
-
 namespace TauCeti.Algebra
+
+open _root_.TensorProduct
 
 attribute [local instance] rightRegularMulSemiringAction
 
