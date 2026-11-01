@@ -211,11 +211,20 @@ theorem regularPart_toMeromorphicGerms (s : (holomorphicStructureSheaf 𝓘(ℂ)
   ((evalInvSub_add_toMeromorphicGerms_eq_iff (coeff_zero 0)).1 (by rw [map_zero, zero_add])).2
 
 open meromorphicGerms in
+/-- On the punctured neighbourhoods of `a`, the regular part of a polynomial in the inverse
+coordinate is its constant term. -/
+@[simp]
+theorem toMeromorphicGerms_regularPart_evalInvSub (P : ℂ[X]) :
+    toMeromorphicGerms a (regularPart a (evalInvSub a P)) = evalInvSub a (C (P.coeff 0)) := by
+  rw [toMeromorphicGerms_regularPart, principalPart_evalInvSub, map_sub, sub_sub_cancel]
+
+open meromorphicGerms in
 /-- A polynomial without constant term in the inverse coordinate has regular part zero. -/
 @[simp]
 theorem regularPart_evalInvSub {P : ℂ[X]} (hP : P.coeff 0 = 0) :
     regularPart a (evalInvSub a P) = 0 :=
-  ((evalInvSub_add_toMeromorphicGerms_eq_iff hP).1 (by rw [map_zero, add_zero])).2
+  toMeromorphicGerms_injective a <| by
+    rw [toMeromorphicGerms_regularPart_evalInvSub, hP, C_0, map_zero, map_zero]
 
 open meromorphicGerms in
 /-- **The regular part through Taylor's formula.** If `φ` is the germ of `(z - a)⁻ᴺ h z` with `h`
