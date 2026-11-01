@@ -17,6 +17,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 -- action on `A' ⊗[R] A` and `Algebra.TensorProduct.piRightHom`.
 public import TauCeti.Algebra.TensorProduct.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Pi
+import TauCeti.Algebra.Group.Action.MulDistribMulAction
 import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
@@ -75,6 +76,8 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
   a finite `R`-module, and if `R → A` is injective it is projective and faithfully flat.
 * `TauCeti.MulSemiringAction.formallyUnramified`, `TauCeti.MulSemiringAction.etale`: `A` is
   formally unramified over `R`, and étale if `R → A` is injective.
+* `TauCeti.MulSemiringAction.sum_smul_sum_smul_smul`: the dual basis identity
+  `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` for a module with semilinear action.
 * `TauCeti.MulSemiringAction.exists_sum_smul_eq_one`: for a free action on a commutative ring,
   some element has trace `∑ g, g • c = 1`.
 * `RingHom.sum_mul_sum_smul`: pairing a dual basis of `tensorToPi` with traces, after a map
@@ -165,6 +168,23 @@ theorem mul_tmul_eq_tmul_mul {c : A} (hc : ∀ g : G, g • c = c) (a b : A) :
 
 end InvariantTensor
 
+section DualBasis
+
+variable {A G N : Type*} [Semiring A] [Monoid G] [MulSemiringAction G A] [AddCommMonoid N]
+  [Module A N] [DistribMulAction G N] [SMulDistribClass G A N]
+
+/-- The dual basis identity `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` for an `A`-module with semilinear
+action, where `∑ i, xᵢ * g • yᵢ` is the indicator function of `1`. -/
+theorem sum_smul_sum_smul_smul [Fintype G] [DecidableEq G] {S : Finset (A × A)}
+    (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g) (n : N) :
+    ∑ p ∈ S, p.1 • ∑ g : G, g • (p.2 • n) = n := by
+  simp only [Finset.smul_sum, smul_distrib_smul, smul_smul]
+  rw [Finset.sum_comm]
+  simp only [← Finset.sum_smul, hS]
+  simp [Pi.single_apply]
+
+end DualBasis
+
 section Ring
 
 variable {R A G : Type*} [CommSemiring R] [CommRing A] [Algebra R A] [Group G]
@@ -247,7 +267,7 @@ theorem tensorToPi_surjective_iff [Finite G] :
 
 /-- The finite family attached to a preimage of the indicator function of `1` under
 `tensorToPi`. -/
-private theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
+theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
     (hu : tensorToPi R A G u = Pi.single 1 1) :
     ∃ S : Finset (A × A), ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g := by
   obtain ⟨S, rfl⟩ := TensorProduct.exists_finset u
@@ -257,18 +277,7 @@ private theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
 private theorem sum_sum_smul_mul [Fintype G] [DecidableEq G] {S : Finset (A × A)}
     (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g) (b : A) :
     ∑ p ∈ S, (∑ g : G, g • (p.2 * b)) * p.1 = b := by
-  have h (g : G) : ∑ p ∈ S, g • (p.2 * b) * p.1 = (Pi.single 1 1 : G → A) g * g • b := by
-    rw [← hS g, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [smul_mul']
-    ring
-  calc ∑ p ∈ S, (∑ g : G, g • (p.2 * b)) * p.1
-      = ∑ g : G, ∑ p ∈ S, g • (p.2 * b) * p.1 := by
-        simp only [Finset.sum_mul]
-        exact Finset.sum_comm
-    _ = b := by
-        simp only [h]
-        simp [Pi.single_apply]
+  simpa only [smul_eq_mul, mul_comm (Prod.fst _)] using sum_smul_sum_smul_smul hS b
 
 section Invariant
 
@@ -330,21 +339,10 @@ theorem projective [Finite G] [FaithfulSMul R A]
   have := Fintype.ofFinite G
   obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
   obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
-  -- The coordinate `b ↦ ∑ g, g • (y * b)` of the dual basis, as an `R`-linear map `A → R`.
-  choose φ hφ using fun y b : A ↦
-    Algebra.IsInvariant.isInvariant (A := R) _ (smul_sum_smul (G := G) · (y * b))
-  have inj := FaithfulSMul.algebraMap_injective R A
-  let f (y : A) : A →ₗ[R] R :=
-    { toFun := φ y
-      map_add' b b' := inj <| by simp [hφ, mul_add, Finset.sum_add_distrib]
-      map_smul' r b := inj <| by
-        simp only [hφ, mul_smul_comm, smul_comm _ r, ← Finset.smul_sum]
-        simp only [RingHom.id_apply, smul_eq_mul, map_mul, hφ, Algebra.smul_def] }
-  refine .of_split (LinearMap.pi fun p : S ↦ f p.1.2)
+  refine .of_split (LinearMap.pi fun p : S ↦ traceCoord G p.1.2)
     (Fintype.linearCombination R fun p : S ↦ p.1.1) (LinearMap.ext fun b ↦ ?_)
   simp only [LinearMap.comp_apply, Fintype.linearCombination_apply, LinearMap.pi_apply,
-    LinearMap.id_apply, Algebra.smul_def]
-  simp only [f, LinearMap.coe_mk, AddHom.coe_mk, hφ]
+    LinearMap.id_apply, Algebra.smul_def, algebraMap_traceCoord]
   exact (Finset.sum_coe_sort S _).trans (sum_sum_smul_mul hS b)
 
 end Invariant
