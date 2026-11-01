@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Measures on the topological separation quotient
@@ -14,7 +14,8 @@ Pushforward to `SeparationQuotient` preserves the information in a Borel measure
 structure of a topological space is pulled back from that of its separation quotient.
 
 The quotient carries its Borel measurable structure. `Measure.separationQuotient_def` exposes
-its pushforward formula, and `Measure.separationQuotient_inj` simplifies equality of quotient laws.
+its pushforward formula, `Measure.separationQuotient_apply` evaluates it on measurable sets, and
+`Measure.separationQuotient_inj` simplifies equality of quotient laws.
 -/
 
 public section
@@ -38,6 +39,15 @@ theorem separationQuotient_def (μ : Measure X) :
       @Measure.map X (SeparationQuotient X) _ (borel (SeparationQuotient X))
         SeparationQuotient.mk μ := by rfl
 
+/-- The separation-quotient measure of a measurable set is the measure of its preimage. -/
+@[simp]
+theorem separationQuotient_apply [OpensMeasurableSpace X] (μ : Measure X)
+    {s : Set (SeparationQuotient X)} (hs : MeasurableSet[borel (SeparationQuotient X)] s) :
+    separationQuotient μ s = μ (SeparationQuotient.mk ⁻¹' s) := by
+  rw [separationQuotient_def]
+  exact map_apply (measurable_iff_comap_le.2 <|
+    SeparationQuotient.isInducing_mk.comap_borel.trans_le OpensMeasurableSpace.borel_le) hs
+
 variable [BorelSpace X]
 
 /-- Pushforward to the topological separation quotient is injective on Borel measures:
@@ -45,14 +55,9 @@ two Borel measures on a topological space agree exactly when their quotient laws
 @[simp]
 theorem separationQuotient_inj {μ ν : Measure X} :
     separationQuotient μ = separationQuotient ν ↔ μ = ν := by
-  have hcomap : ‹MeasurableSpace X› =
-      (borel (SeparationQuotient X)).comap SeparationQuotient.mk := by
-    rw [← borel_comap, ← SeparationQuotient.isInducing_mk.eq_induced]
-    exact BorelSpace.measurable_eq
   refine ⟨fun h ↦ ext fun s hs ↦ ?_, congrArg _⟩
-  rw [hcomap] at hs
+  rw [BorelSpace.measurable_eq (α := X), ← SeparationQuotient.isInducing_mk.comap_borel] at hs
   obtain ⟨t, ht, rfl⟩ := hs
-  have hmk := measurable_iff_comap_le.2 hcomap.ge
-  simpa [separationQuotient_def, map_apply hmk ht] using congr($h t)
+  rw [← separationQuotient_apply μ ht, ← separationQuotient_apply ν ht, h]
 
 end MeasureTheory.Measure
