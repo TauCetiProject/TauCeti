@@ -169,6 +169,20 @@ theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentS
     (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.1 x ![v] := by
   rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
 
+/-- The section of a smooth one-form, read as a linear map, vanishes at `x` exactly when the form
+vanishes at `x`. -/
+theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
+    (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) = 0 ↔ φ.1 x = 0 := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ LinearMap.ext fun v ↦ ?_⟩
+  · have hv : ![v 0] = v := by
+      ext i
+      fin_cases i
+      rfl
+    rw [← hv, ← degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
+      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  · rw [degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
+      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+
 /-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
 @[simp]
 theorem degreeOneEquiv_symm_apply_apply

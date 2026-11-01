@@ -74,17 +74,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   {α : SmoothForm I M ℝ 1} {x : M}
 
-/-- The covector of a one-form which is nonzero at `x` is nonzero. -/
-private theorem degreeOneEquiv_ne_zero (hx : α.1 x ≠ 0) :
-    (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) ≠ 0 := fun h ↦
-  hx <| ContinuousAlternatingMap.ext fun v ↦ by
-    have hv : ![v 0] = v := by
-      ext i
-      fin_cases i
-      rfl
-    rw [← hv, ← degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-
 /-- If `X` is a basis of the tangent space at `x` and `α (X j) ≠ 0`, the vectors
 `X i - (α (X i) / α (X j)) X j`, `i ≠ j`, form a basis of `ker α_x`. -/
 private theorem isBasis_kerDistribution [FiniteDimensional ℝ E] {ι : Type*} [Fintype ι]
@@ -141,7 +130,7 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
   -- Some member of the frame is not in the kernel of `α_x`.
   obtain ⟨j, hj⟩ : ∃ j, a j x ≠ 0 := by
     by_contra! h
-    refine degreeOneEquiv_ne_zero hx <| (hF.toBasisAt hxe).ext fun i ↦ ?_
+    refine hx <| degreeOneEquiv_coe_eq_zero_iff.1 <| (hF.toBasisAt hxe).ext fun i ↦ ?_
     rw [IsLocalFrameOn.toBasisAt_coe, degreeOneEquiv_coe_apply, LinearMap.zero_apply]
     exact h i
   -- On the open set where `α (F j) ≠ 0`, the fields `F i - (α (F i) / α (F j)) F j`, `i ≠ j`,
@@ -235,7 +224,8 @@ theorem isContactFormAt_iff_bijective_distributionLeviForm [FiniteDimensional �
       finrank ℝ (α.kerDistribution x →ₗ[ℝ] TangentSpace I x ⧸ α.kerDistribution x) := by
     have h1 : finrank ℝ (TangentSpace I x ⧸ α.kerDistribution x) = 1 := by
       rw [kerDistribution_def]
-      exact Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero (degreeOneEquiv_ne_zero hx)
+      exact Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero
+        (degreeOneEquiv_coe_eq_zero_iff.not.2 hx)
     rw [Module.finrank_linearMap, h1, mul_one]
   rw [← hinj]
   exact ⟨fun h ↦ ⟨h, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).1 h⟩,
