@@ -10,6 +10,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.GroupTheory.GroupAction.Hom
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Nerve
+public import TauCeti.Topology.Homotopy.Equivariant
 
 /-!
 # Equivariant homotopies and the classifying space of an action groupoid
@@ -117,14 +118,6 @@ theorem fatClassifyingSpaceHomotopy_apply_ι {f₀ f₁ : X →ₑ[MonoidHom.id 
       fatRealization.ι _ n (((ActionCategory.map (MonoidHom.id G)
         (⟨fun x ↦ H (s, x), hH s⟩ : X →ₑ[MonoidHom.id G] Y)).mapComposableArrows _).obj F, t) :=
   TauCeti.fatClassifyingSpaceHomotopy_apply_ι _ _ s n F t
-
-omit [TopologicalSpace G] in
-/-- A point onto which `X` contracts through `G`-equivariant maps is fixed by `G`. -/
-theorem _root_.ContinuousMap.Homotopy.mem_fixedPoints_of_map_smul {x : X}
-    (H : Homotopy (ContinuousMap.id X) (ContinuousMap.const X x))
-    (hH : ∀ (s : unitInterval) (g : G) (y : X), H (s, g • y) = g • H (s, y)) :
-    x ∈ fixedPoints G X :=
-  fun g ↦ by simpa using (hH 1 g x).symm
 
 variable (G) in
 /-- **The local model of an orbifold chart.** If `H` is a contraction of `X` onto a point `x`
