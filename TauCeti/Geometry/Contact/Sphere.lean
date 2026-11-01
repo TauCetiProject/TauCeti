@@ -9,25 +9,17 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
-public import TauCeti.Geometry.Symplectic.Liouville.Linear
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.Liouville.Radial
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # The contact form of the unit sphere of a symplectic vector space
 
-Let `ω` be a linear symplectic form on a finite-dimensional real vector space `V`, regarded as the
-constant symplectic form `TauCeti.SymplecticForm.constSmooth ω` on `V`. Its **radial primitive**
-(`TauCeti.SymplecticForm.radialPrimitive`) is the one-form
-
-`λₓ(v) = ω(x, v) / 2`,
-
-with `dλ = ω` (`TauCeti.SymplecticForm.mextDeriv_radialPrimitive`). Its Liouville field is half
-the position field, `ι_Z ω = λ` for `Z(x) = x / 2`
-(`TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`).
-
-If `V = E` also carries an inner product, then `Z` points outwards along the unit sphere
-`S = sphere 0 1`, since `⟪x, x / 2⟫ = 1 / 2` there. So the unit sphere is a hypersurface of
-restricted contact type with primitive `λ`
+Let `ω` be a linear symplectic form on a finite-dimensional real inner product space `E`, with
+radial primitive `λₓ(v) = ω(x, v) / 2` (`TauCeti.SymplecticForm.radialPrimitive`, in
+`TauCeti.Geometry.Symplectic.Liouville.Radial`) and Liouville field `Z(x) = x / 2`. Then `Z`
+points outwards along the unit sphere `S = sphere 0 1`, since `⟪x, x / 2⟫ = 1 / 2` there. So the
+unit sphere is a hypersurface of restricted contact type with primitive `λ`
 (`TauCeti.SymplecticForm.isRestrictedContactType_sphere`), and the restriction
 `α = λ|S` (`TauCeti.SymplecticForm.sphereContactForm`) is a contact form on `S`
 (`TauCeti.SymplecticForm.isContactForm_sphereContactForm`). No compatibility between `ω` and the
@@ -43,12 +35,11 @@ so `R_α(z) = i z` on `S^(2n+1) ⊂ ℂ^(n+1)`, the generator of the Hopf fibrat
 
 ## Main definitions
 
-* `TauCeti.SymplecticForm.radialPrimitive`: the one-form `λₓ(v) = ω(x, v) / 2`.
-* `TauCeti.SymplecticForm.sphereContactForm`: its restriction to the unit sphere.
+* `TauCeti.SymplecticForm.sphereContactForm`: the restriction of the radial primitive to the unit
+  sphere.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`: `dλ = ω`.
 * `TauCeti.SymplecticForm.isRestrictedContactType_sphere`: the unit sphere is of restricted
   contact type.
 * `TauCeti.SymplecticForm.isContactForm_sphereContactForm`: `λ|S` is a contact form.
@@ -70,71 +61,6 @@ open Metric Module
 open scoped Manifold InnerProductSpace
 
 namespace TauCeti
-
-namespace SymplecticForm
-
-section Radial
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  (ω : SymplecticForm V)
-
-/-- The **radial primitive** `λₓ(v) = ω(x, v) / 2` of a linear symplectic form `ω`, as a smooth
-one-form on `V`. Its exterior derivative is the constant form `ω`
-(`TauCeti.SymplecticForm.mextDeriv_radialPrimitive`). -/
-def radialPrimitive : SmoothForm 𝓘(ℝ, V) V ℝ 1 :=
-  ⟨fun x ↦ ContinuousLinearMap.liouvilleFormCLM ω.toBilinForm.toContinuousBilinearMap x,
-    (isSmoothForm_modelSpace_iff.mpr
-      (ContinuousLinearMap.liouvilleFormCLM _).contDiff).mem_smoothBundleForms⟩
-
-private theorem radialPrimitive_toRoughForm :
-    ω.radialPrimitive.1 =
-      fun x ↦ ContinuousLinearMap.liouvilleFormCLM ω.toBilinForm.toContinuousBilinearMap x :=
-  (rfl)
-
-/-- The radial primitive evaluates as `λₓ(v) = ω(x, v) / 2`. -/
-@[simp]
-theorem radialPrimitive_apply (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
-    ω.radialPrimitive.1 x ![v] = 2⁻¹ * ω x v := by
-  rw [radialPrimitive_toRoughForm]
-  exact (ContinuousLinearMap.liouvilleFormCLM_apply _ x ![v]).trans
-    (congrArg ((2⁻¹ : ℝ) • ·) (LinearMap.toContinuousBilinearMap_apply _ _ _))
-
-/-- **The radial primitive is a primitive**: `dλ = ω`. -/
-@[simp]
-theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.1 = ω.constSmooth.1 := by
-  funext x
-  ext v
-  rw [mextDeriv_eq_extDeriv]
-  refine (ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply_of_skew _ two_ne_zero
-    (fun u w ↦ by simpa using (ω.neg_eq w u).symm) x v).trans ?_
-  have h := ω.constSmooth_apply x (v 0) (v 1)
-  rw [SmoothBundleForm.eval₂_apply] at h
-  have hv : v = ![v 0, v 1] := by
-    funext i
-    fin_cases i <;> rfl
-  conv_rhs => rw [hv]
-  exact h.symm
-
-/-- The Liouville field of the radial primitive is half the position field:
-`ι_Z ω = λ` for `Z(x) = x / 2`. -/
-theorem constSmooth_interior_two_inv_smul :
-    RoughForm.interior (I := 𝓘(ℝ, V)) (fun x : V ↦ (2⁻¹ : ℝ) • x) ω.constSmooth.1 =
-      ω.radialPrimitive.1 := by
-  funext x
-  ext v
-  have hv : v = ![v 0] := by
-    funext i
-    fin_cases i
-    rfl
-  have h := ω.constSmooth_apply x ((2⁻¹ : ℝ) • x) (v 0)
-  refine (RoughForm.interior_apply _ _ x v).trans ?_
-  rw [hv, radialPrimitive_apply]
-  refine ((SmoothBundleForm.eval₂_apply _ _ _ _).symm.trans h).trans ?_
-  exact LinearMap.map_smul₂ ω.toBilinForm _ x (v 0)
-
-end Radial
-
-end SymplecticForm
 
 section Sphere
 
@@ -201,9 +127,12 @@ theorem mextDeriv_sphereContactForm_apply (x : sphere (0 : E) 1) (v w : TangentS
         mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x w] := by
     funext i
     fin_cases i <;> rfl
-  rw [← mextDerivₗ_apply, sphereContactForm, SmoothForm.mextDerivₗ_mpullback,
-    SmoothForm.mpullback_apply, mextDerivₗ_apply, mextDeriv_radialPrimitive, hv,
-    ← SmoothBundleForm.eval₂_apply]
+  have hrad : IsSmoothBundleForm (I := 𝓘(ℝ, E)) (F := ℝ) (V := Bundle.Trivial E ℝ) 1
+      ω.radialPrimitive.1 :=
+    (isSmoothBundleForm_def 1 _).mpr (ω.radialPrimitive.contMDiff.of_le (by simp))
+  rw [sphereContactForm, SmoothForm.coe_mpullback,
+    ← mpullback_mextDeriv contMDiff_coe_sphere hrad, mpullback_apply,
+    mextDeriv_radialPrimitive, hv, ← SmoothBundleForm.eval₂_apply]
   exact (ω.constSmooth_apply _ _ _).trans (congrArg₂ (fun a b ↦ ω a b)
     (mvfderiv_apply_eq_mfderiv_apply _ _ _).symm (mvfderiv_apply_eq_mfderiv_apply _ _ _).symm)
 
