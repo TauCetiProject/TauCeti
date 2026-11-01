@@ -232,10 +232,9 @@ theorem _root_.MonoidHom.fundamentalVectorField_groupLieAlgebraMap
   have horbit : (fun k : K ↦ k • x) = (fun g : G ↦ g • x) ∘ φ := funext fun k ↦ hsmul k x
   have hcomp := mfderiv_comp_apply_of_eq (1 : K) ((ContMDiffSMul.contMDiff_smul_const (I := I)
     (I' := I') (n := 1) x).mdifferentiableAt one_ne_zero) hφ (map_one φ) ξ
-  rw [φ.groupLieAlgebraMap_apply]
-  exact (fundamentalVectorField_apply (I := I) (G := G) (I' := I') _ x).trans <| hcomp.symm.trans <|
-    (congrArg (fun f : K → M ↦ mfderiv J I' f 1 ξ) horbit.symm).trans
-      (fundamentalVectorField_apply (I := J) (G := K) (I' := I') ξ x).symm
+  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, φ.groupLieAlgebraMap_apply,
+    horbit]
+  exact hcomp.symm
 
 end Field
 
