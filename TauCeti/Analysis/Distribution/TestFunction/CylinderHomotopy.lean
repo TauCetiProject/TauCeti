@@ -43,6 +43,8 @@ build homotopies between pushforwards of currents and to estimate their masses.
   continuous linear map.
 * `TauCeti.isCompact_inter_preimage_prodMk_left`: the slices `ι₀` and `ι₁` are proper from `Ω`
   to `W`, so the pushforwards `{t} × T` are defined.
+* `TestFunction.pullbackCLM_prodMk_left_apply`: for `t ∈ [0, 1]`, `ιₜ^* ω` is `ω (·, t)` restricted
+  to `E`.
 * `TestFunction.tsupport_cylinderHomotopyCLM_subset`,
   `TestFunction.norm_cylinderHomotopyCLM_apply_le`: its support and pointwise bound.
 * `TestFunction.cylinderHomotopyCLM_comp_extDerivCLM`: `h ∘ d = ι₁^* - ι₀^* - d ∘ h`, and
@@ -100,11 +102,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
 
-/-- The cylinder homotopy operator of a smooth form is smooth. -/
-private theorem contDiff_cylinderHomotopy {ω : E × ℝ → (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F}
-    (hω : ContDiff ℝ (⊤ : ℕ∞) ω) : ContDiff ℝ (⊤ : ℕ∞) (cylinderHomotopy ω) :=
-  contDiffOn_univ.1 (convex_univ.contDiffOn_cylinderHomotopy uniqueDiffOn_univ hω.contDiffOn)
-
 variable [CompleteSpace F]
 
 /-- The cylinder homotopy operator on tests supported in a compact `K ⊆ E × ℝ`, whose images are
@@ -143,9 +140,7 @@ def cylinderHomotopyCLM (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ �
     𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
   letI T (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)) : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
     haveI hC := isCompact_fst_image_inter ω.hasCompactSupport
-    haveI hsupp : tsupport (cylinderHomotopy ω) ⊆ Prod.fst '' (tsupport ω ∩ univ ×ˢ Icc 0 1) :=
-      closure_minimal ((support_cylinderHomotopy_subset _).trans
-        (image_mono (inter_subset_inter_left _ (subset_tsupport _)))) hC.isClosed
+    haveI hsupp := tsupport_cylinderHomotopy_subset ω.hasCompactSupport
     ⟨cylinderHomotopy ω, contDiff_cylinderHomotopy ω.contDiff,
       hC.of_isClosed_subset (isClosed_tsupport _) hsupp,
       hsupp.trans (fst_image_inter_subset hW ω.tsupport_subset)⟩
@@ -157,12 +152,12 @@ def cylinderHomotopyCLM (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ �
 variable {hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω}
 
 /-- The cylinder homotopy operator on test forms is the pointwise cylinder homotopy operator. -/
+@[simp]
 theorem coe_cylinderHomotopyCLM (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)) :
     ⇑(cylinderHomotopyCLM hW ω) = cylinderHomotopy ω :=
   (rfl)
 
 /-- The cylinder homotopy operator on test forms is `x ↦ ∫₀¹ ω(x, t)(∂ₜ, ·) dt`. -/
-@[simp]
 theorem cylinderHomotopyCLM_apply (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)) (x : E) :
     cylinderHomotopyCLM hW ω x =
       ∫ t in (0 : ℝ)..1, ((ω (x, t)).curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
@@ -172,9 +167,7 @@ theorem cylinderHomotopyCLM_apply (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L
 in `E × [0, 1]`. -/
 theorem tsupport_cylinderHomotopyCLM_subset (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)) :
     tsupport (cylinderHomotopyCLM hW ω) ⊆ Prod.fst '' (tsupport ω ∩ univ ×ˢ Icc 0 1) :=
-  closure_minimal ((support_cylinderHomotopy_subset _).trans
-      (image_mono (inter_subset_inter_left _ (subset_tsupport _))))
-    (isCompact_fst_image_inter ω.hasCompactSupport).isClosed
+  tsupport_cylinderHomotopy_subset ω.hasCompactSupport
 
 /-- The cylinder homotopy operator of a test form is pointwise bounded by any bound for the form
 along `{x} × [0, 1]`, for the sup norm on `E × ℝ`. -/
@@ -185,7 +178,7 @@ theorem norm_cylinderHomotopyCLM_apply_le (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k +
 omit [CompleteSpace F] in
 /-- At a time `t ∈ [0, 1]`, the pullback along the slice `x ↦ (x, t)` is `ω (x, t)` restricted to
 `E`, at every point of `E`. -/
-private theorem pullbackCLM_prodMk_left_apply (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω)
+theorem pullbackCLM_prodMk_left_apply (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω)
     {m : ℕ} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
     {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
       IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, t)) ⁻¹' K)}
@@ -199,17 +192,14 @@ private theorem pullbackCLM_prodMk_left_apply (hW : ∀ p ∈ W, p.2 ∈ Icc (0 
     ext v
     simp
 
-variable {hp₀ : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
-    IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, (0 : ℝ))) ⁻¹' K)}
-  {hp₁ : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
-    IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, (1 : ℝ))) ⁻¹' K)}
-
 /-- **The homotopy formula on test forms**: `h ∘ d = ι₁^* - ι₀^* - d ∘ h` on test
 `(k + 1)`-forms, where `ιₜ^*` is the pullback along the slice `x ↦ (x, t)`. -/
 theorem cylinderHomotopyCLM_comp_extDerivCLM :
     (cylinderHomotopyCLM hW ∘L extDerivCLM : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _) =
-      pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₁ -
-        pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₀ -
+      pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨zero_le_one, le_rfl⟩) -
+        pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨le_rfl, zero_le_one⟩) -
         extDerivCLM ∘L cylinderHomotopyCLM hW := by
   ext ω x : 2
   have h := extDeriv_cylinderHomotopy_add_cylinderHomotopy_extDeriv
@@ -224,8 +214,10 @@ theorem cylinderHomotopyCLM_comp_extDerivCLM :
 pullback along the slice `x ↦ (x, t)`. -/
 theorem cylinderHomotopyCLM_comp_extDerivCLM_finZero :
     (cylinderHomotopyCLM hW ∘L extDerivCLM : 𝓓(W, (E × ℝ) [⋀^Fin 0]→L[ℝ] F) →L[ℝ] _) =
-      pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₁ -
-        pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₀ := by
+      pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨zero_le_one, le_rfl⟩) -
+        pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨le_rfl, zero_le_one⟩) := by
   ext ω x : 2
   simp only [ContinuousLinearMap.comp_apply, sub_apply, coe_cylinderHomotopyCLM,
     coe_extDerivCLM]
@@ -243,10 +235,6 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ} {hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω}
-  {hp₀ : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
-    IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, (0 : ℝ))) ⁻¹' K)}
-  {hp₁ : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
-    IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, (1 : ℝ))) ⁻¹' K)}
 
 /-- **The boundary of a product with the unit interval**: for a `(k + 1)`-current `T` on `Ω`,
 `∂ ([[0, 1]] × T) = {1} × T - {0} × T - [[0, 1]] × ∂ T`, where `[[0, 1]] × T = T ∘ h`,
@@ -254,8 +242,10 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem comp_cylinderHomotopyCLM_comp_extDerivCLM
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) :
     (T ∘L cylinderHomotopyCLM hW) ∘L extDerivCLM =
-      T ∘L pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₁ -
-        T ∘L pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₀ -
+      T ∘L pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨zero_le_one, le_rfl⟩) -
+        T ∘L pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨le_rfl, zero_le_one⟩) -
         (T ∘L extDerivCLM) ∘L cylinderHomotopyCLM hW := by
   rw [comp_assoc, cylinderHomotopyCLM_comp_extDerivCLM, comp_sub, comp_sub, comp_assoc]
 
@@ -265,8 +255,10 @@ theorem comp_cylinderHomotopyCLM_comp_extDerivCLM
 theorem comp_cylinderHomotopyCLM_comp_extDerivCLM_finZero
     (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G) :
     (T ∘L cylinderHomotopyCLM hW) ∘L extDerivCLM =
-      T ∘L pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₁ -
-        T ∘L pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp₀ := by
+      T ∘L pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨zero_le_one, le_rfl⟩) -
+        T ∘L pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+          (isCompact_inter_preimage_prodMk_left hW ⟨le_rfl, zero_le_one⟩) := by
   rw [comp_assoc, cylinderHomotopyCLM_comp_extDerivCLM_finZero, comp_sub]
 
 end ContinuousLinearMap
@@ -312,9 +304,7 @@ theorem mass_comp_cylinderHomotopyCLM_comp_extDerivCLM_le
     refine (mass_comp_pullbackCLM_le T (L := 1) fun x _ ↦ ?_).trans_eq (by simp)
     rw [(hasFDerivAt_prodMk_left x t).fderiv, NNReal.coe_one]
     exact ContinuousLinearMap.norm_inl_le_one ℝ E ℝ
-  rw [ContinuousLinearMap.comp_cylinderHomotopyCLM_comp_extDerivCLM
-    (hp₀ := isCompact_inter_preimage_prodMk_left hW ⟨le_rfl, zero_le_one⟩)
-    (hp₁ := isCompact_inter_preimage_prodMk_left hW ⟨zero_le_one, le_rfl⟩),
+  rw [ContinuousLinearMap.comp_cylinderHomotopyCLM_comp_extDerivCLM,
     FunLike.coe_sub, FunLike.coe_sub, two_mul]
   refine (mass_sub_le ..).trans (add_le_add ((mass_sub_le ..).trans (add_le_add ?_ ?_)) ?_)
   · exact hslice 1 ⟨zero_le_one, le_rfl⟩

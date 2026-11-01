@@ -52,7 +52,8 @@ proved directly, without Stokes' theorem on the manifold with corners `M × [0, 
 ## Main declarations
 
 * `TauCeti.cylinderHomotopy`: the cylinder homotopy operator.
-* `Convex.contDiffOn_cylinderHomotopy`: it preserves `C^r` regularity.
+* `Convex.contDiffOn_cylinderHomotopy`, `TauCeti.contDiff_cylinderHomotopy`: it preserves `C^r`
+  regularity.
 * `Convex.extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin`: the
   cochain-homotopy identity `d (h ω) + h (d ω) = ι₁^* ω - ι₀^* ω`.
 * `Convex.extDerivWithin_cylinderHomotopy`: for a closed form, `ι₁^* ω - ι₀^* ω = d (h ω)`.
@@ -61,9 +62,10 @@ proved directly, without Stokes' theorem on the manifold with corners `M × [0, 
 * `TauCeti.extDeriv_cylinderHomotopy_add_cylinderHomotopy_extDeriv`,
   `TauCeti.cylinderHomotopy_extDeriv_eq_sub`: the same identities for forms `C¹` on all of
   `E × ℝ`, with exterior derivatives on the whole spaces.
-* `TauCeti.support_cylinderHomotopy_subset`, `TauCeti.norm_cylinderHomotopy_le`,
-  `TauCeti.norm_iteratedFDeriv_cylinderHomotopy_le`: support and sup-norm bounds for `h ω` and
-  its derivatives, which make `h` continuous on compactly supported smooth forms.
+* `TauCeti.support_cylinderHomotopy_subset`, `TauCeti.tsupport_cylinderHomotopy_subset`,
+  `TauCeti.norm_cylinderHomotopy_le`, `TauCeti.norm_iteratedFDeriv_cylinderHomotopy_le`: support
+  and sup-norm bounds for `h ω` and its derivatives, which make `h` continuous on compactly
+  supported smooth forms.
 
 ## References
 
@@ -171,6 +173,15 @@ theorem support_cylinderHomotopy_subset (ω : E × ℝ → (E × ℝ) [⋀^Fin (
   refine hx ?_
   rw [cylinderHomotopy_congr (ω₂ := 0) fun t ht ↦ ?_, cylinderHomotopy_zero, Pi.zero_apply]
   exact Function.notMem_support.1 fun hs ↦ h ⟨(x, t), ⟨hs, mem_univ _, ht⟩, rfl⟩
+
+/-- The cylinder homotopy operator of a compactly supported form is topologically supported over
+the part of the topological support of the form that lies in `E × [0, 1]`. -/
+theorem tsupport_cylinderHomotopy_subset {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : HasCompactSupport ω) :
+    tsupport (cylinderHomotopy ω) ⊆ Prod.fst '' (tsupport ω ∩ univ ×ˢ Icc 0 1) :=
+  closure_minimal ((support_cylinderHomotopy_subset _).trans
+      (image_mono (inter_subset_inter_left _ (subset_tsupport _))))
+    ((hω.inter_right (isClosed_univ.prod isClosed_Icc)).image continuous_fst).isClosed
 
 /-- The contraction with `(0, 1)` followed by the pullback along `inl` does not increase norms,
 for the sup norm on `E × ℝ`. -/
@@ -446,6 +457,11 @@ private theorem extDerivWithin_univ_prod_Icc {m : ℕ} {ω : E × ℝ → (E × 
   rw [extDerivWithin, extDeriv, fderivWithin_eq_fderiv
     ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) _ ⟨mem_univ x, ht⟩)
     (hω.differentiable one_ne_zero _)]
+
+/-- The cylinder homotopy operator of a form that is `C^r` on all of `E × ℝ` is `C^r`. -/
+theorem contDiff_cylinderHomotopy {r : ℕ∞} {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : ContDiff ℝ r ω) : ContDiff ℝ r (cylinderHomotopy ω) :=
+  contDiffOn_univ.1 (convex_univ.contDiffOn_cylinderHomotopy uniqueDiffOn_univ hω.contDiffOn)
 
 variable [CompleteSpace F]
 
