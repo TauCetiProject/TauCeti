@@ -70,7 +70,7 @@ No factor `1/4` is included; some sources use `N_J / 4` instead.
 public noncomputable section
 
 open Bundle FiberBundle VectorField
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -366,6 +366,44 @@ end SmoothAlmostComplexStructure
 section Const
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- In a vector space, the Nijenhuis tensor can be computed by differentiating the images of
+constant vector fields. The signs use the native bracket `[X,Y] = DY X - DX Y`. -/
+theorem SmoothAlmostComplexStructure.nijenhuis_eq_fderiv
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (A : V → V →L[ℝ] V)
+    (x : V) (hA : (fun y ↦ (J.toEndomorphism y : V →L[ℝ] V)) =ᶠ[𝓝 x] A)
+    (v w : V) :
+    J.nijenhuis x v w =
+      fderiv ℝ (fun y ↦ A y w) x (A x v) -
+        fderiv ℝ (fun y ↦ A y v) x (A x w) +
+        A x (fderiv ℝ (fun y ↦ A y v) x w) -
+        A x (fderiv ℝ (fun y ↦ A y w) x v) := by
+  have hconst (u : V) :=
+    ((contMDiffAt_vectorSpace_iff_contDiffAt (𝕜 := ℝ) (V := fun _ ↦ u)
+      (x := x) (n := 1)).mpr contDiffAt_const).mdifferentiableAt one_ne_zero
+  have h := J.nijenhuis_apply (hconst v) (hconst w)
+  rw [mlieBracket_eq_lieBracket,
+    mlieBracket_eq_lieBracket (V := fun _ : V ↦ v) (W := fun _ : V ↦ w),
+    mlieBracket_eq_lieBracket (V := fun y ↦ J y v) (W := fun _ : V ↦ w),
+    mlieBracket_eq_lieBracket (V := fun _ : V ↦ v) (W := fun y ↦ J y w)] at h
+  simp only [VectorField.lieBracket] at h
+  have hAx := hA.self_of_nhds
+  have hd (u : V) :
+      fderiv ℝ (fun y ↦ (J.toEndomorphism y : V →L[ℝ] V) u) x =
+        fderiv ℝ (fun y ↦ A y u) x := by
+    have heq : (fun y ↦ (J.toEndomorphism y : V →L[ℝ] V) u) =ᶠ[𝓝 x]
+        (fun y ↦ A y u) :=
+      hA.mono fun y hy ↦ congrArg (fun D : V →L[ℝ] V ↦ D u) hy
+    exact heq.fderiv_eq
+  simp only [hd, hAx] at h
+  -- Fix derivative codomains to the model space: tangent-space instances are hidden in `h`.
+  change (J.nijenhuis x v w : V) =
+    fderiv ℝ (fun y ↦ A y w) x (A x v) - fderiv ℝ (fun y ↦ A y v) x (A x w) -
+      (fderiv ℝ (fun _ : V ↦ w) x v - fderiv ℝ (fun _ : V ↦ v) x w) -
+      A x (fderiv ℝ (fun _ : V ↦ w) x (A x v) - fderiv ℝ (fun y ↦ A y v) x w) -
+      A x (fderiv ℝ (fun y ↦ A y w) x v - fderiv ℝ (fun _ : V ↦ v) x (A x w)) at h
+  simpa only [fderiv_const_apply, zero_apply, sub_zero, zero_sub, map_neg,
+    sub_neg_eq_add] using h
 
 /-- A constant almost complex structure on a finite-dimensional real vector space has vanishing
 Nijenhuis tensor. -/
