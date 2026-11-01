@@ -27,12 +27,12 @@ Frobenius, which form the finite symplectic group `Sp₄(𝔽_q)` of
 `TauCeti.ValidLieTypeIndex.symplecticEquivFrobeniusFixedPoints`. The resulting isomorphism is
 `TauCeti.TypeB2LieIndex.symplecticEquivFixedPoints`.
 
-A valid `B₂(q)` has `q ≥ 4`, because `B₂(2)` and `B₂(3)` are excluded from the classification list
-as duplicate representatives. The field `𝔽_q` therefore has an element other than `0` and `1`, so
-`Sp₄(𝔽_q)` is perfect by `TauCeti.GLSymplecticFin.commutator_eq_top_of_two_le`. Its derived
-subgroup is then the whole group, and the candidate group of `B₂(q)`, the derived subgroup of the
-fixed points modulo its centre, is the projective symplectic group
-`PSp₄(𝔽_q) = Sp₄(𝔽_q) ⧸ Z(Sp₄(𝔽_q))`. That is
+A valid `B₂(q)` has `q ≥ 4`: `B₂(2)` is excluded from the classification list as non-simple, by
+the standard range, and `B₂(3)` as a duplicate representative. The field `𝔽_q` therefore has an
+element other than `0` and `1`, so `Sp₄(𝔽_q)` is perfect by
+`TauCeti.GLSymplecticFin.commutator_eq_top_of_two_le`. Its derived subgroup is then the whole group,
+and the candidate group of `B₂(q)`, the derived subgroup of the fixed points modulo its centre, is
+the projective symplectic group `PSp₄(𝔽_q) = Sp₄(𝔽_q) ⧸ Z(Sp₄(𝔽_q))`. That is
 `TauCeti.TypeB2LieIndex.projectiveSymplecticEquivGroup`. Nothing here asserts that this group is
 simple.
 
@@ -106,27 +106,15 @@ theorem carrierEquivSymplectic_spinEquivCarrier_symplecticEquivFixedPoints
   exact Subtype.ext (Units.ext (by
     rw [ValidLieTypeIndex.coe_symplecticEquivFrobeniusFixedPoints, GLSymplecticFin.coe_map]))
 
-/-- The field of definition of `B₂(q)` has an element other than `0` and `1`, because `q ≥ 4`. -/
-private theorem exists_ne_zero_and_ne_one :
-    ∃ a : GaloisField d.1.1.characteristic d.1.1.fieldExponent, a ≠ 0 ∧ a ≠ 1 := by
-  by_contra! h
-  -- Otherwise every element is `0` or `1`, and the field would have at most two elements.
-  have hsurj : Function.Surjective
-      (![0, 1] : Fin 2 → GaloisField d.1.1.characteristic d.1.1.fieldExponent) := fun a => by
-    by_cases ha : a = 0
-    · exact ⟨0, by simp [ha]⟩
-    · exact ⟨1, by simp [h a ha]⟩
-  have hcard := Nat.card_le_card_of_surjective _ hsurj
-  rw [Nat.card_fin, GaloisField.card _ _ d.1.1.fieldExponent_pos.ne',
-    ← ValidLieTypeIndex.fieldOrder_eq_characteristic_pow] at hcard
-  have := d.four_le_fieldOrder
-  omega
-
 /-- **The finite symplectic group of `B₂(q)` is perfect.** A valid `B₂(q)` has `q ≥ 4`, and
 `Sp₄(𝔽_q)` is perfect as soon as `𝔽_q` has an element other than `0` and `1`. -/
 theorem commutator_symplectic_eq_top :
     commutator (GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent)) = ⊤ :=
-  GLSymplecticFin.commutator_eq_top_of_two_le le_rfl (.inr d.exists_ne_zero_and_ne_one)
+  GLSymplecticFin.commutator_eq_top_of_two_le le_rfl <| .inr <| Cardinal.exists_ne_ne_of_three_le
+    (by
+      rw [← Nat.cast_card, GaloisField.card _ _ d.1.1.fieldExponent_pos.ne',
+        ← ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+      exact_mod_cast (by have := d.four_le_fieldOrder; omega)) 0 1
 
 /-- **The group attached to `B₂(q)` is the projective symplectic group `PSp₄(𝔽_q)`.**
 
