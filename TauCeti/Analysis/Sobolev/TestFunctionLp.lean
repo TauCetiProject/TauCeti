@@ -419,9 +419,9 @@ theorem gradientTestFunctionLp_dilateTestFunction (hr : 0 < r)
       (inv_ne_zero hr.ne')).ae_eq_comp (gradientTestFunctionLp_apply_ae (mu := mu) q phi)]
     with x hx hy hz hw
   simp only [Function.comp_apply] at hw
+  have hexp : (finrank ℝ E : ℝ) / q.toReal - 1 + -((finrank ℝ E : ℝ) / q.toReal) = -1 := by ring
   rw [hx, hy, Pi.smul_apply, hz, hw, gradient_dilateTestFunction, smul_smul, ← Real.rpow_add hr,
-    show (finrank ℝ E : ℝ) / q.toReal - 1 + -((finrank ℝ E : ℝ) / q.toReal) = -1 by ring,
-    Real.rpow_neg_one]
+    hexp, Real.rpow_neg_one]
 
 end GradientDilation
 
