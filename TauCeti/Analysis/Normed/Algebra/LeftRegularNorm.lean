@@ -1,0 +1,117 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Normed.Operator.Mul
+public import Mathlib.Topology.Algebra.Algebra.Equiv
+
+/-!
+# Normalizing the identity by the left regular representation
+
+A unital normed algebra is boundedly isomorphic to its left regular representation,
+with norm `‖a‖_* = ‖ContinuousLinearMap.mul 𝕜 A a‖`. This norm is submultiplicative,
+lies between `‖a‖ / ‖1‖` and `‖a‖`, and is complete when the original norm is complete.
+For a nonzero algebra its identity has norm one. Thus norm-one constructions can be
+applied after a bounded algebra equivalence, rather than imposing a normalization on
+the original algebra. The equivalence is not in general an isometry.
+
+`LeftRegularNorm` is realized as a subalgebra of bounded operators, so its algebra and
+norm structures are inherited rather than reconstructed on the original carrier.
+
+## References
+
+* H. G. Dales, *Banach Algebras and Automatic Continuity*, §§1.3–1.5.
+* The construction uses Mathlib's `NonUnitalAlgHom.Lmul`, `AlgEquiv.ofInjective`,
+  and the operator norm on `ContinuousLinearMap`.
+-/
+
+public section
+
+namespace TauCeti
+
+variable (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- The left regular renorming of a unital normed algebra, realized as the range of
+its left regular representation with the inherited operator norm. -/
+noncomputable abbrev LeftRegularNorm := (AlgHom.Lmul 𝕜 A).range
+
+namespace LeftRegularNorm
+
+private noncomputable def algEquiv : A ≃ₐ[𝕜] LeftRegularNorm 𝕜 A :=
+  AlgEquiv.ofInjective (AlgHom.Lmul 𝕜 A) (AlgHom.Lmul_injective 𝕜 A)
+
+private theorem norm_algEquiv (a : A) :
+    ‖algEquiv 𝕜 A a‖ = ‖ContinuousLinearMap.mul 𝕜 A a‖ := by
+  simp only [algEquiv]
+  rw [← AlgHom.coe_Lmul]
+  exact congrArg norm (AlgEquiv.ofInjective_apply
+    (AlgHom.Lmul 𝕜 A) (AlgHom.Lmul_injective 𝕜 A) a)
+
+/-- The original algebra and its left regular renorming are boundedly algebra isomorphic.
+The forward map is contractive and the inverse is bounded by the original norm of one. -/
+noncomputable def equiv : A ≃A[𝕜] LeftRegularNorm 𝕜 A := by
+  let e := algEquiv 𝕜 A
+  exact { e with
+    continuous_toFun := AddMonoidHomClass.continuous_of_bound e 1 fun a ↦ by
+      rw [one_mul, norm_algEquiv]
+      exact ContinuousLinearMap.opNorm_mul_apply_le 𝕜 A a
+    continuous_invFun := AddMonoidHomClass.continuous_of_bound e.symm ‖(1 : A)‖ fun x ↦ by
+      have h := ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one
+        (𝕜 := 𝕜) (e.symm x)
+      rw [← norm_algEquiv, e.apply_symm_apply] at h
+      simpa only [mul_comm] using h }
+
+/-- The equivalence sends an element to its bounded left multiplication operator. -/
+@[simp]
+theorem equiv_apply_coe (a : A) :
+    (equiv 𝕜 A a : A →L[𝕜] A) = ContinuousLinearMap.mul 𝕜 A a := by
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv]
+  simp only [equiv, algEquiv, AlgEquiv.ofInjective_apply, AlgHom.coe_Lmul]
+
+/-- The original element corresponding to an operator in the renormed algebra is its
+value at the original identity. -/
+@[simp]
+theorem equiv_symm_apply (x : LeftRegularNorm 𝕜 A) :
+    (equiv 𝕜 A).symm x = (x : A →L[𝕜] A) 1 := by
+  have h := DFunLike.congr_fun (equiv_apply_coe 𝕜 A ((equiv 𝕜 A).symm x)) (1 : A)
+  simpa using h.symm
+
+/-- The renormed norm is the operator norm of left multiplication in the original algebra. -/
+theorem norm_equiv (a : A) :
+    ‖equiv 𝕜 A a‖ = ‖ContinuousLinearMap.mul 𝕜 A a‖ :=
+  congrArg norm (equiv_apply_coe 𝕜 A a)
+
+/-- Left regular renorming does not increase norms. -/
+theorem norm_equiv_le (a : A) : ‖equiv 𝕜 A a‖ ≤ ‖a‖ := by
+  rw [norm_equiv]
+  exact ContinuousLinearMap.opNorm_mul_apply_le 𝕜 A a
+
+/-- The original norm is controlled by the left regular norm with comparison constant `‖1‖`. -/
+theorem norm_le_norm_equiv_mul_norm_one (a : A) :
+    ‖a‖ ≤ ‖equiv 𝕜 A a‖ * ‖(1 : A)‖ := by
+  rw [norm_equiv]
+  exact ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one a
+
+/-- The lower comparison in division form for a nonzero algebra. -/
+theorem div_norm_one_le_norm_equiv [Nontrivial A] (a : A) :
+    ‖a‖ / ‖(1 : A)‖ ≤ ‖equiv 𝕜 A a‖ :=
+  (div_le_iff₀ (norm_pos_iff.mpr one_ne_zero)).2
+    (norm_le_norm_equiv_mul_norm_one 𝕜 A a)
+
+/-- The equivalent left regular norm is complete whenever the original norm is complete. -/
+instance [CompleteSpace A] : CompleteSpace (LeftRegularNorm 𝕜 A) := by
+  have h : AntilipschitzWith ‖(1 : A)‖₊ (ContinuousLinearMap.mul 𝕜 A) :=
+    (ContinuousLinearMap.mul 𝕜 A).antilipschitz_of_bound fun a ↦ by
+      simpa only [coe_nnnorm, mul_comm] using
+        ContinuousLinearMap.norm_le_opNorm_mul_apply_mul_norm_one (𝕜 := 𝕜) a
+  have hc : IsClosed ((AlgHom.Lmul 𝕜 A).range : Set (A →L[𝕜] A)) := by
+    simpa only [AlgHom.coe_range, AlgHom.coe_Lmul] using
+      h.isClosed_range (ContinuousLinearMap.mul 𝕜 A).uniformContinuous
+  exact hc.completeSpace_coe
+
+end LeftRegularNorm
+
+end TauCeti
