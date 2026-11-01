@@ -35,10 +35,12 @@ handled by Minkowski's bound
 * `TauCeti.heegnerNumbers`: the nine Heegner numbers `1, 2, 3, 7, 11, 19, 43, 67, 163`.
 * `TauCeti.squarefree_of_mem_heegnerNumbers`: every Heegner number is squarefree, so `-d` is the
   negative squarefree radicand of `ℚ(√(-d))`.
-* `TauCeti.isFundamentalDiscr_neg_of_mem`: `-3, -4, -7, -8, -11, -19, -43, -67, -163` are
-  fundamental discriminants.
-* `TauCeti.classNumber_neg_eq_one_of_mem`: the fields `ℚ(√(-n))` of these nine discriminants `-n`
-  have class number one.
+* `TauCeti.heegnerDiscriminants`: the absolute values `3, 4, 7, 8, 11, 19, 43, 67, 163` of the
+  nine field discriminants.
+* `TauCeti.isFundamentalDiscr_neg_of_mem_heegnerDiscriminants`: `-3, -4, -7, -8, -11, -19, -43,
+  -67, -163` are fundamental discriminants.
+* `TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`: the fields `ℚ(√(-n))` of these nine
+  discriminants `-n` have class number one.
 * `TauCeti.classNumber_eq_one_of_mem_heegnerNumbers`: for every Heegner number `d`, the field
   `ℚ(√(-d))` has class number one.
 
@@ -70,10 +72,21 @@ theorem squarefree_of_mem_heegnerNumbers {d : ℕ} (hd : d ∈ heegnerNumbers) :
   revert d
   decide +kernel
 
+/-- The absolute values `3, 4, 7, 8, 11, 19, 43, 67, 163` of the discriminants of the nine
+imaginary quadratic fields of class number one: these fields have discriminant `-n` for `n` in this
+set. That each `ℚ(√(-n))` has class number one is
+`TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`. -/
+def heegnerDiscriminants : Finset ℕ := {3, 4, 7, 8, 11, 19, 43, 67, 163}
+
+/-- Membership in `heegnerDiscriminants`, spelled out. -/
+@[simp] theorem mem_heegnerDiscriminants {n : ℕ} :
+    n ∈ heegnerDiscriminants ↔
+      n = 3 ∨ n = 4 ∨ n = 7 ∨ n = 8 ∨ n = 11 ∨ n = 19 ∨ n = 43 ∨ n = 67 ∨ n = 163 := by
+  simp [heegnerDiscriminants]
+
 /-- `-3, -4, -7, -8, -11, -19, -43, -67, -163` are fundamental discriminants. -/
-theorem isFundamentalDiscr_neg_of_mem {n : ℕ}
-    (hn : n ∈ ({3, 4, 7, 8, 11, 19, 43, 67, 163} : Finset ℕ)) :
-    Int.IsFundamentalDiscr (-n) := by
+theorem isFundamentalDiscr_neg_of_mem_heegnerDiscriminants {n : ℕ}
+    (hn : n ∈ heegnerDiscriminants) : Int.IsFundamentalDiscr (-n) := by
   rw [Int.isFundamentalDiscr_iff_squarefree, ← Int.squarefree_natAbs, ← Int.squarefree_natAbs]
   revert n
   decide +kernel
@@ -81,12 +94,12 @@ theorem isFundamentalDiscr_neg_of_mem {n : ℕ}
 /-- **Class number one for the nine discriminants.** For `-n` one of the fundamental discriminants
 `-3, -4, -7, -8, -11, -19, -43, -67, -163`, the imaginary quadratic field `ℚ(√(-n))` has class
 number one. -/
-theorem classNumber_neg_eq_one_of_mem {n : ℕ} [NeZero n]
-    (hn : n ∈ ({3, 4, 7, 8, 11, 19, 43, 67, 163} : Finset ℕ)) :
+theorem classNumber_neg_eq_one_of_mem_heegnerDiscriminants {n : ℕ} [NeZero n]
+    (hn : n ∈ heegnerDiscriminants) :
     NumberField.classNumber (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0) = 1 := by
   rw [BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms n
-    (isFundamentalDiscr_neg_of_mem hn)]
-  simp only [mem_insert, mem_singleton] at hn
+    (isFundamentalDiscr_neg_of_mem_heegnerDiscriminants hn)]
+  rw [mem_heegnerDiscriminants] at hn
   rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 /-- **Class number one for the Heegner numbers.** For each Heegner number
@@ -98,9 +111,9 @@ theorem classNumber_eq_one_of_mem_heegnerNumbers {d : ℕ} [NeZero d] (hd : d �
   · refine QuadraticAlgebra.classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two
       (Int.squarefree_natAbs.mp (by simpa using squarefree_of_mem_heegnerNumbers hd))
       ?_ ?_ <;> rcases h with rfl | rfl <;> decide
-  · refine classNumber_neg_eq_one_of_mem ?_
+  · refine classNumber_neg_eq_one_of_mem_heegnerDiscriminants ?_
     simp only [mem_heegnerNumbers] at hd
-    simp only [mem_insert, mem_singleton]
+    simp only [mem_heegnerDiscriminants]
     omega
 
 end TauCeti
