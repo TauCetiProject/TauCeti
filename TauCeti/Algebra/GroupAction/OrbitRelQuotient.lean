@@ -58,6 +58,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   a group isomorphism induces an equivalence of orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
   uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`).
+* `TauCeti.MulAction.orbitRelQuotientDLift`: a dependent map `s x : V (Quotient.mk _ x)` whose
+  values at `g • x` and `x` agree descends to the orbit space, uniquely
+  (`TauCeti.MulAction.eq_orbitRelQuotientDLift_iff`), and every dependent map on the orbit space
+  is the descent of its pullback (`TauCeti.MulAction.orbitRelQuotientDLift_apply_mk`).
 * `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
   functorially, and descent is natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
@@ -809,6 +813,56 @@ theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
   funext fun q ↦ Quotient.inductionOn q fun _ ↦ rfl
 
 end Lift
+
+section DLift
+
+variable {V : MulAction.orbitRel.Quotient G X → Sort*}
+
+/-- **Descent of an invariant dependent map to the orbit space.** A family
+`s x : V (Quotient.mk _ x)` over the orbit projection whose values at `g • x` and at `x` agree,
+for all `g : G` and `x : X`, descends to a dependent map on the orbit space. The orbits of `g • x`
+and `x` are equal but not definitionally so, hence the values are compared by heterogeneous
+equality. This extends `TauCeti.MulAction.orbitRelQuotientLift` to dependent families. -/
+def MulAction.orbitRelQuotientDLift (s : ∀ x, V (Quotient.mk (MulAction.orbitRel G X) x))
+    (hs : ∀ (g : G) (x : X), s (g • x) ≍ s x) : ∀ q, V q :=
+  fun q ↦ Quotient.hrecOn q s <| by
+    rintro _ x ⟨g, rfl⟩
+    exact hs g x
+
+variable {s : ∀ x, V (Quotient.mk (MulAction.orbitRel G X) x)}
+  {hs : ∀ (g : G) (x : X), s (g • x) ≍ s x}
+
+/-- The dependent descent of `s` sends the orbit of `x` to `s x`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientDLift_mk (x : X) :
+    MulAction.orbitRelQuotientDLift s hs (Quotient.mk (MulAction.orbitRel G X) x) = s x :=
+  (rfl)
+
+/-- **Uniqueness of the dependent descent**: a dependent map on the orbit space is the descent of
+`s` exactly when it sends the orbit of every `x` to `s x`. -/
+theorem MulAction.eq_orbitRelQuotientDLift_iff {φ : ∀ q, V q} :
+    φ = MulAction.orbitRelQuotientDLift s hs ↔
+      ∀ x, φ (Quotient.mk (MulAction.orbitRel G X) x) = s x := by
+  refine ⟨fun h x ↦ h ▸ MulAction.orbitRelQuotientDLift_mk x, fun h ↦ funext fun q ↦ ?_⟩
+  induction q using Quotient.inductionOn with
+  | h x => exact h x
+
+/-- A dependent map on the orbit space, pulled back along the orbit projection, takes the same
+value at `g • x` and at `x`. -/
+theorem MulAction.apply_mk_smul_heq (φ : ∀ q, V q) (g : G) (x : X) :
+    φ (Quotient.mk (MulAction.orbitRel G X) (g • x)) ≍
+      φ (Quotient.mk (MulAction.orbitRel G X) x) :=
+  congr_arg_heq φ (Quotient.sound ⟨g, rfl⟩)
+
+/-- Every dependent map on the orbit space is the descent of its pullback along the orbit
+projection. -/
+@[simp]
+theorem MulAction.orbitRelQuotientDLift_apply_mk (φ : ∀ q, V q) :
+    MulAction.orbitRelQuotientDLift (fun x ↦ φ (Quotient.mk (MulAction.orbitRel G X) x))
+      (MulAction.apply_mk_smul_heq φ) = φ :=
+  (MulAction.eq_orbitRelQuotientDLift_iff.2 fun _ ↦ rfl).symm
+
+end DLift
 
 end TauCeti
 
