@@ -12,16 +12,16 @@ import TauCeti.Combinatorics.Network.Menger.Adjacent
 /-!
 # Menger's theorem for adjacent vertices in multigraphs
 
-Let `G : Graph α β` be a multigraph and let `s ≠ t` be actual vertices.  The local vertex form
+Let `G : Graph α β` be a multigraph and let `s ≠ t` be points.  The local vertex form
 of Menger's theorem does not apply directly when an edge joins `s` and `t`, because deleting
 vertices other than the terminals cannot destroy that one-edge path.  This file counts those
 direct edge identities separately.
 
-If `D = {e | G.IsLink e s t}` is finite, then after deleting `D` some set `X` of `k` actual
-vertices separates `s` from `t`, while the original graph has `k + |D|` distinct internally
-vertex-disjoint paths.  The family contains the one-edge path of every `e ∈ D`; parallel edges
-therefore contribute separately.  Weak duality bounds every internally disjoint path family by
-`|X| + |D|` for every such separator.
+If `G` has finitely many actual vertices and `D = {e | G.IsLink e s t}` is finite, then after
+deleting `D` some set `X` of `k` actual vertices separates `s` from `t`, while the original graph
+has `k + |D|` distinct internally vertex-disjoint paths.  The family contains the one-edge path
+of every `e ∈ D`; parallel edges therefore contribute separately.  Weak duality bounds every
+internally disjoint path family by `|X| + |D|` for every such separator.
 
 The attainment theorem is transported from the directed adjacent-terminal theorem for the
 bidirected arrow family.  A directed arrow from `s` to `t` is exactly an edge identity in `D`, and
@@ -125,13 +125,13 @@ theorem card_le_card_add_card_of_not_reachable_deleteEdges_deleteVerts
 /-! ### Attainment -/
 
 /-- **Menger's theorem for internally vertex-disjoint paths between possibly adjacent vertices.**
-Let `s ≠ t` be actual vertices of a multigraph with finitely many actual vertices and finitely
-many edges joining the terminals.  For some `k`, there are distinct internally disjoint paths
+Let `s ≠ t` be points of a multigraph with finitely many actual vertices and finitely many edges
+joining the terminals.  For some `k`, there are distinct internally disjoint paths
 indexed by `Fin k ⊕ {e // G.IsLink e s t}`.  The path indexed by a direct edge is that one-edge
 path.  There is also a set `X` of `k` actual vertices such that deleting `X` and all direct edges
 separates `s` from `t`. -/
 theorem exists_paths_vertexSeparator_card_add_card_eq [Finite V(G)]
-    [Finite {e : β // G.IsLink e s t}] (hst : s ≠ t) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
+    [Finite {e : β // G.IsLink e s t}] (hst : s ≠ t) :
     ∃ (k : ℕ) (P : Fin k ⊕ {e : β // G.IsLink e s t} → G.Walk s t) (X : Finset α),
       Function.Injective P ∧ (∀ i, (P i).IsPath) ∧
       (Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) ∧
@@ -139,6 +139,14 @@ theorem exists_paths_vertexSeparator_card_add_card_eq [Finite V(G)]
       ¬((G.deleteEdges {e | G.IsLink e s t}).deleteVerts
         (X : Set α)).Reachable s t ∧ #X = k := by
   let _ := Fintype.ofFinite {e : β // G.IsLink e s t}
+  by_cases hverts : s ∈ V(G) ∧ t ∈ V(G)
+  swap
+  · let _ : IsEmpty {e : β // G.IsLink e s t} :=
+      ⟨fun e ↦ hverts ⟨e.2.left_mem, e.2.right_mem⟩⟩
+    exact ⟨0, isEmptyElim, ∅, isEmptyElim, isEmptyElim, isEmptyElim, isEmptyElim,
+      by simp, by simp, by simp,
+      fun h ↦ hverts (by simpa using mem_vertexSet_of_reachable_deleteVerts h), by simp⟩
+  obtain ⟨hs, ht⟩ := hverts
   obtain ⟨k, P, X, hinj, hP, hdisj, hdirect, hX, hk⟩ :=
     TauCeti.exists_paths_isMixedSeparator_card_eq
       (Q := G.BidirectedHom) (s := ⟨s, hs⟩) (t := ⟨t, ht⟩)
@@ -150,12 +158,12 @@ theorem exists_paths_vertexSeparator_card_add_card_eq [Finite V(G)]
     (by
       intro hsmem
       obtain ⟨x, hx, hxs⟩ := mem_map.1 hsmem
-      change x.1 = s at hxs
+      rw [Function.Embedding.subtype_apply] at hxs
       have hxsub : x = ⟨s, hs⟩ := Subtype.ext hxs
       exact hX.source_notMem (hxsub ▸ hx)), (by
       intro htmem
       obtain ⟨x, hx, hxt⟩ := mem_map.1 htmem
-      change x.1 = t at hxt
+      rw [Function.Embedding.subtype_apply] at hxt
       have hxsub : x = ⟨t, ht⟩ := Subtype.ext hxt
       exact hX.target_notMem (hxsub ▸ hx)),
     not_reachable_deleteEdges_deleteVerts_of_isMixedSeparator hs ht hX, by simpa using hk⟩
@@ -163,13 +171,12 @@ theorem exists_paths_vertexSeparator_card_add_card_eq [Finite V(G)]
   have he := congrArg ArrowWalk.toGraphWalk (hdirect e)
   simpa using he
 
-/-- **Menger's theorem for adjacent vertices, predicate form.** For distinct actual vertices,
+/-- **Menger's theorem for adjacent vertices, predicate form.** For distinct points,
 after deleting every direct edge, every set of fewer than `k` nonterminal points leaves
 the terminals reachable exactly when there are distinct internally disjoint paths indexed by
 `Fin k ⊕ {e // G.IsLink e s t}`. -/
 theorem forall_reachable_deleteEdges_deleteVerts_iff_exists_paths [Finite V(G)]
-    [Finite {e : β // G.IsLink e s t}] (hst : s ≠ t) (hs : s ∈ V(G)) (ht : t ∈ V(G))
-    (k : ℕ) :
+    [Finite {e : β // G.IsLink e s t}] (hst : s ≠ t) (k : ℕ) :
     (∀ X : Finset α, s ∉ X → t ∉ X → #X < k →
       ((G.deleteEdges {e | G.IsLink e s t}).deleteVerts
         (X : Set α)).Reachable s t) ↔
@@ -178,7 +185,7 @@ theorem forall_reachable_deleteEdges_deleteVerts_iff_exists_paths [Finite V(G)]
   let _ := Fintype.ofFinite {e : β // G.IsLink e s t}
   refine ⟨fun h ↦ ?_, fun ⟨P, hinj, hP, hdisj⟩ X hsX htX hX ↦ ?_⟩
   · obtain ⟨m, P, X, hinj, hP, hdisj, -, -, hsX, htX, hX, rfl⟩ :=
-      exists_paths_vertexSeparator_card_add_card_eq hst hs ht
+      exists_paths_vertexSeparator_card_add_card_eq (G := G) hst
     have hkm : k ≤ #X := not_lt.1 fun hlt ↦ hX (h X hsX htX hlt)
     have hf : Function.Injective
         (Sum.map (Fin.castLE hkm) (id : {e : β // G.IsLink e s t} → _)) :=
@@ -186,6 +193,8 @@ theorem forall_reachable_deleteEdges_deleteVerts_iff_exists_paths [Finite V(G)]
     exact ⟨P ∘ Sum.map (Fin.castLE hkm) id, hinj.comp hf, fun i ↦ hP _,
       hdisj.comp_of_injective hf⟩
   · by_contra hreach
+    have hs : s ∈ V(G) := (P (.inl ⟨0, by omega⟩)).support_subset_vertexSet_of_pos
+      (Nat.pos_of_ne_zero fun h ↦ hst (Walk.eq_of_length_eq_zero h)) s (Walk.start_mem_support _)
     have hle := card_le_card_add_card_of_not_reachable_deleteEdges_deleteVerts
       hinj hP hdisj hs hsX htX hreach
     simp only [Fintype.card_sum, Fintype.card_fin] at hle
