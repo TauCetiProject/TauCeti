@@ -6,6 +6,7 @@ Authors: Ralf Stephan, Zayn Blore
 module
 
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import Mathlib.LinearAlgebra.Projectivization.Subspace
 
 /-!
 # Normalized representatives of projective points
@@ -96,14 +97,13 @@ variable {K V W : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [AddComm
 of the projectivized kernel of `G`, on which `G` induces the map
 `Projectivization.linearProjection G`. -/
 def linearProjectionDomain (G : V →ₗ[K] W) : Set (Projectivization K V) :=
-  {y | G y.rep ≠ 0}
+  ((LinearMap.ker G).projectivization : Set (Projectivization K V))ᶜ
 
 /-- The point `[v]` lies in the domain of `Projectivization.linearProjection G` iff `G v ≠ 0`. -/
 @[simp]
 theorem mk_mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {v : V} (hv : v ≠ 0) :
     mk K v hv ∈ linearProjectionDomain G ↔ G v ≠ 0 := by
-  obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
-  simp [linearProjectionDomain, ← ha, Units.smul_def]
+  simp [linearProjectionDomain, LinearMap.mem_ker]
 
 /-- The map `[v] ↦ [G v]` of projective spaces induced by a linear map `G`, on the set
 `Projectivization.linearProjectionDomain G` of points where `G` does not vanish; it sends the
@@ -117,8 +117,8 @@ noncomputable def linearProjection [Nonempty (Projectivization K W)] (G : V →�
 @[simp]
 theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W) {v : V}
     (hv : v ≠ 0) (h : G v ≠ 0) : linearProjection G (mk K v hv) = mk K (G v) h := by
-  have h' : G (mk K v hv).rep ≠ 0 := (mk_mem_linearProjectionDomain_iff G hv).2 h
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
+  have h' : G (mk K v hv).rep ≠ 0 := by simpa [← ha, Units.smul_def] using h
   simp only [linearProjection, h', ↓reduceDIte]
   exact (mk_eq_mk_iff K _ _ _ _).2 ⟨a, by simp [← ha, Units.smul_def]⟩
 

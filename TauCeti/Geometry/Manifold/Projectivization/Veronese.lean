@@ -26,13 +26,14 @@ analytic (`Projectivization.contMDiff_map_comp_veronese`); over `ℂ` it is holo
 For positive degree `e + 1` it is moreover an immersion. On the affine open where the `i`-th
 homogeneous coordinate is nonzero, the coordinates `y_(e e_i + e_j)` of the image of `[v]` are the
 coordinates of `v i ^ e • v` (`TauCeti.veroneseLocalInverse_veroneseMonomials`). Composed with a
-linear left inverse of `f`, they define an analytic map
-`Projectivization.veroneseLocalLeftInverse` on an open neighbourhood of the image which is a left
-inverse of the Veronese map near `[v]` (`Projectivization.leftInvOn_veroneseLocalLeftInverse`,
-`Projectivization.contMDiffOn_veroneseLocalLeftInverse`), so its differential is injective
-(`Projectivization.isImmersion_map_comp_veronese`). Since projective space is compact and the
-Veronese map of positive degree is injective, it is a closed embedding, and hence a closed analytic
-embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
+linear left inverse `g` of `f`, they induce the map
+`Projectivization.linearProjection (veroneseLocalInverse 𝕜 e i ∘ₗ g)`, analytic on an open
+neighbourhood of the image (`Projectivization.contMDiffOn_linearProjection`), which is a left
+inverse of the Veronese map near `[v]`
+(`Projectivization.leftInvOn_linearProjection_veroneseLocalInverse`), so its differential is
+injective (`Projectivization.isImmersion_map_comp_veronese`). Since projective space is compact
+and the Veronese map of positive degree is injective, it is a closed embedding, and hence a closed
+analytic embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
 `Projectivization.isClosedEmbedding_map_comp_veronese`).
 
 ## Main results
@@ -41,8 +42,6 @@ embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
   of the vector, for every `r`.
 * `Projectivization.contMDiff_map_comp_veronese`: the Veronese map, read through an injective
   linear map, is `C^r` for every `r`, including the analytic order `ω`.
-* `Projectivization.contMDiffOn_veroneseLocalLeftInverse`: the local left inverses of the Veronese
-  map are `C^r` on their open domains.
 * `Projectivization.isImmersion_map_comp_veronese`: for positive degree it is an immersion.
 * `Projectivization.isClosedEmbedding_map_comp_veronese` and
   `Projectivization.isSmoothEmbedding_map_comp_veronese`: for positive degree it is a closed
@@ -94,15 +93,6 @@ theorem contMDiff_map_comp_veronese
     (fun _ hv ↦ (map_ne_zero_iff f hf).2 (veroneseMonomials_ne_zero d hv))
     fun _ _ ↦ by simp [map_mk]
 
-/-- The local left inverse `[w] ↦ [veroneseLocalInverse 𝕜 e i (g w)]` of the Veronese map is
-`C^r` for every `r` on its open domain; for `r = ω` it is analytic there. -/
-theorem contMDiffOn_veroneseLocalLeftInverse (e : ℕ) (i : Fin (m + 1))
-    (g : (Fin (n + 1) → 𝕜) →ₗ[𝕜] Fin (veroneseDim (m + 1) (e + 1)) → 𝕜) (r : ℕ∞ω) :
-    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin m → 𝕜) r (veroneseLocalLeftInverse e i g)
-      (linearProjectionDomain (veroneseLocalInverse 𝕜 e i ∘ₗ g)) := by
-  rw [veroneseLocalLeftInverse_eq]
-  exact contMDiffOn_linearProjection _ r
-
 end NontriviallyNormedField
 
 section RCLike
@@ -112,8 +102,7 @@ variable {𝕜 : Type*} [RCLike 𝕜] {m n d : ℕ}
 /-- **The Veronese map is an immersion.** For positive degree, the Veronese map read through an
 injective linear map `f` is a `C^r` immersion for every `r ≥ 1`. Near a point where the `i`-th
 homogeneous coordinate is nonzero, it has the analytic left inverse
-`Projectivization.veroneseLocalLeftInverse`, `[w] ↦ [veroneseLocalInverse 𝕜 (d - 1) i (g w)]`
-for a linear left inverse `g` of `f`. -/
+`[w] ↦ [veroneseLocalInverse 𝕜 (d - 1) i (g w)]` for a linear left inverse `g` of `f`. -/
 theorem isImmersion_map_comp_veronese (hd : d ≠ 0)
     (f : (Fin (veroneseDim (m + 1) d) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (hf : Injective f)
     {r : ℕ∞ω} (hr : 1 ≤ r) :
@@ -129,10 +118,10 @@ theorem isImmersion_map_comp_veronese (hd : d ≠ 0)
     (LinearMap.continuous_on_pi (veroneseLocalInverse 𝕜 e i ∘ₗ g))
   exact ((contMDiff_map_comp_veronese f hf r).contMDiffOn (s := univ))
     |>.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hr
-    (((contMDiffOn_veroneseLocalLeftInverse e i g r _ hx).contMDiffAt
+    (((contMDiffOn_linearProjection (veroneseLocalInverse 𝕜 e i ∘ₗ g) r _ hx).contMDiffAt
       (hs.mem_nhds hx)).mdifferentiableAt hr0)
     (Filter.eventuallyEq_of_mem ((isOpen_affineOpen i).mem_nhds hi)
-      (leftInvOn_veroneseLocalLeftInverse hf hg i))
+      (leftInvOn_linearProjection_veroneseLocalInverse hf hg i))
 
 /-- For positive degree, the Veronese map read through an injective linear map is a closed
 embedding: projective space is compact and the map is continuous and injective. -/

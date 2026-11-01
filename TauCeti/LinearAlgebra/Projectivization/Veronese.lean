@@ -43,9 +43,6 @@ of a family of degree-`d` equations is the preimage of a linear section of the i
 * `TauCeti.veroneseLinearForm d p`: a polynomial of degree `d` as a linear form in the monomials.
 * `TauCeti.veroneseLocalInverse K d i`: the coordinates `y_(d e_i + e_j)` of a vector indexed by
   the monomials of degree `d + 1`, a local inverse of the Veronese map in homogeneous coordinates.
-* `Projectivization.veroneseLocalLeftInverse e i g`: the induced local left inverse
-  `[w] ↦ [veroneseLocalInverse K e i (g w)]` of the Veronese map read through an injective linear
-  map with linear left inverse `g`.
 
 ## Main results
 
@@ -57,8 +54,9 @@ of a family of degree-`d` equations is the preimage of a linear section of the i
   forms, and the coefficients of the linear forms.
 * `TauCeti.veroneseLocalInverse_veroneseMonomials`: the local inverse recovers `v i ^ d • v`
   from the monomials of degree `d + 1` of `v`.
-* `Projectivization.leftInvOn_veroneseLocalLeftInverse`: on the affine open at `i`, the local left
-  inverse inverts the Veronese map of degree `e + 1`.
+* `Projectivization.leftInvOn_linearProjection_veroneseLocalInverse`: on the affine open at `i`,
+  the induced map `[w] ↦ [veroneseLocalInverse K e i (g w)]` inverts the Veronese map of degree
+  `e + 1` read through an injective linear map with linear left inverse `g`.
 * `Projectivization.veronese_injective`: the Veronese map of positive degree is injective.
 * `Projectivization.range_veronese`: over `ℂ`, the image of the Veronese map of positive degree is
   the zero locus of the quadratic binomials.
@@ -422,31 +420,6 @@ section LocalLeftInverse
 
 variable {M : Type*} [AddCommGroup M] [Module K M] {m e : ℕ}
 
-/-- The local left inverse `[w] ↦ [veroneseLocalInverse K e i (g w)]` of the Veronese map of
-degree `e + 1` read through an injective linear map `f`, for a linear left inverse `g` of `f`. It
-is defined on `linearProjectionDomain (veroneseLocalInverse K e i ∘ₗ g)`, which contains the image
-of the affine open at `i` (`Projectivization.mapsTo_map_comp_veronese_linearProjectionDomain`),
-and inverts the Veronese map there (`Projectivization.leftInvOn_veroneseLocalLeftInverse`). -/
-noncomputable def veroneseLocalLeftInverse (e : ℕ) (i : Fin (m + 1))
-    (g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K) : ℙ K M → ℙ K (Fin (m + 1) → K) :=
-  linearProjection (veroneseLocalInverse K e i ∘ₗ g)
-
-/-- The local left inverse of the Veronese map is the map induced by the linear map
-`veroneseLocalInverse K e i ∘ₗ g`. -/
-theorem veroneseLocalLeftInverse_eq (e : ℕ) (i : Fin (m + 1))
-    (g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K) :
-    veroneseLocalLeftInverse e i g = linearProjection (veroneseLocalInverse K e i ∘ₗ g) :=
-  (rfl)
-
-/-- The local left inverse of the Veronese map in homogeneous coordinates, where
-`veroneseLocalInverse K e i ∘ g` does not vanish. -/
-@[simp]
-theorem veroneseLocalLeftInverse_mk (e : ℕ) (i : Fin (m + 1))
-    (g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K) {w : M} (hw : w ≠ 0)
-    (h : veroneseLocalInverse K e i (g w) ≠ 0) :
-    veroneseLocalLeftInverse e i g (mk K w hw) = mk K (veroneseLocalInverse K e i (g w)) h :=
-  linearProjection_mk _ hw h
-
 variable {f : (Fin (veroneseDim (m + 1) (e + 1)) → K) →ₗ[K] M}
   {g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K}
 
@@ -457,8 +430,9 @@ private theorem veroneseLocalInverse_comp_apply_veroneseMonomials (hg : g ∘ₗ
     veroneseLocalInverse_veroneseMonomials]
 
 /-- The Veronese map of degree `e + 1` read through an injective linear map `f` sends the affine
-open at `i` into the domain of its local left inverse `Projectivization.veroneseLocalLeftInverse`,
-for a linear left inverse `g` of `f`. -/
+open at `i` into the domain of its local left inverse
+`Projectivization.linearProjection (veroneseLocalInverse K e i ∘ₗ g)`, for a linear left inverse
+`g` of `f`. -/
 theorem mapsTo_map_comp_veronese_linearProjectionDomain (hf : Function.Injective f)
     (hg : g ∘ₗ f = LinearMap.id) (i : Fin (m + 1)) :
     Set.MapsTo (map f hf ∘ veronese K (e + 1)) (affineOpen i)
@@ -471,18 +445,18 @@ theorem mapsTo_map_comp_veronese_linearProjectionDomain (hf : Function.Injective
   exact smul_ne_zero (pow_ne_zero e hy) hv
 
 /-- **Local inverses of the Veronese map.** On the affine open at `i`, the map
-`Projectivization.veroneseLocalLeftInverse e i g` is a left inverse of the Veronese map of degree
-`e + 1` read through an injective linear map `f`, for a linear left inverse `g` of `f`. -/
-theorem leftInvOn_veroneseLocalLeftInverse (hf : Function.Injective f)
+`[w] ↦ [veroneseLocalInverse K e i (g w)]` is a left inverse of the Veronese map of degree `e + 1`
+read through an injective linear map `f`, for a linear left inverse `g` of `f`. -/
+theorem leftInvOn_linearProjection_veroneseLocalInverse (hf : Function.Injective f)
     (hg : g ∘ₗ f = LinearMap.id) (i : Fin (m + 1)) :
-    Set.LeftInvOn (veroneseLocalLeftInverse e i g) (map f hf ∘ veronese K (e + 1))
-      (affineOpen i) := by
+    Set.LeftInvOn (linearProjection (veroneseLocalInverse K e i ∘ₗ g))
+      (map f hf ∘ veronese K (e + 1)) (affineOpen i) := by
   intro y hy
   have hmem := mapsTo_map_comp_veronese_linearProjectionDomain hf hg i hy
   induction y using ind with | h v hv => ?_
   simp only [Function.comp_apply, veronese_mk, map_mk, mk_mem_linearProjectionDomain_iff,
     LinearMap.comp_apply] at hmem ⊢
-  rw [veroneseLocalLeftInverse_mk _ _ _ _ hmem]
+  rw [linearProjection_mk (veroneseLocalInverse K e i ∘ₗ g) _ hmem]
   exact (mk_eq_mk_iff' K _ _ _ _).2
     ⟨v i ^ e, (veroneseLocalInverse_comp_apply_veroneseMonomials hg i v).symm⟩
 
