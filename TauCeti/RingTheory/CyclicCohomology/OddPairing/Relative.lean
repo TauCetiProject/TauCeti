@@ -14,10 +14,10 @@ public import TauCeti.RingTheory.CyclicCohomology.Relative
 
 Let `A` be a possibly nonunital complex algebra and `A⁺ = Unitization ℂ A` its forced unitization.
 The cyclic cohomology of `A` is the relative cyclic cohomology `HCⁿ(A; M)`, the cohomology of the
-cyclic cochains on `A⁺` vanishing on scalar arguments, and its `K₁` is the relative `K₁`, the
-kernel of `K₁(A⁺) → K₁(ℂ)`. This file defines Connes' odd pairing between them: a relative class
-`x ∈ K₁(A⁺)` pairs with `c ∈ HC²ᵐ⁺¹(A; M)` through Connes' odd pairing of `K₁(A⁺)` with the image
-of `c` in the cyclic cohomology `HC²ᵐ⁺¹(A⁺; M)` of the forced unitization.
+cyclic cochains on `A⁺` vanishing when all arguments are scalar, and its `K₁` is the relative
+`K₁`, the kernel of `K₁(A⁺) → K₁(ℂ)`. This file defines Connes' odd pairing between them: a
+relative class `x ∈ K₁(A⁺)` pairs with `c ∈ HC²ᵐ⁺¹(A; M)` through Connes' odd pairing of `K₁(A⁺)`
+with the image of `c` in the cyclic cohomology `HC²ᵐ⁺¹(A⁺; M)` of the forced unitization.
 
 For an invertible matrix `u` over `A⁺` with a relative class and a relative cyclic cocycle `φ`,
 the pairing is Connes' formula
@@ -111,8 +111,8 @@ theorem oddPairing_mk_mk (m n : ℕ) (u : GL (Fin n) (Unitization ℂ A))
     relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
 
 /-- **Scalar classes pair trivially**: the class in `K₁(A⁺)` of an invertible scalar matrix pairs
-to zero with every relative cyclic cohomology class, because relative cyclic cochains vanish on
-scalar arguments. -/
+to zero with every relative cyclic cohomology class, because relative cyclic cochains vanish when
+all arguments are scalar, and both entries `u⁻¹ - 1`, `u - 1` are scalar matrices. -/
 theorem oddPairing_map_algebraMap_toUnitization (m : ℕ) (y : AlgebraicK1 ℂ)
     (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
     (AlgebraicK1.oddPairing (Unitization ℂ A) M m

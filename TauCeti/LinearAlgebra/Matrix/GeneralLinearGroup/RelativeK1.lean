@@ -129,18 +129,13 @@ section Map
 variable {B C : Type*} [NonUnitalRing B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
   [NonUnitalRing C] [Module R C] [IsScalarTower R C C] [SMulCommClass R C C]
 
-/-- The induced map of forced unitizations preserves the augmentation. -/
-private theorem fstHom_comp_map (f : A →ₙₐ[R] B) :
-    (Unitization.fstHom R B).comp (Unitization.map f) = Unitization.fstHom R A :=
-  AlgHom.ext fun x ↦ by simp
-
 /-- The homomorphism of relative `K₁` induced by a homomorphism of nonunital algebras, through the
 induced map of forced unitizations. -/
 def map (f : A →ₙₐ[R] B) : relativeAlgebraicK1 R A →* relativeAlgebraicK1 R B :=
   ((AlgebraicK1.map (Unitization.map f : Unitization R A →+* Unitization R B)).comp
     (relativeAlgebraicK1 R A).subtype).codRestrict _ fun x ↦ by
       rw [mem_iff, MonoidHom.comp_apply, ← MonoidHom.comp_apply, ← AlgebraicK1.map_comp,
-        ← AlgHom.comp_toRingHom, fstHom_comp_map]
+        ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
       exact mem_iff.1 x.2
 
 /-- The induced homomorphism of relative `K₁` is the induced homomorphism of `K₁(A⁺)`. -/

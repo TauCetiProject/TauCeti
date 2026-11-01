@@ -104,7 +104,8 @@ theorem oddPairing_map {B : Type _} [Ring B] [Algebra ℂ B] (f : A →ₐ[ℂ] 
   refine LinearMap.ext fun c ↦ ?_
   simp only [map_mk, oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply]
   rw [matrixExtension_map, ← cyclicCohomology.oddPairing_map]
-  rfl
+  refine congrArg (fun v ↦ cyclicCohomology.oddPairing v m _) (Units.ext ?_)
+  simp
 
 end AlgebraicK1
 

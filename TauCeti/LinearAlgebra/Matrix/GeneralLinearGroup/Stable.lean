@@ -432,15 +432,15 @@ theorem map_mk (f : A →+* B) (n : ℕ) (u : GL (Fin n) A) :
 @[simp]
 theorem map_id : AlgebraicK1.map (RingHom.id A) = MonoidHom.id (AlgebraicK1 A) := by
   refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-  simp only [MonoidHom.comp_apply, map_mk, RingHom.mapMatrix_id, MonoidHom.id_apply]
-  rfl
+  simp
 
 /-- Algebraic `K₁` is functorial. -/
 theorem map_comp (f : A →+* B) (g : B →+* C) :
     AlgebraicK1.map (g.comp f) = (AlgebraicK1.map g).comp (AlgebraicK1.map f) := by
   refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
   simp only [MonoidHom.comp_apply, map_mk]
-  rfl
+  refine congrArg _ (Units.ext ?_)
+  simp [Matrix.map_map]
 
 end AlgebraicK1
 

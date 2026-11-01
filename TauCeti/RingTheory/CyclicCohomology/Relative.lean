@@ -589,10 +589,8 @@ theorem coe_mem_cyclicCocycles_iff_mem_relativeCyclicCocycles {n : ℕ}
     {φ : relativeCyclicCochains R A M n} :
     (φ : cyclicCochains R (Unitization R A) M n) ∈ cyclicCocycles R (Unitization R A) M n ↔
       φ ∈ relativeCyclicCocycles R A M n := by
-  rw [mem_cyclicCocycles_iff, mem_relativeCyclicCocycles_iff, ← Subtype.coe_inj,
-    coe_relativeCyclicHochschildCoboundary_apply, ← Subtype.coe_inj,
-    coe_cyclicHochschildCoboundary_apply]
-  rfl
+  simp [mem_cyclicCocycles_iff, mem_relativeCyclicCocycles_iff, Subtype.ext_iff,
+    coe_relativeCyclicHochschildCoboundary_apply, coe_cyclicHochschildCoboundary_apply]
 
 namespace relativeCyclicCohomology
 
@@ -630,6 +628,10 @@ theorem toUnitization_map {B : Type u} [NonUnitalRing B] [Module R B] [IsScalarT
         (toUnitization R B M n c) := by
   obtain ⟨φ, rfl⟩ := mk_surjective R B M n c
   simp only [map_mk, toUnitization_mk, cyclicCohomology.map_mk]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [coe_relativeCyclicCochainsMap_apply]
+  -- Both sides pull back along the underlying linear map of `Unitization.map f`, read once through
+  -- the algebra homomorphism and once through the nonunital algebra homomorphism.
   rfl
 
 end relativeCyclicCohomology
