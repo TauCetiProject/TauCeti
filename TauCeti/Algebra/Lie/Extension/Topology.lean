@@ -153,11 +153,10 @@ theorem continuous_splitEquivOfVanishing [LieModule.IsTrivial L M]
     (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
     (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
     Continuous (splitEquivOfVanishing c S e hc) := by
-  change Continuous fun p ↦ splitEquivOfVanishing c S e hc p
-  apply Continuous.subtype_mk
-  change Continuous fun p ↦ (splitEquivOfVanishing c S e hc p : ofTwoCocycle c)
+  apply continuous_induced_rng.mpr
+  simp only [Function.comp_def, coe_splitEquivOfVanishing]
   apply continuous_iff.mpr
-  simp only [coe_splitEquivOfVanishing, Equiv.symm_apply_apply]
+  simp only [Equiv.symm_apply_apply]
   exact ⟨continuous_subtype_val.comp continuous_fst,
     (IsLocallyConstant.of_discrete e.symm).comp_continuous continuous_snd⟩
 
@@ -168,10 +167,9 @@ theorem continuous_splitEquivOfVanishing_symm [LieModule.IsTrivial L M]
     (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
     (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
     Continuous (splitEquivOfVanishing c S e hc).symm := by
-  change Continuous fun v ↦ (splitEquivOfVanishing c S e hc).symm v
-  simp only [splitEquivOfVanishing_symm_apply]
-  exact (((continuous_proj c).comp continuous_subtype_val).subtype_mk _).prodMk
-    (((isLocallyConstant_snd c).comp_continuous continuous_subtype_val).comp e).continuous
+  exact ((((continuous_proj c).comp continuous_subtype_val).subtype_mk _).prodMk
+    (((isLocallyConstant_snd c).comp_continuous continuous_subtype_val).comp e).continuous).congr
+      fun v ↦ (splitEquivOfVanishing_symm_apply c S e hc v).symm
 
 /-- The section `inl` is a right inverse of the projection. -/
 lemma proj_inl (x : L) : proj c (inl c x) = x := by

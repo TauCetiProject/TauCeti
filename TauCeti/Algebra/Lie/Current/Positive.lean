@@ -175,19 +175,11 @@ theorem centralElement_mem_orderExtensionLieSubalgebra (n : ℕ) :
     ofProd_symm_centralElement]
   exact zero_mem _
 
-/-- Restricting the global central-coordinate form gives the inducing character. -/
-theorem centralCoordinateForm_eq_orderCharacter (a : R) (n : ℕ) (v : E)
-    (hv : v ∈ orderExtensionLieSubalgebra Φ hΦ hΦs n) :
-    centralCoordinateForm Φ hΦ hΦs a v = orderCharacter Φ hΦ hΦs a n ⟨v, hv⟩ := by
-  simp only [orderCharacter, LieSubalgebra.restrictCharacter_apply]
-
 /-- The global central-coordinate form takes the value `a` on the central generator. -/
 @[simp]
 theorem centralCoordinateForm_centralElement (a : R) :
     centralCoordinateForm Φ hΦ hΦs a (centralElement Φ hΦ hΦs) = a := by
-  rw [centralCoordinateForm_eq_orderCharacter Φ hΦ hΦs a 0 _
-    (centralElement_mem_orderExtensionLieSubalgebra Φ hΦ hΦs 0), orderCharacter_apply,
-    ofProd_symm_centralElement, LinearEquiv.apply_symm_apply, mul_one]
+  simp [centralCoordinateForm_apply, ofProd_symm_centralElement]
 
 /-- The inducing character takes the prescribed value on the central generator. -/
 @[simp]
@@ -195,8 +187,7 @@ theorem orderCharacter_centralElement (a : R) (n : ℕ) :
     orderCharacter Φ hΦ hΦs a n
       ⟨centralElement Φ hΦ hΦs, centralElement_mem_orderExtensionLieSubalgebra Φ hΦ hΦs n⟩ =
         a := by
-  rw [← centralCoordinateForm_eq_orderCharacter]
-  exact centralCoordinateForm_centralElement Φ hΦ hΦs a
+  simp [orderCharacter]
 
 /-- In split coordinates, the inducing character is `a` times the scalar coordinate. -/
 @[simp]
@@ -204,12 +195,6 @@ theorem orderCharacter_orderExtensionEquiv (a : R) (n : ℕ)
     (p : orderLieSubalgebra R L n × R) :
     orderCharacter Φ hΦ hΦs a n (orderExtensionEquiv Φ hΦ hΦs n p) = a * p.2 := by
   rw [orderCharacter_apply]
-  simp
-
-/-- The inducing character kills the zero-central-coordinate lift of every order current. -/
-theorem orderCharacter_orderExtensionEquiv_zero (a : R) (n : ℕ)
-    (u : orderLieSubalgebra R L n) :
-    orderCharacter Φ hΦ hΦs a n (orderExtensionEquiv Φ hΦ hΦs n (u, 0)) = 0 := by
   simp
 
 /-- The canonical Lie section is continuous for the induced order topology. -/
