@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # Stalks of quasi-coherent modules
@@ -46,20 +47,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} (M : X.Modules) {U : X.Opens} (x : U)
 
-variable {M x}
-
-/-- If `x` lies in the basic open of `f ∈ Γ(X, U)`, the powers of `f` avoid the prime ideal of
-`Γ(X, U)` corresponding to `x`. -/
-private lemma mem_primeCompl_of_mem_powers (hU : IsAffineOpen U) {f c : Γ(X, U)}
-    (hx : (x : X) ∈ X.basicOpen f) (hc : c ∈ Submonoid.powers f) :
-    c ∈ (hU.primeIdealOf x).asIdeal.primeCompl := by
-  have := hU.isLocalization_stalk x
-  obtain ⟨n, rfl⟩ := hc
-  rw [← IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x), map_pow]
-  exact ((X.mem_basicOpen' f x).1 hx).pow n
-
-variable (M x)
-
 /-- **Stalks of quasi-coherent modules are localizations.** For a quasi-coherent `𝒪_X`-module `M`
 and a point `x` of an affine open `U`, the germ map `Γ(M, U) → M_x` is the localization at the
 prime ideal of `Γ(X, U)` corresponding to `x`. -/
@@ -83,10 +70,13 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
   surj y := by
     obtain ⟨V, hxV, m, rfl⟩ := M.presheaf.exists_germ_eq y
     obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ x.2
+    -- The powers of `f` avoid the prime ideal of `x`, since `x ∈ D(f)`.
+    have hf : Submonoid.powers f ≤ (hU.primeIdealOf x).asIdeal.primeCompl := Submonoid.powers_le.2
+      (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x.2 f).1 hxf))
     have := M.isLocalizedModule_basicOpenRestrict hU f
     obtain ⟨⟨a, c⟩, hac⟩ := IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f)
       (M.presheaf.map (homOfLE hfV).op m)
-    refine ⟨⟨a, ⟨c, mem_primeCompl_of_mem_powers hU hxf c.2⟩⟩, ?_⟩
+    refine ⟨⟨a, ⟨c, hf c.2⟩⟩, ?_⟩
     -- Take germs at `x` of the equation `c • m|_{D(f)} = a|_{D(f)}` over `D(f)`.
     have h := congrArg (M.presheaf.germ (X.basicOpen f) x hxf) hac
     rw [basicOpenRestrict_apply, M.presheaf.germ_res_apply, Submonoid.smul_def,
@@ -98,6 +88,9 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     rw [germₗ_apply, germₗ_apply] at h
     obtain ⟨W, hxW, iU, iU', hab⟩ := M.presheaf.germ_eq x x.2 x.2 a b h
     obtain ⟨f, hfW, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxW⟩ x.2
+    -- The powers of `f` avoid the prime ideal of `x`, since `x ∈ D(f)`.
+    have hf : Submonoid.powers f ≤ (hU.primeIdealOf x).asIdeal.primeCompl := Submonoid.powers_le.2
+      (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x.2 f).1 hxf))
     have := M.isLocalizedModule_basicOpenRestrict hU f
     -- Restriction to `D(f)` factors through the neighbourhood `W` where `a` and `b` agree.
     have hres (i : W ⟶ U) (m : Γ(M, U)) :
@@ -106,7 +99,7 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
         Subsingleton.elim (homOfLE hfW ≫ i) (homOfLE (X.basicOpen_le f))]
     obtain ⟨c, hc⟩ := IsLocalizedModule.exists_of_eq (S := Submonoid.powers f)
       (f := M.basicOpenRestrict f) (x₁ := a) (x₂ := b) (by rw [hres iU, hres iU', hab])
-    exact ⟨⟨c, mem_primeCompl_of_mem_powers hU hxf c.2⟩, hc⟩
+    exact ⟨⟨c, hf c.2⟩, hc⟩
 
 /-- **Stalks of quasi-coherent modules by base change.** For a quasi-coherent `𝒪_X`-module `M`
 and a point `x` of an affine open `U`, the germ map `Γ(M, U) → M_x` exhibits `M_x` as the base
