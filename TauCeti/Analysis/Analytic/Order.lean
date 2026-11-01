@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Order
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # The analytic order of products, power maps and derivatives
@@ -18,8 +16,6 @@ by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m 
 recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
 monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`),
 and at a zero the divided difference `dslope f a` has order one less than `f`.
-Mathlib's Taylor splitting at `0` is also recentred at an arbitrary point, with explicit
-coefficients given by iterated derivatives.
 The finiteness a zero count also needs is
 `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
@@ -42,8 +38,6 @@ The finiteness a zero count also needs is
   equivalent up to constant factors have the same order.
 * `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
   `dslope f a` has order one less than `f` at `a`.
-* `AnalyticAt.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul`: Taylor decomposition of an
-  analytic function to any order at any point, with explicit coefficients `g⁽ʲ⁾(s) / j!`.
 
 ## References
 
@@ -158,25 +152,6 @@ theorem _root_.AnalyticAt.analyticOrderAt_dslope_add_one {E : Type*} [NormedAddC
         rw [analyticOrderAt_smul (by fun_prop) (hf.dslope a), analyticOrderAt_id_sub_const_self,
           add_comm]
     _ = analyticOrderAt f a := by rw [hfa]
-
-/-- **Taylor decomposition of an analytic function to order `k` at `s`**:
-`g z = ∑_{j < k} ((z - s)^j / j!) • g⁽ʲ⁾(s) + (z - s)^k • R z` near `s`, with `R` analytic at `s`.
-Mathlib's `AnalyticAt.exists_eventuallyEq_sum_add_pow_mul` at the translate `g (· + s)`. -/
-theorem _root_.AnalyticAt.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul {𝕜 E : Type*}
-    [NontriviallyNormedField 𝕜] [CharZero 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [CompleteSpace E] {g : 𝕜 → E} {s : 𝕜} (hg : AnalyticAt 𝕜 g s) (k : ℕ) :
-    ∃ R : 𝕜 → E, AnalyticAt 𝕜 R s ∧ ∀ᶠ z in 𝓝 s,
-      g z = (∑ j ∈ Finset.range k, ((z - s) ^ j / (j.factorial : 𝕜)) • iteratedDeriv j g s) +
-        (z - s) ^ k • R z := by
-  have hg' : AnalyticAt 𝕜 (fun w ↦ g (w + s)) 0 := by
-    rw [← zero_add s] at hg
-    exact hg.comp_of_eq (by fun_prop) rfl
-  obtain ⟨F, hF, hFeq⟩ := hg'.exists_eventuallyEq_sum_add_pow_mul k
-  have hsub : Tendsto (fun z ↦ z - s) (𝓝 s) (𝓝 0) := by
-    simpa using (continuous_sub_right s).tendsto s
-  refine ⟨fun z ↦ F (z - s), hF.comp_of_eq (by fun_prop) (sub_self s), ?_⟩
-  filter_upwards [hsub.eventually hFeq] with z hz
-  simpa [iteratedDeriv_comp_add_const] using hz
 
 end TauCeti
 
