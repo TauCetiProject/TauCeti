@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Seminorm
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.MulAction
-import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Analysis.Normed.Group.CompatibleNorm
 
 /-!
 # Making bounded scalar actions contractive
@@ -183,50 +182,15 @@ theorem adaptedAddGroupNorm_apply
     (h : ∀ (a : R) (x : M), ‖a • x‖ ≤ C * ‖a‖ * ‖x‖) (x : M) :
     adaptedAddGroupNorm h x = adaptedNorm R x := (rfl)
 
-/-- The adapted additive norm induces the original uniformity. -/
-theorem adaptedAddGroupNorm_uniformity
-    (h : ∀ (a : R) (x : M), ‖a • x‖ ≤ C * ‖a‖ * ‖x‖) :
-    𝓤 M = @uniformity M (adaptedAddGroupNorm h).toNormedAddCommGroup.toUniformSpace := by
-  have hupper := adaptedNorm_le h
-  have hlower := norm_le_adaptedNorm h
-  let g := ‹NormedAddCommGroup M›
-  have hn (x : M) : adaptedAddGroupNorm h x = adaptedNorm R x :=
-    adaptedAddGroupNorm_apply h x
-  let n := (adaptedAddGroupNorm h).toNormedAddCommGroup
-  -- Restore the original instance for implicit arguments; the second metric is always explicit.
-  let := g
-  -- The native metric constructor evaluates the norm on the additive difference.
-  have hd (x y : M) : @dist M n.toDist x y = adaptedNorm R (-x + y) := hn _
-  have hf : @UniformContinuous M M g.toUniformSpace n.toUniformSpace id := by
-    apply @LipschitzWith.uniformContinuous M M g.toPseudoEMetricSpace n.toPseudoEMetricSpace C id
-    apply @LipschitzWith.of_dist_le_mul M M g.toPseudoMetricSpace n.toPseudoMetricSpace C id
-    intro x y
-    simpa only [id_eq, hd, dist_eq_norm_neg_add] using hupper (-x + y)
-  have hg : @UniformContinuous M M n.toUniformSpace g.toUniformSpace id := by
-    apply @LipschitzWith.uniformContinuous M M n.toPseudoEMetricSpace g.toPseudoEMetricSpace 1 id
-    apply @LipschitzWith.of_dist_le_mul M M n.toPseudoMetricSpace g.toPseudoMetricSpace 1 id
-    intro x y
-    simpa only [id_eq, hd, NNReal.coe_one, one_mul, dist_eq_norm_neg_add] using hlower (-x + y)
-  apply le_antisymm
-  · intro s hs
-    exact @uniformContinuous_def M M g.toUniformSpace n.toUniformSpace id |>.mp hf s hs
-  · intro s hs
-    exact @uniformContinuous_def M M n.toUniformSpace g.toUniformSpace id |>.mp hg s hs
-
 /-- A contractive renorming retaining the original uniformity and topology definitionally.
 Consequently existing completeness and continuity proofs, and continuous linear equivalences,
 remain usable after installing this structure locally. -/
 noncomputable abbrev adaptedNormedAddCommGroup
     (h : ∀ (a : R) (x : M), ‖a • x‖ ≤ C * ‖a‖ * ‖x‖) : NormedAddCommGroup M :=
-  { (adaptedAddGroupNorm h).toNormedAddCommGroup with
-    toMetricSpace := (adaptedAddGroupNorm h).toNormedAddCommGroup.toMetricSpace.replaceUniformity
-      (adaptedAddGroupNorm_uniformity h) }
-
-/-- The norm in the renormed structure is the adapted norm, not the original one. -/
-@[simp]
-theorem norm_adaptedNormedAddCommGroup
-    (h : ∀ (a : R) (x : M), ‖a • x‖ ≤ C * ‖a‖ * ‖x‖) (x : M) :
-    @norm M (adaptedNormedAddCommGroup h).toNorm x = adaptedNorm R x := (rfl)
+  (adaptedAddGroupNorm h).toNormedAddCommGroupOfUniformity <|
+    (adaptedAddGroupNorm h).uniformity_eq_of_le (C := C) (D := 1)
+      (fun x ↦ by simpa using adaptedNorm_le h x)
+      (fun x ↦ by simpa using norm_le_adaptedNorm h x)
 
 /-- The scalar action is bounded with constant one after contractive renorming. -/
 theorem isBoundedSMul_adaptedNormedAddCommGroup

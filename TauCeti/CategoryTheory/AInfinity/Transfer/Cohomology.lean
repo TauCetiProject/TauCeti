@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Cohomology
 public import TauCeti.CategoryTheory.AInfinity.Cohomology
-public import TauCeti.CategoryTheory.AInfinity.Transfer
+public import TauCeti.CategoryTheory.AInfinity.Transfer.Basic
 
 /-!
 # The minimal A-infinity category on Hom cohomology

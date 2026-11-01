@@ -29,6 +29,9 @@ the finite cyclic group it generates, since every element of that group acts by 
 * `Diffeomorph.constSmul`: the diffeomorphism given by a fixed element of a pointwise-smooth
   group action. It sends the identity element to the identity diffeomorphism and products to
   composites (`Diffeomorph.constSmul_one`, `Diffeomorph.constSmul_mul`).
+* `Diffeomorph.constSmul_injective`, `Diffeomorph.infinite_of_faithfulSMul`: for a faithful
+  action these diffeomorphisms are distinct, so an infinite group acting faithfully gives
+  infinitely many diffeomorphisms.
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
   does every element of the cyclic group it generates.
 -/
@@ -137,6 +140,20 @@ the right-hand factor acting first. -/
 lemma constSmul_mul (h : G) :
     constSmul I n (g * h) = (constSmul I n h).trans (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M) :=
   Diffeomorph.ext fun x ↦ mul_smul g h x
+
+/-- Distinct elements of a group acting faithfully give distinct diffeomorphisms. -/
+@[to_additive
+  /-- Distinct elements of an additive group acting faithfully give distinct diffeomorphisms. -/]
+theorem constSmul_injective [FaithfulSMul G M] :
+    Function.Injective (constSmul I n : G → M ≃ₘ^n⟮I, I⟯ M) :=
+  fun _ _ h ↦ eq_of_smul_eq_smul fun x ↦ DFunLike.congr_fun h x
+
+/-- An infinite group acting faithfully by `C^n` maps gives infinitely many `C^n`
+self-diffeomorphisms. -/
+@[to_additive /-- An infinite additive group acting faithfully by `C^n` maps gives infinitely many
+`C^n` self-diffeomorphisms; for instance the translations of an infinite additive Lie group. -/]
+theorem infinite_of_faithfulSMul [Infinite G] [FaithfulSMul G M] : Infinite (M ≃ₘ^n⟮I, I⟯ M) :=
+  Infinite.of_injective _ (constSmul_injective (I := I) (n := n) (G := G))
 
 end Diffeomorph
 

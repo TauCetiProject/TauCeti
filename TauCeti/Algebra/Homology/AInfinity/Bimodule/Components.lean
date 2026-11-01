@@ -74,40 +74,17 @@ theorem isHomogeneous_b_tmul_tprod (MM : AInfinityBimodule AA BB M) (i j : ℕ)
     MM.b i j ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ PiTensorProduct.tprod R b) ∈
       (MM.grading.shift 1).piece ((∑ k, d k) + p + (∑ k, e k) + 1) := by
   rw [← taylor_tmul_of]
-  apply MM.isHomogeneous_taylor.map_mem
-  rw [barGrading_def]
-  exact InternalGrading.tmul_mem_tensorProduct _ _
-    (InternalGrading.tmul_mem_tensorProduct _ _
-      (by simpa only [TensorWords.grading_piece] using
-        TensorWords.mem_gradedPiece_of_tprod _ a d ha) hx)
-    (by simpa only [TensorWords.grading_piece] using
-      TensorWords.mem_gradedPiece_of_tprod _ b e hb)
+  exact MM.isHomogeneous_taylor.map_mem
+    (tmul_of_tprod_mem_barGrading AA BB MM.grading i j a d ha hx b e hb)
 
 /-- Equality of Taylor maps is equivalent to equality of every suspended component. -/
 theorem taylor_eq_taylor_iff {MM NN : AInfinityBimodule AA BB M} :
     MM.taylor = NN.taylor ↔ ∀ i j, MM.b i j = NN.b i j := by
   refine ⟨fun h i j ↦ by rw [b_def, b_def, h], fun h ↦ ?_⟩
-  apply TensorProduct.ext'
-  intro u v
-  suffices hv : (TensorProduct.curry MM.taylor).flip v =
-      (TensorProduct.curry NN.taylor).flip v from LinearMap.congr_fun hv u
-  apply TensorProduct.ext'
-  intro w x
-  have hw : (TensorProduct.curry ((TensorProduct.curry MM.taylor).flip v)).flip x =
-      (TensorProduct.curry ((TensorProduct.curry NN.taylor).flip v)).flip x := by
-    apply TensorWords.linearMap_ext
-    intro i a
-    have hv : TensorProduct.curry MM.taylor
-        (TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) =
-        TensorProduct.curry NN.taylor
-          (TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) := by
-      apply TensorWords.linearMap_ext
-      intro j b
-      simpa only [TensorProduct.curry_apply, taylor_tmul_of] using
-        LinearMap.congr_fun (h i j) ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ
-          PiTensorProduct.tprod R b)
-    exact LinearMap.congr_fun hv v
-  exact LinearMap.congr_fun hw w
+  exact TensorWords.linearMap_ext_threefold R A fun i j a x b ↦ by
+    simpa only [taylor_tmul_of] using
+      LinearMap.congr_fun (h i j) ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ
+        PiTensorProduct.tprod R b)
 
 /-- A bimodule is determined by its grading and suspended operations. -/
 theorem ext_b {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
@@ -177,16 +154,8 @@ theorem b_tmul_tprod_of_mem (MM : AInfinityBimodule AA BB M) (i j : ℕ)
 /-- Equal unsuspended operations give equal suspended components when the gradings agree. -/
 theorem b_eq_b_of_m_eq_m {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
     (i j : ℕ) (hm : MM.m i j = NN.m i j) : MM.b i j = NN.b i j := by
-  apply TensorProduct.ext_threefold
-  intro w x v
-  induction w using PiTensorProduct.induction_on with
-  | smul_tprod r a =>
-    induction v using PiTensorProduct.induction_on with
-    | smul_tprod s b =>
-      simp only [TensorProduct.smul_tmul, TensorProduct.tmul_smul, map_smul]
-      rw [b_tmul_tprod, b_tmul_tprod, hm, hG]
-    | add v w hv hw => simp only [TensorProduct.tmul_add, map_add, hv, hw]
-  | add v w hv hw => simp only [TensorProduct.add_tmul, map_add, hv, hw]
+  apply unsuspend_injective AA.grading MM.grading BB.grading i j
+  simpa only [m, hG] using hm
 
 /-- A bimodule is determined by its grading and unsuspended operations. -/
 theorem ext_m {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
