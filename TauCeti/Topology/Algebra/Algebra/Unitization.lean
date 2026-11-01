@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Algebra.Unitization
 public import Mathlib.Topology.Algebra.Module.Basic
-public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
 # The product topology on a forced unitization
