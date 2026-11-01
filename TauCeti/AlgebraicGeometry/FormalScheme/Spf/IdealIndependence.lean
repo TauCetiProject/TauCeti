@@ -68,7 +68,7 @@ private noncomputable def structureSheafHom (hI : IsAdic I) (hJ : IsAdic J) :
 private theorem structureSheafHom_comp_toQuotientSheaf (hI : IsAdic I) (hJ : IsAdic J)
     (hK : IsAdic K) :
     structureSheafHom hI hJ ≫ toQuotientSheaf hJ hK = toQuotientSheaf hI hK := by
-  obtain ⟨n, hn⟩ := hJ.exists_pow_succ_le hK
+  obtain ⟨n, hn⟩ := hJ.exists_pow_succ_le (by simpa using hK.isOpen_pow 1)
   exact (structureSheaf.lift_toQuotientSheaf hJ hK (fun _ ↦ toQuotientSheaf hI _)
     (fun _ ↦ toQuotientSheaf_comp_quotientTransition _ _ _ _) hn).trans
     (toQuotientSheaf_comp_quotientTransition _ _ _ _)
