@@ -24,6 +24,8 @@ public section
 
 open TensorProduct Algebra.TensorProduct TauCeti.Huber
 
+namespace TauCeti.Examples.FiniteAlgebraBaseChange
+
 section Unit
 
 variable (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
@@ -103,3 +105,5 @@ example : Nonempty (C ⊗[A] B ≃+* CompletedTensor A C B) := by
   exact ⟨Pair.finiteAlgebra.baseChangeEquiv A C B⟩
 
 end Etale
+
+end TauCeti.Examples.FiniteAlgebraBaseChange
