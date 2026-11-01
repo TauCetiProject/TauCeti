@@ -31,14 +31,20 @@ The maps and products of completed combinations given by supported kernels
 cutoffs by the constant of their potential bound. Hence a kernel map is continuous, and a kernel
 product is jointly continuous in both inputs. Floer and Novikov differentials, continuation maps,
 chain homotopies and the pair-of-pants product are of this form, so they are continuous for the
-potential-cutoff topologies of their complexes.
+potential-cutoff topologies of their complexes. Conversely, a linear map sending every `U_D` into
+`U_(D + C)` is the kernel map of its matrix coefficients `NovikovModule.toKernel`
+(`NovikovModule.kernelMap_toKernel`), and a bilinear map sending every `U_(D₁) × U_(D₂)` into
+`U_(D₁ + D₂ + C)` is the kernel product of its coefficients `NovikovModule.toProductKernel`
+(`NovikovModule.kernelProduct_toProductKernel`). It is the uniform bound, not continuity alone,
+that produces a kernel with a potential bound.
 
 The filter-basis construction and the completeness argument parallel
 `TauCeti.RingTheory.NovikovSeries.Topology`, with cutoffs directed towards `-∞` instead of `+∞`.
 The truncation, topology and coordinate parts, including `NovikovModule.ofFinsupp` and
 `NovikovModule.trunc` in `TauCeti.RingTheory.NovikovModule.Basic`, adapt the approach of the
 unmerged TauCeti PR https://github.com/TauCetiProject/TauCeti/pull/20410; the kernel-map and
-kernel-product continuity results are new.
+kernel-product continuity results and the kernel characterizations of maps with potential shift
+are new.
 
 ## Main definitions
 
@@ -63,6 +69,9 @@ kernel-product continuity results are new.
   linear maps agreeing on single generators are equal.
 * `TauCeti.NovikovModule.continuousSMul_module`: the Novikov scalar action is continuous.
 * `TauCeti.NovikovModule.continuous_kernelMap`: kernel maps are continuous.
+* `TauCeti.NovikovModule.kernelMap_toKernel`,
+  `TauCeti.NovikovModule.kernelProduct_toProductKernel`: linear and bilinear maps with potential
+  shift are given by their kernels.
 * `TauCeti.NovikovModule.continuous_kernelProduct`: kernel products are jointly continuous.
 * `TauCeti.NovikovModule.continuous_kernelProduct_left`,
   `TauCeti.NovikovModule.continuous_kernelProduct_right`: continuity in each input separately.
@@ -140,6 +149,18 @@ theorem ofFinsupp_single_mem_potentialFiltration (p : S) (r : R) :
       rintro rfl
       exact lt_irrefl _ hs
     simp [hps]
+
+/-- Potential shifts add under composition: if `f` sends each `U_D` into `U_(D + C)` and `g`
+sends each `U_D` into `U_(D + C')`, then `g ∘ f` sends each `U_D` into `U_(D + (C + C'))`. -/
+theorem comp_mem_potentialFiltration_add {S₁ S₂ : Type*} {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {C' : ℝ}
+    {f : NovikovModule R F →ₗ[R] NovikovModule R F₁}
+    {g : NovikovModule R F₁ →ₗ[R] NovikovModule R F₂}
+    (hf : ∀ D a, a ∈ potentialFiltration R F D → f a ∈ potentialFiltration R F₁ (D + C))
+    (hg : ∀ D b, b ∈ potentialFiltration R F₁ D → g b ∈ potentialFiltration R F₂ (D + C'))
+    (D : ℝ) (a : NovikovModule R F) (ha : a ∈ potentialFiltration R F D) :
+    (g ∘ₗ f) a ∈ potentialFiltration R F₂ (D + (C + C')) := by
+  rw [← add_assoc]
+  exact hg _ _ (hf _ _ ha)
 
 end Filtration
 
@@ -446,6 +467,24 @@ theorem kernelMap_mem_potentialFiltration {D : ℝ} {a : NovikovModule R F₁}
 theorem continuous_kernelMap : Continuous (kernelMap hm hmfin) :=
   continuous_of_mem_potentialFiltration_add fun _ _ => kernelMap_mem_potentialFiltration hm hmfin
 
+variable {f : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀}
+
+/-- The kernel of a linear map with potential shift `C` obeys the potential bound with
+constant `C`. -/
+theorem potential_le_of_toKernel_ne_zero
+    (hf : ∀ D a, a ∈ potentialFiltration R F₁ D → f a ∈ potentialFiltration R F₀ (D + C))
+    (p₁ : S₁) (p₀ : S₀) (h : toKernel f p₁ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + C :=
+  not_lt.1 fun hp => h <| (toKernel_apply p₁ p₀).trans <| mem_potentialFiltration.1
+    (hf _ _ (ofFinsupp_single_mem_potentialFiltration p₁ 1)) p₀ hp
+
+/-- **Maps with potential shift are kernel maps.** A linear map of completed combinations sending
+each `U_D` into `U_(D + C)` is the kernel map of its kernel. -/
+theorem kernelMap_toKernel
+    (hf : ∀ D a, a ∈ potentialFiltration R F₁ D → f a ∈ potentialFiltration R F₀ (D + C)) :
+    kernelMap (potential_le_of_toKernel_ne_zero hf) (toKernel_mem f) = f :=
+  lhom_ext (continuous_kernelMap _ _) (continuous_of_mem_potentialFiltration_add hf) fun p₁ =>
+    Subtype.ext <| by rw [kernelMap_ofFinsupp_single_val]; exact funext (toKernel_apply p₁)
+
 end KernelMap
 
 section KernelProduct
@@ -499,6 +538,53 @@ theorem continuous_kernelProduct :
   simpa only [hB] using continuous_of_continuousAt_zero₂ B (by simpa [ContinuousAt, hB] using h0)
     (fun a => by simpa only [hB] using (continuous_kernelProduct_right hn hfin a).continuousAt)
     (fun b => by simpa only [hB] using (continuous_kernelProduct_left hn hfin b).continuousAt)
+
+section ToProductKernel
+
+variable {B : NovikovModule R F₁ →ₗ[R] NovikovModule R F₂ →ₗ[R] NovikovModule R F₀}
+  (hB : ∀ D₁ D₂ a b, a ∈ potentialFiltration R F₁ D₁ → b ∈ potentialFiltration R F₂ D₂ →
+    B a b ∈ potentialFiltration R F₀ (D₁ + D₂ + C))
+
+include hB
+
+/-- The coefficients of a bilinear map with potential shift `C` obey the potential bound with
+constant `C`. -/
+theorem potential_le_of_toProductKernel_ne_zero (p₁ : S₁) (p₂ : S₂) (p₀ : S₀)
+    (h : toProductKernel B p₁ p₂ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C :=
+  not_lt.1 fun hp => h <| (toProductKernel_apply p₁ p₂ p₀).trans <| mem_potentialFiltration.1
+    (hB _ _ _ _ (ofFinsupp_single_mem_potentialFiltration p₁ 1)
+      (ofFinsupp_single_mem_potentialFiltration p₂ 1)) p₀ hp
+
+/-- A bilinear map with potential shift is continuous in its second input. -/
+private theorem continuous_right (a : NovikovModule R F₁) : Continuous (B a) := by
+  obtain ⟨A, hA⟩ := exists_mem_potentialFiltration a
+  exact continuous_of_mem_potentialFiltration_add (C := A + C) fun D b hb =>
+    monotone_potentialFiltration (le_of_eq (by ring)) (hB _ _ a b hA hb)
+
+/-- A bilinear map with potential shift is continuous in its first input. -/
+private theorem continuous_left (b : NovikovModule R F₂) : Continuous (B.flip b) := by
+  obtain ⟨E, hE⟩ := exists_mem_potentialFiltration b
+  exact continuous_of_mem_potentialFiltration_add (C := E + C) fun D a ha =>
+    monotone_potentialFiltration (le_of_eq (by ring)) (hB _ _ a b ha hE)
+
+/-- **Bilinear maps with potential shift are kernel products.** A bilinear map of completed
+combinations sending each `U_(D₁) × U_(D₂)` into `U_(D₁ + D₂ + C)` is the kernel product of its
+coefficients. -/
+theorem kernelProduct_toProductKernel :
+    kernelProduct (potential_le_of_toProductKernel_ne_zero hB) (toProductKernel_mem B) = B := by
+  refine LinearMap.ext fun a => lhom_ext (continuous_kernelProduct_right _ _ a)
+    (continuous_right hB a) fun p₂ => ?_
+  -- With the second input a generator, both sides are continuous linear in the first input.
+  have h := lhom_ext (f := (kernelProduct (potential_le_of_toProductKernel_ne_zero hB)
+      (toProductKernel_mem B)).flip (ofFinsupp F₂ (Finsupp.single p₂ 1)))
+    (g := B.flip (ofFinsupp F₂ (Finsupp.single p₂ 1)))
+    ((continuous_kernelProduct_left _ _ _).congr fun _ => (LinearMap.flip_apply _ _ _).symm)
+    (continuous_left hB _) fun p₁ => Subtype.ext <| by
+      rw [LinearMap.flip_apply, kernelProduct_ofFinsupp_single_val]
+      exact funext (toProductKernel_apply p₁ p₂)
+  exact LinearMap.congr_fun h a
+
+end ToProductKernel
 
 end KernelProduct
 

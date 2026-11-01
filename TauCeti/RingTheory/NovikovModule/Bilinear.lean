@@ -58,6 +58,7 @@ identity between kernels, which is what counting the ends of one-dimensional mod
 ## Main definitions
 
 * `TauCeti.NovikovModule.kernelProduct`: the bilinear product given by a supported kernel.
+* `TauCeti.NovikovModule.toProductKernel`: the coefficients of a bilinear map.
 * `TauCeti.NovikovModule.kernelMatrix`: the matrix of Novikov series of an invariant kernel in
   chosen reference generators.
 * `TauCeti.NovikovModule.novikovKernelProduct`: the product of an invariant kernel, as a bilinear
@@ -249,6 +250,37 @@ theorem kernelProduct_ofFinsupp_single_val (p₁ : S₁) (p₂ : S₂) :
       simp [Finsupp.single_apply, Ne.symm h₂]
     · simp [Finsupp.single_apply, Ne.symm h₁]]
   simp
+
+section ProductKernel
+
+/-- The coefficients of a bilinear map of completed combinations: the coefficient of the output
+generator `p₀` in the image of the pair of input generators `p₁` and `p₂`. -/
+def toProductKernel
+    (B : NovikovModule R F₁ →ₗ[R] NovikovModule R F₂ →ₗ[R] NovikovModule R F₀)
+    (p₁ : S₁) (p₂ : S₂) (p₀ : S₀) : R :=
+  (B (ofFinsupp F₁ (Finsupp.single p₁ 1)) (ofFinsupp F₂ (Finsupp.single p₂ 1))).val p₀
+
+variable {B : NovikovModule R F₁ →ₗ[R] NovikovModule R F₂ →ₗ[R] NovikovModule R F₀}
+
+@[simp]
+theorem toProductKernel_apply (p₁ : S₁) (p₂ : S₂) (p₀ : S₀) :
+    toProductKernel B p₁ p₂ p₀ =
+      (B (ofFinsupp F₁ (Finsupp.single p₁ 1)) (ofFinsupp F₂ (Finsupp.single p₂ 1))).val p₀ :=
+  (rfl)
+
+/-- Each output of the coefficients of a bilinear map is a completed combination. -/
+theorem toProductKernel_mem
+    (B : NovikovModule R F₁ →ₗ[R] NovikovModule R F₂ →ₗ[R] NovikovModule R F₀)
+    (p₁ : S₁) (p₂ : S₂) : toProductKernel B p₁ p₂ ∈ NovikovModule R F₀ :=
+  (B _ _).property
+
+/-- The coefficients of a kernel product are its kernel. -/
+@[simp]
+theorem toProductKernel_kernelProduct : toProductKernel (kernelProduct hn hfin) = n := by
+  ext p₁ p₂ p₀
+  rw [toProductKernel_apply, kernelProduct_ofFinsupp_single_val]
+
+end ProductKernel
 
 section Comp
 
