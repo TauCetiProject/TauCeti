@@ -81,7 +81,7 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p]
   have : Nontrivial L := by
     refine (subsingleton_or_nontrivial L).resolve_left fun _ ↦ ?_
     obtain ⟨n, hn⟩ := mem_pNilradical.1
-      (IsPRadical.ker_le i p (show (1 : K) ∈ RingHom.ker i from Subsingleton.elim _ _))
+      (IsPRadical.ker_le i p ((RingHom.mem_ker (r := 1)).2 (Subsingleton.elim _ _)))
     simp at hn
   have : CharP L p :=
     (CharP.charP_iff_prime_eq_zero hp.out).2 (by rw [← map_natCast i, hK, map_zero])
