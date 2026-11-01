@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.ChevalleyRestriction
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.LeadingTerm
-public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 
 /-!
 # Surjectivity of the Harish-Chandra projection
