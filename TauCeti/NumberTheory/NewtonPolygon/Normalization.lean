@@ -32,6 +32,17 @@ public section
 
 open TauCeti
 
+namespace TauCeti
+
+private noncomputable def normNormalizationIso {b b' : ℝ} (hb : 1 < b) (hb' : 1 < b') : ℝ ≃+o ℝ :=
+  let c := Real.log b / Real.log b'
+  have hc : 0 < c := div_pos (Real.log_pos hb) (Real.log_pos hb')
+  { (OrderIso.mulLeft₀ c hc).toEquiv with
+    map_add' := mul_add c
+    map_le_map_iff' := mul_le_mul_iff_right₀ hc }
+
+end TauCeti
+
 namespace PowerSeries
 
 /-- An ordered additive change in coefficient values induces the same change in
@@ -52,13 +63,8 @@ theorem newtonPolygon_eq_map_of_norm_eq_rpow {K : Type*} [NormedDivisionRing K]
     (hw : ∀ x ≠ 0, ‖x‖ = b' ^ (-(w x).untop₀)) :
     f.newtonPolygon w = fun n =>
       WithTop.map (fun t => (Real.log b / Real.log b') * t) (f.newtonPolygon v n) := by
-  let c := Real.log b / Real.log b'
-  have hc : 0 < c := div_pos (Real.log_pos hb) (Real.log_pos hb')
-  let e : ℝ ≃+o ℝ :=
-    { (OrderIso.mulLeft₀ c hc).toEquiv with
-      map_add' := mul_add c
-      map_le_map_iff' := mul_le_mul_iff_right₀ hc }
-  exact f.newtonPolygon_eq_map_values v w e (v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
+  exact f.newtonPolygon_eq_map_values v w (normNormalizationIso hb hb')
+    (v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
 
 end PowerSeries
 
@@ -105,12 +111,7 @@ theorem newtonSlopes_eq_map_of_norm_eq_rpow {K : Type*} [NormedDivisionRing K]
     (hw : ∀ x ≠ 0, ‖x‖ = b' ^ (-(w x).untop₀)) :
     f.newtonSlopes w = (f.newtonSlopes v).map
       (fun t => (Real.log b / Real.log b') * t) := by
-  let c := Real.log b / Real.log b'
-  have hc : 0 < c := div_pos (Real.log_pos hb) (Real.log_pos hb')
-  let e : ℝ ≃+o ℝ :=
-    { (OrderIso.mulLeft₀ c hc).toEquiv with
-      map_add' := mul_add c
-      map_le_map_iff' := mul_le_mul_iff_right₀ hc }
-  exact f.newtonSlopes_eq_map_values v w e (v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
+  exact f.newtonSlopes_eq_map_values v w (normNormalizationIso hb hb')
+    (v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
 
 end Polynomial
