@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 
 A ring homomorphism maps a special orthogonal matrix entrywise to a special orthogonal matrix.
 This expresses the functoriality of special orthogonal groups under coefficient-ring maps and
-supports their base-change constructions.
+supports their base-change constructions. The construction is modelled on Mathlib's
+`Matrix.SpecialLinearGroup.map`.
 
 ## Main declarations
 
