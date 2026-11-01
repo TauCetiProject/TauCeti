@@ -141,10 +141,10 @@ theorem _root_.WeierstrassCurve.IsIntegralModularForm.exists_qExpansion_eq_map_s
     · exact isIntegralModularForm_c₄.isWeightedHomogeneous
     · exact isIntegralModularForm_c₆.isWeightedHomogeneous
     · exact isIntegralModularForm_Δ.isWeightedHomogeneous
-  rw [show ({Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} :
-      Set (MvPolynomial Coeff ℤ)) = Set.range v by
-    simp only [v, Matrix.range_cons, Matrix.range_empty, Set.union_empty, Set.singleton_union],
-    Algebra.adjoin_range_eq_range_aeval] at hmem
+  have hrange : ({Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} :
+      Set (MvPolynomial Coeff ℤ)) = Set.range v := by
+    simp only [v, Matrix.range_cons, Matrix.range_empty, Set.union_empty, Set.singleton_union]
+  rw [hrange, Algebra.adjoin_range_eq_range_aeval] at hmem
   obtain ⟨P, rfl⟩ := hmem
   rw [← MvPolynomial.weightedHomogeneousComponent_eq_self hf.isWeightedHomogeneous,
     AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.weightedHomogeneousComponent_aeval hv]
@@ -233,8 +233,9 @@ theorem _root_.ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq 
       rw [map_zero, map_zero, ← hHQ, hH₀, FunLike.coe_zero, qExpansion_zero]
     · obtain ⟨h, hhA, hh, hhQ⟩ := ih (k - 12) (by omega)
         (ModularForm.mcast (by omega) H) (by rwa [ModularForm.qExpansion_mcast])
+      have hk12 : 12 + (k - 12) = k := by omega
       refine ⟨h, hhA, ?_, hhQ⟩
-      simpa [show 12 + (k - 12) = k by omega] using isIntegralModularForm_Δ.mul hh
+      simpa [hk12] using isIntegralModularForm_Δ.mul hh
   refine ⟨a₀ • g + Universal.curve.Δ * h,
     add_mem (zsmul_mem hgA a₀) (mul_mem (Algebra.subset_adjoin (by simp)) hhA),
     (hg.smul a₀).add hh, ?_⟩
