@@ -240,7 +240,7 @@ theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
   have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
   have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
     (hf.comp_contMDiff contMDiff_subtype_val Subtype.prop)
-  rw [totalCriticalCount_comp_subtypeVal (hf.mdifferentiableOn (by simp))] at h
+  rw [totalCriticalCount_comp_subtypeVal] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h
 

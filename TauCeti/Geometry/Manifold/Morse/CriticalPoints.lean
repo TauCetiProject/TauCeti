@@ -135,10 +135,17 @@ theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
 /-! ### Restriction to an open submanifold -/
 
 /-- A point of an open submanifold `U` is a critical point of the restriction of `f` to `U` exactly
-when it is a critical point of `f`, provided `f` is differentiable there. -/
-theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U}
-    (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+when it is a critical point of `f`. -/
+theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U} :
     x ∈ criticalPoints I (f ∘ Subtype.val : U → ℝ) ↔ (x : M) ∈ criticalPoints I f := by
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  swap
+  · -- On the open set `U`, `f` and its restriction are differentiable at the same points, and
+    -- both manifold derivatives vanish by convention where they are not.
+    have hfU : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ Subtype.val : U → ℝ) x :=
+      (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).not.1 hf
+    simp only [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hfU]
   rw [mem_criticalPoints_iff_mfderiv_eq_zero, mem_criticalPoints_iff_mfderiv_eq_zero,
     mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
     Manifold.mfderiv_subtype_val]
@@ -148,12 +155,11 @@ theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U}
     ContinuousLinearEquiv.apply_symm_apply, zero_apply] using
     DFunLike.congr_fun h ((Manifold.tangentSpaceOpenEquiv (I := I) x).symm v)
 
-/-- The critical points of the restriction of `f` to an open submanifold `U`, on which `f` is
-differentiable, are the critical points of `f` lying in `U`. -/
-theorem criticalPoints_comp_subtypeVal {U : Opens M} (hf : MDifferentiableOn I 𝓘(ℝ) f U) :
+/-- The critical points of the restriction of `f` to an open submanifold `U` are the critical
+points of `f` lying in `U`. -/
+theorem criticalPoints_comp_subtypeVal {U : Opens M} :
     criticalPoints I (f ∘ Subtype.val : U → ℝ) = Subtype.val ⁻¹' criticalPoints I f :=
-  Set.ext fun x ↦
-    mem_criticalPoints_comp_subtypeVal (hf.mdifferentiableAt (U.isOpen.mem_nhds x.2))
+  Set.ext fun _ ↦ mem_criticalPoints_comp_subtypeVal
 
 /-! ### Critical points read in the preferred chart -/
 
@@ -397,11 +403,11 @@ theorem criticalCount_le_totalCriticalCount (j : ℕ) :
 theorem totalCriticalCount_neg : totalCriticalCount I (-f) = totalCriticalCount I f := by
   rw [totalCriticalCount_def, totalCriticalCount_def, criticalPoints_neg]
 
-/-- The number of critical points of the restriction of `f` to an open submanifold `U`, on which
-`f` is differentiable, is the number of critical points of `f` in `U`. -/
-theorem totalCriticalCount_comp_subtypeVal {U : Opens M} (hf : MDifferentiableOn I 𝓘(ℝ) f U) :
+/-- The number of critical points of the restriction of `f` to an open submanifold `U` is the
+number of critical points of `f` in `U`. -/
+theorem totalCriticalCount_comp_subtypeVal {U : Opens M} :
     totalCriticalCount I (f ∘ Subtype.val : U → ℝ) = (criticalPoints I f ∩ U).encard := by
-  rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal hf,
+  rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
     ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_val]
 
 /-- **The critical count is additive over components.** If `M` has finitely many connected
