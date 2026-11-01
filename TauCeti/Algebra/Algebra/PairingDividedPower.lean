@@ -41,6 +41,7 @@ the wall-crossing formula for Seiberg–Witten invariants of four-manifolds with
 ## Main results
 
 * `TauCeti.commute_mul_of_anticommute`: `ν i * ν j` commutes with `ν k`.
+* `TauCeti.smul_mul_mul_self_eq_zero`: each summand `a p • (ν p.1 * ν p.2)` squares to zero.
 * `TauCeti.pairDividedPower_insert_succ`: the recursion for `u^[k + 1]` when a pair is added to
   `P`.
 * `TauCeti.pairDividedPower_smul`, `TauCeti.pairDividedPower_neg`: `(c • u)^[k] = c ^ k • u^[k]`,
@@ -119,10 +120,8 @@ theorem pairDividedPower_insert_succ [DecidableEq ι] (a : ι × ι → R) {P : 
     {p : ι × ι} (hp : p ∉ P) (k : ℕ) :
     pairDividedPower hν a (insert p P) (k + 1) =
       pairDividedPower hν a P (k + 1) + a p • (ν p.1 * ν p.2) * pairDividedPower hν a P k := by
-  rw [pairDividedPower_def, pairDividedPower_def, pairDividedPower_def,
-    Finset.sum_powersetCard_succ_insert hp, Finset.mul_sum]
-  exact congrArg _ (Finset.sum_congr rfl fun t ht ↦
-    Finset.noncommProd_insert_of_notMem _ _ _ _ fun h ↦ hp ((Finset.mem_powersetCard.1 ht).1 h))
+  simp only [pairDividedPower_def]
+  exact Finset.sum_noncommProd_powersetCard_succ_insert hp _ (pairwise_commute_smul_mul hν a) k
 
 /-- Scaling the coefficients by `c` scales the `k`-th divided power by `c ^ k`. -/
 theorem pairDividedPower_smul (c : R) (a : ι × ι → R) (P : Finset (ι × ι)) (k : ℕ) :
@@ -159,58 +158,25 @@ theorem mul_mul_eq_zero_of_anticommute {i j k : ι} (h : i = j ∨ i = k) :
   · rw [← mul_assoc, hν₀, zero_mul]
   · rw [← (commute_mul_of_anticommute hν j i i).eq, mul_assoc, hν₀, mul_zero]
 
+/-- A summand `c • (ν i * ν j)` of a quadratic element squares to zero. -/
+theorem smul_mul_mul_self_eq_zero (c : R) (i j : ι) : c • (ν i * ν j) * (c • (ν i * ν j)) = 0 := by
+  rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν i j i).eq, ← mul_assoc, hν₀,
+    zero_mul, zero_mul, smul_zero]
+
 /-- **Divided powers without denominators.** The `k`-th power of the quadratic element
 `u = ∑_{p ∈ P} a p • (ν p.1 * ν p.2)` is `k !` times its divided power `u^[k]`. -/
 theorem factorial_smul_pairDividedPower (a : ι × ι → R) (P : Finset (ι × ι)) (k : ℕ) :
-    k ! • pairDividedPower hν a P k = (∑ p ∈ P, a p • (ν p.1 * ν p.2)) ^ k := by
-  have hsq : ∀ p ∈ P, a p • (ν p.1 * ν p.2) * (a p • (ν p.1 * ν p.2)) = 0 := fun p _ ↦ by
-    rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν p.1 p.2 p.1).eq,
-      ← mul_assoc, hν₀, zero_mul, zero_mul, smul_zero]
-  rw [Finset.sum_pow_of_commute_of_mul_self_eq_zero _ _
-    ((pairwise_commute_smul_mul hν a).set_pairwise _) hsq, pairDividedPower_def]
-  exact congrArg _ (Finset.sum_coe_sort _ _).symm
+    k ! • pairDividedPower hν a P k = (∑ p ∈ P, a p • (ν p.1 * ν p.2)) ^ k :=
+  (Finset.sum_pow_of_pairwise_commute_of_mul_self_eq_zero P _ (pairwise_commute_smul_mul hν a)
+    (fun p _ ↦ smul_mul_mul_self_eq_zero hν hν₀ (a p) p.1 p.2) k).symm
 
 /-- **Multiplication of divided powers.** `u^[m] * u^[n] = (m + n).choose m • u^[m + n]`, with no
 division by factorials. -/
 theorem pairDividedPower_mul (a : ι × ι → R) (P : Finset (ι × ι)) (m n : ℕ) :
     pairDividedPower hν a P m * pairDividedPower hν a P n =
-      (m + n).choose m • pairDividedPower hν a P (m + n) := by
-  classical
-  have hcomm (p : ι × ι) (Q : Finset (ι × ι)) (k : ℕ) :
-      Commute (a p • (ν p.1 * ν p.2)) (pairDividedPower hν a Q k) := by
-    rw [pairDividedPower_def]
-    exact Commute.sum_right _ _ _ fun t _ ↦ Finset.noncommProd_commute _ _ _ _ fun q _ ↦
-      (((commute_mul_of_anticommute hν p.1 p.2 q.1).mul_right
-        (commute_mul_of_anticommute hν p.1 p.2 q.2)).smul_left (a p)).smul_right (a q)
-  induction P using Finset.induction_on generalizing m n with
-  | empty =>
-    cases m with
-    | zero => simp
-    | succ m =>
-      rw [pairDividedPower_eq_zero_of_card_lt hν a (by simp), zero_mul,
-        pairDividedPower_eq_zero_of_card_lt hν a (by simp; omega), smul_zero]
-  | insert p P hp ih =>
-    cases m with
-    | zero => simp
-    | succ m =>
-      cases n with
-      | zero => simp
-      | succ n =>
-        have hpP := hcomm p P
-        have hww : a p • (ν p.1 * ν p.2) * (a p • (ν p.1 * ν p.2)) = 0 := by
-          rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν p.1 p.2 p.1).eq,
-            ← mul_assoc, hν₀, zero_mul, zero_mul, smul_zero]
-        have h1 := ih (m + 1) (n + 1)
-        have h2 := ih (m + 1) n
-        have h3 := ih m (n + 1)
-        rw [show m + 1 + (n + 1) = m + n + 1 + 1 by omega] at h1 ⊢
-        rw [show m + 1 + n = m + n + 1 by omega] at h2
-        rw [show m + (n + 1) = m + n + 1 by omega] at h3
-        simp only [pairDividedPower_insert_succ hν a hp]
-        rw [add_mul, mul_add, mul_add, h1, (hpP (m + 1)).symm.left_comm, h2, mul_assoc, h3,
-          mul_assoc, (hpP m).symm.left_comm, ← mul_assoc, hww, zero_mul, add_zero, add_assoc,
-          ← mul_add, ← add_smul, add_comm ((m + n + 1).choose (m + 1)), ← Nat.choose_succ_succ,
-          mul_smul_comm, ← smul_add]
+      (m + n).choose m • pairDividedPower hν a P (m + n) :=
+  Finset.sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero P _ (pairwise_commute_smul_mul hν a)
+    (fun p _ ↦ smul_mul_mul_self_eq_zero hν hν₀ (a p) p.1 p.2) m n
 
 /-- Left multiplication by `ν i` kills the product over a set `t` of pairs as soon as `i` is an
 endpoint of a pair in `t`. -/

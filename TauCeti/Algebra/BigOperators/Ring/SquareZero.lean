@@ -25,10 +25,19 @@ product of `n` distinct factors occurs `n !` times, once for each ordering. Henc
 so `(∑ i ∈ s, x i) ^ n` is `n !` times an explicit element with no denominators: the elementary
 symmetric sum is a divided power `(∑ i ∈ s, x i) ^ n / n !` over any base, including `ℤ`.
 
+These elementary symmetric sums `e k = ∑_{t ⊆ s, #t = k} ∏_{i ∈ t} x i` multiply like divided
+powers, `e m * e n = (m + n).choose m • e (m + n)`, again with no division by factorials.
+
 ## Main results
 
 * `Finset.sum_pow_of_commute_of_mul_self_eq_zero`: the displayed formula, with the product over
   `t` the noncommutative product `Finset.noncommProd` of the pairwise commuting family.
+* `Finset.sum_pow_of_pairwise_commute_of_mul_self_eq_zero`: the same formula as a sum over
+  `s.powersetCard n`, for a family commuting pairwise everywhere.
+* `Finset.sum_noncommProd_powersetCard_succ_insert`: the recursion for `e (n + 1)` when an index
+  is added to `s`.
+* `Finset.sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero`:
+  `e m * e n = (m + n).choose m • e (m + n)`.
 -/
 
 public section
@@ -41,9 +50,22 @@ namespace Finset
 
 variable {ι : Type*}
 
-/-- The multinomial theorem for square-zero elements, for a family commuting pairwise everywhere.
--/
-private theorem sum_pow_of_pairwise_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
+/-- With `a ∉ s`, the sum of the products over the `n + 1`-element subsets of `insert a s` of a
+pairwise commuting family is the corresponding sum over `s` plus `x a` times the sum of the
+products over the `n`-element subsets of `s`. -/
+theorem sum_noncommProd_powersetCard_succ_insert [DecidableEq ι] {s : Finset ι} {a : ι}
+    (ha : a ∉ s) (x : ι → R) (hc : Pairwise (Commute on x)) (n : ℕ) :
+    ∑ t ∈ (insert a s).powersetCard (n + 1), t.noncommProd x (hc.set_pairwise _) =
+      ∑ t ∈ s.powersetCard (n + 1), t.noncommProd x (hc.set_pairwise _) +
+        x a * ∑ t ∈ s.powersetCard n, t.noncommProd x (hc.set_pairwise _) := by
+  rw [sum_powersetCard_succ_insert ha, mul_sum]
+  exact congrArg _ (sum_congr rfl fun t ht ↦
+    noncommProd_insert_of_notMem _ _ _ _ fun h ↦ ha ((mem_powersetCard.1 ht).1 h))
+
+/-- The multinomial theorem for square-zero elements, for a family commuting pairwise everywhere:
+`(∑ i ∈ s, x i) ^ n` is `n !` times the sum, over the `n`-element subsets `t` of `s`, of the
+products of the `x i` with `i ∈ t`. -/
+theorem sum_pow_of_pairwise_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
     (hc : Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0) (n : ℕ) :
     (∑ i ∈ s, x i) ^ n =
       n ! • ∑ t ∈ s.powersetCard n, t.noncommProd x (hc.set_pairwise _) := by
@@ -60,13 +82,9 @@ private theorem sum_pow_of_pairwise_commute_of_mul_self_eq_zero (s : Finset ι) 
     cases n with
     | zero => simp
     | succ n =>
-      have hins : ∀ t ∈ s.powersetCard n,
-          (insert a t).noncommProd x (hc.set_pairwise _) =
-            x a * t.noncommProd x (hc.set_pairwise _) := fun t ht ↦
-        noncommProd_insert_of_notMem _ _ _ _ fun h ↦ ha ((mem_powersetCard.1 ht).1 h)
       rw [sum_insert ha, hcomm.add_pow_succ_of_mul_self_eq_zero (hx a (mem_insert_self a s)),
-        ih hxs, ih hxs, sum_powersetCard_succ_insert ha, sum_congr rfl hins, ← mul_sum,
-        mul_smul_comm, smul_smul, ← Nat.factorial_succ, smul_add]
+        ih hxs, ih hxs, sum_noncommProd_powersetCard_succ_insert ha x hc, mul_smul_comm, smul_smul,
+        ← Nat.factorial_succ, smul_add]
 
 /-- **Multinomial theorem for square-zero elements.** If the `x i` commute pairwise and square to
 zero on `s`, then `(∑ i ∈ s, x i) ^ n` is `n !` times the sum, over the `n`-element subsets `t` of
@@ -91,5 +109,57 @@ theorem sum_pow_of_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
     ← sum_coe_sort]
   exact congrArg _ (sum_congr rfl fun t _ ↦
     noncommProd_congr rfl (fun i hi ↦ hys i ((mem_powersetCard.1 t.2).1 hi)) _)
+
+
+/-- **Multiplication of elementary symmetric sums of square-zero elements.** If the `x i` commute
+pairwise and square to zero on `s`, then the sums `e k` of the products over the `k`-element
+subsets of `s` satisfy `e m * e n = (m + n).choose m • e (m + n)`: they are the divided powers of
+`e 1 = ∑ i ∈ s, x i`, with no division by factorials. -/
+theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
+    (hc : Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0) (m n : ℕ) :
+    (∑ t ∈ s.powersetCard m, t.noncommProd x (hc.set_pairwise _)) *
+        ∑ t ∈ s.powersetCard n, t.noncommProd x (hc.set_pairwise _) =
+      (m + n).choose m • ∑ t ∈ s.powersetCard (m + n), t.noncommProd x (hc.set_pairwise _) := by
+  classical
+  induction s using Finset.induction_on generalizing m n with
+  | empty =>
+    cases m with
+    | zero => simp
+    | succ m =>
+      rw [powersetCard_eq_empty.2 (by simp), sum_empty, zero_mul,
+        powersetCard_eq_empty.2 (by simp; omega), sum_empty, smul_zero]
+  | insert a s ha ih =>
+    have hxa : x a * x a = 0 := hx a (mem_insert_self a s)
+    have hcomm (k : ℕ) :
+        Commute (x a) (∑ t ∈ s.powersetCard k, t.noncommProd x (hc.set_pairwise _)) :=
+      Commute.sum_right _ _ _ fun t _ ↦ noncommProd_commute _ _ _ _ fun i _ ↦ by
+        obtain rfl | h := eq_or_ne a i
+        exacts [Commute.refl _, hc h]
+    have ih := ih fun i hi ↦ hx i (mem_insert_of_mem hi)
+    cases m with
+    | zero => simp
+    | succ m =>
+      cases n with
+      | zero => simp
+      | succ n =>
+        -- Write the top degree as a successor, so that the recursion applies to each factor.
+        rw [show m + 1 + (n + 1) = m + n + 1 + 1 by omega]
+        simp only [sum_noncommProd_powersetCard_succ_insert ha x hc]
+        -- Name the elementary symmetric sums `e k` of the family over `s`.
+        obtain ⟨e, he⟩ : ∃ e : ℕ → R, ∀ k,
+            ∑ t ∈ s.powersetCard k, t.noncommProd x (hc.set_pairwise _) = e k :=
+          ⟨_, fun _ ↦ rfl⟩
+        simp only [he] at hcomm ih ⊢
+        -- The term with `x a` twice vanishes, and Pascal's rule combines the two terms with `x a`
+        -- once.
+        have hsq : x a * e m * (x a * e n) = 0 := by
+          rw [mul_assoc, (hcomm m).symm.left_comm, ← mul_assoc, hxa, zero_mul]
+        have hcross : e (m + 1) * (x a * e n) + x a * e m * e (n + 1) =
+            (m + n + 1 + 1).choose (m + 1) • (x a * e (m + n + 1)) := by
+          rw [(hcomm (m + 1)).symm.left_comm, mul_assoc, ih, ih, Nat.add_right_comm m 1 n,
+            ← add_assoc, ← mul_add, ← add_smul, add_comm ((m + n + 1).choose (m + 1)),
+            ← Nat.choose_succ_succ, mul_smul_comm]
+        rw [add_mul, mul_add, mul_add, hsq, add_zero, add_assoc, hcross, ih,
+          show m + 1 + (n + 1) = m + n + 1 + 1 by omega, ← smul_add]
 
 end Finset
