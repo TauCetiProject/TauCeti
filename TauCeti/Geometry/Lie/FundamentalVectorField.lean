@@ -204,6 +204,32 @@ theorem mfderiv_smul_mulRightInvariantVectorField [ContMDiffMul I 1 G] [ContMDif
   funext h
   simp [mul_smul]
 
+/-- The fundamental field of a diagonal action is the product of the fundamental fields on
+its two factors. The actions are `C¹`; no Lie group regularity assumption is needed. -/
+theorem fundamentalVectorField_prod
+    {F K : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace K]
+    {J : ModelWithCorners 𝕜 F K} {N : Type*} [TopologicalSpace N] [ChartedSpace K N]
+    [MulAction G N] [ContMDiffSMul I I' 1 G M] [ContMDiffSMul I J 1 G N]
+    (ξ : GroupLieAlgebra I G) :
+    fundamentalVectorField (I'.prod J) ξ =
+      Manifold.prodVectorField (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x)
+        (fundamentalVectorField J ξ : ∀ y : N, TangentSpace J y) := by
+  funext p
+  have hM : MDifferentiableAt I I' (fun g : G ↦ g • p.1) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := 1) p.1).mdifferentiableAt
+      one_ne_zero
+  have hN : MDifferentiableAt I J (fun g : G ↦ g • p.2) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := J) (n := 1) p.2).mdifferentiableAt
+      one_ne_zero
+  have h := DFunLike.congr_fun (mfderiv_prodMk hM hN) ξ
+  -- The derivative's target tangent space is the product of the two model spaces.
+  erw [ContinuousLinearMap.prod_apply] at h
+  apply Prod.ext
+  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_fst, Prod.smul_def] using
+      congrArg Prod.fst h
+  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_snd, Prod.smul_def] using
+      congrArg Prod.snd h
+
 end Field
 
 section Bracket
@@ -356,6 +382,19 @@ def InfinitesimalAction.fundamental : InfinitesimalAction (GroupLieAlgebra I G) 
 theorem InfinitesimalAction.fundamental_apply (ξ : GroupLieAlgebra I G) :
     InfinitesimalAction.fundamental I G I' M ξ = fundamentalVectorField I' ξ :=
   (rfl)
+
+/-- Taking the infinitesimal action by fundamental fields commutes with diagonal products. -/
+@[simp]
+theorem InfinitesimalAction.fundamental_prod
+    {F K : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [TopologicalSpace K] {J : ModelWithCorners ℝ F K} {N : Type*} [TopologicalSpace N]
+    [ChartedSpace K N] [IsManifold J ∞ N] [MulAction G N] [ContMDiffSMul I J ∞ G N] :
+    InfinitesimalAction.fundamental I G (I'.prod J) (M × N) =
+      (InfinitesimalAction.fundamental I G I' M).prod
+        (InfinitesimalAction.fundamental I G J N) := by
+  ext ξ
+  simp only [InfinitesimalAction.fundamental_apply, InfinitesimalAction.prod_apply,
+    fundamentalVectorField_prod]
 
 end InfinitesimalAction
 

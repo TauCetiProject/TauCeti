@@ -142,6 +142,17 @@ theorem stableCharacteristicExponent_neg_skew (α β u : ℝ) :
           Complex.I_im, Complex.I_re, mul_one, zero_mul, add_zero, Complex.conj_im]
         ring
 
+/-- Scaling the argument by `b` is scaling by `|b|` with the skewness multiplied by the sign of
+`b`. At `b = 0` both sides are the value zero at the origin. -/
+theorem stableCharacteristicExponent_mul (α β b u : ℝ) :
+    stableCharacteristicExponent α β (b * u) =
+      stableCharacteristicExponent α (Real.sign b * β) (|b| * u) := by
+  rcases lt_trichotomy b 0 with hb | rfl | hb
+  · rw [Real.sign_of_neg hb, abs_of_neg hb, neg_one_mul, stableCharacteristicExponent_neg_skew,
+      neg_mul, neg_neg]
+  · simp
+  · rw [Real.sign_of_pos hb, abs_of_pos hb, one_mul]
+
 /-- The imaginary part of the stable exponent is linear in the skewness parameter: it is `β`
 times the imaginary part of the totally skewed exponent. -/
 theorem stableCharacteristicExponent_im_eq_mul (α β u : ℝ) :
@@ -268,6 +279,13 @@ def stableS1Location (α β : ℝ) (s : ℝ≥0) (m : ℝ) : ℝ :=
 @[simp]
 theorem stableS1Location_zero_scale (α β m : ℝ) : stableS1Location α β 0 m = m := by
   simp [stableS1Location]
+
+/-- The `S₁` correction does not depend on the location: the `S₁` location is the `S₀` location
+plus the `S₁` location of the same law centred at zero. -/
+theorem stableS1Location_eq_add (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
+    stableS1Location α β s m = m + stableS1Location α β s 0 := by
+  unfold stableS1Location
+  ring
 
 /-- The `S₁` location correction away from shape one. -/
 theorem stableS1Location_of_ne_one {α : ℝ} (hα : α ≠ 1) (β : ℝ) {s : ℝ≥0}
