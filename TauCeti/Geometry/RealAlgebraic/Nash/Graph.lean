@@ -11,6 +11,7 @@ import TauCeti.Geometry.RealAlgebraic.CAD.Existence
 import TauCeti.Geometry.RealAlgebraic.Stack.Selection
 import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
 import TauCeti.Topology.ContinuousOn.ClosedGraph
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The local Nash graph criterion
@@ -139,12 +140,11 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
         congrArg (fun Q : ℝ[X] ↦ Q.coeff j) hzero))
     (fun x hx ↦ hrel x hx.1)
   let e := Homeomorph.sumArrowHomeomorphProdArrow (X := ℝ) (ι := σ) (ι' := Unit)
-  have he : ⇑e = ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) := by
-    funext z
-    apply Prod.ext <;> funext i <;> simp [e]
+  have he : ⇑e = ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) :=
+    coe_sumArrowHomeomorphProdArrow
   have hfst (z : σ ⊕ Unit → ℝ) : (e z).1 = z ∘ Sum.inl := by
-    ext i
-    simp [e]
+    rw [he]
+    exact funext (Equiv.sumArrowEquivProdArrow_apply_fst z)
   have hcl := (continuousOn_pi.mpr (fun _ : Unit ↦ hf)).closure_graphOn_inter hts hst
   refine isSemialgebraicOn_def.mpr ⟨hs, ?_⟩
   have hsemi := hG.graph.closure.inter (hs.preimage_comp Sum.inl)

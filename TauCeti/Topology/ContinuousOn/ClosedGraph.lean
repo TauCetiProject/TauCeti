@@ -66,7 +66,8 @@ theorem ContinuousOn.closure_graphOn_inter [T2Space Y] {f : X → Y} {s t : Set 
   have hclosed := (continuousOn_iff_continuous_domRestrict.mp hf).isClosed_graph
   apply Subset.antisymm
   · rintro ⟨x, y⟩ ⟨hxy, hx, -⟩
-    have hpre : (⟨x, hx⟩, y) ∈ e ⁻¹' closure (t.graphOn f) := hxy
+    have hpre : (⟨x, hx⟩, y) ∈ e ⁻¹' closure (t.graphOn f) := by
+      simpa only [mem_preimage, e, Prod.map_apply, id_eq] using hxy
     rw [← himage, ← he.closure_eq_preimage_closure_image] at hpre
     exact mem_graphOn.mpr ⟨hx, closure_minimal inter_subset_left hclosed hpre⟩
   · rintro ⟨x, y⟩ hxy
