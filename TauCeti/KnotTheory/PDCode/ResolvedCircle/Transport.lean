@@ -557,8 +557,8 @@ def symm (E : D.ResolutionEquiv D') : D'.ResolutionEquiv D where
   edgePair_apply x := E.halfEdgeEquiv.injective <| by
     rw [← E.edgePair_apply, apply_symm_apply, apply_symm_apply]
   statePerm_apply t x := E.halfEdgeEquiv.injective <| by
-    rw [apply_symm_apply, ← apply_symm_apply E.halfEdgeEquiv x, E.statePerm_apply,
-      symm_apply_apply, Function.comp_assoc, symm_comp_self, Function.comp_id]
+    simpa [Function.comp_assoc] using
+      (E.statePerm_apply (t ∘ E.crossingEquiv.symm) (E.halfEdgeEquiv.symm x)).symm
   exists_slots c := by
     obtain ⟨σ, hσ⟩ := E.exists_slots (E.crossingEquiv.symm c)
     refine ⟨σ.symm, fun k ↦ E.halfEdgeEquiv.injective ?_⟩

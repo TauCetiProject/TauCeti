@@ -172,13 +172,13 @@ theorem trans_resolutionCubeIso (F : D'.ResolutionEquiv D'') (hD'' : D''.IsPlana
       cubeState (S.map E.crossingEquiv.toEmbedding) i := fun i ↦ by
     rw [trans_crossingEquiv, Equiv.trans_toEmbedding, ← map_map, cubeState_map_apply]
   ext : 1
-  rw [← cancel_mono (D''.resolutionCubeι hD'' R j _), resolutionCubeIso_hom_comp_resolutionCubeι,
-    Iso.trans_hom, Iso.trans_hom, eqToIso.hom, Category.assoc, Category.assoc,
-    resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _ (by simp [map_map]) h,
+  rw [← cancel_mono (D''.resolutionCubeι hD'' R j _), resolutionCubeIso_hom_comp_resolutionCubeι]
+  simp only [Iso.trans_hom, eqToIso.hom, Category.assoc]
+  rw [resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _ (by simp [map_map]) h,
     resolutionCubeIso_hom_comp_resolutionCubeι_assoc,
     ← smoothingEquiv_trans_smoothingEquiv E F (cubeState_map_apply E.crossingEquiv S) h,
-    SmoothingEquiv.resolvedCircleCongr_trans, ← reindex_trans, LinearEquiv.coe_trans,
-    ModuleCat.ofHom_comp]
+    SmoothingEquiv.resolvedCircleCongr_trans, ← reindex_trans]
+  simp only [LinearEquiv.coe_trans, ModuleCat.ofHom_comp]
 
 /-- **Relabelling the unnormalized Khovanov complex.** An identification of all smoothings of
 `D` with those of `D'` gives an isomorphism of their unnormalized Khovanov complexes, in every
