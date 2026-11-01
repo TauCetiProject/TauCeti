@@ -80,13 +80,9 @@ theorem newtonSlopes_eq_map_values {R : Type*} [Ring R] (f : R[X])
     (hvw : ∀ x, w x = WithTop.map e (v x)) :
     f.newtonSlopes w = (f.newtonSlopes v).map e := by
   have hpoly := f.newtonPolygon_eq_map_values v w e hvw
-  have hfin : (f.finite_finiteEdges_newtonPolygon w).toFinset =
-      (f.finite_finiteEdges_newtonPolygon v).toFinset := by
-    ext n
-    simp only [Set.Finite.mem_toFinset, hpoly, finiteEdges_map]
-  rw [newtonSlopes_def, newtonSlopes_def, hfin, Multiset.map_map]
-  exact Multiset.map_congr rfl fun n _ => by
-    rw [hpoly, unitSlope_map, Function.comp_apply]
+  exact newtonSlopes_eq_map (f := f) (v := v) Function.injective_id.injOn
+    (by rw [hpoly, finiteEdges_map, Set.image_id])
+    (fun n _ => by rw [hpoly, id, unitSlope_map])
 
 /-- Replacing a norm-recovery base `b` by `b'` multiplies polynomial Newton heights
 by `log b / log b'`. -/
