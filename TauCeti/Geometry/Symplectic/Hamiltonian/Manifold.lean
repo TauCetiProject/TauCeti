@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
@@ -58,6 +59,9 @@ Both constructions are natural: a smooth map `φ` pulling a nondegenerate form `
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
 surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
 `{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
+Along a curve where its differential is surjective, `φ` therefore maps integral curves of the
+Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField`).
 
 ## Main declarations
 
@@ -67,7 +71,9 @@ surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorFiel
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isHamiltonianVectorField_iff_eq`: existence and
   uniqueness of the Hamiltonian vector field.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`: a `C^(n+1)`
-  Hamiltonian has a `C^n` Hamiltonian vector field.
+  Hamiltonian has a `C^n` Hamiltonian vector field, with the version
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` for jointly
+  `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on open preconnected sets of times, with the global case
@@ -79,9 +85,11 @@ surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorFiel
   construction.
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp` and
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
-  fields and Poisson brackets under maps pulling one form back to the other.
+  fields, their integral curves and Poisson brackets under maps pulling one form back to the
+  other.
 
 ## References
 
@@ -256,6 +264,20 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
     ContMDiff I I.tangent n (T% (σ.hamiltonianVectorField f)) :=
   ((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).clm_bundle_apply
     hf.contMDiff_totalSpaceMk_mvfderiv
+
+/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
+a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
+`C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
+`n ≤ ∞`. For `N = ℝ` this is the regularity of the vector field of a time-dependent Hamiltonian,
+which is what is needed to integrate it to a time-dependent Hamiltonian flow. -/
+theorem contMDiff_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
+    (hH : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H)) :
+    ContMDiff (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
+  (((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
+    contMDiff_snd).clm_bundle_apply hH.contMDiff_totalSpaceMk_mvfderiv_uncurry
 
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
@@ -452,6 +474,19 @@ theorem poissonBracket_comp (hx : Function.Surjective (mfderiv I I₂ φ x)) {g 
   rw [poissonBracket_def, poissonBracket_def, ← hφσ, SmoothForm.eval₂_mpullback φ hφ, hφσ,
     hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ hx hg,
     hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ hx hk]
+
+/-- **Hamiltonian integral curves are natural.** Let a smooth map `φ` pull a nondegenerate form
+`σ₂` back to a nondegenerate form `σ`. If `γ` is an integral curve of the Hamiltonian vector field
+of `g ∘ φ`, along which the differential of `φ` is surjective and `g` is differentiable at the
+image points, then `φ ∘ γ` is an integral curve of the Hamiltonian vector field of `g`. -/
+theorem isMIntegralCurve_comp_hamiltonianVectorField {g : M₂ → ℝ} {γ : ℝ → M}
+    (hsurj : ∀ t, Function.Surjective (mfderiv I I₂ φ (γ t)))
+    (hg : ∀ t, MDifferentiableAt I₂ 𝓘(ℝ) g (φ (γ t)))
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ φ))) :
+    IsMIntegralCurve (φ ∘ γ) (σ₂.hamiltonianVectorField g) := by
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
+  exact hγ.map_of_mfderiv_eq (fun t _ ↦ (hφ (γ t)).mdifferentiableAt (by simp))
+    fun t _ ↦ hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ (hsurj t) (hg t)
 
 end IsNondegenerate
 
