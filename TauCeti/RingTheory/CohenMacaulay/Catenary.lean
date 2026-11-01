@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.Catenary
+public import TauCeti.RingTheory.UniversallyCatenary
+import TauCeti.RingTheory.CohenMacaulay.Flat
 import TauCeti.RingTheory.CohenMacaulay.Height
 
 /-!
@@ -20,9 +22,11 @@ formula `ht P + dim (R_q ⧸ P) = dim R_q` of the Cohen–Macaulay local ring `R
 
 Additivity of heights makes `R` catenary, through the characterisation of catenary Noetherian rings
 by additivity of heights of quotient primes
-(`TauCeti.Excellence.isCatenary_iff_height_add_of_isNoetherianRing`). This is the first step of
-the proof that Cohen–Macaulay rings are universally catenary (Stacks, Lemma 10.105.9 (00NM)); the
-remaining step is that polynomial rings over Cohen–Macaulay rings are Cohen–Macaulay.
+(`TauCeti.Excellence.isCatenary_iff_height_add_of_isNoetherianRing`). Since polynomial rings in
+finitely many variables over a Cohen–Macaulay ring are again Cohen–Macaulay
+(`MvPolynomial.isCohenMacaulay_localization_atPrime`), they are catenary too: Cohen–Macaulay rings
+are universally catenary (Stacks, Lemma 10.105.9 (00NM)). For instance, every Noetherian domain of
+dimension at most one is universally catenary, being Cohen–Macaulay.
 
 In a catenary ring every saturated chain of primes from `p` to `q` has length `ht (q / p)`, so in a
 Cohen–Macaulay ring every saturated chain of primes from a minimal prime to `q` has length `ht q`.
@@ -39,6 +43,10 @@ form from this one needs localization of Cohen–Macaulay modules (Stacks, Tag 0
   at all primes are Cohen–Macaulay is catenary.
 * `TauCeti.Excellence.length_eq_height_of_forall_isCohenMacaulay`: in such a ring, a saturated chain
   of primes from a minimal prime to `q` has length `ht q`.
+* `TauCeti.Excellence.isUniversallyCatenary_of_forall_isCohenMacaulay`: a Noetherian ring whose
+  localizations at all primes are Cohen–Macaulay is universally catenary.
+* `TauCeti.Excellence.isUniversallyCatenary_of_isDomain_of_krullDimLE_one`: a Noetherian domain of
+  dimension at most one is universally catenary.
 
 ## References
 
@@ -125,5 +133,27 @@ theorem length_eq_height_of_forall_isCohenMacaulay
   rw [PrimeSpectrum.krullDim_Icc hle] at hlen
   rw [← (h s.last.asIdeal).height_add_height_map_quotientMk hle, ← WithBot.coe_inj.1 hlen,
     Ideal.height_eq_zero_iff.2 hs, zero_add]
+
+/-- **Cohen–Macaulay rings are universally catenary.** A Noetherian ring whose localizations at all
+primes are Cohen–Macaulay is universally catenary: polynomial rings in finitely many variables over
+it are again Cohen–Macaulay, hence catenary. Stacks, Lemma 10.105.9 (00NM). -/
+@[stacks 00NM]
+theorem isUniversallyCatenary_of_forall_isCohenMacaulay
+    (h : ∀ (q : Ideal R) [q.IsPrime],
+      Module.IsCohenMacaulay (Localization.AtPrime q) (Localization.AtPrime q)) :
+    IsUniversallyCatenary R :=
+  isUniversallyCatenary_iff_mvPolynomial.2 ⟨inferInstance, fun _ ↦
+    isCatenary_of_forall_isCohenMacaulay (MvPolynomial.isCohenMacaulay_localization_atPrime h)⟩
+
+/-- A Noetherian domain of dimension at most one, such as a Dedekind domain or the cusp
+`k[t², t³]`, is universally catenary: its local rings are Noetherian local domains of dimension at
+most one, hence Cohen–Macaulay. -/
+theorem isUniversallyCatenary_of_isDomain_of_krullDimLE_one [IsDomain R] [Ring.KrullDimLE 1 R] :
+    IsUniversallyCatenary R :=
+  isUniversallyCatenary_of_forall_isCohenMacaulay fun q _ ↦
+    have : Ring.KrullDimLE 1 (Localization.AtPrime q) := Ring.krullDimLE_iff.2 <| by
+      rw [IsLocalization.AtPrime.ringKrullDim_eq_height q]
+      exact (height_le_ringKrullDim_of_ne_top IsPrime.ne_top').trans (Ring.krullDimLE_iff.1 ‹_›)
+    Module.isCohenMacaulay_self_of_isDomain_of_krullDimLE_one
 
 end TauCeti.Excellence
