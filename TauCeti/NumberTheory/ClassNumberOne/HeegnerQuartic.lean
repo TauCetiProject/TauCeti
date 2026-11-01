@@ -78,7 +78,8 @@ theorem eq_zero_of_pow_three_eq_two_mul_sq_add_one {x y : ℤ} (h : x ^ 3 = 2 * 
       (classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two hsf (by decide) (by decide))
   -- Factor `x³ = (1 + y √-2)(1 - y √-2)` in the principal ideal domain `ℤ[√-2]`.
   set α : QuadraticAlgebra ℤ (-2) 0 := ⟨1, y⟩ with hα
-  -- `α ᾱ = 1 + 2 y² = x³`, and `α + ᾱ = 2` is coprime to `x³`, so `α` and `ᾱ` are coprime.
+  -- `α * star α = 1 + 2 y² = x³`, and `α + star α = 2` is coprime to `x³`, so `α` and `star α`
+  -- are coprime.
   have hprod : α * star α = (x : QuadraticAlgebra ℤ (-2) 0) ^ 3 := by
     -- Keep `2 y² + 1` as a single integer cast, whose coordinates are `re_intCast`/`im_intCast`.
     rw [← Int.cast_pow, h]
