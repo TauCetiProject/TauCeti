@@ -230,6 +230,17 @@ private theorem centralizerHopfIdeal_le_ker_iff_centralizerIdeal_le_ker {A : Typ
     MatrixMonoid.centralizerIdeal_le_ker_iff, hG, map_genericMatrix_eq_coe_pointToGeneralLinear,
     pointsMulEquiv_apply]
 
+/-- The defining ideal of the centralizer of `x` lies in an ideal `I` of `O(GLₙ)` exactly when
+the commutation equations of the matrix of `x`, read in `O(GLₙ)`, lie in `I`. -/
+private theorem centralizerHopfIdeal_toIdeal_le_iff
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
+    (I : Ideal (coordinateHopfAlgebra k n)) :
+    (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal ≤ I ↔
+      MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x) ≤
+        I.comap ((coordinateHopfAlgebraAlgEquiv k n).toAlgHom.comp (coordinateRingMap k n)) := by
+  simpa [IsConcreteLE.le_iff, Ideal.Quotient.eq_zero_iff_mem] using
+    centralizerHopfIdeal_le_ker_iff_centralizerIdeal_le_ker x (Ideal.Quotient.mkₐ k I)
+
 /-- **The defining equations of the centralizer of a matrix.** The centralizer of `x` in `GLₙ`
 is cut out of `O(GLₙ)` by the linear equations `G X = X G`, where `G` is the generic matrix and
 `X` the matrix of `x`. -/
@@ -237,27 +248,9 @@ theorem centralizerHopfIdeal_toIdeal_eq_map_centralizerIdeal
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
     (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal =
       (MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)).map
-        ((coordinateHopfAlgebraAlgEquiv k n).toAlgHom.comp (coordinateRingMap k n)) := by
-  apply le_antisymm
-  · -- The quotient by the extended commutation equations is a point of the centralizer.
-    have h := (centralizerHopfIdeal_le_ker_iff_centralizerIdeal_le_ker x
-      (Ideal.Quotient.mkₐ k ((MatrixMonoid.centralizerIdeal (cotangentDualMatrixEquiv x)).map
-        ((coordinateHopfAlgebraAlgEquiv k n).toAlgHom.comp (coordinateRingMap k n))))).2
-      (fun q hq ↦ by
-        rw [AlgHom.comp_assoc, RingHom.mem_ker, AlgHom.comp_apply, ← RingHom.mem_ker,
-          ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
-        exact Ideal.mem_map_of_mem _ hq)
-    rwa [← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker] at h
-  · -- The quotient by the centralizer ideal kills the commutation equations.
-    rw [Ideal.map_le_iff_le_comap]
-    have h := (centralizerHopfIdeal_le_ker_iff_centralizerIdeal_le_ker x
-      (Ideal.Quotient.mkₐ k (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal)).1
-      (by rw [← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker])
-    intro p hp
-    have hp' := h hp
-    rw [Ideal.mem_comap]
-    rwa [AlgHom.comp_assoc, RingHom.mem_ker, AlgHom.comp_apply, ← RingHom.mem_ker,
-      ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker] at hp'
+        ((coordinateHopfAlgebraAlgEquiv k n).toAlgHom.comp (coordinateRingMap k n)) :=
+  le_antisymm ((centralizerHopfIdeal_toIdeal_le_iff x _).2 Ideal.le_comap_map)
+    (Ideal.map_le_iff_le_comap.2 ((centralizerHopfIdeal_toIdeal_le_iff x _).1 le_rfl))
 
 /-- **The centralizer of a matrix in `GLₙ` is the determinant locus of its centralizer.** The
 coordinate ring of the centralizer `C_GL(X)` of `x` is the localization at the generic

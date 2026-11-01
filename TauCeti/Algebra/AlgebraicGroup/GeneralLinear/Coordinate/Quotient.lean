@@ -35,8 +35,7 @@ private abbrev QuotientAway (J : Ideal (MatrixMonoid.CoordinateRing R (Fin n))) 
 private theorem isUnit_det_quotientAway (J : Ideal (MatrixMonoid.CoordinateRing R (Fin n))) :
     IsUnit (((IsScalarTower.toAlgHom R _ (QuotientAway J)).comp (Ideal.Quotient.mkₐ R J))
       (Matrix.mvPolynomialX (Fin n) (Fin n) R).det) := by
-  rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', Ideal.Quotient.mkₐ_eq_mk]
-  exact IsLocalization.Away.algebraMap_isUnit _
+  simpa using IsLocalization.Away.algebraMap_isUnit _
 
 /-- The map `O(GLₙ) → (O(Mₙ) ⧸ J)[det⁻¹]` induced by the quotient map. -/
 private noncomputable def toQuotientAway (J : Ideal (MatrixMonoid.CoordinateRing R (Fin n))) :
@@ -52,10 +51,8 @@ private theorem toQuotientAway_coordinateRingMap
     (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     toQuotientAway J (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p)) =
       algebraMap _ (QuotientAway J) (Ideal.Quotient.mk J p) := by
-  rw [toQuotientAway, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply,
-    coordinateRingMap_apply, IsLocalization.Away.liftAlgHom_apply, IsLocalization.Away.lift_eq,
-    AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.comp_apply,
-    IsScalarTower.coe_toAlgHom', Ideal.Quotient.mkₐ_eq_mk]
+  -- Unfold `coordinateRingMap` to the localization's algebra map, so the lift computes.
+  simp [toQuotientAway, -coordinateRingMap_apply, coordinateRingMap_apply]
 
 /-- The map `O(Mₙ) ⧸ J → O(GLₙ) ⧸ J·O(GLₙ)` induced by `O(Mₙ) → O(GLₙ)`. -/
 private noncomputable def ofQuotient (J : Ideal (MatrixMonoid.CoordinateRing R (Fin n))) :
@@ -71,9 +68,8 @@ private theorem ofQuotient_mk (J : Ideal (MatrixMonoid.CoordinateRing R (Fin n))
     (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     ofQuotient J (Ideal.Quotient.mk J p) =
       Ideal.Quotient.mk _ (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p)) := by
-  rw [← Ideal.Quotient.mkₐ_eq_mk R J, ← AlgHom.comp_apply (ofQuotient J), ofQuotient,
-    Ideal.Quotient.liftₐ_comp, AlgHom.comp_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-    AlgEquiv.coe_toAlgHom]
+  rw [← Ideal.Quotient.mkₐ_eq_mk R J, ← AlgHom.comp_apply, ofQuotient, Ideal.Quotient.liftₐ_comp]
+  simp
 
 /-- The map `(O(Mₙ) ⧸ J)[det⁻¹] → O(GLₙ) ⧸ J·O(GLₙ)`, extending `ofQuotient` across the
 localization, since the determinant is a unit in `O(GLₙ)`. -/
@@ -104,8 +100,7 @@ private noncomputable def quotientToQuotientAway
     refine RingHom.mem_ker.1 <|
       (Ideal.map_le_iff_le_comap (K := RingHom.ker (toQuotientAway J))).2
         (fun p hp ↦ ?_) ha
-    rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-      toQuotientAway_coordinateRingMap, Ideal.Quotient.eq_zero_iff_mem.2 hp, map_zero]
+    simp [toQuotientAway_coordinateRingMap, Ideal.Quotient.eq_zero_iff_mem.2 hp]
 
 private theorem quotientToQuotientAway_mk_coordinateRingMap
     (J : Ideal (MatrixMonoid.CoordinateRing R (Fin n)))
