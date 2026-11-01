@@ -97,21 +97,25 @@ theorem trivialF2Map1Equiv_eqToHom (φ : H ≃ₜ* G)
     trivialF2Map1Equiv φ
         ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom y) =
       (eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 H))).hom
-        (continuousCohomologyMap1 G (trivialF2 G).V H (trivialF2 H).V φ
-          ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-          (fun _ _ ↦ by simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]) y) := by
+        (continuousCohomologyMap1 G (trivialF2 G).V H (trivialF2 H).V φ trivialF2CoeffHom
+          (trivialF2CoeffHom_smul ((φ : H →ₜ* G) : H →* G)) y) := by
   rw [← modelEquiv_apply, trivialF2Map1Equiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.trans_apply, continuousCohomologyMap1Equiv_apply, modelEquiv_apply]
+  -- `trivialF2CoeffHom` is by definition the additive map underlying this coefficient equivalence.
+  rfl
 
 /-- **The inverse transport is the transport along the inverse isomorphism.** -/
 @[simp]
 theorem trivialF2Map1Equiv_symm (φ : H ≃ₜ* G) :
     (trivialF2Map1Equiv φ).symm = trivialF2Map1Equiv φ.symm := by
+  have hcoeff : ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).symm =
+      (trivialF2Equiv H).trans (trivialF2Equiv G).symm := by
+    ext m
+    simp
   ext x
   simp only [trivialF2Map1Equiv, AddEquiv.symm_trans_apply, AddEquiv.trans_apply,
     AddEquiv.symm_symm, continuousCohomologyMap1Equiv_symm_apply,
-    continuousCohomologyMap1Equiv_apply]
-  congr 2
+    continuousCohomologyMap1Equiv_apply, hcoeff]
 
 section SameUniverse
 
@@ -126,9 +130,8 @@ theorem trivialF2Map1Equiv_apply (φ : H ≃ₜ* G) (x : continuousCohomology 1 
   rw [modelEquiv_apply, trivialF2Map1Equiv_eqToHom, continuousCohomologyMap1_eq_map,
     ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
     eqToHom_comp_trivialF2Map (φ : H →ₜ* G) (ofDiscreteModule_trivialF2 G)
-      (ofDiscreteModule_trivialF2 H)
-      ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-      (fun _ _ ↦ by simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply])
+      (ofDiscreteModule_trivialF2 H) trivialF2CoeffHom
+      (trivialF2CoeffHom_smul ((φ : H →ₜ* G) : H →* G))
       (fun m ↦ by simp [eqToHom_ofDiscreteModule_trivialF2_apply])]
 
 end SameUniverse

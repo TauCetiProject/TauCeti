@@ -32,7 +32,7 @@ in `G_K` fixes `α`, so the two `𝔽₂`-valued Kummer cocycles correspond unde
 * `RingEquiv.trivialF2Map1Equiv_kummerClass`: transport along a field isomorphism sends the Kummer
   class of `a` to the Kummer class of `e a`.
 * `RingEquiv.trivialF2Map1Equiv_symm_kummerClass`: the inverse transport sends the Kummer class
-  of `e a` back to the Kummer class of `a`.
+  of `b ∈ Lˣ` to the Kummer class of `e⁻¹ b`.
 
 ## References
 
@@ -90,15 +90,15 @@ private theorem cocyclesMap1_kummerCocycleModTwo (e : K ≃+* L) {a : Kˣ}
     (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     cocyclesMap1 (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V
         (AbsoluteGaloisGroup L) (trivialF2 (AbsoluteGaloisGroup L)).V e.absoluteGaloisGroupCongr
-        ((trivialF2Equiv _).trans (trivialF2Equiv _).symm).toAddMonoidHom
-        continuous_of_discreteTopology
-        (fun _ _ ↦ by simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply])
+        trivialF2CoeffHom continuous_of_discreteTopology
+        (trivialF2CoeffHom_smul
+          ((e.absoluteGaloisGroupCongr : AbsoluteGaloisGroup L →ₜ* AbsoluteGaloisGroup K) :
+            AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K))
         (kummerCocycleModTwo K hα) =
       kummerCocycleModTwo L (units_map_separableClosureCongr_symm_pow e hα) := by
   refine Subtype.ext (funext fun g ↦ (trivialF2Equiv _).injective ?_)
   rw [kummerCocycleModTwo_apply, cocyclesMap1_apply]
-  simp only [ContinuousMonoidHom.coe_coe, AddEquiv.toAddMonoidHom_eq_coe,
-    AddMonoidHom.coe_ofClass, AddEquiv.trans_apply, AddEquiv.apply_symm_apply,
+  simp only [ContinuousMonoidHom.coe_coe, trivialF2CoeffHom_apply, AddEquiv.apply_symm_apply,
     kummerCocycleModTwo_apply]
   split_ifs with h₁ h₂ h₂
   · rfl
@@ -121,13 +121,15 @@ theorem trivialF2Map1Equiv_kummerClass (e : K ≃+* L) (a : Kˣ) :
     kummerCocycleModTwoClass_def, kummerCocycleModTwoClass_def, explicitMap1_mk,
     cocyclesMap1_kummerCocycleModTwo]
 
-/-- The inverse transport of `H¹(-, 𝔽₂)` sends the Kummer class of `e a` back to the Kummer class
-of `a`. -/
+/-- The inverse transport of `H¹(-, 𝔽₂)` sends the Kummer class of `b ∈ Lˣ` to the Kummer class
+of `e⁻¹ b ∈ Kˣ`. -/
 @[simp]
-theorem trivialF2Map1Equiv_symm_kummerClass (e : K ≃+* L) (a : Kˣ) :
-    trivialF2Map1Equiv e.absoluteGaloisGroupCongr.symm
-        (kummerClass (Units.map ((e : K →+* L) : K →* L) a)) =
-      kummerClass a := by
+theorem trivialF2Map1Equiv_symm_kummerClass (e : K ≃+* L) (b : Lˣ) :
+    trivialF2Map1Equiv e.absoluteGaloisGroupCongr.symm (kummerClass b) =
+      kummerClass (Units.map ((e.symm : L →+* K) : L →* K) b) := by
   rw [← trivialF2Map1Equiv_symm, AddEquiv.symm_apply_eq, trivialF2Map1Equiv_kummerClass]
+  congr
+  ext
+  simp
 
 end RingEquiv

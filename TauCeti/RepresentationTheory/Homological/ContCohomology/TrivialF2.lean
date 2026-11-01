@@ -84,7 +84,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 section Monoid
 
@@ -272,12 +272,12 @@ end Group
 
 section CoeffHom
 
-variable {G H : Type u} [Monoid G] [Monoid H]
+variable {G : Type u} {H : Type v} [Monoid G] [Monoid H]
 
 attribute [local instance] TopRep.distribMulAction
 
 /-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
-noncomputable def trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V :=
+@[expose] noncomputable def trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V :=
   ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
 
 /-- The coefficient identification sends an element to the one with the same underlying value. -/

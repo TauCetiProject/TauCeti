@@ -89,6 +89,7 @@ theorem explicitH1AddEquivContinuousCohomology_continuousCohomologyMap1 (φ : H 
 
 /-- **The map on classes is induced by the map on cocycles.** The canonical class of an explicit
 one-cocycle goes to the canonical class of its pullback. -/
+@[simp]
 theorem continuousCohomologyMap1_homologyπ (φ : H →ₜ* G) (f : M →+ N)
     (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : Z1 G M) :
     continuousCohomologyMap1 G M H N φ f hf
