@@ -66,13 +66,11 @@ end IsManifoldNondegenerateCriticalPoint
 /-- On a boundaryless manifold, a scalar change with nonzero derivative preserves critical
 points. -/
 theorem mem_criticalPoints_scalar_comp_iff [I.Boundaryless]
-    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hφ : DifferentiableAt ℝ φ (f x))
-    (hφ' : deriv φ (f x) ≠ 0) :
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hφ' : deriv φ (f x) ≠ 0) :
     x ∈ criticalPoints I (φ ∘ f) ↔ x ∈ criticalPoints I f := by
   rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
     mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero, Function.comp_assoc]
   apply fderiv_scalar_comp_eq_zero_iff
-  · simpa using hφ
   · exact mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mp hf
   · simpa using hφ'
 
@@ -84,13 +82,10 @@ theorem IsMorseOn.scalar_comp {s : Set M} (h : IsMorseOn I f s)
   apply isMorseOn_iff.mpr
   refine ⟨fun x hx ↦ ?_, fun x hx hc ↦ ?_⟩
   · exact (hφ x hx).contMDiffAt.comp_contMDiffWithinAt x (h.contMDiffOn x hx)
-  · have hφcoord : DifferentiableAt ℝ φ
-        ((f ∘ (extChartAt I x).symm) (extChartAt I x x)) := by
-      simpa using (hφ x hx).differentiableAt (by simp)
-    have hφcoord' : deriv φ ((f ∘ (extChartAt I x).symm) (extChartAt I x x)) ≠ 0 := by
+  · have hφcoord' : deriv φ ((f ∘ (extChartAt I x).symm) (extChartAt I x x)) ≠ 0 := by
       simpa using hφ' x hx
     rw [Function.comp_assoc] at hc
-    have hc' := (fderiv_scalar_comp_eq_zero_iff hφcoord
+    have hc' := (fderiv_scalar_comp_eq_zero_iff
       (h.differentiableAt_comp_extChartAt_symm hx) hφcoord').mp hc
     exact (h.isManifoldNondegenerateCriticalPoint hx hc').scalar_comp
       ((hφ x hx).of_le (by simp)) (hφ' x hx)

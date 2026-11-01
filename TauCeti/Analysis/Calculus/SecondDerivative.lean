@@ -301,9 +301,9 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
 /-- Scalar post-composition with nonzero derivative preserves criticality. -/
 @[simp]
 theorem fderiv_scalar_comp_eq_zero_iff {f : E → 𝕜} {φ : 𝕜 → 𝕜} {x : E}
-    (hφ : DifferentiableAt 𝕜 φ (f x)) (hf : DifferentiableAt 𝕜 f x)
-    (hφ' : deriv φ (f x) ≠ 0) :
+    (hf : DifferentiableAt 𝕜 f x) (hφ' : deriv φ (f x) ≠ 0) :
     fderiv 𝕜 (φ ∘ f) x = 0 ↔ fderiv 𝕜 f x = 0 := by
+  have hφ := differentiableAt_of_deriv_ne_zero hφ'
   rw [(hφ.hasDerivAt.comp_hasFDerivAt x hf.hasFDerivAt).fderiv]
   constructor
   · intro h

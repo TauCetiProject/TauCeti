@@ -43,7 +43,7 @@ theorem IsNondegenerateCriticalPoint.scalar_comp (h : IsNondegenerateCriticalPoi
     (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) ≠ 0) :
     IsNondegenerateCriticalPoint (φ ∘ f) x := by
   refine ⟨hφ.comp x h.contDiffAt,
-    (fderiv_scalar_comp_eq_zero_iff (hφ.differentiableAt two_ne_zero)
+    (fderiv_scalar_comp_eq_zero_iff
       (h.contDiffAt.differentiableAt two_ne_zero) hφ').mpr h.fderiv_eq_zero, ?_⟩
   rw [fderiv_fderiv_scalar_comp_of_fderiv_eq_zero hφ h.contDiffAt h.fderiv_eq_zero]
   obtain ⟨e, he⟩ := h.isInvertible
