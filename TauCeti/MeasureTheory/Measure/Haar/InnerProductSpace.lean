@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The volume of a parallelepiped and the Gram determinant
@@ -35,6 +36,9 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
+* `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
+  space linearly isomorphic to `K × Kᗮ` holds, for almost every `a`, at the image of the
+  components of `a` along `K` and `Kᗮ`.
 * `MeasureTheory.Measure.addHaar_setOf_fst_eq`: a hyperplane `{a} × E` of the Euclidean product
   `ℝ × E` is null for every additive Haar measure.
 * `PiLp.volume_preserving_symm_measurableEquiv_toLp`: the volume of `PiLp 2 F` is the product of
@@ -99,6 +103,30 @@ theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
   exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
 
 end AffineIsometryEquiv
+
+namespace Submodule
+
+/-- Null sets pass through the orthogonal splitting `E ≃ K × Kᗮ`, for any additive Haar measures.
+If a property holds for almost every point of a finite-dimensional space `W`, and `T` is a linear
+isomorphism from `K × Kᗮ` to `W`, then for almost every `a ∈ E` the property holds at the image
+under `T` of the components of `a` along `K` and `Kᗮ`. -/
+theorem ae_of_ae_orthogonalProjectionOnto_prod {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (K : Submodule ℝ E) (T : (K × Kᗮ) ≃L[ℝ] W)
+    (ν : Measure W) [ν.IsAddHaarMeasure] {p : W → Prop} (hp : ∀ᵐ w ∂ν, p w) :
+    ∀ᵐ a ∂μ, p (T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a)) := by
+  let S : E ≃L[ℝ] W :=
+    (K.prodEquivOfIsCompl Kᗮ K.isCompl_orthogonal).symm.toContinuousLinearEquiv.trans T
+  have hS : ∀ a, S a = T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a) :=
+    fun a ↦ by
+      simp only [S, ContinuousLinearEquiv.trans_apply, LinearEquiv.coe_toContinuousLinearEquiv']
+      congr 1
+      rw [LinearEquiv.symm_apply_eq, coe_prodEquivOfIsCompl']
+      exact (K.starProjection_add_starProjection_orthogonal a).symm
+  filter_upwards [(S.toContinuousAddEquiv.quasiMeasurePreserving_addHaar μ ν).ae hp] with a ha
+  simpa [hS] using ha
+
+end Submodule
 
 namespace MeasureTheory.Measure
 

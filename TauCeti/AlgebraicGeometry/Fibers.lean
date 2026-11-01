@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.FunctionField
-public import TauCeti.AlgebraicGeometry.PullbackSpecMap
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
