@@ -137,7 +137,8 @@ private lemma singularHomologyMap_complZeroMap_of_conj {F : Type w} [NormedAddCo
   let ε' := e.complZeroPairIso.inv
   have hinv : ε ≫ ε' = 𝟙 _ := e.complZeroPairIso.hom_inv_id
   have hsq : complZeroMap f hf ≫ ε = ε ≫ complZeroMap _ hf' := by
-    rw [show ε = _ from e.complZeroPairIso_hom]
+    dsimp only [ε]
+    rw [e.complZeroPairIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by ext x; simp)
   calc TopPair.singularHomologyMap (complZeroMap f hf) R k
       = TopPair.singularHomologyMap (complZeroMap f hf ≫ ε ≫ ε') R k := by
