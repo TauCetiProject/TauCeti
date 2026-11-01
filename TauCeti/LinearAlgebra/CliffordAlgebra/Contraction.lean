@@ -322,8 +322,8 @@ variable {Q}
 
 /-- **`CliffordAlgebra.equivExterior` is natural under quadratic isometries**: it intertwines the
 algebra map `CliffordAlgebra.map f` with the exterior-algebra map `ExteriorAlgebra.map f`. The
-correction terms of `CliffordAlgebra.equivExterior_ι_mul` are contractions against the polar form,
-which an isometry preserves.
+correction terms of `CliffordAlgebra.equivExterior_ι_mul` are contractions against
+`QuadraticMap.associated (-Q)`, which an isometry preserves.
 
 Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involute`. -/
 theorem equivExterior_map {M' : Type w} [AddCommGroup M'] [Module R M']
@@ -337,8 +337,14 @@ theorem equivExterior_map {M' : Type w} [AddCommGroup M'] [Module R M']
         QuadraticMap.associated (-Q) m := by
       ext m'
       simp [QuadraticMap.associated_apply, ← map_add, f.map_app]
-    rw [map_mul, map_apply_ι, equivExterior_ι_mul, equivExterior_ι_mul, hx, map_sub, map_mul,
-      ExteriorAlgebra.map_apply_ι, f.coe_toLinearMap, ExteriorAlgebra.map, contractLeft_map, hB]
+    -- `ExteriorAlgebra.map` is the Clifford map of an isometry of zero forms, so contractions
+    -- commute with it by `CliffordAlgebra.contractLeft_map`.
+    have hmap (d : Module.Dual R M') (y : ExteriorAlgebra R M) :
+        contractLeft d (ExteriorAlgebra.map f.toLinearMap y) =
+          ExteriorAlgebra.map f.toLinearMap (contractLeft (d ∘ₗ f.toLinearMap) y) :=
+      contractLeft_map { f.toLinearMap with map_app' := fun _ ↦ rfl } d y
+    rw [map_mul, map_apply_ι, equivExterior_ι_mul, equivExterior_ι_mul, hx]
+    simp only [map_sub, map_mul, ExteriorAlgebra.map_apply_ι, f.coe_toLinearMap, hmap, hB]
 
 end equivExterior
 
