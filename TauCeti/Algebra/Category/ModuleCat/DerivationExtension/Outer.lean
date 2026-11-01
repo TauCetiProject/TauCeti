@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.DerivationExtension.BaerSum
 public import TauCeti.Algebra.Category.ModuleCat.DerivationExtension.Scalar
+public import TauCeti.Algebra.Subalgebra.Center
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 
 /-!
@@ -15,10 +16,10 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 Let `A` be a topological `R`-algebra and `M` a discrete `A`-module. Every continuous derivation
 `δ` of `A` gives the self-extension `0 → M → E_δ(M) → M → 0` and hence a class in `Ext¹(M, M)`,
 computed in the abelian category of discrete `A`-modules
-(`TauCeti.DerivationExtension.extClass`). This file assembles these classes into an `R`-linear
+(`TauCeti.DerivationExtension.extClass`). This file assembles these classes into a center-linear
 map out of the continuous outer derivations,
 
-`OutDer_cont(A) →ₗ[R] Ext¹(M, M)`, `[δ] ↦ [E_δ(M)]`.
+`OutDer_cont(A) →ₗ[Z(A)] Ext¹(M, M)`, `[δ] ↦ [E_δ(M)]`.
 
 The category of `A`-modules is `R`-linear, with `r` acting on a module through `algebraMap R A r`,
 so `Ext¹(M, M)` is an `R`-module. Scaling a derivation by `r ∈ R` is multiplication by the
@@ -26,8 +27,13 @@ central element `algebraMap R A r`, so the class of `E_(r • δ)(M)` is `r` tim
 `E_δ(M)`. Together with additivity (`TauCeti.DerivationExtension.extClass_add`) this makes the
 class map `R`-linear on continuous derivations, and invariance under an inner change
 (`TauCeti.DerivationExtension.extClass_eq_of_inner`) makes it descend to the quotient
-`TauCeti.ContinuousOuterDerivation R A` by the inner derivations. The descended map is natural in
-`M`: pushforward of the class along a module map equals pullback of the class of the target.
+`TauCeti.ContinuousOuterDerivation R A` by the inner derivations. In fact the descended map is
+linear over the whole algebraic center `Z(A) = Subalgebra.center R A`: the center acts on the
+category of discrete modules through its canonical inclusion into `A`, and the pushforward
+formula `extClass_center_smul` identifies this action on Ext with scaling derivations.
+No central coefficient is required to be invertible or to belong to the base ring.
+The descended map is natural in `M`: pushforward of the class along a module map equals
+pullback of the class of the target.
 
 These classes are the first-order deformations of `M` in the directions of the outer derivations
 of `A`. For the completed enveloping algebra at the critical level, they are the infinitesimal
@@ -37,7 +43,7 @@ deformations of modules in Frenkel's local categories.
 
 * `TauCeti.DerivationExtension.extClassHom M`: `δ ↦ [E_δ(M)]`, as an `R`-linear map from the
   continuous derivations to `Ext¹(M, M)`.
-* `TauCeti.DerivationExtension.outerExtClass M`: the induced `R`-linear map from the continuous
+* `TauCeti.DerivationExtension.outerExtClass M`: the induced center-linear map from the continuous
   outer derivations to `Ext¹(M, M)`.
 
 ## Main results
@@ -63,8 +69,8 @@ open CategoryTheory CategoryTheory.Abelian
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
--- Only the `R`-linear structure of `ModuleCat A` is needed: opening `ModuleCat.Algebra` would also
--- make every `A`-module, including `A` itself, an `R`-module through `algebraMap`.
+-- Only the scalar-linear structures of `ModuleCat A` are needed: opening `ModuleCat.Algebra`
+-- would also install restricted scalar module structures on every `A`-module, including `A`.
 attribute [local instance] ModuleCat.Algebra.instLinear
 
 universe u w
@@ -138,16 +144,40 @@ private theorem idealRange_le_ker_extClassHom
     obtain ⟨b, rfl⟩ := mem_continuousInnerDerivation_idealRange_iff.mp hD
     simp
 
+/-- The center-linear structure on discrete modules, using the canonical center algebra. -/
+noncomputable local instance :
+    Linear (Subalgebra.center R A) (discreteModules.{max u w} A).FullSubcategory :=
+  Linear.fullSubcategory _
+
 variable (R) in
-/-- **The extension class map of continuous outer derivations**: the `R`-linear map
+/-- **The extension class map of continuous outer derivations**: the center-linear map
 `OutDer_cont(A) → Ext¹(M, M)` sending the outer class of a continuous derivation `δ` to the class
 of the self-extension `E_δ(M)` in the category of discrete modules. It is well defined because an
-inner change `δ ↦ δ + ad b` does not change the class. -/
+inner change `δ ↦ δ + ad b` does not change the class. The center acts on Ext through its
+canonical scalar action on the category of discrete modules. -/
 noncomputable def outerExtClass (M : (discreteModules.{max u w} A).FullSubcategory) :
-    ContinuousOuterDerivation R A →ₗ[R] Ext.{max u w} M M 1 :=
-  (continuousInnerDerivation R :
+    ContinuousOuterDerivation R A →ₗ[Subalgebra.center R A] Ext.{max u w} M M 1 := by
+  let f := (continuousInnerDerivation R :
       A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange.toSubmodule.liftQ
     (extClassHom R M) (idealRange_le_ker_extClassHom M)
+  have hf (D : continuousDerivationLieAlgebra R A) :
+      f (LieIdeal.mkQ _ D) = extClass (continuous D) M :=
+    Submodule.liftQ_apply _ _ _
+  refine { toFun := f, map_add' := f.map_add, map_smul' := ?_ }
+  intro z x
+  obtain ⟨D, rfl⟩ := LieIdeal.surjective_mkQ
+    (continuousInnerDerivation R :
+      A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange x
+  rw [← ContinuousOuterDerivation.mkQ_center_smul]
+  rw [hf, hf, RingHom.id_apply]
+  rw [Ext.smul_eq_comp_mk₀, extClass_def, extClass_def]
+  have hz : z • 𝟙 M = ObjectProperty.homMk
+      (ModuleCat.ofHom (Module.End.smulLeft (z : A) z.property)) := by
+    ext m
+    -- The center-linear structure on ModuleCat acts through the inclusion of the center.
+    rfl
+  rw [hz]
+  exact extClass_center_smul z (D : derivationLieAlgebra R A) (continuous D) M
 
 /-- The class map sends the outer class of a continuous derivation `δ` to the class of the
 self-extension `E_δ(M)`. -/
@@ -155,7 +185,7 @@ self-extension `E_δ(M)`. -/
 theorem outerExtClass_mk (M : (discreteModules.{max u w} A).FullSubcategory)
     (D : continuousDerivationLieAlgebra R A) :
     outerExtClass R M (Submodule.Quotient.mk D) = extClass (continuous D) M :=
-  Submodule.liftQ_apply _ _ _
+  (rfl)
 
 /-- **Naturality of the outer class map**: for a map `f : M ⟶ N` of discrete modules and a
 continuous outer derivation `x`, pushforward along `f` of the class of `x` for `M` equals pullback
