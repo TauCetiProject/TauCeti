@@ -9,7 +9,9 @@ public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Basic.Real.Sign
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
+import TauCeti.MeasureTheory.Measure.Interval
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Tactic.FieldSimp
@@ -85,23 +87,6 @@ theorem intervalIntegral_im_resolventTransform (a b η : ℝ) :
           div_le_div_of_nonneg_left (abs_nonneg _) (by positivity) (by nlinarith)
       _ = |η|⁻¹ := by rw [← sq_abs]; field_simp
 
-/-- The limiting profile of the arctangent kernels is the indicator of `(a, b)` with half weight
-at the endpoints. -/
-private theorem sign_sub_sub_sign_sub_div_two {a b : ℝ} (hab : a < b) (t : ℝ) :
-    (Real.sign (b - t) - Real.sign (a - t)) / 2 =
-      (Ioo a b).indicator 1 t +
-        (({a} : Set ℝ).indicator 1 t + ({b} : Set ℝ).indicator 1 t) / 2 := by
-  rcases lt_trichotomy t a with h | rfl | h
-  · simp [Real.sign_of_pos (sub_pos.2 h), Real.sign_of_pos (sub_pos.2 (h.trans hab)),
-      h.ne, (h.trans hab).ne, h.not_gt]
-  · simp [Real.sign_of_pos (sub_pos.2 hab), hab.ne]
-  rcases lt_trichotomy t b with h' | rfl | h'
-  · simp [Real.sign_of_pos (sub_pos.2 h'), Real.sign_of_neg (sub_neg.2 h), h,
-      h', h.ne', h'.ne]
-  · simp [Real.sign_of_neg (sub_neg.2 h), hab.ne']
-  · simp [Real.sign_of_neg (sub_neg.2 h'), Real.sign_of_neg (sub_neg.2 h),
-      h.ne', h'.ne', h'.not_gt]
-
 /-- **Stieltjes inversion.** For a finite measure `μ` on `ℝ` and `a < b`,
 `π⁻¹ ∫_a^b Im m_μ(x + iη) dx` tends to `μ (a, b) + (μ {a} + μ {b}) / 2` as `η → 0⁺`. -/
 theorem tendsto_intervalIntegral_im_resolventTransform {a b : ℝ} (hab : a < b) :
@@ -109,7 +94,7 @@ theorem tendsto_intervalIntegral_im_resolventTransform {a b : ℝ} (hab : a < b)
       (𝓝 (μ.real (Ioo a b) + (μ.real {a} + μ.real {b}) / 2)) := by
   have hlim : ∫ t, (Real.sign (b - t) - Real.sign (a - t)) / 2 ∂μ =
       μ.real (Ioo a b) + (μ.real {a} + μ.real {b}) / 2 := by
-    simp_rw [sign_sub_sub_sign_sub_div_two hab]
+    simp_rw [Real.sign_sub_sub_sign_sub_div_two hab]
     have hi (s : Set ℝ) (hs : MeasurableSet s) : Integrable (s.indicator (1 : ℝ → ℝ)) μ :=
       (integrable_const 1).indicator hs
     have ha := hi _ (measurableSet_singleton a)
@@ -138,39 +123,6 @@ theorem tendsto_intervalIntegral_im_resolventTransform {a b : ℝ} (hab : a < b)
       (Real.tendsto_arctan_div_nhdsGT_zero (a - t))).const_mul π⁻¹ using 2
     field_simp
 
-/-- The averaged mass `μ (-∞, b) + μ (-∞, b]` is the limit of the interval masses
-`μ (a, b) + μ [a, b]` as `a → -∞`. -/
-private theorem tendsto_measureReal_Ioo_add_measureReal_Icc_atBot (b : ℝ) :
-    Tendsto (fun a => μ.real (Ioo a b) + μ.real (Icc a b)) atBot
-      (𝓝 (μ.real (Iio b) + μ.real (Iic b))) := by
-  have h {s : ℝ → Set ℝ} (hs : Antitone s) :
-      Tendsto (fun a => μ.real (s a)) atBot (𝓝 (μ.real (⋃ a, s a))) :=
-    (ENNReal.tendsto_toReal (measure_ne_top μ _)).comp (tendsto_measure_iUnion_atBot hs)
-  rw [← iUnion_Ioo_left b, ← iUnion_Icc_left b]
-  exact (h fun _ _ h => Ioo_subset_Ioo_left h).add (h fun _ _ h => Icc_subset_Icc_left h)
-
-/-- The averaged mass `μ (-∞, b) + μ (-∞, b]` tends to `2 μ (-∞, y]` as `b → y⁺`. -/
-private theorem tendsto_measureReal_Iio_add_measureReal_Iic_nhdsGT (y : ℝ) :
-    Tendsto (fun b => μ.real (Iio b) + μ.real (Iic b)) (𝓝[>] y)
-      (𝓝 (μ.real (Iic y) + μ.real (Iic y))) := by
-  have hIio : ⋂ r > y, Iio r = Iic y := by
-    ext x
-    simp only [mem_iInter, mem_Iio, mem_Iic]
-    exact ⟨fun h => le_of_forall_gt_imp_ge_of_dense fun r hr => (h r hr).le,
-      fun h r hr => h.trans_lt hr⟩
-  have hIic : ⋂ r > y, Iic r = Iic y := by
-    ext x
-    simp only [mem_iInter, mem_Iic]
-    exact ⟨fun h => le_of_forall_gt_imp_ge_of_dense h, fun h r hr => h.trans hr.le⟩
-  have h (s : ℝ → Set ℝ) (hs : ∀ r, MeasurableSet (s r)) (hm : Monotone s) :
-      Tendsto (fun r => μ.real (s r)) (𝓝[>] y) (𝓝 (μ.real (⋂ r > y, s r))) :=
-    (ENNReal.tendsto_toReal (measure_ne_top μ _)).comp
-      (tendsto_measure_biInter_gt (fun r _ => (hs r).nullMeasurableSet)
-        (fun _ _ _ hij => hm hij) ⟨y + 1, by linarith, measure_ne_top μ _⟩)
-  have := (h Iio (fun _ => measurableSet_Iio) fun _ _ => Iio_subset_Iio).add
-    (h Iic (fun _ => measurableSet_Iic) fun _ _ => Iic_subset_Iic.2)
-  rwa [hIio, hIic] at this
-
 namespace Measure
 
 /-- A finite measure on `ℝ` is determined by the imaginary part of its resolvent transform on
@@ -196,13 +148,24 @@ theorem ext_of_im_resolventTransform {ν : Measure ℝ} [IsFiniteMeasure ν]
     rw [hIcc μ hab, hIcc ν hab]
     linarith
   -- Letting `a → -∞` and then `b → y⁺` identifies the distribution functions.
+  have hreal (ρ : Measure ℝ) [IsFiniteMeasure ρ] {l : Filter ℝ} {s : ℝ → Set ℝ} {t : Set ℝ}
+      (hs : Tendsto (fun x => ρ (s x)) l (𝓝 (ρ t))) :
+      Tendsto (fun x => ρ.real (s x)) l (𝓝 (ρ.real t)) :=
+    (ENNReal.tendsto_toReal (measure_ne_top ρ _)).comp hs
+  have hbot (ρ : Measure ℝ) [IsFiniteMeasure ρ] (b : ℝ) :
+      Tendsto (fun a => ρ.real (Ioo a b) + ρ.real (Icc a b)) atBot
+        (𝓝 (ρ.real (Iio b) + ρ.real (Iic b))) :=
+    (hreal ρ (tendsto_measure_Ioo_atBot ρ b)).add (hreal ρ (tendsto_measure_Icc_atBot ρ b))
   have hhalf (b : ℝ) : μ.real (Iio b) + μ.real (Iic b) = ν.real (Iio b) + ν.real (Iic b) :=
-    tendsto_nhds_unique (tendsto_measureReal_Ioo_add_measureReal_Icc_atBot (μ := μ) b)
-      ((tendsto_measureReal_Ioo_add_measureReal_Icc_atBot (μ := ν) b).congr'
-        ((eventually_lt_atBot b).mono fun _ hab => (hint hab).symm))
+    tendsto_nhds_unique (hbot μ b)
+      ((hbot ν b).congr' ((eventually_lt_atBot b).mono fun _ hab => (hint hab).symm))
+  have hright (ρ : Measure ℝ) [IsFiniteMeasure ρ] (y : ℝ) :
+      Tendsto (fun b => ρ.real (Iio b) + ρ.real (Iic b)) (𝓝[>] y)
+        (𝓝 (ρ.real (Iic y) + ρ.real (Iic y))) :=
+    (hreal ρ (tendsto_measure_Iio_nhdsGT ⟨y + 1, by linarith, measure_ne_top ρ _⟩)).add
+      (hreal ρ (tendsto_measure_Iic_nhdsGT ⟨y + 1, by linarith, measure_ne_top ρ _⟩))
   refine ext_of_Iic μ ν fun y => ?_
-  have := tendsto_nhds_unique (tendsto_measureReal_Iio_add_measureReal_Iic_nhdsGT (μ := μ) y)
-    ((tendsto_measureReal_Iio_add_measureReal_Iic_nhdsGT (μ := ν) y).congr fun b => (hhalf b).symm)
+  have := tendsto_nhds_unique (hright μ y) ((hright ν y).congr fun b => (hhalf b).symm)
   exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top μ _) (measure_ne_top ν _)).1
     (by simp only [← measureReal_def]; linarith)
 
