@@ -36,8 +36,10 @@ base (`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`). The extension
 bases, with exact filtered colimits of coefficients, is in
 `TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion`.
 
-By the universal coefficient theorem, the same holds for the relative cohomology with projective
-coefficients (`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`).
+By the universal coefficient theorem, the finite-union vanishing also holds for relative
+cohomology with projective chain coefficients
+(`TauCeti.isZero_singularCohomology_thomPairOver_biUnion`). The arbitrary-base cohomology form is
+in `TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion`.
 
 This vanishing drives the construction of Thom classes by Mayer–Vietoris over a finite
 trivializing cover. For open sets `U` and `V` of the base, the Mayer–Vietoris sequence of the pairs
@@ -72,8 +74,8 @@ bundle provides.
   finite union `W` of trivializing open sets.
 * `TauCeti.isZero_singularHomology_thomPair_of_compactSpace`: `Hₙ(E, E₀) = 0` for `n < r` over a
   compact base, without a filtered-colimit hypothesis on coefficients.
-* `TauCeti.isZero_singularCohomology_thomPairOver_biUnion`: the same for relative cohomology
-  with projective coefficients.
+* `TauCeti.isZero_singularCohomology_thomPairOver_biUnion`: `Hⁿ(E|_W, E₀|_W) = 0` for `n < r`
+  over a finite union `W` of trivializing open sets, with projective chain coefficients.
 * `TauCeti.singularCohomology_thomPairOver_union_ext`,
   `TauCeti.exists_singularCohomology_thomPairOver_union`: uniqueness and existence of classes over
   `U ∪ V` with given restrictions to the open sets `U` and `V`.
