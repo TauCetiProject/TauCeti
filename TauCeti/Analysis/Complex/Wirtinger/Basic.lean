@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
+import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -112,31 +113,20 @@ theorem wirtingerDeriv_add_conjWirtingerDeriv (v : V) :
   rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply]
   module
 
-/-- A bound for `(a + I • b) / 2` by a common bound for `a` and `b`, the estimate behind both
-Wirtinger norm bounds. -/
-private theorem norm_two_inv_smul_add_I_smul_le {a b : W} {B : ℝ} (ha : ‖a‖ ≤ B) (hb : ‖b‖ ≤ B) :
-    ‖(2 : ℂ)⁻¹ • (a + I • b)‖ ≤ B := by
-  have h := norm_add_le a (I • b)
-  rw [norm_smul, norm_I, one_mul] at h
-  rw [norm_smul, norm_inv, Complex.norm_two]
-  linarith
-
-private theorem norm_fderiv_apply_I_smul_le (v : V) :
-    ‖fderiv ℝ g x (I • v)‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
-  simpa [norm_smul] using (fderiv ℝ g x).le_opNorm (I • v)
-
 /-- The Wirtinger derivative is bounded by the real derivative: `‖∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`. -/
 theorem norm_wirtingerDeriv_apply_le (v : V) :
     ‖wirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
-  rw [wirtingerDeriv_apply, sub_eq_add_neg, ← smul_neg]
-  exact norm_two_inv_smul_add_I_smul_le ((fderiv ℝ g x).le_opNorm v)
-    ((norm_neg _).trans_le (norm_fderiv_apply_I_smul_le g x v))
+  have h := (fderiv ℝ g x).le_opNorm_of_le (x := I • v) (c := ‖v‖) (by simp [norm_smul])
+  rw [wirtingerDeriv_apply, sub_eq_add_neg]
+  exact norm_two_inv_smul_add_le ((fderiv ℝ g x).le_opNorm v) (by simpa [norm_smul] using h)
 
 /-- The conjugate Wirtinger derivative is bounded by the real derivative:
 `‖\bar∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`. -/
 theorem norm_conjWirtingerDeriv_apply_le (v : V) :
-    ‖conjWirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ :=
-  norm_two_inv_smul_add_I_smul_le ((fderiv ℝ g x).le_opNorm v) (norm_fderiv_apply_I_smul_le g x v)
+    ‖conjWirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
+  have h := (fderiv ℝ g x).le_opNorm_of_le (x := I • v) (c := ‖v‖) (by simp [norm_smul])
+  rw [conjWirtingerDeriv_apply]
+  exact norm_two_inv_smul_add_le ((fderiv ℝ g x).le_opNorm v) (by simpa [norm_smul] using h)
 
 /-- The Wirtinger derivative is the complex-linear part `TauCeti.complexLinearPart` of the real
 derivative, for the complex structures given by multiplication by `I`. -/
