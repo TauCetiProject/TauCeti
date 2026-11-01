@@ -63,28 +63,43 @@ namespace TauCeti.Floer
 
 variable {M : Type*} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
+/-- Far out on the end `r`, where `±Re z ≥ 2`, the perturbation is `H_r(t_r) dt_r`. -/
+private theorem pairOfPantsPerturbation_eq_smul_endAngularForm {H : Puncture → ℝ → M → ℝ}
+    {r : Puncture} {w : ℂ} (hw : 2 ≤ r.endSign * (r.endCoord w).re) (x : M) :
+    pairOfPantsPerturbation H w x = H r (r.endCoord w).im x • r.endAngularForm w := by
+  rw [pairOfPantsPerturbation_def, Finset.sum_eq_single r,
+    smoothTransition.one_of_one_le (by linarith), one_mul]
+  · -- The cutoffs of the other ends vanish, since distinct ends are disjoint.
+    intro s _ hs
+    have hc : smoothTransition (s.endSign * (s.endCoord w).re - 1) = 0 := by
+      refine smoothTransition.zero_of_nonpos ?_
+      by_contra! h
+      have hr : w ≠ r.endCenter :=
+        r.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at hw; linarith
+      have hs' : w ≠ s.endCenter :=
+        s.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at h; linarith
+      exact cylindricalEndLift_ne_cylindricalEndLift hs.symm (by linarith) (by linarith)
+        ((r.cylindricalEndLift_endCoord hr).trans (s.cylindricalEndLift_endCoord hs').symm)
+    simp [hc]
+  · simp
+
 /-- **The perturbations match on the neck.** Suppose the Hamiltonian on the output end of the
 inserted pair of pants is the Hamiltonian on the input end `q` of the receiving one. At a point
 `w` of the end at `∞` with end coordinate `z`, where `Re z ≤ -2` and `±Re (z + L) ≥ 2` so that
 both perturbations are cylindrical, the perturbation of the receiving pair of pants at `ψ(w)`
 evaluated on `ψ'(w) v` is the perturbation of the inserted one at `w` evaluated on `v`. -/
-theorem pairOfPantsPerturbation_plumbingMap (hHa : Periodic (Ha inf) 1)
-    (hHb : Periodic (Hb q) 1) (hab : Hb q = Ha inf) {w : ℂ}
+theorem pairOfPantsPerturbation_plumbingMap (hab : Hb q = Ha inf) {w : ℂ}
     (h₁ : (inf.endCoord w).re ≤ -2) (h₂ : 2 ≤ q.endSign * ((inf.endCoord w).re + L))
     (x : M) (v : ℂ) :
     pairOfPantsPerturbation Hb (q.plumbingMap L w) x (q.plumbingFactor L * v) =
       pairOfPantsPerturbation Ha w x v := by
-  set z := inf.endCoord w
-  have hwz : inf.cylindricalEndLift z = w :=
-    inf.cylindricalEndLift_endCoord
-      (inf.ne_endCenter_of_re_endCoord_ne_zero (by linarith : z.re < 0).ne)
-  -- Write the tangent vector `v` as the image of a tangent vector `v'` of the cylinder.
-  obtain ⟨v', rfl⟩ : ∃ v', v = deriv inf.cylindricalEndLift z * v' :=
-    ⟨v / _, (mul_div_cancel₀ v (deriv_cylindricalEndLift_ne_zero _ _)).symm⟩
-  rw [← hwz, ← cylindricalEndLift_add_ofReal, ← mul_assoc,
-    ← deriv_cylindricalEndLift_add_ofReal,
-    pairOfPantsPerturbation_cylindricalEndLift hHb (by simpa using h₂) x v',
-    pairOfPantsPerturbation_cylindricalEndLift hHa (by simp; linarith) x v', hab]
+  have hw : w ≠ 0 := by
+    simpa using inf.ne_endCenter_of_re_endCoord_ne_zero (by linarith : (inf.endCoord w).re < 0).ne
+  have hz := endCoord_plumbingMap q L hw
+  rw [pairOfPantsPerturbation_eq_smul_endAngularForm (r := q) (by rw [hz]; simpa using h₂),
+    pairOfPantsPerturbation_eq_smul_endAngularForm (r := inf) (by simp; linarith),
+    smul_apply, smul_apply, ← deriv_plumbingMap q L w,
+    endAngularForm_plumbingMap, hz, hab]
   simp
 
 open Classical in
@@ -114,8 +129,7 @@ theorem plumbedPerturbation_def (Ha Hb : Puncture → ℝ → M → ℝ) (q : Pu
 /-- **The plumbed perturbation on the receiving pair of pants.** Away from the collar
 `Re z > L - 2` of the end `q`, the plumbed perturbation is the perturbation of the receiving pair
 of pants. -/
-theorem plumbedPerturbation_of_re_endCoord_le (hq : q ≠ inf) (hHa : Periodic (Ha inf) 1)
-    (hHb : Periodic (Hb q) 1) (hab : Hb q = Ha inf) {w : ℂ}
+theorem plumbedPerturbation_of_re_endCoord_le (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
     (hw : (q.endCoord w).re ≤ L - 2) (x : M) :
     plumbedPerturbation Ha Hb q L w x = pairOfPantsPerturbation Hb w x := by
   rw [plumbedPerturbation_def]
@@ -126,7 +140,7 @@ theorem plumbedPerturbation_of_re_endCoord_le (hq : q ≠ inf) (hHa : Periodic (
     have hre := re_endCoord_inf_sub_endCenter_div q L hc
     ext v
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply',
-      ← pairOfPantsPerturbation_plumbingMap (L := L) hHa hHb hab (by linarith)
+      ← pairOfPantsPerturbation_plumbingMap (L := L) hab (by linarith)
         (by rw [endSign_eq_one hq]; linarith) x, plumbingMap_sub_endCenter_div,
       mul_inv_cancel_left₀ (q.plumbingFactor_ne_zero L)]
   · rfl
@@ -134,8 +148,8 @@ theorem plumbedPerturbation_of_re_endCoord_le (hq : q ≠ inf) (hHa : Periodic (
 /-- **The plumbed perturbation on the inserted pair of pants.** Away from the collar `Re z < 2 - L`
 of the end at `∞`, the pullback of the plumbed perturbation along the plumbing map is the
 perturbation of the inserted pair of pants. -/
-theorem plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hHa : Periodic (Ha inf) 1)
-    (hHb : Periodic (Hb q) 1) (hab : Hb q = Ha inf) {w : ℂ} (hw : w ≠ 0)
+theorem plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
+    (hw : w ≠ 0)
     (h : 2 - L ≤ (inf.endCoord w).re) (x : M) (v : ℂ) :
     plumbedPerturbation Ha Hb q L (q.plumbingMap L w) x (q.plumbingFactor L * v) =
       pairOfPantsPerturbation Ha w x v := by
@@ -145,13 +159,12 @@ theorem plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hHa : Periodic (Ha inf
       inv_mul_cancel_left₀ (q.plumbingFactor_ne_zero L),
       plumbingMap_sub_endCenter_div_plumbingFactor]
   · -- On the part `2 - L ≤ Re z ≤ -L/2` of the neck the two perturbations match.
-    exact pairOfPantsPerturbation_plumbingMap hHa hHb hab (by linarith)
+    exact pairOfPantsPerturbation_plumbingMap hab (by linarith)
       (by rw [endSign_eq_one hq]; linarith) x v
 
 /-- Near a point of the end `q` with longitudinal coordinate `> 2`, the plumbed perturbation is
 the pushforward of the perturbation of the inserted pair of pants. -/
-private theorem plumbedPerturbation_eq_comp (hq : q ≠ inf) (hHa : Periodic (Ha inf) 1)
-    (hHb : Periodic (Hb q) 1) (hab : Hb q = Ha inf) {w : ℂ}
+private theorem plumbedPerturbation_eq_comp (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
     (hw : 2 < (q.endCoord w).re) (x : M) :
     plumbedPerturbation Ha Hb q L w x =
       (pairOfPantsPerturbation Ha ((w - q.endCenter) / q.plumbingFactor L) x).comp
@@ -161,7 +174,7 @@ private theorem plumbedPerturbation_eq_comp (hq : q ≠ inf) (hHa : Periodic (Ha
   have hre := re_endCoord_inf_sub_endCenter_div q L hc
   ext v
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply',
-    ← plumbedPerturbation_plumbingMap hq hHa hHb hab
+    ← plumbedPerturbation_plumbingMap hq hab
       (q.sub_endCenter_div_plumbingFactor_ne_zero L hc) (by rw [hre]; linarith),
     plumbingMap_sub_endCenter_div, mul_inv_cancel_left₀ (q.plumbingFactor_ne_zero L)]
 
@@ -189,7 +202,7 @@ theorem contMDiffAt_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
   · -- Off the collar of the end `q`, the datum is the perturbation of the receiving sphere.
     refine (contMDiffAt_pairOfPantsPerturbation hHb hHbs ⟨w, hw.1⟩ x).congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (gt_mem_nhds hlt)] with p hp
-    exact plumbedPerturbation_of_re_endCoord_le hq (hHa inf) (hHb q) hab hp.le p.2
+    exact plumbedPerturbation_of_re_endCoord_le hq hab hp.le p.2
   · -- Deep in the end `q`, the datum is the pushforward of the perturbation of the inserted
     -- sphere along the affine plumbing map.
     have h2 : 2 < (q.endCoord w).re := by linarith
@@ -206,6 +219,6 @@ theorem contMDiffAt_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
       (w, x) hf).clm_comp (contMDiffAt_const (c := ContinuousLinearMap.mul ℝ ℂ a⁻¹))
     refine hK.congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (lt_mem_nhds h2)] with p hp
-    exact plumbedPerturbation_eq_comp hq (hHa inf) (hHb q) hab hp p.2
+    exact plumbedPerturbation_eq_comp hq hab hp p.2
 
 end TauCeti.Floer

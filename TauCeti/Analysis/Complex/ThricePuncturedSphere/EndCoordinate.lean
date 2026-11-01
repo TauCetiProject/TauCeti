@@ -131,6 +131,10 @@ imaginary part an angular coordinate, determined by the point only modulo `1`. -
 def endCoord (q : Puncture) (w : ℂ) : ℂ :=
   -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π)
 
+theorem endCoord_def (q : Puncture) (w : ℂ) :
+    q.endCoord w = -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π) :=
+  (rfl)
+
 /-- The longitudinal coordinate of a point of an end. -/
 theorem re_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).re = -Real.log ‖(w - q.endCenter) / q.endScale‖ / (2 * π) := by

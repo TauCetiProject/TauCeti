@@ -19,12 +19,13 @@ coordinate `z + L` on the end `q` of `S`, for `0 < Re (z + L) < L`.
 Since every end lift is a scaled exponential about its center
 (`TauCeti.ThricePuncturedSphere.Puncture.cylindricalEndLift_eq`), this identification is the
 restriction of the affine map `ψ_{q,L}(w) = c_q + b_q e^{-2πL} w / 2`
-(`TauCeti.ThricePuncturedSphere.Puncture.plumbingMap`), which shrinks `S'` into the end `q` of
-`S`. The glued surface is therefore the four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`: the two
-inputs of `S'` sit at `ψ_{q,L}(0) = c_q` and at `ψ_{q,L}(1)`, and the remaining punctures of `S`
-are unchanged. For `q = 0` the new puncture is `e^{-2πL}/4`, for `q = 1` it is
-`1 - e^{-2πL}/4`; as `L → ∞` it collides with `c_q`, and the four-punctured sphere breaks into
-the two pairs of pants.
+(`TauCeti.ThricePuncturedSphere.Puncture.plumbingMap`), which carries the truncated
+part `Re z > -L` of `S'`, in the end coordinate at `∞`, into the part `Re z > 0` of the end `q`
+of `S` (`TauCeti.ThricePuncturedSphere.Puncture.re_endCoord_plumbingMap`). The glued surface is
+therefore the four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`: the two inputs of `S'` sit at
+`ψ_{q,L}(0) = c_q` and at `ψ_{q,L}(1)`, and the remaining punctures of `S` are unchanged. For
+`q = 0` the new puncture is `e^{-2πL}/4`, for `q = 1` it is `1 - e^{-2πL}/4`; as `L → ∞` it
+collides with `c_q`, and the four-punctured sphere breaks into the two pairs of pants.
 
 ## Main definitions
 
@@ -153,16 +154,12 @@ end scale. -/
 theorem endCoord_plumbingMap (q : Puncture) (L : ℝ) {w : ℂ} (hw : w ≠ 0) :
     q.endCoord (q.plumbingMap L w) = inf.endCoord w + L := by
   have h : (w - inf.endCenter) / inf.endScale ≠ 0 := by simp [hw]
-  have hπ : 0 < π := Real.pi_pos
-  apply Complex.ext
-  · rw [Complex.add_re, Complex.ofReal_re, re_endCoord, re_endCoord,
-      plumbingMap_sub_endCenter_div_endScale, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_pos (Real.exp_pos _), Real.log_mul (Real.exp_pos _).ne' (norm_ne_zero_iff.2 h),
-      Real.log_exp]
-    field_simp
-    ring
-  · rw [Complex.add_im, Complex.ofReal_im, add_zero, im_endCoord, im_endCoord,
-      plumbingMap_sub_endCenter_div_endScale, Complex.arg_real_mul _ (Real.exp_pos _)]
+  have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  rw [endCoord_def, endCoord_def, plumbingMap_sub_endCenter_div_endScale,
+    Complex.log_ofReal_mul (Real.exp_pos _) h, Real.log_exp]
+  field_simp
+  push_cast
+  ring
 
 /-- The longitudinal coordinate of the end `q` at the image of a point is its longitudinal
 coordinate on the end at `∞` plus `L`. -/
