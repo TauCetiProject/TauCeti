@@ -40,7 +40,8 @@ For empty `J` the matrix is empty, its series is `1`, and the stated bound is `â
 For row bounds the first estimate is the case of
 `Matrix.norm_charCoeff_le_prod_decreasingRearrangement` in which an enumeration already lists
 `r` in decreasing order; the enumeration form also covers two-sided bounds, which have no row
-majorant, and requires no decay of `r`.
+majorant, and needs no hypothesis `BddAbove (Set.range r)`, since an antitone `r âˆ˜ e` is bounded
+by `r (e 0)`.
 
 ## Main results
 
