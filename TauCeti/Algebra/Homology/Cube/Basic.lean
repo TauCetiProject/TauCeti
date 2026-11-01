@@ -165,10 +165,21 @@ def cubeComplex : CochainComplex C ℤ where
     rintro i _ _ rfl rfl
     exact F.cubeD_comp_cubeD i
 
+/-- The degree `r` term is the biproduct of the vertices of height `r`. -/
+lemma cubeComplex_X (r : ℤ) :
+    F.cubeComplex.X r = ⨁ fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1 := (rfl)
+
 /-- The inclusion of the vertex `F(S)` into the degree `r` term of the cube complex, for a vertex
 of height `#S = r`. -/
 def cubeComplexι {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.obj S.1 ⟶ F.cubeComplex.X r :=
   biproduct.ι (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
+
+/-- The vertex inclusion agrees with the biproduct inclusion under the term identification. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_comp_eqToHom {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ eqToHom (F.cubeComplex_X r) =
+      biproduct.ι (fun T : {T : Finset ι // (#T : ℤ) = r} ↦ F.obj T.1) S :=
+  Category.comp_id _
 
 /-- The projection of the degree `r` term of the cube complex onto the vertex `F(S)`, for a vertex
 of height `#S = r`. -/

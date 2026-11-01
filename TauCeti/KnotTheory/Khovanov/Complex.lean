@@ -204,26 +204,12 @@ def khovanovComplexXIso (i : ℤ) :
         ModuleCat.of R ((Khovanov.circleQuantumGrading R
           (D.toPDCode.ResolvedCircle (PDCode.cubeState S.1))).piece
             (j - D.stateQuantumShift (PDCode.cubeState S.1))) :=
-  eqToIso (D.khovanovComplex_X hD R j i) ≪≫
-    { hom := (D.toPDCode.resolutionCube hD R
-        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexDesc
-          fun S ↦ eqToHom (D.resolutionCube_obj_normalized hD R j S.1) ≫
-            biproduct.ι (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
-              ModuleCat.of R ((Khovanov.circleQuantumGrading R
-                (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
-                  (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S
-      inv := biproduct.desc fun S ↦
-        eqToHom (D.resolutionCube_obj_normalized hD R j S.1).symm ≫
-          (D.toPDCode.resolutionCube hD R
-            (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexι S
-      hom_inv_id := by
-        apply Functor.cubeComplex_hom_ext
-        intro S
-        simp [Category.assoc]
-      inv_hom_id := by
-        apply biproduct.hom_ext'
-        intro S
-        simp [Category.assoc] }
+  eqToIso ((D.khovanovComplex_X hD R j i).trans
+    ((D.toPDCode.resolutionCube hD R
+      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplex_X _)) ≪≫
+    biproduct.mapIso (fun S : {S : Finset (Fin n) //
+      (#S : ℤ) = i + D.negativeCrossingCount} ↦
+        eqToIso (D.resolutionCube_obj_normalized hD R j S.1))
 
 /-- On a state summand, the term comparison is the quantum-piece identification. -/
 @[reassoc (attr := simp)]
