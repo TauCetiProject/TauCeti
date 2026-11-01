@@ -36,6 +36,19 @@ reducibility of these oracles.
 
 public section
 
+namespace TauCeti
+
+/-- The order on degrees represented by partial functions is Turing reducibility. -/
+@[simp]
+theorem turingDegree_le_iff {f g : ℕ →. ℕ} :
+    toAntisymmetrization TuringReducible f ≤ toAntisymmetrization TuringReducible g ↔
+      TuringReducible f g := by
+  -- Mathlib's generic quotient-order lemma requires its private partial-function preorder.
+  -- The lifted degree order on representatives is definitionally Iff.rfl.
+  exact Iff.rfl
+
+end TauCeti
+
 namespace Set
 
 /-- The oracle of a set of naturals: its characteristic function `A.indicator 1`, as a total
@@ -69,8 +82,8 @@ theorem partrec_oracle_iff (A : Set ℕ) : Partrec A.oracle ↔ ComputablePred (
     exact ((h.ite (Computable.const 1) (Computable.const 0)).partrec).of_eq fun n => by
       by_cases hn : n ∈ A <;> simp [hn]
 
-/-- The empty oracle is Turing reducible to every oracle. -/
-theorem empty_turingReducible (A : Set ℕ) : TuringReducible (∅ : Set ℕ).oracle A.oracle := by
+/-- The empty set oracle is Turing reducible to every partial function. -/
+theorem empty_turingReducible (g : ℕ →. ℕ) : TuringReducible (∅ : Set ℕ).oracle g := by
   rw [oracle_empty]
   exact (Computable.const 0).partrec.turingReducible
 

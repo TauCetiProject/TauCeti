@@ -53,7 +53,7 @@ theorem low_def (A : Set ℕ) :
 reduces to the jump of any set. -/
 theorem low_iff_jump_turingReducible :
     A.Low ↔ TuringReducible A.jump.oracle (∅ : Set ℕ).jump.oracle :=
-  ⟨fun h => h.1, fun h => ⟨h, turingReducible_jump_jump (empty_turingReducible A)⟩⟩
+  ⟨fun h => h.1, fun h => ⟨h, turingReducible_jump_jump (empty_turingReducible A.oracle)⟩⟩
 
 /-- The empty set is low. -/
 @[simp]
@@ -90,14 +90,14 @@ theorem Low.not_jump_empty_turingReducible (hA : A.Low) :
 strictly below the degree represented by the jump of the empty set. -/
 theorem Low.degree_lt_jump_empty (hA : A.Low) :
     toAntisymmetrization TuringReducible A.oracle <
-      toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle :=
-  lt_iff_le_not_ge.2
-    ⟨hA.turingReducible_jump_empty, hA.not_jump_empty_turingReducible⟩
+      toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle := by
+  rw [lt_iff_le_not_ge, TauCeti.turingDegree_le_iff, TauCeti.turingDegree_le_iff]
+  exact ⟨hA.turingReducible_jump_empty, hA.not_jump_empty_turingReducible⟩
 
 /-- No jump is low. In particular, the jump of the empty set is not low. -/
 @[simp]
 theorem not_low_jump (A : Set ℕ) : ¬A.jump.Low :=
   fun h => h.not_jump_empty_turingReducible
-    (turingReducible_jump_jump (empty_turingReducible A))
+    (turingReducible_jump_jump (empty_turingReducible A.oracle))
 
 end Set
