@@ -14,7 +14,8 @@ import Mathlib.Algebra.Field.ZMod
 These computations distinguish the `(A + 2)/4` convention from `(A - 2)/4`, exhibit
 factor-detecting arithmetic over a composite residue ring, and show why correctness is stated
 on nonsingular native points rather than arbitrary pairs. The final examples use the
-correctness theorem on singular models and in characteristic three.
+correctness theorem on singular models and in characteristics three and two. In characteristic
+two, the scaled relation with nonzero `D` forces `A = 0`, so only that degenerate model is covered.
 -/
 
 namespace TauCeti.Montgomery
@@ -56,7 +57,8 @@ example (P : (model (0 : ZMod 3) 1).toAffine.Point) :
       (double 2 4 (coordinates 0 1 P)).cross (coordinates 0 1 (P + P)) = 0 :=
   double_coordinates (by decide) (by decide) (by decide) P
 
--- Even in characteristic two the scaled relation is sufficient on native points.
+-- In characteristic two, the scaled relation with nonzero D forces A = 0;
+-- correctness therefore covers only that degenerate model.
 example (P : (model (0 : ZMod 2) 1).toAffine.Point) :
     double 1 1 (coordinates 0 1 P) ≠ 0 ∧
       (double 1 1 (coordinates 0 1 P)).cross (coordinates 0 1 (P + P)) = 0 :=

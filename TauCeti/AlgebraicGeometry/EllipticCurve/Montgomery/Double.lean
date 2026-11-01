@@ -17,7 +17,7 @@ residue rings.
 
 `double_coordinates` proves correctness on Mathlib's native point group, including infinity
 and points of order two. Its output is nonzero even when the model is singular, since native
-points are nonsingular. `double_of_cross_eq_zero` gives the same result for any nonzero
+points are nonsingular. `double_coordinates_of_cross_eq_zero` gives the same result for any nonzero
 representative of a point's coordinate pair.
 
 The proof uses Mathlib's duplication numerator and denominator, in particular
@@ -60,7 +60,8 @@ theorem double_x (N D : R) (P : Pair R) :
 /-- The second field in the scaled `A24` formula. -/
 theorem double_z (N D : R) (P : Pair R) :
     (double N D P).z = ((P.x + P.z) ^ 2 - (P.x - P.z) ^ 2) *
-      (D * (P.x - P.z) ^ 2 + N * ((P.x + P.z) ^ 2 - (P.x - P.z) ^ 2)) := (rfl)
+      (D * (P.x - P.z) ^ 2 + N * ((P.x + P.z) ^ 2 - (P.x - P.z) ^ 2)) := by
+  simp only [double]
 
 /-- When the scaled constants satisfy their defining relation, the second field is the
 homogeneous Montgomery duplication denominator. -/
@@ -119,8 +120,8 @@ variable {K : Type*} [Field K] [DecidableEq K] {A B N D : K}
 
 /-- **Correctness of Montgomery doubling on native points.** For nonzero `B` and `D` and
 `4N = (A + 2)D`, the output is nonzero and has vanishing cross difference with the coordinate
-pair of `P + P`. No ellipticity assumption is needed. In fact the scaled relation suffices
-also in characteristic two. -/
+pair of `P + P`. No ellipticity assumption is needed. In characteristic two, the scaled
+relation and `D ≠ 0` force `A = 0`, so only that degenerate model is covered. -/
 theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
     (h : 4 * N = (A + 2) * D) (P : (model A B).toAffine.Point) :
     double N D (coordinates A B P) ≠ 0 ∧
@@ -138,6 +139,8 @@ theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
       · have hd := (Affine.den_duplication_eq_zero_iff hP.1).not.mpr hy
         rw [Affine.Point.add_self_of_Y_ne hy, coordinates_some, Pair.cross_def,
           Affine.addX_self_of_Y_ne hP.1 hy]
+        -- Remove the affine-coordinate wrapper so the denominator in hd and the goal
+        -- matches the model invariants in the cancellation identity below.
         dsimp only [toAffine] at hd ⊢
         linear_combination -(D * B) *
           (div_mul_cancel₀
@@ -145,7 +148,7 @@ theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
 
 /-- Doubling any nonzero representative of a native point gives a nonzero representative
 of its double. This is the representative-independent form used by `x`-only scalar arithmetic. -/
-theorem double_of_cross_eq_zero (hB : B ≠ 0) (hD : D ≠ 0)
+theorem double_coordinates_of_cross_eq_zero (hB : B ≠ 0) (hD : D ≠ 0)
     (h : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point} {S : Pair K}
     (hS : S ≠ 0) (hSP : S.cross (coordinates A B P) = 0) :
     double N D S ≠ 0 ∧
