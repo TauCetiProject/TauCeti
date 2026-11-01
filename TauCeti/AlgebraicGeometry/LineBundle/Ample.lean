@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.QuasiAffine
+public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 
 /-!
@@ -21,7 +22,7 @@ Ampleness depends only on the isomorphism class of `L`, and tensor powers are av
 isomorphism classes, where they are powers in the Picard group. So ampleness is defined here as a
 predicate `LineBundleClass.IsAmple` on line-bundle classes; for a line bundle `L` it reads
 `(LineBundleClass.mk L).IsAmple`. The nonvanishing loci of the global sections of a line bundle
-depend only on its class (`LineBundleClass.range_nonvanishingLocus_eq_of_mk_eq`), so in the
+depend only on its isomorphism class (`Scheme.Modules.range_nonvanishingLocus_eq_of_iso`), so in the
 definition any representative of the class of `L^⊗n` may be used
 (`LineBundleClass.IsAmple.exists_pos_forall_mk_eq`).
 
@@ -84,9 +85,10 @@ theorem IsAmple.exists_pos_forall_mk_eq {a : LineBundleClass X} (h : a.IsAmple) 
         x ∈ L.obj.nonvanishingLocus s ∧ IsAffineOpen (L.obj.nonvanishingLocus s) := by
   obtain ⟨n, hn, L₀, hL₀, s₀, hx, hs₀⟩ := h.exists_isAffineOpen_nonvanishingLocus x
   refine ⟨n, hn, fun L hL ↦ ?_⟩
+  obtain ⟨e⟩ := mk_eq_mk_iff.mp (hL₀.trans hL.symm)
   obtain ⟨s, hs⟩ : L₀.obj.nonvanishingLocus s₀ ∈
       Set.range (L.obj.nonvanishingLocus (U := ⊤)) := by
-    rw [← range_nonvanishingLocus_eq_of_mk_eq (hL₀.trans hL.symm)]
+    rw [← Scheme.Modules.range_nonvanishingLocus_eq_of_iso e ⊤]
     exact ⟨s₀, rfl⟩
   exact ⟨s, hs ▸ hx, hs ▸ hs₀⟩
 
@@ -111,7 +113,8 @@ theorem isAmple_one_iff : (1 : LineBundleClass X).IsAmple ↔ X.IsQuasiAffine :=
   have hrange (L : InvertibleSheaf X) (hL : mk L = 1) :
       Set.range (L.obj.nonvanishingLocus (U := ⊤)) =
         Set.range (X.basicOpen (U := ⊤)) := by
-    rw [range_nonvanishingLocus_eq_of_mk_eq (hL.trans hO.symm)]
+    obtain ⟨e⟩ := mk_eq_mk_iff.mp (hL.trans hO.symm)
+    rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e ⊤]
     exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨inferInstance, fun x ↦ ?_⟩⟩
   · have := h.compactSpace

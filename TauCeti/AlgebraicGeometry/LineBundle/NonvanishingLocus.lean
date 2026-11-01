@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 
 /-!
@@ -43,10 +42,10 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
   open subsets of `X_s`;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_hom_app`: the nonvanishing locus is
   invariant under isomorphisms of invertible sheaves;
+* `AlgebraicGeometry.Scheme.Modules.range_nonvanishingLocus_eq_of_iso`: isomorphic invertible
+  sheaves have the same nonvanishing loci of sections over each open;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
   basic open set of the regular function `r`.
-* `TauCeti.AlgebraicGeometry.LineBundleClass.range_nonvanishingLocus_eq_of_mk_eq`: isomorphic line
-  bundles have the same nonvanishing loci of global sections.
 
 ## References
 
@@ -278,6 +277,15 @@ theorem nonvanishingLocus_hom_app {N : X.Modules}
     rw [hbij]
     exact (le_nonvanishingLocus_iff s (homOfLE (nonvanishingLocus_le _))).mp le_rfl W' j
 
+/-- Isomorphic invertible sheaves have the same nonvanishing loci of sections over `U`: the set of
+opens `X_s`, for `s` a section over `U`, is invariant under isomorphism. -/
+theorem range_nonvanishingLocus_eq_of_iso {N : X.Modules}
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X N] (φ : M ≅ N) (U : X.Opens) :
+    Set.range (M.nonvanishingLocus (U := U)) = Set.range (N.nonvanishingLocus (U := U)) := by
+  ext V
+  exact ⟨fun ⟨s, hs⟩ ↦ ⟨φ.hom.app U s, (nonvanishingLocus_hom_app φ s).trans hs⟩,
+    fun ⟨s, hs⟩ ↦ ⟨φ.symm.hom.app U s, (nonvanishingLocus_hom_app φ.symm s).trans hs⟩⟩
+
 /-- On the structure sheaf `𝒪_X`, regarded as an invertible sheaf, the nonvanishing locus of a
 regular function `r` is its basic open set `X_r`. -/
 @[simp]
@@ -299,22 +307,3 @@ theorem nonvanishingLocus_unit {U : X.Opens} (r : Γ(X, U)) :
     exact (inf_eq_left.mpr (X.basicOpen_le r)).symm
 
 end AlgebraicGeometry.Scheme.Modules
-
-namespace TauCeti.AlgebraicGeometry.LineBundleClass
-
-universe u
-
-variable {X : Scheme.{u}}
-
-/-- Isomorphic line bundles have the same nonvanishing loci of global sections: the set of opens
-`X_s`, for `s` a global section, depends only on the line-bundle class. -/
-theorem range_nonvanishingLocus_eq_of_mk_eq {L L' : InvertibleSheaf X} (h : mk L = mk L') :
-    Set.range (L.obj.nonvanishingLocus (U := ⊤)) =
-      Set.range (L'.obj.nonvanishingLocus (U := ⊤)) := by
-  obtain ⟨e⟩ := mk_eq_mk_iff.mp h
-  ext V
-  exact ⟨fun ⟨s, hs⟩ ↦ ⟨e.hom.app ⊤ s, (Scheme.Modules.nonvanishingLocus_hom_app e s).trans hs⟩,
-    fun ⟨s, hs⟩ ↦
-      ⟨e.symm.hom.app ⊤ s, (Scheme.Modules.nonvanishingLocus_hom_app e.symm s).trans hs⟩⟩
-
-end TauCeti.AlgebraicGeometry.LineBundleClass
