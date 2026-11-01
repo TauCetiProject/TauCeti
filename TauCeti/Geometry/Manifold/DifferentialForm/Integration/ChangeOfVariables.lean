@@ -263,21 +263,6 @@ theorem integrableTopForm_of_eq_mpullback (hfe : EqOn f e e.source)
     (fun x hx ↦ hf x (hpu hx)) (hu p).isChartMeasurable (hsub p) b.addHaar).mpr
     (hi b (e p)).integrableOn
 
-omit [IsManifold I 1 M] [IsManifold J 1 N] in
-/-- An orientation lift of `N` with a prescribed model orientation represents every orientation of
-`N`, after flipping it if necessary. -/
-private theorem exists_lift_modelOrientation_eq (l : Manifold.OrientationLift I M (Fin k))
-    (o' : Manifold.Orientation J N (Fin k)) :
-    ∃ l' : Manifold.OrientationLift J N (Fin k),
-      Manifold.Orientation.mk l' = o' ∧ l'.modelOrientation = l.modelOrientation := by
-  obtain ⟨l₀, rfl⟩ := o'.exists_lift
-  rcases _root_.Orientation.eq_or_eq_neg l₀.modelOrientation l.modelOrientation l.card_eq
-    with h | h
-  · exact ⟨l₀, rfl, h⟩
-  · exact ⟨l₀.flip, (Manifold.Orientation.mk_eq_mk_iff _ _).mpr (.inr rfl), by
-      rw [Manifold.OrientationLift.flip_modelOrientation, h]
-      exact _root_.neg_neg l.modelOrientation⟩
-
 /-- One piece of the change of variables along `e`: for a subset `t` of the target of `e` inside
 a chart of `N`, whose preimage piece `e.source ∩ e ⁻¹' t` is chart measurable inside a chart of
 `M`, the signed chart integral of `ψ` over the preimage piece equals that of `φ` over `t`. -/
@@ -327,7 +312,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
   have hψi := e.integrableTopForm_of_eq_mpullback hfe hf hφ hφt hψ hψφ
   -- Represent both orientations by lifts with the same model orientation.
   obtain ⟨l, rfl⟩ := o.exists_lift
-  obtain ⟨l', rfl, hl⟩ := exists_lift_modelOrientation_eq l o'
+  obtain ⟨l', rfl, hl⟩ := o'.exists_lift_modelOrientation_eq l.modelOrientation
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
   -- A finite cover of the support of `φ` by open subsets of the target lying in a chart of `N`
   -- and carried by `e.symm` into a chart of `M`; their preimages under `e` cover the support
