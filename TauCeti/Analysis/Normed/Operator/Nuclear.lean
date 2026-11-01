@@ -325,6 +325,23 @@ private theorem exists_toContinuousLinearMap_eq_of_hasSum {ι : Type*} {T : E �
     ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] at hx
   exact hx.unique (hT x)
 
+/-- The cost of a series representation, as an extended real, is the real cost `∑ i, ‖f i‖ * ‖y i‖`
+whenever the latter series is summable. -/
+private theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddCommGroup G]
+    [SeminormedAddCommGroup H] {f : ι → G} {y : ι → H}
+    (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖) :
+    ∑' i, ‖f i‖ₑ * ‖y i‖ₑ = ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
+  rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy]
+  simp [ENNReal.ofReal_mul]
+
+omit [CompleteSpace F] in
+/-- A series of rank-one operators converging in operator norm to `T` converges pointwise. -/
+private theorem hasSum_apply_of_hasSum_smulRight {ι : Type*} {T : E →L[𝕜] F}
+    {f : ι → StrongDual 𝕜 E} {y : ι → F} (hT : HasSum (fun i ↦ (f i).smulRight (y i)) T) (x : E) :
+    HasSum (fun i ↦ f i x • y i) (T x) := by
+  simpa only [ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] using
+    (ContinuousLinearMap.apply 𝕜 F x).hasSum hT
+
 /-- The nuclear norm of `T` is at most the cost `∑ i, ‖f i‖ * ‖y i‖` of any series representation
 `T x = ∑ i, f i x • y i`. -/
 theorem nuclearGauge_le_tsum_of_hasSum {ι : Type*} {T : E →L[𝕜] F} {f : ι → StrongDual 𝕜 E}
@@ -340,9 +357,7 @@ theorem nuclearGauge_le_tsum_of_hasSum {ι : Type*} {T : E →L[𝕜] F} {f : ι
     _ ≤ ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
       rw [← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal hle
-    _ = ∑' i, ‖f i‖ₑ * ‖y i‖ₑ := by
-      rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy]
-      simp [ENNReal.ofReal_mul]
+    _ = ∑' i, ‖f i‖ₑ * ‖y i‖ₑ := (tsum_enorm_mul_enorm_eq_ofReal hfy).symm
 
 /-- **Series representation of nuclear operators.** If `ν(T) < c`, then `T` is the sum, in
 operator norm, of a series of rank-one operators `x ↦ f n x • y n` whose cost
@@ -354,12 +369,11 @@ theorem exists_hasSum_smulRight_of_nuclearGauge_lt {T : E →L[𝕜] F} {c : ℝ
   obtain ⟨u, rfl, hu⟩ := exists_toContinuousLinearMap_eq_of_nuclearGauge_lt h
   obtain ⟨r, hur, hrc⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hu
   obtain ⟨f, y, hsum, hfy, hlt⟩ := exists_hasSum_tmul_of_norm_lt u (c := r) <| by
-    rwa [enorm_eq_nnnorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnnorm] at hur
+    simpa [← NNReal.coe_lt_coe] using hur
   refine ⟨f, y, by simpa using (toContinuousLinearMap 𝕜 E F).hasSum hsum, hfy, ?_⟩
   calc
-    ∑' n, ‖f n‖ₑ * ‖y n‖ₑ = ENNReal.ofReal (∑' n, ‖f n‖ * ‖y n‖) := by
-      rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy]
-      simp [ENNReal.ofReal_mul]
+    ∑' n, ‖f n‖ₑ * ‖y n‖ₑ = ENNReal.ofReal (∑' n, ‖f n‖ * ‖y n‖) :=
+      tsum_enorm_mul_enorm_eq_ofReal hfy
     _ ≤ r := by simpa using ENNReal.ofReal_le_ofReal hlt.le
     _ < c := hrc
 
@@ -371,8 +385,10 @@ theorem nuclearGauge_eq_iInf_tsum (T : E →L[𝕜] F) :
   refine le_antisymm (le_iInf₂ fun f y ↦ le_iInf nuclearGauge_le_tsum_of_hasSum)
     (le_of_forall_gt fun c hc ↦ ?_)
   obtain ⟨f, y, hT, -, hlt⟩ := exists_hasSum_smulRight_of_nuclearGauge_lt hc
-  exact (iInf₂_le f y).trans_lt <| (iInf_le _ fun x ↦ by
-    simpa using (ContinuousLinearMap.apply 𝕜 F x).hasSum hT).trans_lt hlt
+  calc
+    _ ≤ ∑' n, ‖f n‖ₑ * ‖y n‖ₑ :=
+      iInf₂_le_of_le f y (iInf_le_of_le (hasSum_apply_of_hasSum_smulRight hT) le_rfl)
+    _ < c := hlt
 
 /-- An operator `T` is nuclear iff it has a series representation `T x = ∑ n, f n x • y n` with
 `∑ n, ‖f n‖ * ‖y n‖ < ∞`. -/
@@ -382,7 +398,7 @@ theorem mem_nuclearOperators_iff_exists_hasSum {T : E →L[𝕜] F} :
   refine ⟨fun hT ↦ ?_, fun ⟨f, y, hfy, hT⟩ ↦ ?_⟩
   · obtain ⟨f, y, hT, hfy, -⟩ :=
       exists_hasSum_smulRight_of_nuclearGauge_lt (nuclearGauge_lt_top_iff.2 hT)
-    exact ⟨f, y, hfy, fun x ↦ by simpa using (ContinuousLinearMap.apply 𝕜 F x).hasSum hT⟩
+    exact ⟨f, y, hfy, hasSum_apply_of_hasSum_smulRight hT⟩
   · obtain ⟨u, hu, -⟩ := exists_toContinuousLinearMap_eq_of_hasSum hfy hT
     exact ⟨u, hu⟩
 
