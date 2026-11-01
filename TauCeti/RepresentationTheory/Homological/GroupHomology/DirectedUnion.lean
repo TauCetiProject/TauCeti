@@ -14,12 +14,12 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 Let `A` be a representation of a group `G`, and let `S i` be a directed family of subgroups of `G`
 whose union is `G`. Every class of `Hₙ(G, A)` is then the image of a class of `Hₙ(S i, A)` for some
 `i`, under the map induced by the inclusion of `S i`
-(`TauCeti.groupHomology.exists_map_subtype_eq`). In particular, if every `Hₙ(S i, A)` vanishes,
-so does `Hₙ(G, A)` (`TauCeti.groupHomology.isZero_groupHomology_of_directed`).
+(`groupHomology.exists_map_subtype_eq`). In particular, if every `Hₙ(S i, A)` vanishes,
+so does `Hₙ(G, A)` (`groupHomology.isZero_groupHomology_of_directed`).
 
 This follows from the finiteness of chains. An inhomogeneous chain is a finite combination of
 tuples of elements of `G`, so it involves finitely many elements of `G`, which all lie in one
-`S i` (`TauCeti.groupHomology.exists_chainsMap_subtype_f_eq_of_directed`). The maps of
+`S i` (`groupHomology.exists_chainsMap_subtype_f_eq_of_directed`). The maps of
 inhomogeneous chains induced by injective group homomorphisms are injective
 (`groupHomology.chainsMap_f_map_mono`), so a chain of `S i` whose image is a cycle is itself a
 cycle.
@@ -30,9 +30,9 @@ instance the homology of `K(ℤ[1/2], 1)`, with `ℤ[1/2] = ⋃ᵣ 2⁻ʳ ℤ`, 
 
 ## Main results
 
-* `TauCeti.groupHomology.exists_map_subtype_eq`: a class of a directed union of subgroups comes
+* `groupHomology.exists_map_subtype_eq`: a class of a directed union of subgroups comes
   from a member.
-* `TauCeti.groupHomology.isZero_groupHomology_of_directed`: group homology of a directed union of
+* `groupHomology.isZero_groupHomology_of_directed`: group homology of a directed union of
   subgroups with vanishing homology vanishes.
 
 ## References
@@ -47,9 +47,7 @@ open CategoryTheory Limits Rep
 
 universe u
 
-namespace TauCeti.groupHomology
-
-open _root_.groupHomology
+namespace groupHomology
 
 variable {k G : Type u} [CommRing k] [Group G] {A : Rep k G}
 
@@ -115,4 +113,4 @@ theorem isZero_groupHomology_of_directed {ι : Type*} [Nonempty ι] {S : ι → 
   have := ModuleCat.isZero_iff_subsingleton.1 (h i)
   rw [Subsingleton.elim y 0, map_zero]
 
-end TauCeti.groupHomology
+end groupHomology

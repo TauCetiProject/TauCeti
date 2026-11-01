@@ -17,7 +17,7 @@ For a nonzero integer `m`, the additive group of `ℤ[1/m] = Localization.Away m
 union of its infinite cyclic subgroups `m⁻ʳ ℤ`. Each of these is a free group, whose group homology
 with trivial coefficients vanishes in degrees `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`),
 and group homology commutes with directed unions of subgroups
-(`TauCeti.groupHomology.isZero_groupHomology_of_directed`). Hence
+(`groupHomology.isZero_groupHomology_of_directed`). Hence
 
 * `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 2` and every commutative ring `k`
   (`TauCeti.isZero_groupHomology_localizationAway`);
