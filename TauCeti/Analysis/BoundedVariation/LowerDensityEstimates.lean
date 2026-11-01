@@ -78,39 +78,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {s : Set E} {x : E} {p : ℝ≥0}
 
-omit [μ.IsAddHaarMeasure] in
-/-- At a point of the reduced boundary, `s` charges every ball around the point. -/
-private theorem measure_inter_ball_pos (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r) :
-    0 < μ (s ∩ ball x r) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  set ρ := min r ε
-  have hρ : 0 < ρ := lt_min hr hε
-  refine (measure_mono (inter_subset_inter_right s (ball_subset_ball (min_le_left r ε)))).trans_lt'
-    (pos_iff_ne_zero.2 fun h0 => ?_)
-  -- Otherwise `s` is null in `ball x ρ`, so `|Dχ_s|` vanishes there.
-  have hP : perimeter μ ⟨ball x ρ, isOpen_ball⟩ s = 0 := by
-    rw [perimeter_congr_ae (t := ∅), perimeter_empty]
-    rw [Opens.coe_mk, ae_eq_empty, Measure.restrict_apply' measurableSet_ball, h0]
-  have hU := variationMeasure_preimage_coe hu hfin (U := ⟨ball x ρ, isOpen_ball⟩)
-    fun y hy => hεΩ (ball_subset_ball (min_le_right r ε) hy)
-  rw [← perimeter_def, hP] at hU
-  exact variationMeasure_preimage_closedBall_ne_zero hx (half_pos hρ)
-    (measure_mono_null (preimage_mono (closedBall_subset_ball (half_lt_self hρ))) hU)
-
-omit [μ.IsAddHaarMeasure] in
-/-- A point of the reduced boundary of `s` in `Ω` is a point of the reduced boundary of `s ∩ Ω`,
-which is null-measurable. -/
-private theorem nullMeasurableSet_inter_and_mem_reducedBoundary_inter
-    (hx : x ∈ reducedBoundary μ Ω s) :
-    NullMeasurableSet (s ∩ Ω) μ ∧ x ∈ reducedBoundary μ Ω (s ∩ Ω) := by
-  obtain ⟨hu, -⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  have hs : NullMeasurableSet s (μ.restrict Ω) :=
-    (aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable
-  refine ⟨(nullMeasurableSet_restrict Ω.isOpen.measurableSet.nullMeasurableSet).1 hs, ?_⟩
-  rwa [reducedBoundary_congr_ae (t := s)]
-  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
-  exact propext ⟨fun h => h.1, fun h => ⟨h, hy⟩⟩
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The dimension of `E` is at least two when it has a Hölder conjugate exponent. -/
+private theorem two_le_finrank (hp : NNReal.HolderConjugate (finrank ℝ E) p) :
+    2 ≤ finrank ℝ E := by
+  have := hp.lt
+  exact_mod_cast this
 
 /-- **The differential inequality at the reduced boundary.** For a null-measurable `s`, a point
 `x` of its reduced boundary in `Ω` and `t > 1`, the function `m(ρ) = μ(s ∩ ball x ρ)` satisfies
@@ -171,8 +144,7 @@ private theorem eventually_ofReal_le_mul_measure_inter_ball_rpow_of_nullMeasurab
         μ (s ∩ ball x r) ^ (finrank ℝ E : ℝ)⁻¹ := by
   obtain ⟨ε, hε, h⟩ := exists_ae_measureReal_inter_ball_rpow_le hp hs hx ht
   have hn : (0 : ℝ) < finrank ℝ E := by
-    have := hp.lt
-    exact_mod_cast zero_lt_one.trans this
+    exact_mod_cast zero_lt_two.trans_le (two_le_finrank hp)
   filter_upwards [Ioo_mem_nhdsGT hε] with r hr
   have hfin : μ (s ∩ ball x r) ≠ ∞ :=
     measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
@@ -199,10 +171,10 @@ private theorem eventually_ofReal_le_mul_measure_inter_ball_rpow
       ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) *
         μ (s ∩ ball x r) ^ (finrank ℝ E : ℝ)⁻¹ := by
   -- Replace `s` by the null-measurable set `s ∩ Ω`, which agrees with `s` in small balls.
-  obtain ⟨hs, hx'⟩ := nullMeasurableSet_inter_and_mem_reducedBoundary_inter hx
+  have hx' : x ∈ reducedBoundary μ Ω (s ∩ Ω) := by rwa [reducedBoundary_inter_opens]
   obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  filter_upwards [eventually_ofReal_le_mul_measure_inter_ball_rpow_of_nullMeasurableSet hp hs hx'
-    ht, Ioo_mem_nhdsGT hε] with r h hr
+  filter_upwards [eventually_ofReal_le_mul_measure_inter_ball_rpow_of_nullMeasurableSet hp
+    (nullMeasurableSet_inter_of_mem_reducedBoundary hx) hx' ht, Ioo_mem_nhdsGT hε] with r h hr
   rwa [inter_assoc, inter_eq_right.2 ((ball_subset_ball hr.2.le).trans hεΩ)] at h
 
 /-- **The lower volume density estimate at the reduced boundary.** Let `E` have dimension `n ≥ 2`
@@ -219,9 +191,7 @@ theorem eventually_ofReal_pow_le_mul_measure_inter_ball
     ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r ^ finrank ℝ E) ≤
       ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ finrank ℝ E *
         μ (s ∩ ball x r) := by
-  have hn : finrank ℝ E ≠ 0 := by
-    have := hp.lt
-    exact_mod_cast (zero_lt_one.trans this).ne'
+  have hn : finrank ℝ E ≠ 0 := (zero_lt_two.trans_le (two_le_finrank hp)).ne'
   filter_upwards [eventually_ofReal_le_mul_measure_inter_ball_rpow hp hx ht,
     self_mem_nhdsWithin] with r h (hr : 0 < r)
   rw [ENNReal.ofReal_pow hr.le]
@@ -261,12 +231,8 @@ theorem eventually_ofReal_pow_le_mul_perimeter_ball
       ((1 + t) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) ^ (finrank ℝ E - 1) *
         ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
           perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
-  have hn : 2 ≤ finrank ℝ E := by
-    have := hp.lt
-    exact_mod_cast this
-  obtain ⟨hu, -⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  have hs : NullMeasurableSet s (μ.restrict Ω) :=
-    (aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable
+  have hn := two_le_finrank hp
+  have hs := nullMeasurableSet_restrict_of_mem_reducedBoundary hx
   obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   have hxc : x ∈ reducedBoundary μ Ω sᶜ := by rwa [reducedBoundary_compl]
   filter_upwards [eventually_ofReal_le_mul_measure_inter_ball_rpow hp hx ht,
@@ -315,28 +281,6 @@ theorem eventually_ofReal_pow_le_mul_variationMeasure_closedBall
     fun y hy => hεΩ (closedBall_subset_closedBall hr.2.le (ball_subset_closedBall hy))]
   exact measure_mono (preimage_mono ball_subset_closedBall)
 
-/-- A set filling a proportion `ofReal (r ^ n) ≤ c μ(t ∩ ball x r)`, `c ≠ ∞`, of every small ball
-around `x` does not have density zero at `x`. -/
-private theorem not_hasDensityAt_zero_of_eventually {t : Set E} {c : ℝ≥0∞} (hc : c ≠ ∞)
-    (h : ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r ^ finrank ℝ E) ≤ c * μ (t ∩ ball x r)) :
-    ¬HasDensityAt μ t x 0 := by
-  intro h0
-  have hB : μ (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
-  -- The proportions of `t` in the closed balls stay above `(c μ(ball 0 1))⁻¹`.
-  have hlim : Tendsto (fun r => c * μ (ball (0 : E) 1) *
-      (μ (t ∩ closedBall x r) / μ (closedBall x r))) (𝓝[>] 0) (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul (hasDensityAt_iff.1 h0)
-      (Or.inr (ENNReal.mul_ne_top hc hB))
-  refine absurd (ge_of_tendsto hlim ?_) (by simp : ¬(1 : ℝ≥0∞) ≤ 0)
-  filter_upwards [h, self_mem_nhdsWithin] with r hr (hr0 : 0 < r)
-  have h0' : μ (closedBall x r) ≠ 0 := (measure_closedBall_pos μ x hr0).ne'
-  have htop : μ (closedBall x r) ≠ ∞ := measure_closedBall_lt_top.ne
-  rw [← ENNReal.div_self h0' htop, ← mul_div_assoc]
-  refine ENNReal.div_le_div_right ?_ _
-  rw [Measure.addHaar_closedBall μ x hr0.le, mul_right_comm]
-  gcongr
-  exact hr.trans (by gcongr; exact ball_subset_closedBall)
-
 /-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and
 let `μ` be an additive Haar measure. At a point of the reduced boundary of `s` in an open set `Ω`,
 `s` has neither density zero nor density one. -/
@@ -349,18 +293,18 @@ theorem reducedBoundary_subset_essentialBoundary (hn : 2 ≤ finrank ℝ E) :
       finrank ℝ E ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
   rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
   refine ⟨fun h1 => ?_,
-    not_hasDensityAt_zero_of_eventually hc
+    not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc
       (eventually_ofReal_pow_le_mul_measure_inter_ball hp hx one_lt_two)⟩
   -- Density one of `s` is density one of the null-measurable `s ∩ Ω`, and hence density zero of
   -- its complement, which contains `ball x r \ s` for small `r`.
-  obtain ⟨hs, -⟩ := nullMeasurableSet_inter_and_mem_reducedBoundary_inter hx
+  have hs := nullMeasurableSet_inter_of_mem_reducedBoundary hx
   obtain ⟨ε, hε, hεΩ⟩ :=
     nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   have h1' : HasDensityAt μ (s ∩ Ω) x 1 := by
     refine hasDensityAt_iff.2 ((hasDensityAt_iff.1 h1).congr' ?_)
     filter_upwards [Ioo_mem_nhdsGT hε] with r hr
     rw [inter_assoc, inter_eq_right.2 ((closedBall_subset_closedBall hr.2.le).trans hεΩ)]
-  refine not_hasDensityAt_zero_of_eventually hc ?_
+  refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
     (by simpa using h1'.compl hs (Metric.eventually_measure_closedBall_ne_zero_ne_top μ x))
   filter_upwards [eventually_ofReal_pow_le_mul_measure_ball_sdiff hp hx one_lt_two] with r hr
   refine hr.trans ?_
