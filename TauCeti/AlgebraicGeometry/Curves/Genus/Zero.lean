@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
+import TauCeti.AlgebraicGeometry.Curves.Genus.ConstantExtension
 import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
 import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
@@ -250,12 +251,8 @@ theorem exists_finrank_residueField_le_two_and_isSeparable_of_genus_eq_zero
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   have hk : IsIntegrallyClosedIn k X.functionField :=
     isIntegrallyClosedIn_functionField_of_geometricallyIntegral
-  have := finiteDimensional_cohomology_one_trivial_of_isProper k
-    (IsCurveOver.topologicalKrullDim_eq_one (X := X) k)
-  have : IsNoetherian X := IsCurveOver.isNoetherian k X
-  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hgF : TauCeti.genus k X.functionField = 0 := by
-    rw [← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, genus_def, hg]
+    rw [← X.genus_eq_genus_functionField_of_smooth, genus_def, hg]
   -- The differentials of `k(X)` are one-dimensional, being the generic stalk of the invertible
   -- sheaf `Ω_{X/k}`, so `k(X)` has a separating element.
   have := isInvertible_relativeDifferentials (X := X) k
