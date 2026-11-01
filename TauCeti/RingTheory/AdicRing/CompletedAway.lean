@@ -189,11 +189,8 @@ of an element of `A_f`. -/
 theorem exists_sub_mem_map (x : CompletedAway A f) :
     ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
       (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) := by
-  have hopen : IsOpen ((x - ·) ⁻¹'
-      ((IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) : Set (CompletedAway A f))) :=
-    (by simpa using (isAdic_iff.mp (isAdic A f)).1 1 : IsOpen _).preimage
-      (continuous_const.sub continuous_id)
-  exact (denseRange_algebraMap A f).exists_mem_open hopen ⟨x, by simp⟩
+  rw [map_algebraMap_eq, ← pow_one (Ideal.map _ (IsAdicRing.ideal A))]
+  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) 1 x
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/
