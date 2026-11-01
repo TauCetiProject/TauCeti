@@ -110,8 +110,10 @@ theorem endValuedTensorEquiv_mem_invariants_iff (c : V →ₗ[R] Module.End A E)
     endValuedTensorEquiv R A V E c ∈ ((ρ.baseChange A).dual.tprod (μ.dual.tprod μ)).invariants ↔
       ∀ g v, c (ρ g v) = μ g ∘ₗ c v ∘ₗ μ g⁻¹ := by
   rw [← (dualTensorEndRepEquiv ρ μ).apply_mem_invariants_iff]
-  have hc : dualTensorEndRepEquiv ρ μ (endValuedTensorEquiv R A V E c) = c.liftBaseChange A :=
-    (dualTensorEndEquiv R A V E).apply_symm_apply _
+  -- `liftBaseChange` abbreviates `liftBaseChangeEquiv`, so the last goal closes by `rfl`.
+  have hc : dualTensorEndRepEquiv ρ μ (endValuedTensorEquiv R A V E c) = c.liftBaseChange A := by
+    rw [dualTensorEndRepEquiv, Representation.Equiv.mk_apply, endValuedTensorEquiv,
+      LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
   rw [hc, Representation.mem_invariants]
   simp only [Representation.linHom_apply]
   rw [Representation.mem_linHom_invariants_iff_isIntertwining,
