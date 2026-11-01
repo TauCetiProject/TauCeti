@@ -336,11 +336,10 @@ theorem mem_span_toUnitClosedBall_pow_iff (n : ℕ) {x : Subring.unitClosedBall 
     exact mul_le_of_le_one_right (by positivity) (Subring.mem_unitClosedBall.1 hy)
   · intro hx
     -- `ϖ⁻ⁿ x` lies in the unit ball and `ϖⁿ (ϖ⁻ⁿ x) = x`.
-    refine ⟨((ϖ.unit ^ (-(n : ℤ)) : Rˣ) : R) * x, Subring.mem_unitClosedBall.2 ?_, ?_⟩
-    · rw [hpow, zpow_neg, zpow_natCast]
+    refine ⟨(((ϖ.unit ^ n)⁻¹ : Rˣ) : R) * x, Subring.mem_unitClosedBall.2 ?_, ?_⟩
+    · rw [← zpow_natCast, ← zpow_neg, hpow, zpow_neg, zpow_natCast]
       exact inv_mul_le_one_of_le₀ hx (by positivity)
-    · rw [smul_eq_mul, ← mul_assoc, ← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast,
-        ← zpow_add, add_neg_cancel, zpow_zero, Units.val_one, one_mul]
+    · rw [smul_eq_mul, ← Units.val_pow_eq_pow_val, Units.mul_inv_cancel_left]
 
 /-- **The closed unit ball is `ϖ`-adic**: its norm topology is the `ϖ R°`-adic topology. -/
 theorem isAdic_span_toUnitClosedBall : IsAdic (Ideal.span {ϖ.toUnitClosedBall}) :=
