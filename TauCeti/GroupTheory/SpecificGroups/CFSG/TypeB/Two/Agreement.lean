@@ -169,6 +169,12 @@ noncomputable def symplecticFrobenius : d.StandardGroup →* d.StandardGroup :=
   GLSymplecticFin.map 2 d.1.Closure
     (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
 
+/-- The matrix Frobenius is the entrywise map along the `q`-power Frobenius of the closure. -/
+theorem symplecticFrobenius_def :
+    d.symplecticFrobenius = GLSymplecticFin.map 2 d.1.Closure
+      (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent) :=
+  (rfl)
+
 /-- Entrywise prime-field Frobenius on the standard symplectic matrix group. -/
 noncomputable def symplecticPrimeFrobenius : d.StandardGroup →* d.StandardGroup :=
   GLSymplecticFin.map 2 d.1.Closure (iterateFrobenius d.1.Closure d.1.characteristic 1)

@@ -190,6 +190,12 @@ instance [IsTateRing B] : IsTateRing (CompletedTensor A B C) :=
 instance [IsTateRing C] : IsTateRing (CompletedTensor A B C) :=
   IsTateRing.of_continuous (φ := inr A B C) (continuous_inr A B C)
 
+/-- A Tate base makes the completed tensor ring Tate: the image of a pseudouniformiser of `A`
+under the continuous structure map is one (Wedhorn, *Adic Spaces*, Proposition 6.25). -/
+instance [IsTateRing A] : IsTateRing (CompletedTensor A B C) :=
+  IsTateRing.of_continuous (φ := algebraMap A (CompletedTensor A B C))
+    (IsAdicHom.continuous inferInstance)
+
 /-- Exactly the closure of zero dies in the separated completion. -/
 theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B ⊗[A] C)).closure :=
   Completion.ker_coeRingHom
