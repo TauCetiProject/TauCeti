@@ -97,7 +97,7 @@ theorem nonempty_end_algEquiv_self (P : SplitWedderburnAlgebraPresentation k A)
     subst n
     exact not_subsingleton (isotypicComponent A A S) e.subsingleton⟩
   obtain ⟨f, -⟩ := hσ c
-  exact nonempty_algEquiv_of_algEquiv_matrix
+  exact AlgEquiv.nonempty_algEquiv_of_algEquiv_matrix
     ((e.conjAlgEquiv k).trans (endVecAlgEquivMatrixEnd (Fin n) k A S)) f
 
 end TauCeti.SplitWedderburnAlgebraPresentation

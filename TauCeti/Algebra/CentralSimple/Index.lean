@@ -119,7 +119,7 @@ theorem index_eq_deg_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [Divisi
   let _ := W.finiteDimensional
   let _ := W.matrixSize_neZero
   have hsize : W.matrixSize = n :=
-    (wedderburn_data_unique W.equiv.toRingEquiv e.toRingEquiv).1
+    (W.equiv.toRingEquiv.wedderburn_data_unique e.toRingEquiv).1
   have hW := deg_eq_mul_deg_of_algEquiv_matrix W.equiv
   have hD := deg_eq_mul_deg_of_algEquiv_matrix e
   rw [hsize] at hW

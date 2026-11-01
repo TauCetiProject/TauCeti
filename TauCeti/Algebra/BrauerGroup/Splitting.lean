@@ -20,8 +20,8 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 -- Non-public: `IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, the Wedderburn
 -- presentation the argument runs on, is used only in the proofs; no statement here mentions it.
 import TauCeti.Algebra.CentralSimple.Wedderburn
--- Non-public: `TauCeti.card_eq_of_ringEquiv_matrix` and
--- `TauCeti.length_eq_card_of_ringEquiv_matrix`, the invariance of the size of a matrix
+-- Non-public: `RingEquiv.card_eq_of_ringEquiv_matrix` and
+-- `RingEquiv.length_eq_card_of_ringEquiv_matrix`, the invariance of the size of a matrix
 -- presentation, are the engine of the proofs and are mentioned by no exported statement.
 import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
 
@@ -39,7 +39,7 @@ The missing ingredient is the **uniqueness of the size of a matrix presentation*
 `Mₚ(A) ≃ₐ[K] M_q(K)`, write `A ≃ₐ[K] M_r(D)` for a central division algebra `D`
 (`IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`). Then `Mₚ(A)` is presented as a
 matrix ring over a division ring in two ways, of sizes `p * r` over `D` and `q` over `K`, so
-`TauCeti.card_eq_of_ringEquiv_matrix` forces `p * r = q`. Comparing dimensions,
+`RingEquiv.card_eq_of_ringEquiv_matrix` forces `p * r = q`. Comparing dimensions,
 `p² · dim_K A = q² = p² r²`, so `dim_K A = r²`, and the Wedderburn dimension count
 `dim_K A = r² · dim_K D` collapses `D` to `K`. Hence `A ≃ₐ[K] M_r(K)` already.
 
@@ -66,9 +66,9 @@ hence of the hypothesis that `TauCeti.BrauerGroup.orderOf_mk_eq_two` needs to sh
 ## Implementation notes
 
 Only the size half of the Wedderburn uniqueness is used, in the form
-`TauCeti.card_eq_of_ringEquiv_matrix`: the division ring is pinned here by a dimension count
+`RingEquiv.card_eq_of_ringEquiv_matrix`: the division ring is pinned here by a dimension count
 instead, which keeps the argument inside `Module.finrank` and avoids having to promote the ring
-isomorphism `D ≃+* K` that `TauCeti.wedderburn_data_unique` also supplies to an isomorphism of
+isomorphism `D ≃+* K` that `RingEquiv.wedderburn_data_unique` also supplies to an isomorphism of
 `K`-algebras.
 
 The general `IsBrauerTrivial` equivalence is the `simp` normal form of `TauCeti.IsBrauerTrivial`.
@@ -122,7 +122,7 @@ theorem Algebra.isSplittingField_self_of_isBrauerTrivial (h : IsBrauerTrivial (C
     (f.mapMatrix (m := Fin p)).trans <| (Matrix.compAlgEquiv (Fin p) (Fin r) D K).trans <|
       Matrix.reindexAlgEquiv K D finProdFinEquiv
   have hsize : p * r = q := by
-    simpa using card_eq_of_ringEquiv_matrix g.toRingEquiv e'.toRingEquiv
+    simpa using g.toRingEquiv.card_eq_of_ringEquiv_matrix e'.toRingEquiv
   -- `dim_K A = r ^ 2`, by comparing the dimensions of the two sides of `e'`.
   have hA : Module.finrank K A = r ^ 2 := by
     have h1 : Module.finrank K (Matrix (Fin p) (Fin p) A) = p * p * Module.finrank K A := by
@@ -197,7 +197,7 @@ theorem isBrauerTrivial_iff_finrank_eq_one :
     obtain ⟨n, ⟨e⟩⟩ := (Algebra.isSplittingField_self_iff K D).1
       (Algebra.isSplittingField_self_of_isBrauerTrivial K D h)
     have hlen : Module.length D D = (Fintype.card (Fin n) : ℕ∞) :=
-      length_eq_card_of_ringEquiv_matrix e.toRingEquiv
+      e.toRingEquiv.length_eq_card_of_ringEquiv_matrix
     rw [Module.length_eq_one, Fintype.card_fin] at hlen
     have hn : n = 1 := by exact_mod_cast hlen.symm
     subst hn

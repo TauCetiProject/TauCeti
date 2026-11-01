@@ -28,7 +28,7 @@ both preserve the Brauer class, so `[A] = [D]`.
 For uniqueness, if central division algebras `D` and `E` have the same class, Brauer equivalence
 gives positive `n` and `m` and an algebra isomorphism `Mₙ(D) ≃ₐ[K] Mₘ(E)`. The algebra-linear
 Wedderburn uniqueness theorem
-`TauCeti.nonempty_algEquiv_of_algEquiv_matrix` then gives `D ≃ₐ[K] E`. Its algebra linearity is
+`AlgEquiv.nonempty_algEquiv_of_algEquiv_matrix` then gives `D ≃ₐ[K] E`. Its algebra linearity is
 load-bearing: ring-level Wedderburn uniqueness alone would not say that the resulting isomorphism
 fixes the chosen copy of `K`.
 
@@ -97,7 +97,7 @@ theorem nonempty_algEquiv_of_mk_eq_mk
   obtain ⟨n, m, hn, hm, ⟨e⟩⟩ := mk_eq_mk_iff.mp h
   have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   have : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hm)
-  exact nonempty_algEquiv_of_algEquiv_matrix (K := K) (AlgEquiv.refl :
+  exact AlgEquiv.nonempty_algEquiv_of_algEquiv_matrix (K := K) (AlgEquiv.refl :
     Matrix (Fin n) (Fin n) D ≃ₐ[K] Matrix (Fin n) (Fin n) D) e
 
 /-- **Two central division algebras are Brauer equivalent exactly when they are isomorphic as
