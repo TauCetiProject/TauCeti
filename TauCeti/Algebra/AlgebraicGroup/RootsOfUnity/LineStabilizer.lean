@@ -37,6 +37,9 @@ smooth.
 
 * `TauCeti.RootsOfUnityGroup.projLineComodule`: the representation `t · (u, v) = (tⁿ u, v)` of
   `𝔾ₘ` on `R²`, diagonal with weights `n` and `0`.
+* `TauCeti.RootsOfUnityGroup.projLineComodule_coact_basisFun_zero` and
+  `TauCeti.RootsOfUnityGroup.projLineComodule_coact_basisFun_one`: its coaction on the two
+  coordinate vectors.
 * `TauCeti.RootsOfUnityGroup.stabilizerHopfIdeal_ofWeights_toIdeal`: for
   `t · [u : v] = [tⁿ u : v]`, the stabilizer of `[1 : 1]` is `μ_n`.
 * `TauCeti.RootsOfUnityGroup.smooth_quotient_stabilizerHopfIdeal_ofWeights_iff`: for `n ≠ 0`,
@@ -74,7 +77,7 @@ over `R[ℤ]` that is diagonal in the standard basis with weights `n` and `0`. I
   Comodule.ofWeights (Pi.basisFun R (Fin 2)) ![Multiplicative.ofAdd (n : ℤ), 1]
 
 /-- The first coordinate vector has weight `n`. -/
-private theorem projLineComodule_coact_basisFun_zero (n : ℕ) :
+theorem projLineComodule_coact_basisFun_zero (n : ℕ) :
     letI := projLineComodule R n
     Comodule.coact (R := R) (C := MonoidAlgebra R (Multiplicative ℤ))
         (Pi.basisFun R (Fin 2) 0) =
@@ -82,7 +85,7 @@ private theorem projLineComodule_coact_basisFun_zero (n : ℕ) :
   Comodule.ofWeights_coact_basis _ _ 0
 
 /-- The second coordinate vector has weight `0`. -/
-private theorem projLineComodule_coact_basisFun_one (n : ℕ) :
+theorem projLineComodule_coact_basisFun_one (n : ℕ) :
     letI := projLineComodule R n
     Comodule.coact (R := R) (C := MonoidAlgebra R (Multiplicative ℤ))
         (Pi.basisFun R (Fin 2) 1) =
@@ -101,7 +104,7 @@ private theorem linearIndependent_basisFun_pair :
     LinearIndependent k ![Pi.basisFun k (Fin 2) 0, Pi.basisFun k (Fin 2) 1] := by
   convert (Pi.basisFun k (Fin 2)).linearIndependent using 1
   ext i : 1
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- The point `[1 : 1]` is the line through the sum of the two coordinate vectors. -/
 private theorem one_eq_basisFun_add :

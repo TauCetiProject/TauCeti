@@ -69,6 +69,7 @@ def ofGroupLikeSub (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGroupLikeElem 
         (Ideal.mem_sup_right (Ideal.tmul_mem_rightTensorIdeal R H χ₂ hmem)))
     (fun x hx ↦ by
       obtain rfl := Set.mem_singleton_iff.mp hx
+      -- `ε` lands in the semiring `R`, where `1 - 1` is unavailable, so rewrite `1` back to `ε χ₂`.
       rw [sub_eq_add_neg, map_add, hχ₁.counit_eq_one, ← hχ₂.counit_eq_one, ← map_add,
         add_neg_cancel, map_zero])
     (fun x hx ↦ by
@@ -89,6 +90,7 @@ theorem ofGroupLikeSub_toIdeal (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGr
   ofSpan_toIdeal _ _ _ _
 
 /-- An element lies in `ofGroupLikeSub` exactly when it is a multiple of `χ₁ - χ₂`. -/
+@[simp]
 theorem mem_ofGroupLikeSub (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGroupLikeElem R χ₂) {x : H} :
     x ∈ ofGroupLikeSub hχ₁ hχ₂ ↔ x ∈ Ideal.span {χ₁ - χ₂} := by
   rw [← mem_toIdeal, ofGroupLikeSub_toIdeal]
