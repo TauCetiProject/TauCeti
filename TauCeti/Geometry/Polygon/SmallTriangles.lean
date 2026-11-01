@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
+public import TauCeti.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
+public import TauCeti.LinearAlgebra.AffineSpace.TriangleChart
 import Mathlib.LinearAlgebra.AffineSpace.MidpointZero
 
 /-!
@@ -41,8 +43,8 @@ relation `r` containing these moves: the Δ-move is then in the equivalence rela
 inside `D` is preserved by the Δ-move across `D`.
 
 The intersections of the four triangles with the sides involved are computed in the plane of
-`D`, through the affine chart `(s, t) ↦ a + s • (b - a) + t • (c - a)`, which is injective because
-`a`, `b`, `c` are affinely independent.
+`D`, through the affine chart `TauCeti.triangleChart` `(s, t) ↦ a + s • (b - a) + t • (c - a)`,
+which is injective because `a`, `b`, `c` are affinely independent.
 
 ## Main results
 
@@ -62,88 +64,43 @@ The intersections of the four triangles with the sides involved are computed in 
 
 public section
 
-open Set Function
+open Set Function TauCeti
 
 namespace Polygon
 
-/-! ### The plane of a triangle -/
+/-! ### The sides of the midpoint subdivision in the plane of a triangle -/
 
 section Chart
 
 variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P]
 
-/-- The affine chart `(s, t) ↦ a + s • (b - a) + t • (c - a)` of the plane through `a`, `b`, `c`,
-sending `(0, 0)`, `(1, 0)` and `(0, 1)` to `a`, `b` and `c`. -/
-private def triangleChart (a b c : P) : ℝ × ℝ →ᵃ[ℝ] P :=
-  (AffineEquiv.vaddConst ℝ a).toAffineMap.comp
-    ((LinearMap.fst ℝ ℝ ℝ).smulRight (b -ᵥ a) +
-      (LinearMap.snd ℝ ℝ ℝ).smulRight (c -ᵥ a)).toAffineMap
+/-- The segment `[m_ab, b]` read in the chart of the plane of `abc`. -/
+private theorem affineSegment_ab_b_eq_image (a b c : P) :
+    affineSegment ℝ (midpoint ℝ a b) b =
+      triangleChart ℝ a b c '' convexHull ℝ {(1 / 2, 0), (1, 0)} := by
+  rw [convexHull_pair, ← affineSegment_eq_segment, affineSegment_image,
+    triangleChart_apply_half_zero, triangleChart_apply_one_zero]
 
-private theorem triangleChart_apply (a b c : P) (x : ℝ × ℝ) :
-    triangleChart a b c x = (x.1 • (b -ᵥ a) + x.2 • (c -ᵥ a)) +ᵥ a :=
-  (rfl)
+/-- The segment `[a, m_ac]` read in the chart of the plane of `abc`. -/
+private theorem affineSegment_a_ac_eq_image (a b c : P) :
+    affineSegment ℝ a (midpoint ℝ a c) =
+      triangleChart ℝ a b c '' convexHull ℝ {(0, 0), (0, 1 / 2)} := by
+  rw [convexHull_pair, ← affineSegment_eq_segment, affineSegment_image,
+    triangleChart_apply_zero_zero, triangleChart_apply_zero_half]
 
-/-- The chart of the plane of an affinely independent triple is injective. -/
-private theorem triangleChart_injective {a b c : P} (h : AffineIndependent ℝ ![a, b, c]) :
-    Injective (triangleChart a b c) := by
-  have hli : LinearIndependent ℝ ![b -ᵥ a, c -ᵥ a] := by
-    rw [affineIndependent_iff_linearIndependent_vsub ℝ _ 0] at h
-    convert h.comp ![⟨1, by decide⟩, ⟨2, by decide⟩] (by decide) using 1
-    ext j
-    fin_cases j <;> rfl
-  intro x y hxy
-  rw [triangleChart_apply, triangleChart_apply, vadd_right_cancel_iff, ← sub_eq_zero] at hxy
-  obtain ⟨h₁, h₂⟩ := LinearIndependent.pair_iff.1 hli (x.1 - y.1) (x.2 - y.2) (by
-    rw [← hxy]
-    module)
-  exact Prod.ext (sub_eq_zero.1 h₁) (sub_eq_zero.1 h₂)
+/-- The segment `[m_ac, m_cb]` read in the chart of the plane of `abc`. -/
+private theorem affineSegment_ac_cb_eq_image (a b c : P) :
+    affineSegment ℝ (midpoint ℝ a c) (midpoint ℝ c b) =
+      triangleChart ℝ a b c '' convexHull ℝ {(0, 1 / 2), (1 / 2, 1 / 2)} := by
+  rw [convexHull_pair, ← affineSegment_eq_segment, affineSegment_image,
+    triangleChart_apply_zero_half, triangleChart_apply_half_half]
 
-private theorem triangleChart_a (a b c : P) : triangleChart a b c (0, 0) = a := by
-  simp [triangleChart_apply]
-
-private theorem triangleChart_b (a b c : P) : triangleChart a b c (1, 0) = b := by
-  simp [triangleChart_apply]
-
-private theorem triangleChart_c (a b c : P) : triangleChart a b c (0, 1) = c := by
-  simp [triangleChart_apply]
-
-private theorem triangleChart_ab (a b c : P) :
-    triangleChart a b c (1 / 2, 0) = midpoint ℝ a b := by
-  simp [triangleChart_apply, midpoint, AffineMap.lineMap_apply]
-
-private theorem triangleChart_ac (a b c : P) :
-    triangleChart a b c (0, 1 / 2) = midpoint ℝ a c := by
-  simp [triangleChart_apply, midpoint, AffineMap.lineMap_apply]
-
-private theorem triangleChart_cb (a b c : P) :
-    triangleChart a b c (1 / 2, 1 / 2) = midpoint ℝ c b := by
-  rw [triangleChart_apply, midpoint, AffineMap.lineMap_apply, eq_vadd_iff_vsub_eq,
-    vadd_vsub_assoc, ← vsub_sub_vsub_cancel_right b c a, smul_sub, ← neg_vsub_eq_vsub_rev c a,
-    invOf_eq_inv]
-  module
-
-/-- A triangle whose vertices are the images of `x`, `y`, `z` under an injective affine map `φ`
-from the plane has closed interior the image of the convex hull of `x`, `y`, `z`. -/
-private theorem closedInterior_eq_image_convexHull {φ : ℝ × ℝ →ᵃ[ℝ] P} (hφ : Injective φ)
-    (t : Affine.Triangle ℝ P) {x y z : ℝ × ℝ} (ht : t.points = ![φ x, φ y, φ z]) :
-    t.closedInterior = φ '' convexHull ℝ {x, y, z} := by
-  have hpts : t.points = φ ∘ ![x, y, z] := by
-    rw [ht]
-    ext j
-    fin_cases j <;> rfl
-  have hind : AffineIndependent ℝ ![x, y, z] :=
-    AffineIndependent.of_comp φ (hpts ▸ t.independent)
-  have hmap : t = (⟨_, hind⟩ : Affine.Triangle ℝ (ℝ × ℝ)).map φ hφ :=
-    Affine.Simplex.ext fun j => congrFun hpts j
-  rw [hmap, Affine.Simplex.closedInterior_map, ← Affine.Simplex.convexHull_eq_closedInterior,
-    Matrix.range_cons, Matrix.range_cons, Matrix.range_cons, Matrix.range_empty, union_empty,
-    singleton_union, singleton_union]
-
-/-- The segment between the images of `x` and `y` under an affine map from the plane is the
-image of the convex hull of `x` and `y`. -/
-private theorem affineSegment_eq_image_convexHull (φ : ℝ × ℝ →ᵃ[ℝ] P) (x y : ℝ × ℝ) :
-    affineSegment ℝ (φ x) (φ y) = φ '' convexHull ℝ {x, y} := by
-  rw [← affineSegment_image, affineSegment_eq_segment, convexHull_pair]
+/-- The segment `[m_cb, b]` read in the chart of the plane of `abc`. -/
+private theorem affineSegment_cb_b_eq_image (a b c : P) :
+    affineSegment ℝ (midpoint ℝ c b) b =
+      triangleChart ℝ a b c '' convexHull ℝ {(1 / 2, 1 / 2), (1, 0)} := by
+  rw [convexHull_pair, ← affineSegment_eq_segment, affineSegment_image,
+    triangleChart_apply_half_half, triangleChart_apply_one_zero]
 
 end Chart
 
@@ -159,28 +116,6 @@ private theorem le_of_mem_convexHull {s : Set (ℝ × ℝ)} (u v w : ℝ)
     ⟨fun x y => by simp only [Prod.fst_add, Prod.snd_add]; ring,
      fun r x => by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring⟩ w) hp
 
-/-- Three points of the plane with nonzero determinant `det (y - x, z - x)` are affinely
-independent. -/
-private theorem affineIndependent_of_det_ne_zero {x y z : ℝ × ℝ}
-    (h : (y.1 - x.1) * (z.2 - x.2) - (y.2 - x.2) * (z.1 - x.1) ≠ 0) :
-    AffineIndependent ℝ ![x, y, z] := by
-  have hli : LinearIndependent ℝ ![y - x, z - x] := by
-    refine LinearIndependent.pair_iff.2 fun s t hst => ?_
-    have h₁ := congrArg Prod.fst hst
-    have h₂ := congrArg Prod.snd hst
-    simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, Prod.fst_sub,
-      Prod.snd_sub, smul_eq_mul, Prod.fst_zero, Prod.snd_zero] at h₁ h₂
-    constructor
-    · refine (mul_eq_zero.1 ?_).resolve_right h
-      linear_combination (z.2 - x.2) * h₁ - (z.1 - x.1) * h₂
-    · refine (mul_eq_zero.1 ?_).resolve_right h
-      linear_combination (y.1 - x.1) * h₂ - (y.2 - x.2) * h₁
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ 0,
-    ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
-  convert hli using 1
-  funext j
-  fin_cases j <;> rfl
-
 /-! The four triangles of the midpoint subdivision of the triangle with vertices `(0, 0)`, `(1, 0)`
 and `(0, 1)`, and their intersections with the sides met along the way. -/
 
@@ -194,15 +129,18 @@ private theorem mem_convexHull_standard {x : ℝ × ℝ}
     subset_convexHull ℝ _ (by simp)
   have hC : ((0 : ℝ), (1 : ℝ)) ∈ convexHull ℝ {((0 : ℝ), (0 : ℝ)), (1, 0), (0, 1)} :=
     subset_convexHull ℝ _ (by simp)
-  have hAB := convex_convexHull ℝ _ hA hB (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num)
-    (by norm_num)
-  have hAC := convex_convexHull ℝ _ hA hC (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num)
-    (by norm_num)
-  have hBC := convex_convexHull ℝ _ hB hC (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num)
-    (by norm_num)
-  norm_num at hAB hAC hBC
+  have hconv := convex_convexHull ℝ ({((0 : ℝ), (0 : ℝ)), (1, 0), (0, 1)} : Set (ℝ × ℝ))
   simp only [mem_insert_iff, mem_singleton_iff] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact hA
+  · exact hB
+  · exact hC
+  · convert hconv hA hB (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num) (by norm_num) using 1
+    ext <;> norm_num
+  · convert hconv hA hC (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num) (by norm_num) using 1
+    ext <;> norm_num
+  · convert hconv hB hC (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num) (by norm_num) using 1
+    ext <;> norm_num
 
 /-- A triangle with vertices in the standard triangle lies in it. -/
 private theorem convexHull_subset_standard {x y z : ℝ × ℝ}
@@ -358,7 +296,7 @@ private theorem isDeltaMove_of_chart {m : ℕ} {q : Polygon P m} {j : Fin m} {w 
     funext k
     fin_cases k <;> rfl
   refine ⟨hind', fun k hk => ?_⟩
-  rw [closedInterior_eq_image_convexHull hφ _ (x := x) (y := y) (z := z)
+  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ hφ (x := x) (y := y) (z := z)
     (by rw [← hx, ← hy, ← hz]), hx, hy, ← image_pair]
   exact hedge k hk
 
@@ -367,10 +305,11 @@ variable {n : ℕ} {poly : Polygon P n} {i : Fin n} {c : P}
 /-- The triangle of a Δ-move is the image of the standard triangle under the chart of its
 plane. -/
 private theorem IsDeltaMove.closedInterior_eq_image (h : poly.IsDeltaMove ℝ i c) :
-    h.triangle.closedInterior = triangleChart (poly i) (poly (finRotate n i)) c ''
+    h.triangle.closedInterior = triangleChart ℝ (poly i) (poly (finRotate n i)) c ''
       convexHull ℝ {((0 : ℝ), (0 : ℝ)), (1, 0), (0, 1)} :=
-  closedInterior_eq_image_convexHull (triangleChart_injective h.affineIndependent) _
-    (by rw [IsDeltaMove.triangle_points, triangleChart_a, triangleChart_b, triangleChart_c])
+  Affine.Triangle.closedInterior_eq_image_convexHull _ (triangleChart_injective h.affineIndependent)
+    (by rw [IsDeltaMove.triangle_points, triangleChart_apply_zero_zero,
+      triangleChart_apply_one_zero, triangleChart_apply_zero_one])
 
 /-- The edges of the polygon other than the one replaced by a Δ-move meet the image of a part `X`
 of the standard triangle only at the images of the vertices `(0, 0)` and `(1, 0)` lying in `X`,
@@ -380,17 +319,17 @@ private theorem IsDeltaMove.iUnion_edgeSet_inter_image_subset (h : poly.IsDeltaM
     (ha : ((0 : ℝ), (0 : ℝ)) ∈ X → poly i ∈ E)
     (hb : ((1 : ℝ), (0 : ℝ)) ∈ X → poly (finRotate n i) ∈ E) :
     (⋃ (l : Fin n) (_ : l ≠ i), poly.edgeSet ℝ l) ∩
-      triangleChart (poly i) (poly (finRotate n i)) c '' X ⊆ E := by
+      triangleChart ℝ (poly i) (poly (finRotate n i)) c '' X ⊆ E := by
   rintro _ ⟨hx, y, hyX, rfl⟩
   obtain ⟨l, hl, hxl⟩ := mem_iUnion₂.1 hx
   have hφ := triangleChart_injective h.affineIndependent
   rcases h.edgeSet_inter_closedInterior_subset hl
       ⟨hxl, h.closedInterior_eq_image ▸ mem_image_of_mem _ (hX hyX)⟩ with he | he
-  · obtain rfl := hφ (he.trans (triangleChart_a _ _ c).symm)
-    rw [triangleChart_a]
+  · obtain rfl := hφ (he.trans (triangleChart_apply_zero_zero _ _ c).symm)
+    rw [triangleChart_apply_zero_zero]
     exact ha hyX
-  · obtain rfl := hφ ((mem_singleton_iff.1 he).trans (triangleChart_b _ _ c).symm)
-    rw [triangleChart_b]
+  · obtain rfl := hφ ((mem_singleton_iff.1 he).trans (triangleChart_apply_one_zero _ _ c).symm)
+    rw [triangleChart_apply_one_zero]
     exact hb hyX
 
 /-- First move: across the corner triangle `a m_ab m_ac`, after subdividing `[a, b]` at `m_ab`. -/
@@ -398,20 +337,17 @@ private theorem IsDeltaMove.isDeltaMove_corner_a (h : poly.IsDeltaMove ℝ i c) 
     (poly.insertVertex i (midpoint ℝ (poly i) (poly (finRotate n i)))).IsDeltaMove ℝ i.castSucc
       (midpoint ℝ (poly i) c) := by
   have hφ := triangleChart_injective h.affineIndependent
-  have hs : affineSegment ℝ (midpoint ℝ (poly i) (poly (finRotate n i))) (poly (finRotate n i)) =
-      triangleChart (poly i) (poly (finRotate n i)) c '' convexHull ℝ {(1 / 2, 0), (1, 0)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_ab, triangleChart_b]
   refine isDeltaMove_of_chart hφ (x := (0, 0)) (y := (1 / 2, 0)) (z := (0, 1 / 2))
-    (by rw [insertVertex_apply_castSucc_self, triangleChart_a])
-    (by rw [Fin.finRotate_castSucc, insertVertex_apply_succ_self, triangleChart_ab])
-    (triangleChart_ac _ _ _).symm (affineIndependent_of_det_ne_zero (by norm_num))
+    (by rw [insertVertex_apply_castSucc_self, triangleChart_apply_zero_zero])
+    (by rw [Fin.finRotate_castSucc, insertVertex_apply_succ_self, triangleChart_apply_half_zero])
+    (triangleChart_apply_zero_half _ _ _).symm (affineIndependent_iff_det_ne_zero.2 (by norm_num))
     fun k hk => (inter_subset_inter_left _
       (edgeSet_insertVertex_subset_of_ne_castSucc _ _ _ hk)).trans ?_
   rw [union_inter_distrib_right, union_subset_iff]
   refine ⟨h.iUnion_edgeSet_inter_image_subset (convexHull_subset_standard (by simp) (by simp)
-    (by simp)) (fun _ => ⟨(0, 0), by simp, triangleChart_a _ _ _⟩)
+    (by simp)) (fun _ => ⟨(0, 0), by simp, triangleChart_apply_zero_zero _ _ _⟩)
     (fun hb => (b_notMem_one hb).elim), ?_⟩
-  rw [hs, ← image_inter hφ]
+  rw [affineSegment_ab_b_eq_image (c := c), ← image_inter hφ]
   exact image_mono inter_one_ab_b
 
 /-- Second move: across the middle triangle `m_ac m_ab m_cb`. -/
@@ -420,22 +356,17 @@ private theorem IsDeltaMove.isDeltaMove_middle (h : poly.IsDeltaMove ℝ i c) :
       (midpoint ℝ (poly i) c)).IsDeltaMove ℝ i.castSucc.succ
         (midpoint ℝ c (poly (finRotate n i))) := by
   have hφ := triangleChart_injective h.affineIndependent
-  have hs₁ : affineSegment ℝ (midpoint ℝ (poly i) (poly (finRotate n i))) (poly (finRotate n i)) =
-      triangleChart (poly i) (poly (finRotate n i)) c '' convexHull ℝ {(1 / 2, 0), (1, 0)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_ab, triangleChart_b]
-  have hs₂ : affineSegment ℝ (poly i) (midpoint ℝ (poly i) c) =
-      triangleChart (poly i) (poly (finRotate n i)) c '' convexHull ℝ {(0, 0), (0, 1 / 2)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_a, triangleChart_ac]
   refine isDeltaMove_of_chart hφ (x := (0, 1 / 2)) (y := (1 / 2, 0)) (z := (1 / 2, 1 / 2))
-    (by rw [insertVertex_apply_succ_self, triangleChart_ac])
+    (by rw [insertVertex_apply_succ_self, triangleChart_apply_zero_half])
     (by rw [insertVertex_apply_finRotate_succ_self, Fin.finRotate_castSucc,
-      insertVertex_apply_succ_self, triangleChart_ab])
-    (triangleChart_cb _ _ _).symm (affineIndependent_of_det_ne_zero (by norm_num))
+      insertVertex_apply_succ_self, triangleChart_apply_half_zero])
+    (triangleChart_apply_half_half _ _ _).symm (affineIndependent_iff_det_ne_zero.2 (by norm_num))
     fun k hk => (inter_subset_inter_left _
       ((edgeSet_insertVertex_subset_of_ne_succ _ _ _ hk).trans (union_subset_union_left _
         (iUnion₂_subset fun l hl => edgeSet_insertVertex_subset_of_ne_castSucc _ _ _ hl)))).trans ?_
   rw [insertVertex_apply_castSucc_self, union_inter_distrib_right, union_inter_distrib_right,
-    union_subset_iff, union_subset_iff, hs₁, hs₂, ← image_inter hφ,
+    union_subset_iff, union_subset_iff, affineSegment_ab_b_eq_image (c := c),
+    affineSegment_a_ac_eq_image (b := poly (finRotate n i)), ← image_inter hφ,
     ← image_inter hφ]
   exact ⟨⟨h.iUnion_edgeSet_inter_image_subset (convexHull_subset_standard (by simp) (by simp)
     (by simp)) (fun ha => (a_notMem_two ha).elim) (fun hb => (b_notMem_two hb).elim),
@@ -448,27 +379,21 @@ private theorem IsDeltaMove.isDeltaMove_corner_b (h : poly.IsDeltaMove ℝ i c) 
       (midpoint ℝ c (poly (finRotate n i)))).IsDeltaMove ℝ i.succ.succ
         (midpoint ℝ (poly i) (poly (finRotate n i))) := by
   have hφ := triangleChart_injective h.affineIndependent
-  have hs₁ : affineSegment ℝ (poly i) (midpoint ℝ (poly i) c) =
-      triangleChart (poly i) (poly (finRotate n i)) c '' convexHull ℝ {(0, 0), (0, 1 / 2)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_a, triangleChart_ac]
-  have hs₂ : affineSegment ℝ (midpoint ℝ (poly i) c) (midpoint ℝ c (poly (finRotate n i))) =
-      triangleChart (poly i) (poly (finRotate n i)) c ''
-        convexHull ℝ {(0, 1 / 2), (1 / 2, 1 / 2)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_ac, triangleChart_cb]
   refine isDeltaMove_of_chart hφ (x := (1 / 2, 1 / 2)) (y := (1, 0)) (z := (1 / 2, 0))
-    (by rw [insertVertex_apply_succ_self, triangleChart_cb])
+    (by rw [insertVertex_apply_succ_self, triangleChart_apply_half_half])
     (by rw [insertVertex_apply_finRotate_succ_self, insertVertex_apply_finRotate_succ_self,
-      triangleChart_b])
-    (triangleChart_ab _ _ _).symm (affineIndependent_of_det_ne_zero (by norm_num))
+      triangleChart_apply_one_zero])
+    (triangleChart_apply_half_zero _ _ _).symm (affineIndependent_iff_det_ne_zero.2 (by norm_num))
     fun k hk => (inter_subset_inter_left _
       ((edgeSet_insertVertex_subset_of_ne_succ _ _ _ hk).trans (union_subset_union_left _
         (iUnion₂_subset fun l hl => edgeSet_insertVertex_subset_of_ne_succ _ _ _ hl)))).trans ?_
   rw [insertVertex_apply_succ_self, union_inter_distrib_right, union_inter_distrib_right,
-    union_subset_iff, union_subset_iff, hs₁, hs₂, ← image_inter hφ,
+    union_subset_iff, union_subset_iff, affineSegment_a_ac_eq_image (b := poly (finRotate n i)),
+    affineSegment_ac_cb_eq_image, ← image_inter hφ,
     ← image_inter hφ]
   exact ⟨⟨h.iUnion_edgeSet_inter_image_subset (convexHull_subset_standard (by simp) (by simp)
     (by simp)) (fun ha => (a_notMem_three ha).elim)
-    (fun _ => ⟨(1, 0), by simp, triangleChart_b _ _ _⟩),
+    (fun _ => ⟨(1, 0), by simp, triangleChart_apply_one_zero _ _ _⟩),
     image_mono inter_three_a_ac⟩, image_mono inter_three_ac_cb⟩
 
 /-- Fourth move: across the corner triangle `m_ac m_cb c`, from the polygon
@@ -477,21 +402,17 @@ private theorem IsDeltaMove.isDeltaMove_corner_c (h : poly.IsDeltaMove ℝ i c) 
     ((poly.insertVertex i (midpoint ℝ (poly i) c)).insertVertex i.succ
       (midpoint ℝ c (poly (finRotate n i)))).IsDeltaMove ℝ i.succ.castSucc c := by
   have hφ := triangleChart_injective h.affineIndependent
-  have hs₁ : affineSegment ℝ (poly i) (midpoint ℝ (poly i) c) =
-      triangleChart (poly i) (poly (finRotate n i)) c '' convexHull ℝ {(0, 0), (0, 1 / 2)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_a, triangleChart_ac]
-  have hs₂ : affineSegment ℝ (midpoint ℝ c (poly (finRotate n i))) (poly (finRotate n i)) =
-      triangleChart (poly i) (poly (finRotate n i)) c '' convexHull ℝ {(1 / 2, 1 / 2), (1, 0)} := by
-    rw [← affineSegment_eq_image_convexHull, triangleChart_cb, triangleChart_b]
   refine isDeltaMove_of_chart hφ (x := (0, 1 / 2)) (y := (1 / 2, 1 / 2)) (z := (0, 1))
-    (by rw [insertVertex_apply_castSucc_self, insertVertex_apply_succ_self, triangleChart_ac])
-    (by rw [Fin.finRotate_castSucc, insertVertex_apply_succ_self, triangleChart_cb])
-    (triangleChart_c _ _ _).symm (affineIndependent_of_det_ne_zero (by norm_num))
+    (by rw [insertVertex_apply_castSucc_self, insertVertex_apply_succ_self,
+      triangleChart_apply_zero_half])
+    (by rw [Fin.finRotate_castSucc, insertVertex_apply_succ_self, triangleChart_apply_half_half])
+    (triangleChart_apply_zero_one _ _ _).symm (affineIndependent_iff_det_ne_zero.2 (by norm_num))
     fun k hk => (inter_subset_inter_left _
       ((edgeSet_insertVertex_subset_of_ne_castSucc _ _ _ hk).trans (union_subset_union_left _
         (iUnion₂_subset fun l hl => edgeSet_insertVertex_subset_of_ne_succ _ _ _ hl)))).trans ?_
   rw [insertVertex_apply_finRotate_succ_self, union_inter_distrib_right, union_inter_distrib_right,
-    union_subset_iff, union_subset_iff, hs₁, hs₂, ← image_inter hφ,
+    union_subset_iff, union_subset_iff, affineSegment_a_ac_eq_image (b := poly (finRotate n i)),
+    affineSegment_cb_b_eq_image (a := poly i), ← image_inter hφ,
     ← image_inter hφ]
   exact ⟨⟨h.iUnion_edgeSet_inter_image_subset (convexHull_subset_standard (by simp) (by simp)
     (by simp)) (fun ha => (a_notMem_four ha).elim) (fun hb => (b_notMem_four hb).elim),
@@ -572,16 +493,19 @@ private theorem IsDeltaMove.closedInterior_subset (h : poly.IsDeltaMove ℝ i c)
       midpoint ℝ (poly i) (poly (finRotate n i)), midpoint ℝ (poly i) c,
       midpoint ℝ c (poly (finRotate n i))} : Set P)) :
       ∃ W ∈ ({(0, 0), (1, 0), (0, 1), (1 / 2, 0), (0, 1 / 2), (1 / 2, 1 / 2)} : Set (ℝ × ℝ)),
-        triangleChart (poly i) (poly (finRotate n i)) c W = w := by
+        triangleChart ℝ (poly i) (poly (finRotate n i)) c W = w := by
     simp only [mem_insert_iff, mem_singleton_iff] at hw
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [⟨_, by simp, triangleChart_a _ _ _⟩, ⟨_, by simp, triangleChart_b _ _ _⟩,
-      ⟨_, by simp, triangleChart_c _ _ _⟩, ⟨_, by simp, triangleChart_ab _ _ _⟩,
-      ⟨_, by simp, triangleChart_ac _ _ _⟩, ⟨_, by simp, triangleChart_cb _ _ _⟩]
+    exacts [⟨_, by simp, triangleChart_apply_zero_zero _ _ _⟩,
+      ⟨_, by simp, triangleChart_apply_one_zero _ _ _⟩,
+      ⟨_, by simp, triangleChart_apply_zero_one _ _ _⟩,
+      ⟨_, by simp, triangleChart_apply_half_zero _ _ _⟩,
+      ⟨_, by simp, triangleChart_apply_zero_half _ _ _⟩,
+      ⟨_, by simp, triangleChart_apply_half_half _ _ _⟩]
   obtain ⟨X, hX, rfl⟩ := hsix hx
   obtain ⟨Y, hY, rfl⟩ := hsix hy
   obtain ⟨Z, hZ, rfl⟩ := hsix hz
-  rw [closedInterior_eq_image_convexHull hφ t ht, h.closedInterior_eq_image]
+  rw [Affine.Triangle.closedInterior_eq_image_convexHull t hφ ht, h.closedInterior_eq_image]
   exact image_mono (convexHull_subset_standard hX hY hZ)
 
 /-- The images of the six vertices of the midpoint subdivision lie in the triangle of a
@@ -589,7 +513,7 @@ private theorem IsDeltaMove.closedInterior_subset (h : poly.IsDeltaMove ℝ i c)
 private theorem IsDeltaMove.triangleChart_mem_closedInterior (h : poly.IsDeltaMove ℝ i c)
     {X : ℝ × ℝ}
     (hX : X ∈ ({(0, 0), (1, 0), (0, 1), (1 / 2, 0), (0, 1 / 2), (1 / 2, 1 / 2)} : Set (ℝ × ℝ))) :
-    triangleChart (poly i) (poly (finRotate n i)) c X ∈ h.triangle.closedInterior := by
+    triangleChart ℝ (poly i) (poly (finRotate n i)) c X ∈ h.triangle.closedInterior := by
   rw [h.closedInterior_eq_image]
   exact mem_image_of_mem _ (mem_convexHull_standard hX)
 
@@ -620,13 +544,6 @@ open Polygon
 
 variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpace P]
   [NormedAddTorsor V P]
-
-/-- Two simple polygons with the same number of vertices and the same vertices are equal. -/
-private theorem mk_eq_mk {m : ℕ} [NeZero m] {q₁ q₂ : Polygon P m} (h₁ : q₁.IsSimple ℝ)
-    (h₂ : q₂.IsSimple ℝ) (h : q₁ = q₂) :
-    (⟨m, q₁, h₁⟩ : SimplePolygon ℝ P) = ⟨m, q₂, h₂⟩ := by
-  subst h
-  rfl
 
 /-- **One midpoint subdivision.** A Δ-move whose triangle has sides at most `2 * δ` is in the
 equivalence relation generated by `r`, as soon as that equivalence relation contains the
@@ -695,7 +612,7 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
   -- Subdivide `[a, b]` at `m_ab`.
   have c₁ : Relation.EqvGen r ⟨n, poly, hp⟩ p₁ := by
     have hm := h.triangleChart_mem_closedInterior (X := (1 / 2, 0)) (by simp)
-    rw [triangleChart_ab] at hm
+    rw [triangleChart_apply_half_zero] at hm
     exact hsub ⟨n, poly, hp⟩ i _ ⟨1 / 2, ⟨by norm_num, by norm_num⟩, lineMap_one_half _ _⟩ hm hs₁
   -- The Δ-move across `a m_ab m_ac`.
   have c₂ : Relation.EqvGen r p₁ p₂ := by
@@ -731,7 +648,7 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
     have hr := hΔ p₄ _ _ h₃ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
       (forall_dist_points_le ht hδ₀ ((dist_midpoint_right _ _).trans_le (half_mul_le hcb)) hmid
         ((dist_right_midpoint _ _).trans_le (half_mul_le hab)))
-    rwa [show p₄.deltaMove i.succ.succ _ h₃ = p₃ from mk_eq_mk _ _ e₃.symm] at hr
+    rwa [show p₄.deltaMove i.succ.succ _ h₃ = p₃ from (mk_eq_mk _ _).2 e₃.symm] at hr
   -- The Δ-move across `m_ac m_cb c`.
   have c₅ : Relation.EqvGen r p₄ p₅ := by
     have ht : h₄.triangle.points = ![midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i)),
@@ -752,13 +669,13 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
         edgeSet_insertVertex_castSucc_self]
       exact wbtw_midpoint ℝ _ _
     have hm := h.triangleChart_mem_closedInterior (X := (0, 1 / 2)) (by simp)
-    rw [triangleChart_ac] at hm
+    rw [triangleChart_apply_zero_half] at hm
     have hr := hsub p₆ _ _ hmem hm hs₅
-    rwa [show p₆.insertVertex i.castSucc.castSucc _ hs₅ = p₅ from mk_eq_mk _ _ e₅.symm] at hr
+    rwa [show p₆.insertVertex i.castSucc.castSucc _ hs₅ = p₅ from (mk_eq_mk _ _).2 e₅.symm] at hr
   -- Subdividing `[c, b]` at `m_cb` gives `p₆` from `p₇`.
   have c₇ : Relation.EqvGen r p₇ p₆ := by
     have hm := h.triangleChart_mem_closedInterior (X := (1 / 2, 1 / 2)) (by simp)
-    rw [triangleChart_cb] at hm
+    rw [triangleChart_apply_half_half] at hm
     have hmem : midpoint ℝ c (poly (finRotate n i)) ∈ (poly.insertVertex i c).edgeSet ℝ i.succ := by
       rw [edgeSet_insertVertex_succ_self]
       exact wbtw_midpoint ℝ _ _
