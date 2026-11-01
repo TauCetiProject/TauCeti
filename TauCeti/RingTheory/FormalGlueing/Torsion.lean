@@ -96,11 +96,12 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet
     obtain ⟨b, rfl⟩ := hy
     exact ⟨a + b, map_add _ _ _⟩
 
-/-- An `R`-module killed by `I ^ n` is identified with its base change to `S`, by induction on
-`n` along `0 → M[I] → M → M ⧸ M[I] → 0`. -/
+/-- If `R → S` is flat and `R ⧸ I → S ⧸ IS` is bijective, then for every `R`-module `M` killed
+by `I ^ n` the map `M → S ⊗[R] M`, `m ↦ 1 ⊗ m`, is bijective. -/
 private theorem tensorProduct_mk_bijective_of_isTorsionBySet_pow (n : ℕ) :
     ∀ (M : Type*) [AddCommGroup M] [Module R M], Module.IsTorsionBySet R M ↑(I ^ n) →
       Bijective (TensorProduct.mk R S M 1) := by
+  -- Induct on `n` along `0 → M[I] → M → M ⧸ M[I] → 0`.
   induction n with
   | zero =>
     intro M _ _ hM
