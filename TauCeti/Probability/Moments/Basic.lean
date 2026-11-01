@@ -39,6 +39,22 @@ namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω → ℝ}
 
+/-- The tail event for an absolute value is contained in the union of the upper and lower tails. -/
+theorem measureReal_le_abs_le_add [IsFiniteMeasure μ] {f : Ω → ℝ} {ε : ℝ} :
+    μ.real {ω | ε ≤ |f ω|} ≤
+      μ.real {ω | ε ≤ f ω} + μ.real {ω | ε ≤ -f ω} := by
+  calc
+    μ.real {ω | ε ≤ |f ω|}
+      ≤ μ.real ({ω | ε ≤ f ω} ∪ {ω | ε ≤ -f ω}) := by
+        refine measureReal_mono fun ω hω ↦ ?_
+        change (ε ≤ f ω) ∨ (ε ≤ -f ω)
+        change ε ≤ |f ω| at hω
+        rcases le_abs'.1 hω with h | h
+        · exact Or.inr (by linarith)
+        · exact Or.inl h
+    _ ≤ μ.real {ω | ε ≤ f ω} + μ.real {ω | ε ≤ -f ω} :=
+      measureReal_union_le _ _
+
 /-- A measure is a probability measure if the moment-generating function of any real-valued
 statistic equals `1` at zero. -/
 theorem isProbabilityMeasure_of_mgf_zero_eq_one (hmgf : mgf X μ 0 = 1) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.SubGaussian
-public import Mathlib.Probability.Martingale.Basic
+public import TauCeti.Probability.Moments.Basic
 
 /-!
 # Azuma-Hoeffding inequality
@@ -18,21 +18,21 @@ inequality then controls the sum.
 
 ## Main results
 
-* `ProbabilityTheory.hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero` — the conditional
-  Hoeffding lemma for a general interval;
-* `ProbabilityTheory.hasCondSubgaussianMGF_of_bounded` — a bounded conditionally centered
-  random variable is conditionally sub-Gaussian;
-* `ProbabilityTheory.measureReal_sum_range_ge_le_of_bounded_martingale_differences` — the
-  one-sided Azuma-Hoeffding inequality;
-* `ProbabilityTheory.measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences` — its
-  two-sided form.
+* `TauCeti.Probability.hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero` — conditional
+  Hoeffding's lemma for an arbitrary interval;
+* `TauCeti.Probability.hasCondSubgaussianMGF_of_abs_le_of_condExp_eq_zero` — the symmetric
+  bounded special case;
+* `TauCeti.Probability.measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences` — the
+  one-sided Azuma-Hoeffding inequality with interval bounds;
+* `TauCeti.Probability.measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences` — the
+  two-sided bounded-increment form.
 
 ## References
 
 * K. Azuma, *Weighted sums of certain dependent random variables*, Tohoku Mathematical Journal 19
   (1967), 357-367.
-* C. McDiarmid, *On the method of bounded differences*, Surveys in Combinatorics 141 (1989),
-  148-188.
+* C. McDiarmid, *On the method of bounded differences*, in *Surveys in Combinatorics*, 1989,
+  London Math. Soc. Lecture Note Ser. 141, Cambridge Univ. Press (1989), 148-188.
 -/
 
 public section
@@ -41,9 +41,17 @@ open MeasureTheory ProbabilityTheory Real
 
 open scoped ENNReal NNReal
 
-namespace ProbabilityTheory
+namespace TauCeti.Probability
 
 variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
+
+private theorem nnreal_half_symmetric_sq (b : NNReal) :
+    ((‖(b : ℝ) - -(b : ℝ)‖₊ / 2) ^ 2 : NNReal) = b ^ 2 := by
+  apply Subtype.ext
+  simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
+    norm_eq_abs, NNReal.coe_ofNat]
+  rw [abs_of_nonneg (by positivity : 0 ≤ (b : ℝ) + (b : ℝ))]
+  ring
 
 /-- A conditionally centered random variable whose values lie in `[a, b]` is conditionally
 sub-Gaussian with parameter `((‖b - a‖₊ / 2) ^ 2)`. -/
@@ -67,6 +75,7 @@ theorem hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero [StandardBorelSpace 
     apply Measure.ae_ae_of_ae_comp
     rw [hcomp]
     exact hbound
+  -- The conditional predicate is the kernel-level sub-Gaussian bound.
   change Kernel.HasSubgaussianMGF X ((‖b - a‖₊ / 2) ^ 2)
     (condExpKernel (mΩ := mΩ) μ m) (μ.trim hm)
   refine Kernel.HasSubgaussianMGF.of_rat ?_ ?_
@@ -78,29 +87,67 @@ theorem hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero [StandardBorelSpace 
     have : IsProbabilityMeasure (condExpKernel (mΩ := mΩ) μ m ω) :=
       (inferInstance : IsMarkovKernel (condExpKernel (mΩ := mΩ) μ m)).isProbabilityMeasure ω
     have hsub := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
-      (hX.aemeasurable) hω hzero
+      hX.aemeasurable hω hzero
     exact hsub.mgf_le q
 
-/-- A conditionally centered random variable whose values lie in `[-b, b]` is conditionally
+/-- A conditionally centered random variable bounded in absolute value by `b` is conditionally
 sub-Gaussian with parameter `b ^ 2`. -/
-theorem hasCondSubgaussianMGF_of_bounded [StandardBorelSpace Ω] [IsProbabilityMeasure μ]
-    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) {X : Ω → ℝ} {b : ℝ}
-    (hb : 0 ≤ b) (hX : Measurable[mΩ] X) (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ b)
+theorem hasCondSubgaussianMGF_of_abs_le_of_condExp_eq_zero [StandardBorelSpace Ω]
+    [IsProbabilityMeasure μ] {m : MeasurableSpace Ω} (hm : m ≤ mΩ) {X : Ω → ℝ}
+    {b : NNReal} (hX : Measurable[mΩ] X) (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ (b : ℝ))
     (hmean : μ[X | m] =ᵐ[μ] 0) :
-    HasCondSubgaussianMGF m hm X ⟨b ^ 2, sq_nonneg b⟩ μ := by
-  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-b) b := by
+    HasCondSubgaussianMGF m hm X (b ^ 2) μ := by
+  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-(b : ℝ)) (b : ℝ) := by
     filter_upwards [hbound] with ω hω
     exact abs_le.mp hω
   have hsub := @hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero Ω mΩ μ inferInstance
-    inferInstance m hm X (-b) b hX hIcc hmean
-  have hparam : ((‖b - -b‖₊ / 2) ^ 2 : ℝ≥0) = ⟨b ^ 2, sq_nonneg b⟩ := by
-    apply Subtype.ext
-    simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
-      norm_eq_abs, NNReal.coe_ofNat]
-    rw [abs_of_nonneg (by positivity : 0 ≤ b + b)]
-    ring
-  rw [hparam] at hsub
+    inferInstance m hm X (-(b : ℝ)) (b : ℝ) hX hIcc hmean
+  rw [nnreal_half_symmetric_sq] at hsub
   exact hsub
+
+/-- A centered random variable bounded in absolute value by `b` is sub-Gaussian with parameter
+`b ^ 2`. -/
+theorem hasSubgaussianMGF_of_abs_le [IsProbabilityMeasure μ] {X : Ω → ℝ} {b : NNReal}
+    (hX : AEMeasurable X μ) (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ (b : ℝ)) (hmean : μ[X] = 0) :
+    HasSubgaussianMGF X (b ^ 2) μ := by
+  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-(b : ℝ)) (b : ℝ) := by
+    filter_upwards [hbound] with ω hω
+    exact abs_le.mp hω
+  have hsub := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero hX hIcc hmean
+  rw [nnreal_half_symmetric_sq] at hsub
+  exact hsub
+
+/-- **Azuma-Hoeffding inequality for interval-bounded martingale differences.** Let `Y i` be a
+strongly adapted sequence with conditionally centered increments in `[a i, b i]` almost surely.
+Then the upper tail is bounded using Hoeffding's variance proxy
+`∑ i < n, ((‖b i - a i‖₊ / 2) ^ 2)`. -/
+theorem measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
+    [StandardBorelSpace Ω] [IsProbabilityMeasure μ] {ℱ : Filtration ℕ mΩ}
+    {Y : ℕ → Ω → ℝ} {a b : ℕ → ℝ}
+    (h_adapted : StronglyAdapted ℱ Y)
+    (hbound : ∀ i, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (a i) (b i))
+    (hmean0 : ∫ ω, Y 0 ω ∂μ = 0)
+    (hmean : ∀ i, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
+    (n : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
+    μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} ≤
+      exp (-ε ^ 2 /
+        (2 * ∑ i ∈ Finset.range n, ((‖b i - a i‖₊ / 2) ^ 2 : ℝ))) := by
+  let c : ℕ → ℝ≥0 := fun i => (‖b i - a i‖₊ / 2) ^ 2
+  have h0 : HasSubgaussianMGF (Y 0) (c 0) μ := by
+    simpa [c] using
+      (hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
+        ((h_adapted 0).mono (ℱ.le 0)).measurable.aemeasurable (hbound 0) hmean0)
+  have hsubG : ∀ i < n - 1,
+      HasCondSubgaussianMGF (ℱ i) (ℱ.le i) (Y (i + 1)) (c (i + 1)) μ := by
+    intro i hi
+    have hYi : Measurable[mΩ] (Y (i + 1)) :=
+      ((h_adapted (i + 1)).mono (ℱ.le (i + 1))).measurable
+    simpa [c] using
+      (hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero (ℱ.le i) hYi
+        (hbound (i + 1)) (hmean i))
+  have htail := measure_sum_ge_le_of_hasCondSubgaussianMGF
+    h_adapted h0 n hsubG hε
+  simpa [c] using htail
 
 /-- **Azuma-Hoeffding inequality.** Let `Y i` be a strongly adapted sequence of martingale
 differences with `|Y i| ≤ b i` almost surely, mean zero at time zero, and conditional mean zero at
@@ -116,37 +163,18 @@ theorem measureReal_sum_range_ge_le_of_bounded_martingale_differences
     (n : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} ≤
       exp (-ε ^ 2 / (2 * ∑ i ∈ Finset.range n, (b i : ℝ) ^ 2)) := by
-  let c : ℕ → ℝ≥0 := fun i => b i ^ 2
-  have hparam (i : ℕ) :
-      ((‖(b i : ℝ) - -(b i : ℝ)‖₊ / 2) ^ 2 : ℝ≥0) = c i := by
-    apply Subtype.ext
-    simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
-      norm_eq_abs, NNReal.coe_ofNat]
-    rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
-    simp only [c, NNReal.coe_pow]
-    ring
-  have hparam_sq (i : ℕ) :
-      (⟨(b i : ℝ) ^ 2, sq_nonneg (b i : ℝ)⟩ : ℝ≥0) = c i := by
-    apply Subtype.ext
-    simp [c, NNReal.coe_pow]
-  have hIcc0 : ∀ᵐ ω ∂μ, Y 0 ω ∈ Set.Icc (-(b 0 : ℝ)) (b 0 : ℝ) := by
-    filter_upwards [hbound 0] with ω hω
+  have hIcc : ∀ i, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (-(b i : ℝ)) (b i : ℝ) := by
+    intro i
+    filter_upwards [hbound i] with ω hω
     exact abs_le.mp hω
-  have h0 := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
-    ((h_adapted 0).mono (ℱ.le 0)).measurable.aemeasurable hIcc0 hmean0
-  rw [hparam 0] at h0
-  have hsubG : ∀ i < n - 1,
-      HasCondSubgaussianMGF (ℱ i) (ℱ.le i) (Y (i + 1)) (c (i + 1)) μ := by
-    intro i hi
-    have hYi : Measurable[mΩ] (Y (i + 1)) :=
-      ((h_adapted (i + 1)).mono (ℱ.le (i + 1))).measurable
-    have hYi_subG := hasCondSubgaussianMGF_of_bounded (ℱ.le i)
-      (NNReal.coe_nonneg _) hYi (hbound (i + 1)) (hmean i)
-    rw [hparam_sq (i + 1)] at hYi_subG
-    exact hYi_subG
-  have htail := measure_sum_ge_le_of_hasCondSubgaussianMGF
-    h_adapted h0 n hsubG hε
-  simpa [c, NNReal.coe_pow] using htail
+  have hterm (i : ℕ) :
+      (|((b i : ℝ) + (b i : ℝ))| / 2) ^ 2 = (b i : ℝ) ^ 2 := by
+    rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
+    ring
+  simpa [hterm] using
+    (measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
+      (a := fun i => -(b i : ℝ)) (b := fun i => (b i : ℝ))
+      h_adapted hIcc hmean0 hmean n hε)
 
 /-- **Two-sided Azuma-Hoeffding inequality.** Under the same assumptions as
 `measureReal_sum_range_ge_le_of_bounded_martingale_differences`, the absolute value of the sum
@@ -181,13 +209,9 @@ theorem measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences
   simp only [Finset.sum_neg_distrib] at hlower
   calc
     μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|}
-      ≤ μ.real ({ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} ∪
-          {ω | ε ≤ -∑ i ∈ Finset.range n, Y i ω}) := by
-        refine measureReal_mono fun ω hω ↦ ?_
-        simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
-        rcases le_abs'.1 hω with h | h
-        · exact Or.inr (by linarith)
-        · exact Or.inl h
-    _ ≤ _ := (measureReal_union_le _ _).trans (by linarith)
+      ≤ μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} +
+          μ.real {ω | ε ≤ -∑ i ∈ Finset.range n, Y i ω} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ ≤ _ := (add_le_add hupper hlower).trans (le_of_eq (by ring))
 
-end ProbabilityTheory
+end TauCeti.Probability

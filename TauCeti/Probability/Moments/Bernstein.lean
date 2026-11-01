@@ -189,12 +189,8 @@ theorem measureReal_abs_sum_ge_le_of_abs_le {ι : Type*} {X : ι → Ω → ℝ}
   have hupper := h_indep.measureReal_sum_ge_le_of_ae_le hL2 hmean hup hε
   simp only [neg_sq, Finset.sum_neg_distrib] at hlow
   calc μ.real {ω | ε ≤ |∑ i ∈ s, X i ω|}
-      ≤ μ.real ({ω | ε ≤ ∑ i ∈ s, X i ω} ∪ {ω | ε ≤ -∑ i ∈ s, X i ω}) := by
-        refine measureReal_mono (fun ω hω ↦ ?_)
-        simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
-        rcases le_abs'.1 hω with h | h
-        · exact Or.inr (by linarith)
-        · exact Or.inl h
-    _ ≤ _ := (measureReal_union_le _ _).trans (by linarith)
+      ≤ μ.real {ω | ε ≤ ∑ i ∈ s, X i ω} + μ.real {ω | ε ≤ -∑ i ∈ s, X i ω} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ ≤ _ := (add_le_add hupper hlow).trans (le_of_eq (by ring))
 
 end ProbabilityTheory.iIndepFun
