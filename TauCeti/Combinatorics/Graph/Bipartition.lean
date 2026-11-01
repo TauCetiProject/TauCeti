@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Incidence
-public import Mathlib.Combinatorics.Graph.Simple
 
 /-!
 # Bipartitions of multigraphs
