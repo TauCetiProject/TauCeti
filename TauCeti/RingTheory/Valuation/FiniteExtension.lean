@@ -128,12 +128,19 @@ private theorem exists_mul_mem_integralClosure (hO' : O'.comap (algebraMap K L) 
 ideal of `O'`. -/
 private noncomputable def centre (hO' : O'.comap (algebraMap K L) = O) :
     Ideal (integralClosure O L) :=
-  Valuation.centerIdeal (integralClosure O L) O'.valuation fun c ↦
-    (valuation_le_one_iff _ _).mpr (integralClosure_le_of_comap_eq hO' c.2)
+  Valuation.centerIdeal (integralClosure O L) O'.valuation fun c ↦ by
+    rw [Subalgebra.algebraMap_apply]
+    exact (valuation_le_one_iff _ _).mpr (integralClosure_le_of_comap_eq hO' c.2)
 
 private theorem mem_centre (hO' : O'.comap (algebraMap K L) = O) {c : integralClosure O L} :
-    c ∈ centre hO' ↔ O'.valuation c < 1 :=
-  Valuation.mem_centerIdeal
+    c ∈ centre hO' ↔ O'.valuation c < 1 := by
+  rw [centre, Valuation.mem_centerIdeal, Subalgebra.algebraMap_apply]
+
+/-- An element of the integral closure outside the centre of `O'` is a unit of `O'`. -/
+private theorem valuation_eq_one_of_notMem_centre (hO' : O'.comap (algebraMap K L) = O)
+    {c : integralClosure O L} (hc : c ∉ centre hO') : O'.valuation c = 1 :=
+  ((valuation_le_one_iff _ _).mpr (integralClosure_le_of_comap_eq hO' c.2)).antisymm <|
+    not_lt.mp (mt (mem_centre hO').mpr hc)
 
 private theorem isPrime_centre (hO' : O'.comap (algebraMap K L) = O) : (centre hO').IsPrime :=
   Valuation.isPrime_centerIdeal _
@@ -161,7 +168,7 @@ private theorem le_of_centre_le [Algebra.IsAlgebraic K L] {O₁ O₂ : Valuation
   obtain ⟨u, hu, hxu, hu₁⟩ :=
     exists_mul_mem_integralClosure h₁ (Algebra.IsAlgebraic.isAlgebraic x) hx
   have hu₂ : O₂.valuation u = 1 :=
-    Valuation.eq_one_of_notMem_centerIdeal (r := ⟨u, hu⟩) _ fun h' ↦
+    valuation_eq_one_of_notMem_centre h₂ (c := ⟨u, hu⟩) fun h' ↦
       (mem_centre h₁).mp (h h') |>.ne hu₁
   have := (valuation_le_one_iff _ _).mpr (integralClosure_le_of_comap_eq h₂ hxu)
   rw [map_mul, hu₂, mul_one] at this
@@ -188,7 +195,7 @@ private theorem exists_separating [Algebra.IsAlgebraic K L] (s : Finset (Valuati
     have heq := (isMaximal_centre (hs O₁ hmem)).eq_of_le hP.ne_top hle
     exact hne (le_antisymm (le_of_centre_le _ _ heq.ge) (le_of_centre_le _ _ heq.le))
   obtain ⟨e, he, heP⟩ := Set.not_subset.mp this
-  refine ⟨e, e.2, Valuation.eq_one_of_notMem_centerIdeal _ heP, fun O' hO' hne ↦ ?_⟩
+  refine ⟨e, e.2, valuation_eq_one_of_notMem_centre _ heP, fun O' hO' hne ↦ ?_⟩
   have := Finset.inf_le (f := N) (Finset.mem_erase.mpr ⟨hne, hO'⟩) he
   rwa [hN hO', mem_centre] at this
 
