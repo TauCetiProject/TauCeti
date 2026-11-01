@@ -686,14 +686,17 @@ theorem card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_o
       · by_cases h : mk a = mk z <;> simp [f, h]
       · rw [Equiv.swap_apply_of_ne_of_ne hza hzb]
     · simp only [f, hK g hg]
-  let F := MulAction.orbitRelQuotientLift (G := Subgroup.closure (insert (Equiv.swap a b)
-    (K : Set (Perm α)))) f fun g z ↦ apply_eq_of_mem_closure hf g.2 z
-  refine (Nat.card_le_card_of_surjective (fun q : Option _ ↦ q.elim (mk b) F) ?_).trans
-    Finite.card_option.le
+  have hrange := MulAction.card_le_card_orbitRelQuotient_closure_of_surjective
+    (f := Set.rangeFactorization f) (fun g hg z ↦ Subtype.ext (hf g hg z))
+    Set.rangeFactorization_surjective
+  -- The values of `f` miss at most the orbit of `b`.
+  refine (Nat.card_le_card_of_surjective
+    (fun q : Option (Set.range f) ↦ q.elim (mk b) Subtype.val) ?_).trans
+    (Finite.card_option.trans_le (Nat.add_le_add_right hrange 1))
   rintro ⟨z⟩
   by_cases h : mk z = mk b
   · exact ⟨none, h.symm⟩
-  · exact ⟨some (Quotient.mk _ z), (MulAction.orbitRelQuotientLift_mk z).trans (ite_eq_right h)⟩
+  · exact ⟨some ⟨f z, z, rfl⟩, ite_eq_right h⟩
 
 /-- Adjoining to a group `K` of permutations the transposition of two points `a` and `b` of one
 `K`-orbit does not change the number of orbits. -/
@@ -712,12 +715,10 @@ theorem card_orbitRelQuotient_closure_insert_swap_of_mem_orbit [Finite α]
       · simpa using hmk
       · rw [Equiv.swap_apply_of_ne_of_ne hza hzb]
     · exact Quotient.sound (MulAction.mem_orbit z (⟨g, hg⟩ : K))
-  refine le_antisymm (MulAction.card_orbitRelQuotient_anti
+  exact le_antisymm (MulAction.card_orbitRelQuotient_anti
     fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg))
-    (Nat.card_le_card_of_surjective (MulAction.orbitRelQuotientLift mk
-      fun g z ↦ apply_eq_of_mem_closure hf g.2 z) ?_)
-  rintro ⟨z⟩
-  exact ⟨Quotient.mk _ z, MulAction.orbitRelQuotientLift_mk z⟩
+    (MulAction.card_le_card_orbitRelQuotient_closure_of_surjective (f := mk) hf
+      Quotient.mk_surjective)
 
 omit [DecidableEq α] in
 /-- **The Euler bound for a pair of permutations.** For permutations `σ` and `τ` of a finite type,
@@ -748,7 +749,7 @@ theorem orbitCount_add_orbitCount_add_orbitCount_mul_le [Finite α] (σ τ : Per
   rw [List.prod_append, hprod1, hprod0, List.length_append] at hbound
   omega
 
-/-- **Smoothing a vertex keeps a sphere a sphere.** Let `ρ` and `σ` be permutations of a finite
+/-- **Smoothing a vertex keeps a sphere a sphere.** Let `ρ` and `τ` be permutations of a finite
 type attaining the Euler bound `TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le`, as the
 rotation and edge involution of a ribbon graph whose components are spheres do. If `a ≠ b` lie in
 one cycle of `ρ`, then cutting that cycle in two by the transposition `Equiv.swap a b` gives a
@@ -769,14 +770,14 @@ theorem orbitCount_swap_mul_add_orbitCount_add_orbitCount_mul_swap_mul_eq [Finit
   have hface' : orbitCount (ρ * τ) = orbitCount (τ * ρ) := orbitCount_mul_comm _ _
   -- Adjoining `Equiv.swap a b` to `K` recovers `ρ`.
   have hle : Subgroup.closure {ρ, τ} ≤ Subgroup.closure (insert (Equiv.swap a b) (K : Set _)) := by
-    rw [Subgroup.closure_le]
-    have hK : (K : Set (Perm α)) ⊆ Subgroup.closure (insert (Equiv.swap a b) (K : Set _)) :=
+    have hK : K ≤ Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α))) :=
       fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
-    rintro g (rfl | rfl)
-    · rw [← swap_mul_self_mul a b g]
-      exact mul_mem (Subgroup.subset_closure (Set.mem_insert _ _))
+    have hm : Equiv.swap a b * (Equiv.swap a b * ρ) ∈ _ :=
+      mul_mem (Subgroup.subset_closure (Set.mem_insert _ _))
         (hK (Subgroup.subset_closure (Set.mem_insert _ _)))
-    · exact hK (Subgroup.subset_closure (by simp))
+    rw [swap_mul_self_mul] at hm
+    exact (Subgroup.closure_le _).2
+      (Set.pair_subset_iff.2 ⟨hm, hK (Subgroup.subset_closure (by simp))⟩)
   have hanti := MulAction.card_orbitRelQuotient_anti (X := α) hle
   by_cases hcyc : (ρ * τ).SameCycle a b
   · -- A face through `a` and `b` is cut in two: one face more, at most one component more.

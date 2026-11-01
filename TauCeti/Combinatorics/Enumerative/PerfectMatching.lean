@@ -782,24 +782,17 @@ theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
   -- Reconnecting back by the same transposition recovers `D`, so at most one component is added.
   have hle : Subgroup.closure {T, D.val} ≤
       Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) := by
-    rw [Subgroup.closure_le]
-    have hK : (K : Set (Perm α)) ⊆
-        Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
+    have hK : K ≤ Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
       fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
-    have hs : swap (D.val a) (T a) ∈
-        Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
-      Subgroup.subset_closure (Set.mem_insert _ _)
-    rintro g (rfl | rfl)
-    · exact hK (Subgroup.subset_closure (by simp))
-    · have hval : D.val = swap (D.val a) (T a) * (D.reconnect a (T a)).val *
-          swap (D.val a) (T a) := by
-        rw [reconnect_val, permCongr_eq_mul, swap_inv, ← mul_assoc, ← mul_assoc, swap_mul_self,
-          one_mul, mul_assoc, swap_mul_self, mul_one]
-      have hr : (D.reconnect a (T a)).val ∈
-          Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
-        hK (Subgroup.subset_closure (by simp))
-      have hm := mul_mem (mul_mem hs hr) hs
-      rwa [← hval] at hm
+    have hs := Subgroup.subset_closure (Set.mem_insert (swap (D.val a) (T a)) (K : Set (Perm α)))
+    have hr : (D.reconnect a (T a)).val ∈ K := Subgroup.subset_closure (by simp)
+    have hval : swap (D.val a) (T a) * (D.reconnect a (T a)).val * swap (D.val a) (T a) =
+        D.val := by
+      simp [reconnect_val, permCongr_eq_mul, mul_assoc]
+    have hm := mul_mem (mul_mem hs (hK hr)) hs
+    rw [hval] at hm
+    exact (Subgroup.closure_le _).2
+      (Set.pair_subset_iff.2 ⟨hK (Subgroup.subset_closure (by simp)), hm⟩)
   have hanti := MulAction.card_orbitRelQuotient_anti (X := α) hle
   have := card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one K
     (D.val a) (T a)

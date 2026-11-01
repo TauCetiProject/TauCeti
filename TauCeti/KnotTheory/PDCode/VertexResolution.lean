@@ -649,6 +649,15 @@ private theorem exists_localSmoothing_eq_swap_mul_finRotate :
     simp only [slotSmoothing_true]
     decide
 
+/-- The crossings, arcs and faces of a code are the orbits of its crossing rotation, of its arc
+involution and of their product. -/
+private theorem orbitCount_crossingRotation_add_orbitCount_edgePair_add_orbitCount_mul {m : ℕ}
+    (R : PDCode m) :
+    orbitCount R.crossingRotation + orbitCount R.edgePair.val +
+        orbitCount (R.edgePair.val * R.crossingRotation) = 3 * m + R.faceCount := by
+  rw [orbitCount_crossingRotation, orbitCount_edgePair, faceCount_def, facePerm_def]
+  omega
+
 /-- For a planar code the Euler bound is attained by the crossing rotation and the arcs on the
 positions. -/
 private theorem orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq (hD : D.IsPlanar) :
@@ -672,19 +681,18 @@ private theorem orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq (hD : D.IsP
     have hρ : (D.slotEquiv c).symm.permCongr D.crossingRotation ∈ G :=
       Subgroup.subset_closure (by simp)
     have hα : (D.slotMatching c).val ∈ G := Subgroup.subset_closure (by simp)
-    refine Nat.card_le_card_of_surjective
-      (Quotient.lift (fun h ↦ mk ((D.slotEquiv c).symm h)) ?_) ?_
-    · rintro _ h ⟨⟨g, hg⟩, rfl⟩
-      refine D.toPermutationTriple.apply_eq_of_mem_monodromyGroup
-        (f := fun h ↦ mk ((D.slotEquiv c).symm h)) (fun h ↦ ?_) (fun h ↦ ?_) hg h
-      · simpa [permCongr_apply] using hG _ hρ ((D.slotEquiv c).symm h)
-      · simpa [slotMatching_val, permCongr_apply] using hG _ hα ((D.slotEquiv c).symm h)
-    · rintro ⟨z⟩
-      exact ⟨Quotient.mk _ (D.slotEquiv c z), congrArg mk ((D.slotEquiv c).symm_apply_apply z)⟩
+    rw [PermutationTriple.MonodromyOrbit, ← PermutationTriple.closure_pair_eq_monodromyGroup]
+    refine MulAction.card_le_card_orbitRelQuotient_closure_of_surjective
+      (f := fun h ↦ mk ((D.slotEquiv c).symm h)) ?_
+      (Quotient.mk_surjective.comp (D.slotEquiv c).symm.surjective)
+    rintro g (rfl | rfl) h
+    · simpa [Perm.smul_def, permCongr_apply] using hG _ hρ ((D.slotEquiv c).symm h)
+    · simpa [Perm.smul_def, slotMatching_val, permCongr_apply] using
+        hG _ hα ((D.slotEquiv c).symm h)
   have hface := (D.isPlanar_iff_faceCount_eq).mp hD
-  rw [slotMatching_val, ← permCongr_mul, orbitCount_permCongr, orbitCount_permCongr,
-    orbitCount_permCongr, orbitCount_crossingRotation, orbitCount_edgePair, ← facePerm_def,
-    ← faceCount_def, Nat.card_sum, Nat.card_fin, Nat.card_fin] at hbound ⊢
+  have heuler := orbitCount_crossingRotation_add_orbitCount_edgePair_add_orbitCount_mul D
+  rw [slotMatching_val, ← permCongr_mul] at hbound ⊢
+  simp only [orbitCount_permCongr, Nat.card_sum, Nat.card_fin] at hbound ⊢
   omega
 
 /-- The code `R` beside four slots permuted by `S`, on the positions `Fin (4 * m) ⊕ Fin 4`, has at
@@ -708,11 +716,8 @@ private theorem card_monodromyOrbit_add_orbitCount_le {m : ℕ} (R : PDCode m) (
     · simpa [f] using R.toPermutationTriple.mk_σ1_apply z
     · simpa [f] using hS k
   rw [orbitCount_def, ← Nat.card_sum]
-  refine Nat.card_le_card_of_surjective
-    (MulAction.orbitRelQuotientLift f fun g z ↦ apply_eq_of_mem_closure hf g.2 z) ?_
-  rintro (x | x) <;> obtain ⟨z, rfl⟩ := Quotient.mk_surjective x
-  · exact ⟨Quotient.mk _ (.inl z), MulAction.orbitRelQuotientLift_mk _⟩
-  · exact ⟨Quotient.mk _ (.inr z), MulAction.orbitRelQuotientLift_mk _⟩
+  exact MulAction.card_le_card_orbitRelQuotient_closure_of_surjective (f := f) hf
+    (Sum.map_surjective.2 ⟨Quotient.mk_surjective, Quotient.mk_surjective⟩)
 
 /-- **Resolving a crossing keeps a code planar.** Smoothing one crossing of a planar PD-code, by
 either of its two smoothings, gives a planar code. -/
@@ -735,10 +740,11 @@ theorem IsPlanar.resolveCrossing (hD : D.IsPlanar) : (D.resolveCrossing c t).IsP
   have h₃ := (D.pinchedOnce c t).orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
     (a := .inr 2) (by simp [hSS]) (by simpa using hSk 2) h₂
   rw [Perm.sumCongr_apply, Sum.map_inr, ← pinchedTwice, pinchedTwice_val, Perm.sumCongr_mul,
-    D.localSmoothing_mul_self c t, Perm.orbitCount_sumCongr, Perm.orbitCount_sumCongr,
-    Perm.orbitCount_sumCongr, orbitCount_crossingRotation, orbitCount_edgePair, ← facePerm_def,
-    ← faceCount_def, orbitCount_one, Nat.card_sum, Nat.card_fin, Nat.card_fin] at h₃
+    D.localSmoothing_mul_self c t] at h₃
+  simp only [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_sum, Nat.card_fin] at h₃
   -- What remains is the resolution beside two loops.
+  have heuler :=
+    orbitCount_crossingRotation_add_orbitCount_edgePair_add_orbitCount_mul (D.resolveCrossing c t)
   have hcomp := card_monodromyOrbit_add_orbitCount_le (D.resolveCrossing c t) (D.localSmoothing c t)
   have hle := (D.resolveCrossing c t).faceCount_le
   rw [isPlanar_iff_faceCount_eq]
