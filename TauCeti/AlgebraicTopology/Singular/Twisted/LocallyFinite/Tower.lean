@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Triple
 
 /-!
