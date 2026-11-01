@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Ring.Parity
 
 /-!
-# Vieta's formulas for a family of roots indexed by a finite type
+# Vieta's formulas for indexed families of roots
 
 Mathlib reads the coefficients of a product of linear factors off the elementary symmetric
 functions of the multiset of its roots (`Multiset.prod_X_sub_C_coeff`). Here the roots are a
@@ -17,9 +17,10 @@ family `x : σ → S` indexed by a finite type and the elementary symmetric func
 values of `MvPolynomial.esymm`: the `k`-th elementary symmetric polynomial at `x` is `(-1) ^ k`
 times the coefficient of `∏ i, (X - C (x i))` in degree `card σ - k`.
 
-Over a domain a monic polynomial whose degree is the number of roots it has, listed with
-multiplicity as the values of `x`, is exactly that product, so the same formula computes its
-coefficients.
+Over a domain, a monic polynomial whose degree is the size of a finite set `s` and whose
+roots, with multiplicity, are the values of `x` on `s` is the product
+`∏ i ∈ s, (X - C (x i))`. When `s` is all of a finite type `σ` this is the product above, so the
+same formula computes its coefficients.
 
 ## Main results
 
