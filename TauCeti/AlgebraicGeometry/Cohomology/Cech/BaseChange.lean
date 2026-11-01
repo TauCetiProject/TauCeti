@@ -92,6 +92,8 @@ section FlatBaseChange
 variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
   {R' : Type u} [CommRing R'] [Algebra R R'] {Y : Scheme.{u}} [Y.Over (Spec (.of R'))]
   {g : Y ⟶ X}
+  (C : CommSq g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
 
@@ -105,7 +107,7 @@ section SectionsPullback
 
 variable (M : X.Modules) (W : X.Opens)
 
-include H in
+include C in
 /-- Pulling back sections over `W` along `g`, as an `R`-linear map: this is
 `Scheme.Hom.pullbackSectionsBaseLinear`, for the actions of `R` and `R'` on sections through
 `Scheme.baseRingToStructurePresheaf`. -/
@@ -127,10 +129,10 @@ private def sectionsPullbackApp :
     .of_algebraMap_smul fun _ _ ↦ rfl
   haveI : IsScalarTower R R' Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ W) :=
     .of_algebraMap_smul fun _ _ ↦ rfl
-  exact ModuleCat.ofHom (g.pullbackSectionsBaseLinear M W H.toCommSq)
+  exact ModuleCat.ofHom (g.pullbackSectionsBaseLinear M W C)
 
 private lemma sectionsPullbackApp_hom_apply (x : Γ(M, W)) :
-    (sectionsPullbackApp H M W).hom x = g.pullbackSections M W x := by
+    (sectionsPullbackApp C M W).hom x = g.pullbackSections M W x := by
   let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
   let : Algebra R' Γ(Y, g ⁻¹ᵁ W) :=
     ((Y.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ W))).hom.toAlgebra
@@ -143,7 +145,7 @@ private lemma sectionsPullbackApp_hom_apply (x : Γ(M, W)) :
     .of_algebraMap_smul fun _ _ ↦ rfl
   have : IsScalarTower R R' Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ W) :=
     .of_algebraMap_smul fun _ _ ↦ rfl
-  exact g.pullbackSectionsBaseLinear_apply M W H.toCommSq x
+  exact g.pullbackSectionsBaseLinear_apply M W C x
 
 end SectionsPullback
 
@@ -151,12 +153,12 @@ end SectionsPullback
 private def sectionsPullback (M : X.Modules) :
     (sectionsBasePresheafFunctor R).obj M ⟶
       pullbackSectionsPresheaf (R' := R') g M ⋙ ModuleCat.restrictScalars (algebraMap R R') where
-  app W := sectionsPullbackApp H M W.unop
+  app W := sectionsPullbackApp C M W.unop
   naturality _ _ i := by
     ext (x : Γ(M, _))
-    exact (sectionsPullbackApp_hom_apply H M _ _).trans
+    exact (sectionsPullbackApp_hom_apply C M _ _).trans
       ((g.pullbackSections_restrict M _ i.unop x).symm.trans
-        (congrArg _ (sectionsPullbackApp_hom_apply H M _ x).symm))
+        (congrArg _ (sectionsPullbackApp_hom_apply C M _ x).symm))
 
 /-- The morphism of presheaves of `R'`-modules `R' ⊗[R] Γ(M, -) ⟶ Γ(g^* M, g⁻¹ -)` on `X`,
 `s ⊗ m ↦ s • g^* m`: the adjoint, under extension and restriction of scalars along `R → R'`, of
@@ -166,10 +168,10 @@ def sectionsPullbackExtend (M : X.Modules) :
       (Opens.map g.base).op ⋙
         (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M) where
   app W := ((ModuleCat.extendRestrictScalarsAdj (algebraMap R R')).homEquiv _ _).symm
-    ((sectionsPullback H M).app W)
+    ((sectionsPullback C M).app W)
   naturality W V i := by
     rw [Functor.comp_map, ← Adjunction.homEquiv_naturality_left_symm,
-      (sectionsPullback H M).naturality, Functor.comp_map,
+      (sectionsPullback C M).naturality, Functor.comp_map,
       Adjunction.homEquiv_naturality_right_symm]
 
 /-- `sectionsPullbackExtend` is adjoint to pulling back sections along `g`: its adjoint under
@@ -177,15 +179,15 @@ extension and restriction of scalars along `R → R'` sends a section `m` of `M`
 theorem extendRestrictScalarsAdj_homEquiv_sectionsPullbackExtend_app_hom_apply (M : X.Modules)
     (W : X.Opensᵒᵖ) (m : Γ(M, W.unop)) :
     ((ModuleCat.extendRestrictScalarsAdj (algebraMap R R')).homEquiv _ _
-      ((sectionsPullbackExtend H M).app W)).hom m = g.pullbackSections M W.unop m := by
+      ((sectionsPullbackExtend C M).app W)).hom m = g.pullbackSections M W.unop m := by
   dsimp only [sectionsPullbackExtend]
   rw [Equiv.apply_symm_apply]
-  exact sectionsPullbackApp_hom_apply H M W.unop m
+  exact sectionsPullbackApp_hom_apply C M W.unop m
 
 /-- On an affine open, sections of `g^* M` are the base change of sections of `M`, so the
 adjoint of the pullback of sections is an isomorphism. -/
 private lemma isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoherent] {W : X.Opens}
-    (hW : IsAffineOpen W) : IsIso ((sectionsPullbackExtend H M).app (op W)) := by
+    (hW : IsAffineOpen W) : IsIso ((sectionsPullbackExtend H.toCommSq M).app (op W)) := by
   let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
   let : Algebra R' Γ(Y, g ⁻¹ᵁ W) :=
     ((Y.baseRingToStructurePresheaf R').app (op (g ⁻¹ᵁ W))).hom.toAlgebra
@@ -200,10 +202,10 @@ private lemma isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoheren
     .of_algebraMap_smul fun _ _ ↦ rfl
   have h := ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange
     (g.isBaseChange_pullbackSections M W H hW)
-  have e : (sectionsPullback H M).app (op W) = ModuleCat.ofHom
+  have e : (sectionsPullback H.toCommSq M).app (op W) = ModuleCat.ofHom
       (g.pullbackSectionsBaseLinear M W H.toCommSq) ≫
         (ModuleCat.restrictScalarsAlgebraMapIso _).inv :=
-    ModuleCat.hom_ext (LinearMap.ext fun x ↦ (sectionsPullbackApp_hom_apply H M W x).trans
+    ModuleCat.hom_ext (LinearMap.ext fun x ↦ (sectionsPullbackApp_hom_apply H.toCommSq M W x).trans
       ((g.pullbackSectionsBaseLinear_apply M W H.toCommSq x).symm.trans
         (ModuleCat.restrictScalarsAlgebraMapIso_inv_apply (R := R) (S := R')
           Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ W) _).symm))
@@ -222,14 +224,17 @@ isomorphism. -/
 private lemma isIso_cechComplexFunctor_map_sectionsPullbackExtend (U : ι → X.Opens)
     (M : X.Modules) [M.IsQuasicoherent]
     (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) :
-    IsIso ((cechComplexFunctor U).map (sectionsPullbackExtend H M)) := by
-  have (k : ℕ) : IsIso (((cechComplexFunctor U).map (sectionsPullbackExtend H M)).f k) := by
-    let φ (a : Fin (k + 1) → ι) := (sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j)))
+    IsIso ((cechComplexFunctor U).map (sectionsPullbackExtend H.toCommSq M)) := by
+  have (k : ℕ) :
+      IsIso (((cechComplexFunctor U).map (sectionsPullbackExtend H.toCommSq M)).f k) := by
+    let φ (a : Fin (k + 1) → ι) :=
+      (sectionsPullbackExtend H.toCommSq M).app (op (∏ᶜ fun j ↦ U (a j)))
     have (a : Fin (k + 1) → ι) : IsIso (φ a) :=
       isIso_sectionsPullbackExtend_app H M
         (CompleteLattice.finite_product_of_forall_finset_inf U hU a)
     -- In each degree the map of Čech complexes is the product of the components.
-    have e : ((cechComplexFunctor U).map (sectionsPullbackExtend H M)).f k = Limits.Pi.map φ :=
+    have e : ((cechComplexFunctor U).map (sectionsPullbackExtend H.toCommSq M)).f k =
+        Limits.Pi.map φ :=
       Pi.hom_ext _ _ fun a ↦ (cechComplexFunctor_map_f_π U _ _ k a).trans (Pi.map_π φ a).symm
     rw [e]
     exact Pi.map_isIso φ
@@ -247,7 +252,7 @@ def cechComplexBaseChangeIso [Finite ι] (U : ι → X.Opens) (M : X.Modules)
         ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)) :=
   haveI := isIso_cechComplexFunctor_map_sectionsPullbackExtend H U M hU
   (cechComplexFunctorMapIso U _).app _ ≪≫
-    asIso ((cechComplexFunctor U).map (sectionsPullbackExtend H M)) ≪≫
+    asIso ((cechComplexFunctor U).map (sectionsPullbackExtend H.toCommSq M)) ≪≫
     (cechComplexCompIso (Opens.map g.base) U _
       fun _ a ↦ g.nonempty_pi_preimage_hom fun j ↦ U (a j)).symm
 
@@ -264,11 +269,11 @@ theorem cechComplexBaseChangeIso_hom_f_π [Finite ι] (U : ι → X.Opens) (M : 
           (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a =
       (ModuleCat.extendScalars (algebraMap R R')).map (Pi.π (fun a : Fin (n + 1) → ι ↦
           ((sectionsBasePresheafFunctor R).obj M).obj (op (∏ᶜ fun j ↦ U (a j)))) a) ≫
-        (sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j))) ≫
+        (sectionsPullbackExtend H.toCommSq M).app (op (∏ᶜ fun j ↦ U (a j))) ≫
           ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)).map
             (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op := by
   let Q := (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)
-  let C := cechComplexCompIso (Opens.map g.base) U Q fun _ a ↦
+  let E := cechComplexCompIso (Opens.map g.base) U Q fun _ a ↦
     g.nonempty_pi_preimage_hom fun j ↦ U (a j)
   let r := (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op
   -- The restrictions between the equal opens `∏ g⁻¹ U (a j)` and `g⁻¹ ∏ U (a j)` are inverse.
@@ -277,24 +282,27 @@ theorem cechComplexBaseChangeIso_hom_f_π [Finite ι] (U : ι → X.Opens) (M : 
     rw [← Q.map_comp, ← Q.map_id]
     exact congrArg Q.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
   -- So the factors of the inverse of `cechComplexCompIso` are restrictions.
-  have h : C.hom.f n ≫
+  have h : E.hom.f n ≫
       Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)))) a ≫ Q.map r =
         Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a :=
     (cechComplexCompIso_hom_f_π_assoc _ U Q _ n a (Q.map r)).trans <|
       (congrArg (_ ≫ ·) hr).trans (Category.comp_id _)
-  have hC : C.inv.f n ≫
+  have hE : E.inv.f n ≫
       Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a =
-        Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)))) a ≫ Q.map r :=
-    (congrArg (C.inv.f n ≫ ·) h).symm.trans <| (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ _) ((HomologicalComplex.comp_f _ _ n).symm.trans
-        ((congrArg (fun φ ↦ φ.f n) C.inv_hom_id).trans (HomologicalComplex.id_f _ n)))).trans
-        (Category.id_comp _)
+        Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)))) a ≫ Q.map r := by
+    rw [← h, ← HomologicalComplex.comp_f_assoc, E.inv_hom_id, HomologicalComplex.id_f]
+    exact Category.id_comp _
   -- `cechComplexBaseChangeIso` is the composite of three isomorphisms of complexes.
-  exact (congrArg (_ ≫ _ ≫ ·) hC).trans <|
-    (congrArg (_ ≫ ·) ((cechComplexFunctor_map_f_π_assoc U _ (sectionsPullbackExtend H M) n a
-      (Q.map r)).trans (Category.assoc _ _ _))).trans <| (Category.assoc _ _ _).symm.trans
-    (cechComplexFunctorMapIso_hom_app_f_π_assoc U (ModuleCat.extendScalars (algebraMap R R'))
-      ((sectionsBasePresheafFunctor R).obj M) n a _)
+  simp only [cechComplexBaseChangeIso, Iso.trans_hom, Iso.symm_hom, asIso_hom,
+    HomologicalComplex.comp_f]
+  refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans ?_)
+  rw [hE]
+  -- The middle factor is the component of `sectionsPullbackExtend` at `∏ U (a j)`, and the first
+  -- is extension of scalars applied to the projection.
+  exact (congrArg (_ ≫ ·) ((cechComplexFunctor_map_f_π_assoc U _ (sectionsPullbackExtend
+    H.toCommSq M) n a (Q.map r)).trans (Category.assoc _ _ _))).trans <|
+      (Category.assoc _ _ _).symm.trans (cechComplexFunctorMapIso_hom_app_f_π_assoc U
+        (ModuleCat.extendScalars (algebraMap R R')) ((sectionsBasePresheafFunctor R).obj M) n a _)
 
 include H in
 /-- **The Čech complex computes the cohomology of every base change.** Let `X` be a scheme over
