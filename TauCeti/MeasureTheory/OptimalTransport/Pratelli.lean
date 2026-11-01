@@ -131,11 +131,6 @@ private def piece (i : Σ n, Fin n → Bool) : Set (X × Y) :=
 
 variable {c tX tY ε}
 
-private theorem cellCode_eq_iff {n : ℕ} {w z : X × Y} :
-    cellCode tX tY n w = cellCode tX tY n z ↔
-      code tX n w.1 = code tX n z.1 ∧ code tY n w.2 = code tY n z.2 :=
-  Prod.ext_iff
-
 private theorem measurableSet_good [MeasurableSpace X] [MeasurableSpace Y]
     (htX : ∀ k, MeasurableSet (tX k)) (htY : ∀ k, MeasurableSet (tY k)) (n : ℕ) :
     MeasurableSet (good c tX tY ε n) :=
@@ -176,7 +171,7 @@ private theorem exists_mem_good [TopologicalSpace X] [TopologicalSpace Y] (hc : 
   have hmem (w : X × Y)
       (hw : cellCode tX tY (max n₁ n₂) w = cellCode tX tY (max n₁ n₂) (x, y)) :
       c w ∈ Icc (c (x, y) - ε / 2) (c (x, y) + ε / 2) := by
-    rw [cellCode_eq_iff] at hw
+    rw [Prod.ext_iff] at hw
     exact hUW ⟨h₁ _ (code_eq_code_of_le (le_max_left _ _) hw.1),
       h₂ _ (code_eq_code_of_le (le_max_right _ _) hw.2)⟩
   refine ⟨max n₁ n₂, fun w w' hw hw' ↦ ?_⟩
