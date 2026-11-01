@@ -125,37 +125,49 @@ variable {X : Type*} [TopologicalSpace X] {x : X}
 /-- The crossing matrix depends continuously on its four endpoints and the viewing direction.
 No simplicity or regularity assumption on the other edges is required. -/
 theorem continuousAt_crossingMatrix
-    (hP : ∀ k, ContinuousAt (fun y ↦ P y k) x) (hd : ContinuousAt d x) :
+    (hi : ContinuousAt (fun y ↦ P y i) x)
+    (hi' : ContinuousAt (fun y ↦ P y (finRotate n i)) x)
+    (hj : ContinuousAt (fun y ↦ P y j) x)
+    (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
+    (hd : ContinuousAt d x) :
     ContinuousAt (fun y ↦ (P y).crossingMatrix (d y) i j) x := by
   apply continuousAt_pi.mpr
   intro k
   apply continuousAt_pi.mpr
   intro l
   fin_cases l <;> simp only [crossingMatrix, Matrix.transpose_apply, Matrix.of_apply]
-  · exact (continuous_apply k).continuousAt.comp ((hP _).sub (hP _))
-  · exact (continuous_apply k).continuousAt.comp (((hP _).sub (hP _)).neg)
+  · exact (continuous_apply k).continuousAt.comp (hi'.sub hi)
+  · exact (continuous_apply k).continuousAt.comp ((hj'.sub hj).neg)
   · exact (continuous_apply k).continuousAt.comp hd.neg
 
 /-- The crossing parameters and signed separation depend continuously on moving endpoints and
 viewing direction at every transverse pair. -/
 theorem continuousAt_crossingCoordinates
-    (hP : ∀ k, ContinuousAt (fun y ↦ P y k) x) (hd : ContinuousAt d x)
+    (hi : ContinuousAt (fun y ↦ P y i) x)
+    (hi' : ContinuousAt (fun y ↦ P y (finRotate n i)) x)
+    (hj : ContinuousAt (fun y ↦ P y j) x)
+    (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
+    (hd : ContinuousAt d x)
     (h : ((P x).crossingMatrix (d x) i j).det ≠ 0) :
     ContinuousAt (fun y ↦ (P y).crossingCoordinates (d y) i j) x := by
-  have hm := continuousAt_crossingMatrix (i := i) (j := j) hP hd
-  have hi : ContinuousAt Ring.inverse ((P x).crossingMatrix (d x) i j).det := by
+  have hm := continuousAt_crossingMatrix hi hi' hj hj' hd
+  have hdetinv : ContinuousAt Ring.inverse ((P x).crossingMatrix (d x) i j).det := by
     rw [Ring.inverse_eq_inv']
     exact continuousAt_inv₀ h
-  have hinv := (continuousAt_matrix_inv _ hi).comp
+  have hinv := (continuousAt_matrix_inv _ hdetinv).comp
     (f := fun y ↦ (P y).crossingMatrix (d y) i j) hm
   exact (continuous_fst.matrix_mulVec continuous_snd).continuousAt.comp
-    (hinv.prodMk ((hP j).sub (hP i)))
+    (hinv.prodMk (hj.sub hi))
 
 /-- An interior transverse crossing with nonzero separation persists under small perturbations.
 The canonical crossing parameters remain interior, the system remains nonsingular, and both
 its oriented determinant sign and its over/under choice are unchanged. -/
 theorem eventually_crossingCoordinates_mem_and_sign_eq
-    (hP : ∀ k, ContinuousAt (fun y ↦ P y k) x) (hd : ContinuousAt d x)
+    (hi : ContinuousAt (fun y ↦ P y i) x)
+    (hi' : ContinuousAt (fun y ↦ P y (finRotate n i)) x)
+    (hj : ContinuousAt (fun y ↦ P y j) x)
+    (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
+    (hd : ContinuousAt d x)
     (h : ((P x).crossingMatrix (d x) i j).det ≠ 0)
     (hs : (P x).crossingCoordinates (d x) i j 0 ∈ Ioo (0 : ℝ) 1)
     (ht : (P x).crossingCoordinates (d x) i j 1 ∈ Ioo (0 : ℝ) 1)
@@ -170,9 +182,9 @@ theorem eventually_crossingCoordinates_mem_and_sign_eq
         SignType.sign (((P x).crossingMatrix (d x) i j).det) := by
   have hm : ContinuousAt (fun y ↦ ((P y).crossingMatrix (d y) i j).det) x :=
     continuous_id.matrix_det.continuousAt.comp
-      (continuousAt_crossingMatrix (i := i) (j := j) hP hd)
+      (continuousAt_crossingMatrix hi hi' hj hj' hd)
   have hc (k : Fin 3) : ContinuousAt (fun y ↦ (P y).crossingCoordinates (d y) i j k) x :=
-    (continuous_apply k).continuousAt.comp (continuousAt_crossingCoordinates hP hd h)
+    (continuous_apply k).continuousAt.comp (continuousAt_crossingCoordinates hi hi' hj hj' hd h)
   have hs' := (hc 0).eventually (isOpen_Ioo.mem_nhds hs)
   have ht' := (hc 1).eventually (isOpen_Ioo.mem_nhds ht)
   have hsa : ContinuousAt (fun y ↦ SignType.sign ((P y).crossingCoordinates (d y) i j 2)) x :=
@@ -186,13 +198,17 @@ theorem eventually_crossingCoordinates_mem_and_sign_eq
   filter_upwards [hm.eventually_ne h, hs', ht', ha', hm'] with y hy hs ht ha hm
   exact ⟨hy, hs, ht, ha, hm⟩
 
-/-- An ordinary crossing of a regular projection persists in a continuous family of polygons
-and viewing directions. Near the original parameter there is a unique crossing of the same two
-edges, with interior parameters, the same sign of separation, and the same determinant sign.
-No regularity of the rest of the perturbed diagram is asserted. -/
+/-- An ordinary crossing of a regular projection persists when its four endpoints and the
+viewing direction vary continuously. Near the original parameter there is a unique crossing of
+the same two edges, with interior parameters, the same sign of separation, and the same determinant
+sign. No continuity or regularity of the rest of the perturbed diagram is required. -/
 theorem IsRegularProjection.eventually_exists_crossing
     {p₀ : Fin 3 → ℝ} (hπ : (P x).IsRegularProjection ℝ (projAlong ℝ p₀ (d x)))
-    (hP : ∀ k, ContinuousAt (fun y ↦ P y k) x) (hd : ContinuousAt d x)
+    (hi : ContinuousAt (fun y ↦ P y i) x)
+    (hi' : ContinuousAt (fun y ↦ P y (finRotate n i)) x)
+    (hj : ContinuousAt (fun y ↦ P y j) x)
+    (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
+    (hd : ContinuousAt d x)
     (hsimple : (P x).IsSimple ℝ) {s t : ℝ}
     (hs : s ∈ Ioo (0 : ℝ) 1) (ht : t ∈ Ioo (0 : ℝ) 1)
     (hne : (P x).edgePath ℝ i s ≠ (P x).edgePath ℝ j t)
@@ -217,7 +233,7 @@ theorem IsRegularProjection.eventually_exists_crossing
   have hc : (P x).crossingCoordinates (d x) i j = ![s, t, a] :=
     (crossingCoordinates_eq_iff hm _).mpr heq
   refine ⟨a, ha0, heq, ?_⟩
-  have hev := eventually_crossingCoordinates_mem_and_sign_eq hP hd hm
+  have hev := eventually_crossingCoordinates_mem_and_sign_eq hi hi' hj hj' hd hm
     (by simpa [hc] using hs)
     (by simpa [hc] using ht)
     (by simpa [hc] using ha0)
