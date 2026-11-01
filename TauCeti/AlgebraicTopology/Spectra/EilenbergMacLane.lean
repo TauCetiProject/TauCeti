@@ -154,11 +154,9 @@ lemma eilenbergMacLane_dayStructureMap_app_smashMk {p q : FiniteBijection}
       ReducedFreeModule.map R (fun y ↦ (Functor.LaxMonoidal.μ
         (PointedSSet.smashPowFunctor PointedSSet.circle) p q).right.app n
           (PointedSSet.smashMk x y)) (by simp) v := by
-  rw [eilenbergMacLane_dayStructureMap, Functor.LaxMonoidal.comp_μ,
-    PointedSSet.comp_right_app_apply, PointedSSet.whiskerRight_app_smashMk,
-    PointedSSet.reducedFreeι_right_app, PointedSSet.reducedFree_μ,
-    PointedSSet.comp_right_app_apply, PointedSSet.reducedFreeμ_app_smashMk,
-    ReducedFreeModule.map₂_mk_left, PointedSSet.reducedFree_map_app, ReducedFreeModule.map_map]
+  rw [eilenbergMacLane_dayStructureMap, Functor.LaxMonoidal.comp_μ, PointedSSet.reducedFree_μ,
+    ← Category.assoc, PointedSSet.comp_right_app_apply, PointedSSet.reducedFree_map_app]
+  simp [ReducedFreeModule.map₂_mk_left]
 
 end SymmetricSpectrum
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.LinearAlgebra.Quotient.Bilinear
 
 /-!
 # Reduced free modules on pointed types
@@ -29,6 +29,8 @@ generator of `p x y`. This is the external product of reduced free modules.
 
 * `ReducedFreeModule R a`: the reduced free module on the pointed type `(α, a)`.
 * `ReducedFreeModule.mk R x`: the generator of a point `x`.
+* `ReducedFreeModule.lift R f`: the linear map extending a function `f` that vanishes at the
+  basepoint.
 * `ReducedFreeModule.map R f`: the linear map induced by a based map `f`.
 * `ReducedFreeModule.map₂ R p`: the bilinear map induced by a function `p` of two variables sending
   the axes to the basepoint.
@@ -38,6 +40,8 @@ generator of `p x y`. This is the external product of reduced free modules.
 * `ReducedFreeModule.induction_on`: induction on elements through sums of multiples of
   generators, and `ReducedFreeModule.linearMap_ext`: linear maps out of a reduced free module are
   determined by their values on generators.
+* `ReducedFreeModule.lift_mk`, `ReducedFreeModule.lift_unique`: the universal property of the
+  reduced free module.
 * `ReducedFreeModule.map_map₂`, `ReducedFreeModule.map₂_map_left`,
   `ReducedFreeModule.map₂_map_right`: naturality of `map₂`.
 * `ReducedFreeModule.map₂_assoc`, `ReducedFreeModule.map₂_swap`, `ReducedFreeModule.map₂_mk_left`,
@@ -102,6 +106,23 @@ lemma linearMap_ext {M : Type*} [AddCommGroup M] [Module R M]
 
 variable (R)
 
+/-- The linear map out of the reduced free module extending a function `f` that vanishes at the
+basepoint, sending the generator of `x` to `f x`. -/
+def lift {M : Type*} [AddCommGroup M] [Module R M] (f : α → M) (hf : f a = 0) :
+    ReducedFreeModule R a →ₗ[R] M :=
+  Submodule.liftQ _ (Finsupp.linearCombination R f) <|
+    (Submodule.span_singleton_le_iff_mem _ _).2 <| LinearMap.mem_ker.2 <| by simp [hf]
+
+@[simp]
+lemma lift_mk {M : Type*} [AddCommGroup M] [Module R M] (f : α → M) (hf : f a = 0) (x : α) :
+    lift R f hf (mk R x) = f x := by
+  simp [lift, mk]
+
+/-- A linear map out of the reduced free module is the lift of its values on generators. -/
+lemma lift_unique {M : Type*} [AddCommGroup M] [Module R M] (f : α → M) (hf : f a = 0)
+    (g : ReducedFreeModule R a →ₗ[R] M) (h : ∀ x, g (mk R x) = f x) : g = lift R f hf :=
+  linearMap_ext fun x ↦ by simp [h]
+
 /-- The linear map of reduced free modules induced by a based map `f`, sending the generator of
 `x` to the generator of `f x`. -/
 def map (f : α → β) (hf : f a = b) : ReducedFreeModule R a →ₗ[R] ReducedFreeModule R b :=
@@ -148,11 +169,11 @@ the axes `{a} × β` and `α × {b}` to the basepoint `c`: it sends the generato
 the generator of `p x y`. -/
 def map₂ (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c) :
     ReducedFreeModule R a →ₗ[R] ReducedFreeModule R b →ₗ[R] ReducedFreeModule R c :=
-  Submodule.liftQ _ (Submodule.liftQ _ (map₂Aux R p).flip <|
-      (Submodule.span_singleton_le_iff_mem _ _).2 <| LinearMap.mem_ker.2 <|
-        Finsupp.lhom_ext' fun x ↦ LinearMap.ext_ring <| by simp [hr]).flip <|
-    (Submodule.span_singleton_le_iff_mem _ _).2 <| LinearMap.mem_ker.2 <|
-      linearMap_ext fun y ↦ by simp [mk, hl]
+  LinearMap.liftQ₂ _ _ (map₂Aux R p)
+    ((Submodule.span_singleton_le_iff_mem _ _).2 <| LinearMap.mem_ker.2 <|
+      Finsupp.lhom_ext' fun y ↦ LinearMap.ext_ring <| by simp [hl])
+    ((Submodule.span_singleton_le_iff_mem _ _).2 <| LinearMap.mem_ker.2 <|
+      Finsupp.lhom_ext' fun x ↦ LinearMap.ext_ring <| by simp [hr])
 
 @[simp]
 lemma map₂_mk_mk (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c) (x : α) (y : β) :
