@@ -100,6 +100,8 @@ variable {R} {X Y : PointedSSet.{u}} {n m : SimplexCategoryᵒᵖ}
 @[simp]
 lemma reducedFree_obj_point (X : PointedSSet.{u}) (n : SimplexCategoryᵒᵖ) :
     ((reducedFree R).obj X).point n = (0 : ReducedFreeModule R (X.point n)) :=
+  -- The structure map of `R~[X]` is the constant map to `0` by definition, so the right-hand side
+  -- of `hom_app` is `0` up to unfolding `reducedFree`.
   (hom_app ((reducedFree R).obj X) n (SSet.stdSimplex.const 0 0 n)).symm
 
 /-- Simplicial operators act on `R~[X]` through their action on generators. -/
@@ -220,12 +222,12 @@ instance : (reducedFree R).LaxMonoidal where
     ext n s v
     rcases eq_point_or_eq_tensorUnitSimplex s with rfl | rfl
     · simp
-    · simp [ReducedFreeModule.map₂_mk_left]
+    · simp
   right_unitality X := by
     ext n v s
     rcases eq_point_or_eq_tensorUnitSimplex s with rfl | rfl
     · simp
-    · simp [ReducedFreeModule.map₂_mk_right]
+    · simp
 
 @[simp]
 lemma reducedFree_ε : Functor.LaxMonoidal.ε (reducedFree R) = reducedFreeι R (𝟙_ PointedSSet) :=
@@ -246,7 +248,7 @@ instance : (reducedFree R).LaxBraided where
 
 /-- Sending simplices to their generators is a monoidal natural transformation `X ⟶ R~[X]`. -/
 instance : NatTrans.IsMonoidal (toReducedFree R) where
-  unit := Category.id_comp _
+  unit := by simp
   tensor X Y := by
     ext n x y
     simp

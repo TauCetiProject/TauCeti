@@ -156,7 +156,7 @@ lemma eilenbergMacLane_dayStructureMap_app_smashMk {p q : FiniteBijection}
           (PointedSSet.smashMk x y)) (by simp) v := by
   rw [eilenbergMacLane_dayStructureMap, Functor.LaxMonoidal.comp_μ, PointedSSet.reducedFree_μ,
     ← Category.assoc, PointedSSet.comp_right_app_apply, PointedSSet.reducedFree_map_app]
-  simp [ReducedFreeModule.map₂_mk_left]
+  simp
 
 end SymmetricSpectrum
 

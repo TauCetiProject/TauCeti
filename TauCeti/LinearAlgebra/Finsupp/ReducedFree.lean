@@ -39,7 +39,8 @@ generator of `p x y`. This is the external product of reduced free modules.
 
 * `ReducedFreeModule.induction_on`: induction on elements through sums of multiples of
   generators, and `ReducedFreeModule.linearMap_ext`: linear maps out of a reduced free module are
-  determined by their values on generators.
+  determined by their values on generators, and `ReducedFreeModule.linearMap_ext₂`: likewise for
+  bilinear maps out of two reduced free modules.
 * `ReducedFreeModule.lift_mk`, `ReducedFreeModule.lift_unique`: the universal property of the
   reduced free module.
 * `ReducedFreeModule.map_map₂`, `ReducedFreeModule.map₂_map_left`,
@@ -96,6 +97,7 @@ lemma induction_on {motive : ReducedFreeModule R a → Prop} (v : ReducedFreeMod
 variable {R}
 
 /-- Linear maps out of a reduced free module are determined by their values on generators. -/
+@[ext high]
 lemma linearMap_ext {M : Type*} [AddCommGroup M] [Module R M]
     {f g : ReducedFreeModule R a →ₗ[R] M} (h : ∀ x, f (mk R x) = g (mk R x)) : f = g := by
   refine LinearMap.ext fun v ↦ ?_
@@ -144,8 +146,7 @@ lemma map_comp (f : α → β) (g : β → γ) (hf : f a = b) (hg : g b = c) :
 @[simp]
 lemma map_map (f : α → β) (g : β → γ) (hf : f a = b) (hg : g b = c) (v : ReducedFreeModule R a) :
     map R g hg (map R f hf v) = map R (fun x ↦ g (f x)) (by simp [hf, hg]) v := by
-  rw [← LinearMap.comp_apply, ← map_comp R f g hf hg]
-  rfl
+  induction v using induction_on <;> simp_all
 
 end Ring
 
@@ -175,68 +176,30 @@ def map₂ (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c
     ((Submodule.span_singleton_le_iff_mem _ _).2 <| LinearMap.mem_ker.2 <|
       Finsupp.lhom_ext' fun x ↦ LinearMap.ext_ring <| by simp [hr])
 
-@[simp]
 lemma map₂_mk_mk (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c) (x : α) (y : β) :
     map₂ R p hl hr (mk R x) (mk R y) = mk R (p x y) := by
   simp [map₂, mk]
 
-/-- Applying a based map after the external product `map₂` composes it into the function of two
-variables. -/
-lemma map_map₂ {δ : Type*} {d : δ} (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c)
-    (f : γ → δ) (hf : f c = d) (v : ReducedFreeModule R a) (w : ReducedFreeModule R b) :
-    map R f hf (map₂ R p hl hr v w) =
-      map₂ R (fun x y ↦ f (p x y)) (by simp [hl, hf]) (by simp [hr, hf]) v w := by
-  induction v using induction_on with
-  | zero => simp
-  | add v v' hv hv' => simp [hv, hv']
-  | smul_mk r x =>
-    induction w using induction_on with
-    | zero => simp
-    | add w w' hw hw' => simp_all
-    | smul_mk s y => simp
-
-/-- Applying a based map to the first variable of the external product `map₂` composes it into the
-function of two variables. -/
-lemma map₂_map_left {α' : Type*} {a' : α'} (p : α → β → γ) (hl : ∀ y, p a y = c)
-    (hr : ∀ x, p x b = c) (f : α' → α) (hf : f a' = a) (v : ReducedFreeModule R a')
-    (w : ReducedFreeModule R b) :
-    map₂ R p hl hr (map R f hf v) w =
-      map₂ R (fun x y ↦ p (f x) y) (by simp [hf, hl]) (by simp [hr]) v w := by
-  induction v using induction_on with
-  | zero => simp
-  | add v v' hv hv' => simp [hv, hv']
-  | smul_mk r x =>
-    induction w using induction_on with
-    | zero => simp
-    | add w w' hw hw' => simp_all
-    | smul_mk s y => simp
-
-/-- Applying a based map to the second variable of the external product `map₂` composes it into
-the function of two variables. -/
-lemma map₂_map_right {β' : Type*} {b' : β'} (p : α → β → γ) (hl : ∀ y, p a y = c)
-    (hr : ∀ x, p x b = c) (g : β' → β) (hg : g b' = b) (v : ReducedFreeModule R a)
-    (w : ReducedFreeModule R b') :
-    map₂ R p hl hr v (map R g hg w) =
-      map₂ R (fun x y ↦ p x (g y)) (by simp [hl]) (by simp [hg, hr]) v w := by
-  induction v using induction_on with
-  | zero => simp
-  | add v v' hv hv' => simp [hv, hv']
-  | smul_mk r x =>
-    induction w using induction_on with
-    | zero => simp
-    | add w w' hw hw' => simp_all
-    | smul_mk s y => simp
+variable {R} in
+/-- Bilinear maps out of two reduced free modules are determined by their values on pairs of
+generators. -/
+lemma linearMap_ext₂ {M : Type*} [AddCommGroup M] [Module R M]
+    {f g : ReducedFreeModule R a →ₗ[R] ReducedFreeModule R b →ₗ[R] M}
+    (h : ∀ x y, f (mk R x) (mk R y) = g (mk R x) (mk R y)) : f = g :=
+  linearMap_ext fun x ↦ linearMap_ext fun y ↦ h x y
 
 /-- The external product with a generator in the first variable is the based map `p x`. -/
+@[simp]
 lemma map₂_mk_left (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c) (x : α)
     (w : ReducedFreeModule R b) :
     map₂ R p hl hr (mk R x) w = map R (p x) (hr x) w := by
   induction w using induction_on with
   | zero => simp
   | add w w' hw hw' => simp_all
-  | smul_mk s y => simp
+  | smul_mk s y => simp [map₂_mk_mk]
 
 /-- The external product with a generator in the second variable is the based map `(p · y)`. -/
+@[simp]
 lemma map₂_mk_right (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c)
     (v : ReducedFreeModule R a) (y : β) :
     map₂ R p hl hr v (mk R y) = map R (p · y) (hl y) v := by
@@ -244,6 +207,35 @@ lemma map₂_mk_right (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x
   | zero => simp
   | add v v' hv hv' => simp_all
   | smul_mk r x => simp
+
+/-- Applying a based map after the external product `map₂` composes it into the function of two
+variables. -/
+lemma map_map₂ {δ : Type*} {d : δ} (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c)
+    (f : γ → δ) (hf : f c = d) (v : ReducedFreeModule R a) (w : ReducedFreeModule R b) :
+    map R f hf (map₂ R p hl hr v w) =
+      map₂ R (fun x y ↦ f (p x y)) (by simp [hl, hf]) (by simp [hr, hf]) v w :=
+  LinearMap.congr_fun₂ (f := (map₂ R p hl hr).compr₂ (map R f hf))
+    (linearMap_ext₂ fun x y ↦ by simp) v w
+
+/-- Applying a based map to the first variable of the external product `map₂` composes it into the
+function of two variables. -/
+lemma map₂_map_left {α' : Type*} {a' : α'} (p : α → β → γ) (hl : ∀ y, p a y = c)
+    (hr : ∀ x, p x b = c) (f : α' → α) (hf : f a' = a) (v : ReducedFreeModule R a')
+    (w : ReducedFreeModule R b) :
+    map₂ R p hl hr (map R f hf v) w =
+      map₂ R (fun x y ↦ p (f x) y) (by simp [hf, hl]) (by simp [hr]) v w :=
+  LinearMap.congr_fun₂ (f := (map₂ R p hl hr).comp (map R f hf))
+    (linearMap_ext₂ fun x y ↦ by simp) v w
+
+/-- Applying a based map to the second variable of the external product `map₂` composes it into
+the function of two variables. -/
+lemma map₂_map_right {β' : Type*} {b' : β'} (p : α → β → γ) (hl : ∀ y, p a y = c)
+    (hr : ∀ x, p x b = c) (g : β' → β) (hg : g b' = b) (v : ReducedFreeModule R a)
+    (w : ReducedFreeModule R b') :
+    map₂ R p hl hr v (map R g hg w) =
+      map₂ R (fun x y ↦ p x (g y)) (by simp [hl]) (by simp [hg, hr]) v w :=
+  LinearMap.congr_fun₂ (f := (map₂ R p hl hr).compl₂ (map R g hg))
+    (linearMap_ext₂ fun x y ↦ by simp) v w
 
 /-- Associativity of the external product `map₂`, for functions of two variables satisfying the
 corresponding associativity law. -/
@@ -255,31 +247,21 @@ lemma map₂_assoc {δ ε ζ : Type*} {d : δ} {e : ε} {z : ζ} (p : α → β 
     (v : ReducedFreeModule R b) (w : ReducedFreeModule R d) :
     map₂ R q hql hqr (map₂ R p hpl hpr u v) w =
       map₂ R q' hql' hqr' u (map₂ R p' hpl' hpr' v w) := by
-  induction u using induction_on with
-  | zero => simp
-  | add u u' hu hu' => simp [hu, hu']
-  | smul_mk r x =>
-    induction v using induction_on with
-    | zero => simp
-    | add v v' hv hv' => simp_all
-    | smul_mk s y =>
-      induction w using induction_on with
-      | zero => simp
-      | add w w' hw hw' => simp only [map_add, hw, hw']
-      | smul_mk t w => simp [h]
+  refine LinearMap.congr_fun₂ (f := (map₂ R p hpl hpr).compr₂ ((map₂ R q hql hqr).flip w))
+    (g := (map₂ R q' hql' hqr').compl₂ ((map₂ R p' hpl' hpr').flip w))
+    (linearMap_ext₂ fun x y ↦ ?_) u v
+  simp only [LinearMap.compr₂_apply, LinearMap.compl₂_apply, LinearMap.flip_apply, map₂_mk_left,
+    map_map]
+  congr 1
+  ext t
+  simp [h]
 
 /-- Exchanging the two variables of the external product `map₂`. -/
 lemma map₂_swap (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c)
     (v : ReducedFreeModule R a) (w : ReducedFreeModule R b) :
-    map₂ R p hl hr v w = map₂ R (fun y x ↦ p x y) hr hl w v := by
-  induction v using induction_on with
-  | zero => simp
-  | add v v' hv hv' => simp [hv, hv']
-  | smul_mk r x =>
-    induction w using induction_on with
-    | zero => simp
-    | add w w' hw hw' => simp_all
-    | smul_mk s y => simp [smul_comm r s]
+    map₂ R p hl hr v w = map₂ R (fun y x ↦ p x y) hr hl w v :=
+  LinearMap.congr_fun₂ (g := (map₂ R (fun y x ↦ p x y) hr hl).flip)
+    (linearMap_ext₂ fun x y ↦ by simp) v w
 
 end CommRing
 
