@@ -198,6 +198,27 @@ theorem ker_mk (k : ℕ) :
 
 end deRhamCohomology
 
+variable {I} in
+/-- If the de Rham cohomology `H^k(M)` is one-dimensional, any two closed `k`-forms on `M` have a
+nontrivial linear combination which is exact. -/
+theorem exists_smul_add_smul_mem_exactForms {k : ℕ}
+    (h : Module.finrank ℝ (deRhamCohomology I M k) = 1) {a b : SmoothForm I M ℝ k}
+    (ha : a ∈ closedForms I M k) (hb : b ∈ closedForms I M k) :
+    ∃ s t : ℝ, ¬(s = 0 ∧ t = 0) ∧ s • a + t • b ∈ exactForms I M k := by
+  have : FiniteDimensional ℝ (deRhamCohomology I M k) := Module.finite_of_finrank_eq_succ h
+  have hdep : ¬LinearIndependent ℝ
+      ![deRhamCohomology.mk I k ⟨a, ha⟩, deRhamCohomology.mk I k ⟨b, hb⟩] :=
+    fun hi ↦ by
+      have := hi.fintype_card_le_finrank
+      rw [h, Fintype.card_fin] at this
+      omega
+  rw [LinearIndependent.pair_iff] at hdep
+  push Not at hdep
+  obtain ⟨s, t, hst, hne⟩ := hdep
+  refine ⟨s, t, fun h ↦ hne h.1 h.2, ?_⟩
+  exact (deRhamCohomology.mk_eq_zero_iff I k (s • ⟨a, ha⟩ + t • ⟨b, hb⟩)).mp
+    (by rwa [map_add, map_smul, map_smul])
+
 variable (M) in
 /-- De Rham cohomology vanishes in degrees above the dimension of the model, where every
 alternating form is zero. -/
