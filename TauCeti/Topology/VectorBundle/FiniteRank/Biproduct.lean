@@ -173,79 +173,125 @@ def whitneyInr (A D : FiniteRankBundleCore 𝕜 B) : D ⟶ whitneySum A D where
     rw [D.core.coordChange_comp i j j' x ⟨⟨hi, hj.2⟩, hj'.2⟩,
       D.core.coordChange_comp i i' j' x ⟨⟨hi, hi'⟩, hj'.2⟩]
 
+-- The characteristic equation identifies each preferred-chart operator with a map between
+-- standard models; the remaining calculation uses the shared self-transition equation.
 /-- The first projection is the first coordinate block in every fibre. -/
-@[simp] theorem fiberMap_whitneyFst (A D : FiniteRankBundleCore 𝕜 B) (x : B)
-    (v : Fin (A.rank + D.rank) → 𝕜) :
-    (whitneyFst A D).fiberMap x v = (splitCoords (𝕜 := 𝕜) A.rank D.rank v).1 := by
-  -- Expand the preferred-chart operator, normalizing its dependent source model.
-  erw [CoordinateHom.fiberMap_def]
-  change A.core.coordChange x (A.core.indexAt x) x
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank v).1 = _
-  have h := A.core.coordChange_self (A.core.indexAt x) x (A.core.mem_baseSet_at x)
-  simpa only [A.indexAt_eq] using h (splitCoords (𝕜 := 𝕜) A.rank D.rank v).1
+@[simp] theorem fiberMap_whitneyFst (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (whitneyFst A D).fiberMap x =
+      (ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+        (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap := by
+  calc
+    _ = (A.core.coordChange ((whitneySum A D).core.indexAt x)
+        (A.core.indexAt x) x).comp
+        ((ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+          (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap) :=
+      CoordinateHom.fiberMap_def _ x
+    _ = _ := by
+      rw [(whitneySum A D).indexAt_eq, A.indexAt_eq, coordChange_self,
+        ContinuousLinearMap.id_comp]
 
 /-- The second projection is the second coordinate block in every fibre. -/
-@[simp] theorem fiberMap_whitneySnd (A D : FiniteRankBundleCore 𝕜 B) (x : B)
-    (v : Fin (A.rank + D.rank) → 𝕜) :
-    (whitneySnd A D).fiberMap x v = (splitCoords (𝕜 := 𝕜) A.rank D.rank v).2 := by
-  -- Expand the preferred-chart operator, normalizing its dependent source model.
-  erw [CoordinateHom.fiberMap_def]
-  change D.core.coordChange x (D.core.indexAt x) x
-    (splitCoords (𝕜 := 𝕜) A.rank D.rank v).2 = _
-  have h := D.core.coordChange_self (D.core.indexAt x) x (D.core.mem_baseSet_at x)
-  simpa only [D.indexAt_eq] using h (splitCoords (𝕜 := 𝕜) A.rank D.rank v).2
+@[simp] theorem fiberMap_whitneySnd (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (whitneySnd A D).fiberMap x =
+      (ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+        (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap := by
+  calc
+    _ = (D.core.coordChange ((whitneySum A D).core.indexAt x)
+        (D.core.indexAt x) x).comp
+        ((ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+          (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap) :=
+      CoordinateHom.fiberMap_def _ x
+    _ = _ := by
+      rw [(whitneySum A D).indexAt_eq, D.indexAt_eq, coordChange_self,
+        ContinuousLinearMap.id_comp]
 
 /-- The first inclusion appends a zero block in every fibre. -/
-@[simp] theorem fiberMap_whitneyInl (A D : FiniteRankBundleCore 𝕜 B) (x : B)
-    (v : Fin A.rank → 𝕜) :
-    (whitneyInl A D).fiberMap x v = (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (v, 0) := by
-  -- Expand the preferred-chart operator, normalizing its dependent target model.
-  erw [CoordinateHom.fiberMap_def]
-  change (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm
-    (A.core.coordChange (A.core.indexAt x) x x v, 0) = _
-  have h := A.core.coordChange_self (A.core.indexAt x) x (A.core.mem_baseSet_at x) v
-  rw [A.indexAt_eq] at h ⊢
-  rw [h]
+@[simp] theorem fiberMap_whitneyInl (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (whitneyInl A D).fiberMap x =
+      (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
+        (ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)) := by
+  calc
+    _ = (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
+        ((ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+          (A.core.coordChange (A.core.indexAt x)
+            ((whitneySum A D).core.indexAt x) x)) := CoordinateHom.fiberMap_def _ x
+    _ = _ := by
+      rw [(whitneySum A D).indexAt_eq, A.indexAt_eq, coordChange_self,
+        ContinuousLinearMap.comp_id]
 
 /-- The second inclusion prepends a zero block in every fibre. -/
-@[simp] theorem fiberMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 B) (x : B)
-    (v : Fin D.rank → 𝕜) :
-    (whitneyInr A D).fiberMap x v = (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (0, v) := by
-  -- Expand the preferred-chart operator, normalizing its dependent target model.
-  erw [CoordinateHom.fiberMap_def]
-  change (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm
-    (0, D.core.coordChange (D.core.indexAt x) x x v) = _
-  have h := D.core.coordChange_self (D.core.indexAt x) x (D.core.mem_baseSet_at x) v
-  rw [D.indexAt_eq] at h ⊢
-  rw [h]
+@[simp] theorem fiberMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (whitneyInr A D).fiberMap x =
+      (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
+        (ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)) := by
+  calc
+    _ = (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap.comp
+        ((ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+          (D.core.coordChange (D.core.indexAt x)
+            ((whitneySum A D).core.indexAt x) x)) := CoordinateHom.fiberMap_def _ x
+    _ = _ := by
+      rw [(whitneySum A D).indexAt_eq, D.indexAt_eq, coordChange_self,
+        ContinuousLinearMap.comp_id]
 
 @[reassoc (attr := simp)] theorem whitneyInl_fst (A D : FiniteRankBundleCore 𝕜 B) :
     whitneyInl A D ≫ whitneyFst A D = 𝟙 A := by
   apply hom_ext
   intro x
-  ext v
-  simp
+  -- Work in the standard model so simplification does not unfold dependent fibre instances.
+  let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) A.rank D.rank
+  have h : ((ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+        e.toContinuousLinearMap).comp
+      (e.symm.toContinuousLinearMap.comp (ContinuousLinearMap.inl 𝕜 _ _)) =
+        ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+    ext v i
+    simp
+  simp only [fiberMap_comp, fiberMap_whitneyFst, fiberMap_whitneyInl, fiberMap_id]
+  exact h
 
 @[reassoc (attr := simp)] theorem whitneyInl_snd (A D : FiniteRankBundleCore 𝕜 B) :
     whitneyInl A D ≫ whitneySnd A D = 0 := by
   apply hom_ext
   intro x
-  ext v
-  simp [CoordinateHom.fiberMap_zero]
+  -- Work in the standard model so simplification does not unfold dependent fibre instances.
+  let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) A.rank D.rank
+  have h : ((ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+        e.toContinuousLinearMap).comp
+      (e.symm.toContinuousLinearMap.comp (ContinuousLinearMap.inl 𝕜 _ _)) =
+        (0 : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) := by
+    ext v i
+    simp
+  simp only [fiberMap_comp, fiberMap_whitneySnd, fiberMap_whitneyInl, CoordinateHom.fiberMap_zero]
+  exact h
 
 @[reassoc (attr := simp)] theorem whitneyInr_fst (A D : FiniteRankBundleCore 𝕜 B) :
     whitneyInr A D ≫ whitneyFst A D = 0 := by
   apply hom_ext
   intro x
-  ext v
-  simp [CoordinateHom.fiberMap_zero]
+  -- Work in the standard model so simplification does not unfold dependent fibre instances.
+  let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) A.rank D.rank
+  have h : ((ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+        e.toContinuousLinearMap).comp
+      (e.symm.toContinuousLinearMap.comp (ContinuousLinearMap.inr 𝕜 _ _)) =
+        (0 : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) := by
+    ext v i
+    simp
+  simp only [fiberMap_comp, fiberMap_whitneyFst, fiberMap_whitneyInr, CoordinateHom.fiberMap_zero]
+  exact h
 
 @[reassoc (attr := simp)] theorem whitneyInr_snd (A D : FiniteRankBundleCore 𝕜 B) :
     whitneyInr A D ≫ whitneySnd A D = 𝟙 D := by
   apply hom_ext
   intro x
-  ext v
-  simp
+  -- Work in the standard model so simplification does not unfold dependent fibre instances.
+  let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) A.rank D.rank
+  have h : ((ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+        e.toContinuousLinearMap).comp
+      (e.symm.toContinuousLinearMap.comp (ContinuousLinearMap.inr 𝕜 _ _)) =
+        ContinuousLinearMap.id 𝕜 (Fin D.rank → 𝕜) := by
+    ext v i
+    simp
+  simp only [fiberMap_comp, fiberMap_whitneySnd, fiberMap_whitneyInr, fiberMap_id]
+  exact h
 
 /-- The Whitney sum with its four canonical bundle maps. -/
 -- Expose the point projection so the types of the four legs reduce to the Whitney sum.
@@ -282,23 +328,21 @@ def whitneyBicone (A D : FiniteRankBundleCore 𝕜 B) : BinaryBicone A D where
       𝟙 (whitneySum A D) := by
   apply hom_ext
   intro x
-  erw [CoordinateHom.fiberMap_add, fiberMap_comp, fiberMap_comp, fiberMap_id]
-  apply ContinuousLinearMap.ext
-  intro v
-  -- Normalize the dependent models in the applications of addition and composition.
-  change Fin (A.rank + D.rank) → 𝕜 at v
-  change (whitneyInl A D).fiberMap x ((whitneyFst A D).fiberMap x v) +
-    (whitneyInr A D).fiberMap x ((whitneySnd A D).fiberMap x v) = v
-  erw [fiberMap_whitneyInl, fiberMap_whitneyInr, fiberMap_whitneyFst, fiberMap_whitneySnd]
-  erw [← map_add]
-  apply (splitCoords (𝕜 := 𝕜) A.rank D.rank).injective
-  simp only [Prod.mk_add_mk, add_zero, zero_add]
-  -- Rebuild the split-coordinate expression with the normalized function-space instances.
-  change splitCoords (𝕜 := 𝕜) A.rank D.rank
-    ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm
-      ((splitCoords (𝕜 := 𝕜) A.rank D.rank v).1,
-        (splitCoords (𝕜 := 𝕜) A.rank D.rank v).2)) = _
-  exact (splitCoords (𝕜 := 𝕜) A.rank D.rank).apply_symm_apply _
+  -- Work in the standard model so simplification does not unfold dependent fibre instances.
+  let e := splitCoords (𝕜 := 𝕜) (M := 𝕜) A.rank D.rank
+  have h : (e.symm.toContinuousLinearMap.comp (ContinuousLinearMap.inl 𝕜 _ _)).comp
+        ((ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+          e.toContinuousLinearMap) +
+      (e.symm.toContinuousLinearMap.comp (ContinuousLinearMap.inr 𝕜 _ _)).comp
+        ((ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
+          e.toContinuousLinearMap) =
+      ContinuousLinearMap.id 𝕜 (Fin (A.rank + D.rank) → 𝕜) := by
+    apply ContinuousLinearMap.ext
+    intro v
+    simp [← map_add]
+  simp only [fiberMap_add, fiberMap_comp, fiberMap_id, fiberMap_whitneyFst,
+    fiberMap_whitneySnd, fiberMap_whitneyInl, fiberMap_whitneyInr]
+  exact h
 
 /-- The geometric Whitney sum is simultaneously a product and a coproduct. -/
 def whitneyBiconeIsBilimit (A D : FiniteRankBundleCore 𝕜 B) :
