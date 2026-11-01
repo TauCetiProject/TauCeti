@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Elementary
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -25,6 +26,10 @@ This file studies Legendre's elliptic integrals as functions of the modulus `k`.
   `∂F/∂k = (E - k′² F) / (k k′²) - k sin φ cos φ / (k′² Δ)` and `∂E/∂k = (E - F) / k`. At `φ = π/2`
   these become `dK/dk = (E(k) - k′² K(k)) / (k k′²)` and `dE/dk = (E(k) - K(k)) / k`. At `k = 0`
   every derivative in the modulus vanishes.
+* **Legendre's differential equations.** Differentiating the formulas for `dK/dk` and `dE/dk` once
+  more shows that `K` and `E` are twice differentiable at every `k ≠ 0` with `k ^ 2 < 1`, and that
+  on all of `k ^ 2 < 1`
+  `k k′² K′′ + (1 - 3k²) K′ - k K = 0` and `k k′² E′′ + k′² E′ + k E = 0`.
 
 The integrals are differentiated under the integral sign
 (`TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn`), using the smoothness
@@ -34,10 +39,9 @@ integrand of the derivative is rewritten as a difference of the integrands of `�
 `E(φ, k)` supplies the integration by parts. For the second kind, the integrand of the derivative
 is already the difference of the integrands of `E(φ, k)` and `F(φ, k)`, divided by `k`.
 
-These formulas are the input to Legendre's differential equations for `K` and `E` and to the proof
-by differentiation of Legendre's relation
-`E(k) K(k′) + E(k′) K(k) - K(k) K(k′) = π/2` for `0 < k < 1`, where `k′ = √(1 - k²)` is the
-complementary modulus.
+The first-derivative formulas are also the input to the proof by differentiation of Legendre's
+relation `E(k) K(k′) + E(k′) K(k) - K(k) K(k′) = π/2` for `0 < k < 1`, where `k′ = √(1 - k²)` is
+the complementary modulus.
 
 ## Main statements
 
@@ -48,6 +52,10 @@ complementary modulus.
 * `TauCeti.Real.hasDerivAt_legendreK` and `TauCeti.Real.hasDerivAt_legendreEc`: the derivatives of
   the complete integrals, with `TauCeti.Real.hasDerivAt_legendreK_zero` and
   `TauCeti.Real.hasDerivAt_legendreEc_zero` at `k = 0`.
+* `TauCeti.Real.hasDerivAt_deriv_legendreK` and `TauCeti.Real.hasDerivAt_deriv_legendreEc`: the
+  second derivatives of the complete integrals.
+* `TauCeti.Real.legendreK_differential_equation` and
+  `TauCeti.Real.legendreEc_differential_equation`: Legendre's differential equations.
 
 ## References
 
@@ -58,7 +66,9 @@ public section
 
 namespace TauCeti.Real
 
-open _root_.Real Set intervalIntegral
+open _root_.Real Set intervalIntegral Filter
+
+open scoped Topology
 
 /-! ### Differentiation under the integral sign -/
 
@@ -222,5 +232,89 @@ theorem hasDerivAt_legendreK_zero : HasDerivAt legendreK 0 0 := by
 theorem hasDerivAt_legendreEc_zero : HasDerivAt legendreEc 0 0 := by
   rw [funext legendreEc_def]
   exact hasDerivAt_legendreE_modulus_zero (π / 2)
+
+/-! ### Second derivatives and Legendre's differential equations -/
+
+/-- `K′(k) = (E(k) - (1 - k²) K(k)) / (k (1 - k²))` for `k ≠ 0` and `k ^ 2 < 1`, in `deriv`
+form. -/
+theorem deriv_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+    deriv legendreK k = (legendreEc k - (1 - k ^ 2) * legendreK k) / (k * (1 - k ^ 2)) :=
+  (hasDerivAt_legendreK hk₀ hk).deriv
+
+/-- `E′(k) = (E(k) - K(k)) / k` for `k ≠ 0` and `k ^ 2 < 1`, in `deriv` form. -/
+theorem deriv_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+    deriv legendreEc k = (legendreEc k - legendreK k) / k :=
+  (hasDerivAt_legendreEc hk₀ hk).deriv
+
+@[simp]
+theorem deriv_legendreK_zero : deriv legendreK 0 = 0 :=
+  hasDerivAt_legendreK_zero.deriv
+
+@[simp]
+theorem deriv_legendreEc_zero : deriv legendreEc 0 = 0 :=
+  hasDerivAt_legendreEc_zero.deriv
+
+/-- Near a modulus `k ≠ 0` with `k ^ 2 < 1`, the moduli are again nonzero with square below `1`. -/
+private theorem eventually_ne_zero_and_sq_lt_one {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+    ∀ᶠ x in 𝓝 k, x ≠ 0 ∧ x ^ 2 < 1 :=
+  (eventually_ne_nhds hk₀).and ((isOpen_lt (continuous_pow 2) continuous_const).eventually_mem hk)
+
+/-- **The second derivative of `K`**: for `k ≠ 0` and `k ^ 2 < 1`,
+`K′′(k) = ((1 - k²) (1 - 2k²) K(k) - (1 - 3k²) E(k)) / (k² (1 - k²)²)`. In particular `K` is twice
+differentiable at `k`. -/
+theorem hasDerivAt_deriv_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+    HasDerivAt (deriv legendreK)
+      (((1 - k ^ 2) * (1 - 2 * k ^ 2) * legendreK k - (1 - 3 * k ^ 2) * legendreEc k) /
+        (k ^ 2 * (1 - k ^ 2) ^ 2)) k := by
+  have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
+  have hsq := (hasDerivAt_pow 2 k).const_sub 1
+  have h := ((hasDerivAt_legendreEc hk₀ hk).sub (hsq.mul (hasDerivAt_legendreK hk₀ hk))).div
+    ((hasDerivAt_id' k).mul hsq) (mul_ne_zero hk₀ hc)
+  refine (h.congr_of_eventuallyEq ((eventually_ne_zero_and_sq_lt_one hk₀ hk).mono
+    fun x hx ↦ deriv_legendreK hx.1 hx.2)).congr_deriv ?_
+  simp only [Pi.sub_apply, Pi.mul_apply]
+  field_simp
+  ring
+
+/-- **The second derivative of `E`** (DLMF §19.4): for `k ≠ 0` and `k ^ 2 < 1`,
+`E′′(k) = -(E(k) - (1 - k²) K(k)) / (k² (1 - k²))`, that is `E′′(k) = -K′(k) / k`. In particular `E`
+is twice differentiable at `k`. -/
+theorem hasDerivAt_deriv_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+    HasDerivAt (deriv legendreEc)
+      (-(legendreEc k - (1 - k ^ 2) * legendreK k) / (k ^ 2 * (1 - k ^ 2))) k := by
+  have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
+  have h := ((hasDerivAt_legendreEc hk₀ hk).sub (hasDerivAt_legendreK hk₀ hk)).div
+    (hasDerivAt_id' k) hk₀
+  refine (h.congr_of_eventuallyEq ((eventually_ne_zero_and_sq_lt_one hk₀ hk).mono
+    fun x hx ↦ deriv_legendreEc hx.1 hx.2)).congr_deriv ?_
+  simp only [Pi.sub_apply]
+  field_simp
+  ring
+
+/-- **Legendre's differential equation for `K`** (DLMF §19.4): for `k ^ 2 < 1`,
+`k (1 - k²) K′′(k) + (1 - 3k²) K′(k) - k K(k) = 0`. At `k = 0` it reduces to `K′(0) = 0`. -/
+theorem legendreK_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
+    k * (1 - k ^ 2) * deriv^[2] legendreK k + (1 - 3 * k ^ 2) * deriv legendreK k -
+      k * legendreK k = 0 := by
+  rcases eq_or_ne k 0 with rfl | hk₀
+  · simp
+  have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
+  rw [Function.iterate_succ_apply', Function.iterate_one,
+    (hasDerivAt_deriv_legendreK hk₀ hk).deriv, deriv_legendreK hk₀ hk]
+  field_simp
+  ring
+
+/-- **Legendre's differential equation for `E`** (DLMF §19.4): for `k ^ 2 < 1`,
+`k (1 - k²) E′′(k) + (1 - k²) E′(k) + k E(k) = 0`. At `k = 0` it reduces to `E′(0) = 0`. -/
+theorem legendreEc_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
+    k * (1 - k ^ 2) * deriv^[2] legendreEc k + (1 - k ^ 2) * deriv legendreEc k +
+      k * legendreEc k = 0 := by
+  rcases eq_or_ne k 0 with rfl | hk₀
+  · simp
+  have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
+  rw [Function.iterate_succ_apply', Function.iterate_one,
+    (hasDerivAt_deriv_legendreEc hk₀ hk).deriv, deriv_legendreEc hk₀ hk]
+  field_simp
+  ring
 
 end TauCeti.Real

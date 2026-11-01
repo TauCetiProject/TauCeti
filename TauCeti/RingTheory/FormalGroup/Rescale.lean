@@ -57,8 +57,8 @@ case of the polynomial variable `s` over `R[s]`.
 * `FormalGroup.subst_rescale_toPowerSeries_of_smul_eq_rescale`: if `g` is additive along `F` and
   `s • gₛ = g(s X)` for a nonzerodivisor `s`, then `gₛ` is additive along `F^s`.
 * `FormalGroup.map_toPolynomial_eq_rescale_iff`: over a ring graded by `ℕ`, `F` has its
-  coefficient of `Xⁱ Yʲ` in degree `i + j - 1` exactly when its base change along `a ↦ ∑ₙ aₙ Tⁿ`
-  is its rescaling by `T`.
+  coefficient of `Xⁱ Yʲ` in degree `w * (i + j - 1)` exactly when its base change along
+  `a ↦ ∑ₙ aₙ Tⁿ` is its rescaling by `T ^ w`.
 
 ## References
 
@@ -260,15 +260,15 @@ open TauCeti.GradedAlgebra
 variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
   [GradedRing 𝒜]
 
-/-- **The grading as rescaling by a polynomial variable.** A formal group law has its coefficient
-of `X^(d 0) Y^(d 1)` in degree `d 0 + d 1 - 1` exactly when its base change along
-`a ↦ ∑ₙ aₙ Tⁿ` is its rescaling by `T`. -/
-theorem map_toPolynomial_eq_rescale_iff (F : FormalGroup A) :
-    F.map (toPolynomial 𝒜) = (F.map Polynomial.C).rescale Polynomial.X ↔
-      ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1) := by
+/-- **The grading as rescaling by a power of a polynomial variable.** A formal group law has its
+coefficient of `X^(d 0) Y^(d 1)` in degree `w * (d 0 + d 1 - 1)` exactly when its base change
+along `a ↦ ∑ₙ aₙ Tⁿ` is its rescaling by `T ^ w`. -/
+theorem map_toPolynomial_eq_rescale_iff (F : FormalGroup A) (w : ℕ) :
+    F.map (toPolynomial 𝒜) = (F.map Polynomial.C).rescale (Polynomial.X ^ w) ↔
+      ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1)) := by
   refine (FormalGroup.ext_iff.trans MvPowerSeries.ext_iff).trans (forall_congr' fun d ↦ ?_)
-  rw [coeff_rescale, map_toPowerSeries, map_toPowerSeries, coeff_map, coeff_map, mul_comm,
-    Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
+  rw [coeff_rescale, map_toPowerSeries, map_toPowerSeries, coeff_map, coeff_map, ← pow_mul,
+    mul_comm, Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
 
 end Graded
 

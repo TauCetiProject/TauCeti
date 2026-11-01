@@ -35,9 +35,8 @@ When `-n` is a fundamental discriminant the order is the maximal order of `ℚ(�
 `ℚ(√(-n))` is then the number of primitive reduced forms of discriminant `-n`, a finite set the
 kernel can enumerate. Every quadratic field of discriminant `-n` is isomorphic to `ℚ(√(-n))`, by
 evaluation at `θ` or `2θ` for a square root `θ` of its squarefree radicand, so the same count is
-the class number of any such field. As certified examples, `ℚ(√(-4)) = ℚ(i)` has class number
-one, while `ℚ(√(-20)) = ℚ(√(-5))` has class number two, so its ring of integers is not a unique
-factorization domain.
+the class number of any such field. As a certified example, `ℚ(√(-20)) = ℚ(√(-5))` has class
+number two, so its ring of integers is not a unique factorization domain.
 
 ## Main definitions and results
 
@@ -53,10 +52,8 @@ factorization domain.
   the class number of `ℚ(√(-n))` is `#(primitiveReducedForms n)`.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`: the class
   number of any quadratic field of discriminant `-n` is `#(primitiveReducedForms n)`.
-* `TauCeti.BinaryQuadraticForm.classNumber_neg_four_eq_one` and
-  `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class numbers of `ℚ(√(-4))` and
-  `ℚ(√(-20))` are `1` and `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of
-  unique factorization in the latter.
+* `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class number of `ℚ(√(-20))` is
+  `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of unique factorization there.
 
 ## References
 
@@ -152,16 +149,6 @@ theorem classNumber_eq_card_primitiveReducedForms_of_discr_eq {K : Type*} [Field
 end Fundamental
 
 section Examples
-
-/-- **`ℚ(i)` has class number one**, certified by its single primitive reduced form `x² + y²` of
-discriminant `-4`. -/
-theorem classNumber_neg_four_eq_one :
-    NumberField.classNumber (QuadraticAlgebra ℚ ((-(4 : ℕ) : ℤ) : ℚ) 0) = 1 := by
-  have hfund : Int.IsFundamentalDiscr (-(4 : ℕ) : ℤ) := by
-    simpa using (Int.isFundamentalDiscr_four_mul (m := -1)).mpr
-      ⟨isUnit_neg_one.squarefree, by decide⟩
-  rw [classNumber_eq_card_primitiveReducedForms 4 hfund]
-  decide +kernel
 
 /-- **`ℚ(√(-5))` has class number two**, certified by its two primitive reduced forms
 `x² + 5 y²` and `2 x² + 2 x y + 3 y²` of discriminant `-20`. -/

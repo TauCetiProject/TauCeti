@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
+import TauCeti.NumberTheory.ClassNumberOne.HeegnerNumbers
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 
 /-!
@@ -17,7 +18,9 @@ the kernel enumerates. This file certifies the two finite computations of the cl
 problem.
 
 * The nine discriminants `-3, -4, -7, -8, -11, -19, -43, -67, -163` have class number one: each
-  has the principal form as its only primitive reduced form.
+  has the principal form as its only primitive reduced form
+  (`TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`), and this transports from the
+  model `ℚ(√(-n))` to every quadratic field of discriminant `-n`.
 * Among the discriminants `-51 < D < 0`, the class number one fields are exactly those of
   discriminant `-3, -4, -7, -8, -11, -19, -43`. Every other fundamental discriminant in this range
   has a second primitive reduced form. The imprimitive discriminants `-12, -16, -27` and `-28`,
@@ -61,13 +64,16 @@ theorem classNumber_eq_one_of_discr_mem (hK : finrank ℚ K = 2)
     NumberField.classNumber K = 1 := by
   obtain ⟨n, hn⟩ : ∃ n : ℕ, NumberField.discr K = -n :=
     ⟨(NumberField.discr K).natAbs, by simp only [mem_insert, mem_singleton] at hD; omega⟩
-  rw [classNumber_eq_card_primitiveReducedForms_of_discr_eq hK hn]
-  rw [hn] at hD
-  -- The kernel counts the primitive reduced forms of each of the nine discriminants.
-  have key : ∀ n ∈ ({3, 4, 7, 8, 11, 19, 43, 67, 163} : Finset ℕ),
-      #(primitiveReducedForms n) = 1 := by
-    decide +kernel
-  exact key n (by simp only [mem_insert, mem_singleton] at hD ⊢; omega)
+  have hmem : n ∈ heegnerDiscriminants := by
+    rw [hn] at hD
+    simp only [mem_insert, mem_singleton] at hD
+    simp only [mem_heegnerDiscriminants]
+    omega
+  have : NeZero n := ⟨by rintro rfl; simp at hmem⟩
+  rw [classNumber_eq_card_primitiveReducedForms_of_discr_eq hK hn,
+    ← BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms n
+      (isFundamentalDiscr_neg_of_mem_heegnerDiscriminants hmem),
+    classNumber_neg_eq_one_of_mem_heegnerDiscriminants hmem]
 
 /-- **Class number one for discriminants above `-51`.** A quadratic field with
 `-51 < discr K < 0` has class number one exactly when its discriminant is one of
