@@ -43,13 +43,9 @@ open Filter Topology
 driving the Dirichlet density asymptotics. -/
 theorem tendsto_log_one_div_sub_atTop (a : ℝ) :
     Tendsto (fun s : ℝ ↦ Real.log (1 / (s - a))) (𝓝[>] a) atTop := by
-  refine Real.tendsto_log_atTop.comp ?_
-  have h1 : Tendsto (fun s : ℝ ↦ s - a) (𝓝[>] a) (𝓝[>] (0 : ℝ)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (((continuous_sub_right a).tendsto' a 0 (by ring)).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun s hs ↦ by
-        simp only [Set.mem_Ioi] at hs ⊢
-        linarith)
-  simpa only [one_div, Pi.inv_def] using h1.inv_tendsto_nhdsGT_zero
+  simp only [one_div]
+  exact tendsto_log_atTop.comp <| tendsto_inv_nhdsGT_zero.comp <| tendsto_nhdsWithin_iff.2
+    ⟨tendsto_sub_nhds_zero_iff.2 <| tendsto_id'.2 nhdsWithin_le_nhds,
+      eventually_nhdsWithin_of_forall fun _ ↦ by simp⟩
 
 end Real
