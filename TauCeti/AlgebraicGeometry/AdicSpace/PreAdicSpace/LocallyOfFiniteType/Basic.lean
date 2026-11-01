@@ -201,12 +201,8 @@ theorem locallyOfFiniteType_presentationLimitPreAdicSpaceComap (φ : Pair.Hom S 
     LocallyOfFiniteType (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
       φ.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
-  refine (chartLocally_iff _).mpr fun _ ↦ ⟨⊤, trivial, ⊤, le_top, A, inferInstance,
-    inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
-    hsheaf, restrictTopIso _, restrictTopIso _, ?_⟩
-  rw [← restrictTopIso_hom, ← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id]
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) :=
+  chartLocally_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf φ hφ
 
 include hsheaf in
 /-- **The identity of the adic spectrum of a complete Hausdorff Huber pair with sheafy structure

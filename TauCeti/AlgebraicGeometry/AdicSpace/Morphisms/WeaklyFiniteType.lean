@@ -160,13 +160,8 @@ theorem locallyOfWeaklyFiniteType_presentationLimitPreAdicSpaceComap {A : Type u
       (ObjectProperty.homMk (presentationLimitPreAdicSpaceComap φ.toRingHom
         φ.continuous_toRingHom φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
         T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf)) := by
-  refine (locallyOfWeaklyFiniteType_iff_chartLocally _).mpr <|
-    (chartLocally_iff _).mpr fun _ ↦ ⟨⊤, trivial, ⊤, le_top, A, inferInstance,
-    inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
-    hsheaf, restrictTopIso _, restrictTopIso _, ?_⟩
-  rw [← restrictTopIso_hom, ← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id]
-  rfl
+  rw [locallyOfWeaklyFiniteType_iff_chartLocally, ObjectProperty.homMk_hom]
+  exact chartLocally_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf φ hφ
 
 end AdicSpace
 

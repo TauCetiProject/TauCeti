@@ -33,6 +33,9 @@ presheaf of `Spa(B, B⁺)` to be a sheaf, which is part of the data of the defin
   weaker chart-local property, with the same charts.
 * `TauCeti.PreAdicSpace.chartLocally_respectsIso`: every chart-local property is invariant under
   isomorphisms of the source and of the target.
+* `TauCeti.ValuationSpectrum.chartLocally_presentationLimitPreAdicSpaceComap`: the morphism
+  `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by a morphism of Huber pairs satisfying `Q` is chart-locally
+  `Q`.
 
 ## References
 
@@ -183,6 +186,37 @@ instance chartLocally_respectsIso : MorphismProperty.RespectsIso (chartLocally.{
 end
 
 end PreAdicSpace
+
+namespace ValuationSpectrum
+
+open PreAdicSpace
+
+variable {Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [IsHuberRing A] {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+  [IsHuberRing B] {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop}
+  {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [CompleteSpace B] [T2Space B] [IsHuberRing B]
+  {S : Pair A} {T : Pair B} (P : PairOfDefinition A) (P' : PairOfDefinition B)
+  (hP : P.ringOfDefinition ≤ S.plus) (hP' : P'.ringOfDefinition ≤ T.plus)
+  (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+    (presentationLimitPresheaf P' T.plus))
+
+/-- **The morphism of adic spectra induced by a morphism of Huber pairs satisfying `Q` is
+chart-locally `Q`**, witnessed over the whole of `Spa(B, B⁺)` and `Spa(A, A⁺)`, for `B` complete
+and Hausdorff with sheafy structure presheaf. -/
+theorem chartLocally_presentationLimitPreAdicSpaceComap (φ : Pair.Hom S T) (hφ : Q φ) :
+    chartLocally Q (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
+      φ.map_mem_plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
+  refine (chartLocally_iff _).mpr fun _ ↦ ⟨⊤, trivial, ⊤, le_top, A, inferInstance,
+    inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
+    hsheaf, restrictTopIso _, restrictTopIso _, ?_⟩
+  rw [← restrictTopIso_hom, ← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id]
+
+end ValuationSpectrum
 
 end TauCeti
 
