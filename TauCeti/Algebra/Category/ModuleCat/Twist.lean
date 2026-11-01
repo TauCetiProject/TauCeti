@@ -269,6 +269,11 @@ noncomputable def leftLinearRestrictScalars :
   letI := b.restrictScalarsMonoidalLeftAction.{v}
   have hsymm (h : H) (x : A) : f ((a h).symm x) = (b h).symm (f x) := by
     rw [RingEquiv.eq_symm_apply, ← hf, RingEquiv.apply_symm_apply]
+  -- Both lineators are the identity on the carrier of `M`. By
+  -- `ModuleCat.restrictScalars.smul_def`, `r : A` acts on that carrier by `f ((a c).symm r)`
+  -- through the twisted restriction and by `(b c).symm (f r)` through the restricted twist; these
+  -- agree by `hsymm`. The ascription `show M from x` views `x` in `M`, so that both sides are the
+  -- action of `B` on `M` and differ only in the scalar.
   { μₗ c M := ModuleCat.ofHom
       (X := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
       (Y := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
