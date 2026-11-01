@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Hyperfunction.OneDimensional
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Basic.Complex.OfRealSub
 
 /-!
 # The Cauchy transform of a distribution on the real line
@@ -38,7 +39,7 @@ and it can only be paired with the kernel after the kernel is cut off to a test 
 
 Extended by zero to `ℝ`, the Cauchy transform is a holomorphic section over `ℂ ∖ ℝ` in
 the ambient-function encoding of `TauCeti/Analysis/Hyperfunction/OneDimensional.lean`
-(`TauCeti.Hyperfunction.cauchyTransform_mem_holomorphicSections`).
+(`Distribution.cauchyTransform_mem_holomorphicSections`).
 
 ## Holomorphy
 
@@ -52,14 +53,14 @@ with the remainder is `o(|h|)` as well.
 
 ## Main declarations
 
-* `TauCeti.Hyperfunction.cauchyKernel χ k hz`: the complex test function `t ↦ χ(t) / (t - z) ^ k`
+* `TestFunction.cauchyKernel χ k hz`: the complex test function `t ↦ χ(t) / (t - z) ^ k`
   for `z ∉ ℝ`.
-* `TauCeti.Hyperfunction.cauchyTransform u χ`: the Cauchy transform, extended by zero to `ℝ`.
-* `TauCeti.Hyperfunction.hasDerivAt_cauchyTransform`: its complex derivative off `ℝ`.
-* `TauCeti.Hyperfunction.cauchyTransform_mem_holomorphicSections`: it is a holomorphic section
+* `Distribution.cauchyTransform u χ`: the Cauchy transform, extended by zero to `ℝ`.
+* `Distribution.hasDerivAt_cauchyTransform`: its complex derivative off `ℝ`.
+* `Distribution.cauchyTransform_mem_holomorphicSections`: it is a holomorphic section
   over `ℂ ∖ ℝ`.
-* `TauCeti.Hyperfunction.cauchyTransform_congr`: independence of the cutoff near the support.
-* `TauCeti.Hyperfunction.cauchyTransform_delta`: the transform of a Dirac distribution.
+* `Distribution.cauchyTransform_congr`: independence of the cutoff near the support.
+* `Distribution.cauchyTransform_delta`: the transform of a Dirac distribution.
 
 ## References
 
@@ -72,16 +73,12 @@ public section
 
 noncomputable section
 
-open Complex Filter Metric Set TopologicalSpace TestFunction Distribution
+open Complex Filter Metric Set TopologicalSpace TestFunction Distribution TauCeti.Hyperfunction
 open scoped ContDiff Distributions Real Topology
-
-namespace TauCeti.Hyperfunction
 
 variable {Ω : Opens ℝ}
 
-/-- For non-real `z`, the point `t - z` is nonzero for every real `t`. -/
-private theorem ofReal_sub_ne_zero {z : ℂ} (hz : z.im ≠ 0) (t : ℝ) : (t : ℂ) - z ≠ 0 := fun h ↦
-  hz (by simpa using congrArg im h)
+namespace TestFunction
 
 /-- For a real test function `χ`, a natural number `k` and a non-real `z`, the complex test
 function `t ↦ χ(t) / (t - z) ^ k`. For `k = 1` this is the cutoff Cauchy kernel. -/
@@ -89,7 +86,7 @@ def cauchyKernel (χ : 𝓓(Ω, ℝ)) (k : ℕ) {z : ℂ} (hz : z.im ≠ 0) : �
   toFun t := (χ t : ℂ) * (((t : ℂ) - z) ^ k)⁻¹
   contDiff' := (ofRealCLM.contDiff.comp χ.contDiff).mul
     (((ofRealCLM.contDiff.sub contDiff_const).pow k).inv fun t ↦
-      pow_ne_zero k (ofReal_sub_ne_zero hz t))
+      pow_ne_zero k (ofReal_sub_ne_zero_of_im_ne_zero hz t))
   hasCompactSupport' := (χ.hasCompactSupport.comp_left ofReal_zero).mul_right
   tsupport_subset' :=
     (tsupport_mul_subset_left.trans (tsupport_comp_subset ofReal_zero χ)).trans χ.tsupport_subset
@@ -98,6 +95,10 @@ def cauchyKernel (χ : 𝓓(Ω, ℝ)) (k : ℕ) {z : ℂ} (hz : z.im ≠ 0) : �
 theorem cauchyKernel_apply (χ : 𝓓(Ω, ℝ)) (k : ℕ) {z : ℂ} (hz : z.im ≠ 0) (t : ℝ) :
     cauchyKernel χ k hz t = χ t / ((t : ℂ) - z) ^ k :=
   (div_eq_mul_inv _ _).symm
+
+end TestFunction
+
+namespace Distribution
 
 /-- The **Cauchy transform** of a complex-valued distribution `u` on an open set `Ω ⊆ ℝ`, with
 cutoff `χ`: the function `z ↦ (2πi)⁻¹ ⟨u_t, χ(t) / (t - z)⟩` on `ℂ ∖ ℝ`, extended by zero to `ℝ`.
@@ -134,7 +135,7 @@ private theorem contDiff_hasCompactSupport_bump_mul_cauchyKernel (χ : 𝓓(Ω, 
         (((ofRealCLM.contDiff.comp χ.contDiff).comp contDiff_snd).contDiffAt.mul
           (ContDiffAt.inv (f := fun q : ℂ × ℝ ↦ (q.2 : ℂ) - q.1)
             ((ofRealCLM.contDiff.comp contDiff_snd).sub contDiff_fst).contDiffAt
-            (ofReal_sub_ne_zero (him hq) q.2)))
+            (ofReal_sub_ne_zero_of_im_ne_zero (him hq) q.2)))
     · have hρ0 : ∀ᶠ w : ℂ × ℝ in 𝓝 q, ρ w.1 = 0 :=
         (continuous_fst.tendsto q).eventually
           ((notMem_tsupport_iff_eventuallyEq.1 hq).mono fun w hw ↦ by simpa using hw)
@@ -159,12 +160,13 @@ private theorem fderiv_cauchyKernel_apply_inl (χ : 𝓓(Ω, ℝ)) {z : ℂ} (hz
     (((ofRealCLM.contDiff.comp χ.contDiff).comp contDiff_snd).contDiffAt.mul
       (ContDiffAt.inv (f := fun q : ℂ × ℝ ↦ (q.2 : ℂ) - q.1) (x := (z, t))
         ((ofRealCLM.contDiff.comp contDiff_snd).sub contDiff_fst).contDiffAt
-        (ofReal_sub_ne_zero hz t))).differentiableAt (by simp)
+        (ofReal_sub_ne_zero_of_im_ne_zero hz t))).differentiableAt (by simp)
   -- The complex derivative of the slice `w ↦ χ(t) / (t - w)` at `z`.
   have hslice : HasDerivAt (fun w : ℂ ↦ (χ t : ℂ) * ((t : ℂ) - w)⁻¹)
       ((χ t : ℂ) * (((t : ℂ) - z) ^ 2)⁻¹) z := by
     have h1 : HasDerivAt (fun w : ℂ ↦ ((t : ℂ) - w)⁻¹) (((t : ℂ) - z) ^ 2)⁻¹ z := by
-      convert ((hasDerivAt_id z).const_sub (t : ℂ)).inv (ofReal_sub_ne_zero hz t) using 1
+      convert ((hasDerivAt_id z).const_sub (t : ℂ)).inv
+        (ofReal_sub_ne_zero_of_im_ne_zero hz t) using 1
       · rfl
       · simp
     exact h1.const_mul _
@@ -319,4 +321,4 @@ theorem cauchyTransform_delta_zero {χ : 𝓓(Ω, ℝ)} (hχ : χ 0 = 1) {z : �
   simp [div_eq_mul_inv]
   ring
 
-end TauCeti.Hyperfunction
+end Distribution

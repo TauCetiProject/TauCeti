@@ -147,52 +147,26 @@ theorem HasCompactSupport.exists_norm_iteratedFDeriv_prod_right_sub_sub_le
     ∃ δ > 0, ∀ h : P, ‖h‖ < δ → ∀ y,
       ‖iteratedFDeriv ℝ i (fun x ↦ g (p + h, x) - g (p, x) - fderiv ℝ g (p, x) (h, 0)) y‖ ≤
         ε * ‖h‖ := by
-  set G := iteratedFDeriv ℝ i g
-  have hG : ContDiff ℝ 1 G := hg.iteratedFDeriv_right (by rwa [add_comm])
-  have hGu : UniformContinuous (fderiv ℝ G) :=
-    ((hgc.iteratedFDeriv (𝕜 := ℝ) i).fderiv (𝕜 := ℝ)).uniformContinuous_of_continuous
-      (hG.continuous_fderiv one_ne_zero)
-  obtain ⟨δ, hδ, hδε⟩ :=
-    (Metric.uniformContinuous_iff (α := P × E) (β := P × E →L[ℝ] P × E [×i]→L[ℝ] F)).1 hGu ε hε
-  refine ⟨δ, hδ, fun h hh y => ?_⟩
+  obtain ⟨δ, hδ, hrem⟩ := hgc.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le hg hi hε
+  refine ⟨δ, hδ, fun h hh y ↦ ?_⟩
+  have hw : ‖((-h, 0) : P × E)‖ = ‖h‖ := by simp
+  -- The remainder in `p` is the slice at `p` of the Taylor remainder of `g` on the product with
+  -- displacement `(-h, 0)`, whose derivatives in the second variable are its total derivatives
+  -- restricted to the second factor.
+  set R := fun q : P × E ↦ g (q - (-h, 0)) - g q + fderiv ℝ g q (-h, 0)
   have hin : (i : WithTop ℕ∞) ≤ n := le_trans (by norm_cast; omega) hi
-  have hder : ContDiff ℝ i fun q : P × E ↦ fderiv ℝ g q (h, 0) :=
-    (hg.fderiv_right hi).clm_apply contDiff_const
-  have hslice (q : P) : ContDiff ℝ n fun x ↦ g (q, x) :=
-    hg.comp (contDiff_const.prodMk contDiff_id)
-  have hderslice : ContDiff ℝ i fun x ↦ fderiv ℝ g (p, x) (h, 0) :=
-    hder.comp (contDiff_const.prodMk contDiff_id)
-  -- Each term is a slice of a map on the product, whose derivatives in the second variable are
-  -- the total derivatives restricted to the second factor.
-  rw [fun_iteratedFDeriv_sub_apply ((((hslice _).sub (hslice _)).of_le hin).contDiffAt)
-      hderslice.contDiffAt,
-    fun_iteratedFDeriv_sub_apply (((hslice _).of_le hin).contDiffAt)
-      (((hslice _).of_le hin).contDiffAt),
-    _root_.ContDiff.iteratedFDeriv_prod_right hg i hin,
-    _root_.ContDiff.iteratedFDeriv_prod_right hg i hin,
-    _root_.ContDiff.iteratedFDeriv_prod_right hder i le_rfl,
-    hg.iteratedFDeriv_fderiv_apply (by simpa using hi)]
-  have hsub (A B C : P × E [×i]→L[ℝ] F) :
-      A.compContinuousLinearMap (fun _ ↦ ContinuousLinearMap.inr ℝ P E) -
-          B.compContinuousLinearMap (fun _ ↦ ContinuousLinearMap.inr ℝ P E) -
-          C.compContinuousLinearMap (fun _ ↦ ContinuousLinearMap.inr ℝ P E) =
-        (A - B - C).compContinuousLinearMap (fun _ ↦ ContinuousLinearMap.inr ℝ P E) := by
-    ext
-    simp
-  rw [hsub]
+  have hR : ContDiff ℝ i R :=
+    (((hg.comp (contDiff_id.sub contDiff_const)).sub hg).of_le hin).add
+      ((hg.fderiv_right hi).clm_apply contDiff_const)
+  have hslice : (fun x ↦ g (p + h, x) - g (p, x) - fderiv ℝ g (p, x) (h, 0)) =
+      fun x ↦ R (p, x) := by
+    funext x
+    have hn : ((-h, 0) : P × E) = -(h, 0) := by simp
+    simp only [R, hn, sub_neg_eq_add, Prod.mk_add_mk, add_zero, map_neg, ← sub_eq_add_neg]
+  rw [hslice, _root_.ContDiff.iteratedFDeriv_prod_right hR i le_rfl]
   refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
   have hprod : ∏ _ : Fin i, ‖ContinuousLinearMap.inr ℝ P E‖ ≤ 1 := by
     rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
     exact pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_inr_le_one ..)
-  have hw : ‖((h, 0) : P × E)‖ = ‖h‖ := by simp
-  have hmv := (convex_ball (p, y) δ).norm_image_sub_le_of_norm_fderiv_le' (f := G)
-    (φ := fderiv ℝ G (p, y)) (C := ε) (fun z _ ↦ hG.differentiable one_ne_zero z)
-    (fun z hz ↦ by
-      rw [← dist_eq_norm]
-      exact (hδε (Metric.mem_ball.1 hz)).le)
-    (Metric.mem_ball_self hδ) (x := (p, y)) (y := (p + h, y))
-    (by rwa [Metric.mem_ball, dist_eq_norm, Prod.mk_sub_mk, add_sub_cancel_left, sub_self, hw])
-  rw [Prod.mk_sub_mk, add_sub_cancel_left, sub_self, hw] at hmv
-  calc _ ≤ ‖G (p + h, y) - G (p, y) - fderiv ℝ G (p, y) (h, 0)‖ * 1 :=
-        mul_le_mul_of_nonneg_left hprod (norm_nonneg _)
-    _ ≤ ε * ‖h‖ := by rw [mul_one]; exact hmv
+  calc _ ≤ ‖iteratedFDeriv ℝ i R (p, y)‖ * 1 := mul_le_mul_of_nonneg_left hprod (norm_nonneg _)
+    _ ≤ ε * ‖h‖ := by rw [mul_one, ← hw]; exact hrem _ (hw ▸ hh) _
