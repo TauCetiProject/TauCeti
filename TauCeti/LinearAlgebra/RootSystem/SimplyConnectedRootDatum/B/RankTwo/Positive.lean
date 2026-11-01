@@ -14,10 +14,11 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimpl
 
 For the pinned simply connected root datum of type `B₂`, with `α₀` the long and `α₁` the short
 simple root, the positive roots are the first four entries `α₀`, `α₁`, `α₀ + α₁` and `α₀ + 2 α₁`
-of the coordinate table `TauCeti.DynkinType.b2Coroot`.
+of its coordinate tables, the roots at the indices `b2Index 0` to `b2Index 3`.
 
-The heights of the coroots against the simple coroots are the coordinate sums in that table, and
-a root is positive exactly when its coroot is, that is, when this height is positive.
+The heights of the coroots against the simple coroots are the coordinate sums in the table
+`TauCeti.DynkinType.b2Coroot`, and a root is positive exactly when its coroot is, that is, when
+this height is positive.
 
 ## Main results
 
