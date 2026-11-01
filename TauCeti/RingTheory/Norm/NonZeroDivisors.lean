@@ -28,6 +28,8 @@ a localization of `S` at non-zero-divisors of `R`
 
 ## Main results
 
+* `Algebra.isLeftRegular_leftMulMatrix_iff`: the matrix of left multiplication by `x` in a basis
+  is left regular exactly when `x` is.
 * `Algebra.norm_mem_nonZeroDivisors_iff`: `x` is a non-zero-divisor exactly when its norm is.
 * `Algebra.dvd_algebraMap_norm`: `x` divides the image of its norm.
 -/
@@ -38,25 +40,31 @@ open scoped nonZeroDivisors
 
 namespace Algebra
 
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Free R S]
-  [Module.Finite R S]
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- In a commutative algebra that is free of finite rank, an element is a non-zero-divisor exactly
-when its norm is a non-zero-divisor of the base ring. -/
-theorem norm_mem_nonZeroDivisors_iff {x : S} : norm R x ∈ R⁰ ↔ x ∈ S⁰ := by
-  classical
-  let b := Module.Free.chooseBasis R S
-  -- Multiplication by `x` is injective exactly when the matrix `leftMulMatrix b x` is, since the
-  -- coordinates of `x * y` are that matrix applied to the coordinates of `y`.
+/-- Left multiplication by `x` is injective exactly when its matrix in a basis is left regular,
+since the coordinates of `x * y` are that matrix applied to the coordinates of `y`. -/
+theorem isLeftRegular_leftMulMatrix_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R S) (x : S) : IsLeftRegular (leftMulMatrix b x) ↔ IsLeftRegular x := by
   have hcomp : (leftMulMatrix b x).mulVec ∘ b.equivFun = b.equivFun ∘ (x * ·) := by
     ext y : 1
     simp [b.equivFun_apply, ← leftMulMatrix_mulVec_repr b x y]
-  rw [norm_eq_matrix_det b, ← Matrix.nonsingular_iff_det_mem_nonZeroDivisors,
-    ← Matrix.isLeftRegular_iff_nonsingular, Matrix.isLeftRegular_iff_mulVec_injective,
-    ← EquivLike.injective_comp b.equivFun, hcomp, EquivLike.comp_injective,
-    ← isRegular_iff_mem_nonZeroDivisors, ← isLeftRegular_iff_isRegular]
+  rw [Matrix.isLeftRegular_iff_mulVec_injective, ← EquivLike.injective_comp b.equivFun, hcomp,
+    EquivLike.comp_injective]
   -- `IsLeftRegular x` is defined as the injectivity of `(x * ·)`.
-  exact Iff.rfl
+  rfl
+
+variable [Module.Free R S] [Module.Finite R S]
+
+/-- In a commutative algebra that is free of finite rank, an element is a non-zero-divisor exactly
+when its norm is a non-zero-divisor of the base ring. -/
+@[simp]
+theorem norm_mem_nonZeroDivisors_iff {x : S} : norm R x ∈ R⁰ ↔ x ∈ S⁰ := by
+  classical
+  let b := Module.Free.chooseBasis R S
+  rw [norm_eq_matrix_det b, ← Matrix.nonsingular_iff_det_mem_nonZeroDivisors,
+    ← Matrix.isLeftRegular_iff_nonsingular, isLeftRegular_leftMulMatrix_iff,
+    isLeftRegular_iff_isRegular, isRegular_iff_mem_nonZeroDivisors]
 
 /-- In a commutative algebra that is free of finite rank, an element divides the image of its
 norm. -/
@@ -66,9 +74,7 @@ theorem dvd_algebraMap_norm (x : S) : x ∣ algebraMap R S (norm R x) := by
   let p := (leftMulMatrix b x).charpoly
   -- By Cayley–Hamilton `p(x) = 0`, and `p = X * p.divX + C (p.coeff 0)` with
   -- `p.coeff 0 = ± norm R x`.
-  have hp : Polynomial.aeval x p = 0 :=
-    leftMulMatrix_injective b <| by
-      rw [← Polynomial.aeval_algHom_apply, Matrix.aeval_self_charpoly, map_zero]
+  have hp : Polynomial.aeval x p = 0 := aeval_charpoly_leftMulMatrix b x
   have hdvd : x ∣ algebraMap R S (p.coeff 0) := by
     refine ⟨-Polynomial.aeval x p.divX, ?_⟩
     rw [← Polynomial.X_mul_divX_add p, map_add, map_mul, Polynomial.aeval_X, Polynomial.aeval_C]
