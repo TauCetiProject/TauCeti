@@ -14,7 +14,7 @@ import TauCeti.Analysis.Convex.Intrinsic
 The *open simplex* of a simplex `s` of a geometric simplicial complex `K` is the intrinsic
 interior of its convex hull. Distinct simplices of `K` have disjoint open simplices
 (`Geometry.SimplicialComplex.disjoint_intrinsicInterior_convexHull`), so every point of `|K|` lies
-in exactly one of them.
+in at most one of them.
 
 Coning every simplex of a locally finite complex `K` from its centroid, in order of increasing
 dimension, subdivides `K` (`Geometry.SimplicialComplex.exists_subdivision_centroid_mem`), as in the

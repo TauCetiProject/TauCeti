@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Normed.Affine.Interpolation
 
 /-!
 # Intrinsic interior points of compact and convex sets
@@ -394,20 +395,15 @@ theorem Convex.intrinsicInterior_subset_intrinsicInterior (hs : Convex ℝ s) (h
 
 variable [FiniteDimensional ℝ E] [DecidableEq E] {s t : Finset E} {x : E}
 
-omit [FiniteDimensional ℝ E] in
-/-- An affinely independent finite set has barycentric coordinate functions: affine functions on
-the whole space which are `1` at one point of the set and `0` at the others. -/
-private theorem exists_coord (hs : AffineIndependent ℝ ((↑) : s → E)) :
-    ∃ f : E → E →ᵃ[ℝ] ℝ, ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0 := by
-  classical
-  obtain ⟨T, hsT, hT, hspan⟩ := exists_subset_affineIndependent_affineSpan_eq_top hs
-  let b : AffineBasis T ℝ E := ⟨Subtype.val, hT, by simpa using hspan⟩
-  refine ⟨fun v => if hv : v ∈ T then b.coord ⟨v, hv⟩ else 0, fun v hv u hu => ?_⟩
-  simp only [hsT hv, ↓reduceDIte]
-  have h := b.coord_apply ⟨v, hsT hv⟩ ⟨u, hsT hu⟩
-  simp only [Subtype.mk.injEq] at h
-  convert h using 2
-  exact eq_comm
+omit [FiniteDimensional ℝ E] [DecidableEq E] in
+/-- An affine function which is `1` at one point of a finite family and `0` at the others takes
+an affine combination of the family to the weight of that point. -/
+private theorem coord_affineCombination {ι : Type*} {f : E →ᵃ[ℝ] ℝ} {u : Finset ι} {p : ι → E}
+    {w : ι → ℝ} {i : ι} (hw : ∑ j ∈ u, w j = 1) (hi : i ∈ u) (hfi : f (p i) = 1)
+    (hfj : ∀ j ∈ u, j ≠ i → f (p j) = 0) : f (u.affineCombination ℝ p w) = w i := by
+  rw [Finset.map_affineCombination _ _ _ hw, Finset.affineCombination_eq_linear_combination _ _ _
+    hw, Finset.sum_eq_single i (fun j hj hji => by simp [hfj j hj hji]) (fun h => (h hi).elim)]
+  simp [hfi]
 
 omit [FiniteDimensional ℝ E] in
 /-- A barycentric coordinate function of `s` vanishes on the face opposite its vertex. -/
@@ -435,12 +431,9 @@ private theorem sum_coord_eq {f : E → E →ᵃ[ℝ] ℝ}
     ∑ v ∈ s, f v x = 1 ∧ ∑ v ∈ s, f v x • v = x := by
   rw [show (s : Set E) = Set.range ((↑) : s → E) by simp] at hx
   obtain ⟨w, hw1, rfl⟩ := eq_affineCombination_of_mem_affineSpan_of_fintype hx
-  have hfw : ∀ i : s, f i (Finset.univ.affineCombination ℝ (↑) w) = w i := by
-    intro i
-    rw [Finset.map_affineCombination _ _ _ hw1, Finset.affineCombination_eq_linear_combination _
-      _ _ hw1, Finset.sum_eq_single i (fun j _ hji => ?_) (by simp)]
-    · simp [hf i i.2 i i.2]
-    · simp [hf i i.2 j j.2, Subtype.coe_ne_coe.2 hji]
+  have hfw (i : s) : f i (Finset.univ.affineCombination ℝ (↑) w) = w i :=
+    coord_affineCombination hw1 (Finset.mem_univ i) (by simp [hf i i.2 i i.2])
+      fun j _ hji => by simp [hf i i.2 j j.2, Subtype.coe_ne_coe.2 hji]
   refine ⟨(Finset.sum_coe_sort s _).symm.trans
     ((Finset.sum_congr rfl fun (i : s) _ => hfw i).trans hw1),
     (Finset.sum_coe_sort s _).symm.trans ((Finset.sum_congr rfl fun (i : s) _ =>
@@ -469,7 +462,10 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff
     (hs : AffineIndependent ℝ ((↑) : s → E)) :
     x ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) ↔
       x ∈ convexHull ℝ (s : Set E) ∧ ∀ v ∈ s, x ∉ convexHull ℝ (s.erase v : Set E) := by
-  obtain ⟨f, hf⟩ := exists_coord hs
+  choose g hg using fun v : E => AffineIndependent.exists_continuousAffineMap_eqOn (s := s) hs
+    fun u => if u = v then (1 : ℝ) else 0
+  obtain ⟨f, hf⟩ : ∃ f : E → E →ᵃ[ℝ] ℝ, ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0 :=
+    ⟨fun v => (g v).toAffineMap, fun v _ u hu => hg v hu⟩
   have hnonneg : ∀ v ∈ s, ∀ z ∈ convexHull ℝ (s : Set E), 0 ≤ f v z := fun v hv _ =>
     coord_nonneg_of_mem_convexHull (hf v hv)
   constructor
@@ -484,9 +480,9 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff
       hdir).filter_mono nhdsWithin_le_nhds |>.and (self_mem_nhdsWithin (s := Ioi 0))).exists
     have h := hnonneg v hv _ hεs
     have hcomp : f v (x + ε • (x - v)) = f v x + ε * (f v x - f v v) := by
-      rw [show x + ε • (x - v) = ε • (x -ᵥ v) +ᵥ x by rw [vsub_eq_sub, vadd_eq_add, add_comm],
-        (f v).map_vadd, map_smul, (f v).linear_apply_vsub]
-      simp only [vsub_eq_sub, vadd_eq_add, smul_eq_mul]
+      rw [show x + ε • (x - v) = AffineMap.lineMap v x (1 + ε) by
+          rw [AffineMap.lineMap_apply_module']; module,
+        AffineMap.apply_lineMap, AffineMap.lineMap_apply_ring']
       ring
     rw [hcomp, coord_eq_zero_of_mem_convexHull_erase (hf v hv) hxv, hf v hv v hv] at h
     simp only [↓reduceIte, zero_sub, mul_neg, mul_one, zero_add, Left.nonneg_neg_iff] at h
@@ -517,16 +513,13 @@ theorem AffineIndependent.centroid_mem_intrinsicInterior_convexHull
     s.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) := by
   classical
   refine hs.mem_intrinsicInterior_convexHull_iff.2 ⟨s.centroid_mem_convexHull hne, fun v hv h => ?_⟩
-  obtain ⟨f, hf⟩ := exists_coord hs
-  have hcard : (s.card : ℝ) ≠ 0 := by exact_mod_cast hne.card_pos.ne'
-  have h1 := coord_eq_zero_of_mem_convexHull_erase (hf v hv) h
-  rw [Finset.centroid_def, Finset.map_affineCombination _ _ _
-    (s.sum_centroidWeights_eq_one_of_card_ne_zero ℝ (by exact_mod_cast hcard)),
-    Finset.affineCombination_eq_linear_combination _ _ _
-      (s.sum_centroidWeights_eq_one_of_card_ne_zero ℝ (by exact_mod_cast hcard)),
-    Finset.sum_eq_single v (fun u hu huv => by simp [hf v hv u hu, huv]) (fun h => (h hv).elim)]
-    at h1
-  simp [hf v hv v hv, hcard] at h1
+  obtain ⟨f, hf⟩ := AffineIndependent.exists_continuousAffineMap_eqOn (s := s) hs
+    fun u => if u = v then (1 : ℝ) else 0
+  have hcard : s.card ≠ 0 := hne.card_pos.ne'
+  have h1 := coord_eq_zero_of_mem_convexHull_erase (f := f.toAffineMap) (fun u hu => hf hu) h
+  rw [Finset.centroid_def, coord_affineCombination (s.sum_centroidWeights_eq_one_of_card_ne_zero ℝ
+    hcard) hv (by simp [hf hv]) fun u hu huv => by simp [hf hu, huv]] at h1
+  simp [hcard] at h1
 
 omit [DecidableEq E] in
 /-- A proper subset of an affinely independent finite set spans a simplex disjoint from the
