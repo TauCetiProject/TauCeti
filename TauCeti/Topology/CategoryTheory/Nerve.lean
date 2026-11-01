@@ -64,6 +64,12 @@ theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i
 theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
 
+/-- The arrow of a string of composable arrows from a position to itself is an identity arrow. -/
+@[simp]
+theorem totalArrow_self (F : ComposableArrows C n) (i : Fin (n + 1)) :
+    F.totalArrow i i le_rfl = ⟨F.obj i, F.obj i, 𝟙 (F.obj i)⟩ := by
+  simp [totalArrow_def]
+
 /-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
 its arrows. -/
 @[simp]

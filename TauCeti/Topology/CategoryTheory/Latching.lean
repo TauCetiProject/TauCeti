@@ -15,27 +15,31 @@ public import TauCeti.Topology.Homotopy.Extension.Basic
 
 An `n + 1`-simplex of the nerve of a category, a string `x₀ ⟶ x₁ ⟶ ⋯ ⟶ xₙ₊₁` of composable
 arrows, lies in the image of the `i`-th degeneracy exactly when its `i`-th arrow `xᵢ ⟶ xᵢ₊₁` is
-an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`). The degenerate simplices, the union
-of these images, form the latching object of the nerve in each degree.
+an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`). This generalizes, and adapts the proof
+of, Mathlib's `PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
+The degenerate simplices, the union of these images, form the latching object of the nerve in
+each degree.
 
 Now let the total arrows of the category carry a topology and give the strings of composable
 arrows the topology of `TauCeti.topologicalNerve`. Each image of a degeneracy is then the
 preimage of the set of identity arrows along a continuous map, so it is open or closed when the
-identity arrows are. The degenerate locus is a finite union of such images, so it is open or
-closed too (`TauCeti.isOpen_nerve_degenerate`, `TauCeti.isClosed_nerve_degenerate`).
+identity arrows are, and each degeneracy is an embedding, as in any simplicial space
+(`CategoryTheory.SimplicialObject.isEmbedding_σ`). The degenerate locus is a finite union of such
+images, so it is open or closed too (`TauCeti.isOpen_nerve_degenerate`,
+`TauCeti.isClosed_nerve_degenerate`).
 
 For a topological category whose source is a local homeomorphism (an étale category, such as
 a proper étale groupoid presenting an orbifold), with continuous units and Hausdorff arrow
 space, the identity arrows form a clopen set: they are the image of a continuous section of the
-source, hence open, and the fixed points of the continuous map `a ↦ 𝟙 a.left`, hence closed.
+source, hence open (`TauCeti.isOpen_range_unit`), and the fixed points of the continuous map
+`a ↦ 𝟙 a.left`, hence closed (`TauCeti.isClosed_range_unit`).
 So each degeneracy is an open and closed embedding
 (`TauCeti.isClosedEmbedding_topologicalNerve_σ`, `TauCeti.isOpenEmbedding_topologicalNerve_σ`),
 the degenerate locus in each degree is clopen
 (`TauCeti.isClopen_nerve_degenerate`), and its inclusion has the homotopy extension property
-(`TauCeti.hasHomotopyExtensionProperty_nerve_degenerate`). Degeneracies are always embeddings
-(`TauCeti.isEmbedding_topologicalNerve_σ`). These facts about the latching inclusions are the
-input for treating the topological nerve of an étale groupoid as a proper simplicial space, whose
-thin realization is built from its skeleta by closed attachments.
+(`TauCeti.hasHomotopyExtensionProperty_nerve_degenerate`). These facts about the latching
+inclusions are the input for treating the topological nerve of an étale groupoid as a proper
+simplicial space, whose thin realization is built from its skeleta by closed attachments.
 
 ## References
 
@@ -53,16 +57,47 @@ namespace CategoryTheory.nerve
 
 variable {C : Type u} [Category.{v} C]
 
-/-- The arrow of a string of composable arrows between two equal positions is an identity
-arrow. -/
-private theorem totalArrow_of_eq {n : ℕ} (s : ComposableArrows C n) {j k : Fin (n + 1)}
-    (h : j = k) (hjk : j ≤ k) :
-    s.totalArrow j k hjk = ⟨s.obj j, s.obj j, 𝟙 (s.obj j)⟩ := by
-  subst h
-  simp [ComposableArrows.totalArrow_def]
+/-- A string of composable arrows whose `i`-th arrow is an identity arrow is the `i`-th degeneracy
+of its face deleting the `i`-th object. -/
+theorem σ_δ_castSucc_eq_self {n : ℕ} (s : ComposableArrows C (n + 1)) {i : Fin (n + 1)}
+    {h : s.obj i.castSucc = s.obj i.succ} (hi : s.map (homOfLE i.castSucc_le_succ) = eqToHom h) :
+    (nerve C).σ i ((nerve C).δ i.castSucc s) = s := by
+  -- Removing the `i`-th object and then repeating the next one reindexes the string along `Φ`,
+  -- which moves position `i.castSucc` to `i.succ` and fixes every other position.
+  let Φ (j : Fin (n + 2)) : Fin (n + 2) := i.castSucc.succAbove (i.predAbove j)
+  have hmono : Monotone Φ :=
+    (Fin.strictMono_succAbove _).monotone.comp (Fin.predAbove_right_monotone i)
+  -- By definition the nerve acts on strings by whiskering (on objects this is `nerve.σ_obj` and
+  -- `nerve.δ_obj`), so the degeneracy of the face is `s` whiskered by `Φ`.
+  have hσδ : (nerve C).σ i ((nerve C).δ i.castSucc s) = s.whiskerLeft hmono.functor := rfl
+  have hΦ (j : Fin (n + 2)) : (j = i.castSucc ∧ Φ j = i.succ) ∨ Φ j = j := by
+    obtain rfl | h := eq_or_ne j i.castSucc
+    · simp [Φ]
+    · exact .inr (Fin.succAbove_predAbove h)
+  -- Each object of the string is joined to its new position by an identity arrow.
+  have key (j : Fin (n + 2)) :
+      ∃ e : s.obj j = s.obj (Φ j), ∀ hj : j ≤ Φ j, s.map (homOfLE hj) = eqToHom e := by
+    have := hΦ j
+    generalize Φ j = k at this ⊢
+    rcases this with ⟨rfl, rfl⟩ | rfl
+    · exact ⟨_, fun _ ↦ hi⟩
+    · exact ⟨rfl, fun _ ↦ by simp⟩
+  choose e he using key
+  have hle (j : Fin (n + 2)) : j ≤ Φ j := by
+    rcases hΦ j with ⟨rfl, h⟩ | h
+    · exact h ▸ i.castSucc_le_succ
+    · exact h.ge
+  rw [hσδ]
+  refine Functor.ext (fun j ↦ (e j).symm) fun j k f ↦ ?_
+  simp only [ComposableArrows.whiskerLeft, Functor.comp_map]
+  rw [← eqToHom_comp_iff (e j), ← he j (hle j), ← he k (hle k), ← s.map_comp, ← s.map_comp]
+  exact congrArg s.map (Subsingleton.elim _ _)
 
 /-- A simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its `i`-th
-arrow is an identity arrow. -/
+arrow is an identity arrow. This generalizes Mathlib's `PartialOrder.mem_range_nerve_σ_iff`
+(in `Mathlib/AlgebraicTopology/SimplicialSet/NerveNondegenerate.lean`) from partial orders to
+arbitrary categories, and adapts its proof: the converse exhibits the simplex as the degeneracy
+of its face (`σ_δ_castSucc_eq_self`). -/
 theorem mem_range_σ_iff {n : ℕ} (s : ComposableArrows C (n + 1)) (i : Fin (n + 1)) :
     s ∈ Set.range ((nerve C).σ i) ↔
       s.totalArrow i.castSucc i.succ i.castSucc_le_succ ∈
@@ -70,54 +105,30 @@ theorem mem_range_σ_iff {n : ℕ} (s : ComposableArrows C (n + 1)) (i : Fin (n 
   constructor
   · -- The `i`-th degeneracy repeats the `i`-th object, so its `i`-th arrow is an identity.
     rintro ⟨t, rfl⟩
-    exact ⟨_, ((t.totalArrow_whiskerLeft _ _ _ _).trans (totalArrow_of_eq t
-      ((Fin.predAbove_castSucc_self i).trans (Fin.predAbove_succ_self i).symm) _)).symm⟩
+    refine ⟨t.obj i, ((t.totalArrow_whiskerLeft _ _ _ _).trans ?_).symm⟩
+    change t.totalArrow (i.predAbove i.castSucc) (i.predAbove i.succ) _ = _
+    simp only [Fin.predAbove_castSucc_self, Fin.predAbove_succ_self]
+    exact ComposableArrows.totalArrow_self (n := n) t i
   · rintro ⟨x, hx⟩
     rw [ComposableArrows.totalArrow_def] at hx
     obtain ⟨rfl, hr, hh⟩ := Quiver.Total.ext_iff.1 hx
     dsimp only at hr hh
-    have hi : s.map (homOfLE i.castSucc_le_succ) = eqToHom hr := by
-      have h := (conj_eqToHom_iff_heq _ _ rfl hr).2 hh
-      rw [eqToHom_refl, Category.id_comp, eq_comm, comp_eqToHom_iff, Category.id_comp] at h
-      exact h
-    -- Removing the `i`-th object and then repeating the next one reindexes the string along `Φ`,
-    -- which moves position `i.castSucc` to `i.succ` and fixes every other position.
-    let Φ (j : Fin (n + 2)) : Fin (n + 2) := i.castSucc.succAbove (i.predAbove j)
-    have hΦ (j : Fin (n + 2)) : (j = i.castSucc ∧ Φ j = i.succ) ∨ Φ j = j := by
-      dsimp only [Φ]
-      rcases lt_trichotomy j i.castSucc with h | rfl | h
-      · right
-        rw [Fin.predAbove_of_le_castSucc _ _ h.le,
-          Fin.succAbove_of_castSucc_lt _ _ (by simpa using h), Fin.castSucc_castPred]
-      · simp
-      · right
-        rw [Fin.predAbove_of_castSucc_lt _ _ h, Fin.succAbove_of_le_castSucc _ _ (by
-          simp only [Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.val_pred] at h ⊢; omega),
-          Fin.succ_pred]
-    -- Each object of the string is joined to its new position by an identity arrow.
-    have key (j : Fin (n + 2)) :
-        ∃ e : s.obj j = s.obj (Φ j), ∀ hj : j ≤ Φ j, s.map (homOfLE hj) = eqToHom e := by
-      have := hΦ j
-      generalize Φ j = k at this ⊢
-      rcases this with ⟨rfl, rfl⟩ | rfl
-      · exact ⟨_, fun _ ↦ hi⟩
-      · exact ⟨rfl, fun _ ↦ by simp⟩
-    choose e he using key
-    have hle (j : Fin (n + 2)) : j ≤ Φ j := by
-      rcases hΦ j with ⟨rfl, h⟩ | h
-      · exact h ▸ i.castSucc_le_succ
-      · exact h.ge
-    have hmono : Monotone Φ :=
-      (Fin.strictMono_succAbove _).monotone.comp (Fin.predAbove_right_monotone i)
-    have hmap (j k : Fin (n + 2)) (f : j ⟶ k) (h : Φ j ≤ Φ k) :
-        s.map (homOfLE h) = eqToHom (e j).symm ≫ s.map f ≫ eqToHom (e k) := by
-      rw [← eqToHom_comp_iff (e j), ← he j (hle j), ← he k (hle k), ← s.map_comp, ← s.map_comp]
-      exact congrArg s.map (Subsingleton.elim _ _)
-    -- The degeneracy of the face reindexes `s` along `Φ`, by definition of the nerve.
-    exact ⟨(nerve C).δ i.castSucc s, Functor.ext (fun j ↦ (e j).symm)
-      fun (j k : Fin (n + 2)) (f : j ⟶ k) ↦ hmap j k f (hmono f.le)⟩
+    exact ⟨_, σ_δ_castSucc_eq_self s (h := hr)
+      (by simpa [comp_eqToHom_iff] using ((conj_eqToHom_iff_heq _ _ rfl hr).2 hh).symm)⟩
 
 end CategoryTheory.nerve
+
+namespace CategoryTheory.SimplicialObject
+
+/-- Each degeneracy of a simplicial space is an embedding: the face deleting the repeated
+simplex is a continuous left inverse. -/
+theorem isEmbedding_σ (X : SimplicialObject TopCat) {n : ℕ} (i : Fin (n + 1)) :
+    IsEmbedding (X.σ i) :=
+  .of_leftInverse (f := X.δ i.castSucc)
+    (fun x ↦ by rw [← ConcreteCategory.comp_apply, δ_comp_σ_self, ConcreteCategory.id_apply])
+    (ContinuousMap.continuous _) (ContinuousMap.continuous _)
+
+end CategoryTheory.SimplicialObject
 
 namespace TauCeti
 
@@ -133,21 +144,13 @@ private theorem range_nerve_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
 
 variable [TopologicalSpace (Quiver.Total C)]
 
-/-- Each degeneracy of the topological nerve is an embedding: the face deleting the repeated
-object is a continuous left inverse. -/
-theorem isEmbedding_topologicalNerve_σ {n : ℕ} (i : Fin (n + 1)) :
-    IsEmbedding (SimplicialObject.σ (topologicalNerve C) i) :=
-  .of_leftInverse (f := SimplicialObject.δ (topologicalNerve C) i.castSucc)
-    (fun s ↦ SSet.δ_comp_σ_self_apply (S := nerve C) i s)
-    (ContinuousMap.continuous _) (ContinuousMap.continuous _)
-
 /-- If the identity arrows form a closed set, each degeneracy of the topological nerve is a
 closed embedding. -/
 theorem isClosedEmbedding_topologicalNerve_σ
     (h : IsClosed (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))) {n : ℕ}
     (i : Fin (n + 1)) :
     IsClosedEmbedding (SimplicialObject.σ (topologicalNerve C) i) :=
-  ⟨isEmbedding_topologicalNerve_σ i, range_nerve_σ_eq_preimage (C := C) i ▸
+  ⟨SimplicialObject.isEmbedding_σ (topologicalNerve C) i, range_nerve_σ_eq_preimage (C := C) i ▸
     h.preimage (ComposableArrows.continuous_totalArrow _ _ _)⟩
 
 /-- If the identity arrows form an open set, each degeneracy of the topological nerve is an open
@@ -156,7 +159,7 @@ theorem isOpenEmbedding_topologicalNerve_σ
     (h : IsOpen (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))) {n : ℕ}
     (i : Fin (n + 1)) :
     IsOpenEmbedding (SimplicialObject.σ (topologicalNerve C) i) :=
-  ⟨isEmbedding_topologicalNerve_σ i, range_nerve_σ_eq_preimage (C := C) i ▸
+  ⟨SimplicialObject.isEmbedding_σ (topologicalNerve C) i, range_nerve_σ_eq_preimage (C := C) i ▸
     h.preimage (ComposableArrows.continuous_totalArrow _ _ _)⟩
 
 /-- If the identity arrows form a closed set, the degenerate simplices of the topological nerve
@@ -182,18 +185,31 @@ theorem isOpen_nerve_degenerate
     rw [SSet.degenerate_eq_iUnion_range_σ]
     exact isOpen_iUnion fun i ↦ (isOpenEmbedding_topologicalNerve_σ h i).isOpen_range
 
-variable [TopologicalSpace C] [T2Space (Quiver.Total C)]
-  (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+variable [TopologicalSpace C] (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+include hu
+
+/-- In a topological category with continuous units and locally homeomorphic source, the identity
+arrows form an open set: they are the image of a continuous section of the source. -/
+theorem isOpen_range_unit (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) :
+    IsOpen (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :=
+  (hs.isOpenEmbedding_of_comp (f := fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+    IsOpenEmbedding.id hu).isOpen_range
+
+/-- In a topological category with continuous units, continuous source and Hausdorff arrow
+space, the identity arrows form a closed set: they are a retract of the arrow space. -/
+theorem isClosed_range_unit [T2Space (Quiver.Total C)]
+    (hl : Continuous (Quiver.Total.left : Quiver.Total C → C)) :
+    IsClosed (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :=
+  Function.LeftInverse.isClosed_range (f := Quiver.Total.left) (fun _ ↦ rfl) hl hu
+
+variable [T2Space (Quiver.Total C)]
   (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
-include hu hs
+include hs
 
 /-- In a topological category with continuous units, locally homeomorphic source and Hausdorff
-arrow space, the identity arrows form a clopen set. They are the image of a continuous section
-of the source, hence open, and a retract of the Hausdorff arrow space, hence closed. -/
+arrow space, the identity arrows form a clopen set. -/
 theorem isClopen_range_unit : IsClopen (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :=
-  ⟨Function.LeftInverse.isClosed_range (f := Quiver.Total.left) (fun _ ↦ rfl) hs.continuous hu,
-    (hs.isOpenEmbedding_of_comp (f := fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
-      IsOpenEmbedding.id hu).isOpen_range⟩
+  ⟨isClosed_range_unit hu hs.continuous, isOpen_range_unit hu hs⟩
 
 /-- **The latching loci of an étale nerve are clopen.** In a topological category with
 continuous units, locally homeomorphic source and Hausdorff arrow space, the degenerate
