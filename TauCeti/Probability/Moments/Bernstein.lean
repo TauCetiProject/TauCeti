@@ -9,6 +9,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
+import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Moments.Basic
 
 /-!

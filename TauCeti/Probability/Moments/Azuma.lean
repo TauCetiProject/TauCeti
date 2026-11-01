@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.SubGaussian
-public import TauCeti.Probability.Moments.Basic
+import TauCeti.MeasureTheory.Measure.Tail
 
 /-!
 # Azuma-Hoeffding inequality
@@ -20,8 +20,6 @@ inequality then controls the sum.
 
 * `TauCeti.Probability.hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero` — conditional
   Hoeffding's lemma for an arbitrary interval;
-* `TauCeti.Probability.hasCondSubgaussianMGF_of_abs_le_of_condExp_eq_zero` — the symmetric
-  bounded special case;
 * `TauCeti.Probability.measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences` — the
   one-sided Azuma-Hoeffding inequality with interval bounds;
 * `TauCeti.Probability.measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences` — the
@@ -44,14 +42,6 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
-
-private theorem nnreal_half_symmetric_sq (b : NNReal) :
-    ((‖(b : ℝ) - -(b : ℝ)‖₊ / 2) ^ 2 : NNReal) = b ^ 2 := by
-  apply Subtype.ext
-  simp only [sub_neg_eq_add, NNReal.val_eq_coe, NNReal.coe_pow, NNReal.coe_div, coe_nnnorm,
-    norm_eq_abs, NNReal.coe_ofNat]
-  rw [abs_of_nonneg (by positivity : 0 ≤ (b : ℝ) + (b : ℝ))]
-  ring
 
 /-- A conditionally centered random variable whose values lie in `[a, b]` is conditionally
 sub-Gaussian with parameter `((‖b - a‖₊ / 2) ^ 2)`. -/
@@ -90,33 +80,6 @@ theorem hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero [StandardBorelSpace 
       hX.aemeasurable hω hzero
     exact hsub.mgf_le q
 
-/-- A conditionally centered random variable bounded in absolute value by `b` is conditionally
-sub-Gaussian with parameter `b ^ 2`. -/
-theorem hasCondSubgaussianMGF_of_abs_le_of_condExp_eq_zero [StandardBorelSpace Ω]
-    [IsProbabilityMeasure μ] {m : MeasurableSpace Ω} (hm : m ≤ mΩ) {X : Ω → ℝ}
-    {b : NNReal} (hX : Measurable[mΩ] X) (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ (b : ℝ))
-    (hmean : μ[X | m] =ᵐ[μ] 0) :
-    HasCondSubgaussianMGF m hm X (b ^ 2) μ := by
-  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-(b : ℝ)) (b : ℝ) := by
-    filter_upwards [hbound] with ω hω
-    exact abs_le.mp hω
-  have hsub := @hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero Ω mΩ μ inferInstance
-    inferInstance m hm X (-(b : ℝ)) (b : ℝ) hX hIcc hmean
-  rw [nnreal_half_symmetric_sq] at hsub
-  exact hsub
-
-/-- A centered random variable bounded in absolute value by `b` is sub-Gaussian with parameter
-`b ^ 2`. -/
-theorem hasSubgaussianMGF_of_abs_le [IsProbabilityMeasure μ] {X : Ω → ℝ} {b : NNReal}
-    (hX : AEMeasurable X μ) (hbound : ∀ᵐ ω ∂μ, |X ω| ≤ (b : ℝ)) (hmean : μ[X] = 0) :
-    HasSubgaussianMGF X (b ^ 2) μ := by
-  have hIcc : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc (-(b : ℝ)) (b : ℝ) := by
-    filter_upwards [hbound] with ω hω
-    exact abs_le.mp hω
-  have hsub := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero hX hIcc hmean
-  rw [nnreal_half_symmetric_sq] at hsub
-  exact hsub
-
 /-- **Azuma-Hoeffding inequality for interval-bounded martingale differences.** Let `Y i` be a
 strongly adapted sequence with conditionally centered increments in `[a i, b i]` almost surely.
 Then the upper tail is bounded using Hoeffding's variance proxy
@@ -124,19 +87,21 @@ Then the upper tail is bounded using Hoeffding's variance proxy
 theorem measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
     [StandardBorelSpace Ω] [IsProbabilityMeasure μ] {ℱ : Filtration ℕ mΩ}
     {Y : ℕ → Ω → ℝ} {a b : ℕ → ℝ}
-    (h_adapted : StronglyAdapted ℱ Y)
-    (hbound : ∀ i, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (a i) (b i))
+    (h_adapted : StronglyAdapted ℱ Y) (n : ℕ)
+    (hbound : ∀ i < n, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (a i) (b i))
     (hmean0 : ∫ ω, Y 0 ω ∂μ = 0)
-    (hmean : ∀ i, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
-    (n : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
+    (hmean : ∀ i < n - 1, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
+    {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} ≤
       exp (-ε ^ 2 /
         (2 * ∑ i ∈ Finset.range n, ((‖b i - a i‖₊ / 2) ^ 2 : ℝ))) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [measureReal_le_one]
   let c : ℕ → ℝ≥0 := fun i => (‖b i - a i‖₊ / 2) ^ 2
   have h0 : HasSubgaussianMGF (Y 0) (c 0) μ := by
     simpa [c] using
       (hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero
-        ((h_adapted 0).mono (ℱ.le 0)).measurable.aemeasurable (hbound 0) hmean0)
+        ((h_adapted 0).mono (ℱ.le 0)).measurable.aemeasurable (hbound 0 hn) hmean0)
   have hsubG : ∀ i < n - 1,
       HasCondSubgaussianMGF (ℱ i) (ℱ.le i) (Y (i + 1)) (c (i + 1)) μ := by
     intro i hi
@@ -144,7 +109,7 @@ theorem measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
       ((h_adapted (i + 1)).mono (ℱ.le (i + 1))).measurable
     simpa [c] using
       (hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero (ℱ.le i) hYi
-        (hbound (i + 1)) (hmean i))
+        (hbound (i + 1) (by omega)) (hmean i hi))
   have htail := measure_sum_ge_le_of_hasCondSubgaussianMGF
     h_adapted h0 n hsubG hε
   simpa [c] using htail
@@ -156,16 +121,16 @@ each later step. Then the upper tail of the sum of its first `n` terms is bounde
 theorem measureReal_sum_range_ge_le_of_bounded_martingale_differences
     [StandardBorelSpace Ω] [IsProbabilityMeasure μ] {ℱ : Filtration ℕ mΩ}
     {Y : ℕ → Ω → ℝ} {b : ℕ → ℝ≥0}
-    (h_adapted : StronglyAdapted ℱ Y)
-    (hbound : ∀ i, ∀ᵐ ω ∂μ, |Y i ω| ≤ (b i : ℝ))
+    (h_adapted : StronglyAdapted ℱ Y) (n : ℕ)
+    (hbound : ∀ i < n, ∀ᵐ ω ∂μ, |Y i ω| ≤ (b i : ℝ))
     (hmean0 : ∫ ω, Y 0 ω ∂μ = 0)
-    (hmean : ∀ i, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
-    (n : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
+    (hmean : ∀ i < n - 1, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
+    {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} ≤
       exp (-ε ^ 2 / (2 * ∑ i ∈ Finset.range n, (b i : ℝ) ^ 2)) := by
-  have hIcc : ∀ i, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (-(b i : ℝ)) (b i : ℝ) := by
-    intro i
-    filter_upwards [hbound i] with ω hω
+  have hIcc : ∀ i < n, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (-(b i : ℝ)) (b i : ℝ) := by
+    intro i hi
+    filter_upwards [hbound i hi] with ω hω
     exact abs_le.mp hω
   have hterm (i : ℕ) :
       (|((b i : ℝ) + (b i : ℝ))| / 2) ^ 2 = (b i : ℝ) ^ 2 := by
@@ -174,7 +139,7 @@ theorem measureReal_sum_range_ge_le_of_bounded_martingale_differences
   simpa [hterm] using
     (measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
       (a := fun i => -(b i : ℝ)) (b := fun i => (b i : ℝ))
-      h_adapted hIcc hmean0 hmean n hε)
+      h_adapted n hIcc hmean0 hmean hε)
 
 /-- **Two-sided Azuma-Hoeffding inequality.** Under the same assumptions as
 `measureReal_sum_range_ge_le_of_bounded_martingale_differences`, the absolute value of the sum
@@ -182,30 +147,30 @@ exceeds `ε` with probability at most twice the one-sided bound. -/
 theorem measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences
     [StandardBorelSpace Ω] [IsProbabilityMeasure μ] {ℱ : Filtration ℕ mΩ}
     {Y : ℕ → Ω → ℝ} {b : ℕ → ℝ≥0}
-    (h_adapted : StronglyAdapted ℱ Y)
-    (hbound : ∀ i, ∀ᵐ ω ∂μ, |Y i ω| ≤ (b i : ℝ))
+    (h_adapted : StronglyAdapted ℱ Y) (n : ℕ)
+    (hbound : ∀ i < n, ∀ᵐ ω ∂μ, |Y i ω| ≤ (b i : ℝ))
     (hmean0 : ∫ ω, Y 0 ω ∂μ = 0)
-    (hmean : ∀ i, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
-    (n : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
+    (hmean : ∀ i < n - 1, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
+    {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|} ≤
       2 * exp (-ε ^ 2 / (2 * ∑ i ∈ Finset.range n, (b i : ℝ) ^ 2)) := by
   have hneg_adapted : StronglyAdapted ℱ (fun i ω ↦ -Y i ω) := by
     intro i
     exact (h_adapted i).neg
-  have hneg_bound : ∀ i, ∀ᵐ ω ∂μ, |-(Y i ω)| ≤ (b i : ℝ) := by
-    intro i
-    simpa using hbound i
+  have hneg_bound : ∀ i < n, ∀ᵐ ω ∂μ, |-(Y i ω)| ≤ (b i : ℝ) := by
+    intro i hi
+    simpa using hbound i hi
   have hneg_mean0 : ∫ ω, -Y 0 ω ∂μ = 0 := by
     simp [integral_neg, hmean0]
-  have hneg_mean : ∀ i, μ[-Y (i + 1) | ℱ i] =ᵐ[μ] 0 := by
-    intro i
+  have hneg_mean : ∀ i < n - 1, μ[-Y (i + 1) | ℱ i] =ᵐ[μ] 0 := by
+    intro i hi
     calc
       μ[-Y (i + 1) | ℱ i] =ᵐ[μ] -μ[Y (i + 1) | ℱ i] := condExp_neg _ _
-      _ =ᵐ[μ] 0 := by simpa using (hmean i).neg
+      _ =ᵐ[μ] 0 := by simpa using (hmean i hi).neg
   have hupper := measureReal_sum_range_ge_le_of_bounded_martingale_differences
-    h_adapted hbound hmean0 hmean n hε
+    h_adapted n hbound hmean0 hmean hε
   have hlower := measureReal_sum_range_ge_le_of_bounded_martingale_differences
-    hneg_adapted hneg_bound hneg_mean0 hneg_mean n hε
+    hneg_adapted n hneg_bound hneg_mean0 hneg_mean hε
   simp only [Finset.sum_neg_distrib] at hlower
   calc
     μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|}
