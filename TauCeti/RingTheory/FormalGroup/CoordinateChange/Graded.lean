@@ -44,14 +44,8 @@ theorem map_toLaurent_eq_homothety_smul_iff (F : FormalGroup A) (w : ℕ) :
           F.map LaurentPolynomial.C ↔
       ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1)) := by
   rw [← F.map_toPolynomial_eq_rescale_iff (𝒜 := 𝒜) w]
-  have hinj : Function.Injective
-      (fun G : FormalGroup (Polynomial A) ↦ G.map Polynomial.toLaurent) := by
-    intro G H h
-    apply FormalGroup.ext
-    ext1 d
-    apply Polynomial.toLaurent_injective
-    simpa using congrArg (fun K ↦ coeff d K.toPowerSeries) h
-  rw [← hinj.eq_iff]
+  rw [← (map_injective (f := Polynomial.toLaurent (R := A))
+    Polynomial.toLaurent_injective).eq_iff]
   have hC : Polynomial.toLaurent.comp (Polynomial.C : A →+* Polynomial A) =
       LaurentPolynomial.C := RingHom.ext Polynomial.toLaurent_C
   simp only [map_comp, map_rescale, Polynomial.toLaurent_X_pow, homothety_smul, inv_inv,

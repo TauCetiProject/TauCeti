@@ -117,18 +117,14 @@ def gradedStrictCoeffsEquiv (w : ℕ) :
     funext i
     exact Subtype.ext (coeff_succ_ofStrictCoeffs _ _)
   right_inv φ := by
-    apply Subtype.ext
-    have he := congrArg Subtype.val (strictCoeffsEquiv.apply_symm_apply ⟨φ.1, φ.2.2⟩)
-    rw [coe_strictCoeffsEquiv_apply] at he
-    have hc : strictCoeffsEquiv.symm ⟨φ.1, φ.2.2⟩ =
-        fun i : ℕ+ ↦ coeff (i + 1) φ.1.toPowerSeries :=
-      funext fun i ↦ strictCoeffsEquiv_symm_apply _ i
-    rw [hc] at he
-    exact he
+    exact Subtype.ext (by
+      simpa only [coe_strictCoeffsEquiv_apply,
+        ← strictCoeffsEquiv_symm_apply ⟨φ.1, φ.2.2⟩] using
+        congrArg Subtype.val (strictCoeffsEquiv.apply_symm_apply ⟨φ.1, φ.2.2⟩))
 
 /-- The coordinate attached to a family of homogeneous coefficients is `X + ∑ bᵢ X^(i+1)`. -/
 @[simp]
-theorem coe_gradedStrictCoeffsEquiv (w : ℕ) (b : ∀ i : ℕ+, 𝒜 (w * i)) :
+theorem coe_gradedStrictCoeffsEquiv_apply (w : ℕ) (b : ∀ i : ℕ+, 𝒜 (w * i)) :
     (gradedStrictCoeffsEquiv 𝒜 w b : FormalCoordinate A) = ofStrictCoeffs (fun i : ℕ+ ↦ b i) :=
   (rfl)
 
