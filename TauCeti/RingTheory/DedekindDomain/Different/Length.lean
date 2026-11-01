@@ -45,22 +45,20 @@ noncomputable def quotientDifferentIdealEquivTraceDualQuotient {δ : B}
     (hδ : differentIdeal A B = Ideal.span {δ}) :
     (B ⧸ differentIdeal A B) ≃ₗ[B]
       ((Submodule.traceDual A K (1 : Submodule B L)) ⧸
-        (1 : Submodule B L).comap (Submodule.traceDual A K (1 : Submodule B L)).subtype) := by
-  let e := equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ
-  have hδL := algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) (L := L) hδ
-  refine Submodule.Quotient.equiv _ _ e ?_
-  ext x
-  rw [Submodule.mem_map]
-  constructor
-  · rintro ⟨b, hb, rfl⟩
-    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton.mp (hδ ▸ hb)
-    exact Submodule.mem_one.mpr ⟨c, by
-      simp [e, map_mul, hδL]⟩
-  · intro hx
-    obtain ⟨b, hb⟩ := Submodule.mem_one.mp hx
-    refine ⟨δ * b, hδ.symm ▸ Ideal.mem_span_singleton.mpr ⟨b, rfl⟩, ?_⟩
-    apply Subtype.ext
-    simpa [e, map_mul, hδL] using hb
+        (1 : Submodule B L).comap (Submodule.traceDual A K (1 : Submodule B L)).subtype) :=
+  Submodule.Quotient.equiv _ _ (equivTraceDualOfDifferentIdealEqSpan hδ) (by
+    ext x
+    rw [Submodule.mem_map]
+    constructor
+    · rintro ⟨b, hb, rfl⟩
+      obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton.mp (hδ ▸ hb)
+      exact Submodule.mem_one.mpr ⟨c, by
+        simp [map_mul, algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) hδ]⟩
+    · intro hx
+      obtain ⟨b, hb⟩ := Submodule.mem_one.mp hx
+      refine ⟨δ * b, hδ.symm ▸ Ideal.mem_span_singleton.mpr ⟨b, rfl⟩, ?_⟩
+      apply Subtype.ext
+      simpa [map_mul, algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) hδ] using hb)
 
 /-- On representatives, the quotient comparison divides an integral element by a generator
 of the different. The equality in the hypothesis specifies the resulting fraction without
@@ -76,7 +74,7 @@ theorem quotientDifferentIdealEquivTraceDualQuotient_mk {δ : B}
     rw [LinearEquiv.symm_apply_apply]
     apply IsFractionRing.injective B L
     rw [equivTraceDualOfDifferentIdealEqSpan_symm_apply, hx]
-  rw [← Ideal.Quotient.mk_eq_mk, quotientDifferentIdealEquivTraceDualQuotient,
+  simp only [← Ideal.Quotient.mk_eq_mk, quotientDifferentIdealEquivTraceDualQuotient,
     Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe, he]
 
 /-- The inverse quotient comparison multiplies a complementary element by a generator of
