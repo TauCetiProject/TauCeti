@@ -22,12 +22,14 @@ families. For normalized functionals, the individual star distributions of a sta
 family determine its joint star distribution, even across different ambient algebras.
 Neither positivity nor traciality is required.
 
-The proofs use the range of `StarPolynomial.lift` and the uniqueness theorem
-`IsFreelyIndependent.eqOn_iSup`, rather than constructing a second free-product functional.
+The comparison results allow joint star moments to be transferred between star-free
+realizations with matching individual star distributions.
 
 ## References
 
 * A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 1 and 5.
+* Formal ingredients: star-polynomial evaluation `StarPolynomial.lift` and algebraic freeness
+  uniqueness `IsFreelyIndependent.eqOn_iSup`.
 -/
 
 public section
