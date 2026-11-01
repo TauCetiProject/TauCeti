@@ -125,12 +125,6 @@ theorem tendsto_pow_mul_thetaSeries_comap_S (hk : finrank ℝ E = 2 * k) :
       (comap (ModularGroup.S • ·) atImInfty) (𝓝 (I ^ k * (covolume L : ℂ)⁻¹)) := by
   simpa using tendsto_pow_mul_thetaCoset_comap_S L hk 0
 
-/-- The covolume of `cL` is `c^{2k} covol L` in dimension `2k`. -/
-private theorem covolume_natCast_smul (hk : finrank ℝ E = 2 * k) (c : ℕ) [NeZero c] :
-    covolume ((c : ℝ) • L) = (c : ℝ) ^ (2 * k) * covolume L := by
-  have h := covolume_smul L (NeZero.ne (c : ℝ))
-  rwa [Nat.abs_cast, hk] at h
-
 namespace IsEven
 
 variable {L}
@@ -211,7 +205,7 @@ theorem tendsto_pow_mul_thetaSeries_vadd_comap_S (hk : finrank ℝ E = 2 * k) (a
   simp_rw [thetaSeries_vadd_eq_sum hL a c, Finset.mul_sum]
   convert h using 2 with ε
   · exact Finset.sum_congr rfl fun y _ ↦ by ring
-  · rw [gaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L hk c]
+  · rw [gaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L c MeasureTheory.volume, hk]
     push_cast
     field_simp
 
@@ -231,7 +225,7 @@ theorem tendsto_pow_mul_thetaSeries_dual_vadd_comap_S (hk : finrank ℝ E = 2 * 
   simp_rw [thetaSeries_dual_vadd_eq_sum hL b a, Finset.mul_sum]
   convert h using 2 with ε
   · exact Finset.sum_congr rfl fun y _ ↦ by ring
-  · rw [dualGaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L hk a]
+  · rw [dualGaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L a MeasureTheory.volume, hk]
     push_cast
     field_simp
 
