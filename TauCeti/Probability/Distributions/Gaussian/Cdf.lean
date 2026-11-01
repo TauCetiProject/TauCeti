@@ -61,8 +61,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   `TauCeti.Real.erfc`.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` — the upper tail, in terms of the
   standard Gaussian cdf.
-* `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi` — a lower bound for the upper
-  tail to the right of the mean, by the density at a later point.
+* `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal` — a lower bound
+  for the upper tail to the right of the mean, by the density at a later point.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -322,7 +322,7 @@ theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
 its right end. -/
-theorem mul_gaussianPDFReal_add_le_measureReal_Ioi {m s t : ℝ} (v : ℝ≥0) (hs : m ≤ s)
+theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v : ℝ≥0) (hs : m ≤ s)
     (ht : 0 ≤ t) : t * gaussianPDFReal m v (s + t) ≤ (gaussianReal m v).real (Ioi s) := by
   rcases eq_or_ne v 0 with rfl | hv
   · rw [gaussianPDFReal_zero_var, Pi.zero_apply, mul_zero]

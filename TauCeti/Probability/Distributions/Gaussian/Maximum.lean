@@ -31,8 +31,8 @@ dimension bound in Dvoretzky's theorem.
 
 The proof uses a single level `s = √(log m) / 4`. Each `|g_j|` exceeds `s` with probability at
 least `p = φ(s + 1)`, where `φ` is the standard Gaussian density
-(`TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi`), and `m p ≥ 1 / 7` by the
-choice of `s`. By independence the maximum is at most `s` with probability
+(`TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal`), and
+`m p ≥ 1 / 7` by the choice of `s`. By independence the maximum is at most `s` with probability
 `(1 - p) ^ m ≤ exp (-m p) ≤ 7 / 8` (`TauCeti.Probability.measureReal_setOf_max_le_iid`), so
 Markov's inequality gives `𝔼 max_j |g_j| ≥ s / 8`.
 
@@ -101,7 +101,7 @@ theorem sqrt_log_card_div_le_integral_sup'_abs (hindep : iIndepFun g P)
   -- Each `|g i|` exceeds `s` with probability at least `p = φ(s + 1)`, and `m p ≥ 1 / 7`.
   set p : ℝ := gaussianPDFReal 0 1 (s + 1)
   have hp : p ≤ ν.real (Ioi s) := by
-    have h := mul_gaussianPDFReal_add_le_measureReal_Ioi (m := 0) 1 hs0 zero_le_one
+    have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs0 zero_le_one
     rw [one_mul] at h
     rw [map_measureReal_apply measurable_abs measurableSet_Ioi]
     exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
