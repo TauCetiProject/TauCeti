@@ -51,8 +51,8 @@ theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : �
           ((intervalIntegral.intervalIntegrable_rpow' hr).const_mul A)
       _ = A / a * s ^ a := by
         rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hr)]
-        simp [Real.zero_rpow ha.ne', sub_add_cancel, div_eq_mul_inv, mul_comm,
-          mul_left_comm]
+        rw [sub_add_cancel, Real.zero_rpow ha.ne', sub_zero]
+        ring
   by_cases htd : t ≤ d
   · exact (hsmall ht le_rfl).trans <| le_add_of_le_of_nonneg
       (mul_le_mul_of_nonneg_left (rpow_le_rpow ht htd ha.le) (div_nonneg hA ha.le))
