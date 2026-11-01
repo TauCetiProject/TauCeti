@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
-# Indicator classes in `Lᵖ` and `L∞`
+# Indicator classes in `Lᵖ`
 
 The class `MeasureTheory.indicatorConstLp p hs hμs c` of `s.indicator fun _ => c` is linear in the
 constant `c`: Mathlib provides additivity, `MeasureTheory.indicatorConstLp_add`, and this file adds
@@ -19,16 +19,21 @@ compatibility with scalar multiplication. Together with the norm formula
 linear map, so closed subspaces of `Lᵖ` can be tested on indicator classes of a dense set of
 constants.
 
-In `L∞` the indicator function of a measurable set is essentially bounded whatever the measure of
-the set, so `MeasureTheory.indicatorConstLpTop μ hs c` is defined for sets of arbitrary measure;
-Mathlib's `MeasureTheory.indicatorConstLp` requires `μ s ≠ ∞`.
+In `L∞` the indicator of any measurable set is essentially bounded, whatever its measure. The
+class `TauCeti.linftyIndicator μ s hs` of `1_s` in real `L∞(μ)` therefore needs no finiteness of
+`μ s`, unlike `indicatorConstLp`. It is additive on disjoint sets, nonnegative, vanishes on null
+sets, and equals the constant one at `univ`.
 
 ## Main declarations
 
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
-* `MeasureTheory.indicatorConstLpTop`: the class in `L∞` of `s.indicator fun _ ↦ c`, for a
-  measurable set `s` of arbitrary measure. It is additive on disjoint sets, additive and
-  compatible with scalar multiplication in the value, and the constant one on the whole space.
+* `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
+* `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
+  `c • 1_s` is `c • linftyIndicator μ s hs`.
+* `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
+  values at the classes `linftyIndicator μ s hs`.
+* `PositiveLinearMap.ext_linftyIndicator`: the same for positive linear functionals on real `L∞`,
+  which are automatically continuous.
 -/
 
 public section
@@ -53,97 +58,122 @@ theorem indicatorConstLp_smul (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (a : 
 
 end TauCeti
 
-namespace MeasureTheory
+noncomputable section
 
 open Set
 open scoped ENNReal
 
-variable {α E : Type*} [MeasurableSpace α] (μ : Measure α) [NormedAddCommGroup E] {s : Set α}
+namespace TauCeti
 
-/-- The class in `L∞` of the indicator function of a measurable set `s` with value `c`. Unlike
-`MeasureTheory.indicatorConstLp`, no finiteness of `μ s` is needed. -/
-noncomputable def indicatorConstLpTop (hs : MeasurableSet s) (c : E) : Lp E ∞ μ :=
-  ((memLp_top_const c).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ => c)
+open MeasureTheory
 
-/-- The indicator class of `s` with value `c` is represented by `s.indicator fun _ ↦ c`. -/
-theorem indicatorConstLpTop_coeFn (hs : MeasurableSet s) (c : E) :
-    indicatorConstLpTop μ hs c =ᵐ[μ] s.indicator fun _ => c :=
-  MemLp.coeFn_toLp _
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {s t : Set α}
 
-/-- The indicator class of the whole space is the constant one. -/
+variable (μ) in
+/-- The class in `L∞(μ)` of the indicator function of a measurable set. Unlike
+`MeasureTheory.indicatorConstLp`, it needs no finiteness of `μ s`. -/
+def linftyIndicator (s : Set α) (hs : MeasurableSet s) : Lp ℝ ∞ μ :=
+  SimpleFunc.toLpTop μ ℝ (SimpleFunc.piecewise s hs (SimpleFunc.const α 1) 0)
+
+/-- A constant multiple of an indicator, as a simple function, has class a multiple of
+`TauCeti.linftyIndicator`. -/
 @[simp]
-theorem indicatorConstLpTop_univ : indicatorConstLpTop μ MeasurableSet.univ (1 : ℝ) =
-    TauCeti.linftyOne := by
+theorem _root_.MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero (hs : MeasurableSet s)
+    (c : ℝ) : SimpleFunc.toLpTop μ ℝ (SimpleFunc.piecewise s hs (SimpleFunc.const α c) 0) =
+      c • linftyIndicator μ s hs := by
+  rw [linftyIndicator, ← map_smul]
+  congr 1
+  ext x
+  by_cases hx : x ∈ s <;> simp [hx]
+
+/-- The class `TauCeti.linftyIndicator μ s hs` is almost everywhere the indicator of `s`. -/
+theorem coeFn_linftyIndicator (hs : MeasurableSet s) :
+    linftyIndicator μ s hs =ᵐ[μ] s.indicator 1 := by
+  filter_upwards [SimpleFunc.coeFn_toLpTop (μ := μ) (𝕜 := ℝ)
+    (SimpleFunc.piecewise s hs (SimpleFunc.const α (1 : ℝ)) 0)] with x hx
+  rw [linftyIndicator, hx]
+  by_cases hxs : x ∈ s <;> simp [hxs]
+
+/-- The indicator of the empty set vanishes in `L∞`. -/
+@[simp]
+theorem linftyIndicator_empty : linftyIndicator μ ∅ MeasurableSet.empty = 0 := by
   refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ MeasurableSet.univ (1 : ℝ), TauCeti.coeFn_linftyOne]
+  filter_upwards [coeFn_linftyIndicator (μ := μ) MeasurableSet.empty, Lp.coeFn_zero ℝ ∞ μ]
+    with x h h0
+  rw [h, h0, Set.indicator_empty, Pi.zero_apply]
+
+/-- The indicator of the whole space is the constant one in `L∞`. -/
+@[simp]
+theorem linftyIndicator_univ : linftyIndicator μ univ MeasurableSet.univ = linftyOne := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_linftyIndicator (μ := μ) MeasurableSet.univ, coeFn_linftyOne (μ := μ)]
     with x h h1
-  rw [h, h1, indicator_univ]
+  rw [h, h1, Set.indicator_univ, Pi.one_apply]
 
-/-- The indicator class of a null set vanishes. -/
-theorem indicatorConstLpTop_eq_zero (hs : MeasurableSet s) (hμs : μ s = 0) (c : E) :
-    indicatorConstLpTop μ hs c = 0 := by
+/-- Indicators of disjoint measurable sets add in `L∞`. -/
+theorem linftyIndicator_union (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : Disjoint s t) :
+    linftyIndicator μ (s ∪ t) (hs.union ht) = linftyIndicator μ s hs + linftyIndicator μ t ht := by
   refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ hs c, Lp.coeFn_zero E ∞ μ,
-    measure_eq_zero_iff_ae_notMem.1 hμs] with x h h0 hx
-  rw [h, h0, indicator_of_notMem hx, Pi.zero_apply]
+  filter_upwards [coeFn_linftyIndicator (μ := μ) (hs.union ht), coeFn_linftyIndicator (μ := μ) hs,
+    coeFn_linftyIndicator (μ := μ) ht, Lp.coeFn_add (linftyIndicator μ s hs)
+      (linftyIndicator μ t ht)] with x h hsx htx hadd
+  rw [h, hadd, Pi.add_apply, hsx, htx, Set.indicator_union_of_disjoint hst]
 
-/-- The indicator class with value `0` vanishes. -/
-@[simp]
-theorem indicatorConstLpTop_zero (hs : MeasurableSet s) :
-    indicatorConstLpTop μ hs (0 : E) = 0 := by
-  refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ hs (0 : E), Lp.coeFn_zero E ∞ μ] with x h h0
-  rw [h, h0]
-  simp
-
-/-- A version of `Set.indicator_add` for `MeasureTheory.indicatorConstLpTop`. -/
-theorem indicatorConstLpTop_add (hs : MeasurableSet s) (c c' : E) :
-    indicatorConstLpTop μ hs c + indicatorConstLpTop μ hs c' =
-      indicatorConstLpTop μ hs (c + c') := by
-  refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ hs c, indicatorConstLpTop_coeFn μ hs c',
-    indicatorConstLpTop_coeFn μ hs (c + c'), Lp.coeFn_add (indicatorConstLpTop μ hs c)
-      (indicatorConstLpTop μ hs c')] with x h h' h'' hadd
-  rw [hadd, Pi.add_apply, h, h', h'']
-  by_cases hx : x ∈ s <;> simp [hx]
-
-/-- A version of `Set.indicator_sub` for `MeasureTheory.indicatorConstLpTop`. -/
-theorem indicatorConstLpTop_sub (hs : MeasurableSet s) (c c' : E) :
-    indicatorConstLpTop μ hs c - indicatorConstLpTop μ hs c' =
-      indicatorConstLpTop μ hs (c - c') := by
-  refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ hs c, indicatorConstLpTop_coeFn μ hs c',
-    indicatorConstLpTop_coeFn μ hs (c - c'), Lp.coeFn_sub (indicatorConstLpTop μ hs c)
-      (indicatorConstLpTop μ hs c')] with x h h' h'' hsub
-  rw [hsub, Pi.sub_apply, h, h', h'']
-  by_cases hx : x ∈ s <;> simp [hx]
-
-/-- Indicator classes add on disjoint sets. -/
-theorem indicatorConstLpTop_union {t : Set α} (hs : MeasurableSet s) (ht : MeasurableSet t)
-    (hst : Disjoint s t) (c : E) :
-    indicatorConstLpTop μ (hs.union ht) c =
-      indicatorConstLpTop μ hs c + indicatorConstLpTop μ ht c := by
-  refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ (hs.union ht) c, indicatorConstLpTop_coeFn μ hs c,
-    indicatorConstLpTop_coeFn μ ht c, Lp.coeFn_add (indicatorConstLpTop μ hs c)
-      (indicatorConstLpTop μ ht c)] with x h hs' ht' hadd
-  rw [hadd, Pi.add_apply, h, hs', ht', indicator_union_of_disjoint hst]
-
-/-- A version of `Set.indicator_const_smul` for `MeasureTheory.indicatorConstLpTop`. -/
-theorem indicatorConstLpTop_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-    (hs : MeasurableSet s) (a : 𝕜) (c : E) :
-    indicatorConstLpTop μ hs (a • c) = a • indicatorConstLpTop μ hs c := by
-  refine Lp.ext ?_
-  filter_upwards [indicatorConstLpTop_coeFn μ hs (a • c), indicatorConstLpTop_coeFn μ hs c,
-    Lp.coeFn_smul a (indicatorConstLpTop μ hs c)] with x h h' hsmul
-  rw [hsmul, Pi.smul_apply, h, h', indicator_const_smul_apply]
-
-/-- A real indicator class is nonnegative when its value is. -/
-theorem indicatorConstLpTop_nonneg (hs : MeasurableSet s) {c : ℝ} (hc : 0 ≤ c) :
-    0 ≤ indicatorConstLpTop μ hs c := by
+/-- The indicator of a measurable set is nonnegative in `L∞`. -/
+theorem linftyIndicator_nonneg (hs : MeasurableSet s) : 0 ≤ linftyIndicator μ s hs := by
   rw [← Lp.coeFn_nonneg]
-  filter_upwards [indicatorConstLpTop_coeFn μ hs c] with x h
-  rw [h]
-  exact indicator_nonneg (fun _ _ => hc) x
+  filter_upwards [coeFn_linftyIndicator (μ := μ) hs] with x hx
+  rw [hx]
+  exact Set.indicator_nonneg (fun _ _ => zero_le_one) x
 
-end MeasureTheory
+/-- The indicator of a null set vanishes in `L∞`. -/
+theorem linftyIndicator_of_measure_eq_zero (hs : MeasurableSet s) (h : μ s = 0) :
+    linftyIndicator μ s hs = 0 := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_linftyIndicator (μ := μ) hs, Lp.coeFn_zero ℝ ∞ μ,
+    measure_eq_zero_iff_ae_notMem.1 h] with x hx h0 hxs
+  rw [hx, h0, Set.indicator_of_notMem hxs, Pi.zero_apply]
+
+end TauCeti
+
+namespace LinearMap
+
+open MeasureTheory TauCeti
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- A continuous linear map out of real `L∞` is determined by its values at the indicators of
+measurable sets. -/
+theorem ext_linftyIndicator {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [T2Space E] {f g : Lp ℝ ∞ μ →ₗ[ℝ] E} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ s (hs : MeasurableSet s), f (linftyIndicator μ s hs) = g (linftyIndicator μ s hs)) :
+    f = g := by
+  have hsimple : f ∘ₗ SimpleFunc.toLpTop μ ℝ = g ∘ₗ SimpleFunc.toLpTop μ ℝ := by
+    ext φ
+    induction φ using SimpleFunc.induction with
+    | const c hs => simp [h]
+    | add _ hφ hψ => simp_all
+  exact LinearMap.coe_injective <|
+    SimpleFunc.denseRange_toLpTop.equalizer hf hg (congrArg DFunLike.coe hsimple)
+
+end LinearMap
+
+namespace PositiveLinearMap
+
+open MeasureTheory TauCeti
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- A positive linear functional on real `L∞` is determined by its values at the indicators of
+measurable sets. -/
+theorem ext_linftyIndicator {M N : Lp ℝ ∞ μ →ₚ[ℝ] ℝ}
+    (h : ∀ s (hs : MeasurableSet s), M (linftyIndicator μ s hs) = N (linftyIndicator μ s hs)) :
+    M = N := by
+  have := LinearMap.ext_linftyIndicator (f := M.toLinearMap) (g := N.toLinearMap)
+    M.continuous_lpTop N.continuous_lpTop h
+  ext φ
+  exact LinearMap.congr_fun this φ
+
+end PositiveLinearMap
+
+end

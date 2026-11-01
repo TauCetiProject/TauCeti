@@ -35,9 +35,8 @@ automatic continuity for positive maps between C⋆-algebras.
 * `PositiveLinearMap.lipschitzWith_of_forall_le_norm_smul`: `φ` is `φ u`-Lipschitz.
 * `ContinuousLinearMap.opNorm_eq_apply_of_monotone`: a monotone continuous linear functional has
   operator norm `ψ u` when `‖u‖ ≤ 1`.
-* `LinearMap.apply_nonneg_of_norm_smul_sub_le`: conversely, a linear functional with
-  `|ψ f| ≤ ψ u * ‖f‖` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`, such as a nonnegative
-  bounded function when `u` is the constant one.
+* `LinearMap.apply_nonneg_of_abs_apply_le_mul_norm`: conversely, a linear functional with
+  `|ψ f| ≤ ψ u * ‖f‖` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`.
 -/
 
 public section
@@ -106,19 +105,18 @@ end ContinuousLinearMap
 
 namespace LinearMap
 
-variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
+variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] {u : E}
 
-/-- A real linear functional `ψ` with `|ψ g| ≤ ψ u * ‖g‖` for every `g` is nonnegative at every `f`
-with `‖‖f‖ • u - f‖ ≤ ‖f‖`. For bounded real functions and `u = 1`, or real `L∞` and `u` the
-constant one, these are the nonnegative elements. -/
-theorem apply_nonneg_of_norm_smul_sub_le (ψ : E →ₗ[ℝ] ℝ) {u f : E}
-    (hψ : ∀ g, |ψ g| ≤ ψ u * ‖g‖) (hf : ‖‖f‖ • u - f‖ ≤ ‖f‖) : 0 ≤ ψ f := by
-  rcases le_or_gt 0 (ψ u) with hu | hu
-  · -- Applying the bound to `‖f‖ • u - f` gives `‖f‖ * ψ u - ψ f ≤ ψ u * ‖f‖`.
-    have h := (le_abs_self _).trans (hψ (‖f‖ • u - f))
-    rw [map_sub, map_smul, smul_eq_mul] at h
-    nlinarith [mul_le_mul_of_nonneg_left hf hu]
-  · -- If `ψ u < 0`, the bound forces `ψ = 0`.
-    linarith [neg_abs_le (ψ f), hψ f, mul_nonpos_of_nonpos_of_nonneg hu.le (norm_nonneg f)]
+/-- A converse to `PositiveLinearMap.abs_apply_le_mul_norm`: a linear functional `ψ` with
+`|ψ g| ≤ ψ u * ‖g‖` for all `g` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`. For
+bounded real functions or real `L∞` with `u = 1`, every nonnegative `f` has this property. -/
+theorem apply_nonneg_of_abs_apply_le_mul_norm (ψ : E →ₗ[ℝ] ℝ) (hψ : ∀ g, |ψ g| ≤ ψ u * ‖g‖)
+    {f : E} (hf : ‖‖f‖ • u - f‖ ≤ ‖f‖) : 0 ≤ ψ f := by
+  have hu : 0 ≤ ψ u := by
+    by_contra! h
+    nlinarith [hψ u, abs_pos.2 h.ne, norm_nonneg u]
+  have := (le_abs_self _).trans (hψ (‖f‖ • u - f))
+  rw [map_sub, map_smul, smul_eq_mul] at this
+  nlinarith [mul_le_mul_of_nonneg_left hf hu]
 
 end LinearMap
