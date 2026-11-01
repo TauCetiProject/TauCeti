@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Filtered.Final
 public import TauCeti.FieldTheory.Galois.Profinite
-public import TauCeti.RingTheory.LaurentSeries.Puiseux.Galois
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Galois.Basic
 public import TauCeti.RingTheory.LaurentSeries.RamificationIndex
 
 /-!
@@ -15,10 +15,10 @@ public import TauCeti.RingTheory.LaurentSeries.RamificationIndex
 
 Let `K` be a field containing a primitive `n`-th root of unity for every `n > 0`, and let
 `P = puiseuxField K`. Each level `K⸨t ^ (1 / n)⸩` is a finite Galois extension of `K⸨X⸩`, and the
-levels exhaust `P`, so `P` is Galois over `K⸨X⸩`. Mathlib identifies the Galois group of any
-Galois extension, with its Krull topology, with the limit of the finite Galois groups `Gal(L/K⸨X⸩)`
-over the finite Galois intermediate fields `L`, ordered by reverse inclusion
-(`InfiniteGalois.continuousMulEquivToLimit`).
+levels exhaust `P`, so `P` is Galois over `K⸨X⸩` (`TauCeti.puiseuxField.isGalois`). Mathlib
+identifies the Galois group of any Galois extension, with its Krull topology, with the limit of the
+finite Galois groups `Gal(L/K⸨X⸩)` over the finite Galois intermediate fields `L`, ordered by
+reverse inclusion (`InfiniteGalois.continuousMulEquivToLimit`).
 
 This file shows that the levels are cofinal among the finite Galois intermediate fields of `P`:
 every such field lies in some level, so the functor `n ↦ K⸨t ^ (1 / n)⸩` from ramification indices
@@ -39,7 +39,6 @@ the Tate module as topological groups, compatibly with
 
 ## Main results
 
-* `TauCeti.puiseuxField.isGalois`: the Puiseux field is Galois over `K⸨X⸩`.
 * `TauCeti.puiseuxField.exists_le_levelFiniteGalois`: every finite Galois intermediate field lies
   in a level.
 * `TauCeti.puiseuxField.final_levelFunctor`: the levels are cofinal.
@@ -84,20 +83,12 @@ theorem levelFiniteGalois_le_levelFiniteGalois_iff {n m : ℕ+} [HasEnoughRootsO
 
 variable [∀ n : ℕ+, HasEnoughRootsOfUnity K n]
 
-/-- The Puiseux field is Galois over `K⸨X⸩` when `K` contains a primitive `n`-th root of unity for
-every `n > 0`: it is the union of the levels, each of which is Galois over `K⸨X⸩`. -/
-instance isGalois : IsGalois K⸨X⸩ (puiseuxField K) := by
-  have : IsGalois K⸨X⸩ (⊤ : IntermediateField K⸨X⸩ (puiseuxField K)) := by
-    have (d : ℕ+) : Algebra.IsSeparable K⸨X⸩ (level K d) := (isGalois_level K d).to_isSeparable
-    rw [← iSup_level K]
-    exact isGalois_iff.mpr ⟨isSeparable_iSup .., normal_iSup _ _ _⟩
-  exact IsGalois.of_algEquiv topEquiv
-
 /-- **Cofinality of the levels.** Every finite Galois intermediate field of the Puiseux field over
 `K⸨X⸩` lies in some level. -/
 theorem exists_le_levelFiniteGalois (L : FiniteGaloisIntermediateField K⸨X⸩ (puiseuxField K)) :
     ∃ n : ℕ+, L ≤ levelFiniteGalois K n :=
-  L.toIntermediateField.exists_le_level
+  L.toIntermediateField.exists_le_level.imp fun _ h ↦
+    (FiniteGaloisIntermediateField.le_iff ..).mpr h
 
 variable (K) in
 /-- The levels as a functor from ramification indices, ordered by divisibility, to the finite
