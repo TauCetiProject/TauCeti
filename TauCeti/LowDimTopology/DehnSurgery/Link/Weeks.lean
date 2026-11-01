@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.KnotTheory.SmoothLink.Whitehead
+public import TauCeti.LowDimTopology.DehnSurgery.Existence
 public import TauCeti.LowDimTopology.DehnSurgery.Link.Surgery
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Orientation
 
@@ -38,7 +39,15 @@ is the surgery with coefficients `-5, -5 / 2`.
 Up to homeomorphism the filling does not depend on the choice of the neighbourhoods, which is
 classical but not formalized here; the definition asks for some choice. Being a Weeks manifold
 is a topological property: it is invariant under homeomorphisms
-(`TauCeti.isWeeksManifold_congr`). Existence of the filling is not proved here.
+(`TauCeti.isWeeksManifold_congr`).
+
+A Weeks manifold exists, and can be taken compact and Hausdorff
+(`TauCeti.exists_isWeeksManifold`): the components of the Whitehead link have solid torus
+neighbourhoods preserving the standard orientation at their cores
+(`TauCeti.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`), and the exterior of
+a link has Dehn fillings along every family of slopes
+(`TauCeti.IsSolidTorusLinkNeighborhood.exists_linkDehnFilling`). That this space is a smooth
+`3`-manifold carrying a hyperbolic metric is not proved here.
 
 ## Main definitions
 
@@ -52,6 +61,7 @@ is a topological property: it is invariant under homeomorphisms
   slopes, for orientation-preserving neighbourhoods, is a Weeks manifold.
 * `TauCeti.IsWeeksManifold.of_homeomorph`, `TauCeti.isWeeksManifold_congr`: being a Weeks
   manifold is invariant under homeomorphisms.
+* `TauCeti.exists_isWeeksManifold`: a compact Hausdorff Weeks manifold exists.
 
 ## References
 
@@ -132,5 +142,22 @@ theorem IsWeeksManifold.of_homeomorph (hY : IsWeeksManifold Y) (e : Y ≃ₜ Y')
 /-- **Being a Weeks manifold is a topological property.** -/
 theorem isWeeksManifold_congr (e : Y ≃ₜ Y') : IsWeeksManifold Y ↔ IsWeeksManifold Y' :=
   ⟨fun hY ↦ hY.of_homeomorph e, fun hY ↦ hY.of_homeomorph e.symm⟩
+
+/-- **A Weeks manifold exists.** The components of the Whitehead link have solid torus
+neighbourhoods preserving the standard orientation at their core points, and the exterior of the
+link has a Dehn filling along the surgery slopes of coefficients `5` and `5 / 2`. The filled space
+is compact and Hausdorff. -/
+theorem exists_isWeeksManifold :
+    ∃ (Y : Type) (_ : TopologicalSpace Y), CompactSpace Y ∧ T2Space Y ∧ IsWeeksManifold Y := by
+  obtain ⟨Φ, h, hΦ⟩ := exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore
+    (fun i ↦ (whiteheadLink i).contMDiff.of_le (by simp))
+    (fun i z ↦ (whiteheadLink i).isImmersion.mfderiv_injective (by simp) z)
+    (fun i ↦ (whiteheadLink i).isEmbedding.injective) whiteheadLink.pairwiseDisjoint_range
+    (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis.orientation
+  obtain ⟨A, ⟨F⟩⟩ := h.exists_linkDehnFilling
+    (h.surgerySlope (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+      (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)
+      ![((5 : ℚ) : OnePoint ℚ), ((5 / 2 : ℚ) : OnePoint ℚ)])
+  exact ⟨_, _, inferInstance, inferInstance, .intro hΦ F⟩
 
 end TauCeti
