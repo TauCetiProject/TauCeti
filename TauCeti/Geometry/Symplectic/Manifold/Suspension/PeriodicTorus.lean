@@ -266,7 +266,7 @@ theorem isPseudoholomorphicAt_periodicTorus_iff (p : UnitAddCircle × AddCircle 
     fun w ↦ ?_⟩⟩
   · -- The Cauchy-Riemann equation on `∂_s`: its image is `∂_s`, and `j ∂_s = ∂_t` has image `T`.
     have h₁ := h.2 ((Manifold.tangentSpaceProdEquiv p).symm ((1 : ℝ), (0 : ℝ)))
-    simp only [SmoothAlmostComplexStructure.addCircleProd_apply] at h₁
+    simp only [SmoothAlmostComplexStructure.addCircleProd_apply_symm] at h₁
     rw [mfderiv_periodicTorus_symm, mfderiv_periodicTorus_symm] at h₁
     simp only [neg_zero, zero_smul, zero_add, one_smul, add_zero] at h₁
     exact h₁.symm
@@ -275,15 +275,16 @@ theorem isPseudoholomorphicAt_periodicTorus_iff (p : UnitAddCircle × AddCircle 
     obtain ⟨a, b, rfl⟩ : ∃ a b : ℝ, w = (Manifold.tangentSpaceProdEquiv p).symm (a, b) :=
       ⟨_, _, ((Manifold.tangentSpaceProdEquiv p).symm_apply_apply w).symm⟩
     have hT := apply_symm_zero_timeVectorField h
-    simp only [SmoothAlmostComplexStructure.addCircleProd_apply]
+    simp only [SmoothAlmostComplexStructure.addCircleProd_apply_symm]
     rw [mfderiv_periodicTorus_symm, mfderiv_periodicTorus_symm, map_add, map_smul, map_smul]
     -- Beta-reduce the coercion of `J` in `h` and `hT` to the endomorphism form of the goal.
     simp only at h hT
     rw [h, hT, smul_neg, neg_smul, add_comm]
 
 /-- The periodic torus is pseudoholomorphic, for the standard almost complex structure of the
-parameter torus `(ℝ / ℤ) × (ℝ / dℤ)`, exactly when `J` is of block form along it: `J` sends `∂_s`
-to the suspension vector field `T` at every point of its image. -/
+parameter torus `(ℝ / ℤ) × (ℝ / dℤ)`, exactly when `J ∂_s = T` along its image: `J` sends the
+direction `∂_s` of the circle factor to the suspension vector field `T` at every point of the
+image. -/
 theorem isPseudoholomorphic_periodicTorus_iff :
     IsPseudoholomorphic (SmoothAlmostComplexStructure.addCircleProd 1 d) J
         (periodicTorus φ hx) ↔

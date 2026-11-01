@@ -31,8 +31,10 @@ to the suspension vector field.
 
 ## Main results
 
-* `TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply`: its value in the real coordinates
-  of the two circles, which determines it.
+* `TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply_symm`: its value in the real
+  coordinates of the two circles, which determines it.
+* `TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply`: the same formula
+  `v ↦ (-v.2, v.1)` for a tangent vector viewed directly as a pair, in simp-normal form.
 
 ## References
 
@@ -101,7 +103,7 @@ private theorem product_respects ⦃z z' : ℝ × ℝ⦄ (v : TangentSpace 𝓘(
 
 /-- The standard almost complex structure on the product `AddCircle p × AddCircle q` of two
 circles: in the real coordinates of the circles it sends `a ∂_s + b ∂_t` to `-b ∂_s + a ∂_t`
-(`TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply`). It is the descent of the standard
+(`TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply_symm`). It is the descent of the standard
 structure `(a, b) ↦ (-b, a)` of the plane along `(s, t) ↦ ([s], [t])`. -/
 def addCircleProd : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q) :=
   descend (isLocalDiffeomorph_addCircleProdCover p q) (addCircleProdCover_surjective p q)
@@ -111,7 +113,7 @@ def addCircleProd : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (Add
 `AddCircle p × AddCircle q` sends `a ∂_s + b ∂_t` to `-b ∂_s + a ∂_t`. -/
 -- Not a `simp` lemma: `simp` first erases `Manifold.tangentSpaceProdEquiv` from the left-hand side
 -- through `Manifold.tangentSpaceProdEquiv_symm_apply`.
-theorem addCircleProd_apply (x : AddCircle p × AddCircle q) (a b : ℝ) :
+theorem addCircleProd_apply_symm (x : AddCircle p × AddCircle q) (a b : ℝ) :
     addCircleProd p q x ((Manifold.tangentSpaceProdEquiv x).symm (a, b)) =
       (Manifold.tangentSpaceProdEquiv x).symm (-b, a) := by
   obtain ⟨z, rfl⟩ := addCircleProdCover_surjective p q x
@@ -122,5 +124,17 @@ theorem addCircleProd_apply (x : AddCircle p × AddCircle q) (a b : ℝ) :
   exact (congrArg (addCircleProd p q (addCircleProdCover p q z))
     (mfderiv_addCircleProdCover_apply p q z (a, b)).symm).trans
       (h.trans ((mfderiv_addCircleProdCover_apply p q z _).trans (product_apply z (a, b))))
+
+/-- The standard almost complex structure of `AddCircle p × AddCircle q` sends a tangent vector
+`v = (a, b)`, written in the real coordinates of the two circles, to `(-b, a)`. This is the
+simp-normal form of `TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply_symm`. -/
+@[simp]
+theorem addCircleProd_apply (x : AddCircle p × AddCircle q)
+    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x) :
+    addCircleProd p q x v = (-v.2, v.1) := by
+  have h := addCircleProd_apply_symm p q x v.1 v.2
+  rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply] at h
+  -- `h` is the claim for the pair `(v.1, v.2)`, which is `v` by eta.
+  exact h
 
 end TauCeti.SmoothAlmostComplexStructure
