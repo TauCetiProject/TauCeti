@@ -55,9 +55,9 @@ gluing lemma consumes.
 * `TauCeti.wassersteinEDist p μ ν` — the infimum of `eLpNorm (fun z ↦ edist z.1 z.2) p π` over the
   couplings `π` of `μ` and `ν`.
 * `TauCeti.HasFiniteMoment p μ` — the `MemLp` finite-moment condition about some basepoint, with
-  `TauCeti.hasFiniteMoment_of_ae_mem_finset`, `TauCeti.hasFiniteMoment_of_boundedSpace`, and
-  `TauCeti.hasFiniteMoment_dirac` supplying finite moments for finite carriers, bounded spaces,
-  and Dirac laws.
+  `TauCeti.hasFiniteMoment_of_ae_mem_finset`, `TauCeti.hasFiniteMoment_of_ae_mem_of_isBounded`,
+  `TauCeti.hasFiniteMoment_of_boundedSpace`, and `TauCeti.hasFiniteMoment_dirac` supplying finite
+  moments for finite carriers, bounded carriers, bounded spaces, and Dirac laws.
 
 ## Main statements
 
@@ -694,6 +694,18 @@ theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure 
   · exact ((Finset.sup_lt_iff (by simp)).2 fun z _ ↦ edist_lt_top x₀ z).ne
   · filter_upwards [hs] with y hy
     simpa only [enorm_eq_self] using Finset.le_sup (f := fun z ↦ edist x₀ z) hy
+
+/-- A finite measure carried by a bounded set has finite `p`-moment for every exponent: the ground
+distance to a basepoint is bounded on that set. -/
+theorem hasFiniteMoment_of_ae_mem_of_isBounded [OpensMeasurableSpace X] {ν : Measure X}
+    {s : Set X} [IsFiniteMeasure ν] (x₀ : X) (hs : Bornology.IsBounded s) (hν : ∀ᵐ y ∂ν, y ∈ s) :
+    HasFiniteMoment p ν := by
+  obtain ⟨r, hr⟩ := hs.subset_closedBall x₀
+  refine hasFiniteMoment_def.2 ⟨x₀, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
+    measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top ?_⟩
+  filter_upwards [hν] with y hy
+  simpa only [enorm_eq_self, edist_dist, dist_comm x₀] using
+    ENNReal.ofReal_le_ofReal (Metric.mem_closedBall.1 (hr hy))
 
 /-- On a nonempty bounded pseudometric space, for instance a nonempty compact one, every finite
 measure has finite `p`-moment for every exponent: the ground distance is bounded. -/
