@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.VonMisesFisher.Normalizer
-import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.Probability.Moments.MGFAnalytic
 
 /-!
@@ -17,9 +17,10 @@ mean direction `m` has expectation `I_{d/2}(κ) / I_{d/2-1}(κ) • m`. At zero 
 its expectation vanishes, as for the uniform sphere law. The natural-parameter formulation
 uses `κ = ‖η‖` and direction `η / ‖η‖`.
 
-The mean is a Bochner integral of the sphere embedding. Every moment of that embedding is
-finite. The scalar mean formula also applies to any real linear observable, which allows
-using the mean without first pushing the law into the ambient space.
+The mean is a Bochner integral of the sphere embedding, whose finite moments and essential
+boundedness are established by `memLp_coe_vonMisesFisherNaturalMeasure` in `Basic`. The scalar
+mean formula also applies to any real linear observable, which allows using the mean without
+first pushing the law into the ambient space.
 
 The argument differentiates the normalizer ratio in
 `mgf_inner_vonMisesFisherNaturalMeasure`, using the Bessel derivative identity and Mathlib's
@@ -43,8 +44,9 @@ namespace TauCeti.Probability
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- In dimension at least two, the mean of a real linear observable is given by the
-Bessel ratio, with concentration equal to the norm of the nonzero natural parameter. -/
+/-- In dimension `d ≥ 2`, the mean of `⟪θ, x⟫` is the Bessel ratio
+`I_{d/2}(‖η‖) / I_{d/2-1}(‖η‖)` times the projection `⟪θ, η⟫ / ‖η‖`
+onto the direction of the nonzero natural parameter. -/
 theorem integral_inner_vonMisesFisherNaturalMeasure (hd : 2 ≤ Module.finrank ℝ E)
     {η : E} (hη : η ≠ 0) (θ : E) :
     ∫ x : sphere (0 : E) 1, ⟪θ, (x : E)⟫ ∂vonMisesFisherNaturalMeasure η =
@@ -60,19 +62,13 @@ theorem integral_inner_vonMisesFisherNaturalMeasure (hd : 2 ≤ Module.finrank �
   have hline : HasDerivAt (fun t : ℝ ↦ η + t • θ) θ 0 := by
     simpa only [one_smul] using ((hasDerivAt_id' (0 : ℝ)).smul_const θ).const_add η
   have hnorm : HasDerivAt (fun t : ℝ ↦ ‖η + t • θ‖) (⟪θ, η⟫ / ‖η‖) 0 := by
-    -- Differentiate the squared norm and then its positive square root.
-    have h := hline.norm_sq.sqrt (by simpa using pow_ne_zero 2 hκ.ne')
-    convert h using 1 <;> simp [sqrt_sq, real_inner_comm]
-    ring
+    simpa only [smul_apply, coe_innerSL_apply, smul_eq_mul, real_inner_comm η θ,
+      inv_mul_eq_div, Function.comp_def] using
+      (hasFDerivAt_norm_of_ne hη).comp_hasDerivAt_of_eq 0 hline (by simp)
   have hbessel := hasDerivAt_rpow_neg_mul_besselI ν hκ.ne'
   have hnum := (hbessel.comp_of_eq 0 hnorm (by simp)).const_mul
     (Gamma ((Module.finrank ℝ E : ℝ) / 2))
-  have hden : (∫ x : sphere (0 : E) 1, exp ⟪η, (x : E)⟫ ∂uniformSphereMeasure E) =
-      Gamma ((Module.finrank ℝ E : ℝ) / 2) *
-        ((‖η‖ / 2) ^ (-ν) * besselI ν ‖η‖) := by
-    rw [integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη]
-    simp only [ν, neg_sub]
-    ring
+  -- Near zero the mgf is the ratio of normalized Bessel functions.
   have hmgf : mgf (fun x : sphere (0 : E) 1 ↦ ⟪θ, (x : E)⟫)
       (vonMisesFisherNaturalMeasure η) =ᶠ[𝓝 0]
       fun t : ℝ ↦ Gamma ((Module.finrank ℝ E : ℝ) / 2) *
@@ -84,9 +80,8 @@ theorem integral_inner_vonMisesFisherNaturalMeasure (hd : 2 ≤ Module.finrank �
         (by fun_prop) continuous_const).eventually_mem (by simpa using hη)
     filter_upwards [hne] with t ht
     rw [mgf_inner_vonMisesFisherNaturalMeasure,
-      integral_exp_inner_uniformSphereMeasure_eq_besselI hd ht, hden]
-    simp only [ν, neg_sub]
-    ring
+      integral_exp_inner_uniformSphereMeasure_eq_besselI hd ht,
+      integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη]
   have hderiv := (hnum.div_const (Gamma ((Module.finrank ℝ E : ℝ) / 2) *
     ((‖η‖ / 2) ^ (-ν) * besselI ν ‖η‖))).congr_of_eventuallyEq hmgf
   have hzero : (0 : ℝ) ∈ interior (integrableExpSet
@@ -106,9 +101,7 @@ theorem integral_coe_vonMisesFisherNaturalMeasure (hd : 2 ≤ Module.finrank ℝ
         besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ / ‖η‖) • η := by
   apply ext_inner_left ℝ
   intro θ
-  have hint : Integrable ((↑) : sphere (0 : E) 1 → E) (vonMisesFisherNaturalMeasure η) :=
-    continuous_subtype_val.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-  rw [← integral_inner hint,
+  rw [← integral_inner ((memLp_coe_vonMisesFisherNaturalMeasure η 1).integrable le_rfl),
     integral_inner_vonMisesFisherNaturalMeasure hd hη, real_inner_smul_right]
   ring
 
