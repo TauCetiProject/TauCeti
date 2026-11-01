@@ -9,14 +9,11 @@ public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
-import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Radial
 
 /-!
 # Rotationally symmetric metrics and the Gromov–Lawson bending term
@@ -30,8 +27,9 @@ smooth *profile* `w : ℝ → ℝ`. In the arclength coordinate `σ = ∫ e^w dt
 Under polar coordinates `y = e^t u` the cylinder is the punctured space `V ∖ {0}` of an inner
 product space `V` of dimension `n + 1`, and the metric is the Euclidean metric multiplied by
 `e^(2 (w(log ‖y‖) - log ‖y‖))`. The formula is therefore an instance of the conformal change of
-scalar curvature, applied to a radial conformal exponent; locality and diffeomorphism invariance
-of scalar curvature transport it to the cylinder.
+scalar curvature, applied to a radial conformal exponent
+(`TauCeti.scalarCurvature_rescale_exp_radial`); locality and diffeomorphism invariance of scalar
+curvature transport it to the cylinder.
 
 In the Gromov–Lawson surgery construction, a curve `u ↦ (r u, h u)` in the half-plane `r > 0` with
 velocity `r u (-cos θ u, sin θ u)` sweeps out the hypersurface `{(r(u) x, h(u)) | x ∈ S^(q - 1)}`
@@ -48,14 +46,10 @@ leading part of the scalar curvature of the bent tube.
 
 ## Main results
 
-* `TauCeti.scalarCurvature_rescale_exp_radial`: the scalar curvature of the Euclidean metric
-  multiplied by `e^(2 (w(log ‖y‖) - log ‖y‖))`, away from the origin.
 * `TauCeti.inner_mvfderiv_exp_smul_coe_sphere`: polar coordinates pull the Euclidean metric back to
   `e^(2 t) (g_(Sⁿ) + dt²)`.
 * `TauCeti.scalarCurvature_rotationalMetric`: the scalar curvature of a rotationally symmetric
   metric.
-* `TauCeti.isInvertible_mfderiv_exp_smul_coe_sphere`: polar coordinates have invertible
-  differentials.
 * `TauCeti.inner_mvfderiv_smul_coe_sphere_add_mul_mvfderiv`: a curve with speed equal to its radius
   sweeps out a hypersurface with induced metric `r² (g_(Sⁿ) + du²)`.
 * `TauCeti.scalarCurvature_rotationalMetric_log`: the Gromov–Lawson bending term is the scalar
@@ -78,92 +72,9 @@ open scoped ContDiff Manifold InnerProductSpace Topology
 
 namespace TauCeti
 
-/-! ### Radial conformal factors on an inner product space -/
-
-section Radial
-
-open InnerProductSpace Laplacian
-open scoped Gradient
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-
-/-- **Scalar curvature of a radial conformal metric.** Let `φ` be a smooth function on a real inner
-product space of dimension `N` which, near a point `y ≠ 0`, is `w(log ‖z‖) - log ‖z‖` for a
-function `w` that is `C²` at `s = log ‖y‖`. Then the Euclidean metric multiplied by `e^(2 φ)` has
-scalar curvature `(N - 1) e^(-2 w(s)) ((N - 2) (1 - w'(s)²) - 2 w''(s))` at `y`. In polar
-coordinates `y = e^s u` this metric is `e^(2 w(s)) (ds² + g_(S^(N - 1)))`. -/
-theorem scalarCurvature_rescale_exp_radial {φ : F → ℝ} (hφ : ContDiff ℝ ∞ φ) {w : ℝ → ℝ} {y : F}
-    (hy : y ≠ 0) (hw : ContDiffAt ℝ 2 w (log ‖y‖))
-    (heq : φ =ᶠ[𝓝 y] fun z ↦ w (log ‖z‖) - log ‖z‖) :
-    (((riemannianMetricVectorSpace F).ofLE le_top).rescale (fun z ↦ exp (2 * φ z))
-        (contDiff_const.mul hφ).exp.contMDiff fun _ ↦ exp_pos _).scalarCurvature y =
-      (finrank ℝ F - 1) * exp (-2 * w (log ‖y‖)) *
-        ((finrank ℝ F - 2) * (1 - deriv w (log ‖y‖) ^ 2) - 2 * deriv (deriv w) (log ‖y‖)) := by
-  have hρ : 0 < ‖y‖ := norm_pos_iff.2 hy
-  have hlog : ContDiffAt ℝ 2 (fun z : F ↦ log ‖z‖) y :=
-    (contDiffAt_log.2 hρ.ne').comp y (contDiffAt_norm ℝ hy)
-  -- The conformal exponent is `ψ (log ‖z‖)` near `y`, with `ψ s = w s - s`.
-  have hψ : ContDiffAt ℝ 2 (fun s ↦ w s - s) (log ‖y‖) := hw.sub contDiffAt_id
-  have hheq : φ =ᶠ[𝓝 y] (fun s ↦ w s - s) ∘ fun z : F ↦ log ‖z‖ := heq
-  have hw₁ : DifferentiableAt ℝ w (log ‖y‖) := hw.differentiableAt (by simp)
-  have hderiv : deriv (fun s ↦ w s - s) =ᶠ[𝓝 (log ‖y‖)] fun s ↦ deriv w s - 1 := by
-    filter_upwards [hw.eventually (by simp)] with s hs
-    exact ((hs.differentiableAt (by simp)).hasDerivAt.sub (hasDerivAt_id s)).deriv
-  have hΔφ : Δ φ y = (deriv (deriv w) (log ‖y‖) + (deriv w (log ‖y‖) - 1) * (finrank ℝ F - 2)) /
-      ‖y‖ ^ 2 := by
-    rw [(laplacian_congr_nhds hheq).eq_of_nhds,
-      ContDiffAt.laplacian_comp (q := fun z : F ↦ log ‖z‖) hψ hlog, hderiv.deriv_eq,
-      hderiv.eq_of_nhds, deriv_sub_const, laplacian_log_norm_of_ne hy,
-      norm_gradient_eq_norm_fderiv, norm_fderiv_log_norm_of_ne hy]
-    field_simp
-  have hGφ : ‖∇ φ y‖ = |deriv w (log ‖y‖) - 1| * ‖y‖⁻¹ := by
-    have hd : HasFDerivAt φ ((deriv w (log ‖y‖) - 1) • fderiv ℝ (fun z : F ↦ log ‖z‖) y) y :=
-      (hw₁.hasDerivAt.sub (hasDerivAt_id _)).comp_hasFDerivAt y
-        (hasFDerivAt_log_norm_of_ne hy).differentiableAt.hasFDerivAt |>.congr_of_eventuallyEq hheq
-    rw [norm_gradient_eq_norm_fderiv, hd.fderiv, norm_smul, norm_fderiv_log_norm_of_ne hy,
-      Real.norm_eq_abs]
-  have hgrad : DifferentiableAt ℝ (∇ φ) y :=
-    ((hφ.gradient_right (m := 1) (by simp)).differentiable (by simp)) y
-  -- The conformal change formula, applied to the flat Euclidean metric `g`, involves only the
-  -- Laplacian and the gradient of `φ` for `g`. The formula installs `g` with lowered
-  -- smoothness; the flat identifications are transported along `toRiemannianMetric_ofLE`.
-  rw [ContMDiffRiemannianMetric.scalarCurvature_rescale _ _ _ (φ := φ) (fun _ ↦ rfl) y]
-  have hscal : ((riemannianMetricVectorSpace F).ofLE
-      (le_top : (∞ : WithTop ℕ∞) ≤ ω)).scalarCurvature y = 0 := by
-    rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection _
-      -- Mathlib's `RiemannianBundle` instance on the tangent spaces of `F` is defined to be the
-      -- standard metric `(riemannianMetricVectorSpace F).toRiemannianMetric`, so this is `rfl`.
-      (by rw [ContMDiffRiemannianMetric.toRiemannianMetric_ofLE]; rfl),
-      TauCeti.Manifold.scalarCurvature_leviCivitaConnection_model_space]
-  have hm := ContMDiffRiemannianMetric.toRiemannianMetric_ofLE (riemannianMetricVectorSpace F)
-    (le_top : (∞ : WithTop ℕ∞) ≤ ω)
-  have hΔ : (letI : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
-      ⟨((riemannianMetricVectorSpace F).ofLE (le_top : (∞ : WithTop ℕ∞) ≤ ω)).toRiemannianMetric⟩
-      Manifold.laplaceBeltrami 𝓘(ℝ, F) φ y) = Δ φ y :=
-    TauCeti.Manifold.laplaceBeltrami_eq_laplacian_of_eq
-      (inst := ⟨((riemannianMetricVectorSpace F).ofLE le_top).toRiemannianMetric⟩) hm hgrad
-  have hG : (letI : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
-      ⟨((riemannianMetricVectorSpace F).ofLE (le_top : (∞ : WithTop ℕ∞) ≤ ω)).toRiemannianMetric⟩
-      ‖Manifold.mgradient 𝓘(ℝ, F) φ y‖) = ‖∇ φ y‖ :=
-    TauCeti.Manifold.norm_mgradient_eq_norm_gradient_of_eq
-      (inst := ⟨((riemannianMetricVectorSpace F).ofLE le_top).toRiemannianMetric⟩) hm _ y
-  have hexp : (exp (2 * φ y))⁻¹ = exp (-2 * w (log ‖y‖)) * ‖y‖ ^ 2 := by
-    have harg : -(2 * (w (log ‖y‖) - log ‖y‖)) = -2 * w (log ‖y‖) + log (‖y‖ ^ 2) := by
-      rw [log_pow]
-      push_cast
-      ring
-    rw [heq.eq_of_nhds, ← exp_neg, harg, exp_add, exp_log (by positivity)]
-  rw [hscal, hΔ, hG, hexp, hΔφ, hGφ, mul_pow, sq_abs]
-  field_simp
-  ring
-
-end Radial
-
 /-! ### Polar coordinates -/
 
 section Polar
-
-open TauCeti.Manifold (tangentSpaceProdEquiv)
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
   [Fact (finrank ℝ V = n + 1)]
@@ -175,46 +86,10 @@ theorem inner_mvfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
     ⟪mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p v,
       mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p w⟫_ℝ =
       exp (2 * p.2) * ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  have hu : ⟪(p.1 : V), (p.1 : V)⟫_ℝ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.1, one_pow]
-  have h₁ : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (tangentSpaceProdEquiv p v).1,
-      (p.1 : V)⟫_ℝ = 0 := by
-    rw [real_inner_comm]
-    exact inner_coe_mvfderiv_subtypeVal_sphere p.1 _
-  have h₂ := inner_coe_mvfderiv_subtypeVal_sphere p.1 (tangentSpaceProdEquiv p w).1
-  rw [mvfderiv_exp_smul_coe_sphere_apply, mvfderiv_exp_smul_coe_sphere_apply,
+  rw [inner_mvfderiv_smul_coe_sphere p (differentiable_exp p.2), Real.deriv_exp,
     ContMDiffRiemannianMetric.cylinder_inner, ContMDiffRiemannianMetric.ofLE_inner,
     sphereRoundMetric_inner, two_mul, exp_add]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right, h₁, h₂,
-    hu]
   ring
-
-/-- The differential of polar coordinates is invertible. -/
-theorem isInvertible_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ) :
-    (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
-      (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p).IsInvertible := by
-  have hV : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
-  have : FiniteDimensional ℝ (TangentSpace 𝓘(ℝ, V) (exp p.2 • (p.1 : V))) := hV
-  set L := mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
-    (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p
-  have hinj : Function.Injective L := by
-    refine (injective_iff_map_eq_zero L).2 fun v hv ↦ ?_
-    by_contra hv₀
-    have h := inner_mvfderiv_exp_smul_coe_sphere p v v
-    rw [mvfderiv_apply_eq_mfderiv_apply] at h
-    -- `h` pairs the vectors `L v` in the tangent space of `V`, which is `V` itself.
-    change ⟪L v, L v⟫_ℝ = _ at h
-    rw [show L v = 0 from hv, inner_zero_left] at h
-    exact (mul_pos (exp_pos _)
-      ((((sphereRoundMetric (E := V)).ofLE le_top).cylinder).pos p v hv₀)).ne' h.symm
-  have hdim : finrank ℝ (TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) =
-      finrank ℝ (TangentSpace 𝓘(ℝ, V) (exp p.2 • (p.1 : V))) := by
-    -- Both tangent spaces are their model vector spaces by definition.
-    change finrank ℝ (EuclideanSpace ℝ (Fin n) × ℝ) = finrank ℝ V
-    rw [Module.finrank_prod, finrank_euclideanSpace_fin, Module.finrank_self,
-      (Fact.out : finrank ℝ V = n + 1)]
-  exact ⟨((L : _ →ₗ[ℝ] _).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv,
-    by ext v; simp⟩
 
 end Polar
 
@@ -345,32 +220,13 @@ theorem inner_mvfderiv_smul_coe_sphere_add_mul_mvfderiv {r h θ : ℝ → ℝ} (
       mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ h q.2) p v *
         mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ h q.2) p v' =
       (rotationalMetric (n := n) V (hr.log fun t ↦ (hr_pos t).ne')).inner p v v' := by
-  -- The height is differentiated by the chain rule through the projection to `ℝ`.
-  have hh : ∀ w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p,
-      mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ h q.2) p w =
-        r p.2 * sin (θ p.2) * NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p w).2 := by
-    intro w
-    rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ h q.2) = h ∘ Prod.snd from rfl,
-      mvfderiv_comp_apply _ hh'.differentiableAt.mdifferentiableAt mdifferentiableAt_snd,
-      mfderiv_snd, mvfderiv_eq_fderiv]
-    simp only [ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul,
-      Manifold.tangentSpaceProdEquiv_apply, hh'.deriv]
-    exact mul_comm _ _
-  have hu : ⟪(p.1 : V), (p.1 : V)⟫_ℝ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.1, one_pow]
-  have h₁ : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (tangentSpaceProdEquiv p v).1,
-      (p.1 : V)⟫_ℝ = 0 := by
-    rw [real_inner_comm]
-    exact inner_coe_mvfderiv_subtypeVal_sphere p.1 _
-  have h₂ := inner_coe_mvfderiv_subtypeVal_sphere p.1 (tangentSpaceProdEquiv p v').1
   have hexp : exp (2 * log (r p.2)) = r p.2 ^ 2 := by
     rw [mul_comm, exp_mul, exp_log (hr_pos p.2), rpow_two]
-  rw [mvfderiv_smul_coe_sphere_apply p hr'.differentiableAt,
-    mvfderiv_smul_coe_sphere_apply p hr'.differentiableAt, hh, hh, rotationalMetric_inner,
+  rw [inner_mvfderiv_smul_coe_sphere p hr'.differentiableAt,
+    mvfderiv_comp_snd_sphere_apply p hh'.differentiableAt,
+    mvfderiv_comp_snd_sphere_apply p hh'.differentiableAt, rotationalMetric_inner,
     ContMDiffRiemannianMetric.cylinder_inner, ContMDiffRiemannianMetric.ofLE_inner,
-    sphereRoundMetric_inner, hexp, hr'.deriv]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right, h₁, h₂,
-    hu]
+    sphereRoundMetric_inner, hexp, hr'.deriv, hh'.deriv]
   linear_combination (r p.2 ^ 2 * NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p v).2 *
     NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p v').2) * sin_sq_add_cos_sq (θ p.2)
 

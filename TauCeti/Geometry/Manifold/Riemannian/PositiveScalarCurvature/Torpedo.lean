@@ -10,13 +10,14 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
+public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Rotational
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Rotational
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Radial
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 
 /-!
@@ -491,7 +492,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
 
 /-- **The torpedo metric in polar coordinates.** In the coordinates `y = e^t u`, with `t ∈ ℝ` and
 `u` in the unit sphere, the torpedo metric is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, where `w` is the torpedo
-profile. -/
+profile: the rotationally symmetric metric `TauCeti.rotationalMetric` with profile `w`. -/
 theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
     (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
     (torpedoMetric V).inner (exp p.2 • (p.1 : V))
@@ -499,14 +500,13 @@ theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 ×
           p v)
         (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
           p w) =
-      exp (2 * torpedoProfile p.2) *
-        ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
+      (rotationalMetric (n := n) V contDiff_torpedoProfile).inner p v w := by
   have hnorm : ‖exp p.2 • (p.1 : V)‖ = exp p.2 := by
     rw [norm_smul, norm_eq_of_mem_sphere p.1, mul_one, norm_of_nonneg (exp_pos _).le]
-  rw [torpedoMetric_inner, NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply,
-    inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc, ← exp_add, hnorm,
-    torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
+  rw [rotationalMetric_inner, torpedoMetric_inner, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+    ← mvfderiv_apply_eq_mfderiv_apply, inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc,
+    ← exp_add, hnorm, torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
   ring_nf
 
 /-- On the cylindrical end `t ≥ -1`, the torpedo metric in polar coordinates `y = e^t u` is the
@@ -519,8 +519,8 @@ theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge {p : sphere (0 : V
         (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
           p w) =
       ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, torpedoProfile_of_ge hp, mul_zero, exp_zero,
-    one_mul]
+  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, rotationalMetric_inner,
+    torpedoProfile_of_ge hp, mul_zero, exp_zero, one_mul]
 
 end Polar
 

@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
+import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
 /-!
 # The cylinder over a sphere is the punctured space
@@ -36,10 +38,16 @@ charts of the sphere directly.
 ## Main results
 
 * `TauCeti.contMDiff_exp_smul_coe_sphere`: polar coordinates `(u, t) ↦ exp t • u` are smooth.
+* `TauCeti.mvfderiv_comp_snd_sphere_apply`: the differential of `(u, t) ↦ f(t)` sends `(v, a)` at
+  `(u, t)` to `a f'(t)`.
 * `TauCeti.mvfderiv_smul_coe_sphere_apply`: the differential of `(u, t) ↦ f(t) u` sends `(v, a)`
   at `(u, t)` to `f(t) v + a f'(t) u`.
+* `TauCeti.inner_mvfderiv_smul_coe_sphere`: the map `(u, t) ↦ f(t) u` pulls the inner product of
+  `V` back to `f(t)² g_(Sⁿ) + f'(t)² dt²`.
 * `TauCeti.mvfderiv_exp_smul_coe_sphere_apply`: the differential of polar coordinates sends
   `(v, a)` at `(u, t)` to `e^t (v + a u)`.
+* `TauCeti.isInvertible_mfderiv_exp_smul_coe_sphere`: polar coordinates have invertible
+  differentials.
 * `TauCeti.orientable_sphere_prod_real`, `TauCeti.orientable_circle_prod_real`: the cylinders
   `Sⁿ × ℝ` and `S¹ × ℝ` are orientable.
 -/
@@ -49,7 +57,7 @@ public section
 noncomputable section
 
 open Set TopologicalSpace Manifold Metric Module
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
@@ -124,6 +132,21 @@ theorem sphereProdRealDiffeomorph_symm_apply_snd (v : puncturedSpace V) :
     (sphereProdRealDiffeomorph (n := n) |>.symm v).2 = Real.log ‖(v : V)‖ :=
   (rfl)
 
+/-- The differential of the map `(u, t) ↦ f(t)` from `Sⁿ × ℝ` to `ℝ`: a tangent vector `(v, a)` at
+`(u, t)` is sent to `a f'(t)`. -/
+theorem mvfderiv_comp_snd_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 × ℝ)
+    (hf : DifferentiableAt ℝ f p.2) (v : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p v =
+      deriv f p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
+  -- The chain rule `mvfderiv_comp_apply` matches a composition `f ∘ g` syntactically.
+  rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) = f ∘ Prod.snd from rfl,
+    mvfderiv_comp_apply _ hf.mdifferentiableAt mdifferentiableAt_snd, mfderiv_snd,
+    mvfderiv_eq_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul,
+    Manifold.tangentSpaceProdEquiv_apply]
+  -- `ContinuousLinearMap.snd` is the projection of the product.
+  exact mul_comm _ _
+
 /-- The differential of the map `(u, t) ↦ f(t) u` from `Sⁿ × ℝ` to `V`: a tangent vector `(v, a)` at
 `(u, t)` is sent to `f(t) v + a f'(t) u`, where `v` is read in `V`. -/
 theorem mvfderiv_smul_coe_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 × ℝ)
@@ -134,7 +157,6 @@ theorem mvfderiv_smul_coe_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 �
         (deriv f p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2) •
           (p.1 : V) := by
   have hι := (contMDiff_coe_sphere (E := V) (n := n) (m := 1) p.1).mdifferentiableAt one_ne_zero
-  have hf' : MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ) f p.2 := hf.mdifferentiableAt
   have h₁ : mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) p v =
       mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (Manifold.tangentSpaceProdEquiv p v).1 := by
     -- The chain rule `mvfderiv_comp_apply` matches a composition `f ∘ g` syntactically.
@@ -143,20 +165,38 @@ theorem mvfderiv_smul_coe_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 �
     simp only [Manifold.tangentSpaceProdEquiv_apply]
     -- `ContinuousLinearMap.fst` is the projection of the product.
     rfl
-  have h₂ : mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p v =
-      deriv f p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
-    rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) = f ∘ Prod.snd from rfl,
-      mvfderiv_comp_apply _ hf' mdifferentiableAt_snd, mfderiv_snd, mvfderiv_eq_fderiv]
-    simp only [ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul,
-      Manifold.tangentSpaceProdEquiv_apply]
-    -- `ContinuousLinearMap.snd` is the projection of the product.
-    exact mul_comm _ _
   have hd₁ : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
       (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) p := hι.comp p mdifferentiableAt_fst
   have hd₂ : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ)
-      (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p := hf'.comp p mdifferentiableAt_snd
+      (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p :=
+    hf.mdifferentiableAt.comp p mdifferentiableAt_snd
   rw [mvfderiv_fun_smul hd₂ hd₁]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁, h₂]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁,
+    mvfderiv_comp_snd_sphere_apply p hf]
+
+/-- The map `(u, t) ↦ f(t) u` from `Sⁿ × ℝ` to `V` pulls the inner product of `V` back to
+`f(t)² g_(Sⁿ) + f'(t)² dt²`: tangent vectors `(v, a)` and `(v', a')` at `(u, t)` are paired to
+`f(t)² ⟪v, v'⟫ + f'(t)² a a'`, where `v` and `v'` are read in `V`. -/
+theorem inner_mvfderiv_smul_coe_sphere {f : ℝ → ℝ} (p : sphere (0 : V) 1 × ℝ)
+    (hf : DifferentiableAt ℝ f p.2) (v v' : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    ⟪mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2 • (q.1 : V)) p v,
+      mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2 • (q.1 : V)) p v'⟫_ℝ =
+      f p.2 ^ 2 * ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1
+          (Manifold.tangentSpaceProdEquiv p v).1,
+        mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (Manifold.tangentSpaceProdEquiv p v').1⟫_ℝ +
+        deriv f p.2 ^ 2 * (NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 *
+          NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v').2) := by
+  have hu : ⟪(p.1 : V), (p.1 : V)⟫_ℝ = 1 := by
+    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.1, one_pow]
+  have h₁ : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (Manifold.tangentSpaceProdEquiv p v).1,
+      (p.1 : V)⟫_ℝ = 0 := by
+    rw [real_inner_comm]
+    exact inner_coe_mvfderiv_subtypeVal_sphere p.1 _
+  have h₂ := inner_coe_mvfderiv_subtypeVal_sphere p.1 (Manifold.tangentSpaceProdEquiv p v').1
+  rw [mvfderiv_smul_coe_sphere_apply p hf, mvfderiv_smul_coe_sphere_apply p hf]
+  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right, h₁, h₂,
+    hu]
+  ring
 
 /-- The differential of polar coordinates `(u, t) ↦ e^t u`, the map underlying
 `TauCeti.sphereProdRealDiffeomorph`: a tangent vector `(v, a)` at `(u, t)` is sent to
@@ -169,6 +209,18 @@ theorem mvfderiv_exp_smul_coe_sphere_apply (p : sphere (0 : V) 1 × ℝ)
         NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 • (p.1 : V)) := by
   rw [mvfderiv_smul_coe_sphere_apply p (Real.differentiable_exp p.2), Real.deriv_exp, smul_add,
     smul_smul]
+
+/-- The differential of polar coordinates `(u, t) ↦ e^t u` is invertible. -/
+theorem isInvertible_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ) :
+    (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
+      (fun q : sphere (0 : V) 1 × ℝ ↦ Real.exp q.2 • (q.1 : V)) p).IsInvertible := by
+  -- Polar coordinates are the diffeomorphism `sphereProdRealDiffeomorph` onto the punctured space,
+  -- followed by its inclusion into `V`, whose differential is the identification
+  -- `tangentSpaceOpenEquiv`.
+  rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ Real.exp q.2 • (q.1 : V)) =
+    Subtype.val ∘ sphereProdRealDiffeomorph (n := n) from rfl]
+  exact isInvertible_mfderiv_comp (by rw [Manifold.mfderiv_subtype_val]; exact ⟨_, rfl⟩)
+    (sphereProdRealDiffeomorph.isInvertible_mfderiv (by simp))
 
 /-- **The cylinder `Sⁿ × ℝ` is orientable**: pull back the orientation of `V` along polar
 coordinates `TauCeti.sphereProdRealDiffeomorph`. -/
