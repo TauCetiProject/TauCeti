@@ -15,7 +15,8 @@ Terms in the group language with named coefficients denote words in the variable
 coefficient names. A reduced word has a canonical left-associated term representative, and
 translating that term back to a word recovers the original group element. In every group,
 evaluation of a term agrees with evaluation of its word. This translates atomic equalities into
-word equations.
+word equations. Words in the variables alone likewise have canonical terms in the group language
+without coefficients, evaluating to the same group elements.
 
 The term–word interpretation follows Kharlampovich and Myasnikov, *Implicit function theorem
 over free groups*, §2.3. Mathlib's `FreeGroup.lift` supplies the universal evaluation map.
@@ -199,5 +200,39 @@ example (a : A) (x : X) :
         FreeGroup.of (Sum.inr a) := by
   simp only [Term.toWord_mul, Term.toWord_inv, Term.toWord_coeff, Term.toWord_var]
   rfl
+
+/-! ### Words without coefficients -/
+
+/-- The term of the group language without coefficients for a positive or negative variable. -/
+private def varLetter (e : X × Bool) : Language.group.Term X :=
+  if e.2 then Language.Term.var e.1 else (Language.Term.var e.1)⁻¹
+
+/-- A canonical left-associated term of the group language without coefficients spelling the
+reduced word of a free-group element. -/
+noncomputable def wordTerm (w : FreeGroup X) : Language.group.Term X := by
+  classical
+  exact (FreeGroup.toWord w).foldl (fun t e => t * varLetter e) 1
+
+section WordTerm
+
+attribute [local instance] TauCeti.Group.structureOfGroup
+
+private theorem realize_foldl_varLetter {G : Type*} [Group G] (v : X → G)
+    (l : List (X × Bool)) (t : Language.group.Term X) :
+    (l.foldl (fun u e => u * varLetter e) t).realize v =
+      t.realize v * FreeGroup.lift v (FreeGroup.mk l) := by
+  induction l generalizing t with
+  | nil => simp [← FreeGroup.one_eq_mk]
+  | cons e es ih =>
+    rw [List.foldl_cons, ih, TauCeti.Group.realize_mul, FreeGroup.lift_mk, FreeGroup.lift_mk]
+    rcases e with ⟨x, _ | _⟩ <;> simp [varLetter, mul_assoc]
+
+/-- The canonical term of a word evaluates to the value of the word. -/
+@[simp] theorem realize_wordTerm {G : Type*} [Group G] (v : X → G) (w : FreeGroup X) :
+    (wordTerm w).realize v = FreeGroup.lift v w := by
+  classical
+  rw [wordTerm, realize_foldl_varLetter, TauCeti.Group.realize_one, one_mul, FreeGroup.mk_toWord]
+
+end WordTerm
 
 end FirstOrder.Language.group
