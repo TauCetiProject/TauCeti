@@ -35,8 +35,7 @@ particular, scalar multiplication by `𝔸¹_X` determines the grading of the re
 Both computations come from the algebra-level statement
 `ιTotal_symmetricAlgebraLift_comp_globalSectionsSmul`: multiplying a module map
 `φ : F ⟶ q_* 𝒪_T` by a global function `c` on `T` multiplies the algebra map `Sym F ⟶ q_* 𝒪_T`
-extending it by `cⁿ` on `Symⁿ F`. It is proved by induction on `n`, since `Sym F` is generated
-in degree one.
+extending it by `cⁿ` on `Symⁿ F`.
 
 ## Main declarations
 
