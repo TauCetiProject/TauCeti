@@ -16,7 +16,8 @@ This file collects facts about leading monomials of multivariate polynomials for
 multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, leading data of renamed polynomials, elimination orders and the
-lexicographic ones among them, and algebraic independence from leading monomials.
+lexicographic ones among them, leading exponents of substituted monomials, cancellation of
+substituted monic binomials, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -337,7 +338,55 @@ theorem coe_support_subset_of_lex_le [LinearOrder σ] [WellFoundedGT σ] {s : Se
 
 end Lex
 
+/-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
+exponents, with the multiplicities prescribed by the monomial. -/
+theorem degree_aeval_monomial_one [CommSemiring R] [NoZeroDivisors R]
+    {ι : Type*} {b : ι → MvPolynomial σ R} (hb : ∀ i, b i ≠ 0) (u : ι →₀ ℕ) :
+    m.degree (aeval b (monomial u (1 : R))) = Finsupp.linearCombination ℕ (m.degree ∘ b) u := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
+  rw [m.degree_prod fun i _ ↦ pow_ne_zero _ (hb i)]
+  simp [m.degree_pow, Finsupp.linearCombination_apply, Finsupp.sum]
+
+/-- Substituting monic polynomials into a coefficient-one monomial gives a monic polynomial. -/
+theorem monic_aeval_monomial_one [CommSemiring R] {ι : Type*}
+    {b : ι → MvPolynomial σ R} (hb : ∀ i, m.Monic (b i)) (u : ι →₀ ℕ) :
+    m.Monic (aeval b (monomial u (1 : R))) := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
+  exact Monic.prod fun i _ ↦ (hb i).pow
+
 variable [CommRing R] [NoZeroDivisors R]
+
+/-- The substituted value of a coefficient-one binomial relation of a monic family vanishes
+or has leading exponent strictly below the common exponent of its two terms. -/
+theorem aeval_monomial_sub_monomial_eq_zero_or_degree_lt
+    {ι : Type*} {b : ι → MvPolynomial σ R} [Nontrivial R]
+    (hb : ∀ i, m.Monic (b i)) (u v : ι →₀ ℕ)
+    (huv : Finsupp.linearCombination ℕ (m.degree ∘ b) u =
+      Finsupp.linearCombination ℕ (m.degree ∘ b) v) :
+    aeval b (monomial u (1 : R) - monomial v 1) = 0 ∨
+      m.degree (aeval b (monomial u (1 : R) - monomial v 1)) ≺[m]
+        Finsupp.linearCombination ℕ (m.degree ∘ b) u := by
+  have hb0 (i) := (hb i).ne_zero
+  have hu := m.monic_aeval_monomial_one hb u
+  have hv := m.monic_aeval_monomial_one hb v
+  have hdeg : m.degree (aeval b (monomial u (1 : R))) =
+      m.degree (aeval b (monomial v (1 : R))) := by
+    simpa only [m.degree_aeval_monomial_one hb0] using huv
+  have hlt := m.withBotDegree_sub_lt (q := aeval b (monomial v (1 : R))) hu.ne_zero
+    (by rw [(m.withBotDegree_eq_coe_degree_iff _).2 hu.ne_zero,
+      (m.withBotDegree_eq_coe_degree_iff _).2 hv.ne_zero, hdeg])
+    (by rw [hdeg, ← leadingCoeff, hu.leadingCoeff_eq_one, hv.leadingCoeff_eq_one])
+  rw [← map_sub] at hlt
+  rcases eq_or_ne (aeval b (monomial u (1 : R) - monomial v 1)) 0 with hz | hn
+  · exact Or.inl hz
+  · right
+    rw [(m.withBotDegree_eq_coe_degree_iff _).2 hn,
+      (m.withBotDegree_eq_coe_degree_iff _).2 hu.ne_zero,
+      toWithBotSyn_apply_coe, toWithBotSyn_apply_coe, WithBot.coe_lt_coe,
+      m.degree_aeval_monomial_one hb0] at hlt
+    exact hlt
 
 /-- **Algebraic independence from leading monomials.** Over a ring without zero divisors, a family
 `yᵢ` of polynomials in the variables `Xᵢ` whose leading monomial for a monomial order is `Xᵢ` is
