@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Basic
+public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
@@ -43,26 +44,6 @@ namespace IsQuotientCoveringMap
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k]
 
-/-- The associated local coefficient system, functorially in the representation.
-An abbreviation keeps the objects and maps identified with the existing coefficient API. -/
-abbrev associatedLocalSystemFunctor : Rep.{u} k G ⥤ LocalCoefficientSystem.{u, u, u} k B where
-  obj := hG.associatedLocalSystem k
-  map := hG.associatedLocalSystemMap k
-  map_id _ := hG.associatedLocalSystemMap_id k
-  map_comp _ _ := hG.associatedLocalSystemMap_comp k _ _
-
-/-- The associated-system functor has the existing associated local system as its object. -/
-@[simp]
-lemma associatedLocalSystemFunctor_obj (A : Rep.{u} k G) :
-    (hG.associatedLocalSystemFunctor k).obj A = hG.associatedLocalSystem k A :=
-  (rfl)
-
-/-- The associated-system functor acts by the existing coefficient maps. -/
-@[simp]
-lemma associatedLocalSystemFunctor_map {A A' : Rep.{u} k G} (f : A ⟶ A') :
-    (hG.associatedLocalSystemFunctor k).map f = hG.associatedLocalSystemMap k f :=
-  (rfl)
-
 private def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
     Rep.of (hG.fiberRepresentation k x) ≅ Rep.leftRegular k G := by
   letI := hG.mulActionFiber x
@@ -92,18 +73,20 @@ def associatedLocalSystemFiberIso (A : Rep.{u} k G) {x : FundamentalGroupoid B}
 /-- In sheet coordinates the class of `a ⊗ r[e']` is `r • A.ρ g⁻¹ a`,
 where `e' = g • e`. -/
 @[simp↓]
-lemma associatedLocalSystemFiberIso_hom_mk (A : Rep.{u} k G) {x : FundamentalGroupoid B}
+lemma associatedLocalSystemFiberIso_hom_coinvariantsTensorMk (A : Rep.{u} k G)
+    {x : FundamentalGroupoid B}
     (e e' : p ⁻¹' {x.as}) (a : A) (r : k) :
     (hG.associatedLocalSystemFiberIso k A e).hom.hom
         (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
           (Finsupp.single e' r)) =
       r • A.ρ (hG.fiberEquivGroup e e')⁻¹ a := by
-  -- The tensor-coinvariant functor acts on tensor classes by its second factor.
-  -- Normalize the composite isomorphism to this elementwise presentation.
-  change Representation.coinvariantsTprodLeftRegularLEquiv A.ρ
-    (Rep.coinvariantsTensorMk A (Rep.leftRegular k G) a
-      ((fiberRepresentationIsoLeftRegular hG k e).hom.hom (Finsupp.single e' r))) = _
-  rw [fiberRepresentationIsoLeftRegular_hom_single]
+  -- Normalize the implicit fibre object and its instances, so the isomorphism's source
+  -- matches the tensor class when rewriting the composite and the functor map.
+  dsimp +instances only [associatedLocalSystemFiberIso, associatedLocalSystem,
+    permutationRepFunctor, Functor.comp_obj]
+  rw [Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply, Functor.mapIso_hom,
+    Rep.coinvariantsTensor_obj_map_coinvariantsTensorMk,
+    fiberRepresentationIsoLeftRegular_hom_single]
   simp [Rep.coinvariantsTensorMk]
 
 /-- The inverse fibre identification sends `a` to the tensor class using the chosen sheet. -/
@@ -129,7 +112,8 @@ lemma associatedLocalSystemFiberIso_hom_naturality {A A' : Rep.{u} k G} (f : A �
   ext a
   simp only [Iso.inv_hom_id_assoc, ModuleCat.hom_comp, LinearMap.comp_apply]
   rw [associatedLocalSystemFiberIso_inv_apply,
-    associatedLocalSystemMap_app_coinvariantsTensorMk, associatedLocalSystemFiberIso_hom_mk]
+    associatedLocalSystemMap_app_coinvariantsTensorMk,
+    associatedLocalSystemFiberIso_hom_coinvariantsTensorMk]
   simp
 
 /-- Evaluation of associated local systems at a point is naturally isomorphic to forgetting

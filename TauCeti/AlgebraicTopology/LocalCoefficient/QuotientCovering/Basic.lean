@@ -182,4 +182,24 @@ theorem associatedLocalSystemMap_comp (f : A ⟶ A') (f' : A' ⟶ A'') :
       hG.associatedLocalSystemMap k f ≫ hG.associatedLocalSystemMap k f' :=
   NatTrans.ext <| funext fun _ ↦ NatTrans.congr_app ((Rep.coinvariantsTensor k G).map_comp f f') _
 
+/-- The associated local coefficient system, functorially in the representation.
+Reducibility lets coefficient maps use their original source and target types without transports. -/
+abbrev associatedLocalSystemFunctor : Rep.{u} k G ⥤ LocalCoefficientSystem.{u, u, u} k B where
+  obj := hG.associatedLocalSystem k
+  map := hG.associatedLocalSystemMap k
+  map_id _ := hG.associatedLocalSystemMap_id k
+  map_comp _ _ := hG.associatedLocalSystemMap_comp k _ _
+
+/-- The associated-system functor has the existing associated local system as its object. -/
+@[simp]
+lemma associatedLocalSystemFunctor_obj (A : Rep.{u} k G) :
+    (hG.associatedLocalSystemFunctor k).obj A = hG.associatedLocalSystem k A :=
+  (rfl)
+
+/-- The associated-system functor acts by the existing coefficient maps. -/
+@[simp]
+lemma associatedLocalSystemFunctor_map {A A' : Rep.{u} k G} (f : A ⟶ A') :
+    (hG.associatedLocalSystemFunctor k).map f = hG.associatedLocalSystemMap k f :=
+  (rfl)
+
 end IsQuotientCoveringMap
