@@ -34,8 +34,8 @@ example : ¬ IsIntegrallyClosedIn ℝ (RatFunc ℂ) := by
   rw [Divisor.dim_zero_real_ratFunc_complex] at hdim
   norm_num at hdim
 
--- Use restriction of complex scalars, matching the real module structure on the tensor factor.
-attribute [local instance] Algebra.complexToReal
+-- Use the module from the existing real algebra structure in the tensor product.
+attribute [local instance high] Algebra.toModule
 
 example : ¬ IsDomain (ℂ ⊗[ℝ] RatFunc ℂ) :=
   not_isDomain_complex_tensorProduct (RatFunc ℂ)
