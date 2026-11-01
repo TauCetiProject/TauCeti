@@ -256,7 +256,7 @@ theorem centralizer_gl2NonSplitTorusHom (hx : (x : E) ∉ Set.range (algebraMap 
     -- The commuting matrix is multiplication by `a + b x`, which is nonzero as it is invertible.
     have hmat : (h : Matrix (Fin 2) (Fin 2) F) = Algebra.leftMulMatrix (nonSplitTorusBasis F E)
         (algebraMap F E a + b • (x : E)) := by
-      rw [map_add, map_smul, leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
+      rw [map_add, map_smul, Algebra.leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
       exact hab
     have hy0 : algebraMap F E a + b • (x : E) ≠ 0 := by
       intro h0

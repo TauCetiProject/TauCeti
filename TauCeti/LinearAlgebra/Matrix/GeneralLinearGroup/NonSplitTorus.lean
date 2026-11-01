@@ -238,7 +238,7 @@ theorem notMem_range_scalar_gl2NonSplitTorusHom {x : Eˣ}
       Set.range (Matrix.scalar (Fin 2)) := by
   rintro ⟨c, hc⟩
   refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E) ?_⟩
-  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
+  rw [Algebra.leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
   exact hc
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
