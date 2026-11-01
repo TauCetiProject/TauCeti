@@ -33,8 +33,8 @@ then removes the constant `D`.
 
 ## Main results
 
-* `TauCeti.apply_star_mul_star_X_mul_X_mul_le` — `φ (p* Xᵢ* Xᵢ p) ≤ R ^ 2 * φ (p* p)`.
-* `TauCeti.apply_star_mul_X_mul_star_X_mul_le` — `φ (p* Xᵢ Xᵢ* p) ≤ R ^ 2 * φ (p* p)`.
+* `TauCeti.map_star_mul_star_X_mul_X_mul_le` — `φ (p* Xᵢ* Xᵢ p) ≤ R ^ 2 * φ (p* p)`.
+* `TauCeti.map_star_mul_X_mul_star_X_mul_le` — `φ (p* Xᵢ Xᵢ* p) ≤ R ^ 2 * φ (p* p)`.
 
 ## References
 
@@ -52,7 +52,7 @@ variable {ι : Type*} {φ : StarPolynomial ℂ ι →ₗ[ℂ] ℂ} {C R : ℝ}
 
 /-- For the square `star g * g` of a letter `g`, the moment of `u * (star g * g) ^ m * v` for
 words `u` and `v` is the moment of a word of length `length u + 2 * m + length v`. -/
-private theorem norm_apply_list_prod_mul_pow_mul_list_prod_le
+private theorem norm_map_list_prod_mul_pow_mul_list_prod_le
     (hR : ∀ w : List (ι × Bool), ‖φ (w.map (withStar X)).prod‖ ≤ C * R ^ w.length)
     (x : ι × Bool)
     (m : ℕ) (u v : List (ι × Bool)) :
@@ -72,7 +72,7 @@ private theorem norm_apply_list_prod_mul_pow_mul_list_prod_le
     ring
 
 /-- The moments `φ (u * (star g * g) ^ m * v)` grow at most like `D * (R ^ 2) ^ m`. -/
-private theorem exists_norm_apply_mul_pow_mul_le
+private theorem exists_norm_map_mul_pow_mul_le
     (hR : ∀ w : List (ι × Bool), ‖φ (w.map (withStar X)).prod‖ ≤ C * R ^ w.length)
     (x : ι × Bool)
     (u v : StarPolynomial ℂ ι) :
@@ -83,7 +83,7 @@ private theorem exists_norm_apply_mul_pow_mul_le
   | mem_mem u v hu hv =>
     obtain ⟨u, rfl⟩ := hu
     obtain ⟨v, rfl⟩ := hv
-    exact ⟨_, fun m ↦ norm_apply_list_prod_mul_pow_mul_list_prod_le hR x m u v⟩
+    exact ⟨_, fun m ↦ norm_map_list_prod_mul_pow_mul_list_prod_le hR x m u v⟩
   | zero_left v _ => exact ⟨0, by simp⟩
   | zero_right u _ => exact ⟨0, by simp⟩
   | add_left u₁ u₂ v _ _ _ h₁ h₂ =>
@@ -111,31 +111,31 @@ private theorem exists_norm_apply_mul_pow_mul_le
 
 /-- The bound `φ (p* g* g p) ≤ R ^ 2 * φ (p* p)` for a letter `g`, a generator or the adjoint of
 a generator. -/
-private theorem apply_star_mul_star_withStar_mul_withStar_mul_le
+private theorem map_star_mul_star_withStar_mul_withStar_mul_le
     (hφ : ∀ p, 0 ≤ φ (star p * p))
     (hR : ∀ w : List (ι × Bool), ‖φ (w.map (withStar X)).prod‖ ≤ C * R ^ w.length)
     (x : ι × Bool)
     (p : StarPolynomial ℂ ι) :
     φ (star p * star (withStar X x) * withStar X x * p) ≤ (R : ℂ) ^ 2 * φ (star p * p) := by
-  obtain ⟨D, hD⟩ := exists_norm_apply_mul_pow_mul_le hR x (star p) p
+  obtain ⟨D, hD⟩ := exists_norm_map_mul_pow_mul_le hR x (star p) p
   exact_mod_cast φ.map_star_mul_star_mul_mul_le_of_forall_pow hφ _ p (sq_nonneg R) hD
 
 /-- If a positive functional on the star polynomials satisfies `‖φ (w)‖ ≤ C * R ^ length w` on
 every word `w` in the generators and their adjoints, then `φ (p* Xᵢ* Xᵢ p) ≤ R ^ 2 * φ (p* p)` for
 every star polynomial `p`: left multiplication by `Xᵢ` has norm at most `R` on the GNS space. -/
-theorem apply_star_mul_star_X_mul_X_mul_le (hφ : ∀ p, 0 ≤ φ (star p * p))
+theorem map_star_mul_star_X_mul_X_mul_le (hφ : ∀ p, 0 ≤ φ (star p * p))
     (hR : ∀ w : List (ι × Bool), ‖φ (w.map (withStar X)).prod‖ ≤ C * R ^ w.length)
     (i : ι) (p : StarPolynomial ℂ ι) :
     φ (star p * star (X i) * X i * p) ≤ (R : ℂ) ^ 2 * φ (star p * p) := by
-  simpa using apply_star_mul_star_withStar_mul_withStar_mul_le hφ hR (i, false) p
+  simpa using map_star_mul_star_withStar_mul_withStar_mul_le hφ hR (i, false) p
 
 /-- If a positive functional on the star polynomials satisfies `‖φ (w)‖ ≤ C * R ^ length w` on
 every word `w` in the generators and their adjoints, then `φ (p* Xᵢ Xᵢ* p) ≤ R ^ 2 * φ (p* p)` for
 every star polynomial `p`: left multiplication by `Xᵢ*` has norm at most `R` on the GNS space. -/
-theorem apply_star_mul_X_mul_star_X_mul_le (hφ : ∀ p, 0 ≤ φ (star p * p))
+theorem map_star_mul_X_mul_star_X_mul_le (hφ : ∀ p, 0 ≤ φ (star p * p))
     (hR : ∀ w : List (ι × Bool), ‖φ (w.map (withStar X)).prod‖ ≤ C * R ^ w.length)
     (i : ι) (p : StarPolynomial ℂ ι) :
     φ (star p * X i * star (X i) * p) ≤ (R : ℂ) ^ 2 * φ (star p * p) := by
-  simpa using apply_star_mul_star_withStar_mul_withStar_mul_le hφ hR (i, true) p
+  simpa using map_star_mul_star_withStar_mul_withStar_mul_le hφ hR (i, true) p
 
 end TauCeti

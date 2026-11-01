@@ -88,7 +88,8 @@ theorem star_map_star_mul (hφ : ∀ x, 0 ≤ φ (star x * x)) (x y : A) :
 /-- The positive semidefinite sesquilinear form `(x, y) ↦ φ (star x * y)` of a positive
 functional, as a `PreInnerProductSpace.Core`. Its quotient by the null space is the pre-Hilbert
 space of the GNS construction of `φ`. -/
-abbrev starMulCore (hφ : ∀ x, 0 ≤ φ (star x * x)) : PreInnerProductSpace.Core ℂ A where
+@[instance_reducible]
+def starMulCore (hφ : ∀ x, 0 ≤ φ (star x * x)) : PreInnerProductSpace.Core ℂ A where
   inner x y := φ (star x * y)
   conj_inner_symm x y := φ.star_map_star_mul hφ y x
   re_inner_nonneg x := (Complex.nonneg_iff.1 (hφ x)).1
@@ -100,7 +101,7 @@ abbrev starMulCore (hφ : ∀ x, 0 ≤ φ (star x * x)) : PreInnerProductSpace.C
 @[simp]
 theorem starMulCore_inner (hφ : ∀ x, 0 ≤ φ (star x * x)) (x y : A) :
     (φ.starMulCore hφ).inner x y = φ (star x * y) :=
-  rfl
+  (rfl)
 
 /-- The **Cauchy–Schwarz inequality** for a positive functional on a star algebra over `ℂ`. -/
 theorem norm_map_star_mul_sq_le (hφ : ∀ x, 0 ≤ φ (star x * x)) (x y : A) :
