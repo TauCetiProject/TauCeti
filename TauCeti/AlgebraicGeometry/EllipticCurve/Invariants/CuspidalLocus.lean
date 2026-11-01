@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.IrreducibleQuadratic
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 public import TauCeti.RingTheory.Ideal.Height
 
 /-!
@@ -31,7 +32,8 @@ on `D(c₄)`, written `a / c₄ᵐ`, and a function on `D(Δ)`, written `b / Δ�
 overlap come from a polynomial in the Weierstrass coefficients. So a regular function on
 the compactified locus `D(c₄) ∪ D(Δ)` extends over the whole atlas. Every change of variables
 multiplies `c₄` and `Δ` by units, so the ideal `(c₄, Δ)` and hence the cuspidal locus are
-stable under the coordinate-change group.
+stable under the coordinate-change group (`WeierstrassCurve.span_variableChange_c₄_Δ`, proved
+over any commutative ring in `TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic`).
 
 ## Main results
 
@@ -44,8 +46,6 @@ stable under the coordinate-change group.
   one.
 * `WeierstrassCurve.Universal.exists_eq_c₄_pow_mul_and_eq_Δ_pow_mul`: functions on `D(c₄)` and
   on `D(Δ)` which agree on the overlap extend over the whole atlas.
-* `WeierstrassCurve.span_variableChange_c₄_Δ`: the ideal `(c₄, Δ)` is invariant under changes
-  of variables.
 
 ## References
 
@@ -60,14 +60,6 @@ public section
 noncomputable section
 
 namespace WeierstrassCurve
-
-/-- A change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal they
-generate: the cuspidal locus `V(c₄, Δ)` is stable under the coordinate-change group. -/
-theorem span_variableChange_c₄_Δ {R : Type*} [CommRing R] (W : WeierstrassCurve R)
-    (C : VariableChange R) : Ideal.span {(C • W).c₄, (C • W).Δ} = Ideal.span {W.c₄, W.Δ} := by
-  rw [variableChange_c₄, variableChange_Δ, Ideal.span_insert, Ideal.span_insert,
-    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 4),
-    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 12)]
 
 namespace Universal
 
