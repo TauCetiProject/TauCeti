@@ -114,22 +114,6 @@ theorem toPrefunctor_trans (f : Iso G H) (g : Iso H K) :
   exact (@Quiver.Hom.cast_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _).symm.trans
     (heq_of_eq (mapHom_trans f g a))
 
-private theorem cast_mapPath_eq_of_eq
-    {f g : @Prefunctor G.vertexSet (Quiver.mk G.BidirectedHom)
-      H.vertexSet (Quiver.mk H.BidirectedHom)} (h : f = g)
-    {x y : G.vertexSet} (p : ArrowWalk G.BidirectedHom x y) :
-    @Quiver.Path.cast H.vertexSet (Quiver.mk H.BidirectedHom) _ _ _ _
-      (congrArg (fun k ↦ @Prefunctor.obj G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) k x) h)
-      (congrArg (fun k ↦ @Prefunctor.obj G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) k y) h)
-      (@Prefunctor.mapPath G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) f x y p) =
-        @Prefunctor.mapPath G.vertexSet (Quiver.mk G.BidirectedHom)
-          H.vertexSet (Quiver.mk H.BidirectedHom) g x y p := by
-  subst g
-  rfl
-
 /-- Transport a directed walk of the bidirected arrow family. -/
 def mapPath (f : Iso G H) {x y : G.vertexSet} (p : ArrowWalk G.BidirectedHom x y) :
     ArrowWalk H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) :=
@@ -159,7 +143,9 @@ theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
       (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapPath p) = p :=
   -- The public prefunctor law identifies this transport with the identity prefunctor.
   by
-    exact (cast_mapPath_eq_of_eq (toPrefunctor_refl G) p).trans
+    exact (@Prefunctor.cast_mapPath_eq_of_eq G.vertexSet G.vertexSet
+      (Quiver.mk G.BidirectedHom) (Quiver.mk G.BidirectedHom) _ _
+      (toPrefunctor_refl G) _ _ p).trans
       (@Prefunctor.mapPath_id G.vertexSet (Quiver.mk G.BidirectedHom) x y p)
 
 /-- Transport along a composite isomorphism applies the two directed-walk transports in order. -/
@@ -171,7 +157,9 @@ theorem mapPath_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
         g.mapPath (f.mapPath p) :=
   -- The public prefunctor law identifies this transport with composite prefunctor transport.
   by
-    exact (cast_mapPath_eq_of_eq (toPrefunctor_trans f g) p).trans
+    exact (@Prefunctor.cast_mapPath_eq_of_eq G.vertexSet K.vertexSet
+      (Quiver.mk G.BidirectedHom) (Quiver.mk K.BidirectedHom) _ _
+      (toPrefunctor_trans f g) _ _ p).trans
       (@Prefunctor.mapPath_comp_apply G.vertexSet (Quiver.mk G.BidirectedHom)
           H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor
           K.vertexSet (Quiver.mk K.BidirectedHom) g.toPrefunctor x y p)
@@ -271,14 +259,6 @@ theorem mapWalk_cons (f : Iso G H) {x y z : G.vertexSet}
     Walk.nil_append, Graph.IsLink.toWalk_eq_cons, Walk.cons_append]
   congr 1
 
-private theorem mapWalk_cons' (f : Iso G H) {x y z : α} (e : β) (h : G.IsLink e x y)
-    (p : G.Walk y z) (hx : x ∈ G.vertexSet) (hz : z ∈ G.vertexSet) :
-    f.mapWalk (x := ⟨x, hx⟩) (y := ⟨z, hz⟩) (.cons e h p) =
-      .cons (f.edgeEquiv ⟨e, h.edge_mem⟩) (f.map_isLink h)
-        (f.mapWalk (x := ⟨y, h.right_mem⟩) (y := ⟨z, hz⟩) p) :=
-  mapWalk_cons f (x := (⟨x, hx⟩ : G.vertexSet)) (y := ⟨y, h.right_mem⟩)
-    (z := ⟨z, hz⟩) e h p
-
 /-- Transporting a one-edge walk gives the one-edge walk of the transported link. -/
 @[simp]
 theorem mapWalk_toWalk (f : Iso G H) {x y : G.vertexSet} {e : β}
@@ -309,7 +289,8 @@ private theorem mapWalk_reverse_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
       have happ := mapWalk_append f
         (x := (⟨z, hy⟩ : G.vertexSet)) (y := ⟨y, h.right_mem⟩) (z := ⟨x, hx⟩)
         p.reverse h.symm.toWalk
-      have hc := mapWalk_cons' f e h p hx hy
+      have hc := mapWalk_cons f (x := (⟨x, hx⟩ : G.vertexSet))
+        (y := ⟨y, h.right_mem⟩) (z := ⟨z, hy⟩) e h p
       rw [Walk.reverse_cons, happ, ih h.right_mem hy, hc, Walk.reverse_cons]
       rw [mapWalk_toWalk]
 
@@ -392,7 +373,8 @@ private theorem edges_mapWalk_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
   induction p with
   | nil => simp
   | @cons x y z e h p ih =>
-      have hc := mapWalk_cons' f e h p hx hy
+      have hc := mapWalk_cons f (x := (⟨x, hx⟩ : G.vertexSet))
+        (y := ⟨y, h.right_mem⟩) (z := ⟨z, hy⟩) e h p
       simp [hc, ih h.right_mem hy]
 
 /-- The edges of a transported walk are the pointwise image of the original traversed edges. -/
