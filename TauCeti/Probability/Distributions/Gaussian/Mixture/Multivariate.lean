@@ -11,6 +11,7 @@ public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Moments.Mixture
 
 /-!
 # Finite mixtures of multivariate Gaussian laws
@@ -151,19 +152,23 @@ theorem multivariateGaussianMixturePDF_eq_ofReal (p : StdSimplex ℝ≥0 κ)
       ENNReal.ofReal (multivariateGaussianMixturePDFReal p m S x) :=
   (rfl)
 
+omit [Fintype κ] [Fintype ι] [DecidableEq ι] in
+/-- A component without positive-definite covariance has zero weight when every positive-weight
+component is positive definite. -/
+private theorem weights_eq_zero_of_not_posDef (hS : ∀ k, 0 < p.weights k → (S k).PosDef) {k : κ}
+    (hk : ¬(S k).PosDef) : p.weights k = 0 :=
+  nonpos_iff_eq_zero.mp (not_lt.mp fun hw ↦ hk (hS k hw))
+
 /-- If every positive-weight component has positive-definite covariance, the mixture density is
 the weighted sum of all component densities. -/
-theorem multivariateGaussianMixturePDFReal_eq_sum (hS : ∀ k, 0 < p.weights k → (S k).PosDef)
-    (x : EuclideanSpace ℝ ι) :
+theorem multivariateGaussianMixturePDFReal_eq_sum_of_posDef
+    (hS : ∀ k, 0 < p.weights k → (S k).PosDef) (x : EuclideanSpace ℝ ι) :
     multivariateGaussianMixturePDFReal p m S x =
       ∑ k, (p.weights k : ℝ) * multivariateGaussianPDFReal (m k) (S k) x := by
   classical
   rw [multivariateGaussianMixturePDFReal_def]
   refine Finset.sum_subset (Finset.filter_subset _ _) fun k _ hk ↦ ?_
-  have hw : p.weights k = 0 := by
-    by_contra hw
-    exact hk (Finset.mem_filter.mpr ⟨Finset.mem_univ k, hS k (pos_iff_ne_zero.mpr hw)⟩)
-  simp [hw]
+  simp [weights_eq_zero_of_not_posDef hS (by simpa using hk)]
 
 open Classical in
 /-- The extended mixture density as a weighted sum over the positive-definite components. -/
@@ -188,10 +193,7 @@ theorem multivariateGaussianMixturePDF_eq_sum_of_posDef
   classical
   rw [multivariateGaussianMixturePDF_eq_sum]
   refine Finset.sum_subset (Finset.filter_subset _ _) fun k _ hk ↦ ?_
-  have hw : p.weights k = 0 := by
-    by_contra hw
-    exact hk (Finset.mem_filter.mpr ⟨Finset.mem_univ k, hS k (pos_iff_ne_zero.mpr hw)⟩)
-  simp [hw]
+  simp [weights_eq_zero_of_not_posDef hS (by simpa using hk)]
 
 /-- The real-valued mixture density is nonnegative. -/
 theorem multivariateGaussianMixturePDFReal_nonneg (p : StdSimplex ℝ≥0 κ)
@@ -278,9 +280,7 @@ theorem multivariateGaussianMixtureMeasure_eq_withDensity
   have hsingular : ∑ k with ¬(S k).PosDef,
       (p.weights k : ℝ≥0∞) • multivariateGaussian (m k) (S k) = 0 := by
     refine Finset.sum_eq_zero fun k hk ↦ ?_
-    by_cases hwk : p.weights k = 0
-    · simp [hwk]
-    · exact absurd (hS k (pos_iff_ne_zero.mpr hwk)) (Finset.mem_filter.mp hk).2
+    simp [weights_eq_zero_of_not_posDef hS (Finset.mem_filter.mp hk).2]
   rw [multivariateGaussianMixtureMeasure_eq_add_withDensity p m S, hsingular, zero_add]
 
 /-- The Radon–Nikodym derivative of a multivariate Gaussian mixture with respect to Lebesgue
@@ -445,52 +445,23 @@ theorem covMatrix_multivariateGaussianMixtureMeasure
     covMatrix (multivariateGaussianMixtureMeasure p m S) =
       ∑ k, (p.weights k : ℝ) • (S k + Matrix.vecMulVec
         (m k - ∑ j, (p.weights j : ℝ) • m j) (m k - ∑ j, (p.weights j : ℝ) • m j)) := by
-  set μ := multivariateGaussianMixtureMeasure p m S
+  let _ : MeasurableSpace κ := ⊤
   have hmem := memLp_id_multivariateGaussianMixtureMeasure p m S (q := 2) ENNReal.ofNat_ne_top
-  have hcoord (i : ι) : MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) 2 μ := by
-    simpa only [id_eq] using hmem.eval_piLp i
-  have hw : ∑ k, (p.weights k : ℝ) = 1 := by exact_mod_cast p.total_of_fintype
-  have hmean (i : ι) : ∫ x, x i ∂μ = ∑ k, (p.weights k : ℝ) * m k i := by
-    rw [integral_multivariateGaussianMixtureMeasure (MemLp.integrable one_le_two (hcoord i))]
-    simp
-  have hsecond (i j : ι) :
-      ∫ x, x i * x j ∂μ = ∑ k, (p.weights k : ℝ) * (S k i j + m k i * m k j) := by
-    rw [integral_multivariateGaussianMixtureMeasure (f := fun x ↦ x i * x j)
-      ((hcoord i).integrable_mul (hcoord j))]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    by_cases hk : p.weights k = 0
-    · simp [hk]
-    · rw [smul_eq_mul, integral_eval_mul_eval_multivariateGaussian (m k)
-        (hS k (pos_iff_ne_zero.mpr hk))]
+  have hcoord (i : ι) : MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) 2
+      ((categoricalMeasure p).bind fun k ↦ multivariateGaussian (m k) (S k)) := by
+    simpa only [id_eq, multivariateGaussianMixtureMeasure_eq_bind] using hmem.eval_piLp i
   ext i j
-  rw [covMatrix_apply, covariance_eq_sub (hcoord i) (hcoord j)]
-  simp only [Pi.mul_apply, hmean, hsecond]
-  simp only [Matrix.sum_apply, Matrix.smul_apply, Matrix.add_apply, Matrix.vecMulVec_apply,
-    smul_eq_mul, WithLp.ofLp_sub, WithLp.ofLp_sum, WithLp.ofLp_smul, Pi.sub_apply,
+  rw [covMatrix_apply, multivariateGaussianMixtureMeasure_eq_bind,
+    covariance_bind Measurable.of_discrete (.of_forall fun _ ↦ inferInstance) (hcoord i)
+      (hcoord j), covariance, integral_categoricalMeasure, integral_categoricalMeasure]
+  simp only [integral_eval_multivariateGaussian, integral_categoricalMeasure, smul_eq_mul,
+    ← Finset.sum_add_distrib, ← mul_add, Matrix.sum_apply, Matrix.smul_apply, Matrix.add_apply,
+    Matrix.vecMulVec_apply, WithLp.ofLp_sub, WithLp.ofLp_sum, WithLp.ofLp_smul, Pi.sub_apply,
     Finset.sum_apply, Pi.smul_apply]
-  set a := ∑ k, (p.weights k : ℝ) * m k i
-  set b := ∑ k, (p.weights k : ℝ) * m k j
-  have ha_sum : ∑ k, (p.weights k : ℝ) * (a * m k j) = a * b := by
-    calc
-      _ = a * ∑ k, (p.weights k : ℝ) * m k j := by
-        rw [Finset.mul_sum]
-        apply Finset.sum_congr rfl
-        intro k _
-        ring
-      _ = a * b := by rfl
-  have hb_sum : ∑ k, (p.weights k : ℝ) * (m k i * b) = a * b := by
-    calc
-      _ = (∑ k, (p.weights k : ℝ) * m k i) * b := by
-        rw [Finset.sum_mul]
-        apply Finset.sum_congr rfl
-        intro k _
-        ring
-      _ = a * b := by rfl
-  have hab_sum : ∑ k, (p.weights k : ℝ) * (a * b) = a * b := by
-    rw [← Finset.sum_mul, hw, one_mul]
-  simp only [mul_add, mul_sub, sub_mul, Finset.sum_add_distrib, Finset.sum_sub_distrib]
-  rw [ha_sum, hb_sum, hab_sum]
-  ring
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  by_cases hk : p.weights k = 0
+  · simp [hk]
+  · rw [covariance_eval_multivariateGaussian (hS k (pos_iff_ne_zero.mpr hk))]
 
 /-- The mean of a random vector whose law is a multivariate Gaussian mixture. -/
 theorem integral_of_hasLaw_multivariateGaussianMixtureMeasure
