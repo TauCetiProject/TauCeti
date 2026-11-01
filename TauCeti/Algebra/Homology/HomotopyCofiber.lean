@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Abelian.Refinements
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Homotopy
@@ -47,6 +48,11 @@ complex. Both cones sit in the degreewise split short exact sequences
 last term is `F` shifted by one degree with negated differential; the same sequence computes the
 torsion of a mapping cone of based complexes.
 
+In an abelian category, the splitting hypothesis of the first paragraph can be dropped up to
+quasi-isomorphism: for every short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes, the map
+`homotopyCofiber.desc f g` from the mapping cone of `f` to `X₃` is a quasi-isomorphism. Its kernel
+is the contractible mapping cone of `𝟙 X₁`.
+
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.Splitting.homotopyCofiberHomotopyEquiv`: the homotopy equivalence
@@ -71,9 +77,13 @@ torsion of a mapping cone of based complexes.
   `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` is short exact.
 * `CategoryTheory.ShortComplex.Splitting.quasiIso_homotopyCofiberDesc`: the map from the mapping
   cone of `S.f` to `S.X₃` induced by `S.g` is a quasi-isomorphism.
+* `CategoryTheory.ShortComplex.ShortExact.quasiIso_homotopyCofiberDesc`: the same holds for every
+  short exact sequence of complexes in an abelian category, split or not.
 * `HomologicalComplex.homotopyCofiber.inr_mapArrowHom`,
   `HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f`,
-  `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`: the components of a map of cones.
+  `HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f`,
+  `HomologicalComplex.homotopyCofiber.mapArrowHom_f_sndX`,
+  `HomologicalComplex.homotopyCofiber.mapArrowHom_f_fstX`: the components of a map of cones.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`: a map of mapping cones induced by
   quasi-isomorphisms is a quasi-isomorphism.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom_id`: any morphism induces a
@@ -320,6 +330,22 @@ lemma inlX_mapArrowHom_f (i j : ι) (hij : c.Rel j i) :
     inlX φ i j hij ≫ (mapArrowHom φ φ' hc α).f j = α.left.f i ≫ inlX φ' i j hij := by
   simp [mapArrowHom, inrCompHomotopy_hom _ _ _ _ hij]
 
+/-- The projection of the map of cones induced by `α` onto the summand `G'` is `α.right` after
+the projection onto `G`. -/
+@[reassoc (attr := simp)]
+lemma mapArrowHom_f_sndX (i : ι) :
+    (mapArrowHom φ φ' hc α).f i ≫ sndX φ' i = sndX φ i ≫ α.right.f i := by
+  by_cases hi : c.Rel i (c.next i)
+  · exact ext_from_X φ _ i hi (by simp) (by simp)
+  · exact ext_from_X' φ i hi (by simp)
+
+/-- The projection of the map of cones induced by `α` onto the summand `F'` is `α.left` after
+the projection onto `F`. -/
+@[reassoc (attr := simp)]
+lemma mapArrowHom_f_fstX (i j : ι) (hij : c.Rel i j) :
+    (mapArrowHom φ φ' hc α).f i ≫ fstX φ' i j hij = fstX φ i j hij ≫ α.left.f j :=
+  ext_from_X φ j i hij (by simp) (by simp)
+
 end MapArrowHom
 
 section Identity
@@ -411,3 +437,72 @@ lemma quasiIso_mapArrowHom (α : Arrow.mk φ ⟶ Arrow.mk φ') [QuasiIso α.left
 end QuasiIso
 
 end HomologicalComplex.homotopyCofiber
+
+/-! ### The mapping cone of the first map of a short exact sequence -/
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open HomologicalComplex HomologicalComplex.homotopyCofiber
+
+variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι} [DecidableRel c.Rel]
+  {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) (hc : ∀ j, ∃ i, c.Rel i j)
+
+include hS hc in
+/-- **The mapping cone of a monomorphism computes its cokernel.** For a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes, the map from the mapping cone of `X₁ ⟶ X₂` to `X₃`
+induced by `X₂ ⟶ X₃` is a quasi-isomorphism. This is the analogue for `homotopyCofiber`, and any
+complex shape in which every index is the target of a relation, of Mathlib's
+`CochainComplex.mappingCone.quasiIso_descShortComplex`.
+
+The map is the cokernel of the degreewise monomorphism from the contractible mapping cone of
+`𝟙 X₁` induced by `X₁ ⟶ X₂`, so its kernel is acyclic. -/
+theorem quasiIso_homotopyCofiberDesc :
+    _root_.QuasiIso (desc S.f S.g (_root_.Homotopy.ofEq S.zero)) := by
+  let α : Arrow.mk (𝟙 S.X₁) ⟶ Arrow.mk S.f := Arrow.homMk (𝟙 S.X₁) S.f (by simp)
+  have hd (i : ι) : (desc S.f S.g (_root_.Homotopy.ofEq S.zero)).f i = sndX S.f i ≫ S.g.f i := by
+    by_cases hi : c.Rel i (c.next i)
+    · exact ext_from_X S.f _ i hi (by simp) (by simp)
+    · exact ext_from_X' S.f i hi (by simp)
+  have hz (i : ι) : S.f.f i ≫ S.g.f i = 0 := by
+    rw [← comp_f, S.zero, zero_f]
+  -- The short complex `cone(𝟙 X₁) ⟶ cone(X₁ ⟶ X₂) ⟶ X₃`.
+  let T := ShortComplex.mk (mapArrowHom (𝟙 S.X₁) S.f hc α)
+    (desc S.f S.g (_root_.Homotopy.ofEq S.zero)) (by
+      ext i
+      by_cases hi : c.Rel i (c.next i)
+      · exact ext_from_X (𝟙 S.X₁) _ i hi (by simp [α, hd]) (by simp [α, hd, hz])
+      · exact ext_from_X' (𝟙 S.X₁) i hi (by simp [α, hd, hz]))
+  have hT : T.ShortExact := by
+    refine shortExact_of_degreewise_shortExact _ fun i ↦ ?_
+    have hSi := (shortExact_iff_degreewise_shortExact S).1 hS i
+    have : Mono (S.f.f i) := hSi.mono_f
+    have : Epi (S.g.f i) := hSi.epi_g
+    have hf : Mono ((mapArrowHom (𝟙 S.X₁) S.f hc α).f i) := by
+      rw [Preadditive.mono_iff_cancel_zero]
+      intro A x hx
+      have h₂ : x ≫ sndX (𝟙 S.X₁) i = 0 := by
+        rw [← cancel_mono (S.f.f i)]
+        simpa [α] using hx =≫ sndX S.f i
+      by_cases hi : c.Rel i (c.next i)
+      · refine ext_to_X (𝟙 S.X₁) i _ hi ?_ (by simpa using h₂)
+        simpa [α] using hx =≫ fstX S.f i _ hi
+      · exact ext_to_X' (𝟙 S.X₁) i hi (by simpa using h₂)
+    have hg : Epi ((desc S.f S.g (_root_.Homotopy.ofEq S.zero)).f i) :=
+      epi_of_epi_fac (inrX_desc_f _ _ _ i)
+    refine ShortComplex.ShortExact.mk' ?_ hf hg
+    rw [ShortComplex.exact_iff_exact_up_to_refinements]
+    intro A x₂ hx₂
+    obtain ⟨A', π, _, y, hy⟩ := hSi.exact.exact_up_to_refinements (x₂ ≫ sndX S.f i)
+      (by simpa [T, hd] using hx₂)
+    by_cases hi : c.Rel i (c.next i)
+    · refine ⟨A', π, inferInstance,
+        π ≫ x₂ ≫ fstX S.f i _ hi ≫ inlX (𝟙 S.X₁) _ i hi + y ≫ inrX (𝟙 S.X₁) i, ?_⟩
+      apply ext_to_X S.f i _ hi
+      · simp [T, α]
+      · simpa [T, α] using hy
+    · refine ⟨A', π, inferInstance, y ≫ inrX (𝟙 S.X₁) i, ?_⟩
+      apply ext_to_X' S.f i hi
+      simpa [T, α] using hy
+  exact hT.quasiIso_g_iff.2 (acyclic_id S.X₁ hc)
+
+end CategoryTheory.ShortComplex.ShortExact
