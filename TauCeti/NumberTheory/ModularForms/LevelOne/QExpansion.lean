@@ -89,7 +89,7 @@ theorem qExpansion_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k :
     ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
   ext m
   rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
-  split_ifs <;> push_cast <;> rfl
+  split_ifs <;> simp
 
 /-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the image of Mathlib's
 `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq_graded` under the `q`-expansion algebra

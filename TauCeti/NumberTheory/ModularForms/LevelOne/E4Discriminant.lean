@@ -138,6 +138,12 @@ private theorem mem_range_map_of_qExpansion_discriminant_mul_mem (φ : K →+* �
   simpa using
     TauCeti.ModularForm.qExpansion_natCast_discriminant_coeff_mem (N := 1) (R := φ.range) i
 
+/-- The `q`-expansion of `f - a • m` for level-one forms `f` and `m` of the same weight. -/
+private theorem qExpansion_sub_smul {k : ℤ} (f m : ModularForm 𝒮ℒ k) (a : ℂ) :
+    qExpansion 1 (⇑f - a • ⇑m) = qExpansion 1 f - PowerSeries.C a * qExpansion 1 m := by
+  simpa [PowerSeries.smul_eq_C_mul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
+    using ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL f (a • m)
+
 /-- Every level-one modular form of weight `k` with `4 ∣ k` whose `q`-expansion is the image of a
 power series over `K` under `φ : K →+* ℂ` is a combination of the `E₄ ^ a * Δ ^ b` with
 `4 a + 12 b = k`, with coefficients in `K`. -/
@@ -155,14 +161,13 @@ private theorem exists_finsupp_E₄_discriminant (φ : K →+* ℂ) {k : ℤ} (f
     -- Subtracting the constant term of `f` times `E₄ ^ n` leaves a cusp form `g`, and `g` is `Δ`
     -- times the form `g / Δ` of weight `4 n - 12`.
     let m : ModularForm 𝒮ℒ (4 * n) := mcast (by ring) (E₄.pow n)
-    have hE : PowerSeries.constantCoeff (qExpansion 1 E₄) = 1 := by
-      simpa using E_qExpansion_coeff_zero (k := 4) _ ⟨2, rfl⟩
     have hmq : qExpansion 1 m = qExpansion 1 E₄ ^ n := by
       rw [ModularForm.qExpansion_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL]
-    have hm : (qExpansion 1 m).coeff 0 = 1 := by simp [hmq, hE]
+    have hm : (qExpansion 1 m).coeff 0 = 1 := by
+      simp [hmq, show PowerSeries.constantCoeff (qExpansion 1 E₄) = 1 by
+        simpa using E_qExpansion_coeff_zero (k := 4) _ ⟨2, rfl⟩]
     obtain ⟨F, hF⟩ := RingHom.mem_range.1 hf
-    have ha₀ : φ (F.coeff 0) = (qExpansion 1 f).coeff 0 := by
-      rw [← hF, PowerSeries.coeff_map]
+    have ha₀ : φ (F.coeff 0) = (qExpansion 1 f).coeff 0 := by rw [← hF, PowerSeries.coeff_map]
     obtain ⟨g, hg⟩ := sub_smul_isCuspForm f m hm
     have hgf : ⇑g = ⇑f - (qExpansion 1 f).coeff 0 • ⇑m := congr(⇑$hg)
     -- The `q`-expansion of `g` is the image of a power series over `K`, hence so is that of
@@ -173,9 +178,7 @@ private theorem exists_finsupp_E₄_discriminant (φ : K →+* ℂ) {k : ℤ} (f
         one_mem_strictPeriods_SL, CuspForm.coe_discriminant, discriminant_mul_discriminantEquiv]
     have hgq : qExpansion 1 g =
         qExpansion 1 f - PowerSeries.map φ (PowerSeries.C (F.coeff 0)) * qExpansion 1 E₄ ^ n := by
-      rw [hgf, ← FunLike.coe_smul, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
-        FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL, hmq,
-        PowerSeries.smul_eq_C_mul, PowerSeries.map_C, ha₀]
+      rw [hgf, qExpansion_sub_smul, hmq, PowerSeries.map_C, ha₀]
     have hgK : qExpansion 1 g ∈ (PowerSeries.map φ).range := hgq ▸ sub_mem hf
       (mul_mem (RingHom.mem_range_self _ _)
         (pow_mem (TauCeti.ModularForm.qExpansion_E_mem_range_map φ _ ⟨2, rfl⟩) n))
