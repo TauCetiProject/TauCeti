@@ -53,6 +53,7 @@ build homotopies between pushforwards of currents and to estimate their masses.
   `∂ ([[0, 1]] × T) = {1} × T - {0} × T - [[0, 1]] × ∂ T`, and
   `ContinuousLinearMap.comp_cylinderHomotopyCLM_comp_extDerivCLM_finZero` in degree zero.
 * `Distribution.mass_comp_cylinderHomotopyCLM_le`: `M([[0, 1]] × T) ≤ M(T)`.
+* `Distribution.mass_comp_pullbackCLM_prodMk_left_le`: `M({t} × T) ≤ M(T)` for `t ∈ [0, 1]`.
 * `Distribution.mass_comp_cylinderHomotopyCLM_comp_extDerivCLM_le`:
   `M(∂ ([[0, 1]] × T)) ≤ 2 M(T) + M(∂ T)`.
 
@@ -290,6 +291,19 @@ theorem mass_comp_cylinderHomotopyCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E
         exact ENNReal.ofReal_le_ofReal hb
     _ = mass T := mul_one _
 
+omit [CompleteSpace F] in
+/-- **The mass of a slice**: `M({t} × T) ≤ M(T)` for a `k`-current `T` on `Ω` and `t ∈ [0, 1]`,
+where `{t} × T = T ∘ ιₜ^*` is the pushforward along the slice `ιₜ : x ↦ (x, t)`, for the sup norm
+on `E × ℝ`. -/
+theorem mass_comp_pullbackCLM_prodMk_left_le {𝓕 : Type*}
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [LinearMapClass 𝓕 ℝ 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    (T : 𝓕) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    mass (T ∘ pullbackCLM (fun x ↦ (x, t)) (contDiffOn_id.prodMk contDiffOn_const)
+      (isCompact_inter_preimage_prodMk_left hW ht)) ≤ mass T := by
+  refine (mass_comp_pullbackCLM_le T (L := 1) fun x _ ↦ ?_).trans_eq (by simp)
+  rw [(hasFDerivAt_prodMk_left x t).fderiv, NNReal.coe_one]
+  exact ContinuousLinearMap.norm_inl_le_one ℝ E ℝ
+
 /-- **The mass of the boundary of a product with the unit interval**:
 `M(∂ ([[0, 1]] × T)) ≤ 2 M(T) + M(∂ T)` for a `(k + 1)`-current `T` on `Ω`, where
 `[[0, 1]] × T = T ∘ h` and `∂ T = T ∘ d`, for the sup norm on `E × ℝ`. -/
@@ -297,19 +311,12 @@ theorem mass_comp_cylinderHomotopyCLM_comp_extDerivCLM_le
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) :
     mass ((T ∘L cylinderHomotopyCLM hW) ∘L extDerivCLM) ≤
       2 * mass T + mass (T ∘L extDerivCLM) := by
-  have hslice (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      mass ⇑(T ∘L pullbackCLM (fun x ↦ (x, t)) (contDiffOn_id.prodMk contDiffOn_const)
-        (isCompact_inter_preimage_prodMk_left hW ht)) ≤ mass T := by
-    rw [ContinuousLinearMap.coe_comp]
-    refine (mass_comp_pullbackCLM_le T (L := 1) fun x _ ↦ ?_).trans_eq (by simp)
-    rw [(hasFDerivAt_prodMk_left x t).fderiv, NNReal.coe_one]
-    exact ContinuousLinearMap.norm_inl_le_one ℝ E ℝ
   rw [ContinuousLinearMap.comp_cylinderHomotopyCLM_comp_extDerivCLM,
     FunLike.coe_sub, FunLike.coe_sub, two_mul]
-  refine (mass_sub_le ..).trans (add_le_add ((mass_sub_le ..).trans (add_le_add ?_ ?_)) ?_)
-  · exact hslice 1 ⟨zero_le_one, le_rfl⟩
-  · exact hslice 0 ⟨le_rfl, zero_le_one⟩
-  · rw [ContinuousLinearMap.coe_comp]
-    exact mass_comp_cylinderHomotopyCLM_le _
+  refine (mass_sub_le ..).trans (add_le_add ((mass_sub_le ..).trans (add_le_add ?_ ?_)) ?_) <;>
+    rw [ContinuousLinearMap.coe_comp]
+  · exact mass_comp_pullbackCLM_prodMk_left_le (hW := hW) T ⟨zero_le_one, le_rfl⟩
+  · exact mass_comp_pullbackCLM_prodMk_left_le (hW := hW) T ⟨le_rfl, zero_le_one⟩
+  · exact mass_comp_cylinderHomotopyCLM_le _
 
 end Distribution

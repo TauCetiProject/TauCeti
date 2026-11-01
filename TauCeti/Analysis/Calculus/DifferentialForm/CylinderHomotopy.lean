@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
@@ -449,15 +450,6 @@ end Convex
 
 namespace TauCeti
 
-/-- On the cylinder over the whole space, the exterior derivative of a `C¹` form within
-`univ ×ˢ Icc 0 1` is its exterior derivative. -/
-private theorem extDerivWithin_univ_prod_Icc {m : ℕ} {ω : E × ℝ → (E × ℝ) [⋀^Fin m]→L[ℝ] F}
-    (hω : ContDiff ℝ 1 ω) {x : E} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    extDerivWithin ω (univ ×ˢ Icc 0 1) (x, t) = extDeriv ω (x, t) := by
-  rw [extDerivWithin, extDeriv, fderivWithin_eq_fderiv
-    ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) _ ⟨mem_univ x, ht⟩)
-    (hω.differentiable one_ne_zero _)]
-
 /-- The cylinder homotopy operator of a form that is `C^r` on all of `E × ℝ` is `C^r`. -/
 theorem contDiff_cylinderHomotopy {r : ℕ∞} {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F}
     (hω : ContDiff ℝ r ω) : ContDiff ℝ r (cylinderHomotopy ω) :=
@@ -476,7 +468,8 @@ theorem extDeriv_cylinderHomotopy_add_cylinderHomotopy_extDeriv
   have h := convex_univ.extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin
     uniqueDiffOn_univ hω.contDiffOn (mem_univ x)
   rwa [extDerivWithin_univ, cylinderHomotopy_congr (ω₂ := extDeriv ω)
-    fun t ht ↦ extDerivWithin_univ_prod_Icc hω ht] at h
+    fun t ht ↦ (hω.differentiable one_ne_zero _).extDerivWithin
+      ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) _ ⟨mem_univ x, ht⟩)] at h
 
 /-- **The cylinder homotopy identity in degree zero**, `h (d f) = ι₁^* f - ι₀^* f` for a function
 `f` that is `C¹` on all of `E × ℝ`, viewed as a `0`-form. -/
@@ -486,6 +479,7 @@ theorem cylinderHomotopy_extDeriv_eq_sub {ω : E × ℝ → (E × ℝ) [⋀^Fin 
       (ω (x, 1)).compContinuousLinearMap (.inl ℝ E ℝ) -
         (ω (x, 0)).compContinuousLinearMap (.inl ℝ E ℝ) := by
   rw [← cylinderHomotopy_extDerivWithin_eq_sub uniqueDiffOn_univ hω.contDiffOn (mem_univ x)]
-  exact cylinderHomotopy_congr fun t ht ↦ (extDerivWithin_univ_prod_Icc hω ht).symm
+  exact cylinderHomotopy_congr fun t ht ↦ ((hω.differentiable one_ne_zero _).extDerivWithin
+    ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) _ ⟨mem_univ x, ht⟩)).symm
 
 end TauCeti
