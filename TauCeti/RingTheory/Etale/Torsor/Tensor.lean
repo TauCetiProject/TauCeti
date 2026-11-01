@@ -19,12 +19,6 @@ of a `G`-torsor and an `H`-torsor is a `(G × H)`-torsor.
 Iterating this gives the torsors `B₁ ⊗[A] ⋯ ⊗[A] Bₙ` under `G₁ × ⋯ × Gₙ`, as used for the levels of
 the tower of finite étale torsors splitting every finite étale `A`-algebra.
 
-The proof goes through the Chase–Harrison–Rosenberg criterion
-`TauCeti.Algebra.isFiniteEtaleTorsor_iff`. Freeness of `(g, h) ≠ 1` comes from freeness of `g` on
-`B` or of `h` on `C`, pushed forward along `B → B ⊗[A] C` or `C → B ⊗[A] C`. For the invariants,
-an element fixed by `1 × H` comes from `B`, because `B ⊗[A] C` is an `H`-torsor over `B` by base
-change, and an element of `B` fixed by `G × 1` comes from `A`.
-
 ## Main results
 
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.tensor`: `B ⊗[A] C` is a `(G × H)`-torsor over `A`.
@@ -60,6 +54,7 @@ instance tensor [hB : IsFiniteEtaleTorsor G A B] [hC : IsFiniteEtaleTorsor H A C
   have := hB.faithfullyFlat
   have := hC.faithfullyFlat
   have : Module.FaithfullyFlat A (B ⊗[A] C) := .trans A B (B ⊗[A] C)
+  -- Check the Chase–Harrison–Rosenberg criterion: invariants and freeness.
   refine isFiniteEtaleTorsor_iff.mpr ⟨inferInstance, ⟨fun z hz ↦ ?_⟩, fun k hk ↦ ?_⟩
   · -- Fixed by `1 × H`, the element `z` comes from `B`, since `B ⊗[A] C` is an `H`-torsor over
     -- `B` by base change; fixed by `G × 1`, that element of `B` comes from `A`.
