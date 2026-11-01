@@ -61,7 +61,7 @@ theorem differential_eq_zero_of_forall_sub_smul_notMem (Q : Ideal A) [Q.IsPrime]
   have hder : aeval a p.derivative =
       ∏ g ∈ Finset.univ.erase (1 : G), (a - g • a) := by
     rw [← Polynomial.aeval_map_algebraMap A, ← derivative_map, hp,
-      coe_aeval_eq_eval, MulSemiringAction.eval_derivative_charpoly]
+      coe_aeval_eq_eval, TauCeti.MulSemiringAction.eval_derivative_charpoly]
   have hunit : IsUnit (algebraMap A S (aeval a p.derivative)) := by
     apply IsLocalization.map_units S
       (⟨_, ?_⟩ : Q.primeCompl)
