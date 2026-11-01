@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.LaurentSeries.Lattice
 public import TauCeti.RingTheory.HahnSeries.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
-public import Mathlib.Topology.UniformSpace.Pi
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
