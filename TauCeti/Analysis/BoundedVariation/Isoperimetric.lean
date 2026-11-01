@@ -66,6 +66,10 @@ the perimeter with surface measure or Minkowski content is used.
   form `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)` in `ℝ≥0∞`, with no hypothesis on the perimeter.
 * `MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`: its real form
   for sets of finite perimeter.
+* `ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt`: the smooth case, for a
+  regular superlevel set `{u > t}` of a compactly supported smooth function `u` with `t > 0`.
+* `ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt`: a smooth defining function of such a set
+  whose derivative has norm one on the boundary.
 
 ## References
 
@@ -390,12 +394,21 @@ private theorem ofReal_le_perimeter_setOf_pos {w : E → ℝ} (hw : ContDiff ℝ
     filter_upwards [Ioo_mem_nhdsGT one_pos] with ε hε using
       div_mul_le_integral_mul_indicator hw hδ hK hnorm hn hV ψ hη₀ hψ hε.1 hε.2)
 
+end TauCeti
+
+section ContDiff
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **A normalized defining function for a regular superlevel set.** Let `u` be smooth and
 compactly supported, and let `t > 0` be a regular value of `u`. Then
 `w = (u - t) / √(‖∇u‖² + (u - t)²)` is smooth, positive exactly on `{u > t}`, equal to `-1` off
 the support of `u`, and its derivative has norm one on its zero level `{u = t}`. -/
-private theorem exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : ContDiff ℝ ∞ u)
+theorem ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : ContDiff ℝ ∞ u)
     (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t) (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) :
     ∃ w : E → ℝ, ContDiff ℝ ∞ w ∧ IsCompact {x | -(1 / 2 : ℝ) ≤ w x} ∧
       (∀ x, w x = 0 → ‖fderiv ℝ w x‖ = 1) ∧ {x | 0 < w x} = {x | t < u x} := by
@@ -451,17 +464,18 @@ private theorem exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : Cont
 /-- **The sharp isoperimetric inequality for regular superlevel sets.** Let `u` be smooth and
 compactly supported, and let `t > 0` be a regular value of `u`. In dimension `n ≥ 1`, if
 `F = {u > t}` has positive volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`. -/
-private theorem ofReal_le_perimeter_setOf_lt {u : E → ℝ} (hu : ContDiff ℝ ∞ u)
-    (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t) (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0)
-    (hn : finrank ℝ E ≠ 0) (hV : volume {x | t < u x} ≠ 0) :
+theorem ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt {u : E → ℝ}
+    (hu : ContDiff ℝ ∞ u) (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t)
+    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) (hn : finrank ℝ E ≠ 0)
+    (hV : volume {x | t < u x} ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real {x | t < u x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
       perimeter volume ⊤ {x | t < u x} := by
-  obtain ⟨w, hw, hK, hnorm, hset⟩ := exists_contDiff_setOf_pos_eq_setOf_lt hu huc ht hreg
+  obtain ⟨w, hw, hK, hnorm, hset⟩ := hu.exists_contDiff_setOf_pos_eq_setOf_lt huc ht hreg
   rw [← hset] at hV ⊢
   exact ofReal_le_perimeter_setOf_pos hw (by norm_num) hK hnorm hn hV
 
-end TauCeti
+end ContDiff
 
 namespace MeasureTheory.NullMeasurableSet
 
@@ -502,7 +516,8 @@ theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
       _).comp hV).const_mul _)) hP ?_
   filter_upwards [hV.eventually (lt_mem_nhds hpos)] with k hk
   obtain ⟨hu, huc, htk, hreg, -⟩ := hprop k
-  refine ofReal_le_perimeter_setOf_lt hu huc htk.1 (fun x hx h0 => ?_) hn ?_
+  refine hu.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt huc htk.1
+    (fun x hx h0 => ?_) hn ?_
   · obtain ⟨v, hv⟩ := hreg x hx 1
     simp [h0] at hv
   · intro h
