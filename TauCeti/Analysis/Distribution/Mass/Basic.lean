@@ -428,6 +428,22 @@ theorem hasLocallyFiniteMass_of_mass_ne_top (T : 𝓕) (hT : mass T ≠ ⊤) :
   (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun _ _ _ =>
     ne_top_of_le_ne_top hT localMass_le_mass
 
+/-- **Locally finite mass implies continuity.** A linear map on test functions with locally finite
+mass is continuous for the test-function topology, so it is a distribution of order zero. -/
+theorem HasLocallyFiniteMass.continuous {L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V}
+    (hL : HasLocallyFiniteMass L) : Continuous L := by
+  refine (TestFunction.continuous_iff_continuous_comp L).2 fun K hK => ?_
+  obtain ⟨C, -, hC⟩ := hL K K.isCompact hK
+  -- On the tests supported in `K`, `L` is bounded by `C` times the sup norm.
+  let LK : 𝓓^{n}_{K}(E, F) →ₗ[ℝ] V := L ∘ₗ (TestFunction.ofSupportedInCLM ℝ hK).toLinearMap
+  have hB := (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ :
+    𝓓^{n}_{K}(E, F) →L[ℝ] E →ᵇ F).continuous.tendsto 0
+  rw [map_zero, tendsto_zero_iff_norm_tendsto_zero] at hB
+  refine continuous_of_continuousAt_zero LK ?_
+  rw [ContinuousAt, map_zero, tendsto_zero_iff_norm_tendsto_zero]
+  exact squeeze_zero (fun _ => norm_nonneg _) (fun ψ => hC _ ψ.tsupport_subset)
+    (by simpa using hB.const_mul C)
+
 end LocallyFinite
 
 section Evaluation
