@@ -59,30 +59,28 @@ section QuadraticStep
 
 variable {a : K} [Fact (Irreducible (X ^ 2 - C a))]
 
-/-- If `a` is not a square in `K` but is a fourth power in `K(√a)`, then `a ∈ -4K⁴`. -/
-private theorem exists_neg_four_mul_pow_four_eq_of_pow_four_eq (ha : ∀ b : K, b ^ 2 ≠ a)
+/-- If `X² - a` is irreducible (so `a` is not a square in `K`) and `a` is a fourth power in
+`K(√a)`, then `a ∈ -4K⁴`. -/
+private theorem exists_neg_four_mul_pow_four_eq_of_pow_four_eq
     {γ : AdjoinRoot (X ^ 2 - C a)} (hγ : γ ^ 4 = algebraMap K _ a) :
     ∃ x : K, -4 * x ^ 4 = a := by
   have hβ : root (X ^ 2 - C a) ^ 2 = algebraMap K _ a := root_X_pow_sub_C_pow 2 a
-  -- Since `a` is not a square, `1` and `β = √a` are linearly independent over `K`.
+  -- `1, β` is the power basis of `K(β)` over `K`, so coordinates in it are unique.
+  let pb := powerBasis' (monic_X_pow_sub_C a two_ne_zero)
+  have hdim : pb.dim = 2 := by simp [pb]
+  have hgen : pb.gen = root (X ^ 2 - C a) := by simp [pb]
   have hind (u v : K)
       (h : algebraMap K _ u + algebraMap K _ v * root (X ^ 2 - C a) = 0) : u = 0 ∧ v = 0 := by
-    have hinj := (algebraMap K (AdjoinRoot (X ^ 2 - C a))).injective
-    by_cases hv : v = 0
-    · subst hv
-      exact ⟨hinj (by simpa using h), rfl⟩
-    · refine (ha (-u / v) (hinj ?_)).elim
-      have hroot : root (X ^ 2 - C a) = algebraMap K _ (-u / v) := by
-        rw [map_div₀, map_neg, eq_div_iff ((_root_.map_ne_zero _).mpr hv)]
-        linear_combination h
-      rw [map_pow, ← hroot, hβ]
-  -- Write `γ = x + yβ` in the power basis `1, β`.
-  let pb := powerBasis' (monic_X_pow_sub_C a two_ne_zero)
+    have := Fintype.linearIndependent_iff.mp pb.basis.linearIndependent
+      (fun i ↦ if (i : ℕ) = 0 then u else v) (by
+        simp only [pb.basis_eq_pow, hgen]
+        rw [Fin.sum_univ_eq_sum_range
+          (fun i ↦ (if i = 0 then u else v) • root (X ^ 2 - C a) ^ i), hdim]
+        simpa [Finset.sum_range_succ, Algebra.smul_def] using h)
+    exact ⟨by simpa using this ⟨0, by lia⟩, by simpa using this ⟨1, by lia⟩⟩
+  -- Write `γ = x + yβ` in this basis.
   obtain ⟨f, hf, rfl⟩ := pb.exists_eq_aeval γ
-  have hf : f.natDegree ≤ 1 := by
-    have : pb.dim = 2 := by simp [pb]
-    lia
-  have hgen : pb.gen = root (X ^ 2 - C a) := by simp [pb]
+  have hf : f.natDegree ≤ 1 := by lia
   rw [eq_X_add_C_of_natDegree_le_one hf] at hγ
   simp only [map_add, map_mul, aeval_C, aeval_X, hgen] at hγ
   generalize f.coeff 0 = x at hγ
@@ -121,11 +119,11 @@ theorem X_pow_two_pow_sub_C_irreducible (k : ℕ) {a : K} (ha : ∀ b : K, b ^ 2
     rw [pow_succ]
     refine X_pow_mul_sub_C_irreducible h₂ (ih (fun γ hγ ↦ ?_) (fun _ δ hδ ↦ ?_))
     · -- A square root `γ` of `√a` is a fourth root of `a`.
-      obtain ⟨x, hx⟩ := exists_neg_four_mul_pow_four_eq_of_pow_four_eq ha (γ := γ) (by
+      obtain ⟨x, hx⟩ := exists_neg_four_mul_pow_four_eq_of_pow_four_eq (γ := γ) (by
         rw [AdjoinRoot.algebraMap_eq, ← root_X_pow_sub_C_pow 2 a, ← hγ]; ring)
       exact ha'' x hx
     · -- If `√a = -4δ⁴`, then `2δ²` is a fourth root of `a`.
-      obtain ⟨x, hx⟩ := exists_neg_four_mul_pow_four_eq_of_pow_four_eq ha (γ := 2 * δ ^ 2) (by
+      obtain ⟨x, hx⟩ := exists_neg_four_mul_pow_four_eq_of_pow_four_eq (γ := 2 * δ ^ 2) (by
         rw [AdjoinRoot.algebraMap_eq, ← root_X_pow_sub_C_pow 2 a, ← hδ]; ring)
       exact ha'' x hx
 
