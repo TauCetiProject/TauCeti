@@ -215,8 +215,46 @@ theorem cellFrontier_sigma (n : ℕ) (i : ι) (j : cell (C i) n) :
 omit C [∀ i, CWComplex (C i)] in
 /-- A disjoint union of spaces with CW structures has a CW structure on the whole space. -/
 instance sigmaUniv [∀ i, CWComplex (univ : Set (X i))] :
-    CWComplex (univ : Set (Σ i, X i)) := by
-  have h : univ.sigma (fun i ↦ (univ : Set (X i))) = univ := by ext x; simp
-  exact h ▸ sigma (fun i ↦ (univ : Set (X i)))
+    CWComplex (univ : Set (Σ i, X i)) :=
+  let S := sigma (fun i ↦ (univ : Set (X i)))
+  { S with
+    closed' A _ hA := S.closed' A (by simp) hA
+    union' := by simpa using S.union' }
+
+omit C [∀ i, CWComplex (C i)] in
+section
+
+variable [∀ i, CWComplex (univ : Set (X i))]
+
+/-- Cells in the whole-space disjoint union retain their summand index. -/
+def sigmaUnivCellEquiv (n : ℕ) :
+    cell (univ : Set (Σ i, X i)) n ≃ Σ i, cell (univ : Set (X i)) n :=
+  Equiv.refl _
+
+/-- Whole-space characteristic maps are followed by the summand inclusion. -/
+@[simp]
+theorem coe_map_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    ⇑(map n ((sigmaUnivCellEquiv n).symm ⟨i, j⟩)) = Sigma.mk i ∘ map n j :=
+  coe_map_sigma (fun i ↦ (univ : Set (X i))) n i j
+
+/-- Whole-space open cells are the summand images of the original open cells. -/
+@[simp]
+theorem openCell_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    openCell n ((sigmaUnivCellEquiv n).symm ⟨i, j⟩) = Sigma.mk i '' openCell n j :=
+  openCell_sigma (fun i ↦ (univ : Set (X i))) n i j
+
+/-- Whole-space closed cells are the summand images of the original closed cells. -/
+@[simp]
+theorem closedCell_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    closedCell n ((sigmaUnivCellEquiv n).symm ⟨i, j⟩) = Sigma.mk i '' closedCell n j :=
+  closedCell_sigma (fun i ↦ (univ : Set (X i))) n i j
+
+/-- Whole-space cell frontiers are the summand images of the original frontiers. -/
+@[simp]
+theorem cellFrontier_sigmaUniv (n : ℕ) (i : ι) (j : cell (univ : Set (X i)) n) :
+    cellFrontier n ((sigmaUnivCellEquiv n).symm ⟨i, j⟩) = Sigma.mk i '' cellFrontier n j :=
+  cellFrontier_sigma (fun i ↦ (univ : Set (X i))) n i j
+
+end
 
 end Topology.CWComplex
