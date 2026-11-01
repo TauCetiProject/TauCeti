@@ -203,15 +203,9 @@ theorem relators_hold (t : Relator (Fin hsPresentation.generatorCount))
 /-- The presentation images generate exactly the file-generated carrier. -/
 theorem closure_range_generatorImages : Subgroup.closure (Set.range generatorImages) = HS := by
   have hr : Set.range generatorImages = ({a, b} : Set (Equiv.Perm (Fin 100)))⁻¹ := by
-    ext g
-    simp only [Set.mem_range, generatorImages_apply, Set.mem_inv, Set.mem_insert_iff,
-      Set.mem_singleton_iff]
-    constructor
-    · rintro ⟨i, rfl⟩
-      split <;> simp
-    · rintro (h | h)
-      · exact ⟨⟨0, by simp⟩, by simpa using congrArg Inv.inv h.symm⟩
-      · exact ⟨⟨1, by simp⟩, by simpa using congrArg Inv.inv h.symm⟩
+    simpa only [← generatorImages_apply, Set.inv_insert, Set.inv_singleton] using
+      (Set.range_ite_const (p := fun i : Fin hsPresentation.generatorCount => i.val = 0)
+        (x := a⁻¹) (y := b⁻¹) ⟨⟨0, by simp⟩, rfl⟩ ⟨⟨1, by simp⟩, by decide⟩)
   rw [hr, Subgroup.closure_inv, ← HS_def]
 
 /-- The homomorphism from the transcribed presentation to the ambient permutation group. -/
