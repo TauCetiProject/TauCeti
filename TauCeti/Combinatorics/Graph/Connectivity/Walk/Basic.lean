@@ -397,14 +397,21 @@ theorem isTrail_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     IsTrail (cons e h p) ↔ IsTrail p ∧ e ∉ p.edges := by
   simp [IsTrail, and_comm]
 
-@[simp]
-theorem isPath_nil : IsPath (nil : G.Walk x x) := by
-  simp [IsPath]
-
 @[simp, grind =]
 theorem isPath_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     IsPath (cons e h p) ↔ IsPath p ∧ x ∉ p.support := by
   simp [IsPath, and_comm]
+
+/-- A walk with equal endpoints is a path exactly when it consists of no steps. -/
+@[simp]
+theorem isPath_iff_nil {p : G.Walk x x} : p.IsPath ↔ p.Nil := by
+  cases p with
+  | nil => simp [IsPath]
+  | cons e h p =>
+    constructor
+    · intro hp
+      exact absurd p.end_mem_support ((isPath_cons e h p).1 hp).2
+    · exact not_nil_cons.elim
 
 @[simp]
 theorem cons_isCycle_iff (e : β) (h : G.IsLink e x y) (p : G.Walk y x) :
