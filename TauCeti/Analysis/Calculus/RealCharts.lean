@@ -150,10 +150,8 @@ lemma image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hp : 0 < p) (hq : 0 < q) :
       (c + ·) ∘ (p * q * ·) ∘ (·⁻¹) ∘ (· + p) ∘ (fun t : ℝ ↦ t ^ 2 / 1) := by
     ext t
     simp [div_eq_mul_inv]
-  rw [hcomp, image_comp, image_comp, image_comp, image_comp, hsq, image_add_const_Ioi,
-    image_inv_eq_inv, inv_Ioi₀ (by simpa using hp), image_mul_left_Ioo (by positivity),
-    image_const_add_Ioo]
-  simp only [zero_pow two_ne_zero, zero_div, zero_add, mul_zero, add_zero]
-  rw [mul_comm p q, mul_inv_cancel_right₀ hp.ne']
+  simp only [hcomp, image_comp, hsq, image_add_const_Ioi, image_inv_eq_inv]
+  rw [inv_Ioi₀ (by simpa using hp), image_mul_left_Ioo (by positivity), image_const_add_Ioo]
+  simp [mul_right_comm p q, hp.ne']
 
 end TauCeti
