@@ -82,6 +82,20 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
   -- The given factorization modulo `I` is a point of `A` with values in `R ⧸ I`.
   let ψ : A →ₐ[R] R ⧸ I := (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P).symm
     ⟨(.mk g₀ hg₀ rfl, .mk h₀ hh₀ rfl), by simpa [P] using hp₀.symm, hgh₀⟩
+  -- Composing a point of `A` with values in `R` with `R → R ⧸ I` reduces both factors modulo `I`.
+  have hmod (φ : A →ₐ[R] R) :
+      (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P
+          ((Ideal.Quotient.mkₐ R I).comp φ)).1.1.1 =
+        (UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).1.1.1.map
+          (Ideal.Quotient.mk I) ∧
+      (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P
+          ((Ideal.Quotient.mkₐ R I).comp φ)).1.2.1 =
+        (UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).1.2.1.map
+          (Ideal.Quotient.mk I) := by
+    rw [UniversalCoprimeFactorizationRing.homEquiv_comp_fst,
+      UniversalCoprimeFactorizationRing.homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
+      Ideal.Quotient.mkₐ_toRingHom]
+    simp
   -- A factorization over `R` with the given reductions is a point of `A` lifting `ψ`.
   have hpoint : ∀ gh : R[X] × R[X], gh.1.Monic → gh.2.Monic → gh.1 * gh.2 = p →
       gh.1.map (Ideal.Quotient.mk I) = g₀ → gh.2.map (Ideal.Quotient.mk I) = h₀ →
@@ -97,26 +111,16 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
       ⟨(.mk g hg hgdeg, .mk h hh hhdeg), by simpa [P] using hgh, hcop⟩, ?_, by simp⟩
     apply (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P).injective
     refine Subtype.ext (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
-    · rw [UniversalCoprimeFactorizationRing.homEquiv_comp_fst, ← AlgHom.toRingHom_eq_coe,
-        Ideal.Quotient.mkₐ_toRingHom]
-      simp [ψ, hgmap]
-    · rw [UniversalCoprimeFactorizationRing.homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
-        Ideal.Quotient.mkₐ_toRingHom]
-      simp [ψ, hhmap]
+    · simp [(hmod _).1, ψ, hgmap]
+    · simp [(hmod _).2, ψ, hhmap]
   obtain ⟨φ, hφ⟩ := (comp_bijective I (A := A)).2 ψ
   set q := UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ
   have hq₀ := congrArg (fun φ ↦ (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P φ).1)
     hφ
   simp only [ψ, Equiv.apply_symm_apply] at hq₀
   refine ⟨(q.1.1.1, q.1.2.1), ⟨q.1.1.monic, q.1.2.monic, by simpa [P] using q.2.1, ?_, ?_⟩, ?_⟩
-  · have := congr(($hq₀).1.1)
-    rw [UniversalCoprimeFactorizationRing.homEquiv_comp_fst, ← AlgHom.toRingHom_eq_coe,
-      Ideal.Quotient.mkₐ_toRingHom] at this
-    simpa [q] using this
-  · have := congr(($hq₀).2.1)
-    rw [UniversalCoprimeFactorizationRing.homEquiv_comp_snd, ← AlgHom.toRingHom_eq_coe,
-      Ideal.Quotient.mkₐ_toRingHom] at this
-    simpa [q] using this
+  · simpa [q, (hmod φ).1] using congr(($hq₀).1.1)
+  · simpa [q, (hmod φ).2] using congr(($hq₀).2.1)
   · rintro gh ⟨hg, hh, hgh, hgmap, hhmap⟩
     obtain ⟨φ', hφ', rfl⟩ := hpoint gh hg hh hgh hgmap hhmap
     rw [(comp_bijective I (A := A)).1 (hφ'.trans hφ.symm)]

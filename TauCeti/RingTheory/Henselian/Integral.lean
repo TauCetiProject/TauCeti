@@ -21,27 +21,25 @@ import TauCeti.RingTheory.Idempotents.Projective
 Let `(R, I)` be a Henselian pair and let `S` be an integral `R`-algebra, for instance a finite
 one. Then every idempotent of `S ⧸ IS` lifts to an idempotent of `S`
 (`TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral`), and the lift is
-unique, so reduction modulo `IS` is a bijection on idempotents. Conversely, if `I` lies in the
-Jacobson radical and idempotents lift along `I` in every finite `R`-algebra, then `(R, I)` is
-Henselian. This characterises Henselian pairs by their finite algebras, and by their integral
-algebras, and it shows that `(S, IS)` is again a Henselian pair for every integral `R`-algebra
-`S`.
+unique. Conversely, if `I` lies in the Jacobson radical and idempotents lift along `I` in every
+finite `R`-algebra, then `(R, I)` is Henselian. This shows that `(S, IS)` is again a Henselian pair
+for every integral `R`-algebra `S`, so reduction modulo `IS` is a bijection on idempotents
+(`TauCeti.HenselianRing.bijOn_quotient_mk_isIdempotentElem`), and it characterises Henselian
+pairs by their finite algebras, and by their integral algebras.
 
 ## Main results
 
 * `TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral`: over a Henselian
   pair `(R, I)`, idempotents of `S ⧸ IS` lift to `S` for every integral `R`-algebra `S`.
-* `TauCeti.HenselianRing.bijOn_quotient_mk_map_isIdempotentElem`: reduction modulo `IS` is a
-  bijection on idempotents.
 * `TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot`: a pair `(R, I)` with `I`
   in the Jacobson radical is Henselian if idempotents lift along `I` in `R[X]/(f)` for every
   monic `f`.
+* `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
+  `R`-algebra, then `(S, IS)` is Henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
   `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
   if and only if reduction modulo `IS` is a bijection on idempotents for every finite, or every
   integral, `R`-algebra `S` in the universe of `R`.
-* `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
-  `R`-algebra, then `(S, IS)` is Henselian.
 * `TauCeti.henselianRing_iff_forall_henselianRing_map_of_isIntegral`: `(R, I)` is Henselian if and
   only if `(S, IS)` is Henselian for every integral `R`-algebra `S` in the universe of `R`.
 
@@ -95,8 +93,7 @@ private theorem aeval_mul_sub_mem_map_of_add_eq_one {s : S}
   have hφ (f : R[X]) :
       Ideal.Quotient.mk J (aeval s f) = (f.map (Ideal.Quotient.mk I)).eval₂ φ t := by
     rw [aeval_def, hom_eval₂, eval₂_map, Ideal.quotientMap_comp_mk]
-  have ht : IsIdempotentElem t := by
-    rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs]
+  have ht : IsIdempotentElem t := Ideal.Quotient.isIdempotentElem_mk_iff.mpr hs
   have htt : (t - 1) ^ (d + 1) * t = 0 := by
     rw [pow_succ, mul_assoc, sub_mul, one_mul, ht.eq, sub_self, mul_zero]
   have hab' := congrArg (fun f : R[X] ↦ (f.map (Ideal.Quotient.mk I)).eval₂ φ t) hab
@@ -151,23 +148,6 @@ theorem exists_isIdempotentElem_sub_mem_map_of_isIntegral {s : S}
   have h0 : aeval s (a * g) * aeval s (b * h) = 0 := by
     rw [← map_mul, hagbh, map_mul, hPs, mul_zero]
   exact (IsIdempotentElem.of_mul_add h0 h1).1
-
-/-- **Idempotents of an integral algebra over a Henselian pair.** If `(R, I)` is Henselian and `S`
-is an integral `R`-algebra, the quotient map `S → S ⧸ IS` restricts to a bijection between the
-idempotents of `S` and those of `S ⧸ IS`. -/
-@[stacks 09XI "(1) ⇒ (3) and (4)"]
-theorem bijOn_quotient_mk_map_isIdempotentElem :
-    Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
-      {t | IsIdempotentElem t} := by
-  refine ⟨fun _ he ↦ he.map _, injOn_quotient_mk_map_isIdempotentElem I,
-    fun t ht ↦ ?_⟩
-  obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective t
-  have hss : Ideal.Quotient.mk (I.map (algebraMap R S)) (s * s) =
-      Ideal.Quotient.mk (I.map (algebraMap R S)) s := by
-    rw [map_mul]; exact ht.eq
-  obtain ⟨e, he, hes⟩ := exists_isIdempotentElem_sub_mem_map_of_isIntegral I
-    (Ideal.Quotient.eq.mp hss)
-  exact ⟨e, he, Ideal.Quotient.eq.mpr hes⟩
 
 end HenselianRing
 
@@ -260,11 +240,7 @@ private theorem exists_mul_self_sub_mem_of_isUnit_eval_derivative {I : Ideal R} 
   · rw [mul_left_comm]
     exact J.mul_mem_left _ hxq
   · have hχγ : χ γ = 1 := by
-      rw [map_mul, AlgHom.commutes, ← aeval_algHom_apply, AdjoinRoot.liftAlgHom_root,
-        ← Ideal.Quotient.algebraMap_eq, aeval_algebraMap_apply_eq_algebraMap_eval,
-        Ideal.Quotient.algebraMap_eq, ← map_mul, ← map_one (Ideal.Quotient.mk I),
-        Ideal.Quotient.eq]
-      exact hv
+      simpa [γ, χ, x, S, q] using Ideal.Quotient.eq.mpr hv
     have := hχJ _ hr
     rwa [map_smul, hχγ, Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq,
       Ideal.Quotient.eq_zero_iff_mem] at this
@@ -293,50 +269,6 @@ theorem henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot {I : Ideal R}
 
 end Converse
 
-/-- **Henselian pairs and idempotents of finite algebras.** A pair `(R, I)` is Henselian if and
-only if, for every finite `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
-restricts to a bijection between the idempotents of `S` and those of `S ⧸ IS`. -/
-@[stacks 09XI "(1) ⇔ (3)"]
-theorem henselianRing_iff_forall_bijOn_isIdempotentElem {R : Type u} [CommRing R] {I : Ideal R} :
-    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Module.Finite R S],
-      Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
-        {t | IsIdempotentElem t} := by
-  refine ⟨fun _ S _ _ _ ↦ HenselianRing.bijOn_quotient_mk_map_isIdempotentElem I,
-    fun H ↦ henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot ?_ fun f hf s hs ↦ ?_⟩
-  · -- If `I ⊄ 𝔪` for a maximal ideal `𝔪`, then `0` and `1` in the field `R ⧸ 𝔪` both reduce to `0`.
-    refine le_sInf fun m ⟨_, hm⟩ ↦ ?_
-    by_contra hIm
-    obtain ⟨i, hi, him⟩ := Set.not_subset.mp hIm
-    have : Nontrivial (R ⧸ m) := Ideal.Quotient.nontrivial_iff.mpr hm.ne_top
-    obtain ⟨b, c, hc, hbc⟩ := hm.exists_inv him
-    have htop : I.map (algebraMap R (R ⧸ m)) = ⊤ := by
-      refine (Ideal.eq_top_iff_one _).mpr ?_
-      have : algebraMap R (R ⧸ m) (b * i) = 1 := by
-        rw [← map_one (algebraMap R (R ⧸ m)), ← hbc, map_add, Ideal.Quotient.algebraMap_eq,
-          Ideal.Quotient.eq_zero_iff_mem.mpr hc, add_zero]
-      exact this ▸ Ideal.mem_map_of_mem _ (I.mul_mem_left b hi)
-    have := (H (R ⧸ m)).injOn (IsIdempotentElem.zero : IsIdempotentElem (0 : R ⧸ m))
-      (IsIdempotentElem.one : IsIdempotentElem (1 : R ⧸ m))
-      (Ideal.Quotient.eq.mpr (by rw [htop]; trivial))
-    exact zero_ne_one this
-  · have : Module.Finite R (AdjoinRoot f) := hf.finite_adjoinRoot
-    have hs' : IsIdempotentElem (Ideal.Quotient.mk (I.map (algebraMap R (AdjoinRoot f))) s) := by
-      rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs]
-    obtain ⟨e, he, hes⟩ := (H (AdjoinRoot f)).surjOn hs'
-    exact ⟨e, he, Ideal.Quotient.eq.mp hes⟩
-
-/-- **Henselian pairs and idempotents of integral algebras.** A pair `(R, I)` is Henselian if and
-only if, for every integral `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
-restricts to a bijection between the idempotents of `S` and those of `S ⧸ IS`. -/
-@[stacks 09XI "(1) ⇔ (4)"]
-theorem henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral {R : Type u} [CommRing R]
-    {I : Ideal R} :
-    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.IsIntegral R S],
-      Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
-        {t | IsIdempotentElem t} :=
-  ⟨fun _ _ _ _ _ ↦ HenselianRing.bijOn_quotient_mk_map_isIdempotentElem I,
-    fun H ↦ henselianRing_iff_forall_bijOn_isIdempotentElem.mpr fun S _ _ _ ↦ H S⟩
-
 end TauCeti
 
 namespace Ideal
@@ -357,6 +289,50 @@ instance henselianRing_map_of_isIntegral {R : Type*} [CommRing R] (I : Ideal R) 
 end Ideal
 
 namespace TauCeti
+
+/-- **Henselian pairs and idempotents of finite algebras.** A pair `(R, I)` is Henselian if and
+only if, for every finite `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
+restricts to a bijection between the idempotents of `S` and those of `S ⧸ IS`. -/
+@[stacks 09XI "(1) ⇔ (3)"]
+theorem henselianRing_iff_forall_bijOn_isIdempotentElem {R : Type u} [CommRing R] {I : Ideal R} :
+    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Module.Finite R S],
+      Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
+        {t | IsIdempotentElem t} := by
+  refine ⟨fun _ S _ _ _ ↦ HenselianRing.bijOn_quotient_mk_isIdempotentElem _,
+    fun H ↦ henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot ?_ fun f hf s hs ↦ ?_⟩
+  · -- If `I ⊄ 𝔪` for a maximal ideal `𝔪`, then `0` and `1` in the field `R ⧸ 𝔪` both reduce to `0`.
+    refine le_sInf fun m ⟨_, hm⟩ ↦ ?_
+    by_contra hIm
+    obtain ⟨i, hi, him⟩ := Set.not_subset.mp hIm
+    have : Nontrivial (R ⧸ m) := Ideal.Quotient.nontrivial_iff.mpr hm.ne_top
+    obtain ⟨b, c, hc, hbc⟩ := hm.exists_inv him
+    have htop : I.map (algebraMap R (R ⧸ m)) = ⊤ := by
+      refine (Ideal.eq_top_iff_one _).mpr ?_
+      have : algebraMap R (R ⧸ m) (b * i) = 1 := by
+        rw [← map_one (algebraMap R (R ⧸ m)), ← hbc, map_add, Ideal.Quotient.algebraMap_eq,
+          Ideal.Quotient.eq_zero_iff_mem.mpr hc, add_zero]
+      exact this ▸ Ideal.mem_map_of_mem _ (I.mul_mem_left b hi)
+    have := (H (R ⧸ m)).injOn (IsIdempotentElem.zero : IsIdempotentElem (0 : R ⧸ m))
+      (IsIdempotentElem.one : IsIdempotentElem (1 : R ⧸ m))
+      (Ideal.Quotient.eq.mpr (by rw [htop]; trivial))
+    exact zero_ne_one this
+  · have : Module.Finite R (AdjoinRoot f) := hf.finite_adjoinRoot
+    obtain ⟨e, he, hes⟩ :=
+      (H (AdjoinRoot f)).surjOn (Ideal.Quotient.isIdempotentElem_mk_iff.mpr hs)
+    exact ⟨e, he, Ideal.Quotient.eq.mp hes⟩
+
+/-- **Henselian pairs and idempotents of integral algebras.** A pair `(R, I)` is Henselian if and
+only if, for every integral `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
+restricts to a bijection between the idempotents of `S` and those of `S ⧸ IS`. -/
+@[stacks 09XI "(1) ⇔ (4)"]
+theorem henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral {R : Type u} [CommRing R]
+    {I : Ideal R} :
+    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.IsIntegral R S],
+      Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
+        {t | IsIdempotentElem t} :=
+  ⟨fun _ _ _ _ _ ↦ HenselianRing.bijOn_quotient_mk_isIdempotentElem _,
+    fun H ↦ henselianRing_iff_forall_bijOn_isIdempotentElem.mpr fun S _ _ _ ↦ H S⟩
+
 
 /-- **Henselian pairs and integral extensions.** A pair `(R, I)` is Henselian if and only if
 `(S, IS)` is Henselian for every integral `R`-algebra `S` in the universe of `R`; the converse
