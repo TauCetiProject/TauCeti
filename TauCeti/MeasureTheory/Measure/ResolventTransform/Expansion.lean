@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Moment expansion of the resolvent transform at infinity
@@ -27,6 +28,8 @@ infinity, used when the moment method and the resolvent method are compared for 
 
 ## Main statements
 
+* `Complex.hasSum_resolvent_real`: the geometric series of the kernel `(x - z)⁻¹` in powers of
+  `(x - c) / (z - c)`, for `|x - c| < |z - c|`.
 * `MeasureTheory.resolventTransform_add_sum_eq`: the exact expansion, with integral remainder.
 * `MeasureTheory.norm_resolventTransform_add_sum_le`: the bound on the remainder.
 * `MeasureTheory.tendsto_mul_I_pow_mul_resolventTransform_add_sum`: the sharp asymptotic of the
@@ -45,6 +48,26 @@ noncomputable section
 
 open Complex Filter Finset
 open scoped Topology
+
+namespace Complex
+
+/-- The real resolvent kernel is the geometric series
+`(x - z)⁻¹ = -∑ₙ (x - c) ^ n (z - c)^(-(n+1))` about any centre `c` with `|x - c| < |z - c|`. -/
+theorem hasSum_resolvent_real {z c : ℂ} {x : ℝ} (h : ‖(x : ℂ) - c‖ < ‖z - c‖) :
+    HasSum (fun n ↦ -(((x : ℂ) - c) ^ n * (z - c)⁻¹ ^ (n + 1))) (resolvent z x) := by
+  have hw : z - c ≠ 0 := norm_pos_iff.1 ((norm_nonneg _).trans_lt h)
+  have hr : ‖((x : ℂ) - c) * (z - c)⁻¹‖ < 1 := by
+    rwa [norm_mul, norm_inv, ← div_eq_mul_inv, div_lt_one ((norm_nonneg _).trans_lt h)]
+  have hx : (x : ℂ) - z = -((z - c) * (1 - ((x : ℂ) - c) * (z - c)⁻¹)) := by
+    rw [mul_sub, mul_one, mul_left_comm, mul_inv_cancel₀ hw, mul_one]
+    ring
+  convert (hasSum_geometric_of_norm_lt_one hr).mul_left (-(z - c)⁻¹) using 1
+  · ext n
+    rw [mul_pow, pow_succ]
+    ring
+  · rw [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap, hx, inv_neg, mul_inv, neg_mul]
+
+end Complex
 
 namespace MeasureTheory
 
