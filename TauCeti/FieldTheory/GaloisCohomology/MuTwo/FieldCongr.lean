@@ -53,7 +53,8 @@ variable {K : Type u} {L : Type v} [Field K] [Field L]
 attribute [local instance] TopRep.distribMulAction
 
 /-- The trivial `𝔽₂` coefficients are a discrete module. -/
-local instance (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] :
+local instance continuousSMul_trivialF2_fieldCongr (G : Type*) [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] :
     ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
