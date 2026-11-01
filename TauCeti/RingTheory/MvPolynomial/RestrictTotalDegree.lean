@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.RingTheory.MvPolynomial.Finrank
+public import TauCeti.LinearAlgebra.Basis.Pi
 
 /-!
 # The submodules of polynomials of bounded total degree
@@ -25,10 +26,10 @@ a basis whose coordinates are the coefficients, giving finite coordinates on tup
 bounded-degree polynomials; evaluating such tuples is faithful over an infinite integral domain,
 by Mathlib's `MvPolynomial.funext`. Raising the degree bound leaves the evaluation unchanged and
 zero-pads the coordinates. The homogeneous polynomials of degree `d` have the analogous
-coordinates and evaluation, and their inclusion among the polynomials of total degree at most `d`
-again zero-pads the coordinates. As a spanning family, the monomials may be
-replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members of a polynomial sequence `S` in the separate
-variables, for instance the integer-valued binomial polynomials.
+coordinates, from `TauCeti.homogeneousMonomialBasis`, and evaluation, and their inclusion among
+the polynomials of total degree at most `d` again zero-pads the coordinates. As a spanning family,
+the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members of a polynomial sequence
+`S` in the separate variables, for instance the integer-valued binomial polynomials.
 
 ## Main results
 
@@ -41,12 +42,14 @@ variables, for instance the integer-valued binomial polynomials.
   at most `m`, whose coordinates are the coefficients.
 * `MvPolynomial.boundedCoefficientEquiv`: monomial coefficients as finite coordinates on tuples of
   bounded-degree polynomials.
-* `MvPolynomial.boundedEvaluation`, `MvPolynomial.boundedEvaluation_injective`: evaluation of such
-  tuples as vector-valued functions is linear, and injective over an infinite integral domain.
+* `MvPolynomial.tupleEvaluation`, `MvPolynomial.tupleEvaluation_injective`: evaluation of tuples
+  of polynomials from a submodule as vector-valued functions is linear, and injective over an
+  infinite integral domain; `MvPolynomial.boundedEvaluation` is its bounded-degree case.
+* `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_eq_extendByZero`: including a submodule of
+  polynomials supported on a set of exponents of degree at most `e` among the polynomials of total
+  degree at most `e` extends the coefficients by zero.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp`: raising the degree bound extends the
   finite coefficient coordinates by zero.
-* `MvPolynomial.homogeneousCoefficientEquiv`, `MvPolynomial.homogeneousEvaluation`: the same
-  coordinates and evaluation for tuples of homogeneous polynomials of degree `d`.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_homogeneous`: including homogeneous
   polynomials in a bounded-degree space extends their coordinates by zero.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
@@ -130,28 +133,26 @@ with functions on the pairs of an index and an exponent of degree at most `d`. F
 variables and indices this index type is finite, so these are finite coordinates. -/
 noncomputable def boundedCoefficientEquiv [Finite σ] (d : ℕ) :
     (J → restrictTotalDegree σ R d) ≃ₗ[R] (J × {s : σ →₀ ℕ // s.degree ≤ d} → R) :=
-  (LinearEquiv.piCongrRight fun _ => (basisRestrictTotalDegree σ R d).equivFun).trans
-    (LinearEquiv.curry R R J {s : σ →₀ ℕ // s.degree ≤ d}).symm
+  (basisRestrictTotalDegree σ R d).piEquivFun J
 
 /-- A finite coefficient coordinate is the corresponding monomial coefficient of an entry. -/
 @[simp] theorem boundedCoefficientEquiv_apply [Finite σ] {d : ℕ}
     (v : J → restrictTotalDegree σ R d) (i : J × {s : σ →₀ ℕ // s.degree ≤ d}) :
     boundedCoefficientEquiv σ R J d v i = (v i.1 : MvPolynomial σ R).coeff i.2 := by
-  simp [boundedCoefficientEquiv, Function.uncurry]
+  simp [boundedCoefficientEquiv]
 
 /-- The tuple with prescribed finite coefficient coordinates has those monomial coefficients. -/
 @[simp] theorem coeff_boundedCoefficientEquiv_symm_apply [Finite σ] {d : ℕ}
     (a : J × {s : σ →₀ ℕ // s.degree ≤ d} → R) (j : J) (s : {s : σ →₀ ℕ // s.degree ≤ d}) :
     (((boundedCoefficientEquiv σ R J d).symm a j : restrictTotalDegree σ R d) :
-      MvPolynomial σ R).coeff s = a (j, s) := by
-  have h := boundedCoefficientEquiv_apply ((boundedCoefficientEquiv σ R J d).symm a) (j, s)
-  rwa [LinearEquiv.apply_symm_apply, eq_comm] at h
+      MvPolynomial σ R).coeff s = a (j, s) :=
+  (basisRestrictTotalDegree σ R d).repr_piEquivFun_symm_apply a j s
 
-variable (σ R J) in
-/-- Evaluation of a tuple of bounded-degree polynomials as a vector-valued function on points.
-It is linear in the tuple. -/
-noncomputable def boundedEvaluation (d : ℕ) :
-    (J → restrictTotalDegree σ R d) →ₗ[R] (σ → R) → J → R where
+variable (J) in
+/-- Evaluation of a tuple of polynomials from a submodule `S` as a vector-valued function on
+points. It is linear in the tuple. -/
+noncomputable def tupleEvaluation (S : Submodule R (MvPolynomial σ R)) :
+    (J → S) →ₗ[R] (σ → R) → J → R where
   toFun v x j := eval x (v j : MvPolynomial σ R)
   map_add' v w := by
     funext x j
@@ -159,6 +160,31 @@ noncomputable def boundedEvaluation (d : ℕ) :
   map_smul' a v := by
     funext x j
     simp
+
+/-- Coordinate evaluation of a tuple of polynomials from a submodule. -/
+@[simp] theorem tupleEvaluation_apply {S : Submodule R (MvPolynomial σ R)} (v : J → S)
+    (x : σ → R) (j : J) :
+    tupleEvaluation J S v x j = eval x (v j : MvPolynomial σ R) := (rfl)
+
+/-- Over an infinite integral domain, tuples of polynomials from a submodule are determined by
+the functions they define: the evaluation map is faithful. -/
+theorem tupleEvaluation_injective {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+    (S : Submodule R (MvPolynomial σ R)) : Function.Injective (tupleEvaluation J S) :=
+  fun _ _ h =>
+    _root_.funext fun j => Subtype.ext <| MvPolynomial.funext fun x => congrFun (congrFun h x) j
+
+/-- Including a tuple of polynomials into a larger submodule does not change the function it
+defines. -/
+@[simp] theorem tupleEvaluation_inclusion_comp {S T : Submodule R (MvPolynomial σ R)}
+    (h : S ≤ T) (v : J → S) :
+    tupleEvaluation J T (Submodule.inclusion h ∘ v) = tupleEvaluation J S v := (rfl)
+
+variable (σ R J) in
+/-- Evaluation of a tuple of bounded-degree polynomials as a vector-valued function on points.
+It is linear in the tuple. -/
+noncomputable def boundedEvaluation (d : ℕ) :
+    (J → restrictTotalDegree σ R d) →ₗ[R] (σ → R) → J → R :=
+  tupleEvaluation J (restrictTotalDegree σ R d)
 
 /-- Coordinate evaluation of a tuple of bounded-degree polynomials. -/
 @[simp] theorem boundedEvaluation_apply {d : ℕ} (v : J → restrictTotalDegree σ R d)
@@ -168,8 +194,8 @@ noncomputable def boundedEvaluation (d : ℕ) :
 /-- Over an infinite integral domain, bounded-degree polynomial tuples are determined by the
 functions they define: the evaluation map is faithful. -/
 theorem boundedEvaluation_injective {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
-    (d : ℕ) : Function.Injective (boundedEvaluation σ R J d) := fun _ _ h =>
-  _root_.funext fun j => Subtype.ext <| MvPolynomial.funext fun x => congrFun (congrFun h x) j
+    (d : ℕ) : Function.Injective (boundedEvaluation σ R J d) :=
+  tupleEvaluation_injective _
 
 /-- Raising the degree bound from `d` to `d'` does not change the function defined by a tuple of
 bounded-degree polynomials. -/
@@ -177,6 +203,34 @@ bounded-degree polynomials. -/
     (v : J → restrictTotalDegree σ R d) :
     boundedEvaluation σ R J d' (Submodule.inclusion (restrictTotalDegree_mono σ R h) ∘ v) =
       boundedEvaluation σ R J d v := (rfl)
+
+/-- Let `p` be a submodule of the polynomials of total degree at most `e` whose members have zero
+coefficients at the exponents outside `Q`, all exponents in `Q` having degree at most `e`.
+Including a tuple from `p` among the polynomials of total degree at most `e` extends its
+coefficients at the exponents in `Q` by zero. -/
+theorem boundedCoefficientEquiv_inclusion_comp_eq_extendByZero [Finite σ]
+    {p : Submodule R (MvPolynomial σ R)} {e : ℕ} (hp : p ≤ restrictTotalDegree σ R e)
+    {Q : (σ →₀ ℕ) → Prop} (hQ : ∀ s, Q s → s.degree ≤ e)
+    (h0 : ∀ x ∈ p, ∀ s, ¬Q s → x.coeff s = 0) (v : J → p) :
+    boundedCoefficientEquiv σ R J e (Submodule.inclusion hp ∘ v) =
+      Function.ExtendByZero.linearMap R R
+        (Prod.map (id : J → J) (Subtype.impEmbedding Q (fun s => s.degree ≤ e) hQ))
+        (fun i : J × Subtype Q => (v i.1 : MvPolynomial σ R).coeff i.2) := by
+  have hinj : Function.Injective
+      (Prod.map (id : J → J) (Subtype.impEmbedding Q (fun s => s.degree ≤ e) hQ)) :=
+    Function.injective_id.prodMap (Subtype.impEmbedding _ _ _).injective
+  ext ⟨j, s, hs'⟩
+  rw [Function.ExtendByZero.linearMap_apply]
+  by_cases hs : Q s
+  · -- The index `(j, ⟨s, hs'⟩)` is the image of `(j, ⟨s, hs⟩)` by definition.
+    rw [show ((j, ⟨s, hs'⟩) : J × {s : σ →₀ ℕ // s.degree ≤ e}) =
+      Prod.map id (Subtype.impEmbedding Q _ hQ) (j, ⟨s, hs⟩) from rfl, hinj.extend_apply]
+    simp
+  · rw [Function.extend_apply' _ _ _ ?_, Pi.zero_apply, boundedCoefficientEquiv_apply,
+      Function.comp_apply, Submodule.coe_inclusion]
+    · exact h0 _ (v j).2 s hs
+    · rintro ⟨⟨j', s', hs''⟩, he⟩
+      exact hs (by cases he; exact hs'')
 
 /-- Raising the degree bound from `d` to `d'` zero-pads the finite coefficient coordinates: they
 are extended by zero along the inclusion of index types, so the new coordinates at exponents of
@@ -188,31 +242,23 @@ theorem boundedCoefficientEquiv_inclusion_comp [Finite σ] {d d' : ℕ} (h : d �
           (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ d')
             fun _ hs => hs.trans h))
         (boundedCoefficientEquiv σ R J d v) := by
-  have hinj : Function.Injective (Prod.map (id : J → J)
-      (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ d')
-        fun _ hs => hs.trans h)) :=
-    Function.injective_id.prodMap (Subtype.impEmbedding _ _ _).injective
-  ext ⟨j, s, hs'⟩
-  by_cases hs : s.degree ≤ d
-  · convert (hinj.extend_apply (boundedCoefficientEquiv σ R J d v)
-      (0 : J × {s : σ →₀ ℕ // s.degree ≤ d'} → R) (j, ⟨s, hs⟩)).symm using 1
-    · simp
-    · -- The index `(j, ⟨s, hs'⟩)` is the image of `(j, ⟨s, hs⟩)` by definition.
-      rw [Function.ExtendByZero.linearMap_apply]
-      rfl
-  · rw [Function.ExtendByZero.linearMap_apply, Function.extend_apply' _ _ _ ?_, Pi.zero_apply,
-      boundedCoefficientEquiv_apply, Function.comp_apply, Submodule.coe_inclusion]
-    · refine coeff_eq_zero_of_totalDegree_lt ?_
-      rw [← Finsupp.degree_apply]
-      exact ((mem_restrictTotalDegree σ d _).1 (v j).2).trans_lt (not_le.1 hs)
-    · rintro ⟨⟨j', s', hs''⟩, he⟩
-      exact hs (by cases he; exact hs'')
+  have h0 (x : MvPolynomial σ R) (hx : x ∈ restrictTotalDegree σ R d) (s : σ →₀ ℕ)
+      (hs : ¬s.degree ≤ d) : x.coeff s = 0 := by
+    refine coeff_eq_zero_of_totalDegree_lt ?_
+    rw [← Finsupp.degree_apply]
+    exact ((mem_restrictTotalDegree σ d x).1 hx).trans_lt (not_le.1 hs)
+  rw [boundedCoefficientEquiv_inclusion_comp_eq_extendByZero _ (Q := fun s => s.degree ≤ d)
+    (fun _ hs => hs.trans h) h0 v]
+  congr 1
+  ext i
+  exact (boundedCoefficientEquiv_apply v i).symm
 
 /-! ### Homogeneous coordinates
 
 The homogeneous polynomials of degree `d` lie among those of total degree at most `d`. Their
-monomial coordinates are indexed by the exponents of degree exactly `d`, and including them in a
-bounded-degree space extends these coordinates by zero. -/
+monomial coordinates `(homogeneousMonomialBasis d).piEquivFun J` are indexed by the exponents of
+degree exactly `d`, their evaluation is `tupleEvaluation`, and including them in a bounded-degree
+space extends these coordinates by zero. -/
 
 variable (σ R) in
 /-- A homogeneous polynomial of degree `d` has total degree at most every `e ≥ d`. -/
@@ -220,61 +266,6 @@ theorem homogeneousSubmodule_le_restrictTotalDegree {d e : ℕ} (h : d ≤ e) :
     homogeneousSubmodule σ R d ≤ restrictTotalDegree σ R e := fun p hp =>
   (mem_restrictTotalDegree σ e p).2 <|
     ((mem_homogeneousSubmodule d p).1 hp).totalDegree_le.trans h
-
-variable (σ R J) in
-/-- Monomial coefficients identify `J`-indexed tuples of homogeneous polynomials of degree `d`
-with functions on the pairs of an index and an exponent of degree `d`. -/
-noncomputable def homogeneousCoefficientEquiv [Finite σ] (d : ℕ) :
-    (J → homogeneousSubmodule σ R d) ≃ₗ[R] (J × {s : σ →₀ ℕ // s.degree = d} → R) :=
-  (LinearEquiv.piCongrRight fun _ => (TauCeti.homogeneousMonomialBasis d).equivFun).trans
-    (LinearEquiv.curry R R J {s : σ →₀ ℕ // s.degree = d}).symm
-
-/-- A homogeneous coefficient coordinate is the corresponding monomial coefficient of an entry. -/
-@[simp] theorem homogeneousCoefficientEquiv_apply [Finite σ] {d : ℕ}
-    (v : J → homogeneousSubmodule σ R d) (i : J × {s : σ →₀ ℕ // s.degree = d}) :
-    homogeneousCoefficientEquiv σ R J d v i = (v i.1 : MvPolynomial σ R).coeff i.2 := by
-  simp [homogeneousCoefficientEquiv, Function.uncurry]
-
-/-- The tuple with prescribed homogeneous coefficient coordinates has those monomial
-coefficients. -/
-@[simp] theorem coeff_homogeneousCoefficientEquiv_symm_apply [Finite σ] {d : ℕ}
-    (a : J × {s : σ →₀ ℕ // s.degree = d} → R) (j : J) (s : {s : σ →₀ ℕ // s.degree = d}) :
-    (((homogeneousCoefficientEquiv σ R J d).symm a j : homogeneousSubmodule σ R d) :
-      MvPolynomial σ R).coeff s = a (j, s) := by
-  have h := homogeneousCoefficientEquiv_apply ((homogeneousCoefficientEquiv σ R J d).symm a) (j, s)
-  rwa [LinearEquiv.apply_symm_apply, eq_comm] at h
-
-variable (σ R J) in
-/-- Evaluation of a tuple of homogeneous polynomials of degree `d` as a vector-valued function on
-points. It is linear in the tuple. -/
-noncomputable def homogeneousEvaluation (d : ℕ) :
-    (J → homogeneousSubmodule σ R d) →ₗ[R] (σ → R) → J → R where
-  toFun v x j := eval x (v j : MvPolynomial σ R)
-  map_add' v w := by
-    funext x j
-    simp
-  map_smul' a v := by
-    funext x j
-    simp
-
-/-- Coordinate evaluation of a tuple of homogeneous polynomials. -/
-@[simp] theorem homogeneousEvaluation_apply {d : ℕ} (v : J → homogeneousSubmodule σ R d)
-    (x : σ → R) (j : J) :
-    homogeneousEvaluation σ R J d v x j = eval x (v j : MvPolynomial σ R) := (rfl)
-
-/-- Over an infinite integral domain, tuples of homogeneous polynomials are determined by the
-functions they define: the evaluation map is faithful. -/
-theorem homogeneousEvaluation_injective {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
-    (d : ℕ) : Function.Injective (homogeneousEvaluation σ R J d) := fun _ _ h =>
-  _root_.funext fun j => Subtype.ext <| MvPolynomial.funext fun x => congrFun (congrFun h x) j
-
-/-- Including homogeneous polynomials of degree `d` in a bounded-degree space does not change
-the function they define. -/
-@[simp] theorem boundedEvaluation_inclusion_comp_homogeneous {d e : ℕ} (h : d ≤ e)
-    (v : J → homogeneousSubmodule σ R d) :
-    boundedEvaluation σ R J e
-        (Submodule.inclusion (homogeneousSubmodule_le_restrictTotalDegree σ R h) ∘ v) =
-      homogeneousEvaluation σ R J d v := (rfl)
 
 /-- Including homogeneous polynomials of degree `d` in the polynomials of total degree at most
 `e ≥ d` extends their coefficient coordinates by zero along the inclusion of exponents of degree
@@ -286,25 +277,13 @@ theorem boundedCoefficientEquiv_inclusion_comp_homogeneous [Finite σ] {d e : �
       Function.ExtendByZero.linearMap R R (Prod.map (id : J → J)
           (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree = d) (fun s => s.degree ≤ e)
             fun _ hs => hs.le.trans h))
-        (homogeneousCoefficientEquiv σ R J d v) := by
-  have hinj : Function.Injective (Prod.map (id : J → J)
-      (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree = d) (fun s => s.degree ≤ e)
-        fun _ hs => hs.le.trans h)) :=
-    Function.injective_id.prodMap (Subtype.impEmbedding _ _ _).injective
-  ext ⟨j, s, hs'⟩
-  rw [Function.ExtendByZero.linearMap_apply]
-  by_cases hs : s.degree = d
-  · have hi : ((j, ⟨s, hs'⟩) : J × {s : σ →₀ ℕ // s.degree ≤ e}) =
-        Prod.map id (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree = d)
-          (fun s => s.degree ≤ e) fun _ hs => hs.le.trans h) (j, ⟨s, hs⟩) := by
-      ext <;> simp
-    rw [hi, hinj.extend_apply]
-    simp
-  · rw [Function.extend_apply' _ _ _ ?_, Pi.zero_apply, boundedCoefficientEquiv_apply,
-      Function.comp_apply, Submodule.coe_inclusion]
-    · exact (v j).2.coeff_eq_zero hs
-    · rintro ⟨⟨j', s', hs''⟩, he⟩
-      exact hs (by cases he; exact hs'')
+        ((TauCeti.homogeneousMonomialBasis d).piEquivFun J v) := by
+  rw [boundedCoefficientEquiv_inclusion_comp_eq_extendByZero _ (Q := fun s => s.degree = d)
+    (fun _ hs => hs.le.trans h)
+    (fun x hx _ hs => ((mem_homogeneousSubmodule d x).1 hx).coeff_eq_zero hs) v]
+  congr 1
+  ext i
+  simp
 
 end Coordinates
 

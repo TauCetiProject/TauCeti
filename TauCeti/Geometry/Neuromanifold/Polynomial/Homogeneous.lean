@@ -18,16 +18,18 @@ Specializing the parameters keeps this homogeneity, so the coefficient presentat
 model takes values in a product of homogeneous submodules:
 
 * `polynomialHomogeneousCoefficientMap P hP` is this coefficient map, and
-  `MvPolynomial.homogeneousEvaluation` recovers the realization map from it. Over an infinite
+  `MvPolynomial.tupleEvaluation` recovers the realization map from it. Over an infinite
   integral domain the evaluation is faithful, so coefficients and functions give the same fibres.
-* `polynomialHomogeneousCoefficientCoordinates P hP` gives finite coordinates, indexed by an
-  output and an input exponent of degree exactly `d`; each is polynomial in the parameters.
+* `polynomialHomogeneousCoefficientCoordinates P hP` gives finite coordinates in the monomial
+  basis `homogeneousMonomialBasis d`, indexed by an output and an input exponent of degree exactly
+  `d`; each is polynomial in the parameters.
 * The homogeneous presentation includes into the bounded-degree one with bound `d`:
   `inclusion_comp_polynomialHomogeneousCoefficientMap` compares the coefficient maps and
-  `boundedCoefficientPadding_polynomialCoefficientCoordinates` shows that the zero-padded
-  bounded-degree coordinates are the homogeneous coordinates extended by zero.
+  `boundedCoefficientPadding_polynomialCoefficientCoordinates_of_isHomogeneous` shows that the
+  zero-padded bounded-degree coordinates are the homogeneous coordinates extended by zero.
 
-Input homogeneity is preserved by the polynomial constructors used to build bias-free networks.
+Input homogeneity is preserved by the polynomial constructors used to build bias-free networks,
+using the computations of their collected input polynomials in `Polynomial/Constructors.lean`.
 Substituting polynomials for the parameters keeps the input degree
 (`isHomogeneous_inputPolynomial_polynomialReparametrize`), and substituting a model homogeneous of
 degree `a` into one homogeneous of degree `b` gives degree `a * b`
@@ -73,9 +75,9 @@ def polynomialHomogeneousCoefficientMap (P : J → MvPolynomial (W ⊕ X) K)
       map (eval w) (inputPolynomial P j) := (rfl)
 
 /-- Evaluating the homogeneous coefficient presentation recovers the realization map. -/
-theorem homogeneousEvaluation_comp_polynomialHomogeneousCoefficientMap
+theorem tupleEvaluation_comp_polynomialHomogeneousCoefficientMap
     (P : J → MvPolynomial (W ⊕ X) K) (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) :
-    homogeneousEvaluation X K J d ∘ polynomialHomogeneousCoefficientMap P hP =
+    tupleEvaluation J (homogeneousSubmodule X K d) ∘ polynomialHomogeneousCoefficientMap P hP =
       polynomialRealization P := by
   funext w x j
   simp [eval_map]
@@ -99,9 +101,10 @@ its homogeneous coefficient image. -/
 theorem realizedFunctions_polynomialRealization_of_isHomogeneous
     (P : J → MvPolynomial (W ⊕ X) K) (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) :
     realizedFunctions (polynomialRealization P) =
-      homogeneousEvaluation X K J d '' Set.range (polynomialHomogeneousCoefficientMap P hP) :=
+      tupleEvaluation J (homogeneousSubmodule X K d) ''
+        Set.range (polynomialHomogeneousCoefficientMap P hP) :=
   realizedFunctions_eq_image_range
-    (congrFun (homogeneousEvaluation_comp_polynomialHomogeneousCoefficientMap P hP))
+    (congrFun (tupleEvaluation_comp_polynomialHomogeneousCoefficientMap P hP))
 
 section Coordinates
 
@@ -112,7 +115,7 @@ input exponent of degree `d`. -/
 def polynomialHomogeneousCoefficientCoordinates (P : J → MvPolynomial (W ⊕ X) K)
     (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) (w : W → K) :
     J × {s : X →₀ ℕ // s.degree = d} → K :=
-  homogeneousCoefficientEquiv X K J d (polynomialHomogeneousCoefficientMap P hP w)
+  (homogeneousMonomialBasis d).piEquivFun J (polynomialHomogeneousCoefficientMap P hP w)
 
 /-- Each homogeneous coefficient coordinate is the evaluation at the parameters of a fixed
 polynomial in the parameters. -/
@@ -125,7 +128,7 @@ polynomial in the parameters. -/
 
 /-- Zero-padding the bounded-degree coordinates up to the bound `d` gives the homogeneous
 coordinates extended by zero: every coordinate at an exponent of degree below `d` vanishes. -/
-theorem boundedCoefficientPadding_polynomialCoefficientCoordinates [Fintype J]
+theorem boundedCoefficientPadding_polynomialCoefficientCoordinates_of_isHomogeneous [Fintype J]
     (P : J → MvPolynomial (W ⊕ X) K) (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d)
     (w : W → K) :
     boundedCoefficientPadding (polynomialInputDegree_le_of_isHomogeneous hP)
@@ -154,17 +157,17 @@ theorem polynomialHomogeneousCoefficientMap_eq_iff (P : J → MvPolynomial (W �
     (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) {w v : W → K} :
     polynomialHomogeneousCoefficientMap P hP w = polynomialHomogeneousCoefficientMap P hP v ↔
       polynomialRealization P w = polynomialRealization P v :=
-  apply_eq_apply_iff_of_injective (homogeneousEvaluation_injective _)
-    (congrFun (homogeneousEvaluation_comp_polynomialHomogeneousCoefficientMap P hP))
+  apply_eq_apply_iff_of_injective (tupleEvaluation_injective _)
+    (congrFun (tupleEvaluation_comp_polynomialHomogeneousCoefficientMap P hP))
 
 /-- Over an infinite integral domain, the realization fibre of a model with homogeneous input
 polynomials over the evaluation of `q` is the homogeneous coefficient fibre over `q`. -/
-theorem fiber_polynomialRealization_homogeneousEvaluation (P : J → MvPolynomial (W ⊕ X) K)
+theorem fiber_polynomialRealization_tupleEvaluation (P : J → MvPolynomial (W ⊕ X) K)
     (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) (q : J → homogeneousSubmodule X K d) :
-    fiber (polynomialRealization P) (homogeneousEvaluation X K J d q) =
+    fiber (polynomialRealization P) (tupleEvaluation J (homogeneousSubmodule X K d) q) =
       polynomialHomogeneousCoefficientMap P hP ⁻¹' {q} :=
-  fiber_apply_eq_preimage (homogeneousEvaluation_injective _)
-    (congrFun (homogeneousEvaluation_comp_polynomialHomogeneousCoefficientMap P hP)) q
+  fiber_apply_eq_preimage (tupleEvaluation_injective _)
+    (congrFun (tupleEvaluation_comp_polynomialHomogeneousCoefficientMap P hP)) q
 
 end Faithful
 
@@ -174,50 +177,12 @@ section Constructors
 
 variable {W' V I L : Type*}
 
-/-- Substituting polynomials `R` for the parameters substitutes them into the parameter
-coefficients of each collected input polynomial. -/
-theorem inputPolynomial_polynomialReparametrize (R : W → MvPolynomial W' K)
-    (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
-    inputPolynomial (polynomialReparametrize R P) j =
-      map (bind₁ R : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
-  have hinr (q : MvPolynomial W' K) : sumAlgEquiv K I W' (rename Sum.inr q) = C q := by
-    simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') q
-  simp only [inputPolynomial_def, polynomialReparametrize_apply]
-  induction P j using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => cases i <;> simp [hp, hinr, Function.comp_def]
-
 /-- Substituting polynomials for the parameters preserves input homogeneity. -/
 theorem isHomogeneous_inputPolynomial_polynomialReparametrize (R : W → MvPolynomial W' K)
     {P : J → MvPolynomial (W ⊕ I) K} {d : ℕ} (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d)
     (j : J) : (inputPolynomial (polynomialReparametrize R P) j).IsHomogeneous d := by
   rw [inputPolynomial_polynomialReparametrize]
   exact (hP j).map _
-
-/-- Collecting the inputs of a composite model substitutes the collected input polynomials of
-`P`, with parameters renamed into the composite parameters, for the inputs of `Q`. -/
-theorem inputPolynomial_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
-    (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
-    inputPolynomial (polynomialCompose P Q) l =
-      eval₂ (C.comp (rename Sum.inr : MvPolynomial V K →ₐ[K] MvPolynomial (W ⊕ V) K))
-        (fun j => map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
-          (inputPolynomial P j))
-        (inputPolynomial Q l) := by
-  -- Renaming the parameters of `P` into the composite parameters commutes with collecting inputs.
-  have hP (p : MvPolynomial (W ⊕ I) K) :
-      sumAlgEquiv K I (W ⊕ V) (rename (Sum.swap ∘ Sum.map Sum.inl id) p) =
-        map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
-          (sumAlgEquiv K I W (rename Sum.swap p)) := by
-    induction p using MvPolynomial.induction_on with
-    | C a => simp
-    | add p q hp hq => simp [hp, hq]
-    | mul_X p i hp => cases i <;> simp [hp]
-  simp only [inputPolynomial_def, polynomialCompose_apply]
-  induction Q l using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => cases i <;> simp [hp, hP]
 
 /-- Substituting a model whose input polynomials are homogeneous of degree `a` into one whose
 input polynomials are homogeneous of degree `b` gives input polynomials homogeneous of degree
@@ -232,13 +197,6 @@ theorem isHomogeneous_inputPolynomial_polynomialCompose {P : J → MvPolynomial 
 section Layers
 
 variable {ι ο : Type*}
-
-/-- The collected input polynomials of the linear layer are linear forms whose coefficients are
-the weight variables. -/
-@[simp] theorem inputPolynomial_polynomialLinear [Fintype ι] (o : ο) :
-    inputPolynomial (polynomialLinear : ο → MvPolynomial (ο × ι ⊕ ι) K) o =
-      ∑ i, C (X (o, i)) * X i := by
-  simp [inputPolynomial_def, polynomialLinear_apply]
 
 /-- The linear layer is homogeneous of degree one in its inputs. -/
 theorem isHomogeneous_inputPolynomial_polynomialLinear [Fintype ι] (o : ο) :
