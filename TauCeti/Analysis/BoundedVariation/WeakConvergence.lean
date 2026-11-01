@@ -20,9 +20,10 @@ This is vague (local weak-*) convergence of the vector derivative measures, not 
 their total variations.
 
 The proof first tests the distributional identity against smooth fields, then uses uniform
-approximation with a fixed compact support to pass to continuous fields. The accompanying
-integrability and distance estimates make the continuous-field pairings available without
-assuming global finiteness of the derivative measures.
+approximation with a fixed compact support to pass to continuous fields. The estimates
+`TauCeti.integrable_inner_polarDensity` and `TauCeti.dist_integral_inner_polarDensity_le` in
+`TauCeti.Analysis.BoundedVariation.PolarDecomposition` make the continuous-field pairings
+available without assuming global finiteness of the derivative measures.
 
 ## References
 
@@ -45,7 +46,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- Distributional convergence of locally BV functions with locally uniformly bounded variation
 measures implies convergence of their derivative measures against continuous compactly supported
 fields. The measures may have infinite mass on the whole domain. -/
-theorem tendsto_integral_inner_polarDensity_of_tendsto_testFunction
+theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
     {ι : Type*} {l : Filter ι} {v : ι → E → ℝ} {u : E → ℝ}
     (hv : ∀ i, LocallyIntegrableOn (v i) Ω μ)
     (hvfin : ∀ i K, IsCompact K → K ⊆ Ω →
@@ -134,7 +135,7 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_L1_loc
         ((variationMeasure_preimage_coe (hv i) (hvfin i) hUΩ).le.trans hi)
     exact (ENNReal.toReal_le_toReal (ne_top_of_le_ne_top ENNReal.coe_ne_top hle)
       ENNReal.coe_ne_top).2 hle
-  refine tendsto_integral_inner_polarDensity_of_tendsto_testFunction hv hvfin hu hufin hmass
+  refine tendsto_integral_inner_polarDensity_of_tendsto_integral hv hvfin hu hufin hmass
     (fun ψ => ?_) hf hc hs
   exact MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
     (.of_forall fun x => (ψ : E →ᵇ ℝ).norm_coe_le_norm x)
