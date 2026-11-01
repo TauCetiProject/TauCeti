@@ -48,7 +48,10 @@ def prodToTensor (f : L →ₗ⁅R⁆ A) (g : M →ₗ⁅R⁆ B) : (L × M) →�
 `prodToTensor f g (x, y) = f x ⊗ 1 + 1 ⊗ g y`. -/
 @[simp]
 theorem prodToTensor_apply (f : L →ₗ⁅R⁆ A) (g : M →ₗ⁅R⁆ B) (z : L × M) :
-    prodToTensor f g z = f z.1 ⊗ₜ[R] (1 : B) + (1 : A) ⊗ₜ[R] g z.2 :=
-  (rfl)
+    prodToTensor f g z = f z.1 ⊗ₜ[R] (1 : B) + (1 : A) ⊗ₜ[R] g z.2 := by
+  rw [← coe_toLinearMap]
+  simp only [prodToTensor, LinearMap.coprod_apply, LinearMap.comp_apply, coe_toLinearMap,
+    AlgHom.toLinearMap_apply, Algebra.TensorProduct.includeLeft_apply,
+    Algebra.TensorProduct.includeRight_apply]
 
 end LieHom
