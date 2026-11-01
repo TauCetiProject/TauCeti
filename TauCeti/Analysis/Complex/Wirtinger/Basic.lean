@@ -41,8 +41,11 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `TauCeti.coe_conjWirtingerDeriv_eq_complexAntilinearPart`: the Wirtinger derivatives are the
   complex-linear and complex-antilinear parts of the real derivative.
 * `TauCeti.conjWirtingerDeriv_ofReal_comp_apply`: for real-valued `f`, `\bar∂f = conj ∂f`.
-* `TauCeti.conjWirtingerDeriv_smul_apply`: the product rule `\bar∂(c g) = c \bar∂g + (\bar∂c) g`
-  for a complex-valued factor `c`.
+* `TauCeti.wirtingerDeriv_smul_apply`, `TauCeti.conjWirtingerDeriv_smul_apply`: the product rules
+  `∂(c g) = c ∂g + (∂c) g` and `\bar∂(c g) = c \bar∂g + (\bar∂c) g` for a complex-valued factor `c`.
+* `TauCeti.norm_wirtingerDeriv_smul_sub_smul_le`,
+  `TauCeti.norm_conjWirtingerDeriv_smul_sub_smul_le`: for a real factor `χ`,
+  `‖∂(χ u)(x) v - χ ∂u(x) v‖ ≤ ‖Dχ(x)‖ ‖v‖ ‖u(x)‖`, and likewise for `\bar∂`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 
@@ -109,28 +112,31 @@ theorem wirtingerDeriv_add_conjWirtingerDeriv (v : V) :
   rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply]
   module
 
+/-- A bound for `(a + I • b) / 2` by a common bound for `a` and `b`, the estimate behind both
+Wirtinger norm bounds. -/
+private theorem norm_two_inv_smul_add_I_smul_le {a b : W} {B : ℝ} (ha : ‖a‖ ≤ B) (hb : ‖b‖ ≤ B) :
+    ‖(2 : ℂ)⁻¹ • (a + I • b)‖ ≤ B := by
+  have h := norm_add_le a (I • b)
+  rw [norm_smul, norm_I, one_mul] at h
+  rw [norm_smul, norm_inv, Complex.norm_two]
+  linarith
+
+private theorem norm_fderiv_apply_I_smul_le (v : V) :
+    ‖fderiv ℝ g x (I • v)‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
+  simpa [norm_smul] using (fderiv ℝ g x).le_opNorm (I • v)
+
 /-- The Wirtinger derivative is bounded by the real derivative: `‖∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`. -/
 theorem norm_wirtingerDeriv_apply_le (v : V) :
     ‖wirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
-  have h1 := (fderiv ℝ g x).le_opNorm v
-  have hI : ‖fderiv ℝ g x (I • v)‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
-    simpa [norm_smul] using (fderiv ℝ g x).le_opNorm (I • v)
-  have h := norm_sub_le (fderiv ℝ g x v) (I • fderiv ℝ g x (I • v))
-  rw [norm_smul, norm_I, one_mul] at h
-  rw [wirtingerDeriv_apply, norm_smul, norm_inv, Complex.norm_two]
-  linarith
+  rw [wirtingerDeriv_apply, sub_eq_add_neg, ← smul_neg]
+  exact norm_two_inv_smul_add_I_smul_le ((fderiv ℝ g x).le_opNorm v)
+    ((norm_neg _).trans_le (norm_fderiv_apply_I_smul_le g x v))
 
 /-- The conjugate Wirtinger derivative is bounded by the real derivative:
 `‖\bar∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`. -/
 theorem norm_conjWirtingerDeriv_apply_le (v : V) :
-    ‖conjWirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
-  have h1 := (fderiv ℝ g x).le_opNorm v
-  have hI : ‖fderiv ℝ g x (I • v)‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
-    simpa [norm_smul] using (fderiv ℝ g x).le_opNorm (I • v)
-  have h := norm_add_le (fderiv ℝ g x v) (I • fderiv ℝ g x (I • v))
-  rw [norm_smul, norm_I, one_mul] at h
-  rw [conjWirtingerDeriv_apply, norm_smul, norm_inv, Complex.norm_two]
-  linarith
+    ‖conjWirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ :=
+  norm_two_inv_smul_add_I_smul_le ((fderiv ℝ g x).le_opNorm v) (norm_fderiv_apply_I_smul_le g x v)
 
 /-- The Wirtinger derivative is the complex-linear part `TauCeti.complexLinearPart` of the real
 derivative, for the complex structures given by multiplication by `I`. -/
@@ -182,6 +188,16 @@ theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
 
 end Wirtinger
 
+/-- **The product rule for the Wirtinger derivative**: for a complex-valued factor `c`,
+`∂(c g) = c ∂g + (∂c) g`. -/
+theorem wirtingerDeriv_smul_apply {c : V → ℂ} {g : V → W} {x : V}
+    (hc : DifferentiableAt ℝ c x) (hg : DifferentiableAt ℝ g x) (v : V) :
+    wirtingerDeriv (fun y ↦ c y • g y) x v =
+      c x • wirtingerDeriv g x v + wirtingerDeriv c x v • g x := by
+  simp only [wirtingerDeriv_apply, fderiv_fun_smul hc hg, add_apply, FunLike.coe_smul,
+    Pi.smul_apply, ContinuousLinearMap.smulRight_apply]
+  module
+
 /-- **The product rule for the conjugate Wirtinger derivative**: for a complex-valued factor `c`,
 `\bar∂(c g) = c \bar∂g + (\bar∂c) g`. -/
 theorem conjWirtingerDeriv_smul_apply {c : V → ℂ} {g : V → W} {x : V}
@@ -191,6 +207,41 @@ theorem conjWirtingerDeriv_smul_apply {c : V → ℂ} {g : V → W} {x : V}
   simp only [conjWirtingerDeriv_apply, fderiv_fun_smul hc hg, add_apply, FunLike.coe_smul,
     Pi.smul_apply, ContinuousLinearMap.smulRight_apply]
   module
+
+private theorem differentiableAt_ofReal_comp {χ : V → ℝ} {x : V} (hχ : DifferentiableAt ℝ χ x) :
+    DifferentiableAt ℝ (fun y ↦ (χ y : ℂ)) x :=
+  ofRealCLM.differentiableAt.comp x hχ
+
+private theorem norm_fderiv_ofReal_comp_le (χ : V → ℝ) (x : V) :
+    ‖fderiv ℝ (fun y ↦ (χ y : ℂ)) x‖ ≤ ‖fderiv ℝ χ x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_
+  rw [fderiv_ofReal_comp_apply, Complex.norm_real]
+  exact (fderiv ℝ χ x).le_opNorm w
+
+/-- Against a real factor `χ`, `∂(χ u)` differs from `χ ∂u` by `(∂χ) u`, whose norm is at most
+`‖Dχ‖ ‖v‖ ‖u‖`. -/
+theorem norm_wirtingerDeriv_smul_sub_smul_le {χ : V → ℝ} {u : V → W} {x : V}
+    (hχ : DifferentiableAt ℝ χ x) (hu : DifferentiableAt ℝ u x) (v : V) :
+    ‖wirtingerDeriv (fun y ↦ χ y • u y) x v - χ x • wirtingerDeriv u x v‖ ≤
+      ‖fderiv ℝ χ x‖ * ‖v‖ * ‖u x‖ := by
+  simp_rw [← Complex.coe_smul]
+  rw [wirtingerDeriv_smul_apply (differentiableAt_ofReal_comp hχ) hu, add_sub_cancel_left,
+    norm_smul]
+  gcongr
+  exact (norm_wirtingerDeriv_apply_le _ _ _).trans (by gcongr; exact norm_fderiv_ofReal_comp_le χ x)
+
+/-- Against a real factor `χ`, `\bar∂(χ u)` differs from `χ \bar∂u` by `(\bar∂χ) u`, whose norm is
+at most `‖Dχ‖ ‖v‖ ‖u‖`. -/
+theorem norm_conjWirtingerDeriv_smul_sub_smul_le {χ : V → ℝ} {u : V → W} {x : V}
+    (hχ : DifferentiableAt ℝ χ x) (hu : DifferentiableAt ℝ u x) (v : V) :
+    ‖conjWirtingerDeriv (fun y ↦ χ y • u y) x v - χ x • conjWirtingerDeriv u x v‖ ≤
+      ‖fderiv ℝ χ x‖ * ‖v‖ * ‖u x‖ := by
+  simp_rw [← Complex.coe_smul]
+  rw [conjWirtingerDeriv_smul_apply (differentiableAt_ofReal_comp hχ) hu, add_sub_cancel_left,
+    norm_smul]
+  gcongr
+  exact (norm_conjWirtingerDeriv_apply_le _ _ _).trans
+    (by gcongr; exact norm_fderiv_ofReal_comp_le χ x)
 
 /-- In one variable the Wirtinger derivative is determined by its value at `1`. -/
 theorem wirtingerDeriv_apply_eq_smul_apply_one {f : ℂ → W} (x v : ℂ) :

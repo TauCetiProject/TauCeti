@@ -76,24 +76,6 @@ section Cutoff
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- Against a real factor `χ`, `\bar∂(χ u)` differs from `χ \bar∂u` by `(\bar∂χ) u`, whose norm is
-at most `‖Dχ‖ ‖u‖`. -/
-private theorem norm_conjWirtingerDeriv_smul_sub_smul_le {χ : ℂ → ℝ} {u : ℂ → F} {z : ℂ}
-    (hχ : DifferentiableAt ℝ χ z) (hu : DifferentiableAt ℝ u z) :
-    ‖conjWirtingerDeriv (fun y ↦ χ y • u y) z 1 - χ z • conjWirtingerDeriv u z 1‖ ≤
-      ‖fderiv ℝ χ z‖ * ‖u z‖ := by
-  have hχℂ : DifferentiableAt ℝ (fun y ↦ (χ y : ℂ)) z := ofRealCLM.differentiableAt.comp z hχ
-  have hfun : (fun y ↦ χ y • u y) = fun y ↦ (χ y : ℂ) • u y :=
-    funext fun y ↦ (Complex.coe_smul _ _).symm
-  rw [hfun, conjWirtingerDeriv_smul_apply hχℂ hu, Complex.coe_smul, add_sub_cancel_left,
-    norm_smul]
-  gcongr
-  refine (norm_conjWirtingerDeriv_apply_le _ _ _).trans ?_
-  rw [norm_one, mul_one]
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_
-  rw [fderiv_ofReal_comp_apply, Complex.norm_real]
-  exact (fderiv ℝ χ z).le_opNorm w
-
 /-- The pointwise form of the interior estimate: if `g` is within `δ ‖Du‖ + M ‖u‖` of `\bar∂u`,
 then `\bar∂(χ u)` is bounded by `‖g‖ + δ ‖D(χ u)‖` plus a multiple of `‖u‖`, for a cutoff `χ`
 with values in `[0, 1]` and `‖Dχ‖ ≤ L`. -/
@@ -103,7 +85,8 @@ private theorem norm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ �
     (hg : ‖g z - conjWirtingerDeriv u z 1‖ ≤ δ * ‖fderiv ℝ u z‖ + M * ‖u z‖) :
     ‖conjWirtingerDeriv (fun y ↦ χ y • u y) z 1‖ ≤
       ‖g z‖ + δ * ‖fderiv ℝ (fun y ↦ χ y • u y) z‖ + (δ * L + M + L) * ‖u z‖ := by
-  have hcut := norm_conjWirtingerDeriv_smul_sub_smul_le hχ hu
+  have hcut := norm_conjWirtingerDeriv_smul_sub_smul_le hχ hu 1
+  rw [norm_one, mul_one] at hcut
   -- `χ ‖Du‖ ≤ ‖D(χ u)‖ + ‖Dχ‖ ‖u‖`, read off the product rule for `D(χ u)`.
   have hDu : χ z * ‖fderiv ℝ u z‖ ≤
       ‖fderiv ℝ (fun y ↦ χ y • u y) z‖ + ‖fderiv ℝ χ z‖ * ‖u z‖ := by
@@ -135,21 +118,6 @@ private theorem norm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ �
           hDu.trans (by gcongr)
         gcongr
     _ = ‖g z‖ + δ * ‖fderiv ℝ (fun y ↦ χ y • u y) z‖ + (δ * L + M + L) * ‖u z‖ := by ring
-
-/-- On a compact set where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm of
-`D u` there is at most that of `D (χ u)` on the whole plane. -/
-private theorem eLpNorm_fderiv_restrict_le_of_subset_interior {χ : ℂ → ℝ} {u : ℂ → F}
-    {K : Set ℂ} (hK : IsCompact K) (hKχ : K ⊆ interior (χ ⁻¹' {1})) (p : ℝ≥0∞) :
-    eLpNorm (fderiv ℝ u) p (volume.restrict K) ≤
-      eLpNorm (fderiv ℝ fun y ↦ χ y • u y) p volume := by
-  have heq : fderiv ℝ u =ᵐ[volume.restrict K] fderiv ℝ fun y ↦ χ y • u y := by
-    refine ae_restrict_of_forall_mem hK.measurableSet fun z hz ↦ ?_
-    refine (Filter.EventuallyEq.fderiv_eq ?_).symm
-    filter_upwards [isOpen_interior.mem_nhds (hKχ hz)] with y hy
-    have hy1 : χ y = 1 := interior_subset hy
-    simp [hy1]
-  rw [eLpNorm_congr_ae heq]
-  exact eLpNorm_mono_measure _ Measure.restrict_le_self
 
 /-- **The `Lᵖ` form of the cutoff estimate.** For a smooth cutoff `χ` with values in `[0, 1]`,
 supported in `U` and with `‖Dχ‖ ≤ L`, and `g` within `δ ‖Du‖ + M ‖u‖` of `\bar∂u` on `U`,
@@ -186,7 +154,7 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
   have hsplit : (fun z ↦ ‖g z‖ + δ * ‖fderiv ℝ v z‖ + (δ * L + M + L : ℝ≥0) * ‖u z‖) =
       (fun z ↦ ‖g z‖) + ((δ : ℝ) • fun z ↦ ‖fderiv ℝ v z‖) +
         (((δ * L + M + L : ℝ≥0) : ℝ) • fun z ↦ ‖u z‖) :=
-    rfl
+    funext fun z ↦ by simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   refine (eLpNorm_mono_ae_real hdbar.aestronglyMeasurable hpt).trans ?_
   rw [hsplit]
   refine (eLpNorm_add_le hp).trans (add_le_add ((eLpNorm_add_le hp).trans
@@ -195,6 +163,47 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
     exact mul_le_mul_right (eLpNorm_mono_measure (fderiv ℝ v) Measure.restrict_le_self) _
   · rw [eLpNorm_const_smul, NNReal.enorm_eq,
       eLpNorm_norm _ (hu.continuousOn.aestronglyMeasurable hU.measurableSet)]
+
+/-- A finite quantity bounded by `A` plus half of itself is at most `2 A`: the absorption step of
+the interior estimate. -/
+private theorem le_mul_two_of_le_add_div_two {X A : ℝ≥0∞} (hX : X ≠ ⊤) (h : X ≤ A + X / 2) :
+    X ≤ A * 2 := by
+  have h' : X / 2 + X / 2 ≤ A + X / 2 := by rwa [ENNReal.add_halves]
+  rw [← ENNReal.div_le_iff_le_mul (Or.inl two_ne_zero) (Or.inl ENNReal.ofNat_ne_top)]
+  exact (ENNReal.add_le_add_iff_right (ENNReal.div_ne_top hX two_ne_zero)).1 h'
+
+/-- **The Calderón–Zygmund inequality for the cut-off map.** If `C` is a Calderón–Zygmund
+constant and `C δ = 1 / 2`, then the term `δ ‖D(χ u)‖_{Lᵖ}` coming from the cutoff estimate is
+absorbed into the left-hand side, which is finite since `χ u` is smooth with compact support. -/
+private theorem eLpNorm_fderiv_smul_le {χ : ℂ → ℝ} {u g : ℂ → F} {U : Set ℂ}
+    {C δ M L : ℝ≥0} {p : ℝ≥0∞} (hp : 1 ≤ p) (hU : IsOpen U) (hχ : ContDiff ℝ ∞ χ)
+    (hχr : range χ ⊆ Icc 0 1) (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U)
+    (hL : ∀ z, ‖fderiv ℝ χ z‖ ≤ L) (hu : ContDiffOn ℝ ∞ u U)
+    (hgm : AEStronglyMeasurable g (volume.restrict U))
+    (hg : ∀ z ∈ U, ‖g z - conjWirtingerDeriv u z 1‖ ≤ δ * ‖fderiv ℝ u z‖ + M * ‖u z‖)
+    (hC : ∀ v : ℂ → F, ContDiff ℝ ∞ v → HasCompactSupport v →
+      eLpNorm (fderiv ℝ v) p volume ≤ C * eLpNorm (fun z ↦ conjWirtingerDeriv v z 1) p volume)
+    (hCδ : C * δ = 2⁻¹) :
+    eLpNorm (fderiv ℝ fun y ↦ χ y • u y) p volume ≤
+      C * (eLpNorm g p (volume.restrict U) +
+        (δ * L + M + L : ℝ≥0) * eLpNorm u p (volume.restrict U)) * 2 := by
+  set v : ℂ → F := fun y ↦ χ y • u y
+  have hv : ContDiff ℝ ∞ v := hu.contDiff_smul_of_tsupport_subset hU hχ.contDiffOn hχU
+  have hvc : HasCompactSupport v := hχc.smul_right
+  set X := eLpNorm (fderiv ℝ v) p volume
+  have hX : X ≠ ⊤ :=
+    ((hv.continuous_fderiv (by simp)).memLp_of_hasCompactSupport (hvc.fderiv ℝ)).eLpNorm_ne_top
+  set G := eLpNorm g p (volume.restrict U)
+  set NY := ((δ * L + M + L : ℝ≥0) : ℝ≥0∞) * eLpNorm u p (volume.restrict U)
+  refine le_mul_two_of_le_add_div_two hX ?_
+  calc X ≤ C * eLpNorm (fun z ↦ conjWirtingerDeriv v z 1) p volume := hC v hv hvc
+    _ ≤ C * (G + δ * X + NY) := by
+        gcongr
+        exact eLpNorm_conjWirtingerDeriv_smul_le hp hU hχ hχr hχU hL hu hgm hg
+    _ = C * (G + NY) + ((C * δ : ℝ≥0) : ℝ≥0∞) * X := by
+        push_cast
+        ring
+    _ = C * (G + NY) + X / 2 := by simp [hCδ, ENNReal.div_eq_inv_mul]
 
 end Cutoff
 
@@ -218,11 +227,9 @@ theorem exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le {p : ℝ≥0�
   set C₁ : ℝ≥0 := C₀ + 1
   have hC₁0 : C₁ ≠ 0 := by positivity
   set δ : ℝ≥0 := (2 * C₁)⁻¹ with hδ
-  have hC₁δ : ((C₁ * δ : ℝ≥0) : ℝ≥0∞) = 2⁻¹ := by
-    have h : C₁ * δ = 2⁻¹ := by
-      rw [hδ]
-      field_simp
-    simp [h]
+  have hC₁δ : C₁ * δ = 2⁻¹ := by
+    rw [hδ]
+    field_simp
   refine ⟨δ, by positivity, fun U K hU hK hKU M ↦ ?_⟩
   obtain ⟨χ, hχ, hχr, hKχ, hχc, hχU⟩ := hK.exists_contDiff_cutoff hU hKU
   obtain ⟨L, hL⟩ : ∃ L : ℝ≥0, ∀ z, ‖fderiv ℝ χ z‖ ≤ L := by
@@ -236,35 +243,19 @@ theorem exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le {p : ℝ≥0�
   swap
   · rw [eLpNorm_of_not_aestronglyMeasurable hgm, top_add, ENNReal.mul_top (by positivity)]
     exact le_top
-  set v : ℂ → F := fun y ↦ χ y • u y
-  have hv : ContDiff ℝ ∞ v := hu.contDiff_smul_of_tsupport_subset hU hχ.contDiffOn hχU
-  have hvc : HasCompactSupport v := hχc.smul_right
-  set X := eLpNorm (fderiv ℝ v) p volume
-  have hX : X ≠ ⊤ :=
-    ((hv.continuous_fderiv (by simp)).memLp_of_hasCompactSupport (hvc.fderiv ℝ)).eLpNorm_ne_top
   set G := eLpNorm g p (volume.restrict U)
   set Y := eLpNorm u p (volume.restrict U)
-  -- The Calderón–Zygmund inequality for `v`, with the term `δ ‖D v‖` absorbed by `C₁ δ = 1 / 2`.
-  have hXle : X ≤ C₁ * (G + N * Y) + X / 2 :=
-    calc X ≤ C₀ * eLpNorm (fun z ↦ conjWirtingerDeriv v z 1) p volume := hC₀ v hv hvc
-      _ ≤ C₁ * (G + δ * X + N * Y) := by
-          gcongr
-          · exact_mod_cast le_self_add
-          · exact eLpNorm_conjWirtingerDeriv_smul_le hp.le hU hχ hχr hχU hL hu hgm hg
-      _ = C₁ * (G + N * Y) + ((C₁ * δ : ℝ≥0) : ℝ≥0∞) * X := by
-          push_cast
-          ring
-      _ = C₁ * (G + N * Y) + X / 2 := by rw [hC₁δ, ENNReal.div_eq_inv_mul]
-  have hX2 : X / 2 ≤ C₁ * (G + N * Y) := by
-    have h : X / 2 + X / 2 ≤ C₁ * (G + N * Y) + X / 2 := by rwa [ENNReal.add_halves]
-    exact (ENNReal.add_le_add_iff_right (ENNReal.div_ne_top hX two_ne_zero)).1 h
-  rw [ENNReal.div_le_iff_le_mul (Or.inl two_ne_zero) (Or.inl ENNReal.ofNat_ne_top)] at hX2
   have hGY : G + N * Y ≤ (1 + N) * (G + Y) := by
     rw [add_mul, one_mul, mul_add]
     exact add_le_add le_self_add le_add_self
-  calc eLpNorm (fderiv ℝ u) p (volume.restrict K) ≤ X :=
-        eLpNorm_fderiv_restrict_le_of_subset_interior hK hKχ p
-    _ ≤ C₁ * (G + N * Y) * 2 := hX2
+  have hCZ : ∀ v : ℂ → F, ContDiff ℝ ∞ v → HasCompactSupport v →
+      eLpNorm (fderiv ℝ v) p volume ≤ C₁ * eLpNorm (fun z ↦ conjWirtingerDeriv v z 1) p volume :=
+    fun v hv hvc ↦ (hC₀ v hv hvc).trans (by gcongr; exact_mod_cast le_self_add)
+  calc eLpNorm (fderiv ℝ u) p (volume.restrict K)
+      ≤ eLpNorm (fderiv ℝ fun y ↦ χ y • u y) p volume :=
+        eLpNorm_fderiv_restrict_le_of_subset_interior hK.measurableSet hKχ p
+    _ ≤ C₁ * (G + N * Y) * 2 :=
+        eLpNorm_fderiv_smul_le hp.le hU hχ hχr hχc hχU hL hu hgm hg hCZ hC₁δ
     _ ≤ C₁ * ((1 + N) * (G + Y)) * 2 := by gcongr
     _ = ((2 * C₁ * (1 + N) : ℝ≥0) : ℝ≥0∞) * (G + Y) := by
         push_cast
