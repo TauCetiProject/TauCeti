@@ -31,13 +31,12 @@ This file treats the Levi and wall cases of the Demazure operators.
   This is the recursion through which Demazure characters are compared with characters of path
   crystals.
 
-Behind all of these is the operator identity `Dᵢ D_ω = D_ω` when `sᵢ` is a left descent of `w`,
-which combines `Dᵢ² = Dᵢ` with word independence.
+Behind all of these is the operator identity `Dᵢ D_ω = D_ω` when `sᵢ` is a left descent of `w`
+(`RootPairing.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent`), which combines
+`Dᵢ² = Dᵢ` with word independence.
 
 ## Main results
 
-* `RootPairing.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent`: `Dᵢ D_w = D_w`
-  when `sᵢ` is a left descent of `w`.
 * `RootPairing.prod_map_demazureOperator_apply_eq_self_of_mem_parabolic`: the Levi case,
   `D_v f = f` for `v ∈ W_J` and `W_J`-invariant `f`.
 * `RootPairing.prod_map_demazureOperator_apply_eq_of_inv_mul_mem_parabolic`: `D_w f` depends only
@@ -67,27 +66,6 @@ open AddMonoidAlgebra CoxeterSystem TauCeti
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N] (P : RootPairing ι ℤ M N) [Finite ι]
   [P.IsReduced] (b : P.Base)
-
-/-! ### Left descents -/
-
-/-- **A Demazure operator absorbs into a product along a word it can start.** If `ω` is a reduced
-word and `sᵢ` is a left descent of `w = s_{k₁} ⋯ s_{kᵣ}`, then
-`Dᵢ D_{k₁} ⋯ D_{kᵣ} = D_{k₁} ⋯ D_{kᵣ}`: some reduced word for `w` starts with `i`, and
-`Dᵢ² = Dᵢ`. -/
-theorem demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent {ω : List b.support}
-    (hω : (weylCoxeterSystem P b).IsReduced ω) {i : b.support}
-    (hi : (weylCoxeterSystem P b).IsLeftDescent ((weylCoxeterSystem P b).wordProd ω) i) :
-    P.demazureOperator i * (ω.map fun m : b.support ↦ P.demazureOperator m).prod =
-      (ω.map fun m : b.support ↦ P.demazureOperator m).prod := by
-  set cs := weylCoxeterSystem P b
-  obtain ⟨σ, hσ, hσw⟩ := cs.exists_isReduced (cs.simple i * cs.wordProd ω)
-  have hred := cs.isReduced_cons_of_isLeftDescent hi hσ hσw.symm
-  have hprod : cs.wordProd (i :: σ) = cs.wordProd ω := by
-    rw [cs.wordProd_cons, ← hσw, cs.simple_mul_simple_cancel_left]
-  have hidem : P.demazureOperator i * P.demazureOperator i = P.demazureOperator i :=
-    LinearMap.ext (P.demazureOperator_demazureOperator i)
-  rw [← P.prod_map_demazureOperator_eq_of_wordProd_eq b hred hω hprod, List.map_cons,
-    List.prod_cons, ← mul_assoc, hidem]
 
 /-! ### The Levi case: invariants of a standard parabolic subgroup -/
 
