@@ -30,8 +30,10 @@ isometry fixing the centre commutes with the inversion. This is the compatibilit
 inversion charts of the closed unit balls of two inner product spaces along a linear isometry.
 
 For a nonzero radius `R`, the derivative of the inversion at a point `x ≠ c` is a positive
-multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`), so
-in finite dimension its determinant is negative: inversion reverses orientation. A transition
+multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`). So
+inversion is conformal, and it preserves the metric `⟪u, v⟫ / dist x c ^ 2` on the complement of
+`c`, the product metric of a cylinder in polar coordinates about `c`. In finite dimension the
+determinant of the derivative is negative: inversion reverses orientation. A transition
 between two inversion charts whose linear isometries lie in the same orientation class is a
 composite of two inversions and a linear isometry of positive determinant, so it preserves
 orientation. This is how the inversion charts of the closed unit ball attached to the isometries
@@ -47,6 +49,11 @@ of one orientation class give an oriented atlas.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
+* `EuclideanGeometry.norm_inversion_zero`: the norm of the inversion about the origin.
+* `EuclideanGeometry.inner_fderiv_inversion`: inversion is conformal, its derivative scales inner
+  products by `(R / dist x c) ^ 4`.
+* `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
+  `⟪u, v⟫ / dist x c ^ 2`.
 * `EuclideanGeometry.det_fderiv_inversion_neg`: the derivative of an inversion has negative
   determinant.
 -/
@@ -103,6 +110,35 @@ theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
   ext v
   -- Reflection followed by scalar multiplication evaluates to Mathlib’s derivative formula.
   rfl
+
+/-- The norm of the inversion about the origin in a sphere of radius `R`. -/
+theorem norm_inversion_zero {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (R : ℝ) (x : V) : ‖inversion (0 : V) R x‖ = R ^ 2 / ‖x‖ := by
+  simpa only [dist_zero_right] using dist_inversion_center (0 : V) x R
+
+/-- **Inversion is conformal**: its derivative at `x` multiplies inner products by
+`(R / dist x c) ^ 4`. At the centre both sides vanish. -/
+theorem inner_fderiv_inversion {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (c x : V) (R : ℝ) (u v : V) :
+    inner ℝ (fderiv ℝ (inversion c R) x u) (fderiv ℝ (inversion c R) x v) =
+      (R / dist x c) ^ 4 * inner ℝ u v := by
+  simp only [fderiv_inversion, FunLike.coe_smul, Pi.smul_apply,
+    real_inner_smul_left, real_inner_smul_right, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.inner_map_map]
+  ring
+
+/-- **Inversion preserves the cylinder metric.** The metric `⟪u, v⟫ / dist x c ^ 2` on the
+complement of `c`, which in polar coordinates about `c` is the product metric of the cylinder
+`ℝ × S`, is invariant under the inversion in a sphere of nonzero radius about `c`. -/
+theorem inner_fderiv_inversion_div_dist_sq {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (c x : V) {R : ℝ} (hR : R ≠ 0) (u v : V) :
+    inner ℝ (fderiv ℝ (inversion c R) x u) (fderiv ℝ (inversion c R) x v) /
+        dist (inversion c R x) c ^ 2 =
+      inner ℝ u v / dist x c ^ 2 := by
+  rw [inner_fderiv_inversion, dist_inversion_center]
+  rcases eq_or_ne (dist x c) 0 with hx | hx
+  · simp [hx]
+  · field_simp
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
