@@ -159,19 +159,19 @@ private noncomputable def kernelStep (q u : Kˣ) (c : K) : K :=
 /-- The contraction moves every parameter of the ball `‖1 - u‖ < 1` by less than one from `c`. -/
 private theorem norm_kernelStep_sub_lt (q u : Kˣ) (hq : ‖(q : K)‖ < 1) {c : K}
     (hc : ‖1 - c‖ < 1) (hu : ‖1 - (u : K)‖ < 1) : ‖kernelStep q u c - c‖ < 1 := by
-  have hu₁ : ‖(u : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hu
-  have hc₁ : ‖c‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hc
-  rw [kernelStep, sub_sub_cancel_left, norm_neg, norm_mul, norm_div, norm_pow, hu₁, div_one]
-  refine (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hu.le)).trans_lt ?_
-  exact (norm_kernelErr_le q u hq hc₁.le hc.le hu₁).trans_lt hq
+  have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
+  have hc₁ : ‖c‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hc
+  simpa [kernelStep, hu₁] using
+    (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hu.le)).trans_lt
+      ((norm_kernelErr_le q u hq hc₁.le hc.le hu₁).trans_lt hq)
 
 /-- The contraction is `‖q‖`-Lipschitz on the ball `‖1 - u‖ < 1`. -/
 private theorem norm_kernelStep_sub_kernelStep_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1) {c : K}
     (hc : ‖1 - c‖ < 1) (hu : ‖1 - (u : K)‖ < 1) (hu' : ‖1 - (u' : K)‖ < 1) :
     ‖kernelStep q u c - kernelStep q u' c‖ ≤ ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-  have hu₁ : ‖(u : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hu
-  have hu₁' : ‖(u' : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hu'
-  have hc₁ : ‖c‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hc
+  have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
+  have hu₁' : ‖(u' : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu'
+  have hc₁ : ‖c‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hc
   have e : kernelStep q u c - kernelStep q u' c =
       (1 - (u' : K)) ^ 3 / u' * (kernelErr q u' c - kernelErr q u c) +
         ((1 - (u' : K)) ^ 3 / u' - (1 - (u : K)) ^ 3 / u) * kernelErr q u c := by
@@ -187,7 +187,8 @@ private theorem norm_kernelStep_sub_kernelStep_le (q u u' : Kˣ) (hq : ‖(q : K
       |>.trans (norm_kernelErr_sub_le q u' u hq hc₁.le hc.le hu₁' hu₁)
   · rw [mul_comm]
     exact mul_le_mul (norm_kernelErr_le q u hq hc₁.le hc.le hu₁)
-      (norm_one_sub_pow_three_div_sub_le hu₁' hu₁) (norm_nonneg _) (norm_nonneg _)
+      (norm_one_sub_pow_three_div_sub_one_sub_pow_three_div_le hu₁' hu₁) (norm_nonneg _)
+      (norm_nonneg _)
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- At a fixed point `u ≠ 1` of the contraction, `(1 - c) Y(u) = c X(u)`. -/
@@ -241,7 +242,7 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
   -- the fixed point is not `1`, where the step is the constant `c ≠ 1`
   have hv₁ : ((U v : Kˣ) : K) ≠ 1 := fun h ↦ by
     have h' := hv
-    rw [kernelStep, h, sub_self, zero_pow three_ne_zero, zero_div, zero_mul, sub_zero] at h'
+    simp [kernelStep, h] at h'
     exact hc₁ (h'.trans (by simpa [U] using h))
   exact ⟨U v, hv₁, hU v, one_sub_mul_tateUniformizationY_eq_of_kernelStep_eq q (U v)
     (sub_ne_zero.mpr (Ne.symm hv₁)) hv⟩
@@ -287,7 +288,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm 
     rw [norm_tateUniformizationX_of_norm_one_sub_lt_one q u hq hu1 hu]
     have hd : 0 < ‖1 - (u : K)‖ := norm_pos_iff.mpr (sub_ne_zero.mpr (Ne.symm hu1))
     exact (one_lt_inv₀ (by positivity)).mpr (pow_lt_one₀ hd.le hu two_ne_zero)
-  have hu₁ : ‖(u : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hu
+  have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
   have hnot : u ∉ Subgroup.zpowers q :=
     notMem_zpowers_of_norm_eq_one hq hu₁ fun h ↦ hu1 (by rw [h, Units.val_one])
   obtain ⟨hX, hY⟩ := eq_of_mul_eq_mul_of_one_lt_norm hA₄ hA₆ hx hXu (heq h)
@@ -309,7 +310,7 @@ theorem exists_tateUniformization_eq_some_iff_one_lt_norm (q : Kˣ) (hq : ‖(q 
   · intro hx
     obtain ⟨u, hu1, hu, hX, hY⟩ :=
       exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm q hq h.1 hx
-    have hu₁ : ‖(u : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one hu
+    have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
     refine ⟨u, hu, (tateUniformization_eq_some_iff q hq _ h).mpr ⟨?_, ?_, ?_⟩⟩
     · rw [Ne, QuotientGroup.eq_one_iff]
       exact notMem_zpowers_of_norm_eq_one hq hu₁ hu1

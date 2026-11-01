@@ -202,15 +202,15 @@ theorem norm_tateUniformizationY_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ <
   rw [tateUniformizationY_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u', e]
   exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le q u u' hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
     (fun w ↦ -w / (1 - w) ^ 3) (by simp) (by simp)
-    (fun _ _ ↦ norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le)
-    (fun _ _ ↦ norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le)
+    (fun _ _ ↦ norm_sq_div_one_sub_pow_three_sub_sq_div_one_sub_pow_three_le)
+    (fun _ _ ↦ norm_neg_div_one_sub_pow_three_sub_neg_div_one_sub_pow_three_le)
 
 /-- **Points near the identity: the kernel of reduction.** If `‖1 - u‖ < 1` and `u ≠ 1`, then
 `‖X(u)‖ = ‖1 - u‖⁻²`, which exceeds one. -/
 theorem norm_tateUniformizationX_of_norm_one_sub_lt_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : (u : K) ≠ 1) (h : ‖1 - (u : K)‖ < 1) :
     ‖tateUniformizationX q u‖ = (‖1 - (u : K)‖ ^ 2)⁻¹ := by
-  have hnorm : ‖(u : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one h
+  have hnorm : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one h
   have hd : 0 < ‖1 - (u : K)‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hu.symm)
   have hmain : ‖(u : K) / (1 - u) ^ 2‖ = (‖1 - (u : K)‖ ^ 2)⁻¹ := by
     rw [norm_div, norm_pow, hnorm, one_div]
