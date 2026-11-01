@@ -25,15 +25,17 @@ namespace TauCeti.Probability
 
 /-- **Gaussian integration by parts.** For a differentiable function whose value, derivative, and
 centered first moment are integrable under `gaussianReal μ v`, its centered first moment is the
-variance times the expectation of its derivative. -/
+variance times the expectation of its derivative. At zero variance both sides vanish. -/
 theorem integral_sub_mul_eq_variance_mul_integral_deriv_gaussianReal
-    (μ : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (f : ℝ → ℝ)
+    (μ : ℝ) (v : ℝ≥0) (f : ℝ → ℝ)
     (hf : Differentiable ℝ f)
     (hxf : Integrable (fun x => (x - μ) * f x) (gaussianReal μ v))
     (hdf : Integrable (deriv f) (gaussianReal μ v))
     (hfi : Integrable f (gaussianReal μ v)) :
     ∫ x, (x - μ) * f x ∂(gaussianReal μ v) =
       (v : ℝ) * ∫ x, deriv f x ∂(gaussianReal μ v) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianReal_zero_var, integral_dirac]
   let p : ℝ → ℝ := gaussianPDFReal μ v
   have hconvert {g : ℝ → ℝ} (hg : Integrable g (gaussianReal μ v)) :
       Integrable (fun x => g x * p x) volume := by
@@ -52,16 +54,13 @@ theorem integral_sub_mul_eq_variance_mul_integral_deriv_gaussianReal
     hconvert hdf
   have hfip : Integrable (fun x => f x * p x) volume :=
     hconvert hfi
-  have hderivp (x : ℝ) :
-      HasDerivAt p (-(x - μ) / (v : ℝ) * p x) x := by
-    exact hasDerivAt_gaussianPDFReal μ hv x
   have hparts :
       ∫ x, f x * (-(x - μ) / (v : ℝ) * p x) =
         -∫ x, deriv f x * p x := by
     apply integral_mul_deriv_eq_deriv_mul_of_integrable (u := f) (u' := deriv f)
       (v := p) (v' := fun x => -(x - μ) / (v : ℝ) * p x)
     · exact fun x _ => (hf x).hasDerivAt
-    · exact fun x _ => hderivp x
+    · exact fun x _ => hasDerivAt_gaussianPDFReal μ v x
     · exact hfp
     · exact hdfp
     · exact hfip
@@ -106,6 +105,6 @@ theorem integral_mul_eq_integral_deriv_gaussianReal (f : ℝ → ℝ)
     simpa using hxf
   simpa using
     (integral_sub_mul_eq_variance_mul_integral_deriv_gaussianReal
-      (μ := 0) (v := 1) one_ne_zero f hf hxf' hdf hfi)
+      (μ := 0) (v := 1) f hf hxf' hdf hfi)
 
 end TauCeti.Probability

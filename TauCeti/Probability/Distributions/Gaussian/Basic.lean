@@ -80,10 +80,12 @@ theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
     abs_of_pos (inv_pos.2 (sqrt_pos.2 (by positivity : (0 : ℝ) < 2 * π)))]
   ring_nf
 
-/-- At positive variance, the derivative of the Gaussian density in its real argument is
-`-(x - μ) / v` times the density. -/
-theorem hasDerivAt_gaussianPDFReal (μ : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+/-- The derivative of the Gaussian density in its real argument is `-(x - μ) / v` times the
+density. At zero variance both sides vanish. -/
+theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
     HasDerivAt (gaussianPDFReal μ v) (-(x - μ) / (v : ℝ) * gaussianPDFReal μ v x) x := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianPDFReal_zero_var]
   rw [gaussianPDFReal_def]
   have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hv
   have hq :
@@ -91,10 +93,7 @@ theorem hasDerivAt_gaussianPDFReal (μ : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : 
         (-(x - μ) / (v : ℝ)) x := by
     convert ((((hasDerivAt_id x).sub_const μ).pow 2).neg.div_const (2 * (v : ℝ))) using 1
     · ext y
-      simp only [id_eq]
-      field_simp [hv']
-      change -(y - μ) ^ 2 = -((y - μ) ^ 2)
-      rfl
+      simp only [id_eq, Pi.neg_apply, Pi.pow_apply]
     · simp only [id_eq]
       field_simp [hv']
       ring_nf
