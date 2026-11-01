@@ -24,7 +24,8 @@ expected commuting scalar towers. No function-field, finite-dimensionality, sepa
 perfectness hypothesis is needed: restriction uses only integrality of the field extensions,
 and the degree identity is the ordinary finrank tower formula for the residue fields. The
 inseparable residue degrees are multiplicative as well, since integrality makes every residue
-extension algebraic.
+extension algebraic. Separability of the residue extension holds for the whole tower
+exactly when it holds for both steps.
 
 ## Main results
 
@@ -37,6 +38,8 @@ extension algebraic.
 * `TauCeti.Place.isSeparable_residueField_restrict_top` and
   `TauCeti.Place.isSeparable_residueField_restrict_bot`: a separable residue extension stays
   separable on each step of the tower.
+* `TauCeti.Place.isSeparable_residueField_restrict_trans`: conversely, residue extensions that are
+  separable on both steps of the tower compose to a separable residue extension.
 
 ## Mathematical context
 
@@ -255,6 +258,39 @@ theorem isSeparable_residueField_restrict_bot (P : Place k₂ F₂)
     Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
       (P.restrict k₁ F₁).ResidueField :=
   (isSeparable_residueField_restrict_and P).2
+
+/-- **Separability of residue extensions is transitive in a tower**: if the residue extension of
+`P` over `F₁` and the residue extension of `P ∩ F₁` over `F₀` are separable, so is the residue
+extension of `P` over `F₀`. -/
+theorem isSeparable_residueField_restrict_trans (P : Place k₂ F₂)
+    [Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField]
+    [Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
+      (P.restrict k₁ F₁).ResidueField] :
+    Algebra.IsSeparable
+      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+      P.ResidueField := by
+  let _ : Algebra ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers :=
+    ((algebraMap (P.restrict k₁ F₁).integers P.integers).comp
+      (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).integers
+        (P.restrict k₁ F₁).integers)).toAlgebra
+  let _ : IsLocalHom
+      (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers) :=
+    RingHom.isLocalHom_comp _ _
+  let _ : IsScalarTower ((P.restrict k₁ F₁).restrict k₀ F₀).integers
+      (P.restrict k₁ F₁).integers P.integers :=
+    IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField :=
+    .trans _ (P.restrict k₁ F₁).ResidueField _
+  refine Algebra.IsSeparable.of_equiv_equiv
+    (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
+      (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P))
+    (RingEquiv.refl P.ResidueField) ?_
+  -- Undo the cast along `restrict_restrict` with the inverse cast it composes to the identity.
+  have hcast :=
+    algebraMap_comp_cast_restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P
+  ext x
+  simpa using (RingHom.congr_fun hcast (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
+    (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P) x)).symm
 
 end Place
 
