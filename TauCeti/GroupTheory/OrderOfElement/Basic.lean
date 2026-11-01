@@ -41,6 +41,7 @@ positive exponent equal to one; the source only needs a multiplication and ident
 
 The order of the image of `g` in a quotient group `G ⧸ K` divides `n` exactly when `g ^ n` lies
 in `K`; for a finite quotient, this is how the iterates of `g` that land in `K` are counted.
+In particular `g ^ d ∈ K` for `d` that order, the least positive power of `g` lying in `K`.
 
 ## Main results
 
@@ -51,6 +52,8 @@ in `K`; for a finite quotient, this is how the iterates of `g` that land in `K` 
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
+* `Subgroup.liftClass`, `AddSubgroup.liftClass`: the least positive power `g ^ d` of `g` lying in
+  a normal subgroup `K`, where `d` is the order of `g` in `G ⧸ K`.
 * `TauCeti.natCast_natCard_sub_one_eq_neg_one`: in a finite additive group with one of
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
@@ -111,6 +114,37 @@ end IsOfFinOrder
 theorem QuotientGroup.orderOf_mk_dvd_iff_pow_mem {G : Type*} [Group G] (K : Subgroup G)
     [K.Normal] (g : G) (n : ℕ) : orderOf (g : G ⧸ K) ∣ n ↔ g ^ n ∈ K := by
   rw [orderOf_dvd_iff_pow_eq_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] (K : Subgroup G) [K.Normal]
+
+/-- The least positive power `g ^ d` of `g` lying in `K`, where `d` is the order of `g` in
+`G ⧸ K`. For an orbit of class `g`, this is the class of each of its primitive lifts to the
+covering with deck group `G ⧸ K`. -/
+@[to_additive
+/-- The least positive multiple `d • g` of `g` lying in `K`, where `d` is the order of `g` in
+`G ⧸ K`. For an orbit of class `g`, this is the class of each of its primitive lifts to the
+covering with deck group `G ⧸ K`. -/]
+noncomputable def liftClass (g : G) : K :=
+  ⟨g ^ orderOf (g : G ⧸ K), (QuotientGroup.orderOf_mk_dvd_iff_pow_mem K _ _).1 dvd_rfl⟩
+
+/-- The lift class of `g` is `g ^ d`, where `d` is the order of `g` in `G ⧸ K`. -/
+@[to_additive (attr := simp)
+/-- The lift class of `g` is `d • g`, where `d` is the order of `g` in `G ⧸ K`. -/]
+theorem coe_liftClass (g : G) : (K.liftClass g : G) = g ^ orderOf (g : G ⧸ K) :=
+  (rfl)
+
+/-- The `n`-th power of the lift class of `g` is `g ^ (d * n)`, where `d` is the order of `g` in
+`G ⧸ K`. -/
+@[to_additive
+/-- The `n`-th iterate of the lift class of `g` is the `(d * n)`-th iterate of `g`, where `d` is
+the order of `g` in `G ⧸ K`. -/]
+theorem coe_pow_liftClass (g : G) (n : ℕ) :
+    ((K.liftClass g ^ n : K) : G) = g ^ (orderOf (g : G ⧸ K) * n) := by
+  simp [pow_mul]
+
+end Subgroup
 
 namespace TauCeti
 

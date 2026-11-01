@@ -52,13 +52,13 @@ the discreteness of its image is used, and the exponent group may have torsion.
 **Finite covers.** Let `K` be a finite-index subgroup of an additive commutative group `H`, the
 deck group of an abelian covering over the intermediate finite covering with deck group `H ⧸ K`.
 If `d i` is the order of `γ i` in `H ⧸ K`, the `i`-th primitive orbit has `[H : K] / d i`
-primitive lifts to the intermediate covering, each of class `d i • γ i ∈ K`, and the `n`-th
-iterate of a lift is the `(d i * n)`-th iterate of the orbit. The norm of the orbit zeta
-function over `Nov(R, K, N|K)` is the orbit zeta function of this family of lifts
-(`TauCeti.NovikovSeries.algebraNorm_orbitZeta`). Indeed `Norm (exp L) = exp (Tr L)`, and the
-trace is `[H : K]` times the restriction of coefficients to `K`, which keeps exactly the
-`n`-th iterates of `γ i` with `d i ∣ n`, those whose class `n • γ i` lies in `K`. No hypothesis
-on the torsion of `H` or on the cyclicity of `H ⧸ K` is needed.
+primitive lifts to the intermediate covering, each of class `d i • γ i ∈ K`
+(`AddSubgroup.liftClass`), and the `n`-th iterate of a lift is the `(d i * n)`-th iterate of the
+orbit. The norm of the orbit zeta function over `Nov(R, K, N|K)` is the orbit zeta function of
+this family of lifts (`TauCeti.NovikovSeries.algebraNorm_orbitZeta`). Indeed
+`Norm (exp L) = exp (Tr L)`, and the trace is `[H : K]` times the restriction of coefficients to
+`K`, which keeps exactly the `n`-th iterates of `γ i` with `d i ∣ n`, those whose class `n • γ i`
+lies in `K`. No hypothesis on the torsion of `H` or on the cyclicity of `H ⧸ K` is needed.
 
 ## Main definitions
 
@@ -66,8 +66,6 @@ on the torsion of `H` or on the cyclicity of `H ⧸ K` is needed.
   e^((k + 1) • γ i)`.
 * `TauCeti.NovikovSeries.orbitZeta`: the orbit zeta function, the exponential of the orbit
   logarithm.
-* `TauCeti.NovikovSeries.liftClass`: the least multiple `d • g` of `g` lying in a finite-index
-  subgroup `K`, where `d` is the order of `g` in `H ⧸ K`; the class of a primitive lift.
 
 ## Main results
 
@@ -334,44 +332,27 @@ section FiniteCover
 variable {ι H R : Type*} [AddCommGroup H] {N : H →+ ℝ} {γ : ι → H} [CommRing R] [Algebra ℚ R]
   (K : AddSubgroup H)
 
-/-- The least multiple `d • g` of `g` lying in `K`, where `d` is the order of `g` in `H ⧸ K`.
-For an orbit of class `g`, this is the class of each of its primitive lifts to the covering with
-deck group `H ⧸ K`. -/
-@[expose] def liftClass (g : H) : K :=
-  ⟨addOrderOf (g : H ⧸ K) • g, (QuotientAddGroup.addOrderOf_mk_dvd_iff_nsmul_mem K _ _).1 dvd_rfl⟩
-
-/-- The lift class of `g` is `d • g`, where `d` is the order of `g` in `H ⧸ K`. -/
-@[simp]
-theorem coe_liftClass (g : H) : (liftClass K g : H) = addOrderOf (g : H ⧸ K) • g :=
-  rfl
-
-/-- The `n`-th iterate of the lift class of `g` is the `(d * n)`-th iterate of `g`, where `d` is
-the order of `g` in `H ⧸ K`. -/
-theorem coe_nsmul_liftClass (g : H) (n : ℕ) :
-    ((n • liftClass K g : K) : H) = (addOrderOf (g : H ⧸ K) * n) • g := by
-  simp [smul_smul, mul_comm]
-
 variable [K.FiniteIndex]
 
 /-- The least positive multiple of an orbit class lying in `K` has positive period, and these
 periods tend to `∞` along with those of the orbit classes. -/
 private theorem pos_tendsto_period_nsmul_addOrderOf (hpos : ∀ i, 0 < N (γ i))
     (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) :
-    (∀ i, 0 < N.comp K.subtype (liftClass K (γ i))) ∧
-      Tendsto (fun i => N.comp K.subtype (liftClass K (γ i))) cofinite atTop := by
-  have hle (i : ι) : N (γ i) ≤ N.comp K.subtype (liftClass K (γ i)) := by
-    simp only [AddMonoidHom.comp_apply, AddSubgroup.subtype_apply, coe_liftClass, map_nsmul,
-      nsmul_eq_mul]
+    (∀ i, 0 < N.comp K.subtype (K.liftClass (γ i))) ∧
+      Tendsto (fun i => N.comp K.subtype (K.liftClass (γ i))) cofinite atTop := by
+  have hle (i : ι) : N (γ i) ≤ N.comp K.subtype (K.liftClass (γ i)) := by
+    simp only [AddMonoidHom.comp_apply, AddSubgroup.subtype_apply, AddSubgroup.coe_liftClass,
+      map_nsmul, nsmul_eq_mul]
     exact le_mul_of_one_le_left (hpos i).le (by exact_mod_cast addOrderOf_pos _)
   exact ⟨fun i => (hpos i).trans_le (hle i), tendsto_atTop_mono hle hfin⟩
 
 /-- `[H : K]` times the restriction to `K` of an orbit logarithm is the orbit logarithm over `K`
-of the least multiples `d i • γ i` lying in `K`, with the signs of the iterates `d i * n` scaled
-by `[H : K] / d i`, where `d i` is the order of `γ i` in `H ⧸ K`. -/
+of the least positive multiples `d i • γ i` lying in `K`, with the signs of the iterates `d i * n`
+scaled by `[H : K] / d i`, where `d i` is the order of `γ i` in `H ⧸ K`. -/
 private theorem index_smul_comap_orbitLog (hpos : ∀ i, 0 < N (γ i))
     (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) :
     K.index • comap K.subtype (exists_period_rescale_subtype K) (by simp) (orbitLog R N γ ε) =
-      orbitLog R (N.comp K.subtype) (fun i => liftClass K (γ i))
+      orbitLog R (N.comp K.subtype) (fun i => K.liftClass (γ i))
         (fun i n => ((K.index / addOrderOf (γ i : H ⧸ K) : ℕ) : ℤ) *
           ε i (addOrderOf (γ i : H ⧸ K) * n)) := by
   obtain ⟨hpos', hfin'⟩ := pos_tendsto_period_nsmul_addOrderOf K hpos hfin
@@ -408,7 +389,7 @@ private theorem index_smul_comap_orbitLog (hpos : ∀ i, 0 < N (γ i))
   have hdk := Nat.sub_add_cancel (Nat.mul_pos (hd₀ i) (Nat.add_one_pos k))
   have hdvd : addOrderOf (γ i : H ⧸ K) ∣ K.index := addOrderOf_dvd_natCard _
   simp only [Function.comp_apply, g, hdk]
-  rw [← coe_nsmul_liftClass, ← AddSubgroup.subtype_apply,
+  rw [← AddSubgroup.coe_nsmul_liftClass, ← AddSubgroup.subtype_apply,
     comap_single_of_injective _ _ _ Subtype.val_injective, smul_single, nsmul_eq_mul,
     ← map_natCast (algebraMap ℚ R), ← _root_.map_mul]
   congr 2
@@ -428,7 +409,7 @@ theorem algebraNorm_orbitZeta (hpos : ∀ i, 0 < N (γ i))
     (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) :
     Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (orbitZeta R N γ ε) =
       orbitZeta R (N.comp K.subtype)
-        (fun p : (i : ι) × Fin (K.index / addOrderOf (γ i : H ⧸ K)) => liftClass K (γ p.1))
+        (fun p : (i : ι) × Fin (K.index / addOrderOf (γ i : H ⧸ K)) => K.liftClass (γ p.1))
         (fun p n => ε p.1 (addOrderOf (γ p.1 : H ⧸ K) * n)) := by
   obtain ⟨hpos', hfin'⟩ := pos_tendsto_period_nsmul_addOrderOf K hpos hfin
   obtain ⟨c, hc₀, hc⟩ := hfin.exists_gt_forall_le hpos
