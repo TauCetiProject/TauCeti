@@ -245,7 +245,7 @@ theorem smul_mem_range_point {rels stab : List (List (Fin m))}
   exact ⟨i, by rw [point_def, hi, List.map_nil, List.prod_nil, one_smul]⟩
 
 /-- The cosets named by a certified coset table for a subgroup `H` are all the cosets of `H`. -/
-private theorem surjective_point {H : Subgroup G} {rels stab : List (List (Fin m))}
+theorem surjective_point {H : Subgroup G} {rels stab : List (List (Fin m))}
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) :
