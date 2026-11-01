@@ -27,8 +27,12 @@ variance, `evariance_prod_eq`, combined with Jensen's inequality for the varianc
 
 * `TauCeti.Probability.evariance_prod_eq`: the law of total variance on a product of two
   probability spaces;
+* `TauCeti.Probability.evariance_integral_prod_le`: Jensen's inequality for the variance of an
+  average;
 * `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein inequality;
-* `TauCeti.Probability.efronStein_fin`: the Efron–Stein inequality on `Measure.pi` over `Fin n`.
+* `TauCeti.Probability.measurable_evariance_update`: measurability of the coordinatewise variance;
+* `TauCeti.Probability.efronStein_fin`: the Efron–Stein inequality on `Measure.pi` over `Fin n`,
+  with arbitrary (dependent) coordinate spaces.
 
 ## References
 
