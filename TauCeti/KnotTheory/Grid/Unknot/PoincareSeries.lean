@@ -15,9 +15,9 @@ public import TauCeti.KnotTheory.Grid.Stabilization.FullyBlocked.Homology
 # The fully blocked homology of the standard unknot grids
 
 The fully blocked grid homology `GH~` (written $\widetilde{GH}$ in the literature) of a grid
-diagram of size `n` presenting a knot `K` is `GĤ(K) ⊗ W ^ (n - 1)`, where `W` is the
+diagram of size `n` presenting a knot `K` is `GH^(K) ⊗ W ^ (n - 1)`, where `W` is the
 two-dimensional bigraded space with generators in bidegrees `(0, 0)` and `(-1, -1)`. For the
-unknot `GĤ` is one-dimensional in bidegree `(0, 0)`, so the standard unknot grid of size `n + 2`
+unknot `GH^` is one-dimensional in bidegree `(0, 0)`, so the standard unknot grid of size `n + 2`
 has Poincaré series `W ^ (n + 1)` (`bigradedFullyBlockedHomologyPoincareSeries_unknot`). In
 particular `GH~` genuinely depends on the size of the grid, not only on the knot it presents.
 
@@ -37,7 +37,7 @@ new block, which does not change the series
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.2 (the identification
-`GH~(G) ≅ GĤ(K) ⊗ W ^ (n - 1)`) and Section 4.3 (the standard unknot grids).
+`GH~(G) ≅ GH^(K) ⊗ W ^ (n - 1)`) and Section 4.3 (the standard unknot grids).
 -/
 
 public section

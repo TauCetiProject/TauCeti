@@ -13,16 +13,16 @@ import TauCeti.Algebra.CharP.Two
 /-!
 # Commutation invariance of fully blocked grid homology
 
-The fully blocked pentagon chain map `Φ̃` of a validated column commutation induces a specified map
+The fully blocked pentagon chain map `Φ~` of a validated column commutation induces a specified map
 on fully blocked homology: the class of a cycle is sent to the class of its pentagon image. This
 uses `LinearMap.homologyMap` through the identification with the kernel modulo the image of the
 differential.
 
 The fully blocked homotopy equations
 (`GridDiagram.fullyBlockedDifferential_fullyBlockedCommutationHomotopy_add_eq` and its `_reverse_`
-form) show that `Φ̃` and the pentagon map `Ψ̃` of the reverse commutation are inverse to each other
+form) show that `Φ~` and the pentagon map `Ψ~` of the reverse commutation are inverse to each other
 up to boundaries on cycles, so the induced map on `GH~` (written $\widetilde{GH}$ in the
-literature) is bijective. The fully blocked pentagons carry no markings, so `Φ̃` preserves the
+literature) is bijective. The fully blocked pentagons carry no markings, so `Φ~` preserves the
 `(O-Maslov, Alexander)` bidegree of every state; hence the induced equivalence commutes with the
 homogeneous projections, and the bigraded Poincaré series of `GH~` is unchanged by a column
 commutation.
@@ -108,7 +108,7 @@ fully blocked pentagon map of a validated column commutation is bijective. -/
 theorem fullyBlockedHomologyCommutationMap_bijective :
     Function.Bijective (G.fullyBlockedHomologyCommutationMap C) := by
   refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
-  · -- If `Φ̃ z = ∂̃' w`, then `z = Ψ̃ Φ̃ z + ∂̃ H̃ z = ∂̃ (Ψ̃ w + H̃ z)`.
+  · -- If `Φ~ z = ∂~' w`, then `z = Ψ~ Φ~ z + ∂~ H~ z = ∂~ (Ψ~ w + H~ z)`.
     induction y using Submodule.Quotient.induction_on with
     | H z =>
       rw [fullyBlockedHomologyCommutationMap_mk, fullyBlockedHomology_mk_eq_zero_iff,
@@ -123,8 +123,8 @@ theorem fullyBlockedHomologyCommutationMap_bijective :
       rw [(mem_fullyBlockedCycles _ _).mp z.2, map_zero, add_zero] at hH
       simp only [LinearMap.comp_apply, hw] at hΨ
       rw [map_add, ← hΨ, hH, add_left_comm, add_self_eq_zero_of_charTwo (ZMod 2), add_zero]
-  · -- The class of a cycle `z` of `GC̃(G')` is the image of the class of `Ψ̃ z`, since
-    -- `Φ̃ Ψ̃ z - z = ∂̃' H̃' z`.
+  · -- The class of a cycle `z` of `GC~(G')` is the image of the class of `Ψ~ z`, since
+    -- `Φ~ Ψ~ z - z = ∂~' H~' z`.
     induction y using Submodule.Quotient.induction_on with
     | H z =>
       refine ⟨Submodule.Quotient.mk

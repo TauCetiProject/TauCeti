@@ -13,17 +13,17 @@ public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Equation
 
 Setting every marking variable to zero in the hexagon-counting commutation homotopy `H` of a
 validated column commutation `C` retains exactly the empty hexagons avoiding every `O`- and
-`X`-marking. The result is the hexagon map `H̃` of the fully blocked complex `GC̃(G)`, which is the
+`X`-marking. The result is the hexagon map `H~` of the fully blocked complex `GC~(G)`, which is the
 reduction of `H` modulo the variables (`LinearMap.constantCoeffReduction`).
 
 Reducing the two homotopy equations of the unblocked complex modulo the variables gives their
-fully blocked versions. Write `Φ̃ : GC̃(G) → GC̃(G')` and `Ψ̃ : GC̃(G') → GC̃(G)` for the fully
-blocked pentagon maps of `C` and of its reverse, where `G'` is the commuted diagram, and `H̃'` for
+fully blocked versions. Write `Φ~ : GC~(G) → GC~(G')` and `Ψ~ : GC~(G') → GC~(G)` for the fully
+blocked pentagon maps of `C` and of its reverse, where `G'` is the commuted diagram, and `H~'` for
 the fully blocked hexagon map of the reverse commutation. Then
 
-  `∂̃ ∘ H̃ + H̃ ∘ ∂̃ = 1 + Ψ̃ ∘ Φ̃` and `∂̃' ∘ H̃' + H̃' ∘ ∂̃' = 1 + Φ̃ ∘ Ψ̃`,
+  `∂~ ∘ H~ + H~ ∘ ∂~ = 1 + Ψ~ ∘ Φ~` and `∂~' ∘ H~' + H~' ∘ ∂~' = 1 + Φ~ ∘ Ψ~`,
 
-so `Φ̃` and `Ψ̃` are mutually inverse chain homotopy equivalences of the fully blocked complexes.
+so `Φ~` and `Ψ~` are mutually inverse chain homotopy equivalences of the fully blocked complexes.
 Reduction modulo the variables needs no identification of the chain modules of `G` and of the
 doubly commuted diagram, since the fully blocked chain module `GridChain (ZMod 2) n` does not
 depend on the diagram.
@@ -37,9 +37,9 @@ depend on the diagram.
 * `TauCeti.GridDiagram.fullyBlockedCommutationHomotopy_mapRange_constantCoeff`: the fully blocked
   hexagon map is the reduction of the unblocked one.
 * `TauCeti.GridDiagram.fullyBlockedDifferential_fullyBlockedCommutationHomotopy_add_eq`: the
-  homotopy equation `∂̃ ∘ H̃ + H̃ ∘ ∂̃ = 1 + Ψ̃ ∘ Φ̃`.
+  homotopy equation `∂~ ∘ H~ + H~ ∘ ∂~ = 1 + Ψ~ ∘ Φ~`.
 * `TauCeti.GridDiagram.fullyBlockedDifferential_fullyBlockedCommutationHomotopy_reverse_add_eq`:
-  the homotopy equation `∂̃' ∘ H̃' + H̃' ∘ ∂̃' = 1 + Φ̃ ∘ Ψ̃` on the commuted diagram.
+  the homotopy equation `∂~' ∘ H~' + H~' ∘ ∂~' = 1 + Φ~ ∘ Ψ~` on the commuted diagram.
 
 ## References
 
@@ -81,9 +81,9 @@ theorem fullyBlockedCommutationHomotopy_mapRange_constantCoeff (c : GridChainMin
       (G.commutationHomotopy R C c).mapRange constantCoeff (map_zero _) :=
   LinearMap.constantCoeffReduction_mapRange_constantCoeff _ c
 
-/-- **The fully blocked homotopy equation.** The fully blocked hexagon map `H̃` is a chain
-homotopy between the identity of `GC̃(G)` and the round trip `Ψ̃ ∘ Φ̃` through the commuted
-diagram: `∂̃ ∘ H̃ + H̃ ∘ ∂̃ = 1 + Ψ̃ ∘ Φ̃`. -/
+/-- **The fully blocked homotopy equation.** The fully blocked hexagon map `H~` is a chain
+homotopy between the identity of `GC~(G)` and the round trip `Ψ~ ∘ Φ~` through the commuted
+diagram: `∂~ ∘ H~ + H~ ∘ ∂~ = 1 + Ψ~ ∘ Φ~`. -/
 theorem fullyBlockedDifferential_fullyBlockedCommutationHomotopy_add_eq
     (c : GridChain (ZMod 2) n) :
     G.fullyBlockedDifferential (G.fullyBlockedCommutationHomotopy (ZMod 2) C c) +
@@ -100,8 +100,8 @@ theorem fullyBlockedDifferential_fullyBlockedCommutationHomotopy_add_eq
     fullyBlockedCommutationMap_mapRange_constantCoeff] using h
 
 /-- **The fully blocked homotopy equation on the commuted diagram.** The fully blocked hexagon
-map `H̃'` of the reverse commutation is a chain homotopy between the identity of `GC̃(G')` and the
-round trip `Φ̃ ∘ Ψ̃` through `G`: `∂̃' ∘ H̃' + H̃' ∘ ∂̃' = 1 + Φ̃ ∘ Ψ̃`. -/
+map `H~'` of the reverse commutation is a chain homotopy between the identity of `GC~(G')` and the
+round trip `Φ~ ∘ Ψ~` through `G`: `∂~' ∘ H~' + H~' ∘ ∂~' = 1 + Φ~ ∘ Ψ~`. -/
 theorem fullyBlockedDifferential_fullyBlockedCommutationHomotopy_reverse_add_eq
     (c : GridChain (ZMod 2) n) :
     (G.swapColumns a b).fullyBlockedDifferential
