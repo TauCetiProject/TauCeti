@@ -89,7 +89,8 @@ theorem eval_polynomialCoefficientTransform (P : J → MvPolynomial (W ⊕ X) K)
       (fun j => if a = j then (1 : K) else 0) = Pi.single a 1 := by
     ext j
     simp [Pi.single_apply, eq_comm]
-  simpa [g, polynomialCoefficientTransform, coeff_map, hs, mul_comm] using h.symm
+  rw [polynomialCoefficientTransform_eq_sum]
+  simpa [g, coeff_map, hs, mul_comm] using h.symm
 
 /-- The original monomial coordinates are recovered by using the monomial coefficient
 equivalence as the coordinate map. -/
@@ -101,7 +102,7 @@ theorem polynomialCoefficientTransform_boundedCoefficientEquiv
       (inputPolynomial P i.1).coeff i.2 := by
   classical
   let := Fintype.ofFinite (J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P})
-  simp [polynomialCoefficientTransform, Pi.single_apply]
+  simp [polynomialCoefficientTransform_eq_sum, Pi.single_apply]
 
 /-- Evaluating in any linearly equivalent coordinates recovers the original realization.
 Thus a change of basis changes the coefficient presentation, not the realized functions. -/
