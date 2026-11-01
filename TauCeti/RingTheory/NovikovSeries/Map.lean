@@ -425,6 +425,7 @@ theorem coeff_comap_eq_zero_of_lt {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ
   hb _ ((hcφ h).symm ▸ mul_lt_mul_of_pos_left hh hc)
 
 /-- Restricting the monomial `r e^(φ h)` along an injective `φ` gives the monomial `r e^h`. -/
+@[simp]
 theorem comap_single_of_injective (hinj : Injective φ) (h : H) (r : R) :
     comap φ hφ hker (single (φ h) r) = single h r := by
   ext g
