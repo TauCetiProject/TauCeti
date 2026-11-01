@@ -37,19 +37,6 @@ variable {ι : Type*} (K : AbstractSimplicialComplex ι) (s : Set ι)
 
 attribute [local instance] Classical.decEq
 
-/-- The complement of the polyhedron of a full subcomplex is the open star of the
-complementary vertices. -/
-theorem openStarRealizationSet_compl :
-    K.openStarRealizationSet sᶜ = {x | ¬ (x.1.support : Set ι) ⊆ s} := by
-  classical
-  ext x
-  simp only [mem_openStarRealizationSet, mem_compl_iff, mem_ofPred_eq, Set.not_subset]
-  constructor
-  · rintro ⟨v, hv, hpos⟩
-    exact ⟨v, Finsupp.mem_support_iff.mpr hpos.ne', hv⟩
-  · rintro ⟨v, hv, hs⟩
-    exact ⟨v, hs, Realization.pos_of_mem_support K x hv⟩
-
 /-- Normalizing the coordinates at the vertices of `s` gives a homotopy equivalence from
 their open star to the realization of the full subcomplex on `s`. Its inverse is the
 simplicial inclusion. -/
@@ -81,7 +68,8 @@ theorem openStarHomotopyEquiv_apply (x : K.openStarRealizationSet s) :
 theorem coe_openStarHomotopyEquiv_symm_apply (x : Realization (K.restrict s)) :
     ((K.openStarHomotopyEquiv s).symm x : Realization K) =
       (K.restrictInclusion s).realizationMap x := by
-  classical
+  -- Unfolding the inverse composition identifies it with the inclusion of the restricted
+  -- realization homeomorphism; the inclusion does not change the underlying point.
   exact K.restrictRealizationHomeomorph_apply s x
 
 end AbstractSimplicialComplex

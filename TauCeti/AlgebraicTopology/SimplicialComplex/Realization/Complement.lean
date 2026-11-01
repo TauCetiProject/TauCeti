@@ -77,6 +77,16 @@ theorem coe_complementSubdivisionHomeomorph_apply
       barycentricSubdivisionRealizationMap K x := by
   simp [complementSubdivisionHomeomorph]
 
+/-- The inverse restricted homeomorphism is the inverse subdivision map on underlying points. -/
+@[simp]
+theorem coe_complementSubdivisionHomeomorph_symm_apply
+    (y : {y : Realization K | y.1.support ∉ P}) :
+    ((K.complementSubdivisionHomeomorph P).symm y :
+      Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+        K.toPreAbstractSimplicialComplex)) =
+      (barycentricSubdivisionRealizationHomeomorph K).symm y := by
+  simp [complementSubdivisionHomeomorph]
+
 /-- The complement of a subcomplex has the homotopy type of the full subcomplex of the
 barycentric subdivision spanned by the faces not in the removed subcomplex. -/
 def complementHomotopyEquiv :
@@ -119,7 +129,7 @@ variable (s : Set ι)
 /-- Deleting any collection of vertices from a finite simplicial realization leaves a space
 of finite CW type. Edges between deleted vertices cause no difficulty: the CW model is taken
 in the barycentric subdivision, rather than by deleting those vertices from `K` itself. -/
-theorem finiteCWType_compl_vertex_image [Finite (Face K)] :
+instance instFiniteCWTypeComplVertexImage [Finite (Face K)] :
     TauCeti.FiniteCWType {x : Realization K // x ∉ K.vertex '' s} := by
   let P := ((⊥ : AbstractSimplicialComplex ι).restrict s).toPreAbstractSimplicialComplex.map
     (Subtype.val : s → ι)
