@@ -47,6 +47,8 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate`: the Hessian
   quadratic form at a nondegenerate critical point is nondegenerate.
+* `TauCeti.isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate`: in finite
+  dimensions, the converse.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero`:
   index zero characterizes a positive-definite Hessian at a nondegenerate critical point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
@@ -155,6 +157,25 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp (L : F →L[ℝ] E)
   rw [((hA.clm_comp hL).congr_of_eventuallyEq hev).fderiv]
   simp
 
+/-- The Hessian of `ℓ ∘ φ`, for a continuous linear functional `ℓ`, is `ℓ` applied to the second
+derivative of `φ`. -/
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_left_apply (ℓ : F →L[ℝ] ℝ)
+    {φ : E → F} (hφ : ContDiffAt ℝ 2 φ x) (v : E) :
+    hessianQuadraticForm (ℓ ∘ φ) x v = ℓ (fderiv ℝ (fderiv ℝ φ) x v v) := by
+  have hℓ : fderiv ℝ ℓ = fun _ ↦ ℓ := funext fun _ ↦ ℓ.fderiv
+  rw [hessianQuadraticForm_apply, fderiv_fderiv_comp_apply ℓ.contDiff.contDiffAt hφ]
+  simp [hℓ]
+
+/-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
+differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
+theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
+    (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0) :
+    hessianQuadraticForm (h ∘ φ) x = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x := by
+  ext v
+  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
+    fderiv_fderiv_comp_apply hh hφ, hc]
+  simp
+
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the
 Hessian is negative-definite.  Following Mathlib's `sigNeg`, its value is defined to be zero in
@@ -189,6 +210,18 @@ theorem IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate
   rw [QuadraticMap.nondegenerate_iff_radical_eq_bot,
     QuadraticMap.radical_eq_ker_associated, associated_hessianQuadraticForm h.contDiffAt]
   exact LinearMap.separatingLeft_iff_ker_eq_bot.mp h.separatingLeft
+
+/-- In finite dimensions, a nondegenerate critical point is exactly a `C²` critical point whose
+Hessian quadratic form is nondegenerate. -/
+theorem isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate
+    [FiniteDimensional ℝ E] :
+    IsNondegenerateCriticalPoint f x ↔
+      ContDiffAt ℝ 2 f x ∧ fderiv ℝ f x = 0 ∧ (hessianQuadraticForm f x).Nondegenerate := by
+  rw [isNondegenerateCriticalPoint_iff_separatingLeft]
+  refine and_congr_right fun hf ↦ and_congr_right fun _ ↦ ?_
+  rw [← QuadraticMap.nondegenerate_associated_iff, associated_hessianQuadraticForm hf,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft]
+  exact LinearMap.BilinForm.IsSymm.isRefl ⟨hf.isSymmSndFDerivAt (by norm_num)⟩
 
 /-- The Morse index is at most the dimension of the ambient space. -/
 theorem morseIndex_le_finrank [FiniteDimensional ℝ E] :

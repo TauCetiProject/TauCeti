@@ -54,6 +54,7 @@ operates.
 * `TauCeti.SymplecticForm.apply_hamiltonianEnd`, `TauCeti.SymplecticForm.eq_hamiltonianEnd_iff`:
   the characterizing identity `ω (A_Q v) w = polar Q v w`.
 * `TauCeti.SymplecticForm.hamiltonianEnd_mem_skewAdjointLieSubalgebra`: `A_Q ∈ sp(V, ω)`.
+* `TauCeti.SymplecticForm.ker_hamiltonianEnd`: the kernel of `A_Q` is the radical of `Q`.
 * `TauCeti.SymplecticForm.hamiltonianEndEquiv_symm_apply_apply`: the inverse equivalence sends `A`
   to the linear moment map component `μ_A`.
 * `TauCeti.SymplecticForm.hamiltonianEnd_quadraticPoissonBracket`: `A_{Q, R} = ⁅A_Q, A_R⁆`.
@@ -151,6 +152,19 @@ theorem hamiltonianEnd_injective : Function.Injective ω.hamiltonianEnd := by
   beta_reduce at h
   rw [map_zero, LinearMap.zero_apply, QuadraticMap.polar_self, two_smul] at h
   simpa using (add_self_eq_zero.1 h.symm)
+
+/-- The kernel of the Hamiltonian endomorphism `A_Q` is the radical of `Q`. -/
+theorem ker_hamiltonianEnd (Q : QuadraticForm ℝ V) :
+    LinearMap.ker (ω.hamiltonianEnd Q) = Q.radical := by
+  ext v
+  rw [LinearMap.mem_ker, QuadraticMap.radical_eq_ker_polarBilin, LinearMap.mem_ker]
+  constructor
+  · intro h
+    ext w
+    simpa [h] using (ω.apply_hamiltonianEnd Q v w).symm
+  · intro h
+    refine ω.nondegenerate.1 _ fun w ↦ ?_
+    simpa using (ω.apply_hamiltonianEnd Q v w).trans congr($h w)
 
 /-- The quadratic form `v ↦ ω (A v) v / 2` of a skew-adjoint endomorphism `A`. -/
 private def quadraticFormOfSkewAdjoint (A : skewAdjointLieSubalgebra ω.toBilinForm) :
