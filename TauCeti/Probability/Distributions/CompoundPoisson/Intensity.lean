@@ -34,7 +34,7 @@ open scoped ENNReal
 namespace TauCeti.Probability
 
 /-- A finite jump intensity always gives a probability law, including zero intensity. -/
-theorem isProbabilityMeasure_compoundPoissonMeasure_cond
+instance isProbabilityMeasure_compoundPoissonMeasure_cond
     {E : Type*} [AddMonoid E] [MeasurableSpace E]
     (ν : Measure E) [IsFiniteMeasure ν] :
     IsProbabilityMeasure (compoundPoissonMeasure (ν univ).toNNReal (cond ν univ)) := by
@@ -56,18 +56,20 @@ theorem charFun_compoundPoissonMeasure_cond (ν : Measure E) [IsFiniteMeasure ν
   · have hzero : ν = 0 := Measure.measure_univ_eq_zero.mp hν
     simp [hzero]
   · let _ := cond_isProbabilityMeasure hν
-    have hexp : Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I)) ν :=
-      (integrable_const (1 : ℝ)).mono (by fun_prop) (by simp)
-    rw [charFun_compoundPoissonMeasure, charFun_apply, ProbabilityTheory.cond,
-      Measure.restrict_univ, integral_smul_measure, ENNReal.toReal_inv, Complex.real_smul,
-      integral_sub hexp (integrable_const _), integral_const]
-    simp only [ENNReal.coe_toNNReal_eq_toReal, Complex.ofReal_inv,
-      Complex.real_smul, measureReal_def, mul_one]
-    congr 1
+    have hexp : Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I)) ν := by
+      simpa only [← BoundedContinuousFunction.innerProbChar_apply] using
+        (BoundedContinuousFunction.innerProbChar t).integrable ν
     have hmass : (ν univ).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr
       ⟨hν, measure_ne_top _ _⟩
+    rw [charFun_compoundPoissonMeasure]
+    congr 1
+    simp only [ENNReal.coe_toNNReal_eq_toReal, ProbabilityTheory.cond, Measure.restrict_univ,
+      charFun_apply, integral_smul_measure, ENNReal.toReal_inv, Complex.real_smul,
+      Complex.ofReal_inv, integral_sub hexp (integrable_const _), integral_const,
+      measureReal_def, mul_one]
+    -- Treat the kernel integral as a scalar during normalization.
+    generalize (∫ x, Complex.exp (inner ℝ x t * Complex.I) ∂ν) = z
     field_simp [Complex.ofReal_ne_zero.mpr hmass]
-    simp only [mul_comm]
 
 /-- Superposition of finite jump intensities is convolution of the corresponding compound
 Poisson laws. Either intensity may be zero. -/
@@ -76,14 +78,13 @@ theorem compoundPoissonMeasure_add_intensity [CompleteSpace E]
     compoundPoissonMeasure ((ν₁ + ν₂) univ).toNNReal (cond (ν₁ + ν₂) univ) =
       compoundPoissonMeasure (ν₁ univ).toNNReal (cond ν₁ univ) ∗
         compoundPoissonMeasure (ν₂ univ).toNNReal (cond ν₂ univ) := by
-  let _ := isProbabilityMeasure_compoundPoissonMeasure_cond ν₁
-  let _ := isProbabilityMeasure_compoundPoissonMeasure_cond ν₂
-  let _ := isProbabilityMeasure_compoundPoissonMeasure_cond (ν₁ + ν₂)
   apply Measure.ext_of_charFun
   funext t
   have hint (ν : Measure E) [IsFiniteMeasure ν] :
-      Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I) - 1) ν :=
-    ((integrable_const (1 : ℝ)).mono (by fun_prop) (by simp)).sub (integrable_const _)
+      Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I) - 1) ν := by
+    apply Integrable.sub _ (integrable_const _)
+    simpa only [← BoundedContinuousFunction.innerProbChar_apply] using
+      (BoundedContinuousFunction.innerProbChar t).integrable ν
   simp only [charFun_conv, charFun_compoundPoissonMeasure_cond,
     integral_add_measure (hint ν₁) (hint ν₂), Complex.exp_add]
 
@@ -104,8 +105,6 @@ theorem IndepFun.hasLaw_add_compoundPoissonMeasure_cond
     (hY : HasLaw Y (compoundPoissonMeasure (ν₂ univ).toNNReal (cond ν₂ univ)) P) :
     HasLaw (X + Y)
       (compoundPoissonMeasure ((ν₁ + ν₂) univ).toNNReal (cond (ν₁ + ν₂) univ)) P := by
-  let _ := isProbabilityMeasure_compoundPoissonMeasure_cond ν₁
-  let _ := isProbabilityMeasure_compoundPoissonMeasure_cond ν₂
   let _ : IsFiniteMeasure P := hX.isFiniteMeasure_iff.mpr inferInstance
   rw [compoundPoissonMeasure_add_intensity]
   exact hXY.hasLaw_add hX hY

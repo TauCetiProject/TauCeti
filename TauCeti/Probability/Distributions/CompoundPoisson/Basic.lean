@@ -233,8 +233,9 @@ theorem charFun_compoundPoissonMeasure {E : Type*} [NormedAddCommGroup E] [Inner
     [IsProbabilityMeasure μ] (t : E) :
     charFun (compoundPoissonMeasure r μ) t = Complex.exp (r * (charFun μ t - 1)) := by
   have hint : Integrable (fun x => Complex.exp (inner ℝ x t * Complex.I))
-      (compoundPoissonMeasure r μ) :=
-    (integrable_const (1 : ℝ)).mono (by fun_prop) (by simp)
+      (compoundPoissonMeasure r μ) := by
+    simpa only [← BoundedContinuousFunction.innerProbChar_apply] using
+      (BoundedContinuousFunction.innerProbChar t).integrable (compoundPoissonMeasure r μ)
   rw [charFun_apply]
   rw [compoundPoissonMeasure_eq_sum] at hint ⊢
   rw [integral_sum_measure hint]
