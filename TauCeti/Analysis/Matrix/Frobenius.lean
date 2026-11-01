@@ -25,6 +25,11 @@ and the inner product together.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
   `Matrix.frobeniusSeminormedAddCommGroup`.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
+* `Matrix.frobenius_inner_smul_left` — the inner product is conjugate-linear in its first argument
+  for the entrywise scalar action on matrices.
+* `Matrix.frobenius_inner_eq_sum_conj_mul`, `Matrix.frobenius_real_inner_eq_sum_mul` — over `𝕜`
+  itself, the inner product is `∑ i, ∑ j, conj (A i j) * B i j`, and over `ℝ` it is
+  `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
 -/
@@ -33,7 +38,7 @@ public section
 
 noncomputable section
 
-open scoped InnerProductSpace
+open scoped ComplexConjugate InnerProductSpace
 
 namespace Matrix
 
@@ -77,15 +82,31 @@ theorem frobenius_inner_def (A B : Matrix m n E) :
     ⟪A, B⟫_𝕜 = ∑ i, ∑ j, ⟪A i j, B i j⟫_𝕜 :=
   (rfl)
 
+/-- The Frobenius inner product is conjugate-linear in its first argument for the entrywise scalar
+action on matrices. -/
+theorem frobenius_inner_smul_left (r : 𝕜) (A B : Matrix m n E) :
+    ⟪r • A, B⟫_𝕜 = conj r * ⟪A, B⟫_𝕜 := by
+  simp [inner_smul_left, Finset.mul_sum]
+
 end Def
 
 open scoped Matrix Matrix.Norms.Frobenius
 
+/-- The Frobenius inner product of matrices over `𝕜` is `∑ i, ∑ j, conj (A i j) * B i j`. -/
+theorem frobenius_inner_eq_sum_conj_mul (A B : Matrix m n 𝕜) :
+    ⟪A, B⟫_𝕜 = ∑ i, ∑ j, conj (A i j) * B i j := by
+  simp only [frobenius_inner_def, RCLike.inner_apply']
+
+/-- The Frobenius inner product of real matrices is `∑ i, ∑ j, A i j * B i j`. -/
+theorem frobenius_real_inner_eq_sum_mul (A B : Matrix m n ℝ) :
+    ⟪A, B⟫_ℝ = ∑ i, ∑ j, A i j * B i j := by
+  simp only [frobenius_inner_eq_sum_conj_mul, conj_trivial]
+
 /-- The Frobenius inner product of matrices over `𝕜` is the trace of `Aᴴ * B`. -/
 theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     ⟪A, B⟫_𝕜 = (Aᴴ * B).trace := by
-  simp only [frobenius_inner_def, RCLike.inner_apply', trace, diag_apply, mul_apply,
-    conjTranspose_apply, RCLike.star_def]
+  simp only [frobenius_inner_eq_sum_conj_mul, trace, diag_apply, mul_apply, conjTranspose_apply,
+    RCLike.star_def]
   exact Finset.sum_comm
 
 end Matrix
