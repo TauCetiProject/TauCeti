@@ -44,7 +44,7 @@ Partial correlations parametrize this region: the forward map
 `TauCeti.correlationCoordinatesOfPartialCorrelation` is a bijection from the open cube
 `(-1, 1) ^ J` onto `TauCeti.posDefCorrelationRegion p`, and its inverse takes the Cholesky factor
 of a positive-definite correlation matrix and reads off its partial correlations with
-`TauCeti.partialCorrelationOfCholesky`.
+`Matrix.partialCorrelationOfCholesky`.
 
 ## Main declarations
 
@@ -394,17 +394,18 @@ private theorem sum_sq_cholesky_correlationMatrix {x : strictLowerTriangle p →
 lie in the open cube. -/
 theorem abs_partialCorrelationOfCholesky_cholesky_lt_one {x : strictLowerTriangle p → ℝ}
     (hx : x ∈ posDefCorrelationRegion p) (ij : strictLowerTriangle p) :
-    |partialCorrelationOfCholesky
+    |Matrix.partialCorrelationOfCholesky
       (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 ij| < 1 :=
   abs_partialCorrelationOfCholesky_lt_one (cholesky _).2.2
     (sum_sq_cholesky_correlationMatrix hx) ij
 
 /-- The partial correlations of the Cholesky factor of a positive-definite correlation matrix
 are sent back to that matrix by the partial-correlation forward map. -/
+@[simp]
 theorem correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_cholesky
     {x : strictLowerTriangle p → ℝ} (hx : x ∈ posDefCorrelationRegion p) :
     correlationCoordinatesOfPartialCorrelation
-      (partialCorrelationOfCholesky
+      (Matrix.partialCorrelationOfCholesky
         (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1) = x := by
   funext ⟨⟨i, j⟩, hji⟩
   rw [correlationCoordinatesOfPartialCorrelation_apply, partialCorrelationGram_def,
