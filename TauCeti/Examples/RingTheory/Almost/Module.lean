@@ -62,13 +62,8 @@ example : IsZero ((toAlmost (ofValuationRing (TauCeti.PadicComplexInt.not_fg_max
 example : ¬ IsZero ((toAlmost (ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p))).obj
     (ModuleCat.of 𝓞_ℂ_[p] (𝓞_ℂ_[p] ⧸ Ideal.span {(p : 𝓞_ℂ_[p])}))) := by
   refine (isZero_toAlmost_obj_iff _).not.mpr
-    ((ofValuationRing_isAlmostZero_quotient_span_singleton_iff _).not.mpr ?_)
-  have hp : (1 : NNReal) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-  have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
-    rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
-    exact (div_lt_one (zero_lt_one.trans hp)).mpr hp
-  exact (mem_maximalIdeal _).mp
-    ((Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv)
+    ((ofValuationRing_isAlmostZero_quotient_span_singleton_iff _).not.mpr
+      ((mem_maximalIdeal _).mp (TauCeti.PadicComplexInt.natCast_mem_maximalIdeal p)))
 
 end PadicComplex
 
