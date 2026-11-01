@@ -196,6 +196,16 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
+/-- Away from the center of the end `q`, its cutoff `β(±s_q - 1)` is `C^n` as a function on
+`ℂ × M` which ignores the point of `M`. -/
+theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) {w : ℂ}
+    (hw : w ≠ q.endCenter) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
+      (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) (w, x) :=
+  (smoothTransition.contDiff.contDiffAt.comp w
+    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub contDiffAt_const)).contMDiffAt.comp
+    (w, x) contMDiffAt_fst
+
 /-- **The perturbation is smooth.** For Hamiltonians of period one which are `C^n` on `ℝ × M`,
 the perturbation is `C^n` on `S × M`, where `S = ℂ ∖ {0, 1}` is the thrice-punctured sphere. -/
 theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.Periodic (H q) 1)
@@ -206,15 +216,11 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
   simp only [pairOfPantsPerturbation]
   refine contMDiffAt_finsetSum fun q _ => ?_
   have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
-  have hc : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
-      (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) ((w : ℂ), x) :=
-    (smoothTransition.contDiff.contDiffAt.comp (w : ℂ)
-      ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub contDiffAt_const)).contMDiffAt.comp
-      ((w : ℂ), x) contMDiffAt_fst
   have hf : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × M => q.endAngularForm p.1) ((w : ℂ), x) :=
     ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := q.endAngularForm) _
       (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
-  exact (hc.smul (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
+  exact ((contMDiffAt_smoothTransition_endCoord q hw x).smul
+    (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
 
 end TauCeti.Floer

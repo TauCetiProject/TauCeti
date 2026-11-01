@@ -204,49 +204,37 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
       (fun p : ℂ × M =>
         (pairOfPantsAlmostComplex h₀ J hJ p.1 p.2).toLinearMap.toContinuousLinearMap)
       ((w : ℂ), x) := by
-  -- Pass to the algebra equivalence `Module.End.toContinuousLinearMap`, which is
-  -- `LinearMap.toContinuousLinearMap` as a function, to move products and inverses across.
-  have he (f : V →ₗ[ℝ] V) :
-      LinearMap.toContinuousLinearMap f = Module.End.toContinuousLinearMap V f := rfl
-  simp_rw [he] at hJs ⊢
-  set e := Module.End.toContinuousLinearMap (𝕜 := ℝ) V
   -- The cutoff-weighted sum of the Cayley transforms of the end structures is the Cayley
-  -- transform `C` of the pair-of-pants structure.
+  -- transform `C` of the pair-of-pants structure, which therefore is the inverse Cayley chart
+  -- applied to `C`.
   set C : ℂ × M → V →L[ℝ] V := fun p =>
     ∑ q, smoothTransition (q.endSign * (q.endCoord p.1).re - 1) •
-      e (J₀.cayley (J q (q.endCoord p.1).im p.2)) with hC_def
-  have hC (p : ℂ × M) : C p = e (J₀.cayley (pairOfPantsAlmostComplex h₀ J hJ p.1 p.2)) := by
-    simp only [hC_def, cayley_pairOfPantsAlmostComplex, map_sum, map_smul]
-  -- The structure is the inverse Cayley transform `J₀ (1 + C)(1 - C)⁻¹` of `C`.
-  have hJC : (fun p : ℂ × M => e (pairOfPantsAlmostComplex h₀ J hJ p.1 p.2).toLinearMap) =
-      fun p => e J₀.toLinearMap * (1 + C p) * Ring.inverse (1 - C p) := by
-    funext p
-    rw [hC, h₀.toLinearMap_eq_mul_ringInverse (tames_pairOfPantsAlmostComplex h₀ p.1 p.2),
-      map_mul, map_mul, map_add, map_one, map_ringInverse, map_sub, map_one]
+      LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord p.1).im p.2)) with hC_def
+  have hC (p : ℂ × M) : (C p).toLinearMap =
+      ∑ q, smoothTransition (q.endSign * (q.endCoord p.1).re - 1) •
+        J₀.cayley (J q (q.endCoord p.1).im p.2) := by
+    simp [hC_def]
+  have hCb (p : ℂ × M) : (C p).toLinearMap ∈ ω.cayleyBall J₀ := by
+    rw [hC, ← cayley_pairOfPantsAlmostComplex (hJ := hJ) h₀]
+    exact h₀.cayley_mem_cayleyBall (tames_pairOfPantsAlmostComplex h₀ p.1 p.2)
+  have hJC : (fun p : ℂ × M =>
+      (pairOfPantsAlmostComplex h₀ J hJ p.1 p.2).toLinearMap.toContinuousLinearMap) =
+      fun p => LinearMap.toContinuousLinearMap
+        (h₀.cayleyEquiv.symm ⟨(C p).toLinearMap, hCb p⟩).val.toLinearMap := by
+    simp only [pairOfPantsAlmostComplex, hC]
   -- `C` is smooth: the cutoffs are smooth, and periodicity makes the Cayley transforms of the
   -- end structures smooth functions of the angular coordinate.
   have hCs : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, V →L[ℝ] V) n C ((w : ℂ), x) := by
     refine contMDiffAt_finsetSum fun q _ => ?_
     have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
-    have hc : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
-        (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) ((w : ℂ), x) :=
-      (smoothTransition.contDiff.contDiffAt.comp (w : ℂ)
-        ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub
-          contDiffAt_const)).contMDiffAt.comp ((w : ℂ), x) contMDiffAt_fst
-    have hFp : Function.Periodic (fun t y => e (J₀.cayley (J q t y))) 1 := fun t => by
+    have hFp : Function.Periodic
+        (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
       simp only [hJp q t]
-    exact hc.smul (q.contMDiffAt_comp_im_endCoord hFp
+    exact (contMDiffAt_smoothTransition_endCoord q hw x).smul (q.contMDiffAt_comp_im_endCoord hFp
       (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2) (fun p => hJ q p.1 p.2)
         (hJs q)) hw x)
-  -- The inverse Cayley transform is smooth at `C (w, x)`, which lies in the Cayley ball.
-  have hu : IsUnit (1 - C ((w : ℂ), x)) := by
-    have := (SymplecticForm.isUnit_one_sub_of_mem_cayleyBall
-      (h₀.cayley_mem_cayleyBall (tames_pairOfPantsAlmostComplex (hJ := hJ) h₀ w x))).map e
-    rwa [map_sub, map_one, ← hC ((w : ℂ), x)] at this
   rw [hJC]
-  exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
-    ((contDiffAt_ringInverse ℝ hu.unit).comp (C ((w : ℂ), x))
-      (contDiffAt_const.sub contDiffAt_id))).comp_contMDiffAt hCs
+  exact h₀.contMDiffAt_cayleyEquiv_symm hCb hCs
 
 end Smooth
 

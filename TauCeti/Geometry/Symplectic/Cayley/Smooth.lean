@@ -26,10 +26,11 @@ smooth as well as pointwise compatible.
 structure, is constant for parameters at most zero and at least one, and is smooth on the
 whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
 proved jointly with external parameters for families expressed in Cayley coordinates.
-Conversely, `SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a
-smooth family of tame structures, parameterized by a manifold, to a smooth family of Cayley
-coordinates. These are linear, fixed-form statements; no extension theorem for sections of a
-tangent bundle is asserted here.
+Over a manifold of parameters, `SymplecticForm.Compatible.contMDiffAt_cayleyEquiv_symm` shows
+that the inverse chart preserves smoothness, and conversely
+`SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a smooth family of
+tame structures to a smooth family of Cayley coordinates. These are linear, fixed-form
+statements; no extension theorem for sections of a tangent bundle is asserted here.
 
 ## References
 
@@ -126,7 +127,7 @@ theorem Compatible.contDiff_compatibleCayleyEquiv_symm (h₀ : ω.Compatible J�
       (h₀.compatibleCayleyEquiv.symm ⟨(C p).toLinearMap, hC p⟩).val.toLinearMap) :=
   contDiff_iff_contDiffAt.2 fun _ => h₀.contDiffAt_compatibleCayleyEquiv_symm hC hCs.contDiffAt
 
-section Forward
+section Manifold
 
 variable {E G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace N] [ChartedSpace G N]
@@ -159,6 +160,20 @@ theorem Tames.contMDiffAt_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplex
       (contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)))).comp_contMDiffAt
     (f := j) hJs
 
+/-- The inverse Cayley chart relative to an `ω`-compatible `J₀` sends a family in the tame Cayley
+ball, parameterized by a manifold and `C^n` at a point `p`, to a family of tame structures which is
+`C^n` at `p`. -/
+theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
+    {C : N → V →L[ℝ] V} (hC : ∀ y, (C y).toLinearMap ∈ ω.cayleyBall J₀)
+    {n : WithTop ℕ∞} {p : N} (hCs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n C p) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => LinearMap.toContinuousLinearMap
+      (h₀.cayleyEquiv.symm ⟨(C y).toLinearMap, hC y⟩).val.toLinearMap) p := by
+  simp_rw [h₀.cayleyEquiv_symm_apply_toContinuousLinearMap]
+  have hu := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
+  exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
+    ((contDiffAt_ringInverse ℝ hu.unit).comp (C p)
+      (contDiffAt_const.sub contDiffAt_id))).comp_contMDiffAt hCs
+
 /-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
 structures on a manifold to a `C^n` family of Cayley coordinates. -/
 theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexStructure V}
@@ -169,7 +184,7 @@ theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexSt
       (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) :=
   fun p => h₀.contMDiffAt_cayley (hJ p) (hJs p)
 
-end Forward
+end Manifold
 
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
