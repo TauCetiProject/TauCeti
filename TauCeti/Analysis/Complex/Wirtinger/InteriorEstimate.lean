@@ -88,20 +88,11 @@ private theorem norm_conjWirtingerDeriv_smul_sub_smul_le {χ : ℂ → ℝ} {u :
   rw [hfun, conjWirtingerDeriv_smul_apply hχℂ hu, Complex.coe_smul, add_sub_cancel_left,
     norm_smul]
   gcongr
-  -- `\bar∂χ = (Dχ 1 + I Dχ I) / 2`, with both real derivatives at most `‖Dχ‖`.
-  have h1 : ‖fderiv ℝ χ z 1‖ ≤ ‖fderiv ℝ χ z‖ := by
-    simpa using (fderiv ℝ χ z).le_opNorm 1
-  have hI : ‖fderiv ℝ χ z I‖ ≤ ‖fderiv ℝ χ z‖ := by
-    simpa using (fderiv ℝ χ z).le_opNorm I
-  rw [conjWirtingerDeriv_apply, fderiv_ofReal_comp_apply, fderiv_ofReal_comp_apply,
-    smul_eq_mul I 1, mul_one, norm_smul, norm_inv, Complex.norm_two]
-  calc 2⁻¹ * ‖(fderiv ℝ χ z 1 : ℂ) + I • (fderiv ℝ χ z I : ℂ)‖
-      ≤ 2⁻¹ * (‖fderiv ℝ χ z 1‖ + ‖fderiv ℝ χ z I‖) := by
-        gcongr
-        refine (norm_add_le _ _).trans_eq ?_
-        rw [norm_smul, Complex.norm_I, one_mul, Complex.norm_real, Complex.norm_real]
-    _ ≤ 2⁻¹ * (‖fderiv ℝ χ z‖ + ‖fderiv ℝ χ z‖) := by gcongr
-    _ = ‖fderiv ℝ χ z‖ := by ring
+  refine (norm_conjWirtingerDeriv_apply_le _ _ _).trans ?_
+  rw [norm_one, mul_one]
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_
+  rw [fderiv_ofReal_comp_apply, Complex.norm_real]
+  exact (fderiv ℝ χ z).le_opNorm w
 
 /-- The pointwise form of the interior estimate: if `g` is within `δ ‖Du‖ + M ‖u‖` of `\bar∂u`,
 then `\bar∂(χ u)` is bounded by `‖g‖ + δ ‖D(χ u)‖` plus a multiple of `‖u‖`, for a cutoff `χ`
@@ -228,8 +219,10 @@ theorem exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le {p : ℝ≥0�
   have hC₁0 : C₁ ≠ 0 := by positivity
   set δ : ℝ≥0 := (2 * C₁)⁻¹ with hδ
   have hC₁δ : ((C₁ * δ : ℝ≥0) : ℝ≥0∞) = 2⁻¹ := by
-    rw [hδ, mul_inv, ← mul_assoc, mul_comm C₁, mul_assoc, mul_inv_cancel₀ hC₁0, mul_one,
-      ENNReal.coe_inv two_ne_zero, ENNReal.coe_two]
+    have h : C₁ * δ = 2⁻¹ := by
+      rw [hδ]
+      field_simp
+    simp [h]
   refine ⟨δ, by positivity, fun U K hU hK hKU M ↦ ?_⟩
   obtain ⟨χ, hχ, hχr, hKχ, hχc, hχU⟩ := hK.exists_contDiff_cutoff hU hKU
   obtain ⟨L, hL⟩ : ∃ L : ℝ≥0, ∀ z, ‖fderiv ℝ χ z‖ ≤ L := by

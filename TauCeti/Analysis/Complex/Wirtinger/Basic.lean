@@ -35,6 +35,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 ## Main results
 
 * `TauCeti.wirtingerDeriv_add_conjWirtingerDeriv`: `∂g + \bar∂g = Dg`.
+* `TauCeti.norm_wirtingerDeriv_apply_le`, `TauCeti.norm_conjWirtingerDeriv_apply_le`: both
+  Wirtinger derivatives are bounded by the real derivative, `‖∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`.
 * `TauCeti.coe_wirtingerDeriv_eq_complexLinearPart`,
   `TauCeti.coe_conjWirtingerDeriv_eq_complexAntilinearPart`: the Wirtinger derivatives are the
   complex-linear and complex-antilinear parts of the real derivative.
@@ -106,6 +108,29 @@ theorem wirtingerDeriv_add_conjWirtingerDeriv (v : V) :
     wirtingerDeriv g x v + conjWirtingerDeriv g x v = fderiv ℝ g x v := by
   rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply]
   module
+
+/-- The Wirtinger derivative is bounded by the real derivative: `‖∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`. -/
+theorem norm_wirtingerDeriv_apply_le (v : V) :
+    ‖wirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
+  have h1 := (fderiv ℝ g x).le_opNorm v
+  have hI : ‖fderiv ℝ g x (I • v)‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
+    simpa [norm_smul] using (fderiv ℝ g x).le_opNorm (I • v)
+  have h := norm_sub_le (fderiv ℝ g x v) (I • fderiv ℝ g x (I • v))
+  rw [norm_smul, norm_I, one_mul] at h
+  rw [wirtingerDeriv_apply, norm_smul, norm_inv, Complex.norm_two]
+  linarith
+
+/-- The conjugate Wirtinger derivative is bounded by the real derivative:
+`‖\bar∂g(x) v‖ ≤ ‖Dg(x)‖ ‖v‖`. -/
+theorem norm_conjWirtingerDeriv_apply_le (v : V) :
+    ‖conjWirtingerDeriv g x v‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
+  have h1 := (fderiv ℝ g x).le_opNorm v
+  have hI : ‖fderiv ℝ g x (I • v)‖ ≤ ‖fderiv ℝ g x‖ * ‖v‖ := by
+    simpa [norm_smul] using (fderiv ℝ g x).le_opNorm (I • v)
+  have h := norm_add_le (fderiv ℝ g x v) (I • fderiv ℝ g x (I • v))
+  rw [norm_smul, norm_I, one_mul] at h
+  rw [conjWirtingerDeriv_apply, norm_smul, norm_inv, Complex.norm_two]
+  linarith
 
 /-- The Wirtinger derivative is the complex-linear part `TauCeti.complexLinearPart` of the real
 derivative, for the complex structures given by multiplication by `I`. -/
