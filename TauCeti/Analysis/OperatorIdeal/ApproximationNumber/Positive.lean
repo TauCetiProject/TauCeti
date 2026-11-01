@@ -11,10 +11,10 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 # Ky Fan gauges of positive operators
 
 For a positive operator `T` on a Hilbert space, the Ky Fan gauge
-`Kₖ(T) = a₀(T) + ⋯ + aₖ₋₁(T)` is the largest diagonal sum `∑ᵢ re ⟪vᵢ, T vᵢ⟫` along an orthonormal
-family of at most `k` vectors (`ContinuousLinearMap.IsPositive.kyFanGauge_le_iff`). This is Ky
-Fan's maximum principle for positive operators: one orthonormal family does the work of the two
-families in the general principle `ContinuousLinearMap.norm_sum_inner_le_kyFanGauge`.
+`Kₖ(T) = a₀(T) + ⋯ + aₖ₋₁(T)` is the supremum of the diagonal sums `∑ᵢ re ⟪vᵢ, T vᵢ⟫` along
+orthonormal families of at most `k` vectors (`ContinuousLinearMap.IsPositive.kyFanGauge_le_iff`).
+This is Ky Fan's maximum principle for positive operators: one orthonormal family does the work of
+the two families in the general principle `ContinuousLinearMap.norm_sum_inner_le_kyFanGauge`.
 
 The upper bound is the general principle. For the lower bound, the converse min–max
 localization `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism`
@@ -26,7 +26,7 @@ too (`LinearMap.IsPositive.exists_orthonormal_sum_re_inner_eq_kyFanSum`).
 
 The variational description gives the converse of the Ky Fan triangle inequality for positive
 operators, `Kₖ(S) + Kₗ(T) ≤ Kₖ₊ₗ(S + T)`
-(`ContinuousLinearMap.IsPositive.kyFanGauge_add_kyFanGauge_le`): the two maximizing families span
+(`ContinuousLinearMap.IsPositive.kyFanGauge_add_kyFanGauge_le`): two nearly maximizing families span
 a subspace of dimension at most `k + l`, and the diagonal sums of `S` and `T` along each family
 are at most their traces on that subspace. Combined with `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`, this is the
 estimate making the logarithmic means `Kₙ(T) / log (1 + n)` additive in the limit on positive
@@ -109,8 +109,8 @@ theorem IsPositive.kyFanGauge_le_iff {T : E →L[𝕜] E} (hT : T.IsPositive)
 
 /-- **Ky Fan superadditivity for positive operators.** For positive operators `S` and `T` on a
 Hilbert space, `Kₖ(S) + Kₗ(T) ≤ Kₖ₊ₗ(S + T)`, where `Kₖ` is the sum of the first `k` approximation
-numbers. Together with the triangle inequality `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` this pins the Ky Fan
-sums of `S + T` between those of `S` and `T` at indices `k` and `2k`. -/
+numbers. Together with the triangle inequality `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` this gives
+`Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T) ≤ K₂ₖ(S + T)`. -/
 theorem IsPositive.kyFanGauge_add_kyFanGauge_le {S T : E →L[𝕜] E}
     (hS : S.IsPositive) (hT : T.IsPositive) (k l : ℕ) :
     S.kyFanGauge k + T.kyFanGauge l ≤ (S + T).kyFanGauge (k + l) := by
