@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Augment
 public import TauCeti.Algebra.Homology.Periodic.Unfold
 public import Mathlib.Algebra.Homology.Augment
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
@@ -39,8 +40,8 @@ resolution of its cokernel (Eisenbud, Section 5).
   indexed homologically by `ℕ`.
 * `TauCeti.PeriodicComplex.projectiveResolution`: the projective resolution of a cokernel of
   `Q^i ⟶ Q^i'`, for an acyclic periodic complex of projectives `Q`.
-* `ChainComplex.HasPeriodicTail`: a chain complex has a periodic tail of period `n` after a
-  preperiod of `p` terms.
+* `ChainComplex.HasPeriodicTail`: a chain complex has a periodic tail of positive period `n`
+  after a preperiod of `p` terms.
 
 ## Main results
 
@@ -116,6 +117,26 @@ def resolutionComplexIsoOfEq {j j' : ℤ} (h : (j : ZMod n) = (j' : ZMod n)) :
       rw [resolutionComplex_d, resolutionComplex_d]
       exact (Q.XIsoOfEq_hom_comp_d _ _).trans (Q.d_comp_XIsoOfEq_hom _ _).symm)
 
+/-- The components of `TauCeti.PeriodicComplex.resolutionComplexIsoOfEq` are the canonical
+isomorphisms `Q.XIsoOfEq`. -/
+@[simp]
+theorem resolutionComplexIsoOfEq_hom_f {j j' : ℤ} (h : (j : ZMod n) = (j' : ZMod n)) (k : ℕ) :
+    (resolutionComplexIsoOfEq Q h).hom.f k =
+      (Q.XIsoOfEq (show ((j - k : ℤ) : ZMod n) = ((j' - k : ℤ) : ZMod n) by
+        push_cast; rw [h])).hom := by
+  rw [resolutionComplexIsoOfEq]
+  rfl
+
+/-- The components of the inverse of `TauCeti.PeriodicComplex.resolutionComplexIsoOfEq` are
+the inverses of the canonical isomorphisms `Q.XIsoOfEq`. -/
+@[simp]
+theorem resolutionComplexIsoOfEq_inv_f {j j' : ℤ} (h : (j : ZMod n) = (j' : ZMod n)) (k : ℕ) :
+    (resolutionComplexIsoOfEq Q h).inv.f k =
+      (Q.XIsoOfEq (show ((j - k : ℤ) : ZMod n) = ((j' - k : ℤ) : ZMod n) by
+        push_cast; rw [h])).inv := by
+  rw [resolutionComplexIsoOfEq]
+  rfl
+
 /-- Dropping the first term of `TauCeti.PeriodicComplex.resolutionComplex Q j` gives the
 complex attached to `j - 1`. -/
 def truncateResolutionComplexIso :
@@ -125,10 +146,28 @@ def truncateResolutionComplexIso :
         congrArg _ (by omega)))
     (by
       rintro _ k rfl
-      change _ ≫ (resolutionComplex Q (j - 1)).d (k + 1) k =
-        (resolutionComplex Q j).d (k + 1 + 1) (k + 1) ≫ _
-      rw [resolutionComplex_d, resolutionComplex_d]
+      rw [ChainComplex.truncate_obj_d, resolutionComplex_d, resolutionComplex_d]
       exact (Q.XIsoOfEq_hom_comp_d _ _).trans (Q.d_comp_XIsoOfEq_hom _ _).symm)
+
+/-- The components of `TauCeti.PeriodicComplex.truncateResolutionComplexIso` are the canonical
+isomorphisms `Q.XIsoOfEq`. -/
+@[simp]
+theorem truncateResolutionComplexIso_hom_f (k : ℕ) :
+    (truncateResolutionComplexIso Q j).hom.f k =
+      (Q.XIsoOfEq (show ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = ((j - 1 - k : ℤ) : ZMod n) from
+        congrArg _ (by omega))).hom := by
+  rw [truncateResolutionComplexIso]
+  rfl
+
+/-- The components of the inverse of `TauCeti.PeriodicComplex.truncateResolutionComplexIso`
+are the inverses of the canonical isomorphisms `Q.XIsoOfEq`. -/
+@[simp]
+theorem truncateResolutionComplexIso_inv_f (k : ℕ) :
+    (truncateResolutionComplexIso Q j).inv.f k =
+      (Q.XIsoOfEq (show ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = ((j - 1 - k : ℤ) : ZMod n) from
+        congrArg _ (by omega))).inv := by
+  rw [truncateResolutionComplexIso]
+  rfl
 
 /-- Dropping the first `m` terms of `TauCeti.PeriodicComplex.resolutionComplex Q j` gives the
 complex attached to `j - m`. -/
@@ -139,11 +178,72 @@ def truncateIterateResolutionComplexIso : ∀ m : ℕ,
       ChainComplex.truncate.mapIso (truncateIterateResolutionComplexIso m) ≪≫
       truncateResolutionComplexIso Q (j - m) ≪≫ resolutionComplexIsoOfEq Q (congrArg _ (by omega))
 
+/-- The term in degree `k` of `TauCeti.PeriodicComplex.resolutionComplex Q j` with its first `m`
+terms dropped is the term in degree `k` of the complex attached to `j - m`. -/
+theorem truncate_iterate_resolutionComplex_X (m k : ℕ) :
+    (ChainComplex.truncate.obj^[m] (resolutionComplex Q j)).X k =
+      (resolutionComplex Q (j - m)).X k := by
+  rw [ChainComplex.truncate_iterate_obj_X, resolutionComplex_X, resolutionComplex_X]
+  congr 2
+  omega
+
+/-- The components of `TauCeti.PeriodicComplex.truncateIterateResolutionComplexIso` are
+identities, up to the equality of their source and target. -/
+theorem truncateIterateResolutionComplexIso_hom_f (m k : ℕ) :
+    (truncateIterateResolutionComplexIso Q j m).hom.f k =
+      eqToHom (truncate_iterate_resolutionComplex_X Q j m k) := by
+  induction m generalizing k with
+  | zero =>
+    rw [truncateIterateResolutionComplexIso, resolutionComplexIsoOfEq_hom_f]
+    rfl
+  | succ m ih =>
+    rw [truncateIterateResolutionComplexIso]
+    simp only [Iso.trans_hom, HomologicalComplex.comp_f, eqToIso.hom,
+      HomologicalComplex.eqToHom_f, Functor.mapIso_hom, ChainComplex.truncate_map_f, ih,
+      truncateResolutionComplexIso_hom_f, resolutionComplexIsoOfEq_hom_f,
+      HomologicalComplex.XIsoOfEq]
+    -- The intermediate objects agree only up to definitional unfolding, so `simp` cannot
+    -- compose the `eqToHom`s.
+    exact (eqToHom_trans_assoc _ _ _).trans ((eqToHom_trans_assoc _ _ _).trans
+      (eqToHom_trans _ _))
+
+/-- The components of the inverse of
+`TauCeti.PeriodicComplex.truncateIterateResolutionComplexIso` are identities, up to the
+equality of their source and target. -/
+theorem truncateIterateResolutionComplexIso_inv_f (m k : ℕ) :
+    (truncateIterateResolutionComplexIso Q j m).inv.f k =
+      eqToHom (truncate_iterate_resolutionComplex_X Q j m k).symm := by
+  rw [← cancel_epi ((truncateIterateResolutionComplexIso Q j m).hom.f k),
+    ← HomologicalComplex.comp_f, Iso.hom_inv_id, truncateIterateResolutionComplexIso_hom_f]
+  simp
+
 /-- **Periodicity.** Dropping the first `n` terms of
 `TauCeti.PeriodicComplex.resolutionComplex Q j` gives back the same complex. -/
 def resolutionComplexPeriodIso :
     ChainComplex.truncate.obj^[n] (resolutionComplex Q j) ≅ resolutionComplex Q j :=
   truncateIterateResolutionComplexIso Q j n ≪≫ resolutionComplexIsoOfEq Q (by simp)
+
+/-- The components of `TauCeti.PeriodicComplex.resolutionComplexPeriodIso` are identities, up
+to the equality of their source and target. -/
+theorem resolutionComplexPeriodIso_hom_f (k : ℕ) :
+    (resolutionComplexPeriodIso Q j).hom.f k =
+      eqToHom ((truncate_iterate_resolutionComplex_X Q j n k).trans
+        (congrArg Q.X (by simp))) := by
+  rw [resolutionComplexPeriodIso, Iso.trans_hom, HomologicalComplex.comp_f,
+    truncateIterateResolutionComplexIso_hom_f, resolutionComplexIsoOfEq_hom_f,
+    HomologicalComplex.XIsoOfEq, eqToIso.hom]
+  exact eqToHom_trans _ _
+
+/-- The components of the inverse of `TauCeti.PeriodicComplex.resolutionComplexPeriodIso` are
+identities, up to the equality of their source and target. -/
+theorem resolutionComplexPeriodIso_inv_f (k : ℕ) :
+    (resolutionComplexPeriodIso Q j).inv.f k =
+      eqToHom ((truncate_iterate_resolutionComplex_X Q j n k).trans
+        (congrArg Q.X (by simp))).symm := by
+  rw [resolutionComplexPeriodIso, Iso.trans_inv, HomologicalComplex.comp_f,
+    truncateIterateResolutionComplexIso_inv_f, resolutionComplexIsoOfEq_inv_f,
+    HomologicalComplex.XIsoOfEq, eqToIso.inv]
+  exact eqToHom_trans _ _
 
 variable {j} {i i' : ZMod n}
 
@@ -152,6 +252,14 @@ the residue `i'` of `j`. -/
 def resolutionComplexXZeroIso (hj : (j : ZMod n) = i') :
     (resolutionComplex Q j).X 0 ≅ Q.X i' :=
   Q.XIsoOfEq (by simpa using hj)
+
+/-- `TauCeti.PeriodicComplex.resolutionComplexXZeroIso` is the canonical isomorphism
+`Q.XIsoOfEq`. -/
+theorem resolutionComplexXZeroIso_eq (hj : (j : ZMod n) = i') :
+    resolutionComplexXZeroIso Q hj =
+      Q.XIsoOfEq (show ((j - (0 : ℕ) : ℤ) : ZMod n) = i' by simpa using hj) := by
+  rw [resolutionComplexXZeroIso]
+  rfl
 
 /-- The term in degree `1` of `TauCeti.PeriodicComplex.resolutionComplex Q j` is `Q^i`, for the
 residue `i' = i + 1` of `j`. -/
@@ -250,47 +358,43 @@ namespace ChainComplex
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
 
-/-- Dropping the first `m` terms of isomorphic complexes gives isomorphic complexes. -/
-private def truncateIterateMapIso {K L : ChainComplex C ℕ} (e : K ≅ L) :
-    ∀ m : ℕ, truncate.obj^[m] K ≅ truncate.obj^[m] L
-  | 0 => e
-  | m + 1 => truncateIterateMapIso (truncate.mapIso e) m
-
 /-- A chain complex `K` has a periodic tail of period `n` after a preperiod of `p` terms if
-dropping its first `p` terms leaves the unfolding of a `ZMod n`-indexed complex in the degrees
-at most some integer `j`, as in `TauCeti.PeriodicComplex.resolutionComplex`. -/
+`n` is positive and dropping its first `p` terms leaves the unfolding of a `ZMod n`-indexed
+complex in the degrees at most some integer `j`, as in
+`TauCeti.PeriodicComplex.resolutionComplex`. The period must be positive: since `ZMod 0 = ℤ`,
+every chain complex is the unfolding of some `ZMod 0`-indexed complex. -/
 def HasPeriodicTail (K : ChainComplex C ℕ) (n p : ℕ) : Prop :=
-  ∃ (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) (j : ℤ),
+  0 < n ∧ ∃ (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) (j : ℤ),
     Nonempty (truncate.obj^[p] K ≅ TauCeti.PeriodicComplex.resolutionComplex Q j)
 
 variable {K L : ChainComplex C ℕ} {n p q : ℕ}
 
 /-- The unfolding of a periodic complex in degrees at most `j` is periodic from the start. -/
-theorem _root_.TauCeti.PeriodicComplex.resolutionComplex_hasPeriodicTail
+theorem _root_.TauCeti.PeriodicComplex.resolutionComplex_hasPeriodicTail [NeZero n]
     (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) (j : ℤ) :
     (TauCeti.PeriodicComplex.resolutionComplex Q j).HasPeriodicTail n 0 :=
-  ⟨Q, j, ⟨Iso.refl _⟩⟩
+  ⟨Nat.pos_of_neZero n, Q, j, ⟨Iso.refl _⟩⟩
 
 /-- Having a periodic tail is invariant under isomorphism of complexes. -/
 theorem HasPeriodicTail.of_iso (h : K.HasPeriodicTail n p) (e : K ≅ L) :
     L.HasPeriodicTail n p := by
-  obtain ⟨Q, j, ⟨e'⟩⟩ := h
-  exact ⟨Q, j, ⟨(truncateIterateMapIso e p).symm ≪≫ e'⟩⟩
+  obtain ⟨hn, Q, j, ⟨e'⟩⟩ := h
+  exact ⟨hn, Q, j, ⟨(truncateIterateMapIso e p).symm ≪≫ e'⟩⟩
 
 /-- A periodic tail after `p` terms is also a periodic tail after any `q ≥ p` terms. -/
 theorem HasPeriodicTail.mono (h : K.HasPeriodicTail n p) (hpq : p ≤ q) :
     K.HasPeriodicTail n q := by
-  obtain ⟨Q, j, ⟨e⟩⟩ := h
+  obtain ⟨hn, Q, j, ⟨e⟩⟩ := h
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le' hpq
   rw [HasPeriodicTail, Function.iterate_add_apply]
-  exact ⟨Q, j - d, ⟨truncateIterateMapIso e d ≪≫
+  exact ⟨hn, Q, j - d, ⟨truncateIterateMapIso e d ≪≫
     TauCeti.PeriodicComplex.truncateIterateResolutionComplexIso Q j d⟩⟩
 
 /-- **Eventual periodicity.** If `K` has a periodic tail of period `n` after `p` terms, then
 dropping `n` further terms gives back the complex obtained by dropping the first `p` terms. -/
 theorem HasPeriodicTail.nonempty_truncate_iterate_iso (h : K.HasPeriodicTail n p) :
     Nonempty (truncate.obj^[n] (truncate.obj^[p] K) ≅ truncate.obj^[p] K) := by
-  obtain ⟨Q, j, ⟨e⟩⟩ := h
+  obtain ⟨-, Q, j, ⟨e⟩⟩ := h
   exact ⟨truncateIterateMapIso e n ≪≫
     TauCeti.PeriodicComplex.resolutionComplexPeriodIso Q j ≪≫ e.symm⟩
 

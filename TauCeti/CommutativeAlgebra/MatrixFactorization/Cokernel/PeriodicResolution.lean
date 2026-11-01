@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange.Basic
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange.Projective
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Basic
 public import TauCeti.Algebra.Homology.Periodic.Resolution
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
 # The periodic resolution of the cokernel of a matrix factorization
@@ -49,16 +48,6 @@ open CategoryTheory Limits
 
 variable {S : Type u} [CommRing S] {w : S}
 
-/-- The terms of the reduction modulo `w` of a finite-projective matrix factorization are
-projective `S/(w)`-modules. -/
-instance projective_quotientPeriodicComplex_obj_X (X : MatrixFactorization S w) (i : ZMod 2) :
-    Projective ((quotientPeriodicComplex.obj X).X i) := by
-  rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) i with rfl | rfl
-  · exact ModuleCat.projective_of_categoryTheory_projective
-      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₀.obj
-  · exact ModuleCat.projective_of_categoryTheory_projective
-      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.X₁.obj
-
 /-- **The periodic resolution of a matrix factorization.** For a non-zero-divisor `w`, the
 reduction modulo `w` of a finite-projective matrix factorization `X` is a two-periodic
 projective resolution
@@ -85,6 +74,7 @@ theorem quotientCokernelProjectiveResolution_complex (hw : w ∈ nonZeroDivisors
 
 /-- The augmentation of `TauCeti.MatrixFactorization.quotientCokernelProjectiveResolution` is
 the cokernel projection. -/
+@[simp]
 theorem quotientCokernelProjectiveResolution_π_f_zero (hw : w ∈ nonZeroDivisors S)
     (X : MatrixFactorization S w) :
     (quotientCokernelProjectiveResolution hw X).π.f 0 =
