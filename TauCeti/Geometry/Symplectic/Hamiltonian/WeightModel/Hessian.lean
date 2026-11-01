@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
-public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel
+public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Data.Set.Card
 
 /-!
 # Morse–Bott data of the components of the weight-model moment map
@@ -45,11 +46,10 @@ moment map there.
 * `TauCeti.morseIndex_weightMomentMap_apply`: the Morse index is `2 #{i | 0 < α_i(ξ)}`.
 * `TauCeti.sigPos_hessianQuadraticForm_weightMomentMap_apply`: the coindex is
   `2 #{i | α_i(ξ) < 0}`.
-* `TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`: the critical points of `μ^ξ` are the zeros of
-  the generator `ξ_M`.
 * `TauCeti.radical_hessianQuadraticForm_weightMomentMap_apply`: the null space of the Hessian is
-  the kernel of the generator `ξ_M`, that is the critical set.
-* `TauCeti.finrank_ker_weightGenerator`: this subspace has dimension `2 #{i | α_i(ξ) = 0}`.
+  the kernel of the generator `ξ_M`, that is the critical set
+  (`TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`), of dimension `2 #{i | α_i(ξ) = 0}`
+  (`TauCeti.finrank_ker_weightGenerator`).
 
 ## References
 
@@ -104,32 +104,17 @@ theorem hessianQuadraticForm_weightMomentMap_apply (α : ι → StrongDual ℝ �
     ← Finset.sum_add_distrib, ← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun i _ ↦ by ring
 
-/-- The real coordinates `(q, p) ↦ (q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by `ι ⊕ ι`. -/
-private def sumCoords :
-    (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
-  ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).prodCongr (WithLp.linearEquiv 2 ℝ (ι → ℝ))).trans
-    (LinearEquiv.sumArrowLequivProdArrow ι ι ℝ ℝ).symm
-
-omit [Fintype ι] in
-private theorem sumCoords_inl (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
-    sumCoords v (Sum.inl i) = v.1 i :=
-  (rfl)
-
-omit [Fintype ι] in
-private theorem sumCoords_inr (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
-    sumCoords v (Sum.inr i) = v.2 i :=
-  (rfl)
-
 /-- The isometry of the Hessian of `μ^ξ` with the doubled weighted sum of squares, given by the
 real coordinates `(q_i)_i ⊔ (p_i)_i`. -/
 private def hessianIsometryEquiv (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱)
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     (hessianQuadraticForm (fun y ↦ weightMomentMap α y ξ) x).IsometryEquiv
       (weightedSumSquares ℝ (Sum.elim (fun i ↦ -α i ξ) fun i ↦ -α i ξ)) where
-  __ := sumCoords
+  __ := weightModelCoords
   map_app' v := by
     simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, weightedSumSquares_apply,
-      Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, sumCoords_inl, sumCoords_inr, smul_eq_mul,
+      Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, weightModelCoords_apply_inl,
+      weightModelCoords_apply_inr, smul_eq_mul,
       hessianQuadraticForm_weightMomentMap_apply, ← Finset.sum_add_distrib,
       ← Finset.sum_neg_distrib]
     exact Finset.sum_congr rfl fun i _ ↦ by ring
@@ -143,15 +128,6 @@ theorem equivalent_hessianQuadraticForm_weightMomentMap_apply (α : ι → Stron
       (weightedSumSquares ℝ (Sum.elim (fun i ↦ -α i ξ) fun i ↦ -α i ξ)) :=
   ⟨hessianIsometryEquiv α ξ x⟩
 
-omit [Fintype ι] in
-/-- A property of the doubled index set `ι ⊕ ι`, read off the same function on both copies of `ι`,
-holds on twice as many indices as on `ι`. -/
-private theorem ncard_setOf_sumElim [Finite ι] {β : Type*} (f : ι → β) (P : β → Prop) :
-    {j : ι ⊕ ι | P (Sum.elim f f j)}.ncard = 2 * {i | P (f i)}.ncard := by
-  rw [← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq, Set.coe_ofPred, Set.coe_ofPred,
-    Nat.card_congr Equiv.subtypeSum, Nat.card_sum, two_mul]
-  simp only [Sum.elim_inl, Sum.elim_inr]
-
 /-- **The Morse index of a component of the weight-model moment map.** At every point, the Morse
 index of `μ^ξ` is twice the number of weights with `α_i(ξ) > 0`. -/
 theorem morseIndex_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱)
@@ -159,7 +135,7 @@ theorem morseIndex_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ :
     morseIndex (fun y ↦ weightMomentMap α y ξ) x = 2 * {i | 0 < α i ξ}.ncard := by
   rw [morseIndex_def, sigNeg_of_equiv_weightedSumSquares
     (equivalent_hessianQuadraticForm_weightMomentMap_apply α ξ x),
-    ncard_setOf_sumElim (fun i ↦ -α i ξ) (· < 0)]
+    Set.ncard_setOf_sumElim (fun i ↦ -α i ξ) (· < 0)]
   simp
 
 /-- **The coindex of a component of the weight-model moment map.** At every point, the positive
@@ -170,40 +146,8 @@ theorem sigPos_hessianQuadraticForm_weightMomentMap_apply (α : ι → StrongDua
       2 * {i | α i ξ < 0}.ncard := by
   rw [sigPos_of_equiv_weightedSumSquares
     (equivalent_hessianQuadraticForm_weightMomentMap_apply α ξ x),
-    ncard_setOf_sumElim (fun i ↦ -α i ξ) (0 < ·)]
+    Set.ncard_setOf_sumElim (fun i ↦ -α i ξ) (0 < ·)]
   simp
-
-/-- The kernel of the generator of the rotation by the angles `θ` is the subspace of `z` with
-`z_i = q_i + i p_i = 0` whenever `θ_i ≠ 0`. -/
-theorem mem_ker_weightGenerator_iff (θ : ι → ℝ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    x ∈ LinearMap.ker (weightGenerator θ).toLinearMap ↔
-      ∀ i, θ i ≠ 0 → x.1 i = 0 ∧ x.2 i = 0 := by
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, weightGenerator_apply_eq_zero_iff]
-  exact forall_congr' fun i ↦ by tauto
-
-/-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
-angles `θ` is spanned by the coordinates whose angle vanishes. -/
-private theorem map_sumCoords_ker_weightGenerator (θ : ι → ℝ) :
-    (LinearMap.ker (weightGenerator θ).toLinearMap).map sumCoords.toLinearMap =
-      Pi.spanSubset ℝ {j | Sum.elim θ θ j = 0} := by
-  ext u
-  obtain ⟨v, rfl⟩ := sumCoords.surjective u
-  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, mem_ker_weightGenerator_iff,
-    Pi.mem_spanSubset_iff]
-  constructor
-  · rintro h (i | i) hi
-    · exact (h i hi).1
-    · exact (h i hi).2
-  · exact fun h i hi ↦ ⟨h (Sum.inl i) hi, h (Sum.inr i) hi⟩
-
-/-- **Critical points of a component of the weight-model moment map.** A point is critical for
-`μ^ξ` exactly when the generator `ξ_M`, the rotation generator for the angles `α_i(ξ)`, vanishes
-there. -/
-theorem fderiv_weightMomentMap_apply_eq_zero_iff (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱)
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    fderiv ℝ (fun y ↦ weightMomentMap α y ξ) x = 0 ↔ weightGenerator (fun i ↦ α i ξ) x = 0 := by
-  rw [← SymplecticForm.hamiltonianVectorField_eq_zero_iff stdSymplecticForm,
-    hamiltonianVectorField_weightMomentMap]
 
 /-- **The Morse–Bott property of a component of the weight-model moment map.** At every point,
 the null space of the Hessian of `μ^ξ` is the kernel of the generator `ξ_M`. By
@@ -213,20 +157,14 @@ theorem radical_hessianQuadraticForm_weightMomentMap_apply (α : ι → StrongDu
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     (hessianQuadraticForm (fun y ↦ weightMomentMap α y ξ) x).radical =
       LinearMap.ker (weightGenerator fun i ↦ α i ξ).toLinearMap := by
-  refine Submodule.map_injective_of_injective (f := sumCoords.toLinearMap) sumCoords.injective ?_
-  rw [map_sumCoords_ker_weightGenerator]
-  -- The linear equivalence underlying `hessianIsometryEquiv` is `sumCoords`, by construction.
+  refine Submodule.map_injective_of_injective (f := weightModelCoords.toLinearMap)
+    weightModelCoords.injective ?_
+  rw [map_weightModelCoords_ker_weightGenerator]
+  -- The linear equivalence underlying `hessianIsometryEquiv` is `weightModelCoords`, by
+  -- construction.
   have h := (hessianIsometryEquiv α ξ x).map_radical
   rw [radical_weightedSumSquares] at h
   refine h.trans (congrArg _ ?_)
   ext (i | i) <;> simp
-
-/-- The kernel of the generator of the rotation by the angles `θ`, the fixed tangent directions,
-has dimension twice the number of `i` with `θ_i = 0`. -/
-theorem finrank_ker_weightGenerator (θ : ι → ℝ) :
-    Module.finrank ℝ (LinearMap.ker (weightGenerator θ).toLinearMap) =
-      2 * {i | θ i = 0}.ncard := by
-  rw [← sumCoords.finrank_map_eq, map_sumCoords_ker_weightGenerator,
-    Pi.dim_spanSubset, ncard_setOf_sumElim θ (· = 0)]
 
 end TauCeti

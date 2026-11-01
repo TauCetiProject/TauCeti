@@ -72,7 +72,9 @@ theorem eq_hamiltonianVectorField_iff (ω : SymplecticForm V) (H : V → ℝ) (x
     ext v
     exact (h v).trans (ω.apply_hamiltonianVectorField H x v).symm
 
-/-- The Hamiltonian vector field vanishes exactly at the critical points of the Hamiltonian. -/
+/-- The Hamiltonian vector field vanishes at `x` exactly when the derivative `fderiv ℝ H x` does.
+Where `H` is differentiable these are the critical points of `H`; since `fderiv` is `0` where `H`
+is not differentiable, the field also vanishes at every such point. -/
 @[simp]
 theorem hamiltonianVectorField_eq_zero_iff (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
     ω.hamiltonianVectorField H x = 0 ↔ fderiv ℝ H x = 0 := by

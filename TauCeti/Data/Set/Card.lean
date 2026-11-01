@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 
 /-!
-# Cardinalities of images, of complements, of preimages under division and of sigma fibres
+# Cardinalities of images, complements, division preimages, sigma fibres and doubled sets
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
@@ -24,6 +24,9 @@ Adding a fresh element to a set removes one element from its complement
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
+
+A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
+indices as on `ι` (`Set.ncard_setOf_sumElim`).
 
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
@@ -94,5 +97,13 @@ theorem ncard_preimage_div (S : Set ℕ) (n : ℕ) : ((· / n) ⁻¹' S).ncard =
     simpa [Nat.mul_add_div hn, Nat.div_eq_of_lt hp, Nat.div_eq_of_lt hq] using
       congrArg (· / n) hpq
   exact Prod.ext h₁ (Fin.ext (by simpa [h₁] using hpq))
+
+/-- A property of the doubled index set `ι ⊕ ι`, read off the same function on both copies of `ι`,
+holds on twice as many indices as on `ι`. Both sides are `0` when the set on `ι` is infinite. -/
+theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
+    {j : ι ⊕ ι | P (Sum.elim f f j)}.ncard = 2 * {i | P (f i)}.ncard := by
+  rw [two_mul, ← ncard_sumEquiv_symm_apply]
+  congr 1
+  ext (i | i) <;> simp
 
 end Set
