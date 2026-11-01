@@ -311,10 +311,9 @@ theorem isPerfectMatching_smoothingTurn (D : PDCode n) (b : Fin n → Bool) :
 slots at every crossing. In particular this composite is itself a perfect matching. -/
 theorem isPerfectMatching_smoothingTurn_mul_crossingTurn (D : PDCode n) (b : Fin n → Bool) :
     IsPerfectMatching (D.smoothingTurn b * D.crossingTurn) := by
-  have hlocal (β : Bool) : IsPerfectMatching (slotSmoothing β * oppositeCrossingSlot) := by
-    rw [isPerfectMatching_iff]
-    cases β <;> simp only [slotSmoothing_true, slotSmoothing_false,
-      oppositeCrossingSlot_eq_swap_mul_swap] <;> decide
+  have hlocal (β : Bool) : IsPerfectMatching (slotSmoothing β * oppositeCrossingSlot) :=
+    (isPerfectMatching_slotSmoothing β).mul_of_ne_fin_four
+      isPerfectMatching_oppositeCrossingSlot (slotSmoothing_ne_oppositeCrossingSlot_perm β)
   rw [isPerfectMatching_iff]
   constructor
   · intro h
