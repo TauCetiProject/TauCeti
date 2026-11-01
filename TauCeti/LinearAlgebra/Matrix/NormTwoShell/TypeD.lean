@@ -85,7 +85,7 @@ variable {n : ℕ} (hn : 4 ≤ n)
 vertex `k` is the Bourbaki simple root `TauCeti.DynkinType.typeDSimpleRoot n hn k`, that is
 `eₖ - eₖ₊₁` for `k + 1 < n` and `e_(n-2) + e_(n-1)` at the fork vertex `n - 1`. -/
 def typeDSimpleRootMatrix (n : ℕ) (hn : 4 ≤ n) : Matrix (Fin n) (Fin n) ℤ :=
-  .of fun m k ↦ typeDSimpleRoot n hn k m
+  (Matrix.of (typeDSimpleRoot n hn))ᵀ
 
 @[simp]
 theorem typeDSimpleRootMatrix_apply (m k : Fin n) :
@@ -96,8 +96,8 @@ theorem typeDSimpleRootMatrix_apply (m k : Fin n) :
 roots. -/
 theorem typeDSimpleRootMatrix_mulVec (a : Fin n → ℤ) :
     typeDSimpleRootMatrix n hn *ᵥ a = ∑ k, a k • typeDSimpleRoot n hn k := by
-  ext m
-  simp [mulVec, dotProduct, mul_comm]
+  rw [typeDSimpleRootMatrix, mulVec_transpose, vecMul_eq_sum]
+  rfl
 
 /-- The classical coordinates of the simple root `αₖ` of `Q`. -/
 theorem typeDSimpleRootMatrix_mulVec_single (k : Fin n) :
@@ -108,10 +108,7 @@ theorem typeDSimpleRootMatrix_mulVec_single (k : Fin n) :
 /-- **The Cartan matrix of type `Dₙ` is the Gram matrix of the simple roots.** -/
 theorem transpose_typeDSimpleRootMatrix_mul_self :
     (typeDSimpleRootMatrix n hn)ᵀ * typeDSimpleRootMatrix n hn = CartanMatrix.D n := by
-  have h : (typeDSimpleRootMatrix n hn)ᵀ = Matrix.of (typeDSimpleRoot n hn) := by
-    ext k m
-    rw [transpose_apply, typeDSimpleRootMatrix_apply, of_apply]
-  rw [h, ← typeDSimpleRoot_mul_transpose_self hn, ← h, transpose_transpose]
+  rw [typeDSimpleRootMatrix, transpose_transpose, typeDSimpleRoot_mul_transpose_self hn]
 
 /-- The Gram pairing of `CartanMatrix.D n` is the dot product of the classical coordinates. -/
 theorem dotProduct_cartanMatrix_D_mulVec (a b : Fin n → ℤ) :
@@ -182,13 +179,17 @@ theorem coe_typeDNormTwoShellEquiv_typeDRootEquiv (k : Fin (2 * n * (n - 1))) :
 
 /-! ### Partial sums of classical coordinates -/
 
-/-- The partial sums `∑_{m ≤ K} (αⱼ)ₘ` of the classical coordinates of a simple root: the chain root
-`eⱼ - eⱼ₊₁` contributes `1` exactly at `K = j`, and each of the two coordinates of the fork root
-`e_(n-2) + e_(n-1)` contributes `1` once `K` reaches it. -/
-theorem sum_filter_typeDSimpleRoot (j : Fin n) (K : ℕ) :
-    ∑ m : Fin n with m.val ≤ K, typeDSimpleRoot n hn j m =
-      if j.val + 1 < n then (if j.val = K then 1 else 0)
-      else (if n ≤ K + 2 then 1 else 0) + (if n ≤ K + 1 then 1 else 0) := by
+/-- The partial sum `∑_{m ≤ K} (αⱼ)ₘ` of the classical coordinates of the simple root `αⱼ`
+(`TauCeti.sum_filter_typeDSimpleRoot`): the chain root `eⱼ - eⱼ₊₁` contributes `1` exactly at
+`K = j`, and each of the two coordinates of the fork root `e_(n-2) + e_(n-1)` contributes `1` once
+`K` reaches it. -/
+private def typeDSimpleRootPartialSum (n : ℕ) (j : Fin n) (K : ℕ) : ℤ :=
+  if j.val + 1 < n then (if j.val = K then 1 else 0)
+  else (if n ≤ K + 2 then 1 else 0) + (if n ≤ K + 1 then 1 else 0)
+
+private theorem sum_filter_typeDSimpleRoot (j : Fin n) (K : ℕ) :
+    ∑ m : Fin n with m.val ≤ K, typeDSimpleRoot n hn j m = typeDSimpleRootPartialSum n j K := by
+  unfold typeDSimpleRootPartialSum
   by_cases hj : j.val + 1 < n
   · simp only [typeDSimpleRoot_of_add_one_lt hn hj, hj, ↓reduceIte, Pi.sub_apply,
       Finset.sum_sub_distrib, Pi.single_apply, Finset.sum_ite_eq', Finset.mem_filter,
@@ -201,10 +202,9 @@ theorem sum_filter_typeDSimpleRoot (j : Fin n) (K : ℕ) :
 
 /-- The partial sums of the classical coordinates of a vector `a` of `Q`, in terms of its
 simple-root coefficients. -/
-theorem sum_filter_typeDSimpleRootMatrix_mulVec (a : Fin n → ℤ) (K : ℕ) :
+private theorem sum_filter_typeDSimpleRootMatrix_mulVec (a : Fin n → ℤ) (K : ℕ) :
     ∑ m : Fin n with m.val ≤ K, (typeDSimpleRootMatrix n hn *ᵥ a) m =
-      ∑ j, a j * ((if j.val + 1 < n then (if j.val = K then 1 else 0)
-        else (if n ≤ K + 2 then 1 else 0) + (if n ≤ K + 1 then 1 else 0))) := by
+      ∑ j, a j * typeDSimpleRootPartialSum n j K := by
   simp only [← sum_filter_typeDSimpleRoot hn, typeDSimpleRootMatrix_mulVec, Finset.sum_apply,
     Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
   exact Finset.sum_comm
@@ -215,9 +215,10 @@ theorem sum_filter_typeDSimpleRootMatrix_mulVec_of_add_two_lt (a : Fin n → ℤ
     (hK : K + 2 < n) :
     ∑ m : Fin n with m.val ≤ K, (typeDSimpleRootMatrix n hn *ᵥ a) m = a ⟨K, by omega⟩ := by
   rw [sum_filter_typeDSimpleRootMatrix_mulVec, Finset.sum_eq_single ⟨K, by omega⟩]
-  · simp [show K + 1 < n by omega]
+  · simp [typeDSimpleRootPartialSum, show K + 1 < n by omega]
   · intro j _ hj
     have : j.val ≠ K := fun h ↦ hj (Fin.ext h)
+    simp only [typeDSimpleRootPartialSum]
     split_ifs <;> omega
   · simp
 
@@ -226,19 +227,16 @@ coefficients**: `∑_{m ≤ n - 2} (D a)ₘ = a_(n-2) + a_(n-1)`. -/
 theorem sum_filter_typeDSimpleRootMatrix_mulVec_fork (a : Fin n → ℤ) :
     ∑ m : Fin n with m.val ≤ n - 2, (typeDSimpleRootMatrix n hn *ᵥ a) m =
       a ⟨n - 2, by omega⟩ + a ⟨n - 1, by omega⟩ := by
-  rw [sum_filter_typeDSimpleRootMatrix_mulVec, ← Finset.sum_pair (f := fun j : Fin n ↦ a j)
-    (show (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ by simp [Fin.ext_iff]; omega)]
-  rw [← Finset.sum_subset (Finset.subset_univ _)]
-  · refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rcases Finset.mem_insert.mp hj with rfl | hj
-    · dsimp only
-      split_ifs <;> omega
-    · rw [Finset.mem_singleton.mp hj]
-      dsimp only
-      split_ifs <;> omega
-  · intro j _ hj
-    simp only [Finset.mem_insert, Finset.mem_singleton, Fin.ext_iff, not_or] at hj
+  rw [sum_filter_typeDSimpleRootMatrix_mulVec, Finset.sum_eq_add ⟨n - 2, by omega⟩
+    ⟨n - 1, by omega⟩ (by simp only [ne_eq, Fin.ext_iff]; omega)]
+  · simp only [typeDSimpleRootPartialSum]
     split_ifs <;> omega
+  · intro j _ hj
+    simp only [ne_eq, Fin.ext_iff] at hj
+    simp only [typeDSimpleRootPartialSum]
+    split_ifs <;> omega
+  · simp
+  · simp
 
 /-! ### The ordered sign form -/
 
@@ -257,16 +255,14 @@ theorem orderedSignForm_cartanMatrix_D (a b : Fin n → ℤ) :
 
 /-- The coefficients of the ordered form in partial sums: summed over `k < n - 2`, the products of
 the partial sums `∑_{m ≤ k + 1} (αᵢ)ₘ` and `∑_{m ≤ k} (αⱼ)ₘ` of two simple roots
-(`TauCeti.sum_filter_typeDSimpleRoot`) pair the chain vertex `j ≤ n - 3` with the next vertex
+(`TauCeti.typeDSimpleRootPartialSum`) pair the chain vertex `j ≤ n - 3` with the next vertex
 `j + 1`, and also with the fork vertex `n - 1` when `j = n - 3`. -/
 private theorem sum_range_partialSum_mul_partialSum (i j : Fin n) :
     ∑ k ∈ Finset.range (n - 2),
-        (if i.val + 1 < n then (if i.val = k + 1 then 1 else 0)
-          else (if n ≤ k + 1 + 2 then 1 else 0) + (if n ≤ k + 1 + 1 then 1 else 0)) *
-        (if j.val + 1 < n then (if j.val = k then 1 else 0)
-          else (if n ≤ k + 2 then 1 else 0) + (if n ≤ k + 1 then 1 else 0)) =
+        typeDSimpleRootPartialSum n i (k + 1) * typeDSimpleRootPartialSum n j k =
       if j.val + 1 = i.val ∧ i.val + 2 < n ∨ j.val + 3 = n ∧ n ≤ i.val + 2 then (1 : ℤ)
       else 0 := by
+  unfold typeDSimpleRootPartialSum
   by_cases hj : j.val + 3 ≤ n
   · rw [Finset.sum_eq_single j.val]
     · split_ifs <;> omega
