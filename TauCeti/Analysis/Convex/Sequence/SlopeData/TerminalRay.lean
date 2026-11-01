@@ -102,6 +102,16 @@ theorem eventuallyConst_slope_expand : Filter.EventuallyConst d.expand.slope Fil
   Filter.eventuallyConst_atTop.mpr ⟨d.prefix.expand.length, fun i hi => by
     rw [d.expand_slope_of_le hi, d.expand_slope_of_le le_rfl]⟩
 
+/-- Truncating expansion at the join recovers the expanded finite prefix. -/
+@[simp]
+theorem expand_truncate_length :
+    d.expand.truncate d.prefix.expand.length = d.prefix.expand := by
+  symm
+  apply FiniteSlopeData.ext_of_slope (by simp) (by simp) (by simp)
+  intro i
+  simpa only [InfiniteSlopeData.truncate_slope, Fin.val_cast] using
+    (d.expand_slope_of_lt i.isLt).symm
+
 /-- Normalized terminal-ray data is determined by its expanded unit slopes and anchor. -/
 theorem expand_injective : Function.Injective (expand : TerminalRaySlopeData Γ → _) := by
   intro d e h
@@ -156,13 +166,8 @@ theorem heights_start : d.heights d.prefix.start = (d.prefix.initialHeight : Wit
 /-- On the prefix interval, the heights agree with the finite compressed prefix. -/
 theorem heights_eq_prefix {k : ℕ} (hk : k ≤ d.prefix.expand.length) :
     d.heights (d.prefix.start + k) = d.prefix.heights (d.prefix.start + k) := by
-  have hp : d.prefix.expand = d.expand.truncate d.prefix.expand.length := by
-    apply FiniteSlopeData.ext_of_slope (by simp) (by simp) (by simp)
-    intro i
-    simpa only [InfiniteSlopeData.truncate_slope, Fin.val_cast] using
-      (d.expand_slope_of_lt i.isLt).symm
   rw [heights_def, ← expand_start, ← d.expand.heights_truncate_start_add _ hk,
-    ← hp, FiniteCompressedSlopeData.heights_def, expand_start]
+    expand_truncate_length, FiniteCompressedSlopeData.heights_def, expand_start]
 
 /-- Beyond the join, each further step adds the ray slope to the endpoint height
 of the finite prefix. The offset `k` is relative to the join, not the anchor. -/
@@ -268,8 +273,7 @@ theorem toTerminalRay_raySlope (hd : Filter.EventuallyConst d.slope Filter.atTop
 theorem expand_toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTop) :
     (d.toTerminalRay hd).expand = d := by
   have hp := d.toTerminalRay_prefix hd
-  have hlen : (d.toTerminalRay hd).prefix.expand.length = d.stabilizationIndex hd := by
-    simp
+  have hlen := d.toTerminalRay_prefix_expand_length hd
   apply InfiniteSlopeData.ext (by simp) (by simp)
   funext i
   by_cases hi : i < d.stabilizationIndex hd
