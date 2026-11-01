@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.CompactOpen
 import TauCeti.LinearAlgebra.Basis.RangeSpan
-import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.Logic.Equiv.Set
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
@@ -129,8 +129,8 @@ theorem localStabilizer_eq_integralOrthogonalSubgroup {ι : Type*} [Fintype ι] 
     exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   ext g
   rw [mem_localStabilizer_iff, mem_integralOrthogonalSubgroup_iff_mem_span]
-  refine (LinearEquiv.forall_apply_mem_iff_iff_mapsTo _
-    (LinearMap.range (L.localizationToCompletion p) : Set (ℚ_[p] ⊗[ℚ] V))).trans ?_
+  refine (Equiv.forall_apply_mem_iff_iff_mapsTo (g : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).toEquiv
+    _ (LinearMap.range (L.localizationToCompletion p) : Set (ℚ_[p] ⊗[ℚ] V))).trans ?_
   rw [← hspan]
   rfl
 
@@ -193,7 +193,7 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
       Set.MapsTo (g : V ≃ₗ[ℚ] V).toLinearMap L.carrier L.carrier ∧
         Set.MapsTo ((g⁻¹ : orthogonalGroup L.norm) : V ≃ₗ[ℚ] V).toLinearMap L.carrier
           L.carrier :=
-    LinearEquiv.forall_apply_mem_iff_iff_mapsTo _ _
+    Equiv.forall_apply_mem_iff_iff_mapsTo (g : V ≃ₗ[ℚ] V).toEquiv _ _
   rw [hglob, hint, hint]
   -- A rational number is an integer exactly when it is a `p`-adic integer at every prime.
   simp only [hloc, forall_and, forall_comm (α := Nat.Primes),
