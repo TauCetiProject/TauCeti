@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
 
 /-!
@@ -45,7 +46,8 @@ measure and the renewal function are the objects of the renewal limit theorems a
   `U = δ₀ + F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
 * `MeasureTheory.Measure.renewalMeasure_Iic` — `U [0, t] = 1 + m t`.
-* `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments.
+* `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments, and
+  `TauCeti.Probability.integral_renewalCountNat`, its real form for the natural-valued count.
 * `MeasureTheory.Measure.renewalFunction_lt_top`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_renewalMeasure` — local finiteness when
   `F {0} < 1`.
@@ -190,6 +192,20 @@ theorem lintegral_renewalCount (hindep : iIndepFun T P)
   refine tsum_congr fun n ↦ ?_
   rw [lintegral_indicator_const₀ (hnull n), one_mul, ← (hS (n + 1)).map_eq,
     Measure.map_apply_of_aemeasurable (hS (n + 1)).aemeasurable measurableSet_Iic]
+
+/-- The real form of `TauCeti.Probability.lintegral_renewalCount`: for independent, identically
+distributed increments that are not almost surely zero, the mean of the natural-valued count at
+time `t` is the renewal function of the increment law. -/
+theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
+    ∫ ω, (renewalCountNat T t ω : ℝ) ∂P = ((P.map (T 0)).renewalFunction t).toReal := by
+  have hm := measurable_renewalCountNat hT t
+  rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun ω ↦ by positivity)
+    (by fun_prop), ← lintegral_renewalCount hindep hid t]
+  congr 1
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_natCast_renewalCountNat hT hindep hid hzero] with ω hω
+  rw [ENNReal.ofReal_natCast, hω t]
 
 end TauCeti.Probability
 
