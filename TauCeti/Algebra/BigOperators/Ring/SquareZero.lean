@@ -153,14 +153,14 @@ theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x 
         -- The term with `x a` twice vanishes, and Pascal's rule combines the two terms with `x a`
         -- once.
         have hsq : x a * e m * (x a * e n) = 0 := by
-          rw [mul_assoc, (hcomm m).symm.left_comm, ← mul_assoc, hxa, zero_mul]
-        have hcross : e (m + 1) * (x a * e n) + x a * e m * e (n + 1) =
+          rw [mul_assoc, (hcomm m).symm.left_comm]
+          simp [← mul_assoc, hxa]
+        have hcross : x a * e m * e (n + 1) + e (m + 1) * (x a * e n) =
             (m + n + 1 + 1).choose (m + 1) • (x a * e (m + n + 1)) := by
           rw [(hcomm (m + 1)).symm.left_comm, mul_assoc, ih, ih, Nat.choose_succ_succ']
           -- Both products land in degree `m + n + 1`.
           simp only [Nat.add_right_comm m 1 n, ← add_assoc, mul_smul_comm, add_smul]
-          exact add_comm _ _
-        rw [add_mul, mul_add, mul_add, hsq, add_zero, add_assoc, hcross, ih,
-          show m + 1 + (n + 1) = m + n + 1 + 1 by omega, ← smul_add]
+        simp only [add_mul, mul_add, hsq, add_zero, ih]
+        rw [add_assoc, hcross, show m + 1 + (n + 1) = m + n + 1 + 1 by omega, smul_add]
 
 end Finset

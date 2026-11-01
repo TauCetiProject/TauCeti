@@ -48,8 +48,9 @@ theorem add_pow_succ_of_mul_self_eq_zero (h : Commute x y) (hx : x * x = 0) (n :
     have hxy : y * (x * y ^ n) = x * y ^ (n + 1) := by
       rw [← mul_assoc, ← h.eq, mul_assoc, pow_succ']
     have hxx : x * (x * y ^ n) = 0 := by rw [← mul_assoc, hx, zero_mul]
-    rw [pow_succ', ih, mul_add, add_mul, add_mul, mul_smul_comm, mul_smul_comm, hxx, hxy,
-      ← pow_succ', smul_zero, zero_add, succ_nsmul _ (n + 1)]
+    rw [pow_succ', ih]
+    simp only [add_mul, mul_add, mul_smul_comm, hxx, hxy, zero_add, ← pow_succ']
+    rw [succ_nsmul _ (n + 1)]
     ac_rfl
 
 end Commute

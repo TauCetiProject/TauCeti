@@ -153,8 +153,8 @@ theorem mul_mul_eq_zero_of_anticommute {i j k : ι} (h : i = j ∨ i = k) :
 
 /-- A summand `c • (ν i * ν j)` of a quadratic element squares to zero. -/
 theorem smul_mul_mul_self_eq_zero (c : R) (i j : ι) : c • (ν i * ν j) * (c • (ν i * ν j)) = 0 := by
-  rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν i j i).eq, ← mul_assoc, hν₀,
-    zero_mul, zero_mul, smul_zero]
+  rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν i j i).eq]
+  simp [← mul_assoc, hν₀]
 
 /-- **Divided powers without denominators.** The `k`-th power of the quadratic element
 `u = ∑_{p ∈ P} a p • (ν p.1 * ν p.2)` is `k !` times its divided power `u^[k]`. -/
@@ -179,8 +179,8 @@ theorem mul_noncommProd_smul_mul_eq_zero (a : ι × ι → R) {t : Finset (ι ×
       ((pairwise_commute_smul_mul hν a).set_pairwise _) = 0 := by
   classical
   obtain ⟨p, hp, hip⟩ := Multiset.mem_bind.1 hi
-  rw [← Finset.mul_noncommProd_erase t hp, ← mul_assoc, mul_smul_comm,
-    mul_mul_eq_zero_of_anticommute hν hν₀ (by simpa using hip), smul_zero, zero_mul]
+  rw [← Finset.mul_noncommProd_erase t hp, ← mul_assoc, mul_smul_comm]
+  simp [mul_mul_eq_zero_of_anticommute hν hν₀ (by simpa using hip : i = p.1 ∨ i = p.2)]
 
 /-- The product over a set `t` of pairs vanishes unless the endpoints of the pairs in `t` are
 distinct, that is, unless `t` consists of pairwise disjoint pairs with distinct endpoints. -/
@@ -208,9 +208,9 @@ theorem noncommProd_smul_mul_eq_zero_of_not_nodup (a : ι × ι → R) {t : Fins
       have hi : i = p.1 ∨ i = p.2 := by simpa using hi
       rw [smul_mul_assoc]
       rcases hi with rfl | rfl
-      · rw [eq_neg_of_add_eq_zero_left (hν _ _), neg_mul, mul_assoc,
-          mul_noncommProd_smul_mul_eq_zero hν hν₀ a hit, mul_zero, neg_zero, smul_zero]
-      · rw [mul_assoc, mul_noncommProd_smul_mul_eq_zero hν hν₀ a hit, mul_zero, smul_zero]
+      · rw [eq_neg_of_add_eq_zero_left (hν _ _)]
+        simp [mul_assoc, mul_noncommProd_smul_mul_eq_zero hν hν₀ a hit]
+      · simp [mul_assoc, mul_noncommProd_smul_mul_eq_zero hν hν₀ a hit]
 
 /-- **The divided power as a sum over disjoint pairings.** The `k`-th divided power of
 `u = ∑_{p ∈ P} a p • (ν p.1 * ν p.2)` is the sum, over the `k`-element sets `t ⊆ P` whose `2 k`
