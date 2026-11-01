@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame

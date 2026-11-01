@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
@@ -154,6 +154,37 @@ private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin 
   · exact (o.orientationAt y).volumeForm_apply_eq_sqrt_det_gram _ (hor.2 h)
   · exact (o.orientationAt y).volumeForm_apply_eq_neg_sqrt_det_gram _ (mt hor.1 h)
 
+/-- **The volume form in a chart frame.** Near `x`, the Riemannian volume form evaluated on the
+chart frame at `x`, reindexed by `σ`, is a fixed sign `c = ±1` times the chart volume density
+`√(det G)` at `x`. The sign is `+` exactly when the chart frame is positively oriented at `x`. -/
+theorem exists_eventually_riemannianVolumeForm_chartLocalFrame_eq
+    (o : Manifold.Orientation I M (Fin m)) (σ : Fin (finrank ℝ E) ≃ Fin m) (x : M) :
+    ∃ c : ℝ, (c = 1 ∨ c = -1) ∧ ∀ᶠ y in 𝓝 x,
+      riemannianVolumeForm o y
+          (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) =
+        c * chartVolumeDensity (I := I) x y := by
+  classical
+  set e := trivializationAt E (TangentSpace I) x
+  set b := (Module.finBasis ℝ E).reindex σ
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  have hbase : e.baseSet ∈ 𝓝 x := e.open_baseSet.mem_nhds hx
+  have hframe (y : M) (hy : y ∈ e.baseSet) :
+      (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) = e.basisAt b hy := by
+    funext i
+    rw [Riemannian.Tensor.chartLocalFrame_def, e.localFrame_apply_of_mem_baseSet _ hy,
+      TauCeti.Manifold.basisAt_apply, TauCeti.Manifold.basisAt_apply, Module.Basis.reindex_apply]
+  -- Near `x` the orientation is constant in the trivialization, so the sign of the frame is too.
+  have hconst := o.toVectorBundleOrientation.eventually_mapOrientation_eq
+    (by simpa using o.card_eq) e hx
+  simp only [Manifold.Orientation.toVectorBundleOrientation_apply] at hconst
+  by_cases hP : b.orientation = e.mapOrientation (Fin m) hx (o.orientationAt x)
+  · refine ⟨1, Or.inl rfl, ?_⟩
+    filter_upwards [hconst, hbase] with y hy hyb
+    rw [hframe y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_left hP, one_mul]
+  · refine ⟨-1, Or.inr rfl, ?_⟩
+    filter_upwards [hconst, hbase] with y hy hyb
+    rw [hframe y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_right hP, neg_one_mul]
+
 variable {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
 
@@ -168,12 +199,13 @@ theorem isSmoothForm_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
   have hm : finrank ℝ E = m := by simpa using o.card_eq.symm
   let σ : Fin (finrank ℝ E) ≃ Fin m := finCongr hm
   let b : Basis (Fin m) ℝ E := (Module.finBasis ℝ E).reindex σ
-  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  have hbase : e.baseSet ∈ 𝓝 x := e.open_baseSet.mem_nhds hx
-  -- On the base set, the value on `e.symmL y ∘ v` is the volume of the frame `e.basisAt b`
+  have hbase : e.baseSet ∈ 𝓝 x :=
+    e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)
+  -- On the base set, the value on `e.symmL y ∘ v` is the volume of the reindexed chart frame
   -- times `b.det v`.
   have hval (y : M) (hy : y ∈ e.baseSet) : riemannianVolumeForm o y (e.symmL ℝ y ∘ v) =
-      riemannianVolumeForm o y (e.basisAt b hy) * b.det v := by
+      riemannianVolumeForm o y
+        (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) * b.det v := by
     have h := ContinuousAlternatingMap.apply_eq_det_mul
       ((riemannianVolumeForm o y).compContinuousLinearMap (e.symmL ℝ y)) b v
     rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
@@ -181,20 +213,16 @@ theorem isSmoothForm_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
     rw [h, mul_comm]
     congr 2
     funext i
-    rw [Function.comp_apply, TauCeti.Manifold.basisAt_apply]
-  -- Near `x`, that volume is `±chartVolumeDensity` with a constant sign, since the orientation is
-  -- locally constant in the trivialization, and the chart volume density is `C^n`.
+    rw [Function.comp_apply, Riemannian.Tensor.chartLocalFrame_eq_symmL, Module.Basis.reindex_apply]
+  -- Near `x`, that volume is `±chartVolumeDensity` with a constant sign, and the chart volume
+  -- density is `C^n`.
   have hρ : ContMDiffAt I 𝓘(ℝ) n (chartVolumeDensity (I := I) x) x :=
     (contMDiffOn_chartVolumeDensity (I := I) x).contMDiffAt hbase
-  have hconst := o.toVectorBundleOrientation.eventually_mapOrientation_eq (by simp [hm]) e hx
-  simp only [Manifold.Orientation.toVectorBundleOrientation_apply] at hconst
-  by_cases hP : b.orientation = e.mapOrientation (Fin m) hx (o.orientationAt x)
-  · refine (hρ.mul (contMDiffAt_const (c := b.det v))).congr_of_eventuallyEq ?_
-    filter_upwards [hconst, hbase] with y hy hyb
-    rw [Pi.mul_apply, hval y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_left hP]
-  · refine (hρ.neg.mul (contMDiffAt_const (c := b.det v))).congr_of_eventuallyEq ?_
-    filter_upwards [hconst, hbase] with y hy hyb
-    rw [Pi.mul_apply, hval y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_right hP]
+  obtain ⟨c, -, hc⟩ := exists_eventually_riemannianVolumeForm_chartLocalFrame_eq o σ x
+  refine ((contMDiffAt_const (c := c)).mul hρ |>.mul
+    (contMDiffAt_const (c := b.det v))).congr_of_eventuallyEq ?_
+  filter_upwards [hc, hbase] with y hy hyb
+  rw [Pi.mul_apply, Pi.mul_apply, hval y hyb, hy]
 
 end Smooth
 

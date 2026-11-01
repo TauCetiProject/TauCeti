@@ -51,6 +51,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 
 * `AlternatingMap.eq_basis_det_smulRight`: `ω = b.det.smulRight (ω b)` for `ω` of top degree.
 * `AlternatingMap.compLinearMap_eq_det_smul`: `ω ∘ φ = det φ • ω` for `ω` of top degree.
+* `AlternatingMap.map_update_basis`: replacing the `i`-th vector of a basis `b` by `w` multiplies
+  the value on `b` by the `i`-th coordinate of `w`.
 * `LinearMap.det_eq_of_compLinearMap_eq_smul`: if `ω ≠ 0` and `ω ∘ φ = d • ω` then `det φ = d`,
   for `R` cancellative and `N` torsion-free.
 * `LinearMap.IsAlt.compl₁₂_self_eq_det_smul` and `LinearMap.det_eq_of_compl₁₂_self_eq_smul`: the
@@ -152,6 +154,18 @@ theorem compLinearMap_eq_det_smul [Finite ι] (b : Basis ι R M) (ω : M [⋀^ι
   rw [eq_basis_det_smulRight b ω]
   ext v
   simp [← Function.comp_def, mul_smul]
+
+/-- **Replacing one vector of a basis.** An alternating map evaluated on a basis with its `i`-th
+vector replaced by `w` is the `i`-th coordinate of `w` times its value on the basis. -/
+theorem map_update_basis [Finite ι] [DecidableEq ι] (b : Basis ι R M) (ω : M [⋀^ι]→ₗ[R] N)
+    (i : ι) (w : M) : ω (Function.update b i w) = b.repr w i • ω b := by
+  cases nonempty_fintype ι
+  conv_lhs => rw [← b.sum_repr w]
+  rw [map_update_sum, Finset.sum_eq_single i]
+  · rw [map_update_smul, Function.update_eq_self]
+  · intro j _ hji
+    rw [map_update_smul, ω.map_update_self (v := b) hji.symm, smul_zero]
+  · simp
 
 end AlternatingMap
 
