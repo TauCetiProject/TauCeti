@@ -46,8 +46,8 @@ uniqueness theorem rests on Mathlib's identity principle
 from holomorphy; and the closure lemmas below consume `AnalyticAt.deriv`, `.add` and `.neg`, and
 `AnalyticAt.mul` and `.pow` for the two that multiply germs. These are inputs consumed from Mathlib
 at whatever generality Mathlib provides; the conformal-mapping theorems that consume this file —
-Schwarz reflection and the boundary correspondence — are scalar and stay scalar, instantiating
-`E = ℂ`.
+the monodromy theorem (`Conformal/Monodromy.lean`) and global branches
+(`Conformal/GlobalBranch.lean`) — are scalar and stay scalar, instantiating `E = ℂ`.
 
 Completeness of `E` is asked for exactly where those Mathlib inputs ask for it, and nowhere else:
 the definition itself, the gluing and reparametrisation lemmas, and the closure of continuations
