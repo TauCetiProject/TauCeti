@@ -258,10 +258,11 @@ theorem foldedGramMatrix_eq_mul_mul_transpose :
   simp [vecMul, dotProduct, mul_apply]
 
 variable {B} in
-/-- **The folded Gram matrix of a positive definite `B` is positive definite**, since the folded
-simple roots are linearly independent. No invariance of `B` under `σ` is needed. -/
+/-- **The folded Gram matrix of a positive definite `B` is positive definite.** No invariance of
+`B` under `σ` is needed. -/
 theorem posDef_foldedGramMatrix (hB : B.PosDef) : (B.foldedGramMatrix σ).PosDef := by
   classical
+  -- `G` is a congruence of `B` by the matrix of the linearly independent folded simple roots.
   rw [foldedGramMatrix_eq_mul_mul_transpose, ← conjTranspose_eq_transpose_of_trivial]
   exact (TauCeti.Matrix.posDef_map_intCast hB).mul_mul_conjTranspose_same
     (Matrix.vecMul_injective_iff.mpr σ.linearIndependent_orbitMean)

@@ -181,9 +181,10 @@ theorem dotProduct_orbitMean (O : Quotient (SameCycle.setoid σ)) (v : I → ℚ
       (#{j | σ.SameCycle j O.out} : ℚ)⁻¹ * ∑ i with σ.SameCycle i O.out, v i := by
   rw [dotProduct_comm, orbitMean_dotProduct]
 
-/-- **The folded simple roots are linearly independent**: the orbits are disjoint and nonempty, so
-pairing with the coordinate vector of the representative of `O` only sees `β_O`. -/
+/-- **The folded simple roots are linearly independent.** -/
 theorem linearIndependent_orbitMean : LinearIndependent ℚ σ.orbitMean :=
+  -- The orbits are disjoint and nonempty, so pairing with the coordinate vector of the
+  -- representative of `O` only sees `β_O`.
   TauCeti.linearIndependent_of_dotProduct_diagonal (w := fun O ↦ Pi.single O.out 1)
     (c := fun O ↦ (#{j | σ.SameCycle j O.out} : ℚ)⁻¹)
     (fun O ↦ (IsRegular.of_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr
