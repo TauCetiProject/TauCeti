@@ -176,12 +176,13 @@ theorem forall_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Finite (Q 
 
 /-- An integer `A`–`B` flow carrying at most one unit on every arrow carries as many directed paths
 as its value, each from a vertex of `A` to a vertex of `B`, no two of which traverse a common
-arrow. -/
+arrow. Every arrow of an extracted path carries exactly one unit of the flow. -/
 theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     {cap : Assignment Q ℤ} {A B : Finset V} (f : SetFlow cap A B)
     (hf : ∀ ⦃x y : V⦄ (e : Q x y), f.toFun e ≤ 1) :
     ∃ (k : ℕ) (a b : Fin k → V) (P : ∀ i, ArrowWalk Q (a i) (b i)), (k : ℤ) = f.val ∧
       (∀ i, a i ∈ A) ∧ (∀ i, b i ∈ B) ∧ (∀ i, (P i).IsPath) ∧
+      (∀ i, ∀ e ∈ (P i).arrows, f.toFun e.2.2 = 1) ∧
       Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows := by
   classical
   obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
@@ -202,6 +203,7 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
   refine ⟨D.paths.length, fun i ↦ D.paths[(i : ℕ)].source, fun i ↦ D.paths[(i : ℕ)].target,
     fun i ↦ D.paths[(i : ℕ)].walk, ?_, fun i ↦ (hsource _ (List.getElem_mem _)).1,
     fun i ↦ htarget _ (List.getElem_mem _), fun i ↦ D.isPath_walk _ (List.getElem_mem _),
+    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _) he,
     D.pairwise_disjoint_arrows hf⟩
   -- The value is the total weight of the paths ending in `B`, each of weight one.
   have hval := WeightedWalk.sum_excessAt_sum_map_assignment D.paths B
@@ -231,7 +233,8 @@ theorem exists_paths_setArrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x 
   -- arrows leaving `S`, which separate `B` from `A`.
   obtain ⟨f, S, hS, hval⟩ :=
     SetFlow.exists_val_eq_arrowSum hAB (cap := (1 : Assignment Q ℤ)) fun _ _ _ ↦ zero_le_one
-  obtain ⟨k, a, b, P, hk, ha, hb, -, hdisj⟩ := f.exists_paths_card_eq_val fun _ _ e ↦ f.le_cap e
+  obtain ⟨k, a, b, P, hk, ha, hb, -, -, hdisj⟩ :=
+    f.exists_paths_card_eq_val fun _ _ e ↦ f.le_cap e
   -- Trim every path to an `A`–`B` path, which traverses only arrows of the original path.
   have h (i : Fin k) : ∃ a' ∈ A, ∃ b' ∈ B, ∃ q : ArrowWalk Q a' b', q.IsPath ∧
       q.arrows ⊆ (P i).arrows ∧ ∀ v ∈ q.vertices, v ≠ a' → v ≠ b' → v ∉ A ∧ v ∉ B := by
