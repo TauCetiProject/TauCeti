@@ -433,7 +433,7 @@ noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.
     IntegralLattice.Isometry (gluedLattice (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK)
       (gluedLattice (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK) :=
   gluedLatticeIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK (fun _ ↦ hvT) hK
-    ((Isometry.pi fun i ↦ if u i = 1 then Isometry.refl _ else Isometry.neg _).trans
+    ((Isometry.pi fun i ↦ Isometry.unitsSMul _ (u i)).trans
       (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ))
     (fun w j ↦ u (σ.symm j) • w (σ.symm j))
     (fun w ↦ by
@@ -441,10 +441,10 @@ noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.
       have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
         _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
           (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
-          (fun i ↦ if u i = 1 then Isometry.refl (T.rootLattice hT) else Isometry.neg _)
+          (fun i ↦ Isometry.unitsSMul (T.rootLattice hT) (u i))
           (fun i x ↦ u i • x) (fun i x ↦ by
             refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-              (Isometry.discriminantGroupEquiv_ite_neg _ (u i) _)).symm
+              (Isometry.discriminantGroupEquiv_unitsSMul _ (u i) _)).symm
             exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
       have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
         _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
@@ -468,10 +468,8 @@ theorem gluedLatticeSignedPermIsometry_apply (u : ι → ℤˣ) (σ : Equiv.Perm
     gluedLatticeSignedPermIsometry hvT hK u σ hσ x j = u (σ.symm j) • x (σ.symm j) := by
   obtain ⟨k, rfl⟩ := σ.surjective j
   rw [gluedLatticeSignedPermIsometry, gluedLatticeIsometry_apply, Isometry.trans_apply,
-    Isometry.piCongrLeft_apply_apply, Isometry.pi_apply, Equiv.symm_apply_apply]
-  rcases Int.units_eq_one_or (u k) with h | h
-  · simp [h]
-  · simp [h, show (-1 : ℤˣ) ≠ 1 by decide]
+    Isometry.piCongrLeft_apply_apply, Isometry.pi_apply, Equiv.symm_apply_apply,
+    Isometry.unitsSMul_apply]
 
 end SignedPermutation
 

@@ -42,6 +42,7 @@ and in rank one `O(L) = {±1}`.
 * `TauCeti.IntegralLattice.Isometry.det`: the determinant `O(L) →* ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup`: the subgroup `SO(L)` of determinant one.
 * `TauCeti.IntegralLattice.Isometry.neg`: negation, the element `-1` of `O(L)`.
+* `TauCeti.IntegralLattice.Isometry.unitsSMul`: multiplication by a sign `u : ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toSpecialLinearGroup`: restriction to the
   carrier as a group homomorphism from `SO(L)` to the special linear group of the carrier.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix`: the matrix of a proper isometry in a
@@ -182,6 +183,22 @@ def neg (L : IntegralLattice V) : Isometry L L where
 
 @[simp]
 theorem neg_apply (L : IntegralLattice V) (x : V) : neg L x = -x := (rfl)
+
+/-- Multiplication by a sign `u : ℤˣ` is a self-isometry of every integral lattice: the identity
+for `u = 1` and negation for `u = -1`. -/
+def unitsSMul (L : IntegralLattice V) (u : ℤˣ) : Isometry L L :=
+  if u = 1 then 1 else neg L
+
+@[simp]
+theorem unitsSMul_one (L : IntegralLattice V) : unitsSMul L 1 = 1 := ite_eq_left rfl
+
+@[simp]
+theorem unitsSMul_neg_one (L : IntegralLattice V) : unitsSMul L (-1) = neg L :=
+  ite_eq_right (by decide)
+
+@[simp]
+theorem unitsSMul_apply (L : IntegralLattice V) (u : ℤˣ) (x : V) : unitsSMul L u x = u • x := by
+  rcases Int.units_eq_one_or u with rfl | rfl <;> simp
 
 /-- Negation restricts to negation of the carrier. -/
 @[simp]
