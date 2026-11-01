@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Basic
 public import TauCeti.NumberTheory.SumTwoSquares
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.RingTheory.Norm.Quadratic
