@@ -69,14 +69,14 @@ end ProductGrouping
 
 /-- The geometric sum of mixed powers of two monic polynomials of equal degree has the
 expected degree in characteristic zero. -/
-theorem natDegree_geom_sum₂ {S : Type*} [CommRing S] [IsDomain S] [CharZero S]
+theorem natDegree_geom_sum₂ {S : Type*} [CommSemiring S] [CharZero S]
     {p q : S[X]} (hp : p.Monic) (hq : q.Monic)
     (hdeg : p.natDegree = q.natDegree) {n : ℕ} (hn : 0 < n) :
     (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
   have hd (i : ℕ) (hi : i ∈ range n) :
       (p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
-    rw [natDegree_mul (hp.pow i).ne_zero (hq.pow _).ne_zero, natDegree_pow,
-      natDegree_pow, ← hdeg, ← add_mul]
+    rw [(hp.pow i).natDegree_mul (hq.pow _), hp.natDegree_pow,
+      hq.natDegree_pow, ← hdeg, ← add_mul]
     congr 1
     have := mem_range.mp hi
     omega
