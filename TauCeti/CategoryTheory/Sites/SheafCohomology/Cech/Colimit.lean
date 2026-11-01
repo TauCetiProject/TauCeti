@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Limits.Connected
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
@@ -48,6 +49,9 @@ the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
   are compatible with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.isZero_cechCohomology_obj`: the Čech cohomology vanishes if every family
   of the system is empty.
+* `TauCeti.CategoryTheory.isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero`: for
+  presheaves of modules, the Čech cohomology vanishes if every cohomology class of every family of
+  the system is killed by passing to some finer member of the system.
 * `TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0`
   is natural in the presheaf.
 
@@ -177,6 +181,25 @@ theorem isZero_cechCohomology_obj (hE₀ : ∀ j, IsEmpty (E j).I) (P : Cᵒᵖ 
   have : IsZero (((cechComplexFunctor (E j).obj).obj P).X n) :=
     (IsZero.iff_id_eq_zero _).2 <| Pi.hom_ext _ _ fun a ↦ (hE₀ j).elim (a 0)
   exact (ShortComplex.isZero_homology_of_isZero_X₂ _ this).eq_of_src _ _
+
+/-- **Vanishing by refinement.** For a presheaf of modules, the Čech cohomology for the system
+vanishes if every class in the degree `n` Čech cohomology of every family `E j` is sent to zero by
+the map induced by some morphism of families `E k ⟶ E j` with `j ≤ k`. -/
+theorem isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero {R : Type*} [Ring R]
+    [HasProducts.{w} (ModuleCat.{v'} R)] [HasColimitsOfShape J (ModuleCat.{v'} R)]
+    (P : Cᵒᵖ ⥤ ModuleCat.{v'} R)
+    (h : ∀ (j : J) (z : ((cechComplexFunctor (E j).obj).obj P).homology n),
+      ∃ (k : J) (_ : j ≤ k) (φ : E k ⟶ E j),
+        HomologicalComplex.homologyMap (cechComplexMap P φ) n z = 0) :
+    IsZero ((cechCohomology (ModuleCat.{v'} R) E hE n).obj P) := by
+  refine (IsZero.iff_id_eq_zero _).2 (cechCohomology_obj_hom_ext fun j ↦ ?_)
+  rw [Category.comp_id, comp_zero]
+  ext z
+  obtain ⟨k, hjk, φ, hz⟩ := h j z
+  -- the structure map at `j` factors through the map to the finer family `E k`
+  rw [← homologyMap_cechComplexMap_comp_cechCohomologyι_app E hE n hjk φ P, ModuleCat.hom_zero,
+    LinearMap.zero_apply]
+  exact (ConcreteCategory.comp_apply _ _ z).trans ((congrArg _ hz).trans (map_zero _))
 
 /-! ### Degree zero -/
 

@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Filtered.Connected
 public import Mathlib.CategoryTheory.Limits.FormalCoproducts.Basic
 public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Topology.Sets.OpenCover
+public import Mathlib.Topology.ShrinkingLemma
 
 /-!
 # Small cofinal systems of open covers
@@ -18,6 +19,11 @@ is `X` itself. Every `u`-small open cover admits a refinement of this form, and 
 intersection supplies common refinements. On a compact space, the `u`-small system of covers
 indexed by `ULift (Fin n)` is also cofinal. Compactness alone suffices; no separation axiom
 is needed.
+
+On a normal space, a finite open cover `U` and any point-neighborhood cover have a common
+point-neighborhood refinement `W`, with `W x ⊆ U (r x)`, whose overlaps are controlled by `U`:
+`x ∈ U (r z)` whenever `W x` meets `W z`. This is the shrinking argument used to kill Čech cochains
+of locally zero presheaves by refinement.
 
 Both systems are preorders ordered towards finer covers. The relation remembers only the
 existence of a refinement, whereas an actual refinement is a native `FormalCoproduct` morphism.
@@ -34,7 +40,7 @@ Appendix A, Lemma A.4.4, here without separation or local compactness assumption
 
 public section
 
-open CategoryTheory Limits TopologicalSpace
+open CategoryTheory Limits TopologicalSpace Topology
 
 universe u
 
@@ -104,6 +110,38 @@ theorem exists_refinement {ι : Type u} (U : ι → Opens X) (hU : IsOpenCover U
   classical
   choose a ha using hU.exists_mem
   exact ⟨⟨fun x ↦ U (a x), ha⟩, ⟨⟨a, fun _ ↦ 𝟙 _⟩⟩⟩
+
+/-- **Point-neighborhood refinements with controlled overlaps.** On a normal space, a finite open
+cover `U` and a point-neighborhood cover `N` have a common point-neighborhood refinement `W`, with
+`W x ⊆ U (r x)`, such that `x ∈ U (r z)` whenever `W x` and `W z` meet. Thus a nonempty
+intersection `W x₀ ∩ ⋯ ∩ W xₙ` lies in `W x₀`, whose point `x₀` lies in each `U (r xₖ)`. -/
+theorem exists_refinement_mem_of_mem_of_mem [NormalSpace X] {ι : Type*} [Finite ι]
+    (U : ι → Opens X) (hU : IsOpenCover U) (N : PointOpenCover X) :
+    ∃ (W : PointOpenCover X) (r : X → ι), (∀ x, W.opens x ≤ U (r x) ⊓ N.opens x) ∧
+      ∀ x y z, y ∈ W.opens x → y ∈ W.opens z → x ∈ U (r z) := by
+  -- shrink `U` to opens `v i` with `closure (v i) ⊆ U i`, and choose `x ∈ v (r x)`
+  obtain ⟨v, hvU, hvo, hvc⟩ := exists_iUnion_eq_closure_subset (u := fun i ↦ (U i : Set X))
+    (fun i ↦ (U i).isOpen) (fun _ ↦ Set.toFinite _) hU.iSup_set_eq_univ
+  choose r hr using fun x : X ↦ Set.mem_iUnion.1 (hvU ▸ Set.mem_univ x)
+  -- `W x` lies in `v (r x)` and in `N x`, and misses every `closure (v i)` not containing `x`
+  have key (x : X) : ∃ W : Opens X, x ∈ W ∧ ∀ y ∈ W, y ∈ v (r x) ∧ y ∈ N.opens x ∧
+      ∀ i, x ∉ closure (v i) → y ∉ closure (v i) := by
+    have h : ∀ᶠ y in 𝓝 x, ∀ i, x ∉ closure (v i) → y ∉ closure (v i) :=
+      Filter.eventually_all.2 fun i ↦ by
+        by_cases hi : x ∈ closure (v i)
+        · exact Filter.Eventually.of_forall fun _ h ↦ (h hi).elim
+        · exact Filter.eventually_of_mem (isClosed_closure.isOpen_compl.mem_nhds hi)
+            fun _ hy _ ↦ hy
+    have h₁ : ∀ᶠ y in 𝓝 x, y ∈ v (r x) := (hvo _).mem_nhds (hr x)
+    have h₂ : ∀ᶠ y in 𝓝 x, y ∈ N.opens x := (N.opens x).isOpen.mem_nhds (N.mem_opens x)
+    obtain ⟨t, ht, hto, hxt⟩ := mem_nhds_iff.1 (h₁.and (h₂.and h))
+    exact ⟨⟨t, hto⟩, hxt, ht⟩
+  choose W hxW hW using key
+  refine ⟨⟨W, hxW⟩, r, fun x y hy ↦ ⟨hvc _ (subset_closure (hW x y hy).1), (hW x y hy).2.1⟩,
+    fun x y z hx hz ↦ hvc _ ?_⟩
+  -- `y ∈ v (r z)` lies in `closure (v (r z))`, which `W x` would miss unless it contains `x`
+  by_contra h
+  exact (hW x y hx).2.2 _ h (subset_closure (hW z y hz).1)
 
 end PointOpenCover
 
