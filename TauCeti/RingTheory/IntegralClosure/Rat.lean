@@ -45,4 +45,5 @@ theorem IsIntegral.dvd_of_natCast_mul_eq {k : Type*} [Ring k] [CharZero k] {m n 
     have := scaleRoots_eval₂_mul (p := p) (algebraMap ℤ ℚ) ((m : ℚ) / n) n
     simpa [mul_div_cancel₀, aeval_def, hn, hm] using this.symm
   obtain ⟨y, hy⟩ := IsIntegrallyClosed.algebraMap_eq_of_integral hq
+  rw [eq_intCast] at hy
   exact (Rat.den_div_natCast_eq_one_iff m n hn).mp (hy ▸ Rat.den_intCast y)
