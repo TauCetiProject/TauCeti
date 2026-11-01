@@ -128,6 +128,25 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 section FiniteEntropy
 
+omit [SecondCountableTopology X] in
+/-- The normalised restriction `m[|s]` of `m` to a bounded measurable set `s` of positive, finite
+`m`-measure is a law of finite `p`-moment, for every exponent `p`. -/
+theorem exists_coe_eq_cond {p : ℝ≥0∞} {s : Set X} (hs : MeasurableSet s)
+    (hbdd : Bornology.IsBounded s) (hs0 : m s ≠ 0) (hstop : m s ≠ ∞) :
+    ∃ μ : WassersteinSpace p X, ((μ : ProbabilityMeasure X) : Measure X) = m[|s] := by
+  have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite hs0 hstop
+  obtain ⟨x, -⟩ := nonempty_of_measure_ne_zero hs0
+  obtain ⟨R, hR⟩ := hbdd.subset_closedBall x
+  have hmom : HasFiniteMoment p m[|s] :=
+    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal R)
+      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
+      ((ae_cond_mem hs).mono fun y hy ↦ by
+        rw [enorm_eq_self, edist_dist]
+        exact ENNReal.ofReal_le_ofReal (mem_closedBall'.1 (hR hy)))⟩
+  exact ⟨.mk ⟨_, hprob⟩ hmom,
+    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
+      (ProbabilityMeasure.coe_mk _ _)⟩
+
 /-- **Dirac masses on the support are limits of laws of finite entropy.** If `m` is locally
 finite and `x` lies in the support of `m`, then for every `r > 0` some law `μ` of finite
 `p`-moment and finite entropy, `Ent_m(μ) ∉ {⊥, ⊤}`, is within `W_p`-distance `r` of `δ_x`. One can
@@ -148,29 +167,24 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
   have hstop : m s ≠ ∞ :=
     ((measure_mono ((ball_subset_ball (min_le_right r ρ)).trans hρU)).trans_lt hmU).ne
   -- The normalised restriction `m[|s]`, with its constant density `(m s)⁻¹` on `s`.
-  have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite hs0 hstop
   set c : ℝ≥0 := ((m s)⁻¹).toNNReal
   have hc : (c : ℝ≥0∞) = (m s)⁻¹ := ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 hs0)
   have hdens : m[|s] = m.withDensity fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ≥0∞) := by
     simp_rw [ENNReal.coe_indicator, withDensity_indicator hs, withDensity_const, hc]
     rw [ProbabilityTheory.cond]
-  have hW : wassersteinEDist p (Measure.dirac x) m[|s] ≤ ENNReal.ofReal r := by
-    have hbound : ∀ᵐ y ∂m[|s], ‖edist x y‖ₑ ≤ ENNReal.ofReal r :=
-      (ae_cond_mem hs).mono fun y hy ↦ by
+  obtain ⟨μ, hμ⟩ := exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
+  have hW : wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
+      ENNReal.ofReal r := by
+    have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
+        ‖edist x y‖ₑ ≤ ENNReal.ofReal r :=
+      hμ ▸ (ae_cond_mem hs).mono fun y hy ↦ by
         rw [enorm_eq_self, edist_comm, edist_dist]
         exact ENNReal.ofReal_le_ofReal ((mem_ball.1 hy).le.trans (min_le_left r ρ))
-    calc wassersteinEDist p (Measure.dirac x) m[|s]
-        ≤ ENNReal.ofReal r • m[|s] univ ^ p.toReal⁻¹ := by
+    calc wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X)
+        ≤ ENNReal.ofReal r • ((μ : ProbabilityMeasure X) : Measure X) univ ^ p.toReal⁻¹ := by
           rw [wassersteinEDist_dirac_left measurable_edist]
           exact eLpNorm_le_of_ae_enorm_bound (by fun_prop) hbound
       _ = ENNReal.ofReal r := by simp
-  have hmom : HasFiniteMoment p m[|s] :=
-    (hasFiniteMoment_iff_exists_wassersteinEDist_dirac_ne_top measurable_edist _).2
-      ⟨x, ne_top_of_le_ne_top ENNReal.ofReal_ne_top hW⟩
-  have hcoe : ((WassersteinSpace.mk (p := p) ⟨m[|s], hprob⟩ hmom : ProbabilityMeasure X) :
-      Measure X) = m[|s] :=
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)
   -- The entropy is `c log c * m s`, the integral of a constant over `s`.
   have hV : (fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ) *
       Real.log (s.indicator (fun _ ↦ c) y : ℝ≥0)) =
@@ -181,7 +195,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
     rw [hdens, boltzmannEntropy_withDensity (measurable_const.indicator hs).aemeasurable, hV,
       potentialEnergy_of_integrable ((integrableOn_const hstop).integrable_indicator hs)]
     exact ⟨_, rfl⟩
-  refine ⟨.mk ⟨m[|s], hprob⟩ hmom, ?_, ?_, by rwa [hcoe]⟩ <;> rw [hcoe, hE]
+  refine ⟨μ, ?_, ?_, hW⟩ <;> rw [hμ, hE]
   exacts [EReal.coe_ne_top E, EReal.coe_ne_bot E]
 
 end FiniteEntropy
@@ -335,11 +349,8 @@ def CurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
     Bornology.IsBounded ((μ₀ : ProbabilityMeasure X) : Measure X).support →
     Bornology.IsBounded ((μ₁ : ProbabilityMeasure X) : Measure X).support →
     ∃ q : Measure (X × X),
-      IsCoupling q ((μ₀ : ProbabilityMeasure X) : Measure X)
-        ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
-      eLpNorm (fun z : X × X ↦ edist z.1 z.2) 2 q =
-        wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X)
-          ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
+      IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) q
+        ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
       ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
         ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
           Bornology.IsBounded ((γ t : ProbabilityMeasure X) : Measure X).support ∧
@@ -358,11 +369,8 @@ theorem curvatureDimension_iff : M.CurvatureDimension K N ↔
       Bornology.IsBounded ((μ₀ : ProbabilityMeasure X) : Measure X).support →
       Bornology.IsBounded ((μ₁ : ProbabilityMeasure X) : Measure X).support →
       ∃ q : Measure (X × X),
-        IsCoupling q ((μ₀ : ProbabilityMeasure X) : Measure X)
-          ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
-        eLpNorm (fun z : X × X ↦ edist z.1 z.2) 2 q =
-          wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X)
-            ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
+        IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ (2 : ℝ)) q
+          ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
         ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
           ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
             Bornology.IsBounded ((γ t : ProbabilityMeasure X) : Measure X).support ∧
@@ -379,8 +387,8 @@ the curvature bound. -/
 theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) :
     M.CurvatureDimension K' N := by
   intro μ₀ μ₁ hac₀ hac₁ hb₀ hb₁
-  obtain ⟨q, hq, hopt, γ, hγ, hall⟩ := h hac₀ hac₁ hb₀ hb₁
-  refine ⟨q, hq, hopt, γ, hγ, fun t ht ↦ ?_⟩
+  obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ hac₁ hb₀ hb₁
+  refine ⟨q, hq, γ, hγ, fun t ht ↦ ?_⟩
   obtain ⟨hac, hb, hS⟩ := hall t ht
   refine ⟨hac, hb, fun N' hN' ↦ (hS N' hN').trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
@@ -393,27 +401,9 @@ every dimension bound above `N`. -/
 theorem CurvatureDimension.mono_dimension (h : M.CurvatureDimension K N) (hN : N ≤ N') :
     M.CurvatureDimension K N' := by
   intro μ₀ μ₁ hac₀ hac₁ hb₀ hb₁
-  obtain ⟨q, hq, hopt, γ, hγ, hall⟩ := h hac₀ hac₁ hb₀ hb₁
-  exact ⟨q, hq, hopt, γ, hγ, fun t ht ↦ (hall t ht).imp_right fun h' ↦
+  obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ hac₁ hb₀ hb₁
+  exact ⟨q, hq, γ, hγ, fun t ht ↦ (hall t ht).imp_right fun h' ↦
     h'.imp_right fun hS N'' hN'' ↦ hS N'' (hN.trans hN'')⟩
-
-/-- The normalised restriction `m[|B]` of the reference measure to a ball `B` about a point of its
-support is a law of finite second moment. -/
-private theorem exists_coe_eq_cond_ball {x : X} (hx : x ∈ M.support) {r : ℝ} (hr : 0 < r) :
-    ∃ μ : WassersteinSpace 2 X,
-      ((μ : ProbabilityMeasure X) : Measure X) = M.reference[|ball x r] := by
-  have hprob : IsProbabilityMeasure M.reference[|ball x r] :=
-    cond_isProbabilityMeasure_of_finite ((M.mem_support_iff x).1 hx _ (ball_mem_nhds x hr)).ne'
-      (M.finite_bounded _ isBounded_ball).ne
-  have hmom : HasFiniteMoment 2 M.reference[|ball x r] :=
-    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
-      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
-      ((ae_cond_mem measurableSet_ball).mono fun y hy ↦ by
-        rw [enorm_eq_self, edist_dist]
-        exact ENNReal.ofReal_le_ofReal (mem_ball'.1 hy).le)⟩
-  exact ⟨.mk ⟨_, hprob⟩ hmom,
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)⟩
 
 open scoped Real in
 /-- **The generalised Bonnet–Myers theorem under `CD(K, N)`.** If `M` satisfies `CD(K, N)` with
@@ -430,15 +420,19 @@ theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (
   have hbdd (z : X) : Bornology.IsBounded (M.reference[|ball z r]).support :=
     isBounded_closedBall.subset (Measure.support_subset_of_isClosed isClosed_closedBall
       ((hball z).mono fun _ hw ↦ ball_subset_closedBall hw))
-  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond_ball hx hr
-  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond_ball hy hr
+  have hpos {z : X} (hz : z ∈ M.support) : M.reference (ball z r) ≠ 0 :=
+    ((M.mem_support_iff z).1 hz _ (ball_mem_nhds z hr)).ne'
+  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond (p := 2) measurableSet_ball isBounded_ball (hpos hx)
+    (M.finite_bounded _ isBounded_ball).ne
+  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond (p := 2) measurableSet_ball isBounded_ball (hpos hy)
+    (M.finite_bounded _ isBounded_ball).ne
   have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference :=
     hμ₀ ▸ cond_absolutelyContinuous
-  obtain ⟨q, hq, -, γ, hγ, hall⟩ := h hac₀ (hμ₁ ▸ cond_absolutelyContinuous) (hμ₀ ▸ hbdd x)
+  obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ (hμ₁ ▸ cond_absolutelyContinuous) (hμ₀ ▸ hbdd x)
     (hμ₁ ▸ hbdd y)
   have hS := (hall 0 (left_mem_Icc.2 zero_le_one)).2.2 N le_rfl
   rw [hγ.source] at hS
-  have : IsProbabilityMeasure q := hq.isProbabilityMeasure
+  have : IsProbabilityMeasure q := hq.toIsCoupling.isProbabilityMeasure
   -- The entropy of `μ₀` is finite, since `μ₀` is carried by a ball of finite mass.
   refine renyiEntropy_ne_bot_of_measure_compl_eq_zero hN (A := ball x r)
     (by rw [hμ₀]; exact mem_ae_iff.1 (hball x)) (M.finite_bounded _ isBounded_ball).ne
@@ -447,11 +441,11 @@ theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (
   rw [EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
   have h₀ : ∀ᵐ z ∂q, z.1 ∈ ball x r ∧
       ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv M.reference z.1 ≠ ∞ :=
-    hq.measurePreserving_fst.quasiMeasurePreserving.ae
+    hq.toIsCoupling.measurePreserving_fst.quasiMeasurePreserving.ae
       (((hμ₀ ▸ hball x : ∀ᵐ w ∂((μ₀ : ProbabilityMeasure X) : Measure X), w ∈ ball x r)).and
         (hac₀.ae_le (Measure.rnDeriv_ne_top _ _)))
   have h₁ : ∀ᵐ z ∂q, z.2 ∈ ball y r :=
-    hq.measurePreserving_snd.quasiMeasurePreserving.ae (hμ₁ ▸ hball y)
+    hq.toIsCoupling.measurePreserving_snd.quasiMeasurePreserving.ae (hμ₁ ▸ hball y)
   rw [lintegral_congr_ae (g := fun _ ↦ ∞) ?_, lintegral_const, measure_univ, mul_one]
   filter_upwards [h₀, h₁] with z ⟨hz₁, hρ⟩ hz₂
   rw [mem_ball] at hz₁ hz₂
