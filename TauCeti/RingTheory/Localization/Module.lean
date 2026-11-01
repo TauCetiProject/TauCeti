@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
@@ -20,9 +21,15 @@ submonoid `S`:
 * `LocalizedModule.map_comp`: localization is functorial, `(g ∘ f)ₛ = gₛ ∘ fₛ`.
 * `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
   after localizing at `S`.
+* `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
+  `Localization S`, sending `mk r s` to `Localization.mk r s`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
   presented and `N` is finitely generated, a left inverse of the localization `iₛ` of
   `i : N → M` descends to a map `φ : M → N` with `φ ∘ i` multiplication by some element of `S`.
+* `LocalizedModule.bijective_map_dual_eval_iff`: if `M` and its dual are finitely presented, the
+  map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
+  reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
+  so `(M**)ₛ` is the double dual of `Mₛ` over `Rₛ`.
 
 We also record that localization commutes with dividing by an element:
 
@@ -53,6 +60,28 @@ theorem bijective_map_lsmul {s : R} (hs : s ∈ S) :
   ext x
   induction x using induction_on with
   | h m t => simp [smul'_mk]
+
+/-- The localization of `R` at `S`, as an `R`-module, is the ring `Localization S`, linearly over
+`Localization S`. -/
+noncomputable def equivLocalization : LocalizedModule S R ≃ₗ[Localization S] Localization S :=
+  (IsLocalizedModule.iso S (Algebra.linearMap R (Localization S))).extendScalarsOfIsLocalization
+    S _
+
+/-- `equivLocalization` sends the fraction `r / s` to the same fraction in `Localization S`. -/
+@[simp]
+theorem equivLocalization_mk (r : R) (s : S) :
+    equivLocalization S (mk r s) = Localization.mk r s := by
+  rw [equivLocalization, LinearEquiv.extendScalarsOfIsLocalization_apply,
+    IsLocalizedModule.iso_apply_mk, Module.End.algebraMap_isUnit_inv_apply_eq_iff,
+    Algebra.linearMap_apply, Localization.mk_eq_mk', IsLocalization.smul_mk',
+    IsLocalization.mk'_mul_cancel_left]
+
+/-- The inverse of `equivLocalization` sends the fraction `r / s` to the same fraction in
+`LocalizedModule S R`. -/
+@[simp]
+theorem equivLocalization_symm_mk (r : R) (s : S) :
+    (equivLocalization S).symm (Localization.mk r s) = mk r s :=
+  (equivLocalization S).symm_apply_eq.mpr (equivLocalization_mk S r s).symm
 
 end LocalizedModule
 
@@ -89,6 +118,40 @@ theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
   simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
 
 end LinearMap
+
+namespace LocalizedModule
+
+open Module
+
+variable {R : Type*} [CommRing R] (S : Submonoid R) (Rₛ : Type*) [CommRing Rₛ] [Algebra R Rₛ]
+  [IsLocalization S Rₛ] {M M' : Type*} [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] [Module Rₛ M'] [IsScalarTower R Rₛ M']
+
+/-- Let `f : M → M'` be a localization of `M` at `S`, over the localization `Rₛ` of `R`. If `M`
+and its dual are finitely presented, the canonical map `M → M**` becomes bijective after
+localizing at `S` exactly when `M'` is reflexive over `Rₛ`. -/
+theorem bijective_map_dual_eval_iff (f : M →ₗ[R] M') [IsLocalizedModule S f]
+    [FinitePresentation R M] [FinitePresentation R (Dual R M)] :
+    Function.Bijective (map S (Dual.eval R M)) ↔ Function.Bijective (Dual.eval Rₛ M') := by
+  -- Localizing the dual and the double dual: `D` and `E` are localizations at `S`, because
+  -- `M` and `M*` are finitely presented.
+  let g := Algebra.linearMap R Rₛ
+  let D : Dual R M →ₗ[R] Dual Rₛ M' := IsLocalizedModule.mapExtendScalars S f g Rₛ
+  let E : Dual R (Dual R M) →ₗ[R] Dual Rₛ (Dual Rₛ M') :=
+    IsLocalizedModule.mapExtendScalars S D g Rₛ
+  -- Under these identifications, the localization of `M → M**` is `M' → M'**`.
+  have key : IsLocalizedModule.map S f E (Dual.eval R M) =
+      (Dual.eval Rₛ M').restrictScalars R := by
+    refine IsLocalizedModule.linearMap_ext S f E ?_
+    rw [IsLocalizedModule.map_comp]
+    ext m : 1
+    refine LinearMap.restrictScalars_injective R (IsLocalizedModule.linearMap_ext S D g ?_)
+    ext φ
+    simp [E, D, g]
+  rw [← IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective f E, key,
+    LinearMap.coe_restrictScalars]
+
+end LocalizedModule
 
 namespace TauCeti
 

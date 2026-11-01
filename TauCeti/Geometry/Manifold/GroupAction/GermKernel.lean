@@ -10,10 +10,12 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Analysis.Calculus.BochnerLinearization
 public import TauCeti.Topology.Algebra.GroupAction.GermKernel
+public import TauCeti.Topology.Algebra.ProperAction.GermKernel
 
 import Mathlib.Dynamics.FixedPoints.Topology
 import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # The germ kernel of a smooth finite-order action
@@ -26,16 +28,21 @@ of its fixed set, is closed as well as open. So if `g` acts as the identity on a
 that set.
 
 In terms of the germ kernel `TauCeti.MulAction.germKernel G x` of the elements acting as the
-identity near `x`, this says that for a torsion group acting by `C¹` maps the germ kernel is
-constant on connected sets. On a connected manifold it is the kernel of the action at every point,
-so it is a normal subgroup, and in general it is a locally constant function of the point, as is
-its order. This is the statement that the ineffective kernel of a local action chart `[U/G]` of an
-orbifold acts trivially on the whole connected chart: an element acting trivially near one point
-acts trivially everywhere, so the ineffective part of the isotropy is the same at every point of
-the chart. For a finite group the stabilizer equals the germ kernel on a dense open set
+identity near `x`, this says that for a group with torsion stabilizers acting by `C¹` maps the germ
+kernel is constant on connected sets. On a connected manifold it is the kernel of the action at
+every point, so it is a normal subgroup, and in general it is a locally constant function of the
+point, as is its order. This is the statement that the ineffective kernel of a local action chart
+`[U/G]` of an orbifold acts trivially on the whole connected chart: an element acting trivially
+near one point acts trivially everywhere, so the ineffective part of the isotropy is the same at
+every point of the chart. The order of the germ kernel is also constant along orbits, so it is a
+locally constant function on the orbit space. Stabilizers are finite, hence torsion, for a finite
+group and for a proper action of a discrete group.
+
+For a finite group the stabilizer equals the germ kernel on a dense open set
 (`TauCeti.MulAction.dense_setOf_stabilizer_eq_germKernel`), so on a connected chart the stabilizer
 is the kernel of the action at a dense open set of points: generically, the isotropy of `[U/G]` is
-exactly its ineffective kernel.
+exactly its ineffective kernel. The same holds for a proper action of a discrete group on a
+connected manifold, using `ProperSMul.dense_setOf_stabilizer_eq_germKernel`.
 
 The proof is Bochner linearization (`OpenPartialHomeomorph.exists_equivariant_chart`), which on a
 manifold gives a chart at a common fixed point of a finite group acting by `C¹` maps in which the
@@ -61,14 +68,21 @@ two origins is smooth, has order two, and is the identity off the origins, but n
   fixed set of a finite-order element acting by a `C¹` map is clopen.
 * `TauCeti.subset_interior_fixedBy_of_isPreconnected`: the identity principle on a preconnected
   set.
-* `TauCeti.germKernel_eq_of_isPreconnected`: the germ kernel of a torsion group acting by `C¹`
-  maps is the same at all points of a preconnected set.
+* `TauCeti.germKernel_eq_of_isPreconnected`: the germ kernel of a group with torsion stabilizers
+  acting by `C¹` maps is the same at all points of a preconnected set.
 * `TauCeti.germKernel_eq_ker`, `TauCeti.normal_germKernel`: on a preconnected manifold, the germ
   kernel at every point is the kernel of the action, so it is normal.
 * `TauCeti.dense_setOf_stabilizer_eq_ker_of_contMDiff`: for a finite group acting by `C¹` maps on a
   preconnected manifold, the stabilizer is the kernel of the action on a dense open set of points.
+* `TauCeti.isOpen_setOf_stabilizer_eq_ker_of_properSMul`,
+  `TauCeti.dense_setOf_stabilizer_eq_ker_of_properSMul`: for a proper action of a discrete group
+  by `C¹` maps on a preconnected manifold, the stabilizer is the kernel of the action on a dense
+  open set of points.
 * `TauCeti.isLocallyConstant_germKernel`, `TauCeti.isLocallyConstant_card_germKernel`: the germ
-  kernel of a torsion group acting by `C¹` maps, and its order, are locally constant.
+  kernel of a group with torsion stabilizers acting by `C¹` maps, and its order, are locally
+  constant.
+* `TauCeti.isLocallyConstant_orbitCardGermKernel`: the order of the germ kernel is a locally
+  constant function on the orbit space.
 
 ## References
 
@@ -182,33 +196,38 @@ theorem subset_interior_fixedBy_of_isPreconnected [T2Space M] (g : G) (hg : IsOf
     (hne : (s ∩ interior (fixedBy M g)).Nonempty) : s ⊆ interior (fixedBy M g) :=
   hs.subset_isClopen (isClopen_interior_fixedBy g hg hsmooth) hne
 
-/-- For a torsion group acting by `C¹` maps on a Hausdorff manifold without boundary, the germ
-kernel is the same at any two points of a preconnected set. -/
+/-- For a group with torsion stabilizers acting by `C¹` maps on a Hausdorff manifold without
+boundary, the germ kernel is the same at any two points of a preconnected set. -/
 theorem germKernel_eq_of_isPreconnected [T2Space M]
-    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) {s : Set M}
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x)
+    (hG : ∀ x : M, IsMulTorsion (stabilizer G x)) {s : Set M}
     (hs : IsPreconnected s) {x y : M} (hx : x ∈ s) (hy : y ∈ s) :
     germKernel G x = germKernel G y := by
   have key {x y : M} (hx : x ∈ s) (hy : y ∈ s) : germKernel G x ≤ germKernel G y := fun g hg ↦ by
+    have hfin := Submonoid.isOfFinOrder_coe.mpr (hG x ⟨g, germKernel_le_stabilizer x hg⟩)
     rw [mem_germKernel_iff_mem_interior_fixedBy] at hg ⊢
-    exact subset_interior_fixedBy_of_isPreconnected g (hG g) (hsmooth g) hs ⟨x, hx, hg⟩ hy
+    exact subset_interior_fixedBy_of_isPreconnected g hfin (hsmooth g) hs ⟨x, hx, hg⟩ hy
   exact le_antisymm (key hx hy) (key hy hx)
 
-/-- For a torsion group acting by `C¹` maps on a preconnected Hausdorff manifold without boundary,
-the germ kernel at every point is the kernel of the action: an element acting as the identity near
-one point acts as the identity everywhere. -/
+/-- For a group with torsion stabilizers acting by `C¹` maps on a preconnected Hausdorff manifold
+without boundary, the germ kernel at every point is the kernel of the action: an element acting as
+the identity near one point acts as the identity everywhere. -/
 theorem germKernel_eq_ker [T2Space M] [PreconnectedSpace M]
-    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) (x : M) :
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x)
+    (hG : ∀ x : M, IsMulTorsion (stabilizer G x)) (x : M) :
     germKernel G x = (toPermHom G M).ker := by
   refine le_antisymm (fun g hg ↦ ?_) (ker_toPermHom_le_germKernel x)
+  have hfin := Submonoid.isOfFinOrder_coe.mpr (hG x ⟨g, germKernel_le_stabilizer x hg⟩)
   rw [mem_germKernel_iff_mem_interior_fixedBy] at hg
-  have h := subset_interior_fixedBy_of_isPreconnected g (hG g) (hsmooth g) isPreconnected_univ
+  have h := subset_interior_fixedBy_of_isPreconnected g hfin (hsmooth g) isPreconnected_univ
     ⟨x, mem_univ x, hg⟩
   exact MonoidHom.mem_ker.mpr (Equiv.ext fun z ↦ by simpa using interior_subset (h (mem_univ z)))
 
-/-- For a torsion group acting by `C¹` maps on a preconnected Hausdorff manifold without boundary,
-the germ kernel at every point is a normal subgroup. -/
+/-- For a group with torsion stabilizers acting by `C¹` maps on a preconnected Hausdorff manifold
+without boundary, the germ kernel at every point is a normal subgroup. -/
 theorem normal_germKernel [T2Space M] [PreconnectedSpace M]
-    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) (x : M) :
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x)
+    (hG : ∀ x : M, IsMulTorsion (stabilizer G x)) (x : M) :
     (germKernel G x).Normal := by
   rw [germKernel_eq_ker hsmooth hG x]
   infer_instance
@@ -222,14 +241,15 @@ theorem dense_setOf_stabilizer_eq_ker_of_contMDiff [Finite G] [T2Space M] [Preco
     (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) :
     Dense {x : M | stabilizer G x = (toPermHom G M).ker} := by
   have : ContinuousConstSMul G M := ⟨fun g ↦ (hsmooth g).continuous⟩
-  simpa only [germKernel_eq_ker hsmooth isMulTorsion_of_finite] using
+  simpa only [germKernel_eq_ker hsmooth fun _ ↦ isMulTorsion_of_finite] using
     dense_setOf_stabilizer_eq_germKernel (G := G) (X := M)
 
-/-- For a torsion group acting by `C¹` maps on a Hausdorff manifold without boundary, the germ
-kernel is a locally constant function of the point: it is constant on connected components, which
-are open. -/
+/-- For a group with torsion stabilizers acting by `C¹` maps on a Hausdorff manifold without
+boundary, the germ kernel is a locally constant function of the point: it is constant on connected
+components, which are open. -/
 theorem isLocallyConstant_germKernel [T2Space M]
-    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) :
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x)
+    (hG : ∀ x : M, IsMulTorsion (stabilizer G x)) :
     IsLocallyConstant (germKernel G : M → Subgroup G) := by
   let := NormedSpace.restrictScalars ℝ 𝕜 E
   have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
@@ -238,12 +258,57 @@ theorem isLocallyConstant_germKernel [T2Space M]
     germKernel_eq_of_isPreconnected hsmooth hG isPreconnected_connectedComponent hy
       mem_connectedComponent
 
-/-- For a torsion group acting by `C¹` maps on a Hausdorff manifold without boundary, the order of
-the germ kernel is a locally constant function of the point. -/
+/-- For a group with torsion stabilizers acting by `C¹` maps on a Hausdorff manifold without
+boundary, the order of the germ kernel is a locally constant function of the point. -/
 theorem isLocallyConstant_card_germKernel [T2Space M]
-    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) (hG : IsMulTorsion G) :
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x)
+    (hG : ∀ x : M, IsMulTorsion (stabilizer G x)) :
     IsLocallyConstant fun x : M ↦ Nat.card (germKernel G x) :=
   (isLocallyConstant_germKernel hsmooth hG).comp fun K ↦ Nat.card K
+
+/-- **The kernel order on the coarse space.** For a group with torsion stabilizers acting by `C¹`
+maps on a Hausdorff manifold without boundary, the order of the germ kernel, as a function on the
+orbit space, is locally constant. So it is constant on each connected component of the orbit
+space. -/
+theorem isLocallyConstant_orbitCardGermKernel [T2Space M] [ContinuousConstSMul G M]
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x)
+    (hG : ∀ x : M, IsMulTorsion (stabilizer G x)) :
+    IsLocallyConstant (orbitCardGermKernel G : orbitRel.Quotient G M → ℕ) := by
+  refine IsLocallyConstant.iff_isOpen_fiber.mpr fun n ↦ ?_
+  have h : orbitCardGermKernel G ∘ Quotient.mk (orbitRel G M) =
+      fun x : M ↦ Nat.card (germKernel G x) :=
+    funext orbitCardGermKernel_mk
+  rw [← isOpenQuotientMap_quotientMk.isQuotientMap.isOpen_preimage, ← Set.preimage_comp, h]
+  exact (isLocallyConstant_card_germKernel hsmooth hG).isOpen_fiber n
+
+section ProperSMul
+
+variable [TopologicalSpace G] [DiscreteTopology G] [ProperSMul G M] [PreconnectedSpace M]
+
+/-- For a proper action of a discrete group by `C¹` maps on a preconnected manifold without
+boundary, the points whose stabilizer is the kernel of the action form an open set. -/
+theorem isOpen_setOf_stabilizer_eq_ker_of_properSMul
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) :
+    IsOpen {x : M | stabilizer G x = (toPermHom G M).ker} := by
+  have := t2Space_of_properSMul_of_t1Group (G := G) (X := M)
+  have := ProperSMul.properlyDiscontinuousSMul G M
+  simpa only [germKernel_eq_ker hsmooth fun _ ↦ isMulTorsion_of_finite] using
+    ProperSMul.isOpen_setOf_stabilizer_eq_germKernel (G := G) (X := M)
+
+/-- **The principal part of a proper smooth action.** For a proper action of a discrete group by
+`C¹` maps on a preconnected manifold without boundary, the points whose stabilizer is the kernel of
+the action form a dense set. The group may be infinite and the action need not be faithful: the
+elements acting trivially lie in every stabilizer, and generically they are the only ones. The set
+is also open, by `TauCeti.isOpen_setOf_stabilizer_eq_ker_of_properSMul`. -/
+theorem dense_setOf_stabilizer_eq_ker_of_properSMul
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) :
+    Dense {x : M | stabilizer G x = (toPermHom G M).ker} := by
+  have := t2Space_of_properSMul_of_t1Group (G := G) (X := M)
+  have := ProperSMul.properlyDiscontinuousSMul G M
+  simpa only [germKernel_eq_ker hsmooth fun _ ↦ isMulTorsion_of_finite] using
+    ProperSMul.dense_setOf_stabilizer_eq_germKernel (G := G) (X := M)
+
+end ProperSMul
 
 end TauCeti
 

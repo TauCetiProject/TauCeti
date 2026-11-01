@@ -83,6 +83,11 @@ theorem fundamentalDiscriminantChar_isQuadratic {D : ℤ}
     (fundamentalDiscriminantChar D hD).IsQuadratic :=
   kroneckerChar_isQuadratic _ _
 
+/-- The character of a fundamental discriminant takes values at most `1`. -/
+theorem fundamentalDiscriminantChar_le_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (x : ZMod D.natAbs) : fundamentalDiscriminantChar D hD x ≤ 1 := by
+  rcases fundamentalDiscriminantChar_isQuadratic hD x with h | h | h <;> simp [h]
+
 /-- The character of a fundamental discriminant has conductor exactly `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantChar {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
     IsPrimitive (fundamentalDiscriminantChar D hD) := by
@@ -104,6 +109,14 @@ when `D ≡ 5 (mod 8)`. This is the value of the Kronecker symbol `(D / 2)`. -/
 theorem fundamentalDiscriminantChar_two {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantChar D hD 2 = ZMod.χ₈ (D : ZMod 8) := by
   simpa using fundamentalDiscriminantChar_intCast hD 2
+
+/-- The fundamental-discriminant character is `1` at `2` iff `D ≡ 1 (mod 8)`, that is, iff `2`
+splits in the associated quadratic field. -/
+theorem fundamentalDiscriminantChar_two_eq_one_iff {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantChar D hD 2 = 1 ↔ D % 8 = 1 := by
+  have := hD.emod_four_eq_zero_or_one
+  rw [fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
+  split_ifs <;> simp <;> omega
 
 /-- **The character of a fundamental discriminant `D ≠ 1` is nontrivial.** -/
 theorem fundamentalDiscriminantChar_ne_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)

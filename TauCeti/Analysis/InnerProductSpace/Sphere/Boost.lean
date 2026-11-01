@@ -47,6 +47,7 @@ through `-v` without moving the point.
 * `TauCeti.norm_sphereBoost`: boosts preserve the unit sphere.
 * `TauCeti.sphereBoost_sphereBoost`: on the unit sphere, rapidities add under composition.
 * `TauCeti.inner_sphereBoost`: the height formula `tanh σ ↦ tanh (σ + a)`.
+* `TauCeti.monotone_inner_sphereBoost`: the height of a boosted point is monotone in the rapidity.
 * `LinearIsometry.sphereBoost_map`: boosts commute with linear isometries.
 * `IsCompact.eventually_forall_inner_sphereBoost_pos`: large boosts carry a compact set
   avoiding `-v` into the open hemisphere around `v`.
@@ -113,6 +114,28 @@ theorem inner_sphereBoost {v : E} (hv : ‖v‖ = 1) (a : ℝ) (x : E) :
   rw [sphereBoost_def, real_inner_smul_left, inner_add_left, real_inner_smul_left,
     real_inner_self_eq_norm_sq, hv, div_eq_inv_mul]
   ring
+
+/-- **Boosting raises the height.** On the unit sphere, the height `⟪sphereBoost v a x, v⟫` is
+monotone in the rapidity `a`: the difference of the heights at rapidities `a ≤ b` is
+`sinh (b - a) (1 - ⟪x, v⟫²)` divided by the two positive denominators. -/
+theorem monotone_inner_sphereBoost {v x : E} (hv : ‖v‖ = 1) (hx : ‖x‖ = 1) :
+    Monotone fun a => ⟪sphereBoost v a x, v⟫ := by
+  intro a b hab
+  have ha := cosh_add_sinh_mul_inner_pos hv hx a
+  have hb := cosh_add_sinh_mul_inner_pos hv hx b
+  have hs : ⟪x, v⟫ ^ 2 ≤ 1 := by
+    rw [sq_le_one_iff_abs_le_one]
+    exact abs_real_inner_le_norm x v |>.trans (by rw [hx, hv, one_mul])
+  have hsinh : 0 ≤ sinh (b - a) := sinh_nonneg_iff.2 (sub_nonneg.2 hab)
+  simp only [inner_sphereBoost hv]
+  rw [div_le_div_iff₀ ha hb, ← sub_nonneg]
+  have key : (sinh b + cosh b * ⟪x, v⟫) * (cosh a + sinh a * ⟪x, v⟫) -
+      (sinh a + cosh a * ⟪x, v⟫) * (cosh b + sinh b * ⟪x, v⟫) =
+        sinh (b - a) * (1 - ⟪x, v⟫ ^ 2) := by
+    rw [sinh_sub]
+    ring
+  rw [key]
+  exact mul_nonneg hsinh (sub_nonneg.2 hs)
 
 /-- **Boosts preserve the unit sphere.** -/
 @[simp]
