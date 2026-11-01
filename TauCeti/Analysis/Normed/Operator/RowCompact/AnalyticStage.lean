@@ -33,8 +33,8 @@ these truncations have finite rank, so the transition is completely continuous
 `LA_h(E) → LA_k(E)` with `h < k` and evaluation `LA_h(E) → C(ℤ_p, E)` factor through the
 transition followed by a map that does not increase norms, so they are completely continuous
 as well (`TauCeti.AnalyticStage.isCompletelyContinuous_transitionLE`,
-`TauCeti.AnalyticStage.isCompletelyContinuous_eval`). Over Tate scalars finite generation is
-also necessary, for evaluation and for every transition `LA_h(E) → LA_k(E)` with `h < k`
+`TauCeti.AnalyticStage.isCompletelyContinuous_eval`). Finite generation is also necessary, for
+evaluation and for every transition `LA_h(E) → LA_k(E)` with `h < k`
 (`TauCeti.AnalyticStage.isCompletelyContinuous_eval_iff`,
 `TauCeti.AnalyticStage.isCompletelyContinuous_transition_iff`,
 `TauCeti.AnalyticStage.isCompletelyContinuous_transitionLE_iff`). Indeed, sending `e ∈ E` to
@@ -55,8 +55,8 @@ of coefficients is excluded: its constant functions keep its identity operator.
   completely continuous for finitely generated coefficients.
 * `TauCeti.AnalyticStage.isCompletelyContinuous_transition_iff`,
   `TauCeti.AnalyticStage.isCompletelyContinuous_transitionLE_iff`,
-  `TauCeti.AnalyticStage.isCompletelyContinuous_eval_iff`: over Tate scalars, raising the level
-  and evaluation are completely continuous exactly for finitely generated coefficients.
+  `TauCeti.AnalyticStage.isCompletelyContinuous_eval_iff`: raising the level and evaluation are
+  completely continuous exactly for finitely generated coefficients.
 
 ## References
 
@@ -122,12 +122,6 @@ theorem isCompletelyContinuous_eval [Module.Finite R E] :
   exact isCompletelyContinuous_transition.clm_comp_of_bound _ one_pos fun c ↦ by
     simpa using norm_eval_le R c
 
-end Ring
-
-section Tate
-
-variable [SeminormedRing R] [Module R E] [IsBoundedSMul R E] [SMulCommClass ℤ_[p] R E]
-
 /-- Evaluation at `0` of the constant function `e` on the disc of `0`, whose coefficient vector
 is `single (0, 0) e`, is `e`. -/
 private theorem eval_single_zero (e : E) :
@@ -137,43 +131,41 @@ private theorem eval_single_zero (e : E) :
   rw [h0, tsum_eq_single 0 fun n hn ↦ by simp [zero_pow hn]]
   simp
 
-variable [NormedRing.IsTate R]
-
-/-- Over Tate scalars, evaluation `LA_h(E) → C(ℤ_p, E)` is completely continuous exactly when `E`
-is a finitely generated `R`-module. -/
+/-- Evaluation `LA_h(E) → C(ℤ_p, E)` is completely continuous exactly when `E` is a finitely
+generated `R`-module. -/
 theorem isCompletelyContinuous_eval_iff :
     (eval R : AnalyticStage p h E →L[R] C(ℤ_[p], E)).IsCompletelyContinuous ↔
       Module.Finite R E := by
-  refine ⟨fun hT ↦ ?_, fun _ ↦ ?_⟩
-  · have hid : (ContinuousMap.evalCLM R 0).comp
-        ((eval (p := p) (h := h) R).comp (singleCLM R (0, 0))) = ContinuousLinearMap.id R E := by
-      ext e
-      simpa using eval_single_zero (p := p) (R := R) e
-    rw [← ContinuousLinearMap.isCompletelyContinuous_id_iff, ← hid]
-    exact (hT.comp_clm _).clm_comp _
-  · exact isCompletelyContinuous_eval
+  refine ⟨fun hT ↦ ?_, fun _ ↦ isCompletelyContinuous_eval⟩
+  have hid : (ContinuousMap.evalCLM R 0).comp
+      ((eval (p := p) (h := h) R).comp (singleCLM R (0, 0))) = ContinuousLinearMap.id R E := by
+    ext e
+    simpa using eval_single_zero (p := p) (R := R) e
+  rw [← ContinuousLinearMap.isCompletelyContinuous_id_iff, ← hid]
+  exact (hT.comp_clm_of_bound _ one_pos fun e ↦ by simp).clm_comp_of_bound _ one_pos fun f ↦ by
+    simpa using f.norm_coe_le_norm 0
 
-/-- Over Tate scalars, raising the level `LA_h(E) → LA_{h+1}(E)` is completely continuous exactly
-when `E` is a finitely generated `R`-module. -/
+/-- Raising the level `LA_h(E) → LA_{h+1}(E)` is completely continuous exactly when `E` is a
+finitely generated `R`-module. -/
 theorem isCompletelyContinuous_transition_iff :
     (transition R : AnalyticStage p h E →L[R] AnalyticStage p (h + 1) E).IsCompletelyContinuous ↔
       Module.Finite R E := by
   refine ⟨fun hT ↦ (isCompletelyContinuous_eval_iff (p := p) (h := h)).1 ?_,
     fun _ ↦ isCompletelyContinuous_transition⟩
   rw [← eval_comp_transition]
-  exact hT.clm_comp _
+  exact hT.clm_comp_of_bound _ one_pos fun c ↦ by simpa using norm_eval_le R c
 
-/-- Over Tate scalars, raising the level `LA_h(E) → LA_k(E)` with `h < k` is completely continuous
-exactly when `E` is a finitely generated `R`-module. -/
+/-- Raising the level `LA_h(E) → LA_k(E)` with `h < k` is completely continuous exactly when `E`
+is a finitely generated `R`-module. -/
 theorem isCompletelyContinuous_transitionLE_iff (hhk : h < k) :
     (transitionLE R hhk.le : AnalyticStage p h E →L[R] AnalyticStage p k E).IsCompletelyContinuous ↔
       Module.Finite R E := by
   refine ⟨fun hT ↦ (isCompletelyContinuous_eval_iff (p := p) (h := h)).1 ?_,
     fun _ ↦ isCompletelyContinuous_transitionLE hhk⟩
   rw [← eval_comp_transitionLE R hhk.le]
-  exact hT.clm_comp _
+  exact hT.clm_comp_of_bound _ one_pos fun c ↦ by simpa using norm_eval_le R c
 
-end Tate
+end Ring
 
 section Scalar
 
@@ -195,14 +187,20 @@ theorem isRowCompact_transition :
   ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le
     (PadicInt.tendsto_norm_p_pow_mul_cofinite _) norm_matrixCoeff_transition_le
 
-/-- With scalar coefficients in an ultrametric Tate ring, raising the level
-`LA_h(R) → LA_k(R)` with `h < k` is row compact. -/
-theorem isRowCompact_transitionLE {R : Type*} [NormedCommRing R] [NormedRing.IsTate R]
-    [Module ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [SMulCommClass ℤ_[p] R R] [IsUltrametricDist R]
-    [CompleteSpace R] (hhk : h < k) :
+/-- With scalar coefficients, raising the level `LA_h(R) → LA_k(R)` with `h < k` is row compact:
+it ends with an adjacent transition, so its row of index `(a', j)` is bounded by `‖p‖ʲ ‖1‖`. -/
+theorem isRowCompact_transitionLE (hhk : h < k) :
     (transitionLE R hhk.le : AnalyticStage p h R →L[R] AnalyticStage p k R).IsRowCompact := by
-  rw [← transitionLE_comp_transition R hhk]
-  exact isRowCompact_transition.clm_comp _
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hhk
+  rw [← transition_comp_transitionLE R (Nat.le_add_right h m)]
+  refine ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le
+    (PadicInt.tendsto_norm_p_pow_mul_cofinite (p := p) ‖(1 : R)‖) fun i j ↦ ?_
+  rw [ContinuousLinearMap.matrixCoeff_apply, ContinuousLinearMap.comp_apply]
+  calc _ ≤ ‖(p : ℤ_[p])‖ ^ i.2 * ‖transitionLE R (Nat.le_add_right h m) (single j (1 : R))‖ :=
+        norm_transition_apply_le R _ i.1 i.2
+    _ ≤ ‖(p : ℤ_[p])‖ ^ i.2 * ‖(1 : R)‖ := by
+        gcongr
+        exact (norm_transitionLE_le R _ _).trans (norm_single j 1).le
 
 end Scalar
 
