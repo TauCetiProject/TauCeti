@@ -33,6 +33,11 @@ scalars and carriers live in the same universe.
   finite-dimensional vector spaces splits.
 * `TauCeti.SplitK0.finrankEquiv`: split `K₀` of finite-dimensional vector spaces is `ℤ`.
 * `TauCeti.AbelianK0.finrankEquiv`: abelian `K₀` of finite-dimensional vector spaces is `ℤ`.
+* `TauCeti.SplitK0.isoClassModelFinrankEquiv` and `TauCeti.AbelianK0.isoClassModelFinrankEquiv`:
+  the same computations over any model of the isomorphism classes, such as a chosen skeleton,
+  with `TauCeti.SplitK0.equiv_trans_isoClassModelFinrankEquiv` and
+  `TauCeti.AbelianK0.equiv_trans_isoClassModelFinrankEquiv`: the computation is independent of the
+  model, since the canonical isomorphism between two presentations commutes with dimension.
 
 ## References
 
@@ -253,5 +258,68 @@ theorem AdditiveInvariant.obj_eq_finrank_nsmul {G : Type*} [AddCommGroup G]
   rw [← lift_of a X, of_eq_finrank_nsmul k L X hL, map_nsmul, lift_of]
 
 end AbelianK0
+
+section IsoClassModel
+
+variable (k : Type u) [DivisionRing k] [Small.{v} k] {I J : Type*}
+
+namespace SplitK0
+
+/-- Over any model `m` of the isomorphism classes of finite-dimensional vector spaces, such as a
+chosen skeleton, the split `K₀` presented on `m` is identified with `ℤ` by dimension. -/
+noncomputable def isoClassModelFinrankEquiv (m : IsoClassModel (FGModuleCat.{v} k) I) :
+    m.K0 (splitObjectRelations (FGModuleCat.{v} k)) ≃+ ℤ :=
+  (isoClassModelEquiv m).symm.trans (finrankEquiv k)
+
+/-- Over every model, the dimension equivalence sends an object class to its dimension. -/
+@[simp]
+theorem isoClassModelFinrankEquiv_of (m : IsoClassModel (FGModuleCat.{v} k) I)
+    (X : FGModuleCat.{v} k) :
+    isoClassModelFinrankEquiv k m (IsoClassModel.K0.of X) = Module.finrank k X := by
+  simp [isoClassModelFinrankEquiv]
+
+/-- The dimension computation of split `K₀` is independent of the chosen model: over two models,
+the dimension equivalences differ by the canonical isomorphism between the two presentations. -/
+@[simp]
+theorem equiv_trans_isoClassModelFinrankEquiv (m : IsoClassModel (FGModuleCat.{v} k) I)
+    (m' : IsoClassModel (FGModuleCat.{v} k) J) :
+    (IsoClassModel.K0.equiv m m' (splitObjectRelations (FGModuleCat.{v} k))).trans
+        (isoClassModelFinrankEquiv k m') =
+      isoClassModelFinrankEquiv k m :=
+  AddEquiv.toAddMonoidHom_injective (IsoClassModel.K0.hom_ext fun X => by simp)
+
+end SplitK0
+
+namespace AbelianK0
+
+/-- Over any model `m` of the isomorphism classes of finite-dimensional vector spaces, such as a
+chosen skeleton, the abelian `K₀` presented on `m` by the short exact sequences is identified with
+`ℤ` by dimension. -/
+noncomputable def isoClassModelFinrankEquiv (m : IsoClassModel (FGModuleCat.{v} k) I) :
+    m.K0 (exactObjectRelations (ExactStructure.abelian (FGModuleCat.{v} k))) ≃+ ℤ :=
+  (ExactK0.isoClassModelEquiv m).symm.trans ((toExactK0 _).symm.trans (finrankEquiv k))
+
+/-- Over every model, the dimension equivalence sends an object class to its dimension. -/
+@[simp]
+theorem isoClassModelFinrankEquiv_of (m : IsoClassModel (FGModuleCat.{v} k) I)
+    (X : FGModuleCat.{v} k) :
+    isoClassModelFinrankEquiv k m (IsoClassModel.K0.of X) = Module.finrank k X := by
+  simp [isoClassModelFinrankEquiv]
+
+/-- The dimension computation of abelian `K₀` is independent of the chosen model: over two
+models, the dimension equivalences differ by the canonical isomorphism between the two
+presentations. -/
+@[simp]
+theorem equiv_trans_isoClassModelFinrankEquiv (m : IsoClassModel (FGModuleCat.{v} k) I)
+    (m' : IsoClassModel (FGModuleCat.{v} k) J) :
+    (IsoClassModel.K0.equiv m m'
+          (exactObjectRelations (ExactStructure.abelian (FGModuleCat.{v} k)))).trans
+        (isoClassModelFinrankEquiv k m') =
+      isoClassModelFinrankEquiv k m :=
+  AddEquiv.toAddMonoidHom_injective (IsoClassModel.K0.hom_ext fun X => by simp)
+
+end AbelianK0
+
+end IsoClassModel
 
 end TauCeti

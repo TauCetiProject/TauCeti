@@ -51,6 +51,10 @@ is translated by `d • χ`. No centrality condition is needed to define this op
 def shiftTimed (χ : V) (p : List (𝕜 × V)) : List (𝕜 × V) :=
   p.map fun x ↦ (x.1, x.2 + x.1 • χ)
 
+theorem shiftTimed_def (χ : V) (p : List (𝕜 × V)) :
+    shiftTimed χ p = p.map fun x ↦ (x.1, x.2 + x.1 • χ) :=
+  (rfl)
+
 @[simp]
 theorem shiftTimed_nil (χ : V) : shiftTimed χ ([] : List (𝕜 × V)) = [] := (rfl)
 
