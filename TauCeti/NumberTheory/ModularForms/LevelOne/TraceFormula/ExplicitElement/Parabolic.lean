@@ -51,9 +51,14 @@ private theorem eq_one_of_det_one_trace_sq_four_weight_ne_zero
   rcases abs_le.mp ha with ⟨ha₁, ha₂⟩
   rcases abs_le.mp hb with ⟨hb₁, hb₂⟩
   rcases abs_le.mp hc with ⟨hc₁, hc₂⟩
-  rcases abs_le.mp he with ⟨he₁, he₂⟩
-  interval_cases a <;> interval_cases b <;> interval_cases c <;> interval_cases d <;>
-    norm_num at hd <;> norm_num at ht <;>
+  generalize es : a + d = s at ht
+  have hs : s = 2 ∨ s = -2 := sq_eq_sq_iff_eq_or_eq_neg.mp (by nlinarith [ht])
+  have ed' : d = s - a := by omega
+  rw [ed'] at hd hw he ed
+  -- Trace determines the last entry; reject impossible determinants before evaluating weights.
+  rcases hs with rfl | rfl <;>
+    interval_cases a <;> norm_num at he <;>
+    interval_cases b <;> norm_num at hd <;> interval_cases c <;> norm_num at hd <;>
     norm_num [weight₁, weight₂, weight₃, weight₄, chainWeight₃, chainWeight₄] at hw
   ext i j
   fin_cases i <;> fin_cases j <;> simp [ea, eb, ec, ed]
@@ -77,39 +82,35 @@ private theorem finsum_weight_trace_neg_two_det_one :
     (by rw [ht]; norm_num) hw
   simp [hM] at ht
 
+private theorem finsum_weight_traceDetFiber_two_mul_sq_step {a : ℤ} (ha : a ≠ 0) :
+    ∑ᶠ M : traceDetFiber (Fin 2) (2 * (a + 1)) ((a + 1) ^ 2), weight M.1 =
+      ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 := by
+  have ht : 2 * a + 2 = 2 * (a + 1) := by ring
+  have hn : a ^ 2 + 2 * a + 1 = (a + 1) ^ 2 := by ring
+  have h := finsum_weight_traceDetFiber_add_two (t := 2 * a) (sq_pos_of_ne_zero ha)
+  rw [ht, hn] at h
+  exact h
+
 /-- The discriminant-zero fibre with positive trace has total integer weight `2`. -/
 private theorem finsum_weight_traceDetFiber_two_mul_sq_of_pos {a : ℤ} (ha : 0 < a) :
     ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 = 2 := by
-  obtain ⟨m, rfl⟩ : ∃ m : ℕ, a = m + 1 := ⟨(a - 1).toNat, by omega⟩
+  have ha' : 1 ≤ a := by omega
   clear ha
-  induction m with
-  | zero => simpa using finsum_weight_trace_two_det_one
-  | succ m ih =>
-    have h := finsum_weight_traceDetFiber_add_two (t := 2 * ((m : ℤ) + 1))
-      (n := ((m : ℤ) + 1) ^ 2) (by positivity)
-    have ht : 2 * ((m : ℤ) + 1) + 2 = 2 * ((m : ℤ) + 1 + 1) := by ring
-    have hn : ((m : ℤ) + 1) ^ 2 + 2 * ((m : ℤ) + 1) + 1 =
-        ((m : ℤ) + 1 + 1) ^ 2 := by ring
-    rw [ht, hn] at h
-    rw [Nat.cast_succ]
-    exact h.trans ih
+  induction a, ha' using Int.leInduction with
+  | base => simpa using finsum_weight_trace_two_det_one
+  | succ a ha ih =>
+    exact (finsum_weight_traceDetFiber_two_mul_sq_step (by omega)).trans ih
 
 /-- The discriminant-zero fibre with negative trace has total integer weight zero. -/
 private theorem finsum_weight_traceDetFiber_two_mul_sq_of_neg {a : ℤ} (ha : a < 0) :
     ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 = 0 := by
-  obtain ⟨m, hm⟩ : ∃ m : ℕ, a = -((m : ℤ) + 1) := ⟨(-a - 1).toNat, by omega⟩
-  rw [hm]
-  clear ha hm a
-  induction m with
-  | zero => simpa using finsum_weight_trace_neg_two_det_one
-  | succ m ih =>
-    have h := finsum_weight_traceDetFiber_add_two (t := 2 * (-((m : ℤ) + 2)))
-      (n := (-((m : ℤ) + 2)) ^ 2) (by rw [neg_sq]; positivity)
-    have ht : 2 * (-((m : ℤ) + 2)) + 2 = 2 * (-((m : ℤ) + 1)) := by ring
-    have hn : (-((m : ℤ) + 2)) ^ 2 + 2 * (-((m : ℤ) + 2)) + 1 =
-        (-((m : ℤ) + 1)) ^ 2 := by ring
-    rw [ht, hn] at h
-    rw [Nat.cast_succ, add_assoc, one_add_one_eq_two]
+  have ha' : a ≤ -1 := by omega
+  clear ha
+  induction a, ha' using Int.leInductionDown with
+  | base => simpa using finsum_weight_trace_neg_two_det_one
+  | pred a ha ih =>
+    have h := finsum_weight_traceDetFiber_two_mul_sq_step (a := a - 1) (by omega)
+    rw [sub_add_cancel] at h
     exact h.symm.trans ih
 
 /-- **The repeated-root trace fibres of Popa–Zagier's element.** At positive determinant and
