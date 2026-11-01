@@ -83,6 +83,24 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
 
+section LeftTranslation
+
+variable {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [RiemannianBundle (fun x : G ↦ TangentSpace I x)]
+
+/-- If the left-invariant vector fields have constant inner products, `⟪X_a, X_c⟫ = ⟪a, c⟫` at
+every point, then every left translation preserves the inner product of tangent vectors. -/
+theorem inner_mfderiv_mul_left_of_inner_mulInvariantVectorField [ContMDiffMul I 1 G]
+    (hL : ∀ (x : G) (a c : TangentSpace I (1 : G)),
+      inner ℝ (mulInvariantVectorField a x) (mulInvariantVectorField c x) = inner ℝ a c)
+    (g x : G) (v w : TangentSpace I x) :
+    inner ℝ (mfderiv I I (g * ·) x v) (mfderiv I I (g * ·) x w) = inner ℝ v w := by
+  obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
+  obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
+  rw [mfderiv_mul_left_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hL, hL]
+
+end LeftTranslation
+
 section Construction
 
 variable {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
@@ -200,11 +218,12 @@ theorem leftInvariantMetric_inner_mfderiv_mul_left (g x : G) (v w : TangentSpace
         (mfderiv I I (g * ·) x w) =
       (leftInvariantMetric hmn b hsymm hpos).inner x v w := by
   have := contMDiffMul_one_of_add_one_le (I := I) (G := G) hmn
-  obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
-  obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
-  rw [mfderiv_mul_left_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField,
-    leftInvariantMetric_inner_mulInvariantVectorField,
-    leftInvariantMetric_inner_mulInvariantVectorField]
+  let : RiemannianBundle (fun x : G ↦ TangentSpace I x) :=
+    ⟨(leftInvariantMetric hmn b hsymm hpos).toRiemannianMetric⟩
+  -- The inner product of the installed bundle is `(leftInvariantMetric hmn b hsymm hpos).inner`
+  -- by definition of the instance.
+  exact inner_mfderiv_mul_left_of_inner_mulInvariantVectorField
+    (inner_mulInvariantVectorField_leftInvariantMetric hmn b hsymm hpos) g x v w
 
 /-- A Riemannian metric in which the left-invariant vector fields have the constant inner products
 `⟪X_a, X_c⟫ = b(a, c)` is the left-invariant metric of `b`. -/
@@ -249,17 +268,6 @@ section Isometry
 
 variable {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [RiemannianBundle (fun x : G ↦ TangentSpace I x)]
-
-/-- If the left-invariant vector fields have constant inner products, `⟪X_a, X_c⟫ = ⟪a, c⟫` at
-every point, then every left translation preserves the inner product of tangent vectors. -/
-theorem inner_mfderiv_mul_left_of_inner_mulInvariantVectorField [ContMDiffMul I 1 G]
-    (hL : ∀ (x : G) (a c : TangentSpace I (1 : G)),
-      inner ℝ (mulInvariantVectorField a x) (mulInvariantVectorField c x) = inner ℝ a c)
-    (g x : G) (v w : TangentSpace I x) :
-    inner ℝ (mfderiv I I (g * ·) x v) (mfderiv I I (g * ·) x w) = inner ℝ v w := by
-  obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
-  obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
-  rw [mfderiv_mul_left_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hL, hL]
 
 variable [LieGroup I ∞ G]
 
@@ -326,23 +334,27 @@ theorem completeSpace_of_inner_mulInvariantVectorField
   have := isPretransitive_isom_of_inner_mulInvariantVectorField hL
   completeSpace_of_isPretransitive_isom_of_finiteDimensional (I := I) G
 
-variable {G : Type*} [TopologicalSpace G] [T3Space G] [ChartedSpace H G] [Group G]
+variable {G : Type*} [TopologicalSpace G] [T2Space G] [ChartedSpace H G] [Group G]
   [LieGroup I ∞ G]
 
-/-- A finite-dimensional regular Hausdorff Lie group with a continuous left-invariant Riemannian
-metric is complete for the distance that this metric induces. -/
+/-- A finite-dimensional Hausdorff Lie group with a continuous left-invariant Riemannian metric is
+complete for the distance that this metric induces. A Lie group is a topological group, hence
+regular, which is what `EMetricSpace.ofRiemannianMetric` needs. -/
 theorem completeSpace_ofRiemannianMetric_of_inner_mulInvariantVectorField
     [RiemannianBundle (fun x : G ↦ TangentSpace I x)]
     [IsContinuousRiemannianBundle E (fun x : G ↦ TangentSpace I x)]
     (hL : ∀ (x : G) (a c : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a x) (mulInvariantVectorField c x) = inner ℝ a c) :
-    letI : EMetricSpace G := EMetricSpace.ofRiemannianMetric I G
+    letI : EMetricSpace G :=
+      haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
+      EMetricSpace.ofRiemannianMetric I G
     CompleteSpace G :=
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
   have := isPretransitive_isom_of_inner_mulInvariantVectorField hL
   completeSpace_ofRiemannianMetric_of_isPretransitive_isom (I := I) G
 
 /-- The left-invariant metric of an inner product `b` on the Lie algebra of a finite-dimensional
-regular Hausdorff Lie group is complete for the distance that it induces. -/
+Hausdorff Lie group is complete for the distance that it induces. -/
 theorem completeSpace_leftInvariantMetric {m : ℕ∞ω} (hm : m + 1 ≤ ∞)
     (b : TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G) →L[ℝ] ℝ)
     (hsymm : ∀ v w, b v w = b w v) (hpos : ∀ v, v ≠ 0 → 0 < b v v) :
@@ -351,7 +363,9 @@ theorem completeSpace_leftInvariantMetric {m : ℕ∞ω} (hm : m + 1 ≤ ∞)
     haveI : IsContinuousRiemannianBundle E (fun x : G ↦ TangentSpace I x) :=
       Bundle.instIsContinuousRiemannianBundle
         (leftInvariantMetric hm b hsymm hpos).toContinuousRiemannianMetric
-    letI : EMetricSpace G := EMetricSpace.ofRiemannianMetric I G
+    letI : EMetricSpace G :=
+      haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
+      EMetricSpace.ofRiemannianMetric I G
     CompleteSpace G :=
   letI : RiemannianBundle (fun x : G ↦ TangentSpace I x) :=
     ⟨(leftInvariantMetric hm b hsymm hpos).toRiemannianMetric⟩
