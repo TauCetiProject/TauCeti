@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.MeasureTheory.Function.Lp.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.Lp.AddContent
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -34,6 +35,12 @@ a functional is left invariant exactly when its set function is. Hence `L∞(G, 
 left-invariant mean exactly when the measurable sets carry a left-invariant finitely additive
 probability vanishing on `μ`-null sets, and such a probability also makes `G` amenable.
 
+Whether `L∞(G, μ)` carries such an invariant functional depends only on the null sets of `μ`:
+the classes of essentially bounded functions for measures with the same null sets correspond,
+compatibly with order, the constant one and left translation. In particular it is unchanged by
+multiplying `μ` by a nonzero constant, and on a locally compact group it does not depend on the
+choice of regular Haar measure.
+
 For a compact group, integration against the normalized Haar measure `TauCeti.haarProb G` is
 such a mean on `L∞`, by left invariance of Haar measure. Hence every compact topological group
 is amenable, for its given topology.
@@ -55,6 +62,10 @@ is amenable, for its given topology.
   mean exactly when the measurable sets carry a left-invariant finitely additive probability
   vanishing on `μ`-null sets.
 * `TauCeti.Amenable.of_invariantContent`: such a probability makes a topological group amenable.
+* `TauCeti.exists_lpTop_invariant_of_absolutelyContinuous`: a left-invariant normalized positive
+  functional on `L∞(G, μ)` gives one on `L∞(G, ν)` for every left-invariant `ν` with `μ ≪ ν`.
+* `TauCeti.exists_lpTop_invariant_smul_iff`, `TauCeti.exists_lpTop_invariant_iff_of_regular`:
+  existence is unchanged by scaling `μ`, and is the same for all regular Haar measures.
 * `TauCeti.Amenable.of_compactSpace`: every compact topological group is amenable.
 
 ## References
@@ -189,6 +200,71 @@ theorem Amenable.of_invariantContent {G : Type*} [Group G] [TopologicalSpace G]
     (hνg : ∀ (g : G) s, MeasurableSet s → ν (g • s) = ν s) : Amenable G :=
   have ⟨M, hM1, hM⟩ := exists_linftyMean_iff_exists_invariantContent.2 ⟨ν, hν1, hνμ, hνg⟩
   Amenable.of_lpTop (μ := μ) M hM1 hM
+
+end TauCeti
+
+namespace TauCeti
+
+/-! ### Independence of the measure within its class -/
+
+section AbsolutelyContinuous
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ ν : Measure G}
+  [μ.IsMulLeftInvariant] [ν.IsMulLeftInvariant]
+
+/-- Let `μ ≪ ν` be left-invariant measures on a group. If `L∞(G, μ)` carries a left-invariant
+positive linear functional `M` with `M 1 = 1`, then so does `L∞(G, ν)`: send a `ν`-class to its
+`μ`-class and apply `M`. -/
+theorem exists_lpTop_invariant_of_absolutelyContinuous (h : μ ≪ ν)
+    (hμ : ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+      ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) :
+    ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M linftyOne = 1 ∧ ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ := by
+  obtain ⟨M, hM₁, hM⟩ := hμ
+  let T : Lp ℝ ∞ ν →L[ℝ] Lp ℝ ∞ μ := Lp.linftyOfAbsolutelyContinuous ℝ h
+  let M' : Lp ℝ ∞ ν →ₚ[ℝ] ℝ :=
+    { M.toLinearMap ∘ₗ (T : Lp ℝ ∞ ν →ₗ[ℝ] Lp ℝ ∞ μ) with
+      monotone' := fun _ _ hφψ => M.monotone' (Lp.linftyOfAbsolutelyContinuous_mono h hφψ) }
+  -- `M'` is built as a structure, so its evaluation is `M ∘ T` by definition.
+  have hM' (φ : Lp ℝ ∞ ν) : M' φ = M (T φ) := rfl
+  refine ⟨M', ?_, fun g φ => ?_⟩
+  · rw [hM', Lp.linftyOfAbsolutelyContinuous_linftyOne, hM₁]
+  · rw [hM', hM', ← Lp.leftTranslation_linftyOfAbsolutelyContinuous, hM]
+
+/-- For left-invariant measures `μ` and `ν` on a group with the same null sets, `L∞(G, μ)` carries
+a left-invariant positive linear functional taking the value `1` at `1` if and only if
+`L∞(G, ν)` does. -/
+theorem exists_lpTop_invariant_congr (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
+    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧ ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
+      ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+        ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ :=
+  ⟨exists_lpTop_invariant_of_absolutelyContinuous hμν,
+    exists_lpTop_invariant_of_absolutelyContinuous hνμ⟩
+
+/-- The existence of a left-invariant positive linear functional on `L∞(G, μ)` taking the value
+`1` at `1` is unchanged when `μ` is multiplied by a nonzero constant. -/
+theorem exists_lpTop_invariant_smul_iff {c : ℝ≥0∞} (hc : c ≠ 0) :
+    (∃ M : Lp ℝ ∞ (c • μ) →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+      ∀ g φ, M (Lp.leftTranslation (c • μ) ∞ ℝ g φ) = M φ) ↔
+      ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+        ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ :=
+  exists_lpTop_invariant_congr Measure.smul_absolutelyContinuous
+    (Measure.absolutelyContinuous_smul hc)
+
+end AbsolutelyContinuous
+
+/-- On a locally compact group, the existence of a left-invariant positive linear functional on
+Haar `L∞` taking the value `1` at `1` does not depend on the choice of regular Haar measure. -/
+theorem exists_lpTop_invariant_iff_of_regular {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+    (μ ν : Measure G) [μ.IsHaarMeasure] [ν.IsHaarMeasure] [μ.Regular] [ν.Regular] :
+    (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧ ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
+      ∃ M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+        ∀ g φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ := by
+  refine exists_lpTop_invariant_congr ?_ ?_
+  · rw [Measure.isMulLeftInvariant_eq_smul_of_regular μ ν]
+    exact Measure.smul_absolutelyContinuous
+  · rw [Measure.isMulLeftInvariant_eq_smul_of_regular ν μ]
+    exact Measure.smul_absolutelyContinuous
 
 end TauCeti
 
