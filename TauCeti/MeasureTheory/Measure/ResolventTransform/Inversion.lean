@@ -26,7 +26,7 @@ it shows that two finite measures with the same transform on the upper half-plan
 uniqueness identifies a limiting spectral law from its transform, for example a law whose
 transform solves a self-consistent equation.
 
-For fixed `η > 0` the integral over `[a, b]` is computed exactly by Fubini's theorem: the
+For fixed `η ≠ 0` the integral over `[a, b]` is computed exactly by Fubini's theorem: the
 imaginary part of the kernel integrates to a difference of arctangents, giving
 `∫_a^b Im m(s + iη) ds = ∫ (arctan ((b - x) / η) - arctan ((a - x) / η)) dμ(x)`. As `η ↓ 0`
 the integrand, divided by `π`, tends to `1` on `(a, b)`, to `1 / 2` at the endpoints and to `0`
@@ -59,10 +59,10 @@ namespace MeasureTheory
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
-/-- **The transform integrated along a horizontal line.** For `η > 0`, the integral of
+/-- **The transform integrated along a horizontal line.** For real `η`, the integral of
 `Im m(s + iη)` over `s ∈ [a, b]` is the integral against `μ` of the angle
 `arctan ((b - x) / η) - arctan ((a - x) / η)` subtended by `[a, b]` at `x + iη`. -/
-theorem intervalIntegral_im_resolventTransform (a b : ℝ) {η : ℝ} (hη : 0 < η) :
+theorem intervalIntegral_im_resolventTransform (a b η : ℝ) :
     ∫ s in a..b, (resolventTransform μ (s + η * I)).im =
       ∫ x, (arctan ((b - x) / η) - arctan ((a - x) / η)) ∂μ := by
   have hkernel (s : ℝ) : (resolventTransform μ (s + η * I)).im =
@@ -79,44 +79,16 @@ theorem intervalIntegral_im_resolventTransform (a b : ℝ) {η : ℝ} (hη : 0 <
   simp_rw [hkernel]
   rw [intervalIntegral_integral_swap]
   · simp_rw [hinner]
-  · refine Integrable.of_bound (Measurable.aestronglyMeasurable (by fun_prop)) η⁻¹
+  · rcases eq_or_ne η 0 with rfl | hη
+    · simp [Function.uncurry_def]
+    refine Integrable.of_bound (Measurable.aestronglyMeasurable (by fun_prop)) |η|⁻¹
       (ae_of_all _ fun p => ?_)
-    rw [Function.uncurry_apply_pair, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    calc η / ((p.2 - p.1) ^ 2 + η ^ 2) ≤ η / η ^ 2 :=
-          div_le_div_of_nonneg_left hη.le (by positivity) (by nlinarith [sq_nonneg (p.2 - p.1)])
-      _ = η⁻¹ := by field_simp
-
-/-- The normalized angle subtended by `[a, b]` at `x + iη` tends, as `η ↓ 0`, to `1` on `(a, b)`,
-to `1 / 2` at the endpoints and to `0` outside `[a, b]`. -/
-private theorem tendsto_inv_pi_mul_arctan_sub_arctan {a b : ℝ} (hab : a < b) (x : ℝ) :
-    Tendsto (fun η : ℝ => π⁻¹ * (arctan ((b - x) / η) - arctan ((a - x) / η))) (𝓝[>] 0)
-      (𝓝 ((Ioo a b).indicator 1 x +
-        (({a} : Set ℝ).indicator 1 x + ({b} : Set ℝ).indicator 1 x) / 2)) := by
-  have key {L₁ L₂ : ℝ} (h₁ : Tendsto (fun η : ℝ => arctan ((b - x) / η)) (𝓝[>] 0) (𝓝 L₁))
-      (h₂ : Tendsto (fun η : ℝ => arctan ((a - x) / η)) (𝓝[>] 0) (𝓝 L₂))
-      (hL : π⁻¹ * (L₁ - L₂) = (Ioo a b).indicator 1 x +
-        (({a} : Set ℝ).indicator 1 x + ({b} : Set ℝ).indicator 1 x) / 2) :
-      Tendsto (fun η : ℝ => π⁻¹ * (arctan ((b - x) / η) - arctan ((a - x) / η))) (𝓝[>] 0)
-        (𝓝 ((Ioo a b).indicator 1 x +
-          (({a} : Set ℝ).indicator 1 x + ({b} : Set ℝ).indicator 1 x) / 2)) :=
-    hL ▸ (h₁.sub h₂).const_mul π⁻¹
-  rcases lt_trichotomy x a with hxa | rfl | hax
-  · refine key (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith))
-      (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith)) ?_
-    simp [hxa.ne, (hxa.trans hab).ne, not_lt.2 hxa.le]
-  · refine key (L₂ := 0) (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith)) (by simp) ?_
-    simp [hab.ne]
-    field_simp
-  · rcases lt_trichotomy x b with hxb | rfl | hbx
-    · refine key (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith))
-        (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith)) ?_
-      simp [hax, hxb, hax.ne', hxb.ne]
-    · refine key (L₁ := 0) (by simp) (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith)) ?_
-      simp [hab.ne']
-      field_simp
-    · refine key (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith))
-        (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith)) ?_
-      simp [hbx.ne', (hab.trans hbx).ne', not_lt.2 hbx.le]
+    rw [Function.uncurry_apply_pair, Real.norm_eq_abs, abs_div,
+      abs_of_pos (a := (p.2 - p.1) ^ 2 + η ^ 2) (by positivity)]
+    calc |η| / ((p.2 - p.1) ^ 2 + η ^ 2) ≤ |η| / η ^ 2 :=
+          div_le_div_of_nonneg_left (abs_nonneg η) (by positivity)
+            (by nlinarith [sq_nonneg (p.2 - p.1)])
+      _ = |η|⁻¹ := by rw [← sq_abs]; field_simp
 
 /-- **Stieltjes inversion formula.** For a finite measure `μ` on `ℝ` and `a < b`,
 `π⁻¹ ∫_a^b Im m(s + iη) ds` tends to `μ (a, b) + (μ {a} + μ {b}) / 2` as `η` decreases to `0`,
@@ -129,12 +101,12 @@ theorem tendsto_inv_pi_mul_intervalIntegral_im_resolventTransform {a b : ℝ} (h
       μ.real (Ioo a b) + (μ.real {a} + μ.real {b}) / 2 := by
     have hI (s : Set ℝ) (hs : MeasurableSet s) : Integrable (s.indicator (1 : ℝ → ℝ)) μ :=
       (integrable_const (1 : ℝ)).indicator hs
-    rw [← integral_indicator_one measurableSet_Ioo,
-      ← integral_indicator_one (measurableSet_singleton a),
-      ← integral_indicator_one (measurableSet_singleton b),
-      ← integral_add (hI _ (measurableSet_singleton a)) (hI _ (measurableSet_singleton b)),
-      ← integral_div, ← integral_add (hI _ measurableSet_Ioo)]
-    exact ((hI _ (measurableSet_singleton a)).add (hI _ (measurableSet_singleton b))).div_const 2
+    have ha := hI _ (measurableSet_singleton a)
+    have hb := hI _ (measurableSet_singleton b)
+    rw [integral_add (hI _ measurableSet_Ioo) (by exact (ha.add hb).div_const 2), integral_div,
+      integral_add ha hb, integral_indicator_one measurableSet_Ioo,
+      integral_indicator_one (measurableSet_singleton a),
+      integral_indicator_one (measurableSet_singleton b)]
   rw [← hlimit]
   have hdom : Tendsto
       (fun η : ℝ => ∫ x, π⁻¹ * (arctan ((b - x) / η) - arctan ((a - x) / η)) ∂μ) (𝓝[>] 0)
@@ -150,9 +122,8 @@ theorem tendsto_inv_pi_mul_intervalIntegral_im_resolventTransform {a b : ℝ} (h
     constructor <;> linarith [neg_pi_div_two_lt_arctan ((b - x) / η),
       arctan_lt_pi_div_two ((b - x) / η), neg_pi_div_two_lt_arctan ((a - x) / η),
       arctan_lt_pi_div_two ((a - x) / η)]
-  refine hdom.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with η hη
-  rw [intervalIntegral_im_resolventTransform a b hη, integral_const_mul]
+  refine hdom.congr fun η => ?_
+  rw [intervalIntegral_im_resolventTransform, integral_const_mul]
 
 /-- **Uniqueness of the resolvent transform.** Two finite measures on `ℝ` whose resolvent
 transforms agree on the upper half-plane are equal. -/
@@ -180,6 +151,6 @@ theorem Measure.ext_of_resolventTransform {ν : Measure ℝ} [IsFiniteMeasure ν
     have hd : Disjoint (Ioo a b) {b} := disjoint_singleton_right.2 (by simp)
     rw [← Ioo_union_right hab, measureReal_union (μ := μ) hd (measurableSet_singleton b),
       measureReal_union (μ := ν) hd (measurableSet_singleton b), hIoo, hatom b]
-  exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top μ _) (measure_ne_top ν _)).1 hIoc
+  rwa [measureReal_eq_measureReal_iff] at hIoc
 
 end MeasureTheory

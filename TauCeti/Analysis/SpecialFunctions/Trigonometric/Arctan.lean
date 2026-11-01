@@ -23,6 +23,8 @@ the sign of `c`. These limits describe the vanishing-width limit of the Cauchy (
 * `Real.arctan_div_add_arctan_div`: the quotient form of the complementary-angle law.
 * `Real.tendsto_arctan_div_nhdsGT_zero_of_pos`, `Real.tendsto_arctan_div_nhdsGT_zero_of_neg`:
   the limits of `arctan (c / η)` as `η` decreases to `0`.
+* `Real.tendsto_inv_pi_mul_arctan_sub_arctan`: the normalized angle subtended by `[a, b]` at
+  `x + iη` tends to the indicator of `[a, b]` with half weights at the endpoints.
 * `TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I`: the four corner angles of a rectangle straddling
   the imaginary axis sum to a full turn.
 -/
@@ -55,6 +57,42 @@ theorem tendsto_arctan_div_nhdsGT_zero_of_neg {c : ℝ} (hc : c < 0) :
   have h : Tendsto (fun η : ℝ => c / η) (𝓝[>] 0) atBot := by
     simpa only [div_eq_mul_inv] using tendsto_inv_nhdsGT_zero.const_mul_atTop_of_neg hc
   exact (tendsto_arctan_atBot.mono_right nhdsWithin_le_nhds).comp h
+
+/-- The normalized angle subtended by `[a, b]` at `x + iη` tends, as `η ↓ 0`, to `1` on `(a, b)`,
+to `1 / 2` at the endpoints and to `0` outside `[a, b]`. -/
+theorem tendsto_inv_pi_mul_arctan_sub_arctan {a b : ℝ} (hab : a < b) (x : ℝ) :
+    Tendsto (fun η : ℝ => π⁻¹ * (arctan ((b - x) / η) - arctan ((a - x) / η))) (𝓝[>] 0)
+      (𝓝 ((Set.Ioo a b).indicator 1 x +
+        (({a} : Set ℝ).indicator 1 x + ({b} : Set ℝ).indicator 1 x) / 2)) := by
+  have key {L₁ L₂ : ℝ} (h₁ : Tendsto (fun η : ℝ => arctan ((b - x) / η)) (𝓝[>] 0) (𝓝 L₁))
+      (h₂ : Tendsto (fun η : ℝ => arctan ((a - x) / η)) (𝓝[>] 0) (𝓝 L₂))
+      (hL : π⁻¹ * (L₁ - L₂) = (Set.Ioo a b).indicator 1 x +
+        (({a} : Set ℝ).indicator 1 x + ({b} : Set ℝ).indicator 1 x) / 2) :
+      Tendsto (fun η : ℝ => π⁻¹ * (arctan ((b - x) / η) - arctan ((a - x) / η))) (𝓝[>] 0)
+        (𝓝 ((Set.Ioo a b).indicator 1 x +
+          (({a} : Set ℝ).indicator 1 x + ({b} : Set ℝ).indicator 1 x) / 2)) :=
+    hL ▸ (h₁.sub h₂).const_mul π⁻¹
+  rcases lt_trichotomy x a with hxa | rfl | hax
+  · refine key (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith))
+      (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith)) ?_
+    simp [hxa.ne, (hxa.trans hab).ne, not_lt.2 hxa.le]
+  · refine key (L₂ := 0) (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith)) (by simp) ?_
+    simp only [sub_zero, Set.mem_Ioo, lt_self_iff_false, false_and, not_false_eq_true,
+      Set.indicator_of_notMem, Set.mem_singleton_iff, Set.indicator_of_mem, Pi.one_apply, hab.ne,
+      add_zero, one_div, zero_add]
+    field_simp
+  · rcases lt_trichotomy x b with hxb | rfl | hbx
+    · refine key (tendsto_arctan_div_nhdsGT_zero_of_pos (by linarith))
+        (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith)) ?_
+      simp [hax, hxb, hax.ne', hxb.ne]
+    · refine key (L₁ := 0) (by simp) (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith)) ?_
+      simp only [sub_neg_eq_add, zero_add, Set.mem_Ioo, lt_self_iff_false, and_false,
+        not_false_eq_true, Set.indicator_of_notMem, Set.mem_singleton_iff, hab.ne',
+        Set.indicator_of_mem, Pi.one_apply, one_div]
+      field_simp
+    · refine key (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith))
+        (tendsto_arctan_div_nhdsGT_zero_of_neg (by linarith)) ?_
+      simp [hbx.ne', (hab.trans hbx).ne', not_lt.2 hbx.le]
 
 end Real
 
