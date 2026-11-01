@@ -142,6 +142,7 @@ theorem trace_gaugeDerivation (ℓ : ℤ × ℤ →+ ℂ) (a : SmoothNoncommutat
   simp
 
 /-- For purely imaginary `ℓ`, the derivation `δ_ℓ` is a star derivation. -/
+@[simp]
 theorem gaugeDerivation_star {ℓ : ℤ × ℤ →+ ℂ} (hℓ : ∀ x, conj (ℓ x) = -ℓ x)
     (a : SmoothNoncommutativeTorus θ) :
     (gaugeDerivation θ ℓ : Module.End ℂ (SmoothNoncommutativeTorus θ)) (star a) =
@@ -237,29 +238,31 @@ theorem derivation₂_U₂ :
       (2 * π * I) • (U₂ θ : SmoothNoncommutativeTorus θ) := by
   simp
 
+/-- The canonical trace is invariant under `δ₁`: `τ (δ₁ a) = 0`. -/
 theorem trace_derivation₁ (a : SmoothNoncommutativeTorus θ) :
     trace θ ((derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) a) = 0 :=
   trace_gaugeDerivation _ a
 
+/-- The canonical trace is invariant under `δ₂`: `τ (δ₂ a) = 0`. -/
 theorem trace_derivation₂ (a : SmoothNoncommutativeTorus θ) :
     trace θ ((derivation₂ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) a) = 0 :=
   trace_gaugeDerivation _ a
 
-private theorem conj_two_pi_I_mul_intCast (k : ℤ) :
-    conj (2 * π * I * k) = -(2 * π * I * k) := by
-  simp only [map_mul, map_ofNat, conj_ofReal, conj_I, map_intCast]
-  ring
-
+/-- `δ₁` is a star derivation: `δ₁ (star a) = star (δ₁ a)`. -/
+@[simp]
 theorem derivation₁_star (a : SmoothNoncommutativeTorus θ) :
     (derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) (star a) =
       star ((derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) a) :=
-  gaugeDerivation_star (fun x ↦ by simpa using conj_two_pi_I_mul_intCast x.1) a
+  gaugeDerivation_star (fun x ↦ by simp [map_ofNat]) a
 
+/-- `δ₂` is a star derivation: `δ₂ (star a) = star (δ₂ a)`. -/
+@[simp]
 theorem derivation₂_star (a : SmoothNoncommutativeTorus θ) :
     (derivation₂ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) (star a) =
       star ((derivation₂ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) a) :=
-  gaugeDerivation_star (fun x ↦ by simpa using conj_two_pi_I_mul_intCast x.2) a
+  gaugeDerivation_star (fun x ↦ by simp [map_ofNat]) a
 
+/-- The two basic derivations commute: `δ₁ δ₂ = δ₂ δ₁`. -/
 theorem commute_derivation₁_derivation₂ :
     Commute (derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ))
       (derivation₂ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) :=
@@ -333,6 +336,7 @@ def fundamentalCocycle : cyclicCocycles ℂ (SmoothNoncommutativeTorus θ) ℂ 2
 
 /-- The defining formula
 `φ (a₀, a₁, a₂) = (2πi)⁻¹ τ (a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))`. -/
+@[simp]
 theorem fundamentalCocycle_apply (a : Fin 3 → SmoothNoncommutativeTorus θ) :
     ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
       MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) a =
