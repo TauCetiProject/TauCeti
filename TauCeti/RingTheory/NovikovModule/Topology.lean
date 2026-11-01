@@ -41,10 +41,10 @@ that produces a kernel with a potential bound.
 The filter-basis construction and the completeness argument parallel
 `TauCeti.RingTheory.NovikovSeries.Topology`, with cutoffs directed towards `-∞` instead of `+∞`.
 The truncation, topology and coordinate parts, including `NovikovModule.ofFinsupp` and
-`NovikovModule.trunc` in `TauCeti.RingTheory.NovikovModule.Basic`, adapt the approach of the
-unmerged TauCeti PR https://github.com/TauCetiProject/TauCeti/pull/20410; the kernel-map and
-kernel-product continuity results and the kernel characterizations of maps with potential shift
-are new.
+`NovikovModule.trunc` in `TauCeti.RingTheory.NovikovModule.Basic`, adapt the approach of
+TauCeti PR https://github.com/TauCetiProject/TauCeti/pull/20410. The kernel characterizations of
+maps with potential shift identify such maps with kernel maps and kernel products, so identities
+between them can be checked on their coefficients at single generators.
 
 ## Main definitions
 

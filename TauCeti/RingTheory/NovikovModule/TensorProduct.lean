@@ -75,7 +75,11 @@ namespace NovikovModule
 
 section ExternalProduct
 
-variable {R S₁ S₂ S₀ : Type*} [CommRing R] {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ} {C : ℝ}
+variable {R S₁ S₂ S₀ : Type*} {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ} {C : ℝ}
+
+section CommSemiring
+
+variable [CommSemiring R]
 
 /-- The completed external product of completed combinations: `a ⊠ b` has coefficient
 `a(p₁) b(p₂)` at the pair `(p₁, p₂)`, for the potential `F₁ p₁ + F₂ p₂` on pairs. -/
@@ -105,6 +109,23 @@ theorem externalProduct_ofFinsupp_single (p₁ : S₁) (p₂ : S₂) (r₁ r₂ 
   ext ⟨q₁, q₂⟩
   simp only [externalProduct_apply_val, ofFinsupp_apply_val, Finsupp.single_apply, Prod.mk.injEq]
   split_ifs <;> simp_all
+
+/-- A supported product kernel, viewed as a one-input kernel on pairs, maps external products to
+kernel products. -/
+theorem kernelMap_externalProduct {n : S₁ → S₂ → S₀ → R}
+    (hn : ∀ p₁ p₂ p₀, n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C)
+    (hfin : ∀ p₁ p₂, n p₁ p₂ ∈ NovikovModule R F₀) (a : NovikovModule R F₁)
+    (b : NovikovModule R F₂) :
+    kernelMap (m := fun q : S₁ × S₂ => n q.1 q.2) (fun q => hn q.1 q.2) (fun q => hfin q.1 q.2)
+      (externalProduct a b) = kernelProduct hn hfin a b :=
+  Subtype.ext <| funext fun p₀ => by
+    simp only [kernelMap_apply_val, externalProduct_apply_val, kernelProduct_apply_val]
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The external product shifts potential cutoffs additively: if `a` vanishes above `D₁` and `b`
 vanishes above `D₂`, then `a ⊠ b` vanishes above `D₁ + D₂`. -/
@@ -143,17 +164,6 @@ theorem ext_externalProduct {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [
   addHom_ext hf hg fun q r => by
     rw [← mul_one r, ← externalProduct_ofFinsupp_single q.1 q.2 r 1]
     exact h _ _
-
-/-- A supported product kernel, viewed as a one-input kernel on pairs, maps external products to
-kernel products. -/
-theorem kernelMap_externalProduct {n : S₁ → S₂ → S₀ → R}
-    (hn : ∀ p₁ p₂ p₀, n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C)
-    (hfin : ∀ p₁ p₂, n p₁ p₂ ∈ NovikovModule R F₀) (a : NovikovModule R F₁)
-    (b : NovikovModule R F₂) :
-    kernelMap (m := fun q : S₁ × S₂ => n q.1 q.2) (fun q => hn q.1 q.2) (fun q => hfin q.1 q.2)
-      (externalProduct a b) = kernelProduct hn hfin a b :=
-  Subtype.ext <| funext fun p₀ => by
-    simp only [kernelMap_apply_val, externalProduct_apply_val, kernelProduct_apply_val]
 
 section Lift
 
@@ -274,6 +284,8 @@ theorem map_id :
       (C₁ := 0) (C₂ := 0) (fun D a ha => by simpa using ha) (fun D b hb => by simpa using hb) =
       LinearMap.id :=
   (map_unique _ _ _ _ continuous_id fun _ _ => rfl).symm
+
+end CommRing
 
 end ExternalProduct
 
