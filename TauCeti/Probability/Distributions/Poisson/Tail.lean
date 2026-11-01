@@ -106,7 +106,7 @@ theorem poissonMeasure_tail_eq_regularizedGamma (r : ℝ≥0) (n : ℕ) :
     ext k
     simp
   rw [hcompl, probReal_compl_eq_one_sub .of_discrete, hIic, ← sum_measureReal_singleton]
-  rw [show (n : ℝ) + 1 = ((n + 1 : ℕ) : ℝ) by norm_num]
+  rw [← Nat.cast_succ]
   rw [regularizedGamma_natCast (Nat.succ_ne_zero n) hr, Finset.mul_sum]
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_

@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Hypoexponential.PDF
 public import TauCeti.Probability.Cdf
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
 import TauCeti.Probability.Distributions.Gamma.Cdf
+import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # The cdf of hypoexponential laws
