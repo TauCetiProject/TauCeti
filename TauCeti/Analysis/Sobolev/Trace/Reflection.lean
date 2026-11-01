@@ -43,8 +43,8 @@ Dominated convergence then passes to the limit.
 
 * `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
   `Submodule.reflection` in the hyperplane `{0} × E`.
-* `TauCeti.traceCLM_normalLinearReflection_comp_comp`: conjugating by the linear reflection
-  preserves the trace of an endomorphism.
+* `ContinuousLinearMap.traceCLM_normalLinearReflection_comp_comp`: conjugating by the linear
+  reflection preserves the trace of an endomorphism.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
@@ -125,7 +125,7 @@ theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
   rw [← (normalLinearReflection E).inner_map_map, normalLinearReflection_normalLinearReflection]
 
 /-- Conjugating by the reflection `R (s, z) = (-s, z)` preserves the trace of an endomorphism. -/
-theorem traceCLM_normalLinearReflection_comp_comp
+theorem _root_.ContinuousLinearMap.traceCLM_normalLinearReflection_comp_comp
     (M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
     traceCLM ℝ (WithLp 2 (ℝ × E))
         (((normalLinearReflection E).toContinuousLinearEquiv :

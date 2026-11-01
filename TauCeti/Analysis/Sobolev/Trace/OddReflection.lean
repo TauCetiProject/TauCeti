@@ -427,8 +427,8 @@ theorem eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection [Fact (1 ≤ p)] 
     by_cases hy : y ∈ H <;> simp [hφ, hy]
   have hae : (fun x => T (w x)) =ᵐ[volume] φ - φ ∘ normalReflection E a := by
     filter_upwards [hw] with x hwx
-    rw [hwx, map_sub, traceCLM_normalLinearReflection_comp_comp, hTφ, hTφ, Pi.sub_apply,
-      Function.comp_apply]
+    rw [hwx, map_sub, ContinuousLinearMap.traceCLM_normalLinearReflection_comp_comp, hTφ, hTφ,
+      Pi.sub_apply, Function.comp_apply]
   calc eLpNorm (fun x => T (w x)) p volume
       = eLpNorm (φ - φ ∘ normalReflection E a) p volume := eLpNorm_congr_ae hae
     _ ≤ eLpNorm φ p volume + eLpNorm (φ ∘ normalReflection E a) p volume :=
