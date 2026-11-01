@@ -68,83 +68,6 @@ variable {a : ℂ}
 
 /-! ### Finite Laurent tails as polynomials in `(z - a)⁻¹` -/
 
-/-- A polynomial without constant term, evaluated at `(z - a)⁻¹`, is the finite Laurent tail with
-its coefficients. -/
-private theorem eval_inv_sub_eq_sum {P : ℂ[X]} (hP : P.coeff 0 = 0) (z : ℂ) :
-    P.eval (z - a)⁻¹ = ∑ k : Fin P.natDegree, P.coeff (k + 1) / (z - a) ^ (k.val + 1) := by
-  rw [eval_eq_sum_range, Finset.sum_range_succ', hP, zero_mul, add_zero,
-    ← Fin.sum_univ_eq_sum_range]
-  simp [div_eq_mul_inv]
-
-/-- The zero-padded coefficients of the Laurent tail of a polynomial are its coefficients. -/
-private theorem dite_coeff_succ (P : ℂ[X]) (k : ℕ) :
-    (if hk : k < P.natDegree then P.coeff ((⟨k, hk⟩ : Fin P.natDegree).val + 1) else 0) =
-      P.coeff (k + 1) := by
-  split_ifs with hk
-  · rfl
-  · exact (coeff_eq_zero_of_natDegree_lt (by omega)).symm
-
-/-- Two polynomials without constant term whose evaluations at `(z - a)⁻¹` differ, on a punctured
-neighbourhood of `a`, by functions continuous at `a` are equal. -/
-private theorem eq_of_eventuallyEq_add_eval {P Q : ℂ[X]} (hP : P.coeff 0 = 0) (hQ : Q.coeff 0 = 0)
-    {g h : ℂ → ℂ} (hg : ContinuousAt g a) (hh : ContinuousAt h a)
-    (heq : ∀ᶠ z in 𝓝[≠] a, g z + P.eval (z - a)⁻¹ = h z + Q.eval (z - a)⁻¹) : P = Q := by
-  ext (_ | k)
-  · rw [hP, hQ]
-  · have := Contour.laurent_coeff_unique hg hh
-      (heq.mono fun z hz ↦ by rwa [eval_inv_sub_eq_sum hP, eval_inv_sub_eq_sum hQ] at hz) k
-    rwa [dite_coeff_succ, dite_coeff_succ] at this
-
-/-- **Taylor splitting.** If `h` is analytic at `a`, then on a punctured neighbourhood of `a`,
-`h(z) / (z - a)^N` is the evaluation at `(z - a)⁻¹` of `∑_{j < N} (h⁽ʲ⁾(a) / j!) X^(N - j)` plus
-`(h(z) - ∑_{j < N} (h⁽ʲ⁾(a) / j!) (z - a)^j) / (z - a)^N`, a function which agrees near `a` with a
-function analytic at `a`. -/
-private theorem exists_analyticAt_eventuallyEq_div_pow {h : ℂ → ℂ} (hh : AnalyticAt ℂ h a)
-    (N : ℕ) : ∃ q : ℂ → ℂ, AnalyticAt ℂ q a ∧
-      (∀ᶠ z in 𝓝[≠] a, q z =
-        (h z - ∑ j ∈ Finset.range N, iteratedDeriv j h a / (j.factorial : ℂ) * (z - a) ^ j) /
-          (z - a) ^ N) ∧
-      ∀ᶠ z in 𝓝[≠] a, h z / (z - a) ^ N = q z +
-        (∑ j ∈ Finset.range N, C (iteratedDeriv j h a / (j.factorial : ℂ)) * X ^ (N - j)).eval
-          (z - a)⁻¹ := by
-  have hh' : AnalyticAt ℂ (fun w ↦ h (w + a)) 0 := by
-    rw [← zero_add a] at hh
-    exact hh.comp_of_eq (by fun_prop) rfl
-  obtain ⟨F, hF, hFeq⟩ := hh'.exists_eventuallyEq_sum_add_pow_mul N
-  have hsub : Tendsto (fun z ↦ z - a) (𝓝[≠] a) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds (by simpa using (continuous_sub_right a).tendsto a)
-  have hderiv (j : ℕ) : iteratedDeriv j (fun w ↦ h (w + a)) 0 = iteratedDeriv j h a := by
-    simp [iteratedDeriv_comp_add_const]
-  have htaylor : ∀ᶠ z in 𝓝[≠] a, h z = (∑ j ∈ Finset.range N,
-      iteratedDeriv j h a / (j.factorial : ℂ) * (z - a) ^ j) + (z - a) ^ N * F (z - a) := by
-    filter_upwards [hsub.eventually hFeq] with z hz
-    simp only [hderiv, sub_add_cancel, smul_eq_mul] at hz
-    rw [hz]
-    congr 1
-    exact Finset.sum_congr rfl fun j _ ↦ by ring
-  refine ⟨fun z ↦ F (z - a), hF.comp_of_eq (by fun_prop) (sub_self a), ?_, ?_⟩
-  · filter_upwards [htaylor, self_mem_nhdsWithin] with z hz hza
-    have hza' : z - a ≠ 0 := sub_ne_zero.2 hza
-    rw [hz, add_sub_cancel_left, mul_div_cancel_left₀ _ (pow_ne_zero N hza')]
-  · filter_upwards [htaylor, self_mem_nhdsWithin] with z hz hza
-    have hza' : z - a ≠ 0 := sub_ne_zero.2 hza
-    simp only [eval_finsetSum, eval_mul, eval_C, eval_pow, eval_X]
-    rw [hz, add_div, mul_div_cancel_left₀ _ (pow_ne_zero N hza'), add_comm, Finset.sum_div]
-    congr 1
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    have hjN : j ≤ N := (Finset.mem_range.1 hj).le
-    rw [← Nat.sub_add_cancel hjN, pow_add, Nat.add_sub_cancel, inv_pow]
-    field_simp
-
-/-- The polynomial `∑_{j < N} c_j X^(N - j)` has no constant term. -/
-private theorem coeff_sum_C_mul_X_pow_sub_zero (N : ℕ) (c : ℕ → ℂ) :
-    (∑ j ∈ Finset.range N, C (c j) * X ^ (N - j)).coeff 0 = 0 := by
-  rw [finsetSum_coeff]
-  refine Finset.sum_eq_zero fun j hj ↦ ?_
-  have := Finset.mem_range.1 hj
-  rw [coeff_C_mul_X_pow, ite_eq_right_iff]
-  omega
-
 /-- Every meromorphic germ at `a` is a holomorphic germ plus the evaluation at `(z - a)⁻¹` of a
 polynomial without constant term. -/
 private theorem exists_coe_eq_add_eval (φ : meromorphicGerms ℂ a) :
@@ -152,11 +75,11 @@ private theorem exists_coe_eq_add_eval (φ : meromorphicGerms ℂ a) :
       (φ : Germ (𝓝[≠] a) ℂ) =
         (toMeromorphicGerms a s : Germ (𝓝[≠] a) ℂ) + ↑(fun z ↦ P.eval (z - a)⁻¹) := by
   obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
-  obtain ⟨q, hq, -, hdecomp⟩ := exists_analyticAt_eventuallyEq_div_pow hN N
+  obtain ⟨q, hq, -, hdecomp⟩ := Contour.exists_analyticAt_eventuallyEq_div_pow hN N
   obtain ⟨s, hs⟩ := exists_toMeromorphicGerms_eq_of_analyticAt hq
   refine ⟨∑ j ∈ Finset.range N,
     C (iteratedDeriv j (fun z ↦ (z - a) ^ N • f z) a / (j.factorial : ℂ)) * X ^ (N - j),
-    coeff_sum_C_mul_X_pow_sub_zero N _, s, ?_⟩
+    coeff_zero_sum_C_mul_X_pow_sub N _, s, ?_⟩
   rw [← hφ, hs, ← Germ.coe_add, Germ.coe_eq]
   filter_upwards [hdecomp, self_mem_nhdsWithin] with z hz hza
   rw [Pi.add_apply, ← hz, smul_eq_mul, mul_div_cancel_left₀ _ (pow_ne_zero N (sub_ne_zero.2 hza))]
@@ -172,23 +95,13 @@ private theorem eq_and_eq_of_coe_add_eval_eq {P Q : ℂ[X]} (hP : P.coeff 0 = 0)
   obtain ⟨k, hk, hkt⟩ := exists_toFilterGerm_eq a t
   rw [coe_toMeromorphicGerms, coe_toMeromorphicGerms, hgs, hkt, ← Germ.coe_add, ← Germ.coe_add,
     Germ.coe_eq] at h
-  have hPQ : P = Q := eq_of_eventuallyEq_add_eval hP hQ hg.self_of_nhds.continuousAt
+  have hPQ : P = Q := Contour.eq_of_eventuallyEq_add_eval_inv_sub hP hQ hg.self_of_nhds.continuousAt
     hk.self_of_nhds.continuousAt h
   subst hPQ
   refine ⟨rfl, toMeromorphicGerms_injective a (Subtype.ext ?_)⟩
   rw [coe_toMeromorphicGerms, coe_toMeromorphicGerms, hgs, hkt, Germ.coe_eq]
   filter_upwards [h] with z hz
   exact add_right_cancel hz
-
-private theorem coe_eval_zero : (↑(fun z ↦ (0 : ℂ[X]).eval (z - a)⁻¹) : Germ (𝓝[≠] a) ℂ) = 0 := by
-  rw [← Germ.coe_zero, Germ.coe_eq]
-  exact .of_forall fun _ ↦ eval_zero
-
-private theorem coe_eval_add (P Q : ℂ[X]) :
-    (↑(fun z ↦ (P + Q).eval (z - a)⁻¹) : Germ (𝓝[≠] a) ℂ) =
-      ↑(fun z ↦ P.eval (z - a)⁻¹) + ↑(fun z ↦ Q.eval (z - a)⁻¹) := by
-  rw [← Germ.coe_add, Germ.coe_eq]
-  exact .of_forall fun _ ↦ eval_add
 
 /-- The polynomial part of a chosen decomposition of `φ`; see `principalPart`. -/
 private def principalPartAux (φ : meromorphicGerms ℂ a) : ℂ[X] :=
@@ -219,23 +132,24 @@ private theorem principalPartAux_eq_and_regularPartAux_eq {φ : meromorphicGerms
 private theorem principalPartAux_zero_and_regularPartAux_zero :
     principalPartAux (0 : meromorphicGerms ℂ a) = 0 ∧
       regularPartAux (0 : meromorphicGerms ℂ a) = 0 :=
-  principalPartAux_eq_and_regularPartAux_eq (coeff_zero 0) <| by
-    rw [coe_eval_zero, map_zero, ZeroMemClass.coe_zero, add_zero]
+  principalPartAux_eq_and_regularPartAux_eq (coeff_zero 0) <| by simp [← Pi.zero_def]
 
 private theorem principalPartAux_add_and_regularPartAux_add (φ ψ : meromorphicGerms ℂ a) :
     principalPartAux (φ + ψ) = principalPartAux φ + principalPartAux ψ ∧
       regularPartAux (φ + ψ) = regularPartAux φ + regularPartAux ψ :=
   principalPartAux_eq_and_regularPartAux_eq
     (by rw [coeff_add, coeff_principalPartAux_zero, coeff_principalPartAux_zero, add_zero]) <| by
-    rw [coe_eval_add, map_add, Subring.coe_add, Subring.coe_add, coe_eq_regularPartAux_add φ,
+    rw [map_add, Subring.coe_add, Subring.coe_add, coe_eq_regularPartAux_add φ,
       coe_eq_regularPartAux_add ψ, add_add_add_comm]
+    simp [← Germ.coe_add, Pi.add_def]
 
 /-! ### The principal part and the regular part -/
 
 variable (a) in
 /-- The **principal part** of a meromorphic germ `φ` at `a`: the unique polynomial `P` without
-constant term such that `φ` minus the germ of `z ↦ P((z - a)⁻¹)` is holomorphic at `a`. Its
-coefficient of `X ^ k` is the Laurent coefficient of `φ` of order `-k`. -/
+constant term such that `φ` minus the germ of `z ↦ P((z - a)⁻¹)` is holomorphic at `a`. For
+`k ≥ 1`, its coefficient of `X ^ k` is the Laurent coefficient of `φ` of order `-k`; its constant
+coefficient is `0`. -/
 def principalPart : meromorphicGerms ℂ a →+ ℂ[X] where
   toFun := principalPartAux
   map_zero' := principalPartAux_zero_and_regularPartAux_zero.1
@@ -283,7 +197,7 @@ theorem principalPart_eq_and_regularPart_eq_iff {φ : meromorphicGerms ℂ a} {P
 theorem principalPart_toMeromorphicGerms
     (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
     principalPart a (toMeromorphicGerms a s) = 0 :=
-  (principalPart_eq_and_regularPart_eq_iff.2 ⟨coeff_zero 0, by rw [coe_eval_zero, add_zero]⟩).1
+  (principalPart_eq_and_regularPart_eq_iff (s := s).2 ⟨coeff_zero 0, by simp [← Pi.zero_def]⟩).1
 
 /-- A holomorphic germ is its own regular part: `regularPart a` is a left inverse of
 `toMeromorphicGerms a`. -/
@@ -291,7 +205,7 @@ theorem principalPart_toMeromorphicGerms
 theorem regularPart_toMeromorphicGerms
     (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
     regularPart a (toMeromorphicGerms a s) = s :=
-  (principalPart_eq_and_regularPart_eq_iff.2 ⟨coeff_zero 0, by rw [coe_eval_zero, add_zero]⟩).2
+  (principalPart_eq_and_regularPart_eq_iff (s := s).2 ⟨coeff_zero 0, by simp [← Pi.zero_def]⟩).2
 
 /-- The regular meromorphic germs, those coming from holomorphic germs, are exactly those whose
 principal part vanishes. -/
@@ -299,7 +213,7 @@ theorem principalPart_eq_zero_iff {φ : meromorphicGerms ℂ a} :
     principalPart a φ = 0 ↔ φ ∈ (toMeromorphicGerms a).range := by
   refine ⟨fun h ↦ ⟨regularPart a φ, Subtype.ext ?_⟩, ?_⟩
   · rw [coe_eq_regularPart_add_principalPart φ, h]
-    rw [coe_eval_zero, add_zero]
+    simp [← Pi.zero_def]
   · rintro ⟨s, rfl⟩
     exact principalPart_toMeromorphicGerms s
 
@@ -313,10 +227,10 @@ theorem principalPart_eq_sum_of_coe_eq {φ : meromorphicGerms ℂ a} {h : ℂ �
     (hh : AnalyticAt ℂ h a) {N : ℕ} (hφ : (φ : Germ (𝓝[≠] a) ℂ) = ↑(fun z ↦ h z / (z - a) ^ N)) :
     principalPart a φ =
       ∑ j ∈ Finset.range N, C (iteratedDeriv j h a / (j.factorial : ℂ)) * X ^ (N - j) := by
-  obtain ⟨q, hq, -, hdecomp⟩ := exists_analyticAt_eventuallyEq_div_pow hh N
+  obtain ⟨q, hq, -, hdecomp⟩ := Contour.exists_analyticAt_eventuallyEq_div_pow hh N
   obtain ⟨s, hs⟩ := exists_toMeromorphicGerms_eq_of_analyticAt hq
   refine (principalPart_eq_and_regularPart_eq_iff (s := s).2
-    ⟨coeff_sum_C_mul_X_pow_sub_zero N _, ?_⟩).1
+    ⟨coeff_zero_sum_C_mul_X_pow_sub N _, ?_⟩).1
   rw [hφ, hs, ← Germ.coe_add, Germ.coe_eq]
   exact hdecomp
 
@@ -330,10 +244,10 @@ theorem coe_toMeromorphicGerms_regularPart_of_coe_eq {φ : meromorphicGerms ℂ 
       ↑(fun z ↦ (h z - ∑ j ∈ Finset.range N,
         iteratedDeriv j h a / (j.factorial : ℂ) * (z - a) ^ j) /
         (z - a) ^ N) := by
-  obtain ⟨q, hq, hqeq, hdecomp⟩ := exists_analyticAt_eventuallyEq_div_pow hh N
+  obtain ⟨q, hq, hqeq, hdecomp⟩ := Contour.exists_analyticAt_eventuallyEq_div_pow hh N
   obtain ⟨s, hs⟩ := exists_toMeromorphicGerms_eq_of_analyticAt hq
   have hreg := (principalPart_eq_and_regularPart_eq_iff (s := s).2
-    ⟨coeff_sum_C_mul_X_pow_sub_zero N _, by
+    ⟨coeff_zero_sum_C_mul_X_pow_sub N _, by
       rw [hφ, hs, ← Germ.coe_add, Germ.coe_eq]
       exact hdecomp⟩).2
   rw [hreg, hs, Germ.coe_eq]
