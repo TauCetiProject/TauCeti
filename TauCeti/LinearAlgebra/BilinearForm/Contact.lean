@@ -304,13 +304,17 @@ contact for `B`. This is the pointwise reason why `d(eᵗ α)` is a symplectic f
 exactly when `α` is a contact form on `M`. -/
 theorem isContact_iff_nondegenerate_symplectizationForm :
     a.IsContact B ↔ (a.symplectizationForm B).Nondegenerate := by
+  -- Flipping commutes with restricting to `ker a`.
+  have hflip : LinearMap.flip (B.restrict (LinearMap.ker a)) =
+      LinearMap.BilinForm.restrict (LinearMap.flip B) (LinearMap.ker a) := by
+    ext x y
+    simp [LinearMap.BilinForm.restrict_apply]
   -- Right separation is left separation of the swapped form, which is again a symplectization.
   have hright : (a.symplectizationForm B).SeparatingRight ↔
       a ≠ 0 ∧ (B.restrict (LinearMap.ker a)).SeparatingRight := by
     rw [← LinearMap.flip_separatingLeft, flip_symplectizationForm,
       separatingLeft_symplectizationForm_iff, LinearMap.ker_neg, neg_ne_zero,
-      ← LinearMap.flip_separatingLeft (B := B.restrict _)]
-    rfl
+      ← LinearMap.flip_separatingLeft (B := B.restrict _), hflip]
   rw [isContact_def]
   exact ⟨fun ⟨ha, hl, hr⟩ ↦ ⟨separatingLeft_symplectizationForm_iff.2 ⟨ha, hl⟩, hright.2 ⟨ha, hr⟩⟩,
     fun ⟨hl, hr⟩ ↦ ⟨(separatingLeft_symplectizationForm_iff.1 hl).1,
