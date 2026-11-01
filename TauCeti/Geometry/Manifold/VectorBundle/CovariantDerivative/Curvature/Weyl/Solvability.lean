@@ -16,9 +16,9 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 /-!
 # Local solutions of the conformal flattening equation
 
-Let `g` be a smooth Riemannian metric on a finite-dimensional real normed space `E`. The metric
-`e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the *conformal flattening
-equation*
+Let `g` be a smooth Riemannian metric on a finite-dimensional real normed space `E`. In dimension
+at least `3`, the metric `e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the
+*conformal flattening equation*
 
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g`,
 
@@ -405,8 +405,9 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
 metric on a finite-dimensional real normed space `E` whose Weyl and Cotton tensors vanish near
 `x₀`. Then for every `c : ℝ` and every tangent vector `ξ` at `x₀` there is a smooth function `φ`
 with `φ x₀ = c` and `grad φ x₀ = ξ` solving the conformal flattening equation
-`Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`, where `P` is the Schouten tensor. Equivalently,
-`e^(2φ) g` has vanishing Schouten tensor near `x₀`. -/
+`Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`, where `P` is the Schouten tensor. When `E` has
+dimension at least `3`, this says equivalently that `e^(2φ) g` has vanishing Schouten tensor near
+`x₀`. -/
 theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
     (c : ℝ) (ξ : TangentSpace 𝓘(ℝ, E) x₀) :
