@@ -103,6 +103,16 @@ theorem _root_.ModelWithCorners.isOpen_extendCoordChange_source [I.Boundaryless]
   (e.continuousOn_extend_symm (I := I)).isOpen_inter_preimage e.isOpen_extend_target
     e'.isOpen_extend_source
 
+omit [ChartedSpace H M] in
+/-- A change of extended charts sends the coordinate of a point in the first chart to its
+coordinate in the second chart. -/
+theorem _root_.ModelWithCorners.extendCoordChange_apply {e e' : OpenPartialHomeomorph M H}
+    {x : M} (hx : x ∈ e.source) :
+    I.extendCoordChange e e' (I (e x)) = I (e' x) := by
+  simp only [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
+    OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+    Function.comp_apply, I.left_inv, e.left_inv hx]
+
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/
 theorem extChartAt_inclusion_self {U V : TopologicalSpace.Opens M} (h : U ≤ V) (x : U) :
