@@ -36,7 +36,7 @@ The relative spectrum of a symmetric algebra commutes with base change: for `f :
 `Spec_Y (Sym (f^* F)) ⟶ Spec_X (Sym F)` (`relativeSpecSymmetricAlgebraPullbackFst`) sends a point
 over `q : T ⟶ Y` with linear functional `q^* f^* F ⟶ 𝒪_T` to the point over `q ≫ f` with the same
 functional on `(q ≫ f)^* F ≅ q^* f^* F`
-(`relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_pullbackFst`).
+(`relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst`).
 
 ## Main declarations
 
@@ -54,8 +54,9 @@ functional on `(q ≫ f)^* F ≅ q^* f^* F`
   `Spec_X (Sym F)`, naturally in `F`.
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraPullbackFst`: the projection
   `Spec_Y (Sym (f^* F)) ⟶ Spec_X (Sym F)`, with its action on module maps
-  (`relativeSpecSymmetricAlgebraHomEquiv_map_comp_pullbackFst`) and on linear functionals
-  (`relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_pullbackFst`).
+  (`relativeSpecSymmetricAlgebraHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst`) and on
+  linear functionals
+  (`relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst`).
 
 ## References
 
@@ -325,19 +326,26 @@ lemma relativeSpecSymmetricAlgebraBaseChangeIso_hom_app_left_fst :
     ((relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app (op F)).left ≫
         Limits.pullback.fst ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F))).hom f =
       (relativeSpecSymmetricAlgebraPullbackFst f F).left := by
-  have h := congrArg Iso.hom (relativeSpecBaseChangeIso_app f (op ((symmetricAlgebra X).obj F)))
-  rw [relativeSpecSymmetricAlgebraBaseChangeIso_hom_app]
-  -- The underlying morphism of a composite in `AffineSchemeOver Y` is the composite of the
-  -- underlying morphisms, so the left side reassociates by `Category.assoc` up to unfolding.
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-    ((congrArg (fun φ ↦ φ.left ≫ Limits.pullback.fst _ f) h).trans
-      (relativeSpecPullbackIso_hom_left_fst ((symmetricAlgebra X).obj F) f)))
+  rw [relativeSpecSymmetricAlgebraBaseChangeIso_hom_app, ← Iso.app_hom,
+    relativeSpecBaseChangeIso_app, relativeSpecSymmetricAlgebraPullbackFst_left]
+  -- `MorphismProperty.Comma.comp_left` does not rewrite here: `@IsAffineHom` only has type
+  -- `MorphismProperty Scheme` after unfolding, as in `relativeSpecBaseChangeIso`. `change` states
+  -- the composite of the underlying scheme morphisms, using `relativeSpec_map_left`.
+  change (CommMon.relativeSpecMap (pullbackSymmetricAlgebraIso f F).hom.hom ≫
+      (relativeSpecPullbackIso ((symmetricAlgebra X).obj F) f).hom.left) ≫
+        Limits.pullback.fst ((symmetricAlgebra X).obj F).obj.relativeSpecToBase f = _
+  -- `rw [Category.assoc]` rejects this goal at implicit transparency (the quasicoherence
+  -- instances of the relative Spec terms only typecheck after unfolding) and `simp` does not
+  -- rewrite it, so the reassociation is applied as a term.
+  exact (Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) (relativeSpecPullbackIso_hom_left_fst ((symmetricAlgebra X).obj F) f))
 
 /-- **Base change of `Spec_X (Sym F)` on points, as module maps.** For a scheme `q : T ⟶ Y` over
 `Y` and a morphism `t : T ⟶ Spec_Y (Sym (f^* F))` over `Y`, the module map `F ⟶ (q ≫ f)_* 𝒪_T` of
 the composite of `t` with the projection to `Spec_X (Sym F)` is the transpose along `f` of the
 module map `f^* F ⟶ q_* 𝒪_T` of `t`, followed by the identification `f_* q_* ≅ (q ≫ f)_*`. -/
-theorem relativeSpecSymmetricAlgebraHomEquiv_map_comp_pullbackFst {T : Over Y}
+lemma relativeSpecSymmetricAlgebraHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst
+    {T : Over Y}
     (t : T ⟶ (MorphismProperty.Over.forget _ _ Y).obj ((relativeSpec Y).obj
       (op ((symmetricAlgebra Y).obj ((QuasicoherentSheaf.pullback f).obj F))))) :
     relativeSpecSymmetricAlgebraHomEquiv F ((Over.map f).obj T)
@@ -349,9 +357,9 @@ theorem relativeSpecSymmetricAlgebraHomEquiv_map_comp_pullbackFst {T : Over Y}
   let A := (symmetricAlgebra X).obj F
   let e := pullbackSymmetricAlgebraIso f F
   have hpt : ((Over.map f).map t ≫ relativeSpecSymmetricAlgebraPullbackFst f F).left =
-      (t.left ≫ CommMon.relativeSpecMap e.hom.hom) ≫ relativeSpecPullbackFst A f :=
-    (congrArg (t.left ≫ ·) (relativeSpecSymmetricAlgebraPullbackFst_left f F)).trans
-      (Category.assoc _ _ _).symm
+      (t.left ≫ CommMon.relativeSpecMap e.hom.hom) ≫ relativeSpecPullbackFst A f := by
+    rw [Over.comp_left, Over.map_map_left, relativeSpecSymmetricAlgebraPullbackFst_left]
+    exact (Category.assoc _ _ _).symm
   -- The algebra map `Sym F ⟶ (q ≫ f)_* 𝒪_T` of the projected point is the transpose along `f` of
   -- `f^* (Sym F) ≅ Sym (f^* F) ⟶ q_* 𝒪_T`, by naturality of the universal property of relative
   -- Spec in the algebra and its compatibility with base change.
@@ -388,7 +396,8 @@ theorem relativeSpecSymmetricAlgebraHomEquiv_map_comp_pullbackFst {T : Over Y}
 `q : T ⟶ Y` over `Y` and a morphism `t : T ⟶ Spec_Y (Sym (f^* F))` over `Y`, the linear functional
 `(q ≫ f)^* F ⟶ 𝒪_T` of the composite of `t` with the projection to `Spec_X (Sym F)` is the linear
 functional `q^* f^* F ⟶ 𝒪_T` of `t`, through the composition isomorphism of pullback. -/
-theorem relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_pullbackFst {T : Over Y}
+lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst
+    {T : Over Y}
     (t : T ⟶ (MorphismProperty.Over.forget _ _ Y).obj ((relativeSpec Y).obj
       (op ((symmetricAlgebra Y).obj ((QuasicoherentSheaf.pullback f).obj F))))) :
     relativeSpecSymmetricAlgebraPullbackHomEquiv F ((Over.map f).obj T)
@@ -400,7 +409,7 @@ theorem relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_pullbackFst {T : O
             T t := by
   apply ((Scheme.Modules.pullbackPushforwardAdjunction _).homEquiv _ _).injective
   refine (Equiv.apply_symm_apply _ _).trans ?_
-  rw [relativeSpecSymmetricAlgebraHomEquiv_map_comp_pullbackFst]
+  rw [relativeSpecSymmetricAlgebraHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst]
   -- Transposing along `q ≫ f` after `(pullbackComp q f).inv` is transposing along `q` and then
   -- along `f`, followed by `pushforwardComp q f`.
   refine Eq.trans ?_ (Adjunction.homEquiv_conjugateEquiv

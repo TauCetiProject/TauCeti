@@ -282,12 +282,25 @@ lemma totalSpaceSchemeBaseChangeIso_hom_app_left_fst :
     ((totalSpaceSchemeBaseChangeIso f).hom.app E).left ≫
         Limits.pullback.fst ((totalSpaceScheme X).obj E).hom f =
       (totalSpacePullbackFst f E).left := by
-  rw [totalSpaceSchemeBaseChangeIso_hom_app]
-  -- Underlying morphisms of composites in `AffineSchemeOver Y` and of `Over.map f` are composites
-  -- of underlying morphisms, so both sides reassociate by `Category.assoc` up to unfolding.
-  exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    (congrArg (_ ≫ ·) (relativeSpecSymmetricAlgebraBaseChangeIso_hom_app_left_fst f _)))).trans
-      (Category.assoc _ _ _).symm)
+  rw [totalSpaceSchemeBaseChangeIso_hom_app, totalSpacePullbackFst]
+  -- `MorphismProperty.Comma.comp_left` and `Over.comp_left` do not rewrite these composites:
+  -- `@IsAffineHom` only has type `MorphismProperty Scheme` after unfolding. `change` states both
+  -- sides as composites of underlying morphisms, which they are by definition of `.left` of a
+  -- composite and of `Over.map_map_left`.
+  change (((relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).hom)).op ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op).left ≫
+      ((relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
+        (op ((toQuasicoherent X).obj (dual E)))).left) ≫
+        Limits.pullback.fst ((totalSpaceScheme X).obj E).hom f =
+    ((relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).hom)).op ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op).left ≫
+      (relativeSpecSymmetricAlgebraPullbackFst f ((toQuasicoherent X).obj (dual E))).left
+  exact (Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) (relativeSpecSymmetricAlgebraBaseChangeIso_hom_app_left_fst f _))
 
 /-- The linear functional on `(q ≫ f)^* E^∨` of the projection to `𝕍(E)` of a point `t` of
 `𝕍(f^* E)` over `q : T ⟶ Y` is the base-change map `(q ≫ f)^* E^∨ ≅ q^* f^* E^∨ ⟶ q^* (f^* E)^∨`
@@ -307,7 +320,8 @@ private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePu
             ((toQuasicoherent Y).obj (dual ((FiniteLocallyFreeSheaf.pullback f).obj E))) T t := by
   refine ((congrArg (relativeSpecSymmetricAlgebraPullbackHomEquiv _ _)
     ((Over.map f).map_comp_assoc t _ _).symm).trans
-      (relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_pullbackFst f _ _)).trans
+      (relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst
+        f _ _)).trans
         (congrArg (_ ≫ ·) ?_)
   -- Naturality of the linear functionals in the quasicoherent sheaf, for the two relative-Spec
   -- maps making up the first factor of `totalSpacePullbackFst`.
