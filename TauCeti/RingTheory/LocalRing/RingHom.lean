@@ -37,7 +37,7 @@ theorem isLocalHom_of_surjective_of_isNilpotent_ker (f : R →+* S)
   exact isUnit_of_mul_isUnit_left (by simpa using hxy.isUnit_add_one)
 
 /-- The kernel of a unit-reflecting ring map is contained in the Jacobson radical. -/
-theorem ker_le_jacobson (f : R →+* S) [IsLocalHom f] :
+theorem ker_le_jacobson_bot (f : R →+* S) [IsLocalHom f] :
     ker f ≤ Ideal.jacobson (⊥ : Ideal R) := by
   intro x hx
   refine Ideal.mem_jacobson_bot.mpr fun y ↦ isUnit_of_map_unit f _ ?_
