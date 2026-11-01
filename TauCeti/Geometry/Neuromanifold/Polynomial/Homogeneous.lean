@@ -59,7 +59,7 @@ variable {X : Type*} {d : ℕ}
 bound is at most `d`. -/
 theorem polynomialInputDegree_le_of_isHomogeneous [Fintype J] {P : J → MvPolynomial (W ⊕ X) K}
     (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) : polynomialInputDegree P ≤ d :=
-  polynomialInputDegree_le_iff.2 fun j => (hP j).totalDegree_le
+  (polynomialInputDegree_le_iff _).2 fun j => (hP j).totalDegree_le
 
 /-- The coefficient presentation of a model whose input polynomials are homogeneous of degree
 `d`, with values in a product of homogeneous submodules. -/
