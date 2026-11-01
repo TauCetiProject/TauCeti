@@ -18,10 +18,10 @@ identities describe its successor step and its alternating binomial expansion, u
 forward-difference operator and integer scalar multiplication. For ring-valued functions, the same
 identities are stated using multiplication by the coefficients in the ring.
 
-The discrete Leibniz rule expresses differences of a scalar product in terms of differences
-of its factors. The binomial summation identity `Finset.sum_antidiagonal_choose_succ_nsmul`
-combines the two terms in the shifted product rule. The Gregory–Newton formula then eliminates
-the shifts, giving a finite formula in differences at a single point.
+The discrete Leibniz rule computes differences of a scalar product from finitely many differences
+of its factors. Its shifted form evaluates the second factor along the arithmetic progression
+starting at the input point. Its unshifted form uses only differences at that point, of orders
+at most the output order, so it also computes products in finite-difference coordinates.
 
 ## Main declarations
 
