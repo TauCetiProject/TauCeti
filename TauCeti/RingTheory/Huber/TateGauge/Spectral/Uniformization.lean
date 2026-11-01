@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Completion.Uniform
 public import TauCeti.RingTheory.Huber.TateGauge.Spectral.Topology
+public import TauCeti.Topology.UniformSpace.Completion
 
 /-!
 # The uniformization of a Tate Huber pair
@@ -18,12 +19,11 @@ has dense image, and kills exactly the elements with `|x|_sp = 0`. For a Huber p
 plus ring `A^{u+}` is the closure of `ι(A⁺)`, and `ι` is a morphism of Huber pairs
 `(A, A⁺) → (A^u, A^{u+})`.
 
-Uniformization is left adjoint to the inclusion of complete Hausdorff uniform Huber pairs: every
-morphism `(A, A⁺) → (B, B⁺)` into a complete Hausdorff Huber pair with `B` uniform factors
-uniquely through `ι`. The key input is that a continuous homomorphism into a uniform ring is
-continuous for the spectral topology of its source
-(`TauCeti.Huber.SpectralTop.continuous_comp_toSpectralTop_symm`). In particular, when `A` is
-itself complete, Hausdorff and uniform, `ι` is an isomorphism.
+For a Tate Huber pair `(A, A⁺)`, `ι` is universal among morphisms into complete Hausdorff
+Huber pairs `(B, B⁺)` with `B` uniform: every such morphism factors uniquely through `ι`. The
+key input is that a continuous homomorphism into a uniform ring is continuous for the spectral
+topology of its source (`TauCeti.Huber.SpectralTop.continuous_comp_toSpectralTop_symm`). In
+particular, when `A` is itself complete, Hausdorff and uniform, `ι` is an isomorphism.
 
 ## Main definitions
 
@@ -99,10 +99,10 @@ theorem toUniformization_eq_zero_iff (d : TateNormDatum A) {x : A} :
     toUniformization A x = 0 ↔ spectralSeminorm d x = 0 := by
   -- `ι x = 0` says that `x` and `0` are inseparable in `SpectralTop A`, that is, that `x` lies in
   -- every ball of the spectral seminorm around zero
-  rw [toUniformization_apply, ← Completion.coe_zero, ← inseparable_iff_eq,
-    (Completion.isUniformInducing_coe _).isInducing.inseparable_iff, ← specializes_iff_inseparable,
-    specializes_iff_pure, (SpectralTop.hasBasis_nhds_zero_spectralSeminorm d).ge_iff]
-  simp only [Filter.mem_pure, (toSpectralTop A).injective.mem_set_image, Set.mem_ofPred_eq]
+  rw [toUniformization_apply, ← Completion.coe_zero, Completion.coe_eq_coe_iff_inseparable,
+    ← specializes_iff_inseparable,
+    (SpectralTop.hasBasis_nhds_zero_spectralSeminorm d).specializes_iff]
+  simp only [(toSpectralTop A).injective.mem_set_image, Set.mem_ofPred_eq]
   exact ⟨fun h ↦ le_antisymm (le_of_forall_pos_lt_add fun ε hε ↦ by simpa using h ε hε)
     (apply_nonneg _ x), fun h ε hε ↦ h ▸ hε⟩
 
@@ -112,10 +112,9 @@ variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopo
   [CompleteSpace B] [T0Space B] [IsUniform B]
 
 /-- **The universal property of the uniformization, at ring level**: a continuous homomorphism
-`φ : A → B` into a complete Hausdorff uniform ring extends to `A^u`. It is continuous for the
-spectral topology of `A` (`TauCeti.Huber.SpectralTop.continuous_comp_toSpectralTop_symm`), hence
-extends to the completion. -/
+`φ : A → B` into a complete Hausdorff uniform ring extends to `A^u`. -/
 noncomputable def lift (φ : A →+* B) (hφ : Continuous φ) : Uniformization A →+* B :=
+  -- `φ` is continuous for the spectral topology of `A`, hence extends to the completion.
   Completion.extensionHom (φ.comp ((toSpectralTop A).symm : SpectralTop A →+* A))
     (SpectralTop.continuous_comp_toSpectralTop_symm hφ)
 
@@ -211,6 +210,7 @@ noncomputable def Hom.uniformizationLift (f : Hom S T) : Hom S.uniformization T 
 
 /-- The underlying ring homomorphism of `f.uniformizationLift` is the ring-level extension
 `TauCeti.Huber.Uniformization.lift`. -/
+@[simp]
 theorem Hom.toRingHom_uniformizationLift (f : Hom S T) :
     f.uniformizationLift.toRingHom = Uniformization.lift f.toRingHom f.continuous_toRingHom :=
   Hom.toRingHom_extension _
@@ -220,7 +220,7 @@ theorem Hom.toRingHom_uniformizationLift (f : Hom S T) :
 theorem Hom.uniformizationLift_comp_uniformizationHom (f : Hom S T) :
     f.uniformizationLift.comp S.uniformizationHom = f := by
   ext x
-  simp [Hom.toRingHom_uniformizationLift]
+  simp
 
 /-- **Morphisms out of the uniformization are determined on `A`**: two morphisms into a
 Hausdorff Huber pair that agree after `ι` are equal. -/

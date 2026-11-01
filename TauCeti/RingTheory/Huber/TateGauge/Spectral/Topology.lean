@@ -425,12 +425,12 @@ theorem continuous_map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologi
   exact ⟨_, ⟨φ a, ha.map hφ, rfl⟩, by simp⟩
 
 /-- **Continuous homomorphisms into uniform rings are continuous for the spectral topology.** If
-`φ : A →+* B` is continuous and `B` is uniform, then `φ` is continuous on `SpectralTop A`: some
-power of `φ ϖ` multiplies the bounded set `B°` into any neighbourhood of zero, and `φ` carries
-`ϖ ^ n • A°°` into `φ ϖ ^ n • B°`. -/
+`φ : A →+* B` is continuous and `B` is uniform, then `φ` is continuous on `SpectralTop A`. -/
 theorem continuous_comp_toSpectralTop_symm {B : Type*} [CommRing B] [TopologicalSpace B]
     [IsTopologicalRing B] [IsUniform B] {φ : A →+* B} (hφ : Continuous φ) :
     Continuous (φ ∘ (toSpectralTop A).symm) := by
+  -- Some power of `φ ϖ` multiplies the bounded set `B°` into any neighbourhood of zero, and `φ`
+  -- carries `ϖ ^ n • A°°` into `φ ϖ ^ n • B°`.
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   let ψ : SpectralTop A →+* B := φ.comp ((toSpectralTop A).symm : SpectralTop A →+* A)
   refine continuous_of_tendsto_nhds_zero ψ ((hasBasis_nhds_zero hϖ).tendsto_left_iff.mpr ?_)
@@ -459,8 +459,7 @@ section Pair
 variable {A} [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
 
 /-- **The Huber pair `(SpectralTop A, A⁺)`**: a ring of integral elements `A⁺` of a Tate ring `A`
-is also one for the spectral topology. It is open because it contains `A°°`, and its elements have
-spectral seminorm at most one. -/
+is also one for the spectral topology. -/
 noncomputable def pair (S : Pair A) : Pair (SpectralTop A) where
   plus := S.plus.comap ((toSpectralTop A).symm : SpectralTop A →+* A)
   isRingOfIntegralElements := by
