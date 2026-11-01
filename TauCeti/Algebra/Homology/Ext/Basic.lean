@@ -324,6 +324,39 @@ lemma exists_f_comp_eq_of_ext_eq_zero {Y : C} (h : ∀ x : Ext.{w} S.X₃ Y 1, x
   rw [← Ext.mk₀_addEquiv₀_apply x, Ext.mk₀_comp_mk₀] at hx
   exact hx
 
+/-- **The connecting map in degree zero**: for `S` short exact, the class `extClass ∘ g` in
+`Ext¹(S.X₃, Y)` of a morphism `g : S.X₁ ⟶ Y` vanishes if and only if `g` extends along `S.f`. -/
+lemma extClass_comp_mk₀_eq_zero_iff {Y : C} (g : S.X₁ ⟶ Y) :
+    hS.extClass.comp (Ext.mk₀ g) (add_zero 1) = 0 ↔ ∃ h : S.X₂ ⟶ Y, S.f ≫ h = g := by
+  refine ⟨fun hg ↦ ?_, fun ⟨h, hh⟩ ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := Ext.contravariant_sequence_exact₁ hS Y (Ext.mk₀ g) (n₁ := 1) rfl hg
+    refine ⟨Ext.addEquiv₀ x, Ext.homEquiv₀.symm.injective ?_⟩
+    rw [← Ext.mk₀_addEquiv₀_apply x, Ext.mk₀_comp_mk₀] at hx
+    exact hx
+  · rw [← hh, ← Ext.mk₀_comp_mk₀]
+    exact hS.extClass_comp_assoc _
+
+/-- **Surjectivity of the connecting map against a projective middle term**: if `S` is short
+exact with `S.X₂` projective, every class in `Ext¹(S.X₃, Y)` is `extClass ∘ g` for a morphism
+`g : S.X₁ ⟶ Y`. -/
+lemma exists_extClass_comp_mk₀_eq [Projective S.X₂] {Y : C} (e : Ext.{w} S.X₃ Y 1) :
+    ∃ g : S.X₁ ⟶ Y, hS.extClass.comp (Ext.mk₀ g) (add_zero 1) = e := by
+  obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Y e (Ext.eq_zero_of_projective _)
+    (n₀ := 0) rfl
+  exact ⟨Ext.addEquiv₀ x, by rw [Ext.mk₀_addEquiv₀_apply]⟩
+
+/-- **Dimension shifting against a projective middle term**: if `S` is short exact with `S.X₂`
+projective, composition with the extension class is a bijection
+`Ext^{n+1}(S.X₁, Y) ⟶ Ext^{n+2}(S.X₃, Y)`. -/
+lemma bijective_precomp_extClass [Projective S.X₂] {Y : C} (n : ℕ) :
+    Function.Bijective (Ext.precomp hS.extClass Y (show 1 + (n + 1) = n + 2 by lia)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun e ↦ ?_⟩
+  · obtain ⟨y, rfl⟩ := Ext.contravariant_sequence_exact₁ hS Y x (n₁ := n + 2) (by lia) hx
+    rw [Ext.eq_zero_of_projective y, Ext.comp_zero]
+  · obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Y e (Ext.eq_zero_of_projective _)
+      (n₀ := n + 1) (by lia)
+    exact ⟨x, rfl⟩
+
 /-- **`Ext¹` against a projective middle term**: if `S` is short exact with `S.X₂` projective, then
 `Ext¹(S.X₃, Y) = 0` if and only if every morphism `S.X₁ ⟶ Y` extends along `S.f`. -/
 lemma forall_ext_one_eq_zero_iff [Projective S.X₂] {Y : C} :
