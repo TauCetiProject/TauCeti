@@ -51,7 +51,8 @@ full set of sections of a finite locally free subgroup scheme.
   isomorphisms of `B`.
 * `TauCeti.IsFullSetOfSections.of_localizationSpan`: being a full set of sections is Zariski-local
   on `Spec A`: it can be checked after localizing at a family of elements generating the unit
-  ideal.
+  ideal. `TauCeti.IsFullSetOfSections.of_localization_maximal` permits checking at all maximal
+  ideals instead.
 * `TauCeti.isFullSetOfSections_iff_charpoly`: for finite `B`, the characteristic-polynomial
   formulation (Katz–Mazur 1.8.2), tested on free base changes in the universe of `A`.
 
@@ -284,6 +285,26 @@ theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
     .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.Away r.1) (T' r) (T' r)
       B).symm.toLinearEquiv
   exact algebraMap_norm_eq_algebraMap_prod f (h r (T' r))
+
+/-- A family of sections of a finite algebra is full if it is full after localization at
+every maximal ideal of the base. -/
+theorem IsFullSetOfSections.of_localization_maximal [Module.Finite A B]
+    (h : ∀ (P : Ideal A) [P.IsMaximal],
+      IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.AtPrime P)) :
+    IsFullSetOfSections s := by
+  intro T _ _ _ f
+  let T' (P : Ideal A) [P.IsMaximal] :=
+    Localization (Algebra.algebraMapSubmonoid T P.primeCompl)
+  refine Module.eq_of_localization_maximal T'
+    (fun P ↦ (IsScalarTower.toAlgHom A T (T' P)).toLinearMap) _ _ fun P _ ↦ ?_
+  rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
+  have : Module.Free (T' P) (T' P ⊗[A] B) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A T (T' P) (T' P) B).toLinearEquiv
+  have : Module.Free (T' P)
+      (T' P ⊗[Localization.AtPrime P] (Localization.AtPrime P ⊗[A] B)) :=
+    .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.AtPrime P)
+      (T' P) (T' P) B).symm.toLinearEquiv
+  exact algebraMap_norm_eq_algebraMap_prod f (h P (T' P))
 
 /-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
 full set of sections of a finite algebra if and only if, after every base change `A → T`
