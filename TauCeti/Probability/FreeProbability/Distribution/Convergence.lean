@@ -38,7 +38,7 @@ open Filter Topology
 
 namespace TauCeti
 
-variable {R T ι κ : Type*} {A : T → Type*} {B C : Type*}
+variable {R S T ι κ : Type*} {A : T → Type*} {B C : Type*}
   [CommSemiring R] [TopologicalSpace R]
   [∀ t, Semiring (A t)] [∀ t, Algebra R (A t)]
   [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
@@ -56,10 +56,41 @@ theorem tendstoInMoments_iff : TendstoInMoments φ a l ψ b ↔
     ∀ w : List ι, Tendsto (fun t => φ t (w.map (a t)).prod) l (𝓝 (ψ (w.map b).prod)) :=
   Iff.rfl
 
+/-- Replacing the limiting family by one with the same distribution preserves convergence. -/
+theorem TendstoInMoments.congr_limit (h : TendstoInMoments φ a l ψ b)
+    (e : jointDistribution ψ b = jointDistribution χ c) : TendstoInMoments φ a l χ c := by
+  rw [tendstoInMoments_iff] at h ⊢
+  intro w
+  rw [← jointDistribution_eq_iff.1 e w]
+  exact h w
+
+/-- Restricting the approximation filter preserves moment convergence. -/
+theorem TendstoInMoments.mono_left (h : TendstoInMoments φ a l ψ b)
+    {l' : Filter T} (hl : l' ≤ l) : TendstoInMoments φ a l' ψ b := by
+  rw [tendstoInMoments_iff] at h ⊢
+  exact fun w => (h w).mono_left hl
+
+/-- Reindexing along a convergent map preserves moment convergence. -/
+theorem TendstoInMoments.comp_tendsto (h : TendstoInMoments φ a l ψ b)
+    {f : S → T} {l' : Filter S} (hf : Tendsto f l' l) :
+    TendstoInMoments (fun s => φ (f s)) (fun s => a (f s)) l' ψ b := by
+  rw [tendstoInMoments_iff] at h ⊢
+  exact fun w => (h w).comp hf
+
+/-- Eventual equality of each word moment preserves moment convergence, even between
+families in different algebras. The eventual set may depend on the word. -/
+theorem TendstoInMoments.congr' (h : TendstoInMoments φ a l ψ b)
+    {D : T → Type*} [∀ t, Semiring (D t)] [∀ t, Algebra R (D t)]
+    {φ' : (t : T) → D t →ₗ[R] R} {a' : (t : T) → ι → D t}
+    (e : ∀ w : List ι, ∀ᶠ t in l, φ t (w.map (a t)).prod = φ' t (w.map (a' t)).prod) :
+    TendstoInMoments φ' a' l ψ b := by
+  rw [tendstoInMoments_iff] at h ⊢
+  exact fun w => (h w).congr' (e w)
+
 /-- Moment convergence implies convergence of the expectation of every noncommutative
 polynomial, not just monomials. -/
-theorem TendstoInMoments.polynomial [IsTopologicalSemiring R] (h : TendstoInMoments φ a l ψ b)
-    (p : FreeAlgebra R ι) :
+theorem TendstoInMoments.tendsto_jointDistribution [IsTopologicalSemiring R]
+    (h : TendstoInMoments φ a l ψ b) (p : FreeAlgebra R ι) :
     Tendsto (fun t => jointDistribution (φ t) (a t) p) l (𝓝 (jointDistribution ψ b p)) := by
   classical
   rw [← (FreeAlgebra.basisFreeMonoid R ι).linearCombination_repr p,
@@ -71,11 +102,11 @@ theorem TendstoInMoments.polynomial [IsTopologicalSemiring R] (h : TendstoInMome
     simpa only [jointDistribution_basisFreeMonoid] using h w.toList)
 
 /-- Testing all polynomials is equivalent to testing all word moments. -/
-theorem tendstoInMoments_iff_forall_polynomial [IsTopologicalSemiring R] :
+theorem tendstoInMoments_iff_forall_tendsto_jointDistribution [IsTopologicalSemiring R] :
     TendstoInMoments φ a l ψ b ↔
     ∀ p : FreeAlgebra R ι,
       Tendsto (fun t => jointDistribution (φ t) (a t) p) l (𝓝 (jointDistribution ψ b p)) := by
-  refine ⟨fun h => h.polynomial, fun h w => ?_⟩
+  refine ⟨fun h => h.tendsto_jointDistribution, fun h w => ?_⟩
   simpa only [jointDistribution_list_prod] using h (w.map (FreeAlgebra.ι R)).prod
 
 /-- Fixed polynomial substitutions preserve convergence in moments. -/
@@ -83,10 +114,10 @@ theorem TendstoInMoments.subst [IsTopologicalSemiring R] (h : TendstoInMoments �
     (p : κ → FreeAlgebra R ι) :
     TendstoInMoments φ (fun t j => FreeAlgebra.lift R (a t) (p j)) l
       ψ (fun j => FreeAlgebra.lift R b (p j)) := by
-  apply tendstoInMoments_iff_forall_polynomial.2
+  apply tendstoInMoments_iff_forall_tendsto_jointDistribution.2
   intro q
   simpa only [jointDistribution_subst, jointDistribution_apply] using
-    h.polynomial (FreeAlgebra.lift R p q)
+    h.tendsto_jointDistribution (FreeAlgebra.lift R p q)
 
 /-- Relabeling and restriction to a subfamily preserve moment convergence. -/
 theorem TendstoInMoments.comp (h : TendstoInMoments φ a l ψ b) (r : κ → ι) :
@@ -128,21 +159,55 @@ theorem tendstoInStarMoments_iff : TendstoInStarMoments φ a l ψ b ↔
     TendstoInMoments φ (fun t => StarPolynomial.withStar (a t)) l ψ
       (StarPolynomial.withStar b) := Iff.rfl
 
+/-- Replacing the limiting family by one with the same star distribution preserves
+star-moment convergence. -/
+theorem TendstoInStarMoments.congr_limit [StarRing R] [StarModule R B] [StarModule R C]
+    (h : TendstoInStarMoments φ a l ψ b)
+    (e : starDistribution ψ b = starDistribution χ c) : TendstoInStarMoments φ a l χ c := by
+  rw [tendstoInStarMoments_iff] at h ⊢
+  exact h.congr_limit (starDistribution_eq_iff_jointDistribution_withStar_eq.1 e)
+
+/-- Restricting the approximation filter preserves star-moment convergence. -/
+theorem TendstoInStarMoments.mono_left (h : TendstoInStarMoments φ a l ψ b)
+    {l' : Filter T} (hl : l' ≤ l) : TendstoInStarMoments φ a l' ψ b := by
+  rw [tendstoInStarMoments_iff] at h ⊢
+  exact h.mono_left hl
+
+/-- Reindexing along a convergent map preserves star-moment convergence. -/
+theorem TendstoInStarMoments.comp_tendsto (h : TendstoInStarMoments φ a l ψ b)
+    {f : S → T} {l' : Filter S} (hf : Tendsto f l' l) :
+    TendstoInStarMoments (fun s => φ (f s)) (fun s => a (f s)) l' ψ b := by
+  rw [tendstoInStarMoments_iff] at h ⊢
+  exact h.comp_tendsto hf
+
+/-- Eventual equality of each word moment in variables and adjoints preserves star-moment
+convergence, even between different algebras. The eventual set may depend on the word. -/
+theorem TendstoInStarMoments.congr' (h : TendstoInStarMoments φ a l ψ b)
+    {D : T → Type*} [∀ t, Semiring (D t)] [∀ t, Algebra R (D t)] [∀ t, StarRing (D t)]
+    {φ' : (t : T) → D t →ₗ[R] R} {a' : (t : T) → ι → D t}
+    (e : ∀ w : List (ι × Bool), ∀ᶠ t in l,
+      φ t (w.map (StarPolynomial.withStar (a t))).prod =
+        φ' t (w.map (StarPolynomial.withStar (a' t))).prod) :
+    TendstoInStarMoments φ' a' l ψ b := by
+  rw [tendstoInStarMoments_iff] at h ⊢
+  exact h.congr' e
+
 /-- Star-moment convergence implies convergence of every star-polynomial expectation. -/
-theorem TendstoInStarMoments.polynomial [IsTopologicalSemiring R] [StarRing R]
+theorem TendstoInStarMoments.tendsto_starDistribution [IsTopologicalSemiring R] [StarRing R]
     [∀ t, StarModule R (A t)] [StarModule R B] (h : TendstoInStarMoments φ a l ψ b)
     (p : StarPolynomial R ι) :
     Tendsto (fun t => starDistribution (φ t) (a t) p) l (𝓝 (starDistribution ψ b p)) := by
   simpa only [starDistribution_apply, StarPolynomial.lift_apply, jointDistribution_apply] using
-    (tendstoInStarMoments_iff.1 h).polynomial (StarPolynomial.toFreeAlgebra R ι p)
+    (tendstoInStarMoments_iff.1 h).tendsto_jointDistribution (StarPolynomial.toFreeAlgebra R ι p)
 
 /-- Testing all star polynomials is equivalent to testing words in variables and adjoints. -/
-theorem tendstoInStarMoments_iff_forall_polynomial [IsTopologicalSemiring R] [StarRing R]
-    [∀ t, StarModule R (A t)] [StarModule R B] : TendstoInStarMoments φ a l ψ b ↔
+theorem tendstoInStarMoments_iff_forall_tendsto_starDistribution
+    [IsTopologicalSemiring R] [StarRing R] [∀ t, StarModule R (A t)] [StarModule R B] :
+    TendstoInStarMoments φ a l ψ b ↔
     ∀ p : StarPolynomial R ι,
       Tendsto (fun t => starDistribution (φ t) (a t) p) l (𝓝 (starDistribution ψ b p)) := by
-  refine ⟨fun h => h.polynomial, fun h => ?_⟩
-  apply tendstoInMoments_iff_forall_polynomial.2
+  refine ⟨fun h => h.tendsto_starDistribution, fun h => ?_⟩
+  apply tendstoInMoments_iff_forall_tendsto_jointDistribution.2
   intro q
   simpa only [starDistribution_apply, StarPolynomial.lift_apply,
     AlgEquiv.apply_symm_apply, jointDistribution_apply] using
@@ -154,10 +219,10 @@ theorem TendstoInStarMoments.subst [IsTopologicalSemiring R] [StarRing R]
     (p : κ → StarPolynomial R ι) :
     TendstoInStarMoments φ (fun t j => StarPolynomial.lift (a t) (p j)) l
       ψ (fun j => StarPolynomial.lift b (p j)) := by
-  apply tendstoInStarMoments_iff_forall_polynomial.2
+  apply tendstoInStarMoments_iff_forall_tendsto_starDistribution.2
   intro q
   simpa only [starDistribution_subst, starDistribution_apply] using
-    h.polynomial (StarPolynomial.lift p q)
+    h.tendsto_starDistribution (StarPolynomial.lift p q)
 
 /-- Relabeling and restriction to a subfamily preserve star-moment convergence. -/
 theorem TendstoInStarMoments.comp (h : TendstoInStarMoments φ a l ψ b) (r : κ → ι) :
@@ -180,7 +245,7 @@ theorem TendstoInStarMoments.tendstoInMoments (h : TendstoInStarMoments φ a l �
     (tendstoInStarMoments_iff.1 h).comp (fun i => (i, false))
 
 /-- For selfadjoint families, moment convergence and star-moment convergence coincide. -/
-theorem tendstoInStarMoments_iff_of_isSelfAdjoint
+theorem tendstoInStarMoments_iff_tendstoInMoments_of_isSelfAdjoint
     (ha : ∀ t i, IsSelfAdjoint (a t i)) (hb : ∀ i, IsSelfAdjoint (b i)) :
     TendstoInStarMoments φ a l ψ b ↔ TendstoInMoments φ a l ψ b := by
   refine ⟨fun h => h.tendstoInMoments, fun h => ?_⟩
