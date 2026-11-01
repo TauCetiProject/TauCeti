@@ -217,6 +217,12 @@ theorem adjoint_cornerEmbedding (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
     (e.cornerEmbedding T).adjoint = e.cornerEmbedding T.adjoint := by
   simp [cornerEmbedding_apply, adjoint_comp, ContinuousLinearMap.comp_assoc]
 
+/-- Extension by zero preserves the star operation on the operator algebra. -/
+@[simp]
+theorem cornerEmbedding_star (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    e.cornerEmbedding (star T) = star (e.cornerEmbedding T) := by
+  simp only [ContinuousLinearMap.star_eq_adjoint, adjoint_cornerEmbedding]
+
 /-- Extension by zero preserves composition. -/
 @[simp]
 theorem cornerEmbedding_comp (e : E →ₗᵢ[𝕜] F) (T S : E →L[𝕜] E) :
@@ -226,6 +232,12 @@ theorem cornerEmbedding_comp (e : E →ₗᵢ[𝕜] F) (T S : E →L[𝕜] E) :
     DFunLike.congr_fun e.adjoint_comp_self y
   simp [cornerEmbedding_apply_apply, he]
 
+/-- Extension by zero preserves multiplication in the operator algebra. -/
+@[simp]
+theorem cornerEmbedding_mul (e : E →ₗᵢ[𝕜] F) (T S : E →L[𝕜] E) :
+    e.cornerEmbedding (T * S) = e.cornerEmbedding T * e.cornerEmbedding S := by
+  simp only [ContinuousLinearMap.mul_def, cornerEmbedding_comp]
+
 /-- The identity extends to the orthogonal projection onto the included space, not in general
  to the ambient identity. -/
 @[simp]
@@ -233,6 +245,12 @@ theorem cornerEmbedding_id (e : E →ₗᵢ[𝕜] F) :
     e.cornerEmbedding (ContinuousLinearMap.id 𝕜 E) =
       e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint := by
   simp [cornerEmbedding_apply]
+
+/-- The unit extends to the orthogonal projection onto the included space. -/
+@[simp]
+theorem cornerEmbedding_one (e : E →ₗᵢ[𝕜] F) :
+    e.cornerEmbedding 1 = e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint := by
+  simp only [ContinuousLinearMap.one_def, cornerEmbedding_id]
 
 /-- Compressing and extending an ambient operator gives its two-sided corner compression. -/
 theorem cornerEmbedding_adjoint_comp (e : E →ₗᵢ[𝕜] F) (T : F →L[𝕜] F) :
