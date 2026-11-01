@@ -166,7 +166,7 @@ theorem heights_eq_prefix {k : ℕ} (hk : k ≤ d.prefix.expand.length) :
 
 /-- Beyond the join, each further step adds the ray slope to the endpoint height
 of the finite prefix. The offset `k` is relative to the join, not the anchor. -/
-theorem heights_ray (k : ℕ) :
+theorem heights_start_add_length_add (k : ℕ) :
     d.heights (d.prefix.start + d.prefix.expand.length + k) =
       d.prefix.heights (d.prefix.start + d.prefix.expand.length) +
         ((k • d.raySlope : Γ) : WithTop Γ) := by
