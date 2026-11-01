@@ -17,8 +17,8 @@ with row norms `rᵢ(u)`, the row Hodge polygon of the row norms, with slopes
 `-logb b (r* k)` for the decreasing rearrangement `r*` of the row norms, lies below the Newton
 polygon of the Fredholm series `det (1 - T u)`
 (`ContinuousLinearMap.IsRowCompact.rowHodgePolygon_rowNorm_le_newtonPolygon_charPowerSeries`).
-Its finite domain is `[0, m]` for the number `m` of nonzero rows, possibly infinite, so only the
-first `m` coefficients of the Fredholm series can be nonzero.
+Its finite domain is `[0, m]` for the number `m` of nonzero rows, possibly infinite, so every
+coefficient of the Fredholm series of degree greater than `m` vanishes.
 
 Over a nontrivially normed field every entry of the matrix of `u` is bounded by the operator
 norm. Hence the line of slope `-logb b ‖u‖` through the origin lies below the Newton polygon of

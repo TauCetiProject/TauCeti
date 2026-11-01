@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.Sequence.Face
 public import TauCeti.Analysis.Matrix.CharPowerSeries.Rearrangement
-public import TauCeti.NumberTheory.NewtonPolygon.Basic
+public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 /-!
@@ -189,17 +189,14 @@ theorem rowHodgePolygon_le_addValuation_charCoeff (hb : 1 < b)
     rowHodgePolygon b r n ≤ v (A.charCoeff n) := by
   have hcoeff := norm_charCoeff_le_prod_decreasingRearrangement hr hA n
   by_cases h : ∀ k < n, 0 < decreasingRearrangement r k
-  · rw [rowHodgePolygon_of_forall_lt h]
-    by_cases h0 : A.charCoeff n = 0
-    · simp [h0]
-    have hb0 : 0 < b := zero_lt_one.trans hb
-    have hne : v (A.charCoeff n) ≠ ⊤ := (v.ne_top_iff).mpr h0
-    rw [← WithTop.coe_untop₀_of_ne_top hne, WithTop.coe_le_coe]
-    have hlog := Real.logb_le_logb_of_le hb (norm_pos_iff.mpr h0) hcoeff
-    rw [hv _ h0, Real.logb_rpow hb0 hb.ne', Real.logb_prod _ _
-      fun k hk ↦ (h k (mem_range.mp hk)).ne'] at hlog
-    rw [sum_neg_distrib]
-    linarith
+  · have key := (PowerSeries.norm_coeff_mul_rpow_pow_le_iff A.charPowerSeries v hb hv n 0
+      (∑ k ∈ range n, -Real.logb b (decreasingRearrangement r k))).mp <| by
+      rw [Real.rpow_zero, one_pow, mul_one, coeff_charPowerSeries, sum_neg_distrib, neg_neg,
+        ← Real.logb_prod _ _ fun k hk ↦ (h k (mem_range.mp hk)).ne',
+        Real.rpow_logb (zero_lt_one.trans hb) hb.ne' (prod_pos fun k hk ↦ h k (mem_range.mp hk))]
+      exact hcoeff
+    rwa [rowHodgePolygon_of_forall_lt h, ← coeff_charPowerSeries, ← add_zero (∑ k ∈ range n, _),
+      ← zero_mul (n : ℝ)]
   · obtain ⟨k, hk, hk0⟩ : ∃ k < n, decreasingRearrangement r k = 0 := by
       push Not at h
       obtain ⟨k, hk, hk0⟩ := h
