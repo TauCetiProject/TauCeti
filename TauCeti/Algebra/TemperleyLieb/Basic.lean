@@ -239,6 +239,19 @@ def strandIncl : TemperleyLieb R δ (n + 1) →ₐ[R] TemperleyLieb R δ (n + 2)
 theorem strandIncl_e (i : Fin n) : strandIncl (e δ i) = e δ i.castSucc := by
   rw [strandIncl, lift_e]
 
+/-- The last generator commutes with every element coming from two stages earlier in the strand
+tower: such an element lives on the first `n + 1` strands, disjoint from the strands `n + 1` and
+`n + 2` that the last generator caps. -/
+theorem commute_e_last_strandIncl_strandIncl (x : TemperleyLieb R δ (n + 1)) :
+    Commute (e δ (Fin.last (n + 1))) (strandIncl (strandIncl x)) := by
+  have hx : strandIncl (strandIncl x) ∈ (strandIncl.comp (strandIncl (R := R) (δ := δ))).range :=
+    ⟨x, rfl⟩
+  rw [← Algebra.map_top, ← adjoin_range_e, AlgHom.map_adjoin, ← Set.range_comp] at hx
+  apply Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx
+  rintro _ ⟨i, rfl⟩
+  simp only [Function.comp_apply, AlgHom.comp_apply, strandIncl_e]
+  exact commute_e (Or.inr (by have := i.isLt; simp; omega))
+
 section Augmentation
 
 /-- The augmentation of the Temperley-Lieb algebra, killing every generator. It is a retraction of
@@ -250,6 +263,13 @@ def aug : TemperleyLieb R δ n →ₐ[R] R :=
 @[simp]
 theorem aug_e (i : Fin (n - 1)) : aug (e δ i) = (0 : R) :=
   lift_e _ _ _ _ i
+
+/-- Adding a straight strand does not change the augmentation. -/
+@[simp]
+theorem aug_strandIncl (x : TemperleyLieb R δ (n + 1)) : aug (strandIncl x) = aug x := by
+  have : (aug : TemperleyLieb R δ (n + 2) →ₐ[R] R).comp strandIncl = aug :=
+    hom_ext fun i ↦ by simp
+  exact AlgHom.congr_fun this x
 
 /-- The base ring embeds into the Temperley-Lieb algebra. -/
 theorem algebraMap_injective : Function.Injective (algebraMap R (TemperleyLieb R δ n)) := by
