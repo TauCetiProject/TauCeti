@@ -97,8 +97,8 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff
   -- `ζ` generates the group of `m`-th roots of unity, which has `m` elements.
   have hgen : Subgroup.zpowers ζ = ⊤ := Subgroup.eq_top_of_card_eq _ <| by
     rw [Nat.card_zpowers, ← hζ.eq_orderOf, Complex.card_rootsOfUnity]
-  have h := isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_eq_bot R hone hmul P ρ hP b
-    hb hbone hbmul (smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ) (hgen ▸ le_top)
+  have h := isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne
+    R hone hmul P ρ hP b hb hbone hbmul (smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ) (hgen ▸ le_top)
     (isOfFinOrder_of_finite ζ) fun u hu ↦
       stabilizer_rootsOfUnityBall_of_coe_ne_zero fun h ↦ hu (Subtype.ext (h.trans hu₀.symm))
   rwa [← hζ.eq_orderOf] at h

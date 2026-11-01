@@ -43,7 +43,7 @@ partial norm `N_{A,k}(t)` of the translation part of `γ y` does not lie in the 
 (`TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers`). For composite
 `m` every such `k` must be checked. If the base action is free away from a single point `y₀`, as
 for a rotation of a disc about its centre, only the fibre over `y₀` needs to be tested
-(`TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_eq_bot`).
+(`TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne`).
 
 ## Main definitions
 
@@ -65,8 +65,9 @@ for a rotation of a disc about its centre, only the fibre over `y₀` needs to b
   free exactly when no nonidentity element of a base stabilizer has a fixed point on the fibre.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers`: the same
   criterion for cyclic stabilizers of finite order, checked on every nonidentity power.
-* `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_eq_bot`: for a base action
-  free away from one point with cyclic stabilizer, the criterion on the fibre over that point.
+* `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne`:
+  for a base action free away from one point with cyclic stabilizer, the criterion on the fibre
+  over that point.
 
 ## References
 
@@ -348,7 +349,8 @@ the affine action on the total space of the family of tori is free exactly when,
 `0 < k < orderOf γ`, the `k`-th partial norm `N_{A,k}(t)` of the translation part `t` of `γ` on
 the fibre over `y₀` does not lie in the image of `1 - A^k`, where `A` is the linear part. Only
 the fibre over `y₀` is tested, but every nonidentity power of `γ` is. -/
-theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_eq_bot {y₀ : Y} {γ : Γ}
+theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_eq_bot_of_ne
+    {y₀ : Y} {γ : Γ}
     (hγ : γ • y₀ = y₀) (hstab : MulAction.stabilizer Γ y₀ ≤ Subgroup.zpowers γ)
     (hfin : IsOfFinOrder γ) (hfree : ∀ y ≠ y₀, MulAction.stabilizer Γ y = ⊥) :
     letI := periodAddAction P
