@@ -144,7 +144,8 @@ theorem exists_minHeight_eq_intCast (π : LSPath P b lam)
 
 /-- The raising and lowering heights of an LS path are natural numbers. Their difference is
 the final simple-coroot height, so they are the normal-crystal string parameters. -/
-theorem exists_stringLengths (π : LSPath P b lam)
+theorem exists_neg_minHeight_eq_natCast_and_apply_endpoint_sub_minHeight_eq_natCast
+    (π : LSPath P b lam)
     (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
     (i : b.support) (F : Module.Dual 𝕜 V)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) :
