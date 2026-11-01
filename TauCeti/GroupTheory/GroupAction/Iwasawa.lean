@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Iwasawa
 public import TauCeti.GroupTheory.DerivedCentralQuotient
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+import TauCeti.GroupTheory.QuotientGroup.Simple
 
 /-!
 # Iwasawa's criterion for central quotients
@@ -82,18 +84,6 @@ section OfConj
 variable [IsPretransitive G α] (a : α) (T : Subgroup G) [IsMulCommutative T]
   (hT : stabilizer G a ≤ normalizer (T : Set G)) (hgen : normalClosure (T : Set G) = ⊤)
 
-omit [IsPretransitive G α] [IsMulCommutative T] in
-include hT in
-/-- Two elements moving the base point to the same point conjugate `T` to the same subgroup. -/
-private theorem conj_smul_eq_conj_smul {g h : G} (hgh : g • a = h • a) :
-    MulAut.conj g • T = MulAut.conj h • T := by
-  have hmem : g⁻¹ * h ∈ normalizer (T : Set G) :=
-    hT (by rw [mem_stabilizer_iff, mul_smul, ← hgh, inv_smul_smul])
-  have hfix : MulAut.conj (g⁻¹ * h) • T = T := by
-    rw [pointwise_smul_def]
-    exact mem_normalizer_iff_map_conj_eq.mp hmem
-  conv_rhs => rw [← mul_inv_cancel_left g h, map_mul, mul_smul, hfix]
-
 /-- **The Iwasawa structure of the conjugates of one subgroup.** Let `G` act transitively on `α`,
 and let `T` be a commutative subgroup normalized by the stabilizer of a point `a`, whose conjugates
 generate `G`. The subgroup at the point `g • a` is the conjugate `g T g⁻¹`, which depends only on
@@ -105,7 +95,7 @@ noncomputable def ofConj : IwasawaStructure G α where
     exact map_isMulCommutative _ _
   is_conj g x := by
     rw [← mul_smul, ← map_mul]
-    refine conj_smul_eq_conj_smul a T hT ?_
+    refine TauCeti.conj_smul_eq_conj_smul_of_smul_eq hT ?_
     rw [(exists_smul_eq G a (g • x)).choose_spec, mul_smul, (exists_smul_eq G a x).choose_spec]
   is_generator := by
     rw [eq_top_iff, ← hgen, normalClosure, closure_le]
@@ -113,13 +103,13 @@ noncomputable def ofConj : IwasawaStructure G α where
     obtain ⟨t, ht, hty⟩ := Group.mem_conjugatesOfSet_iff.mp hy
     obtain ⟨c, rfl⟩ := isConj_iff.mp hty
     refine le_iSup (fun x ↦ MulAut.conj (exists_smul_eq G a x).choose • T) (c • a) ?_
-    rw [conj_smul_eq_conj_smul a T hT (exists_smul_eq G a (c • a)).choose_spec]
+    rw [TauCeti.conj_smul_eq_conj_smul_of_smul_eq hT (exists_smul_eq G a (c • a)).choose_spec]
     exact smul_mem_pointwise_smul t (MulAut.conj c) T ht
 
 /-- The subgroup of `MulAction.IwasawaStructure.ofConj` at the point `g • a` is `g T g⁻¹`. -/
 @[simp]
 theorem ofConj_T_smul (g : G) : (ofConj a T hT hgen).T (g • a) = MulAut.conj g • T :=
-  conj_smul_eq_conj_smul a T hT ((exists_smul_eq G a (g • a)).choose_spec)
+  TauCeti.conj_smul_eq_conj_smul_of_smul_eq hT (exists_smul_eq G a (g • a)).choose_spec
 
 /-- The subgroup of `MulAction.IwasawaStructure.ofConj` at the base point is `T`. -/
 @[simp]
@@ -147,20 +137,11 @@ theorem fixedPoints_eq_univ_or_eq_top [Group.IsPerfect G] (N : Subgroup G) [N.No
 quasiprimitive action. If a proper normal subgroup `N` contains every element acting trivially,
 then `G ⧸ N` is simple. -/
 theorem isSimpleGroup_quotient [Group.IsPerfect G] {N : Subgroup G} [N.Normal] (hN : N ≠ ⊤)
-    (hker : ∀ g : G, (∀ x : α, g • x = x) → g ∈ N) : IsSimpleGroup (G ⧸ N) := by
-  have : Nontrivial (G ⧸ N) := QuotientGroup.nontrivial_iff.mpr hN
-  have hπ := QuotientGroup.mk'_surjective N
-  refine ⟨fun L hL ↦ ?_⟩
-  -- A normal subgroup of the quotient is the image of its preimage, which is normal in `G`.
-  have := hL.comap (QuotientGroup.mk' N)
-  rw [← map_comap_eq_self_of_surjective hπ L]
-  rcases IwaS.fixedPoints_eq_univ_or_eq_top (L.comap (QuotientGroup.mk' N)) with h | h
-  · -- A preimage acting trivially lies in `N`, so its image is trivial.
-    refine Or.inl (eq_bot_iff.mpr ((map_mono fun g hg ↦ hker g fun x ↦ ?_).trans
-      (QuotientGroup.map_mk'_self N).le))
-    exact (Set.eq_univ_iff_forall.mp h x) ⟨g, hg⟩
-  · rw [h, map_top_of_surjective _ hπ]
-    exact Or.inr rfl
+    (hker : ∀ g : G, (∀ x : α, g • x = x) → g ∈ N) : IsSimpleGroup (G ⧸ N) :=
+  QuotientGroup.isSimpleGroup_of_forall_normal hN fun K _ ↦
+    -- A normal subgroup acting trivially lies in `N`.
+    (IwaS.fixedPoints_eq_univ_or_eq_top K).imp_left fun (h : fixedPoints K α = _) g hg ↦
+      hker g fun x ↦ (Set.eq_univ_iff_forall.mp h x) ⟨g, hg⟩
 
 /-- **Iwasawa's criterion for the central quotient.** Let a nontrivial perfect group `G` have an
 Iwasawa structure on a quasiprimitive action. If every element acting trivially is central, then
