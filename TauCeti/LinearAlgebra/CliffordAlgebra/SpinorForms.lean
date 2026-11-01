@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Contraction
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.CliffordAction
 -- Private: Chevalley grading and ordered-monomial identities are used only in proofs.
@@ -122,10 +121,7 @@ theorem cliffordFormsEquivEnd_action
         rw [baseChangeExteriorAction_ι_tmul, cliffordFormsEquivEnd_tmul,
           exteriorAction_apply, LinearEquiv.symm_apply_apply, map_mul, map_mul,
           cliffordFormsEquivEnd_tmul]
-        have hι : ι (Q.baseChange A) (z ⊗ₜ v) =
-            z • ofBaseChangeAux A Q (ι Q v) := by
-          rw [ofBaseChangeAux_ι, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        rw [hι, map_smul, smul_mul_smul_comm, mul_smul]
+        rw [ι_baseChange_tmul_eq_smul_ofBaseChangeAux, map_smul, smul_mul_smul_comm, mul_smul]
   | add a b ha hb => simp [ha, hb, add_mul]
   | mul a b ha hb => simp [ha, hb, mul_assoc]
 
@@ -253,24 +249,3 @@ theorem cliffordFormsEquivTensor_involute [FiniteDimensional ℂ S]
   exact ρ.cliffordFormsEquivEnd_involute o hQ hn x
 
 end AlgEquiv
-
-namespace AlgHom
-
-variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [FiniteDimensional ℝ V] [AddCommGroup S] [Module ℂ S]
-  {n : ℕ} [Fact (Module.finrank ℝ V = n)] {Q : QuadraticForm ℝ V}
-
-/-- The reverse-dual action on normalized complex volume is `(-1) ^ (n / 2)` times
-its transpose. In even dimension `n = 2ℓ`, reverse-dual chirality is `(-1)^ℓ` times
-transposed chirality; the induced dual parity has no such sign. No finite dimension
-of the module or Hermitian metric is required. -/
-@[simp]
-theorem cliffordReverseDual_complexVolume
-    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) :
-    ρ.cliffordReverseDual (CliffordAlgebra.complexVolume Q o) =
-      (-1 : ℂ) ^ (n / 2) • (ρ (CliffordAlgebra.complexVolume Q o)).dualMap := by
-  ext φ s
-  simp [cliffordReverseDual_apply_apply]
-
-end AlgHom

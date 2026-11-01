@@ -23,7 +23,7 @@ The construction needs neither finite dimension nor a nondegenerate quadratic fo
 contravariantly natural in intertwiners, and the canonical map to the double dual intertwines
 the original action with its double reverse dual. For reflexive modules this is an equivalence.
 On an orthogonal volume product of length `n`, the dual action is the transpose multiplied by
-`(-1) ^ n.choose 2`.
+`(-1) ^ n.choose 2`; this fixes the sign needed when comparing dual chiralities.
 
 The construction uses Mathlib's `LinearMap.dualMap` and `CliffordAlgebra.reverse`.
 
