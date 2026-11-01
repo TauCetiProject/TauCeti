@@ -92,10 +92,12 @@ theorem ker_spinToSpecialOrthogonal_eq_top_of_finrank_eq_one (hV : Module.finran
   exact MonoidHom.ker_eq_top_iff.mpr (MonoidHom.ext fun _ ↦ Subsingleton.elim _ _)
 
 /-- In dimension one the Spin group of a nondegenerate form is `{1, -1}`. -/
-theorem spinGroup.eq_one_or_eq_negOne_of_finrank_eq_one [Nontrivial V] (hQ : Q.Nondegenerate)
+theorem spinGroup.eq_one_or_eq_negOne_of_finrank_eq_one (hQ : Q.Nondegenerate)
     (hV : Module.finrank K V = 1) (x : spinGroup Q) :
-    x = 1 ∨ x = spinGroup.negOne Q hQ.ne_zero := by
+    x = 1 ∨ x = spinGroup.negOne Q
+      (have := Module.nontrivial_of_finrank_eq_succ hV; hQ.ne_zero) := by
   have : Module.Finite K V := Module.finite_of_finrank_eq_succ hV
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := K) (by rw [hV]; exact one_pos)
   refine (mem_ker_spinToSpecialOrthogonal_iff Q hQ x).mp ?_
   rw [ker_spinToSpecialOrthogonal_eq_top_of_finrank_eq_one Q hV]
   exact Subgroup.mem_top x
@@ -129,11 +131,11 @@ noncomputable def zmodTwoMulEquivSpinGroupOfFinrankEqOne (hQ : Q.Nondegenerate)
 
 /-- The rank-one cyclic equivalence sends the generator of `Multiplicative (ZMod 2)` to `-1`. -/
 @[simp]
-theorem zmodTwoMulEquivSpinGroupOfFinrankEqOne_apply_ofAdd_one [Nontrivial V]
-    (hQ : Q.Nondegenerate)
+theorem zmodTwoMulEquivSpinGroupOfFinrankEqOne_apply_ofAdd_one (hQ : Q.Nondegenerate)
     (hV : Module.finrank K V = 1) :
     zmodTwoMulEquivSpinGroupOfFinrankEqOne Q hQ hV (Multiplicative.ofAdd 1) =
-      spinGroup.negOne Q hQ.ne_zero := by
+      spinGroup.negOne Q (have := Module.nontrivial_of_finrank_eq_succ hV; hQ.ne_zero) := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := K) (by rw [hV]; exact one_pos)
   simp [zmodTwoMulEquivSpinGroupOfFinrankEqOne]
 
 end Kernel

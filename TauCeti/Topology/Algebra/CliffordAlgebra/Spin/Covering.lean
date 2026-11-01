@@ -162,14 +162,15 @@ instance finite_realCliffordSpinGroupZero_one : Finite (realCliffordSpinGroupZer
     (nondegenerate_realCliffordForm 1 0) (Module.finrank_fin_fun ℝ)).toEquiv
 
 /-- In dimension zero, the projection of the even unitary group `μ₂ = {1, -1}` onto the trivial
-special orthogonal group is a covering map, for the subgroup topology on Clifford units. For
-`realCliffordForm 0 0` this is the rank-zero geometric replacement for
+special orthogonal group is a covering map, for the subgroup topology on Clifford units and any
+topology on the one-point special orthogonal group, such as the coordinate topology on
+`ι → K`. For `realCliffordForm 0 0` this is the rank-zero geometric replacement for
 `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom`, since Mathlib's Spin
 group is trivial in dimension zero. -/
 theorem isCoveringMap_evenUnitaryDoubleCoverOfSubsingleton_rightHom
     {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K] [T2Space K]
-    {ι : Type*} [Fintype ι] [Subsingleton (ι → K)] (Q : QuadraticForm K (ι → K))
-    (h2 : (2 : K) ≠ 0) :
+    {V : Type*} [AddCommGroup V] [Module K V] [Subsingleton V] (Q : QuadraticForm K V)
+    [TopologicalSpace (TauCeti.QuadraticMap.specialOrthogonalGroup Q)] (h2 : (2 : K) ≠ 0) :
     IsCoveringMap (evenUnitaryDoubleCoverOfSubsingleton Q h2).rightHom :=
   .of_discreteTopology _
 
