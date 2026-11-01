@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Manifold.SmoothIsotopy.DiscTheorem
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homogeneity
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Orientation
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Extend
+public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.RadialContraction
 
 /-!
 # The disc theorem for oriented embeddings
@@ -40,6 +43,11 @@ finishes. This is what makes a connected sum independent of its balls.
   compactly supported diffeotopy.
 * `TauCeti.SmoothEmbedding.exists_diffeomorph_comp_eventuallyEq`: on a connected manifold, two
   orientation-preserving embeddings agree near the origin after a diffeomorphism.
+* `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset`:
+  the relative form, for two embeddings with images in a preconnected σ-compact open set `U`; the
+  diffeotopy fixes every point outside a compact subset of `U`.
+* `TauCeti.SmoothEmbedding.isOrientationPreservingAt_compRadialContraction`: shrinking an
+  embedding by a radial contraction keeps it orientation-preserving at the origin.
 
 ## References
 
@@ -49,7 +57,7 @@ finishes. This is what makes a connected sum independent of its balls.
 
 public noncomputable section
 
-open Set Metric Topology
+open Set Metric Topology TopologicalSpace
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothEmbedding
@@ -135,5 +143,71 @@ theorem exists_diffeomorph_comp_eventuallyEq [T2Space M] [SigmaCompactSpace M]
   obtain ⟨Φ, -, -, -, hΦ⟩ := f.exists_diffeotopy_eqOn_of_isOrientationPreservingAt g o oM hf hg
     (isCompact_closedBall (0 : E) 1)
   exact ⟨Φ.final, hΦ.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos)⟩
+
+/-- **The relative ambient disc theorem.** Let `f` and `g` be smooth embeddings of `E` into a
+Hausdorff boundaryless manifold `M` modelled on `E`, preserving the orientations `o` of `E` and
+`oM` of `M` at the origin, with images in a preconnected σ-compact open set `U`. On every compact
+subset `A` of `E`, `g` is `f` followed by the final diffeomorphism of a smooth diffeotopy of `M`
+fixing every point outside a compact subset of `U`. Points outside `U`, for instance protected
+discs and collars, are not moved. -/
+theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset [T2Space M]
+    {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U) (hUσ : IsSigmaCompact U)
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hfU : range f ⊆ U) (hgU : range g ⊆ U)
+    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0)
+    {A : Set E} (hA : IsCompact A) :
+    ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ K ⊆ U ∧
+      (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧ EqOn (Φ.final ∘ f) g A := by
+  -- Run the ambient disc theorem in the open submanifold `U`, then extend by the identity.
+  let V : Opens M := ⟨U, hU⟩
+  have : SigmaCompactSpace V := isSigmaCompact_iff_sigmaCompactSpace.mp hUσ
+  have : PreconnectedSpace V := Subtype.preconnectedSpace hUc
+  let f' := f.codRestrict V fun x ↦ hfU (mem_range_self x)
+  let g' := g.codRestrict V fun x ↦ hgU (mem_range_self x)
+  have hrestrict {h' : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E V}
+      (hh' : o.IsOrientationPreservingAt oM (Subtype.val ∘ h') 0) :
+      o.IsOrientationPreservingAt (oM.restrict V) h' 0 :=
+    (Manifold.Orientation.isOrientationPreservingAt_restrict oM V (h' 0)).of_comp hh'
+      (h'.contMDiff.mdifferentiableAt (by simp))
+  obtain ⟨Λ, K, hK, hΛK, hΛ⟩ := f'.exists_diffeotopy_eqOn_of_isOrientationPreservingAt g' o
+    (oM.restrict V) (hrestrict (by simpa [f'] using hf)) (hrestrict (by simpa [g'] using hg)) hA
+  obtain ⟨Φ, hΦ, hΦK⟩ := Λ.exists_extend_of_isCompact isLocalDiffeomorph_subtype_val
+    V.isOpen.isOpenEmbedding_subtypeVal hK fun t z hz ↦ hΛK t z hz
+  refine ⟨Φ, Subtype.val '' K, hK.image continuous_subtype_val,
+    image_subset_iff.mpr fun z _ ↦ z.2, hΦK, fun x hx ↦ ?_⟩
+  calc Φ.final (f x) = Φ.final (f' x : M) := by rw [val_codRestrict_apply]
+    _ = Λ.final (f' x) := by rw [Diffeotopy.final_apply, Diffeotopy.final_apply, hΦ]
+    _ = g x := by rw [← Function.comp_apply (f := Λ.final), hΛ hx, val_codRestrict_apply]
+
+/-- A radial contraction preserves every orientation of `E` at its centre. -/
+theorem _root_.TauCeti.isOrientationPreservingAt_radialContraction_self
+    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (c : E) (κ : ℝ) :
+    o.IsOrientationPreservingAt o (radialContraction c κ) c := by
+  -- Its derivative at the centre is the identity.
+  have hd : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (radialContraction c κ) c = ContinuousLinearMap.id ℝ E := by
+    rw [mfderiv_eq_fderiv, (hasFDerivAt_radialContraction_self c κ).fderiv]
+    ext v
+    rfl
+  refine (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mpr
+    ⟨ContinuousLinearEquiv.refl ℝ E, hd.symm, ?_⟩
+  -- The tangent spaces at `c` and at its image `radialContraction c κ c = c` are both `E`;
+  -- generalize the image point to substitute it.
+  have key : ∀ y : E, y = c → _root_.Orientation.map ι
+      (ContinuousLinearEquiv.refl ℝ (TangentSpace 𝓘(ℝ, E) c)).toLinearEquiv
+        (o.orientationAt c) = o.orientationAt y := by
+    rintro y rfl
+    exact Equiv.ext_iff.mp (_root_.Orientation.map_refl ι) _
+  exact key _ (radialContraction_self c κ)
+
+/-- Precomposing an embedding of `E` with a radial contraction about the origin keeps it
+orientation-preserving at the origin. -/
+theorem isOrientationPreservingAt_compRadialContraction
+    (f : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) {κ : ℝ} (hκ : 0 ≤ κ)
+    {o : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation 𝓘(ℝ, E) M ι}
+    (hf : o.IsOrientationPreservingAt oM f 0) :
+    o.IsOrientationPreservingAt oM (f.compRadialContraction le_rfl hκ) 0 := by
+  rw [coe_compRadialContraction]
+  rw [← radialContraction_self (0 : E) κ] at hf
+  exact hf.comp (isOrientationPreservingAt_radialContraction_self o 0 κ)
 
 end TauCeti.SmoothEmbedding

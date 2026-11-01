@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -32,6 +34,14 @@ space.
   diffeomorphism along a set containing the image, and a topological embedding on that set.
 * `TauCeti.SmoothEmbedding.transChart`: read a smooth embedding in a chart of the maximal atlas
   whose source contains its image.
+* `TauCeti.SmoothEmbedding.codRestrict`: a smooth embedding whose image lies in an open subset,
+  as a smooth embedding into that open submanifold.
+
+## Main results
+
+* `TauCeti.SmoothEmbedding.isLocalDiffeomorph`: a smooth embedding between boundaryless
+  manifolds modelled on the same finite-dimensional space is a local diffeomorphism, so its image
+  is open (`TauCeti.SmoothEmbedding.isOpen_range`).
 -/
 
 public section
@@ -40,7 +50,7 @@ noncomputable section
 
 namespace TauCeti.SmoothEmbedding
 
-open Manifold Set Topology
+open Manifold Set Topology TopologicalSpace
 open scoped ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -113,5 +123,72 @@ theorem transChart_apply [IsManifold J n G] (f : SmoothEmbedding I J n M N)
     {φ : OpenPartialHomeomorph N G} (hφ : φ ∈ IsManifold.maximalAtlas J n N)
     (hf : range f ⊆ φ.source) (x : M) : f.transChart hφ hf x = φ (f x) := by
   rw [coe_transChart, Function.comp_apply]
+
+/-- A smooth embedding with image in an open subset `U` stays a smooth embedding into the open
+submanifold `U`. -/
+theorem _root_.Manifold.IsSmoothEmbedding.codRestrict [IsManifold J n N] {f : M → N}
+    (hf : Manifold.IsSmoothEmbedding I J n f) (U : Opens N) (h : ∀ x, f x ∈ U) :
+    Manifold.IsSmoothEmbedding I J n fun x ↦ (⟨f x, h x⟩ : U) := by
+  refine ⟨?_, hf.isEmbedding.codRestrict U h⟩
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact IsImmersionOfComplement.isImmersion (F := E') fun x ↦ isEmptyElim x
+  have : Nonempty U := ⟨⟨f hM.some, h _⟩⟩
+  -- Read `f` through the inverse of the inclusion `U → N`, a partial diffeomorphism with
+  -- target `U`.
+  let Φ := ((isLocalDiffeomorph_subtype_val (I := J) (n := n) (U := U)).isLocalDiffeomorphOn
+    univ).partialDiffeomorphOfInjOn isOpen_univ Subtype.val_injective.injOn
+  have hk (x : M) : IsLocalDiffeomorphAt J J n Φ.symm (f x) :=
+    Φ.symm.isLocalDiffeomorphAt J J n (by simpa [Φ] using h x)
+  have hcomp : Φ.symm ∘ f = fun x ↦ (⟨f x, h x⟩ : U) := by
+    funext x
+    have hx : ∃ y ∈ (univ : Set U), (y : N) = f x := ⟨⟨f x, h x⟩, mem_univ _, rfl⟩
+    exact Subtype.ext (by simpa [Φ] using Function.invFunOn_eq hx)
+  exact hcomp ▸ isImmersion_isLocalDiffeomorphAt_comp hk hf.isImmersion
+
+/-- A smooth embedding whose image lies in the open subset `U`, as a smooth embedding into the
+open submanifold `U`. -/
+def codRestrict [IsManifold J n N] (f : SmoothEmbedding I J n M N) (U : Opens N)
+    (h : ∀ x, f x ∈ U) : SmoothEmbedding I J n M U :=
+  ofIsSmoothEmbedding (fun x ↦ ⟨f x, h x⟩) (f.isSmoothEmbedding.codRestrict U h)
+
+@[simp]
+theorem val_codRestrict_apply [IsManifold J n N] (f : SmoothEmbedding I J n M N) (U : Opens N)
+    (h : ∀ x, f x ∈ U) (x : M) : (f.codRestrict U h x : N) = f x := by
+  rw [codRestrict, ofIsSmoothEmbedding_apply]
+
+@[simp]
+theorem subtype_val_comp_codRestrict [IsManifold J n N] (f : SmoothEmbedding I J n M N)
+    (U : Opens N) (h : ∀ x, f x ∈ U) : Subtype.val ∘ f.codRestrict U h = f :=
+  funext (f.val_codRestrict_apply U h)
+
+section InverseFunctionTheorem
+
+variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+  [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
+  {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
+  [IsManifold K n X] [IsManifold K n Y] [BoundarylessManifold K X]
+
+/-- A smooth embedding between boundaryless manifolds modelled on the same finite-dimensional
+space is a local diffeomorphism. -/
+theorem isLocalDiffeomorph (f : SmoothEmbedding K K n X Y) (hn : 1 ≤ n) :
+    IsLocalDiffeomorph K K n f := by
+  have := FiniteDimensional.complete 𝕂 F
+  refine isLocalDiffeomorph_of_mfderiv_eq f.contMDiff hn fun y ↦ ?_
+  let L := (mfderiv K K f y : TangentSpace K y →ₗ[𝕂] TangentSpace K (f y))
+  have hinj : Function.Injective L :=
+    (f.isImmersion.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
+  -- Both tangent spaces are the model space `F`, so an injective linear map is bijective.
+  have hsurj : Function.Surjective L :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := L) rfl).mp hinj
+  exact ⟨(LinearEquiv.ofBijective L ⟨hinj, hsurj⟩).toContinuousLinearEquiv,
+    ContinuousLinearMap.ext fun _ ↦ rfl⟩
+
+/-- A smooth embedding between boundaryless manifolds modelled on the same finite-dimensional
+space has open image. -/
+theorem isOpen_range (f : SmoothEmbedding K K n X Y) (hn : 1 ≤ n) : IsOpen (range f) :=
+  (f.isLocalDiffeomorph hn).isOpen_range
+
+end InverseFunctionTheorem
 
 end TauCeti.SmoothEmbedding
