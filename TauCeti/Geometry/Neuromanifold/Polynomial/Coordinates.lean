@@ -25,7 +25,7 @@ not preserve polynomiality.
 The finite coefficient-space viewpoint follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
 [arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), §3.1. The construction uses
-`MvPolynomial.boundedCoefficientEquiv` and Mathlib's `pi_eq_sum_univ'`.
+`MvPolynomial.boundedCoefficientEquiv` and Mathlib's `LinearMap.pi_apply_eq_sum_univ`.
 -/
 
 public section
@@ -83,24 +83,10 @@ theorem eval_polynomialCoefficientTransform (P : J → MvPolynomial (W ⊕ X) K)
   classical
   let := Fintype.ofFinite (J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P})
   let g := T.comp (boundedCoefficientEquiv X K J (polynomialInputDegree P)).symm.toLinearMap
-  have h := congrArg (fun c => g c i)
-    (pi_eq_sum_univ' (polynomialCoefficientCoordinates P w))
-  simp only [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul] at h
-  rw [polynomialCoefficientTransform_eq_sum, eval_sum]
-  simp only [eval_mul, eval_C]
-  calc
-    _ = ∑ a, polynomialCoefficientCoordinates P w a * g (Pi.single a 1) i := by
-      simp only [polynomialCoefficientCoordinates_apply, g, LinearMap.comp_apply,
-        LinearEquiv.coe_coe, mul_comm]
-    _ = g (polynomialCoefficientCoordinates P w) i := h.symm
-    _ = T (polynomialCoefficientMap P w) i := by
-      have hc : polynomialCoefficientCoordinates P w =
-          boundedCoefficientEquiv X K J _ (polynomialCoefficientMap P w) := by
-        ext a
-        simp only [polynomialCoefficientCoordinates_apply, boundedCoefficientEquiv_apply,
-          coeff_polynomialCoefficientMap]
-      simp only [g, hc, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        LinearEquiv.symm_apply_apply]
+  simpa [polynomialCoefficientTransform_eq_sum, eval_sum, g, boundedCoefficientEquiv_apply,
+    coeff_map, ← Pi.single_apply, Pi.single_comm, mul_comm] using
+    (LinearMap.pi_apply_eq_sum_univ ((LinearMap.proj i).comp g)
+      (boundedCoefficientEquiv X K J _ (polynomialCoefficientMap P w))).symm
 
 /-- The original monomial coordinates are recovered by using the monomial coefficient
 equivalence as the coordinate map. -/
