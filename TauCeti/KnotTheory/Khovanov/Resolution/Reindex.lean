@@ -25,9 +25,10 @@ bijection of resolved circles (`TauCeti.PDCode.ResolutionEquiv.resolutionCubeIso
 isomorphisms commute with the saddle maps on the edges, so the reordering isomorphism of cube
 complexes (`CategoryTheory.Functor.cubeComplexReindexIso`) gives an isomorphism of unnormalized
 Khovanov complexes `TauCeti.PDCode.ResolutionEquiv.khovanovBracketIso`, in every quantum degree.
-On the vertex `S` it acts by the vertex isomorphism with the sign `(-1) ^ #(S.inversions e)` of the
-permutation of `S` comparing the two crossing orders. It is the identity for the identity
-identification and is compatible with composition.
+On the vertex `S` it acts by the vertex isomorphism with the sign
+`(-1) ^ #(S.inversions E.crossingEquiv)` of the permutation of `S` comparing the two crossing
+orders. It is the identity for the identity identification and is compatible with composition
+and inversion.
 
 This applies to relabelling the half-edges and crossings of a code (`TauCeti.PDCode.relabel`), in
 particular to reordering its crossings, to reading a crossing from another slot
@@ -45,7 +46,9 @@ particular to reordering its crossings, to reading a crossing from another slot
 * `TauCeti.PDCode.ResolutionEquiv.isCubeReindexCompatible`: the vertex isomorphisms commute with
   the saddle maps.
 * `TauCeti.PDCode.ResolutionEquiv.refl_khovanovBracketIso`,
-  `TauCeti.PDCode.ResolutionEquiv.trans_khovanovBracketIso`: the identity and composition laws.
+  `TauCeti.PDCode.ResolutionEquiv.trans_khovanovBracketIso`,
+  `TauCeti.PDCode.ResolutionEquiv.symm_khovanovBracketIso`: the identity, composition and
+  inverse laws.
 
 ## References
 
@@ -64,27 +67,6 @@ namespace TauCeti.PDCode
 universe u
 
 variable {n m r : ℕ}
-
-/-- The state of the vertex `S.map e` of a cube indexed by `Fin m`, read along a bijection
-`e : Fin n ≃ Fin m`, is the state of the vertex `S`. -/
-@[simp]
-theorem cubeState_map_apply (e : Fin n ≃ Fin m) (S : Finset (Fin n)) (i : Fin n) :
-    cubeState (S.map e.toEmbedding) (e i) = cubeState S i := by
-  simp [cubeState_apply]
-
-/-- Along an edge `S ⋖ T` of the cube, the cube of resolutions acts by the saddle map at the
-crossing added along the edge. This restates
-`resolutionCube_map_homOfLE_insert_comp_resolutionCubeι` for a target which is only
-propositionally `insert a S`. -/
-private theorem resolutionCube_map_homOfLE_comp_resolutionCubeι (D : PDCode n) (hD : D.IsPlanar)
-    (R : Type u) [CommRing R] (j : ℤ) {S T : Finset (Fin n)} {a : Fin n} (ha : a ∉ S)
-    (hT : insert a S = T) (hST : S ⊆ T) (hst : ∀ i, i ≠ a → cubeState S i = cubeState T i)
-    (hc : cubeState S a ≠ cubeState T a)
-    (h : #(D.circlesAt (cubeState S) a) = 2 ∨ #(D.circlesAt (cubeState T) a) = 2) :
-    (D.resolutionCube hD R j).map (homOfLE hST) ≫ D.resolutionCubeι hD R j T =
-      D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (D.resolutionEdgeMap hst hc h R) := by
-  subst hT
-  exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j ha
 
 namespace ResolutionEquiv
 
@@ -156,7 +138,7 @@ theorem isCubeReindexCompatible :
   have hc' := cubeState_ne_of_notMem_of_mem ha' hmem
   rw [← cancel_mono (D'.resolutionCubeι hD' R j ((insert a S).map E.crossingEquiv.toEmbedding)),
     Category.assoc, Category.assoc, resolutionCubeIso_hom_comp_resolutionCubeι,
-    resolutionCube_map_homOfLE_comp_resolutionCubeι D' hD' R j ha' hT _ hst' hc'
+    D'.resolutionCube_map_homOfLE_comp_resolutionCubeι hD' R j ha' hT _ hst' hc'
       (hD'.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst' hc'),
     D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j ha,
     resolutionCubeIso_hom_comp_resolutionCubeι_assoc]
@@ -195,8 +177,8 @@ theorem trans_resolutionCubeIso (F : D'.ResolutionEquiv D'') (hD'' : D''.IsPlana
     resolutionCubeIso_hom_comp_eqToHom_comp_resolutionCubeι _ _ _ _ _ (by simp [map_map]) h,
     resolutionCubeIso_hom_comp_resolutionCubeι_assoc,
     ← smoothingEquiv_trans_smoothingEquiv E F (cubeState_map_apply E.crossingEquiv S) h,
-    SmoothingEquiv.resolvedCircleCongr_trans, ← reindex_trans]
-  rfl
+    SmoothingEquiv.resolvedCircleCongr_trans, ← reindex_trans, LinearEquiv.coe_trans,
+    ModuleCat.ofHom_comp]
 
 /-- **Relabelling the unnormalized Khovanov complex.** An identification of all smoothings of
 `D` with those of `D'` gives an isomorphism of their unnormalized Khovanov complexes, in every
@@ -210,7 +192,8 @@ def khovanovBracketIso : D.khovanovBracket hD R ≅ D'.khovanovBracket hD' R :=
 
 /-- In quantum degree `j`, the isomorphism of unnormalized Khovanov complexes is the reordering
 isomorphism of the cube complexes with the vertex isomorphisms `E.resolutionCubeIso`. On the
-vertex `S` it acts by `E.resolutionCubeIso` with the sign `(-1) ^ #(S.inversions e)`
+vertex `S` it acts by `E.resolutionCubeIso` with the sign
+`(-1) ^ #(S.inversions E.crossingEquiv)`
 (`CategoryTheory.Functor.ι_cubeComplexReindexIso_hom_f`). -/
 theorem khovanovBracketIso_hom_apply :
     (E.khovanovBracketIso hD hD' R).hom j =
@@ -237,16 +220,10 @@ theorem refl_khovanovBracketIso : (refl D).khovanovBracketIso hD hD R = Iso.refl
   ext j : 2
   -- The vertex isomorphisms are the identifications of vertices, along a crossing bijection which
   -- is only propositionally the identity.
-  have key : ∀ (e : Fin n ≃ Fin n) (he : e = Equiv.refl _)
-      (hα : Functor.IsCubeReindexCompatible _ _ e
-        fun S ↦ eqToIso (congrArg (D.resolutionCube hD R j).obj (by subst he; simp))),
-      (D.resolutionCube hD R j).cubeComplexReindexIso e _ hα = Iso.refl _ := by
-    rintro e rfl hα
-    exact Functor.cubeComplexReindexIso_refl _
   have hα := funext (refl_resolutionCubeIso hD R j)
   rw [khovanovBracketIso_hom_apply]
   simp only [hα]
-  rw [key _ (refl_crossingEquiv D)]
+  rw [Functor.cubeComplexReindexIso_refl_of_eq _ (refl_crossingEquiv D)]
   simp
 
 /-- The isomorphism of unnormalized Khovanov complexes of a composite identification is the
@@ -257,25 +234,22 @@ theorem trans_khovanovBracketIso (F : D'.ResolutionEquiv D'') (hD'' : D''.IsPlan
   ext j : 2
   -- The vertex isomorphisms are the composites of vertex isomorphisms, along a crossing bijection
   -- which is only propositionally the composite.
-  have key : ∀ (e : Fin n ≃ Fin r) (he : e = E.crossingEquiv.trans F.crossingEquiv)
-      (hα : Functor.IsCubeReindexCompatible _ _ e fun S ↦ E.resolutionCubeIso hD hD' R j S ≪≫
-        F.resolutionCubeIso hD' hD'' R j (S.map E.crossingEquiv.toEmbedding) ≪≫
-          eqToIso (congrArg (D''.resolutionCube hD'' R j).obj (by subst he; simp [map_map]))),
-      (D.resolutionCube hD R j).cubeComplexReindexIso e _ hα =
-        (D.resolutionCube hD R j).cubeComplexReindexIso E.crossingEquiv
-            (E.resolutionCubeIso hD hD' R j) (E.isCubeReindexCompatible hD hD' R j) ≪≫
-          (D'.resolutionCube hD' R j).cubeComplexReindexIso F.crossingEquiv
-            (F.resolutionCubeIso hD' hD'' R j) (F.isCubeReindexCompatible hD' hD'' R j) := by
-    rintro e rfl hα
-    exact Functor.cubeComplexReindexIso_trans (D.resolutionCube hD R j) E.crossingEquiv
-      F.crossingEquiv _ _ (E.isCubeReindexCompatible hD hD' R j)
-      (F.isCubeReindexCompatible hD' hD'' R j)
   have hα := funext (E.trans_resolutionCubeIso hD hD' R j F hD'')
   rw [Iso.trans_hom, GradedObject.categoryOfGradedObjects_comp, khovanovBracketIso_hom_apply,
     khovanovBracketIso_hom_apply, khovanovBracketIso_hom_apply]
   simp only [hα]
-  rw [key _ (trans_crossingEquiv E F)]
+  rw [Functor.cubeComplexReindexIso_trans_of_eq _ E.crossingEquiv F.crossingEquiv
+    (trans_crossingEquiv E F) _ _ (E.isCubeReindexCompatible hD hD' R j)
+    (F.isCubeReindexCompatible hD' hD'' R j)]
   simp
+
+/-- The isomorphism of unnormalized Khovanov complexes of the inverse identification is the
+inverse of the isomorphism. -/
+theorem symm_khovanovBracketIso :
+    E.symm.khovanovBracketIso hD' hD R = (E.khovanovBracketIso hD hD' R).symm := by
+  have h := E.trans_khovanovBracketIso hD hD' R E.symm hD
+  rw [self_trans_symm, refl_khovanovBracketIso] at h
+  exact Iso.ext (Iso.inv_ext' (congrArg Iso.hom h).symm)
 
 end ResolutionEquiv
 
