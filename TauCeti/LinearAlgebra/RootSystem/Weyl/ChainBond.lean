@@ -116,6 +116,13 @@ def IsAChain (a : ℚ) (lam : M)
 
 variable {a : ℚ} {lam : M}
 
+/-- The `a`-chain condition is integrality of `a` times each reflection bond. -/
+theorem isAChain_iff_forall_reflectionBond
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
+    IsAChain a lam C ↔ ∀ i : Fin C.length,
+      ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z :=
+  Iff.rfl
+
 /-- A natural number divides the bond gcd `d(C)` of a saturated chain exactly when it divides the
 bond of every cover of the chain. -/
 theorem dvd_bondGcd_iff {n : ℕ}
