@@ -39,7 +39,6 @@ apply, and the only map to `B⁺` is the zero map.
 
 ## Main results
 
-* `TauCeti.Perfectoid.uniformTilt.isAdicComplete_span_natCast`: `B⁺` is `p`-adically complete.
 * `TauCeti.Perfectoid.uniformTilt.coe_untilt_plusEquivPreTilt`: `PreTilt.untilt` is the zeroth
   coordinate of `B♭⁺`.
 * `TauCeti.Perfectoid.uniformTilt.coe_theta_teichmuller`: `θ [x] = x♯`.
@@ -70,30 +69,14 @@ variable {p : ℕ} {B : Type*} [CommRing B] [hp : Fact p.Prime] [UniformSpace B]
 
 variable {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
 
-include h in
-omit hp in
-/-- A ring of integral elements of `B` is `p`-adically complete and separated, even though `p`
-need not be a pseudouniformiser of `B`. -/
-theorem isAdicComplete_span_natCast : IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus :=
-  h.isAdicComplete_span_singleton_of_isTopologicallyNilpotent _ <| by
-    rw [Subring.coe_natCast]
-    exact hpn.out
-
-include h in
-omit hp [IsUniformAddGroup B] [CompleteSpace B] in
-/-- `p` is not a unit of a ring of integral elements of a nonzero `B`. -/
-theorem not_isUnit_natCast [Nontrivial B] : ¬IsUnit (p : Bplus) :=
-  h.not_isUnit_of_isTopologicallyNilpotent <| by
-    rw [Subring.coe_natCast]
-    exact hpn.out
-
 section PreTilt
 
 variable [Fact ¬IsUnit (p : Bplus)] [IsAdicComplete (Ideal.span {(p : Bplus)}) Bplus]
 
 /-- **The integral tilt is Mathlib's `PreTilt`**: reducing every coordinate modulo `p` is a ring
 isomorphism `B♭⁺ ≃+* PreTilt B⁺ p`. The instance hypotheses are those of `PreTilt.untilt`; they
-hold for nonzero `B` by `not_isUnit_natCast` and `isAdicComplete_span_natCast`. -/
+hold for nonzero `B` by `IsRingOfIntegralElements.not_isUnit_natCast` and
+`IsRingOfIntegralElements.isAdicComplete_span_natCast`. -/
 noncomputable def plusEquivPreTilt : plusSubring p h ≃+* PreTilt Bplus p :=
   plusEquiv h (Ideal.span {(p : Bplus)})
 
@@ -130,8 +113,8 @@ variable [Nontrivial B]
 (`coe_theta_teichmuller`, `theta_unique`). It is Mathlib's `WittVector.fontaineTheta` transported
 along `plusEquivPreTilt` (`theta_eq_fontaineTheta`). -/
 noncomputable def theta : WittVector p (plusSubring p h) →+* Bplus :=
-  haveI : Fact ¬IsUnit (p : Bplus) := ⟨not_isUnit_natCast h⟩
-  haveI := isAdicComplete_span_natCast (p := p) h
+  haveI : Fact ¬IsUnit (p : Bplus) := ⟨h.not_isUnit_natCast⟩
+  haveI := h.isAdicComplete_span_natCast (p := p)
   (WittVector.fontaineTheta Bplus p).comp (WittVector.map (plusEquivPreTilt h).toRingHom)
 
 /-- `θ` is Mathlib's `WittVector.fontaineTheta` under `B♭⁺ ≃+* PreTilt B⁺ p`. -/
@@ -144,14 +127,14 @@ theorem theta_eq_fontaineTheta [Fact ¬IsUnit (p : Bplus)]
 @[simp]
 theorem coe_theta_teichmuller (x : plusSubring p h) :
     (theta h (WittVector.teichmuller p x) : B) = coeff p B 0 x := by
-  have : Fact ¬IsUnit (p : Bplus) := ⟨not_isUnit_natCast h⟩
-  have := isAdicComplete_span_natCast (p := p) h
+  have : Fact ¬IsUnit (p : Bplus) := ⟨h.not_isUnit_natCast⟩
+  have := h.isAdicComplete_span_natCast (p := p)
   simp [theta_eq_fontaineTheta, WittVector.map_teichmuller]
 
 /-- `θ` is the only ring homomorphism `W(B♭⁺) → B⁺` sending `[x]` to `x♯`. -/
 theorem theta_unique (f : WittVector p (plusSubring p h) →+* Bplus)
     (hf : ∀ x, (f (WittVector.teichmuller p x) : B) = coeff p B 0 x) : f = theta h := by
-  have := isAdicComplete_span_natCast (p := p) h
+  have := h.isAdicComplete_span_natCast (p := p)
   exact WittVector.eq_of_apply_teichmuller_eq_of_isHausdorff fun x ↦
     Subtype.ext <| by rw [hf, coe_theta_teichmuller]
 
@@ -159,8 +142,8 @@ theorem theta_unique (f : WittVector p (plusSubring p h) →+* Bplus)
 theorem mk_theta (x : WittVector p (plusSubring p h)) :
     Ideal.Quotient.mk (Ideal.span {(p : Bplus)}) (theta h x) =
       Ideal.Quotient.mk _ ⟨coeff p B 0 (x.coeff 0), mem_plusSubring_iff.mp (x.coeff 0).2 0⟩ := by
-  have : Fact ¬IsUnit (p : Bplus) := ⟨not_isUnit_natCast h⟩
-  have := isAdicComplete_span_natCast (p := p) h
+  have : Fact ¬IsUnit (p : Bplus) := ⟨h.not_isUnit_natCast⟩
+  have := h.isAdicComplete_span_natCast (p := p)
   simp [theta_eq_fontaineTheta, WittVector.mk_fontaineTheta]
 
 /-- In characteristic `p`, `θ` is the sharp of the zeroth Witt coordinate. -/
@@ -181,7 +164,7 @@ theorem theta_natural (hC : IsRingOfIntegralElements Cplus) (g : B →+* C) (hg 
     (hgp : ∀ x ∈ Bplus, g x ∈ Cplus) :
     (theta hC).comp (WittVector.map (plusMap (p := p) h hC g hg hgp)) =
       (g.restrict Bplus Cplus hgp).comp (theta h) := by
-  have := isAdicComplete_span_natCast (p := p) hC
+  have := hC.isAdicComplete_span_natCast (p := p)
   refine WittVector.eq_of_apply_teichmuller_eq_of_isHausdorff fun x ↦ Subtype.ext ?_
   simp [WittVector.map_teichmuller]
 

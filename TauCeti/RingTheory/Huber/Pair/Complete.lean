@@ -35,6 +35,10 @@ hypothesis used in the integral tilt and Fontaine's map.
   pseudouniformiser.
 * `IsRingOfIntegralElements.isAdicComplete_span_singleton_of_isTopologicallyNilpotent`:
   completeness for a topologically nilpotent element of a Tate ring.
+* `IsRingOfIntegralElements.isAdicComplete_span_natCast`: completeness for a topologically
+  nilpotent natural number.
+* `IsRingOfIntegralElements.not_isUnit_natCast`: a topologically nilpotent natural number is
+  not a unit of the plus ring.
 * `TauCeti.Huber.IsRingOfIntegralElements.not_isUnit_of_isTopologicallyNilpotent`: exclusion of
   topologically nilpotent units in the plus ring.
 
@@ -64,6 +68,15 @@ theorem IsRingOfIntegralElements.not_isUnit_of_isTopologicallyNilpotent
     [T2Space A] [Nontrivial A] (h : IsRingOfIntegralElements Aplus) {a : Aplus}
     (ha : IsTopologicallyNilpotent (a : A)) : ¬ IsUnit a :=
   Aplus.not_isUnit_of_isTopologicallyNilpotent h.isBounded ha
+
+/-- A topologically nilpotent natural number is not a unit of a ring of integral elements
+of a nonzero Hausdorff uniform ring. -/
+theorem IsRingOfIntegralElements.not_isUnit_natCast
+    [T2Space A] [Nontrivial A] (h : IsRingOfIntegralElements Aplus) {p : ℕ}
+    [hpn : Fact (IsTopologicallyNilpotent (p : A))] : ¬IsUnit (p : Aplus) :=
+  h.not_isUnit_of_isTopologicallyNilpotent <| by
+    rw [Subring.coe_natCast]
+    exact hpn.out
 
 end TauCeti.Huber
 
@@ -100,5 +113,16 @@ theorem IsRingOfIntegralElements.isAdicComplete_span_singleton_of_isTopologicall
       ⟨⟨_, hn⟩, Subtype.ext (by simp)⟩
   rw [← Ideal.span_singleton_pow] at hpow
   exact .of_pow hn0.ne'
+
+/-- A ring of integral elements of a complete Hausdorff uniform Tate ring is `p`-adically
+complete and separated when `p` is topologically nilpotent, even though `p` need not be a
+pseudouniformiser. -/
+theorem IsRingOfIntegralElements.isAdicComplete_span_natCast
+    [IsTateRing A] (h : IsRingOfIntegralElements Aplus) {p : ℕ}
+    [hpn : Fact (IsTopologicallyNilpotent (p : A))] :
+    IsAdicComplete (Ideal.span {(p : Aplus)}) Aplus :=
+  h.isAdicComplete_span_singleton_of_isTopologicallyNilpotent _ <| by
+    rw [Subring.coe_natCast]
+    exact hpn.out
 
 end TauCeti.Huber

@@ -51,12 +51,12 @@ theorem plusQ : IsRingOfIntegralElements (powerBoundedSubring ℚ_[p]) :=
 
 /-- `p` is not a unit of `ℂ_p°`. -/
 local instance : Fact ¬IsUnit (p : powerBoundedSubring ℂ_[p]) :=
-  ⟨uniformTilt.not_isUnit_natCast (plusC p)⟩
+  ⟨(plusC p).not_isUnit_natCast⟩
 
 /-- `ℂ_p°` is `p`-adically complete. -/
 local instance :
     IsAdicComplete (Ideal.span {(p : powerBoundedSubring ℂ_[p])}) (powerBoundedSubring ℂ_[p]) :=
-  uniformTilt.isAdicComplete_span_natCast (plusC p)
+  (plusC p).isAdicComplete_span_natCast
 
 variable (ϖ : PseudoUniformizerRoots p ℂ_[p])
 
@@ -89,9 +89,8 @@ theorem coe_theta_natCast_ne :
 theorem theta_natural_algebraMap (x : WittVector p (uniformTilt.plusSubring p (plusQ p))) :
     (uniformTilt.theta (plusC p) (WittVector.map (uniformTilt.plusMap (plusQ p) (plusC p)
       (algebraMap ℚ_[p] ℂ_[p]) (continuous_algebraMap ℚ_[p] ℂ_[p]) fun y hy ↦ by
-        rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, norm_algebraMap', ←
-          isPowerBounded_iff_norm_le_one, ← mem_powerBoundedSubring]
-        exact hy) x) : ℂ_[p]) =
+        simpa [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, norm_algebraMap']
+          using hy) x) : ℂ_[p]) =
       algebraMap ℚ_[p] ℂ_[p] (uniformTilt.theta (plusQ p) x) :=
   congrArg Subtype.val (RingHom.congr_fun (uniformTilt.theta_natural (plusQ p) (plusC p) _ _ _) x)
 
