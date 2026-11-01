@@ -204,6 +204,15 @@ theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) (x : M) (v : Fin k → TangentSpace I x) :
     ω.interior X x v = ω x (Matrix.vecCons (X x) v) := (rfl)
 
+/-- The interior product of a vector field `X` with a one-form `φ` is the `0`-form of the
+function `y ↦ φ y ![X y]`. -/
+theorem RoughForm.interior_eq_ofFunction (X : (x : M) → TangentSpace I x)
+    (φ : RoughForm I M F 1) :
+    φ.interior X = RoughForm.ofFunction I (fun y ↦ φ y ![X y]) := by
+  funext y
+  ext v
+  rw [RoughForm.interior_apply, RoughForm.ofFunction_apply, Subsingleton.elim v ![]]
+
 /-- Insertion of the zero field vanishes. -/
 @[simp]
 theorem RoughForm.interior_zero_field (ω : RoughForm I M F (k + 1)) :

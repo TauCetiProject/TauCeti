@@ -90,6 +90,13 @@ theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
   ext v
   rw [mem_kerDistribution, LinearMap.mem_ker, degreeOneEquiv_coe_apply]
 
+/-- The exterior derivative of a one-form `α`, evaluated on two tangent vectors, is the
+bilinear form `(mextDerivₗ I 1 α).bilinFormAt x` that the contact condition is phrased with. -/
+theorem mextDeriv_apply_eq_bilinFormAt (α : SmoothForm I M ℝ 1) (x : M)
+    (u v : TangentSpace I x) :
+    mextDeriv α.1 x ![u, v] = (mextDerivₗ I 1 α).bilinFormAt x u v := by
+  simp [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+
 /-- A real one-form `α` is a **contact form** when, at every point `x`, the covector `α_x` is
 nonzero and `dα_x` restricts to a nondegenerate bilinear form on `ker α_x`. -/
 def IsContactForm (α : SmoothForm I M ℝ 1) : Prop :=
