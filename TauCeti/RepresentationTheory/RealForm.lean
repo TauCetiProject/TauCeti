@@ -58,7 +58,8 @@ indicator in `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Realiza
 * `Representation.IsRealizableOverReal`: `ρ` admits a real form on a carrier pinned by the
   dimension of `V`.
 * `Representation.IsRealStructure`: `K` is a real structure on `ρ`, that is, a conjugation of `V`
-  commuting with the action.
+  commuting with the action; it is stated over any commutative star ring, `ℂ` being the case
+  the rest of the file treats.
 * `Representation.IsRealStructure.rep`: the real representation it induces on the real points.
 
 ## Main results
@@ -108,8 +109,11 @@ namespace Representation
 
 open TauCeti.Representation
 
-variable {G : Type*} [Monoid G] {V : Type*} [AddCommGroup V] [Module ℂ V]
-  {W : Type*} [AddCommGroup W] [Module ℝ W]
+variable {G : Type*} [Monoid G]
+
+section RealForm
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] {W : Type*} [AddCommGroup W] [Module ℝ W]
 variable {ρ : Representation ℂ G V} {σ : Representation ℝ G W}
 
 /-! ### Real forms -/
@@ -274,21 +278,32 @@ theorem IsRealForm.isRealizableOverReal [FiniteDimensional ℂ V] (h : IsRealFor
     LinearEquiv.baseChange_tmul, LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
   exact he g (f.symm x)
 
+end RealForm
+
 /-! ### Real structures -/
 
-variable (ρ) in
-/-- A **real structure** on a complex representation: a conjugation of the underlying space -- a
-conjugate-linear involution `K` -- that commutes with the action.  This is the intrinsic form of
-`Representation.IsRealForm`, phrased inside `V` instead of on an auxiliary real carrier, and it is
-the form in which realizability over `ℝ` is produced.
+section RealStructure
 
-The conjugation is carried unbundled, matching `Representation.IsInvariantForm`; the two fields are
-exactly the data of a `TauCeti.Hodge.Conjugation` together with equivariance. -/
-structure IsRealStructure (K : V →ₛₗ[starRingEnd ℂ] V) : Prop where
+variable {k V : Type*} [CommSemiring k] [StarRing k] [AddCommMonoid V] [Module k V]
+
+/-- A **real structure** on a representation over a commutative star ring `k`: an involution `K`
+of the underlying space, semilinear for `starRingEnd k`, that commutes with the action.  For
+`k = ℂ` it is a conjugation of `V` -- a conjugate-linear involution -- and the predicate is the
+intrinsic form of `Representation.IsRealForm`, phrased inside `V` instead of on an auxiliary real
+carrier; it is the form in which realizability over `ℝ` is produced.
+
+The conjugation is carried unbundled, matching `Representation.IsInvariantForm`; for `k = ℂ` the
+two fields are exactly the data of a `TauCeti.Hodge.Conjugation` together with equivariance. -/
+structure IsRealStructure (ρ : Representation k G V) (K : V →ₛₗ[starRingEnd k] V) : Prop where
   /-- The conjugation is an involution. -/
   involutive : Function.Involutive ⇑K
   /-- The conjugation intertwines the action with itself. -/
   isIntertwining (g : G) (v : V) : K (ρ g v) = ρ g (K v)
+
+end RealStructure
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] {W : Type*} [AddCommGroup W] [Module ℝ W]
+variable {ρ : Representation ℂ G V} {σ : Representation ℝ G W}
 
 namespace IsRealStructure
 
