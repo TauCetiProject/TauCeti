@@ -363,7 +363,7 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
 /-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
 Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
 @[simp]
-theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Finite ι]
     [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
     [_root_.LieAlgebra.IsKilling K L]
     (b : Module.Basis ι K L) (i : ι) :

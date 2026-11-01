@@ -7,21 +7,24 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.Topology.Maps.Strict.Basic
 
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.StrictMorphism
 
 /-!
-# Finite injective maps into affinoid algebras
+# Finite maps into affinoid algebras
 
-A finite injective algebra homomorphism from a noetherian ultrametric Banach algebra into
-an affinoid algebra with a complete compatible ultrametric algebra norm is a closed topological
-embedding. In particular this applies when the source is affinoid. Continuity follows from the
-algebraic hypotheses, and the chosen complete algebra norms need not agree on the image.
+A finite algebra homomorphism from a noetherian ultrametric Banach algebra into an affinoid
+algebra with a complete compatible ultrametric algebra norm is strict
+(`Topology.IsStrictMap`): it is a quotient map onto its image. Surjective homomorphisms are
+finite, hence strict. A finite injective homomorphism is moreover a closed topological embedding.
+In particular this applies when the source is affinoid. Continuity follows from the algebraic
+hypotheses, and the chosen complete algebra norms need not agree on the image.
 
-The finite-module topology identifies the source with its image topologically, and
-noetherianity makes that image closed. This allows finite algebraic inclusions to be used as
-closed inclusions with any compatible complete algebra norms.
+The finite-module topology identifies the source modulo the kernel with its image
+topologically, and noetherianity makes that image closed. This allows finite algebraic
+inclusions to be used as closed inclusions with any compatible complete algebra norms.
 
 ## References
 
@@ -41,6 +44,17 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
     {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B]
     [CompleteSpace B]
 
+/-- A finite algebra homomorphism from a noetherian ultrametric Banach algebra into a completely
+normed affinoid algebra is strict: the induced map onto its image is a quotient map. No
+continuity hypothesis or normalisation of either algebra norm is required. -/
+theorem isStrictMap_of_finite (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B) (hfin : f.Finite) :
+    IsStrictMap f := by
+  let : Algebra A B := f.toRingHom.toAlgebra
+  have : Module.Finite A B := hfin
+  have : ContinuousSMul A B := continuousSMul_of_algebraMap A B (hB.continuous_algHom f)
+  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
+  exact (Algebra.linearMap A B).isStrictMap_of_module_finite
+
 /-- A finite injective algebra homomorphism from a noetherian ultrametric Banach algebra into
 a completely normed affinoid algebra is a closed topological embedding. No continuity
 hypothesis or normalisation of either algebra norm is required. -/
@@ -51,8 +65,7 @@ theorem isClosedEmbedding_of_finite_injective (hB : IsAffinoidAlgebra K B)
   have : Module.Finite A B := hfin
   have : ContinuousSMul A B := continuousSMul_of_algebraMap A B (hB.continuous_algHom f)
   let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
-  exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨(Algebra.linearMap A B).isStrictMap_of_module_finite, hinj⟩,
+  exact ⟨isEmbedding_iff_isStrictMap_injective.mpr ⟨hB.isStrictMap_of_finite f hfin, hinj⟩,
     Huber.isClosed_of_isNoetherian (LinearMap.range (Algebra.linearMap A B))⟩
 
 end TauCeti.IsAffinoidAlgebra

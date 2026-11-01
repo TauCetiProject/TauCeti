@@ -30,12 +30,11 @@ entire series (`PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`). Consequently o
 products, and when `f(0) = 1` a good zero of positive order is a unit, so the factor `(X - a)ʰ`
 may be renormalised to `(1 - a⁻¹ X)ʰ`.
 
-The values `(Δʲ f)(a)` are the coefficients of the Taylor translation `PowerSeries.taylor a f`.
-Over a field, a good zero of order `h` is therefore exactly a Taylor translation of order `h`
-(`PowerSeries.isGoodZero_iff_order_taylor_eq`). Since Taylor translation is injective on entire
-series, a nonzero entire series over a complete normed field has a good zero of finite order at
-every point (`PowerSeries.IsEntire.exists_isGoodZero`): its zeros have finite order. The field
-need not be ultrametric, discretely valued or of characteristic zero.
+Over a complete normed field every zero of a nonzero entire series has a finite order
+(`PowerSeries.IsEntire.exists_isGoodZero`). The values `(Δⁿ f)(a)` are the coefficients of the
+Taylor translate of `f` at `a`, which is nonzero because Taylor translation is injective on entire
+series (`PowerSeries.IsEntire.taylor_eq_zero_iff`); the order is the first index of a nonzero
+coefficient. No discreteness of the valuation, Weierstrass product or identity theorem is used.
 
 ## Main definitions
 
@@ -47,6 +46,8 @@ need not be ultrametric, discretely valued or of characteristic zero.
 * `PowerSeries.isGoodZero_coe_iff`, `PowerSeries.isGoodZero_coe_iff_of_field`: for polynomials
   the order is the root multiplicity, and over a ring the quotient by `(X - a)ʰ` must be a unit
   at `a`.
+* `PowerSeries.isGoodZero_iff_order_taylor_eq`: over a field, the order of a good zero at `a` is
+  the order of the Taylor translate at `a`.
 * `PowerSeries.IsEntire.isGoodZero_iff`: factorisation of an entire series at a good zero.
 * `PowerSeries.IsGoodZero.mul`: the orders of good zeros of entire series add under products.
 * `PowerSeries.IsEntire.isGoodZero_mul_iff_of_isUnit`: a factor which is a unit at `a` does not
@@ -56,12 +57,9 @@ need not be ultrametric, discretely valued or of characteristic zero.
   `G` entire, `G(0) = 1` and `G(a)` a unit.
 * `PowerSeries.IsGoodZero.map`: good zeros of entire series are preserved by continuous
   coefficient homomorphisms.
-* `PowerSeries.isGoodZero_iff_order_taylor_eq`: over a field, the order of a good zero at `a` is
-  the order of the Taylor translation at `a`.
 * `PowerSeries.IsEntire.exists_isGoodZero`,
-  `PowerSeries.IsEntire.exists_pos_isGoodZero_of_evalAt_eq_zero`: over a complete normed field,
-  every point is a good zero of finite order of a nonzero entire series, of positive order at a
-  zero.
+  `PowerSeries.IsEntire.exists_pos_isGoodZero_of_evalAt_eq_zero`: over a complete normed field, a
+  nonzero entire series has a good zero of some order at every point, of positive order at a zero.
 
 ## References
 
@@ -157,6 +155,12 @@ theorem isGoodZero_coe_iff_of_field {K : Type*} [Field K] [TopologicalSpace K]
     exact ⟨fun hp ↦ hne (by simp [hp]), rfl⟩
   · rintro ⟨hp, rfl⟩
     exact ⟨rfl, Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero a hp⟩
+
+/-- Over a field, `f` has a good zero of order `h` at `a` exactly when its Taylor translate at `a`
+has order `h`. -/
+theorem isGoodZero_iff_order_taylor_eq {K : Type*} [Field K] [TopologicalSpace K] {f : K⟦X⟧}
+    {a : K} {h : ℕ} : f.IsGoodZero a h ↔ (taylor a f).order = h := by
+  simp [isGoodZero_iff, order_eq_nat, isUnit_iff_ne_zero, and_comm]
 
 end TopologicalRing
 
@@ -256,22 +260,20 @@ end Normed
 
 section Field
 
-/-- **Good zeros over a field.** Over a topological field, `f` has a good zero of order `h` at `a`
-exactly when its Taylor translation at `a` has order `h`. -/
-theorem isGoodZero_iff_order_taylor_eq {K : Type*} [Field K] [TopologicalSpace K] {f : K⟦X⟧}
-    {a : K} {h : ℕ} : f.IsGoodZero a h ↔ (taylor a f).order = h := by
-  simp [isGoodZero_iff, order_eq_nat, isUnit_iff_ne_zero, and_comm]
-
 variable {K : Type*} [NormedField K] [CompleteSpace K] {f : K⟦X⟧}
 
-/-- **Zeros of entire series over a field have finite order.** A nonzero entire series over a
-complete normed field has, at every point `a`, a good zero of some order `h`: the Hasse
-derivatives of order less than `h` vanish at `a` and the one of order `h` does not. -/
+/-- **Zeros of entire series over a field have finite order.** Over a complete normed field, a
+nonzero entire series `f` has a good zero at every point `a`. Its order, unique by
+`PowerSeries.IsGoodZero.unique`, is the least `h` with `(Δʰ f)(a) ≠ 0`; it is positive exactly when
+`f(a) = 0`. -/
 theorem IsEntire.exists_isGoodZero (hf : f.IsEntire) (hf0 : f ≠ 0) (a : K) :
     ∃ h, f.IsGoodZero a h := by
-  have hT : PowerSeries.taylor a f ≠ 0 := (hf.taylor_eq_zero_iff a).not.mpr hf0
-  exact ⟨(PowerSeries.taylor a f).order.toNat,
-    isGoodZero_iff_order_taylor_eq.mpr (coe_toNat_order hT).symm⟩
+  classical
+  have hex : ∃ n, (PowerSeries.hasseDeriv n f).evalAt a ≠ 0 := by
+    by_contra! h
+    exact hf0 ((hf.taylor_eq_zero_iff a).1 (ext fun n ↦ by simpa using h n))
+  exact ⟨Nat.find hex, PowerSeries.isGoodZero_iff.2
+    ⟨fun j hj ↦ not_not.1 (Nat.find_min hex hj), (Nat.find_spec hex).isUnit⟩⟩
 
 /-- A zero of a nonzero entire series over a complete normed field is a good zero of some
 positive order. -/
