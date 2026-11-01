@@ -24,9 +24,11 @@ it is homotopy equivalent to a complex with a projective flag
 object of `C` has projective dimension `< d`, this is also equivalent to being homotopy
 equivalent to a complex with projective terms
 (`TauCeti.PeriodicComplex.isHomotopicallyProjective_iff_exists_projective`). Thus in finite
-global dimension the three classes of homotopically projective objects, objects with a
-projective flag, and relatively projective objects agree up to homotopy equivalence. Without the
-bound, a complex with projective terms need not be homotopically projective
+global dimension the three classes of homotopically projective complexes, complexes with a
+projective flag, and complexes with projective terms agree up to homotopy equivalence. Stai calls
+complexes with projective terms relatively projective; this differs from the componentwise split
+notion of relative projectivity used elsewhere in this library. Without the bound, a complex
+with projective terms need not be homotopically projective
 (`TauCeti.not_isHomotopicallyProjective_dualNumberPeriodicComplex`).
 
 No positivity of the period is needed; at period zero, when `ZMod 0` is integer indexing, these
@@ -34,6 +36,8 @@ are resolutions of unbounded complexes with bounded homological dimension.
 
 ## Main results
 
+* `TauCeti.PeriodicComplex.hasProjectiveDimensionLT_homology_homotopyCofiber`: killing homology
+  with a complex of projectives lowers the projective dimension of the homology by one.
 * `TauCeti.PeriodicComplex.exists_hasProjectiveFlag_quasiIso`: every periodic complex whose
   homology has projective dimension `< d` receives a quasi-isomorphism from a complex with a
   projective flag.
@@ -84,10 +88,10 @@ private def projectiveZeroDifferential :
 /-- If `g : P ⟶ X` from a complex with projective terms and zero differential is surjective on
 homology, then the homology of its cone has projective dimension one less than that of `X`:
 it is the kernel of `Pⁱ⁺¹ ⟶ Hⁱ⁺¹(X)`. -/
-private lemma hasProjectiveDimensionLT_homology_homotopyCofiber {P X : CochainComplex C (ZMod n)}
+lemma hasProjectiveDimensionLT_homology_homotopyCofiber {P X : CochainComplex C (ZMod n)}
     (g : P ⟶ X) [∀ i, Projective (P.X i)] (hP : ∀ i j, P.d i j = 0)
-    (hg : ∀ i, Epi (homologyMap g i)) (k : ℕ)
-    (hX : ∀ i, HasProjectiveDimensionLT (X.homology i) (k + 2)) (i : ZMod n) :
+    (hg : ∀ i, Epi (homologyMap g i)) (k : ℕ) (i : ZMod n)
+    (hX : HasProjectiveDimensionLT (X.homology (i + 1)) (k + 2)) :
     HasProjectiveDimensionLT ((homotopyCofiber g).homology i) (k + 1) := by
   let S := coneSequence g
   have hS : S.ShortExact :=
@@ -104,11 +108,10 @@ private lemma hasProjectiveDimensionLT_homology_homotopyCofiber {P X : CochainCo
       epi_g := (hS.homology_exact₁ i (i + 1) rfl).epi_f (hf (i + 1)) }
   -- The middle term is the homology of `P⟦1⟧`, which has zero differential.
   have : Projective (S.X₃.X i) := inferInstanceAs (Projective (P.X _))
-  have hd (j j' : ZMod n) : S.X₃.d j j' = 0 :=
-    (shiftFunctor_obj_d' P 1 j j').trans (by rw [hP, smul_zero])
+  have hd := shiftFunctor_obj_d_eq_zero hP 1
   have : Projective (S.X₃.homology i) := S.X₃.projective_homology_of_d_eq_zero i (hd _ _) (hd _ _)
   exact hses.hasProjectiveDimensionLT_X₁ (k + 1)
-    (hasProjectiveDimensionLT_of_ge _ 1 (k + 1) (by lia)) (hX (i + 1))
+    (hasProjectiveDimensionLT_of_ge _ 1 (k + 1) (by lia)) hX
 
 variable [EnoughProjectives C]
 
@@ -129,18 +132,12 @@ private lemma exists_extensionProductIter_isIso_Qh_map (k : ℕ) :
     have (i : ZMod n) : Projective (X.homology i) :=
       projective_iff_hasProjectiveDimensionLT_one.mpr (hX i)
     let e (i : ZMod n) : X.homology i ⟶ X.cycles i := Projective.factorThru (𝟙 _) (X.homologyπ i)
-    let G := graded (ComplexShape.up (ZMod n)) fun i ↦ X.homology i
-    have : QuasiIso (X.fromGraded e) := ⟨fun i ↦ by
-      rw [quasiIsoAt_iff_isIso_homologyMap]
-      have := G.isIso_homologyπ _ i rfl rfl
-      let φ₀ := (G.iCyclesIso i _ rfl rfl).inv ≫ G.homologyπ i
-      have : IsIso (φ₀ ≫ homologyMap (X.fromGraded e) i) := by
-        rw [Category.assoc, homologyπ_naturality, iCyclesIso_inv_cyclesMap_fromGraded_assoc,
-          Projective.factorThru_comp]
-        infer_instance
-      exact IsIso.of_isIso_comp_left φ₀ _⟩
+    have := X.quasiIso_fromGraded e fun i ↦ by
+      rw [Projective.factorThru_comp]
+      infer_instance
     refine ⟨_, (HomotopyCategory.quotient C _).map (X.fromGraded e),
-      ⟨G, fun i ↦ inferInstanceAs (Projective (X.homology i)), fun _ _ ↦ rfl, ⟨Iso.refl _⟩⟩, ?_⟩
+      ⟨graded _ fun i ↦ X.homology i, fun i ↦ inferInstanceAs (Projective (X.homology i)),
+        fun _ _ ↦ rfl, ⟨Iso.refl _⟩⟩, ?_⟩
     have : IsIso ((DerivedCategory.Q C n).map (X.fromGraded e)) := inferInstance
     rwa [← DerivedCategory.quotient_comp_Qh, Functor.comp_map] at this
   | succ k ih =>
@@ -151,9 +148,9 @@ private lemma exists_extensionProductIter_isIso_Qh_map (k : ℕ) :
     have : ∀ i, Projective ((graded (ComplexShape.up (ZMod n))
         fun i ↦ Projective.over (X.cycles i)).X i) :=
       fun i ↦ inferInstanceAs (Projective (Projective.over _))
-    obtain ⟨Y, ψ, hY, hψ⟩ := ih (homotopyCofiber g)
-      (hasProjectiveDimensionLT_homology_homotopyCofiber g (fun _ _ ↦ rfl)
-        (fun i ↦ X.epi_homologyMap_fromGraded _ i) k hX)
+    obtain ⟨Y, ψ, hY, hψ⟩ := ih (homotopyCofiber g) fun i ↦
+      hasProjectiveDimensionLT_homology_homotopyCofiber g (fun _ _ ↦ rfl)
+        (fun i ↦ X.epi_homologyMap_fromGraded _ i) k i (hX (i + 1))
     -- Attach `P` to the resolution `ψ : Y ⟶ cone g` along the connecting map `cone g ⟶ P⟦1⟧`,
     -- and compare the resulting triangle with the cone triangle of `g`.
     let T := mappingConeTriangle g
@@ -196,12 +193,10 @@ private lemma exists_hasProjectiveFlag_of_extensionProductIter (m : ℕ) :
     obtain ⟨u, hu⟩ := (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map_surjective
       (e₀.inv ≫ T.mor₁ ≫ e₁.hom)
     have : ∀ i, Projective ((P⟦(-1 : ℤ)⟧).X i) := fun i ↦ hP _
-    have hd' (i j : ZMod n) : (P⟦(-1 : ℤ)⟧).d i j = 0 :=
-      (shiftFunctor_obj_d' P (-1) i j).trans (by rw [hd, smul_zero])
-    exact ⟨homotopyCofiber u, hF₁.homotopyCofiber u hd', ⟨Triangle.π₃.mapIso
-      (isoTriangleOfIso₁₂ T (mappingConeTriangle u) (inv_rot_of_distTriang _ hT)
-        (mappingCone_mem_distTriang u) e₀ e₁ (by rw [mappingConeTriangle_mor₁, hu,
-          Iso.hom_inv_id_assoc]))⟩⟩
+    exact ⟨homotopyCofiber u, hF₁.homotopyCofiber u (shiftFunctor_obj_d_eq_zero hd (-1)),
+      ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T (mappingConeTriangle u)
+        (inv_rot_of_distTriang _ hT) (mappingCone_mem_distTriang u) e₀ e₁
+        (by rw [mappingConeTriangle_mor₁, hu, Iso.hom_inv_id_assoc]))⟩⟩
 
 /-- **Projective flag resolutions.** In an abelian category with enough projectives, every
 periodic complex whose homology objects have projective dimension `< d` receives a
