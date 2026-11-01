@@ -8,8 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
-public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Bounded continuous functions in `L∞`
@@ -47,8 +47,6 @@ counting measure, or of a Haar measure on a discrete group, consists of all boun
 * `BoundedContinuousFunction.norm_toLpTop`: `‖[f]‖ = ‖f‖` when `μ` is positive on open sets.
 * `BoundedContinuousFunction.toLpTop_le_toLpTop_iff`: for such `μ`, the map is an order
   embedding on real-valued functions.
-* `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure charging
-  every point, almost everywhere means everywhere.
 * `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, for a measure charging
   every point, every class in `L∞` is the class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
@@ -60,13 +58,6 @@ noncomputable section
 
 open MeasureTheory Filter
 open scoped ENNReal BoundedContinuousFunction
-
-/-- On a discrete space, a measure positive on nonempty open sets charges every point, so
-almost everywhere means everywhere. -/
-theorem MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [TopologicalSpace α]
-    [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
-    ae μ = ⊤ :=
-  ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
 
 namespace BoundedContinuousFunction
 

@@ -33,8 +33,9 @@ then every essentially bounded function is bounded, so taking classes identifies
 is all bounded functions, with `L∞(G, μ)` (`BoundedContinuousFunction.toLpTopLinearIsometryEquiv`).
 The correspondence preserves left invariance. Hence a discrete group is amenable exactly when
 `L∞` of a Haar measure, or of any left-invariant measure charging every point, carries a
-left-invariant mean (`TauCeti.amenable_iff_exists_lpTop`). This is the characterization of
-amenable locally compact groups by invariant means on Haar `L∞`, in the discrete case.
+left-invariant mean (`TauCeti.amenable_iff_exists_lpTop_invariant`). This is the
+characterization of amenable locally compact groups by invariant means on Haar `L∞`, in the
+discrete case.
 
 Whether `L∞(G, μ)` carries such an invariant functional depends only on the null sets of `μ`:
 the classes of essentially bounded functions for measures with the same null sets correspond,
@@ -61,8 +62,8 @@ is amenable, for its given topology.
   functional on `L∞` of a left-invariant measure is amenable.
 * `TauCeti.Mean.isLeftInvariant_iff_lpTopEquiv`: on a discrete group, a mean is left invariant
   exactly when the corresponding functional on `L∞` is.
-* `TauCeti.amenable_iff_exists_lpTop`: a discrete group is amenable exactly when `L∞` of a
-  left-invariant measure charging every point carries a left-invariant mean.
+* `TauCeti.amenable_iff_exists_lpTop_invariant`: a discrete group is amenable exactly when `L∞`
+  of a left-invariant measure charging every point carries a left-invariant mean.
 * `TauCeti.exists_lpTop_invariant_of_absolutelyContinuous`: such a functional for `μ` gives one
   for every left-invariant `ν` with `μ ≪ ν`.
 * `TauCeti.exists_lpTop_invariant_smul_iff`, `TauCeti.exists_lpTop_invariant_iff_of_regular`:
@@ -178,7 +179,7 @@ variable (μ) in
 /-- A discrete group is amenable exactly when, for a left-invariant measure `μ` charging every
 point (for instance a Haar measure), `L∞(G, μ)` carries a left-invariant positive linear
 functional `M` with `M 1 = 1`. -/
-theorem amenable_iff_exists_lpTop [μ.IsMulLeftInvariant] :
+theorem amenable_iff_exists_lpTop_invariant [μ.IsMulLeftInvariant] :
     Amenable G ↔ ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ := by
   refine ⟨fun h => ?_, fun ⟨M, hM, h⟩ => Amenable.of_lpTop M hM h⟩
