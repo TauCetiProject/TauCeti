@@ -336,6 +336,26 @@ theorem tendsto_circleAverage_norm_sq_diskFunction :
       simpa only [add_zero] using AddCircle.integral_haarAddCircle_comp_toCircle
         (T := 1) (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r
 
+/-- A Hardy function is determined by its disk function: `F_x` vanishes on the open unit disk
+exactly when `x = 0`. -/
+theorem eqOn_diskFunction_zero_iff : Set.EqOn x.diskFunction 0 (Metric.ball 0 1) ↔ x = 0 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- The squared circle means of `F_x` vanish, and they converge to `‖x‖ ^ 2`.
+    have hmean : ∀ᶠ r : ℝ in 𝓝[<] 1,
+        Real.circleAverage (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r = 0 := by
+      filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with r hr
+      rw [Real.circleAverage_congr_sphere (f₂ := fun _ ↦ 0) fun w hw ↦ ?_,
+        Real.circleAverage_const]
+      have hw1 : w ∈ Metric.ball (0 : ℂ) 1 :=
+        Metric.sphere_subset_ball (abs_lt.mpr hr) hw
+      simp [h hw1]
+    have hlim := x.tendsto_circleAverage_norm_sq_diskFunction
+    have hsq : ‖x‖ ^ 2 = 0 :=
+      tendsto_nhds_unique hlim (tendsto_const_nhds.congr' (hmean.mono fun _ h ↦ h.symm))
+    simpa using hsq
+  · rintro rfl w hw
+    simpa using (0 : HardySpace).diskFunction_smul 0 (mem_ball_zero_iff.mp hw)
+
 end Radial
 
 end HardySpace
