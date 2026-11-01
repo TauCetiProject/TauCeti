@@ -129,6 +129,13 @@ theorem partitionMoment_top (φ : A → R) (a : α → A) (hs : s.Nonempty) :
     partitionMoment φ a (⊤ : Finpartition s) = φ ((s.sort.map a).prod) := by
   rw [partitionMoment_def, Finpartition.parts_top hs.ne_empty, prod_singleton]
 
+/-- The block moment of a constant word is the product over the parts `B` of the moments
+`φ (x ^ #B)`. -/
+@[simp]
+theorem partitionMoment_const (φ : A → R) (x : A) (P : Finpartition s) :
+    partitionMoment φ (fun _ => x) P = ∏ B ∈ P.parts, φ (x ^ #B) := by
+  simp [partitionMoment_def]
+
 end Moment
 
 section Cumulant
