@@ -11,10 +11,10 @@ public import Mathlib.LinearAlgebra.RootSystem.Defs
 /-!
 # Reflection-invariant submodules of a root pairing
 
-A submodule of the root space invariant under the reflection at `v` absorbs, from any root it
-already contains, every root whose pairing with `v` is a unit. Reflecting `u` in `v` stays inside
-the submodule, and subtracting leaves a multiple of the root at `v` whose coefficient is exactly
-that pairing.
+A submodule of the root space invariant under the reflection at `v` that contains the root at
+`u`, where the pairing of `u` with `v` is a unit, also contains the root at `v`. Reflecting `u` in
+`v` stays inside the submodule, and subtracting leaves a multiple of the root at `v` whose
+coefficient is exactly that pairing.
 
 This is stated for a bare `RootPairing` over a commutative ring: no base, no crystallographic
 structure and no finiteness. Over a field the unit hypothesis is just nonvanishing of the pairing,
@@ -41,8 +41,8 @@ theorem root_mem_of_isUnit_pairing {q : Submodule R M} {u v : ι}
     (hinvv : q ∈ Module.End.invtSubmodule (P.reflection v))
     (hpair : IsUnit (P.pairing u v)) (hu : P.root u ∈ q) : P.root v ∈ q := by
   -- `root u - reflection v (root u) = pairing u v • root v` lies in `q`.
-  have h := q.sub_mem hu ((Module.End.mem_invtSubmodule _).mp hinvv hu)
-  rwa [LinearEquiv.coe_coe, reflection_apply_root, sub_sub_cancel,
-    q.smul_mem_iff_of_isUnit hpair] at h
+  have h : P.root u - P.reflection v (P.root u) ∈ q :=
+    q.sub_mem hu ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mp hinvv _ hu)
+  rwa [reflection_apply_root, sub_sub_cancel, q.smul_mem_iff_of_isUnit hpair] at h
 
 end RootPairing
