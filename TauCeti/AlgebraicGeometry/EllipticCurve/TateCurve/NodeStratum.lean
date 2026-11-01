@@ -45,6 +45,9 @@ first coordinate has norm at most `‖s‖`, so `(X(u), Y(u)) = (x, y)`.
 
 ## Main results
 
+* `TauCeti.eq_and_eq_of_add_eq_of_add_eq_of_norm_le`: over an ultrametric field, a line
+  `x + y = s` with `‖s‖ < 1` meets `y² + xy = x³ + A₄x + A₆`, `‖A₄‖ < ‖s‖`, in at most one point
+  whose first coordinate has norm at most `‖s‖`.
 * `TauCeti.exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_norm_lt_one`: every solution
   `(x, y)` of the Tate equation with `‖x‖ < 1` and `‖y‖ < 1` is `(X(u), Y(u))` for some `u` with
   `‖q‖ < ‖u‖ < 1`.
@@ -69,11 +72,12 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-! ### Points on a line of slope `-1` -/
 
-/-- **A line `x + y = s` meets the curve in at most one point with `‖x‖ ≤ ‖s‖`.** If `(x, y)` and
-`(X, Y)` solve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖ < ‖s‖ < 1`, both lie on the line `x + y = s`
-and both first coordinates have norm at most `‖s‖`, then the two points are equal. -/
-private theorem eq_of_add_eq_of_add_eq {A₄ A₆ s x y X Y : K} (hA₄ : ‖A₄‖ < ‖s‖) (hs : ‖s‖ < 1)
-    (hx : ‖x‖ ≤ ‖s‖) (hX : ‖X‖ ≤ ‖s‖) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
+/-- **A line `x + y = s` meets the curve in at most one point with `‖x‖ ≤ ‖s‖`.** Over an
+ultrametric normed field, let `A₄, A₆` be arbitrary coefficients. If `(x, y)` and `(X, Y)` solve
+`y² + xy = x³ + A₄x + A₆` with `‖A₄‖ < ‖s‖ < 1`, both lie on the line `x + y = s` and both first
+coordinates have norm at most `‖s‖`, then the two points are equal. -/
+theorem eq_and_eq_of_add_eq_of_add_eq_of_norm_le {A₄ A₆ s x y X Y : K} (hA₄ : ‖A₄‖ < ‖s‖)
+    (hs : ‖s‖ < 1) (hx : ‖x‖ ≤ ‖s‖) (hX : ‖X‖ ≤ ‖s‖) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
     (h₂ : Y ^ 2 + X * Y = X ^ 3 + A₄ * X + A₆) (hxy : x + y = s) (hXY : X + Y = s) :
     X = x ∧ Y = y := by
   obtain rfl : y = s - x := eq_sub_of_add_eq' hxy
@@ -189,27 +193,13 @@ private theorem summable_tateNodeErr (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
   exact ⟨(h₁.add h₂).congr fun n ↦ div_one_sub_sq_add_sq_div_one_sub_cube _,
     (h₃.add h₄).congr fun n ↦ div_one_sub_sq_add_neg_div_one_sub_cube _⟩
 
-omit [IsUltrametricDist K] [CompleteSpace K] in
-/-- The arguments `qⁿu⁻¹`, `n ≥ 1`, have norm at most `‖q‖ / ‖u‖`. -/
-private theorem norm_pow_succ_mul_inv_le (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (n : ℕ) :
-    ‖(q : K) ^ (n + 1) * (u : K)⁻¹‖ ≤ ‖(q : K)‖ / ‖(u : K)‖ := by
-  rw [norm_mul, norm_pow, norm_inv, div_eq_mul_inv]
-  exact mul_le_mul_of_nonneg_right (pow_le_of_le_one (norm_nonneg _) hq.le n.succ_ne_zero)
-    (inv_nonneg.mpr (norm_nonneg _))
-
-omit [IsUltrametricDist K] [CompleteSpace K] in
-/-- `‖q‖ / ‖u‖ ≤ ‖u‖` when `‖q‖ ≤ ‖u‖²`. -/
-private theorem norm_div_norm_le (q u : Kˣ) (hqu : ‖(q : K)‖ ≤ ‖(u : K)‖ ^ 2) :
-    ‖(q : K)‖ / ‖(u : K)‖ ≤ ‖(u : K)‖ := by
-  rw [div_le_iff₀ (norm_pos_iff.mpr u.ne_zero), ← sq]
-  exact hqu
-
 /-- **The error near the node is small.** If `‖q‖ ≤ ‖u‖² < 1`, then `X(u) + Y(u)` differs from
 `u / (1 - u)³` by at most `‖q‖`. -/
 private theorem norm_tateNodeErr_le (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hqu : ‖(q : K)‖ ≤ ‖(u : K)‖ ^ 2) (hu : ‖(u : K)‖ < 1) :
     ‖tateNodeErr q u‖ ≤ ‖(q : K)‖ := by
-  have hb := norm_div_norm_le q u hqu
+  have hb : ‖(q : K)‖ / ‖(u : K)‖ ≤ ‖(u : K)‖ :=
+    div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) (by rwa [← sq])
   have hqu' : ‖(q : K) * u‖ < 1 := by
     rw [norm_mul]
     exact (mul_le_of_le_one_right (norm_nonneg _) hu.le).trans_lt hq
@@ -221,7 +211,10 @@ private theorem norm_tateNodeErr_le (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     rw [norm_mul]
     exact mul_le_of_le_one_right (norm_nonneg _) hu.le
   · refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg _) fun n ↦ ?_
-    have ht := norm_pow_succ_mul_inv_le q u hq n
+    have ht : ‖(q : K) ^ (n + 1) * (u : K)⁻¹‖ ≤ ‖(q : K)‖ / ‖(u : K)‖ := by
+      rw [norm_mul, norm_pow, norm_inv, div_eq_mul_inv]
+      exact mul_le_mul_of_nonneg_right (pow_le_of_le_one (norm_nonneg _) hq.le n.succ_ne_zero)
+        (inv_nonneg.mpr (norm_nonneg _))
     rw [norm_neg, norm_div_one_sub_pow _ ((ht.trans hb).trans_lt hu), norm_pow]
     calc ‖(q : K) ^ (n + 1) * (u : K)⁻¹‖ ^ 2 ≤ (‖(q : K)‖ / ‖(u : K)‖) ^ 2 :=
           pow_le_pow_left₀ (norm_nonneg _) ht 2
@@ -235,7 +228,8 @@ private theorem norm_tateNodeErr_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hqu : ‖(q : K)‖ ≤ ‖(u : K)‖ ^ 2) (hu : ‖(u : K)‖ < 1) (hu' : ‖(u' : K)‖ = ‖(u : K)‖) :
     ‖tateNodeErr q u - tateNodeErr q u'‖ ≤ ‖(u : K)‖ * ‖(u : K) - u'‖ := by
   have hu0 : 0 < ‖(u : K)‖ := norm_pos_iff.mpr u.ne_zero
-  have hb := norm_div_norm_le q u hqu
+  have hb : ‖(q : K)‖ / ‖(u : K)‖ ≤ ‖(u : K)‖ :=
+    div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) (by rwa [← sq])
   have hqr : ‖(q : K)‖ ≤ ‖(u : K)‖ :=
     hqu.trans (pow_le_of_le_one (norm_nonneg _) hu.le two_ne_zero)
   obtain ⟨hG, hH⟩ := summable_tateNodeErr q hq u
@@ -256,8 +250,12 @@ private theorem norm_tateNodeErr_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
     rw [← mul_sub, norm_mul]
     exact mul_le_mul_of_nonneg_right (hpow.trans hqr) (norm_nonneg _)
   · -- the terms `-t² / (1 - t)³` at `t = qⁿu⁻¹` are Lipschitz with constant `‖q‖ / ‖u‖`
-    have ht := norm_pow_succ_mul_inv_le q u hq n
-    have ht' := norm_pow_succ_mul_inv_le q u' hq n
+    have hw (w : Kˣ) : ‖(q : K) ^ (n + 1) * (w : K)⁻¹‖ ≤ ‖(q : K)‖ / ‖(w : K)‖ := by
+      rw [norm_mul, norm_pow, norm_inv, div_eq_mul_inv]
+      exact mul_le_mul_of_nonneg_right (pow_le_of_le_one (norm_nonneg _) hq.le n.succ_ne_zero)
+        (inv_nonneg.mpr (norm_nonneg _))
+    have ht := hw u
+    have ht' := hw u'
     rw [hu'] at ht'
     have hd : ‖(q : K) ^ (n + 1) * (u : K)⁻¹ - (q : K) ^ (n + 1) * (u' : K)⁻¹‖ ≤
         ‖(u : K) - u'‖ := by
@@ -392,9 +390,9 @@ private theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_norm
       _ ≤ ‖x + y‖ := (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl hy)
   have hX : ‖tateUniformizationX q u‖ ≤ ‖x + y‖ :=
     hu ▸ (norm_tateUniformizationX_le_max q u hqu hu1).trans
-      (max_le le_rfl (norm_div_norm_le q u (hu ▸ hqs)))
-  obtain ⟨hXe, hYe⟩ := eq_of_add_eq_of_add_eq ((norm_tateCurveA₄_le (q : K) hq).trans_lt hqs') hs
-    hx hX (tate_equation h) (tate_equation
+      (max_le le_rfl (div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) (by rwa [← sq, hu])))
+  obtain ⟨hXe, hYe⟩ := eq_and_eq_of_add_eq_of_add_eq_of_norm_le
+    ((norm_tateCurveA₄_le (q : K) hq).trans_lt hqs') hs hx hX (tate_equation h) (tate_equation
       (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq
         (notMem_zpowers_of_norm_lt_of_norm_lt_one hqu hu1))) rfl hXY
   exact ⟨u, hqu, hu1, hXe, hYe⟩
@@ -441,12 +439,10 @@ theorem exists_tateUniformization_eq_some_iff_norm_lt_one_and_norm_lt_one (q : K
       ‖x‖ < 1 ∧ ‖y‖ < 1 := by
   constructor
   · rintro ⟨u, hqu, hu1, hP⟩
-    obtain ⟨-, hX, hY⟩ := (tateUniformization_eq_some_iff q hq _ h).mp hP
-    rw [tateQuotientCoordinates_mk] at hX hY
-    have hB : max ‖(u : K)‖ (‖(q : K)‖ / ‖(u : K)‖) < 1 :=
-      max_lt hu1 ((div_lt_one (norm_pos_iff.mpr u.ne_zero)).mpr hqu)
-    exact ⟨hX ▸ (norm_tateUniformizationX_le_max q u hqu hu1).trans_lt hB,
-      hY ▸ (norm_tateUniformizationY_le_max q u hqu hu1).trans_lt hB⟩
+    obtain ⟨hne, hX, hY⟩ := (tateUniformization_eq_some_iff q hq _ h).mp hP
+    obtain ⟨hX', hY'⟩ :=
+      (norm_tateQuotientCoordinates_fst_lt_one_and_snd_lt_one_iff q hq hne).mpr ⟨u, rfl, hqu, hu1⟩
+    exact ⟨hX ▸ hX', hY ▸ hY'⟩
   · rintro ⟨hx, hy⟩
     obtain ⟨u, hqu, hu1, hX, hY⟩ :=
       exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_norm_lt_one q hq h.1 hx hy
