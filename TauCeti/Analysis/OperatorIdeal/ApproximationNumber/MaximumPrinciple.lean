@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 
 /-!
@@ -25,8 +26,9 @@ numbers up to any `ε > 0` (`TauCeti.HasMinMaxLowerBound.exists_singularValue_le
 
 For a positive operator `T` on a Hilbert space it suffices to take `u = v`: `Kₖ(T)` is the
 supremum of the diagonal sums `∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families with at most `k`
-members. Positivity of `T` at `uᵢ - z vᵢ` for a scalar `z` of norm one bounds a mixed sum by the
-average of two diagonal sums.
+members. The bound `2 ‖⟪x, T y⟫‖ ≤ re ⟪T x, x⟫ + re ⟪T y, y⟫`
+(`ContinuousLinearMap.IsPositive.two_mul_norm_inner_le_add`) bounds a mixed sum by the average of
+two diagonal sums.
 
 The diagonal form gives the **superadditivity** of the Ky Fan gauges on positive operators,
 
@@ -103,27 +105,13 @@ theorem kyFanGauge_le_iff [CompleteSpace E] (T : E →L[𝕜] F) {k : ℕ} {c : 
   · have := T.norm_sum_inner_le_kyFanGauge hu hv
     rw [Fintype.card_fin] at this
     exact this.trans ((NNReal.coe_le_coe.mpr (T.monotone_kyFanGauge hm)).trans h)
-  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-  obtain ⟨V, _, hV⟩ := TauCeti.HasMinMaxLowerBound.of_completeSpace
-    |>.exists_singularValue_le_compression T k (δ := ε / (k + 1)) (by positivity)
-  set W := V.map (T : E →ₗ[𝕜] F)
-  set C : V →L[𝕜] W := W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)
-  -- The finite-dimensional variational characterization bounds the compression `C`.
-  have hC : (C.kyFanGauge k : ℝ) ≤ c := by
-    rw [kyFanGauge_eq_kyFanSum]
-    refine (LinearMap.kyFanSum_le_iff _).mpr fun m hm u v hu hv ↦ ?_
-    simpa [C] using h m hm _ _ (hu.comp_linearIsometry W.subtypeₗᵢ)
-      (hv.comp_linearIsometry V.subtypeₗᵢ)
-  calc (T.kyFanGauge k : ℝ)
-      ≤ ∑ n ∈ range k, ((C.singularValue n : ℝ) + ε / (k + 1)) := by
-        rw [kyFanGauge_def, NNReal.coe_sum]
-        exact sum_le_sum fun n hn ↦ hV n (mem_range.mp hn)
-    _ = C.kyFanGauge k + k * (ε / (k + 1)) := by
-        simp [sum_add_distrib, kyFanGauge_def]
-    _ ≤ c + ε := by
-        gcongr
-        rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-        nlinarith
+  refine TauCeti.HasMinMaxLowerBound.of_completeSpace.kyFanGauge_le_of_forall_compression T
+    fun V _ ↦ ?_
+  -- The finite-dimensional variational characterization bounds the compression to `V`.
+  rw [kyFanGauge_eq_kyFanSum]
+  refine (LinearMap.kyFanSum_le_iff _).mpr fun m hm u v hu hv ↦ ?_
+  simpa using h m hm _ _ (hu.comp_linearIsometry (Submodule.subtypeₗᵢ _))
+    (hv.comp_linearIsometry V.subtypeₗᵢ)
 
 namespace IsPositive
 
@@ -138,33 +126,13 @@ theorem kyFanGauge_le_iff [CompleteSpace E] {T : E →L[𝕜] E} (hT : T.IsPosit
   · refine le_trans ?_ (T.kyFanGauge_le_iff.mp h m hm w w hw hw)
     simp_rw [hT.inner_left_eq_inner_right, ← map_sum]
     exact RCLike.re_le_norm _
-  -- Positivity of `T` at `x - z • y` bounds a mixed term by two diagonal terms.
-  have key (x y : E) {z : 𝕜} (hz : ‖z‖ = 1) :
-      2 * RCLike.re (z * ⟪x, T y⟫) ≤ RCLike.re ⟪T x, x⟫ + RCLike.re ⟪T y, y⟫ := by
-    have hzz : (starRingEnd 𝕜) z * z = 1 := by
-      rw [RCLike.conj_mul, hz]
-      simp
-    have e : ⟪T (x - z • y), x - z • y⟫ =
-        ⟪T x, x⟫ - z * ⟪x, T y⟫ - (starRingEnd 𝕜) (z * ⟪x, T y⟫) + ⟪T y, y⟫ := by
-      simp only [map_sub, map_smul, inner_sub_left, inner_sub_right, inner_smul_left,
-        inner_smul_right, map_mul]
-      rw [hT.inner_left_eq_inner_right x y, ← inner_conj_symm x (T y), RCLike.conj_conj]
-      linear_combination ⟪T y, y⟫ * hzz
-    have h0 := hT.re_inner_nonneg_left (x - z • y)
-    rw [e] at h0
-    simp only [map_add, map_sub, RCLike.conj_re] at h0
-    linarith
-  set s := ∑ i, ⟪u i, T (v i)⟫
-  obtain ⟨z, hz, hzs⟩ : ∃ z : 𝕜, ‖z‖ = 1 ∧ z * s = ‖s‖ := by
-    by_cases hs : s = 0
-    · exact ⟨1, by simp, by simp [hs]⟩
-    · refine ⟨‖s‖ / s, ?_, div_mul_cancel₀ _ hs⟩
-      rw [norm_div, RCLike.norm_ofReal, abs_norm, div_self (norm_ne_zero_iff.mpr hs)]
-  have hsum : 2 * ‖s‖ = ∑ i, 2 * RCLike.re (z * ⟪u i, T (v i)⟫) := by
-    rw [← mul_sum, ← map_sum, ← mul_sum, hzs, RCLike.ofReal_re]
-  have := sum_le_sum fun i (_ : i ∈ univ) ↦ key (u i) (v i) hz
-  rw [sum_add_distrib, ← hsum] at this
-  linarith [h m hm u hu, h m hm v hv]
+  calc ‖∑ i, ⟪u i, T (v i)⟫‖
+      ≤ ∑ i, (RCLike.re ⟪T (u i), u i⟫ + RCLike.re ⟪T (v i), v i⟫) / 2 :=
+        (norm_sum_le _ _).trans <| sum_le_sum fun i _ ↦ by
+          linarith [hT.two_mul_norm_inner_le_add (u i) (v i)]
+    _ ≤ c := by
+        rw [← sum_div, sum_add_distrib]
+        linarith [h m hm u hu, h m hm v hv]
 
 variable {S T : E →L[𝕜] E}
 

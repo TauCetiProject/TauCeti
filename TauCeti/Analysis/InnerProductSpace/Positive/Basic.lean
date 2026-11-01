@@ -8,7 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
-# Invertibility of `1 + T` for a positive operator `T`
+# Basic facts about positive operators
+
+For a positive operator `T`, the off-diagonal entries are bounded by the diagonal ones,
+`2 ‖⟪x, T y⟫‖ ≤ re ⟪T x, x⟫ + re ⟪T y, y⟫`
+(`ContinuousLinearMap.IsPositive.two_mul_norm_inner_le_add`), by positivity of `T` at `x - z y`
+for a scalar `z` of norm one.
 
 For a positive operator `T` on a possibly infinite-dimensional Hilbert space, `1 + T` is
 invertible (`ContinuousLinearMap.IsPositive.isUnit_one_add`), because
@@ -23,7 +28,33 @@ namespace ContinuousLinearMap
 open scoped InnerProductSpace InnerProduct
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E]
+
+/-- For a positive operator `T`, the off-diagonal entries are bounded by the diagonal ones:
+`2 ‖⟪x, T y⟫‖ ≤ re ⟪T x, x⟫ + re ⟪T y, y⟫`. -/
+theorem IsPositive.two_mul_norm_inner_le_add {T : E →L[𝕜] E} (hT : T.IsPositive) (x y : E) :
+    2 * ‖⟪x, T y⟫_𝕜‖ ≤ RCLike.re ⟪T x, x⟫_𝕜 + RCLike.re ⟪T y, y⟫_𝕜 := by
+  -- A scalar `z` of norm one rotating `⟪x, T y⟫` onto its norm.
+  obtain ⟨z, hz, hzs⟩ : ∃ z : 𝕜, ‖z‖ = 1 ∧ z * ⟪x, T y⟫_𝕜 = ‖⟪x, T y⟫_𝕜‖ := by
+    by_cases hs : ⟪x, T y⟫_𝕜 = 0
+    · exact ⟨1, by simp, by simp [hs]⟩
+    · refine ⟨‖⟪x, T y⟫_𝕜‖ / ⟪x, T y⟫_𝕜, ?_, div_mul_cancel₀ _ hs⟩
+      rw [norm_div, RCLike.norm_ofReal, abs_norm, div_self (norm_ne_zero_iff.mpr hs)]
+  have hzz : (starRingEnd 𝕜) z * z = 1 := by
+    rw [RCLike.conj_mul, hz]
+    simp
+  -- Positivity of `T` at `x - z • y`.
+  have e : ⟪T (x - z • y), x - z • y⟫_𝕜 =
+      ⟪T x, x⟫_𝕜 - z * ⟪x, T y⟫_𝕜 - (starRingEnd 𝕜) (z * ⟪x, T y⟫_𝕜) + ⟪T y, y⟫_𝕜 := by
+    simp only [map_sub, map_smul, inner_sub_left, inner_sub_right, inner_smul_left,
+      inner_smul_right, map_mul]
+    rw [hT.inner_left_eq_inner_right x y, ← inner_conj_symm x (T y), RCLike.conj_conj]
+    linear_combination ⟪T y, y⟫_𝕜 * hzz
+  have h0 := hT.re_inner_nonneg_left (x - z • y)
+  rw [e, hzs] at h0
+  simp only [map_add, map_sub, RCLike.conj_re, RCLike.ofReal_re] at h0
+  linarith
+
+variable [CompleteSpace E]
 
 /-- On a complete space, `1 + T` is invertible for every positive operator `T`, since
 `re ⟪(1 + T) x, x⟫ = ‖x‖² + re ⟪T x, x⟫ ≥ ‖x‖²`. For instance `1 + X†X` is invertible, by
