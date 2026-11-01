@@ -19,13 +19,11 @@ unit capacity to every actual edge makes the minimum cut value between two disti
 vertices equal to their local edge reachability. Parallel edges contribute separately, while
 loops never contribute to a cut.
 
-The threshold form is useful without choosing a minimum cut. The numerical form connects the
-deletion-based invariant directly to cut trees for the unit-capacity cut function.
+The threshold form is useful without choosing a minimum cut. The numerical form lets results about
+minimum cut values, such as cut trees, apply to the deletion-based invariant.
 
 ## Main results
 
-* `Graph.edgeCutCapacity_one`: a unit-capacity cut has value equal to the number of crossing
-  edge identities.
 * `Graph.isEdgeReachable_iff_le_pairMinimumValue`: edge reachability at threshold `k` is
   equivalent to `k` being at most the minimum unit cut value.
 * `Graph.edgeReachability_eq_pairMinimumValue`: the numerical local edge reachability is the
@@ -49,37 +47,6 @@ universe u v
 namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
-
-/-- Giving every actual edge capacity one makes the capacity of a cut equal to the number of
-crossing edge identities. In particular, parallel edges are counted separately. -/
-@[simp]
-theorem edgeCutCapacity_one [Fintype E(G)] (S : Finset V(G)) :
-    G.edgeCutCapacity (fun _ ↦ (1 : ℕ)) S =
-      (G.edgeCut (Subtype.val '' (S : Set V(G)))).ncard := by
-  classical
-  rw [edgeCutCapacity_def]
-  let C : Set E(G) := {e | e.1 ∈ G.edgeCut (Subtype.val '' (S : Set V(G)))}
-  have hC : Subtype.val '' C = G.edgeCut (Subtype.val '' (S : Set V(G))) := by
-    ext e
-    simp only [Set.mem_image]
-    constructor
-    · rintro ⟨e', he', rfl⟩
-      exact he'
-    · intro he
-      exact ⟨⟨e, G.edgeCut_subset_edgeSet he⟩, he, rfl⟩
-  calc
-    (∑ e : E(G), if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set V(G))) then 1 else 0) =
-        #(univ.filter fun e : E(G) ↦
-          e.1 ∈ G.edgeCut (Subtype.val '' (S : Set V(G)))) := by
-      rw [card_filter]
-    _ = C.ncard := by
-      rw [Set.ncard_eq_toFinset_card C]
-      congr 1
-      ext e
-      simp [C]
-    _ = (Subtype.val '' C).ncard :=
-      (Set.ncard_image_of_injective C Subtype.val_injective).symm
-    _ = (G.edgeCut (Subtype.val '' (S : Set V(G)))).ncard := congrArg Set.ncard hC
 
 /-- If deleting an edge set separates two actual vertices, then the edge set contains the
 boundary of the side reachable from the first vertex. -/
