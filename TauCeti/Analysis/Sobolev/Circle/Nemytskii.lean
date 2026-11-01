@@ -45,7 +45,8 @@ series is a power series expansion of the Nemytskii map around `p`.
 * `TauCeti.CircleSobolev.analyticOnNhd_nemytskii`: the map `nemytskii F` is analytic on the open
   set of `u ∈ H^s` with values in `U`.
 * `TauCeti.CircleSobolev.hasFDerivAt_nemytskii`: its derivative at `u` is multiplication by
-  `F' ∘ u`.
+  `F' ∘ u`; at `u = 0` it is multiplication by the scalar `F'(0)`
+  (`TauCeti.CircleSobolev.hasFDerivAt_nemytskii_zero`).
 
 ## References
 
@@ -454,6 +455,12 @@ theorem analyticOnNhd_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     rw [Metric.eball_coe, mem_ball_iff_norm, Real.coe_toNNReal _ hρ.le]
     exact hp)
 
+/-- The Nemytskii map of an entire function is analytic on all of `H^s`, `s > 1/2`. -/
+theorem analyticAt_nemytskii {F : ℂ → ℂ} (hF : Differentiable ℂ F) (u : CircleSobolev s ℂ) :
+    AnalyticAt ℂ (nemytskii F) u := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  exact analyticOnNhd_nemytskii 1 isOpen_univ hF.differentiableOn u fun _ ↦ Set.mem_univ _
+
 /-- The Nemytskii map of any `F` sends the zero function to the constant function `F 0`. -/
 @[simp]
 theorem nemytskii_zero (F : ℂ → ℂ) : nemytskii F (0 : CircleSobolev s ℂ) = single 0 (F 0) := by
@@ -495,6 +502,17 @@ theorem hasFDerivAt_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
   simp only [ev, ContinuousLinearMap.comp_apply, ContinuousMap.evalCLM_apply] at h
   rw [← h, toContinuousMap_convolution_apply, toContinuousMap_nemytskii T hU (hF.deriv hU) hu,
     ContinuousLinearMap.mul_apply']
+
+/-- At the zero function, the derivative of the Nemytskii map of `F` is multiplication by the
+scalar `F'(0)`. -/
+theorem hasFDerivAt_nemytskii_zero {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
+    (hF : DifferentiableOn ℂ F U) (h₀ : 0 ∈ U) :
+    HasFDerivAt (nemytskii F) (deriv F 0 • ContinuousLinearMap.id ℂ (CircleSobolev s ℂ)) 0 := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  refine (hasFDerivAt_nemytskii 1 hU hF (u := 0) fun _ ↦ by simpa using h₀).congr_fderiv
+    (ContinuousLinearMap.ext fun v ↦ ?_)
+  rw [nemytskii_zero, ← mul_def]
+  simpa [algebraMap_eq_single] using (Algebra.smul_def (deriv F 0) v).symm
 
 end CircleSobolev
 

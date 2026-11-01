@@ -42,8 +42,8 @@ nonnegative Laurent subspaces, which depends holomorphically on `a` and vanishes
 substituting this parametrization, the equation is a holomorphic equation in `a`, `p`, `q` and the
 nonnegative parts of `F` and `G`, whose derivative in the last two variables at the origin is the
 identity, because the derivative of `e^F` at `F = 0` is the identity
-(`CircleSobolev.hasFDerivAt_nemytskii`). The holomorphic implicit function theorem then gives the
-solution and its local uniqueness.
+(`CircleSobolev.hasFDerivAt_nemytskii_zero`). The holomorphic implicit function theorem then gives
+the solution and its local uniqueness.
 
 ## Main statements
 
@@ -111,21 +111,15 @@ private def hardyEquation
   (indicatorProj (Set.Ici 0) (nemytskii exp (neckPoint z.1.1 z.2).1) - z.1.2.1,
     indicatorProj (Set.Ici 0) (nemytskii exp (neckPoint z.1.1 z.2).2) - z.1.2.2)
 
-private theorem analyticAt_nemytskii_exp (u : CircleSobolev s ℂ) :
-    AnalyticAt ℂ (nemytskii exp) u := by
-  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
-  exact analyticOnNhd_nemytskii 1 isOpen_univ differentiable_exp.differentiableOn u
-    fun _ ↦ Set.mem_univ _
-
 private theorem analyticAt_hardyEquation : AnalyticAt ℂ (hardyEquation s) 0 := by
   have hN : AnalyticAt ℂ (fun z : (ℂ × (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0))) ×
       (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) ↦ neckPoint z.1.1 z.2) 0 :=
     analyticAt_neckPoint (analyticAt_fst.comp analyticAt_fst) (by simp) analyticAt_snd
-  exact ((((indicatorProj (Set.Ici 0)).analyticAt _).comp ((analyticAt_nemytskii_exp _).comp
-      (analyticAt_fst.comp hN))).sub
+  exact ((((indicatorProj (Set.Ici 0)).analyticAt _).comp
+      ((analyticAt_nemytskii differentiable_exp _).comp (analyticAt_fst.comp hN))).sub
         (analyticAt_fst.comp (analyticAt_snd.comp analyticAt_fst))).prod
-    ((((indicatorProj (Set.Ici 0)).analyticAt _).comp ((analyticAt_nemytskii_exp _).comp
-      (analyticAt_snd.comp hN))).sub
+    ((((indicatorProj (Set.Ici 0)).analyticAt _).comp
+      ((analyticAt_nemytskii differentiable_exp _).comp (analyticAt_snd.comp hN))).sub
         (analyticAt_snd.comp (analyticAt_snd.comp analyticAt_fst)))
 
 /-- The derivative of `F ↦ e^F` at `0`, followed by the nonnegative projection, is the identity on
@@ -135,13 +129,12 @@ private theorem hasFDerivAt_indicatorProj_nemytskii_exp :
       (fun P : supported s ℂ (Set.Ici 0) ↦
         indicatorProj (Set.Ici 0) (nemytskii exp (P : CircleSobolev s ℂ)))
       (ContinuousLinearMap.id ℂ _) 0 := by
-  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
-  have hN := hasFDerivAt_nemytskii 1 isOpen_univ differentiable_exp.differentiableOn
-    (u := (supported s ℂ (Set.Ici 0)).subtypeL 0) fun _ ↦ Set.mem_univ _
+  have hN := hasFDerivAt_nemytskii_zero (s := s) isOpen_univ differentiable_exp.differentiableOn
+    (Set.mem_univ 0)
+  rw [Complex.deriv_exp, exp_zero, one_smul, ← map_zero (supported s ℂ (Set.Ici 0)).subtypeL] at hN
   have h := (indicatorProj (Set.Ici 0)).hasFDerivAt.comp (0 : supported s ℂ (Set.Ici 0))
     (hN.comp (0 : supported s ℂ (Set.Ici 0)) (supported s ℂ (Set.Ici 0)).subtypeL.hasFDerivAt)
-  refine h.congr_fderiv (ContinuousLinearMap.ext fun P ↦ ?_)
-  simp [← one_def, ← mul_def]
+  exact h.congr_fderiv (ContinuousLinearMap.ext fun P ↦ by simp)
 
 private theorem hasFDerivAt_hardyEquation_zero :
     HasFDerivAt (fun PQ ↦ hardyEquation s ((0 : ℂ × (supported s ℂ (Set.Ici 0) ×
