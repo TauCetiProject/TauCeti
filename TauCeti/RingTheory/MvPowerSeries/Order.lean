@@ -21,23 +21,13 @@ constant coefficient, the degree-`p` component of `f(a)` only depends on the deg
 of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
-the polynomial `f_p(X + Y, Z)`.
+the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` component is a
+polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
+`f(a)` is that polynomial evaluated at the linear parts of the `a i`
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
-
-Substitution preserves closeness: if each `a i - b i` has order at least `n ≠ 0` and the `b i`
-have no constant coefficient, then `aᵈ - bᵈ` has order at least `n + |d| - 1`
-(`MvPowerSeries.le_order_prod_pow_sub_prod_pow`), by bounding products of nearby series factor by
-factor (`MvPowerSeries.le_order_mul_sub_mul`). Expanding the coefficients of `f(a) - f(b)`
-along these differences of monomials (`MvPowerSeries.coeff_subst_sub_subst`) shows that
-`f(a) - f(b)` has order at least `n` (`MvPowerSeries.le_order_subst_sub_subst`), and that its
-degree-`n` component only sees the linear part of `f`
-(`MvPowerSeries.homogeneousComponent_subst_sub_subst`). This compares `G(x, y)` and `G(x', y')`
-for a formal group law `G` and nearby arguments.
-
-The degree-`n` component of a series is a polynomial, `MvPowerSeries.homogeneousComponentPoly`.
-
 The degree-zero component of a series is its constant term
 (`MvPowerSeries.homogeneousComponent_zero`).
 
@@ -152,33 +142,6 @@ theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
 
 end Components
 
-section ComponentPoly
-
-variable {σ R : Type*} [Finite σ] [CommSemiring R]
-
-/-- The degree-`n` homogeneous component of a power series in finitely many variables, as a
-polynomial. -/
-noncomputable def homogeneousComponentPoly (n : ℕ) : MvPowerSeries σ R →ₗ[R] MvPolynomial σ R :=
-  (MvPolynomial.homogeneousComponent n).comp (truncTotal (n + 1))
-
-/-- The polynomial `homogeneousComponentPoly n f` is the degree-`n` component of `f`. -/
-@[simp]
-theorem coe_homogeneousComponentPoly (n : ℕ) (f : MvPowerSeries σ R) :
-    (homogeneousComponentPoly n f : MvPowerSeries σ R) = homogeneousComponent n f := by
-  ext d
-  rw [MvPolynomial.coeff_coe, homogeneousComponentPoly, LinearMap.comp_apply,
-    MvPolynomial.coeff_homogeneousComponent, coeff_homogeneousComponent]
-  split_ifs with hd
-  · exact coeff_truncTotal _ (by omega)
-  · rfl
-
-/-- The polynomial `homogeneousComponentPoly n f` is homogeneous of degree `n`. -/
-theorem isHomogeneous_homogeneousComponentPoly (n : ℕ) (f : MvPowerSeries σ R) :
-    (homogeneousComponentPoly n f).IsHomogeneous n :=
-  MvPolynomial.homogeneousComponent_isHomogeneous _ _
-
-end ComponentPoly
-
 section Products
 
 variable {σ R : Type*} [CommSemiring R]
@@ -225,76 +188,6 @@ theorem homogeneousComponent_degree_prod_pow {ι : Type*} {a : ι → MvPowerSer
 
 end Products
 
-section Differences
-
-variable {σ R : Type*} [CommRing R]
-
-/-- If `x - y` has order at least `n ≠ 0` and `y` has no constant coefficient, neither has `x`. -/
-theorem constantCoeff_eq_zero_of_le_order_sub {n : ℕ} (hn : n ≠ 0) {x y : MvPowerSeries σ R}
-    (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) : constantCoeff x = 0 := by
-  have h := one_le_order_iff_constCoeff_eq_zero.mp
-    ((by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn : (1 : ℕ∞) ≤ n).trans hxy)
-  rwa [map_sub, hy, sub_zero] at h
-
-/-- If `x - x'` and `y - y'` have orders at least `n + p - 1` and `n + q - 1`, where `n ≠ 0`,
-and `x'` and `y` have orders at least `p` and `q`, then `x y - x' y'` has order at least
-`n + (p + q) - 1`. -/
-theorem le_order_mul_sub_mul {n p q : ℕ} (hn : n ≠ 0) {x x' y y' : MvPowerSeries σ R}
-    (hx : ((n + p - 1 : ℕ) : ℕ∞) ≤ (x - x').order) (hx' : (p : ℕ∞) ≤ x'.order)
-    (hy : (q : ℕ∞) ≤ y.order) (hy' : ((n + q - 1 : ℕ) : ℕ∞) ≤ (y - y').order) :
-    ((n + (p + q) - 1 : ℕ) : ℕ∞) ≤ (x * y - x' * y').order := by
-  rw [← sub_add_sub_cancel (x * y) (x' * y) (x' * y'), ← sub_mul, ← mul_sub]
-  refine le_order_add ?_ ?_
-  · calc ((n + (p + q) - 1 : ℕ) : ℕ∞) ≤ ((n + p - 1 + q : ℕ) : ℕ∞) := Nat.cast_le.mpr (by omega)
-      _ = ((n + p - 1 : ℕ) : ℕ∞) + q := Nat.cast_add _ _
-      _ ≤ _ := (add_le_add hx hy).trans le_order_mul
-  · calc ((n + (p + q) - 1 : ℕ) : ℕ∞) = ((p + (n + q - 1) : ℕ) : ℕ∞) := by congr 1; omega
-      _ = (p : ℕ∞) + ((n + q - 1 : ℕ) : ℕ∞) := Nat.cast_add _ _
-      _ ≤ _ := (add_le_add hx' hy').trans le_order_mul
-
-/-- If `x - y` has order at least `n ≠ 0` and `y` has no constant coefficient, then `xᵏ - yᵏ` has
-order at least `n + k - 1`. -/
-theorem le_order_pow_sub_pow {n : ℕ} (hn : n ≠ 0) {x y : MvPowerSeries σ R}
-    (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) (k : ℕ) :
-    ((n + k - 1 : ℕ) : ℕ∞) ≤ (x ^ k - y ^ k).order := by
-  have hx := constantCoeff_eq_zero_of_le_order_sub hn hy hxy
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, pow_succ]
-    exact le_order_mul_sub_mul hn ih (le_order_pow_of_constantCoeff_eq_zero k hy)
-      (by exact_mod_cast one_le_order_iff_constCoeff_eq_zero.mpr hx) (by simpa using hxy)
-
-/-- If each `a i - b i` has order at least `n ≠ 0` and the `b i` have no constant coefficient,
-then the difference of the monomials `aᵈ - bᵈ` has order at least `n + |d| - 1`. -/
-theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {n : ℕ} (hn : n ≠ 0)
-    {a b : ι → MvPowerSeries σ R} (hb : ∀ i, constantCoeff (b i) = 0)
-    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) (d : ι →₀ ℕ) :
-    ((n + d.degree - 1 : ℕ) : ℕ∞) ≤
-      ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k).order := by
-  have ha (i : ι) := constantCoeff_eq_zero_of_le_order_sub hn (hb i) (hab i)
-  induction d using Finsupp.induction with
-  | zero => simp
-  | single_add i k d _ _ ih =>
-    rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
-      Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
-      Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp), map_add,
-      Finsupp.degree_single]
-    exact le_order_mul_sub_mul hn (le_order_pow_sub_pow hn (hb i) (hab i) k)
-      (le_order_pow_of_constantCoeff_eq_zero k (hb i)) (degree_le_order_prod_pow ha d) ih
-
-/-- If each `a i - b i` has order at least `n ≠ 0` and the `b i` have no constant coefficient,
-then the coefficients of `aᵈ - bᵈ` vanish in degrees `e` with `|e| + 1 < n + |d|`. -/
-theorem coeff_prod_pow_sub_prod_pow_eq_zero {ι : Type*} {n : ℕ} (hn : n ≠ 0)
-    {a b : ι → MvPowerSeries σ R} (hb : ∀ i, constantCoeff (b i) = 0)
-    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {d : ι →₀ ℕ} {e : σ →₀ ℕ}
-    (he : e.degree + 1 < n + d.degree) :
-    coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k) = 0 :=
-  coeff_of_lt_order ((Nat.cast_lt.mpr (by omega)).trans_le
-    (le_order_prod_pow_sub_prod_pow hn hb hab d))
-
-end Differences
-
 section Subst
 
 variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -335,74 +228,50 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
         ite_eq_right (hd ▸ he), smul_zero]
     · rw [zero_smul]
 
-/-- A coefficient of `f(a) - f(b)` is the sum of the coefficients of `f` against the corresponding
-coefficients of the differences of monomials `aᵈ - bᵈ`. -/
-theorem coeff_subst_sub_subst {a b : σ → MvPowerSeries τ S} (ha : HasSubst a)
-    (hb : HasSubst b) (f : MvPowerSeries σ R) (e : τ →₀ ℕ) :
-    coeff e (f.subst a - f.subst b) = ∑ᶠ d, coeff d f •
-      coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k) := by
-  rw [map_sub, coeff_subst ha, coeff_subst hb,
-    ← finsum_sub_distrib (coeff_subst_finite ha f e) (coeff_subst_finite hb f e)]
-  simp_rw [map_sub, smul_sub]
-
-/-- **Substitution preserves closeness.** If each `a i - b i` has order at least `n` and the `b i`
-have no constant coefficient, then `f(a) - f(b)` has order at least `n`. -/
-theorem le_order_subst_sub_subst {n : ℕ} {a b : σ → MvPowerSeries τ S} (ha : HasSubst a)
-    (hb : HasSubst b) (hb₀ : ∀ i, constantCoeff (b i) = 0)
-    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) (f : MvPowerSeries σ R) :
-    (n : ℕ∞) ≤ (f.subst a - f.subst b).order := by
-  obtain rfl | hn := eq_or_ne n 0
-  · simp
-  refine nat_le_order fun e he ↦ ?_
-  rw [coeff_subst_sub_subst ha hb]
-  refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
-  obtain rfl | hd := eq_or_ne d 0
-  · simp
-  have hdeg : d.degree ≠ 0 := by rwa [Ne, Finsupp.degree_eq_zero_iff]
-  rw [coeff_prod_pow_sub_prod_pow_eq_zero hn hb₀ hab (by omega), smul_zero]
-
-/-- **The lowest-degree component of a difference of substitutions.** If each `a i - b i` has order
-at least `n ≠ 0` and the `b i` have no constant coefficient, then the degree-`n` component of
-`f(a) - f(b)` only sees the linear part of `f`: it is `∑ᵢ fᵢ (a i - b i)ₙ`, where `fᵢ` is the
-coefficient of `Xᵢ` in `f`. -/
-theorem homogeneousComponent_subst_sub_subst [Fintype σ] {n : ℕ} (hn : n ≠ 0)
-    {a b : σ → MvPowerSeries τ S} (ha : HasSubst a) (hb : HasSubst b)
-    (hb₀ : ∀ i, constantCoeff (b i) = 0) (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order)
-    (f : MvPowerSeries σ R) :
-    homogeneousComponent n (f.subst a - f.subst b) =
-      ∑ i, coeff (Finsupp.single i 1) f • homogeneousComponent n (a i - b i) := by
-  classical
-  ext e
-  rw [coeff_homogeneousComponent]
-  split_ifs with he
-  swap
-  · simp [coeff_homogeneousComponent, he]
-  set g : (σ →₀ ℕ) → S := fun d ↦ coeff d f •
-    coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k)
-  calc coeff e (f.subst a - f.subst b) = ∑ᶠ d, g d := coeff_subst_sub_subst ha hb f e
-    _ = ∑ d ∈ Finset.univ.image fun i : σ ↦ Finsupp.single i 1, g d := by
-      refine finsum_eq_sum_of_support_subset _ fun d hd ↦ ?_
-      -- only the monomials of degree one contribute in degree `n`
-      rw [Finset.coe_image, Finset.coe_univ, Set.image_univ, Finsupp.range_single_one]
-      by_contra hd1
-      obtain rfl | hd0 := eq_or_ne d 0
-      · simp [g] at hd
-      have hdeg : d.degree ≠ 0 := by rwa [Ne, Finsupp.degree_eq_zero_iff]
-      rw [Set.mem_ofPred_eq] at hd1
-      exact hd (by
-        simp only [g]
-        rw [coeff_prod_pow_sub_prod_pow_eq_zero hn hb₀ hab (by omega), smul_zero])
-    _ = ∑ i, g (Finsupp.single i 1) :=
-      Finset.sum_image fun i _ j _ h ↦ Finsupp.single_left_injective one_ne_zero h
-    _ = coeff e (∑ i, coeff (Finsupp.single i 1) f • homogeneousComponent n (a i - b i)) := by
-      rw [map_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp only [g]
-      rw [Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp), pow_one,
-        pow_one]
-      simp [coeff_homogeneousComponent, he]
-
 end Subst
+
+section Polynomial
+
+variable {σ τ R : Type*} [Finite σ]
+
+/-- The degree-`n` homogeneous component of a power series in finitely many variables, as a
+polynomial. -/
+noncomputable def homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial σ R :=
+  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)
+
+@[simp]
+theorem coe_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ) (f : MvPowerSeries σ R) :
+    (homogeneousComponentPolynomial n f : MvPowerSeries σ R) = homogeneousComponent n f := by
+  ext d
+  rw [MvPolynomial.coeff_coe, homogeneousComponentPolynomial,
+    MvPolynomial.coeff_homogeneousComponent, coeff_homogeneousComponent]
+  split_ifs with hd
+  · exact coeff_truncTotal _ (by omega)
+  · rfl
+
+theorem isHomogeneous_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    (homogeneousComponentPolynomial n f).IsHomogeneous n :=
+  MvPolynomial.homogeneousComponent_isHomogeneous _ _
+
+/-- If `f` vanishes below degree `n` and the series `a i` have no constant term, the degree-`n`
+part of `f(a)` is the polynomial degree-`n` part of `f` evaluated at polynomials `l i` equal to the
+linear parts of the `a i`. -/
+theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPowerSeries σ R}
+    (hn : n ≤ f.order) {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ R}
+    (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
+    homogeneousComponent n (f.subst a) =
+      (MvPolynomial.aeval l (homogeneousComponentPolynomial n f) : MvPowerSeries τ R) := by
+  rw [homogeneousComponent_subst_of_le_order hn ha ha₀, ← coe_homogeneousComponentPolynomial,
+    subst_coe]
+  simp_rw [hl]
+  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
+    (homogeneousComponentPolynomial n f) (f := l)).symm
+
+end Polynomial
 
 open Finsupp
 

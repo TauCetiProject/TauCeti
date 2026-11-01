@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Data.Setoid.Basic
 
 /-!
 # Closure properties of analytic sets
@@ -47,8 +48,10 @@ Borel, hence analytic.
 * `MeasureTheory.AnalyticSet.relImage_measurableSet`,
   `MeasureTheory.AnalyticSet.relPreimage_measurableSet`: the image and preimage of a Borel set
   under an analytic relation are analytic, with no separation axiom.
-* `MeasureTheory.AnalyticSet.preimage_image_quotientMk`: the saturation of an analytic set under an
-  equivalence relation with analytic graph is analytic.
+* `MeasureTheory.AnalyticSet.preimage_image_quotientMk`,
+  `MeasureTheory.AnalyticSet.preimage_image_quotientMk_measurableSet`: the saturation of an analytic
+  set (in a Hausdorff space) or of a Borel set under an equivalence relation with analytic graph is
+  analytic.
 
 ## References
 
@@ -180,11 +183,15 @@ Hausdorff space, is analytic. -/
 theorem AnalyticSet.preimage_image_quotientMk [T2Space α] {E : Setoid α}
     (hE : AnalyticSet {p : α × α | E p.1 p.2}) {s : Set α} (hs : AnalyticSet s) :
     AnalyticSet (Quotient.mk E ⁻¹' (Quotient.mk E '' s)) := by
-  have : Quotient.mk E ⁻¹' (Quotient.mk E '' s) = SetRel.preimage {p : α × α | E p.1 p.2} s := by
-    ext x
-    simp only [mem_preimage, mem_image, Quotient.eq, SetRel.mem_preimage, mem_ofPred_eq]
-    exact exists_congr fun y ↦ and_congr_right fun _ ↦ ⟨E.symm, E.symm⟩
-  rw [this]
+  rw [E.preimage_image_quotientMk_eq_relPreimage]
   exact hE.relPreimage hs
+
+/-- The saturation of a Borel set under an equivalence relation with analytic graph is analytic,
+with no separation axiom. -/
+theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α] [BorelSpace α]
+    {E : Setoid α} (hE : AnalyticSet {p : α × α | E p.1 p.2}) {s : Set α} (hs : MeasurableSet s) :
+    AnalyticSet (Quotient.mk E ⁻¹' (Quotient.mk E '' s)) := by
+  rw [E.preimage_image_quotientMk_eq_relPreimage]
+  exact hE.relPreimage_measurableSet hs
 
 end MeasureTheory
