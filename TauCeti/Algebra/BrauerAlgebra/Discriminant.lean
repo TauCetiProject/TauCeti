@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Algebra.BrauerAlgebra.Basic
-public import TauCeti.RingTheory.Semisimple.TraceForm
+public import TauCeti.RingTheory.Semisimple.Trace.Form
 
 /-!
 # The discriminant of the Brauer algebra
@@ -97,14 +97,15 @@ theorem trace_mulLeft_of_mul_of {R : Type*} [CommSemiring R] {δ : R} (D D' : Br
 /-- **The value of the discriminant at `δ`** is the Gram determinant of the regular trace form of
 the Brauer algebra `B_k(δ)` in the diagram basis. -/
 theorem aeval_discr {R : Type*} [CommRing R] (δ : R) :
-    aeval δ (discr k) =
-      (Matrix.of fun D D' : BrauerDiagram k =>
-        trace R (BrauerAlgebra R δ k) (mulLeft R (of D * of D'))).det := by
+    aeval δ (discr k) = (BilinForm.toMatrix (basis R δ k)
+      (Algebra.regularTraceForm R (BrauerAlgebra R δ k))).det := by
   rw [discr, AlgHom.map_det]
   congr 1
   ext D D'
-  rw [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, Matrix.of_apply,
-    trace_mulLeft_of_mul_of]
+  rw [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, BilinForm.toMatrix_apply,
+    Algebra.regularTraceForm_apply, basis_apply, basis_apply]
+  change _ = trace R _ (mulLeft R (of D * of D'))
+  rw [trace_mulLeft_of_mul_of]
   simp [traceMulPoly, apply_ite]
 
 /-- **The Brauer algebra is semisimple where the discriminant does not vanish.** Over every field,
@@ -113,16 +114,17 @@ semisimple. -/
 theorem isSemisimpleRing_of_aeval_discr_ne_zero {K : Type*} [Field K] {δ : K}
     (h : aeval δ (discr k) ≠ 0) : IsSemisimpleRing (BrauerAlgebra K δ k) := by
   classical
-  refine isSemisimpleRing_of_det_trace_mulLeft_ne_zero (basis K δ k) ?_
-  simpa [aeval_discr] using h
+  refine isSemisimpleRing_of_nondegenerate_regularTraceForm
+    ((BilinForm.nondegenerate_iff_det_ne_zero (basis K δ k)).mpr ?_)
+  rwa [← aeval_discr]
 
 /-- **The semisimplicity locus of the Brauer algebra**: over a field of characteristic zero, the
 Brauer algebra `B_k(δ)` is semisimple exactly when the discriminant does not vanish at `δ`. -/
 theorem isSemisimpleRing_iff_aeval_discr_ne_zero {K : Type*} [Field K] [CharZero K] {δ : K} :
     IsSemisimpleRing (BrauerAlgebra K δ k) ↔ aeval δ (discr k) ≠ 0 := by
   classical
-  rw [isSemisimpleRing_iff_det_trace_mulLeft_ne_zero (basis K δ k), aeval_discr]
-  simp
+  rw [isSemisimpleRing_iff_nondegenerate_regularTraceForm (K := K),
+    BilinForm.nondegenerate_iff_det_ne_zero (basis K δ k), aeval_discr]
 
 end BrauerAlgebra
 

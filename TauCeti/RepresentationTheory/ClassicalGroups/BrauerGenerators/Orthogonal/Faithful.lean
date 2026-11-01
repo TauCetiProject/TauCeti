@@ -47,7 +47,7 @@ vanish at `δ = k`, where `B_k(k)` is semisimple; it is a nonzero polynomial
 value `δ` transcendental over `ℤ`, in any field
 (`TauCeti.BrauerAlgebra.isSemisimpleRing_of_transcendental`), and over a field of characteristic
 zero it fails to be semisimple at only finitely many loop values
-(`TauCeti.BrauerAlgebra.finite_setOf_not_isSemisimpleRing`). Which loop values these are, for
+(`TauCeti.BrauerAlgebra.finite_setOfPred_not_isSemisimpleRing`). Which loop values these are, for
 instance whether the symplectic value `-2l` is among them, this argument does not decide.
 
 ## Main results
@@ -62,7 +62,7 @@ instance whether the symplectic value `-2l` is among them, this argument does no
   polynomial in the loop value.
 * `TauCeti.BrauerAlgebra.isSemisimpleRing_of_transcendental`: **the Brauer algebra is semisimple at
   a transcendental loop value.**
-* `TauCeti.BrauerAlgebra.finite_setOf_not_isSemisimpleRing`: **over a field of characteristic
+* `TauCeti.BrauerAlgebra.finite_setOfPred_not_isSemisimpleRing`: **over a field of characteristic
   zero, the Brauer algebra is semisimple at all but finitely many loop values.**
 
 ## References
@@ -175,7 +175,7 @@ variable (k) in
 /-- **The Brauer algebra is generically semisimple**: over a field of characteristic zero, `B_k(δ)`
 is semisimple for all but finitely many loop values `δ`, the exceptions being roots of the
 discriminant. -/
-theorem finite_setOf_not_isSemisimpleRing (K : Type*) [Field K] [CharZero K] :
+theorem finite_setOfPred_not_isSemisimpleRing (K : Type*) [Field K] [CharZero K] :
     {δ : K | ¬IsSemisimpleRing (BrauerAlgebra K δ k)}.Finite := by
   have hp : (discr k).map (Int.castRingHom K) ≠ 0 :=
     (Polynomial.map_ne_zero_iff Int.cast_injective).mpr (discr_ne_zero k)
