@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -24,7 +25,8 @@ the single part of the coarsest partition of a non-bottom element, the fact that
 the whole element as a part is the coarsest, the partition of a type into the
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
 subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
-part sizes, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
+part sizes, the existence of a partition into at most `k` parts of size at most `#s / k + 1`, the
+refinement relations of `Finpartition.bind` and of a refining partition's parts,
 the monotonicity of `Finpartition.bind`, products over its parts, its parts through each point,
 and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
 the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
@@ -187,6 +189,18 @@ theorem sum_sq_card_parts_le {ι : Type*} [DecidableEq ι] {s : Finset ι} (P : 
     ∑ A ∈ P.parts, A.card ^ 2 ≤ m * s.card := by
   rw [← P.sum_card_parts, Finset.mul_sum]
   exact Finset.sum_le_sum fun A hA ↦ by rw [sq]; exact Nat.mul_le_mul_right _ (hm A hA)
+
+/-- A finite set has a partition into at most `k` parts, each with at most `#s / k + 1` elements:
+an equipartition into `k` parts when `k ≤ #s`, and the partition into singletons otherwise. -/
+theorem exists_card_parts_le_card_le {ι : Type*} [DecidableEq ι] (s : Finset ι) {k : ℕ}
+    (hk : k ≠ 0) :
+    ∃ E : Finpartition s, E.parts.card ≤ k ∧ ∀ A ∈ E.parts, A.card ≤ s.card / k + 1 := by
+  obtain hks | hsk := le_or_gt k s.card
+  · obtain ⟨E, hE, hcard⟩ := exists_equipartition_card_eq s hk hks
+    exact ⟨E, hcard.le, fun A hA ↦ hcard ▸ hE.card_part_le_average_add_one hA⟩
+  · refine ⟨⊥, ((card_bot s).trans_lt hsk).le, fun A hA ↦ ?_⟩
+    obtain ⟨a, -, rfl⟩ := mem_bot_iff.1 hA
+    simp
 
 variable {Ω : Type*} {u : Set Ω}
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Energy
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
-import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.Finset.Basic
@@ -87,17 +86,6 @@ theorem pairColorRegularityBound_def (ε : ℝ) (m : ℕ) :
 /-- The growth of the number of parts in one round of the energy increment is monotone. -/
 private theorem monotone_mul_four_pow_sq : Monotone fun m : ℕ ↦ m * 4 ^ m ^ 2 := fun a b hab ↦
   Nat.mul_le_mul hab (Nat.pow_le_pow_right (by norm_num) (Nat.pow_le_pow_left hab 2))
-
-/-- A finite set has a partition into at most `k` parts, each with at most `#s / k + 1` elements:
-an equipartition into `k` parts when `k ≤ #s`, and the partition into singletons otherwise. -/
-private theorem exists_card_parts_le_card_le {α : Type*} [DecidableEq α] (s : Finset α) {k : ℕ}
-    (hk : k ≠ 0) : ∃ E : Finpartition s, #E.parts ≤ k ∧ ∀ A ∈ E.parts, #A ≤ #s / k + 1 := by
-  obtain hks | hsk := le_or_gt k #s
-  · obtain ⟨E, hE, hcard⟩ := exists_equipartition_card_eq s hk hks
-    exact ⟨E, hcard.le, fun A hA ↦ hcard ▸ hE.card_part_le_average_add_one hA⟩
-  · refine ⟨⊥, ((card_bot s).trans_lt hsk).le, fun A hA ↦ ?_⟩
-    obtain ⟨a, -, rfl⟩ := mem_bot_iff.1 hA
-    simp
 
 namespace PairColorSystem
 
