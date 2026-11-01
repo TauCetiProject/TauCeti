@@ -516,9 +516,8 @@ theorem inv_iff (hf : HasLeftQuotientFDerivAt f q b) (hq : f q ≠ 0) :
     HasLeftQuotientFDerivAt (fun x ↦ (f x)⁻¹) q (-((f q)⁻¹ * b * (f q)⁻¹)) ↔
       b = 0 ∨ (f q).im = 0 := by
   have hD : HasFDerivAt (fun x ↦ (f x)⁻¹) _ q := (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
-  have hinv : (f q)⁻¹.im = 0 ↔ (f q).im = 0 := by
-    simp only [Quaternion.im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
-  rw [hD.hasLeftQuotientFDerivAt_iff, ← hinv, ← forall_mul_mul_eq_iff]
+  rw [hD.hasLeftQuotientFDerivAt_iff, ← Quaternion.im_inv_eq_zero_iff (x := f q),
+    ← forall_mul_mul_eq_iff]
   refine forall_congr' fun h ↦ ?_
   simp [← mul_assoc, inv_ne_zero hq]
 
@@ -571,10 +570,9 @@ theorem inv_iff (hf : HasRightQuotientFDerivAt f q a) (hq : f q ≠ 0) :
     HasRightQuotientFDerivAt (fun x ↦ (f x)⁻¹) q (-((f q)⁻¹ * a * (f q)⁻¹)) ↔
       a = 0 ∨ (f q).im = 0 := by
   have hD : HasFDerivAt (fun x ↦ (f x)⁻¹) _ q := (hasFDerivAt_inv' hq).comp q hf.hasFDerivAt
-  have hinv : (f q)⁻¹.im = 0 ↔ (f q).im = 0 := by
-    simp only [Quaternion.im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
   have ha : (f q)⁻¹ * a = 0 ↔ a = 0 := by simp [hq]
-  rw [hD.hasRightQuotientFDerivAt_iff, ← hinv, ← ha, ← forall_mul_mul_eq_iff']
+  rw [hD.hasRightQuotientFDerivAt_iff, ← Quaternion.im_inv_eq_zero_iff (x := f q), ← ha,
+    ← forall_mul_mul_eq_iff']
   refine forall_congr' fun h ↦ ?_
   simp [mul_assoc]
 

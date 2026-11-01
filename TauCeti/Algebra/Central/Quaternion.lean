@@ -41,6 +41,8 @@ than excluding it.
   and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
 * `TauCeti.Quaternion.im_eq_zero_iff_forall_commute`: under the same hypotheses, a quaternion is a
   scalar iff it commutes with every quaternion.
+* `TauCeti.Quaternion.im_inv_eq_zero_iff`: over a linearly ordered field, the inverse of a
+  quaternion is a scalar iff the quaternion is.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
   not isomorphic to a matrix algebra of size at least two, so over a field its Brauer class is
   nontrivial.
@@ -181,6 +183,18 @@ theorem im_eq_zero_iff_forall_commute [NoZeroDivisors R] [NeZero (2 : R)] :
     simp
 
 end CommRing
+
+section LinearOrderedField
+
+variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x : ℍ[R]}
+
+/-- **The inverse of a quaternion is a scalar exactly when the quaternion is**, over a linearly
+ordered field. By `TauCeti.Quaternion.im_eq_zero_iff_forall_commute` both sides say the element is
+central, and `x⁻¹` commutes with `y` exactly when `x` does. -/
+theorem im_inv_eq_zero_iff : x⁻¹.im = 0 ↔ x.im = 0 := by
+  simp only [im_eq_zero_iff_forall_commute, Commute.inv_left_iff₀]
+
+end LinearOrderedField
 
 section LinearOrderedCommRing
 
