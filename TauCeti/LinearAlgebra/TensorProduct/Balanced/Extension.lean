@@ -443,19 +443,6 @@ open Matrix
 
 variable (f) {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
 
-/-- The `f`-semilinear map `Rⁿ e → Sⁿ f(e)` applying `f` to every coordinate. -/
-private def rangeVecMulLinearMap (he : IsIdempotentElem e) :
-    LinearMap.range e.vecMulLinear →ₛₗ[f] LinearMap.range (e.map f).vecMulLinear where
-  toFun v := ⟨f ∘ v, (he.matrix_map f).mem_range_vecMulLinear_iff.2 <| funext fun i ↦ by
-    rw [← RingHom.map_vecMul, he.mem_range_vecMulLinear_iff.1 v.2]
-    rfl⟩
-  map_add' v w := Subtype.ext <| funext fun i ↦ by simp
-  map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
-
-private theorem coe_rangeVecMulLinearMap_apply (he : IsIdempotentElem e)
-    (v : LinearMap.range e.vecMulLinear) :
-    (rangeVecMulLinearMap f he v : ι → S) = f ∘ v := (rfl)
-
 /-- The `S`-linear map `Sⁿ f(e) → S ⊗_R (Rⁿ e)`, `w ↦ ∑ i, wᵢ ⊗ eᵢ`, through the rows `eᵢ`
 of `e`. -/
 private def rangeVecMulLinearInv (he : IsIdempotentElem e) :
@@ -473,24 +460,25 @@ module, the extension of scalars along `f` is the image `Sⁿ f(e)` of the matri
 noncomputable def rangeVecMulLinearEquiv (he : IsIdempotentElem e) :
     BalancedExtension f (LinearMap.range e.vecMulLinear) ≃ₗ[S]
       LinearMap.range (e.map f).vecMulLinear :=
-  LinearEquiv.ofLinearMap (lift (rangeVecMulLinearMap f he)) (rangeVecMulLinearInv f he)
+  LinearEquiv.ofLinearMap (lift (e.rangeVecMulLinearMap f)) (rangeVecMulLinearInv f he)
     (LinearMap.ext fun w ↦ by
       conv_rhs => rw [LinearMap.id_apply, (he.matrix_map f).eq_sum_smul_row w]
       simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Fintype.linearCombination_apply,
-        map_sum, map_smul, lift_tmul, one_smul]
-      rfl)
+        map_sum, map_smul, lift_tmul, one_smul, Submodule.subtype_apply]
+      exact Finset.sum_congr rfl fun i _ ↦ congrArg _ <| Subtype.ext <|
+        coe_rangeVecMulLinearMap_apply e f _)
     (hom_ext fun v ↦ by
       conv_rhs => rw [LinearMap.id_apply, he.eq_sum_smul_row v, ← includeRight_apply, map_sum]
       simp only [LinearMap.comp_apply, lift_tmul, one_smul, rangeVecMulLinearInv,
-        Fintype.linearCombination_apply, map_smulₛₗ, includeRight_apply, smul_tmul, mul_one]
-      rfl)
+        Fintype.linearCombination_apply, map_smulₛₗ, includeRight_apply, smul_tmul, mul_one,
+        Submodule.subtype_apply, coe_rangeVecMulLinearMap_apply, Function.comp_apply])
 
 @[simp]
 theorem coe_rangeVecMulLinearEquiv_tmul (he : IsIdempotentElem e) (s : S)
     (v : LinearMap.range e.vecMulLinear) :
     (rangeVecMulLinearEquiv f he (tmul f s v) : ι → S) = fun i ↦ s * f ((v : ι → R) i) := by
   ext i
-  simp [rangeVecMulLinearEquiv, coe_rangeVecMulLinearMap_apply]
+  simp [rangeVecMulLinearEquiv]
 
 @[simp]
 theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
