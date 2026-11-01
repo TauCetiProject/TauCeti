@@ -47,6 +47,8 @@ records that none of them is admissible.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.twoElementaryLatticeWithInvariants_iff`: the defining characterization
+  of the existence predicate.
 * `TauCeti.IntegralLattice.twoElementaryAdmissible_sigPos_sigNeg`: the invariants of an even
   `2`-elementary lattice satisfy Nikulin's conditions.
 * `TauCeti.IntegralLattice.TwoElementaryLatticeWithInvariants.twoElementaryAdmissible`: the
@@ -114,7 +116,7 @@ private noncomputable def dualTwo (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0
     intro y hy
     -- `2B(x, y) = B(y, 2x)` with `y ∈ Lᵛ` and `2x ∈ L`.
     have h := (LinearMap.BilinForm.mem_dualSubmodule _).mp hy _
-      (L.two_nsmul_mem_carrier h2 ⟨x, hx⟩)
+      (L.nsmul_mem_carrier 2 h2 ⟨x, hx⟩)
     rw [map_nsmul, nsmul_eq_mul, L.isSymm.eq] at h
     rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul]
     exact_mod_cast h
@@ -186,7 +188,7 @@ theorem twoElementaryAdmissible_sigPos_sigNeg {a : ℕ}
     have := L.signature_sum_eq_finrank
     omega
   have hle : a ≤ L.sigPos + L.sigNeg := by
-    have := L.natCard_discriminantGroup_dvd_two_pow_finrank h2
+    have := L.natCard_discriminantGroup_dvd_pow_finrank 2 h2
     rw [hcard, ← hrank] at this
     exact (Nat.pow_dvd_pow_iff_le_right (by norm_num)).mp this
   refine ⟨hle, ?_, fun hδ0 ↦ ?_, fun ha ↦ ?_, fun ha ↦ ?_, fun ha hs ↦ ?_, fun hδ0 ha ↦ ?_⟩
@@ -230,7 +232,7 @@ theorem twoElementaryAdmissible_sigPos_sigNeg {a : ℕ}
     exact hδ.mpr (FiniteQuadraticModule.quadratic_add_self_eq_zero_of_gaussSign_eq_four hA h2
       (hcard.trans (by norm_num)) (hmil.trans hs))
   · -- (7) If `#A_L = 2^n`, then `L = 2Lᵛ` and `Lᵛ(2)` is even unimodular.
-    have hS := fun x hx ↦ L.exists_mem_dualCarrier_eq_two_nsmul h2
+    have hS := fun x hx ↦ L.exists_mem_dualCarrier_eq_nsmul 2 h2
       (hcard.trans (by rw [ha, hrank])) (x := x) hx
     have h8 := L.eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul hL h2 hS (hδ.mp hδ0)
     exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mpr (by exact_mod_cast h8)
@@ -246,11 +248,21 @@ def TwoElementaryLatticeWithInvariants (δ : ZMod 2) (tp tm a : ℕ) : Prop :=
       (δ = 0 ↔ ∀ x : L.DiscriminantGroup,
         L.discriminantQuadraticMap hev x + L.discriminantQuadraticMap hev x = 0)
 
+/-- The defining characterization of `TwoElementaryLatticeWithInvariants`: introduce and
+eliminate the existence predicate through its lattice witness. -/
+theorem twoElementaryLatticeWithInvariants_iff {δ : ZMod 2} {tp tm a : ℕ} :
+    TwoElementaryLatticeWithInvariants δ tp tm a ↔
+      ∃ (L : IntegralLattice (Fin (tp + tm) → ℚ)) (_ : L.IsNondegenerate) (hev : L.IsEven),
+        L.signature = (tp, 0, tm) ∧ Nonempty (L.DiscriminantGroup ≃+ (Fin a → ZMod 2)) ∧
+          (δ = 0 ↔ ∀ x : L.DiscriminantGroup,
+            L.discriminantQuadraticMap hev x + L.discriminantQuadraticMap hev x = 0) :=
+  Iff.rfl
+
 /-- **The necessity half of Nikulin's Theorem 3.6.2**: the invariants of an even `2`-elementary
 lattice satisfy his seven conditions. -/
 theorem TwoElementaryLatticeWithInvariants.twoElementaryAdmissible {δ : ZMod 2} {tp tm a : ℕ}
     (h : TwoElementaryLatticeWithInvariants δ tp tm a) : TwoElementaryAdmissible δ tp tm a := by
-  obtain ⟨L, _, hev, hsig, ⟨e⟩, hδ⟩ := h
+  obtain ⟨L, _, hev, hsig, ⟨e⟩, hδ⟩ := twoElementaryLatticeWithInvariants_iff.mp h
   have hadm := L.twoElementaryAdmissible_sigPos_sigNeg hev e hδ
   simp only [signature, Prod.mk.injEq] at hsig
   rwa [hsig.1, hsig.2.2] at hadm
