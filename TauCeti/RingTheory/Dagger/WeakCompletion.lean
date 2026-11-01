@@ -15,8 +15,8 @@ import TauCeti.Algebra.MvPolynomial.Monad
 # The Monsky–Washnitzer weak completion
 
 Let `O` be a commutative ring, `π ∈ O`, and `S` a finitely generated `O`-algebra with
-`π`-adic completion `Ŝ = lim_m S ⧸ πᵐ S`. Choose generators `x₁, …, xₙ` of `S`. The *weak
-completion* `S† ⊆ Ŝ` of Monsky and Washnitzer consists of the elements
+`π`-adic completion `S^∧ = lim_m S ⧸ πᵐ S`. Choose generators `x₁, …, xₙ` of `S`. The *weak
+completion* `S† ⊆ S^∧` of Monsky and Washnitzer consists of the elements
 
 ```text
 z = ∑_{j ≥ 0} πʲ Pⱼ(x₁, …, xₙ),   Pⱼ ∈ O[X₁, …, Xₙ],   deg Pⱼ ≤ c (j + 1)
@@ -33,18 +33,18 @@ The growth condition is invariant under a change of generators. If every `xᵢ` 
 degree at most `D` in other generators `y`, then `Pⱼ(x) = Qⱼ(y)` with `deg Qⱼ ≤ D c (j + 1)`
 (`MvPolynomial.totalDegree_bind₁_le`). Truncated products of such series are the truncations of
 their Cauchy products, so the degree-growth set is closed under multiplication. Hence `S†` is
-an `O`-subalgebra of `Ŝ` which does not depend on the chosen generators.
+an `O`-subalgebra of `S^∧` which does not depend on the chosen generators.
 
 Nothing here assumes that `O` is a discrete valuation ring or that `π` is a uniformiser. For
-`π = 0` the map `S → Ŝ` is bijective, so `S† = Ŝ` by `weakCompletion_eq_top_of_surjective`; for
+`π = 0` the map `S → S^∧` is bijective, so `S† = S^∧` by `weakCompletion_eq_top_of_surjective`; for
 `π` a unit the completion is the zero ring.
 
 ## Main definitions
 
-* `TauCeti.Dagger.piAdicCompletion π S`: the `π`-adic completion `Ŝ` of `S`.
-* `TauCeti.Dagger.weakCompletionSet π x`: the elements of `Ŝ` with a degree-growth expansion
+* `TauCeti.Dagger.piAdicCompletion π S`: the `π`-adic completion `S^∧` of `S`.
+* `TauCeti.Dagger.weakCompletionSet π x`: the elements of `S^∧` with a degree-growth expansion
   in a family `x` of elements of `S`.
-* `TauCeti.Dagger.weakCompletion π S`: the weak completion `S†`, the subalgebra of `Ŝ` given by
+* `TauCeti.Dagger.weakCompletion π S`: the weak completion `S†`, the subalgebra of `S^∧` given by
   the degree-growth set of a chosen finite generating family.
 * `TauCeti.Dagger.weakCompletion.of π S`: the map `S → S†`.
 
@@ -57,7 +57,7 @@ Nothing here assumes that `O` is a discrete valuation ring or that `π` is a uni
 * `TauCeti.Dagger.algebraMap_mem_weakCompletion`: `S†` contains the image of `S`.
 * `TauCeti.Dagger.weakCompletion.of_injective_iff`: `S → S†` is injective iff `S` is
   `π`-adically separated.
-* `TauCeti.Dagger.weakCompletion_eq_top_of_surjective`: if `S → Ŝ` is surjective, `S† = Ŝ`.
+* `TauCeti.Dagger.weakCompletion_eq_top_of_surjective`: if `S → S^∧` is surjective, `S† = S^∧`.
 
 ## References
 
@@ -76,7 +76,7 @@ open Finset MvPolynomial
 
 variable {O : Type*} [CommRing O] (π : O) (S : Type*) [CommRing S] [Algebra O S]
 
-/-- The `π`-adic completion `Ŝ = lim_m S ⧸ πᵐ S` of an `O`-algebra `S`. -/
+/-- The `π`-adic completion `S^∧ = lim_m S ⧸ πᵐ S` of an `O`-algebra `S`. -/
 abbrev piAdicCompletion : Type _ :=
   AdicCompletion (Ideal.span {algebraMap O S π}) S
 
@@ -181,7 +181,7 @@ end WeakCompletionSet
 
 variable (S) [Algebra.FiniteType O S]
 
-/-- The weak completion `S† ⊆ Ŝ` of a finitely generated `O`-algebra `S`: the degree-growth set
+/-- The weak completion `S† ⊆ S^∧` of a finitely generated `O`-algebra `S`: the degree-growth set
 of a chosen finite generating family, an `O`-subalgebra of the `π`-adic completion. By
 `coe_weakCompletion` it is the degree-growth set of every finite generating family. -/
 noncomputable def weakCompletion : Subalgebra O (piAdicCompletion π S) where
@@ -221,7 +221,7 @@ theorem algebraMap_mem_weakCompletion (s : S) :
     exact Algebra.mem_top
 
 variable (S) in
-/-- The map `S → S†` into the weak completion. Its composite with the inclusion `S† ⊆ Ŝ` is
+/-- The map `S → S†` into the weak completion. Its composite with the inclusion `S† ⊆ S^∧` is
 the map of `S` to its `π`-adic completion. -/
 noncomputable def weakCompletion.of : S →ₐ[O] weakCompletion π S :=
   (IsScalarTower.toAlgHom O S (piAdicCompletion π S)).codRestrict _
