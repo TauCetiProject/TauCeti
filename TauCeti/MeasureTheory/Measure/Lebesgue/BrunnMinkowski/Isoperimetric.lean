@@ -98,18 +98,6 @@ theorem mul_volume_real_rpow_mul_le_perimeter_toReal (K : ConvexBody E)
   rw [hB, Measure.addHaar_real_closedBall_eq_addHaar_real_ball, le_div_iff₀ (by positivity)] at h
   linarith
 
-/-- The isoperimetric bound `n^n ω_n |s|^(n-1)` for a set `s` of finite volume is the `n`-th
-power of the real quantity `n ω_n^(1/n) |s|^(1 - 1/n)`, read in `ℝ≥0∞`. -/
-theorem _root_.TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal {s : Set E}
-    (hs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0) :
-    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) * volume s ^ (finrank ℝ E - 1) =
-      ENNReal.ofReal ((finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ^ finrank ℝ E) := by
-  rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow measureReal_nonneg hn,
-    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg hn]
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
-  simp [ENNReal.ofReal_pow, measure_ball_lt_top.ne, hs]
-
 /-- **The isoperimetric inequality for convex bodies.** In dimension `n ≥ 1`, a convex body `K`
 of positive volume satisfies `P(K)^n ≥ n^n ω_n |K|^(n-1)`, where `ω_n = volume (ball 0 1)`. -/
 theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow (K : ConvexBody E)

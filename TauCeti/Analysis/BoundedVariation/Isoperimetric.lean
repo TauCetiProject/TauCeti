@@ -8,15 +8,17 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.BoundedVariation.SmoothApproximation
+import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Isoperimetric
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+import TauCeti.Topology.Order.Sublevel
 
 /-!
 # The sharp isoperimetric inequality for sets of finite volume
@@ -29,8 +31,9 @@ null-measurable set `s` of finite positive volume satisfies the sharp isoperimet
 
 (`MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`),
 with no boundedness, connectedness or regularity hypothesis on `s`, and with `P(s)` finite or
-infinite. Equivalently `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`, which is stated in real numbers when the
-perimeter is finite
+infinite. Equivalently `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`
+(`MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`), which is also
+stated in real numbers when the perimeter is finite
 (`MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`).
 Balls attain equality (`TauCeti.perimeter_ball_pow`), so the constant is sharp. Finite volume
 cannot be dropped: the complement of a ball has finite perimeter.
@@ -59,8 +62,10 @@ the perimeter with surface measure or Minkowski content is used.
 
 * `MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`:
   the sharp isoperimetric inequality `n^n ω_n |s|^(n-1) ≤ P(s)^n` in `ℝ≥0∞`.
+* `MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`: the equivalent
+  form `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)` in `ℝ≥0∞`, with no hypothesis on the perimeter.
 * `MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`: its real form
-  `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)` for sets of finite perimeter.
+  for sets of finite perimeter.
 
 ## References
 
@@ -79,104 +84,6 @@ open MeasureTheory Metric Module Set Filter TopologicalSpace TestFunction InnerP
 open scoped ENNReal Topology ContDiff Distributions Gradient Pointwise symmDiff
 
 namespace TauCeti
-
-section NormedSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- If the derivative of `w` has norm at most `L` wherever `a ≤ w ≤ b`, then `w` stays above `a`
-at distance less than `(b - a) / L` from every point where `w ≥ b`. -/
-private theorem lt_apply_add_of_norm_fderiv_le {w : E → ℝ} (hw : Differentiable ℝ w)
-    {a b L : ℝ} (hL : 0 ≤ L) (hbound : ∀ x, a ≤ w x → w x ≤ b → ‖fderiv ℝ w x‖ ≤ L) {x z : E}
-    (hx : b ≤ w x) (hz : L * ‖z‖ < b - a) : a < w (x + z) := by
-  by_contra! h
-  -- Along the segment from `x` to `x + z`, let `s₁` be the first time with `w ≤ a` and `s₀` the
-  -- last earlier time with `w ≥ b`. Strictly between them `a < w < b`, so the derivative bound
-  -- applies there, and the mean value theorem gives a contradiction.
-  let f : ℝ → ℝ := fun s => w (x + s • z)
-  have hfd (s : ℝ) : HasDerivAt f (fderiv ℝ w (x + s • z) z) s := by
-    have hline : HasDerivAt (fun s : ℝ => x + s • z) z s := by
-      simpa using ((hasDerivAt_id s).smul_const z).const_add x
-    exact (hw (x + s • z)).hasFDerivAt.comp_hasDerivAt s hline
-  have hfc : Continuous f := continuous_iff_continuousAt.2 fun s => (hfd s).continuousAt
-  have hab : a < b := by nlinarith [norm_nonneg z]
-  obtain ⟨s₁, ⟨⟨hs₁I, hs₁a⟩, hs₁⟩⟩ :=
-    (isCompact_Icc.inter_right (isClosed_Iic.preimage hfc)).exists_isLeast
-      (⟨1, right_mem_Icc.2 zero_le_one, by simpa [f] using h⟩ :
-        (Icc (0 : ℝ) 1 ∩ f ⁻¹' Iic a).Nonempty)
-  obtain ⟨s₀, ⟨⟨hs₀I, hs₀b⟩, hs₀⟩⟩ :=
-    (isCompact_Icc.inter_right (isClosed_Ici.preimage hfc)).exists_isGreatest
-      (⟨0, left_mem_Icc.2 hs₁I.1, by simpa [f] using hx⟩ : (Icc 0 s₁ ∩ f ⁻¹' Ici b).Nonempty)
-  simp only [mem_preimage, mem_Iic, mem_Ici] at hs₁a hs₀b
-  have hlt : s₀ < s₁ :=
-    lt_of_le_of_ne hs₀I.2 fun he => by rw [he] at hs₀b; linarith
-  obtain ⟨c, hc, hcd⟩ := exists_hasDerivAt_eq_slope f (fun s => fderiv ℝ w (x + s • z) z) hlt
-    hfc.continuousOn fun s _ => hfd s
-  have hcI : c ∈ Icc (0 : ℝ) 1 := ⟨hs₀I.1.trans hc.1.le, hc.2.le.trans hs₁I.2⟩
-  have hca : a < f c := by
-    by_contra! hca
-    exact (hs₁ ⟨hcI, hca⟩).not_gt hc.2
-  have hcb : f c < b := by
-    by_contra! hcb
-    exact (hs₀ ⟨⟨hcI.1, hc.2.le⟩, hcb⟩).not_gt hc.1
-  have hd : -(L * ‖z‖) ≤ fderiv ℝ w (x + c • z) z := by
-    have := ((fderiv ℝ w (x + c • z)).le_opNorm z).trans
-      (mul_le_mul_of_nonneg_right (hbound _ hca.le hcb.le) (norm_nonneg z))
-    rw [Real.norm_eq_abs] at this
-    linarith [neg_abs_le (fderiv ℝ w (x + c • z) z)]
-  have hpos : 0 < s₁ - s₀ := sub_pos.2 hlt
-  have hslope : f s₁ - f s₀ = fderiv ℝ w (x + c • z) z * (s₁ - s₀) := by
-    rw [hcd, div_mul_cancel₀ _ hpos.ne']
-  have : -(L * ‖z‖) ≤ f s₁ - f s₀ := by
-    rw [hslope]
-    nlinarith [mul_nonneg hL (norm_nonneg z), hs₀I.1, hs₁I.2]
-  linarith
-
-/-- The derivative of the clamped function `max 0 (min w η)` is the derivative of `w` on
-`{0 < w < η}` and vanishes elsewhere, including at both levels `0` and `η`. -/
-private theorem fderiv_max_min_eq_indicator {w : E → ℝ} (hw : Continuous w) {η : ℝ} (hη : 0 < η)
-    (x : E) :
-    fderiv ℝ (fun y => max 0 (min (w y) η)) x = (w ⁻¹' Ioo 0 η).indicator (fderiv ℝ w) x := by
-  rcases lt_trichotomy (w x) 0 with h | h | h
-  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (h.trans hx.1).false]
-    refine (Filter.EventuallyEq.fderiv_eq (f := fun _ => (0 : ℝ)) ?_).trans (fderiv_const_apply _)
-    filter_upwards [hw.continuousAt.eventually (gt_mem_nhds h)] with y hy
-    exact max_eq_left ((min_le_left _ _).trans hy.le)
-  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (h ▸ hx.1).false]
-    refine IsLocalMin.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
-    simp only [h, min_eq_left hη.le, max_self]
-    exact le_max_left _ _
-  rcases lt_trichotomy (w x) η with h' | h' | h'
-  · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) ⟨h, h'⟩]
-    refine Filter.EventuallyEq.fderiv_eq ?_
-    filter_upwards [hw.continuousAt.eventually (lt_mem_nhds h),
-      hw.continuousAt.eventually (gt_mem_nhds h')] with y hy hy'
-    rw [min_eq_left hy'.le, max_eq_right hy.le]
-  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (h' ▸ hx.2).false]
-    refine IsLocalMax.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
-    simp only [h', min_self, max_eq_right hη.le]
-    exact max_le hη.le (min_le_right _ _)
-  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) fun hx => (hx.2.trans h').false]
-    refine (Filter.EventuallyEq.fderiv_eq (f := fun _ => η) ?_).trans (fderiv_const_apply _)
-    filter_upwards [hw.continuousAt.eventually (lt_mem_nhds h')] with y hy
-    rw [min_eq_right hy.le, max_eq_right hη.le]
-
-end NormedSpace
-
-/-- If `{w ≥ -δ}` is compact, then a closed set avoiding the zero level of a continuous `w` also
-avoids `{|w| ≤ η}` for some `0 < η ≤ δ`. -/
-private theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → ℝ}
-    (hw : Continuous w) {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) {C : Set X}
-    (hC : IsClosed C)
-    (hCw : ∀ x ∈ C, w x ≠ 0) : ∃ η, 0 < η ∧ η ≤ δ ∧ ∀ x, |w x| ≤ η → x ∉ C := by
-  rcases ({x | -δ ≤ w x} ∩ C).eq_empty_or_nonempty with hA | hA
-  · exact ⟨δ, hδ, le_rfl, fun x hx hxC =>
-      hA.subset ⟨neg_le_of_abs_le hx, hxC⟩⟩
-  obtain ⟨x₀, hx₀, hmin⟩ := (hK.inter_right hC).exists_isMinOn hA hw.abs.continuousOn
-  have hm : 0 < |w x₀| := abs_pos.2 (hCw x₀ hx₀.2)
-  refine ⟨min δ (|w x₀| / 2), lt_min hδ (half_pos hm), min_le_left _ _, fun x hx hxC => ?_⟩
-  have := isMinOn_iff.1 hmin x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩
-  linarith [min_le_right δ (|w x₀| / 2)]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -316,36 +223,6 @@ private theorem setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1 
   rw [Real.norm_eq_abs] at hrem
   rw [← hibp, mul_add]
   linarith [neg_abs_le (∫ x, D x * (η * F.indicator 1 x - v x))]
-
-/-- **Brunn–Minkowski for a shell.** If the `r`-neighbourhood `G + ball 0 r` of a nonempty
-measurable set `G` lies in a set `F` of finite volume, then in dimension `n ≥ 1`
-`volume F - volume G ≥ n (volume G ^ (1 / n)) ^ (n - 1) r ω_n ^ (1 / n)`. -/
-private theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {G F : Set E}
-    (hG : MeasurableSet G) (hG0 : G.Nonempty) (hF : volume F ≠ ⊤) {r : ℝ} (hr : 0 < r)
-    (hsub : G + ball (0 : E) r ⊆ F) :
-    finrank ℝ E * (volume.real G ^ (finrank ℝ E : ℝ)⁻¹) ^ (finrank ℝ E - 1) *
-        (r * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹) ≤
-      volume.real F - volume.real G := by
-  set n := finrank ℝ E
-  set a := volume.real G ^ (n : ℝ)⁻¹
-  set b := r * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹
-  have hball : volume.real (ball (0 : E) r) ^ (n : ℝ)⁻¹ = b := by
-    rw [volume.addHaar_real_ball_of_pos 0 hr, Real.mul_rpow (by positivity) measureReal_nonneg,
-      Real.pow_rpow_inv_natCast hr.le hn]
-  have hBM := volume_real_rpow_add_volume_real_rpow_le hn hG0 hG.nullMeasurableSet
-    (nonempty_ball.2 hr) measurableSet_ball.nullMeasurableSet
-    (ne_top_of_le_ne_top hF (measure_mono hsub))
-  rw [hball] at hBM
-  have hab : a + b ≤ volume.real F ^ (n : ℝ)⁻¹ := hBM.trans
-    (Real.rpow_le_rpow measureReal_nonneg (measureReal_mono hsub hF) (by positivity))
-  have ha : 0 ≤ a := by positivity
-  have hb : 0 ≤ b := by positivity
-  have hpow := pow_le_pow_left₀ (by positivity) hab n
-  rw [Real.rpow_inv_natCast_pow measureReal_nonneg hn] at hpow
-  have hbin := (Commute.all a b).pow_add_mul_le_add_pow_of_sq_nonneg ha (sq_nonneg b)
-    (sq_nonneg _) (by positivity) n
-  have han : a ^ n = volume.real G := Real.rpow_inv_natCast_pow measureReal_nonneg hn
-  linarith
 
 /-- **One step of the smooth isoperimetric argument.** Suppose that `‖Dw‖` lies within `ε < 1`
 of `1` on `{0 ≤ w ≤ η}` and that a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on
@@ -584,19 +461,33 @@ private theorem ofReal_le_perimeter_setOf_lt {u : E → ℝ} (hu : ContDiff ℝ 
   rw [← hset] at hV ⊢
   exact ofReal_le_perimeter_setOf_pos hw (by norm_num) hK hnorm hn hV
 
-/-- The sharp isoperimetric inequality in the form `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)` for
-a null-measurable set of finite positive volume, obtained from the smooth case by approximation
-in measure and in perimeter. -/
-private theorem ofReal_le_perimeter {s : Set E} (hs : NullMeasurableSet s volume)
-    (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0) (hs0 : volume s ≠ 0) :
+end TauCeti
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **The sharp isoperimetric inequality, extended-real form.** In a Euclidean space of dimension
+`n ≥ 1`, every null-measurable set `s` of finite positive volume satisfies
+`n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
+perimeter of `s` in the whole space, finite or infinite. No boundedness or regularity is
+assumed. -/
+theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
+    (hs0 : volume s ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤ perimeter volume ⊤ s := by
   obtain ⟨u, t, hprop, hsymm, hP⟩ := hs.exists_smooth_perimeter_approximation hμs
   set F : ℕ → Set E := fun k => {x | t k < u k x}
-  have hFm (k : ℕ) : NullMeasurableSet (F k) volume :=
-    (measurableSet_lt measurable_const (hprop k).1.continuous.measurable).nullMeasurableSet
-  have hFfin (k : ℕ) : volume (F k) ≠ ⊤ :=
-    ne_top_of_le_ne_top (hprop k).2.2.2.2.1.measure_lt_top.ne (measure_mono subset_closure)
+  have hFm (k : ℕ) : NullMeasurableSet (F k) volume := by
+    obtain ⟨hu, -⟩ := hprop k
+    exact (measurableSet_lt measurable_const hu.continuous.measurable).nullMeasurableSet
+  have hFfin (k : ℕ) : volume (F k) ≠ ⊤ := by
+    obtain ⟨-, -, -, -, hcl, -⟩ := hprop k
+    exact ne_top_of_le_ne_top hcl.measure_lt_top.ne (measure_mono subset_closure)
   -- The volumes of the approximations converge to the volume of `s`.
   have hV : Tendsto (fun k => volume.real (F k)) atTop (𝓝 (volume.real s)) := by
     have h0 : Tendsto (fun k => volume.real (F k ∆ s)) atTop (𝓝 0) := by
@@ -618,15 +509,6 @@ private theorem ofReal_le_perimeter {s : Set E} (hs : NullMeasurableSet s volume
     rw [measureReal_def, (h : volume (F k) = 0), ENNReal.toReal_zero] at hk
     exact hk.false
 
-end TauCeti
-
-namespace MeasureTheory.NullMeasurableSet
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
 /-- **The sharp isoperimetric inequality, real-valued form.** In a Euclidean space of dimension
 `n ≥ 1`, every null-measurable set `s` of finite positive volume and finite perimeter satisfies
 `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
@@ -636,7 +518,8 @@ theorem mul_volume_real_rpow_mul_le_perimeter_toReal
     (hs0 : volume s ≠ 0) (hP : perimeter volume ⊤ s ≠ ⊤) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤ (perimeter volume ⊤ s).toReal :=
-  (ENNReal.ofReal_le_iff_le_toReal hP).1 (ofReal_le_perimeter hs hμs hn hs0)
+  (ENNReal.ofReal_le_iff_le_toReal hP).1
+    (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0)
 
 /-- **The sharp isoperimetric inequality.** In a Euclidean space of dimension `n ≥ 1`, every
 null-measurable set `s` of finite positive volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where
@@ -650,6 +533,6 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
       perimeter volume ⊤ s ^ finrank ℝ E := by
   rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
-  exact pow_le_pow_left₀ zero_le (ofReal_le_perimeter hs hμs hn hs0) _
+  exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0) _
 
 end MeasureTheory.NullMeasurableSet
