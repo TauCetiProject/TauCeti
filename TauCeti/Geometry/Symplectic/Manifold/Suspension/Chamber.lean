@@ -35,9 +35,11 @@ coordinate `w = -2π l · [ω_g]`, where `ω_g` is a positive multiple of the se
 in the class of `Ω`, this sign locates the unperturbed solutions of a nonpullback label
 (`c ≠ 0`) in a definite chamber. A pullback label `p^* e_Y` has `c = 0` and so `d(e) = 0`.
 
-Every class `x = a v + c t` (modulo torsion) also has even square `x · x = 2ac`. When `v` and `t`
-span `H²(X; ℤ)` modulo torsion, the intersection form of `X` is therefore even; in particular no
-class has square `-1`.
+Every class `x = a v + c t` (modulo torsion) also has even square `x · x = 2ac`
+(`LinearMap.BilinForm.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub`). When `v` and `t` span
+`H²(X; ℤ)` modulo torsion, the intersection form of `X` is therefore even
+(`LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`); in particular no class has
+square `-1`.
 
 The statements are about an arbitrary `ℤ`-valued bilinear form `B` on an abelian group `H`,
 playing the role of the intersection form on `H²(X; ℤ)`. Torsion is retained: the classes `e`
@@ -46,10 +48,6 @@ order, which every `ℤ`-valued bilinear form annihilates.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.apply_self_eq_two_mul_mul`: `x · x = 2ac` for `x = a v + c t`
-  modulo torsion.
-* `TauCeti.SmoothMappingTorus.even_apply_self`: if `v` and `t` span modulo torsion, the form is
-  even.
 * `TauCeti.SmoothMappingTorus.isOfFinAddOrder_two_smul_sub_sub`: `l = 2q v + 2c t` modulo
   torsion.
 * `TauCeti.SmoothMappingTorus.apply_self_sub_apply_canonical_eq`: `d(e) = 2cq`.
@@ -72,26 +70,7 @@ namespace TauCeti
 
 namespace SmoothMappingTorus
 
-variable {H : Type*} [AddCommGroup H] {B : BilinForm ℤ H} {v t e κ x : H} {a c g : ℤ}
-
-/-- A class `x = a v + c t` modulo torsion, for a hyperbolic pair `v, t`, has square `2ac`. -/
-theorem apply_self_eq_two_mul_mul (hv : B v v = 0) (ht : B t t = 0) (hvt : B v t = 1)
-    (htv : B t v = 1) (hx : IsOfFinAddOrder (x - (a • v + c • t))) :
-    B x x = 2 * a * c := by
-  rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left hx,
-    B.apply_eq_apply_of_isOfFinAddOrder_sub_right hx]
-  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hv, ht,
-    hvt, htv]
-  ring
-
-/-- If every class is an integral combination of the hyperbolic pair `v, t` modulo torsion, the
-form is even. -/
-theorem even_apply_self (hv : B v v = 0) (ht : B t t = 0) (hvt : B v t = 1) (htv : B t v = 1)
-    (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) (x : H) :
-    Even (B x x) := by
-  obtain ⟨a, c, hx⟩ := hspan x
-  rw [apply_self_eq_two_mul_mul hv ht hvt htv hx, mul_assoc]
-  exact even_two_mul _
+variable {H : Type*} [AddCommGroup H] {B : BilinForm ℤ H} {v t e κ : H} {a c g : ℤ}
 
 /-- The determinant class `l = 2e - κ` of the label `e = a v + c t` is `2q v + 2c t` modulo
 torsion, where `κ = (2g - 2) v` and `q = a + 1 - g`. -/
@@ -110,7 +89,8 @@ theorem apply_self_sub_apply_canonical_eq (hv : B v v = 0) (ht : B t t = 0) (hvt
     (htv : B t v = 1) (he : IsOfFinAddOrder (e - (a • v + c • t)))
     (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
     B e e - B κ e = 2 * c * (a + 1 - g) := by
-  rw [apply_self_eq_two_mul_mul hv ht hvt htv he, B.apply_eq_apply_of_isOfFinAddOrder_sub_left hκ,
+  rw [B.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub hv ht hvt htv he,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_left hκ,
     B.apply_eq_apply_of_isOfFinAddOrder_sub_right he]
   simp only [map_add, map_zsmul, LinearMap.smul_apply, smul_eq_mul, hv, hvt]
   ring
