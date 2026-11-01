@@ -96,21 +96,52 @@ def pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y)) 
       convert a.coordChange_fiberMap (f i) (f j) x.2.1 x.2.2 v using 1 <;>
         simp only [A.indexAt_eq, D.indexAt_eq])) x
 
+/-- Pullback preserves identity bundle maps. -/
+@[simp] theorem pullbackMap_id (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (𝟙 A) f = 𝟙 (A.pullback f) := by
+  apply hom_ext
+  intro x
+  simp only [fiberMap_pullbackMap, fiberMap_id]
+  -- The coordinate models coincide definitionally, as recorded by `rank_pullback`.
+  rfl
+
+/-- Pullback preserves composition of bundle maps. -/
+@[simp] theorem pullbackMap_comp {A D E : FiniteRankBundleCore 𝕜 Y}
+    (a : A ⟶ D) (b : D ⟶ E) (f : C(X, Y)) :
+    pullbackMap (a ≫ b) f = pullbackMap a f ≫ pullbackMap b f := by
+  apply hom_ext
+  intro x
+  simp only [fiberMap_comp, fiberMap_pullbackMap]
+
+/-- Pullback preserves sums of bundle maps. -/
+@[simp] theorem pullbackMap_add {A D : FiniteRankBundleCore 𝕜 Y} (a b : A ⟶ D)
+    (f : C(X, Y)) : pullbackMap (a + b) f = pullbackMap a f + pullbackMap b f := by
+  apply hom_ext
+  intro x
+  simp only [fiberMap_add, fiberMap_pullbackMap]
+
+/-- Pullback preserves the zero bundle map. -/
+@[simp] theorem pullbackMap_zero (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (0 : A ⟶ D) f = 0 := by
+  apply hom_ext
+  intro x
+  simp only [fiberMap_pullbackMap, CoordinateHom.fiberMap_zero]
+
+/-- Pullback preserves negatives of bundle maps. -/
+@[simp] theorem pullbackMap_neg {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
+    (f : C(X, Y)) : pullbackMap (-a) f = -pullbackMap a f := by
+  apply hom_ext
+  intro x
+  simp only [fiberMap_neg, fiberMap_pullbackMap]
+
 /-- Pullback on bundles and their continuous fibrewise linear maps. -/
 -- Its object projection must reduce when simp matches the dependent fibre-map types.
 @[expose, reducible]
 def pullbackFunctor (f : C(X, Y)) : FiniteRankBundleCore 𝕜 Y ⥤ FiniteRankBundleCore 𝕜 X where
   obj A := A.pullback f
   map a := pullbackMap a f
-  map_id A := by
-    apply hom_ext
-    intro x
-    simp only [fiberMap_pullbackMap, fiberMap_id]
-    rfl
-  map_comp a b := by
-    apply hom_ext
-    intro x
-    simp only [fiberMap_comp, fiberMap_pullbackMap]
+  map_id A := pullbackMap_id A f
+  map_comp a b := pullbackMap_comp a b f
 
 @[simp] theorem pullbackFunctor_obj (f : C(X, Y)) (A : FiniteRankBundleCore 𝕜 Y) :
     (pullbackFunctor f).obj A = A.pullback f := (rfl)
@@ -121,20 +152,13 @@ def pullbackFunctor (f : C(X, Y)) : FiniteRankBundleCore 𝕜 Y ⥤ FiniteRankBu
 
 /-- Pullback is additive, with no compactness or separation assumption on either base. -/
 instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
-  map_add := by
-    intros
-    apply CoordinateHom.ext
-    intros
-    rfl
+  map_add := fun {_ _ a b} => pullbackMap_add a b f
 
 /-- Pullback by the identity retains the original point-indexed core. -/
 @[simp] theorem pullback_id (A : FiniteRankBundleCore 𝕜 Y) :
     A.pullback (ContinuousMap.id Y) = A := by
-  rcases A with ⟨r, c, hc⟩
-  cases c
-  dsimp only [pullback, ContinuousMap.id, ContinuousMap.coe_mk, id_eq, Set.preimage_id_eq]
-  congr 2
-  exact (funext hc).symm
+  induction A using induction_on
+  rfl
 
 /-- Iterated pullback and pullback by a composite have literally the same coordinate data. -/
 @[simp] theorem pullback_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z)) :
@@ -145,12 +169,8 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
     pullbackFunctor (𝕜 := 𝕜) (ContinuousMap.id Y) = 𝟭 (FiniteRankBundleCore 𝕜 Y) := by
   apply Functor.hext pullback_id
   intro A D a
-  rcases A with ⟨r, ⟨U, hU, i, hi, t, ht, hc, hcomp⟩, h⟩
-  rcases D with ⟨s, ⟨V, hV, j, hj, q, hq, hd, hqcomp⟩, h'⟩
-  have ei : i = id := funext h
-  have ej : j = id := funext h'
-  subst i
-  subst j
+  induction A using induction_on
+  induction D using induction_on
   apply heq_of_eq
   apply CoordinateHom.ext
   intros
