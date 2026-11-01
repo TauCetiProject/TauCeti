@@ -216,6 +216,11 @@ theorem coe_inclusion_apply (x : ℤ_[p]ˣ) :
     (inclusion K x : K) = padicIntAlgebraMap p K x :=
   (rfl)
 
+/-- Distinct units of `ℤ_p` give distinct values of the weight `x ↦ x` in a nontrivial `K`. -/
+theorem inclusion_injective [Nontrivial K] : Function.Injective (inclusion (p := p) K) :=
+  fun x y hxy ↦ Units.ext <| padicIntAlgebraMap_injective (K := K) <| by
+    rw [← coe_inclusion_apply, ← coe_inclusion_apply, hxy]
+
 end Inclusion
 
 section Construction

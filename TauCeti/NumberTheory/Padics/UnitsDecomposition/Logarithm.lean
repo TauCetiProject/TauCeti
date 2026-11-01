@@ -47,7 +47,8 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 * `TauCeti.padicUnitsDepth p`: the exponent `k` with `q = p ^ k`.
 * `TauCeti.unitsPrincipalLogEquiv p`: the logarithm `1 + qℤ_p ≃ₜ* ℤ_p`, `u ↦ log u / q`.
 * `TauCeti.padicUnitsGenerator p`: the unit `γ = exp q`, with
-  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator`.
+  `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator` and
+  `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`.
 * `TauCeti.padicUnitsSection p`: the section `ω`, with `TauCeti.eq_padicUnitsSection` and
   `TauCeti.padicUnitsSection_pow_totient`.
 * `TauCeti.padicIntUnitsEquivZModUnitsProd p`: the decomposition `ℤ_pˣ ≃ₜ* (ℤ/qℤ)ˣ × ℤ_p`, with
@@ -257,6 +258,13 @@ theorem unitsPrincipalLogEquiv_padicUnitsGenerator :
     unitsPrincipalLogEquiv p ⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩ =
       .ofAdd 1 :=
   (unitsPrincipalLogEquiv p).apply_symm_apply _
+
+/-- The powers of `γ = exp q` are `γ ^ k = exp (q k)`, for `k ∈ ℤ`. -/
+theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
+    (((padicUnitsGenerator p ^ k : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
+      exp ((p : ℚ_[p]) ^ padicUnitsDepth p * k) := by
+  rw [padicUnitsGenerator, ← Subgroup.coe_zpow, ← map_zpow, ← ofAdd_zsmul,
+    coe_unitsPrincipalLogEquiv_symm_apply, toAdd_ofAdd, zsmul_one, PadicInt.coe_intCast]
 
 /-- `γ = exp q` has exact level `padicUnitsDepth p`: it is not congruent to `1` modulo `p q`. -/
 theorem padicUnitsGenerator_notMem_unitsPrincipal_succ :
