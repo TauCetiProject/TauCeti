@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
 public import TauCeti.Probability.MarkovChain.StrongMarkov
 public import TauCeti.Probability.Process.SuccessiveVisits
-public import TauCeti.Probability.Process.Excursion.MarkovChain
 
 /-!
 # The number of visits of a Markov chain to a state
@@ -105,12 +104,6 @@ private theorem setOf_successiveVisit_succ_ne_top (y : α) (k : ℕ) :
 variable [MeasurableSpace α] [MeasurableSingletonClass α] (ν : Measure α) (κ : Kernel α α)
   [IsMarkovKernel κ]
 
-/-- The chain is at `y` at time `n` with probability `((κ ^ n) ∘ₘ ν) {y}`. -/
-private theorem markovChainLaw_setOf_apply_eq_comp (n : ℕ) (y : α) :
-    markovChainLaw ν κ {x | x n = y} = ((κ ^ n) ∘ₘ ν) {y} := by
-  rw [← markovChainLaw_map_eval, map_apply (measurable_pi_apply n) (measurableSet_singleton y)]
-  simp only [Set.preimage, Set.mem_singleton_iff]
-
 /-- **The visits of a chain to a state have a geometric tail.** The visit to `y` indexed by `k`,
 counting the first entrance as visit zero, exists with probability
 `ℙ_ν(H_y < ∞) · ρ_y ^ k`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return probability of `y`. -/
@@ -139,18 +132,6 @@ theorem markovChainLaw_setOf_successiveVisit_ne_top [IsFiniteMeasure ν] (y : α
     simp only [Set.univ_inter] at hlaw
     rw [← setOf_successiveVisit_succ_ne_top, Set.inter_comm, ← restrict_apply (hB.preimage hθ),
       ← map_apply hθ hB, hlaw, smul_apply, smul_eq_mul, ih, pow_succ, mul_assoc]
-
-/-- Started at `y`, the chain enters `y` at time zero. -/
-private theorem ae_hittingAfter_zero_ne_top_markovChainLaw_dirac (y : α) :
-    ∀ᵐ x ∂markovChainLaw (dirac y) κ, hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ := by
-  filter_upwards [markovChainLaw_dirac_ae_apply_zero κ y] with x hx
-  exact ne_top_of_le_ne_top WithTop.coe_ne_top
-    (hittingAfter_le_of_mem le_rfl (Set.mem_singleton_iff.mpr hx))
-
-private theorem markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top (y : α) :
-    markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} = 1 := by
-  rw [measure_congr (ae_eq_univ.mpr (mem_ae_iff.mp
-    (ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y))), measure_univ]
 
 /-- **A state that is returned to almost surely is visited infinitely often.** If the chain started
 at `y` returns to `y` almost surely, then for every finite initial measure, almost every path that
@@ -227,13 +208,26 @@ open MeasureTheory
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] (κ : Kernel α α)
   [IsMarkovKernel κ]
 
+/-- Started at `y`, the chain enters `y` at time zero. -/
+theorem ae_hittingAfter_zero_ne_top_markovChainLaw_dirac (y : α) :
+    ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ, hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ := by
+  filter_upwards [markovChainLaw_dirac_ae_apply_zero κ y] with x hx
+  exact ne_top_of_le_ne_top WithTop.coe_ne_top
+    (hittingAfter_le_of_mem le_rfl (Set.mem_singleton_iff.mpr hx))
+
+/-- Started at `y`, the chain reaches `y` with probability one. -/
+theorem markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top (y : α) :
+    markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} = 1 := by
+  rw [measure_congr (ae_eq_univ.mpr (mem_ae_iff.mp
+    (ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y))), measure_univ]
+
 /-- Started at `y`, the visit to `y` indexed by `k` (visit zero being time zero) exists with
 probability `ρ_y ^ k`. -/
 theorem markovChainLaw_dirac_setOf_successiveVisit_ne_top (y : α) (k : ℕ) :
     markovChainLaw (Measure.dirac y) κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} =
       markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ k := by
   rw [Measure.markovChainLaw_setOf_successiveVisit_ne_top,
-    Measure.markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
+    markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
 
 /-- **A chain started at a state it returns to almost surely returns infinitely often.** This is
 the hypothesis of the excursion decomposition
@@ -242,7 +236,7 @@ theorem ae_infinite_setOf_eq_markovChainLaw_dirac {y : α}
     (hy : markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
     ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ, {n | x n = y}.Infinite := by
   filter_upwards [Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top (Measure.dirac y) κ hy,
-    Measure.ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y] with x hx h0
+    ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y] with x hx h0
   exact hx h0
 
 /-- **The Green function at the diagonal.** The mean number of visits to `y` of the chain started
@@ -255,7 +249,7 @@ theorem tsum_pow_apply_singleton_self (y : α) :
   have hn : ∀ n, (κ ^ n) y {y} = markovChainLaw (Measure.dirac y) κ {x | x n = y} := fun n => by
     rw [Measure.markovChainLaw_setOf_apply_eq_comp, Measure.dirac_bind (κ ^ n).measurable]
   simp_rw [hn, Measure.tsum_markovChainLaw_setOf_apply_eq,
-    Measure.markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
+    markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
 
 /-- **The Green function.** For a finite initial measure `ν`, the mean number of visits to `y`,
 `∑ n, ((κ ^ n) ∘ₘ ν) {y}`, is the probability `ℙ_ν(H_y < ∞)` of reaching `y` times the mean
