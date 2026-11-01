@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.Dual.Annihilator
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.LinearAlgebra.Eigenspace.Dual
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 
@@ -77,11 +78,6 @@ theorem cliffordReverseDual_complexVolume :
   ext φ s
   simp [cliffordReverseDual_apply_apply, reverse_complexVolume]
 
-/-- Multiplying a sign `μ = ±1` by a power of `-1` gives a sign. -/
-private theorem neg_one_pow_mul_eq_one_or_neg_one {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) (k : ℕ) :
-    (-1) ^ k * μ = 1 ∨ (-1) ^ k * μ = -1 := by
-  rcases neg_one_pow_eq_or ℂ k with h | h <;> rcases hμ with rfl | rfl <;> simp [h]
-
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -133,7 +129,7 @@ def cliffordReverseDualComplexVolumeEigenspaceEquiv {μ : ℂ} (hμ : μ = 1 ∨
       Dual ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) :=
   (LinearEquiv.ofEq _ _ (eigenspace_cliffordReverseDual_complexVolume ρ o hQ hμ)).trans
     (Submodule.dualAnnihilatorEquivOfIsCompl _ _ (isCompl_eigenspace_complexVolume_neg ρ o hQ
-      (neg_one_pow_mul_eq_one_or_neg_one hμ (n / 2))))
+      (TauCeti.neg_one_pow_mul_eq_or hμ (n / 2))))
 
 /-- The identification `AlgHom.cliffordReverseDualComplexVolumeEigenspaceEquiv` restricts a
 functional. -/

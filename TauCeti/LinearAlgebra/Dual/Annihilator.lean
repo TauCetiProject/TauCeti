@@ -58,10 +58,9 @@ zero on `q`. -/
 theorem coe_dualAnnihilatorEquivOfIsCompl_symm_apply (h : IsCompl p q) (ψ : Module.Dual R p) :
     ((dualAnnihilatorEquivOfIsCompl p q h).symm ψ : Module.Dual R V) = LinearMap.ofIsCompl h ψ 0 :=
   (LinearMap.ofIsCompl_eq h
-    (fun x ↦ congrArg ψ (quotientEquivOfIsCompl_apply_mk_right h.symm x).symm)
-    fun x ↦ by
-      change 0 = ψ (q.quotientEquivOfIsCompl p h.symm (Quotient.mk (x : V)))
-      rw [(Quotient.mk_eq_zero q).2 x.2, map_zero, map_zero]).symm
+    (fun x ↦ by rw [← dualAnnihilatorEquivOfIsCompl_apply p q h, LinearEquiv.apply_symm_apply])
+    fun x ↦
+      ((mem_dualAnnihilator _).1 ((dualAnnihilatorEquivOfIsCompl p q h).symm ψ).2 x x.2).symm).symm
 
 end IsCompl
 
