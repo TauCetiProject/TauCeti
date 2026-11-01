@@ -48,6 +48,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
   acting compatibly.
+* `TauCeti.surjective_of_injective_of_length_eq`: an injective map between modules of the same
+  finite length is surjective.
 * `TauCeti.map_lsmul_eq_smul` and `TauCeti.range_lsmul_eq_smul_top`: `aN` and `aM` as Mathlib's
   pointwise `a • N` and `a • ⊤`.
 * `TauCeti.comap_subtype_map_lsmul`: `aN` computed inside `N` agrees with `aN` computed in the
@@ -61,6 +63,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
+* `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
+  over `A`.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
@@ -150,6 +154,18 @@ theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
   obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp h
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
     ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
+
+/-- An injective linear map between modules of the same finite length is surjective: its
+cokernel has length zero. -/
+theorem surjective_of_injective_of_length_eq {N : Type*} [AddCommGroup N] [Module A N]
+    {f : M →ₗ[A] N} (hf : Function.Injective f) (hM : Module.length A M ≠ ⊤)
+    (h : Module.length A M = Module.length A N) : Function.Surjective f := by
+  have hlen := Module.length_eq_add_of_exact _ _ hf (Submodule.mkQ_surjective _)
+    (LinearMap.exact_map_mkQ_range f)
+  rw [← h] at hlen
+  rw [← LinearMap.range_eq_top, ← Submodule.Quotient.subsingleton_iff,
+    ← Module.length_eq_zero_iff (R := A)]
+  exact WithTop.add_left_cancel hM (hlen.symm.trans (add_zero _).symm)
 
 end Ring
 
@@ -307,6 +323,13 @@ theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdea
   rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
     (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective]
   let _ := Ideal.Quotient.field (maximalIdeal A)
+  exact instIsSimpleModule _
+
+/-- The residue field of a local ring has length one over the ring. -/
+@[simp]
+theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
+  rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
+    (S := ResidueField A) residue_surjective]
   exact instIsSimpleModule _
 
 end LocalRing
