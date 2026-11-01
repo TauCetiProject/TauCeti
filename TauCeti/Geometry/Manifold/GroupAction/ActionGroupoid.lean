@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid
@@ -55,6 +56,9 @@ action, `TauCeti.ActionGroupoid.isProperMap_source_target_iff` makes it a proper
   source map.
 * `TauCeti.ActionGroupoid.contMDiff_unit`, `TauCeti.ActionGroupoid.contMDiff_inverse` and
   `TauCeti.ActionGroupoid.contMDiff_comp`: units, inversion and composition are `C^n`.
+* `TauCeti.ActionGroupoid.contMDiff_map_obj`, `TauCeti.ActionGroupoid.contMDiff_map_total`: the
+  functor `CategoryTheory.ActionCategory.map` induced by a `C^n` equivariant map is `C^n` on
+  objects and on arrows.
 
 ## References
 
@@ -184,6 +188,35 @@ theorem contMDiff_comp {a b : N → Quiver.Total (ActionCategory G X)} (ha : Con
     (isLocalDiffeomorph_source I n G X).contMDiff.comp ha
   exact (contMDiff_arrows_iff I n).2 ⟨(continuous_comp G X).comp
     ((ha.continuous.prodMk hb.continuous).subtype_mk h), hsource⟩
+
+section Map
+
+variable {G X} {G' Y : Type*} [Monoid G'] [MulAction G' Y] [TopologicalSpace Y]
+  [ChartedSpace H' Y] (φ : G →* G') (f : X →ₑ[φ] Y)
+
+omit [TopologicalSpace G] [DiscreteTopology G] in
+/-- The functor between action categories induced by a `C^n` equivariant map is `C^n` on objects.
+-/
+theorem contMDiff_map_obj (hf : ContMDiff I I' n f) : ContMDiff I I' n (map φ f).obj :=
+  (contMDiff_objects_iff I' n).2 <| by
+    simpa only [Function.comp_def, back_map_obj, objectDiffeomorph_apply] using
+      hf.comp (objectDiffeomorph I n G X).contMDiff
+
+/-- The functor between action categories of discrete monoids induced by a `C^n` equivariant map
+is `C^n` on arrows. -/
+theorem contMDiff_map_total [TopologicalSpace G'] [DiscreteTopology G'] (hf : ContMDiff I I' n f) :
+    ContMDiff I I' n fun a : Quiver.Total (ActionCategory G X) ↦
+      (⟨(map φ f).obj a.left, (map φ f).obj a.right, (map φ f).map a.hom⟩ :
+        Quiver.Total (ActionCategory G' Y)) := by
+  refine (contMDiff_arrows_iff I' n).2 ⟨?_,
+    (contMDiff_map_obj I n φ f hf).comp (isLocalDiffeomorph_source I n G X).contMDiff⟩
+  rw [← (arrowHomeomorph G' Y).comp_continuous_iff]
+  simpa only [Function.comp_def, arrowHomeomorph_apply, map_map_hom, back_map_obj,
+    objectHomeomorph_apply] using
+    ((continuous_of_discreteTopology (f := ⇑φ)).comp (continuous_label G X)).prodMk
+      (hf.continuous.comp ((objectHomeomorph G X).continuous.comp (continuous_source G X)))
+
+end Map
 
 end Monoid
 
