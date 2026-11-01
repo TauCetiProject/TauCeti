@@ -40,56 +40,6 @@ open MvPolynomial
 
 variable {K : Type*} {L : ℕ}
 
-/-- One coordinate per filter entry and one shared bias coordinate per layer. -/
-abbrev ParameterIndex (A : ConvolutionSpec K L) :=
-  (i : Fin L) × (Fin (A.filterLength i) ⊕ Unit)
-
-/-- One coordinate per filter entry, with no bias coordinates. -/
-abbrev WeightIndex (A : ConvolutionSpec K L) := (i : Fin L) × Fin (A.filterLength i)
-
-/-- Reconstruct the full affine parameter product from its scalar coordinates. -/
-def parameterEquiv (A : ConvolutionSpec K L) : (A.ParameterIndex → K) ≃ A.Parameters :=
-  (Equiv.piCurry fun _ _ => K).trans
-    (Equiv.piCongrRight fun i => affineConvolutionParameterEquiv K (A.filterLength i))
-
-/-- Scalar filter coordinates reconstruct the filter at the specified layer. -/
-@[simp] theorem parameterEquiv_apply_fst (A : ConvolutionSpec K L)
-    (p : A.ParameterIndex → K) (i : Fin L) (j : Fin (A.filterLength i)) :
-    (A.parameterEquiv p i).1 j = p ⟨i, Sum.inl j⟩ := by
-  simp [parameterEquiv, Sigma.curry]
-
-/-- Each layer has a single shared bias coordinate. -/
-@[simp] theorem parameterEquiv_apply_snd (A : ConvolutionSpec K L)
-    (p : A.ParameterIndex → K) (i : Fin L) :
-    (A.parameterEquiv p i).2 = p ⟨i, Sum.inr ()⟩ := by
-  simp [parameterEquiv, Sigma.curry]
-
-/-- Flattening affine parameters recovers each filter entry. -/
-@[simp] theorem parameterEquiv_symm_apply_inl (A : ConvolutionSpec K L) (p : A.Parameters)
-    (i : Fin L) (j : Fin (A.filterLength i)) :
-    A.parameterEquiv.symm p ⟨i, Sum.inl j⟩ = (p i).1 j := by
-  simp [parameterEquiv, Sigma.uncurry, Equiv.piCongrRight]
-
-/-- Flattening affine parameters recovers the shared bias. -/
-@[simp] theorem parameterEquiv_symm_apply_inr (A : ConvolutionSpec K L) (p : A.Parameters)
-    (i : Fin L) (u : Unit) :
-    A.parameterEquiv.symm p ⟨i, Sum.inr u⟩ = (p i).2 := by
-  simp [parameterEquiv, Sigma.uncurry, Equiv.piCongrRight]
-
-/-- Reconstruct the bias-free filter product from its scalar coordinates. -/
-def weightEquiv (A : ConvolutionSpec K L) : (A.WeightIndex → K) ≃ A.Weights :=
-  Equiv.piCurry fun _ _ => K
-
-/-- Reconstruction selects the filter coordinate at the specified layer and position. -/
-@[simp] theorem weightEquiv_apply (A : ConvolutionSpec K L) (w : A.WeightIndex → K)
-    (i : Fin L) (j : Fin (A.filterLength i)) :
-    A.weightEquiv w i j = w ⟨i, j⟩ := (rfl)
-
-/-- Flattening the bias-free product recovers every filter entry. -/
-@[simp] theorem weightEquiv_symm_apply (A : ConvolutionSpec K L) (w : A.Weights)
-    (i : Fin L) (j : Fin (A.filterLength i)) :
-    A.weightEquiv.symm w ⟨i, j⟩ = w i j := (rfl)
-
 variable [CommSemiring K]
 
 /-- Joint polynomials for each prefix. Hidden layers substitute their activation polynomial;
@@ -176,13 +126,20 @@ def polynomialRealizeWeights (A : ConvolutionSpec K L)
   polynomialReparametrize (fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j)
     (A.polynomialRealize q)
 
+/-- The bias-free tuple substitutes filter variables for filters and zero for shared biases. -/
+theorem polynomialRealizeWeights_def (A : ConvolutionSpec K L)
+    (q : Fin (L - 1) → Polynomial K) :
+    A.polynomialRealizeWeights q =
+      polynomialReparametrize (fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j)
+        (A.polynomialRealize q) := (rfl)
+
 /-- The bias-free polynomial tuple realizes the network on precisely its filter product. -/
 theorem polynomialRealization_polynomialRealizeWeights (A : ConvolutionSpec K L)
     (q : Fin (L - 1) → Polynomial K)
     (hq : ∀ j t, A.activation j t = (q j).eval t) :
     polynomialRealization (A.polynomialRealizeWeights q) =
       A.realizeWeights ∘ A.weightEquiv := by
-  rw [polynomialRealizeWeights, polynomialRealization_polynomialReparametrize,
+  rw [polynomialRealizeWeights_def, polynomialRealization_polynomialReparametrize,
     A.polynomialRealization_polynomialRealize q hq]
   funext w
   simp only [Function.comp_apply, realizeWeights_def]
