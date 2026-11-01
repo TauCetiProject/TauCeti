@@ -8,14 +8,15 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
-public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.Algebra.Polynomial.Reverse
+public import TauCeti.LinearAlgebra.FixedSubmodule
 
 /-!
 # The characteristic polynomial and the fixed submodule
 
 For an endomorphism `f` of a finite-dimensional vector space `V`, the fixed submodule
-`f.fixedSubmodule` is the eigenspace of `f` for the eigenvalue `1`. Its dimension is therefore at
+`f.fixedSubmodule` is the eigenspace of `f` for the eigenvalue `1`
+(`Module.End.eigenspace_one_eq_fixedSubmodule`). Its dimension is therefore at
 most the multiplicity of `1` as a root of the characteristic polynomial, with equality when `f` is
 semisimple, for example when `f` has finite order invertible in the field.
 
@@ -30,7 +31,9 @@ pseudoreflections.
 
 ## Main results
 
-* `Module.End.eigenspace_one_eq_fixedSubmodule`: the `1`-eigenspace is the fixed submodule.
+* `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
+  multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
+  `μ`-eigenspace.
 * `Module.End.IsFinitelySemisimple.rootMultiplicity_one_charpoly`: for a semisimple endomorphism,
   the multiplicity of the root `1` of the characteristic polynomial is the dimension of the fixed
   submodule.
@@ -51,12 +54,6 @@ open Polynomial Module
 
 namespace Module.End
 
-/-- The eigenspace of an endomorphism for the eigenvalue `1` is its fixed submodule. -/
-theorem eigenspace_one_eq_fixedSubmodule {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-    (f : End R V) : f.eigenspace 1 = f.fixedSubmodule := by
-  ext v
-  simp [LinearMap.mem_fixedSubmodule_iff]
-
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- The dimension of the fixed submodule of an endomorphism is at most the multiplicity of `1`
@@ -65,13 +62,19 @@ theorem finrank_fixedSubmodule_le_rootMultiplicity_one_charpoly (f : End K V) :
     finrank K f.fixedSubmodule ≤ f.charpoly.rootMultiplicity 1 :=
   f.eigenspace_one_eq_fixedSubmodule ▸ LinearMap.finrank_eigenspace_le f 1
 
+/-- For a semisimple endomorphism, the multiplicity of `μ` as a root of the characteristic
+polynomial is the dimension of the `μ`-eigenspace. -/
+theorem IsFinitelySemisimple.rootMultiplicity_charpoly {f : End K V}
+    (hf : f.IsFinitelySemisimple) (μ : K) :
+    f.charpoly.rootMultiplicity μ = finrank K (f.eigenspace μ) := by
+  rw [← LinearMap.finrank_maxGenEigenspace_eq, hf.maxGenEigenspace_eq_eigenspace]
+
 /-- For a semisimple endomorphism, the multiplicity of `1` as a root of the characteristic
 polynomial is the dimension of the fixed submodule. -/
 theorem IsFinitelySemisimple.rootMultiplicity_one_charpoly {f : End K V}
     (hf : f.IsFinitelySemisimple) :
     f.charpoly.rootMultiplicity 1 = finrank K f.fixedSubmodule := by
-  rw [← LinearMap.finrank_maxGenEigenspace_eq, hf.maxGenEigenspace_eq_eigenspace,
-    eigenspace_one_eq_fixedSubmodule]
+  rw [hf.rootMultiplicity_charpoly, eigenspace_one_eq_fixedSubmodule]
 
 /-- For a semisimple endomorphism `f` whose fixed submodule has dimension `m`, the reverse
 characteristic polynomial `det(1 - t f)` is `(1 - t) ^ m` times a polynomial that does not vanish

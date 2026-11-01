@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Order
 
 /-!
-# Self-multiplication cancellation and orders under coefficient maps
+# Self-multiplication cancellation and orders of power series
 
 A formal power series fixed by multiplication with a series of zero constant coefficient is zero:
 if `f = g * f` in `R⟦X⟧` and `constantCoeff g = 0`, then `f = 0`.
@@ -23,11 +23,15 @@ An injective map of coefficient semirings preserves the order of a power series:
 nonzero coefficients to nonzero coefficients. Mathlib records only the inequality
 `PowerSeries.le_order_map`.
 
+A series `X ^ k * f` with `constantCoeff f ≠ 0` has order exactly `k`, over any semiring.
+
 ## Main results
 
 * `PowerSeries.eq_zero_of_self_eq_mul_self`: `constantCoeff g = 0` and `f = g * f` give `f = 0`.
 * `PowerSeries.eq_zero_of_self_eq_self_mul`: the same for `f = f * g`.
 * `PowerSeries.order_map_of_injective`: injective coefficient maps preserve orders.
+* `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
+  nonzero constant coefficient.
 
 ## Provenance
 
@@ -85,5 +89,13 @@ theorem order_map_of_injective {S : Type*} [Semiring S] {φ : R →+* S}
   calc (map φ f).order ≤ f.order.toNat :=
         order_le _ (by simpa [coeff_map] using (map_ne_zero_iff φ hφ).mpr (coeff_order hf))
     _ = f.order := ENat.natCast_toNat (order_eq_top.not.mpr hf)
+
+/-- Multiplying a power series with nonzero constant coefficient by `X ^ k` gives a series of
+order exactly `k`. -/
+theorem order_X_pow_mul_of_constantCoeff_ne_zero {f : R⟦X⟧} (hf : constantCoeff f ≠ 0) (k : ℕ) :
+    (X ^ k * f).order = (k : ℕ∞) := by
+  refine order_eq_nat.2 ⟨?_, fun i hi ↦ ?_⟩
+  · rwa [coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
+  · rw [coeff_X_pow_mul', ite_eq_right (not_le.2 hi)]
 
 end PowerSeries

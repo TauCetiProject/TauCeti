@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Molien
 import TauCeti.LinearAlgebra.Charpoly.FixedSubmodule
 import TauCeti.LinearAlgebra.End.FiniteOrder
 import TauCeti.RingTheory.PowerSeries.CoeffProd
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # The product and the sum of the degrees of a polynomial invariant algebra
@@ -53,8 +54,8 @@ denominators in `K[t]` and then mapped to `K⟦u⟧` by the substitution `t = 1 
 
 * `Representation.card_eq_finrank_of_sum_inv_reverse_charpoly_mul_prod_eq`,
   `Representation.natCard_ker_mul_prod_eq_card_of_sum_inv_reverse_charpoly_mul_prod_eq`,
-  `Representation.natCard_ker_mul_sum_eq_card_of_sum_inv_reverse_charpoly_mul_prod_eq`: if the
-  Molien series `#G⁻¹ ∑_g det(1 - t g)⁻¹` is `∏ᵢ (1 - t ^ dᵢ)⁻¹`, then `r = dim M`,
+  `Representation.natCard_ker_mul_sum_sub_one_eq_card_of_sum_inv_reverse_charpoly_mul_prod_eq`: if
+  the Molien series `#G⁻¹ ∑_g det(1 - t g)⁻¹` is `∏ᵢ (1 - t ^ dᵢ)⁻¹`, then `r = dim M`,
   `#ker ρ · ∏ dᵢ = #G` and `#ker ρ · ∑ (dᵢ - 1)` is the number of pseudoreflections.
 * `Representation.prod_eq_card_of_mk_finrank_mul_prod_eq_one`: for a faithful action whose
   invariant subalgebra has Hilbert series `∏ᵢ (1 - t ^ dᵢ)⁻¹`, `∏ dᵢ = #G`.
@@ -188,13 +189,6 @@ private theorem sum_inv_one_sub_det_mul_two
   field_simp
   ring
 
-omit [Fintype G] in
-/-- The fixed space of `g` is the whole space exactly when `g` acts trivially. -/
-private theorem finrank_fixedSubmodule_eq_iff_mem_ker {g : G} :
-    finrank K (ρ g).fixedSubmodule = finrank K M ↔ g ∈ ρ.ker := by
-  rw [MonoidHom.mem_ker, Module.End.one_eq_id, ← LinearMap.fixedSubmodule_eq_top_iff]
-  exact ⟨Submodule.eq_top_of_finrank_eq, fun h ↦ by rw [h, finrank_top]⟩
-
 private theorem one_sub_X_ne_zero : (1 - Polynomial.X : Polynomial K) ≠ 0 :=
   fun h ↦ by simpa using congrArg (Polynomial.eval 0) h
 
@@ -257,9 +251,7 @@ private theorem coeff_one_X_pow_mul_inv {g : G} {R : Polynomial K}
     simp
   · rw [ite_eq_right hps]
     by_cases hg : g ∈ ρ.ker
-    · have hinv : (1 : PowerSeries K)⁻¹ = 1 :=
-        ((PowerSeries.eq_inv_iff_mul_eq_one (by simp)).2 (mul_one 1)).symm
-      rw [hker.2 hg, Nat.sub_self, pow_zero, one_mul, eq_one_of_mem_ker ρ hg hR, map_one, hinv,
+    · rw [hker.2 hg, Nat.sub_self, pow_zero, one_mul, eq_one_of_mem_ker ρ hg hR, map_one, inv_one,
         PowerSeries.coeff_one, ite_eq_right one_ne_zero]
     · rw [PowerSeries.coeff_X_pow_mul', ite_eq_right]
       have := hker.not.2 hg
@@ -338,15 +330,10 @@ private theorem molien_expansion {ι : Type*} [Fintype ι] {d : ι → ℕ}
     rw [map_mul, hA0, hS0]
     exact mul_ne_zero hker hD
   -- Comparing the orders of vanishing at `u = 0` gives `r = n`.
-  have horder (B : PowerSeries K) (hB : PowerSeries.constantCoeff B ≠ 0) (k : ℕ) :
-      (PowerSeries.X ^ k * B).order = (k : ℕ∞) := by
-    have : B.order = 0 := by
-      by_contra h0
-      exact hB (PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.1 h0)
-    rw [PowerSeries.order_mul, PowerSeries.order_X_pow, this, add_zero]
   have hr : Fintype.card ι = finrank K M := by
     have := congrArg PowerSeries.order hE
-    rwa [horder _ hB, horder _ (by simp), Nat.cast_inj] at this
+    rwa [PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero hB,
+      PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero (by simp), Nat.cast_inj] at this
   rw [hr] at hE
   have hAS : A * S = PowerSeries.C (Fintype.card G : K) :=
     mul_left_cancel₀ (pow_ne_zero _ PowerSeries.X_ne_zero) hE
