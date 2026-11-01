@@ -42,8 +42,6 @@ is continuous for coefficientwise convergence (`Polynomial.continuous_coeff_cole
   `Q(π_S ∘ u)` is `Q(A)` for every polynomial `Q`.
 * `ContinuousLinearMap.charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp`: for `B(0) = 0`,
   the determinant of `B(π_S ∘ u)` is the polynomial `det (1 - T B(A))`.
-* `ContinuousLinearMap.IsRowCompact.aeval`: `B(u)` is row compact when `u` is and `B(0) = 0`,
-  by the ideal property.
 * `ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_aeval`: spectral mapping
   `det (1 - T B(u)) = D(B, det (1 - T u))`.
 
@@ -77,24 +75,19 @@ theorem submatrix_matrixCoeff_aeval_indicatorCLM_comp (S : Finset I)
         (Subtype.val : S → I) =
       aeval (u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I)) Q := by
   set w := (indicatorCLM R (S : Set I)).comp u
-  set A := u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I)
-  have hpow (j : ℕ) :
-      (w ^ j).matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) = A ^ j := by
-    induction j with
-    | zero => rw [pow_zero, pow_zero, matrixCoeff_one, Matrix.submatrix_one _ Subtype.val_injective]
-    | succ j ih =>
-      ext i i'
-      -- only the middle indices in `S` contribute, since the rows of `w` outside `S` vanish
-      rw [pow_succ, pow_succ, Matrix.submatrix_apply, matrixCoeff_mul, Matrix.mul_apply,
-        tsum_eq_sum (s := S) fun k hk ↦ by simp [w, hk], ← Finset.sum_coe_sort S, ← ih]
-      simp [w, A]
+  -- the rows of `w` outside `S` vanish, and its block on `S` is that of `u`
+  have hw : ∀ i ∉ S, ∀ j, w.matrixCoeff i j = 0 := fun i hi _ ↦ by simp [w, hi]
+  have hblock : w.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) =
+      u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) := by
+    ext i i'
+    simp [w]
   induction Q using Polynomial.induction_on' with
   | add p q hp hq =>
     rw [map_add, map_add, matrixCoeff_add, Matrix.submatrix_add, Pi.add_apply, Pi.add_apply, hp,
       hq]
   | monomial j a =>
     rw [aeval_monomial, aeval_monomial, ← Algebra.smul_def, ← Algebra.smul_def, matrixCoeff_smul,
-      Matrix.submatrix_smul, Pi.smul_apply, Pi.smul_apply, hpow]
+      Matrix.submatrix_smul, Pi.smul_apply, Pi.smul_apply, submatrix_matrixCoeff_pow hw, hblock]
 
 /-- **Spectral mapping for an output truncation.** If `B(0) = 0`, the Fredholm determinant of
 `B(π_S ∘ u)` is the polynomial `det (1 - T B(A))` for the block `A` of `u` on `S`, since the rows
@@ -116,15 +109,6 @@ theorem charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp (S : Finset I)
     simp [hw]
   rw [← submatrix_matrixCoeff_aeval_indicatorCLM_comp, ← hblock, hw,
     charPowerSeries_matrixCoeff_indicatorCLM_comp]
-
-/-- A polynomial with zero constant coefficient takes row-compact operators to row-compact
-operators, over ultrametric Tate scalars. -/
-theorem IsRowCompact.aeval [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
-    {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {B : R[X]} (hB0 : B.coeff 0 = 0) :
-    (Polynomial.aeval u B).IsRowCompact := by
-  obtain ⟨B', rfl⟩ := X_dvd_iff.2 hB0
-  rw [map_mul, aeval_X, mul_def]
-  exact hu.comp_clm _
 
 end NormedCommRing
 

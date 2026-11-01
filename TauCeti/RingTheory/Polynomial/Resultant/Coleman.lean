@@ -17,7 +17,6 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Coleman's finite spectral transform
@@ -72,8 +71,9 @@ determinants of polynomials in compact operators.
   `D(B, 1) = (1 - B(0) T) ^ n`.
 * `Polynomial.coeff_colemanDBounded_congr`: locality of the coefficients in `P` when `B(0) = 0`.
 * `Polynomial.colemanDSeries`: Coleman's transform of a power series along a polynomial `B`, with
-  `Polynomial.coeff_colemanDSeries`, `Polynomial.colemanDSeries_coe`,
-  `Polynomial.colemanDSeries_mul` and `Polynomial.continuous_coeff_colemanDSeries`.
+  `Polynomial.coeff_colemanDSeries_eq_coeff_colemanDBounded`, `Polynomial.coeff_colemanDSeries`,
+  `Polynomial.colemanDSeries_coe`, `Polynomial.colemanDSeries_mul` and
+  `Polynomial.continuous_coeff_colemanDSeries`.
 
 ## References
 
@@ -363,11 +363,25 @@ open PowerSeries (trunc natDegree_trunc_lt)
 `k`-th coefficient is the `k`-th coefficient of `D_(N,m)(B, trunc (N + 1) F)` for `m = deg B` and
 `N = k m`. When `B(0) = 0` the same coefficient is obtained for every rank `N ≥ k m`
 (`Polynomial.coeff_colemanDSeries`), and for a polynomial `F` the series is the polynomial
-transform (`Polynomial.colemanDSeries_coe`). If `B(0) ≠ 0` the finite transforms do not stabilise
-and this series has no spectral meaning. -/
+transform (`Polynomial.colemanDSeries_coe`). If `B(0) ≠ 0` the finite transforms need not
+stabilise and this series has no spectral meaning in general. -/
 noncomputable def colemanDSeries (B : R[X]) (F : PowerSeries R) : PowerSeries R :=
   PowerSeries.mk fun k ↦
     (colemanDBounded B (trunc (k * B.natDegree + 1) F) (k * B.natDegree) B.natDegree).coeff k
+
+theorem colemanDSeries_def (B : R[X]) (F : PowerSeries R) :
+    B.colemanDSeries F = PowerSeries.mk fun k ↦
+      (colemanDBounded B (trunc (k * B.natDegree + 1) F) (k * B.natDegree)
+        B.natDegree).coeff k := by
+  rw [colemanDSeries]
+
+/-- For any `B`, the `k`-th coefficient of Coleman's transform of `F` is that of the finite
+transform of `trunc (N + 1) F` at the rank `N = k deg B`. -/
+theorem coeff_colemanDSeries_eq_coeff_colemanDBounded (B : R[X]) (F : PowerSeries R) (k : ℕ) :
+    PowerSeries.coeff k (B.colemanDSeries F) =
+      (colemanDBounded B (trunc (k * B.natDegree + 1) F) (k * B.natDegree)
+        B.natDegree).coeff k := by
+  rw [colemanDSeries_def, PowerSeries.coeff_mk]
 
 /-- When `B(0) = 0`, the `k`-th coefficient of Coleman's transform of `F` is that of the finite
 transform of the truncation `trunc (N + 1) F` at any rank `N ≥ k deg B`. -/
@@ -376,7 +390,7 @@ theorem coeff_colemanDSeries (hB0 : B.coeff 0 = 0) {F : PowerSeries R} {k N : �
     PowerSeries.coeff k (B.colemanDSeries F) =
       (colemanDBounded B (trunc (N + 1) F) N B.natDegree).coeff k := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hN
-  rw [colemanDSeries, PowerSeries.coeff_mk,
+  rw [coeff_colemanDSeries_eq_coeff_colemanDBounded,
     ← colemanDBounded_add_of_coeff_zero (Nat.lt_succ_iff.1 (natDegree_trunc_lt F _)) le_rfl hB0 j]
   refine coeff_colemanDBounded_congr hB0 fun i hi ↦ ?_
   simp only [PowerSeries.coeff_trunc]
@@ -412,8 +426,8 @@ theorem colemanDSeries_coe (hB0 : B.coeff 0 = 0) (P : R[X]) :
 @[simp]
 theorem constantCoeff_colemanDSeries {F : PowerSeries R} (hF0 : PowerSeries.constantCoeff F = 1) :
     PowerSeries.constantCoeff (B.colemanDSeries F) = 1 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, colemanDSeries, PowerSeries.coeff_mk,
-    coeff_zero_colemanDBounded (by simp [hF0])]
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+    coeff_colemanDSeries_eq_coeff_colemanDBounded, coeff_zero_colemanDBounded (by simp [hF0])]
 
 /-- **Multiplicativity in `F`.** When `B(0) = 0`, Coleman's transform of a product of power series
 is the product of their transforms. -/
@@ -421,8 +435,10 @@ theorem colemanDSeries_mul (hB0 : B.coeff 0 = 0) (F G : PowerSeries R) :
     B.colemanDSeries (F * G) = B.colemanDSeries F * B.colemanDSeries G := by
   ext k
   set N := k * B.natDegree
-  -- Up to degree `k`, the transforms of `F` and `G` are their finite transforms of rank `N`.
-  have htrunc {H : PowerSeries R} :
+  have hF : (trunc (N + 1) F).natDegree ≤ N := Nat.lt_succ_iff.1 (natDegree_trunc_lt F N)
+  have hG : (trunc (N + 1) G).natDegree ≤ N := Nat.lt_succ_iff.1 (natDegree_trunc_lt G N)
+  -- Up to degree `k`, the transform of a series `H` is its finite transform of rank `N`.
+  have htrunc (H : PowerSeries R) :
       trunc (k + 1) (B.colemanDSeries H) =
         trunc (k + 1) (colemanDBounded B (trunc (N + 1) H) N B.natDegree : PowerSeries R) := by
     ext i
@@ -430,17 +446,24 @@ theorem colemanDSeries_mul (hB0 : B.coeff 0 = 0) (F G : PowerSeries R) :
     split_ifs with hi
     · rw [coeff_colemanDSeries hB0 (Nat.mul_le_mul_right _ (Nat.lt_succ_iff.1 hi)), coeff_coe]
     · rfl
-  -- The product `trunc F * trunc G` agrees with `F * G` up to degree `N`; compare at rank `N + N`.
-  rw [coeff_colemanDSeries hB0 le_rfl,
-    ← colemanDBounded_add_of_coeff_zero (Nat.lt_succ_iff.1 (natDegree_trunc_lt _ N)) le_rfl hB0 N,
-    coeff_colemanDBounded_congr (P' := trunc (N + 1) F * trunc (N + 1) G) hB0 fun j hj ↦ by
-      rw [PowerSeries.coeff_trunc, ite_eq_left (Nat.lt_succ_of_le hj),
-        PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ (Nat.lt_succ_of_le hj), ← coe_mul,
-        coeff_coe],
-    colemanDBounded_mul (Nat.lt_succ_iff.1 (natDegree_trunc_lt F N))
-      (Nat.lt_succ_iff.1 (natDegree_trunc_lt G N)) le_rfl,
-    PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ k.lt_succ_self, htrunc, htrunc,
-    ← PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ k.lt_succ_self, ← coe_mul, coeff_coe]
+  -- Up to degree `N`, `F * G` agrees with `trunc F * trunc G`, so by locality its transform has the
+  -- same `k`-th coefficient as the finite transform of rank `N + N` of that product.
+  have hprod : PowerSeries.coeff k (B.colemanDSeries (F * G)) =
+      (colemanDBounded B (trunc (N + 1) F * trunc (N + 1) G) (N + N) B.natDegree).coeff k := by
+    rw [coeff_colemanDSeries hB0 (Nat.le_add_right N N)]
+    refine coeff_colemanDBounded_congr hB0 fun j hj ↦ ?_
+    rw [PowerSeries.coeff_trunc, ite_eq_left (by omega),
+      PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ (Nat.lt_succ_of_le hj), ← coe_mul,
+      coeff_coe]
+  -- The finite transform is multiplicative.
+  have hmul : colemanDBounded B (trunc (N + 1) F * trunc (N + 1) G) (N + N) B.natDegree =
+      colemanDBounded B (trunc (N + 1) F) N B.natDegree *
+        colemanDBounded B (trunc (N + 1) G) N B.natDegree :=
+    colemanDBounded_mul hF hG le_rfl
+  rw [hprod, hmul, ← coeff_coe, coe_mul,
+    PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ k.lt_succ_self,
+    PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc (B.colemanDSeries F) _ k.lt_succ_self,
+    htrunc, htrunc]
 
 /-- With `B = T`, Coleman's transform returns `F`. -/
 @[simp]
@@ -484,7 +507,7 @@ theorem continuous_coeff_colemanDSeries [TopologicalSpace R] [IsTopologicalSemir
         trunc (N + 1) F := by
       simp [U, Polynomial.map_sum, PowerSeries.trunc_apply,
         Fin.sum_univ_eq_sum_range (fun j ↦ monomial j (PowerSeries.coeff j F))]
-    rw [colemanDSeries, PowerSeries.coeff_mk, hΦ_def, ← coeff_map, colemanDBounded_map,
+    rw [coeff_colemanDSeries_eq_coeff_colemanDBounded, hΦ_def, ← coeff_map, colemanDBounded_map,
       Polynomial.map_map, hC, Polynomial.map_id, hU]
   simp_rw [hΦ]
   exact (MvPolynomial.continuous_eval Φ).comp

@@ -261,6 +261,22 @@ theorem matrixCoeff_mul (u v : C₀(J, R) →L[R] C₀(J, R)) (i j : J) :
     (u * v).matrixCoeff i j = ∑' k, u.matrixCoeff i k * v.matrixCoeff k j :=
   u.matrixCoeff_comp v i j
 
+/-- If the rows of `w` outside a finite set `F` vanish, the block of `w ^ k` on `F` is the
+`k`-th power of the block of `w` on `F`. -/
+theorem submatrix_matrixCoeff_pow {w : C₀(J, R) →L[R] C₀(J, R)} {F : Finset J}
+    (hw : ∀ i ∉ F, ∀ j, w.matrixCoeff i j = 0) (k : ℕ) :
+    (w ^ k).matrixCoeff.submatrix (Subtype.val : F → J) (Subtype.val : F → J) =
+      w.matrixCoeff.submatrix (Subtype.val : F → J) (Subtype.val : F → J) ^ k := by
+  induction k with
+  | zero =>
+    ext x y
+    simp [Matrix.one_apply]
+  | succ k ih =>
+    ext x y
+    rw [pow_succ, pow_succ, Matrix.submatrix_apply, matrixCoeff_mul, Matrix.mul_apply, ← ih,
+      tsum_eq_sum (s := F) fun l hl ↦ by simp [hw l hl], ← Finset.sum_coe_sort F]
+    simp
+
 end NormedCommRing
 
 end ContinuousLinearMap
