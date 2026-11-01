@@ -155,9 +155,6 @@ theorem eq_refl_of_apply_zero_one_infty_eq_self (hn : n ≠ 0) (h0 : f (0 : ℂ)
 `x ↦ g • x` for some `g ∈ GL(2, ℂ)`. -/
 theorem exists_coe_eq_smul (hn : n ≠ 0) :
     ∃ g : GL (Fin 2) ℂ, ⇑f = fun x ↦ g • x := by
-  -- Möbius transformations are analytic, hence `C^n`.
-  have : ContMDiffConstSMul 𝓘(ℂ) n (GL (Fin 2) ℂ) (OnePoint ℂ) :=
-    ⟨fun g ↦ (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ⊤) g).of_le le_top⟩
   -- Move `0`, `1`, `∞` to `f 0`, `f 1`, `f ∞`; the composite `g⁻¹ • f` fixes `0`, `1`, `∞`.
   obtain ⟨g, h0, h1, hinf⟩ := exists_smul_zero_one_infty_eq
     (f.injective.ne (by simp : ((0 : ℂ) : OnePoint ℂ) ≠ (1 : ℂ)))
@@ -181,8 +178,6 @@ biholomorphic to the Riemann sphere, the only biholomorphism of `M` fixing every
 with at least three points is the identity. -/
 theorem fixingSubgroup_eq_bot_of_two_lt_encard (e : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ OnePoint ℂ) (hn : n ≠ 0)
     {s : Set M} (hs : 2 < s.encard) : fixingSubgroup (I := I) (n := n) s = ⊥ := by
-  have : ContMDiffConstSMul 𝓘(ℂ) n (GL (Fin 2) ℂ) (OnePoint ℂ) :=
-    ⟨fun g ↦ (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ⊤) g).of_le le_top⟩
   -- Choose three distinct points `p`, `q`, `r` of `e '' s`.
   have himage : (e '' s).encard = s.encard := e.injective.encard_image s
   obtain ⟨t, hts, ht⟩ := exists_subset_encard_eq (s := e '' s) (k := 3)
