@@ -27,8 +27,8 @@ Mathlib's `MeasureTheory.indicatorConstLp` requires `μ s ≠ ∞`.
 
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `MeasureTheory.indicatorConstLpTop`: the class in `L∞` of `s.indicator fun _ ↦ c`, for a
-  measurable set `s` of arbitrary measure. It is additive on disjoint sets, compatible with
-  scalar multiplication, and the constant one on the whole space.
+  measurable set `s` of arbitrary measure. It is additive on disjoint sets, additive and
+  compatible with scalar multiplication in the value, and the constant one on the whole space.
 -/
 
 public section
@@ -86,6 +86,37 @@ theorem indicatorConstLpTop_eq_zero (hs : MeasurableSet s) (hμs : μ s = 0) (c 
   filter_upwards [indicatorConstLpTop_coeFn μ hs c, Lp.coeFn_zero E ∞ μ,
     measure_eq_zero_iff_ae_notMem.1 hμs] with x h h0 hx
   rw [h, h0, indicator_of_notMem hx, Pi.zero_apply]
+
+/-- The indicator class with value `0` vanishes. -/
+@[simp]
+theorem indicatorConstLpTop_zero (hs : MeasurableSet s) :
+    indicatorConstLpTop μ hs (0 : E) = 0 := by
+  refine Lp.ext ?_
+  filter_upwards [indicatorConstLpTop_coeFn μ hs (0 : E), Lp.coeFn_zero E ∞ μ] with x h h0
+  rw [h, h0]
+  simp
+
+/-- A version of `Set.indicator_add` for `MeasureTheory.indicatorConstLpTop`. -/
+theorem indicatorConstLpTop_add (hs : MeasurableSet s) (c c' : E) :
+    indicatorConstLpTop μ hs c + indicatorConstLpTop μ hs c' =
+      indicatorConstLpTop μ hs (c + c') := by
+  refine Lp.ext ?_
+  filter_upwards [indicatorConstLpTop_coeFn μ hs c, indicatorConstLpTop_coeFn μ hs c',
+    indicatorConstLpTop_coeFn μ hs (c + c'), Lp.coeFn_add (indicatorConstLpTop μ hs c)
+      (indicatorConstLpTop μ hs c')] with x h h' h'' hadd
+  rw [hadd, Pi.add_apply, h, h', h'']
+  by_cases hx : x ∈ s <;> simp [hx]
+
+/-- A version of `Set.indicator_sub` for `MeasureTheory.indicatorConstLpTop`. -/
+theorem indicatorConstLpTop_sub (hs : MeasurableSet s) (c c' : E) :
+    indicatorConstLpTop μ hs c - indicatorConstLpTop μ hs c' =
+      indicatorConstLpTop μ hs (c - c') := by
+  refine Lp.ext ?_
+  filter_upwards [indicatorConstLpTop_coeFn μ hs c, indicatorConstLpTop_coeFn μ hs c',
+    indicatorConstLpTop_coeFn μ hs (c - c'), Lp.coeFn_sub (indicatorConstLpTop μ hs c)
+      (indicatorConstLpTop μ hs c')] with x h h' h'' hsub
+  rw [hsub, Pi.sub_apply, h, h', h'']
+  by_cases hx : x ∈ s <;> simp [hx]
 
 /-- Indicator classes add on disjoint sets. -/
 theorem indicatorConstLpTop_union {t : Set α} (hs : MeasurableSet s) (ht : MeasurableSet t)

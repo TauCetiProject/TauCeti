@@ -87,8 +87,8 @@ theorem integralSimple_apply (g : SimpleFunc α ℝ) :
 theorem integralSimple_piecewise {s : Set α} (hs : MeasurableSet s) (c : ℝ) :
     ν.integralSimple hC (SimpleFunc.piecewise s hs (SimpleFunc.const α c) (SimpleFunc.const α 0)) =
       c * ν s := by
-  change SimpleFunc.setToSimpleFunc (contentCLM ν) _ = _
-  rw [SimpleFunc.setToSimpleFunc_indicator _ (by simp [contentCLM])]
+  rw [integralSimple, LinearMap.coe_mk, AddHom.coe_mk,
+    SimpleFunc.setToSimpleFunc_indicator _ (by simp [contentCLM])]
   simp [contentCLM, mul_comm]
 
 /-- A linear functional on simple functions taking the value `c * ν s` at the simple function equal

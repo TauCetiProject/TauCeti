@@ -110,6 +110,7 @@ theorem toAddContentLpTop_apply (M : Lp ℝ ∞ μ →ₗ[ℝ] ℝ) (hs : Measur
   simp [toAddContentLpTop_eq, hs]
 
 /-- The content of `M` is `0` on sets which are not measurable. -/
+@[simp]
 theorem toAddContentLpTop_of_not_measurableSet (M : Lp ℝ ∞ μ →ₗ[ℝ] ℝ)
     (hs : ¬MeasurableSet s) : M.toAddContentLpTop s = 0 := by
   simp [toAddContentLpTop_eq, hs]
