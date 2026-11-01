@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Closed two-sided ideals
@@ -17,6 +18,8 @@ The closure of a two-sided ideal in a topological ring is again two-sided. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
 for quotients of noncommutative rings by native ideals. The closed ideal generated
 by an ideal of the center presents discrete modules with central relations.
+When ring automorphisms preserving a two-sided ideal have continuous inverses, so do the
+automorphisms they induce on the quotient (`MonoidHom.continuous_quotientRingAut_symm`).
 
 The quotient-ring construction generalizes Patrick Massot's
 `QuotientRing.topologicalRing_quotient` in Mathlib from commutative rings, using
@@ -49,6 +52,20 @@ instance isTwoSided_closure [IsTopologicalRing A] (I : Ideal A) [I.IsTwoSided] :
       (continuous_mul_const b) ha fun _ hx => I.mul_mem_right b hx
 
 end Ideal
+
+namespace MonoidHom
+
+variable {H : Type*} [Monoid H] {A : Type*} [Ring A] [TopologicalSpace A] (a : H →* RingAut A)
+  (I : Ideal A) [I.IsTwoSided] (hI : ∀ h, I.map (a h : A →+* A) = I)
+
+/-- If the inverse of an automorphism preserving `I` is continuous, so is the inverse of the
+induced automorphism of `A ⧸ I`, for the quotient topology. -/
+theorem continuous_quotientRingAut_symm {h : H} (ha : Continuous (a h).symm) :
+    Continuous (a.quotientRingAut I hI h).symm :=
+  I.isQuotientMap_mkQ.continuous_iff.mpr <| (I.isQuotientMap_mkQ.continuous.comp ha).congr
+    fun x => (a.quotientRingAut_symm_apply_mk I hI h x).symm
+
+end MonoidHom
 
 namespace TwoSidedIdeal
 

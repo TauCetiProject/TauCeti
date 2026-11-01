@@ -32,6 +32,10 @@ the component of `R` cut out by `e`.
 
 If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated by `I`
 are unique. This quotient extensionality lemma is used to construct compatible residue maps.
+
+An action of a monoid by ring automorphisms preserving a two-sided ideal `I` descends to an action
+on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
+`Ideal.quotientEquiv`.
 -/
 
 public section
@@ -97,6 +101,38 @@ theorem spanFinrank_le_spanFinrank_map_add_spanFinrank {I J : Ideal R} (hIJ : I 
     Submodule.spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank hIJ hI
 
 end Ideal
+
+namespace MonoidHom
+
+variable {H : Type*} [Monoid H] {A : Type*} [Ring A] (a : H →* RingAut A) (I : Ideal A)
+  [I.IsTwoSided] (hI : ∀ h, I.map (a h : A →+* A) = I)
+
+/-- An action of a monoid `H` on a ring `A` by ring automorphisms that preserve a two-sided ideal
+`I` descends to an action on `A ⧸ I`: the element `h` acts by `Ideal.quotientEquiv I I (a h)`,
+which sends the class of `x` to the class of `a h x`. -/
+def quotientRingAut : H →* RingAut (A ⧸ I) where
+  toFun h := Ideal.quotientEquiv I I (a h) (hI h).symm
+  map_one' := by
+    ext x
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    simp [RingAut.one_eq_refl]
+  map_mul' g h := by
+    ext x
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    simp [RingAut.mul_apply]
+
+@[simp]
+theorem quotientRingAut_apply_mk (h : H) (x : A) :
+    a.quotientRingAut I hI h (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (a h x) :=
+  (rfl)
+
+@[simp]
+theorem quotientRingAut_symm_apply_mk (h : H) (x : A) :
+    (a.quotientRingAut I hI h).symm (Ideal.Quotient.mk I x) =
+      Ideal.Quotient.mk I ((a h).symm x) :=
+  (rfl)
+
+end MonoidHom
 
 namespace TauCeti.Ideal.Quotient
 
