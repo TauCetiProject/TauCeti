@@ -98,7 +98,7 @@ theorem cycleWord_one : cycleWord q 1 = 1 := by
 /-- The cycle word on `m + 2` strands is `g_m * ζₘ₊₁`, where `g_m = q • T m`. -/
 theorem cycleWord_add_two (m : ℕ) :
     cycleWord q (m + 2) = ((q : R) • T q m) * cycleWord q (m + 1) := by
-  rw [cycleWord_def, cycleWord_def, show m + 2 - 1 = m + 1 by omega, Nat.add_sub_cancel,
+  rw [cycleWord_def, cycleWord_def, Nat.add_sub_cancel, Nat.add_succ_sub_one,
     cosetRep_succ (Nat.zero_le m), smul_mul_smul, pow_succ']
 
 /-- The cycle word on `m` strands lies in the stage of the first `m` strands. -/
