@@ -34,14 +34,14 @@ subsets of a real affine space, the form in which triangulation theorems for com
 semialgebraic sets apply to them.
 
 The real coordinates of a complex `ι × ι` matrix are indexed by `(ι × ι) ⊕ (ι × ι)`: the matrix
-with entries `a (Sum.inl (i, j)) + a (Sum.inr (i, j)) * I`, as in
-`TauCeti.isSemialgebraic_setOf_eval_sumElim_star_eq_zero`.
+with entries `(TauCeti.complexToRealPi (ι × ι)).symm a (i, j)`, that is
+`a (Sum.inl (i, j)) + a (Sum.inr (i, j)) * I`.
 
-The standard affine charts of complex projective space are compatible with this model. In real
-coordinates, given by `TauCeti.complexToRealPi`, the inverse chart at `i` followed by the Hermitian
-projector map is a semialgebraic map from `ℝ²ⁿ`, the image of the affine open `{x_i ≠ 0}` is a
-semialgebraic set, and the chart at `i` read in the model, `A ↦ (A (i.succAbove k) i / A i i)_k`,
-is semialgebraic on it. Composing the two, every transition map between standard affine charts
+The standard affine charts of complex projective space are compatible with this model. In these
+real coordinates, the inverse chart at `i` followed by the Hermitian projector map is a
+semialgebraic map from `ℝ²ⁿ`, the image of the affine open `{x_i ≠ 0}` is a semialgebraic set, and
+the chart at `i` read in the model, `A ↦ (A (i.succAbove k) i / A i i)_k`, is semialgebraic on
+it. Composing the two, every transition map between standard affine charts
 is semialgebraic on its domain. These comparisons transfer semialgebraic statements between the
 compact matrix model, where compact semialgebraic triangulation applies, and the affine charts,
 where projective algebraic sets are affine algebraic sets.
@@ -129,18 +129,18 @@ theorem isCompact_hermitianProjectorLocus {𝕜 : Type*} [RCLike 𝕜] :
     isCompact_range Projectivization.continuous_hermitianProjector
 
 /-- The complex Hermitian projector locus is semialgebraic in the real and imaginary parts
-`a (Sum.inl (i, j))` and `a (Sum.inr (i, j))` of the matrix entries: it is cut out by the
-polynomial equations, in the entries and their conjugates, expressing self-adjointness,
-idempotence and trace one. -/
+`a (Sum.inl (i, j))` and `a (Sum.inr (i, j))` of the matrix entries, recombined by
+`TauCeti.complexToRealPi`: it is cut out by the polynomial equations, in the entries and their
+conjugates, expressing self-adjointness, idempotence and trace one. -/
 theorem isSemialgebraic_hermitianProjectorLocus :
     IsSemialgebraic {a : (ι × ι) ⊕ (ι × ι) → ℝ |
-      Matrix.of (fun i j ↦ (a (.inl (i, j)) : ℂ) + a (.inr (i, j)) * I) ∈
+      Matrix.of (fun i j ↦ (complexToRealPi (ι × ι)).symm a (i, j)) ∈
         hermitianProjectorLocus ι ℂ} := by
   let z (a : (ι × ι) ⊕ (ι × ι) → ℝ) : (ι × ι) ⊕ (ι × ι) → ℂ :=
     Sum.elim (fun k ↦ (a (.inl k) : ℂ) + a (.inr k) * I)
       (fun k ↦ star ((a (.inl k) : ℂ) + a (.inr k) * I))
   have h : {a : (ι × ι) ⊕ (ι × ι) → ℝ |
-      Matrix.of (fun i j ↦ (a (.inl (i, j)) : ℂ) + a (.inr (i, j)) * I) ∈
+      Matrix.of (fun i j ↦ (complexToRealPi (ι × ι)).symm a (i, j)) ∈
         hermitianProjectorLocus ι ℂ} =
       ((⋂ p : ι × ι, {a | eval (z a) (∑ k, X (.inl (p.1, k)) * X (.inl (k, p.2)) -
           X (.inl p)) = 0}) ∩
@@ -188,20 +188,20 @@ entries. -/
 theorem isSemialgebraic_image_hermitianProjector_complexProjectiveZeroLocus [Finite κ]
     (hp : ∀ k, (p k).IsHomogeneous (d k)) :
     IsSemialgebraic {a : (Fin N × Fin N) ⊕ (Fin N × Fin N) → ℝ |
-      Matrix.of (fun i j ↦ (a (.inl (i, j)) : ℂ) + a (.inr (i, j)) * I) ∈
+      Matrix.of (fun i j ↦ (complexToRealPi (Fin N × Fin N)).symm a (i, j)) ∈
         Projectivization.hermitianProjector '' complexProjectiveZeroLocus p} := by
   let z (a : (Fin N × Fin N) ⊕ (Fin N × Fin N) → ℝ) : (Fin N × Fin N) ⊕ (Fin N × Fin N) → ℂ :=
     Sum.elim (fun k ↦ (a (.inl k) : ℂ) + a (.inr k) * I)
       (fun k ↦ star ((a (.inl k) : ℂ) + a (.inr k) * I))
   have h : {a : (Fin N × Fin N) ⊕ (Fin N × Fin N) → ℝ |
-      Matrix.of (fun i j ↦ (a (.inl (i, j)) : ℂ) + a (.inr (i, j)) * I) ∈
+      Matrix.of (fun i j ↦ (complexToRealPi (Fin N × Fin N)).symm a (i, j)) ∈
         Projectivization.hermitianProjector '' complexProjectiveZeroLocus p} =
-      {a | Matrix.of (fun i j ↦ (a (.inl (i, j)) : ℂ) + a (.inr (i, j)) * I) ∈
+      {a | Matrix.of (fun i j ↦ (complexToRealPi (Fin N × Fin N)).symm a (i, j)) ∈
         hermitianProjectorLocus (Fin N) ℂ} ∩
         ⋂ k, ⋂ i, {a | eval (z a) (rename (fun j ↦ .inl (j, i)) (p k)) = 0} := by
     ext a
     simp only [image_hermitianProjector_complexProjectiveZeroLocus hp, Set.mem_inter_iff,
-      Set.mem_ofPred_eq, Set.mem_iInter, eval_rename]
+      Set.mem_ofPred_eq, Set.mem_iInter, eval_rename, Matrix.of_apply, complexToRealPi_symm_apply]
     rfl
   rw [h]
   exact isSemialgebraic_hermitianProjectorLocus.inter
@@ -224,7 +224,7 @@ theorem isSemialgebraicMap_hermitianProjector_affineChart_symm (i : Fin (n + 1))
     IsSemialgebraicMap fun a : Fin n ⊕ Fin n → ℝ ↦
       complexToRealPi (Fin (n + 1) × Fin (n + 1)) fun q ↦
         hermitianProjector ((affineChart i).symm ((complexToRealPi (Fin n)).symm a)) q.1 q.2 := by
-  rw [isSemialgebraicMap_def]
+  rw [← isSemialgebraicOn_univ, ← Set.preimage_univ (f := (complexToRealPi (Fin n)).symm)]
   -- Complex coordinates `z` of `ℂⁿ` and `A` of the matrices, together with their conjugates.
   let V : Fin (n + 1) → MvPolynomial
       ((Fin n ⊕ (Fin (n + 1) × Fin (n + 1))) ⊕ (Fin n ⊕ (Fin (n + 1) × Fin (n + 1)))) ℂ :=
@@ -232,31 +232,22 @@ theorem isSemialgebraicMap_hermitianProjector_affineChart_symm (i : Fin (n + 1))
   let Vc : Fin (n + 1) → MvPolynomial
       ((Fin n ⊕ (Fin (n + 1) × Fin (n + 1))) ⊕ (Fin n ⊕ (Fin (n + 1) × Fin (n + 1)))) ℂ :=
     Fin.insertNth i 1 fun k ↦ X (.inr (.inl k))
-  let R (q : Fin (n + 1) × Fin (n + 1)) := (∑ r, Vc r * V r) * X (.inl (.inr q)) - V q.1 * Vc q.2
-  -- The real coordinates of the complex coordinates, in the layout of the graph.
-  let f : (Fin n ⊕ (Fin (n + 1) × Fin (n + 1))) ⊕ (Fin n ⊕ (Fin (n + 1) × Fin (n + 1))) →
-      (Fin n ⊕ Fin n) ⊕ ((Fin (n + 1) × Fin (n + 1)) ⊕ (Fin (n + 1) × Fin (n + 1))) :=
-    Sum.elim (Sum.map .inl .inl) (Sum.map .inr .inr)
-  convert IsSemialgebraic.iInter fun q ↦
-    (isSemialgebraic_setOf_eval_sumElim_star_eq_zero (R q)).preimage_comp f using 1
-  ext w
-  set z := (complexToRealPi (Fin n)).symm (w ∘ Sum.inl)
+  refine isSemialgebraicOn_complexToRealPi_of_forall_eq_iff
+    (g := fun z q ↦ hermitianProjector ((affineChart i).symm z) q.1 q.2)
+    (Set.preimage_univ (f := (complexToRealPi (Fin n)).symm) ▸ isSemialgebraic_univ)
+    (fun q ↦ (∑ r, Vc r * V r) * X (.inl (.inr q)) - V q.1 * Vc q.2) fun z _ A ↦ ?_
   set v : Fin (n + 1) → ℂ := Fin.insertNth i 1 z
   have hs : star v ⬝ᵥ v ≠ 0 := dotProduct_star_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero i z)
-  have hV (r) : eval (Sum.elim (fun k ↦ ((w ∘ f) (.inl k) : ℂ) + (w ∘ f) (.inr k) * I)
-      (fun k ↦ star (((w ∘ f) (.inl k) : ℂ) + (w ∘ f) (.inr k) * I))) (V r) = v r := by
-    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i r <;> simp [V, v, z, f]
-  have hVc (r) : eval (Sum.elim (fun k ↦ ((w ∘ f) (.inl k) : ℂ) + (w ∘ f) (.inr k) * I)
-      (fun k ↦ star (((w ∘ f) (.inl k) : ℂ) + (w ∘ f) (.inr k) * I))) (Vc r) = star (v r) := by
-    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i r <;> simp [Vc, v, z, f]
-  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
-  simp only [Set.mem_univ, true_and, Set.mem_iInter, Set.mem_preimage, Set.mem_ofPred_eq, R,
-    map_sub, map_mul, map_sum, hV, hVc]
-  rw [← ContinuousLinearEquiv.eq_symm_apply, funext_iff]
+  have hV (r) : eval (Sum.elim (Sum.elim z A) fun t ↦ star (Sum.elim z A t)) (V r) = v r := by
+    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i r <;> simp [V, v]
+  have hVc (r) : eval (Sum.elim (Sum.elim z A) fun t ↦ star (Sum.elim z A t)) (Vc r) =
+      star (v r) := by
+    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i r <;> simp [Vc, v]
+  simp only [map_sub, map_mul, map_sum, hV, hVc, funext_iff]
   refine forall_congr' fun q ↦ ?_
   rw [affineChart_symm_apply, hermitianProjector_mk, rankOneHermitianProjector_apply, div_eq_iff hs,
     sub_eq_zero, eq_comm]
-  simp [f, v, z, dotProduct, mul_comm]
+  simp [v, dotProduct, mul_comm]
 
 /-- In real coordinates, the image of the standard affine open `{x_i ≠ 0}` under the Hermitian
 projector map is semialgebraic: it is the part of the Hermitian projector locus with nonzero
@@ -280,27 +271,19 @@ theorem isSemialgebraicOn_hermitianProjector_affineChart (i : Fin (n + 1)) :
         (complexToRealPi _).symm b (i.succAbove k, i) / (complexToRealPi _).symm b (i, i))
       {b | Matrix.of (fun r s ↦ (complexToRealPi (Fin (n + 1) × Fin (n + 1))).symm b (r, s)) ∈
         hermitianProjector '' affineOpen i} := by
-  refine isSemialgebraicOn_def.2 ⟨isSemialgebraic_image_hermitianProjector_affineOpen i, ?_⟩
   -- The graph is cut out by the equations `A i i * z k = A (i.succAbove k) i` over the domain.
-  let R (k : Fin n) : MvPolynomial
-      (((Fin (n + 1) × Fin (n + 1)) ⊕ Fin n) ⊕ ((Fin (n + 1) × Fin (n + 1)) ⊕ Fin n)) ℂ :=
-    X (.inl (.inl (i, i))) * X (.inl (.inr k)) - X (.inl (.inl (i.succAbove k, i)))
-  let f : ((Fin (n + 1) × Fin (n + 1)) ⊕ Fin n) ⊕ ((Fin (n + 1) × Fin (n + 1)) ⊕ Fin n) →
-      ((Fin (n + 1) × Fin (n + 1)) ⊕ (Fin (n + 1) × Fin (n + 1))) ⊕ (Fin n ⊕ Fin n) :=
-    Sum.elim (Sum.map .inl .inl) (Sum.map .inr .inr)
-  convert ((isSemialgebraic_image_hermitianProjector_affineOpen i).preimage_comp Sum.inl).inter
-    (IsSemialgebraic.iInter fun k ↦
-      (isSemialgebraic_setOf_eval_sumElim_star_eq_zero (R k)).preimage_comp f) using 1
-  ext w
-  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
-  simp only [Set.mem_inter_iff, Set.mem_iInter, Set.mem_preimage, Set.mem_ofPred_eq]
-  refine and_congr_right fun hw ↦ ?_
-  rw [image_hermitianProjector_affineOpen] at hw
-  have hii : (complexToRealPi _).symm (w ∘ Sum.inl) (i, i) ≠ 0 := hw.2
-  rw [← ContinuousLinearEquiv.eq_symm_apply, funext_iff]
+  refine isSemialgebraicOn_complexToRealPi_of_forall_eq_iff
+    (g := fun A k ↦ A (i.succAbove k, i) / A (i, i))
+    (s := {A | Matrix.of (fun r s ↦ A (r, s)) ∈ hermitianProjector '' affineOpen i})
+    (isSemialgebraic_image_hermitianProjector_affineOpen i)
+    (fun k ↦ X (.inl (.inl (i, i))) * X (.inl (.inr k)) - X (.inl (.inl (i.succAbove k, i))))
+    fun A hA w ↦ ?_
+  rw [image_hermitianProjector_affineOpen] at hA
+  have hii : A (i, i) ≠ 0 := by simpa only [Set.mem_ofPred_eq, Matrix.of_apply] using hA.2
+  simp only [funext_iff]
   refine forall_congr' fun k ↦ ?_
   rw [div_eq_iff hii, eq_comm, ← sub_eq_zero]
-  simp [R, f, mul_comm]
+  simp [mul_comm]
 
 /-- **Semialgebraicity of the chart changes.** In real coordinates, the transition map from the
 standard affine chart of complex projective space at `i` to the one at `j` is semialgebraic on its
