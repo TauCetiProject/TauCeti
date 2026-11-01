@@ -37,11 +37,13 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 
 ## Main results
 
+* `constantCoeff_taylor`: the constant term of the translate is `f(a)`.
 * `taylor_coe`: on polynomials, the translate is `Polynomial.taylor`.
 * `taylor_zero`: translation by `0` is the identity.
 * `PowerSeries.IsEntire.taylor`: the translate of an entire series is entire.
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
   entire series.
+* `taylor_one`, `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasseDeriv_taylor`: Hasse derivatives commute with translation.
 * `PowerSeries.IsEntire.taylor_taylor`: `taylor b (taylor a f) = taylor (b + a) f`.
@@ -72,6 +74,11 @@ theorem coeff_taylor (a : R) (f : R⟦X⟧) (n : ℕ) :
     coeff n (taylor a f) = (hasseDeriv n f).evalAt a := by
   simp [taylor]
 
+/-- The constant term of the Taylor translate at `a` is the value at `a`. -/
+@[simp]
+theorem constantCoeff_taylor (a : R) (f : R⟦X⟧) : constantCoeff (taylor a f) = f.evalAt a := by
+  simp [← coeff_zero_eq_constantCoeff_apply]
+
 /-- On polynomials, Taylor translation is `Polynomial.taylor`. -/
 @[simp]
 theorem taylor_coe (a : R) (p : Polynomial R) :
@@ -90,6 +97,11 @@ theorem taylor_zero (f : R⟦X⟧) : taylor 0 f = f := by
 theorem taylor_zero_right (a : R) : taylor a (0 : R⟦X⟧) = 0 := by
   ext n
   simp
+
+/-- The translate of the constant series `1` is `1`. -/
+@[simp]
+theorem taylor_one (a : R) : taylor a (1 : R⟦X⟧) = 1 := by
+  simpa using taylor_coe a 1
 
 end Topological
 
@@ -143,6 +155,16 @@ theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
   ext n
   rw [coeff_taylor, map_smul, (hf.hasseDeriv n).evalAt_smul, coeff_smul, coeff_taylor,
     smul_eq_mul]
+
+/-- Taylor translation is multiplicative on entire series, by the Leibniz rule for Hasse
+derivatives. -/
+theorem IsEntire.taylor_mul {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
+    taylor a (f * g) = taylor a f * taylor a g := by
+  ext n
+  rw [coeff_taylor, hasseDeriv_mul,
+    IsEntire.evalAt_sum _ fun _ _ ↦ (hf.hasseDeriv _).mul (hg.hasseDeriv _), coeff_mul]
+  refine sum_congr rfl fun _ _ ↦ ?_
+  rw [(hf.hasseDeriv _).evalAt_mul (hg.hasseDeriv _), coeff_taylor, coeff_taylor]
 
 /-- **The Taylor identity.** For an entire series `f`, the Taylor translate at `a` evaluated at
 `b` is `f(b + a)`. -/
