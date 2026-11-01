@@ -240,6 +240,7 @@ private theorem le_of_mem_support_rename_toLex_det_submatrix_mvPolynomialX {r : 
 /-- For the lexicographic order on the variables `X (i, j)` ordered row by row, a minor of the
 generic matrix on sorted rows `r` and sorted columns `c` has the main diagonal
 `∏ i, X (r i, c i)` as its leading monomial. -/
+@[simp]
 theorem degree_rename_toLex_det_submatrix_mvPolynomialX [Nontrivial R] {r : ι → m}
     {c : ι → n} (hr : StrictMono r) (hc : StrictMono c) :
     lex.degree (rename toLex ((mvPolynomialX m n R).submatrix r c).det) =
@@ -252,6 +253,7 @@ theorem degree_rename_toLex_det_submatrix_mvPolynomialX [Nontrivial R] {r : ι �
 
 /-- For the lexicographic order on the variables `X (i, j)` ordered row by row, a minor of the
 generic matrix on sorted rows and sorted columns is monic. -/
+@[simp]
 theorem monic_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c : ι → n}
     (hr : StrictMono r) (hc : StrictMono c) :
     lex.Monic (rename toLex ((mvPolynomialX m n R).submatrix r c).det) := by
@@ -262,6 +264,7 @@ theorem monic_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c : ι �
 /-- For the lexicographic order on the variables `X (i, j)` ordered row by row, the leading term
 of a minor of the generic matrix on sorted rows `r` and sorted columns `c` is the product
 `∏ i, X (r i, c i)` of its diagonal entries. -/
+@[simp]
 theorem leadingTerm_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c : ι → n}
     (hr : StrictMono r) (hc : StrictMono c) :
     lex.leadingTerm (rename toLex ((mvPolynomialX m n R).submatrix r c).det) =
