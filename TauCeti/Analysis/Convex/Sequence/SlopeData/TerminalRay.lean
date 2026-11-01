@@ -255,9 +255,15 @@ noncomputable def toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTo
         (by simpa only [f, truncate_length] using i.isLt) }
 
 /-- The normalized prefix compresses precisely the slopes before stabilization. -/
+@[simp]
 theorem toTerminalRay_prefix (hd : Filter.EventuallyConst d.slope Filter.atTop) :
     (d.toTerminalRay hd).prefix =
       (d.truncate (d.stabilizationIndex hd)).compress := (rfl)
+
+/-- The expanded normalized prefix has length equal to the first stabilization index. -/
+theorem toTerminalRay_prefix_expand_length (hd : Filter.EventuallyConst d.slope Filter.atTop) :
+    (d.toTerminalRay hd).prefix.expand.length = d.stabilizationIndex hd := by
+  simp
 
 /-- The normalized ray has the slope at the first stabilization index. -/
 @[simp]
@@ -270,8 +276,8 @@ theorem expand_toTerminalRay (hd : Filter.EventuallyConst d.slope Filter.atTop) 
     (d.toTerminalRay hd).expand = d := by
   have hp := d.toTerminalRay_prefix hd
   have hlen : (d.toTerminalRay hd).prefix.expand.length = d.stabilizationIndex hd := by
-    simp [hp]
-  apply InfiniteSlopeData.ext (by simp [hp]) (by simp [hp])
+    simp
+  apply InfiniteSlopeData.ext (by simp) (by simp)
   funext i
   by_cases hi : i < d.stabilizationIndex hd
   · rw [TerminalRaySlopeData.expand_slope_of_lt _ (hlen ▸ hi)]

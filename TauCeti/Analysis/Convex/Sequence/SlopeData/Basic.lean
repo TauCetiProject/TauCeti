@@ -298,6 +298,17 @@ theorem heights_start_add (k : ℕ) :
       ((d.initialHeight + ∑ i ∈ range k, d.slope i : Γ) : WithTop Γ) := by
   simp only [heights, Nat.le_add_right, ite_true, Nat.add_sub_cancel_left]
 
+/-- Truncation preserves heights on the interval from the anchor to its endpoint. -/
+@[simp]
+theorem truncate_heights_start_add (n : ℕ) {k : ℕ} (hk : k ≤ n) :
+    (d.truncate n).heights (d.start + k) = d.heights (d.start + k) := by
+  have h := (d.truncate n).heights_start_add (k := k) (by simpa using hk)
+  have hs : (d.truncate n).slope = fun i : Fin (d.truncate n).length => d.slope i :=
+    funext (d.truncate_slope n)
+  rw [hs, prefixSum_eq_sum_range] at h
+  simpa only [truncate_start, truncate_initialHeight, truncate_length,
+    min_eq_left hk, heights_start_add] using h
+
 /-- The height at the first index is the initial height. -/
 @[simp]
 theorem heights_start : d.heights d.start = (d.initialHeight : WithTop Γ) := by
