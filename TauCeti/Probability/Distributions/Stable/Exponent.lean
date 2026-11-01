@@ -263,6 +263,18 @@ theorem continuousAt_stableCharacteristicExponent_zero {α : ℝ} (hα : 0 < α)
       simp [Real.zero_rpow hα.ne']
     · exact stableCharacteristicExponent_of_ne_one_of_ne_zero hα1 β hu
 
+private theorem hasDerivAt_cos_pi_mul_div_two_one :
+    HasDerivAt (fun a : ℝ ↦ cos (π * a / 2)) (-(π / 2)) 1 := by
+  convert ((hasDerivAt_id (1 : ℝ)).const_mul π |>.div_const 2).cos using 1 <;> simp
+
+private theorem cos_pi_mul_div_two_ne_zero {α : ℝ} (hα : α ∈ Set.Ioc (0 : ℝ) 2)
+    (hα1 : α ≠ 1) : cos (π * α / 2) ≠ 0 := by
+  rcases lt_or_gt_of_ne hα1 with h | h
+  · exact (cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos, hα.1],
+      by nlinarith [pi_pos]⟩).ne'
+  · exact (cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [pi_pos])
+      (by nlinarith [pi_pos, hα.2])).ne
+
 private theorem stableCharacteristicExponent_im_dslope {u : ℝ} (hu : u ≠ 0)
     (α β : ℝ) :
     (stableCharacteristicExponent α β u).im =
@@ -273,8 +285,7 @@ private theorem stableCharacteristicExponent_im_dslope {u : ℝ} (hu : u ≠ 0)
     rcases hu.lt_or_gt with h | h <;> simp [Real.sign_of_neg, Real.sign_of_pos, abs_of_neg,
       abs_of_pos, h]
   have hd := (Real.hasStrictDerivAt_const_rpow (abs_pos.mpr hu) 1).hasDerivAt
-  have hc : HasDerivAt (fun a : ℝ ↦ cos (π * a / 2)) (-(π / 2)) 1 := by
-    convert ((hasDerivAt_id (1 : ℝ)).const_mul π |>.div_const 2).cos using 1 <;> simp
+  have hc := hasDerivAt_cos_pi_mul_div_two_one
   by_cases hα : α = 1
   · subst α
     simp only [stableCharacteristicExponent_one, Complex.sub_im, Complex.neg_im,
@@ -294,6 +305,26 @@ private theorem stableCharacteristicExponent_im_dslope {u : ℝ} (hu : u ≠ 0)
       dslope_of_ne _ hα, slope_def_field, rpow_one, mul_one, cos_pi_div_two, sub_zero,
       div_div_div_cancel_right₀ (sub_ne_zero.mpr hα), tan_eq_sin_div_cos]
     linear_combination (β * sin (π * α / 2) / cos (π * α / 2)) * hsign
+
+private theorem continuousAt_stableCharacteristicExponent_im_params_one {u : ℝ} (hu : u ≠ 0)
+    (β : ℝ) :
+    ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
+      (stableCharacteristicExponent p.1.1 p.2 u).im) (⟨1, by norm_num⟩, β) := by
+  have ha : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
+      (⟨1, by norm_num⟩, β) := (continuous_subtype_val.comp continuous_fst).continuousAt
+  -- Both divided differences extend continuously, with a nonzero cosine derivative.
+  have hd := (Real.hasStrictDerivAt_const_rpow (abs_pos.mpr hu) 1).hasDerivAt
+  have hc := hasDerivAt_cos_pi_mul_div_two_one
+  have hdc := ContinuousAt.comp' (f := fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
+    (x := (⟨1, by norm_num⟩, β)) (continuousAt_dslope_same.mpr hd.differentiableAt) ha
+  have hcc := ContinuousAt.comp' (f := fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
+    (x := (⟨1, by norm_num⟩, β)) (continuousAt_dslope_same.mpr hc.differentiableAt) ha
+  have hn : dslope (fun a : ℝ ↦ cos (π * a / 2)) 1 1 ≠ 0 := by
+    simpa only [dslope_same, hc.deriv, neg_ne_zero] using (div_ne_zero pi_ne_zero two_ne_zero)
+  simpa only [stableCharacteristicExponent_im_dslope hu, Function.comp_def,
+    Pi.mul_def, Pi.div_def] using
+    ((continuous_snd.continuousAt.mul_const (Real.sign u)).mul
+      (continuous_sin.continuousAt.comp ((ha.const_mul π).div_const 2))).mul (hdc.div hcc hn)
 
 /-- At each fixed frequency, the stable exponent depends continuously on shape and skewness
 throughout `0 < α ≤ 2`. In particular, the logarithmic branch is the limit at shape one. -/
@@ -315,26 +346,8 @@ theorem continuous_stableCharacteristicExponent_params (u : ℝ) :
       (stableCharacteristicExponent p.1.1 p.2 u).im) (⟨α, hα⟩, β) := by
     by_cases hα1 : α = 1
     · subst α
-      -- Both divided differences extend continuously, with a nonzero cosine derivative.
-      have hd := (Real.hasStrictDerivAt_const_rpow (abs_pos.mpr hu) 1).hasDerivAt
-      have hc : HasDerivAt (fun a : ℝ ↦ cos (π * a / 2)) (-(π / 2)) 1 := by
-        convert ((hasDerivAt_id (1 : ℝ)).const_mul π |>.div_const 2).cos using 1 <;> simp
-      have hdc := ContinuousAt.comp' (f := fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
-        (x := (⟨1, hα⟩, β)) (continuousAt_dslope_same.mpr hd.differentiableAt) ha
-      have hcc := ContinuousAt.comp' (f := fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
-        (x := (⟨1, hα⟩, β)) (continuousAt_dslope_same.mpr hc.differentiableAt) ha
-      have hn : dslope (fun a : ℝ ↦ cos (π * a / 2)) 1 1 ≠ 0 := by
-        simpa only [dslope_same, hc.deriv, neg_ne_zero] using (div_ne_zero pi_ne_zero two_ne_zero)
-      simpa only [stableCharacteristicExponent_im_dslope hu, Function.comp_def,
-        Pi.mul_def, Pi.div_def] using
-        ((continuous_snd.continuousAt.mul_const (Real.sign u)).mul
-          (continuous_sin.continuousAt.comp ((ha.const_mul π).div_const 2))).mul (hdc.div hcc hn)
-    · have hcos : cos (π * α / 2) ≠ 0 := by
-        rcases lt_or_gt_of_ne hα1 with h | h
-        · exact (cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos, hα.1],
-            by nlinarith [pi_pos]⟩).ne'
-        · exact (cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [pi_pos])
-            (by nlinarith [pi_pos, hα.2])).ne
+      exact continuousAt_stableCharacteristicExponent_im_params_one hu β
+    · have hcos := cos_pi_mul_div_two_ne_zero hα hα1
       have hangle := (ha.const_mul π).div_const 2
       have htan := (continuous_sin.continuousAt.comp hangle).div
         (continuous_cos.continuousAt.comp hangle) hcos

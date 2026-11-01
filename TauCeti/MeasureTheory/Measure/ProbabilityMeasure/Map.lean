@@ -80,9 +80,10 @@ lemma continuous_map_of_continuous_uncurry {f : T → X → Y}
   intro p
   apply ProbabilityMeasure.toMeasure_injective
   simp only [Function.comp_def, toMeasure_map, toMeasure_prod]
+  -- `diracProba` bundles `Measure.dirac` with its probability-measure instance.
   have hd : (diracProba p.1).toMeasure = Measure.dirac p.1 := (rfl)
   rw [hd, Measure.dirac_prod, Measure.map_map hf.measurable (by fun_prop)]
-  rfl
+  simp only [Function.comp_def, Function.uncurry]
 
 end MeasureTheory.ProbabilityMeasure
 
