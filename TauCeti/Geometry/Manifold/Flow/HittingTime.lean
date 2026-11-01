@@ -31,7 +31,9 @@ of `g` through `q` is `C^n` at `p` (`TauCeti.contMDiffAt_flowOf_flowHittingTime`
 
 These are the local hitting times and transition maps between transverse sections of a periodic
 orbit: restricting `z` to a section through `p` gives the transition map between the sections,
-and taking `q = p` and `T` the period gives the Poincaré first return map.
+and taking `q = p` and `T` a period gives a local return branch near `T`. This branch need not be
+the Poincaré first return map: `T` may be a multiple of the primitive period, and earlier
+intersections with the section are not excluded.
 
 ## Main definitions
 
