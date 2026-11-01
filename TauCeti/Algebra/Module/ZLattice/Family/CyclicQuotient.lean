@@ -21,13 +21,14 @@ cocycle `ζ • [z, v] = R ζ z v +ᵥ b ζ z` lifting the rotations
 (`TauCeti.torusFamilyAffineMulAction`).
 
 The function `t = z ^ m` of the base is invariant under the rotations, so `[x] ↦ p(x) ^ m`
-descends to the orbit space `Q = X / C_m` (`TauCeti.torusFamilyCyclicQuotientProjection`). Its
-image is the disc of radius `r ^ m` (`TauCeti.range_torusFamilyCyclicQuotientProjection`), and two
-points of `Q` have the same image exactly when they lie over one orbit of the rotations on `D`
+descends to the orbit space `Q = X / C_m` (`TauCeti.torusFamilyCyclicQuotientProjection`). For
+`0 ≤ r`, its image is the disc of radius `r ^ m`
+(`TauCeti.range_torusFamilyCyclicQuotientProjection`), and two points of `Q` have the same image
+exactly when they lie over one orbit of the rotations on `D`
 (`TauCeti.torusFamilyCyclicQuotientProjection_mk_eq_mk_iff`): it is the map from `Q` to the
 quotient disc `D / C_m`, read in the coordinate `t` of
 `TauCeti.rootsOfUnityBallQuotientHomeomorph`. Its fibre over `0` consists of the points over the
-centre of `D`, the image of the central torus, where every rotation has a fixed point
+centre of `D`, the fixed point of the rotations on the base, that is, the image of the central torus
 (`TauCeti.torusFamilyCyclicQuotientProjection_eq_zero_iff`).
 
 When the action of `C_m` on `X` is free, a condition on the central torus only
@@ -51,7 +52,8 @@ and translation sections and `n = ω`, `Q` is a complex manifold and `t : Q → 
   orbits of the rotations on the base.
 * `TauCeti.torusFamilyCyclicQuotientProjection_eq_zero_iff`: its fibre over `0` lies over the
   centre of the disc.
-* `TauCeti.range_torusFamilyCyclicQuotientProjection`: its image is the disc of radius `r ^ m`.
+* `TauCeti.range_torusFamilyCyclicQuotientProjection`: for `0 ≤ r`, its image is the disc of
+  radius `r ^ m`.
 * `TauCeti.contMDiff_torusFamilyCyclicQuotientProjection`: for a free action with `C^n` data it is
   `C^n`; for holomorphic data it is holomorphic.
 
@@ -90,8 +92,8 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
 
 /-- **The coordinate `t = z ^ m` on the cyclic quotient.** The map `Q → ℂ` from the orbit space
 `Q = X / C_m` of the cyclic affine action on the family of tori `X = (D × E)/Λ`, sending the orbit
-of a point over `z` to `z ^ m`. Its image is the disc of radius `r ^ m`, the quotient of `D` by
-the rotations. -/
+of a point over `z` to `z ^ m`. For `0 ≤ r`, its image is the disc of radius `r ^ m`, the quotient
+of `D` by the rotations. -/
 noncomputable def torusFamilyCyclicQuotientProjection :
     letI := periodAddAction P
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
@@ -141,8 +143,8 @@ theorem torusFamilyCyclicQuotientProjection_eq_zero_iff
         (Quotient.mk _ x) = 0 ↔ ((torusFamilyProjection P x : rootsOfUnityBall m r) : ℂ) = 0 := by
   rw [torusFamilyCyclicQuotientProjection_mk, pow_eq_zero_iff (NeZero.ne m)]
 
-/-- **The image of `t`.** The coordinate `t` maps the cyclic quotient onto the disc of radius
-`r ^ m`, the quotient of the disc of radius `r` by the rotations. -/
+/-- **The image of `t`.** For `0 ≤ r`, the coordinate `t` maps the cyclic quotient onto the disc
+of radius `r ^ m`, the quotient of the disc of radius `r` by the rotations. -/
 theorem range_torusFamilyCyclicQuotientProjection (hr : 0 ≤ r) :
     range (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul) =
       Metric.ball 0 (r ^ m) := by

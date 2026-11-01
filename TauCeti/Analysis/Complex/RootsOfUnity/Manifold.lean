@@ -22,8 +22,8 @@ on which the rotations lift.
 
 ## Main declarations
 
-* `TauCeti.isOpen_rootsOfUnityBall`: the disc is open in `ℂ`, hence locally compact
-  (`TauCeti.rootsOfUnityBall.instLocallyCompactSpace`).
+* `TauCeti.rootsOfUnityBall.opens`: the disc as an open subset of `ℂ`, whose subtype is the
+  disc itself.
 * `TauCeti.rootsOfUnityBall.instChartedSpace`, `TauCeti.rootsOfUnityBall.instIsManifold`: the disc
   is a `C^n` manifold modelled on `ℂ` for every `n`; for `n = ω` it is a complex manifold.
 * `TauCeti.rootsOfUnityBall.contMDiff_val`: the inclusion of the disc into `ℂ` is holomorphic.
@@ -39,39 +39,37 @@ namespace TauCeti
 
 variable {m : ℕ} [NeZero m] {r : ℝ} {n : ℕ∞ω}
 
-/-- The disc of radius `r` is open in `ℂ`. -/
-theorem isOpen_rootsOfUnityBall : IsOpen (rootsOfUnityBall m r : Set ℂ) := by
-  simp [Metric.isOpen_ball]
-
 namespace rootsOfUnityBall
 
-/-- The disc of radius `r` is locally compact, as an open subset of `ℂ`. -/
-instance instLocallyCompactSpace : LocallyCompactSpace (rootsOfUnityBall m r) :=
-  isOpen_rootsOfUnityBall.locallyCompactSpace
+variable (m r) in
+/-- The disc of radius `r` as an open subset of `ℂ`. Its carrier is `Metric.ball 0 r`, the carrier
+of `rootsOfUnityBall m r`, so its subtype is definitionally the subtype of `rootsOfUnityBall m r`;
+the instances below transfer the open-subset manifold structure of `ℂ` along this equality. -/
+noncomputable def opens : TopologicalSpace.Opens ℂ :=
+  ⟨rootsOfUnityBall m r, isOpen_rootsOfUnityBall⟩
 
 /-- The disc of radius `r` is an open subset of `ℂ`, so it inherits the charts of `ℂ`. -/
 noncomputable instance instChartedSpace : ChartedSpace ℂ (rootsOfUnityBall m r) :=
-  inferInstanceAs (ChartedSpace ℂ (⟨_, isOpen_rootsOfUnityBall⟩ : TopologicalSpace.Opens ℂ))
+  inferInstanceAs (ChartedSpace ℂ (opens m r))
 
 /-- The disc of radius `r` is a `C^n` manifold modelled on `ℂ`; for `n = ω` it is a complex
 manifold. -/
 instance instIsManifold : IsManifold 𝓘(ℂ) n (rootsOfUnityBall m r) :=
-  inferInstanceAs (IsManifold 𝓘(ℂ) n (⟨_, isOpen_rootsOfUnityBall⟩ : TopologicalSpace.Opens ℂ))
+  inferInstanceAs (IsManifold 𝓘(ℂ) n (opens m r))
 
 /-- The rotations by the `m`-th roots of unity act on the disc of radius `r` by `C^n` maps; for
 `n = ω` they are biholomorphisms of the disc. -/
 instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(ℂ) n (rootsOfUnity m ℂ)
     (rootsOfUnityBall m r) where
   contMDiff_const_smul ζ := by
-    let U : TopologicalSpace.Opens ℂ := ⟨_, isOpen_rootsOfUnityBall (m := m) (r := r)⟩
-    have h : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n
-        (Subtype.val ∘ fun u : U ↦ (⟨ζ • (u : ℂ), (rootsOfUnityBall m r).smul_mem ζ u.2⟩ : U)) :=
+    have h : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (Subtype.val ∘ fun u : opens m r ↦
+        (⟨ζ • (u : ℂ), (rootsOfUnityBall m r).smul_mem ζ u.2⟩ : opens m r)) :=
       (contMDiff_iff_contDiff.2 (contDiff_const_smul ((ζ : ℂˣ) : ℂ))).comp contMDiff_subtype_val
     exact fun u ↦ (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 (h u)
 
 /-- The inclusion of the disc of radius `r` into `ℂ` is `C^n`; it is holomorphic. -/
 theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
-  contMDiff_subtype_val (U := ⟨_, isOpen_rootsOfUnityBall (m := m) (r := r)⟩)
+  contMDiff_subtype_val (U := opens m r)
 
 end rootsOfUnityBall
 
