@@ -239,39 +239,50 @@ theorem clebschGordanInclusion_injective (hq : IsGenericQuantumParameter q)
     Function.Injective (clebschGordanInclusion (ε := ε) (δ := δ) hq j) :=
   lift_injective _ _ _ _ (clebschGordanVector_ne_zero (val_le_right j))
 
+/-- The Casimir acts on the included channel by its signed highest-weight scalar. -/
+theorem casimir_smul_clebschGordanInclusion (hq : IsGenericQuantumParameter q)
+    (j : Fin (min m n + 1)) (x : LadderModule q (m + n - 2 * j) (ε * δ)) :
+    casimir q • clebschGordanInclusion hq j x =
+      casimirScalar q ((ε * δ : ℤˣ) * q ^ (m + n - 2 * (j : ℕ))) •
+        clebschGordanInclusion hq j x := by
+  have := isSimpleModule (m := m + n - 2 * j) (ε := ε * δ) hq
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp
+    ((IsSimpleModule.span_singleton_eq_top (UqSl2 q)
+      (m := vec q (m + n - 2 * j) (ε * δ) 0) (by simp)).ge
+      (Submodule.mem_top (x := x)))
+  rw [map_smul, clebschGordanInclusion_vec_zero]
+  exact casimir_smul_smul_of_e_smul_eq_zero
+    (clebschGordanVector_mem_weightSpace_natCast (by have := j.isLt; omega))
+    (e_smul_clebschGordanVector hq (by have := j.isLt; omega)) a
+
+omit [Fact (q ≠ 0)] in
+/-- The Casimir scalars of the Clebsch–Gordan channels are distinct. -/
+theorem clebschGordan_casimirScalar_injective (hq : IsGenericQuantumParameter q) :
+    Function.Injective fun j : Fin (min m n + 1) =>
+      casimirScalar q ((ε * δ : ℤˣ) * q ^ (m + n - 2 * (j : ℕ))) := by
+  intro i j h
+  have hdeg := ((casimirScalar_units_mul_pow_inj hq).mp h).1
+  have hi := i.isLt
+  have hj := j.isLt
+  ext
+  omega
+
 /-- The image of the `j`-th Clebsch–Gordan inclusion lies in the Casimir block of its highest
 weight `εδ q^(m + n - 2j)`. -/
 theorem range_clebschGordanInclusion_le_casimirBlock (hq : IsGenericQuantumParameter q)
     (j : Fin (min m n + 1)) :
     LinearMap.range (clebschGordanInclusion (ε := ε) (δ := δ) hq j) ≤
       casimirBlock q _ (casimirScalar q ((ε * δ : ℤˣ) * q ^ (m + n - 2 * (j : ℕ)))) := by
-  -- Every vector of the simple module `L_(m + n - 2j)^(εδ)` is `a v₀`, and the Casimir element
-  -- acts on `a w_j` by the scalar of the highest weight.
   rintro _ ⟨x, rfl⟩
-  have := isSimpleModule (q := q) (m := m + n - 2 * j) (ε := ε * δ) hq
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp
-    ((IsSimpleModule.span_singleton_eq_top (UqSl2 q) (m := vec q (m + n - 2 * j) (ε * δ) 0)
-      (by simp)).ge (Submodule.mem_top (x := x)))
-  rw [map_smul, clebschGordanInclusion_vec_zero, mem_casimirBlock_iff]
-  refine ⟨1, ?_⟩
-  rw [pow_one, sub_smul, algebraMap_smul, casimir_smul_smul_of_e_smul_eq_zero
-    (clebschGordanVector_mem_weightSpace_natCast (by omega))
-    (e_smul_clebschGordanVector hq (val_le_left j)), sub_self]
+  exact mem_casimirBlock_iff.mpr ⟨1, by
+    simp [sub_smul, casimir_smul_clebschGordanInclusion hq]⟩
 
 /-- The images of the Clebsch–Gordan inclusions are independent. -/
 theorem iSupIndep_range_clebschGordanInclusion (hq : IsGenericQuantumParameter q) :
     iSupIndep fun j : Fin (min m n + 1) =>
-      LinearMap.range (clebschGordanInclusion (ε := ε) (δ := δ) hq j) := by
-  -- The summands lie in the Casimir blocks of their highest weights, which are distinct.
-  have hc : Function.Injective fun j : Fin (min m n + 1) =>
-      casimirScalar q ((ε * δ : ℤˣ) * q ^ (m + n - 2 * (j : ℕ))) := fun j k h => by
-    obtain ⟨h, -⟩ := (casimirScalar_units_mul_pow_inj hq).mp h
-    have := val_le_left j
-    have := val_le_left k
-    ext
-    omega
-  exact (iSupIndep_casimirBlock.comp hc).mono fun j =>
-    range_clebschGordanInclusion_le_casimirBlock hq j
+      LinearMap.range (clebschGordanInclusion (ε := ε) (δ := δ) hq j) :=
+  (iSupIndep_casimirBlock.comp (clebschGordan_casimirScalar_injective hq)).mono
+    fun j => range_clebschGordanInclusion_le_casimirBlock hq j
 
 /-- The sum of the Clebsch–Gordan inclusions, a module map out of the product of the summands. -/
 private def clebschGordanSum (hq : IsGenericQuantumParameter q) :
