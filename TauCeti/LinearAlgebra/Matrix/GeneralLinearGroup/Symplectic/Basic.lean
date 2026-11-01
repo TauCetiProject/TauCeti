@@ -322,8 +322,6 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
-namespace GLSymplecticFin
-
 section CommRing
 
 variable {m R}
@@ -355,8 +353,6 @@ theorem exists_dotProduct_JFin_mulVec_ne_zero_pair {x y : Fin (m + m) → R}
   · exact ⟨v, hv, hvy⟩
 
 end CommRing
-
-end GLSymplecticFin
 
 variable {m R} in
 /-- A scalar matrix preserving the transported alternating form has scalar a square root of one,

@@ -46,7 +46,7 @@ variable {K : Type u} [Field K]
 
 /-- When `ω(y,x) ≠ 0`, the transvection along `y - x` with parameter `ω(y,x)⁻¹` sends
 `x` to `y`. -/
-theorem symplecticTransvection_sub_mulVec {x y : Fin (m + m) → K}
+theorem coe_symplecticTransvection_sub_mulVec {x y : Fin (m + m) → K}
     (hxy : y ⬝ᵥ (JFin m K *ᵥ x) ≠ 0) :
     (((symplecticTransvection (y - x) (y ⬝ᵥ (JFin m K *ᵥ x))⁻¹ :
         GLSymplecticFin m K) : GL (Fin (m + m)) K) :
@@ -69,7 +69,7 @@ theorem exists_symplecticTransvection_mul_mulVec_eq {x y : Fin (m + m) → K}
   refine ⟨y - z, z - x, (y ⬝ᵥ (JFin m K *ᵥ z))⁻¹,
     (z ⬝ᵥ (JFin m K *ᵥ x))⁻¹, ?_⟩
   rw [Subgroup.coe_mul, Units.val_mul, ← mulVec_mulVec,
-    symplecticTransvection_sub_mulVec hzx, symplecticTransvection_sub_mulVec hyz]
+    coe_symplecticTransvection_sub_mulVec hzx, coe_symplecticTransvection_sub_mulVec hyz]
 
 /-- The standard symplectic group sends any nonzero vector to any other nonzero vector. -/
 theorem exists_mulVec_eq {x y : Fin (m + m) → K} (hx : x ≠ 0) (hy : y ≠ 0) :
