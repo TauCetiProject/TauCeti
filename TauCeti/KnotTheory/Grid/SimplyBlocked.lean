@@ -350,6 +350,18 @@ theorem exact_X_smul_simplyBlockedSpecialization :
     Set.mem_ofPred_eq]
   exact forall_congr' fun x => exact_X_mul_simplyBlockedRingHom R i (c x)
 
+/-- A chain vanishes after specialization at `V_i = 0` exactly when it is a multiple of `V_i`. -/
+theorem simplyBlockedSpecialization_eq_zero_iff {c : GridChainMinus R n} :
+    simplyBlockedSpecialization R i c = 0 ↔
+      ∃ d : GridChainMinus R n, (MvPolynomial.X i : MvPolynomial (Fin n) R) • d = c :=
+  exact_X_smul_simplyBlockedSpecialization R i c
+
+/-- Specialization at `V_i = 0` kills multiples of `V_i`. -/
+@[simp]
+theorem simplyBlockedSpecialization_X_smul (c : GridChainMinus R n) :
+    simplyBlockedSpecialization R i ((MvPolynomial.X i : MvPolynomial (Fin n) R) • c) = 0 :=
+  (simplyBlockedSpecialization_eq_zero_iff R i).mpr ⟨c, rfl⟩
+
 end Specialization
 
 namespace GridDiagram

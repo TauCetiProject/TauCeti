@@ -86,15 +86,14 @@ private theorem simplyBlockedSpecialization_mem_range_of_commutationMap
     (hΦ : simplyBlockedSpecialization R (σ i) (G.commutationMap R C Z) ∈
       LinearMap.range ((G').simplyBlockedDifferential R (σ i))) :
     simplyBlockedSpecialization R i Z ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
-  obtain ⟨P, hP⟩ := (exact_X_smul_simplyBlockedSpecialization R i _).mp hZ
+  obtain ⟨P, hP⟩ := (simplyBlockedSpecialization_eq_zero_iff R i).mp hZ
   obtain ⟨w, hw⟩ := hΦ
   obtain ⟨W, rfl⟩ := simplyBlockedSpecialization_surjective R (σ i) w
   rw [← simplyBlockedSpecialization_unblockedDifferential, eq_comm, ← sub_eq_zero, ← map_sub] at hw
-  obtain ⟨Q, hQ⟩ := (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mp hw
+  obtain ⟨Q, hQ⟩ := (simplyBlockedSpecialization_eq_zero_iff R (σ i)).mp hw
   -- In `GC⁻(G)`, `∂ (H Z - Ψ W) = Z + V_i • (Ψ Q - H P)`, by the homotopy equation of `C`.
   have hΦZ : G.commutationMap R C Z = (G').unblockedDifferential R W +
       (MvPolynomial.X (σ i) : MvPolynomial (Fin n) R) • Q := by
-    simp only at hQ
     rw [hQ, add_sub_cancel]
   have hΨ := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential R C) W
   simp only [LinearMap.comp_apply] at hΨ
@@ -109,7 +108,7 @@ private theorem simplyBlockedSpecialization_mem_range_of_commutationMap
   refine ⟨simplyBlockedSpecialization R i
     (G.commutationHomotopy R C Z - (G').commutationMap R C.reverse W), ?_⟩
   rw [← simplyBlockedSpecialization_unblockedDifferential, key, map_add,
-    (exact_X_smul_simplyBlockedSpecialization R i _).mpr ⟨_, rfl⟩, add_zero]
+    simplyBlockedSpecialization_X_smul, add_zero]
 
 /-- If the boundary of an unblocked chain `Y` of the commuted diagram vanishes at `V_{σ i} = 0`,
 then the boundary of its image `Ψ Y` under the reverse pentagon map vanishes at `V_i = 0`. -/
@@ -118,11 +117,11 @@ private theorem simplyBlockedSpecialization_unblockedDifferential_commutationMap
     (hY : simplyBlockedSpecialization R (σ i) ((G').unblockedDifferential R Y) = 0) :
     simplyBlockedSpecialization R i
       (G.unblockedDifferential R ((G').commutationMap R C.reverse Y)) = 0 := by
-  obtain ⟨P, hP⟩ := (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mp hY
+  obtain ⟨P, hP⟩ := (simplyBlockedSpecialization_eq_zero_iff R (σ i)).mp hY
   have hΨ := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential R C) Y
   simp only [LinearMap.comp_apply] at hΨ
   rw [← hΨ, ← hP, commutationMap_reverse_X_smul]
-  exact (exact_X_smul_simplyBlockedSpecialization R i _).mpr ⟨_, rfl⟩
+  exact simplyBlockedSpecialization_X_smul R i _
 
 /-- If the boundary of an unblocked chain `Y` of the commuted diagram vanishes at
 `V_{σ i} = 0`, then at `V_{σ i} = 0` the round trip `Φ Ψ Y` differs from `Y` by a boundary. -/
@@ -133,7 +132,7 @@ private theorem simplyBlockedSpecialization_commutationMap_commutationMap_revers
         (G.commutationMap R C ((G').commutationMap R C.reverse Y)) -
       simplyBlockedSpecialization R (σ i) Y ∈
         LinearMap.range ((G').simplyBlockedDifferential R (σ i)) := by
-  obtain ⟨P, hP⟩ := (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mp hY
+  obtain ⟨P, hP⟩ := (simplyBlockedSpecialization_eq_zero_iff R (σ i)).mp hY
   -- In `GC⁻(G')`, `Φ Ψ Y - Y = ∂' (H' Y) + V_{σ i} • H' P`, by the homotopy equation of the
   -- reverse commutation in characteristic two.
   have hH := G.unblockedDifferential_commutationHomotopy_reverse_add_eq C R Y
@@ -147,7 +146,7 @@ private theorem simplyBlockedSpecialization_commutationMap_commutationMap_revers
       _ = _ := by rw [← hH, add_self_eq_zero_of_charTwo (MvPolynomial (Fin n) R) Y, sub_zero]
   refine ⟨simplyBlockedSpecialization R (σ i) ((G').commutationHomotopy R C.reverse Y), ?_⟩
   rw [← simplyBlockedSpecialization_unblockedDifferential, ← map_sub, key, map_add,
-    (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mpr ⟨_, rfl⟩, add_zero]
+    simplyBlockedSpecialization_X_smul, add_zero]
 
 end Chain
 
