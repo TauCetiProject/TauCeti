@@ -97,7 +97,7 @@ theorem Converges.computableIn_jump (h : Converges f g) (hf : ComputableIn₂ {Z
   have hfJ : Nat.RecursiveIn {Z.jump.oracle} fun n => Part.some (f n.unpair.1 n.unpair.2) :=
     (ComputableIn₂.iff_nat.1 hf).subst
       fun _ hg => (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 Z.turingReducible_jump
-  refine ComputableIn.iff_nat.2 <| (hfJ.comp (hS.pair Nat.Primrec.id.recursiveIn)).of_eq_tot
+  refine RecursiveIn.iff_nat.2 <| (hfJ.comp (hS.pair Nat.Primrec.id.recursiveIn)).of_eq_tot
     fun x => ?_
   -- the stages after which the value at `x` no longer changes
   have hex : ∃ s, ∀ t, f (s + t) x = f s x := by
@@ -122,7 +122,7 @@ converge pointwise to the characteristic function of `A`, then `A` is Turing red
 jump `Z'`. -/
 theorem Converges.turingReducible_jump {A : Set ℕ} (h : Converges f (A.indicator 1))
     (hf : ComputableIn₂ {Z.oracle} f) : TuringReducible A.oracle Z.jump.oracle :=
-  RecursiveIn.iff_nat.2 <| (ComputableIn.iff_nat.1 (h.computableIn_jump hf)).of_eq fun n =>
+  RecursiveIn.iff_nat.2 <| (RecursiveIn.iff_nat.1 (h.computableIn_jump hf)).of_eq fun n =>
     (Set.oracle_apply A n).symm
 
 /-- **Limit Lemma for sets, unrelativized.** If a computable sequence `f` converges pointwise to
