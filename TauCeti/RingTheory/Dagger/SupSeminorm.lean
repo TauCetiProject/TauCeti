@@ -125,16 +125,9 @@ a surjection `φ : W ↠ A`. -/
 theorem pointNorm_map_le_norm {φ : W σ →ₐ[K] A} (hφ : Function.Surjective φ)
     (x : MaximalSpectrum A) (f : W σ) : pointNorm K x (φ f) ≤ ‖f‖ := by
   -- The pullback of `x` is a classical point of `W` at which `f` has the same absolute value.
-  let := Ideal.Quotient.field x.asIdeal
-  let q := Ideal.Quotient.mkₐ K x.asIdeal
   have hx : (x.asIdeal.comap φ).IsMaximal := Ideal.comap_isMaximal_of_surjective φ hφ
-  calc pointNorm K x (φ f) = pointNorm K ⟨_, hx⟩ f := by
-        rw [pointNorm_eq_spectralNorm (ψ := q)
-            (fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb),
-          pointNorm_eq_spectralNorm (x := ⟨_, hx⟩) (ψ := q.comp φ)
-            (fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb),
-          AlgHom.comp_apply]
-    _ ≤ ‖f‖ := pointNorm_le_norm _ f
+  rw [← pointNorm_comap φ x hx]
+  exact pointNorm_le_norm _ f
 
 /-- **The supremum seminorm is bounded by residue norms.** For a surjection `φ : W ↠ A`,
 `|φ f|sup ≤ ‖f‖`; so on a dagger algebra `|a|sup` is at most the residue seminorm
@@ -163,22 +156,18 @@ theorem pointNorm_le_supSeminorm (x : MaximalSpectrum A) (a : A) :
   rw [supSeminorm_eq_iSup]
   exact le_ciSup (bddAbove_range_pointNorm a) x
 
-/-- **Perturbations of `1` by topologically nilpotent elements are units.** In a dagger algebra,
-`1 - a` is a unit whenever `|a|sup < 1`. -/
+/-- **Perturbations of `1` by elements of supremum seminorm `< 1` are units.** In a dagger
+algebra, `1 - a` is a unit whenever `|a|sup < 1`. -/
 theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A} (ha : supSeminorm K a < 1) :
     IsUnit (1 - a) := by
   -- Otherwise `1 - a` lies in a maximal ideal `M`, at which `a` takes the value `1`.
   by_contra h
   obtain ⟨M, hM, hM'⟩ := Ideal.exists_le_maximal _ (Ideal.span_singleton_ne_top h)
-  let := Ideal.Quotient.field M
-  let q := Ideal.Quotient.mkₐ K M
-  have hq : M ≤ RingHom.ker q := fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb
-  have hmk : q a = q 1 := by
-    rw [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, ← neg_sub]
-    exact M.neg_mem (hM' (Ideal.mem_span_singleton_self _))
   have hx : pointNorm K ⟨M, hM⟩ a = 1 := by
-    rw [← pointNorm_one (K := K) (x := ⟨M, hM⟩), pointNorm_eq_spectralNorm (ψ := q) hq,
-      pointNorm_eq_spectralNorm (ψ := q) hq, hmk]
+    rw [← pointNorm_one (K := K) (x := ⟨M, hM⟩)]
+    refine pointNorm_eq_of_sub_mem ?_
+    rw [← neg_sub]
+    exact M.neg_mem (hM' (Ideal.mem_span_singleton_self _))
   exact ((hx ▸ pointNorm_le_supSeminorm ⟨M, hM⟩ a).trans_lt ha).false
 
 end IsDaggerAlgebra

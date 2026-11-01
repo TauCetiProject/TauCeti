@@ -135,19 +135,30 @@ theorem pointNorm_eq_spectralNorm {L : Type*} [Field L] [Algebra K L] {x : Maxim
   have h : ψ' (Ideal.Quotient.mk x.asIdeal f) = ψ f := Ideal.Quotient.lift_mk _ _ _
   rw [pointNorm, ← h, ψ'.spectralNorm_map]
 
+/-- Elements congruent modulo a classical point have the same absolute value there. -/
+theorem pointNorm_eq_of_sub_mem {x : MaximalSpectrum A} {f g : A} (h : f - g ∈ x.asIdeal) :
+    pointNorm K x f = pointNorm K x g := by
+  rw [pointNorm, pointNorm, Ideal.Quotient.eq.mpr h]
+
+/-- The absolute value at a classical point is unchanged by pulling the point back along an
+algebra map, whenever the pullback is again a maximal ideal. -/
+theorem pointNorm_comap (φ : A →ₐ[K] B) (x : MaximalSpectrum B)
+    (hx : (x.asIdeal.comap φ).IsMaximal) (a : A) :
+    pointNorm K ⟨_, hx⟩ a = pointNorm K x (φ a) := by
+  let := Ideal.Quotient.field x.asIdeal
+  let q := Ideal.Quotient.mkₐ K x.asIdeal
+  rw [pointNorm_eq_spectralNorm (ψ := q.comp φ) fun b hb ↦ (Ideal.Quotient.mkₐ_ker K _).ge hb,
+    pointNorm_eq_spectralNorm (x := x) (ψ := q) (Ideal.Quotient.mkₐ_ker K _).ge, AlgHom.comp_apply]
+
 /-- The absolute value at a classical point is unchanged by pulling the point back along an
 algebra map into an affinoid algebra. -/
 @[simp]
 theorem IsAffinoidAlgebra.pointNorm_maximalSpectrumComap [IsUltrametricDist K] [CompleteSpace K]
     (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B) (x : MaximalSpectrum B)
     (a : A) : pointNorm K (hB.maximalSpectrumComap φ x) a = pointNorm K x (φ a) := by
-  let := Ideal.Quotient.field x.asIdeal
-  let q := Ideal.Quotient.mkₐ K x.asIdeal
-  rw [pointNorm_eq_spectralNorm (ψ := q.comp φ)
-      (fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb),
-    pointNorm_eq_spectralNorm (x := x) (ψ := q)
-      (fun b hb ↦ by simpa [q, Ideal.Quotient.eq_zero_iff_mem] using hb),
-    AlgHom.comp_apply]
+  rw [← pointNorm_comap φ x (hB.comap_isMaximal φ x.asIdeal)]
+  congr 1
+  exact MaximalSpectrum.ext (hB.maximalSpectrumComap_asIdeal φ x)
 
 namespace IsAffinoidAlgebra
 
