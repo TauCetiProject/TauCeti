@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Kronecker
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.Tree
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 
