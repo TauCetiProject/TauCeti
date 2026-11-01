@@ -24,9 +24,10 @@ For a path-connected manifold, where the Hurewicz map identifies `H₁(M; ℤ)` 
 abelianization of `π₁(M, x)`, this determines `homologyPeriodHom φ`
 (`TauCeti.homologyPeriodHom_hurewiczHomologyAddEquiv`).
 
-For smooth real forms the homomorphism only depends on the de Rham class, and on a connected
-manifold it determines the class: `TauCeti.deRhamCohomology.homologyPeriod` is an injective linear
-map from `H¹_dR(M)` to the homomorphisms `H₁(M; ℤ) → ℝ`.
+For smooth real forms the homomorphism only depends on the de Rham class, and it determines the
+class, with no connectedness assumption: `TauCeti.deRhamCohomology.homologyPeriod` is an injective
+linear map from `H¹_dR(M)` to the homomorphisms `H₁(M; ℤ) → ℝ`. A closed form with vanishing periods
+has a primitive on each path component, the integral from a base point of the component.
 
 The singular chains are those of `TopCat.of M` in `TopCat.{0}`, so `M` and the coefficients live
 in `Type`.
@@ -38,8 +39,10 @@ in `Type`.
 * `TauCeti.homologyPeriodHom_homologyπ`: its value on the class of a cycle `Σ nᵢ σᵢ` is
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
+* `TauCeti.mem_exactForms_one_iff_homologyPeriodHom_eq_zero`: a closed smooth real `1`-form is
+  exact exactly when its periods on `H₁(M; ℤ)` vanish.
 * `TauCeti.deRhamCohomology.homologyPeriod`: the periods of de Rham classes on `H₁(M; ℤ)`, an
-  injective linear map on a connected manifold.
+  injective linear map.
 
 ## References
 
@@ -196,23 +199,59 @@ theorem homologyPeriodHom_eq_zero_of_mem_exactForms {φ : SmoothForm I M ℝ 1}
     chainsDesc_pathClassIntegral_mextDeriv (ψ.isSmoothForm.of_le (by simp)), LinearMap.comp_apply,
     mem_cycles₁_iff.1 c.2, map_zero]
 
-/-- **Periods on singular homology detect exactness.** A closed smooth real `1`-form on a
-connected manifold is exact exactly when its periods on `H₁(M; ℤ)` vanish. -/
-theorem mem_exactForms_one_iff_homologyPeriodHom_eq_zero [PreconnectedSpace M]
-    {φ : SmoothForm I M ℝ 1} (hφ : φ ∈ closedForms I M 1) :
+/-- Integrals of a form with vanishing periods on singular homology along two paths with the same
+endpoints agree. -/
+private theorem pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero
+    (h : homologyPeriodHom φ = 0) {a a' y : M} (e : a = a') (p : Path a y) (q : Path a' y) :
+    pathClassIntegral φ (.mk p) = pathClassIntegral φ (.mk q) := by
+  subst e
+  have hl := homologyPeriodHom_loopClass (φ := φ) (p.trans q.symm)
+  rw [h, AddMonoidHom.zero_apply, Path.Homotopic.Quotient.mk_trans,
+    Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm,
+    ← sub_eq_add_neg] at hl
+  exact sub_eq_zero.mp hl.symm
+
+/-- A closed `C¹` form is integrated along a path inside an open set by any primitive there. -/
+private theorem pathClassIntegral_mk_eq_sub_of_isPrimitiveOn (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U) {x y : M}
+    (γ : Path x y) (hγU : ∀ t, γ t ∈ U) :
+    pathClassIntegral φ (.mk γ) = g y - g x := by
+  rw [pathClassIntegral_mk_eq_sub hφ hclosed
+    ((PrimitiveSpace.continuousOn_graph hgU).comp_continuous γ.continuous hγU)
+    (fun t ↦ PrimitiveSpace.proj_graph (γ t))]
+  simp
+
+/-- **Periods on singular homology detect exactness.** A closed smooth real `1`-form is exact
+exactly when its periods on `H₁(M; ℤ)` vanish. -/
+theorem mem_exactForms_one_iff_homologyPeriodHom_eq_zero {φ : SmoothForm I M ℝ 1}
+    (hφ : φ ∈ closedForms I M 1) :
     φ ∈ exactForms I M 1 ↔ homologyPeriodHom (φ : RoughForm I M ℝ 1) = 0 := by
   refine ⟨homologyPeriodHom_eq_zero_of_mem_exactForms, fun h ↦ ?_⟩
-  cases isEmpty_or_nonempty M with
-  | inl _ =>
-    -- On the empty manifold every form vanishes.
-    rw [Subsingleton.elim φ 0]
-    exact zero_mem _
-  | inr hM =>
-  obtain ⟨x⟩ := hM
-  rw [mem_exactForms_one_iff_periodHom_eq_zero hφ x]
-  refine AddMonoidHom.ext fun g ↦ ?_
-  rw [AddMonoidHom.zero_apply, ← ofMul_toMul g, ← homologyPeriodHom_hurewicz₁, h,
-    AddMonoidHom.zero_apply]
+  have hφ₁ : IsSmoothForm I 1 (φ : RoughForm I M ℝ 1) := φ.isSmoothForm.of_le (by simp)
+  have hclosed := (mem_closedForms I φ).mp hφ
+  -- The primitive is the integral from a base point chosen in each path component.
+  let b (y : M) : M := (Quotient.mk (pathSetoid M) y).out
+  have hb (y : M) : Joined (b y) y := Quotient.mk_out (s := pathSetoid M) y
+  set f : M → ℝ := fun y ↦ pathClassIntegral (φ : RoughForm I M ℝ 1) (.mk (hb y).somePath)
+  obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
+    (r := ((⊤ : ℕ∞) : WithTop ℕ∞)) (by simp) (φ := (φ : RoughForm I M ℝ 1)) (f := f) fun x ↦ by
+      -- Near `x`, `f` differs by a constant from a local primitive `g` of `φ`.
+      obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn (r := ⊤) le_top
+        φ.isSmoothForm hclosed x
+      refine ⟨g, f x - g x, hg.contMDiffAt, ?_, hgU.mextDeriv_eq x hxU⟩
+      filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := 1)
+        (hgU.isOpen.mem_nhds hxU)] with y ⟨c, hc, hc₀, hc₁, hcU⟩
+      let γ : Path x y :=
+        ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtype_val⟩, hc₀ 0 le_rfl, hc₁ 1 le_rfl⟩
+      have hbxy : b y = b x :=
+        (congrArg Quotient.out (Quotient.sound (s := pathSetoid M) ⟨γ⟩)).symm
+      simp only [f]
+      rw [pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero h hbxy (hb y).somePath
+          ((hb x).somePath.trans γ), Path.Homotopic.Quotient.mk_trans, pathClassIntegral_trans,
+        pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ₁ hclosed hgU γ fun t ↦ hcU t]
+      abel
+  rw [exactForms_succ]
+  exact ⟨⟨ψ, hψ.mem_smoothBundleForms⟩, Subtype.ext ((mextDerivₗ_apply I 0 _).trans hdψ)⟩
 
 namespace deRhamCohomology
 
@@ -257,9 +296,8 @@ theorem homologyPeriod_hurewicz₁ (c : deRhamCohomology I M 1) {x : M} (g : Fun
   obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
   rw [homologyPeriod_mk, period_mk, homologyPeriodHom_hurewicz₁]
 
-/-- **De Rham classes of degree one are determined by their periods on singular homology** on a
-connected manifold. -/
-theorem homologyPeriod_injective [PreconnectedSpace M] :
+/-- **De Rham classes of degree one are determined by their periods on singular homology.** -/
+theorem homologyPeriod_injective :
     Function.Injective (homologyPeriod (I := I) (M := M)) := by
   refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_
   obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
