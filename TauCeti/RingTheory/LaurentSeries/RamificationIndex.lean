@@ -59,6 +59,7 @@ instance : OrderBot RamificationIndex where
 theorem toPNat_bot : (⊥ : RamificationIndex).toPNat = 1 := rfl
 
 /-- The quotient `m / n` attached to a divisibility relation `n ≤ m`. -/
+@[expose]
 def transitionDegree {n m : RamificationIndex} (_h : n ≤ m) : ℕ+ :=
   PNat.divExact m.toPNat n.toPNat
 

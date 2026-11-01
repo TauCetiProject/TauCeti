@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.PNat.Basic
 public import TauCeti.RingTheory.LaurentSeries.Level.Residue
 
 /-!
@@ -87,12 +88,8 @@ theorem ringEquivLaurentSeries_transition (h : n ∣ m) (x : Level K n) :
 @[simp]
 theorem transition_parameter (h : n ∣ m) :
     transition K h (parameter K n) = parameter K m ^ ((m : ℕ) / n) := by
-  have hdiv : ((m.divExact n : ℕ+) : ℕ) = m / n := by
-    rw [eq_comm, Nat.div_eq_iff_eq_mul_left n.pos (PNat.dvd_iff.1 h), mul_comm, ← PNat.mul_coe,
-      PNat.mul_div_exact h]
   apply (ringEquivLaurentSeries K m).injective
-  rw [ringEquivLaurentSeries_transition, ringEquiv_parameter, expand_single, map_pow,
-    ringEquiv_parameter, single_pow, one_pow, nsmul_one, mul_one, hdiv]
+  simp [single_pow, PNat.coe_divExact h]
 
 /-- Under the embeddings of the levels into the Puiseux field, the transition map from level `n`
 to level `m` becomes the identity: both send `u_n` to `t ^ (1 / n)`. -/
@@ -142,7 +139,6 @@ theorem exists_eq_transition_comp_kummer (φ : Level K n →ₐ[K⸨X⸩] Level 
     exact PNat.dvd_iff.2 (Int.natCast_dvd_natCast.1 ⟨w.order, hord.symm⟩)
   have hk : ((n : ℕ) • (((m : ℕ) / n : ℕ) : ℤ)) = m := by
     rw [nsmul_eq_mul, ← Nat.cast_mul, Nat.mul_div_cancel' (PNat.dvd_iff.1 h)]
-  have hsingle : (single (((m : ℕ) / n : ℕ) : ℤ) (1 : K)) ≠ 0 := single_ne_zero one_ne_zero
   -- `w / t ^ (m / n)` is an `n`-th root of unity of `K⸨X⸩`, hence a constant
   have hv : (w / single (((m : ℕ) / n : ℕ) : ℤ) 1) ^ (n : ℕ) = 1 := by
     rw [div_pow, hw, single_pow, one_pow, hk, div_self (single_ne_zero one_ne_zero)]
@@ -153,8 +149,8 @@ theorem exists_eq_transition_comp_kummer (φ : Level K n →ₐ[K⸨X⸩] Level 
   rw [powerBasis_gen, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     kummer_parameter, map_mul, AlgHom.commutes, transition_parameter]
   apply (ringEquivLaurentSeries K m).injective
-  rw [map_mul, algebraMap_apply, AlgHom.commutes, hη, map_pow, ringEquiv_parameter, single_pow,
-    one_pow, nsmul_one, ← hw_def, div_mul_cancel₀ _ hsingle]
+  rw [map_mul, algebraMap_apply, AlgHom.commutes, hη]
+  simp [single_pow, w]
 
 /-- Level `n` embeds into level `m` over `K⸨t⸩` exactly when `n ∣ m`. -/
 theorem nonempty_algHom_iff : Nonempty (Level K n →ₐ[K⸨X⸩] Level K m) ↔ n ∣ m :=
