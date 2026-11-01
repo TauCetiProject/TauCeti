@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
-import Mathlib.FieldTheory.Minpoly.Field
+import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 import Mathlib.RingTheory.Localization.Away.Basic
-import TauCeti.RingTheory.FiniteType.PointSeparation
-import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
+import TauCeti.FieldTheory.Minpoly
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
@@ -194,30 +194,23 @@ private theorem exists_eval₂_eq_zero_of_unit {K : Type u} [Field K] [Algebra k
   set m := minpoly K v
   have hm : m ≠ 0 := minpoly.ne_zero hint
   have hmv : aeval v m = 0 := minpoly.aeval K v
-  refine ⟨m, hm, fun h0 ↦ ?_, ?_⟩
-  · have hdiv : divX m ≠ 0 := fun h ↦ hm (by rw [divX_eq_zero_iff, h0, C_0] at h; exact h)
-    have hX : aeval v (divX m) = 0 := by
-      have := divX_mul_X_add m
-      rw [h0, C_0, add_zero] at this
-      rw [← this, map_mul, aeval_X] at hmv
-      exact (hv.mul_left_eq_zero).mp hmv
-    exact absurd (minpoly.degree_le_of_ne_zero K v hdiv hX) (not_le.mpr (degree_divX_lt hm))
-  · have hc : (c.symm : K ⊗[k] B →+* B ⊗[k] K).comp (algebraMap K (K ⊗[k] B)) =
-        (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom := by
-      ext a
-      simp [c, Algebra.TensorProduct.algebraMap_apply]
-    have := congrArg (c.symm : K ⊗[k] B →+* B ⊗[k] K) hmv
-    rw [aeval_def, Polynomial.hom_eval₂, hc, map_zero] at this
-    simpa [v] using this
+  refine ⟨m, hm, minpoly.coeff_zero_ne_zero_of_isUnit hint hv, ?_⟩
+  have hc : (c.symm : K ⊗[k] B →+* B ⊗[k] K).comp (algebraMap K (K ⊗[k] B)) =
+      (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom := by
+    ext a
+    simp [c, Algebra.TensorProduct.algebraMap_apply]
+  have := congrArg (c.symm : K ⊗[k] B →+* B ⊗[k] K) hmv
+  rw [aeval_def, Polynomial.hom_eval₂, hc, map_zero] at this
+  simpa [v] using this
 
-/-- Every point of `Res_{B/k} 𝔾ₘ` with values in a field `K` is joined to the identity by a point
-with values in a domain. Consequently an idempotent of `K ⊗[k] O(Res_{B/k} 𝔾ₘ)` takes the same
-value at every `K`-point as at the identity. -/
-private theorem liftEquiv_apply_eq_one_apply_of_isIdempotentElem {K : Type u} [Field K]
-    [Algebra k K] {e : K ⊗[k] WeilRestriction k B B[T;T⁻¹]} (he : IsIdempotentElem e)
-    (f : WeilRestriction k B B[T;T⁻¹] →ₐ[k] K) :
-    AlgHom.liftEquiv k K _ K f e =
-      AlgHom.liftEquiv k K _ K (1 : WithConv (WeilRestriction k B B[T;T⁻¹] →ₐ[k] K)).ofConv e := by
+/-- Every point of `Res_{B/k} 𝔾ₘ` with values in an algebraically closed field `K` is joined to
+the identity by a point with values in a domain. Consequently right translation by it fixes every
+idempotent of `K ⊗[k] O(Res_{B/k} 𝔾ₘ)`. -/
+private theorem rightTranslationAlgHom_eq_self {K : Type u} [Field K] [Algebra k K]
+    [IsAlgClosed K] {e : K ⊗[k] WeilRestriction k B B[T;T⁻¹]} (he : IsIdempotentElem e)
+    (g : WithConv (K ⊗[k] WeilRestriction k B B[T;T⁻¹] →ₐ[K] K)) :
+    HopfAlgebra.rightTranslationAlgHom (k := K) g e = e := by
+  let f := (AlgHom.liftEquiv k K _ K).symm g.ofConv
   let u := multiplicativeGroupPoints k B K (toConv f)
   obtain ⟨p, hp, hp0, hpu⟩ := exists_eval₂_eq_zero_of_unit u
   have hρ1 : (pathPolynomial p).eval 1 ≠ 0 := by rwa [eval_one_pathPolynomial]
@@ -243,14 +236,16 @@ private theorem liftEquiv_apply_eq_one_apply_of_isIdempotentElem {K : Type u} [F
     refine toConv_injective ((multiplicativeGroupPoints k B K).injective (Units.ext ?_))
     rw [hpath, toConv_ofConv, map_one]
     simp
-  -- an idempotent takes the value `0` or `1` along a path valued in a domain
   have hΨ (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
       (evalAway _ a ha).comp (AlgHom.liftEquiv k K _ _ x) =
         AlgHom.liftEquiv k K _ K (((evalAway _ a ha).restrictScalars k).comp x) :=
     Algebra.TensorProduct.ext_ring (AlgHom.ext fun w ↦ by simp)
-  rw [← h₁, ← h₀, ← hΨ, ← hΨ, AlgHom.comp_apply, AlgHom.comp_apply]
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (he.map (AlgHom.liftEquiv k K _ _ x)) with h | h <;>
-    simp [h]
+  refine HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g
+    (toConv (AlgHom.liftEquiv k K _ _ x)) (evalAway _ 1 hρ1) (evalAway _ 0 hρ0) ?_ ?_
+  · rw [AlgHom.mapValue_apply, ofConv_toConv, hΨ, h₁, Equiv.apply_symm_apply, toConv_ofConv]
+  · rw [AlgHom.mapValue_apply, ofConv_toConv, hΨ, h₀]
+    exact map_one (AlgHom.baseChangePointsMulEquiv (k := k) (K := K)
+      (A := WeilRestriction k B B[T;T⁻¹]) (R := K))
 
 /-- **The Weil restriction of `𝔾ₘ` is geometrically connected.** For a finite-dimensional
 commutative algebra `B` over a field `k`, the coordinate Hopf algebra
@@ -264,16 +259,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup :
   suffices ConnectedSpace (PrimeSpectrum (K ⊗[k] W)) by
     let c := Algebra.TensorProduct.comm k W K
     exact c.toRingHom.connectedSpace_primeSpectrum_of_injective c.injective
-  let f₀ := AlgHom.liftEquiv k K W K (1 : WithConv (W →ₐ[k] K)).ofConv
-  have : Nontrivial (K ⊗[k] W) := f₀.toRingHom.domain_nontrivial
-  refine connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr fun e he ↦ ?_
-  have hconst (F : K ⊗[k] W →ₐ[K] K) : F e = f₀ e := by
-    rw [← (AlgHom.liftEquiv k K W K).apply_symm_apply F]
-    exact liftEquiv_apply_eq_one_apply_of_isIdempotentElem he _
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (he.map f₀) with h | h
-  · exact .inl (eq_of_isIdempotentElem_of_forall_algHom_apply_eq (k := K) (K := K) he .zero
-      fun F ↦ by rw [hconst, h, map_zero])
-  · exact .inr (eq_of_isIdempotentElem_of_forall_algHom_apply_eq (k := K) (K := K) he .one
-      fun F ↦ by rw [hconst, h, map_one])
+  exact HopfAlgebra.connectedSpace_primeSpectrum_of_forall_rightTranslationAlgHom_eq_self
+    (K := K) (H := K ⊗[k] W) fun _ he g ↦ rightTranslationAlgHom_eq_self he g
 
 end TauCeti.Algebra.WeilRestriction
