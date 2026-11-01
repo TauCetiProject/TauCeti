@@ -17,7 +17,9 @@ local homology group in degree `n`. This file defines that generator condition a
 every point in a finite-dimensional charted space has local orientations. Integral coefficients
 are represented by the universe-lifted module `ULift ℤ`. The construction is the inverse image of
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
-`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved.
+`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, and
+isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
+(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -107,6 +109,60 @@ theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalS
       (e.hom.hom.toAddMonoidHom.map_zsmul c z).symm
     _ = e.hom (e.inv a) := congrArg e.hom hc
     _ = a := e.inv_hom_id_apply a
+
+/-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
+local orientations at `y`, through the isomorphism it induces on integral local homology. -/
+def LocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d : ℕ} (z : LocalOrientation M x d)
+    (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
+      TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
+    LocalOrientation N y d :=
+  ⟨(TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d).hom z.val,
+    z.property.map
+      { hom := TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d
+        inv := TopPair.singularHomologyMap e.inv (ModuleCat.of ℤ (ULift.{w} ℤ)) d
+        hom_inv_id := by
+          rw [← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id]
+        inv_hom_id := by
+          rw [← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
+            TopPair.singularHomologyMap_id] }⟩
+
+@[simp]
+lemma LocalOrientation.coe_map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d : ℕ} (z : LocalOrientation M x d)
+    (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
+      TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
+    ((z.map e : LocalOrientation N y d) : localHomology (A := ModuleCat.{w} ℤ)
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d) =
+      (TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d).hom z.val :=
+  (rfl)
+
+/-- Transport along an isomorphism of pairs commutes with reversal of local orientations. -/
+@[simp]
+lemma LocalOrientation.map_neg {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d : ℕ} (z : LocalOrientation M x d)
+    (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
+      TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
+    (-z).map e = -z.map e :=
+  Subtype.ext (_root_.map_neg _ z.val)
+
+/-- Transport along the identity isomorphism of pairs is the identity. -/
+@[simp]
+lemma LocalOrientation.map_refl {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (z : LocalOrientation M x d) : z.map (Iso.refl _) = z :=
+  Subtype.ext (by rw [coe_map, Iso.refl_hom, TopPair.singularHomologyMap_id, ModuleCat.id_apply])
+
+/-- Transport along a composite isomorphism of pairs is the composite of the transports. -/
+lemma LocalOrientation.map_trans {M N P : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    [TopologicalSpace P] {x : M} {y : N} {p : P} {d : ℕ} (z : LocalOrientation M x d)
+    (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
+      TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N)))
+    (e' : TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N)) ≅
+      TopPair.ofSubset ({p}ᶜ : Set (TopCat.of P))) :
+    z.map (e ≪≫ e') = (z.map e).map e' :=
+  Subtype.ext (by
+    rw [coe_map, coe_map, coe_map, Iso.trans_hom, TopPair.singularHomologyMap_comp,
+      ModuleCat.comp_apply])
 
 /-- If integral local homology is isomorphic to `ℤ`, its generators are precisely the inverse
 images of `1` and `-1`. In particular a top-degree local homology fibre has two orientations. -/
