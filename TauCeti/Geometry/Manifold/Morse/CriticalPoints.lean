@@ -157,6 +157,7 @@ theorem mem_criticalPoints_comp_subtypeVal {U : Opens M} {x : U} :
 
 /-- The critical points of the restriction of `f` to an open submanifold `U` are the critical
 points of `f` lying in `U`. -/
+@[simp]
 theorem criticalPoints_comp_subtypeVal {U : Opens M} :
     criticalPoints I (f ∘ Subtype.val : U → ℝ) = Subtype.val ⁻¹' criticalPoints I f :=
   Set.ext fun _ ↦ mem_criticalPoints_comp_subtypeVal
@@ -405,6 +406,7 @@ theorem totalCriticalCount_neg : totalCriticalCount I (-f) = totalCriticalCount 
 
 /-- The number of critical points of the restriction of `f` to an open submanifold `U` is the
 number of critical points of `f` in `U`. -/
+@[simp]
 theorem totalCriticalCount_comp_subtypeVal {U : Opens M} :
     totalCriticalCount I (f ∘ Subtype.val : U → ℝ) = (criticalPoints I f ∩ U).encard := by
   rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
