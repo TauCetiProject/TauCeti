@@ -65,8 +65,8 @@ theorem isCartanWeightVector_equiv_iff
           (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (h (σ k)))) (μ k : ℚ) ↔
         v ∈ Module.End.eigenspace
           (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h k))) (μ k : ℚ) := by
-    rw [TauCeti.eigenspace_eq_comap_of_intertwine (hθ k)]
-    rfl
+    rw [TauCeti.eigenspace_eq_comap_of_intertwine (hθ k), Submodule.mem_comap,
+      LinearEquiv.coe_toLinearMap]
   simp only [isCartanWeightVector_iff_mem_eigenspace]
   constructor
   · intro hv k
@@ -90,7 +90,8 @@ theorem map_weightSublattice_invariantRestrict (μ : κ → ℤ) :
   ext v
   rw [Submodule.mem_map_equiv]
   simp only [mem_weightSublattice_iff, AddEquiv.coe_invariantRestrict_symm_apply,
-    LinearEquiv.coe_toAddEquiv]
+    LinearEquiv.coe_toAddEquiv, ← LinearEquiv.coe_toAddEquiv_symm,
+    LinearEquiv.coe_addEquiv_apply]
   exact (isCartanWeightVector_equiv_iff h ρ ρ θ σ hθ μ
     (θ.symm (v : V))).symm.trans (by rw [θ.apply_symm_apply])
 
@@ -99,19 +100,37 @@ components. This supplies the weight-compatibility hypothesis of
 `TauCeti.UniversalEnvelopingAlgebra.kostantToralNumberedSymmetryIso` without assuming that the
 symmetry acts monomially on the basis. -/
 theorem weight_eq_of_repr_invariantRestrict_ne_zero
-    {ι η : Type*} (e : ι → L)
-    (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
-    (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
+    {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
     (hwt : ∀ j, IsCartanWeightVector h ρ (wt j) (b j : V)) {i j : η}
     (hij : b.repr (θ.toAddEquiv.invariantRestrict M hθM (b j)) i ≠ 0) :
     ∀ k, wt i (σ k) = wt j k := by
   have hv : IsCartanWeightVector h ρ (wt j ∘ σ.symm)
       ((θ.toAddEquiv.invariantRestrict M hθM (b j) : M) : V) := by
-    rw [AddEquiv.coe_invariantRestrict_apply]
-    exact (isCartanWeightVector_equiv_iff h ρ ρ θ σ hθ (wt j) (b j : V)).2 (hwt j)
+    simpa only [AddEquiv.coe_invariantRestrict_apply, LinearEquiv.coe_toAddEquiv,
+      LinearEquiv.coe_addEquiv_apply] using
+      (isCartanWeightVector_equiv_iff h ρ ρ θ σ hθ (wt j) (b j : V)).2 (hwt j)
+  -- The weight basis itself restricts the Cartan operators to the lattice; no stability
+  -- under root operators or the full Kostant form is needed.
+  let f (k : κ) : Module.End ℤ M := b.constr ℤ fun x => wt x k • b x
+  have hf (k : κ) (v : M) : ((f k v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h k)) (v : V) := by
+    have heq : M.subtype.toIntLinearMap.comp (f k) =
+        ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h k))).restrictScalars ℤ).comp
+          M.subtype.toIntLinearMap := by
+      apply b.ext
+      intro x
+      simp only [LinearMap.comp_apply, f, Module.Basis.constr_basis,
+        AddMonoidHom.coe_toIntLinearMap, AddSubgroup.subtype_apply, AddSubgroup.coe_zsmul,
+        LinearMap.restrictScalars_apply, (isCartanWeightVector_iff h ρ).1 (hwt x) k,
+        Int.cast_smul_eq_zsmul]
+    exact LinearMap.congr_fun heq v
   have hw : wt i = wt j ∘ σ.symm := by
     by_contra hne
-    exact hij (repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt hv hne)
+    apply hij
+    exact b.repr_eq_zero_of_weight_ne (f := f)
+      (fun x k => b.constr_basis ℤ _ x)
+      (fun k => Subtype.ext (by rw [hf, (isCartanWeightVector_iff h ρ).1 hv k,
+        AddSubgroup.coe_zsmul, Int.cast_smul_eq_zsmul])) hne
   intro k
   simpa using congr_fun hw (σ k)
 
