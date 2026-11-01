@@ -23,7 +23,8 @@ of the composite `F ∘ φ`.
 
 ## Main results
 
-* `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`: the functor laws.
+* `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`: the functor laws, with
+  additive forms `AddMonoidAlgebra.mapDomain_id` and `AddMonoidAlgebra.mapDomain_mapDomain`.
 * `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
   when the values of `f` commute with `n` and `r` is central.
@@ -40,13 +41,16 @@ namespace MonoidAlgebra
 variable {R : Type*} [Semiring R] {M N O : Type*}
 
 /-- Pushing the coefficients forward along the identity does nothing. -/
-@[simp]
+@[to_additive (attr := simp)
+/-- Pushing the coefficients forward along the identity does nothing. -/]
 theorem mapDomain_id (x : MonoidAlgebra R M) : mapDomain id x = x :=
   ext <| by rw [coeff_mapDomain, Finsupp.mapDomain_id]
 
 /-- Pushing the coefficients forward along two maps in turn is pushing them forward along the
 composite. -/
-@[simp]
+@[to_additive (attr := simp)
+/-- Pushing the coefficients forward along two maps in turn is pushing them forward along the
+composite. -/]
 theorem mapDomain_mapDomain (f : M → N) (g : N → O) (x : MonoidAlgebra R M) :
     mapDomain g (mapDomain f x) = mapDomain (g ∘ f) x :=
   ext <| by rw [coeff_mapDomain, coeff_mapDomain, coeff_mapDomain, Finsupp.mapDomain_comp]
