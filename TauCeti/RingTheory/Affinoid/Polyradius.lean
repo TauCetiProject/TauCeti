@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Integral.Basic
 public import TauCeti.RingTheory.Affinoid.SpectralRadius
-public import TauCeti.RingTheory.Affinoid.ValueGroup
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand
 
 /-!
