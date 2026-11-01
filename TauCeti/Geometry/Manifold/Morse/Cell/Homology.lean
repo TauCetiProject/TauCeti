@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.MorseInequalities
-public import TauCeti.AlgebraicTopology.Singular.Homotopy.DeformationRetract
 public import TauCeti.Geometry.Manifold.Morse.RelCWComplex
 
 /-!
