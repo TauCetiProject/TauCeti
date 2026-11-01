@@ -182,13 +182,14 @@ private def cubeComplexReindexXIso (r : ℤ) : F.cubeComplex.X r ≅ G.cubeCompl
   inv := F.cubeComplexReindexXInv e α r
   hom_inv_id := by
     refine F.cubeComplex_hom_ext fun S ↦ ?_
-    simp [ι_cubeComplexReindexXHom_assoc, ι_cubeComplexReindexXInv, smul_smul, ← mul_pow]
+    simp [ι_cubeComplexReindexXHom_assoc, ι_cubeComplexReindexXInv, Preadditive.zsmul_comp,
+      Preadditive.comp_zsmul, smul_smul, ← mul_pow]
   inv_hom_id := by
     refine G.cubeComplex_hom_ext fun ⟨T, hT⟩ ↦ ?_
     obtain ⟨S, rfl⟩ : ∃ S : Finset ι, S.map e.toEmbedding = T :=
       ⟨T.map e.symm.toEmbedding, by simp [map_map]⟩
     simp [F.ι_cubeComplexReindexXInv_assoc e α ⟨S, by simpa using hT⟩, ι_cubeComplexReindexXHom,
-      smul_smul, ← mul_pow]
+      Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_smul, ← mul_pow]
 
 variable {F e α} in
 /-- The degreewise isomorphisms `cubeComplexReindexXIso` commute with the differentials. -/

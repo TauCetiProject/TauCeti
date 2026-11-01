@@ -48,6 +48,15 @@ theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1
     (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
   (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
 
+/-- Without the normalisation `‖1‖ = 1`, powers are still bounded by `‖xⁿ‖ ≤ max ‖1‖ 1 * ‖x‖ⁿ`,
+including the power `x⁰ = 1`. -/
+theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
+    ‖x ^ n‖ ≤ max ‖(1 : R)‖ 1 * ‖x‖ ^ n := by
+  rcases n with _ | n
+  · simp
+  · exact (norm_pow_le' x n.succ_pos).trans
+      (le_mul_of_one_le_left (by positivity) (le_max_right _ _))
+
 end TauCeti
 
 end

@@ -18,9 +18,7 @@ Vanishing and direct sums of objects of `ModuleCat R` are naturally expressed ca
 `CategoryTheory.Limits.IsZero` and biproducts `M ⊞ N`, while the dimension counts that consume them
 speak of `Module.finrank`. This file supplies the translations between the two: a zero object has
 finrank zero, and finrank is additive on biproducts of finite free modules
-(`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`, and its finite indexed
-form `ModuleCat.finrank_biproduct`); finite biproducts of finite, respectively free, modules are
-finite, respectively free.
+(`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`).
 
 Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
 commutative domain, finrank is moreover additive on every short exact sequence whose middle term
@@ -68,32 +66,6 @@ theorem finrank_biprod {R : Type u} [Ring R] [StrongRankCondition R] (M N : Modu
     [Module.Free R M] [Module.Free R N] [Module.Finite R M] [Module.Finite R N] :
     Module.finrank R ↑(M ⊞ N) = Module.finrank R M + Module.finrank R N :=
   (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans Module.finrank_prod
-
-/-- A finite biproduct in `ModuleCat R` is linearly equivalent to the product module. Unlike
-`ModuleCat.biproductIsoPi`, the index type may live in any universe: it is reindexed by
-`Fin (card J)` first. -/
-private noncomputable def biproductLinearEquivPi {R : Type u} [Ring R] {J : Type*} [Fintype J]
-    (f : J → ModuleCat.{v} R) : ↑(⨁ f) ≃ₗ[R] ∀ k : Fin (Fintype.card J),
-      f ((Fintype.equivFin J).symm k) :=
-  (biproduct.whiskerEquiv (Fintype.equivFin J) (fun j ↦ eqToIso (by simp)) ≪≫
-    biproductIsoPi fun k ↦ f ((Fintype.equivFin J).symm k)).toLinearEquiv
-
-instance {R : Type u} [Ring R] {J : Type*} [Finite J] (f : J → ModuleCat.{v} R)
-    [∀ j, Module.Free R (f j)] : Module.Free R ↑(⨁ f) :=
-  have := Fintype.ofFinite J
-  .of_equiv (biproductLinearEquivPi f).symm
-
-instance {R : Type u} [Ring R] {J : Type*} [Finite J] (f : J → ModuleCat.{v} R)
-    [∀ j, Module.Finite R (f j)] : Module.Finite R ↑(⨁ f) :=
-  have := Fintype.ofFinite J
-  .equiv (biproductLinearEquivPi f).symm
-
-/-- The finrank of a finite biproduct of finite free modules is the sum of their finranks. -/
-theorem finrank_biproduct {R : Type u} [Ring R] [StrongRankCondition R] {J : Type*} [Fintype J]
-    (f : J → ModuleCat.{v} R) [∀ j, Module.Free R (f j)] [∀ j, Module.Finite R (f j)] :
-    Module.finrank R ↑(⨁ f) = ∑ j, Module.finrank R (f j) := by
-  rw [(biproductLinearEquivPi f).finrank_eq, Module.finrank_pi_fintype,
-    ← (Fintype.equivFin J).symm.sum_comp]
 
 end ModuleCat
 
