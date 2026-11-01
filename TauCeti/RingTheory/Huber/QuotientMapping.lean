@@ -52,6 +52,15 @@ theorem IsQuotientMapping.mem_plus_iff {f : Hom S T} (hf : IsQuotientMapping f) 
     b ∈ T.plus ↔ IsIntegral (S.plus.map f.toRingHom) b := by
   rw [hf.plus_eq, Subalgebra.mem_toSubring, mem_integralClosure_iff]
 
+/-- An element integral over the image of the source plus ring lies in the target plus ring,
+which is integrally closed and contains that image. -/
+theorem mem_plus_of_isIntegral (f : Hom S T) {b : B} (hb : IsIntegral (S.plus.map f.toRingHom) b) :
+    b ∈ T.plus := by
+  let := T.isRingOfIntegralElements.isIntegrallyClosedIn
+  refine Subring.integralClosure_subring_le_iff.mpr ?_ ((mem_integralClosure_iff _ _).mpr hb)
+  rintro _ ⟨a, ha, rfl⟩
+  exact f.map_mem_plus a ha
+
 /-- A pair morphism that is an open quotient map is a quotient mapping if every target plus
 ring element is integral over the image plus ring. The other inclusion is automatic. -/
 theorem isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral (f : Hom S T) :
@@ -61,11 +70,7 @@ theorem isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral (f : Hom S T) :
   · intro hf
     exact ⟨hf.isOpenQuotientMap, fun _ hb ↦ hf.mem_plus_iff.mp hb⟩
   · rintro ⟨hopen, hint⟩
-    refine ⟨hopen, le_antisymm (fun b hb ↦ hint b hb) ?_⟩
-    let := T.isRingOfIntegralElements.isIntegrallyClosedIn
-    apply Subring.integralClosure_subring_le_iff.mpr
-    rintro _ ⟨a, ha, rfl⟩
-    exact f.map_mem_plus a ha
+    exact ⟨hopen, le_antisymm (fun b hb ↦ hint b hb) fun _ hb ↦ f.mem_plus_of_isIntegral hb⟩
 
 /-- The identity of a Huber pair is a quotient mapping. -/
 @[simp]
@@ -86,6 +91,23 @@ theorem isQuotientMapping_quotientHom (S : Pair A) (J : Ideal A) :
     exact QuotientRing.isOpenQuotientMap_mk J
   · rw [toRingHom_quotientHom, Pair.quotient_plus]
 
+/-- Integrality over plus-ring images is transitive: if every element of `T⁺` is integral over
+the image of `S⁺`, then an element integral over the image of `T⁺` is integral over the image of
+`S⁺` under the composite, because the integral closure of the latter image contains the former. -/
+theorem isIntegral_plus_map_comp {f : Hom S T} {g : Hom T U}
+    (hf : ∀ b ∈ T.plus, IsIntegral (S.plus.map f.toRingHom) b) {c : C}
+    (hc : IsIntegral (T.plus.map g.toRingHom) c) :
+    IsIntegral (S.plus.map (g.comp f).toRingHom) c := by
+  let R := S.plus.map (g.comp f).toRingHom
+  have hmap : T.plus.map g.toRingHom ≤ (integralClosure R C).toSubring := by
+    rintro _ ⟨b, hb, rfl⟩
+    have hR : (S.plus.map f.toRingHom).map g.toRingHom = R := by
+      simp only [R, toRingHom_comp, Subring.map_map]
+    let φ : S.plus.map f.toRingHom →+* R :=
+      g.toRingHom.restrict _ R fun b hb ↦ hR ▸ Subring.mem_map.mpr ⟨b, hb, rfl⟩
+    exact (hf b hb).map_of_comp_eq φ g.toRingHom (by ext; rfl)
+  exact Subring.integralClosure_subring_le_iff.mpr hmap hc
+
 /-- Quotient mappings of Huber pairs compose. In particular, successive quotient presentations
 have the same integral closure condition as their composite presentation. -/
 theorem IsQuotientMapping.comp {f : Hom S T} {g : Hom T U}
@@ -94,18 +116,7 @@ theorem IsQuotientMapping.comp {f : Hom S T} {g : Hom T U}
   refine ⟨?_, fun c hc ↦ ?_⟩
   · simpa only [toRingHom_comp, RingHom.coe_comp] using
       hg.isOpenQuotientMap.comp hf.isOpenQuotientMap
-  · let R := S.plus.map (g.comp f).toRingHom
-    let V := (integralClosure R C).toSubring
-    have hmap : T.plus.map g.toRingHom ≤ V := by
-      rintro _ ⟨b, hb, rfl⟩
-      have hR : (S.plus.map f.toRingHom).map g.toRingHom = R := by
-        simp only [R, toRingHom_comp, Subring.map_map]
-      let φ : S.plus.map f.toRingHom →+* R :=
-        g.toRingHom.restrict _ R fun b hb ↦ hR ▸ Subring.mem_map.mpr ⟨b, hb, rfl⟩
-      exact (hf.mem_plus_iff.mp hb).map_of_comp_eq φ g.toRingHom (by ext; rfl)
-    have hcl : (integralClosure (T.plus.map g.toRingHom) C).toSubring ≤ V :=
-      Subring.integralClosure_subring_le_iff.mpr hmap
-    exact hcl (hg.mem_plus_iff.mp hc)
+  · exact isIntegral_plus_map_comp (fun _ hb ↦ hf.mem_plus_iff.mp hb) (hg.mem_plus_iff.mp hc)
 
 /-- For a quotient mapping, the inverse of the first-isomorphism-theorem ring equivalence
 is a continuous morphism of Huber pairs. The source of the inverse is the target pair, and its

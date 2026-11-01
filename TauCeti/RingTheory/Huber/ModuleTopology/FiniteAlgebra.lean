@@ -43,6 +43,9 @@ Tate, the image of a pseudouniformiser of `A` is one of `B`.
   natural topology, is a Huber ring.
 * `TauCeti.Huber.IsTateRing.of_isModuleTopology`: a finite algebra over a Tate ring, with its
   natural topology, is a Tate ring.
+* `TauCeti.Huber.exists_span_range_eq_top_of_mem_nhds_zero`: a finite module over a Tate ring,
+  with any topology making scalar multiplication continuous, is spanned by finitely many elements
+  of any neighbourhood of zero.
 * `TauCeti.Huber.IsPowerBounded.algebraMap_of_isModuleTopology`: the structure map `A → B`
   preserves power-boundedness.
 * `TauCeti.Huber.isOpen_integralClosure_map_algebraMap`: the integral closure in `B` of the image
@@ -140,6 +143,23 @@ theorem IsTateRing.of_isModuleTopology [IsTateRing A] :
   haveI : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
   haveI : IsHuberRing B := IsHuberRing.of_isModuleTopology (A := A)
   IsTateRing.of_continuous (A := A) (φ := algebraMap A B) (continuous_algebraMap A B)
+
+/-- **A finite module over a Tate ring is spanned by finitely many elements of any neighbourhood
+of zero**, for any topology making scalar multiplication continuous: scaling a finite generating
+family by a high power of a pseudouniformiser moves it into the neighbourhood without changing
+its span. -/
+theorem exists_span_range_eq_top_of_mem_nhds_zero [IsTateRing A] {M : Type*} [AddCommGroup M]
+    [Module A M] [TopologicalSpace M] [ContinuousSMul A M] [Module.Finite A M] {W : Set M}
+    (hW : W ∈ 𝓝 0) :
+    ∃ (n : ℕ) (b : Fin n → M), (∀ j, b j ∈ W) ∧ Submodule.span A (Set.range b) = ⊤ := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨hϖu, hϖn⟩ := isPseudoUniformizer_iff.mp hϖ
+  obtain ⟨n, c, hc⟩ := Module.Finite.exists_fin (R := A) (M := M)
+  have hlim (j : Fin n) : Tendsto (fun N : ℕ ↦ ϖ ^ N • c j) atTop (𝓝 0) := by
+    simpa using hϖn.smul_const (c j)
+  obtain ⟨N, hN⟩ := (eventually_all.mpr fun j ↦ hlim j hW).exists
+  refine ⟨n, fun j ↦ ϖ ^ N • c j, hN, ?_⟩
+  rw [← Set.smul_set_range, Submodule.span_smul_eq_of_isUnit _ _ (hϖu.pow N), hc]
 
 /-! ### Power-bounded and integral elements -/
 
