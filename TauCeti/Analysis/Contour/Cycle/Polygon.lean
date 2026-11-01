@@ -164,6 +164,10 @@ contour cycle. -/
 def _root_.Polygon.contourCycle : Cycle :=
   FreeAbelianGroup.of poly.contourCurve
 
+/-- The cycle of a polygon is the single generator given by its polygonal curve. -/
+theorem _root_.Polygon.contourCycle_def :
+    poly.contourCycle = FreeAbelianGroup.of poly.contourCurve := (rfl)
+
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]
 theorem _root_.Polygon.trace_contourCycle : Cycle.trace poly.contourCycle = poly.boundary ℝ := by
