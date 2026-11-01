@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.Reduction
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Subst
 import TauCeti.RingTheory.Affinoid.MaximumModulus
+import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Affinoid.Restricted
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand
@@ -157,6 +158,14 @@ theorem coeff_restrictedSquareSubst_single_zero_one (f : Tate (Fin 2)) :
       fin_cases i <;> simp <;> omega
     simp only [hprod, coeff_C_mul, coeff_X_pow, hne, ite_false, mul_zero, smul_zero]
 
+/-- For `|ϖ| < 1`, the coefficient of `U` in `φ f` has norm less than one whenever `‖f‖ ≤ 1`. -/
+theorem norm_coeff_restrictedSquareSubst_single_zero_one_lt {ϖ : K} (hϖ : ‖ϖ‖ < 1)
+    {f : Tate (Fin 2)} (hf : ‖f‖ ≤ 1) :
+    ‖coeff (Finsupp.single 0 1) (restrictedSquareSubst ϖ hϖ.le f : MvPowerSeries (Fin 1) K)‖ <
+      1 := by
+  rw [coeff_restrictedSquareSubst_single_zero_one, norm_mul]
+  exact (mul_le_of_le_one_right (norm_nonneg _) ((norm_coeff_le_norm _ _).trans hf)).trans_lt hϖ
+
 /-- **`restrictedSquareSubst` is surjective** when `ϖ ≠ 0`: a restricted series in `U` is
 `g₀(U²) + U g₁(U²)`, where `g₀(U²)` and `g₁(U²)` are the images of `g₀(T)` and `g₁(T)`, and
 `U` is the image of `ϖ⁻¹ S`. -/
@@ -267,20 +276,16 @@ theorem not_surjective_reductionMap_restrictedSquareSubst (hϖ : ‖ϖ‖ < 1) :
     simpa using isAffinoidAlgebra_tate.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mp hx
   have hF : ‖(F : Tate (Fin 2))‖ ≤ 1 := by
     simp [← Subring.mem_unitClosedBall, ← powerBoundedSubring_eq_unitClosedBall]
-  -- Compare the coefficients of `U`: `ϖ c - 1` with `|ϖ c| < 1` has norm one.
-  have hc :
-      ‖ϖ * coeff (Finsupp.single 1 1) ((F : Tate (Fin 2)) : MvPowerSeries (Fin 2) K)‖ < 1 := by
-    rw [norm_mul]
-    exact (mul_le_of_le_one_right (norm_nonneg _) ((norm_coeff_le_norm _ _).trans hF)).trans_lt hϖ
+  -- Compare the coefficients of `U`: `c - 1` with `|c| < 1` has norm one.
+  have hc := norm_coeff_restrictedSquareSubst_single_zero_one_lt hϖ hF
   have hcoeff := (norm_coeff_le_norm (restrictedSquareSubst ϖ hϖ.le F - ⟨X 0, isRestricted_X _ 0⟩)
     (Finsupp.single 0 1)).trans_lt hlt
-  rw [AddSubgroupClass.coe_sub, map_sub, coeff_restrictedSquareSubst_single_zero_one,
-    coeff_X] at hcoeff
+  rw [AddSubgroupClass.coe_sub, map_sub, coeff_X] at hcoeff
   simp only [↓reduceIte] at hcoeff
   rw [norm_sub_rev] at hcoeff
   have := IsUltrametricDist.norm_add_le_max
-    (ϖ * coeff (Finsupp.single 1 1) ((F : Tate (Fin 2)) : MvPowerSeries (Fin 2) K))
-    (1 - ϖ * coeff (Finsupp.single 1 1) ((F : Tate (Fin 2)) : MvPowerSeries (Fin 2) K))
+    (coeff (Finsupp.single 0 1) (restrictedSquareSubst ϖ hϖ.le F : MvPowerSeries (Fin 1) K))
+    (1 - coeff (Finsupp.single 0 1) (restrictedSquareSubst ϖ hϖ.le F : MvPowerSeries (Fin 1) K))
   rw [add_sub_cancel, norm_one] at this
   exact (this.trans_lt (max_lt hc hcoeff)).false
 
@@ -294,14 +299,10 @@ theorem X_notMem_map_restrictedSquareSubst_unitClosedBall (hϖ : ‖ϖ‖ < 1) :
     (⟨X 0, isRestricted_X _ 0⟩ : Tate (Fin 1)) ∉
       (Subring.unitClosedBall (Tate (Fin 2))).map (restrictedSquareSubst ϖ hϖ.le).toRingHom := by
   rintro ⟨F, hF, hFU⟩
-  have h := coeff_restrictedSquareSubst_single_zero_one ϖ hϖ.le F
+  have h :=
+    norm_coeff_restrictedSquareSubst_single_zero_one_lt hϖ (Subring.mem_unitClosedBall.mp hF)
   rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hFU
-  simp only [hFU, coeff_X, ↓reduceIte] at h
-  have h1 : ‖(1 : K)‖ < 1 := by
-    rw [h, norm_mul]
-    exact (mul_le_of_le_one_right (norm_nonneg _)
-      ((norm_coeff_le_norm _ _).trans (Subring.mem_unitClosedBall.mp hF))).trans_lt hϖ
-  exact (norm_one (α := K) ▸ h1).false
+  simp only [hFU, coeff_X, ↓reduceIte, norm_one, lt_self_iff_false] at h
 
 /-- The presentation ring `restrictedSquareSubst ϖ (K⟨T, S⟩°)` is bounded. -/
 theorem isBounded_map_restrictedSquareSubst_unitClosedBall :
@@ -317,12 +318,10 @@ open mapping theorem. -/
 theorem isOpen_map_restrictedSquareSubst_unitClosedBall [CompleteSpace K] (hϖ0 : ϖ ≠ 0) :
     IsOpen (((Subring.unitClosedBall (Tate (Fin 2))).map
       (restrictedSquareSubst ϖ hϖ).toRingHom : Subring (Tate (Fin 1))) : Set (Tate (Fin 1))) := by
-  let φ : Tate (Fin 2) →L[K] Tate (Fin 1) :=
-    (restrictedSquareSubst ϖ hϖ).toLinearMap.mkContinuous 1 fun f ↦ by
-      simpa using norm_restrictedSquareSubst_le ϖ hϖ f
+  have := (isAffinoidAlgebra_tate (K := K) (σ := Fin 2)).isNoetherianRing
   rw [Subring.coe_map]
-  exact φ.isOpenMap (restrictedSquareSubst_surjective ϖ hϖ hϖ0) _
-    (Subring.isOpen_unitClosedBall _)
+  exact (isAffinoidAlgebra_tate.isOpenQuotientMap _
+    (restrictedSquareSubst_surjective ϖ hϖ hϖ0)).isOpenMap _ (Subring.isOpen_unitClosedBall _)
 
 /-- **The presentation ring has a nonreduced quotient.** For `0 < |ϖ| < 1`, in the image `B` of
 the Gauss unit ball of `K⟨T, S⟩` the quotient `B ⧸ ϖ B` is not reduced: the class of
