@@ -171,12 +171,8 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
 /-- The target of a flat, surjective morphism of schemes has Krull dimension at most that of
 the source. -/
 theorem Scheme.Hom.topologicalKrullDim_le_of_flat_of_surjective (f : X ⟶ Y)
-    [Flat f] [Surjective f] : topologicalKrullDim Y ≤ topologicalKrullDim X := by
-  rw [TauCeti.topologicalKrullDim_eq_iSup_coheight, TauCeti.topologicalKrullDim_eq_iSup_coheight]
-  refine iSup_le fun y ↦ ?_
-  obtain ⟨x, rfl⟩ := f.surjective y
-  exact le_iSup_of_le x (WithBot.coe_le_coe.mpr
-    ((Flat.generalizingMap f).coheight_apply_le_coheight f.continuous x))
+    [Flat f] [Surjective f] : topologicalKrullDim Y ≤ topologicalKrullDim X :=
+  (Flat.generalizingMap f).topologicalKrullDim_le_of_surjective f.continuous f.surjective
 
 /-- A flat, surjective, locally quasi-finite morphism of schemes preserves Krull dimension.
 In particular, this applies to finite faithfully flat covers. -/

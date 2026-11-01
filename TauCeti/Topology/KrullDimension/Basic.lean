@@ -42,6 +42,8 @@ have codimension at least two.
   is the supremum of the codimensions of the points.
 * `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
   the codimension of a point.
+* `GeneralizingMap.topologicalKrullDim_le_of_surjective`: the target of a continuous, surjective,
+  generalizing map from a T₀ space to a quasi-sober T₀ space has dimension at most its source.
 -/
 
 public section
@@ -127,6 +129,19 @@ theorem GeneralizingMap.coheight_apply_le_coheight {X Y : Type*}
       hlt.not_ge (by simpa [hfx'] using hcont.specialization_monotone h)
     grw [RelSeries.cons_length, Nat.cast_add, Nat.cast_one, ih x' hfx'.symm]
     exact coheight_add_one_le hx
+
+attribute [local instance] specializationOrder in
+/-- The target of a continuous, surjective, generalizing map from a T₀ space to a quasi-sober T₀
+space has Krull dimension at most that of the source. -/
+theorem GeneralizingMap.topologicalKrullDim_le_of_surjective {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X] [QuasiSober Y] [T0Space Y]
+    {f : X → Y} (hf : GeneralizingMap f) (hcont : Continuous f)
+    (hsurj : Function.Surjective f) : topologicalKrullDim Y ≤ topologicalKrullDim X := by
+  rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
+  refine iSup_le fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact (WithBot.coe_le_coe.mpr (hf.coheight_apply_le_coheight hcont x)).trans
+    (TauCeti.coheight_le_topologicalKrullDim x)
 
 namespace Topology.IsEmbedding
 
