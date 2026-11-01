@@ -48,7 +48,7 @@ theorem _root_.Ideal.ramificationIdx_le_finrank_of_numberField {F : Type*} [Fiel
   have : CharZero K := RingHom.charZero (algebraMap K F)
   have : NumberField K := NumberField.of_tower ℚ F K
   -- The fundamental identity `∑ eᵢ fᵢ = [F : K]` bounds each `eᵢ`, and `[𝓞 F : 𝓞 K] = [F : K]`.
-  exact (TauCeti.RamificationInertia.ramificationIdx_le_finrank (𝔔.under (𝓞 K)) 𝔔).trans_eq
+  exact (TauCeti.RamificationInertia.ramificationIdx_le_finrank (𝓞 K) 𝔔).trans_eq
     (IsFractionRing.finrank_eq (𝓞 K) K (𝓞 F) F).symm
 
 /-- **A relative ramification index equal to the full tower degree leaves no room for an

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Pair
+import TauCeti.Data.Int.Round
 
 /-!
 # The coordinate pair and the projective `x`-coordinate of a Montgomery point
@@ -26,6 +27,13 @@ point of `ℙ K (Fin 2 → K)`, and two native points have the same projective `
 equivalently coordinate pairs with vanishing cross difference, exactly when they are equal or
 negatives of each other. This is what makes `x`-only arithmetic well defined on the native
 point group up to sign.
+
+Applied to scalar multiples of one point `Q`, this gives the cross-difference criterion behind
+the second stage of the elliptic-curve factorization method: the coordinate pairs of `[m] Q` and
+`[n] Q` have vanishing cross difference exactly when `[m - n] Q = 0` or `[m + n] Q = 0`. So if
+`[q] Q = 0`, writing `q = i w ± j` with `0 ≤ j` and `2 j ≤ w` for a fixed step `w > 0` (see
+`Int.exists_two_mul_abs_sub_mul_le`) makes the cross difference of the coordinate pairs of
+`[i w] Q` and `[j] Q` vanish.
 
 The projective `x`-coordinate need not be surjective: when `model A B` is elliptic (`2 ≠ 0`,
 `B ≠ 0` and `A² ≠ 4`, so every solution is nonsingular), `(r : 1)` comes from a `K`-rational
@@ -49,11 +57,17 @@ point exactly when `(r³ + A r² + r) / B` is a square in `K`.
   and `Q` have vanishing cross difference exactly when `P = Q` or `P = -Q`.
 * `TauCeti.Montgomery.projectiveX_eq_projectiveX_iff`: the fibres of the projective
   `x`-coordinate are the sets `{P, -P}`.
+* `TauCeti.Montgomery.cross_coordinates_zsmul_eq_zero_iff`: the coordinate pairs of `[m] Q` and
+  `[n] Q` have vanishing cross difference exactly when `[m - n] Q = 0` or `[m + n] Q = 0`.
+* `TauCeti.Montgomery.exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero`: the stage-2
+  criterion, for `[q] Q = 0` and a step `w > 0`.
 
 ## References
 
 * P. L. Montgomery, *Speeding the Pollard and elliptic curve methods of factorization*,
   Math. Comp. 48 (1987), 243–264, §10.3.1.
+* P. Zimmermann, *20 years of ECM*, ANTS VII, Lecture Notes in Computer Science 4076 (2006),
+  §1 (stage 2 of the method).
 -/
 
 public section
@@ -175,6 +189,41 @@ theorem projectiveX_eq_projectiveX_iff (hB : B ≠ 0) {P Q : (model A B).toAffin
 theorem projectiveX_neg (hB : B ≠ 0) (P : (model A B).toAffine.Point) :
     projectiveX A hB (-P) = projectiveX A hB P :=
   (projectiveX_eq_projectiveX_iff hB).mpr (.inr rfl)
+
+variable [DecidableEq K]
+
+/-- **The cross-difference criterion for scalar multiples.** For `B ≠ 0`, the coordinate pairs of
+`[m] Q` and `[n] Q` have vanishing cross difference exactly when `[m - n] Q = 0` or
+`[m + n] Q = 0`. -/
+theorem cross_coordinates_zsmul_eq_zero_iff (hB : B ≠ 0) {Q : (model A B).toAffine.Point}
+    {m n : ℤ} :
+    (coordinates A B (m • Q)).cross (coordinates A B (n • Q)) = 0 ↔
+      (m - n) • Q = 0 ∨ (m + n) • Q = 0 := by
+  rw [cross_coordinates_eq_zero_iff hB, sub_zsmul, add_zsmul, add_neg_eq_zero,
+    add_eq_zero_iff_eq_neg]
+
+/-- If `[q] Q = 0` and `q = m + n` or `q = m - n`, then the coordinate pairs of `[m] Q` and
+`[n] Q` have vanishing cross difference. -/
+theorem cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero (hB : B ≠ 0)
+    {Q : (model A B).toAffine.Point} {q : ℤ} (hq : q • Q = 0) {m n : ℤ}
+    (h : q = m + n ∨ q = m - n) :
+    (coordinates A B (m • Q)).cross (coordinates A B (n • Q)) = 0 := by
+  rw [cross_coordinates_zsmul_eq_zero_iff hB]
+  rcases h with rfl | rfl
+  exacts [.inr hq, .inl hq]
+
+/-- **The stage-2 cross-difference criterion.** Let `w > 0` and `[q] Q = 0`. Then there is an
+integer `i` such that `j = |q - i w|` satisfies `2 j ≤ w`, so that `q = i w + j` or
+`q = i w - j`, and the coordinate pairs of `[i w] Q` and `[j] Q` have vanishing cross
+difference. -/
+theorem exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero (hB : B ≠ 0)
+    {Q : (model A B).toAffine.Point} {q : ℤ} (hq : q • Q = 0) {w : ℤ} (hw : 0 < w) :
+    ∃ i : ℤ, 2 * |q - i * w| ≤ w ∧
+      (coordinates A B ((i * w) • Q)).cross (coordinates A B (|q - i * w| • Q)) = 0 := by
+  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le q hw
+  refine ⟨i, hi, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hB hq ?_⟩
+  rcases abs_choice (q - i * w) with h | h <;> rw [h]
+  exacts [.inl (by ring), .inr (by ring)]
 
 end Field
 
