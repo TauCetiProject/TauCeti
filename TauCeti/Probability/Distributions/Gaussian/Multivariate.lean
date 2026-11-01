@@ -84,8 +84,8 @@ theorem integral_eval_mul_eval_multivariateGaussian [Fintype ι] [DecidableEq ι
     ∫ x, x i * x j ∂multivariateGaussian m S = S i j + m i * m j := by
   have hcoord (i : ι) :
       MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) 2 (multivariateGaussian m S) := by
-    simpa only [id_eq, EuclideanSpace.coe_proj] using
-      IsGaussian.memLp_two_id.continuousLinearMap_comp (𝕜 := ℝ) (EuclideanSpace.proj i)
+    simpa only [id_eq] using
+      (IsGaussian.memLp_two_id (μ := multivariateGaussian m S)).eval_piLp i
   have hcov := covariance_eval_multivariateGaussian (μ := m) hS i j
   rw [covariance_eq_sub (hcoord i) (hcoord j)] at hcov
   simp only [Pi.mul_apply, integral_eval_multivariateGaussian] at hcov

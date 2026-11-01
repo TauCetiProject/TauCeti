@@ -27,9 +27,11 @@ parameter value, and when every positive-weight component is positive definite i
 weighted sum of all component densities and the mixture is absolutely continuous.
 
 The remaining results are the categorical-mixture presentation, parameter measurability,
-finite-mixture integration, the moment-generating function of every linear observable (with
-domain all of `ℝ`), the characteristic function, the mean `∑ k, pₖ • mₖ`, and the law of total
-covariance `∑ k, pₖ • (Sₖ + (mₖ - μ)(mₖ - μ)ᵀ)` with `μ` the mean.
+finite-mixture integration, the exponential-integrability domain, and the mean
+`∑ k, pₖ • mₖ` for every parameter value. When every positive-weight component has a
+positive-semidefinite covariance parameter, they also include the moment-generating function of
+every linear observable, the characteristic function, and the law of total covariance
+`∑ k, pₖ • (Sₖ + (mₖ - μ)(mₖ - μ)ᵀ)` with `μ` the mean.
 
 ## References
 
@@ -163,6 +165,34 @@ theorem multivariateGaussianMixturePDFReal_eq_sum (hS : ∀ k, 0 < p.weights k �
     exact hk (Finset.mem_filter.mpr ⟨Finset.mem_univ k, hS k (pos_iff_ne_zero.mpr hw)⟩)
   simp [hw]
 
+open Classical in
+/-- The extended mixture density as a weighted sum over the positive-definite components. -/
+theorem multivariateGaussianMixturePDF_eq_sum (p : StdSimplex ℝ≥0 κ)
+    (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
+    multivariateGaussianMixturePDF p m S x =
+      ∑ k with (S k).PosDef,
+        (p.weights k : ℝ≥0∞) * multivariateGaussianPDF (m k) (S k) x := by
+  rw [multivariateGaussianMixturePDF_eq_ofReal, multivariateGaussianMixturePDFReal_def,
+    ENNReal.ofReal_sum_of_nonneg fun k _ ↦
+      mul_nonneg (NNReal.coe_nonneg _) (multivariateGaussianPDFReal_nonneg _ _ _)]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [ENNReal.ofReal_mul (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal,
+    multivariateGaussianPDF_def]
+
+/-- If every positive-weight component has positive-definite covariance, the extended mixture
+density is the weighted sum of all component densities. -/
+theorem multivariateGaussianMixturePDF_eq_sum_of_posDef
+    (hS : ∀ k, 0 < p.weights k → (S k).PosDef) (x : EuclideanSpace ℝ ι) :
+    multivariateGaussianMixturePDF p m S x =
+      ∑ k, (p.weights k : ℝ≥0∞) * multivariateGaussianPDF (m k) (S k) x := by
+  classical
+  rw [multivariateGaussianMixturePDF_eq_sum]
+  refine Finset.sum_subset (Finset.filter_subset _ _) fun k _ hk ↦ ?_
+  have hw : p.weights k = 0 := by
+    by_contra hw
+    exact hk (Finset.mem_filter.mpr ⟨Finset.mem_univ k, hS k (pos_iff_ne_zero.mpr hw)⟩)
+  simp [hw]
+
 /-- The real-valued mixture density is nonnegative. -/
 theorem multivariateGaussianMixturePDFReal_nonneg (p : StdSimplex ℝ≥0 κ)
     (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
@@ -221,12 +251,7 @@ theorem multivariateGaussianMixtureMeasure_eq_add_withDensity (p : StdSimplex �
     have hpdf (x : EuclideanSpace ℝ ι) : multivariateGaussianMixturePDF p m S x = ∑ k,
         if (S k).PosDef then (p.weights k : ℝ≥0∞) * multivariateGaussianPDF (m k) (S k) x
         else 0 := by
-      rw [← Finset.sum_filter, multivariateGaussianMixturePDF_eq_ofReal,
-        multivariateGaussianMixturePDFReal_def, ENNReal.ofReal_sum_of_nonneg fun k _ ↦
-          mul_nonneg (NNReal.coe_nonneg _) (multivariateGaussianPDFReal_nonneg _ _ _)]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [ENNReal.ofReal_mul (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal,
-        multivariateGaussianPDF_def]
+      rw [multivariateGaussianMixturePDF_eq_sum, Finset.sum_filter]
     have hsum := withDensity_tsum (μ := (volume : Measure (EuclideanSpace ℝ ι)))
       (f := fun k x ↦ if (S k).PosDef then
         (p.weights k : ℝ≥0∞) * multivariateGaussianPDF (m k) (S k) x else 0)
@@ -423,8 +448,7 @@ theorem covMatrix_multivariateGaussianMixtureMeasure
   set μ := multivariateGaussianMixtureMeasure p m S
   have hmem := memLp_id_multivariateGaussianMixtureMeasure p m S (q := 2) ENNReal.ofNat_ne_top
   have hcoord (i : ι) : MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) 2 μ := by
-    simpa only [id_eq, EuclideanSpace.coe_proj] using
-      hmem.continuousLinearMap_comp (𝕜 := ℝ) (EuclideanSpace.proj i)
+    simpa only [id_eq] using hmem.eval_piLp i
   have hw : ∑ k, (p.weights k : ℝ) = 1 := by exact_mod_cast p.total_of_fintype
   have hmean (i : ι) : ∫ x, x i ∂μ = ∑ k, (p.weights k : ℝ) * m k i := by
     rw [integral_multivariateGaussianMixtureMeasure (MemLp.integrable one_le_two (hcoord i))]
@@ -446,11 +470,26 @@ theorem covMatrix_multivariateGaussianMixtureMeasure
     Finset.sum_apply, Pi.smul_apply]
   set a := ∑ k, (p.weights k : ℝ) * m k i
   set b := ∑ k, (p.weights k : ℝ) * m k j
-  have hexpand : ∀ k, (p.weights k : ℝ) * (S k i j + (m k i - a) * (m k j - b)) =
-      (p.weights k : ℝ) * (S k i j + m k i * m k j) - b * ((p.weights k : ℝ) * m k i) -
-        a * ((p.weights k : ℝ) * m k j) + a * b * (p.weights k : ℝ) := fun k ↦ by ring
-  rw [Finset.sum_congr rfl fun k _ ↦ hexpand k, Finset.sum_add_distrib, Finset.sum_sub_distrib,
-    Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum, ← Finset.mul_sum, hw]
+  have ha_sum : ∑ k, (p.weights k : ℝ) * (a * m k j) = a * b := by
+    calc
+      _ = a * ∑ k, (p.weights k : ℝ) * m k j := by
+        rw [Finset.mul_sum]
+        apply Finset.sum_congr rfl
+        intro k _
+        ring
+      _ = a * b := by rfl
+  have hb_sum : ∑ k, (p.weights k : ℝ) * (m k i * b) = a * b := by
+    calc
+      _ = (∑ k, (p.weights k : ℝ) * m k i) * b := by
+        rw [Finset.sum_mul]
+        apply Finset.sum_congr rfl
+        intro k _
+        ring
+      _ = a * b := by rfl
+  have hab_sum : ∑ k, (p.weights k : ℝ) * (a * b) = a * b := by
+    rw [← Finset.sum_mul, hw, one_mul]
+  simp only [mul_add, mul_sub, sub_mul, Finset.sum_add_distrib, Finset.sum_sub_distrib]
+  rw [ha_sum, hb_sum, hab_sum]
   ring
 
 /-- The mean of a random vector whose law is a multivariate Gaussian mixture. -/
