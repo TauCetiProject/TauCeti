@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
-public import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Data.Nat.Factorization.PrimePow
 import Mathlib.Data.Nat.Log
@@ -46,12 +45,12 @@ so the height is defined over fields.
 The leading coefficient `a` of `[p]_F(T) = a T ^ (p ^ h) + ⋯` depends on the coordinate, but in
 a controlled way. If `f(T) = u T + ⋯` is a homomorphism from `F` to `G` and `b` is the leading
 coefficient of `[p]_G`, comparing the coefficients of `T ^ (p ^ h)` in `f ∘ [p]_F = [p]_G ∘ f`
-gives `b u ^ (p ^ h) = u a`. So strict isomorphisms preserve `a`, and over a separably closed
-field the homothety `T ↦ u T` with `u ^ (p ^ h - 1) = a` turns `a` into `1`. This normalization
-is how Lazard's classification of formal group laws over separably closed fields by their height
-deals with the degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the same
-leading term `T ^ (p ^ h)`, and the strict coordinate changes that match the remaining
-coefficients keep it.
+gives `b u ^ (p ^ h) = u a`. So strict isomorphisms preserve `a`, and the homothety `T ↦ u T`
+with `u ^ (p ^ h - 1) = a` turns `a` into `1`; over a separably closed field such a `u` exists
+(`TauCeti.RingTheory.FormalGroup.Height.SepClosed`). This normalization is how Lazard's
+classification of formal group laws over separably closed fields by their height deals with the
+degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the same leading term
+`T ^ (p ^ h)`, and the strict coordinate changes that match the remaining coefficients keep it.
 
 ## Main definitions
 
@@ -77,11 +76,12 @@ coefficients keep it.
 * `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow`: a homomorphism `u T + ⋯` relates
   the leading coefficients `a` of `[p]_F` and `b` of `[p]_G` by `b u ^ (p ^ h) = u a`; over a
   ring, `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order` gives the same
-  relation for `[n]_F` and `[n]_G` in any degree below both orders.
+  relation for the coefficients of `T ^ q` in `[n]_F` and `[n]_G` when both have order at least
+  `q`.
 * `TauCeti.FormalGroupIso.coeff_nsmulSeries_eq_of_isStrict`: strict isomorphisms preserve the
   leading coefficient of the `p`-series.
-* `FormalGroup.exists_coeff_nsmulSeries_homothety_smul_eq_one`: over a separably closed field, a
-  homothety makes the leading coefficient of the `p`-series equal to one.
+* `FormalGroup.coeff_nsmulSeries_homothety_smul_eq_one`: the homothety by any `u` with
+  `u ^ (p ^ h - 1) = a` makes the leading coefficient `a` of the `p`-series equal to one.
 * `FormalGroup.height_𝔾ₐ` and `FormalGroup.height_𝔾ₘ`: the additive formal group law has height
   `⊤` and the multiplicative one has height `1`.
 
@@ -276,25 +276,6 @@ namespace TauCeti
 
 namespace FormalGroupHom
 
-section Coeff
-
-variable {R : Type*} [CommRing R] {F G : FormalGroup R}
-
-/-- **A homomorphism relates the leading coefficients of multiplication by `n`.** If `f` is a
-homomorphism of formal group laws from `F` to `G` with linear coefficient `u`, and `[n]_F` and
-`[n]_G` both have order at least `q`, then their coefficients `a` and `b` of `T ^ q` satisfy
-`b u ^ q = u a`. -/
-theorem coeff_nsmulSeries_mul_coeff_one_pow_of_le_order (f : FormalGroupHom F G) (n : ℕ) {q : ℕ}
-    (hF : q ≤ (F.nsmulSeries n).order) (hG : q ≤ (G.nsmulSeries n).order) :
-    PowerSeries.coeff q (G.nsmulSeries n) * PowerSeries.coeff 1 f.toPowerSeries ^ q =
-      PowerSeries.coeff 1 f.toPowerSeries * PowerSeries.coeff q (F.nsmulSeries n) := by
-  have h := congrArg (PowerSeries.coeff q) (f.subst_nsmulSeries n)
-  rw [PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries n) f.zero_constantCoeff hF,
-    PowerSeries.coeff_subst_eq_mul_pow f.zero_constantCoeff hG] at h
-  simpa using h.symm
-
-end Coeff
-
 section Order
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {F G : FormalGroup R}
@@ -366,37 +347,24 @@ theorem height_smul {K : Type*} [Field K] (φ : TauCeti.FormalCoordinate K) (F :
     (p : ℕ) : (φ • F).height p = F.height p :=
   ((smulIso φ F).height_eq p).symm
 
-/-- **Normalizing the leading coefficient of the `p`-series.** Over a separably closed field of
-characteristic `p`, a commutative formal group law `F` of finite height `h` becomes, after the
-homothety `T ↦ u T` by a suitable unit `u`, a formal group law whose `p`-series has leading term
-`T ^ (p ^ h)`. Any `u` with `u ^ (p ^ h - 1) = a`, for `a` the leading coefficient of `[p]_F`,
-does this. -/
-theorem exists_coeff_nsmulSeries_homothety_smul_eq_one {K : Type*} [Field K] [IsSepClosed K]
-    {p : ℕ} [hp : Fact p.Prime] [CharP K p] (F : FormalGroup K) [F.IsComm] {h : ℕ}
-    (hF : F.height p = h) :
-    ∃ u : Kˣ, PowerSeries.coeff (p ^ h)
-      ((TauCeti.FormalCoordinate.homothety u • F).nsmulSeries p) = 1 := by
+/-- **Normalizing the leading coefficient of the `p`-series.** Let `F` be a commutative formal
+group law of finite height `h` over a field of characteristic `p`, and let `a` be the leading
+coefficient of `[p]_F`. For any unit `u` with `u ^ (p ^ h - 1) = a`, the homothety `T ↦ u T`
+turns `F` into a formal group law whose `p`-series has leading term `T ^ (p ^ h)`. -/
+theorem coeff_nsmulSeries_homothety_smul_eq_one {K : Type*} [Field K] {p : ℕ} [hp : Fact p.Prime]
+    [CharP K p] (F : FormalGroup K) [F.IsComm] {h : ℕ} (hF : F.height p = h) (u : Kˣ)
+    (hu : (u : K) ^ (p ^ h - 1) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p)) :
+    PowerSeries.coeff (p ^ h) ((TauCeti.FormalCoordinate.homothety u • F).nsmulSeries p) = 1 := by
   set a := PowerSeries.coeff (p ^ h) (F.nsmulSeries p)
   have ha : a ≠ 0 := (PowerSeries.order_eq_nat.mp (F.height_eq_natCast_iff.mp hF)).1
-  have hh : 1 ≤ h := by exact_mod_cast hF ▸ F.one_le_height
-  have hq : 1 < p ^ h := Nat.one_lt_pow (by omega) hp.out.one_lt
-  -- `p ^ h - 1` is `-1` in `K`, so `X ^ (p ^ h - 1) - a` is separable and has a root `z`
-  have : NeZero ((p ^ h - 1 : ℕ) : K) := ⟨by
-    rw [Nat.cast_sub hq.le, Nat.cast_pow, CharP.cast_eq_zero, zero_pow (by omega), Nat.cast_one,
-      zero_sub, neg_ne_zero]
-    exact one_ne_zero⟩
-  obtain ⟨z, hz⟩ := IsSepClosed.exists_pow_nat_eq a (p ^ h - 1)
-  have hz0 : z ≠ 0 := by
-    rintro rfl
-    exact ha (by rw [← hz, zero_pow (by omega)])
-  refine ⟨Units.mk0 z hz0, ?_⟩
-  have key := (smulIso (TauCeti.FormalCoordinate.homothety (Units.mk0 z hz0)) F).toHom
+  have key := (smulIso (TauCeti.FormalCoordinate.homothety u) F).toHom
     |>.coeff_nsmulSeries_mul_coeff_one_pow hF
   simp only [smulIso_toHom_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_homothety,
-    Units.val_mk0, PowerSeries.coeff_smul, PowerSeries.coeff_one_X, smul_eq_mul, mul_one] at key
-  -- `key : b z ^ (p ^ h) = z a`, where `z ^ (p ^ h) = z a` is nonzero, so `b = 1`
-  have hzq : z ^ (p ^ h) = z * a := by rw [← hz, ← pow_succ', Nat.sub_add_cancel hq.le]
-  rw [hzq] at key
-  exact mul_right_cancel₀ (mul_ne_zero hz0 ha) (key.trans (one_mul _).symm)
+    PowerSeries.coeff_smul, PowerSeries.coeff_one_X, smul_eq_mul, mul_one] at key
+  -- `key : b u ^ (p ^ h) = u a`, where `u ^ (p ^ h) = u a` is nonzero, so `b = 1`
+  have hup : (u : K) ^ (p ^ h) = u * a := by
+    rw [← hu, ← pow_succ', Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.out.pos)]
+  rw [hup] at key
+  exact mul_right_cancel₀ (mul_ne_zero u.ne_zero ha) (key.trans (one_mul _).symm)
 
 end FormalGroup
