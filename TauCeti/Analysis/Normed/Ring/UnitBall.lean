@@ -31,10 +31,11 @@ ultrametric normed field `K` the ring `K⁰` is local with maximal ideal `K⁰�
 is the residue field. These are the facts about the unit ball that underlie reduction arguments
 for Banach modules over nonarchimedean Banach rings.
 
-Conversely, a ring homomorphism from a local ring into the closed unit ball of a seminormed ring
-with `‖1‖ = 1`, mapping the maximal ideal into the open unit ball, maps exactly the units to
-elements of norm one, and the maximal ideal is the preimage of the open unit ball. This needs no
-ultrametric hypothesis; the model case is the valuation ring of a nonarchimedean field.
+Conversely, a ring homomorphism into the closed unit ball of a seminormed ring with `‖1‖ = 1`
+maps units to elements of norm one. If its source is a local ring and it maps the maximal ideal
+into the open unit ball, it maps exactly the units to elements of norm one, and the maximal ideal
+is the preimage of the open unit ball. This needs no ultrametric hypothesis; the model case is
+the valuation ring of a nonarchimedean field.
 
 ## Main definitions
 
@@ -56,6 +57,8 @@ ultrametric hypothesis; the model case is the valuation ring of a nonarchimedean
 * `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
   `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed division ring the unit ball
   is a local ring, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
+* `TauCeti.norm_map_eq_one_of_isUnit`: a ring homomorphism into the closed unit ball maps units
+  to elements of norm one.
 * `TauCeti.norm_map_eq_one_iff_isUnit` and `TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`: a
   ring homomorphism from a local ring into the closed unit ball, mapping the maximal ideal into the
   open unit ball, maps exactly the units to norm one and pulls the open unit ball back to the
@@ -258,6 +261,22 @@ instance isMaximal_unitBallIdeal : (unitBallIdeal K).IsMaximal :=
 
 end Field
 
+section Map
+
+variable {O R : Type*} [Semiring O] [SeminormedRing R] [NormOneClass R] {φ : O →+* R}
+
+/-- A ring homomorphism into the closed unit ball of a normed ring maps units to elements of norm
+one. -/
+theorem norm_map_eq_one_of_isUnit (hφ : ∀ x, ‖φ x‖ ≤ 1) {x : O} (hx : IsUnit x) : ‖φ x‖ = 1 := by
+  obtain ⟨u, rfl⟩ := hx
+  refine le_antisymm (hφ _) ?_
+  calc (1 : ℝ) = ‖φ ↑u * φ ↑u⁻¹‖ := by rw [← map_mul, Units.mul_inv, map_one, norm_one]
+    _ ≤ ‖φ ↑u‖ * ‖φ ↑u⁻¹‖ := norm_mul_le _ _
+    _ ≤ ‖φ ↑u‖ * 1 := mul_le_mul_of_nonneg_left (hφ _) (norm_nonneg _)
+    _ = ‖φ ↑u‖ := mul_one _
+
+end Map
+
 section LocalRing
 
 open IsLocalRing
@@ -268,15 +287,9 @@ variable {O R : Type*} [CommRing O] [IsLocalRing O] [SeminormedRing R] [NormOneC
 /-- A ring homomorphism from a local ring into the closed unit ball of a normed ring, mapping the
 maximal ideal into the open unit ball, maps exactly the units to elements of norm one. -/
 theorem norm_map_eq_one_iff_isUnit (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1)
-    {x : O} : ‖φ x‖ = 1 ↔ IsUnit x := by
-  refine ⟨fun h ↦ by_contra fun hx ↦ (hm x (by rwa [mem_maximalIdeal, mem_nonunits_iff])).ne h,
-    fun ⟨u, hu⟩ ↦ ?_⟩
-  subst hu
-  refine le_antisymm (hφ _) ?_
-  calc (1 : ℝ) = ‖φ ↑u * φ ↑u⁻¹‖ := by rw [← map_mul, Units.mul_inv, map_one, norm_one]
-    _ ≤ ‖φ ↑u‖ * ‖φ ↑u⁻¹‖ := norm_mul_le _ _
-    _ ≤ ‖φ ↑u‖ * 1 := mul_le_mul_of_nonneg_left (hφ _) (norm_nonneg _)
-    _ = ‖φ ↑u‖ := mul_one _
+    {x : O} : ‖φ x‖ = 1 ↔ IsUnit x :=
+  ⟨fun h ↦ by_contra fun hx ↦ (hm x (by rwa [mem_maximalIdeal, mem_nonunits_iff])).ne h,
+    norm_map_eq_one_of_isUnit hφ⟩
 
 /-- A ring homomorphism from a local ring into the closed unit ball of a normed ring, mapping the
 maximal ideal into the open unit ball, pulls the open unit ball back to the maximal ideal. -/

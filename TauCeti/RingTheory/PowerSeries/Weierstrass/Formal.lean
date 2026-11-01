@@ -52,25 +52,31 @@ which is not restricted at radius one.
 No completeness, discreteness or ultrametric hypothesis is needed for the comparison of degrees;
 the comparison of factorizations uses the uniqueness theorem of normed preparation, over an
 ultrametric ring with multiplicative norm, but no completeness. Over a discrete valuation ring,
-dividing out the uniformiser power `π ^ μ(g)` reduces a nonzero series to the case of a unit
-coefficient, whose least index is the λ-invariant.
+a series with μ-invariant zero has a unit coefficient, and the least index of one is its
+λ-invariant.
 
-The comparison of norms on `O` (`TauCeti.norm_map_eq_one_iff_isUnit`,
-`TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`), restrictedness and units inside the unit disc
-(`PowerSeries.isRestricted_map_of_abs_lt_one`, `TauCeti.PowerSeries.isUnit_mk_map`) and the
-unique dominant coefficient near the unit radius
-(`TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant`) need no local ring or
-preparation theory, and live in `TauCeti.Analysis.Normed.Ring.UnitBall`,
-`TauCeti.RingTheory.PowerSeries.TateAlgebra` and `TauCeti.RingTheory.PowerSeries.Active`.
+The supporting lemmas need no preparation theory and live in lower modules: the comparison of
+norms on `O` (`TauCeti.norm_map_eq_one_of_isUnit`, `TauCeti.norm_map_eq_one_iff_isUnit`,
+`TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`) in `TauCeti.Analysis.Normed.Ring.UnitBall`;
+restrictedness and units inside the unit disc (`PowerSeries.isRestricted_map_of_abs_lt_one`,
+`TauCeti.PowerSeries.isUnit_mk_map`), which need no local ring, in
+`TauCeti.RingTheory.PowerSeries.TateAlgebra`; and the persistence of a lowest dominant degree as
+the unique dominant degree just inside its radius
+(`TauCeti.PowerSeries.IsLowestDominant.eventually_isDistinguished_and_isLowestDominant`), which
+needs no local ring either, in `TauCeti.RingTheory.PowerSeries.Active`.
 
 ## Main results
 
+* `TauCeti.PowerSeries.order_map_residue_eq_iff`: the formal degree is the least index of a unit
+  coefficient.
 * `TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant_map`: near the unit radius,
   the formal degree is the unique dominant index.
-* `PowerSeries.IsWeierstrassFactorization.eventually_isDistinguished_map` and
+* `PowerSeries.IsWeierstrassFactorization.eventually_isDistinguished_and_isLowestDominant_map` and
   `PowerSeries.IsWeierstrassFactorization.eventually_eq_map_of_mul_eq`: near the unit radius,
   the image of a formal Weierstrass factorization `g = P * h` is distinguished of degree `deg P`,
   and every normed preparation of `g.map φ` is the image of the formal one.
+* `PowerSeries.IsWeierstrassFactorization.eq_map_of_mul_eq`: the same identification at any
+  radius `0 < r < 1` where `g.map φ` is distinguished of degree `deg P`.
 * `TauCeti.PowerSeries.isDistinguished_one_map_iff` and
   `TauCeti.PowerSeries.isLowestDominant_one_map_iff`: at the radius one, the distinguished degree
   is the last index of a unit coefficient and the lowest dominant degree is the formal degree.
@@ -98,31 +104,22 @@ section LocalRing
 variable {O R : Type*} [CommRing O] [IsLocalRing O] [SeminormedRing R] [NormOneClass R]
   {φ : O →+* R} {g : _root_.PowerSeries O} {s : ℕ}
 
-/-- **The formal degree is the normed degree near the unit radius.** If `φ` maps `O` into the
-closed unit ball and the maximal ideal into the open unit ball, and the reduction of `g` modulo
-the maximal ideal has order `s`, then for all radii `r < 1` close enough to one, `s` is both the
-distinguished and the lowest dominant degree of `g.map φ` at `r`. -/
-theorem eventually_isDistinguished_and_isLowestDominant_map (hφ : ∀ x, ‖φ x‖ ≤ 1)
-    (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) (hs : (g.map (residue O)).order = s) :
-    ∀ᶠ r in 𝓝[<] (1 : ℝ), IsDistinguished r s (g.map φ) ∧ IsLowestDominant r s (g.map φ) := by
-  rw [_root_.PowerSeries.order_eq_nat] at hs
-  simp only [_root_.PowerSeries.coeff_map, ne_eq, residue_eq_zero_iff] at hs
-  refine eventually_isDistinguished_and_isLowestDominant (fun n ↦ ?_) ?_ fun n hn ↦ ?_
-  · simpa using hφ (g.coeff n)
-  · rw [_root_.PowerSeries.coeff_map, norm_map_eq_one_iff_isUnit hφ hm]
-    simpa [mem_maximalIdeal, mem_nonunits_iff] using hs.1
-  · rw [_root_.PowerSeries.coeff_map]
-    exact hm _ (hs.2 n hn)
+/-- The reduction of `g` modulo the maximal ideal has order `s` exactly when the coefficient in
+degree `s` is a unit and every earlier coefficient lies in the maximal ideal. -/
+theorem order_map_residue_eq_iff :
+    (g.map (residue O)).order = s ↔ IsUnit (g.coeff s) ∧ ∀ m < s, g.coeff m ∈ maximalIdeal O := by
+  rw [_root_.PowerSeries.order_eq_nat]
+  simp only [_root_.PowerSeries.coeff_map, residue_ne_zero_iff_isUnit, residue_eq_zero_iff]
 
 /-- If `φ` maps into the closed unit ball and `g` has a unit coefficient, the Gauss norm of
 `g.map φ` at the radius one is one. -/
-theorem gaussNorm_one_map_eq_one (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1)
-    (hg : g.map (residue O) ≠ 0) : (g.map φ).gaussNorm norm 1 = 1 := by
+theorem gaussNorm_one_map_eq_one (hφ : ∀ x, ‖φ x‖ ≤ 1) (hg : g.map (residue O) ≠ 0) :
+    (g.map φ).gaussNorm norm 1 = 1 := by
   obtain ⟨n, hn⟩ := _root_.PowerSeries.exists_coeff_ne_zero_iff_ne_zero.mpr hg
   rw [_root_.PowerSeries.coeff_map, residue_ne_zero_iff_isUnit] at hn
   rw [gaussNorm_eq_of_forall_le (s := n) fun m ↦ ?_]
-  · simp [norm_map_eq_one_iff_isUnit hφ hm |>.mpr hn]
-  · simpa [norm_map_eq_one_iff_isUnit hφ hm |>.mpr hn] using hφ (g.coeff m)
+  · simp [norm_map_eq_one_of_isUnit hφ hn]
+  · simpa [norm_map_eq_one_of_isUnit hφ hn] using hφ (g.coeff m)
 
 /-- **The distinguished degree at the radius one.** If `φ` maps `O` into the closed unit ball and
 the maximal ideal into the open unit ball, and `g` has a unit coefficient, then `g.map φ` is
@@ -132,7 +129,7 @@ theorem isDistinguished_one_map_iff (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x 
     (hg : g.map (residue O) ≠ 0) :
     IsDistinguished 1 s (g.map φ) ↔
       IsUnit (g.coeff s) ∧ ∀ m, s < m → g.coeff m ∈ maximalIdeal O := by
-  have h1 := gaussNorm_one_map_eq_one hφ hm hg
+  have h1 := gaussNorm_one_map_eq_one hφ hg
   refine ⟨fun ⟨heq, hlt⟩ ↦ ⟨?_, fun m hm' ↦ ?_⟩, fun ⟨hu, hlt⟩ ↦ ⟨?_, fun m hm' ↦ ?_⟩⟩
   · simpa [h1, norm_map_eq_one_iff_isUnit hφ hm] using heq
   · simpa [h1, norm_map_lt_one_iff_mem_maximalIdeal hφ hm] using hlt m hm'
@@ -146,16 +143,28 @@ the reduction of `g` modulo the maximal ideal has order `s`. -/
 theorem isLowestDominant_one_map_iff (hφ : ∀ x, ‖φ x‖ ≤ 1)
     (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) (hg : g.map (residue O) ≠ 0) :
     IsLowestDominant 1 s (g.map φ) ↔ (g.map (residue O)).order = s := by
-  have h1 := gaussNorm_one_map_eq_one hφ hm hg
-  rw [_root_.PowerSeries.order_eq_nat]
-  simp only [_root_.PowerSeries.coeff_map, ne_eq, residue_eq_zero_iff]
+  have h1 := gaussNorm_one_map_eq_one hφ hg
+  rw [order_map_residue_eq_iff]
   refine ⟨fun ⟨_, heq, hlt⟩ ↦ ⟨?_, fun m hm' ↦ ?_⟩, fun ⟨hu, hlt⟩ ↦ ⟨?_, ?_, fun m hm' ↦ ?_⟩⟩
-  · simpa [h1, norm_map_eq_one_iff_isUnit hφ hm, mem_maximalIdeal, mem_nonunits_iff] using heq
+  · simpa [h1, norm_map_eq_one_iff_isUnit hφ hm] using heq
   · simpa [h1, norm_map_lt_one_iff_mem_maximalIdeal hφ hm] using hlt m hm'
   · rw [h1]
     exact one_pos
-  · simpa [h1, norm_map_eq_one_iff_isUnit hφ hm, mem_maximalIdeal, mem_nonunits_iff] using hu
+  · simpa [h1, norm_map_eq_one_iff_isUnit hφ hm] using hu
   · simpa [h1, norm_map_lt_one_iff_mem_maximalIdeal hφ hm] using hlt m hm'
+
+/-- **The formal degree is the normed degree near the unit radius.** If `φ` maps `O` into the
+closed unit ball and the maximal ideal into the open unit ball, and the reduction of `g` modulo
+the maximal ideal has order `s`, then for all radii `r < 1` close enough to one, `s` is both the
+distinguished and the lowest dominant degree of `g.map φ` at `r`. -/
+theorem eventually_isDistinguished_and_isLowestDominant_map (hφ : ∀ x, ‖φ x‖ ≤ 1)
+    (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) (hs : (g.map (residue O)).order = s) :
+    ∀ᶠ r in 𝓝[<] (1 : ℝ), IsDistinguished r s (g.map φ) ∧ IsLowestDominant r s (g.map φ) := by
+  have hg : g.map (residue O) ≠ 0 := by
+    rintro h
+    simp [h] at hs
+  exact ((isLowestDominant_one_map_iff hφ hm hg).mpr hs)
+    |>.eventually_isDistinguished_and_isLowestDominant one_pos
 
 end LocalRing
 
@@ -198,11 +207,11 @@ variable {R : Type*} [SeminormedRing R] [NormOneClass R] {φ : O →+* R}
 `g = P * h` is a formal Weierstrass factorization over `O`, then for all radii `r < 1` close enough
 to one, the degree of `P` is both the distinguished and the lowest dominant degree of `g.map φ`
 at `r`. -/
-theorem eventually_isDistinguished_map (H : g.IsWeierstrassFactorization P h)
+theorem eventually_isDistinguished_and_isLowestDominant_map (H : g.IsWeierstrassFactorization P h)
     (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) :
     ∀ᶠ r in 𝓝[<] (1 : ℝ), IsDistinguished r P.natDegree (g.map φ) ∧
       IsLowestDominant r P.natDegree (g.map φ) := by
-  refine eventually_isDistinguished_and_isLowestDominant_map hφ hm ?_
+  refine TauCeti.PowerSeries.eventually_isDistinguished_and_isLowestDominant_map hφ hm ?_
   rw [H.natDegree_eq_toNat_order_map, ENat.natCast_toNat]
   exact _root_.PowerSeries.order_finite_iff_ne_zero.mpr H.map_ne_zero |>.ne
 
@@ -211,23 +220,20 @@ end SeminormedRing
 section NormedCommRing
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] [NormOneClass R]
-  {φ : O →+* R}
+  {φ : O →+* R} {r : ℝ}
 
-/-- **Formal preparation is normed preparation near the unit radius.** Let `φ` map `O` into the
-closed unit ball and the maximal ideal into the open unit ball, and let `g = P * h` be a formal
-Weierstrass factorization over `O`, with `P` distinguished at the maximal ideal and `h` a unit.
-For all radii `r < 1` close enough to one, any factorization of `g.map φ` as a unit `e` of the
-ring of series restricted at `r` times a monic polynomial `ω` of degree `deg P` is the image of
-the formal one: `e = h.map φ` and `ω = P.map φ`. Such a factorization exists when `R` is
-complete, by `TauCeti.PowerSeries.IsDistinguished.existsUnique_isUnit_isMonicOfDegree_mul_eq`
-applied to `PowerSeries.IsWeierstrassFactorization.eventually_isDistinguished_map`. -/
-theorem eventually_eq_map_of_mul_eq (H : g.IsWeierstrassFactorization P h)
-    (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) :
-    ∀ᶠ r in 𝓝[<] (1 : ℝ), ∀ (e : PowerSeries.IsRestricted.subring (R := R) r) (ω : Polynomial R),
-      IsUnit e → ω.IsMonicOfDegree P.natDegree → (e : PowerSeries R) * (ω : PowerSeries R) =
-        g.map φ → (e : PowerSeries R) = h.map φ ∧ ω = P.map φ := by
-  filter_upwards [H.eventually_isDistinguished_map hφ hm, Ioo_mem_nhdsLT zero_lt_one]
-    with r ⟨hd, _⟩ ⟨hr0, hr1⟩ e ω he hω heq
+/-- **Formal preparation is normed preparation at a distinguished radius.** Let `φ` map `O` into
+the closed unit ball, let `g = P * h` be a formal Weierstrass factorization over `O`, with `P`
+distinguished at the maximal ideal and `h` a unit, and let `0 < r < 1` be a radius at which
+`g.map φ` is distinguished of degree `deg P`. Then any factorization of `g.map φ` as a unit `e` of
+the ring of series restricted at `r` times a monic polynomial `ω` of degree `deg P` is the image of
+the formal one: `e = h.map φ` and `ω = P.map φ`. -/
+theorem eq_map_of_mul_eq (H : g.IsWeierstrassFactorization P h) (hφ : ∀ x, ‖φ x‖ ≤ 1)
+    (hr0 : 0 < r) (hr1 : r < 1) (hd : IsDistinguished r P.natDegree (g.map φ))
+    (e : PowerSeries.IsRestricted.subring (R := R) r) (ω : Polynomial R) (he : IsUnit e)
+    (hω : ω.IsMonicOfDegree P.natDegree)
+    (heq : (e : PowerSeries R) * (ω : PowerSeries R) = g.map φ) :
+    (e : PowerSeries R) = h.map φ ∧ ω = P.map φ := by
   have hr : |r| < 1 := by rwa [abs_of_pos hr0]
   have : Nontrivial R := NormOneClass.nontrivial
   have hP : (P.map φ).IsMonicOfDegree P.natDegree :=
@@ -239,6 +245,21 @@ theorem eventually_eq_map_of_mul_eq (H : g.IsWeierstrassFactorization P h)
   obtain ⟨h1, h2⟩ := hd.eq_and_eq_of_mul_eq_mul hr0 he (isUnit_mk_map hφ H.isUnit hr) hω hP heq
     hformal
   exact ⟨congrArg Subtype.val h1, h2⟩
+
+/-- **Formal preparation is normed preparation near the unit radius.** Let `φ` map `O` into the
+closed unit ball and the maximal ideal into the open unit ball, and let `g = P * h` be a formal
+Weierstrass factorization over `O`, with `P` distinguished at the maximal ideal and `h` a unit.
+For all radii `r < 1` close enough to one, any factorization of `g.map φ` as a unit `e` of the
+ring of series restricted at `r` times a monic polynomial `ω` of degree `deg P` is the image of
+the formal one: `e = h.map φ` and `ω = P.map φ`. -/
+theorem eventually_eq_map_of_mul_eq (H : g.IsWeierstrassFactorization P h)
+    (hφ : ∀ x, ‖φ x‖ ≤ 1) (hm : ∀ x ∈ maximalIdeal O, ‖φ x‖ < 1) :
+    ∀ᶠ r in 𝓝[<] (1 : ℝ), ∀ (e : PowerSeries.IsRestricted.subring (R := R) r) (ω : Polynomial R),
+      IsUnit e → ω.IsMonicOfDegree P.natDegree → (e : PowerSeries R) * (ω : PowerSeries R) =
+        g.map φ → (e : PowerSeries R) = h.map φ ∧ ω = P.map φ := by
+  filter_upwards [H.eventually_isDistinguished_and_isLowestDominant_map hφ hm,
+    Ioo_mem_nhdsLT zero_lt_one] with r ⟨hd, _⟩ ⟨hr0, hr1⟩
+  exact H.eq_map_of_mul_eq hφ hr0 hr1 hd
 
 end NormedCommRing
 
