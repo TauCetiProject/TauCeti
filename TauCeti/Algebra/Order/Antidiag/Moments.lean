@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -75,17 +76,25 @@ theorem sum_piAntidiag_choose {s : Finset ι} {i : ι} (hi : i ∈ s) (N k : ℕ
       simp_rw [ih i hit]
       simp only [card_cons]
       -- Adjoining a variable sums the previous moment over all possible residual degrees.
-      induction N with
-      | zero =>
-        rcases k with _ | k
-        · simp
-        · rw [Nat.antidiagonal_zero, sum_singleton]
-          simp only [zero_add]
-          rw [Nat.choose_eq_zero_of_lt (by omega), Nat.choose_eq_zero_of_lt (by omega)]
-      | succ N ihN =>
-        rw [Nat.sum_antidiagonal_succ, ihN]
-        simpa only [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using
-          (Nat.choose_succ_succ' (N + t.card + 1) (k + t.card)).symm
+      rw [← Nat.sum_antidiagonal_swap]
+      simp only [Prod.snd_swap]
+      rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+      calc
+        ∑ r ∈ range (N + 1), (r + t.card).choose (k + t.card) =
+            ∑ r ∈ Icc t.card (N + t.card), r.choose (k + t.card) := by
+          convert! (sum_map (range (N + 1)) (addRightEmbedding t.card)
+            (fun r ↦ r.choose (k + t.card))).symm using 2
+          rw [range_eq_Ico, map_add_right_Ico, zero_add, Nat.add_right_comm,
+            Ico_add_one_right_eq_Icc]
+        _ = ∑ r ∈ Icc (k + t.card) (N + t.card), r.choose (k + t.card) := by
+          symm
+          apply sum_subset (by intro r hr; simp only [mem_Icc] at *; omega)
+          intro r hr hnot
+          apply Nat.choose_eq_zero_of_lt
+          simp only [mem_Icc] at *
+          omega
+        _ = (N + (t.card + 1)).choose (k + (t.card + 1)) := by
+          simpa only [Nat.add_assoc] using Nat.sum_Icc_choose (N + t.card) (k + t.card)
   have h := aux (s.erase i) i (notMem_erase i s) N k
   rw [insert_erase hi, card_erase_of_mem hi] at h
   simpa [Nat.add_sub_assoc (card_pos.mpr ⟨i, hi⟩)] using h
