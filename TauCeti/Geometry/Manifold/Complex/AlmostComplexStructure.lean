@@ -39,8 +39,9 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold`: the almost complex structure of a
   complex manifold.
-* `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`: it acts on each tangent space as
-  multiplication by `i`.
+* `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold`: it acts on each tangent
+  space as multiplication by `i`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
@@ -104,6 +105,14 @@ space. -/
 @[simp]
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
   (rfl)
+
+/-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
+space, as an endomorphism. -/
+theorem toEndomorphism_ofComplexManifold (x : M) :
+    (ofComplexManifold E M).toEndomorphism x =
+      (Complex.I • ContinuousLinearMap.id ℝ E :
+        TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) x) :=
+  ContinuousLinearMap.ext fun v ↦ ofComplexManifold_apply (E := E) x v
 
 end SmoothAlmostComplexStructure
 

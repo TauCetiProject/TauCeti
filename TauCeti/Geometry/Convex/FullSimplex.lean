@@ -30,7 +30,10 @@ coface vertex maps `Fin.succAbove`. In coordinates, the face map omitting the ve
 zero `j`-th coordinate, and the face map omitting the origin puts the missing barycentric weight in
 front; a permutation of the vertices induces an affine symmetry of the simplex. Cycling the
 vertices relates the two readings of the face opposite the origin: through the coordinates other
-than the `j`-th one, and through the last coordinates as the face map does.
+than the `j`-th one, and through the last coordinates as the face map does. The simplex is a
+compact convex set with nonempty interior, so derivatives within it are unique at every point
+(`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for derivatives and integrals
+of forms.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -53,23 +56,34 @@ theorem mem_fullSimplex_iff {p : ℕ} {x : EuclideanSpace ℝ (Fin p)} :
     x ∈ fullSimplex p ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1 := by
   exact mem_coordinateSimplex _ _
 
+/-- The origin is the zeroth vertex of the full-dimensional simplex. -/
+theorem zero_mem_fullSimplex (p : ℕ) : 0 ∈ fullSimplex p := by
+  simp
+
 /-- The full-dimensional simplex is convex. -/
 theorem convex_fullSimplex (p : ℕ) : Convex ℝ (fullSimplex p) :=
   (convex_coordinateSimplex (Fin p)).linear_preimage (EuclideanSpace.equiv (Fin p) ℝ).toLinearMap
+
+/-- The full-dimensional simplex is closed. -/
+theorem isClosed_fullSimplex (p : ℕ) : IsClosed (fullSimplex p) :=
+  (isClosed_coordinateSimplex (Fin p)).preimage (EuclideanSpace.equiv (Fin p) ℝ).continuous
 
 /-- The full-dimensional simplex is compact. -/
 theorem isCompact_fullSimplex (p : ℕ) : IsCompact (fullSimplex p) :=
   (EuclideanSpace.equiv (Fin p) ℝ).toHomeomorph.isCompact_preimage.2
     (isCompact_coordinateSimplex (Fin p))
 
-/-- The full-dimensional simplex has nonempty interior. -/
+/-- The full-dimensional simplex has nonempty interior in its Euclidean space. -/
 theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Nonempty := by
-  rw [fullSimplex, ← ContinuousLinearEquiv.coe_toHomeomorph,
-    ← Homeomorph.preimage_interior]
+  have h :=
+    (EuclideanSpace.equiv (Fin p) ℝ).toHomeomorph.preimage_interior (coordinateSimplex (Fin p))
+  rw [ContinuousLinearEquiv.coe_toHomeomorph] at h
+  rw [fullSimplex, ← h]
   exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
     (EuclideanSpace.equiv (Fin p) ℝ).surjective
 
-/-- The full-dimensional simplex is a set of unique differentiability. -/
+/-- Derivatives within the full-dimensional simplex are unique at each of its points, including
+the points of its faces and corners. -/
 theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
   uniqueDiffOn_convex (convex_fullSimplex p) (nonempty_interior_fullSimplex p)
 
