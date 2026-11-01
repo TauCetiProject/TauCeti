@@ -243,18 +243,10 @@ noncomputable def parityShiftRankOneIso (a b : S) (h : a * b = w) :
   ObjectProperty.isoMk (P := isProjective S w) (CurvedDuplex.isoMk
     (X := (parityShift.obj (rankOne a b h)).obj)
     (Y := (rankOne b a (by rw [mul_comm, h])).obj)
-    (Iso.refl _)
-    { hom := -𝟙 _
-      inv := -𝟙 _
-      hom_inv_id := (Preadditive.neg_comp_neg _ _).trans (Category.id_comp _)
-      inv_hom_id := (Preadditive.neg_comp_neg _ _).trans (Category.id_comp _) }
-    (by
-      exact (Category.id_comp _).trans
-        ((Preadditive.neg_comp_neg _ _).trans (Category.comp_id _)).symm)
-    (by
-      exact (Preadditive.neg_comp _ _).trans
-        ((congrArg Neg.neg (Category.id_comp _)).trans
-          ((congrArg Neg.neg (Category.comp_id _)).symm))))
+    (Iso.refl (FGModuleCat.of S S))
+    (-Iso.refl (FGModuleCat.of S S))
+    (by simp +instances)
+    (by simp +instances))
 
 @[simp]
 theorem parityShiftRankOneIso_hom_f₀ (a b : S) (h : a * b = w) :

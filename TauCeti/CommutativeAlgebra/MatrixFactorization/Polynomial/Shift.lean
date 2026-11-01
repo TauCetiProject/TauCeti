@@ -47,10 +47,13 @@ def parityShiftPowerXOfLEIso (hi : i ≤ n) :
       (by rw [← pow_add, Nat.add_sub_cancel' hi]) ≪≫
     ObjectProperty.isoMk (P := isProjective R[X] (X ^ n))
       (CurvedDuplex.isoMk (Iso.refl _) (Iso.refl _)
-        (by exact (Category.id_comp _).trans (Category.comp_id _).symm)
-        (by simp only [powerXOfLE_d₁, Nat.sub_sub_self hi, rankOne_d₁, Iso.refl_hom]
-            exact (Category.id_comp _).trans (Category.comp_id _).symm))
+        -- Normalize the indexed carriers and their instances before simplifying the squares.
+        (by dsimp +instances only [powerXOfLE, rankOne, ofCurvedDuplex]; simp)
+        (by dsimp +instances only [powerXOfLE, rankOne, ofCurvedDuplex]
+            simp [Nat.sub_sub_self hi]))
 
+-- The component proofs use the rank-one comparison lemmas; constructor reduction below
+-- computes only the identity comparison that reindexes the complementary exponent.
 /-- The even component of the comparison is the identity. -/
 @[simp]
 theorem parityShiftPowerXOfLEIso_hom_f₀ (hi : i ≤ n) :
@@ -81,11 +84,10 @@ def shiftPowerXOfLEIso (hi : i ≤ n) :
     ((nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
       (powerXOfLE R hi))⟦(1 : ℤ)⟧ ≅
         (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
-          (powerXOfLE R (Nat.sub_le n i)) :=
-  (HomotopyCategory.shiftFunctorOneIso R[X] (X ^ n)).app _ ≪≫
-    eqToIso (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj _) ≪≫
-    (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.mapIso
-      (parityShiftPowerXOfLEIso R hi)
+          (powerXOfLE R (Nat.sub_le n i)) := by
+  simpa only [powerXOfLE, Nat.sub_sub_self hi] using
+    shiftRankOneIso (X ^ i : R[X]) (X ^ (n - i))
+      (by rw [← pow_add, Nat.add_sub_cancel' hi])
 
 /-- Reduction modulo `X ^ n` of the shifted factorization has cyclic right-module cokernel
 `A/(x ^ (n - i))`, viewed as a left module through the commutativity isomorphism. -/
@@ -117,28 +119,29 @@ theorem cokernelπ_comp_parityShiftPowerXOfLECokernelIso_hom_apply (hi : i ≤ n
         (parityShiftPowerXOfLEIso R hi).hom).hom.f₁.hom = -𝟙 _ := by
     rw [← FGModuleCat.forget₂_map, baseChangeFunctor_map_f₁,
       parityShiftPowerXOfLEIso_hom_f₁]
+    -- Explicit composition lets elaboration align the two indexed module carriers.
     exact (Functor.map_neg
       (forget₂ (FGModuleCat R[X]) (ModuleCat R[X]) ⋙
         ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X])))).trans
       (congrArg Neg.neg (CategoryTheory.Functor.map_id _ _))
-  have hnat := cokernelπ_naturality_apply
-    ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
-      (parityShiftPowerXOfLEIso R hi).hom) a
-  have h := congrArg ((powerXOfLECokernelIso R (Nat.sub_le n i)).hom) hnat
   have ha :
       ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
         (parityShiftPowerXOfLEIso R hi).hom).hom.f₁.hom.hom a = -a :=
     congrArg (fun f ↦ f.hom a) hf
-  have hneg := congrArg (fun b ↦ (powerXOfLECokernelIso R (Nat.sub_le n i)).hom
-    (cokernelπ ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
-      (powerXOfLE R (Nat.sub_le n i))) b)) ha
-  -- The composite cokernel comparison has the underlying map appearing on the left of `h`.
-  refine h.trans (hneg.trans ?_)
-  exact (congrArg ((powerXOfLECokernelIso R (Nat.sub_le n i)).hom)
-      ((cokernelπ ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
-        (powerXOfLE R (Nat.sub_le n i)))).hom.map_neg a)).trans
-    (((powerXOfLECokernelIso R (Nat.sub_le n i)).hom.hom.map_neg _).trans
-      (congrArg Neg.neg
-        (cokernelπ_comp_powerXOfLECokernelIso_hom_apply R (Nat.sub_le n i) a)))
+  have hnat := cokernelπ_naturality_apply
+    ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
+      (parityShiftPowerXOfLEIso R hi).hom) a
+  let e := powerXOfLECokernelIso R (Nat.sub_le n i)
+  let π := cokernelπ ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+    (powerXOfLE R (Nat.sub_le n i)))
+  refine (congrArg e.hom hnat).trans ?_
+  rw [ha]
+  -- Instantiate linear-map formulas explicitly: the shifted and complementary odd modules
+  -- agree definitionally, but their indexed carriers prevent generic `map_neg` rewrites.
+  calc
+    _ = e.hom (-(π a)) := congrArg e.hom (π.hom.map_neg a)
+    _ = -(e.hom (π a)) := e.hom.hom.map_neg _
+    _ = _ := congrArg Neg.neg
+      (cokernelπ_comp_powerXOfLECokernelIso_hom_apply R (Nat.sub_le n i) a)
 
 end TauCeti.MatrixFactorization

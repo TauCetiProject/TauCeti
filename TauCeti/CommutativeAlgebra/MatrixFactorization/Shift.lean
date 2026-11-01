@@ -116,6 +116,15 @@ end HomotopyCategory
 
 variable {S w}
 
+/-- In the homotopy category, shifting the rank-one factorization
+`S --a--> S --b--> S` by one exchanges `a` and `b`. -/
+noncomputable def shiftRankOneIso (a b : S) (h : a * b = w) :
+    ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj (rankOne a b h))⟦(1 : ℤ)⟧ ≅
+      (nullHomotopic (S := S) (w := w)).quotientFunctor.obj
+        (rankOne b a (by rw [mul_comm, h])) :=
+  ((HomotopyCategory.parityShiftCompQuotientFunctorIso S w).app (rankOne a b h)).symm ≪≫
+    (nullHomotopic (S := S) (w := w)).quotientFunctor.mapIso (parityShiftRankOneIso a b h)
+
 /-- The componentwise split injective presentation `X ⟶ diskSum X ⟶ X[1]` of a matrix
 factorization: its middle term is the contractible disk sum on the components of `X`, and its
 cokernel term is the parity shift of `X`. -/
