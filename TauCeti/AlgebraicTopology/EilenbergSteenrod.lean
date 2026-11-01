@@ -71,8 +71,8 @@ lemma hFstToHₚ_naturality {X Y : TopPair.{u}} (f : X ⟶ Y) (i : ι) :
     HP.hFstToHₚ i X ≫ (HP.Hₚ i).map f = (HP.H i).map (Hom.fst f) ≫ HP.hFstToHₚ i Y := by
   have h : X.j ≫ f = incl.map (Hom.fst f) ≫ Y.j :=
     MorphismProperty.Arrow.Hom.ext (TopCat.isInitialPEmpty.hom_ext _ _) (by cat_disch)
-  rw [hFstToHₚ_def, hFstToHₚ_def, Category.assoc, ← Functor.map_comp, h, Functor.map_comp,
-    ← Category.assoc, ← Functor.comp_map, ← (HP.iso i).hom.naturality, Category.assoc]
+  rw [hFstToHₚ_def, hFstToHₚ_def, Category.assoc, ← Functor.map_comp, h, Functor.map_comp]
+  exact ((HP.iso i).hom.naturality_assoc (Hom.fst f) _).symm
 
 /-- A morphism of homology pretheories commutes with the maps `Hᵢ(X) ⟶ Hᵢ(X, A)`. -/
 @[reassoc (attr := simp)]

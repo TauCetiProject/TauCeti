@@ -132,6 +132,15 @@ lemma tripleδ_comp_map_innerToTotal (i j : ι) (T : TopTriple.{u}) :
       ← Category.assoc, h, zero_comp]
   · simp [HP.shape_tripleδ i j hij]
 
+/-- When `i` has no successor in the complex shape, the sequence of a triple ends with the
+epimorphism `Hᵢ(X, B) ⟶ Hᵢ(X, A)`. -/
+theorem epi_map_totalToOuter_of_not_rel (i : ι) (hi : ∀ j, ¬ c.Rel i j) (T : TopTriple.{u}) :
+    Epi ((HP.Hₚ i).map (totalToOuter.app T)) := by
+  have := HP.epi_hFstToHₚ_of_not_rel i hi (outerPair.obj T)
+  have h := HP.hFstToHₚ_naturality (totalToOuter.app T) i
+  rw [totalToOuter_app_fst, CategoryTheory.Functor.map_id, Category.id_comp] at h
+  exact epi_of_epi_fac h
+
 end HasZeroMorphisms
 
 section Preadditive
@@ -168,8 +177,6 @@ theorem exact_triple_total (i : ι) (T : TopTriple.{u}) :
     from ComposableArrows.exact₂_mk _ (HP.map_innerToTotal_comp_map_totalToOuter i T)
       ((ShortComplex.exact_iff_exact_up_to_refinements _).2 h)
   intro W y hy
-  have hβ := HP.hFstToHₚ_naturality (totalToOuter.app T) i
-  rw [totalToOuter_app_fst, CategoryTheory.Functor.map_id, Category.id_comp] at hβ
   -- First write `y`, up to refinement, as `z ≫ a + w ≫ βQ` with `a : Hᵢ(A, B) ⟶ Hᵢ(X, B)` and
   -- `βQ : Hᵢ(X) ⟶ Hᵢ(X, B)`.
   obtain ⟨W₁, π₁, _, z, w, hzw⟩ : ∃ (W₁ : C) (π₁ : W₁ ⟶ W) (_ : Epi π₁)
@@ -190,15 +197,13 @@ theorem exact_triple_total (i : ι) (T : TopTriple.{u}) :
       -- Then `y - z` has no boundary, so it comes from `Hᵢ(X)`.
       have hz' : (π₁ ≫ y - z ≫ (HP.Hₚ i).map (innerToTotal.app T)) ≫
           HP.pairδ i j (totalPair.obj T) = 0 := by
-        rw [Preadditive.sub_comp, Category.assoc, hz, Category.assoc, map_comp_pairδ,
-          innerToTotal_app_snd, CategoryTheory.Functor.map_id, Category.comp_id, sub_self]
+        simp [hz, map_comp_pairδ]
       obtain ⟨W₂, π₂, _, (w : W₂ ⟶ (HP.H i).obj T.fst), hw⟩ :=
         ((HP.exact_pair (totalPair.obj T) i j hij).exact 0).exact_up_to_refinements _ hz'
       replace hw : π₂ ≫ (π₁ ≫ y - z ≫ (HP.Hₚ i).map (innerToTotal.app T)) =
           w ≫ HP.hFstToHₚ i (totalPair.obj T) := hw
       refine ⟨W₂, π₂ ≫ π₁, epi_comp _ _, π₂ ≫ z, w, ?_⟩
-      rw [← hw, Preadditive.comp_sub, Category.assoc, Category.assoc]
-      abel
+      simp [← hw]
     · push Not at hi
       have := HP.epi_hFstToHₚ_of_not_rel i hi (totalPair.obj T)
       obtain ⟨W₁, π₁, _, w, hw⟩ :=
@@ -206,18 +211,12 @@ theorem exact_triple_total (i : ι) (T : TopTriple.{u}) :
       exact ⟨W₁, π₁, inferInstance, 0, w, by rw [hw, zero_comp, zero_add]⟩
   -- The component `w` vanishes in `Hᵢ(X, A)`, so it comes from `Hᵢ(A)`.
   have hw : w ≫ HP.hFstToHₚ i (outerPair.obj T) = 0 := by
-    have h := hzw =≫ (HP.Hₚ i).map (totalToOuter.app T)
-    rw [Category.assoc, hy, comp_zero, Preadditive.add_comp, Category.assoc, Category.assoc,
-      map_innerToTotal_comp_map_totalToOuter, comp_zero, zero_add, hβ] at h
-    exact h.symm
+    simpa [hy] using (hzw =≫ (HP.Hₚ i).map (totalToOuter.app T)).symm
   obtain ⟨W₂, π₂, _, (v : W₂ ⟶ (HP.H i).obj T.snd), hv⟩ :=
     ((HP.exact_fst (outerPair.obj T) i).exact 0).exact_up_to_refinements _ hw
   replace hv : π₂ ≫ w = v ≫ (HP.H i).map T.outerMap := hv
-  have hα := HP.hFstToHₚ_naturality (innerToTotal.app T) i
-  rw [innerToTotal_app_fst] at hα
   refine ⟨W₂, π₂ ≫ π₁, epi_comp _ _, π₂ ≫ z + v ≫ HP.hFstToHₚ i (innerPair.obj T), ?_⟩
-  simp only [Category.assoc, hzw, Preadditive.comp_add, Preadditive.add_comp, hα,
-    reassoc_of% hv]
+  simp [hzw, reassoc_of% hv]
 
 /-- Exactness of the sequence of a triple at `Hᵢ(X, A)`:
 `Hᵢ(X, B) ⟶ Hᵢ(X, A) ⟶ Hⱼ(A, B)` is exact for `c.Rel i j`. -/
@@ -238,28 +237,22 @@ theorem exact_triple_outer (i j : ι) (hij : c.Rel i j) (T : TopTriple.{u}) :
   have hu' : u ≫ (HP.H j).map T.totalMap = 0 := by
     have h : HP.pairδ i j (outerPair.obj T) ≫ (HP.H j).map T.outerMap = 0 :=
       (HP.exact_snd (outerPair.obj T) i j hij).toIsComplex.zero 0
-    rw [← T.innerMap_comp_outerMap, Functor.map_comp, ← Category.assoc, ← hu, Category.assoc,
-      Category.assoc, h, comp_zero, comp_zero]
+    rw [← T.innerMap_comp_outerMap, Functor.map_comp, ← reassoc_of% hu]
+    simp [h]
   obtain ⟨W₂, π₂, _, (y : W₂ ⟶ (HP.Hₚ i).obj (totalPair.obj T)), hy⟩ :=
     ((HP.exact_snd (totalPair.obj T) i j hij).exact 0).exact_up_to_refinements _ hu'
   replace hy : π₂ ≫ u = y ≫ HP.pairδ i j (totalPair.obj T) := hy
   -- Then `x - y` has no boundary in `Hⱼ(A)`, so it comes from `Hᵢ(X)`.
   have hxy : (π₂ ≫ π₁ ≫ x - y ≫ (HP.Hₚ i).map (totalToOuter.app T)) ≫
       HP.pairδ i j (outerPair.obj T) = 0 := by
-    rw [Preadditive.sub_comp]
-    simp only [Category.assoc]
-    rw [hu, reassoc_of% hy, map_comp_pairδ, totalToOuter_app_snd, sub_self]
+    simp [hu, reassoc_of% hy, map_comp_pairδ]
   obtain ⟨W₃, π₃, _, (w : W₃ ⟶ (HP.H i).obj T.fst), hw⟩ :=
     ((HP.exact_pair (outerPair.obj T) i j hij).exact 0).exact_up_to_refinements _ hxy
   replace hw : π₃ ≫ (π₂ ≫ π₁ ≫ x - y ≫ (HP.Hₚ i).map (totalToOuter.app T)) =
       w ≫ HP.hFstToHₚ i (outerPair.obj T) := hw
-  have hβ := HP.hFstToHₚ_naturality (totalToOuter.app T) i
-  rw [totalToOuter_app_fst, CategoryTheory.Functor.map_id, Category.id_comp] at hβ
   refine ⟨W₃, π₃ ≫ π₂ ≫ π₁, inferInstance,
     π₃ ≫ y + w ≫ HP.hFstToHₚ i (totalPair.obj T), ?_⟩
-  simp only [Category.assoc, Preadditive.add_comp, hβ]
-  rw [← hw, Preadditive.comp_sub]
-  abel
+  simp [← hw]
 
 /-- Exactness of the sequence of a triple at `Hⱼ(A, B)`:
 `Hᵢ(X, A) ⟶ Hⱼ(A, B) ⟶ Hⱼ(X, B)` is exact for `c.Rel i j`. -/
@@ -277,18 +270,14 @@ theorem exact_triple_inner (i j : ι) (hij : c.Rel i j) (T : TopTriple.{u}) :
     by_cases hj : ∃ k, c.Rel j k
     · obtain ⟨k, hjk⟩ := hj
       have hz' : z ≫ HP.pairδ j k (innerPair.obj T) = 0 := by
-        have h := HP.map_comp_pairδ j k (innerToTotal.app T)
-        rw [innerToTotal_app_snd, CategoryTheory.Functor.map_id, Category.comp_id] at h
-        rw [← h, reassoc_of% hz, zero_comp]
+        simpa [map_comp_pairδ] using hz =≫ HP.pairδ j k (totalPair.obj T)
       exact ((HP.exact_pair (innerPair.obj T) j k hjk).exact 0).exact_up_to_refinements _ hz'
     · push Not at hj
       have := HP.epi_hFstToHₚ_of_not_rel j hj (innerPair.obj T)
       exact surjective_up_to_refinements_of_epi (HP.hFstToHₚ j (innerPair.obj T)) z
   -- The image of `v` in `Hⱼ(X)` vanishes in `Hⱼ(X, B)`, so it comes from `Hⱼ(B)`.
-  have hα := HP.hFstToHₚ_naturality (innerToTotal.app T) j
-  rw [innerToTotal_app_fst] at hα
   have hv' : (v ≫ (HP.H j).map T.outerMap) ≫ HP.hFstToHₚ j (totalPair.obj T) = 0 := by
-    rw [Category.assoc, ← hα, ← Category.assoc, ← hv, Category.assoc, hz, comp_zero]
+    simpa [hz] using (hv =≫ (HP.Hₚ j).map (innerToTotal.app T)).symm
   obtain ⟨W₂, π₂, _, (u : W₂ ⟶ (HP.H j).obj T.thd), hu⟩ :=
     ((HP.exact_fst (totalPair.obj T) j).exact 0).exact_up_to_refinements _ hv'
   replace hu : π₂ ≫ v ≫ (HP.H j).map T.outerMap = u ≫ (HP.H j).map T.totalMap := hu
@@ -305,15 +294,6 @@ theorem exact_triple_inner (i j : ι) (hij : c.Rel i j) (T : TopTriple.{u}) :
   refine ⟨W₃, π₃ ≫ π₂ ≫ π₁, inferInstance, x, ?_⟩
   rw [tripleδ_app', ← reassoc_of% hx]
   simp only [Category.assoc, hv, Preadditive.sub_comp, hB, comp_zero, sub_zero]
-
-/-- When `i` has no successor in the complex shape, the sequence of a triple ends with the
-epimorphism `Hᵢ(X, B) ⟶ Hᵢ(X, A)`. -/
-theorem epi_map_totalToOuter_of_not_rel (i : ι) (hi : ∀ j, ¬ c.Rel i j) (T : TopTriple.{u}) :
-    Epi ((HP.Hₚ i).map (totalToOuter.app T)) := by
-  have := HP.epi_hFstToHₚ_of_not_rel i hi (outerPair.obj T)
-  have h := HP.hFstToHₚ_naturality (totalToOuter.app T) i
-  rw [totalToOuter_app_fst, CategoryTheory.Functor.map_id, Category.id_comp] at h
-  exact epi_of_epi_fac h
 
 end Abelian
 
