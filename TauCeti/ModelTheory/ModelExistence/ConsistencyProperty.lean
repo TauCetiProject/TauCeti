@@ -146,80 +146,6 @@ theorem not_not (C : ConsistencyProperty L) {s : L[[ℕ]].Theoryω} (hs : s ∈ 
   -- `φ.not.not` is `(φ.imp ⊥).not` by the definitions of `not` and `⊥`.
   (C.not_imp s hs φ ⊥ (by rwa [bot_def])).1
 
-section Model
-
-/-! ### Components of sentences true in a model
-
-The semantic content of the clauses common to `ofModel` and `ofSatisfiable`: in a model of `s`,
-the component that a clause adds to `s` is true. -/
-
-variable {M : Type w} [L[[ℕ]].Structure M] {s : L[[ℕ]].Theoryω}
-
-/-- A theory with a model does not contain `⊥`. -/
-private theorem bot_notMem_of_model (hs : s.Model M) : (⊥ : L[[ℕ]].Sentenceω) ∉ s := fun h =>
-  SentenceInf.realize_bot.1 (Theoryω.Model.realize_of_mem hs h)
-
-/-- A theory with a model does not contain a sentence together with its negation. -/
-private theorem not_notMem_of_model (hs : s.Model M) {φ : L[[ℕ]].Sentenceω} (h : φ ∈ s) :
-    φ.not ∉ s := fun h' =>
-  SentenceInf.realize_not.1 (Theoryω.Model.realize_of_mem hs h') (Theoryω.Model.realize_of_mem hs h)
-
-/-- In a model of `s`, an implication in `s` has a false hypothesis or a true conclusion. -/
-private theorem realize_of_imp_mem (hs : s.Model M) {φ ψ : L[[ℕ]].Sentenceω} (h : φ.imp ψ ∈ s) :
-    SentenceInf.Realize φ.not M ∨ SentenceInf.Realize ψ M := by
-  have h := Theoryω.Model.realize_of_mem hs h
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_not, realize_imp] at h ⊢
-  exact imp_iff_not_or.1 h
-
-/-- In a model of `s`, a negated implication in `s` has a true hypothesis and a false
-conclusion. -/
-private theorem realize_of_not_imp_mem (hs : s.Model M) {φ ψ : L[[ℕ]].Sentenceω}
-    (h : (φ.imp ψ).not ∈ s) : SentenceInf.Realize φ M ∧ SentenceInf.Realize ψ.not M := by
-  have h := Theoryω.Model.realize_of_mem hs h
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_not, realize_imp,
-    Classical.not_imp] at h ⊢
-  exact h
-
-/-- In a model of `s`, a negated conjunction in `s` has a false conjunct. -/
-private theorem realize_of_not_iInf_mem (hs : s.Model M) {φs : ℕ → L[[ℕ]].Sentenceω}
-    (h : (BoundedFormulaInf.iInf φs).not ∈ s) : ∃ k, SentenceInf.Realize (φs k).not M := by
-  have h := SentenceInf.realize_not.1 (Theoryω.Model.realize_of_mem hs h)
-  obtain ⟨k, hk⟩ := not_forall.1 (h ∘ SentenceInf.realize_iInf.2)
-  exact ⟨k, SentenceInf.realize_not.2 hk⟩
-
-/-- In a model of `s`, every disjunct of a negated disjunction in `s` is false. -/
-private theorem realize_of_not_iSup_mem (hs : s.Model M) {φs : ℕ → L[[ℕ]].Sentenceω}
-    (h : (BoundedFormulaInf.iSup φs).not ∈ s) (k : ℕ) : SentenceInf.Realize (φs k).not M :=
-  SentenceInf.realize_not.2 fun hk =>
-    SentenceInf.realize_not.1 (Theoryω.Model.realize_of_mem hs h)
-      (SentenceInf.realize_iSup.2 ⟨k, hk⟩)
-
-/-- In a model of `s`, a universal sentence in `s` holds at every Henkin constant. -/
-private theorem realize_inst_of_all_mem (hs : s.Model M) {φ : L[[ℕ]].BoundedFormulaω Empty 1}
-    (h : φ.all ∈ s) (c : ℕ) : SentenceInf.Realize (φ.inst (L.con c).term) M := by
-  have h := Theoryω.Model.realize_of_mem hs h
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at h
-  simp only [SentenceInf.realize_def, realize_inst, Term.realize_constants]
-  simpa only [Fin.snoc_zero] using h (L.con c)
-
-/-- Every closed term equals itself in every structure. -/
-private theorem realize_equal_self (t : L[[ℕ]].Term (Empty ⊕ Fin 0)) :
-    SentenceInf.Realize (equal t t : L[[ℕ]].Sentenceω) M := by
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_equal]
-
-/-- In a model of `s`, equals in `s` can be substituted into a formula whose instance is in
-`s`. -/
-private theorem realize_inst_of_equal_mem (hs : s.Model M) {t t' : L[[ℕ]].Term (Empty ⊕ Fin 0)}
-    {φ : L[[ℕ]].BoundedFormulaω Empty 1} (ht : (equal t t' : L[[ℕ]].Sentenceω) ∈ s)
-    (hφ : φ.inst t ∈ s) : SentenceInf.Realize (φ.inst t') M := by
-  have ht := Theoryω.Model.realize_of_mem hs ht
-  have hφ := Theoryω.Model.realize_of_mem hs hφ
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_equal] at ht
-  simp only [SentenceInf.realize_def, realize_inst] at hφ ⊢
-  rwa [← ht]
-
-end Model
-
 section ofModel
 
 variable (M : Type w) [L[[ℕ]].Structure M]
@@ -230,22 +156,23 @@ consistency property. For an `L`-structure `M` and a surjection `e : ℕ → M`,
 `constantsOn.structure e` interpreting `L.con c` as `e c` is such a structure. -/
 def ofModel (hM : Function.Surjective fun c : ℕ => (L.con c : M)) : ConsistencyProperty L where
   sets := {s | s.Model M}
-  no_falsum _ hs := bot_notMem_of_model hs
-  no_contradiction _ hs _ h := not_notMem_of_model hs h
-  imp s hs φ ψ h := (realize_of_imp_mem hs h).imp
+  no_falsum _ hs := hs.bot_notMem
+  no_contradiction _ hs _ h := hs.not_notMem h
+  imp s hs φ ψ h := (hs.realize_of_imp_mem h).imp
     (fun hφ => Theoryω.model_insert_iff.2 ⟨hφ, hs⟩) fun hψ => Theoryω.model_insert_iff.2 ⟨hψ, hs⟩
-  not_imp s hs φ ψ h := ⟨Theoryω.model_insert_iff.2 ⟨(realize_of_not_imp_mem hs h).1, hs⟩,
-    Theoryω.model_insert_iff.2 ⟨(realize_of_not_imp_mem hs h).2, hs⟩⟩
+  not_imp s hs φ ψ h := ⟨Theoryω.model_insert_iff.2 ⟨(hs.realize_of_not_imp_mem h).1, hs⟩,
+    Theoryω.model_insert_iff.2 ⟨(hs.realize_of_not_imp_mem h).2, hs⟩⟩
   iInf s hs φs h k := Theoryω.model_insert_iff.2
     ⟨SentenceInf.realize_iInf.1 (Theoryω.Model.realize_of_mem hs h) k, hs⟩
   not_iInf s hs φs h := by
-    obtain ⟨k, hk⟩ := realize_of_not_iInf_mem hs h
+    obtain ⟨k, hk⟩ := hs.realize_of_not_iInf_mem h
     exact ⟨k, Theoryω.model_insert_iff.2 ⟨hk, hs⟩⟩
   iSup s hs φs h := by
     obtain ⟨k, hk⟩ := SentenceInf.realize_iSup.1 (Theoryω.Model.realize_of_mem hs h)
     exact ⟨k, Theoryω.model_insert_iff.2 ⟨hk, hs⟩⟩
-  not_iSup s hs φs h k := Theoryω.model_insert_iff.2 ⟨realize_of_not_iSup_mem hs h k, hs⟩
-  all s hs φ h c := Theoryω.model_insert_iff.2 ⟨realize_inst_of_all_mem hs h c, hs⟩
+  not_iSup s hs φs h k := Theoryω.model_insert_iff.2 ⟨hs.realize_of_not_iSup_mem h k, hs⟩
+  all s hs φ h c := Theoryω.model_insert_iff.2
+    ⟨SentenceInf.realize_inst_of_realize_all (hs.realize_of_mem h) _, hs⟩
   not_all s hs φ h := by
     have h := SentenceInf.realize_not.1 (Theoryω.Model.realize_of_mem hs h)
     simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at h
@@ -254,9 +181,10 @@ def ofModel (hM : Function.Surjective fun c : ℕ => (L.con c : M)) : Consistenc
     refine ⟨c, Theoryω.model_insert_iff.2 ⟨SentenceInf.realize_not.2 ?_, hs⟩⟩
     simp only [SentenceInf.realize_def, realize_inst, Term.realize_constants]
     simpa only [Fin.snoc_zero] using hm
-  eq_refl s hs t := Theoryω.model_insert_iff.2 ⟨realize_equal_self t, hs⟩
+  eq_refl s hs t := Theoryω.model_insert_iff.2 ⟨SentenceInf.realize_equal_self t, hs⟩
   eq_subst s hs t t' φ _ ht hφ :=
-    Theoryω.model_insert_iff.2 ⟨realize_inst_of_equal_mem hs ht hφ, hs⟩
+    Theoryω.model_insert_iff.2
+      ⟨SentenceInf.realize_inst_of_realize_equal (hs.realize_of_mem ht) (hs.realize_of_mem hφ), hs⟩
   eq_name s hs t := by
     obtain ⟨c, hc⟩ := hM (t.realize (Sum.elim Empty.elim default))
     refine ⟨c, Theoryω.model_insert_iff.2 ⟨?_, hs⟩⟩
@@ -367,22 +295,22 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
   sets := satisfiableSets T A
   no_falsum s hs := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    exact bot_notMem_of_model hM
+    exact hM.bot_notMem
   no_contradiction s hs φ h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
-    exact not_notMem_of_model hM h
+    exact hM.not_notMem h
   imp s hs φ ψ h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     have hi := subset_instances hT hs h
-    exact (realize_of_imp_mem hM h).imp
+    exact (hM.realize_of_imp_mem h).imp
       (insert_mem_of_model hs (hA.not_mem_instances_iff.2 (imp_left_mem_instances hi)) hM)
       (insert_mem_of_model hs (imp_right_mem_instances hi) hM)
   not_imp s hs φ ψ h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     have hi := imp_left_mem_instances (subset_instances hT hs h)
-    exact ⟨insert_mem_of_model hs (imp_left_mem_instances hi) hM (realize_of_not_imp_mem hM h).1,
+    exact ⟨insert_mem_of_model hs (imp_left_mem_instances hi) hM (hM.realize_of_not_imp_mem h).1,
       insert_mem_of_model hs (hA.not_mem_instances_iff.2 (imp_right_mem_instances hi)) hM
-        (realize_of_not_imp_mem hM h).2⟩
+        (hM.realize_of_not_imp_mem h).2⟩
   iInf s hs φs h k := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     exact insert_mem_of_model hs (iInf_mem_instances (subset_instances hT hs h) k) hM
@@ -390,7 +318,7 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
   not_iInf s hs φs h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     have hi := hA.not_mem_instances_iff.1 (subset_instances hT hs h)
-    obtain ⟨k, hk⟩ := realize_of_not_iInf_mem hM h
+    obtain ⟨k, hk⟩ := hM.realize_of_not_iInf_mem h
     exact ⟨k, insert_mem_of_model hs (hA.not_mem_instances_iff.2 (iInf_mem_instances hi k)) hM hk⟩
   iSup s hs φs h := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
@@ -400,11 +328,11 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     have hi := hA.not_mem_instances_iff.1 (subset_instances hT hs h)
     exact insert_mem_of_model hs (hA.not_mem_instances_iff.2 (iSup_mem_instances hi k)) hM
-      (realize_of_not_iSup_mem hM h k)
+      (hM.realize_of_not_iSup_mem h k)
   all s hs φ h c := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     exact insert_mem_of_model hs (inst_mem_instances (subset_instances hT hs h) c) hM
-      (realize_inst_of_all_mem hM h c)
+      (SentenceInf.realize_inst_of_realize_all (hM.realize_of_mem h) _)
   not_all s hs φ h := by
     -- Write `¬∀φ` as the instance of `¬∀χ` at `d`, take a counterexample `m` to `χ` at `d`, and
     -- reinterpret a Henkin constant `c` not occurring in `s` as `m`.
@@ -431,12 +359,13 @@ def ofSatisfiable (T : L.Theoryω) (A : Fragment L) (hA : A.FormationClosed)
   eq_refl s hs t := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     exact insert_mem_of_model hs (hA.mem_instances_of_isAtomic (.equal _ _)) hM
-      (realize_equal_self t)
+      (SentenceInf.realize_equal_self t)
   eq_subst s hs t t' φ hφ ht htφ := by
     obtain ⟨M, _, _, hM⟩ := Theoryω.isSatisfiable_iff.1 hs.2
     have hi : (φ.inst t').IsAtomic := by rw [inst_def]; exact hφ.substBounds _
     exact insert_mem_of_model hs (hA.mem_instances_of_isAtomic hi) hM
-      (realize_inst_of_equal_mem hM ht htφ)
+      (SentenceInf.realize_inst_of_realize_equal (hM.realize_of_mem ht)
+        (hM.realize_of_mem htφ))
   eq_name s hs t := by
     -- Write `t` with its constants `d` abstracted, and reinterpret a Henkin constant `c`
     -- occurring neither in `s` nor in `t` as the value of `t`.
