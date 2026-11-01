@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Kronecker
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.Tree
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 
@@ -105,24 +106,6 @@ private def blockArrow (γ : V → V → Matrix m m k) (d : G.Dart) : Matrix (V 
 private def blockSign (ε : V → k) : Matrix (V × m) (V × m) k :=
   diagonal fun p ↦ ε p.1
 
-/-- The block sign matrix acts on the left of a block in the row of `a` by `ε a`. -/
-private theorem blockSign_mul_single_kronecker (ε : V → k) (a b : V) (X : Matrix m m k) :
-    blockSign ε * (single a b 1 ⊗ₖ X) = ε a • (single a b 1 ⊗ₖ X) := by
-  ext ⟨i, r⟩ ⟨j, s⟩
-  by_cases h : a = i ∧ b = j
-  · obtain ⟨rfl, rfl⟩ := h
-    simp [blockSign]
-  · simp [blockSign, h]
-
-/-- The block sign matrix acts on the right of a block in the column of `b` by `ε b`. -/
-private theorem single_kronecker_mul_blockSign (ε : V → k) (a b : V) (X : Matrix m m k) :
-    (single a b 1 ⊗ₖ X) * blockSign ε = ε b • (single a b 1 ⊗ₖ X) := by
-  ext ⟨i, r⟩ ⟨j, s⟩
-  by_cases h : a = i ∧ b = j
-  · obtain ⟨rfl, rfl⟩ := h
-    simp [blockSign, mul_comm]
-  · simp [blockSign, h]
-
 omit [DecidableEq m] in
 /-- Matrices satisfying the signless relations give block matrices of darts satisfying them in the
 form of the word pairing. -/
@@ -178,9 +161,9 @@ private theorem trace_blockSign_mul_mul_blockArrow (ε : V → k) (γ : V → V 
   · simp [blockArrow, h]
   -- The sign matrix acts on the block of `d` by `ε d.fst` on the right and `ε d.snd` on the left.
   have hr : blockArrow γ d * blockSign ε = ε d.fst • blockArrow γ d :=
-    single_kronecker_mul_blockSign ε _ _ _
+    single_kronecker_mul_diagonal ε _ _ _ _
   have hl : blockSign ε * blockArrow γ d = ε d.snd • blockArrow γ d :=
-    blockSign_mul_single_kronecker ε _ _ _
+    diagonal_mul_single_kronecker ε _ _ _ _
   rw [← mul_assoc, trace_mul_comm, ← mul_assoc, ← mul_assoc, hr, hl, hd h]
   simp only [neg_smul, neg_mul, smul_mul_assoc, trace_neg, trace_smul]
 
@@ -210,7 +193,7 @@ private theorem not_hochschildVanishesAt_of_trace_ne_zero [DecidableRel G.Adj]
     simpa using hw (Fin.last (n + 1))
   have hprod := list_prod_blockArrow γ w fun i ↦ by simpa [Fin.coeSucc_eq_succ] using hw i.castSucc
   rw [hlast] at hprod
-  rw [hf, hprod, blockSign_mul_single_kronecker]
+  rw [hf, hprod, blockSign, diagonal_mul_single_kronecker]
   simp only [trace_smul, trace_kronecker, trace_single_eq_same, one_mul, smul_eq_mul]
   exact mt ((ε (w 0).snd).isUnit.map (Int.castRingHom k)).mul_right_eq_zero.1 htr
 

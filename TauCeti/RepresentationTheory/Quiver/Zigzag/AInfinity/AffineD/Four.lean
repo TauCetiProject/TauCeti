@@ -362,10 +362,8 @@ private def affineD4LeafDart : Fin 4 → (AffineDynkinType.D 4).graph.Dart :=
 /-- A single coefficient on Liu--Wang's walk is supported on closed walks, read in product
 order. -/
 theorem fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (r : k) :
-    ∀ w ∈ (Finsupp.single liuWangAffineD4Walk r).support, ∀ i, (w i).fst = (w (i + 1)).snd := by
-  intro w hw i
-  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw)]
-  simpa using liuWangAffineD4Walk_sub_fst_eq_snd i 0
+    ∀ w ∈ (Finsupp.single liuWangAffineD4Walk r).support, ∀ i, (w i).fst = (w (i + 1)).snd :=
+  fst_eq_snd_of_mem_support_single (fun i ↦ by simpa using liuWangAffineD4Walk_sub_fst_eq_snd i 0) r
 
 /-- **The loop operation of Liu--Wang's walk alone is not a Hochschild coboundary.** With
 coefficient one on the single walk `β₄ α₁ β₁ α₄`, and zero on its other rotations, the quartic
