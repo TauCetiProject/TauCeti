@@ -186,24 +186,26 @@ theorem kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct
   -- Potential bounds and completed outputs of the two nested product kernels.
   have hN (q : (S₁ × S₂) × S₃) (p₀ : S₀) (h : ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀ ≠ 0) :
       F₀ p₀ ≤ F₁ q.1.1 + F₂ q.1.2 + F₃ q.2 + (C₁ + C₂) := by
-    obtain ⟨t, ht⟩ : ∃ t, n q.1.1 q.1.2 t * n' t q.2 p₀ ≠ 0 := by
-      by_contra! h'
-      exact h (finsum_eq_zero_of_forall_eq_zero h')
-    linarith [hn _ _ _ (left_ne_zero_of_mul ht), hn' _ _ _ (right_ne_zero_of_mul ht)]
+    linarith [potential_le_of_kernelComp_ne_zero (m := fun q : (S₁ × S₂) × S₃ => n q.1.1 q.1.2)
+      (m' := (n' · q.2)) (C' := F₃ q.2 + C₂) (hn q.1.1 q.1.2)
+      (fun t h => by linarith [hn' t q.2 p₀ h]) (by rwa [kernelComp_apply])]
   have hNfin (q : (S₁ × S₂) × S₃) :
-      (fun p₀ => ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀) ∈ NovikovModule R F₀ :=
-    finsum_mul_mem (κ := fun t => n' t q.2) (D := F₃ q.2 + C₂)
-      (fun t p₀ h => by linarith [hn' t q.2 p₀ h]) (hfin' · q.2) ⟨_, hfin q.1.1 q.1.2⟩
+      (fun p₀ => ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀) ∈ NovikovModule R F₀ := by
+    convert kernelComp_mem (m := fun q : (S₁ × S₂) × S₃ => n q.1.1 q.1.2) (C' := F₃ q.2 + C₂)
+      (fun t p₀ h => by linarith [hn' t q.2 p₀ h]) (hfin' · q.2) (hfin q.1.1 q.1.2) using 1
+    ext p₀
+    rw [kernelComp_apply]
   have hM (q : (S₁ × S₂) × S₃) (p₀ : S₀) (h : ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀ ≠ 0) :
       F₀ p₀ ≤ F₁ q.1.1 + F₂ q.1.2 + F₃ q.2 + (C₃ + C₄) := by
-    obtain ⟨u, hu⟩ : ∃ u, m q.1.2 q.2 u * m' q.1.1 u p₀ ≠ 0 := by
-      by_contra! h'
-      exact h (finsum_eq_zero_of_forall_eq_zero h')
-    linarith [hm _ _ _ (left_ne_zero_of_mul hu), hm' _ _ _ (right_ne_zero_of_mul hu)]
+    linarith [potential_le_of_kernelComp_ne_zero (m := fun q : (S₁ × S₂) × S₃ => m q.1.2 q.2)
+      (m' := m' q.1.1) (C' := F₁ q.1.1 + C₄) (hm q.1.2 q.2)
+      (fun u h => by linarith [hm' q.1.1 u p₀ h]) (by rwa [kernelComp_apply])]
   have hMfin (q : (S₁ × S₂) × S₃) :
-      (fun p₀ => ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀) ∈ NovikovModule R F₀ :=
-    finsum_mul_mem (κ := m' q.1.1) (D := F₁ q.1.1 + C₄)
-      (fun u p₀ h => by linarith [hm' q.1.1 u p₀ h]) (hmfin' q.1.1) ⟨_, hmfin q.1.2 q.2⟩
+      (fun p₀ => ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀) ∈ NovikovModule R F₀ := by
+    convert kernelComp_mem (m := fun q : (S₁ × S₂) × S₃ => m q.1.2 q.2) (C' := F₁ q.1.1 + C₄)
+      (fun u p₀ h => by linarith [hm' q.1.1 u p₀ h]) (hmfin' q.1.1) (hmfin q.1.2 q.2) using 1
+    ext p₀
+    rw [kernelComp_apply]
   -- Potential bounds of the two composites with the homotopy kernel.
   have hkδ (q : (S₁ × S₂) × S₃) (p₀ : S₀) (h : kernelComp k δ₀ q p₀ ≠ 0) :
       F₀ p₀ ≤ F₁ q.1.1 + F₂ q.1.2 + F₃ q.2 + (Ck + C₀) := by
