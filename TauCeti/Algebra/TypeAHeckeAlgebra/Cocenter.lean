@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Enumerative.Partition.Basic
 public import TauCeti.Algebra.Algebra.CyclicQuotient
+public import TauCeti.Algebra.Algebra.Subalgebra.Equalizer
 public import TauCeti.Algebra.TypeAHeckeAlgebra.CycleWord
 
 /-!
@@ -282,41 +283,23 @@ private theorem blockSwap_mul_T {a b i : ℕ} (hi : i + 1 < a) :
         (commute_T_of_mem_stage (by omega) (cosetRep_mem_stage b 0)).eq.symm
       rw [blockSwap_succ, mul_assoc, hs, ← mul_assoc, hc, mul_assoc]
 
-/-- The subalgebra of elements `x` with `P * g x = f x * P`, for algebra endomorphisms `f`, `g`. -/
-private def intertwiners (P : InfiniteTypeAHeckeAlgebra R q)
-    (f g : InfiniteTypeAHeckeAlgebra R q →ₐ[R] InfiniteTypeAHeckeAlgebra R q) :
-    Subalgebra R (InfiniteTypeAHeckeAlgebra R q) where
-  carrier := {x | P * g x = f x * P}
-  mul_mem' {x y} hx hy := by
-    simp only [Set.mem_ofPred_eq, map_mul] at hx hy ⊢
-    rw [← mul_assoc, hx, mul_assoc, hy, mul_assoc]
-  add_mem' {x y} hx hy := by
-    simp only [Set.mem_ofPred_eq, map_add] at hx hy ⊢
-    rw [mul_add, add_mul, hx, hy]
-  algebraMap_mem' r := by
-    simp only [Set.mem_ofPred_eq, AlgHom.commutes]
-    exact (Algebra.commutes r P).symm
-
-private theorem mem_intertwiners {P x : InfiniteTypeAHeckeAlgebra R q}
-    {f g : InfiniteTypeAHeckeAlgebra R q →ₐ[R] InfiniteTypeAHeckeAlgebra R q} :
-    x ∈ intertwiners P f g ↔ P * g x = f x * P :=
-  Iff.rfl
-
 /-- **Exchanging two blocks of strands.** For `x` in the stage `a` and `y` in the stage `b`, the
 block swap conjugates `x * shift a y` to `y * shift b x`. -/
 private theorem blockSwap_mul_mul_shift {a b : ℕ} {x y : InfiniteTypeAHeckeAlgebra R q}
     (hx : x ∈ stage R q a) (hy : y ∈ stage R q b) :
     blockSwap q a b * (x * shift R q a y) = y * shift R q b x * blockSwap q a b := by
-  have hX : stage R q a ≤ intertwiners (blockSwap q a b) (shift R q b) (AlgHom.id R _) :=
-    stage_le_iff.2 fun i hi ↦ mem_intertwiners.2 <| by
+  have hX :
+      stage R q a ≤ intertwiningSubalgebra (blockSwap q a b) (shift R q b) (AlgHom.id R _) :=
+    stage_le_iff.2 fun i hi ↦ mem_intertwiningSubalgebra.2 <| by
       rw [AlgHom.id_apply, shift_T, blockSwap_mul_T hi]
-  have hY : stage R q b ≤ intertwiners (blockSwap q a b) (AlgHom.id R _) (shift R q a) :=
-    stage_le_iff.2 fun j hj ↦ mem_intertwiners.2 <| by
+  have hY :
+      stage R q b ≤ intertwiningSubalgebra (blockSwap q a b) (AlgHom.id R _) (shift R q a) :=
+    stage_le_iff.2 fun j hj ↦ mem_intertwiningSubalgebra.2 <| by
       rw [AlgHom.id_apply, shift_T, Nat.add_comm j a, blockSwap_mul_T_add hj]
   have hx' : blockSwap q a b * x = shift R q b x * blockSwap q a b := by
-    simpa only [AlgHom.id_apply] using mem_intertwiners.1 (hX hx)
+    simpa only [AlgHom.id_apply] using mem_intertwiningSubalgebra.1 (hX hx)
   have hy' : blockSwap q a b * shift R q a y = y * blockSwap q a b := by
-    simpa only [AlgHom.id_apply] using mem_intertwiners.1 (hY hy)
+    simpa only [AlgHom.id_apply] using mem_intertwiningSubalgebra.1 (hY hy)
   rw [← mul_assoc, hx', mul_assoc, hy', ← mul_assoc, (commute_shift_of_mem_stage hy x).eq]
 
 end BlockSwap
