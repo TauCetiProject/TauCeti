@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Lie.Extension
 public import Mathlib.RingTheory.Finiteness.Prod
 
@@ -24,7 +25,9 @@ This file works with an arbitrary module `M` and supplies:
   homomorphism, whose kernel `0 × M` is an abelian ideal;
 * `LieAlgebra.ofTwoCocycle.map` and `LieAlgebra.ofTwoCocycle.mapEquiv`: for trivial coefficients,
   the morphisms and isomorphisms of central extensions `(x, m) ↦ (φ x, e m)` induced by a map `φ`
-  of the quotients and a linear map `e` of the kernels carrying one cocycle to the other.
+  of the quotients and a linear map `e` of the kernels carrying one cocycle to the other;
+* `LieAlgebra.ofTwoCocycle.derivation`: for trivial coefficients, the derivation
+  `(x, m) ↦ (D x, 0)` induced by a derivation `D` of the quotient for which the cocycle is skew.
 
 The construction of `map` and `mapEquiv` follows Mathlib's `LieAlgebra.LieEquiv.ofCoboundary`,
 which identifies the extensions of cohomologous cocycles by acting on the coordinates of `ofProd`.
@@ -189,6 +192,50 @@ lemma mapEquiv_symm_ofProd (x : L') (m : M') :
 lemma toLieHom_mapEquiv :
     (mapEquiv c φ e c' h).toLieHom = map c φ.toLieHom e.toLinearMap c' h :=
   (rfl)
+
+section Derivation
+
+variable (D : LieDerivation R L L)
+  (hD : ∀ x y, (c : twoCochain R L M) (D x) y + (c : twoCochain R L M) x (D y) = 0)
+include hD
+
+/-- The derivation `(x, m) ↦ (D x, 0)` of the Lie algebra sheared by a 2-cocycle `c` with trivial
+coefficients, for a derivation `D` of `L` which is skew for `c`:
+`c (D x) y + c x (D y) = 0`. It kills the central kernel `0 × M`. -/
+def derivation : LieDerivation R (ofTwoCocycle c) (ofTwoCocycle c) where
+  toFun v := ofProd c (D ((ofProd c).symm v).1, 0)
+  map_add' _ _ := by simp [← of_add]
+  map_smul' _ _ := by simp [← of_smul]
+  leibniz' v w := by
+    -- Subtraction on the sheared Lie algebra is transported from `L × M`.
+    have hsub (a b : ofTwoCocycle c) :
+        (ofProd c).symm (a - b) = (ofProd c).symm a - (ofProd c).symm b := (rfl)
+    refine (ofProd c).symm.injective (Prod.ext ?_ ?_)
+    · simp [bracket_ofTwoCocycle, hsub, LieDerivation.apply_lie_eq_sub]
+    · have h := hD ((ofProd c).symm v).1 ((ofProd c).symm w).1
+      rw [← twoCochain_skew _ ((ofProd c).symm w).1] at h
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, bracket_ofTwoCocycle, hsub,
+        Equiv.symm_apply_apply, trivial_lie_zero, sub_zero, add_zero, Prod.snd_sub,
+        twoCochain_val_apply]
+      rw [← h]
+      abel
+
+/-- The derivation acts by `D` on the first coordinate and kills the second. -/
+@[simp]
+lemma derivation_ofProd (x : L) (m : M) :
+    derivation c D hD (ofProd c (x, m)) = ofProd c (D x, 0) :=
+  (rfl)
+
+@[simp]
+lemma ofProd_symm_derivation (v : ofTwoCocycle c) :
+    (ofProd c).symm (derivation c D hD v) = (D ((ofProd c).symm v).1, 0) :=
+  (rfl)
+
+/-- The derivation lies over `D`. -/
+lemma proj_derivation (v : ofTwoCocycle c) : proj c (derivation c D hD v) = D (proj c v) :=
+  (rfl)
+
+end Derivation
 
 end Trivial
 
