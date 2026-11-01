@@ -77,8 +77,8 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
   formally unramified over `R`, and étale if `R → A` is injective.
 * `TauCeti.MulSemiringAction.exists_sum_smul_eq_one`: for a free action on a commutative ring,
   some element has trace `∑ g, g • c = 1`.
-* `TauCeti.MulSemiringAction.sum_mul_sum_smul`: pairing a dual basis of `tensorToPi` with traces,
-  after a map equivariant along `π : G' → G`, sums the translates by the kernel of `π`.
+* `RingHom.sum_mul_sum_smul`: pairing a dual basis of `tensorToPi` with traces, after a map
+  equivariant along `π : G' → G`, sums the translates by the kernel of `π`.
 * `TauCeti.MulSemiringAction.span_range_smul_sub_eq_top_iff`: on a finite-type algebra over a
   field, freeness of `g` means that `g` fixes no point valued in an algebraically closed field.
 
@@ -438,8 +438,8 @@ theorem exists_sum_smul_eq_one [Fintype G]
 elsewhere, as for a preimage of the indicator function of `1` under `tensorToPi`. After a ring map
 `f : A → C` equivariant along `π : G' → G`, pairing the `xᵢ` with the traces of `yᵢ * c` gives the
 sum of the translates of `c` by the kernel of `π`. -/
-theorem sum_mul_sum_smul [DecidableEq G] {G' C : Type*} [Group G'] [Fintype G'] [CommRing C]
-    [MulSemiringAction G' C] (f : A →+* C) (π : G' →* G)
+theorem _root_.RingHom.sum_mul_sum_smul [DecidableEq G] {G' C : Type*} [Group G'] [Fintype G']
+    [CommRing C] [MulSemiringAction G' C] (f : A →+* C) (π : G' →* G)
     (hπ : ∀ (g : G') (a : A), g • f a = f (π g • a))
     {S : Finset (A × A)} (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g)
     (c : C) :

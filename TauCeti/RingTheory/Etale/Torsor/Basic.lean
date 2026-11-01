@@ -272,7 +272,7 @@ theorem IsFiniteEtaleTorsor.of_surjective [Finite G'] [hB : IsFiniteEtaleTorsor 
       obtain ⟨g', rfl⟩ := hπs g
       rw [smul_mul', map_mul, ← hπ, ← hπ, hb, smul_zero, mul_zero]
     have :=
-      MulSemiringAction.sum_mul_sum_smul (RingHom.id B) (MonoidHom.id G) (fun _ _ ↦ rfl) hS b
+      (RingHom.id B).sum_mul_sum_smul (MonoidHom.id G) (fun _ _ ↦ rfl) hS b
     simp only [RingHom.id_apply, MonoidHom.id_apply, Finset.sum_ite_eq', Finset.mem_univ,
       ite_true, one_smul, hcoord, mul_zero, Finset.sum_const_zero] at this
     exact this.symm
@@ -283,7 +283,7 @@ theorem IsFiniteEtaleTorsor.of_surjective [Finite G'] [hB : IsFiniteEtaleTorsor 
     choose a ha using fun p : B × B ↦
       hinv'.isInvariant _ (smul_sum_smul (G := G') · (algebraMap B B' p.2 * y))
     refine ⟨∑ p ∈ S, p.1 * algebraMap A B (a p), ?_⟩
-    rw [← hker, ← MulSemiringAction.sum_mul_sum_smul (algebraMap B B') π hπ hS, map_sum]
+    rw [← hker, ← (algebraMap B B').sum_mul_sum_smul π hπ hS, map_sum]
     refine Finset.sum_congr rfl fun p _ ↦ ?_
     rw [map_mul, ← IsScalarTower.algebraMap_apply, ha]
 
