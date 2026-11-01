@@ -50,6 +50,10 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
 * `TauCeti.minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero` and
   `TauCeti.reflectionBond_simple_smul_one_smul`: a simple reflection `sᵢ` off the walls through `λ`
   covers the identity, with bond `⟨λ, αᵢ^∨⟩`.
+* `TauCeti.reflectionBond_smul_simple_mul_smul`: the bond of `x λ` and `sᵢ x λ` is
+  `-⟨x λ, αᵢ^∨⟩`; `TauCeti.coroot'_simple_mul_smul` says `⟨sᵢ x λ, αᵢ^∨⟩ = -⟨x λ, αᵢ^∨⟩`.
+* `TauCeti.natAbs_reflectionBond_mul_smul_mul_smul`: left multiplication by a Weyl group element
+  preserves the bond of a cover, up to sign.
 
 ## References
 
@@ -176,18 +180,32 @@ theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero {i : b.support}
   exact CharZero.eq_neg_self_iff.mp h
 
 omit [P.flip.IsReduced] in
+/-- **The bond of `x λ` and `sᵢ x λ` is `-⟨x λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `sᵢ` is a
+left descent of the minimal coset representative `x`, this is the bond of the cover `sᵢ x ⋖ x` of
+`W / W_λ`. -/
+theorem reflectionBond_smul_simple_mul_smul (i : b.support) (x : P.weylGroup) :
+    P.reflectionBond b (x • lam) (((weylCoxeterSystem P b).simple i * x) • lam) =
+      -P.coroot' i (x • lam) := by
+  rw [mul_smul, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul]
+  exact reflectionBond_reflection (b.isPos_of_mem_support i.2) _
+
+omit [P.flip.IsReduced] in
+/-- The pairing of `(sᵢ x) λ` with the simple coroot `αᵢ^∨` is `-⟨x λ, αᵢ^∨⟩`. -/
+theorem coroot'_simple_mul_smul (i : b.support) (x : P.weylGroup) :
+    P.coroot' i (((weylCoxeterSystem P b).simple i * x) • lam) = -P.coroot' i (x • lam) := by
+  rw [mul_smul, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul,
+    coroot'_reflection_self]
+
+omit [P.flip.IsReduced] in
 /-- **The bond of `sᵢ λ` and `λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `⟨λ, αᵢ^∨⟩ ≠ 0`
 this is the bond of the cover `1 ⋖ sᵢ` of `W / W_λ`; otherwise `sᵢ λ = λ` and both sides vanish. -/
 theorem reflectionBond_simple_smul_one_smul (i : b.support) :
     P.reflectionBond b ((weylCoxeterSystem P b).simple i • lam) ((1 : P.weylGroup) • lam) =
       P.coroot' i lam := by
-  rw [weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul, one_smul]
-  by_cases hi : P.coroot' i lam = 0
-  · rw [P.reflection_apply, hi, zero_smul, sub_zero, reflectionBond_self]
-  -- `sᵢ λ ≠ λ`, since `⟨sᵢ λ, αᵢ^∨⟩ = -⟨λ, αᵢ^∨⟩ ≠ ⟨λ, αᵢ^∨⟩`.
-  have hne : lam ≠ P.reflection i lam := fun h ↦ hi <| CharZero.eq_neg_self_iff.mp <| by
-    rw [← coroot'_reflection_self P i lam, ← h]
-  rw [reflectionBond_eq_coroot' (b.isPos_of_mem_support i.2) (P.reflection_same i lam) hne]
+  have h := reflectionBond_smul_simple_mul_smul (lam := lam) i ((weylCoxeterSystem P b).simple i)
+  rw [CoxeterSystem.simple_mul_simple_self] at h
+  rw [h, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul,
+    coroot'_reflection_self, neg_neg]
 
 end
 
@@ -214,5 +232,19 @@ theorem exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy (hlam : lam ∈ domina
   push_cast at hz ⊢
   rw [← hz]
   ring
+
+/-- **Left multiplication preserves the bonds of covers.** If `y ⋖ x` is a cover of `W / W_λ`, then
+for every element `w` of the Weyl group the bond of `(w x) λ` and `(w y) λ` has the same absolute
+value as the bond `b_λ(x, y)`. When `w y ⋖ w x` is again a cover, both bonds are positive and so
+they are equal. -/
+theorem natAbs_reflectionBond_mul_smul_mul_smul (hlam : lam ∈ dominantChamber P b)
+    {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x)
+    (w : P.weylGroup) :
+    (P.reflectionBond b ((w * x) • lam) ((w * y) • lam)).natAbs =
+      (P.reflectionBond b (x • lam) (y • lam)).natAbs := by
+  obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
+  rw [mul_smul, mul_smul, ← Int.natAbs_abs, abs_reflectionBond_smul_smul hβ hβx
+    (smul_ne_smul_of_minimalCosetRepCovBy hlam h) w, Int.natAbs_abs]
 
 end TauCeti
