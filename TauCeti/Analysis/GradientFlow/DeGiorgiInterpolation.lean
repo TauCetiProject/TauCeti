@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Derivative
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # De Giorgi's variational interpolation
@@ -45,6 +46,9 @@ is the distance estimate `d(U n, W t) ≤ d(U n, U (n + 1))` on `(n τ, (n + 1) 
 * `TauCeti.apply_deGiorgiInterpolant_le` and `TauCeti.edist_deGiorgiInterpolant_le`: on
   `(n τ, (n + 1) τ]` the interpolant has energy at most `φ (U n)`, and, when `V n τ = U (n + 1)`,
   `φ (U n) ≠ ⊤` and `φ (U (n + 1)) ≠ ⊥`, distance at most `d(U n, U (n + 1))` from `U n`.
+* `TauCeti.tendsto_deGiorgiInterpolant_of_forall_mem_moreauYosidaResolvent`: for bounded-below
+  energies and uniformly bounded initial energies, variational interpolants have the same
+  positive-time pointwise limits as the piecewise constant interpolants.
 * `TauCeti.apply_add_sum_add_lintegral_descendingSlope_le_of_forall_mem_moreauYosidaResolvent`:
   the discrete energy–dissipation inequality along a minimizing movement sequence.
 
@@ -60,7 +64,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -140,6 +144,24 @@ theorem apply_deGiorgiInterpolant_le (hτ : 0 < τ) {n : ℕ}
     φ (deGiorgiInterpolant τ V t) ≤ φ (U n) :=
   apply_le_of_mem_moreauYosidaResolvent (deGiorgiInterpolant_mem_moreauYosidaResolvent hτ hV ht)
 
+/-- At every positive time, a variational interpolation along a minimizing movement sequence
+has energy at most the initial energy. -/
+theorem apply_deGiorgiInterpolant_le_initial (hτ : 0 < τ)
+    (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
+    (hV : ∀ n, ∀ r ∈ Ioc 0 (τ : ℝ), V n r ∈ moreauYosidaResolvent φ r.toNNReal (U n))
+    {t : ℝ} (ht : 0 < t) : φ (deGiorgiInterpolant τ V t) ≤ φ (U 0) := by
+  have hτ' : (0 : ℝ) < τ := hτ
+  have hc := (Nat.ceil_eq_iff (ne_of_gt (Nat.one_le_ceil_iff.2 (div_pos ht hτ')))).1
+    (rfl : ⌈t / τ⌉₊ = ⌈t / τ⌉₊)
+  have hn : ⌈t / τ⌉₊ - 1 + 1 = ⌈t / τ⌉₊ := by
+    have := Nat.one_le_ceil_iff.2 (div_pos ht hτ')
+    omega
+  have hmem : t ∈ Ioc ((⌈t / τ⌉₊ - 1 : ℕ) * τ : ℝ) (((⌈t / τ⌉₊ - 1 : ℕ) + 1) * τ) := by
+    rw [← Nat.cast_add_one, hn]
+    exact ⟨(lt_div_iff₀ hτ').1 hc.1, (div_le_iff₀ hτ').1 hc.2⟩
+  exact (apply_deGiorgiInterpolant_le hτ (hV _) hmem).trans
+    (antitone_comp_of_forall_mem_moreauYosidaResolvent hU (Nat.zero_le _))
+
 /-- **Distance along the variational interpolant.** On the time interval `(n τ, (n + 1) τ]`, the
 variational interpolant of a selection with `V n τ = U (n + 1)` stays within distance
 `d(U n, U (n + 1))` of `U n`, provided `φ (U n) ≠ ⊤` and `φ (U (n + 1)) ≠ ⊥`. -/
@@ -164,6 +186,66 @@ theorem edist_deGiorgiInterpolant_le (hτ : 0 < τ) {n : ℕ}
   · rw [hrτ, hVU]
 
 end PseudoEMetricSpace
+
+section PseudoMetricSpace
+
+variable {X : Type*} [PseudoMetricSpace X] {φ : X → EReal} {τ : ℕ → ℝ≥0}
+  {U : ℕ → ℕ → X} {V : ℕ → ℕ → ℝ → X} {u : ℝ → X} {L S : ℝ}
+
+/-- **The variational interpolation has the same limit as the discrete interpolation.**
+For a bounded-below energy and uniformly bounded initial energies, any intermediate
+resolvent selections agreeing with the discrete steps at the nodes converge at every
+positive time where the piecewise constant interpolants converge. No measurability of
+the selections is needed for this pointwise assertion. -/
+theorem tendsto_deGiorgiInterpolant_of_forall_mem_moreauYosidaResolvent
+    (hL : ∀ x, (L : EReal) ≤ φ x) (hS : ∀ k, φ (U k 0) ≤ S)
+    (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
+    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
+    (hV : ∀ k n, ∀ r ∈ Ioc 0 (τ k : ℝ),
+      V k n r ∈ moreauYosidaResolvent φ r.toNNReal (U k n))
+    (hVU : ∀ k n, V k n (τ k) = U k (n + 1)) {t : ℝ} (ht : 0 < t)
+    (hu : Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (𝓝 (u t))) :
+    Tendsto (fun k ↦ deGiorgiInterpolant (τ k) (V k) t) atTop (𝓝 (u t)) := by
+  have htop k n : φ (U k n) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top S)
+    ((antitone_comp_of_forall_mem_moreauYosidaResolvent (hU k) (Nat.zero_le n)).trans (hS k))
+  have hbot x : φ x ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (hL x)
+  have hstep k n : dist (U k n) (U k (n + 1)) ≤ Real.sqrt (2 * τ k * (S - L)) := by
+    have he := (add_le_add (hL (U k (n + 1)))
+      (le_rfl (a := ((edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k) : ℝ≥0∞) : EReal)))).trans
+      ((apply_add_le_of_mem_moreauYosidaResolvent (hU k n)).trans
+        ((antitone_comp_of_forall_mem_moreauYosidaResolvent (hU k) (Nat.zero_le n)).trans (hS k)))
+    rw [coe_edist_sq_div_eq_coe_dist_sq_div (hτ k), ← EReal.coe_add,
+      EReal.coe_le_coe_iff] at he
+    apply Real.le_sqrt_of_sq_le
+    have hτ' : (0 : ℝ) < τ k := hτ k
+    have hp : (0 : ℝ) < 2 * τ k := by positivity
+    have hdiv : dist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k) ≤ S - L := by linarith
+    have := (div_le_iff₀ hp).1 hdiv
+    nlinarith
+  have hdist k : dist (deGiorgiInterpolant (τ k) (V k) t) (U k ⌈t / τ k⌉₊) ≤
+      2 * Real.sqrt (2 * τ k * (S - L)) := by
+    let n := ⌈t / τ k⌉₊ - 1
+    have hceil : ⌈t / τ k⌉₊ = n + 1 := by
+      have : 1 ≤ ⌈t / τ k⌉₊ := Nat.one_le_ceil_iff.2 (div_pos ht (hτ k))
+      omega
+    have hmem : t ∈ Ioc (n * τ k : ℝ) ((n + 1) * τ k) := by
+      have hc := (Nat.ceil_eq_iff (by omega : n + 1 ≠ 0)).1 hceil
+      constructor
+      · exact (lt_div_iff₀ (by exact hτ k)).1 (by simpa using hc.1)
+      · exact (div_le_iff₀ (by exact hτ k)).1 (by simpa using hc.2)
+    have hd := edist_deGiorgiInterpolant_le (hτ k) (hV k n) (hVU k n)
+      (htop k n) (hbot _) hmem
+    have hd' : dist (U k n) (deGiorgiInterpolant (τ k) (V k) t) ≤
+        dist (U k n) (U k (n + 1)) := by
+      simpa only [edist_dist, ENNReal.ofReal_le_ofReal_iff dist_nonneg] using hd
+    rw [hceil]
+    exact (dist_triangle_left _ _ _).trans (by linarith [hstep k n])
+  have hlim : Tendsto (fun k ↦ 2 * Real.sqrt (2 * τ k * (S - L))) atTop (𝓝 0) := by
+    have hr := (NNReal.continuous_coe.tendsto 0).comp hτ0
+    simpa using ((((hr.const_mul 2).mul_const (S - L)).sqrt).const_mul 2)
+  exact (tendsto_iff_of_dist (squeeze_zero (fun _ ↦ dist_nonneg) hdist hlim)).2 hu
+
+end PseudoMetricSpace
 
 section EMetricSpace
 
