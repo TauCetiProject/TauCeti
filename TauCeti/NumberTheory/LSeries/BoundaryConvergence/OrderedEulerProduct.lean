@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.NumberTheory.PrimeCounting
+import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SumPrimePow
@@ -33,6 +34,11 @@ partial sum of the Taylor series of `log (1 - c p / p)⁻¹`. Its truncation err
 over `p ≤ N` of these errors tends to zero by dominated convergence. No unordered sum or product
 at `s = 1` is asserted.
 
+Removing the higher prime powers gives the ordered prime sums `∑ p ≤ N, c p / p`. Each local
+logarithm differs from its linear term `c p / p` by at most `2 / p ^ 2`, so these differences
+form an absolutely convergent series over the primes, and the ordered prime sums converge
+whenever the ordered partial sums of `∑ a n / n` do.
+
 ## Main results
 
 * `TauCeti.LSeries.tendsto_sum_log_one_sub_inv_sub_sum_div`: the difference between the sum of
@@ -48,6 +54,11 @@ at `s = 1` is asserted.
   Euler products in both directions, multiplying the limit by `∏ p ∈ S, (1 - c p / p)`;
   `TauCeti.LSeries.tendsto_prod_primesLE_filter_notMem_inv_congr_iff` changes one finite set of
   deleted primes into another.
+* `TauCeti.LSeries.summable_log_one_sub_inv_sub_div`: the differences between the local
+  logarithms and their linear terms are absolutely summable over the primes.
+* `TauCeti.LSeries.tendsto_sum_primesLE_div_of_tendsto_sum`: if the partial sums converge to
+  `L`, the ordered prime sums `∑ p ≤ N, c p / p` converge to `L` minus the sum of these
+  differences.
 -/
 
 public section
@@ -91,6 +102,16 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_congr_iff (hS : ∀ p ∈ S, p.P
     tendsto_prod_primesLE_filter_notMem_inv_iff hT hcT]
 
 end FiniteDeletion
+
+/-- **The higher prime powers are absolutely summable.** If `‖c p‖ ≤ 1` at every prime `p`, the
+local logarithm `log (1 - c p / p)⁻¹` differs from its linear term `c p / p` by at most
+`2 / p ^ 2`, so these differences are absolutely summable over the primes. -/
+theorem summable_log_one_sub_inv_sub_div (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) :
+    Summable fun p : Nat.Primes ↦ log (1 - c p / p)⁻¹ - c p / p := by
+  have hsum : Summable fun p : Nat.Primes ↦ 2 * ((p : ℝ) ^ 2)⁻¹ :=
+    ((Real.summable_nat_pow_inv.mpr one_lt_two).comp_injective Subtype.val_injective).mul_left 2
+  refine .of_norm_bounded hsum fun p ↦ ?_
+  simpa using norm_log_one_sub_div_inv_sub_sum_Icc_le p.prop.two_le (hc p p.prop) 1
 
 section Comparison
 
@@ -147,6 +168,20 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_of_tendsto_sum {L : ℂ}
       (𝓝 (exp L * ∏ p ∈ S, (1 - c p / p))) :=
   (tendsto_prod_primesLE_filter_notMem_inv_iff hS fun p hp ↦ hc p (hS p hp)).mpr
     (tendsto_prod_primesLE_inv_of_tendsto_sum hc ha ha_pow hL)
+
+/-- **Ordered prime sums from ordered partial sums.** If the ordered partial sums
+`∑ n ∈ Icc 1 N, a n / n` converge to `L`, then the ordered prime sums `∑ p ≤ N, c p / p`
+converge to `L` minus the absolutely convergent sum over the primes of
+`log (1 - c p / p)⁻¹ - c p / p`. -/
+theorem tendsto_sum_primesLE_div_of_tendsto_sum {L : ℂ}
+    (hL : Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, a n / n) atTop (𝓝 L)) :
+    Tendsto (fun N : ℕ ↦ ∑ p ∈ Nat.primesLE N, c p / p) atTop
+      (𝓝 (L - ∑' p : Nat.Primes, (log (1 - c p / p)⁻¹ - c p / p))) := by
+  have hlog : Tendsto (fun N : ℕ ↦ ∑ p ∈ Nat.primesLE N, log (1 - c p / p)⁻¹) atTop (𝓝 L) := by
+    simpa using (tendsto_sum_log_one_sub_inv_sub_sum_div hc ha ha_pow).add hL
+  have htail := HasSum.tendsto_sum_primesLE (f := fun n ↦ log (1 - c n / n)⁻¹ - c n / n)
+    (summable_log_one_sub_inv_sub_div hc).hasSum
+  simpa [sum_sub_distrib] using hlog.sub htail
 
 end Comparison
 

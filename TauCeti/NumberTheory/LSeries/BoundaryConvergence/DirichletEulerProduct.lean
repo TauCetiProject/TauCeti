@@ -42,6 +42,11 @@ The proof of the Euler product limit combines three results:
 * `TauCeti.LSeries.tendsto_prod_primesLE_inv_of_tendsto_sum` compares those sums with the
   logarithms of the finite Euler products, which therefore converge to `exp L = L(χ, 1)`.
 
+Removing the higher prime powers from the ordered logarithmic sums shows that the ordered prime
+sums `∑ p ≤ B, χ p / p` also converge (`DirichletCharacter.exists_tendsto_sum_primesLE_div`).
+Their limit is the logarithm of `L(χ, 1)` above minus the absolutely convergent sum over the
+primes of `log (1 - χ p / p)⁻¹ - χ p / p`.
+
 Conjugating every Euler factor replaces `χ` by `χ⁻¹`, since the values of `χ` on units have norm
 `1` (Mathlib's `MulChar.star_apply'`); ordered convergence transports along this with the
 conjugated limit (`DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_inv_iff`).
@@ -52,6 +57,8 @@ conjugated limit (`DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_in
   Dirichlet series of `χ` converge to `L(χ, 1)`.
 * `DirichletCharacter.exists_tendsto_sum_Icc_eulerLogCoeff_div`: the ordered sums of
   `χ.eulerLogCoeff n / n` converge to a logarithm of `L(χ, 1)`.
+* `DirichletCharacter.exists_tendsto_sum_primesLE_div`: the ordered prime sums of `χ p / p`
+  converge, with an explicit limit in terms of a logarithm of `L(χ, 1)`.
 * `DirichletCharacter.tendsto_prod_primesLE_inv_LFunction_one`: the ordered Euler product
   converges to `L(χ, 1)`.
 * `DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_LFunction_one`: the same with the
@@ -101,6 +108,20 @@ theorem exists_tendsto_sum_Icc_eulerLogCoeff_div [NeZero N] (hχ : χ ≠ 1) :
   exact ⟨F 1, TauCeti.LSeries.boundedDirichlet_tendsto_ordered_at_one
     (fun n _ ↦ χ.norm_eulerLogCoeff_le_one n) hΩ hcover hF hseries,
     hexp 1 (hcover (by simp))⟩
+
+/-- **The ordered prime sums of a character at `s = 1`.** For a nontrivial Dirichlet character `χ`
+of positive level, the ordered prime sums `∑ p ≤ B, χ p / p` converge as `B → ∞`. Their limit is
+`L - ∑' p, (log (1 - χ p / p)⁻¹ - χ p / p)`, where `L` is the logarithm of `L(χ, 1)` from
+`DirichletCharacter.exists_tendsto_sum_Icc_eulerLogCoeff_div` and the sum over the primes
+converges absolutely. -/
+theorem exists_tendsto_sum_primesLE_div [NeZero N] (hχ : χ ≠ 1) :
+    ∃ L : ℂ, Tendsto (fun B : ℕ ↦ ∑ p ∈ Nat.primesLE B, χ p / (p : ℂ)) atTop
+        (𝓝 (L - ∑' p : Nat.Primes, (log (1 - χ p / (p : ℂ))⁻¹ - χ p / (p : ℂ)))) ∧
+      exp L = LFunction χ 1 := by
+  obtain ⟨L, hL, hexp⟩ := χ.exists_tendsto_sum_Icc_eulerLogCoeff_div hχ
+  exact ⟨L, TauCeti.LSeries.tendsto_sum_primesLE_div_of_tendsto_sum (c := fun n ↦ χ n)
+    (fun p _ ↦ χ.norm_le_one p) (fun _ hn ↦ χ.eulerLogCoeff_eq_zero_of_not_isPrimePow hn)
+    (fun _ _ hp hk ↦ χ.eulerLogCoeff_prime_pow hp hk) hL, hexp⟩
 
 /-- **The ordered Euler product with finitely many factors deleted.** For a nontrivial Dirichlet
 character `χ` of positive level and a finite set `S` of primes, the finite Euler products over

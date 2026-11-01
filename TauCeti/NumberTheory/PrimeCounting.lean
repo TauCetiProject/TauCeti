@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Algebra.GroupWithZero
+public import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Order.Filter.AtTopBot
 
 /-!
@@ -30,6 +31,8 @@ is `Filter.Tendsto.comp`; real cutoffs `x ↦ ∏ p ∈ primesLE ⌊x⌋₊, f p
 These comparisons concern conditionally convergent products such as Euler products at the edge
 of their half-plane of absolute convergence, where only ordered cutoffs make sense and different
 orderings of the primes could give different limits. No topology on the values is needed.
+When the product over the primes does converge unconditionally, its ordered cutoffs converge to
+the same value.
 
 Deleting the factors at a finite set `S` of primes changes the cutoffs `∏ p ∈ primesLE B, f p`,
 once `B` is past `S`, by the fixed factor `∏ p ∈ S, f p`. When no deleted factor vanishes,
@@ -45,6 +48,8 @@ convergence of the cutoffs therefore transports in both directions with this exp
   when the products over the first `k` primes do.
 * `Nat.tendsto_prod_primesLE_comp_iff`: the same along cutoffs passing every prime one at a time.
 * `Nat.tendsto_prod_primesLE_nth_iff`: the same along the cutoffs `nth Nat.Prime k`.
+* `HasProd.tendsto_prod_primesLE`: the ordered cutoffs of an unconditionally convergent product
+  over the primes converge to its value.
 * `Nat.eventually_subset_primesLE`: a finite set of primes eventually lies in `Nat.primesLE B`.
 * `Nat.tendsto_prod_primesLE_filter_notMem_iff`: deleting the factors at a finite set of primes
   transports convergence of the ordered products, with the explicit finite correction.
@@ -128,6 +133,19 @@ theorem tendsto_prod_primesLE_nth_iff :
       Tendsto (fun n ↦ ∏ p ∈ primesLE n, f p) atTop l :=
   tendsto_prod_primesLE_comp_iff (nth_strictMono infinite_setOfPred_prime).tendsto_atTop
     (.of_forall fun k ↦ by simp)
+
+/-- The ordered cutoffs of an unconditionally convergent product over the primes converge to its
+value. -/
+@[to_additive /-- The ordered cutoffs of an unconditionally convergent sum over the primes
+converge to its value. -/]
+theorem _root_.HasProd.tendsto_prod_primesLE [TopologicalSpace M] {a : M}
+    (h : HasProd (fun p : Primes ↦ f p) a) :
+    Tendsto (fun n ↦ ∏ p ∈ primesLE n, f p) atTop (𝓝 a) := by
+  -- `Primes` is by definition the subtype of the set `{p | p.Prime}`.
+  have h' : HasProd ({p | p.Prime}.mulIndicator f) a :=
+    hasProd_subtype_iff_mulIndicator.mp h
+  refine ((tendsto_add_atTop_iff_nat 1).mpr h'.tendsto_prod_nat).congr fun n ↦ ?_
+  simp [primesLE_eq_filter_range, prod_filter, Set.mulIndicator_apply]
 
 section FiniteDeletion
 
