@@ -12,13 +12,12 @@ import TauCeti.RingTheory.Almost.Module
 
 These examples test the category of almost modules and the almostification functor `M ↦ M^a`:
 
-* for every setup, the almostification of `V ⧸ m` is zero and the inclusion `m → V` becomes an
-  isomorphism;
+* for every setup, the almostification of `V ⧸ m` is zero, the inclusion `m → V` becomes an
+  isomorphism, and the quotient map `V → V ⧸ m` almostifies to zero;
 * for the zero setup every almost module is zero; for the zero setup of `ℤ` the inclusion `0 → ℤ`
   becomes an isomorphism, although it is not one;
 * for the classical setup almostification is an equivalence, the almostification of `ℤ` is nonzero,
-  and multiplication by `2` on `ℤ` stays a monomorphism but not an epimorphism;
-* the almostification of a morphism is zero iff `m` kills its image.
+  and multiplication by `2` on `ℤ` stays a monomorphism but not an epimorphism.
 -/
 
 open CategoryTheory Limits TauCeti.Almost TauCeti.Almost.BasicSetup
