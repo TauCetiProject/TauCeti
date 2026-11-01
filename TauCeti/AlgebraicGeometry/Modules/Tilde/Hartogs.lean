@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Regular.RegularSequence
+import Mathlib.RingTheory.Regular.Flat
 
 /-!
 # Extending sections of `M~` across a closed subset of depth at least two
@@ -43,6 +45,9 @@ section over `U` is determined by its restriction to `U ∩ D(a)`.
   `M`-regular sequence `a, b` with `D(a), D(b) ⊆ U`.
 * `TauCeti.AlgebraicGeometry.tilde_toOpen_bijective_of_two_le_depth`: for a finite module over a
   Noetherian ring, `M → M~(U)` is bijective when `depth M_p ≥ 2` at every prime `p ∉ U`.
+* `TauCeti.AlgebraicGeometry.isIso_appTop_pullback_fst_ι_of_isWeaklyRegular`: for a flat
+  `R`-algebra `C` and `D(a), D(b) ⊆ U` with `a, b` weakly regular on `R`, global sections of
+  `Spec C` do not change under restriction to the preimage of `U`.
 
 ## References
 
@@ -210,5 +215,35 @@ theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleC
   -- sections; the composite is unfolded by `exact`, as Mathlib states no lemma for it.
   exact ((tilde.modulesSpecToSheafIso M).app _).symm.toLinearEquiv.bijective.comp
     (StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg ha hb)
+
+/-- Let `C` be a flat `R`-algebra and `W` an open subset of `Spec R` containing `D(a)` and `D(b)`
+for a weakly regular sequence `a, b` on `R`. Then restriction of global sections
+`Γ(Spec C, 𝒪) → Γ(Spec C ×_{Spec R} W, 𝒪)` is an isomorphism. -/
+theorem isIso_appTop_pullback_fst_ι_of_isWeaklyRegular (C : Type u) [CommRing C] [Algebra R C]
+    [Module.Flat R C] (W : (Spec R).Opens) {a b : R} (hab : IsWeaklyRegular R [a, b])
+    (ha : PrimeSpectrum.basicOpen a ≤ W) (hb : PrimeSpectrum.basicOpen b ≤ W) :
+    IsIso (Limits.pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R C))) W.ι).appTop := by
+  set f := Spec.map (CommRingCat.ofHom (algebraMap R C))
+  rw [← pullbackRestrictIsoRestrict_hom_ι, Scheme.Hom.comp_appTop]
+  suffices IsIso (f ⁻¹ᵁ W).ι.appTop from
+    have : IsIso (pullbackRestrictIsoRestrict f W).hom.appTop :=
+      inferInstanceAs (IsIso ((pullbackRestrictIsoRestrict f W).hom.app ⊤))
+    inferInstance
+  -- The preimage of `W` contains the basic opens of the images of `a` and `b`.
+  have hD {r : R} (hr : PrimeSpectrum.basicOpen r ≤ W) :
+      PrimeSpectrum.basicOpen (algebraMap R C r) ≤ (f ⁻¹ᵁ W).ι ''ᵁ ⊤ := by
+    rw [Scheme.Opens.ι_image_top]
+    exact fun p hp ↦ hr hp
+  have hreg : IsWeaklyRegular C [algebraMap R C a, algebraMap R C b] := by
+    simpa using hab.of_flat (S := C)
+  have hbij := AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg
+    (hD ha) (hD hb)
+  -- By definition, `toOpenₗ C C U` is the restriction of sections of `Spec C` from `⊤` to `U`,
+  -- precomposed with the bijection `C → Γ(Spec C, 𝒪)`.
+  have hcomp : ⇑(AlgebraicGeometry.StructureSheaf.toOpenₗ C C ((f ⁻¹ᵁ W).ι ''ᵁ ⊤)) =
+      (f ⁻¹ᵁ W).ι.appTop ∘ AlgebraicGeometry.StructureSheaf.toOpenₗ C C ⊤ := rfl
+  rw [hcomp] at hbij
+  exact (ConcreteCategory.isIso_iff_bijective _).mpr ((Function.Bijective.of_comp_iff _
+    AlgebraicGeometry.StructureSheaf.toOpenₗ_top_bijective).mp hbij)
 
 end TauCeti.AlgebraicGeometry
