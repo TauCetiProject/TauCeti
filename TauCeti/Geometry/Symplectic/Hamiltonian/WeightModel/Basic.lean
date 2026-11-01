@@ -375,6 +375,18 @@ theorem weightModelCoords_apply_inr (v : EuclideanSpace ℝ ι × EuclideanSpace
     weightModelCoords v (Sum.inr i) = v.2 i :=
   (rfl)
 
+omit [Fintype ι] in
+@[simp]
+theorem weightModelCoords_symm_apply_fst (u : ι ⊕ ι → ℝ) (i : ι) :
+    (weightModelCoords.symm u).1 i = u (Sum.inl i) :=
+  (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
+    (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
+  (rfl)
+
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
 angles `θ` is spanned by the coordinates whose angle vanishes. -/
 theorem map_weightModelCoords_ker_weightGenerator (θ : ι → ℝ) :
