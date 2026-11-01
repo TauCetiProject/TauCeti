@@ -73,18 +73,7 @@ namespace Matrix.ShellLieAlgebra
 
 open LieAlgebra Module TensorProduct
 
-variable {I : Type*} [Fintype I] (B : Matrix I I ℤ)
-
-/-- The signed shell Lie algebra is free over `ℤ`, with basis `Matrix.ShellLieAlgebra.basis`. -/
-instance : Module.Free ℤ (ShellLieAlgebra B) :=
-  .of_basis (basis B)
-
-/-- The signed shell Lie algebra is finite over `ℤ` when its norm-two shell is finite, as it is for
-a positive definite `B` (`Matrix.PosDef.finite_normTwoShell`). -/
-instance [Finite B.normTwoShell] : Module.Finite ℤ (ShellLieAlgebra B) :=
-  .of_basis (basis B)
-
-variable [LinearOrder I] {B}
+variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
 
 /-- **The Killing form on Cartan vectors** of the signed shell Lie algebra of a positive definite
 `B` with even diagonal: `κ(H_h, H_k) = ∑_(a ∈ Φ) ⟪h, a⟫ ⟪k, a⟫`. -/
@@ -124,12 +113,13 @@ theorem killingForm_root_cartan (hB : B.PosDef)
   rw [LieModule.traceForm_comm, killingForm_cartan_root]
 
 /-- **Root vectors of non-opposite roots are Killing orthogonal**: `κ(x_a, x_b) = 0` for
-`a + b ≠ 0`. With `c = a + b`, invariance gives `⟪c, a + b⟫ κ(x_a, x_b) = 0`, and `⟪c, c⟫ > 0`. -/
+`a + b ≠ 0`. -/
 theorem killingForm_root_root_of_add_ne_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) {a b : B.normTwoShell} (hab : (a : I → ℤ) + b ≠ 0) :
     letI := lieRing hB hev
     killingForm ℤ (ShellLieAlgebra B) (root B a) (root B b) = 0 := by
   let _ := lieRing hB hev
+  -- With `c = a + b`, invariance gives `⟪c, a + b⟫ κ(x_a, x_b) = 0`, and `⟪c, c⟫ > 0`.
   set c : I → ℤ := (a : I → ℤ) + b
   have hc : 0 < c ⬝ᵥ B *ᵥ c := by simpa using hB.dotProduct_mulVec_pos hab
   -- Invariance: `⟪c, a⟫ κ(x_a, x_b) = κ(⁅H_c, x_a⁆, x_b) = -κ(x_a, ⁅H_c, x_b⁆)`
@@ -214,34 +204,22 @@ theorem killingForm_cartan_self_pos [Finite B.normTwoShell] (hB : B.PosDef)
 
 /-- **The signed shell Lie algebra is a Killing Lie algebra over `ℤ`** when its norm-two shell
 spans the lattice, for instance for the Cartan matrix of a simply laced Dynkin diagram: its Killing
-form is nondegenerate. A vector Killing orthogonal to everything has zero coefficient on each root
-vector `x_a`, by pairing with `x_(-a)`, and its Cartan part `H_h` then satisfies
-`κ(H_h, H_h) = 0`. -/
+form is nondegenerate. -/
 theorem isKilling [Finite B.normTwoShell] (hB : B.PosDef) (hev : ∀ i, Even (B i i))
     (hspan : Submodule.span ℤ B.normTwoShell = ⊤) :
     letI := lieRing hB hev
     IsKilling ℤ (ShellLieAlgebra B) := by
   let _ := lieRing hB hev
-  classical
   have := Fintype.ofFinite B.normTwoShell
   refine ⟨(LieSubmodule.eq_bot_iff _).mpr fun x hx ↦ ?_⟩
   have hx' (y : ShellLieAlgebra B) : killingForm ℤ (ShellLieAlgebra B) x y = 0 := by
     rw [LieModule.traceForm_comm]
     exact (LieIdeal.mem_killingCompl ℤ (ShellLieAlgebra B) ⊤).mp hx y (LieSubmodule.mem_top y)
-  have hsum : x = cartan B (fun i ↦ (basis B).repr x (.inl i)) +
-      ∑ a, (basis B).repr x (.inr a) • root B a := by
-    conv_lhs => rw [← (basis B).sum_repr x]
-    rw [Fintype.sum_sum_type]
-    congr 1
-    · have hc : (fun i ↦ (basis B).repr x (.inl i)) =
-          ∑ i, (basis B).repr x (.inl i) • Pi.single i (1 : ℤ) := by
-        ext j
-        simp [Finset.sum_apply, Pi.single_apply]
-      rw [hc, map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ by rw [basis_inl, map_smul]
-    · simp
-  -- Pairing with `x_(-a)` isolates the coefficient of `x_a`.
-  have hroot (a : B.normTwoShell) : (basis B).repr x (.inr a) = 0 := by
+  -- A vector Killing orthogonal to everything has zero coefficient on each root vector `x_a`, by
+  -- pairing with `x_(-a)`, and its Cartan part `H_h` then satisfies `κ(H_h, H_h) = 0`.
+  have hsum := (cartan_add_sum_root_eq B x).symm
+  set h := (equivProd B x).1
+  have hroot (a : B.normTwoShell) : (equivProd B x).2 a = 0 := by
     let a' : B.normTwoShell := ⟨-a, neg_mem_normTwoShell.mpr a.2⟩
     have hne := killingForm_root_root_ne_zero_of_add_eq_zero hB hev (b := a')
       (add_neg_cancel (a : I → ℤ))
@@ -255,10 +233,10 @@ theorem isKilling [Finite B.normTwoShell] (hB : B.PosDef) (hev : ∀ i, Even (B 
         killingForm_root_root_of_add_ne_zero hB hev, mul_zero]
       exact fun hba ↦ hb (Subtype.ext (add_neg_eq_zero.mp hba))
     · simp
-  have hcart : x = cartan B (fun i ↦ (basis B).repr x (.inl i)) := by
+  have hcart : x = cartan B h := by
     conv_lhs => rw [hsum, Finset.sum_eq_zero fun a _ ↦ by rw [hroot a, zero_smul], add_zero]
   by_contra hx0
-  have hh : (fun i ↦ (basis B).repr x (.inl i)) ≠ 0 := fun h0 ↦ hx0 (by rw [hcart, h0, map_zero])
+  have hh : h ≠ 0 := fun h0 ↦ hx0 (by rw [hcart, h0, map_zero])
   have := killingForm_cartan_self_pos hB hev hspan hh
   rw [← hcart, hx'] at this
   exact this.false
