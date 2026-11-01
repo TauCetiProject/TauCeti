@@ -129,16 +129,20 @@ theorem inducedCountingSchedule3_antitone (k : ℕ) {ε : ℝ} (hε : 0 ≤ ε) 
   apply div_le_div_of_nonneg_left (by positivity) (by positivity)
   gcongr
 
-/-- One use of the global parameter per pattern triple fits a sixth of the error budget. -/
+/-- Up to `k³` uses of the global parameter fit a sixth of the error budget. -/
 theorem inducedCountingParameter3_charge (k : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
+    (k : ℝ) ^ 3 * inducedCountingParameter3 k ε ≤ ε / 6 := by
+  rw [inducedCountingParameter3_def, mul_div_left_comm]
+  exact mul_le_of_le_one_right (by positivity)
+    (div_le_one_of_le₀ (le_max_right _ _) (by positivity))
+
+/-- One use of the global parameter per pattern triple fits a sixth of the error budget. -/
+theorem inducedCountingParameter3_choose_charge (k : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     (k.choose 3 : ℝ) * inducedCountingParameter3 k ε ≤ ε / 6 := by
   calc _ ≤ (k : ℝ) ^ 3 * inducedCountingParameter3 k ε :=
       mul_le_mul_of_nonneg_right (by exact_mod_cast Nat.choose_le_pow k 3)
         (inducedCountingParameter3_nonneg k hε)
-    _ ≤ _ := by
-      rw [inducedCountingParameter3_def, mul_div_left_comm]
-      exact mul_le_of_le_one_right (by positivity)
-        (div_le_one_of_le₀ (le_max_right _ _) (by positivity))
+    _ ≤ _ := inducedCountingParameter3_charge k hε
 
 /-- At any index dominating the pair palette size, the schedule pays `k³` errors per route. -/
 theorem inducedCountingSchedule3_mul_le_routeBudget3 (C : TriadicComplex3 V) (k : ℕ)
@@ -201,7 +205,7 @@ theorem Approximates3.inducedCopyCount_sub_le_countingParameter {ε : ℝ} (hε 
       (ε / 6) * (Fintype.card V : ℝ) ^ F.k := by
   refine (h.inducedCopyCount_sub_le F).trans ?_
   apply mul_le_mul_of_nonneg_right _ (by positivity)
-  exact inducedCountingParameter3_charge F.k hε
+  exact inducedCountingParameter3_choose_charge F.k hε
 
 /-- With the counting schedule on the lower skeleton and the global counting parameter on
 exceptional polyads, the exceptional prediction costs at most two sixths of the error.
@@ -223,7 +227,7 @@ theorem exceptional_route_prediction_mass_le_countingSchedule [DecidableEq κ] {
   have htriple : F.k.choose 3 * H.exceptionalPolyadMass C η r ≤ ε / 6 := by
     calc _ ≤ (F.k.choose 3 : ℝ) * inducedCountingParameter3 F.k ε :=
         mul_le_mul_of_nonneg_left hmass (Nat.cast_nonneg _)
-      _ ≤ _ := inducedCountingParameter3_charge F.k hε
+      _ ≤ _ := inducedCountingParameter3_choose_charge F.k hε
   have hpair : (C.pairColorCount : ℝ) ^ F.k.choose 2 * F.k.choose 2 *
       inducedCountingSchedule3 F.k ε n ≤ ε / 12 := by
     calc _ ≤ (C.pairColorCount : ℝ) ^ F.k.choose 2 *
