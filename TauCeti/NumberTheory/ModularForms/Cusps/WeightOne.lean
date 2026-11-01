@@ -59,9 +59,9 @@ public noncomputable section
 open Matrix.SpecialLinearGroup ModularForm
 open scoped MatrixGroups
 
-namespace TauCeti.ModularForm
+namespace ModularForm
 
-section Residue
+open TauCeti.ModularForm
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne]
 
@@ -80,7 +80,9 @@ theorem weight_one_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslati
     exact weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero F
   simpa only [constantTermAtCuspTranslationOrbit_mul] using key (by norm_num) (f.mul g)
 
-end Residue
+end ModularForm
+
+namespace TauCeti.ModularForm
 
 variable {H : Subgroup SL(2, ℤ)} [H.FiniteIndex]
 

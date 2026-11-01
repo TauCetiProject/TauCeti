@@ -81,8 +81,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.ker_constantTerms`: the kernel of `constantTerms` is the cusp-form submodule.
 * `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
   coset's orbit constant term with the constant term at the cusp represented by the inverse matrix.
-* `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mul`: the constant term at a cusp
-  translation orbit is multiplicative.
+* `ModularForm.constantTermAtCuspTranslationOrbit_mul`: the constant term at a cusp translation
+  orbit is multiplicative.
 * `TauCeti.ModularForm.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
   a modular form is cuspidal if and only if all its cusp translation orbit constant terms vanish.
 * `TauCeti.mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero`: the same
@@ -581,17 +581,6 @@ theorem constantTermAtCuspTranslationOrbit_mk_mapGL {f : ModularForm 𝒢 k} {γ
     constantTermAt_eq_valueAtInfty, _root_.ModularForm.coe_translate,
     MonoidHom.coe_rangeRestrict, map_inv]
 
-/-- The constant term at a cusp translation orbit is multiplicative: the constant term of a
-product of forms of weights `k₁` and `k₂` is the product of their constant terms. -/
-@[simp]
-theorem constantTermAtCuspTranslationOrbit_mul {k₁ k₂ : ℤ} (f : ModularForm 𝒢 k₁)
-    (g : ModularForm 𝒢 k₂) (c : CuspTranslationOrbit 𝒢) :
-    TauCeti.ModularForm.constantTermAtCuspTranslationOrbit (f.mul g) c =
-      TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f c *
-        TauCeti.ModularForm.constantTermAtCuspTranslationOrbit g c := by
-  induction c using CuspTranslationOrbit.induction_on with
-  | h γ => simp only [constantTermAtCuspTranslationOrbit_mk_mapGL, constantTermAt_mul]
-
 /-- A modular form is cuspidal exactly when its constant terms at all cusp translation
 orbits vanish. -/
 theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
@@ -612,3 +601,22 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
         𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)
 
 end TauCeti.ModularForm
+
+namespace ModularForm
+
+open TauCeti.ModularForm Matrix.SpecialLinearGroup
+open scoped MatrixGroups
+
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne]
+
+/-- The constant term at a cusp translation orbit is multiplicative: the constant term of a
+product of forms of weights `k₁` and `k₂` is the product of their constant terms. -/
+@[simp]
+theorem constantTermAtCuspTranslationOrbit_mul {k₁ k₂ : ℤ} (f : ModularForm 𝒢 k₁)
+    (g : ModularForm 𝒢 k₂) (c : CuspTranslationOrbit 𝒢) :
+    constantTermAtCuspTranslationOrbit (f.mul g) c =
+      constantTermAtCuspTranslationOrbit f c * constantTermAtCuspTranslationOrbit g c := by
+  induction c using CuspTranslationOrbit.induction_on with
+  | h γ => simp only [constantTermAtCuspTranslationOrbit_mk_mapGL, constantTermAt_mul]
+
+end ModularForm
