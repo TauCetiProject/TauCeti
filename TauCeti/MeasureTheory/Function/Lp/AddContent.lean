@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Integral.AddContent
-public import TauCeti.MeasureTheory.Measure.NullMeasurable
+public import TauCeti.MeasureTheory.Measure.AddContent.Completion
 public import TauCeti.MeasureTheory.SetAlgebra
 import TauCeti.Algebra.Order.Group.MinMax
 
@@ -316,12 +316,9 @@ def addContentLpTopCompletionEquiv :
   invFun ν := ofAddContentLpTop (ν.1.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
     (fun s _ => by simpa using ν.2.1 s) fun s _ h => by simpa using ν.2.2.1 s h
   left_inv M := ext_linftyIndicator fun s hs => by simp [hs]
-  right_inv ν := by
-    refine Subtype.ext (AddContent.ext fun s => ?_)
-    by_cases hs : NullMeasurableSet s μ
-    · refine AddContent.completion_unique _ ν.2.2.1 (fun u hu => ?_) hs
-      rw [toAddContentLpTop_ofAddContentLpTop_apply _ _ hu, AddContent.map_apply, preimage_id]
-    · rw [AddContent.completion_of_not_nullMeasurableSet _ hs, ν.2.2.2 s hs]
+  right_inv ν := Subtype.ext <| AddContent.completion_eq _ ν.2.2.1 (fun u hu => by
+    rw [toAddContentLpTop_ofAddContentLpTop_apply _ _ hu, AddContent.map_apply, preimage_id])
+    ν.2.2.2
 
 /-- The content of `M` under `addContentLpTopCompletionEquiv` extends its content on the
 measurable sets. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Pointwise
 public import Mathlib.MeasureTheory.Measure.AddContent
-public import TauCeti.MeasureTheory.Measure.AddContent
+public import TauCeti.MeasureTheory.Measure.AddContent.Basic
 public import TauCeti.MeasureTheory.SetAlgebra
 
 /-!
@@ -42,10 +42,11 @@ invariance under a group action preserving `μ`.
   sets that agree almost everywhere.
 * `MeasureTheory.AddContent.completion_apply`: the extension takes the value `m t` at a
   null-measurable set that agrees almost everywhere with a measurable set `t`.
-* `MeasureTheory.AddContent.completion_unique`, `MeasureTheory.AddContent.completion_map_id`:
+* `MeasureTheory.AddContent.completion_unique`, `MeasureTheory.AddContent.completion_eq`:
   any content on the null-measurable sets extending `m` and vanishing on null sets agrees with
   the extension at every null-measurable set, and equals it if it also vanishes, by convention,
-  on sets that are not null-measurable.
+  on sets that are not null-measurable. `MeasureTheory.AddContent.completion_map_id` recovers
+  such a content as the extension of its restriction to the measurable sets.
 * `MeasureTheory.AddContent.forall_completion_smul_eq_iff`: the extension is invariant under a
   measure-preserving group action exactly when `m` is invariant on measurable sets.
 -/
@@ -132,6 +133,11 @@ theorem completion_apply (hs : NullMeasurableSet s μ) (ht : MeasurableSet t) (h
   exact (ite_eq_left hs).trans <| addContent_congr_ae isSetRing_measurableSet hm
     (measurableSet_toMeasurable μ s) ht (hs.toMeasurable_ae_eq.trans hst)
 
+/-- The extension of `m` takes the value `m (toMeasurable μ s)` at a null-measurable set `s`. -/
+theorem completion_apply_of_nullMeasurableSet (hs : NullMeasurableSet s μ) :
+    m.completion μ hm s = m (toMeasurable μ s) :=
+  m.completion_apply hs (measurableSet_toMeasurable μ s) hs.toMeasurable_ae_eq.symm
+
 /-- The extension of `m` agrees with `m` on measurable sets. -/
 @[simp]
 theorem completion_apply_of_measurableSet (hs : MeasurableSet s) : m.completion μ hm s = m s :=
@@ -149,34 +155,40 @@ theorem completion_of_measure_eq_zero (hs : μ s = 0) : m.completion μ hm s = 0
 
 /-- Any content on the null-measurable sets that agrees with `m` on measurable sets and vanishes
 on null sets agrees with the extension of `m` at every null-measurable set. See
-`completion_map_id` for equality of contents, under the convention that the content vanishes on
+`completion_eq` for equality of contents, under the convention that the content vanishes on
 sets that are not null-measurable. -/
 theorem completion_unique {m' : AddContent G {s : Set α | NullMeasurableSet s μ}}
     (hm' : ∀ s, μ s = 0 → m' s = 0) (h : ∀ s, MeasurableSet s → m' s = m s)
     (hs : NullMeasurableSet s μ) : m.completion μ hm s = m' s := by
   have ht := measurableSet_toMeasurable μ s
-  rw [m.completion_apply hs ht hs.toMeasurable_ae_eq.symm, ← h _ ht]
+  rw [m.completion_apply_of_nullMeasurableSet hs, ← h _ ht]
   exact addContent_congr_ae isSetRing_nullMeasurableSet (fun u _ hu => hm' u hu)
     ht.nullMeasurableSet hs hs.toMeasurable_ae_eq
+
+/-- A content on the null-measurable sets that agrees with `m` on measurable sets and vanishes on
+null sets, and by convention on sets that are not null-measurable, is the extension of `m`. -/
+theorem completion_eq {m' : AddContent G {s : Set α | NullMeasurableSet s μ}}
+    (hm' : ∀ s, μ s = 0 → m' s = 0) (h : ∀ s, MeasurableSet s → m' s = m s)
+    (h' : ∀ s, ¬NullMeasurableSet s μ → m' s = 0) : m.completion μ hm = m' := by
+  ext s
+  by_cases hs : NullMeasurableSet s μ
+  · exact m.completion_unique hm' h hs
+  · rw [m.completion_of_not_nullMeasurableSet hs, h' s hs]
 
 /-- A content on the null-measurable sets vanishing on null sets, and by convention on sets that
 are not null-measurable, is the extension of its restriction to the measurable sets. -/
 theorem completion_map_id (m' : AddContent G {s : Set α | NullMeasurableSet s μ})
     (hm' : ∀ s, μ s = 0 → m' s = 0) (h' : ∀ s, ¬NullMeasurableSet s μ → m' s = 0) :
     (m'.map id fun _ hu => MeasurableSet.nullMeasurableSet hu).completion μ
-      (fun s _ hs => (map_apply ..).trans (hm' s hs)) = m' := by
-  ext s
-  by_cases hs : NullMeasurableSet s μ
-  · exact completion_unique _ hm' (fun _ _ => (map_apply ..).symm) hs
-  · rw [completion_of_not_nullMeasurableSet _ hs, h' s hs]
+      (fun s _ hs => (map_apply ..).trans (hm' s hs)) = m' :=
+  completion_eq _ hm' (fun _ _ => (map_apply ..).symm) h'
 
 /-- The extension of a nonnegative content is nonnegative. -/
 theorem completion_nonneg [Preorder G] (h₀ : ∀ s, MeasurableSet s → 0 ≤ m s) (s : Set α) :
     0 ≤ m.completion μ hm s := by
   by_cases hs : NullMeasurableSet s μ
-  · have ht := measurableSet_toMeasurable μ s
-    rw [m.completion_apply hs ht hs.toMeasurable_ae_eq.symm]
-    exact h₀ _ ht
+  · rw [m.completion_apply_of_nullMeasurableSet hs]
+    exact h₀ _ (measurableSet_toMeasurable μ s)
   · rw [m.completion_of_not_nullMeasurableSet hs]
 
 variable {Γ : Type*} [Group Γ] [MulAction Γ α] [MeasurableConstSMul Γ α]
@@ -188,7 +200,7 @@ theorem completion_smul (h : ∀ (g : Γ) s, MeasurableSet s → m (g • s) = m
     (s : Set α) : m.completion μ hm (g • s) = m.completion μ hm s := by
   by_cases hs : NullMeasurableSet s μ
   · have ht := measurableSet_toMeasurable μ s
-    rw [m.completion_apply hs ht hs.toMeasurable_ae_eq.symm,
+    rw [m.completion_apply_of_nullMeasurableSet hs,
       m.completion_apply (hs.smul g) (ht.const_smul g)
         ((smul_set_ae_eq g).2 hs.toMeasurable_ae_eq.symm), h g _ ht]
   · -- Translating back by `g⁻¹` shows that `g • s` is not null-measurable either.
