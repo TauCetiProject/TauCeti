@@ -24,8 +24,7 @@ triangle axiom requires, so the result is again a monoidal category, with the sa
 and unitors. The intended example is `I = Additive G` and `C = ModuleCat k` for a field `k`: the
 category of `G`-graded vector spaces with associator twisted by `ω`, where on the one-dimensional
 objects `δ_g` concentrated in a single degree the associator is multiplication by `ω g h j`, and
-whose finite-dimensional, finitely supported objects form the pointed category `Vec^ω_G`. The
-instance applies there once tensoring on the right is known to preserve colimits in `ModuleCat k`.
+whose finite-dimensional, finitely supported objects form the pointed category `Vec^ω_G`.
 
 ## Main definitions
 
@@ -385,8 +384,7 @@ variable {I : Type*} [AddMonoid I] {R : Type*} [CommSemiring R]
 /-- The category of `I`-graded objects of `C`, with the monoidal structure whose associator is
 twisted by the normalized `3`-cocycle `c`. The intended example is `I = Additive G` and
 `C = ModuleCat k` for a field `k`, the category of `G`-graded vector spaces with associator twisted
-by `c`. The monoidal instance applies there once tensoring on the right is known to preserve
-colimits in `ModuleCat k`. -/
+by `c`. -/
 @[expose]
 def TwistedGradedObject (_c : GradedObject.TwistingCocycle I R) (C : Type*) : Type _ :=
   GradedObject I C
