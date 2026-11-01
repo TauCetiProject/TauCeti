@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.NumberTheory.LFunctions.Data.Series
+public import TauCeti.NumberTheory.LFunctions.Data.Comparison
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
@@ -168,5 +169,20 @@ theorem ofSeries_riemannZetaData :
     rw [heq, hL]
     exact mul_ne_zero (Gammaℝ_ne_zero_of_re_pos (by norm_num))
       (riemannZeta_ne_zero_of_one_lt_re (by norm_num))
+
+-- The all-one presentation differs from the arithmetic-function presentation at index zero.
+-- Comparison transports every analytic property while retaining this distinction of records.
+example : ∃ e : AnalyticLFunctionData, riemannZetaData.EqOffZero e ∧ riemannZetaData ≠ e ∧
+    e.HasDirichletAgreement ∧ e.HasMeromorphicContinuation ∧ e.HasFunctionalEquation := by
+  let e : AnalyticLFunctionData :=
+    { riemannZetaData with coeff := Function.update riemannZetaData.coeff 0 1 }
+  have h : riemannZetaData.EqOffZero e :=
+    AnalyticLFunctionData.eqOffZero_update_coeff_zero riemannZetaData 1
+  refine ⟨e, h, ?_, h.hasDirichletAgreement riemannZetaData_hasDirichletAgreement,
+    h.hasMeromorphicContinuation riemannZetaData_hasMeromorphicContinuation,
+    h.hasFunctionalEquation riemannZetaData_hasFunctionalEquation⟩
+  intro heq
+  have hzero := congrArg (fun d : AnalyticLFunctionData ↦ d.coeff 0) heq
+  simp [e] at hzero
 
 end TauCeti.LFunctions

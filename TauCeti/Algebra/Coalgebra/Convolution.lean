@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
+public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Comultiplication as a convolution product
@@ -29,6 +30,11 @@ map `g : B →ₐ[R] B'` induces Mathlib's `AlgHom.convPostcomp` on convolution 
 `B'` is a `B`-algebra with a basis over `B`, taking coordinates identifies the convolution
 algebra with coefficients in `B'` with a free module over the one with coefficients in `B`.
 
+Last, convolution products respect ideal-valued maps: the convolution product of maps with values
+in ideals `I` and `J` of a commutative algebra has values in `I * J`, so the `n`-th convolution
+power of a map with values in `I` has values in `I ^ n`. For a point `x = 1 + D` of an affine
+group with `D` valued in `I`, this controls the binomial expansion of the powers of `x`.
+
 ## Main declarations
 
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
@@ -44,6 +50,8 @@ algebra with coefficients in `B'` with a free module over the one with coefficie
 * `Module.Basis.convCoordEquiv`: the coordinates of a convolution-algebra element in a basis of
   the coefficients, with `Module.Basis.convCoordEquiv_convPostcomp_mul` recording that they are
   linear over the convolution algebra of the smaller coefficient ring.
+* `LinearMap.convMul_apply_mem_mul` and `LinearMap.convPow_apply_mem_pow`: convolution products
+  and powers of ideal-valued maps.
 -/
 
 public section
@@ -330,3 +338,33 @@ theorem _root_.Module.Basis.convCoordEquiv_convPostcomp_mul [_root_.Coalgebra R 
 end Basis
 
 end CoefficientChange
+
+section IdealValued
+
+open WithConv
+
+namespace LinearMap
+
+variable {R C A : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C] [CommSemiring A]
+  [Algebra R A]
+
+/-- The convolution product of a linear map with values in an ideal `I` and one with values in an
+ideal `J` has values in `I * J`. -/
+theorem convMul_apply_mem_mul [CoalgebraStruct R C] {I J : Ideal A} {f g : WithConv (C →ₗ[R] A)}
+    (hf : ∀ c, f c ∈ I) (hg : ∀ c, g c ∈ J) (c : C) : (f * g) c ∈ I * J := by
+  rw [convMul_apply]
+  induction (CoalgebraStruct.comul c : C ⊗[R] C) with
+  | tmul x y => simpa using Ideal.mul_mem_mul (hf x) (hg y)
+  | add x y hx hy => simpa [map_add] using add_mem hx hy
+
+/-- The `n`-th convolution power of a linear map with values in an ideal `I` has values in
+`I ^ n`. -/
+theorem convPow_apply_mem_pow [_root_.Coalgebra R C] {I : Ideal A} {f : WithConv (C →ₗ[R] A)}
+    (hf : ∀ c, f c ∈ I) (n : ℕ) (c : C) : (f ^ n) c ∈ I ^ n := by
+  induction n generalizing c with
+  | zero => simp
+  | succ n ih => simpa [pow_succ] using convMul_apply_mem_mul ih hf c
+
+end LinearMap
+
+end IdealValued
