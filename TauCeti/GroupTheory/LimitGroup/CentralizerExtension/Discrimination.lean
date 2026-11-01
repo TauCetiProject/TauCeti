@@ -162,22 +162,6 @@ private def letterPair : (Σ b, CentralizerExtFactor u 1 b) → G × ℤ
   | ⟨false, g⟩ => (g, 0)
   | ⟨true, p⟩ => (p.1, (p.2 0).toAdd)
 
-/-- A letter `(c, v)` of the factor `C_G(u) × ℤ` is `c * t ^ v`. -/
-private theorem of_true_eq (c : centralizer {u}) (v : Fin 1 → Multiplicative ℤ) :
-    Monoid.PushoutI.of (φ := centralizerExtMap u 1) true (c, v) =
-      of (c : G) * t 0 ^ (v 0).toAdd := by
-  have hcv : ((c, v) : centralizer {u} × (Fin 1 → Multiplicative ℤ)) =
-      (c, 1) * (1, Pi.mulSingle 0 (.ofAdd 1)) ^ (v 0).toAdd := by
-    ext i
-    · simp
-    · fin_cases i
-      simp
-  have h₁ := Monoid.PushoutI.of_apply_eq_base (centralizerExtMap u 1) true c
-  have h₂ := Monoid.PushoutI.of_apply_eq_base (centralizerExtMap u 1) false c
-  simp only [centralizerExtMap_true, centralizerExtMap_false, Subgroup.coe_subtype] at h₁ h₂
-  rw [hcv, map_mul, map_zpow, of_def, t_def]
-  exact congrArg₂ (· * ·) (h₁.trans h₂.symm) rfl
-
 private theorem retraction_of_letter (k : ℕ) (a : Σ b, CentralizerExtFactor u 1 b) :
     retraction (fun _ => (k : ℤ)) (Monoid.PushoutI.of (φ := centralizerExtMap u 1) a.1 a.2) =
       (letterPair a).1 * (u ^ (letterPair a).2) ^ k := by
@@ -185,7 +169,14 @@ private theorem retraction_of_letter (k : ℕ) (a : Σ b, CentralizerExtFactor u
   · simp only [letterPair, zpow_zero, one_pow, mul_one]
     exact (congrArg _ (DFunLike.congr_fun of_def g).symm).trans (retraction_of _ g)
   · obtain ⟨c, v⟩ := g
-    rw [of_true_eq, map_mul, map_zpow, retraction_of, retraction_t]
+    have hv : v = Pi.mulSingle 0 (.ofAdd 1) ^ (v 0).toAdd := by
+      ext i
+      fin_cases i
+      simp
+    have ht : zpowersPiHom t commute_t_t v = (t 0 : CentralizerExt u 1) ^ (v 0).toAdd := by
+      conv_lhs => rw [hv]
+      rw [map_zpow, zpowersPiHom_mulSingle]
+    rw [pushoutI_of_true, ht, map_mul, map_zpow, retraction_of, retraction_t]
     simp [letterPair, ← zpow_natCast, ← zpow_mul, mul_comm]
 
 /-- The letters of a normal word of `G(u, ℤ)` lie outside the image of `C_G(u)` in their factor: a
