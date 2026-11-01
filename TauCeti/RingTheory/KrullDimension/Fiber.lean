@@ -51,9 +51,9 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
   homomorphism of Noetherian local rings, `dim S ≤ dim R + dim S ⧸ 𝔪_R S`.
 * `TauCeti.ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: equality
   holds when the homomorphism satisfies going down, for instance when it is flat.
-* `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
-  closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
-  dimension.
+* `TauCeti.ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq`: a local homomorphism with
+  going down, for instance a flat one, whose closed fibre is a field, such as the completion of a
+  Noetherian local ring, preserves the Krull dimension.
 * `TauCeti.ringKrullDim_quotient_map_maximalIdeal_quotient`: dividing the base by an ideal `J`
   with `R ⧸ J` local does not change the closed fibre.
 
@@ -235,11 +235,11 @@ theorem ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal 
     ← maximalIdeal_height_eq_ringKrullDim, h, WithBot.coe_add]
 
 open IsLocalRing in
-/-- Along a flat homomorphism of local rings under which the maximal ideal of `R` generates the
-maximal ideal of `S`, so that the closed fibre is a field, the Krull dimensions of `R` and `S`
-agree. -/
-theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalRing S]
-    [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
+/-- Along a homomorphism of Noetherian local rings satisfying going down, for instance a flat one,
+under which the maximal ideal of `R` generates the maximal ideal of `S`, so that the closed fibre
+is a field, the Krull dimensions of `R` and `S` agree. -/
+theorem ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalRing S]
+    [IsNoetherianRing R] [IsNoetherianRing S] [Algebra.HasGoingDown R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     ringKrullDim S = ringKrullDim R := by
   have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le

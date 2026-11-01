@@ -71,7 +71,7 @@ theorem isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [I
     _root_.IsRegularLocalRing S ↔ _root_.IsRegularLocalRing R := by
   rw [isRegularLocalRing_iff, isRegularLocalRing_iff,
     IsLocalRing.spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq h,
-    ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq h]
+    ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq h]
 
 namespace IsRegularLocalRing
 
