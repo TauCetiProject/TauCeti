@@ -33,6 +33,7 @@ is nonzero by construction. The zero root space is the Cartan subalgebra.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
   elements.
 * `LieSubalgebra.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
+* `LieSubalgebra.engel_eq_cartan_of_isRegular`: a regular element of `H` has Engel subalgebra `H`.
 
 It supplies only the `rank ≤ dim H` direction; the reverse inequality, which needs a separate
 minimal-centralizer or Cartan-dimension argument, is not asserted here.
@@ -116,5 +117,19 @@ theorem rank_le_finrank_cartan [Infinite K] [LieModule.LinearWeights K H L]
   obtain ⟨h, hh⟩ := exists_engel_eq_cartan H
   rw [← hh]
   exact LieAlgebra.rank_le_finrank_engel K (h : L)
+
+/-- **A regular element of a Cartan subalgebra has Engel subalgebra equal to it.** If `h ∈ H` is
+regular in `L`, in the sense of `LieAlgebra.IsRegular`, then the Engel subalgebra of `h` is `H`. -/
+theorem engel_eq_cartan_of_isRegular [Infinite K] [LieModule.LinearWeights K H L]
+    [LieModule.IsTriangularizable K H L] {h : H} (hh : LieAlgebra.IsRegular K (h : L)) :
+    LieSubalgebra.engel K (h : L) = H := by
+  -- `H` is nilpotent, so it lies in the generalized kernel of `ad h`
+  have hle : H.toSubmodule ≤ (LieSubalgebra.engel K (h : L)).toSubmodule := fun y hy ↦ by
+    obtain ⟨k, hk⟩ := (mem_zeroRootSubalgebra K L H y).mp (le_zeroRootSubalgebra K L H hy) h
+    exact (LieSubalgebra.mem_engel_iff K _ _).mpr
+      ⟨k, by simpa [LieAlgebra.ad, LieSubalgebra.toEnd_eq] using hk⟩
+  refine (LieSubalgebra.toSubmodule_injective (Submodule.eq_of_le_of_finrank_le hle ?_)).symm
+  exact ((LieAlgebra.isRegular_iff_finrank_engel_eq_rank K _).mp hh).trans_le
+    (rank_le_finrank_cartan H)
 
 end LieSubalgebra
