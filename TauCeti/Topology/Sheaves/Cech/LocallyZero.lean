@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.CategoryTheory.Limits.Lattice
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.ModuleCat
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 
 /-!
@@ -81,20 +82,14 @@ theorem exists_cechComplexMap_f_eq_zero_of_locally_eq_zero (h₀ : IsZero (P.obj
     (hx : x ∈ (∏ᶜ fun j ↦ U (a j) : Opens X)) ↦
       hP _ (Pi.π (fun b : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (b j))))
         (fun j ↦ (a j : ι)) c) x hx
-  -- a neighborhood `N x` of `x` contained in all of these, of which there are finitely many
-  have hN (x : X) : ∃ N : Opens X, x ∈ N ∧ ∀ a hx, N ≤ O a x hx := by
-    have h : ∀ᶠ y in 𝓝 x, ∀ a hx, y ∈ O a x hx :=
-      Filter.eventually_all.2 fun a ↦ by
-        by_cases hx : x ∈ (∏ᶜ fun j ↦ U (a j) : Opens X)
-        · exact Filter.eventually_of_mem ((O a x hx).isOpen.mem_nhds (hxO a x hx)) fun _ hy _ ↦ hy
-        · exact Filter.Eventually.of_forall fun _ h ↦ (hx h).elim
-    obtain ⟨t, ht, hto, hxt⟩ := mem_nhds_iff.1 h
-    exact ⟨⟨t, hto⟩, hxt, fun a hx y hy ↦ ht hy a hx⟩
-  choose N hxN hNO using hN
+  -- the points lying in all of these, of which there are finitely many, form a neighborhood of `x`
+  have hN (x : X) : ∀ᶠ y in 𝓝 x, ∀ a hx, y ∈ O a x hx :=
+    Filter.eventually_all.2 fun a ↦ Filter.eventually_all.2 fun hx ↦
+      (O a x hx).isOpen.eventually_mem (hxO a x hx)
   obtain ⟨W, r, hWU, hWW⟩ :=
-    PointOpenCover.exists_refinement_mem_of_mem_of_mem (fun i : s ↦ U i) hs ⟨N, hxN⟩
+    PointOpenCover.exists_refinement_mem_of_mem_of_mem (fun i : s ↦ U i) hs hN
   let φ : W.toFormalCoproduct ⟶ FormalCoproduct.mk _ U :=
-    ⟨fun x ↦ r x, fun x ↦ homOfLE ((hWU x).trans inf_le_left)⟩
+    ⟨fun x ↦ r x, fun x ↦ homOfLE (hWU x).1⟩
   refine ⟨W, φ, ?_⟩
   -- it suffices to show that the component at every tuple `b` of points vanishes
   refine Concrete.isLimit_ext _ (productIsProduct
@@ -112,13 +107,11 @@ theorem exists_cechComplexMap_f_eq_zero_of_locally_eq_zero (h₀ : IsZero (P.obj
       simpa using fun j ↦ hWW (b 0) y (b j) (hyb 0) (hyb j)
     -- so the component restricts to zero on `W (b 0)`, which contains the intersection
     have hTO : (∏ᶜ fun j ↦ W.opens (b j) : Opens X) ≤ O (fun j ↦ r (b j)) (b 0) hb :=
-      (leOfHom (Pi.π (fun j ↦ W.opens (b j)) 0)).trans <|
-        ((hWU (b 0)).trans inf_le_right).trans (hNO _ _ hb)
+      (leOfHom (Pi.π (fun j ↦ W.opens (b j)) 0)).trans fun y hy ↦ (hWU (b 0)).2 hy _ hb
     have : (Limits.Pi.map fun j ↦ φ.φ (b j)) = homOfLE hTO ≫ homOfLE (hOU _ (b 0) hb) :=
       Subsingleton.elim _ _
     rw [this, op_comp, P.map_comp]
-    exact ((ConcreteCategory.comp_apply _ _ c).trans <| (ConcreteCategory.comp_apply _ _ _).trans <|
-      congrArg _ (hO _ (b 0) hb)).trans (map_zero _)
+    exact (congrArg (P.map (homOfLE hTO).op).hom (hO _ (b 0) hb)).trans (map_zero _)
   · -- an empty intersection has no nonzero sections
     have : IsZero (P.obj (op (∏ᶜ fun j ↦ W.opens (b j) : Opens X))) := by
       rwa [show (∏ᶜ fun j ↦ W.opens (b j) : Opens X) = ⊥ from
@@ -141,12 +134,12 @@ theorem isZero_cechCohomology_obj_of_locally_eq_zero (h₀ : IsZero (P.obj (op �
     exists_cechComplexMap_f_eq_zero_of_locally_eq_zero P h₀ hP U.opens U.isOpenCover n
       (K.iCycles n c)
   refine ⟨V, ⟨φ⟩, φ, ?_⟩
-  have h : HomologicalComplex.cyclesMap (TauCeti.CategoryTheory.cechComplexMap P φ) n c = 0 :=
-    (ModuleCat.mono_iff_injective (HomologicalComplex.iCycles _ n)).1 inferInstance <|
-      ((ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ n) c).trans hc).trans
-        (map_zero _).symm
-  exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ n) c).trans <|
-    (ConcreteCategory.comp_apply _ _ c).trans <| (congrArg _ h).trans (map_zero _)
+  have h : HomologicalComplex.cyclesMap (TauCeti.CategoryTheory.cechComplexMap P φ) n c = 0 := by
+    apply (ModuleCat.mono_iff_injective (HomologicalComplex.iCycles _ n)).1 inferInstance
+    rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+      hc, map_zero]
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
+    ConcreteCategory.comp_apply, h, map_zero]
 
 /-- **Presheaves with zero sheafification have no Čech cohomology.** On a compact normal space,
 for instance a compact Hausdorff space, a presheaf of modules `P` with `P(∅) = 0` whose
