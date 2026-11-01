@@ -11,15 +11,17 @@ public import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Topology.Connected.Clopen
+import Mathlib.Topology.DiscreteSubset
 
 /-!
 # The scalar similarity principle with smooth coefficient
 
 A real-differentiable solution of `bar∂ f = a f`, for smooth `a` on the plane, becomes
-holomorphic after multiplication by a nowhere-zero smooth integrating factor. Consequently
-a nonzero solution has isolated zeros and factors near each point as a nonnegative integral
-power of the complex coordinate times a nonvanishing smooth function. No curvature equation
-or analyticity of the coefficient is needed.
+holomorphic near each point after multiplication by a nowhere-zero smooth integrating factor
+depending on the point. Consequently a nonzero solution has isolated zeros and factors near
+each point as a nonnegative integral power of the complex coordinate times a factor smooth
+at the point and nonzero there. If the solution is nonzero outside a compact set, its zero
+set is finite. No curvature equation or analyticity of the coefficient is needed.
 
 The integrating factor comes from the planar Newtonian potential; the holomorphic zero
 factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_nonzero_iff`.
@@ -57,6 +59,15 @@ theorem exists_contDiff_exp_mul_analyticAt {a f : ℂ → ℂ}
   simp only [add_apply, smul_apply, smul_eq_mul, neg_apply]
   linear_combination exp (-g w) / 2 * (hF - f w * hG)
 
+private theorem exists_contDiff_exp_mul_analyticAt_not_eventually_eq_zero {a f : ℂ → ℂ}
+    (ha : ContDiff ℝ ∞ a) (hf : Differentiable ℝ f)
+    (heq : ∀ w, conjWirtingerDeriv f w 1 = a w * f w) (z : ℂ)
+    (hn : ¬ ∀ᶠ w in 𝓝 z, f w = 0) :
+    ∃ g : ℂ → ℂ, ContDiff ℝ ∞ g ∧ AnalyticAt ℂ (fun w ↦ exp (-g w) * f w) z ∧
+      ¬ ∀ᶠ w in 𝓝 z, exp (-g w) * f w = 0 := by
+  obtain ⟨g, hg, hA⟩ := exists_contDiff_exp_mul_analyticAt ha hf heq z
+  exact ⟨g, hg, hA, by simpa only [mul_eq_zero, exp_ne_zero, false_or] using hn⟩
+
 /-- A nontrivial solution of a scalar Cauchy–Riemann equation with smooth coefficient
 cannot vanish identically on any neighborhood. -/
 theorem not_eventually_eq_zero_of_conjWirtingerDeriv_eq_mul {a f : ℂ → ℂ}
@@ -67,10 +78,8 @@ theorem not_eventually_eq_zero_of_conjWirtingerDeriv_eq_mul {a f : ℂ → ℂ}
   have hS : IsOpen S := isOpen_setOfPred_eventually_nhds
   have hSc : IsOpen Sᶜ := by
     refine isOpen_iff_mem_nhds.mpr fun w hw ↦ ?_
-    obtain ⟨g, _, hg⟩ := exists_contDiff_exp_mul_analyticAt ha hf heq w
-    have hgn : ¬ ∀ᶠ y in 𝓝 w, exp (-g y) * f y = 0 := by
-      have hnw : ¬ ∀ᶠ y in 𝓝 w, f y = 0 := hw
-      simpa only [mul_eq_zero, exp_ne_zero, false_or] using hnw
+    obtain ⟨g, _, hg, hgn⟩ :=
+      exists_contDiff_exp_mul_analyticAt_not_eventually_eq_zero ha hf heq w hw
     have hi := hg.eventually_eq_zero_or_eventually_ne_zero.resolve_left hgn
     rw [eventually_nhdsWithin_iff] at hi
     filter_upwards [hi] with y hy
@@ -90,10 +99,9 @@ theorem eventually_ne_zero_of_conjWirtingerDeriv_eq_mul {a f : ℂ → ℂ}
     (ha : ContDiff ℝ ∞ a) (hf : Differentiable ℝ f)
     (heq : ∀ w, conjWirtingerDeriv f w 1 = a w * f w)
     (hne : ∃ w, f w ≠ 0) (z : ℂ) : ∀ᶠ w in 𝓝[≠] z, f w ≠ 0 := by
-  obtain ⟨g, _, hg⟩ := exists_contDiff_exp_mul_analyticAt ha hf heq z
-  have hn := not_eventually_eq_zero_of_conjWirtingerDeriv_eq_mul ha hf heq hne z
-  have hgn : ¬ ∀ᶠ w in 𝓝 z, exp (-g w) * f w = 0 := by
-    simpa only [mul_eq_zero, exp_ne_zero, false_or] using hn
+  obtain ⟨g, _, hg, hgn⟩ :=
+    exists_contDiff_exp_mul_analyticAt_not_eventually_eq_zero ha hf heq z
+      (not_eventually_eq_zero_of_conjWirtingerDeriv_eq_mul ha hf heq hne z)
   filter_upwards [hg.eventually_eq_zero_or_eventually_ne_zero.resolve_left hgn] with w hw
   exact fun h ↦ hw (by simp [h])
 
@@ -105,10 +113,9 @@ theorem exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_eq_mul {a f : ℂ → �
     (hne : ∃ w, f w ≠ 0) (z : ℂ) :
     ∃ (n : ℕ) (v : ℂ → ℂ), ContDiffAt ℝ ∞ v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n * v w := by
-  obtain ⟨g, hg, hA⟩ := exists_contDiff_exp_mul_analyticAt ha hf heq z
-  have hn := not_eventually_eq_zero_of_conjWirtingerDeriv_eq_mul ha hf heq hne z
-  have hgn : ¬ ∀ᶠ w in 𝓝 z, exp (-g w) * f w = 0 := by
-    simpa only [mul_eq_zero, exp_ne_zero, false_or] using hn
+  obtain ⟨g, hg, hA, hgn⟩ :=
+    exists_contDiff_exp_mul_analyticAt_not_eventually_eq_zero ha hf heq z
+      (not_eventually_eq_zero_of_conjWirtingerDeriv_eq_mul ha hf heq hne z)
   obtain ⟨n, u, hu, hun, he⟩ := hA.exists_eventuallyEq_pow_smul_nonzero_iff.mpr hgn
   refine ⟨n, fun w ↦ exp (g w) * u w,
     hg.contDiffAt.cexp.mul (hu.contDiffAt.restrict_scalars ℝ), mul_ne_zero (exp_ne_zero _) hun, ?_⟩
@@ -116,5 +123,22 @@ theorem exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_eq_mul {a f : ℂ → �
   have := congrArg (fun c : ℂ ↦ exp (g w) * c) hw
   rw [← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul] at this
   simpa only [smul_eq_mul, mul_assoc, mul_comm, mul_left_comm] using this
+
+/-- A solution of `bar∂ f = a f` with smooth coefficient that is nonzero outside a compact
+set has finitely many zeros. -/
+theorem finite_zeroSet_of_conjWirtingerDeriv_eq_mul {a f : ℂ → ℂ}
+    (ha : ContDiff ℝ ∞ a) (hf : Differentiable ℝ f)
+    (heq : ∀ w, conjWirtingerDeriv f w 1 = a w * f w)
+    (htail : ∀ᶠ w in cocompact ℂ, f w ≠ 0) : {w | f w = 0}.Finite := by
+  have hne : ∃ w, f w ≠ 0 := htail.exists
+  have hdis : IsDiscrete {w | f w = 0} := by
+    apply isDiscrete_iff_nhdsNE.mpr
+    intro z _
+    rw [← disjoint_iff, Filter.disjoint_principal_right]
+    exact eventually_ne_zero_of_conjWirtingerDeriv_eq_mul ha hf heq hne z
+  obtain ⟨K, hK, hsub⟩ := Filter.mem_cocompact'.mp htail
+  simp only [Set.compl_ofPred, not_not] at hsub
+  exact (hK.of_isClosed_subset (isClosed_eq hf.continuous continuous_const)
+    (by simpa using hsub)).finite hdis
 
 end TauCeti

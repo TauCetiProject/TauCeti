@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity
-import Mathlib.Topology.DiscreteSubset
 
 /-!
 # Isolated zeros and local multiplicities of plane vortex sections
@@ -40,7 +39,7 @@ namespace TauCeti.Vortex
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- The two holomorphicity rows give the scalar Cauchy–Riemann equation for `α = 2(p + i q)`. -/
-theorem conjWirtingerDeriv_section {z : ℂ}
+theorem conjWirtingerDeriv_section_eq_mul {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
     (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0) :
@@ -63,19 +62,25 @@ variable (hb₁ : ContDiff ℝ ∞ (fun w ↦ x w 0))
 
 include hb₁ hb₂ hp hq hhol
 
+private theorem section_scalar_equation :
+    ContDiff ℝ ∞ (fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2) ∧
+      Differentiable ℝ (fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)) ∧
+      ∀ w, conjWirtingerDeriv (fun y ↦ 2 * ((x y 2 : ℂ) + I * x y 3)) w 1 =
+        ((x w 1 : ℂ) - I * x w 0) / 2 * (2 * ((x w 2 : ℂ) + I * x w 3)) := by
+  refine ⟨?_, ?_, fun w ↦
+    conjWirtingerDeriv_section_eq_mul (hp w) (hq w) (hhol w).1 (hhol w).2⟩
+  · exact ((Complex.ofRealCLM.contDiff.comp hb₂).sub
+      (contDiff_const.mul (Complex.ofRealCLM.contDiff.comp hb₁))).div_const 2
+  · fun_prop
+
 /-- A nontrivial plane vortex section factors locally as a nonnegative integral power
-times a smooth nonvanishing factor, including at repeated zeros. -/
+times a factor smooth at `z` and nonzero there, including at repeated zeros. -/
 theorem exists_contDiffAt_section_eq_pow_mul
     (hne : ∃ w, (x w 2 : ℂ) + I * x w 3 ≠ 0) (z : ℂ) :
     ∃ (n : ℕ) (v : ℂ → ℂ), ContDiffAt ℝ ∞ v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, 2 * ((x w 2 : ℂ) + I * x w 3) = (w - z) ^ n * v w := by
-  have ha : ContDiff ℝ ∞ (fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2) := by
-    exact ((Complex.ofRealCLM.contDiff.comp hb₂).sub
-      (contDiff_const.mul (Complex.ofRealCLM.contDiff.comp hb₁))).div_const 2
-  have hα : Differentiable ℝ (fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)) := by
-    fun_prop
-  apply exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_eq_mul ha hα
-    (fun w ↦ conjWirtingerDeriv_section (hp w) (hq w) (hhol w).1 (hhol w).2)
+  obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
+  apply exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_eq_mul ha hα heq
   simpa only [mul_ne_zero_iff, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, true_and] using hne
 
 /-- A plane vortex section approaching unit modulus has finitely many zeros. -/
@@ -83,10 +88,7 @@ theorem finite_section_zeroSet
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     {w | (x w 2 : ℂ) + I * x w 3 = 0}.Finite := by
   let α := fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)
-  have ha : ContDiff ℝ ∞ (fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2) := by
-    exact ((Complex.ofRealCLM.contDiff.comp hb₂).sub
-      (contDiff_const.mul (Complex.ofRealCLM.contDiff.comp hb₁))).div_const 2
-  have hα : Differentiable ℝ α := by dsimp [α]; fun_prop
+  obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
   have htail : ∀ᶠ w in cocompact ℂ, α w ≠ 0 := by
     filter_upwards [hlim.eventually (lt_mem_nhds (by norm_num : (0 : ℝ) < 1))] with w hw
     intro hz
@@ -94,18 +96,6 @@ theorem finite_section_zeroSet
     have hi := congrArg Complex.im hz
     simp [α] at hr hi
     simp [hr, hi] at hw
-  have hne : ∃ w, α w ≠ 0 := htail.exists
-  have hdis : IsDiscrete {w | α w = 0} := by
-    apply isDiscrete_iff_nhdsNE.mpr
-    intro z _
-    have hz := eventually_ne_zero_of_conjWirtingerDeriv_eq_mul ha hα
-      (fun w ↦ conjWirtingerDeriv_section (hp w) (hq w) (hhol w).1 (hhol w).2) hne z
-    rw [← disjoint_iff, Filter.disjoint_principal_right]
-    exact hz
-  obtain ⟨K, hK, hsub⟩ := Filter.mem_cocompact'.mp htail
-  simp only [Set.compl_ofPred, not_not] at hsub
-  have hc : IsCompact {w | α w = 0} := hK.of_isClosed_subset
-    (isClosed_eq hα.continuous continuous_const) (by simpa using hsub)
-  simpa [α] using hc.finite hdis
+  simpa [α] using finite_zeroSet_of_conjWirtingerDeriv_eq_mul ha hα heq htail
 
 end TauCeti.Vortex
