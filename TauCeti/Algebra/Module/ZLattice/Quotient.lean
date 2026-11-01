@@ -44,6 +44,7 @@ quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite fo
 * `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
 * `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
   then `V / (L ∩ V) → E / L` is a closed embedding.
+* `ZLattice.natCast_smul_le_self`: `cL ≤ L`.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
   `L` of rank `n`; it is finite for `c ≠ 0`.
 
@@ -243,6 +244,12 @@ theorem mem_smul_submoduleOf_iff {c : ℕ} {v : L} :
     exact ⟨⟨w, hw⟩, Subtype.ext (by rw [← h, Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul])⟩
   · rintro ⟨w, rfl⟩
     exact ⟨w, w.2, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
+
+variable (L) in
+/-- The lattice `cL = (c : ℝ) • L` is contained in `L`. -/
+theorem natCast_smul_le_self (c : ℕ) : (c : ℝ) • L ≤ L := by
+  rintro _ ⟨w, hw, rfl⟩
+  simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hw c
 
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

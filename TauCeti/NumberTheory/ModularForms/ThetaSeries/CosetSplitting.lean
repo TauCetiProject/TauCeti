@@ -103,10 +103,6 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
   have hc0 : c ≠ 0 := NeZero.ne c
   have hc' : (c : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hc0
   set σ : ℍ := ((A 1 1 : ℝ) / c) +ᵥ τ with hσ
-  have hle : (c : ℝ) • L ≤ L := by
-    rintro _ ⟨w, hw, rfl⟩
-    rw [DistribSMul.toLinearMap_apply, Nat.cast_smul_eq_nsmul]
-    exact L.nsmul_mem hw c
   -- The dual series of each class converges, its terms being bounded by those of `Θ_{L^∨}(σ)`.
   have hsum (v : E) : Summable fun m : dual L =>
       cexp (2 * π * I * ⟪v, (m : E)⟫) * cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ) := by
@@ -139,7 +135,7 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
     push_cast
     field_simp
     ring
-  rw [← (hasSum_thetaCoset_out L hle (A • τ)).tsum_eq, tsum_fintype]
+  rw [← (hasSum_thetaCoset_out L (natCast_smul_le_self L c) (A • τ)).tsum_eq, tsum_fintype]
   simp_rw [thetaCoset_smul_smul hL A hc0 hc, thetaCoset_S_smul L hk, hterm,
     Summable.tsum_finsetSum fun y _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
   refine Finset.sum_congr rfl fun y _ => ?_
