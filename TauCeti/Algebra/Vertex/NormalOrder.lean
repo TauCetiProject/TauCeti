@@ -38,21 +38,33 @@ namespace VertexOperator
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
+private theorem support_normalOrder_left_subset (A B : VertexOperator R V) (n : ℤ) (v : V)
+    {P : ℕ} (hP : ∀ i : ℕ, P ≤ i → (B[[n + i]]) v = 0) :
+    (Function.support fun i : ℕ ↦ (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)) ⊆ range P := by
+  intro i hi
+  simp only [mem_coe, mem_range]
+  by_contra! h
+  exact hi (by simp only [hP i h, map_zero])
+
+private theorem support_normalOrder_right_subset (A B : VertexOperator R V) (n : ℤ) (v : V)
+    {Q : ℕ} (hQ : ∀ i : ℕ, Q ≤ i → (A[[(i : ℤ)]]) v = 0) :
+    (Function.support fun i : ℕ ↦ (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v)) ⊆ range Q := by
+  intro i hi
+  simp only [mem_coe, mem_range]
+  by_contra! h
+  exact hi (by simp only [hQ i h, map_zero])
+
 private theorem finite_support_normalOrder_left (A B : VertexOperator R V) (n : ℤ) (v : V) :
     (Function.support fun i : ℕ ↦ (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)).Finite := by
   obtain ⟨N, hN⟩ := B.exists_forall_ncoeff_apply_eq_zero v
-  refine (finite_toSet (range (N + n.natAbs))).subset fun i hi ↦ ?_
-  simp only [mem_coe, mem_range]
-  by_contra! h
-  exact hi (by simp only [hN (n + i) (by omega), map_zero])
+  exact (finite_toSet (range (N + n.natAbs))).subset
+    (support_normalOrder_left_subset A B n v (fun i hi ↦ hN _ (by omega)))
 
 private theorem finite_support_normalOrder_right (A B : VertexOperator R V) (n : ℤ) (v : V) :
     (Function.support fun i : ℕ ↦ (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v)).Finite := by
   obtain ⟨N, hN⟩ := A.exists_forall_ncoeff_apply_eq_zero v
-  refine (finite_toSet (range N)).subset fun i hi ↦ ?_
-  simp only [mem_coe, mem_range]
-  by_contra! h
-  exact hi (by simp only [hN i (by omega), map_zero])
+  exact (finite_toSet (range N)).subset
+    (support_normalOrder_right_subset A B n v (fun i hi ↦ hN _ (by omega)))
 
 /-- The normalized coefficient of the normal-ordered product. The sums are finite on each
 vector, with negative modes of `A` on the left and nonnegative modes of `A` on the right. -/
@@ -88,17 +100,8 @@ theorem normalOrderCoeff_eq_sum (A B : VertexOperator R V) (n : ℤ) (v : V)
       (∑ i ∈ range P, (A[[-(i : ℤ) - 1]]) ((B[[n + i]]) v)) +
         ∑ i ∈ range Q, (B[[n - i - 1]]) ((A[[(i : ℤ)]]) v) := by
   rw [normalOrderCoeff_apply]
-  congr 1
-  · apply finsum_eq_sum_of_support_subset
-    intro i hi
-    simp only [mem_coe, mem_range]
-    by_contra! h
-    exact hi (by simp only [hP i h, map_zero])
-  · apply finsum_eq_sum_of_support_subset
-    intro i hi
-    simp only [mem_coe, mem_range]
-    by_contra! h
-    exact hi (by simp only [hQ i h, map_zero])
+  rw [finsum_eq_sum_of_support_subset _ (support_normalOrder_left_subset A B n v hP),
+    finsum_eq_sum_of_support_subset _ (support_normalOrder_right_subset A B n v hQ)]
 
 /-- Normal-ordered coefficients kill each vector in all sufficiently high degrees. -/
 private theorem exists_forall_normalOrderCoeff_eq_zero (A B : VertexOperator R V) (v : V) :
@@ -132,20 +135,55 @@ theorem ncoeff_normalOrder (A B : VertexOperator R V) (n : ℤ) :
     (normalOrder A B)[[n]] = normalOrderCoeff A B n := by
   simp [normalOrder]
 
+/-- Normal-ordered coefficients are additive in the first field. -/
+@[simp]
+theorem normalOrderCoeff_add_left (A B C : VertexOperator R V) (n : ℤ) :
+    normalOrderCoeff (A + B) C n = normalOrderCoeff A C n + normalOrderCoeff B C n := by
+  ext v
+  simp only [map_add, Pi.add_apply, LinearMap.add_apply, normalOrderCoeff_apply]
+  rw [finsum_add_distrib (finite_support_normalOrder_left A C n v)
+    (finite_support_normalOrder_left B C n v),
+    finsum_add_distrib (finite_support_normalOrder_right A C n v)
+    (finite_support_normalOrder_right B C n v)]
+  abel
+
+/-- Normal-ordered coefficients are additive in the second field. -/
+@[simp]
+theorem normalOrderCoeff_add_right (A B C : VertexOperator R V) (n : ℤ) :
+    normalOrderCoeff A (B + C) n = normalOrderCoeff A B n + normalOrderCoeff A C n := by
+  ext v
+  simp only [map_add, Pi.add_apply, LinearMap.add_apply, normalOrderCoeff_apply]
+  rw [finsum_add_distrib (finite_support_normalOrder_left A B n v)
+    (finite_support_normalOrder_left A C n v),
+    finsum_add_distrib (finite_support_normalOrder_right A B n v)
+    (finite_support_normalOrder_right A C n v)]
+  abel
+
+/-- Normal-ordered coefficients respect scalar multiplication in the first field. -/
+@[simp]
+theorem normalOrderCoeff_smul_left (r : R) (A B : VertexOperator R V) (n : ℤ) :
+    normalOrderCoeff (r • A) B n = r • normalOrderCoeff A B n := by
+  ext v
+  simp only [map_smul, Pi.smul_apply, LinearMap.smul_apply, normalOrderCoeff_apply]
+  rw [← smul_finsum' r (finite_support_normalOrder_left A B n v),
+    ← smul_finsum' r (finite_support_normalOrder_right A B n v), smul_add]
+
+/-- Normal-ordered coefficients respect scalar multiplication in the second field. -/
+@[simp]
+theorem normalOrderCoeff_smul_right (r : R) (A B : VertexOperator R V) (n : ℤ) :
+    normalOrderCoeff A (r • B) n = r • normalOrderCoeff A B n := by
+  ext v
+  simp only [map_smul, Pi.smul_apply, LinearMap.smul_apply, normalOrderCoeff_apply]
+  rw [← smul_finsum' r (finite_support_normalOrder_left A B n v),
+    ← smul_finsum' r (finite_support_normalOrder_right A B n v), smul_add]
+
 /-- Normal ordering is additive in the first field. -/
 @[simp]
 theorem normalOrder_add_left (A B C : VertexOperator R V) :
     normalOrder (A + B) C = normalOrder A C + normalOrder B C := by
   apply ext_ncoeff
   intro n
-  ext v
-  simp only [map_add, Pi.add_apply, LinearMap.add_apply, ncoeff_normalOrder,
-    normalOrderCoeff_apply]
-  rw [finsum_add_distrib (finite_support_normalOrder_left A C n v)
-    (finite_support_normalOrder_left B C n v),
-    finsum_add_distrib (finite_support_normalOrder_right A C n v)
-    (finite_support_normalOrder_right B C n v)]
-  abel
+  simp
 
 /-- Normal ordering is additive in the second field. -/
 @[simp]
@@ -153,14 +191,7 @@ theorem normalOrder_add_right (A B C : VertexOperator R V) :
     normalOrder A (B + C) = normalOrder A B + normalOrder A C := by
   apply ext_ncoeff
   intro n
-  ext v
-  simp only [map_add, Pi.add_apply, LinearMap.add_apply, ncoeff_normalOrder,
-    normalOrderCoeff_apply]
-  rw [finsum_add_distrib (finite_support_normalOrder_left A B n v)
-    (finite_support_normalOrder_left A C n v),
-    finsum_add_distrib (finite_support_normalOrder_right A B n v)
-    (finite_support_normalOrder_right A C n v)]
-  abel
+  simp
 
 /-- Normal ordering is coefficient-linear in the first field. -/
 @[simp]
@@ -168,11 +199,7 @@ theorem normalOrder_smul_left (r : R) (A B : VertexOperator R V) :
     normalOrder (r • A) B = r • normalOrder A B := by
   apply ext_ncoeff
   intro n
-  ext v
-  simp only [map_smul, Pi.smul_apply, LinearMap.smul_apply, ncoeff_normalOrder,
-    normalOrderCoeff_apply]
-  rw [← smul_finsum' r (finite_support_normalOrder_left A B n v),
-    ← smul_finsum' r (finite_support_normalOrder_right A B n v), smul_add]
+  simp
 
 /-- Normal ordering is coefficient-linear in the second field. -/
 @[simp]
@@ -180,18 +207,66 @@ theorem normalOrder_smul_right (r : R) (A B : VertexOperator R V) :
     normalOrder A (r • B) = r • normalOrder A B := by
   apply ext_ncoeff
   intro n
-  ext v
-  simp only [map_smul, Pi.smul_apply, LinearMap.smul_apply, ncoeff_normalOrder,
-    normalOrderCoeff_apply]
-  rw [← smul_finsum' r (finite_support_normalOrder_left A B n v),
-    ← smul_finsum' r (finite_support_normalOrder_right A B n v), smul_add]
+  simp
+
+/-- Normal ordering as a bilinear map on fields. -/
+def normalOrderₗ : VertexOperator R V →ₗ[R] VertexOperator R V →ₗ[R] VertexOperator R V where
+  toFun A :=
+    { toFun := normalOrder A
+      map_add' := normalOrder_add_right A
+      map_smul' := fun r B ↦ normalOrder_smul_right r A B }
+  map_add' A B := LinearMap.ext fun C ↦ normalOrder_add_left A B C
+  map_smul' r A := LinearMap.ext fun B ↦ normalOrder_smul_left r A B
+
+/-- Applying the bundled normal-ordering map gives the normal-ordered product. -/
+@[simp]
+theorem normalOrderₗ_apply (A B : VertexOperator R V) :
+    normalOrderₗ A B = normalOrder A B := (rfl)
 
 @[simp]
 theorem normalOrder_zero_left (B : VertexOperator R V) : normalOrder 0 B = 0 := by
-  simpa using normalOrder_smul_left (0 : R) (0 : VertexOperator R V) B
+  simpa only [normalOrderₗ_apply, LinearMap.zero_apply] using
+    LinearMap.congr_fun (map_zero (normalOrderₗ (R := R) (V := V))) B
 
 @[simp]
-theorem normalOrder_zero_right (A : VertexOperator R V) : normalOrder A 0 = 0 := by
-  simpa using normalOrder_smul_right (0 : R) A (0 : VertexOperator R V)
+theorem normalOrder_zero_right (A : VertexOperator R V) : normalOrder A 0 = 0 :=
+  map_zero (normalOrderₗ A)
+
+@[simp]
+theorem normalOrder_neg_left (A B : VertexOperator R V) :
+    normalOrder (-A) B = -normalOrder A B := by
+  simpa only [normalOrderₗ_apply, LinearMap.neg_apply] using
+    LinearMap.congr_fun (map_neg (normalOrderₗ (R := R) (V := V)) A) B
+
+@[simp]
+theorem normalOrder_neg_right (A B : VertexOperator R V) :
+    normalOrder A (-B) = -normalOrder A B :=
+  map_neg (normalOrderₗ A) B
+
+@[simp]
+theorem normalOrder_sub_left (A B C : VertexOperator R V) :
+    normalOrder (A - B) C = normalOrder A C - normalOrder B C := by
+  simpa only [normalOrderₗ_apply, LinearMap.sub_apply] using
+    LinearMap.congr_fun (map_sub (normalOrderₗ (R := R) (V := V)) A B) C
+
+@[simp]
+theorem normalOrder_sub_right (A B C : VertexOperator R V) :
+    normalOrder A (B - C) = normalOrder A B - normalOrder A C :=
+  map_sub (normalOrderₗ A) B C
+
+/-- Normal ordering distributes over finite sums in the first field. -/
+@[simp]
+theorem normalOrder_sum_left {ι : Type*} (s : Finset ι) (A : ι → VertexOperator R V)
+    (B : VertexOperator R V) :
+    normalOrder (∑ i ∈ s, A i) B = ∑ i ∈ s, normalOrder (A i) B := by
+  simpa only [normalOrderₗ_apply, LinearMap.sum_apply] using
+    LinearMap.congr_fun (map_sum (normalOrderₗ (R := R) (V := V)) A s) B
+
+/-- Normal ordering distributes over finite sums in the second field. -/
+@[simp]
+theorem normalOrder_sum_right {ι : Type*} (A : VertexOperator R V) (s : Finset ι)
+    (B : ι → VertexOperator R V) :
+    normalOrder A (∑ i ∈ s, B i) = ∑ i ∈ s, normalOrder A (B i) :=
+  map_sum (normalOrderₗ A) B s
 
 end VertexOperator
