@@ -5,10 +5,12 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Algebra.Polynomial.Coeff.Basic
+import TauCeti.Algebra.Polynomial.Eval.Inv
+import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Canonical Laurent data of a meromorphic function
@@ -41,8 +43,6 @@ generalized residue theorem be discharged at simple poles by flatness of order o
 * `Contour.laurent_coeff_unique`, `Contour.laurent_coeff_eq_meromorphicPolarCoeffAt` —
   uniqueness of finite principal-part expansions: any Laurent witness of `f` at `s` has the
   canonical coefficients, compared through zero-padding.
-* `AnalyticAt.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul` — Taylor decomposition of an
-  analytic function to any order at any point, with explicit coefficients `g⁽ʲ⁾(s) / j!`.
 * `Contour.eq_of_eventuallyEq_add_eval_inv_sub`, `Contour.exists_analyticAt_eventuallyEq_div_pow` —
   finite Laurent tails written as polynomials in `(z - s)⁻¹` without constant term: their
   uniqueness, and the tail of `h(z) / (z - s)^N` read off from the Taylor expansion of `h`.
@@ -143,30 +143,44 @@ theorem meromorphicPolarOrderAt_le_one_iff {f : ℂ → ℂ} {s : ℂ} :
       meromorphicOrderAt_lt_neg_one_of_one_lt_meromorphicPolarOrderAt (by omega)
     exact (not_lt_of_ge h) hlt
 
-/-- **Taylor decomposition of an analytic function to order `k` at `s`**:
-`g z = ∑_{j < k} ((z - s)^j / j!) • g⁽ʲ⁾(s) + (z - s)^k • R z` near `s`, with `R` analytic at `s`.
-Mathlib's `AnalyticAt.exists_eventuallyEq_sum_add_pow_mul` at the translate `g (· + s)`. -/
-theorem _root_.AnalyticAt.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul {𝕜 E : Type*}
-    [NontriviallyNormedField 𝕜] [CharZero 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [CompleteSpace E] {g : 𝕜 → E} {s : 𝕜} (hg : AnalyticAt 𝕜 g s) (k : ℕ) :
-    ∃ R : 𝕜 → E, AnalyticAt 𝕜 R s ∧ ∀ᶠ z in 𝓝 s,
-      g z = (∑ j ∈ Finset.range k, ((z - s) ^ j / (j.factorial : 𝕜)) • iteratedDeriv j g s) +
-        (z - s) ^ k • R z := by
-  have hg' : AnalyticAt 𝕜 (fun w ↦ g (w + s)) 0 := by
-    rw [← zero_add s] at hg
-    exact hg.comp_of_eq (by fun_prop) rfl
-  obtain ⟨F, hF, hFeq⟩ := hg'.exists_eventuallyEq_sum_add_pow_mul k
-  have hsub : Tendsto (fun z ↦ z - s) (𝓝 s) (𝓝 0) := by
-    simpa using (continuous_sub_right s).tendsto s
-  refine ⟨fun z ↦ F (z - s), hF.comp_of_eq (by fun_prop) (sub_self s), ?_⟩
-  filter_upwards [hsub.eventually hFeq] with z hz
-  simpa [iteratedDeriv_comp_add_const] using hz
+section Polynomial
 
-private theorem pow_div_pow_neg {w : ℂ} (hw : w ≠ 0) {k j : ℕ} (hjk : j < k) :
-    w ^ j * (w ^ k)⁻¹ = (w ^ (k - j))⁻¹ := by
-  have h_exp : (k - j) + j = k := by omega
-  rw [show (w ^ k)⁻¹ = (w ^ ((k - j) + j))⁻¹ by rw [h_exp], pow_add]
-  field_simp
+open Polynomial
+
+/-- **Taylor splitting.** If `h` is analytic at `s`, then on a punctured neighbourhood of `s`,
+`h(z) / (z - s)^N` is the evaluation at `(z - s)⁻¹` of `∑_{j < N} (h⁽ʲ⁾(s) / j!) X^(N - j)` plus
+`(h(z) - ∑_{j < N} (h⁽ʲ⁾(s) / j!) (z - s)^j) / (z - s)^N`, a function which agrees near `s` with a
+function analytic at `s`. -/
+theorem exists_analyticAt_eventuallyEq_div_pow {s : ℂ} {h : ℂ → ℂ} (hh : AnalyticAt ℂ h s)
+    (N : ℕ) : ∃ q : ℂ → ℂ, AnalyticAt ℂ q s ∧
+      (∀ᶠ z in 𝓝[≠] s, q z =
+        (h z - ∑ j ∈ Finset.range N, iteratedDeriv j h s / (j.factorial : ℂ) * (z - s) ^ j) /
+          (z - s) ^ N) ∧
+      ∀ᶠ z in 𝓝[≠] s, h z / (z - s) ^ N = q z +
+        (∑ j ∈ Finset.range N, C (iteratedDeriv j h s / (j.factorial : ℂ)) * X ^ (N - j)).eval
+          (z - s)⁻¹ := by
+  obtain ⟨q, hq, hqeq⟩ := hh.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul N
+  have htaylor : ∀ᶠ z in 𝓝[≠] s, h z = (∑ j ∈ Finset.range N,
+      iteratedDeriv j h s / (j.factorial : ℂ) * (z - s) ^ j) + (z - s) ^ N * q z := by
+    filter_upwards [nhdsWithin_le_nhds hqeq] with z hz
+    rw [hz, smul_eq_mul]
+    congr 1
+    exact Finset.sum_congr rfl fun j _ ↦ by rw [smul_eq_mul]; ring
+  refine ⟨q, hq, ?_, ?_⟩
+  · filter_upwards [htaylor, self_mem_nhdsWithin] with z hz hzs
+    have hzs' : z - s ≠ 0 := sub_ne_zero.2 hzs
+    rw [hz, add_sub_cancel_left, mul_div_cancel_left₀ _ (pow_ne_zero N hzs')]
+  · filter_upwards [htaylor, self_mem_nhdsWithin] with z hz hzs
+    have hzs' : z - s ≠ 0 := sub_ne_zero.2 hzs
+    simp only [eval_finsetSum, eval_mul, eval_C, eval_pow, eval_X]
+    rw [hz, add_div, mul_div_cancel_left₀ _ (pow_ne_zero N hzs'), add_comm, Finset.sum_div]
+    congr 1
+    refine Finset.sum_congr rfl fun j hj ↦ ?_
+    have hjN : j ≤ N := (Finset.mem_range.1 hj).le
+    rw [← Nat.sub_add_cancel hjN, pow_add, Nat.add_sub_cancel, inv_pow]
+    field_simp
+
+end Polynomial
 
 private theorem reindex_sum_fin_neg {k : ℕ} (c : Fin k → ℂ) (w : ℂ) :
     (∑ j : Fin k, c j / w ^ (k - j.val)) =
@@ -195,30 +209,17 @@ private theorem laurent_data_of_zpow_factor {f g₀ : ℂ → ℂ} {s : ℂ} (k 
     ∃ (a : Fin k → ℂ) (g : ℂ → ℂ),
       AnalyticAt ℂ g s ∧
       ∀ᶠ z in 𝓝[≠] s, f z = g z + ∑ i : Fin k, a i / (z - s) ^ (i.val + 1) := by
-  obtain ⟨R, hR_an, hR_eq'⟩ := hg₀_an.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul k
+  obtain ⟨R, hR_an, -, hdecomp⟩ := exists_analyticAt_eventuallyEq_div_pow hg₀_an k
   set c : Fin k → ℂ := fun j ↦ iteratedDeriv j.val g₀ s / (j.val.factorial : ℂ)
-  have hR_eq : ∀ᶠ z in 𝓝 s,
-      g₀ z = (∑ j : Fin k, c j * (z - s) ^ j.val) + (z - s) ^ k * R z := by
-    filter_upwards [hR_eq'] with z hz
-    rw [hz, smul_eq_mul, Fin.sum_univ_eq_sum_range (fun j ↦
-      iteratedDeriv j g₀ s / (j.factorial : ℂ) * (z - s) ^ j)]
-    congr 1
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [smul_eq_mul]; ring
   refine ⟨fun i : Fin k => c ⟨k - 1 - i.val, by have := i.isLt; omega⟩, R, hR_an, ?_⟩
-  filter_upwards [hg₀_eq, nhdsWithin_le_nhds hR_eq, self_mem_nhdsWithin]
-    with z hf_eq hR_eq_z hz_ne
-  have hz_sub : (z - s) ≠ 0 := sub_ne_zero.mpr hz_ne
-  rw [hf_eq, hR_eq_z, smul_eq_mul, zpow_neg, zpow_natCast, mul_add]
-  have h1 : ((z - s) ^ k)⁻¹ * ((z - s) ^ k * R z) = R z := by field_simp
-  rw [h1, add_comm]
-  congr 1
-  rw [Finset.mul_sum, show ∑ j : Fin k, ((z - s) ^ k)⁻¹ * (c j * (z - s) ^ j.val) =
-      ∑ j : Fin k, c j / (z - s) ^ (k - j.val) from
-    Finset.sum_congr rfl fun j _ => by
-      rw [div_eq_mul_inv, show ((z - s) ^ k)⁻¹ * (c j * (z - s) ^ j.val) =
-          c j * ((z - s) ^ j.val * ((z - s) ^ k)⁻¹) by ring,
-        pow_div_pow_neg hz_sub j.isLt]]
-  exact reindex_sum_fin_neg c (z - s)
+  filter_upwards [hg₀_eq, hdecomp] with z hf_eq hz
+  rw [hf_eq, smul_eq_mul, zpow_neg, zpow_natCast, inv_mul_eq_div, hz,
+    ← reindex_sum_fin_neg c (z - s)]
+  simp only [Polynomial.eval_finsetSum, Polynomial.eval_mul, Polynomial.eval_C,
+    Polynomial.eval_pow, Polynomial.eval_X]
+  rw [← Fin.sum_univ_eq_sum_range (fun j ↦
+    iteratedDeriv j g₀ s / (j.factorial : ℂ) * (z - s)⁻¹ ^ (k - j))]
+  simp only [c, inv_pow, div_eq_mul_inv]
 
 /-- **Canonical Laurent data of a meromorphic function**: near `s`,
 `f = g + ∑ k, a k / (z - s)^(k+1)` with `g` analytic at `s`, where the tail length is the
@@ -421,8 +422,7 @@ theorem laurent_coeff_eq_meromorphicPolarCoeffAt {f : ℂ → ℂ} {s : ℂ}
 
 A finite Laurent tail `∑_{1 ≤ k ≤ N} c_k (z - s)⁻ᵏ` is the evaluation at `(z - s)⁻¹` of the
 polynomial `∑ c_k X ^ k`, which has no constant term. In this form, uniqueness of the tail is an
-equality of polynomials, and the Taylor splitting of `h(z) / (z - s)^N` produces the polynomial
-`∑_{j < N} (h⁽ʲ⁾(s) / j!) X^(N - j)`. -/
+equality of polynomials. -/
 
 section Polynomial
 
@@ -445,39 +445,6 @@ theorem eq_of_eventuallyEq_add_eval_inv_sub {s : ℂ} {P Q : ℂ[X]} (hP : P.coe
     have := laurent_coeff_unique hg hh (heq.mono fun z hz ↦ by
       rwa [eval_inv_eq_sum_fin_div_pow hP, eval_inv_eq_sum_fin_div_pow hQ] at hz) k
     rwa [hpad, hpad] at this
-
-/-- **Taylor splitting.** If `h` is analytic at `s`, then on a punctured neighbourhood of `s`,
-`h(z) / (z - s)^N` is the evaluation at `(z - s)⁻¹` of `∑_{j < N} (h⁽ʲ⁾(s) / j!) X^(N - j)` plus
-`(h(z) - ∑_{j < N} (h⁽ʲ⁾(s) / j!) (z - s)^j) / (z - s)^N`, a function which agrees near `s` with a
-function analytic at `s`. -/
-theorem exists_analyticAt_eventuallyEq_div_pow {s : ℂ} {h : ℂ → ℂ} (hh : AnalyticAt ℂ h s)
-    (N : ℕ) : ∃ q : ℂ → ℂ, AnalyticAt ℂ q s ∧
-      (∀ᶠ z in 𝓝[≠] s, q z =
-        (h z - ∑ j ∈ Finset.range N, iteratedDeriv j h s / (j.factorial : ℂ) * (z - s) ^ j) /
-          (z - s) ^ N) ∧
-      ∀ᶠ z in 𝓝[≠] s, h z / (z - s) ^ N = q z +
-        (∑ j ∈ Finset.range N, C (iteratedDeriv j h s / (j.factorial : ℂ)) * X ^ (N - j)).eval
-          (z - s)⁻¹ := by
-  obtain ⟨q, hq, hqeq⟩ := hh.exists_eventuallyEq_sum_iteratedDeriv_add_pow_mul N
-  have htaylor : ∀ᶠ z in 𝓝[≠] s, h z = (∑ j ∈ Finset.range N,
-      iteratedDeriv j h s / (j.factorial : ℂ) * (z - s) ^ j) + (z - s) ^ N * q z := by
-    filter_upwards [nhdsWithin_le_nhds hqeq] with z hz
-    rw [hz, smul_eq_mul]
-    congr 1
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [smul_eq_mul]; ring
-  refine ⟨q, hq, ?_, ?_⟩
-  · filter_upwards [htaylor, self_mem_nhdsWithin] with z hz hzs
-    have hzs' : z - s ≠ 0 := sub_ne_zero.2 hzs
-    rw [hz, add_sub_cancel_left, mul_div_cancel_left₀ _ (pow_ne_zero N hzs')]
-  · filter_upwards [htaylor, self_mem_nhdsWithin] with z hz hzs
-    have hzs' : z - s ≠ 0 := sub_ne_zero.2 hzs
-    simp only [eval_finsetSum, eval_mul, eval_C, eval_pow, eval_X]
-    rw [hz, add_div, mul_div_cancel_left₀ _ (pow_ne_zero N hzs'), add_comm, Finset.sum_div]
-    congr 1
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    have hjN : j ≤ N := (Finset.mem_range.1 hj).le
-    rw [← Nat.sub_add_cancel hjN, pow_add, Nat.add_sub_cancel, inv_pow]
-    field_simp
 
 end Polynomial
 
