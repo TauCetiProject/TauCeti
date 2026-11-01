@@ -495,6 +495,13 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
   | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
 
+/-- A vector graded-commutes with an element of the `n`-th exterior power with the sign
+`(-1) ^ n`. -/
+theorem ι_mul_eq_neg_one_pow_smul_mul {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M)
+    (m : M) : ExteriorAlgebra.ι R m * x = (-1 : R) ^ n • (x * ExteriorAlgebra.ι R m) := by
+  rw [ι_mul_eq_involute_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
+    smul_mul_assoc]
+
 end ExteriorAlgebra
 
 namespace TauCeti.ExteriorAlgebra
