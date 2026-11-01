@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
-public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
+public import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
+
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # Level-one modular forms of weight divisible by `4` are polynomials in `E₄` and `Δ`
@@ -28,11 +30,11 @@ form, which is `Δ` times a form of weight `k - 12` (`CuspForm.discriminantEquiv
 weight `k - 12` is the induction hypothesis.
 
 The induction also keeps track of the field of definition of the coefficients. The
-`q`-expansions of `E₄` and of `Δ = (E₄³ - E₆²) / 1728` have rational coefficients, and the
-`q`-expansion of `Δ` is `q` times a power series with constant term `1`, so dividing by `Δ`
-preserves the property of having all `q`-expansion coefficients in the image of a field
-`K →+* ℂ`. Hence a form whose `q`-expansion has coefficients in the image of `K`, such as a form
-with rational `q`-expansion, has its coefficients `c (a, b)` in `K`.
+`q`-expansion of `E₄` has rational coefficients, and that of `Δ` has integer coefficients and is
+`q` times a power series with constant term `1`, so dividing by `Δ` preserves the property of
+having all `q`-expansion coefficients in the image of a field `K →+* ℂ`. Hence a form whose
+`q`-expansion has coefficients in the image of `K`, such as a form with rational `q`-expansion,
+has its coefficients `c (a, b)` in `K`.
 
 Uniqueness holds in every weight, and is the linear independence of the functions
 `E₄ ^ a * Δ ^ b` with `4 a + 12 b = k`: in a vanishing combination, divide by the smallest power
@@ -46,8 +48,6 @@ tends to `1` and `Δ` to `0`, so the quotient tends to the coefficient of the un
   `4 a + 12 b = k` are linearly independent.
 * `ModularForm.existsUnique_finsupp_E₄_discriminant`: a level-one modular form of weight `k` with
   `4 ∣ k` is a unique combination of the `E₄ ^ a * Δ ^ b` with `4 a + 12 b = k`.
-* `ModularForm.qExpansion_E_mem_range_map`, `ModularForm.qExpansion_discriminant_mem_range_map`:
-  the `q`-expansions of the normalised Eisenstein series and of `Δ` have rational coefficients.
 * `ModularForm.existsUnique_finsupp_E₄_discriminant_of_qExpansion_mem_range`: if the
   `q`-expansion of such a form has coefficients in the image of a field `K` under `K →+* ℂ`, then
   so do its coefficients in the `E₄ ^ a * Δ ^ b`.
@@ -125,68 +125,18 @@ theorem linearIndepOn_E₄_pow_mul_discriminant_pow (k : ℤ) :
 
 variable {K : Type*} [Field K]
 
-/-- The `q`-expansion of a normalised Eisenstein series of even weight `k ≥ 3` has rational
-coefficients, so it is the image of a power series over `K` under every ring homomorphism
-`φ : K →+* ℂ`. -/
-theorem qExpansion_E_mem_range_map (φ : K →+* ℂ) {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) :
-    qExpansion 1 (E hk) ∈ (PowerSeries.map φ).range := by
-  refine RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦
-    ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
-  ext m
-  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
-  split_ifs <;> push_cast <;> rfl
-
-/-- The `q`-expansion of the discriminant `Δ = (E₄³ - E₆²) / 1728` has rational coefficients, so
-it is the image of a power series over `K` under every ring homomorphism `φ : K →+* ℂ`. -/
-theorem qExpansion_discriminant_mem_range_map (φ : K →+* ℂ) :
-    qExpansion 1 discriminant ∈ (PowerSeries.map φ).range := by
-  let D : ModularForm 𝒮ℒ 12 :=
-    (1728 : ℂ)⁻¹ • (mcast (by norm_num) (E₄.pow 3) - mcast (by norm_num) (E₆.pow 2))
-  have hD : ⇑D = discriminant := funext fun τ ↦ by
-    simp only [D, FunLike.coe_smul, FunLike.coe_sub, coe_mcast, coe_pow, Pi.smul_apply,
-      Pi.sub_apply, Pi.pow_apply, smul_eq_mul, discriminant_eq_E₄_cube_sub_E₆_sq, div_eq_inv_mul]
-  have hC : PowerSeries.C (1728 : ℂ)⁻¹ ∈ (PowerSeries.map φ).range :=
-    RingHom.mem_range.2
-      ⟨PowerSeries.C (1728 : K)⁻¹, by rw [PowerSeries.map_C, map_inv₀, map_ofNat]⟩
-  rw [← hD, FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL,
-    FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL]
-  simp only [ModularForm.qExpansion_mcast,
-    ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, PowerSeries.smul_eq_C_mul]
-  exact mul_mem hC (sub_mem (pow_mem (qExpansion_E_mem_range_map φ _ ⟨2, rfl⟩) 3)
-    (pow_mem (qExpansion_E_mem_range_map φ _ ⟨3, rfl⟩) 2))
-
 /-- If the `q`-expansion of `Δ` times a power series `Q` is the image of a power series over `K`,
-then so is `Q`: the `q`-expansion of `Δ` is `q` times a power series over `K` with constant
-term `1`, which is a unit. -/
+then so is `Q`: the `q`-expansion of `Δ` has integer coefficients and is `q` times a power series
+with constant term `1`. -/
 private theorem mem_range_map_of_qExpansion_discriminant_mul_mem (φ : K →+* ℂ)
     {Q : PowerSeries ℂ} (hQ : qExpansion 1 discriminant * Q ∈ (PowerSeries.map φ).range) :
     Q ∈ (PowerSeries.map φ).range := by
-  have hΔ₀ : (qExpansion 1 discriminant).coeff 0 = 0 := by
-    simpa using CuspFormClass.qExpansion_coeff_zero CuspForm.discriminant one_pos
-      one_mem_strictPeriods_SL
-  have hΔ : qExpansion 1 discriminant ≠ 0 := fun h ↦ by
-    simpa [h] using discriminant_qExpansion_coeff_one
-  obtain ⟨D, hD⟩ := RingHom.mem_range.1 (qExpansion_discriminant_mem_range_map φ)
-  obtain ⟨G, hG⟩ := RingHom.mem_range.1 hQ
-  -- Both `D` and `G` have zero constant term, so they are divisible by `X`.
-  have hconst {P : PowerSeries K} {P' : PowerSeries ℂ} (hP : PowerSeries.map φ P = P')
-      (hP' : P'.coeff 0 = 0) : PowerSeries.constantCoeff P = 0 := by
-    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
-    exact φ.injective (by rw [← PowerSeries.coeff_map, hP, hP', map_zero])
-  obtain ⟨U, rfl⟩ := PowerSeries.X_dvd_iff.2 (hconst hD hΔ₀)
-  obtain ⟨W, rfl⟩ := PowerSeries.X_dvd_iff.2 (hconst hG (by
-    rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, map_mul,
-      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, hΔ₀, zero_mul]))
-  -- The coefficient of `q` in `Δ` is `1`, so `U` has constant term `1`.
-  have hU₀ : φ (U.coeff 0) = φ 1 := by
-    rw [← PowerSeries.coeff_succ_X_mul, ← PowerSeries.coeff_map, hD,
-      discriminant_qExpansion_coeff_one, map_one]
-  have hU : IsUnit U := PowerSeries.isUnit_iff_constantCoeff.2 <| by
-    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, φ.injective hU₀]
-    exact isUnit_one
-  refine RingHom.mem_range.2 ⟨W * ↑hU.unit⁻¹, mul_left_cancel₀ hΔ ?_⟩
-  rw [← hG, ← hD, ← map_mul, show PowerSeries.X * U * (W * ↑hU.unit⁻¹) =
-    PowerSeries.X * W * (U * ↑hU.unit⁻¹) by ring, hU.mul_val_inv, mul_one]
+  rw [PowerSeries.mem_map_range] at hQ ⊢
+  refine PowerSeries.coeff_mem_of_coeff_mul_mem (m := 1) (D := qExpansion 1 discriminant)
+    (fun i hi ↦ by rw [Nat.lt_one_iff.1 hi, TauCeti.ModularForm.discriminant_qExpansion_coeff_zero])
+    discriminant_qExpansion_coeff_one (fun i ↦ ?_) (by simpa only [mul_comm] using hQ)
+  simpa using
+    TauCeti.ModularForm.qExpansion_natCast_discriminant_coeff_mem (N := 1) (R := φ.range) i
 
 /-- Every level-one modular form of weight `k` with `4 ∣ k` whose `q`-expansion is the image of a
 power series over `K` under `φ : K →+* ℂ` is a combination of the `E₄ ^ a * Δ ^ b` with
@@ -227,7 +177,8 @@ private theorem exists_finsupp_E₄_discriminant (φ : K →+* ℂ) {k : ℤ} (f
         FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL, hmq,
         PowerSeries.smul_eq_C_mul, PowerSeries.map_C, ha₀]
     have hgK : qExpansion 1 g ∈ (PowerSeries.map φ).range := hgq ▸ sub_mem hf
-      (mul_mem (RingHom.mem_range_self _ _) (pow_mem (qExpansion_E_mem_range_map φ _ ⟨2, rfl⟩) n))
+      (mul_mem (RingHom.mem_range_self _ _)
+        (pow_mem (TauCeti.ModularForm.qExpansion_E_mem_range_map φ _ ⟨2, rfl⟩) n))
     obtain ⟨c, hc, hgc⟩ := ih (4 * n - 12) (by omega) (CuspForm.discriminantEquiv g)
       ⟨(n : ℤ) - 3, by ring⟩ (mem_range_map_of_qExpansion_discriminant_mul_mem φ (hΔg ▸ hgK))
     refine ⟨.single (n, 0) (F.coeff 0) +
