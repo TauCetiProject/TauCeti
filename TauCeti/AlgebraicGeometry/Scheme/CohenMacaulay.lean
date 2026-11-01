@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-public import TauCeti.RingTheory.SerreCondition.Basic
+public import TauCeti.RingTheory.CohenMacaulay.Ring
 
 /-!
 # Cohen–Macaulay schemes and modules
@@ -20,10 +20,10 @@ stalk `F_x` is a Cohen–Macaulay module over the local ring `𝒪_{X,x}`, that 
 
 Since a stalk of an affine open `U` is the localization of `Γ(X, U)` at the corresponding prime,
 Cohen–Macaulayness of `X` can be read off its affine opens: `X` is Cohen–Macaulay exactly when
-every ring of sections `Γ(X, U)` over an affine open is Noetherian and Cohen–Macaulay at every
-prime, equivalently satisfies Serre's conditions `(S_n)` for every `n`. In particular `Spec R` is
-Cohen–Macaulay exactly when `R` is a Noetherian ring all of whose localizations at primes are
-Cohen–Macaulay. Regular schemes are Cohen–Macaulay, since regular local rings are.
+every ring of sections `Γ(X, U)` over an affine open is Cohen–Macaulay in the sense of
+`TauCeti.Ring.IsCohenMacaulay`, equivalently Noetherian and satisfying Serre's conditions `(S_n)`
+for every `n`. In particular `Spec R` is Cohen–Macaulay exactly when `R` is Cohen–Macaulay.
+Regular schemes are Cohen–Macaulay, since regular local rings are.
 
 ## Main definitions
 
@@ -152,11 +152,10 @@ theorem isCohenMacaulay_stalk_iff_of_isAffineOpen {U : X.Opens} (hU : IsAffineOp
   exact IsLocalization.AtPrime.isCohenMacaulay_self_iff _ (X.presheaf.stalk x)
 
 /-- A scheme is Cohen–Macaulay exactly when the ring of sections over every affine open is
-Noetherian and its localization at every prime is Cohen–Macaulay. -/
+Cohen–Macaulay. -/
 theorem isCohenMacaulay_iff_forall_affineOpens :
-    X.IsCohenMacaulay ↔ ∀ U : X.affineOpens, IsNoetherianRing Γ(X, U) ∧
-      ∀ (p : Ideal Γ(X, U)) [p.IsPrime],
-        Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) := by
+    X.IsCohenMacaulay ↔ ∀ U : X.affineOpens, TauCeti.Ring.IsCohenMacaulay Γ(X, U) := by
+  simp only [TauCeti.Ring.isCohenMacaulay_iff]
   refine ⟨fun _ U ↦ ⟨IsLocallyNoetherian.component_noetherian U, fun p _ ↦ ?_⟩, fun h ↦ ?_⟩
   · -- The prime `p` is the prime of the point `U.2.fromSpec y` of `U`, whose stalk is `Γ(X, U)_p`.
     have := IsLocallyNoetherian.component_noetherian U
@@ -174,13 +173,10 @@ theorem isCohenMacaulay_iff_forall_affineOpens :
     have := (h ⟨U, hU⟩).1
     exact (isCohenMacaulay_stalk_iff_of_isAffineOpen hU ⟨x, hx⟩).mpr ((h ⟨U, hU⟩).2 _)
 
-/-- The ring of sections over an affine open of a Cohen–Macaulay scheme is Cohen–Macaulay at every
-prime. -/
-theorem IsCohenMacaulay.isCohenMacaulay_localization [X.IsCohenMacaulay] (U : X.affineOpens)
-    (p : Ideal Γ(X, U)) [p.IsPrime] :
-    Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) :=
-  have := IsLocallyNoetherian.component_noetherian U
-  (isCohenMacaulay_iff_forall_affineOpens.mp inferInstance U).2 p
+/-- The ring of sections over an affine open of a Cohen–Macaulay scheme is Cohen–Macaulay. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.isCohenMacaulay [X.IsCohenMacaulay]
+    {U : X.Opens} (hU : IsAffineOpen U) : TauCeti.Ring.IsCohenMacaulay Γ(X, U) :=
+  isCohenMacaulay_iff_forall_affineOpens.mp inferInstance ⟨U, hU⟩
 
 /-- A scheme is Cohen–Macaulay exactly when the ring of sections over every affine open is
 Noetherian and satisfies Serre's condition `(S_n)` for every `n`. -/
@@ -188,21 +184,16 @@ theorem isCohenMacaulay_iff_forall_satisfiesSerreS :
     X.IsCohenMacaulay ↔ ∀ U : X.affineOpens, IsNoetherianRing Γ(X, U) ∧
       ∀ n, Module.SatisfiesSerreS n Γ(X, U) Γ(X, U) := by
   rw [isCohenMacaulay_iff_forall_affineOpens]
-  refine forall_congr' fun U ↦ and_congr_right fun _ ↦ ?_
-  refine ((Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay (R := Γ(X, U))
-    (M := Γ(X, U))).trans (forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_)).symm
-  exact ((IsLocalizedModule.iso p.primeCompl (Algebra.linearMap Γ(X, U)
-    (Localization.AtPrime p))).extendScalarsOfIsLocalization p.primeCompl
-    (Localization.AtPrime p)).isCohenMacaulay_iff
+  refine forall_congr' fun U ↦ ⟨fun h ↦ ⟨inferInstance,
+    TauCeti.Ring.isCohenMacaulay_iff_forall_satisfiesSerreS.mp h⟩, fun ⟨_, h⟩ ↦
+      TauCeti.Ring.isCohenMacaulay_iff_forall_satisfiesSerreS.mpr h⟩
 
-/-- The spectrum of a ring `R` is Cohen–Macaulay exactly when `R` is Noetherian and its
-localization at every prime is Cohen–Macaulay. Stacks, Definition 10.103.12 (0AAH) on the ring
-side. -/
+/-- The spectrum of a ring `R` is Cohen–Macaulay exactly when `R` is Cohen–Macaulay. -/
 @[simp 1100]
 theorem isCohenMacaulay_Spec_iff (R : CommRingCat.{u}) :
-    (Spec R).IsCohenMacaulay ↔ IsNoetherianRing R ∧ ∀ (p : Ideal R) [p.IsPrime],
-      Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) := by
-  rw [isCohenMacaulay_iff_forall_stalk, isLocallyNoetherian_Spec]
+    (Spec R).IsCohenMacaulay ↔ TauCeti.Ring.IsCohenMacaulay R := by
+  rw [isCohenMacaulay_iff_forall_stalk, isLocallyNoetherian_Spec,
+    TauCeti.Ring.isCohenMacaulay_iff]
   refine and_congr_right fun _ ↦ ?_
   -- The stalk of `Spec R` at `x` is the localization of `R` at the prime `x`.
   have key (x : Spec R) [x.asIdeal.IsPrime] :

@@ -106,13 +106,8 @@ private noncomputable def tensorRepresentation
 private theorem tensorInclusion_range (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     LinearMap.range (tensorInclusion rho).toLinearMap =
       (groupAlgebraTensorInvariants rho).toSubmodule := by
-  have he : (AlgHom.liftEquiv k L _ _ (tensorInclusion rho)).toLinearMap =
-      (tensorInclusion rho).toLinearMap.liftBaseChange L := by
-    apply TensorProduct.AlgebraTensorModule.ext
-    intros
-    simp
   have hf : Function.Surjective ((tensorInclusion rho).toLinearMap.liftBaseChange L) := by
-    rw [← he]
+    rw [← AlgHom.liftEquiv_toLinearMap (S := L) (tensorInclusion rho)]
     exact (liftEquiv_tensorInclusion_bijective rho).surjective
   have hinv : (tensorRepresentation rho).invariants =
       (groupAlgebraTensorInvariants rho).toSubmodule := by

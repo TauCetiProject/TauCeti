@@ -9,11 +9,15 @@ public import Mathlib.Computability.Primrec.List
 public import Mathlib.Data.List.Rotate
 
 /-!
-# Primitive-recursive list rotations
+# Primitive-recursive list operations
 
 Rotation and cyclic-permutation testing are primitive recursive on the standard list
 encoding. The bounded rotation criterion includes the empty list, so it also applies to
 cyclic reductions of trivial free-group words.
+
+Searching a list for its first element passing a test, `List.find?`, is primitive recursive.
+Over `List.range n` this is the bounded least-witness search of finite-stage constructions,
+returning `none` when no number below `n` passes the test.
 -/
 
 public section
@@ -29,6 +33,13 @@ theorem list_rotate : Primrec₂ (List.rotate : List α → ℕ → List α) := 
   exact (list_append.comp (list_drop.comp index fst)
     (list_take.comp index fst)).to₂.of_eq fun l n =>
       (List.rotate_eq_drop_append_take_mod (l := l) (n := n)).symm
+
+/-- The first element of a list passing a test, if any, is primitive recursive, uniformly in a
+parameter on which the list and the test depend primitive recursively. -/
+theorem list_find? {β : Type*} [Primcodable β] {f : α → List β} {p : α → β → Bool}
+    (hf : Primrec f) (hp : Primrec₂ p) : Primrec fun a => (f a).find? (p a) :=
+  (list_getElem?.comp hf (list_findIdx hf hp)).of_eq fun _ =>
+    List.find?_eq_getElem?_findIdx.symm
 
 end Primrec
 

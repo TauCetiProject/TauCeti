@@ -21,6 +21,10 @@ derives further closure properties from those constructors:
 
 The last one is the closure property needed to evaluate the search instruction of a code, whose
 search starts at the second component of its input rather than at zero.
+
+Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
+encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
+statement on codes `Nat.pair a b` of pairs.
 -/
 
 public section
@@ -62,3 +66,17 @@ theorem rfind' (hf : Nat.RecursiveIn O f) :
   simp [Seq.seq, Part.map_map, Function.comp_def]
 
 end Nat.RecursiveIn
+
+namespace ComputableIn₂
+
+variable {O : Set (ℕ →. ℕ)}
+
+/-- A binary total function on `ℕ` is computable in `O` exactly when it is recursive in `O` as a
+function of the code `Nat.pair a b` of its arguments. -/
+theorem iff_nat {f : ℕ → ℕ → ℕ} :
+    ComputableIn₂ O f ↔ Nat.RecursiveIn O fun n => Part.some (f n.unpair.1 n.unpair.2) := by
+  -- `ComputableIn₂` is recursiveness of the function on encodings, which `simp` unpairs
+  unfold ComputableIn₂ ComputableIn RecursiveIn
+  exact ⟨fun h => h.of_eq fun n => by simp, fun h => h.of_eq fun n => by simp⟩
+
+end ComputableIn₂
