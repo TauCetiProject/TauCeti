@@ -27,6 +27,10 @@ Mathlib's `CategoryTheory.Limits.MonoCoprod.mono_map'_of_injective` proves the s
 monomorphism in a category satisfying `MonoCoprod`; the splitting below needs zero morphisms
 instead, and is the stronger statement in the situations where both apply.
 
+Dually, reindexing a product `∏ X ⟶ ∏ (X ∘ f)` along an injective `f` is a split epimorphism
+(`TauCeti.isSplitEpi_piMap'`): the section extends by zero on the factors indexed outside the range
+of `f`.
+
 Chain complexes built as coproducts over a set of simplices, singular or simplicial, get their
 degreewise splittings this way: for a pair of spaces the singular simplices of the subspace form a
 subset of those of the ambient space, so the short exact sequence of chains of the pair is split in
@@ -103,6 +107,28 @@ instance isSplitMono_sigmaMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono 
         exact Sigma.eqToHom_comp_ι (X ∘ f) hj }
 
 end Reindex
+
+section ReindexPi
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasProducts.{w} C]
+
+open scoped Classical in
+/-- Reindexing a product along an injective map of index types is a split epimorphism. -/
+theorem isSplitEpi_piMap' {I J : Type w} (X : I → C) {f : J → I} (hf : Function.Injective f) :
+    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 (X (f j))) :=
+  IsSplitEpi.mk'
+    { section_ := Pi.lift fun i ↦
+        if h : ∃ j, f j = i then
+          Pi.π (fun j ↦ X (f j)) h.choose ≫ eqToHom (congrArg X h.choose_spec)
+        else 0
+      id := by
+        refine Pi.hom_ext _ _ fun j ↦ ?_
+        have h : ∃ j', f j' = f j := ⟨j, rfl⟩
+        rw [Category.assoc, Pi.map'_comp_π, Category.comp_id, Pi.lift_comp_π, dite_eq_left h,
+          Category.id_comp]
+        exact Pi.π_comp_eqToHom (fun j ↦ X (f j)) (hf h.choose_spec) }
+
+end ReindexPi
 
 noncomputable section Codiagonal
 
