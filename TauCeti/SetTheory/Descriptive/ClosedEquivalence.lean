@@ -28,13 +28,12 @@ it suffices that open sets are measurable.
 
 * `Setoid.countablySeparated_quotient_of_isClosed`: the quotient of a closed equivalence relation
   on a Polish space is countably separated.
-* `Setoid.exists_measurable_eq_iff_of_isClosed`: a measurable Cantor-valued map classifies the
-  equivalence classes.
+* `Setoid.exists_measurable_eq_iff_of_countablySeparated`: any equivalence relation with a
+  countably separated measurable quotient has a measurable Cantor-valued classifier.
 
 ## References
 
-* A. S. Kechris, *Classical Descriptive Set Theory*, Springer, 1995, Section 18.A
-  (smooth equivalence relations).
+* A. S. Kechris, *Classical Descriptive Set Theory*, Springer, 1995.
 * S. Gao, *Invariant Descriptive Set Theory*, CRC Press, 2009 (closed equivalence relations
   are smooth, via invariant separation).
 -/
@@ -44,6 +43,8 @@ public section
 open MeasureTheory Set
 
 namespace Setoid
+
+section
 
 variable {X : Type*} [TopologicalSpace X] [PolishSpace X]
   [MeasurableSpace X] [OpensMeasurableSpace X]
@@ -87,12 +88,14 @@ theorem countablySeparated_quotient_of_isClosed (E : Setoid X)
   have hyC := (hab (C p) (mem_image_of_mem C hp)).1 hxC
   exact (disjoint_left.1 (hVC p)) (mem_image_of_mem _ hyp) hyC
 
-/-- A closed equivalence relation on a Polish space is classified by a measurable map into
-Cantor space: two points have the same image if and only if they are equivalent. -/
-theorem exists_measurable_eq_iff_of_isClosed (E : Setoid X)
-    (hE : IsClosed {p : X × X | E p.1 p.2}) :
+end
+
+/-- An equivalence relation with a countably separated measurable quotient is classified by a
+measurable map into Cantor space: two points have the same image exactly when they are
+equivalent. -/
+theorem exists_measurable_eq_iff_of_countablySeparated {X : Type*} [MeasurableSpace X]
+    (E : Setoid X) [MeasurableSpace.CountablySeparated (Quotient E)] :
     ∃ f : X → (ℕ → Bool), Measurable f ∧ ∀ x y, f x = f y ↔ E x y := by
-  have := E.countablySeparated_quotient_of_isClosed hE
   obtain ⟨g, hg, hinj⟩ :=
     MeasurableSpace.measurable_injection_nat_bool_of_countablySeparated (Quotient E)
   refine ⟨g ∘ Quotient.mk E, hg.comp measurable_quotient_mk', fun x y => ?_⟩
