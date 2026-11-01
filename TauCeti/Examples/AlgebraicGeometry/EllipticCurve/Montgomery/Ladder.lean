@@ -26,8 +26,8 @@ variable [Fact (Nat.Prime 2)] [Fact (Nat.Prime 5)] [Fact (Nat.Prime 7)]
 -- Use three independently scaled representatives of the non-distinguished point of order two.
 example (k : ℕ) :
     let T : (model (0 : ZMod 5) 1).toAffine.Point := .some 2 0 (by
-      rw [Affine.nonsingular_iff, Affine.equation_iff]
-      norm_num
+      simp only [Affine.nonsingular_iff, Affine.equation_iff,
+        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
       decide +revert)
     let R := diffAdd ((2 : ZMod 5) • coordinates (0 : ZMod 5) 1 ((k + 1) • T))
       ((3 : ZMod 5) • coordinates (0 : ZMod 5) 1 (k • T))
@@ -35,37 +35,39 @@ example (k : ℕ) :
     R.cross (coordinates (0 : ZMod 5) 1 ((2 * k + 1) • T)) = 0 ∧ R ≠ 0 := by
   dsimp only
   have hB : (1 : ZMod 5) ≠ 0 := one_ne_zero
-  have h₂ : (2 : ZMod 5) ≠ 0 := (ZMod.natCast_eq_zero_iff 2 5).not.mpr (by decide)
-  have h₃ : (3 : ZMod 5) ≠ 0 := (ZMod.natCast_eq_zero_iff 3 5).not.mpr (by decide)
-  have h₄ : (4 : ZMod 5) ≠ 0 := (ZMod.natCast_eq_zero_iff 4 5).not.mpr (by decide)
+  have h₂ : (2 : ZMod 5) ≠ 0 := by decide +revert
+  have h₃ : (3 : ZMod 5) ≠ 0 := by decide +revert
+  have h₄ : (4 : ZMod 5) ≠ 0 := by decide +revert
   have nonsingular_two_zero : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
-    rw [Affine.nonsingular_iff, Affine.equation_iff]
-    norm_num
+    simp only [Affine.nonsingular_iff, Affine.equation_iff,
+      model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
     decide +revert
   have hscale (a : ZMod 5) (ha : a ≠ 0) (Q : (model (0 : ZMod 5) 1).toAffine.Point) :
       a • coordinates 0 1 Q ≠ 0 := by
     rw [Ne, Pair.smul_eq_zero, not_or]
     exact ⟨ha, coordinates_ne_zero hB Q⟩
-  have h := diffAdd_nsmul h₂ hB
+  refine ⟨diffAdd_cross_two_mul_add_one_nsmul_of_cross_eq_zero hB
+    (.some 2 0 nonsingular_two_zero) k (by simp) (by simp) (by simp), ?_⟩
+  have h := diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero h₂ hB
     (A := 0) (.some 2 0 nonsingular_two_zero) k
     (SNext := (2 : ZMod 5) • coordinates 0 1 ((k + 1) • .some 2 0 nonsingular_two_zero))
     (SCurrent := (3 : ZMod 5) • coordinates 0 1 (k • .some 2 0 nonsingular_two_zero))
     (SBase := (4 : ZMod 5) • coordinates 0 1 (.some 2 0 nonsingular_two_zero))
     (hscale 2 h₂ _) (hscale 3 h₃ _) (hscale 4 h₄ _)
     (by simp) (by simp) (by simp)
-  refine ⟨h.1, h.2.mpr ⟨Affine.Point.some_ne_zero _, ?_⟩⟩
+  apply h.mpr ⟨Affine.Point.some_ne_zero _, ?_⟩
   exact (some_eq_twoTorsionPoint_iff hB nonsingular_two_zero).not.mpr h₂
 
 -- The distinguished point alternates, while its odd differential-addition step degenerates.
 example (k : ℕ) :
     coordinates (0 : ZMod 7) 1 ((2 * k) • twoTorsionPoint (0 : ZMod 7) (by decide +revert)) =
       ⟨1, 0⟩ := by
-  simp
+  simp [coordinates_nsmul_twoTorsionPoint]
 
 example (k : ℕ) :
     coordinates (0 : ZMod 7) 1 ((2 * k + 1) • twoTorsionPoint (0 : ZMod 7) (by decide +revert)) =
       ⟨0, 1⟩ := by
-  simp
+  simp [coordinates_nsmul_twoTorsionPoint]
 
 example (k : ℕ) :
     diffAdd
@@ -78,7 +80,7 @@ example (k : ℕ) :
 example (k : ℕ) :
     coordinates (0 : ZMod 2) 1 ((2 * k + 1) • twoTorsionPoint (0 : ZMod 2) (by decide +revert)) =
       ⟨0, 1⟩ := by
-  simp
+  simp [coordinates_nsmul_twoTorsionPoint]
 
 -- Infinity is also an exceptional fixed difference, even though the input pairs are nonzero.
 example (k : ℕ) :
