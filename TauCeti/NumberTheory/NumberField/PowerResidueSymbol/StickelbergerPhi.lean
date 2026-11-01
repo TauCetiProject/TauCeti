@@ -141,8 +141,7 @@ theorem stickelbergerPhi_prime (P : Ideal (𝓞 K)) [P.IsMaximal] [Fintype (𝓞
     f (stickelbergerPhi P m) = gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f) ψ ^ m := by
   let _ := Ideal.Quotient.field P
   have hχ : orderOf ((powerResidueSymbol P m)⁻¹.ringHomComp f) = m := by
-    rw [← MulChar.ringHomCompHom_apply, orderOf_injective _ (MulChar.injective_ringHomComp hf),
-      orderOf_inv, orderOf_powerResidueSymbol hP]
+    rw [MulChar.orderOf_ringHomComp hf, orderOf_inv, orderOf_powerResidueSymbol hP]
   have h := gaussSum_pow_eq_prod_jacobiSum (hχ ▸ hm) hψ
   rw [hχ] at h
   rw [h, stickelbergerPhi_eq_mul_prod_jacobiSum P hP]

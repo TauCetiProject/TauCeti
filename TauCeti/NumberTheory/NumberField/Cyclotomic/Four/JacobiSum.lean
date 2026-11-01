@@ -192,8 +192,7 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq (hπ : P = span {π})
   let _ := Ideal.Quotient.field P
   have hP : (absNorm P).Coprime 4 := hπ ▸ hπ'.absNorm_span_singleton_coprime_four
   have hχ : orderOf ((powerResidueSymbol P 4).ringHomComp f) = 4 := by
-    rw [← MulChar.ringHomCompHom_apply, orderOf_injective _ (MulChar.injective_ringHomComp hf),
-      orderOf_powerResidueSymbol hP]
+    rw [MulChar.orderOf_ringHomComp hf, orderOf_powerResidueSymbol hP]
   have hneg : f (powerResidueSymbol P 4 (-1)) * f (powerResidueSymbol P 4 (-1)) = 1 := by
     rw [← map_mul, MulChar.apply_neg_one_mul_self, map_one]
   rw [gaussSum_pow_four_eq_card_mul_jacobiSum_sq hχ hψ, jacobiSum_ringHomComp,
