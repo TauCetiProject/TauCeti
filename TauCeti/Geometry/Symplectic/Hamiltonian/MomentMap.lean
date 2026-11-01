@@ -411,10 +411,11 @@ theorem momentCocycle_apply (σ : SmoothTwoForm I M) (a : InfinitesimalAction �
 theorem momentCocycle_eq_zero_iff {x : M} : σ.momentCocycle a μ x = 0 ↔
     ∀ Z Z' : 𝔤, SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) = μ x ⁅Z, Z'⁆ := by
   refine ⟨fun hc Z Z' ↦ ?_, fun hc ↦ DFunLike.ext _ _ fun Z ↦ LinearMap.ext fun Z' ↦ ?_⟩
-  · have h0 : σ.momentCocycle a μ x Z Z' = 0 := congr($hc Z Z')
-    rwa [momentCocycle_apply, LinearEquiv.map_eq_zero_iff, sub_eq_zero] at h0
-  · rw [momentCocycle_apply, hc, sub_self, map_zero]
-    rfl
+  · have h0 := congr($hc Z Z')
+    rwa [momentCocycle_apply, ← LieModule.Cohomology.twoCochain_val_apply, ZeroMemClass.coe_zero,
+      LinearMap.zero_apply, LinearMap.zero_apply, LinearEquiv.map_eq_zero_iff, sub_eq_zero] at h0
+  · rw [momentCocycle_apply, hc, sub_self, map_zero, ← LieModule.Cohomology.twoCochain_val_apply,
+      ZeroMemClass.coe_zero, LinearMap.zero_apply, LinearMap.zero_apply]
 
 /-- Shifting `μ` by a constant `ν ∈ 𝔤*` changes its cocycle by the coboundary `d ν`, which is
 `(Z, Z') ↦ -ν(⁅Z, Z'⁆)`. -/
