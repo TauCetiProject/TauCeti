@@ -266,6 +266,7 @@ instance orientable_of_complex : Orientable 𝓘(ℝ, E) M :=
 
 /-- At every point `x`, the canonical orientation of the tangent space, read in the preferred
 chart at `x`, is the canonical real orientation of the model. -/
+@[simp]
 theorem orientationAt_complexManifoldOrientation_eq_complexOrientation (x : M) :
     (complexManifoldOrientation E M).orientationAt x = complexOrientation E :=
   (isOrientedAtlas_maximalAtlas_complex 1).orientationAt_orientation _ _
@@ -297,16 +298,16 @@ theorem complexOrientationLift_sign (α : M) (x : (chartAt E α).source) :
     (complexOrientationLift E M).sign α x = 1 := by
   simp [complexOrientationLift]
 
-/-- The canonical orientation lift represents the canonical orientation of a complex manifold:
-its tangent orientations are the canonical ones, reindexed by the real dimension. -/
+/-- The canonical orientation lift represents the canonical orientation of a complex manifold: at
+every point, its tangent orientation, read in the preferred chart, is the canonical real
+orientation of the model reindexed by the real dimension, which is also the canonical tangent
+orientation there (`TauCeti.orientationAt_complexManifoldOrientation_eq_complexOrientation`). -/
+@[simp]
 theorem orientationAt_complexOrientationLift (x : M) :
     (complexOrientationLift E M).orientationAt x =
-      Orientation.reindex ℝ _ (finCongr (finrank_real_of_complex E).symm)
-        ((complexManifoldOrientation E M).orientationAt x) := by
-  rw [complexOrientationLift, Manifold.OrientationLift.orientationAt_ofHasGroupoid,
-    orientationAt_complexManifoldOrientation_eq_complexOrientation]
-  -- The tangent space at `x` is the model space, with its own scalar structure.
-  rfl
+      Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
+        (complexOrientation E) :=
+  Manifold.OrientationLift.orientationAt_ofHasGroupoid _ _ x
 
 /-- An orientation lift of a complex manifold, indexed by the real dimension, is the canonical
 lift exactly when its model orientation is the reindexed canonical real orientation of the model
@@ -322,11 +323,17 @@ theorem eq_complexOrientationLift_iff
           ((complexManifoldOrientation E M).orientationAt x) := by
   constructor
   · rintro rfl
-    exact ⟨complexOrientationLift_modelOrientation, orientationAt_complexOrientationLift⟩
+    refine ⟨complexOrientationLift_modelOrientation, fun x ↦ ?_⟩
+    rw [orientationAt_complexManifoldOrientation_eq_complexOrientation]
+    exact orientationAt_complexOrientationLift x
   · rintro ⟨hm, h⟩
     exact Manifold.OrientationLift.ext_of_orientationAt
       (hm.trans complexOrientationLift_modelOrientation.symm) fun x ↦
-      (h x).trans (orientationAt_complexOrientationLift x).symm
+      (h x).trans (by
+        rw [orientationAt_complexOrientationLift,
+          orientationAt_complexManifoldOrientation_eq_complexOrientation]
+        -- The tangent space at `x` is the model space, with its own scalar structure.
+        rfl)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℂ, E) 1 N]
 
