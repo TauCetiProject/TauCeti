@@ -87,16 +87,16 @@ private theorem modelLocalOrientation_neg (ω : Orientation ℝ (Model.{w} n) (F
 
 /-- A linear automorphism of the model carries the local orientation of `ω` to that of its image
 orientation: both actions are by the sign of its determinant. -/
-private theorem singularHomologyMap_modelLocalOrientation (g : (Model.{w} n) ≃L[ℝ] (Model.{w} n))
+private theorem modelLocalOrientation_map (g : (Model.{w} n) ≃L[ℝ] (Model.{w} n))
     (ω : Orientation ℝ (Model.{w} n) (Fin (n + 1))) :
-    (TopPair.singularHomologyMap g.complZeroPairIso.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)).hom
-        (modelLocalOrientation ω).val =
-      (modelLocalOrientation (ω.map _ g.toLinearEquiv)).val := by
+    (modelLocalOrientation ω).map g.complZeroPairIso =
+      modelLocalOrientation (ω.map _ g.toLinearEquiv) := by
   have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ (Model.{w} n) := by
     rw [Fintype.card_fin, finrank_euclideanSpace_ulift_fin]
   have hsign := singularHomologyMap_continuousLinearMap_compl_zero
     (ModuleCat.of ℤ (ULift.{w} ℤ)) (g : Model.{w} n →L[ℝ] Model.{w} n) g.mapsTo_compl_zero (n + 1)
-  rw [g.complZeroPairIso_hom, hsign]
+  apply Subtype.ext
+  rw [LocalOrientation.coe_map, g.complZeroPairIso_hom, hsign]
   -- The determinant of `g` is nonzero, and the orientation and the local orientation change by
   -- its sign.
   have hdet : LinearMap.det (g.toLinearEquiv : (Model.{w} n) →ₗ[ℝ] (Model.{w} n)) ≠ 0 :=
@@ -124,13 +124,10 @@ private theorem localOrientationVia_eq (ω : Orientation ℝ F (Fin (n + 1)))
       ext x
       simp [g]
     rw [← Orientation.map_trans, hL]
-  have hpair : g.complZeroPairIso.hom ≫ L'.complZeroPairIso.inv = L.complZeroPairIso.inv := by
-    rw [g.complZeroPairIso_hom, L'.complZeroPairIso_inv, L.complZeroPairIso_inv]
-    exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext; simp [g])
-  apply Subtype.ext
-  simp only [localOrientationVia, LocalOrientation.coe_map, Iso.symm_hom]
-  rw [hω, ← singularHomologyMap_modelLocalOrientation, ← ModuleCat.comp_apply,
-    ← TopPair.singularHomologyMap_comp, hpair]
+  have hpair : g.complZeroPairIso ≪≫ L'.complZeroPairIso.symm = L.complZeroPairIso.symm := by
+    simp [g]
+  rw [localOrientationVia, localOrientationVia, hω, ← modelLocalOrientation_map,
+    ← LocalOrientation.map_trans, hpair]
 
 /-- **The local orientation selected by an orientation.** An orientation `ω` of a real normed
 space `F` of dimension `n + 1` selects the generator of `Hₙ₊₁(F, F ∖ {0}; ℤ)` carried from the
@@ -157,18 +154,15 @@ theorem localOrientation_euclideanSpace
     ω.localOrientation hE = (OpenPartialHomeomorph.refl _).localOrientationOfOrientedChart
       (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _) ω hE := by
   rw [localOrientation_eq_localOrientationVia ω hE (ContinuousLinearEquiv.refl ℝ _)]
-  apply Subtype.ext
   have hω : ω.map _ (ContinuousLinearEquiv.refl ℝ (Model.{w} n)).toLinearEquiv = ω := by
     have hrefl : (ContinuousLinearEquiv.refl ℝ (Model.{w} n)).toLinearEquiv =
         LinearEquiv.refl ℝ _ := by
       ext x
       simp
     rw [hrefl, Orientation.map_refl, Equiv.refl_apply]
-  simp only [localOrientationVia, LocalOrientation.coe_map, Iso.symm_hom,
-    ContinuousLinearEquiv.complZeroPairIso_refl, Iso.refl_inv, TopPair.singularHomologyMap_id,
-    ModuleCat.id_apply, hω]
+  simp only [localOrientationVia, ContinuousLinearEquiv.complZeroPairIso_refl, Iso.refl_symm, hω]
   -- Both sides are the oriented-chart generator of the identity chart.
-  rfl
+  exact LocalOrientation.map_refl _
 
 /-- **Naturality of the selected local orientations.** A continuous linear equivalence
 `f : F ≃L[ℝ] G` carries the local orientation selected by `ω` to the local orientation selected by
@@ -187,22 +181,16 @@ theorem localOrientation_map (f : F ≃L[ℝ] G) (ω : Orientation ℝ F (Fin (n
       ext x
       simp
     rw [← Orientation.map_trans, hL]
-  have hpair : (f.symm.trans L).complZeroPairIso.inv =
-      L.complZeroPairIso.inv ≫ f.complZeroPairIso.hom := by
-    rw [(f.symm.trans L).complZeroPairIso_inv, L.complZeroPairIso_inv, f.complZeroPairIso_hom]
-    exact (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext; simp)).symm
   rw [localOrientation_eq_localOrientationVia _ hG (f.symm.trans L),
-    localOrientation_eq_localOrientationVia _ hF L]
-  apply Subtype.ext
-  simp only [localOrientationVia, LocalOrientation.coe_map, Iso.symm_hom]
-  rw [hω, hpair, TopPair.singularHomologyMap_comp, ModuleCat.comp_apply]
+    localOrientation_eq_localOrientationVia _ hF L, localOrientationVia, localOrientationVia, hω,
+    ← LocalOrientation.map_trans, ContinuousLinearEquiv.complZeroPairIso_trans,
+    ContinuousLinearEquiv.complZeroPairIso_symm, Iso.trans_symm, Iso.symm_symm_eq]
 
 /-- Reversing an orientation reverses the local orientation it selects. -/
 @[simp]
 theorem localOrientation_neg (ω : Orientation ℝ F (Fin (n + 1))) (hF : finrank ℝ F = n + 1) :
     (-ω).localOrientation hF = -ω.localOrientation hF := by
-  apply Subtype.ext
   simp only [localOrientation, localOrientationVia, Orientation.map_neg, modelLocalOrientation_neg,
-    LocalOrientation.coe_map, LocalOrientation.coe_neg, map_neg]
+    LocalOrientation.map_neg]
 
 end Orientation

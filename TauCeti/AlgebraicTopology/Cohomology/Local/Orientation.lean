@@ -182,7 +182,7 @@ theorem cohomologyClass_neg :
     cohomologyClass (-o) φ hx = -cohomologyClass o φ hx := by
   symm
   apply (eq_cohomologyClass_iff (-o) φ hx _).mpr
-  simp only [map_neg, ModuleCat.hom_neg, LinearMap.neg_apply, coe_neg, neg_neg]
+  simp only [_root_.map_neg, ModuleCat.hom_neg, LinearMap.neg_apply, coe_neg, neg_neg]
   exact kronecker_cohomologyClass o φ hx
 
 /-- The dual cohomology class is independent of the chart used in its construction. -/
