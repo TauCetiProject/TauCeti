@@ -44,6 +44,8 @@ the perfectoid cover of an analytic adic space by a tower of finite étale torso
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.isGaloisGroup`: over a nonzero ring, `G` is a Galois group
   of `B` over `A` in Mathlib's sense.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.rankAtStalk_eq_card`: a torsor has constant rank `|G|`.
+* `TauCeti.Algebra.IsFiniteEtaleTorsor.baseChange`: for every ring map `A → A'`, `A' ⊗[A] B` is a
+  `G`-torsor over `A'`, with `G` acting on the right factor.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.iff_field`: over a field, a torsor is a nonzero finite
   étale algebra with bijective Galois map.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.iff_isGaloisGroup`,
@@ -148,6 +150,37 @@ theorem rankAtStalk_eq_card [h : IsFiniteEtaleTorsor G A B] (p : PrimeSpectrum A
   rw [← Module.rankAtStalk_baseChange, Module.rankAtStalk_eq_of_equiv e,
     Module.rankAtStalk_eq_finrank_of_free]
   simp [Nat.card_eq_fintype_card]
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- **Base change of a torsor.** For every ring map `A → A'`, the base change `A' ⊗[A] B` of a
+finite étale `G`-torsor is a finite étale `G`-torsor over `A'`, with `G` acting on the right
+factor (`Algebra.TensorProduct.rightMulSemiringAction`). Geometrically, the pullback of a
+`G`-torsor `Spec B → Spec A` along `Spec A' → Spec A` is a `G`-torsor. -/
+instance baseChange (A' : Type*) [CommRing A'] [Algebra A A'] [h : IsFiniteEtaleTorsor G A B] :
+    IsFiniteEtaleTorsor G A' (A' ⊗[A] B) := by
+  have := h.etale
+  have := h.finite
+  have := h.faithfullyFlat
+  classical
+  have := Fintype.ofFinite G
+  refine ⟨inferInstance, inferInstance, inferInstance, ?_⟩
+  -- The Galois map of `A' ⊗[A] B` is the base change of the Galois map of `B`, read through
+  -- `A' ⊗[A] (B ⊗[A] B) ≃ (A' ⊗[A] B) ⊗[A'] (A' ⊗[A] B)` and
+  -- `A' ⊗[A] (G → B) ≃ (G → A' ⊗[A] B)`.
+  let eB : B ⊗[A] B ≃ₐ[A] (G → B) :=
+    (AlgEquiv.ofBijective _ h.bijective_tensorToPi).restrictScalars A
+  let e : A' ⊗[A] (B ⊗[A] B) ≃ₐ[A'] (G → A' ⊗[A] B) :=
+    (Algebra.TensorProduct.congr AlgEquiv.refl eB).trans
+      (Algebra.TensorProduct.piRight A A' A' fun _ ↦ B)
+  have hcomp : ⇑(MulSemiringAction.tensorToPi A' (A' ⊗[A] B) G) =
+      e ∘ (TensorProduct.baseChangeTensorAlgEquiv A A' B B).symm := by
+    funext x
+    rw [Function.comp_apply, ← (TensorProduct.baseChangeTensorAlgEquiv A A' B B).apply_symm_apply x,
+      MulSemiringAction.tensorToPi_baseChange, AlgEquiv.symm_apply_apply]
+    -- `e` is `id ⊗ tensorToPi A B G` followed by `piRight`, whose underlying map is `piRightHom`.
+    rfl
+  rw [hcomp]
+  exact e.bijective.comp (AlgEquiv.bijective _)
 
 end IsFiniteEtaleTorsor
 
