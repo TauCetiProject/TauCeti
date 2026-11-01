@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 import Mathlib.NumberTheory.Basic
 import TauCeti.Algebra.Ring.FrobeniusLift
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.RingTheory.MvPowerSeries.Expand
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -25,9 +26,11 @@ power series `h` over `K` satisfies the *functional equation* if
 
   `h(X) - ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ)) ∈ A⟦X⟧`,
 
-where `σⁱ h` applies `σⁱ` to the coefficients of `h`. Hazewinkel's functional equation lemma
-says that if a power series `f = b₁ X + ⋯` in one variable, with `b₁` a unit of `A`, satisfies the
-functional equation, then the formal group law `f⁻¹(f(X) + f(Y))` with logarithm `f` has all its
+where `σⁱ h` applies `σⁱ` to the coefficients of `h`. Formally the sum is truncated in each
+degree (`TauCeti.functionalEquationSum`); as `p ≥ 2`, this agrees with the infinite sum whenever
+`h` has zero constant coefficient. Hazewinkel's functional equation lemma says that if a power
+series `f = b₁ X + ⋯` in one variable, with `b₁` a unit of `A`, satisfies the functional equation,
+then the formal group law `f⁻¹(f(X) + f(Y))` with logarithm `f` has all its
 coefficients in `A`, although the coefficients of `f` itself have denominators.
 
 The proof characterises the integral series of zero constant coefficient as those `ψ` for which
@@ -46,9 +49,11 @@ the logarithm of a formal group law over `ℤ_(p)[v₁, v₂, …]`. With `σ = 
 
 ## Main definitions
 
-* `TauCeti.functionalEquationSum p σ s`: the twisted sum `h ↦ ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))`.
+* `TauCeti.functionalEquationSum p σ s`: the twisted sum `h ↦ ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))`,
+  truncated in degree `d` to the terms `1 ≤ i ≤ |d|`. For `p ≥ 2` and `h` of zero constant
+  coefficient this is the infinite sum.
 * `TauCeti.SatisfiesFunctionalEquation p σ s A h`: `h` satisfies the functional equation, that is
-  `h - ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))` has coefficients in `A`.
+  `h - functionalEquationSum p σ s h` has coefficients in `A`.
 
 ## Main results
 
@@ -77,11 +82,15 @@ section Def
 
 variable (p : ℕ) [NeZero p] (σ : K →+* K) (s : ℕ → K)
 
-/-- The twisted sum `h ↦ ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))` of the functional equation, where `σⁱ h`
-applies `σⁱ` to the coefficients of `h`. It is defined degree by degree: the coefficient of `X^d`
-sums over `1 ≤ i ≤ |d|`. For `d ≠ 0` the terms with `i > |d|` vanish, because `pⁱ > |d|` cannot
-divide a nonzero exponent of `X^d`, so this is the infinite sum in every nonzero degree; in degree
-zero it is `0`, which is the value of the infinite sum when `h` has zero constant coefficient. -/
+/-- The degree-truncated twisted sum of the functional equation: the coefficient of `X^d` is
+`∑_{1 ≤ i ≤ |d|} sᵢ` times the coefficient of `X^d` in `(σⁱ h)(X ^ (pⁱ))`, where `σⁱ h` applies
+`σⁱ` to the coefficients of `h`; in degree zero it is `0`.
+
+For `p ≥ 2` it is the infinite sum `∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))` in every nonzero degree `d`:
+the terms with `i > |d|` vanish, because `pⁱ > |d|` cannot divide a nonzero exponent of `X^d`.
+In degree zero the infinite sum is `0` only when `h` has zero constant coefficient. So for `p ≥ 2`
+and `h` of zero constant coefficient this is `∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))`; for `p = 1` or a
+nonzero constant coefficient it is only the truncation. -/
 noncomputable def functionalEquationSum : MvPowerSeries τ K →+ MvPowerSeries τ K where
   toFun h d := ∑ i ∈ Finset.Icc 1 d.degree,
     s i * coeff d (expand (p ^ i) (NeZero.ne _) (map (σ ^ i) h))
@@ -89,14 +98,15 @@ noncomputable def functionalEquationSum : MvPowerSeries τ K →+ MvPowerSeries 
   map_zero' := by ext d; simp; rfl
   map_add' h₁ h₂ := by ext d; simp [mul_add, Finset.sum_add_distrib]; rfl
 
-/-- The coefficient of `X^d` in `∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))`. -/
+/-- The coefficient of `X^d` in `functionalEquationSum p σ s h` is the sum over `1 ≤ i ≤ |d|` of
+`sᵢ` times the coefficient of `X^d` in `(σⁱ h)(X ^ (pⁱ))`. -/
 @[simp]
 theorem coeff_functionalEquationSum (h : MvPowerSeries τ K) (d : τ →₀ ℕ) :
     coeff d (functionalEquationSum p σ s h) = ∑ i ∈ Finset.Icc 1 d.degree,
       s i * coeff d (expand (p ^ i) (NeZero.ne _) (map (σ ^ i) h)) :=
   (rfl)
 
-/-- In one variable, the coefficient of `Xⁿ` in `∑_{i ≥ 1} sᵢ (σⁱ f)(X ^ (pⁱ))` is the sum of
+/-- In one variable, the coefficient of `Xⁿ` in `functionalEquationSum p σ s f` is the sum of
 `sᵢ σⁱ(f_(n / pⁱ))` over the `1 ≤ i ≤ n` with `pⁱ ∣ n`. -/
 @[simp]
 theorem powerSeries_coeff_functionalEquationSum (f : PowerSeries K) (n : ℕ) :
@@ -113,21 +123,22 @@ theorem powerSeries_coeff_functionalEquationSum (f : PowerSeries K) (n : ℕ) :
     PowerSeries.coeff_map]
 
 /-- `h` satisfies the **functional equation** for `(p, σ, s)` relative to the subring `A`:
-`h - ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))` has all its coefficients in `A`. -/
+`h - functionalEquationSum p σ s h` has all its coefficients in `A`. For `p ≥ 2` and `h` of zero
+constant coefficient, this says that `h - ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))` is integral. -/
 def SatisfiesFunctionalEquation (A : Subring K) (h : MvPowerSeries τ K) : Prop :=
   ∀ d, coeff d (h - functionalEquationSum p σ s h) ∈ A
 
 variable {p σ s} {A : Subring K}
 
 /-- `h` satisfies the functional equation exactly when every coefficient of
-`h - ∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))` is in `A`. -/
+`h - functionalEquationSum p σ s h` is in `A`. -/
 theorem satisfiesFunctionalEquation_iff {h : MvPowerSeries τ K} :
     SatisfiesFunctionalEquation p σ s A h ↔
       ∀ d, coeff d (h - functionalEquationSum p σ s h) ∈ A :=
   Iff.rfl
 
 /-- In one variable, `f` satisfies the functional equation exactly when the coefficient of `Xⁿ` in
-`f - ∑_{i ≥ 1} sᵢ (σⁱ f)(X ^ (pⁱ))` is in `A` for every `n`. -/
+`f - functionalEquationSum p σ s f` is in `A` for every `n`. -/
 theorem powerSeries_satisfiesFunctionalEquation_iff {f : PowerSeries K} :
     SatisfiesFunctionalEquation p σ s A f ↔
       ∀ n, PowerSeries.coeff n (f - functionalEquationSum p σ s f : PowerSeries K) ∈ A := by
@@ -167,13 +178,6 @@ section Integrality
 
 variable {p : ℕ} [hp : Fact p.Prime] {σ : K →+* K} {s : ℕ → K} {A : Subring K}
 
-omit hp in
-/-- If `σ` maps `A` into itself, then `pᵏ x ∈ A` implies `pᵏ σⁱ(x) ∈ A`. -/
-private theorem natCast_pow_mul_pow_apply_mem (hσ : Set.MapsTo σ A A) (i : ℕ) {k : ℕ} {x : K}
-    (hx : (p : K) ^ k * x ∈ A) : (p : K) ^ k * (σ ^ i) x ∈ A := by
-  have := (RingHom.coe_pow σ i ▸ hσ.iterate i) hx
-  rwa [map_mul, map_pow, map_natCast] at this
-
 /-- **Denominators of a solution of the functional equation.** If `f` satisfies the functional
 equation, then `p ^ (vₚ(n)) fₙ ∈ A` for the coefficient `fₙ` of `Xⁿ`. -/
 theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
@@ -201,7 +205,11 @@ theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
     have hlt : n / p ^ i < n := Nat.div_lt_self (by omega) (Nat.one_lt_pow (by omega) hp.out.one_lt)
     have hfac : (n / p ^ i).factorization p = r - i := by
       simp [r, Nat.factorization_div hdvd, hp.out.factorization_self]
-    have hmem := natCast_pow_mul_pow_apply_mem hσ i (ih _ hlt)
+    have hmem : (p : K) ^ (n / p ^ i).factorization p * (σ ^ i) (PowerSeries.coeff (n / p ^ i) f)
+        ∈ A := by
+      have hσi : Set.MapsTo (σ ^ i) A A := RingHom.coe_pow σ i ▸ hσ.iterate i
+      exact_mod_cast hσi.natCast_mul_apply_mem (n := p ^ (n / p ^ i).factorization p)
+        (by exact_mod_cast ih _ hlt)
     rw [hfac] at hmem
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hir
     obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hi₁
@@ -276,8 +284,10 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
     exact sub_dvd_pow_sub_pow _ _ _
   rw [← hU, ← hW, ← map_pow, ← map_pow, ← map_sub, hE, coeff_map,
     ← map_natCast (C (σ := τ) (R := A)), ← map_pow, coeff_C_mul, map_mul, map_pow, map_natCast]
-  have hmem :=
-    natCast_pow_mul_pow_apply_mem hσ i (hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
+  have hmem : (p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f) ∈ A := by
+    have hσi : Set.MapsTo (σ ^ i) A A := RingHom.coe_pow σ i ▸ hσ.iterate i
+    exact_mod_cast hσi.natCast_mul_apply_mem (n := p ^ r)
+      (by exact_mod_cast hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
   have : s i * ((σ ^ i) (PowerSeries.coeff m f) * ((p : K) ^ (r + 1) * A.subtype (coeff d E))) =
       ((p : K) * s i) * (((p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f)) *
         A.subtype (coeff d E)) := by ring
