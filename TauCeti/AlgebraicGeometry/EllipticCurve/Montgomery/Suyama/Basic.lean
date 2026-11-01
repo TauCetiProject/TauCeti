@@ -90,6 +90,13 @@ def suyamaB (σ : K) : K := suyamaX σ ^ 3 + suyamaA σ * suyamaX σ ^ 2 + suyam
 theorem suyamaB_def (σ : K) :
     suyamaB σ = suyamaX σ ^ 3 + suyamaA σ * suyamaX σ ^ 2 + suyamaX σ := (rfl)
 
+/-- Nonzero `B` forces the denominator auxiliary polynomial `v` to be nonzero. -/
+theorem suyamaV_ne_zero {σ : K} (hB : suyamaB σ ≠ 0) : suyamaV σ ≠ 0 := by
+  intro hv
+  apply hB
+  simp only [suyamaB_def, suyamaX_def, hv]
+  simp
+
 /-- The denominator in Suyama's formula is nonzero under the standing parameter restrictions. -/
 theorem suyama_denominator_ne_zero {σ : K} (h₂ : (2 : K) ≠ 0) (hσ : σ ≠ 0)
     (hu : σ ^ 2 ≠ 5) : 4 * suyamaU σ ^ 3 * suyamaV σ ≠ 0 := by
