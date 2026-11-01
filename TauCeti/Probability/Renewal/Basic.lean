@@ -218,6 +218,20 @@ lemma continuousWithinAt_renewalCount_Ici (t : ℝ≥0) (ω : Ω) :
   tendsto_const_nhds.congr' <|
     (eventually_renewalCount_eq_nhdsGE t ω).mono fun _ hs ↦ hs.symm
 
+/-- Smaller increments give earlier arrivals. -/
+lemma arrival_le_arrival {T' : ℕ → Ω → ℝ≥0} {ω : Ω} (h : ∀ n, T' n ω ≤ T n ω) (n : ℕ) :
+    arrival T' n ω ≤ arrival T n ω :=
+  Finset.sum_le_sum fun i _ ↦ h i
+
+/-- Smaller increments give more arrivals by each time. -/
+lemma renewalCount_le_renewalCount {T' : ℕ → Ω → ℝ≥0} {ω : Ω} (h : ∀ n, T' n ω ≤ T n ω)
+    (t : ℝ≥0) : renewalCount T t ω ≤ renewalCount T' t ω := by
+  simp only [renewalCount_def]
+  refine ENNReal.tsum_le_tsum fun n ↦ ?_
+  by_cases hn : arrival T (n + 1) ω ≤ t
+  · simp [hn, (arrival_le_arrival h (n + 1)).trans hn]
+  · simp [hn]
+
 /-- The process does not explode at `ω`, i.e. its arrival times tend to infinity, exactly when
 every count is finite. -/
 lemma tendsto_arrival_atTop_iff {ω : Ω} :
