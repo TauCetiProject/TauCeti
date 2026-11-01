@@ -218,19 +218,17 @@ theorem nonempty_diffeomorph_connectedSum {e₁ : E → M} {e₂ : E → N} (h�
       oE oE oM (-oN) hl hf₁ (by simpa using hr) (by simpa using hf₂)
   -- The balls `e₁` and `e₂` use the opposite orientation of `E` from the chosen balls: rotating
   -- both by a reflection of `E` brings them to the orientation of the chosen balls.
-  obtain ⟨R, hR⟩ := exists_det_eq_neg_one (F := E)
-  have hR' : LinearMap.det (R.toContinuousLinearEquiv : E →ₗ[ℝ] E) < 0 := by
-    rw [← LinearEquiv.coe_det]; exact hR.trans_lt (by norm_num)
+  obtain ⟨R, hR⟩ := exists_det_neg (F := E)
   have h₁' := h₁.comp_linearIsometryEquiv R
   have h₂' := h₂.comp_linearIsometryEquiv R
   have hf₂' : oE₀.IsOrientationReversingAt oN (e₂ ∘ R) 0 :=
-    Manifold.Orientation.isOrientationReversingAt_comp_of_det_neg (by simpa using hf₂) hR'
+    Manifold.Orientation.isOrientationReversingAt_comp_of_det_neg (by simpa using hf₂) hR
   let := ConnectedSum.chartedSpace (H := E) h₁' h₂'
   obtain ⟨φ⟩ := ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt
     (isOpenEmbedding_ballLeft oM oN) (isOpenEmbedding_ballRight oM oN) h₁' h₂'
     (isLocalDiffeomorph_ballLeft oM oN) (isLocalDiffeomorph_ballRight oM oN)
     (d₁.comp_linearIsometryEquiv R) (d₂.comp_linearIsometryEquiv R) oE₀ oE₀ oM (-oN) hl
-    (Manifold.Orientation.isOrientationPreservingAt_comp_of_det_neg (by simpa using hf₁) hR')
+    (Manifold.Orientation.isOrientationPreservingAt_comp_of_det_neg (by simpa using hf₁) hR)
     (by simpa using hr) (by simpa using hf₂')
   let := ConnectedSum.chartedSpace (H := E) (isOpenEmbedding_ballLeft oM oN)
     (isOpenEmbedding_ballRight oM oN)
@@ -284,14 +282,12 @@ theorem nonempty_diffeomorph_orientedConnectedSum {s s' : E → N} (h : IsComple
   obtain hp | hr :=
     (ds 0).isOrientationPreservingAt_or_isOrientationReversingAt (by simp) oE oN
   · -- The ball `s` preserves orientations: rotate the sphere's two balls by a reflection.
-    obtain ⟨R, hR⟩ := exists_det_eq_neg_one (F := E)
-    have hR' : LinearMap.det (R.toContinuousLinearEquiv : E →ₗ[ℝ] E) < 0 := by
-      rw [← LinearEquiv.coe_det]; exact hR.trans_lt (by norm_num)
+    obtain ⟨R, hR⟩ := exists_det_neg (F := E)
     have hsR := hs.comp_linearIsometryEquiv R
     let := ConnectedSum.chartedSpace (H := E) he hsR
     obtain ⟨φ⟩ := OrientedConnectedSum.nonempty_diffeomorph_connectedSum oM oN he hsR de
       (ds.comp_linearIsometryEquiv R) oE hl
-      (Manifold.Orientation.isOrientationReversingAt_comp_of_det_neg (by simpa using hp) hR')
+      (Manifold.Orientation.isOrientationReversingAt_comp_of_det_neg (by simpa using hp) hR)
     exact ⟨φ.trans ((h.comp_linearIsometryEquiv R).connectedSumDiffeomorph he hsR de
       (ds.comp_linearIsometryEquiv R) (ds'.comp_linearIsometryEquiv R))⟩
   · let := ConnectedSum.chartedSpace (H := E) he hs
