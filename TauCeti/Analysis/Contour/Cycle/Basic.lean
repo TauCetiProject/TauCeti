@@ -253,6 +253,16 @@ theorem trace_add_subset (C D : Cycle) : trace (C + D) ⊆ trace C ∪ trace D :
   · exact Set.mem_union_left _ (mem_trace_iff.mpr ⟨γ, hγC, hz⟩)
   · exact Set.mem_union_right _ (mem_trace_iff.mpr ⟨γ, hγD, hz⟩)
 
+/-- The trace of a finite sum of cycles is contained in the union of the traces. -/
+theorem trace_sum_subset {ι : Type*} (s : Finset ι) (C : ι → Cycle) :
+    trace (∑ i ∈ s, C i) ⊆ ⋃ i ∈ s, trace (C i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.set_biUnion_insert]
+    exact (trace_add_subset _ _).trans (union_subset_union_right _ ih)
+
 /-- A nonzero integer multiple has the same trace as the original cycle. -/
 theorem trace_zsmul (C : Cycle) {n : ℤ} (hn : n ≠ 0) : trace (n • C) = trace C := by
   simp [trace, hn]
