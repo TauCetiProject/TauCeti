@@ -15,6 +15,9 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
+An acyclic graph has no loop, and a restriction `Γ.restrict S hS` is acyclic exactly when no
+nonempty reduced closed path of `Γ` has all its darts in `S`.
+
 The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
 since its petal is a reduced loop.
 
@@ -75,6 +78,14 @@ theorem IsAcyclic.eq_of_isReduced (h : Γ.IsAcyclic) {a b : Γ.V} {p q : Γ.Path
     _ = q := by
         rw [hpq, Quiver.Path.nil_comp, Path.reduce_eq_self_of_isReduced Γ q hq]
 
+variable {Γ} in
+/-- An acyclic graph has no loop: a loop dart is a nonempty reduced closed path. -/
+theorem IsAcyclic.src_ne_tgt (h : Γ.IsAcyclic) (e : Γ.E) : Γ.src e ≠ Γ.tgt e := by
+  have key : ∀ {a b : Γ.V} (f : Quiver.Hom a b), a ≠ b := by
+    rintro a _ f rfl
+    cases h a f.toPath (Path.isReduced_toPath Γ f)
+  exact key (Γ.dart e)
+
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     ∀ ⦃a b : Γ.V⦄ (p q : Γ.Path a b), Path.IsReduced Γ p → Path.IsReduced Γ q → p = q :=
@@ -98,6 +109,34 @@ theorem isTree_iff_existsUnique_isReduced : Γ.IsTree ↔
   refine ⟨Γ.connected_iff.mpr ⟨hV, Γ.preconnected_iff.mpr fun a b => ⟨(h a b).exists.choose⟩⟩,
     ?_⟩
   exact (Γ.isAcyclic_iff_eq_of_isReduced).mpr fun a b p q hp hq => (h a b).unique hp hq
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- The restriction is acyclic exactly when every reduced closed path of `Γ` whose darts lie in
+`S` is empty. -/
+theorem isAcyclic_restrict_iff : (Γ.restrict S hS).IsAcyclic ↔
+    ∀ (u : Γ.V) (p : Γ.Path u u), Path.IsReduced Γ p → (∀ e ∈ Path.darts Γ p, e ∈ S) →
+      p = Quiver.Path.nil := by
+  rw [isAcyclic_iff]
+  refine ⟨fun h u p hp hpS => ?_, fun h u q hq => ?_⟩
+  · obtain ⟨q, rfl⟩ := Γ.exists_restrict_path S hS p hpS
+    rw [h u q ((Γ.isReduced_restrictInclusion_mapPath_iff S hS q).mp hp)]
+    rfl
+  · have hp := h u _ ((Γ.isReduced_restrictInclusion_mapPath_iff S hS q).mpr hq)
+      fun e he => Γ.mem_of_mem_darts_mapPath S hS q he
+    cases q with
+    | nil => rfl
+    | cons q e => cases hp
+
+/-- The restriction to the empty set of darts is acyclic. -/
+theorem isAcyclic_restrict_empty : (Γ.restrict ∅ fun _ h => h.elim).IsAcyclic :=
+  (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p _ hp => Quiver.Path.eq_nil_of_length_zero _ (by
+    rw [← Path.length_darts, List.eq_nil_iff_forall_not_mem.mpr fun e he => hp e he,
+      List.length_nil])
+
+end Restrict
 
 /-- The graph with one vertex and no edges is a tree. -/
 theorem single_vertex_isTree : point.{u, v}.IsTree := by

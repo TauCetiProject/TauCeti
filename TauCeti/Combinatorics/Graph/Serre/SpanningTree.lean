@@ -12,10 +12,6 @@ public import Mathlib.Order.Zorn
 /-!
 # Spanning trees of Serre graphs
 
-For a reversal-closed set `S` of darts of a Serre graph `Γ`, the subgraph `Γ.restrict S hS` keeps
-every vertex of `Γ` and the darts in `S`. Its paths are the paths of `Γ` all of whose darts lie in
-`S`, and it is acyclic exactly when no nonempty reduced closed path of `Γ` stays in `S`.
-
 A spanning tree of `Γ` is a reversal-closed set of darts whose subgraph is a tree. Every connected
 Serre graph has one, and every acyclic reversal-closed set of darts extends to one, by Zorn's
 lemma: a maximal acyclic set of darts reaches every vertex, since a dart leaving the vertices it
@@ -24,19 +20,17 @@ allowed throughout, and no finiteness is assumed. A rose has exactly one spannin
 darts.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
-tree path `T.path a b`. The tree paths from a base vertex give the free basis of the fundamental
-group of a graph: a dart `e` outside `T` gives the loop `T.path v (src e) · e · T.path (tgt e) v`.
+tree path `T.path a b`. The tree paths from a base vertex `v` give a free basis of the
+fundamental group of a graph: choose one dart `e` from each reversal pair outside `T`; the basis
+consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 
 ## Main definitions
 
-* `TauCeti.SerreGraph.restrict`: the subgraph on all vertices with a reversal-closed dart set.
 * `TauCeti.SerreGraph.SpanningTree`: a spanning tree of a Serre graph.
 * `TauCeti.SerreGraph.SpanningTree.path`: the reduced path between two vertices in a spanning tree.
 
 ## Main results
 
-* `TauCeti.SerreGraph.isAcyclic_restrict_iff`: acyclicity of a restriction in terms of paths of
-  the ambient graph.
 * `TauCeti.SerreGraph.exists_spanningTree_superset`: in a connected graph, every acyclic
   reversal-closed set of darts lies in a spanning tree.
 * `TauCeti.SerreGraph.nonempty_spanningTree_iff`: a graph has a spanning tree exactly when it is
@@ -54,105 +48,6 @@ namespace TauCeti.SerreGraph
 
 variable (Γ : SerreGraph)
 
-section Restrict
-
-variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
-
-/-- The subgraph of `Γ` with all vertices of `Γ` and the darts of a reversal-closed set `S`. The
-vertex type reduces to that of `Γ`, so vertices of `Γ` are vertices of the subgraph. -/
-abbrev restrict : SerreGraph where
-  V := Γ.V
-  E := S
-  src e := Γ.src e.1
-  rev e := ⟨Γ.rev e.1, hS e.1 e.2⟩
-  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
-  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
-
-@[simp] theorem restrict_src (e : (Γ.restrict S hS).E) :
-    (Γ.restrict S hS).src e = Γ.src e.1 := (rfl)
-
-@[simp] theorem restrict_rev_val (e : (Γ.restrict S hS).E) :
-    ((Γ.restrict S hS).rev e).1 = Γ.rev e.1 := (rfl)
-
-@[simp] theorem restrict_tgt (e : (Γ.restrict S hS).E) :
-    (Γ.restrict S hS).tgt e = Γ.tgt e.1 := (rfl)
-
-/-- The inclusion of a restriction into the ambient graph. -/
-@[expose] def restrictInclusion : (Γ.restrict S hS).Hom Γ where
-  mapV := id
-  mapE := Subtype.val
-  map_src _ := rfl
-  map_rev _ := rfl
-
-@[simp] theorem restrictInclusion_mapV (a : (Γ.restrict S hS).V) :
-    (Γ.restrictInclusion S hS).mapV a = a := (rfl)
-
-@[simp] theorem restrictInclusion_mapE (e : (Γ.restrict S hS).E) :
-    (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
-
-/-- A path all of whose darts lie in `S` lifts through the inclusion of the restriction. -/
-theorem exists_restrict_path {a b : Γ.V} (p : Γ.Path a b)
-    (hp : ∀ e ∈ Path.darts Γ p, e ∈ S) :
-    ∃ q : (Γ.restrict S hS).Path a b,
-      (Γ.restrictInclusion S hS).toPrefunctor.mapPath q = p := by
-  induction p with
-  | nil => exact ⟨.nil, rfl⟩
-  | @cons b c p e ih =>
-    obtain ⟨q, hq⟩ := ih fun f hf => hp f (by simp [hf])
-    refine ⟨q.cons ⟨⟨e.1, hp e.1 (by simp)⟩, e.2⟩, ?_⟩
-    subst hq
-    rfl
-
-/-- The darts of a path in the restriction lie in `S`. -/
-theorem mem_of_mem_darts_mapPath {a b : (Γ.restrict S hS).V}
-    (q : (Γ.restrict S hS).Path a b) {e : Γ.E}
-    (he : e ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q)) : e ∈ S := by
-  rw [Hom.darts_mapPath] at he
-  obtain ⟨f, -, rfl⟩ := List.mem_map.mp he
-  exact f.2
-
-/-- A path in the restriction is reduced exactly when it is reduced in the ambient graph. -/
-@[simp] theorem isReduced_restrictInclusion_mapPath_iff {a b : (Γ.restrict S hS).V}
-    (q : (Γ.restrict S hS).Path a b) :
-    Path.IsReduced Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q) ↔
-      Path.IsReduced (Γ.restrict S hS) q :=
-  Hom.isReduced_mapPath_iff _ (Γ.restrictInclusion S hS) Subtype.val_injective q
-
-/-- The restriction is preconnected exactly when any two vertices are joined by a path of `Γ`
-whose darts lie in `S`. -/
-theorem preconnected_restrict_iff : (Γ.restrict S hS).Preconnected ↔
-    ∀ a b : Γ.V, ∃ p : Γ.Path a b, ∀ e ∈ Path.darts Γ p, e ∈ S := by
-  rw [preconnected_iff]
-  refine ⟨fun h a b => ?_, fun h a b => ?_⟩
-  · obtain ⟨q⟩ := h a b
-    exact ⟨_, fun e he => Γ.mem_of_mem_darts_mapPath S hS q he⟩
-  · obtain ⟨p, hp⟩ := h a b
-    exact ⟨(Γ.exists_restrict_path S hS p hp).choose⟩
-
-/-- The restriction is acyclic exactly when every reduced closed path of `Γ` whose darts lie in
-`S` is empty. -/
-theorem isAcyclic_restrict_iff : (Γ.restrict S hS).IsAcyclic ↔
-    ∀ (u : Γ.V) (p : Γ.Path u u), Path.IsReduced Γ p → (∀ e ∈ Path.darts Γ p, e ∈ S) →
-      p = Quiver.Path.nil := by
-  rw [isAcyclic_iff]
-  refine ⟨fun h u p hp hpS => ?_, fun h u q hq => ?_⟩
-  · obtain ⟨q, rfl⟩ := Γ.exists_restrict_path S hS p hpS
-    rw [h u q ((Γ.isReduced_restrictInclusion_mapPath_iff S hS q).mp hp)]
-    rfl
-  · have hp := h u _ ((Γ.isReduced_restrictInclusion_mapPath_iff S hS q).mpr hq)
-      fun e he => Γ.mem_of_mem_darts_mapPath S hS q he
-    cases q with
-    | nil => rfl
-    | cons q e => cases hp
-
-/-- The restriction to the empty set of darts is acyclic. -/
-theorem isAcyclic_restrict_empty : (Γ.restrict ∅ fun _ h => h.elim).IsAcyclic :=
-  (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p _ hp => Quiver.Path.eq_nil_of_length_zero _ (by
-    rw [← Path.length_darts, List.eq_nil_iff_forall_not_mem.mpr fun e he => hp e he,
-      List.length_nil])
-
-end Restrict
-
 /-! ### Adding a dart to an acyclic set of darts -/
 
 /-- A set of darts carries no nonempty reduced closed path. -/
@@ -161,30 +56,6 @@ private def IsAcyclicOn (S : Set Γ.E) : Prop :=
     p = Quiver.Path.nil
 
 variable {Γ}
-
-/-- Paths in a set of darts that preserves a vertex set `R` start in `R` exactly when they end
-in `R`. -/
-private theorem mem_iff_mem_of_darts {S : Set Γ.E} {R : Set Γ.V}
-    (hS : ∀ e ∈ S, Γ.rev e ∈ S) (hR : ∀ e ∈ S, Γ.src e ∈ R → Γ.tgt e ∈ R)
-    {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ S) : a ∈ R ↔ b ∈ R := by
-  induction p with
-  | nil => rfl
-  | cons p e ih =>
-    obtain ⟨e, rfl, rfl⟩ := e
-    have he : e ∈ S := hp e (by simp)
-    rw [ih fun f hf => hp f (by simp [hf])]
-    exact ⟨hR e he, fun h => by simpa using hR _ (hS e he) (by simpa using h)⟩
-
-/-- A path from `R` to its complement has a dart from `R` to its complement. -/
-private theorem exists_mem_darts_of_mem_of_notMem {R : Set Γ.V} {a b : Γ.V} (p : Γ.Path a b)
-    (ha : a ∈ R) (hb : b ∉ R) : ∃ e ∈ Path.darts Γ p, Γ.src e ∈ R ∧ Γ.tgt e ∉ R := by
-  induction p with
-  | nil => exact absurd ha hb
-  | @cons b c p f ih =>
-    by_cases hb' : b ∈ R
-    · exact ⟨f.1, by simp, by rwa [f.2.1], by rwa [f.2.2]⟩
-    · obtain ⟨e, he, h⟩ := ih hb'
-      exact ⟨e, by simp [he], h⟩
 
 /-- Let `e` be a dart from a vertex set `R` preserved by `S` to its complement. A reduced path in
 `S ∪ {e, rev e}` uses at most one of `e` and `rev e`, and at most once: between two such darts
@@ -216,21 +87,27 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
         simp only [Path.darts_cons, List.mem_append, List.mem_singleton]
         rintro d (hd | rfl)
         exacts [hpS' d hd, hf]
-    · rcases hf with hf | hf | hf
-      rotate_right
-      -- A dart of `S` extends the final segment `r`; the crossing darts are impossible.
-      · refine Or.inr ⟨x, hx, q, r.cons f, rfl, hq, ?_⟩
+    · by_cases hfS : f.1 ∈ S
+      · -- A dart of `S` extends the final segment `r`.
+        refine Or.inr ⟨x, hx, q, r.cons f, rfl, hq, ?_⟩
         simp only [Path.darts_cons, List.mem_append, List.mem_singleton]
         rintro d (hd | rfl)
-        exacts [hr d hd, hf]
-      all_goals
+        exacts [hr d hd, hfS]
+      · -- The crossing darts `e` and `rev e` cannot follow `r`.
         exfalso
-        have hside := mem_iff_mem_of_darts hS hR r hr
+        have hf : f.1 = e ∨ f.1 = Γ.rev e := hf.imp_right fun h => h.resolve_right hfS
+        have hside := Path.mem_iff_mem_of_forall_mem_darts _ hS hR r hr
         rw [← f.2.1] at hside
         -- The darts `x` and `f` both cross between `R` and its complement, in opposite
         -- directions, so `f` reverses `x`.
         have hfx : f.1 = Γ.rev x := by
-          rcases hx with rfl | rfl <;> rw [hf] at hside ⊢ <;> simp_all
+          rcases hx with rfl | rfl <;> rcases hf with hf | hf
+          · rw [hf] at hside
+            exact absurd (hside.mpr he) he'
+          · exact hf
+          · rw [hf, rev_rev]
+          · rw [hf, src_rev, tgt_rev] at hside
+            exact absurd (hside.mp he) he'
         have hb : b = Γ.tgt x := by rw [← f.2.1, hfx, src_rev]
         subst hb
         obtain rfl := hSa _ r ((hp.of_cons Γ).of_comp_right Γ) hr
@@ -246,9 +123,13 @@ private theorem isAcyclicOn_insert {S : Set Γ.E} {R : Set Γ.V}
   rcases darts_subset_or_eq_comp hS hSa hR he he' p hp hpS with
     hpS' | ⟨x, hx, q, r, -, hq, hr⟩
   · exact hSa u p hp hpS'
-  · have h₁ := mem_iff_mem_of_darts hS hR q hq
-    have h₂ := mem_iff_mem_of_darts hS hR r hr
-    rcases hx with rfl | rfl <;> simp_all
+  · have h₁ := Path.mem_iff_mem_of_forall_mem_darts _ hS hR q hq
+    have h₂ := Path.mem_iff_mem_of_forall_mem_darts _ hS hR r hr
+    rcases hx with rfl | rfl
+    · exact absurd (h₂.mpr (h₁.mpr he)) he'
+    · rw [src_rev] at h₁
+      rw [tgt_rev] at h₂
+      exact absurd (h₁.mp (h₂.mp he)) he'
 
 /-- A reversal-closed acyclic set of darts of a preconnected graph to which no dart can be added
 joins any two vertices: otherwise a dart leaving the vertices it reaches from `a` could be added. -/
@@ -265,7 +146,7 @@ private theorem exists_path_of_maximal (h : Γ.Preconnected) {T : Set Γ.E}
     rintro f (hf | rfl)
     exacts [hp f hf, hd]
   obtain ⟨p⟩ := Γ.preconnected_iff.mp h a b
-  obtain ⟨e, -, he, he'⟩ := exists_mem_darts_of_mem_of_notMem (R := R) p ⟨.nil, by simp⟩ hab
+  obtain ⟨e, -, he, he'⟩ := Path.exists_boundary_dart _ p R ⟨.nil, by simp⟩ hab
   exact he' (hR e (hmax e (isAcyclicOn_insert hT hTa hR he he')) he)
 
 variable (Γ)
@@ -343,7 +224,8 @@ theorem exists_path (a b : Γ.V) :
 tree. -/
 noncomputable def path (a b : Γ.V) : Γ.Path a b := (T.exists_path a b).choose
 
-theorem isReduced_path (a b : Γ.V) : Path.IsReduced Γ (T.path a b) :=
+/-- The tree path is reduced. -/
+@[simp] theorem isReduced_path (a b : Γ.V) : Path.IsReduced Γ (T.path a b) :=
   (T.exists_path a b).choose_spec.1
 
 theorem mem_of_mem_darts_path {a b : Γ.V} {e : Γ.E} (he : e ∈ Path.darts Γ (T.path a b)) :
@@ -370,11 +252,8 @@ theorem path_src_tgt {e : Γ.E} (he : e ∈ T.darts) :
   (T.eq_path (Path.isReduced_toPath Γ _) (by simpa using he)).symm
 
 /-- A spanning tree contains no loop. -/
-theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e := by
-  intro h
-  have hlen := congrArg Quiver.Path.length (T.path_src_tgt he)
-  rw [Quiver.Path.length_toPath, ← h, path_self, Quiver.Path.length_nil] at hlen
-  exact zero_ne_one hlen
+theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
+  T.isTree.isAcyclic.src_ne_tgt ⟨e, he⟩
 
 end SpanningTree
 
