@@ -22,7 +22,8 @@ over `ℚ` and take a nearby root (`IsAlgebraic.mem_closure_setOf_isAlgebraic`).
 Separability is what makes `ℂ_p` fail to be spherically complete, so that the closed unit disc
 over `ℂ_p` has points of type (4).
 
-The file also records the norm `‖p‖ = p⁻¹ < 1` of `p` in `ℂ_[p]`.
+The file also records the norm `‖p‖ = p⁻¹ < 1` of `p` in `ℂ_[p]` and the
+characteristic of the residue field of its integers.
 
 ## Main results
 
@@ -43,6 +44,11 @@ namespace PadicComplex
 
 variable (p : ℕ) [Fact p.Prime]
 
+/-- The real value of the valuation on `ℂ_[p]` is its norm. -/
+theorem valuation_coe (x : ℂ_[p]) : ((Valued.v x : NNReal) : ℝ) = ‖x‖ := by
+  rw [PadicComplex.norm_eq_norm]
+  simp [Valuation.norm_def, RankOne.hom_eq_embedding, Valuation.embedding_restrict]
+
 /-- The norm of `p` in `ℂ_[p]` is `p⁻¹`. -/
 @[simp]
 theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
@@ -52,6 +58,15 @@ theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
 theorem norm_p_lt_one : ‖(p : ℂ_[p])‖ < 1 := by
   rw [norm_p]
   exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt)
+
+/-- The residue field of the integers of `ℂ_p` has characteristic `p`. -/
+instance residueFieldCharP : CharP (IsLocalRing.ResidueField (Valued.integer ℂ_[p])) p := by
+  apply (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).2
+  rw [← map_natCast (IsLocalRing.residue (Valued.integer ℂ_[p])),
+    IsLocalRing.residue_eq_zero_iff]
+  apply (Valuation.mem_maximalIdeal_iff ℂ_[p] (PadicComplex.valued p).v).2
+  rw [← NNReal.coe_lt_coe, valuation_coe]
+  exact norm_p_lt_one p
 
 /-- **The algebraic numbers are dense in `ℂ_[p]`.** -/
 theorem dense_setOf_isAlgebraic : Dense {x : ℂ_[p] | IsAlgebraic ℚ x} := by
