@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.CalderonZygmund
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Data.ENNReal.Inv
 
 /-!
