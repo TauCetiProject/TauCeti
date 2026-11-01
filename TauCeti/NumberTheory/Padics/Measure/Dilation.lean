@@ -58,30 +58,6 @@ theorem amiceTransform_map_mulLeft {R : Type*} [CommRing R] [TopologicalSpace R]
     simpa only [Function.comp_apply, binomialSeries_nat] using
       amiceTransform_map_mulLeft_natCast m μ)) a
 
-/-- Dilation by a unit commutes with restriction to the units. -/
-theorem unitRestriction_map_mulLeft_unit {R : Type*} [NormedCommRing R]
-    (μ : D(ℤ_[p], R)) (a : ℤ_[p]ˣ) :
-    unitRestriction (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) =
-      map (ContinuousMap.mulLeft (a : ℤ_[p])) (unitRestriction μ) := by
-  have h : (1 - pMultiplesIndicator p R).comp (ContinuousMap.mulLeft (a : ℤ_[p])) =
-      1 - pMultiplesIndicator p R := by
-    ext x
-    have hd : (p : ℤ_[p]) ∣ (a : ℤ_[p]) * x ↔ (p : ℤ_[p]) ∣ x :=
-      a.isUnit.dvd_mul_left
-    by_cases hx : (p : ℤ_[p]) ∣ x
-    · simp [ContinuousMap.comp_apply, pMultiplesIndicator_eq_one hx,
-        pMultiplesIndicator_eq_one (hd.mpr hx)]
-    · simp [ContinuousMap.comp_apply, pMultiplesIndicator_eq_zero hx,
-        pMultiplesIndicator_eq_zero (mt hd.mp hx)]
-  rw [unitRestriction_eq_weight, ← map_weight, h]
-
-/-- Dilation by a unit preserves the kernel of measure psi. -/
-theorem psiMeasure_map_mulLeft_unit_eq_zero {R : Type*} [NormedCommRing R]
-    (μ : D(ℤ_[p], R)) (a : ℤ_[p]ˣ) (hμ : psiMeasure μ = 0) :
-    psiMeasure (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) = 0 := by
-  rw [← unitRestriction_eq_self_iff_psiMeasure_eq_zero] at hμ ⊢
-  rw [unitRestriction_map_mulLeft_unit, hμ]
-
 end AbstractMeasure
 
 namespace TauCeti
@@ -93,9 +69,17 @@ theorem inverseMahler_subst_binomialSeries (F : ℤ_[p]⟦X⟧) (a : ℤ_[p]ˣ) 
       (↑a⁻¹ : ℤ_[p]) • (inverseMahler p F).subst
         (binomialSeries ℤ_[p] (a : ℤ_[p]) - 1) := by
   obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
-  rw [amiceTransformEquiv_apply, ← amiceTransform_map_mulLeft, inverseMahler_amiceTransform,
-    inverseWeight_map_mulLeft_unit, map_smul, Algebra.algebraMap_self_apply,
-    amiceTransform_map_mulLeft, inverseMahler_amiceTransform]
+  rw [amiceTransformEquiv_apply]
+  calc
+    inverseMahler p (μ.amiceTransform.subst (binomialSeries ℤ_[p] (a : ℤ_[p]) - 1)) =
+        (inverseWeight (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ)).amiceTransform := by
+      rw [← amiceTransform_map_mulLeft, inverseMahler_amiceTransform]
+    _ = (↑a⁻¹ : ℤ_[p]) •
+        (map (ContinuousMap.mulLeft (a : ℤ_[p])) (inverseWeight μ)).amiceTransform := by
+      simp only [inverseWeight_map_mulLeft_unit, Algebra.algebraMap_self_apply, map_smul]
+    _ = (↑a⁻¹ : ℤ_[p]) • (inverseMahler p μ.amiceTransform).subst
+        (binomialSeries ℤ_[p] (a : ℤ_[p]) - 1) := by
+      rw [amiceTransform_map_mulLeft, inverseMahler_amiceTransform]
 
 -- The inverse factor is visible at the unit two, not just at the identity exponent.
 example (F : ℤ_[3]⟦X⟧) :
