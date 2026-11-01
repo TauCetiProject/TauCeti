@@ -553,12 +553,6 @@ section Map
 variable {R V W U : Type*} [Ring R] [AddCommGroup V] [Module R V]
   [AddCommGroup W] [Module R W] [AddCommGroup U] [Module R U]
 
-/-- Coefficientwise linear maps preserve every lattice. -/
-theorem of_map_mem_lattice (u : V →ₗ[R] W) {a : ℤ} {f : HahnModule ℤ R V}
-    (hf : f ∈ lattice R V a) : of R (((of R).symm f).map u) ∈ lattice R W a :=
-  (mem_lattice_iff R W).mpr fun n hn ↦ by
-    simp [map_coeff, (mem_lattice_iff R V).mp hf n hn]
-
 /-- Applying a linear map to each coefficient of a module-valued Laurent series, continuously
 for the lattice topologies. -/
 noncomputable def hahnModuleMap (u : V →ₗ[R] W) : HahnModule ℤ R V →L[R] HahnModule ℤ R W := by
@@ -566,24 +560,29 @@ noncomputable def hahnModuleMap (u : V →ₗ[R] W) : HahnModule ℤ R V →L[R]
     { toFun := fun x ↦ of R (((of R).symm x).map u)
       map_add' := fun x y ↦ by
         apply (of R).symm.injective
-        simpa only [Equiv.symm_apply_apply, of_symm_add, HahnSeries.ext_iff, funext_iff,
-          map_coeff, coeff_add, toAddMonoidHom_coe] using
-          (HahnSeries.map_add u.toAddMonoidHom
-            (x := (of R).symm x) (y := (of R).symm y))
+        ext n
+        simp [map_coeff]
       map_smul' := fun c x ↦ by
         apply (of R).symm.injective
-        simpa only [Equiv.symm_apply_apply, of_symm_smul', RingHom.id_apply] using
-          (HahnSeries.map_smul u (r := c) (x := (of R).symm x)) }
+        ext n
+        simp [map_coeff] }
   refine ⟨f, continuous_of_continuousAt_zero f ?_⟩
   rw [ContinuousAt, map_zero]
   refine ((hasBasis_nhds_zero_lattice R V).tendsto_iff
     (hasBasis_nhds_zero_lattice R W)).mpr fun a _ ↦
-      ⟨a, trivial, fun _ hx ↦ u.of_map_mem_lattice hx⟩
+      ⟨a, trivial, fun x hx ↦ (mem_lattice_iff R W).mpr fun n hn ↦ by
+        simp [f, map_coeff, (mem_lattice_iff R V).mp hx n hn]⟩
 
 /-- The coefficientwise map agrees with `HahnSeries.map` through `HahnModule.of`. -/
 theorem hahnModuleMap_apply (u : V →ₗ[R] W) (f : HahnModule ℤ R V) :
     u.hahnModuleMap f = of R (((of R).symm f).map u) :=
   (rfl)
+
+/-- Coefficientwise linear maps preserve every lattice. -/
+theorem hahnModuleMap_mem_lattice (u : V →ₗ[R] W) {a : ℤ} {f : HahnModule ℤ R V}
+    (hf : f ∈ lattice R V a) : u.hahnModuleMap f ∈ lattice R W a :=
+  (mem_lattice_iff R W).mpr fun n hn ↦ by
+    simp [hahnModuleMap_apply, map_coeff, (mem_lattice_iff R V).mp hf n hn]
 
 /-- The coefficients of `hahnModuleMap u f` are the images under `u` of the coefficients of `f`. -/
 @[simp]

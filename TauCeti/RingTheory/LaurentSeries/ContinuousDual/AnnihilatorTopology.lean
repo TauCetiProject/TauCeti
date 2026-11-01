@@ -58,8 +58,8 @@ noncomputable def annihilatorLattice (a : ℤ) : Submodule R (HahnModule ℤ R V
 theorem mem_annihilatorLattice_iff {a : ℤ} {ℓ : HahnModule ℤ R V →L[R] R} :
     ℓ ∈ annihilatorLattice R V a ↔ lattice R V (-a) ≤ LinearMap.ker ℓ.toLinearMap := by
   simp only [annihilatorLattice, Submodule.mem_comap, Submodule.mem_dualAnnihilator,
-    ContinuousLinearMap.coeLM, LinearMap.coe_mk, AddHom.coe_mk]
-  rfl
+    ContinuousLinearMap.coeLM, LinearMap.coe_mk, AddHom.coe_mk, IsConcreteLE.le_iff,
+    LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
 
 /-- The annihilator neighbourhoods decrease with their index. -/
 theorem annihilatorLattice_antitone : Antitone (annihilatorLattice R V) := by
@@ -203,7 +203,7 @@ noncomputable def hahnModuleDualMap (u : V →ₗ[R] W) :
   rw [SetLike.mem_coe, mem_annihilatorLattice_iff] at hℓ ⊢
   intro x hx
   apply hℓ
-  simpa only [ContinuousLinearMap.coe_coe, hahnModuleMap_apply] using u.of_map_mem_lattice hx
+  exact u.hahnModuleMap_mem_lattice hx
 
 @[simp]
 theorem hahnModuleDualMap_apply (u : V →ₗ[R] W) (ℓ : HahnModule ℤ R W →L[R] R)
@@ -233,6 +233,6 @@ theorem hahnModuleDualMap_residueDual (u : V →ₗ[R] W) (g : HahnModule ℤ R 
     u.hahnModuleDualMap (residueDual g) = residueDual (u.dualMap.hahnModuleMap g) := by
   apply ContinuousLinearMap.ext
   intro f
-  simpa only [hahnModuleDualMap_apply] using u.residueDual_of_map g f
+  simpa only [hahnModuleDualMap_apply] using u.residueDual_hahnModuleMap g f
 
 end LinearMap
