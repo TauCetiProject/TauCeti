@@ -432,7 +432,8 @@ theorem exists_continuous_coloring_gSGraph (hS : (List.length '' S).Finite) :
 
 /-- If the words of `S` have only finitely many lengths, then the oriented graph `orientedGS S`
 has a countable Borel coloring. Since `{[]}` is such a word set and is sparse, the density
-hypothesis of `not_hasCountableBorelColoring_orientedGS` cannot be weakened to sparseness. -/
+hypothesis of `not_hasCountableBorelColoring_orientedGS` cannot be dropped, even for sparse word
+sets. -/
 theorem hasCountableBorelColoring_orientedGS (hS : (List.length '' S).Finite) :
     SetRel.HasCountableBorelColoring (orientedGS S) := by
   obtain ⟨c, hc⟩ := exists_continuous_coloring_gSGraph hS
