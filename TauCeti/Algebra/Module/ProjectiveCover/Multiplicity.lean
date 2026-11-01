@@ -52,6 +52,7 @@ The identification is `TauCeti.IsProjectiveCover.homEquivOfIsSemisimpleModule` i
 * `TauCeti.IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity`: its split form, and
   `TauCeti.IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_of_isAlgClosed` over an
   algebraically closed field.
+* `TauCeti.finrank_end_pos`: the scale `dim_k End_A(S)` is positive.
 
 ## References
 
@@ -172,6 +173,15 @@ theorem IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_of_isAlg
   hf.finrank_linearMap_eq_jordanHolderMultiplicity
     (by rw [(endAlgEquivSelfOfIsSimpleModule (k := k) (A := A) (S := S)).toLinearEquiv.finrank_eq,
       Module.finrank_self]) M
+
+/-- **The scale in the multiplicity formula is positive**: the division algebra `End_A(S)` of a
+simple module that is finite-dimensional over `k` has positive dimension. -/
+theorem finrank_end_pos [FiniteDimensional k S] :
+    0 < Module.finrank k (Module.End A S) := by
+  have : Module.Finite A S := Module.Finite.of_restrictScalars_finite k A S
+  have : Module.Finite k (Module.End A S) := Module.Finite.linearMap_of_isNoetherian
+  have : Nontrivial S := IsSimpleModule.nontrivial A S
+  exact Module.finrank_pos
 
 end Formula
 
