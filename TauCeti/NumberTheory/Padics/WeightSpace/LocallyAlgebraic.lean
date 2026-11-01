@@ -41,16 +41,10 @@ normalised valuation `1 / (p ^ (m - 2) (p - 1))` for odd `p`, `m ≥ 2`, and `1 
 
 ## Main results
 
-* `TauCeti.WeightSpace.coord_mul`: the coordinate of a product of weights.
 * `TauCeti.WeightSpace.coord_inclusion_zpow_mul`: the weight `x ↦ x ^ m ψ(x)` has coordinate
   `exp (q m) ψ(γ) - 1`.
 * `TauCeti.WeightSpace.coord_inclusion_zpow_mul_eq_zero_iff`: for `ψ` of finite order, that
   coordinate vanishes exactly when `m = 0` and `T_ψ = 0`.
-* `TauCeti.WeightSpace.unitsPrincipal_le_ker_iff`: `κ` is trivial on `1 + q pʲ ℤ_p` exactly when
-  `κ(γ) ^ (p ^ j) = 1`.
-* `TauCeti.WeightSpace.coord_eq_zero_iff`: `T_κ = 0` exactly when `κ` is trivial on `1 + qℤ_p`.
-* `TauCeti.WeightSpace.isPrimitiveRoot_apply_padicUnitsGenerator`: for exact conductor
-  `p ^ (k + j + 1)`, `κ(γ)` is a primitive `p ^ (j + 1)`-th root of unity.
 * `TauCeti.WeightSpace.norm_coord_pow`, `TauCeti.WeightSpace.norm_coord_eq_rpow`: for exact
   conductor `p ^ (k + j + 1)`, `‖T_κ‖ = p ^ (-1 / (pʲ (p - 1)))`.
 
@@ -66,68 +60,6 @@ open NormedSpace
 namespace TauCeti.WeightSpace
 
 variable {p : ℕ} [Fact p.Prime]
-
-section Monoid
-
-variable {R : Type*} [Monoid R] [TopologicalSpace R] [T2Space R]
-
-/-- A weight `κ` is trivial on `1 + q pʲ ℤ_p` exactly when `κ(γ) ^ (p ^ j) = 1`, where
-`γ = exp q`: the power `γ ^ (p ^ j)` topologically generates `1 + q pʲ ℤ_p`. -/
-theorem unitsPrincipal_le_ker_iff (κ : WeightSpace p R) (j : ℕ) :
-    unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker ↔
-      κ (padicUnitsGenerator p) ^ p ^ j = 1 := by
-  have hk := padicUnitsDepth_pos p
-  have hmem := pow_pow_mem_unitsPrincipal hk padicUnitsGenerator_mem_unitsPrincipal j
-  refine ⟨fun h ↦ by simpa using h hmem, fun h ↦ ?_⟩
-  rw [← topologicalClosure_zpowers_eq_unitsPrincipal (by omega) (by rintro rfl; simp) hmem
-    (pow_pow_notMem_unitsPrincipal hk (by rintro rfl; simp) padicUnitsGenerator_mem_unitsPrincipal
-      padicUnitsGenerator_notMem_unitsPrincipal_succ j)]
-  refine Subgroup.topologicalClosure_minimal _ ?_ (isClosed_singleton.preimage κ.continuous)
-  rw [Subgroup.zpowers_le, MonoidHom.mem_ker]
-  simpa using h
-
-end Monoid
-
-section CommMonoid
-
-variable {R : Type*} [CommMonoid R] [TopologicalSpace R] [T2Space R]
-
-/-- If a weight `κ` has exact conductor `p ^ (k + j + 1)`, where `q = p ^ k`, that is, `κ` is
-trivial on `1 + p ^ (k + j + 1) ℤ_p` but not on `1 + p ^ (k + j) ℤ_p`, then `κ(γ)` is a primitive
-`p ^ (j + 1)`-th root of unity. -/
-theorem isPrimitiveRoot_apply_padicUnitsGenerator (κ : WeightSpace p R) {j : ℕ}
-    (h : unitsPrincipal p (padicUnitsDepth p + j + 1) ≤ κ.toMonoidHom.ker)
-    (h' : ¬unitsPrincipal p (padicUnitsDepth p + j) ≤ κ.toMonoidHom.ker) :
-    IsPrimitiveRoot (κ (padicUnitsGenerator p) : R) (p ^ (j + 1)) := by
-  rw [IsPrimitiveRoot.coe_units_iff]
-  rw [unitsPrincipal_le_ker_iff] at h'
-  rw [add_assoc, unitsPrincipal_le_ker_iff] at h
-  exact orderOf_eq_prime_pow h' h ▸ IsPrimitiveRoot.orderOf _
-
-end CommMonoid
-
-section Ring
-
-variable {R : Type*} [Ring R] [TopologicalSpace R]
-
-/-- The coordinate of a weight vanishes exactly when the weight is trivial on `1 + qℤ_p`, that is,
-when its conductor divides `q`. -/
-theorem coord_eq_zero_iff [T2Space R] (κ : WeightSpace p R) :
-    κ.coord = 0 ↔ unitsPrincipal p (padicUnitsDepth p) ≤ κ.toMonoidHom.ker := by
-  simpa [coord_def, sub_eq_zero, Units.val_eq_one] using (unitsPrincipal_le_ker_iff κ 0).symm
-
-/-- The trivial weight has coordinate zero. -/
-@[simp]
-theorem coord_one : (1 : WeightSpace p R).coord = 0 := by
-  simp [coord_def]
-
-end Ring
-
-/-- The coordinates of weights multiply after adding one: `1 + T_{κκ'} = (1 + T_κ)(1 + T_κ')`. -/
-theorem coord_mul {R : Type*} [CommRing R] [TopologicalSpace R] [ContinuousMul R]
-    (κ κ' : WeightSpace p R) : (κ * κ').coord = κ.coord * κ'.coord + κ.coord + κ'.coord := by
-  simp only [coord_def, ContinuousMonoidHom.mul_apply, Units.val_mul]
-  ring
 
 section Algebraic
 
