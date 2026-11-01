@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorPower.Basic
+public import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Tensor powers of representations
@@ -21,6 +22,7 @@ the character.
 ## Main definitions
 
 * `Representation.tensorPower` is the diagonal action on `⨂[R]^d M`.
+* `FDRep.tensorPower` is its bundled finite-dimensional form.
 * `Representation.tensorPowerAddEquiv` identifies the tensor product of the `d`-th and `e`-th
   tensor-power representations with the `(d + e)`-th one.
 
@@ -99,3 +101,20 @@ theorem char_tensorPower (ρ : Representation R G M) (d : ℕ) (g : G) :
 end Field
 
 end Representation
+
+namespace FDRep
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+/-- The diagonal action on the `n`-fold tensor power of a finite-dimensional representation.
+The zero-fold power is one-dimensional, including when the original representation is zero. -/
+noncomputable abbrev tensorPower (V : FDRep k G) (n : ℕ) : FDRep k G :=
+  FDRep.of (Representation.tensorPower V.ρ n)
+
+/-- The character of the bundled tensor power is the corresponding power of the character. -/
+@[simp]
+theorem char_tensorPower (V : FDRep k G) (n : ℕ) (g : G) :
+    (V.tensorPower n).character g = V.character g ^ n := by
+  rw [tensorPower, character_of, Representation.char_tensorPower, character_ρ]
+
+end FDRep
