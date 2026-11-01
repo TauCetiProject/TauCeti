@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
-import TauCeti.NumberTheory.Padics.MahlerBasis
+import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!

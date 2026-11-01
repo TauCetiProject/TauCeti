@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Filtered.Basic
+public import Mathlib.CategoryTheory.Filtered.Connected
 public import Mathlib.CategoryTheory.Limits.FormalCoproducts.Basic
 public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Topology.Sets.OpenCover
@@ -21,9 +21,10 @@ is needed.
 
 Both systems are preorders ordered towards finer covers. The relation remembers only the
 existence of a refinement, whereas an actual refinement is a native `FormalCoproduct` morphism.
-Consequently these preorders are filtered categories, without asserting filteredness of the
-category of actual refinement functions. They provide small indexing categories for colimits
-of cover-dependent invariants whose transition maps are independent of refinement functions.
+Consequently these preorders are filtered, hence connected, categories, without asserting
+filteredness of the category of actual refinement functions. They provide small indexing
+categories for colimits of cover-dependent invariants whose transition maps are independent of
+refinement functions.
 Finite covers retain repeated members and include the empty cover of the empty space.
 
 The cover-refinement description follows the Stacks Project, Cohomology of Sheaves, §20.15
@@ -91,6 +92,9 @@ instance : IsDirectedOrder (PointOpenCover X) where
   directed U V := ⟨U.inter V, U.le_inter_left V, U.le_inter_right V⟩
 
 instance : Inhabited (PointOpenCover X) := ⟨⟨fun _ ↦ ⊤, fun _ ↦ trivial⟩⟩
+
+/-- As a nonempty directed preorder, the point-neighborhood covers form a connected category. -/
+instance : IsConnected (PointOpenCover X) := IsFiltered.isConnected _
 
 /-- Every small open cover admits a point-neighborhood refinement. This also applies to the
 empty cover of the empty space: no nonempty index type is required. -/
@@ -169,6 +173,9 @@ instance : IsDirectedOrder (FiniteOpenCover X) where
     obtain ⟨T, ⟨e⟩⟩ := exists_iso W hW
     exact ⟨T, ⟨e.hom ≫ ⟨Prod.fst, fun _ ↦ homOfLE inf_le_left⟩⟩,
       ⟨e.hom ≫ ⟨Prod.snd, fun _ ↦ homOfLE inf_le_right⟩⟩⟩
+
+/-- As a nonempty directed preorder, the finite covers form a connected category. -/
+instance : IsConnected (FiniteOpenCover X) := IsFiltered.isConnected _
 
 /-- The empty indexed family is a cover of the empty space. -/
 def empty [IsEmpty X] : FiniteOpenCover X where

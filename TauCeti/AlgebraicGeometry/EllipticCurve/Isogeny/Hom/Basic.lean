@@ -141,22 +141,13 @@ theorem ofIsogeny_injective : Function.Injective (ofIsogeny (W₁ := W₁) (W₂
 /-- **No isogeny is the zero map**, since a pullback sends `1` to `1`. -/
 @[simp]
 theorem ofIsogeny_ne_zero (φ : Isogeny W₁ W₂) : ofIsogeny φ ≠ 0 := fun h => by
-  refine one_ne_zero (α := W₁.FunctionField) ?_
-  calc (1 : W₁.FunctionField)
-      = φ.pullback 1 := (map_one _).symm
-    _ = (ofIsogeny φ).toNonUnitalAlgHom 1 := (ofIsogeny_apply φ 1).symm
-    _ = (0 : Hom W₁ W₂).toNonUnitalAlgHom 1 := by rw [h]
-    _ = 0 := by rw [toNonUnitalAlgHom_zero, NonUnitalAlgHom.zero_apply]
+  simpa using congrArg (fun g : Hom W₁ W₂ => g.toNonUnitalAlgHom 1) h
 
 /-- The isogeny a nonzero element of the carrier comes from: it is unital, so its underlying
 map promotes to a pullback, and pointedness is the carrier's own condition. -/
 noncomputable def toIsogeny {h : Hom W₁ W₂} (hz : h ≠ 0) : Isogeny W₁ W₂ :=
-  ⟨_, h.mapsInfinity_of_map_one
-    (MulHomClass.map_one_of_exists_apply_ne_zero (by
-      by_contra hall
-      rw [not_exists] at hall
-      refine hz (Hom.ext (NonUnitalAlgHom.ext fun x => ?_))
-      rw [not_not.mp (hall x), toNonUnitalAlgHom_zero, NonUnitalAlgHom.zero_apply]))⟩
+  ⟨_, h.mapsInfinity_of_map_one (MulHomClass.map_one_of_exists_apply_ne_zero (not_forall.mp
+    fun hall => hz (Hom.ext (NonUnitalAlgHom.ext fun x => by simp [hall]))))⟩
 
 /-- The pullback of the isogeny read off a nonzero element is that element's own map. -/
 -- The one place the two bundlings are identified; the lemmas below rewrite through it.
@@ -181,10 +172,8 @@ theorem toIsogeny_ofIsogeny (φ : Isogeny W₁ W₂) :
 /-- **Every element of the carrier is the zero map or an isogeny.** This is the dichotomy the
 carrier is built for: weakening unitality admits the zero map and nothing else. -/
 theorem eq_zero_or_exists_ofIsogeny (h : Hom W₁ W₂) :
-    h = 0 ∨ ∃ φ : Isogeny W₁ W₂, h = ofIsogeny φ := by
-  by_cases hz : h = 0
-  · exact Or.inl hz
-  · exact Or.inr ⟨toIsogeny hz, (ofIsogeny_toIsogeny hz).symm⟩
+    h = 0 ∨ ∃ φ : Isogeny W₁ W₂, h = ofIsogeny φ :=
+  (em _).imp_right fun hz => ⟨toIsogeny hz, (ofIsogeny_toIsogeny hz).symm⟩
 
 /-- **The degree**, extended to the carrier by stipulating `degree 0 = 0`: the zero map's image
 generates no field, so there is no extension for a dimension to measure. -/
@@ -197,11 +186,7 @@ theorem degree_zero : (0 : Hom W₁ W₂).degree = 0 := by
 
 @[simp]
 theorem degree_ofIsogeny (φ : Isogeny W₁ W₂) : (ofIsogeny φ).degree = φ.degree := by
-  classical
-  rw [degree]
-  split
-  · exact absurd ‹ofIsogeny φ = 0› (ofIsogeny_ne_zero φ)
-  · rw [ofIsogeny_injective (ofIsogeny_toIsogeny _)]
+  simp [degree]
 
 /-- **The degree vanishes exactly at the zero map**: every isogeny has positive degree, so the
 stipulated value at zero is the only one. -/
@@ -224,22 +209,12 @@ noncomputable def comp (g : Hom W₂ W₃) (f : Hom W₁ W₂) : Hom W₁ W₃ :
 /-- **The zero map absorbs on the left.** -/
 @[simp]
 theorem zero_comp (f : Hom W₁ W₂) : (0 : Hom W₂ W₃).comp f = 0 := by
-  classical
-  rw [comp]
-  split
-  · rfl
-  · exact absurd rfl ‹(0 : Hom W₂ W₃) ≠ 0›
+  simp [comp]
 
 /-- **The zero map absorbs on the right.** -/
 @[simp]
 theorem comp_zero (g : Hom W₂ W₃) : g.comp (0 : Hom W₁ W₂) = 0 := by
-  classical
-  rw [comp]
-  split
-  · rfl
-  · split
-    · rfl
-    · exact absurd rfl ‹(0 : Hom W₁ W₂) ≠ 0›
+  simp [comp]
 
 /-- **The embedding carries `Isogeny.comp` to carrier composition.** -/
 @[simp]
@@ -258,13 +233,10 @@ theorem ofIsogeny_comp_ofIsogeny (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W�
 theorem comp_eq_zero_iff {g : Hom W₂ W₃} {f : Hom W₁ W₂} :
     g.comp f = 0 ↔ g = 0 ∨ f = 0 := by
   refine ⟨fun hc => ?_, fun h => h.elim (fun hg => hg ▸ zero_comp f) fun hf => hf ▸ comp_zero g⟩
-  by_contra hn
-  rw [not_or] at hn
-  obtain ⟨hg, hf⟩ := hn
-  obtain ⟨ψ, rfl⟩ := g.eq_zero_or_exists_ofIsogeny.resolve_left hg
-  obtain ⟨φ, rfl⟩ := f.eq_zero_or_exists_ofIsogeny.resolve_left hf
-  rw [ofIsogeny_comp_ofIsogeny] at hc
-  exact ofIsogeny_ne_zero _ hc
+  by_contra! hn
+  obtain ⟨ψ, rfl⟩ := g.eq_zero_or_exists_ofIsogeny.resolve_left hn.1
+  obtain ⟨φ, rfl⟩ := f.eq_zero_or_exists_ofIsogeny.resolve_left hn.2
+  exact ofIsogeny_ne_zero _ (ofIsogeny_comp_ofIsogeny ψ φ ▸ hc)
 
 /-- **`deg (g ∘ f) = deg g · deg f`, on the whole carrier.** The tower formula holds at the zero
 map too, and that is what the stipulation `degree 0 = 0` buys: both sides are `0` there. -/
