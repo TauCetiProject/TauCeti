@@ -225,19 +225,10 @@ theorem AuslanderReitenTranspose.dualShortComplex_shortExact (hexact : Function.
     (hπ : Function.Surjective π) :
     (dualShortComplex p π hexact.linearMap_comp_eq_zero).ShortExact := by
   refine .mk' (ShortComplex.Exact.moduleCat_of_range_eq_ker _ _ ?_) ?_ ?_
-  · ext ψ
-    simp only [ModuleCat.hom_ofHom, LinearMap.mem_range, LinearMap.mem_ker]
-    refine ⟨?_, fun h ↦ ?_⟩
-    · rintro ⟨φ, rfl⟩
-      exact Subtype.ext (LinearMap.ext fun x ↦ by
-        simp [← LinearMap.comp_apply π p, hexact.linearMap_comp_eq_zero])
-    · exact ((hexact.lcomp_of_surjective (T := Aᵐᵒᵖ) A hπ) ψ).1 (by
-        simpa [LinearMap.lcomp_apply'] using congrArg Subtype.val h)
+  · rw [ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, LinearMap.ker_rangeRestrict]
+    exact (hexact.lcomp_of_surjective (T := Aᵐᵒᵖ) A hπ).linearMap_ker_eq.symm
   · rw [ModuleCat.mono_iff_injective]
-    intro φ φ' h
-    ext m
-    obtain ⟨x, rfl⟩ := hπ m
-    exact LinearMap.congr_fun h x
+    exact LinearMap.lcomp_injective_of_surjective π hπ
   · rw [ModuleCat.epi_iff_surjective]
     exact LinearMap.surjective_rangeRestrict _
 
