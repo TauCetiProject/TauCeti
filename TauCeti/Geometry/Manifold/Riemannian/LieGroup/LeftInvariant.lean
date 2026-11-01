@@ -247,20 +247,21 @@ end BiInvariant
 
 section Isometry
 
-variable {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+variable {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [RiemannianBundle (fun x : G ↦ TangentSpace I x)]
 
 /-- If the left-invariant vector fields have constant inner products, `⟪X_a, X_c⟫ = ⟪a, c⟫` at
 every point, then every left translation preserves the inner product of tangent vectors. -/
-theorem inner_mfderiv_mul_left_of_inner_mulInvariantVectorField
+theorem inner_mfderiv_mul_left_of_inner_mulInvariantVectorField [ContMDiffMul I 1 G]
     (hL : ∀ (x : G) (a c : TangentSpace I (1 : G)),
       inner ℝ (mulInvariantVectorField a x) (mulInvariantVectorField c x) = inner ℝ a c)
     (g x : G) (v w : TangentSpace I x) :
     inner ℝ (mfderiv I I (g * ·) x v) (mfderiv I I (g * ·) x w) = inner ℝ v w := by
-  have := contMDiffMul_one_of_add_one_le (I := I) (G := G) (m := 0) (n := ∞) (by simp)
   obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
   obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
   rw [mfderiv_mul_left_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hL, hL]
+
+variable [LieGroup I ∞ G]
 
 /-- Left multiplication by `g`, as an isometry of a left-invariant metric. -/
 private def mulLeftIsometry
@@ -273,7 +274,9 @@ private def mulLeftIsometry
   right_inv := mul_inv_cancel_left g
   contMDiff_toFun := contMDiff_mul_left
   contMDiff_invFun := contMDiff_mul_left
-  inner_mfderiv' := inner_mfderiv_mul_left_of_inner_mulInvariantVectorField hL g
+  inner_mfderiv' :=
+    have := contMDiffMul_one_of_add_one_le (I := I) (G := G) (m := 0) (n := ∞) (by simp)
+    inner_mfderiv_mul_left_of_inner_mulInvariantVectorField hL g
 
 /-- Left multiplication, as a homomorphism from a Lie group to the isometry group of a
 left-invariant Riemannian metric on it. -/
