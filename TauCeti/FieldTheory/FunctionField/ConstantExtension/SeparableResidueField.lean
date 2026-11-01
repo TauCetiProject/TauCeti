@@ -91,18 +91,6 @@ namespace Place
 
 variable [Algebra.IsIntegral F F']
 
-variable (k F) in
-/-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra compatibly with the
-valuation ring of the place below. -/
-private theorem isScalarTower_integers_restrict (P' : Place k' F') :
-    letI : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
-    IsScalarTower k (P'.restrict k F).integers P'.integers := by
-  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
-  refine .of_algebraMap_eq fun c ↦ Subtype.ext ?_
-  rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F']
-  exact (P'.coe_algebraMap_constants (algebraMap k k' c)).trans
-    (IsScalarTower.algebraMap_apply k k' F' c).symm
-
 /-- **Separable residue fields stay separable over the enlarged constants**: if the residue field
 of the place below `P'` is separable over `k` and `F'_{P'}` is separable over it, then `F'_{P'}` is
 separable over `k'`. -/
@@ -204,8 +192,7 @@ private theorem ramificationIdx_eq_one_of_isSeparable_residueField_of_finiteDime
   let E := constantCompositum F S F'
   let : Algebra S E := constantCompositumAlgebra F S F'
   have : IsScalarTower S E F' := isScalarTower_constantCompositum F S F'
-  have : IsScalarTower k S E := .of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k S F' c)
+  have : IsScalarTower k S E := isScalarTower_base_constantCompositum k F S F'
   have hE : constantCompositum F S E = ⊤ := (constantCompositum_eq_top_iff F S F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
   let : Algebra.IsSeparable F E := isSeparable_of_constantCompositum_eq_top (k := k) hE
@@ -238,8 +225,7 @@ theorem ramificationIdx_eq_one_of_isSeparable_residueField [Algebra.IsAlgebraic 
   let E := constantCompositum F L F'
   let : Algebra L E := constantCompositumAlgebra F L F'
   have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
-  have : IsScalarTower k L E := .of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
   have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
   let Q := P'.restrict L E

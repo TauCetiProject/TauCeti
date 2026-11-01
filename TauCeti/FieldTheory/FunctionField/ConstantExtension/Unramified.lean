@@ -176,8 +176,7 @@ theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
   let E := constantCompositum F L F'
   let : Algebra L E := constantCompositumAlgebra F L F'
   have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
-  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
   have hE : constantCompositum F L E = ⊤ :=
     (constantCompositum_eq_top_iff F L F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE

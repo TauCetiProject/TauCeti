@@ -568,6 +568,18 @@ theorem relativeDegree_def :
     relativeDegree k F P' = Module.finrank (P'.restrict k F).ResidueField P'.ResidueField := by
   rw [relativeDegree]
 
+/-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra compatibly with the
+valuation ring of the place below. The `k`-algebra structure is not an instance: for `k = k'` it
+would compete with the constant-field algebra of `P'`. -/
+theorem isScalarTower_integers_restrict :
+    letI : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
+    IsScalarTower k (P'.restrict k F).integers P'.integers := by
+  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
+  refine .of_algebraMap_eq fun c ↦ Subtype.ext ?_
+  rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F']
+  exact (P'.coe_algebraMap_constants (algebraMap k k' c)).trans
+    (IsScalarTower.algebraMap_apply k k' F' c).symm
+
 /-- **The degree of a place and the degree of the place below it** (Stichtenoth, Section III.1):
 the residue field `F'_{P'}` sits in the two towers `k ⊆ k' ⊆ F'_{P'}` and `k ⊆ F_P ⊆ F'_{P'}`,
 whose successive degrees are `[k' : k]`, `deg P'` and `deg P`, `f(P' ∣ P)`.  Comparing them gives
@@ -581,11 +593,7 @@ theorem finrank_mul_degree_eq_relativeDegree_mul_degree_restrict :
   -- local instance: for `k = k'` it would compete with the constant-field algebra of `P'`.
   let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
   have : IsScalarTower k k' P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k (P'.restrict k F).integers P'.integers := by
-    refine .of_algebraMap_eq fun c ↦ Subtype.ext ?_
-    rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F']
-    exact (P'.coe_algebraMap_constants (algebraMap k k' c)).trans
-      (IsScalarTower.algebraMap_apply k k' F' c).symm
+  have := isScalarTower_integers_restrict k F P'
   rw [degree_eq_finrank, degree_eq_finrank, relativeDegree_def,
     Module.finrank_mul_finrank k k' P'.ResidueField,
     mul_comm (Module.finrank (P'.restrict k F).ResidueField P'.ResidueField),
