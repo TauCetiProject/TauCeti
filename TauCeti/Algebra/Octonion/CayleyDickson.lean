@@ -56,8 +56,9 @@ diagonal entries `x.re + x.imI` and `x.re` and vector entries
 * `TauCeti.Octonion.cayleyDicksonEquiv_star` and `TauCeti.Octonion.cayleyDicksonEquiv_symm_conj`:
   it carries the involution of the double to octonion conjugation.
 * `TauCeti.Octonion.trace_cayleyDicksonEquiv` and `TauCeti.Octonion.norm_cayleyDicksonEquiv`: it
-  carries the trace and the norm of the double, the sums of those of the quaternion coordinates, to
-  the octonion trace and norm.
+  carries the trace of the double, the trace of its first quaternion coordinate, and the norm of
+  the double, the sum of the norms of its two quaternion coordinates, to the octonion trace and
+  norm.
 
 ## References
 
