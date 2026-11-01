@@ -504,6 +504,12 @@ theorem T_smul (f : BinaryQuadraticForm ℤ) :
 theorem S_smul (f : BinaryQuadraticForm ℤ) : ModularGroup.S • f = ⟨f.c, -f.b, f.a⟩ := by
   ext <;> simp [ModularGroup.coe_S]
 
+/-- Exchanging the outer coefficients of `a x² + b x y + c y²` preserves the discriminant. -/
+theorem discrim_swap (f : BinaryQuadraticForm R) :
+    (⟨f.c, f.b, f.a⟩ : BinaryQuadraticForm R).discrim = f.discrim := by
+  simp only [discrim_def, discrim]
+  ring
+
 end BinaryQuadraticForm
 
 end TauCeti

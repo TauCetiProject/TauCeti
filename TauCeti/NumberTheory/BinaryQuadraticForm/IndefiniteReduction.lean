@@ -62,8 +62,8 @@ window; this suffices for the existence of reduced representatives, which needs 
 
 * `TauCeti.BinaryQuadraticForm.isGaussReduced_iff_abs_sqrt_sub_lt`: the classical inequalities
   `|√D - 2 |a|| < b < √D`.
-* `TauCeti.BinaryQuadraticForm.isGaussReduced_iff_le_sqrt`: for nonsquare `D`, the same
-  inequalities with `s = Int.sqrt D` in place of `√D`.
+* `TauCeti.BinaryQuadraticForm.isGaussReduced_iff_le_sqrt`: for nonsquare `D`, the equivalent
+  integer conditions `b ≤ s`, `s < b + 2 |a|` and `2 |a| ≤ s + b`, with `s = Int.sqrt D`.
 * `TauCeti.BinaryQuadraticForm.exists_smul_isGaussReduced`: every form of positive nonsquare
   discriminant is properly equivalent to a reduced form.
 * `TauCeti.BinaryQuadraticForm.IsGaussReduced.reductionStep` and
@@ -109,26 +109,20 @@ theorem isGaussReduced_iff_sq_lt {f : BinaryQuadraticForm ℤ} :
       f.discrim < (2 * |f.a| + f.b) ^ 2 := by
   obtain ⟨a, b, c⟩ := f
   simp only [isGaussReduced_iff, discrim_def, discrim]
-  rcases lt_trichotomy a 0 with ha | rfl | ha
-  · rw [abs_of_neg ha]
-    constructor
-    · rintro ⟨hac, habs⟩
-      have hc : 0 < c := by nlinarith
-      obtain ⟨h₁, h₂⟩ := abs_lt.mp habs
-      refine ⟨by linarith, by nlinarith, by nlinarith, by nlinarith⟩
-    · rintro ⟨hb, h₁, h₂, h₃⟩
-      have hc : 0 < c := by nlinarith
-      exact ⟨by nlinarith, abs_lt.mpr ⟨by nlinarith, by nlinarith⟩⟩
+  -- negating the outer coefficients `(a, b, c) ↦ (-a, b, -c)` preserves both sides
+  wlog ha : 0 ≤ a generalizing a c with H
+  · simpa only [mul_neg, neg_mul, neg_neg, ← neg_add, abs_neg] using H (-a) (-c) (by linarith)
+  rcases ha.eq_or_lt with rfl | ha
   · simp
-  · rw [abs_of_pos ha]
-    constructor
-    · rintro ⟨hac, habs⟩
-      have hc : c < 0 := by nlinarith
-      obtain ⟨h₁, h₂⟩ := abs_lt.mp habs
-      refine ⟨by linarith, by nlinarith, by nlinarith, by nlinarith⟩
-    · rintro ⟨hb, h₁, h₂, h₃⟩
-      have hc : c < 0 := by nlinarith
-      exact ⟨by nlinarith, abs_lt.mpr ⟨by nlinarith, by nlinarith⟩⟩
+  rw [abs_of_pos ha]
+  constructor
+  · rintro ⟨hac, habs⟩
+    have hc : c < 0 := by nlinarith
+    obtain ⟨h₁, h₂⟩ := abs_lt.mp habs
+    refine ⟨by linarith, by nlinarith, by nlinarith, by nlinarith⟩
+  · rintro ⟨hb, h₁, h₂, h₃⟩
+    have hc : c < 0 := by nlinarith
+    exact ⟨by nlinarith, abs_lt.mpr ⟨by nlinarith, by nlinarith⟩⟩
 
 /-- **Gauss's reduction condition**: `a x² + b x y + c y²` of discriminant `D` is reduced exactly
 when `|√D - 2 |a|| < b < √D`. -/
@@ -161,11 +155,6 @@ theorem isGaussReduced_iff_abs_sqrt_sub_lt {f : BinaryQuadraticForm ℤ} :
     · exact_mod_cast (show ((2 * |f.a| - f.b : ℤ) : ℝ) ^ 2 < D by push_cast; exact key₂)
     · exact_mod_cast (show (D : ℝ) < ((2 * |f.a| + f.b : ℤ) : ℝ) ^ 2 by push_cast; exact key₃)
 
-/-- A nonsquare `D ≥ 0` lies strictly between `s²` and `(s + 1)²`, where `s = Int.sqrt D`. -/
-private theorem sqrt_mul_sqrt_lt {D : ℤ} (hD : ¬ IsSquare D) (h₀ : 0 ≤ D) :
-    Int.sqrt D * Int.sqrt D < D :=
-  (Int.sqrt_mul_sqrt_le h₀).lt_of_ne fun h ↦ hD ⟨_, h.symm⟩
-
 /-- For a nonsquare discriminant `D`, the form `a x² + b x y + c y²` is Gauss reduced exactly when
 `b ≤ s`, `s < b + 2 |a|` and `2 |a| ≤ s + b`, where `s = Int.sqrt D = ⌊√D⌋`. -/
 theorem isGaussReduced_iff_le_sqrt {f : BinaryQuadraticForm ℤ} (hD : ¬ IsSquare f.discrim) :
@@ -179,7 +168,7 @@ theorem isGaussReduced_iff_le_sqrt {f : BinaryQuadraticForm ℤ} (hD : ¬ IsSqua
   have hs₂ := Int.lt_sqrt_add_one_mul_sqrt_add_one D
   constructor
   · rintro ⟨hb, h₁, h₂, h₃⟩
-    have hs₁ := Int.sqrt_mul_sqrt_le (z := D) (by nlinarith)
+    have hs₁ : s * s ≤ D := (Int.abs_le_sqrt (by nlinarith)).1 (abs_of_nonneg hs₀).le
     refine ⟨?_, ?_, ?_⟩
     · by_contra! h
       nlinarith
@@ -193,7 +182,7 @@ theorem isGaussReduced_iff_le_sqrt {f : BinaryQuadraticForm ℤ} (hD : ¬ IsSqua
       by_contra! h
       have : s = 0 := Int.sqrt_eq_zero_of_nonpos h.le
       linarith
-    have hs₁ := sqrt_mul_sqrt_lt hD hD₀
+    have hs₁ := Int.sqrt_mul_sqrt_lt hD hD₀
     refine ⟨hb, by nlinarith, by nlinarith, by nlinarith⟩
 
 namespace IsGaussReduced
@@ -228,21 +217,14 @@ private theorem isGaussReduced_swap {f : BinaryQuadraticForm ℤ} :
     (⟨f.c, f.b, f.a⟩ : BinaryQuadraticForm ℤ).IsGaussReduced ↔ f.IsGaussReduced := by
   simp only [isGaussReduced_iff, mul_comm f.c, add_comm f.c]
 
-/-- Exchanging the outer coefficients preserves the discriminant. -/
-private theorem discrim_swap (f : BinaryQuadraticForm ℤ) :
-    (⟨f.c, f.b, f.a⟩ : BinaryQuadraticForm ℤ).discrim = f.discrim := by
-  simp only [discrim_def, discrim]
-  ring
-
-/-- For a nonsquare discriminant, the middle coefficient of a Gauss reduced form lies in the window
-`s - 2 |c| < b ≤ s`, where `s = Int.sqrt D`. -/
-private theorem IsGaussReduced.b_mem_window {f : BinaryQuadraticForm ℤ} (hf : f.IsGaussReduced)
+/-- The variant of `isGaussReduced_iff_le_sqrt` with `|c|` in place of `|a|`: for a nonsquare
+discriminant, `f` is Gauss reduced exactly when `b ≤ s`, `s < b + 2 |c|` and `2 |c| ≤ s + b`. -/
+private theorem isGaussReduced_iff_le_sqrt' {f : BinaryQuadraticForm ℤ}
     (hD : ¬ IsSquare f.discrim) :
-    f.b ≤ Int.sqrt f.discrim ∧ Int.sqrt f.discrim < f.b + 2 * |f.c| ∧
+    f.IsGaussReduced ↔ f.b ≤ Int.sqrt f.discrim ∧ Int.sqrt f.discrim < f.b + 2 * |f.c| ∧
       2 * |f.c| ≤ Int.sqrt f.discrim + f.b := by
-  have h := (isGaussReduced_iff_le_sqrt (f := ⟨f.c, f.b, f.a⟩) (by rwa [discrim_swap])).mp
-    (isGaussReduced_swap.mpr hf)
-  rwa [discrim_swap] at h
+  have h := isGaussReduced_iff_le_sqrt (f := ⟨f.c, f.b, f.a⟩) (by rwa [discrim_swap])
+  rwa [discrim_swap, isGaussReduced_swap] at h
 
 /-! ### The finite set of reduced forms -/
 
@@ -266,9 +248,13 @@ def gaussReducedForms (D : ℤ) : Finset (BinaryQuadraticForm ℤ) :=
   have hb' := (isGaussReduced_iff_sq_lt.mp hf).2.1
   have hA := abs_nonneg f.a
   have hC := abs_nonneg f.c
-  have ha : |f.a| ≤ Int.sqrt f.discrim := Int.le_sqrt_of_mul_self_le (by nlinarith)
-  have hc : |f.c| ≤ Int.sqrt f.discrim := Int.le_sqrt_of_mul_self_le (by nlinarith)
-  have hb'' : f.b ≤ Int.sqrt f.discrim := Int.le_sqrt_of_mul_self_le (by nlinarith)
+  have hD₀ := hf.discrim_pos.le
+  have ha : |f.a| ≤ Int.sqrt f.discrim :=
+    (Int.abs_le_sqrt hD₀).2 (by rw [← abs_mul_abs_self]; nlinarith)
+  have hc : |f.c| ≤ Int.sqrt f.discrim :=
+    (Int.abs_le_sqrt hD₀).2 (by rw [← abs_mul_abs_self]; nlinarith)
+  have hb'' : f.b ≤ Int.sqrt f.discrim :=
+    (le_abs_self _).trans ((Int.abs_le_sqrt hD₀).2 (by nlinarith))
   simp only [Equiv.symm_symm, equivProd_apply, mem_product, mem_Icc, ← abs_le]
   exact ⟨ha, ⟨hb, hb''⟩, hc⟩
 
@@ -307,6 +293,15 @@ theorem reductionStep_mem_orbit (f : BinaryQuadraticForm ℤ) :
   dsimp only
   linear_combination Int.mul_ediv_add_emod (Int.sqrt f.discrim + f.b) (2 * f.c)
 
+/-- The last coefficient of `f.reductionStep` is `c q² - b q + a`, for `q = (s + b) / (2 c)` and
+`s = Int.sqrt f.discrim`. -/
+@[simp] theorem reductionStep_c (f : BinaryQuadraticForm ℤ) :
+    f.reductionStep.c = f.c * ((Int.sqrt f.discrim + f.b) / (2 * f.c)) ^ 2 -
+      f.b * ((Int.sqrt f.discrim + f.b) / (2 * f.c)) + f.a := by
+  rw [reductionStep, mul_smul, S_smul, T_zpow_smul]
+  dsimp only
+  ring
+
 /-- The last coefficient `c'` of `f.reductionStep = (c, b', c')` is forced by the discriminant:
 `4 c c' = b'² - D`. -/
 theorem four_mul_c_mul_reductionStep_c (f : BinaryQuadraticForm ℤ) :
@@ -317,14 +312,13 @@ theorem four_mul_c_mul_reductionStep_c (f : BinaryQuadraticForm ℤ) :
 
 /-- For `c ≠ 0`, the middle coefficient of `f.reductionStep` lies in the window `(s - 2 |c|, s]`,
 where `s = Int.sqrt f.discrim`. -/
-theorem reductionStep_b_mem_window {f : BinaryQuadraticForm ℤ} (hc : f.c ≠ 0) :
-    f.reductionStep.b ≤ Int.sqrt f.discrim ∧
-      Int.sqrt f.discrim < f.reductionStep.b + 2 * |f.c| := by
+theorem reductionStep_b_mem_Ioc {f : BinaryQuadraticForm ℤ} (hc : f.c ≠ 0) :
+    f.reductionStep.b ∈ Set.Ioc (Int.sqrt f.discrim - 2 * |f.c|) (Int.sqrt f.discrim) := by
   have h₂c : 2 * f.c ≠ 0 := mul_ne_zero two_ne_zero hc
   have h₀ := Int.emod_nonneg (Int.sqrt f.discrim + f.b) h₂c
   have h₁ := Int.emod_lt_abs (Int.sqrt f.discrim + f.b) h₂c
   rw [abs_mul, abs_two] at h₁
-  rw [reductionStep_b]
+  rw [reductionStep_b, Set.mem_Ioc]
   constructor <;> linarith
 
 /-- For a nonsquare discriminant, `f.reductionStep` is Gauss reduced exactly when its middle
@@ -335,8 +329,8 @@ theorem isGaussReduced_reductionStep_iff {f : BinaryQuadraticForm ℤ}
     f.reductionStep.IsGaussReduced ↔ 2 * |f.c| ≤ Int.sqrt f.discrim + f.reductionStep.b := by
   rw [isGaussReduced_iff_le_sqrt (by rwa [discrim_reductionStep]), discrim_reductionStep,
     reductionStep_a]
-  have h := reductionStep_b_mem_window (c_ne_zero_of_not_isSquare_discrim hD)
-  exact ⟨fun h' ↦ h'.2.2, fun h' ↦ ⟨h.1, h.2, h'⟩⟩
+  have h := reductionStep_b_mem_Ioc (c_ne_zero_of_not_isSquare_discrim hD)
+  exact ⟨fun h' ↦ h'.2.2, fun h' ↦ ⟨h.2, by linarith [h.1], h'⟩⟩
 
 /-- A form `a x² + b x y + c y²` of nonsquare discriminant `D` with `4 c² < D` is sent to a Gauss
 reduced form by one reduction step. -/
@@ -344,9 +338,10 @@ theorem isGaussReduced_reductionStep_of_four_mul_sq_lt {f : BinaryQuadraticForm 
     (hD : ¬ IsSquare f.discrim) (h : 4 * f.c ^ 2 < f.discrim) :
     f.reductionStep.IsGaussReduced := by
   rw [isGaussReduced_reductionStep_iff hD]
-  have hc : 2 * |f.c| ≤ Int.sqrt f.discrim :=
-    Int.le_sqrt_of_mul_self_le (by nlinarith [sq_abs f.c])
-  have := (reductionStep_b_mem_window (c_ne_zero_of_not_isSquare_discrim hD)).2
+  have hc : 2 * |f.c| ≤ Int.sqrt f.discrim := by
+    rw [← abs_two, ← abs_mul]
+    exact (Int.abs_le_sqrt (by nlinarith [sq_nonneg f.c])).2 (by nlinarith)
+  have := (reductionStep_b_mem_Ioc (c_ne_zero_of_not_isSquare_discrim hD)).1
   linarith
 
 /-- **The reduction step preserves reducedness**: for a nonsquare discriminant, the reduction step
@@ -355,8 +350,8 @@ theorem IsGaussReduced.reductionStep {f : BinaryQuadraticForm ℤ} (hf : f.IsGau
     (hD : ¬ IsSquare f.discrim) : f.reductionStep.IsGaussReduced := by
   rw [isGaussReduced_reductionStep_iff hD]
   have hc := c_ne_zero_of_not_isSquare_discrim hD
-  obtain ⟨hb₁, hb₂, hb₃⟩ := hf.b_mem_window hD
-  obtain ⟨h₁, h₂⟩ := reductionStep_b_mem_window hc
+  obtain ⟨hb₁, hb₂, hb₃⟩ := (isGaussReduced_iff_le_sqrt' hD).mp hf
+  obtain ⟨h₁, h₂⟩ := reductionStep_b_mem_Ioc hc
   by_contra! h
   -- `b' + b` is a multiple of `2 c` strictly between `0` and `2 |c|`
   have hdvd : 2 * |f.c| ∣ f.reductionStep.b + f.b := by
@@ -380,14 +375,14 @@ theorem reductionStep_injOn :
   have hb : f.b = g.b := by
     have hr := congrArg BinaryQuadraticForm.b h
     rw [reductionStep_b, reductionStep_b, ← hdisc, ← hc] at hr
-    have hmod :
-        (Int.sqrt f.discrim + f.b) % (2 * f.c) = (Int.sqrt f.discrim + g.b) % (2 * f.c) := by
+    have hmod : Int.sqrt f.discrim + f.b ≡ Int.sqrt f.discrim + g.b [ZMOD 2 * f.c] := by
+      rw [Int.ModEq]
       linarith
     have hdvd : 2 * |f.c| ∣ g.b - f.b := by
-      rw [← abs_two, ← abs_mul, abs_dvd]
-      simpa using Int.ModEq.dvd hmod
-    obtain ⟨hf₁, hf₂, -⟩ := hf.b_mem_window hD
-    obtain ⟨hg₁, hg₂, -⟩ := hg.b_mem_window (hdisc ▸ hD)
+      rw [← abs_two, ← abs_mul, abs_dvd, ← add_sub_add_left_eq_sub _ _ (Int.sqrt f.discrim)]
+      exact Int.modEq_iff_dvd.mp hmod
+    obtain ⟨hf₁, hf₂, -⟩ := (isGaussReduced_iff_le_sqrt' hD).mp hf
+    obtain ⟨hg₁, hg₂, -⟩ := (isGaussReduced_iff_le_sqrt' (hdisc ▸ hD)).mp hg
     rw [← hdisc] at hg₁ hg₂
     rw [← hc] at hg₂
     have := Int.eq_zero_of_abs_lt_dvd hdvd (abs_lt.mpr ⟨by linarith, by linarith⟩)
@@ -474,27 +469,7 @@ example : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ).IsGaussReduced ∧
   decide
 
 example : reductionStep ⟨1, 2, -2⟩ = ⟨-2, 2, 1⟩ ∧ reductionStep ⟨-2, 2, 1⟩ = ⟨1, 2, -2⟩ := by
-  have hs : Int.sqrt 12 = 3 := by
-    rw [Int.sqrt_ofNat]
-    exact_mod_cast (Nat.eq_sqrt.mpr (by norm_num)).symm
-  constructor
-  · have hD : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ).discrim = 12 := by decide
-    have hb : (reductionStep ⟨1, 2, -2⟩).b = 2 := by rw [reductionStep_b, hD, hs]; decide
-    have hc := four_mul_c_mul_reductionStep_c ⟨1, 2, -2⟩
-    rw [hb, hD] at hc
-    ext
-    · simp
-    · exact hb
-    · simp only at hc ⊢
-      linarith
-  · have hD : (⟨-2, 2, 1⟩ : BinaryQuadraticForm ℤ).discrim = 12 := by decide
-    have hb : (reductionStep ⟨-2, 2, 1⟩).b = 2 := by rw [reductionStep_b, hD, hs]; decide
-    have hc := four_mul_c_mul_reductionStep_c ⟨-2, 2, 1⟩
-    rw [hb, hD] at hc
-    ext
-    · simp
-    · exact hb
-    · simp only at hc ⊢
-      linarith
+  have hs : Nat.sqrt 12 = 3 := (Nat.eq_sqrt.mpr (by norm_num)).symm
+  constructor <;> ext <;> simp [discrim_def, discrim, hs]
 
 end TauCeti.BinaryQuadraticForm
