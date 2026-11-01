@@ -7,10 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Sobolev.Trudinger
-public import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
-public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
 
 /-!
 # Trudinger's inequality on a closed Riemannian manifold
@@ -75,117 +72,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-/-- Around the chart image of `c` there is a coordinate ball inside the chart target on which the
-coordinate derivative of every function is bounded by a fixed multiple of the length of its
-gradient, and the chart density lies between half and twice its value at `c`. -/
-private theorem exists_ball_norm_fderiv_le_and_chartVolumeDensity_mem_Ioo (c : M) :
-    ∃ C₁ > 0, ∃ r > 0, ball (extChartAt I c c) r ⊆ (extChartAt I c).target ∧
-      ∀ y ∈ ball (extChartAt I c c) r, (∀ f : M → ℝ,
-        ‖fderiv ℝ (f ∘ (extChartAt I c).symm) y‖ ≤
-          C₁ * ‖mgradient I f ((extChartAt I c).symm y)‖) ∧
-        chartVolumeDensity (I := I) c ((extChartAt I c).symm y) ∈
-          Ioo (chartVolumeDensity (I := I) c c / 2) (2 * chartVolumeDensity (I := I) c c) := by
-  obtain ⟨C₁, hC₁, hcmp⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) (M := M) c
-  set φ := extChartAt I c
-  set ρ := chartVolumeDensity (I := I) c
-  have hρc : 0 < ρ c := chartVolumeDensity_pos c (FiberBundle.mem_baseSet_trivializationAt' c)
-  have hρcont : ContinuousAt ρ c := by
-    have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-    have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-      IsContinuousRiemannianBundle.toIsContMDiffZero
-    exact ((contMDiffOn_chartVolumeDensity (I := I) (n := 0) c).continuousOn.continuousAt
-      ((trivializationAt E (TangentSpace I) c).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt' c)))
-  have hρev : ∀ᶠ x in 𝓝 c, ρ x ∈ Ioo (ρ c / 2) (2 * ρ c) :=
-    hρcont.eventually (Ioo_mem_nhds (by linarith) (by linarith))
-  -- Read both neighbourhoods of `c` in the chart.
-  have hsymm : Tendsto φ.symm (𝓝 (φ c)) (𝓝 c) := by
-    have h := continuousAt_extChartAt_symm (I := I) c
-    rwa [ContinuousAt, extChartAt_to_inv] at h
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
-    (inter_mem (extChartAt_target_mem_nhds (I := I) c) (hsymm.eventually (hcmp.and hρev)))
-  refine ⟨C₁, hC₁, r, hr, fun y hy ↦ (hball hy).1, fun y hy ↦ ⟨fun f ↦ ?_, (hball hy).2.2⟩⟩
-  have h := (hball hy).2.1 f
-  rwa [φ.right_inv (hball hy).1] at h
-
 variable [MeasurableSpace M] [BorelSpace M]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
-
-/-- **The derivative of the cut-off function in `Lⁿ`.** On a coordinate ball where the chart
-derivative is bounded by `C₁` times the gradient and the chart density is at least `m`, the
-cut-off coordinate expression of `u` has `∫ ‖D(b · u)‖ⁿ` bounded by a constant multiple of
-`C₁ⁿ ∫ |∇u|ⁿ dV + Gⁿ ∫ |u|ⁿ dV`. -/
-private theorem lintegral_enorm_fderiv_bump_mul_rpow_le [LindelofSpace M] [Nontrivial E] {c : M}
-    (b : ContDiffBump (extChartAt I c c)) {r : ℝ}
-    (hbr : closedBall (extChartAt I c c) b.rOut ⊆ ball (extChartAt I c c) r)
-    (hrt : ball (extChartAt I c c) r ⊆ (extChartAt I c).target) {C₁ : ℝ}
-    (hC₁ : 0 ≤ C₁) (hcmp : ∀ y ∈ ball (extChartAt I c c) r, ∀ f : M → ℝ,
-      ‖fderiv ℝ (f ∘ (extChartAt I c).symm) y‖ ≤ C₁ * ‖mgradient I f ((extChartAt I c).symm y)‖)
-    {m : ℝ} (hm : 0 < m) (hρ : ∀ y ∈ ball (extChartAt I c c) r,
-      m ≤ chartVolumeDensity (I := I) c ((extChartAt I c).symm y))
-    {G : ℝ} (hG : ∀ y, ‖fderiv ℝ b y‖ ≤ G) {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 1 u) :
-    ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ (finrank ℝ E : ℝ)
-        ∂(Module.finBasis ℝ E).addHaar ≤
-      2 ^ ((finrank ℝ E : ℝ) - 1) * ENNReal.ofReal m⁻¹ *
-        (ENNReal.ofReal C₁ ^ (finrank ℝ E : ℝ) *
-            ∫⁻ x, ‖mgradient I u x‖ₑ ^ (finrank ℝ E : ℝ) ∂riemannianVolume I M +
-          ENNReal.ofReal G ^ (finrank ℝ E : ℝ) *
-            ∫⁻ x, ‖u x‖ₑ ^ (finrank ℝ E : ℝ) ∂riemannianVolume I M) := by
-  set n : ℝ := (finrank ℝ E : ℝ)
-  set μ := (Module.finBasis ℝ E).addHaar
-  set B := ball (extChartAt I c c) r
-  have hn : 1 ≤ n := Nat.one_le_cast.2 Module.finrank_pos
-  have hn0 : 0 ≤ n := zero_le_one.trans hn
-  have hfin (a : ℝ) : ENNReal.ofReal a ^ n ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg hn0 ENNReal.ofReal_ne_top
-  -- On `B` the integrand is dominated by the gradient and the function.
-  have hpt : ∀ y ∈ B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ≤
-      2 ^ (n - 1) * (ENNReal.ofReal C₁ ^ n * ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n +
-        ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) := fun y hy ↦ by
-    have hbd := (b.norm_fderiv_mul_comp_extChartAt_symm_le hu hG (hrt hy)).trans
-      (add_le_add (hcmp y hy u) le_rfl)
-    rw [← ENNReal.mul_rpow_of_nonneg _ _ hn0, ← ENNReal.mul_rpow_of_nonneg _ _ hn0]
-    refine (ENNReal.rpow_le_rpow ?_ hn0).trans (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hn)
-    have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
-    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC₁,
-      ← ENNReal.ofReal_mul hG0, ← ENNReal.ofReal_add (by positivity) (by positivity),
-      Real.norm_eq_abs (u _)]
-    exact ENNReal.ofReal_le_ofReal hbd
-  have hmeas : AEMeasurable
-      (fun y ↦ ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) (μ.restrict B) :=
-    ((((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.continuousOn.mono
-      hrt).aemeasurable measurableSet_ball).enorm.pow_const n).const_mul _
-  calc ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ∂μ
-      = ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ∂μ := by
-        -- The integrand vanishes off the support of the bump, which lies in `B`.
-        refine (setLIntegral_eq_of_support_subset fun y hy ↦ ?_).symm
-        by_contra hyB
-        refine hy ?_
-        simp only [b.fderiv_mul_comp_extChartAt_symm_eq_zero (u := u) fun h ↦ hyB (hbr h)]
-        rw [← ofReal_norm, norm_zero, ENNReal.ofReal_zero,
-          ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hn)]
-    _ ≤ ∫⁻ y in B, 2 ^ (n - 1) *
-          (ENNReal.ofReal C₁ ^ n * ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n +
-            ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) ∂μ :=
-        setLIntegral_mono' measurableSet_ball hpt
-    _ = 2 ^ (n - 1) *
-          (ENNReal.ofReal C₁ ^ n * ∫⁻ y in B, ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n ∂μ +
-            ENNReal.ofReal G ^ n * ∫⁻ y in B, ‖u ((extChartAt I c).symm y)‖ₑ ^ n ∂μ) := by
-        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by linarith) (by simp)),
-          lintegral_add_right' _ hmeas, lintegral_const_mul' _ _ (hfin _),
-          lintegral_const_mul' _ _ (hfin _)]
-    _ ≤ 2 ^ (n - 1) * (ENNReal.ofReal C₁ ^ n *
-            (ENNReal.ofReal m⁻¹ * ∫⁻ x, ‖mgradient I u x‖ₑ ^ n ∂riemannianVolume I M) +
-          ENNReal.ofReal G ^ n *
-            (ENNReal.ofReal m⁻¹ * ∫⁻ x, ‖u x‖ₑ ^ n ∂riemannianVolume I M)) := by
-        gcongr
-        · exact setLIntegral_comp_extChartAt_symm_le_mul_lintegral c isOpen_ball hrt hm hρ
-            fun x ↦ ‖mgradient I u x‖ₑ ^ n
-        · exact setLIntegral_comp_extChartAt_symm_le_mul_lintegral c isOpen_ball hrt hm hρ
-            fun x ↦ ‖u x‖ₑ ^ n
-    _ = _ := by ring
 
 /-! ### Trudinger's inequality -/
 
@@ -253,8 +142,9 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   simp only [enorm_norm] at hgrad
   -- The derivative of the cut-off function has `Lⁿ` norm at most `A`.
   have hDw : ∫⁻ y, ‖fderiv ℝ w y‖ₑ ^ (n : ℝ) ∂μ ≤ Λ :=
-    (lintegral_enorm_fderiv_bump_mul_rpow_le b hbr hrt hC₁.le (fun y hy ↦ (hball y hy).1)
-      (m := ρ c / 2) (by positivity) (fun y hy ↦ (hball y hy).2.1.le) hG hu).trans (by
+    (b.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le hbr hrt hC₁.le
+      (fun y hy ↦ (hball y hy).1) (m := ρ c / 2) (by positivity)
+      (fun y hy ↦ (hball y hy).2.1.le) hG hu (by linarith)).trans (by
         simp only [Λ]
         gcongr
         exact hint u (le_add_self.trans hnorm))
