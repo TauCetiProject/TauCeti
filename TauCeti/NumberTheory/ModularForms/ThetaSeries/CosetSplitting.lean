@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.GaussSum
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
-import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
+import TauCeti.NumberTheory.ModularForms.ThetaSeries.Asymptotics
 
 /-!
 # The theta series of an even lattice under `SL(2, ℤ)`: the coset splitting
@@ -60,35 +60,6 @@ namespace IsEven
 variable (hL : IsEven L)
 include hL
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
-  [IsZLattice ℝ L] in
-/-- The theta series of the class `v + cL` of `v ∈ L` at `A τ`, for `A ∈ SL(2, ℤ)` with lower-left
-entry `c ≠ 0`: since `L` is even, `θ_{v+cL}(A τ) = e(a ‖v‖² / (2c)) θ_{v/c+L}(-1/σ)` with
-`σ = τ + d / c`. -/
-private theorem thetaCoset_smul_smul (A : SL(2, ℤ)) {c : ℕ} (hc0 : c ≠ 0) (hc : A 1 0 = c)
-    (v : L) (τ : ℍ) :
-    thetaCoset ((c : ℝ) • L) v (A • τ) =
-      cexp (2 * π * I * ((A 0 0 * ‖(v : E)‖ ^ 2 / 2 / c : ℝ) : ℂ)) *
-        thetaCoset L ((c : ℝ)⁻¹ • (v : E)) (ModularGroup.S • (((A 1 1 : ℝ) / c) +ᵥ τ)) := by
-  have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc0
-  have hA := ModularGroup.sq_smul_smul_eq_vadd_S_smul_vadd A (by rw [hc]; exact_mod_cast hc0) τ
-  simp only [hc, Int.cast_natCast] at hA
-  conv_lhs => rw [← smul_inv_smul₀ hc' (v : E)]
-  rw [thetaCoset_smul L hc', hA, thetaCoset_vadd_eq_mul L _ ?_]
-  · congr 1
-    rw [norm_smul, mul_pow, norm_inv, Real.norm_natCast]
-    push_cast
-    field_simp
-  · -- Translating by `a c` multiplies every term by the same factor, as `L` is even.
-    intro w hw
-    obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ v.2 _ hw
-    obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hw
-    refine ⟨A 0 0 * i + A 0 0 * c * j, ?_⟩
-    rw [norm_add_sq_real, inner_smul_left, hi, hj, conj_trivial]
-    push_cast
-    field_simp
-    ring
-
 /-- **The coset splitting of a theta series.** Let `L` be an even full lattice of rank `2k` and
 `A = !![a, b; c, d] ∈ SL(2, ℤ)` with `c > 0`. Then
 `Θ_L(A τ) = (covol L)⁻¹ ((c τ + d) / (i c))^k ∑_{m ∈ L^∨} G_L(a, c; m) e(d ‖m‖² / (2c)) q_m(τ)`
@@ -101,8 +72,29 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
         cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
           cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ) := by
   have hc0 : c ≠ 0 := NeZero.ne c
+  have hcR : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc0
   have hc' : (c : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hc0
   set σ : ℍ := ((A 1 1 : ℝ) / c) +ᵥ τ with hσ
+  set τ' : ℍ := (⟨((c : ℝ) ^ 2)⁻¹, inv_pos.mpr (sq_pos_of_ne_zero hcR)⟩ : {r : ℝ // 0 < r}) •
+    (ModularGroup.S • σ) with hτ'
+  -- Since `c² • A τ = a c +ᵥ S σ`, the point `A τ` is the translate by `a / c` of `c⁻² • S σ`.
+  have hAτ : A • τ = ((A 0 0 : ℝ) / c) +ᵥ τ' := by
+    have hA := congrArg UpperHalfPlane.coe
+      (ModularGroup.sq_smul_smul_eq_vadd_S_smul_vadd A (by rw [hc]; exact_mod_cast hc0) τ)
+    simp only [hc, Int.cast_natCast, UpperHalfPlane.coe_pos_real_smul, coe_vadd,
+      Complex.real_smul] at hA
+    rw [UpperHalfPlane.ext_iff, coe_vadd, hτ', UpperHalfPlane.coe_pos_real_smul, Complex.real_smul]
+    push_cast at hA ⊢
+    field_simp
+    linear_combination hA
+  -- Rescaling each class `y + c L` onto `y / c + L` takes `c⁻² • S σ` back to `S σ`.
+  have hclass (v : E) : thetaCoset ((c : ℝ) • L) v τ' =
+      thetaCoset L ((c : ℝ)⁻¹ • v) (ModularGroup.S • σ) := by
+    conv_lhs => rw [← smul_inv_smul₀ hcR v]
+    rw [thetaCoset_smul L hcR]
+    congr 1
+    rw [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_pos_real_smul, hτ',
+      UpperHalfPlane.coe_pos_real_smul, smul_smul, mul_inv_cancel₀ (pow_ne_zero 2 hcR), one_smul]
   -- The dual series of each class converges, its terms being bounded by those of `Θ_{L^∨}(σ)`.
   have hsum (v : E) : Summable fun m : dual L =>
       cexp (2 * π * I * ⟪v, (m : E)⟫) * cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ) := by
@@ -122,23 +114,24 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
   have hterm (m : dual L) : gaussSumTwisted L hL (A 0 0) c m *
       cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
         cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ) =
-      ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L,
-        cexp (2 * π * I * ((A 0 0 * ‖((Quotient.out y : L) : E)‖ ^ 2 / 2 / c : ℝ) : ℂ)) *
+      ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L, gaussTerm L hL (A 0 0) c 0 y *
           (cexp (2 * π * I * ⟪(c : ℝ)⁻¹ • ((Quotient.out y : L) : E), (m : E)⟫) *
             cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ)) := by
     rw [gaussSumTwisted_def, Finset.sum_mul, Finset.sum_mul]
     refine Finset.sum_congr rfl fun y _ => ?_
-    conv_lhs => rw [← Submodule.Quotient.mk_out y]
-    rw [gaussTerm_mk, ← exp_add, ← exp_add, ← exp_add, ← exp_add, hσ, coe_vadd, inner_smul_left,
-      conj_trivial]
+    generalize hv : Quotient.out y = v
+    rw [← Submodule.Quotient.mk_out y, hv, gaussTerm_mk, gaussTerm_mk, ZeroMemClass.coe_zero,
+      inner_zero_right, add_zero, hσ, coe_vadd, inner_smul_left, conj_trivial]
+    simp only [← Complex.exp_add]
     congr 1
     push_cast
     field_simp
     ring
-  rw [← (hasSum_thetaCoset_out L (natCast_smul_le L c) (A • τ)).tsum_eq, tsum_fintype]
-  simp_rw [thetaCoset_smul_smul hL A hc0 hc, thetaCoset_S_smul L hk, hterm,
+  rw [hAτ, thetaSeries_vadd_eq_sum hL]
+  simp_rw [hclass, thetaCoset_S_smul L hk, hterm,
     Summable.tsum_finsetSum fun y _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun y _ => ?_
+  -- `thetaSeries_vadd_eq_sum` sums over its own `Fintype` instance on `L / c L`.
+  refine Finset.sum_congr (by congr; exact Subsingleton.elim _ _) fun y _ => ?_
   ring
 
 /-- **The theta series of an even lattice under `Γ₀(N)`, with the Gauss sum unevaluated.** Let
