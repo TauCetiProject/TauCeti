@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.Resolution
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Resolution
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
 public import TauCeti.Topology.Covering.Quotient
 
@@ -36,10 +35,8 @@ this action the endpoint projection is a quotient covering map
 (`TauCeti.isQuotientCoveringMap_cellularClassifyingSpace_universalCover`).
 
 The cellular classifying space is an aspherical Hausdorff CW complex and its universal cover is
-simply connected, so the lifted CW structure on the universal cover is that of a contractible
-space (`IsCoveringMap.contractibleSpace_preimage_univ_of_isAspherical`). Its cellular chains are
-therefore a complex of free representations of `PresentedGroup R` whose augmentation is a
-quasi-isomorphism (`TauCeti.cellularResolution`).
+simply connected, so the resolution is the cellular resolution of an aspherical CW complex
+(`TauCeti.cellularResolutionOfIsAspherical`) for this covering.
 
 ## Main definitions
 
@@ -98,29 +95,18 @@ theorem isQuotientCoveringMap_cellularClassifyingSpace_universalCover :
     (cellularClassifyingSpaceFundamentalGroupMulEquiv R) fun {_ _} ↦ by
       rw [cellularClassifyingSpace_universalCover_smul_def, MulEquiv.symm_apply_apply]
 
-/-- The lifted CW complex `proj ⁻¹' univ` in the universal cover of the cellular classifying space
-is contractible: the cellular classifying space is an aspherical CW complex and its universal cover
-is simply connected. -/
-private theorem contractibleSpace_proj_preimage_univ :
-    ContractibleSpace ((UniversalCover.proj :
-      UniversalCover (cellularClassifyingSpaceBasepoint R) → cellularClassifyingSpace R) ⁻¹'
-        (univ : Set (cellularClassifyingSpace R))) :=
-  (UniversalCover.isCoveringMap
-    (cellularClassifyingSpaceBasepoint R)).contractibleSpace_preimage_univ_of_isAspherical
-      (UniversalCover.proj_basepointLift _)
-      (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical
-
-attribute [local instance] contractibleSpace_proj_preimage_univ
-
 /-- **The cellular resolution of a presented group**: the cellular chains of the universal cover of
 the cellular classifying space of `⟨S | R⟩`, with its lifted CW structure, form a projective
 resolution of the trivial representation of `PresentedGroup R` over `k`. In degree `n` they are
 free over `k[PresentedGroup R]` with one generator for each `n`-cell of the cellular classifying
 space (`TauCeti.cellularChainRepIsoFree`). The group acts by the deck transformations of
-`isQuotientCoveringMap_cellularClassifyingSpace_universalCover`. -/
+`isQuotientCoveringMap_cellularClassifyingSpace_universalCover`. This is
+`TauCeti.cellularResolutionOfIsAspherical` for the cellular classifying space. -/
 def cellularClassifyingSpaceResolution (k : Type u) [CommRing k] :
     ProjectiveResolution (Rep.trivial k (PresentedGroup R) k) :=
-  cellularResolution univ (isQuotientCoveringMap_cellularClassifyingSpace_universalCover R) k
+  cellularResolutionOfIsAspherical (isQuotientCoveringMap_cellularClassifyingSpace_universalCover R)
+    (UniversalCover.proj_basepointLift _)
+    (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical k
 
 /-- The complex of `TauCeti.cellularClassifyingSpaceResolution` is the lifted cellular chain
 complex of the universal cover of the cellular classifying space. -/
@@ -129,7 +115,7 @@ lemma cellularClassifyingSpaceResolution_complex (k : Type u) [CommRing k] :
     (cellularClassifyingSpaceResolution R k).complex =
       cellularChainComplexRep univ (isQuotientCoveringMap_cellularClassifyingSpace_universalCover R)
         k :=
-  cellularResolution_complex ..
+  cellularResolutionOfIsAspherical_complex ..
 
 -- As for `TauCeti.cellularResolution_π`, the public statement cannot unfold the unexposed body of
 -- `TauCeti.cellularClassifyingSpaceResolution`, so it transports along
@@ -142,6 +128,6 @@ lemma cellularClassifyingSpaceResolution_π (k : Type u) [CommRing k] :
       eqToHom (cellularClassifyingSpaceResolution_complex R k) ≫
         cellularChainComplexRepAugmentation univ
           (isQuotientCoveringMap_cellularClassifyingSpace_universalCover R) k :=
-  cellularResolution_π ..
+  cellularResolutionOfIsAspherical_π ..
 
 end TauCeti
