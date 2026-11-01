@@ -33,7 +33,9 @@ distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function a
 `(x₀, y₀)` that vanishes on `y = y₀` near `x₀` is `(y - y₀) • H` near `(x₀, y₀)` with `H` analytic.
 Applied in both variables, it shows that a function of two variables vanishing on two crossing
 lines is divisible by the product of their equations
-(`AnalyticAt.exists_eventuallyEq_mul_smul`).
+(`AnalyticAt.exists_eventuallyEq_mul_smul`). After straightening, the same holds along the graph
+`y = g x` of an analytic function: a function vanishing there is `(y - g x) • H`
+(`AnalyticAt.exists_eventuallyEq_sub_smul_of_graph`).
 
 ## References
 
@@ -128,6 +130,29 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   congr 1
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   simp [hLapply, RCLike.real_smul_eq_coe_mul]
+
+/-- **Hadamard's lemma along a graph**: a function `G` analytic at `(x₀, g x₀)` that vanishes on
+the graph `y = g x` of a function `g` analytic at `x₀` is `(y - g x) • H (x, y)` near
+`(x₀, g x₀)`, with `H` analytic at `(x₀, g x₀)`. -/
+theorem AnalyticAt.exists_eventuallyEq_sub_smul_of_graph {G : E × 𝕜 → F} {g : E → 𝕜} {x₀ : E}
+    (hG : AnalyticAt 𝕜 G (x₀, g x₀)) (hg : AnalyticAt 𝕜 g x₀)
+    (h0 : ∀ᶠ x in 𝓝 x₀, G (x, g x) = 0) :
+    ∃ H : E × 𝕜 → F, AnalyticAt 𝕜 H (x₀, g x₀) ∧
+      ∀ᶠ p in 𝓝 (x₀, g x₀), G p = (p.2 - g p.1) • H p := by
+  -- `Φ` straightens the graph onto the hyperplane `y = 0`, and `Ψ` is its inverse.
+  set Φ : E × 𝕜 → E × 𝕜 := fun q ↦ (q.1, q.2 + g q.1)
+  set Ψ : E × 𝕜 → E × 𝕜 := fun q ↦ (q.1, q.2 - g q.1)
+  have hΦ : AnalyticAt 𝕜 Φ (x₀, 0) :=
+    analyticAt_fst.prod (analyticAt_snd.add (hg.comp analyticAt_fst))
+  have hΨ : AnalyticAt 𝕜 Ψ (x₀, g x₀) :=
+    analyticAt_fst.prod (analyticAt_snd.sub (hg.comp analyticAt_fst))
+  have hΨ₀ : Ψ (x₀, g x₀) = (x₀, 0) := by simp [Ψ]
+  obtain ⟨K, hK, hGK⟩ := (hG.comp_of_eq hΦ (by simp [Φ])).exists_eventuallyEq_sub_smul
+    (h0.mono fun x hx ↦ by simpa [Φ] using hx)
+  refine ⟨K ∘ Ψ, hK.comp_of_eq hΨ hΨ₀, ?_⟩
+  have hΨt : Tendsto Ψ (𝓝 (x₀, g x₀)) (𝓝 (x₀, 0)) := hΨ₀ ▸ hΨ.continuousAt.tendsto
+  filter_upwards [hΨt.eventually hGK] with p hp
+  simpa [Φ, Ψ] using hp
 
 /-- **Functions vanishing on two crossing lines.** A function of two scalar variables which is
 analytic at `(a, b)` and vanishes near `(a, b)` on the lines `y = b` and `x = a` is
