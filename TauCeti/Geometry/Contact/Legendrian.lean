@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Contact.Pullback
 
 /-!
 # Isotropic maps and Legendrian immersions
@@ -35,8 +36,9 @@ when `g` is an exact Lagrangian immersion with primitive `h`
 (`TauCeti.SmoothForm.isLegendrianImmersion_contactization_iff`). This is the correspondence
 between exact Lagrangian immersions and their Legendrian lifts. For the cotangent bundle
 `W = T*M`, whose contactization is the space of one-jets `J¹M = T*M × ℝ`, the section
-`x ↦ (α_x, g x)` defined by a one-form `α` and a function `g` is a Legendrian immersion exactly when
-`α = dg` (`TauCeti.CotangentBundle.isLegendrianImmersion_section_iff`). In particular the one-jet
+`x ↦ (s x, g x)` defined by a smooth covector field `s` and a function `g` is a Legendrian immersion
+exactly when `g` is smooth and `s = dg`
+(`TauCeti.CotangentBundle.isLegendrianImmersion_section_iff`). In particular the one-jet
 `j¹g : x ↦ (dg_x, g x)` of a smooth function is a Legendrian immersion
 (`TauCeti.CotangentBundle.isLegendrianImmersion_oneJet`).
 
@@ -143,21 +145,13 @@ theorem isIsotropicMap_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : (mpullback ψ ψ.contMDiff α₂).kerDistribution = α.kerDistribution) :
     α₂.IsIsotropicMap J (ψ ∘ f) ↔ α.IsIsotropicMap J f := by
   refine forall_congr' fun x ↦ ?_
-  -- The kernel of the pulled-back form is the preimage of the kernel under `dψ`.
-  have hker : (mpullback ψ ψ.contMDiff α₂).kerDistribution (f x) =
-      (α₂.kerDistribution (ψ (f x))).comap (mfderiv I I₂ ψ (f x)).toLinearMap := by
-    ext v
-    simp only [mem_kerDistribution, mpullback_apply, Submodule.mem_comap,
-      ContinuousLinearMap.coe_coe]
-    congr! 2
-    ext i
-    fin_cases i
-    rfl
-  rw [ψ.range_mfderiv_diffeomorph_comp (by simp), Function.comp_apply,
-    show (ψ.mfderivToContinuousLinearEquiv (by simp) (f x)).toLinearEquiv.toLinearMap =
-      (mfderiv I I₂ ψ (f x)).toLinearMap from
-      congrArg ContinuousLinearMap.toLinearMap (ψ.mfderivToContinuousLinearEquiv_coe _),
-    Submodule.map_le_iff_le_comap, ← hψ, hker]
+  -- `range_mfderiv_diffeomorph_comp` pushes the tangent image forward along `dψ` packaged as a
+  -- linear equivalence; as a linear map this is the differential `mfderiv I I₂ ψ`.
+  have hdψ : (ψ.mfderivToContinuousLinearEquiv (by simp) (f x)).toLinearEquiv.toLinearMap =
+      (mfderiv I I₂ ψ (f x)).toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap (ψ.mfderivToContinuousLinearEquiv_coe _)
+  rw [ψ.range_mfderiv_diffeomorph_comp (by simp), Function.comp_apply, hdψ,
+    Submodule.map_le_iff_le_comap, ← hψ, kerDistribution_mpullback]
 
 end Transport
 
@@ -239,38 +233,25 @@ theorem isIsotropicMap_contactization_iff (hg : MDifferentiable J I g)
     (hh : MDifferentiable J 𝓘(ℝ) h) :
     θ.contactization.IsIsotropicMap J (fun y ↦ (g y, h y)) ↔
       TauCeti.mpullback J I g θ.1 = mextDeriv (RoughForm.ofFunction J h) := by
-  rw [isIsotropicMap_contactization_iff_forall hg hh]
-  refine ⟨fun H ↦ ?_, fun H y v ↦ ?_⟩
-  · funext y
-    ext v
-    have hv : v = ![v 0] := by
-      ext i
-      fin_cases i
-      rfl
-    rw [hv, TauCeti.mpullback_apply, mextDeriv_ofFunction_apply, H y (v 0)]
-    congr 1
-    funext i
-    fin_cases i
-    rfl
-  · have := congrArg (fun φ : RoughForm J N ℝ 1 ↦ φ y ![v]) H
-    simp only [TauCeti.mpullback_apply, mextDeriv_ofFunction_apply] at this
-    rw [← this]
-    congr 1
-    funext i
-    fin_cases i
-    rfl
+  rw [isIsotropicMap_contactization_iff_forall hg hh, funext_iff]
+  refine forall_congr' fun y ↦ ?_
+  -- A one-form at `y` is determined by its values on the constant vectors `![v]`.
+  rw [← (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace J y) ℝ 0).symm.injective.eq_iff,
+    ContinuousLinearMap.ext_iff, mextDeriv_ofFunction, Equiv.symm_apply_apply]
+  simp only [ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, TauCeti.mpullback_apply,
+    Matrix.vec_single_eq_const, mvfderiv_apply_eq_mfderiv_apply]
+  exact forall_congr' fun _ ↦ eq_comm
 
 variable [IsManifold J ∞ N] [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless]
 
 /-- **Legendrian lifts of exact Lagrangian immersions.** Let `θ` be a one-form on `M` with `-dθ`
 nondegenerate. A map `y ↦ (g y, h y)` into the contactization `(M × ℝ, dz - θ)` is a Legendrian
-immersion exactly when `g` is a Lagrangian immersion into `(M, -dθ)` and `h` is a smooth primitive
-of `g^* θ`, that is when `g` is an exact Lagrangian immersion with primitive `h`. -/
+immersion exactly when `g` is a Lagrangian immersion into `(M, -dθ)` and an exact Lagrangian map
+with primitive `h`, that is when `h` is a smooth primitive of `g^* θ`. -/
 theorem isLegendrianImmersion_contactization_iff
     (hσ : SmoothTwoForm.IsNondegenerate (-mextDerivₗ I 1 θ)) :
     θ.contactization.IsLegendrianImmersion J (fun y ↦ (g y, h y)) ↔
-      hσ.IsLagrangianImmersion J g ∧ ContMDiff J 𝓘(ℝ) ∞ h ∧
-        TauCeti.mpullback J I g θ.1 = mextDeriv (RoughForm.ofFunction J h) := by
+      hσ.IsLagrangianImmersion J g ∧ hσ.IsExactLagrangianMap J θ g h := by
   have hdim : finrank ℝ (E × ℝ) = finrank ℝ E + 1 := by rw [finrank_prod, finrank_self]
   constructor
   · intro hL
@@ -289,16 +270,17 @@ theorem isLegendrianImmersion_contactization_iff
         rfl
       rw [mfderiv_prodMk (hg₁ y) (hh₁ y)]
       exact h0.trans (map_zero _).symm
-    refine ⟨⟨?_, ?_, ?_⟩, hh, (isIsotropicMap_contactization_iff hg₁ hh₁).1 hL.isIsotropicMap⟩
-    · exact TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun y ↦
-        (hg.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (Set.mem_univ y)
-          (by simp)).2 (hinj y)
-    · exact SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv rfl hg
-        (hh.of_le (by simp)) ((isIsotropicMap_contactization_iff hg₁ hh₁).1 hL.isIsotropicMap)
-    · have := hL.two_mul_finrank_add_one
+    have hdim' : 2 * finrank ℝ E' = finrank ℝ E := by
+      have := hL.two_mul_finrank_add_one
       rw [hdim] at this
       omega
-  · rintro ⟨hg, hh, hpull⟩
+    have hE := (SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_of_finrank (hσ := hσ) rfl
+      hg hinj hdim').2 ⟨hh, (isIsotropicMap_contactization_iff hg₁ hh₁).1 hL.isIsotropicMap⟩
+    refine ⟨⟨?_, hE.isLagrangianMap.isIsotropicMap, hdim'⟩, hE⟩
+    exact TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun y ↦
+      (hg.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (Set.mem_univ y)
+        (by simp)).2 (hinj y)
+  · rintro ⟨hg, -, hh, hpull⟩
     have hg' := hg.isImmersion.contMDiff
     refine ⟨?_, (isIsotropicMap_contactization_iff (hg'.mdifferentiable (by simp))
       (hh.mdifferentiable (by simp))).2 hpull, by rw [hdim, hg.two_mul_finrank]⟩
@@ -357,15 +339,18 @@ theorem isLegendrianImmersion_section_iff {s : (x : M) → TangentSpace I x →L
     rw [mpullback_liouvilleForm_section ((hs x).mdifferentiableAt (by simp)),
       mextDeriv_ofFunction]
     exact (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0).injective.eq_iff
-  rw [SmoothForm.isLegendrianImmersion_contactization_iff hσ, hpull]
-  refine ⟨fun h ↦ h.2, fun ⟨hg, hsg⟩ ↦ ⟨⟨?_, ?_, ?_⟩, hg, hsg⟩⟩
-  · -- The bundle projection is a smooth left inverse of the section.
-    exact hs.isImmersion_of_leftInverse (by simp)
-      (fun x ↦ (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt
-        one_ne_zero) fun _ ↦ rfl
-  · exact SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv rfl hs
-      (hg.of_le (by simp)) (hpull.2 hsg)
-  · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+  rw [SmoothForm.isLegendrianImmersion_contactization_iff hσ]
+  refine ⟨fun h ↦ ⟨h.2.contMDiff_primitive, hpull.1 h.2.mpullback_eq⟩, fun ⟨hg, hsg⟩ ↦ ?_⟩
+  have hLI : hσ.IsLagrangianImmersion I fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (s x) := by
+    refine ⟨?_, ?_, ?_⟩
+    · -- The bundle projection is a smooth left inverse of the section.
+      exact hs.isImmersion_of_leftInverse (by simp)
+        (fun x ↦ (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt
+          one_ne_zero) fun _ ↦ rfl
+    · exact SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv rfl hs
+        (hg.of_le (by simp)) (hpull.2 hsg)
+    · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+  exact ⟨hLI, hLI.isLagrangianMap, hg, hpull.2 hsg⟩
 
 /-- **One-jets are Legendrian.** The one-jet `j¹g : x ↦ (dg_x, g x)` of a smooth function is a
 Legendrian immersion into the space of one-jets `J¹M = T*M × ℝ` with its contact form `dz - λ`. -/
