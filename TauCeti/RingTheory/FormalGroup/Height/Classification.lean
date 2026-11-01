@@ -79,16 +79,6 @@ private noncomputable def homError (f : PowerSeries R) : MvPowerSeries (Fin 2) R
 
 variable {F G}
 
-/-- Substituting a series without constant term at two points without constant term gives a
-substitutable pair. -/
-private theorem hasSubst_pair_subst {σ : Type*} {f : PowerSeries R}
-    (hf : PowerSeries.constantCoeff f = 0) {x y : MvPowerSeries σ R} (hx : constantCoeff x = 0)
-    (hy : constantCoeff y = 0) : HasSubst ![PowerSeries.subst x f, PowerSeries.subst y f] :=
-  hasSubst_of_constantCoeff_zero fun i ↦ by
-    fin_cases i
-    exacts [PowerSeries.constantCoeff_subst_eq_zero hx f hf,
-      PowerSeries.constantCoeff_subst_eq_zero hy f hf]
-
 /-- The homomorphism defect of `f` at points `x, y` is `f(F(x, y)) - G(f(x), f(y))`. -/
 private theorem subst_homError {σ : Type*} {f : PowerSeries R}
     (hf : PowerSeries.constantCoeff f = 0) {x y : MvPowerSeries σ R} (hx : constantCoeff x = 0)
@@ -100,7 +90,10 @@ private theorem subst_homError {σ : Type*} {f : PowerSeries R}
     exacts [hx, hy]
   rw [homError, subst_sub hxy,
     subst_powerSeriesSubst hxy (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
-    subst_comp_subst_apply (hasSubst_pair_subst hf (constantCoeff_X 0) (constantCoeff_X 1)) hxy]
+    subst_comp_subst_apply (hasSubst_finTwo
+      (.of_constantCoeff_zero (PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 0) f hf))
+      (.of_constantCoeff_zero (PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 1) f hf)))
+      hxy]
   congr 3
   funext i
   fin_cases i <;>
@@ -163,14 +156,15 @@ private theorem le_order_homError_sub {f g : PowerSeries R} (hf : PowerSeries.co
       PowerSeries.subst (X i) g).order := by
     rw [← PowerSeries.subst_sub (PowerSeries.HasSubst.X i)]
     exact hfg.trans (PowerSeries.le_order_subst_left (constantCoeff_X i))
+  have hf₀ (i : Fin 2) : constantCoeff (![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) f,
+      PowerSeries.subst (X 1) f] i) = 0 := by
+    fin_cases i <;> exact PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X _) f hf
+  have hg₀ (i : Fin 2) : constantCoeff (![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g,
+      PowerSeries.subst (X 1) g] i) = 0 := by
+    fin_cases i <;> exact PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X _) g hg
   have hG := le_order_subst_sub_subst (H := G.toPowerSeries) (k := 1)
     (one_le_order_iff_constCoeff_eq_zero.mpr G.zero_constantCoeff)
-    (hasSubst_pair_subst hf (constantCoeff_X (R := R) (0 : Fin 2)) (constantCoeff_X 1))
-    (hasSubst_pair_subst hg (constantCoeff_X (R := R) (0 : Fin 2)) (constantCoeff_X 1))
-    (fun i ↦ by
-      fin_cases i <;> exact PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X _) f hf)
-    (fun i ↦ by
-      fin_cases i <;> exact PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X _) g hg)
+    (hasSubst_of_constantCoeff_zero hf₀) (hasSubst_of_constantCoeff_zero hg₀) hf₀ hg₀
     (n := n) (fun i ↦ by fin_cases i; exacts [hX 0, hX 1])
   rw [Nat.add_sub_cancel] at hG
   have h : homError F G f - homError F G g = PowerSeries.subst F.toPowerSeries (f - g) -

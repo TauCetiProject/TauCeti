@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import Mathlib.RingTheory.MvPowerSeries.Trunc
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+-- Proof-only: coefficients of a difference of substitutions.
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -24,6 +26,9 @@ of `f` and on the linear parts of the `a i`, into which it is substituted
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
 the polynomial `f_p(X + Y, Z)` (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
 
+Products and powers of close series are close: the order of `x y - x' y'` is bounded through
+those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x - y` has order
+at least `n` then `xᵏ - yᵏ` has order at least `n + k - 1` (`MvPowerSeries.le_order_pow_sub_pow`).
 Substitution is Lipschitz for the order: if `a i - b i` has order at least `n` for all `i`, then
 `f(a) - f(b)` has order at least `n + k - 1` when `f` has order at least `k`
 (`MvPowerSeries.le_order_subst_sub_subst`), and in degrees at most `n` it agrees with the linear
@@ -80,7 +85,7 @@ coefficient of `X` in `f`. -/
 theorem homogeneousComponent_one_eq_C_mul_X (f : MvPowerSeries Unit R) :
     homogeneousComponent 1 f = C (coeff (Finsupp.single () 1) f) * X () := by
   classical
-  ext d
+  refine ext fun d ↦ ?_
   rw [coeff_homogeneousComponent, coeff_C_mul, coeff_X]
   by_cases h : d = Finsupp.single () 1
   · subst h
@@ -240,7 +245,7 @@ variable {R : Type*}
 
 /-- The polynomial `homogeneousComponent n (truncTotal (n + 1) f)` is the degree-`n` homogeneous
 component of `f`. -/
-theorem coe_homogeneousComponent_truncTotal {σ : Type*} [Finite σ] [CommRing R] (n : ℕ)
+theorem coe_homogeneousComponent_truncTotal {σ : Type*} [Finite σ] [CommSemiring R] (n : ℕ)
     (f : MvPowerSeries σ R) :
     ((MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f) : MvPolynomial σ R) :
       MvPowerSeries σ R) = homogeneousComponent n f := by
@@ -281,19 +286,24 @@ end Leading
 
 section Differences
 
-variable {σ τ R : Type*} [CommRing R] {n : ℕ}
+variable {σ τ R : Type*} {n : ℕ}
+
+section Ring
+
+variable [Ring R]
 
 /-- The order of `x y - x' y'` is at least the smaller of the orders of `(x - x') y` and
 `x' (y - y')`. -/
-private theorem le_order_mul_sub_mul {x x' y y' : MvPowerSeries τ R} {m : ℕ∞}
+theorem le_order_mul_sub_mul {x x' y y' : MvPowerSeries τ R} {m : ℕ∞}
     (h₁ : m ≤ (x - x').order + y.order) (h₂ : m ≤ x'.order + (y - y').order) :
     m ≤ (x * y - x' * y').order := by
-  rw [show x * y - x' * y' = (x - x') * y + x' * (y - y') by ring]
+  rw [show x * y - x' * y' = (x - x') * y + x' * (y - y') by
+    rw [sub_mul, mul_sub, sub_add_sub_cancel]]
   exact le_order_add (h₁.trans le_order_mul) (h₂.trans le_order_mul)
 
 /-- If `x - y` has order at least `n` and `x`, `y` have zero constant coefficient, then
 `xᵏ - yᵏ` has order at least `n + k - 1` for `k ≥ 1`. -/
-private theorem le_order_pow_sub_pow {x y : MvPowerSeries τ R} (hx : constantCoeff x = 0)
+theorem le_order_pow_sub_pow {x y : MvPowerSeries τ R} (hx : constantCoeff x = 0)
     (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) {k : ℕ} (hk : k ≠ 0) :
     ((n + k - 1 : ℕ) : ℕ∞) ≤ (x ^ k - y ^ k).order := by
   induction k with
@@ -306,6 +316,10 @@ private theorem le_order_pow_sub_pow {x y : MvPowerSeries τ R} (hx : constantCo
       hx)).trans' ?_) ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k hy) hxy).trans' ?_)
     · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ n + k - 1 + 1)
     · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ k + n)
+
+end Ring
+
+variable [CommRing R]
 
 /-- **Monomials in close arguments are closer.** If the series `a i` and `b i` have zero constant
 coefficient and `a i - b i` has order at least `n` for every `i`, then for `d ≠ 0` the monomials
@@ -332,16 +346,6 @@ theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries 
       ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k (hb₀ i)) (ih hf)).trans' ?_)
     · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ n + k - 1 + f.degree)
     · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ k + (n + f.degree - 1))
-
-/-- The coefficients of `H(a) - H(b)` are the sums of the coefficients of `H` times those of the
-differences `aᵈ - bᵈ` of monomials. -/
-private theorem coeff_subst_sub_subst {H : MvPowerSeries σ R} {a b : σ → MvPowerSeries τ R}
-    (ha : HasSubst a) (hb : HasSubst b) (e : τ →₀ ℕ) :
-    coeff e (H.subst a - H.subst b) = ∑ᶠ d, coeff d H •
-      coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k) := by
-  simp_rw [map_sub, smul_sub]
-  rw [coeff_subst ha, coeff_subst hb,
-    finsum_sub_distrib (coeff_subst_finite ha H e) (coeff_subst_finite hb H e)]
 
 /-- **Substitution is Lipschitz for the order.** Let `H` have order at least `k`, and let the
 series `a i` and `b i` have zero constant coefficient, with `a i - b i` of order at least `n`.

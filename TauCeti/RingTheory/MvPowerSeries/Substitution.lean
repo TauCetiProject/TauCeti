@@ -82,6 +82,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   pair of polynomials.
 * `MvPowerSeries.coeff_subst_mem_span` : the coefficients of `f(a)` lie in the ideal generated
   by the coefficients of `f`.
+* `MvPowerSeries.coeff_subst_sub_subst` : the coefficients of `H(a) - H(b)` are those of `H`
+  paired with the coefficients of the differences `aᵈ - bᵈ` of monomials.
 * `MvPowerSeries.subst_eq_subst_of_coeff_mem` : if the coefficients of `f` annihilate an ideal `J`,
   then `f(a) = f(b)` for families `a` and `b` that agree modulo `J`.
 * `MvPowerSeries.subst_X_add_X_add_eq` : if the coefficients of `G` pairwise multiply to zero, then
@@ -513,6 +515,16 @@ theorem coeff_subst_mem_span {f : MvPowerSeries σ O} {a : σ → MvPowerSeries 
   have : map (Ideal.Quotient.mk (Ideal.span (Set.range fun d ↦ coeff d f))) f = 0 :=
     ext fun d ↦ by simp
   rw [this, ← coe_substAlgHom (ha.map _), map_zero, map_zero]
+
+/-- The coefficients of `H(a) - H(b)` are the sums of the coefficients of `H` times those of the
+differences `aᵈ - bᵈ` of monomials. -/
+theorem coeff_subst_sub_subst {H : MvPowerSeries σ O} {a b : σ → MvPowerSeries τ O}
+    (ha : HasSubst a) (hb : HasSubst b) (e : τ →₀ ℕ) :
+    coeff e (H.subst a - H.subst b) = ∑ᶠ d, coeff d H •
+      coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k) := by
+  simp_rw [map_sub, smul_sub]
+  rw [coeff_subst ha, coeff_subst hb,
+    finsum_sub_distrib (coeff_subst_finite ha H e) (coeff_subst_finite hb H e)]
 
 /-- Substitution is insensitive to an ideal annihilated by the coefficients of the series: if the
 coefficients of `f` kill the ideal `J` and the families `a` and `b` agree modulo `J`
