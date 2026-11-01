@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Contour.Residue.Theorem
 
 /-!
@@ -18,15 +17,16 @@ Let `a : ℂ` and let `φ` be a meromorphic germ at `a`, with principal part
 `TauCeti.meromorphicGerms.principalPart φ : ℂ[X]`, so that the coefficient of `X ^ (k + 1)` is the
 Laurent coefficient of `φ` of order `-(k + 1)`. This file computes these coefficients from any
 representative `f` of `φ`: the coefficient of `X ^ (k + 1)` is the residue at `a` of
-`(z - a)^k f(z)` (`coeff_principalPart_succ`), so the coefficient of `X` is the residue of `f`
-(`coeff_principalPart_one`), and by the residue theorem it is
+`(z - a)^k f(z)` (`coeff_principalPart_succ_eq_residue`), so the coefficient of `X` is the residue
+of `f` (`coeff_principalPart_one_eq_residue`), and by the residue theorem it is
 `(2πi)⁻¹ ∮_{|z - a| = ρ} (z - a)^k f(z) dz` for every sufficiently small `ρ > 0`
 (`coeff_principalPart_succ_eq_circleIntegral`).
 
 Both sides are Taylor coefficients: writing `f(z) = h(z) / (z - a)^(N + k + 1)` with `h` analytic
 at `a`, the principal part is computed by `TauCeti.meromorphicGerms.principalPart_eq_sum_coeff`
 and the residue by `TauCeti.Contour.residue_eq_of_eventuallyEq_zpow_smul`, and both equal the
-Taylor coefficient of `h` of order `N`.
+Taylor coefficient of `h` of order `N`, the coefficient `iteratedDeriv N h a / N!` of the power
+series of `h` given by `AnalyticAt.hasFPowerSeriesAt`.
 
 ## References
 
@@ -45,7 +45,7 @@ variable {a : ℂ}
 /-- **Laurent coefficients as residues.** The coefficient of `X ^ (k + 1)` in the principal part
 of a meromorphic germ, its Laurent coefficient of order `-(k + 1)`, is the residue at `a` of
 `(z - a)^k f(z)` for any representative `f`. -/
-theorem coeff_principalPart_succ {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
+theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
     (hφ : (φ : Germ (𝓝[≠] a) ℂ) = f) (k : ℕ) :
     (principalPart φ).coeff (k + 1) = Contour.residue (fun z ↦ (z - a) ^ k * f z) a := by
   obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
@@ -53,7 +53,6 @@ theorem coeff_principalPart_succ {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
   -- Taylor coefficient of `h` of order `N`.
   have hh : AnalyticAt ℂ (fun z ↦ (z - a) ^ (k + 1) * ((z - a) ^ N • f z)) a :=
     ((analyticAt_id.sub analyticAt_const).pow _).mul hN
-  obtain ⟨p, hp⟩ := hh
   have hφh : (φ : Germ (𝓝[≠] a) ℂ) = ↑(fun z ↦
       ((z - a) ^ (N + (k + 1)))⁻¹ * ((z - a) ^ (k + 1) * ((z - a) ^ N • f z))) := by
     rw [hφ, Germ.coe_eq]
@@ -61,15 +60,9 @@ theorem coeff_principalPart_succ {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
     have hza : z - a ≠ 0 := sub_ne_zero.2 hz
     rw [smul_eq_mul, pow_add]
     field_simp
-  have hcoeff : p.coeff N = iteratedDeriv N
-      (fun z ↦ (z - a) ^ (k + 1) * ((z - a) ^ N • f z)) a / (N.factorial : ℂ) := by
-    obtain ⟨r, hpr⟩ := hp
-    rw [iteratedDeriv_eq_iteratedFDeriv, ← hpr.factorial_smul, nsmul_eq_mul,
-      mul_div_cancel_left₀ _ (Nat.cast_ne_zero.2 N.factorial_ne_zero)]
-    rfl
-  rw [principalPart_eq_sum_coeff hp hφh, finsetSum_coeff, Finset.sum_eq_single N,
-    coeff_C_mul_X_pow, Nat.add_sub_cancel_left, hcoeff,
-    Contour.residue_eq_of_eventuallyEq_zpow_smul (n := -((N + 1 : ℕ) : ℤ)) (by omega) ⟨p, hp⟩]
+  rw [principalPart_eq_sum_coeff hh.hasFPowerSeriesAt hφh, finsetSum_coeff, Finset.sum_eq_single N,
+    coeff_C_mul_X_pow, Nat.add_sub_cancel_left, FormalMultilinearSeries.coeff_ofScalars,
+    Contour.residue_eq_of_eventuallyEq_zpow_smul (n := -((N + 1 : ℕ) : ℤ)) (by omega) hh]
   · simp only [↓reduceIte]
     congr <;> omega
   · filter_upwards [self_mem_nhdsWithin] with z hz
@@ -85,9 +78,9 @@ theorem coeff_principalPart_succ {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
 
 /-- The coefficient of `X` in the principal part of a meromorphic germ is the residue at `a` of
 any of its representatives. -/
-theorem coeff_principalPart_one {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
+theorem coeff_principalPart_one_eq_residue {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
     (hφ : (φ : Germ (𝓝[≠] a) ℂ) = f) : (principalPart φ).coeff 1 = Contour.residue f a := by
-  simpa using coeff_principalPart_succ hφ 0
+  simpa using coeff_principalPart_succ_eq_residue hφ 0
 
 /-- **Laurent coefficients as contour integrals.** For every sufficiently small radius `ρ > 0`,
 the coefficient of `X ^ (k + 1)` in the principal part of a meromorphic germ, its Laurent
@@ -108,7 +101,8 @@ theorem coeff_principalPart_succ_eq_circleIntegral {φ : meromorphicGerms ℂ a}
     hεF ((Metric.mem_closedBall.1 hz).trans_lt hρε) hza
   rw [Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hρ {a} (fun z hz ↦ ?_)
     (by simpa using Metric.mem_ball_self (x := a) hρ) (fun z hz hneg ↦ ?_), Finset.sum_singleton,
-    ← mul_assoc, inv_mul_cancel₀ two_pi_I_ne_zero, one_mul, coeff_principalPart_succ hφ k]
+    ← mul_assoc, inv_mul_cancel₀ two_pi_I_ne_zero, one_mul,
+    coeff_principalPart_succ_eq_residue hφ k]
   · rcases eq_or_ne z a with rfl | hza
     · exact hF
     · exact (han hz hza).meromorphicAt
