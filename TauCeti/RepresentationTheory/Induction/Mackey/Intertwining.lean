@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 public import TauCeti.RepresentationTheory.Induction.Mackey.Hom
+import TauCeti.RepresentationTheory.Induction.Mackey.IdentityComponent
 
 /-!
 # The intertwining-number formula
@@ -262,28 +263,7 @@ theorem finrank_hom_res_mackeyToH_one (A B : FDRep k H) :
         (Subgroup.resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A ⟶
           (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B) =
       Module.finrank k (A ⟶ B) := by
-  have hsubtype : ((mackeySubgroup 1 H H).subgroupOf H).subtype =
-      (mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)).toMonoidHom := by
-    ext y
-    exact congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply (H := H) (s := (1 : G))
-      (one_mem H) y).symm
-  have hmackey : mackeyToH 1 H H =
-      (mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)).toMonoidHom := by
-    ext y
-    rw [coe_mackeyToH_apply]
-    simp only [MulEquiv.coe_toMonoidHom]
-    simpa only [inv_one, one_mul, mul_one] using
-      congrArg Subtype.val (coe_mackeySubgroupSelfEquiv_apply
-        (H := H) (s := (1 : G)) (one_mem H) y).symm
-  let e := mackeySubgroupSelfEquiv (H := H) (s := (1 : G)) (one_mem H)
-  have hsource : Subgroup.resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A =
-      (Action.res (FGModuleCat k) e.toMonoidHom).obj A :=
-    congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj A) (by simpa [e] using hsubtype)
-  have htarget : (Action.res (FGModuleCat k) (mackeyToH 1 H H)).obj B =
-      (Action.res (FGModuleCat k) e.toMonoidHom).obj B :=
-    congrArg (fun phi => (Action.res (FGModuleCat k) phi).obj B) (by simpa [e] using hmackey)
-  rw [hsource, htarget]
-  exact e.toMonoidHom.finrank_hom_actionRes_of_surjective e.surjective A B
+  exact (FDRep.mackeyHomSelfLinearEquiv (s := (1 : G)) (one_mem H) A B).finrank_eq
 
 /-- For a normal subgroup, the dimension of a Mackey intertwining space equals the dimension of
 the ordinary intertwining space from `A` to its conjugate `{}^s A`. -/

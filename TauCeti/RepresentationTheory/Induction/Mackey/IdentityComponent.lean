@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.Mackey.Hom
+import TauCeti.RepresentationTheory.Induction.Adjunction
 import TauCeti.CategoryTheory.Linear.FullyFaithful
 import TauCeti.RepresentationTheory.FiniteIndex
 
@@ -33,29 +34,26 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G] {H : Subgroup G} {s : G}
 
-private theorem mackeySelfSubtype_surjective (hs : s ∈ H) :
-    Function.Surjective ((mackeySubgroup s H H).subgroupOf H).subtype := by
-  intro h
-  obtain ⟨y, hy⟩ := (mackeySubgroupSelfEquiv hs).surjective h
-  exact ⟨y, (coe_mackeySubgroupSelfEquiv_apply hs y).symm.trans hy⟩
-
 /-- The inner conjugation twist at a representative in `H` is removed by its action on `B`. -/
 private noncomputable def mackeySelfTwistIso (hs : s ∈ H) (B : Rep.{u} k H) :
     Rep.res (mackeyToH s H H) B ≅
       Rep.res ((mackeySubgroup s H H).subgroupOf H).subtype B :=
   Rep.mkIso <| .mk (LinearEquiv.ofBijective (B.ρ ⟨s, hs⟩) (B.ρ.apply_bijective _))
     fun y ↦ by
-      -- The restricted actions have the same carrier as B, but rewriting the restrictions
-      -- changes their dependent carrier. Read them as B's action before using multiplication.
-      change B.ρ ⟨s, hs⟩ ∘ₗ B.ρ (mackeyToH s H H y) =
-        B.ρ (y : H) ∘ₗ B.ρ ⟨s, hs⟩
-      change B.ρ ⟨s, hs⟩ * B.ρ (mackeyToH s H H y) =
-        B.ρ (y : H) * B.ρ ⟨s, hs⟩
-      rw [← map_mul, ← map_mul]
-      congr 1
-      ext
-      simp only [Subgroup.coe_mul, coe_mackeyToH_apply]
-      group
+      have h : (⟨s, hs⟩ : H) * mackeyToH s H H y = (y : H) * ⟨s, hs⟩ := by
+        ext
+        simp only [Subgroup.coe_mul, coe_mackeyToH_apply]
+        group
+      ext a
+      simpa only [Rep.coe_res_obj_ρ', MonoidHom.comp_apply, Subgroup.subtype_apply, map_mul,
+        Module.End.mul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        LinearEquiv.ofBijective_apply] using
+        congrArg (fun f : Module.End k B ↦ f a) (congrArg B.ρ h)
+
+/-- The twist comparison acts by the chosen representative on the original carrier. -/
+private theorem mackeySelfTwistIso_hom_hom_apply (hs : s ∈ H) (B : Rep.{u} k H) (b : B) :
+    (mackeySelfTwistIso hs B).hom.hom b = B.ρ ⟨s, hs⟩ b :=
+  rfl
 
 /-- A Mackey Hom component represented by an element of `H` is the ordinary Hom space over
 `H`. The map removes inner conjugation by acting on the target with the representative. -/
@@ -67,23 +65,33 @@ noncomputable def mackeyHomSelfLinearEquiv (hs : s ∈ H) (A B : Rep.{u} k H) :
     ((Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype).homLinearEquiv k A B).symm
 
 /-- The identity-component identification postcomposes with the action of its representative. -/
+@[simp]
 theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : Rep.{u} k H)
     (f : Rep.res ((mackeySubgroup s H H).subgroupOf H).subtype A ⟶
       Rep.res (mackeyToH s H H) B) (a : A) :
     (mackeyHomSelfLinearEquiv hs A B f).hom a = B.ρ ⟨s, hs⟩ (f.hom a) := by
   let := Rep.full_res (k := k) _ (mackeySelfSubtype_surjective hs)
-  have h := ((Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype).homLinearEquiv
-    k A B).apply_symm_apply (f ≫ (mackeySelfTwistIso hs B).hom)
-  rw [Functor.homLinearEquiv_apply] at h
-  have h' := congrArg (fun g ↦ g.hom a) h
-  -- Restriction and the comparison isomorphism retain different dependent presentations of
-  -- B's carrier; normalize those wrappers before comparing the evaluations.
-  change (((Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype).homLinearEquiv
-    k A B).symm (f ≫ (mackeySelfTwistIso hs B).hom)).hom a =
-      B.ρ ⟨s, hs⟩ (f.hom a) at h'
-  simpa only [mackeyHomSelfLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,
-    Iso.refl_inv, Category.id_comp, Rep.resMap_hom_apply, Rep.hom_comp,
-    IntertwiningMap.comp_apply] using h'
+  have h := Functor.map_homLinearEquiv_symm_apply k
+    (Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype)
+    (f ≫ (mackeySelfTwistIso hs B).hom)
+  calc
+    _ = (mackeySelfTwistIso hs B).hom.hom (f.hom a) := by
+      simpa only [mackeyHomSelfLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,
+        Iso.refl_inv, Category.id_comp, Rep.resMap_hom_apply, Rep.hom_comp,
+        IntertwiningMap.comp_apply] using congrArg (fun g ↦ g.hom a) h
+    _ = _ := mackeySelfTwistIso_hom_hom_apply hs B (f.hom a)
+
+/-- The inverse identity-component identification removes the representative's action. -/
+@[simp↓]
+theorem mackeyHomSelfLinearEquiv_symm_apply (hs : s ∈ H) (A B : Rep.{u} k H)
+    (g : A ⟶ B) (a : A) :
+    ((mackeyHomSelfLinearEquiv hs A B).symm g).hom a =
+      B.ρ (⟨s, hs⟩ : H)⁻¹ (g.hom a) := by
+  have h := mackeyHomSelfLinearEquiv_apply hs A B
+    ((mackeyHomSelfLinearEquiv hs A B).symm g) a
+  rw [LinearEquiv.apply_symm_apply] at h
+  exact (Representation.inv_self_apply B.ρ ⟨s, hs⟩ _).symm.trans
+    (congrArg (B.ρ (⟨s, hs⟩ : H)⁻¹) h.symm)
 
 section Finite
 
@@ -98,19 +106,9 @@ theorem indHomMackeyLinearEquiv_indMap_apply (A B : Rep.{u} k H) (f : A ⟶ B)
   classical
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
   rw [indHomMackeyLinearEquiv_apply]
-  -- The adjunction evaluates at 1. Its morphism is wrapped in Rep.ofHom, and the
-  -- composite targets a dependent coinduced carrier, so expose this evaluation together.
-  change (((Rep.indCoindIso (Rep.res (mackeyToH D.out H H) B)).hom.hom
-    ((Rep.homDirectSumLinearEquiv A (fun E : DoubleCoset.Quotient (H : Set G) (H : Set G) ↦
-      Rep.mackeySummand H H E.out B)
-      ((Rep.indResHomEquiv H.subtype A (Rep.ind H.subtype B) (Rep.indMap H.subtype f)) ≫
-        (Rep.mackeyDecomposition (K := H) B).hom) D).hom a)).1 1) = _
-  rw [Rep.homDirectSumLinearEquiv_apply]
-  -- Likewise, the first adjunction is evaluation on the generator at 1; expressing its
-  -- evaluation avoids rewriting a composition across the restricted target carrier.
-  change (((Rep.indCoindIso (Rep.res (mackeyToH D.out H H) B)).hom.hom
-    (((Rep.mackeyDecomposition (K := H) B).hom.hom
-      ((Rep.indMap H.subtype f).hom (IndV.mk H.subtype A.ρ 1 a))) D)).1 1) = _
+  rw [Rep.resCoindHomEquiv_symm_hom_apply, Rep.hom_comp,
+    IntertwiningMap.comp_apply, Rep.homDirectSumLinearEquiv_apply,
+    Rep.hom_comp, IntertwiningMap.comp_apply, Rep.indResHomEquiv_hom_apply]
   have hmap : (Rep.indMap H.subtype f).hom (IndV.mk H.subtype A.ρ 1 a) =
       IndV.mk H.subtype B.ρ 1 (f.hom a) := by
     simp [Rep.indMap]
@@ -120,11 +118,7 @@ theorem indHomMackeyLinearEquiv_indMap_apply (A B : Rep.{u} k H) (f : A ⟶ B)
   simp only [Subgroup.coe_one, mul_inv_cancel, one_mul] at hdecomp
   rw [hdecomp]
   rw [DirectSum.lof_apply]
-  -- The public comparison equation is on the underlying linear map rather than the
-  -- intertwining-map coercion selected by the adjunction.
-  change (((Rep.indCoindIso (Rep.res (mackeyToH D.out H H) B)).hom.hom.toLinearMap
-    (IndV.mk _ _ 1 (B.ρ (⟨D.out, hs⟩ : H)⁻¹ (f.hom a)))).1 1) = _
-  rw [Rep.indCoindIso_hom_hom_toLinearMap]
+  rw [Rep.indCoindIso_hom_hom_apply]
   exact congrFun (TauCeti.indToCoind_mk 1 _) 1 |>.trans (Rep.indToCoindAux_self 1 _)
 
 /-- Removing the inner conjugation identifies the actual identity component of an induced
@@ -147,8 +141,7 @@ with the ordinary Hom space over `H`. -/
 noncomputable def indHomMackeyIdentityComponent (A B : Rep.{u} k H) :
     (Rep.ind H.subtype A ⟶ Rep.ind H.subtype B) →ₗ[k] (A ⟶ B) :=
   (mackeyHomSelfLinearEquiv
-    ((doubleCosetMk_eq_mk_one_iff_mem H _).mp
-      (DoubleCoset.out_eq' (DoubleCoset.mk H H 1))) A B).toLinearMap.comp
+    (H.doubleCoset_out_mk_one_mem) A B).toLinearMap.comp
     ((LinearMap.proj (DoubleCoset.mk H H 1)).comp
       (indHomMackeyLinearEquiv A B).toLinearMap)
 
@@ -158,8 +151,7 @@ theorem indHomMackeyIdentityComponent_apply (A B : Rep.{u} k H)
     (φ : Rep.ind H.subtype A ⟶ Rep.ind H.subtype B) :
     indHomMackeyIdentityComponent A B φ =
       mackeyHomSelfLinearEquiv
-        ((doubleCosetMk_eq_mk_one_iff_mem H _).mp
-          (DoubleCoset.out_eq' (DoubleCoset.mk H H 1))) A B
+        (H.doubleCoset_out_mk_one_mem) A B
         (indHomMackeyLinearEquiv A B φ (DoubleCoset.mk H H 1)) := by rfl
 
 /-- Projection onto the identity component is a left inverse to induction on morphisms. -/
@@ -190,6 +182,7 @@ noncomputable def mackeyHomSelfLinearEquiv (hs : s ∈ H) (A B : FDRep k H) :
       FDRep.forget₂HomLinearEquiv A B
 
 /-- The finite-dimensional identification acts by the chosen representative on the target. -/
+@[simp]
 theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : FDRep k H)
     (f : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj B) (a : A) :
@@ -200,6 +193,17 @@ theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : FDRep k H)
     ((forget₂ (FDRep k H) (Rep k H)).obj B)
     ((FDRep.forget₂HomLinearEquiv _ _).symm f) a
 
+/-- The inverse finite-dimensional identification removes the representative's action. -/
+theorem mackeyHomSelfLinearEquiv_symm_apply (hs : s ∈ H) (A B : FDRep k H)
+    (g : A ⟶ B) (a : A) :
+    (mackeyHomSelfLinearEquiv hs A B).symm g a =
+      B.ρ (⟨s, hs⟩ : H)⁻¹ (g a) := by
+  have h := mackeyHomSelfLinearEquiv_apply hs A B
+    ((mackeyHomSelfLinearEquiv hs A B).symm g) a
+  rw [LinearEquiv.apply_symm_apply] at h
+  exact (Representation.inv_self_apply B.ρ ⟨s, hs⟩ _).symm.trans
+    (congrArg (B.ρ (⟨s, hs⟩ : H)⁻¹) h.symm)
+
 variable [Finite G]
 
 /-- The identity double-coset projection of the actual finite-dimensional Mackey Hom
@@ -207,8 +211,7 @@ isomorphism, with its component identified with `Hom_H(A, B)`. -/
 noncomputable def indHomMackeyIdentityComponent (A B : FDRep k H) :
     (indFDRep A ⟶ indFDRep B) →ₗ[k] (A ⟶ B) :=
   (mackeyHomSelfLinearEquiv
-    ((doubleCosetMk_eq_mk_one_iff_mem H _).mp
-      (DoubleCoset.out_eq' (DoubleCoset.mk H H 1))) A B).toLinearMap.comp
+    (H.doubleCoset_out_mk_one_mem) A B).toLinearMap.comp
     ((LinearMap.proj (DoubleCoset.mk H H 1)).comp
       (indHomMackeyLinearEquiv A B).toLinearMap)
 
@@ -218,8 +221,7 @@ theorem indHomMackeyIdentityComponent_apply (A B : FDRep k H)
     (φ : indFDRep A ⟶ indFDRep B) :
     indHomMackeyIdentityComponent A B φ =
       mackeyHomSelfLinearEquiv
-        ((doubleCosetMk_eq_mk_one_iff_mem H _).mp
-          (DoubleCoset.out_eq' (DoubleCoset.mk H H 1))) A B
+        (H.doubleCoset_out_mk_one_mem) A B
         (indHomMackeyLinearEquiv A B φ (DoubleCoset.mk H H 1)) := by rfl
 
 /-- Forgetting finite-dimensionality carries the identity component to the identity component
@@ -234,12 +236,23 @@ theorem indHomMackeyIdentityComponent_forget (A B : FDRep k H)
           ((indFDRepForgetIso A).inv ≫
             (FDRep.forget₂HomLinearEquiv (indFDRep A) (indFDRep B)).symm φ ≫
               (indFDRepForgetIso B).hom)) := by
-  simp only [indHomMackeyIdentityComponent, LinearMap.comp_apply,
-    LinearMap.proj_apply, LinearEquiv.coe_coe, FDRep.indHomMackeyLinearEquiv_apply,
-    mackeyHomSelfLinearEquiv, Rep.indHomMackeyIdentityComponent_apply]
-  -- The two forgetful equivalences present the same scalar action through different
-  -- category instances; erw identifies those presentations before canceling them.
-  erw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
+  apply ConcreteCategory.hom_ext
+  intro a
+  simp only [indHomMackeyIdentityComponent_apply, mackeyHomSelfLinearEquiv_apply,
+    FDRep.forget₂HomLinearEquiv_apply, Rep.indHomMackeyIdentityComponent_apply,
+    indHomMackeyLinearEquiv_apply]
+  let D := DoubleCoset.mk H H 1
+  let A' := (forget₂ (FDRep k H) (Rep k H)).obj A
+  let B' := (forget₂ (FDRep k H) (Rep k H)).obj B
+  let φ' := (indFDRepForgetIso A).inv ≫
+    (FDRep.forget₂HomLinearEquiv (indFDRep A) (indFDRep B)).symm φ ≫
+      (indFDRepForgetIso B).hom
+  let ψ := Rep.indHomMackeyLinearEquiv A' B' φ' D
+  have h := FDRep.forget₂HomLinearEquiv_apply
+    (Subgroup.resFDRep ((mackeySubgroup D.out H H).subgroupOf H) A)
+    ((Action.res (FGModuleCat k) (mackeyToH D.out H H)).obj B) ψ a
+  exact (congrArg (B.ρ ⟨D.out, H.doubleCoset_out_mk_one_mem⟩) h).trans
+    (Rep.mackeyHomSelfLinearEquiv_apply (H.doubleCoset_out_mk_one_mem) A' B' ψ a).symm
 
 /-- The identity Mackey component of an induced finite-dimensional morphism is the original
 morphism, over every field. -/
@@ -247,13 +260,7 @@ morphism, over every field. -/
 theorem indHomMackeyIdentityComponent_indFDRepMap (A B : FDRep k H) (f : A ⟶ B) :
     indHomMackeyIdentityComponent A B (indFDRepMap f) = f := by
   rw [indHomMackeyIdentityComponent_forget]
-  -- Identify the inverse forgetful Hom equivalence with the actual forgetful functor map,
-  -- so the public equation for indFDRepMap applies without unfolding its construction.
-  change FDRep.forget₂HomLinearEquiv A B
-    (Rep.indHomMackeyIdentityComponent _ _
-      ((indFDRepForgetIso A).inv ≫
-        (forget₂ (FDRep k G) (Rep k G)).map (indFDRepMap f) ≫
-          (indFDRepForgetIso B).hom)) = f
+  rw [FDRep.forget₂HomLinearEquiv_symm_apply]
   rw [forget₂_map_indFDRepMap]
   simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id,
     Rep.indFunctor_map, Rep.indHomMackeyIdentityComponent_indMap]
