@@ -226,21 +226,21 @@ theorem lsCategoryCount_univ_le_totalCriticalCount [CompactSpace M]
 /-- **The Lusternik–Schnirelmann bound on a compact open part.** If `C` is a compact open subset
 of a boundaryless manifold `M`, for instance a connected component of a compact manifold, then the
 Lusternik–Schnirelmann count of `C`, as a space in its own right, is at most the number of critical
-points of a smooth function `f` lying in `C`. The critical points may be degenerate; if there are
-infinitely many in `C`, their count is `⊤`.
+points in `C` of a function `f` that is smooth on `C`. The critical points may be degenerate; if
+there are infinitely many in `C`, their count is `⊤`.
 
 Summed over the finitely many components of a compact manifold `M`, using
 `TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents` and
 `TauCeti.totalCriticalCount_eq_finsum_connectedComponents`, these bounds recover
 `TauCeti.lsCategoryCount_univ_le_totalCriticalCount`. -/
-theorem lsCategoryCount_univ_le_encard_criticalPoints_inter (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    {C : Set M} (hCo : IsOpen C) (hCc : IsCompact C) :
+theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
+    (hf : ContMDiffOn I 𝓘(ℝ) ∞ f C) (hCo : IsOpen C) (hCc : IsCompact C) :
     lsCategoryCount C univ ≤ (criticalPoints I f ∩ C).encard := by
   let U : Opens M := ⟨C, hCo⟩
   have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
   have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
-    (hf.comp contMDiff_subtype_val)
-  rw [totalCriticalCount_comp_subtypeVal (hf.mdifferentiable (by simp)).mdifferentiableOn] at h
+    (hf.comp_contMDiff contMDiff_subtype_val Subtype.prop)
+  rw [totalCriticalCount_comp_subtypeVal (hf.mdifferentiableOn (by simp))] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h
 
