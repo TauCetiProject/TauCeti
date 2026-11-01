@@ -61,6 +61,9 @@ compatibility of `J` with the full symplectic form `Ω = ds ∧ dt + σ_v` is ne
 
 * `TauCeti.SmoothMappingTorus.suspensionHorizontalSubspace_eq_span`: `H` is the span of `∂_s`
   and `T`.
+* `TauCeti.SmoothMappingTorus.mfderiv_snd_comp_mem_span_of_mem_suspensionHorizontalSubspace`: if
+  the tangent image `du e` of a map `u` into `X_φ` is horizontal, then the mapping torus component
+  of `u` maps `e` into the line spanned by `T`.
 * `TauCeti.SmoothMappingTorus.isCompl_suspensionVerticalSubspace_suspensionHorizontalSubspace`:
   `T X_φ = V ⊕ H`.
 * `TauCeti.SmoothMappingTorus.eval₂_mpullback_snd_fiberForm_projection_projection`: `ω_v` only sees
@@ -186,6 +189,25 @@ theorem suspensionHorizontalSubspace_eq_span :
       exact hb
   · exact Set.insert_subset (symm_one_zero_mem_suspensionHorizontalSubspace φ q)
       (Set.singleton_subset_iff.2 (symm_zero_timeVectorField_mem_suspensionHorizontalSubspace φ q))
+
+section Differential
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*}
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {C : Type*} [TopologicalSpace C]
+  [ChartedSpace H' C] {u : C → UnitAddCircle × SmoothMappingTorus φ}
+
+/-- If the tangent image `du e` of a map `u` into `X_φ = (ℝ / ℤ) × Y_φ` lies in the horizontal
+plane `span(∂_s, T)`, then the tangent image of `e` under the mapping torus component of `u` lies
+in the line spanned by `T`. -/
+theorem mfderiv_snd_comp_mem_span_of_mem_suspensionHorizontalSubspace {c : C}
+    (hu : MDifferentiableAt I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c) {e : TangentSpace I' c}
+    (hH : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c)) :
+    mfderiv I' (𝓘(ℝ).prod I) (Prod.snd ∘ u) c e ∈ ℝ ∙ timeVectorField φ (u c).2 := by
+  have h := mem_suspensionHorizontalSubspace_iff.1 hH
+  rw [Manifold.tangentSpaceProdEquiv_apply] at h
+  rwa [mfderiv_comp c mdifferentiableAt_snd hu, mfderiv_snd]
+
+end Differential
 
 variable [IsManifold I ∞ M]
 
