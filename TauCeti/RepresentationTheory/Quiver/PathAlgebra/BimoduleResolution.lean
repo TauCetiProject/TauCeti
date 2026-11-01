@@ -482,19 +482,13 @@ variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
 variable (k Q)
 
-/-- The component at an arrow `b : i ⟶ j` of the differential of the standard resolution: right
-multiplication by `b ⊗ eᵢ - eⱼ ⊗ b`, from `kQ eⱼ ⊗_k eᵢ kQ` to `kQ ⊗_{kQ₀} kQ`. -/
-private noncomputable def arrowTensorDifferentialComponent (b : Σ i j : Q, i ⟶ j) :
-    (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ) →ₗ[𝒜ᵉ] vertexTensorBimodule k Q :=
-  LinearMap.toSpanSingleton 𝒜ᵉ _ ⟨arrowTensorBoundary k Q b, mem_vertexTensorBimodule_iff.2
-    (arrowTensorBoundary_mul_vertexTensorIdempotent b)⟩ ∘ₗ
-      (Ideal.span {arrowTensorIdempotent k Q b}).subtype
-
 /-- **The differential of the standard resolution**, `x eⱼ ⊗ eᵢ y ↦ x b ⊗ eᵢ y - x eⱼ ⊗ b y` in
-the component of an arrow `b : i ⟶ j`. -/
+the component of an arrow `b : i ⟶ j`: the bimodule map sending the generator `eⱼ ⊗ eᵢ` to
+`b ⊗ eᵢ - eⱼ ⊗ b`. -/
 noncomputable def arrowTensorDifferential :
     arrowTensorBimodule k Q →ₗ[𝒜ᵉ] vertexTensorBimodule k Q :=
-  DirectSum.toModule 𝒜ᵉ _ _ (arrowTensorDifferentialComponent k Q)
+  arrowTensorLift k Q fun b ↦ (⟨arrowTensorBoundary k Q b, mem_vertexTensorBimodule_iff.2
+    (arrowTensorBoundary_mul_vertexTensorIdempotent b)⟩ : vertexTensorBimodule k Q)
 
 variable {k Q}
 
@@ -505,7 +499,7 @@ theorem coe_arrowTensorDifferential_lof (b : Σ i j : Q, i ⟶ j)
     (u : (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) :
     (arrowTensorDifferential k Q (DirectSum.lof 𝒜ᵉ _ _ b u) : 𝒜ᵉ) =
       u * arrowTensorBoundary k Q b := by
-  simp [arrowTensorDifferential, arrowTensorDifferentialComponent]
+  rw [arrowTensorDifferential, arrowTensorLift_lof, Submodule.coe_smul, smul_eq_mul]
 
 /-- **The differential is `x ⊗ y ↦ x b ⊗ y - x ⊗ b y`**: on the generator `x eⱼ ⊗ eᵢ y` of the
 component of an arrow `b : i ⟶ j` its value is `x b ⊗ eᵢ y - x eⱼ ⊗ b y`. -/
