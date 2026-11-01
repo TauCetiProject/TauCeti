@@ -37,6 +37,8 @@ lemma: on at least one boundary point, some arc joins two consecutive points.
   `{a, b} ↦ {a + 1, b + 1}` modulo `k`.
 * `TauCeti.PlanarMatching.reflect k`: reflecting every arc in the order reversal `Fin.rev`.
 * `TauCeti.PlanarMatching.cast h`: transport along an equality `k = k'` of the numbers of points.
+* `TauCeti.PlanarMatching.nested n`: the fully nested planar matching of `n + n` points, joining
+  each point `a` to `Fin.rev a`.
 
 ## Main results
 
@@ -282,6 +284,21 @@ theorem cast_reflect (h : k = k') (x : PlanarMatching k) :
     cast h (reflect k x) = reflect k' (cast h x) := by
   subst h
   simp
+
+/-! ### The fully nested matching -/
+
+/-- The **fully nested planar matching** of `n + n` points: the order reversal `Fin.rev` joins
+each point `a` to the point `2n - 1 - a`, so its `n` arcs are nested one inside the next. -/
+def nested (n : ℕ) : PlanarMatching (n + n) :=
+  ⟨⟨Fin.revPerm, isPerfectMatching_iff.mpr ⟨Fin.rev_rev, fun a h => by
+      have := congrArg Fin.val h
+      simp only [Fin.revPerm_apply, Fin.val_rev] at this
+      omega⟩⟩,
+    Perm.isNoncrossingMatching_iff.mpr fun _ _ hab _ h => (Fin.rev_lt_rev.mp h).not_gt hab⟩
+
+/-- The fully nested planar matching joins each point to its order reversal. -/
+@[simp]
+theorem nested_val (n : ℕ) : (nested n).1.val = Fin.revPerm := (rfl)
 
 end PlanarMatching
 

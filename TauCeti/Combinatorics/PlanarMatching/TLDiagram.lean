@@ -332,23 +332,15 @@ theorem verticalReflect_dragLeft (x : TLDiagram (n + 1) m) :
 
 /-! ### The identity, the cup and the cap -/
 
-/-- The involution `Fin.rev` of `Fin (n + n)` is a planar matching: it joins each bottom point
-of the rectangle with `n` points on each side to the top point straight above it. -/
-private def idMatching (n : ℕ) : PlanarMatching (n + n) :=
-  ⟨⟨Fin.revPerm, isPerfectMatching_iff.mpr ⟨Fin.rev_rev, fun a h => by
-      have := congrArg Fin.val h
-      simp only [Fin.revPerm_apply, Fin.val_rev] at this
-      omega⟩⟩,
-    Perm.isNoncrossingMatching_iff.mpr fun _ _ hab _ h => (Fin.rev_lt_rev.mp h).not_gt hab⟩
-
 /-- The **identity diagram** on `n` strands: each bottom point is joined to the top point straight
 above it, with no circles. In the counterclockwise numbering the bottom point `i` is joined to the
-top point `2n - 1 - i`, so the matching is `Fin.rev`. -/
+top point `2n - 1 - i`, so the matching is the fully nested `TauCeti.PlanarMatching.nested`. -/
 def id (n : ℕ) : TLDiagram n n :=
-  ⟨idMatching n, 0⟩
+  ⟨PlanarMatching.nested n, 0⟩
 
 @[simp]
-theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm := (rfl)
+theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
+  PlanarMatching.nested_val n
 
 @[simp]
 theorem circles_id (n : ℕ) : (id n).circles = 0 := (rfl)
@@ -452,7 +444,8 @@ example (x y : TLDiagram 3 1) (hx : x.matching.1.val = swap 0 1 * swap 2 3)
 /-- The rotation of the identity diagram on two strands, `{0, 3}, {1, 2}`, is the diagram
 `{1, 0}, {2, 3}`: a cap on the bottom points followed by a cup on the top points. -/
 example : (TLDiagram.rotate 2 2 (TLDiagram.id 2)).matching.1.val = swap 0 1 * swap 2 3 := by
-  simp only [TLDiagram.matching_rotate, PlanarMatching.coe_rotate_apply, PerfectMatching.congr_val]
+  simp only [TLDiagram.matching_rotate, PlanarMatching.coe_rotate_apply, PerfectMatching.congr_val,
+    TLDiagram.id_matching_val]
   decide
 
 end TauCeti
