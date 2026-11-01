@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.RootWeight
-public import TauCeti.Algebra.Lie.Matrix.IntegralCast
+public import TauCeti.Algebra.Lie.Presentation.Serre.IntegralCast
 
 /-!
 # Serre generators in the Lie algebra of the generated E₆ group
@@ -89,11 +89,10 @@ theorem generatedCartanVector_def (i : Fin 6) :
 theorem generatedTangentMatrixLieHom_generatedCartanVector (i : Fin 6) :
     generatedTangentMatrixLieHom R (generatedCartanVector R i) =
       (cartanGeneratorMatrix i).map (Int.cast : ℤ → R) := by
-  rw [generatedCartanVector_def, LieHom.map_lie,
-    generatedTangentMatrixLieHom_generatedRootVector,
-    generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl, Sum.elim_inr]
-  simpa only [Function.comp_apply, matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).lie_E_F_self i
+  rw [generatedCartanVector_def]
+  exact isSerreSystem.map_lie_eq_intCast (generatedTangentMatrixLieHom R)
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inr i)) i
 
 /-- The normalized root vectors and their Cartan brackets satisfy all E₆ Serre relations. -/
 theorem isSerreSystem_generatedRootVector :

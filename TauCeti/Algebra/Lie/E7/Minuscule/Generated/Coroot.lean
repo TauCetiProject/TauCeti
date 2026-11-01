@@ -131,14 +131,22 @@ theorem generatedSerreLift_serreH_eq_derivationComp_generatedCorootCocharacter (
   rw [generatedSerreLift_serreH,
     generatedCartanVector_eq_derivationComp_generatedCorootCocharacter]
 
+/-- The differential of a coordinate cocharacter of the generated weight torus is its
+numbered Cartan vector. -/
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : Fin 7) :
+    derivationCompLieHom
+        ((generatedWeightTorusCoordinateMap R).hom.cocharacter
+          (Finsupp.applyAddHom i).toMultiplicative)
+        (MultiplicativeGroup.tangentLinearEquiv.symm (1 : R)) = generatedCartanVector R i := by
+  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
+    generatedCorootCocharacter_def, derivationCompLieHom_apply]
+
 /-- The weight-torus differential sends a coordinate tangent vector to its Cartan vector. -/
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis (i : Fin 7) :
     derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom
         (SplitTorus.tangentBasis (R := R) (B := R) i) = generatedCartanVector R i := by
   rw [SplitTorus.derivationCompLieHom_tangentBasis,
-    generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
-    generatedCorootCocharacter_def,
-    derivationCompLieHom_apply]
+    derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter]
 
 /-- The tangent image of the generated weight torus is the span of the normalized
 Cartan vectors. No injectivity of the torus differential is assumed. -/
@@ -150,9 +158,7 @@ theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_eq_span :
   congr 1
   apply congrArg Set.range
   funext i
-  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
-    generatedCorootCocharacter_def,
-    derivationCompLieHom_apply]
+  exact derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter R i
 
 /-- Every tangent vector in the weight-torus image is in the image of the Serre comparison. -/
 theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_le_range_generatedSerreLift :
@@ -186,8 +192,7 @@ theorem linearIndependent_generatedCartanVector :
     (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
   convert h using 1
   funext i
-  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
-    generatedCorootCocharacter_def, derivationCompLieHom_apply]
+  exact (derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter R i).symm
 
 /-- The simple-coroot differentials form a basis of their span, the toral tangent image. -/
 def generatedCartanBasis :
