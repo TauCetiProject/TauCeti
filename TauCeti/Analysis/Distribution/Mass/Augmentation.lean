@@ -77,21 +77,27 @@ theorem enorm_augmentation_le_mass_add_comp_extDerivCLM_mul {k : ℕ} {𝓕 𝓖
   have hBc : IsCompact (dsupport B) := hQ.of_isClosed_subset isClosed_dsupport hB
   have hBΩ : dsupport B ⊆ Ω := hB.trans hQΩ
   let A := (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →ₗ[ℝ] V) + B
-  have hsum : dsupport A ⊆ dsupport T ∪ dsupport B := dsupport_add_subset T B
+  have hA : ⇑A = ⇑T + ⇑B := by
+    funext ω
+    simp [A]
+  have hsum : dsupport A ⊆ dsupport T ∪ dsupport B :=
+    hA ▸ dsupport_add_subset T B
   have hsumc : IsCompact (dsupport A) :=
     (hT.union hBc).of_isClosed_subset isClosed_dsupport hsum
   have hsumΩ : dsupport A ⊆ Ω := hsum.trans (union_subset hTΩ hBΩ)
   have haug : augmentation A c = augmentation T c := by
     have hzero : augmentation B c = 0 := augmentation_comp_extDerivCLM Q hQ hQΩ c
-    exact (augmentation_add T B hT hTΩ hBc hBΩ c).trans (by rw [hzero, add_zero])
-  have hcoe : (⇑A) = fun ω => T ω + Q (TestFunction.extDerivCLM ω) := rfl
+    rw [hA, augmentation_add T B hT hTΩ hBc hBΩ c, hzero, add_zero]
+  have hcoe : (⇑A) = fun ω => T ω + Q (TestFunction.extDerivCLM ω) := by
+    funext ω
+    simp [A, B]
   have h := enorm_augmentation_le_mass_mul A hsumc hsumΩ c
   rwa [haug, hcoe] at h
 
 /-- A weighted point current minimizes mass against every compactly supported boundary
 perturbation, already among real-linear functionals. This includes positive, negative and zero
 coefficients, in every ambient dimension. -/
-theorem mass_point_le_mass_add_comp_extDerivCLM {𝓖 : Type*}
+theorem mass_mul_apply_finZero_le_mass_add_comp_extDerivCLM {𝓖 : Type*}
     [FunLike 𝓖 𝓓(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) ℝ]
     [LinearMapClass 𝓖 ℝ 𝓓(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) ℝ]
     {x : E} (hx : x ∈ Ω) (a : ℝ) (Q : 𝓖)
@@ -103,26 +109,30 @@ theorem mass_point_le_mass_add_comp_extDerivCLM {𝓖 : Type*}
     { toFun ω := a * ω x ![]
       map_add' ω η := by simp [mul_add]
       map_smul' r ω := by simp [mul_left_comm] }
+  have hpoint : (⇑T) = fun ω => a * ω x ![] := by
+    funext ω
+    simp [T]
+  let ℓ : (E [⋀^Fin 0]→L[ℝ] ℝ) →+ ℝ :=
+    { toFun ω := a * ω ![]
+      map_zero' := by simp
+      map_add' ω η := by simp [mul_add] }
   have hTx : dsupport T ⊆ {x} := by
-    refine compl_subset_compl.1 fun y hy => ?_
-    refine (notMem_dsupport_iff y).2 ⟨{x}ᶜ, fun ω hω => ?_, isOpen_compl_singleton, hy⟩
-    simp [T, image_eq_zero_of_notMem_tsupport fun h => hω h rfl]
+    rw [hpoint]
+    simpa [ℓ] using (dsupport_apply_apply_subset (Ω := Ω) (n := ⊤) (x := x) ℓ)
   have hTc : IsCompact (dsupport T) :=
     isCompact_singleton.of_isClosed_subset isClosed_dsupport hTx
   have hTΩ : dsupport T ⊆ Ω := hTx.trans (singleton_subset_iff.2 hx)
   let c := ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) (1 : ℝ)
   have hc : ‖c‖ₑ = 1 := by simp [c, ← ofReal_norm]
   have haug : augmentation T c = a := by
-    let ℓ : (E [⋀^Fin 0]→L[ℝ] ℝ) →+ ℝ :=
-      { toFun ω := a * ω ![]
-        map_zero' := by simp
-        map_add' ω η := by simp [mul_add] }
-    exact (augmentation_apply_apply (n := ⊤) hx ℓ c).trans (by simp [ℓ, c])
+    rw [hpoint]
+    simpa [ℓ, c] using (augmentation_apply_apply (n := ⊤) hx ℓ c)
   have hmass : mass T = ‖a‖ₑ := by
-    have heq : (⇑T) = a • (fun ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) => ω x ![]) := rfl
+    have heq : (⇑T) = a • (fun ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) => ω x ![]) := by
+      funext ω
+      simp [T]
     rw [heq, mass_smul, mass_apply_finZero hx, mul_one]
   have h := enorm_augmentation_le_mass_add_comp_extDerivCLM_mul T Q hTc hTΩ hQ hQΩ c
-  have hpoint : (⇑T) = fun ω => a * ω x ![] := rfl
   rwa [haug, hc, mul_one, ← hmass, hpoint] at h
 
 end Distribution
