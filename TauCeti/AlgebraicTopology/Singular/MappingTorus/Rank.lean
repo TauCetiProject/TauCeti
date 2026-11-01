@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
-public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -29,10 +28,6 @@ one. This is the criterion used for surface mapping tori `Y_φ` with `b₁(Y_φ)
 
 ## Main results
 
-* `TauCeti.MappingTorus.homologyMap_monodromyChainMap_zero`: on a path-connected fibre the
-  monodromy induces the identity of `H₀(F)`.
-* `TauCeti.MappingTorus.epi_wangδ_zero`: the Wang connecting morphism `H₁(T_φ) ⟶ H₀(F)` is an
-  epimorphism.
 * `TauCeti.MappingTorus.rank_homology_one`: `rank H₁(T_φ; k) = rank coker (𝟙 - φ_*) + 1`.
 * `TauCeti.MappingTorus.finrank_homology_one`: `b₁(T_φ; k) = dim ker (𝟙 - φ_*) + 1` when
   `H₁(F; k)` is finite-dimensional.
@@ -49,29 +44,9 @@ noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology HomologicalComplex Module
 
-universe w v u
+universe w
 
 namespace TauCeti.MappingTorus
-
-section Abelian
-
-variable {F : Type w} [TopologicalSpace F] [PathConnectedSpace F] (φ : F ≃ₜ F)
-  {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-
-/-- On a path-connected fibre the monodromy induces the identity of `H₀(F)`. -/
-@[simp]
-theorem homologyMap_monodromyChainMap_zero :
-    homologyMap (monodromyChainMap φ R) 0 = 𝟙 _ := by
-  rw [monodromyChainMap_def]
-  -- `singularHomologyFunctor` is by definition the homology of `singularChainComplexFunctor`.
-  exact singularHomology₀_map_eq_id_of_pathConnectedSpace R _
-
-/-- **The end of the Wang sequence** of a mapping torus with path-connected fibre:
-`H₁(T_φ) ⟶ H₀(F) ⟶ 0`, that is, the Wang connecting morphism is an epimorphism in degree zero. -/
-instance epi_wangδ_zero : Epi (wangδ φ R 0) :=
-  (wang_exact₁ φ R 0).epi_f (by simp)
-
-end Abelian
 
 section Field
 
