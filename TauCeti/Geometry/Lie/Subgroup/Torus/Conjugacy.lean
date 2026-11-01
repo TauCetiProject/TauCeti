@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
-import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 
 /-!
 # Conjugacy of maximal tori
@@ -21,10 +20,10 @@ The proof is the classical maximization argument of Hunt, which needs no degree 
 `Ad`-invariant inner product `B` on the Lie algebra `𝔤`. Given `X Y : 𝔤`, the function
 `g ↦ B (Ad g X) Y` on the compact group `G` attains its maximum at some `g`, and differentiating
 along one-parameter subgroups at the maximum, using that each `ad Z` is skew for `B`, gives
-`⁅Ad g X, Y⁆ = 0` (`TauCeti.Lie.exists_lie_Ad_eq_zero`). Choose `Y` with `lieExp Y` a topological
-generator of a maximal torus `T`. Then the one-parameter subgroup of `Ad g X` centralizes `T`, so
-`Ad g X` lies in `Lie(T)`: every adjoint orbit in `𝔤` meets `Lie(T)`. Applying this to an `X` whose
-exponential topologically generates another torus `S` conjugates `S` into `T`.
+`⁅Ad g X, Y⁆ = 0` (`LeftInvariantDerivation.exists_lie_Ad_eq_zero`). Choose `Y` with `lieExp Y` a
+topological generator of a maximal torus `T`. Then the one-parameter subgroup of `Ad g X`
+centralizes `T`, so `Ad g X` lies in `Lie(T)`: every adjoint orbit in `𝔤` meets `Lie(T)`. Applying
+this to an `X` whose exponential topologically generates another torus `S` conjugates `S` into `T`.
 
 The conjugates of `T` therefore cover exactly the image of the exponential map
 (`TauCeti.Lie.IsMaximalTorus.iUnion_map_conj_eq_range_lieExp`). For a compact connected `G` they
@@ -32,8 +31,6 @@ cover all of `G` as soon as `lieExp` is known to be surjective, which is a separ
 
 ## Main results
 
-* `TauCeti.Lie.exists_lie_Ad_eq_zero`: for `X Y : 𝔤` in the Lie algebra of a compact Lie group,
-  some adjoint translate of `X` brackets to zero with `Y`.
 * `TauCeti.Lie.IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup`: every adjoint orbit meets the
   Lie algebra of a maximal torus.
 * `TauCeti.Lie.IsMaximalTorus.iUnion_map_conj_eq_range_lieExp`: the conjugates of a maximal torus
@@ -66,40 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- **Hunt's lemma.** For `X` and `Y` in the Lie algebra of a compact Lie group, some adjoint
-translate of `X` brackets to zero with `Y`. -/
-theorem exists_lie_Ad_eq_zero (X Y : LeftInvariantDerivation I G) :
-    ∃ g : G, ⁅Ad (I := I) g X, Y⁆ = 0 := by
-  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  obtain ⟨B, -, hpos, hAd⟩ := exists_isSymm_bilinForm_Ad_invariant (I := I) (G := G)
-  have hinv := lieInvariant_of_forall_Ad_apply hAd
-  -- Let `g` maximize `g ↦ B (Ad g X) Y` over the compact group.
-  let φ := LinearMap.toContinuousLinearMap (B.flip Y)
-  have hcont : Continuous fun g : G ↦ φ (Ad (I := I) g X) :=
-    φ.continuous.comp ((contMDiff_Ad_apply (I := I) (G := G)).continuous.comp
-      (continuous_id.prodMk continuous_const))
-  obtain ⟨g, -, hg⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hcont.continuousOn
-  refine ⟨g, ?_⟩
-  set X' := Ad (I := I) g X with hX'
-  set Z := ⁅X', Y⁆
-  -- Along the one-parameter subgroup of `Z`, the value at `g` is still maximal.
-  have hmax : IsLocalMax (fun s : ℝ ↦ φ (Ad (I := I) (lieExp (I := I) (s • Z)) X')) 0 := by
-    refine Filter.Eventually.of_forall fun s ↦ ?_
-    have := hg (Set.mem_univ (lieExp (I := I) (s • Z) * g))
-    simpa [hX', Ad_mul] using this
-  have hderiv := φ.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
-    (hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) Z X')
-  have hzero : B ⁅Z, X'⁆ Y = 0 := by
-    simpa [φ] using hmax.hasDerivAt_eq_zero hderiv
-  -- By invariance the derivative at the maximum is `B Z Z`.
-  have hnorm : B Z Z = 0 := by
-    have h := hinv X' Z Y
-    rw [← lie_skew, map_neg, LinearMap.neg_apply, hzero, neg_zero] at h
-    exact neg_eq_zero.mp h.symm
-  by_contra hne
-  exact (hpos Z hne).ne' hnorm
-
 /-- **Every adjoint orbit meets the Lie algebra of a maximal torus.** -/
 theorem IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup {T : Subgroup G}
     (hT : IsMaximalTorus T) (X : LeftInvariantDerivation I G) :
@@ -109,7 +72,7 @@ theorem IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup {T : Subgroup G}
   obtain ⟨t, ht, hgen⟩ := hT.isTorus.exists_closedZpowers_eq I
   rw [← SetLike.mem_coe, ← hT.isTorus.image_lieExp_lieSubalgebraOfSubgroup (I := I)] at ht
   obtain ⟨Y, -, rfl⟩ := ht
-  obtain ⟨g, hg⟩ := exists_lie_Ad_eq_zero (I := I) X Y
+  obtain ⟨g, hg⟩ := X.exists_lie_Ad_eq_zero Y
   refine ⟨g, ?_⟩
   -- So its one-parameter subgroup commutes with the generator, and hence with all of `T`.
   rw [← hT.lieSubalgebraOfSubgroup_centralizer,
@@ -181,7 +144,7 @@ theorem IsMaximalTorus.finrank_lieSubalgebraOfSubgroup_eq {S T : Subgroup G}
     Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) S) =
       Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T) := by
   obtain ⟨g, rfl⟩ := hS.exists_map_conj_eq I hT
-  rw [lieSubalgebraOfSubgroup_map_conj hS.isTorus.isClosed]
+  rw [lieSubalgebraOfSubgroup_map_conj]
   exact ((Ad (I := I) g).lieSubalgebraMap _).toLinearEquiv.finrank_eq
 
 end TauCeti.Lie

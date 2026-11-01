@@ -26,11 +26,14 @@ conjugacy of maximal tori.
   under `ad`, in the sense of Mathlib's `LinearMap.BilinForm.lieInvariant`.
 * `TauCeti.Lie.exists_isSymm_bilinForm_Ad_invariant`: the Lie algebra of a compact Lie group has
   an `Ad`-invariant symmetric positive-definite bilinear form.
+* `LeftInvariantDerivation.exists_lie_Ad_eq_zero`: **Hunt's lemma**, for `X Y : 𝔤` in the Lie
+  algebra of a compact Lie group, some adjoint translate of `X` brackets to zero with `Y`.
 
 ## References
 
 * T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter II, § 1.
+* G. A. Hunt, *A theorem of Élie Cartan*, Proc. Amer. Math. Soc. **7** (1956), 307–308.
 -/
 
 public section
@@ -86,5 +89,40 @@ theorem exists_isSymm_bilinForm_Ad_invariant [CompactSpace G] :
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   simpa using ContRepresentation.exists_isSymm_bilinForm_invariant _
     (contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous
+
+/-- **Hunt's lemma.** For `X` and `Y` in the Lie algebra of a compact Lie group, some adjoint
+translate of `X` brackets to zero with `Y`. -/
+theorem _root_.LeftInvariantDerivation.exists_lie_Ad_eq_zero [CompactSpace G]
+    (X Y : LeftInvariantDerivation I G) :
+    ∃ g : G, ⁅Ad (I := I) g X, Y⁆ = 0 := by
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  obtain ⟨B, -, hpos, hAd⟩ := exists_isSymm_bilinForm_Ad_invariant (I := I) (G := G)
+  have hinv := lieInvariant_of_forall_Ad_apply hAd
+  -- Let `g` maximize `g ↦ B (Ad g X) Y` over the compact group.
+  let φ := LinearMap.toContinuousLinearMap (B.flip Y)
+  have hcont : Continuous fun g : G ↦ φ (Ad (I := I) g X) :=
+    φ.continuous.comp ((contMDiff_Ad_apply (I := I) (G := G)).continuous.comp
+      (continuous_id.prodMk continuous_const))
+  obtain ⟨g, -, hg⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hcont.continuousOn
+  refine ⟨g, ?_⟩
+  set X' := Ad (I := I) g X with hX'
+  set Z := ⁅X', Y⁆
+  -- Along the one-parameter subgroup of `Z`, the value at `g` is still maximal.
+  have hmax : IsLocalMax (fun s : ℝ ↦ φ (Ad (I := I) (lieExp (I := I) (s • Z)) X')) 0 := by
+    refine Filter.Eventually.of_forall fun s ↦ ?_
+    have := hg (Set.mem_univ (lieExp (I := I) (s • Z) * g))
+    simpa [hX', Ad_mul] using this
+  have hderiv := φ.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    (hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) Z X')
+  have hzero : B ⁅Z, X'⁆ Y = 0 := by
+    simpa [φ] using hmax.hasDerivAt_eq_zero hderiv
+  -- By invariance the derivative at the maximum is `B Z Z`.
+  have hnorm : B Z Z = 0 := by
+    have h := hinv X' Z Y
+    rw [← lie_skew, map_neg, LinearMap.neg_apply, hzero, neg_zero] at h
+    exact neg_eq_zero.mp h.symm
+  by_contra hne
+  exact (hpos Z hne).ne' hnorm
 
 end TauCeti.Lie
