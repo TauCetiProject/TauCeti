@@ -57,6 +57,8 @@ so the height is defined over fields.
 * `FormalGroup.height_eq_top_iff` and `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤`
   exactly when `[p]_F = 0`, and height `h` exactly when `[p]_F` has order `p ^ h`.
 * `FormalGroup.one_le_height`: the height is at least one.
+* `FormalGroup.coeff_nsmulSeries_eq_zero_of_lt_height`: below the height `h`, the `p`-series has
+  no term of degree `pᵏ`, `k < h`.
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
 * `TauCeti.FormalGroupHom.order_nsmulSeries_eq`: over an integral domain, if there is a nonzero
   homomorphism from `F` to `G`, then `[n]_F` and `[n]_G` have the same order.
@@ -227,6 +229,19 @@ theorem one_le_height [hp : Fact p.Prime] [CharP K p] [F.IsComm] : 1 ≤ F.heigh
   obtain ⟨k, hk0, hk⟩ := F.exists_order_nsmulSeries_eq_pow hp.out (CharP.cast_eq_zero K p) h0
   rw [(F.height_eq_natCast_iff).mpr hk]
   exact_mod_cast Nat.one_le_iff_ne_zero.mpr hk0
+
+/-- Below the height, the `p`-series has no terms of `p`-power degree: if `k` is less than the
+height of a commutative formal group law `F` over a field of characteristic `p`, the coefficient
+of `T ^ (p ^ k)` in `[p]_F(T)` is zero. -/
+theorem coeff_nsmulSeries_eq_zero_of_lt_height [hp : Fact p.Prime] [CharP K p] [F.IsComm] {k : ℕ}
+    (hk : (k : ℕ∞) < F.height p) : PowerSeries.coeff (p ^ k) (F.nsmulSeries p) = 0 := by
+  by_cases h0 : F.nsmulSeries p = 0
+  · simp [h0]
+  obtain ⟨h, hh⟩ := ENat.ne_top_iff_exists.mp (mt F.height_eq_top_iff.mp h0)
+  rw [← hh, Nat.cast_lt] at hk
+  refine PowerSeries.coeff_of_lt_order _ ?_
+  rw [F.height_eq_natCast_iff.mp hh.symm, Nat.cast_lt]
+  exact Nat.pow_lt_pow_right hp.out.one_lt hk
 
 /-- The height is invariant under extension of the base field. -/
 @[simp]
