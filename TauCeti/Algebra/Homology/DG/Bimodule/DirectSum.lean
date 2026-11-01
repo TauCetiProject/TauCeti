@@ -126,13 +126,28 @@ theorem directSumι_apply (i : ι) (x : M i) :
 
 variable {M}
 
+private def directSumDescLinearMap {N : DGBimoduleCat hA hB}
+    (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) :
+    (⨁ i, M i) →ₗ[Bᵐᵒᵖ] N := by
+  classical
+  exact DirectSum.toModule Bᵐᵒᵖ ι N (fun i ↦ (f i).val.toLinearMap)
+
+private theorem directSumDescLinearMap_of {N : DGBimoduleCat hA hB}
+    (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) (i : ι) (x : M i) :
+    directSumDescLinearMap f
+      (@DirectSum.of ι (fun i ↦ M i) _ (Classical.decEq ι) i x) = f i x := by
+  classical
+  simpa only [directSumDescLinearMap, DirectSum.lof_eq_of,
+    DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val] using
+    (DirectSum.toModule_lof Bᵐᵒᵖ (φ := fun i ↦ (f i).val.toLinearMap) i x)
+
 /-- The closed degree-zero bimodule map induced by maps out of every summand.
 The target carrier universe is independent of the summands and the index type. -/
 def directSumDesc {N : DGBimoduleCat hA hB}
     (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) :
     DGBimoduleHom (directSumObj M).isDGBimodule N.isDGBimodule := by
   classical
-  let F := DirectSum.toModule Bᵐᵒᵖ ι N (fun i ↦ (f i).val.toLinearMap)
+  let F := directSumDescLinearMap f
   refine ⟨{ toLinearMap := F, map_mem' := ?_, map_d' := ?_ }, ?_⟩
   · intro p x hx
     rw [directSumObj_grading, InternalGrading.directSum_piece] at hx
@@ -141,23 +156,24 @@ def directSumDesc {N : DGBimoduleCat hA hB}
       (fun i y hy ↦ Graded.map_mem (f i)
         (by simpa only [InternalGrading.ofDecomposition_piece] using hy)) hx
   · intro x
-    induction x using DirectSum.induction_on with
-    | zero => simp [F]
-    | of i x =>
-      simpa only [F, DirectSum.coe_toModule_eq_coe_toAddMonoid,
-        DirectSum.toAddMonoid_of, DirectSum.lmap_of, LinearMap.toAddMonoidHom_coe,
-        DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val] using (f i).map_d x
-    | add x y hx hy => simp only [map_add, hx, hy]
+    have h := DirectSum.addHom_ext
+      (f := N.differential.toAddMonoidHom.comp F.toAddMonoidHom)
+      (g := F.toAddMonoidHom.comp
+        (DirectSum.lmap fun i ↦ (M i).differential).toAddMonoidHom) (fun i y ↦ by
+          simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, F,
+            DirectSum.lmap_of, directSumDescLinearMap_of]
+          exact (f i).map_d y)
+    exact DFunLike.congr_fun h x
   · rw [mem_dgBimoduleHomSubmodule]
     intro a x
-    induction x using DirectSum.induction_on with
-    | zero => simp [F]
-    | of i x =>
-      rw [← DirectSum.of_smul]
-      simpa only [DGRightModuleHom.coe_mk, F, DirectSum.coe_toModule_eq_coe_toAddMonoid,
-        DirectSum.toAddMonoid_of, LinearMap.toAddMonoidHom_coe,
-        DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val] using (f i).map_smul_left a x
-    | add x y hx hy => simp only [smul_add, map_add, hx, hy]
+    have h := DirectSum.addHom_ext
+      (f := F.toAddMonoidHom.comp (DistribSMul.toAddMonoidHom (⨁ i, M i) a))
+      (g := (DistribSMul.toAddMonoidHom N a).comp F.toAddMonoidHom) (fun i y ↦ by
+        simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+          DistribSMul.toAddMonoidHom_apply, ← DirectSum.of_smul, F,
+          directSumDescLinearMap_of]
+        exact (f i).map_smul_left a y)
+    exact DFunLike.congr_fun h x
 
 /-- The induced map has the prescribed value on each summand. -/
 -- Run before rewriting the inclusion to a single-coordinate element.
@@ -165,23 +181,21 @@ def directSumDesc {N : DGBimoduleCat hA hB}
 theorem directSumDesc_ι {N : DGBimoduleCat hA hB}
     (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) (i : ι) (x : M i) :
     directSumDesc f (directSumι M i x) = f i x := by
-  classical
-  rw [← DGBimoduleHom.coe_val, directSumι_apply]
-  simpa only [directSumDesc, DGRightModuleHom.coe_mk, DirectSum.lof_eq_of,
-    DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val] using
-    (DirectSum.toModule_lof Bᵐᵒᵖ (φ := fun i ↦ (f i).val.toLinearMap) i x)
+  exact directSumDescLinearMap_of f i x
 
 /-- Maps out of a direct sum are determined by their restrictions to the summands. -/
 @[ext]
 theorem directSum_hom_ext {N : DGBimoduleCat hA hB}
     {f g : DGBimoduleHom (directSumObj M).isDGBimodule N.isDGBimodule}
     (h : ∀ i x, f (directSumι M i x) = g (directSumι M i x)) : f = g := by
-  apply DGBimoduleHom.ext
-  intro x
-  induction x using DirectSum.induction_on with
-  | zero => simp
-  | of i x => exact h i x
-  | add x y hx hy => simp only [map_add, hx, hy]
+  classical
+  have hfg : f.val.toLinearMap = g.val.toLinearMap := by
+    apply DirectSum.linearMap_ext
+    intro i
+    apply LinearMap.ext
+    intro x
+    exact h i x
+  exact DGBimoduleHom.ext (fun x ↦ DFunLike.congr_fun hfg x)
 
 section Coproduct
 
