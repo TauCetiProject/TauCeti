@@ -41,11 +41,15 @@ any ordering of the circles or parenthesization of the tensor product, and it is
 * `TauCeti.Khovanov.CircleTensor`: the tensor product of one copy of `R[ε]` per circle.
 * `TauCeti.Khovanov.circleBasis`: its basis indexed by labellings.
 * `TauCeti.Khovanov.circleQuantumGrading`: the quantum grading of the circle tensor.
+* `TauCeti.Khovanov.circlePieceBasis`: the basis of its degree-`p` piece indexed by the labellings
+  of degree `p`, so that every piece is finite free.
 
 ## Main results
 
 * `TauCeti.Khovanov.tprod_mem_circleQuantumGrading_piece`: a tensor of homogeneous elements of
   `R[ε]` is homogeneous of the total degree.
+* `TauCeti.Khovanov.circleQuantumGrading_piece_eq_bot_of_card_lt_abs`: the circle tensor of `k`
+  circles vanishes in the quantum degrees `p` with `k < |p|`.
 * `TauCeti.Khovanov.fiberwiseMul_circleBasis`: the merge map along `f` sends a labelling to the
   labelling marking `X` on each circle whose fibre carries one `X`, and to `0` when some fibre
   carries two `X`s.
@@ -238,6 +242,55 @@ theorem circleBasis_mem_circleQuantumGrading_piece (l : ι → Bool) :
   rw [← Module.Basis.repr_symm_single_one, circleQuantumGrading,
     InternalGrading.apply_mem_map_piece_iff]
   exact InternalGrading.single_mem_finsupp_piece _ _
+
+variable (R ι) in
+/-- The basis of the degree-`p` piece of the circle tensor formed by the basis vectors of the
+labellings of degree `p`. -/
+noncomputable def circlePieceBasis (p : ℤ) :
+    Module.Basis {l : ι → Bool // labelingQuantumDegree ι l = p} R
+      ((circleQuantumGrading R ι).piece p) :=
+  (InternalGrading.finsuppPieceBasis R (labelingQuantumDegree ι) p).map
+    ((circleBasis R ι).repr.symm.ofSubmodules _ _ (by
+      rw [circleQuantumGrading, InternalGrading.map_piece]))
+
+/-- The basis vector of a labelling of degree `p` in the degree-`p` piece is its basis vector in
+the circle tensor. -/
+@[simp]
+theorem coe_circlePieceBasis {p : ℤ} (l : {l : ι → Bool // labelingQuantumDegree ι l = p}) :
+    (circlePieceBasis R ι p l : CircleTensor R ι) = circleBasis R ι l := by
+  simp [circlePieceBasis]
+
+/-- The coordinates of a homogeneous element in `circlePieceBasis` are its coordinates in
+`circleBasis`. -/
+@[simp]
+theorem circlePieceBasis_repr_apply {p : ℤ} (x : (circleQuantumGrading R ι).piece p)
+    (l : {l : ι → Bool // labelingQuantumDegree ι l = p}) :
+    (circlePieceBasis R ι p).repr x l = (circleBasis R ι).repr x l := by
+  simp [circlePieceBasis]
+
+/-- The degree-`p` piece of the circle tensor vanishes when no labelling has degree `p`. -/
+theorem circleQuantumGrading_piece_eq_bot {p : ℤ}
+    (h : ∀ l : ι → Bool, labelingQuantumDegree ι l ≠ p) :
+    (circleQuantumGrading R ι).piece p = ⊥ := by
+  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ (circleBasis R ι).repr.injective ?_
+  ext l
+  by_contra hl
+  exact h l (mem_circleQuantumGrading_piece_iff.1 hx l (by simpa using hl))
+
+/-- **Finite quantum support**: the circle tensor of `k` circles vanishes in the quantum degrees `p`
+with `k < |p|`. -/
+theorem circleQuantumGrading_piece_eq_bot_of_card_lt_abs {p : ℤ} (hp : Fintype.card ι < |p|) :
+    (circleQuantumGrading R ι).piece p = ⊥ :=
+  circleQuantumGrading_piece_eq_bot fun l hl ↦
+    (abs_labelingQuantumDegree_le l).not_gt (hl ▸ hp)
+
+/-- Each quantum-degree piece of the circle tensor is a free module. -/
+instance (p : ℤ) : Module.Free R ((circleQuantumGrading R ι).piece p) :=
+  .of_basis (circlePieceBasis R ι p)
+
+/-- Each quantum-degree piece of the circle tensor is a finitely generated module. -/
+instance (p : ℤ) : Module.Finite R ((circleQuantumGrading R ι).piece p) :=
+  .of_basis (circlePieceBasis R ι p)
 
 /-- The pure tensor of the labels of a labelling is homogeneous of the degree of the labelling.
 This is the simp-normal form of `TauCeti.Khovanov.circleBasis_mem_circleQuantumGrading_piece`. -/

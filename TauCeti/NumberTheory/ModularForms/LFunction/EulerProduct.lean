@@ -43,11 +43,11 @@ namespace HeckeRing.GL2.Eigenform
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
 /-- The quadratic Euler factors of a normalized full Hecke eigenform have product equal to
-its coefficient L-series on `Re s > k/2 + 1`. The zero-extended character makes the factors
+its coefficient L-series on `Re s > (k+1)/2`. The zero-extended character makes the factors
 linear at bad primes. -/
 theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     HasProd (fun p : Nat.Primes ↦
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
@@ -67,10 +67,10 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
     hsum
 
 /-- **Euler product of a normalized full Hecke eigenform**, as a `tprod` equality on
-`Re s > k/2 + 1`. -/
+`Re s > (k+1)/2`. -/
 theorem LSeries_eulerProduct_tprod (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     (∏' p : Nat.Primes,
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
@@ -81,7 +81,7 @@ theorem LSeries_eulerProduct_tprod (f : Eigenform N k)
 /-- Finite products of the quadratic Euler factors converge to the coefficient L-series. -/
 theorem LSeries_eulerProduct (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     Tendsto (fun n : ℕ ↦
         ∏ p ∈ Nat.primesBelow n,
           (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
@@ -115,7 +115,7 @@ theorem L_eulerProduct_tprod (f : Eigenform N k)
       ModularForm.L hk f.toCuspForm s := by
     simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
   rw [← hL]
-  exact f.LSeries_eulerProduct_tprod h₁ hs
+  exact f.LSeries_eulerProduct_tprod h₁ (by linarith)
 
 /-- The quadratic Euler factors have product equal to Mathlib's `ModularForm.L` for a
 normalized full Hecke eigenform. -/
@@ -131,7 +131,7 @@ theorem L_eulerProduct_hasProd (f : Eigenform N k)
       ModularForm.L hk f.toCuspForm s := by
     simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
   rw [← hL]
-  exact f.LSeries_eulerProduct_hasProd h₁ hs
+  exact f.LSeries_eulerProduct_hasProd h₁ (by linarith)
 
 /-- Finite products of the quadratic Euler factors converge to Mathlib's `ModularForm.L`. -/
 theorem L_eulerProduct (f : Eigenform N k)
@@ -147,7 +147,7 @@ theorem L_eulerProduct (f : Eigenform N k)
       ModularForm.L hk f.toCuspForm s := by
     simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
   rw [← hL]
-  exact f.LSeries_eulerProduct h₁ hs
+  exact f.LSeries_eulerProduct h₁ (by linarith)
 
 end HeckeRing.GL2.Eigenform
 
@@ -156,9 +156,9 @@ namespace HeckeRing.GL2.Newform
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
 /-- The Euler factors of a newform have product equal to its coefficient L-series on
-`Re s > k/2 + 1`. The character is zero-extended at primes dividing the level. -/
+`Re s > (k+1)/2`. The character is zero-extended at primes dividing the level. -/
 theorem LSeries_eulerProduct_hasProd (f : Newform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     HasProd (fun p : Nat.Primes ↦
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
           f.dirichletLift p.val *
@@ -168,9 +168,9 @@ theorem LSeries_eulerProduct_hasProd (f : Newform N k) {s : ℂ}
     (f.toEigenform.LSeries_eulerProduct_hasProd
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hs)
 
-/-- The coefficient L-series of a newform equals its Euler product on `Re s > k/2 + 1`. -/
+/-- The coefficient L-series of a newform equals its Euler product on `Re s > (k+1)/2`. -/
 theorem LSeries_eulerProduct_tprod (f : Newform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     (∏' p : Nat.Primes,
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
           f.dirichletLift p.val *
@@ -180,7 +180,7 @@ theorem LSeries_eulerProduct_tprod (f : Newform N k) {s : ℂ}
 
 /-- Finite Euler products converge to the coefficient L-series of a newform. -/
 theorem LSeries_eulerProduct (f : Newform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
     Tendsto (fun n : ℕ ↦
         ∏ p ∈ Nat.primesBelow n,
           (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
