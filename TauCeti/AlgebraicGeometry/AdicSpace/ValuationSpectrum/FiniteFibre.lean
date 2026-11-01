@@ -44,6 +44,8 @@ lift along the surjection `C → κ(Q)`.
   finitely many points of `Spv B` lie over a given point of `Spv A`.
 * `TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le`: their number is at most the
   dimension of the fibre algebra `κ(𝔭) ⊗[A] B`.
+* `TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le_finrank`: over a field `K`, the
+  number of points of `Spv C` over a point of `Spv K` is at most `dim_K C`.
 * `TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le_rankAtStalk`: for `B` finite and
   flat, it is at most the rank of `B` at the support `𝔭`.
 
@@ -178,6 +180,16 @@ private theorem card_le_finrank (vK : Spv K) (s : Finset (Spv C))
         exact mul_ne_zero (hδ0 w.2) (hε _ w.1 w.2 rfl).1
   simpa using hli.fintype_card_le_finrank
 
+/-- **The fibre bound over a field.** For a finite `K`-algebra `C`, the number of points of `Spv C`
+over a point of `Spv K` is at most the dimension of `C` over `K`. (These points form a finite set
+by `finite_preimage_comap_singleton`.) -/
+theorem ncard_preimage_comap_singleton_le_finrank (vK : Spv K) :
+    (comap (algebraMap K C) ⁻¹' {vK}).ncard ≤ Module.finrank K C := by
+  by_cases hfin : (comap (algebraMap K C) ⁻¹' {vK}).Finite
+  · rw [Set.ncard_eq_toFinset_card _ hfin]
+    exact card_le_finrank vK _ fun w hw ↦ by simpa using hw
+  · simp [Set.Infinite.ncard hfin]
+
 end Field
 
 section Fibre
@@ -198,8 +210,8 @@ private theorem exists_comap_includeRight_eq (v : Spv A) {w : Spv B}
   set φ := Algebra.TensorProduct.lift f (IsScalarTower.toAlgHom A B w.supp.ResidueField)
     fun _ _ ↦ .all _ _
   set w' := ofValuation (residueFieldValuation w)
-  have hw' : comap (algebraMap B w.supp.ResidueField) w' = w := by
-    rw [comap_ofValuation, residueFieldValuation_comap_algebraMap, ofValuation_valuation]
+  have hw' : comap (algebraMap B w.supp.ResidueField) w' = w :=
+    comap_algebraMap_residueField_ofValuation w
   have hφB : φ.toRingHom.comp Algebra.TensorProduct.includeRight.toRingHom =
       algebraMap B w.supp.ResidueField := by
     ext b
@@ -214,8 +226,8 @@ private theorem exists_comap_includeRight_eq (v : Spv A) {w : Spv B}
   · rw [comap_comap, hφB, hw']
   · -- both sides pull back to `v` along `A → κ(supp v)`
     refine comap_algebraMap_residueField_injective v.supp ?_
-    rw [comap_comap, comap_comap, hφA, ← comap_comap, hw', hw, comap_ofValuation,
-      residueFieldValuation_comap_algebraMap, ofValuation_valuation]
+    rw [comap_comap, comap_comap, hφA, ← comap_comap, hw', hw,
+      comap_algebraMap_residueField_ofValuation]
 
 variable [Module.Finite A B]
 

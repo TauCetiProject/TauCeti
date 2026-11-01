@@ -54,6 +54,50 @@ namespace ValuationSubring
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
+/-- **Normalizing a polynomial relation.** An element `t` algebraic over `K` satisfies a relation
+`∑_{i ≤ n} aᵢ tⁱ = 0` whose coefficients all lie in `O`, with some `aᵢ`, `i ≤ n`, a unit of `O`. -/
+private theorem exists_sum_eq_zero_of_isAlgebraic (O : ValuationSubring K) {t : L}
+    (ht : IsAlgebraic K t) :
+    ∃ (n : ℕ) (a : ℕ → K), (∀ i, a i ∈ O) ∧ (∃ i ≤ n, O.valuation (a i) = 1) ∧
+      ∑ i ∈ Finset.range (n + 1), algebraMap K L (a i) * t ^ i = 0 := by
+  classical
+  obtain ⟨p, hp0, hpt⟩ := ht
+  set n := p.natDegree
+  obtain ⟨k, hk, hck, hkO⟩ := O.exists_ne_zero_and_div_mem
+    ⟨n, Finset.self_mem_range_succ n, mt leadingCoeff_eq_zero.mp hp0⟩
+  refine ⟨n, fun i ↦ p.coeff i / p.coeff k, fun i ↦ ?_,
+    ⟨k, Finset.mem_range_succ_iff.mp hk, by simp [hck]⟩, ?_⟩
+  · by_cases hi : i ∈ Finset.range (n + 1)
+    · exact hkO i hi
+    · rw [Finset.mem_range, not_lt] at hi
+      simp [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hi)]
+  · rw [aeval_eq_sum_range] at hpt
+    have hsum : ∑ i ∈ Finset.range (n + 1), algebraMap K L (p.coeff i / p.coeff k) * t ^ i =
+        (algebraMap K L (p.coeff k))⁻¹ * ∑ i ∈ Finset.range (n + 1), p.coeff i • t ^ i := by
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      simp only [Algebra.smul_def, div_eq_mul_inv, map_mul, map_inv₀]
+      ring
+    rw [hsum, hpt, mul_zero]
+
+/-- **Two expressions for the tail of a relation.** If `t * x = 1` and `∑_{i ≤ n} cᵢ tⁱ = 0`, then
+for `j ≤ n` the tail `∑_{j ≤ i ≤ n} cᵢ t^{i - j}` equals `-∑_{i < j} cᵢ x^{j - i}`. -/
+private theorem sum_Ico_mul_pow_eq_neg_sum_range {t x : L} (htx : t * x = 1) {c : ℕ → L}
+    {n j : ℕ} (hjn : j ≤ n) (hrel : ∑ i ∈ Finset.range (n + 1), c i * t ^ i = 0) :
+    ∑ i ∈ Finset.Ico j (n + 1), c i * t ^ (i - j) =
+      -∑ i ∈ Finset.range j, c i * x ^ (j - i) := by
+  have ht0 : t ≠ 0 := left_ne_zero_of_mul_eq_one htx
+  refine eq_neg_of_add_eq_zero_left (mul_left_cancel₀ (pow_ne_zero j ht0) ?_)
+  rw [mul_zero, ← hrel, ← Finset.sum_range_add_sum_Ico _ (hjn.trans n.le_succ), mul_add,
+    add_comm, Finset.mul_sum, Finset.mul_sum]
+  congr 1
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    have hij := (Finset.mem_range.mp hi).le
+    have htj : t ^ j = t ^ i * t ^ (j - i) := by rw [← pow_add, Nat.add_sub_cancel' hij]
+    rw [mul_left_comm, htj, mul_assoc, ← mul_pow, htx, one_pow, mul_one]
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [mul_left_comm, ← pow_add, Nat.add_sub_cancel' (Finset.mem_Ico.mp hi).1]
+
 /-- **The separating element.** If `A` and `B` are valuation subrings of `L` with
 `A ∩ K ⊆ O ⊆ B ∩ K`, an algebraic element `x ∈ A ∖ B` produces a nonunit `u` of `A` that is a
 unit of `B` and lies in every valuation subring of `L` whose restriction to `K` contains `O`. -/
@@ -66,7 +110,6 @@ private theorem exists_of_mem_of_notMem {O : ValuationSubring K} {A B : Valuatio
   have hx0 : x ≠ 0 := by rintro rfl; exact hxB B.zero_mem
   set t := x⁻¹ with ht_def
   have htx : t * x = 1 := inv_mul_cancel₀ hx0
-  have ht0 : t ≠ 0 := inv_ne_zero hx0
   -- `t` is a nonunit of `B`, and nonunits of `O` are nonunits of `A`
   have htB : B.valuation t < 1 := by
     rw [← mem_nonunits_iff, mem_nonunits_iff_or, ht_def, inv_inv]
@@ -75,66 +118,37 @@ private theorem exists_of_mem_of_notMem {O : ValuationSubring K} {A B : Valuatio
     rw [← mem_nonunits_iff, ← mem_nonunits_comap]
     exact nonunits_le_nonunits.mpr hA ((O.mem_nonunits_iff).mpr ha)
   -- a relation `∑ aᵢ tⁱ = 0` with all `aᵢ ∈ O` and some `aᵢ` a unit of `O`
-  obtain ⟨p, hp0, hpt⟩ := hx.inv
-  set n := p.natDegree
-  obtain ⟨k, hk, hck, hkO⟩ := O.exists_ne_zero_and_div_mem
-    ⟨n, Finset.self_mem_range_succ n, mt leadingCoeff_eq_zero.mp hp0⟩
-  set a : ℕ → K := fun i ↦ p.coeff i / p.coeff k with ha_def
-  have haO' (i : ℕ) : a i ∈ O := by
-    by_cases hi : i ∈ Finset.range (n + 1)
-    · exact hkO i hi
-    · rw [Finset.mem_range, not_lt] at hi
-      simp [ha_def, coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hi)]
+  obtain ⟨n, a, haO', ⟨k, hkn, hak⟩, hrel⟩ := exists_sum_eq_zero_of_isAlgebraic O hx.inv
   have haO (i : ℕ) : O.valuation (a i) ≤ 1 := (O.valuation_le_one_iff _).mpr (haO' i)
-  have hak : O.valuation (a k) = 1 := by simp [ha_def, hck]
-  have hrel : ∑ i ∈ Finset.range (n + 1), algebraMap K L (a i) * t ^ i = 0 := by
-    have h := hpt
-    rw [aeval_eq_sum_range] at h
-    have hsum : ∑ i ∈ Finset.range (n + 1), algebraMap K L (a i) * t ^ i =
-        (algebraMap K L (p.coeff k))⁻¹ * ∑ i ∈ Finset.range (n + 1), p.coeff i • t ^ i := by
-      rw [Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp only [ha_def, Algebra.smul_def, div_eq_mul_inv, map_mul, map_inv₀]
-      ring
-    rw [hsum, ht_def, h, mul_zero]
   -- `j` is the least index with `aⱼ` a unit of `O`
   have hex : ∃ i, O.valuation (a i) = 1 := ⟨k, hak⟩
   set j := Nat.find hex
   have hj : O.valuation (a j) = 1 := Nat.find_spec hex
-  have hjn : j ≤ n := (Nat.find_min' hex hak).trans (Finset.mem_range_succ_iff.mp hk)
+  have hjn : j ≤ n := (Nat.find_min' hex hak).trans hkn
   have hlt {i : ℕ} (hi : i < j) : O.valuation (a i) < 1 :=
     lt_of_le_of_ne (haO i) (Nat.find_min hex hi)
   set u := ∑ i ∈ Finset.Ico j (n + 1), algebraMap K L (a i) * t ^ (i - j) with hu_def
-  set s := ∑ i ∈ Finset.range j, algebraMap K L (a i) * x ^ (j - i) with hs_def
   -- the two expressions for `u`
-  have hus : u = -s := by
-    refine eq_neg_of_add_eq_zero_left (mul_left_cancel₀ (pow_ne_zero j ht0) ?_)
-    rw [mul_zero, ← hrel, ← Finset.sum_range_add_sum_Ico _ (hjn.trans n.le_succ), mul_add,
-      add_comm, hu_def, hs_def, Finset.mul_sum, Finset.mul_sum]
-    congr 1
-    · refine Finset.sum_congr rfl fun i hi ↦ ?_
-      have hij := (Finset.mem_range.mp hi).le
-      have htj : t ^ j = t ^ i * t ^ (j - i) := by rw [← pow_add, Nat.add_sub_cancel' hij]
-      rw [mul_left_comm, htj, mul_assoc, ← mul_pow, htx, one_pow, mul_one]
-    · refine Finset.sum_congr rfl fun i hi ↦ ?_
-      rw [mul_left_comm, ← pow_add, Nat.add_sub_cancel' (Finset.mem_Ico.mp hi).1]
+  have hus : u = -∑ i ∈ Finset.range j, algebraMap K L (a i) * x ^ (j - i) :=
+    sum_Ico_mul_pow_eq_neg_sum_range htx hjn hrel
   refine ⟨u, ?_, ?_, fun W hW ↦ ?_⟩
-  · -- `u = -s` is a nonunit of `A`
+  · -- the second expression for `u` is a nonunit of `A`
     rw [mem_nonunits_iff, hus, Valuation.map_neg]
     refine Valuation.map_sum_lt _ one_ne_zero fun i hi ↦ ?_
     rw [map_mul, map_pow]
     exact mul_lt_one_of_lt_of_le (hnon (hlt (Finset.mem_range.mp hi)))
       (pow_le_one' ((A.valuation_le_one_iff x).mpr hxA) _)
   · -- `u ≡ aⱼ` modulo the nonunits of `B`
+    have htail : B.valuation (∑ i ∈ Finset.Ico (j + 1) (n + 1),
+        algebraMap K L (a i) * t ^ (i - j)) < B.valuation (algebraMap K L (a j)) := by
+      rw [valuation_map_eq_one hB hj]
+      refine Valuation.map_sum_lt _ one_ne_zero fun i hi ↦ ?_
+      have hi' := (Finset.mem_Ico.mp hi).1
+      rw [map_mul, map_pow, mul_comm]
+      exact mul_lt_one_of_lt_of_le (pow_lt_one₀ zero_le htB (by omega))
+        ((B.valuation_le_one_iff _).mpr (hB (haO' i)))
     rw [hu_def, Finset.sum_eq_sum_Ico_succ_bot (Nat.lt_succ_of_le hjn), Nat.sub_self, pow_zero,
-      mul_one, Valuation.map_add_eq_of_lt_left, valuation_map_eq_one hB hj]
-    rw [valuation_map_eq_one hB hj]
-    refine Valuation.map_sum_lt _ one_ne_zero fun i hi ↦ ?_
-    have hi' := (Finset.mem_Ico.mp hi).1
-    rw [map_mul, map_pow]
-    rw [mul_comm]
-    exact mul_lt_one_of_lt_of_le (pow_lt_one₀ zero_le htB (by omega))
-      ((B.valuation_le_one_iff _).mpr (hB (haO' i)))
+      mul_one, B.valuation.map_add_eq_of_lt_left htail, valuation_map_eq_one hB hj]
   · -- every valuation subring over `O` contains `x` or `t`, hence `u`
     rcases W.mem_or_inv_mem x with hxW | htW
     · rw [hus]

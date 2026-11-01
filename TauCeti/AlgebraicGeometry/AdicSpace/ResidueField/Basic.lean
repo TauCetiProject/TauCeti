@@ -52,6 +52,8 @@ is evaluated at `v` by its image in the residue field, and the condition cutting
 * `TauCeti.ValuationSpectrum.residueFieldValuation_comap_algebraMap`: the residue-field valuation
   restricts to the valuation of `v` along `A → κ(v)`, so a point is the pullback of its
   residue-field valuation.
+* `TauCeti.ValuationSpectrum.comap_algebraMap_residueField_ofValuation`: the point of `Spv κ(v)`
+  given by the residue-field valuation pulls back to `v`.
 * `TauCeti.ValuationSpectrum.comap_algebraMap_residueField_injective`: pulling back along
   `A → κ(𝔭)` is injective on valuation spectra.
 * `TauCeti.ValuationSpectrum.mem_range_comap_algebraMap_residueField_iff`: the points of `Spv A`
@@ -156,6 +158,12 @@ theorem residueFieldValuation_comap_algebraMap (v : Spv A) :
   ext x
   simp
 
+/-- **A point is the pullback of its residue-field valuation.** The point of `Spv κ(v)` given by
+`residueFieldValuation v` pulls back to `v` along `A → κ(v)`. -/
+theorem comap_algebraMap_residueField_ofValuation (v : Spv A) :
+    comap (algebraMap A v.supp.ResidueField) (ofValuation (residueFieldValuation v)) = v := by
+  rw [comap_ofValuation, residueFieldValuation_comap_algebraMap, ofValuation_valuation]
+
 /-- Pulling back along `A → κ(𝔭)` is injective on valuation spectra, since `A → κ(𝔭)` is a
 surjection followed by a localization. -/
 theorem comap_algebraMap_residueField_injective (p : Ideal A) [p.IsPrime] :
@@ -173,8 +181,7 @@ theorem mem_range_comap_algebraMap_residueField_iff (p : Ideal A) [p.IsPrime] (v
     rw [supp_comap, Ideal.eq_bot_of_prime w.supp, ← RingHom.ker_eq_comap_bot,
       Ideal.ker_algebraMap_residueField]
   · rintro rfl
-    exact ⟨ofValuation (residueFieldValuation v), by
-      rw [comap_ofValuation, residueFieldValuation_comap_algebraMap, ofValuation_valuation]⟩
+    exact ⟨ofValuation (residueFieldValuation v), comap_algebraMap_residueField_ofValuation v⟩
 
 end ValuationSpectrum
 
