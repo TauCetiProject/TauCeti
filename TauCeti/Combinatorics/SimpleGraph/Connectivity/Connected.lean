@@ -44,6 +44,11 @@ def connectedComponentEquivOfReachableEq {V : Type*} (G : SimpleGraph V)
     G.connectedComponentEquivOfReachableEq h (G.connectedComponentMk v) =
       H.connectedComponentMk v := (rfl)
 
+@[simp] theorem connectedComponentEquivOfReachableEq_symm_mk {V : Type*} (G : SimpleGraph V)
+    {H : SimpleGraph V} (h : G.Reachable = H.Reachable) (v : V) :
+    (G.connectedComponentEquivOfReachableEq h).symm (H.connectedComponentMk v) =
+      G.connectedComponentMk v := (rfl)
+
 variable {V : Type*} [LT V] [WellFoundedLT V] {G : SimpleGraph V}
 
 /-- **A graph on a well-founded order in which every vertex other than `v₀` has a neighbour below
