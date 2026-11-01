@@ -42,27 +42,28 @@ variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {g : 
 
 namespace Polynomial.Monic
 
+/-- `R[X] ⧸ (g)` is a regular local ring, by ascent along the flat local homomorphism
+`R → R[X] ⧸ (g)`, in which the maximal ideal of `R` generates the maximal ideal. -/
+private theorem isRegularLocalRing_adjoinRoot (hg : g.Monic)
+    (hirr : Irreducible (g.map (residue R))) : _root_.IsRegularLocalRing (AdjoinRoot g) :=
+  have : IsLocalRing (AdjoinRoot g) := hg.isLocalRing_adjoinRoot hirr
+  have := hg.free_adjoinRoot
+  TauCeti.IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq
+    (AdjoinRoot.maximalIdeal_eq_map hirr).symm
+
 /-- **Adjoining a root of a monic polynomial with irreducible reduction to a discrete valuation
 ring gives a domain.** The reduction need not be separable. -/
 theorem isDomain_adjoinRoot (hg : g.Monic) (hirr : Irreducible (g.map (residue R))) :
     IsDomain (AdjoinRoot g) :=
-  have : IsLocalRing (AdjoinRoot g) := hg.isLocalRing_adjoinRoot hirr
-  have := hg.free_adjoinRoot
-  have := hg.finite_adjoinRoot
-  have : IsNoetherianRing (AdjoinRoot g) := .of_finite R _
-  have : _root_.IsRegularLocalRing (AdjoinRoot g) :=
-    TauCeti.IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq
-      (AdjoinRoot.maximalIdeal_eq_map hirr).symm
+  have := hg.isRegularLocalRing_adjoinRoot hirr
   inferInstance
 
 /-- **Adjoining a root of a monic polynomial with irreducible reduction to a discrete valuation
 ring gives a discrete valuation ring.** The reduction need not be separable. -/
 theorem isDiscreteValuationRing_adjoinRoot (hg : g.Monic) (hirr : Irreducible (g.map (residue R)))
     [IsDomain (AdjoinRoot g)] : IsDiscreteValuationRing (AdjoinRoot g) :=
-  have : IsLocalRing (AdjoinRoot g) := hg.isLocalRing_adjoinRoot hirr
+  have := hg.isRegularLocalRing_adjoinRoot hirr
   have := hg.free_adjoinRoot
-  have := hg.finite_adjoinRoot
-  have : IsNoetherianRing (AdjoinRoot g) := .of_finite R _
   TauCeti.IsDiscreteValuationRing.of_flat_of_map_maximalIdeal_eq
     (AdjoinRoot.maximalIdeal_eq_map hirr).symm
 
