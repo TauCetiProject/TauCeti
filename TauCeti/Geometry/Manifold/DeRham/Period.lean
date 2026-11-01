@@ -175,7 +175,7 @@ theorem pathClassIntegral_mextDeriv_ofFunction {g : M → F} (hg : ContMDiff I �
   have hφ : IsSmoothForm I 1 φ :=
     isSmoothForm_mextDeriv (isSmoothForm_ofFunction_iff.mpr hg) (by norm_num)
   have hgU : IsPrimitiveOn φ g univ :=
-    ⟨isOpen_univ, (hg.mdifferentiable (by norm_num)).mdifferentiableOn, fun _ _ ↦ rfl⟩
+    isPrimitiveOn_univ_of_mextDeriv_eq (hg.mdifferentiable (by norm_num)) rfl
   -- the graph of the global primitive `g` along `γ` is a lift of `γ`
   rw [pathClassIntegral_mk_eq_sub hφ (mextDeriv_mextDeriv_ofFunction hg)
     ((PrimitiveSpace.continuousOn_graph hgU).comp_continuous γ.continuous fun _ ↦ mem_univ _)

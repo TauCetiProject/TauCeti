@@ -145,7 +145,7 @@ Morse. In particular the one-form predicate includes the ordinary exact case. -/
 theorem isMorseOneForm_mextDeriv_ofFunction_iff (hf : ContMDiff I 𝓘(ℝ) ∞ f) :
     IsMorseOneForm (mextDeriv (RoughForm.ofFunction I f)) ↔ IsMorse I f := by
   have hp : IsPrimitiveOn (mextDeriv (RoughForm.ofFunction I f)) f univ :=
-    ⟨isOpen_univ, (hf.mdifferentiable (by simp)).mdifferentiableOn, fun _ _ ↦ rfl⟩
+    isPrimitiveOn_univ_of_mextDeriv_eq (hf.mdifferentiable (by simp)) rfl
   constructor
   · intro hα
     rw [isMorse_iff]
