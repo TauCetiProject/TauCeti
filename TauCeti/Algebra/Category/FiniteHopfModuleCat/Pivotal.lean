@@ -75,6 +75,13 @@ private theorem whiskerRight_comp_tmul {A B C Z : FiniteHopfModuleCat k H} {f : 
     e.hom.hom (tmul k H (f.hom.hom a) z) = e'.hom.hom (tmul k H a z) := by
   rw [← h, hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul]
 
+/-- Evaluating `a` followed by the mate of `f : X ⟶ Y` against `X` is evaluating `a` against `Y`
+after applying `f` to `X`. Each comparison below is tested against an evaluation in this form. -/
+private theorem whiskerRight_rightMate_evaluation {W X X' Y Y' : FiniteHopfModuleCat k H}
+    (pX : ExactPairing X X') (pY : ExactPairing Y Y') (a : W ⟶ Y') (f : X ⟶ Y) :
+    a ▷ X ≫ rightMate pX pY f ▷ X ≫ ε_ X X' = W ◁ f ≫ a ▷ Y ≫ ε_ Y Y' := by
+  rw [rightMate_comp_evaluation, whisker_exchange_assoc]
+
 variable (g : Hˣ) (hg : ∀ a : H, HopfAlgebra.antipode k (HopfAlgebra.antipode k a) = g * a * ↑g⁻¹)
 
 /-- If the unit `g` implements the square of the antipode, `m ↦ (φ ↦ φ(g m))` is an isomorphism
@@ -109,8 +116,8 @@ comparison. -/
 theorem unitEvalIso_hom_naturality {M N : FiniteHopfModuleCat k H} (f : M ⟶ N) :
     f ≫ (unitEvalIso g hg N).hom = (unitEvalIso g hg M).hom ≫ fᘁᘁ := by
   refine rightHom_ext (X := Nᘁ) ?_
-  rw [comp_whiskerRight, comp_whiskerRight, Category.assoc, Category.assoc,
-    rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc]
+  simp only [comp_whiskerRight, Category.assoc, rightAdjointMate_eq_rightMate (rightAdjointMate f),
+    whiskerRight_rightMate_evaluation]
   ext m φ
   simp [f.hom.hom.map_smul]
 
@@ -144,8 +151,8 @@ theorem unitEvalIso_unit_hom (hg₁ : IsGroupLikeElem k (g : H)) :
     (X := (RightRigidCategory.rightDual (𝟙_ (FiniteHopfModuleCat k H))).rightDual) ?_
   -- Both sides become maps `𝟙_ ⊗ (𝟙_)ᘁ ⟶ 𝟙_`; the right side is the left unitor followed by the
   -- identification `(𝟙_)ᘁ ≅ 𝟙_`.
-  rw [comp_whiskerRight, Category.assoc, rightMate_comp_evaluation, ← whisker_exchange_assoc,
-    rightDualIso_inv_whiskerRight_evaluation, ExactPairing.unit_evaluation, ← unitors_equal,
+  simp only [comp_whiskerRight, Category.assoc, whiskerRight_rightMate_evaluation]
+  rw [rightDualIso_inv_whiskerRight_evaluation, ExactPairing.unit_evaluation, ← unitors_equal,
     leftUnitor_naturality]
   ext c ψ
   simp only [hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul, evaluation_tmul,
@@ -179,9 +186,10 @@ theorem unitEvalIso_tensor_hom (hg₁ : IsGroupLikeElem k (g : H))
   -- Evaluate both sides against `(X ⊗ Y)ᘁ`. On the right, the comparison
   -- `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` moves to the front and the evaluation becomes that of the tensor product
   -- pairing of `(Yᘁ, Yᘁᘁ)` and `(Xᘁ, Xᘁᘁ)`.
-  rw [comp_whiskerRight, comp_whiskerRight, Category.assoc, Category.assoc,
-    rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
-    rightDualTensorIso_inv_whiskerRight_evaluation, ← whisker_exchange_assoc]
+  simp only [comp_whiskerRight, Category.assoc,
+    rightAdjointMate_eq_rightMate (rightDualTensorIso X Y).hom, whiskerRight_rightMate_evaluation,
+    rightDualTensorIso_inv_whiskerRight_evaluation]
+  rw [← whisker_exchange_assoc]
   ext z ψ
   induction z using Tensor.inductionOn (R := k) (H := H) (M := X) (N := Y) with
   | hadd z z' hz hz' => rw [add_tmul, map_add, map_add, hz, hz']
