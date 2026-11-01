@@ -121,7 +121,8 @@ theorem exists_spanningForest (Γ : SerreGraph.{u, v}) (O : Set Γ.E) :
 
 /-- On finitely many vertices, forest darts plus ambient components equal vertices.
 This includes disconnected graphs and the empty graph. -/
-theorem IsSpanningForest.card [Finite Γ.V] (hF : Γ.IsSpanningForest O F) :
+theorem IsSpanningForest.card_add_card_connectedComponent [Finite Γ.V]
+    (hF : Γ.IsSpanningForest O F) :
     Nat.card F + Nat.card (Γ.supportGraph O).ConnectedComponent = Nat.card Γ.V := by
   have hcard := hF.bijOn_endpoints.ncard_eq
   have hcomp := Nat.card_congr
