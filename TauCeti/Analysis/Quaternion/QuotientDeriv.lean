@@ -439,16 +439,16 @@ when `D h = h * c` for every `h`. -/
 theorem _root_.HasFDerivAt.hasLeftQuotientFDerivAt_iff {D : ℍ →L[ℝ] ℍ} (hD : HasFDerivAt f D q) :
     HasLeftQuotientFDerivAt f q c ↔ ∀ h, D h = h * c := by
   refine ⟨fun hc h ↦ by simp [hD.unique hc.hasFDerivAt], fun H ↦ ?_⟩
-  have hc : (ContinuousLinearMap.mul ℝ ℍ).flip c = D := ContinuousLinearMap.ext fun h ↦ by simp [H]
-  rwa [hasLeftQuotientFDerivAt_iff_hasFDerivAt, hc]
+  rw [hasLeftQuotientFDerivAt_iff_hasFDerivAt]
+  exact hD.congr_fderiv (ContinuousLinearMap.ext fun h ↦ by simp [H])
 
 /-- A real derivative `D` of `f` at `q` identifies the right slopes of `f` at `q`: `c` is one
 exactly when `D h = c * h` for every `h`. -/
 theorem _root_.HasFDerivAt.hasRightQuotientFDerivAt_iff {D : ℍ →L[ℝ] ℍ} (hD : HasFDerivAt f D q) :
     HasRightQuotientFDerivAt f q c ↔ ∀ h, D h = c * h := by
   refine ⟨fun hc h ↦ by simp [hD.unique hc.hasFDerivAt], fun H ↦ ?_⟩
-  have hc : ContinuousLinearMap.mul ℝ ℍ c = D := ContinuousLinearMap.ext fun h ↦ by simp [H]
-  rwa [hasRightQuotientFDerivAt_iff_hasFDerivAt, hc]
+  rw [hasRightQuotientFDerivAt_iff_hasFDerivAt]
+  exact hD.congr_fderiv (ContinuousLinearMap.ext fun h ↦ by simp [H])
 
 /-- If `D` is the real derivative of `f` at `q`, then `f` has some left slope at `q` exactly when
 `D 1` is one. -/

@@ -229,21 +229,13 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x c : �
 when `c = 0` or `x` is real. -/
 theorem forall_sub_mul_eq_zero_iff : (∀ y, (x * y - y * x) * c = 0) ↔ c = 0 ∨ x.im = 0 := by
   rw [← forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h]
-  refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hc y ↦ ?_, ?_⟩
-  · exact sub_eq_zero.mp ((mul_eq_zero.mp (H y)).resolve_right hc)
-  · rintro (rfl | H) y
-    · exact mul_zero _
-    · rw [H, sub_self, zero_mul]
+  simp only [mul_eq_zero, sub_eq_zero, forall_or_right, or_comm]
 
 /-- Left multiplication by `c` of the commutator with `x` vanishes identically exactly when `c = 0`
 or `x` is real. -/
 theorem forall_mul_sub_eq_zero_iff : (∀ y, c * (y * x - x * y) = 0) ↔ c = 0 ∨ x.im = 0 := by
   rw [← forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h]
-  refine ⟨fun H ↦ or_iff_not_imp_left.mpr fun hc y ↦ ?_, ?_⟩
-  · exact (sub_eq_zero.mp ((mul_eq_zero.mp (H y)).resolve_left hc)).symm
-  · rintro (rfl | H) y
-    · exact zero_mul _
-    · rw [H, sub_self, mul_zero]
+  simp only [mul_eq_zero, sub_eq_zero, forall_or_left, eq_comm]
 
 /-- A quaternion is real exactly when its inverse is. -/
 @[simp]
