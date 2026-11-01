@@ -147,7 +147,6 @@ theorem hom_ext_of_epi_mul {A B : GradedQuasicoherentAlgebra X} [Epi A.obj.toMon
 
 /-- Extract the degree-`n` component of a graded quasicoherent algebra as a quasicoherent sheaf.
 On morphisms this is the degree-`n` component of the underlying graded algebra morphism. -/
-@[expose]
 def degree (n : ℕ) : GradedQuasicoherentAlgebra X ⥤ QuasicoherentSheaf X where
   obj A := ⟨A.obj.X n, inferInstance⟩
   map f := ⟨f.hom.hom.hom n⟩
@@ -191,22 +190,26 @@ protected def mul (i j : ℕ) : (degree i).obj A ⊗ (degree j).obj A ⟶ (degre
   ObjectProperty.homMk (A.obj.toMon.mul i j)
 
 /-- The unit of `A`, as a morphism of quasicoherent sheaves, is the unit of the underlying graded
-algebra on modules. -/
+algebra on modules, up to the identification `degree_obj_obj`. -/
 @[simp]
-protected theorem one_hom : A.one.hom = A.obj.toMon.one :=
-  (rfl)
+protected theorem one_hom :
+    A.one.hom = A.obj.toMon.one ≫ eqToHom (degree_obj_obj A 0).symm :=
+  (Category.comp_id _).symm
 
 /-- The homogeneous multiplication of `A`, as a morphism of quasicoherent sheaves, is that of the
-underlying graded algebra on modules. -/
+underlying graded algebra on modules, up to the identifications `degree_obj_obj`. -/
 @[simp]
-protected theorem mul_hom (i j : ℕ) : (A.mul i j).hom = A.obj.toMon.mul i j :=
-  (rfl)
-
-/-- Transport between homogeneous components, read on underlying modules. -/
-private lemma eqToHom_degree_obj_hom {i j : ℕ} (h : i = j) :
-    (eqToHom (congrArg (fun n ↦ (degree n).obj A) h)).hom = eqToHom (congrArg A.obj.X h) := by
-  subst h
-  rfl
+protected theorem mul_hom (i j : ℕ) :
+    (A.mul i j).hom =
+      (eqToHom (degree_obj_obj A i) ⊗ₘ eqToHom (degree_obj_obj A j) :
+          (((degree i).obj A).obj ⊗ ((degree j).obj A).obj : X.Modules) ⟶ _) ≫
+        A.obj.toMon.mul i j ≫
+        eqToHom (degree_obj_obj A (i + j)).symm := by
+  -- The transports are identities, since `degree` unfolds to the underlying components here.
+  change _ = (𝟙 (A.obj.X i) ⊗ₘ 𝟙 (A.obj.X j) : (A.obj.X i ⊗ A.obj.X j : X.Modules) ⟶ _) ≫
+    A.obj.toMon.mul i j ≫ 𝟙 _
+  rw [id_tensorHom_id, Category.id_comp]
+  exact (Category.comp_id _).symm
 
 /-- The unit of a graded quasicoherent algebra is a left identity for homogeneous
 multiplication, up to the identification of the degrees `0 + n` and `n`. -/
@@ -217,7 +220,7 @@ protected theorem one_mul (n : ℕ) :
   apply ObjectProperty.hom_ext
   -- Composition, whiskering and unitors of the full monoidal subcategory are those of modules.
   change (A.obj.toMon.one ▷ A.obj.X n) ≫ A.obj.toMon.mul 0 n = (λ_ (A.obj.X n)).hom ≫ _
-  rw [eqToHom_degree_obj_hom A (zero_add n).symm]
+  rw [ObjectProperty.eqToHom_hom]
   exact Mon.one_mul A.obj.toMon n
 
 /-- The unit of a graded quasicoherent algebra is a right identity for homogeneous
@@ -229,7 +232,7 @@ protected theorem mul_one (n : ℕ) :
   apply ObjectProperty.hom_ext
   -- As in `one_mul`, read the full-subcategory structure maps on underlying modules.
   change (A.obj.X n ◁ A.obj.toMon.one) ≫ A.obj.toMon.mul n 0 = (ρ_ (A.obj.X n)).hom ≫ _
-  rw [eqToHom_degree_obj_hom A (add_zero n).symm]
+  rw [ObjectProperty.eqToHom_hom]
   exact Mon.mul_one A.obj.toMon n
 
 /-- Homogeneous multiplication of a graded quasicoherent algebra is associative, up to the
@@ -243,7 +246,7 @@ protected theorem mul_assoc (i j k : ℕ) :
   change (A.obj.toMon.mul i j ▷ A.obj.X k) ≫ A.obj.toMon.mul (i + j) k =
     (α_ (A.obj.X i) (A.obj.X j) (A.obj.X k)).hom ≫ (A.obj.X i ◁ A.obj.toMon.mul j k) ≫
       A.obj.toMon.mul i (j + k) ≫ _
-  rw [eqToHom_degree_obj_hom A (add_assoc i j k).symm]
+  rw [ObjectProperty.eqToHom_hom]
   exact Mon.mul_assoc A.obj.toMon i j k
 
 /-- Homogeneous multiplication of a graded quasicoherent algebra is commutative, up to the
@@ -254,7 +257,7 @@ protected theorem mul_comm (i j : ℕ) :
   apply ObjectProperty.hom_ext
   -- As in `one_mul`, read the full-subcategory structure maps on underlying modules.
   change (β_ (A.obj.X i) (A.obj.X j)).hom ≫ A.obj.toMon.mul j i = A.obj.toMon.mul i j ≫ _
-  rw [eqToHom_degree_obj_hom A (add_comm i j)]
+  rw [ObjectProperty.eqToHom_hom]
   exact CommMon.mul_comm A.obj i j
 
 variable {A} {B : GradedQuasicoherentAlgebra X}

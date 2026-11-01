@@ -77,52 +77,67 @@ private abbrev pullbackQ : QuasicoherentSheaf X ⥤ Y.Modules :=
 
 variable (A : GradedQuasicoherentAlgebra X)
 
+/-- The pullback of the underlying module of the degree-`n` component of `A` is the pullback of
+that component as a quasicoherent sheaf. -/
+private def pullbackComponentIso (n : ℕ) :
+    (Scheme.Modules.pullback f).obj (A.obj.X n) ≅ (pullbackQ f).obj ((degree n).obj A) :=
+  eqToIso (congrArg (Scheme.Modules.pullback f).obj (degree_obj_obj A n).symm)
+
 /-- The unit `𝒪_Y ≅ f^* 𝒪_X ⟶ f^* A₀` of the pullback of a graded quasicoherent algebra. -/
 private def pullbackOne :
     𝟙_ Y.Modules ⟶ (Scheme.Modules.pullback f).obj (A.obj.X 0) :=
-  ε (pullbackQ f) ≫ (pullbackQ f).map A.one
+  ε (pullbackQ f) ≫ (pullbackQ f).map A.one ≫ (pullbackComponentIso f A 0).inv
 
 /-- The homogeneous multiplication `f^* Aᵢ ⊗ f^* Aⱼ ≅ f^* (Aᵢ ⊗ Aⱼ) ⟶ f^* Aᵢ₊ⱼ` of the pullback of
 a graded quasicoherent algebra. -/
 private def pullbackMul (i j : ℕ) :
     (Scheme.Modules.pullback f).obj (A.obj.X i) ⊗ (Scheme.Modules.pullback f).obj (A.obj.X j) ⟶
       (Scheme.Modules.pullback f).obj (A.obj.X (i + j)) :=
-  μ (pullbackQ f) ((degree i).obj A) ((degree j).obj A) ≫ (pullbackQ f).map (A.mul i j)
+  ((pullbackComponentIso f A i).hom ⊗ₘ (pullbackComponentIso f A j).hom) ≫
+    μ (pullbackQ f) ((degree i).obj A) ((degree j).obj A) ≫ (pullbackQ f).map (A.mul i j) ≫
+      (pullbackComponentIso f A (i + j)).inv
 
-private lemma pullbackMul_eq (i j : ℕ) :
-    pullbackMul f A i j =
-      ((Iso.refl ((Scheme.Modules.pullback f).obj (A.obj.X i))).hom ⊗ₘ
-          (Iso.refl ((Scheme.Modules.pullback f).obj (A.obj.X j))).hom) ≫
-        μ (pullbackQ f) ((degree i).obj A) ((degree j).obj A) ≫ (pullbackQ f).map (A.mul i j) ≫
-          (Iso.refl ((Scheme.Modules.pullback f).obj (A.obj.X (i + j)))).inv := by
-  simp only [Iso.refl_hom, Iso.refl_inv, id_tensorHom_id, Category.id_comp]
-  -- `pullbackQ f` is reducible, so the remaining identity composite is `pullbackMul f A i j`
-  -- followed by the identity of its target, which `simp` does not see across the two category
-  -- instances on modules.
-  rfl
+/-- Pullback of modules commutes with transports along equalities of modules. -/
+private lemma pullback_map_eq_eqToHom_conj {M M' N N' : X.Modules} (hM : M = M') (hN : N = N')
+    (φ : M ⟶ N) (ψ : M' ⟶ N') (hψ : ψ = eqToHom hM.symm ≫ φ ≫ eqToHom hN) :
+    (Scheme.Modules.pullback f).map φ =
+      eqToHom (congrArg (Scheme.Modules.pullback f).obj hM) ≫ (Scheme.Modules.pullback f).map ψ ≫
+        eqToHom (congrArg (Scheme.Modules.pullback f).obj hN).symm := by
+  subst hM hN hψ
+  simp
 
-private lemma pullbackOne_eq :
-    pullbackOne f A =
-      ε (pullbackQ f) ≫ (pullbackQ f).map A.one ≫
-        (Iso.refl ((Scheme.Modules.pullback f).obj (A.obj.X 0))).inv := by
-  simp only [Iso.refl_inv]
-  -- As in `pullbackMul_eq`, the remaining identity is that of the target of `pullbackOne f A`.
-  rfl
+/-- The inverse tensor comparison of pullback commutes with transports along equalities of
+modules. -/
+private lemma inv_δ_map_eq_eqToHom_conj {M M' N N' P P' : X.Modules} (hM : M = M') (hN : N = N')
+    (hP : P = P') [IsIso (δ (Scheme.Modules.pullback f) M N)]
+    [IsIso (δ (Scheme.Modules.pullback f) M' N')] (φ : M ⊗ N ⟶ P) (ψ : M' ⊗ N' ⟶ P')
+    (hψ : ψ = (eqToHom hM.symm ⊗ₘ eqToHom hN.symm) ≫ φ ≫ eqToHom hP) :
+    (eqToHom (congrArg (Scheme.Modules.pullback f).obj hM) ⊗ₘ
+        eqToHom (congrArg (Scheme.Modules.pullback f).obj hN)) ≫
+      inv (δ (Scheme.Modules.pullback f) M' N') ≫ (Scheme.Modules.pullback f).map ψ ≫
+        eqToHom (congrArg (Scheme.Modules.pullback f).obj hP).symm =
+      inv (δ (Scheme.Modules.pullback f) M N) ≫ (Scheme.Modules.pullback f).map φ := by
+  subst hM hN hP hψ
+  simp
 
 private lemma pullbackOne_def :
     pullbackOne f A = (Scheme.Modules.pullbackObjUnitIso f).inv ≫
       (Scheme.Modules.pullback f).map A.obj.toMon.one := by
   rw [pullbackOne, Scheme.Modules.pullbackToModules_ε]
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  exact congrArg (_ ≫ (Scheme.Modules.pullback f).map ·) A.one_hom
+  exact congrArg (_ ≫ ·) ((pullback_map_eq_eqToHom_conj f rfl (degree_obj_obj A 0).symm _ _
+    (A.one_hom.trans (Category.id_comp _).symm)).trans (Category.id_comp _)).symm
 
 private lemma pullbackMul_def (i j : ℕ) :
     pullbackMul f A i j =
       inv (δ (Scheme.Modules.pullback f) (A.obj.X i) (A.obj.X j)) ≫
         (Scheme.Modules.pullback f).map (A.obj.toMon.mul i j) := by
   rw [pullbackMul, Scheme.Modules.pullbackToModules_μ]
+  have := @Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent _ _ f _
+    ((degree j).obj A).obj ((degree i).obj A).property
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  exact congrArg (_ ≫ (Scheme.Modules.pullback f).map ·) (A.mul_hom i j)
+  exact inv_δ_map_eq_eqToHom_conj f (degree_obj_obj A i).symm (degree_obj_obj A j).symm
+    (degree_obj_obj A (i + j)).symm _ _ (A.mul_hom i j)
 
 /-- The homogeneous components `f^* Aₙ` of the pullback of a graded quasicoherent algebra. -/
 private abbrev pullbackComponents : GradedObject ℕ Y.Modules :=
@@ -133,16 +148,16 @@ private lemma pullbackOne_mul (n : ℕ) :
       (λ_ (pullbackComponents f A n)).hom ≫
         eqToHom (congrArg (pullbackComponents f A) (zero_add n).symm) :=
   GradedObject.one_mul_of_laxMonoidal (F := pullbackQ f) (X := fun n ↦ (degree n).obj A)
-    (Y := pullbackComponents f A) (e := fun _ ↦ Iso.refl _) A.mul (pullbackMul f A)
-    (pullbackMul_eq f A) A.one (pullbackOne f A) (pullbackOne_eq f A) A.one_mul n
+    (Y := pullbackComponents f A) (e := pullbackComponentIso f A) A.mul (pullbackMul f A)
+    (fun _ _ ↦ rfl) A.one (pullbackOne f A) rfl A.one_mul n
 
 private lemma pullbackMul_one (n : ℕ) :
     (pullbackComponents f A n ◁ pullbackOne f A) ≫ pullbackMul f A n 0 =
       (ρ_ (pullbackComponents f A n)).hom ≫
         eqToHom (congrArg (pullbackComponents f A) (add_zero n).symm) :=
   GradedObject.mul_one_of_laxMonoidal (F := pullbackQ f) (X := fun n ↦ (degree n).obj A)
-    (Y := pullbackComponents f A) (e := fun _ ↦ Iso.refl _) A.mul (pullbackMul f A)
-    (pullbackMul_eq f A) A.one (pullbackOne f A) (pullbackOne_eq f A) A.mul_one n
+    (Y := pullbackComponents f A) (e := pullbackComponentIso f A) A.mul (pullbackMul f A)
+    (fun _ _ ↦ rfl) A.one (pullbackOne f A) rfl A.mul_one n
 
 private lemma pullbackMul_assoc (i j k : ℕ) :
     (pullbackMul f A i j ▷ pullbackComponents f A k) ≫ pullbackMul f A (i + j) k =
@@ -150,15 +165,15 @@ private lemma pullbackMul_assoc (i j k : ℕ) :
         pullbackMul f A i (j + k) ≫
           eqToHom (congrArg (pullbackComponents f A) (add_assoc i j k).symm) :=
   GradedObject.mul_assoc_of_laxMonoidal (F := pullbackQ f) (X := fun n ↦ (degree n).obj A)
-    (Y := pullbackComponents f A) (e := fun _ ↦ Iso.refl _) A.mul (pullbackMul f A)
-    (pullbackMul_eq f A) A.mul_assoc i j k
+    (Y := pullbackComponents f A) (e := pullbackComponentIso f A) A.mul (pullbackMul f A)
+    (fun _ _ ↦ rfl) A.mul_assoc i j k
 
 private lemma pullbackMul_comm (i j : ℕ) :
     (β_ (pullbackComponents f A i) (pullbackComponents f A j)).hom ≫ pullbackMul f A j i =
       pullbackMul f A i j ≫ eqToHom (congrArg (pullbackComponents f A) (add_comm i j)) :=
   GradedObject.mul_comm_of_laxBraided (F := pullbackQ f) (X := fun n ↦ (degree n).obj A)
-    (Y := pullbackComponents f A) (e := fun _ ↦ Iso.refl _) A.mul (pullbackMul f A)
-    (pullbackMul_eq f A) A.mul_comm i j
+    (Y := pullbackComponents f A) (e := pullbackComponentIso f A) A.mul (pullbackMul f A)
+    (fun _ _ ↦ rfl) A.mul_comm i j
 
 /-- The pullback `f^* A = ⨁ₙ f^* Aₙ` of a single graded quasicoherent algebra, assembled from its
 homogeneous components by `GradedQuasicoherentAlgebra.ofHomogeneous`. -/
@@ -186,23 +201,34 @@ section Hom
 
 variable {A} {B : GradedQuasicoherentAlgebra X}
 
+/-- In degree `n`, the pullback of a morphism of graded quasicoherent algebras, read through
+`pullbackComponentIso`, is the pullback of its degree-`n` component. -/
+private lemma pullback_map_degree_map (g : A ⟶ B) (n : ℕ) :
+    (Scheme.Modules.pullback f).map (g.hom.hom.hom n) =
+      (pullbackComponentIso f A n).hom ≫ (pullbackQ f).map ((degree n).map g) ≫
+        (pullbackComponentIso f B n).inv :=
+  -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
+  pullback_map_eq_eqToHom_conj f (degree_obj_obj A n).symm (degree_obj_obj B n).symm _ _
+    (degree_map_hom g n)
+
 private lemma pullbackOne_map (g : A ⟶ B) :
-    pullbackOne f A ≫ (pullbackQ f).map ((degree 0).map g) = pullbackOne f B :=
-  (Category.assoc _ _ _).trans (congrArg (ε (pullbackQ f) ≫ ·)
-    (((pullbackQ f).map_comp _ _).symm.trans
-      (congrArg (pullbackQ f).map (GradedQuasicoherentAlgebra.one_map g))))
+    pullbackOne f A ≫ (Scheme.Modules.pullback f).map (g.hom.hom.hom 0) = pullbackOne f B := by
+  rw [pullbackOne_def, pullbackOne_def]
+  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+    (((Scheme.Modules.pullback f).map_comp _ _).symm.trans
+      (congrArg (Scheme.Modules.pullback f).map (Mon.one_map g.hom.hom))))
 
 private lemma pullbackMul_map (g : A ⟶ B) (i j : ℕ) :
-    ((pullbackQ f).map ((degree i).map g) ⊗ₘ (pullbackQ f).map ((degree j).map g)) ≫
-        pullbackMul f B i j =
-      pullbackMul f A i j ≫ (pullbackQ f).map ((degree (i + j)).map g) :=
+    ((Scheme.Modules.pullback f).map (g.hom.hom.hom i) ⊗ₘ
+        (Scheme.Modules.pullback f).map (g.hom.hom.hom j)) ≫ pullbackMul f B i j =
+      pullbackMul f A i j ≫ (Scheme.Modules.pullback f).map (g.hom.hom.hom (i + j)) :=
   GradedObject.map_mul_of_laxMonoidal (F := pullbackQ f) (X := fun n ↦ (degree n).obj A)
-    (Y := pullbackComponents f A) (e := fun _ ↦ Iso.refl _) A.mul (pullbackMul f A)
-    (pullbackMul_eq f A) (X' := fun n ↦ (degree n).obj B) (Y' := pullbackComponents f B)
-    (e' := fun _ ↦ Iso.refl _) B.mul (pullbackMul f B) (pullbackMul_eq f B)
+    (Y := pullbackComponents f A) (e := pullbackComponentIso f A) A.mul (pullbackMul f A)
+    (fun _ _ ↦ rfl) (X' := fun n ↦ (degree n).obj B) (Y' := pullbackComponents f B)
+    (e' := pullbackComponentIso f B) B.mul (pullbackMul f B) (fun _ _ ↦ rfl)
     (fun n ↦ (degree n).map g)
-    (fun n ↦ (pullbackQ f).map ((degree n).map g))
-    (fun _ ↦ ((Category.id_comp _).trans (Category.comp_id _)).symm)
+    (fun n ↦ (Scheme.Modules.pullback f).map (g.hom.hom.hom n))
+    (pullback_map_degree_map f g)
     (GradedQuasicoherentAlgebra.map_mul g) i j
 
 end Hom
@@ -216,12 +242,11 @@ def pullback : GradedQuasicoherentAlgebra X ⥤ GradedQuasicoherentAlgebra Y whe
   obj := pullbackObj f
   map {A B} g := homMkOfEq (pullbackObj_X f A) (pullbackObj_X f B) (one_pullbackObj f A)
     (one_pullbackObj f B) (mul_pullbackObj f A) (mul_pullbackObj f B)
-    (fun n ↦ (pullbackQ f).map ((degree n).map g)) (pullbackOne_map f g) (pullbackMul_map f g)
-  map_id _ := homMkOfEq_id _ _ _ _ _ _ fun n ↦
-    (congrArg (pullbackQ f).map ((degree n).map_id _)).trans ((pullbackQ f).map_id _)
-  map_comp g h := homMkOfEq_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ fun n ↦
-    ((pullbackQ f).map_comp _ _).symm.trans
-      (congrArg (pullbackQ f).map ((degree n).map_comp g h).symm)
+    (fun n ↦ (Scheme.Modules.pullback f).map (g.hom.hom.hom n)) (pullbackOne_map f g)
+    (pullbackMul_map f g)
+  map_id _ := homMkOfEq_id _ _ _ _ _ _ fun _ ↦ (Scheme.Modules.pullback f).map_id _
+  map_comp _ _ := homMkOfEq_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ fun _ ↦
+    ((Scheme.Modules.pullback f).map_comp _ _).symm
 
 /-- The degree-`n` component of the pullback `f^* A` is the pullback `f^* Aₙ` of the degree-`n`
 component of `A`. -/
