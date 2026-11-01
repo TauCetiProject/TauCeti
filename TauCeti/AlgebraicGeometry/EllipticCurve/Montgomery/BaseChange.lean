@@ -34,8 +34,8 @@ after base change exactly when they agree before.
 * `TauCeti.Montgomery.coordinates_mapPoint`: the coordinate pair of `mapPoint f hf P` is the
   image of the coordinate pair of `P` under `f`.
 * `TauCeti.Montgomery.mapPoint_neg`, `TauCeti.Montgomery.mapPoint_injective` and, over fields,
-  `TauCeti.Montgomery.mapPoint_add`: the map commutes with negation and addition and is
-  injective.
+  `TauCeti.Montgomery.mapPoint_add` and `TauCeti.Montgomery.mapPoint_zsmul`: the map commutes
+  with negation, addition and integer multiples and is injective.
 * `TauCeti.Montgomery.projectiveX_mapPoint_eq_projectiveX_mapPoint_iff`: along a field
   embedding, two native points have the same projective `x`-coordinate after base change exactly
   when they do before.
@@ -105,13 +105,16 @@ variable [DecidableEq K] [DecidableEq L] in
 @[simp]
 theorem mapPoint_add (P Q : (model A B).toAffine.Point) :
     mapPoint f f.injective (P + Q) = mapPoint f f.injective P + mapPoint f f.injective Q := by
-  -- Transport along an equality of curves is additive: generalise the curve and substitute.
-  have key {V V' : WeierstrassCurve L} (h : V = V') (P Q : V.toAffine.Point) :
-      cast (congrArg (fun V : WeierstrassCurve L ↦ V.toAffine.Point) h) (P + Q) =
-        cast (congrArg _ h) P + cast (congrArg _ h) Q := by
-    subst h
-    rfl
-  rw [mapPoint, mapPoint, mapPoint, Affine.Point.mapAlong_add, key (map_model A B f)]
+  rw [mapPoint, mapPoint, mapPoint, Affine.Point.mapAlong_add]
+  exact map_add (AddEquiv.cast (M := fun V : WeierstrassCurve L ↦ V.toAffine.Point)
+    (map_model A B f)) _ _
+
+variable [DecidableEq K] [DecidableEq L] in
+/-- Over fields, base change commutes with integer multiples. -/
+@[simp]
+theorem mapPoint_zsmul (n : ℤ) (P : (model A B).toAffine.Point) :
+    mapPoint f f.injective (n • P) = n • mapPoint f f.injective P :=
+  map_zsmul (AddMonoidHom.mk' _ (mapPoint_add f)) n P
 
 /-- **The projective `x`-coordinate is compatible with field embeddings**: two native points
 have the same projective `x`-coordinate after base change exactly when they do before. -/
