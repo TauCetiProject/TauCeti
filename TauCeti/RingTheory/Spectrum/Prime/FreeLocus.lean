@@ -50,6 +50,8 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   a finitely presented flat module lies in a given set is the basic open set of an idempotent.
 * `Module.exists_isIdempotentElem_basicOpen_eq_support`: the support of a finitely presented flat
   module is the basic open set of an idempotent.
+* `Module.Flat.quotient_span_singleton_of_isIdempotentElem`: for an idempotent `e`, `R ⧸ (e)` is
+  flat.
 * `Module.rankAtStalk_quotient_span_one_sub`: for an idempotent `e`, `R ⧸ (1 - e)` has rank `1`
   on the basic open set of `e` and rank `0` off it.
 * `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
@@ -166,14 +168,21 @@ theorem exists_isIdempotentElem_basicOpen_eq_support {R : Type*} (M : Type*) [Co
     {n | 0 < n}
   exact ⟨e, he, hU.trans (Set.ext fun p ↦ rankAtStalk_pos_iff_mem_support p)⟩
 
+/-- For an idempotent `e`, the quotient `R ⧸ (e)` is flat: it is the localization away from
+`1 - e`. -/
+theorem Flat.quotient_span_singleton_of_isIdempotentElem {R : Type*} [CommRing R] {e : R}
+    (he : IsIdempotentElem e) : Module.Flat R (R ⧸ Ideal.span {e}) := by
+  have := IsLocalization.Away.quotient_of_isIdempotentElem he.one_sub
+  rw [sub_sub_cancel] at this
+  exact IsLocalization.flat _ (Submonoid.powers (1 - e))
+
 open scoped Classical in
 /-- For an idempotent `e`, the quotient `R ⧸ (1 - e)`, the localization away from `e`, has rank `1`
 at the primes in the basic open set of `e` and rank `0` at the others. -/
 theorem rankAtStalk_quotient_span_one_sub {R : Type*} [CommRing R] {e : R}
     (he : IsIdempotentElem e) (p : PrimeSpectrum R) :
     rankAtStalk (R := R) (R ⧸ Ideal.span {1 - e}) p = if e ∈ p.asIdeal then 0 else 1 := by
-  have := IsLocalization.Away.quotient_of_isIdempotentElem he
-  have : Module.Flat R (R ⧸ Ideal.span {1 - e}) := IsLocalization.flat _ (Submonoid.powers e)
+  have := Flat.quotient_span_singleton_of_isIdempotentElem he.one_sub
   have h₁ : rankAtStalk (R := R) (R ⧸ Ideal.span {1 - e}) p ≤ 1 :=
     rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
   have h₀ : 0 < rankAtStalk (R := R) (R ⧸ Ideal.span {1 - e}) p ↔ e ∉ p.asIdeal := by
@@ -197,9 +206,7 @@ theorem exists_rankAtStalk_prod_pi_quotient_eq {R : Type*} (M : Type*) [CommRing
   choose e he hU using fun j : Fin n ↦
     exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage (R := R) M {k | (j : ℕ) + k < n}
   refine ⟨e, he, funext fun p ↦ ?_⟩
-  have (j : Fin n) : Module.Flat R (R ⧸ Ideal.span {1 - e j}) := by
-    have := IsLocalization.Away.quotient_of_isIdempotentElem (he j)
-    exact IsLocalization.flat _ (Submonoid.powers (e j))
+  have (j : Fin n) := Flat.quotient_span_singleton_of_isIdempotentElem (he j).one_sub
   have hmem (j : Fin n) : e j ∉ p.asIdeal ↔ (j : ℕ) < n - rankAtStalk (R := R) M p := by
     rw [← PrimeSpectrum.mem_basicOpen, ← SetLike.mem_coe, hU j, Set.mem_preimage,
       Set.mem_ofPred_eq]
@@ -216,8 +223,8 @@ theorem exists_rankAtStalk_prod_pi_quotient_eq {R : Type*} (M : Type*) [CommRing
       _ = n - rankAtStalk (R := R) M p := by
           rw [Finset.sum_boole, Nat.cast_id, Fin.card_filter_val_lt]
           omega
-  rw [rankAtStalk_prod, Pi.add_apply, rankAtStalk_pi, finsum_eq_sum_of_fintype, hsum,
-    Pi.natCast_apply, Nat.cast_id]
+  simp only [rankAtStalk_prod, rankAtStalk_pi, finsum_eq_sum_of_fintype, Pi.add_apply,
+    Pi.natCast_apply, Nat.cast_id, hsum]
   have := hn p
   omega
 
@@ -228,26 +235,21 @@ theorem exists_rankAtStalk_prod_quotient_eq_max {R : Type*} (M : Type*) [CommRin
     ∃ e : R, IsIdempotentElem e ∧ ∀ p : PrimeSpectrum R,
       rankAtStalk (R := R) (M × R ⧸ Ideal.span {e}) p = max 1 (rankAtStalk (R := R) M p) := by
   obtain ⟨e, he, hsupp⟩ := exists_isIdempotentElem_basicOpen_eq_support (R := R) M
-  -- `R ⧸ (e)` is the localization away from `1 - e`, hence flat.
-  have : IsLocalization.Away (1 - e) (R ⧸ Ideal.span {e}) := by
-    have := IsLocalization.Away.quotient_of_isIdempotentElem he.one_sub
-    rwa [sub_sub_cancel] at this
-  have : Module.Flat R (R ⧸ Ideal.span {e}) := IsLocalization.flat _ (Submonoid.powers (1 - e))
+  have := Flat.quotient_span_singleton_of_isIdempotentElem he
   refine ⟨e, he, fun p ↦ ?_⟩
-  have hU₁ : rankAtStalk (R := R) (R ⧸ Ideal.span {e}) p ≤ 1 :=
-    rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
-  have hU₀ : 0 < rankAtStalk (R := R) (R ⧸ Ideal.span {e}) p ↔ e ∈ p.asIdeal := by
-    simp [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
-      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective]
+  -- `R ⧸ (e) = R ⧸ (1 - (1 - e))` has rank `1` off `D(e)` and rank `0` on it.
+  have hU := rankAtStalk_quotient_span_one_sub he.one_sub p
+  rw [sub_sub_cancel] at hU
   have hM : 0 < rankAtStalk (R := R) M p ↔ e ∉ p.asIdeal := by
     rw [rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe, PrimeSpectrum.mem_basicOpen]
-  rw [rankAtStalk_prod, Pi.add_apply]
-  by_cases hp : e ∈ p.asIdeal
-  · have := hU₀.mpr hp
-    have := hM.not.mpr (not_not.mpr hp)
+  have h1e : 1 - e ∈ p.asIdeal ↔ e ∉ p.asIdeal := by
+    simpa using
+      (Set.ext_iff.mp (PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he) p).symm
+  rw [rankAtStalk_prod, Pi.add_apply, hU]
+  split_ifs with hp
+  · have := hM.mpr (h1e.mp hp)
     omega
-  · have := hU₀.not.mpr hp
-    have := hM.mpr hp
+  · have := hM.not.mpr (h1e.not.mp hp)
     omega
 
 open scoped TensorProduct in
