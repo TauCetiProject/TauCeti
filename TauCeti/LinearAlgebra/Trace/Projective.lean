@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.TensorProduct.Finite
+public import TauCeti.LinearAlgebra.Contraction
 
 /-!
 # The trace of an endomorphism of a finite projective module
@@ -19,6 +19,10 @@ For a finite projective module `M` over a commutative semiring `R`, the map
 is its image under the contraction `Dual R M ⊗[R] M → R`, `φ ⊗ m ↦ φ m`. This is the trace of a
 finite locally free module (Stacks, Tag 02DU and Tag 0BVH; Kedlaya–Liu, *Relative p-adic Hodge
 theory: foundations*, §1.1).
+
+The contraction definition also appears in Mathlib PR
+https://github.com/leanprover-community/mathlib4/pull/44636, which proposes it as the definition
+of `LinearMap.trace` itself; this file was written independently and adapts no code from it.
 
 Mathlib's `LinearMap.trace R M` is defined through a finite basis and is `0` when `M` has none,
 so it is the trace of a finite projective module only when the module is free:
@@ -91,21 +95,6 @@ theorem projectiveTrace_smulRight (φ : Dual R M) (m : M) :
     simp
   rw [this, projectiveTrace_dualTensorHom, contractLeft_apply]
 
-/-- Every endomorphism of a finite projective module is a finite sum of rank-one endomorphisms
-`φ.smulRight m`, so a property of linear maps out of `M` that is closed under `+` holds as soon
-as it holds for these. -/
-theorem induction_smulRight {N : Type*} [AddCommMonoid N] [Module R N]
-    {P : (M →ₗ[R] N) → Prop} (f : M →ₗ[R] N)
-    (smulRight : ∀ (φ : Dual R M) (n : N), P (φ.smulRight n))
-    (add : ∀ f g, P f → P g → P (f + g)) : P f := by
-  obtain ⟨x, rfl⟩ := (dualTensorHomEquiv R M N).surjective f
-  induction x using TensorProduct.inductionOn with
-  | tmul φ n =>
-    convert smulRight φ n using 1
-    ext
-    simp
-  | add x y hx hy => simpa using add _ _ hx hy
-
 /-- **Cyclicity of the trace** across two finite projective modules:
 `tr_M (g ∘ f) = tr_N (f ∘ g)`. -/
 theorem projectiveTrace_cyclic {N : Type*} [AddCommMonoid N] [Module R N] [Module.Finite R N]
@@ -151,6 +140,7 @@ theorem projectiveTrace_self_apply (f : R →ₗ[R] R) : projectiveTrace R R f =
   rw [this, projectiveTrace_smulRight, id_apply, smulRight_apply, id_apply, one_smul]
 
 /-- The trace on the zero module vanishes. -/
+@[simp]
 theorem projectiveTrace_eq_zero_of_subsingleton [Subsingleton M] (f : M →ₗ[R] M) :
     projectiveTrace R M f = 0 := by
   rw [Subsingleton.elim f 0, map_zero]
