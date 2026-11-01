@@ -337,6 +337,9 @@ compatible with the hom modules along a bijection of objects `e : D ≃ C`.  Its
 differential `d_D` of the retract (`homInclusion_homDifferential_transfer`), its composition is
 `g ∘ f = p m₂(i g, i f)` (`homInclusion_comp_transfer`), and its higher operations are those of the
 transferred `A∞` algebra. -/
+-- Expose the total algebra so that the `A∞` morphisms of the transfer are morphisms out of and into
+-- the transferred category.
+@[expose]
 noncomputable def transfer : AInfinityCategory R D where
   toAInfinityAlgebra := 𝒞.toAInfinityAlgebra.transfer c hh hincl hproj
   grading_eq := AInfinityAlgebra.transfer_grading ..
