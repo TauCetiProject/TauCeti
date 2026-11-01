@@ -19,8 +19,8 @@ with values in `𝓞 K`. This file shows that the normalised Jacobi sum `-χ (-1
 primary, that `J(χ, χ)` has norm `q`, and that `-χ (-1) J(χ, χ)` equals every primary divisor
 `π` of `J(χ, χ)` of norm `q`. For the quartic residue symbol `χ = (· / P)_4` at a prime
 `P = π 𝓞 K` with `π` primary, this gives the identification `J(χ, χ) = -χ (-1) π`, and with it
-the fourth power `g(χ, ψ) ^ 4 = N P · π ^ 2 = π ^ 3 π̄` of the Gauss sum, on which the proof of
-biquadratic reciprocity rests.
+the fourth power `g(χ, ψ) ^ 4 = N P · π ^ 2 = π ^ 3 · σ π` of the Gauss sum, where `σ` is complex
+conjugation, on which the proof of biquadratic reciprocity rests.
 
 * If `χ ^ 4 = 1` and `q ≡ 1 (mod 4)`, then `-χ (-1) J(χ, χ)` is primary: it is congruent to `1`
   modulo `(1 + i) ^ 3`. This applies to the quartic residue symbol `χ = (· / P)_4` at a prime `P`
@@ -38,7 +38,7 @@ biquadratic reciprocity rests.
   primary prime `π`, of norm `p ≡ 1 (mod 4)` or a rational prime `-q` with `q ≡ 3 (mod 4)`.
 * Since `χ (-1) ^ 2 = 1`, the relation `g(χ, ψ) ^ 4 = q J(χ, χ) ^ 2`
   (`TauCeti.gaussSum_pow_four_eq_card_mul_jacobiSum_sq`) becomes `g(χ, ψ) ^ 4 = N P · π ^ 2`, and
-  `N P = π π̄` gives the form `π ^ 3 π̄`. Complex conjugation is described, as in
+  `N P = π · σ π` gives the form `π ^ 3 · σ π`. Complex conjugation is described, as in
   `TauCeti.intCast_norm_eq_mul_of_four`, as a ring endomorphism `σ` of `𝓞 K` cubing the fourth
   roots of unity.
 
@@ -56,7 +56,7 @@ biquadratic reciprocity rests.
 * `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq`: `g(χ, ψ) ^ 4 = N P · π ^ 2` for this `χ`
   and a primitive additive character `ψ`, the values pushed to a domain along an injective ring
   homomorphism.
-* `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul`: `g(χ, ψ) ^ 4 = π ^ 3 π̄`.
+* `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul`: `g(χ, ψ) ^ 4 = π ^ 3 · σ π`.
 
 ## References
 
@@ -202,7 +202,7 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq (hπ : P = span {π})
     ← absNorm_eq_natCard, map_mul, map_neg]
   linear_combination (absNorm P : R) * f π ^ 2 * hneg
 
-/-- **The fourth power of the quartic Gauss sum, as `π ^ 3 π̄`.** Under the hypotheses of
+/-- **The fourth power of the quartic Gauss sum, as `π ^ 3 · σ π`.** Under the hypotheses of
 `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq`, let `σ` be complex conjugation of
 `𝓞 K = ℤ[i]`, given as a ring endomorphism cubing every fourth root of unity
 (`TauCeti.exists_ringHom_apply_eq_pow_three_of_four`). Then `g(χ, ψ) ^ 4 = f π ^ 3 · f (σ π)`. -/
