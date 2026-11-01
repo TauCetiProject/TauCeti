@@ -48,6 +48,16 @@ def IsNondegenerate (E : LinearRecurrence K) : Prop :=
       θ' ∈ E.charPoly.rootSet (AlgebraicClosure K) →
       θ ≠ θ' → ¬IsOfFinOrder (θ / θ')
 
+/-- Nondegeneracy is equivalent to a nonzero constant characteristic coefficient and
+infinite multiplicative order of every quotient of distinct characteristic roots. -/
+theorem isNondegenerate_def (E : LinearRecurrence K) :
+    E.IsNondegenerate ↔ E.charPoly.coeff 0 ≠ 0 ∧
+      ∀ ⦃θ θ' : AlgebraicClosure K⦄,
+        θ ∈ E.charPoly.rootSet (AlgebraicClosure K) →
+        θ' ∈ E.charPoly.rootSet (AlgebraicClosure K) →
+        θ ≠ θ' → ¬IsOfFinOrder (θ / θ') :=
+  Iff.rfl
+
 variable {E E' : LinearRecurrence K}
 
 /-- The constant characteristic coefficient of a nondegenerate recurrence is nonzero. -/
