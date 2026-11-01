@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Quantile.Finite
 public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.UniformOn
 public import Mathlib.MeasureTheory.Measure.Prod
@@ -16,7 +17,9 @@ public import Mathlib.MeasureTheory.Measure.Support
 This file develops uniform probability measures on finite discrete spaces.  It identifies the
 conditional counting measure `ProbabilityTheory.uniformOn` with Mathlib's finite Dirac-sum
 measure, computes its masses and Bochner integrals, and shows that embeddings transport finite
-uniform measures to uniform measures on their images.
+uniform measures to uniform measures on their images. For arbitrary real labels, it computes
+cumulative masses and quantiles by finite cumulative counts, retaining multiplicities of repeated
+labels, and identifies both one-sided quantile endpoint limits.
 
 ## Main results
 
@@ -215,3 +218,105 @@ theorem uniformOfFinset_univ_fin_two_prod_offDiagonal :
   rw [← mul_two, mul_assoc, ENNReal.inv_mul_cancel (by norm_num) (by norm_num), mul_one]
 
 end TauCeti.Probability
+
+namespace Finset
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+
+open Classical in
+/-- The real mass of a set of labels under finite uniform sampling is the proportion of inputs
+with labels in that set. Repeated labels are counted with their multiplicities. -/
+theorem measureReal_map_uniformOn_apply (s : Finset α) (f : α → ℝ)
+    {t : Set ℝ} (ht : MeasurableSet t) :
+    ((uniformOn (s : Set α)).map f).real t =
+      ((s.filter fun i ↦ f i ∈ t).card : ℝ) / s.card := by
+  rw [← integral_indicator_one ht,
+    integral_map (s.aemeasurable_uniformOn_finset f) (by fun_prop), integral_uniformOn_finset]
+  simp [Set.indicator, sum_boole, div_eq_mul_inv, mul_comm]
+
+open Classical in
+/-- The cdf of a finitely labeled uniform sample counts inputs with label at most the argument. -/
+theorem cdf_map_uniformOn (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) (x : ℝ) :
+    cdf ((uniformOn (s : Set α)).map f) x =
+      ((s.filter fun i ↦ f i ≤ x).card : ℝ) / s.card := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  rw [cdf_eq_real, measureReal_map_uniformOn_apply s f measurableSet_Iic]
+  simp only [Set.mem_Iic]
+
+/-- A labeled finite uniform sample lies in the finite image of its sampling set almost surely.
+The labeling function need not be globally measurable. -/
+theorem ae_mem_image_map_uniformOn (s : Finset α) (f : α → ℝ) :
+    ∀ᵐ x ∂(uniformOn (s : Set α)).map f, x ∈ s.image f := by
+  classical
+  apply (ae_map_iff (s.aemeasurable_uniformOn_finset f) (s.image f).measurableSet).2
+  rw [s.uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset,
+    ae_finsetSum_measure_iff]
+  intro i hi
+  apply Measure.ae_smul_measure
+  simpa using s.mem_image_of_mem f hi
+
+/-- Every label attained by a finite uniform sample has nonzero mass. -/
+theorem map_uniformOn_singleton_ne_zero (s : Finset α) (f : α → ℝ) {x : ℝ}
+    (hx : x ∈ s.image f) : (uniformOn (s : Set α)).map f {x} ≠ 0 := by
+  classical
+  obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
+  rw [Measure.map_apply_of_aemeasurable (s.aemeasurable_uniformOn_finset f)
+    (measurableSet_singleton _)]
+  apply ne_of_gt
+  calc
+    0 < uniformOn (s : Set α) {i} := by simp [hi]
+    _ ≤ uniformOn (s : Set α) (f ⁻¹' {f i}) := measure_mono (by simp)
+
+open Classical in
+/-- The uniform quantile is the least distinct label whose cumulative input count reaches the
+requested fraction of the sample size. This retains multiplicities of repeated labels. -/
+theorem quantile_map_uniformOn_eq_iff (s : Finset α) (hs : s.Nonempty) (f : α → ℝ)
+    {u x : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((uniformOn (s : Set α)).map f).quantile u = x ↔
+      IsLeast {y | y ∈ s.image f ∧
+        u ≤ ((s.filter fun i ↦ f i ≤ y).card : ℝ) / s.card} x := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  simpa only [s.cdf_map_uniformOn hs] using
+    ((uniformOn (s : Set α)).map f).quantile_eq_iff_of_ae_mem_finset
+      (s.ae_mem_image_map_uniformOn f) hu
+
+open Classical in
+/-- Compute a finite uniform quantile by a minimum over distinct labels, with cumulative counts
+including every input carrying each label. -/
+theorem quantile_map_uniformOn (s : Finset α) (hs : s.Nonempty) (f : α → ℝ)
+    {u : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((uniformOn (s : Set α)).map f).quantile u =
+      ((s.image f).filter fun y ↦
+        u ≤ ((s.filter fun i ↦ f i ≤ y).card : ℝ) / s.card).min' (by
+          let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+          simpa only [s.cdf_map_uniformOn hs] using
+            ((uniformOn (s : Set α)).map f).nonempty_filter_le_cdf
+              (s.ae_mem_image_map_uniformOn f) hu) := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  simpa only [s.cdf_map_uniformOn hs] using
+    ((uniformOn (s : Set α)).map f).quantile_eq_min'_of_ae_mem_finset
+      (s.ae_mem_image_map_uniformOn f) hu
+
+open Filter Topology in
+/-- Uniform quantiles tend to the smallest attained label as the level decreases to zero. -/
+theorem tendsto_quantile_map_uniformOn_nhdsGT_zero
+    (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) :
+    Tendsto (fun u ↦ (((uniformOn (s : Set α)).map f).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 ((s.image f).min' (hs.image f) : EReal)) := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  apply Measure.tendsto_quantile_nhdsGT_zero_of_ae_mem_finset _
+    (s.ae_mem_image_map_uniformOn f)
+  exact s.map_uniformOn_singleton_ne_zero f (min'_mem _ _)
+
+open Filter Topology in
+/-- Uniform quantiles tend to the largest attained label as the level increases to one. -/
+theorem tendsto_quantile_map_uniformOn_nhdsLT_one
+    (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) :
+    Tendsto (fun u ↦ (((uniformOn (s : Set α)).map f).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 ((s.image f).max' (hs.image f) : EReal)) := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  apply Measure.tendsto_quantile_nhdsLT_one_of_ae_mem_finset _
+    (s.ae_mem_image_map_uniformOn f)
+  exact s.map_uniformOn_singleton_ne_zero f (max'_mem _ _)
+
+end Finset

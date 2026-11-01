@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Moments
-public import TauCeti.Probability.Distributions.Categorical
+public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Concentration
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import Mathlib.Topology.Order.AtTopBotIxx
