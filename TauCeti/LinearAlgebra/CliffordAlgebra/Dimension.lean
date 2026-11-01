@@ -15,6 +15,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 -- Private: `Module.Finite.of_finite_end` shows that a spinor module is finite-dimensional.
 import TauCeti.LinearAlgebra.Dual.Lemmas
+-- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
@@ -71,6 +73,7 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 
 * `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`: for every basis, the basis
   vectors indexed by `∅` and by `{i}` are `1` and the generator `ι Q (b i)`.
+* `CliffordAlgebra.map_basis`: the basis is natural under isometric equivalences.
 * `CliffordAlgebra.rank_eq_rank_exteriorAlgebra` and
   `CliffordAlgebra.finrank_eq_finrank_exteriorAlgebra`: the rank of `CliffordAlgebra Q`
   is the rank of `ExteriorAlgebra R M`. The right-hand sides do not mention `Q`, so this is the
@@ -161,6 +164,17 @@ Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underl
 theorem equivExterior_basis {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     equivExterior Q (basis Q b s) = b.ExteriorAlgebra s := by
   rw [basis_apply, LinearEquiv.apply_symm_apply]
+
+variable {Q} in
+/-- **The basis is natural under isometric equivalences**: the algebra map induced by an isometric
+equivalence `e : Q ≃ Q'` sends the basis vector of `b` indexed by `s` to the basis vector of the
+transported basis `b.map e` indexed by `s`. -/
+theorem map_basis {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticForm R M'}
+    (e : Q.IsometryEquiv Q') {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
+    map e.toIsometry (basis Q b s) = basis Q' (b.map e.toLinearEquiv) s := by
+  apply (equivExterior Q').injective
+  rw [equivExterior_map, equivExterior_basis, equivExterior_basis]
+  exact b.map_exteriorAlgebra s e.toLinearEquiv
 
 /-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
 invertible. -/
