@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.RingTheory.DualNumber
+public import Mathlib.RingTheory.LocalRing.Pullback
 public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.RingTheory.Artinian.RestrictScalars
 
@@ -36,8 +37,8 @@ tangent space of a deformation functor.
 
 Schlessinger's conditions compare the values of a deformation functor on a fibre product
 `A' ×_A A''` with those on `A'` and `A''`. For `A'' → A` surjective this fibre product is again an
-object of `C_Λ` (Stacks, Lemma 90.3.8 (06GH)): it is local, as a pair whose components are units
-has an inverse with the same image in `A`, and it is Artinian, as it maps onto the residue fields of
+object of `C_Λ` (Stacks, Lemma 90.3.8 (06GH)): the subalgebra `AlgHom.pullback` of `A' × A''` is
+local (`AlgHom.isLocalRing_pullback`), and it is Artinian, as it maps onto the residue fields of
 the Artinian local rings `A'` and `A''`
 (`TauCeti.isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient`).
 
@@ -73,7 +74,7 @@ hypothesis is needed for the definitions and results here.
   `k[ε] → k` is a small extension.
 * `TauCeti.Deformation.ArtinLocalAlg.not_isSmallExtension_toResidue_residue`: the identity of
   `k` is not a small extension, as its kernel is zero.
-* `TauCeti.Deformation.ArtinLocalAlg.isArtinianRing_pullbackSubalgebra`: the fibre product of
+* `TauCeti.Deformation.ArtinLocalAlg.isArtinianRing_pullback`: the fibre product of
   Artinian local rings along a surjection, over a common residue field, is Artinian.
 * `TauCeti.Deformation.ArtinLocalAlg.isPullback`: `A' ×_A A''` is a pullback in `C_Λ`.
 
@@ -319,67 +320,29 @@ theorem comp_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (φ : A' ⟶ A) (ψ : A
     (a : A'.obj.left) : (φ ≫ ψ).hom.left.hom a = ψ.hom.left.hom (φ.hom.left.hom a) :=
   (rfl)
 
-/-- The fibre product `A' ×_A A''` of `f : A' ⟶ A` and `g : A'' ⟶ A`, as the `Λ`-subalgebra of
-`A' × A''` of pairs with the same image in `A`. -/
-def pullbackSubalgebra : Subalgebra Λ (A'.obj.left × A''.obj.left) :=
-  AlgHom.equalizer (f.hom.left.hom.comp (AlgHom.fst Λ _ _))
-    (g.hom.left.hom.comp (AlgHom.snd Λ _ _))
-
-/-- A pair lies in the fibre product exactly when its components have the same image in `A`. -/
-@[simp]
-theorem mem_pullbackSubalgebra {x : A'.obj.left × A''.obj.left} :
-    x ∈ pullbackSubalgebra f g ↔ f.hom.left.hom x.1 = g.hom.left.hom x.2 :=
-  Iff.rfl
-
-/-- The augmentation of the fibre product, through its first component. -/
-def pullbackAugmentation : pullbackSubalgebra f g →ₐ[Λ] k :=
-  A'.augmentation.comp ((AlgHom.fst Λ _ _).comp (pullbackSubalgebra f g).val)
+/-- The augmentation of the fibre product `AlgHom.pullback f g` of the underlying algebra maps,
+through its first component. -/
+def pullbackAugmentation : AlgHom.pullback f.hom.left.hom g.hom.left.hom →ₐ[Λ] k :=
+  A'.augmentation.comp (AlgHom.pullbackFst _ _)
 
 /-- The augmentation of the fibre product is that of its first component. -/
 @[simp]
-theorem pullbackAugmentation_apply (x : pullbackSubalgebra f g) :
+theorem pullbackAugmentation_apply (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
     pullbackAugmentation f g x = A'.augmentation x.1.1 :=
   (rfl)
 
 /-- The two components of a point of the fibre product have the same augmentation. -/
-theorem augmentation_snd_pullbackSubalgebra (x : pullbackSubalgebra f g) :
+theorem augmentation_snd_pullback (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
     A''.augmentation x.1.2 = A'.augmentation x.1.1 := by
-  rw [← augmentation_hom_apply g, ← (mem_pullbackSubalgebra f g).mp x.2, augmentation_hom_apply]
+  have hx : f.hom.left.hom x.1.1 = g.hom.left.hom x.1.2 := x.2
+  rw [← augmentation_hom_apply g, ← hx, augmentation_hom_apply]
 
 variable {f g}
 
 /-- If `g` is surjective, the augmentation of the fibre product is surjective. -/
 theorem pullbackAugmentation_surjective (hg : Function.Surjective g.hom.left.hom) :
-    Function.Surjective (pullbackAugmentation f g) := fun c ↦ by
-  obtain ⟨a', rfl⟩ := A'.augmentation_surjective c
-  obtain ⟨a'', ha''⟩ := hg (f.hom.left.hom a')
-  exact ⟨⟨(a', a''), ha''.symm⟩, rfl⟩
-
-/-- A point of the fibre product with nonzero augmentation is a unit: both components are units,
-and their inverses again have the same image in `A`. -/
-private theorem isUnit_of_pullbackAugmentation_ne_zero {x : pullbackSubalgebra f g}
-    (hx : pullbackAugmentation f g x ≠ 0) : IsUnit x := by
-  rw [pullbackAugmentation_apply] at hx
-  obtain ⟨b', hb'⟩ := isUnit_iff_exists_inv.mp (isUnit_iff_augmentation_ne_zero.mpr hx)
-  obtain ⟨b'', hb''⟩ := isUnit_iff_exists_inv.mp (isUnit_iff_augmentation_ne_zero.mpr
-    ((augmentation_snd_pullbackSubalgebra f g x).trans_ne hx))
-  have hmem : (b', b'') ∈ pullbackSubalgebra f g := by
-    have h' := congrArg f.hom.left.hom hb'
-    have h'' := congrArg g.hom.left.hom hb''
-    rw [map_mul, map_one] at h' h''
-    rw [← (mem_pullbackSubalgebra f g).mp x.2] at h''
-    exact left_inv_eq_right_inv ((mul_comm _ _).trans h') h''
-  exact isUnit_iff_exists_inv.mpr ⟨⟨_, hmem⟩, Subtype.ext (Prod.ext hb' hb'')⟩
-
-/-- The fibre product of `f` and `g` is a local ring. -/
-instance isLocalRing_pullbackSubalgebra : IsLocalRing (pullbackSubalgebra f g) := by
-  have := (pullbackAugmentation f g).toRingHom.domain_nontrivial
-  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦ ?_
-  by_cases hx : pullbackAugmentation f g x = 0
-  · refine .inr (isUnit_of_pullbackAugmentation_ne_zero ?_)
-    rw [map_sub, map_one, hx, sub_zero]
-    exact one_ne_zero
-  · exact .inl (isUnit_of_pullbackAugmentation_ne_zero hx)
+    Function.Surjective (pullbackAugmentation f g) :=
+  A'.augmentation_surjective.comp (AlgHom.surjective_pullbackFst_of_surjective _ _ hg)
 
 /-- For a ring `R` mapping to an object `B` of `C_Λ` compatibly with a surjection `R → k`, the
 composite `R → B → B ⧸ 𝔪_B` is surjective. -/
@@ -395,21 +358,21 @@ private theorem surjective_mk_maximalIdeal_comp {B : ArtinLocalAlg Λ k} {R : Ty
 /-- If `g` is surjective, the fibre product of `f` and `g` is an Artinian ring: it maps onto the
 residue fields of the Artinian local rings `A'` and `A''`, so these are Artinian modules over it,
 and it is a submodule of their product. Stacks, Lemma 90.3.8 (06GH). -/
-theorem isArtinianRing_pullbackSubalgebra (hg : Function.Surjective g.hom.left.hom) :
-    IsArtinianRing (pullbackSubalgebra f g) := by
-  set P := pullbackSubalgebra f g
+theorem isArtinianRing_pullback (hg : Function.Surjective g.hom.left.hom) :
+    IsArtinianRing (AlgHom.pullback f.hom.left.hom g.hom.left.hom) := by
+  set P := AlgHom.pullback f.hom.left.hom g.hom.left.hom
   have hP := pullbackAugmentation_surjective (f := f) hg
   have hnil (B : ArtinLocalAlg Λ k) : IsNilpotent (maximalIdeal B.obj.left) := by
     rw [← jacobson_eq_maximalIdeal ⊥ bot_ne_top]
     exact IsArtinianRing.isNilpotent_jacobson_bot
-  let : Algebra P A'.obj.left := ((AlgHom.fst Λ _ _).comp P.val).toRingHom.toAlgebra
-  let : Algebra P A''.obj.left := ((AlgHom.snd Λ _ _).comp P.val).toRingHom.toAlgebra
+  let : Algebra P A'.obj.left := (AlgHom.pullbackFst _ _).toRingHom.toAlgebra
+  let : Algebra P A''.obj.left := (AlgHom.pullbackSnd _ _).toRingHom.toAlgebra
   have : IsArtinian P A'.obj.left :=
     isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient (hnil A')
       (surjective_mk_maximalIdeal_comp _ hP fun _ ↦ rfl)
   have : IsArtinian P A''.obj.left :=
     isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient (hnil A'')
-      (surjective_mk_maximalIdeal_comp _ hP (augmentation_snd_pullbackSubalgebra f g))
+      (surjective_mk_maximalIdeal_comp _ hP (augmentation_snd_pullback f g))
   let ι : P →ₗ[P] A'.obj.left × A''.obj.left :=
     { toFun := Subtype.val
       map_add' _ _ := rfl
@@ -419,12 +382,14 @@ theorem isArtinianRing_pullbackSubalgebra (hg : Function.Surjective g.hom.left.h
 
 /-- The fibre product `A' ×_A A''` in `C_Λ` of morphisms `f : A' ⟶ A` and `g : A'' ⟶ A` with `g`
 surjective. Stacks, Lemma 90.3.8 (06GH). -/
--- Exposed because the carrier of `pullback f g hg` is `pullbackSubalgebra f g` by definitional
--- unfolding.
+-- Exposed because the carrier of `pullback f g hg` is
+-- `AlgHom.pullback f.hom.left.hom g.hom.left.hom` by definitional unfolding.
 @[expose] def pullback (f : A' ⟶ A) (g : A'' ⟶ A) (hg : Function.Surjective g.hom.left.hom) :
     ArtinLocalAlg Λ k :=
-  have := isArtinianRing_pullbackSubalgebra (f := f) hg
-  mk' (pullbackSubalgebra f g) (pullbackAugmentation f g) (pullbackAugmentation_surjective hg)
+  have := isArtinianRing_pullback (f := f) hg
+  have := AlgHom.isLocalRing_pullback f.hom.left.hom g.hom.left.hom
+  mk' (AlgHom.pullback f.hom.left.hom g.hom.left.hom) (pullbackAugmentation f g)
+    (pullbackAugmentation_surjective hg)
 
 variable (f g) (hg : Function.Surjective g.hom.left.hom)
 
@@ -435,12 +400,12 @@ theorem augmentation_pullback : (pullback f g hg).augmentation = pullbackAugment
 
 /-- The first projection `A' ×_A A'' ⟶ A'`. -/
 def pullbackFst : pullback f g hg ⟶ A' :=
-  homMk' ((AlgHom.fst Λ _ _).comp (pullbackSubalgebra f g).val) (rfl)
+  homMk' (AlgHom.pullbackFst f.hom.left.hom g.hom.left.hom) (rfl)
 
 /-- The second projection `A' ×_A A'' ⟶ A''`. -/
 def pullbackSnd : pullback f g hg ⟶ A'' :=
-  homMk' ((AlgHom.snd Λ _ _).comp (pullbackSubalgebra f g).val)
-    (AlgHom.ext (augmentation_snd_pullbackSubalgebra f g))
+  homMk' (AlgHom.pullbackSnd f.hom.left.hom g.hom.left.hom)
+    (AlgHom.ext (augmentation_snd_pullback f g))
 
 /-- The first projection takes a pair to its first component. -/
 @[simp]
