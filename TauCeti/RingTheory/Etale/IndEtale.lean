@@ -107,7 +107,10 @@ presentation with the new base preserves both the colimit and étaleness of its 
 instance baseChange (T : Type u) [CommRing T] [Algebra R T] [IndEtale R S] :
     IndEtale T (T ⊗[R] S) := by
   obtain ⟨J, _, _, pres, hD⟩ := IndEtale.ind_etale (R := R) (S := S)
-  let F := CommAlgCat.baseChange R T
+  let F := CommAlgCat.extendScalars R T
+  -- By `extendScalars_obj`, `F.obj A` is definitionally `T ⊗[R] A` as a `T`-algebra.
+  -- Mapping the cocone sends its point `S` to `T ⊗[R] S` by `rfl`, so the comparison
+  -- with the target algebra below is `AlgEquiv.refl`.
   have h (j : J) : Algebra.Etale T (F.obj (pres.diag.obj j)) := by
     have := hD j
     exact inferInstanceAs (Algebra.Etale T (T ⊗[R] pres.diag.obj j))

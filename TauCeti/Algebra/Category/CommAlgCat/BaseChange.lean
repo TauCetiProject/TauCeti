@@ -32,65 +32,62 @@ namespace CommAlgCat
 variable (R : Type u) (S : Type v) [CommRing R] [CommRing S] [Algebra R S]
 
 /-- Extension of scalars for commutative algebras, with scalar ring `S`. -/
-noncomputable abbrev baseChange : CommAlgCat.{w} R ⥤ CommAlgCat.{max v w} S where
+noncomputable abbrev extendScalars : CommAlgCat.{w} R ⥤ CommAlgCat.{max v w} S where
   obj A := of S (S ⊗[R] A)
   map f := ofHom (Algebra.TensorProduct.map (AlgHom.id S S) f.hom)
   map_id A := by ext; simp
   map_comp f g := by ext; simp
 
 /-- The algebra underlying extension of scalars is the tensor product. -/
-lemma baseChange_obj (A : CommAlgCat.{w} R) :
-    (baseChange R S).obj A = of S (S ⊗[R] A) :=
+lemma extendScalars_obj (A : CommAlgCat.{w} R) :
+    (extendScalars R S).obj A = of S (S ⊗[R] A) :=
   (rfl)
 
 /-- The morphism part of base change tensors a morphism with the identity on `S`. -/
-lemma baseChange_map_hom {A A' : CommAlgCat.{w} R} (f : A ⟶ A') :
-    ((baseChange R S).map f).hom = Algebra.TensorProduct.map (AlgHom.id S S) f.hom :=
+lemma extendScalars_map_hom {A A' : CommAlgCat.{w} R} (f : A ⟶ A') :
+    ((extendScalars R S).map f).hom = Algebra.TensorProduct.map (AlgHom.id S S) f.hom :=
   (rfl)
 
 /-- The Hom equivalence for extension and restriction of scalars. -/
-noncomputable def baseChangeHomEquiv (A : CommAlgCat.{max v w} R)
+noncomputable def extendScalarsHomEquiv (A : CommAlgCat.{max v w} R)
     (B : CommAlgCat.{max v w} S) :
-    ((baseChange R S).obj A ⟶ B) ≃
+    ((extendScalars R S).obj A ⟶ B) ≃
       (A ⟶ (restrictScalars (algebraMap R S)).obj B) := by
   letI : Algebra R B := Algebra.compHom B (algebraMap R S)
   letI : IsScalarTower R S B := .of_algebraMap_eq' rfl
   exact (ConcreteCategory.homEquiv (C := CommAlgCat S)
-    (X := (baseChange R S).obj A) (Y := B)).trans
+    (X := (extendScalars R S).obj A) (Y := B)).trans
     ((Algebra.TensorProduct.liftEquivRight R S A B).symm.trans
       (ConcreteCategory.homEquiv (C := CommAlgCat R)
         (X := A) (Y := (restrictScalars (algebraMap R S)).obj B)).symm)
 
 /-- The adjunction's forward map is evaluation on the second tensor factor. -/
 @[simp]
-lemma baseChangeHomEquiv_apply (A : CommAlgCat.{max v w} R)
-    (B : CommAlgCat.{max v w} S) (f : (baseChange R S).obj A ⟶ B) (a : A) :
-    (baseChangeHomEquiv R S A B f).hom a = f.hom (1 ⊗ₜ[R] a) :=
+lemma extendScalarsHomEquiv_apply (A : CommAlgCat.{max v w} R)
+    (B : CommAlgCat.{max v w} S) (f : (extendScalars R S).obj A ⟶ B) (a : A) :
+    (extendScalarsHomEquiv R S A B f).hom a = f.hom (1 ⊗ₜ[R] a) :=
   (rfl)
 
 /-- The adjunction's inverse extends a map by `S`-linearity. -/
 @[simp]
-lemma baseChangeHomEquiv_symm_tmul (A : CommAlgCat.{max v w} R)
+lemma extendScalarsHomEquiv_symm_tmul (A : CommAlgCat.{max v w} R)
     (B : CommAlgCat.{max v w} S)
     (f : A ⟶ (restrictScalars (algebraMap R S)).obj B) (s : S) (a : A) :
-    ((baseChangeHomEquiv R S A B).symm f).hom (s ⊗ₜ[R] a) = s • f.hom a := by
-  simp [baseChangeHomEquiv, ConcreteCategory.homEquiv,
+    ((extendScalarsHomEquiv R S A B).symm f).hom (s ⊗ₜ[R] a) = s • f.hom a := by
+  simp [extendScalarsHomEquiv, ConcreteCategory.homEquiv,
     Algebra.TensorProduct.liftEquivRight, Algebra.smul_def]
 
 /-- Tensor-product base change is left adjoint to restriction of scalars. -/
-noncomputable def baseChangeRestrictScalarsAdj :
-    baseChange.{u, v, max v w} R S ⊣ restrictScalars (algebraMap R S) :=
+noncomputable def extendRestrictScalarsAdj :
+    extendScalars.{u, v, max v w} R S ⊣ restrictScalars (algebraMap R S) :=
   Adjunction.mkOfHomEquiv
-    { homEquiv := baseChangeHomEquiv R S
+    { homEquiv := extendScalarsHomEquiv R S
       homEquiv_naturality_left_symm := by
         intro A A' B f g
-        apply (baseChangeHomEquiv R S A B).injective
+        apply (extendScalarsHomEquiv R S A B).injective
         ext a
-        rw [Equiv.apply_symm_apply, baseChangeHomEquiv_apply]
-        simp only [hom_comp, AlgHom.comp_apply, hom_ofHom, Algebra.TensorProduct.map_tmul,
-          AlgHom.id_apply]
-        rw [baseChangeHomEquiv_symm_tmul]
-        simp
+        simp [extendScalarsHomEquiv_apply R S A B,
+          extendScalarsHomEquiv_symm_tmul R S A' B, Algebra.TensorProduct.map_tmul]
       homEquiv_naturality_right := by
         intro A B B' f g
         ext a
@@ -98,14 +95,14 @@ noncomputable def baseChangeRestrictScalarsAdj :
 
 /-- The adjunction uses the tensor-product Hom equivalence. -/
 @[simp]
-lemma baseChangeRestrictScalarsAdj_homEquiv (A : CommAlgCat.{max v w} R)
+lemma extendRestrictScalarsAdj_homEquiv (A : CommAlgCat.{max v w} R)
     (B : CommAlgCat.{max v w} S) :
-    (baseChangeRestrictScalarsAdj R S).homEquiv A B = baseChangeHomEquiv R S A B := by
-  simp [baseChangeRestrictScalarsAdj]
+    (extendRestrictScalarsAdj R S).homEquiv A B = extendScalarsHomEquiv R S A B := by
+  simp [extendRestrictScalarsAdj]
 
 /-- Base change is a left adjoint, so the general adjunction API makes it preserve colimits. -/
-noncomputable instance baseChange_isLeftAdjoint :
-    (baseChange.{u, v, max v w} R S).IsLeftAdjoint :=
-  (baseChangeRestrictScalarsAdj R S).isLeftAdjoint
+noncomputable instance extendScalars_isLeftAdjoint :
+    (extendScalars.{u, v, max v w} R S).IsLeftAdjoint :=
+  (extendRestrictScalarsAdj R S).isLeftAdjoint
 
 end CommAlgCat
