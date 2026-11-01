@@ -24,7 +24,9 @@ order at only finitely many codimension-one points; no finiteness assumption is 
 Elementary facts about `Scheme.ord` itself are recorded first: the order of one vanishes
 (`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), and a
 function regular on `U` has nonnegative order at every point of `U`
-(`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined.
+(`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
+element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
+quotient (`Scheme.ord_algebraMap_stalk`).
 
 Where the local ring at a codimension-one point is a discrete valuation ring, `orderAt` is
 surjective onto `ℤ` (`SchemeWeilDivisor.exists_orderAt_eq`): the powers of a uniformizer supply
@@ -76,6 +78,22 @@ lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {
   · simp
   · have h := Scheme.ord_le_smul hx ha (1 : X.functionField)
     rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, ord_one] at h
+
+/-- At a codimension-one point `x`, the order of the image in the function field of a nonzero
+element `c` of the local ring `𝒪_{X,x}` is its order of vanishing `Ring.ord`, the length of
+`𝒪_{X,x} ⧸ (c)`. -/
+theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1) {c : X.presheaf.stalk x}
+    (hc : c ≠ 0) :
+    X.ord (algebraMap (X.presheaf.stalk x) X.functionField c) x =
+      (Ring.ord (X.presheaf.stalk x) c).toNat := by
+  have : Ring.KrullDimLE 1 (X.presheaf.stalk x) := krullDimLE_of_coheight_le hx.le
+  have hnz : c ∈ nonZeroDivisors (X.presheaf.stalk x) := mem_nonZeroDivisors_of_ne_zero hc
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (Ring.ord_ne_top hnz)
+  have hne : algebraMap (X.presheaf.stalk x) X.functionField c ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective _ _)).mpr hc
+  rw [X.ord_eq_iff hx hne, ← hn, ENat.toNat_natCast]
+  simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
+  rw [Ring.ordFrac_eq_ord _ hc, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
 
 end Scheme
 

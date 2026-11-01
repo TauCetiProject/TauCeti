@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.RingTheory.DedekindDomain.Basic
 
@@ -37,6 +38,10 @@ off.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_residueField_of_specializes`: if every
   nonzero prime of `𝒪_{X,y}` is maximal and `x ≠ y`, then `κ(x)` is a fraction field of
   `𝒪_{X,y}`.
+* `TauCeti.AlgebraicGeometry.Scheme.algebraMap_stalkSpecializes` and
+  `TauCeti.AlgebraicGeometry.Scheme.stalkSpecializes_injective`: on an irreducible scheme the
+  specialization map is compatible with the maps to the function field, and on an integral scheme
+  it is injective.
 
 ## References
 
@@ -133,6 +138,21 @@ theorem comap_stalkSpecializes_maximalIdeal_eq_iff (h : x ⤳ y) :
       ← hxy, ← hcomp, Ideal.comap_comap]
   simpa using (hU.fromSpec_primeIdealOf ⟨x, hxU⟩).symm.trans
     (hprime ▸ hU.fromSpec_primeIdealOf ⟨y, hyU⟩)
+
+/-- On an irreducible scheme, the image in the function field of a germ at `y` is the image of its
+germ at a generization `x` of `y`. -/
+@[simp]
+theorem algebraMap_stalkSpecializes [IrreducibleSpace X] (h : x ⤳ y) (b : X.presheaf.stalk y) :
+    algebraMap (X.presheaf.stalk x) X.functionField ((X.presheaf.stalkSpecializes h).hom b) =
+      algebraMap (X.presheaf.stalk y) X.functionField b := by
+  simp [RingHom.algebraMap_toAlgebra, ← ConcreteCategory.comp_apply]
+
+/-- On an integral scheme the specialization map `𝒪_{X,y} ⟶ 𝒪_{X,x}` is injective, both local
+rings being subrings of the function field. -/
+theorem stalkSpecializes_injective [IsIntegral X] (h : x ⤳ y) :
+    Function.Injective (X.presheaf.stalkSpecializes h).hom := fun a b hab ↦
+  IsFractionRing.injective (X.presheaf.stalk y) X.functionField <| by
+    rw [← algebraMap_stalkSpecializes h, hab, algebraMap_stalkSpecializes h]
 
 /-- If `x` is a proper generization of `y` and every nonzero prime of `𝒪_{X,y}` is maximal
 (`Ring.DimensionLEOne`, which without a domain assumption is stronger than Krull dimension at
