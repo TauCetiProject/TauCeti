@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Rep.Iso
+public import TauCeti.RepresentationTheory.Rep.Ihom
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -36,7 +37,9 @@ turn the same as a morphism `X ⟶ Homₖ(A, N)` into the internal hom
 `Rep.coinvariantsTensorHomLinearEquiv`; it sends `f` to `x ↦ (a ↦ f ⟦a ⊗ x⟧)` and is natural in
 all three variables: in `X`, in `N` (postcomposition with a linear map corresponds to the induced
 map of internal homs) and, contravariantly, in `A` (precomposition with the map induced by
-`f : A ⟶ A'` corresponds to Mathlib's `MonoidalClosed.pre f`).
+`f : A ⟶ A'` corresponds to Mathlib's `MonoidalClosed.pre f`). It also commutes with change of
+group, with precomposition by the compatible coefficient map on the internal-hom side
+(`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`).
 
 ## Main definitions
 
@@ -373,3 +376,31 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
     exact ⟨p.τ₂ z, congrArg (fun f ↦ f z) p.comm₂₃⟩
 
 end CategoryTheory.ShortComplex.ShortExact
+
+namespace MonoidHom
+
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
+  {A : Rep.{u} k G} {B : Rep.{u} k H} (f : G →* H) (φ : A ⟶ res f B)
+  (N : Type u) [AddCommGroup N] [Module k N]
+
+/-- The tensor-coinvariant adjunction commutes with change of group: precomposition with the map
+on tensor classes becomes precomposition with the map of representations and with `φ`. -/
+theorem coinvariantsTensorHomLinearEquiv_naturality {X : Rep.{u} k G} {Y : Rep.{u} k H}
+    (v : X ⟶ res f Y)
+    (ℓ : ((coinvariantsTensor k H).obj B).obj Y ⟶ ModuleCat.of k N) :
+    coinvariantsTensorHomLinearEquiv A N X (f.coinvariantsTensorMap φ v ≫ ℓ) =
+      v ≫ (resFunctor f).map (coinvariantsTensorHomLinearEquiv B N Y ℓ) ≫
+        f.ihomTrivialPrecomp N φ := by
+  refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ ?_
+  apply LinearMap.ext
+  intro a
+  -- Term-mode composition keeps the internal-hom carriers bundled while applying their
+  -- pointwise API; tactic rewriting would require unfolding these carriers.
+  exact (coinvariantsTensorHomLinearEquiv_apply_hom_apply_apply
+    (f.coinvariantsTensorMap φ v ≫ ℓ) x a).trans <|
+    (congrArg ℓ (f.coinvariantsTensorMap_mk φ v a x)).trans <|
+      ((f.ihomTrivialPrecomp_hom_apply N φ
+        ((coinvariantsTensorHomLinearEquiv B N Y ℓ).hom (v.hom x)) a).trans
+          (coinvariantsTensorHomLinearEquiv_apply_hom_apply_apply ℓ (v.hom x) (φ.hom a))).symm
+
+end MonoidHom
