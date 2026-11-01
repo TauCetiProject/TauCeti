@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
-public import TauCeti.Topology.FiberBundle.Principal
+public import TauCeti.Topology.FiberBundle.Principal.Basic
 
 /-!
 # Smooth principal bundles
