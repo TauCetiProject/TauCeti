@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
@@ -154,10 +155,9 @@ private theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pu
   have hmaps : MapsTo τ W (extChartAt J x).target := fun z hz ↦ (extChartAt J x).map_source hz.2
   -- `L z` pulls bilinear forms back along `Dτ_z`, as a continuous linear map in the form.
   set L : E → (F →L[ℝ] F →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ := fun z ↦
-    (ContinuousLinearMap.compL ℝ E (F →L[ℝ] ℝ) (E →L[ℝ] ℝ)
-      ((ContinuousLinearMap.compL ℝ E F ℝ).flip (fderiv ℝ τ z))).comp
-      ((ContinuousLinearMap.compL ℝ E F (F →L[ℝ] ℝ)).flip (fderiv ℝ τ z))
+    (fderiv ℝ τ z).pullbackBilinL
   have hDτ : ContDiffOn ℝ m (fderiv ℝ τ) W := hτ.fderiv_of_isOpen hW (by simp)
+  -- `ContinuousLinearMap.pullbackBilinL` is by definition this composite of `compL` maps.
   have hL : ContDiffOn ℝ m L W :=
     ((ContinuousLinearMap.compL ℝ E (F →L[ℝ] ℝ) (E →L[ℝ] ℝ)).contDiff.comp_contDiffOn
       ((ContinuousLinearMap.compL ℝ E F ℝ).flip.contDiff.comp_contDiffOn hDτ)).clm_comp

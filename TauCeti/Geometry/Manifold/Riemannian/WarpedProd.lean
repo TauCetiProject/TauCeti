@@ -22,7 +22,7 @@ Given Riemannian manifolds `M` and `N` and a nowhere vanishing function `f : M �
 at `(x, y)`. The fibres `{x} × N` are copies of `N` rescaled by the constant `f(x)²`, the
 horizontal slices `M × {y}` are isometric copies of `M`, and the two are orthogonal. A constant
 warping function `f = 1` gives the product metric, which
-`TauCeti.Geometry.Manifold.Riemannian.Prod` constructs as that case. Warped products are the
+`TauCeti.Geometry.Manifold.Riemannian.Prod.Basic` constructs as that case. Warped products are the
 standard models of rotationally symmetric metrics: the Euclidean metric away from the origin is
 `(0, ∞) ×_r S^(n-1)`, the round sphere minus two antipodal points is `(0, π) ×_(sin r) S^(n-1)`,
 and hyperbolic space minus a point is `(0, ∞) ×_(sinh r) S^(n-1)`.

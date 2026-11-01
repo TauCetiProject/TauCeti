@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Jet
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.CompTime
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Scalar curvature of a metric composed with a map of the time coordinate
@@ -93,7 +94,7 @@ theorem continuousAt_scalarCurvature_compTime_affine [I.Boundaryless] (q₀ : �
   set T := (extChartAt I x₀).target
   have hT : IsOpen T := isOpen_extChartAt_target x₀
   have htarget : (extChartAt (I.prod 𝓘(ℝ)) (x₀, (0 : ℝ))).target = T ×ˢ univ := by
-    rw [extChartAt_prod, PartialEquiv.prod_target, extChartAt_model_space_eq_id,
+    rw [TauCeti.extChartAt_prod_target, extChartAt_model_space_eq_id,
       PartialEquiv.refl_target]
   have hC : ContDiffOn ℝ ∞ C (T ×ˢ univ) :=
     htarget ▸ G.toNondegenerateMetric.contDiffOn_chartMetric (x₀, (0 : ℝ))

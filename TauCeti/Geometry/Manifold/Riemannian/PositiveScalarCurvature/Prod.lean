@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Topology
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Prod
+public import TauCeti.Geometry.Manifold.Riemannian.Prod.Topology
 public import Mathlib.Topology.Connected.PathConnected
 
 /-!
@@ -18,8 +18,8 @@ the product of metrics is jointly continuous in the chart C² topology
 counterparts of the product laws for positive scalar curvature.
 
 Isotopies, that is C²-continuous paths of metrics of positive scalar curvature, on two manifolds
-assemble into an isotopy on their product (`JoinedIn.prodTangentSpace`). Neither manifold needs to
-be compact.
+assemble into an isotopy on their product (`JoinedIn.prodTangentSpace`); the path on the second
+factor only needs nonnegative scalar curvature. Neither manifold needs to be compact.
 
 On compact manifolds, shrinking a factor of positive scalar curvature dominates the scalar
 curvature of a whole compact family of metrics on the other factor at once
@@ -51,15 +51,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
   {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace G N] [IsManifold J ∞ N]
 
-/-- Isotopies through metrics of positive scalar curvature assemble on products, with the given
-product metrics as their exact endpoints. -/
+/-- An isotopy through metrics of positive scalar curvature and a C²-continuous path through
+metrics of nonnegative scalar curvature assemble into an isotopy through metrics of positive scalar
+curvature on the product, with the given product metrics as its exact endpoints. -/
 theorem JoinedIn.prodTangentSpace [J.Boundaryless]
     {g₀ g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {h₀ h₁ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)}
     (hg : JoinedIn {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) |
       g.HasPositiveScalarCurvature} g₀ g₁)
     (hh : JoinedIn {h : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y) |
-      h.HasPositiveScalarCurvature} h₀ h₁) :
+      ∀ y, 0 ≤ h.scalarCurvature y} h₀ h₁) :
     JoinedIn {G : ContMDiffRiemannianMetric (I.prod J) ∞ (E × F)
         (fun p : M × N ↦ TangentSpace (I.prod J) p) | G.HasPositiveScalarCurvature}
       (g₀.prodTangentSpace h₀) (g₁.prodTangentSpace h₁) := by
@@ -67,8 +68,7 @@ theorem JoinedIn.prodTangentSpace [J.Boundaryless]
     (M := M) (N := N) 2 continuous_fst continuous_snd
   refine ((hg.prod hh).map hcont.continuousOn).mono ?_
   rintro _ ⟨⟨g, h⟩, ⟨hg, hh⟩, rfl⟩
-  exact hg.prodTangentSpace_of_nonneg fun y ↦
-    ((ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff h).1 hh y).le
+  exact hg.prodTangentSpace_of_nonneg hh
 
 variable [CompactSpace M] [CompactSpace N]
 
