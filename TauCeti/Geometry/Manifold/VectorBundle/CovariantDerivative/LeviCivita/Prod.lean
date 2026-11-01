@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
 
 /-!
@@ -20,7 +21,7 @@ factors (`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.P
 
 On product fields the Koszul expression of the product metric splits as a sum over the factors,
 
-`K((X₁, X₂), (Y₁, Y₂), (Z₁, Z₂))(x, y) = K(X₁, Y₁, Z₁)(x) + K(X₂, Y₂, Z₂)(y)`,
+`K((X₁, X₂), (Y₁, Y₂), (Z₁, Z₂))(x, y) = K(X₁, Y₁, Z₁)(x) + K(X₂, Y₂, Z₂)(y)`.
 
 The product metric is the warped product with constant warping function `1`
 (`TauCeti.Manifold.isWarpedProduct_one`), so these formulas are the case `f = 1` of the Koszul

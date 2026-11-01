@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Algebra.Structures
-public import TauCeti.Geometry.Manifold.Riemannian.Prod
+public import TauCeti.Analysis.LocallyConvex.Bounded
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Warped products of Riemannian manifolds
@@ -19,10 +21,11 @@ Given Riemannian manifolds `M` and `N` and a nowhere vanishing function `f : M �
 
 at `(x, y)`. The fibres `{x} × N` are copies of `N` rescaled by the constant `f(x)²`, the
 horizontal slices `M × {y}` are isometric copies of `M`, and the two are orthogonal. A constant
-warping function `f = 1` gives the product metric. Warped products are the standard models of
-rotationally symmetric metrics: the Euclidean metric away from the origin is `(0, ∞) ×_r S^(n-1)`,
-the round sphere minus two antipodal points is `(0, π) ×_(sin r) S^(n-1)`, and hyperbolic space
-minus a point is `(0, ∞) ×_(sinh r) S^(n-1)`.
+warping function `f = 1` gives the product metric, which
+`TauCeti.Geometry.Manifold.Riemannian.Prod` constructs as that case. Warped products are the
+standard models of rotationally symmetric metrics: the Euclidean metric away from the origin is
+`(0, ∞) ×_r S^(n-1)`, the round sphere minus two antipodal points is `(0, π) ×_(sin r) S^(n-1)`,
+and hyperbolic space minus a point is `(0, ∞) ×_(sinh r) S^(n-1)`.
 
 The predicate `TauCeti.Manifold.IsWarpedProduct I J N f` says that the Riemannian metric installed
 on `M × N` is the warped product of the metrics installed on the factors. Geometric quantities of a
@@ -42,8 +45,6 @@ that they apply both to the construction below and to any metric shown to have t
 ## Main results
 
 * `TauCeti.Manifold.isWarpedProduct_of_eq`: the warped product metric is a warped product.
-* `TauCeti.Manifold.isWarpedProduct_one`: the product metric is the warped product with warping
-  function `1`.
 * `TauCeti.Manifold.IsWarpedProduct.isContMDiffRiemannianBundle`: a warped product of `C^n`
   metrics with a nowhere vanishing `C^n` warping function is `C^n`.
 
@@ -277,11 +278,6 @@ theorem isWarpedProduct_of_eq [RiemannianBundle (fun p : M × N ↦ TangentSpace
     IsWarpedProduct I J N f :=
   -- The inner product of a fibre is by definition the installed metric `RiemannianBundle.g`.
   ⟨fun p v w ↦ congrArg (fun g : RiemannianMetric _ ↦ g.inner p v w) hg⟩
-
-open scoped TauCeti in
-/-- The product metric is the warped product with the constant warping function `1`. -/
-theorem isWarpedProduct_one : IsWarpedProduct I J N (fun _ : M ↦ (1 : ℝ)) :=
-  ⟨fun p v w ↦ by rw [inner_tangentSpace_prod, one_pow, one_mul]⟩
 
 variable [IsManifold I 1 M] [IsManifold J 1 N]
   [RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)]
