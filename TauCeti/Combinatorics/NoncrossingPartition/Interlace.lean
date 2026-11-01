@@ -26,9 +26,9 @@ interlaced positions none of whose parts meets both positions and bars is of thi
 (`Finpartition.exists_eq_interlace`), and `P`, `Q` are determined by it
 (`Finpartition.interlace_inj`).
 
-The pairs `{x, x̄}` of a position and the bar after it are the fibres of the projection of the
-interlaced positions to `s`. Pulling back along this projection, the join of `P.interlace Q` with
-these pairs is the partition into one part exactly when `P ⊔ Q` is
+The pairs `{(x, false), (x, true)}` of a position and the bar after it are the fibres of the
+projection of the interlaced positions to `s`. Pulling back along this projection, the join of
+`P.interlace Q` with these pairs is the partition into one part exactly when `P ⊔ Q` is
 (`TauCeti.NoncrossingPartition.interlace_sup_comap_bot_eq_top_iff`).
 
 These partitions index the moment–cumulant expansion of the alternating products
@@ -54,8 +54,8 @@ noncrossing partition of the `b`-letters below the Kreweras complement of `π`.
 * `Finpartition.isNoncrossing_interlace_iff` — `P.interlace Q` is noncrossing exactly when `P` and
   `Q` are noncrossing and `Q ≤ P.kreweras`.
 * `TauCeti.NoncrossingPartition.interlace_sup_comap_bot_eq_top_iff` — for noncrossing `P`, `Q`
-  with `P.interlace Q` noncrossing, its join with the pairs `{x, x̄}` is `1` exactly when
-  `P ⊔ Q = 1`.
+  with `P.interlace Q` noncrossing, its join with the pairs `{(x, false), (x, true)}` is `1`
+  exactly when `P ⊔ Q = 1`.
 
 ## References
 
@@ -361,9 +361,9 @@ namespace TauCeti.NoncrossingPartition
 
 variable {α : Type*} [LinearOrder α] {s : Finset α}
 
-/-- Joining the interlaced partition of `P` and `Q` with the pairs `{x, x̄}` of a position and the
-bar after it gives the partition of the interlaced positions into one part exactly when `P ⊔ Q` is
-the partition of `s` into one part. The pairs `{x, x̄}` are the fibres of the projection
+/-- Joining the interlaced partition of `P` and `Q` with the pairs `{(x, false), (x, true)}` of a
+position and the bar after it gives the partition of the interlaced positions into one part exactly
+when `P ⊔ Q` is the partition of `s` into one part. These pairs are the fibres of the projection
 `(x, b) ↦ x` from the interlaced positions to `s`. -/
 theorem interlace_sup_comap_bot_eq_top_iff {P Q : NoncrossingPartition s}
     (hPQ : (P.1.interlace Q.1).IsNoncrossing)

@@ -203,8 +203,8 @@ theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partit
   have hf : MonotoneOn (fun p : Fin n ×ₗ Bool => (ofLex p).1) (univ : Finset (Fin n)).interlace :=
     Prod.Lex.monotone_fst_ofLex.monotoneOn _
   -- Expand the cumulant of the products as a cumulant of the interlaced word `a₁, b₁, …, aₙ, bₙ`
-  -- with the letters grouped along the pairs `{k, k̄}`: a sum over the noncrossing partitions `σ`
-  -- of the interlaced positions whose join with these pairs is `1`.
+  -- with the letters grouped along the pairs `{(k, false), (k, true)}`: a sum over the noncrossing
+  -- partitions `σ` of the interlaced positions whose join with these pairs is `1`.
   have hL : freeCumulant φ (fun k => a k * b k) univ =
       ∑ σ : NoncrossingPartition (univ : Finset (Fin n)).interlace with
         σ ⊔ NoncrossingPartition.comap hf ⊥ = ⊤,
