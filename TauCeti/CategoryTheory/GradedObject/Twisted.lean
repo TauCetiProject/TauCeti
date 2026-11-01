@@ -25,8 +25,7 @@ and unitors. The intended example is `I = Additive G` and `C = ModuleCat k` for 
 category of `G`-graded vector spaces with associator twisted by `ω`, where on the one-dimensional
 objects `δ_g` concentrated in a single degree the associator is multiplication by `ω g h j`, and
 whose finite-dimensional, finitely supported objects form the pointed category `Vec^ω_G`. The
-instance does not yet apply there: it still needs an instance saying that tensoring on the right
-preserves colimits in `ModuleCat k`.
+instance applies there once tensoring on the right is known to preserve colimits in `ModuleCat k`.
 
 ## Main definitions
 
@@ -267,8 +266,8 @@ variable {R : Type*} [CommSemiring R] [Linear R C] [MonoidalPreadditive C] [Mono
   [HasTensor₄ObjExt X₁ X₂ X₃ X₄]
 
 include hω in
-/-- The pentagon axiom for the twisted associator, in terms of inverses: the scalars produced
-on the summand indexed by `(i₁, i₂, i₃, i₄)` by the two sides agree by the cocycle identity. -/
+/-- The pentagon axiom for the twisted associator, in terms of inverses, for `ω` satisfying the
+cocycle identity. -/
 @[reassoc]
 lemma twistedAssociator_pentagon_inv :
     tensorHom (𝟙 X₁) (twistedAssociator ω X₂ X₃ X₄).inv ≫
@@ -386,7 +385,7 @@ variable {I : Type*} [AddMonoid I] {R : Type*} [CommSemiring R]
 /-- The category of `I`-graded objects of `C`, with the monoidal structure whose associator is
 twisted by the normalized `3`-cocycle `c`. The intended example is `I = Additive G` and
 `C = ModuleCat k` for a field `k`, the category of `G`-graded vector spaces with associator twisted
-by `c`, although the monoidal instance there still needs tensoring on the right to preserve
+by `c`. The monoidal instance applies there once tensoring on the right is known to preserve
 colimits in `ModuleCat k`. -/
 @[expose]
 def TwistedGradedObject (_c : GradedObject.TwistingCocycle I R) (C : Type*) : Type _ :=
