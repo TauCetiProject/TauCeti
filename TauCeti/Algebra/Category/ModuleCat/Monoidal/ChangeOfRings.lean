@@ -71,6 +71,17 @@ noncomputable def extendScalarsCompTensorLeftIso (M : ModuleCat.{u} P) :
   (NatIso.ofComponents (fun X ↦ (tensorExtendScalarsLinearEquiv f M X).toModuleIso.symm)
     fun _ ↦ by apply MonoidalCategory.tensor_ext; intros; rfl).symm
 
+/-- The forward map of `extendScalarsCompTensorLeftIso` sends `m ⊗ (s ⊗ x)` to `(s • m) ⊗ x`. -/
+@[simp]
+theorem extendScalarsCompTensorLeftIso_hom_app_tmul (M : ModuleCat.{u} P) (X : ModuleCat.{u} A)
+    (m : M) (s : P) (x : X) :
+    (Hom.hom : ((restrictScalars f).obj (M ⊗ (extendScalars f).obj X) ⟶
+        (restrictScalars f).obj M ⊗ X) → _) ((extendScalarsCompTensorLeftIso f M).hom.app X)
+        (TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m (s ⊗ₜ[A, f] x)) =
+      TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) (s • m) x := by
+  unfold extendScalarsCompTensorLeftIso tensorExtendScalarsLinearEquiv
+  rfl
+
 /-- The inverse of `extendScalarsCompTensorLeftIso` sends `m ⊗ x` to `m ⊗ (1 ⊗ x)`. -/
 theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : ModuleCat.{u} A)
     (m : (restrictScalars f).obj M) (x : X) :
