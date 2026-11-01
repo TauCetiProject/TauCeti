@@ -767,14 +767,6 @@ namespace SimplePolygon
 
 attribute [instance] neZero
 
-/-- Two simple polygons with the same number of vertices are equal if and only if their underlying
-polygons are. -/
-theorem mk_eq_mk {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V]
-    [Module R V] [AddTorsor V P] {m : ℕ} [NeZero m] {q₁ q₂ : Polygon P m} (h₁ : q₁.IsSimple R)
-    (h₂ : q₂.IsSimple R) :
-    (⟨m, q₁, h₁⟩ : SimplePolygon R P) = ⟨m, q₂, h₂⟩ ↔ q₁ = q₂ := by
-  simp
-
 section Operations
 
 variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V]

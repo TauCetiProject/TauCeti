@@ -105,20 +105,12 @@ theorem insertVertex_apply (j : Fin (n + 1)) :
     simp only [Fin.val_succ] at hv
     split_ifs at hv <;> split_ifs <;> first | omega | (congr 1; ext; simp; omega)
 
-/-- The polygon `⋯ a y z x b ⋯` built by inserting `x`, then `y` before it, then `z` after `y`,
-is also built by inserting `y`, then `z` after it, then `x` after `z`. -/
-theorem insertVertex_insertVertex_insertVertex_middle (x y z : P) :
-    ((poly.insertVertex i x).insertVertex i.castSucc y).insertVertex i.castSucc.succ z =
-      ((poly.insertVertex i y).insertVertex i.succ z).insertVertex i.succ.succ x := by
-  refine congrArg Polygon.mk (funext fun j => ?_)
-  simp only [← insertVertex_vertices, insertVertex_apply, Fin.val_succ, Fin.val_castSucc]
-  split_ifs <;> first | rfl | omega
-
-/-- The polygon `⋯ a y w z b ⋯` built by inserting `y`, then `z` after it, then `w` between
-them, is also built by inserting `w`, then `z` after it, then `y` before `w`. -/
-theorem insertVertex_insertVertex_insertVertex_corner (y z w : P) :
-    ((poly.insertVertex i y).insertVertex i.succ z).insertVertex i.succ.castSucc w =
-      ((poly.insertVertex i w).insertVertex i.succ z).insertVertex i.castSucc.castSucc y := by
+/-- Inserting `x` after vertex `i` and then `y` between vertex `i` and `x` gives the same polygon
+as inserting `y` after vertex `i` and then `x` after `y`: both put `y, x` between vertex `i` and
+the next vertex. -/
+theorem insertVertex_insertVertex_castSucc (x y : P) :
+    (poly.insertVertex i x).insertVertex i.castSucc y =
+      (poly.insertVertex i y).insertVertex i.succ x := by
   refine congrArg Polygon.mk (funext fun j => ?_)
   simp only [← insertVertex_vertices, insertVertex_apply, Fin.val_succ, Fin.val_castSucc]
   split_ifs <;> first | rfl | omega

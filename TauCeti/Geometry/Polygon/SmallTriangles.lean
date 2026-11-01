@@ -70,6 +70,32 @@ open Set Function TauCeti
 
 namespace Polygon
 
+/-! ### Two ways to insert the same three vertices -/
+
+section Reindex
+
+variable {P : Type*} {n : ℕ}
+
+/-- The polygon `⋯ a y z x b ⋯` built by inserting `x`, then `y` before it, then `z` after `y`,
+is also built by inserting `y`, then `z` after it, then `x` after `z`. -/
+private theorem insertVertex_insertVertex_insertVertex_middle (poly : Polygon P n) (i : Fin n)
+    (x y z : P) :
+    ((poly.insertVertex i x).insertVertex i.castSucc y).insertVertex i.castSucc.succ z =
+      ((poly.insertVertex i y).insertVertex i.succ z).insertVertex i.succ.succ x := by
+  rw [insertVertex_insertVertex_castSucc, Fin.succ_castSucc, insertVertex_insertVertex_castSucc]
+
+/-- The polygon `⋯ a y w z b ⋯` built by inserting `y`, then `z` after it, then `w` between
+them, is also built by inserting `w`, then `z` after it, then `y` before `w`. -/
+private theorem insertVertex_insertVertex_insertVertex_corner (poly : Polygon P n) (i : Fin n)
+    (y z w : P) :
+    ((poly.insertVertex i y).insertVertex i.succ z).insertVertex i.succ.castSucc w =
+      ((poly.insertVertex i w).insertVertex i.succ z).insertVertex i.castSucc.castSucc y := by
+  refine congrArg Polygon.mk (funext fun j => ?_)
+  simp only [insertVertex_apply, Fin.val_succ, Fin.val_castSucc]
+  split_ifs <;> first | rfl | omega
+
+end Reindex
+
 /-! ### The sides of the midpoint subdivision in the plane of a triangle -/
 
 section Chart
@@ -325,6 +351,13 @@ private theorem IsDeltaMove.isDeltaMove_corner_a (h : poly.IsDeltaMove ℝ i c) 
   rw [affineSegment_ab_b_eq_image (c := c), ← image_inter hφ]
   exact image_mono inter_one_ab_b
 
+/-- The triangle of the first move is `a m_ab m_ac`. -/
+private theorem IsDeltaMove.isDeltaMove_corner_a_triangle_points (h : poly.IsDeltaMove ℝ i c) :
+    h.isDeltaMove_corner_a.triangle.points =
+      ![poly i, midpoint ℝ (poly i) (poly (finRotate n i)), midpoint ℝ (poly i) c] := by
+  rw [IsDeltaMove.triangle_points, insertVertex_apply_castSucc_self, Fin.finRotate_castSucc,
+    insertVertex_apply_succ_self]
+
 /-- Second move: across the middle triangle `m_ac m_ab m_cb`. -/
 private theorem IsDeltaMove.isDeltaMove_middle (h : poly.IsDeltaMove ℝ i c) :
     ((poly.insertVertex i (midpoint ℝ (poly i) (poly (finRotate n i)))).insertVertex i.castSucc
@@ -346,6 +379,13 @@ private theorem IsDeltaMove.isDeltaMove_middle (h : poly.IsDeltaMove ℝ i c) :
   exact ⟨⟨h.iUnion_edgeSet_inter_image_subset (convexHull_subset_standard (by simp) (by simp)
     (by simp)) (fun ha => (a_notMem_two ha).elim) (fun hb => (b_notMem_two hb).elim),
     image_mono inter_two_ab_b⟩, image_mono inter_two_a_ac⟩
+
+/-- The triangle of the second move is `m_ac m_ab m_cb`. -/
+private theorem IsDeltaMove.isDeltaMove_middle_triangle_points (h : poly.IsDeltaMove ℝ i c) :
+    h.isDeltaMove_middle.triangle.points = ![midpoint ℝ (poly i) c,
+      midpoint ℝ (poly i) (poly (finRotate n i)), midpoint ℝ c (poly (finRotate n i))] := by
+  rw [IsDeltaMove.triangle_points, insertVertex_apply_succ_self,
+    insertVertex_apply_finRotate_succ_self, Fin.finRotate_castSucc, insertVertex_apply_succ_self]
 
 /-- Third move, read backwards: across the corner triangle `m_cb b m_ab`, from the polygon
 `⋯ a m_ac m_cb b ⋯`. -/
@@ -371,6 +411,13 @@ private theorem IsDeltaMove.isDeltaMove_corner_b (h : poly.IsDeltaMove ℝ i c) 
     (fun _ => ⟨(1, 0), by simp, triangleChart_apply_one_zero _ _ _⟩),
     image_mono inter_three_a_ac⟩, image_mono inter_three_ac_cb⟩
 
+/-- The triangle of the third move is `m_cb b m_ab`. -/
+private theorem IsDeltaMove.isDeltaMove_corner_b_triangle_points (h : poly.IsDeltaMove ℝ i c) :
+    h.isDeltaMove_corner_b.triangle.points = ![midpoint ℝ c (poly (finRotate n i)),
+      poly (finRotate n i), midpoint ℝ (poly i) (poly (finRotate n i))] := by
+  rw [IsDeltaMove.triangle_points, insertVertex_apply_succ_self,
+    insertVertex_apply_finRotate_succ_self, insertVertex_apply_finRotate_succ_self]
+
 /-- Fourth move: across the corner triangle `m_ac m_cb c`, from the polygon
 `⋯ a m_ac m_cb b ⋯`. -/
 private theorem IsDeltaMove.isDeltaMove_corner_c (h : poly.IsDeltaMove ℝ i c) :
@@ -392,6 +439,13 @@ private theorem IsDeltaMove.isDeltaMove_corner_c (h : poly.IsDeltaMove ℝ i c) 
   exact ⟨⟨h.iUnion_edgeSet_inter_image_subset (convexHull_subset_standard (by simp) (by simp)
     (by simp)) (fun ha => (a_notMem_four ha).elim) (fun hb => (b_notMem_four hb).elim),
     image_mono inter_four_a_ac⟩, image_mono inter_four_cb_b⟩
+
+/-- The triangle of the fourth move is `m_ac m_cb c`. -/
+private theorem IsDeltaMove.isDeltaMove_corner_c_triangle_points (h : poly.IsDeltaMove ℝ i c) :
+    h.isDeltaMove_corner_c.triangle.points =
+      ![midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i)), c] := by
+  rw [IsDeltaMove.triangle_points, insertVertex_apply_castSucc_self, insertVertex_apply_succ_self,
+    Fin.finRotate_castSucc, insertVertex_apply_succ_self]
 
 end Steps
 
@@ -467,6 +521,51 @@ open Polygon
 variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpace P]
   [NormedAddTorsor V P]
 
+/-- The Δ-move on the simple polygon with underlying polygon `q` is the simple polygon with
+underlying polygon `q'`, for any `q'` equal to the inserted polygon. -/
+private theorem deltaMove_mk_eq {m : ℕ} [NeZero m] {q : Polygon P m} (hq : q.IsSimple ℝ)
+    {j : Fin m} {x : P} (h' : q.IsDeltaMove ℝ j x) {q' : Polygon P (m + 1)}
+    (hq' : q'.IsSimple ℝ) (e : q.insertVertex j x = q') :
+    SimplePolygon.deltaMove ⟨m, q, hq⟩ j x h' = ⟨m + 1, q', hq'⟩ := by
+  subst e
+  rfl
+
+/-- The subdivision of the simple polygon with underlying polygon `q` is the simple polygon with
+underlying polygon `q'`, for any `q'` equal to the inserted polygon. -/
+private theorem insertVertex_mk_eq {m : ℕ} [NeZero m] {q : Polygon P m} (hq : q.IsSimple ℝ)
+    (j : Fin m) (x : P) (hx : (q.insertVertex j x).IsSimple ℝ) {q' : Polygon P (m + 1)}
+    (hq' : q'.IsSimple ℝ) (e : q.insertVertex j x = q') :
+    SimplePolygon.insertVertex ⟨m, q, hq⟩ j x hx = ⟨m + 1, q', hq'⟩ := by
+  subst e
+  rfl
+
+/-- One Δ-move of the midpoint subdivision of the triangle of `h`: a Δ-move across a triangle
+whose vertices are among the vertices and midpoints of the sides of the triangle of `h`, and whose
+sides are at most `δ`, is in the equivalence relation generated by `r` when `hΔ` provides the
+Δ-moves across such triangles. -/
+private theorem eqvGen_deltaMove_of_mem_midpoints
+    {r : SimplePolygon ℝ P → SimplePolygon ℝ P → Prop} {n : ℕ} {poly : Polygon P n} {i : Fin n}
+    {c : P} (h : poly.IsDeltaMove ℝ i c) {δ : ℝ}
+    (hΔ : ∀ (q : SimplePolygon ℝ P) (j : Fin q.numVertices) (x : P)
+      (h' : q.toPolygon.IsDeltaMove ℝ j x),
+      h'.triangle.closedInterior ⊆ h.triangle.closedInterior →
+        (∀ k l, dist (h'.triangle.points k) (h'.triangle.points l) ≤ δ) →
+          Relation.EqvGen r q (q.deltaMove j x h'))
+    {m : ℕ} [NeZero m] {q : Polygon P m} (hq : q.IsSimple ℝ) {j : Fin m} {w : P}
+    (h' : q.IsDeltaMove ℝ j w) {q' : Polygon P (m + 1)} (hq' : q'.IsSimple ℝ)
+    (e : q.insertVertex j w = q') {x y z : P} (ht : h'.triangle.points = ![x, y, z])
+    (hx : x ∈ ({poly i, poly (finRotate n i), c, midpoint ℝ (poly i) (poly (finRotate n i)),
+      midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i))} : Set P))
+    (hy : y ∈ ({poly i, poly (finRotate n i), c, midpoint ℝ (poly i) (poly (finRotate n i)),
+      midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i))} : Set P))
+    (hz : z ∈ ({poly i, poly (finRotate n i), c, midpoint ℝ (poly i) (poly (finRotate n i)),
+      midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i))} : Set P))
+    (hδ : 0 ≤ δ) (hxy : dist x y ≤ δ) (hxz : dist x z ≤ δ) (hyz : dist y z ≤ δ) :
+    Relation.EqvGen r ⟨m, q, hq⟩ ⟨m + 1, q', hq'⟩ := by
+  rw [← deltaMove_mk_eq hq h' hq' e]
+  exact hΔ ⟨m, q, hq⟩ j w h' (h.closedInterior_subset ht hx hy hz)
+    (Affine.Triangle.dist_points_le ht hδ hxy hxz hyz)
+
 /-- **One midpoint subdivision.** A Δ-move whose triangle has sides at most `2 * δ` is in the
 equivalence relation generated by `r`, as soon as that equivalence relation contains the
 subdivisions of edges at points of the triangle and the Δ-moves across triangles inside it with
@@ -484,9 +583,10 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
         (∀ k l, dist (h'.triangle.points k) (h'.triangle.points l) ≤ δ) →
           Relation.EqvGen r q (q.deltaMove j x h')) :
     Relation.EqvGen r ⟨n, poly, hp⟩ (SimplePolygon.deltaMove ⟨n, poly, hp⟩ i c h) := by
-  -- Following the module docstring, the polygons `p₁, …, p₇` below lead from `⋯ a b ⋯` to
-  -- `⋯ a c b ⋯` through the four triangles of the midpoint subdivision of `abc`; consecutive
-  -- ones are related by a subdivision or a Δ-move, in one direction or the other.
+  -- Following the module docstring, the simple polygons `⟨_, _, hs₁⟩, …, ⟨_, _, hs₇⟩` below lead
+  -- from `⋯ a b ⋯` to `⋯ a c b ⋯` through the four triangles of the midpoint subdivision of
+  -- `abc`; consecutive ones are related by a subdivision or a Δ-move, in one direction or the
+  -- other.
   have E := Relation.EqvGen.is_equivalence r
   -- The sides of the triangle `abc` of the move are at most `2 * δ`.
   have hpts := h.triangle_points
@@ -506,87 +606,63 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
   have hs₁ : (poly.insertVertex i (midpoint ℝ (poly i) (poly (finRotate n i)))).IsSimple ℝ := by
     have := hp.insertVertex_edgePath i (s := (1 / 2 : ℝ)) ⟨by norm_num, by norm_num⟩
     rwa [edgePath, lineMap_one_half] at this
-  let p₁ := (⟨n, poly, hp⟩ : SimplePolygon ℝ P).insertVertex i _ hs₁
-  let p₂ := p₁.deltaMove i.castSucc _ h₁
-  let p₃ := p₂.deltaMove i.castSucc.succ _ h₂
-  -- The polygon `⋯ a m_ac m_cb b ⋯`, to which the third move adds `m_ab`.
+  have hs₂ := h₁.isSimple_insertVertex hs₁
+  have hs₃ := h₂.isSimple_insertVertex hs₂
+  -- The polygon `⋯ a m_ac m_cb b ⋯`, to which the third move adds `m_ab`, and the polygon
+  -- `⋯ a m_ac c m_cb b ⋯` given by the fourth move.
   have e₃ := insertVertex_insertVertex_insertVertex_middle poly i
     (midpoint ℝ (poly i) (poly (finRotate n i))) (midpoint ℝ (poly i) c)
     (midpoint ℝ c (poly (finRotate n i)))
-  have hs₄ := h₃.isSimple_of_isSimple_insertVertex (e₃ ▸ p₃.isSimple)
-  let p₄ : SimplePolygon ℝ P := ⟨n + 1 + 1, _, hs₄⟩
-  let p₅ := p₄.deltaMove i.succ.castSucc c h₄
-  -- The polygons `⋯ a c b ⋯` and `⋯ a c m_cb b ⋯`; subdividing `[a, c]` at `m_ac` gives `p₅`.
-  let p₇ := (⟨n, poly, hp⟩ : SimplePolygon ℝ P).deltaMove i c h
+  have hs₄ := h₃.isSimple_of_isSimple_insertVertex (e₃ ▸ hs₃)
+  have hs₅ := h₄.isSimple_insertVertex hs₄
+  -- The polygons `⋯ a c b ⋯` and `⋯ a c m_cb b ⋯`; subdividing `[a, c]` at `m_ac` gives
+  -- `⋯ a m_ac c m_cb b ⋯` again.
+  have hs₇ := h.isSimple_insertVertex hp
   have hs₆ : ((poly.insertVertex i c).insertVertex i.succ
       (midpoint ℝ c (poly (finRotate n i)))).IsSimple ℝ := by
-    have := (h.isSimple_insertVertex hp).insertVertex_edgePath i.succ (s := (1 / 2 : ℝ))
-      ⟨by norm_num, by norm_num⟩
+    have := hs₇.insertVertex_edgePath i.succ (s := (1 / 2 : ℝ)) ⟨by norm_num, by norm_num⟩
     rwa [edgePath_insertVertex_succ_self, lineMap_one_half] at this
-  let p₆ := p₇.insertVertex i.succ _ hs₆
   have e₅ := insertVertex_insertVertex_insertVertex_corner poly i (midpoint ℝ (poly i) c)
     (midpoint ℝ c (poly (finRotate n i))) c
-  have hs₅ : (((poly.insertVertex i c).insertVertex i.succ
-      (midpoint ℝ c (poly (finRotate n i)))).insertVertex i.castSucc.castSucc
-        (midpoint ℝ (poly i) c)).IsSimple ℝ := by
-    rw [← e₅]
-    exact p₅.isSimple
   -- Subdivide `[a, b]` at `m_ab`.
-  have c₁ : Relation.EqvGen r ⟨n, poly, hp⟩ p₁ := by
+  have c₁ : Relation.EqvGen r ⟨n, poly, hp⟩ ⟨_, _, hs₁⟩ := by
     have hm := h.triangleChart_mem_closedInterior (X := (1 / 2, 0)) (by simp)
     rw [triangleChart_apply_half_zero] at hm
     have hmem : midpoint ℝ (poly i) (poly (finRotate n i)) ∈ poly.edgeSet ℝ i := by
       rw [edgeSet]
       exact wbtw_midpoint ℝ _ _
+    rw [← insertVertex_mk_eq hp i _ hs₁ hs₁ rfl]
     exact hsub ⟨n, poly, hp⟩ i _ hmem hm hs₁
   -- The Δ-move across `a m_ab m_ac`.
-  have c₂ : Relation.EqvGen r p₁ p₂ := by
-    have ht : h₁.triangle.points = ![poly i, midpoint ℝ (poly i) (poly (finRotate n i)),
-        midpoint ℝ (poly i) c] := by
-      rw [IsDeltaMove.triangle_points, insertVertex_apply_castSucc_self, Fin.finRotate_castSucc,
-        insertVertex_apply_succ_self]
-    exact hΔ p₁ _ _ h₁ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (Affine.Triangle.dist_points_le ht hδ₀ ((dist_left_midpoint _ _).trans_le (half_mul_le hab))
-        ((dist_left_midpoint _ _).trans_le (half_mul_le hac))
-        ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le (by rwa [dist_comm]))))
+  have c₂ : Relation.EqvGen r ⟨_, _, hs₁⟩ ⟨_, _, hs₂⟩ :=
+    eqvGen_deltaMove_of_mem_midpoints h hΔ hs₁ h₁ hs₂ rfl h.isDeltaMove_corner_a_triangle_points
+      (by simp) (by simp) (by simp) hδ₀ ((dist_left_midpoint _ _).trans_le (half_mul_le hab))
+      ((dist_left_midpoint _ _).trans_le (half_mul_le hac))
+      ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le (by rwa [dist_comm])))
   -- The Δ-move across `m_ac m_ab m_cb`.
-  have c₃ : Relation.EqvGen r p₂ p₃ := by
-    have ht : h₂.triangle.points = ![midpoint ℝ (poly i) c,
-        midpoint ℝ (poly i) (poly (finRotate n i)), midpoint ℝ c (poly (finRotate n i))] := by
-      rw [IsDeltaMove.triangle_points, insertVertex_apply_succ_self,
-        insertVertex_apply_finRotate_succ_self, Fin.finRotate_castSucc,
-        insertVertex_apply_succ_self]
-    exact hΔ p₂ _ _ h₂ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (Affine.Triangle.dist_points_le ht hδ₀
-        ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le hcb)) hac_cb
-        ((dist_midpoint_midpoint_same_right _ _ _).trans_le (half_mul_le hac)))
-  -- The Δ-move across `m_cb b m_ab`, read backwards from `p₃`.
-  have c₄ : Relation.EqvGen r p₄ p₃ := by
-    have ht : h₃.triangle.points = ![midpoint ℝ c (poly (finRotate n i)), poly (finRotate n i),
-        midpoint ℝ (poly i) (poly (finRotate n i))] := by
-      rw [IsDeltaMove.triangle_points, insertVertex_apply_succ_self,
-        insertVertex_apply_finRotate_succ_self, insertVertex_apply_finRotate_succ_self]
+  have c₃ : Relation.EqvGen r ⟨_, _, hs₂⟩ ⟨_, _, hs₃⟩ :=
+    eqvGen_deltaMove_of_mem_midpoints h hΔ hs₂ h₂ hs₃ rfl h.isDeltaMove_middle_triangle_points
+      (by simp) (by simp) (by simp) hδ₀
+      ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le hcb)) hac_cb
+      ((dist_midpoint_midpoint_same_right _ _ _).trans_le (half_mul_le hac))
+  -- The Δ-move across `m_cb b m_ab`, read backwards from `⋯ a m_ac m_cb m_ab b ⋯`.
+  have c₄ : Relation.EqvGen r ⟨_, _, hs₄⟩ ⟨_, _, hs₃⟩ := by
     have hmid : dist (midpoint ℝ c (poly (finRotate n i)))
         (midpoint ℝ (poly i) (poly (finRotate n i))) ≤ δ := by
       rw [dist_midpoint_midpoint_same_right]
       exact half_mul_le (by rwa [dist_comm])
-    have hr := hΔ p₄ _ _ h₃ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (Affine.Triangle.dist_points_le ht hδ₀
-        ((dist_midpoint_right _ _).trans_le (half_mul_le hcb)) hmid
-        ((dist_right_midpoint _ _).trans_le (half_mul_le hab)))
-    rwa [show p₄.deltaMove i.succ.succ _ h₃ = p₃ from (mk_eq_mk _ _).2 e₃.symm] at hr
+    exact eqvGen_deltaMove_of_mem_midpoints h hΔ hs₄ h₃ hs₃ e₃.symm
+      h.isDeltaMove_corner_b_triangle_points (by simp) (by simp) (by simp) hδ₀
+      ((dist_midpoint_right _ _).trans_le (half_mul_le hcb)) hmid
+      ((dist_right_midpoint _ _).trans_le (half_mul_le hab))
   -- The Δ-move across `m_ac m_cb c`.
-  have c₅ : Relation.EqvGen r p₄ p₅ := by
-    have ht : h₄.triangle.points = ![midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i)),
-        c] := by
-      rw [IsDeltaMove.triangle_points, insertVertex_apply_castSucc_self,
-        insertVertex_apply_succ_self, Fin.finRotate_castSucc, insertVertex_apply_succ_self]
-    exact hΔ p₄ _ _ h₄ (h.closedInterior_subset ht (by simp) (by simp) (by simp))
-      (Affine.Triangle.dist_points_le ht hδ₀ hac_cb
-        ((dist_midpoint_right _ _).trans_le (half_mul_le hac))
-        ((dist_midpoint_left _ _).trans_le (half_mul_le hcb)))
-  -- Subdividing `[a, c]` at `m_ac` gives `p₅` back from `p₆`.
-  have c₆ : Relation.EqvGen r p₆ p₅ := by
+  have c₅ : Relation.EqvGen r ⟨_, _, hs₄⟩ ⟨_, _, hs₅⟩ :=
+    eqvGen_deltaMove_of_mem_midpoints h hΔ hs₄ h₄ hs₅ rfl h.isDeltaMove_corner_c_triangle_points
+      (by simp) (by simp) (by simp) hδ₀ hac_cb
+      ((dist_midpoint_right _ _).trans_le (half_mul_le hac))
+      ((dist_midpoint_left _ _).trans_le (half_mul_le hcb))
+  -- Subdividing `[a, c]` at `m_ac` gives `⋯ a m_ac c m_cb b ⋯` back from `⋯ a c m_cb b ⋯`.
+  have c₆ : Relation.EqvGen r ⟨_, _, hs₆⟩ ⟨_, _, hs₅⟩ := by
     have hidx : i.castSucc.castSucc = i.succ.succ.succAbove i.castSucc :=
       (Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def])).symm
     have hmem : midpoint ℝ (poly i) c ∈ ((poly.insertVertex i c).insertVertex i.succ
@@ -596,16 +672,18 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
       exact wbtw_midpoint ℝ _ _
     have hm := h.triangleChart_mem_closedInterior (X := (0, 1 / 2)) (by simp)
     rw [triangleChart_apply_zero_half] at hm
-    have hr := hsub p₆ _ _ hmem hm hs₅
-    rwa [show p₆.insertVertex i.castSucc.castSucc _ hs₅ = p₅ from (mk_eq_mk _ _).2 e₅.symm] at hr
-  -- Subdividing `[c, b]` at `m_cb` gives `p₆` from `p₇`.
-  have c₇ : Relation.EqvGen r p₇ p₆ := by
+    rw [← insertVertex_mk_eq hs₆ _ _ (e₅ ▸ hs₅) hs₅ e₅.symm]
+    exact hsub ⟨_, _, hs₆⟩ _ _ hmem hm _
+  -- Subdividing `[c, b]` at `m_cb` gives `⋯ a c m_cb b ⋯` from `⋯ a c b ⋯`.
+  have c₇ : Relation.EqvGen r ⟨_, _, hs₇⟩ ⟨_, _, hs₆⟩ := by
     have hm := h.triangleChart_mem_closedInterior (X := (1 / 2, 1 / 2)) (by simp)
     rw [triangleChart_apply_half_half] at hm
     have hmem : midpoint ℝ c (poly (finRotate n i)) ∈ (poly.insertVertex i c).edgeSet ℝ i.succ := by
       rw [edgeSet_insertVertex_succ_self]
       exact wbtw_midpoint ℝ _ _
-    exact hsub p₇ i.succ _ hmem hm hs₆
+    rw [← insertVertex_mk_eq hs₇ _ _ hs₆ hs₆ rfl]
+    exact hsub ⟨_, _, hs₇⟩ i.succ _ hmem hm hs₆
+  rw [deltaMove_mk_eq hp h hs₇ rfl]
   exact E.trans c₁ (E.trans c₂ (E.trans c₃ (E.trans (E.symm c₄)
     (E.trans c₅ (E.trans (E.symm c₆) (E.symm c₇))))))
 
