@@ -97,21 +97,29 @@ private theorem mixed_sign_walking_hyperbolic {a : ℤ_[2]} (ha : IsUnit a) :
     exact isUnit_five_padicInt.mul ha
   have hfirst : (toBilin' !![a, 0, 0; 0, 0, 2; 0, 2, 0]).Equivalent
       (toBilin' !![5 * a, 0, 0; 0, 4 * a, 6 * a; 0, 6 * a, 4 * a]) := by
-    refine .symm ⟨⟨P.toLinearEquiv' (P.invertibleOfIsUnitDet hP), fun x y ↦ ?_⟩⟩
-    simp [Matrix.toLinearEquiv'_apply, Matrix.toLin'_apply, P, toBilin'_apply',
-      dotProduct, mulVec, Fin.sum_univ_three]
-    ring
+    have hmatrix : Pᵀ * !![a, 0, 0; 0, 0, 2; 0, 2, 0] * P =
+        !![5 * a, 0, 0; 0, 4 * a, 6 * a; 0, 6 * a, 4 * a] := by
+      apply Matrix.ext
+      intro i j
+      fin_cases i <;> fin_cases j <;> simp [P, mul_apply, Fin.sum_univ_three] <;> ring
+    rw [← hmatrix, ← toBilin'_comp,
+      ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
+    exact ⟨(toBilin' _).isometryEquivOfCompLinearEquiv _⟩
   obtain ⟨e⟩ := mixed_sign_walking_binary ha
   -- Split off the first coordinate and apply the binary isometry to the remaining two.
   let split : (Fin 3 → ℤ_[2]) ≃ₗ[ℤ_[2]] ℤ_[2] × (Fin 2 → ℤ_[2]) :=
     (LinearEquiv.piCongrLeft ℤ_[2] (fun _ ↦ ℤ_[2]) (finSuccEquiv 2)) ≪≫ₗ
       LinearEquiv.piOptionEquivProd ℤ_[2]
   let f := split ≪≫ₗ (LinearEquiv.refl ℤ_[2] ℤ_[2]).prodCongr e.toLinearEquiv ≪≫ₗ split.symm
+  have hf (x : Fin 3 → ℤ_[2]) : f x = Matrix.vecCons (x 0) (e (Fin.tail x)) := by
+    funext i
+    refine Fin.cases ?_ (fun i ↦ ?_) i <;>
+      simp [f, split, LinearEquiv.piCongrLeft, LinearEquiv.piCongrLeft',
+        LinearEquiv.piOptionEquivProd, Equiv.piCongrLeft', Equiv.piOptionEquivProd]
+    rfl
   refine hfirst.trans ⟨⟨f, fun x y ↦ ?_⟩⟩
   have he := e.map_app (Fin.tail y) (Fin.tail x)
-  -- Expose the coordinate map of the local equivalence to compare its binary block with `he`.
-  change toBilin' !![5 * a, 0, 0; 0, 4, 2; 0, 2, 4]
-      (Matrix.vecCons (x 0) (e (Fin.tail x))) (Matrix.vecCons (y 0) (e (Fin.tail y))) = _
+  simp only [LinearMap.coe_toAddHom, AddHom.toFun_eq_coe, LinearEquiv.coe_coe, hf]
   simp [toBilin'_apply', dotProduct, mulVec, Fin.sum_univ_two, Fin.sum_univ_three,
     Fin.tail, -LinearMap.BilinForm.IsometryEquiv.map_app] at he ⊢
   linear_combination 2 * he
@@ -125,10 +133,15 @@ private theorem mixed_sign_walking_anisotropic {a : ℤ_[2]} (ha : IsUnit a) :
     simpa [P, det_diagonal, Fin.prod_univ_three] using isUnit_five_padicInt
   have hscale : (toBilin' !![a, 0, 0; 0, 4, 2; 0, 2, 4]).Equivalent
       (toBilin' !![5 * (5 * a), 0, 0; 0, 4, 2; 0, 2, 4]) := by
-    refine .symm ⟨⟨P.toLinearEquiv' (P.invertibleOfIsUnitDet hP), fun x y ↦ ?_⟩⟩
-    simp [Matrix.toLinearEquiv'_apply, Matrix.toLin'_apply, P, toBilin'_apply',
-      dotProduct, mulVec, Fin.sum_univ_three]
-    ring
+    have hmatrix : Pᵀ * !![a, 0, 0; 0, 4, 2; 0, 2, 4] * P =
+        !![5 * (5 * a), 0, 0; 0, 4, 2; 0, 2, 4] := by
+      apply Matrix.ext
+      intro i j
+      fin_cases i <;> fin_cases j <;> simp [P, mul_apply, Fin.sum_univ_three]
+      ring
+    rw [← hmatrix, ← toBilin'_comp,
+      ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
+    exact ⟨(toBilin' _).isometryEquivOfCompLinearEquiv _⟩
   exact hscale.trans h.symm
 
 /-- **Mixed-type sign walking, with the hyperbolic even plane.** At adjacent scales
