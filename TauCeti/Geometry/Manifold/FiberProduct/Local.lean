@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Equation
 public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
@@ -21,15 +22,15 @@ coordinate patch `φ` gives an embedded manifold on the actual subtype
 its dimension is `dim X + dim Y - dim N`. Its tangent image consists exactly of pairs of
 vectors with equal images under `df` and `dg`.
 
-`PartialDiffeomorph.exists_localFiberProduct_smoothEmbedding` constructs this structure by
-applying the regular-level theorem to the coordinate-difference equation on the open subset
-where both maps take values in `φ.source`. This local construction allows fibre-product charts
-to be glued over different target-coordinate patches. No Hausdorff or countability hypotheses
-are used, and the local fibre product may be empty.
+`PartialDiffeomorph.exists_isManifold_localFiberProduct_isSmoothEmbedding` constructs this
+structure by applying the regular-level theorem to the coordinate-difference equation on the
+open subset where both maps take values in `φ.source`. This local construction allows
+fibre-product charts to be glued over different target-coordinate patches. No Hausdorff or
+countability hypotheses are used, and the local fibre product may be empty.
 
-The smooth universal property is supplied by the returned immersion and Mathlib's
-`ContMDiff.iff_comp_isImmersion`: a map to this subtype is smooth exactly when its composite
-with the inclusion into `X × Y` is smooth, equivalently when both its components are smooth.
+The smooth universal property is supplied by the returned embedding and
+`Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: a map to this subtype is smooth exactly when
+its composite with the inclusion into `X × Y` is smooth.
 
 ## References
 
@@ -121,8 +122,8 @@ The topology is the inherited subspace topology, the model dimension is
 images. Transversality is required only at equal-value pairs in the chosen patch.
 
 The returned smooth embedding also gives the smooth universal property through
-`ContMDiff.iff_comp_isImmersion` and continuity of subtype-valued maps. -/
-theorem exists_localFiberProduct_smoothEmbedding
+`Manifold.IsSmoothEmbedding.contMDiff_iff_comp`, without a separate continuity hypothesis. -/
+theorem exists_isManifold_localFiberProduct_isSmoothEmbedding
     (htrans : ∀ p : X × Y, f p.1 = g p.2 → f p.1 ∈ φ.source →
       (mfderiv IX IN f p.1).range ⊔
         (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
