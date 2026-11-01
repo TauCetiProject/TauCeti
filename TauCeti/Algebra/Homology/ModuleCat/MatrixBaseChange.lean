@@ -115,6 +115,7 @@ variable {C c} {K L : Type*} [Field K] [Field L] (φ : A →+* K) (ψ : K →+* 
 
 /-- The coordinate base changes of `C` along `φ` and along `ψ ∘ φ`, for a homomorphism of fields
 `ψ : K →+* L`, are acyclic together. -/
+@[simp]
 theorem acyclic_matrixBaseChange_comp_iff :
     (C.matrixBaseChange c (ψ.comp φ)).Acyclic ↔ (C.matrixBaseChange c φ).Acyclic :=
   acyclic_iff_of_toMatrix_eq (e := C.matrixBaseChangeBasis c _)
@@ -125,6 +126,7 @@ theorem acyclic_matrixBaseChange_comp_iff :
 
 /-- The coordinate base change of a based complex `C` over a field `F` along the identity of `F`
 is acyclic exactly when `C` is. -/
+@[simp]
 theorem acyclic_matrixBaseChange_id_iff {F : Type*} [Field F] {C : ChainComplex (ModuleCat F) ℤ}
     {c : ∀ i, Basis (Fin (n i)) F (C.X i)} :
     (C.matrixBaseChange c (RingHom.id F)).Acyclic ↔ C.Acyclic :=
