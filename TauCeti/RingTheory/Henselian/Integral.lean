@@ -9,7 +9,11 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.RingTheory.Henselian.Idempotent
 import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.IntegralClosure.Algebra.Ideal
+import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
+import TauCeti.Algebra.Polynomial.AlgebraMap
+import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Henselian.Factorization
+import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Idempotents of integral algebras over a Henselian pair
@@ -19,8 +23,9 @@ one. Then every idempotent of `S ⧸ IS` lifts to an idempotent of `S`
 (`TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral`), and the lift is
 unique, so reduction modulo `IS` is a bijection on idempotents. Conversely, if `I` lies in the
 Jacobson radical and idempotents lift along `I` in every finite `R`-algebra, then `(R, I)` is
-Henselian. This characterises Henselian pairs by their finite algebras, and it shows that `(S, IS)`
-is again a Henselian pair for every integral `R`-algebra `S`.
+Henselian. This characterises Henselian pairs by their finite algebras, and by their integral
+algebras, and it shows that `(S, IS)` is again a Henselian pair for every integral `R`-algebra
+`S`.
 
 ## Main results
 
@@ -28,13 +33,17 @@ is again a Henselian pair for every integral `R`-algebra `S`.
   pair `(R, I)`, idempotents of `S ⧸ IS` lift to `S` for every integral `R`-algebra `S`.
 * `TauCeti.HenselianRing.bijOn_quotient_mk_map_isIdempotentElem`: reduction modulo `IS` is a
   bijection on idempotents.
-* `TauCeti.henselianRing_of_forall_adjoinRoot`: a pair `(R, I)` with `I` in the Jacobson radical
-  is Henselian if idempotents lift along `I` in `R[X]/(f)` for every monic `f`.
-* `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem`: `(R, I)` is Henselian if and only if
-  reduction modulo `IS` is a bijection on idempotents for every finite `R`-algebra `S` in the
-  universe of `R`.
-* `TauCeti.HenselianRing.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an
-  integral `R`-algebra, then `(S, IS)` is Henselian.
+* `TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot`: a pair `(R, I)` with `I`
+  in the Jacobson radical is Henselian if idempotents lift along `I` in `R[X]/(f)` for every
+  monic `f`.
+* `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
+  `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
+  if and only if reduction modulo `IS` is a bijection on idempotents for every finite, or every
+  integral, `R`-algebra `S` in the universe of `R`.
+* `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
+  `R`-algebra, then `(S, IS)` is Henselian.
+* `TauCeti.henselianRing_iff_forall_henselianRing_map_of_isIntegral`: `(R, I)` is Henselian if and
+  only if `(S, IS)` is Henselian for every integral `R`-algebra `S` in the universe of `R`.
 
 ## Implementation notes
 
@@ -69,8 +78,36 @@ namespace TauCeti
 
 namespace HenselianRing
 
-variable {R : Type*} [CommRing R] (I : Ideal R) [HenselianRing R I]
-  {S : Type*} [CommRing S] [Algebra R S] [Algebra.IsIntegral R S]
+variable {R : Type*} [CommRing R] (I : Ideal R)
+  {S : Type*} [CommRing S] [Algebra R S]
+
+/-- Let `a g + b h = 1` over `R` with `g ≡ Xᵈ⁺¹` and `h ≡ (X - 1)ᵈ⁺¹` modulo `I`, and let `s` be
+idempotent modulo `IS`. Then `a(s) g(s) ≡ s` modulo `IS`: there `g(s) ≡ sᵈ⁺¹ = s` and
+`h(s) s ≡ (s - 1)ᵈ⁺¹ s = 0`. -/
+private theorem aeval_mul_sub_mem_map_of_add_eq_one {s : S}
+    (hs : s * s - s ∈ I.map (algebraMap R S)) {a b g h : R[X]} {d : ℕ}
+    (hab : a * g + b * h = 1) (hgmap : g.map (Ideal.Quotient.mk I) = X ^ (d + 1))
+    (hhmap : h.map (Ideal.Quotient.mk I) = (X - C 1) ^ (d + 1)) :
+    aeval s (a * g) - s ∈ I.map (algebraMap R S) := by
+  set J := I.map (algebraMap R S)
+  set φ : R ⧸ I →+* S ⧸ J := Ideal.quotientMap J (algebraMap R S) Ideal.le_comap_map
+  set t := Ideal.Quotient.mk J s
+  have hφ (f : R[X]) :
+      Ideal.Quotient.mk J (aeval s f) = (f.map (Ideal.Quotient.mk I)).eval₂ φ t := by
+    rw [aeval_def, hom_eval₂, eval₂_map, Ideal.quotientMap_comp_mk]
+  have ht : IsIdempotentElem t := by
+    rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs]
+  have htt : (t - 1) ^ (d + 1) * t = 0 := by
+    rw [pow_succ, mul_assoc, sub_mul, one_mul, ht.eq, sub_self, mul_zero]
+  have hab' := congrArg (fun f : R[X] ↦ (f.map (Ideal.Quotient.mk I)).eval₂ φ t) hab
+  simp only [Polynomial.map_add, Polynomial.map_mul, hgmap, hhmap, eval₂_add, eval₂_mul,
+    eval₂_pow, eval₂_sub, eval₂_X, map_one, Polynomial.map_one, eval₂_one] at hab'
+  rw [← Ideal.Quotient.eq, hφ, Polynomial.map_mul, eval₂_mul, hgmap, eval₂_X_pow]
+  linear_combination t * hab' - (eval₂ φ t (b.map (Ideal.Quotient.mk I))) * htt +
+    (eval₂ φ t (a.map (Ideal.Quotient.mk I))) * (1 - t) * ht.pow_succ_eq d -
+    (eval₂ φ t (a.map (Ideal.Quotient.mk I))) * ht.eq
+
+variable [HenselianRing R I] [Algebra.IsIntegral R S]
 
 /-- **Idempotents lift along a Henselian pair in integral algebras.** If `(R, I)` is Henselian, `S`
 is an integral `R`-algebra and `s : S` is idempotent modulo `IS`, then some idempotent of `S` is
@@ -85,16 +122,10 @@ theorem exists_isIdempotentElem_sub_mem_map_of_isIntegral {s : S}
     exact ⟨s, Subsingleton.elim _ _, Subsingleton.elim (s - s) 0 ▸ zero_mem _⟩
   | inr _ =>
   -- `s * s - s` is integral over `I`: it is a root of a monic `q ≡ Xᵈ` modulo `I`.
-  obtain ⟨q, hq, hqs, hqI⟩ := Polynomial.exists_monic_aeval_eq_zero_forall_mem_pow_of_mem_map hs
+  obtain ⟨q, hq, hqs, hqI⟩ := Polynomial.exists_monic_aeval_eq_zero_forall_mem_of_mem_map hs
   set d := q.natDegree
-  have hqmap : q.map (Ideal.Quotient.mk I) = X ^ d := by
-    ext i
-    rw [coeff_map, coeff_X_pow]
-    rcases lt_trichotomy i d with hi | rfl | hi
-    · rw [ite_eq_right hi.ne, Ideal.Quotient.eq_zero_iff_mem]
-      exact Ideal.pow_le_self (Nat.sub_ne_zero_of_lt hi) (hqI i)
-    · rw [ite_eq_left rfl, ← leadingCoeff, hq.leadingCoeff, map_one]
-    · rw [ite_eq_right hi.ne', coeff_eq_zero_of_natDegree_lt hi, map_zero]
+  have hqmap : q.map (Ideal.Quotient.mk I) = X ^ d :=
+    (IsDistinguishedAt.mk ⟨fun h ↦ hqI _ h.ne⟩ hq).map_eq_X_pow
   -- So `s` is a root of the monic `P = q(X² - X) (X² - X) ≡ Xᵈ⁺¹ (X - 1)ᵈ⁺¹` modulo `I`.
   set Q : R[X] := X * (X - C 1)
   have hQ : Q.Monic := monic_X.mul (monic_X_sub_C 1)
@@ -113,32 +144,13 @@ theorem exists_isIdempotentElem_sub_mem_map_of_isIntegral {s : S}
     IsCoprime.pow ⟨1, -1, by rw [map_one]; ring⟩
   obtain ⟨g, h, -, -, hgh, ⟨a, b, hab⟩, hgmap, hhmap⟩ :=
     exists_monic_mul_eq I hP (monic_X_pow _) ((monic_X_sub_C _).pow _) hcop hPmap
-  refine ⟨aeval s (a * g), ?_, ?_⟩
-  · -- `a(s) g(s)` and `b(s) h(s)` are complementary idempotents, since `g h = P` kills `s`.
-    have h1 : aeval s (a * g) + aeval s (b * h) = 1 := by rw [← map_add, hab, map_one]
-    have h0 : aeval s (a * g) * aeval s (b * h) = 0 := by
-      rw [← map_mul, show a * g * (b * h) = a * b * P by rw [← hgh]; ring, map_mul, hPs,
-        mul_zero]
-    rw [IsIdempotentElem]
-    linear_combination aeval s (a * g) * h1 - h0
-  · -- Modulo `IS`, `g(s) ≡ sᵈ⁺¹ = s` and `h(s) s ≡ (s - 1)ᵈ⁺¹ s = 0`, so `a(s) g(s) ≡ s`.
-    set J := I.map (algebraMap R S)
-    set φ : R ⧸ I →+* S ⧸ J := Ideal.quotientMap J (algebraMap R S) Ideal.le_comap_map
-    set t := Ideal.Quotient.mk J s
-    have hφ (f : R[X]) :
-        Ideal.Quotient.mk J (aeval s f) = (f.map (Ideal.Quotient.mk I)).eval₂ φ t := by
-      rw [aeval_def, hom_eval₂, eval₂_map, Ideal.quotientMap_comp_mk]
-    have ht : IsIdempotentElem t := by
-      rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs]
-    have htt : (t - 1) ^ (d + 1) * t = 0 := by
-      rw [pow_succ, mul_assoc, sub_mul, one_mul, ht.eq, sub_self, mul_zero]
-    have hab' := congrArg (fun f : R[X] ↦ (f.map (Ideal.Quotient.mk I)).eval₂ φ t) hab
-    simp only [Polynomial.map_add, Polynomial.map_mul, hgmap, hhmap, eval₂_add, eval₂_mul,
-      eval₂_pow, eval₂_sub, eval₂_X, map_one, Polynomial.map_one, eval₂_one] at hab'
-    rw [← Ideal.Quotient.eq, hφ, Polynomial.map_mul, eval₂_mul, hgmap, eval₂_X_pow]
-    linear_combination t * hab' - (eval₂ φ t (b.map (Ideal.Quotient.mk I))) * htt +
-      (eval₂ φ t (a.map (Ideal.Quotient.mk I))) * (1 - t) * ht.pow_succ_eq d -
-      (eval₂ φ t (a.map (Ideal.Quotient.mk I))) * ht.eq
+  refine ⟨aeval s (a * g), ?_, aeval_mul_sub_mem_map_of_add_eq_one I hs hab hgmap hhmap⟩
+  -- `a(s) g(s)` and `b(s) h(s)` are complementary idempotents, since `g h = P` kills `s`.
+  have h1 : aeval s (a * g) + aeval s (b * h) = 1 := by rw [← map_add, hab, map_one]
+  have h0 : aeval s (a * g) * aeval s (b * h) = 0 := by
+    rw [← map_mul, show a * g * (b * h) = a * b * P by rw [← hgh]; ring, map_mul, hPs,
+      mul_zero]
+  exact (IsIdempotentElem.of_mul_add h0 h1).1
 
 /-- **Idempotents of an integral algebra over a Henselian pair.** If `(R, I)` is Henselian and `S`
 is an integral `R`-algebra, the quotient map `S → S ⧸ IS` restricts to a bijection between the
@@ -160,39 +172,6 @@ end HenselianRing
 section Converse
 
 variable {R : Type*} [CommRing R]
-
-/-- If `(x - c) e` lies in an ideal `K`, then so does `(p(x) - p(c)) e` for every polynomial `p`,
-since `x - c` divides `p(x) - p(c)`. -/
-private theorem aeval_sub_algebraMap_eval_mul_mem {S : Type*} [CommRing S] [Algebra R S]
-    {K : Ideal S} {x e : S} {c : R} (he : (x - algebraMap R S c) * e ∈ K) (p : R[X]) :
-    (aeval x p - algebraMap R S (p.eval c)) * e ∈ K := by
-  obtain ⟨w, hw⟩ := sub_dvd_eval_sub x (algebraMap R S c) (p.map (algebraMap R S))
-  rw [eval_map_algebraMap, eval_map_algebraMap, aeval_algebraMap_apply, coe_aeval_eq_eval] at hw
-  rw [hw, mul_right_comm]
-  exact K.mul_mem_right w he
-
-/-- Let `e` be an idempotent of an `R`-algebra `S` that is projective as an `R`-module, with
-`e S = R e`. Then the surjection `R → R e` splits: some `c : R` has `c e = e` and kills the
-annihilator of `e`. -/
-private theorem exists_smul_eq_self_and_mul_eq_zero {S : Type*} [CommRing S] [Algebra R S]
-    [Module.Projective R S] {e : S} (he : IsIdempotentElem e)
-    (hσ : ∀ y : S, ∃ σ : R, σ • e = e * y) :
-    ∃ c : R, c • e = e ∧ ∀ r : R, r • e = 0 → r * c = 0 := by
-  -- The summand `e S` of `S` is projective, so `R → e S`, `r ↦ r e` has a section `τ`.
-  let L := LinearMap.mulLeft R e
-  have hL (y : S) : L y ∈ LinearMap.range L := LinearMap.mem_range_self L y
-  have : Module.Projective R (LinearMap.range L) :=
-    Module.Projective.of_split (LinearMap.range L).subtype (L.codRestrict _ hL) (by
-      ext ⟨_, y, rfl⟩
-      simp [L, ← mul_assoc, he.eq])
-  let e' : LinearMap.range L := ⟨e, by simpa [L] using hL 1⟩
-  have hρ : Function.Surjective (LinearMap.toSpanSingleton R (LinearMap.range L) e') := by
-    rintro ⟨_, y, rfl⟩
-    obtain ⟨σ, hσ⟩ := hσ y
-    exact ⟨σ, Subtype.ext hσ⟩
-  obtain ⟨τ, hτ⟩ := Module.projective_lifting_property _ LinearMap.id hρ
-  refine ⟨τ e', congrArg Subtype.val (LinearMap.congr_fun hτ e'), fun r hr ↦ ?_⟩
-  rw [← smul_eq_mul, ← map_smul, show r • e' = 0 from Subtype.ext hr, map_zero]
 
 /-- Let `I` lie in the Jacobson radical of `R`, let `f` be monic and let `e` be an idempotent of
 `R[X]/(f)` with `(X - a₀) e ≡ 0` modulo `I`, such that `r e ≡ 0` modulo `I` only for `r ∈ I`.
@@ -220,7 +199,7 @@ private theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} (hjac : I ≤ Id
     have hfa := aeval_sub_algebraMap_eval_mul_mem hxa f
     rw [Ideal.mem_bot, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, zero_sub, neg_mul, neg_eq_zero,
       ← Algebra.smul_def] at hfa
-    obtain ⟨c, hce, hc⟩ := exists_smul_eq_self_and_mul_eq_zero he hσ
+    obtain ⟨c, hce, hc⟩ := he.exists_smul_eq_self_and_mul_eq_zero hσ
     have hcu : IsUnit c := Ideal.isUnit_of_sub_one_mem_jacobson_bot _ (hjac (hI _ (by
       rw [sub_smul, hce, one_smul, sub_self]; exact zero_mem _)))
     exact hcu.mul_left_eq_zero.mp (hc _ hfa)
@@ -228,76 +207,87 @@ private theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} (hjac : I ≤ Id
     rw [sub_smul, ha, Algebra.smul_def]
     ring
 
+/-- Let `a₀` be a simple root modulo `I` of `f`. Then `R[X]/(f)` has an element `γ` that is
+idempotent modulo `I`, with `(X - a₀) γ ≡ 0` modulo `I`, such that `r γ ≡ 0` modulo `I` only for
+`r ∈ I`: with `f = (X - a₀) q + f(a₀)` and `u f'(a₀) ≡ 1`, take `γ = u q(X)`. -/
+private theorem exists_mul_self_sub_mem_of_isUnit_eval_derivative {I : Ideal R} {f : R[X]}
+    {a₀ : R} (hfa₀ : f.eval a₀ ∈ I)
+    (hunit : IsUnit (Ideal.Quotient.mk I (f.derivative.eval a₀))) :
+    ∃ γ : AdjoinRoot f, γ * γ - γ ∈ I.map (algebraMap R (AdjoinRoot f)) ∧
+      (AdjoinRoot.root f - algebraMap R _ a₀) * γ ∈ I.map (algebraMap R (AdjoinRoot f)) ∧
+      ∀ r : R, r • γ ∈ I.map (algebraMap R (AdjoinRoot f)) → r ∈ I := by
+  set S := AdjoinRoot f
+  set J := I.map (algebraMap R S)
+  set x := AdjoinRoot.root f
+  -- Evaluation at `a₀` modulo `I` kills `J`.
+  let χ : S →ₐ[R] R ⧸ I :=
+    AdjoinRoot.liftAlgHom f (Algebra.ofId R (R ⧸ I)) (Ideal.Quotient.mk I a₀) (by
+      rw [Algebra.toRingHom_ofId, Ideal.Quotient.algebraMap_eq, eval₂_hom,
+        Ideal.Quotient.eq_zero_iff_mem]
+      exact hfa₀)
+  have hχJ : ∀ y ∈ J, χ y = 0 := by
+    refine fun y hy ↦ (Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_ : J ≤ RingHom.ker χ) hy
+    rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.commutes, Ideal.Quotient.algebraMap_eq,
+      Ideal.Quotient.eq_zero_iff_mem]
+    exact hr
+  -- Split off the root modulo `I`: `f = (X - a₀) q + f(a₀)` and `q(a₀) = f'(a₀)`.
+  set q := f /ₘ (X - C a₀)
+  have hfq : (X - C a₀) * q + C (f.eval a₀) = f := by
+    rw [← modByMonic_X_sub_C_eq_C_eval, add_comm, modByMonic_add_div f (X - C a₀)]
+  obtain ⟨v, hv⟩ := isUnit_iff_exists_inv'.mp hunit
+  obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective v
+  rw [← map_mul, ← eval_divByMonic_X_sub_C_self, ← map_one (Ideal.Quotient.mk I),
+    Ideal.Quotient.eq] at hv
+  -- `γ = u q(x)` is idempotent modulo `J`, with `(x - a₀) γ ∈ J` and `χ(γ) = 1`.
+  have hxq : (x - algebraMap R S a₀) * aeval x q ∈ J := by
+    have hfx : aeval x f = 0 := by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]
+    have := congrArg (aeval x) hfq
+    rw [map_add, map_mul, map_sub, aeval_X, aeval_C, aeval_C, hfx] at this
+    rw [eq_neg_of_add_eq_zero_left this]
+    exact neg_mem (Ideal.mem_map_of_mem _ hfa₀)
+  set γ := algebraMap R S u * aeval x q
+  refine ⟨γ, ?_, ?_, fun r hr ↦ ?_⟩
+  · have h1 := aeval_sub_algebraMap_eval_mul_mem hxq q
+    have h2 : algebraMap R S (u * q.eval a₀ - 1) ∈ J := Ideal.mem_map_of_mem _ hv
+    have : γ * γ - γ = algebraMap R S u ^ 2 * ((aeval x q - algebraMap R S (q.eval a₀)) *
+        aeval x q) + γ * algebraMap R S (u * q.eval a₀ - 1) := by
+      simp only [γ, map_sub, map_mul, map_one]
+      ring
+    rw [this]
+    exact add_mem (J.mul_mem_left _ h1) (J.mul_mem_left _ h2)
+  · rw [mul_left_comm]
+    exact J.mul_mem_left _ hxq
+  · have hχγ : χ γ = 1 := by
+      rw [map_mul, AlgHom.commutes, ← aeval_algHom_apply, AdjoinRoot.liftAlgHom_root,
+        ← Ideal.Quotient.algebraMap_eq, aeval_algebraMap_apply_eq_algebraMap_eval,
+        Ideal.Quotient.algebraMap_eq, ← map_mul, ← map_one (Ideal.Quotient.mk I),
+        Ideal.Quotient.eq]
+      exact hv
+    have := hχJ _ hr
+    rwa [map_smul, hχγ, Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq,
+      Ideal.Quotient.eq_zero_iff_mem] at this
+
 /-- **Henselian pairs from idempotents.** Let `I` be an ideal in the Jacobson radical of `R`. If for
 every monic `f` over `R`, idempotents of `R[X]/(f)` modulo `I` lift to idempotents of `R[X]/(f)`,
 then `(R, I)` is Henselian. -/
 @[stacks 09XI "(3) ⇒ (1)"]
-theorem henselianRing_of_forall_adjoinRoot {I : Ideal R} (hjac : I ≤ Ideal.jacobson ⊥)
+theorem henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot {I : Ideal R}
+    (hjac : I ≤ Ideal.jacobson ⊥)
     (H : ∀ f : R[X], f.Monic → ∀ s : AdjoinRoot f,
       s * s - s ∈ I.map (algebraMap R (AdjoinRoot f)) →
       ∃ e : AdjoinRoot f, IsIdempotentElem e ∧ e - s ∈ I.map (algebraMap R (AdjoinRoot f))) :
     HenselianRing R I where
   jac := hjac
   is_henselian f hf a₀ hfa₀ hunit := by
-    set S := AdjoinRoot f
-    set J := I.map (algebraMap R S)
-    set x := AdjoinRoot.root f
-    -- Evaluation at `a₀` modulo `I` kills `J`.
-    let χ : S →ₐ[R] R ⧸ I :=
-      AdjoinRoot.liftAlgHom f (Algebra.ofId R (R ⧸ I)) (Ideal.Quotient.mk I a₀) (by
-        change aeval (algebraMap R (R ⧸ I) a₀) f = 0
-        rw [aeval_algebraMap_apply, coe_aeval_eq_eval, Ideal.Quotient.algebraMap_eq,
-          Ideal.Quotient.eq_zero_iff_mem]
-        exact hfa₀)
-    have hχJ : ∀ y ∈ J, χ y = 0 := by
-      refine fun y hy ↦ (Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_ : J ≤ RingHom.ker χ) hy
-      change χ (algebraMap R S r) = 0
-      rw [AlgHom.commutes, Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem]
-      exact hr
-    -- Split off the root modulo `I`: `f = (X - a₀) q + f(a₀)` and `q(a₀) = f'(a₀)`.
-    set q := f /ₘ (X - C a₀)
-    have hfq : (X - C a₀) * q + C (f.eval a₀) = f := by
-      rw [← modByMonic_X_sub_C_eq_C_eval, add_comm, modByMonic_add_div f (X - C a₀)]
-    have hq : q.eval a₀ = f.derivative.eval a₀ := by
-      conv_rhs => rw [← hfq]
-      simp
-    obtain ⟨v, hv⟩ := isUnit_iff_exists_inv'.mp hunit
-    obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective v
-    rw [← map_mul, ← hq, ← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq] at hv
-    -- `γ = u q(x)` is idempotent modulo `J`, with `(x - a₀) γ ∈ J` and `χ(γ) = 1`.
-    have hxq : (x - algebraMap R S a₀) * aeval x q ∈ J := by
-      have hfx : aeval x f = 0 := by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]
-      have := congrArg (aeval x) hfq
-      rw [map_add, map_mul, map_sub, aeval_X, aeval_C, aeval_C, hfx] at this
-      rw [eq_neg_of_add_eq_zero_left this]
-      exact neg_mem (Ideal.mem_map_of_mem _ hfa₀)
-    set γ := algebraMap R S u * aeval x q
-    have hγ : γ * γ - γ ∈ J := by
-      have h1 := aeval_sub_algebraMap_eval_mul_mem hxq q
-      have h2 : algebraMap R S (u * q.eval a₀ - 1) ∈ J := Ideal.mem_map_of_mem _ hv
-      have : γ * γ - γ = algebraMap R S u ^ 2 * ((aeval x q - algebraMap R S (q.eval a₀)) *
-          aeval x q) + γ * algebraMap R S (u * q.eval a₀ - 1) := by
-        simp only [γ, map_sub, map_mul, map_one]
-        ring
-      rw [this]
-      exact add_mem (J.mul_mem_left _ h1) (J.mul_mem_left _ h2)
-    have hχγ : χ γ = 1 := by
-      rw [map_mul, AlgHom.commutes, ← aeval_algHom_apply, AdjoinRoot.liftAlgHom_root,
-        show Ideal.Quotient.mk I a₀ = algebraMap R (R ⧸ I) a₀ from rfl, aeval_algebraMap_apply,
-        coe_aeval_eq_eval, Ideal.Quotient.algebraMap_eq, ← map_mul,
-        ← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq]
-      exact hv
-    -- Its idempotent lift `e` cuts out the factor `R[X]/(X - a₀)` of `R[X]/(f)`.
+    set J := I.map (algebraMap R (AdjoinRoot f))
+    obtain ⟨γ, hγ, hxγ, hrγ⟩ := exists_mul_self_sub_mem_of_isUnit_eval_derivative hfa₀ hunit
+    -- The idempotent lift `e` of `γ` cuts out the factor `R[X]/(X - a₀)` of `R[X]/(f)`.
     obtain ⟨e, he, heγ⟩ := H f hf γ hγ
-    refine exists_isRoot_of_isIdempotentElem hjac hf he ?_ fun r hr ↦ ?_
-    · have : (x - algebraMap R S a₀) * e = (x - algebraMap R S a₀) * (e - γ) +
-          algebraMap R S u * ((x - algebraMap R S a₀) * aeval x q) := by ring
-      rw [this]
-      exact add_mem (J.mul_mem_left _ heγ) (J.mul_mem_left _ hxq)
-    · have hχe : χ e = 1 := by rw [← sub_add_cancel e γ, map_add, hχJ _ heγ, hχγ, zero_add]
-      have := hχJ _ hr
-      rwa [map_smul, hχe, Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq,
-        Ideal.Quotient.eq_zero_iff_mem] at this
+    refine exists_isRoot_of_isIdempotentElem hjac hf he ?_ fun r hr ↦ hrγ r ?_
+    · rw [← sub_add_cancel e γ, mul_add]
+      exact add_mem (J.mul_mem_left _ heγ) hxγ
+    · rw [← sub_sub_cancel e γ, smul_sub, Algebra.smul_def r (e - γ)]
+      exact sub_mem hr (J.mul_mem_left _ heγ)
 
 end Converse
 
@@ -310,7 +300,7 @@ theorem henselianRing_iff_forall_bijOn_isIdempotentElem {R : Type u} [CommRing R
       Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
         {t | IsIdempotentElem t} := by
   refine ⟨fun _ S _ _ _ ↦ HenselianRing.bijOn_quotient_mk_map_isIdempotentElem I,
-    fun H ↦ henselianRing_of_forall_adjoinRoot ?_ fun f hf s hs ↦ ?_⟩
+    fun H ↦ henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot ?_ fun f hf s hs ↦ ?_⟩
   · -- If `I ⊄ 𝔪` for a maximal ideal `𝔪`, then `0` and `1` in the field `R ⧸ 𝔪` both reduce to `0`.
     refine le_sInf fun m ⟨_, hm⟩ ↦ ?_
     by_contra hIm
@@ -333,7 +323,21 @@ theorem henselianRing_iff_forall_bijOn_isIdempotentElem {R : Type u} [CommRing R
         rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq.mpr hs])
     exact ⟨e, he, Ideal.Quotient.eq.mp hes⟩
 
-namespace HenselianRing
+/-- **Henselian pairs and idempotents of integral algebras.** A pair `(R, I)` is Henselian if and
+only if, for every integral `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
+restricts to a bijection between the idempotents of `S` and those of `S ⧸ IS`. -/
+@[stacks 09XI "(1) ⇔ (4)"]
+theorem henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral {R : Type u} [CommRing R]
+    {I : Ideal R} :
+    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.IsIntegral R S],
+      Set.BijOn (Ideal.Quotient.mk (I.map (algebraMap R S))) {e | IsIdempotentElem e}
+        {t | IsIdempotentElem t} :=
+  ⟨fun _ _ _ _ _ ↦ HenselianRing.bijOn_quotient_mk_map_isIdempotentElem I,
+    fun H ↦ henselianRing_iff_forall_bijOn_isIdempotentElem.mpr fun S _ _ _ ↦ H S⟩
+
+end TauCeti
+
+namespace Ideal
 
 /-- **Henselian pairs are stable under integral extensions.** If `(R, I)` is Henselian and `S` is
 an integral `R`-algebra, then `(S, IS)` is Henselian. -/
@@ -341,13 +345,26 @@ an integral `R`-algebra, then `(S, IS)` is Henselian. -/
 instance henselianRing_map_of_isIntegral {R : Type*} [CommRing R] (I : Ideal R) [HenselianRing R I]
     {S : Type*} [CommRing S] [Algebra R S] [Algebra.IsIntegral R S] :
     HenselianRing S (I.map (algebraMap R S)) :=
-  henselianRing_of_forall_adjoinRoot (Ideal.map_le_jacobson_bot_of_isIntegral HenselianRing.jac)
-    fun f hf s hs ↦ by
+  TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot
+    (map_le_jacobson_bot_of_isIntegral HenselianRing.jac) fun f hf s hs ↦ by
       have : Module.Finite S (AdjoinRoot f) := hf.finite_adjoinRoot
       have : Algebra.IsIntegral R (AdjoinRoot f) := Algebra.IsIntegral.trans S
-      rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq] at hs ⊢
-      exact exists_isIdempotentElem_sub_mem_map_of_isIntegral I hs
+      rw [map_map, ← IsScalarTower.algebraMap_eq] at hs ⊢
+      exact TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral I hs
 
-end HenselianRing
+end Ideal
+
+namespace TauCeti
+
+/-- **Henselian pairs and integral extensions.** A pair `(R, I)` is Henselian if and only if
+`(S, IS)` is Henselian for every integral `R`-algebra `S` in the universe of `R`; the converse
+direction is the case `S = R`. -/
+theorem henselianRing_iff_forall_henselianRing_map_of_isIntegral {R : Type u} [CommRing R]
+    {I : Ideal R} :
+    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.IsIntegral R S],
+      HenselianRing S (I.map (algebraMap R S)) := by
+  refine ⟨fun _ _ _ _ _ ↦ inferInstance, fun H ↦ ?_⟩
+  have := H R
+  rwa [Algebra.algebraMap_self, Ideal.map_id] at this
 
 end TauCeti
