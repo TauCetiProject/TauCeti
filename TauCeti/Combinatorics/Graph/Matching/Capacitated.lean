@@ -29,7 +29,6 @@ graph are all allowed.
 
 ## Main definitions
 
-* `Graph.IsVertexCover G C`: the set `C` of actual vertices meets every edge of `G`.
 * `Graph.IsCapacitatedMatching G b x`: the edge multiplicities `x` form a multiset capacitated
   matching for the vertex capacities `b`.
 
@@ -67,61 +66,6 @@ universe u v
 namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
-
-/-! ### Vertex covers -/
-
-variable (G) in
-/-- The set `C` of actual vertices is a *vertex cover* of `G`: every edge has an end in `C`. A loop
-at `v` is met only by sets containing `v`. -/
-def IsVertexCover (C : Set V(G)) : Prop :=
-  ∀ ⦃e : β⦄ ⦃x y : V(G)⦄, G.IsLink e x y → x ∈ C ∨ y ∈ C
-
-theorem isVertexCover_def {C : Set V(G)} :
-    G.IsVertexCover C ↔ ∀ ⦃e : β⦄ ⦃x y : V(G)⦄, G.IsLink e x y → x ∈ C ∨ y ∈ C :=
-  Iff.rfl
-
-/-- A set of actual vertices is a vertex cover exactly when every actual edge is incident with one
-of its vertices. -/
-theorem isVertexCover_iff_forall_exists_inc {C : Set V(G)} :
-    G.IsVertexCover C ↔ ∀ e : E(G), ∃ x ∈ C, G.Inc e x := by
-  refine ⟨fun hC e ↦ ?_, fun hC e x y he ↦ ?_⟩
-  · obtain ⟨x, y, he⟩ := G.exists_isLink_of_mem_edgeSet e.2
-    rcases hC (x := ⟨x, he.left_mem⟩) (y := ⟨y, he.right_mem⟩) he with hx | hy
-    exacts [⟨_, hx, he.inc_left⟩, ⟨_, hy, he.inc_right⟩]
-  · obtain ⟨z, hz, hze⟩ := hC ⟨e, he.edge_mem⟩
-    rcases hze.eq_or_eq_of_isLink he with h | h
-    · exact .inl (Subtype.ext h ▸ hz)
-    · exact .inr (Subtype.ext h ▸ hz)
-
-/-- Every actual edge is incident with a vertex of a vertex cover. -/
-theorem IsVertexCover.exists_mem_inc {C : Set V(G)} (hC : G.IsVertexCover C) (e : E(G)) :
-    ∃ x ∈ C, G.Inc e x :=
-  isVertexCover_iff_forall_exists_inc.1 hC e
-
-/-- A superset of a vertex cover is a vertex cover. -/
-theorem IsVertexCover.subset {C D : Set V(G)} (hC : G.IsVertexCover C) (hCD : C ⊆ D) :
-    G.IsVertexCover D :=
-  fun _ _ _ he ↦ (hC he).imp (@hCD _) (@hCD _)
-
-/-- The set of all actual vertices is a vertex cover. -/
-@[simp]
-theorem isVertexCover_univ : G.IsVertexCover Set.univ :=
-  fun _ _ _ _ ↦ .inl trivial
-
-/-- The empty set is a vertex cover exactly when there are no actual edges. -/
-@[simp]
-theorem isVertexCover_empty_iff : G.IsVertexCover ∅ ↔ E(G) = ∅ := by
-  simp [isVertexCover_iff_forall_exists_inc, Set.eq_empty_iff_forall_notMem]
-
-/-- The side `L` of a bipartition is a vertex cover. -/
-theorem IsBipartition.isVertexCover_left {L R : Finset V(G)} (h : G.IsBipartition L R) :
-    G.IsVertexCover (L : Set V(G)) :=
-  fun _ _ _ he ↦ (h.isLink he).imp And.left And.right
-
-/-- The side `R` of a bipartition is a vertex cover. -/
-theorem IsBipartition.isVertexCover_right {L R : Finset V(G)} (h : G.IsBipartition L R) :
-    G.IsVertexCover (R : Set V(G)) :=
-  h.symm.isVertexCover_left
 
 /-! ### Multiset capacitated matchings -/
 
@@ -193,7 +137,7 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
   -- Every member of the packing joins `L` to `R`, so it traverses an arrow.
   have hst (i : Fin k) : s i ≠ t i := fun h ↦ disjoint_left.1 hLR.disjoint (hs i) (h ▸ ht i)
   choose f hf using fun i ↦ List.exists_mem_of_ne_nil _ ((P i).arrows_ne_nil (hst i))
-  refine ⟨fun e ↦ #{i | (f i).2.2.1 = e}, X, fun v ↦ ?_, fun e y z he ↦ ?_, ?_⟩
+  refine ⟨fun e ↦ #{i | (f i).2.2.1 = e}, X, fun v ↦ ?_, isVertexCover_def.2 fun e y z he ↦ ?_, ?_⟩
   · -- The members counted at `v` are members through `v`: both ends of the edge of the arrow
     -- are vertices of the member.
     rw [sum_card_fiberwise_eq_card_filter]

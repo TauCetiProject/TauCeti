@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.VertexCover
 
 /-!
 # Bipartitions of multigraphs
@@ -31,6 +32,8 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.isBipartition_comm`: a bipartition is symmetric in its two sides.
 * `Graph.IsBipartition.loopless`: a multigraph with a bipartition has no loops.
 * `Graph.IsBipartition.finite`: a multigraph with a bipartition has finitely many actual vertices.
+* `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and
+  similarly for `R`.
 * `Graph.IsBipartition.sum_sum_incidentEdges_left`: summing over `L` the values of the edges
   incident with each vertex sums every actual edge once, and similarly for `R`.
 -/
@@ -93,6 +96,14 @@ theorem finite (h : G.IsBipartition L R) : Finite V(G) := by
   classical
   exact Set.finite_univ_iff.1 <| (L ∪ R).finite_toSet.subset fun x _ ↦ by
     simpa using h.mem_or_mem x
+
+/-- The side `L` of a bipartition is a vertex cover. -/
+theorem isVertexCover_left (h : G.IsBipartition L R) : G.IsVertexCover (L : Set V(G)) :=
+  isVertexCover_def.2 fun _ _ _ he ↦ (h.isLink he).imp And.left And.right
+
+/-- The side `R` of a bipartition is a vertex cover. -/
+theorem isVertexCover_right (h : G.IsBipartition L R) : G.IsVertexCover (R : Set V(G)) :=
+  h.symm.isVertexCover_left
 
 /-- Every actual edge has exactly one end in `L`. -/
 theorem existsUnique_mem_left_inc (h : G.IsBipartition L R) (e : E(G)) :
