@@ -36,7 +36,7 @@ The main result is that taking initial polynomials is multiplicative,
 the initial polynomials of `P` and `Q`. This is the dominant-term identity behind the
 Minkowski-sum formula, refined from valuations to leading coefficients. No completeness and no
 characteristic hypothesis is used. The proof reads coefficients at the real exponents where
-supporting lines cross, through the embedding `HahnSeries.embDomainRingHom` of `R⸨X⸩` into the
+supporting lines cross, through the embedding `LaurentSeries.embReal` of `R⸨X⸩` into the
 Hahn series with real exponents.
 
 Initial polynomials also follow a translation `Y ↦ Y + c` of the unknown, the Taylor shift
@@ -178,12 +178,6 @@ theorem natDegree_initialPolynomial_le (P : R⸨X⸩[X]) (σ : ℝ) :
     rw [coeff_initialPolynomial, coeff_eq_zero_of_natDegree_lt hN, HahnSeries.leadingCoeff_zero,
       ite_self]
 
-omit [IsDomain R] in
-variable (R) in
-/-- A Laurent series read in the Hahn series with real exponents. -/
-private noncomputable abbrev embReal : R⸨X⸩ →+* HahnSeries ℝ R :=
-  embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
-
 variable {P Q : R⸨X⸩[X]} {σ : ℝ}
 
 /-- The coefficient heights of a nonzero polynomial over Laurent series have a finite
@@ -225,14 +219,14 @@ private theorem sub_eq_supportingValue_iff (hP : P ≠ 0) (n : ℕ) :
 
 /-- On a supporting line of `P ≠ 0`, every exponent of a coefficient of `P`, read in the Hahn
 series with real exponents, lies above the line. -/
-private theorem le_of_mem_support_embDomainRingHom (hP : P ≠ 0) (i : ℕ) :
+private theorem le_of_mem_support_embReal (hP : P ≠ 0) (i : ℕ) :
     ∀ r ∈ (embReal R (P.coeff i)).support, intercept P σ + σ * i ≤ r :=
   le_realAddVal_iff_forall_mem_support.mp
     (isSupportingLine_iff_forall.mp (isSupportingLine_intercept hP) i)
 
 /-- For `P ≠ 0`, the `n`-th coefficient of the initial polynomial is the coefficient of `aₙ` at
 the real exponent where the supporting line meets the vertical line through `n`. -/
-private theorem coeff_initialPolynomial_eq_coeff_embDomainRingHom (hP : P ≠ 0) (n : ℕ) :
+private theorem coeff_initialPolynomial_eq_coeff_embReal (hP : P ≠ 0) (n : ℕ) :
     (P.initialPolynomial σ).coeff n = (embReal R (P.coeff n)).coeff (intercept P σ + σ * n) := by
   rw [coeff_initialPolynomial]
   split_ifs with h
@@ -242,10 +236,10 @@ private theorem coeff_initialPolynomial_eq_coeff_embDomainRingHom (hP : P ≠ 0)
       rw [h0, AddValuation.map_zero] at h
       exact WithTop.top_ne_coe h
     rw [realAddVal_of_ne_zero hne, WithTop.coe_eq_coe] at h
-    rw [← h, coeff_embDomainRingHom_intCast, leadingCoeff_eq]
+    rw [← h, coeff_embReal_intCast, leadingCoeff_eq]
   · rw [sub_eq_supportingValue_iff hP] at h
     by_contra hc
-    exact h (le_antisymm (realAddVal_le_of_coeff_embDomainRingHom_ne_zero (Ne.symm hc))
+    exact h (le_antisymm (realAddVal_le_of_coeff_embReal_ne_zero (Ne.symm hc))
       (isSupportingLine_iff_forall.mp (isSupportingLine_intercept hP) n))
 
 /-- A recognition criterion for initial polynomials: if every coefficient of `Q`, read in the Hahn
@@ -267,13 +261,13 @@ private theorem initialPolynomial_eq_of_forall_le {F : R[X]} {μ : ℝ}
     isSupportingLine_iff_forall.mpr fun n => le_realAddVal_iff_forall_mem_support.mpr (hle n)
   have hface : m ∈ supportingFace (fun n => realAddVal R (Q.coeff n)) σ μ := by
     rw [mem_supportingFace]
-    refine le_antisymm (realAddVal_le_of_coeff_embDomainRingHom_ne_zero ?_)
+    refine le_antisymm (realAddVal_le_of_coeff_embReal_ne_zero ?_)
       (isSupportingLine_iff_forall.mp hline m)
     rwa [hcoeff]
   have hμ : intercept Q σ = μ := EReal.coe_eq_coe_iff.mp
     ((coe_intercept hQ).trans (supportingValue_eq_coe_of_mem_supportingFace hline hface))
   refine Polynomial.ext fun n => ?_
-  rw [coeff_initialPolynomial_eq_coeff_embDomainRingHom hQ, hμ, hcoeff]
+  rw [coeff_initialPolynomial_eq_coeff_embReal hQ, hμ, hcoeff]
 
 variable (σ) in
 /-- A nonzero polynomial has a nonzero initial polynomial at every slope: the coefficient
@@ -360,13 +354,13 @@ theorem initialPolynomial_mul (P Q : R⸨X⸩[X]) (σ : ℝ) :
     rw [← coe_intercept hPQ, ← coe_intercept hP, ← coe_intercept hQ, ← EReal.coe_add] at this
     exact EReal.coe_eq_coe_iff.mp this
   refine Polynomial.ext fun n => ?_
-  rw [coeff_initialPolynomial_eq_coeff_embDomainRingHom hPQ, Polynomial.coeff_mul,
+  rw [coeff_initialPolynomial_eq_coeff_embReal hPQ, Polynomial.coeff_mul,
     Polynomial.coeff_mul, map_sum, HahnSeries.coeff_sum, hc]
   refine Finset.sum_congr rfl fun ij hij => ?_
-  rw [coeff_initialPolynomial_eq_coeff_embDomainRingHom hP,
-    coeff_initialPolynomial_eq_coeff_embDomainRingHom hQ,
-    ← coeff_mul_add_of_forall_le (le_of_mem_support_embDomainRingHom hP _)
-      (le_of_mem_support_embDomainRingHom hQ _), ← map_mul]
+  rw [coeff_initialPolynomial_eq_coeff_embReal hP,
+    coeff_initialPolynomial_eq_coeff_embReal hQ,
+    ← coeff_mul_add_of_forall_le (le_of_mem_support_embReal hP _)
+      (le_of_mem_support_embReal hQ _), ← map_mul]
   congr 1
   rw [← Finset.HasAntidiagonal.mem_antidiagonal.mp hij, Nat.cast_add]
   ring
@@ -414,15 +408,15 @@ private theorem initialPolynomial_taylor_of_le_realAddVal (P : R⸨X⸩[X]) {c :
   have hterm_le (k m : ℕ) :
       ∀ r ∈ (embReal R (P.coeff (k + m) * c ^ k)).support, μ + σ * m ≤ r := by
     rw [map_mul, map_pow, ← hshift k m]
-    exact HahnSeries.add_le_of_mem_support_mul (le_of_mem_support_embDomainRingHom hP _)
+    exact HahnSeries.add_le_of_mem_support_mul (le_of_mem_support_embReal hP _)
       (HahnSeries.nsmul_le_of_mem_support_pow hcE k)
   have hterm_coeff (k m : ℕ) :
       (embReal R (P.coeff (k + m) * c ^ k)).coeff (μ + σ * m) =
         (P.initialPolynomial σ).coeff (k + m) * a ^ k := by
     rw [map_mul, map_pow, ← hshift k m, HahnSeries.coeff_mul_add_of_forall_le
-      (le_of_mem_support_embDomainRingHom hP _) (HahnSeries.nsmul_le_of_mem_support_pow hcE k),
+      (le_of_mem_support_embReal hP _) (HahnSeries.nsmul_le_of_mem_support_pow hcE k),
       HahnSeries.coeff_pow_nsmul_of_forall_le hcE,
-      coeff_initialPolynomial_eq_coeff_embDomainRingHom hP]
+      coeff_initialPolynomial_eq_coeff_embReal hP]
   have hsum (m : ℕ) : embReal R ((taylor c P).coeff m) =
       ∑ k ∈ Finset.range (P.natDegree + 1),
         (k + m).choose m • embReal R (P.coeff (k + m) * c ^ k) := by
@@ -453,7 +447,7 @@ theorem initialPolynomial_taylor_of_realAddVal_eq (P : R⸨X⸩[X]) {c : R⸨X�
     exact WithTop.top_ne_coe hσ
   rw [realAddVal_of_ne_zero hc0, WithTop.coe_eq_coe] at hσ
   rw [initialPolynomial_taylor_of_le_realAddVal P (by rw [realAddVal_of_ne_zero hc0, hσ]), ← hσ,
-    coeff_embDomainRingHom_intCast, HahnSeries.leadingCoeff_eq]
+    coeff_embReal_intCast, HahnSeries.leadingCoeff_eq]
 
 /-- **Translation of the unknown, above the face.** If `ord(c) > -σ`, translating the unknown by
 `c` does not change the initial polynomial at slope `σ`: `in_σ (P (Y + c)) = in_σ (P)`. -/
@@ -462,7 +456,7 @@ theorem initialPolynomial_taylor_of_lt_realAddVal (P : R⸨X⸩[X]) {c : R⸨X�
     (taylor c P).initialPolynomial σ = P.initialPolynomial σ := by
   -- The coefficient of `c` at `-σ`, below its order, vanishes.
   have ha : (embReal R c).coeff (-σ) = 0 := by
-    rw [realAddVal_eq_orderTop_embDomainRingHom] at hσ
+    rw [realAddVal_eq_orderTop_embReal] at hσ
     exact coeff_eq_zero_of_lt_orderTop hσ
   rw [initialPolynomial_taylor_of_le_realAddVal P hσ.le, ha, taylor_zero]
 
