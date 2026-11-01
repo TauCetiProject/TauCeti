@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
 public import TauCeti.Algebra.Lie.Weights.Chevalley.Automorphism
 
 /-!
@@ -21,7 +20,8 @@ w_α = exp (ad (x α)) ∘ exp (ad (-x (-α))) ∘ exp (ad (x α))
 
 (`TauCeti.weylAut`) is the Lie-algebra form of Chevalley's group element
 `n_α = x_α(1) x_{-α}(-1) x_α(1)`. On the Cartan subalgebra `H` it is the coreflection
-`y ↦ y - α(y) α^∨`, so it normalises `H` and permutes the weights by the reflection `s_α`.
+`y ↦ y - α(y) α^∨`, so it normalises `H` and permutes the weights by the reflection `s_α`
+(`TauCeti.IsSl2System.map_weylAut_eq_self` and `TauCeti.IsSl2System.weightPerm_weylAut_apply`).
 
 If `x` is moreover a Chevalley system for an involution `ω`, then `ω` exchanges `x α` with
 `-x (-α)` and therefore commutes with `w_α` (`LieHom.map_weylAut`). The general sign theorem for
@@ -40,13 +40,9 @@ and in a representation such a composite is conjugation by a product of the elem
 
 ## Main results
 
-* `TauCeti.IsSl2System.weylAut_apply_coe`: the Weyl automorphism of the triple of a root acts on
-  the Cartan subalgebra by the coreflection.
-* `TauCeti.IsSl2System.map_weylAut_eq_self`: it normalises the Cartan subalgebra.
-* `TauCeti.IsSl2System.weightPerm_weylAut_apply`: it permutes the weights by the reflection in the
-  root.
-* `TauCeti.IsChevalleySystem.weylAut_apply_eq_or_eq_neg`: for a Chevalley system it carries the
-  root vector of `β` to the root vector of `s_α β`, up to sign.
+* `TauCeti.IsChevalleySystem.weylAut_apply_eq_or_eq_neg`: for a Chevalley system the Weyl
+  automorphism of the triple of a root `α` carries the root vector of `β` to the root vector of
+  `s_α β`, up to sign.
 
 ## References
 
@@ -64,61 +60,6 @@ open LieAlgebra LieModule LieAlgebra.IsKilling
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
   [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
   [IsTriangularizable K H L]
-
-namespace IsSl2System
-
-variable {x : Weight K H L → L} (hx : IsSl2System x) {α : Weight K H L} (hα : α.IsNonZero)
-
-include hx
-
-omit [LieAlgebra ℚ L] in
-/-- An element of the Cartan subalgebra acts on the root vector of `α` by `α`. -/
-private theorem lie_coe_rootVector (y : H) : ⁅(y : L), x α⁆ = α y • x α :=
-  lie_eq_smul_of_mem_rootSpace (hx.mem_rootSpace α) y
-
-omit [LieAlgebra ℚ L] in
-/-- An element of the Cartan subalgebra acts on the root vector of `-α` by `-α`. -/
-private theorem lie_coe_rootVector_neg (y : H) : ⁅(y : L), x (-α)⁆ = -(α y • x (-α)) := by
-  simpa using lie_eq_smul_of_mem_rootSpace (hx.mem_rootSpace (-α)) y
-
-/-- **The Weyl automorphism of a root is the coreflection on the Cartan subalgebra.** It sends
-`y ∈ H` to `y - α(y) α^∨`. -/
-theorem weylAut_apply_coe (y : H) :
-    weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-        (hx.isNilpotent_ad_rootVector (-α)) y = (y - α y • coroot α : H) := by
-  rw [weylAut_apply_of_lie_eq_smul _ _ _ (hx.lie_coe_rootVector y)
-    (hx.lie_coe_rootVector_neg y)]
-  simp
-
-/-- The coreflection is an involution: the Weyl automorphism sends `y - α(y) α^∨` back to `y`. -/
-private theorem weylAut_apply_coe_sub_smul (y : H) :
-    weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-        (hx.isNilpotent_ad_rootVector (-α)) (y - α y • coroot α : H) = y := by
-  push_cast
-  exact weylAut_apply_sub_smul _ _ _ (hx.lie_coe_rootVector y) (hx.lie_coe_rootVector_neg y)
-
-/-- **The Weyl automorphism of a root normalises the Cartan subalgebra.** -/
-theorem map_weylAut_eq_self :
-    H.map (weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-      (hx.isNilpotent_ad_rootVector (-α)) : L →ₗ⁅K⁆ L) = H := by
-  refine le_antisymm ?_ fun y hy => ?_
-  · rintro _ ⟨y, hy, rfl⟩
-    exact hx.weylAut_apply_coe hα ⟨y, hy⟩ ▸ Subtype.property _
-  · exact ⟨_, Subtype.property (⟨y, hy⟩ - α ⟨y, hy⟩ • coroot α : H),
-      hx.weylAut_apply_coe_sub_smul hα ⟨y, hy⟩⟩
-
-/-- **The Weyl automorphism of a root permutes the weights by the reflection in the root**: the
-permuted weight of `β` is `β - β(α^∨) α`. -/
-theorem weightPerm_weylAut_apply (β : Weight K H L) (y : H) :
-    weightPerm _ (hx.map_weylAut_eq_self hα) β y = β y - α y * β (coroot α) := by
-  have hsymm : ((weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-      (hx.isNilpotent_ad_rootVector (-α))).ofSubalgebras H H (hx.map_weylAut_eq_self hα)).symm y =
-      y - α y • coroot α := by
-    rw [LieEquiv.symm_apply_eq]
-    exact Subtype.ext (hx.weylAut_apply_coe_sub_smul hα y).symm
-  rw [weightPerm_apply_apply, hsymm, map_sub, map_smul, smul_eq_mul]
-
-end IsSl2System
 
 namespace IsChevalleySystem
 
