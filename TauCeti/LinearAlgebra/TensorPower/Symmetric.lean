@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.TensorPower.Basic
-public import TauCeti.LinearAlgebra.PiTensorProduct.Basis
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 
 /-!
 # Symmetric tensors
