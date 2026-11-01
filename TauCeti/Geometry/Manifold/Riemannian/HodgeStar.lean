@@ -140,6 +140,18 @@ theorem tsupport_hodgeStar_subset (o : Manifold.Orientation I M (Fin m)) (hkl : 
   rw [hodgeStar_apply]
   exact (congrArg _ hφ).trans (map_zero _)
 
+/-- The top form `⟨α, β⟩ vol` is supported in the support of `α`. -/
+theorem tsupport_inner_smul_riemannianVolumeForm_subset (o : Manifold.Orientation I M (Fin m))
+    (α β : RoughForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
+        (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
+          riemannianVolumeForm o x) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α :=
+  -- Supports are read in the model fibre; state the vanishing in the tangent fibre at `x`.
+  closure_mono fun x hx hα ↦ hx
+    (by simp [show α x = 0 from hα] :
+      alternatingFormInner (TangentSpace I x) k (α x) (β x) • riemannianVolumeForm o x = 0)
+
 /-- The wedge `α ∧ ⋆β` is compactly supported when `α` or `β` is. -/
 theorem isCompact_tsupport_wedge_hodgeStar {j : ℕ} (o : Manifold.Orientation I M (Fin m))
     (hjl : j + l = m) (α : RoughForm I M ℝ k) (β : RoughForm I M ℝ j)
@@ -305,6 +317,14 @@ theorem inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar (o : Manifold.Orienta
     ← ContinuousAlternatingMap.wedge_def, RoughForm.wedge_hodgeStar_apply,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   simp only [Function.comp_def, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
+
+/-- The top form `⟨α, β⟩ vol` of two smooth forms is smooth. -/
+theorem isSmoothForm_inner_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) (α β : SmoothForm I M ℝ k) :
+    IsSmoothForm I ∞ (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
+      riemannianVolumeForm o x) := by
+  rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl]
+  exact SmoothForm.isSmoothForm _
 
 /-- Reversing the orientation negates the Hodge star of smooth forms. -/
 @[simp]

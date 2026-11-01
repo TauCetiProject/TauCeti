@@ -6,6 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
+public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 
 /-!
 # Self-dual and anti-self-dual forms on an oriented Riemannian manifold
@@ -30,6 +35,11 @@ Seiberg–Witten equations prescribes the self-dual part `F⁺`.
 
 For a `C^n` metric on a `C^(n+1)` manifold both projections preserve `C^n` forms; on smooth forms
 they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualPart`.
+
+On a boundaryless manifold, Stokes' theorem gives `∫_M β ∧ β = 0` for a compactly supported exact
+form `β = dα`, so its self-dual and anti-self-dual parts have the same energy,
+`∫_M |β⁺|² vol = ∫_M |β⁻|² vol`. Hence `β⁺ = 0` or `β⁻ = 0` forces `β = 0`: on a closed
+four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 
 ## Main definitions
 
@@ -56,6 +66,11 @@ they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualP
   likewise for `Λ⁻`.
 * `TauCeti.IsSmoothForm.selfDualPart`, `TauCeti.IsSmoothForm.antiSelfDualPart`: the projections
   preserve `C^n` forms.
+* `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart`: a compactly
+  supported exact form has `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`.
+* `TauCeti.SmoothForm.eq_zero_of_selfDualPart_eq_zero`,
+  `TauCeti.SmoothForm.eq_zero_of_antiSelfDualPart_eq_zero`: a compactly supported exact form with
+  vanishing self-dual, or anti-self-dual, part is zero.
 
 ## References
 
@@ -125,6 +140,22 @@ theorem selfDualPart_apply (α : RoughForm I M ℝ k) :
 theorem antiSelfDualPart_apply (α : RoughForm I M ℝ k) :
     antiSelfDualPart o α = (2⁻¹ : ℝ) • (α - hodgeStar o rfl α) :=
   (rfl)
+
+/-- The self-dual part of a form is supported in the support of the form. -/
+theorem tsupport_selfDualPart_subset (α : RoughForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (selfDualPart o α) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α :=
+  -- Supports are read in the model fibre; state the vanishing in the tangent fibre at `x`.
+  closure_mono fun x hx hα ↦ hx
+    (by simp [selfDualPart_apply, show α x = 0 from hα] : selfDualPart o α x = 0)
+
+/-- The anti-self-dual part of a form is supported in the support of the form. -/
+theorem tsupport_antiSelfDualPart_subset (α : RoughForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (antiSelfDualPart o α) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α :=
+  -- Supports are read in the model fibre; state the vanishing in the tangent fibre at `x`.
+  closure_mono fun x hx hα ↦ hx
+    (by simp [antiSelfDualPart_apply, show α x = 0 from hα] : antiSelfDualPart o α x = 0)
 
 /-- A middle-degree form is the sum of its self-dual and anti-self-dual parts. -/
 @[simp]
@@ -444,6 +475,90 @@ theorem antiSelfDualPart_selfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) 
   Subtype.ext <| by
     rw [coe_antiSelfDualPart, coe_selfDualPart, RoughForm.antiSelfDualPart_selfDualPart o hk,
       Submodule.coe_zero]
+
+/-! ### Exact forms on a boundaryless manifold -/
+
+section Exact
+
+variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
+
+/-- **The self-dual and anti-self-dual parts of an exact form have equal energy**: on an oriented
+boundaryless Riemannian manifold of dimension `k + k` with `k` even, a compactly supported exact
+`k`-form `β` satisfies `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`. Indeed `β ∧ β = (|β⁺|² - |β⁻|²) vol`, and
+`∫_M dα ∧ dα = 0` by Stokes' theorem. -/
+theorem integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart (hk : Even k)
+    {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
+    (hc : β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o β).1 x) ((selfDualPart o β).1 x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o β).1 x) ((antiSelfDualPart o β).1 x) • riemannianVolumeForm o x) := by
+  have hcβ := (mem_compactlySupportedForms I).mp hc
+  -- `|β⁺|² vol = β ∧ β + |β⁻|² vol` pointwise.
+  have hsplit : (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((selfDualPart o β).1 x) ((selfDualPart o β).1 x) • riemannianVolumeForm o x) =
+      RoughForm.wedge β.1 β.1 + fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((antiSelfDualPart o β).1 x) ((antiSelfDualPart o β).1 x) • riemannianVolumeForm o x := by
+    funext x
+    ext v
+    rw [Pi.add_apply, ContinuousAlternatingMap.add_apply, RoughForm.wedge_self_apply o hk,
+      ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply, coe_selfDualPart,
+      coe_antiSelfDualPart, smul_eq_mul, smul_eq_mul]
+    ring
+  have hw : IsCompact (_root_.tsupport (α := E [⋀^Fin (k + k)]→L[ℝ] ℝ)
+      (RoughForm.wedge β.1 β.1)) := by
+    rw [RoughForm.wedge_def]
+    exact hcβ.of_isClosed_subset (_root_.isClosed_tsupport _)
+      (RoughForm.tsupport_wedgeWith_subset_left _ _ _)
+  have hsw : IsSmoothForm I 0 (RoughForm.wedge β.1 β.1) := by
+    simpa only [coe_wedge] using (wedge β β).isSmoothForm.of_le (by simp)
+  rw [hsplit, integralTopForm_add o hsw
+      ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le) hw
+      (hcβ.of_isClosed_subset (_root_.isClosed_tsupport _)
+        ((RoughForm.tsupport_inner_smul_riemannianVolumeForm_subset o _ _).trans
+          (RoughForm.tsupport_antiSelfDualPart_subset o β.1))),
+    integralTopForm_wedge_eq_zero_of_mem_exactForms o hβ
+      ⟨β, (mem_compactlySupportedClosedForms I).mpr ⟨hc, exactForms_le_closedForms I k hβ⟩⟩,
+    zero_add]
+
+/-- On an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, a compactly
+supported exact `k`-form whose self-dual part vanishes is zero. In particular on a
+closed four-manifold a one-form `a` with `(da)⁺ = 0` is closed. -/
+theorem eq_zero_of_selfDualPart_eq_zero (hk : Even k)
+    {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
+    (hc : β ∈ compactlySupportedForms I M k) (h : selfDualPart o β = 0) : β = 0 := by
+  -- In degree zero only the zero form is exact.
+  obtain rfl | hk₀ := k.eq_zero_or_pos
+  · simpa using hβ
+  have : NeZero (k + k) := ⟨by omega⟩
+  have hc' : antiSelfDualPart o β ∈ compactlySupportedForms I M k :=
+    (mem_compactlySupportedForms I).mpr (((mem_compactlySupportedForms I).mp hc).of_isClosed_subset
+      (_root_.isClosed_tsupport _) (RoughForm.tsupport_antiSelfDualPart_subset o β.1))
+  have h0 := (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o rfl
+    (h ▸ Submodule.zero_mem _)).mpr h
+  rw [integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart o hk hβ hc,
+    integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o rfl hc'] at h0
+  rw [← selfDualPart_add_antiSelfDualPart o β, h, h0, add_zero]
+
+/-- On an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, a compactly
+supported exact `k`-form whose anti-self-dual part vanishes is zero. -/
+theorem eq_zero_of_antiSelfDualPart_eq_zero (hk : Even k)
+    {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
+    (hc : β ∈ compactlySupportedForms I M k) (h : antiSelfDualPart o β = 0) : β = 0 := by
+  -- In degree zero only the zero form is exact.
+  obtain rfl | hk₀ := k.eq_zero_or_pos
+  · simpa using hβ
+  have : NeZero (k + k) := ⟨by omega⟩
+  have hc' : selfDualPart o β ∈ compactlySupportedForms I M k :=
+    (mem_compactlySupportedForms I).mpr (((mem_compactlySupportedForms I).mp hc).of_isClosed_subset
+      (_root_.isClosed_tsupport _) (RoughForm.tsupport_selfDualPart_subset o β.1))
+  have h0 := (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o rfl
+    (h ▸ Submodule.zero_mem _)).mpr h
+  rw [← integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart o hk hβ hc,
+    integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o rfl hc'] at h0
+  rw [← selfDualPart_add_antiSelfDualPart o β, h, h0, add_zero]
+
+end Exact
 
 end SmoothForm
 
