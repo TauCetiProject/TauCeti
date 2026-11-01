@@ -49,26 +49,21 @@ section Formula
 
 variable {R : Type*} [Ring R] [Algebra ℝ R]
 
-/-- The Cayley coordinate `-(1 + A B)(1 - A B)⁻¹` of `B` relative to `A`, in any real algebra. -/
-def cayleyFormula (A B : R) : R :=
-  -((1 + A * B) * Ring.inverse (1 - A * B))
-
 /-- The point at parameter `b` of the Cayley segment from `A` to `B`, that is
 `A (1 + b C)(1 - b C)⁻¹` for the Cayley coordinate `C` of `B` relative to `A`. -/
 def cayleyPathFormula (b : ℝ) (A B : R) : R :=
   A * (1 + b • cayleyFormula A B) * Ring.inverse (1 - b • cayleyFormula A B)
 
-/-- Algebra isomorphisms commute with the Cayley coordinate expression. -/
-theorem map_cayleyFormula {S F : Type*} [Ring S] [Algebra ℝ S] [EquivLike F R S]
-    [AlgEquivClass F ℝ R S] (f : F) (A B : R) :
-    f (cayleyFormula A B) = cayleyFormula (f A) (f B) := by
-  simp only [cayleyFormula, map_mul, map_add, map_one, map_neg, map_sub, map_ringInverse]
+/-- The defining formula of the Cayley path expression. -/
+lemma cayleyPathFormula_def (b : ℝ) (A B : R) :
+    cayleyPathFormula b A B =
+      A * (1 + b • cayleyFormula A B) * Ring.inverse (1 - b • cayleyFormula A B) := (rfl)
 
 /-- Algebra isomorphisms commute with the Cayley path expression. -/
 theorem map_cayleyPathFormula {S F : Type*} [Ring S] [Algebra ℝ S] [EquivLike F R S]
     [AlgEquivClass F ℝ R S] (f : F) (b : ℝ) (A B : R) :
     f (cayleyPathFormula b A B) = cayleyPathFormula b (f A) (f B) := by
-  simp only [cayleyPathFormula, map_mul, map_add, map_one, map_smul, map_sub, map_ringInverse,
+  simp only [cayleyPathFormula_def, map_mul, map_add, map_one, map_smul, map_sub, map_ringInverse,
     map_cayleyFormula]
 
 /-- The Cayley path expression is smooth in its parameter and both endpoints at any point where
@@ -88,8 +83,9 @@ theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra �
   have hB : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ q.2.2) (b, A, B) :=
     contDiffAt_snd.comp _ contDiffAt_snd
   have hAB := hA.mul hB
-  have hC : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ cayleyFormula q.2.1 q.2.2) (b, A, B) :=
-    ((contDiffAt_const.add hAB).mul (hinv (contDiffAt_const.sub hAB) h₁)).neg
+  have hC : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ cayleyFormula q.2.1 q.2.2) (b, A, B) := by
+    simp only [cayleyFormula_def]
+    exact ((contDiffAt_const.add hAB).mul (hinv (contDiffAt_const.sub hAB) h₁)).neg
   have hbC := contDiffAt_fst.smul hC
   exact (hA.mul (contDiffAt_const.add hbC)).mul (hinv (contDiffAt_const.sub hbC) h₂)
 
@@ -280,9 +276,10 @@ theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tam
   have hinv := (h₀.isUnit_one_sub_mul_of_toLinearMap h₁ hA hB).map_ringInverse
     (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
   simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
-  rw [cayleyFormula, ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_mul,
-    hinv]
-  simp [AlmostComplexStructure.cayley_def, hA, hB]
+  rw [AlmostComplexStructure.cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
+    cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
+    ContinuousLinearMap.toLinearMap_mul, hinv]
+  simp [hA, hB]
 
 /-- In operator-norm coordinates, the compatible Cayley path from `J₀` to `J₁` at time `t` is
 `J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
