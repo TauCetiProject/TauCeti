@@ -6,21 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Uniform.Basic
+public import TauCeti.Probability.Distributions.Uniform.Finite
 public import TauCeti.Probability.Quantile
+public import TauCeti.Probability.Quantile.Finite
 
 /-!
-# Quantiles of interval-uniform laws
+# Quantiles of interval and finite-uniform laws
 
 This file computes the lower quantile of the uniform probability measure on a nondegenerate real
 interval. At an interior probability level `u`, the quantile is the affine interpolation
 `a + (b - a) * u`. Consequently the quantiles tend to the two interval endpoints as the level
 tends to zero from above or to one from below.
 
+For a uniform law on a finite type with supplied real labels, the quantile is the first distinct
+label whose cumulative cardinality fraction reaches the requested level. Repeated labels retain
+their full multiplicity.
+
 ## Main results
 
 * `TauCeti.Probability.quantile_uniformMeasure` gives the explicit quantile formula;
 * `TauCeti.Probability.tendsto_quantile_uniformMeasure_nhdsGT_zero` and
-  `TauCeti.Probability.tendsto_quantile_uniformMeasure_nhdsLT_one` give its endpoint limits.
+  `TauCeti.Probability.tendsto_quantile_uniformMeasure_nhdsLT_one` give its endpoint limits;
+* `TauCeti.Probability.isLeast_quantile_map_uniformOn_univ` gives the finite-uniform cumulative
+  crossing formula.
 -/
 
 public section
@@ -83,5 +91,65 @@ theorem tendsto_quantile_uniformMeasure_nhdsLT_one (hab : a < b) :
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
   exact (quantile_uniformMeasure hab hu).symm
+
+section Finite
+
+variable {ι : Type*} [Fintype ι] [MeasurableSpace ι] [MeasurableSingletonClass ι]
+
+/-- The cumulative mass of a labelled uniform law is the fraction of categories whose labels
+are at most the threshold. Repeated labels are counted with their full multiplicity. -/
+theorem uniformOn_univ_real_setOf_label_le (label : ι → ℝ) (x : ℝ) :
+    (uniformOn (Set.univ : Set ι)).real {i | label i ≤ x} =
+      ((Finset.univ.filter fun i => label i ≤ x).card : ℝ) / Fintype.card ι := by
+  classical
+  rw [← Finset.coe_filter_univ, ← sum_measureReal_singleton]
+  simp [div_eq_mul_inv]
+
+/-- The quantile of a labelled uniform law is the least distinct label for which the fraction of
+categories at or below that label reaches the requested level. -/
+theorem isLeast_quantile_map_uniformOn_univ [Nonempty ι]
+    (label : ι → ℝ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+    IsLeast {x : ℝ | x ∈ Set.range label ∧
+      u ≤ ((Finset.univ.filter fun i => label i ≤ x).card : ℝ) / Fintype.card ι}
+      (((uniformOn (Set.univ : Set ι)).map label).quantile u) := by
+  simpa only [uniformOn_univ_real_setOf_label_le] using
+    Measure.isLeast_quantile_map_finite (uniformOn (Set.univ : Set ι)) label hu
+
+private theorem uniformOn_univ_real_label_eq_pos
+    {κ : Type*} [Finite κ] [Nonempty κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    (label : κ → ℝ) {x : ℝ} (hx : ∃ i, label i = x) :
+    0 < (uniformOn (Set.univ : Set κ)).real {j | label j = x} := by
+  let _ := Fintype.ofFinite κ
+  obtain ⟨i, hi⟩ := hx
+  have hsingle : 0 < (uniformOn (Set.univ : Set κ)).real {i} := by
+    rw [uniformOn_univ_real_singleton]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
+  exact hsingle.trans_le (measureReal_mono (singleton_subset_iff.mpr hi))
+
+/-- At levels tending to zero, finite-uniform quantiles tend to a lowest supplied label. -/
+theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero
+    {κ : Type*} [Finite κ] [Nonempty κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    (label : κ → ℝ) (a : ℝ)
+    (ha : ∃ i, label i = a) (hmin : ∀ i, a ≤ label i) :
+    Tendsto (fun u ↦ (((uniformOn (Set.univ : Set κ)).map label).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 (a : EReal)) := by
+  let _ := Fintype.ofFinite κ
+  apply Measure.tendsto_quantile_map_nhdsGT_zero_of_atom _ (measurable_of_finite label)
+  · exact ae_of_all _ hmin
+  · exact uniformOn_univ_real_label_eq_pos label ha
+
+/-- At levels tending to one, finite-uniform quantiles tend to a highest supplied label. -/
+theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one
+    {κ : Type*} [Finite κ] [Nonempty κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    (label : κ → ℝ) (b : ℝ)
+    (hb : ∃ i, label i = b) (hmax : ∀ i, label i ≤ b) :
+    Tendsto (fun u ↦ (((uniformOn (Set.univ : Set κ)).map label).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 (b : EReal)) := by
+  let _ := Fintype.ofFinite κ
+  apply Measure.tendsto_quantile_map_nhdsLT_one_of_atom _ (measurable_of_finite label)
+  · exact ae_of_all _ hmax
+  · exact uniformOn_univ_real_label_eq_pos label hb
+
+end Finite
 
 end TauCeti.Probability

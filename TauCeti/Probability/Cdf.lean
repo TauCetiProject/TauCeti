@@ -51,6 +51,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.cdf_map_eq_measureReal` computes the cdf of a measurable real-valued
+  image as the mass of the corresponding sublevel set;
 * `MeasureTheory.Measure.cdf_map_const_mul_sqrt` evaluates the cdf of the image of a real law
   under a positive multiple of the square root;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
@@ -132,6 +134,15 @@ distribution function tends to `1` at `+∞`. -/
 theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
     {x : ℝ | t ≤ cdf μ x}.Nonempty :=
   ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
+
+/-- The cdf of a mapped probability law is the mass of the points whose images are at most the
+threshold. -/
+theorem cdf_map_eq_measureReal {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    [IsProbabilityMeasure μ] {f : α → ℝ} (hf : Measurable f) (x : ℝ) :
+    cdf (μ.map f) x = μ.real {a | f a ≤ x} := by
+  rw [cdf_eq_real, map_measureReal_apply hf measurableSet_Iic]
+  -- The preimage of `Iic x` is definitionally the set of points mapped below `x`.
+  rfl
 
 /-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
 `1 - cdf μ x`. -/

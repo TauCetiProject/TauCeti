@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Quantile
 public import Mathlib.Data.Finset.Max
-public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
 # Quantiles of finitely supported real laws
@@ -20,12 +19,8 @@ collapses repeated labels.
 
 ## Main results
 
-* `MeasureTheory.Measure.cdf_map_eq_measureReal` computes the cumulative mass of a mapped law.
 * `MeasureTheory.Measure.isLeast_quantile_map_finite` identifies an interior quantile as the
   least labelled cumulative crossing.
-* `MeasureTheory.Measure.tendsto_quantile_map_nhdsGT_zero` and
-  `MeasureTheory.Measure.tendsto_quantile_map_nhdsLT_one` give the endpoint limits from
-  an extreme label of positive mass.
 -/
 
 public section
@@ -36,22 +31,12 @@ open Filter MeasureTheory ProbabilityTheory Set Topology
 
 namespace MeasureTheory.Measure
 
-variable {α : Type*} [MeasurableSpace α]
-
-/-- The cdf of a mapped probability law is the mass of the points whose images are at most the
-threshold. -/
-theorem cdf_map_eq_measureReal (μ : Measure α) [IsProbabilityMeasure μ] {f : α → ℝ}
-    (hf : Measurable f) (x : ℝ) : cdf (μ.map f) x = μ.real {a | f a ≤ x} := by
-  rw [cdf_eq_real, map_measureReal_apply hf measurableSet_Iic]
-  -- The preimage of `Iic x` is definitionally the set of points mapped below `x`.
-  rfl
-
 variable {ι : Type*} [Finite ι] [MeasurableSpace ι]
   [MeasurableSingletonClass ι]
 
 /-- Some supplied label at or below an interior quantile already has cumulative mass at least
 the requested level. -/
-theorem exists_label_le_quantile_map_finite (μ : Measure ι) [IsProbabilityMeasure μ]
+private theorem exists_label_le_quantile_map_finite (μ : Measure ι) [IsProbabilityMeasure μ]
     (label : ι → ℝ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     ∃ y ∈ Set.range label,
       y ≤ (μ.map label).quantile u ∧ u ≤ μ.real {i | label i ≤ y} := by
@@ -132,38 +117,5 @@ theorem isLeast_quantile_map_finite (μ : Measure ι) [IsProbabilityMeasure μ]
       obtain ⟨i, hi⟩ := hx.1
       exact ⟨i, Finset.mem_univ _, hi⟩
     exact crossings.min'_le x (Finset.mem_filter.2 ⟨hx_labels, hx.2⟩)
-
-/-- Quantiles of a mapped law tend to a lowest image value of positive mass as the level tends to
-zero from above. -/
-theorem tendsto_quantile_map_nhdsGT_zero (μ : Measure α) [IsProbabilityMeasure μ]
-    {f : α → ℝ} (hf : Measurable f) (a : ℝ) (hbound : ∀ᵐ x ∂μ, a ≤ f x)
-    (hatom : 0 < μ.real {x | f x = a}) :
-    Tendsto (fun u ↦ ((μ.map f).quantile u : EReal)) (𝓝[>] 0) (𝓝 (a : EReal)) := by
-  apply tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos
-  · exact (ae_map_iff hf.aemeasurable measurableSet_Ici).2 hbound
-  · intro x hax
-    rw [cdf_map_eq_measureReal _ hf]
-    exact hatom.trans_le (measureReal_mono fun y hy => hy.trans_le hax.le)
-
-/-- Quantiles of a mapped law tend to a highest image value of positive mass as the level tends to
-one from below. -/
-theorem tendsto_quantile_map_nhdsLT_one (μ : Measure α) [IsProbabilityMeasure μ]
-    {f : α → ℝ} (hf : Measurable f) (b : ℝ) (hbound : ∀ᵐ x ∂μ, f x ≤ b)
-    (hatom : 0 < μ.real {x | f x = b}) :
-    Tendsto (fun u ↦ ((μ.map f).quantile u : EReal)) (𝓝[<] 1) (𝓝 (b : EReal)) := by
-  apply tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one
-  · exact (ae_map_iff hf.aemeasurable measurableSet_Iic).2 hbound
-  · intro x hxb
-    rw [cdf_map_eq_measureReal _ hf]
-    have hsubset : {y | f y ≤ x} ⊆ ({y | f y = b} : Set α)ᶜ := by
-      intro y hy
-      simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
-      exact ne_of_lt (hy.trans_lt hxb)
-    calc
-      μ.real {y | f y ≤ x} ≤ μ.real ({y | f y = b} : Set α)ᶜ :=
-        measureReal_mono hsubset
-      _ = 1 - μ.real {y | f y = b} :=
-        probReal_compl_eq_one_sub (hf (measurableSet_singleton b))
-      _ < 1 := sub_lt_self 1 hatom
 
 end MeasureTheory.Measure

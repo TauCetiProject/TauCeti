@@ -34,6 +34,8 @@ connect them to the existing multinomial API.
 
 * `TauCeti.Probability.categoricalMeasure` is the weighted sum of Dirac measures;
 * `TauCeti.Probability.categoricalMeasure_singleton` gives its masses;
+* `TauCeti.Probability.ae_categoricalMeasure_iff` characterizes almost-everywhere properties by
+  the positive-weight categories;
 * `TauCeti.Probability.integral_categoricalMeasure` evaluates integrals as finite weighted sums;
 * `TauCeti.Probability.measurable_categoricalMeasure` proves parameter measurability;
 * `TauCeti.Probability.continuous_categoricalMeasure` proves weak continuity on the full simplex,
@@ -94,6 +96,20 @@ theorem categoricalMeasure_real_singleton (p : StdSimplex NNReal I) (i : I) :
     (categoricalMeasure p).real {i} = p.weights i := by
   rw [measureReal_def, categoricalMeasure_singleton]
   simp
+
+/-- A property holds almost everywhere for a categorical law exactly when it holds at every
+category of positive weight. -/
+theorem ae_categoricalMeasure_iff (p : StdSimplex NNReal I) {P : I → Prop} :
+    (∀ᵐ i ∂categoricalMeasure p, P i) ↔ ∀ i, 0 < p.weights i → P i := by
+  rw [ae_iff_of_countable]
+  constructor
+  · intro h i hi
+    apply h i
+    rw [categoricalMeasure_singleton]
+    exact ENNReal.coe_ne_zero.mpr hi.ne'
+  · intro h i hi
+    apply h i
+    exact pos_iff_ne_zero.mpr (ENNReal.coe_ne_zero.mp (by simpa using hi))
 
 /-- Integration against a categorical law is the probability-weighted finite sum. -/
 theorem integral_categoricalMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

@@ -74,6 +74,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one` — the finite endpoint
   limits from almost-sure bounds and strict cdf inequalities toward the support interior;
+* `MeasureTheory.Measure.tendsto_quantile_map_nhdsGT_zero` and
+  `MeasureTheory.Measure.tendsto_quantile_map_nhdsLT_one` — endpoint limits for measurable
+  real-valued images;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -616,6 +619,58 @@ theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
     exact (lt_quantile_iff μ ((cdf_nonneg μ a).trans_lt hu.1) hu.2).2 hu.1
   · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact (ordConnected_Iic.quantile_mem hbound hu.1 hu.2).trans_lt hb
+
+/-- Quantiles of a measurable real-valued image tend to its lower support endpoint when every
+strictly larger sublevel set has positive mass. -/
+theorem tendsto_quantile_map_nhdsGT_zero {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsProbabilityMeasure μ] {f : α → ℝ} (hf : Measurable f) (a : ℝ)
+    (hbound : ∀ᵐ x ∂μ, a ≤ f x) (hpos : ∀ x, a < x → 0 < μ.real {y | f y ≤ x}) :
+    Tendsto (fun u ↦ ((μ.map f).quantile u : EReal)) (𝓝[>] 0) (𝓝 (a : EReal)) := by
+  apply tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos
+  · exact (ae_map_iff hf.aemeasurable measurableSet_Ici).2 hbound
+  · intro x hax
+    rw [cdf_map_eq_measureReal _ hf]
+    simpa only using hpos x hax
+
+/-- Quantiles of a measurable real-valued image tend to its upper support endpoint when every
+strictly smaller sublevel set has mass less than one. -/
+theorem tendsto_quantile_map_nhdsLT_one {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsProbabilityMeasure μ] {f : α → ℝ} (hf : Measurable f) (b : ℝ)
+    (hbound : ∀ᵐ x ∂μ, f x ≤ b) (hlt : ∀ x, x < b → μ.real {y | f y ≤ x} < 1) :
+    Tendsto (fun u ↦ ((μ.map f).quantile u : EReal)) (𝓝[<] 1) (𝓝 (b : EReal)) := by
+  apply tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one
+  · exact (ae_map_iff hf.aemeasurable measurableSet_Iic).2 hbound
+  · intro x hxb
+    rw [cdf_map_eq_measureReal _ hf]
+    simpa only using hlt x hxb
+
+/-- An atom at the lower support endpoint implies the positive-sublevel hypothesis for mapped
+quantile convergence. -/
+theorem tendsto_quantile_map_nhdsGT_zero_of_atom {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsProbabilityMeasure μ] {f : α → ℝ} (hf : Measurable f) (a : ℝ)
+    (hbound : ∀ᵐ x ∂μ, a ≤ f x) (hatom : 0 < μ.real {x | f x = a}) :
+    Tendsto (fun u ↦ ((μ.map f).quantile u : EReal)) (𝓝[>] 0) (𝓝 (a : EReal)) := by
+  apply tendsto_quantile_map_nhdsGT_zero μ hf a hbound
+  intro x hax
+  exact hatom.trans_le (measureReal_mono fun y hy => hy.trans_le hax.le)
+
+/-- An atom at the upper support endpoint implies the strict-sublevel hypothesis for mapped
+quantile convergence. -/
+theorem tendsto_quantile_map_nhdsLT_one_of_atom {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsProbabilityMeasure μ] {f : α → ℝ} (hf : Measurable f) (b : ℝ)
+    (hbound : ∀ᵐ x ∂μ, f x ≤ b) (hatom : 0 < μ.real {x | f x = b}) :
+    Tendsto (fun u ↦ ((μ.map f).quantile u : EReal)) (𝓝[<] 1) (𝓝 (b : EReal)) := by
+  apply tendsto_quantile_map_nhdsLT_one μ hf b hbound
+  intro x hxb
+  have hsubset : {y | f y ≤ x} ⊆ ({y | f y = b} : Set α)ᶜ := by
+    intro y hy
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
+    exact ne_of_lt (hy.trans_lt hxb)
+  calc
+    μ.real {y | f y ≤ x} ≤ μ.real ({y | f y = b} : Set α)ᶜ := measureReal_mono hsubset
+    _ = 1 - μ.real {y | f y = b} :=
+      probReal_compl_eq_one_sub (hf (measurableSet_singleton b))
+    _ < 1 := sub_lt_self 1 hatom
 
 /-- The cumulative distribution function at the upper quantile is exactly the level when the law
 has no atom at the upper quantile. -/
