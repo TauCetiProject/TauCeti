@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.Length
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Demazure.Braid
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Integral
 
@@ -76,16 +75,6 @@ open AddMonoidAlgebra TauCeti
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N] (P : RootPairing ι ℤ M N) [Finite ι]
   (b : P.Base) [P.IsReduced]
-
-/-- **A reduced word for the longest element**: some reduced word in the simple reflections spells
-an element of which every simple reflection is a left descent. -/
-theorem exists_isReduced_forall_isLeftDescent :
-    ∃ ω : List b.support, (weylCoxeterSystem P b).IsReduced ω ∧
-      ∀ i, (weylCoxeterSystem P b).IsLeftDescent ((weylCoxeterSystem P b).wordProd ω) i := by
-  have := P.finite_weylGroup_of_base b
-  obtain ⟨w, hw⟩ := exists_forall_isLeftDescent (weylCoxeterSystem P b)
-  obtain ⟨ω, hω, rfl⟩ := (weylCoxeterSystem P b).exists_isReduced w
-  exact ⟨ω, hω, hw⟩
 
 /-- **The longest-element Demazure operator has Weyl-invariant image**: the product of the Demazure
 operators along a reduced word of the longest element `w₀` (an element of which every simple

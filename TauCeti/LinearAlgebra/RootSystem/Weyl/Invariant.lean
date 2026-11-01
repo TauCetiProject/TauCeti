@@ -53,6 +53,8 @@ data in which `ρ` is not a weight.
 
 * `TauCeti.isWeylInvariant_of_forall_coeff_reflection`: invariance under the simple reflections of
   a base is Weyl invariance.
+* `TauCeti.weylReindex_ofIdx`: along a simple reflection `sᵢ`, `σ_{sᵢ}` is the domain reindexing
+  along `P.reflection i`, the form used by the Demazure operators.
 * `TauCeti.isWeylInvariant_iff_weylReindex_eq`: the invariants are the common fixed points of the
   reindexings `σ_w`.
 * `TauCeti.IsWeylInvariant.twistedWeylReindex_mul`: the twisted reindexing is linear over the
@@ -113,6 +115,16 @@ lemma weylReindex_apply (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
 lemma weylReindex_single (w : P.weylGroup) (x : M) (c : ℤ) :
     weylReindex P w (AddMonoidAlgebra.single x c) = AddMonoidAlgebra.single (w • x) c := by
   rw [weylReindex_apply, AddMonoidAlgebra.mapDomain_single]
+
+/-- The reindexing along a simple reflection `sᵢ`, in the form used by the Demazure operators:
+the domain reindexing along the reflection `P.reflection i`. -/
+lemma weylReindex_ofIdx (i : ι) (f : AddMonoidAlgebra ℤ M) :
+    weylReindex P (RootPairing.weylGroup.ofIdx P i) f =
+      AddMonoidAlgebra.mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
+  induction f using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg]
+  | single x c => simp
 
 /-- The reindexings compose like the group: `σ_{v w} = σ_v σ_w`. -/
 lemma weylReindex_mul (v w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :

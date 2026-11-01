@@ -122,16 +122,6 @@ private lemma two_smul_smul_sub_rhoShift_add (w : P.weylGroup) (x : M) :
   generalize w • x = a
   module
 
-omit [Finite ι] in
-/-- The reindexing of `ℤ[M]` along a simple reflection, in the form used by the Demazure
-operators. -/
-private lemma weylReindex_ofIdx (i : ι) (f : AddMonoidAlgebra ℤ M) :
-    weylReindex P (weylGroup.ofIdx P i) f = mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
-  induction f using AddMonoidAlgebra.induction_linear with
-  | zero => simp
-  | add f g hf hg => simp only [map_add, hf, hg]
-  | single x c => simp
-
 /-- The twisted reindexing `T_w(f) = e^{-(ρ - w ρ)} w(f)`, under which `e^x ↦ e^{w ⬝ x}`. -/
 private abbrev dotReindex (w : P.weylGroup) : AddMonoidAlgebra ℤ M →ₗ[ℤ] AddMonoidAlgebra ℤ M :=
   twistedWeylReindex P (-rhoShift P b w) w
