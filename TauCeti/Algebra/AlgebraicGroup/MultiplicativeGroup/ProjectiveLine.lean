@@ -6,12 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.HomogeneousIdeal
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LocallyClosed
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedPoints
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.CoordinateMap
+import TauCeti.RingTheory.Spectrum.Prime.Polynomial
 
 /-!
 # Orbits of the multiplicative group on the projective line
@@ -23,10 +28,9 @@ field `k`:
 
 * the lines `[1 : 0]` and `[0 : 1]` through the two standard basis vectors are fixed by the whole
   group scheme, so their orbits are single closed points;
-* the orbit of `[1 : 1]` is dense in `ℙ¹` (over any domain) but misses both fixed points, so it is
-  not closed;
-* when `k` is algebraically closed, the boundary of that orbit, its closure minus the orbit, is
-  exactly the two fixed points.
+* the orbit of `[1 : 1]` is dense in `ℙ¹` (over any domain) and consists of all points except the
+  two fixed points, so it is not closed;
+* hence the boundary of that orbit, its closure minus the orbit, is exactly the two fixed points.
 
 This is the standard example of the closed-orbit lemma: the open orbit has a boundary made of
 orbits of smaller dimension, and these are closed. Over `ℂ` the open orbit is `ℂ*`, embedded as
@@ -35,8 +39,11 @@ orbits of smaller dimension, and these are closed. Over `ℂ` the open orbit is 
 The fixed points are lines spanned by weight vectors. The orbit of `[1 : 1]` is dense because its
 orbit coordinates satisfy no homogeneous relation: after identifying the forms on `R²` with
 `R[X₀, X₁]`, they are the dehomogenization `f ↦ f(T, 1)`, which is injective on forms of each
-degree. The boundary is computed from its closed points, using that it is closed and that the
-projective line over a field is a Jacobson space.
+degree. The orbit itself is computed by identifying `ℙ(k²)` with the standard projective line
+`Proj k[X₀, X₁]` through the dual basis: the orbit morphism becomes the localization
+`Spec k[T, T⁻¹] ⟶ Spec k[X]` followed by the standard chart `D₊(X₁)`, so the orbit is the overlap
+`D₊(X₀) ∩ D₊(X₁)` of the two standard charts. Its complement is the two fixed points, over any
+field and including nonclosed points.
 
 ## Main declarations
 
@@ -47,6 +54,10 @@ projective line over a field is a Jacobson space.
 * `TauCeti.MultiplicativeGroup.isClosed_range_projectiveOrbitMap_single`: these orbits are closed.
 * `TauCeti.MultiplicativeGroup.dense_range_projectiveOrbitMap_one`: the orbit of `[1 : 1]` is
   dense.
+* `TauCeti.MultiplicativeGroup.projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom`: on the
+  standard projective line, the orbit morphism of `[1 : 1]` is the chart `D₊(X₁)` on `D(X)`.
+* `TauCeti.MultiplicativeGroup.range_projectiveOrbitMap_one`: the orbit of `[1 : 1]` is the
+  complement of the two fixed points.
 * `TauCeti.MultiplicativeGroup.projectiveOrbitMap_single_notMem_range_one` and
   `TauCeti.MultiplicativeGroup.not_isClosed_range_projectiveOrbitMap_one`: it misses both fixed
   points, so it is not closed.
@@ -70,14 +81,6 @@ universe u
 section Ring
 
 variable (R : Type u) [CommRing R]
-
-/-- The coordinate `T` of `𝔾ₘ`, as a group-like element of `R[T, T⁻¹]`. -/
-noncomputable def groupLikeT : GroupLike R R[T;T⁻¹] :=
-  ⟨T 1, ⟨by simp [counit_T], comul_T 1⟩⟩
-
-@[simp]
-theorem groupLikeT_val : (groupLikeT R).val = T 1 :=
-  (rfl)
 
 /-- The weights `T` and `1` of the two standard basis vectors of `R²`. -/
 noncomputable def scalingWeight : Fin 2 → GroupLike R R[T;T⁻¹] :=
@@ -258,58 +261,137 @@ theorem not_isClosed_range_projectiveOrbitMap_one :
   rw [← h.closure_eq, (dense_range_projectiveOrbitMap_one k).closure_eq]
   trivial
 
-variable [IsAlgClosed k]
-
-/-- Over an algebraically closed field, a closed point of the projective line off the orbit of
-`[1 : 1]` is one of the fixed points `[1 : 0]` and `[0 : 1]`: every other closed point is the line
-through some `(t, 1)` with `t ≠ 0`, the image of the rational point `t`. -/
-theorem eq_or_eq_of_mem_closedPoints_of_notMem_range_one
-    {x : Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (Fin 2 → k)))}
-    (hx : x ∈ closedPoints _)
-    (hxR : x ∉ Set.range
-      (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k))) :
-    x = projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single 0 1) (isUnimodular_single k 0)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹])) ∨
-      x = projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single 1 1) (isUnimodular_single k 1)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹])) := by
-  have hone : (1 : WithConv (k[T;T⁻¹] →ₐ[k] k)).ofConv = Bialgebra.counitAlgHom k k[T;T⁻¹] := by
-    rw [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp]
-  -- Lines that coincide have the same image under the identity point.
-  have hline {v w : Fin 2 → k} (hv : Module.IsUnimodular k v) (hw : Module.IsUnimodular k w)
-      (h : k ∙ v = k ∙ w) :
-      projectiveOrbitMap (H := k[T;T⁻¹]) v hv
-          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹])) =
-        projectiveOrbitMap (H := k[T;T⁻¹]) w hw
-          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹])) := by
-    rw [← hone, projectiveOrbitMap_kernelPoint_eq_iff_span_eq]
-    simpa using h
-  obtain ⟨v, hv, rfl⟩ :=
-    (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := k[T;T⁻¹]) x).mp hx
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    obtain ⟨f, hf⟩ := Module.isUnimodular_iff.mp hv
-    simp at hf
-  by_cases h0 : v 0 = 0
-  · have h1 : v 1 ≠ 0 := fun h1 ↦ hv0 (funext fun i ↦ by fin_cases i <;> simp [h0, h1])
-    refine Or.inr (hline _ _ ?_)
-    have hv' : v = v 1 • Pi.single 1 1 := funext fun i ↦ by fin_cases i <;> simp [h0]
-    rw [hv', Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.mpr h1)]
-  by_cases h1 : v 1 = 0
-  · refine Or.inl (hline _ _ ?_)
-    have hv' : v = v 0 • Pi.single 0 1 := funext fun i ↦ by fin_cases i <;> simp [h1]
-    rw [hv', Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.mpr h0)]
-  refine (hxR ⟨AlgHom.kernelPoint
-    ((pointsMulEquiv (R := k) (A := k)).symm (Units.mk0 (v 0 / v 1) (by simp [h0, h1]))).ofConv,
-    ?_⟩).elim
-  rw [← hone, projectiveOrbitMap_kernelPoint_eq_iff_span_eq,
-    basePointsRepresentation_pointsMulEquiv_symm, map_one, Module.End.one_apply,
-    ← Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.mpr (inv_ne_zero h1)) v]
+/-- After identifying the projective line of lines in `k²` with the standard projective line
+`Proj k[X₀, X₁]` through the dual basis, the orbit morphism of `[1 : 1]` is the localization
+`Spec k[T, T⁻¹] ⟶ Spec k[X]` followed by the standard chart `D₊(X₁)`. -/
+theorem projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom :
+    projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k) ≫
+        (Proj.symmetricAlgebraMapIso k (Pi.basisFun k (Fin 2)).toDualEquiv).hom =
+      Spec.map (CommRingCat.ofHom (Polynomial.toLaurent : Polynomial k →+* k[T;T⁻¹])) ≫
+        AlgebraicGeometry.projectiveLine.polynomialChartι k 1 := by
+  have hcongr {X : Scheme.{u}} (f g : SymmetricAlgebra k (Fin 2 → k) →+* Γ(X, ⊤))
+      (hf : (HomogeneousIdeal.irrelevant
+        (SymmetricAlgebra.homogeneousSubmodule k (Fin 2 → k))).toIdeal.map f = ⊤)
+      (hg : (HomogeneousIdeal.irrelevant
+        (SymmetricAlgebra.homogeneousSubmodule k (Fin 2 → k))).toIdeal.map g = ⊤)
+      (h : f = g) :
+      Proj.fromOfGlobalSections _ f hf = Proj.fromOfGlobalSections _ g hg := by
+    subst h
+    rfl
+  set f := (Polynomial.toLaurent : Polynomial k →+* k[T;T⁻¹]).comp
+    (AlgebraicGeometry.projectiveLine.dehomogenize k 1).toRingHom
+  have hθ : (orbitCoordinates (H := k[T;T⁻¹]) (1 : Fin 2 → k)).toRingHom.comp
+      (SymmetricAlgebra.gradedMap k (Pi.basisFun k (Fin 2)).toDualEquiv.toLinearMap).toRingHom =
+      f := by
+    refine RingHom.ext fun s ↦ ?_
+    rw [RingHom.comp_apply, GradedRingHom.coe_toRingHom, SymmetricAlgebra.gradedMap_apply]
+    exact AlgHom.congr_fun (orbitCoordinates_one_comp_map_toDual k) s
+  have hu : IsUnit (f (AlgebraicGeometry.projectiveLine.coord k 1)) := by
+    simp [f, AlgebraicGeometry.projectiveLine.dehomogenize_coord_self]
+  have hirr : (HomogeneousIdeal.irrelevant
+      (SymmetricAlgebra.homogeneousSubmodule k (Fin 2 → k))).toIdeal.map f = ⊤ :=
+    Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _
+      (HomogeneousIdeal.mem_irrelevant_of_mem _ one_pos
+        (AlgebraicGeometry.projectiveLine.coord_mem k 1))) hu
+  rw [Proj.symmetricAlgebraMapIso_hom, projectiveOrbitMap_def, Proj.fromOfGlobalSections_map,
+    hcongr _ ((Scheme.ΓSpecIso (.of k[T;T⁻¹])).inv.hom.comp f) _
+      (by rw [← Ideal.map_map, hirr, Ideal.map_top]) (by rw [RingHom.comp_assoc, ← hθ]),
+    Proj.fromOfGlobalSections_Spec_eq_awayLift f hirr one_pos
+      (AlgebraicGeometry.projectiveLine.coord_mem k 1) hu,
+    AlgebraicGeometry.projectiveLine.polynomialChartι_def, ← Spec.map_comp_assoc]
   congr 2
-  funext i
-  fin_cases i <;> simp [div_eq_inv_mul, h1]
+  ext z
+  obtain ⟨n, a, ha, rfl⟩ := HomogeneousLocalization.Away.mk_surjective _
+    (AlgebraicGeometry.projectiveLine.coord_mem k 1) z
+  simp [f, HomogeneousLocalization.Away.lift_mk,
+    AlgebraicGeometry.projectiveLine.awayEquivPolynomial_mk,
+    AlgebraicGeometry.projectiveLine.dehomogenize_coord_self]
 
-/-- Over an algebraically closed field, the boundary of the orbit of `[1 : 1]` consists exactly
-of the two fixed points `[1 : 0]` and `[0 : 1]`. -/
+/-- On the standard projective line, the fixed point `[eᵢ]` lies off the chart `D₊(X_{1-i})`. -/
+private theorem symmetricAlgebraMapIso_hom_single_notMem_range (i : Fin 2) :
+    (Proj.symmetricAlgebraMapIso k (Pi.basisFun k (Fin 2)).toDualEquiv).hom
+        (projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single i 1) (isUnimodular_single k i)
+          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹]))) ∉
+      Set.range (AlgebraicGeometry.projectiveLine.polynomialChartι k i.rev) := by
+  rw [← Scheme.Hom.coe_opensRange, AlgebraicGeometry.projectiveLine.opensRange_polynomialChartι,
+    SetLike.mem_coe, ← Scheme.Hom.mem_preimage, Proj.symmetricAlgebraMapIso_hom,
+    Proj.map_preimage_basicOpen, Proj.mem_basicOpen, not_not, SymmetricAlgebra.gradedMap_apply]
+  refine (mem_projectiveOrbitMap_iff (H := k[T;T⁻¹]) _ _ _
+    (s := SymmetricAlgebra.map k (Pi.basisFun k (Fin 2)).toDualEquiv.toLinearMap
+      (AlgebraicGeometry.projectiveLine.coord k i.rev)) one_pos
+    (SymmetricAlgebra.map_mem_homogeneousSubmodule _
+      (AlgebraicGeometry.projectiveLine.coord_mem k i.rev))).mpr ?_
+  have hcoord : AlgebraicGeometry.projectiveLine.coord k i.rev =
+      SymmetricAlgebra.ι k (Fin 2 → k) (Pi.single i.rev 1) := by
+    fin_cases i <;> simp [AlgebraicGeometry.projectiveLine.ι_eq_smul_coord_add_smul_coord k 0]
+  rw [hcoord, SymmetricAlgebra.map_apply_ι, orbitCoordinates_ι,
+    GroupLike.matrixCoefficient_of_mem_weightSpace (single_mem_weightSpace k i)]
+  fin_cases i
+  · simpa using (Pi.basisFun k (Fin 2)).toDual_apply 1 0
+  · simpa using (Pi.basisFun k (Fin 2)).toDual_apply 0 1
+
+/-- The orbit of `[1 : 1]` consists of all points of the projective line except the two fixed
+points `[1 : 0]` and `[0 : 1]`, nonclosed points included. -/
+theorem range_projectiveOrbitMap_one :
+    Set.range (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k)) =
+      {projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single 0 1) (isUnimodular_single k 0)
+          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹])),
+        projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single 1 1) (isUnimodular_single k 1)
+          (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹]))}ᶜ := by
+  set e := Proj.symmetricAlgebraMapIso k (Pi.basisFun k (Fin 2)).toDualEquiv
+  have he : Function.Injective e.hom := (Scheme.homeoOfIso e).injective
+  refine subset_antisymm ?_ fun x hx ↦ ?_
+  · rintro _ ⟨y, rfl⟩ (h | h)
+    · exact projectiveOrbitMap_single_notMem_range_one k 0 ⟨y, h⟩
+    · exact projectiveOrbitMap_single_notMem_range_one k 1 ⟨y, h⟩
+  simp only [Set.mem_compl_iff, Set.mem_insert_iff, Set.mem_singleton_iff, not_or] at hx
+  have hcover :=
+    AlgebraicGeometry.projectiveLine.range_polynomialChartι_union_range_polynomialChartι k
+  by_cases h0 : e.hom x ∈ Set.range (AlgebraicGeometry.projectiveLine.polynomialChartι k 0)
+  swap
+  · -- Off the chart `D₊(X₀)` there is only the point at infinity, which is `[e₁]`.
+    have h1 := symmetricAlgebraMapIso_hom_single_notMem_range k 1
+    rw [show (1 : Fin 2).rev = 0 by simp] at h1
+    rw [← Set.mem_compl_iff, AlgebraicGeometry.projectiveLine.compl_range_polynomialChartι] at h0 h1
+    exact (hx.2 (he (h0.trans h1.symm))).elim
+  by_cases h1 : e.hom x ∈ Set.range (AlgebraicGeometry.projectiveLine.polynomialChartι k 1)
+  swap
+  · -- Off the chart `D₊(X₁)` there is only the origin of `D₊(X₀)`, which is `[e₀]`.
+    have hV {y : AlgebraicGeometry.projectiveLine k}
+        (hy : y ∉ Set.range (AlgebraicGeometry.projectiveLine.polynomialChartι k 1)) :
+        ∃ r : PrimeSpectrum k, AlgebraicGeometry.projectiveLine.polynomialChartι k 0
+          (PrimeSpectrum.comap (Polynomial.evalRingHom (0 : k)) r) = y := by
+      have hy' : y ∈ Set.range (AlgebraicGeometry.projectiveLine.polynomialChartι k 0) ∪
+          Set.range (AlgebraicGeometry.projectiveLine.polynomialChartι k 1) := by
+        rw [hcover]
+        trivial
+      obtain ⟨q, rfl⟩ := hy'.resolve_right hy
+      have hq : Polynomial.X ∈ q.asIdeal := not_not.mp fun h ↦ hy <| by
+        simpa using (AlgebraicGeometry.projectiveLine.polynomialChartι_mem_range_iff k 0 q).mpr h
+      obtain ⟨r, hr⟩ := (Set.ext_iff.mp (Polynomial.range_comap_evalRingHom_zero k) q).mpr hq
+      exact ⟨r, congrArg _ hr⟩
+    obtain ⟨r, hr⟩ := hV h1
+    obtain ⟨r', hr'⟩ := hV (symmetricAlgebraMapIso_hom_single_notMem_range k 0)
+    rw [Subsingleton.elim r r'] at hr
+    exact (hx.1 (he (hr.symm.trans hr'))).elim
+  obtain ⟨q, hq⟩ := h1
+  rw [← hq] at h0
+  have hX : Polynomial.X ∉ q.asIdeal :=
+    (AlgebraicGeometry.projectiveLine.polynomialChartι_mem_range_iff k 1 q).mp (by simpa using h0)
+  obtain ⟨p, hp⟩ : q ∈ Set.range (PrimeSpectrum.comap
+      (algebraMap (Polynomial k) k[T;T⁻¹])) := by
+    rw [PrimeSpectrum.localization_away_comap_range k[T;T⁻¹] Polynomial.X]
+    exact hX
+  have key (y : Spec (.of k[T;T⁻¹])) :
+      e.hom (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k) y) =
+        AlgebraicGeometry.projectiveLine.polynomialChartι k 1
+          (Spec.map (CommRingCat.ofHom (Polynomial.toLaurent : Polynomial k →+* k[T;T⁻¹])) y) := by
+    rw [← Scheme.Hom.comp_apply, projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom,
+      Scheme.Hom.comp_apply]
+  exact ⟨p, he ((key p).trans ((congrArg _ hp).trans hq))⟩
+
+/-- The boundary of the orbit of `[1 : 1]` consists exactly of the two fixed points `[1 : 0]`
+and `[0 : 1]`. -/
 theorem closure_diff_range_projectiveOrbitMap_one :
     closure (Set.range (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k))) \
         Set.range (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k)) =
@@ -317,24 +399,8 @@ theorem closure_diff_range_projectiveOrbitMap_one :
           (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹])),
         projectiveOrbitMap (H := k[T;T⁻¹]) (Pi.single 1 1) (isUnimodular_single k 1)
           (AlgHom.kernelPoint (Bialgebra.counitAlgHom k k[T;T⁻¹]))} := by
-  have : JacobsonSpace (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k
-      (Module.Dual k (Fin 2 → k)))) :=
-    LocallyOfFiniteType.jacobsonSpace (TauCeti.SymmetricAlgebra.projToSpec k _)
-  refine subset_antisymm ?_ ?_
-  · -- The boundary is closed, hence the closure of its closed points, which are the two fixed
-    -- points; and these form a closed set.
-    rw [← JacobsonSpace.closure_inter_closedPoints
-      (isClosed_closure_diff_range_projectiveOrbitMap _ (isUnimodular_one k))]
-    refine closure_minimal (fun x ⟨⟨_, hxR⟩, hx⟩ ↦
-      eq_or_eq_of_mem_closedPoints_of_notMem_range_one k hx hxR) ?_
-    rw [Set.insert_eq, ← range_projectiveOrbitMap_single, ← range_projectiveOrbitMap_single]
-    exact (isClosed_range_projectiveOrbitMap_single k 0).union
-      (isClosed_range_projectiveOrbitMap_single k 1)
-  · rintro _ (rfl | rfl)
-    · exact ⟨(dense_range_projectiveOrbitMap_one k).closure_eq ▸ trivial,
-        projectiveOrbitMap_single_notMem_range_one k 0⟩
-    · exact ⟨(dense_range_projectiveOrbitMap_one k).closure_eq ▸ trivial,
-        projectiveOrbitMap_single_notMem_range_one k 1⟩
+  rw [(dense_range_projectiveOrbitMap_one k).closure_eq, range_projectiveOrbitMap_one,
+    ← Set.compl_eq_univ_sdiff, compl_compl]
 
 end Field
 

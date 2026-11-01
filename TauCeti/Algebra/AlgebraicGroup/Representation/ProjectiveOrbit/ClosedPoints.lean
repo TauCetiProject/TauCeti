@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedPoints
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Closed points of a projective orbit image
@@ -90,11 +91,8 @@ theorem projectiveOrbitMap_kernelPoint_mem_closedPoints (m : M) (hm : Module.IsU
       rfl
     rw [← h]
     rfl
-  -- A section over the one-point scheme `Spec k` is a closed immersion with one-point range.
-  have := isClosedImmersion_of_comp_eq_id _ p hp
-  rw [← hpt, mem_closedPoints_iff, ← Set.range_eq_singleton
-    (fun x ↦ congrArg p (Subsingleton.elim x (IsLocalRing.closedPoint k)))]
-  exact p.isClosedEmbedding.isClosed_range
+  rw [← hpt, mem_closedPoints_iff]
+  exact TauCeti.AlgebraicGeometry.isClosed_singleton_of_section hp
 
 variable [IsAlgClosed k]
 
