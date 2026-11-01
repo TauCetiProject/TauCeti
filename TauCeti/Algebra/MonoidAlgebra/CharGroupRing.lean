@@ -22,10 +22,10 @@ gives the joint evaluation `O[G] → ∏_{ψ ∈ Ψ} O`, whose image is the *cha
 `R_Ψ`: an `O`-subalgebra of the product, and a quotient of `O[G]` by the intersection of the
 kernels of the evaluations at the members of `Ψ`.
 
-Character group rings are the coefficient orders of the integral Brumer–Stark and Euler-system
-arguments of Dasgupta and Kakde: they interpolate between `O` (`Ψ = {1}`) and, for `G` finite
-and `O` a domain with enough roots of unity, `O[G]` itself (`Ψ` all characters). Quotients of
-`O[G]` by norm elements and by character idempotents are of this form (Dasgupta–Kakde,
+Character group rings are the coefficient orders of the integral Brumer–Stark arguments of
+Dasgupta and Kakde: they interpolate between `O` (`Ψ = {1}`) and, for `G` finite and `O` a
+domain with enough roots of unity, `O[G]` itself (`Ψ` all characters). The quotient
+`O[G] / N_I O[G]` by the norm element `N_I` of a subgroup `I` is of this form (Dasgupta–Kakde,
 Lemma 2.2). They are in general proper suborders of the product `∏_{ψ ∈ Ψ} O`.
 
 The main theorem is that the joint evaluation at all characters is injective when `G` is finite
@@ -42,7 +42,8 @@ character group ring of the set of all characters is `O[G]` itself.
 
 ## Main results
 
-* `TauCeti.charEval_one_apply`: the trivial character evaluates by the augmentation.
+* `TauCeti.charEval_one_apply` and `TauCeti.charEval_one`: the trivial character evaluates by the
+  augmentation.
 * `TauCeti.charEval_subgroupCharSum_of_le_ker` and
   `TauCeti.charEval_subgroupCharSum_eq_zero`: the evaluation of a character sum over a finite
   subgroup `H`, which is `#H` or `0` (row orthogonality); the norm element `∑_{h ∈ H} h` is the
@@ -94,6 +95,12 @@ theorem charEval_one_apply (x : MonoidAlgebra O G) :
   | add x y hx hy => rw [map_add, map_add, hx, hy]
   | single g a => simp
 
+/-- As a ring homomorphism, evaluation at the trivial character is the coefficient-sum
+augmentation. -/
+theorem charEval_one :
+    (charEval (1 : G →* Oˣ) : MonoidAlgebra O G →+* O) = TauCeti.MonoidAlgebra.augmentation O G :=
+  RingHom.ext charEval_one_apply
+
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
 `H` is `#H` when `χ ψ` is trivial on `H`. -/
 theorem charEval_subgroupCharSum_of_le_ker (χ ψ : G →* Oˣ) (H : Subgroup G) [Fintype H]
@@ -128,6 +135,10 @@ quotient of `O[G]` by the intersection of the kernels of the evaluations at the 
 (`TauCeti.charGroupRing.ker_proj`). It is in general a proper suborder of the product. -/
 noncomputable def charGroupRing (Ψ : Set (G →* Oˣ)) : Subalgebra O (Ψ → O) :=
   (jointEval Ψ).range
+
+/-- The character group ring is the range of the joint evaluation. -/
+theorem charGroupRing_def (Ψ : Set (G →* Oˣ)) : charGroupRing Ψ = (jointEval Ψ).range :=
+  (rfl)
 
 namespace charGroupRing
 
