@@ -10,15 +10,18 @@ import TauCeti.RingTheory.Almost.Firm
 /-!
 # Examples of firm modules
 
-These examples test the action map `m~ ⊗[V] M → M`, the equivalence `m~ ⊗[V] m ≃ m~`, firm modules
-and the functor `M ↦ m~ ⊗[V] M`:
+These examples test the action map `m~ ⊗[V] M → M`, the equivalence `m~ ⊗[V] m ≃ m~`, firm
+modules, the functor `M ↦ m~ ⊗[V] M` and its right adjoint `N ↦ Hom_V(m~, N)`:
 
 * over the classical setup `(ℤ, ℤ)` the action map and the equivalence are computed on explicit
   tensors, fixing the scalar conventions, and both vanish for the zero setup;
 * `m~` and every module are firm for the classical setup, `m~` is firm for every setup, `ℤ` is not
   firm for the zero setup of `ℤ`, and a firm almost zero module is zero;
 * the functor `firm` kills `V ⧸ m` for every setup and every module for the zero setup, but not
-  `ℤ` for the classical setup.
+  `ℤ` for the classical setup;
+* the unit and counit of `firm ⊣ closure` are coevaluation and evaluation, `closure` kills every
+  firm module for the zero setup but not `firm ℤ` for the classical setup, firm modules form an
+  abelian category, and `firm` is an exact localization functor for the almost isomorphisms.
 
 ## References
 
@@ -110,3 +113,43 @@ example : ¬ IsZero ((classical ℤ).firm.obj (ModuleCat.of ℤ ℤ)) := by
   rw [isZero_firm_obj_iff, isAlmostZero_classical_iff]
   intro h
   exact zero_ne_one (Subsingleton.elim (0 : ℤ) 1)
+
+/-! ### The functor `closure`, the adjunction `firm ⊣ closure` and the localization -/
+
+-- The counit of `firm ⊣ closure` evaluates: `t ⊗ g ↦ g t`.
+example (S : BasicSetup V) (N : S.Firm) (t : S.tilde) (g : ModuleCat.of V S.tilde ⟶ N.obj) :
+    (S.firmAdj.counit.app N).hom.hom (t ⊗ₜ g) = g t := by
+  rw [firmAdj_counit_app_hom]
+  rfl
+
+-- The unit of `firm ⊣ closure` is `x ↦ (t ↦ t ⊗ x)`.
+example (S : BasicSetup V) (M : ModuleCat V) (x : M) (t : S.tilde) :
+    ((S.firmAdj.unit.app M).hom x).hom t = t ⊗ₜ x := by
+  rw [firmAdj_unit_app]
+  rfl
+
+-- For the classical setup, `closure` does not kill `firm ℤ`: `closure` is faithful.
+example : ¬ IsZero ((classical ℤ).closure.obj ((classical ℤ).firm.obj (ModuleCat.of ℤ ℤ))) := by
+  intro h
+  have := IsZero.of_full_of_faithful_of_isZero (classical ℤ).closure _ h
+  rw [isZero_firm_obj_iff, isAlmostZero_classical_iff] at this
+  exact zero_ne_one (Subsingleton.elim (0 : ℤ) 1)
+
+-- For the zero setup, `closure` sends every firm module to zero.
+example (N : (zero ℤ).Firm) : IsZero ((zero ℤ).closure.obj N) := by
+  have : Subsingleton N.obj := (isFirm_zero_iff N.obj).mp (((zero ℤ).isFirm_iff _).mp N.property)
+  -- The elements of `(ihom m~).obj N` are the morphisms `m~ ⟶ N`, and `N = 0`.
+  rw [closure_obj]
+  exact @ModuleCat.isZero_of_subsingleton _ _ _
+    ⟨fun f g ↦ ModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)⟩
+
+-- Firm modules form an abelian category, and `firm` is exact.
+example (S : BasicSetup V) : Abelian S.Firm :=
+  inferInstance
+
+example (S : BasicSetup V) : PreservesFiniteLimits S.firm ∧ PreservesFiniteColimits S.firm :=
+  ⟨inferInstance, inferInstance⟩
+
+-- `firm` localizes `ModuleCat V` at the almost isomorphisms.
+example (S : BasicSetup V) : S.firm.IsLocalization S.almostZero.isoModSerre :=
+  inferInstance

@@ -56,6 +56,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
+  factors past `x ≤ n` are replaced by `1` or `0` is the product or sum over `range x`.
 * `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
   symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
@@ -99,6 +101,18 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
+
+/-- Restricting a product over `range n` to the indices below `x ≤ n`, by replacing the other
+factors with `1`, gives the product over `range x`. -/
+@[to_additive /-- Restricting a sum over `range n` to the indices below `x ≤ n`, by replacing the
+other terms with `0`, gives the sum over `range x`. -/]
+theorem prod_range_ite_lt {M : Type*} [CommMonoid M] (f : ℕ → M) {x n : ℕ} (h : x ≤ n) :
+    ∏ r ∈ range n, (if r < x then f r else 1) = ∏ r ∈ range x, f r := by
+  rw [← prod_filter]
+  congr 1
+  ext r
+  simp only [mem_filter, mem_range]
+  omega
 
 
 /-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes

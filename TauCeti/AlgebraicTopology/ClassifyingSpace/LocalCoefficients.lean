@@ -42,6 +42,15 @@ Twisted cochains with values in `N` are maps out of the twisted chains, so this 
 coefficients in the dual local system `Homₖ(A, N)`; it comes from
 `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology`.
 
+This identification is natural in both coefficient variables. A morphism of representations
+`f : A ⟶ A'` induces `Hⁿ(BG; A', N) ⟶ Hⁿ(BG; A, N)` through
+`TauCeti.classifyingSpaceLocalSystemMap k f`, and this corresponds to the map
+`Hⁿ(G, Homₖ(A', N)) ⟶ Hⁿ(G, Homₖ(A, N))` given by precomposition with `f`
+(`TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left`). A linear map
+`g : N →ₗ[k] N'` acts on cochains by postcomposition and on group cohomology through the induced
+map `Homₖ(A, N) ⟶ Homₖ(A, N')`
+(`TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right`).
+
 ## Main definitions
 
 * `TauCeti.classifyingSpaceLocalSystem`: the local coefficient system on `classifyingSpace G`
@@ -58,6 +67,9 @@ coefficients in the dual local system `Homₖ(A, N)`; it comes from
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`,
   `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: the isomorphism is
   natural in the coefficients.
+* `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left`,
+  `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right`: the
+  cohomological isomorphism is natural in the representation and in the module of values.
 
 ## References
 
@@ -152,5 +164,45 @@ theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality (f : A �
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k f n
+
+/-- **The cohomology of the classifying space with local coefficients is naturally group
+cohomology, in the representation**: for a morphism of representations `f : A ⟶ A'`, the
+identifications `Hⁿ(BG; A', N) ≅ Hⁿ(G, Homₖ(A', N))` and `Hⁿ(BG; A, N) ≅ Hⁿ(G, Homₖ(A, N))` carry
+the map on twisted cohomology induced by `TauCeti.classifyingSpaceLocalSystemMap f` to Mathlib's
+map `groupCohomology.map (MonoidHom.id G)` induced by precomposition with `f`,
+`Homₖ(A', N) ⟶ Homₖ(A, N)`. -/
+@[reassoc]
+theorem classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left (f : A ⟶ A')
+    (n : ℕ) :
+    twistedCohomologyCoefficientMap k (ModuleCat.of k N) (classifyingSpaceLocalSystemMap f) n ≫
+        (classifyingSpaceTwistedCohomologyIsoGroupCohomology k A N n).hom =
+      (classifyingSpaceTwistedCohomologyIsoGroupCohomology k A' N n).hom ≫
+        groupCohomology.map (MonoidHom.id G) ((MonoidalClosed.pre f).app (Rep.trivial k G N)) n :=
+  IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_left
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k N f n
+
+variable (A) {N} {N' : Type u} [AddCommGroup N'] [Module k N']
+
+/-- **The cohomology of the classifying space with local coefficients is naturally group
+cohomology, in the module of values**: for a `k`-linear map `g : N →ₗ[k] N'`, the identifications
+`Hⁿ(BG; A, N) ≅ Hⁿ(G, Homₖ(A, N))` and `Hⁿ(BG; A, N') ≅ Hⁿ(G, Homₖ(A, N'))` carry the map on
+twisted cohomology given by postcomposing cochains with `g` to Mathlib's map
+`groupCohomology.map (MonoidHom.id G)` induced by the map `Homₖ(A, N) ⟶ Homₖ(A, N')` of internal
+homs. -/
+@[reassoc]
+theorem classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right
+    (g : N →ₗ[k] N') (n : ℕ) :
+    HomologicalComplex.homologyMap ((classifyingSpaceLocalSystem k A).twistedChainComplex
+        |>.linearYonedaObjMap k (ModuleCat.ofHom g)) n ≫
+        (classifyingSpaceTwistedCohomologyIsoGroupCohomology k A N' n).hom =
+      (classifyingSpaceTwistedCohomologyIsoGroupCohomology k A N n).hom ≫
+        groupCohomology.map (MonoidHom.id G)
+          ((Rep.ihom A).map ((Rep.trivialFunctor k G).map (ModuleCat.ofHom g))) n :=
+  IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_right
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k A N g n
 
 end TauCeti

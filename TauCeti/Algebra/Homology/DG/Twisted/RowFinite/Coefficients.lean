@@ -138,9 +138,8 @@ theorem coefficientDifferential_single (x : P) {q : ℤ} {α : M} (hα : α ∈ 
       Finsupp.single x (dM α) + q.negOnePow •
         (m.m x).sum (fun y a ↦ Finsupp.single y (op a • α)) := by
   classical
-  have he : Finsupp.single x α = finsuppScalarRight R A M P (tmul R A α (Finsupp.single x 1)) := by
-    simp
-  rw [he, coefficientDifferential_finsuppScalarRight,
+  rw [single_eq_finsuppScalarRight_tmul R A M P x α,
+    coefficientDifferential_finsuppScalarRight,
     differential_tmul_of_mem hM (m.isDGLeftModule_rowFiniteTwistedDifferential hA) hα,
     m.differential_single_one hA]
   rw [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
