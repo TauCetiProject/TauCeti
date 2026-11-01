@@ -24,8 +24,8 @@ any commutative ring and units `s`, `z` with `z = s⁻¹ - s`; it applies, for e
 rational function field at an indeterminate `s`. It does not assert an evaluation of the
 Laurent HOMFLY polynomial at `z = 0`.
 
-The proof uses `MarkovBraid.eq_of_skein`: both algorithms have unknot value one,
-vanish on adding an uncrossed strand, and satisfy the same oriented skein relation.
+Among Markov-invariant functions on braids, unknot value one, vanishing on adding an
+uncrossed strand, and the Conway skein relation characterize the specialized invariant.
 The unreduced HOMFLY polynomial cannot be used here: its unknot value vanishes at
 `a = 1`.
 
@@ -56,6 +56,7 @@ theorem eval₂_reducedHomfly_eq_normalizedBurauAlexander (β : MarkovBraid)
   have hez : e (C (T 1)) = (z : R) := by simp [e]
   have heU : e (homflyUnknot K) = 0 := by
     simp [homflyUnknot_def, map_mul, map_sub, heT]
+  -- Apply `MarkovBraid.eq_of_skein` to compare the two algorithms.
   have h := eq_of_skein (R := R) (M := R) 1 (z : R) 0
     (F := fun γ ↦ e (γ.reducedHomfly K)) (G := fun γ ↦ γ.normalizedBurauAlexander s)
     (fun _ _ h ↦ congrArg e (h.reducedHomfly_eq K))
