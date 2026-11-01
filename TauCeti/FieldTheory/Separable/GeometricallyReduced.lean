@@ -27,15 +27,13 @@ geometrically reduced field extension is separably generated. Over a perfect fie
 generated extension is separably generated, so the content lies in positive characteristic over
 an imperfect field.
 
-Reducedness after extending scalars to *any* algebraically closed field `L` suffices, since the
-algebraic closure of `k` embeds in `L` and the tensor product over a field preserves injections.
-In particular, a finitely generated field extension `K / k` with `L ⊗[k] K` a domain is separably
-generated.
+Reducedness after extending scalars to *any* algebraically closed field `L` suffices
+(`Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct`, in
+`TauCeti.RingTheory.TensorProduct.Reduced`). In particular, a finitely generated field extension
+`K / k` with `L ⊗[k] K` a domain is separably generated.
 
 ## Main results
 
-* `Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct`: `A` is geometrically reduced over
-  `k` as soon as `L ⊗[k] A` is reduced for one algebraically closed field `L` over `k`.
 * `TauCeti.linearIndepOn_pow_of_isGeometricallyReduced`: in a geometrically reduced algebra, the
   `p`-th powers of `k`-linearly independent elements are `k`-linearly independent.
 * `TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced`: a finitely
@@ -50,20 +48,6 @@ generated.
 public section
 
 open scoped TensorProduct
-
-namespace Algebra.IsGeometricallyReduced
-
-/-- A `k`-algebra `A` is geometrically reduced as soon as `L ⊗[k] A` is reduced for one
-algebraically closed field `L` over `k`. -/
-theorem of_isReduced_tensorProduct {k A : Type*} [Field k] [Ring A] [Algebra k A]
-    (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] [IsReduced (L ⊗[k] A)] :
-    IsGeometricallyReduced k A := by
-  rw [isGeometricallyReduced_field_iff]
-  exact isReduced_of_injective
-    (Algebra.TensorProduct.map (IsAlgClosed.lift : AlgebraicClosure k →ₐ[k] L) 1)
-    (Module.Flat.rTensor_preserves_injective_linearMap _ (RingHom.injective _))
-
-end Algebra.IsGeometricallyReduced
 
 namespace TauCeti
 
