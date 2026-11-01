@@ -12,9 +12,10 @@ public import TauCeti.RingTheory.Huber.TateGauge.Basic
 # Scalar normalisation of the Tate gauge
 
 When the pseudo-uniformiser of an algebra is the image of a scalar `π`, the Tate gauge at
-base `‖π‖⁻¹` is the normalised discrete lattice gauge. Consequently it is bounded between
-the scalar lattice gauge and `‖π‖⁻¹` times that gauge. No discrete-valuation or completeness
-assumption is required. These estimates supply bounded equivalence of the two gauges,
+base `‖π‖⁻¹` is the normalised discrete lattice gauge. When `A₀` is balanced and absorbent
+over `K` and `‖π‖ < 1`, it is bounded between the scalar lattice gauge and `‖π‖⁻¹` times
+that gauge. No discrete-valuation or completeness assumption is required.
+These estimates supply bounded equivalence of the two gauges,
 which is stronger than equality of their induced topologies.
 -/
 
@@ -39,8 +40,8 @@ theorem tateGauge_eq_discreteLatticeGauge :
   ext n
   simp only [mem_ofPred_eq, mem_smul_set_iff_inv_smul_mem₀ (zpow_ne_zero n π.ne_zero)]
   simp only [← map_zpow, ← map_inv, Units.coe_map, Units.val_inv_eq_inv_val,
-    Units.val_zpow_eq_zpow_val, Algebra.smul_def]
-  rfl
+    Units.val_zpow_eq_zpow_val, Algebra.smul_def, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass, SetLike.mem_coe]
 
 end NormedField
 
@@ -48,12 +49,12 @@ variable {K A : Type*} [NontriviallyNormedField K] [CommRing A] [Algebra K A]
   {A₀ : Subring A} {π : Kˣ}
 
 /-- The scalar lattice gauge is bounded above by the normalised Tate gauge. -/
-theorem latticeGauge_le_tateGauge (hb : Balanced K (A₀ : Set A))
-    (hs : Absorbent K (A₀ : Set A)) (hπ : ‖(π : K)‖ < 1) (x : A) :
+theorem latticeGauge_le_tateGauge (hs : Absorbent K (A₀ : Set A))
+    (hπ : ‖(π : K)‖ < 1) (x : A) :
     latticeGauge K (A₀ : Set A) x ≤
       tateGauge A₀ (Units.map (algebraMap K A).toMonoidHom π) ‖(π : K)‖⁻¹ x := by
   rw [tateGauge_eq_discreteLatticeGauge]
-  exact latticeGauge_le_discreteLatticeGauge hb hs (norm_pos_iff.2 π.ne_zero) hπ x
+  exact latticeGauge_le_discreteLatticeGauge hs (norm_pos_iff.2 π.ne_zero) hπ x
 
 /-- The normalised Tate gauge loses at most one inverse scalar-norm factor. -/
 theorem tateGauge_le_inv_mul_latticeGauge (hb : Balanced K (A₀ : Set A))

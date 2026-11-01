@@ -18,8 +18,10 @@ For a scalar `π` with `0 < ‖π‖ < 1`, the normalised discrete gauge of a la
 
 These are multiplicative-constant bounds, not merely an identification of topologies. They
 apply to algebra lattices and module lattices alike, without discreteness of the scalar norm
-or completeness. For an algebra lattice the discrete gauge is the existing Tate gauge with
-base `‖π‖⁻¹` and the image of `π` as pseudo-uniformiser.
+or completeness. When `s` is a subring `A₀` of a `K`-algebra and `π` is a unit, this is
+`TauCeti.Huber.tateGauge` at base `‖π‖⁻¹` with pseudo-uniformiser the image of `π` (see
+`TauCeti.Huber.tateGauge_eq_discreteLatticeGauge` in
+`TauCeti.RingTheory.Huber.TateGauge.Lattice`).
 
 ## References
 
@@ -39,8 +41,8 @@ variable {K M : Type*} [NormedField K] [AddCommGroup M] [Module K M]
   {s : Set M} {π : K} {x : M}
 
 /-- The normalised discrete lattice gauge, taking its infimum only over powers of `π`.
-Its value is zero if no power absorbs `x`; use absorbency and balancedness to exclude this
-empty-infimum case. -/
+Its value is zero if no power absorbs `x`; absorbency excludes this empty-infimum case
+when `0 < ‖π‖ < 1`. -/
 noncomputable def discreteLatticeGauge (s : Set M) (π : K) (x : M) : ℝ :=
   sInf ((fun n : ℤ ↦ ‖π‖ ^ n) '' {n | x ∈ (π ^ n) • s})
 
@@ -107,28 +109,29 @@ section NontriviallyNormedField
 variable {K M : Type*} [NontriviallyNormedField K] [AddCommGroup M] [Module K M]
   {s : Set M} {π : K} {x : M}
 
-/-- Balanced absorbent sets have a nonempty family of discrete scalar witnesses. -/
-private theorem nonempty_discreteLatticeGauge_radii (hb : Balanced K s) (hs : Absorbent K s)
+/-- Absorbent sets have a nonempty family of discrete scalar witnesses. -/
+private theorem nonempty_discreteLatticeGauge_radii (hs : Absorbent K s)
     (hπ₀ : 0 < ‖π‖) (hπ₁ : ‖π‖ < 1) (x : M) :
     ((fun n : ℤ ↦ ‖π‖ ^ n) '' {n | x ∈ (π ^ n) • s}).Nonempty := by
-  obtain ⟨c, hc, hx, -⟩ := (latticeGauge_lt_iff hs).1 (lt_add_one (latticeGauge K s x))
-  obtain ⟨n, hn, -⟩ := exists_mem_zpow_smul_of_mem_smul hb hπ₀ hπ₁ hc hx
-  exact ⟨_, n, hn, rfl⟩
+  obtain ⟨r, -, hr⟩ := Filter.hasBasis_cobounded_norm.mem_iff.1 (hs x)
+  obtain ⟨n, hn⟩ := exists_zpowCeil_eq_zpow (c := ‖π‖) (zero_lt_one.trans_le (le_max_right r 1))
+  have hle : r ≤ ‖π‖ ^ n := (le_max_left r 1).trans (hn ▸ le_zpowCeil hπ₀ hπ₁ _)
+  exact ⟨_, n, hr (by simpa only [mem_ofPred_eq, norm_zpow] using hle) rfl, rfl⟩
 
 /-- Below any strict bound for the discrete gauge there is an actual discrete witness. -/
-theorem discreteLatticeGauge_lt_iff (hb : Balanced K s) (hs : Absorbent K s)
+theorem discreteLatticeGauge_lt_iff (hs : Absorbent K s)
     (hπ₀ : 0 < ‖π‖) (hπ₁ : ‖π‖ < 1) {r : ℝ} :
     discreteLatticeGauge s π x < r ↔ ∃ n : ℤ, x ∈ (π ^ n) • s ∧ ‖π‖ ^ n < r := by
   rw [discreteLatticeGauge_def,
     csInf_lt_iff (bddBelow_discreteLatticeGauge_radii s π x)
-      (nonempty_discreteLatticeGauge_radii hb hs hπ₀ hπ₁ x)]
+      (nonempty_discreteLatticeGauge_radii hs hπ₀ hπ₁ x)]
   simp
 
 /-- The scalar lattice gauge is at most the normalised discrete gauge. -/
-theorem latticeGauge_le_discreteLatticeGauge (hb : Balanced K s) (hs : Absorbent K s)
+theorem latticeGauge_le_discreteLatticeGauge (hs : Absorbent K s)
     (hπ₀ : 0 < ‖π‖) (hπ₁ : ‖π‖ < 1) (x : M) :
     latticeGauge K s x ≤ discreteLatticeGauge s π x := by
-  refine le_csInf (nonempty_discreteLatticeGauge_radii hb hs hπ₀ hπ₁ x) ?_
+  refine le_csInf (nonempty_discreteLatticeGauge_radii hs hπ₀ hπ₁ x) ?_
   rintro _ ⟨n, hn, rfl⟩
   simpa using latticeGauge_le_norm (zpow_ne_zero n (norm_pos_iff.1 hπ₀)) hn
 
