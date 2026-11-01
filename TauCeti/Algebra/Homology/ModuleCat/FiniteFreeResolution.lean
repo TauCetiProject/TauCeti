@@ -203,8 +203,7 @@ private noncomputable def toComplex : resolution K hK ⟶ K where
   comm' := by
     rintro _ k rfl
     ext z
-    change K.d (k + 1) k ((stage K hK (k + 1)).g z) =
-      (stage K hK k).g ((resolution K hK).d (k + 1) k z)
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
     rw [stage_succ_g, resolution_d_apply]
     exact ((stage K hK k).extension (hK (k + 1))).comm z
 
