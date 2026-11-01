@@ -56,22 +56,13 @@ private theorem isFullSetOfSections_pi_iff_of_free
     dsimp only [e] at hx
     simp only [AlgHom.sectionBaseChange_comp_evalAlgHom, AlgEquiv.apply_symm_apply] at hx
     have hn : (∏ j, Algebra.norm T (x j)) = Algebra.norm T f := by
-      trans ∏ j, if j = k then Algebra.norm T f else 1
-      · apply Finset.prod_congr rfl
-        intro j _
-        by_cases hj : j = k
-        · subst j; simp [x]
-        · simp [x, hj]
-      · simp
+      simpa [x] using (Fintype.prod_eq_single (f := fun j ↦ Algebra.norm T (x j)) k
+        (fun j hj ↦ by simp [x, hj]))
     have hs : (∏ j, ∏ i, (s j i).sectionBaseChange T (x j)) =
         ∏ i, (s k i).sectionBaseChange T f := by
-      trans ∏ j, if j = k then (∏ i, (s k i).sectionBaseChange T f) else 1
-      · apply Finset.prod_congr rfl
-        intro j _
-        by_cases hj : j = k
-        · subst j; simp [x]
-        · simp [x, hj]
-      · simp
+      simpa [x] using (Fintype.prod_eq_single
+        (f := fun j ↦ ∏ i, (s j i).sectionBaseChange T (x j)) k
+        (fun j hj ↦ by simp [x, hj]))
     exact hn.symm.trans (hx.trans hs)
   · intro h
     rw [isFullSetOfSections_iff]
