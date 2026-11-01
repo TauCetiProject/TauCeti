@@ -15,8 +15,8 @@ its own inverse (`Diffeomorph.subLeft`, the smooth counterpart of `Equiv.subLeft
 line, `Diffeomorph.subLeft 1` is the reflection `t ↦ 1 - t` exchanging `0` and `1`.
 
 A continuous linear equivalence of normed spaces is a diffeomorphism of every smoothness
-(`Diffeomorph.ofContinuousLinearEquiv`). Mathlib's `ContinuousLinearEquiv.toDiffeomorph` provides
-only the `C^∞` one.
+(`ContinuousLinearEquiv.toDiffeomorphOfContDiff`). Mathlib's `ContinuousLinearEquiv.toDiffeomorph`
+provides only the `C^∞` one.
 
 For a nonzero scalar `a`, the affine map `x ↦ a • x + b` is a diffeomorphism of `E`, of any
 smoothness, with inverse `y ↦ a⁻¹ • (y - b)` (`Diffeomorph.smulAdd`). On the real line these are
@@ -30,8 +30,7 @@ open scoped Manifold ContDiff
 namespace Diffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {n : ℕ∞ω}
 
 variable (𝕜 n) in
 /-- The map `x ↦ a - x` of a normed space, as a diffeomorphism. It is its own inverse
@@ -52,24 +51,6 @@ theorem subLeft_apply (a x : E) : subLeft 𝕜 n a x = a - x :=
 /-- `Diffeomorph.subLeft 𝕜 n a` is its own inverse. -/
 @[simp]
 theorem symm_subLeft (a : E) : (subLeft 𝕜 n a).symm = subLeft 𝕜 n a :=
-  (rfl)
-
-variable (n) in
-/-- A continuous linear equivalence of normed spaces, as a `C^n` diffeomorphism. -/
-def ofContinuousLinearEquiv (L : E ≃L[𝕜] F) : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F where
-  toEquiv := L.toEquiv
-  contMDiff_toFun := L.contDiff.contMDiff
-  contMDiff_invFun := L.symm.contDiff.contMDiff
-
-/-- `Diffeomorph.ofContinuousLinearEquiv n L` is `L`. -/
-@[simp]
-theorem coe_ofContinuousLinearEquiv (L : E ≃L[𝕜] F) : ⇑(ofContinuousLinearEquiv n L) = L :=
-  (rfl)
-
-/-- The inverse of `Diffeomorph.ofContinuousLinearEquiv n L` is the diffeomorphism of `L.symm`. -/
-@[simp]
-theorem symm_ofContinuousLinearEquiv (L : E ≃L[𝕜] F) :
-    (ofContinuousLinearEquiv n L).symm = ofContinuousLinearEquiv n L.symm :=
   (rfl)
 
 variable (n) in
@@ -95,3 +76,36 @@ theorem smulAdd_symm_apply (a : 𝕜) (b : E) (ha : a ≠ 0) (y : E) :
   (rfl)
 
 end Diffeomorph
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear equivalence of normed spaces, as a `C^n` diffeomorphism. Mathlib's
+`ContinuousLinearEquiv.toDiffeomorph` is the `C^∞` one. -/
+def toDiffeomorphOfContDiff (L : E ≃L[𝕜] F) (n : ℕ∞ω) : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F where
+  toEquiv := L.toEquiv
+  contMDiff_toFun := L.contDiff.contMDiff
+  contMDiff_invFun := L.symm.contDiff.contMDiff
+
+/-- `L.toDiffeomorphOfContDiff n` is `L`. -/
+@[simp]
+theorem coe_toDiffeomorphOfContDiff (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
+    ⇑(L.toDiffeomorphOfContDiff n) = L :=
+  (rfl)
+
+/-- The diffeomorphism of `L.symm` is the inverse of the diffeomorphism of `L`. -/
+@[simp]
+theorem symm_toDiffeomorphOfContDiff (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
+    L.symm.toDiffeomorphOfContDiff n = (L.toDiffeomorphOfContDiff n).symm :=
+  (rfl)
+
+/-- The inverse of `L.toDiffeomorphOfContDiff n` is `L.symm`. -/
+@[simp]
+theorem coe_toDiffeomorphOfContDiff_symm (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
+    ⇑(L.toDiffeomorphOfContDiff n).symm = L.symm :=
+  (rfl)
+
+end ContinuousLinearEquiv

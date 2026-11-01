@@ -49,6 +49,8 @@ up to diffeomorphism by the two oriented summands alone.
 ## Main definitions
 
 * `TauCeti.OrientedConnectedSum oM oN`: the oriented connected sum of `M` and `N`.
+* `TauCeti.OrientedConnectedSum.diffeomorphConnectedSum oM oN`: its identification with the
+  connected sum along its two balls.
 
 ## Main results
 
@@ -160,6 +162,19 @@ instance : IsManifold 𝓘(ℝ, E) ∞ (OrientedConnectedSum oM oN) :=
     (isOpenEmbedding_ballRight oM oN) (isLocalDiffeomorph_ballLeft oM oN)
     (isLocalDiffeomorph_ballRight oM oN)
   inferInstanceAs (IsManifold 𝓘(ℝ, E) ∞ (ConnectedSum (ballLeft oM oN) (ballRight oM oN)))
+
+/-- The oriented connected sum is, by definition, the connected sum along its two balls
+`OrientedConnectedSum.ballLeft oM oN` and `OrientedConnectedSum.ballRight oM oN`; this
+diffeomorphism is the identity map. It transports the API of `TauCeti.ConnectedSum`, such as the
+inclusions of the punctured summands, to the oriented connected sum. -/
+def diffeomorphConnectedSum :
+    letI := ConnectedSum.chartedSpace (H := E) (isOpenEmbedding_ballLeft oM oN)
+      (isOpenEmbedding_ballRight oM oN)
+    OrientedConnectedSum oM oN ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯
+      ConnectedSum (ballLeft oM oN) (ballRight oM oN) :=
+  letI := ConnectedSum.chartedSpace (H := E) (isOpenEmbedding_ballLeft oM oN)
+    (isOpenEmbedding_ballRight oM oN)
+  Diffeomorph.refl 𝓘(ℝ, E) (ConnectedSum (ballLeft oM oN) (ballRight oM oN)) ∞
 
 instance [T2Space M] [T2Space N] : T2Space (OrientedConnectedSum oM oN) :=
   haveI := ConnectedSum.t2Space (isOpenEmbedding_ballLeft oM oN) (isOpenEmbedding_ballRight oM oN)
@@ -285,22 +300,29 @@ end IsComplementaryBall
 namespace OrientedConnectedSum
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ} [NeZero n]
-  [Fact (finrank ℝ F = n + 1)] [Nonempty (sphere (0 : F) 1)]
+  [Fact (finrank ℝ F = n + 1)]
   {X : Type*} [TopologicalSpace X] [T2Space X] [SigmaCompactSpace X] [PreconnectedSpace X]
   [Nonempty X] [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] [IsManifold (𝓡 n) ∞ X]
 
 /-- **`X # Sⁿ ≃ X`**: the oriented connected sum of a connected, Hausdorff, σ-compact smooth
 `n`-manifold `X`, for `n ≥ 1`, with the unit sphere `Sⁿ`, is diffeomorphic to `X`, for all
-orientations of `X` and of the sphere. -/
+orientations of `X` and of the sphere. The sphere is nonempty because `F` has dimension `n + 1`,
+so this needs no nonemptiness hypothesis. -/
 theorem nonempty_diffeomorph_sphere (oX : Manifold.Orientation (𝓡 n) X ι)
     (oS : Manifold.Orientation (𝓡 n) (sphere (0 : F) 1) ι) :
+    -- The sphere is nonempty since `F` has positive dimension.
+    haveI : Nontrivial F :=
+      Module.nontrivial_of_finrank_eq_succ (Fact.out (p := finrank ℝ F = n + 1))
+    haveI := NormedSpace.sphere_nonempty_rclike ℝ (E := F) zero_le_one
     Nonempty (OrientedConnectedSum oX oS ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ X) := by
   have : FiniteDimensional ℝ F := .of_fact_finrank_eq_succ n
   have : PreconnectedSpace (sphere (0 : F) 1) := Subtype.preconnectedSpace <|
     isPreconnected_sphere (by
       rw [← Module.finrank_eq_rank, Fact.out (p := finrank ℝ F = n + 1)]
       exact_mod_cast Nat.lt_add_of_pos_left (Nat.pos_of_ne_zero (NeZero.ne n))) 0 1
-  obtain ⟨v⟩ := ‹Nonempty (sphere (0 : F) 1)›
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ (Fact.out (p := finrank ℝ F = n + 1))
+  have := NormedSpace.sphere_nonempty_rclike ℝ (E := F) zero_le_one
+  have v : sphere (0 : F) 1 := Classical.arbitrary _
   exact (isComplementaryBall_sphereBall v).nonempty_diffeomorph_orientedConnectedSum oX oS
     (isOpenEmbedding_sphereBall v) (isLocalDiffeomorph_sphereBall v ∞)
     (isLocalDiffeomorph_neg_sphereBall_neg v ∞)
