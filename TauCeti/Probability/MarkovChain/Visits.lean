@@ -79,6 +79,19 @@ private theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
 
 namespace MeasureTheory.Measure
 
+/-- The mean number of indices `k` with `P k x` is `∑' k, μ {x | P k x}`. This swap of sum and
+integral needs no Markov property. -/
+private theorem lintegral_encard_setOf_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
+    {P : ℕ → β → Prop} (hP : ∀ k, MeasurableSet {x | P k x}) :
+    ∫⁻ x, ({k | P k x}.encard : ℝ≥0∞) ∂μ = ∑' k, μ {x | P k x} := by
+  have hcount : ∀ x, ({k | P k x}.encard : ℝ≥0∞) = ∑' k, {x | P k x}.indicator (fun _ => 1) x :=
+    fun x => by
+    rw [← ENNReal.tsum_indicator_one]
+    exact tsum_congr fun k => by simp only [Set.indicator, Set.mem_ofPred_eq]
+  simp_rw [hcount]
+  rw [lintegral_tsum fun k => (measurable_const.indicator (hP k)).aemeasurable]
+  simp_rw [lintegral_indicator_const (hP _), one_mul]
+
 variable {α : Type*}
 
 /-- After a finite visit to `y` at time `n`, the next visit exists exactly when the path seen from
@@ -205,21 +218,12 @@ theorem lintegral_encard_setOf_eq_markovChainLaw [IsFiniteMeasure ν] (y : α) :
     ∫⁻ x, ({n | x n = y}.encard : ℝ≥0∞) ∂markovChainLaw ν κ =
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         (1 - markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤})⁻¹ := by
-  have hσ : ∀ k, MeasurableSet {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} :=
-    measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
-      (measurableSet_singleton y)
   -- The number of visits is the number of indices `k` whose visit exists.
-  have hcount : ∀ x : ℕ → α, ({n | x n = y}.encard : ℝ≥0∞) =
-      ∑' k, {x | successiveVisit (fun n x => x n) y k x ≠ ⊤}.indicator (fun _ => 1) x :=
-    fun x => by
-    rw [← encard_setOf_successiveVisit_ne_top (X := fun n (x : ℕ → α) => x n) (ω := x),
-      ← ENNReal.tsum_indicator_one]
-    simp only [Set.indicator_apply, Set.mem_ofPred_eq]
-  simp_rw [hcount]
-  rw [lintegral_tsum fun k => (measurable_const.indicator (hσ k)).aemeasurable]
-  simp_rw [lintegral_indicator_const (hσ _), one_mul,
-    markovChainLaw_setOf_successiveVisit_ne_top ν κ y,
-    ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
+  simp_rw [← encard_setOf_successiveVisit_ne_top (X := fun n (x : ℕ → α) => x n)]
+  rw [lintegral_encard_setOf_eq_tsum _ (measurableSet_setOf_successiveVisit_ne_top
+    (fun n => measurable_pi_apply n) (measurableSet_singleton y))]
+  simp_rw [markovChainLaw_setOf_successiveVisit_ne_top ν κ y, ENNReal.tsum_mul_left,
+    ENNReal.tsum_geometric]
 
 /-- The probability that the chain is at `y` at time `n`, summed over `n`, is the mean number of
 visits `ℙ_ν(H_y < ∞) · (1 - ρ_y)⁻¹`. -/
@@ -227,18 +231,9 @@ private theorem tsum_markovChainLaw_setOf_apply_eq [IsFiniteMeasure ν] (y : α)
     ∑' n, markovChainLaw ν κ {x | x n = y} =
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         (1 - markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤})⁻¹ := by
-  have hm : ∀ n, MeasurableSet {x : ℕ → α | x n = y} := fun n =>
-    (measurableSet_singleton y).preimage (measurable_pi_apply n)
-  have hind : ∀ n, markovChainLaw ν κ {x | x n = y} =
-      ∫⁻ x, {x : ℕ → α | x n = y}.indicator (fun _ => 1) x ∂markovChainLaw ν κ := fun n => by
-    rw [lintegral_indicator_const (hm n), one_mul]
-  rw [← lintegral_encard_setOf_eq_markovChainLaw]
-  simp_rw [hind]
-  rw [← lintegral_tsum fun n => (measurable_const.indicator (hm n)).aemeasurable]
-  congr 1
-  funext x
-  rw [← ENNReal.tsum_indicator_one]
-  exact tsum_congr fun n => by simp only [Set.indicator, Set.mem_ofPred_eq]
+  rw [← lintegral_encard_setOf_eq_tsum (P := fun n (x : ℕ → α) => x n = y) _ fun n =>
+    (measurableSet_singleton y).preimage (measurable_pi_apply n),
+    lintegral_encard_setOf_eq_markovChainLaw]
 
 end MeasureTheory.Measure
 
