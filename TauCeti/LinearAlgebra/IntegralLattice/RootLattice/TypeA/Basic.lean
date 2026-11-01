@@ -360,6 +360,12 @@ noncomputable def typeAFundamentalWeightClass :
     (typeARootLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk (typeAFundamentalWeightDual n)
 
+/-- The class of the chosen dual fundamental weight is the fundamental-weight class. -/
+@[simp]
+theorem mk_typeAFundamentalWeightDual :
+    Submodule.Quotient.mk (typeAFundamentalWeightDual n) = typeAFundamentalWeightClass n :=
+  (rfl)
+
 variable {n} in
 /-- A dual vector lies in the class `k ω₁` exactly when it differs from `k ω₁` by a vector of the
 root lattice. -/
