@@ -48,45 +48,6 @@ open InfiniteTypeAHeckeAlgebra
 variable {R : Type*} [CommRing R] {q : Rˣ} {z : R}
   {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R} {n : ℕ}
 
-namespace InfiniteTypeAHeckeAlgebra.IsMarkovTrace
-
-/-- Conjugation of a braid does not change its Hecke trace. -/
-theorem braid_conj (hτ : IsMarkovTrace z τ) (b c : BraidGroup n) :
-    τ (braidHom R q n (c * b * c⁻¹)) = τ (braidHom R q n b) := by
-  simp only [map_mul, map_inv, Units.val_mul]
-  rw [hτ.map_mul_comm, ← mul_assoc, Units.inv_mul, one_mul]
-
-/-- Positive stabilization has constant `z`, independently of the strand count. -/
-theorem braid_stabilize (hτ : IsMarkovTrace z τ) (b : BraidGroup (n + 1)) :
-    τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n))) =
-      z * τ (braidHom R q (n + 1) b) := by
-  simp only [map_mul, braidHom_strandIncl, braidHom_sigma, Units.val_mul, val_unitT,
-    Fin.val_last]
-  exact hτ.map_mul_T (braidHom_mem_stage b)
-
-/-- Negative stabilization has constant `z - (q - q⁻¹)`, dictated by the Hecke relation. -/
-theorem braid_stabilizeInv (hτ : IsMarkovTrace z τ) (b : BraidGroup (n + 1)) :
-    τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹)) =
-      (z - ((q : R) - ↑q⁻¹)) * τ (braidHom R q (n + 1) b) := by
-  simp only [map_mul, map_inv, braidHom_strandIncl, braidHom_sigma, Units.val_mul,
-    val_inv_unitT, Fin.val_last, Algebra.algebraMap_eq_smul_one, mul_sub, mul_smul_comm,
-    mul_one, map_sub, map_smul, smul_eq_mul]
-  rw [hτ.map_mul_T (braidHom_mem_stage b)]
-  ring
-
-end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
-
-/-- The unnormalized Hecke skein identity holds for every linear functional, without a trace
-hypothesis, and in an arbitrary braid context. -/
-theorem heckeBraidTrace_skein (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
-    (b c : BraidGroup (n + 1)) (i : Fin n) :
-    τ (braidHom R q (n + 1) (b * BraidGroup.sigma (n := n + 1) i * c)) -
-        τ (braidHom R q (n + 1) (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c)) =
-      ((q : R) - ↑q⁻¹) * τ (braidHom R q (n + 1) (b * c)) := by
-  simp only [map_mul, map_inv, braidHom_sigma, Units.val_mul, val_unitT, val_inv_unitT]
-  rw [mul_sub, sub_mul, map_sub, sub_sub_cancel, Algebra.algebraMap_eq_smul_one,
-    mul_smul_comm, mul_one, smul_mul_assoc, map_smul, smul_eq_mul]
-
 namespace MarkovBraid
 
 /-- The normalized braid trace of the universal Hecke representation. The strand count is
@@ -113,7 +74,7 @@ theorem heckeTrace_conj (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (b c : BraidGroup (n + 1)) :
     heckeTrace ⟨n, c * b * c⁻¹⟩ τ C l = heckeTrace ⟨n, b⟩ τ C l := by
   simp only [heckeTrace_def]
-  rw [hτ.braid_conj]
+  rw [hτ.map_braidHom_conj]
   simp [map_mul, map_inv]
 
 /-- Positive Markov stabilization preserves the normalized Hecke trace when
@@ -123,7 +84,7 @@ theorem heckeTrace_stabilize (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     heckeTrace ⟨n + 1, BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)⟩ τ C l =
       heckeTrace ⟨n, b⟩ τ C l := by
   simp only [heckeTrace_def]
-  rw [hτ.braid_stabilize]
+  rw [hτ.map_braidHom_stabilize]
   simp only [map_mul,
     BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
     toAdd_mul, toAdd_ofAdd, zpow_add, zpow_one, Units.val_mul, pow_succ]
@@ -141,7 +102,7 @@ theorem heckeTrace_stabilizeInv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     heckeTrace ⟨n + 1, BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹⟩ τ C l =
       heckeTrace ⟨n, b⟩ τ C l := by
   simp only [heckeTrace_def]
-  rw [hτ.braid_stabilizeInv]
+  rw [hτ.map_braidHom_stabilizeInv]
   simp only [map_mul, map_inv,
     BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
     toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, Units.val_mul, pow_succ]
@@ -157,20 +118,16 @@ theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n
     (↑l⁻¹ : R) * heckeTrace ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ τ C l -
         (l : R) * heckeTrace ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ τ C l =
       ((q : R) - ↑q⁻¹) * heckeTrace ⟨n, b * c⟩ τ C l := by
-  have h := heckeBraidTrace_skein τ b c i
-  simp only [map_mul, map_inv, Units.val_mul] at h
-  simp only [heckeTrace_def, map_mul, map_inv, BraidGroup.exponentSum_sigma,
+  have h := τ.map_braidHom_skein b c i
+  simp only [heckeTrace_def, map_mul (ArtinGroup.exponentSum _),
+    map_inv (ArtinGroup.exponentSum _), BraidGroup.exponentSum_sigma,
     toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, zpow_one, Units.val_mul]
+  let w := C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
+    ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ c))
   have hu : (l : R) * ↑l⁻¹ = 1 := l.mul_inv
-  linear_combination
-    C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-      ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ c)) * h +
-    (C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-      ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ c)) *
-      (τ ((braidHom R q (n + 1) b : InfiniteTypeAHeckeAlgebra R q) *
-          ↑(braidHom R q (n + 1) (BraidGroup.sigma i)) * ↑(braidHom R q (n + 1) c)) -
-        τ ((braidHom R q (n + 1) b : InfiniteTypeAHeckeAlgebra R q) *
-          ↑(braidHom R q (n + 1) (BraidGroup.sigma i))⁻¹ * ↑(braidHom R q (n + 1) c)))) * hu
+  linear_combination w * h + w *
+    (τ (braidHom R q (n + 1) (b * BraidGroup.sigma (n := n + 1) i * c)) -
+      τ (braidHom R q (n + 1) (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c))) * hu
 
 end MarkovBraid
 
