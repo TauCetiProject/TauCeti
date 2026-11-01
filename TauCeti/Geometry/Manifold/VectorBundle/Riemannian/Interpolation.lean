@@ -259,11 +259,11 @@ private theorem tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub (k 
     {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     (hg : letI := chartCkTopology (I := I) (M := M) k; Tendsto g l (𝓝 g₀)) (x : M) {m : ℕ}
     (hm : (m : ℕ∞) ≤ k) {c : E → ℝ} (hc : ContDiffOn ℝ ∞ c (extChartAt I x).target)
-    {K : Set (extChartAt I x).target} (hK : IsCompact K) :
+    {K : Set E} (hKU : K ⊆ (extChartAt I x).target) (hK : IsCompact K) :
     TendstoUniformlyOn (fun i z ↦ iteratedFDerivWithin ℝ m (fun y ↦
         c y • ((g i).toNondegenerateMetric.chartMetric x y -
           g₀.toNondegenerateMetric.chartMetric x y)) (extChartAt I x).target z)
-      (fun _ ↦ 0) l (Subtype.val '' K) := by
+      (fun _ ↦ 0) l K := by
   have hU : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
   -- The map `y ↦ c y • (g i - g₀) y` is `y ↦ L y ((g i - g₀) (id y))` for `L y = c y • id`.
   have hL := contDiffOn_infty.mp (hc.smul (contDiffOn_const
@@ -276,16 +276,14 @@ private theorem tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub (k 
     simp only [smul_apply, ContinuousLinearMap.id_apply, id, Pi.sub_apply]
   simp_rw [← hform]
   refine hL.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp contDiffOn_id hU.uniqueDiffOn
-    hU.uniqueDiffOn (mapsTo_id _) (hK.image continuous_subtype_val)
-    (image_subset_iff.mpr fun z _ ↦ z.2) (Eventually.of_forall fun i ↦ contDiffOn_infty.mp
+    hU.uniqueDiffOn (mapsTo_id _) hK hKU (Eventually.of_forall fun i ↦ contDiffOn_infty.mp
       (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).sub
         (g₀.toNondegenerateMetric.contDiffOn_chartMetric x)) m) fun j hj ↦ ?_
   refine Metric.tendstoUniformlyOn_iff.mpr fun δ hδ ↦ ?_
   filter_upwards [Metric.tendstoUniformlyOn_iff.mp ((tendsto_chartCk_iff k).mp hg x j
-    ((Nat.cast_le.2 hj).trans hm) K hK) δ hδ] with i hi z hz
-  obtain ⟨z, hzK, rfl⟩ := hz
-  have hz := hU.mem_nhds z.2
-  rw [id, iteratedFDerivWithin_of_isOpen j hU z.2, iteratedFDeriv_sub_apply
+    ((Nat.cast_le.2 hj).trans hm) K hKU hK) δ hδ] with i hi z hzK
+  have hz := hU.mem_nhds (hKU hzK)
+  rw [id, iteratedFDerivWithin_of_isOpen j hU (hKU hzK), iteratedFDeriv_sub_apply
       (contDiffAt_infty.mp (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt hz) j)
       (contDiffAt_infty.mp ((g₀.toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt hz) j),
     dist_zero_left, ← dist_eq_norm, dist_comm]
@@ -347,21 +345,21 @@ theorem continuous_convexCombinationFun (k : ℕ∞) (f : M → ℝ) (hf : ContM
       q.1.convexCombinationFun q.2 f hf hf₀ hf₁) := by
   let _ := chartCkTopology (I := I) (M := M) k
   refine continuous_iff_continuousAt.mpr fun q₀ ↦ (tendsto_chartCk_iff k).mpr
-    fun x m hm K hK ↦ ?_
+    fun x m hm K hKU hK ↦ ?_
   have hw : ContDiffOn ℝ ∞ (fun y ↦ f ((extChartAt I x).symm y)) (extChartAt I x).target :=
     contMDiffOn_iff_contDiffOn.mp (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))
   have h₁ := tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub k
-    (continuous_fst.tendsto q₀) x hm ((contDiffOn_const (c := (1 : ℝ))).sub hw) hK
+    (continuous_fst.tendsto q₀) x hm ((contDiffOn_const (c := (1 : ℝ))).sub hw) hKU hK
   have h₂ := tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub k
-    (continuous_snd.tendsto q₀) x hm hw hK
+    (continuous_snd.tendsto q₀) x hm hw hKU hK
   refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
   filter_upwards [Metric.tendstoUniformlyOn_iff.mp h₁ (ε / 2) (half_pos hε),
     Metric.tendstoUniformlyOn_iff.mp h₂ (ε / 2) (half_pos hε)] with q hq₁ hq₂ z hz
-  have hz₁ := hq₁ z (mem_image_of_mem _ hz)
-  have hz₂ := hq₂ z (mem_image_of_mem _ hz)
+  have hz₁ := hq₁ z hz
+  have hz₂ := hq₂ z hz
   rw [dist_zero_left] at hz₁ hz₂
   rw [dist_comm, dist_eq_norm,
-    iteratedFDeriv_chartMetric_convexCombinationFun_sub _ _ _ _ f hf hf₀ hf₁ x m z.2]
+    iteratedFDeriv_chartMetric_convexCombinationFun_sub _ _ _ _ f hf hf₀ hf₁ x m (hKU hz)]
   calc _ ≤ _ := norm_add_le _ _
     _ < ε / 2 + ε / 2 := add_lt_add hz₁ hz₂
     _ = ε := add_halves ε
