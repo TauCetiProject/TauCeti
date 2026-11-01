@@ -271,26 +271,13 @@ theorem map_prodComm_prod_complexOrientation :
       Orientation.reindex ℝ (F × E) (finCongr (add_comm _ _))
         ((complexOrientation F).prod (complexOrientation E) finrank_real_eq_two_mul_finrank_complex
           finrank_real_eq_two_mul_finrank_complex) := by
-  -- The exchange is complex linear, so it carries a complex basis `d` of `E × F` to one of
-  -- `F × E`, and both sides are the orientations of the underlying real bases.
-  set d : Basis (Fin (finrank ℂ (E × F))) ℂ (E × F) := finBasis ℂ (E × F)
-  set f := LinearEquiv.prodComm ℂ E F
-  set d' : Basis (Fin (finrank ℂ (F × E))) ℂ (F × E) := (d.map f).reindex (finCongr f.finrank_eq)
-  rw [prod_complexOrientation, prod_complexOrientation, d.complexOrientation_eq,
-    d'.complexOrientation_eq]
-  simp only [← Basis.orientation_reindex, ← Basis.orientation_map]
+  -- The exchange is complex linear, so it carries the canonical orientation of `E × F` to that of
+  -- `F × E`; what remains is that `map` and the index casts commute.
+  rw [prod_complexOrientation, prod_complexOrientation,
+    (Equiv.eq_symm_apply _).2 (LinearEquiv.prodComm ℂ E F).map_complexOrientation.symm]
+  induction complexOrientation (E × F) using Module.Ray.ind with | h v hv => ?_
+  simp only [Orientation.map_apply, Orientation.reindex_apply, Orientation.reindex_symm]
   congr 1
-  refine Basis.eq_of_apply_eq fun j ↦ ?_
-  simp only [d', Basis.complexToReal_map, Basis.complexToReal_reindex, Basis.reindex_apply,
-    Basis.map_apply, finCongr_symm, finCongr_apply, LinearEquiv.restrictScalars_apply, f,
-    LinearEquiv.prodComm_apply, Equiv.prodCongr_symm, Equiv.prodCongr_apply, Equiv.refl_symm,
-    Equiv.coe_refl, Fin.cast_cast]
-  have key : ∀ {m n p : ℕ} (h : m = n) (j : Fin p) (h₁ : p = 2 * m) (h₂ : p = 2 * n),
-      (complexRealIndexEquiv m).symm (Fin.cast h₁ j) =
-        Prod.map (finCongr h.symm) id ((complexRealIndexEquiv n).symm (Fin.cast h₂ j)) := by
-    rintro m n p rfl j h₁ h₂
-    simp
-  rw [key f.finrank_eq]
 
 end Prod
 
