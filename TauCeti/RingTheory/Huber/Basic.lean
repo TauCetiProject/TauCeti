@@ -92,6 +92,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   norm, such as nonarchimedean normed fields, are recognised.
 * `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the first of the
   roadmap's Layer-0 examples.
+* `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_eq_bot`: every ideal
+  of definition of a discrete ring is nilpotent.
 * `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`: pure algebra, stated here because it is what
   finite generation of an ideal of definition is used through — an element of `(G) * K`, for a
   finite family `G`, is a `K`-linear combination of `G` itself.
@@ -751,6 +753,17 @@ theorem PairOfDefinition.discrete_ringOfDefinition :
 @[simp]
 theorem PairOfDefinition.discrete_idealOfDefinition :
     (PairOfDefinition.discrete A).idealOfDefinition = ⊥ := (rfl)
+
+variable {A} in
+/-- **The ideal of definition of a discrete ring is nilpotent.** The singleton `{0}` is a
+neighbourhood of zero, so it contains the image of some power `Iⁿ` of the ideal of definition, and
+the inclusion `A₀ → A` is injective. -/
+theorem PairOfDefinition.exists_pow_idealOfDefinition_eq_bot (P : PairOfDefinition A) :
+    ∃ n : ℕ, P.idealOfDefinition ^ n = ⊥ := by
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp
+    ((isOpen_discrete ({0} : Set A)).mem_nhds rfl)
+  refine ⟨n, (Submodule.eq_bot_iff _).mpr fun x hx ↦ Subtype.ext ?_⟩
+  simpa using hn ((P.mem_idealImage n).mpr ⟨x, hx, rfl⟩)
 
 /-- A discrete ring is Huber, with `(A, 0)` as a pair of definition. This is the first of the
 roadmap's Layer-0 examples, and the witness that `IsHuberRing` is not vacuous. -/

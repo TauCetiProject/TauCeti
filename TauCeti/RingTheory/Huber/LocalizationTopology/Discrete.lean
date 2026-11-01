@@ -30,8 +30,6 @@ of the Čech complexes of localisations.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_eq_bot`: the ideal of definition
-  of a discrete ring is nilpotent.
 * `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_of_discreteTopology`: over a discrete ring
   every presentation satisfies the standing hypothesis of the localisation topology.
 * `TauCeti.Huber.PairOfDefinition.discreteTopology_locTopology` and
@@ -57,16 +55,6 @@ namespace TauCeti.Huber
 namespace PairOfDefinition
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
-
-/-- **The ideal of definition of a discrete ring is nilpotent.** The singleton `{0}` is a
-neighbourhood of zero, so it contains the image of some power `Iⁿ` of the ideal of definition, and
-the inclusion `A₀ → A` is injective. -/
-theorem exists_pow_idealOfDefinition_eq_bot (P : PairOfDefinition A) :
-    ∃ n : ℕ, P.idealOfDefinition ^ n = ⊥ := by
-  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp
-    ((isOpen_discrete ({0} : Set A)).mem_nhds rfl)
-  refine ⟨n, (Submodule.eq_bot_iff _).mpr fun x hx ↦ Subtype.ext ?_⟩
-  simpa using hn ((P.mem_idealImage n).mpr ⟨x, hx, rfl⟩)
 
 /-- **Over a discrete ring every presentation is admissible for the localisation topology.** The
 ideal of definition is nilpotent, so the fractions `b/s` with `b` in a high enough power of it are
