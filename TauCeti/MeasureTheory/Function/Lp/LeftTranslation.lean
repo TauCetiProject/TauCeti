@@ -23,11 +23,12 @@ preserves `Lᵖ` classes and norms, so it gives a group homomorphism
 action of `DomMulAct.mk g⁻¹` from Mathlib's `DomMulAct` action on `Lp`, reindexed so that it is
 a left action of `G` itself.
 
-For real-valued functions, left translation is an order automorphism, preserves integrals and
-fixes the constant class one of `L∞`. The class of the left translate of a bounded continuous
-function is the left translate of its class, so `BoundedContinuousFunction.toLpTop` is
-equivariant. These are the translation-invariance properties needed to compare invariant means
-on bounded uniformly continuous functions with invariant means on `L∞` of a Haar measure.
+For real-valued functions, left translation is an order automorphism, preserves integrals,
+fixes the constant class one of `L∞` and translates indicator classes in `L∞`. The class of the
+left translate of a bounded continuous function is the left translate of its class, so
+`BoundedContinuousFunction.toLpTop` is equivariant. These are the translation-invariance
+properties needed to compare invariant means on bounded uniformly continuous functions with
+invariant means on `L∞` of a Haar measure.
 
 ## Main definitions
 
@@ -40,6 +41,8 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.leftTranslation_le_leftTranslation_iff`: left translation is an order
   automorphism of real `Lᵖ`.
 * `MeasureTheory.Lp.leftTranslation_linftyOne`: it fixes the constant class one in `L∞`.
+* `MeasureTheory.Lp.leftTranslation_linftyIndicator`: it takes the indicator class of a set `s` in
+  `L∞` to that of `g • s`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
@@ -116,6 +119,22 @@ theorem leftTranslation_linftyOne (g : G) :
     (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae TauCeti.coeFn_linftyOne]
     with x hx h1 h1'
   rw [hx, h1, h1']
+
+/-- Left translation by `g` takes the indicator class of `s` in `L∞` to the indicator class of
+the translated set `g • s`. -/
+theorem leftTranslation_linftyIndicator (g : G) {s : Set G} (hs : MeasurableSet s) :
+    leftTranslation μ ∞ ℝ g (TauCeti.linftyIndicator μ hs) =
+      TauCeti.linftyIndicator μ (hs.const_smul g) := by
+  refine ext ?_
+  filter_upwards [coeFn_leftTranslation (𝕜 := ℝ) g (TauCeti.linftyIndicator μ hs),
+    TauCeti.coeFn_linftyIndicator (μ := μ) (hs.const_smul g),
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae
+      (TauCeti.coeFn_linftyIndicator (μ := μ) hs)] with x hx hgs hs'
+  rw [hx, hgs, hs']
+  by_cases h : g⁻¹ * x ∈ s
+  · rw [Set.indicator_of_mem h, Set.indicator_of_mem (Set.mem_smul_set_iff_inv_smul_mem.2 h)]
+  · rw [Set.indicator_of_notMem h,
+      Set.indicator_of_notMem (mt Set.mem_smul_set_iff_inv_smul_mem.1 h)]
 
 /-- Left translation preserves the integral of an `Lᵖ` class, since `μ` is left invariant. -/
 @[simp]
