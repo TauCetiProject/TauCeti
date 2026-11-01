@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Character
-public import Mathlib.Algebra.Lie.Prod
+public import TauCeti.Algebra.Lie.Subalgebra.Character
 public import TauCeti.Algebra.Lie.Current.CentralExtension
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Extension.Topology
@@ -17,7 +16,9 @@ public import TauCeti.Algebra.Lie.Extension.Topology
 The currents of order at least `n ≥ 0` form a Lie subalgebra `a_n`. The residue cocycle
 vanishes on this subalgebra, so the zero-central-coordinate section is a Lie homomorphism.
 The preimage of `a_n` in the residue extension is canonically the direct product `a_n × R`.
-These splittings agree under inclusion of higher-order currents and are continuous.
+The zero-central-coordinate sections agree under inclusion of higher-order currents and are
+continuous. The product splitting is continuous when `R` is discrete, and its inverse is
+continuous for any topology on `R`.
 
 The central-coordinate character, scaled by any `a : R`, kills `a_n` and takes the value
 `a` on the distinguished central generator. It specifies the one-dimensional representation
@@ -41,31 +42,11 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace TauCeti.CurrentAlgebra
 
-variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
 
-/-- The Lie subalgebra of currents of order at least the nonnegative integer `n`. -/
-def orderLieSubalgebra (n : ℕ) : LieSubalgebra R (currentAlgebra R L) where
-  toSubmodule := orderSubmodule R L n
-  lie_mem' {u v} hu hv := orderSubmodule_antitone R L (by omega : (n : ℤ) ≤ n + n)
-    (lie_mem_orderSubmodule R L hu hv)
-
-/-- The underlying submodule of `a_n` is the order submodule. -/
-@[simp]
-theorem orderLieSubalgebra_toSubmodule (n : ℕ) :
-    (orderLieSubalgebra R L n).toSubmodule = orderSubmodule R L n :=
-  (rfl)
-
-/-- Membership in `a_n` is the order condition. -/
-@[simp]
-theorem mem_orderLieSubalgebra (n : ℕ) (u : currentAlgebra R L) :
-    u ∈ orderLieSubalgebra R L n ↔ u ∈ orderSubmodule R L n :=
-  (Iff.rfl)
-
-/-- The current Lie subalgebras decrease with the order. -/
-theorem orderLieSubalgebra_antitone : Antitone (orderLieSubalgebra R L) :=
-  fun m n h u hu ↦ orderSubmodule_antitone R L (by exact_mod_cast h) hu
-
-variable {R L} (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+local instance : IsLieAbelian R := ⟨fun x y ↦ by
+  simp [LieRing.of_associative_ring_bracket, mul_comm]⟩
 
 local notation "C" => currentAlgebra R L
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
@@ -87,35 +68,31 @@ theorem orderExtensionLieSubalgebra_antitone :
     Antitone (orderExtensionLieSubalgebra Φ hΦ hΦs) :=
   fun _ _ h _ hu ↦ orderLieSubalgebra_antitone R L h hu
 
+/-- The residue cocycle vanishes on every nonnegative-order current subalgebra. -/
+theorem twoCocycleOfBilinear_eq_zero_of_mem_orderLieSubalgebra (n : ℕ)
+    (x : C) (hx : x ∈ orderLieSubalgebra R L n)
+    (y : C) (hy : y ∈ orderLieSubalgebra R L n) :
+    (c : LieModule.Cohomology.twoCochain R C (TrivialLieModule R C R)) x y = 0 := by
+  simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply]
+  exact residuePairing_eq_zero_of_mem_orderSubmodule_zero R L Φ
+    (orderSubmodule_antitone R L (Int.natCast_nonneg n)
+      ((mem_orderLieSubalgebra R L n x).mp hx))
+    (orderSubmodule_antitone R L (Int.natCast_nonneg n)
+      ((mem_orderLieSubalgebra R L n y).mp hy))
+
 /-- The canonical splitting of the central preimage as a direct product of Lie algebras. -/
 def orderExtensionEquiv (n : ℕ) :
-    (orderLieSubalgebra R L n × R) ≃ₗ⁅R⁆ orderExtensionLieSubalgebra Φ hΦ hΦs n where
-  toFun p := ⟨ofProd c (p.1, (TrivialLieModule.equiv R C R).symm p.2), by
-    simp⟩
-  invFun v := (⟨ofTwoCocycle.proj c v,
-    (mem_orderExtensionLieSubalgebra Φ hΦ hΦs n v).mp v.property⟩,
-    TrivialLieModule.equiv R C R ((ofProd c).symm v).2)
-  left_inv p := by simp
-  right_inv v := Subtype.ext (by simp [ofTwoCocycle.proj_apply])
-  map_add' p q := Subtype.ext (by simp [← of_add])
-  map_smul' r p := Subtype.ext (by simp [← of_smul, -smul_eq_mul])
-  map_lie' {p q} := by
-    apply Subtype.ext
-    simp only [LieSubalgebra.coe_bracket, bracket_ofTwoCocycle, Equiv.symm_apply_apply,
-      trivial_lie_zero, sub_zero, add_zero, twoCocycleOfBilinear_coe,
-      LieModule.Cohomology.twoCochain_val_apply, twoCochainOfBilinear_apply_apply,
-      LieAlgebra.Prod.bracket_apply]
-    rw [residuePairing_eq_zero_of_mem_orderSubmodule_zero R L Φ
-      (orderSubmodule_antitone R L (Int.natCast_nonneg n) p.1.property)
-      (orderSubmodule_antitone R L (Int.natCast_nonneg n) q.1.property)]
-    simp [LieRing.of_associative_ring_bracket, mul_comm]
+    (orderLieSubalgebra R L n × R) ≃ₗ⁅R⁆ orderExtensionLieSubalgebra Φ hΦ hΦs n :=
+  ofTwoCocycle.splitEquivOfVanishing c (orderLieSubalgebra R L n)
+    (TrivialLieModule.equiv R C R)
+    (twoCocycleOfBilinear_eq_zero_of_mem_orderLieSubalgebra Φ hΦ hΦs n)
 
 /-- Forward coordinates of the canonical splitting. -/
 @[simp]
 theorem coe_orderExtensionEquiv (n : ℕ) (p : orderLieSubalgebra R L n × R) :
     (orderExtensionEquiv Φ hΦ hΦs n p : E) =
       ofProd c (p.1, (TrivialLieModule.equiv R C R).symm p.2) :=
-  (rfl)
+  ofTwoCocycle.coe_splitEquivOfVanishing c _ _ _ p
 
 /-- Inverse coordinates of the canonical splitting. -/
 @[simp]
@@ -125,13 +102,12 @@ theorem orderExtensionEquiv_symm_apply (n : ℕ)
       (⟨ofTwoCocycle.proj c v,
           (mem_orderExtensionLieSubalgebra Φ hΦ hΦs n v).mp v.property⟩,
         TrivialLieModule.equiv R C R ((ofProd c).symm v).2) :=
-  (rfl)
+  ofTwoCocycle.splitEquivOfVanishing_symm_apply c _ _ _ v
 
 /-- The canonical Lie section over currents of nonnegative order, with central coordinate zero. -/
 def orderSection (n : ℕ) : orderLieSubalgebra R L n →ₗ⁅R⁆ E :=
-  (orderExtensionLieSubalgebra Φ hΦ hΦs n).incl.comp
-    ((orderExtensionEquiv Φ hΦ hΦs n).toLieHom.comp
-      (LieHom.inl R (orderLieSubalgebra R L n) R))
+  ofTwoCocycle.sectionOfVanishing c (orderLieSubalgebra R L n)
+    (twoCocycleOfBilinear_eq_zero_of_mem_orderLieSubalgebra Φ hΦ hΦs n)
 
 /-- The section puts zero in the central coordinate. -/
 @[simp]
@@ -146,22 +122,51 @@ theorem orderSection_inclusion {m n : ℕ} (h : n ≤ m) (u : orderLieSubalgebra
         orderSection Φ hΦ hΦs m u := by
   simp
 
+/-- `a` times the central coordinate of the residue extension. -/
+def centralCoordinateForm (a : R) : E →ₗ[R] R :=
+  a • ((TrivialLieModule.equiv R C R).toLinearMap ∘ₗ LinearMap.snd R _ _ ∘ₗ
+    (ofProdLinearEquiv c).symm.toLinearMap)
+
+/-- The scaled central-coordinate form is `a` times the coefficient coordinate. -/
+theorem centralCoordinateForm_apply (a : R) (v : E) :
+    centralCoordinateForm Φ hΦ hΦs a v =
+      a * TrivialLieModule.equiv R C R ((ofProd c).symm v).2 := by
+  simp [centralCoordinateForm, coe_ofProdLinearEquiv_symm]
+
+/-- The scaled central-coordinate form evaluates to `a z` in product coordinates. -/
+@[simp]
+theorem centralCoordinateForm_ofProd (a : R) (u : C) (z : TrivialLieModule R C R) :
+    centralCoordinateForm Φ hΦ hΦs a (ofProd c (u, z)) =
+      a * TrivialLieModule.equiv R C R z := by
+  simp [centralCoordinateForm_apply]
+
+/-- The central-coordinate form vanishes on brackets of nonnegative-order currents in the
+extension, since their cocycle is zero. -/
+theorem centralCoordinateForm_lie_eq_zero (a : R) (n : ℕ) :
+    ∀ x ∈ orderExtensionLieSubalgebra Φ hΦ hΦs n,
+      ∀ y ∈ orderExtensionLieSubalgebra Φ hΦ hΦs n,
+      centralCoordinateForm Φ hΦ hΦs a ⁅x, y⁆ = 0 := by
+  intro x hx y hy
+  let χ := (LieHom.snd R (orderLieSubalgebra R L n) R).comp
+    (orderExtensionEquiv Φ hΦ hΦs n).symm.toLieHom
+  have h := lieCharacter_apply_lie χ ⟨x, hx⟩ ⟨y, hy⟩
+  simp only [χ, LieHom.comp_apply, LieHom.snd_apply, LieEquiv.coe_toLieHom,
+    orderExtensionEquiv_symm_apply, LieSubalgebra.coe_bracket] at h
+  rw [centralCoordinateForm_apply, h, mul_zero]
+
 /-- The central-coordinate character with central value `a`, killing the order currents. -/
 def orderCharacter (a : R) (n : ℕ) :
     LieCharacter R (orderExtensionLieSubalgebra Φ hΦ hΦs n) :=
-  letI : IsLieAbelian R := ⟨fun x y ↦ by
-    simp [LieRing.of_associative_ring_bracket, mul_comm]⟩
-  ((lieCharacterEquivLinearDual (R := R) (L := R)).symm (a • LinearMap.id)).comp
-    ((LieHom.snd R (orderLieSubalgebra R L n) R).comp
-      (orderExtensionEquiv Φ hΦ hΦs n).symm.toLieHom)
+  (orderExtensionLieSubalgebra Φ hΦ hΦs n).restrictCharacter
+    (centralCoordinateForm Φ hΦ hΦs a)
+    (centralCoordinateForm_lie_eq_zero Φ hΦ hΦs a n)
 
 /-- The inducing character is `a` times the central coordinate. -/
-@[simp]
 theorem orderCharacter_apply (a : R) (n : ℕ)
     (v : orderExtensionLieSubalgebra Φ hΦ hΦs n) :
     orderCharacter Φ hΦ hΦs a n v =
-      a * TrivialLieModule.equiv R C R ((ofProd c).symm v).2 :=
-  (rfl)
+      a * TrivialLieModule.equiv R C R ((ofProd c).symm v).2 := by
+  simp [orderCharacter, centralCoordinateForm_apply]
 
 /-- The distinguished central generator belongs to every central preimage. -/
 theorem centralElement_mem_orderExtensionLieSubalgebra (n : ℕ) :
@@ -170,28 +175,56 @@ theorem centralElement_mem_orderExtensionLieSubalgebra (n : ℕ) :
     ofProd_symm_centralElement]
   exact zero_mem _
 
-/-- The canonical Lie section is continuous for the induced order topology. -/
-theorem continuous_orderSection (n : ℕ) : Continuous (orderSection Φ hΦ hΦs n) := by
-  convert (ofTwoCocycle.inl c).continuous.comp
-    (continuous_subtype_val : Continuous fun u : orderLieSubalgebra R L n ↦ (u : C)) using 1
-  ext u
+/-- Restricting the global central-coordinate form gives the inducing character. -/
+theorem centralCoordinateForm_eq_orderCharacter (a : R) (n : ℕ) (v : E)
+    (hv : v ∈ orderExtensionLieSubalgebra Φ hΦ hΦs n) :
+    centralCoordinateForm Φ hΦ hΦs a v = orderCharacter Φ hΦ hΦs a n ⟨v, hv⟩ := by
+  simp only [orderCharacter, LieSubalgebra.restrictCharacter_apply]
+
+/-- The global central-coordinate form takes the value `a` on the central generator. -/
+@[simp]
+theorem centralCoordinateForm_centralElement (a : R) :
+    centralCoordinateForm Φ hΦ hΦs a (centralElement Φ hΦ hΦs) = a := by
+  rw [centralCoordinateForm_eq_orderCharacter Φ hΦ hΦs a 0 _
+    (centralElement_mem_orderExtensionLieSubalgebra Φ hΦ hΦs 0), orderCharacter_apply,
+    ofProd_symm_centralElement, LinearEquiv.apply_symm_apply, mul_one]
+
+/-- The inducing character takes the prescribed value on the central generator. -/
+@[simp]
+theorem orderCharacter_centralElement (a : R) (n : ℕ) :
+    orderCharacter Φ hΦ hΦs a n
+      ⟨centralElement Φ hΦ hΦs, centralElement_mem_orderExtensionLieSubalgebra Φ hΦ hΦs n⟩ =
+        a := by
+  rw [← centralCoordinateForm_eq_orderCharacter]
+  exact centralCoordinateForm_centralElement Φ hΦ hΦs a
+
+/-- In split coordinates, the inducing character is `a` times the scalar coordinate. -/
+@[simp]
+theorem orderCharacter_orderExtensionEquiv (a : R) (n : ℕ)
+    (p : orderLieSubalgebra R L n × R) :
+    orderCharacter Φ hΦ hΦs a n (orderExtensionEquiv Φ hΦ hΦs n p) = a * p.2 := by
+  rw [orderCharacter_apply]
   simp
+
+/-- The inducing character kills the zero-central-coordinate lift of every order current. -/
+theorem orderCharacter_orderExtensionEquiv_zero (a : R) (n : ℕ)
+    (u : orderLieSubalgebra R L n) :
+    orderCharacter Φ hΦ hΦs a n (orderExtensionEquiv Φ hΦ hΦs n (u, 0)) = 0 := by
+  simp
+
+/-- The canonical Lie section is continuous for the induced order topology. -/
+theorem continuous_orderSection (n : ℕ) : Continuous (orderSection Φ hΦ hΦs n) :=
+  ofTwoCocycle.continuous_sectionOfVanishing c _ _
 
 /-- With discrete scalars, the splitting is continuous for the product and subspace topologies. -/
 theorem continuous_orderExtensionEquiv [TopologicalSpace R] [DiscreteTopology R] (n : ℕ) :
-    Continuous (orderExtensionEquiv Φ hΦ hΦs n) := by
-  apply Continuous.subtype_mk
-  exact ofTwoCocycle.continuous_iff.mpr
-    ⟨continuous_subtype_val.comp continuous_fst,
-      (IsLocallyConstant.of_discrete (TrivialLieModule.equiv R C R).symm).comp_continuous
-        continuous_snd⟩
+    Continuous (orderExtensionEquiv Φ hΦ hΦs n) :=
+  ofTwoCocycle.continuous_splitEquivOfVanishing c _ _ _
 
 /-- The inverse splitting is continuous for any topology on the scalar target: its central
 coordinate is locally constant. -/
 theorem continuous_orderExtensionEquiv_symm [TopologicalSpace R] (n : ℕ) :
     Continuous (orderExtensionEquiv Φ hΦ hΦs n).symm :=
-  (((ofTwoCocycle.continuous_proj c).comp continuous_subtype_val).subtype_mk _).prodMk
-    (((ofTwoCocycle.isLocallyConstant_snd c).comp_continuous continuous_subtype_val).comp
-      (TrivialLieModule.equiv R C R)).continuous
+  ofTwoCocycle.continuous_splitEquivOfVanishing_symm c _ _ _
 
 end TauCeti.CurrentAlgebra

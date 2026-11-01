@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Extension
+public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -24,7 +25,11 @@ This file works with an arbitrary module `M` and supplies:
   homomorphism, whose kernel `0 × M` is an abelian ideal;
 * `LieAlgebra.ofTwoCocycle.map` and `LieAlgebra.ofTwoCocycle.mapEquiv`: for trivial coefficients,
   the morphisms and isomorphisms of central extensions `(x, m) ↦ (φ x, e m)` induced by a map `φ`
-  of the quotients and a linear map `e` of the kernels carrying one cocycle to the other.
+  of the quotients and a linear map `e` of the kernels carrying one cocycle to the other;
+* `LieAlgebra.ofTwoCocycle.sectionOfVanishing` and
+  `LieAlgebra.ofTwoCocycle.splitEquivOfVanishing`: the zero-coefficient Lie section over a
+  subalgebra where the cocycle vanishes, and, for trivial coefficients, the direct-product
+  splitting of its preimage.
 
 The construction of `map` and `mapEquiv` follows Mathlib's `LieAlgebra.LieEquiv.ofCoboundary`,
 which identifies the extensions of cohomologous cocycles by acting on the coordinates of `ofProd`.
@@ -90,6 +95,59 @@ instance : IsLieAbelian (proj c).ker where
     have hb := (mem_ker_proj c).1 b.2
     refine Subtype.ext ((ofProd c).symm.injective ?_)
     simp [bracket_ofTwoCocycle, ha, hb]
+
+/-- The zero-coefficient Lie section over a subalgebra on which the cocycle vanishes.
+No triviality assumption on the coefficient action is needed. -/
+def sectionOfVanishing (S : LieSubalgebra R L)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
+    S →ₗ⁅R⁆ ofTwoCocycle c where
+  toFun x := ofProd c (x, 0)
+  map_add' _ _ := by simp [← of_add]
+  map_smul' _ _ := by simp [← of_smul]
+  map_lie' {x y} := by simp [bracket_ofTwoCocycle, hc x x.property y y.property]
+
+/-- The section has zero coefficient coordinate. -/
+@[simp]
+lemma sectionOfVanishing_apply (S : LieSubalgebra R L)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) (x : S) :
+    sectionOfVanishing c S hc x = ofProd c (x, 0) := (rfl)
+
+/-- A central extension splits over a subalgebra where its cocycle vanishes. The coefficient
+coordinate is expressed in any chosen abelian Lie algebra `N` linearly equivalent to `M`. -/
+def splitEquivOfVanishing [LieModule.IsTrivial L M]
+    {N : Type*} [LieRing N] [LieAlgebra R N] [IsLieAbelian N]
+    (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
+    (S × N) ≃ₗ⁅R⁆ S.comap (proj c) where
+  toFun p := ⟨ofProd c (p.1, e.symm p.2), by simp⟩
+  invFun v := (⟨proj c v, v.property⟩, e ((ofProd c).symm v).2)
+  left_inv p := by simp
+  right_inv v := Subtype.ext (by simp [proj_apply])
+  map_add' p q := Subtype.ext (by simp [← of_add])
+  map_smul' r p := Subtype.ext (by simp [← of_smul])
+  map_lie' {p q} := by
+    apply Subtype.ext
+    simp [bracket_ofTwoCocycle, trivial_lie_zero, hc p.1 p.1.property q.1 q.1.property,
+      LieAlgebra.Prod.bracket_apply]
+
+/-- Forward coordinates of the split preimage. -/
+@[simp]
+lemma coe_splitEquivOfVanishing [LieModule.IsTrivial L M]
+    {N : Type*} [LieRing N] [LieAlgebra R N] [IsLieAbelian N]
+    (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) (p : S × N) :
+    (splitEquivOfVanishing c S e hc p : ofTwoCocycle c) = ofProd c (p.1, e.symm p.2) :=
+  (rfl)
+
+/-- Inverse coordinates of the split preimage. -/
+@[simp]
+lemma splitEquivOfVanishing_symm_apply [LieModule.IsTrivial L M]
+    {N : Type*} [LieRing N] [LieAlgebra R N] [IsLieAbelian N]
+    (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0)
+    (v : S.comap (proj c)) :
+    (splitEquivOfVanishing c S e hc).symm v =
+      (⟨proj c v, v.property⟩, e ((ofProd c).symm v).2) := (rfl)
 
 section Trivial
 
