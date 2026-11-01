@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Roth.IndexEstimate
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.KeyInequality
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Parameters
 public import TauCeti.Order.Northcott.Sequence
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Roth's theorem
@@ -140,8 +141,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   have : NeZero n := ⟨hn.ne'⟩
   set P' := P.map (Int.castRingHom ℚ) with hP'_def
   have hP'0 : P' ≠ 0 := fun h0 ↦ hP0 (map_injective _ (RingHom.injective_int _) (by simpa))
-  have hP'deg (i : Fin n) : P'.degreeOf i ≤ r i :=
-    degreeOf_le_iff.2 fun μ hμ ↦ degreeOf_le_iff.1 (hPdeg i) μ (support_map_subset _ _ hμ)
+  have hP'deg (i : Fin n) : P'.degreeOf i ≤ r i := (degreeOf_map_le _ P i).trans (hPdeg i)
   have hP'height : P'.logHeight ≤ C₁ * ∑ k ∈ range n, (⌊D / h k⌋₊ : ℝ) := by
     rw [← hsum]
     exact (logHeight_map_intCast_le_log hP0 fun μ ↦ (hPcoeff' μ)).trans_eq (log_exp _)
