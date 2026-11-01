@@ -72,14 +72,11 @@ theorem dvd_algebraMap_norm (x : S) : x ∣ algebraMap R S (norm R x) := by
   classical
   let b := Module.Free.chooseBasis R S
   let p := (leftMulMatrix b x).charpoly
-  -- By Cayley–Hamilton `p(x) = 0`, and `p = X * p.divX + C (p.coeff 0)` with
-  -- `p.coeff 0 = ± norm R x`.
-  have hp : Polynomial.aeval x p = 0 := aeval_charpoly_leftMulMatrix b x
+  -- By Cayley–Hamilton `x` is a root of `p`, so it divides `p.coeff 0 = ± norm R x`.
+  have hp : (p.map (algebraMap R S)).IsRoot x := by
+    rw [Polynomial.IsRoot, Polynomial.eval_map_algebraMap, aeval_charpoly_leftMulMatrix]
   have hdvd : x ∣ algebraMap R S (p.coeff 0) := by
-    refine ⟨-Polynomial.aeval x p.divX, ?_⟩
-    rw [← Polynomial.X_mul_divX_add p, map_add, map_mul, Polynomial.aeval_X, Polynomial.aeval_C]
-      at hp
-    linear_combination hp
+    simpa only [Polynomial.coeff_map] using hp.dvd_coeff_zero
   rw [norm_eq_matrix_det b, Matrix.det_eq_sign_charpoly_coeff, map_mul]
   exact Dvd.dvd.mul_left hdvd _
 
