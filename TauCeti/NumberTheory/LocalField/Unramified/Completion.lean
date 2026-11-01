@@ -12,11 +12,11 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
-# The completed maximal unramified extension `Ĕ`
+# The completed maximal unramified extension `Breve E`
 
 Let `E` be a nonarchimedean local field with residue field of cardinality `q`. This file
-constructs the completion `Ĕ` of the maximal unramified extension `E^{ur}` of `E`, together with
-its arithmetic Frobenius `σ`.
+constructs the completion `Breve E` of the maximal unramified extension `E^{ur}` of `E`, together
+with its arithmetic Frobenius `σ`.
 
 The maximal unramified extension is taken inside the algebraic closure,
 `TauCeti.MaxUnramifiedCompletion.Unramified E = TauCeti.maximalUnramifiedExtension E
@@ -29,22 +29,23 @@ extending those of `E^{ur}` and of `E`, and its valuative topology is its own to
 this comes from Mathlib's theory of valuative completions.
 
 Every automorphism of `E^{ur}/E` preserves the valuation, so it is uniformly continuous and
-extends uniquely to a continuous `E`-algebra automorphism of `Ĕ`. This gives the action
-`TauCeti.MaxUnramifiedCompletion.galAction` of `Gal(E^{ur}/E)` on `Ĕ`, and the Frobenius `σ` of `Ĕ`
-is the extension `TauCeti.MaxUnramifiedCompletion.frobenius` of the arithmetic Frobenius of
-`E^{ur}`, which raises every root of every polynomial `X^{q^n} − X` to the `q`-th power. The field
-`Ĕ` with its Frobenius is the base over which the structure theory of reductive groups over a
-local field (Bruhat–Tits theory, the Kottwitz homomorphism, isocrystals) is developed.
+extends uniquely to a continuous `E`-algebra automorphism of `Breve E`. This gives the action
+`TauCeti.MaxUnramifiedCompletion.galAction` of `Gal(E^{ur}/E)` on `Breve E`, and the Frobenius
+`σ` of `Breve E` is the extension `TauCeti.MaxUnramifiedCompletion.frobenius` of the arithmetic
+Frobenius of `E^{ur}`, which raises every root of every polynomial `X^{q^n} − X` to the `q`-th
+power. The field `Breve E` with its Frobenius is the base over which the structure theory of
+reductive groups over a local field (Bruhat–Tits theory, the Kottwitz homomorphism, isocrystals)
+is developed.
 
 ## Main definitions
 
 * `TauCeti.MaxUnramifiedCompletion.Unramified E`: the maximal unramified extension `E^{ur}` of `E`
   inside its algebraic closure.
 * `TauCeti.MaxUnramifiedCompletion.unramifiedFrobenius E`: the arithmetic Frobenius of `E^{ur}/E`.
-* `TauCeti.MaxUnramifiedCompletion.Breve E`: the completion `Ĕ` of `E^{ur}`.
-* `TauCeti.MaxUnramifiedCompletion.galAction`: the action of `Gal(E^{ur}/E)` on `Ĕ` by continuous
-  extension.
-* `TauCeti.MaxUnramifiedCompletion.frobenius E`: the arithmetic Frobenius `σ` of `Ĕ`.
+* `TauCeti.MaxUnramifiedCompletion.Breve E`: the completion of `E^{ur}`.
+* `TauCeti.MaxUnramifiedCompletion.galAction`: the action of `Gal(E^{ur}/E)` on `Breve E` by
+  continuous extension.
+* `TauCeti.MaxUnramifiedCompletion.frobenius E`: the arithmetic Frobenius `σ` of `Breve E`.
 
 ## Main results
 
@@ -59,8 +60,8 @@ local field (Bruhat–Tits theory, the Kottwitz homomorphism, isocrystals) is de
   `σ⁻¹(ζ^q) = ζ`.
 * `TauCeti.MaxUnramifiedCompletion.frobenius_ne_one`: `σ` is not the identity.
 * `TauCeti.MaxUnramifiedCompletion.breveValuativeExtension`,
-  `TauCeti.MaxUnramifiedCompletion.breveIsNontrivial`: the valuation of `Ĕ` extends that of `E`
-  and is nontrivial.
+  `TauCeti.MaxUnramifiedCompletion.breveIsNontrivial`: the valuation of `Breve E` extends that of
+  `E` and is nontrivial.
 
 ## References
 
@@ -123,25 +124,25 @@ polynomial `X^{q^n} − X`, `n ≠ 0`, to the `q`-th power (see
 abbrev unramifiedFrobenius : Gal(Unramified E/E) :=
   maximalUnramifiedFrobenius E (AlgebraicClosure E)
 
-/-! ### The completion `Ĕ` -/
+/-! ### The completion `Breve E` -/
 
-/-- **The completed maximal unramified extension** `Ĕ` of a nonarchimedean local field `E`: the
-uniform completion of `E^{ur}` for its spectral norm. It is a complete valued field
+/-- **The completed maximal unramified extension** `Breve E` of a nonarchimedean local field `E`:
+the uniform completion of `E^{ur}` for its spectral norm. It is a complete valued field
 (`UniformSpace.Completion.valuativeRel`, `UniformSpace.Completion.isValuativeTopology`) and an
 algebra over `E` and over `E^{ur}`, the latter embedding densely
 (`UniformSpace.Completion.denseRange_coe`). -/
 abbrev Breve : Type _ :=
   Completion (Unramified E)
 
-/-- The valuative relation of `Ĕ` extends that of `E`. -/
+/-- The valuative relation of `Breve E` extends that of `E`. -/
 instance breveValuativeExtension : ValuativeExtension E (Breve E) :=
   ValuativeExtension.trans E (Unramified E) (Breve E)
 
-/-- The valuation of `Ĕ` is nontrivial. -/
+/-- The valuation of `Breve E` is nontrivial. -/
 instance breveIsNontrivial : IsNontrivial (Breve E) :=
   .of_valuativeExtension E
 
-/-! ### The Galois action on `Ĕ` -/
+/-! ### The Galois action on `Breve E` -/
 
 variable {E}
 
@@ -152,7 +153,7 @@ private theorem map_coe_gal (τ : Gal(Unramified E/E)) (x : Unramified E) :
   Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous (f := τ.toAddMonoidHom)
     τ.continuous_of_valuativeExtension) x
 
-/-- The extension of a Galois automorphism of `E^{ur}` to a ring automorphism of `Ĕ`. -/
+/-- The extension of a Galois automorphism of `E^{ur}` to a ring automorphism of `Breve E`. -/
 private def galRingEquiv (τ : Gal(Unramified E/E)) : Breve E ≃+* Breve E :=
   Completion.mapRingEquiv τ.toRingEquiv τ.continuous_of_valuativeExtension
     (by simpa using τ.symm.continuous_of_valuativeExtension)
@@ -172,9 +173,9 @@ private theorem continuous_galRingEquiv (τ : Gal(Unramified E/E)) :
     funext (Completion.mapRingEquiv_apply _ _ _)
   exact h ▸ Completion.continuous_map
 
-/-- **The action of `Gal(E^{ur}/E)` on `Ĕ`.** Every automorphism `τ` of `E^{ur}/E` preserves the
-valuation, hence is uniformly continuous, and `galAction τ` is its unique extension to a
-continuous `E`-algebra automorphism of the completion `Ĕ` (`galAction_coe`,
+/-- **The action of `Gal(E^{ur}/E)` on `Breve E`.** Every automorphism `τ` of `E^{ur}/E` preserves
+the valuation, hence is uniformly continuous, and `galAction τ` is its unique extension to a
+continuous `E`-algebra automorphism of the completion `Breve E` (`galAction_coe`,
 `continuous_galAction`). -/
 def galAction : Gal(Unramified E/E) →* (Breve E ≃ₐ[E] Breve E) where
   toFun τ := AlgEquiv.ofRingEquiv (galRingEquiv_algebraMap τ)
@@ -184,29 +185,29 @@ def galAction : Gal(Unramified E/E) →* (Breve E ≃ₐ[E] Breve E) where
     ((continuous_galRingEquiv τ).comp (continuous_galRingEquiv τ')) fun x ↦ by
       simp [galRingEquiv_coe]
 
-/-- The action of a Galois automorphism `τ` on `Ĕ` extends `τ`. -/
+/-- The action of a Galois automorphism `τ` on `Breve E` extends `τ`. -/
 @[simp]
 theorem galAction_coe (τ : Gal(Unramified E/E)) (x : Unramified E) :
     galAction τ (x : Breve E) = (τ x : Breve E) :=
   galRingEquiv_coe τ x
 
-/-- The action of a Galois automorphism on `Ĕ` is continuous. -/
+/-- The action of a Galois automorphism on `Breve E` is continuous. -/
 @[fun_prop, continuity]
 theorem continuous_galAction (τ : Gal(Unramified E/E)) : Continuous (galAction τ) :=
   continuous_galRingEquiv τ
 
-/-- The inverse of the action of `τ` on `Ĕ` is the action of `τ⁻¹`. -/
+/-- The inverse of the action of `τ` on `Breve E` is the action of `τ⁻¹`. -/
 @[simp]
 theorem galAction_symm (τ : Gal(Unramified E/E)) : (galAction τ).symm = galAction τ⁻¹ := by
   rw [map_inv, AlgEquiv.aut_inv]
 
-/-- **Uniqueness of the extension.** A continuous map `Ĕ → Ĕ` which agrees with a Galois
+/-- **Uniqueness of the extension.** A continuous map `Breve E → Breve E` which agrees with a Galois
 automorphism `τ` on `E^{ur}` is the action of `τ`. -/
 theorem eq_galAction_of_continuous (τ : Gal(Unramified E/E)) {f : Breve E → Breve E}
     (hf : Continuous f) (h : ∀ x : Unramified E, f x = (τ x : Breve E)) : f = galAction τ :=
   Completion.ext hf (continuous_galAction τ) fun x ↦ by rw [h, galAction_coe]
 
-/-- **The Galois action on `Ĕ` is faithful.** -/
+/-- **The Galois action on `Breve E` is faithful.** -/
 theorem galAction_injective : Function.Injective (galAction (E := E)) := by
   refine (injective_iff_map_eq_one _).2 fun τ hτ ↦ AlgEquiv.ext fun x ↦ ?_
   simpa using congr($hτ (x : Breve E))
@@ -214,36 +215,36 @@ theorem galAction_injective : Function.Injective (galAction (E := E)) := by
 /-! ### Frobenius -/
 
 variable (E) in
-/-- **The arithmetic Frobenius `σ` of `Ĕ`**: the continuous extension to `Ĕ` of the arithmetic
-Frobenius of `E^{ur}/E`. It raises every root of every polynomial `X^{q^n} − X` to the `q`-th
-power (`frobenius_coe_of_pow_natCard_pow_eq_self`). -/
+/-- **The arithmetic Frobenius `σ` of `Breve E`**: the continuous extension to `Breve E` of the
+arithmetic Frobenius of `E^{ur}/E`. It raises every root of every polynomial `X^{q^n} − X` to the
+`q`-th power (`frobenius_coe_of_pow_natCard_pow_eq_self`). -/
 def frobenius : Breve E ≃ₐ[E] Breve E :=
   galAction (unramifiedFrobenius E)
 
 variable (E) in
-/-- Frobenius on `Ĕ` is the action of the arithmetic Frobenius of `E^{ur}`. -/
+/-- Frobenius on `Breve E` is the action of the arithmetic Frobenius of `E^{ur}`. -/
 theorem frobenius_eq_galAction : frobenius E = galAction (unramifiedFrobenius E) :=
   (rfl)
 
-/-- Frobenius on `Ĕ` extends the arithmetic Frobenius of `E^{ur}`. -/
+/-- Frobenius on `Breve E` extends the arithmetic Frobenius of `E^{ur}`. -/
 @[simp]
 theorem frobenius_coe (x : Unramified E) :
     frobenius E (x : Breve E) = (unramifiedFrobenius E x : Breve E) :=
   galAction_coe _ x
 
-/-- Frobenius on `Ĕ` is continuous. -/
+/-- Frobenius on `Breve E` is continuous. -/
 @[fun_prop, continuity]
 theorem continuous_frobenius : Continuous (frobenius E) :=
   continuous_galAction _
 
-/-- The inverse of Frobenius on `Ĕ` extends the inverse of the arithmetic Frobenius of
+/-- The inverse of Frobenius on `Breve E` extends the inverse of the arithmetic Frobenius of
 `E^{ur}`. -/
 @[simp]
 theorem frobenius_symm_coe (x : Unramified E) :
     (frobenius E).symm (x : Breve E) = ((unramifiedFrobenius E).symm x : Breve E) := by
   rw [frobenius_eq_galAction, galAction_symm, galAction_coe, AlgEquiv.aut_inv]
 
-/-- **The equation of Frobenius on `Ĕ`.** Frobenius raises every root `ζ ∈ E^{ur}` of
+/-- **The equation of Frobenius on `Breve E`.** Frobenius raises every root `ζ ∈ E^{ur}` of
 `X^{q^n} − X`, for `n ≠ 0`, to the `q`-th power, where `q` is the cardinality of the residue
 field of `E`. This pins the arithmetic normalization: geometric Frobenius would send `ζ` to
 `ζ^{q^{n-1}}` instead. -/
@@ -251,19 +252,19 @@ theorem frobenius_coe_of_pow_natCard_pow_eq_self {ζ : Unramified E} {n : ℕ} (
     (hζ : ζ ^ Nat.card 𝓀[E] ^ n = ζ) :
     frobenius E (ζ : Breve E) = (ζ : Breve E) ^ Nat.card 𝓀[E] := by
   rw [frobenius_coe, maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self hn hζ]
-  -- `Completion.coeRingHom` is the coercion `E^{ur} → Ĕ` bundled as a ring homomorphism.
+  -- `Completion.coeRingHom` is the coercion `E^{ur} → Breve E` bundled as a ring homomorphism.
   exact map_pow Completion.coeRingHom ζ _
 
-/-- **The equation of inverse Frobenius on `Ĕ`.** For every root `ζ ∈ E^{ur}` of `X^{q^n} − X`,
-`n ≠ 0`, the inverse of Frobenius sends `ζ^q` back to `ζ`. -/
+/-- **The equation of inverse Frobenius on `Breve E`.** For every root `ζ ∈ E^{ur}` of
+`X^{q^n} − X`, `n ≠ 0`, the inverse of Frobenius sends `ζ^q` back to `ζ`. -/
 theorem frobenius_symm_coe_pow_natCard_of_pow_natCard_pow_eq_self {ζ : Unramified E} {n : ℕ}
     (hn : n ≠ 0) (hζ : ζ ^ Nat.card 𝓀[E] ^ n = ζ) :
     (frobenius E).symm ((ζ : Breve E) ^ Nat.card 𝓀[E]) = ζ := by
   rw [← frobenius_coe_of_pow_natCard_pow_eq_self hn hζ, AlgEquiv.symm_apply_apply]
 
 variable (E) in
-/-- **Frobenius on `Ĕ` is not the identity**, since the arithmetic Frobenius of `E^{ur}` is not
-and the Galois action on `Ĕ` is faithful. -/
+/-- **Frobenius on `Breve E` is not the identity**, since the arithmetic Frobenius of `E^{ur}` is
+not and the Galois action on `Breve E` is faithful. -/
 theorem frobenius_ne_one : frobenius E ≠ 1 := by
   rw [frobenius_eq_galAction, ← map_one galAction, galAction_injective.ne_iff]
   exact maximalUnramifiedFrobenius_ne_one E (AlgebraicClosure E)
