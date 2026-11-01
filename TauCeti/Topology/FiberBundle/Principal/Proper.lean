@@ -40,20 +40,6 @@ instance continuousSMul_totalSpace [ContinuousMul G] : ContinuousSMul Gᵐᵒᵖ
   continuous_smul := Continuous.totalSpaceMk_smul continuous_snd
     (continuous_unop.comp continuous_fst)
 
-/-- The image of the principal action map consists exactly of pairs in a common fibre. -/
-theorem range_action :
-    range (fun x : TotalSpace G P × G ↦ (x.1, op x.2 • x.1)) =
-      {p | p.1.proj = p.2.proj} := by
-  ext p
-  constructor
-  · rintro ⟨⟨q, g⟩, rfl⟩
-    rfl
-  · rcases p with ⟨⟨b, u⟩, ⟨b', v⟩⟩
-    intro h
-    dsimp at h
-    subst b'
-    exact ⟨(⟨b, u⟩, division G u v), by simp⟩
-
 variable [IsTopologicalGroup G]
 
 variable (G P) in
@@ -79,10 +65,19 @@ theorem actionHomeomorph_apply (p : TotalSpace G P) (g : G) :
 theorem actionHomeomorph_symm_apply (p : TotalSpace (G × G) (P ×ᵇ P)) :
     (actionHomeomorph G P).symm p = (⟨p.proj, p.snd.1⟩, division G p.snd.1 p.snd.2) := (rfl)
 
-/-- Over a Hausdorff base the principal action map is a closed embedding: its image is the
+/-- Over a Hausdorff base the principal action pair map is a closed embedding: its image is the
 closed relation of pairs lying over a common base point. -/
-theorem isClosedEmbedding_action [T2Space B] :
+theorem isClosedEmbedding_smul_pair [T2Space B] :
     Topology.IsClosedEmbedding (fun x : TotalSpace G P × G ↦ (x.1, op x.2 • x.1)) := by
+  have hdiag :
+      (fun p : TotalSpace (G × G) (P ×ᵇ P) ↦
+        ((⟨p.proj, p.snd.1⟩ : TotalSpace G P), (⟨p.proj, p.snd.2⟩ : TotalSpace G P))) ∘
+          actionHomeomorph G P = (fun x : TotalSpace G P × G ↦ (x.1, op x.2 • x.1)) := by
+    funext ⟨⟨b, p⟩, g⟩
+    simp only [Function.comp_apply]
+    rw [actionHomeomorph_apply]
+    simp
+  rw [← hdiag]
   exact (FiberBundle.Prod.isClosedEmbedding_diag
     (FiberBundle.continuous_proj G P) (FiberBundle.continuous_proj G P)).comp
       (actionHomeomorph G P).isClosedEmbedding
@@ -90,9 +85,11 @@ theorem isClosedEmbedding_action [T2Space B] :
 /-- The right action on a topological principal bundle over a Hausdorff base is proper. -/
 instance properSMul_totalSpace [T2Space B] : ProperSMul Gᵐᵒᵖ (TotalSpace G P) where
   isProperMap_smul_pair := by
-    have h := (isClosedEmbedding_action (G := G) (P := P)).isProperMap
+    have h := (isClosedEmbedding_smul_pair (G := G) (P := P)).isProperMap
     let e : Gᵐᵒᵖ × TotalSpace G P ≃ₜ TotalSpace G P × G :=
       (Homeomorph.prodComm _ _).trans ((Homeomorph.refl _).prodCongr MulOpposite.opHomeomorph.symm)
-    exact (Homeomorph.prodComm _ _).isProperMap.comp (h.comp e.isProperMap)
+    convert (Homeomorph.prodComm _ _).isProperMap.comp (h.comp e.isProperMap) using 1
+    funext gx
+    simp [Function.comp_def, e]
 
 end TauCeti.PrincipalBundle

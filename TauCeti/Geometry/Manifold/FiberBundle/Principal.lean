@@ -27,7 +27,7 @@ For the charts through the fibre, the right action and the division map are smoo
 is `C^n` when multiplication of `G` is (`ContMDiff.totalSpaceMk_smul`), and the division map
 `TauCeti.PrincipalBundle.division G p q`, the unique `g` with `p • g = q`, is `C^n` on pairs of
 points over a common base point when `G` is a `C^n` Lie group (`ContMDiff.division`). As for
-continuity in `TauCeti.Topology.FiberBundle.Principal`, both are stated for families of points
+continuity in `TauCeti.Topology.FiberBundle.Principal.Basic`, both are stated for families of points
 `⟨f x, p x⟩` of the total space over a varying base point `f x`, so that no cast between fibres is
 needed; none of them uses smoothness of the coordinate changes. Consequently the equivariant
 trivialization `TauCeti.PrincipalBundle.trivializationOfSection` determined by a `C^n` local
