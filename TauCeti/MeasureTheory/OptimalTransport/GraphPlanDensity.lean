@@ -16,7 +16,6 @@ of graph plans of measurable, law-preserving maps. A countable quantization of t
 each point by a uniformly small distance. Realizing the coupling exactly after this quantization
 then makes its graph realization close in the Lévy--Prokhorov metric.
 
-This is the measure-theoretic approximation used to compare the Monge and Kantorovich problems.
 It does not assert that a limiting coupling is itself a graph plan.
 
 Integration of a bounded continuous cost is continuous in the weak topology, so this density is

@@ -7,15 +7,17 @@ module
 
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Allocation
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
+public import TauCeti.MeasureTheory.OptimalTransport.Realization
 
 /-!
 # Monge's infimum equals Kantorovich's minimum for continuous costs
 
 Let `X` and `Y` be second-countable spaces with standard Borel structures, for instance Polish
-spaces, and let `c : X × Y → [0, ∞]` be continuous, possibly unbounded and possibly infinite.
-For a finite atomless source measure `μ`, Pratelli's Theorem B says that the Monge infimum over
-transport maps equals the Kantorovich infimum over couplings. Neither a moment condition nor an
-integrable envelope of the cost is needed, and the Monge infimum need not be attained.
+spaces, with `Y` nonempty, and let `c : X × Y → [0, ∞]` be continuous, possibly unbounded and
+possibly infinite. For a finite atomless source measure `μ`, Pratelli's Theorem B says that the
+Monge infimum over transport maps equals the Kantorovich infimum over couplings. Neither a moment
+condition nor an integrable envelope of the cost is needed, and the Monge infimum need not be
+attained.
 
 ## Construction
 
@@ -32,10 +34,11 @@ exceeds that of `π` by at most `ε` per unit mass.
 
 ## Main statements
 
-* `TauCeti.IsCoupling.exists_hasLaw_transportMapCost_le` — for an atomless finite source and a
-  continuous cost, transport maps approach the cost of every coupling;
+* `TauCeti.IsCoupling.exists_hasLaw_transportMapCost_le` — for an atomless finite source, a
+  nonempty target type and a continuous cost, transport maps approach the cost of every coupling;
 * `TauCeti.mongeCost_eq_transportCost_of_continuous` — **Pratelli's theorem**: the Monge and
-  Kantorovich values agree for continuous costs and atomless finite sources.
+  Kantorovich values agree for continuous costs, atomless finite sources and a nonempty target
+  type.
 
 ## References
 
@@ -181,71 +184,6 @@ private theorem exists_mem_good [TopologicalSpace X] [TopologicalSpace Y] (hc : 
 
 end Rectangles
 
-/-! ### Gluing transport maps along the pieces -/
-
-section Gluing
-
-variable {X Y ι : Type*} [MeasurableSpace X] [StandardBorelSpace X]
-  [MeasurableSpace Y] [StandardBorelSpace Y] [Nonempty Y] [Countable ι]
-  {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)} [IsFiniteMeasure μ] [NullSingletonClass μ]
-
-/-- Let `π` be concentrated on a union of disjoint measurable pieces `S i`, and let `Z i` be
-disjoint measurable source sets with `μ (Z i) = π (S i)`. Then one transport map sends `μ`
-restricted to each `Z i` to the second marginal of `π` restricted to `S i`, and the sets `Z i`
-exhaust `μ`. -/
-private theorem IsCoupling.exists_measurePreserving_restrict
-    (hπ : IsCoupling π μ ν) {S : ι → Set (X × Y)} (hSm : ∀ i, MeasurableSet (S i))
-    (hSd : Pairwise (Disjoint on S)) (hScov : ∀ᵐ z ∂π, z ∈ ⋃ i, S i) {Z : ι → Set X}
-    (hZm : ∀ i, MeasurableSet (Z i)) (hZd : Pairwise (Disjoint on Z))
-    (hZμ : ∀ i, μ (Z i) = π (S i)) :
-    ∃ T : X → Y, MeasurePreserving T μ ν ∧
-      (∀ i, MeasurePreserving T (μ.restrict (Z i)) (π.restrict (S i)).snd) ∧
-      μ (⋃ i, Z i)ᶜ = 0 := by
-  have hπS : π.restrict (⋃ i, S i) = π := Measure.restrict_eq_self_of_ae_mem hScov
-  have hZcov : μ (⋃ i, Z i)ᶜ = 0 := by
-    have hS : π (⋃ i, S i) = π univ := by
-      conv_rhs => rw [← hπS, Measure.restrict_apply_univ]
-    have h : μ (⋃ i, Z i) = μ univ := by
-      rw [measure_iUnion hZd hZm, tsum_congr hZμ, ← measure_iUnion hSd hSm, hS,
-        hπ.measure_univ_left]
-    rw [measure_compl (MeasurableSet.iUnion hZm) (measure_ne_top _ _), h, tsub_self]
-  -- The null remainder of the source becomes one more cell, carrying the zero law.
-  let A : Option ι → Set X := fun o ↦ o.elim (⋃ i, Z i)ᶜ Z
-  let ν' : Option ι → Measure Y := fun o ↦ o.elim 0 fun i ↦ (π.restrict (S i)).snd
-  have hAm (o : Option ι) : MeasurableSet (A o) := by
-    cases o
-    exacts [(MeasurableSet.iUnion hZm).compl, hZm _]
-  have hAd : Pairwise (Disjoint on A) := by
-    rintro (_ | i) (_ | j) hij
-    · exact absurd rfl hij
-    · exact disjoint_compl_left_iff_subset.2 (subset_iUnion Z j)
-    · exact (disjoint_compl_left_iff_subset.2 (subset_iUnion Z i)).symm
-    · exact hZd fun h ↦ hij (congrArg some h)
-  have hAu : ⋃ o, A o = univ := by
-    refine eq_univ_of_forall fun x ↦ ?_
-    by_cases hx : x ∈ ⋃ i, Z i
-    · obtain ⟨i, hi⟩ := mem_iUnion.1 hx
-      exact mem_iUnion.2 ⟨some i, hi⟩
-    · exact mem_iUnion.2 ⟨none, hx⟩
-  have hmass (o : Option ι) : μ (A o) = ν' o univ := by
-    cases o
-    · simpa [A, ν'] using hZcov
-    · simp [A, ν', hZμ, Measure.snd_univ]
-  obtain ⟨T, hT, hTA⟩ := μ.exists_measurePreserving_sum_of_nullSingleton hAm hAd hAu ν' hmass
-  have hsum : Measure.sum ν' = ν := by
-    calc Measure.sum ν' = Measure.sum fun i ↦ (π.restrict (S i)).snd := by
-          ext s hs
-          rw [Measure.sum_apply _ hs, Measure.sum_apply _ hs]
-          exact ((Option.some_injective ι).tsum_eq fun o ho ↦ by
-            cases o
-            · exact (ho (by simp [ν'])).elim
-            · exact mem_range_self _).symm
-      _ = ν := by
-          rw [← Measure.snd_sum, ← Measure.restrict_iUnion hSd hSm, hπS, hπ.snd_eq]
-  exact ⟨T, hsum ▸ hT, fun i ↦ hTA (some i), hZcov⟩
-
-end Gluing
-
 /-! ### Transport maps approaching a coupling -/
 
 section Approximation
@@ -328,8 +266,8 @@ end Approximation
 section Pratelli
 
 variable {X Y : Type*} [TopologicalSpace X] [SecondCountableTopology X] [MeasurableSpace X]
-  [BorelSpace X] [StandardBorelSpace X] [TopologicalSpace Y] [SecondCountableTopology Y]
-  [MeasurableSpace Y] [BorelSpace Y] [StandardBorelSpace Y] [Nonempty Y]
+  [OpensMeasurableSpace X] [StandardBorelSpace X] [TopologicalSpace Y] [SecondCountableTopology Y]
+  [MeasurableSpace Y] [OpensMeasurableSpace Y] [StandardBorelSpace Y] [Nonempty Y]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)} {c : X × Y → ℝ≥0∞}
   [IsFiniteMeasure μ] [NullSingletonClass μ]
 
@@ -373,10 +311,11 @@ private theorem IsCoupling.exists_hasLaw_transportMapCost_le_add_mul (hπ : IsCo
         exact add_le_add (setLIntegral_le_lintegral _ _)
           (mul_le_mul' le_rfl (measure_mono (subset_univ _)))
 
-/-- **Transport maps approach every coupling.** For an atomless finite source measure and a
-continuous cost `c : X × Y → [0, ∞]` on second-countable standard Borel spaces, the cost of every
-coupling `π` is approached from above by the costs of transport maps: for every `η > 0` some
-transport map costs at most `∫⁻ c ∂π + η`. No integrability of the cost is assumed. -/
+/-- **Transport maps approach every coupling.** For an atomless finite source measure, a nonempty
+target type and a continuous cost `c : X × Y → [0, ∞]` on second-countable standard Borel spaces,
+the cost of every coupling `π` is approached from above by the costs of transport maps: for every
+`η > 0` some transport map costs at most `∫⁻ c ∂π + η`. No integrability of the cost is
+assumed. -/
 theorem IsCoupling.exists_hasLaw_transportMapCost_le (hπ : IsCoupling π μ ν) (hc : Continuous c)
     {η : ℝ≥0∞} (hη : 0 < η) :
     ∃ T : X → Y, HasLaw T ν μ ∧ transportMapCost c μ T ≤ ∫⁻ z, c z ∂π + η := by
@@ -391,10 +330,10 @@ theorem IsCoupling.exists_hasLaw_transportMapCost_le (hπ : IsCoupling π μ ν)
       (ε := η / μ univ) (ENNReal.div_pos_iff.2 ⟨hη.ne', measure_ne_top _ _⟩).ne'
     exact ⟨T, hT, hle.trans_eq (by rw [ENNReal.div_mul_cancel hμ (measure_ne_top _ _)])⟩
 
-/-- **Pratelli's theorem.** For an atomless finite source measure and a continuous cost
-`c : X × Y → [0, ∞]` on second-countable standard Borel spaces, for instance Polish spaces, the
-Monge and Kantorovich values agree, whether finite or not. The cost may be unbounded and take the
-value `∞`, and the Monge infimum need not be attained. -/
+/-- **Pratelli's theorem.** For an atomless finite source measure, a nonempty target type and a
+continuous cost `c : X × Y → [0, ∞]` on second-countable standard Borel spaces, for instance
+Polish spaces, the Monge and Kantorovich values agree, whether finite or not. The cost may be
+unbounded and take the value `∞`, and the Monge infimum need not be attained. -/
 theorem mongeCost_eq_transportCost_of_continuous (hc : Continuous c) :
     mongeCost c μ ν = transportCost c μ ν := by
   refine le_antisymm (le_transportCost fun π hπ ↦ ?_) (transportCost_le_mongeCost c μ ν)
