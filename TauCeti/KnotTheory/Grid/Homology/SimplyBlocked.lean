@@ -29,6 +29,8 @@ every grid diagram as `GridDiagram.simplyBlockedComplex`.
 
 ## Main definitions
 
+* `TauCeti.GridDiagram.oneVariableSpecializationHomologyClass`: the cycle-class map of the
+  one-variable specialization for arbitrary grids.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomology`: the simply blocked homology `G-hat`.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedCycles`: its cycles as a kernel.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyQuotient`: the concrete cycles-modulo-boundaries
@@ -56,6 +58,34 @@ The construction and coefficient convention follow Ozsváth--Stipsicz--Szabó,
 public section
 
 open CategoryTheory
+
+namespace TauCeti.GridDiagram
+
+variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
+
+/-- The cycle-class map of the one-variable specialization `V_i = 0` for an arbitrary grid.
+For links this need not be the simply blocked theory, which blocks one marking per component. -/
+noncomputable def oneVariableSpecializationHomologyClass (i : Fin n) :
+    LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom
+      →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] (G.simplyBlockedComplex R i).homology () :=
+  (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatCyclesIso.inv ≫
+    ((G.simplyBlockedComplex R i).sc' () () ()).homologyπ ≫
+      ((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv).hom
+
+/-- Compute the specialization class map through the native short-complex quotient, preserving
+its actual categorical carrier without unfolding the homology construction. -/
+theorem oneVariableSpecializationHomologyClass_apply (i : Fin n)
+    (c : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    G.oneVariableSpecializationHomologyClass R i c =
+      ((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv
+        (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.inv
+          (Submodule.Quotient.mk c)) := by
+  have h := congrArg (fun f => f c)
+    ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatCyclesIso_inv_π
+  exact congrArg (fun y =>
+    ((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv y) h
+
+end TauCeti.GridDiagram
 
 namespace TauCeti.GridDiagram.IsKnot
 
@@ -143,6 +173,15 @@ noncomputable def simplyBlockedHomologyClass (hG : G.IsKnot) (i : Fin n)
       →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] hG.simplyBlockedHomology R i :=
   (hG.simplyBlockedHomologyIsoQuotient R i).inv.hom.comp
     (hG.simplyBlockedBoundaries R i).mkQ
+
+/-- On a knot grid, the general one-variable specialization class map agrees with the
+simply blocked class map. -/
+theorem oneVariableSpecializationHomologyClass_eq_simplyBlockedHomologyClass
+    (hG : G.IsKnot) (i : Fin n) (c : hG.simplyBlockedCycles R i) :
+    G.oneVariableSpecializationHomologyClass R i c =
+      hG.simplyBlockedHomologyClass R i c := by
+  rw [G.oneVariableSpecializationHomologyClass_apply]
+  rfl
 
 /-- Under the concrete cycles-modulo-boundaries identification, the class of a cycle is its
 quotient class. -/
