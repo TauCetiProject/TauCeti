@@ -85,13 +85,14 @@ end IsSolidTorusLinkNeighborhood
 
 /-- **Disjoint solid-torus neighbourhoods of a link.** In a Hausdorff space, let `f` be a finite
 family of circles with pairwise disjoint images, each of which has a solid-torus neighbourhood
-inside every neighbourhood of its image. Then the family has solid-torus neighbourhoods with
-pairwise disjoint images. -/
+satisfying a property `P` inside every neighbourhood of its image. Then the family has solid-torus
+neighbourhoods with pairwise disjoint images, each satisfying `P`. -/
 theorem exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet [T2Space X] [Finite ι]
-    {f : ι → Circle → X} (hdisj : Pairwise (Disjoint on fun i => range (f i)))
+    {f : ι → Circle → X} {P : (SolidTorus → X) → Prop}
+    (hdisj : Pairwise (Disjoint on fun i => range (f i)))
     (hf : ∀ i, ∀ U ∈ 𝓝ˢ (range (f i)),
-      ∃ Φ : SolidTorus → X, IsSolidTorusNeighborhood (f i) Φ ∧ range Φ ⊆ U) :
-    ∃ Φ : ι → SolidTorus → X, IsSolidTorusLinkNeighborhood f Φ := by
+      ∃ Φ : SolidTorus → X, IsSolidTorusNeighborhood (f i) Φ ∧ P Φ ∧ range Φ ⊆ U) :
+    ∃ Φ : ι → SolidTorus → X, IsSolidTorusLinkNeighborhood f Φ ∧ ∀ i, P (Φ i) := by
   -- The images are compact, so they have pairwise disjoint neighbourhoods.
   have hcompact (i : ι) : IsCompact (range (f i)) := by
     obtain ⟨Φ, hΦ, -⟩ := hf i univ Filter.univ_mem
@@ -99,8 +100,8 @@ theorem exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet [T2Space X] [Finit
   obtain ⟨U, hU, hUdisj⟩ := Pairwise.exists_mem_filter_of_disjoint fun i j hij =>
     separatedNhds_iff_disjoint.1 <|
       SeparatedNhds.of_isCompact_isCompact (hcompact i) (hcompact j) (hdisj hij)
-  choose Φ hΦ hΦU using fun i => hf i (U i) (hU i)
-  exact ⟨Φ, hΦ, fun i j hij => (hUdisj hij).mono (hΦU i) (hΦU j)⟩
+  choose Φ hΦ hP hΦU using fun i => hf i (U i) (hU i)
+  exact ⟨Φ, ⟨hΦ, fun i j hij => (hUdisj hij).mono (hΦU i) (hΦU j)⟩, hP⟩
 
 /-! ### Existence in Euclidean three-space -/
 
@@ -117,8 +118,9 @@ theorem exists_isSolidTorusLinkNeighborhood
     (hinj : ∀ i, Injective (f i))
     (hdisj : Pairwise (Disjoint on fun i => range (f i))) :
     ∃ Φ : ι → SolidTorus → ℝ³, IsSolidTorusLinkNeighborhood f Φ :=
-  exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet hdisj fun i _ hU =>
-    exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) hU
+  (exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet (P := fun _ => True) hdisj fun i _ hU =>
+    (exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) hU).imp fun _ h =>
+      ⟨h.1, trivial, h.2.1⟩).imp fun _ h => h.1
 
 namespace SmoothLinkEmbedding
 

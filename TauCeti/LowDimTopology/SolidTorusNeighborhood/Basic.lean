@@ -13,6 +13,7 @@ public import TauCeti.Topology.Category.TopCat.DisjointOpens
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Euclidean.Angle.Unoriented.CrossProduct
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
@@ -38,7 +39,10 @@ choose a continuous orthonormal frame `(n₁ z, n₂ z)` of the normal plane at 
 lines of the circle form the image of a `C¹` map from a plane, which has dense complement in `ℝ³`,
 so some vector `a` is tangent to the circle nowhere; `n₁ z` is the normalized projection of `a`
 onto the normal plane, and `n₂ z` is the cross product of the unit tangent with `n₁ z`. Then
-`Φ (w, z) = f z + r • (re w • n₁ z + im w • n₂ z)` for a small `r > 0`.
+`Φ (w, z) = f z + r • (re w • n₁ z + im w • n₂ z)` for a small `r > 0`. At the point `(0, 1)` of
+the core its derivative is `(u, t) ↦ t • f' + r • (re u • n₁ 1 + im u • n₂ 1)`, with `f'` the
+velocity of `f` at `1`; it exists because the frame is continuous, and it is injective because its
+two terms are orthogonal.
 
 ## Main definitions
 
@@ -65,7 +69,8 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
 * `TauCeti.IsSolidTorusNeighborhood.exteriorFrontierHomeomorph`: the framing identifies the torus
   with the frontier of the exterior.
 * `TauCeti.exists_isSolidTorusNeighborhood`: a `C²` embedded circle in `ℝ³` has a solid torus
-  neighbourhood inside any neighbourhood of its image.
+  neighbourhood inside any neighbourhood of its image, differentiable at a core point with
+  injective derivative.
 
 ## References
 
@@ -387,7 +392,7 @@ onto its normal planes: `ψ z w = re w • n₁ z + im w • n₂ z` for the fra
 `exists_normalFrame`. -/
 private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℝ³) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) f z)) :
-    ∃ ψ : Circle → ℂ → ℝ³, Continuous (fun q : SolidTorus => ψ q.2 q.1) ∧ ∀ z,
+    ∃ ψ : Circle → ℂ →L[ℝ] ℝ³, Continuous ψ ∧ ∀ z,
       (∀ w, ψ z w ∈ normalSubspace (𝓡 1) f z) ∧ (∀ w, ‖ψ z w‖ = ‖w‖) ∧ Injective (ψ z) ∧
       ∀ v ∈ normalSubspace (𝓡 1) f z, ∃ w, ψ z w = v := by
   obtain ⟨n₁, n₂, hc₁, hc₂, hn⟩ := exists_normalFrame hf himm
@@ -397,23 +402,71 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
   have h₂ : ∀ z (w : ℂ), ⟪n₂ z, w.re • n₁ z + w.im • n₂ z⟫ = w.im := fun z w => by
     simp [inner_add_right, real_inner_smul_right, (hn z).2.1, real_inner_comm (n₁ z),
       (hn z).2.2.1]
-  refine ⟨fun z w => w.re • n₁ z + w.im • n₂ z, by fun_prop, fun z => ⟨fun w => ?_, fun w => ?_,
-    fun w w' h => ?_, fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
-  · rw [(hn z).2.2.2, h₁, h₂]
-  · rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
+  have hψ : ∀ z (w : ℂ), (Complex.reCLM.smulRight (n₁ z) + Complex.imCLM.smulRight (n₂ z)) w =
+      w.re • n₁ z + w.im • n₂ z := fun z w => by simp
+  refine ⟨fun z => Complex.reCLM.smulRight (n₁ z) + Complex.imCLM.smulRight (n₂ z), by fun_prop,
+    fun z => ⟨fun w => ?_, fun w => ?_, fun w w' h => ?_,
+      fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
+  · rw [hψ, (hn z).2.2.2, h₁, h₂]
+  · rw [hψ, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
       ← real_inner_self_eq_norm_sq, inner_add_left, real_inner_smul_left, real_inner_smul_left,
       h₁, h₂]
-  · dsimp only at h
+  · rw [hψ, hψ] at h
     exact Complex.ext ((h₁ z w).symm.trans (h ▸ h₁ z w')) ((h₂ z w).symm.trans (h ▸ h₂ z w'))
   · rw [(hn z).2.2.2] at hv
     simp [← hv]
 
+/-- The map `(u, t) ↦ f (exp (t i)) + r • ψ (exp (t i)) u` has an injective derivative at the
+origin, when `ψ` is a continuous family of linear isometries onto the normal planes of a `C²`
+immersed loop `f` and `r ≠ 0`: the derivative is `(u, t) ↦ t • f' + r • ψ 1 u`, whose two terms
+are orthogonal, with `f'` the nonzero velocity of `f` at `1`. -/
+private theorem exists_hasFDerivAt_normalTube {f : Circle → ℝ³}
+    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℝ³) 2 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) f z))
+    {ψ : Circle → ℂ →L[ℝ] ℝ³} (hψc : Continuous ψ)
+    (hψ : ∀ z, (∀ w, ψ z w ∈ normalSubspace (𝓡 1) f z) ∧ ∀ w, ‖ψ z w‖ = ‖w‖) {r : ℝ}
+    (hr : r ≠ 0) :
+    ∃ L : ℂ × ℝ →L[ℝ] ℝ³, HasFDerivAt
+      (fun v : ℂ × ℝ => f (Circle.exp v.2) + r • ψ (Circle.exp v.2) v.1) L 0 ∧ Injective L := by
+  have hγ : ContDiff ℝ 2 (f ∘ Circle.exp) :=
+    contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
+  have hγ₀ : HasDerivAt (f ∘ Circle.exp) (deriv (f ∘ Circle.exp) 0) (0 : ℂ × ℝ).2 := by
+    rw [Prod.snd_zero]
+    exact (hγ.differentiable two_ne_zero 0).hasDerivAt
+  have hA := hγ₀.hasFDerivAt.comp (0 : ℂ × ℝ) hasFDerivAt_snd
+  -- The variation of `ψ` is multiplied by `u = 0` at the origin, so only `ψ 1` contributes.
+  have hB := (hasFDerivWithinAt_univ.1 <| HasFDerivWithinAt.clm_apply_of_eq_zero
+    (c := fun v : ℂ × ℝ => ψ (Circle.exp v.2)) (u := Prod.fst)
+    (hψc.comp (Circle.exp.continuous.comp continuous_snd)).continuousWithinAt
+    hasFDerivAt_fst.hasFDerivWithinAt Prod.fst_zero).const_smul r
+  refine ⟨_, hA.add hB, (injective_iff_map_eq_zero _).2 fun v hv => ?_⟩
+  -- The velocity `d` of `f` at `1` is nonzero and orthogonal to the normal plane there.
+  obtain ⟨hd, hnormal⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff hf himm 1
+  have hτ : tangentVector f 1 = deriv (f ∘ Circle.exp) 0 := by
+    rw [← tangentVector_circleExp, Circle.exp_zero]
+  rw [hτ] at hd hnormal
+  have hv' : v.2 • deriv (f ∘ Circle.exp) 0 + r • ψ 1 v.1 = 0 := by simpa using hv
+  have hperp : ⟪deriv (f ∘ Circle.exp) 0, ψ 1 v.1⟫ = 0 := (hnormal _).1 ((hψ 1).1 v.1)
+  have ht : v.2 = 0 := by
+    have := congrArg (⟪deriv (f ∘ Circle.exp) 0, ·⟫) hv'
+    simp only [inner_add_right, real_inner_smul_right, hperp, mul_zero, add_zero, inner_zero_right,
+      real_inner_self_eq_norm_sq] at this
+    exact (mul_eq_zero.1 this).resolve_right (pow_ne_zero 2 (norm_ne_zero_iff.2 hd))
+  rw [ht, zero_smul, zero_add, smul_eq_zero] at hv'
+  have hu : v.1 = 0 := by
+    rw [← norm_eq_zero, ← (hψ 1).2, hv'.resolve_left hr, norm_zero]
+  exact Prod.ext hu ht
+
 /-- **Solid torus neighbourhoods of knots in `ℝ³`.** A `C²` embedded circle in `ℝ³` has a solid
-torus neighbourhood inside any neighbourhood of its image. -/
+torus neighbourhood `Φ` inside any neighbourhood of its image. Moreover `Φ` is differentiable at
+the point `(0, 1)` of its core, with injective derivative: read as `(u, t) ↦ Φ (u, exp (t i))`, it
+is the restriction to the closed unit disc of a map `G` on `ℂ × ℝ` with an injective derivative at
+the origin. -/
 theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℝ³) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) f z)) (hinj : Injective f)
     {U : Set ℝ³} (hU : U ∈ 𝓝ˢ (range f)) :
-    ∃ Φ : SolidTorus → ℝ³, IsSolidTorusNeighborhood f Φ ∧ range Φ ⊆ U := by
+    ∃ Φ : SolidTorus → ℝ³, IsSolidTorusNeighborhood f Φ ∧ range Φ ⊆ U ∧
+      ∃ (G : ℂ × ℝ → ℝ³) (L : ℂ × ℝ →L[ℝ] ℝ³), (∀ u t, Φ (u, Circle.exp t) = G (u, t)) ∧
+        HasFDerivAt G L 0 ∧ Injective L := by
   -- The tubular neighbourhood of radius `ε`, and a radius `r < ε` keeping the tube inside `U`.
   obtain ⟨ε, hε, hemb⟩ := exists_isOpenEmbedding_normalTube hf himm hinj
   obtain ⟨δ, hδ, hδU⟩ := (isCompact_range hf.continuous).exists_thickening_subset_open
@@ -436,8 +489,13 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
     obtain ⟨h₂, h₁⟩ := h'
     rw [h₂] at h₁
     exact Prod.ext (Subtype.ext ((hψ _).2.2.1 (smul_right_injective _ hr.ne' h₁))) h₂
+  have hψc' : Continuous fun q : SolidTorus => ψ q.2 q.1 :=
+    (hψc.comp continuous_snd).clm_apply (continuous_subtype_val.comp continuous_fst)
+  obtain ⟨L, hL, hLinj⟩ :=
+    exists_hasFDerivAt_normalTube hf himm hψc (fun z => ⟨(hψ z).1, (hψ z).2.1⟩) hr.ne'
   refine ⟨fun q => f q.2 + r • ψ q.2 q.1, ⟨((hf.continuous.comp continuous_snd).add
-    (hψc.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_⟩
+    (hψc'.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_,
+    _, L, fun u t => rfl, hL, hLinj⟩
   · dsimp only
     rw [Metric.unitClosedBall.coe_zero, norm_eq_zero.mp (((hψ z).2.1 0).trans norm_zero),
       smul_zero, add_zero]

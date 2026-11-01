@@ -50,8 +50,9 @@ theorem exists_isSolidTorusLinkNeighborhood_sphere [Finite ι]
     (himm : ∀ i z, Injective (mfderiv (𝓡 1) (𝓡 3) (f i) z)) (hinj : ∀ i, Injective (f i))
     (hdisj : Pairwise (Disjoint on fun i => range (f i))) :
     ∃ Φ : ι → SolidTorus → sphere (0 : E) 1, IsSolidTorusLinkNeighborhood f Φ :=
-  exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet hdisj fun i _ hU =>
-    exists_isSolidTorusNeighborhood_sphere (hf i) (himm i) (hinj i) hU
+  (exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet (P := fun _ => True) hdisj fun i _ hU =>
+    (exists_isSolidTorusNeighborhood_sphere (hf i) (himm i) (hinj i) hU).imp fun _ h =>
+      ⟨h.1, trivial, h.2.1⟩).imp fun _ h => h.1
 
 /-- A smooth link presentation in a unit three-sphere admits pairwise disjoint solid-torus
 neighbourhoods of all its labeled components. -/

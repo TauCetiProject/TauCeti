@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Link.Sphere
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
 
 /-!
@@ -54,6 +55,18 @@ The two orientations of `S³` give opposite answers
 (`TauCeti.isOrientationPreservingAtCore_unknotSolidTorus`): at its core point `(1, 0, 0, 0)` its
 derivative sends `(1, 0)`, `(i, 0)` and `(0, 1)` to the third, fourth and second basis vectors.
 
+Every `C²` embedded circle in `S³` has solid torus neighbourhoods preserving a given orientation at
+their core points, inside any neighbourhood of the circle
+(`TauCeti.exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore`), and so do the
+components of a link, with disjoint images
+(`TauCeti.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`). The neighbourhoods
+built from the tubular neighbourhood theorem (`TauCeti.exists_isSolidTorusNeighborhood_sphere`) are
+differentiable at the core point with injective derivative `L`. The reading stays on the unit
+sphere, so `L` takes values in the tangent space `(ℝ ∙ Φ (0, 1))ᗮ`; hence the volume form above
+does not vanish. If it is negative, precomposing `Φ` with the reflection `(u, z) ↦ (conj u, z)`
+changes its sign. So surgery coefficients with their usual orientation conventions can always be
+read off.
+
 ## Main definitions
 
 * `TauCeti.SolidTorus.coreReading Φ`: the map `(u, t) ↦ Φ (u, exp (t i))`, read in `E`.
@@ -69,6 +82,12 @@ derivative sends `(1, 0)`, `(i, 0)` and `(0, 1)` to the third, fourth and second
 * `TauCeti.IsOrientationPreservingAtCore.not_neg`: `Φ` does not preserve both orientations.
 * `TauCeti.isOrientationPreservingAtCore_unknotSolidTorus`: the standard solid torus
   neighbourhood of the unknot preserves the standard orientation.
+* `TauCeti.exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore`: a `C²` embedded circle
+  in `S³` has a solid torus neighbourhood preserving a given orientation, inside any neighbourhood
+  of the circle.
+* `TauCeti.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`,
+  `TauCeti.SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore`:
+  the same for the components of a link, with pairwise disjoint images.
 
 ## References
 
@@ -167,6 +186,178 @@ theorem IsOrientationPreservingAtCore.not_neg (h : IsOrientationPreservingAtCore
   obtain ⟨L, hL, hpos⟩ := isOrientationPreservingAtCore_iff.1 h
   rw [hL'.unique hL] at hneg
   exact hneg.not_gt hpos
+
+/-! ### Existence of orientation-preserving neighbourhoods -/
+
+section Existence
+
+open Function Set Topology ComplexConjugate
+open scoped Manifold RealInnerProductSpace
+
+/-- The vectors `(1, 0)`, `(i, 0)` and `(0, 1)` of `ℂ × ℝ` are linearly independent. -/
+private theorem linearIndependent_complexProdReal :
+    LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
+  refine Fintype.linearIndependent_iff.2 fun g hg i => ?_
+  simp [Fin.sum_univ_three, Prod.ext_iff, Complex.ext_iff] at hg
+  fin_cases i <;> simp [hg]
+
+/-- If the reading of `Φ` at its core point has an injective derivative `L` at the origin, then
+the volume form does not vanish on the outward normal `Φ (0, 1)` followed by the images under `L`
+of `(1, 0)`, `(i, 0)` and `(0, 1)`: the reading stays on the unit sphere, so `L` takes values in
+the tangent space `(ℝ ∙ Φ (0, 1))ᗮ`, and the four vectors are linearly independent. -/
+private theorem volumeForm_ne_zero_of_hasFDerivAt {L : ℂ × ℝ →L[ℝ] E}
+    (hL : HasFDerivAt (SolidTorus.coreReading Φ) L 0) (hLinj : Injective L)
+    (o : Orientation ℝ E (Fin 4)) :
+    o.volumeForm ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] ≠ 0 := by
+  set p : E := (Φ (0, 1) : E)
+  -- The squared norm of the reading is `1` near the origin, so `L` is orthogonal to `p`.
+  have hconst : (fun v ↦ ‖SolidTorus.coreReading Φ v‖ ^ 2) =ᶠ[nhds 0] fun _ ↦ (1 : ℝ) := by
+    filter_upwards [SolidTorus.eventually_coreReading_eq Φ] with v ⟨hv, heq⟩
+    simp [heq]
+  have hderiv := hL.norm_sq.unique ((hasFDerivAt_const (1 : ℝ) 0).congr_of_eventuallyEq hconst)
+  have horth : ∀ w, ⟪p, L w⟫ = 0 := fun w ↦ by
+    simpa [p] using congrArg (fun A : ℂ × ℝ →L[ℝ] ℝ ↦ A w) hderiv
+  -- The four vectors are linearly independent.
+  have hli : LinearIndependent ℝ ![p, L (1, 0), L (I, 0), L (0, 1)] := by
+    have h₃ : LinearIndependent ℝ ![L (1, 0), L (I, 0), L (0, 1)] := by
+      convert linearIndependent_complexProdReal.map' (L : ℂ × ℝ →ₗ[ℝ] E)
+        (LinearMap.ker_eq_bot.2 hLinj) using 1
+      ext i
+      fin_cases i <;> rfl
+    refine h₃.finCons fun hp ↦ ?_
+    have hle : Submodule.span ℝ (Set.range ![L (1, 0), L (I, 0), L (0, 1)]) ≤ (ℝ ∙ p)ᗮ := by
+      rw [Submodule.span_le]
+      rintro _ ⟨i, rfl⟩
+      fin_cases i <;> exact Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth _)
+    have hpp := Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle hp)
+    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere (Φ (0, 1))] at hpp
+    exact one_ne_zero (pow_eq_zero_iff two_ne_zero |>.1 hpp)
+  -- Linearly independent vectors have nonzero determinant in an orthonormal basis.
+  have hfin : finrank ℝ E = 4 := Fact.out
+  rw [o.volumeForm_robust (o.finOrthonormalBasis (by norm_num) hfin)
+    (o.finOrthonormalBasis_orientation _ _)]
+  exact (Basis.is_basis_iff_det _ |>.1
+    ⟨hli, hli.span_eq_top_of_card_eq_finrank (by simp [hfin])⟩).ne_zero
+
+/-- The reflection `(u, z) ↦ (conj u, z)` of the solid torus. It fixes the core and preserves the
+open solid torus. -/
+private def conjSolidTorus : SolidTorus ≃ₜ SolidTorus where
+  toFun q := (⟨conj (q.1 : ℂ), mem_closedBall_zero_iff.2 <|
+    (Complex.norm_conj _).trans_le (mem_closedBall_zero_iff.1 q.1.2)⟩, q.2)
+  invFun q := (⟨conj (q.1 : ℂ), mem_closedBall_zero_iff.2 <|
+    (Complex.norm_conj _).trans_le (mem_closedBall_zero_iff.1 q.1.2)⟩, q.2)
+  left_inv q := by simp
+  right_inv q := by simp
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 4)] in
+/-- Precomposing a solid torus neighbourhood with the reflection `(u, z) ↦ (conj u, z)` gives a
+solid torus neighbourhood of the same loop. -/
+private theorem IsSolidTorusNeighborhood.comp_conjSolidTorus {f : Circle → sphere (0 : E) 1}
+    (h : IsSolidTorusNeighborhood f Φ) : IsSolidTorusNeighborhood f (Φ ∘ conjSolidTorus) where
+  isEmbedding := h.isEmbedding.comp conjSolidTorus.isEmbedding
+  apply_zero z := by
+    rw [comp_apply, ← h.apply_zero z]
+    congr 1
+    ext <;> simp [conjSolidTorus]
+  isOpen_image := by
+    convert h.isOpen_image using 1
+    rw [image_comp, conjSolidTorus.image_eq_preimage_symm]
+    ext q
+    simp [conjSolidTorus]
+
+omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 4)] in
+/-- The reading of `Φ ∘ conjSolidTorus` at the core is the reading of `Φ` precomposed with
+`(u, t) ↦ (conj u, t)`. -/
+private theorem coreReading_comp_conjSolidTorus (v : ℂ × ℝ) :
+    SolidTorus.coreReading (Φ ∘ conjSolidTorus) v =
+      SolidTorus.coreReading Φ (conj v.1, v.2) := by
+  simp only [SolidTorus.coreReading, Complex.norm_conj]
+  -- On the disc, `conjSolidTorus` conjugates the disc coordinate by definition.
+  split_ifs <;> rfl
+
+/-- If the reading of `Φ` at its core has an injective derivative at the origin, then `Φ` or its
+precomposition with the reflection `(u, z) ↦ (conj u, z)` preserves the orientation `o` at the
+core: the reflection reverses the sign of the volume form, which does not vanish. -/
+private theorem exists_isOrientationPreservingAtCore_conj {L : ℂ × ℝ →L[ℝ] E}
+    (hL : HasFDerivAt (SolidTorus.coreReading Φ) L 0) (hLinj : Injective L)
+    (o : Orientation ℝ E (Fin 4)) :
+    IsOrientationPreservingAtCore Φ o ∨ IsOrientationPreservingAtCore (Φ ∘ conjSolidTorus) o := by
+  rcases (volumeForm_ne_zero_of_hasFDerivAt hL hLinj o).lt_or_gt with hneg | hpos
+  · right
+    set R : ℂ × ℝ →L[ℝ] ℂ × ℝ :=
+      conjCLE.toContinuousLinearMap.prodMap (ContinuousLinearMap.id ℝ ℝ)
+    have hL' : HasFDerivAt (SolidTorus.coreReading Φ) L (R 0) := by rwa [map_zero]
+    refine ⟨L.comp R, ?_, ?_⟩
+    · exact (hL'.comp 0 R.hasFDerivAt).congr_of_eventuallyEq
+        (Filter.Eventually.of_forall coreReading_comp_conjSolidTorus)
+    · have hcore : Φ (conjSolidTorus (0, 1)) = Φ (0, 1) := by
+        congr 1
+        ext <;> simp [conjSolidTorus]
+      have hvec : ![((Φ ∘ conjSolidTorus) (0, 1) : E), (L.comp R) (1, 0), (L.comp R) (I, 0),
+          (L.comp R) (0, 1)] =
+          Function.update ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] 2 (-L (I, 0)) := by
+        ext i
+        fin_cases i <;> simp [R, hcore, ← map_neg]
+      have hupd : Function.update ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] 2 (L (I, 0)) =
+          ![(Φ (0, 1) : E), L (1, 0), L (I, 0), L (0, 1)] :=
+        Function.update_eq_self_iff.2 rfl
+      rw [hvec, AlternatingMap.map_update_neg, hupd]
+      exact neg_pos.2 hneg
+  · exact Or.inl ⟨L, hL, hpos⟩
+
+/-- **Orientation-preserving solid torus neighbourhoods of knots in `S³`.** A `C²` embedded circle
+in the unit three-sphere of `E` has, inside any prescribed neighbourhood of its image, a solid torus
+neighbourhood preserving a given orientation of `E` at its core point. A solid torus neighbourhood
+which is differentiable at its core point with injective derivative
+(`TauCeti.exists_isSolidTorusNeighborhood_sphere`) either preserves the orientation, or does so
+after precomposition with the reflection `(u, z) ↦ (conj u, z)` of the solid torus. -/
+theorem exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore
+    {f : Circle → sphere (0 : E) 1} (hf : ContMDiff (𝓡 1) (𝓡 3) 2 f)
+    (himm : ∀ z, Injective (mfderiv (𝓡 1) (𝓡 3) f z)) (hinj : Injective f)
+    {U : Set (sphere (0 : E) 1)} (hU : U ∈ 𝓝ˢ (range f)) (o : Orientation ℝ E (Fin 4)) :
+    ∃ Φ : SolidTorus → sphere (0 : E) 1, IsSolidTorusNeighborhood f Φ ∧ range Φ ⊆ U ∧
+      IsOrientationPreservingAtCore Φ o := by
+  obtain ⟨Φ, hΦ, hΦU, G, L, hG, hL, hLinj⟩ :=
+    exists_isSolidTorusNeighborhood_sphere hf himm hinj hU
+  -- Near the origin the reading of `Φ` at its core is `G`.
+  have hread : HasFDerivAt (SolidTorus.coreReading Φ) L 0 := by
+    refine hL.congr_of_eventuallyEq ?_
+    filter_upwards [SolidTorus.eventually_coreReading_eq Φ] with v ⟨hv, heq⟩
+    rw [heq, hG]
+  rcases exists_isOrientationPreservingAtCore_conj hread hLinj o with h | h
+  · exact ⟨Φ, hΦ, hΦU, h⟩
+  · refine ⟨Φ ∘ conjSolidTorus, hΦ.comp_conjSolidTorus, ?_, h⟩
+    rw [range_comp, conjSolidTorus.range_coe, image_univ]
+    exact hΦU
+
+/-- A finite family of pairwise disjoint `C²` embedded circles in the unit three-sphere of `E` has
+solid torus neighbourhoods with pairwise disjoint images, each preserving a given orientation of `E`
+at its core point. -/
+theorem exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore {ι : Type*} [Finite ι]
+    {f : ι → Circle → sphere (0 : E) 1} (hf : ∀ i, ContMDiff (𝓡 1) (𝓡 3) 2 (f i))
+    (himm : ∀ i z, Injective (mfderiv (𝓡 1) (𝓡 3) (f i) z)) (hinj : ∀ i, Injective (f i))
+    (hdisj : Pairwise (Disjoint on fun i => range (f i))) (o : Orientation ℝ E (Fin 4)) :
+    ∃ Φ : ι → SolidTorus → sphere (0 : E) 1,
+      IsSolidTorusLinkNeighborhood f Φ ∧ ∀ i, IsOrientationPreservingAtCore (Φ i) o :=
+  exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet hdisj fun i _ hU =>
+    (exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore (hf i) (himm i) (hinj i) hU
+      o).imp fun _ h => ⟨h.1, h.2.2, h.2.1⟩
+
+/-- A smooth link presentation in the unit three-sphere of `E` has solid torus neighbourhoods of
+its components with pairwise disjoint images, each preserving a given orientation of `E` at its
+core point. -/
+theorem SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore
+    {n : ℕ} (L : SmoothLinkEmbedding (𝓡 3) (sphere (0 : E) 1) n) (o : Orientation ℝ E (Fin 4)) :
+    ∃ Φ : Fin n → SolidTorus → sphere (0 : E) 1,
+      IsSolidTorusLinkNeighborhood (fun i => L i) Φ ∧ ∀ i, IsOrientationPreservingAtCore (Φ i) o :=
+  TauCeti.exists_isSolidTorusLinkNeighborhood_isOrientationPreservingAtCore
+    (fun i => (L i).contMDiff.of_le (by simp))
+    (fun i z => (L i).isImmersion.mfderiv_injective (by simp) z)
+    (fun i => (L i).isEmbedding.injective) L.pairwiseDisjoint_range o
+
+end Existence
 
 /-! ### The standard neighbourhood of the unknot -/
 
