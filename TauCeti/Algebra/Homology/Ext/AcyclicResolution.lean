@@ -184,10 +184,6 @@ theorem resolutionExtClass_postcomp_eq_zero_iff (n : ℕ) (x : Ext.{w} P (K.cycl
 
 variable {P}
 
-omit [HasExt C] in
-private lemma lift_comp (f : P ⟶ K.X 0) (hf : f ≫ K.d 0 1 = 0) : hι'.lift f hf ≫ ι = f :=
-  hι'.lift_f f hf
-
 /-- The class in `Extⁿ(P, F)` of a cocycle `f : P ⟶ Kⁿ` of the complex `Hom(P, K)`, for a
 resolution `F ⟶ K`. In degree `0` it is the factorization of `f` through `F`; in degree `n + 1`
 it is the factorization of `f` through the cycles `Zⁿ⁺¹`, composed with the class
@@ -215,7 +211,7 @@ lemma extMk_add {n : ℕ} (f g : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0)
   | zero =>
     simp only [extMk_zero, ← Ext.mk₀_add]
     congr 1
-    simp [← cancel_mono ι, lift_comp]
+    simp [← cancel_mono ι, hι'.lift_f]
   | succ n =>
     simp only [extMk_succ, ← Ext.add_comp, ← Ext.mk₀_add]
     congr 2
@@ -231,7 +227,7 @@ theorem extMk_surjective {n : ℕ} (α : Ext.{w} P F n) :
     refine ⟨Ext.homEquiv₀ α ≫ ι, by simp [hι], ?_⟩
     rw [extMk_zero, ← Ext.mk₀_homEquiv₀_apply α]
     congr 1
-    simp [← cancel_mono ι, lift_comp]
+    simp [← cancel_mono ι, hι'.lift_f]
   | succ n =>
     obtain ⟨x, rfl⟩ := K.resolutionExtClass_postcomp_surjective ι hι hι' hK P hP n α
     refine ⟨Ext.homEquiv₀ x ≫ K.iCycles (n + 1), by simp, ?_⟩
@@ -247,9 +243,9 @@ theorem extMk_zero_eq_zero_iff (f : P ⟶ K.X 0) (hf : f ≫ K.d 0 (0 + 1) = 0) 
     K.extMk ι hι hι' hK f hf = 0 ↔ f = 0 := by
   rw [extMk_zero, Ext.mk₀_eq_zero_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← lift_comp ι hι hι' f hf, h, zero_comp]
+  · rw [← hι'.lift_f f hf, h, zero_comp]
   · subst h
-    simp [← cancel_mono ι, lift_comp]
+    simp [← cancel_mono ι, hι'.lift_f]
 
 include hP in
 /-- **A cocycle has zero class exactly when it is a coboundary**, for a resolution `F ⟶ K` whose
