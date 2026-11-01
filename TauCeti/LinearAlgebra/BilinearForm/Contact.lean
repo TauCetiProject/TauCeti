@@ -221,6 +221,11 @@ theorem isContact_comp_compl₁₂ {U : Type*} [AddCommGroup U] [Module K U] (hB
 
 /-! ### The symplectization form -/
 
+section CommRing
+
+variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
+  {a : Module.Dual K V} {B : LinearMap.BilinForm K V}
+
 /-- The **symplectization form** of a covector `a` and a bilinear form `B` on `V`: the bilinear
 form `((s, v), (t, w)) ↦ s * a w - t * a v + B v w` on `K × V`. Up to the positive factor `eᵗ`, it
 is the value of `d(eᵗ α)` at a point `(t, x)` of `ℝ × M`, for a one-form `α` on a manifold `M`,
@@ -251,6 +256,8 @@ theorem flip_symplectizationForm :
   simp only [LinearMap.flip_apply, symplectizationForm_apply, LinearMap.neg_apply]
   ring
 
+end CommRing
+
 /-- The symplectization form of `a` and `B` is left-separating exactly when `a` is nonzero and the
 restriction of `B` to `ker a` is left-separating. -/
 theorem separatingLeft_symplectizationForm_iff :
@@ -262,24 +269,16 @@ theorem separatingLeft_symplectizationForm_iff :
     have ha : a ≠ 0 := fun ha ↦ one_ne_zero <| congrArg Prod.fst <|
       h ((1 : K), (0 : V)) fun y ↦ by simp [ha]
     refine ⟨ha, fun v hv ↦ ?_⟩
-    obtain ⟨u, hu⟩ : ∃ u, a u ≠ 0 := by
-      by_contra! h'
-      exact ha (LinearMap.ext h')
-    -- `B v` vanishes on `ker a`, so it is the multiple `c • a`, and `(-c, v)` is orthogonal to
+    -- `B v` vanishes on `ker a`, so it is a multiple `c • a`, and `(-c, v)` is orthogonal to
     -- everything.
-    set c := B v u / a u
-    have hBv (w : V) : B v w = c * a w := by
-      have hw : w - (a w / a u) • u ∈ LinearMap.ker a := by
-        rw [LinearMap.mem_ker, map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hu, sub_self]
-      have := hv ⟨_, hw⟩
-      simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, map_sub,
-        map_smul, smul_eq_mul] at this
-      rw [sub_eq_zero] at this
-      rw [this]
-      simp only [c]
-      ring
+    have hspan : B v ∈ Submodule.span K (Set.range fun _ : Unit ↦ a) :=
+      mem_span_of_iInf_ker_le_ker fun w hw ↦ LinearMap.mem_ker.2 <| by
+        simpa using hv ⟨w, (Submodule.mem_iInf _).1 hw ()⟩
+    rw [Set.range_const] at hspan
+    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 hspan
     have h0 := h (-c, v) fun y ↦ by
-      simp only [symplectizationForm_apply, LinearMap.mem_ker.1 v.2, hBv]
+      simp only [symplectizationForm_apply, LinearMap.mem_ker.1 v.2, ← hc, LinearMap.smul_apply,
+        smul_eq_mul]
       ring
     exact Subtype.ext (congrArg Prod.snd h0)
   · rintro ⟨ha, hr⟩ x hx
