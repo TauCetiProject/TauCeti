@@ -32,9 +32,9 @@ extension algebraic.
   restricting directly to `F₀`.
 * `TauCeti.Place.ramificationIdx_restrict_mul`: ramification indices multiply in a tower.
 * `TauCeti.Place.relativeDegree_restrict_mul`: relative residue degrees multiply in a tower.
-* `TauCeti.Place.ramificationIdx_eq_one_iff_restrict_eq_one` and
-  `TauCeti.Place.relativeDegree_eq_one_iff_restrict_eq_one`: `e = 1`, respectively `f = 1`, over
-  the bottom of a tower holds exactly when it holds on both steps.
+* `TauCeti.Place.ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict` and
+  `TauCeti.Place.relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict`: `e = 1`,
+  respectively `f = 1`, over the bottom of a tower holds exactly when it holds on both steps.
 * `TauCeti.Place.finInsepDegree_residueField_restrict_mul`: inseparable degrees of residue
   extensions multiply in a tower.
 * `TauCeti.Place.isSeparable_residueField_restrict_top` and
@@ -108,7 +108,7 @@ theorem ramificationIdx_restrict_mul (P : Place k₂ F₂) :
 omit [Algebra.IsIntegral F₀ F₁] in
 /-- **A place is unramified over the bottom of a tower exactly when it is unramified on both
 steps**: `e(P₂ / F₀) = 1` if and only if `e(P₂ / F₁) = 1` and `e(P₂|F₁ / F₀) = 1`. -/
-theorem ramificationIdx_eq_one_iff_restrict_eq_one (P : Place k₂ F₂) :
+theorem ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict (P : Place k₂ F₂) :
     P.ramificationIdx F₀ = 1 ↔
       P.ramificationIdx F₁ = 1 ∧ (P.restrict k₁ F₁).ramificationIdx F₀ = 1 := by
   rw [ramificationIdx_restrict_mul (k₁ := k₁) (F₁ := F₁), mul_eq_one]
@@ -183,7 +183,7 @@ theorem relativeDegree_restrict_mul (P : Place k₂ F₂) :
 
 /-- **A place has relative degree one over the bottom of a tower exactly when it does on both
 steps**: `f(P₂ / P₀) = 1` if and only if `f(P₂ / P₁) = 1` and `f(P₁ / P₀) = 1`. -/
-theorem relativeDegree_eq_one_iff_restrict_eq_one (P : Place k₂ F₂) :
+theorem relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict (P : Place k₂ F₂) :
     @relativeDegree k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁) = 1 ↔
       P.relativeDegree k₁ F₁ = 1 ∧ (P.restrict k₁ F₁).relativeDegree k₀ F₀ = 1 := by
   rw [relativeDegree_restrict_mul (k₁ := k₁) (F₁ := F₁), mul_eq_one]

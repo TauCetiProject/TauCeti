@@ -65,8 +65,8 @@ proved here.
   an intermediate field is the index of its fixing subgroup in the decomposition group.
 * `TauCeti.Place.isSplitCompletely_iff_forall_decompositionSubgroup_le`: complete splitting in
   an intermediate field is detected by all upstairs decomposition groups.
-* `TauCeti.Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one`: in a finite extension, Galois
-  or not, an automorphism fixing a place with `e = f = 1` is the identity.
+* `TauCeti.Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one_of_relativeDegree_eq_one`: in a
+  finite extension, Galois or not, an automorphism fixing a place with `e = f = 1` is the identity.
 
 ## References
 
@@ -380,7 +380,8 @@ variable {F} in
 `F' / F` be a finite extension, not necessarily Galois, and `P` a place of `F' / k` with
 `e(P ∣ P ∩ F) = f(P ∣ P ∩ F) = 1`. Then the only automorphism of `F'` over `F` fixing `P` is the
 identity. -/
-theorem eq_one_of_smul_eq_self_of_ramificationIdx_eq_one {σ : F' ≃ₐ[F] F'} {P : Place k F'}
+theorem eq_one_of_smul_eq_self_of_ramificationIdx_eq_one_of_relativeDegree_eq_one
+    {σ : F' ≃ₐ[F] F'} {P : Place k F'}
     (hσ : σ • P = P) (he : ramificationIdx F P = 1) (hf : relativeDegree k F P = 1) : σ = 1 := by
   -- Over the field `E` fixed by `σ`, `F'` is Galois and `σ` lies in the decomposition group of `P`.
   let E := IntermediateField.fixedField (Subgroup.zpowers σ)
@@ -391,9 +392,9 @@ theorem eq_one_of_smul_eq_self_of_ramificationIdx_eq_one {σ : F' ≃ₐ[F] F'} 
       ← restrictScalars_smul, hτσ, hσ]
   -- Over `E`, the place `P` is still unramified of relative degree one.
   have he' : ramificationIdx E P = 1 :=
-    ((ramificationIdx_eq_one_iff_restrict_eq_one (k₁ := k) (F₁ := E) P).mp he).1
+    ((ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict (k₁ := k) (F₁ := E) P).mp he).1
   have hf' : relativeDegree k E P = 1 :=
-    ((relativeDegree_eq_one_iff_restrict_eq_one (k₁ := k) (F₁ := E) P).mp hf).1
+    ((relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict (k₁ := k) (F₁ := E) P).mp hf).1
   have hcard := card_decompositionSubgroup E P
   rw [he', hf', mul_one, Nat.card_eq_one_iff_unique] at hcard
   have hτ1 : τ = 1 := congrArg Subtype.val (hcard.1.elim ⟨τ, hτ⟩ 1)

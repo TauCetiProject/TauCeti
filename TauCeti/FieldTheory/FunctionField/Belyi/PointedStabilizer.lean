@@ -37,7 +37,7 @@ number `q`, every semilinear automorphism permutes the finitely many places over
 one, as is automatic over an algebraically closed field, then the semilinear automorphism fixing
 `P` above a given `g` is **unique**: two of them differ by an automorphism of `F` over `k(t)`
 fixing the unramified place `P`, which is trivial
-(`TauCeti.Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one`). Thus
+(`TauCeti.Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one_of_relativeDegree_eq_one`). Thus
 `U(X, P)` acts on `F` by semilinear automorphisms fixing `t` and `P`
 (`TauCeti.AlgebraicBelyiPair.pointedStabilizerEquiv`). In Köck's argument this action fixes a
 generator of `F` over `k(t)` normalized by its Laurent expansion at `P` in `t - q`, so the
@@ -333,7 +333,8 @@ private theorem eq_one_of_smul_eq_self_of_snd_eq_one {p : semilinearAut X} (hp :
   have hσP : σ • P = P := Place.ext <| Valuation.ext fun z ↦ by
     rw [Place.valuation_smul, ← smul_eq_self_iff_valuation_apply_eq.mp hp (σ.symm z), ← hσφ,
       AlgEquiv.apply_symm_apply]
-  have hσ := Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one hσP he hf
+  have hσ :=
+    Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one_of_relativeDegree_eq_one hσP he hf
   refine Subtype.ext <| Prod.ext (RingEquiv.ext fun x ↦ ?_) ?_
   · rw [← hσφ, hσ, AlgEquiv.one_apply, OneMemClass.coe_one, Prod.fst_one, RingAut.one_apply]
   · rw [h1, OneMemClass.coe_one, Prod.snd_one]

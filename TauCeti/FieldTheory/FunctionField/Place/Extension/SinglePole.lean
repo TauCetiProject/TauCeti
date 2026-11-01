@@ -68,9 +68,9 @@ theorem adjoin_simple_eq_top_of_forall_ne_ord_nonneg (hK : IsFunctionField k K)
   have hw : algebraMap E F w = z := IntermediateField.AdjoinSimple.algebraMap_gen K z
   -- In the tower `K ⊆ E ⊆ F`, the place `P` has `e = f = 1` over `E`.
   have heE : ramificationIdx E P = 1 :=
-    ((ramificationIdx_eq_one_iff_restrict_eq_one (k₁ := k) (F₁ := E) P).mp he).1
+    ((ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict (k₁ := k) (F₁ := E) P).mp he).1
   have hfE : relativeDegree k E P = 1 :=
-    ((relativeDegree_eq_one_iff_restrict_eq_one (k₁ := k) (F₁ := E) P).mp hf).1
+    ((relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict (k₁ := k) (F₁ := E) P).mp hf).1
   -- Every place of `F` over the place of `E` below `P` is a pole of `z`, hence is `P`.
   have hfibre (P' : Place k F) : P'.restrict k E = P.restrict k E ↔ P' = P := by
     refine ⟨fun hP' ↦ ?_, fun h ↦ h ▸ rfl⟩
