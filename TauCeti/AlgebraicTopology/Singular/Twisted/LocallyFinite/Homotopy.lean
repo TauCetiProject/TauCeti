@@ -39,6 +39,33 @@ variable {R : Type u} [Ring R] {X Y : TopCat.{v}}
   {K : LocalCoefficientSystem.{u, v, max v w} R Y}
   {φ ψ : twistedChainComplex L ⟶ twistedChainComplex K}
 
+-- Transport linear maps to the terms of the locally finite complex. The algebraic laws below
+-- keep the homotopy proof independent of the eqToHom/ofHom representation.
+private def locallyFiniteHom {a b : ℕ}
+    (f : locallyFiniteChains L a →ₗ[R] locallyFiniteChains K b) :
+    (locallyFiniteChainComplex L).X a ⟶ (locallyFiniteChainComplex K).X b :=
+  eqToHom (locallyFiniteChainComplex_X L a) ≫ ModuleCat.ofHom f ≫
+    eqToHom (locallyFiniteChainComplex_X K b).symm
+
+private lemma locallyFiniteHom_add {a b : ℕ}
+    (f g : locallyFiniteChains L a →ₗ[R] locallyFiniteChains K b) :
+    locallyFiniteHom (f + g) = locallyFiniteHom f + locallyFiniteHom g := by
+  simp only [locallyFiniteHom, ModuleCat.ofHom_add, Preadditive.comp_add, Preadditive.add_comp]
+
+private lemma locallyFiniteHom_comp {Z : TopCat.{v}}
+    {J : LocalCoefficientSystem.{u, v, max v w} R Z} {a b c : ℕ}
+    (f : locallyFiniteChains L a →ₗ[R] locallyFiniteChains K b)
+    (g : locallyFiniteChains K b →ₗ[R] locallyFiniteChains J c) :
+    locallyFiniteHom (g ∘ₗ f) = locallyFiniteHom f ≫ locallyFiniteHom g := by
+  simp only [locallyFiniteHom, ModuleCat.ofHom_comp, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+
+private lemma locallyFiniteHom_eq_add {a b : ℕ}
+    {f g h : locallyFiniteChains L a →ₗ[R] locallyFiniteChains K b} (heq : f - g = h) :
+    locallyFiniteHom f = locallyFiniteHom h + locallyFiniteHom g := by
+  simpa only [locallyFiniteHom_add] using
+    congrArg locallyFiniteHom ((sub_eq_iff_eq_add (a := f) (b := g) (c := h)).mp heq)
+
 /-- A chain homotopy with properly supported components extends to a chain homotopy of locally
 finite chains. Proper support of the endpoints alone would not suffice. -/
 def extendLocallyFiniteHomotopy
@@ -47,9 +74,7 @@ def extendLocallyFiniteHomotopy
     (H : Homotopy φ ψ) (hH : ∀ k, IsProperlySupported (H.hom k (k + 1))) :
     Homotopy (extendLocallyFiniteChainMap φ hφ) (extendLocallyFiniteChainMap ψ hψ) := by
   refine Homotopy.equivSubZero.symm <| Homotopy.mkChainComplex _
-    (fun k ↦ eqToHom (locallyFiniteChainComplex_X L k) ≫
-      ModuleCat.ofHom (extendLocallyFinite (hH k)) ≫
-        eqToHom (locallyFiniteChainComplex_X K (k + 1)).symm) ?_ ?_
+    (fun k ↦ locallyFiniteHom (extendLocallyFinite (hH k))) ?_ ?_
   · -- In degree zero there is only the boundary of the prism, with no preceding component.
     have hh : φ.f 0 - ψ.f 0 = H.hom 0 1 ≫ (twistedChainComplex K).d 1 0 := by
       have h := H.comm 0
@@ -57,20 +82,17 @@ def extendLocallyFiniteHomotopy
       exact sub_eq_iff_eq_add.mpr h
     have key : extendLocallyFinite (hφ 0) - extendLocallyFinite (hψ 0) =
         locallyFiniteBoundary K 0 ∘ₗ extendLocallyFinite (hH 0) := by
-      refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext ?_
-      replace hc := mem_locallyFiniteChains.mp hc
-      simp only [LinearMap.sub_apply, Submodule.coe_sub, LinearMap.comp_apply,
-        coe_extendLocallyFinite, coe_locallyFiniteBoundary]
-      rw [← extendLocallyFiniteFun_sub (hφ 0) (hψ 0) hc, hh,
-        ← extendLocallyFiniteFun_extendLocallyFiniteFun (hH 0) (isProperlySupported_d 0) hc,
-        extendLocallyFiniteFun_d]
-    -- Transport the module-level identity along the named identifications of complex terms.
+      rw [locallyFiniteBoundary_def, extendLocallyFinite_comp (hH 0) (isProperlySupported_d 0)]
+      exact (sub_eq_iff_eq_add (a := extendLocallyFinite (hφ 0))
+        (b := extendLocallyFinite (hψ 0))).mpr
+          (extendLocallyFinite_eq_add (hφ 0)
+            ((hH 0).comp (isProperlySupported_d 0)) (hψ 0) (sub_eq_iff_eq_add.mp hh))
     rw [HomologicalComplex.sub_f_apply]
     apply sub_eq_iff_eq_add.mpr
-    simpa [extendLocallyFiniteChainMap_f, locallyFiniteChainComplex_d,
-      Preadditive.comp_add, Preadditive.add_comp, Category.assoc, ModuleCat.ofHom_comp] using
-      congrArg (fun f ↦ eqToHom (locallyFiniteChainComplex_X L 0) ≫ ModuleCat.ofHom f ≫
-        eqToHom (locallyFiniteChainComplex_X K 0).symm) (sub_eq_iff_eq_add.mp key)
+    have transported := locallyFiniteHom_eq_add key
+    rw [locallyFiniteHom_comp] at transported
+    simpa only [extendLocallyFiniteChainMap_f, locallyFiniteChainComplex_d,
+      locallyFiniteHom] using transported
   · -- In positive degrees both composites extend, and extension respects their sum.
     intro k
     have hh : φ.f (k + 1) - ψ.f (k + 1) =
@@ -82,23 +104,18 @@ def extendLocallyFiniteHomotopy
     have key : extendLocallyFinite (hφ (k + 1)) - extendLocallyFinite (hψ (k + 1)) =
         extendLocallyFinite (hH k) ∘ₗ locallyFiniteBoundary L k +
           locallyFiniteBoundary K (k + 1) ∘ₗ extendLocallyFinite (hH (k + 1)) := by
-      refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext ?_
-      replace hc := mem_locallyFiniteChains.mp hc
-      simp only [LinearMap.sub_apply, LinearMap.add_apply, Submodule.coe_sub, Submodule.coe_add,
-        LinearMap.comp_apply, coe_extendLocallyFinite, coe_locallyFiniteBoundary]
-      rw [← extendLocallyFiniteFun_sub (hφ (k + 1)) (hψ (k + 1)) hc, hh,
-        extendLocallyFiniteFun_add ((isProperlySupported_d k).comp (hH k))
-          ((hH (k + 1)).comp (isProperlySupported_d (k + 1))) hc,
-        ← extendLocallyFiniteFun_extendLocallyFiniteFun (isProperlySupported_d k) (hH k) hc,
-        ← extendLocallyFiniteFun_extendLocallyFiniteFun (hH (k + 1))
-          (isProperlySupported_d (k + 1)) hc,
-        extendLocallyFiniteFun_d, extendLocallyFiniteFun_d]
+      rw [locallyFiniteBoundary_def, locallyFiniteBoundary_def,
+        extendLocallyFinite_comp (isProperlySupported_d k) (hH k),
+        extendLocallyFinite_comp (hH (k + 1)) (isProperlySupported_d (k + 1))]
+      exact extendLocallyFinite_sub_eq_add (hφ (k + 1)) (hψ (k + 1))
+        ((isProperlySupported_d k).comp (hH k))
+        ((hH (k + 1)).comp (isProperlySupported_d (k + 1))) hh
     rw [HomologicalComplex.sub_f_apply]
     apply sub_eq_iff_eq_add.mpr
-    simpa [extendLocallyFiniteChainMap_f, locallyFiniteChainComplex_d,
-      Preadditive.comp_add, Preadditive.add_comp, Category.assoc, ModuleCat.ofHom_comp] using
-      congrArg (fun f ↦ eqToHom (locallyFiniteChainComplex_X L (k + 1)) ≫ ModuleCat.ofHom f ≫
-        eqToHom (locallyFiniteChainComplex_X K (k + 1)).symm) (sub_eq_iff_eq_add.mp key)
+    have transported := locallyFiniteHom_eq_add key
+    rw [locallyFiniteHom_add, locallyFiniteHom_comp, locallyFiniteHom_comp] at transported
+    simpa only [extendLocallyFiniteChainMap_f, locallyFiniteChainComplex_d,
+      locallyFiniteHom] using transported
 
 /-- In adjacent degrees the extended homotopy is the extension of the original component. -/
 @[simp]

@@ -33,7 +33,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory SimplexCategory
+open CategoryTheory SimplexCategory Convexity
 
 open scoped Simplicial
 
@@ -44,32 +44,34 @@ namespace TauCeti.LocalCoefficientSystem
 variable {R : Type u} [Ring R] {X Y : TopCat.{v}}
   (L : LocalCoefficientSystem.{u, v, max v w} R X)
 
-/-- Every simplex occurring in the subdivision of a twisted simplex lies inside the original
-simplex's image. -/
-lemma movesAlong_twistedSubdivisionX (k : ℕ) : MovesAlong (𝟙 X) (twistedSubdivisionX L k) := by
+/-- An operator obtained on each simplex by pushing forward an affine chain does not enlarge
+that simplex's image. -/
+lemma movesAlong_of_ιTwistedChainComplex_eq_twistedSingularChain {k m : ℕ}
+    {A : (twistedChainComplex L).X k ⟶ (twistedChainComplex L).X m}
+    (c : (Fin (m + 1) → StdSimplex ℝ (Fin (k + 1))) →₀ ℤ)
+    (hA : ∀ σ, ιTwistedChainComplex L k σ ≫ A =
+      twistedSingularChain L σ (toTopInitialVertex ⦋k⦌) m c) : MovesAlong (𝟙 X) A := by
   refine movesAlong_iff.mpr ?_
   intro ρ σ x hx
   rw [TopCat.hom_id, ContinuousMap.coe_id, Set.image_id]
   by_contra h
-  have hz := twistedSingularChain_comp_coeff_eq_zero L σ (toTopInitialVertex ⦋k⦌)
-    (AffineChain.subdivision _ k (AffineChain.simplex k)) ρ h
-  rw [← ιTwistedChainComplex_twistedSubdivisionX_eq] at hz
+  have hz := twistedSingularChain_comp_twistedChainComplexCoeff_eq_zero L σ
+    (toTopInitialVertex ⦋k⦌) c ρ h
+  rw [← hA σ] at hz
   apply hx
   simpa only [matrixCoeff_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
     ModuleCat.hom_zero, LinearMap.zero_apply] using congrArg (fun f ↦ f.hom x) hz
 
+/-- Every simplex occurring in the subdivision of a twisted simplex lies inside the original
+simplex's image. -/
+lemma movesAlong_twistedSubdivisionX (k : ℕ) : MovesAlong (𝟙 X) (twistedSubdivisionX L k) :=
+  movesAlong_of_ιTwistedChainComplex_eq_twistedSingularChain L _
+    (ιTwistedChainComplex_twistedSubdivisionX_eq L)
+
 /-- The prism homotopy for twisted subdivision does not enlarge a simplex's image. -/
-lemma movesAlong_twistedPrismX (k : ℕ) : MovesAlong (𝟙 X) (twistedPrismX L k) := by
-  refine movesAlong_iff.mpr ?_
-  intro ρ σ x hx
-  rw [TopCat.hom_id, ContinuousMap.coe_id, Set.image_id]
-  by_contra h
-  have hz := twistedSingularChain_comp_coeff_eq_zero L σ (toTopInitialVertex ⦋k⦌)
-    (AffineChain.prismModel k) ρ h
-  rw [← ιTwistedChainComplex_twistedPrismX] at hz
-  apply hx
-  simpa only [matrixCoeff_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-    ModuleCat.hom_zero, LinearMap.zero_apply] using congrArg (fun f ↦ f.hom x) hz
+lemma movesAlong_twistedPrismX (k : ℕ) : MovesAlong (𝟙 X) (twistedPrismX L k) :=
+  movesAlong_of_ιTwistedChainComplex_eq_twistedSingularChain L _
+    (ιTwistedChainComplex_twistedPrismX L)
 
 /-- Each component of twisted barycentric subdivision is properly supported. -/
 lemma isProperlySupported_twistedSubdivisionChainMap_f (k : ℕ) :

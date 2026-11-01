@@ -383,6 +383,31 @@ lemma coe_extendLocallyFinite (hA : IsProperlySupported A) (c : locallyFiniteCha
       extendLocallyFiniteFun A c :=
   (rfl)
 
+/-- Extension preserves an additive identity among properly supported operators, even when the
+operators move simplices along different proper maps. -/
+lemma extendLocallyFinite_eq_add
+    {B C : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B) (hC : IsProperlySupported C)
+    (h : A = B + C) :
+    extendLocallyFinite hA = extendLocallyFinite hB + extendLocallyFinite hC := by
+  refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext ?_
+  simp only [LinearMap.add_apply, Submodule.coe_add, coe_extendLocallyFinite]
+  rw [h, extendLocallyFiniteFun_add hB hC (mem_locallyFiniteChains.mp hc)]
+
+/-- Extension preserves a difference-equals-sum identity among properly supported operators.
+No common proper map controlling all four operators is required. -/
+lemma extendLocallyFinite_sub_eq_add
+    {B C D : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B)
+    (hC : IsProperlySupported C) (hD : IsProperlySupported D) (h : A - B = C + D) :
+    extendLocallyFinite hA - extendLocallyFinite hB =
+      extendLocallyFinite hC + extendLocallyFinite hD := by
+  refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext ?_
+  replace hc := mem_locallyFiniteChains.mp hc
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, Submodule.coe_sub, Submodule.coe_add,
+    coe_extendLocallyFinite]
+  rw [← extendLocallyFiniteFun_sub hA hB hc, h, extendLocallyFiniteFun_add hC hD hc]
+
 /-- Extending a composite is the composite of the extensions. -/
 lemma extendLocallyFiniteFun_extendLocallyFiniteFun
     {B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e}
@@ -478,6 +503,10 @@ variable (L k) in
 /-- The boundary of locally finite singular `(k + 1)`-chains with coefficients in `L`. -/
 def locallyFiniteBoundary : locallyFiniteChains L (k + 1) →ₗ[R] locallyFiniteChains L k :=
   extendLocallyFinite (isProperlySupported_d k)
+
+/-- The locally finite boundary is the extension of the twisted boundary as a linear map. -/
+lemma locallyFiniteBoundary_def :
+    locallyFiniteBoundary L k = extendLocallyFinite (isProperlySupported_d k) := (rfl)
 
 /-- The underlying coefficients of the boundary of a locally finite chain. -/
 @[simp]

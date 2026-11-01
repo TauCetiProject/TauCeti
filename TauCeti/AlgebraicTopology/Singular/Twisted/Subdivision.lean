@@ -306,7 +306,7 @@ lemma map_vertexTransport_comp_twistedSingularChain {m : ℕ}
 /-- Pushing an affine chain forward inside `σ` has zero coefficient on every singular simplex
 whose image is not contained in the image of `σ`. This support control applies to both
 barycentric subdivision and its prism operator. -/
-lemma twistedSingularChain_comp_coeff_eq_zero
+lemma twistedSingularChain_comp_twistedChainComplexCoeff_eq_zero
     (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) {k : ℕ}
     (c : (Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) →₀ ℤ)
     (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
