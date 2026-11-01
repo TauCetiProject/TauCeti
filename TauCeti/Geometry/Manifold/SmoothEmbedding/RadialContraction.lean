@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.RadialContraction
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
-public import TauCeti.Geometry.Manifold.Orientation.Preserving
-import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.Orientation.RadialContraction
 
 /-!
 # Radial contraction of bundled smooth embeddings
@@ -18,8 +17,8 @@ finite-dimensional real normed space or postcompose an embedding into that space
 operations preserve every regularity at most `∞`; coercion and application lemmas describe their
 underlying functions.
 
-A radial contraction preserves every orientation of `E` at its centre
-(`TauCeti.isOrientationPreservingAt_radialContraction_self`), so precomposing an embedding with a
+Since a radial contraction preserves every orientation of `E` at its centre
+(`TauCeti.isOrientationPreservingAt_radialContraction_self`), precomposing an embedding with a
 radial contraction about the origin keeps it orientation-preserving at the origin
 (`TauCeti.SmoothEmbedding.isOrientationPreservingAt_compRadialContraction`).
 -/
@@ -91,19 +90,6 @@ section Orientation
 
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℝ, E) ∞ X]
   {ι : Type*} [Fintype ι]
-
-/-- A radial contraction preserves every orientation of `E` at its centre. -/
-theorem _root_.TauCeti.isOrientationPreservingAt_radialContraction_self
-    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (c : E) (κ : ℝ) :
-    o.IsOrientationPreservingAt o (radialContraction c κ) c := by
-  -- It fixes its centre, and its derivative there is the identity.
-  refine Manifold.Orientation.isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o
-    (radialContraction_self c κ) ?_
-  rw [mfderiv_eq_fderiv, (hasFDerivAt_radialContraction_self c κ).fderiv]
-  -- `mfderiv_eq_fderiv` conjugates by `NormedSpace.fromTangentSpace`, which is the identity of
-  -- `E` by definition.
-  ext v
-  rfl
 
 /-- Precomposing an embedding of `E` with a radial contraction about the origin keeps it
 orientation-preserving at the origin. -/
