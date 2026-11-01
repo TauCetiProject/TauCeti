@@ -136,6 +136,16 @@ theorem exists_isMIntegralCurve {v : (x : M) → TangentSpace I x}
     ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v :=
   (isCompleteVectorField_iff_exists_isMIntegralCurve hv).mp hcomplete x
 
+/-- The trajectories `t ↦ flowOf v t x` of a complete `C¹` vector field are integral curves defined
+for all time. -/
+theorem isMIntegralCurve_flowOf {v : (x : M) → TangentSpace I x}
+    (hcomplete : IsCompleteVectorField v)
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) (x : M) :
+    IsMIntegralCurve (fun t ↦ flowOf v t x) v := by
+  have := isMIntegralCurveOn_flowOf hv x
+  rw [hcomplete.flowDomain_eq_univ] at this
+  exact isMIntegralCurve_iff_isMIntegralCurveOn.2 (by simpa using this)
+
 end IsCompleteVectorField
 
 variable [CompleteSpace E]
