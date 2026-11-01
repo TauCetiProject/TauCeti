@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.JInvariant
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 
 /-!
@@ -73,15 +74,7 @@ namespace TauCeti.ModularForm
 
 local notation "𝕢" => Function.Periodic.qParam
 
-/-! ### The fourth powers as products -/
-
-/-- The odd product `∏_{n ≥ 0} (1 - q^{2n+1})` does not vanish at `q = e^{2π i τ}`. -/
-private theorem tprod_one_sub_qParam_pow_odd_ne_zero {τ : ℂ} (hτ : 0 < τ.im) :
-    (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ≠ 0 := by
-  have hq : 𝕢 1 τ = cexp (2 * π * I * τ) := by simp [Function.Periodic.qParam]
-  rw [hq]
-  exact right_ne_zero_of_mul_eq_one
-    (tprod_one_add_pow_mul_tprod_one_sub_pow_odd (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩))
+/-! ### Product expansion and limits of `g₀⁴` -/
 
 /-- `g₀⁴ = 16 q^{1/3} / (∏_{n ≥ 0} (1 - q^{2n+1}))⁸` for `q = e^{2π i τ}`, where
 `q^{1/3} = e^{2π i τ / 3}`. -/
@@ -96,7 +89,8 @@ private theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
     congr 1
     push_cast
     ring
-  rw [eq_div_iff (pow_ne_zero 8 (tprod_one_sub_qParam_pow_odd_ne_zero hτ)), hq,
+  rw [eq_div_iff (pow_ne_zero 8
+      (tprod_one_sub_pow_odd_ne_zero (Function.Periodic.norm_qParam_lt_one one_pos hτ))), hq,
     siegelFunction_zero_half hτ, ← he]
   calc (2 * I * cexp (π * I * τ / 6) * (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) ^ 2) ^ 4 *
         (∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8
@@ -105,60 +99,24 @@ private theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
             ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8 := by ring
     _ = 16 * cexp (π * I * τ / 6) ^ 4 := by rw [heuler, I_pow_four]; ring
 
-/-- `g₁⁴ = s^{-1/3} (∏_{n ≥ 0} (1 - s^{2n+1}))⁸` for `s = e^{π i τ}`, where
-`s^{-1/3} = e^{-π i τ / 3}`. -/
-private theorem siegelFunction_half_zero_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![1 / 2, 0] τ ^ 4 =
-      cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - 𝕢 2 τ ^ (2 * n + 1))) ^ 8 := by
-  have hs : cexp (π * I * τ) = 𝕢 2 τ := by
-    rw [Function.Periodic.qParam]
-    congr 1
-    push_cast
-    ring
-  have he : cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
-    rw [← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
-  rw [siegelFunction_half_zero hτ, hs, mul_pow, neg_pow, he, ← pow_mul]
-  norm_num
+/-- `q^{1/w} = e^{2π i τ / w} → 0` at `i∞`. -/
+private theorem tendsto_qParam_atImInfty_nhds {w : ℝ} (hw : 0 < w) :
+    Tendsto (fun τ : ℍ ↦ 𝕢 w τ) atImInfty (𝓝 0) :=
+  (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty hw).mono_right nhdsWithin_le_nhds
 
-/-- `g₂⁴ = -s^{-1/3} (∏_{n ≥ 0} (1 - (-s)^{2n+1}))⁸` for `s = e^{π i τ}`, where
-`s^{-1/3} = e^{-π i τ / 3}`. -/
-private theorem siegelFunction_half_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![1 / 2, 1 / 2] τ ^ 4 =
-      -(cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1))) ^ 8) := by
-  have hs : cexp (π * I * τ) = 𝕢 2 τ := by
-    rw [Function.Periodic.qParam]
-    congr 1
-    push_cast
-    ring
-  have he : cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
-    rw [← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
-  have h₄ : cexp (-(π * I / 4)) ^ 4 = -1 := by
-    rw [← Complex.exp_nat_mul, ← exp_neg_pi_mul_I]
-    congr 1
-    push_cast
-    ring
-  have hodd : ∏' n : ℕ, (1 + 𝕢 2 τ ^ (2 * n + 1)) = ∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1)) :=
-    tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
-  rw [siegelFunction_half_half hτ, hs, hodd, mul_pow, mul_pow, neg_pow, he, h₄, ← pow_mul]
-  norm_num
+/-- `(∏_{n ≥ 0} (1 - q^{2n+1}))⁸ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
+private theorem tendsto_tprod_one_sub_qParam_pow_odd_pow_eight :
+    Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8) atImInfty (𝓝 1) := by
+  have h := ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
+    (tendsto_qParam_atImInfty_nhds one_pos)).pow 8
+  simpa using h
 
-/-- `g₀⁴ g₁⁴ g₂⁴ = -16`, the fourth power of `g₀ g₁ g₂ = 2 ζ₈`. -/
-private theorem siegelFunction_pow_four_mul_mul {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 *
-      siegelFunction ![1 / 2, 1 / 2] τ ^ 4 = -16 := by
-  have h₈ : cexp (2 * π * I / 8) ^ 4 = -1 := by
-    rw [← Complex.exp_nat_mul, ← exp_pi_mul_I]
-    congr 1
-    push_cast
-    ring
-  rw [← mul_pow, ← mul_pow, siegelFunction_zero_half_mul_half_zero_mul_half_half hτ, mul_pow, h₈]
-  norm_num
+/-- `e^{π i / 6}⁴ = e^{2π i / 3}`. -/
+private theorem exp_pi_I_div_six_pow_four : cexp (π * I / 6) ^ 4 = cexp (2 * π * I / 3) := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
 
 /-! ### Weber's identity -/
 
@@ -169,9 +127,8 @@ private noncomputable def weberSum (τ : ℂ) : ℂ :=
 
 /-- `S` exchanges `g₀⁴` and `g₁⁴` and fixes `g₂⁴`. -/
 private theorem weberSum_S_smul (τ : ℍ) : weberSum ↑(ModularGroup.S • τ) = weberSum τ := by
-  have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
-    rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
-  rw [weberSum, weberSum, hS, siegelFunction_zero_half_apply_neg_one_div τ.im_pos,
+  rw [weberSum, weberSum, ModularGroup.coe_S_smul,
+    siegelFunction_zero_half_apply_neg_one_div τ.im_pos,
     siegelFunction_half_zero_apply_neg_one_div τ.im_pos,
     siegelFunction_half_half_apply_neg_one_div τ.im_pos, mul_pow, mul_pow, neg_pow, I_pow_four]
   ring
@@ -179,20 +136,13 @@ private theorem weberSum_S_smul (τ : ℍ) : weberSum ↑(ModularGroup.S • τ)
 /-- `T` multiplies `g₀⁴ + g₁⁴ + g₂⁴` by `e^{2π i / 3}`. -/
 private theorem weberSum_T_smul (τ : ℍ) :
     weberSum ↑(ModularGroup.T • τ) = cexp (2 * π * I / 3) * weberSum τ := by
-  have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
-    rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
-  have h₆ : cexp (π * I / 6) ^ 4 = cexp (2 * π * I / 3) := by
-    rw [← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
+  -- `-4π i / 3 = 2π i / 3 - 2π i`.
   have h₃ : cexp (-(π * I / 3)) ^ 4 = cexp (2 * π * I / 3) := by
-    rw [← Complex.exp_nat_mul, show ((4 : ℕ) : ℂ) * -(π * I / 3) =
-      2 * π * I / 3 + ((-1 : ℤ) : ℂ) * (2 * π * I) by push_cast; ring, Complex.exp_add,
-      exp_int_mul_two_pi_mul_I, mul_one]
-  rw [weberSum, weberSum, hT, siegelFunction_zero_half_apply_add_one,
+    rw [← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
+    exact ⟨-1, by push_cast; ring⟩
+  rw [weberSum, weberSum, ModularGroup.coe_T_smul, siegelFunction_zero_half_apply_add_one,
     siegelFunction_half_zero_apply_add_one, siegelFunction_half_half_apply_add_one, mul_pow,
-    mul_pow, mul_pow, h₆, h₃]
+    mul_pow, mul_pow, exp_pi_I_div_six_pow_four, h₃]
   ring
 
 /-- The cube of `g₀⁴ + g₁⁴ + g₂⁴` is invariant under `SL₂(ℤ)`. -/
@@ -217,32 +167,17 @@ private theorem weberSum_pow_three_smul (γ : SL(2, ℤ)) (τ : ℍ) :
 /-- `g₀⁴ + g₁⁴ + g₂⁴ → 0` at `i∞`. -/
 private theorem tendsto_weberSum_atImInfty :
     Tendsto (fun τ : ℍ ↦ weberSum τ) atImInfty (𝓝 0) := by
-  have hq₁ := (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty one_pos).mono_right
-    nhdsWithin_le_nhds
-  have hq₃ := (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty (w := 3) (by norm_num)).mono_right
-    nhdsWithin_le_nhds
-  -- `P(s)⁸ = 1 - 8 s + O(s²)` for `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
-  have hP : HasDerivAt (fun s : ℂ ↦ (∏' n : ℕ, (1 - s ^ (2 * n + 1))) ^ 8) (-8) 0 := by
-    simpa using (hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).fun_pow 8
-  have hP₀ : (∏' n : ℕ, (1 - (0 : ℂ) ^ (2 * n + 1))) ^ 8 = 1 := by simp
-  -- `g₀⁴ = 16 q^{1/3} / P(q)⁸ → 0`.
+  have hq₃ := tendsto_qParam_atImInfty_nhds (w := 3) (by norm_num)
+  -- `g₀⁴ = 16 q^{1/3} / P(q)⁸ → 0` for `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
   have h₀ : Tendsto (fun τ : ℍ ↦ siegelFunction ![0, 1 / 2] τ ^ 4) atImInfty (𝓝 0) := by
-    have h := (hq₃.const_mul 16).div (hP.continuousAt.tendsto.comp hq₁) (by simp)
-    simp only [mul_zero, zero_div, hP₀] at h
+    have h := (hq₃.const_mul 16).div tendsto_tprod_one_sub_qParam_pow_odd_pow_eight one_ne_zero
+    rw [mul_zero, zero_div] at h
     exact h.congr fun τ ↦ (siegelFunction_zero_half_pow_four τ.im_pos).symm
-  -- `g₁⁴ + g₂⁴ = q^{1/3} (P(s)⁸ - P(-s)⁸) / s → 0 · (-16)`.
+  -- `g₁⁴ + g₂⁴ = q^{1/3} (P(s)⁸ - P(-s)⁸) / s → 0 · (-16)` for `s = e^{π i τ}`.
   have h₁₂ : Tendsto (fun τ : ℍ ↦ siegelFunction ![1 / 2, 0] τ ^ 4 +
       siegelFunction ![1 / 2, 1 / 2] τ ^ 4) atImInfty (𝓝 0) := by
-    have hPneg : HasDerivAt (fun s : ℂ ↦ (∏' n : ℕ, (1 - (-s) ^ (2 * n + 1))) ^ 8) 8 0 := by
-      have h : HasDerivAt (fun s : ℂ ↦ (∏' n : ℕ, (1 - s ^ (2 * n + 1))) ^ 8) (-8) (-0) := by
-        rw [neg_zero]
-        exact hP
-      have h' := h.comp (0 : ℂ) (hasDerivAt_neg (0 : ℂ))
-      rw [show (-8 : ℂ) * -1 = 8 by norm_num] at h'
-      exact h'
-    have hslope := ((hP.tendsto_slope_zero.sub hPneg.tendsto_slope_zero).comp
+    have h := hq₃.mul ((tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div 8).comp
       (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty two_pos))
-    have h := hq₃.mul hslope
     rw [zero_mul] at h
     refine h.congr fun τ ↦ ?_
     have hs₀ : 𝕢 2 (τ : ℂ) ≠ 0 := Function.Periodic.qParam_ne_zero _
@@ -251,8 +186,8 @@ private theorem tendsto_weberSum_atImInfty :
       congr 1
       push_cast
       ring
-    simp only [Function.comp_apply, zero_add, smul_eq_mul, hP₀, neg_zero]
-    rw [siegelFunction_half_zero_pow_four τ.im_pos, siegelFunction_half_half_pow_four τ.im_pos, he]
+    rw [Function.comp_apply, siegelFunction_half_zero_pow_four τ.im_pos,
+      siegelFunction_half_half_pow_four τ.im_pos, he]
     field_simp
     ring
   have h := h₀.add h₁₂
@@ -298,7 +233,7 @@ private theorem siegelFunction_pow_four_ne_zero (τ : ℍ) :
       siegelFunction ![1 / 2, 1 / 2] τ ^ 4 ≠ 0 := by
   have h : siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 *
       siegelFunction ![1 / 2, 1 / 2] τ ^ 4 ≠ 0 := by
-    rw [siegelFunction_pow_four_mul_mul τ.im_pos]
+    rw [siegelFunction_pow_four_mul_mul τ]
     norm_num
   exact ⟨left_ne_zero_of_mul (left_ne_zero_of_mul h), right_ne_zero_of_mul (left_ne_zero_of_mul h),
     right_ne_zero_of_mul h⟩
@@ -308,7 +243,7 @@ theorem gammaTwo_eq_siegelFunction_half_zero (τ : ℍ) :
     gammaTwo τ = (siegelFunction ![1 / 2, 0] τ ^ 12 + 16) / siegelFunction ![1 / 2, 0] τ ^ 4 := by
   have h := pow_three_add_sixteen_div_eq (siegelFunction_pow_four_ne_zero τ).1
     (siegelFunction_pow_four_ne_zero τ).2.1 (siegelFunction_pow_four_add_add τ)
-    (siegelFunction_pow_four_mul_mul τ.im_pos)
+    (siegelFunction_pow_four_mul_mul τ)
   rw [gammaTwo_eq_siegelFunction_zero_half]
   simpa only [← pow_mul, Nat.reduceMul] using h
 
@@ -319,16 +254,15 @@ theorem gammaTwo_eq_siegelFunction_half_half (τ : ℍ) :
   have h := pow_three_add_sixteen_div_eq (c := siegelFunction ![1 / 2, 0] τ ^ 4)
     (siegelFunction_pow_four_ne_zero τ).1 (siegelFunction_pow_four_ne_zero τ).2.2
     (by linear_combination siegelFunction_pow_four_add_add τ)
-    (by linear_combination siegelFunction_pow_four_mul_mul τ.im_pos)
+    (by linear_combination siegelFunction_pow_four_mul_mul τ)
   rw [gammaTwo_eq_siegelFunction_zero_half]
   simpa only [← pow_mul, Nat.reduceMul] using h
 
 /-- **`γ₂` is a cube root of `j`**: `γ₂³ = j`. -/
 @[simp]
 theorem gammaTwo_pow_three (τ : ℍ) : gammaTwo τ ^ 3 = j τ := by
-  have hg : siegelFunction ![0, 1 / 2] τ ^ 12 ≠ 0 := by
-    rw [show (12 : ℕ) = 4 * 3 by rfl, pow_mul]
-    exact pow_ne_zero 3 (siegelFunction_pow_four_ne_zero τ).1
+  have hg : siegelFunction ![0, 1 / 2] τ ^ 12 ≠ 0 :=
+    pow_ne_zero 12 (ne_zero_pow four_ne_zero (siegelFunction_pow_four_ne_zero τ).1)
   rw [gammaTwo_eq_siegelFunction_zero_half, div_pow, ← pow_mul,
     siegelFunction_zero_half_pow_twelve_add_sixteen_pow_three, mul_div_assoc, div_self hg, mul_one]
 
@@ -342,57 +276,54 @@ theorem mdifferentiable_gammaTwo : MDiff gammaTwo := by
   simp only [gammaTwo_eq_siegelFunction_zero_half, div_eq_mul_inv, Pi.mul_apply, Pi.add_apply,
     Pi.pow_apply, Pi.inv_apply]
 
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
+-- `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, as for `ModularGroup.re_S_smul`.
 /-- `γ₂` is invariant under `S : τ ↦ -1/τ`. -/
 theorem gammaTwo_S_smul (τ : ℍ) : gammaTwo (ModularGroup.S • τ) = gammaTwo τ := by
-  have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
-    rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
   have hI : (-I) ^ 4 = 1 := by rw [neg_pow, I_pow_four]; norm_num
-  rw [gammaTwo_eq_siegelFunction_zero_half, hS,
+  have hI₁₂ : (-I) ^ 12 = 1 := by
+    calc (-I) ^ 12 = ((-I) ^ 4) ^ 3 := by ring
+      _ = 1 := by rw [hI, one_pow]
+  rw [gammaTwo_eq_siegelFunction_zero_half, ModularGroup.coe_S_smul,
     siegelFunction_zero_half_apply_neg_one_div τ.im_pos, gammaTwo_eq_siegelFunction_half_zero,
-    show (12 : ℕ) = 4 * 3 by rfl, mul_pow, mul_pow, pow_mul, pow_mul, hI]
-  simp
+    mul_pow, mul_pow, hI, hI₁₂, one_mul, one_mul]
 
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
+-- `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, as for `ModularGroup.re_S_smul`.
 /-- `γ₂` is multiplied by `e^{-2π i / 3}` under `T : τ ↦ τ + 1`. -/
 theorem gammaTwo_T_smul (τ : ℍ) :
     gammaTwo (ModularGroup.T • τ) = cexp (-(2 * π * I / 3)) * gammaTwo τ := by
-  have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
-    rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
-  have h₄ : cexp (π * I / 6) ^ 4 = cexp (2 * π * I / 3) := by
-    rw [← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
   have h₁₂ : cexp (π * I / 6) ^ 12 = 1 := by
     rw [← Complex.exp_nat_mul, ← exp_two_pi_mul_I]
     congr 1
     push_cast
     ring
   have hinv : cexp (-(2 * π * I / 3)) = (cexp (2 * π * I / 3))⁻¹ := Complex.exp_neg _
-  rw [gammaTwo_eq_siegelFunction_zero_half, gammaTwo_eq_siegelFunction_zero_half, hT,
-    siegelFunction_zero_half_apply_add_one, mul_pow, mul_pow, h₄, h₁₂, hinv, one_mul,
+  rw [gammaTwo_eq_siegelFunction_zero_half, gammaTwo_eq_siegelFunction_zero_half,
+    ModularGroup.coe_T_smul, siegelFunction_zero_half_apply_add_one, mul_pow, mul_pow,
+    exp_pi_I_div_six_pow_four, h₁₂, hinv, one_mul,
     mul_div_assoc', inv_mul_eq_div, div_div]
 
 /-- **The leading Fourier term of `γ₂` is `q^{-1/3}`**: `γ₂(τ) e^{2π i τ / 3} → 1` as
 `Im τ → ∞`. -/
 theorem tendsto_gammaTwo_mul_qParam_atImInfty :
     Tendsto (fun τ : ℍ ↦ gammaTwo τ * 𝕢 3 τ) atImInfty (𝓝 1) := by
-  have hq₁ := (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty one_pos).mono_right
-    nhdsWithin_le_nhds
-  have hq₃ := (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty (w := 3) (by norm_num)).mono_right
-    nhdsWithin_le_nhds
-  have hP : Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8) atImInfty (𝓝 1) := by
-    have h := ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp hq₁).pow 8
-    simpa using h
+  have hq₃ := tendsto_qParam_atImInfty_nhds (w := 3) (by norm_num)
+  have hP := tendsto_tprod_one_sub_qParam_pow_odd_pow_eight
   -- `γ₂ q^{1/3} = g₀⁸ q^{1/3} + P(q)⁸` with `g₀⁴ = 16 q^{1/3} / P(q)⁸`.
   have h := ((((hq₃.const_mul 16).div hP one_ne_zero).pow 2).mul hq₃).add hP
   simp only [mul_zero, zero_div, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
     zero_add] at h
   refine h.congr fun τ ↦ ?_
   rw [Pi.div_apply]
-  have hO := tprod_one_sub_qParam_pow_odd_ne_zero τ.im_pos
+  have hO := tprod_one_sub_pow_odd_ne_zero (Function.Periodic.norm_qParam_lt_one one_pos τ.im_pos)
   have hq₀ : 𝕢 3 (τ : ℂ) ≠ 0 := Function.Periodic.qParam_ne_zero _
-  rw [gammaTwo_eq_siegelFunction_zero_half, show (12 : ℕ) = 4 * 3 by rfl, pow_mul,
-    siegelFunction_zero_half_pow_four τ.im_pos]
+  have h₄ := siegelFunction_zero_half_pow_four τ.im_pos
+  have h₁₂ : siegelFunction ![0, 1 / 2] τ ^ 12 =
+      (16 * 𝕢 3 τ / (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8) ^ 3 := by
+    rw [← h₄]
+    ring
+  rw [gammaTwo_eq_siegelFunction_zero_half, h₁₂, h₄]
   field_simp
 
 end TauCeti.ModularForm

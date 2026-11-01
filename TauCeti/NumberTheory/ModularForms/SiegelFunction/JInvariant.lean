@@ -39,6 +39,11 @@ This is the input for the cube root `γ₂ = (g¹² + 16) / g⁴` of `j`.
 
 ## Main results
 
+* `TauCeti.ModularForm.siegelFunction_half_zero_pow_four`,
+  `TauCeti.ModularForm.siegelFunction_half_half_pow_four`: the product expansions
+  `g₁⁴ = s^{-1/3} P(s)⁸` and `g₂⁴ = -s^{-1/3} P(-s)⁸` for `s = e^{π i τ}` and
+  `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
+* `TauCeti.ModularForm.siegelFunction_pow_four_mul_mul`: `g₀⁴ g₁⁴ g₂⁴ = -16`.
 * `TauCeti.ModularForm.prod_X_sub_C_siegelFunction_pow_twelve`: Weber's cubic
   `(X - g₀¹²)(X - g₁¹²)(X - g₂¹²) = (X + 16)³ - j X`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_pow_twelve_add_sixteen_pow_three`,
@@ -64,7 +69,7 @@ namespace TauCeti.ModularForm
 
 local notation "𝕢" => Function.Periodic.qParam
 
-/-! ### The twelfth powers as products in `s = e^{π i τ}` -/
+/-! ### The fourth and twelfth powers as products in `s = e^{π i τ}` -/
 
 /-- `(∏_{n ≥ 0} (1 - s^{2n+1}))²⁴ = 1 - 24 s + O(s²)`. -/
 private theorem hasDerivAt_tprod_one_sub_pow_odd_pow :
@@ -79,89 +84,120 @@ private theorem tprod_one_sub_pow_odd_pow_mul_neg {s : ℂ} (hs : ‖s‖ < 1) :
     tprod_congr fun n ↦ one_sub_neg_pow_odd _ n
   rw [hodd, ← mul_pow, tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd hs]
 
-private theorem exp_neg_pi_I_mul_div_twelve_pow_twelve (τ : ℂ) :
-    cexp (-(π * I * τ / 12)) ^ 12 = (cexp (π * I * τ))⁻¹ := by
-  rw [← Complex.exp_nat_mul, ← Complex.exp_neg]
+private theorem exp_pi_I_mul_eq_qParam_two (τ : ℂ) : cexp (π * I * τ) = 𝕢 2 τ := by
+  rw [Function.Periodic.qParam]
   congr 1
   push_cast
   ring
 
+private theorem exp_neg_pi_I_mul_div_twelve_pow_four (τ : ℂ) :
+    cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
+
+private theorem exp_neg_pi_I_mul_div_three_pow_three (τ : ℂ) :
+    cexp (-(π * I * τ / 3)) ^ 3 = (𝕢 2 τ)⁻¹ := by
+  rw [← exp_pi_I_mul_eq_qParam_two, ← Complex.exp_nat_mul, ← Complex.exp_neg]
+  congr 1
+  push_cast
+  ring
+
+/-- `g₁⁴ = s^{-1/3} (∏_{n ≥ 0} (1 - s^{2n+1}))⁸` for `s = e^{π i τ}`, where
+`s^{-1/3} = e^{-π i τ / 3}`. -/
+theorem siegelFunction_half_zero_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 0] τ ^ 4 =
+      cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - 𝕢 2 τ ^ (2 * n + 1))) ^ 8 := by
+  rw [siegelFunction_half_zero hτ, exp_pi_I_mul_eq_qParam_two, mul_pow, neg_pow,
+    exp_neg_pi_I_mul_div_twelve_pow_four, ← pow_mul]
+  norm_num
+
+/-- `g₂⁴ = -s^{-1/3} (∏_{n ≥ 0} (1 - (-s)^{2n+1}))⁸` for `s = e^{π i τ}`, where
+`s^{-1/3} = e^{-π i τ / 3}`. -/
+theorem siegelFunction_half_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 1 / 2] τ ^ 4 =
+      -(cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1))) ^ 8) := by
+  have h₄ : cexp (-(π * I / 4)) ^ 4 = -1 := by
+    rw [← Complex.exp_nat_mul, ← exp_neg_pi_mul_I]
+    congr 1
+    push_cast
+    ring
+  have hodd : ∏' n : ℕ, (1 + 𝕢 2 τ ^ (2 * n + 1)) = ∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1)) :=
+    tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
+  rw [siegelFunction_half_half hτ, exp_pi_I_mul_eq_qParam_two, hodd, mul_pow, mul_pow, neg_pow,
+    exp_neg_pi_I_mul_div_twelve_pow_four, h₄, ← pow_mul]
+  norm_num
+
+/-- `g₀⁴ g₁⁴ g₂⁴ = -16`, the fourth power of `g₀ g₁ g₂ = 2 ζ₈`. -/
+theorem siegelFunction_pow_four_mul_mul (τ : ℍ) :
+    siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 *
+      siegelFunction ![1 / 2, 1 / 2] τ ^ 4 = -16 := by
+  have h₈ : cexp (2 * π * I / 8) ^ 4 = -1 := by
+    rw [← Complex.exp_nat_mul, ← exp_pi_mul_I]
+    congr 1
+    push_cast
+    ring
+  rw [← mul_pow, ← mul_pow, siegelFunction_zero_half_mul_half_zero_mul_half_half τ.im_pos,
+    mul_pow, h₈]
+  norm_num
+
 /-- `g₁¹² = s⁻¹ (∏_{n ≥ 0} (1 - s^{2n+1}))²⁴` for `s = e^{π i τ}`. -/
 private theorem siegelFunction_half_zero_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] τ ^ 12 =
-      (cexp (π * I * τ))⁻¹ * (∏' n : ℕ, (1 - cexp (π * I * τ) ^ (2 * n + 1))) ^ 24 := by
-  rw [siegelFunction_half_zero hτ, mul_pow, neg_pow, exp_neg_pi_I_mul_div_twelve_pow_twelve,
-    ← pow_mul]
-  norm_num
+      (𝕢 2 τ)⁻¹ * (∏' n : ℕ, (1 - 𝕢 2 τ ^ (2 * n + 1))) ^ 24 := by
+  calc siegelFunction ![1 / 2, 0] τ ^ 12 = (siegelFunction ![1 / 2, 0] τ ^ 4) ^ 3 := by ring
+    _ = _ := by
+      rw [siegelFunction_half_zero_pow_four hτ, ← exp_neg_pi_I_mul_div_three_pow_three]
+      ring
 
 /-- `g₂¹² = -s⁻¹ (∏_{n ≥ 0} (1 - (-s)^{2n+1}))²⁴` for `s = e^{π i τ}`. -/
 private theorem siegelFunction_half_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 1 / 2] τ ^ 12 =
-      -((cexp (π * I * τ))⁻¹ * (∏' n : ℕ, (1 - (-cexp (π * I * τ)) ^ (2 * n + 1))) ^ 24) := by
-  have h₄ : cexp (-(π * I / 4)) ^ 12 = -1 := by
-    have harg : ((12 : ℕ) : ℂ) * -(π * I / 4) = -(π * I) + ((-1 : ℤ) : ℂ) * (2 * π * I) := by
-      push_cast
+      -((𝕢 2 τ)⁻¹ * (∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1))) ^ 24) := by
+  calc siegelFunction ![1 / 2, 1 / 2] τ ^ 12 = (siegelFunction ![1 / 2, 1 / 2] τ ^ 4) ^ 3 := by
+        ring
+    _ = _ := by
+      rw [siegelFunction_half_half_pow_four hτ, ← exp_neg_pi_I_mul_div_three_pow_three]
       ring
-    rw [← Complex.exp_nat_mul, harg, Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one,
-      Complex.exp_neg, exp_pi_mul_I]
-    norm_num
-  have hodd : ∏' n : ℕ, (1 + cexp (π * I * τ) ^ (2 * n + 1)) =
-      ∏' n : ℕ, (1 - (-cexp (π * I * τ)) ^ (2 * n + 1)) :=
-    tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
-  rw [siegelFunction_half_half hτ, hodd, mul_pow, mul_pow, neg_pow,
-    exp_neg_pi_I_mul_div_twelve_pow_twelve, h₄, ← pow_mul]
-  norm_num
 
-/-- `g₀¹² g₁¹² g₂¹² = -4096`, the twelfth power of `g₀ g₁ g₂ = 2 ζ₈`. -/
-private theorem siegelFunction_pow_twelve_mul_mul {τ : ℂ} (hτ : 0 < τ.im) :
+/-- `g₀¹² g₁¹² g₂¹² = -4096`, the cube of `g₀⁴ g₁⁴ g₂⁴ = -16`. -/
+private theorem siegelFunction_pow_twelve_mul_mul (τ : ℍ) :
     siegelFunction ![0, 1 / 2] τ ^ 12 * siegelFunction ![1 / 2, 0] τ ^ 12 *
       siegelFunction ![1 / 2, 1 / 2] τ ^ 12 = -4096 := by
-  have h₈ : cexp (2 * π * I / 8) ^ 12 = -1 := by
-    have harg : ((12 : ℕ) : ℂ) * (2 * π * I / 8) = π * I + ((1 : ℤ) : ℂ) * (2 * π * I) := by
-      push_cast
-      ring
-    rw [← Complex.exp_nat_mul, harg, Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one,
-      exp_pi_mul_I]
-  rw [← mul_pow, ← mul_pow, siegelFunction_zero_half_mul_half_zero_mul_half_half hτ, mul_pow, h₈]
-  norm_num
+  calc siegelFunction ![0, 1 / 2] τ ^ 12 * siegelFunction ![1 / 2, 0] τ ^ 12 *
+        siegelFunction ![1 / 2, 1 / 2] τ ^ 12
+      = (siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 *
+          siegelFunction ![1 / 2, 1 / 2] τ ^ 4) ^ 3 := by ring
+    _ = -4096 := by
+      rw [siegelFunction_pow_four_mul_mul]
+      norm_num
 
 /-- `g₁¹² g₂¹² = -q⁻¹ (∏_{n ≥ 0} (1 - q^{2n+1}))²⁴` for `q = e^{2π i τ}`. -/
 private theorem siegelFunction_half_zero_pow_twelve_mul {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] τ ^ 12 * siegelFunction ![1 / 2, 1 / 2] τ ^ 12 =
       -((𝕢 1 τ)⁻¹ * (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 24) := by
-  have hq : 𝕢 1 τ = cexp (π * I * τ) ^ 2 := by
-    rw [Function.Periodic.qParam, ← UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq, ofReal_one,
-      div_one]
+  have hq : 𝕢 1 τ = 𝕢 2 τ ^ 2 := by
+    rw [Function.Periodic.qParam, Function.Periodic.qParam, ← Complex.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
   rw [siegelFunction_half_zero_pow_twelve hτ, siegelFunction_half_half_pow_twelve hτ, hq,
-    ← tprod_one_sub_pow_odd_pow_mul_neg (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)]
+    ← tprod_one_sub_pow_odd_pow_mul_neg (Function.Periodic.norm_qParam_lt_one two_pos hτ)]
   ring
 
 /-! ### Limits at `i∞` -/
-
-private theorem tendsto_exp_pi_I_atImInfty :
-    Tendsto (fun τ : ℍ ↦ cexp (π * I * τ)) atImInfty (𝓝[≠] 0) := by
-  refine (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty two_pos).congr fun τ ↦ ?_
-  simp only [Function.Periodic.qParam]
-  congr 1
-  push_cast
-  ring
 
 /-- `g₁¹² + g₂¹² → -48` at `i∞`. -/
 private theorem tendsto_siegelFunction_half_zero_pow_twelve_add :
     Tendsto (fun τ : ℍ ↦ siegelFunction ![1 / 2, 0] τ ^ 12 +
       siegelFunction ![1 / 2, 1 / 2] τ ^ 12) atImInfty (𝓝 (-48)) := by
-  -- The two slopes of `Φ(s) = (∏ (1 - s^{2n+1}))²⁴` at `0`, in the directions `s` and `-s`.
-  have hΦ : HasDerivAt (fun s : ℂ ↦ (∏' n : ℕ, (1 - s ^ (2 * n + 1))) ^ 24) (-24) (-0) := by
-    rw [neg_zero]
-    exact hasDerivAt_tprod_one_sub_pow_odd_pow
-  have h₁ := hasDerivAt_tprod_one_sub_pow_odd_pow.tendsto_slope_zero
-  have h₂ := (hΦ.comp (0 : ℂ) (hasDerivAt_neg (0 : ℂ))).tendsto_slope_zero
-  have h := (h₁.sub h₂).comp tendsto_exp_pi_I_atImInfty
-  norm_num at h
-  refine h.congr fun τ ↦ ?_
-  simp only [Function.comp_apply, siegelFunction_half_zero_pow_twelve τ.im_pos,
-    siegelFunction_half_half_pow_twelve τ.im_pos]
-  ring
+  convert (tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div 24).comp
+    (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty two_pos) using 2 with τ
+  · simp only [Function.comp_apply, siegelFunction_half_zero_pow_twelve τ.im_pos,
+      siegelFunction_half_half_pow_twelve τ.im_pos]
+    ring
+  · norm_num
 
 /-- `g₁¹² g₂¹² + q⁻¹ → 24` at `i∞`. -/
 private theorem tendsto_siegelFunction_half_zero_pow_twelve_mul_add_inv_qParam :
@@ -190,7 +226,7 @@ private theorem tendsto_siegelFunction_zero_half_pow_twelve :
     rwa [mul_zero, zero_div] at h
   refine h.congr fun τ ↦ ?_
   -- `g₀¹² = -4096 / (g₁¹² g₂¹²)`.
-  have h₃ := siegelFunction_pow_twelve_mul_mul τ.im_pos
+  have h₃ := siegelFunction_pow_twelve_mul_mul τ
   rw [mul_assoc, siegelFunction_half_zero_pow_twelve_mul τ.im_pos] at h₃
   have hq₀ : 𝕢 1 (τ : ℂ) ≠ 0 := Function.Periodic.qParam_ne_zero _
   have hΦ₀ : (∏' n : ℕ, (1 - 𝕢 1 (τ : ℂ) ^ (2 * n + 1))) ^ 24 ≠ 0 := by
@@ -255,7 +291,7 @@ theorem prod_X_sub_C_siegelFunction_pow_twelve (τ : ℍ) :
       (X + 16) ^ 3 - C (j τ) * X := by
   have h₁ := siegelFunction_pow_twelve_add_add τ
   have h₂ := siegelFunction_pow_twelve_mul_add_mul_add_mul τ
-  have h₃ := siegelFunction_pow_twelve_mul_mul τ.im_pos
+  have h₃ := siegelFunction_pow_twelve_mul_mul τ
   set a := siegelFunction ![0, 1 / 2] τ ^ 12
   set b := siegelFunction ![1 / 2, 0] τ ^ 12
   set c := siegelFunction ![1 / 2, 1 / 2] τ ^ 12
