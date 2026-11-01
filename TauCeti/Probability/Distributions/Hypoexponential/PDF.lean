@@ -125,6 +125,20 @@ theorem measurable_hypoexponentialPDFReal (r : ι → ℝ) :
 theorem measurable_hypoexponentialPDF (r : ι → ℝ) : Measurable (hypoexponentialPDF r) :=
   (measurable_hypoexponentialPDFReal r).ennreal_ofReal
 
+/-- The real density is continuous on the positive half-line, including for empty or
+invalid families. -/
+@[fun_prop]
+theorem continuousOn_hypoexponentialPDFReal (r : ι → ℝ) :
+    ContinuousOn (hypoexponentialPDFReal r) (Set.Ioi 0) := by
+  by_cases hr : ∀ i, 0 < r i
+  · apply ContinuousOn.congr (f := fun x ↦ ∑ ρ ∈ univ.image r,
+      ∑ k ∈ Icc 1 #{i | r i = ρ},
+        hypoexponentialCoeff r ρ k * x ^ (k - 1) * exp (-(ρ * x)) / (k - 1)!)
+    · fun_prop
+    · intro x hx
+      exact hypoexponentialPDFReal_of_pos hr hx
+  · exact continuousOn_const.congr fun x _ ↦ hypoexponentialPDFReal_of_not_pos hr x
+
 /-- For positive rates and `x > 0`, the density is the combination of Erlang densities with the
 weights `A ρ k / ρ ^ k`. For a nonempty family these weights sum to one by
 `sum_hypoexponentialCoeff_div_pow`. -/
