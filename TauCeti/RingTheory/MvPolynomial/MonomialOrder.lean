@@ -37,6 +37,11 @@ the images of the generators of the Lazard ring in a polynomial ring.
   is at most its degree.
 * `MonomialOrder.withBotDegree_sub_lt`: if `q` has degree at most that of `f ≠ 0` and the same
   coefficient of `X^(deg f)`, then `f - q` has smaller degree than `f`.
+* `MvPolynomial.monomial_mem_iff_monomial_one_mem`: a set closed under scalar multiplication
+  contains `c X^a` for a unit `c` if and only if it contains `X^a`.
+* `MonomialOrder.leadingTerm_mem_iff`: a set closed under scalar multiplication contains the
+  leading term of a polynomial with unit leading coefficient if and only if it contains its
+  leading monomial.
 * `MonomialOrder.toSyn_degree_monomial_mul_le`: `c X^a * b` has degree at most `a + deg b`.
 * `MonomialOrder.monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial`: if `b₀` has a unit
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
@@ -63,6 +68,19 @@ the images of the generators of the Lazard ring in a polynomial ring.
 public section
 
 open MvPolynomial
+
+/-- A set of polynomials closed under scalar multiplication (for example a submodule or a
+subalgebra) contains a monomial with unit coefficient if and only if it contains the
+corresponding monomial with coefficient one. -/
+theorem MvPolynomial.monomial_mem_iff_monomial_one_mem {σ R S : Type*} [CommSemiring R]
+    [SetLike S (MvPolynomial σ R)] [SMulMemClass S R (MvPolynomial σ R)]
+    {a : σ →₀ ℕ} {c : R} (C : S) (hc : IsUnit c) :
+    monomial a c ∈ C ↔ monomial a 1 ∈ C := by
+  obtain ⟨u, rfl⟩ := hc
+  have h : monomial a (u : R) = (u : R) • monomial a 1 := by simp [smul_monomial]
+  rw [h]
+  refine ⟨fun hu => ?_, SMulMemClass.smul_mem _⟩
+  simpa [smul_smul] using SMulMemClass.smul_mem ((u⁻¹ : Rˣ) : R) hu
 
 namespace MonomialOrder
 
@@ -94,6 +112,15 @@ theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R
     (b : MvPolynomial σ R) : m.toSyn (m.degree (monomial a c * b)) ≤ m.toSyn (a + m.degree b) := by
   rw [map_add]
   exact m.toSyn_degree_mul_le.trans (by gcongr; exact m.degree_monomial_le c)
+
+/-- A set of polynomials closed under scalar multiplication (for example a submodule or a
+subalgebra) contains the leading term of a polynomial with unit leading coefficient if and only
+if it contains its leading monomial. -/
+theorem leadingTerm_mem_iff [CommSemiring R] {S : Type*} [SetLike S (MvPolynomial σ R)]
+    [SMulMemClass S R (MvPolynomial σ R)] {f : MvPolynomial σ R} (C : S)
+    (hf : IsUnit (m.leadingCoeff f)) :
+    m.leadingTerm f ∈ C ↔ monomial (m.degree f) 1 ∈ C := by
+  rw [leadingTerm, monomial_mem_iff_monomial_one_mem C hf]
 
 /-- **Cancellation of leading terms by an S-polynomial.** If `b₀` has unit leading coefficient
 `u₀` and `deg b₀ ≤ a + deg b`, the difference between `X^a * b` and `lc b` times the normalized
