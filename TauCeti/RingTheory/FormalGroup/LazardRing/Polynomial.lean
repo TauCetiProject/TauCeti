@@ -26,6 +26,13 @@ whose classes generate `I ⧸ I²` generate `L` over `L₀ = ℤ`.
 
 The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `xₙ` is given degree `2n`.
 
+Since `L` is a polynomial ring, ring homomorphisms out of `L` lift along surjective ring
+homomorphisms: choose preimages of the images of the generators. By the universal property of `L`,
+every commutative formal group law over `S` is therefore the base change of a commutative formal
+group law over `R` along any surjection `R →+* S`. This is the use Lubin and Tate make of Lazard's
+theorem: formal group laws over `A ⧸ I` lift to `A`, so deformations of a formal group law exist
+over every ring surjecting onto its coefficient ring.
+
 ## Main definitions
 
 * `TauCeti.LazardRing.mvPolynomialEquiv`: the isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` sending `xₙ` to
@@ -36,6 +43,10 @@ The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `x
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_grading_iff`: the isomorphism carries the polynomials
   that are homogeneous of degree `n`, for `xₖ` of degree `2k`, onto `Lₙ`.
+* `TauCeti.LazardRing.exists_comp_eq_of_surjective`: a ring homomorphism `L →+* S` factors
+  through any surjective ring homomorphism `R →+* S`.
+* `FormalGroup.exists_map_eq_of_surjective`: a commutative formal group law over `S` is the base
+  change of a commutative formal group law over `R` along any surjective `R →+* S`.
 
 ## References
 
@@ -43,6 +54,8 @@ The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `x
 * J. F. Adams, *Stable Homotopy and Generalised Homology*, Part II, §7.
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2.1
   (Lazard's theorem A2.1.8).
+* J. Lubin and J. Tate, *Formal moduli for one-parameter formal Lie groups*, Bull. Soc. Math.
+  France 94 (1966).
 -/
 
 public section
@@ -136,4 +149,36 @@ theorem mvPolynomialEquiv_mem_grading_iff {p : MvPolynomial ℕ+ ℤ} {n : ℕ} 
   exact (MvPolynomial.mem_weightedHomogeneousSubmodule ℤ w n p).1
     (φ.mem_of_map_mem mvPolynomialEquiv.injective hp)
 
+/-- Ring homomorphisms out of the Lazard ring lift along surjective ring homomorphisms: every
+`g : L →+* S` factors as `f.comp g'` through any surjection `f : R →+* S`. -/
+theorem exists_comp_eq_of_surjective {R S : Type*} [CommRing R] [CommRing S] {f : R →+* S}
+    (hf : Function.Surjective f) (g : LazardRing →+* S) :
+    ∃ g' : LazardRing →+* R, f.comp g' = g := by
+  -- Send the generator `xₙ` to a preimage of `g xₙ`.
+  let g' : LazardRing →+* R :=
+    (MvPolynomial.aeval (Function.surjInv hf ∘ g ∘ generator)).toRingHom.comp
+      mvPolynomialEquiv.symm.toRingEquiv.toRingHom
+  refine ⟨g', ?_⟩
+  have h : (f.comp g').comp mvPolynomialEquiv.toRingEquiv.toRingHom =
+      g.comp mvPolynomialEquiv.toRingEquiv.toRingHom :=
+    MvPolynomial.ringHom_ext (fun _ ↦ by simp) fun n ↦ by
+      simp [g', Function.surjInv_eq hf]
+  exact (RingHom.cancel_right mvPolynomialEquiv.surjective).1 h
+
 end TauCeti.LazardRing
+
+namespace FormalGroup
+
+open TauCeti
+
+/-- **Commutative formal group laws lift along surjections**: if `f : R →+* S` is surjective, every
+commutative formal group law over `S` is the base change along `f` of a commutative formal group law
+over `R`. -/
+theorem exists_map_eq_of_surjective {R S : Type*} [CommRing R] [CommRing S] (F : FormalGroup S)
+    [F.IsComm] {f : R →+* S} (hf : Function.Surjective f) :
+    ∃ G : FormalGroup R, G.IsComm ∧ G.map f = F := by
+  obtain ⟨g, hg⟩ := LazardRing.exists_comp_eq_of_surjective hf (LazardRing.lift ⟨F, ‹_›⟩)
+  exact ⟨LazardRing.formalGroup.map g, inferInstance, by
+    rw [map_comp, hg, LazardRing.map_lift]⟩
+
+end FormalGroup
