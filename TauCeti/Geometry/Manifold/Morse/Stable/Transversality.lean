@@ -62,6 +62,8 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`: the Morse–Smale condition, with
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold`:
   the space of trajectories from `a` to `b` is a smooth manifold of dimension `ind a - ind b`.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank`: if
+  every critical point has index `0` or `n`, every adapted pseudo-gradient is Morse–Smale.
 
 ## References
 
@@ -250,6 +252,38 @@ theorem IsMorseSmale.of_forall {hX : IsAdaptedPseudoGradient f X}
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
     hX.IsMorseSmale :=
   h
+
+omit hX in
+/-- **Extremal indices force the Morse–Smale condition.** If every critical point of a Morse
+function `f` has Morse index `0` or `n`, then every pseudo-gradient adapted to `f` is Morse–Smale.
+This applies, for instance, to the height function on the sphere. -/
+theorem IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank
+    {hX : IsAdaptedPseudoGradient f X} (hf : IsMorse 𝓘(ℝ, E) f)
+    (hind : ∀ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 →
+      manifoldMorseIndex 𝓘(ℝ, E) f x = 0 ∨
+        manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    hX.IsMorseSmale := by
+  intro a b y ha hb hy
+  have hu := hX.finrank_span_mtangentConeAt_unstableSet hf ha hy.1
+  have hs := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex
+    (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
+  rcases hind a ha with ha0 | han
+  · rcases hind b hb with hb0 | hbn
+    · rw [Submodule.eq_top_of_finrank_eq (by omega : Module.finrank ℝ (Submodule.span ℝ
+        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y)) = Module.finrank ℝ E), sup_top_eq]
+    -- Here `ind a = 0` and `ind b = n`. If `a ≠ b`, the velocity `X y` is a nonzero tangent vector
+    -- of `W^u(a)`, which has no tangent directions; if `a = b`, then `n = ind b = ind a = 0`.
+    obtain rfl | hab := eq_or_ne a b
+    · rw [Submodule.eq_top_of_finrank_eq (by omega : Module.finrank ℝ (Submodule.span ℝ
+        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y)) = Module.finrank ℝ E), top_sup_eq]
+    refine absurd ?_ (hX.ne_zero_of_mfderiv_ne_zero
+      (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hab hy))
+    have hmem : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) :=
+      Submodule.subset_span
+        (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet a) hy.1)
+    rw [Submodule.finrank_eq_zero.1 (hu.trans ha0)] at hmem
+    exact (Submodule.mem_bot ℝ).1 hmem
+  · rw [Submodule.eq_top_of_finrank_eq (hu.trans han), top_sup_eq]
 
 omit hX in
 /-- **The pointwise elimination rule for `IsMorseSmale`.** Under the Morse–Smale condition, at a
