@@ -45,15 +45,15 @@ theorem AnalyticAt.exists_analyticAt_eventually_sub_eq {f : E → F} {c : E}
   have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
   -- `L t` is the homothety of ratio `t`, so `G` is the average of `fderiv 𝕜 f` along segments.
   set L : ℝ → E →L[𝕜] E := fun t ↦ (t : 𝕜) • ContinuousLinearMap.id 𝕜 E with hL
-  have hLapply (t : ℝ) (v : E) : L t v = (t : 𝕜) • v := rfl
+  have hLapply (t : ℝ) (v : E) : L t v = (t : 𝕜) • v := by simp [hL]
   have hLc : Continuous L := by
     rw [hL]
     fun_prop
-  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := by
-    intro t ht
-    refine (L t).opNorm_le_bound zero_le_one fun w ↦ ?_
-    rw [hLapply, norm_smul, RCLike.norm_ofReal, abs_of_nonneg ht.1, one_mul]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+  -- For `t ∈ [0, 1]`, scaling by `t` does not increase norms.
+  have hsmul (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (v : E) : ‖(t : 𝕜) • v‖ ≤ ‖v‖ := by
+    simpa [norm_smul, abs_of_nonneg ht.1] using mul_le_of_le_one_left (norm_nonneg v) ht.2
+  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := fun t ht ↦
+    (L t).opNorm_le_bound zero_le_one fun w ↦ by simpa [hLapply] using hsmul t ht w
   refine ⟨fun z ↦ ∫ t in (0 : ℝ)..1, fderiv 𝕜 f (c + L t (z - c)),
     hf.fderiv.intervalIntegral_comp hLc.continuousOn hL1, by simp [hLapply], ?_⟩
   -- On a ball about `c` where `f` is analytic, apply the fundamental theorem of calculus to
@@ -61,9 +61,8 @@ theorem AnalyticAt.exists_analyticAt_eventually_sub_eq {f : E → F} {c : E}
   obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff_ball.1 hf.eventually_analyticAt
   filter_upwards [Metric.ball_mem_nhds c hρ] with z hz
   have hmem (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : c + (t : 𝕜) • (z - c) ∈ Metric.ball c ρ := by
-    rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, RCLike.norm_ofReal,
-      abs_of_nonneg ht.1, ← dist_eq_norm]
-    exact (mul_le_of_le_one_left dist_nonneg ht.2).trans_lt hz
+    rw [Metric.mem_ball, dist_eq_norm] at hz ⊢
+    simpa using (hsmul t ht (z - c)).trans_lt hz
   have hcont : ContinuousOn (fun t : ℝ ↦ fderiv 𝕜 f (c + (t : 𝕜) • (z - c))) (Icc 0 1) :=
     fun t ht ↦ ((hball _ (hmem t ht)).fderiv.continuousAt.comp
       (f := fun t : ℝ ↦ c + (t : 𝕜) • (z - c)) (by fun_prop)).continuousWithinAt

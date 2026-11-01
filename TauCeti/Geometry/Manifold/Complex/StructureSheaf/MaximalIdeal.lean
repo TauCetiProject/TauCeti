@@ -29,8 +29,8 @@ derivatives of the germ in the chart. Consequently:
 * a germ lies in the square of the maximal ideal exactly when it vanishes at `x` together with its
   derivative read in the chart (`OpenPartialHomeomorph.mem_ker_eval_sq_iff`).
 
-For `E = ℂ` the first statement recovers the single generator of
-`OpenPartialHomeomorph.ker_eval_eq_span_holomorphicCoordinateGerm` on complex curves. Together,
+The first statement is the several-variable analogue of the one-variable
+`OpenPartialHomeomorph.ker_eval_eq_span_holomorphicCoordinateGerm` for complex curves. Together,
 the two statements say that `n = dim E` coordinate germs generate the maximal ideal `𝔪` of the
 analytic local ring, and that a germ in `𝔪` is determined modulo `𝔪²` by its derivative at `x`
 read in the chart.
