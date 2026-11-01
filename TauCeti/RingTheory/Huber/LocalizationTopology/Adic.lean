@@ -66,7 +66,9 @@ private theorem map_subtype_locIdeal_adic (T : Set A) :
 
 /-- An element of `A_f` lies in the `n`-th basic neighbourhood of zero of the localisation
 topology with numerator `1` and denominator `f`, for the pair of definition `(A, I)`, exactly
-when it lies in the `n`-th power of `I A_f`. -/
+when it lies in the `n`-th power of `I A_f`. Its priority is high so that `simp` prefers it to the
+general description `mem_locIdealImage_iff`. -/
+@[simp high]
 theorem mem_locIdealImage_adic_one_iff (n : ℕ) {x : S} :
     x ∈ locIdealImage (adic I hI hfg) {1} f S n ↔ x ∈ I.map (algebraMap A S) ^ n := by
   have hsurj : Function.Surjective (locSubring (adic I hI hfg) {1} f S).subtype := fun x ↦
