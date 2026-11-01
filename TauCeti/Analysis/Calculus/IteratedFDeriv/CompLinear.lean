@@ -15,9 +15,10 @@ Precomposing a function with a continuous linear map `g` multiplies the norm of 
 iterated derivative by at most `‖g‖ ^ i`. This is the norm form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_right`; for a linear isometry equivalence the norm is
 preserved (`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right`). Mathlib's formula for the
-iterated derivative of `f ∘ g` assumes `f` smooth everywhere; it holds at a point `x` as soon as
-`f` is smooth near `g x`, which is the form needed for functions defined only on an open set,
-such as coordinate expressions in a chart.
+`i`-th iterated derivative of `f ∘ g` assumes `f` is `C^n` everywhere, with `i ≤ n`; it holds at a
+point `x` as soon as `f` is `C^n` at `g x` (`iteratedFDeriv_comp_right_of_contDiffAt`), which is
+the form needed for functions defined only on an open set, such as coordinate expressions in a
+chart.
 
 For a function of one variable, postcomposition with a continuous linear map commutes with the
 iterated derivative `iteratedDeriv`. This is the one-variable form of Mathlib's
