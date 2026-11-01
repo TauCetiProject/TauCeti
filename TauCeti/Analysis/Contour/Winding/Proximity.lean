@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import Mathlib.Analysis.Convex.Segment
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
-import TauCeti.Analysis.Contour.AbsolutelyContinuous
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Topology.Order.Compact

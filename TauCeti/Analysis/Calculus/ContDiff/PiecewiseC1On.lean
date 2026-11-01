@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import TauCeti.Order.Interval.Finite
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Piecewise `C¹` curves on an interval
@@ -45,6 +46,10 @@ curve for which these hypotheses can be established.
 * `TauCeti.IsPiecewiseC1On.add`, `TauCeti.IsPiecewiseC1On.sub`,
   `TauCeti.IsPiecewiseC1On.const_smul` — the predicate is stable under the module operations
   on curves, the two breakpoint sets being merged by union.
+* `TauCeti.IsPiecewiseC1On.comp_const_sub` — reversal `t ↦ γ (c - t)` preserves the predicate,
+  with reflected endpoints and breakpoints.
+* `TauCeti.IsPiecewiseC1On.if_le` — the concatenation `t ↦ if t ≤ b then γ t else δ t` of a curve
+  on `[a, b]` and a curve on `[b, c]` agreeing at `b` is piecewise `C¹` on `[a, c]`.
 * `TauCeti.IsPiecewiseC1On.exists_finset_differentiableAt`,
   `TauCeti.IsPiecewiseC1On.exists_countable_differentiableAt` — differentiability off a finite
   (hence countable) set, in the exact shapes the raw contour-integral lemmas consume.
@@ -178,16 +183,76 @@ theorem IsPiecewiseC1On.const_smul {R : Type*} [Semiring R] [Module R E] [SMulCo
   exact ⟨h.continuousOn.const_smul c, p, hp,
     fun u v huv hdisj => (hC1 u v huv hdisj).const_smul c⟩
 
-/-- Around any interior parameter outside a closed set `s` there is a closed subinterval of
-`[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
-theorem exists_Icc_subset_uIcc_disjoint {s : Set ℝ} (hs : IsClosed s) {t : ℝ}
-    (ht : t ∈ Ioo (min a b) (max a b)) (hts : t ∉ s) :
-    ∃ c d : ℝ, t ∈ Ioo c d ∧ Icc c d ⊆ uIcc a b ∧ Disjoint s (Ioo c d) := by
-  have hmem : Ioo (min a b) (max a b) \ s ∈ 𝓝 t := (isOpen_Ioo.sdiff hs).mem_nhds ⟨ht, hts⟩
-  obtain ⟨c, d, -, hnhds, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds hmem
-  refine ⟨c, d, interior_Icc (a := c) (b := d) ▸ mem_interior_iff_mem_nhds.mpr hnhds,
-    fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hsub hx).1),
-    disjoint_right.mpr fun x hx => (hsub (Ioo_subset_Icc_self hx)).2⟩
+/-- **Reversal of a piecewise-`C¹` curve.** If `γ` is piecewise `C¹` on `[[a, b]]`, then the
+reversed curve `t ↦ γ (c - t)` is piecewise `C¹` on `[[c - a, c - b]]`, with the reflected
+breakpoints. -/
+theorem IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
+    IsPiecewiseC1On (fun t => γ (c - t)) (c - a) (c - b) := by
+  obtain ⟨p, hp, hC1⟩ := h.exists_breakpoints
+  have hmem : ∀ {t : ℝ}, t ∈ uIcc (c - a) (c - b) → c - t ∈ uIcc a b := fun ht => by
+    rwa [← preimage_const_sub_uIcc] at ht
+  refine IsPiecewiseC1On.of_breakpoints
+    (h.continuousOn.comp (continuous_sub_left c).continuousOn fun _ ht => hmem ht)
+    (p.image (c - ·)) ?_ fun d e hde hdisj => ?_
+  · intro x hx
+    simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    have hy' := hp hy
+    rw [min_sub_sub_left, max_sub_sub_left]
+    exact ⟨by linarith [hy'.2], by linarith [hy'.1]⟩
+  · have hsub : Icc (c - e) (c - d) ⊆ uIcc a b := fun s hs => by
+      have hs' : c - s ∈ Icc d e := ⟨by linarith [hs.2], by linarith [hs.1]⟩
+      simpa using hmem (hde hs')
+    have hdisj' : Disjoint (↑p : Set ℝ) (Ioo (c - e) (c - d)) := by
+      rw [Set.disjoint_left] at hdisj ⊢
+      intro x hxp hx
+      exact hdisj (Finset.mem_coe.2 (Finset.mem_image_of_mem _ hxp))
+        ⟨by linarith [hx.2], by linarith [hx.1]⟩
+    exact (hC1 _ _ hsub hdisj').comp (contDiff_const.sub contDiff_id).contDiffOn
+      fun t ht => ⟨by linarith [ht.2], by linarith [ht.1]⟩
+
+/-- **Concatenation of piecewise-`C¹` curves.** If `γ` is piecewise `C¹` on `[a, b]`, `δ` is
+piecewise `C¹` on `[b, c]`, and the two agree at `b`, then the curve following `γ` up to time `b`
+and `δ` afterwards is piecewise `C¹` on `[a, c]`. -/
+theorem IsPiecewiseC1On.if_le {δ : ℝ → E} {c : ℝ} (h₁ : IsPiecewiseC1On γ a b)
+    (h₂ : IsPiecewiseC1On δ b c) (hab : a ≤ b) (hbc : b ≤ c) (hb : γ b = δ b) :
+    IsPiecewiseC1On (fun t => if t ≤ b then γ t else δ t) a c := by
+  classical
+  obtain ⟨p₁, -, hC₁⟩ := h₁.exists_breakpoints
+  obtain ⟨p₂, -, hC₂⟩ := h₂.exists_breakpoints
+  have hac : a ≤ c := hab.trans hbc
+  have hη₁ : EqOn (fun t => if t ≤ b then γ t else δ t) γ (Icc a b) := fun t ht =>
+    ite_eq_left ht.2
+  have hη₂ : EqOn (fun t => if t ≤ b then γ t else δ t) δ (Icc b c) := fun t ht => by
+    rcases ht.1.eq_or_lt with rfl | hlt
+    · simp [hb]
+    · exact ite_eq_right (not_le.2 hlt)
+  refine IsPiecewiseC1On.of_breakpoints ?_ ((p₁ ∪ p₂ ∪ {b}).filter (· ∈ Ioo a c)) ?_
+    fun d e hde hdisj => ?_
+  · rw [uIcc_of_le hac, ← Icc_union_Icc_eq_Icc hab hbc]
+    refine ContinuousOn.union_of_isClosed ?_ ?_ isClosed_Icc isClosed_Icc
+    · exact (uIcc_of_le hab ▸ h₁.continuousOn).congr hη₁
+    · exact (uIcc_of_le hbc ▸ h₂.continuousOn).congr hη₂
+  · intro x hx
+    rw [min_eq_left hac, max_eq_right hac]
+    exact (Finset.mem_filter.1 (Finset.mem_coe.1 hx)).2
+  · rw [uIcc_of_le hac] at hde
+    have hIoo : Ioo d e ⊆ Ioo a c := fun x hx =>
+      ⟨(hde ⟨le_rfl, (hx.1.trans hx.2).le⟩).1.trans_lt hx.1,
+        hx.2.trans_le (hde ⟨(hx.1.trans hx.2).le, le_rfl⟩).2⟩
+    have hnot : ∀ x ∈ p₁ ∪ p₂ ∪ {b}, x ∉ Ioo d e := fun x hx hxde =>
+      Set.disjoint_left.1 hdisj (Finset.mem_coe.2 (Finset.mem_filter.2 ⟨hx, hIoo hxde⟩)) hxde
+    have hside : e ≤ b ∨ b ≤ d := by
+      by_contra hcon
+      push Not at hcon
+      exact hnot b (by simp) ⟨hcon.2, hcon.1⟩
+    rcases hside with heb | hbd
+    · have hsub : Icc d e ⊆ Icc a b := fun t ht => ⟨(hde ht).1, ht.2.trans heb⟩
+      refine (hC₁ d e (uIcc_of_le hab ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
+        hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₁ (hsub ht)
+    · have hsub : Icc d e ⊆ Icc b c := fun t ht => ⟨hbd.trans ht.1, (hde ht).2⟩
+      refine (hC₂ d e (uIcc_of_le hbc ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
+        hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₂ (hsub ht)
 
 /-- **Differentiability off a finite set.** A piecewise-`C¹` curve is differentiable at every
 interior parameter outside a finite set — the breakpoints. -/

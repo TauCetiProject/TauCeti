@@ -5,34 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Reversal and concatenation of piecewise `C¹` curves
+# Contour integrals along reversed and concatenated curves
 
 The contour-integration layer works with raw curves `γ : ℝ → ℂ` on a parameter interval
-`[[a, b]]` (`TauCeti.IsPiecewiseC1On`) and with the raw contour integral
-`∫ t in a..b, deriv γ t • f (γ t)`. This file supplies the two operations on such curves that a
-path-independence argument needs: running a curve backwards, and following one curve by another.
+`[[a, b]]` and with the raw contour integral `∫ t in a..b, deriv γ t • f (γ t)`. This file computes
+that integral along the two operations on curves that a path-independence argument needs: running a
+curve backwards, and following one curve by another. That these operations preserve piecewise `C¹`
+regularity is `TauCeti.IsPiecewiseC1On.comp_const_sub` and `TauCeti.IsPiecewiseC1On.if_le`.
 
-* The **reversal** `t ↦ γ (c - t)` of a curve on `[[a, b]]` is a curve on `[[c - a, c - b]]`; its
-  contour integral over `a..b` is the contour integral of `γ` over `c - a..c - b`. Taking `c` to be
-  the sum of the endpoints of a second interval lets the reversed curve start where another curve
-  ends.
-* The **concatenation** `t ↦ if t ≤ b then γ t else δ t` of a curve `γ` on `[a, b]` and a curve `δ`
-  on `[b, c]` that agree at `b` is piecewise `C¹` on `[a, c]`. The contour integral only sees a
-  curve on the open interior of its parameter interval, so it splits as the sum of the contour
-  integrals of `γ` and `δ`.
-
-The two regularity statements hold for curves in any real normed space; the contour integrals
-use complex curves.
+* The contour integral of the **reversal** `t ↦ γ (c - t)` over `a..b` is the contour integral of
+  `γ` over `c - a..c - b`. Taking `c` to be the sum of the endpoints of a second interval lets the
+  reversed curve start where another curve ends.
+* The contour integral only sees a curve on the open interior of its parameter interval, so along
+  the **concatenation** `t ↦ if t ≤ b then γ t else δ t` of a curve `γ` on `[a, b]` and a curve
+  `δ` on `[b, c]` it splits as the sum of the contour integrals of `γ` and `δ`.
 
 ## Main results
 
-* `TauCeti.IsPiecewiseC1On.comp_const_sub` — reversal preserves piecewise `C¹` regularity.
-* `TauCeti.IsPiecewiseC1On.if_le` — concatenation preserves piecewise `C¹` regularity.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_comp_const_sub` — the contour integral of the
   reversed curve.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_congr` — the contour integral depends on the curve
@@ -46,83 +40,6 @@ public section
 namespace TauCeti.Contour
 
 open Set MeasureTheory
-
-section Regularity
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {γ δ : ℝ → E} {a b c : ℝ}
-
-/-- **Reversal of a piecewise-`C¹` curve.** If `γ` is piecewise `C¹` on `[[a, b]]`, then the
-reversed curve `t ↦ γ (c - t)` is piecewise `C¹` on `[[c - a, c - b]]`, with the reflected
-breakpoints. -/
-theorem _root_.TauCeti.IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
-    IsPiecewiseC1On (fun t => γ (c - t)) (c - a) (c - b) := by
-  obtain ⟨p, hp, hC1⟩ := h.exists_breakpoints
-  have hmem : ∀ {t : ℝ}, t ∈ uIcc (c - a) (c - b) → c - t ∈ uIcc a b := fun ht => by
-    rwa [← preimage_const_sub_uIcc] at ht
-  refine IsPiecewiseC1On.of_breakpoints
-    (h.continuousOn.comp (continuous_sub_left c).continuousOn fun _ ht => hmem ht)
-    (p.image (c - ·)) ?_ fun d e hde hdisj => ?_
-  · intro x hx
-    simp only [Finset.coe_image, mem_image, Finset.mem_coe] at hx
-    obtain ⟨y, hy, rfl⟩ := hx
-    have hy' := hp hy
-    rw [min_sub_sub_left, max_sub_sub_left]
-    exact ⟨by linarith [hy'.2], by linarith [hy'.1]⟩
-  · have hsub : Icc (c - e) (c - d) ⊆ uIcc a b := fun s hs => by
-      have hs' : c - s ∈ Icc d e := ⟨by linarith [hs.2], by linarith [hs.1]⟩
-      simpa using hmem (hde hs')
-    have hdisj' : Disjoint (↑p : Set ℝ) (Ioo (c - e) (c - d)) := by
-      rw [Set.disjoint_left] at hdisj ⊢
-      intro x hxp hx
-      exact hdisj (Finset.mem_coe.2 (Finset.mem_image_of_mem _ hxp))
-        ⟨by linarith [hx.2], by linarith [hx.1]⟩
-    exact (hC1 _ _ hsub hdisj').comp (contDiff_const.sub contDiff_id).contDiffOn
-      fun t ht => ⟨by linarith [ht.2], by linarith [ht.1]⟩
-
-/-- **Concatenation of piecewise-`C¹` curves.** If `γ` is piecewise `C¹` on `[a, b]`, `δ` is
-piecewise `C¹` on `[b, c]`, and the two agree at `b`, then the curve following `γ` up to time `b`
-and `δ` afterwards is piecewise `C¹` on `[a, c]`. -/
-theorem _root_.TauCeti.IsPiecewiseC1On.if_le (h₁ : IsPiecewiseC1On γ a b)
-    (h₂ : IsPiecewiseC1On δ b c) (hab : a ≤ b) (hbc : b ≤ c) (hb : γ b = δ b) :
-    IsPiecewiseC1On (fun t => if t ≤ b then γ t else δ t) a c := by
-  classical
-  obtain ⟨p₁, -, hC₁⟩ := h₁.exists_breakpoints
-  obtain ⟨p₂, -, hC₂⟩ := h₂.exists_breakpoints
-  have hac : a ≤ c := hab.trans hbc
-  have hη₁ : EqOn (fun t => if t ≤ b then γ t else δ t) γ (Icc a b) := fun t ht =>
-    ite_eq_left ht.2
-  have hη₂ : EqOn (fun t => if t ≤ b then γ t else δ t) δ (Icc b c) := fun t ht => by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [hb]
-    · exact ite_eq_right (not_le.2 hlt)
-  refine IsPiecewiseC1On.of_breakpoints ?_ ((p₁ ∪ p₂ ∪ {b}).filter (· ∈ Ioo a c)) ?_
-    fun d e hde hdisj => ?_
-  · rw [uIcc_of_le hac, ← Icc_union_Icc_eq_Icc hab hbc]
-    refine ContinuousOn.union_of_isClosed ?_ ?_ isClosed_Icc isClosed_Icc
-    · exact (uIcc_of_le hab ▸ h₁.continuousOn).congr hη₁
-    · exact (uIcc_of_le hbc ▸ h₂.continuousOn).congr hη₂
-  · intro x hx
-    rw [min_eq_left hac, max_eq_right hac]
-    exact (Finset.mem_filter.1 (Finset.mem_coe.1 hx)).2
-  · rw [uIcc_of_le hac] at hde
-    have hIoo : Ioo d e ⊆ Ioo a c := fun x hx =>
-      ⟨(hde ⟨le_rfl, (hx.1.trans hx.2).le⟩).1.trans_lt hx.1,
-        hx.2.trans_le (hde ⟨(hx.1.trans hx.2).le, le_rfl⟩).2⟩
-    have hnot : ∀ x ∈ p₁ ∪ p₂ ∪ {b}, x ∉ Ioo d e := fun x hx hxde =>
-      Set.disjoint_left.1 hdisj (Finset.mem_coe.2 (Finset.mem_filter.2 ⟨hx, hIoo hxde⟩)) hxde
-    have hside : e ≤ b ∨ b ≤ d := by
-      by_contra hcon
-      push Not at hcon
-      exact hnot b (by simp) ⟨hcon.2, hcon.1⟩
-    rcases hside with heb | hbd
-    · have hsub : Icc d e ⊆ Icc a b := fun t ht => ⟨(hde ht).1, ht.2.trans heb⟩
-      refine (hC₁ d e (uIcc_of_le hab ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
-        hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₁ (hsub ht)
-    · have hsub : Icc d e ⊆ Icc b c := fun t ht => ⟨hbd.trans ht.1, (hde ht).2⟩
-      refine (hC₂ d e (uIcc_of_le hbc ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
-        hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₂ (hsub ht)
-
-end Regularity
 
 section Integral
 
