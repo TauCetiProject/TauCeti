@@ -14,14 +14,14 @@ public import TauCeti.ModelTheory.Infinitary.Theory
 A structure for the graph language `L.graphLanguage` interprets the graph symbol `G_f` of a
 function symbol `f` of `L` as an arbitrary relation, which need not be the graph of a function.
 The **graph axioms** of a set `F` of function symbols say that it is, for each `f ∈ F`:
-**totality** `∀ x̄, ∃ y, G_f(x̄, y)` and **functionality**
-`∀ x̄ y z, G_f(x̄, y) → G_f(x̄, z) → y = z`. The graph expansion of an `L`-structure satisfies
+**totality** `∀ xs, ∃ y, G_f(xs, y)` and **functionality**
+`∀ xs y z, G_f(xs, y) → G_f(xs, z) → y = z`. The graph expansion of an `L`-structure satisfies
 the graph axioms of every set of function symbols.
 
 Conversely, on a nonempty carrier every graph-language structure has a **reconstruction**, the
 `L`-structure `reconstructStructure L M` whose relation symbols are read off the base relations and
-whose function symbol `f` sends `x̄` to a chosen `y` with `G_f(x̄, y)`, if there is one. On a model
-of the graph axioms of `F` the value of `f ∈ F` at `x̄` is the unique such `y`, so the graph
+whose function symbol `f` sends `xs` to a chosen `y` with `G_f(xs, y)`, if there is one. On a model
+of the graph axioms of `F` the value of `f ∈ F` at `xs` is the unique such `y`, so the graph
 expansion of the reconstruction agrees with the given structure on every base relation and on the
 graph relation of every `f ∈ F`. By symbol locality, a formula whose function symbols lie in `F`
 therefore has a translation into the graph language that is realized in the given structure
@@ -49,7 +49,7 @@ other direction, the reconstruction of the graph expansion of an `L`-structure i
 * `FirstOrder.Language.relationsIn_graphAxioms`: the graph axioms of `F` mention exactly the graph
   relations of the symbols in `F`.
 * `FirstOrder.Language.funMap_reconstructStructure_eq_iff`: where the graph relation of `f` relates
-  `x̄` to exactly one value, the reconstruction sends `x̄` to that value.
+  `xs` to exactly one value, the reconstruction sends `xs` to that value.
 * `FirstOrder.Language.BoundedFormulaInf.realize_relationalize_reconstructStructure`: on a model of
   the graph axioms of `F`, the translation of a formula whose function symbols lie in `F` is
   realized exactly when the formula is realized in the reconstruction.
@@ -87,12 +87,12 @@ namespace Functions
 variable {k : ℕ} (f : L.Functions k)
 
 /-- **Totality** of the graph relation of a function symbol `f`: the sentence
-`∀ x̄, ∃ y, G_f(x̄, y)` of the graph language. -/
+`∀ xs, ∃ y, G_f(xs, y)` of the graph language. -/
 def graphTotality : L.graphLanguage.Sentenceω :=
   (BoundedFormulaInf.rel (GraphRelation.graph f) fun i => Term.var (Sum.inr i)).ex.alls
 
 /-- **Functionality** of the graph relation of a function symbol `f`: the sentence
-`∀ x̄ y z, G_f(x̄, y) → G_f(x̄, z) → y = z` of the graph language, with `x̄` the first `k` bound
+`∀ xs y z, G_f(xs, y) → G_f(xs, z) → y = z` of the graph language, with `xs` the first `k` bound
 positions and `y`, `z` the last two. -/
 def graphFunctionality : L.graphLanguage.Sentenceω :=
   ((BoundedFormulaInf.rel (GraphRelation.graph f) fun i =>
@@ -104,7 +104,7 @@ def graphFunctionality : L.graphLanguage.Sentenceω :=
       (BoundedFormulaInf.equal (Term.var (Sum.inr (Fin.last k).castSucc))
         (Term.var (Sum.inr (Fin.last (k + 1))))))).alls
 
-/-- Reading the arguments `x̄, y` off a valuation `x̄, y, z` of `k + 2` positions. -/
+/-- Reading the arguments `xs, y` off a valuation `xs, y, z` of `k + 2` positions. -/
 private theorem snoc_snoc_comp_castSucc {M : Type w} (xs : Fin k → M) (y z : M) :
     (fun i => Fin.snoc (α := fun _ => M) (Fin.snoc xs y) z
       (Fin.snoc (α := fun _ => Fin (k + 2)) (fun j : Fin k => j.castSucc.castSucc)
@@ -113,7 +113,7 @@ private theorem snoc_snoc_comp_castSucc {M : Type w} (xs : Fin k → M) (y z : M
   funext i
   cases i using Fin.lastCases <;> simp
 
-/-- Reading the arguments `x̄, z` off a valuation `x̄, y, z` of `k + 2` positions. -/
+/-- Reading the arguments `xs, z` off a valuation `xs, y, z` of `k + 2` positions. -/
 private theorem snoc_snoc_comp_last {M : Type w} (xs : Fin k → M) (y z : M) :
     (fun i => Fin.snoc (α := fun _ => M) (Fin.snoc xs y) z
       (Fin.snoc (α := fun _ => Fin (k + 2)) (fun j : Fin k => j.castSucc.castSucc)
@@ -252,7 +252,7 @@ variable (L) (M : Type w) [L.graphLanguage.Structure M] [Nonempty M]
 
 /-- The **reconstruction** of an `L`-structure from a structure for the graph language on a
 nonempty carrier: a relation symbol of `L` is interpreted by its base relation, and a function
-symbol `f` sends `x̄` to a chosen `y` with `G_f(x̄, y)`, or to an arbitrary element if there is
+symbol `f` sends `xs` to a chosen `y` with `G_f(xs, y)`, or to an arbitrary element if there is
 none. Where the graph relation of `f` is the graph of a function, the reconstruction interprets
 `f` by that function (`funMap_reconstructStructure_eq_iff`). -/
 @[instance_reducible]
