@@ -26,12 +26,16 @@ derivatives turn the derivative in `t` of `<∂_u F, ∂_t F>` into `<v,w>`.  In
 The statement is made on the full natural domain of the exponential map.  In particular, every
 normal domain inherits it without choosing a smaller ball.
 
-## Main result
+## Main results
 
 * `TauCeti.Manifold.inner_mfderiv_riemannianExp_radial`: the differential of the exponential map
   preserves inner products with the radial direction.
 * `TauCeti.Manifold.norm_mfderiv_riemannianExp_radial`: the differential of the exponential map
   preserves the norm of the radial direction.
+* `TauCeti.Manifold.contMDiffAt_radialVariation`,
+  `TauCeti.Manifold.eventually_mem_geodesicInterval_add_smul` and
+  `TauCeti.Manifold.acceleration_radialVariation_eq_zero`: the radial variation
+  `exp_p (t • (v + u • w))` is smooth on the natural domain and consists of geodesics.
 
 ## References
 
@@ -74,8 +78,10 @@ The Gauss lemma is proved by differentiating the radial variation
 
 of the geodesic `t ↦ exp_p (t • v)`.  The facts below are what the variational argument consumes:
 each radial curve of the variation is a maximal geodesic, the variation is smooth wherever the
-exponential map is, and the transverse covariant derivative of the radial velocity field is
-determined by the constant speed of those geodesics.
+exponential map is, nearby radial curves are still defined at each time of the central one, and
+the transverse covariant derivative of the radial velocity field is determined by the constant
+speed of those geodesics.  All but the last also identify the variation field of the radial
+variation as a Jacobi field.
 
 Each statement takes the variation as a function `F` together with its defining equation, rather
 than as the explicit two-parameter formula.  The fibre in which a velocity vector lives is indexed
@@ -92,7 +98,7 @@ private theorem radialVariation_eq_maximalGeodesic
 
 /-- The radial variation is smooth at every parameter pair whose radial vector lies in the natural
 domain of the exponential map. -/
-private theorem contMDiffAt_radialVariation
+theorem contMDiffAt_radialVariation
     (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
     (hut : t • (v + u • w) ∈ expDomain I M p) :
     ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t) := by
@@ -106,9 +112,21 @@ private theorem contMDiffAt_radialVariation
   rw [hFfun]
   exact (contMDiffAt_riemannianExp (I := I) (M := M) hut).comp (u, t) hinput
 
+/-- Each time of the central radial geodesic `t ↦ exp_p (t • v)` remains in the maximal interval
+of the radial curves of the variation for all transverse parameters near `0`. -/
+theorem eventually_mem_geodesicInterval_add_smul {t : ℝ} (ht : t ∈ geodesicInterval I M p v) :
+    ∀ᶠ u in 𝓝 (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) := by
+  have hopen := (isOpen_expDomain (I := I) (M := M) p).mem_nhds
+    (mem_geodesicInterval_iff_smul_mem_expDomain.mp ht)
+  have hcont : ContinuousAt (fun u : ℝ ↦ t • (v + u • w)) 0 := by fun_prop
+  have hpre : (fun u : ℝ ↦ t • (v + u • w)) ⁻¹' expDomain I M p ∈ 𝓝 0 :=
+    hcont.preimage_mem_nhds (by simpa using hopen)
+  filter_upwards [hpre] with u hu
+  exact mem_geodesicInterval_iff_smul_mem_expDomain.mpr hu
+
 /-- The covariant acceleration of a radial curve of the variation vanishes on its maximal
 interval. -/
-private theorem acceleration_radialVariation_eq_zero
+theorem acceleration_radialVariation_eq_zero
     (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
     (ht : t ∈ geodesicInterval I M p (v + u • w)) :
     acceleration (leviCivitaConnection I M) (F u) t = 0 := by
@@ -143,13 +161,8 @@ private theorem inner_alongCurve_variationField_radialVariation
   have hleft := hasDerivAt_norm_sq_curveVelocity (hsurface.of_le (by simp))
   -- Near `u = 0` the radial curve of the variation still reaches `t`, so its squared speed there
   -- is the squared norm `⟪v + u • w, v + u • w⟫` of its initial velocity.
-  have hnear : ∀ᶠ u in nhds (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) := by
-    have hopen := (isOpen_expDomain (I := I) (M := M) p).mem_nhds htExp
-    have hcont : ContinuousAt (fun u : ℝ ↦ t • (v + u • w)) 0 := by fun_prop
-    have hpre : (fun u : ℝ ↦ t • (v + u • w)) ⁻¹' expDomain I M p ∈ nhds 0 :=
-      hcont.preimage_mem_nhds (by simpa using hopen)
-    filter_upwards [hpre] with u hu
-    exact mem_geodesicInterval_iff_smul_mem_expDomain.mpr hu
+  have hnear : ∀ᶠ u in nhds (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) :=
+    eventually_mem_geodesicInterval_add_smul ht
   have heq : (fun u ↦ ‖curveVelocity I (F u) t‖ ^ 2) =ᶠ[nhds (0 : ℝ)]
       fun u ↦ inner ℝ (v + u • w) (v + u • w) :=
     hnear.mono fun u hu ↦

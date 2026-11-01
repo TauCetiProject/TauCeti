@@ -47,6 +47,10 @@ ambient covariant derivative.
   scalar homogeneity; each has an unrestricted counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
+* `CovariantDerivative.alongCurveWithin_const_const`: a constant vector along a constant curve has
+  zero derivative, with `CovariantDerivative.alongCurve_const_const` its unrestricted case, and
+  `CovariantDerivative.alongCurve_const_add_smul`: the affine field `v + q • w` along a constant
+  curve has derivative `w`.
 * `CovariantDerivative.alongCurveWithin_inter`, `CovariantDerivative.alongCurveWithin_of_mem_nhds`,
   `CovariantDerivative.alongCurveWithin_subset`, `CovariantDerivative.alongCurveWithin_congr`, and
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
@@ -262,6 +266,36 @@ theorem alongCurve_zero (t : 𝕜) :
     alongCurve cov γ (fun r : 𝕜 ↦ (0 : TangentSpace I (γ r))) t = 0 := by
   rw [← alongCurveWithin_univ]
   exact alongCurveWithin_zero cov γ Set.univ t
+
+/-- A constant tangent vector along a constant curve has zero moving-chart candidate within every
+parameter set. -/
+@[simp]
+theorem alongCurveWithin_const_const (x : M) (v : TangentSpace I x) (s : Set 𝕜) (t : 𝕜) :
+    alongCurveWithin cov (fun _ : 𝕜 ↦ x) (fun _ : 𝕜 ↦ v) s t = 0 := by
+  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_const]
+  simp only [Function.comp_def, derivWithin_fun_const, Pi.zero_apply, map_zero, add_zero]
+
+/-- A constant tangent vector along a constant curve has zero unrestricted moving-chart
+candidate. -/
+@[simp]
+theorem alongCurve_const_const (x : M) (v : TangentSpace I x) (t : 𝕜) :
+    alongCurve cov (fun _ : 𝕜 ↦ x) (fun _ : 𝕜 ↦ v) t = 0 := by
+  rw [← alongCurveWithin_univ, alongCurveWithin_const_const]
+
+/-- Along a constant curve, the affine field `q ↦ v + q • w` has unrestricted moving-chart
+candidate `w` at every parameter. -/
+@[simp]
+theorem alongCurve_const_add_smul (x : M) (v w : TangentSpace I x) (t : 𝕜) :
+    alongCurve cov (fun _ : 𝕜 ↦ x) (fun q ↦ v + q • w) t = w := by
+  have hw : DifferentiableAt 𝕜 (sectionCoord (F := E) (fun _ : 𝕜 ↦ x) (fun _ ↦ w) x) t := by
+    rw [sectionCoord_const]
+    exact differentiableAt_const _
+  rw [alongCurve_add cov _ (fun _ ↦ v) (fun q : 𝕜 ↦ q • w)
+      (by rw [sectionCoord_const]; exact differentiableAt_const _)
+      (by rw [sectionCoord_smul _ (fun _ ↦ w) (fun q ↦ q)]; exact differentiableAt_id.smul hw),
+    alongCurve_smul cov _ (fun _ ↦ w) (fun q ↦ q) differentiableAt_id hw,
+    alongCurve_const_const, alongCurve_const_const, deriv_id'', one_smul, smul_zero, add_zero,
+    zero_add]
 
 /-! ### Locality and reparametrization -/
 

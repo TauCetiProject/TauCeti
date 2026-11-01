@@ -89,6 +89,13 @@ theorem sectionCoord_zero (x : M) :
   funext t
   exact map_zero _
 
+/-- A constant vector along a constant curve has constant coordinate reading. -/
+@[simp]
+theorem sectionCoord_const (x y : M) (v : V x) :
+    sectionCoord (F := F) (fun _ : 𝕜 ↦ x) (fun _ : 𝕜 ↦ v) y =
+      fun _ ↦ (trivializationAt F V y).continuousLinearMapAt 𝕜 x v :=
+  (rfl)
+
 /-- The coordinate reading of a reparametrized section is the composition of its reading with the
 reparametrizing function. -/
 @[simp]
