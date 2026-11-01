@@ -69,6 +69,19 @@ instance monoidalCategory : MonoidalCategory PointedSSet.{u} :=
 instance symmetricCategory : SymmetricCategory PointedSSet.{u} :=
   inferInstanceAs (SymmetricCategory (Transported simplicialPointedEquivalence.{u}.symm))
 
+/-- The degreewise pointed presentation is strong monoidal for the smash product. -/
+noncomputable instance : simplicialPointedEquivalence.{u}.functor.Monoidal := by
+  -- The category and monoidal structure on the transported synonym must both be made
+  -- explicit when comparing the monoidal functors across the type synonym.
+  unfold monoidalCategory
+  convert (inferInstance :
+    (Monoidal.equivalenceTransported simplicialPointedEquivalence.{u}.symm).inverse.Monoidal)
+    using 0
+  simp +instances only [Monoidal.equivalenceTransported, Equivalence.symm_inverse,
+    Monoidal.Transported, Monoidal.instCategoryTransported,
+    Monoidal.Transported.instMonoidalCategory]
+  rfl
+
 variable {X Y Z X' Y' : PointedSSet.{u}} {n m : SimplexCategoryᵒᵖ}
 
 /-- The class in the smash product `X ⊗ Y` of a pair of simplices of the same degree. -/
