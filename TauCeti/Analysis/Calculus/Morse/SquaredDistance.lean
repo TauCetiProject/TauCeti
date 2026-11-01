@@ -13,7 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.TangentGraphChart
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Squared distance from almost every point is Morse along an immersion
@@ -63,32 +63,6 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {F : E → V} {U : Set E}
 
-/-- Change of parameters for
-`TauCeti.exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_comp`. The splitting
-`a = b + c` along `V = R ⊕ Rᗮ` and the Riesz isomorphism `b ↦ 2⟪b, e₀ ·⟫` identify `V` with
-`(E →L[ℝ] ℝ) × Rᗮ` and preserve null sets. So a property of almost every pair `(L, c)` holds, for
-almost every `a`, at the pair coming from the splitting of `a`. -/
-private theorem ae_exists_add_eq_of_ae_prod [MeasurableSpace V] [BorelSpace V] (μ : Measure V)
-    [μ.IsAddHaarMeasure] {R : Submodule ℝ V} (e₀ : E ≃L[ℝ] R)
-    [MeasurableSpace ((E →L[ℝ] ℝ) × Rᗮ)] [BorelSpace ((E →L[ℝ] ℝ) × Rᗮ)]
-    (ν : Measure ((E →L[ℝ] ℝ) × Rᗮ)) [ν.IsAddHaarMeasure] {p : (E →L[ℝ] ℝ) × Rᗮ → Prop}
-    (hp : ∀ᵐ q ∂ν, p q) :
-    ∀ᵐ a ∂μ, ∃ (b : R) (c : Rᗮ) (L : E →L[ℝ] ℝ), a = (b : V) + c ∧
-      (∀ w, L w = 2 * ⟪(b : V), (e₀ w : V)⟫_ℝ) ∧ p (L, c) := by
-  let S : (R × Rᗮ) ≃L[ℝ] V :=
-    (Submodule.prodEquivOfIsCompl R Rᗮ R.isCompl_orthogonal).toContinuousLinearEquiv
-  let D : R ≃L[ℝ] (E →L[ℝ] ℝ) :=
-    ((LinearEquiv.smulOfNeZero ℝ R 2 two_ne_zero).toContinuousLinearEquiv.trans
-      (toDual ℝ R).toContinuousLinearEquiv).trans
-      (e₀.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
-  let T : V ≃L[ℝ] (E →L[ℝ] ℝ) × Rᗮ := S.symm.trans (D.prodCongr (ContinuousLinearEquiv.refl ℝ _))
-  filter_upwards [(T.toContinuousAddEquiv.quasiMeasurePreserving_addHaar μ ν).ae hp] with a ha
-  refine ⟨(S.symm a).1, (S.symm a).2, D (S.symm a).1, ?_, fun w ↦ by simp [D], ?_⟩
-  · conv_lhs => rw [← S.apply_symm_apply a]
-    simp [S, Submodule.coe_prodEquivOfIsCompl']
-  · have hTa : T a = (D (S.symm a).1, (S.symm a).2) := by simp [T]
-    simpa [hTa] using ha
-
 /-- The local form of `TauCeti.ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_comp`: a point
 at which the differential is injective has an open neighbourhood on which the squared distance
 from almost every point has only nondegenerate critical points. -/
@@ -117,12 +91,27 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
   have hgood := ae_hasNondegenerateCriticalPointsOn_sub_prod
     (addHaar : Measure ((E →L[ℝ] ℝ) × Rᗮ)) Φ.open_target hf
   refine ⟨Φ.source, Φ.open_source, hu₀Φ, ?_⟩
-  filter_upwards [ae_exists_add_eq_of_ae_prod μ e₀ _ hgood] with a ⟨b, c, L, hab, hL, ha⟩
+  -- Split `a = b + c` along `R ⊕ Rᗮ` and send `b` to the linear form `2⟪b, e₀ ·⟫`.
+  let D : R ≃L[ℝ] (E →L[ℝ] ℝ) :=
+    ((LinearEquiv.smulOfNeZero ℝ R 2 two_ne_zero).toContinuousLinearEquiv.trans
+      (toDual ℝ R).toContinuousLinearEquiv).trans
+      (e₀.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
+  filter_upwards [R.ae_of_ae_orthogonalProjectionOnto_prod μ
+    (D.prodCongr (ContinuousLinearEquiv.refl ℝ _)) _ hgood] with a ha
+  set b := R.orthogonalProjectionOnto a
+  set c := Rᗮ.orthogonalProjectionOnto a
+  set L := D b
+  have hab : a = (b : V) + c := (R.starProjection_add_starProjection_orthogonal a).symm
+  have hL : ∀ w, L w = 2 * ⟪(b : V), (e₀ w : V)⟫_ℝ := fun w ↦ by
+    have h : L w = 2 * toDual ℝ R b (e₀ w) := by simp [L, D, -toDual_apply_apply]
+    -- The Riesz map of `R` evaluates to the inner product of `V`.
+    exact h.trans (congrArg _ (toDual_apply_apply.trans (R.coe_inner _ _)))
+  simp only [ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_apply] at ha
   -- The squared distance agrees on the source of `Φ` with `g ∘ Φ`.
   set g : E → ℝ := fun w ↦ f c w - L w + ‖(b : V)‖ ^ 2
   have hev : ∀ u ∈ Φ.source, ‖F u - a‖ ^ 2 = g (Φ u) := fun u hu ↦ by
     simp only [g, f, Φ.left_inv hu, hL, hΦe u hu, hab,
-      Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal _ _ b.2 c.2]
+      Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal R _ b.2 c.2, R]
   refine hasNondegenerateCriticalPointsOn_iff.2 fun u hu hcrit ↦ ?_
   have hev' : (fun u ↦ ‖F u - a‖ ^ 2) =ᶠ[𝓝 u] g ∘ Φ :=
     eventually_of_mem (Φ.open_source.mem_nhds hu) hev
