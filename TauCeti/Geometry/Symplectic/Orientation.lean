@@ -191,34 +191,6 @@ theorem orientation_prod [FiniteDimensional ℝ W] (ω₁ : SymplecticForm V) (�
 
 variable {J : AlmostComplexStructure V}
 
-omit [FiniteDimensional ℝ V] in
-/-- A family `d` which is triangular with positive diagonal in a basis `c` indexed by
-`Fin n × Fin 2` has positive determinant in `c`. Triangularity means that `d p - coef p • c p`
-lies in the span of the `c r` with `r.1 < p.1`; listed lexicographically, the family is
-triangular in the sense of `Module.Basis.det_eq_prod_of_sub_smul_mem_span`. -/
-private theorem det_pos_of_sub_smul_mem_span (c : Basis (Fin n × Fin 2) ℝ V)
-    {d : Fin n × Fin 2 → V} {coef : Fin n × Fin 2 → ℝ} (hcoef : ∀ p, 0 < coef p)
-    (hd : ∀ p, d p - coef p • c p ∈ Submodule.span ℝ (c '' {r | r.1 < p.1})) :
-    0 < c.det d := by
-  set E := (finProdFinEquiv : Fin n × Fin 2 ≃ Fin (n * 2))
-  have hdE : c.det d = (c.reindex E).det (d ∘ E.symm) := by
-    rw [Basis.det_reindex, Function.comp_assoc, E.symm_comp_self, Function.comp_id]
-  rw [hdE, Basis.det_eq_prod_of_sub_smul_mem_span (c := coef ∘ E.symm)]
-  · exact Finset.prod_pos fun r _ ↦ hcoef _
-  · intro r
-    refine Submodule.span_mono ?_ (by simpa using hd (E.symm r))
-    rintro _ ⟨q, hq, rfl⟩
-    refine ⟨E q, ?_, by simp⟩
-    -- `finProdFinEquiv` lists `Fin n × Fin 2` lexicographically.
-    have hq' : (q.1 : ℕ) < (E.symm r).1 := hq
-    have hr : (r : ℕ) = (E.symm r).2 + 2 * (E.symm r).1 := by
-      conv_lhs => rw [← E.apply_symm_apply r]
-      simp [E, finProdFinEquiv_apply_val]
-    have := q.2.isLt
-    have := (E.symm r).2.isLt
-    simp only [Set.mem_Iio, Fin.lt_def, E, finProdFinEquiv_apply_val]
-    omega
-
 /-- One step of the symplectic Gram–Schmidt process for a tamed almost complex structure. If `S`
 is `J`-invariant and `v ∉ S`, there is a pair `(x, y)` in the symplectic complement of `S` with
 `ω x y = 1`, `x ≡ v` and `y ≡ c • J v` modulo `S` for some `c > 0`. -/
@@ -311,17 +283,25 @@ theorem Tames.orientation_reindex (hJ : ω.Tames J) (hb : ∀ i, b (i, 1) = J (b
     · exact (mem_orthogonal_iff.1 (hdo q)) _ (hdS p h)
     · exact (mem_orthogonal_iff'.1 (hdo p)) _ (hdS q h)
   -- In the basis `b`, the family `d` is triangular with diagonal entries `1` and `c i`.
+  have hcoef (p : Fin n × Fin 2) : 0 < ![1, c p.1] p.2 := by
+    obtain ⟨j, a⟩ := p
+    fin_cases a
+    · simp
+    · simpa using hc j
+  have htri (p : Fin n × Fin 2) :
+      d p - ![1, c p.1] p.2 • b p ∈ Submodule.span ℝ (b '' {r | r.1 < p.1}) := by
+    obtain ⟨j, a⟩ := p
+    fin_cases a
+    · simpa [d] using hxv j
+    · simpa [d, hb] using hyv j
+  -- Listed lexicographically, `d` is triangular in the sense of
+  -- `Module.Basis.det_pos_of_sub_smul_mem_span`.
   have hdet : 0 < b.det d := by
-    refine det_pos_of_sub_smul_mem_span b (coef := fun p ↦ ![1, c p.1] p.2) (fun p ↦ ?_)
-      (fun p ↦ ?_)
-    · obtain ⟨j, a⟩ := p
-      fin_cases a
-      · simp
-      · simpa using hc j
-    · obtain ⟨j, a⟩ := p
-      fin_cases a
-      · simpa [d] using hxv j
-      · simpa [d, hb] using hyv j
+    rw [show b.det d = (b.reindex toLex).det (d ∘ ofLex) by rw [Basis.det_reindex]; rfl]
+    refine (b.reindex toLex).det_pos_of_sub_smul_mem_span (fun p ↦ hcoef (ofLex p)) fun p ↦ ?_
+    refine Submodule.span_mono ?_ (by simpa using htri (ofLex p))
+    rintro _ ⟨q, hq, rfl⟩
+    exact ⟨toLex q, Prod.Lex.toLex_lt_toLex.2 (.inl hq), by simp⟩
   have hbasis := b.is_basis_iff_det.2 hdet.ne'.isUnit
   set D := Basis.mk hbasis.1 hbasis.2.ge
   have hDd : ⇑D = d := Basis.coe_mk _ _

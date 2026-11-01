@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 
-import Mathlib.Analysis.Normed.Module.Alternating.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import TauCeti.Analysis.Normed.Module.Alternating.Tame
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 
@@ -28,9 +28,10 @@ almost symplectic manifold, and in particular to every symplectic manifold.
 The tangent orientations are locally constant because the linear symplectic orientation is locally
 constant in the form. Read in a trivialization of the tangent bundle near `b`, the forms `σ_x` are
 symplectic forms on the model space depending continuously on `x`. An almost complex structure `J`
-tamed by `σ_b` is still tamed by `σ_x` for `x` near `b`, because tameness is positivity of
-`u ↦ σ_x(u, J u)` on the compact unit sphere. Symplectic forms taming a common almost complex
-structure have the same orientation (`TauCeti.SymplecticForm.Tames.orientation_eq`).
+tamed by `σ_b` is still tamed by `σ_x` for `x` near `b`, because taming a fixed `J` is an open
+condition on alternating two-forms (`ContinuousAlternatingMap.isOpen_setOf_forall_ne_zero_pos`).
+Symplectic forms taming a common almost complex structure have the same orientation
+(`TauCeti.SymplecticForm.Tames.orientation_eq`).
 
 A diffeomorphism pulling one nondegenerate form back to another preserves their symplectic
 orientations (`TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`). In
@@ -71,17 +72,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {σ : SmoothTwoForm I M} {k : ℕ}
-
-/-- Taming a fixed continuous linear map `J` is an open condition on a continuous family of
-alternating two-forms on a finite-dimensional space, tested on the unit sphere. -/
-private theorem eventually_forall_mem_sphere_pos {X : Type*} [TopologicalSpace X]
-    {g : X → E [⋀^Fin 2]→L[ℝ] ℝ} {x₀ : X} (hg : ContinuousAt g x₀) (J : E →L[ℝ] E)
-    (h : ∀ u ∈ Metric.sphere (0 : E) 1, 0 < g x₀ ![u, J u]) :
-    ∀ᶠ x in 𝓝 x₀, ∀ u ∈ Metric.sphere (0 : E) 1, 0 < g x ![u, J u] := by
-  refine (isCompact_sphere (0 : E) 1).eventually_forall_of_forall_eventually fun u hu ↦ ?_
-  have hc : ContinuousAt (fun z : X × E ↦ g z.1 ![z.2, J z.2]) (x₀, u) :=
-    (hg.comp continuousAt_fst).eval (by fun_prop)
-  exact hc.eventually (lt_mem_nhds (h u hu))
 
 namespace IsNondegenerate
 
@@ -131,21 +121,15 @@ private theorem eventually_mapOrientation_orientation_eq (b : M) :
   have hgc : ContinuousAt g b :=
     (((SmoothForm.isSmoothForm σ).continuousOn_inChartAt b).comp (continuousOn_extChartAt b)
       (extChartAt I b).mapsTo).continuousAt (extChartAt_source_mem_nhds b)
-  have hpos := eventually_forall_mem_sphere_pos hgc (LinearMap.toContinuousLinearMap J.toLinearMap)
-    fun u hu ↦ by
+  have hpos := hgc.eventually_mem <| (ContinuousAlternatingMap.isOpen_setOf_forall_ne_zero_pos
+    (LinearMap.toContinuousLinearMap J.toLinearMap)).mem_nhds fun u hu ↦ by
       rw [LinearMap.coe_toContinuousLinearMap', ← transport_symplecticFormAt_apply hσ hb]
-      exact hJ u (ne_zero_of_mem_unit_sphere ⟨u, hu⟩)
+      exact hJ u hu
   filter_upwards [hpos, e.open_baseSet.mem_nhds hb] with x hx hxe hxe'
   rw [hmap, hmap]
   refine SymplecticForm.Tames.orientation_eq (fun u hu ↦ ?_) hJ hk
-  -- Rescale `u` to the unit sphere.
-  have hn : ‖u‖ ≠ 0 := norm_ne_zero_iff.2 hu
-  have := hx (‖u‖⁻¹ • u) (by simp [norm_smul, hn])
-  rw [LinearMap.coe_toContinuousLinearMap', ← transport_symplecticFormAt_apply hσ hxe',
-    map_smul] at this
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at this
-  have hu2 : 0 < ‖u‖⁻¹ * ‖u‖⁻¹ := by positivity
-  nlinarith
+  have := hx u hu
+  rwa [LinearMap.coe_toContinuousLinearMap', ← transport_symplecticFormAt_apply hσ hxe'] at this
 
 /-- The **symplectic orientation** of a manifold `M` carrying a fiberwise nondegenerate smooth
 two-form `σ`, for instance a symplectic form: at each point it is the symplectic orientation of the

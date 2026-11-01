@@ -29,6 +29,8 @@ Its matrix in `b` is then upper triangular, so its determinant in `b` is the pro
   as `e`.
 * `Module.Basis.det_eq_prod_of_sub_smul_mem_span`: the determinant of a triangular family is the
   product of its diagonal coefficients.
+* `Module.Basis.det_pos_of_sub_smul_mem_span`: over an ordered ring, a triangular family with
+  positive diagonal coefficients has positive determinant.
 -/
 
 public section
@@ -73,6 +75,15 @@ theorem det_eq_prod_of_sub_smul_mem_span (b : Basis ι R M) {v : ι → M} {c : 
   · simp [toMatrix_apply, hrepr _ _ le_rfl]
   · intro i j (hji : j < i)
     rw [toMatrix_apply, hrepr _ _ hji.le, Finsupp.single_eq_of_ne hji.ne', mul_zero]
+
+/-- Over an ordered ring, a family `v` that is triangular with respect to a basis `b` with positive
+diagonal coefficients `c i`, in the sense of `Module.Basis.det_eq_prod_of_sub_smul_mem_span`, has
+positive determinant in `b`. -/
+theorem det_pos_of_sub_smul_mem_span [PartialOrder R] [IsStrictOrderedRing R] (b : Basis ι R M)
+    {v : ι → M} {c : ι → R} (hc : ∀ i, 0 < c i)
+    (hv : ∀ i, v i - c i • b i ∈ span R (b '' Set.Iio i)) : 0 < b.det v := by
+  rw [b.det_eq_prod_of_sub_smul_mem_span hv]
+  exact Finset.prod_pos fun i _ ↦ hc i
 
 end Det
 
