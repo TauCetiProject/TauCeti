@@ -44,7 +44,7 @@ of `A` for the eigenvalue `c` is an eigenvector of `(1 + A²)⁻¹` for `(1 + c�
 * `LinearPMap.eigenspace_invOneAddSq_le_domainPow`: eigenvectors of `(1 + A²)⁻¹` for nonzero
   eigenvalues lie in every `D(Aⁿ)`.
 * `LinearPMap.apply_mem_eigenspace_invOneAddSq`: `A` preserves the eigenspaces of `(1 + A²)⁻¹`.
-* `LinearPMap.eigenspace_invOneAddSq_zero`: `(1 + A²)⁻¹` has trivial kernel.
+* `LinearPMap.eigenspace_invOneAddSq_zero_eq_bot`: `(1 + A²)⁻¹` has trivial kernel.
 * `LinearPMap.invOneAddSq_apply_of_apply_eq_smul`: `(1 + A²)⁻¹ x = (1 + c²)⁻¹ x` when `A x = c x`.
 
 ## References
@@ -132,7 +132,7 @@ theorem invOneAddSq_injective : Function.Injective A.invOneAddSq := by
   rw [← invOneAddSq_add_apply_apply hp hm y h₁ h₂.1, h0', map_zero, hy, add_zero]
 
 /-- The eigenspace of `(1 + A²)⁻¹` for the eigenvalue `0`, its kernel, is trivial. -/
-theorem eigenspace_invOneAddSq_zero : eigenspace (A.invOneAddSq : End ℂ X) 0 = ⊥ := by
+theorem eigenspace_invOneAddSq_zero_eq_bot : eigenspace (A.invOneAddSq : End ℂ X) 0 = ⊥ := by
   rw [eigenspace_zero, LinearMap.ker_eq_bot, ContinuousLinearMap.coe_coe]
   exact invOneAddSq_injective hp hm
 

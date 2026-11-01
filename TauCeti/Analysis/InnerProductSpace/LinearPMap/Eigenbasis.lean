@@ -114,7 +114,7 @@ theorem IsSelfAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactReso
   have hp := hA.I_mem_resolventSet
   have hm := hA.neg_I_mem_resolventSet
   have hK := hA.isPositive_invOneAddSq.isSymmetric
-  have h0 := eigenspace_invOneAddSq_zero hp hm
+  have h0 := eigenspace_invOneAddSq_zero_eq_bot hp hm
   have : ∀ μ, FiniteDimensional ℂ (eigenspace (A.invOneAddSq : End ℂ H) μ) := fun μ ↦ by
     rcases eq_or_ne μ 0 with rfl | hμ
     · rw [h0]

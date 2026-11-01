@@ -115,7 +115,7 @@ complement is zero. -/
 theorem _root_.IsSelfAdjoint.orthogonalComplement_iSup_eigenspaces_invOneAddSq_eq_bot
     (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
     (⨆ (μ : ℂ) (_ : μ ≠ 0), eigenspace (A.invOneAddSq : End ℂ H) μ)ᗮ = ⊥ := by
-  have h0 := eigenspace_invOneAddSq_zero hA.I_mem_resolventSet hA.neg_I_mem_resolventSet
+  have h0 := eigenspace_invOneAddSq_zero_eq_bot hA.I_mem_resolventSet hA.neg_I_mem_resolventSet
   have hsup := iSup_split_single (fun μ => eigenspace (A.invOneAddSq : End ℂ H) μ) 0
   rw [h0, bot_sup_eq] at hsup
   rw [← hsup]
