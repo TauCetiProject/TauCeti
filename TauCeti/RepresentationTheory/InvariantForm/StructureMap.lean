@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import TauCeti.LinearAlgebra.Complex.SesquilinearForm
+public import TauCeti.LinearAlgebra.SesquilinearForm.Balance
 public import TauCeti.RepresentationTheory.InvariantForm.Hermitian
 public import TauCeti.RepresentationTheory.QuaternionicStructure
 public import TauCeti.RepresentationTheory.RealForm

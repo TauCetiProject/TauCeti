@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Algebra.Module.LinearMap.Star
+public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
@@ -27,13 +28,13 @@ from `H` to `balance H K` unchanged.
 
 The construction and its compatibility are plain star-ring algebra, so they are stated over a
 commutative star semiring.  Nonnegativity and definiteness off the origin need an order on the
-scalars and are stated over `ℂ`, which is why the file sits here: the complex half is what the
-representation theory of `TauCeti/RepresentationTheory/InvariantForm/StructureMap.lean` consumes.
+scalars compatible with the star, and are stated over a commutative star-ordered semiring, such as
+`ℂ` with its partial order `ComplexOrder`.
 
 Definiteness off the origin is also what makes a form **separate** vectors: two vectors pairing
 identically against every vector are equal, because their difference pairs to zero with itself.
-That principle is what the representation theory downstream uses to identify two vectors, and it
-is recorded here beside the construction; it needs subtraction, hence a commutative star *ring*.
+That principle is recorded here beside the construction, for any semilinear map of two arguments
+on an additive group with values in an additive group.
 
 ## Main definitions
 
@@ -52,8 +53,6 @@ is recorded here beside the construction; it needs subtraction, hence a commutat
 
 public section
 
-open scoped ComplexOrder
-
 namespace LinearMap
 
 section CommSemiring
@@ -69,40 +68,30 @@ one. -/
 def balance (H : V →ₗ⋆[R] V →ₗ[R] R) (K : V →ₛₗ[starRingEnd R] V) :
     V →ₗ⋆[R] V →ₗ[R] R where
   toFun x :=
-    { toFun := fun y => H x y + (starRingEnd R) (H (K x) (K y))
-      map_add' := fun y z => by simp only [map_add]; ring
-      map_smul' := fun c y => by
-        simp only [map_smulₛₗ, RingHom.id_apply, smul_eq_mul, map_mul, starRingEnd_self_apply]
-        ring }
-  map_add' x y := by
-    ext z
-    simp only [map_add, LinearMap.add_apply, LinearMap.coe_mk, AddHom.coe_mk]
-    ring
-  map_smul' c x := by
-    ext z
-    simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, map_mul, starRingEnd_self_apply,
-      LinearMap.coe_mk, AddHom.coe_mk]
-    ring
+    { toFun y := H x y + starRingEnd R (H (K x) (K y))
+      map_add' y z := by simp only [map_add]; ring
+      map_smul' c y := by simp; ring }
+  map_add' x y := by ext; simp; ring
+  map_smul' c x := by ext; simp; ring
 
 /-- The defining formula of the balanced form. -/
 @[simp]
 theorem balance_apply (H : V →ₗ⋆[R] V →ₗ[R] R) (K : V →ₛₗ[starRingEnd R] V) (x y : V) :
-    balance H K x y = H x y + (starRingEnd R) (H (K x) (K y)) := (rfl)
+    balance H K x y = H x y + starRingEnd R (H (K x) (K y)) := (rfl)
 
 /-- **The balanced form is compatible with the map it was balanced against**: replacing both
 arguments by their `K`-images conjugates the value, as soon as `K ∘ K` is a scalar `ε` of modulus
 one.  The conjugation of the first argument of `H` turns the two `ε`-factors into `star ε * ε`, so
-no more than `star ε * ε = 1` is used; the real signs `ε = 1` and `ε = -1` -- an involution, or a
-quaternionic structure -- are the cases the representation theory needs.  This is the only property
-of `balance` that `H` alone does not already have, and the whole point of the construction. -/
+no more than `star ε * ε = 1` is used; the real signs `ε = 1` and `ε = -1` (an involution, or a
+quaternionic structure) are the main examples.  This is the only property of `balance` that `H`
+alone does not already have, and the whole point of the construction. -/
 theorem balance_map_map {H : V →ₗ⋆[R] V →ₗ[R] R} {K : V →ₛₗ[starRingEnd R] V} {ε : R}
     (hε : star ε * ε = 1) (hK : ∀ x : V, K (K x) = ε • x) (x y : V) :
-    balance H K (K x) (K y) = (starRingEnd R) (balance H K x y) := by
+    balance H K (K x) (K y) = starRingEnd R (balance H K x y) := by
   -- The first argument of `H` contributes a factor `star ε` and the second a factor `ε`.
-  have hεmul : ε * star ε = 1 := by rw [mul_comm]; exact hε
   have hH : H (ε • x) (ε • y) = H x y := by
-    simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply, starRingEnd_apply]
-    rw [← mul_assoc, hεmul, one_mul]
+    rw [map_smulₛₗ₂, map_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc, starRingEnd_apply, hε,
+      one_mul]
   rw [balance_apply, balance_apply, hK x, hK y, hH, map_add, starRingEnd_self_apply, add_comm]
 
 /-- The balanced form is Hermitian if `H` is. -/
@@ -112,50 +101,43 @@ theorem isSymm_balance {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.IsSymm)
     rw [balance_apply, balance_apply, map_add, starRingEnd_self_apply, hH.eq x y,
       hH.eq (K y) (K x)]
 
-end CommSemiring
+section StarOrderedRing
 
-section CommRing
-
-variable {R V : Type*} [CommRing R] [StarRing R] [AddCommGroup V] [Module R V]
-
-/-- **A form definite off the origin separates vectors**: two vectors pairing identically against
-every vector are equal, because their difference pairs to zero with itself.  Mathlib's
-`LinearMap.SeparatingLeft` is the same separation stated as a property of the form; definiteness
-off the origin is what supplies it here, and is the shape the callers carry it in. -/
-theorem eq_of_forall_sesq_eq {H : V →ₗ⋆[R] V →ₗ[R] R} (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) {u v : V}
-    (h : ∀ y : V, H u y = H v y) : u = v := by
-  rw [← sub_eq_zero]
-  by_contra hne
-  refine hdef _ hne ?_
-  -- The difference pairs to zero against every vector, so in particular against itself.
-  have hzero : H (u - v) = 0 := by
-    ext y
-    rw [map_sub, LinearMap.sub_apply, h y, sub_self, LinearMap.zero_apply]
-  rw [hzero, LinearMap.zero_apply]
-
-end CommRing
-
-section Complex
-
-variable {V : Type*} [AddCommMonoid V] [Module ℂ V]
+variable [PartialOrder R] [StarOrderedRing R]
 
 /-- The balanced form is nonnegative if `H` is: both summands are, the second because conjugation
-fixes a nonnegative complex number. -/
-theorem isNonneg_balance {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} (hH : H.IsNonneg)
-    (K : V →ₛₗ[starRingEnd ℂ] V) : (balance H K).IsNonneg where
+fixes a nonnegative scalar. -/
+theorem isNonneg_balance {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.IsNonneg)
+    (K : V →ₛₗ[starRingEnd R] V) : (balance H K).IsNonneg where
   nonneg x := by
     rw [balance_apply, starRingEnd_apply, (hH.nonneg (K x)).star_eq]
     exact add_nonneg (hH.nonneg x) (hH.nonneg (K x))
 
 /-- The balanced form is definite off the origin if `H` is: the first summand is already nonzero
 and the second is nonnegative. -/
-theorem balance_apply_self_ne_zero {H : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ} (hH : H.IsNonneg)
-    (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) (K : V →ₛₗ[starRingEnd ℂ] V) {x : V} (hx : x ≠ 0) :
+theorem balance_apply_self_ne_zero {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.IsNonneg)
+    (hdef : ∀ x : V, x ≠ 0 → H x x ≠ 0) (K : V →ₛₗ[starRingEnd R] V) {x : V} (hx : x ≠ 0) :
     balance H K x x ≠ 0 := by
   rw [balance_apply, starRingEnd_apply, (hH.nonneg (K x)).star_eq]
-  exact (add_pos_of_pos_of_nonneg
-    (lt_of_le_of_ne (hH.nonneg x) (Ne.symm (hdef x hx))) (hH.nonneg (K x))).ne'
+  exact fun h ↦ hdef x hx ((add_eq_zero_iff_of_nonneg (hH.nonneg x) (hH.nonneg (K x))).1 h).1
 
-end Complex
+end StarOrderedRing
+
+end CommSemiring
+
+section AddCommGroup
+
+variable {R S M P : Type*} [Semiring R] [CommSemiring S] [AddCommGroup M] [Module R M]
+  [AddCommGroup P] [Module S P] {I₁ I₂ : R →+* S}
+
+/-- **A form definite off the origin separates vectors**: two vectors pairing identically against
+every vector are equal, because their difference pairs to zero with itself.  Mathlib's
+`LinearMap.SeparatingLeft` is the same separation stated as a property of the form; definiteness
+off the origin is what supplies it here, and is the shape the callers carry it in. -/
+theorem eq_of_forall_sesq_eq {B : M →ₛₗ[I₁] M →ₛₗ[I₂] P} (hdef : ∀ x : M, x ≠ 0 → B x x ≠ 0)
+    {u v : M} (h : ∀ y : M, B u y = B v y) : u = v :=
+  sub_eq_zero.1 <| not_not.1 fun hne ↦ hdef _ hne <| by simp [h]
+
+end AddCommGroup
 
 end LinearMap
