@@ -17,7 +17,7 @@ Let `M` be a Riemannian manifold without boundary, with cotangent bundle `T*M`, 
 `λ = p dq` and canonical symplectic form `ω = -dλ`. The **kinetic energy** of a covector is
 `K(q, p) = ‖p‖² / 2` (`TauCeti.CotangentBundle.kineticEnergy`), where `‖p‖` is the norm of `p` for
 the metric. Its Hamiltonian vector field `X_K`, with `ι_(X_K) ω = dK`, generates the
-**cogeodesic flow**: in canonical coordinates it reads `q̇ = p♯`, `ṗ = -∂_q K`.
+**cogeodesic flow**: in canonical coordinates it reads `dq/dt = p♯`, `dp/dt = -∂_q K`.
 
 The unit cosphere bundle `S*M = {‖p‖ = 1}` is the level `K = 1/2`. It carries the two contact
 forms `α_g = λ|S*M` and `α_b = -λ|S*M`, which define opposite coorientations of the same contact
@@ -139,7 +139,7 @@ variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ 
 
 /-- **The Liouville form on the cogeodesic field.** The Liouville form takes the value
 `λ(X_K) = ‖p‖² = 2K` on the Hamiltonian vector field of the kinetic energy: in coordinates,
-`p(q̇) = p(p♯) = ‖p‖²`. -/
+`p(dq/dt) = p(p♯) = ‖p‖²`. -/
 theorem liouvilleForm_hamiltonianVectorField_kineticEnergy (z : CotangentBundle I M) :
     (liouvilleForm I M).1 z ![(symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z] =
       ‖z.2‖ ^ 2 := by
