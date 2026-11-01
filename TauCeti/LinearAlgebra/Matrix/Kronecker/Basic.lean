@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Kronecker
 
 A Kronecker product `Matrix.single i j 1 ⊗ₖ X` is the block matrix carrying `X` in the block from
 `j` to `i` and zero elsewhere. Such block matrices multiply along chains: the product of
-`single (a t) (b t) 1 ⊗ₖ X t` over a chain in which each block ends where the next one begins is
+`single (a t) (b t) 1 ⊗ₖ X t` over a chain in which each block starts where the next one ends is
 the single block of the product of the `X t`.
 
 ## Main result

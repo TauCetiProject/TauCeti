@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.Matrix.KroneckerPower
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 
 /-!
 # Permuting tensor factors

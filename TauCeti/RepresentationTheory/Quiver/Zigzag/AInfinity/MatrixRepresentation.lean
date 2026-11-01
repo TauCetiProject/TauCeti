@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.LinearAlgebra.Matrix.Diagonal
-public import TauCeti.LinearAlgebra.Matrix.Kronecker
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 
@@ -122,20 +122,14 @@ private theorem trace_twist_mul_dartMatrix (β : V → V → Matrix m m k) (ε :
     (Y : Matrix (V × m) (V × m) k) :
     trace ((diagonal ε ⊗ₖ 1) * (Y * dartMatrix β d)) =
       -trace ((diagonal ε ⊗ₖ 1) * (dartMatrix β d * Y)) := by
-  have hr : Matrix.single d.snd d.fst (1 : k) * diagonal ε =
-      ε d.fst • Matrix.single d.snd d.fst 1 := by
-    simpa [Matrix.smul_single] using diagonal_mul_single_mul_diagonal (v := (1 : V → k)) (w := ε)
-      (i := d.snd) (j := d.fst) (1 : k)
-  have hl : diagonal ε * Matrix.single d.snd d.fst (1 : k) =
-      ε d.snd • Matrix.single d.snd d.fst 1 := by
-    simpa [Matrix.smul_single] using diagonal_mul_single_mul_diagonal (v := ε) (w := (1 : V → k))
-      (i := d.snd) (j := d.fst) (1 : k)
-  rw [trace_mul_cycle', ← Matrix.mul_assoc, dartMatrix, ← mul_kronecker_mul, hr, mul_one,
-    smul_kronecker, ← Matrix.mul_assoc, ← mul_kronecker_mul, hl, one_mul, smul_kronecker,
-    Matrix.smul_mul, Matrix.smul_mul, trace_smul, trace_smul, smul_eq_mul, smul_eq_mul]
   by_cases h : β d.fst d.snd = 0
-  · simp [h]
-  · rw [hε d h, neg_mul]
+  · simp [dartMatrix, h]
+  have hr : dartMatrix β d * (diagonal ε ⊗ₖ 1) = ε d.fst • dartMatrix β d := by
+    simp [dartMatrix, ← mul_kronecker_mul, ← smul_kronecker]
+  have hl : (diagonal ε ⊗ₖ 1) * dartMatrix β d = ε d.snd • dartMatrix β d := by
+    simp [dartMatrix, ← mul_kronecker_mul, ← smul_kronecker]
+  rw [trace_mul_cycle', ← Matrix.mul_assoc, ← Matrix.mul_assoc, hr, hl, hε d h]
+  simp
 
 omit [Fintype m] [Fintype V] [DecidableRel G.Adj] [DecidableEq m] in
 /-- Along a copy, the block matrix of the image of a dart of `H` is the block of the dart. -/
@@ -218,11 +212,9 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     have hs₁ : s (w 0).snd = 1 ∨ s (w 0).snd = -1 := by
       simp only [s]
       split_ifs <;> simp
-    have hl : diagonal ε * Matrix.single (f (w 0).snd) (f (w 0).snd) (1 : k) =
-        Matrix.single (f (w 0).snd) (f (w 0).snd) (ε (f (w 0).snd)) := by
-      simpa using diagonal_mul_single_mul_diagonal (w := (1 : V → k)) (1 : k)
     simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply, hlast,
-      ← mul_kronecker_mul, hl, one_mul, trace_kronecker, trace_single_eq_same, hεf]
+      ← mul_kronecker_mul, diagonal_mul_single, mul_one, one_mul, trace_kronecker,
+      trace_single_eq_same, hεf]
     rcases hs₁ with h | h <;> simpa only [h, one_mul, neg_one_mul, neg_ne_zero] using htr
 
 omit [DecidableRel H.Adj] in
