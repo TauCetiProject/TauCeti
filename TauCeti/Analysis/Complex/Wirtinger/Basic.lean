@@ -208,16 +208,6 @@ theorem conjWirtingerDeriv_smul_apply {c : V → ℂ} {g : V → W} {x : V}
     Pi.smul_apply, ContinuousLinearMap.smulRight_apply]
   module
 
-private theorem differentiableAt_ofReal_comp {χ : V → ℝ} {x : V} (hχ : DifferentiableAt ℝ χ x) :
-    DifferentiableAt ℝ (fun y ↦ (χ y : ℂ)) x :=
-  ofRealCLM.differentiableAt.comp x hχ
-
-private theorem norm_fderiv_ofReal_comp_le (χ : V → ℝ) (x : V) :
-    ‖fderiv ℝ (fun y ↦ (χ y : ℂ)) x‖ ≤ ‖fderiv ℝ χ x‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_
-  rw [fderiv_ofReal_comp_apply, Complex.norm_real]
-  exact (fderiv ℝ χ x).le_opNorm w
-
 /-- Against a real factor `χ`, `∂(χ u)` differs from `χ ∂u` by `(∂χ) u`, whose norm is at most
 `‖Dχ‖ ‖v‖ ‖u‖`. -/
 theorem norm_wirtingerDeriv_smul_sub_smul_le {χ : V → ℝ} {u : V → W} {x : V}
@@ -225,7 +215,7 @@ theorem norm_wirtingerDeriv_smul_sub_smul_le {χ : V → ℝ} {u : V → W} {x :
     ‖wirtingerDeriv (fun y ↦ χ y • u y) x v - χ x • wirtingerDeriv u x v‖ ≤
       ‖fderiv ℝ χ x‖ * ‖v‖ * ‖u x‖ := by
   simp_rw [← Complex.coe_smul]
-  rw [wirtingerDeriv_smul_apply (differentiableAt_ofReal_comp hχ) hu, add_sub_cancel_left,
+  rw [wirtingerDeriv_smul_apply hχ.ofReal_comp hu, add_sub_cancel_left,
     norm_smul]
   gcongr
   exact (norm_wirtingerDeriv_apply_le _ _ _).trans (by gcongr; exact norm_fderiv_ofReal_comp_le χ x)
@@ -237,7 +227,7 @@ theorem norm_conjWirtingerDeriv_smul_sub_smul_le {χ : V → ℝ} {u : V → W} 
     ‖conjWirtingerDeriv (fun y ↦ χ y • u y) x v - χ x • conjWirtingerDeriv u x v‖ ≤
       ‖fderiv ℝ χ x‖ * ‖v‖ * ‖u x‖ := by
   simp_rw [← Complex.coe_smul]
-  rw [conjWirtingerDeriv_smul_apply (differentiableAt_ofReal_comp hχ) hu, add_sub_cancel_left,
+  rw [conjWirtingerDeriv_smul_apply hχ.ofReal_comp hu, add_sub_cancel_left,
     norm_smul]
   gcongr
   exact (norm_conjWirtingerDeriv_apply_le _ _ _).trans

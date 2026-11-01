@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.CalderonZygmund
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Interior `Lᵖ` estimates for the Cauchy–Riemann operator
@@ -164,14 +165,6 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
   · rw [eLpNorm_const_smul, NNReal.enorm_eq,
       eLpNorm_norm _ (hu.continuousOn.aestronglyMeasurable hU.measurableSet)]
 
-/-- A finite quantity bounded by `A` plus half of itself is at most `2 A`: the absorption step of
-the interior estimate. -/
-private theorem le_mul_two_of_le_add_div_two {X A : ℝ≥0∞} (hX : X ≠ ⊤) (h : X ≤ A + X / 2) :
-    X ≤ A * 2 := by
-  have h' : X / 2 + X / 2 ≤ A + X / 2 := by rwa [ENNReal.add_halves]
-  rw [← ENNReal.div_le_iff_le_mul (Or.inl two_ne_zero) (Or.inl ENNReal.ofNat_ne_top)]
-  exact (ENNReal.add_le_add_iff_right (ENNReal.div_ne_top hX two_ne_zero)).1 h'
-
 /-- **The Calderón–Zygmund inequality for the cut-off map.** If `C` is a Calderón–Zygmund
 constant and `C δ = 1 / 2`, then the term `δ ‖D(χ u)‖_{Lᵖ}` coming from the cutoff estimate is
 absorbed into the left-hand side, which is finite since `χ u` is smooth with compact support. -/
@@ -195,7 +188,7 @@ private theorem eLpNorm_fderiv_smul_le {χ : ℂ → ℝ} {u g : ℂ → F} {U :
     ((hv.continuous_fderiv (by simp)).memLp_of_hasCompactSupport (hvc.fderiv ℝ)).eLpNorm_ne_top
   set G := eLpNorm g p (volume.restrict U)
   set NY := ((δ * L + M + L : ℝ≥0) : ℝ≥0∞) * eLpNorm u p (volume.restrict U)
-  refine le_mul_two_of_le_add_div_two hX ?_
+  refine ENNReal.le_mul_two_of_le_add_div_two hX ?_
   calc X ≤ C * eLpNorm (fun z ↦ conjWirtingerDeriv v z 1) p volume := hC v hv hvc
     _ ≤ C * (G + δ * X + NY) := by
         gcongr
