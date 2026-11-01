@@ -69,6 +69,7 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   isomorphism on left and right vector factors.
 * `CliffordAlgebra.equivExterior_prod_map_ι_of_pairwise_isOrtho`: that isomorphism sends a product
   of pairwise orthogonal vectors to their exterior product.
+* `CliffordAlgebra.equivExterior_map`: that isomorphism is natural under quadratic isometries.
 
 ## References
 
@@ -316,6 +317,28 @@ theorem equivExterior_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairw
       contractLeft_prod_map_ι_eq_zero, sub_zero, List.map_cons, List.prod_cons]
     intro m hm
     simp [hl.1 m hm]
+
+variable {Q}
+
+/-- **`CliffordAlgebra.equivExterior` is natural under quadratic isometries**: it intertwines the
+algebra map `CliffordAlgebra.map f` with the exterior-algebra map `ExteriorAlgebra.map f`. The
+correction terms of `CliffordAlgebra.equivExterior_ι_mul` are contractions against the polar form,
+which an isometry preserves.
+
+Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involute`. -/
+theorem equivExterior_map {M' : Type w} [AddCommGroup M'] [Module R M']
+    {Q' : QuadraticForm R M'} (f : Q →qᵢ Q') (x : CliffordAlgebra Q) :
+    equivExterior Q' (map f x) = ExteriorAlgebra.map f.toLinearMap (equivExterior Q x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp [equivExterior]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    have hB : QuadraticMap.associated (-Q') (f m) ∘ₗ f.toLinearMap =
+        QuadraticMap.associated (-Q) m := by
+      ext m'
+      simp [QuadraticMap.associated_apply, ← map_add, f.map_app]
+    rw [map_mul, map_apply_ι, equivExterior_ι_mul, equivExterior_ι_mul, hx, map_sub, map_mul,
+      ExteriorAlgebra.map_apply_ι, f.coe_toLinearMap, ExteriorAlgebra.map, contractLeft_map, hB]
 
 end equivExterior
 
