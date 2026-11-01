@@ -22,6 +22,11 @@ When the index `m × n` labels a basis of the tensor product of two finite quant
 the additivity of the logarithm of a product state, which underlies the subadditivity of the von
 Neumann entropy (`TauCeti/Analysis/Matrix/Entropy.lean`).
 
+## Main definitions
+
+* `Matrix.kroneckerOneStarAlgHom`, `Matrix.oneKroneckerStarAlgHom`: the unital ⋆-algebra
+  homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B`.
+
 ## Main results
 
 * `Matrix.cfc_kronecker_one`, `Matrix.cfc_one_kronecker`: the functional calculus commutes with
@@ -36,6 +41,57 @@ open scoped Kronecker ComplexOrder
 
 namespace Matrix
 
+section StarAlgHom
+
+variable (R : Type*) {m : Type*} (n : Type*) [CommSemiring R] [StarRing R] [Fintype m]
+  [DecidableEq m] [Fintype n] [DecidableEq n]
+
+/-- Tensoring by the identity on the right, `A ↦ A ⊗ₖ 1`, as a unital ⋆-algebra homomorphism. -/
+@[expose] def kroneckerOneStarAlgHom : Matrix m m R →⋆ₐ[R] Matrix (m × n) (m × n) R where
+  toFun X := X ⊗ₖ (1 : Matrix n n R)
+  map_one' := one_kronecker_one
+  map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
+  map_zero' := zero_kronecker _
+  map_add' X Y := add_kronecker X Y _
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, smul_kronecker]
+  map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
+
+/-- Tensoring by the identity on the left, `B ↦ 1 ⊗ₖ B`, as a unital ⋆-algebra homomorphism. -/
+@[expose] def oneKroneckerStarAlgHom : Matrix n n R →⋆ₐ[R] Matrix (m × n) (m × n) R where
+  toFun X := (1 : Matrix m m R) ⊗ₖ X
+  map_one' := one_kronecker_one
+  map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
+  map_zero' := kronecker_zero _
+  map_add' X Y := kronecker_add _ X Y
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, kronecker_smul]
+  map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
+
+variable {R n}
+
+@[simp]
+theorem kroneckerOneStarAlgHom_apply (A : Matrix m m R) :
+    kroneckerOneStarAlgHom R n A = A ⊗ₖ (1 : Matrix n n R) :=
+  rfl
+
+@[simp]
+theorem oneKroneckerStarAlgHom_apply (B : Matrix n n R) :
+    oneKroneckerStarAlgHom R (m := m) n B = (1 : Matrix m m R) ⊗ₖ B :=
+  rfl
+
+variable [TopologicalSpace R] [ContinuousMul R]
+
+@[continuity, fun_prop]
+theorem continuous_kroneckerOneStarAlgHom :
+    Continuous (kroneckerOneStarAlgHom R (m := m) n) :=
+  continuous_id.matrix_kronecker continuous_const
+
+@[continuity, fun_prop]
+theorem continuous_oneKroneckerStarAlgHom :
+    Continuous (oneKroneckerStarAlgHom R (m := m) n) :=
+  continuous_const.matrix_kronecker continuous_id
+
+end StarAlgHom
+
 variable {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
 
 /-- The functional calculus commutes with tensoring by the identity on the right. -/
@@ -43,17 +99,9 @@ variable {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [DecidableEq m] [Fintype n
 theorem cfc_kronecker_one (f : ℝ → ℝ) (A : Matrix m m 𝕜) :
     cfc f (A ⊗ₖ (1 : Matrix n n 𝕜)) = cfc f A ⊗ₖ (1 : Matrix n n 𝕜) := by
   by_cases hA : IsSelfAdjoint A
-  · let φ : Matrix m m 𝕜 →⋆ₐ[𝕜] Matrix (m × n) (m × n) 𝕜 :=
-      { toFun X := X ⊗ₖ (1 : Matrix n n 𝕜)
-        map_one' := one_kronecker_one
-        map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
-        map_zero' := zero_kronecker _
-        map_add' X Y := add_kronecker X Y _
-        commutes' r := by simp [Algebra.algebraMap_eq_smul_one, smul_kronecker]
-        map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker] }
-    have hφ : Continuous φ := continuous_id.matrix_kronecker continuous_const
-    exact (StarAlgHom.map_cfc φ f A (A.finite_real_spectrum.continuousOn _) hφ hA
-      (hA.map φ)).symm
+  · exact (StarAlgHom.map_cfc (kroneckerOneStarAlgHom 𝕜 n) f A
+      (A.finite_real_spectrum.continuousOn _) continuous_kroneckerOneStarAlgHom hA
+      (hA.map _)).symm
   -- Off the self-adjoint matrices both sides are zero; for empty `n` there is only one matrix.
   rcases isEmpty_or_nonempty n with hn | ⟨⟨k⟩⟩
   · exact Subsingleton.elim _ _
@@ -67,17 +115,9 @@ theorem cfc_kronecker_one (f : ℝ → ℝ) (A : Matrix m m 𝕜) :
 theorem cfc_one_kronecker (f : ℝ → ℝ) (B : Matrix n n 𝕜) :
     cfc f ((1 : Matrix m m 𝕜) ⊗ₖ B) = (1 : Matrix m m 𝕜) ⊗ₖ cfc f B := by
   by_cases hB : IsSelfAdjoint B
-  · let φ : Matrix n n 𝕜 →⋆ₐ[𝕜] Matrix (m × n) (m × n) 𝕜 :=
-      { toFun X := (1 : Matrix m m 𝕜) ⊗ₖ X
-        map_one' := one_kronecker_one
-        map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
-        map_zero' := kronecker_zero _
-        map_add' X Y := kronecker_add _ X Y
-        commutes' r := by simp [Algebra.algebraMap_eq_smul_one, kronecker_smul]
-        map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker] }
-    have hφ : Continuous φ := continuous_const.matrix_kronecker continuous_id
-    exact (StarAlgHom.map_cfc φ f B (B.finite_real_spectrum.continuousOn _) hφ hB
-      (hB.map φ)).symm
+  · exact (StarAlgHom.map_cfc (oneKroneckerStarAlgHom 𝕜 (m := m) n) f B
+      (B.finite_real_spectrum.continuousOn _) continuous_oneKroneckerStarAlgHom hB
+      (hB.map _)).symm
   -- Off the self-adjoint matrices both sides are zero; for empty `m` there is only one matrix.
   rcases isEmpty_or_nonempty m with hm | ⟨⟨k⟩⟩
   · exact Subsingleton.elim _ _
