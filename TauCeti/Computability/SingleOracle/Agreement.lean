@@ -143,6 +143,13 @@ run counts as use `0`. -/
 def agreementRestraint (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (g : ℕ → ℕ) : ℕ :=
   (Finset.range (agreementLength σ k c g + 1)).sup (stageUse σ k c)
 
+/-- The agreement restraint is the finite maximum of the uses, including the run at the first
+disagreement. -/
+theorem agreementRestraint_def (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (g : ℕ → ℕ) :
+    agreementRestraint σ k c g =
+      (Finset.range (agreementLength σ k c g + 1)).sup (stageUse σ k c) :=
+  (rfl)
+
 /-- The agreement restraint is at most `b` exactly when every stage use up to and including the
 length of agreement is. -/
 theorem agreementRestraint_le_iff {b : ℕ} :
