@@ -484,6 +484,16 @@ noncomputable def zigzagLoopAInfinityAlgebra
     (AInfinity.suspensionTaylor _ _) (AInfinity.isSuspension_suspensionTaylor _ _)
     (fun r _ e x hx ↦ stasheffSum_loopOps c hc r e x hx)
 
+omit [Finite V] in
+/-- A single coefficient on a closed walk is supported on closed walks, so it defines a loop
+deformation. -/
+theorem fst_eq_snd_of_mem_support_single {w : Fin n → G.Dart}
+    (hw : ∀ i, (w i).fst = (w (i + 1)).snd) (r : k) :
+    ∀ w' ∈ (Finsupp.single w r).support, ∀ i, (w' i).fst = (w' (i + 1)).snd := by
+  intro w' hw'
+  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw')]
+  exact hw
+
 variable (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
 
 private theorem zigzagLoopAInfinityAlgebra_m :
