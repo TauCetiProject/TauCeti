@@ -147,6 +147,18 @@ theorem uniformContinuous_coeff (n : ℕ) :
       rw [inv_mul_eq_div, le_div_iff₀ (pow_pos hR₀.out n)]
       exact norm_coeff_mul_pow_le f n
 
+/-- Restricted series keep their Gauss norm as bounded series. -/
+@[simp]
+theorem norm_inclusion_isRestrictedSubring (f : IsRestricted.subring (R := R) R₀) :
+    ‖Subring.inclusion IsRestricted.subring_le_hasGaussNormSubring f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm, TauCeti.PowerSeries.norm_eq_gaussNorm, Subring.coe_inclusion]
+
+/-- The inclusion of restricted series into bounded series is an isometry. -/
+theorem isometry_inclusion_isRestrictedSubring :
+    Isometry (Subring.inclusion
+      (IsRestricted.subring_le_hasGaussNormSubring (R := R) (R₀ := R₀))) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_inclusion_isRestrictedSubring
+
 variable (R₀)
 
 /-- The Gauss norm on bounded series is ultrametric. -/
@@ -159,12 +171,8 @@ instance : IsUltrametricDist (HasGaussNorm.subring R R₀) :=
 /-- The Gauss norm on bounded series preserves the norm of `1`. -/
 instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where
   norm_one := by
-    rw [norm_eq_gaussNorm, OneMemClass.coe_one,
-      TauCeti.PowerSeries.gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_]
-    · simp
-    · rcases eq_or_ne m 0 with rfl | hm
-      · rfl
-      · simp [coeff_one, hm]
+    rw [← map_one (Subring.inclusion (IsRestricted.subring_le_hasGaussNormSubring (R₀ := R₀))),
+      norm_inclusion_isRestrictedSubring, norm_one]
 
 /-- The Gauss norm on bounded series is complete over a complete coefficient ring. -/
 instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
@@ -195,20 +203,6 @@ instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
   refine ((norm_le_iff (half_pos hε).le).mpr fun n ↦ ?_).trans_lt (half_lt_self hε)
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_mk]
   exact hN k hk n
-
-variable {R₀}
-
-/-- Restricted series keep their Gauss norm as bounded series. -/
-@[simp]
-theorem norm_inclusion_isRestrictedSubring (f : IsRestricted.subring (R := R) R₀) :
-    ‖Subring.inclusion IsRestricted.subring_le_hasGaussNormSubring f‖ = ‖f‖ := by
-  rw [norm_eq_gaussNorm, TauCeti.PowerSeries.norm_eq_gaussNorm, Subring.coe_inclusion]
-
-/-- The inclusion of restricted series into bounded series is an isometry. -/
-theorem isometry_inclusion_isRestrictedSubring :
-    Isometry (Subring.inclusion
-      (IsRestricted.subring_le_hasGaussNormSubring (R := R) (R₀ := R₀))) :=
-  AddMonoidHomClass.isometry_of_norm _ norm_inclusion_isRestrictedSubring
 
 end NormedRing
 
