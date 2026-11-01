@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A11D7E6
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A1TwentyFour
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A1TwentyFourth
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A2Twelfth
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.D4Six
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.D4Six.Glue
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Table
 import TauCeti.FieldTheory.Finite.Four
 
