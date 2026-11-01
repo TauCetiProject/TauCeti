@@ -13,8 +13,9 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Quadratic
 Let `L/K` be an unramified quadratic extension of nonarchimedean local fields, and let `(1, ω)` be
 a basis of `𝒪[L]` over `𝒪[K]`, with `T = Tr(ω)` and `N = N(ω)`. The norm of `x + y ω` is the
 binary form `x² + T x y + N y²`. Modulo `𝓂[K]` this is the norm form of the residue extension
-`𝓀[L]/𝓀[K]` in the basis `(1, ω̄)`, which is anisotropic. So the value `x² + T x y + N y²` is a
-unit exactly when the pair `(x, y)` is primitive, that is when `x` or `y` is a unit.
+`𝓀[L]/𝓀[K]` in the basis given by `1` and the residue of `ω`, which is anisotropic. So the value
+`x² + T x y + N y²` is a unit exactly when the pair `(x, y)` is primitive, that is when `x` or `y`
+is a unit.
 
 This is the unramified counterpart of
 `TauCeti.isUnit_norm_iff_eisensteinQuadraticBasis_repr_zero`, where only the first coordinate
