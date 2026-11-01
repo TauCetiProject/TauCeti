@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.AlgebraicGeometry.PullbackSpecMap
 public import TauCeti.RingTheory.Etale.LocallySplit
 
 /-!
@@ -53,45 +54,21 @@ theorem exists_split_etaleLocally {X S : Scheme.{u}} (f : X ⟶ S) [IsFinite f] 
     rw [hU.range_fromSpec]
     exact hsU
   let f₀ := pullback.snd f j
-  have : (TauCeti.FiniteEtaleScheme.spec.{u} R).EssSurj := by
-    rw [← TauCeti.FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor]
-    infer_instance
-  obtain ⟨B, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
-    (TauCeti.FiniteEtaleScheme.spec R) (TauCeti.FiniteEtaleScheme.ofHom f₀)
-  let eSpec : (algSpec R).obj (.op B.unop.obj) ≅
-      Over.mk (Spec.algebraMap R B.unop.obj) :=
-    Over.isoMk (Iso.refl _) (by
-      -- The object wrapper of `algSpec` hides its structure map.
-      erw [Category.id_comp, algSpec_obj_hom]
-      rfl)
-  have e' := (TauCeti.finiteEtaleSchemeProperty (Spec R)).ι.mapIso e
-  rw [ObjectProperty.ι_obj, ObjectProperty.ι_obj, TauCeti.FiniteEtaleScheme.spec_obj_obj,
-    TauCeti.FiniteEtaleScheme.ofHom_obj] at e'
-  let e₀ : Over.mk (Spec.algebraMap R B.unop.obj) ≅ Over.mk f₀ := eSpec.symm ≪≫ e'
+  obtain ⟨B, ⟨e₀⟩⟩ := f₀.exists_finiteEtale_algebra
   obtain ⟨T, _, _, _, q, hq, hT⟩ :=
-    TauCeti.Algebra.Etale.exists_isFiniteSplit_etaleNeighborhood R B.unop.obj p
+    TauCeti.Algebra.Etale.exists_isFiniteSplit_etaleNeighborhood R B.obj p
   obtain ⟨n, ⟨φ⟩⟩ := hT.nonempty_algEquiv_fun
   let t := Spec.algebraMap R T
   let g := t ≫ j
   have : Etale t :=
     (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
   have : Etale g := inferInstanceAs (Etale (t ≫ j))
-  refine ⟨.of T, g, inferInstance, q, ?_, n, ⟨?_⟩⟩
+  refine ⟨.of T, g, inferInstance, q, ?_, n, ?_⟩
   · -- On points, the spectrum map is comap and composition is function composition.
     exact (congrArg j hq).trans hp
-  · let e₁ : Over.mk (pullback.snd (Spec.algebraMap R B.unop.obj) t) ≅
-        Over.mk (Spec.algebraMap T (T ⊗[R] B.unop.obj)) :=
-      Over.isoMk (pullbackSymmetry _ _ ≪≫ pullbackSpecIso R T B.unop.obj) (by
-        simp [t, Spec.algebraMap, pullbackSpecIso_hom_fst'])
-    let e₂ : Over.mk (Spec.algebraMap T (T ⊗[R] B.unop.obj)) ≅
-        Over.mk (Spec.algebraMap T (Fin n → T)) :=
-      Over.isoMk (Scheme.Spec.mapIso φ.toRingEquiv.toCommRingCatIso.symm.op) (by
-        -- Contravariance identifies this spectrum map with `φ.symm` on rings.
-        erw [← Spec.map_comp]
-        apply congrArg Spec.map
-        ext r
-        exact φ.symm.commutes r)
-    exact ((Over.pullbackComp t j).app (Over.mk f)) ≪≫
-      ((Over.pullback t).mapIso e₀).symm ≪≫ e₁ ≪≫ e₂
+  · obtain ⟨e₁⟩ :=
+      TauCeti.AlgebraicGeometry.nonempty_pullbackSpecIso_of_algEquiv R B.obj T (Fin n → T) φ
+    exact ⟨((Over.pullbackComp t j).app (Over.mk f)) ≪≫
+      ((Over.pullback t).mapIso e₀).symm ≪≫ e₁⟩
 
 end AlgebraicGeometry.Scheme.Hom
