@@ -47,10 +47,9 @@ ambient covariant derivative.
   scalar homogeneity; each has an unrestricted counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
-* `CovariantDerivative.alongCurveWithin_const_const`: a constant vector along a constant curve has
-  zero derivative, with `CovariantDerivative.alongCurve_const_const` its unrestricted case, and
-  `CovariantDerivative.alongCurve_const_add_smul`: the affine field `v + q • w` along a constant
-  curve has derivative `w`.
+* `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
+  ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
+  case.
 * `CovariantDerivative.alongCurveWithin_inter`, `CovariantDerivative.alongCurveWithin_of_mem_nhds`,
   `CovariantDerivative.alongCurveWithin_subset`, `CovariantDerivative.alongCurveWithin_congr`, and
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
@@ -267,35 +266,42 @@ theorem alongCurve_zero (t : 𝕜) :
   rw [← alongCurveWithin_univ]
   exact alongCurveWithin_zero cov γ Set.univ t
 
-/-- A constant tangent vector along a constant curve has zero moving-chart candidate within every
-parameter set. -/
-@[simp]
-theorem alongCurveWithin_const_const (x : M) (v : TangentSpace I x) (s : Set 𝕜) (t : 𝕜) :
-    alongCurveWithin cov (fun _ : 𝕜 ↦ x) (fun _ : 𝕜 ↦ v) s t = 0 := by
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_const]
-  simp only [Function.comp_def, derivWithin_fun_const, Pi.zero_apply, map_zero, add_zero]
+/-- Along a constant curve at `x`, the moving-chart candidate within a parameter set is the
+ordinary derivative within that set of the field, read in the model space `E = T_x M`, wherever
+the set has unique derivatives.  No differentiability of the field is needed. -/
+theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜}
+    (hs : UniqueDiffWithinAt 𝕜 s t) :
+    alongCurveWithin cov (fun _ : 𝕜 ↦ x) W s t = derivWithin W s t := by
+  have hx := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x
+  let L : E ≃L[𝕜] E := (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt 𝕜 x hx
+  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W := by
+    funext r
+    refine (congrFun (sectionCoord_const (F := E) (V := TangentSpace I) x x W) r).trans ?_
+    exact (congrFun (Trivialization.coe_continuousLinearEquivAt_eq (R := 𝕜) _ hx) (W r)).symm
+  have hderiv : derivWithin (L ∘ W) s t = L (derivWithin W s t) := by
+    simp only [derivWithin, L.comp_fderivWithin hs]
+    rfl
+  have hchart : derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t = 0 := by
+    rw [Function.comp_def, derivWithin_fun_const, Pi.zero_apply]
+  -- Unfold the candidate by `change`: `W` is `E`-valued, so rewriting with the defining lemmas
+  -- would have to see through the identification `TangentSpace I x = E`.
+  change (trivializationAt E (TangentSpace I) x).symmL 𝕜 x
+      (derivWithin (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x) s t +
+        christoffelMap (Module.finBasis 𝕜 E)
+          (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet)) x
+            (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x t)
+            (derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t)) = _
+  rw [hcoord, hderiv, hchart, map_zero, add_zero,
+    ← Trivialization.symm_continuousLinearEquivAt_eq _ hx]
+  exact L.symm_apply_apply _
 
-/-- A constant tangent vector along a constant curve has zero unrestricted moving-chart
-candidate. -/
-@[simp]
-theorem alongCurve_const_const (x : M) (v : TangentSpace I x) (t : 𝕜) :
-    alongCurve cov (fun _ : 𝕜 ↦ x) (fun _ : 𝕜 ↦ v) t = 0 := by
-  rw [← alongCurveWithin_univ, alongCurveWithin_const_const]
-
-/-- Along a constant curve, the affine field `q ↦ v + q • w` has unrestricted moving-chart
-candidate `w` at every parameter. -/
-@[simp]
-theorem alongCurve_const_add_smul (x : M) (v w : TangentSpace I x) (t : 𝕜) :
-    alongCurve cov (fun _ : 𝕜 ↦ x) (fun q ↦ v + q • w) t = w := by
-  have hw : DifferentiableAt 𝕜 (sectionCoord (F := E) (fun _ : 𝕜 ↦ x) (fun _ ↦ w) x) t := by
-    rw [sectionCoord_const]
-    exact differentiableAt_const _
-  rw [alongCurve_add cov _ (fun _ ↦ v) (fun q : 𝕜 ↦ q • w)
-      (by rw [sectionCoord_const]; exact differentiableAt_const _)
-      (by rw [sectionCoord_smul _ (fun _ ↦ w) (fun q ↦ q)]; exact differentiableAt_id.smul hw),
-    alongCurve_smul cov _ (fun _ ↦ w) (fun q ↦ q) differentiableAt_id hw,
-    alongCurve_const_const, alongCurve_const_const, deriv_id'', one_smul, smul_zero, add_zero,
-    zero_add]
+/-- Along a constant curve, the unrestricted moving-chart candidate is the ordinary derivative of
+the field. -/
+theorem alongCurve_const (x : M) (W : 𝕜 → E) (t : 𝕜) :
+    alongCurve cov (fun _ : 𝕜 ↦ x) W t = deriv W t :=
+  (alongCurveWithin_univ cov _ W t).symm.trans
+    ((alongCurveWithin_const cov x W uniqueDiffWithinAt_univ).trans
+      (congrFun (derivWithin_univ (f := W)) t))
 
 /-! ### Locality and reparametrization -/
 

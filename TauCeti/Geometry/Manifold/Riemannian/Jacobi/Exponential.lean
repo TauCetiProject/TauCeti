@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Variation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
@@ -87,10 +86,10 @@ theorem isJacobiFieldOn_mfderiv_riemannianExp_smul (p : M) (v w : TangentSpace I
   let F : ℝ → ℝ → M := fun q t ↦ riemannianExp I M p (t • (v + q • w))
   have hF : ∀ q t : ℝ, F q t = riemannianExp I M p (t • (v + q • w)) := fun _ _ ↦ rfl
   have h := isJacobiFieldOn_variationField (F := F) isOpen_geodesicInterval
-    (fun t ht ↦ (contMDiffAt_radialVariation hF (u := 0)
+    (fun t ht ↦ (contMDiffAt_riemannianExp_smul_add_smul hF (u := 0)
       (by simpa using mem_geodesicInterval_iff_smul_mem_expDomain.mp ht)).of_le (by norm_num))
     (fun t ht ↦ (eventually_mem_geodesicInterval_add_smul ht).mono fun q hq ↦
-      acceleration_radialVariation_eq_zero hF hq)
+      acceleration_riemannianExp_smul_add_smul_eq_zero hF hq)
   have hF0 : F 0 = fun t ↦ riemannianExp I M p (t • v) := funext fun t ↦ by simp [F]
   rw [hF0] at h
   exact h.congr fun t ht ↦ (variationField_radialVariation hF ht).symm
@@ -117,15 +116,19 @@ theorem alongCurveWithin_mfderiv_riemannianExp_smul_zero (p : M) (v w : TangentS
   -- curve `q ↦ exp_p 0` is constant with initial radial velocities `v + q • w`.
   have hcomm := alongCurve_curveVelocity_comm cov
     ((isTorsionFree_iff_torsion_eq_zero _).2 (torsion_leviCivitaConnection_eq_zero I))
-    (f := F) (u := 0) (v := 0) ((contMDiffAt_radialVariation hF (u := 0) (t := 0)
+    (f := F) (u := 0) (v := 0) ((contMDiffAt_riemannianExp_smul_add_smul hF (u := 0) (t := 0)
       (by simp)).of_le (by simp))
   have hbase : (fun q ↦ F q 0) = fun _ ↦ p := funext fun q ↦ by simp [F]
   have hvel (q : ℝ) : curveVelocity I (F q) 0 = v + q • w := by
     have hFq : F q = fun t ↦ riemannianExp I M p (t • (v + q • w)) := funext (hF q)
     rw [hFq, curveVelocity_riemannianExp_smul (by simp), zero_smul,
       mfderiv_riemannianExp_apply_zero]
+  -- Along the constant curve the covariant derivative is the ordinary derivative in `E`.
+  have hd (a b : E) : HasDerivAt (fun q : ℝ ↦ a + q • b) b 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const b).const_add a
   rw [variationField_def, hcomm, hbase, alongCurve_congr cov _ _ (W := fun q ↦ v + q • w)
-    (Filter.Eventually.of_forall hvel), alongCurve_const_add_smul]
+    (Filter.Eventually.of_forall hvel)]
+  exact (alongCurve_const cov p _ 0).trans (hd v w).deriv
 
 /-- **Jacobi fields vanishing at the origin are differentials of the exponential map.** A Jacobi
 field `J` along the radial geodesic `t ↦ exp_p (t • v)`, on a preconnected parameter set inside the

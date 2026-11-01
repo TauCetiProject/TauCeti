@@ -51,6 +51,10 @@ defined for all time.
 * `TauCeti.Manifold.curveVelocity_riemannianExp_add_smul` and
   `TauCeti.Manifold.curveVelocity_riemannianExp_smul`: velocities of affine and radial curves
   through the exponential map.
+* `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_add_smul`,
+  `TauCeti.Manifold.eventually_mem_geodesicInterval_add_smul` and
+  `TauCeti.Manifold.acceleration_riemannianExp_smul_add_smul_eq_zero`: the radial variation
+  `exp_p (t • (v + u • w))` is smooth on the natural domain and consists of geodesics.
 * `TauCeti.Manifold.mfderiv_riemannianExp_zero`: the differential of the exponential map at `0`
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
@@ -68,7 +72,7 @@ defined for all time.
 
 public section
 
-open Bundle Manifold Set
+open Bundle CovariantDerivative Manifold Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -263,6 +267,68 @@ theorem continuousAt_riemannianExp [T2Space M] {p : M}
     {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
     ContinuousAt (riemannianExp I M p) v :=
   (contMDiffAt_riemannianExp (I := I) (M := M) hv).continuousAt
+
+/-! ### The radial variation
+
+For `v w ∈ T_p M`, the radial variation
+
+`F (u, t) = exp_p (t • (v + u • w))`
+
+of the geodesic `t ↦ exp_p (t • v)` consists of the radial geodesics with initial velocities
+`v + u • w`.  It is smooth wherever the exponential map is, nearby radial curves are still defined
+at each time of the central one, and each radial curve has vanishing acceleration.  These are the
+inputs for differentiating along it, as in the Gauss lemma and in the identification of the
+differential of the exponential map as a Jacobi field.
+
+Each statement takes the variation as a function `F` together with its defining equation, rather
+than as the explicit two-parameter formula.  The fibre in which a velocity vector lives is indexed
+by the point of the curve, so rewriting a radial curve into the maximal geodesic it equals has to
+reach the index as well; that is possible for `F u` and not for the formula, whose index appears
+already evaluated. -/
+
+section RadialVariation
+
+variable [T2Space M] {p : M} {v w : TangentSpace I p} {F : ℝ → ℝ → M}
+
+/-- The radial variation `(u, t) ↦ exp_p (t • (v + u • w))` is smooth at every parameter pair
+whose radial vector lies in the natural domain of the exponential map. -/
+theorem contMDiffAt_riemannianExp_smul_add_smul
+    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
+    (hut : t • (v + u • w) ∈ expDomain I M p) :
+    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t) := by
+  have hFfun : (fun z : ℝ × ℝ ↦ F z.1 z.2) =
+      fun z : ℝ × ℝ ↦ riemannianExp I M p (z.2 • (v + z.1 • w)) :=
+    funext fun z ↦ hF z.1 z.2
+  have hinput : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, TangentSpace I p) ∞
+      (fun z : ℝ × ℝ ↦ z.2 • (v + z.1 • w)) (u, t) :=
+    (contMDiff_iff_contDiff.mpr
+      (by fun_prop : ContDiff ℝ ∞ (fun z : ℝ × ℝ ↦ z.2 • (v + z.1 • w)))).contMDiffAt
+  rw [hFfun]
+  exact (contMDiffAt_riemannianExp (I := I) (M := M) hut).comp (u, t) hinput
+
+/-- Each time of the central radial geodesic `t ↦ exp_p (t • v)` remains in the maximal interval
+of the radial curves `t ↦ exp_p (t • (v + u • w))` for all transverse parameters `u` near `0`. -/
+theorem eventually_mem_geodesicInterval_add_smul {t : ℝ} (ht : t ∈ geodesicInterval I M p v) :
+    ∀ᶠ u in 𝓝 (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) := by
+  have hopen := (isOpen_expDomain (I := I) (M := M) p).mem_nhds
+    (mem_geodesicInterval_iff_smul_mem_expDomain.mp ht)
+  have hcont : ContinuousAt (fun u : ℝ ↦ t • (v + u • w)) 0 := by fun_prop
+  have hpre : (fun u : ℝ ↦ t • (v + u • w)) ⁻¹' expDomain I M p ∈ 𝓝 0 :=
+    hcont.preimage_mem_nhds (by simpa using hopen)
+  filter_upwards [hpre] with u hu
+  exact mem_geodesicInterval_iff_smul_mem_expDomain.mpr hu
+
+/-- The covariant acceleration of the radial curve `t ↦ exp_p (t • (v + u • w))` vanishes on its
+maximal interval. -/
+theorem acceleration_riemannianExp_smul_add_smul_eq_zero
+    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
+    (ht : t ∈ geodesicInterval I M p (v + u • w)) :
+    acceleration (leviCivitaConnection I M) (F u) t = 0 := by
+  rw [show F u = maximalGeodesic I M p (v + u • w) from
+    funext fun t ↦ (hF u t).trans (riemannianExp_smul p (v + u • w) t)]
+  exact acceleration_maximalGeodesic_eq_zero ht
+
+end RadialVariation
 
 /-! ### The derivative at the origin -/
 
