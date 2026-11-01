@@ -52,8 +52,8 @@ every weight vanishes because every matrix of nonzero weight has positive determ
 
 For positive trace, translating downwards decreases `n` and ends at a fibre with `0 < n < t`. There
 the sums `T₂`, `T₃` and `T₄` of eq. (15) contribute nothing and the only matrices occurring in
-`T₁` are `(1 b; 0 n)` with `0 ≤ b < n`, so the fibre is empty unless `t = n + 1`. The weights of
-these matrices are `6, 12, …, 12, 6` (or `2` when `n = 1`) by
+`T₁` are `(1 b; 0 n)` with `0 ≤ b < n`, so every matrix of the fibre has weight zero unless
+`t = n + 1`. The weights of these matrices are `6, 12, …, 12, 6` (or `2` when `n = 1`) by
 `TauCeti.PopaZagier.weight_upperTriangular`, with sum `12 (n - 1)` (or `2`), twelve times the
 coefficient sum `TauCeti.PopaZagier.sum_upperTriangularCoeff`. The
 fibre `(n + 1, n)` has discriminant `(n - 1)²`, and translating it upwards reaches the fibre of
