@@ -298,6 +298,17 @@ def stage (n : ℕ) : Subalgebra R (InfiniteTypeAHeckeAlgebra R q) :=
 theorem T_mem_stage {i n : ℕ} (h : i + 1 < n) : T q i ∈ stage R q n :=
   Algebra.subset_adjoin ⟨⟨i, by omega⟩, rfl⟩
 
+/-- A generator crossing two of the first `n` strands is a unit of the stage `n`: its inverse
+`T i - (q - q⁻¹)` lies in the same stage. -/
+theorem isUnit_mk_T {i n : ℕ} (h : i + 1 < n) :
+    IsUnit (⟨T q i, T_mem_stage h⟩ : stage R q n) := by
+  have hinv : (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) ∈ stage R q n := by
+    rw [val_inv_unitT]
+    exact sub_mem (T_mem_stage h) (algebraMap_mem _ _)
+  refine isUnit_iff_exists.2 ⟨⟨_, hinv⟩, Subtype.ext ?_, Subtype.ext ?_⟩
+  · simpa only [MulMemClass.mk_mul_mk, OneMemClass.coe_one, val_unitT] using (unitT q i).mul_inv
+  · simpa only [MulMemClass.mk_mul_mk, OneMemClass.coe_one, val_unitT] using (unitT q i).inv_mul
+
 /-- The stage `n` is contained in a subalgebra exactly when every generator crossing two of the
 first `n` strands is. -/
 theorem stage_le_iff {n : ℕ} {S : Subalgebra R (InfiniteTypeAHeckeAlgebra R q)} :

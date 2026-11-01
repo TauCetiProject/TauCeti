@@ -40,6 +40,16 @@ says that the classes of the elements `ζ_λ`, for `λ` a partition of `n`, span
 the theorem that these classes form a basis of the cocenter; their linear independence is not
 proved here.
 
+A linear functional `τ` on the infinite type-A Hecke algebra is *block multiplicative* when
+`τ (x * shift a y) = τ x * τ y` for every `x` in the stage of the first `a` strands and every
+`y`. Such a functional is determined on each `ζ_λ` by its values on the cycle words, so two
+tracial, block-multiplicative functionals agreeing on every cycle word `ζₘ` are equal
+(`TauCeti.InfiniteTypeAHeckeAlgebra.towerTrace_eq_of_cycleChain_values`). The
+block-multiplicativity hypothesis is essential: the values on the cycle words alone do not
+determine an arbitrary trace. In particular a tracial, block-multiplicative functional with the
+cycle values `(q * z) ^ (m - 1)` of a Markov trace is that Markov trace
+(`TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.eq_of_map_cycleWord`).
+
 The proof has two steps. First, along the decomposition `Hₙ₊₁ = Hₙ + Hₙ Tₙ₋₁ Hₙ`, every element of
 `Hₙ` is congruent modulo commutators to a combination of cycle-block words of compositions of `n`,
 with blocks in arbitrary order. Second, reordering the blocks does not change the class of a
@@ -66,13 +76,21 @@ strands past the next `b` strands.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.span_cycleBlock_sup_stageCommutatorSpan` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.span_cycleBlock_sup_commutatorSubmodule`: the elements `ζ_λ`
   span the cocenter of `Hₙ`, in the infinite algebra and in the stage itself.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values`: trace functionals on `Hₙ`
-  agreeing on every `ζ_λ` agree on `Hₙ`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.trace_apply_eq_of_cycleBlock_values`: trace functionals on
+  `Hₙ` agreeing on every `ζ_λ` agree on `Hₙ`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.towerTrace_eq_of_cycleChain_values`: tracial,
+  block-multiplicative functionals agreeing on all cycle words are equal.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.eq_of_map_cycleWord`: a tracial,
+  block-multiplicative functional with the cycle values of a Markov trace is that Markov trace.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleBlock`: a Markov trace with
   parameter `z` takes the value `∏ᵢ (q * z) ^ (λᵢ - 1)` on `ζ_λ`.
 
 ## References
 
+* V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*,
+  Ann. of Math. 126 (1987), 335–388, Section 5, for the reduction of traces along
+  `Hₙ₊₁ = Hₙ + Hₙ Tₙ₋₁ Hₙ`.
 * M. Geck and G. Pfeiffer, *Characters of Finite Coxeter Groups and Iwahori-Hecke Algebras*,
   OUP (2000), Sections 8.2 and 8.4, where the classes of the elements `T_w` of minimal length in
   the conjugacy classes of `W` are shown to span (and to form a basis of) the cocenter.
@@ -202,56 +220,6 @@ private theorem blockSwap_mem_stage (a b : ℕ) : blockSwap q a b ∈ stage R q 
     refine mul_mem (stage_mono (by omega) (cosetRep_mem_stage b 0)) ?_
     simpa only [Nat.add_right_comm a 1 b] using shift_mem_stage 1 ih
 
-/-- The generator `T i` is a unit of every stage containing it: its inverse
-`T i - (q - q⁻¹)` lies in the same stage. -/
-private theorem isUnit_mk_T {i n : ℕ} (h : i + 1 < n) :
-    IsUnit (⟨T q i, T_mem_stage h⟩ : stage R q n) := by
-  have hinv : (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) ∈ stage R q n := by
-    rw [val_inv_unitT]
-    exact sub_mem (T_mem_stage h) (algebraMap_mem _ _)
-  refine isUnit_iff_exists.2 ⟨⟨_, hinv⟩, Subtype.ext ?_, Subtype.ext ?_⟩
-  · simpa only [MulMemClass.mk_mul_mk, OneMemClass.coe_one, val_unitT] using (unitT q i).mul_inv
-  · simpa only [MulMemClass.mk_mul_mk, OneMemClass.coe_one, val_unitT] using (unitT q i).inv_mul
-
-/-- A unit of a stage stays a unit of every later stage. -/
-private theorem isUnit_mk_of_le {m n : ℕ} (hmn : m ≤ n) {x : InfiniteTypeAHeckeAlgebra R q}
-    {hx : x ∈ stage R q m} (h : IsUnit (⟨x, hx⟩ : stage R q m)) :
-    IsUnit (⟨x, stage_mono hmn hx⟩ : stage R q n) :=
-  h.map (Subalgebra.inclusion (stage_mono hmn))
-
-/-- The strand shift by `k` carries units of the stage `n` to units of the stage `n + k`. -/
-private theorem isUnit_mk_shift {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
-    {hx : x ∈ stage R q n} (h : IsUnit (⟨x, hx⟩ : stage R q n)) :
-    IsUnit (⟨shift R q k x, shift_mem_stage k hx⟩ : stage R q (n + k)) :=
-  h.map (((shift R q k).comp (stage R q n).val).codRestrict (stage R q (n + k))
-    fun y ↦ shift_mem_stage k y.2)
-
-/-- Units of a stage are closed under multiplication. -/
-private theorem isUnit_mk_mul {n : ℕ} {x y : InfiniteTypeAHeckeAlgebra R q} {hx : x ∈ stage R q n}
-    {hy : y ∈ stage R q n} (h : IsUnit (⟨x, hx⟩ : stage R q n))
-    (h' : IsUnit (⟨y, hy⟩ : stage R q n)) : IsUnit (⟨x * y, mul_mem hx hy⟩ : stage R q n) :=
-  h.mul h'
-
-/-- Being a unit of a stage only depends on the element. -/
-private theorem isUnit_mk_of_eq {n : ℕ} {x y : InfiniteTypeAHeckeAlgebra R q} (hxy : x = y)
-    {hx : x ∈ stage R q n} (h : IsUnit (⟨x, hx⟩ : stage R q n)) :
-    IsUnit (⟨y, hxy ▸ hx⟩ : stage R q n) := by
-  subst hxy
-  exact h
-
-private theorem isUnit_cosetRep (n m : ℕ) :
-    IsUnit (⟨cosetRep q n m, cosetRep_mem_stage n m⟩ : stage R q (n + 1)) := by
-  induction n with
-  | zero =>
-    simp only [cosetRep_of_le (Nat.zero_le m)]
-    exact isUnit_one
-  | succ n ih =>
-    rcases le_or_gt m n with h | h
-    · exact isUnit_mk_of_eq (cosetRep_succ h).symm
-        (isUnit_mk_mul (isUnit_mk_T (i := n) (by omega)) (isUnit_mk_of_le (by omega) ih))
-    · simp only [cosetRep_of_le h]
-      exact isUnit_one
-
 private theorem isUnit_blockSwap (a b : ℕ) :
     IsUnit (⟨blockSwap q a b, blockSwap_mem_stage a b⟩ : stage R q (a + b)) := by
   induction a with
@@ -259,27 +227,15 @@ private theorem isUnit_blockSwap (a b : ℕ) :
     simp only [blockSwap_zero]
     exact isUnit_one
   | succ a ih =>
-    exact isUnit_mk_of_eq (blockSwap_succ a b).symm
-      (isUnit_mk_mul (isUnit_mk_of_le (by omega) (isUnit_cosetRep (q := q) b 0))
-        (isUnit_mk_of_le (by omega) (isUnit_mk_shift 1 ih)))
-
-/-- The two-block identity: moving two strands past `b` strands carries the crossing `T 0` of the
-two strands to the crossing `T b`. -/
-private theorem cosetRep_mul_cosetRep_mul_T_zero (b : ℕ) :
-    cosetRep q b 0 * cosetRep q (b + 1) 1 * T q 0 =
-      T q b * (cosetRep q b 0 * cosetRep q (b + 1) 1) := by
-  induction b with
-  | zero => simp
-  | succ b ih =>
-    have hc : cosetRep q b 0 * T q (b + 1) = T q (b + 1) * cosetRep q b 0 :=
-      (commute_T_of_mem_stage le_rfl (cosetRep_mem_stage b 0)).eq.symm
-    have hD : cosetRep q (b + 1) 0 * cosetRep q (b + 1 + 1) 1 =
-        T q b * T q (b + 1) * (cosetRep q b 0 * cosetRep q (b + 1) 1) := by
-      rw [cosetRep_succ (Nat.zero_le b), cosetRep_succ (by omega : 1 ≤ b + 1), mul_assoc,
-        ← mul_assoc (cosetRep q b 0), hc]
-      simp only [mul_assoc]
-    rw [hD, mul_assoc, ih, ← mul_assoc, ← mul_assoc, T_braid]
-    simp only [mul_assoc]
+    have e : (⟨blockSwap q (a + 1) b, blockSwap_mem_stage (a + 1) b⟩ : stage R q (a + 1 + b)) =
+        Subalgebra.inclusion (stage_mono (by omega)) ⟨_, cosetRep_mem_stage b 0⟩ *
+          Subalgebra.inclusion (stage_mono (by omega))
+            ⟨_, shift_mem_stage 1 (blockSwap_mem_stage a b)⟩ :=
+      Subtype.ext (blockSwap_succ a b)
+    rw [e]
+    exact ((isUnit_mk_cosetRep b 0).map _).mul ((ih.map (((shift R q 1).comp
+      (stage R q (a + b)).val).codRestrict (stage R q (a + b + 1))
+        fun y ↦ shift_mem_stage 1 y.2)).map _)
 
 /-- The block swap carries a generator crossing two of the last `b` strands to the corresponding
 generator crossing two of the first `b` strands. -/
@@ -307,10 +263,16 @@ private theorem blockSwap_mul_T {a b i : ℕ} (hi : i + 1 < a) :
       obtain ⟨a, rfl⟩ : ∃ a', a = a' + 1 := ⟨a - 1, by omega⟩
       have hT : Commute (T q 0) (shift R q 2 (blockSwap q a b)) :=
         commute_shift_of_mem_stage (T_mem_stage (by omega)) _
-      rw [blockSwap_succ, blockSwap_succ, map_mul, shift_shift, shift_cosetRep, Nat.zero_add,
-        ← mul_assoc, mul_assoc _ _ (T q 0), ← hT.eq, ← mul_assoc,
-        cosetRep_mul_cosetRep_mul_T_zero, Nat.zero_add]
-      simp only [mul_assoc]
+      have hP : blockSwap q (a + 1 + 1) b =
+          cosetRep q b 0 * cosetRep q (b + 1) 1 * shift R q 2 (blockSwap q a b) := by
+        simp only [blockSwap_succ, map_mul, shift_shift, shift_cosetRep, Nat.zero_add, mul_assoc]
+      rw [hP, Nat.zero_add]
+      calc cosetRep q b 0 * cosetRep q (b + 1) 1 * shift R q 2 (blockSwap q a b) * T q 0
+          = cosetRep q b 0 * cosetRep q (b + 1) 1 * T q 0 * shift R q 2 (blockSwap q a b) := by
+            rw [mul_assoc, ← hT.eq, ← mul_assoc]
+        _ = T q b * (cosetRep q b 0 * cosetRep q (b + 1) 1 * shift R q 2 (blockSwap q a b)) := by
+            rw [cosetRep_mul_cosetRep_mul_T_zero]
+            simp only [mul_assoc]
     · -- A crossing inside the shifted block, which commutes past `cosetRep q b 0`.
       have hs : shift R q 1 (blockSwap q a b) * T q (i + 1) =
           T q (i + 1 + b) * shift R q 1 (blockSwap q a b) := by
@@ -456,9 +418,12 @@ theorem cycleBlockWord_sub_mem_stageCommutatorSpan {l l' : List ℕ} (h : l.Perm
     rw [cycleBlockWord_cons, cycleBlockWord_cons, ← mul_sub, ← map_sub, List.sum_cons]
     exact mul_shift_mem_stageCommutatorSpan_left (cycleWord_mem_stage m) ih
   | swap m m' l =>
-    rw [cycleBlockWord_cons, cycleBlockWord_cons, cycleBlockWord_cons, cycleBlockWord_cons,
-      map_mul, map_mul, shift_shift, shift_shift, ← mul_assoc, ← mul_assoc, Nat.add_comm m m',
-      ← sub_mul, List.sum_cons, List.sum_cons, ← Nat.add_assoc]
+    have key : cycleBlockWord q (m' :: m :: l) - cycleBlockWord q (m :: m' :: l) =
+        (cycleWord q m' * shift R q m' (cycleWord q m) -
+          cycleWord q m * shift R q m (cycleWord q m')) *
+          shift R q (m' + m) (cycleBlockWord q l) := by
+      simp only [cycleBlockWord_cons, map_mul, shift_shift, sub_mul, mul_assoc, Nat.add_comm m m']
+    rw [key, List.sum_cons, List.sum_cons, ← Nat.add_assoc]
     exact mul_shift_mem_stageCommutatorSpan_right
       (mul_shift_sub_mul_shift_mem_stageCommutatorSpan (cycleWord_mem_stage m')
         (cycleWord_mem_stage m))
@@ -482,15 +447,10 @@ def cycleBlock {n : ℕ} (μ : n.Partition) : InfiniteTypeAHeckeAlgebra R q :=
 theorem cycleBlock_def {n : ℕ} (μ : n.Partition) :
     cycleBlock q μ = cycleBlockWord q (μ.parts.sort (· ≥ ·)) := (rfl)
 
-/-- The sum of the parts of a partition, listed in nonincreasing order, is the partitioned
-number. -/
-private theorem sum_sort_parts {n : ℕ} (μ : n.Partition) : (μ.parts.sort (· ≥ ·)).sum = n := by
-  rw [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum]
-
 /-- The element `ζ_λ` of a partition of `n` lies in the stage of the first `n` strands. -/
 theorem cycleBlock_mem_stage {n : ℕ} (μ : n.Partition) : cycleBlock q μ ∈ stage R q n := by
   have h := cycleBlockWord_mem_stage (q := q) (μ.parts.sort (· ≥ ·))
-  rwa [sum_sort_parts] at h
+  rwa [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum] at h
 
 /-- The cycle-block word of a list of positive block sizes with sum `n` is congruent modulo the
 commutators of the stage `n` to the element `ζ_λ` of the partition `λ` with these parts. -/
@@ -509,12 +469,6 @@ the stage `j ≤ n` with the cycle word on the remaining `n + 1 - j` strands. -/
 private def lastCycleSpan (n : ℕ) : Submodule R (InfiniteTypeAHeckeAlgebra R q) :=
   Submodule.span R {z | ∃ j ≤ n, ∃ x ∈ stage R q j, z = x * shift R q j (cycleWord q (n + 1 - j))}
     ⊔ stageCommutatorSpan R q (n + 1)
-
-/-- The descending product `T (n - 1) * ⋯ * T a` is a rescaled shifted cycle word. -/
-private theorem cosetRep_eq_smul_shift_cycleWord {a n : ℕ} (han : a ≤ n) :
-    cosetRep q n a = (↑q⁻¹ : R) ^ (n - a) • shift R q a (cycleWord q (n + 1 - a)) := by
-  rw [cycleWord_def, show n + 1 - a - 1 = n - a by omega, map_smul, shift_cosetRep,
-    Nat.zero_add, Nat.sub_add_cancel han, smul_smul, ← mul_pow, Units.inv_mul, one_pow, one_smul]
 
 /-- The rotation step of the reduction: for `b` and `e` in the stage `a + 1` and `a < n`, the
 element `b * T a * e * cosetRep q n (a + 1)` is congruent modulo the commutators of the stage
@@ -658,10 +612,9 @@ theorem span_cycleBlock_sup_commutatorSubmodule (n : ℕ) :
   obtain ⟨w, hw, hwz⟩ := hz
   rwa [← Subtype.val_injective hwz]
 
-/-- **Traces are determined by their values on the elements `ζ_λ`.** Two linear maps which are
-traces on the stage of the first `n` strands agree on that stage as soon as they agree on the
-element `ζ_λ` of every partition `λ` of `n`. -/
-theorem trace_eq_of_cycleBlock_values {M : Type*} [AddCommGroup M] [Module R M] {n : ℕ}
+/-- Two linear maps on the infinite algebra which are traces on the stage of the first `n` strands
+agree on that stage as soon as they agree on the element `ζ_λ` of every partition `λ` of `n`. -/
+theorem trace_apply_eq_of_cycleBlock_values {M : Type*} [AddCommGroup M] [Module R M] {n : ℕ}
     {τ τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] M}
     (hτ : ∀ x ∈ stage R q n, ∀ y ∈ stage R q n, τ (x * y) = τ (y * x))
     (hτ' : ∀ x ∈ stage R q n, ∀ y ∈ stage R q n, τ' (x * y) = τ' (y * x))
@@ -677,6 +630,46 @@ theorem trace_eq_of_cycleBlock_values {M : Type*} [AddCommGroup M] [Module R M] 
   rw [span_cycleBlock_sup_stageCommutatorSpan] at hle
   rw [← sub_eq_zero, ← LinearMap.sub_apply]
   exact hle hx
+
+/-- **Traces are determined by their values on the elements `ζ_λ`.** Two trace functionals on the
+stage of the first `n` strands are equal as soon as they agree on the element `ζ_λ` of every
+partition `λ` of `n`. -/
+theorem trace_eq_of_cycleBlock_values {M : Type*} [AddCommGroup M] [Module R M] {n : ℕ}
+    {τ τ' : stage R q n →ₗ[R] M} (hτ : ∀ x y, τ (x * y) = τ (y * x))
+    (hτ' : ∀ x y, τ' (x * y) = τ' (y * x))
+    (h : ∀ μ : n.Partition,
+      τ ⟨cycleBlock q μ, cycleBlock_mem_stage μ⟩ = τ' ⟨cycleBlock q μ, cycleBlock_mem_stage μ⟩) :
+    τ = τ' := by
+  have hle : Submodule.span R (Set.range fun μ : n.Partition ↦
+        (⟨cycleBlock q μ, cycleBlock_mem_stage μ⟩ : stage R q n)) ⊔
+      commutatorSubmodule R (stage R q n) ≤ LinearMap.ker (τ - τ') := by
+    refine sup_le (Submodule.span_le.2 ?_) ((commutatorSubmodule_le_ker_iff _).2 fun x y ↦ ?_)
+    · rintro _ ⟨μ, rfl⟩
+      rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.sub_apply, h μ, sub_self]
+    · rw [LinearMap.sub_apply, LinearMap.sub_apply, hτ, hτ']
+  rw [span_cycleBlock_sup_commutatorSubmodule, top_le_iff, LinearMap.ker_eq_top,
+    sub_eq_zero] at hle
+  exact hle
+
+/-- **Cycle words determine block-multiplicative traces.** Two tracial linear functionals on the
+infinite type-A Hecke algebra, both multiplicative on disjoint blocks of strands, are equal as
+soon as they agree on every cycle word `ζₘ`. -/
+theorem towerTrace_eq_of_cycleChain_values {τ τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+    (hτ : ∀ x y, τ (x * y) = τ (y * x)) (hτ' : ∀ x y, τ' (x * y) = τ' (y * x))
+    (hτm : ∀ {a x}, x ∈ stage R q a → ∀ y, τ (x * shift R q a y) = τ x * τ y)
+    (hτm' : ∀ {a x}, x ∈ stage R q a → ∀ y, τ' (x * shift R q a y) = τ' x * τ' y)
+    (h : ∀ m, τ (cycleWord q m) = τ' (cycleWord q m)) : τ = τ' := by
+  -- Block multiplicativity gives agreement on every cycle-block word.
+  have hl : ∀ l, τ (cycleBlockWord q l) = τ' (cycleBlockWord q l) := by
+    intro l
+    induction l with
+    | nil => simpa only [cycleWord_zero, cycleBlockWord_nil] using h 0
+    | cons m l ih =>
+      rw [cycleBlockWord_cons, hτm (cycleWord_mem_stage m), hτm' (cycleWord_mem_stage m), h, ih]
+  ext x
+  obtain ⟨n, hx⟩ := exists_mem_stage x
+  exact trace_apply_eq_of_cycleBlock_values (fun x _ y _ ↦ hτ x y) (fun x _ y _ ↦ hτ' x y)
+    (fun _ ↦ hl _) hx
 
 end CycleBlock
 
@@ -700,6 +693,15 @@ theorem map_cycleBlock (hτ : IsMarkovTrace z τ) {n : ℕ} (μ : n.Partition) :
     τ (cycleBlock q μ) = (μ.parts.map fun m ↦ ((q : R) * z) ^ (m - 1)).prod := by
   rw [cycleBlock_def, hτ.map_cycleBlockWord, ← Multiset.prod_coe, ← Multiset.map_coe,
     Multiset.sort_eq]
+
+/-- A tracial, block-multiplicative linear functional taking the value `(q * z) ^ (m - 1)` on
+every cycle word `ζₘ` is the Markov trace with parameter `z`. -/
+theorem eq_of_map_cycleWord {τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+    (hτ : IsMarkovTrace z τ) (hτ' : ∀ x y, τ' (x * y) = τ' (y * x))
+    (hτm' : ∀ {a x}, x ∈ stage R q a → ∀ y, τ' (x * shift R q a y) = τ' x * τ' y)
+    (h : ∀ m, τ' (cycleWord q m) = ((q : R) * z) ^ (m - 1)) : τ' = τ :=
+  towerTrace_eq_of_cycleChain_values hτ' hτ.map_mul_comm hτm' hτ.map_mul_shift
+    fun m ↦ by rw [h, hτ.map_cycleWord]
 
 end IsMarkovTrace
 
