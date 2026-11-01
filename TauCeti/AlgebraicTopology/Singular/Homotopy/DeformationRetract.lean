@@ -44,7 +44,6 @@ variable {X : TopCat.{w}} {s c t : Set X} (hsc : s ⊆ c) (hct : c ⊆ t)
 singular homology.** If `s ⊆ c ⊆ t` and `t` deformation retracts onto `c` relative to `c`, the
 inclusion `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel (r : C(t, c))
-    (hr : ∀ x, r (ContinuousMap.inclusion hct x) = x)
     (G : ((ContinuousMap.inclusion hct).comp r).HomotopyRel (ContinuousMap.id t)
       {x | (x : X) ∈ c})
     {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Preadditive A] [CategoryWithHomology A]
@@ -53,15 +52,14 @@ theorem isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel (r : C
       (ofInclusionMap hsc (hsc.trans hct) (ContinuousMap.inclusion hct)
         fun _ hx ↦ by simpa using hx) R n) := by
   -- The retraction fixes every point of `c`, in particular every point of `s`.
-  have hrc (x : t) (hx : (x : X) ∈ c) : (r x : X) = x := by
-    obtain ⟨y, hy⟩ := x
-    exact congrArg Subtype.val (hr ⟨y, hx⟩)
+  have hrc (x : t) (hx : (x : X) ∈ c) : (r x : X) = x :=
+    congrArg Subtype.val (G.fst_eq_snd (x := x) hx)
   have hrs (x : t) (hx : (x : X) ∈ s) : (r x : X) ∈ s := (hrc x (hsc hx)).symm ▸ hx
   refine isIso_singularHomologyMap _ (ofInclusionMap (hsc.trans hct) hsc r hrs) ?_ ?_ R n
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
     have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
       ext x
-      exact congrArg Subtype.val (hr x)
+      exact hrc _ x.2
     simp only [hid]
     exact Homotopy.refl _
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
