@@ -24,8 +24,8 @@ relations, with its own generators. By `TauCeti/Algebra/Lie/Presentation/Serre/I
 (`TauCeti.IsSerreSystem.reflection`). These are Kac's automorphisms (written `rᵢ` with a
 tilde), the Lie-algebra shadows of the group elements `x_{αᵢ}(1) x_{-αᵢ}(-1) x_{αᵢ}(1)`
 representing the simple reflections. When `ad Eᵢ` and `ad Fᵢ` are nilpotent this is the Weyl
-automorphism `TauCeti.weylAut` of the `sl₂` triple `(Hᵢ, Eᵢ, Fᵢ)`; on the presented algebra they
-are only locally nilpotent, since its finite-dimensionality is what is being proved.
+automorphism `TauCeti.weylAut` of the `sl₂` triple `(Hᵢ, Eᵢ, Fᵢ)`; here only their local
+nilpotence is used, and no global nilpotence bound is assumed.
 
 When `CMᵢᵢ = 2`, the automorphism `θᵢ` acts on the Cartan generators by the simple coreflection
 
@@ -38,12 +38,14 @@ eigenvalue equations along `θᵢ` gives
 
 `θᵢ (L_χ) = L_{sᵢ χ}`
 
-(`TauCeti.IsSerreSystem.map_reflection_iInf_eigenspace`). This is the Weyl-group symmetry of
-the weight spaces used in Serre's theorem: it carries every root space of the presented algebra to
-a simple-root one, which is a line by
-`TauCeti.IsSerreSystem.iInf_eigenspace_ad_col_eq_span_singleton`, and every nonzero multiple
-`m • α` of a root with `|m| ≥ 2` to such a multiple of a simple root, whose weight space vanishes
-by `TauCeti.IsSerreSystem.iInf_eigenspace_ad_nsmul_col_eq_bot`.
+(`TauCeti.IsSerreSystem.map_reflection_iInf_eigenspace`). So the weight spaces `L_χ` and
+`L_{sᵢ χ}` are isomorphic, and the set of weights of `L` is stable under the simple reflections
+`sᵢ`. This is the Weyl-group symmetry of the weight spaces used in Serre's theorem. Under the
+additional hypotheses of that theorem (a Cartan matrix of finite type, whose roots are all real),
+it reduces the study of the weight spaces at roots and their multiples to those at simple roots
+and their multiples, which are treated, under their own hypotheses, by
+`TauCeti.IsSerreSystem.iInf_eigenspace_ad_col_eq_span_singleton` and
+`TauCeti.IsSerreSystem.iInf_eigenspace_ad_nsmul_col_eq_bot`.
 
 ## Main definitions
 
@@ -79,24 +81,6 @@ namespace TauCeti
 
 variable {B R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {CM : Matrix B B ℤ}
   {H E F : B → L}
-
-/-! ## The weight of the image of a weight vector -/
-
-/-- An automorphism whose inverse acts on the `Hₖ` by the coreflection `Hₖ ↦ Hₖ - CMₖᵢ • Hᵢ`
-carries the weight space `L_χ` into the weight space of the reflected weight `χ - χᵢ • CM.col i`.
--/
-theorem apply_mem_iInf_eigenspace_of_symm_apply (τ : L ≃ₗ⁅R⁆ L) {i : B}
-    (hτ : ∀ k, τ.symm (H k) = H k - CM k i • H i) {χ : B → ℤ} {x : L}
-    (hx : x ∈ ⨅ k, (ad R L (H k)).eigenspace (χ k : R)) :
-    τ x ∈ ⨅ k, (ad R L (H k)).eigenspace ((χ - χ i • CM.col i) k : R) := by
-  simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply] at hx ⊢
-  intro k
-  have e : CM k i • (χ i : R) • x = ((χ i * CM k i : ℤ) : R) • x := by
-    rw [← Int.cast_smul_eq_zsmul R, smul_smul, Int.cast_mul, mul_comm]
-  calc ⁅H k, τ x⁆ = τ ⁅τ.symm (H k), x⁆ := by rw [LieEquiv.map_lie, LieEquiv.apply_symm_apply]
-    _ = ((χ - χ i • CM.col i) k : R) • τ x := by
-      rw [hτ, sub_lie, zsmul_lie, hx k, hx i, e, ← sub_smul, ← Int.cast_sub, map_smul]
-      simp [Matrix.col_apply]
 
 namespace IsSerreSystem
 
@@ -193,6 +177,7 @@ private theorem expF_apply_E (hii : CM i i = 2) :
 
 /-- **The simple reflection acts on the Cartan generators by the simple coreflection**:
 `θᵢ (Hₖ) = Hₖ - CMₖᵢ • Hᵢ` when `CMᵢᵢ = 2`. -/
+@[simp]
 theorem reflection_apply_H (hii : CM i i = 2) (k : B) :
     h.reflection hspan i (H k) = H k - CM k i • H i := by
   rw [reflection_apply, h.expE_apply_H hspan i k, map_sub, map_zsmul, h.expF_apply_H hspan i k,
@@ -202,6 +187,7 @@ theorem reflection_apply_H (hii : CM i i = 2) (k : B) :
 
 /-- The inverse of the simple reflection also acts on the Cartan generators by the simple
 coreflection, which is an involution when `CMᵢᵢ = 2`. -/
+@[simp]
 theorem reflection_symm_apply_H (hii : CM i i = 2) (k : B) :
     (h.reflection hspan i).symm (H k) = H k - CM k i • H i := by
   rw [LieEquiv.symm_apply_eq, map_sub, map_zsmul, h.reflection_apply_H hspan i hii,
@@ -219,7 +205,8 @@ the weight space `L_χ` into the weight space of the reflected weight `χ - χ�
 theorem reflection_mem_iInf_eigenspace (hii : CM i i = 2) {χ : B → ℤ} {x : L}
     (hx : x ∈ ⨅ k, (ad R L (H k)).eigenspace (χ k : R)) :
     h.reflection hspan i x ∈ ⨅ k, (ad R L (H k)).eigenspace ((χ - χ i • CM.col i) k : R) :=
-  apply_mem_iInf_eigenspace_of_symm_apply _ (h.reflection_symm_apply_H hspan i hii) hx
+  (h.reflection hspan i).apply_mem_iInf_eigenspace_of_symm_apply
+    (h.reflection_symm_apply_H hspan i hii) hx
 
 /-- **The simple reflection permutes the weight spaces**: when `CMᵢᵢ = 2`, it carries the weight
 space `L_χ` onto the weight space of the reflected weight `χ - χᵢ • CM.col i`. -/
@@ -235,7 +222,7 @@ theorem map_reflection_iInf_eigenspace (hii : CM i i = 2) (χ : B → ℤ) :
       funext k
       simp only [Pi.sub_apply, Pi.smul_apply, Matrix.col_apply, smul_eq_mul, hii]
       ring
-    have hy' := apply_mem_iInf_eigenspace_of_symm_apply (h.reflection hspan i).symm
+    have hy' := (h.reflection hspan i).symm.apply_mem_iInf_eigenspace_of_symm_apply
       (fun k => by rw [LieEquiv.symm_symm, h.reflection_apply_H hspan i hii]) hy
     rw [hs] at hy'
     exact ⟨_, hy', by simp⟩
