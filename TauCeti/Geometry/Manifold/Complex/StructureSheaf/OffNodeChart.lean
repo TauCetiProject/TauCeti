@@ -150,9 +150,9 @@ private theorem graph_of_snd_ne_zero {p : E × ℂ × ℂ} {S : E → ℂ} (hSa 
   ⟨contDiffAt_fst.prodMk (((hSa.comp (p.1, p.2.2) contDiffAt_fst).div contDiffAt_snd hy).prodMk
     contDiffAt_snd), by rw [hSp, mul_div_cancel_right₀ _ hy]⟩
 
-/-- Where `x ≠ 0`, a germ lies in the ideal of the local equation exactly when it vanishes on the
-graph `y = S(b)/x`. -/
-private theorem mem_span_smoothingEquation_iff_of_fst_ne_zero {p : E × ℂ × ℂ}
+/-- At a point of `N_s` where `x ≠ 0`, a germ lies in the ideal of the local equation exactly when
+it vanishes on the graph `y = S(b)/x`, for representatives `G` of the germ and `S` of `s`. -/
+theorem mem_span_smoothingEquation_iff_of_fst_ne_zero {p : E × ℂ × ℂ}
     {s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk p.1} (hx : p.2.1 ≠ 0)
     (hs : eval 𝓘(ℂ, E) E p.1 s = p.2.1 * p.2.2) {S : E → ℂ}
     (hS : toFilterGerm 𝓘(ℂ, E) E p.1 (𝓝 p.1) le_rfl s = S)
@@ -170,9 +170,9 @@ private theorem mem_span_smoothingEquation_iff_of_fst_ne_zero {p : E × ℂ × �
   filter_upwards [continuous_snd.continuousAt.eventually_ne hx] with w hw
   exact mul_div_cancel₀ _ hw
 
-/-- Where `y ≠ 0`, a germ lies in the ideal of the local equation exactly when it vanishes on the
-graph `x = S(b)/y`. -/
-private theorem mem_span_smoothingEquation_iff_of_snd_ne_zero {p : E × ℂ × ℂ}
+/-- At a point of `N_s` where `y ≠ 0`, a germ lies in the ideal of the local equation exactly when
+it vanishes on the graph `x = S(b)/y`, for representatives `G` of the germ and `S` of `s`. -/
+theorem mem_span_smoothingEquation_iff_of_snd_ne_zero {p : E × ℂ × ℂ}
     {s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk p.1} (hy : p.2.2 ≠ 0)
     (hs : eval 𝓘(ℂ, E) E p.1 s = p.2.1 * p.2.2) {S : E → ℂ}
     (hS : toFilterGerm 𝓘(ℂ, E) E p.1 (𝓝 p.1) le_rfl s = S)
