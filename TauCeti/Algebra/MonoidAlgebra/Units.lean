@@ -96,9 +96,9 @@ section NoZeroDivisors
 
 variable [Nontrivial R] [NoZeroDivisors R] [TwoUniqueProds M]
 
-/-- A factor of a product equal to one has exactly one exponent in its support. -/
+/-- If `f * g = 1`, then the left factor `f` has exactly one exponent in its support. -/
 @[to_additive (dont_translate := R) card_support_coeff_eq_one_of_mul_eq_one
-/-- A factor of a product equal to one has exactly one exponent in its support. -/]
+/-- If `f * g = 1`, then the left factor `f` has exactly one exponent in its support. -/]
 theorem card_support_coeff_eq_one_of_mul_eq_one (f g : MonoidAlgebra R M)
     (hfg : f * g = 1) : f.coeff.support.card = 1 := by
   classical
