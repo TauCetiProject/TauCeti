@@ -34,10 +34,10 @@ Polish space is smooth.
 ## Main results
 
 * `Setoid.measurablySeparable_image_quotientMk`: for `E` with analytic graph on a Hausdorff space
-  with its Borel σ-algebra, the images in `Quotient E` of two analytic sets with disjoint images
-  are measurably separable.
+  whose σ-algebra contains the Borel sets, the images in `Quotient E` of two analytic sets with
+  disjoint images are measurably separable.
 * `Setoid.exists_invariant_measurableSet_separating`: the same separation stated in the space: an
-  `E`-invariant Borel set contains `A` and misses `B`.
+  `E`-invariant measurable set (Borel, for the Borel σ-algebra) contains `A` and misses `B`.
 
 ## References
 
@@ -53,13 +53,12 @@ open MeasureTheory Set
 
 namespace Setoid
 
-variable {X : Type*} [TopologicalSpace X] [T2Space X] [MeasurableSpace X] [BorelSpace X]
+variable {X : Type*} [TopologicalSpace X] [T2Space X]
 
-/-- **Invariant Lusin separation**, in the quotient. Let `E` be an equivalence relation with
-analytic graph on a Hausdorff space with its Borel σ-algebra. If `A` and `B` are analytic sets
-and no class of `E` meets both, then their images in `Quotient E` are separated by a measurable
-set of Mathlib's quotient σ-algebra. -/
-theorem measurablySeparable_image_quotientMk (E : Setoid X)
+/-- Invariant Lusin separation in the quotient, for the Borel σ-algebra itself. The construction
+needs the stages to be Borel, so that their saturations are analytic. -/
+private theorem measurablySeparable_image_quotientMk_of_borelSpace [MeasurableSpace X]
+    [BorelSpace X] (E : Setoid X)
     (hE : AnalyticSet {p : X × X | E p.1 p.2}) {A B : Set X} (hA : AnalyticSet A)
     (hB : AnalyticSet B) (hAB : Disjoint (Quotient.mk E '' A) (Quotient.mk E '' B)) :
     MeasurablySeparable (Quotient.mk E '' A) (Quotient.mk E '' B) := by
@@ -95,10 +94,26 @@ theorem measurablySeparable_image_quotientMk (E : Setoid X)
   · rw [measurableSet_quotient, Quotient.mk''_eq_mk, hsat]
     exact MeasurableSet.iUnion fun n ↦ (f^[n] ⟨T₀, hT₀, hT₀B⟩).2.1
 
+variable [MeasurableSpace X] [OpensMeasurableSpace X]
+
+/-- **Invariant Lusin separation**, in the quotient. Let `E` be an equivalence relation with
+analytic graph on a Hausdorff space whose σ-algebra contains the Borel sets. If `A` and `B` are
+analytic sets and no class of `E` meets both, then their images in `Quotient E` are separated by a
+measurable set of Mathlib's quotient σ-algebra. -/
+theorem measurablySeparable_image_quotientMk (E : Setoid X)
+    (hE : AnalyticSet {p : X × X | E p.1 p.2}) {A B : Set X} (hA : AnalyticSet A)
+    (hB : AnalyticSet B) (hAB : Disjoint (Quotient.mk E '' A) (Quotient.mk E '' B)) :
+    MeasurablySeparable (Quotient.mk E '' A) (Quotient.mk E '' B) := by
+  -- Separate for the Borel σ-algebra, which is coarser than the ambient one.
+  obtain ⟨C, hAC, hBC, hC⟩ := @measurablySeparable_image_quotientMk_of_borelSpace X _ _
+    (borel X) (@BorelSpace.mk _ _ (borel X) rfl) E hE A B hA hB hAB
+  exact ⟨C, hAC, hBC, MeasurableSpace.map_mono OpensMeasurableSpace.borel_le _ hC⟩
+
 /-- **Invariant Lusin separation.** Let `E` be an equivalence relation with analytic graph on a
-Hausdorff space with its Borel σ-algebra. If `A` and `B` are analytic sets and no class of `E`
-meets both, then some `E`-invariant Borel set contains `A` and is disjoint from `B`. In
-particular, disjoint `E`-invariant analytic sets are separated by an `E`-invariant Borel set. -/
+Hausdorff space whose σ-algebra contains the Borel sets. If `A` and `B` are analytic sets and no
+class of `E` meets both, then some `E`-invariant measurable set contains `A` and is disjoint from
+`B`. In particular, for the Borel σ-algebra, disjoint `E`-invariant analytic sets are separated by
+an `E`-invariant Borel set. -/
 theorem exists_invariant_measurableSet_separating (E : Setoid X)
     (hE : AnalyticSet {p : X × X | E p.1 p.2}) {A B : Set X} (hA : AnalyticSet A)
     (hB : AnalyticSet B) (hAB : Disjoint (Quotient.mk E '' A) (Quotient.mk E '' B)) :
