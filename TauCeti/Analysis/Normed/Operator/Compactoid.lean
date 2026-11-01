@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Module.Compactoid
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
+import TauCeti.Analysis.Normed.Operator.Compact.Basic
 
 /-!
 # Operators with compactoid image
@@ -214,7 +215,6 @@ into a Banach space are compact operators**: the image of the closed unit ball i
 totally bounded, so its closure is compact. -/
 theorem ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator [ProperSpace K]
     [CompleteSpace F] {u : E →L[K] F} (hu : u.IsCompletelyContinuous) : IsCompactOperator u :=
-  (isCompactOperator_iff_isCompact_closure_image_closedBall (u : E →ₗ[K] F) one_pos).2 <|
-    hu.hasCompactoidImage.totallyBounded.closure.isCompact_of_isClosed isClosed_closure
+  isCompactOperator_of_totallyBounded_image_closedBall one_pos hu.hasCompactoidImage.totallyBounded
 
 end Complete
