@@ -131,10 +131,13 @@ private theorem exists_isOpen_forall_exists_isMorseOn (c : M) {U : Set M} (hU : 
   obtain ⟨a, ⟨ha𝒰, haA⟩, haU⟩ := (hnear.and_frequently (mem_closure_iff_frequently.1
     ((dense_setOfPred_hasNondegenerateCriticalPointsOn_sub hUo hgU) 0))).exists
   have hsupp : tsupport (fun y ↦ bumpPerturbation β g a y - g y) ⊆ tsupport β := by
-    apply closure_minimal _ (isClosed_tsupport β)
-    intro y hy
-    by_contra hyβ
-    exact hy (by simp [bumpPerturbation_apply, image_eq_zero_of_notMem_tsupport hyβ])
+    have hdiff : (fun y ↦ bumpPerturbation β g a y - g y) =
+        (fun y ↦ β y * (-a (extChartAt I c y))) := by
+      ext y
+      simp only [bumpPerturbation_apply, map_smul, smul_eq_mul]
+      ring
+    rw [hdiff]
+    exact tsupport_mul_subset_left
   refine ⟨_, ha𝒰, haA, ?_,
     β.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp.trans hβU⟩
   apply (isMorseOn_iff_of_mem_maximalAtlas he
