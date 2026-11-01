@@ -17,9 +17,9 @@ exactly when its Hasse derivatives of weighted order strictly less than `t` vani
 Only derivative orders in the coefficient box need to be tested.
 
 `MvPolynomial.indexConditionMap` writes these conditions as a linear map on coefficient
-vectors, allowing several points in an extension field. Its kernel parametrizes exactly the
-polynomials with the prescribed indices. Each extension-field equation costs at most the
-extension degree in base-field dimension. Thus, if the number of coefficients exceeds that
+vectors, allowing several points in a commutative algebra. Its kernel parametrizes exactly the
+polynomials with the prescribed indices. Over a base field, each equation in a finite-dimensional
+algebra costs at most the algebra's dimension. Thus, if the number of coefficients exceeds that
 cost, a nonzero polynomial with all the prescribed indices exists.
 
 This is the linear-algebraic existence step in the construction of auxiliary polynomials;
@@ -117,10 +117,10 @@ end Semiring
 
 section Field
 
-variable [Field R] [Field F] [Algebra R F] [FiniteDimensional R F] [Fintype κ]
+variable [Field R] [CommRing F] [Algebra R F] [Module.Finite R F] [Fintype κ]
 
 /-- The dimension left after imposing the index conditions is at least the coefficient count
-minus the extension degree times the number of extension-field equations. Dependencies among
+minus the algebra's dimension times the number of algebra-valued equations. Dependencies among
 conditions can only increase this dimension. -/
 theorem sub_le_finrank_ker_indexConditionMap (d : σ → ℕ) (a : κ → σ → F) (t : κ → ℝ) :
     (∏ j, (d j + 1)) - Module.finrank R F * ∑ k, (indexConditions d (t k)).card ≤
@@ -134,9 +134,9 @@ theorem sub_le_finrank_ker_indexConditionMap (d : σ → ℕ) (a : κ → σ →
   simp only [Module.finrank_pi, Fintype.card_pi, Fintype.card_fin] at hnull
   omega
 
-/-- If there are more coefficients than the extension-degree cost of the index conditions,
+/-- If there are more coefficients than the dimension cost of the index conditions,
 there is a nonzero base-field polynomial of the given partial degrees with all the prescribed
-indices at the extension-field points. No assertion about its height is made. -/
+indices at the algebra-valued points. No assertion about its height is made. -/
 theorem exists_ne_zero_forall_le_weightedIndex (d : σ → ℕ) (a : κ → σ → F) (t : κ → ℝ)
     (hcount : Module.finrank R F * ∑ k, (indexConditions d (t k)).card < ∏ j, (d j + 1)) :
     ∃ P : MvPolynomial σ R, P ≠ 0 ∧ (∀ j, P.degreeOf j ≤ d j) ∧
