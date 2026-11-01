@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.Padics.MahlerBasis
 public import TauCeti.NumberTheory.Padics.Distribution.AnalyticStage
 public import TauCeti.Topology.MetricSpace.Ultra.ContinuousMaps
-import Mathlib.Data.Int.CardIntervalMod
 import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -98,6 +97,8 @@ namespace TauCeti
 
 section Integrality
 
+open PadicInt
+
 /-- The product `∏_{i < n} (a - i + pʰ X)`, whose value at `w` is `n! (a + pʰ w choose n)`. -/
 private noncomputable def discProd (h n : ℕ) (a : ℤ_[p]) : ℤ_[p][X] :=
   ∏ i ∈ Finset.range n, (C (a - i) + C ((p : ℤ_[p]) ^ h) * X)
@@ -118,109 +119,6 @@ private theorem natDegree_discProd_le (h n : ℕ) (a : ℤ_[p]) : (discProd h n 
     (Finset.sum_const_nat (m := 1) fun _ _ ↦ rfl).le |>.trans (by simp)
   exact (natDegree_add_le _ _).trans <| max_le ((natDegree_C _).le.trans zero_le_one)
     ((natDegree_C_mul_le _ _).trans natDegree_X_le)
-
-/-- The product `∏_{i < n} (a - i + pʰ X)` is divisible by `p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`. -/
-private theorem C_pow_dvd_discProd (h n : ℕ) (a : ℤ_[p]) :
-    C ((p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1)) ∣ discProd h n a := by
-  classical
-  -- `d i = min(v_p(a - i), h)`, the largest `k ≤ h` with `pᵏ ∣ a - i`.
-  set d : ℕ → ℕ := fun i ↦ Nat.findGreatest (fun k ↦ (p : ℤ_[p]) ^ k ∣ a - i) h
-  have hd_le (i : ℕ) : d i ≤ h := Nat.findGreatest_le h
-  have hd_dvd (i : ℕ) : (p : ℤ_[p]) ^ d i ∣ a - i :=
-    Nat.findGreatest_spec (P := fun k ↦ (p : ℤ_[p]) ^ k ∣ a - i) (zero_le h) (by simp)
-  have hfac (i : ℕ) : C ((p : ℤ_[p]) ^ d i) ∣ C (a - i) + C ((p : ℤ_[p]) ^ h) * X := by
-    obtain ⟨s, hs⟩ := hd_dvd i
-    refine ⟨C s + C ((p : ℤ_[p]) ^ (h - d i)) * X, ?_⟩
-    rw [hs, mul_add, ← mul_assoc, ← C_mul, ← C_mul, ← pow_add, Nat.add_sub_cancel' (hd_le i)]
-  -- Count the pairs `(k, i)` with `pᵏ⁺¹ ∣ a - i` in two ways.
-  have hsum : ∑ k ∈ Finset.range h, n / p ^ (k + 1) ≤ ∑ i ∈ Finset.range n, d i :=
-    calc ∑ k ∈ Finset.range h, n / p ^ (k + 1)
-        ≤ ∑ k ∈ Finset.range h,
-            #{i ∈ Finset.range n | (p : ℤ_[p]) ^ (k + 1) ∣ a - ((i : ℕ) : ℤ_[p])} :=
-          Finset.sum_le_sum fun k _ ↦ a.div_pow_le_card_filter_dvd n (k + 1)
-      _ = ∑ i ∈ Finset.range n, #{k ∈ Finset.range h | (p : ℤ_[p]) ^ (k + 1) ∣ a - i} := by
-          simp only [Finset.card_filter]
-          exact Finset.sum_comm
-      _ ≤ ∑ i ∈ Finset.range n, d i := Finset.sum_le_sum fun i _ ↦ by
-          calc #{k ∈ Finset.range h | (p : ℤ_[p]) ^ (k + 1) ∣ a - i}
-              ≤ #(Finset.range (d i)) := Finset.card_le_card fun k hk ↦ by
-                simp only [Finset.mem_filter, Finset.mem_range] at hk ⊢
-                exact Nat.le_findGreatest (P := fun k ↦ (p : ℤ_[p]) ^ k ∣ a - i) hk.1 hk.2
-            _ = d i := Finset.card_range _
-  calc C ((p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1))
-      ∣ C ((p : ℤ_[p]) ^ ∑ i ∈ Finset.range n, d i) := _root_.map_dvd C (pow_dvd_pow _ hsum)
-    _ = ∏ i ∈ Finset.range n, C ((p : ℤ_[p]) ^ d i) := by
-        rw [← map_prod, Finset.prod_pow_eq_pow_sum]
-    _ ∣ discProd h n a := Finset.prod_dvd_prod_of_dvd _ _ fun i _ ↦ hfac i
-
-/-- **Integrality of Amice's polynomials on discs.** For every centre `a ∈ ℤ_p`, the polynomial
-`w ↦ ⌊n / pʰ⌋! (a + pʰ w choose n)` has coefficients in `ℤ_p`: it is the evaluation of a
-polynomial over `ℤ_p` of degree at most `n`. -/
-theorem exists_natDegree_le_and_eval_eq_factorial_mul_choose (h n : ℕ) (a : ℤ_[p]) :
-    ∃ P : ℤ_[p][X], P.natDegree ≤ n ∧ ∀ w : ℤ_[p],
-      P.eval w = ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n := by
-  obtain ⟨P, hP⟩ : C (n ! : ℤ_[p]) ∣ C ((n / p ^ h)! : ℤ_[p]) * discProd h n a := by
-    refine (_root_.map_dvd C (factorial_dvd_factorial_div_mul_pow h n)).trans ?_
-    rw [C_mul]
-    exact mul_dvd_mul_left _ (C_pow_dvd_discProd h n a)
-  have hn : (n ! : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (factorial_ne_zero n)
-  refine ⟨P, ?_, fun w ↦ ?_⟩
-  · rw [← natDegree_C_mul hn, ← hP]
-    exact natDegree_C_mul_le _ _ |>.trans (natDegree_discProd_le h n a)
-  · refine mul_left_cancel₀ hn ?_
-    have := congrArg (eval w) hP
-    rw [eval_mul, eval_mul, eval_C, eval_C, eval_discProd] at this
-    rw [← this]
-    ring
-
-variable (p) in
-/-- **Amice's polynomial on the disc of centre `a`.** The polynomial over `ℤ_p` whose value at
-`w` is `⌊n / pʰ⌋! (a + pʰ w choose n)`: the expansion of Amice's basis polynomial
-`e_{h,n}(x) = ⌊n / pʰ⌋! (x choose n)` in the coordinate `w = (x - a) / pʰ` of the disc
-`a + pʰℤ_p`. -/
-noncomputable def amicePolynomial (h n : ℕ) (a : ℤ_[p]) : ℤ_[p][X] :=
-  (exists_natDegree_le_and_eval_eq_factorial_mul_choose h n a).choose
-
-/-- Amice's polynomial on a disc has degree at most `n`. -/
-theorem natDegree_amicePolynomial_le (h n : ℕ) (a : ℤ_[p]) :
-    (amicePolynomial p h n a).natDegree ≤ n :=
-  (exists_natDegree_le_and_eval_eq_factorial_mul_choose h n a).choose_spec.1
-
-/-- The value of Amice's polynomial on the disc of centre `a` at `w` is
-`⌊n / pʰ⌋! (a + pʰ w choose n)`. -/
-@[simp]
-theorem eval_amicePolynomial (h n : ℕ) (a w : ℤ_[p]) :
-    (amicePolynomial p h n a).eval w =
-      ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n :=
-  (exists_natDegree_le_and_eval_eq_factorial_mul_choose h n a).choose_spec.2 w
-
-/-- `amicePolynomial p h n a` is the only polynomial with values `⌊n / pʰ⌋! (a + pʰ w choose n)`.
--/
-theorem eq_amicePolynomial_of_eval {h n : ℕ} {a : ℤ_[p]} {P : ℤ_[p][X]}
-    (hP : ∀ w, P.eval w = ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n) :
-    P = amicePolynomial p h n a :=
-  Polynomial.funext fun w ↦ by rw [hP, eval_amicePolynomial]
-
-/-- The coefficients of Amice's polynomial vanish above degree `n`. -/
-theorem coeff_amicePolynomial_eq_zero {h n k : ℕ} (a : ℤ_[p]) (hk : n < k) :
-    (amicePolynomial p h n a).coeff k = 0 :=
-  coeff_eq_zero_of_natDegree_lt ((natDegree_amicePolynomial_le h n a).trans_lt hk)
-
-/-- The disc expansion of Amice's polynomial: `∑_{k ≤ n} cₖ wᵏ = ⌊n / pʰ⌋! (a + pʰ w choose n)`,
-where `cₖ` are the coefficients of `amicePolynomial p h n a`. -/
-theorem sum_range_coeff_amicePolynomial_mul_pow (h n : ℕ) (a w : ℤ_[p]) :
-    ∑ k ∈ Finset.range (n + 1), (amicePolynomial p h n a).coeff k * w ^ k =
-      ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n := by
-  rw [← eval_amicePolynomial,
-    eval_eq_sum_range' (Nat.lt_succ_of_le (natDegree_amicePolynomial_le h n a))]
-
-end Integrality
-
-/-! ### Reduction modulo `p` -/
-
-section Reduction
-
-open PadicInt
 
 open scoped Classical in
 /-- The constant factored out of the term `a - i + pʰ X` of `discProd`: `pʰ` if `pʰ ∣ a - i`,
@@ -300,23 +198,105 @@ private theorem norm_discFactor (h : ℕ) (z : ℤ_[p]) :
     have hv : z.valuation < h := lt_of_not_ge fun hle ↦ hz ((hdvd h).mpr hle)
     rw [discFactor, ite_eq_right hz, norm_eq_zpow_neg_valuation hz0, ← norm_p_pow, norm_pow,
       Finset.filter_congr fun k _ ↦ hdvd (k + 1)]
-    congr 1
-    rw [show {k ∈ Finset.range h | k + 1 ≤ z.valuation} = Finset.range z.valuation by
+    have hrange : {k ∈ Finset.range h | k + 1 ≤ z.valuation} = Finset.range z.valuation := by
       ext k
       simp only [Finset.mem_filter, Finset.mem_range]
-      omega, Finset.card_range]
+      omega
+    rw [hrange, Finset.card_range]
 
 open scoped Classical in
-/-- Among `0, 1, …, n - 1` there are `⌊n / pᵐ⌋ + [a mod pᵐ < n mod pᵐ]` integers `i` with
-`pᵐ ∣ a - i`. -/
-private theorem card_filter_pow_dvd_natCast_sub (m n a : ℕ) :
-    #{i ∈ Finset.range n | (p : ℤ_[p]) ^ m ∣ (a : ℤ_[p]) - ((i : ℕ) : ℤ_[p])} =
-      n / p ^ m + if a % p ^ m < n % p ^ m then 1 else 0 := by
+/-- The product of the constants `discFactor` has norm `‖p‖ ^ ∑_{k < h} #{i < n | pᵏ⁺¹ ∣ a - i}`,
+counting the pairs `(k, i)` with `pᵏ⁺¹ ∣ a - i` by `i` and then by `k`. -/
+private theorem norm_prod_discFactor (h n : ℕ) (a : ℤ_[p]) :
+    ‖∏ i ∈ Finset.range n, discFactor h (a - ((i : ℕ) : ℤ_[p]))‖ =
+      ‖(p : ℤ_[p])‖ ^ ∑ k ∈ Finset.range h,
+        #{i ∈ Finset.range n | (p : ℤ_[p]) ^ (k + 1) ∣ a - ((i : ℕ) : ℤ_[p])} := by
   classical
-  rw [← Nat.count_modEq_card n (pow_pos hp.out.pos m) a, Nat.count_eq_card_filter_range]
-  refine congrArg Finset.card (Finset.filter_congr fun i _ ↦ ?_)
-  have hcast : (a : ℤ_[p]) - i = ((a - i : ℤ) : ℤ_[p]) := by push_cast; rfl
-  rw [hcast, pow_p_dvd_int_iff, Nat.modEq_iff_dvd, Nat.cast_pow]
+  rw [norm_prod]
+  simp_rw [norm_discFactor]
+  rw [Finset.prod_pow_eq_pow_sum]
+  congr 1
+  simp only [Finset.card_filter]
+  exact Finset.sum_comm
+
+/-- The product `∏_{i < n} (a - i + pʰ X)` is divisible by `p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`. -/
+private theorem C_pow_dvd_discProd (h n : ℕ) (a : ℤ_[p]) :
+    C ((p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1)) ∣ discProd h n a := by
+  obtain ⟨F, hF, -, -⟩ := exists_discProd_eq h n a
+  rw [hF]
+  refine dvd_mul_of_dvd_left (_root_.map_dvd C (dvd_of_norm_le ?_)) F
+  rw [norm_prod_discFactor, norm_pow]
+  exact pow_le_pow_of_le_one (norm_nonneg _) (norm_le_one _)
+    (Finset.sum_le_sum fun k _ ↦ a.div_pow_le_card_filter_dvd n (k + 1))
+
+/-- **Integrality of Amice's polynomials on discs.** For every centre `a ∈ ℤ_p`, the polynomial
+`w ↦ ⌊n / pʰ⌋! (a + pʰ w choose n)` has coefficients in `ℤ_p`: it is the evaluation of a
+polynomial over `ℤ_p` of degree at most `n`. -/
+theorem exists_natDegree_le_and_eval_eq_factorial_mul_choose (h n : ℕ) (a : ℤ_[p]) :
+    ∃ P : ℤ_[p][X], P.natDegree ≤ n ∧ ∀ w : ℤ_[p],
+      P.eval w = ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n := by
+  obtain ⟨P, hP⟩ : C (n ! : ℤ_[p]) ∣ C ((n / p ^ h)! : ℤ_[p]) * discProd h n a := by
+    refine (_root_.map_dvd C (factorial_dvd_factorial_div_mul_pow h n)).trans ?_
+    rw [C_mul]
+    exact mul_dvd_mul_left _ (C_pow_dvd_discProd h n a)
+  have hn : (n ! : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (factorial_ne_zero n)
+  refine ⟨P, ?_, fun w ↦ ?_⟩
+  · rw [← natDegree_C_mul hn, ← hP]
+    exact natDegree_C_mul_le _ _ |>.trans (natDegree_discProd_le h n a)
+  · refine mul_left_cancel₀ hn ?_
+    have := congrArg (eval w) hP
+    rw [eval_mul, eval_mul, eval_C, eval_C, eval_discProd] at this
+    rw [← this]
+    ring
+
+variable (p) in
+/-- **Amice's polynomial on the disc of centre `a`.** The polynomial over `ℤ_p` whose value at
+`w` is `⌊n / pʰ⌋! (a + pʰ w choose n)`: the expansion of Amice's basis polynomial
+`e_{h,n}(x) = ⌊n / pʰ⌋! (x choose n)` in the coordinate `w = (x - a) / pʰ` of the disc
+`a + pʰℤ_p`. -/
+noncomputable def amicePolynomial (h n : ℕ) (a : ℤ_[p]) : ℤ_[p][X] :=
+  (exists_natDegree_le_and_eval_eq_factorial_mul_choose h n a).choose
+
+/-- Amice's polynomial on a disc has degree at most `n`. -/
+theorem natDegree_amicePolynomial_le (h n : ℕ) (a : ℤ_[p]) :
+    (amicePolynomial p h n a).natDegree ≤ n :=
+  (exists_natDegree_le_and_eval_eq_factorial_mul_choose h n a).choose_spec.1
+
+/-- The value of Amice's polynomial on the disc of centre `a` at `w` is
+`⌊n / pʰ⌋! (a + pʰ w choose n)`. -/
+@[simp]
+theorem eval_amicePolynomial (h n : ℕ) (a w : ℤ_[p]) :
+    (amicePolynomial p h n a).eval w =
+      ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n :=
+  (exists_natDegree_le_and_eval_eq_factorial_mul_choose h n a).choose_spec.2 w
+
+/-- `amicePolynomial p h n a` is the only polynomial with values `⌊n / pʰ⌋! (a + pʰ w choose n)`.
+-/
+theorem eq_amicePolynomial_of_eval {h n : ℕ} {a : ℤ_[p]} {P : ℤ_[p][X]}
+    (hP : ∀ w, P.eval w = ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n) :
+    P = amicePolynomial p h n a :=
+  Polynomial.funext fun w ↦ by rw [hP, eval_amicePolynomial]
+
+/-- The coefficients of Amice's polynomial vanish above degree `n`. -/
+theorem coeff_amicePolynomial_eq_zero {h n k : ℕ} (a : ℤ_[p]) (hk : n < k) :
+    (amicePolynomial p h n a).coeff k = 0 :=
+  coeff_eq_zero_of_natDegree_lt ((natDegree_amicePolynomial_le h n a).trans_lt hk)
+
+/-- The disc expansion of Amice's polynomial: `∑_{k ≤ n} cₖ wᵏ = ⌊n / pʰ⌋! (a + pʰ w choose n)`,
+where `cₖ` are the coefficients of `amicePolynomial p h n a`. -/
+theorem sum_range_coeff_amicePolynomial_mul_pow (h n : ℕ) (a w : ℤ_[p]) :
+    ∑ k ∈ Finset.range (n + 1), (amicePolynomial p h n a).coeff k * w ^ k =
+      ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n := by
+  rw [← eval_amicePolynomial,
+    eval_eq_sum_range' (Nat.lt_succ_of_le (natDegree_amicePolynomial_le h n a))]
+
+end Integrality
+
+/-! ### Reduction modulo `p` -/
+
+section Reduction
+
+open PadicInt
 
 /-- **Amice's polynomial modulo `p`.** On the disc of `a`, Amice's polynomial is `C c * F`, where
 `F` is congruent modulo `p` to a monic polynomial of degree `N = ⌊n / pʰ⌋ + [a mod pʰ < n mod pʰ]`,
@@ -357,14 +337,7 @@ private theorem exists_amicePolynomial_eq_C_mul (h n a : ℕ) :
   · refine mul_left_cancel₀ (C_ne_zero.mpr hn) ?_
     rw [hA, ← mul_assoc, ← C_mul, hc]
   -- Compare norms: `‖K‖ = ‖p‖ ^ ∑_{k < h} #{i < n | pᵏ⁺¹ ∣ a - i}` and Legendre's formula.
-  have hK : ‖K‖ = ‖(p : ℤ_[p])‖ ^ ∑ k ∈ Finset.range h,
-      #{i ∈ Finset.range n | (p : ℤ_[p]) ^ (k + 1) ∣ (a : ℤ_[p]) - ((i : ℕ) : ℤ_[p])} := by
-    rw [norm_prod]
-    simp_rw [norm_discFactor]
-    rw [Finset.prod_pow_eq_pow_sum]
-    congr 1
-    simp only [Finset.card_filter]
-    exact Finset.sum_comm
+  have hK : ‖K‖ = _ := norm_prod_discFactor h n (a : ℤ_[p])
   simp_rw [card_filter_pow_dvd_natCast_sub] at hK
   rw [Finset.sum_add_distrib, Finset.sum_boole, pow_add] at hK
   have hnorm := congrArg norm hc
@@ -382,20 +355,8 @@ private theorem norm_lt_one_of_mod_lt {h n a : ℕ} {c : ℤ_[p]} (ha : a % p ^ 
   obtain ⟨h, rfl⟩ : ∃ h', h = h' + 1 := Nat.exists_eq_add_one.mpr <|
     Nat.pos_of_ne_zero fun h0 ↦ by simp [h0, Nat.mod_one] at ha
   rw [hc]
-  refine pow_lt_one₀ (norm_nonneg _) ?_ (Finset.card_ne_zero.mpr ⟨h, by simpa using ha⟩)
-  rw [norm_p]
-  exact inv_lt_one_of_one_lt₀ (mod_cast hp.out.one_lt)
-
-/-- **Amice's polynomials modulo `p`: degree bound.** On every disc `a + pʰℤ_p`, the coefficients
-of `wʲ` in `⌊n / pʰ⌋! (a + pʰ w choose n)` with `j > ⌊n / pʰ⌋` lie in `pℤ_p`: modulo `p`, Amice's
-polynomial has degree at most `⌊n / pʰ⌋`. -/
-theorem norm_coeff_amicePolynomial_lt_one_of_div_lt {h n j : ℕ} (a : ℕ) (hj : n / p ^ h < j) :
-    ‖(amicePolynomial p h n a).coeff j‖ < 1 := by
-  obtain ⟨c, F, hA, -, hhigh, hc⟩ := exists_amicePolynomial_eq_C_mul (p := p) h n a
-  rw [hA, coeff_C_mul]
-  by_cases ha : a % p ^ h < n % p ^ h
-  · exact mul_comm (F.coeff j) c ▸ norm_lt_one_mul (norm_lt_one_of_mod_lt ha hc)
-  · exact norm_lt_one_mul (hhigh j (by rwa [ite_eq_right ha, add_zero]))
+  exact pow_lt_one₀ (norm_nonneg _) (mem_nonunits.mp p_nonunit)
+    (Finset.card_ne_zero.mpr ⟨h, by simpa using ha⟩)
 
 /-- **Amice's polynomials modulo `p`: vanishing on earlier discs.** If `a mod pʰ < n mod pʰ`,
 every coefficient of `⌊n / pʰ⌋! (a + pʰ w choose n)` as a polynomial in `w` lies in `pℤ_p`. -/
@@ -405,9 +366,20 @@ theorem norm_coeff_amicePolynomial_lt_one_of_mod_lt {h n a : ℕ} (ha : a % p ^ 
   rw [hA, coeff_C_mul, mul_comm]
   exact norm_lt_one_mul (norm_lt_one_of_mod_lt ha hc)
 
-/-- **Amice's polynomials modulo `p`: the leading coefficient.** If `n mod pʰ ≤ a mod pʰ`, the
-coefficient of `w ^ ⌊n / pʰ⌋` in `⌊n / pʰ⌋! (a + pʰ w choose n)` has norm `‖p‖ ^ e`, where `e` is
-the number of `k ∈ [1, h]` with `a mod pᵏ < n mod pᵏ`. -/
+/-- **Amice's polynomials modulo `p`: degree bound.** On every disc `a + pʰℤ_p`, the coefficients
+of `wʲ` in `⌊n / pʰ⌋! (a + pʰ w choose n)` with `j > ⌊n / pʰ⌋` lie in `pℤ_p`: modulo `p`, Amice's
+polynomial has degree at most `⌊n / pʰ⌋`. -/
+theorem norm_coeff_amicePolynomial_lt_one_of_div_lt {h n j : ℕ} (a : ℕ) (hj : n / p ^ h < j) :
+    ‖(amicePolynomial p h n a).coeff j‖ < 1 := by
+  by_cases ha : a % p ^ h < n % p ^ h
+  · exact norm_coeff_amicePolynomial_lt_one_of_mod_lt ha j
+  obtain ⟨c, F, hA, -, hhigh, -⟩ := exists_amicePolynomial_eq_C_mul (p := p) h n a
+  rw [hA, coeff_C_mul]
+  exact norm_lt_one_mul (hhigh j (by rwa [ite_eq_right ha, add_zero]))
+
+/-- **Amice's polynomials modulo `p`: the coefficient of `w ^ ⌊n / pʰ⌋`.** If
+`n mod pʰ ≤ a mod pʰ`, the coefficient of `w ^ ⌊n / pʰ⌋` in `⌊n / pʰ⌋! (a + pʰ w choose n)` has
+norm `‖p‖ ^ e`, where `e` is the number of `k ∈ [1, h]` with `a mod pᵏ < n mod pᵏ`. -/
 theorem norm_coeff_amicePolynomial_div_of_mod_le {h n a : ℕ} (ha : n % p ^ h ≤ a % p ^ h) :
     ‖(amicePolynomial p h n a).coeff (n / p ^ h)‖ =
       ‖(p : ℤ_[p])‖ ^ #{k ∈ Finset.range h | a % p ^ (k + 1) < n % p ^ (k + 1)} := by
@@ -417,6 +389,7 @@ theorem norm_coeff_amicePolynomial_div_of_mod_le {h n a : ℕ} (ha : n % p ^ h �
 
 /-- **Amice's polynomials modulo `p`: the diagonal coefficient.** On the disc of `n mod pʰ`, the
 coefficient of `w ^ ⌊n / pʰ⌋` in `⌊n / pʰ⌋! (n mod pʰ + pʰ w choose n)` is a unit of `ℤ_p`. -/
+@[simp]
 theorem norm_coeff_amicePolynomial_mod_div (h n : ℕ) :
     ‖(amicePolynomial p h n (n % p ^ h : ℕ)).coeff (n / p ^ h)‖ = 1 := by
   rw [norm_coeff_amicePolynomial_div_of_mod_le (Nat.mod_mod _ _).ge,
