@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RealPower
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Complexification
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The polar deformation retraction of a complex Spin group
@@ -20,7 +22,9 @@ multiplication in the orthonormal basis `e_s`
 `a = g† g` has a positive definite matrix and real powers `a ^ t`, computed by the continuous
 functional calculus of its matrix (`Algebra.leftMulMatrixRpow`). For `g` in the Spin group these
 powers are Spin elements
-(`CliffordAlgebra.leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup`).
+(`CliffordAlgebra.leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup`), and they are
+self-adjoint
+(`CliffordAlgebra.complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self`).
 
 This file proves that `(g, t) ↦ (g† g) ^ t` is jointly continuous, and that the polar deformation
 
@@ -36,11 +40,8 @@ of the Spin elements fixed by complex conjugation of the coefficients.
 
 ## Main results
 
-* `CliffordAlgebra.continuous_complexConj`: complex conjugation of the coefficients is continuous.
 * `CliffordAlgebra.continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self`: the real powers
   `(g† g) ^ t` are jointly continuous in the unit `g` and the exponent `t`.
-* `CliffordAlgebra.complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self`: the real
-  powers of `g† g` are self-adjoint.
 * `CliffordAlgebra.spinPolarRetraction`: the retraction `g ↦ g (g† g) ^ (-1/2)` of the Spin group
   onto its unitary part.
 * `CliffordAlgebra.spinPolarHomotopyRel`: the polar deformation, a homotopy from the identity to
@@ -61,28 +62,8 @@ open scoped MatrixOrder ComplexOrder ComplexConjugate ContinuousMap
 
 namespace CliffordAlgebra
 
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- Complex conjugation of the coefficients of a complexified Clifford algebra is continuous for
-the module topology, being conjugate-linear (`CliffordAlgebra.complexConj_smul`). -/
-@[fun_prop]
-theorem continuous_complexConj (Q : QuadraticForm ℝ V) : Continuous (complexConj Q) :=
-  IsModuleTopology.continuous_of_linearMapₛₗ Complex.continuous_conj
-    ({ toFun := complexConj Q
-       map_add' := map_add (complexConj Q)
-       map_smul' := complexConj_smul Q } :
-      CliffordAlgebra (Q.baseChange ℂ) →ₛₗ[starRingEnd ℂ] CliffordAlgebra (Q.baseChange ℂ))
-
-variable {I : Type*} [LinearOrder I] [Fintype I] {Q : QuadraticForm ℝ V}
-  {b : Module.Basis I ℝ V}
-
-/-- The matrix of `g† * g` is strictly positive for a unit `g`. -/
-private theorem isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
-    {g : CliffordAlgebra (Q.baseChange ℂ)} (hg : IsUnit g) :
-    IsStrictlyPositive (Algebra.leftMulMatrix (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-      (complexConj Q (reverse g) * g)) :=
-  (posDef_toMatrix_mulLeft_complexConj_reverse_mul_self hb hQ hg).isStrictlyPositive
+variable {V I : Type*} [AddCommGroup V] [Module ℝ V] [LinearOrder I] [Fintype I]
+  {Q : QuadraticForm ℝ V} {b : Module.Basis I ℝ V}
 
 /-- **The real powers of `g† g` are jointly continuous** in the unit `g` and the exponent `t`, where
 `g† = complexConj (reverse g)` and the powers are taken through the matrix of `g† * g` in the
@@ -99,48 +80,9 @@ theorem continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self
   exact Algebra.continuousOn_leftMulMatrixRpow.comp hf.continuousOn
     fun p hp ↦ isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self hb hQ hp.1
 
-/-- **The real powers of `g† g` are self-adjoint**: `((g† g) ^ s)† = (g† g) ^ s`, where
-`g† = complexConj (reverse g)` and the powers are taken through the matrix of `g† * g` in the
-ordered-product basis of a real orthonormal basis. -/
-theorem complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
-    (g : CliffordAlgebra (Q.baseChange ℂ)) (s : ℝ) :
-    complexConj Q (reverse (Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-        (complexConj Q (reverse g) * g) s)) =
-      Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-        (complexConj Q (reverse g) * g) s := by
-  apply Algebra.leftMulMatrix_injective (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-  rw [← Algebra.toMatrix_lmul_eq, toMatrix_mulLeft_complexConj_reverse hb hQ,
-    Algebra.toMatrix_lmul_eq, Algebra.leftMulMatrix_leftMulMatrixRpow]
-  exact CFC.rpow_nonneg.isSelfAdjoint
-
-/-- The positive-form norm of `g (g† g) ^ s` is `(g† g) ^ (2 s + 1)`, for a unit `g`. -/
-private theorem complexConj_reverse_mul_self_mul_leftMulMatrixRpow
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
-    {g : CliffordAlgebra (Q.baseChange ℂ)} (hg : IsUnit g) (s : ℝ) :
-    complexConj Q (reverse (g * Algebra.leftMulMatrixRpow
-        (basis (Q.baseChange ℂ) (b.baseChange ℂ)) (complexConj Q (reverse g) * g) s)) *
-        (g * Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-          (complexConj Q (reverse g) * g) s) =
-      Algebra.leftMulMatrixRpow (basis (Q.baseChange ℂ) (b.baseChange ℂ))
-        (complexConj Q (reverse g) * g) (s + 1 + s) := by
-  have hpos := isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self hb hQ hg
-  have hu : IsUnit (complexConj Q (reverse g) * g) :=
-    Algebra.lmul_isUnit_iff.1 ((LinearMap.isUnit_toMatrix_iff _).1 hpos.isUnit)
-  rw [Algebra.leftMulMatrixRpow_add hu, Algebra.leftMulMatrixRpow_add hu,
-    Algebra.leftMulMatrixRpow_one hpos.nonneg, reverse.map_mul, map_mul,
-    complexConj_reverse_leftMulMatrixRpow_complexConj_reverse_mul_self hb hQ]
-  simp only [mul_assoc]
-
 /-! ### The polar deformation of the Spin group -/
 
 section Spin
-
-/-- A Spin element is a unit of the Clifford algebra. -/
-private theorem isUnit_coe_spinGroup (g : spinGroup (Q.baseChange ℂ)) :
-    IsUnit (g : CliffordAlgebra (Q.baseChange ℂ)) :=
-  ⟨⟨_, _, pinGroup.mul_star_self_of_mem (spinGroup.mem_pin g.2),
-    pinGroup.star_mul_self_of_mem (spinGroup.mem_pin g.2)⟩, rfl⟩
 
 variable (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
 include hb hQ
@@ -164,7 +106,7 @@ private theorem continuous_mul_leftMulMatrixRpow :
       ((p.1 : CliffordAlgebra (Q.baseChange ℂ)), p.2) := by fun_prop
   exact (continuous_subtype_val.comp continuous_fst).mul
     ((continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self hb hQ).comp_continuous hf
-      fun p ↦ ⟨isUnit_coe_spinGroup p.1, trivial⟩)
+      fun p ↦ ⟨spinGroup.isUnit_coe p.1, trivial⟩)
 
 /-- **The polar retraction of a complex Spin group** onto its unitary part `{g | g† g = 1}`: the
 continuous map `g ↦ g (g† g) ^ (-1/2)`, where `g† = complexConj (reverse g)` and the power is taken
@@ -188,10 +130,10 @@ theorem complexConj_reverse_mul_self_spinPolarRetraction (g : spinGroup (Q.baseC
     complexConj Q (reverse (spinPolarRetraction hb hQ g : CliffordAlgebra (Q.baseChange ℂ))) *
       spinPolarRetraction hb hQ g = 1 := by
   rw [coe_spinPolarRetraction_apply, complexConj_reverse_mul_self_mul_leftMulMatrixRpow hb hQ
-    (isUnit_coe_spinGroup g), show (-1 / 2 : ℝ) + 1 + -1 / 2 = 0 by norm_num]
+    (spinGroup.isUnit_coe g), show (-1 / 2 : ℝ) + 1 + -1 / 2 = 0 by norm_num]
   exact Algebra.leftMulMatrixRpow_zero
     (isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self hb hQ
-      (isUnit_coe_spinGroup g)).nonneg
+      (spinGroup.isUnit_coe g)).nonneg
 
 /-- **The polar retraction fixes the unitary part**: `r(g) = g` when `g† g = 1`. -/
 theorem spinPolarRetraction_of_complexConj_reverse_mul_self_eq_one
@@ -218,14 +160,14 @@ noncomputable def spinPolarHomotopyRel :
     simp only [Set.Icc.coe_zero, neg_zero, zero_div, ContinuousMap.id_apply]
     rw [Algebra.leftMulMatrixRpow_zero
       (isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self hb hQ
-        (isUnit_coe_spinGroup g)).nonneg, mul_one]
+        (spinGroup.isUnit_coe g)).nonneg, mul_one]
   map_one_left g := by
     ext
     simp only [Set.Icc.coe_one, coe_spinPolarRetraction_apply]
   prop' t g hg := by
     ext
     simp only [ContinuousMap.coe_mk, ContinuousMap.id_apply]
-    have hg : complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) * g = 1 := hg
+    rw [Set.mem_ofPred_eq] at hg
     rw [hg, Algebra.leftMulMatrixRpow_one_left, mul_one]
 
 /-- The polar deformation at time `t` sends `g` to `g (g† g) ^ (-t/2)`. -/
@@ -254,7 +196,11 @@ noncomputable def spinPolarHomotopyEquiv :
     ext g
     exact congrArg Subtype.val
       (spinPolarRetraction_of_complexConj_reverse_mul_self_eq_one hb hQ g.2).symm
-  right_inv := ⟨(spinPolarHomotopyRel hb hQ).toHomotopy.symm⟩
+  right_inv := by
+    -- Composing the corestricted retraction with the inclusion recovers the retraction.
+    refine ⟨(spinPolarHomotopyRel hb hQ).toHomotopy.symm.cast ?_ rfl⟩
+    ext g
+    rfl
 
 /-- The homotopy equivalence `CliffordAlgebra.spinPolarHomotopyEquiv` is the inclusion. -/
 @[simp]
