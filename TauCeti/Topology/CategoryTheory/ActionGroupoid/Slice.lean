@@ -75,9 +75,9 @@ theorem isOpenEmbedding_inclusion_total (hH : IsOpen (H : Set G)) (hS : IsOpen (
     IsOpenEmbedding (inclusion S).toPrefunctor.mapTotal := by
   have : (inclusion S).toPrefunctor.mapTotal =
       (arrowHomeomorph G X).symm ∘ Prod.map Subtype.val Subtype.val ∘ arrowHomeomorph H S := by
-    funext f
+    funext ⟨_, _, f⟩
     apply (arrowHomeomorph G X).injective
-    simp [Prefunctor.mapTotal, objEquiv]
+    simp [objEquiv]
   rw [this]
   exact (arrowHomeomorph G X).symm.isOpenEmbedding.comp
     ((hH.isOpenEmbedding_subtypeVal.prodMap

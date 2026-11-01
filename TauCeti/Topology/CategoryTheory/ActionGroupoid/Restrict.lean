@@ -54,9 +54,9 @@ subset. -/
 theorem isEmbedding_mapTotal_restrict : IsEmbedding (restrict U).toPrefunctor.mapTotal := by
   have : (restrict U).toPrefunctor.mapTotal =
       (arrowHomeomorph M X).symm ∘ Prod.map id Subtype.val ∘ arrowHomeomorph M U := by
-    funext f
+    funext ⟨_, _, f⟩
     apply (arrowHomeomorph M X).injective
-    simp [Prefunctor.mapTotal, objEquiv]
+    simp [objEquiv]
   rw [this]
   exact (arrowHomeomorph M X).symm.isEmbedding.comp
     ((IsEmbedding.id.prodMap IsEmbedding.subtypeVal).comp (arrowHomeomorph M U).isEmbedding)
@@ -98,8 +98,9 @@ theorem isOpenEmbedding_topologicalNerveMap_restrict (hU : IsOpen (U : Set X))
 induced by the inclusion `G ⋉ U ⥤ G ⋉ X` is an open embedding. -/
 theorem isOpenEmbedding_fatClassifyingSpaceMap_restrict (hU : IsOpen (U : Set X)) :
     IsOpenEmbedding (fatClassifyingSpaceMap (restrict U)
-      (isEmbedding_mapTotal_restrict U).continuous) :=
-  fatRealization.isOpenEmbedding_map_of_range_eq_preimage (coarseAugmentation G X)
+      (isEmbedding_mapTotal_restrict U).continuous) := by
+  rw [fatClassifyingSpaceMap_eq]
+  exact fatRealization.isOpenEmbedding_map_of_range_eq_preimage (coarseAugmentation G X)
     (V := Quotient.mk _ '' (U : Set X))
     (fun _ => isOpenEmbedding_topologicalNerveMap_restrict U hU _)
     (range_topologicalNerveMap_restrict U)
@@ -108,8 +109,8 @@ theorem isOpenEmbedding_fatClassifyingSpaceMap_restrict (hU : IsOpen (U : Set X)
 a `G`-invariant subset `U` is the image of the fat classifying space of `G ⋉ U`. -/
 theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_restrict :
     coarseMap G X ⁻¹' (Quotient.mk _ '' (U : Set X)) =
-      range (fatClassifyingSpaceMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous) :=
-  coarseMap_eq_augment G X ▸
-    fatRealization.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
+      range (fatClassifyingSpaceMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous) := by
+  rw [coarseMap_eq_augment, fatClassifyingSpaceMap_eq]
+  exact fatRealization.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
 
 end TauCeti.ActionGroupoid

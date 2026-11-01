@@ -234,7 +234,8 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
     Set.range (inclusion S).toPrefunctor.mapTotal = {f | f.left.back ∈ S ∧ f.right.back ∈ S} := by
   ext ⟨l, r, g⟩
   refine ⟨?_, fun hf => ?_⟩
-  · rintro ⟨f, hf⟩
+  · rintro ⟨⟨a, b, f⟩, hf⟩
+    rw [Prefunctor.mapTotal_mk] at hf
     cases hf
     simp
   · have := (full_inclusion_iff S).mpr hS
@@ -242,8 +243,9 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
       simpa [range_inclusion_obj] using hf.1
     obtain ⟨b, rfl⟩ : r ∈ Set.range (inclusion S).obj := by
       simpa [range_inclusion_obj] using hf.2
-    exact ⟨⟨a, b, (inclusion S).preimage g⟩,
-      congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)⟩
+    refine ⟨⟨a, b, (inclusion S).preimage g⟩, ?_⟩
+    rw [Prefunctor.mapTotal_mk]
+    exact congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)
 
 end Inclusion
 

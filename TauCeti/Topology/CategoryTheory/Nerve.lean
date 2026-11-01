@@ -86,7 +86,7 @@ theorem totalArrow_mapComposableArrows_obj (φ : C ⥤ D) (F : ComposableArrows 
     (i j : Fin (n + 1)) (hij : i ≤ j) :
     ((φ.mapComposableArrows n).obj F).totalArrow i j hij =
       φ.toPrefunctor.mapTotal (F.totalArrow i j hij) :=
-  (rfl)
+  (φ.toPrefunctor.mapTotal_mk _).symm
 
 /-- A string of composable arrows is determined by its arrows. -/
 theorem ext_of_totalArrow {F G : ComposableArrows C n}
@@ -129,7 +129,9 @@ variable [TopologicalSpace (Quiver.Total D)]
 /-- A functor that is continuous on total arrows is continuous on strings of composable arrows. -/
 theorem continuous_mapComposableArrows_obj {φ : C ⥤ D} (hφ : Continuous φ.toPrefunctor.mapTotal) :
     Continuous (φ.mapComposableArrows n).obj :=
-  continuous_iff.2 fun i j hij ↦ hφ.comp (continuous_totalArrow i j hij)
+  continuous_iff.2 fun i j hij ↦ by
+    simp only [totalArrow_mapComposableArrows_obj]
+    exact hφ.comp (continuous_totalArrow i j hij)
 
 /-- A functor that is an embedding on total arrows is an embedding on strings of composable
 arrows. -/
@@ -202,12 +204,64 @@ theorem coe_topologicalNerveMap_app (φ : C ⥤ D) (hφ : Continuous φ.toPrefun
     (Δ : SimplexCategoryᵒᵖ) :
     ⇑((topologicalNerveMap φ hφ).app Δ) = (φ.mapComposableArrows Δ.unop.len).obj := (rfl)
 
+/-- The map of topological nerves induced by the identity functor is the identity. -/
+@[simp]
+theorem topologicalNerveMap_id (h : Continuous (𝟭 C).toPrefunctor.mapTotal) :
+    topologicalNerveMap (𝟭 C) h = 𝟙 (topologicalNerve C) := by
+  ext Δ F
+  rfl
+
+/-- The map of topological nerves induced by a composite of functors is the composite of the
+induced maps. -/
+theorem topologicalNerveMap_comp {E : Type u} [Category.{v} E] [TopologicalSpace (Quiver.Total E)]
+    (φ : C ⥤ D) (ψ : D ⥤ E) (hφ : Continuous φ.toPrefunctor.mapTotal)
+    (hψ : Continuous ψ.toPrefunctor.mapTotal) (hφψ : Continuous (φ ⋙ ψ).toPrefunctor.mapTotal) :
+    topologicalNerveMap (φ ⋙ ψ) hφψ = topologicalNerveMap φ hφ ≫ topologicalNerveMap ψ hψ := by
+  ext Δ F
+  rfl
+
 /-- The map of fat classifying spaces induced by a functor that is continuous on total arrows: the
-fat realization of the induced map of topological nerves. It is an abbreviation so that the API
-of `TauCeti.fatRealization.map` applies directly. -/
-abbrev fatClassifyingSpaceMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
+fat realization of the induced map of topological nerves (`TauCeti.fatClassifyingSpaceMap_eq`). -/
+def fatClassifyingSpaceMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
     fatClassifyingSpace C ⟶ fatClassifyingSpace D :=
   fatRealization.map
     (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op (topologicalNerveMap φ hφ))
+
+/-- The map of fat classifying spaces induced by a functor is the fat realization of the induced
+map of topological nerves, restricted to the semi-simplicial part. -/
+theorem fatClassifyingSpaceMap_eq (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
+    fatClassifyingSpaceMap φ hφ = fatRealization.map
+      (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op (topologicalNerveMap φ hφ)) :=
+  (rfl)
+
+/-- The map of fat classifying spaces induced by a functor applies the functor to the string of
+each simplex and keeps its barycentric coordinates. -/
+theorem fatClassifyingSpaceMap_ι (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal)
+    (n : SemiSimplexCategory) (F : ComposableArrows C n.len)
+    (t : SemiSimplexCategory.toTop.{max u v}.obj n) :
+    fatClassifyingSpaceMap φ hφ (fatRealization.ι _ n (F, t)) =
+      fatRealization.ι _ n ((φ.mapComposableArrows n.len).obj F, t) :=
+  fatRealization.map_ι
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op (topologicalNerveMap φ hφ)) n F t
+
+/-- The map of fat classifying spaces induced by the identity functor is the identity. -/
+@[simp]
+theorem fatClassifyingSpaceMap_id (h : Continuous (𝟭 C).toPrefunctor.mapTotal) :
+    fatClassifyingSpaceMap (𝟭 C) h = 𝟙 (fatClassifyingSpace C) := by
+  rw [fatClassifyingSpaceMap_eq, topologicalNerveMap_id, Functor.whiskerLeft_id',
+    fatRealization.map_id]
+  rfl
+
+/-- The map of fat classifying spaces induced by a composite of functors is the composite of the
+induced maps. -/
+theorem fatClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
+    [TopologicalSpace (Quiver.Total E)] (φ : C ⥤ D) (ψ : D ⥤ E)
+    (hφ : Continuous φ.toPrefunctor.mapTotal) (hψ : Continuous ψ.toPrefunctor.mapTotal)
+    (hφψ : Continuous (φ ⋙ ψ).toPrefunctor.mapTotal) :
+    fatClassifyingSpaceMap (φ ⋙ ψ) hφψ =
+      fatClassifyingSpaceMap φ hφ ≫ fatClassifyingSpaceMap ψ hψ := by
+  rw [fatClassifyingSpaceMap_eq, fatClassifyingSpaceMap_eq, fatClassifyingSpaceMap_eq,
+    topologicalNerveMap_comp φ ψ hφ hψ, Functor.whiskerLeft_comp, fatRealization.map_comp]
+  rfl
 
 end TauCeti
