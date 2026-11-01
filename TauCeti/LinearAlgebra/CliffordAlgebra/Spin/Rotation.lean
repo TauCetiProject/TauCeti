@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
@@ -24,9 +25,9 @@ More generally, let `u, w` be orthogonal vectors with `Q u * Q w = 1`, for insta
 pair for either sign convention `Q v = ±‖v‖²`. Then the bivector `J = ι u ι w` squares to `-1`,
 so `a + b i ↦ a + b J` is an algebra map from `ℂ`, and it sends the unit circle into the Spin
 group (`CliffordAlgebra.spinCircle`). This circle subgroup is a one-parameter group of rotations
-of the plane of `u` and `w`: the element `z` acts on vectors as the rotation by `z²` in that plane
-and fixes its orthogonal complement. For `Q u = Q w = 1` it is `spinRotation`, reparametrized by
-`Circle.exp`.
+of the plane of `u` and `w`: the element `z` acts on vectors as the rotation by `z²` from `u`
+towards `w` when `Q u < 0` (by `z⁻²` when `Q u > 0`), and fixes the orthogonal complement. For
+`Q u = Q w = 1` it is `spinRotation`, reparametrized by `Circle.exp`.
 
 ## Main definitions and results
 
@@ -40,7 +41,8 @@ and fixes its orthogonal complement. For `Q u = Q w = 1` it is `spinRotation`, r
 * `CliffordAlgebra.spinVectorAction_spinCircle_left`,
   `CliffordAlgebra.spinVectorAction_spinCircle_right`,
   `CliffordAlgebra.spinVectorAction_spinCircle_of_isOrtho`: `z` rotates the plane of `u` and `w`
-  by `z²` and fixes the vectors orthogonal to it.
+  by `z²` from `u` towards `w` when `Q u < 0` (by `z⁻²` when `Q u > 0`) and fixes the vectors
+  orthogonal to it.
 
 ## References
 
@@ -123,13 +125,10 @@ private theorem planeComplex_apply (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) (z 
 private theorem planeComplex_eq_ι_mul_ι (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) (z : ℂ) :
     planeComplex huw h z = ι Q u * ι Q ((z.re * Q w) • u + z.im • w) := by
   have hre : (z.re * Q w) • algebraMap ℝ (CliffordAlgebra Q) (Q u) = algebraMap ℝ _ z.re := by
-    rw [Algebra.smul_def, ← map_mul, mul_assoc, mul_comm (Q w), h, mul_one]
-  rw [planeComplex_apply, map_add, map_smul, map_smul, mul_add, mul_smul_comm, mul_smul_comm,
-    ι_sq_scalar, hre]
-
-private theorem re_sq_add_im_sq_coe_circle (z : Circle) :
-    (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
-  simpa [Complex.normSq_apply, sq] using Circle.normSq_coe z
+    rw [Algebra.smul_def, ← map_mul]
+    congr 1
+    linear_combination z.re * h
+  simp only [planeComplex_apply, map_add, map_smul, mul_add, mul_smul_comm, ι_sq_scalar, hre]
 
 /-- A unit complex number maps into the Spin group: it is the product of the two vectors `u` and
 `Re z Q w • u + Im z • w`, the product of whose values under `Q` is one. -/
@@ -140,15 +139,17 @@ private theorem planeComplex_mem_spinGroup (huw : Q.IsOrtho u w) (h : Q u * Q w 
   have hscaled : Q.IsOrtho (((z : ℂ).re * Q w) • u) ((z : ℂ).im • w) := by
     rw [← QuadraticMap.isOrtho_polarBilin]
     simp [huw.polar_eq_zero]
-  rw [hscaled, QuadraticMap.map_smul, QuadraticMap.map_smul, smul_eq_mul, smul_eq_mul]
+  rw [QuadraticMap.isOrtho_def.1 hscaled, QuadraticMap.map_smul, QuadraticMap.map_smul,
+    smul_eq_mul, smul_eq_mul]
   linear_combination ((z : ℂ).re ^ 2 * (Q u * Q w + 1) + (z : ℂ).im ^ 2) * h +
-    re_sq_add_im_sq_coe_circle z
+    Circle.re_sq_add_im_sq z
 
 variable (Q u w) in
 /-- **The circle subgroup of `Spin` in an orthogonal plane.** For orthogonal `u, w` with
 `Q u * Q w = 1`, the bivector `J = ι u ι w` squares to `-1`, and a unit complex number `z` maps
-to `Re z + Im z J ∈ Spin(Q)`. The element `z` acts on vectors as the rotation by `z²` in the plane
-of `u` and `w` (`CliffordAlgebra.spinVectorAction_spinCircle_left`). -/
+to `Re z + Im z J ∈ Spin(Q)`. The element `z` acts on the plane of `u` and `w` as the rotation by
+`z²` from `u` towards `w` when `Q u < 0`, and by `z⁻²` when `Q u > 0`
+(`CliffordAlgebra.spinVectorAction_spinCircle_left`). -/
 def spinCircle (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) : Circle →* spinGroup Q where
   toFun z := ⟨planeComplex huw h z, planeComplex_mem_spinGroup huw h z⟩
   map_one' := Subtype.ext (by simp)
@@ -166,9 +167,8 @@ theorem spinRotation_eq_spinCircle (hx : Q x = 1) (hy : Q y = 1) (hxy : Q.IsOrth
     spinRotation Q x y hx hy hxy t =
       spinCircle Q x y hxy (by rw [hx, hy, mul_one]) (Circle.exp t) := by
   apply Subtype.ext
-  rw [coe_spinRotation, coe_spinCircle, Circle.coe_exp, Complex.exp_ofReal_mul_I_re,
-    Complex.exp_ofReal_mul_I_im, map_add, map_smul, map_smul, mul_add, mul_smul_comm,
-    mul_smul_comm, ι_sq_scalar, hx, map_one, Algebra.algebraMap_eq_smul_one]
+  simp [mul_add, hx, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im,
+    Algebra.algebraMap_eq_smul_one]
 
 section VectorAction
 
@@ -203,7 +203,7 @@ theorem spinVectorAction_spinCircle_left (z : Circle) :
     mul_smul_comm, ← Algebra.commutes, ← Algebra.smul_def, bivector_mul_ι_left huw,
     ι_mul_bivector, ι_right_mul_bivector huw, sq, Complex.mul_re, Complex.mul_im]
   linear_combination (norm := module)
-    re_sq_add_im_sq_coe_circle z • ((-(z : ℂ).re) • ι Q u + ((z : ℂ).im * Q u) • ι Q w) +
+    Circle.re_sq_add_im_sq z • ((-(z : ℂ).re) • ι Q u + ((z : ℂ).im * Q u) • ι Q w) +
       h • ((-2 * (z : ℂ).re * (z : ℂ).im ^ 2) • ι Q u)
 
 /-- **`spinCircle` rotates its plane, second vector.** The circle element `z` moves `w` to
@@ -216,7 +216,7 @@ theorem spinVectorAction_spinCircle_right (z : Circle) :
     mul_smul_comm, ← Algebra.commutes, ← Algebra.smul_def, bivector_mul_ι_right,
     ι_mul_bivector, ι_right_mul_bivector huw, sq, Complex.mul_re, Complex.mul_im]
   linear_combination (norm := module)
-    re_sq_add_im_sq_coe_circle z • ((-(z : ℂ).re) • ι Q w - ((z : ℂ).im * Q w) • ι Q u) +
+    Circle.re_sq_add_im_sq z • ((-(z : ℂ).re) • ι Q w - ((z : ℂ).im * Q w) • ι Q u) +
       h • ((-2 * (z : ℂ).re * (z : ℂ).im ^ 2) • ι Q w)
 
 /-- **`spinCircle` fixes the orthogonal complement of its plane.** -/

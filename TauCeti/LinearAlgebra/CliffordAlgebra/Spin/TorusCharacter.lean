@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.NoncommCoprod
+public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
--- Private: the commuting of orthogonal bivectors, orthogonality of orthonormal basis vectors for
--- `Q v = -‖v‖²` and the square of a bivector are used only in proofs.
+-- Private: the commuting of orthogonal bivectors, the square of a bivector and `w + w⁻¹ = 2 Re w`
+-- on the circle are used only in proofs.
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
@@ -47,6 +48,7 @@ has Chern root `l = 2ζ`.
 
 ## Main results
 
+* `OrthonormalBasis.spinTorus_apply`: `spinTorus` is the product of the two circle subgroups.
 * `OrthonormalBasis.spinVectorAction_spinTorus_zero` (and `_one`, `_two`, `_three`): `(w₁, w₂)`
   rotates `⟨b₀, b₁⟩` by `w₁²` and `⟨b₂, b₃⟩` by `w₂²`.
 * `CliffordAlgebra.halfSpinRep_one_spinTorus`, `CliffordAlgebra.halfSpinRep_neg_one_spinTorus`:
@@ -85,12 +87,6 @@ namespace OrthonormalBasis
 
 include hQ
 
-private theorem isOrtho_apply {i j : Fin 4} (hij : i ≠ j) : Q.IsOrtho (b i) (b j) :=
-  (QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 (b.orthonormal.2 hij)
-
-private theorem map_apply_mul_map_apply (i j : Fin 4) : Q (b i) * Q (b j) = 1 := by
-  simp [hQ, b.orthonormal.1 i, b.orthonormal.1 j]
-
 /-- The circle subgroups of the two coordinate planes commute. -/
 private theorem commute_spinCircle (w₁ w₂ : Circle) :
     Commute
@@ -124,7 +120,8 @@ theorem coe_spinTorus_apply (w : Circle × Circle) :
         (algebraMap ℝ _ (w.2 : ℂ).re + (w.2 : ℂ).im • (ι Q (b 2) * ι Q (b 3))) := by
   simp [spinTorus]
 
-private theorem spinTorus_apply (w : Circle × Circle) :
+/-- `spinTorus` is the product of the circle subgroups of the planes `⟨b₀, b₁⟩` and `⟨b₂, b₃⟩`. -/
+theorem spinTorus_apply (w : Circle × Circle) :
     b.spinTorus hQ w =
       spinCircle Q (b 0) (b 1) (b.isOrtho_apply hQ (by decide))
           (b.map_apply_mul_map_apply hQ 0 1) w.1 *
@@ -205,13 +202,13 @@ private theorem map_ι_mul_ι_two_three_apply {ε : ℂ} {ψ : W}
     (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) :
     ρ (ι Q (b 2) * ι Q (b 3)) ψ = ε • ρ (ι Q (b 0) * ι Q (b 1)) ψ := by
   rw [mem_eigenspace_iff, chirality_eq o hQ b hb, mul_assoc (ι Q (b 0) * ι Q (b 1)), map_neg,
-    map_mul, LinearMap.neg_apply, Module.End.mul_apply] at hψ
+    map_mul] at hψ
+  simp only [LinearMap.neg_apply, Module.End.mul_apply] at hψ
   -- `J₁² = -1`, so `J₂ ψ = -J₁ (J₁ (J₂ ψ)) = J₁ (ε ψ)`.
   have h₁ (x : W) : ρ (ι Q (b 0) * ι Q (b 1)) (ρ (ι Q (b 0) * ι Q (b 1)) x) = -x := by
     rw [← Module.End.mul_apply, ← map_mul,
-      ι_mul_ι_mul_self_of_isOrtho (b.isOrtho_apply hQ (by decide)),
-      b.map_apply_mul_map_apply hQ 0 1, map_one, map_neg, map_one, LinearMap.neg_apply,
-      Module.End.one_apply]
+      ι_mul_ι_mul_self_of_isOrtho (b.isOrtho_apply hQ (by decide)), b.map_apply_mul_map_apply hQ]
+    simp
   calc ρ (ι Q (b 2) * ι Q (b 3)) ψ
       = ρ (ι Q (b 0) * ι Q (b 1)) (-ρ (ι Q (b 0) * ι Q (b 1)) (ρ (ι Q (b 2) * ι Q (b 3)) ψ)) := by
         rw [map_neg, h₁, neg_neg]
@@ -288,10 +285,9 @@ theorem coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_neg_I_smul {ε : ℂ} (w : 
     {ψ : eigenspace (ρ (chirality Q o)) ε}
     (hψ : ρ (ι Q (b 0) * ι Q (b 1)) ψ = -Complex.I • (ψ : W)) :
     (halfSpinRep o ρ ε (b.spinTorus hQ (w, 1)) ψ : W) = ((w : ℂ))⁻¹ • (ψ : W) := by
-  rw [coe_halfSpinRep_apply, map_spinTorus_mk_one_apply, hψ, smul_smul, ← add_smul,
-    ← Circle.coe_inv, Circle.coe_inv_eq_conj]
+  rw [coe_halfSpinRep_apply, map_spinTorus_mk_one_apply, hψ, smul_smul, ← add_smul]
   congr 1
-  apply Complex.ext <;> simp
+  linear_combination -Circle.coe_add_inv_coe w - Complex.re_add_im (w : ℂ)
 
 variable [FiniteDimensional ℂ W]
 
@@ -322,13 +318,6 @@ theorem trace_halfSpinRep_neg_one_spinTorus (w₁ w₂ : Circle) :
 variable (hQ₀ : Q ≠ 0) (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2)
 include h₂
 
-omit hQ [FiniteDimensional ℂ W] hb h₂ in
-/-- For a unit complex number, `2 Re w = w + w⁻¹`. -/
-private theorem re_mul_two_eq_add_inv (w : Circle) :
-    (((w : ℂ).re : ℝ) : ℂ) * 2 = w + (w : ℂ)⁻¹ := by
-  rw [← Circle.coe_inv, Circle.coe_inv_eq_conj, Complex.re_eq_add_conj]
-  ring
-
 /-- **The character of the positive half-spin representation of `Spinᶜ(4)`** on the torus:
 `[(w₁, w₂), z]` has trace `z (w₁ w₂ + w₁⁻¹ w₂⁻¹)` on a two-dimensional `W⁺`. -/
 theorem trace_spinCGroupHalfSpinRep_one_mk_spinTorus (w₁ w₂ z : Circle) :
@@ -336,8 +325,11 @@ theorem trace_spinCGroupHalfSpinRep_one_mk_spinTorus (w₁ w₂ z : Circle) :
         (spinCGroupHalfSpinRep o ρ 1 hQ₀ (spinCGroup.mk Q hQ₀ (b.spinTorus hQ (w₁, w₂), z))) =
       (z : ℂ) * ((w₁ : ℂ) * w₂ + (w₁ : ℂ)⁻¹ * (w₂ : ℂ)⁻¹) := by
   rw [spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, map_smul,
-    trace_halfSpinRep_one_spinTorus b hQ ρ hb, h₂, ← Circle.coe_mul, Nat.cast_ofNat,
-    re_mul_two_eq_add_inv, Circle.coe_mul, mul_inv, smul_eq_mul]
+    trace_halfSpinRep_one_spinTorus b hQ ρ hb, h₂, smul_eq_mul]
+  have hw := Circle.coe_add_inv_coe (w₁ * w₂)
+  simp only [Circle.coe_mul] at hw
+  push_cast
+  linear_combination -(z : ℂ) * hw
 
 /-- **The character of the negative half-spin representation of `Spinᶜ(4)`** on the torus:
 `[(w₁, w₂), z]` has trace `z (w₁ w₂⁻¹ + w₁⁻¹ w₂)` on `W⁻`, when `W⁺` is two-dimensional. -/
@@ -347,8 +339,11 @@ theorem trace_spinCGroupHalfSpinRep_neg_one_mk_spinTorus (w₁ w₂ z : Circle) 
       (z : ℂ) * ((w₁ : ℂ) * (w₂ : ℂ)⁻¹ + (w₁ : ℂ)⁻¹ * w₂) := by
   rw [spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, map_smul,
     trace_halfSpinRep_neg_one_spinTorus b hQ ρ hb, finrank_eigenspace_chirality_neg o hQ ρ, h₂,
-    ← Circle.coe_inv, ← Circle.coe_mul, Nat.cast_ofNat, re_mul_two_eq_add_inv, Circle.coe_mul,
-    Circle.coe_inv, mul_inv, inv_inv, smul_eq_mul]
+    smul_eq_mul]
+  have hw := Circle.coe_add_inv_coe (w₁ * w₂⁻¹)
+  simp only [Circle.coe_mul, Circle.coe_inv, mul_inv, inv_inv] at hw
+  push_cast
+  linear_combination -(z : ℂ) * hw
 
 /-- **The character of `W⁺ - W⁻` on the torus of `Spinᶜ(4)`**: on two-dimensional half-spinors,
 `tr ρ⁺ - tr ρ⁻ = z (w₁ - w₁⁻¹) (w₂ - w₂⁻¹)` at `[(w₁, w₂), z]`. -/
