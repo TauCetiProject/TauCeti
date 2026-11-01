@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.CutByBall
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
+import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
+import TauCeti.Analysis.BoundedVariation.Sobolev
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
+import TauCeti.Analysis.Calculus.PowerGrowth
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import Mathlib.Analysis.Calculus.Monotone
@@ -19,7 +23,7 @@ import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
-# The derivative of a set of finite perimeter on balls, and the upper density estimate
+# The derivative of a set of finite perimeter on balls, and the density estimates
 
 Let `Ω` be an open set of a finite-dimensional real inner product space `E` and `s` a set of
 locally finite perimeter in `Ω`, with `Dχ_s = σ |Dχ_s|` the polar decomposition of the derivative
@@ -49,12 +53,34 @@ which gives the **upper density estimate**: for every `t > 1` and every small `r
 `|Dχ_s| (closedBall x r) ≤ t n μ(ball 0 1) r^(n - 1)`,     `n = dim E`
 
 (`TauCeti.eventually_variationMeasure_closedBall_le`), and the same bound for the relative
-perimeter `P(s; ball x r)` (`TauCeti.eventually_perimeter_ball_le`). This is one of the density
-estimates at points of the reduced boundary behind De Giorgi's structure theorem. Neither finite
-perimeter nor finite measure of `s` is assumed: the estimates at every radius and at the reduced
-boundary only use that `s` has locally finite perimeter in `Ω`, and the forms with `m'(r)` also
-use that `s` is null-measurable and that `μ` is finite on compact sets. Only the upper density
-estimates use that `μ` is an additive Haar measure.
+perimeter `P(s; ball x r)` (`TauCeti.eventually_perimeter_ball_le`).
+
+In dimension `n ≥ 2` there are matching **lower density estimates**. Let `p = n / (n - 1)` and let
+`C` be the constant `MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the Sobolev inequality.
+At a point `x` of `∂*s`, for every small `r > 0`,
+
+`(r / (3 n C)) ^ n ≤ μ(s ∩ ball x r)`,   `(r / (3 n C)) ^ n ≤ μ(ball x r \ s)`
+
+(`TauCeti.eventually_le_measure_inter_ball`, `TauCeti.eventually_le_measure_ball_sdiff`), and
+the relative isoperimetric inequality turns these into the lower bound
+`(r / (3 n C)) ^ (n - 1) ≤ 2 ^ (n + 1) μ(ball 0 1) ^ (-1/n) P(s; ball x r)`
+(`TauCeti.eventually_le_perimeter_ball`). For the first, cutting `s` by `ball x r` costs at most
+`m'(r)` in perimeter (`TauCeti.ae_perimeter_inter_ball_le`), and the perimeter of `s` inside the
+ball is at most `2 m'(r)` by the estimate above, so the Sobolev inequality for `s ∩ ball x r`
+(`TauCeti.measure_rpow_le_perimeter`) gives the differential inequality
+`m ^ (1 - 1/n) ≤ 3 C m'` at almost every small radius. Since `m` is monotone and positive on
+`(0, r)` (`TauCeti.measure_inter_ball_ne_zero`), it integrates to `r / n ≤ 3 C m(r) ^ (1/n)`
+(`TauCeti.mul_sub_le_mul_rpow_sub_rpow_of_rpow_le_mul_deriv`). The second follows by applying the
+first to the complement, which has the same reduced boundary.
+
+These are the density estimates at points of the reduced boundary behind De Giorgi's structure
+theorem: the volume of `s` and of its complement and the perimeter of `s` in `ball x r` are all
+comparable to the corresponding powers of `r`. Neither finite perimeter nor finite measure of `s`
+is assumed: the estimates at every radius and at the reduced boundary only use that `s` has
+locally finite perimeter in `Ω`, and the forms with `m'(r)` also use that `s` is null-measurable
+and that `μ` is finite on compact sets. The lower density estimates need no measurability
+hypothesis, since a point of the reduced boundary forces `s` to be null-measurable in `Ω`. Only
+the upper and lower density estimates use that `μ` is an additive Haar measure.
 
 ## References
 
@@ -294,5 +320,156 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     (U := ⟨ball x r, isOpen_ball⟩)
     fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
   exact (measure_mono (preimage_mono hball)).trans hr
+
+/-! ### The lower density estimates -/
+
+section LowerDensity
+
+variable [μ.IsAddHaarMeasure] {p : ℝ≥0}
+
+/-- At a point `x` of the reduced boundary of a null-measurable set `s`, the measure
+`m(ρ) = μ(s ∩ ball x ρ)` satisfies `m ^ (1/p) ≤ 3 C m'` at almost every small radius, where
+`1/p = 1 - 1/n` and `C` is the constant of the Sobolev inequality. Cutting `s` by `ball x r` costs
+at most `m'(r)` in perimeter, and the perimeter of `s` in `ball x r` is at most `2 m'(r)` by the
+estimate at the reduced boundary. -/
+private theorem exists_ae_measureReal_inter_ball_rpow_le_mul_deriv (hs : NullMeasurableSet s μ)
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hx : x ∈ reducedBoundary μ Ω s) :
+    ∃ δ > 0, ∀ᵐ r, r ∈ Ioo 0 δ → μ.real (s ∩ ball x r) ^ (p : ℝ)⁻¹ ≤
+      3 * eLpNormLESNormFDerivOneConst μ p * deriv (fun ρ => μ.real (s ∩ ball x ρ)) r := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  obtain ⟨ε, hε, hεΩ⟩ :=
+    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  obtain ⟨δ, hδ, hδε⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
+    ((eventually_variationMeasure_closedBall_le_mul_enorm_setIntegral hx (t := 2)
+      one_lt_two).and (Ioc_mem_nhdsGT hε))
+  refine ⟨δ, hδ, ?_⟩
+  filter_upwards [ae_perimeter_inter_ball_le hs x,
+    ae_enorm_setIntegral_polarDensity_closedBall_le hu hfin hs x] with r hcut hD hr
+  obtain ⟨hvar, hrε⟩ := hδε hr
+  have hΩr : closedBall x r ⊆ Ω := (closedBall_subset_closedBall hrε.2).trans hεΩ
+  set D := deriv (fun ρ => μ.real (s ∩ ball x ρ)) r
+  set C := eLpNormLESNormFDerivOneConst μ p
+  have hD0 : 0 ≤ D := (monotone_measureReal_inter_ball μ s x).deriv_nonneg
+  have hm : μ (s ∩ ball x r) ≠ ∞ :=
+    measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
+  -- The perimeter of `s` in `ball x r` is at most `2 m'(r)`.
+  have hP : perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤ 2 * ENNReal.ofReal D := by
+    rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩)
+      (ball_subset_closedBall.trans hΩr)]
+    exact (measure_mono (preimage_mono ball_subset_closedBall)).trans
+      (hvar.trans (mul_le_mul_right (hD hΩr) _))
+  -- The Sobolev inequality for `s ∩ ball x r`, after cutting `s` by the ball.
+  have h := (measure_rpow_le_perimeter (hs.inter measurableSet_ball.nullMeasurableSet) hm hp).trans
+    (mul_le_mul_right (hcut.trans (add_le_add_left hP _)) _)
+  rw [← ofReal_measureReal hm, ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg (by positivity),
+    show (C : ℝ≥0∞) * (2 * ENNReal.ofReal D + ENNReal.ofReal D) = ENNReal.ofReal (3 * C * D) by
+      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
+        ENNReal.ofReal_ofNat, ENNReal.ofReal_coe_nnreal]
+      ring,
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
+  exact h
+
+/-- **The lower volume density estimate at the reduced boundary.** Let `E` have dimension `n ≥ 2`,
+let `p = n / (n - 1)` and let `C` be the constant `MeasureTheory.eLpNormLESNormFDerivOneConst μ p`
+of the Sobolev inequality. At a point `x` of the reduced boundary of `s` in `Ω`, for every small
+`r > 0`,
+
+`(r / (3 n C)) ^ n ≤ μ(s ∩ ball x r)`. -/
+theorem eventually_le_measure_inter_ball (hp : NNReal.HolderConjugate (finrank ℝ E) p)
+    (hx : x ∈ reducedBoundary μ Ω s) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal ((r / (3 * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      finrank ℝ E) ≤ μ (s ∩ ball x r) := by
+  set n := finrank ℝ E
+  set C := eLpNormLESNormFDerivOneConst μ p
+  have hn : (1 : ℝ) < n := by exact_mod_cast hp.lt
+  have hn' : (0 : ℝ) < n := zero_lt_one.trans hn
+  have hn0 : n ≠ 0 := Nat.cast_ne_zero.1 hn'.ne'
+  -- Replace `s` by the null-measurable set `t = s ∩ Ω`, which agrees with `s` on `Ω`.
+  set t := s ∩ (Ω : Set E)
+  have ht : NullMeasurableSet t μ :=
+    (nullMeasurableSet_restrict Ω.isOpen.measurableSet.nullMeasurableSet).1
+      (nullMeasurableSet_restrict_of_mem_reducedBoundary hx)
+  have hst : s =ᵐ[μ.restrict Ω] t := by
+    filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
+    simp [t, hy]
+  have hxt : x ∈ reducedBoundary μ Ω t := by rwa [← reducedBoundary_congr_ae hst]
+  obtain ⟨δ, hδ, hδm⟩ := exists_ae_measureReal_inter_ball_rpow_le_mul_deriv ht hp hxt
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [Ioo_mem_nhdsGT (lt_min hδ hε)] with r hr
+  have hts : t ∩ ball x r = s ∩ ball x r := by
+    rw [inter_right_comm, inter_eq_left]
+    exact inter_subset_right.trans ((ball_subset_ball (hr.2.le.trans (min_le_right _ _))).trans hεΩ)
+  set m := fun ρ => μ.real (t ∩ ball x ρ)
+  -- The differential inequality `m ^ (1 - 1/n) ≤ 3 C m'` integrates to `r / n ≤ 3 C m(r) ^ (1/n)`.
+  have hgrowth := mul_sub_le_mul_rpow_sub_rpow_of_rpow_le_mul_deriv (f := m) (β := (n : ℝ)⁻¹)
+    (K := 3 * C) hr.1.le
+    ((monotone_measureReal_inter_ball μ t x).monotoneOn _) measureReal_nonneg
+    (fun ρ hρ => ENNReal.toReal_pos (measure_inter_ball_ne_zero hxt hρ.1)
+      (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne))
+    (inv_pos.2 hn') (by positivity) (hδm.mono fun ρ h hρ => by
+      rw [show 1 - (n : ℝ)⁻¹ = (p : ℝ)⁻¹ by simpa using hp.coe.one_sub_inv]
+      exact h ⟨hρ.1, hρ.2.trans (hr.2.trans_le (min_le_left _ _))⟩)
+  simp only [m, ball_zero, inter_empty, measureReal_empty, sub_zero,
+    Real.zero_rpow (inv_pos.2 hn').ne'] at hgrowth
+  have hroot : r / (3 * n * C) ≤ μ.real (t ∩ ball x r) ^ (n : ℝ)⁻¹ := by
+    rcases eq_or_ne (C : ℝ) 0 with hC | hC
+    · rw [hC, mul_zero, div_zero]
+      positivity
+    rw [div_le_iff₀ (mul_pos (mul_pos three_pos hn') (lt_of_le_of_ne C.coe_nonneg hC.symm))]
+    have := mul_le_mul_of_nonneg_left hgrowth hn'.le
+    rw [← mul_assoc, mul_inv_cancel₀ hn'.ne', one_mul] at this
+    linarith
+  rw [← hts, ← ofReal_measureReal (measure_ne_top_of_subset inter_subset_right
+    measure_ball_lt_top.ne), ← Real.rpow_inv_natCast_pow measureReal_nonneg hn0]
+  exact ENNReal.ofReal_le_ofReal
+    (pow_le_pow_left₀ (div_nonneg hr.1.le (by positivity)) hroot n)
+
+/-- **The lower volume density estimate for the complement.** In the setting of
+`TauCeti.eventually_le_measure_inter_ball`, at a point `x` of the reduced boundary of `s` in `Ω`,
+for every small `r > 0`,
+
+`(r / (3 n C)) ^ n ≤ μ(ball x r \ s)`. -/
+theorem eventually_le_measure_ball_sdiff (hp : NNReal.HolderConjugate (finrank ℝ E) p)
+    (hx : x ∈ reducedBoundary μ Ω s) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal ((r / (3 * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      finrank ℝ E) ≤ μ (ball x r \ s) := by
+  simpa only [sdiff_eq_compl_inter] using
+    eventually_le_measure_inter_ball (s := sᶜ) hp (by rwa [reducedBoundary_compl])
+
+/-- **The lower perimeter density estimate at the reduced boundary.** Let `E` have dimension
+`n ≥ 2`, let `p = n / (n - 1)`, let `C` be the constant
+`MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the Sobolev inequality and let
+`ω = μ(ball 0 1)`. At a point `x` of the reduced boundary of `s` in `Ω`, for every small `r > 0`,
+
+`(r / (3 n C)) ^ (n - 1) ≤ 2 ^ (n + 1) ω ^ (-1/n) P(s; ball x r)`.
+
+Together with `TauCeti.eventually_perimeter_ball_le`, the relative perimeter `P(s; ball x r)` is
+comparable to `r ^ (n - 1)` at every point of the reduced boundary. -/
+theorem eventually_le_perimeter_ball (hp : NNReal.HolderConjugate (finrank ℝ E) p)
+    (hx : x ∈ reducedBoundary μ Ω s) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal ((r / (3 * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      (finrank ℝ E - 1)) ≤ ENNReal.ofReal (2 ^ (finrank ℝ E + 1) /
+        μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) * perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
+  set n := finrank ℝ E
+  have hn : 2 ≤ n := by
+    have : (1 : ℝ) < n := by exact_mod_cast hp.lt
+    exact_mod_cast this
+  have hs := nullMeasurableSet_restrict_of_mem_reducedBoundary hx
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [eventually_le_measure_inter_ball hp hx, eventually_le_measure_ball_sdiff hp hx,
+    Ioo_mem_nhdsGT hε] with r h1 h2 hr
+  set a := r / (3 * n * eLpNormLESNormFDerivOneConst μ p)
+  have ha : 0 ≤ a := div_nonneg hr.1.le (by positivity)
+  have hexp : 0 ≤ 1 - (n : ℝ)⁻¹ := sub_nonneg.2 (inv_le_one_of_one_le₀ (by exact_mod_cast
+    (one_le_two.trans hn)))
+  refine Eq.trans_le ?_ ((ENNReal.rpow_le_rpow (le_min h1 h2) hexp).trans
+    (min_measure_inter_measure_sdiff_rpow_le_perimeter hn
+      (hs.mono (Measure.restrict_mono ((ball_subset_ball hr.2.le).trans hεΩ) le_rfl))
+      (Ω := ⟨ball x r, isOpen_ball⟩) subset_rfl))
+  rw [ENNReal.ofReal_rpow_of_nonneg (pow_nonneg ha n) hexp, ← Real.rpow_natCast a n,
+    ← Real.rpow_mul ha, ← Real.rpow_natCast a (n - 1), Nat.cast_sub (one_le_two.trans hn),
+    Nat.cast_one, mul_sub, mul_one, mul_inv_cancel₀ (by positivity)]
+
+end LowerDensity
 
 end TauCeti

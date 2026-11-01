@@ -38,10 +38,14 @@ proves their basic properties.
   (`TauCeti.integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal`).
 * A point of the reduced boundary forces `s` to have locally finite perimeter in `Ω`
   (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), so otherwise
-  `∂*s` is empty (`TauCeti.reducedBoundary_eq_empty_of_not`).
+  `∂*s` is empty (`TauCeti.reducedBoundary_eq_empty_of_not`). It also forces `s` to be
+  null-measurable in `Ω` (`TauCeti.nullMeasurableSet_restrict_of_mem_reducedBoundary`).
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
-  (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence, when `μ` is an additive
-  Haar measure, in the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
+  (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and every ball around it meets `s`
+  in a set of positive measure (`TauCeti.measure_inter_ball_ne_zero`). When `μ` is an additive
+  Haar measure, the same holds for the complement (`TauCeti.measure_ball_sdiff_ne_zero`), so the
+  reduced boundary lies in the topological frontier of `s`
+  (`TauCeti.reducedBoundary_subset_frontier`).
 * The outer normal concentrates at `ν_s x` in mean at every point `x` of the reduced boundary:
   `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
   (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
@@ -154,6 +158,13 @@ theorem locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary
   exact variationMeasure_preimage_closedBall_ne_zero hx one_pos
     (by simp [variationMeasure_eq_zero_of_not h])
 
+/-- A point of the reduced boundary forces `s` to be null-measurable in `Ω`. -/
+theorem nullMeasurableSet_restrict_of_mem_reducedBoundary (hx : x ∈ reducedBoundary μ Ω s) :
+    NullMeasurableSet s (μ.restrict Ω) :=
+  (aemeasurable_indicator_const_iff (1 : ℝ)).1
+    (locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary
+      hx).1.aestronglyMeasurable.aemeasurable
+
 /-- The reduced boundary is empty unless `s` has locally finite perimeter in `Ω`. -/
 theorem reducedBoundary_eq_empty_of_not (h : ¬(LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧
     ∀ K, IsCompact K → K ⊆ Ω →
@@ -162,34 +173,25 @@ theorem reducedBoundary_eq_empty_of_not (h : ¬(LocallyIntegrableOn (s.indicator
   eq_empty_of_forall_notMem fun _ hx =>
     h (locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx)
 
-/-- **The reduced boundary lies in the topological frontier.** Near a point outside the frontier
-of `s`, the indicator of `s` is constant, so the perimeter measure vanishes there. -/
-theorem reducedBoundary_subset_frontier [μ.IsAddHaarMeasure] :
-    reducedBoundary μ Ω s ⊆ frontier s := by
-  intro x hx
+/-- **Points of the reduced boundary see `s` in every ball.** Every ball of positive radius around a
+point of `∂*s` meets `s` in a set of positive measure. -/
+theorem measure_inter_ball_ne_zero (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r) :
+    μ (s ∩ ball x r) ≠ 0 := by
+  intro h0
   obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  by_contra hxf
-  -- A ball around `x` inside `Ω` lies in `s` or in its complement.
-  obtain ⟨V, hV, hVs⟩ : ∃ V ∈ 𝓝 x, V ⊆ s ∨ V ⊆ sᶜ := by
-    rw [frontier, Set.mem_sdiff, not_and_or, not_not] at hxf
-    rcases hxf with h | h
-    · exact ⟨_, isClosed_closure.isOpen_compl.mem_nhds h,
-        Or.inr (compl_subset_compl.2 subset_closure)⟩
-    · exact ⟨_, isOpen_interior.mem_nhds h, Or.inl interior_subset⟩
-  obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 (inter_mem hV (Ω.isOpen.mem_nhds hx.1))
-  have hP : perimeter μ ⟨ball x r, isOpen_ball⟩ s = 0 := by
-    rcases hVs with h | h
-    · rw [perimeter_congr_ae (t := univ), perimeter_univ]
-      filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
-      simp [h (hrV hy).1]
-    · rw [perimeter_congr_ae (t := ∅), perimeter_empty]
-      filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
-      simpa using h (hrV hy).1
-  have hU := variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => (hrV hy).2
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds hx.1)
+  set ρ := min r ε
+  have hρ : 0 < ρ := lt_min hr hε
+  -- `s` is null in `ball x ρ`, so its perimeter there vanishes.
+  have hP : perimeter μ ⟨ball x ρ, isOpen_ball⟩ s = 0 := by
+    rw [perimeter_congr_ae (t := ∅), perimeter_empty]
+    rw [Opens.coe_mk, ae_eq_empty, Measure.restrict_apply' measurableSet_ball]
+    exact measure_mono_null (inter_subset_inter_right _ (ball_subset_ball (min_le_left r ε))) h0
+  have hU := variationMeasure_preimage_coe hu hfin (U := ⟨ball x ρ, isOpen_ball⟩)
+    fun y hy => hεΩ (ball_subset_ball (min_le_right r ε) hy)
   rw [Opens.coe_mk, ← perimeter_def, hP] at hU
-  exact variationMeasure_preimage_closedBall_ne_zero hx (half_pos hr)
-    (measure_mono_null (preimage_mono (closedBall_subset_ball (half_lt_self hr))) hU)
+  exact variationMeasure_preimage_closedBall_ne_zero hx (half_pos hρ)
+    (measure_mono_null (preimage_mono (closedBall_subset_ball (half_lt_self hρ))) hU)
 
 /-- At `|Dχ_s|`-almost every point the polar density has norm one and is the limit of its averages
 over shrinking closed balls. -/
@@ -398,5 +400,26 @@ theorem outerNormal_compl [μ.IsAddHaarMeasure] (hx : x ∈ reducedBoundary μ �
   rw [outerNormal]
   simp only [setAverage_polarDensity_compl]
   rw [(tendsto_setAverage_polarDensity hx).neg.limUnder_eq, neg_neg]
+
+/-- **Points of the reduced boundary see the complement of `s` in every ball**, against an additive
+Haar measure: every ball of positive radius around a point of `∂*s` meets `sᶜ` in a set of positive
+measure. -/
+theorem measure_ball_sdiff_ne_zero [μ.IsAddHaarMeasure] (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ}
+    (hr : 0 < r) : μ (ball x r \ s) ≠ 0 := by
+  rw [sdiff_eq_compl_inter]
+  exact measure_inter_ball_ne_zero (by rwa [reducedBoundary_compl]) hr
+
+/-- **The reduced boundary lies in the topological frontier.** Near a point outside the frontier
+of `s`, the set `s` or its complement contains a ball. -/
+theorem reducedBoundary_subset_frontier [μ.IsAddHaarMeasure] :
+    reducedBoundary μ Ω s ⊆ frontier s := by
+  intro x hx
+  rw [frontier, Set.mem_sdiff]
+  refine ⟨Metric.mem_closure_iff.2 fun r hr => ?_, fun hxs => ?_⟩
+  · obtain ⟨y, hy⟩ := nonempty_of_measure_ne_zero (measure_inter_ball_ne_zero hx hr)
+    exact ⟨y, hy.1, by simpa [dist_comm] using hy.2⟩
+  · obtain ⟨r, hr, hrs⟩ := Metric.isOpen_iff.1 isOpen_interior x hxs
+    exact measure_ball_sdiff_ne_zero hx hr
+      (by rw [sdiff_eq_empty.2 (hrs.trans interior_subset), measure_empty])
 
 end TauCeti
