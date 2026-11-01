@@ -12,8 +12,8 @@ public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Relationalize
 
 `BoundedFormulaInf.backTranslate` sends an infinitary formula of the graph language
 `L.graphLanguage` to a formula of `L`: an atom `G_f(x₀, …, x_{k-1}, y)` of the graph relation of
-a function symbol `f` becomes the equation `f(x₀, …, x_{k-1}) = y`, a base atom `R(x̄)` becomes
-`R(x̄)`, and connectives and quantifiers are translated structurally. The graph language has no
+a function symbol `f` becomes the equation `f(x₀, …, x_{k-1}) = y`, a base atom `R(xs)` becomes
+`R(xs)`, and connectives and quantifiers are translated structurally. The graph language has no
 function symbols, so its terms are variables and are sent to the same variables
 (`Term.backTranslate`). The translation works over any branching carrier.
 
@@ -132,7 +132,7 @@ theorem backTranslate_equal (t₁ t₂ : L.graphLanguage.Term (α ⊕ Fin n)) :
     (equal t₁ t₂ : L.graphLanguage.BoundedFormulaInf ι α n).backTranslate =
       equal t₁.backTranslate t₂.backTranslate := (rfl)
 
-/-- A base atom `R(t̄)` back-translates to the atom `R(t̄)` of `L`. -/
+/-- A base atom `R(ts)` back-translates to the atom `R(ts)` of `L`. -/
 @[simp]
 theorem backTranslate_rel_base {l : ℕ} (R : L.Relations l)
     (ts : Fin l → L.graphLanguage.Term (α ⊕ Fin n)) :
