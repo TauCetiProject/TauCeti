@@ -82,6 +82,7 @@ abbrev bfEquivSetoidOn (φ : L.SentenceInf ι) (α : Ordinal.{o}) : Setoid (mode
 
 /-- Two models are related by the restricted level exactly when they are related by the ambient
 level. -/
+@[simp]
 theorem bfEquivSetoidOn_apply {φ : L.SentenceInf ι} {α : Ordinal.{o}}
     {c d : modelsOf (V := V) φ} :
     bfEquivSetoidOn V φ α c d ↔ bfEquivSetoid L V α c d :=
