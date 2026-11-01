@@ -127,10 +127,11 @@ image of `f`, and `d₁` is its quotient by `f`
 theorem ofInjective_obj_d₁_eq_iff (d : Q ⟶ P) :
     (ofInjective f hf hw).obj.d₁ = d ↔ d ≫ f = w • 𝟙 Q := by
   refine ⟨fun h ↦ h ▸ (ofInjective f hf hw).obj.d₁_comp_d₀, fun h ↦ ?_⟩
+  have hd (y : Q) : f.hom.hom (d.hom.hom y) = w • y := by
+    simpa using LinearMap.congr_fun (congrArg (·.hom.hom) h) y
   ext y
   apply hf
-  have hd : f.hom.hom (d.hom.hom y) = w • y := congrArg (fun k ↦ k.hom.hom y) h
-  exact (d₁_comp_d₀_apply (ofInjective f hf hw) y).trans hd.symm
+  exact (d₁_comp_d₀_apply (ofInjective f hf hw) y).trans (hd y).symm
 
 end OfInjective
 
@@ -185,10 +186,11 @@ private theorem quotientCokernelπ_comp_quotientCokernelDesc (hf : Function.Inje
   -- The class of `y` is the image of `1 ⊗ y`, on which the adjoint of `g` takes the value `g y`.
   ext y
   refine (congrArg (quotientCokernelDesc hf hfg).hom (quotientCokernelπ_apply _ y)).trans ?_
-  exact (ConcreteCategory.congr_hom (cokernelπ_quotientCokernelDesc hf hfg) _).trans
-    (congrArg (fun k ↦ k.hom y)
-      (((ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).homEquiv
-        _ _).apply_symm_apply g))
+  refine (ConcreteCategory.congr_hom (cokernelπ_quotientCokernelDesc hf hfg) _).trans ?_
+  refine (ModuleCat.extendRestrictScalarsAdj_homEquiv_apply (M := Q.obj) _ y).symm.trans ?_
+  rw [Equiv.apply_symm_apply]
+  -- `ConcreteCategory.hom` on `ModuleCat` is `ModuleCat.Hom.hom` by definition of the instance.
+  rfl
 
 /-- **The cokernel of Eisenbud's matrix factorization.** If `0 → P --f--> Q --g--> M → 0` is a
 resolution of an `S/(w)`-module `M` by finitely generated projective `S`-modules, then the
