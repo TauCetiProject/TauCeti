@@ -89,6 +89,28 @@ namespace PointedPrestableFamily
 
 variable {S T : Scheme.{u}} {m n : ℕ} (P : PointedPrestableFamily S n)
 
+/-- The total space of a pointed prestable family is a scheme over the base, through its structure
+morphism. -/
+instance instOverTotal : P.total.Over S :=
+  ⟨P.toBase⟩
+
+/-- The structure morphism of the total space as a scheme over the base is `toBase`. -/
+@[simp]
+theorem over_eq_toBase : P.total ↘ S = P.toBase :=
+  (rfl)
+
+/-- A closed subscheme of the total space of a pointed prestable family, for instance the reduced
+subscheme on an irreducible component, is a scheme over the base through the total space. -/
+instance instOverSubscheme (I : P.total.IdealSheafData) : I.subscheme.Over S :=
+  ⟨I.subschemeι ≫ P.toBase⟩
+
+/-- The structure morphism of a closed subscheme of the total space is its inclusion followed by
+`toBase`. -/
+@[simp]
+theorem over_eq_subschemeι_comp_toBase (I : P.total.IdealSheafData) :
+    I.subscheme ↘ S = I.subschemeι ≫ P.toBase :=
+  (rfl)
+
 /-- Distinct markings take distinct values at every point of the base. -/
 theorem marking_apply_ne {i j : Fin n} (hij : i ≠ j) (s : S) : P.marking i s ≠ P.marking j s :=
   fun h ↦ Set.disjoint_left.mp (P.pairwise_disjoint_range hij) ⟨s, rfl⟩ ⟨s, h.symm⟩

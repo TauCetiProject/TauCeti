@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
-public import TauCeti.AlgebraicGeometry.Curves.AffineCover
+public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
@@ -14,14 +14,17 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 # Line-bundle degree under extension of the base field
 
 The Euler-characteristic degree of a line bundle is unchanged by extension of the ground field
-when the source is quasi-separated and has a two-affine cover with affine intersection. The line
-bundle after base change is its actual pullback. In particular, the result holds for smooth
-proper connected curves over arbitrary fields, without a rational point or geometric
-connectedness hypothesis.
+when the source is quasi-compact with affine diagonal, for instance separated of finite type over
+the field, and in particular proper. The line bundle after base change is its actual pullback. No
+smoothness, rational point or geometric connectedness is needed, so the result applies to nodal
+and to reducible proper curves. The same holds, through an explicit Čech computation, for a
+quasi-separated scheme with a two-affine cover having affine intersection.
 
 Both coefficient cohomology dimensions and both structure-sheaf dimensions are preserved by
-field extension. This makes degree, and hence the subgroup of degree-zero line-bundle classes,
-compatible with extension of the base field.
+field extension, by flat base change of cohomology
+(`TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback`). This makes degree,
+and hence the subgroup of degree-zero line-bundle classes, compatible with extension of the base
+field.
 
 ## References
 
@@ -73,19 +76,19 @@ theorem eulerDegree_pullback_of_two_affine_opens [QuasiSeparatedSpace X]
     hOne (trivial X).obj]
 
 include H in
-/-- The degree of a line bundle on a smooth proper connected curve is unchanged by any
-extension of the ground field. The curve need not have a rational point or be geometrically
-connected. -/
-theorem eulerDegree_pullback [IsProper (X ↘ Spec (.of k))]
-    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X]
+/-- **The degree of a line bundle is unchanged by any extension of the ground field**, on a
+quasi-compact scheme with affine diagonal, for instance a proper scheme over `k`. The scheme need
+not be smooth, irreducible or geometrically connected, nor have a rational point. -/
+theorem eulerDegree_pullback [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))]
     (L : InvertibleSheaf X) :
     ((pullback g).obj L).eulerDegree K = L.eulerDegree k := by
-  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
-  have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
-  obtain ⟨U, V, hU, hV, hUV⟩ := X.exists_two_affine_opens_of_smooth (k := k)
-  have := quasiSeparatedSpace_of_quasiSeparated (X ↘ Spec (.of k))
-  exact eulerDegree_pullback_of_two_affine_opens H L hU hV (hU.inf hV) hUV
+  let e : (Scheme.Modules.pullback g).obj (trivial X).obj ≅ (trivial Y).obj :=
+    (Scheme.Modules.pullback g).mapIso (trivialObjIsoUnit X) ≪≫
+      Scheme.Modules.pullbackObjUnitIso g ≪≫ (trivialObjIsoUnit Y).symm
+  rw [eulerDegree_eq_finrank_sub, eulerDegree_eq_finrank_sub, pullback_obj_obj,
+    ← Scheme.Modules.finrank_cohomology_congr K e 0,
+    ← Scheme.Modules.finrank_cohomology_congr K e 1]
+  simp only [finrank_cohomology_pullback_eq_of_isPullback H]
 
 end InvertibleSheaf
 
@@ -106,9 +109,9 @@ theorem eulerDegree_pullback_of_two_affine_opens [QuasiSeparatedSpace X]
 
 include H in
 /-- Pullback under a field extension preserves the Euler-characteristic degree of a
-line-bundle class on a smooth proper connected curve. -/
-theorem eulerDegree_pullback [IsProper (X ↘ Spec (.of k))]
-    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X]
+line-bundle class on a quasi-compact scheme with affine diagonal, for instance a proper scheme
+over `k`. -/
+theorem eulerDegree_pullback [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))]
     (a : LineBundleClass X) :
     eulerDegree K (pullback g a) = eulerDegree k a := by
   obtain ⟨L, rfl⟩ := mk_surjective a
