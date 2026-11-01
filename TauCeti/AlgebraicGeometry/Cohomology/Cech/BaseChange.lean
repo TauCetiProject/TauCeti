@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicGeometry.Cohomology.Cech.Linear
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
-public import TauCeti.CategoryTheory.Limits.Lattice
+public import TauCeti.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
 /-!
@@ -51,8 +51,12 @@ degrees zero and one on a two-affine cover, along any base-ring map in degree on
 
 ## Main definitions
 
+* `TauCeti.AlgebraicGeometry.sectionsPullbackExtend`: the map of presheaves of `R'`-modules
+  `R' ⊗_R Γ(M, -) ⟶ Γ(g^* M, g⁻¹ -)`, `s ⊗ m ↦ s • g^* m`, adjoint to pulling back sections
+  (`extendRestrictScalarsAdj_homEquiv_sectionsPullbackExtend_app_hom_apply`).
 * `TauCeti.AlgebraicGeometry.cechComplexBaseChangeIso`: the isomorphism of complexes
-  `R' ⊗_R Č(U, M) ≅ Č(g⁻¹ U, g^* M)`, along any ring map `R → R'`.
+  `R' ⊗_R Č(U, M) ≅ Č(g⁻¹ U, g^* M)`, along any ring map `R → R'`. Its factors are the components
+  of `sectionsPullbackExtend` (`cechComplexBaseChangeIso_hom_f_π`).
 
 ## Main results
 
@@ -154,17 +158,29 @@ private def sectionsPullback (M : X.Modules) :
       ((g.pullbackSections_restrict M _ i.unop x).symm.trans
         (congrArg _ (sectionsPullbackApp_hom_apply H M _ x).symm))
 
-/-- The morphism of presheaves of `R'`-modules `R' ⊗[R] Γ(M, -) ⟶ Γ(g^* M, g⁻¹ -)` adjoint to
-`sectionsPullback`, `s ⊗ m ↦ s • g^* m`. -/
-private def sectionsPullbackExtend (M : X.Modules) :
+/-- The morphism of presheaves of `R'`-modules `R' ⊗[R] Γ(M, -) ⟶ Γ(g^* M, g⁻¹ -)` on `X`,
+`s ⊗ m ↦ s • g^* m`: the adjoint, under extension and restriction of scalars along `R → R'`, of
+pulling back sections along `g` (`AlgebraicGeometry.Scheme.Hom.pullbackSectionsBaseLinear`). -/
+def sectionsPullbackExtend (M : X.Modules) :
     (sectionsBasePresheafFunctor R).obj M ⋙ ModuleCat.extendScalars (algebraMap R R') ⟶
-      pullbackSectionsPresheaf (R' := R') g M where
+      (Opens.map g.base).op ⋙
+        (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M) where
   app W := ((ModuleCat.extendRestrictScalarsAdj (algebraMap R R')).homEquiv _ _).symm
     ((sectionsPullback H M).app W)
   naturality W V i := by
     rw [Functor.comp_map, ← Adjunction.homEquiv_naturality_left_symm,
       (sectionsPullback H M).naturality, Functor.comp_map,
       Adjunction.homEquiv_naturality_right_symm]
+
+/-- `sectionsPullbackExtend` is adjoint to pulling back sections along `g`: its adjoint under
+extension and restriction of scalars along `R → R'` sends a section `m` of `M` to `g^* m`. -/
+theorem extendRestrictScalarsAdj_homEquiv_sectionsPullbackExtend_app_hom_apply (M : X.Modules)
+    (W : X.Opensᵒᵖ) (m : Γ(M, W.unop)) :
+    ((ModuleCat.extendRestrictScalarsAdj (algebraMap R R')).homEquiv _ _
+      ((sectionsPullbackExtend H M).app W)).hom m = g.pullbackSections M W.unop m := by
+  dsimp only [sectionsPullbackExtend]
+  rw [Equiv.apply_symm_apply]
+  exact sectionsPullbackApp_hom_apply H M W.unop m
 
 /-- On an affine open, sections of `g^* M` are the base change of sections of `M`, so the
 adjoint of the pullback of sections is an isomorphism. -/
@@ -219,29 +235,11 @@ private lemma isIso_cechComplexFunctor_map_sectionsPullbackExtend (U : ι → X.
     exact Pi.map_isIso φ
   exact HomologicalComplex.Hom.isIso_of_components _
 
-/-- Taking inverse images under `g` commutes with finite intersections. -/
-private lemma finset_inf_preimage (U : ι → X.Opens) (s : Finset ι) :
-    (s.inf fun i ↦ g ⁻¹ᵁ U i) = g ⁻¹ᵁ s.inf U :=
-  (Finset.apply_inf_eq_inf_comp (g ⁻¹ᵁ ·) (fun _ _ ↦ rfl) rfl).symm
-
 /-- The inverse images under `g` of the finite intersections of `U` are the finite intersections
 of the inverse images, so `cechComplexCompIso` applies to `g⁻¹`. -/
 private lemma nonempty_pi_preimage_hom_preimage_pi (U : ι → X.Opens) (k : ℕ) (a : Fin (k + 1) → ι) :
-    Nonempty ((∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)) ⟶ g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)) := by
-  classical
-  refine ⟨homOfLE (le_of_eq ?_)⟩
-  rw [CompleteLattice.finite_product_eq_finset_image_inf (fun i ↦ g ⁻¹ᵁ U i) a,
-    CompleteLattice.finite_product_eq_finset_image_inf U a]
-  exact finset_inf_preimage U _
-
-include H in
-/-- The nonempty finite intersections of the inverse images `g⁻¹ U` are affine, because `g` is
-affine. -/
-private lemma isAffineOpen_finset_inf_preimage (U : ι → X.Opens)
-    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (s : Finset ι) (hs : s.Nonempty) :
-    IsAffineOpen (s.inf fun i ↦ g ⁻¹ᵁ U i) := by
-  have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
-  exact finset_inf_preimage U s ▸ (hU s hs).preimage g
+    Nonempty ((∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)) ⟶ g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)) :=
+  ⟨homOfLE (g.preimage_finite_product _).ge⟩
 
 /-- **The Čech complex commutes with base change.** Extending scalars from `R` to `R'` in the
 Čech complex of the sections of `M` for `U` gives the Čech complex of the sections of `g^* M` for
@@ -259,6 +257,50 @@ def cechComplexBaseChangeIso [Finite ι] (U : ι → X.Opens) (M : X.Modules)
     (cechComplexCompIso (Opens.map g.base) U _
       (nonempty_pi_preimage_hom_preimage_pi (g := g) U)).symm
 
+/-- The factor indexed by `a` of the degree `n` component of `cechComplexBaseChangeIso` is the
+component `R' ⊗_R Γ(M, W) ⟶ Γ(g^* M, g⁻¹ W)` of `sectionsPullbackExtend` at the intersection
+`W = U (a 0) ∩ ⋯ ∩ U (a n)`, followed by the identification of `g⁻¹ W` with the intersection of
+the `g⁻¹ U (a j)`. -/
+@[reassoc]
+theorem cechComplexBaseChangeIso_hom_f_π [Finite ι] (U : ι → X.Opens) (M : X.Modules)
+    [M.IsQuasicoherent] (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (n : ℕ)
+    (a : Fin (n + 1) → ι) :
+    (cechComplexBaseChangeIso H U M hU).hom.f n ≫ Pi.π (fun a : Fin (n + 1) → ι ↦
+        ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)).obj
+          (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a =
+      (ModuleCat.extendScalars (algebraMap R R')).map (Pi.π (fun a : Fin (n + 1) → ι ↦
+          ((sectionsBasePresheafFunctor R).obj M).obj (op (∏ᶜ fun j ↦ U (a j)))) a) ≫
+        (sectionsPullbackExtend H M).app (op (∏ᶜ fun j ↦ U (a j))) ≫
+          ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)).map
+            (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op := by
+  let Q := (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)
+  let C := cechComplexCompIso (Opens.map g.base) U Q (nonempty_pi_preimage_hom_preimage_pi U)
+  let r := (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op
+  -- The restrictions between the equal opens `∏ g⁻¹ U (a j)` and `g⁻¹ ∏ U (a j)` are inverse.
+  have hr : Q.map (Pi.lift fun j ↦ (Opens.map g.base).map (Pi.π (fun j ↦ U (a j)) j)).op ≫
+      Q.map r = 𝟙 _ := by
+    rw [← Q.map_comp, ← Q.map_id]
+    exact congrArg Q.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
+  -- So the factors of the inverse of `cechComplexCompIso` are restrictions.
+  have h : C.hom.f n ≫
+      Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)))) a ≫ Q.map r =
+        Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a :=
+    (cechComplexCompIso_hom_f_π_assoc _ U Q _ n a (Q.map r)).trans <|
+      (congrArg (_ ≫ ·) hr).trans (Category.comp_id _)
+  have hC : C.inv.f n ≫
+      Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)))) a =
+        Pi.π (fun a : Fin (n + 1) → ι ↦ Q.obj (op (g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)))) a ≫ Q.map r :=
+    (congrArg (C.inv.f n ≫ ·) h).symm.trans <| (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ _) ((HomologicalComplex.comp_f _ _ n).symm.trans
+        ((congrArg (fun φ ↦ φ.f n) C.inv_hom_id).trans (HomologicalComplex.id_f _ n)))).trans
+        (Category.id_comp _)
+  -- `cechComplexBaseChangeIso` is the composite of three isomorphisms of complexes.
+  exact (congrArg (_ ≫ _ ≫ ·) hC).trans <|
+    (congrArg (_ ≫ ·) ((cechComplexFunctor_map_f_π_assoc U _ (sectionsPullbackExtend H M) n a
+      (Q.map r)).trans (Category.assoc _ _ _))).trans <| (Category.assoc _ _ _).symm.trans
+    (cechComplexFunctorMapIso_hom_app_f_π_assoc U (ModuleCat.extendScalars (algebraMap R R'))
+      ((sectionsBasePresheafFunctor R).obj M) n a _)
+
 include H in
 /-- **The Čech complex computes the cohomology of every base change.** Let `X` be a scheme over
 `R`, let `R → R'` be any ring map and let `Y = X ×_R R'`, given as a pullback square. Let `M` be a
@@ -274,9 +316,10 @@ theorem nonempty_linearEquiv_homology_extendScalars_cechComplex_cohomology_pullb
           ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
   have hcoverV : ⨆ i, g ⁻¹ᵁ U i = ⊤ := by
     rw [← Scheme.Hom.preimage_iSup, hcover, Scheme.Hom.preimage_top]
+  have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
   exact ⟨(HomologicalComplex.homologyMapIso (cechComplexBaseChangeIso H U M hU) n
       |>.toLinearEquiv) ≪≫ₗ
-    homologyCechComplexLinearEquiv _ (isAffineOpen_finset_inf_preimage H U hU) hcoverV _ n⟩
+    homologyCechComplexLinearEquiv _ (g.isAffineOpen_finset_inf_preimage hU) hcoverV _ n⟩
 
 include H in
 /-- **Flat base change for the cohomology of quasi-coherent sheaves**, for a finite cover with

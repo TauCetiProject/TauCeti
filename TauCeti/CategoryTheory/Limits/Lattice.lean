@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Lattice
+public import Mathlib.CategoryTheory.Limits.Shapes.FiniteProducts
 
 /-!
 # Finite products of reindexed families in a lattice
@@ -37,13 +38,14 @@ theorem finite_product_eq_finset_image_inf {ι : Type v} [DecidableEq ι] {J : T
   rw [← Finset.univ_map_equiv_to_embedding (discreteEquiv (α := J)).symm, Finset.inf_map]
   rfl
 
-/-- A property of the nonempty finite infima of a family `f` holds for the finite products
-`f (a 0) × ⋯ × f (a n)` of its members, as in the terms of Čech complexes: such a product is the
-infimum of `f` over the image of `a`. -/
+/-- A property of the nonempty finite infima of a family `f` holds for the nonempty finite products
+of its members `f (a j)`, such as the products `f (a 0) × ⋯ × f (a n)` in the terms of Čech
+complexes: such a product is the infimum of `f` over the image of `a`. -/
 theorem finite_product_of_forall_finset_inf {ι : Type v} {p : α → Prop} (f : ι → α)
-    (h : ∀ s : Finset ι, s.Nonempty → p (s.inf f)) {n : ℕ} (a : Fin (n + 1) → ι) :
-    p (∏ᶜ fun j ↦ f (a j)) := by
+    (h : ∀ s : Finset ι, s.Nonempty → p (s.inf f)) {J : Type w} [Finite J] [Nonempty J]
+    (a : J → ι) : p (∏ᶜ fun j ↦ f (a j)) := by
   classical
+  have := Fintype.ofFinite J
   exact finite_product_eq_finset_image_inf f a ▸ h _ (Finset.univ_nonempty.image a)
 
 end CategoryTheory.Limits.CompleteLattice
