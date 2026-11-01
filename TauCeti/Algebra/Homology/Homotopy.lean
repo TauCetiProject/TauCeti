@@ -327,21 +327,17 @@ lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p
     Nonempty (Homotopy χ 0) ↔
       ∃ g : X ⟶ K.X q, g ≫ K.d q p =
         (HomologicalComplex.singleObjXSelf (.up ℤ) p X).inv ≫ χ.f p := by
-  -- The zero-cochain of `χ` is the cochain from a single complex given by its component.
-  have hχ : Cochain.ofHom χ = Cochain.fromSingleMk
-      ((HomologicalComplex.singleObjXSelf (.up ℤ) p X).inv ≫ χ.f p) (add_zero p) :=
+  have hf : ((HomologicalComplex.singleObjXSelf (.up ℤ) p X).inv ≫ χ.f p) ≫ K.d p (p + 1) = 0 := by
+    rw [Category.assoc, χ.comm]
+    simp
+  rw [← Cocycle.fromSingleMk_mem_coboundaries_iff _ (add_zero p) (p + 1) rfl hf q hqp,
+    mem_coboundaries_iff _ (-1) (by simp)]
+  -- The cocycle of `Cocycle.fromSingleMk` is the zero-cochain of `χ`.
+  have h : (Cocycle.fromSingleMk _ (add_zero p) (p + 1) rfl hf : Cochain _ _ 0) =
+      Cochain.ofHom χ :=
     (Cochain.fromSingleEquiv (add_zero p)).injective (by simp [Cochain.fromSingleEquiv_apply])
-  have hδ (g : X ⟶ K.X q) : δ (-1) 0 (Cochain.fromSingleMk g (show p + (-1) = q by lia)) =
-      Cochain.fromSingleMk (g ≫ K.d q p) (add_zero p) :=
-    Cochain.δ_fromSingleMk _ _ _ _ _
-  constructor
-  · rintro ⟨ho⟩
-    obtain ⟨g, hg⟩ := Cochain.fromSingleMk_surjective (Cochain.ofHomotopy ho) q (by lia)
-    have := δ_ofHomotopy ho
-    rw [← hg, hδ, hχ, Cochain.ofHom_zero, sub_zero] at this
-    exact ⟨g, by simpa using congrArg (Cochain.fromSingleEquiv (add_zero p)) this⟩
-  · rintro ⟨g, hg⟩
-    exact ⟨(Cochain.equivHomotopy _ _).symm
-      ⟨Cochain.fromSingleMk g (show p + (-1) = q by lia), by simp [hδ, hg, hχ]⟩⟩
+  rw [h]
+  exact ⟨fun ⟨ho⟩ ↦ ⟨Cochain.ofHomotopy ho, by simp [δ_ofHomotopy]⟩,
+    fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
 
 end CochainComplex

@@ -90,10 +90,14 @@ theorem exists_homotopyEquiv {K I₁ I₂ : CochainComplex C ℤ} [I₁.IsKInjec
 null-homotopic. -/
 theorem Q_map_eq_zero_iff [HasDerivedCategory.{w} C] {K L : CochainComplex C ℤ} [L.IsKInjective]
     (χ : K ⟶ L) : Q.map χ = 0 ↔ Nonempty (Homotopy χ 0) := by
-  rw [← HomotopyCategory.quotient_map_eq_zero_iff, ← (Qh_map_bijective _ L).1.eq_iff,
-    Functor.map_zero, ← cancel_mono ((quotientCompQhIso C).hom.app L),
-    quotientCompQhIso_hom_naturality, Limits.zero_comp,
-    ← cancel_epi ((quotientCompQhIso C).inv.app K), Iso.inv_hom_id_app_assoc, Limits.comp_zero]
+  -- Transport along `quotientCompQhIso`, which identifies `Q` with `quotient ⋙ Qh`.
+  have hQ : Q.map χ = (quotientCompQhIso C).inv.app K ≫
+      Qh.map ((HomotopyCategory.quotient _ _).map χ) ≫ (quotientCompQhIso C).hom.app L :=
+    (NatIso.naturality_1 _ χ).symm
+  -- `Qh` is faithful on maps into the K-injective complex `L`.
+  rw [hQ, Preadditive.IsIso.comp_left_eq_zero, Preadditive.IsIso.comp_right_eq_zero,
+    ← HomotopyCategory.quotient_map_eq_zero_iff, ← (Qh_map_bijective _ L).1.eq_iff,
+    Functor.map_zero]
 
 /-- Every map in the derived category into a K-injective complex comes from a chain map. -/
 theorem Q_map_surjective [HasDerivedCategory.{w} C] (K L : CochainComplex C ℤ) [L.IsKInjective] :

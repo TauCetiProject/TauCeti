@@ -238,7 +238,8 @@ private lemma Orth.away_add {f g : A} (hf : Orth M (deg0 A (Localization.Away f)
   have e (x : A) : Localization.Away ((f + g) * x) ≃ₗ[A] Localization.Away (algebraMap A B x) :=
     (IsLocalization.algEquiv (Submonoid.powers ((f + g) * x)) _ _).toLinearEquiv
   have hfg := Orth.away_mul ((f + g) * g) hf
-  rw [show (f + g) * g * f = (f + g) * (f * g) by ring] at hfg
+  have hfg_eq : (f + g) * g * f = (f + g) * (f * g) := by ring
+  rw [hfg_eq] at hfg
   exact Orth.of_shortExact₁ hι hιδ hδ
     (((Orth.away_mul (f + g) hf).of_linearEquiv (e f)).prod
       ((Orth.away_mul (f + g) hg).of_linearEquiv (e g)))
@@ -320,6 +321,7 @@ theorem derivedComplete_span_iff (s : Set A) :
   rfl
 
 /-- Derived completeness only depends on the radical of the ideal. -/
+@[simp]
 theorem derivedComplete_radical_iff {I : Ideal A} :
     derivedComplete I.radical M ↔ derivedComplete I M := by
   rw [derivedComplete_iff_le, derivedComplete_iff_le,
@@ -336,6 +338,7 @@ theorem derivedComplete_antitone : Antitone (derivedComplete (A := A)) :=
   fun _ _ h _ hM ↦ derivedComplete_iff_le.2 (h.trans (derivedComplete_iff_le.1 hM))
 
 /-- Every object is derived complete with respect to the zero ideal. -/
+@[simp]
 theorem derivedComplete_bot (M : DerivedCategory (ModuleCat.{u} A)) : derivedComplete ⊥ M :=
   derivedComplete_iff_le.2 bot_le
 
