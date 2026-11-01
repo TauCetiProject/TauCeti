@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
@@ -34,6 +35,8 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 * `LaurentSeries.residuePairing_single`: its value on Laurent monomials.
 * `LaurentSeries.residuePairing_eq_sum`: its finite coefficient formula.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
+* `LaurentSeries.residuePairing_toLaurentSeries`: on Laurent polynomials it is the coefficient of
+  `T⁻¹` in `f * g'`, for the derivative `LaurentPolynomial.derivative`.
 * `LaurentSeries.continuous_residuePairing`: joint continuity over a field.
 * `LaurentSeries.residuePairing_substAlgHom`: substitution multiplies the pairing by the
   order of the substituted parameter, so formal coordinate changes preserve it.
@@ -42,7 +45,7 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 public section
 
 open HahnSeries
-open scoped LaurentSeries PowerSeries
+open scoped LaurentPolynomial LaurentSeries PowerSeries
 
 namespace LaurentSeries
 
@@ -182,6 +185,15 @@ theorem residuePairing_coe_powerSeries (f g : R⟦X⟧) :
   rw [residuePairing_apply, ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul,
     PowerSeries.coeff_coe]
   simp
+
+/-- On Laurent polynomials, the residue pairing `Res(f dg)` is the coefficient of `T⁻¹` in
+`f * g'`, for the derivative of Laurent polynomials. -/
+@[simp]
+theorem residuePairing_toLaurentSeries (f g : R[T;T⁻¹]) :
+    residuePairing R f.toLaurentSeries g.toLaurentSeries =
+      (f * LaurentPolynomial.derivative g).coeff (-1) := by
+  rw [residuePairing_apply, ← LaurentPolynomial.toLaurentSeries_derivative, ← map_mul,
+    LaurentPolynomial.coeff_toLaurentSeries]
 
 section Substitution
 
