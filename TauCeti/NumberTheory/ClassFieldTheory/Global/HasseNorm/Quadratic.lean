@@ -22,7 +22,8 @@ still uses the two-dimensional split algebra, rather than a field incorrectly as
 degree two. The norm calculation in these algebras is
 `TauCeti.Algebra.mem_range_normUnits_baseChange_iff_exists_sq_sub_mul_sq`.
 
-`hasseNorm_Qsqrt5` gives the explicit equation `a = x² - 5y²` over `ℚ` and its completions.
+`exists_sq_sub_five_mul_sq_iff_forall_completion` gives the explicit equation `a = x² - 5y²`
+over `ℚ` and its completions.
 Infinite places remain in the statement, including complex places for a general number field.
 
 ## References
@@ -71,7 +72,7 @@ theorem exists_sq_sub_mul_sq_iff_forall_completion {d : K}
 
 /-- **The Hasse norm test for `ℚ(√5)`.** A nonzero rational is a value of `x² - 5y²` over `ℚ`
 exactly when it is a value over every finite and infinite completion of `ℚ`. -/
-theorem hasseNorm_Qsqrt5 (a : ℚˣ) :
+theorem exists_sq_sub_five_mul_sq_iff_forall_completion (a : ℚˣ) :
     (∃ x y : ℚ, (a : ℚ) = x ^ 2 - 5 * y ^ 2) ↔
       (∀ v : HeightOneSpectrum (𝓞 ℚ), ∃ x y : v.adicCompletion ℚ,
         algebraMap ℚ (v.adicCompletion ℚ) (a : ℚ) = x ^ 2 - 5 * y ^ 2) ∧
