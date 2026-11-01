@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.RepresentationTheory.GaloisDescent.Injective
 import TauCeti.RepresentationTheory.GaloisDescent.Range
 import TauCeti.RepresentationTheory.GaloisDescent.Span
@@ -44,7 +45,7 @@ Conversely, a `k`-form `E` of `F`, an intermediate field for which `a ⊗ x ↦ 
 (`TauCeti.GaloisDescent.eq_baseChangeAction`). Its fixed field is `E`
 (`TauCeti.GaloisDescent.fixedField_baseChangeAction`), and the action attached to the fixed field
 of a semilinear action `ρ` is `ρ`
-(`TauCeti.GaloisDescent.baseChangeAction_liftEquiv_fixedField_bijective`).
+(`TauCeti.GaloisDescent.baseChangeAction_fixedField`).
 So semilinear actions of `Gal(L/k)` on `F` and `k`-forms of `F` determine each other. In
 particular a field automorphism of `L / k` extends to `F` fixing a given `k`-form, which is how a
 model of a curve over `k` is seen to be fixed by `Gal(L/k)`.
@@ -65,7 +66,7 @@ field descends.
   `TauCeti.GaloisDescent.fixedFieldBaseChangeEquiv_symm_apply_coe`.
 * `TauCeti.GaloisDescent.baseChangeAction`: the semilinear action of a `k`-form, with
   `TauCeti.GaloisDescent.fixedField_baseChangeAction` and
-  `TauCeti.GaloisDescent.baseChangeAction_liftEquiv_fixedField_bijective`: semilinear actions and
+  `TauCeti.GaloisDescent.baseChangeAction_fixedField`: semilinear actions and
   `k`-forms correspond.
 * `TauCeti.GaloisDescent.isIntegrallyClosedIn_fixedField`: relative algebraic closure descends.
 
@@ -115,14 +116,6 @@ theorem span_fixedField_eq_top [Finite (L ≃ₐ[k] L)] {ρ : (L ≃ₐ[k] L) �
 
 variable [IsScalarTower k L F]
 
-/-- The multiplication map `L ⊗[k] E → F` of an intermediate field `E`, as an `L`-linear map, is
-the scalar extension of the inclusion of `E`. -/
-private theorem liftEquiv_val_toLinearMap (E : IntermediateField k F) :
-    (AlgHom.liftEquiv k L E F E.val).toLinearMap = E.val.toLinearMap.liftBaseChange L := by
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro a x
-  simp
-
 /-- **The exact constant field descends.** If `L` is relatively algebraically closed in `F`, then
 `k` is relatively algebraically closed in the fixed field of a semilinear action of `Gal(L/k)` on
 `F`. The extension `L / k` may be infinite. -/
@@ -155,7 +148,7 @@ theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F
   · have h := liftBaseChange_injective_of_invariant (ρ := toRepresentation ρ)
       (f := (fixedField ρ.range).val.toLinearMap) Subtype.val_injective fun σ a x ↦ by
         simp [apply_smul hρ, (mem_fixedField_iff _ _).mp x.2 (ρ σ) ⟨σ, rfl⟩]
-    rwa [← liftEquiv_val_toLinearMap] at h
+    rwa [← AlgHom.liftEquiv_toLinearMap] at h
   · apply (LinearMap.range_eq_top (f := f.toLinearMap)).mp
     refine top_unique ?_
     rw [← span_fixedField_eq_top hρ, Submodule.span_le]
@@ -201,14 +194,11 @@ private noncomputable abbrev formEquiv (hE : Function.Bijective (AlgHom.liftEqui
 
 /-- The **semilinear action of a `k`-form**. If `E` is a `k`-form of `F`, in the sense that
 `a ⊗ x ↦ a • x` is a bijection `L ⊗[k] E → F`, then `Gal(L/k)` acts on `F = L ⊗[k] E` through the
-first factor: `σ (a • x) = σ a • x` for `a ∈ L` and `x ∈ E`
+first factor (`TauCeti.ScalarAut.toAlgAut`): `σ (a • x) = σ a • x` for `a ∈ L` and `x ∈ E`
 (`TauCeti.GaloisDescent.baseChangeAction_apply_smul`). -/
 noncomputable def baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k L E F E.val)) :
     (L ≃ₐ[k] L) →* (F ≃ₐ[k] F) :=
-  (AlgEquiv.autCongr (formEquiv hE)).toMonoidHom.comp
-    { toFun σ := Algebra.TensorProduct.congr σ AlgEquiv.refl
-      map_one' := Algebra.TensorProduct.congr_refl
-      map_mul' _ _ := AlgEquiv.coe_toAlgHom_injective (Algebra.TensorProduct.ext' fun _ _ ↦ rfl) }
+  (AlgEquiv.autCongr (formEquiv hE)).toMonoidHom.comp (ScalarAut.toAlgAut (A := E))
 
 /-- The semilinear action of a `k`-form `E` acts on `a • x`, for `a ∈ L` and `x ∈ E`, through
 `a`. -/
@@ -216,10 +206,9 @@ noncomputable def baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k 
 theorem baseChangeAction_apply_smul (hE : Function.Bijective (AlgHom.liftEquiv k L E F E.val))
     (σ : L ≃ₐ[k] L) (a : L) (x : E) : baseChangeAction hE σ (a • (x : F)) = σ a • (x : F) := by
   have h (b : L) : b • (x : F) = formEquiv hE (b ⊗ₜ x) := by simp
-  simp only [baseChangeAction, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply,
-    AlgEquiv.autCongr_apply, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.trans_apply, h,
-    AlgEquiv.symm_apply_apply, Algebra.TensorProduct.congr_apply,
-    Algebra.TensorProduct.map_tmul, AlgEquiv.coe_toAlgHom, AlgEquiv.refl_toAlgHom, AlgHom.id_apply]
+  rw [h, h]
+  -- Cancel `formEquiv hE` against its inverse before evaluating it on the pure tensor.
+  simp [baseChangeAction, -AlgHom.liftEquiv_tmul]
 
 /-- The action of a `k`-form fixes the elements of the form. -/
 @[simp]
@@ -248,7 +237,7 @@ theorem eq_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k L E F E
 variable [FiniteDimensional k L] [IsGalois k L]
 
 /-- **The fixed field of the action of a `k`-form is the form.** Together with
-`TauCeti.GaloisDescent.baseChangeAction_liftEquiv_fixedField_bijective`, this makes
+`TauCeti.GaloisDescent.baseChangeAction_fixedField`, this makes
 `E ↦ baseChangeAction` and `ρ ↦ fixedField ρ.range` mutually inverse between the `k`-forms of `F`
 and the semilinear actions of `Gal(L/k)` on `F`. -/
 theorem fixedField_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k L E F E.val)) :
@@ -256,12 +245,12 @@ theorem fixedField_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k
   have h := range_eq_invariants_of_liftBaseChange_surjective
     (ρ := toRepresentation (baseChangeAction hE)) (f := E.val.toLinearMap)
     (apply_smul (baseChangeAction_algebraMap hE)) (fun σ x ↦ baseChangeAction_apply_coe hE σ x)
-    (by rw [← liftEquiv_val_toLinearMap, AlgHom.coe_toLinearMap]; exact hE.2)
+    (by rw [← AlgHom.liftEquiv_toLinearMap, AlgHom.coe_toLinearMap]; exact hE.2)
   ext x
   simpa [Representation.mem_invariants] using (SetLike.ext_iff.mp h x).symm
 
 /-- **A semilinear action is the action of its fixed field.** -/
-theorem baseChangeAction_liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+theorem baseChangeAction_fixedField {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
     baseChangeAction (liftEquiv_fixedField_bijective hρ) = ρ :=
   (eq_baseChangeAction (liftEquiv_fixedField_bijective hρ) hρ fun σ x ↦
