@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Spectrum
-public import TauCeti.Analysis.Matrix.PosSemidef.Basic
+public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
-public import TauCeti.LinearAlgebra.Matrix.Block
+public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Determinant inequalities for positive-semidefinite matrices
@@ -18,9 +18,7 @@ bounds a block determinant by the product of its diagonal-block determinants.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
 All statements include singular matrices and empty blocks, over either real or
-complex scalars. The proofs use the CFC square root for monotonicity and the
-native `Matrix.det_fromBlocks₁₁` and
-`Matrix.PosSemidef.schur_complement₁₁` identities for the block inequalities.
+complex scalars.
 
 ## References
 
@@ -57,32 +55,20 @@ theorem PosSemidef.det_le_det_add (hA : A.PosSemidef) (hB : B.PosSemidef) :
   by_cases hdet : A.det = 0
   · rw [hdet]
     exact (hA.add hB).det_nonneg
-  -- Congruence by the inverse square root reduces the nonsingular case to `1 + N`.
-  let S := CFC.sqrt A
-  have hS : S.PosSemidef := Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)
-  have hSS : S * S = A := CFC.sqrt_mul_sqrt_self A hA.nonneg
-  have hunit : IsUnit S := by
-    apply S.isUnit_iff_isUnit_det.mpr
-    rw [isUnit_iff_ne_zero]
-    intro h
-    exact hdet (by rw [← hSS, det_mul, h, zero_mul])
-  have hright : S * S⁻¹ = 1 := mul_nonsing_inv S (S.isUnit_iff_isUnit_det.mp hunit)
-  have hleft : S⁻¹ * S = 1 := nonsing_inv_mul S (S.isUnit_iff_isUnit_det.mp hunit)
-  let N := S⁻¹ * B * S⁻¹
+  let N := CFC.sqrt B * A⁻¹ * CFC.sqrt B
+  have hroot : (CFC.sqrt B).IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg B)).isHermitian
   have hN : N.PosSemidef := by
-    simpa only [N, conjTranspose_nonsing_inv, hS.isHermitian.eq] using
-      hB.mul_mul_conjTranspose_same S⁻¹
-  have hfactor : A + B = S * (1 + N) * S := by
-    simp only [mul_add, add_mul, mul_one, hSS, N]
-    simp only [← mul_assoc, hright, one_mul]
-    simp only [mul_assoc, hleft, mul_one]
+    simpa only [hroot.eq] using hA.inv.mul_mul_conjTranspose_same (CFC.sqrt B)
+  have hpencil : (1 + N).det = (1 + A⁻¹ * B).det := by
+    simpa using hB.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul A⁻¹ (-1)
+  have hfactor : A + B = A * (1 + A⁻¹ * B) := by
+    simp [mul_add, ← Matrix.mul_assoc, mul_nonsing_inv A (isUnit_iff_ne_zero.mpr hdet)]
   calc
     A.det = A.det * 1 := (mul_one _).symm
     _ ≤ A.det * (1 + N).det :=
       mul_le_mul_of_nonneg_left hN.one_le_det_one_add hA.det_nonneg
-    _ = (A + B).det := by
-      rw [hfactor, ← hSS, det_mul, det_mul, det_mul]
-      ring
+    _ = (A + B).det := by rw [hpencil, hfactor, det_mul]
 
 /-- The determinant is monotone for the Loewner order on positive-semidefinite matrices. -/
 theorem PosSemidef.det_le_det (hA : A.PosSemidef) (hAB : A ≤ B) : A.det ≤ B.det := by
@@ -99,10 +85,8 @@ block matrix is at most the product of the diagonal-block determinants. -/
 theorem PosSemidef.det_fromBlocks_le {A : Matrix m m 𝕜} {B : Matrix m n 𝕜}
     {D : Matrix n n 𝕜} (h : (fromBlocks A B Bᴴ D).PosSemidef) :
     (fromBlocks A B Bᴴ D).det ≤ A.det * D.det := by
-  have hA : A.PosSemidef := by
-    simpa only [← toBlocks₁₁_eq_submatrix, toBlocks_fromBlocks₁₁] using h.submatrix Sum.inl
-  have hD : D.PosSemidef := by
-    simpa only [← toBlocks₂₂_eq_submatrix, toBlocks_fromBlocks₂₂] using h.submatrix Sum.inr
+  have hA : A.PosSemidef := by simpa using h.toBlocks₁₁
+  have hD : D.PosSemidef := by simpa using h.toBlocks₂₂
   by_cases hdet : (fromBlocks A B Bᴴ D).det = 0
   · rw [hdet]
     exact mul_nonneg hA.det_nonneg hD.det_nonneg
@@ -131,16 +115,8 @@ theorem PosSemidef.det_mul_det_fromBlocks_le
     A.det * (fromBlocks A (fromCols B C) (fromCols B C)ᴴ
       (fromBlocks D E Eᴴ F)).det ≤
       (fromBlocks A B Bᴴ D).det * (fromBlocks A C Cᴴ F).det := by
-  have hA : A.PosSemidef := by
-    simpa only [← toBlocks₁₁_eq_submatrix, toBlocks_fromBlocks₁₁] using h.submatrix Sum.inl
-  have hAB : (fromBlocks A B Bᴴ D).PosSemidef := by
-    convert h.submatrix (Sum.map id Sum.inl) using 1
-    ext i j
-    cases i <;> cases j <;> rfl
-  have hAC : (fromBlocks A C Cᴴ F).PosSemidef := by
-    convert h.submatrix (Sum.map id Sum.inr) using 1
-    ext i j
-    cases i <;> cases j <;> rfl
+  have hA : A.PosSemidef := by simpa using h.toBlocks₁₁
+  obtain ⟨hAB, hAC⟩ := h.overlapping_blocks
   by_cases hdet : A.det = 0
   · rw [hdet, zero_mul]
     exact mul_nonneg hAB.det_nonneg hAC.det_nonneg
@@ -159,8 +135,15 @@ theorem PosSemidef.det_mul_det_fromBlocks_le
   have hbound := hS.det_fromBlocks_le
   rw [det_fromBlocks₁₁, det_fromBlocks₁₁, det_fromBlocks₁₁,
     invOf_eq_nonsing_inv, hblock]
-  simpa only [← mul_assoc, mul_mul_mul_comm A.det] using
-    mul_le_mul_of_nonneg_left hbound (mul_nonneg hA.det_nonneg hA.det_nonneg)
+  calc
+    A.det * (A.det * (fromBlocks (D - Bᴴ * A⁻¹ * B) (E - Bᴴ * A⁻¹ * C)
+        (E - Bᴴ * A⁻¹ * C)ᴴ (F - Cᴴ * A⁻¹ * C)).det) =
+        (A.det * A.det) * (fromBlocks (D - Bᴴ * A⁻¹ * B) (E - Bᴴ * A⁻¹ * C)
+          (E - Bᴴ * A⁻¹ * C)ᴴ (F - Cᴴ * A⁻¹ * C)).det := by ring
+    _ ≤ (A.det * A.det) * ((D - Bᴴ * A⁻¹ * B).det * (F - Cᴴ * A⁻¹ * C).det) :=
+      mul_le_mul_of_nonneg_left hbound (mul_nonneg hA.det_nonneg hA.det_nonneg)
+    _ = (A.det * (D - Bᴴ * A⁻¹ * B).det) *
+        (A.det * (F - Cᴴ * A⁻¹ * C).det) := by ring
 
 end Blocks
 

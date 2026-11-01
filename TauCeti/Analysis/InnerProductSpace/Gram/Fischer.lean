@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 public import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 
 /-!
@@ -40,8 +41,33 @@ theorem gram_sumElim (u : ι → E) (v : κ → E) :
   ext i j
   cases i <;> cases j <;> simp [gram_apply, conjTranspose_apply, inner_conj_symm]
 
+/-- The Gram matrix of three concatenated families, with the two complementary families
+split into separate blocks. -/
+theorem gram_sumElim_sumElim (u : ι → E) (v : κ → E) (w : η → E) :
+    gram 𝕜 (Sum.elim u (Sum.elim v w)) =
+      fromBlocks (gram 𝕜 u)
+        (fromCols (of fun i j ↦ ⟪u i, v j⟫_𝕜) (of fun i j ↦ ⟪u i, w j⟫_𝕜))
+        (fromCols (of fun i j ↦ ⟪u i, v j⟫_𝕜) (of fun i j ↦ ⟪u i, w j⟫_𝕜))ᴴ
+        (fromBlocks (gram 𝕜 v) (of fun i j ↦ ⟪v i, w j⟫_𝕜)
+          (of fun i j ↦ ⟪v i, w j⟫_𝕜)ᴴ (gram 𝕜 w)) := by
+  have hcols : (of fun i j ↦ ⟪u i, Sum.elim v w j⟫_𝕜) =
+      fromCols (of fun i j ↦ ⟪u i, v j⟫_𝕜) (of fun i j ↦ ⟪u i, w j⟫_𝕜) := by
+    ext i j
+    cases j <;> simp
+  simp only [gram_sumElim, hcols]
+
 variable [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
   [Fintype η] [DecidableEq η]
+
+/-- Gram determinants satisfy Koteljanskii's overlapping-family inequality over
+real or complex scalars, including empty and dependent families. -/
+theorem det_gram_mul_det_gram_sumElim_le (u : ι → E) (v : κ → E) (w : η → E) :
+    (gram 𝕜 u).det * (gram 𝕜 (Sum.elim u (Sum.elim v w))).det ≤
+      (gram 𝕜 (Sum.elim u v)).det * (gram 𝕜 (Sum.elim u w)).det := by
+  have h := posSemidef_gram 𝕜 (Sum.elim u (Sum.elim v w))
+  rw [gram_sumElim_sumElim] at h
+  rw [gram_sumElim_sumElim u v w, gram_sumElim u v, gram_sumElim u w]
+  exact h.det_mul_det_fromBlocks_le
 
 /-- The real parts of Gram determinants satisfy the overlapping-family
 Hadamard--Fischer inequality, also called Koteljanskii's inequality. -/
@@ -49,21 +75,11 @@ theorem re_det_gram_mul_re_det_gram_sumElim_le (u : ι → E) (v : κ → E) (w 
     RCLike.re (gram 𝕜 u).det * RCLike.re (gram 𝕜 (Sum.elim u (Sum.elim v w))).det ≤
       RCLike.re (gram 𝕜 (Sum.elim u v)).det *
         RCLike.re (gram 𝕜 (Sum.elim u w)).det := by
-  have h := posSemidef_gram 𝕜 (Sum.elim u (Sum.elim v w))
-  rw [gram_sumElim, gram_sumElim] at h
-  have hcols : (of fun i j ↦ ⟪u i, Sum.elim v w j⟫_𝕜) =
-      fromCols (of fun i j ↦ ⟪u i, v j⟫_𝕜) (of fun i j ↦ ⟪u i, w j⟫_𝕜) := by
-    ext i j
-    cases j <;> rfl
-  rw [hcols] at h
-  have hbound := h.det_mul_det_fromBlocks_le
-  rw [← hcols, ← gram_sumElim, ← gram_sumElim, ← gram_sumElim,
-    ← gram_sumElim] at hbound
+  have hbound := det_gram_mul_det_gram_sumElim_le (𝕜 := 𝕜) u v w
   rw [← (isHermitian_gram 𝕜 u).ofReal_re_det,
     ← (isHermitian_gram 𝕜 (Sum.elim u (Sum.elim v w))).ofReal_re_det,
     ← (isHermitian_gram 𝕜 (Sum.elim u v)).ofReal_re_det,
-    ← (isHermitian_gram 𝕜 (Sum.elim u w)).ofReal_re_det,
-    ← RCLike.ofReal_mul, ← RCLike.ofReal_mul, RCLike.ofReal_le_ofReal] at hbound
-  exact hbound
+    ← (isHermitian_gram 𝕜 (Sum.elim u w)).ofReal_re_det] at hbound
+  exact_mod_cast hbound
 
 end Matrix
