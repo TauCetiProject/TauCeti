@@ -35,8 +35,9 @@ quadratic field `K` of class number one of a real algebraic integer generating a
 * `NumberField.RingOfIntegers.mem_range_algebraMap_iff_star_eq_of_isTotallyComplex`: an algebraic
   integer of `K` is a rational integer exactly when its image under a given complex embedding is
   real.
-* `NumberField.minpoly_eq_map_minpoly_int_of_star_eq`: over an imaginary quadratic subfield of
-  `ℂ`, the minimal polynomial of a real algebraic integer is its minimal polynomial over `ℤ`.
+* `NumberField.minpoly_eq_map_minpoly_int_of_star_eq_of_isTotallyComplex`: over an imaginary
+  quadratic subfield of `ℂ`, the minimal polynomial of a real algebraic integer is its minimal
+  polynomial over `ℤ`.
 
 ## References
 
@@ -58,20 +59,17 @@ complex embedding, an algebraic integer of an imaginary quadratic field has a re
 when it is a rational integer. -/
 theorem RingOfIntegers.mem_range_algebraMap_iff_star_eq_of_isTotallyComplex (φ : K →+* ℂ)
     (x : 𝓞 K) : x ∈ Set.range (algebraMap ℤ (𝓞 K)) ↔ star (φ x) = φ x := by
-  rw [← CMExtension.mem_range_algebraMap_iff_star_eq ℚ]
-  refine ⟨fun ⟨n, hn⟩ ↦ ⟨n, by simp [← hn]⟩, fun ⟨q, hq⟩ ↦ ?_⟩
-  -- A rational number that is an algebraic integer is an integer.
-  have hq' : IsIntegral ℤ q := by
-    rw [← isIntegral_algebraMap_iff (B := K), hq]
-    exact x.isIntegral_coe
-  obtain ⟨n, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hq'
-  exact ⟨n, RingOfIntegers.ext (by simp [← hq])⟩
+  rw [← CMExtension.mem_range_algebraMap_iff_star_eq ℚ,
+    IsIntegralClosure.mem_range_algebraMap ℤ (B := ℚ) x.isIntegral_coe]
+  exact ⟨fun ⟨n, hn⟩ ↦ ⟨n, by simp [← hn]⟩,
+    fun ⟨n, hn⟩ ↦ ⟨n, RingOfIntegers.ext (by simpa using hn)⟩⟩
 
 /-- **Minimal polynomials of real algebraic integers over an imaginary quadratic field.** For an
 imaginary quadratic field `K ⊆ ℂ` and a real algebraic integer `x`, the minimal polynomial of `x`
 over `K` has rational integer coefficients: it is the minimal polynomial of `x` over `ℤ`. -/
-theorem minpoly_eq_map_minpoly_int_of_star_eq [Algebra K ℂ] {x : ℂ} (hx : star x = x)
-    (hint : IsIntegral ℤ x) : minpoly K x = (minpoly ℤ x).map (algebraMap ℤ K) := by
+theorem minpoly_eq_map_minpoly_int_of_star_eq_of_isTotallyComplex [Algebra K ℂ] {x : ℂ}
+    (hx : star x = x) (hint : IsIntegral ℤ x) :
+    minpoly K x = (minpoly ℤ x).map (algebraMap ℤ K) := by
   rw [CMExtension.minpoly_eq_map_minpoly_of_star_eq (F := ℚ) hx,
     minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hint, Polynomial.map_map,
     ← IsScalarTower.algebraMap_eq]
