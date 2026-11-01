@@ -70,7 +70,6 @@ theorem smoothOfRelativeDimension_projectiveOrbitToSpec_iff
   rw [← topologicalKrullDim_projectiveOrbitScheme]
   constructor
   · intro hn
-    have := hn
     have : Nonempty (projectiveOrbitScheme (H := H) m hm) :=
       ⟨toProjectiveOrbit (H := H) m hm (Bialgebra.augmentationPoint k H)⟩
     exact TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_smoothOfRelativeDimension
