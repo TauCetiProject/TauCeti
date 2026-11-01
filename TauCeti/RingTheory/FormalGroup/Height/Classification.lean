@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.RingTheory.FormalGroup.Frobenius.Factorization
 public import TauCeti.RingTheory.FormalGroup.Logarithm.InfiniteHeight
-import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -563,7 +562,8 @@ private theorem exists_formalGroupHom_coeff_one_ne_zero [IsSepClosed K] (hF : F.
       (le_order_homDefect_sub (F := F) (G := G) hf₀ (key m).1 (hlim m))
     rwa [add_sub_cancel] at h
   refine ⟨TauCeti.FormalGroupHom.ofHomDefectEqZero hf₀ hΦ, ?_⟩
-  rw [TauCeti.FormalGroupHom.ofHomDefectEqZero_toPowerSeries, hcoeff (n := 2) one_lt_two, (key 2).2.1]
+  rw [TauCeti.FormalGroupHom.ofHomDefectEqZero_toPowerSeries, hcoeff (n := 2) one_lt_two,
+    (key 2).2.1]
   exact hc₁₀
 
 end Construction
