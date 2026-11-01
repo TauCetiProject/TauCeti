@@ -305,6 +305,24 @@ theorem stage_le_iff {n : ℕ} {S : Subalgebra R (InfiniteTypeAHeckeAlgebra R q)
   rw [stage, Algebra.adjoin_le_iff, Set.range_subset_iff]
   exact ⟨fun h i hi ↦ h ⟨i, by omega⟩, fun h i ↦ h i (by omega)⟩
 
+/-- An element `u` with `u * f (T i) = g (T i) * u` for the generators `T i` of the stage `n`, where
+`f` and `g` are algebra maps, satisfies `u * f x = g x * u` for every `x` in the stage `n`. -/
+theorem mul_map_eq_map_mul_of_mem_stage {A : Type*} [Semiring A] [Algebra R A] {n : ℕ} {u : A}
+    {f g : InfiniteTypeAHeckeAlgebra R q →ₐ[R] A}
+    (h : ∀ i, i + 1 < n → u * f (T q i) = g (T q i) * u) {x : InfiniteTypeAHeckeAlgebra R q}
+    (hx : x ∈ stage R q n) : u * f x = g x * u := by
+  let S : Subalgebra R (InfiniteTypeAHeckeAlgebra R q) :=
+    { carrier := {x | u * f x = g x * u}
+      mul_mem' := fun {a b} ha hb ↦ by
+        simp only [Set.mem_ofPred_eq, map_mul] at ha hb ⊢
+        rw [← mul_assoc, ha, mul_assoc, hb, ← mul_assoc]
+      add_mem' := fun {a b} ha hb ↦ by
+        simp only [Set.mem_ofPred_eq, map_add, mul_add, add_mul] at ha hb ⊢
+        rw [ha, hb]
+      algebraMap_mem' := fun r ↦ by
+        simp only [Set.mem_ofPred_eq, AlgHom.commutes, Algebra.commutes] }
+  exact (stage_le_iff (S := S)).2 h hx
+
 /-- The stages increase with the number of strands. -/
 theorem stage_mono : Monotone (stage R q) :=
   fun _ _ hmn ↦ stage_le_iff.2 fun _ hi ↦ T_mem_stage (by omega)

@@ -144,6 +144,15 @@ theorem cosetRep_mul_T_succ {n m j : ℕ} (hm : m ≤ j) (hj : j + 2 ≤ n) :
     rw [cosetRep_succ (by omega), mul_assoc, ih, ← mul_assoc, ← mul_assoc,
       (commute_T (Or.inr (by omega))).eq]
 
+/-- Conjugation by the descending product `T (n - 1) * ⋯ * T 0` moves the stage of the first `n`
+strands down by one strand: `cosetRep q n 0 * shift 1 x = x * cosetRep q n 0` for `x` in the stage
+`n`. -/
+theorem cosetRep_zero_mul_shift_one {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
+    (hx : x ∈ stage R q n) : cosetRep q n 0 * shift R q 1 x = x * cosetRep q n 0 :=
+  mul_map_eq_map_mul_of_mem_stage (g := AlgHom.id R _) (fun i hi ↦ by
+    rw [shift_T, AlgHom.id_apply]
+    exact cosetRep_mul_T_succ (Nat.zero_le i) (by omega)) hx
+
 /-- The strand shift by `k` of the descending product from `T (n - 1)` down to `T m` is the
 descending product from `T (n + k - 1)` down to `T (m + k)`. -/
 @[simp]
