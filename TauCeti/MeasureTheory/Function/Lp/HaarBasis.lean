@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.Dyadic
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
-import TauCeti.Data.Nat.Log
 
 /-!
 # The Haar basis of `Lᵖ([0, 1])`
