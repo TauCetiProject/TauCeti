@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Filter
-import TauCeti.GroupTheory.FiniteAbelian.CyclicFactors
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.ElementaryDivisors
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Relations
@@ -37,7 +37,7 @@ trivial and impose nothing. Together with Nikulin's decomposition, this classifi
 nondegenerate finite quadratic modules of odd prime-power order up to isometry.
 
 The numbers of summands of each order are invariants of the underlying group
-(`TauCeti.AddCommGroup.card_filter_eq_of_addEquiv_pi_zmod_pow`). Once they agree, deleting the
+(`ZMod.exists_equiv_exponents_of_pi_pow_addEquiv`). Once they agree, deleting the
 trivial summands and matching the others by their orders reduces the classification to two sums
 with the same exponents.
 
@@ -284,6 +284,15 @@ private noncomputable def isometryPiOddCyclicNeZero (hp : Odd p) (k : ι → ℕ
       rw [natCard_oddCyclic, not_not.mp hi, pow_zero]
     exact (Nat.card_eq_one_iff_unique.mp h).1
 
+/-- For `m ≥ 1`, the entries of `k` equal to `m` are the nonzero entries equal to `m`. -/
+private theorem card_filter_eq_card_subtype_ne_zero (k : ι → ℕ) {m : ℕ} (hm : 0 < m) :
+    #{i | k i = m} = Fintype.card {i : {i // k i ≠ 0} // k i = m} := by
+  classical
+  rw [← Fintype.card_subtype]
+  exact Fintype.card_congr <|
+    (Equiv.subtypeSubtypeEquivSubtype (p := fun i ↦ k i ≠ 0) (q := fun i ↦ k i = m)
+      (by omega)).symm
+
 omit [Fact p.Prime] in
 /-- If the exponent families `k` and `l` have the same number of entries equal to `m` for every
 `m ≥ 1`, their nonzero entries are matched by an equivalence of index types. -/
@@ -299,15 +308,8 @@ private theorem exists_equiv_of_card_filter_eq (k : ι → ℕ) (l : κ → ℕ)
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · rw [Fintype.card_eq_zero_iff.mpr ⟨fun i ↦ i.1.2 i.2⟩,
       Fintype.card_eq_zero_iff.mpr ⟨fun j ↦ j.1.2 j.2⟩]
-  · calc Fintype.card {i : {i // k i ≠ 0} // k i = m}
-        = Fintype.card {i // k i = m} := Fintype.card_congr <|
-          Equiv.subtypeSubtypeEquivSubtype (p := fun i ↦ k i ≠ 0) (q := fun i ↦ k i = m) (by omega)
-      _ = #{i | k i = m} := Fintype.card_subtype _
-      _ = #{j | l j = m} := h m hm
-      _ = Fintype.card {j // l j = m} := (Fintype.card_subtype _).symm
-      _ = Fintype.card {j : {j // l j ≠ 0} // l j = m} := Fintype.card_congr <|
-          (Equiv.subtypeSubtypeEquivSubtype (p := fun j ↦ l j ≠ 0) (q := fun j ↦ l j = m)
-            (by omega)).symm
+  · rw [← card_filter_eq_card_subtype_ne_zero k hm, ← card_filter_eq_card_subtype_ne_zero l hm,
+      h m hm]
 
 omit [Fact p.Prime] in
 /-- Matching the nontrivial summands of `⊕ⱼ q_{η_j}^{(p)}(p^{l_j})` with those of an exponent
@@ -380,10 +382,16 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
   constructor
   · intro hf
     -- The carrier of `oddCyclic (p ^ k) _ θ` is `ZMod (p ^ k)` by definition, so an isometry is in
-    -- particular an additive equivalence of products of cyclic groups.
-    have hcard (m : ℕ) (hm : 0 < m) : #{i | k i = m} = #{j | l j = m} :=
-      AddCommGroup.card_filter_eq_of_addEquiv_pi_zmod_pow (Fact.out : p.Prime).one_lt
-        hf.some.toLinearEquiv.toAddEquiv hm.ne'
+    -- particular an additive equivalence of products of cyclic groups. After deleting the trivial
+    -- summands, its exponents agree up to reindexing.
+    obtain ⟨σ, hσ⟩ := ZMod.exists_equiv_exponents_of_pi_pow_addEquiv (Fact.out : p.Prime).one_lt
+      (fun i : {i // k i ≠ 0} ↦ k i) (fun j : {j // l j ≠ 0} ↦ l j)
+      (fun i ↦ Nat.pos_of_ne_zero i.2) (fun j ↦ Nat.pos_of_ne_zero j.2)
+      ((isometryPiOddCyclicNeZero hp k θ).symm.trans
+        (hf.some.trans (isometryPiOddCyclicNeZero hp l η))).toLinearEquiv.toAddEquiv
+    have hcard (m : ℕ) (hm : 0 < m) : #{i | k i = m} = #{j | l j = m} := by
+      rw [card_filter_eq_card_subtype_ne_zero k hm, card_filter_eq_card_subtype_ne_zero l hm]
+      exact Fintype.card_congr (σ.subtypeEquiv fun i ↦ by rw [hσ i])
     exact fun m hm ↦ ⟨hcard m hm, (key hcard).mp hf m hm⟩
   · intro h
     exact (key fun m hm ↦ (h m hm).1).mpr fun m hm ↦ (h m hm).2
