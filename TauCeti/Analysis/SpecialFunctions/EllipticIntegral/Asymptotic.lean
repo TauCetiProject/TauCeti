@@ -24,8 +24,9 @@ with `k' = √(1 - k²)`,
 
 `K(k) - log (4 / k') → 0` as `k → 1⁻`.
 
-In particular `(1 - k²) K(k) → 0`, while `E(k) → E(1) = 1`. These limits are what is needed to
-evaluate expressions such as `E K' + E' K - K K'` at the endpoints of `(0, 1)`.
+In particular `(1 - k²) K(k) → 0`, while `E(k) → E(1) = 1` by `continuous_legendreEc`. These
+limits are what is needed to evaluate expressions such as `E K' + E' K - K K'` at the endpoints of
+`(0, 1)`.
 
 The proof splits the integrand of `K(k)` as `(1 - sin θ) Δ^(-1/2) + sin θ Δ^(-1/2)`, where
 `Δ = 1 - k² sin² θ`. The second part integrates in closed form,
@@ -40,7 +41,6 @@ part is dominated by `1`, and by dominated convergence it tends to
 * `TauCeti.Real.tendsto_legendreK_sub_log_nhdsLT_one`: `K(k) - log (4 / √(1 - k²)) → 0` as
   `k → 1⁻`.
 * `TauCeti.Real.tendsto_one_sub_sq_mul_legendreK_nhdsLT_one`: `(1 - k²) K(k) → 0` as `k → 1⁻`.
-* `TauCeti.Real.tendsto_legendreEc_one`: `E(k) → 1` as `k → 1`.
 
 ## References
 
@@ -245,9 +245,5 @@ theorem tendsto_one_sub_sq_mul_legendreK_nhdsLT_one :
   have h : 0 < 1 - k ^ 2 := by nlinarith [hk.1, hk.2]
   rw [log_div (by norm_num) (sqrt_pos.2 h).ne', log_sqrt h.le, negMulLog]
   ring
-
-/-- As `k → 1`, `E(k) → E(1) = 1`. -/
-theorem tendsto_legendreEc_one : Tendsto legendreEc (𝓝 1) (𝓝 1) := by
-  simpa using continuous_legendreEc.tendsto 1
 
 end TauCeti.Real
