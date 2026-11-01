@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
+public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
