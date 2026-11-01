@@ -12,7 +12,8 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 
 For a positive operator `T`, the off-diagonal entries are bounded by the diagonal ones,
 `2 ‖⟪x, T y⟫‖ ≤ re ⟪T x, x⟫ + re ⟪T y, y⟫`
-(`ContinuousLinearMap.IsPositive.two_mul_norm_inner_le_add`), by positivity of `T` at `x - z y`
+(`LinearMap.IsPositive.two_mul_norm_inner_le_add`, with the continuous version
+`ContinuousLinearMap.IsPositive.two_mul_norm_inner_le_add`), by positivity of `T` at `x - z y`
 for a scalar `z` of norm one.
 
 For a positive operator `T` on a possibly infinite-dimensional Hilbert space, `1 + T` is
@@ -23,15 +24,15 @@ invertible (`ContinuousLinearMap.IsPositive.isUnit_one_add`), because
 
 public section
 
-namespace ContinuousLinearMap
-
 open scoped InnerProductSpace InnerProduct
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
+namespace LinearMap
+
 /-- For a positive operator `T`, the off-diagonal entries are bounded by the diagonal ones:
 `2 ‖⟪x, T y⟫‖ ≤ re ⟪T x, x⟫ + re ⟪T y, y⟫`. -/
-theorem IsPositive.two_mul_norm_inner_le_add {T : E →L[𝕜] E} (hT : T.IsPositive) (x y : E) :
+theorem IsPositive.two_mul_norm_inner_le_add {T : E →ₗ[𝕜] E} (hT : T.IsPositive) (x y : E) :
     2 * ‖⟪x, T y⟫_𝕜‖ ≤ RCLike.re ⟪T x, x⟫_𝕜 + RCLike.re ⟪T y, y⟫_𝕜 := by
   -- A scalar `z` of norm one rotating `⟪x, T y⟫` onto its norm.
   obtain ⟨z, hz, hzs⟩ : ∃ z : 𝕜, ‖z‖ = 1 ∧ z * ⟪x, T y⟫_𝕜 = ‖⟪x, T y⟫_𝕜‖ := by
@@ -47,12 +48,22 @@ theorem IsPositive.two_mul_norm_inner_le_add {T : E →L[𝕜] E} (hT : T.IsPosi
       ⟪T x, x⟫_𝕜 - z * ⟪x, T y⟫_𝕜 - (starRingEnd 𝕜) (z * ⟪x, T y⟫_𝕜) + ⟪T y, y⟫_𝕜 := by
     simp only [map_sub, map_smul, inner_sub_left, inner_sub_right, inner_smul_left,
       inner_smul_right, map_mul]
-    rw [hT.inner_left_eq_inner_right x y, ← inner_conj_symm x (T y), RCLike.conj_conj]
+    rw [hT.isSymmetric x y, ← inner_conj_symm x (T y), RCLike.conj_conj]
     linear_combination ⟪T y, y⟫_𝕜 * hzz
   have h0 := hT.re_inner_nonneg_left (x - z • y)
   rw [e, hzs] at h0
   simp only [map_add, map_sub, RCLike.conj_re, RCLike.ofReal_re] at h0
   linarith
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+/-- For a positive operator `T`, the off-diagonal entries are bounded by the diagonal ones:
+`2 ‖⟪x, T y⟫‖ ≤ re ⟪T x, x⟫ + re ⟪T y, y⟫`. -/
+theorem IsPositive.two_mul_norm_inner_le_add {T : E →L[𝕜] E} (hT : T.IsPositive) (x y : E) :
+    2 * ‖⟪x, T y⟫_𝕜‖ ≤ RCLike.re ⟪T x, x⟫_𝕜 + RCLike.re ⟪T y, y⟫_𝕜 :=
+  hT.toLinearMap.two_mul_norm_inner_le_add x y
 
 variable [CompleteSpace E]
 
