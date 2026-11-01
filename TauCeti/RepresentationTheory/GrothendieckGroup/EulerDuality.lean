@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ExtEuler
 public import TauCeti.Algebra.Module.ProjectiveCover.Multiplicity
 public import TauCeti.RepresentationTheory.GrothendieckGroup.CartanMatrix
+import TauCeti.RingTheory.Semisimple.Schur
 
 /-!
 # Projective/simple duality for the Euler form
@@ -169,6 +170,14 @@ theorem projectiveExtEuler_eq_projectiveSimplePairing_iff :
 
 /-! ### Nondegeneracy and perfectness -/
 
+omit [IsArtinianRing A] in
+/-- The scale `dim_k End_A(T)` of a finitely generated simple module is a nonzero integer. -/
+private theorem finrank_end_ne_zero (T : FGModuleCat.{u} A) [IsSimpleModule A T] :
+    (Module.finrank k (Module.End A T) : ℤ) ≠ 0 := by
+  have : Module.Finite A T := (ModuleCat.isFG_iff T.obj).mp T.property
+  have : Module.Finite k T := Module.Finite.trans A (T : Type u)
+  exact mod_cast (finrank_end_pos (k := k) (A := A) (S := T)).ne'
+
 variable [Finite I]
 
 include hind hPnoniso hPexhaustive hSnoniso hSexhaustive hf in
@@ -179,10 +188,7 @@ theorem projectiveExtEuler_injective : Function.Injective (projectiveExtEuler k 
   apply (LinearMap.IsPerfPair.bijective_left
     (projectiveSimplePairing P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive)).injective
   refine (simpleClassBasis S hSnoniso hSexhaustive).ext fun i ↦ ?_
-  have : Module.Finite A (S i) := (ModuleCat.isFG_iff (S i).obj).mp (S i).property
-  have : Module.Finite k (S i) := Module.Finite.trans A (S i : Type u)
-  have hd : (Module.finrank k (Module.End A (S i)) : ℤ) ≠ 0 := mod_cast
-    (finrank_end_pos (k := k) (A := A) (S := S i)).ne'
+  have hd := finrank_end_ne_zero (k := k) (S i)
   have hi := LinearMap.congr_fun hx (ExactK0.of (S i))
   rw [projectiveExtEuler_of_right_eq_projectiveSimplePairing_mul P S hind hPnoniso hPexhaustive
       hSnoniso hSexhaustive hf, projectiveExtEuler_of_right_eq_projectiveSimplePairing_mul P S hind
@@ -199,10 +205,7 @@ theorem projectiveExtEuler_flip_injective :
   apply (LinearMap.IsPerfPair.bijective_right
     (projectiveSimplePairing P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive)).injective
   refine (indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive).ext fun i ↦ ?_
-  have : Module.Finite A (S i) := (ModuleCat.isFG_iff (S i).obj).mp (S i).property
-  have : Module.Finite k (S i) := Module.Finite.trans A (S i : Type u)
-  have hd : (Module.finrank k (Module.End A (S i)) : ℤ) ≠ 0 := mod_cast
-    (finrank_end_pos (k := k) (A := A) (S := S i)).ne'
+  have hd := finrank_end_ne_zero (k := k) (S i)
   have hi := LinearMap.congr_fun hy (indecomposableProjectiveClassBasis P hind hPnoniso
     hPexhaustive i)
   rw [indecomposableProjectiveClassBasis_apply] at hi ⊢
