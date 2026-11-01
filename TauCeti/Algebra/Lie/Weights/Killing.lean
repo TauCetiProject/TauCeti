@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Weights.IsSimple
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 
 /-!
@@ -12,6 +13,7 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 
 This file records consequences of the non-degeneracy of the Killing form for the root spaces of a
 splitting Cartan subalgebra, and the vanishing of brackets inside the Cartan subalgebra itself.
+It also records that the root system of a simple Lie algebra has a root.
 
 ## Main results
 
@@ -21,6 +23,7 @@ splitting Cartan subalgebra, and the vanishing of brackets inside the Cartan sub
   Cartan subalgebra is a root exactly when its negative is.
 * `TauCeti.lie_cartan_cartan_eq_zero`: the Cartan subalgebra is abelian, so two of its elements
   have zero bracket in the ambient Lie algebra.
+* `TauCeti.nonempty_root`: the root system of a simple Lie algebra has a root.
 -/
 
 public section
@@ -60,5 +63,14 @@ omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 two of its elements have zero bracket in the ambient Lie algebra. -/
 theorem lie_cartan_cartan_eq_zero (y z : H) : ⁅(y : L), (z : L)⁆ = 0 := by
   rw [← LieSubalgebra.coe_bracket, trivial_lie_zero, ZeroMemClass.coe_zero]
+
+omit [LieAlgebra.IsKilling K L] in
+/-- The root system of a simple Lie algebra has a root. -/
+instance nonempty_root [IsSimple K L] : Nonempty H.root := by
+  have := RootPairing.IsIrreducible.nontrivial (rootSystem H)
+  by_contra h
+  have htop := RootPairing.IsRootSystem.span_root_eq_top (P := rootSystem H)
+  rw [Set.range_eq_empty_iff.mpr (not_nonempty_iff.mp h), Submodule.span_empty] at htop
+  exact bot_ne_top htop
 
 end TauCeti
