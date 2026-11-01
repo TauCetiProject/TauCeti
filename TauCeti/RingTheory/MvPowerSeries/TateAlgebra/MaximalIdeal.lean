@@ -130,8 +130,9 @@ theorem polynomialQuotientAlgEquiv_mk (p : MvPolynomial σ K) :
 maximal ideal of `K[X]`. -/
 theorem isMaximal_comap_polynomialToRestricted_of_finite [I.IsMaximal] :
     (I.comap (polynomialToRestricted (R := K) c)).IsMaximal :=
-  isMaximal_comap_of_surjective_quotient_mk_comp _
-    (quotientMkₐ_comp_polynomialToRestricted_surjective I)
+  isMaximal_comap_of_surjective_quotient_mk_comp _ <| by
+    simpa only [AlgHom.coe_comp, Ideal.Quotient.mkₐ_eq_mk] using
+      quotientMkₐ_comp_polynomialToRestricted_surjective I
 
 end FiniteCodimension
 
