@@ -82,13 +82,14 @@ theorem cosetGaussTerm_zero (a : ℤ) (c : ℕ) (m : dual L)
   simp [cosetGaussTerm]
 
 /-- Changing the representative of the offset translates the quotient argument. -/
-theorem cosetGaussTerm_add_mem (a : ℤ) (c : ℕ) (γ m : dual L) (w : L)
-    (y : L ⧸ ((c : ℝ) • L).submoduleOf L) :
-    cosetGaussTerm L hL a c (γ + ⟨w, isIntegral_iff_le_dual.mp hL.isIntegral w.2⟩) m y =
-      cosetGaussTerm L hL a c γ m (y + Submodule.Quotient.mk w) := by
+theorem cosetGaussTerm_eq_of_sub_mem (a : ℤ) (c : ℕ) (γ γ' m : dual L)
+    (h : (γ' : E) - γ ∈ L) (y : L ⧸ ((c : ℝ) • L).submoduleOf L) :
+    cosetGaussTerm L hL a c γ' m y =
+      cosetGaussTerm L hL a c γ m (y + Submodule.Quotient.mk ⟨(γ' : E) - γ, h⟩) := by
   induction y using Submodule.Quotient.induction_on with | H v
   rw [← Submodule.Quotient.mk_add, cosetGaussTerm_mk, cosetGaussTerm_mk]
-  simp only [coe_add, add_assoc, add_comm (w : E) (v : E)]
+  have heq : (γ' : E) + v = (γ : E) + ((v : E) + ((γ' : E) - γ)) := by abel
+  simp only [coe_add, heq]
 
 /-- Expanding the square reduces a coset Gauss sum to a twisted Gauss sum on `L`.
 The new twisting vector is `a • γ + m`. -/
@@ -107,12 +108,12 @@ theorem cosetGaussSum_zero (a : ℤ) (c : ℕ)
   simp [cosetGaussSum, gaussSumTwisted_def]
 
 /-- The sum over a coset is independent of its representative modulo `L`. -/
-theorem cosetGaussSum_add_mem (a : ℤ) (c : ℕ)
-    [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] (γ m : dual L) (w : L) :
-    cosetGaussSum L hL a c (γ + ⟨w, isIntegral_iff_le_dual.mp hL.isIntegral w.2⟩) m =
-      cosetGaussSum L hL a c γ m := by
-  simp only [cosetGaussSum, cosetGaussTerm_add_mem]
-  exact Equiv.sum_comp (Equiv.addRight (Submodule.Quotient.mk w)) _
+theorem cosetGaussSum_eq_of_sub_mem (a : ℤ) (c : ℕ)
+    [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] (γ γ' m : dual L)
+    (h : (γ' : E) - γ ∈ L) :
+    cosetGaussSum L hL a c γ' m = cosetGaussSum L hL a c γ m := by
+  simp only [cosetGaussSum, cosetGaussTerm_eq_of_sub_mem hL a c γ γ' m h]
+  exact Equiv.sum_comp (Equiv.addRight (Submodule.Quotient.mk (⟨(γ' : E) - γ, h⟩ : L))) _
 
 /-- If the level divides `c`, the coset Gauss sum vanishes unless the twisting vector
 `m` lies in the class `-a • γ` modulo `L`. -/
