@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Trace
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Spherical
 public import TauCeti.QuantumGroups.UqSl2.Pivotal
 public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
@@ -16,7 +15,8 @@ public import TauCeti.QuantumGroups.UqSl2.QuantumTrace
 For `q ≠ 0` and `q - q⁻¹ ≠ 0`, the pivotal structure with pivot `K⁻¹` is spherical: its
 left and right categorical traces agree on every module endomorphism. The generic Hopf-module
 trace formulas identify these traces with `tr(K f)` and `tr(K⁻¹ f)`. Their equality follows
-from the defining commutator relation, without genericity or semisimplicity assumptions.
+from the defining commutator relation. No semisimplicity assumption is needed; roots of unity
+are allowed provided `q ≠ 0` and `q - q⁻¹ ≠ 0`.
 
 The spherical structure uses the named inverse-antipode rigid structure and pivotal structure
 of `UqSl2.Pivotal`, installed locally.
@@ -35,8 +35,8 @@ namespace TauCeti.UqSl2
 variable (q : ℂ) [Fact (q ≠ 0)]
 
 /-- The finite-dimensional modules of `U_q(sl₂)` are spherical under the pivot `K⁻¹` whenever
-`q - q⁻¹ ≠ 0`. -/
-theorem finiteModuleSphericalCategory (hq : q - q⁻¹ ≠ 0) :
+`q ≠ 0` and `q - q⁻¹ ≠ 0`, with no semisimplicity assumption. -/
+theorem sphericalCategory_finiteModulePivotalCategory (hq : q - q⁻¹ ≠ 0) :
     letI := finiteModuleRigidCategory q
     letI := finiteModulePivotalCategory q
     SphericalCategory (FiniteHopfModuleCat ℂ (UqSl2 q)) := by
@@ -46,12 +46,7 @@ theorem finiteModuleSphericalCategory (hq : q - q⁻¹ ≠ 0) :
   intro M f
   apply FiniteHopfModuleCat.hom_ext
   ext c
-  rw [finiteModulePivotalCategory_def]
-  rw [FiniteHopfModuleCat.leftTrace_apply (antipode_bijective q) (pivotalElement q)
-      (fun x => by simpa using antipode_antipode q x),
-    FiniteHopfModuleCat.rightTrace_apply (antipode_bijective q) (pivotalElement q)
-      (fun x => by simpa using antipode_antipode q x)]
-  simp only [pivotalElement_val, antipode_kInv]
+  rw [leftTrace_apply, rightTrace_apply]
   rw [trace_lsmul_k_comp_eq_trace_lsmul_kInv_comp hq]
 
 end TauCeti.UqSl2

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Pivotal
+public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Trace
 public import TauCeti.QuantumGroups.UqSl2.Antipode
 
 /-!
@@ -18,6 +18,8 @@ implements the square of the antipode. It therefore supplies the pivotal isomorp
 
 The named structures `finiteModuleRigidCategory` and `finiteModulePivotalCategory` are installed
 locally, retaining the inverse-antipode duals of the general finite Hopf module construction.
+The named trace equations identify the right and left pivotal traces with ordinary linear traces
+twisted by `K⁻¹` and `K`, respectively.
 
 ## References
 
@@ -42,6 +44,13 @@ def pivotalElement : GroupLike ℂ (UqSl2 q) :=
 @[simp]
 theorem pivotalElement_val : (pivotalElement q : UqSl2 q) = kInv q := (rfl)
 
+/-- The square of the antipode is conjugation by the pivotal element. -/
+theorem antipode_antipode_pivotalElement (x : UqSl2 q) :
+    HopfAlgebra.antipode ℂ (HopfAlgebra.antipode ℂ x) =
+      (pivotalElement q : UqSl2 q) * x *
+        HopfAlgebra.antipode ℂ (pivotalElement q : UqSl2 q) := by
+  simpa using antipode_antipode q x
+
 /-- Finite-dimensional `U_q(sl₂)`-modules with their inverse-antipode left duals and
 antipode right duals. -/
 -- Expose the structure so public elementwise equations retain the canonical contragredient
@@ -56,7 +65,7 @@ def finiteModulePivotalCategory :
     letI := finiteModuleRigidCategory q
     PivotalCategory (FiniteHopfModuleCat ℂ (UqSl2 q)) :=
   FiniteHopfModuleCat.pivotalCategory (antipode_bijective q)
-    (pivotalElement q) (fun x => by simpa using antipode_antipode q x)
+    (pivotalElement q) (antipode_antipode_pivotalElement q)
 
 /-- The named pivotal structure specializes the group-like pivot construction at `K⁻¹`.
 This equation transports results about that construction to the named structure. -/
@@ -64,7 +73,7 @@ theorem finiteModulePivotalCategory_def :
     letI := finiteModuleRigidCategory q
     finiteModulePivotalCategory q =
       FiniteHopfModuleCat.pivotalCategory (antipode_bijective q)
-        (pivotalElement q) (fun x => by simpa using antipode_antipode q x) :=
+        (pivotalElement q) (antipode_antipode_pivotalElement q) :=
   (rfl)
 
 -- Keep this as a named rewrite: the generic rule simplifies it here, but does not match through
@@ -80,5 +89,39 @@ theorem dualEquiv_pivotalIsoApp_hom_apply (M : FiniteHopfModuleCat ℂ (UqSl2 q)
   let := finiteModuleRigidCategory q
   let := finiteModulePivotalCategory q
   exact FiniteHopfModuleCat.dualEquiv_pivotalIsoApp_hom_apply _ _ _ M m φ
+
+/-- For the named pivotal structure, the right trace is the ordinary trace twisted by `K⁻¹`.
+This formula requires only `q ≠ 0`. -/
+theorem rightTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
+    (c : (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q)) : FiniteHopfModuleCat ℂ (UqSl2 q))) :
+    letI := finiteModuleRigidCategory q
+    letI := finiteModulePivotalCategory q
+    (rightTrace f).hom.hom c =
+      (BialgebraModule.trivialEquiv ℂ (UqSl2 q)).symm
+        (LinearMap.trace ℂ M (Algebra.lsmul ℂ ℂ M (kInv q) ∘ₗ
+          f.hom.hom.restrictScalars ℂ) * BialgebraModule.trivialEquiv ℂ (UqSl2 q) c) := by
+  let := finiteModuleRigidCategory q
+  let := finiteModulePivotalCategory q
+  rw [finiteModulePivotalCategory_def]
+  simpa only [pivotalElement_val] using
+    FiniteHopfModuleCat.rightTrace_apply (antipode_bijective q) (pivotalElement q)
+      (antipode_antipode_pivotalElement q) f c
+
+/-- For the named pivotal structure, the left trace is the ordinary trace twisted by `K`.
+This formula requires only `q ≠ 0`. -/
+theorem leftTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
+    (c : (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q)) : FiniteHopfModuleCat ℂ (UqSl2 q))) :
+    letI := finiteModuleRigidCategory q
+    letI := finiteModulePivotalCategory q
+    (leftTrace f).hom.hom c =
+      (BialgebraModule.trivialEquiv ℂ (UqSl2 q)).symm
+        (LinearMap.trace ℂ M (Algebra.lsmul ℂ ℂ M (k q) ∘ₗ
+          f.hom.hom.restrictScalars ℂ) * BialgebraModule.trivialEquiv ℂ (UqSl2 q) c) := by
+  let := finiteModuleRigidCategory q
+  let := finiteModulePivotalCategory q
+  rw [finiteModulePivotalCategory_def]
+  simpa only [pivotalElement_val, antipode_kInv] using
+    FiniteHopfModuleCat.leftTrace_apply (antipode_bijective q) (pivotalElement q)
+      (antipode_antipode_pivotalElement q) f c
 
 end TauCeti.UqSl2

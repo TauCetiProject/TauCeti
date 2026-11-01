@@ -66,8 +66,7 @@ theorem rightTrace_apply {M : FiniteHopfModuleCat k H} (f : M ⟶ M)
         (tmul k H (M := M) (N := (Mᘁ : FiniteHopfModuleCat k H))
           (trivialEquiv k H c • Module.Basis.ofVectorSpace k M i)
           (φ i) : ↑(M ⊗ Mᘁ)) := by
-    -- The chosen right-dual instance uses `dualCoevaluation M` as its coevaluation.
-    rw [show η_ M Mᘁ = dualCoevaluation M from rfl, dualCoevaluation_hom_hom]
+    rw [coevaluation_eq_dualCoevaluation, dualCoevaluation_hom_hom]
     exact dualCoeval_apply_eq_sum k H M c
   rw [hcoe]
   simp only [map_sum]
