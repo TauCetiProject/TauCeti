@@ -31,11 +31,11 @@ interpretation below needs more.
 The normalization is Mathlib's relative one, as in `Height.mulHeight`: the local factor at an
 infinite place carries the exponent `mult v`. Suppose that `F` is algebraic over `K` (for instance
 an algebraic closure of `K`), that each `w v` lies over `v`, and that the forms at each place are
-linearly independent, and let `ε > 0`. Then the Subspace Theorem says that the nonzero `x` with
-`approxProd Sinf Sfin w L x ≤ mulHeight x ^ (-card ι - ε)` lie in finitely many proper subspaces
-of `K^ι`: this is the number-field form of Schlickewei and Evertse, and with `K = ℚ` Schmidt's
-form with algebraic coefficients. This file develops the quantity itself, not the theorem, and
-assumes `w v` lies over `v` only where a result needs it.
+linearly independent, and let `2 ≤ card ι` and `ε > 0`. Then the Subspace Theorem says that the
+nonzero `x` with `approxProd Sinf Sfin w L x ≤ mulHeight x ^ (-card ι - ε)` lie in finitely many
+proper subspaces of `K^ι`: this is the number-field form of Schlickewei and Evertse, and with
+`K = ℚ` Schmidt's form with algebraic coefficients. This file develops the quantity itself, not
+the theorem, and assumes `w v` lies over `v` only where a result needs it.
 
 ## Main results
 
