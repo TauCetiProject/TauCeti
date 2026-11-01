@@ -11,25 +11,25 @@ public import TauCeti.LinearAlgebra.Finsupp.ReducedFree
 /-!
 # The reduced free module on a pointed simplicial set
 
-For a ring `R` and a pointed simplicial set `X`, the reduced free module `R̃[X]` has as
+For a ring `R` and a pointed simplicial set `X`, the reduced free module `R~[X]` has as
 `n`-simplices the reduced free `R`-module on the pointed set `X_n`: the free module on `X_n`
 modulo the generator of the basepoint. Simplicial operators act on generators, and the basepoint
 is zero. This is the functor `PointedSSet.reducedFree R`, and the generators give the based map
-`PointedSSet.reducedFreeι R X : X ⟶ R̃[X]`, natural in `X` (`PointedSSet.toReducedFree R`).
+`PointedSSet.reducedFreeι R X : X ⟶ R~[X]`, natural in `X` (`PointedSSet.toReducedFree R`).
 
 For a commutative ring `R`, the external product of generators `[x] ∧ [y] ↦ [x ∧ y]` extends
-bilinearly to based maps `R̃[X] ∧ R̃[Y] ⟶ R̃[X ∧ Y]`. With the unit `S⁰ ⟶ R̃[S⁰]` given by the
-generators, they make `R̃[-]` a lax braided functor on pointed simplicial sets with the smash
-product, and `X ⟶ R̃[X]` a monoidal natural transformation. Applied to the spheres
+bilinearly to based maps `R~[X] ∧ R~[Y] ⟶ R~[X ∧ Y]`. With the unit `S⁰ ⟶ R~[S⁰]` given by the
+generators, they make `R~[-]` a lax braided functor on pointed simplicial sets with the smash
+product, and `X ⟶ R~[X]` a monoidal natural transformation. Applied to the spheres
 `Sⁿ = (S¹)^∧n`, this gives the commutative ring structure of the Eilenberg–MacLane symmetric
-spectrum `HR`, with levels `R̃[Sⁿ]`, and its unit map from the sphere spectrum.
+spectrum `HR`, with levels `R~[Sⁿ]`, and its unit map from the sphere spectrum.
 
 ## Main definitions
 
-* `PointedSSet.reducedFree R`: the reduced free `R`-module functor `X ↦ R̃[X]`.
-* `PointedSSet.reducedFreeι R X`: the based map `X ⟶ R̃[X]` sending a simplex to its generator,
+* `PointedSSet.reducedFree R`: the reduced free `R`-module functor `X ↦ R~[X]`.
+* `PointedSSet.reducedFreeι R X`: the based map `X ⟶ R~[X]` sending a simplex to its generator,
   and `PointedSSet.toReducedFree R`: the corresponding natural transformation.
-* `PointedSSet.reducedFreeμ R X Y`: the external product `R̃[X] ∧ R̃[Y] ⟶ R̃[X ∧ Y]`.
+* `PointedSSet.reducedFreeμ R X Y`: the external product `R~[X] ∧ R~[Y] ⟶ R~[X ∧ Y]`.
 
 ## Main statements
 
@@ -58,10 +58,10 @@ section Ring
 
 variable (R : Type u) [Ring R]
 
-/-- The reduced free `R`-module `R̃[X]` on a pointed simplicial set `X`: its `n`-simplices form the
+/-- The reduced free `R`-module `R~[X]` on a pointed simplicial set `X`: its `n`-simplices form the
 reduced free module on the `n`-simplices of `X` pointed at the basepoint, simplicial operators act
 on generators, and the basepoint is zero. -/
--- The `n`-simplices of `R̃[X]` unfold at implicit transparency to the module
+-- The `n`-simplices of `R~[X]` unfold at implicit transparency to the module
 -- `ReducedFreeModule R (X.point n)`, so that the module API applies to them.
 @[expose, implicit_reducible]
 def reducedFree : PointedSSet.{u} ⥤ PointedSSet.{u} where
@@ -102,20 +102,20 @@ lemma reducedFree_obj_point (X : PointedSSet.{u}) (n : SimplexCategoryᵒᵖ) :
     ((reducedFree R).obj X).point n = (0 : ReducedFreeModule R (X.point n)) :=
   (hom_app ((reducedFree R).obj X) n (SSet.stdSimplex.const 0 0 n)).symm
 
-/-- Simplicial operators act on `R̃[X]` through their action on generators. -/
+/-- Simplicial operators act on `R~[X]` through their action on generators. -/
 @[simp]
 lemma reducedFree_obj_map (f : n ⟶ m) (v : ((reducedFree R).obj X).right.obj n) :
     ((reducedFree R).obj X).right.map f v =
       ReducedFreeModule.map R (X.right.map f ·) (X.map_point f) v := (rfl)
 
-/-- A based map `f` acts on `R̃[X]` through its action on generators. -/
+/-- A based map `f` acts on `R~[X]` through its action on generators. -/
 @[simp]
 lemma reducedFree_map_app (f : X ⟶ Y) (v : ((reducedFree R).obj X).right.obj n) :
     ((reducedFree R).map f).right.app n v =
       ReducedFreeModule.map R (f.right.app n ·) (app_point f n) v := (rfl)
 
 variable (R) in
-/-- The based map `X ⟶ R̃[X]` sending each simplex to its generator; the basepoint goes to
+/-- The based map `X ⟶ R~[X]` sending each simplex to its generator; the basepoint goes to
 zero. -/
 def reducedFreeι (X : PointedSSet.{u}) : X ⟶ (reducedFree R).obj X :=
   Under.homMk
@@ -134,7 +134,7 @@ lemma reducedFreeι_right_app (x : X.right.obj n) :
     (reducedFreeι R X).right.app n x = ReducedFreeModule.mk R x := (rfl)
 
 variable (R) in
-/-- The natural based map `X ⟶ R̃[X]` sending each simplex to its generator. -/
+/-- The natural based map `X ⟶ R~[X]` sending each simplex to its generator. -/
 def toReducedFree : 𝟭 PointedSSet.{u} ⟶ reducedFree R where
   app X := reducedFreeι R X
   naturality X Y f := by
@@ -165,7 +165,7 @@ private lemma map₂_smashMk_map {X Y : PointedSSet.{u}} {n m : SimplexCategory�
   simp [ReducedFreeModule.map_map₂, ReducedFreeModule.map₂_map_left,
     ReducedFreeModule.map₂_map_right]
 
-/-- The external product `R̃[X] ∧ R̃[Y] ⟶ R̃[X ∧ Y]`, the bilinear extension of
+/-- The external product `R~[X] ∧ R~[Y] ⟶ R~[X ∧ Y]`, the bilinear extension of
 `[x] ∧ [y] ↦ [x ∧ y]` on generators. -/
 def reducedFreeμ (X Y : PointedSSet.{u}) :
     (reducedFree R).obj X ⊗ (reducedFree R).obj Y ⟶ (reducedFree R).obj (X ⊗ Y) :=
@@ -198,7 +198,7 @@ lemma reducedFreeμ_app_smashMk (v : ((reducedFree R).obj X).right.obj n)
   smashLift_app_smashMk _ _ _ v w
 
 /-- The reduced free module functor is lax monoidal for the smash product: the unit is the
-generator map `S⁰ ⟶ R̃[S⁰]` and the tensorator is the external product. -/
+generator map `S⁰ ⟶ R~[S⁰]` and the tensorator is the external product. -/
 instance : (reducedFree R).LaxMonoidal where
   ε := reducedFreeι R (𝟙_ PointedSSet)
   μ := reducedFreeμ R
@@ -244,7 +244,7 @@ instance : (reducedFree R).LaxBraided where
       reducedFreeμ_app_smashMk, reducedFree_map_app, ReducedFreeModule.map_map₂]
     exact (ReducedFreeModule.map₂_swap R _ _ _ w v).symm
 
-/-- Sending simplices to their generators is a monoidal natural transformation `X ⟶ R̃[X]`. -/
+/-- Sending simplices to their generators is a monoidal natural transformation `X ⟶ R~[X]`. -/
 instance : NatTrans.IsMonoidal (toReducedFree R) where
   unit := Category.id_comp _
   tensor X Y := by

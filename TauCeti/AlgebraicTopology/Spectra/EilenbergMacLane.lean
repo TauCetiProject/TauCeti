@@ -12,22 +12,23 @@ public import TauCeti.AlgebraicTopology.Spectra.SymmetricSpectrum
 # The Eilenberg–MacLane symmetric spectrum `HR`
 
 For a commutative ring `R`, the Eilenberg–MacLane symmetric spectrum `HR` has as `n`-th level the
-reduced free module `R̃[Sⁿ]` on the simplicial sphere `Sⁿ = (S¹)^∧n`, with `Σ_n` permuting the
+reduced free module `R~[Sⁿ]` on the simplicial sphere `Sⁿ = (S¹)^∧n`, with `Σ_n` permuting the
 sphere coordinates. It is the composite of the sphere symmetric sequence `n ↦ Sⁿ` with the lax
-braided functor `R̃[-]`, so it is a commutative monoid for the Day convolution product
-(`SymmetricSequence.eilenbergMacLane R`): its multiplication `R̃[Sᵖ] ∧ R̃[Sᑫ] ⟶ R̃[Sᵖ⁺ᑫ]` is the
-bilinear extension of the concatenation of sphere coordinates, `[x] ∧ [y] ↦ [x ∧ y]`, and its unit
-is the generator of the non-basepoint simplex of `S⁰`.
+braided functor `R~[-]`, so it is a commutative monoid for the Day convolution product
+(`SymmetricSequence.eilenbergMacLane R`): its multiplication
+`R~[S^p] ∧ R~[S^q] ⟶ R~[S^(p+q)]` is the bilinear extension of the concatenation of sphere
+coordinates, `[x] ∧ [y] ↦ [x ∧ y]`, and its unit is the generator of the non-basepoint simplex
+of `S⁰`.
 
 Sending each simplex of `Sⁿ` to its generator is a morphism of commutative monoids from the sphere
 symmetric sequence to `HR` (`SymmetricSequence.sphereToEilenbergMacLane R`). Restricting scalars
 along it makes `HR` a symmetric spectrum (`SymmetricSpectrum.eilenbergMacLane R`). Its structure
-maps `Sᵖ ∧ R̃[Sᑫ] ⟶ R̃[Sᵖ⁺ᑫ]` send `x ∧ Σ aᵢ yᵢ` to `Σ aᵢ (x ∧ yᵢ)`
+maps `S^p ∧ R~[S^q] ⟶ R~[S^(p+q)]` send `x ∧ Σ aᵢ yᵢ` to `Σ aᵢ (x ∧ yᵢ)`
 (`SymmetricSpectrum.eilenbergMacLane_dayStructureMap_app_smashMk`).
 
 ## Main definitions
 
-* `SymmetricSequence.eilenbergMacLane R`: the commutative monoid `n ↦ R̃[Sⁿ]` of symmetric
+* `SymmetricSequence.eilenbergMacLane R`: the commutative monoid `n ↦ R~[Sⁿ]` of symmetric
   sequences.
 * `SymmetricSequence.sphereToEilenbergMacLane R`: the unit morphism of monoids `S ⟶ HR`.
 * `SymmetricSpectrum.eilenbergMacLane R`: the Eilenberg–MacLane symmetric spectrum `HR`.
@@ -60,7 +61,7 @@ variable (R : Type) [CommRing R]
 
 namespace SymmetricSequence
 
-/-- The Eilenberg–MacLane symmetric sequence `n ↦ R̃[Sⁿ]` of reduced free `R`-modules on the
+/-- The Eilenberg–MacLane symmetric sequence `n ↦ R~[Sⁿ]` of reduced free `R`-modules on the
 simplicial spheres, with `Σ_n` permuting the sphere coordinates. The bilinear extension of the
 concatenation of coordinates `[x] ∧ [y] ↦ [x ∧ y]` makes it a commutative monoid for the Day
 convolution product, through the instances `DayFunctor.monObj` and `DayFunctor.isCommMonObj`. -/
@@ -72,7 +73,7 @@ abbrev eilenbergMacLane : SymmetricSequence.{0} :=
 example : IsCommMonObj (eilenbergMacLane R) := inferInstance
 
 /-- The unit morphism `S ⟶ HR` from the sphere symmetric sequence, sending each simplex of `Sⁿ` to
-its generator in `R̃[Sⁿ]`. It is a morphism of monoids, through the instance
+its generator in `R~[Sⁿ]`. It is a morphism of monoids, through the instance
 `DayFunctor.isMonHom`. -/
 def sphereToEilenbergMacLane : sphere ⟶ eilenbergMacLane R :=
   .mk ((PointedSSet.smashPowFunctor PointedSSet.circle).rightUnitor.inv ≫
@@ -84,7 +85,7 @@ lemma sphereToEilenbergMacLane_natTrans_app (k : FiniteBijection) :
       PointedSSet.reducedFreeι R (PointedSSet.circle.smashPow (Fin k.len)) := by
   simp [sphereToEilenbergMacLane]
 
-/-- The generator maps `Sⁿ ⟶ R̃[Sⁿ]` form a monoidal natural transformation. -/
+/-- The generator maps `Sⁿ ⟶ R~[Sⁿ]` form a monoidal natural transformation. -/
 instance : NatTrans.IsMonoidal (sphereToEilenbergMacLane R).natTrans :=
   inferInstanceAs (NatTrans.IsMonoidal
     ((PointedSSet.smashPowFunctor PointedSSet.circle).rightUnitor.inv ≫
@@ -97,11 +98,11 @@ end SymmetricSequence
 
 namespace SymmetricSpectrum
 
-/-- The Eilenberg–MacLane symmetric spectrum `HR`: the commutative monoid `n ↦ R̃[Sⁿ]` of
+/-- The Eilenberg–MacLane symmetric spectrum `HR`: the commutative monoid `n ↦ R~[Sⁿ]` of
 symmetric sequences, regarded as a module over the sphere by restricting scalars along the unit
 `S ⟶ HR`. -/
 -- Written as a structure with an explicit underlying object, exposed and implicitly reducible, so
--- that the levels of `HR` are those of the symmetric sequence `n ↦ R̃[Sⁿ]`.
+-- that the levels of `HR` are those of the symmetric sequence `n ↦ R~[Sⁿ]`.
 @[expose, implicit_reducible]
 def eilenbergMacLane : SymmetricSpectrum :=
   letI := ModObj.regular (SymmetricSequence.eilenbergMacLane R)
@@ -125,8 +126,8 @@ lemma eilenbergMacLane_smul :
         MonObj.mul :=
   (rfl)
 
-/-- The structure maps `Sᵖ ∧ R̃[Sᑫ] ⟶ R̃[Sᵖ⁺ᑫ]` of `HR` are the generator map on the sphere factor
-followed by the multiplication of `HR`. -/
+/-- The structure maps `S^p ∧ R~[S^q] ⟶ R~[S^(p+q)]` of `HR` are the generator map on the sphere
+factor followed by the multiplication of `HR`. -/
 lemma eilenbergMacLane_dayStructureMap (p q : FiniteBijection) :
     (eilenbergMacLane R).dayStructureMap p q =
       PointedSSet.reducedFreeι R _ ▷ _ ≫
@@ -143,8 +144,8 @@ lemma eilenbergMacLane_dayStructureMap (p q : FiniteBijection) :
   rw [DayFunctor.η_app_comp_mul_natTrans_app,
     SymmetricSequence.sphereToEilenbergMacLane_natTrans_app]
 
-/-- The structure map `Sᵖ ∧ R̃[Sᑫ] ⟶ R̃[Sᵖ⁺ᑫ]` of `HR` sends `x ∧ Σ aᵢ yᵢ` to `Σ aᵢ (x ∧ yᵢ)`, where
-`x ∧ yᵢ ∈ Sᵖ⁺ᑫ` concatenates the sphere coordinates. -/
+/-- The structure map `S^p ∧ R~[S^q] ⟶ R~[S^(p+q)]` of `HR` sends `x ∧ Σ aᵢ yᵢ` to
+`Σ aᵢ (x ∧ yᵢ)`, where `x ∧ yᵢ ∈ S^(p+q)` concatenates the sphere coordinates. -/
 lemma eilenbergMacLane_dayStructureMap_app_smashMk {p q : FiniteBijection}
     {n : SimplexCategoryᵒᵖ} (x : (PointedSSet.circle.smashPow (Fin p.len)).right.obj n)
     (v : ((PointedSSet.reducedFree R).obj
