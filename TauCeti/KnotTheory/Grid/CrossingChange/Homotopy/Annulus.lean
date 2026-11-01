@@ -293,7 +293,7 @@ private theorem pentagonWeight_withTurnRow {u v : GridState n}
 
 /-- The weight of an initial-side pentagon of the exchanged diagram, read in `G` by exchanging the
 columns `a` and `b`. -/
-private theorem initialPentagonWeight_withTurnRow {u v : GridState n}
+theorem initialPentagonWeight_withTurnRow {u v : GridState n}
     (Q : GridInitialPentagonBetween a t u v) :
     (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q =
       ∏ c ∈ G.OColumnsOfSquares
