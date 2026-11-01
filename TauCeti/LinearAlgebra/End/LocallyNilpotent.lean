@@ -12,6 +12,16 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Ring.Rat
+public import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Algebra.Algebra.Rat
+import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+import Mathlib.Algebra.Module.BigOperators
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Locally nilpotent endomorphisms and families of endomorphisms
@@ -20,6 +30,11 @@ An endomorphism `f` of a module is *locally nilpotent* when every vector is anni
 power of `f`.  Then `1 + f` is invertible.  No global nilpotence bound is needed, so the statement
 applies to operators which lower a filtration by direct summands without being nilpotent on the
 whole module, such as those of homological perturbation theory on bar constructions.
+
+Over a `ℚ`-algebra, a locally nilpotent endomorphism also has an exponential
+`exp f x = ∑ fᵏ x / k!`, a finite sum for each `x`. It is a linear automorphism with inverse
+`exp (-f)`, again with no global nilpotence bound. This is what exponentiates the adjoint action of
+a raising generator on an infinite-dimensional Lie algebra presented by generators and relations.
 
 On a free module `ι →₀ R`, an endomorphism is locally nilpotent as soon as it strictly lowers a
 weight on the basis whose strict order is well-founded, for instance any weight on a finite basis.
@@ -38,6 +53,9 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   locally nilpotent.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
+* `Module.End.locallyNilpotentExp`: the exponential of a locally nilpotent endomorphism, as a linear
+  automorphism; `Module.End.locallyNilpotentExp_apply_eq_sum` computes it as a finite sum and
+  `Module.End.symm_locallyNilpotentExp` identifies its inverse with `exp (-f)`.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
   that strictly lowers a well-founded weight on the basis is locally nilpotent.
 * `Module.End.mem_wordKer_iff`: `Module.End.wordKer f d` consists of the vectors killed by the
@@ -286,3 +304,209 @@ theorem iSup_wordKer_eq_top_of_injective (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ
 end Module.End
 
 end Family
+
+section Exp
+
+/-! ### The exponential of a locally nilpotent endomorphism -/
+
+open Finset
+
+namespace Module.End
+
+variable {R M : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup M] [Module R M]
+
+/-- The exponential series of `f` at `x`, truncated at a power of `f` killing `x`. Beyond the first
+such power every term vanishes, so the truncation point does not matter
+(`Module.End.sum_range_inv_factorial_smul_pow_apply_eq`). -/
+private noncomputable def locallyNilpotentExpFun (f : Module.End R M)
+    (hf : ∀ x, ∃ n, (f ^ n) x = 0) (x : M) : M :=
+  ∑ k ∈ range (hf x).choose, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x
+
+/-- Extending a truncated exponential series past a power of `f` killing `x` adds only zeros. -/
+private theorem sum_range_inv_factorial_smul_pow_apply_of_le (f : Module.End R M) {x : M}
+    {n m : ℕ} (hn : (f ^ n) x = 0) (hnm : n ≤ m) :
+    ∑ k ∈ range m, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x =
+      ∑ k ∈ range n, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x := by
+  refine (sum_subset (range_subset_range.2 hnm) fun k _ hk => ?_).symm
+  rw [mem_range, not_lt] at hk
+  rw [Module.End.pow_map_zero_of_le hk hn, smul_zero]
+
+/-- Two truncations of the exponential series at powers of `f` killing `x` agree. -/
+private theorem sum_range_inv_factorial_smul_pow_apply_eq (f : Module.End R M) {x : M}
+    {n m : ℕ} (hn : (f ^ n) x = 0) (hm : (f ^ m) x = 0) :
+    ∑ k ∈ range n, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x =
+      ∑ k ∈ range m, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x := by
+  rcases le_total n m with h | h
+  · exact (sum_range_inv_factorial_smul_pow_apply_of_le f hn h).symm
+  · exact sum_range_inv_factorial_smul_pow_apply_of_le f hm h
+
+private theorem locallyNilpotentExpFun_eq_sum (f : Module.End R M)
+    (hf : ∀ x, ∃ n, (f ^ n) x = 0) {x : M} {n : ℕ} (hn : (f ^ n) x = 0) :
+    locallyNilpotentExpFun f hf x =
+      ∑ k ∈ range n, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x :=
+  sum_range_inv_factorial_smul_pow_apply_eq f (hf x).choose_spec hn
+
+/-- The exponential series of a locally nilpotent endomorphism, as a linear map. -/
+private noncomputable def locallyNilpotentExpLinearMap (f : Module.End R M)
+    (hf : ∀ x, ∃ n, (f ^ n) x = 0) : Module.End R M where
+  toFun := locallyNilpotentExpFun f hf
+  map_add' x y := by
+    obtain ⟨n, hn⟩ := hf x
+    obtain ⟨m, hm⟩ := hf y
+    have hx : (f ^ (n + m)) x = 0 := Module.End.pow_map_zero_of_le (Nat.le_add_right n m) hn
+    have hy : (f ^ (n + m)) y = 0 := Module.End.pow_map_zero_of_le (Nat.le_add_left m n) hm
+    rw [locallyNilpotentExpFun_eq_sum f hf hx, locallyNilpotentExpFun_eq_sum f hf hy,
+      locallyNilpotentExpFun_eq_sum f hf (by rw [map_add, hx, hy, add_zero]), ← sum_add_distrib]
+    simp only [map_add, smul_add]
+  map_smul' r x := by
+    obtain ⟨n, hn⟩ := hf x
+    rw [locallyNilpotentExpFun_eq_sum f hf hn,
+      locallyNilpotentExpFun_eq_sum f hf (by rw [map_smul, hn, smul_zero]), smul_sum]
+    simp only [map_smul, RingHom.id_apply, smul_comm r]
+
+omit [Algebra ℚ R] in
+/-- Local nilpotence passes from `f` to `-f`. -/
+private theorem neg_pow_apply_eq_zero (f : Module.End R M) {x : M} {n : ℕ}
+    (hn : (f ^ n) x = 0) : ((-f) ^ n) x = 0 := by
+  rw [neg_pow, Module.End.mul_apply, hn, map_zero]
+
+omit [Algebra ℚ R] in
+/-- Powers of `-f` are powers of `f` up to sign. -/
+private theorem neg_pow_apply (f : Module.End R M) (n : ℕ) (x : M) :
+    ((-f) ^ n) x = (-1 : R) ^ n • (f ^ n) x := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', Module.End.mul_apply, ih, map_smul, LinearMap.neg_apply, pow_succ' f,
+      Module.End.mul_apply, pow_succ', neg_one_mul, neg_smul, smul_neg]
+
+/-- The coefficients of `exp X * exp (-X)`: for `m > 0` the alternating sum of
+`1 / (i ! j !)` over `i + j = m` vanishes, since it is `(1 - 1) ^ m / m !`. -/
+private theorem sum_antidiagonal_inv_factorial_mul_neg_one_pow (m : ℕ) :
+    ∑ ij ∈ antidiagonal m,
+        (ij.1.factorial : ℚ)⁻¹ * ((ij.2.factorial : ℚ)⁻¹ * (-1) ^ ij.2) =
+      if m = 0 then 1 else 0 := by
+  have h := (Commute.all (1 : ℚ) (-1)).add_pow' m
+  rw [add_neg_cancel, zero_pow_eq] at h
+  have hterm : ∀ ij ∈ antidiagonal m,
+      (ij.1.factorial : ℚ)⁻¹ * ((ij.2.factorial : ℚ)⁻¹ * (-1) ^ ij.2) =
+        (m.factorial : ℚ)⁻¹ * (m.choose ij.1 • ((1 : ℚ) ^ ij.1 * (-1) ^ ij.2)) := by
+    intro ij hij
+    rw [mem_antidiagonal] at hij
+    subst m
+    rw [nsmul_eq_mul, one_pow, one_mul]
+    have hfac : ((ij.1 + ij.2).choose ij.1 : ℚ) * ij.2.factorial * ij.1.factorial =
+        (ij.1 + ij.2).factorial := by
+      have := Nat.add_choose_mul_factorial_mul_factorial ij.2 ij.1
+      rw [Nat.add_comm ij.2] at this
+      exact_mod_cast this
+    field_simp
+    rw [← hfac]
+    ring
+  rw [sum_congr rfl hterm, ← mul_sum, ← h]
+  split_ifs with hm <;> simp [hm]
+
+/-- `exp (-f)` is a left inverse of `exp f`. -/
+private theorem locallyNilpotentExpLinearMap_neg_apply (f : Module.End R M)
+    (hf : ∀ x, ∃ n, (f ^ n) x = 0) (hf' : ∀ x, ∃ n, ((-f) ^ n) x = 0) (x : M) :
+    locallyNilpotentExpLinearMap f hf (locallyNilpotentExpLinearMap (-f) hf' x) = x := by
+  obtain ⟨n, hn⟩ := hf x
+  have hn1 : (f ^ (n + 1)) x = 0 := Module.End.pow_map_zero_of_le (Nat.le_succ n) hn
+  -- every `f ^ j x` is killed by `f ^ (n + 1)`, so all inner series can be truncated there
+  have hkill : ∀ j, (f ^ (n + 1)) ((f ^ j) x) = 0 := fun j => by
+    rw [← Module.End.mul_apply, ← pow_add, add_comm, pow_add, Module.End.mul_apply, hn1,
+      map_zero]
+  let g : ℕ × ℕ → M := fun ij =>
+    (algebraMap ℚ R ((ij.1.factorial : ℚ)⁻¹ * ((ij.2.factorial : ℚ)⁻¹ * (-1) ^ ij.2))) •
+      (f ^ (ij.1 + ij.2)) x
+  have hg : ∀ i j, n + 1 ≤ i ∨ n + 1 ≤ j → g (i, j) = 0 := fun i j hij => by
+    have : n + 1 ≤ i + j := by omega
+    simp only [g, Module.End.pow_map_zero_of_le this hn1, smul_zero]
+  change locallyNilpotentExpLinearMap f hf (locallyNilpotentExpFun (-f) hf' x) = x
+  rw [locallyNilpotentExpFun_eq_sum (-f) hf' (neg_pow_apply_eq_zero f hn1), map_sum]
+  calc ∑ j ∈ range (n + 1), locallyNilpotentExpLinearMap f hf
+          (algebraMap ℚ R (j.factorial : ℚ)⁻¹ • ((-f) ^ j) x)
+      = ∑ i ∈ range (n + 1), ∑ j ∈ range (n + 1), g (i, j) := by
+        rw [sum_comm]
+        refine sum_congr rfl fun j _ => ?_
+        rw [neg_pow_apply, map_smul, map_smul]
+        -- the linear map is the exponential series, which can be truncated at `n + 1`
+        change _ • _ • locallyNilpotentExpFun f hf ((f ^ j) x) = _
+        rw [locallyNilpotentExpFun_eq_sum f hf (hkill j), smul_sum, smul_sum]
+        refine sum_congr rfl fun i _ => ?_
+        simp only [g, smul_smul, ← Module.End.mul_apply, ← pow_add, map_mul, map_pow, map_neg,
+          map_one]
+        congr 1
+        ring
+    _ = ∑ m ∈ range (n + 1 + (n + 1)), ∑ ij ∈ antidiagonal m, g ij :=
+        (TauCeti.sum_range_add_antidiagonal_of_support _ _ g hg).symm
+    _ = ∑ m ∈ range (n + 1 + (n + 1)),
+          (algebraMap ℚ R (if m = 0 then 1 else 0)) • (f ^ m) x := by
+        refine sum_congr rfl fun m _ => ?_
+        rw [← sum_antidiagonal_inv_factorial_mul_neg_one_pow m, map_sum, Finset.sum_smul]
+        refine sum_congr rfl fun ij hij => ?_
+        rw [mem_antidiagonal] at hij
+        simp only [g, hij]
+    _ = x := by
+        rw [sum_eq_single_of_mem 0 (by simp) fun m _ hm => by simp [hm]]
+        simp
+
+/-- **The exponential of a locally nilpotent endomorphism.** If every vector is killed by some
+power of `f`, then over a `ℚ`-algebra the exponential series `exp f x = ∑ fᵏ x / k!` is a finite
+sum for each `x`, and it is a linear automorphism with inverse `exp (-f)`. No global nilpotence
+bound is needed. -/
+noncomputable def locallyNilpotentExp (f : Module.End R M) (hf : ∀ x, ∃ n, (f ^ n) x = 0) :
+    M ≃ₗ[R] M :=
+  have hf' : ∀ x, ∃ n, ((-f) ^ n) x = 0 := fun x =>
+    (hf x).imp fun _ => neg_pow_apply_eq_zero f
+  { locallyNilpotentExpLinearMap f hf with
+    invFun := locallyNilpotentExpLinearMap (-f) hf'
+    left_inv x := by
+      have := locallyNilpotentExpLinearMap_neg_apply (-f) hf' (by simpa only [neg_neg] using hf) x
+      simp only [neg_neg] at this
+      exact this
+    right_inv x := locallyNilpotentExpLinearMap_neg_apply f hf hf' x }
+
+variable (f : Module.End R M) (hf : ∀ x, ∃ n, (f ^ n) x = 0)
+
+/-- `exp f x` is its exponential series truncated at any power of `f` killing `x`. -/
+theorem locallyNilpotentExp_apply_eq_sum {x : M} {n : ℕ} (hn : (f ^ n) x = 0) :
+    locallyNilpotentExp f hf x =
+      ∑ k ∈ range n, algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (f ^ k) x :=
+  locallyNilpotentExpFun_eq_sum f hf hn
+
+/-- The inverse of `exp f` is `exp (-f)`. -/
+theorem symm_locallyNilpotentExp :
+    (locallyNilpotentExp f hf).symm =
+      locallyNilpotentExp (-f) fun x => (hf x).imp fun _ hn => by
+        rw [neg_pow, Module.End.mul_apply, hn, map_zero] :=
+  LinearEquiv.ext fun _ => (rfl)
+
+/-- `exp f` fixes the vectors killed by `f`. -/
+theorem locallyNilpotentExp_apply_of_apply_eq_zero {x : M} (hx : f x = 0) :
+    locallyNilpotentExp f hf x = x := by
+  rw [locallyNilpotentExp_apply_eq_sum f hf (n := 1) (by rwa [pow_one])]
+  simp
+
+/-- `exp f x = x + f x` when `f` kills `f x`. -/
+theorem locallyNilpotentExp_apply_of_apply_apply_eq_zero {x : M} (hx : f (f x) = 0) :
+    locallyNilpotentExp f hf x = x + f x := by
+  rw [locallyNilpotentExp_apply_eq_sum f hf (n := 2) (by rwa [sq, Module.End.mul_apply])]
+  simp [sum_range_succ]
+
+/-- `exp f x = x + f x + y` when `f (f x) = 2 • y` and `f` kills `y`: the exponential series
+stops after its quadratic term `f (f x) / 2`. -/
+theorem locallyNilpotentExp_apply_of_apply_apply_eq_two_nsmul {x y : M}
+    (hx : f (f x) = 2 • y) (hy : f y = 0) :
+    locallyNilpotentExp f hf x = x + f x + y := by
+  rw [locallyNilpotentExp_apply_eq_sum f hf (n := 3)
+    (by rw [pow_succ, Module.End.mul_apply, sq, Module.End.mul_apply, hx, map_nsmul, hy,
+      smul_zero])]
+  simp only [sum_range_succ, range_zero, sum_empty, pow_zero, Module.End.one_apply, pow_one, sq,
+    Module.End.mul_apply, hx, Nat.factorial, Nat.cast_one, inv_one, map_one, one_smul, zero_add]
+  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, ← map_natCast (algebraMap ℚ R), ← map_mul]
+  norm_num
+
+end Module.End
+
+end Exp
