@@ -107,7 +107,9 @@ noncomputable def pivotalIsoAppHom (X : Center C) : X ⟶ ((Xᘁ : Center C)ᘁ 
     simp only [rightDual_snd]
     exact X.2.pivotalIsoApp_hom_whiskerRight_comp_rightDual_rightDual_β_hom U
 
-private theorem pivotalIsoAppHom_f (X : Center C) :
+/-- The underlying morphism of `pivotalIsoAppHom X` is the pivotal isomorphism `φ_{X.1}` of `C`. -/
+@[simp]
+theorem pivotalIsoAppHom_f (X : Center C) :
     (pivotalIsoAppHom X).f = (pivotalIsoApp X.1).hom :=
   (rfl)
 
@@ -127,7 +129,10 @@ noncomputable def pivotalNatIso : 𝟭 (Center C) ≅ doubleRightDualFunctor (Ce
   NatIso.ofComponents (fun X => (isoMk (pivotalIsoAppHom X) : X ≅ ((Xᘁ : Center C)ᘁ : Center C)))
     pivotalIsoAppHom_naturality
 
-private theorem pivotalNatIso_hom_app_f (X : Center C) :
+/-- The underlying morphisms of the components of `pivotalNatIso` are the pivotal isomorphisms of
+`C`. -/
+@[simp]
+theorem pivotalNatIso_hom_app_f (X : Center C) :
     (pivotalNatIso.hom.app X).f = (pivotalIsoApp X.1).hom := by
   unfold pivotalNatIso
   exact pivotalIsoAppHom_f X
