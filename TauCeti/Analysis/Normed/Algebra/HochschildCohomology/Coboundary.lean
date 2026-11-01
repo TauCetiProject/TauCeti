@@ -90,8 +90,10 @@ private def leftCoface (L : A →L[𝕜] E →L[𝕜] E) :
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
 private theorem leftCoface_apply (L : A →L[𝕜] E →L[𝕜] E)
     (T : ContinuousMultilinearMap 𝕜 (fun _ : Fin n ↦ A) E) (a : Fin (n + 1) → A) :
-    leftCoface n L T a = L (a 0) (T (Fin.tail a)) :=
-  rfl
+    leftCoface n L T a = L (a 0) (T (Fin.tail a)) := by
+  simp only [leftCoface, coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, continuousMultilinearCurryLeftEquiv_symm_apply,
+    flip_apply, compContinuousMultilinearMapL_apply, compContinuousMultilinearMap_coe]
 
 variable (n) in
 /-- The last coface `(∂ₙ₊₁T)(a₀, …, aₙ) = R aₙ (T (a₀, …, aₙ₋₁))`. -/
@@ -105,8 +107,33 @@ private def rightCoface (R : A →L[𝕜] E →L[𝕜] E) :
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
 private theorem rightCoface_apply (R : A →L[𝕜] E →L[𝕜] E)
     (T : ContinuousMultilinearMap 𝕜 (fun _ : Fin n ↦ A) E) (a : Fin (n + 1) → A) :
-    rightCoface n R T a = R (a (Fin.last n)) (T (Fin.init a)) :=
-  rfl
+    rightCoface n R T a = R (a (Fin.last n)) (T (Fin.init a)) := by
+  simp only [rightCoface, coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    continuousMultilinearCurryRightEquiv_symm_apply, compContinuousMultilinearMapL_apply,
+    compContinuousMultilinearMap_coe, flip_apply]
+
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+private theorem norm_leftCoface_le (L : A →L[𝕜] E →L[𝕜] E) : ‖leftCoface n L‖ ≤ ‖L‖ := by
+  refine opNorm_le_bound _ (norm_nonneg L) fun T ↦ ?_
+  refine ContinuousMultilinearMap.opNorm_le_bound
+    (mul_nonneg (norm_nonneg _) (norm_nonneg _)) fun a ↦ ?_
+  rw [leftCoface_apply, Fin.prod_univ_succ]
+  calc ‖L (a 0) (T (Fin.tail a))‖ ≤ ‖L‖ * ‖a 0‖ * (‖T‖ * ∏ k : Fin n, ‖Fin.tail a k‖) :=
+        (L.le_opNorm₂ _ _).trans (by gcongr; exact T.le_opNorm _)
+    _ = ‖L‖ * ‖T‖ * (‖a 0‖ * ∏ k : Fin n, ‖a k.succ‖) := by simp only [Fin.tail]; ring
+
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
+private theorem norm_rightCoface_le (R : A →L[𝕜] E →L[𝕜] E) : ‖rightCoface n R‖ ≤ ‖R‖ := by
+  refine opNorm_le_bound _ (norm_nonneg R) fun T ↦ ?_
+  refine ContinuousMultilinearMap.opNorm_le_bound
+    (mul_nonneg (norm_nonneg _) (norm_nonneg _)) fun a ↦ ?_
+  rw [rightCoface_apply, Fin.prod_univ_castSucc]
+  calc ‖R (a (Fin.last n)) (T (Fin.init a))‖ ≤
+        ‖R‖ * ‖a (Fin.last n)‖ * (‖T‖ * ∏ k : Fin n, ‖Fin.init a k‖) :=
+        (R.le_opNorm₂ _ _).trans (by gcongr; exact T.le_opNorm _)
+    _ = ‖R‖ * ‖T‖ * ((∏ k : Fin n, ‖a k.castSucc‖) * ‖a (Fin.last n)‖) := by
+        simp only [Fin.init]; ring
 
 /-- The inner coface multiplying the entries `j` and `j + 1`, a bounded version of
 `TauCeti.hochschildCoface`. -/
@@ -199,27 +226,13 @@ private theorem norm_hochschildBimoduleCoface_le (i : Fin (n + 2)) :
     ‖hochschildBimoduleCoface L R i‖ ≤
       Fin.cases ‖L‖ (Fin.lastCases ‖R‖ fun _ ↦ 1) i := by
   induction i using Fin.cases with
-  | zero =>
-    refine opNorm_le_bound _ (norm_nonneg L) fun T ↦ ?_
-    refine ContinuousMultilinearMap.opNorm_le_bound
-      (mul_nonneg (norm_nonneg _) (norm_nonneg _)) fun a ↦ ?_
-    rw [hochschildBimoduleCoface_zero_apply, Fin.prod_univ_succ]
-    calc ‖L (a 0) (T (Fin.tail a))‖ ≤ ‖L‖ * ‖a 0‖ * (‖T‖ * ∏ k : Fin n, ‖Fin.tail a k‖) :=
-          (L.le_opNorm₂ _ _).trans (by gcongr; exact T.le_opNorm _)
-      _ = ‖L‖ * ‖T‖ * (‖a 0‖ * ∏ k : Fin n, ‖a k.succ‖) := by simp only [Fin.tail]; ring
+  | zero => exact norm_leftCoface_le L
   | succ i =>
     induction i using Fin.lastCases with
     | last =>
-      rw [Fin.cases_succ, Fin.lastCases_last]
-      refine opNorm_le_bound _ (norm_nonneg R) fun T ↦ ?_
-      refine ContinuousMultilinearMap.opNorm_le_bound
-        (mul_nonneg (norm_nonneg _) (norm_nonneg _)) fun a ↦ ?_
-      rw [Fin.succ_last, hochschildBimoduleCoface_last_apply, Fin.prod_univ_castSucc]
-      calc ‖R (a (Fin.last n)) (T (Fin.init a))‖ ≤
-            ‖R‖ * ‖a (Fin.last n)‖ * (‖T‖ * ∏ k : Fin n, ‖Fin.init a k‖) :=
-          (R.le_opNorm₂ _ _).trans (by gcongr; exact T.le_opNorm _)
-        _ = ‖R‖ * ‖T‖ * ((∏ k : Fin n, ‖a k.castSucc‖) * ‖a (Fin.last n)‖) := by
-          simp only [Fin.init]; ring
+      rw [Fin.cases_succ, Fin.lastCases_last, hochschildBimoduleCoface, Fin.cases_succ,
+        Fin.lastCases_last]
+      exact norm_rightCoface_le R
     | cast j =>
       rw [Fin.cases_succ, Fin.lastCases_castSucc]
       cases n with
