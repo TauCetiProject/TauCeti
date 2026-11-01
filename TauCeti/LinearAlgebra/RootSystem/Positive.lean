@@ -431,12 +431,16 @@ omit [CharZero R] in
 integer combination of the simple coroots. -/
 theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
     (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 := by
-  have hle : Submodule.span ℤ (P.coroot '' b.support) ≤
-      LinearMap.ker (P.toLinearMap x).toAddMonoidHom.toIntLinearMap := by
-    rw [Submodule.span_le]
-    rintro _ ⟨i, hi, rfl⟩
+  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), P.toLinearMap.flip n x = 0
+    from this _ (b.coroot_mem_span_int j)
+  intro n hn
+  induction hn using Submodule.span_induction with
+  | mem n hn =>
+    obtain ⟨i, hi, rfl⟩ := hn
     exact hx i hi
-  exact hle (b.coroot_mem_span_int j)
+  | zero => simp
+  | add n n' _ _ hn hn' => simp [hn, hn']
+  | smul z n _ hn => simp [hn]
 
 omit [CharZero R] in
 variable {P b} in
