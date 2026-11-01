@@ -11,9 +11,10 @@ import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 /-!
 # Algebra automorphisms as ring automorphisms; cancelling factors
 
-The underlying ring automorphism of an algebra automorphism turns the group structure of
-`A ≃ₐ[R] A` into identity, composition and inversion of ring equivalences
-(`AlgEquiv.toRingEquiv_one`, `AlgEquiv.toRingEquiv_mul`, `AlgEquiv.toRingEquiv_inv`).
+The underlying ring automorphism of an algebra automorphism turns the identity and product of
+`A ≃ₐ[R] A` into the identity and composition of ring equivalences
+(`AlgEquiv.toRingEquiv_one`, `AlgEquiv.toRingEquiv_mul`). For inverses, Mathlib's
+`AlgEquiv.aut_inv` and `AlgEquiv.symm_toRingEquiv` already apply.
 
 The remaining lemmas recover the action of an algebra automorphism on one factor from its action
 on a product or quotient and a fixed cancellable factor. An automorphism negating a nonzero element
@@ -39,11 +40,6 @@ factor applied first. -/
 @[simp]
 theorem toRingEquiv_mul (σ τ : A ≃ₐ[R] A) :
     ((σ * τ : A ≃ₐ[R] A) : A ≃+* A) = (τ : A ≃+* A).trans σ :=
-  (rfl)
-
-/-- The inverse algebra automorphism is the inverse ring automorphism. -/
-@[simp]
-theorem toRingEquiv_inv (σ : A ≃ₐ[R] A) : ((σ⁻¹ : A ≃ₐ[R] A) : A ≃+* A) = (σ : A ≃+* A).symm :=
   (rfl)
 
 end ToRingEquiv

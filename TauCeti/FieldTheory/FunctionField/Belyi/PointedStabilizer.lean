@@ -99,7 +99,8 @@ def semilinearAut : Subgroup (RingAut X × (k ≃ₐ[ℚ] k)) where
       RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
   inv_mem' {p} hp r := by
     rw [Prod.fst_inv, RingAut.inv_apply, RingEquiv.symm_apply_eq, hp, Prod.snd_inv,
-      AlgEquiv.toRingEquiv_inv, ← RatFunc.mapRingEquiv_symm, RingEquiv.apply_symm_apply]
+      AlgEquiv.aut_inv, AlgEquiv.symm_toRingEquiv, ← RatFunc.mapRingEquiv_symm,
+      RingEquiv.apply_symm_apply]
 
 variable {X}
 
@@ -148,7 +149,7 @@ theorem valuation_smul_apply (p : semilinearAut X) (P : Place k X) (z : X) :
 @[simp]
 theorem ord_smul (p : semilinearAut X) (P : Place k X) (z : X) :
     (p • P).ord z = P.ord ((p : RingAut X × (k ≃ₐ[ℚ] k)).1.symm z) := by
-  rw [Place.ord_def, Place.ord_def, valuation_smul]
+  rw [smul_def, Place.ord_equivOfRingEquiv]
 
 /-- A semilinear automorphism `(φ, g)` moves the order function along `φ`. -/
 theorem ord_smul_apply (p : semilinearAut X) (P : Place k X) (z : X) :
@@ -192,7 +193,7 @@ theorem restrict_smul (p : semilinearAut X) (P : Place k X) :
         (RatFunc.mapRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k))
         (RatFunc.mapRingEquiv_algebraMap_const _) (P.restrict k (RatFunc k)) := by
   rw [smul_def]
-  exact Place.restrict_equivOfRingEquiv _ _ _ _ p.2 _ P
+  exact Place.restrict_equivOfRingEquiv _ _ _ _ (mem_semilinearAut_iff.mp p.2) _ P
 
 variable (X) in
 /-- **The automorphisms of `k` underlying semilinear automorphisms of `X` form the stabilizer of

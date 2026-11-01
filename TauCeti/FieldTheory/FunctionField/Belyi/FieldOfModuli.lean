@@ -151,7 +151,7 @@ def curveStabilizer : Subgroup (k ≃ₐ[ℚ] k) where
     exact ⟨((conjTrans _ X _).symm.restrictScalars k).trans ((conjCurveAlgEquiv _ eh).trans eg)⟩
   inv_mem' {g} := fun ⟨e⟩ ↦ by
     have hg : RingEquiv.refl k = (g : k ≃+* k).trans ((g⁻¹ : k ≃ₐ[ℚ] k) : k ≃+* k) :=
-      by rw [AlgEquiv.toRingEquiv_inv, RingEquiv.self_trans_symm]
+      by rw [AlgEquiv.aut_inv, AlgEquiv.symm_toRingEquiv, RingEquiv.self_trans_symm]
     have e' : X ≃ₐ[k] X.conj (RingEquiv.refl k) := ((conjRefl X).restrictScalars k).symm
     rw [hg] at e'
     exact ⟨(e'.trans (((conjTrans _ X _).symm.restrictScalars k).trans
