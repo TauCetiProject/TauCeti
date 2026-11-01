@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.CyclicCohomology.Cochain
 import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.RingTheory.HochschildCohomology.Coboundary
 
 /-!
 # The bounded Hochschild coboundary of a bounded bimodule
@@ -34,8 +35,9 @@ degrees the coboundary of a constant cochain `x` is the inner derivation `a ↦ 
 the degree-zero cocycles are the central elements of `E`, and the degree-one cocycles are the
 bounded derivations `D (a * b) = L a (D b) + R b (D a)`.
 
-The inner cofaces are the bounded versions of `TauCeti.hochschildCoface`; the algebraic
-coboundary with coefficients in a bimodule over a unital algebra is
+The inner cofaces are the bounded versions of `TauCeti.hochschildCoface`, and the cosimplicial
+identities come from those of the coface formulas `TauCeti.hochschildBimoduleCofaceFun`; the
+algebraic coboundary with coefficients in a bimodule over a unital algebra is
 `TauCeti.hochschildBimoduleCoboundary`. The present construction keeps the actions as bounded
 bilinear maps, so that it applies to nonunital Banach algebras and to bimodules whose actions are
 not unital.
@@ -199,8 +201,7 @@ theorem hochschildBimoduleCoface_last_apply
 
 private theorem hochschildBimoduleCoface_castSucc_succ (j : Fin (n + 1)) :
     hochschildBimoduleCoface (n := n + 1) L R j.castSucc.succ = contractCoface j := by
-  rw [hochschildBimoduleCoface, Fin.cases_succ, Fin.lastCases_castSucc]
-  rfl
+  rw [hochschildBimoduleCoface, Fin.cases_succ, Fin.lastCases_castSucc, innerCoface]
 
 /-- The inner cofaces multiply two adjacent entries. -/
 @[simp]
@@ -241,78 +242,33 @@ private theorem norm_hochschildBimoduleCoface_le (i : Fin (n + 2)) :
         rw [hochschildBimoduleCoface_castSucc_succ]
         exact norm_contractCoface_le j
 
+/-- The bounded cofaces evaluate by the coface formulas `TauCeti.hochschildBimoduleCofaceFun`. -/
+private theorem coe_hochschildBimoduleCoface (i : Fin (n + 2))
+    (T : ContinuousMultilinearMap 𝕜 (fun _ : Fin n ↦ A) E) :
+    ⇑(hochschildBimoduleCoface L R i T) =
+      TauCeti.hochschildBimoduleCofaceFun (fun a x ↦ L a x) (fun a x ↦ R a x) T i := by
+  funext a
+  induction i using Fin.cases with
+  | zero => rw [hochschildBimoduleCoface_zero_apply, TauCeti.hochschildBimoduleCofaceFun_zero]
+  | succ i =>
+    induction i using Fin.lastCases with
+    | last =>
+      rw [Fin.succ_last, hochschildBimoduleCoface_last_apply,
+        TauCeti.hochschildBimoduleCofaceFun_last]
+    | cast j =>
+      rw [hochschildBimoduleCoface_castSucc_succ_apply,
+        TauCeti.hochschildBimoduleCofaceFun_castSucc_succ]
+
 /-- The cosimplicial identity `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`, for a bounded bimodule. -/
 theorem hochschildBimoduleCoface_hochschildBimoduleCoface
     (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
     (hLR : ∀ a b x, L a (R b x) = R b (L a x)) {i j : Fin (n + 2)} (hij : i ≤ j)
     (T : ContinuousMultilinearMap 𝕜 (fun _ : Fin n ↦ A) E) :
     hochschildBimoduleCoface L R j.succ (hochschildBimoduleCoface L R i T) =
-      hochschildBimoduleCoface L R i.castSucc (hochschildBimoduleCoface L R j T) := by
-  -- Each of `i` and `j` is the left coface `0`, an inner coface `k.castSucc.succ` or the right
-  -- coface `Fin.last`; the six cases with `i ≤ j` reduce to identities between tuples, after
-  -- rewriting each inner index into the shape `k.castSucc.succ` of
-  -- `hochschildBimoduleCoface_castSucc_succ_apply`.
-  ext a
-  induction i using Fin.cases with
-  | zero =>
-    induction j using Fin.cases with
-    | zero =>
-      -- `L (a₀ a₁) (T (a₂, …)) = L a₀ (L a₁ (T (a₂, …)))`
-      rw [← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCoface_castSucc_succ_apply]
-      simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply]
-      rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
-      simp only [Fin.cons_zero, Fin.tail_cons, hL]
-    | succ j =>
-      induction j using Fin.lastCases with
-      | last =>
-        -- the left and right actions commute
-        simp only [Fin.succ_last, hochschildBimoduleCoface_last_apply,
-          Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply]
-        rw [Fin.tail_init_eq_init_tail]
-        exact (hLR _ _ _).symm
-      | cast j =>
-        -- an inner contraction commutes with dropping the first entry
-        rw [Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
-        simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply,
-          hochschildBimoduleCoface_succ_castSucc_apply]
-        rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), Fin.castSucc_zero,
-          ← Fin.succ_castSucc, Fin.tail_contractNth_succ]
-  | succ i =>
-    induction i using Fin.lastCases with
-    | last =>
-      -- `R (aₙ aₙ₊₁) (T (…)) = R aₙ₊₁ (R aₙ (T (…)))`
-      rw [Fin.succ_last] at hij ⊢
-      obtain rfl : j = Fin.last (n + 1) := le_antisymm (Fin.le_last _) hij
-      rw [Fin.succ_last, (by rw [Fin.succ_castSucc, Fin.succ_last] :
-        (Fin.last (n + 1)).castSucc = (Fin.last n).castSucc.succ),
-        hochschildBimoduleCoface_castSucc_succ_apply]
-      simp only [hochschildBimoduleCoface_last_apply]
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.init_contractNth_castSucc_last, hR,
-        Fin.succ_last, Fin.init_def]
-    | cast i =>
-      induction j using Fin.cases with
-      | zero => exact absurd hij (not_le.2 (Fin.succ_pos _))
-      | succ j =>
-        induction j using Fin.lastCases with
-        | last =>
-          -- an inner contraction commutes with dropping the last entry
-          rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCoface_succ_castSucc_apply]
-          simp only [hochschildBimoduleCoface_last_apply,
-            hochschildBimoduleCoface_castSucc_succ_apply]
-          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
-            Fin.succ_last]
-        | cast j =>
-          -- two inner contractions: the simplicial identity of `TauCeti.hochschildFace`
-          rw [Fin.succ_castSucc j]
-          simp only [hochschildBimoduleCoface_castSucc_succ_apply,
-            hochschildBimoduleCoface_succ_castSucc_apply]
-          cases n with
-          | zero => exact i.elim0
-          | succ n =>
-            have h := TauCeti.hochschildFace_hochschildFace (i := i.castSucc) (j := j.castSucc)
-              (by simpa using hij) a
-            simp only [Fin.succ_castSucc, TauCeti.hochschildFace_castSucc] at h
-            rw [h]
+      hochschildBimoduleCoface L R i.castSucc (hochschildBimoduleCoface L R j T) :=
+  DFunLike.coe_injective <| by
+    simp only [coe_hochschildBimoduleCoface]
+    exact TauCeti.hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun _ hL hR hLR hij
 
 end Coface
 
