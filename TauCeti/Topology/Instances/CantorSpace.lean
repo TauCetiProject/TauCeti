@@ -263,6 +263,18 @@ theorem wordCylinder_reverse_res (x : ℕ → α) (n : ℕ) :
     mem_wordCylinder_iff.2 fun i hi => by simp [reverse_res]
   rw [← cylinder_eq_wordCylinder hx, List.length_reverse, res_length]
 
+/-- The first `w.length + n` coordinates of `prependWord w x`, newest first, are the first `n`
+coordinates of `x`, newest first, followed by the reversed word `w`. -/
+theorem res_prependWord_length_add (w : List α) (x : ℕ → α) (n : ℕ) :
+    res (prependWord w x) (w.length + n) = res x n ++ w.reverse := by
+  induction n with
+  | zero =>
+    rw [Nat.add_zero, res_zero, List.nil_append, ← List.reverse_inj, reverse_res,
+      List.reverse_reverse]
+    exact List.ext_getElem (by simp) fun i _ hi => by simp [prependWord_apply_of_lt hi]
+  | succ n ih => rw [← Nat.add_assoc, res_succ, ih, prependWord_apply_length_add, res_succ,
+      List.cons_append]
+
 /-- The cylinder of `w` as the intersection of the coordinate conditions it imposes. -/
 theorem wordCylinder_eq_iInter (w : List α) :
     wordCylinder w = ⋂ i, ⋂ (h : i < w.length), (fun y : ℕ → α => y i) ⁻¹' {w[i]} := by
@@ -315,6 +327,23 @@ theorem isOpenEmbedding_prependWord [TopologicalSpace α] [DiscreteTopology α] 
 theorem isClosedEmbedding_prependWord [TopologicalSpace α] [T1Space α] (w : List α) :
     IsClosedEmbedding (prependWord w) :=
   ⟨isEmbedding_prependWord w, isClosed_wordCylinder w⟩
+
+/-- Let the words `c m` increase in the prefix order, with lengths tending to infinity. Then any
+points `γ m ∈ wordCylinder (c m)` converge: eventually every coordinate of `γ m` is the letter
+that the words spell out at that position. -/
+theorem exists_tendsto_of_mem_wordCylinder [TopologicalSpace α] {c : ℕ → List α}
+    (hc : ∀ m, c m <+: c (m + 1)) (hlen : Filter.Tendsto (fun m ↦ (c m).length) .atTop .atTop)
+    {γ : ℕ → ℕ → α} (hγ : ∀ m, γ m ∈ wordCylinder (c m)) :
+    ∃ β, Filter.Tendsto γ .atTop (𝓝 β) := by
+  have hmono {m m' : ℕ} (h : m ≤ m') : c m <+: c m' := by
+    induction m', h using Nat.le_induction with
+    | base => exact List.prefix_refl _
+    | succ m' _ ih => exact ih.trans (hc m')
+  choose N hN using fun j ↦ (hlen.eventually_gt_atTop j).exists
+  refine ⟨fun j ↦ (c (N j))[j]'(hN j), tendsto_pi_nhds.2 fun j ↦ tendsto_const_nhds.congr' ?_⟩
+  filter_upwards [hlen.eventually_gt_atTop j, Filter.eventually_ge_atTop (N j)] with m hm hNm
+  rw [mem_wordCylinder_iff.1 (hγ m) j hm]
+  exact (hmono hNm).getElem (hN j)
 
 /-! ### The coordinate flip of Cantor space -/
 
