@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -20,6 +21,10 @@ That cancellation is all the hypothesis on the ring there is: `2` has to be regu
 is asked of any other element, so the statement covers rings with zero divisors elsewhere.  Over a
 field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `(2 : R) ≠ 0`.
 
+A bilinear form with additively torsion-free values, such as an integral intersection form,
+vanishes on elements of finite additive order, so its values depend on each argument only modulo
+torsion.
+
 For a left-separating alternating bilinear map on a module with a two-element basis, its value
 on that basis has trivial scalar annihilator. This holds over any commutative semiring and for
 maps valued in an arbitrary module.
@@ -33,6 +38,9 @@ maps valued in an arbitrary module.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.BilinForm.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
+  `LinearMap.BilinForm.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear form with
+  additively torsion-free values sees each argument only modulo elements of finite additive order.
 * `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
   alternating bilinear map on a two-element basis has trivial scalar annihilator.
 -/
@@ -65,6 +73,27 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
   ring
 
 end LinearMap.BilinForm.IsSymm
+
+namespace LinearMap.BilinForm
+
+variable {R M : Type*} [CommRing R] [IsAddTorsionFree R] [AddCommGroup M] [Module R M]
+  (B : LinearMap.BilinForm R M) {x x' : M}
+
+/-- A bilinear form with additively torsion-free values sees its left argument only modulo
+elements of finite additive order. -/
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_left (h : IsOfFinAddOrder (x - x')) (y : M) :
+    B x y = B x' y := by
+  have := ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
+  simpa [sub_eq_zero] using this
+
+/-- A bilinear form with additively torsion-free values sees its right argument only modulo
+elements of finite additive order. -/
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_right (h : IsOfFinAddOrder (x - x')) (y : M) :
+    B y x = B y x' := by
+  have := ((B y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
+  simpa [sub_eq_zero] using this
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 
