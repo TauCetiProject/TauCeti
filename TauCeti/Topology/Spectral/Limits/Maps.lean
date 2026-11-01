@@ -16,9 +16,10 @@ Spectrality of a map from a compact quasiseparated space into a limit of spectra
 checked on the coordinate maps. No filteredness assumption is needed for this assertion: finite
 intersections of inverse images of compact opens form a basis of the limit topology.
 
-For a cofiltered diagram, a map from a spectral space into its limit is generalizing if all its
-coordinate maps are generalizing and spectral. To lift a generalization, consider the sets of
-lifts at each coordinate inside the constructible space of the source. They are nonempty compact
+For a cofiltered diagram, a map from a compact, quasi-sober, quasiseparated prespectral space
+into its limit is generalizing if all its coordinate maps are generalizing and spectral. To lift a
+generalization, consider the sets of lifts at each coordinate inside the constructible space of the
+source. They are nonempty compact
 closed sets, directed by reverse inclusion. A point in their intersection gives the required
 simultaneous lift. Thus a surjective such map is a quotient map.
 
@@ -79,9 +80,10 @@ theorem isSpectralMap_of_isLimit_iff {Y : Type*} [TopologicalSpace Y]
           exact (h j).isCompact_preimage_of_isOpen (hU j hj).1 (hU j hj).2))
 
 /-- For a cofiltered limit of spectral spaces, generalizing spectral coordinate maps lift
-simultaneously: the induced map into the limit is generalizing. -/
+simultaneously: the induced map into the limit is generalizing. The source need only be compact,
+quasi-sober, quasiseparated and prespectral. -/
 theorem generalizingMap_of_isLimit [IsCofiltered J] {Y : Type*} [TopologicalSpace Y]
-    [SpectralSpace Y] (f : Y → c.pt)
+    [CompactSpace Y] [QuasiSober Y] [PrespectralSpace Y] [QuasiSeparatedSpace Y] (f : Y → c.pt)
     (hs : ∀ j, IsSpectralMap (c.π.app j ∘ f))
     (hg : ∀ j, GeneralizingMap (c.π.app j ∘ f)) : GeneralizingMap f := by
   intro y z hz
@@ -123,9 +125,11 @@ theorem generalizingMap_of_isLimit [IsCofiltered J] {Y : Type*} [TopologicalSpac
 
 include hF in
 /-- A surjective map into a cofiltered limit of spectral spaces is a quotient map if all its
-coordinate maps are generalizing and spectral. -/
+coordinate maps are generalizing and spectral. The source need only be compact, quasi-sober,
+quasiseparated and prespectral. -/
 theorem isQuotientMap_of_isLimit [IsCofiltered J] {Y : Type*} [TopologicalSpace Y]
-    [SpectralSpace Y] (f : Y → c.pt) (hf : Function.Surjective f)
+    [CompactSpace Y] [QuasiSober Y] [PrespectralSpace Y] [QuasiSeparatedSpace Y]
+    (f : Y → c.pt) (hf : Function.Surjective f)
     (hs : ∀ j, IsSpectralMap (c.π.app j ∘ f))
     (hg : ∀ j, GeneralizingMap (c.π.app j ∘ f)) : IsQuotientMap f := by
   have := spectralSpace_of_isLimit F hF c hc
