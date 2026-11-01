@@ -307,6 +307,31 @@ theorem isPerfectMatching_smoothingTurn (D : PDCode n) (b : Fin n → Bool) :
     (crossingSlotEquiv n).apply_eq_iff_eq, Prod.mk.injEq] at hh
   exact (isPerfectMatching_slotSmoothing _).apply_ne slot hh.2
 
+/-- Following an opposite-slot turn by a smoothing pairs the two complementary adjacent
+slots at every crossing. In particular this composite is itself a perfect matching. -/
+theorem isPerfectMatching_smoothingTurn_mul_crossingTurn (D : PDCode n) (b : Fin n → Bool) :
+    IsPerfectMatching (D.smoothingTurn b * D.crossingTurn) := by
+  have hlocal (β : Bool) : IsPerfectMatching (slotSmoothing β * oppositeCrossingSlot) := by
+    rw [isPerfectMatching_iff]
+    cases β <;> simp only [slotSmoothing_true, slotSmoothing_false,
+      oppositeCrossingSlot_eq_swap_mul_swap] <;> decide
+  rw [isPerfectMatching_iff]
+  constructor
+  · intro h
+    obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+    obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
+    simpa only [Equiv.Perm.mul_apply, crossing_apply, crossingTurn_crossing,
+      smoothingTurn_crossing] using congrArg (D.crossing i) ((hlocal (b i)).apply_apply k)
+  · intro h
+    obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+    obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
+    intro he
+    have he' : D.crossing i (slotSmoothing (b i) (oppositeCrossingSlot k)) =
+        D.crossing i k := by
+      simpa only [Equiv.Perm.mul_apply, crossing_apply, crossingTurn_crossing,
+        smoothingTurn_crossing] using he
+    exact (hlocal (b i)).apply_ne k (D.crossing_eq_crossing_iff.mp he').2
+
 /-- The directed traversal orbits of a smoothed diagram come in pairs, as the halving in
 `TauCeti.PDCode.stateLoopCount` presumes: smoothed traversal is a product of two perfect
 matchings. -/
