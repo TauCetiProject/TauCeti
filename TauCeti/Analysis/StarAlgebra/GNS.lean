@@ -5,26 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
-public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.Analysis.InnerProductSpace.Completion
+public import Mathlib.Analysis.Normed.Group.NullSubmodule
 public import Mathlib.Algebra.Star.Module
 import Mathlib.Analysis.Complex.Order
 
 /-!
 # Algebraic GNS representations
 
-A complex-linear functional on a unital star algebra is positive when it is nonnegative on
-all squares `star a * a`. Its null space is a left ideal, and the quotient is an inner product
-space with a cyclic algebra representation by left multiplication. The adjoint identity holds
-on this space, but the operators need not be bounded and the space need not be complete.
+A complex-linear functional on a possibly non-unital star algebra is positive when it is
+nonnegative on all squares `star a * a`. Its null space is a left ideal, and the quotient is an
+inner product space with an action by left multiplication. In the unital case this action is
+cyclic. The adjoint identity holds on this space, but the operators need not be bounded and the
+space need not be complete.
 
 The construction applies in particular to positive noncommutative star-polynomial distributions.
 It needs no norm, order, faithfulness or traciality on the original algebra. Normalization is
 required only to make the cyclic vector a unit vector.
 
-The inner-product construction uses Mathlib's `PreInnerProductSpace.Core` and
-`InnerProductSpace.Core`, as in `PositiveLinearMap.PreGNS`, but positivity here is positivity
-on squares in an arbitrary star algebra rather than order preservation on a C⋆-algebra.
+The seminormed construction uses Mathlib's `PreInnerProductSpace.Core`, as in
+`PositiveLinearMap.PreGNS`, followed by `SeparationQuotient` and its inner-product instance.
+Positivity here is positivity on squares in an arbitrary star algebra rather than order
+preservation on a C⋆-algebra.
 
 ## References
 
@@ -40,7 +42,9 @@ open scoped ComplexOrder InnerProductSpace
 
 namespace TauCeti
 
-variable (A : Type*) [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
+section NonUnital
+
+variable (A : Type*) [NonUnitalRing A] [Module ℂ A] [StarRing A]
 
 /-- A complex-linear functional nonnegative on every square `star a * a`.
 The algebra is not assumed to carry a norm or an order. -/
@@ -64,26 +68,25 @@ instance : LinearMapClass (StarPositiveFunctional A) ℂ A ℂ where
   map_add φ := φ.toLinearMap.map_add
   map_smulₛₗ φ := φ.toLinearMap.map_smul
 
-omit [StarModule ℂ A] in
 /-- Positive functionals are determined by their values. -/
 @[ext]
 theorem ext {φ ψ : StarPositiveFunctional A} (h : ∀ a, φ a = ψ a) : φ = ψ :=
   DFunLike.ext φ ψ h
 
-omit [StarModule ℂ A] in
 @[simp]
 theorem toLinearMap_apply (φ : StarPositiveFunctional A) (a : A) : φ.toLinearMap a = φ a :=
   (rfl)
 
-omit [StarModule ℂ A] in
 @[simp]
 theorem mk_apply (f : A →ₗ[ℂ] ℂ) (h : ∀ a, 0 ≤ f (star a * a)) (a : A) :
     (StarPositiveFunctional.mk f h) a = f a := (rfl)
 
 variable (φ : StarPositiveFunctional A)
 
+variable [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
-theorem conj_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
+theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
   have him (x : A) : (φ (star x * x)).im = 0 := (φ.square_nonneg x).2.symm
   have hsum := him (a + b)
   have hI := him (a + Complex.I • b)
@@ -96,187 +99,202 @@ theorem conj_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a)
   · linarith
   · linarith
 
-/-- A positive functional preserves the involution. -/
-@[simp]
-theorem map_star (a : A) : φ (star a) = star (φ a) := by
-  simpa using (φ.conj_apply_star_mul 1 a).symm
+/-- A copy of the algebra carrying the seminorm induced by the positive functional. -/
+def PreGNS (_φ : StarPositiveFunctional A) := A
+
+@[no_expose]
+instance : AddCommGroup φ.PreGNS := inferInstanceAs (AddCommGroup A)
+
+@[no_expose]
+instance : Module ℂ φ.PreGNS := inferInstanceAs (Module ℂ A)
+
+/-- Identify the algebra with the space carrying its GNS seminorm. -/
+def toPreGNS : A ≃ₗ[ℂ] φ.PreGNS := LinearEquiv.refl ℂ A
 
 /-- The positive semidefinite inner product before dividing out the null space. -/
-private abbrev preInner : PreInnerProductSpace.Core ℂ A where
-  inner a b := φ (star a * b)
-  conj_inner_symm a b := φ.conj_apply_star_mul b a
-  re_inner_nonneg a := (φ.square_nonneg a).1
+private abbrev preInner : PreInnerProductSpace.Core ℂ φ.PreGNS where
+  inner a b := φ (star (φ.toPreGNS.symm a) * φ.toPreGNS.symm b)
+  conj_inner_symm a b := φ.star_apply_star_mul _ _
+  re_inner_nonneg a := (φ.square_nonneg _).1
   add_left a b c := by simp [add_mul]
-  smul_left a b c := by simp
+  smul_left a b c := by simp [smul_mul_assoc]
+
+@[no_expose]
+instance : SeminormedAddCommGroup φ.PreGNS :=
+  InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)
+
+@[no_expose]
+instance : InnerProductSpace ℂ φ.PreGNS := InnerProductSpace.ofCore φ.preInner
+
+/-- The inner product before taking the separation quotient is the original pairing. -/
+@[simp]
+theorem inner_toPreGNS (a b : A) :
+    ⟪φ.toPreGNS a, φ.toPreGNS b⟫_ℂ = φ (star a * b) := (rfl)
 
 /-- A vector has zero square value exactly when it pairs to zero with every vector.
 This is the null-space consequence of Cauchy–Schwarz, without a boundedness assumption. -/
 theorem apply_star_mul_self_eq_zero_iff (a : A) :
     φ (star a * a) = 0 ↔ ∀ b, φ (star b * a) = 0 := by
-  let := InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)
-  let := InnerProductSpace.ofCore φ.preInner
   constructor
   · intro ha b
-    have hnorm : ‖a‖ = 0 := by
-      rw [← sq_eq_zero_iff, norm_sq_eq_re_inner (𝕜 := ℂ)]
-      exact congrArg Complex.re ha
-    have h := norm_inner_le_norm (𝕜 := ℂ) b a
-    rw [hnorm, mul_zero, norm_le_zero_iff] at h
-    exact h
+    have hnorm : ‖φ.toPreGNS a‖ = 0 := by
+      rw [← sq_eq_zero_iff, norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_toPreGNS]
+      exact congrArg (RCLike.re (K := ℂ)) ha
+    simpa using inner_eq_zero_of_right (𝕜 := ℂ) (φ.toPreGNS b) hnorm
   · intro h
     exact h a
 
-/-- The null space of a positive functional. Its elements pair to zero against every element
-of the algebra; equivalently, their square value is zero. -/
-def nullSubmodule : Submodule ℂ A where
-  carrier := {a | ∀ b, φ (star b * a) = 0}
-  zero_mem' := by simp
-  add_mem' ha hb c := by simp [mul_add, ha c, hb c]
-  smul_mem' c a ha b := by simp [ha b]
-
-omit [StarModule ℂ A] in
-/-- Membership in the null space is vanishing of all pairings. -/
-@[simp]
-theorem mem_nullSubmodule (a : A) : a ∈ φ.nullSubmodule ↔ ∀ b, φ (star b * a) = 0 :=
-  Iff.rfl
+/-- The null space of the GNS seminorm, transported back to the original algebra. -/
+def nullSubmodule : Submodule ℂ A :=
+  (_root_.nullSubmodule ℂ φ.PreGNS).comap φ.toPreGNS.toLinearMap
 
 /-- The null space is precisely the zero set of the quadratic form. -/
-theorem mem_nullSubmodule_iff (a : A) :
-    a ∈ φ.nullSubmodule ↔ φ (star a * a) = 0 :=
-  (φ.apply_star_mul_self_eq_zero_iff a).symm
+theorem mem_nullSubmodule_iff_apply_star_mul_self_eq_zero (a : A) :
+    a ∈ φ.nullSubmodule ↔ φ (star a * a) = 0 := by
+  -- The comap transports Mathlib's seminorm-null submodule along the linear equivalence.
+  change ‖φ.toPreGNS a‖ = 0 ↔ φ (star a * a) = 0
+  constructor
+  · intro h
+    rw [← φ.inner_toPreGNS]
+    exact inner_eq_zero_of_right (𝕜 := ℂ) (φ.toPreGNS a) h
+  · intro h
+    rw [← sq_eq_zero_iff, norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_toPreGNS, h]
+    simp
 
-omit [StarModule ℂ A] in
+/-- Membership in the null space is vanishing of all pairings. -/
+@[simp]
+theorem mem_nullSubmodule (a : A) : a ∈ φ.nullSubmodule ↔ ∀ b, φ (star b * a) = 0 := by
+  rw [φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
+    φ.apply_star_mul_self_eq_zero_iff]
+
 /-- The null space is a left ideal, even when the functional is not tracial. -/
 theorem mul_mem_nullSubmodule (a : A) {b : A} (hb : b ∈ φ.nullSubmodule) :
     a * b ∈ φ.nullSubmodule := by
+  rw [φ.mem_nullSubmodule] at hb ⊢
   intro c
   simpa [mul_assoc] using hb (star a * c)
 
-/-- The algebraic GNS space: quotient by the null space, without completion. -/
-abbrev GNS := A ⧸ φ.nullSubmodule
+/-- The algebraic GNS space: the separation quotient of the GNS seminorm, without completion. -/
+abbrev GNS := SeparationQuotient φ.PreGNS
 
 /-- The canonical linear map into the algebraic GNS space. -/
-def classMap : A →ₗ[ℂ] φ.GNS := φ.nullSubmodule.mkQ
+def classMap : A →ₗ[ℂ] φ.GNS :=
+  (SeparationQuotient.mkCLM ℂ φ.PreGNS).toLinearMap.comp φ.toPreGNS.toLinearMap
 
-omit [StarModule ℂ A] in
+/-- The canonical map sends an algebra element to its separation class. -/
+theorem classMap_apply (a : A) :
+    φ.classMap a = SeparationQuotient.mk (φ.toPreGNS a) := (rfl)
+
 /-- Every vector of the algebraic GNS space is the class of an algebra element. -/
 theorem classMap_surjective : Function.Surjective φ.classMap :=
-  φ.nullSubmodule.mkQ_surjective
+  SeparationQuotient.surjective_mk.comp φ.toPreGNS.surjective
+
+/-- Two algebra elements have the same class exactly when their difference is null. -/
+theorem classMap_eq_classMap_iff (a b : A) :
+    φ.classMap a = φ.classMap b ↔ a - b ∈ φ.nullSubmodule := by
+  rw [← sub_eq_zero, ← map_sub]
+  rw [φ.classMap_apply]
+  -- Membership in the transported null submodule is the seminorm-zero condition.
+  change SeparationQuotient.mk (φ.toPreGNS (a - b)) = 0 ↔ _
+  exact SeparationQuotient.mk_eq_zero_iff
+
+/-- Linear maps out of the GNS space are determined by their values on algebra classes. -/
+@[ext]
+theorem classMap_ext {E : Type*} [AddCommMonoid E] [Module ℂ E]
+    {f g : φ.GNS →ₗ[ℂ] E} (h : ∀ a, f (φ.classMap a) = g (φ.classMap a)) : f = g :=
+  LinearMap.ext <| φ.classMap_surjective.forall.mpr h
 
 /-- The class of an element is zero exactly when its square value is zero. -/
 @[simp]
 theorem classMap_eq_zero_iff (a : A) : φ.classMap a = 0 ↔ φ (star a * a) = 0 := by
-  rw [classMap, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, mem_nullSubmodule_iff]
-
-private theorem pairing_eq_of_rel {a a' b b' : A}
-    (ha : φ.nullSubmodule.quotientRel a a') (hb : φ.nullSubmodule.quotientRel b b') :
-    φ (star a * b) = φ (star a' * b') := by
-  have hleft := (φ.mem_nullSubmodule (a - a')).mp
-    (φ.nullSubmodule.quotientRel_def.mp ha) b
-  have hright := (φ.mem_nullSubmodule (b - b')).mp
-    (φ.nullSubmodule.quotientRel_def.mp hb) a'
-  rw [mul_sub, map_sub] at hleft
-  have hleft' := congrArg star hleft
-  simp only [star_sub, φ.conj_apply_star_mul, star_zero] at hleft'
-  simp only [mul_sub, map_sub] at hright
-  exact (sub_eq_zero.mp hleft').trans (sub_eq_zero.mp hright)
-
-private def quotientInner (x y : φ.GNS) : ℂ :=
-  Quotient.liftOn₂ x y (fun a b => φ (star a * b)) fun _ _ _ _ ha hb =>
-    φ.pairing_eq_of_rel ha hb
-
-private theorem quotientInner_classMap (a b : A) :
-    φ.quotientInner (φ.classMap a) (φ.classMap b) = φ (star a * b) := rfl
-
-private abbrev innerCore : InnerProductSpace.Core ℂ φ.GNS where
-  inner := φ.quotientInner
-  conj_inner_symm := by
-    intro x y
-    obtain ⟨a, rfl⟩ := φ.classMap_surjective x
-    obtain ⟨b, rfl⟩ := φ.classMap_surjective y
-    exact φ.conj_apply_star_mul b a
-  re_inner_nonneg := by
-    intro x
-    obtain ⟨a, rfl⟩ := φ.classMap_surjective x
-    exact (φ.square_nonneg a).1
-  add_left := by
-    intro x y z
-    obtain ⟨a, rfl⟩ := φ.classMap_surjective x
-    obtain ⟨b, rfl⟩ := φ.classMap_surjective y
-    obtain ⟨c, rfl⟩ := φ.classMap_surjective z
-    rw [← map_add, φ.quotientInner_classMap, φ.quotientInner_classMap,
-      φ.quotientInner_classMap]
-    simp [add_mul]
-  smul_left := by
-    intro x y r
-    obtain ⟨a, rfl⟩ := φ.classMap_surjective x
-    obtain ⟨b, rfl⟩ := φ.classMap_surjective y
-    rw [← map_smul, φ.quotientInner_classMap, φ.quotientInner_classMap]
-    simp
-  definite := by
-    intro x hx
-    obtain ⟨a, rfl⟩ := φ.classMap_surjective x
-    exact (φ.classMap_eq_zero_iff a).mpr hx
-
-@[no_expose]
-instance : NormedAddCommGroup φ.GNS := by
-  exact (innerCore φ).toNormedAddCommGroup
-
-@[no_expose]
-instance : InnerProductSpace ℂ φ.GNS := by
-  exact InnerProductSpace.ofCore (innerCore φ).toCore
+  rw [← map_zero φ.classMap, φ.classMap_eq_classMap_iff, sub_zero,
+    φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero]
 
 /-- Inner products of classes are the original square pairings. -/
 @[simp]
 theorem inner_classMap (a b : A) :
     ⟪φ.classMap a, φ.classMap b⟫_ℂ = φ (star a * b) :=
-  φ.quotientInner_classMap a b
+  SeparationQuotient.inner_mk_mk (φ.toPreGNS a) (φ.toPreGNS b)
 
 /-- The GNS norm of a class is determined by the quadratic form. -/
 theorem norm_classMap_sq (a : A) : ‖φ.classMap a‖ ^ 2 = (φ (star a * a)).re := by
-  rw [norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_classMap]
-  rfl
+  rw [norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_classMap, RCLike.re_to_complex]
 
-private def leftMul (a : A) : Module.End ℂ φ.GNS :=
-  φ.nullSubmodule.mapQ φ.nullSubmodule (LinearMap.mul ℂ A a)
-    (fun _ hb => φ.mul_mem_nullSubmodule a hb)
+/-- Left multiplication on the algebraic GNS space, without a continuity assertion. -/
+def leftMul (a : A) : Module.End ℂ φ.GNS where
+  toFun := SeparationQuotient.lift
+    (fun b => φ.classMap (a * φ.toPreGNS.symm b)) (by
+      intro b c h
+      rw [φ.classMap_eq_classMap_iff, ← mul_sub]
+      apply φ.mul_mem_nullSubmodule
+      -- Unfold the comap membership to use the pseudometric's inseparability criterion.
+      change ‖φ.toPreGNS (φ.toPreGNS.symm b - φ.toPreGNS.symm c)‖ = 0
+      simpa [dist_eq_norm] using h.dist_eq_zero)
+  map_add' := by
+    intro x y
+    obtain ⟨b, rfl⟩ := φ.classMap_surjective x
+    obtain ⟨c, rfl⟩ := φ.classMap_surjective y
+    -- On representatives, the quotient lift computes to multiplication.
+    change φ.classMap (a * (b + c)) = φ.classMap (a * b) + φ.classMap (a * c)
+    simp [mul_add]
+  map_smul' := by
+    intro r x
+    obtain ⟨b, rfl⟩ := φ.classMap_surjective x
+    -- On representatives, the quotient lift computes to multiplication.
+    change φ.classMap (a * (r • b)) = r • φ.classMap (a * b)
+    simp [mul_smul_comm]
 
-omit [StarModule ℂ A] in
-private theorem leftMul_classMap (a b : A) :
-    φ.leftMul a (φ.classMap b) = φ.classMap (a * b) := rfl
+/-- Left multiplication acts on classes by the original multiplication. -/
+@[simp]
+theorem leftMul_classMap (a b : A) :
+    φ.leftMul a (φ.classMap b) = φ.classMap (a * b) := (rfl)
+
+/-- Left multiplication respects adjoints on the algebraic GNS domain. -/
+theorem inner_leftMul (a : A) (x y : φ.GNS) :
+    ⟪φ.leftMul a x, y⟫_ℂ = ⟪x, φ.leftMul (star a) y⟫_ℂ := by
+  obtain ⟨b, rfl⟩ := φ.classMap_surjective x
+  obtain ⟨c, rfl⟩ := φ.classMap_surjective y
+  simp [mul_assoc]
+
+end StarPositiveFunctional
+
+end NonUnital
+
+namespace StarPositiveFunctional
+
+variable {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
+  (φ : StarPositiveFunctional A)
+
+/-- A positive functional preserves the involution. -/
+@[simp]
+theorem map_star (a : A) : φ (star a) = star (φ a) := by
+  simpa using (φ.star_apply_star_mul 1 a).symm
 
 /-- The algebra acts on its algebraic GNS space by left multiplication.
 The endomorphisms are algebraic linear maps and are not asserted to be continuous. -/
 def representation : A →ₐ[ℂ] Module.End ℂ φ.GNS where
   toFun := φ.leftMul
   map_one' := by
-    apply LinearMap.ext
-    intro x
-    obtain ⟨b, rfl⟩ := φ.classMap_surjective x
-    simp only [φ.leftMul_classMap, one_mul, Module.End.one_apply]
+    apply φ.classMap_ext
+    intro b
+    simp
   map_mul' a b := by
-    apply LinearMap.ext
-    intro x
-    obtain ⟨c, rfl⟩ := φ.classMap_surjective x
-    simp only [Module.End.mul_apply, φ.leftMul_classMap, mul_assoc]
+    apply φ.classMap_ext
+    intro c
+    simp [Module.End.mul_apply, mul_assoc]
   map_zero' := by
-    apply LinearMap.ext
-    intro x
-    obtain ⟨b, rfl⟩ := φ.classMap_surjective x
-    simp only [φ.leftMul_classMap, zero_mul, map_zero, LinearMap.zero_apply]
+    apply φ.classMap_ext
+    intro b
+    simp
   map_add' a b := by
-    apply LinearMap.ext
-    intro x
-    obtain ⟨c, rfl⟩ := φ.classMap_surjective x
-    simp only [LinearMap.add_apply, φ.leftMul_classMap, add_mul, map_add]
+    apply φ.classMap_ext
+    intro c
+    simp [add_mul]
   commutes' r := by
-    apply LinearMap.ext
-    intro x
-    obtain ⟨b, rfl⟩ := φ.classMap_surjective x
-    simp only [φ.leftMul_classMap, Algebra.algebraMap_eq_smul_one, smul_mul_assoc,
-      one_mul, map_smul, LinearMap.smul_apply, Module.End.one_apply]
+    apply φ.classMap_ext
+    intro b
+    simp [Algebra.algebraMap_eq_smul_one]
 
-omit [StarModule ℂ A] in
 /-- The action on classes is left multiplication. -/
 @[simp]
 theorem representation_classMap (a b : A) :
@@ -284,26 +302,21 @@ theorem representation_classMap (a b : A) :
 
 /-- The representation respects adjoints on the algebraic GNS domain. -/
 theorem inner_representation (a : A) (x y : φ.GNS) :
-    ⟪φ.representation a x, y⟫_ℂ = ⟪x, φ.representation (star a) y⟫_ℂ := by
-  obtain ⟨b, rfl⟩ := φ.classMap_surjective x
-  obtain ⟨c, rfl⟩ := φ.classMap_surjective y
-  simp [mul_assoc]
+    ⟪φ.representation a x, y⟫_ℂ = ⟪x, φ.representation (star a) y⟫_ℂ :=
+  φ.inner_leftMul a x y
 
 /-- The canonical cyclic vector is the class of the unit. -/
 def cyclicVector : φ.GNS := φ.classMap 1
 
-omit [StarModule ℂ A] in
 /-- The cyclic vector is the class of the unit. -/
 theorem cyclicVector_def : φ.cyclicVector = φ.classMap 1 := (rfl)
 
-omit [StarModule ℂ A] in
 /-- Acting on the cyclic vector produces the class of the acting element. -/
 @[simp]
 theorem representation_cyclicVector (a : A) :
     φ.representation a φ.cyclicVector = φ.classMap a := by
   simp [cyclicVector_def]
 
-omit [StarModule ℂ A] in
 /-- The orbit of the canonical vector consists of every vector of the algebraic GNS space. -/
 theorem representation_cyclicVector_surjective :
     Function.Surjective (fun a => φ.representation a φ.cyclicVector) := by
@@ -314,6 +327,18 @@ theorem representation_cyclicVector_surjective :
 theorem inner_cyclicVector_classMap (a : A) :
     ⟪φ.cyclicVector, φ.classMap a⟫_ℂ = φ a := by
   simp [cyclicVector_def]
+
+/-- Pairing a class with the cyclic vector evaluates the involution of its representative. -/
+@[simp]
+theorem inner_classMap_cyclicVector (a : A) :
+    ⟪φ.classMap a, φ.cyclicVector⟫_ℂ = φ (star a) := by
+  simp [cyclicVector_def]
+
+/-- The square pairing of the cyclic vector is the mass of the functional. -/
+@[simp high]
+theorem inner_cyclicVector_self : ⟪φ.cyclicVector, φ.cyclicVector⟫_ℂ = φ 1 := by
+  rw [cyclicVector_def, φ.inner_classMap]
+  simp
 
 /-- The squared norm of the cyclic vector is the mass of the functional. -/
 theorem norm_cyclicVector_sq : ‖φ.cyclicVector‖ ^ 2 = (φ 1).re := by
