@@ -55,12 +55,10 @@ theorem exists_isPrime_height_eq_one_of_not_isField {R : Type*} [CommRing R] [Is
     [IsNoetherianRing R] (hR : ¬IsField R) : ∃ p : Ideal R, p.IsPrime ∧ p.height = 1 := by
   obtain ⟨P, hP0, _⟩ := Ring.not_isField_iff_exists_prime.mp hR
   obtain ⟨x, hxP, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP0
-  obtain ⟨p, hp, -⟩ := exists_minimalPrimes_le ((span_singleton_le_iff_mem P).mpr hxP)
-  have : p.IsPrime := hp.1.1
-  refine ⟨p, this, le_antisymm (height_le_one_of_isPrincipal_of_mem_minimalPrimes _ p hp) ?_⟩
-  rw [Order.one_le_iff_ne_zero, Ne, height_eq_zero_iff_eq_bot]
-  rintro rfl
-  exact hx0 ((span_singleton_le_iff_mem _).mp hp.1.2)
+  obtain ⟨p, hp, -, h⟩ := exists_isPrime_height_eq (n := 1)
+    (height_span_singleton_eq_one_of_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hx0)
+      fun hu ↦ ‹P.IsPrime›.ne_top (P.eq_top_of_isUnit_mem hxP hu))
+  exact ⟨p, hp, h⟩
 
 end Ideal
 
