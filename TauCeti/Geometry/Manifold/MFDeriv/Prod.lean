@@ -33,6 +33,8 @@ fields on a product manifold.
 
 public section
 
+open scoped Manifold
+
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -102,6 +104,22 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- The identifications `NormedSpace.fromTangentSpace` at `(g ∘ Prod.snd) p` and at `g p.2` agree,
   -- as these points are equal by definition.
   rfl
+
+/-- The derivative of a slice with fixed first coordinate is the product derivative composed
+with the inclusion of the second tangent factor. -/
+theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
+    (hf : MDifferentiableAt (I.prod J) 𝓘(𝕜, F) f (p, x)) :
+    mvfderiv J (Function.curry f p) x =
+      (mvfderiv (I.prod J) f (p, x)).comp
+        (ContinuousLinearMap.inr 𝕜 (TangentSpace I p) (TangentSpace J x)) := by
+  have hd := mvfderiv_comp_of_eq hf
+    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (rfl : (p, x) = (p, x))
+  -- Remove the identity in the fixed-parameter inclusion `y ↦ (p, id y)`.
+  dsimp only [id_eq] at hd
+  rw [mfderiv_prod_right] at hd
+  -- The product tangent synonym and the product of tangent synonyms have the same vectors;
+  -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
+  exact hd.trans (by ext v; rfl)
 
 end TauCeti
 

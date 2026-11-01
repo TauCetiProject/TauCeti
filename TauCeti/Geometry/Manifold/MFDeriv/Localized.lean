@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-import Mathlib.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Compactly supported functions with prescribed first derivative
@@ -51,7 +50,7 @@ theorem exists_contMDiff_hasCompactSupport_mvfderiv_eq (x : M) (c : F)
   refine ⟨fun y => b y • g y, b.contMDiff_smul hg, b.hasCompactSupport.smul_right,
     (tsupport_smul_subset_left _ _).trans hbU, ?_, ?_⟩
   · simp [g]
-  · rw [mvfderiv, heq.mfderiv_eq]
+  · rw [heq.mvfderiv_eq]
     have hd : HasMFDerivAt I 𝓘(ℝ, F) g x L := by
       have hchart := (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H x)).hasMFDerivAt
       rw [mfderiv_extChartAt_self] at hchart
@@ -62,7 +61,9 @@ theorem exists_contMDiff_hasCompactSupport_mvfderiv_eq (x : M) (c : F)
       -- The composite chart derivative is the same map across the tangent-space synonym.
       convert ha.hasMFDerivAt.comp x hchart using 1
       rfl
-    rw [hd.mfderiv]
+    ext v
+    rw [mvfderiv_apply_eq_mfderiv_apply, hd.mfderiv]
+    -- `hd` reads `L v` in the target tangent synonym; its underlying vector is still `L v`.
     rfl
 
 end TauCeti
