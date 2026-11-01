@@ -37,8 +37,6 @@ choosing singular-chain representatives. No finiteness of the set of cells is re
 Composing with the quotient map for the empty subspace identifies cellular homology of a
 CW complex with its ordinary singular homology
 (`TauCeti.cellularSingularHomologyIsoOfCWComplex`, `TauCeti.cellularSingularHomologyIsoUniv`).
-In particular a CW complex with no `n`-cells has vanishing `n`-th singular homology
-(`TauCeti.isZero_singularHomology_of_isEmpty_cell`).
 Coefficients lie in any abelian category with coproducts exact for the cell indexing types; for
 an infinite-dimensional complex, sequential colimits must be exact as well.
 
@@ -320,30 +318,6 @@ lemma cellularSingularHomologyIsoUniv_hom [CWComplex (Set.univ : Set X)]
         ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).map
           (TopCat.isoOfHomeo (Homeomorph.Set.univ X)).hom := by
   rw [cellularSingularHomologyIsoUniv, Iso.trans_hom, Functor.mapIso_hom]
-
-/-- **A CW complex has no homology in a degree without cells.** If a CW complex has no
-`n`-cells, its `n`-th singular homology vanishes, since its cellular chain group in degree `n`
-is zero. -/
-theorem isZero_singularHomology_of_isEmpty_cell (n : ℕ) [IsEmpty (cell C n)]
-    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
-      (skeletonBasePairToComplex C (n + 1)) R n)] :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C)) := by
-  refine IsZero.of_iso ?_ (cellularSingularHomologyIsoOfCWComplex C R n).symm
-  refine ShortComplex.isZero_homology_of_isZero_X₂ _ ?_
-  rw [HomologicalComplex.shortComplexFunctor_obj_X₂, cellularChainComplex_X]
-  exact isZero_cellularChainGroup C n R
-
-/-- A CW structure on the whole space `X` with no `n`-cells forces the `n`-th singular homology
-of `X` to vanish. -/
-theorem isZero_singularHomology_of_isEmpty_cell_univ [CWComplex (Set.univ : Set X)]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell (Set.univ : Set X) m)) A] (n : ℕ)
-    [IsEmpty (cell (Set.univ : Set X) n)]
-    [IsIso ((skeletonBasePair (Set.univ : Set X) (n + 1)).singularHomologyMap
-      (skeletonBasePairToComplex (Set.univ : Set X) (n + 1)) R n)] :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of X)) :=
-  (isZero_singularHomology_of_isEmpty_cell Set.univ R n).of_iso
-    (((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).mapIso
-      (TopCat.isoOfHomeo (Homeomorph.Set.univ X))).symm
 
 end Absolute
 
