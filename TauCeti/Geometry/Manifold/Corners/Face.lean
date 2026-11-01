@@ -32,11 +32,11 @@ neighbourhoods of `y` in `R` and of `φ y` in a second such region `R'` which pr
 carries each local face at `y` onto a local face at `φ y`. Chart transitions preserve the depth
 (`ModelWithCorners.depthAt_extend_eq_depth`), which is where the differentiability of the charts
 enters. Distinct faces through a point stay distinct near it
-(`ModelWithCorners.eq_of_eventually_apply_eq_zero_imp`), which makes the matching unique.
+(`TauCeti.eq_of_eventually_apply_eq_zero_imp`), which makes the matching unique.
 
 ## Main results
 
-* `ModelWithCorners.eq_of_eventually_apply_eq_zero_imp`: if near `y` the face `z i = 0` lies in the
+* `TauCeti.eq_of_eventually_apply_eq_zero_imp`: if near `y` the face `z i = 0` lies in the
   face `z k = 0`, then `i = k`.
 * `ModelWithCorners.existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq`: a depth-preserving local
   homeomorphism of regions of the form `{z | ∀ i ∈ S, 0 ≤ z i}` matches their local faces.
@@ -65,11 +65,9 @@ public section
 open Set Filter Function
 open scoped Manifold Topology
 
-namespace ModelWithCorners
+namespace TauCeti
 
 variable {ι ι' : Type*} {S : Set ι} {S' : Set ι'}
-
-section Coordinates
 
 /-- The path `t ↦ z + t • v` tends to `z` as `t` decreases to `0`. -/
 private theorem tendsto_add_smul [Finite ι] (z v : EuclideanSpace ℝ ι) :
@@ -117,6 +115,77 @@ private theorem eventually_forall_pos {κ : Type*} [Finite κ] {T : Set κ}
     exact hw'
   · exact Eventually.of_forall fun w' hjT hj' ↦ absurd ⟨hjT, hj'⟩ hj
 
+/-- The points of a convex set on the face `z i = 0` whose other coordinates in `S` are positive
+form a convex set. -/
+private theorem convex_apply_eq_zero_pos {C : Set (EuclideanSpace ℝ ι)} (hC : Convex ℝ C)
+    (i : ι) : Convex ℝ {z | z ∈ C ∧ z i = 0 ∧ ∀ k ∈ S, k ≠ i → 0 < z k} := by
+  rintro z ⟨hz, hzi, hzS⟩ z' ⟨hz', hz'i, hz'S⟩ a b ha hb hab
+  refine ⟨hC hz hz' ha hb hab, by simp [hzi, hz'i], fun k hk hki ↦ ?_⟩
+  have h₁ := hzS k hk hki
+  have h₂ := hz'S k hk hki
+  simp only [PiLp.add_apply, PiLp.smul_apply, smul_eq_mul]
+  rcases ha.eq_or_lt with rfl | ha'
+  · nlinarith [mul_pos (show (0 : ℝ) < b by linarith) h₂]
+  · nlinarith [mul_pos ha' h₁, mul_nonneg hb h₂.le]
+
+/-- If `z` has exactly one vanishing coordinate `i` in `S`, and `w` has as many vanishing
+coordinates in `S'` as `z` has in `S`, then `w` has exactly one vanishing coordinate in `S'`. -/
+private theorem exists_apply_eq_zero_unique_of_natCard_eq {z : EuclideanSpace ℝ ι}
+    {w : EuclideanSpace ℝ ι'}
+    (h : Nat.card {j // j ∈ S' ∧ w j = 0} = Nat.card {k // k ∈ S ∧ z k = 0}) {i : ι}
+    (hiS : i ∈ S) (hi : z i = 0) (hpos : ∀ k ∈ S, k ≠ i → 0 < z k) :
+    ∃ j ∈ S', w j = 0 ∧ ∀ k ∈ S', w k = 0 → k = j := by
+  have hcard : Nat.card {k // k ∈ S ∧ z k = 0} = 1 :=
+    Nat.card_eq_one_iff_exists.2 ⟨⟨i, hiS, hi⟩, fun ⟨k, hkS, hk⟩ ↦ Subtype.ext <| by
+      by_contra hki
+      exact (hpos k hkS hki).ne' hk⟩
+  obtain ⟨⟨j, hjS, hj⟩, huniq⟩ := Nat.card_eq_one_iff_exists.1 (h.trans hcard)
+  exact ⟨j, hjS, hj, fun k hkS hk ↦ congrArg Subtype.val (huniq ⟨k, hkS, hk⟩)⟩
+
+/-- Every point `z` of the face `z i = 0` of `{z | ∀ k ∈ S, 0 ≤ z k}` lying in an open set `U` is
+a limit of points of `U` on that face whose other coordinates in `S` are positive. -/
+private theorem mem_closure_apply_eq_zero_pos [Finite ι] {U : Set (EuclideanSpace ℝ ι)}
+    (hU : IsOpen U) {z : EuclideanSpace ℝ ι} (hz : z ∈ U) (hzS : ∀ k ∈ S, 0 ≤ z k) {i : ι}
+    (hzi : z i = 0) : z ∈ closure {z | z ∈ U ∧ z i = 0 ∧ ∀ k ∈ S, k ≠ i → 0 < z k} := by
+  classical
+  -- Move off `z` in the direction of the coordinates other than the `i`-th one.
+  set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun k ↦ if k = i then 0 else 1
+  refine mem_closure_of_tendsto (tendsto_add_smul z v) ?_
+  filter_upwards [(tendsto_add_smul z v).eventually (hU.mem_nhds hz), self_mem_nhdsWithin]
+    with t ht (ht0 : 0 < t)
+  refine ⟨ht, by simp [v, hzi], fun k hk hki ↦ ?_⟩
+  have := hzS k hk
+  simp only [v, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul, hki, ↓reduceIte]
+  linarith
+
+/-- If every point of a preconnected set `P` has exactly one vanishing coordinate in `T`, then
+this coordinate is the same at all points of `P`. -/
+private theorem apply_eq_zero_of_isPreconnected {κ : Type*} [Finite κ] {T : Set κ}
+    {P : Set (EuclideanSpace ℝ κ)} (hP : IsPreconnected P)
+    (hone : ∀ w ∈ P, ∃ j ∈ T, w j = 0 ∧ ∀ k ∈ T, w k = 0 → k = j)
+    {w₀ : EuclideanSpace ℝ κ} (hw₀ : w₀ ∈ P) {j₀ : κ} (hj₀T : j₀ ∈ T) (hj₀ : w₀ j₀ = 0) :
+    ∀ w ∈ P, w j₀ = 0 := by
+  -- `P` is covered by two relatively disjoint open sets: the points whose `j₀`-th coordinate
+  -- is nonzero, and those whose other coordinates in `T` are nonzero.
+  set V := ⋂ k ∈ {k | k ∈ T ∧ k ≠ j₀}, {w : EuclideanSpace ℝ κ | w k ≠ 0}
+  have hiff {w} (hw : w ∈ P) : w j₀ = 0 ↔ w ∈ V := by
+    obtain ⟨j, hjT, hj, huniq⟩ := hone w hw
+    rw [mem_iInter₂]
+    refine ⟨fun h k hk hk0 ↦ hk.2 ((huniq k hk.1 hk0).trans (huniq j₀ hj₀T h).symm),
+      fun h ↦ ?_⟩
+    by_contra h'
+    exact h j ⟨hjT, fun hjj ↦ h' (hjj ▸ hj)⟩ hj
+  have hcoord (j : κ) : Continuous fun w : EuclideanSpace ℝ κ ↦ w j := by fun_prop
+  have hu : IsOpen {w : EuclideanSpace ℝ κ | w j₀ ≠ 0} :=
+    isOpen_ne_fun (hcoord j₀) continuous_const
+  have hV : IsOpen V :=
+    (toFinite _).isOpen_biInter fun k _ ↦ isOpen_ne_fun (hcoord k) continuous_const
+  rcases isPreconnected_iff_subset_of_disjoint.1 hP _ _ hu hV
+    (fun w hw ↦ (em (w j₀ = 0)).symm.imp id (hiff hw).1)
+    (eq_empty_iff_forall_notMem.2 fun w ⟨hw, hu, hv⟩ ↦ hu ((hiff hw).2 hv)) with hsub | hsub
+  · exact absurd hj₀ (hsub hw₀)
+  · exact fun w hw ↦ (hiff hw).2 (hsub hw)
+
 /-- A depth-preserving map carries a local face into a local face. Let `φ` be continuous on a
 neighbourhood `s` of `y` in `R = {z | ∀ i ∈ S, 0 ≤ z i}`, with values in
 `R' = {w | ∀ j ∈ S', 0 ≤ w j}`, preserving the number of vanishing coordinates. Then for each face
@@ -139,89 +208,49 @@ private theorem exists_eventually_apply_eq_zero_of_apply_eq_zero [Finite ι] [Fi
   obtain ⟨ε, hε, hεG⟩ := Metric.mem_nhdsWithin_iff.1 <| inter_mem hs <|
     inter_mem (mem_nhdsWithin_of_mem_nhds (eventually_forall_pos hy))
       (hcont.eventually (eventually_forall_pos (hφs y hys)))
-  -- The points of depth one near `y` on the face `z i = 0`, and the direction leading into them.
+  -- The points of depth one near `y` on the face `z i = 0`.
   set A : Set (EuclideanSpace ℝ ι) :=
     {z | z ∈ Metric.ball y ε ∧ z i = 0 ∧ ∀ k ∈ S, k ≠ i → 0 < z k}
-  set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun k ↦ if k = i then 0 else 1
   have hAR : A ⊆ R := fun z hz k hk ↦ by
     by_cases hki : k = i
     · rw [hki, hz.2.1]
     · exact (hz.2.2 k hk hki).le
   have hAG : A ⊆ s ∩ ({z | ∀ k ∈ S, y k ≠ 0 → 0 < z k} ∩
       φ ⁻¹' {w | ∀ j ∈ S', φ y j ≠ 0 → 0 < w j}) := fun z hz ↦ hεG ⟨hz.1, hAR hz⟩
-  have hin {z : EuclideanSpace ℝ ι} (hz : z ∈ Metric.ball y ε) (hzR : z ∈ R) (hzi : z i = 0) :
-      ∀ᶠ t : ℝ in 𝓝[>] 0, z + t • v ∈ A := by
-    filter_upwards [(tendsto_add_smul z v).eventually (Metric.isOpen_ball.mem_nhds hz),
-      self_mem_nhdsWithin] with t ht (ht0 : 0 < t)
-    refine ⟨ht, by simp [v, hzi], fun k hk hki ↦ ?_⟩
-    have := hzR k hk
-    simp only [v, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul, hki, ↓reduceIte]
-    linarith
+  have hcl {z : EuclideanSpace ℝ ι} (hz : z ∈ Metric.ball y ε) (hzR : z ∈ R) (hzi : z i = 0) :
+      z ∈ closure A :=
+    mem_closure_apply_eq_zero_pos Metric.isOpen_ball hz hzR hzi
   -- Each point of `A` has exactly one vanishing coordinate in `S`, so its image has exactly one
-  -- in `S'`, and it vanishes at `φ y` too.
+  -- in `S'`. The image of `A` is connected, so this coordinate `j₀` is the same at all of them,
+  -- and it vanishes at `φ y` too.
   have hone {z : EuclideanSpace ℝ ι} (hz : z ∈ A) :
-      ∃ j ∈ S', φ y j = 0 ∧ φ z j = 0 ∧ ∀ k ∈ S', φ z k = 0 → k = j := by
-    have hcard : Nat.card {k // k ∈ S ∧ z k = 0} = 1 :=
-      Nat.card_eq_one_iff_exists.2 ⟨⟨i, hiS, hz.2.1⟩, fun ⟨k, hkS, hk⟩ ↦ Subtype.ext <| by
-        by_contra hki
-        exact (hz.2.2 k hkS hki).ne' hk⟩
-    obtain ⟨⟨j, hjS, hj⟩, huniq⟩ :=
-      Nat.card_eq_one_iff_exists.1 ((hφd z (hAG hz).1).trans hcard)
-    refine ⟨j, hjS, ?_, hj, fun k hkS hk ↦ congrArg Subtype.val (huniq ⟨k, hkS, hk⟩)⟩
-    by_contra hj'
-    exact ((hAG hz).2.2 j hjS hj').ne' hj
-  obtain ⟨t₀, ht₀⟩ := (hin (Metric.mem_ball_self hε) hy hi).exists
-  obtain ⟨j₀, hj₀S, hj₀y, hj₀, -⟩ := hone ht₀
-  -- `φ '' A` is connected and covered by two relatively disjoint open sets: the points whose
-  -- `j₀`-th coordinate is nonzero, and those whose other coordinates in `S'` are nonzero.
-  have hA : IsPreconnected (φ '' A) := by
-    refine (Convex.isPreconnected ?_).image φ (hφ.mono fun z hz ↦ (hAG hz).1)
-    rintro z ⟨hz, hzi, hzS⟩ z' ⟨hz', hz'i, hz'S⟩ a b ha hb hab
-    refine ⟨convex_ball y ε hz hz' ha hb hab, by simp [hzi, hz'i], fun k hk hki ↦ ?_⟩
-    have h₁ := hzS k hk hki
-    have h₂ := hz'S k hk hki
-    simp only [PiLp.add_apply, PiLp.smul_apply, smul_eq_mul]
-    rcases ha.eq_or_lt with rfl | ha'
-    · nlinarith [mul_pos (show (0 : ℝ) < b by linarith) h₂]
-    · nlinarith [mul_pos ha' h₁, mul_nonneg hb h₂.le]
-  have hcoord (j : ι') : Continuous fun w : EuclideanSpace ℝ ι' ↦ w j := by fun_prop
-  have hu : IsOpen {w : EuclideanSpace ℝ ι' | w j₀ ≠ 0} :=
-    isOpen_ne_fun (hcoord j₀) continuous_const
-  have hv : IsOpen (⋂ k ∈ {k | k ∈ S' ∧ k ≠ j₀}, {w : EuclideanSpace ℝ ι' | w k ≠ 0}) :=
-    (toFinite _).isOpen_biInter fun k _ ↦ isOpen_ne_fun (hcoord k) continuous_const
-  have hcover : φ '' A ⊆ {w | w j₀ ≠ 0} ∪
-      ⋂ k ∈ {k | k ∈ S' ∧ k ≠ j₀}, {w : EuclideanSpace ℝ ι' | w k ≠ 0} := by
-    rintro _ ⟨z, hz, rfl⟩
-    obtain ⟨j, -, -, hj, huniq⟩ := hone hz
-    by_cases hjj : j = j₀
-    · exact .inr <| mem_iInter₂.2 fun k hk hk0 ↦ hk.2 ((huniq k hk.1 hk0).trans hjj)
-    · exact .inl fun h0 ↦ hjj (huniq j₀ hj₀S h0).symm
-  have hdisj : φ '' A ∩ ({w | w j₀ ≠ 0} ∩
-      ⋂ k ∈ {k | k ∈ S' ∧ k ≠ j₀}, {w : EuclideanSpace ℝ ι' | w k ≠ 0}) = ∅ := by
-    refine eq_empty_iff_forall_notMem.2 ?_
-    rintro _ ⟨⟨z, hz, rfl⟩, hu, hv⟩
-    obtain ⟨j, hjS, -, hj, -⟩ := hone hz
-    by_cases hjj : j = j₀
-    · exact hu (hjj ▸ hj)
-    · exact mem_iInter₂.1 hv j ⟨hjS, hjj⟩ hj
-  have hA0 : ∀ z ∈ A, φ z j₀ = 0 := by
-    rcases isPreconnected_iff_subset_of_disjoint.1 hA _ _ hu hv hcover hdisj with hsub | hsub
-    · exact absurd hj₀ (hsub ⟨_, ht₀, rfl⟩)
-    · intro z hz
-      obtain ⟨j, hjS, -, hj, -⟩ := hone hz
-      by_cases hjj : j = j₀
-      · exact hjj ▸ hj
-      · exact absurd hj (mem_iInter₂.1 (hsub ⟨z, hz, rfl⟩) j ⟨hjS, hjj⟩)
+      ∃ j ∈ S', φ z j = 0 ∧ ∀ k ∈ S', φ z k = 0 → k = j :=
+    exists_apply_eq_zero_unique_of_natCard_eq (hφd z (hAG hz).1) hiS hz.2.1 hz.2.2
+  obtain ⟨z₀, hz₀⟩ := closure_nonempty_iff.1 ⟨y, hcl (Metric.mem_ball_self hε) hy hi⟩
+  obtain ⟨j₀, hj₀S, hj₀, -⟩ := hone hz₀
+  have hA0 : φ '' A ⊆ {w | w j₀ = 0} :=
+    apply_eq_zero_of_isPreconnected
+      ((convex_apply_eq_zero_pos (convex_ball y ε) i).isPreconnected.image φ
+        (hφ.mono fun z hz ↦ (hAG hz).1))
+      (by rintro _ ⟨z, hz, rfl⟩; exact hone hz) ⟨_, hz₀, rfl⟩ hj₀S hj₀
+  have hj₀y : φ y j₀ = 0 := by
+    by_contra h
+    exact ((hAG hz₀).2.2 j₀ hj₀S h).ne' hj₀
   -- Every point of the face near `y` is a limit of points of `A`, so `φ` carries it to the face.
   refine ⟨j₀, hj₀S, hj₀y, ?_⟩
-  filter_upwards [inter_mem_nhdsWithin R (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hε)),
-    self_mem_nhdsWithin] with z ⟨hzR, hz⟩ _ hzi
-  have hzs : z ∈ s := (hεG ⟨hz, hzR⟩).1
-  have hT : Tendsto (fun t : ℝ ↦ z + t • v) (𝓝[>] 0) (𝓝[s] z) :=
-    tendsto_nhdsWithin_iff.2 ⟨tendsto_add_smul z v,
-      (hin hz hzR hzi).mono fun _ ht ↦ (hAG ht).1⟩
-  exact (isClosed_eq (hcoord j₀) continuous_const).mem_of_tendsto ((hφ z hzs).tendsto.comp hT)
-    ((hin hz hzR hzi).mono fun _ ht ↦ hA0 _ ht)
+  filter_upwards [inter_mem_nhdsWithin R (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hε))]
+    with z ⟨hzR, hz⟩ hzi
+  have hcoord : Continuous fun w : EuclideanSpace ℝ ι' ↦ w j₀ := by fun_prop
+  exact closure_minimal hA0 (isClosed_eq hcoord continuous_const) <|
+    ((hφ z (hεG ⟨hz, hzR⟩).1).mono fun _ h ↦ (hAG h).1).mem_closure_image (hcl hz hzR hzi)
+
+end TauCeti
+
+namespace ModelWithCorners
+
+variable {ι ι' : Type*} {S : Set ι} {S' : Set ι'}
+
+section Coordinates
 
 variable [Fintype ι] [Fintype ι'] {H : Type*} [TopologicalSpace H]
   {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {H' : Type*} [TopologicalSpace H']
@@ -273,10 +302,10 @@ theorem existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq
     rw [← hcard hw.2.1 hw.2.2, hφψ hw.1.1]
   -- Each face at `y` goes into a face at `φ y`, and back.
   have hσ (i : {i // i ∈ S ∧ y i = 0}) :=
-    exists_eventually_apply_eq_zero_of_apply_eq_zero hy hs₀ (hφ.mono inter_subset_left)
+    TauCeti.exists_eventually_apply_eq_zero_of_apply_eq_zero hy hs₀ (hφ.mono inter_subset_left)
       (fun z hz ↦ hφs hz.1) (fun z hz ↦ hcard hz.1 hz.2) i.2.1 i.2.2
   have hτ (j : {j // j ∈ S' ∧ φ y j = 0}) :=
-    exists_eventually_apply_eq_zero_of_apply_eq_zero hφy ht₀
+    TauCeti.exists_eventually_apply_eq_zero_of_apply_eq_zero hφy ht₀
       (hψ.mono fun _ hw ↦ hw.1.1) (fun w hw ↦ hψt hw.1.1) (fun w hw ↦ hcard' hw) j.2.1 j.2.2
   choose σ hσS hσy hσ using hσ
   choose τ hτS hτy hτ using hτ
@@ -293,11 +322,11 @@ theorem existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq
     rw [← hφψ hwt]
     exact hw h
   have hστ (i : {i // i ∈ S ∧ y i = 0}) : τ ⟨σ i, hσS i, hσy i⟩ = i :=
-    (eq_of_eventually_apply_eq_zero_imp hy i.2.2 (hτy _) <| by
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.2.2 (hτy _) <| by
       filter_upwards [hσ i, hback i] with z h₁ h₂ h
       exact h₂ (h₁ h)).symm
   have hτσ (j : {j // j ∈ S' ∧ φ y j = 0}) : σ ⟨τ j, hτS j, hτy j⟩ = j :=
-    (eq_of_eventually_apply_eq_zero_imp hφy j.2.2 (hσy _) <| by
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.2.2 (hσy _) <| by
       filter_upwards [hτ j, hforth j] with w h₁ h₂ h
       exact h₂ (h₁ h)).symm
   let e : {i // i ∈ S ∧ y i = 0} ≃ {j // j ∈ S' ∧ φ y j = 0} :=
@@ -310,7 +339,7 @@ theorem existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq
     exact ⟨fun h ↦ hστ i ▸ h₂ h, h₁⟩
   refine ⟨e, eventually_all.2 hiff, fun e' he' ↦ Equiv.ext fun i ↦ Subtype.ext ?_⟩
   -- Two such bijections agree: pull both characterizations back along `ψ`.
-  refine eq_of_eventually_apply_eq_zero_imp hφy (e' i).2.2 (hσy i) ?_
+  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).2.2 (hσy i) ?_
   filter_upwards [hTψ.eventually he', hTψ.eventually (hiff i), ht] with w h₁ h₂ hwt h
   rw [hφψ hwt] at h₁ h₂
   exact h₂.2 ((h₁ i).1 h)
