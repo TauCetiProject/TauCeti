@@ -1,0 +1,203 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.VectorBundle.LinearScheme
+public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
+
+/-!
+# Base change of linear schemes
+
+A linear scheme is recovered from its degree-one sheaf by the graded symmetric algebra.
+Consequently its base change along `f : Y ⟶ X` can be constructed by pulling back that sheaf
+and taking its linear spectrum. This retains the grading, not just the underlying scheme.
+
+`QuasicoherentLinearScheme.pullback` implements this construction. The natural isomorphisms
+`linearSpecPullbackIso` and `pullbackDegreeOneIso` identify its action under the equivalence
+between quasicoherent sheaves (opposite) and linear schemes. Most importantly,
+`pullbackForgetIso` identifies its underlying affine scheme with the actual fibre product
+`Y ×_X V`: it uses base change of the relative spectrum of a symmetric algebra, followed by
+the reconstruction isomorphism `Spec_X (Sym A₁) ≅ V`.
+
+The identity and composition comparisons are induced by those of quasicoherent pullback and
+by the unit and counit of `linearSpecEquiv`. No flatness, finite rank, or affineness assumption
+is needed.
+
+## References
+
+* The Stacks Project, Section 27.6, [Tag 01M1](https://stacks.math.columbia.edu/tag/01M1).
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique II*, §1.7.
+-/
+
+public section
+
+open CategoryTheory Opposite
+open _root_.AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry.QuasicoherentLinearScheme
+
+universe u
+
+noncomputable section
+
+variable (X : Scheme.{u})
+
+/-- Forget the grading of a linear scheme, retaining its affine structure morphism. -/
+abbrev forget : QuasicoherentLinearScheme X ⥤ AffineSchemeOver X :=
+  (isQuasicoherentLinearScheme X).ι ⋙
+    Limits.CategoricalPullback.π₁ (affineFunctions X)
+      GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.op
+
+variable {X} {Y Z : Scheme.{u}} (f : Y ⟶ X)
+
+/-- Base change of linear schemes: pull back the degree-one sheaf and reconstruct its graded
+linear spectrum. Its underlying affine scheme is the fibre product (`pullbackForgetIso`). -/
+-- Exposed so that the comparison components below can be typed at the reconstructed objects.
+@[expose]
+def pullback : QuasicoherentLinearScheme X ⥤ QuasicoherentLinearScheme Y :=
+  degreeOne X ⋙ (QuasicoherentSheaf.pullback f).op ⋙ linearSpec Y
+
+/-- Base change sends `V` to the linear spectrum of the pullback of its degree-one sheaf. -/
+@[simp]
+theorem pullback_obj (V : QuasicoherentLinearScheme X) :
+    (pullback f).obj V =
+      (linearSpec Y).obj ((QuasicoherentSheaf.pullback f).op.obj ((degreeOne X).obj V)) :=
+  (rfl)
+
+/-- Base change acts on morphisms by pulling back their degree-one maps and taking linear
+spectra. -/
+@[simp]
+theorem pullback_map {V W : QuasicoherentLinearScheme X} (a : V ⟶ W) :
+    (pullback f).map a =
+      (linearSpec Y).map ((QuasicoherentSheaf.pullback f).op.map ((degreeOne X).map a)) :=
+  (rfl)
+
+/-- The degree-one sheaf of a base-changed linear scheme is the pullback of its original
+degree-one sheaf, naturally in the linear scheme. -/
+def pullbackDegreeOneIso :
+    pullback f ⋙ degreeOne Y ≅ degreeOne X ⋙ (QuasicoherentSheaf.pullback f).op :=
+  Functor.isoWhiskerLeft (degreeOne X ⋙ (QuasicoherentSheaf.pullback f).op)
+    (linearSpecEquiv Y).unitIso.symm
+
+/-- The degree-one comparison is the identification `Sym¹(f^* A₁) ≅ f^* A₁`. -/
+@[simp]
+theorem pullbackDegreeOneIso_hom_app (V : QuasicoherentLinearScheme X) :
+    (pullbackDegreeOneIso f).hom.app V =
+      (degreeOneLinearSpecIso
+        ((QuasicoherentSheaf.pullback f).op.obj ((degreeOne X).obj V))).hom := by
+  let F := (QuasicoherentSheaf.pullback f).op.obj ((degreeOne X).obj V)
+  have h : (linearSpecEquiv Y).unitIso.app F = (degreeOneLinearSpecIso F).symm :=
+    Iso.ext (linearSpecEquiv_unit_app F)
+  exact congrArg Iso.inv h
+
+/-- Linear spectrum commutes with arbitrary base change, as a functor to structured linear
+schemes, not merely to schemes over the base. -/
+def linearSpecPullbackIso :
+    linearSpec X ⋙ pullback f ≅ (QuasicoherentSheaf.pullback f).op ⋙ linearSpec Y :=
+  Functor.isoWhiskerRight (linearSpecEquiv X).unitIso.symm
+    ((QuasicoherentSheaf.pullback f).op ⋙ linearSpec Y)
+
+/-- The base-change comparison for linear spectrum is induced by `Sym¹ F ≅ F`. -/
+@[simp]
+theorem linearSpecPullbackIso_hom_app (F : (QuasicoherentSheaf X)ᵒᵖ) :
+    (linearSpecPullbackIso f).hom.app F =
+      (linearSpec Y).map ((QuasicoherentSheaf.pullback f).op.map
+        (degreeOneLinearSpecIso F).hom) := by
+  have h : (linearSpecEquiv X).unitIso.app F = (degreeOneLinearSpecIso F).symm :=
+    Iso.ext (linearSpecEquiv_unit_app F)
+  exact congrArg ((QuasicoherentSheaf.pullback f).op ⋙ linearSpec Y).map
+    (congrArg Iso.inv h)
+
+/-- **Base change of the underlying scheme.** Forgetting the grading after base change of a
+linear scheme gives the base change of its underlying affine scheme. The comparison first uses
+base change of `Spec (Sym A₁)` and then `Spec (Sym A₁) ≅ V`. -/
+def pullbackForgetIso :
+    pullback f ⋙ forget Y ≅ forget X ⋙ baseChangeAffineSchemeOver f :=
+  Functor.isoWhiskerLeft (degreeOne X)
+    (Functor.isoWhiskerLeft (QuasicoherentSheaf.pullback f).op (linearSpecForgetIso Y) ≪≫
+      relativeSpecSymmetricAlgebraBaseChangeIso f) ≪≫
+    Functor.isoWhiskerRight
+      (Functor.isoWhiskerLeft (degreeOne X) (linearSpecForgetIso X).symm ≪≫
+        Functor.isoWhiskerRight (linearSpecEquiv X).counitIso (forget X))
+      (baseChangeAffineSchemeOver f)
+
+/-- On objects the underlying-scheme comparison is base change of the symmetric spectrum,
+followed by the base change of the reconstruction isomorphism. -/
+theorem pullbackForgetIso_hom_app (V : QuasicoherentLinearScheme X) :
+    (pullbackForgetIso f).hom.app V =
+      ((linearSpecForgetIso Y).hom.app
+          ((QuasicoherentSheaf.pullback f).op.obj ((degreeOne X).obj V)) ≫
+        (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app ((degreeOne X).obj V)) ≫
+      (baseChangeAffineSchemeOver f).map
+        ((linearSpecForgetIso X).inv.app ((degreeOne X).obj V) ≫
+          (forget X).map ((linearSpecEquiv X).counit.app V)) :=
+  (rfl)
+
+/-- The projection from a base-changed linear scheme to the original total space. -/
+def pullbackFst (V : QuasicoherentLinearScheme X) :
+    ((pullback f).obj V).obj.fst.left ⟶ V.obj.fst.left :=
+  ((pullbackForgetIso f).hom.app V).left ≫ Limits.pullback.fst V.obj.fst.hom f
+
+/-- The base-change projection commutes with the structure morphisms. -/
+@[reassoc (attr := simp)]
+theorem pullbackFst_hom (V : QuasicoherentLinearScheme X) :
+    pullbackFst f V ≫ V.obj.fst.hom = ((pullback f).obj V).obj.fst.hom ≫ f := by
+  -- The affine slice uses `IsAffineHom` as a morphism property only after unfolding;
+  -- ordinary rewriting cannot match the resulting mixed category instances.
+  let a := ((pullbackForgetIso f).hom.app V).left
+  exact (Category.assoc a _ _).trans
+    ((congrArg (a ≫ ·) (Limits.pullback.condition (f := V.obj.fst.hom) (g := f))).trans
+      ((Category.assoc a _ f).symm.trans
+        (congrArg (· ≫ f) (MorphismProperty.Over.w ((pullbackForgetIso f).hom.app V)))))
+
+/-- The square consisting of the base-change projection and the structure morphisms is
+cartesian in schemes. -/
+theorem isPullback_pullbackFst (V : QuasicoherentLinearScheme X) :
+    IsPullback (pullbackFst f V) ((pullback f).obj V).obj.fst.hom V.obj.fst.hom f := by
+  let e := ((MorphismProperty.Over.forget _ _ Y) ⋙ Over.forget Y).mapIso
+    ((pullbackForgetIso f).app V)
+  exact IsPullback.of_iso_pullback ⟨pullbackFst_hom f V⟩ e rfl
+    (MorphismProperty.Over.w ((pullbackForgetIso f).hom.app V))
+
+/-- Base change along the identity is naturally the identity on linear schemes. -/
+def pullbackId : pullback (𝟙 X) ≅ 𝟭 (QuasicoherentLinearScheme X) :=
+  Functor.isoWhiskerLeft (degreeOne X)
+    (Functor.isoWhiskerRight (NatIso.op (QuasicoherentSheaf.pullbackId X)).symm
+      (linearSpec X)) ≪≫
+    (linearSpecEquiv X).counitIso
+
+/-- The identity comparison pulls the identity comparison of quasicoherent sheaves through
+linear spectrum and then reconstructs the original linear scheme. -/
+theorem pullbackId_hom_app (V : QuasicoherentLinearScheme X) :
+    (pullbackId (X := X)).hom.app V =
+      (linearSpec X).map (((QuasicoherentSheaf.pullbackId X).inv.app
+        ((degreeOne X).obj V).unop).op) ≫ (linearSpecDegreeOneIso V).hom := by
+  exact congrArg ((linearSpec X).map
+    (((QuasicoherentSheaf.pullbackId X).inv.app ((degreeOne X).obj V).unop).op) ≫ ·)
+    (linearSpecEquiv_counit_app V)
+
+/-- Successive base changes of linear schemes agree naturally with base change along the
+composite morphism. -/
+def pullbackComp (g : Z ⟶ Y) : pullback f ⋙ pullback g ≅ pullback (g ≫ f) :=
+  Functor.isoWhiskerRight (pullbackDegreeOneIso f)
+    ((QuasicoherentSheaf.pullback g).op ⋙ linearSpec Z) ≪≫
+  Functor.isoWhiskerLeft (degreeOne X)
+    (Functor.isoWhiskerRight (NatIso.op (QuasicoherentSheaf.pullbackComp g f)).symm
+      (linearSpec Z))
+
+/-- The composition comparison uses `Sym¹(f^* A₁) ≅ f^* A₁` and the composition comparison for
+quasicoherent pullback. -/
+theorem pullbackComp_hom_app (g : Z ⟶ Y) (V : QuasicoherentLinearScheme X) :
+    (pullbackComp f g).hom.app V =
+      (linearSpec Z).map ((QuasicoherentSheaf.pullback g).op.map
+        ((pullbackDegreeOneIso f).hom.app V)) ≫
+      (linearSpec Z).map (((QuasicoherentSheaf.pullbackComp g f).inv.app
+        ((degreeOne X).obj V).unop).op) := by
+  rfl
+
+end
+
+end TauCeti.AlgebraicGeometry.QuasicoherentLinearScheme
