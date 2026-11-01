@@ -22,11 +22,12 @@ tensor and the Cotton tensor of a locally conformally flat metric vanish identic
 
 The last statements are one half of the Weyl–Schouten theorem; the converse (vanishing of the Weyl
 tensor in dimension at least `4`, or of the Cotton tensor in dimension `3`, implies local conformal
-flatness) is a Frobenius integrability argument. The proof of the forward direction combines two
-facts: the Weyl tensor of a flat metric vanishes, and the Weyl tensor of `f g` is `f` times that of
-`g`, so its vanishing at a point is a conformal invariant. For the Cotton tensor, the Cotton tensor
-of `f g` vanishes at a point near which `f g` is flat, and it differs from that of `g` by a
-contraction of the Weyl tensor of `g`, which has just been shown to vanish.
+flatness) is a Frobenius integrability argument and is not proved here: this file only reduces it
+to local solvability of the conformal flattening equation (see below). The proof of the forward
+direction combines two facts: the Weyl tensor of a flat metric vanishes, and the Weyl tensor of
+`f g` is `f` times that of `g`, so its vanishing at a point is a conformal invariant. For the Cotton
+tensor, the Cotton tensor of `f g` vanishes at a point near which `f g` is flat, and it differs
+from that of `g` by a contraction of the Weyl tensor of `g`, which has just been shown to vanish.
 
 This file reduces the converse to local solvability of a PDE. In dimension at least `3`, the metric
 `e^(2φ) g` is flat exactly where the Weyl tensor of `g` vanishes and `φ` solves the conformal
@@ -69,9 +70,9 @@ the full curvature tensor.
   dimension `2`, a locally conformally flat metric has vanishing Cotton tensor.
 * `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale_eq_zero_iff`:
   `e^(2φ) g` is flat at `x` exactly when `W = 0` and the conformal flattening equation holds at `x`.
-* `ContMDiffRiemannianMetric.isLocallyConformallyFlat_iff_forall_exists_eventually_hessian_eq`:
-  in dimension at least `3`, local conformal flatness is equivalent to `W = 0` together with local
-  solvability of the conformal flattening equation.
+* `isLocallyConformallyFlat_iff_forall_weylTensor_eq_zero_and_forall_exists_eventually_hessian_eq`
+  (in `Bundle.ContMDiffRiemannianMetric`): in dimension at least `3`, local conformal flatness is
+  equivalent to `W = 0` together with local solvability of the conformal flattening equation.
 
 ## References
 
@@ -232,7 +233,8 @@ a smooth metric `g` is locally conformally flat exactly when its Weyl tensor van
 point has a neighbourhood on which a smooth function `φ` solves the conformal flattening equation
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g`. A solution `φ` near `x` gives the conformal factor
 `e^(2φ)` flattening `g` near `x`, and conversely `φ = (log f) / 2` for a flattening factor `f`. -/
-theorem isLocallyConformallyFlat_iff_forall_exists_eventually_hessian_eq
+theorem
+    isLocallyConformallyFlat_iff_forall_weylTensor_eq_zero_and_forall_exists_eventually_hessian_eq
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (hn : 3 ≤ Module.finrank ℝ E) :
     g.IsLocallyConformallyFlat ↔
