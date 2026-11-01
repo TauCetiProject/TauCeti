@@ -22,7 +22,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Three
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Two
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Lyons
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyThree
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.McLaughlin
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Monster

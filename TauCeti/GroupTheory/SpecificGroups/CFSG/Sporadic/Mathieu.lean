@@ -190,7 +190,7 @@ imported, copied, or adapted here.
 
 The remaining two Mathieu names, `M₂₃` and `M₂₄`, are transcribed in the sibling modules
 `TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyThree` and
-`TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour`.
+`TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Presentation`.
 -/
 
 public section

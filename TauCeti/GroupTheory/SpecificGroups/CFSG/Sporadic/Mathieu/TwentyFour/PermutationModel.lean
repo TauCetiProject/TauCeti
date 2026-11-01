@@ -48,7 +48,7 @@ the model is not computed here.
 * `TauCeti.Sporadic.M24`: the permutation model of `M₂₄` on `24` points.
 * `TauCeti.Sporadic.M24.presentationImage`: the images `a` and `b⁻¹` of the presentation
   generators.
-* `TauCeti.Sporadic.M24.lift_presentationImage_toFreeGroup`: every transcribed relator of the
+* `TauCeti.Sporadic.M24.lift_presentationImage_toFreeGroup_eq_one`: every transcribed relator of the
   presentation of `M₂₄` evaluates to `1` at these images.
 * `TauCeti.Sporadic.M24.closure_range_presentationImage`: the images generate the model.
 * `TauCeti.Sporadic.M24.presentationHom`: the homomorphism from the presented group.
@@ -144,7 +144,7 @@ theorem range_presentationImage : Set.range presentationImage = {a, b⁻¹} := b
 
 /-- **The relators of `M₂₄` hold in the model.** All seven transcribed relators of the
 presentation of `M₂₄` evaluate to `1` at `presentationImage`. -/
-theorem lift_presentationImage_toFreeGroup :
+theorem lift_presentationImage_toFreeGroup_eq_one :
     ∀ t ∈ SporadicName.M24.presentation.transcribed,
       FreeGroup.lift presentationImage t.toFreeGroup = 1 := by
   -- The type of `presentationImage` mentions `SporadicName.M24.presentation`, so the statement is
@@ -170,7 +170,7 @@ theorem closure_range_presentationImage :
 `Equiv.Perm (Fin 24)` sending the presentation generators to `presentationImage`. -/
 def presentationHom : SporadicName.M24.Group →* Equiv.Perm (Fin 24) :=
   SporadicName.M24.presentation.homEquiv.symm
-    ⟨presentationImage, lift_presentationImage_toFreeGroup⟩
+    ⟨presentationImage, lift_presentationImage_toFreeGroup_eq_one⟩
 
 @[simp]
 theorem presentationHom_of (i : Fin SporadicName.M24.presentation.generatorCount) :
