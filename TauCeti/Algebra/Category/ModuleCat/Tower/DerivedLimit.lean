@@ -30,7 +30,7 @@ surjective, the derived limit is the termwise limit complex `lim K`: the inclusi
 isomorphism `Rlim K ≅ lim K` the projections of `Rlim K` are the projections of the limit.
 
 The homotopy limit is the mapping cocone functor of the natural transformation `δ`
-(`TauCeti.mappingCoconeFunctor`), so it commutes with the shifts of complexes, and its projection
+(`NatTrans.mappingCoconeFunctor`), so it commutes with the shifts of complexes, and its projection
 `holim K → ∏ₙ Kₙ` is compatible with these isomorphisms. Through the localization this equips
 `Rlim` with `Functor.CommShift ℤ`, that is with coherent isomorphisms `Rlim (K⟦a⟧) ≅ (Rlim K)⟦a⟧`,
 compatible with the identification of `Rlim` with the homotopy limit.
@@ -121,7 +121,7 @@ the shift chain map `δ : ∏ₙ Kₙ → ∏ₙ Kₙ`. It computes the derived 
 @[expose]
 def homotopyLimitFunctor :
     CochainComplex (ModuleTower.{v} R) ℤ ⥤ CochainComplex (ModuleCat.{v} R) ℤ :=
-  mappingCoconeFunctor (complexShift R)
+  NatTrans.mappingCoconeFunctor (complexShift R)
 
 theorem homotopyLimitFunctor_obj (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     (homotopyLimitFunctor R).obj K = mappingCocone ((complexShift R).app K) :=
@@ -159,11 +159,11 @@ instance : NatTrans.CommShift (complexShift R) ℤ :=
   inferInstanceAs (NatTrans.CommShift (NatTrans.mapHomologicalComplex (shiftNatTrans R) _) ℤ)
 
 /-- The homotopy limit commutes with the shifts, as the mapping cocone functor of the shift chain
-maps `δ` (`TauCeti.mappingCoconeFunctor`). For this structure the projection `holim K → ∏ₙ Kₙ`
-commutes with the shifts: it is the natural transformation `TauCeti.mappingCoconeFunctorFst`,
+maps `δ` (`NatTrans.mappingCoconeFunctor`). For this structure the projection `holim K → ∏ₙ Kₙ`
+commutes with the shifts: it is the natural transformation `NatTrans.mappingCoconeFunctorFst`,
 whose compatibility with the shifts is an instance. -/
 noncomputable instance : (homotopyLimitFunctor R).CommShift ℤ :=
-  inferInstanceAs ((mappingCoconeFunctor (complexShift R)).CommShift ℤ)
+  inferInstanceAs ((NatTrans.mappingCoconeFunctor (complexShift R)).CommShift ℤ)
 
 /-- The fibre triangle `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ → (holim K)[1]` of the shift chain map, the
 mapping cocone triangle of `δ`. -/

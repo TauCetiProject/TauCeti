@@ -39,13 +39,13 @@ compares the mapping cone of the first map with the third term.
 ## Mapping cocones of natural transformations and shifts
 
 For a natural transformation `τ : F ⟶ G` of functors `D ⥤ CochainComplex C ℤ`, the mapping
-cocones `X ↦ mappingCocone (τ.app X)` form the functor `TauCeti.mappingCoconeFunctor τ`, the
-composite of `TauCeti.mappingConeFunctor τ` with `⟦-1⟧`. When `F`, `G` and `τ` commute with the
+cocones `X ↦ mappingCocone (τ.app X)` form the functor `NatTrans.mappingCoconeFunctor τ`, the
+composite of `NatTrans.mappingConeFunctor τ` with `⟦-1⟧`. When `F`, `G` and `τ` commute with the
 shifts, so does this functor: the shift of mapping cones is composed with the commutation of
 `⟦-1⟧` with the shifts twisted by the sign `(-1)^a` (`TauCeti.shiftFunctorCommShift`). The two
 signs cancel on the first component, so that the first projections
 `mappingCocone (τ.app X) ⟶ F.obj X` form a natural transformation compatible with the shifts
-(`TauCeti.mappingCoconeFunctorFst`).
+(`NatTrans.mappingCoconeFunctorFst`).
 -/
 
 public section
@@ -244,9 +244,9 @@ lemma shiftFunctor_map_shiftIso_inv_comp_fst (φ : K ⟶ L) (a : ℤ) :
 
 end CochainComplex.mappingCocone
 
-namespace TauCeti
+namespace CategoryTheory.NatTrans
 
-open CochainComplex
+open CochainComplex TauCeti
 
 variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
   {D : Type*} [Category* D] {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
@@ -295,24 +295,24 @@ theorem mappingCoconeFunctor_commShiftIso_hom_app (a : ℤ) (X : D) :
         ((a * -1).negOnePow •
           (shiftFunctorComm _ a (-1)).hom.app (mappingCone (τ.app X))) := by
   let := shiftFunctorCommShift (CochainComplex C ℤ) (-1)
-  exact (Functor.commShiftIso_comp_hom_app (mappingConeFunctor τ)
-    (CategoryTheory.shiftFunctor _ (-1)) a X).trans (by
-      rw [shiftFunctorCommShift_commShiftIso_hom_app, mappingConeFunctor_commShiftIso_hom_app]
-      rfl)
+  refine (Functor.commShiftIso_comp_hom_app (mappingConeFunctor τ)
+    (CategoryTheory.shiftFunctor _ (-1)) a X).trans ?_
+  rw [shiftFunctorCommShift_commShiftIso_hom_app, mappingConeFunctor_commShiftIso_hom_app]
+  -- The two sides differ only by `(mappingConeFunctor τ).obj X = mappingCone (τ.app X)`, which
+  -- holds by definition (`mappingConeFunctor_obj`) but cannot be rewritten inside the dependent
+  -- types of the morphisms.
+  rfl
 
 /-- The first projections of the mapping cocones commute with the shifts. -/
 instance : NatTrans.CommShift (mappingCoconeFunctorFst τ) ℤ := ⟨fun a ↦ by
   refine NatTrans.ext (funext fun X ↦ ?_)
-  have key : (mappingCone.map _ _ ((F.commShiftIso a).hom.app X) ((G.commShiftIso a).hom.app X)
-      (NatTrans.shift_app_comm τ a X).symm ≫ (mappingCone.shiftIso (τ.app X) a).inv)⟦(-1 : ℤ)⟧' ≫
-        ((a * -1).negOnePow • (shiftFunctorComm _ a (-1)).hom.app (mappingCone (τ.app X))) ≫
-          (mappingCocone.fst (τ.app X))⟦a⟧' =
-        mappingCocone.fst (τ.app (X⟦a⟧)) ≫ (F.commShiftIso a).hom.app X := by
-    rw [Functor.map_comp, Category.assoc, mappingCocone.shiftFunctor_map_shiftIso_inv_comp_fst]
-    exact mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _
   simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
     mappingCoconeFunctor_commShiftIso_hom_app, mappingCoconeFunctorFst_app,
-    mappingConeFunctorShiftIso_hom]
-  exact (Category.assoc _ _ _).trans key⟩
+    mappingConeFunctorShiftIso_hom, Functor.map_comp, Category.assoc]
+  -- The outer composition passes through `mappingCocone (τ.app X)⟦a⟧`, which is
+  -- `(mappingCone (τ.app X))⟦-1⟧⟦a⟧` only up to unfolding, so it is reassociated by hand.
+  exact (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+    (mappingCocone.shiftFunctor_map_shiftIso_inv_comp_fst _ _))).trans
+      (mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _)⟩
 
-end TauCeti
+end CategoryTheory.NatTrans

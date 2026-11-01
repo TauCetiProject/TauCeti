@@ -37,7 +37,7 @@ Mathlib's `CochainComplex.mappingCone.shiftIso φ n : (mappingCone φ)⟦n⟧ �
 multiplies the first component by `(-1)^n`. This file proves that it is natural in commutative
 squares and compatible with the isomorphisms `shiftFunctorZero` and `shiftFunctorAdd`. For a
 natural transformation `τ : F ⟶ G` of functors `D ⥤ CochainComplex C ℤ`, the mapping cones
-`X ↦ mappingCone (τ.app X)` form a functor `TauCeti.mappingConeFunctor τ`. When `F`, `G` and
+`X ↦ mappingCone (τ.app X)` form a functor `NatTrans.mappingConeFunctor τ`. When `F`, `G` and
 `τ` commute with the shifts of `D` and of cochain complexes, so does this functor: its
 commutation isomorphism at `X` is the map of mapping cones induced by those of `F` and `G`,
 followed by the inverse of `shiftIso`. For instance, the homotopy limit `Cone(δ)[-1]` of a
@@ -49,7 +49,7 @@ complex of towers of modules is built from such a functor.
   of `shiftIso`.
 * `CochainComplex.mappingCone.mapIso`: the isomorphism of mapping cones induced by an
   isomorphism of arrows.
-* `TauCeti.mappingConeFunctor`: the mapping cone of a natural transformation, as a functor, which
+* `NatTrans.mappingConeFunctor`: the mapping cone of a natural transformation, as a functor, which
   commutes with the shifts when `τ` does.
 -/
 
@@ -224,7 +224,7 @@ end Shift
 
 end CochainComplex.mappingCone
 
-namespace TauCeti
+namespace CategoryTheory.NatTrans
 
 open CategoryTheory CochainComplex CochainComplex.mappingCone
 
@@ -260,7 +260,7 @@ lemma mappingConeFunctorShiftIso_hom (a : ℤ) (X : D) :
         (NatTrans.shift_app_comm τ a X).symm ≫ (shiftIso (τ.app X) a).inv :=
   (rfl)
 
-/-- Followed by `shiftIso`, `TauCeti.mappingConeFunctorShiftIso` is the map of mapping cones
+/-- Followed by `shiftIso`, `NatTrans.mappingConeFunctorShiftIso` is the map of mapping cones
 induced by the commutation isomorphisms of `F` and `G`. -/
 @[reassoc (attr := simp)]
 lemma mappingConeFunctorShiftIso_hom_comp_shiftIso_hom (a : ℤ) (X : D) :
@@ -269,7 +269,7 @@ lemma mappingConeFunctorShiftIso_hom_comp_shiftIso_hom (a : ℤ) (X : D) :
         (NatTrans.shift_app_comm τ a X).symm := by
   simp [mappingConeFunctorShiftIso]
 
-/-- The isomorphisms `TauCeti.mappingConeFunctorShiftIso` are natural. -/
+/-- The isomorphisms `NatTrans.mappingConeFunctorShiftIso` are natural. -/
 lemma mappingConeFunctorShiftIso_hom_naturality (a : ℤ) {X Y : D} (f : X ⟶ Y) :
     map _ _ (F.map (f⟦a⟧')) (G.map (f⟦a⟧')) (τ.naturality _).symm ≫
         (mappingConeFunctorShiftIso τ a Y).hom =
@@ -305,7 +305,7 @@ private lemma mappingConeFunctorShiftIso_add (a b : ℤ) (X : D) :
   congr 1 <;> simp [Functor.commShiftIso_add]
 
 /-- The mapping cone of a natural transformation compatible with the shifts commutes with the
-shifts, through `TauCeti.mappingConeFunctorShiftIso`. -/
+shifts, through `NatTrans.mappingConeFunctorShiftIso`. -/
 noncomputable instance : (mappingConeFunctor τ).CommShift ℤ where
   commShiftIso a := NatIso.ofComponents (mappingConeFunctorShiftIso τ a)
     (fun f ↦ mappingConeFunctorShiftIso_hom_naturality τ a f)
@@ -322,4 +322,4 @@ lemma mappingConeFunctor_commShiftIso_hom_app (a : ℤ) (X : D) :
     ((mappingConeFunctor τ).commShiftIso a).hom.app X = (mappingConeFunctorShiftIso τ a X).hom :=
   (rfl)
 
-end TauCeti
+end CategoryTheory.NatTrans
