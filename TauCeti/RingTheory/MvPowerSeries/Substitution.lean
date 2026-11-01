@@ -61,6 +61,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
   for the two variables indexed by `Fin 2`.
+* `MvPowerSeries.constantCoeff_finTwo_eq_zero` : the entries of a pair `![x, y]` of series
+  without constant coefficient have no constant coefficient.
 * `MvPowerSeries.eval₂_subst_finTwo` : evaluating `G(x, y)` is evaluating `G` at the values of
   `x` and `y`.
 * `MvPowerSeries.powerSeriesSubst_subst_finTwo_eq_add` : a series `g` with
@@ -313,6 +315,12 @@ variable {O : Type*} [CommRing O]
 theorem hasSubst_finTwo {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x)
     (hy : PowerSeries.HasSubst y) : HasSubst ![x, y] :=
   hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s <;> simpa
+
+/-- The entries of a pair `![x, y]` of series without constant coefficient have no constant
+coefficient, the hypothesis of `hasSubst_of_constantCoeff_zero` for the pair. -/
+theorem constantCoeff_finTwo_eq_zero {x y : MvPowerSeries σ O} (hx : constantCoeff x = 0)
+    (hy : constantCoeff y = 0) (i : Fin 2) : constantCoeff (![x, y] i) = 0 := by
+  fin_cases i <;> simp [hx, hy]
 
 /-- If a one-variable series `g` is additive along a two-variable series `G`, that is
 `g(G(X, Y)) = g(X) + g(Y)`, then `g(G(x, y)) = g(x) + g(y)` for any series `x, y` that can be

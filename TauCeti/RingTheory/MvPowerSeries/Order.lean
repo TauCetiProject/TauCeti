@@ -28,7 +28,8 @@ A common lower bound on the orders of two series bounds the orders of their sum 
 
 Substitution preserves closeness: if each `a i - b i` has order at least `n ≠ 0` and the `b i`
 have no constant coefficient, then `aᵈ - bᵈ` has order at least `n + |d| - 1`
-(`MvPowerSeries.le_order_prod_pow_sub_prod_pow`). Expanding the coefficients of `f(a) - f(b)`
+(`MvPowerSeries.le_order_prod_pow_sub_prod_pow`), by bounding products of nearby series factor by
+factor (`MvPowerSeries.le_order_mul_sub_mul`). Expanding the coefficients of `f(a) - f(b)`
 along these differences of monomials (`MvPowerSeries.coeff_subst_sub_subst`) shows that
 `f(a) - f(b)` has order at least `n` (`MvPowerSeries.le_order_subst_sub_subst`), and that its
 degree-`n` component only sees the linear part of `f`
@@ -238,11 +239,11 @@ theorem constantCoeff_eq_zero_of_le_order_sub {n : ℕ} (hn : n ≠ 0) {x y : Mv
 /-- If `x - x'` and `y - y'` have orders at least `n + p - 1` and `n + q - 1`, where `n ≠ 0`,
 and `x'` and `y` have orders at least `p` and `q`, then `x y - x' y'` has order at least
 `n + (p + q) - 1`. -/
-private theorem le_order_mul_sub_mul {n p q : ℕ} (hn : n ≠ 0) {x x' y y' : MvPowerSeries σ R}
+theorem le_order_mul_sub_mul {n p q : ℕ} (hn : n ≠ 0) {x x' y y' : MvPowerSeries σ R}
     (hx : ((n + p - 1 : ℕ) : ℕ∞) ≤ (x - x').order) (hx' : (p : ℕ∞) ≤ x'.order)
     (hy : (q : ℕ∞) ≤ y.order) (hy' : ((n + q - 1 : ℕ) : ℕ∞) ≤ (y - y').order) :
     ((n + (p + q) - 1 : ℕ) : ℕ∞) ≤ (x * y - x' * y').order := by
-  rw [show x * y - x' * y' = (x - x') * y + x' * (y - y') by ring]
+  rw [← sub_add_sub_cancel (x * y) (x' * y) (x' * y'), ← sub_mul, ← mul_sub]
   refine le_order_add ?_ ?_
   · calc ((n + (p + q) - 1 : ℕ) : ℕ∞) ≤ ((n + p - 1 + q : ℕ) : ℕ∞) := Nat.cast_le.mpr (by omega)
       _ = ((n + p - 1 : ℕ) : ℕ∞) + q := Nat.cast_add _ _

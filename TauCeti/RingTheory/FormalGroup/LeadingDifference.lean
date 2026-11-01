@@ -72,19 +72,13 @@ section Leading
 
 variable {F G}
 
-/-- A pair of series without constant coefficient has entries without constant coefficient. -/
-private theorem constantCoeff_pair_eq_zero {τ : Type*} {x y : MvPowerSeries τ R}
-    (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) (i : Fin 2) :
-    constantCoeff (![x, y] i) = 0 := by
-  fin_cases i <;> simp [hx, hy]
-
 /-- `F(x, y) - G(x', y') = (F - G)(x, y) + (G(x, y) - G(x', y'))`. -/
 private theorem subst_pair_sub_subst_pair_eq {τ : Type*} {x y x' y' : MvPowerSeries τ R}
     (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) :
     F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y'] =
       (F.toPowerSeries - G.toPowerSeries).subst ![x, y] +
         (G.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']) := by
-  rw [subst_sub (hasSubst_of_constantCoeff_zero (constantCoeff_pair_eq_zero hx hy))]
+  rw [subst_sub (hasSubst_of_constantCoeff_zero (constantCoeff_finTwo_eq_zero hx hy))]
   ring
 
 /-- If `x - x'` and `y - y'` have order at least `n`, so does `F(x, y) - G(x', y')`, provided
@@ -94,8 +88,8 @@ private theorem le_order_subst_pair_sub_subst_pair {τ : Type*} {n : ℕ}
     (hx : constantCoeff x = 0) (hy : constantCoeff y = 0) (hx' : constantCoeff x' = 0)
     (hy' : constantCoeff y' = 0) (hxx' : n ≤ (x - x').order) (hyy' : n ≤ (y - y').order) :
     (n : ℕ∞) ≤ (F.toPowerSeries.subst ![x, y] - G.toPowerSeries.subst ![x', y']).order := by
-  have hxy₀ := constantCoeff_pair_eq_zero hx hy
-  have hxy₀' := constantCoeff_pair_eq_zero hx' hy'
+  have hxy₀ := constantCoeff_finTwo_eq_zero hx hy
+  have hxy₀' := constantCoeff_finTwo_eq_zero hx' hy'
   have hxy := hasSubst_of_constantCoeff_zero hxy₀
   rw [subst_pair_sub_subst_pair_eq hx hy]
   refine le_order_add ?_ (le_order_subst_sub_subst hxy (hasSubst_of_constantCoeff_zero hxy₀')
@@ -119,8 +113,8 @@ private theorem homogeneousComponent_subst_pair_sub_subst_pair {τ : Type*} {n :
       (MvPolynomial.aeval ![lx, ly]
           (homogeneousComponentPoly n (F.toPowerSeries - G.toPowerSeries)) :
         MvPowerSeries τ R) + homogeneousComponent n (x - x') + homogeneousComponent n (y - y') := by
-  have hxy₀ := constantCoeff_pair_eq_zero hx hy
-  have hxy₀' := constantCoeff_pair_eq_zero hx' hy'
+  have hxy₀ := constantCoeff_finTwo_eq_zero hx hy
+  have hxy₀' := constantCoeff_finTwo_eq_zero hx' hy'
   have hxy := hasSubst_of_constantCoeff_zero hxy₀
   rw [subst_pair_sub_subst_pair_eq hx hy, map_add,
     homogeneousComponent_subst_eq_coe_aeval hn hxy hxy₀ (l := ![lx, ly])
@@ -284,8 +278,7 @@ theorem succ_le_order_sub_of_coeff_nsmulSeries_eq [F.IsComm] [G.IsComm] {p : ℕ
     ((p ^ k + 1 : ℕ) : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order := by
   obtain rfl | hk := eq_or_ne k 0
   · -- formal group laws always agree below degree two
-    rw [show F.toPowerSeries - G.toPowerSeries = (F.toPowerSeries - (X 0 + X 1)) -
-      (G.toPowerSeries - (X 0 + X 1)) by ring]
+    rw [← sub_sub_sub_cancel_right F.toPowerSeries G.toPowerSeries (X 0 + X 1)]
     exact le_order_sub
       (two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y)
       (two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y)
