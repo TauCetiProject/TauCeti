@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TemperleyLieb.Basic
+public import TauCeti.Algebra.TemperleyLieb.Trace
 public import TauCeti.LinearAlgebra.Matrix.ExtendLast
 public import TauCeti.Logic.Function.Update
 public import Mathlib.LinearAlgebra.Matrix.Trace
@@ -62,6 +62,10 @@ Markov property.
   trace by `δ`.
 * `TauCeti.TemperleyLieb.markovTrace_strandIncl_mul_e_last`: the Markov property, capping the
   added strand with the previous one does not change the trace.
+* `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`: the spin-model trace satisfies the
+  abstract Markov-trace predicate.
+* `TauCeti.TemperleyLieb.markovTrace_jonesWenzl`: its value on the Jones–Wenzl projection is
+  the quantum dimension.
 
 ## References
 
@@ -499,6 +503,21 @@ theorem markovTrace_strandIncl_mul_e_last (x : TemperleyLieb R δ (n + 1)) :
     markovTrace q hδ (strandIncl x * e δ (Fin.last n)) = markovTrace q hδ x := by
   rw [markovTrace_apply, markovTrace_apply, map_mul, spinRep_strandIncl, spinRep_e]
   exact trace_diagonal_spinWeight_mul_extendLast_mul_spinGenerator q _
+
+/-- The spin-model trace is an unnormalized Markov trace. Its parameter convention is
+`δ = -(q + q⁻¹)`; replacing `q` by `-q` gives the positive convention. -/
+theorem isMarkovTrace_markovTrace :
+    IsMarkovTrace R δ (fun _ ↦ markovTrace q hδ) :=
+  ⟨fun _ ↦ markovTrace_one q hδ,
+    fun _ x y ↦ markovTrace_mul_comm q hδ x y,
+    fun _ x ↦ markovTrace_strandIncl q hδ x,
+    fun _ x ↦ markovTrace_strandIncl_mul_e_last q hδ x⟩
+
+/-- The spin-model trace of the Jones–Wenzl projection is its quantum dimension. -/
+theorem markovTrace_jonesWenzl
+    (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) :
+    markovTrace q hδ (jonesWenzl δ n) = qInt R δ (n + 1) :=
+  (isMarkovTrace_markovTrace q hδ).map_jonesWenzl n h
 
 end MarkovTrace
 

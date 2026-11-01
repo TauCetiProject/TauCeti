@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.JonesWenzl
-public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Markov traces and quantum dimensions
@@ -21,9 +21,8 @@ takes the value `qInt R δ (n + 1)` on the Jones–Wenzl projection on `n` stran
 quantum-dimension calculation used to detect negligible projections. The result also applies
 to any normalized element annihilated by the generators, by uniqueness of the projection.
 
-The existing spin-model trace supplies a witness at `δ = -(q + q⁻¹)` and hence the same
-quantum-dimension formula. This does not assert existence of a Markov trace at every loop
-parameter, or uniqueness of Markov traces.
+This does not assert existence of a Markov trace at every loop parameter, or uniqueness of
+Markov traces.
 
 ## References
 
@@ -31,8 +30,7 @@ parameter, or uniqueness of Markov traces.
 * L. H. Kauffman and S. L. Lins, *Temperley–Lieb Recoupling Theory and Invariants of
   3-Manifolds*, Annals of Mathematics Studies 134, Princeton University Press, 1994.
 
-The calculation uses `TauCeti.TemperleyLieb.jonesWenzl_add_two` and its idempotence theorem;
-the concrete trace is `TauCeti.TemperleyLieb.markovTrace` from the spin representation.
+The calculation uses `TauCeti.TemperleyLieb.jonesWenzl_add_two` and its idempotence theorem.
 -/
 
 public section
@@ -80,9 +78,9 @@ theorem map_jonesWenzl (htr : IsMarkovTrace R δ tr) :
     have hid := (isIdempotentElem_jonesWenzl hprev).eq
     rw [jonesWenzl_add_two, map_sub, map_smul, htr.map_strandIncl,
       htr.map_strandIncl_mul_e_last_mul, hid, htr.map_jonesWenzl (m + 1) hprev,
-      smul_eq_mul, ← sub_mul]
-    rw [← qInt_add_two_mul_inverse δ (m + 1) (h (m + 2) (by simp)), mul_assoc,
-      Ring.inverse_mul_cancel _ (h (m + 2) (by simp)), mul_one]
+      smul_eq_mul, qInt_add_two δ (m + 1)]
+    linear_combination -(qInt R δ (m + 1)) *
+      Ring.inverse_mul_cancel _ (h (m + 2) (by simp))
 
 /-- The quantum-dimension formula for any element of augmentation `1` annihilated on the
 left by the generators. One-sided annihilation already characterizes the Jones–Wenzl projection.
@@ -96,22 +94,5 @@ theorem apply_jonesWenzl (htr : IsMarkovTrace R δ tr) {n : ℕ}
   exact htr.map_jonesWenzl n h
 
 end IsMarkovTrace
-
-/-- The spin-model trace is an unnormalized Markov trace. Its parameter convention is
-`δ = -(q + q⁻¹)`; replacing `q` by `-q` gives the positive convention. -/
-theorem isMarkovTrace_markovTrace (q : Rˣ)
-    (hδ : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) :
-    IsMarkovTrace R δ (fun _ ↦ markovTrace q hδ) :=
-  ⟨fun _ ↦ markovTrace_one q hδ,
-    fun _ x y ↦ markovTrace_mul_comm q hδ x y,
-    fun _ x ↦ markovTrace_strandIncl q hδ x,
-    fun _ x ↦ markovTrace_strandIncl_mul_e_last q hδ x⟩
-
-/-- The spin-model trace of the Jones–Wenzl projection is its quantum dimension. -/
-theorem markovTrace_jonesWenzl (q : Rˣ)
-    (hδ : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) {n : ℕ}
-    (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) :
-    markovTrace q hδ (jonesWenzl δ n) = qInt R δ (n + 1) :=
-  (isMarkovTrace_markovTrace q hδ).map_jonesWenzl n h
 
 end TauCeti.TemperleyLieb
