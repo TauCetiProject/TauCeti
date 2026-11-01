@@ -284,6 +284,32 @@ lemma logHeight₁_le_logHeightAff [Finite ι] (x : ι → K) (i : ι) :
     logHeight₁ (x i) ≤ logHeightAff x :=
   log_le_log (mulHeight₁_pos _) (mulHeight₁_le_mulHeightAff x i)
 
+/-- The affine height is at most the product of the scalar heights of its coordinates. -/
+lemma mulHeightAff_le_prod_mulHeight₁ [Fintype ι] (x : ι → K) :
+    mulHeightAff x ≤ ∏ i, mulHeight₁ (x i) := by
+  classical
+  -- The affine tuple occurs among the coordinates of the Segre product of `(x i, 1)`.
+  let e : Option ι → ι → Fin 2 := fun o i ↦ if o = some i then 0 else 1
+  have he : (fun o : Option ι ↦ o.elim 1 x) =
+      (fun s : ι → Fin 2 ↦ ∏ i, ![x i, 1] (s i)) ∘ e := by
+    funext o
+    cases o with
+    | none => simp [e]
+    | some j => simp [e, apply_ite]
+  rw [mulHeightAff_def, he]
+  calc
+    _ ≤ mulHeight (fun s : ι → Fin 2 ↦ ∏ i, ![x i, 1] (s i)) := mulHeight_comp_le e _
+    _ = ∏ i, mulHeight₁ (x i) := by
+      rw [mulHeight_fun_prod_eq (by simp)]
+      simp only [mulHeight₁_eq_mulHeight]
+
+/-- The affine logarithmic height is at most the sum of the scalar logarithmic heights. -/
+lemma logHeightAff_le_sum_logHeight₁ [Fintype ι] (x : ι → K) :
+    logHeightAff x ≤ ∑ i, logHeight₁ (x i) := by
+  simpa [logHeightAff_eq_log_mulHeightAff, logHeight₁_eq_log_mulHeight₁,
+    Real.log_prod (fun i _ ↦ mulHeight₁_ne_zero (x i))] using
+    Real.log_le_log (mulHeightAff_pos x) (mulHeightAff_le_prod_mulHeight₁ x)
+
 /-- **The affine height is not invariant under scaling.** Over `ℚ`, doubling the tuple `![1]`
 changes its affine height from `1` to `2`, while the projective height of every tuple is
 unchanged by scaling (`Height.mulHeight_smul_eq_mulHeight`). -/
