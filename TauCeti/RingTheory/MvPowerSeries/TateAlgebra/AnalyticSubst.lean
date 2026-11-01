@@ -49,6 +49,8 @@ here allows radii that are not norms of elements of `R`, which no weight family 
 * `TauCeti.MvPowerSeries.norm_restrictedAnalyticSubst_le`: substitution is contractive.
 * `TauCeti.MvPowerSeries.eq_restrictedAnalyticSubst`: uniqueness among continuous algebra
   homomorphisms.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`: substituting zero gives the
+  constant coefficient.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_self` and
   `TauCeti.MvPowerSeries.restrictedAnalyticSubst_comp`: the identity and composition laws.
 * `TauCeti.MvPowerSeries.restrictedEval₂_restrictedAnalyticSubst`: evaluating `f(g)` at `b` is
@@ -129,6 +131,23 @@ theorem coeff_restrictedAnalyticSubst (f : IsRestricted.subring (R := R) r) (e :
 theorem restrictedAnalyticSubst_X (i : Fin k) :
     restrictedAnalyticSubst g hg ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ = g i :=
   restrictedEval₂_X _ g _ hg i
+
+/-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
+@[simp]
+theorem restrictedAnalyticSubst_zero_apply
+    (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst 0 hh f =
+      algebraMap R _ (constantCoeff (f : MvPowerSeries (Fin k) R)) := by
+  -- Every monomial but the constant one vanishes at zero.
+  refine (hasSum_restrictedAnalyticSubst _ _ _).unique ?_
+  convert hasSum_ite_eq (0 : Fin k →₀ ℕ)
+    (algebraMap R (IsRestricted.subring (R := R) s) (constantCoeff (f : MvPowerSeries (Fin k) R)))
+    using 2 with t
+  split_ifs with ht
+  · simp [ht]
+  · obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 ht
+    rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [zero_pow hi]), mul_zero]
 
 /-- **Coefficient maps commute with analytic substitution.** For a bounded ring homomorphism
 `φ : R →+* S` such that the mapped series `φ(gᵢ)` still satisfy `‖φ(gᵢ)‖ ≤ rᵢ`, mapping the

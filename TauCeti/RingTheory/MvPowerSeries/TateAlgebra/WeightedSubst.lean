@@ -55,8 +55,6 @@ substitutions converging on a larger polydisc is in
   `TauCeti.MvPowerSeries.weightedSubstCLM_comp`: the composition law.
 * `TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_one_X`,
   `TauCeti.MvPowerSeries.weightedSubstCLM_one_X`: the identity.
-* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`: substituting zero gives the
-  constant coefficient, at all radii.
 * `TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_zero_apply`,
   `TauCeti.MvPowerSeries.weightedSubstCLM_zero_apply`,
   `TauCeti.MvPowerSeries.isFiniteRank_weightedSubstCLM_zero`: substitution of zero has finite
@@ -84,23 +82,6 @@ variable {k m : ℕ} {τ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [Co
 section Restricted
 
 variable {r : Fin k → ℝ} {s : τ → ℝ} [∀ j, Fact (0 < s j)]
-
-/-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
-@[simp]
-theorem restrictedAnalyticSubst_zero_apply
-    (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
-    (f : IsRestricted.subring (R := R) r) :
-    restrictedAnalyticSubst 0 hh f =
-      algebraMap R _ (constantCoeff (f : MvPowerSeries (Fin k) R)) := by
-  -- Every monomial but the constant one vanishes at zero.
-  refine (hasSum_restrictedAnalyticSubst _ _ _).unique ?_
-  convert hasSum_ite_eq (0 : Fin k →₀ ℕ)
-    (algebraMap R (IsRestricted.subring (R := R) s) (constantCoeff (f : MvPowerSeries (Fin k) R)))
-    using 2 with t
-  split_ifs with ht
-  · simp [ht]
-  · obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 ht
-    rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [zero_pow hi]), mul_zero]
 
 variable [∀ i, Fact (0 < r i)]
 
