@@ -32,9 +32,9 @@ the sets meet, and the Mayer–Vietoris gluing over finite trivializing covers
 `Hʳ(F, F ∖ {0})` the glued class is a Thom class. In particular **every oriented real vector bundle
 over a compact base has a Thom class with coefficients in any commutative ring**, integral
 coefficients included (`TauCeti.VectorBundleOrientation.exists_isThomClass`). Without an
-orientation this holds only for coefficient rings with a single unit, such as `ZMod 2`
-(`TauCeti.exists_isThomClass_of_compactSpace`). For an oriented plane bundle the Euler class of
-this Thom class (`TauCeti.eulerClass`) is the Euler class in `H²(B; ℤ)`.
+orientation the existence is established (`TauCeti.exists_isThomClass_of_compactSpace`) for
+coefficient rings with a single unit, such as `ZMod 2`. For an oriented plane bundle the Euler
+class of this Thom class (`TauCeti.eulerClass`) is the Euler class in `H²(B; ℤ)`.
 
 ## Main results
 
