@@ -30,8 +30,8 @@ locally finite mass. Then `T` is represented by integration against its mass mea
 The **polar density** `τ = Distribution.polarDensity T` takes values in the native normed dual
 `StrongDual ℝ F` of the fibre, with its dual norm. For `F = E [⋀^Fin k]→L[ℝ] ℝ` over an inner
 product space `E`, the norm on `F` is the comass and its dual norm is the mass norm of `k`-vectors,
-under `exteriorPower.formDualEquiv`; so `τ(x)` is Federer's orientation `T⃗(x)` of the current,
-and the representation is `T = ‖T‖ ∧ T⃗`. The density is unique `‖T‖`-almost everywhere
+under `exteriorPower.formDualEquiv`; so `τ(x)` is Federer's orientation `vec T (x)` of the current,
+and the representation is `T = ‖T‖ ∧ vec T`. The density is unique `‖T‖`-almost everywhere
 (`Distribution.ae_eq_polarDensity`). The mass measure lives on the open domain `Ω` and need not be
 finite near its frontier, so the density is only locally integrable.
 
@@ -62,7 +62,7 @@ representation gives `‖T‖(U) ≤ ∫_U ‖τ‖ d‖T‖`, hence `‖τ‖ =
 ## References
 
 * H. Federer, *Geometric Measure Theory*, §4.1.5 and §4.1.7 (currents representable by
-  integration, `T = ‖T‖ ∧ T⃗`).
+  integration, `T = ‖T‖ ∧ vec T`).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   §1.8 (the Riesz representation theorem for vector-valued functionals and its polar density).
 * L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §2.
@@ -207,7 +207,7 @@ to its mass measure `‖T‖`: if `T` has locally finite mass, it is a measurabl
 `τ : Ω → StrongDual ℝ F` of dual norm one at `‖T‖`-almost every point
 (`Distribution.ae_norm_polarDensity_eq_one`) such that `T φ = ∫ τ(x) (φ x) d‖T‖` for every test
 `φ` (`Distribution.apply_eq_integral_polarDensity`). For a `k`-current, with
-`F = E [⋀^Fin k]→L[ℝ] ℝ`, it is the orientation `T⃗` of `T`, read as a `k`-vector through
+`F = E [⋀^Fin k]→L[ℝ] ℝ`, it is the orientation `vec T` of `T`, read as a `k`-vector through
 `exteriorPower.formDualEquiv`. It is determined `‖T‖`-almost everywhere
 (`Distribution.ae_eq_polarDensity`). If no such field exists it is `0` by convention. -/
 def polarDensity (T : 𝓓(Ω, F) →L[ℝ] ℝ) : Ω → StrongDual ℝ F :=
