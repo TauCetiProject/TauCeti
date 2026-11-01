@@ -155,16 +155,15 @@ private lemma opDualEval_eq_zero_iff (hexact : Function.Exact p π) (hπ : Funct
       intro ψ hψ
       obtain ⟨φ, rfl⟩ := ((hexact.lcomp_of_surjective (T := Aᵐᵒᵖ) A hπ) ψ).1 hψ
       simpa [LinearMap.lcomp_apply'] using LinearMap.congr_fun hm φ
-    let e := (p.lcomp Aᵐᵒᵖ A).quotKerEquivRange
-    have he (ψ : Module.Dual A P₀) :
-        e.symm ((p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ) = Submodule.Quotient.mk ψ := by
-      rw [LinearEquiv.symm_apply_eq]
-      ext1
-      simp [e, LinearMap.quotKerEquivRange_apply_mk, LinearMap.lcomp_apply']
-    let g := (LinearMap.ker _).liftQ _ hker ∘ₗ e.symm.toLinearMap
+    rw [← LinearMap.ker_rangeRestrict] at hker
+    -- The implicit arguments are given to avoid a slow unification between the two semiring
+    -- structures on `Aᵐᵒᵖ`.
+    let g := LinearMap.liftOfSurjective (R := Aᵐᵒᵖ) (M := Module.Dual A P₀)
+      (M₂ := LinearMap.range (p.lcomp Aᵐᵒᵖ A)) (M₃ := A)
+      (LinearMap.surjective_rangeRestrict (p.lcomp Aᵐᵒᵖ A)) ⟨opDualEval A P₀ x, hker⟩
     refine ⟨g, ?_⟩
     rw [rangeDualToModule_apply, ← eq_rangeDualPreimage (g := g) (x := x) fun ψ ↦ ?_]
-    simp [g, he]
+    rw [LinearMap.equivOfSurjective_apply, opDualEval_apply]
   · rintro ⟨g, rfl⟩
     refine LinearMap.ext fun φ ↦ ?_
     -- `φ ∘ π` vanishes on the image of `p`, so its image in `K` is zero.
