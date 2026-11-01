@@ -288,4 +288,25 @@ theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h
     (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
   (rfl)
 
+/-- The power transition at a nonzero order is the identity. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_refl {M : Type*} [CommMonoid M] {n : ℕ} [NeZero n] :
+    rootsOfUnityPowOfDvd (M := M) (dvd_refl n) = MonoidHom.id _ := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp [Nat.div_self (NeZero.pos n)]
+
+/-- Power transitions compose along divisibility of orders. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_comp {M : Type*} [CommMonoid M] {n m l : ℕ}
+    (h₁ : n ∣ m) (h₂ : m ∣ l) :
+    (rootsOfUnityPowOfDvd (M := M) h₁).comp (rootsOfUnityPowOfDvd h₂) =
+      rootsOfUnityPowOfDvd (h₁.trans h₂) := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp only [MonoidHom.comp_apply, coe_rootsOfUnityPowOfDvd_apply]
+  rw [← pow_mul, Nat.div_mul_div h₂ h₁]
+
 end TauCeti
