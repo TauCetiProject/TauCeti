@@ -29,11 +29,11 @@ open scoped Real
 
 namespace Real
 
-/-- **Complementary angles, in quotient form.**  For positive `u` and `v` the angles
-`arctan (u / v)` and `arctan (v / u)` are complementary. -/
-theorem arctan_div_add_arctan_div {u v : ℝ} (hu : 0 < u) (hv : 0 < v) :
+/-- **Complementary angles, in quotient form.**  When `u / v` is positive (for instance when `u`
+and `v` are both positive) the angles `arctan (u / v)` and `arctan (v / u)` are complementary. -/
+theorem arctan_div_add_arctan_div {u v : ℝ} (h : 0 < u / v) :
     arctan (u / v) + arctan (v / u) = π / 2 := by
-  rw [← inv_div u v, Real.arctan_inv_of_pos (by positivity)]
+  rw [← inv_div u v, arctan_inv_of_pos h]
   ring
 
 end Real
@@ -48,16 +48,12 @@ theorem arctan_corner_sum_eq_two_mul_pi_mul_I {c B T : ℝ} (hc : 0 < c) (hB : 0
     2 * I * ((Real.arctan (c / T) : ℂ) - (Real.arctan (-B / T) : ℂ))
       + I * (2 * (Real.arctan (T / c) : ℂ)) - I * (2 * (Real.arctan (T / -B) : ℂ))
       = 2 * π * I := by
-  have hA : ((Real.arctan (c / T) : ℝ) : ℂ) + ((Real.arctan (T / c) : ℝ) : ℂ) = (π : ℂ) / 2 := by
-    rw [← Complex.ofReal_add, Real.arctan_div_add_arctan_div hc hT]
-    push_cast
-    ring
-  have hB' : ((Real.arctan (B / T) : ℝ) : ℂ) + ((Real.arctan (T / B) : ℝ) : ℂ) = (π : ℂ) / 2 := by
-    rw [← Complex.ofReal_add, Real.arctan_div_add_arctan_div hB hT]
-    push_cast
-    ring
+  have hc' : (Real.arctan (c / T) : ℂ) + Real.arctan (T / c) = π / 2 :=
+    mod_cast Real.arctan_div_add_arctan_div (div_pos hc hT)
+  have hB' : (Real.arctan (B / T) : ℂ) + Real.arctan (T / B) = π / 2 :=
+    mod_cast Real.arctan_div_add_arctan_div (div_pos hB hT)
   rw [neg_div, Real.arctan_neg, div_neg, Real.arctan_neg]
   push_cast
-  linear_combination (2 * I) * hA + (2 * I) * hB'
+  linear_combination (2 * I) * hc' + (2 * I) * hB'
 
 end TauCeti
