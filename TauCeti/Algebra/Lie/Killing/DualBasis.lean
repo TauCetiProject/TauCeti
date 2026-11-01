@@ -100,11 +100,13 @@ end Finite
 variable [Fintype ι]
 
 /-- **Expansion in `b`**, with the coefficients read off by the Killing-dual basis. -/
+@[simp]
 theorem sum_killingForm_smul_basis (b : Module.Basis ι K L) (v : L) :
     ∑ i, killingForm K L v (killingDualBasis b i) • b i = v := by
   simp only [← repr_eq_killingForm, Module.Basis.sum_repr]
 
 /-- **Expansion in the Killing-dual basis**, with the coefficients read off by `b`. -/
+@[simp]
 theorem sum_killingForm_smul_killingDualBasis (b : Module.Basis ι K L) (v : L) :
     ∑ i, killingForm K L (b i) v • killingDualBasis b i = v := by
   simp only [← killingDualBasis_repr, Module.Basis.sum_repr]
@@ -128,14 +130,17 @@ variable {W : Type w} [AddCommGroup W] [Module K W] (f : L →ₗ[K] L →ₗ[K]
 
 /-- **Expansion of the first argument of a bilinear map in `b`**, with the coefficients read off
 by the Killing-dual basis. -/
-theorem sum_killingForm_smul_apply_basis (b : Module.Basis ι K L) (u v : L) :
+@[simp]
+theorem _root_.LinearMap.sum_killingForm_smul_apply_basis (b : Module.Basis ι K L) (u v : L) :
     ∑ j, killingForm K L u (killingDualBasis b j) • f (b j) v = f u v := by
   conv_rhs => rw [← sum_killingForm_smul_basis b u]
   simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply]
 
 /-- **Expansion of the second argument of a bilinear map in the Killing-dual basis**, with the
 coefficients read off by `b`. -/
-theorem sum_killingForm_smul_apply_killingDualBasis (b : Module.Basis ι K L) (u v : L) :
+@[simp]
+theorem _root_.LinearMap.sum_killingForm_smul_apply_killingDualBasis (b : Module.Basis ι K L)
+    (u v : L) :
     ∑ j, killingForm K L (b j) v • f u (killingDualBasis b j) = f u v := by
   conv_rhs => rw [← sum_killingForm_smul_killingDualBasis b v]
   simp only [map_sum, map_smul]
@@ -148,10 +153,10 @@ theorem sum_apply_killingDualBasis_eq (b : Module.Basis ι K L) (c : Module.Basi
   calc ∑ i, f (b i) (killingDualBasis b i)
       = ∑ i, ∑ j, killingForm K L (c j) (killingDualBasis b i) •
           f (b i) (killingDualBasis c j) :=
-        sum_congr rfl fun i _ ↦ (sum_killingForm_smul_apply_killingDualBasis f c _ _).symm
+        sum_congr rfl fun i _ ↦ (f.sum_killingForm_smul_apply_killingDualBasis c _ _).symm
     _ = ∑ j, f (c j) (killingDualBasis c j) := by
         rw [Finset.sum_comm]
-        exact sum_congr rfl fun j _ ↦ sum_killingForm_smul_apply_basis f b _ _
+        exact sum_congr rfl fun j _ ↦ f.sum_killingForm_smul_apply_basis b _ _
 
 /-- **A Killing-adjoint pair of operators may be moved from one slot to the other.**  If `κ (p x) y`
 is `κ x (q y)` then applying `p` to the basis vectors and applying `q` to their Killing duals give
@@ -162,21 +167,21 @@ theorem sum_apply_killingDualBasis_of_isAdjointPair (b : Module.Basis ι K L) {p
   calc ∑ i, f (p (b i)) (killingDualBasis b i)
       = ∑ i, ∑ j, killingForm K L (p (b i)) (killingDualBasis b j) •
           f (b j) (killingDualBasis b i) :=
-        sum_congr rfl fun i _ ↦ (sum_killingForm_smul_apply_basis f b _ _).symm
+        sum_congr rfl fun i _ ↦ (f.sum_killingForm_smul_apply_basis b _ _).symm
     _ = ∑ i, ∑ j, killingForm K L (b j) (q (killingDualBasis b i)) •
           f (b i) (killingDualBasis b j) := by
         rw [Finset.sum_comm]
         simp only [hpq _ _]
     _ = ∑ i, f (b i) (q (killingDualBasis b i)) :=
-        sum_congr rfl fun i _ ↦ sum_killingForm_smul_apply_killingDualBasis f b _ _
+        sum_congr rfl fun i _ ↦ f.sum_killingForm_smul_apply_killingDualBasis b _ _
 
 /-- **The element `∑ᵢ xᵢ ⊗ yᵢ` is invariant under the adjoint action.**  Read through a bilinear
 map `f`, the Leibniz expansion of the adjoint action of `z` vanishes, because the two coefficient
 families it produces are negatives of each other by the invariance of the Killing form. -/
 theorem sum_apply_lie_killingDualBasis_add_eq_zero (b : Module.Basis ι K L) (z : L) :
     ∑ i, f ⁅z, b i⁆ (killingDualBasis b i) + ∑ i, f (b i) ⁅z, killingDualBasis b i⁆ = 0 := by
-  simp_rw [← sum_killingForm_smul_apply_basis f b ⁅z, b _⁆,
-    ← sum_killingForm_smul_apply_killingDualBasis f b (b _) ⁅z, _⁆]
+  simp_rw [← f.sum_killingForm_smul_apply_basis b ⁅z, b _⁆,
+    ← f.sum_killingForm_smul_apply_killingDualBasis b (b _) ⁅z, _⁆]
   rw [Finset.sum_comm]
   simp [LieModule.traceForm_apply_lie_apply' K L L z]
 
