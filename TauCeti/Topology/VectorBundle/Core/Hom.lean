@@ -60,6 +60,7 @@ private theorem continuous_pointIndexedCore_conjugate_iff (f : B → F →L[𝕜
     funext p
     dsimp only [h, h', g, Function.comp_def]
     rw [pointIndexedCoreHomeomorph_symm_apply, pointIndexedCoreHomeomorph_apply]
+    -- Both sides evaluate the target frame after the operator and inverse source frame.
     rfl
   rw [hmap, h'.comp_continuous_iff, h.symm.comp_continuous_iff']
 
@@ -89,6 +90,7 @@ noncomputable def pointIndexedCoreHomEquiv :
   dsimp only [pointIndexedCoreHomEquiv, Equiv.trans_apply, Equiv.subtypeEquiv,
     Equiv.piCongrRight, Equiv.coe_fn_mk, Pi.map_apply]
   rw [VectorBundleCore.CoordinateHom.coe_fiberMapEquiv_apply]
+  -- The arrow equivalence evaluates by the target frame, operator and inverse source frame.
   rfl
 
 @[simp] theorem pointIndexedCoreHomEquiv_symm_fiberMap
@@ -98,13 +100,13 @@ noncomputable def pointIndexedCoreHomEquiv :
     (pointIndexedCoreHomEquiv.symm f).fiberMap x v =
       (pointIndexedCoreFiberEquiv 𝕜 G E' x).symm
         (f.1 x (pointIndexedCoreFiberEquiv 𝕜 F E x v)) := by
-  have h := congrArg (fun g ↦ g.1 x (pointIndexedCoreFiberEquiv 𝕜 F E x v))
-    (pointIndexedCoreHomEquiv.apply_symm_apply f)
-  rw [pointIndexedCoreHomEquiv_apply] at h
-  -- The coordinate morphism uses the model type, while the fibre equivalence uses `Fiber`.
-  erw [(pointIndexedCoreFiberEquiv 𝕜 F E x).symm_apply_apply] at h
-  exact (pointIndexedCoreFiberEquiv 𝕜 G E' x).injective <|
-    h.trans ((pointIndexedCoreFiberEquiv 𝕜 G E' x).apply_symm_apply _).symm
+  simp only [pointIndexedCoreHomEquiv, Equiv.symm_trans_apply, Equiv.subtypeEquiv_symm,
+    Equiv.subtypeEquiv_apply, VectorBundleCore.CoordinateHom.fiberMapEquiv_symm_apply,
+    VectorBundleCore.CoordinateHom.fiberMap_ofContinuous]
+  -- Evaluate the inverse dependent-function equivalence at the chosen base point.
+  dsimp only [Equiv.piCongrRight, Equiv.symm_mk, Equiv.coe_fn_mk, Pi.map_apply]
+  exact congrArg (fun g ↦ g v) (ContinuousLinearEquiv.arrowCongrEquiv_symm_apply
+    (pointIndexedCoreFiberEquiv 𝕜 F E x) (pointIndexedCoreFiberEquiv 𝕜 G E' x) (f.1 x))
 
 /-- The coordinate identity reconstructs the actual identity on each original fibre. -/
 @[simp] theorem pointIndexedCoreHomEquiv_id (x : B) :
@@ -138,6 +140,7 @@ reconstructed maps, for finite-dimensional source models. -/
     ContinuousLinearMap.comp_apply]
   -- Align the core fibre with the operator's model before cancelling the middle frame.
   erw [(pointIndexedCoreFiberEquiv 𝕜 G E' x).symm_apply_apply]
+  -- Evaluation of the composite continuous linear map is definitionally function composition.
   rfl
 
 end Comp
