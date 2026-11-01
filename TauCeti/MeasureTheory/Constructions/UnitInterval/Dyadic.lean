@@ -198,8 +198,8 @@ theorem disjoint_dyadicCell {m n : ℕ} (h : Nat.log 2 m = Nat.log 2 n) (hmn : m
 /-- The two halves of a positively numbered dyadic cell are disjoint. -/
 theorem disjoint_dyadicCell_two_mul {n : ℕ} (hn : 0 < n) :
     Disjoint (dyadicCell (2 * n)) (dyadicCell (2 * n + 1)) :=
-  disjoint_dyadicCell (by rw [Nat.log_base_mul one_lt_two hn.ne',
-    Nat.log_mul_add one_lt_two hn.ne' one_lt_two]) (by omega)
+  disjoint_dyadicCell (by rw [Nat.log_mul_add one_lt_two hn.ne' one_lt_two, Nat.mul_comm 2 n,
+    Nat.log_mul_base one_lt_two hn.ne']) (by omega)
 
 /-- A positively numbered dyadic cell is a cell of the equipartition of its level. -/
 theorem dyadicCell_eq_preimage_cellIdx {n : ℕ} (hn : 0 < n) :

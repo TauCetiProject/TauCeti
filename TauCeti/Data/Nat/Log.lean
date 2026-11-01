@@ -17,7 +17,6 @@ which is the case `e = 0` with the factors in the other order.
 ## Main results
 
 * `TauCeti.Nat.log_mul_add`: `Nat.log b (b * n + e) = Nat.log b n + 1` for `n ≠ 0` and `e < b`.
-* `TauCeti.Nat.log_base_mul`: `Nat.log b (b * n) = Nat.log b n + 1` for `n ≠ 0`.
 -/
 
 public section
@@ -31,9 +30,5 @@ theorem log_mul_add {b n e : ℕ} (hb : 1 < b) (hn : n ≠ 0) (he : e < b) :
     (Nat.le_mul_of_pos_right b (Nat.pos_of_ne_zero hn)).trans (Nat.le_add_right _ _)
   rw [Nat.log_of_one_lt_of_le hb hle, Nat.mul_add_div (by omega), Nat.div_eq_of_lt he]
   simp
-
-/-- Multiplying a positive number by the base raises its integer logarithm by one. -/
-theorem log_base_mul {b n : ℕ} (hb : 1 < b) (hn : n ≠ 0) : Nat.log b (b * n) = Nat.log b n + 1 :=
-  Nat.mul_comm n b ▸ Nat.log_mul_base hb hn
 
 end TauCeti.Nat
