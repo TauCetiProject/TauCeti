@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
+import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 
 /-!
 # Distributions as vector bundles
@@ -108,32 +109,26 @@ theorem exists_mdifferentiableAt_coeff [IsRCLikeNormedField 𝕜]
     infer_instance
   let e := trivializationAt E (TangentSpace I) x
   have hxe : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  -- Compress the frame operator by a left inverse `P` at `x`; the compression is invertible
-  -- near `x`, and inverting it recovers the coefficients from `V` read in the trivialization.
-  obtain ⟨P, hP⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain
-    (hX.isSubbundleFrameOn.injective_trivOperator (mem_of_mem_nhds hU))
-  let Q : M → (ι → 𝕜) →L[𝕜] ι → 𝕜 := fun y ↦ P ∘L IsSubbundleFrameOn.trivOperator 𝕜 E X x y
   -- The tangent bundle of a `C²` manifold is a `C¹` vector bundle, in which the frame is `C¹`.
   have : IsManifold I (1 + 1) M := .of_le (n := 2) one_add_one_eq_two.le
   have := TangentBundle.contMDiffVectorBundle (n := 1) (I := I) (M := M)
-  have hQ : MDiffAt Q x := mdifferentiableAt_const.clm_comp
-    ((IsSubbundleFrameOn.contMDiffAt_trivOperator (n := 1)
-      (fun i ↦ ((hX.contMDiffOn i).contMDiffAt hU).of_le hn) hxe).mdifferentiableAt one_ne_zero)
-  have hQx : Q x = ((1 : ((ι → 𝕜) →L[𝕜] ι → 𝕜)ˣ) : (ι → 𝕜) →L[𝕜] ι → 𝕜) :=
-    ContinuousLinearMap.ext hP
-  let c : M → ι → 𝕜 := fun y ↦ Ring.inverse (Q y) (P (e ⟨y, V y⟩).2)
+  -- A `C¹` left inverse of the frame operator recovers the coefficients from `V` read in the
+  -- trivialization.
+  obtain ⟨L, hL, hLinv⟩ := ContMDiffAt.exists_contMDiffAt_leftInverse
+    (IsSubbundleFrameOn.contMDiffAt_trivOperator (n := 1)
+      (fun i ↦ ((hX.contMDiffOn i).contMDiffAt hU).of_le hn) hxe)
+    (.of_injective_of_finiteDimensional_domain
+      (hX.isSubbundleFrameOn.injective_trivOperator (mem_of_mem_nhds hU)))
+  let c : M → ι → 𝕜 := fun y ↦ L y (e ⟨y, V y⟩).2
   have hc : MDifferentiableAt I 𝓘(𝕜, ι → 𝕜) c x :=
-    (((differentiableAt_inverse (hQx ▸ isUnit_one)).comp_mdifferentiableAt hQ).clm_apply
-      (mdifferentiableAt_const.clm_apply ((e.mdifferentiableAt_section_iff I V hxe).mp hV)))
+    (hL.mdifferentiableAt one_ne_zero).clm_apply ((e.mdifferentiableAt_section_iff I V hxe).mp hV)
   refine ⟨fun i y ↦ c y i, fun i ↦ ?_, ?_⟩
   · exact ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i).differentiableAt
       ).comp_mdifferentiableAt hc
-  filter_upwards [hVD, hU, e.open_baseSet.mem_nhds hxe,
-    hQ.continuousAt.preimage_mem_nhds (hQx ▸ Units.nhds 1)] with y hyD hyU hye hyQ
+  filter_upwards [hVD, hU, e.open_baseSet.mem_nhds hxe, hLinv] with y hyD hyU hye hyL
   obtain ⟨a, ha⟩ := Submodule.mem_span_range_iff_exists_fun 𝕜 |>.mp ((hX.span_eq hyU).symm ▸ hyD)
   have hca : c y = a := by
-    have h := congrArg (fun T : (ι → 𝕜) →L[𝕜] ι → 𝕜 ↦ T a) (Ring.inverse_mul_cancel _ hyQ)
-    simpa [c, Q, ← ha, IsSubbundleFrameOn.trivOperator_apply hye] using h
+    simpa [c, ← ha, IsSubbundleFrameOn.trivOperator_apply hye] using hyL a
   simpa [hca] using ha.symm
 
 end IsDistributionFrameOn

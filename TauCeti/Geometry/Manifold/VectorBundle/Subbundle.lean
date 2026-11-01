@@ -74,15 +74,6 @@ theorem contMDiffAt_trivOperator {X : ι → Π x, E x} {y₀ y : B}
   exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F
     (ContinuousLinearMap.proj i)).contDiff.contDiffAt).comp_contMDiffAt (h i)
 
-omit [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
-  [VectorBundle 𝕜 F E] [ContMDiffVectorBundle n F E IB] in
-/-- Over a point of `U`, the vector of `V y` with coordinates `c` in the frame `X` is the
-combination `∑ i, c i • X i y`. -/
-private theorem coe_basis_equivFun_symm {X : ι → Π x, E x} {U : Set B}
-    (hX : IsSubbundleFrameOn F V X U) {y : B} (hy : y ∈ U) (c : ι → 𝕜) :
-    ((hX.basis hy).equivFun.symm c : E y) = ∑ i, c i • X i y := by
-  simp [Basis.equivFun_symm_apply]
-
 variable [IsRCLikeNormedField 𝕜]
 
 /-- **Coordinate changes between `C^n` local frames are `C^n`.** If `X` and `Y` are local frames
