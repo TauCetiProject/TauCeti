@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 import TauCeti.Combinatorics.Enumerative.RandomColoring
-import TauCeti.Data.Finset.Basic
 
 /-!
 # Regular recolorings of a pair of disjoint sets
@@ -21,9 +20,9 @@ colors on all pairs that do not join `s` and `t`; the pairs from `t` to `s` rece
 colors. In particular `(s, t)` becomes a `2ε`-regular pair whose color densities are within `ε`
 of `p`.
 
-Thus any prescribed color densities are realized by a regular pair. This is the step of a
-regular approximation in which the coloring of an irregular pair of cells, or of a pair of cells
-whose densities must be adjusted, is replaced by a quasi-random coloring with the required
+Thus any prescribed color densities are realized up to `ε` by a regular pair. This is the step
+of a regular approximation in which the coloring of an irregular pair of cells, or of a pair of
+cells whose densities must be adjusted, is replaced by a quasi-random coloring with the required
 densities, while the rest of the coloring is kept.
 
 The coloring is a random coloring of `s ×ˢ t` with distribution `p`, whose color counts on all
@@ -61,10 +60,9 @@ open Classical in
 /-- Recolor the pairs from `s` to `t` by `x`, the pairs from `t` to `s` by the reversed colors,
 and keep all other colors of `S`. -/
 private noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finset V}
-    (hst : Disjoint s t) (x : ↥(s ×ˢ t) → κ) : PairColorSystem κ V where
+    (hst : Disjoint s t) (x : V × V → κ) : PairColorSystem κ V where
   color q :=
-    if h : q.1 ∈ s ×ˢ t then x ⟨q.1, h⟩
-    else if h' : q.1.swap ∈ s ×ˢ t then S.rev (x ⟨q.1.swap, h'⟩) else S.color q
+    if q.1 ∈ s ×ˢ t then x q.1 else if q.1.swap ∈ s ×ˢ t then S.rev (x q.1.swap) else S.color q
   rev := S.rev
   rev_involutive := S.rev_involutive
   color_rev q := by
@@ -78,10 +76,10 @@ private noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finse
     · simp [h₁, h₂]
     · simpa [h₁, h₂] using S.color_rev ⟨(u, v), huv⟩
 
-variable {S : PairColorSystem κ V} {s t : Finset V} (hst : Disjoint s t) (x : ↥(s ×ˢ t) → κ)
+variable {S : PairColorSystem κ V} {s t : Finset V} (hst : Disjoint s t) (x : V × V → κ)
 
 private theorem colorOfPair_recolorProduct_of_mem {u v : V} (h : (u, v) ∈ s ×ˢ t) :
-    (S.recolorProduct hst x).colorOfPair u v = some (x ⟨(u, v), h⟩) := by
+    (S.recolorProduct hst x).colorOfPair u v = some (x (u, v)) := by
   have huv : u ≠ v := hst.forall_ne_finset (mem_product.1 h).1 (mem_product.1 h).2
   rw [colorOfPair_of_ne _ huv]
   simp [recolorProduct, h]
@@ -94,22 +92,6 @@ private theorem colorOfPair_recolorProduct_of_not_mem {u v : V} (hs : u ∈ s �
   have h₂ : (v, u) ∉ s ×ˢ t := fun h ↦ ht (mem_product.1 h).2 (mem_product.1 h).1
   rw [colorOfPair_of_ne _ huv, colorOfPair_of_ne _ huv]
   simp [recolorProduct, h₁, h₂]
-
-/-- The pairs of color `c` in a rectangle `s' ×ˢ t'` inside `s ×ˢ t` are counted by the points of
-color `c` of the corresponding test set of the coloring `x`. -/
-private theorem card_filter_colorOfPair_recolorProduct [DecidableEq κ] [DecidableEq V]
-    {s' t' : Finset V} (hs' : s' ⊆ s) (ht' : t' ⊆ t) (c : κ) :
-    #{q ∈ s' ×ˢ t' | (S.recolorProduct hst x).colorOfPair q.1 q.2 = some c} =
-      #{e ∈ (s' ×ˢ t').subtype (· ∈ s ×ˢ t) | x e = c} := by
-  refine (card_bij (fun e _ ↦ e.1) (fun e he ↦ ?_) (fun _ _ _ _ ↦ Subtype.ext) fun q hq ↦ ?_).symm
-  · obtain ⟨he, hc⟩ := mem_filter.1 he
-    refine mem_filter.2 ⟨mem_subtype.1 he, ?_⟩
-    rw [colorOfPair_recolorProduct_of_mem hst x e.2, hc]
-  · obtain ⟨hq, hc⟩ := mem_filter.1 hq
-    have hmem : q ∈ s ×ˢ t := product_subset_product hs' ht' hq
-    refine ⟨⟨q, hmem⟩, mem_filter.2 ⟨mem_subtype.2 hq, ?_⟩, rfl⟩
-    rw [colorOfPair_recolorProduct_of_mem hst x hmem] at hc
-    exact Option.some_injective _ hc
 
 /-- The size condition `card κ + 1 ≤ ε ^ 6 * #u` forces `u` to be nonempty. -/
 private theorem cast_card_pos_of_add_one_le [Fintype κ] {ε : ℝ} {u : Finset V}
@@ -179,29 +161,30 @@ theorem exists_recoloring_abs_pairColorDensity_sub_le [Fintype κ] (S : PairColo
   have ht0 := cast_card_pos_of_add_one_le ht
   -- A coloring of `s ×ˢ t` with small deviations on all rectangles `s' ×ˢ t'`.
   obtain ⟨x, hx⟩ := exists_forall_abs_card_filter_sub_mul_card_lt hp hp1
-    (I := ↥(s.powerset ×ˢ t.powerset))
-    (fun i ↦ (i.1.1 ×ˢ i.1.2).subtype (· ∈ s ×ˢ t)) (N := #s * #t)
-    (fun _ ↦ (card_le_univ _).trans (by simp)) (a := ε ^ 3 * #s * #t)
+    (I := ↥(s.powerset ×ˢ t.powerset)) (fun i ↦ i.1.1 ×ˢ i.1.2) (N := #s * #t)
+    (fun i ↦ by
+      obtain ⟨hs', ht'⟩ := mem_product.1 i.2
+      rw [card_product]
+      exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs')) (card_le_card (mem_powerset.1 ht')))
+    (a := ε ^ 3 * #s * #t)
     (mul_pos (mul_pos (pow_pos hε 3) hs0) ht0)
     (by simpa using two_mul_two_pow_mul_two_pow_mul_exp_lt hs ht)
   refine ⟨S.recolorProduct hst x, rfl, fun u v ↦ colorOfPair_recolorProduct_of_not_mem hst x, ?_⟩
   intro c s' hs' t' ht' hs's ht't
   have hpos : (0 : ℝ) < #s' * #t' :=
     mul_pos ((mul_pos hε hs0).trans_le hs's) ((mul_pos hε ht0).trans_le ht't)
-  have hcard : #((s' ×ˢ t').subtype (· ∈ s ×ˢ t)) = #s' * #t' := by
-    rw [card_subtype, filter_true_of_mem fun q hq ↦ product_subset_product hs' ht' hq,
-      card_product]
   have hdev := hx ⟨(s', t'), mem_product.2 ⟨mem_powerset.2 hs', mem_powerset.2 ht'⟩⟩ c
-  simp only at hdev
-  rw [← card_filter_colorOfPair_recolorProduct (S := S) hst x hs' ht' c, hcard] at hdev
-  push_cast at hdev
-  -- The color count is the density times `#s' * #t'`, since `s'` and `t'` are disjoint.
-  have hcount : (#{q ∈ s' ×ˢ t' | (S.recolorProduct hst x).colorOfPair q.1 q.2 = some c} : ℝ) =
+  -- On `s' ×ˢ t' ⊆ s ×ˢ t` the recolored system has the colors of `x`, and the color count is the
+  -- density times `#s' * #t'`, since `s'` and `t'` are disjoint.
+  have hcount : (#{q ∈ s' ×ˢ t' | x q = c} : ℝ) =
       pairColorDensity (S.recolorProduct hst x) c s' t' * (#s' * #t') := by
-    have := pairColorDensity_mul_card_support (S.recolorProduct hst x) c s' t'
-    rw [filter_ne_product_of_disjoint (hst.mono hs' ht'), card_product] at this
-    exact_mod_cast this.symm
-  rw [hcount, ← sub_mul, abs_mul, abs_of_pos hpos] at hdev
+    have hfilter : {q ∈ s' ×ˢ t' | (S.recolorProduct hst x).colorOfPair q.1 q.2 = some c} =
+        {q ∈ s' ×ˢ t' | x q = c} := filter_congr fun q hq ↦ by
+      rw [colorOfPair_recolorProduct_of_mem hst x (product_subset_product hs' ht' hq),
+        Option.some_inj]
+    rw [← hfilter]
+    exact mod_cast (pairColorDensity_mul_card_of_disjoint _ c (hst.mono hs' ht')).symm
+  rw [hcount, card_product, Nat.cast_mul, ← sub_mul, abs_mul, abs_of_pos hpos] at hdev
   refine le_of_mul_le_mul_right ?_ hpos
   calc _ ≤ ε ^ 3 * #s * #t := hdev.le
     _ = ε * ((ε * #s) * (ε * #t)) := by ring
