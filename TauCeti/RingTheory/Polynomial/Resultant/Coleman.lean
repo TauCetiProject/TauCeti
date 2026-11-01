@@ -357,7 +357,7 @@ theorem coeff_colemanDBounded_congr (hB0 : B.coeff 0 = 0) {P' : R[X]} {k : ℕ}
 
 section Series
 
-open PowerSeries (trunc natDegree_trunc_succ_le)
+open PowerSeries (trunc natDegree_trunc_lt)
 
 /-- Coleman's transform with polynomial functional input `B` and power series input `F`. Its
 `k`-th coefficient is the `k`-th coefficient of `D_(N,m)(B, trunc (N + 1) F)` for `m = deg B` and
@@ -377,7 +377,7 @@ theorem coeff_colemanDSeries (hB0 : B.coeff 0 = 0) {F : PowerSeries R} {k N : �
       (colemanDBounded B (trunc (N + 1) F) N B.natDegree).coeff k := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hN
   rw [colemanDSeries, PowerSeries.coeff_mk,
-    ← colemanDBounded_add_of_coeff_zero (natDegree_trunc_succ_le F _) le_rfl hB0 j]
+    ← colemanDBounded_add_of_coeff_zero (Nat.lt_succ_iff.1 (natDegree_trunc_lt F _)) le_rfl hB0 j]
   refine coeff_colemanDBounded_congr hB0 fun i hi ↦ ?_
   simp only [PowerSeries.coeff_trunc]
   split_ifs <;> first | rfl | omega
@@ -432,12 +432,13 @@ theorem colemanDSeries_mul (hB0 : B.coeff 0 = 0) (F G : PowerSeries R) :
     · rfl
   -- The product `trunc F * trunc G` agrees with `F * G` up to degree `N`; compare at rank `N + N`.
   rw [coeff_colemanDSeries hB0 le_rfl,
-    ← colemanDBounded_add_of_coeff_zero (natDegree_trunc_succ_le _ N) le_rfl hB0 N,
+    ← colemanDBounded_add_of_coeff_zero (Nat.lt_succ_iff.1 (natDegree_trunc_lt _ N)) le_rfl hB0 N,
     coeff_colemanDBounded_congr (P' := trunc (N + 1) F * trunc (N + 1) G) hB0 fun j hj ↦ by
       rw [PowerSeries.coeff_trunc, ite_eq_left (Nat.lt_succ_of_le hj),
         PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ (Nat.lt_succ_of_le hj), ← coe_mul,
         coeff_coe],
-    colemanDBounded_mul (natDegree_trunc_succ_le F N) (natDegree_trunc_succ_le G N) le_rfl,
+    colemanDBounded_mul (Nat.lt_succ_iff.1 (natDegree_trunc_lt F N))
+      (Nat.lt_succ_iff.1 (natDegree_trunc_lt G N)) le_rfl,
     PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ k.lt_succ_self, htrunc, htrunc,
     ← PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ k.lt_succ_self, ← coe_mul, coeff_coe]
 
@@ -447,7 +448,7 @@ theorem colemanDSeries_X_left (F : PowerSeries R) : (X : R[X]).colemanDSeries F 
   nontriviality R
   ext k
   rw [coeff_colemanDSeries coeff_X_zero (by rw [natDegree_X, mul_one]), natDegree_X,
-    colemanDBounded_X_left (natDegree_trunc_succ_le F k), PowerSeries.coeff_trunc,
+    colemanDBounded_X_left (Nat.lt_succ_iff.1 (natDegree_trunc_lt F k)), PowerSeries.coeff_trunc,
     ite_eq_left k.lt_succ_self]
 
 /-- With `B = 0`, Coleman's transform of a normalised power series is one. -/
