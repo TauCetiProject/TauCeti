@@ -18,10 +18,10 @@ import TauCeti.Probability.Distributions.Cauchy.Basic
 This file proves that Nolan's `S₀` stable family `stableMeasure α β s m` is closed under affine
 maps and, at a common shape `α`, under convolution.
 
-* **Affine transport.** For valid shapes, `a + b * X` has skewness `Real.sign b * β`, scale
-  `‖b‖₊ * s` and location `a + b * m`. The formula covers `b = 0`, where both scale and skewness
-  vanish and the law is the Dirac mass at `a`. Reflection negates skewness and location for all
-  parameters, valid or not.
+* **Affine transport.** `a + b * X` has skewness `Real.sign b * β`, scale `‖b‖₊ * s` and
+  location `a + b * m`. For `b ≠ 0` this holds for all parameters, valid or not. For valid
+  parameters it also covers `b = 0`, where both scale and skewness vanish and the law is the
+  Dirac mass at `a`. Reflection is the case `b = -1`.
 * **Convolution.** Two stable laws of common shape `α` convolve to a stable law of the same
   shape. Its scale `s` satisfies `s ^ α = s₁ ^ α + s₂ ^ α`, its skewness is the average of the
   skewnesses weighted by `sᵢ ^ α`, and its `S₁` location `stableS1Location α β s m` is the sum of
@@ -52,13 +52,24 @@ variable {α β : ℝ}
 
 /-! ### Affine transport -/
 
-/-- An affine image of a stable law with valid shape is stable with skewness
-`Real.sign b * β`, scale `‖b‖₊ * s` and location `a + b * m`. At `b = 0` this is the Dirac
-mass at `a`. -/
+/-- An affine image of a stable law is stable with skewness `Real.sign b * β`, scale
+`‖b‖₊ * s` and location `a + b * m`. For `b ≠ 0` no validity hypothesis is needed, since invalid
+parameters give the zero measure on both sides. For valid parameters and `b = 0` this is the
+Dirac mass at `a`. -/
 @[simp]
-theorem stableMeasure_map_affine (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (s : ℝ≥0) (m a b : ℝ) :
+theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
+    (h : b ≠ 0 ∨ (α ∈ Ioc 0 2 ∧ |β| ≤ 1)) :
     (stableMeasure α β s m).map (fun x ↦ a + b * x) =
       stableMeasure α (Real.sign b * β) (‖b‖₊ * s) (a + b * m) := by
+  by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  swap
+  · have hb : b ≠ 0 := h.resolve_right hv
+    have hinv : α ≤ 0 ∨ 2 < α ∨ 1 < |β| := by
+      simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using hv
+    have hsβ : |Real.sign b * β| = |β| := by
+      rcases Real.sign_apply_eq_of_ne_zero b hb with hs | hs <;> simp [hs]
+    rw [stableMeasure_of_invalid hinv, stableMeasure_of_invalid (by rwa [hsβ]), Measure.map_zero]
+  obtain ⟨hα, hβ⟩ := hv
   have hβ' : |Real.sign b * β| ≤ 1 := by
     rcases Real.sign_apply_eq b with h | h | h <;> simp [h, hβ]
   apply Measure.ext_of_charFun
@@ -76,26 +87,39 @@ parameters, since invalid shapes give the zero measure on both sides. -/
 @[simp]
 theorem stableMeasure_map_neg (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
     (stableMeasure α β s m).map (fun x ↦ -x) = stableMeasure α (-β) s (-m) := by
-  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
-  · have hneg : (fun x : ℝ ↦ -x) = fun x ↦ 0 + -1 * x := by
-      funext x
-      ring
-    rw [hneg, stableMeasure_map_affine h.1 h.2]
-    simp [Real.sign_neg]
-  · have hinv : α ≤ 0 ∨ 2 < α ∨ 1 < |β| := by
-      simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using h
-    rw [stableMeasure_of_invalid hinv, stableMeasure_of_invalid (by rwa [abs_neg]),
-      Measure.map_zero]
+  have hneg : (fun x : ℝ ↦ -x) = fun x ↦ 0 + -1 * x := by
+    funext x
+    ring
+  rw [hneg, stableMeasure_map_affine (Or.inl (by norm_num))]
+  simp [Real.sign_neg]
 
-/-- Affine transport of a stable random variable with valid shape, including constant maps. -/
+/-- Affine transport of a stable random variable. For `b ≠ 0` no validity hypothesis is
+needed; for valid parameters this includes constant maps. -/
 theorem hasLaw_affine_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → ℝ} (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) {s : ℝ≥0} {m : ℝ} (a b : ℝ)
+    {X : Ω → ℝ} {s : ℝ≥0} {m : ℝ} (a b : ℝ) (h : b ≠ 0 ∨ (α ∈ Ioc 0 2 ∧ |β| ≤ 1))
     (hX : HasLaw X (stableMeasure α β s m) P) :
     HasLaw (fun ω ↦ a + b * X ω)
       (stableMeasure α (Real.sign b * β) (‖b‖₊ * s) (a + b * m)) P :=
-  (HasLaw.mk (by fun_prop) (stableMeasure_map_affine hα hβ s m a b)).fun_comp hX
+  (HasLaw.mk (by fun_prop) (stableMeasure_map_affine h)).fun_comp hX
 
 /-! ### Convolution -/
+
+/-- **Output shape validity.** The `sᵢ ^ α`-weighted average of two valid skewnesses is a valid
+skewness. When both weights vanish the average is `0`. -/
+theorem abs_stableConvSkew_le_one {β₁ β₂ : ℝ} (hβ₁ : |β₁| ≤ 1) (hβ₂ : |β₂| ≤ 1)
+    (s₁ s₂ : ℝ≥0) :
+    |(β₁ * (s₁ : ℝ) ^ α + β₂ * (s₂ : ℝ) ^ α) / ((s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α)| ≤ 1 := by
+  have h₁ : 0 ≤ (s₁ : ℝ) ^ α := by positivity
+  have h₂ : 0 ≤ (s₂ : ℝ) ^ α := by positivity
+  rcases (add_nonneg h₁ h₂).eq_or_lt with h | h
+  · rw [← h, div_zero, abs_zero]
+    exact zero_le_one
+  · rw [abs_div, abs_of_pos h, div_le_one h]
+    calc |β₁ * (s₁ : ℝ) ^ α + β₂ * (s₂ : ℝ) ^ α|
+        ≤ |β₁| * (s₁ : ℝ) ^ α + |β₂| * (s₂ : ℝ) ^ α := by
+          simpa only [abs_mul, abs_of_nonneg h₁, abs_of_nonneg h₂] using
+            abs_add_le (β₁ * (s₁ : ℝ) ^ α) (β₂ * (s₂ : ℝ) ^ α)
+      _ ≤ (s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α := by nlinarith
 
 /-- **Stable laws of a common shape are closed under convolution.** The output parameters are
 characterized by `s ^ α = s₁ ^ α + s₂ ^ α`, `β * s ^ α = β₁ * s₁ ^ α + β₂ * s₂ ^ α`, and
@@ -159,30 +183,15 @@ theorem stableMeasure_conv_stableMeasure (hα : α ∈ Ioc 0 2) {β₁ β₂ : �
   have hs : (((s₁ ^ α + s₂ ^ α) ^ α⁻¹ : ℝ≥0) : ℝ) ^ α = (s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α := by
     rw [← NNReal.coe_rpow, NNReal.rpow_inv_rpow hα0, NNReal.coe_add, NNReal.coe_rpow,
       NNReal.coe_rpow]
-  refine stableMeasure_conv_stableMeasure_of_eq hα hβ₁ hβ₂ ?_ hs ?_ ?_
-  · rcases (add_nonneg h₁ h₂).eq_or_lt with h | h
-    · rw [← h, div_zero, abs_zero]
-      exact zero_le_one
-    · rw [abs_div, abs_of_pos h, div_le_one h]
-      calc |β₁ * (s₁ : ℝ) ^ α + β₂ * (s₂ : ℝ) ^ α|
-          ≤ |β₁| * (s₁ : ℝ) ^ α + |β₂| * (s₂ : ℝ) ^ α := by
-            simpa only [abs_mul, abs_of_nonneg h₁, abs_of_nonneg h₂] using
-              abs_add_le (β₁ * (s₁ : ℝ) ^ α) (β₂ * (s₂ : ℝ) ^ α)
-        _ ≤ (s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α := by nlinarith
+  refine stableMeasure_conv_stableMeasure_of_eq hα hβ₁ hβ₂
+    (abs_stableConvSkew_le_one hβ₁ hβ₂ s₁ s₂) hs ?_ ?_
   · rw [hs]
     rcases (add_nonneg h₁ h₂).eq_or_lt with h | h
     · have h₁0 : (s₁ : ℝ) ^ α = 0 := by linarith
       have h₂0 : (s₂ : ℝ) ^ α = 0 := by linarith
       simp [h₁0, h₂0]
     · exact div_mul_cancel₀ _ h.ne'
-  · have hshift (β' : ℝ) (s' : ℝ≥0) (x : ℝ) :
-        stableS1Location α β' s' x = x + stableS1Location α β' s' 0 := by
-      rcases eq_or_ne α 1 with rfl | hα1
-      · rw [stableS1Location_one, stableS1Location_one]
-        ring
-      · rw [stableS1Location_of_ne_one hα1, stableS1Location_of_ne_one hα1]
-        ring
-    rw [hshift]
+  · rw [stableS1Location_eq_add]
     ring
 
 /-! ### Specializations -/

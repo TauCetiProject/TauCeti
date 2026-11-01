@@ -280,6 +280,13 @@ def stableS1Location (α β : ℝ) (s : ℝ≥0) (m : ℝ) : ℝ :=
 theorem stableS1Location_zero_scale (α β m : ℝ) : stableS1Location α β 0 m = m := by
   simp [stableS1Location]
 
+/-- The `S₁` correction does not depend on the location: the `S₁` location is the `S₀` location
+plus the `S₁` location of the same law centred at zero. -/
+theorem stableS1Location_eq_add (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
+    stableS1Location α β s m = m + stableS1Location α β s 0 := by
+  unfold stableS1Location
+  ring
+
 /-- The `S₁` location correction away from shape one. -/
 theorem stableS1Location_of_ne_one {α : ℝ} (hα : α ≠ 1) (β : ℝ) {s : ℝ≥0}
     (m : ℝ) :
