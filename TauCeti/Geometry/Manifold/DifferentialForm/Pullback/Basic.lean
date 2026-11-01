@@ -284,6 +284,15 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
 
+/-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
+theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
+    (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
+    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) := by
+  intro ω η h
+  funext y
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact (mpullback_apply_eq_mpullback_apply_iff (hf x)).mp (congrFun h x)
+
 /-- Within-set pullback preserves zero. -/
 @[simp]
 theorem mpullbackWithin_zero (f : M → M') (s : Set M) :

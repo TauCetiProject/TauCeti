@@ -84,12 +84,8 @@ open TauCeti
 forms. -/
 theorem IsLocalDiffeomorph.mpullback_injective (hf : IsLocalDiffeomorph I I' n f) (hn : n ≠ 0)
     (hsurj : Function.Surjective f) :
-    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) := by
-  intro ω η h
-  funext y
-  obtain ⟨x, rfl⟩ := hsurj y
-  exact (mpullback_apply_eq_mpullback_apply_iff
-    ((hf.isInvertible_mfderiv hn x).surjective)).mp (congrFun h x)
+    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) :=
+  mpullback_injective_of_surjective hsurj fun x ↦ (hf.isInvertible_mfderiv hn x).surjective
 
 section descendAlong
 
