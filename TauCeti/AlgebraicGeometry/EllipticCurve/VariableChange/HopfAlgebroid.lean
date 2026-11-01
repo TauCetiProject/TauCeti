@@ -243,11 +243,8 @@ theorem coproduct_u :
     coproduct (universalChange (MvPolynomial Coeff ℤ)).u =
       algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).u *
         ChangeRing.map rightUnit (universalChange (MvPolynomial Coeff ℤ)).u := by
-  have h := congrArg (fun C ↦ (C.u : ChangeRing ArrowRing)) universalChange_map_coproduct
-  have h₂ := congrArg (fun C ↦ (C.u : ChangeRing ArrowRing)) (universalChange_map_map rightUnit)
-  simp only [VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass, VariableChange.mul_def,
-    Units.val_mul] at h h₂
-  rw [h, ← h₂, mul_comm]
+  simp [coproduct, VariableChange.mul_def]
+  ring
 
 /-- `Δr = r₁ + u₁²r₂`. -/
 theorem coproduct_r :
@@ -255,12 +252,7 @@ theorem coproduct_r :
       algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).r +
         algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).u ^ 2 *
           ChangeRing.map rightUnit (universalChange (MvPolynomial Coeff ℤ)).r := by
-  have h := congrArg VariableChange.r universalChange_map_coproduct
-  have hu := congrArg (fun C ↦ (C.u : ChangeRing ArrowRing)) (universalChange_map_map rightUnit)
-  have hr := congrArg VariableChange.r (universalChange_map_map rightUnit)
-  simp only [VariableChange.map_r, VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass,
-    VariableChange.mul_def] at h hu hr
-  rw [h, ← hr]
+  simp [coproduct, VariableChange.mul_def]
   ring
 
 /-- `Δs = s₁ + u₁s₂`. -/
@@ -269,11 +261,7 @@ theorem coproduct_s :
       algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).s +
         algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).u *
           ChangeRing.map rightUnit (universalChange (MvPolynomial Coeff ℤ)).s := by
-  have h := congrArg VariableChange.s universalChange_map_coproduct
-  have hs := congrArg VariableChange.s (universalChange_map_map rightUnit)
-  simp only [VariableChange.map_s, VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass,
-    VariableChange.mul_def] at h hs
-  rw [h, ← hs]
+  simp [coproduct, VariableChange.mul_def]
   ring
 
 /-- `Δt = t₁ + u₁³t₂ + s₁u₁²r₂`. -/
@@ -285,12 +273,7 @@ theorem coproduct_t :
         algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).s *
           algebraMap ArrowRing _ (universalChange (MvPolynomial Coeff ℤ)).u ^ 2 *
             ChangeRing.map rightUnit (universalChange (MvPolynomial Coeff ℤ)).r := by
-  have h := congrArg VariableChange.t universalChange_map_coproduct
-  have hr := congrArg VariableChange.r (universalChange_map_map rightUnit)
-  have ht := congrArg VariableChange.t (universalChange_map_map rightUnit)
-  simp only [VariableChange.map_r, VariableChange.map_t, VariableChange.map_s,
-    VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass, VariableChange.mul_def] at h hr ht
-  rw [h, ← hr, ← ht]
+  simp [coproduct, VariableChange.mul_def]
   ring
 
 /-- If `k : Γ ⊗_A Γ →+* R` classifies the composable pair `W → C₁ • W → C₂ • (C₁ • W)`, then
@@ -458,17 +441,11 @@ theorem isIntegralModularForm_iff_rightUnit {k : ℕ} {f : MvPolynomial Coeff �
     IsIntegralModularForm k f ↔
       rightUnit f = ↑(universalChange (MvPolynomial Coeff ℤ)).u⁻¹ ^ k *
         algebraMap (MvPolynomial Coeff ℤ) ArrowRing f := by
-  have hη : rightUnit = (universalChange (MvPolynomial Coeff ℤ) •
-      WeierstrassCurve.map Universal.curve (algebraMap (MvPolynomial Coeff ℤ) ArrowRing)).specialize
-      := by
-    simpa using comp_rightUnit (RingHom.id ArrowRing)
   refine ⟨fun hf ↦ ?_, fun h ↦ isIntegralModularForm_def.2 fun R _ W C ↦ ?_⟩
-  · rw [hη, hf.specialize_smul, specialize_map, Universal.specialize_curve, RingHom.comp_id]
+  · rw [rightUnit, hf.specialize_smul, specialize_map, Universal.specialize_curve, RingHom.comp_id]
   · -- Specialize the identity in `Γ` along the homomorphism classifying the arrow `W → C • W`.
     have hk := congrArg (lift (W.specialize, C)) h
-    have hu := congrArg (fun C : VariableChange R ↦ ((C.u⁻¹ : Rˣ) : R)) (map_lift (W.specialize, C))
     rw [← RingHom.comp_apply, comp_rightUnit] at hk
-    simp only [VariableChange.map_u, Units.coe_map_inv, MonoidHom.coe_ofClass] at hu
-    simpa [hu] using hk
+    simpa using hk
 
 end WeierstrassCurve
