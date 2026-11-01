@@ -168,19 +168,15 @@ private theorem indexOneProj_comp_differential :
   -- the module structure of the topological representation.
   let : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionTopRep.V := TopRep.hV2 _
   have := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
-  refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
-  rw [TopRep.hom_comp, TopRep.hom_comp, ContIntertwiningMap.toContinuousLinearMap_comp,
-    ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, TopRep.resFunctor_map_hom,
-    ContIntertwiningMap.restrict_toContinuousLinearMap,
-    ContIntertwiningMap.toContinuousLinearMap_apply,
-    ContIntertwiningMap.toContinuousLinearMap_apply,
-    ContIntertwiningMap.toContinuousLinearMap_apply,
-    ContIntertwiningMap.toContinuousLinearMap_apply, indexOneProj_apply,
-    smoothTensorInducedGradedResolutionDifferential_apply]
-  exact (PiTensorProduct.subsingletonEquiv_slotSum (QuotientGroup.mk 1)
-    (fun _ ↦ (coeffs (U := U)).obj.gradedResolutionDifferential) x).trans
-    (TopRep.gradedResolutionTopRepDifferential_apply _ _).symm
+  ext x
+  rw [ContIntertwiningMap.toContinuousLinearMap_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply, ConcreteCategory.comp_apply,
+    ConcreteCategory.comp_apply, indexOneProj_apply, indexOneProj_apply]
+  -- Restriction along `U → G` does not change the underlying map of the differential.
+  exact (congrArg _ (smoothTensorInducedGradedResolutionDifferential_apply _ _ _ _ x)).trans <|
+    (PiTensorProduct.subsingletonEquiv_slotSum (QuotientGroup.mk 1)
+      (fun _ ↦ (coeffs (U := U)).obj.gradedResolutionDifferential) x).trans
+      (TopRep.gradedResolutionTopRepDifferential_apply _ _).symm
 
 /-- Reading off the single factor lies over the identification of the tensor-induced
 coefficients with the coefficients: both multiply out a single factor. -/
