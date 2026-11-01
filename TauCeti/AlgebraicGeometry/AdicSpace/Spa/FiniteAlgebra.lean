@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.Topology.Algebra.Algebra
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Support
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Integral.Basic
 
@@ -25,7 +26,12 @@ points of valuation spectra along primes lying over their supports
 (`TauCeti.ValuationSpectrum.exists_supp_eq_comap_eq`), it follows that
 `Spa(B, B⁺) → Spa(A, A⁺)` hits every point whose support is the contraction of a prime of `B`. In
 particular it is surjective when `B` is faithfully flat over `A`, which is the surjectivity clause
-of the Huber pair of a finite étale algebra.
+of the Huber pair of a finite étale algebra. Over a complete Hausdorff Tate ring every maximal
+ideal of `A` is the support of a point of `Spa(A, A⁺)`
+(`TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_of_isMaximal`), so for a flat (for example
+finite étale) morphism, surjectivity on adic spectra forces faithful flatness
+(`TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap`). Hence a finite étale morphism of
+Huber pairs over such a base is surjective on adic spectra exactly when it is faithfully flat.
 
 The content is the continuity of `w` given that of its pullback. Fix a pseudouniformiser `ϖ` of
 `A`. The integers of the pullback of `w` form an open subring of `A`, so the integral closure `C`
@@ -44,6 +50,9 @@ holds because `B` is integral over `A` (`Valuation.exists_pow_lt_of_isIntegral`)
   `Spa(B, B⁺)` with any prescribed support lying over its own.
 * `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap`: a faithfully flat finite étale
   morphism of Huber pairs over a Tate ring is surjective on adic spectra.
+* `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap_iff`: over a complete Hausdorff Tate
+  ring, a finite étale morphism of Huber pairs is surjective on adic spectra if and only if it is
+  faithfully flat.
 
 ## References
 
@@ -167,6 +176,23 @@ theorem IsFiniteEtale.surjective_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale
   obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
     (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
   exact ⟨⟨w, hφ.plus_eq ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
+
+section Complete
+
+variable {A B : Type*} [CommRing A] [UniformSpace A] [T2Space A] [CompleteSpace A]
+  [IsTopologicalRing A] [IsUniformAddGroup A] [IsTateRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {S : Pair A}
+  {T : Pair B}
+
+/-- **Surjectivity criterion for finite étale morphisms of Huber pairs.** A finite étale morphism
+`φ : (A, A⁺) → (B, B⁺)` over a complete Hausdorff Tate ring `A` is surjective on adic spectra
+exactly when `B` is faithfully flat over `A`. -/
+theorem IsFiniteEtale.surjective_spaComap_iff {φ : Hom S T} (hφ : φ.IsFiniteEtale) :
+    Function.Surjective φ.spaComap ↔ φ.toRingHom.FaithfullyFlat :=
+  ⟨faithfullyFlat_of_surjective_spaComap
+    (RingHom.Etale.iff_flat_and_formallyUnramified.mp hφ.etale).1, hφ.surjective_spaComap⟩
+
+end Complete
 
 end Huber.Pair.Hom
 

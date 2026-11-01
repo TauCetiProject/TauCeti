@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.GroupLabel
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Primitivization
 public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Examples
 public import TauCeti.Combinatorics.PermutationTriple.SmallDegrees
 import TauCeti.Combinatorics.PermutationTriple.ComputedInvariants
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Cyclic
+-- The concrete group-string checks reduce decimal rendering in the kernel.
+import all TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.GroupLabel
+import all Init.Data.ToString.Basic
+import all Init.Data.Repr
 
 /-!
 # Examples of passport records
@@ -175,6 +180,35 @@ differs from the search triple `(2, 4, 4)`. -/
 theorem torusPassportRecord_abc_ne_sortedAbc :
     torusPassportRecord.abc ≠ torusPassportRecord.sortedAbc := by
   decide
+
+/-! ### Recognizing the group components -/
+
+namespace PassportRecord
+
+/-- The nonabelian degree-three example is displayed as `3T2`, not `3T1`. -/
+@[simp] theorem groupString_s3PassportRecord : s3PassportRecord.groupString = "3T2" := by
+  decide +kernel
+
+/-- The torus example is displayed as `4T1`, despite its positive genus. -/
+@[simp] theorem groupString_torusPassportRecord : torusPassportRecord.groupString = "4T1" := by
+  decide +kernel
+
+-- These clients use the parser output as a certificate of the actual monodromy group.
+example : TransitiveGroupLabel (⟨1, by simp⟩ : TransitiveGroupIndex 3)
+    s3Triple.monodromyGroup :=
+  isValidAt_s3PassportRecord.transitiveGroupLabel_of_parse_groupString (by
+    rw [parseTransitiveGroupLabel_eq_some_iff, groupString_s3PassportRecord,
+      transitiveGroupLabelString_def]
+    decide)
+
+example : TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4)
+    torusTriple.monodromyGroup :=
+  isValidAt_torusPassportRecord.transitiveGroupLabel_of_parse_groupString (by
+    rw [parseTransitiveGroupLabel_eq_some_iff, groupString_torusPassportRecord,
+      transitiveGroupLabelString_def]
+    decide)
+
+end PassportRecord
 
 /-! ### The primitivization `2T1-2_2_1.1-a` of `4T1-4_4_2.2` -/
 

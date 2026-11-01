@@ -180,6 +180,12 @@ theorem deck_apply (p : VectorBundleOrientationCover F E ι) :
 theorem proj_deck (p : VectorBundleOrientationCover F E ι) : (deck p).proj = p.proj :=
   (rfl)
 
+/-- The deck involution, as a continuous map, lies over the base. -/
+theorem proj_comp_deck :
+    proj ∘ ⇑(deck (F := F) (E := E) (ι := ι) :
+      C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι)) = proj :=
+  funext proj_deck
+
 /-- The deck involution reverses the orientation of each point. -/
 @[simp]
 theorem orientation_deck (p : VectorBundleOrientationCover F E ι) :

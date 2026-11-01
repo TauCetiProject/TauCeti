@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Sum
-public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+public import TauCeti.RingTheory.MvPolynomial.DegreePadding
 
 /-!
 # Polynomial realization maps and input coefficients
@@ -31,6 +31,12 @@ over an infinite integral domain, and
 `boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
 coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
+Raising the degree bound zero-pads these coordinates, and the padded coordinates are given by the
+same coefficient formula, so the coordinates for different bounds correspond under zero-padding.
+`boundedEvaluation_padding_polynomialCoefficientCoordinates` shows that evaluating the padded
+coordinates still recovers exactly the same realization.
+Over an infinite integral domain, two parameters realize the same function exactly when they
+give the same specialized coefficients (`polynomialRealization_eq_iff`).
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -131,6 +137,12 @@ theorem totalDegree_inputPolynomial_le (P : J → MvPolynomial (W ⊕ X) K) (j :
     (inputPolynomial P j).totalDegree ≤ polynomialInputDegree P :=
   Finset.le_sup (f := fun j => (inputPolynomial P j).totalDegree) (Finset.mem_univ j)
 
+/-- The uniform input-degree bound is the least bound on the total degrees of all collected
+input polynomials. -/
+theorem polynomialInputDegree_le_iff (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} :
+    polynomialInputDegree P ≤ d ↔ ∀ j, (inputPolynomial P j).totalDegree ≤ d := by
+  simp [polynomialInputDegree]
+
 /-- Every input monomial in the reconstruction has degree at most the uniform bound. -/
 theorem inputPolynomial_support_degree_le (P : J → MvPolynomial (W ⊕ X) K)
     (j : J) {a : X →₀ ℕ} (ha : a ∈ (inputPolynomial P j).support) :
@@ -200,6 +212,48 @@ polynomial in the parameters. -/
     polynomialCoefficientCoordinates P w i = eval w ((inputPolynomial P i.1).coeff i.2) := by
   simp [polynomialCoefficientCoordinates, coeff_map]
 
+/-- Enlarging the uniform input-degree bound by zero-padding the coefficient coordinates
+preserves the realization at every parameter and every input. -/
+theorem boundedEvaluation_padding_polynomialCoefficientCoordinates
+    (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K) :
+    boundedEvaluation X K J d
+        ((boundedCoefficientEquiv X K J d).symm
+          (boundedCoefficientPadding h (polynomialCoefficientCoordinates P w))) =
+      polynomialRealization P w := by
+  rw [boundedEvaluation_padding, polynomialCoefficientCoordinates, LinearEquiv.symm_apply_apply]
+  exact congrFun (boundedEvaluation_comp_polynomialCoefficientMap P) w
+
+/-- Raising the degree bound to any `d ≥ polynomialInputDegree P` zero-pads the finite coefficient
+coordinates, and the padded coordinates are given by the same formula: each is the evaluation at
+the parameters of the corresponding input coefficient. The padding is thus independent of the
+parameters, and the coefficients it introduces vanish identically. -/
+theorem extendByZero_polynomialCoefficientCoordinates_apply (P : J → MvPolynomial (W ⊕ X) K)
+    {d : ℕ} (h : polynomialInputDegree P ≤ d) (w : W → K)
+    (i : J × {s : X →₀ ℕ // s.degree ≤ d}) :
+    Function.ExtendByZero.linearMap K K (Prod.map (id : J → J)
+        (Subtype.impEmbedding (fun s : X →₀ ℕ => s.degree ≤ polynomialInputDegree P)
+          (fun s => s.degree ≤ d) fun _ hs => hs.trans h))
+        (polynomialCoefficientCoordinates P w) i =
+      eval w ((inputPolynomial P i.1).coeff i.2) := by
+  rw [polynomialCoefficientCoordinates, ← boundedCoefficientEquiv_inclusion_comp h,
+    boundedCoefficientEquiv_apply]
+  simp [coeff_map]
+
 end Coordinates
+
+section Fibres
+
+variable {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- Over an infinite integral domain, a polynomial model realizes the same function at two
+parameters exactly when it has the same specialized coefficients at both. -/
+theorem polynomialRealization_eq_iff (P : J → MvPolynomial (W ⊕ X) R) (w v : W → R) :
+    polynomialRealization P w = polynomialRealization P v ↔
+      ∀ j, map (eval w) (inputPolynomial P j) = map (eval v) (inputPolynomial P j) := by
+  refine ⟨fun h j => MvPolynomial.funext fun x => ?_, fun h => funext fun x => funext fun j => ?_⟩
+  · simpa [eval_map] using congrFun (congrFun h x) j
+  · simpa [eval_map] using congrArg (eval x) (h j)
+
+end Fibres
 
 end TauCeti.Neuromanifold

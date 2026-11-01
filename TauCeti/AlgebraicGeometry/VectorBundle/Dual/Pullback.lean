@@ -168,18 +168,9 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
       subst e
       simp only [eqToHom_refl, Category.id_comp]
     rw [hM _ (pullback_obj_obj g E)]
-    -- On module pullbacks, combine the internal-Hom coherence `pullbackIhomComparison_comp` with
-    -- the composition coherence `pullbackObjUnitIso_comp` of the structure-sheaf comparison.
-    have hn := (pullbackIhomComparison ((Scheme.Modules.pullback g).obj E.obj) f).naturality
-      (Scheme.Modules.pullbackObjUnitIso g).hom
-    dsimp only [Functor.comp_obj, Functor.comp_map] at hn
-    have hu : (Scheme.Modules.pullback f).map (Scheme.Modules.pullbackObjUnitIso g).hom ≫
-        (Scheme.Modules.pullbackObjUnitIso f).hom =
-          (Scheme.Modules.pullbackComp f g).hom.app (𝟙_ Z.Modules) ≫
-            (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom := by
-      rw [← Scheme.Modules.pullbackObjUnitIso_comp, Iso.hom_inv_id_app_assoc]
-    rw [reassoc_of% hn, ← Functor.map_comp_assoc, hu, Functor.map_comp_assoc,
-      pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc, ← NatTrans.naturality_assoc]
+    -- On module pullbacks, this is the composition coherence of the base-change map of linear
+    -- functionals.
+    rw [← Functor.map_comp_assoc, Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc]
   exact h
 
 end

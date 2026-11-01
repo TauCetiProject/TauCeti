@@ -13,6 +13,8 @@ public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+
 /-!
 # Hasse derivatives of multivariate polynomials
 
@@ -39,15 +41,17 @@ Roth's theorem.
 * `MvPolynomial.eval_const_hasseDeriv_monomial`: the jet `∂^d (a X^m)` at a diagonal point
   `(x, …, x)`.
 * `MvPolynomial.abv_coeff_hasseDeriv_le`: for an absolute value `v`,
-  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`.
-* `MvPolynomial.abs_eval_hasseDeriv_le`: over a linearly ordered ring, the jets of a polynomial
-  with partial degrees `≤ rᵢ` and coefficients bounded by `B` satisfy
-  `|(∂^d P)(a)| ≤ B ∏ᵢ (rᵢ + 1) ∏ᵢ (2 max(1, |aᵢ|)) ^ rᵢ`.
+  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`; with partial degrees `≤ rᵢ` the factor is
+  at most `2 ^ ∑ᵢ rᵢ` (`MvPolynomial.abv_coeff_hasseDeriv_le_of_degreeOf_le`), with coefficients
+  also bounded by `B` this is `MvPolynomial.abv_coeff_hasseDeriv_le_two_pow_mul`, and at a
+  nonarchimedean `v` the factor `2 ^ |m + d|` disappears
+  (`MvPolynomial.abv_coeff_hasseDeriv_le_of_isNonarchimedean`).
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
   `∂^0` is the identity and every other Hasse derivative kills constants.
 * `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
-  derivative lowers the degree in `Xᵢ` by `dᵢ`.
+  derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
+  `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
 * `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`.
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
@@ -137,46 +141,40 @@ theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrd
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
   exact Nat.mono_cast (Finsupp.prod_choose_le_two_pow_degree d (m + d))
 
-/-- The jets of a polynomial over a linearly ordered ring with partial degrees
-`degreeOf i P ≤ r i` and coefficients bounded by `B` are bounded at every point `a`:
-`|(∂^d P)(a)| ≤ B ∏ᵢ (rᵢ + 1) ∏ᵢ (2 max(1, |aᵢ|)) ^ rᵢ`. -/
-theorem abs_eval_hasseDeriv_le {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
-    [Fintype σ] {P : MvPolynomial σ K} {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : K}
-    (hB : ∀ μ, |P.coeff μ| ≤ B) (a : σ → K) (d : σ →₀ ℕ) :
-    |eval a (hasseDeriv d P)| ≤
-      B * (∏ i, ((r i : K) + 1)) * ∏ i, (2 * max 1 |a i|) ^ r i := by
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  -- A monomial `X^m` of `∂^d P` comes from the monomial `X^(m + d)` of `P`.
-  have hsupp (m) (hm : m ∈ (hasseDeriv d P).support) (i : σ) : (m + d) i ≤ r i := by
-    rw [mem_support_iff, hasseDeriv_coeff] at hm
-    exact (monomial_le_degreeOf i (mem_support_iff.2 (right_ne_zero_of_mul hm))).trans (hdeg i)
-  have hle (m) (hm : m ∈ (hasseDeriv d P).support) (i : σ) : m i ≤ r i :=
-    (Nat.le_add_right _ _).trans (by simpa using hsupp m hm i)
-  have hterm (m) (hm : m ∈ (hasseDeriv d P).support) :
-      |(hasseDeriv d P).coeff m * ∏ i, a i ^ m i| ≤ B * ∏ i, (2 * max 1 |a i|) ^ r i := by
-    have h2 : (2 : K) ^ (m + d).degree ≤ ∏ i, (2 : K) ^ r i := by
-      rw [Finset.prod_pow_eq_pow_sum, degree_eq_sum]
-      exact pow_le_pow_right₀ one_le_two (Finset.sum_le_sum fun i _ ↦ hsupp m hm i)
-    have ha : ∏ i, |a i| ^ m i ≤ ∏ i, max 1 |a i| ^ r i :=
-      Finset.prod_le_prod₀ (fun i _ ↦ by positivity) fun i _ ↦
-        (pow_le_pow_left₀ (abs_nonneg _) (le_max_right _ _) _).trans <|
-          pow_le_pow_right₀ (le_max_left _ _) (hle m hm i)
-    rw [abs_mul, Finset.abs_prod]
-    simp only [abs_pow]
-    calc |(hasseDeriv d P).coeff m| * ∏ i, |a i| ^ m i
-        ≤ (2 ^ (m + d).degree * |P.coeff (m + d)|) * ∏ i, max 1 |a i| ^ r i :=
-          mul_le_mul (abv_coeff_hasseDeriv_le AbsoluteValue.abs d m P) ha
-            (by positivity) (by positivity)
-      _ ≤ ((∏ i, (2 : K) ^ r i) * B) * ∏ i, max 1 |a i| ^ r i := by
-          gcongr
-          exact hB _
-      _ = B * ∏ i, (2 * max 1 |a i|) ^ r i := by
-          simp only [mul_pow, Finset.prod_mul_distrib]
-          ring
-  rw [eval_eq']
-  exact (Finset.abs_sum_le_sum_abs _ _).trans <|
-    (Finsupp.sum_le_prod_mul_of_forall_le hle hterm (mul_nonneg hB0 (by positivity))).trans_eq
-      (by ring)
+/-- If `P` has partial degrees `degreeOf i P ≤ r i`, then
+`v([X^m] ∂^d P) ≤ 2 ^ ∑ᵢ rᵢ * v([X^(m + d)] P)`. -/
+theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) (d m : σ →₀ ℕ) :
+    abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * abv (P.coeff (m + d)) := by
+  by_cases hm : P.coeff (m + d) = 0
+  · simp [hasseDeriv_coeff, hm]
+  refine (abv_coeff_hasseDeriv_le abv d m P).trans
+    (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two ?_) (abv.nonneg _))
+  rw [Finsupp.degree_eq_sum]
+  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hm)).trans (hdeg j)
+
+/-- If `P` has partial degrees `degreeOf i P ≤ r i` and coefficients of absolute value at most
+`B`, then every coefficient of every Hasse derivative of `P` has absolute value at most
+`2 ^ ∑ᵢ rᵢ * B`. -/
+theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : S} (hB : ∀ μ, abv (P.coeff μ) ≤ B)
+    (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B :=
+  (abv_coeff_hasseDeriv_le_of_degreeOf_le abv hdeg d m).trans
+    (mul_le_mul_of_nonneg_left (hB _) (pow_nonneg zero_le_two _))
+
+/-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
+most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
+theorem abv_coeff_hasseDeriv_le_of_isNonarchimedean {S : Type*} [Semiring S] [LinearOrder S]
+    [IsOrderedRing S] [IsDomain S] {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv)
+    (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    abv ((hasseDeriv d P).coeff m) ≤ abv (P.coeff (m + d)) := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · simp [Subsingleton.elim ((hasseDeriv d P).coeff m) 0]
+  rw [hasseDeriv_coeff, abv.map_mul]
+  exact mul_le_of_le_one_left (abv.nonneg _)
+    (hv.apply_natCast_le_one (by simp) abv.map_one)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]
@@ -223,6 +221,11 @@ theorem degreeOf_hasseDeriv_le (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : 
   have := monomial_le_degreeOf i (mem_support_iff.2 (right_ne_zero_of_mul hm))
   simp only [Finsupp.add_apply] at this
   omega
+
+/-- If `P` has partial degrees `degreeOf i P ≤ L i`, then so does every Hasse derivative of `P`. -/
+theorem degreeOf_hasseDeriv_le_of_le {P : MvPolynomial σ R} {L : σ → ℕ}
+    (hL : ∀ i, P.degreeOf i ≤ L i) (d : σ →₀ ℕ) (i : σ) : (hasseDeriv d P).degreeOf i ≤ L i :=
+  (degreeOf_hasseDeriv_le d P i).trans ((Nat.sub_le _ _).trans (hL i))
 
 /-- Differentiating `∂^(k eᵢ)` with respect to `Xᵢ` gives `(k + 1) ∂^((k + 1) eᵢ)`. -/
 @[simp]
