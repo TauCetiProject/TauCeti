@@ -56,6 +56,10 @@ coefficients in the dual local system `Homₖ(A, N)`; it comes from
   associated to a representation of `G`.
 * `TauCeti.classifyingSpaceLocalSystemMap`: the morphism of local systems induced by a morphism
   of representations.
+* `MonoidHom.classifyingSpaceLocalSystemMapOver`: the map of local systems over the map of
+  classifying spaces induced by a group homomorphism and a compatible coefficient map.
+* `MonoidHom.classifyingSpaceTwistedHomologyMap`: the resulting geometric change-of-group map
+  on twisted homology.
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology`: the isomorphism
   `Hₙ(BG; A) ≅ Hₙ(G, A)`.
 * `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology`: the isomorphism
@@ -66,6 +70,14 @@ coefficients in the dual local system `Homₖ(A, N)`; it comes from
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`,
   `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: the isomorphism is
   natural in the coefficients.
+* `MonoidHom.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`,
+  `MonoidHom.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: naturality in the
+  group and compatible coefficient maps.
+* `MonoidHom.classifyingSpaceTwistedHomologyMap_id`,
+  `MonoidHom.classifyingSpaceTwistedHomologyMap_comp`: the geometric maps respect identities and
+  composition.
+* `MonoidHom.classifyingSpaceTwistedHomologyMap_id_hom`: for the identity group homomorphism,
+  the geometric map is the existing coefficient-change map.
 
 ## References
 
@@ -221,15 +233,36 @@ theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality
     groupHomology.map φ ξ n ≫ (classifyingSpaceTwistedHomologyIsoGroupHomology k D n).inv =
       (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).inv ≫
         φ.classifyingSpaceTwistedHomologyMap k ξ n := by
-  rw [Iso.comp_inv_eq, Category.assoc,
-    φ.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality k ξ n,
-    Iso.inv_hom_id_assoc]
+  have h := IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality_over
+      (E := TopCat.of (universalGSpace G))
+      (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+      (F := TopCat.of (universalGSpace H))
+      (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+      (isQuotientCoveringMap_classifyingSpaceProj G)
+      (isQuotientCoveringMap_classifyingSpaceProj H) k (TopCat.ofHom φ.universalGSpaceMap)
+      (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+      (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ n
+  rw [IsQuotientCoveringMap.associatedTwistedChainMap_def,
+    HomologicalComplex.homologyMap_comp] at h
+  exact h
 
 variable {k}
 
+/-- Change of groups along the identity homomorphism is the existing coefficient-change map
+on twisted homology of the classifying space. -/
+@[simp]
+theorem classifyingSpaceTwistedHomologyMap_id_hom {A' : Rep.{u} k G}
+    (f : A ⟶ A') (n : ℕ) :
+    (MonoidHom.id G).classifyingSpaceTwistedHomologyMap k f n =
+      twistedHomologyCoefficientMap (classifyingSpaceLocalSystemMap f) n := by
+  apply (cancel_mono (classifyingSpaceTwistedHomologyIsoGroupHomology k A' n).hom).1
+  rw [classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality,
+    TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality]
+
 /-- The identity homomorphism with identity coefficients induces the identity in twisted
 homology of the classifying space. -/
-@[simp]
+-- Match before the general identity-homomorphism rule reduces to coefficient change.
+@[simp↓]
 theorem classifyingSpaceTwistedHomologyMap_id (A : Rep.{u} k G) (n : ℕ) :
     (MonoidHom.id G).classifyingSpaceTwistedHomologyMap k (𝟙 A) n = 𝟙 _ := by
   apply (cancel_mono (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).hom).1

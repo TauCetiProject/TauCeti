@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
 public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
+public import TauCeti.Topology.Category.TopCat.Fiber
 public import Mathlib.Topology.Covering.Quotient
 
 /-!
@@ -36,10 +37,14 @@ map to the tensor factor and the covering map to the sheet.
   on a fibre.
 * `IsQuotientCoveringMap.permutationRepFunctor`: these representations as a functor on the
   fundamental groupoid of the base.
+* `IsQuotientCoveringMap.permutationRepMap`: the map of permutation-representation functors
+  induced by an equivariant map of quotient covers.
 * `IsQuotientCoveringMap.associatedLocalSystem`: the local coefficient system associated to a
   representation.
 * `IsQuotientCoveringMap.associatedLocalSystemMap`: the morphism of associated local systems
   induced by a morphism of representations.
+* `IsQuotientCoveringMap.associatedLocalSystemMapOver`: the map of associated local systems over
+  a map of bases, induced by an equivariant cover map and a compatible coefficient map.
 
 ## References
 
@@ -138,10 +143,7 @@ def permutationRepMap :
     hG.permutationRepFunctor k ⟶
       FundamentalGroupoid.map b.hom ⋙ hH.permutationRepFunctor k ⋙ Rep.resFunctor φ where
   app x := Rep.ofHom
-    { toLinearMap := Finsupp.lmapDomain k k fun e : p ⁻¹' {x.as} ↦
-        (⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
-          Set.mem_preimage, Set.mem_singleton_iff] using
-          (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ : q ⁻¹' {b x.as})
+    { toLinearMap := Finsupp.lmapDomain k k ((CommSq.mk hb.symm).fiberMap x.as)
       isIntertwining' g := Finsupp.lhom_ext fun e r ↦ by
         let := hG.mulActionFiber x.as
         let := hH.mulActionFiber (b x.as)
@@ -154,23 +156,28 @@ def permutationRepMap :
         simp only [Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
         rw [fiberRepresentation_single]
         congr 1
-        exact Subtype.ext (hf g e) }
+        apply Subtype.ext
+        change ((CommSq.mk hb.symm).fiberMap x.as (g • e) : F) =
+          φ g • ((CommSq.mk hb.symm).fiberMap x.as e : F)
+        rw [CommSq.fiberMap_apply_coe, CommSq.fiberMap_apply_coe]
+        exact hf g e }
   naturality x y γ := by
-    let j (z : B) (e : p ⁻¹' {z}) : q ⁻¹' {b z} :=
-      ⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
-        Set.mem_preimage, Set.mem_singleton_iff] using
-        (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩
-    have hm : j y.as ∘ hG.isCoveringMap.monodromy γ =
-        hH.isCoveringMap.monodromy (γ.map b.hom) ∘ j x.as := by
+    have hm : (CommSq.mk hb.symm).fiberMap y.as ∘ hG.isCoveringMap.monodromy γ =
+        hH.isCoveringMap.monodromy (γ.map b.hom) ∘ (CommSq.mk hb.symm).fiberMap x.as := by
       funext e
-      exact Subtype.ext (hG.isCoveringMap.coe_monodromy_map hH.isCoveringMap
+      apply Subtype.ext
+      change ((CommSq.mk hb.symm).fiberMap y.as (hG.isCoveringMap.monodromy γ e) : F) = _
+      rw [CommSq.fiberMap_apply_coe]
+      exact (hG.isCoveringMap.coe_monodromy_map hH.isCoveringMap
         (g := f.hom) (f := b.hom)
-        (funext fun z ↦ (congrArg (fun t : E ⟶ C ↦ t z) hb).symm) γ e _ rfl).symm
+        (funext fun z ↦ (congrArg (fun t : E ⟶ C ↦ t z) hb).symm) γ e
+        ((CommSq.mk hb.symm).fiberMap x.as e)
+        (CommSq.fiberMap_apply_coe _ _ _).symm).symm
     -- Term mode identifies the restricted representation carriers without rewriting their indices.
     exact Rep.hom_ext (Representation.IntertwiningMap.ext
-      ((Finsupp.lmapDomain_comp k k _ (j y.as)).symm.trans
+      ((Finsupp.lmapDomain_comp k k _ ((CommSq.mk hb.symm).fiberMap y.as)).symm.trans
         ((congrArg (Finsupp.lmapDomain k k) hm).trans
-          (Finsupp.lmapDomain_comp k k (j x.as) _))))
+          (Finsupp.lmapDomain_comp k k ((CommSq.mk hb.symm).fiberMap x.as) _))))
 
 /-- The map of permutation representations sends the sheet `e` to the sheet `f e`. -/
 -- Match before simplification changes the presentation of the restricted representation.
@@ -178,10 +185,7 @@ def permutationRepMap :
 theorem permutationRepMap_app_hom_single (x : FundamentalGroupoid B)
     (e : p ⁻¹' {x.as}) (r : k) :
     ((hG.permutationRepMap k hH f hf b hb).app x).hom (Finsupp.single e r) =
-      Finsupp.single
-        ⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
-          Set.mem_preimage, Set.mem_singleton_iff, FundamentalGroupoid.map_obj_as] using
-          (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ r :=
+      Finsupp.single ((CommSq.mk hb.symm).fiberMap x.as e) r :=
   Finsupp.mapDomain_single
 
 end ChangeOfGroups
@@ -280,10 +284,7 @@ theorem associatedLocalSystemMapOver_app_mk_single (x : FundamentalGroupoid B) (
           (Finsupp.single e r)) =
       Rep.coinvariantsTensorMk D ((hH.permutationRepFunctor k).obj
         ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a)
-        (Finsupp.single
-          ⟨f e, by simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
-            Set.mem_preimage, Set.mem_singleton_iff, FundamentalGroupoid.map_obj_as] using
-            (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ r) := by
+        (Finsupp.single ((CommSq.mk hb.symm).fiberMap x.as e) r) := by
   exact (φ.coinvariantsTensorMap_mk ξ
     ((hG.permutationRepMap k hH f hf b hb).app x) a (Finsupp.single e r)).trans
     (congrArg (Rep.coinvariantsTensorMk D

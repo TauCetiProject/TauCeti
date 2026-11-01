@@ -76,11 +76,7 @@ theorem associatedTwistedChainMap_f_ι_mk_single (n : ℕ) (σ : (TopCat.toSSet.
         ((TopCat.toSSet.map b).app _ σ)).hom
           (Rep.coinvariantsTensorMk D ((hH.permutationRepFunctor k).obj
             (initialVertex ((TopCat.toSSet.map b).app _ σ))) (ξ.hom a)
-            (Finsupp.single (⟨f e, by
-              simpa only [TopCat.comp_app, Set.mem_singleton_iff.mp e.2,
-                Set.mem_preimage, Set.mem_singleton_iff] using
-                (congrArg (fun t : E ⟶ C ↦ t e) hb).symm⟩ :
-                  q ⁻¹' {b (initialVertex σ).as}) r)) := by
+            (Finsupp.single ((CommSq.mk hb.symm).fiberMap (initialVertex σ).as e) r)) := by
   let η := hG.associatedLocalSystemMapOver k hH f hf b hb ξ
   let L := hH.associatedLocalSystem k D
   let v := Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj (initialVertex σ)) a
@@ -141,7 +137,8 @@ theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_over :
     simpa only [Functor.map_comp, NatTrans.comp_app, types_comp_apply] using
       (congrArg (fun t : E ⟶ C ↦ (TopCat.toSSet.map t).app _ τ) hb).symm
   exact hleft.trans ((ι_mk_single_congr hH k hσ (ξ.hom a) _ _
-    rfl 1).trans hright.symm)
+    (CommSq.fiberMap_apply_coe (CommSq.mk hb.symm) _ (initialSheet τ)).symm 1).trans
+      hright.symm)
 
 /-- On a contractible free cover, change of groups in twisted homology agrees with Mathlib's
 change-of-group map in group homology. -/
@@ -179,5 +176,17 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality_over
         (singularChainsRepResMap k f hf)
         (singularChainsRepResMap_f_zero_comp_augmentation k f hf) n)).trans
           (Category.assoc _ _ _).symm)
+
+/-- The inverse comparison of group homology with twisted homology on a contractible free cover
+is natural for equivariant maps and compatible coefficient maps. -/
+@[reassoc]
+theorem twistedHomologyIsoGroupHomology_inv_naturality_over
+    [ContractibleSpace E] [ContractibleSpace F] (n : ℕ) :
+    groupHomology.map φ ξ n ≫ (hH.twistedHomologyIsoGroupHomology k D n).inv =
+      (hG.twistedHomologyIsoGroupHomology k A n).inv ≫
+        HomologicalComplex.homologyMap (hG.associatedTwistedChainMap hH k f hf b hb ξ) n := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    hG.twistedHomologyIsoGroupHomology_hom_naturality_over hH k f hf b hb ξ n,
+    Iso.inv_hom_id_assoc]
 
 end IsQuotientCoveringMap
