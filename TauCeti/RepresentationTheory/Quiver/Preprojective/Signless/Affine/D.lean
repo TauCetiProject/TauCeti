@@ -58,6 +58,7 @@ the cyclic quotient is nonzero.
 
 ## Main results
 
+* `TauCeti.affineDMatrix_eq_zero_of_not_adj`: the matrices vanish off the edges.
 * `TauCeti.sum_affineDMatrix_mul_affineDMatrix`: the representation satisfies the signless
   relations.
 * `TauCeti.trace_affineDMatrix_backtracks`: the walk `1 → 0 → 1 → (n - 1) → 1` acts with trace one.
@@ -151,6 +152,15 @@ private theorem affineDMatrix_pred (hj : 1 ≤ j) (hi : j + 1 = i) (hin : i ≤ 
   unfold affineDMatrix; split_ifs <;> first | rfl | omega
 
 end Evaluation
+
+/-- The affine `Dₙ` matrices vanish off the edges of the diagram. -/
+theorem affineDMatrix_eq_zero_of_not_adj {n : ℕ} (hn : 4 ≤ n)
+    {i j : Fin (AffineDynkinType.D n).nodes} (h : ¬(AffineDynkinType.D n).graph.Adj i j) :
+    affineDMatrix k n i j = 0 := by
+  replace h := mt (AffineDynkinType.graph_D_adj hn (i := i) (j := j)).2 h
+  -- Every condition of the definition names an edge, so every branch is skipped.
+  rw [affineDMatrix]
+  repeat rw [ite_eq_right (by omega)]
 
 /-- **The affine `Dₙ` matrices satisfy the signless relations**: at every node `v` of `Dₙ`, the
 backtracks `β w v * β v w` over the neighbours `w` of `v` sum to zero. -/

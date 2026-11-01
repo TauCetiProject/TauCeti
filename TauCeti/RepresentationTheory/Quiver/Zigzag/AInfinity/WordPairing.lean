@@ -313,37 +313,13 @@ end Anticyclic
 
 section Loop
 
-/-- The sign by which the suspension twists `n + 2` letters of path length one. -/
-private def loopSign (k : Type w) [CommRing k] (n : ℕ) : k :=
-  ∏ i : Fin (n + 2), (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k)
-
-/-- The suspension sign squares to one. -/
-private theorem loopSign_mul_self (n : ℕ) : loopSign k n * loopSign k n = 1 := by
-  rw [loopSign, ← Finset.prod_mul_distrib]
+/-- The sign by which the suspension twists `n + 2` letters of path length one squares to one. -/
+private theorem prod_negOnePow_mul_self (n : ℕ) :
+    (∏ i : Fin (n + 2), (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k)) *
+      ∏ i : Fin (n + 2), (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k) = 1 := by
+  rw [← Finset.prod_mul_distrib]
   exact Finset.prod_eq_one fun i _ ↦ by
     rw [← Int.cast_mul, Int.isUnit_mul_self (Units.isUnit _), Int.cast_one]
-
-/-- The trace of the higher operation of a loop deformation on the arrows of `n + 2` darts `d` is
-the coefficient of `d`, up to the sign of the suspension. -/
-private theorem trace_obstruction_ofArrow {n : ℕ} (hn : 1 ≤ n) (c : (Fin (n + 2) → G.Dart) →₀ k)
-    (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) (d : Fin (n + 2) → G.Dart) :
-    zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
-      (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (d t)))) =
-      loopSign k n * c d := by
-  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
-  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero]
-  -- Every letter has degree one, so the suspension twists it by a sign.
-  have htw : (fun i : Fin (n + 2) ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
-      (((⟨n + 2, by omega⟩ : {n : ℕ // 0 < n}) : ℕ) - 1 - (i : ℕ)) (𝔞 (d i))) =
-      fun i : Fin (n + 2) ↦ (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k) • 𝔞 (d i) := by
-    funext i
-    rw [InternalGrading.koszulTwist_apply_of_mem _ (e := 1) (by
-      rw [zigzagLoopAInfinityAlgebra_grading_piece]
-      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _), mul_one]
-  rw [htw, MultilinearMap.map_smul_univ,
-    zigzagLoopAInfinityAlgebra_m_ofArrow (n := n + 2) _ _ (by omega), smul_smul, map_smul,
-    zigzagTrace_zigzagVolume, smul_eq_mul, mul_one, loopSign]
 
 variable [Fintype G.Dart] [DecidableEq V] {B : Type*} [Semiring B] [Module k B]
 
@@ -371,9 +347,10 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   rintro ⟨φ, hφ, hφc⟩
   have h0 := zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic (n := n) β hβ f hf hφ
   rw [hφc, zigzagWordPairing_apply] at h0
-  simp only [trace_obstruction_ofArrow hn, Finsupp.single_apply, mul_ite, mul_one, mul_zero,
-    eq_comm (a := w), Finset.sum_ite_eq', Finset.mem_univ, ite_true] at h0
-  rw [← mul_one (f _), ← loopSign_mul_self (k := k) n, ← mul_assoc, h0, zero_mul] at hfw
+  simp only [zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_ofArrow hn, Finsupp.single_apply,
+    mul_ite, mul_one, mul_zero, eq_comm (a := w), Finset.sum_ite_eq', Finset.mem_univ,
+    ite_true] at h0
+  rw [← mul_one (f _), ← prod_negOnePow_mul_self (k := k) n, ← mul_assoc, h0, zero_mul] at hfw
   exact hfw rfl
 
 /-- **The Hochschild cohomology `HH^{n + 2, -n}` of a zigzag algebra is nonzero** when some closed

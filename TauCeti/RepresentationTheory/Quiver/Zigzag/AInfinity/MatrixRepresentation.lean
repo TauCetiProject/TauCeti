@@ -12,37 +12,39 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 # Hochschild classes of zigzag algebras from matrix representations
 
 Let `Z` be the zigzag algebra of a finite simple graph `G` with no isolated vertex, regarded as an
-`A∞` algebra whose only operation is the product (`TauCeti.zigzagStrictAInfinityAlgebra`). This
-file turns the matrix representations of the signless preprojective algebra `Π⁺(G)`, which detect
-nonzero classes in its cyclic quotient `Π⁺(G) / [Π⁺(G), Π⁺(G)]`
-(`TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero`),
-into nonzero Hochschild classes of `Z` when `G` is bipartite: a closed walk of length `n + 2 ≥ 3`
-acting with nonzero trace gives `HH^{n + 2, -n}(Z, Z) ≠ 0`. This is the passage, through the
-quadratic duality between `Z` and `Π⁺(G)`, from cyclic classes of the preprojective algebra to
-Hochschild classes of the zigzag algebra which Liu and Wang use to decide intrinsic formality.
+`A∞` algebra whose only operation is the product (`TauCeti.zigzagStrictAInfinityAlgebra`). This file
+turns the matrix representations of the signless preprojective algebra `Π⁺(G)`, which detect nonzero
+classes in its cyclic quotient `Π⁺(G) / [Π⁺(G), Π⁺(G)]`
+(`TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero`), into
+nonzero Hochschild classes of `Z` when they live on a bipartite subgraph of `G`: a closed walk of
+length `n + 2 ≥ 3` acting with nonzero trace gives `HH^{n + 2, -n}(Z, Z) ≠ 0`. This is the passage,
+through the quadratic duality between `Z` and `Π⁺(G)`, from cyclic classes of the preprojective
+algebra to Hochschild classes of the zigzag algebra which Liu and Wang use to decide intrinsic
+formality.
 
 ## The functional
 
 Let `γ i j` be the matrix of the arrow `i → j` in a representation of `Π⁺(G)` with `kᵐ` at every
 vertex, so that `∑_{w ∼ v} γ w v * γ v w = 0` at every vertex `v`. The block matrices
-`β d = E_{d.snd, d.fst} ⊗ γ d.fst d.snd` of the darts satisfy the signless relations in the
-form required by the word pairing (`TauCeti.zigzagWordPairing`). A two-colouring `ε : V → {±1}` of
-`G` gives the block sign matrix `S = diag(ε)`, which anticommutes with every `β d`, so that the
-supertrace `y ↦ tr(S y)` is anticyclic on the `β d`. On the product of the `β` along a closed walk
-`w` based at `v` it takes the value `ε v · tr(γ_w)`, for `γ_w` the product of the `γ` along `w`.
-So when `tr(γ_w) ≠ 0`, the loop operation of `w` is a Hochschild cocycle of `Z` which is not a
-coboundary
+`β d = E_{d.snd, d.fst} ⊗ γ d.fst d.snd` of the darts satisfy the signless relations in the form
+required by the word pairing (`TauCeti.zigzagWordPairing`). A sign `ε : V → {±1}` which changes
+along every dart carrying a nonzero matrix, such as a two-colouring of a bipartite subgraph
+supporting the representation, gives the block sign matrix `S = diag(ε)`, which anticommutes with
+every `β d`, so that the supertrace `y ↦ tr(S y)` is anticyclic on the `β d`. On the product of the
+`β` along a closed walk `w` based at `v` it takes the value `ε v · tr(γ_w)`, for `γ_w` the product
+of the `γ` along `w`. So when `tr(γ_w) ≠ 0`, the loop operation of `w` is a Hochschild cocycle of
+`Z` which is not a coboundary
 (`not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic`).
 
 ## Affine diagrams and trees
 
 The representations of the affine diagrams `E₆`, `E₇` and `E₈` constructed for the cyclic quotient
 (`TauCeti.affineE6Matrix`, `TauCeti.affineE7Matrix` and `TauCeti.affineE8Matrix`) have products of
-backtracks of trace one at the trivalent node, in path degrees `6`, `8` and `12`. Hence a bipartite
-graph containing a copy of one of these diagrams has `HH^{6, -4}`, `HH^{8, -6}` or `HH^{12, -10}`
-nonzero, over every nontrivial commutative ring. With the representation of affine `Dₙ`
-(`TauCeti.affineDMatrix`) in path degree four, this covers every finite tree which is not a Dynkin
-diagram, since such a tree contains a copy of one of these affine diagrams
+backtracks of trace one at the trivalent node, in path degrees `6`, `8` and `12`. Since these
+diagrams are bipartite, every graph containing a copy of one of them has `HH^{6, -4}`, `HH^{8, -6}`
+or `HH^{12, -10}` nonzero, over every nontrivial commutative ring. With the representation of affine
+`Dₙ` (`TauCeti.affineDMatrix`) in path degree four, this covers every finite tree which is not a
+Dynkin diagram, since such a tree contains a copy of one of these affine diagrams
 (`SimpleGraph.IsTree.isContained_affineDynkinType_of_not_exists_dynkinType_iso`). Consequently
 Kadeishvili's criterion
 `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_of_forall_hochschildVanishesAt` does not apply to
@@ -51,14 +53,14 @@ the zigzag algebra of any finite non-Dynkin tree.
 ## Main results
 
 * `TauCeti.not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero`: a matrix
-  representation of the signless preprojective algebra of a subgraph of a bipartite graph `G`, in
-  which a closed walk of length `n + 2 ≥ 3` acts with nonzero trace, gives
+  representation of the signless preprojective algebra of a bipartite subgraph of `G`, in which a
+  closed walk of length `n + 2 ≥ 3` acts with nonzero trace, gives
   `HH^{n + 2, -n}(Z, Z) ≠ 0` for the zigzag algebra `Z` of `G`.
 * `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`,
   `TauCeti.not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra`,
   `TauCeti.not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra` and
-  `TauCeti.not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra`: the bipartite graphs
-  containing an affine `Dₙ`, `E₆`, `E₇` or `E₈`.
+  `TauCeti.not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra`: the graphs containing
+  an affine `Dₙ`, `E₆`, `E₇` or `E₈`.
 * `SimpleGraph.IsTree.exists_not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra`: the zigzag
   algebra of a finite non-Dynkin tree has a nonzero Hochschild class in `HH^{n, 2 - n}` for some
   `n ∈ {4, 6, 8, 12}`.
@@ -160,48 +162,57 @@ private theorem list_prod_blockArrow (γ : V → V → Matrix m m k) {N : ℕ}
   induction N with
   | zero => simp [blockArrow]
   | succ N ih =>
+    -- The second dart starts where the first one ends.
+    have h₀ : (u (Fin.succ 0)).snd = (u 0).fst := by simpa using (hu 0).symm
     rw [List.ofFn_succ, List.prod_cons, ih (fun t ↦ u t.succ) fun i ↦ hu i.succ,
-      List.ofFn_succ (n := N + 1), List.prod_cons, blockArrow, ← mul_kronecker_mul,
-      show (u (Fin.succ 0)).snd = (u 0).fst by simpa using (hu 0).symm, single_mul_single_same,
-      mul_one, Fin.succ_last]
+      List.ofFn_succ (n := N + 1), List.prod_cons, blockArrow, ← mul_kronecker_mul, h₀]
+    simp only [single_mul_single_same, mul_one, Fin.succ_last]
+
+/-- **The supertrace is anticyclic on the block matrices of darts.** For a function `ε` on the
+vertices which changes sign along a dart `d`, unless the matrix of `d` vanishes, the functional
+`y ↦ tr(S y)`, for `S` the block sign matrix of `ε`, is anticyclic on the block matrix of `d`. -/
+private theorem trace_blockSign_mul_mul_blockArrow (ε : V → k) (γ : V → V → Matrix m m k)
+    (d : G.Dart) (hd : γ d.fst d.snd ≠ 0 → ε d.fst = -ε d.snd) (y : Matrix (V × m) (V × m) k) :
+    trace (blockSign ε * (y * blockArrow γ d)) = -trace (blockSign ε * (blockArrow γ d * y)) := by
+  by_cases h : γ d.fst d.snd = 0
+  · simp [blockArrow, h]
+  -- The sign matrix acts on the block of `d` by `ε d.fst` on the right and `ε d.snd` on the left.
+  have hr : blockArrow γ d * blockSign ε = ε d.fst • blockArrow γ d :=
+    single_kronecker_mul_blockSign ε _ _ _
+  have hl : blockSign ε * blockArrow γ d = ε d.snd • blockArrow γ d :=
+    blockSign_mul_single_kronecker ε _ _ _
+  rw [← mul_assoc, trace_mul_comm, ← mul_assoc, ← mul_assoc, hr, hl, hd h]
+  simp only [neg_smul, neg_mul, smul_mul_assoc, trace_neg, trace_smul]
 
 omit [DecidableEq V] in
-/-- **Closed walks detected by a matrix representation of the signless preprojective algebra of a
-bipartite graph.** The supertrace of the block matrices of the darts, for a two-colouring of `G`,
-is an anticyclic functional; it detects a closed walk along which the matrices have nonzero
-trace. -/
+/-- **Closed walks detected by a matrix representation of the signless preprojective algebra.**
+For a sign `ε` on the vertices which changes along every dart carrying a nonzero matrix, the
+supertrace of the block matrices of the darts is an anticyclic functional; it detects a closed walk
+along which the matrices have nonzero trace. -/
 private theorem not_hochschildVanishesAt_of_trace_ne_zero [DecidableRel G.Adj]
     (γ : V → V → Matrix m m k)
-    (hγ : ∀ v, ∑ w ∈ G.neighborFinset v, γ w v * γ v w = 0) (hG : G.IsBipartite) {n : ℕ}
+    (hγ : ∀ v, ∑ w ∈ G.neighborFinset v, γ w v * γ v w = 0) (ε : V → ℤˣ)
+    (hε : ∀ i j, γ i j ≠ 0 → ε i = -ε j) {n : ℕ}
     (hn : 1 ≤ n) {w : Fin (n + 2) → G.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ γ (w t).fst (w t).snd).prod ≠ 0) :
     ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
   classical
-  obtain ⟨c⟩ := hG
-  -- The sign of the colouring changes along every edge.
-  set ε : V → k := fun v ↦ if c v = 0 then 1 else -1 with hεdef
-  have hε (d : G.Dart) : ε d.fst = -ε d.snd := by
-    have h := c.valid d.adj
-    simp only [hεdef]
-    generalize c d.fst = a at h ⊢
-    generalize c d.snd = b at h ⊢
-    fin_cases a <;> fin_cases b <;> simp at h ⊢
   -- The supertrace `y ↦ tr(S y)`.
+  let s : V → k := fun v ↦ ((ε v : ℤ) : k)
   let f : Matrix (V × m) (V × m) k →ₗ[k] k :=
-    traceLinearMap (V × m) k k ∘ₗ LinearMap.mulLeft k (blockSign ε)
-  have hf (y : Matrix (V × m) (V × m) k) : f y = trace (blockSign ε * y) := rfl
+    traceLinearMap (V × m) k k ∘ₗ LinearMap.mulLeft k (blockSign s)
+  have hf (y : Matrix (V × m) (V × m) k) : f y = trace (blockSign s * y) := rfl
   refine not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_anticyclic hn (blockArrow γ)
-    (sum_blockArrow_mul_blockArrow_symm γ hγ) f (fun e y ↦ ?_) hw ?_
-  · rw [hf, hf, ← mul_assoc, trace_mul_comm, ← mul_assoc, blockArrow,
-      single_kronecker_mul_blockSign, ← mul_assoc (blockSign ε), blockSign_mul_single_kronecker,
-      smul_mul_assoc, smul_mul_assoc, trace_smul, trace_smul, smul_eq_mul, smul_eq_mul, hε, neg_mul]
-  · -- The product along the closed walk is a block at its base vertex.
-    have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by
-      simpa using hw (Fin.last (n + 1))
-    rw [hf, list_prod_blockArrow γ w fun i ↦ by simpa [Fin.coeSucc_eq_succ] using hw i.castSucc,
-      hlast, blockSign_mul_single_kronecker, trace_smul, trace_kronecker, trace_single_eq_same,
-      one_mul, smul_eq_mul]
-    by_cases h : c (w 0).snd = 0 <;> simpa [hεdef, h] using htr
+    (sum_blockArrow_mul_blockArrow_symm γ hγ) f
+    (fun e y ↦ trace_blockSign_mul_mul_blockArrow s γ e (fun h ↦ by simp [s, hε _ _ h]) y) hw ?_
+  -- The product along the closed walk is a block at its base vertex.
+  have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by
+    simpa using hw (Fin.last (n + 1))
+  have hprod := list_prod_blockArrow γ w fun i ↦ by simpa [Fin.coeSucc_eq_succ] using hw i.castSucc
+  rw [hlast] at hprod
+  rw [hf, hprod, blockSign_mul_single_kronecker]
+  simp only [trace_smul, trace_kronecker, trace_single_eq_same, one_mul, smul_eq_mul]
+  exact mt ((ε (w 0).snd).isUnit.map (Int.castRingHom k)).mul_right_eq_zero.1 htr
 
 end Blocks
 
@@ -212,7 +223,7 @@ section Subgraph
 variable [Finite V] {W : Type*} [Fintype W] {H : SimpleGraph W}
 
 /-- **Hochschild classes of zigzag algebras from matrix representations of a subgraph.** Let `G` be
-a bipartite graph with no isolated vertex, `f` a copy of a graph `H` in `G`, not necessarily
+a graph with no isolated vertex, `f` a copy of a bipartite graph `H` in `G`, not necessarily
 induced, and `β` a family of matrices on `H` satisfying the signless relations
 `∑_{y ∼ x} β y x * β x y = 0`, a representation of `Π⁺(H)`. If the product of the matrices along a
 closed walk `u` of length `n + 2 ≥ 3` in `H`, read in product order, has nonzero trace, then the
@@ -220,15 +231,35 @@ loop operation of the image of `u` in `G` is a Hochschild cocycle of the strict 
 `Z` of `G` which is not a coboundary: `HH^{n + 2, -n}(Z, Z) ≠ 0`. -/
 theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero [DecidableRel H.Adj]
     (β : W → W → Matrix m m k) (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
-    (f : H.Copy G) (hG : G.IsBipartite) {n : ℕ} (hn : 1 ≤ n) {u : Fin (n + 2) → H.Dart}
+    (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n) {u : Fin (n + 2) → H.Dart}
     (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ β (u t).fst (u t).snd).prod ≠ 0) :
     ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
   classical
   have := Fintype.ofFinite V
+  obtain ⟨c⟩ := hH
+  -- The sign of a two-colouring of `H`, extended arbitrarily off the copy.
+  let ε : V → ℤˣ := Function.extend f (fun x ↦ (-1) ^ (c x : ℕ)) 1
+  have hε (x : W) : ε (f x) = (-1) ^ (c x : ℕ) := f.injective.extend_apply _ _ x
   refine not_hochschildVanishesAt_of_trace_ne_zero (f.extendByZero β)
-    (f.sum_extendByZero_mul_extendByZero β hβ) hG hn (w := fun t ↦ f.toHom.mapDart (u t))
-    (fun i ↦ by simp [SimpleGraph.Hom.mapDart_apply, hu i]) ?_
+    (f.sum_extendByZero_mul_extendByZero β hβ) ε (fun i j hij ↦ ?_) hn
+    (w := fun t ↦ f.toHom.mapDart (u t)) (fun i ↦ by simp [SimpleGraph.Hom.mapDart_apply, hu i]) ?_
+  · -- A nonzero entry of the extension sits on the image of an edge of `H`, whose ends have
+    -- different colours.
+    obtain ⟨x, rfl⟩ : i ∈ Set.range f := by
+      by_contra hi
+      exact hij (f.extendByZero_eq_zero_of_notMem_range_left β hi j)
+    obtain ⟨y, rfl⟩ : j ∈ Set.range f := by
+      by_contra hj
+      exact hij (f.extendByZero_eq_zero_of_notMem_range_right β _ hj)
+    have hxy : H.Adj x y := by
+      by_contra hxy
+      exact hij (f.extendByZero_apply_apply_of_not_adj β hxy)
+    have hc := c.valid hxy
+    rw [hε, hε]
+    generalize c x = a at hc ⊢
+    generalize c y = b at hc ⊢
+    fin_cases a <;> fin_cases b <;> simp at hc ⊢
   simpa [SimpleGraph.Hom.mapDart_apply, SimpleGraph.Copy.extendByZero_apply_apply_of_adj,
     SimpleGraph.Dart.adj] using htr
 
@@ -239,14 +270,14 @@ along a closed walk has trace one, gives a nonzero Hochschild class over every n
 commutative ring. -/
 private theorem not_hochschildVanishesAt_of_trace_eq_one [Nontrivial k]
     (β : W → W → Matrix m m ℤ) (h₀ : ∀ x y, ¬H.Adj x y → β x y = 0)
-    (h : ∀ x, ∑ y, β y x * β x y = 0) (f : H.Copy G) (hG : G.IsBipartite) {n : ℕ} (hn : 1 ≤ n)
+    (h : ∀ x, ∑ y, β y x * β x y = 0) (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n)
     {u : Fin (n + 2) → H.Dart} (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ β (u t).fst (u t).snd).prod = 1) :
     ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
   classical
   refine not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
     (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
-    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) f hG hn hu ?_
+    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) f hH hn hu ?_
   have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (u t).fst (u t).snd)) =
       (List.ofFn fun t ↦ β (u t).fst (u t).snd).map (Int.castRingHom k).mapMatrix := by
     simp [List.map_ofFn, Function.comp_def]
@@ -260,6 +291,34 @@ end Subgraph
 section Affine
 
 variable [Finite V]
+
+/-- The affine diagram `E₆` is bipartite, coloured by the parity of the distance to node `0`. -/
+private theorem isBipartite_graph_E6 : AffineDynkinType.E6.graph.IsBipartite :=
+  ⟨.mk ![0, 1, 0, 1, 0, 1, 0] fun {i j} h ↦ by
+    rw [AffineDynkinType.graph_E6_adj] at h
+    fin_cases i <;> fin_cases j <;> revert h <;> decide⟩
+
+/-- The affine diagram `E₇` is bipartite, coloured by the parity of the distance to node `0`. -/
+private theorem isBipartite_graph_E7 : AffineDynkinType.E7.graph.IsBipartite :=
+  ⟨.mk ![0, 1, 1, 0, 1, 1, 0, 1] fun {i j} h ↦ by
+    rw [AffineDynkinType.graph_E7_adj] at h
+    fin_cases i <;> fin_cases j <;> revert h <;> decide⟩
+
+/-- The affine diagram `E₈` is bipartite, coloured by the parity of the distance to node `0`. -/
+private theorem isBipartite_graph_E8 : AffineDynkinType.E8.graph.IsBipartite :=
+  ⟨.mk ![0, 1, 1, 0, 1, 0, 1, 0, 1] fun {i j} h ↦ by
+    rw [AffineDynkinType.graph_E8_adj] at h
+    fin_cases i <;> fin_cases j <;> revert h <;> decide⟩
+
+/-- The affine diagram `Dₙ` is bipartite: the path `0 - 1 - ⋯ - (n - 2)` is coloured by parity,
+and the leaves `n - 1` at node `1` and `n` at node `n - 3` take the other colour. -/
+private theorem isBipartite_graph_D {n : ℕ} (hn : 4 ≤ n) :
+    (AffineDynkinType.D n).graph.IsBipartite := by
+  refine ⟨.mk (fun i ↦ ⟨if (i : ℕ) ≤ n - 2 then (i : ℕ) % 2 else if (i : ℕ) = n - 1 then 0
+    else n % 2, by split_ifs <;> omega⟩) fun {i j} h ↦ ?_⟩
+  have hij := (AffineDynkinType.graph_D_adj hn (i := i) (j := j)).1 h
+  simp only [ne_eq, Fin.mk.injEq]
+  split_ifs <;> omega
 
 /-- The closed walk `0 → 3 → 0 → 1 → 0 → 1 → 0` at the trivalent node of the affine diagram `E₆`,
 in product order: the product of the backtracks through `1`, `1` and `3`. -/
@@ -282,59 +341,60 @@ private def affineE8Walk : Fin 12 → AffineDynkinType.E8.graph.Dart :=
 
 variable [Nontrivial k]
 
-/-- **Bipartite graphs containing an affine `E₆` have `HH^{6, -4}` nonzero.** If a bipartite
-graph `G` with no isolated vertex contains a copy of the affine diagram `E₆`, not necessarily
-induced, then over every nontrivial commutative ring the Hochschild cohomology `HH^{6, -4}` of the
-strict zigzag algebra of `G` is nonzero: the loop operation of the closed walk of length six through
-the backtracks `0 → 1 → 0`, `0 → 1 → 0` and `0 → 3 → 0` at the image of the trivalent node is a
-Hochschild cocycle which is not a coboundary. -/
-theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra (hb : G.IsBipartite)
+/-- **Graphs containing an affine `E₆` have `HH^{6, -4}` nonzero.** If a graph `G` with no isolated
+vertex contains a copy of the affine diagram `E₆`, not necessarily induced, then over every
+nontrivial commutative ring the Hochschild cohomology `HH^{6, -4}` of the strict zigzag algebra of
+`G` is nonzero: the loop operation of the closed walk of length six through the backtracks
+`0 → 1 → 0`, `0 → 1 → 0` and `0 → 3 → 0` at the image of the trivalent node is a Hochschild cocycle
+which is not a coboundary. -/
+theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra
     (hG : AffineDynkinType.E6.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨6, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_of_trace_eq_one affineE6Matrix
-    (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj) sum_affineE6Matrix_mul_affineE6Matrix f hb
+    (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj) sum_affineE6Matrix_mul_affineE6Matrix f
+    isBipartite_graph_E6
     (n := 4) (by norm_num) (u := affineE6Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE6Walk, mul_assoc] using trace_affineE6Matrix_backtracks)
 
-/-- **Bipartite graphs containing an affine `E₇` have `HH^{8, -6}` nonzero.** If a bipartite
-graph `G` with no isolated vertex contains a copy of the affine diagram `E₇`, not necessarily
-induced, then over every nontrivial commutative ring the Hochschild cohomology `HH^{8, -6}` of the
-strict zigzag algebra of `G` is nonzero: the loop operation of the closed walk of length eight
-through three backtracks `0 → 2 → 0` and the backtrack `0 → 5 → 0` at the image of the trivalent
-node is a Hochschild cocycle which is not a coboundary. -/
-theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra (hb : G.IsBipartite)
+/-- **Graphs containing an affine `E₇` have `HH^{8, -6}` nonzero.** If a graph `G` with no isolated
+vertex contains a copy of the affine diagram `E₇`, not necessarily induced, then over every
+nontrivial commutative ring the Hochschild cohomology `HH^{8, -6}` of the strict zigzag algebra of
+`G` is nonzero: the loop operation of the closed walk of length eight through three backtracks
+`0 → 2 → 0` and the backtrack `0 → 5 → 0` at the image of the trivalent node is a Hochschild
+cocycle which is not a coboundary. -/
+theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra
     (hG : AffineDynkinType.E7.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨8, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_of_trace_eq_one affineE7Matrix
-    (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj) sum_affineE7Matrix_mul_affineE7Matrix f hb
+    (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj) sum_affineE7Matrix_mul_affineE7Matrix f
+    isBipartite_graph_E7
     (n := 6) (by norm_num) (u := affineE7Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE7Walk, mul_assoc] using trace_affineE7Matrix_backtracks)
 
-/-- **Bipartite graphs containing an affine `E₈` have `HH^{12, -10}` nonzero.** If a bipartite
-graph `G` with no isolated vertex contains a copy of the affine diagram `E₈`, not necessarily
-induced, then over every nontrivial commutative ring the Hochschild cohomology `HH^{12, -10}` of
-the strict zigzag algebra of `G` is nonzero: the loop operation of the closed walk of length twelve
-through the backtracks at the image of the trivalent node through the nodes `1`, `2`, `4`, `4`,
-`4` and `2` is a Hochschild cocycle which is not a coboundary. -/
-theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra (hb : G.IsBipartite)
+/-- **Graphs containing an affine `E₈` have `HH^{12, -10}` nonzero.** If a graph `G` with no
+isolated vertex contains a copy of the affine diagram `E₈`, not necessarily induced, then over every
+nontrivial commutative ring the Hochschild cohomology `HH^{12, -10}` of the strict zigzag algebra of
+`G` is nonzero: the loop operation of the closed walk of length twelve through the backtracks at the
+image of the trivalent node through the nodes `1`, `2`, `4`, `4`, `4` and `2` is a Hochschild
+cocycle which is not a coboundary. -/
+theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra
     (hG : AffineDynkinType.E8.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨12, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_of_trace_eq_one affineE8Matrix
-    (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj) sum_affineE8Matrix_mul_affineE8Matrix f hb
+    (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj) sum_affineE8Matrix_mul_affineE8Matrix f
+    isBipartite_graph_E8
     (n := 10) (by norm_num) (u := affineE8Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE8Walk, mul_assoc] using trace_affineE8Matrix_backtracks)
 
-/-- **Bipartite graphs containing an affine `Dₙ` have `HH^{4, -2}` nonzero.** If a bipartite graph
-`G` with no isolated vertex contains a copy of the affine diagram `Dₙ` (`n ≥ 4`), not necessarily
-induced, then over every nontrivial commutative ring the Hochschild cohomology `HH^{4, -2}` of the
-strict zigzag algebra of `G` is nonzero: the loop operation of the closed walk
-`1 → 0 → 1 → (n - 1) → 1` at the image of the branch node `1` is a Hochschild cocycle which is not
-a coboundary. -/
-theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained
-    (hb : G.IsBipartite) {n : ℕ}
+/-- **Graphs containing an affine `Dₙ` have `HH^{4, -2}` nonzero.** If a graph `G` with no isolated
+vertex contains a copy of the affine diagram `Dₙ` (`n ≥ 4`), not necessarily induced, then over
+every nontrivial commutative ring the Hochschild cohomology `HH^{4, -2}` of the strict zigzag
+algebra of `G` is nonzero: the loop operation of the closed walk `1 → 0 → 1 → (n - 1) → 1` at the
+image of the branch node `1` is a Hochschild cocycle which is not a coboundary. -/
+theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained {n : ℕ}
     (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
@@ -342,13 +402,14 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContaine
   let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
   let a : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
   let b : Fin (AffineDynkinType.D n).nodes := ⟨n - 1, by omega⟩
+  have h1n : 1 ≤ n - 2 := by omega
   have h₁ : (AffineDynkinType.D n).graph.Adj c a :=
-    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inl ⟨rfl, show 1 ≤ n - 2 by omega⟩))
+    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inl ⟨rfl, h1n⟩))
   have h₂ : (AffineDynkinType.D n).graph.Adj c b :=
     (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
   refine not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
     (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
-    (sum_affineDMatrix_mul_affineDMatrix k hn) f hb
+    (sum_affineDMatrix_mul_affineDMatrix k hn) f (isBipartite_graph_D hn)
     (n := 2) (by norm_num)
     (u := ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩])
     (fun i ↦ by fin_cases i <;> rfl) ?_
@@ -384,12 +445,12 @@ theorem exists_not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra (hG : G.IsT
   rcases hG.isContained_affineDynkinType_of_not_exists_dynkinType_iso hD with
     ⟨n, hn, h⟩ | h | h | h
   · exact ⟨⟨4, by norm_num⟩, by simp,
-      not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained hG.isBipartite hn h⟩
+      not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained hn h⟩
   · exact ⟨⟨6, by norm_num⟩, by simp,
-      not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra hG.isBipartite h⟩
+      not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra h⟩
   · exact ⟨⟨8, by norm_num⟩, by simp,
-      not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra hG.isBipartite h⟩
+      not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra h⟩
   · exact ⟨⟨12, by norm_num⟩, by simp,
-      not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra hG.isBipartite h⟩
+      not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra h⟩
 
 end SimpleGraph.IsTree

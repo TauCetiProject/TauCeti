@@ -120,6 +120,8 @@ the strict zigzag algebra, when `2` is invertible, is proved in
   of four letters, written out.
 * `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries
   when its weights satisfy the balance condition.
+* `TauCeti.zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_ofArrow`: the trace of a loop
+  operation on a word of arrows is its coefficient, up to the sign of the suspension.
 * `TauCeti.zigzagBacktrackPairing_obstruction`: the value of `Λ` on the quartic operation of a loop
   deformation.
 * `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`: the higher operation of
@@ -614,27 +616,30 @@ theorem zigzagBacktrackPairing_hochschildDifferential_eq_zero {a : Matrix G.Dart
   ring
 
 omit [Fintype G.Dart] in
-/-- The trace of the quartic operation of a loop deformation on the arrows of four darts `w` is
-the coefficient of `w`. -/
-private theorem trace_obstruction_ofArrow (c : (Fin 4 → G.Dart) →₀ k)
-    (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) (w : Fin 4 → G.Dart) :
-    zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩
-      (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) = c w := by
+/-- **The trace of a loop operation on arrows.** On the arrows of `n + 2 ≥ 3` darts `d`, the trace
+of the operation of arity `n + 2` of the loop deformation with coefficients `c` is the coefficient
+of `d`, up to the product of the signs `(-1) ^ (n + 1 - i)` by which the suspension twists the
+letters of path length one. -/
+theorem zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_ofArrow {n : ℕ} (hn : 1 ≤ n)
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (d : Fin (n + 2) → G.Dart) :
+    zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
+      (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (d t)))) =
+      (∏ i : Fin (n + 2), (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k)) * c d := by
   simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
   rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by norm_num), _root_.zero_apply, sub_zero]
-  -- The suspension twists the first and third arrows, each by a sign.
-  have htw : (fun i : Fin 4 ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
-      (((⟨4, by norm_num⟩ : {n : ℕ // 0 < n}) : ℕ) - 1 - (i : ℕ)) (𝔞 (w i))) =
-      fun i ↦ (![-1, 1, -1, 1] i : k) • 𝔞 (w i) := by
+    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero]
+  -- Every letter has degree one, so the suspension twists it by a sign.
+  have htw : (fun i : Fin (n + 2) ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
+      (((⟨n + 2, by omega⟩ : {n : ℕ // 0 < n}) : ℕ) - 1 - (i : ℕ)) (𝔞 (d i))) =
+      fun i : Fin (n + 2) ↦ (((((n + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k) • 𝔞 (d i) := by
     funext i
     rw [InternalGrading.koszulTwist_apply_of_mem _ (e := 1) (by
       rw [zigzagLoopAInfinityAlgebra_grading_piece]
-      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _)]
-    fin_cases i <;> norm_num
+      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _), mul_one]
   rw [htw, MultilinearMap.map_smul_univ,
-    zigzagLoopAInfinityAlgebra_m_ofArrow (n := 4) _ _ (by norm_num), Fin.prod_univ_four]
-  simp
+    zigzagLoopAInfinityAlgebra_m_ofArrow (n := n + 2) _ _ (by omega)]
+  simp only [smul_smul, map_smul, zigzagTrace_zigzagVolume, smul_eq_mul, mul_one]
 
 /-- **The backtrack pairing of a quartic loop operation.** On the obstruction of the loop
 deformation with coefficients `c`, that is on its quartic operation, the backtrack pairing is
@@ -648,8 +653,13 @@ theorem zigzagBacktrackPairing_obstruction (a : Matrix G.Dart G.Dart k)
         c (zigzagBacktrackWalk G e.symm d)) := by
   rw [zigzagBacktrackPairing_apply]
   refine Finset.sum_congr rfl fun d _ ↦ Finset.sum_congr rfl fun e _ ↦ ?_
-  rw [trace_obstruction_ofArrow c hc fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1),
-    trace_obstruction_ofArrow c hc (zigzagBacktrackWalk G e.symm d)]
+  -- In arity four the suspension signs `-1, 1, -1, 1` cancel.
+  have hs : ∏ i : Fin (2 + 2), (((((2 + 2 : ℕ) : ℤ) - 1 - (i : ℕ)).negOnePow : ℤ) : k) = 1 := by
+    rw [Fin.prod_univ_four]
+    norm_num
+  rw [zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_ofArrow (n := 2) one_le_two c hc,
+    zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_ofArrow (n := 2) one_le_two c hc, hs,
+    one_mul, one_mul]
 
 omit [Fintype G.Dart] in
 /-- **Loop operations are Hochschild cocycles.** For coefficients `c` on closed walks of length
