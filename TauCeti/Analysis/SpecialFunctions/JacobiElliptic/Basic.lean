@@ -166,35 +166,41 @@ theorem jacobiAm_legendreK {k : ℝ} (hk : k ^ 2 < 1) : jacobiAm k (legendreK k)
 /-! ### Algebraic identities -/
 
 @[simp]
-theorem jacobiSn_sq_add_jacobiCn_sq (k u : ℝ) : jacobiSn k u ^ 2 + jacobiCn k u ^ 2 = 1 :=
-  sin_sq_add_cos_sq _
+theorem jacobiSn_sq_add_jacobiCn_sq (k u : ℝ) : jacobiSn k u ^ 2 + jacobiCn k u ^ 2 = 1 := by
+  rw [jacobiSn_def, jacobiCn_def, sin_sq_add_cos_sq]
 
 /-- For `k ^ 2 ≤ 1`, the radicand defining `dn` is nonnegative. -/
 theorem one_sub_sq_mul_jacobiSn_sq_nonneg {k : ℝ} (hk : k ^ 2 ≤ 1) (u : ℝ) :
-    0 ≤ 1 - k ^ 2 * jacobiSn k u ^ 2 :=
-  (sub_nonneg.2 hk).trans (one_sub_sq_le_one_sub_sq_mul_sin_sq k _)
+    0 ≤ 1 - k ^ 2 * jacobiSn k u ^ 2 := by
+  rw [jacobiSn_def]
+  exact (sub_nonneg.2 hk).trans (one_sub_sq_le_one_sub_sq_mul_sin_sq k _)
 
 /-- For `k ^ 2 < 1`, the radicand defining `dn` is positive. -/
 theorem one_sub_sq_mul_jacobiSn_sq_pos {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
-    0 < 1 - k ^ 2 * jacobiSn k u ^ 2 :=
-  one_sub_mul_sin_sq_pos hk _
+    0 < 1 - k ^ 2 * jacobiSn k u ^ 2 := by
+  rw [jacobiSn_def]
+  exact one_sub_mul_sin_sq_pos hk _
 
 theorem jacobiDn_sq {k : ℝ} (hk : k ^ 2 ≤ 1) (u : ℝ) :
-    jacobiDn k u ^ 2 = 1 - k ^ 2 * jacobiSn k u ^ 2 :=
-  sq_sqrt (one_sub_sq_mul_jacobiSn_sq_nonneg hk u)
+    jacobiDn k u ^ 2 = 1 - k ^ 2 * jacobiSn k u ^ 2 := by
+  rw [jacobiDn_def, sq_sqrt (one_sub_sq_mul_jacobiSn_sq_nonneg hk u)]
 
 theorem jacobiDn_sq_add_sq_mul_jacobiSn_sq {k : ℝ} (hk : k ^ 2 ≤ 1) (u : ℝ) :
     jacobiDn k u ^ 2 + k ^ 2 * jacobiSn k u ^ 2 = 1 := by
   rw [jacobiDn_sq hk]
   ring
 
-theorem jacobiDn_nonneg (k u : ℝ) : 0 ≤ jacobiDn k u := sqrt_nonneg _
+theorem jacobiDn_nonneg (k u : ℝ) : 0 ≤ jacobiDn k u := by
+  rw [jacobiDn_def]
+  exact sqrt_nonneg _
 
-theorem jacobiDn_pos {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) : 0 < jacobiDn k u :=
-  sqrt_pos.2 (one_sub_sq_mul_jacobiSn_sq_pos hk u)
+theorem jacobiDn_pos {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) : 0 < jacobiDn k u := by
+  rw [jacobiDn_def]
+  exact sqrt_pos.2 (one_sub_sq_mul_jacobiSn_sq_pos hk u)
 
-theorem jacobiDn_le_one (k u : ℝ) : jacobiDn k u ≤ 1 :=
-  sqrt_le_one.2 (one_sub_sq_mul_sin_sq_le_one k _)
+theorem jacobiDn_le_one (k u : ℝ) : jacobiDn k u ≤ 1 := by
+  rw [jacobiDn_def, jacobiSn_def]
+  exact sqrt_le_one.2 (one_sub_sq_mul_sin_sq_le_one k _)
 
 /-! ### Values at zero and parity -/
 
@@ -269,7 +275,7 @@ theorem continuous_jacobiDn (k : ℝ) : Continuous (jacobiDn k) :=
 theorem hasDerivAt_jacobiAm {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
     HasDerivAt (jacobiAm k) (jacobiDn k u) u := by
   have hF := hasDerivAt_legendreF hk (jacobiAm k u)
-  rw [legendreF_integrand_eq_inv_sqrt] at hF
+  rw [legendreF_integrand_eq_inv_sqrt, ← jacobiSn_def, ← jacobiDn_def] at hF
   have h := hF.of_local_left_inverse (continuous_jacobiAm k).continuousAt
     (inv_ne_zero (jacobiDn_pos hk u).ne') (Eventually.of_forall (legendreF_jacobiAm hk))
   rwa [inv_inv] at h
@@ -293,9 +299,8 @@ theorem hasDerivAt_jacobiDn {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
     (one_sub_sq_mul_jacobiSn_sq_pos hk u).ne'
   convert h using 1
   · exact funext fun v ↦ by rw [jacobiDn_def, Pi.pow_apply]
-  · rw [Pi.pow_apply, ← jacobiDn_def]
-    field_simp [(jacobiDn_pos hk u).ne']
-    norm_num
+  · rw [Pi.pow_apply, ← jacobiDn_def,
+      eq_div_iff (mul_ne_zero two_ne_zero (jacobiDn_pos hk u).ne')]
     ring
 
 /-- **The first-order differential equation of `sn`** (DLMF §22.13(ii)):
