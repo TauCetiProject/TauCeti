@@ -49,7 +49,7 @@ theorem map_toLaurent_eq_homothety_smul_iff (F : FormalGroup A) (w : ℕ) :
   have hC : Polynomial.toLaurent.comp (Polynomial.C : A →+* Polynomial A) =
       LaurentPolynomial.C := RingHom.ext Polynomial.toLaurent_C
   simp only [map_comp, map_rescale, Polynomial.toLaurent_X_pow, homothety_smul, inv_inv,
-    unitOfInvertible, Units.val_mk, hC]
+    val_unitOfInvertible, hC]
 
 /-- Changing by a graded coordinate preserves the homogeneous degrees of a formal group law.
 For homological degree two, take `w = 2`. -/

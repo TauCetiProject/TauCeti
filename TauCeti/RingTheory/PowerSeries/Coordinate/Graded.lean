@@ -47,7 +47,7 @@ private theorem coeff_grading_conjugate (w : ℕ) (φ : FormalCoordinate A) (n :
       homothety (unitOfInvertible (T (w : ℤ)))).toPowerSeries =
       LaurentPolynomial.C (coeff n φ.toPowerSeries) * T (w * (n - 1) : ℕ) := by
   rw [coeff_homothety_inv_mul_mul_homothety, toPowerSeries_map, coeff_map]
-  simp only [unitOfInvertible, Units.val_mk, Units.inv_mk, LaurentPolynomial.invOf_T]
+  simp only [val_unitOfInvertible, val_inv_unitOfInvertible, LaurentPolynomial.invOf_T]
   cases n with
   | zero => simp [coeff_zero_eq_constantCoeff_apply]
   | succ n =>
@@ -116,11 +116,12 @@ def gradedStrictCoeffsEquiv (w : ℕ) :
   left_inv b := by
     funext i
     exact Subtype.ext (coeff_succ_ofStrictCoeffs _ _)
-  right_inv φ := by
-    exact Subtype.ext (by
-      simpa only [coe_strictCoeffsEquiv_apply,
-        ← strictCoeffsEquiv_symm_apply ⟨φ.1, φ.2.2⟩] using
-        congrArg Subtype.val (strictCoeffsEquiv.apply_symm_apply ⟨φ.1, φ.2.2⟩))
+  right_inv φ := Subtype.ext (by
+    -- Rewrite the coefficient function back to the inverse equivalence: its definition is
+    -- unexposed, so the inverse law needs this identification through the public API.
+    simpa only [coe_strictCoeffsEquiv_apply,
+      ← strictCoeffsEquiv_symm_apply ⟨φ.1, φ.2.2⟩] using
+      congrArg Subtype.val (strictCoeffsEquiv.apply_symm_apply ⟨φ.1, φ.2.2⟩))
 
 /-- The coordinate attached to a family of homogeneous coefficients is `X + ∑ bᵢ X^(i+1)`. -/
 @[simp]
