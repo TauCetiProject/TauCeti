@@ -27,9 +27,11 @@ so its eigenvalue is `r`. The root `r` is simple: its eigenspace is spanned by t
 eigenvector, and its multiplicity as a root of the characteristic polynomial is one. Finally,
 `r y ≤ A y` for a real vector `y` forces `A y = r y`.
 
-The statements about a given positive eigenvector work over any linearly ordered field. Existence,
-and the two statements that use a positive eigenvector of the transpose (simplicity as a root of
-the characteristic polynomial, and the equality case `r y ≤ A y`), are stated over `ℝ`.
+The primitivity of `1 + A` and the positivity of nonnegative eigenvectors hold over any linearly
+ordered commutative ring, such as `ℤ`. The other statements about a given positive eigenvector work
+over any linearly ordered field. Existence, and the two statements that use a positive eigenvector
+of the transpose (simplicity as a root of the characteristic polynomial, and the equality case
+`r y ≤ A y`), are stated over `ℝ`.
 
 ## Main results
 
@@ -60,10 +62,10 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n]
 
-section OrderedField
+section OrderedCommRing
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
-  {v w : n → K} {r μ : K}
+variable {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
+  {w : n → K} {μ : K}
 
 /-- If `A` is irreducible, then `1 + A` is primitive: some power of `1 + A` has all its entries
 strictly positive. -/
@@ -102,6 +104,13 @@ theorem IsIrreducible.pos_of_mulVec_eq_smul (hA : A.IsIrreducible) (hw : 0 ≤ w
   classical
   obtain ⟨k, hk, h⟩ := hA.exists_one_add_pow
   exact Matrix.pos_of_mulVec_eq_smul hk hw hw0 (h hAw) i
+
+end OrderedCommRing
+
+section OrderedField
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
+  {v w : n → K} {r μ : K}
 
 /-- A nonzero nonnegative eigenvector of an irreducible matrix is a positive multiple of any
 eigenvector with strictly positive entries, whatever eigenvalue it was taken for. -/
