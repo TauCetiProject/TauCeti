@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnected.Module
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
+import TauCeti.Algebra.Module.Lattice
 
 /-!
 # The admissible lattice of the full-weight module
@@ -183,34 +184,22 @@ private theorem scLattice_eq_iSup :
       ⟨x i, (t.mem_scLattice_iff ht).1 hx i, (lof_eq_of ℚ _ _ i (x i)).symm⟩
   · exact (t.lof_mem_scLattice_iff ht).2 hy
 
-/-- The full-weight lattice is finitely generated over `ℤ`, as the sum of the images of the
-finitely many fundamental lattices. -/
-private theorem fg_scLattice : (t.scLattice ht).FG := by
-  rw [scLattice_eq_iSup]
-  exact Submodule.fg_iSup _ fun i => (t.instIsLatticeFundamentalLattice ht i).fg.map _
+/-- The full-weight lattice is the product of the fundamental lattices, carried to the direct sum
+by `DirectSum.linearEquivFunOnFintype`. -/
+private theorem scLattice_eq_map_pi :
+    t.scLattice ht = (Submodule.pi univ (t.fundamentalLattice ht)).map
+      ((linearEquivFunOnFintype ℚ _ (t.fundamentalModule ht)).symm.toLinearMap.restrictScalars
+        ℤ) := by
+  refine le_antisymm (fun x hx => ?_) (Submodule.map_le_iff_le_comap.2 fun y hy => ?_)
+  · exact ⟨fun i => x i, fun i _ => (t.mem_scLattice_iff ht).1 hx i,
+      (linearEquivFunOnFintype ℚ _ _).symm_apply_apply x⟩
+  · exact (t.mem_scLattice_iff ht).2 fun i => hy i (mem_univ i)
 
-/-- The full-weight lattice spans `V_sc(t)` over `ℚ`, since each fundamental lattice spans its
-summand. -/
-private theorem span_scLattice_eq_top :
-    Submodule.span ℚ (t.scLattice ht : Set (t.scModule ht)) = ⊤ := by
-  refine top_unique fun x _ => ?_
-  rw [← sum_univ_of x]
-  refine sum_mem fun i _ => ?_
-  rw [← lof_eq_of ℚ]
-  -- The `i`-th component lies in the `ℚ`-span of the `i`-th fundamental lattice, whose image
-  -- under the inclusion of the summand lies in the full-weight lattice.
-  have hi : x i ∈ Submodule.span ℚ (t.fundamentalLattice ht i : Set _) := by
-    rw [Submodule.IsLattice.span_eq_top]
-    exact Submodule.mem_top
-  refine Submodule.span_mono ?_ (Submodule.apply_mem_span_image_of_mem_span _ hi)
-  rintro _ ⟨y, hy, rfl⟩
-  exact t.lof_mem_scLattice ht hy
-
-/-- **The full-weight lattice is a full lattice in `V_sc(t)`**: it is finitely generated over `ℤ`
-and spans `V_sc(t)` over `ℚ`. -/
-instance instIsLatticeScLattice : Submodule.IsLattice ℚ (t.scLattice ht) where
-  fg := t.fg_scLattice ht
-  span_eq_top := t.span_scLattice_eq_top ht
+/-- **The full-weight lattice is a full lattice in `V_sc(t)`**: it is the image of the product of
+the fundamental lattices, each a full lattice in its summand. -/
+instance instIsLatticeScLattice : Submodule.IsLattice ℚ (t.scLattice ht) := by
+  rw [scLattice_eq_map_pi]
+  exact Submodule.isLattice_map _ _ (linearEquivFunOnFintype ℚ _ _).symm.surjective
 
 /-- **The full-weight lattice lies in the span of the integral weight spaces** of the Cartan
 generators. With finite generation and stability under the Kostant form, this is what
