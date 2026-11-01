@@ -31,15 +31,17 @@ theorem contDiff_gaussianPDFReal (m : ℝ) (v : ℝ≥0) {n : WithTop ℕ∞} :
   rw [gaussianPDFReal_def]
   fun_prop
 
-/-- A nondegenerate Gaussian CDF is infinitely differentiable on the real line. -/
+/-- A nondegenerate Gaussian CDF is smooth to every finite or infinite differentiability order. -/
 @[fun_prop]
-theorem contDiff_cdf_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
-    ContDiff ℝ ∞ (cdf (gaussianReal m v)) := by
-  rw [contDiff_infty_iff_deriv]
-  refine ⟨fun x => (hasDerivAt_cdf_gaussianReal m hv x).differentiableAt, ?_⟩
-  have hderiv : deriv (cdf (gaussianReal m v)) = gaussianPDFReal m v :=
-    funext fun x => (hasDerivAt_cdf_gaussianReal m hv x).deriv
-  rw [hderiv]
-  exact contDiff_gaussianPDFReal m v
+theorem contDiff_cdf_gaussianReal (m : ℝ) {v : ℝ≥0} {n : ℕ∞} (hv : v ≠ 0) :
+    ContDiff ℝ n (cdf (gaussianReal m v)) := by
+  have h : ContDiff ℝ ∞ (cdf (gaussianReal m v)) := by
+    rw [contDiff_infty_iff_deriv]
+    refine ⟨fun x => (hasDerivAt_cdf_gaussianReal m hv x).differentiableAt, ?_⟩
+    have hderiv : deriv (cdf (gaussianReal m v)) = gaussianPDFReal m v :=
+      funext fun x => (hasDerivAt_cdf_gaussianReal m hv x).deriv
+    rw [hderiv]
+    exact contDiff_gaussianPDFReal m v
+  exact h.of_le (by exact_mod_cast le_top)
 
 end TauCeti.Probability
