@@ -210,13 +210,10 @@ private theorem isSliceChart_symm_trans {p : OpenPartialHomeomorph M E}
       (∀ z ∈ (p.symm.trans q).source, ContDiffAt 𝕜 n (p.symm.trans q) z) ∧
       (∀ z ∈ (p.symm.trans q).target, ContDiffAt 𝕜 n (p.symm.trans q).symm z) ∧
       IsSliceChart (p.symm.trans q) (L : Set E) (p.symm ⁻¹' s) := by
-  refine ⟨?_, fun z hz ↦ contDiffAt_symm_trans_of_mem_maximalAtlas hp hq hz, fun z hz ↦ ?_,
+  refine ⟨?_, fun z hz ↦ contDiffAt_symm_trans_of_mem_maximalAtlas hp hq hz,
+    fun z hz ↦ contDiffAt_symm_trans_symm_of_mem_maximalAtlas hp hq hz,
     isSliceChart_iff.2 fun z hz ↦ ?_⟩
   · simp [hy, hyp]
-  · rw [← OpenPartialHomeomorph.symm_source] at hz
-    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm] at hz ⊢
-    exact contDiffAt_symm_trans_of_mem_maximalAtlas hq hp hz
   · rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] at hz
     rw [mem_preimage, OpenPartialHomeomorph.coe_trans, Function.comp_apply]
     exact isSliceChart_iff.1 hs _ hz.2
@@ -239,10 +236,8 @@ theorem IsSliceChart.finrank_span_mtangentConeAt (hn : n ≠ 0)
     (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
     (hL : IsClosed (L : Set E)) (hy : y ∈ q.source) (hys : y ∈ s) :
     Module.finrank 𝕜 (Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y)) = Module.finrank 𝕜 L := by
-  obtain ⟨hy', hc, hcs, he⟩ := isSliceChart_chartAt_symm_trans hq hs hy
-  obtain ⟨A, hA⟩ := OpenPartialHomeomorph.exists_hasFDerivAt_of_chart _ hy'
-    ((hc _ hy').differentiableAt hn)
-    ((hcs _ (OpenPartialHomeomorph.map_source _ hy')).differentiableAt hn)
+  obtain ⟨hy', -, -, he⟩ := isSliceChart_chartAt_symm_trans hq hs hy
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
   rw [mtangentConeAt_eq_tangentConeAt_chartAt]
   exact he.finrank_span_tangentConeAt hL hy' (chartAt_self_mem_preimage hys) hA
 
@@ -464,24 +459,6 @@ variable {𝕜 E G M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω}
   [IsManifold 𝓘(𝕜, E) n M] {p q : OpenPartialHomeomorph M E} {L : Submodule 𝕜 E}
   {s₁ s₂ : Set M} {y : M}
-
-omit [IsManifold 𝓘(𝕜, E) n M] in
-/-- The transition map between two charts of the maximal atlas has an invertible strict derivative
-at each point of its source. -/
-private theorem exists_hasStrictFDerivAt_symm_trans (hn : n ≠ 0)
-    (hp : p ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
-    {z : E} (hz : z ∈ (p.symm.trans q).source) :
-    ∃ A : E ≃L[𝕜] E, HasStrictFDerivAt (p.symm.trans q) (A : E →L[𝕜] E) z := by
-  have hc := contDiffAt_symm_trans_of_mem_maximalAtlas hp hq hz
-  have hcs : ContDiffAt 𝕜 n (p.symm.trans q).symm (p.symm.trans q z) := by
-    have hz' := (p.symm.trans q).map_source hz
-    rw [← OpenPartialHomeomorph.symm_source] at hz'
-    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm] at hz' ⊢
-    exact contDiffAt_symm_trans_of_mem_maximalAtlas hq hp hz'
-  obtain ⟨A, hA⟩ := OpenPartialHomeomorph.exists_hasFDerivAt_of_chart _ hz (hc.differentiableAt hn)
-    (hcs.differentiableAt hn)
-  exact ⟨A, hA.fderiv ▸ hc.hasStrictFDerivAt hn⟩
 
 /-- **Transversality read in a chart.** If the tangent spaces of `s₁` and `s₂` at `y` span the
 model space, then so do the tangent spaces, at the image of `y`, of their images in any chart `p`
