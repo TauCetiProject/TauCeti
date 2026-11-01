@@ -9,10 +9,12 @@ public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
-# Compactly supported smooth strict approximation
+# Smooth strict approximation
 
 Every integrable real function on a finite-dimensional real inner product space admits
 compactly supported smooth approximations converging in `L¹` and in total variation.
@@ -26,12 +28,34 @@ smoothness without losing compact support. The central formal inputs are
 `TauCeti.exists_forall_contDiff_cutoff_closedBall`, and
 `ContDiffBump.totalVariationOn_normed_convolution_le`.
 
+On an arbitrary open set `Ω`, a function `u` locally integrable on `Ω` is the limit of functions
+smooth on `Ω` converging to it in `L¹(Ω)` whose variations on `Ω` converge to `|Du|(Ω)`, again
+finite or infinite. Neither boundedness nor boundary regularity of `Ω` is needed. The approximation
+is the locally finite sum `∑ k, ρ_k ⋆ (ζ k u)` over a nonnegative decomposition of unity `(ζ k)` of
+`Ω` (`IsOpen.exists_contDiff_decomposition_cutoff`), with mollifiers `ρ_k` whose radii are chosen
+piece by piece. Pairing it with a test vector field `φ`, the terms `ζ k div φ` combine into the
+divergence of one test vector field of norm at most one, while the remaining terms `u Dζ k`, whose
+sum vanishes, only contribute their small mollification errors. All the `ρ_k` are rescalings of
+one kernel, so the averages over translates defining the different pieces can be taken jointly.
+
+## Main results
+
+* `MeasureTheory.Integrable.exists_contDiff_hasCompactSupport_strict_approximation`: compactly
+  supported smooth strict approximation on the whole space.
+* `MeasureTheory.LocallyIntegrableOn.exists_contDiffOn_strict_approximation`: strict
+  approximation on an open set by functions smooth on it.
+* `MeasureTheory.LocallyIntegrableOn.exists_contDiffOn_tendsto_setLIntegral_enorm_fderiv`: the same
+  approximation, with `∫_Ω ‖∇w‖ → |Du|(Ω)`.
+
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised
   edition, §5.2.2 (smooth approximation of BV functions).
+* G. Anzellotti, M. Giaquinta, *Funzioni BV e tracce*, Rend. Sem. Mat. Univ. Padova 60 (1978),
+  1–21.
+* L. Ambrosio, N. Fusco, D. Pallara, *Functions of Bounded Variation and Free Discontinuity
+  Problems*, Theorem 3.9.
 -/
-
 public section
 
 noncomputable section
@@ -172,3 +196,434 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
     exact (limsup_le_limsup (.of_forall hwv)).trans_eq hbound.limsup_eq
 
 end MeasureTheory.Integrable
+
+namespace TauCeti
+
+open Function TestFunction
+open scoped Distributions
+
+variable {Ω : Opens E}
+
+/-- The bump of outer radius `1 / (n + 1)` and inner radius half of it. All of them are rescalings
+of `scaledBump E 0`, which lets the mollifications of different pieces share one kernel. -/
+private def scaledBump (E : Type*) [NormedAddCommGroup E] (n : ℕ) :
+    ContDiffBump (0 : E) where
+  rIn := 1 / (2 * (n + 1))
+  rOut := 1 / (n + 1)
+  rIn_pos := by positivity
+  rIn_lt_rOut := one_div_lt_one_div_of_lt (by positivity) (by linarith [n.cast_nonneg (α := ℝ)])
+
+private theorem scaledBump_apply {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (n : ℕ) (x : E) :
+    scaledBump E n x = scaledBump E 0 (((n : ℝ) + 1) • x) := by
+  have hratio : (1 / ((n : ℝ) + 1)) / (1 / (2 * ((n : ℝ) + 1))) =
+      (1 / ((0 : ℕ) + 1 : ℝ)) / (1 / (2 * ((0 : ℕ) + 1 : ℝ))) := by
+    field_simp
+  have hscale : (1 / (2 * ((n : ℝ) + 1)))⁻¹ • x =
+      (1 / (2 * ((0 : ℕ) + 1 : ℝ)))⁻¹ • (((n : ℝ) + 1) • x) := by
+    rw [smul_smul]
+    congr 1
+    field_simp
+    norm_num
+  simp only [ContDiffBump.apply, sub_zero, scaledBump]
+  rw [hratio, hscale]
+
+/-- Integrating against the normalized bump of radius `1 / (n + 1)` is integrating against the
+normalized bump of radius one after rescaling the variable. -/
+private theorem integral_scaledBump_normed_mul (n : ℕ) (F : E → ℝ) :
+    ∫ t, (scaledBump E n).normed μ t * F t ∂μ =
+      ∫ s, (scaledBump E 0).normed μ s * F (((n : ℝ) + 1)⁻¹ • s) ∂μ := by
+  set R : ℝ := (n : ℝ) + 1
+  have hR : 0 < R := by positivity
+  set d := Module.finrank ℝ E
+  have hI : ∫ t, scaledBump E n t ∂μ = (R ^ d)⁻¹ * ∫ s, scaledBump E 0 s ∂μ := by
+    simp_rw [scaledBump_apply n]
+    rw [Measure.integral_comp_smul_of_nonneg μ _ R (hR := hR.le), smul_eq_mul]
+  have hI0 : ∫ s, scaledBump E 0 s ∂μ ≠ 0 := (ContDiffBump.integral_pos _).ne'
+  have hRd : R ^ d ≠ 0 := pow_ne_zero _ hR.ne'
+  set G : E → ℝ := fun s => (scaledBump E 0).normed μ s * F (R⁻¹ • s) * R ^ d
+  have hG (t : E) : (scaledBump E n).normed μ t * F t = G (R • t) := by
+    simp only [G, ContDiffBump.normed_def]
+    rw [hI, scaledBump_apply n, inv_smul_smul₀ hR.ne']
+    field_simp
+    exact mul_comm _ _
+  calc ∫ t, (scaledBump E n).normed μ t * F t ∂μ = ∫ t, G (R • t) ∂μ :=
+        integral_congr_ae (.of_forall hG)
+    _ = (R ^ d)⁻¹ • ∫ s, G s ∂μ := Measure.integral_comp_smul_of_nonneg μ G R (hR := hR.le)
+    _ = _ := by
+        simp only [G, smul_eq_mul, integral_mul_const]
+        field_simp
+
+omit [μ.IsAddHaarMeasure] in
+/-- **The pairing estimate behind approximation on open sets.** Let `ζ k` be nonnegative smooth
+functions compactly supported in `Ω` whose partial sums are at most one, and suppose that the
+derivatives of the first `M` of them sum to zero on the support of a test vector field `φ` with
+`‖φ‖ ≤ 1`. Translating the pieces `ζ k u` by arbitrary vectors `τ k`, their total pairing with
+`div φ` exceeds the variation `|Du|(Ω)` by at most the `L¹` translation increments of the
+functions `u Dζ k`. The pieces combine into the single test vector field `∑ k, ζ k φ(· + τ k)`;
+the increments measure how far the translated gradient terms are from cancelling. -/
+private theorem sum_integral_mul_comp_sub_le [μ.IsAddRightInvariant]
+    (hu : LocallyIntegrableOn u Ω μ) (hT : totalVariationOn μ Ω u ≠ ⊤) {ζ : ℕ → E → ℝ}
+    (hζ : ∀ k, ContDiff ℝ ∞ (ζ k) ∧ HasCompactSupport (ζ k) ∧ tsupport (ζ k) ⊆ Ω)
+    (hζ0 : ∀ k x, 0 ≤ ζ k x) (hζ1 : ∀ N x, ∑ k ∈ Finset.range N, ζ k x ≤ 1)
+    (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖φ x‖ ≤ 1) {M : ℕ}
+    (hM : ∀ x ∈ tsupport φ, ∑ k ∈ Finset.range M, fderiv ℝ (ζ k) x = 0) (τ : ℕ → E) :
+    ∑ k ∈ Finset.range M, ∫ x, divergenceCLM φ x * (ζ k (x - τ k) * u (x - τ k)) ∂μ ≤
+      (totalVariationOn μ Ω u).toReal + ∑ k ∈ Finset.range M,
+        ∫ x, ‖u (x - τ k) • fderiv ℝ (ζ k) (x - τ k) - u x • fderiv ℝ (ζ k) x‖ ∂μ := by
+  set ψ := divergenceCLM φ
+  have hφd : ContDiff ℝ ∞ (φ : E → E) := φ.contDiff
+  have hζd (k : ℕ) : Differentiable ℝ (ζ k) := (hζ k).1.differentiable (by simp)
+  have hφτ (k : ℕ) : ContDiff ℝ ∞ (fun y => φ (y + τ k)) :=
+    hφd.comp (contDiff_id.add contDiff_const)
+  have hDζ (k : ℕ) : Continuous (fderiv ℝ (ζ k)) := (hζ k).1.continuous_fderiv (by simp)
+  -- Continuous functions supported in `tsupport (ζ k)` are integrable against `u`.
+  have hsupp (k : ℕ) {c : E → ℝ} (hc : Continuous c) (hcs : support c ⊆ tsupport (ζ k)) :
+      Integrable (fun y => u y • c y) μ :=
+    hu.integrable_smul_right_of_hasCompactSupport hc ((hζ k).2.1.mono' hcs)
+      ((closure_minimal hcs (isClosed_tsupport _)).trans (hζ k).2.2)
+  have hDζs (k : ℕ) {v : E → E} : support (fun y => fderiv ℝ (ζ k) y (v y)) ⊆ tsupport (ζ k) :=
+    fun y hy => support_fderiv_subset ℝ fun h0 => hy (by simp [h0])
+  have hA (k : ℕ) : Integrable (fun y => u y * (ζ k y * ψ (y + τ k))) μ := by
+    simpa only [smul_eq_mul] using hsupp k (c := fun y => ζ k y * ψ (y + τ k))
+      ((hζ k).1.continuous.mul (ψ.continuous.comp (continuous_id.add continuous_const)))
+      fun y hy => subset_tsupport _ (left_ne_zero_of_mul hy)
+  have hB (k : ℕ) : Integrable (fun y => u y * fderiv ℝ (ζ k) y (φ (y + τ k))) μ := by
+    simpa only [smul_eq_mul] using hsupp k ((hDζ k).clm_apply (hφτ k).continuous) (hDζs k)
+  have hC (k : ℕ) : Integrable (fun x => (u x • fderiv ℝ (ζ k) x) (φ x)) μ := by
+    simpa only [smul_apply] using
+      hsupp k ((hDζ k).clm_apply φ.continuous) (hDζs k)
+  have hg (k : ℕ) : Integrable (fun y => u y • fderiv ℝ (ζ k) y) μ :=
+    hu.integrable_smul_right_of_hasCompactSupport (hDζ k)
+      ((hζ k).2.1.mono' (support_fderiv_subset ℝ)) ((tsupport_fderiv_subset ℝ).trans (hζ k).2.2)
+  -- Translating each piece back moves the translation onto `div φ` and `φ`.
+  have htrans (k : ℕ) : ∫ x, ψ x * (ζ k (x - τ k) * u (x - τ k)) ∂μ =
+      ∫ y, u y * (ζ k y * ψ (y + τ k)) ∂μ := by
+    have h := integral_sub_right_eq_self (μ := μ) (fun y => u y * (ζ k y * ψ (y + τ k))) (τ k)
+    simp only [sub_add_cancel] at h
+    rw [← h]
+    congr 1
+    ext x
+    ring
+  have hBtrans (k : ℕ) : ∫ y, u y * fderiv ℝ (ζ k) y (φ (y + τ k)) ∂μ =
+      ∫ x, (u (x - τ k) • fderiv ℝ (ζ k) (x - τ k)) (φ x) ∂μ := by
+    have h := integral_sub_right_eq_self (μ := μ)
+      (fun y => u y * fderiv ℝ (ζ k) y (φ (y + τ k))) (τ k)
+    simp only [sub_add_cancel] at h
+    rw [← h]
+    simp only [smul_apply, smul_eq_mul]
+  -- The single test vector field `Φ = ∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one.
+  set L : Set E := ⋃ k ∈ Finset.range M, tsupport (ζ k)
+  have hL : IsCompact L := (Finset.range M).isCompact_biUnion fun k _ => (hζ k).2.1
+  have hLΩ : L ⊆ Ω := iUnion₂_subset fun k _ => (hζ k).2.2
+  set Φf : E → E := fun y => ∑ k ∈ Finset.range M, ζ k y • φ (y + τ k)
+  have hΦL : support Φf ⊆ L := fun y hy => by
+    by_contra hyL
+    refine hy (Finset.sum_eq_zero fun k hk => ?_)
+    rw [image_eq_zero_of_notMem_tsupport fun h => hyL (mem_iUnion₂.2 ⟨k, hk, h⟩), zero_smul]
+  let Φ : 𝓓(Ω, E) := ⟨Φf, ContDiff.sum fun k _ => (hζ k).1.smul (hφτ k),
+    HasCompactSupport.intro hL fun y hy => notMem_support.mp fun h => hy (hΦL h),
+    (closure_minimal hΦL hL.isClosed).trans hLΩ⟩
+  have hΦ_coe : (Φ : E → E) = fun y => ∑ k ∈ Finset.range M, ζ k y • φ (y + τ k) := rfl
+  have hΦ1 (y : E) : ‖Φ y‖ ≤ 1 := by
+    rw [hΦ_coe]
+    calc ‖∑ k ∈ Finset.range M, ζ k y • φ (y + τ k)‖
+        ≤ ∑ k ∈ Finset.range M, ‖ζ k y • φ (y + τ k)‖ := norm_sum_le _ _
+      _ ≤ ∑ k ∈ Finset.range M, ζ k y := Finset.sum_le_sum fun k _ => by
+          rw [norm_smul, Real.norm_of_nonneg (hζ0 k y)]
+          exact mul_le_of_le_one_right (hζ0 k y) (hφ _)
+      _ ≤ 1 := hζ1 M y
+  -- Its divergence, by the Leibniz rule `div (ζ φ) = ζ div φ + Dζ φ`.
+  have hdiv (y : E) : divergenceCLM Φ y = ∑ k ∈ Finset.range M,
+      (ζ k y * ψ (y + τ k) + fderiv ℝ (ζ k) y (φ (y + τ k))) := by
+    have hd (k : ℕ) : DifferentiableAt ℝ (fun y => φ (y + τ k)) y :=
+      (hφτ k).differentiable (by simp) y
+    rw [divergenceCLM_apply, hΦ_coe,
+      fderiv_fun_sum (A := fun k y => ζ k y • φ (y + τ k)) fun k _ => ((hζd k) y).smul (hd k),
+      ContinuousLinearMap.toLinearMap_sum, map_sum]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [trace_fderiv_smul ((hζd k) y) (hd k), fderiv_comp_add_right, divergenceCLM_apply]
+  have hTV : ∫ y, divergenceCLM Φ y * u y ∂μ ≤ (totalVariationOn μ Ω u).toReal :=
+    (ENNReal.ofReal_le_iff_le_toReal hT).mp (ofReal_integral_le_totalVariationOn Φ hΦ1)
+  have hsplit : ∫ y, divergenceCLM Φ y * u y ∂μ =
+      ∑ k ∈ Finset.range M, ∫ y, u y * (ζ k y * ψ (y + τ k)) ∂μ +
+        ∑ k ∈ Finset.range M, ∫ y, u y * fderiv ℝ (ζ k) y (φ (y + τ k)) ∂μ := by
+    have h : (fun y => divergenceCLM Φ y * u y) = fun y =>
+        (∑ k ∈ Finset.range M, u y * (ζ k y * ψ (y + τ k))) +
+          ∑ k ∈ Finset.range M, u y * fderiv ℝ (ζ k) y (φ (y + τ k)) := by
+      funext y
+      rw [hdiv, Finset.sum_mul, ← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun k _ => by ring
+    rw [h, integral_add (integrable_finsetSum _ fun k _ => hA k)
+      (integrable_finsetSum _ fun k _ => hB k), integral_finsetSum _ fun k _ => hA k,
+      integral_finsetSum _ fun k _ => hB k]
+  -- Untranslated, the gradient terms cancel on the support of `φ`.
+  have hzero : ∑ k ∈ Finset.range M, ∫ x, (u x • fderiv ℝ (ζ k) x) (φ x) ∂μ = 0 := by
+    rw [← integral_finsetSum _ fun k _ => hC k]
+    refine (integral_congr_ae (.of_forall fun x => ?_)).trans (integral_zero _ _)
+    by_cases hx : x ∈ tsupport φ
+    · simp only [smul_apply, smul_eq_mul, ← Finset.mul_sum,
+        ← sum_apply, hM x hx, zero_apply, mul_zero]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  have hdiff (k : ℕ) : -(∫ x, (u (x - τ k) • fderiv ℝ (ζ k) (x - τ k)) (φ x) ∂μ -
+      ∫ x, (u x • fderiv ℝ (ζ k) x) (φ x) ∂μ) ≤
+        ∫ x, ‖u (x - τ k) • fderiv ℝ (ζ k) (x - τ k) - u x • fderiv ℝ (ζ k) x‖ ∂μ := by
+    have hC' : Integrable (fun x => (u (x - τ k) • fderiv ℝ (ζ k) (x - τ k)) (φ x)) μ :=
+      ((hB k).comp_sub_right (τ k)).congr (.of_forall fun x => by
+        simp only [sub_add_cancel, smul_apply, smul_eq_mul])
+    rw [← integral_sub hC' (hC k)]
+    refine (neg_le_abs _).trans ?_
+    rw [← Real.norm_eq_abs]
+    refine norm_integral_le_of_norm_le (((hg k).comp_sub_right (τ k)).sub (hg k)).norm
+      (.of_forall fun x => ?_)
+    rw [← sub_apply]
+    exact (ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
+  have hgrad : -∑ k ∈ Finset.range M, ∫ y, u y * fderiv ℝ (ζ k) y (φ (y + τ k)) ∂μ ≤
+      ∑ k ∈ Finset.range M,
+        ∫ x, ‖u (x - τ k) • fderiv ℝ (ζ k) (x - τ k) - u x • fderiv ℝ (ζ k) x‖ ∂μ := by
+    rw [Finset.sum_congr rfl fun k _ => hBtrans k, ← sub_zero (∑ k ∈ Finset.range M, _), ← hzero,
+      ← Finset.sum_sub_distrib, ← Finset.sum_neg_distrib]
+    exact Finset.sum_le_sum fun k _ => hdiff k
+  rw [Finset.sum_congr rfl fun k _ => htrans k]
+  linarith
+
+/-- A radius `1 / (n + 1)`, with `n` at least a given `k`, for which mollifying an integrable `v`
+costs at most `ε` in `L¹` and translating an integrable `g` by at most the radius changes it by at
+most `ε` in `L¹`. -/
+private theorem exists_scaledBump_radius {F : Type*} [NormedAddCommGroup F] (k : ℕ) {v : E → ℝ}
+    (hv : Integrable v μ) {g : E → F} (hg : Integrable g μ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ n, k ≤ n ∧
+      ∫⁻ x, ‖((scaledBump E n).normed μ ⋆[lsmul ℝ ℝ, μ] v) x - v x‖ₑ ∂μ ≤ ENNReal.ofReal ε ∧
+      ∀ τ : E, ‖τ‖ ≤ ((n : ℝ) + 1)⁻¹ → ∫ x, ‖g (x - τ) - g x‖ ∂μ ≤ ε := by
+  have hrad : Tendsto (fun n : ℕ => (scaledBump E n).rOut) atTop (𝓝 0) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat
+  have hL1 := tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hrad
+    (memLp_one_iff_integrable.mpr hv)
+  have hi (n : ℕ) : Integrable ((scaledBump E n).normed μ ⋆[lsmul ℝ ℝ, μ] v - v) μ :=
+    ((scaledBump E n).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hv).sub hv
+  simp_rw [eLpNorm_one_eq_lintegral_enorm (hi _).aestronglyMeasurable] at hL1
+  have htr := hg.tendsto_integral_norm_translate_sub (c := id) (b := (0 : E)) tendsto_id
+  simp only [id, sub_zero] at htr
+  obtain ⟨r, hr, hr'⟩ := Metric.eventually_nhds_iff.mp (htr.eventually (ge_mem_nhds hε))
+  have hsmall : ∀ᶠ n : ℕ in atTop, ((n : ℝ) + 1)⁻¹ < r := by
+    simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat.eventually (gt_mem_nhds hr)
+  obtain ⟨n, hkn, hnv, hnr⟩ := ((eventually_ge_atTop k).and
+    ((hL1.eventually (ge_mem_nhds (ENNReal.ofReal_pos.2 hε))).and hsmall)).exists
+  exact ⟨n, hkn, hnv, fun τ hτ => hr' (by rw [dist_zero_right]; exact hτ.trans_lt hnr)⟩
+
+/-- A function locally integrable on an open set `Ω` is, for every `δ > 0`, within `δ` in
+`L¹(Ω)` of a function smooth on `Ω` whose variation on `Ω` exceeds that of `u` by at most `δ`.
+The approximation is `∑ k, ρ_k ⋆ (ζ k u)` for a nonnegative decomposition of unity `(ζ k)` of `Ω`
+and mollifiers `ρ_k`, which are rescalings of one kernel with radii chosen piece by piece. -/
+private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
+    (hu : LocallyIntegrableOn u Ω μ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ w : E → ℝ, ContDiffOn ℝ ∞ w Ω ∧ ∫⁻ x in Ω, ‖w x - u x‖ₑ ∂μ ≤ ENNReal.ofReal δ ∧
+      totalVariationOn μ Ω w ≤ totalVariationOn μ Ω u + ENNReal.ofReal δ := by
+  obtain ⟨ζ, χ, hζ, hζ0, hζ1, -, hχζ, hfin⟩ := Ω.isOpen.exists_contDiff_decomposition_cutoff
+  -- The pieces `v k = ζ k u` and the gradient terms `g k = u Dζ k`.
+  let v : ℕ → E → ℝ := fun k y => ζ k y * u y
+  let g : ℕ → E → E →L[ℝ] ℝ := fun k y => u y • fderiv ℝ (ζ k) y
+  have hv (k : ℕ) : Integrable (v k) μ := by
+    simpa only [v, smul_eq_mul, mul_comm (u _)] using
+      hu.integrable_smul_right_of_hasCompactSupport (hζ k).1.continuous (hζ k).2.1 (hζ k).2.2
+  have hg (k : ℕ) : Integrable (g k) μ :=
+    hu.integrable_smul_right_of_hasCompactSupport ((hζ k).1.continuous_fderiv (by simp))
+      ((hζ k).2.1.mono' (support_fderiv_subset ℝ)) ((tsupport_fderiv_subset ℝ).trans (hζ k).2.2)
+  let ε : ℕ → ℝ := fun k => δ / 2 / 2 ^ k
+  have hε (k : ℕ) : 0 < ε k := by positivity
+  -- For each piece choose a mollification radius `1 / (n k + 1) ≤ 1 / (k + 1)` controlling both
+  -- the `L¹` error of the piece and the translation increments of its gradient term.
+  have hchoice (k : ℕ) := exists_scaledBump_radius (μ := μ) k (hv k) (hg k) (hε k)
+  choose n hkn hnv hng using hchoice
+  let f : ℕ → E → ℝ := fun k => (scaledBump E (n k)).normed μ ⋆[lsmul ℝ ℝ, μ] v k
+  have hf (k : ℕ) : ContDiff ℝ ∞ (f k) :=
+    (scaledBump E (n k)).hasCompactSupport_normed.contDiff_convolution_left _
+      (scaledBump E (n k)).contDiff_normed (hv k).locallyIntegrable
+  -- Near each point of `Ω` only finitely many `f k` are nonzero, and the `ζ k` sum to one.
+  have hloc (x : E) (hx : x ∈ Ω) : ∃ m, ∀ᶠ y in 𝓝 x,
+      (∀ k, m ≤ k → f k y = 0) ∧ ∀ N, m ≤ N → ∑ j ∈ Finset.range N, ζ j y = 1 := by
+    obtain ⟨m₀, hm₀⟩ := hfin x hx
+    obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp hm₀
+    obtain ⟨K, hK⟩ := exists_nat_one_div_lt (half_pos hr)
+    refine ⟨max m₀ K, ?_⟩
+    filter_upwards [Metric.ball_mem_nhds x (half_pos hr)] with y hy
+    refine ⟨fun k hk => ?_, fun N hN =>
+      (hball y (ball_subset_ball (by linarith) hy)).2 N (le_of_max_le_left hN)⟩
+    by_contra hne
+    obtain ⟨a, ha, b, hb, rfl⟩ := support_convolution_subset (lsmul ℝ ℝ) hne
+    rw [ContDiffBump.support_normed_eq, mem_ball_zero_iff] at ha
+    have hbζ : b ∈ tsupport (ζ k) := subset_tsupport _ fun h => hb (by simp [v, h])
+    have hra : ‖a‖ < r / 2 := ha.trans_le <| ((Nat.one_div_le_one_div
+      ((le_of_max_le_right hk).trans (hkn k))).trans_lt hK).le
+    have hb' : b ∈ ball x r := by
+      rw [mem_ball] at hy ⊢
+      calc dist b x ≤ dist b (a + b) + dist (a + b) x := dist_triangle _ _ _
+        _ < r / 2 + r / 2 := by
+          gcongr
+          simpa [dist_eq_norm] using hra
+        _ = r := add_halves r
+    have h1 := hχζ k hbζ
+    rw [(hball b hb').1 k (le_of_max_le_left hk)] at h1
+    exact zero_ne_one h1
+  let w : E → ℝ := fun x => ∑' k, f k x
+  have hw : ContDiffOn ℝ ∞ w Ω := fun x hx => by
+    obtain ⟨m, hm⟩ := hloc x hx
+    refine (contDiffAt_tsum_of_eventually_eq_zero (Finset.range m)
+      (fun k _ => (hf k).contDiffAt) (hm.mono fun y hy k hk => ?_)).contDiffWithinAt
+    exact hy.1 k (by simpa using hk)
+  -- The `L¹` error is at most the sum of the errors of the pieces.
+  have hL1 : ∫⁻ x in Ω, ‖w x - u x‖ₑ ∂μ ≤ ENNReal.ofReal δ := by
+    have hpt (x : E) (hx : x ∈ (Ω : Set E)) : ‖w x - u x‖ₑ ≤ ∑' k, ‖f k x - v k x‖ₑ := by
+      obtain ⟨m, hm⟩ := hloc x hx
+      have hwx : w x = ∑ k ∈ Finset.range m, f k x :=
+        tsum_eq_sum fun k hk => hm.self_of_nhds.1 k (by simpa using hk)
+      have hux : u x = ∑ k ∈ Finset.range m, v k x := by
+        simp only [v, ← Finset.sum_mul, hm.self_of_nhds.2 m le_rfl, one_mul]
+      rw [hwx, hux, ← Finset.sum_sub_distrib]
+      exact (enorm_sum_le _ _).trans (ENNReal.sum_le_tsum _)
+    calc ∫⁻ x in Ω, ‖w x - u x‖ₑ ∂μ ≤ ∫⁻ x in Ω, ∑' k, ‖f k x - v k x‖ₑ ∂μ :=
+          setLIntegral_mono' Ω.isOpen.measurableSet hpt
+      _ ≤ ∫⁻ x, ∑' k, ‖f k x - v k x‖ₑ ∂μ := setLIntegral_le_lintegral _ _
+      _ = ∑' k, ∫⁻ x, ‖f k x - v k x‖ₑ ∂μ :=
+          lintegral_tsum fun k => ((hf k).continuous.aestronglyMeasurable.sub
+            (hv k).aestronglyMeasurable).enorm
+      _ ≤ ∑' k, ENNReal.ofReal (ε k) := ENNReal.tsum_le_tsum hnv
+      _ = ENNReal.ofReal δ := by
+          rw [← ENNReal.ofReal_tsum_of_nonneg (fun k => (hε k).le) (summable_geometric_two' δ),
+            tsum_geometric_two']
+  refine ⟨w, hw, hL1, ?_⟩
+  by_cases hT : totalVariationOn μ Ω u = ⊤
+  · simp [hT]
+  refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
+  set ψ := divergenceCLM φ
+  -- A single index `M` works on the whole support of `φ`.
+  let P : ℕ → Set E := fun m => {y | ∀ᶠ z in 𝓝 y,
+    (∀ k, m ≤ k → f k z = 0) ∧ ∀ N, m ≤ N → ∑ j ∈ Finset.range N, ζ j z = 1}
+  have hPmono : Monotone P := fun m m' hmm' y hy => hy.mono fun z hz =>
+    ⟨fun k hk => hz.1 k (hmm'.trans hk), fun N hN => hz.2 N (hmm'.trans hN)⟩
+  obtain ⟨M, hM⟩ := φ.hasCompactSupport.isCompact.elim_directed_cover P
+    (fun m => isOpen_setOfPred_eventually_nhds) (fun y hy => by
+      obtain ⟨m, hm⟩ := hloc y (φ.tsupport_subset hy)
+      exact mem_iUnion.2 ⟨m, hm⟩) hPmono.directed_le
+  have hDζ (y : E) (hy : y ∈ tsupport φ) : ∑ k ∈ Finset.range M, fderiv ℝ (ζ k) y = 0 := by
+    have h1 : (fun z => ∑ k ∈ Finset.range M, ζ k z) =ᶠ[𝓝 y] fun _ => 1 :=
+      (hM hy).mono fun z hz => hz.2 M le_rfl
+    rw [← fderiv_fun_sum fun k _ => ((hζ k).1.differentiable (by simp)) y, h1.fderiv_eq,
+      fderiv_const_apply]
+  -- The pairing with `w` is a finite sum of pairings with the mollified pieces.
+  have hpair : ∫ x, ψ x * w x ∂μ = ∑ k ∈ Finset.range M, ∫ x, ψ x * f k x ∂μ := by
+    rw [← integral_finsetSum (f := fun k x => ψ x * f k x) _ fun k _ =>
+      (ψ.continuous.mul (hf k).continuous).integrable_of_hasCompactSupport
+        ψ.hasCompactSupport.mul_right]
+    refine integral_congr_ae (.of_forall fun x => ?_)
+    by_cases hx : x ∈ tsupport φ
+    · simp only [w, ← Finset.mul_sum]
+      rw [tsum_eq_sum (s := Finset.range M) fun k hk =>
+        (hM hx).self_of_nhds.1 k (by simpa using hk)]
+    · have hψx : ψ x = 0 := by
+        simp [ψ, divergenceCLM_apply, fderiv_of_notMem_tsupport ℝ hx]
+      simp [hψx]
+  -- Each mollified piece is an average of translates, all with the same rescaled kernel `ρ`.
+  set T := (totalVariationOn μ Ω u).toReal
+  let ρ : E → ℝ := (scaledBump E 0).normed μ
+  let J : ℕ → E → ℝ := fun k t => ∫ x, ψ x * v k (x - t) ∂μ
+  have hJ (k : ℕ) : Continuous (J k) := by
+    have h : J k = ψ ⋆[lsmul ℝ ℝ, μ] fun z => v k (-z) := by
+      funext t
+      simp only [J, convolution_lsmul, smul_eq_mul, neg_sub]
+    rw [h]
+    exact ψ.hasCompactSupport.continuous_convolution_left _ ψ.continuous
+      (hv k).comp_neg.locallyIntegrable
+  have hterm (k : ℕ) : ∫ x, ψ x * f k x ∂μ = ∫ s, ρ s * J k (((n k : ℝ) + 1)⁻¹ • s) ∂μ := by
+    rw [integral_mul_convolution_eq_integral_mul_integral_comp_sub ψ.continuous
+      ψ.hasCompactSupport (scaledBump E (n k)).integrable_normed
+      (scaledBump E (n k)).hasCompactSupport_normed
+      ((hv k).locallyIntegrable.locallyIntegrableOn univ) fun _ _ _ _ => mem_univ _]
+    exact integral_scaledBump_normed_mul (n k) (J k)
+  have hint (k : ℕ) : Integrable (fun s => ρ s * J k (((n k : ℝ) + 1)⁻¹ • s)) μ :=
+    ((scaledBump E 0).continuous_normed.mul
+      ((hJ k).comp (continuous_const_smul _))).integrable_of_hasCompactSupport
+        (scaledBump E 0).hasCompactSupport_normed.mul_right
+  -- For each point of the kernel's support the translates combine into one test field.
+  have hbound (s : E) : ρ s * ∑ k ∈ Finset.range M, J k (((n k : ℝ) + 1)⁻¹ • s) ≤
+      ρ s * (T + δ) := by
+    rcases eq_or_ne (ρ s) 0 with hs | hs
+    · simp [hs]
+    refine mul_le_mul_of_nonneg_left ?_ ((scaledBump E 0).nonneg_normed s)
+    have hs1 : ‖s‖ < 1 := by
+      have hmem : s ∈ support ρ := hs
+      rw [ContDiffBump.support_normed_eq, mem_ball_zero_iff] at hmem
+      simpa [scaledBump] using hmem
+    refine (sum_integral_mul_comp_sub_le hu hT hζ hζ0 hζ1 φ hφ hDζ
+      fun k => ((n k : ℝ) + 1)⁻¹ • s).trans (add_le_add_right ?_ _)
+    calc ∑ k ∈ Finset.range M, ∫ x, ‖g k (x - ((n k : ℝ) + 1)⁻¹ • s) - g k x‖ ∂μ
+        ≤ ∑ k ∈ Finset.range M, ε k := Finset.sum_le_sum fun k _ => hng k _ (by
+          rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+          exact mul_le_of_le_one_right (by positivity) hs1.le)
+      _ ≤ ∑' k, ε k := Summable.sum_le_tsum _ (fun k _ => (hε k).le) (summable_geometric_two' δ)
+      _ = δ := tsum_geometric_two' δ
+  have hle : ∫ x, ψ x * w x ∂μ ≤ T + δ := by
+    rw [hpair, Finset.sum_congr rfl fun k _ => hterm k,
+      ← integral_finsetSum (f := fun k s => ρ s * J k (((n k : ℝ) + 1)⁻¹ • s)) _
+        fun k _ => hint k]
+    calc ∫ s, ∑ k ∈ Finset.range M, ρ s * J k (((n k : ℝ) + 1)⁻¹ • s) ∂μ
+        ≤ ∫ s, ρ s * (T + δ) ∂μ :=
+          integral_mono (integrable_finsetSum _ fun k _ => hint k)
+            ((scaledBump E 0).integrable_normed.mul_const _) fun s => by
+              rw [← Finset.mul_sum]
+              exact hbound s
+      _ = T + δ := by rw [integral_mul_const, (scaledBump E 0).integral_normed, one_mul]
+  calc ENNReal.ofReal (∫ x, ψ x * w x ∂μ) ≤ ENNReal.ofReal (T + δ) := ENNReal.ofReal_le_ofReal hle
+    _ = totalVariationOn μ Ω u + ENNReal.ofReal δ := by
+        rw [ENNReal.ofReal_add ENNReal.toReal_nonneg hδ.le, ENNReal.ofReal_toReal hT]
+
+end TauCeti
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {Ω : Opens E}
+
+/-- **Strict approximation on an open set.** A function `u` locally integrable on an arbitrary
+open set `Ω` is the limit of functions `w n` smooth on `Ω` with `∫_Ω |w n - u| → 0` and
+`|D(w n)|(Ω) → |Du|(Ω)`. For `u ∈ BV(Ω)` this is strict approximation; the variation limit also
+holds when `|Du|(Ω)` is infinite. No integrability of `u` on `Ω`, boundedness of `Ω` or regularity
+of its boundary is assumed, and the approximations need not be smooth up to the boundary. -/
+theorem exists_contDiffOn_strict_approximation (hu : LocallyIntegrableOn u Ω μ) :
+    ∃ w : ℕ → E → ℝ, (∀ n, ContDiffOn ℝ ∞ (w n) Ω) ∧
+      Tendsto (fun n => ∫⁻ x in Ω, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) ∧
+      Tendsto (fun n => TauCeti.totalVariationOn μ Ω (w n)) atTop
+        (𝓝 (TauCeti.totalVariationOn μ Ω u)) := by
+  choose w hw hwL hwV using fun n : ℕ =>
+    TauCeti.exists_contDiffOn_lintegral_le_totalVariationOn_le hu (δ := 1 / (n + 1))
+      (by positivity)
+  have hzero : Tendsto (fun n : ℕ => ENNReal.ofReal (1 / (n + 1))) atTop (𝓝 0) := by
+    simpa only [Function.comp_def, ENNReal.ofReal_zero] using
+      (ENNReal.continuous_ofReal.tendsto 0).comp tendsto_one_div_add_atTop_nhds_zero_nat
+  have hL : Tendsto (fun n => ∫⁻ x in Ω, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hzero (fun _ => zero_le) hwL
+  refine ⟨w, hw, hL, tendsto_of_le_liminf_of_limsup_le ?_ ?_⟩
+  · exact TauCeti.totalVariationOn_le_liminf
+      (.of_forall fun n => (hw n).continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) hu
+      fun K _ hKΩ => tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hL
+        (fun _ => zero_le) fun _ => lintegral_mono_set hKΩ
+  · have hbound := tendsto_const_nhds.add hzero (a := TauCeti.totalVariationOn μ Ω u)
+    rw [add_zero] at hbound
+    exact (limsup_le_limsup (.of_forall hwV)).trans_eq hbound.limsup_eq
+
+/-- **Strict approximation on an open set, with gradients.** A function `u` locally integrable on
+an arbitrary open set `Ω` is the limit of functions `w n` smooth on `Ω` with
+`∫_Ω |w n - u| → 0` and `∫_Ω ‖∇(w n)‖ → |Du|(Ω)`, finite or infinite. -/
+theorem exists_contDiffOn_tendsto_setLIntegral_enorm_fderiv (hu : LocallyIntegrableOn u Ω μ) :
+    ∃ w : ℕ → E → ℝ, (∀ n, ContDiffOn ℝ ∞ (w n) Ω) ∧
+      Tendsto (fun n => ∫⁻ x in Ω, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) ∧
+      Tendsto (fun n => ∫⁻ x in Ω, ‖fderiv ℝ (w n) x‖ₑ ∂μ) atTop
+        (𝓝 (TauCeti.totalVariationOn μ Ω u)) := by
+  obtain ⟨w, hw, hL, hV⟩ := hu.exists_contDiffOn_strict_approximation
+  refine ⟨w, hw, hL, hV.congr fun n => ?_⟩
+  refine LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv fun x hx => ?_
+  obtain ⟨K, t, ht, hK⟩ :=
+    (((hw n).contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (by simp)).exists_lipschitzOnWith
+  exact ⟨K, t, mem_nhdsWithin_of_mem_nhds ht, hK⟩
+
+end MeasureTheory.LocallyIntegrableOn
