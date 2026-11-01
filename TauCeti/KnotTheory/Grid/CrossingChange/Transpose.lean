@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
-public import TauCeti.KnotTheory.Grid.Move.Transpose
 
 /-!
 # Transposition preserves unknotting number
@@ -32,7 +31,7 @@ theorem IsCrossingChange.transpose {L L' : GridLink} (h : IsCrossingChange L L')
 
 /-- Transposition preserves and reflects the crossing-change relation. -/
 @[simp]
-theorem isCrossingChange_transpose_iff {L L' : GridLink} :
+theorem isCrossingChange_transpose {L L' : GridLink} :
     IsCrossingChange L.transpose L'.transpose ↔ IsCrossingChange L L' :=
   ⟨fun h ↦ by simpa only [transpose_transpose] using h.transpose,
     IsCrossingChange.transpose⟩
@@ -60,15 +59,6 @@ theorem crossingChangeGraph_edist_transpose (L L' : GridLink) :
     crossingChangeGraph.edist L.transpose L'.transpose = crossingChangeGraph.edist L L' := by
   simpa only [crossingChangeGraphTransposeIso_apply] using
     crossingChangeGraphTransposeIso.edist_eq L L'
-
-/-- Diagonal reflection fixes the unknot, whose two-by-two diagram is symmetric. -/
-@[simp]
-theorem transpose_unknot : unknot.transpose = unknot := by
-  have h : (GridDiagram.unknot 0).transpose = GridDiagram.unknot 0 := by
-    ext c <;> simp only [GridDiagram.transpose_O, GridDiagram.transpose_X,
-      GridState.transpose_apply, GridDiagram.unknot_O_toPerm, GridDiagram.unknot_X_toPerm] <;>
-      fin_cases c <;> decide
-  rw [← GridDiagram.toGridLink_unknot 0, transpose_toGridLink, h]
 
 /-- Transposition preserves unknotting number, also when it is infinite. -/
 @[simp]

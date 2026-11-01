@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Move.Basic
+public import TauCeti.KnotTheory.Grid.Move.Components
 public import TauCeti.KnotTheory.Grid.Stabilization.Transpose
 
 /-!
@@ -51,7 +51,7 @@ theorem MovesTo.transpose {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m}
 
 /-- Two transposed diagrams are move-equivalent exactly when the original diagrams are. -/
 @[simp]
-theorem movesTo_transpose_iff {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m} :
+theorem movesTo_transpose {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m} :
     MovesTo G.transpose G'.transpose ↔ MovesTo G G' :=
   ⟨fun h ↦ by simpa only [transpose_transpose] using h.transpose, MovesTo.transpose⟩
 
@@ -59,38 +59,55 @@ end GridDiagram
 
 namespace GridLink
 
+private theorem transpose_cyclicRows_toGridLink_eq {n : ℕ} (G : GridDiagram n) :
+    G.transpose.toGridLink = (G.relabelRows (finRotate n)).transpose.toGridLink := by
+  rw [GridDiagram.relabelRows_transpose]
+  exact G.transpose.cyclicColumns_toGridLink_eq
+
+private theorem transpose_cyclicColumns_toGridLink_eq {n : ℕ} (G : GridDiagram n) :
+    G.transpose.toGridLink = (G.relabelColumns (finRotate n)).transpose.toGridLink := by
+  rw [GridDiagram.relabelColumns_transpose]
+  exact G.transpose.cyclicRows_toGridLink_eq
+
+private theorem transpose_commutation_toGridLink_eq {n : ℕ} {G G' : GridDiagram n}
+    (h : G.IsCommutation G') : G.transpose.toGridLink = G'.transpose.toGridLink :=
+  ((GridDiagram.isCommutation_transpose _ _).mpr h).toGridLink_eq
+
+private theorem transpose_stabilization_toGridLink_eq {n : ℕ} {G : GridDiagram n}
+    {G' : GridDiagram (n + 1)} (h : G.IsStabilization G') :
+    G.transpose.toGridLink = G'.transpose.toGridLink :=
+  ((GridDiagram.isStabilization_transpose _ _).mpr h).toGridLink_eq
+
 /-- Diagonal reflection of a grid link, defined independently of a presenting diagram. -/
 def transpose : GridLink → GridLink :=
   GridLink.lift (fun _ G ↦ G.transpose.toGridLink)
-    (fun G ↦ by
-      rw [GridDiagram.relabelRows_transpose]
-      exact G.transpose.cyclicColumns_toGridLink_eq)
-    (fun G ↦ by
-      rw [GridDiagram.relabelColumns_transpose]
-      exact G.transpose.cyclicRows_toGridLink_eq)
-    (fun h ↦ ((GridDiagram.isCommutation_transpose _ _).mpr h).toGridLink_eq)
-    (fun h ↦ ((GridDiagram.isStabilization_transpose _ _).mpr h).toGridLink_eq)
+    transpose_cyclicRows_toGridLink_eq transpose_cyclicColumns_toGridLink_eq
+    transpose_commutation_toGridLink_eq transpose_stabilization_toGridLink_eq
 
 /-- Transposition of a link presented by a diagram is presented by the transposed diagram. -/
 @[simp]
 theorem transpose_toGridLink {n : ℕ} (G : GridDiagram n) :
-    G.toGridLink.transpose = G.transpose.toGridLink := by
-  unfold transpose
-  apply GridLink.lift_toGridLink
-  · intro n G
-    rw [GridDiagram.relabelRows_transpose]
-    exact G.transpose.cyclicColumns_toGridLink_eq
-  · intro n G
-    rw [GridDiagram.relabelColumns_transpose]
-    exact G.transpose.cyclicRows_toGridLink_eq
-  · exact fun h ↦ ((GridDiagram.isCommutation_transpose _ _).mpr h).toGridLink_eq
-  · exact fun h ↦ ((GridDiagram.isStabilization_transpose _ _).mpr h).toGridLink_eq
+    G.toGridLink.transpose = G.transpose.toGridLink :=
+  lift_toGridLink _ transpose_cyclicRows_toGridLink_eq transpose_cyclicColumns_toGridLink_eq
+    transpose_commutation_toGridLink_eq transpose_stabilization_toGridLink_eq G
 
 /-- Diagonal reflection is involutive on grid links. -/
 @[simp]
 theorem transpose_transpose (L : GridLink) : L.transpose.transpose = L := by
   induction L using GridLink.ind with
   | h G => simp
+
+/-- Diagonal reflection preserves the number of link components. -/
+@[simp]
+theorem componentCount_transpose (L : GridLink) :
+    L.transpose.componentCount = L.componentCount := by
+  induction L using GridLink.ind with
+  | h G => simp [GridDiagram.componentCount_transpose]
+
+/-- A transposed grid link is a knot exactly when the original link is. -/
+@[simp]
+theorem isKnot_transpose {L : GridLink} : L.transpose.IsKnot ↔ L.IsKnot := by
+  simp only [isKnot_def, componentCount_transpose]
 
 /-- Transposition as an equivalence of grid links. -/
 def transposeEquiv : GridLink ≃ GridLink :=
