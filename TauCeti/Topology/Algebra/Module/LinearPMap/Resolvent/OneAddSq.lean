@@ -174,11 +174,13 @@ nonzero eigenvector for it. -/
 theorem invOneAddSq_apply_of_apply_eq_smul {c : ℂ} (x : A.domain) (h : A x = c • (x : X)) :
     A.invOneAddSq x = (1 + c ^ 2)⁻¹ • (x : X) := by
   have hAx : A x ∈ A.domain := h ▸ A.domain.smul_mem c x.2
+  have hAx' : (⟨A x, hAx⟩ : A.domain) = c • x := Subtype.ext h
   have hAAx : A ⟨A x, hAx⟩ = c ^ 2 • (x : X) := by
-    rw [show (⟨A x, hAx⟩ : A.domain) = c • x from Subtype.ext h, map_smul, h, smul_smul, sq]
+    rw [hAx', map_smul, h, smul_smul, sq]
+  have hsum : (x : X) + c ^ 2 • (x : X) = (1 + c ^ 2) • (x : X) := by
+    rw [add_smul, one_smul]
   have key := invOneAddSq_apply_add_apply hp hm x hAx
-  rw [hAAx, show (x : X) + c ^ 2 • (x : X) = (1 + c ^ 2) • (x : X) by rw [add_smul, one_smul],
-    ContinuousLinearMap.map_smul] at key
+  rw [hAAx, hsum, ContinuousLinearMap.map_smul] at key
   rcases eq_or_ne (1 + c ^ 2) 0 with hc | hc
   · rw [hc, zero_smul] at key
     simp [← key]

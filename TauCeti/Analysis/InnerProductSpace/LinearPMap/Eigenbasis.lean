@@ -28,7 +28,10 @@ orthonormal family with dense span, hence a Hilbert basis. An eigenspace of `K` 
 inside it is needed: an eigenbasis of `K` alone need not consist of eigenvectors of `D`.
 
 The first step only uses that the pieces are finite-dimensional, mutually orthogonal, invariant
-and densely spanning, and is stated for any symmetric partial linear map over `ℝ` or `ℂ`.
+and densely spanning, and is stated for any symmetric partial linear map over `ℝ` or `ℂ`. The
+assembly of the Hilbert basis from orthonormal bases of the pieces follows the bounded compact
+symmetric case, `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces`
+in `TauCeti.Analysis.InnerProductSpace.Spectrum`.
 
 ## Main results
 
