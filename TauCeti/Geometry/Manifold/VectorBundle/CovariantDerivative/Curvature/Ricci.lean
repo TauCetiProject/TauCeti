@@ -32,7 +32,8 @@ The calculation is stated for any bilinear form in place of `κ g`, and then spe
 to `κ g`.
 
 The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart, so
-the Ricci tensor pairs vector fields differentiable at a point to a function differentiable there.
+the Ricci tensor pairs vector fields differentiable (respectively smooth) at a point to a function
+differentiable (respectively smooth) there.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
@@ -237,6 +238,33 @@ theorem mdifferentiableAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x}
       (((cov.contMDiffOn_ricciTensor_chartLocalFrame x i j).contMDiffAt
         ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))).mdifferentiableAt
           (by simp))
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := σ) hx,
+    e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := τ) hx] with y hσy hτy
+  conv_lhs => rw [hσy, hτy]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
+    chartLocalFrame_def, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+open Riemannian.Tensor in
+/-- The Ricci tensor of a smooth connection pairs two vector fields that are `C^∞` at `x` to a
+function that is `C^∞` at `x`. No metric is involved. -/
+theorem contMDiffAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x} {x : M}
+    (hσ : CMDiffAt ∞ (T% σ) x) (hτ : CMDiffAt ∞ (T% τ) x) :
+    ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ cov.ricciTensor y (σ y) (τ y)) x := by
+  let e := trivializationAt E (TangentSpace I : M → Type _) x
+  let b := Module.finBasis ℝ E
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  -- Expand both fields in the chart-local frame at `x`, whose Ricci coefficients are smooth.
+  have hsum : ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ ∑ i, ∑ j, e.localFrameCoeff I b i y (σ y) *
+      e.localFrameCoeff I b j y (τ y) *
+        cov.ricciTensor y (chartLocalFrame (I := I) x i y) (chartLocalFrame (I := I) x j y)) x :=
+    contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦
+      ((contMDiffAt_localFrameCoeff b hx hσ i).mul (contMDiffAt_localFrameCoeff b hx hτ j)).mul
+      ((cov.contMDiffOn_ricciTensor_chartLocalFrame x i j).contMDiffAt
+        ((chartAt H x).open_source.mem_nhds (mem_chart_source H x)))
   refine hsum.congr_of_eventuallyEq ?_
   filter_upwards [e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := σ) hx,
     e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := τ) hx] with y hσy hτy
