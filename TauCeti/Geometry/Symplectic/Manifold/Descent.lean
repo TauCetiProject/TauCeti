@@ -30,6 +30,8 @@ kernels of the derivative of the projection; its descent is the reduced symplect
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.eval₂_descendedForm_mfderiv`: the descent evaluates on images under the
+  derivative of `f` as the form.
 * `TauCeti.SmoothTwoForm.isNondegenerate_descendedForm_iff`: the descent of a basic two-form is
   nondegenerate exactly when the kernel of the form is the kernel of the derivative of `f`.
 * `TauCeti.SmoothTwoForm.isSymplectic_descendedForm_iff`: the descent is symplectic exactly when
@@ -64,7 +66,7 @@ variable {E H M E' H' M' : Type*}
 
 /-- The descent `β` of a basic two-form `σ` evaluates on images under the derivative of `f` as
 `σ`: `σ_x(u, w) = β_(f x)(df_x u, df_x w)`. -/
-private theorem eval₂_descendedForm_mfderiv (x : M) (u w : TangentSpace I x) :
+theorem eval₂_descendedForm_mfderiv (x : M) (u w : TangentSpace I x) :
     SmoothBundleForm.eval₂ (SmoothForm.descendedForm hf hsurj σ hσ) (f x)
         (mfderiv I I' f x u) (mfderiv I I' f x w) =
       SmoothBundleForm.eval₂ σ x u w := by

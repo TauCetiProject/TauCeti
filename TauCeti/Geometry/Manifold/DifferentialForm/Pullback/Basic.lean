@@ -261,6 +261,14 @@ theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
     (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
   bundleMpullbackWithin_eq_bundleMpullback hs hf ω
 
+/-- A form evaluated at `a` on tangent vectors at `b = a` moved by `tangentSpaceCast` is the form
+evaluated at `b` on the original vectors. -/
+theorem RoughForm.apply_tangentSpaceCast {ω : RoughForm I' M' F k} {a b : M'} (h : b = a)
+    (u : Fin k → TangentSpace I' b) : ω a (fun i ↦ tangentSpaceCast I' b a (u i)) = ω b u := by
+  subst h
+  -- `tangentSpaceCast` from a tangent space to itself is the identity.
+  rfl
+
 /-- Maps that agree near `x` pull a form back to the same value at `x`. -/
 theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f =ᶠ[𝓝 x] g)
     (ω : RoughForm I' M' F k) : mpullback I I' f ω x = mpullback I I' g ω x := by

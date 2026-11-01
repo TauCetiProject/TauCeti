@@ -174,27 +174,11 @@ theorem IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff [IsManifold I 1 M]
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (mpullback I I' f ω y)) x ↔
       ContMDiffAt I' (I'.prod 𝓘(ℝ, E' [⋀^Fin k]→L[ℝ] F)) m
-        (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f x) := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    exact absurd hmn (by simp)
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mpullback_form hf.contMDiffAt hmn⟩
-  -- Near `f x`, the form `ω` is the pullback of `f^* ω` along a local inverse `s` of `f`.
-  set s := hf.localInverse
-  have hsx : s (f x) = x := hf.localInverse_left_inv hf.localInverse_mem_target
-  have hs : ContMDiffAt I' I n s (f x) := hf.contMDiffAt_localInverse
-  have hpull := (hsx ▸ h).mpullback_form hs hmn
-  refine hpull.congr_of_eventuallyEq ?_
-  have hfs : ∀ᶠ y in 𝓝 (f x), IsLocalDiffeomorphAt I I' n f (s y) :=
-    hf.continuousAt_localInverse.tendsto.eventually (by rw [hsx]; exact hf.eventually)
-  filter_upwards [hfs, hf.localInverse_open_source.mem_nhds hf.localInverse_mem_source]
-    with y hy hys
-  have hsy : MDifferentiableAt I' I s y :=
-    (hf.contMDiffOn_localInverse.contMDiffAt
-      (hf.localInverse_open_source.mem_nhds hys)).mdifferentiableAt hn
-  have hid : f ∘ s =ᶠ[𝓝 y] id :=
-    eventuallyEq_of_mem (hf.localInverse_open_source.mem_nhds hys) hf.localInverse_eqOn_right
-  rw [← mpullback_comp_at hsy (hy.mdifferentiableAt hn), hid.mpullback_eq, mpullback_id]
+        (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f x) :=
+  -- Near `f x`, the form `ω` is the pullback of `f^* ω` along the local inverse of `f`.
+  contMDiffAt_mpullback_form_iff_of_section hf.localInverse_open_source hf.localInverse_mem_source
+    (hf.localInverse_left_inv hf.localInverse_mem_target) hf.contMDiffOn_localInverse
+    (fun _ hy ↦ hf.localInverse_right_inv hy) hf.contMDiffAt hmn
 
 /-- For a surjective `C^n` local diffeomorphism `f` and `m + 1 ≤ n`, a form is `C^m` exactly when
 its pullback along `f` is. -/
@@ -231,7 +215,6 @@ open scoped ContDiff in
 pullback along `f` is. -/
 theorem IsLocalDiffeomorph.isClosed_mpullback_iff [IsManifold I 2 M] [IsManifold I' 2 M']
     (hf : IsLocalDiffeomorph I I' ∞ f) (hsurj : Function.Surjective f)
-    {φ : SmoothForm I' M' F k} : (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed := by
-  rw [SmoothForm.isClosed_def, SmoothForm.isClosed_def, ← mextDerivₗ_apply,
-    SmoothForm.mextDerivₗ_mpullback, SmoothForm.coe_mpullback, mextDerivₗ_apply]
-  exact (hf.mpullback_injective (by simp) hsurj).eq_iff' (mpullback_zero f)
+    {φ : SmoothForm I' M' F k} : (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed :=
+  SmoothForm.isClosed_mpullback_iff_of_surjective hf.contMDiff hsurj
+    fun x ↦ (hf.isInvertible_mfderiv (by simp) x).surjective

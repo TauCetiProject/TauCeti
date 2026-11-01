@@ -143,9 +143,8 @@ theorem mpullback_quotientMk_descend :
 theorem mpullback_quotientMk_injective :
     Function.Injective (mpullback (F := F) (k := k)
       (Quotient.mk (MulAction.orbitRel G M)) (isLocalDiffeomorph_quotientMk (I := I)).contMDiff) :=
-  fun _ _ h ↦
-  Subtype.ext <| (isLocalDiffeomorph_quotientMk (n := ∞)).mpullback_injective (by simp)
-    Quotient.mk_surjective (by simpa only [coe_mpullback] using congrArg Subtype.val h)
+  mpullback_injective_of_surjective _ Quotient.mk_surjective fun x ↦
+    ((isLocalDiffeomorph_quotientMk (n := ∞)).isInvertible_mfderiv (by simp) x).surjective
 
 /-- The descent of an invariant smooth form `α` is the unique smooth form on the orbit space whose
 pullback along the orbit projection is `α`. -/

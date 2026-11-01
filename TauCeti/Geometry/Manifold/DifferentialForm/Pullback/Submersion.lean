@@ -21,8 +21,9 @@ for every `i`. Being basic is a pointwise condition, and it is all that descent 
 * Pullbacks are basic (`TauCeti.RoughForm.isBasic_mpullback`). Conversely, when every derivative of
   `f` has a continuous right inverse, a basic form `α` is the pullback of
   `TauCeti.RoughForm.descendedForm I I' f α` (`TauCeti.RoughForm.IsBasic.mpullback_descendedForm`),
-  the form that at `f x` reads `α_x` through a right inverse of `df_x`. So the basic forms are
-  exactly the pullbacks (`TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`).
+  the form that at `f x` reads `α_x` through a right inverse of `df_x`; on images under `df_x` it
+  takes the values of `α_x` (`TauCeti.RoughForm.IsBasic.descendedForm_apply_mfderiv`). So the basic
+  forms are exactly the pullbacks (`TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`).
 * When moreover `f` is surjective, pullback along `f` is injective
   (`TauCeti.mpullback_injective_of_surjective`), so the descended form is unique.
 
@@ -30,10 +31,12 @@ For a submersion with boundaryless source, local sections give the regularity of
 Near `f x`, a form `ω` is the pullback of `f^* ω` along a local section of `f` through `x`, so
 `ω` is `C^m` near `f x` exactly when `f^* ω` is `C^m` near `x`, for a `C^n` submersion with
 `m + 1 ≤ n`
-(`Manifold.IsSubmersionAt.contMDiffAt_mpullback_form_iff`). For a surjective smooth submersion `f`
+(`Manifold.IsSubmersionAt.contMDiffAt_mpullback_form_iff`, an instance of
+`TauCeti.contMDiffAt_mpullback_form_iff_of_section`). For a surjective smooth submersion `f`
 this gives the smooth descent `TauCeti.SmoothForm.descendedForm`: a smooth basic form `α` on `M` is
 the pullback of exactly one smooth form on `M'` (`TauCeti.SmoothForm.mpullback_descendedForm` and
-`TauCeti.SmoothForm.eq_descendedForm_iff`). Descent commutes with the exterior derivative, and the
+`TauCeti.SmoothForm.eq_descendedForm_iff`). The exterior derivative of a smooth basic form is basic
+(`TauCeti.SmoothForm.isBasic_mextDerivₗ`), descent commutes with the exterior derivative, and the
 descended form is closed exactly when `α` is.
 
 This is how forms are put on the base of a principal bundle or on the quotient of a free and proper
@@ -105,13 +108,6 @@ def IsBasic (α : RoughForm I M V k) : Prop :=
     (∀ i, mfderiv I I' f x (v i) = tangentSpaceCast I' (f y) (f x) (mfderiv I I' f y (w i))) →
       α x v = α y w
 
-/-- A form evaluated on tangent vectors moved by `tangentSpaceCast` between two equal points. -/
-private theorem apply_tangentSpaceCast {ω : RoughForm I' M' V k} {a b : M'} (h : b = a)
-    (u : Fin k → TangentSpace I' b) : ω a (fun i ↦ tangentSpaceCast I' b a (u i)) = ω b u := by
-  subst h
-  -- `tangentSpaceCast` from a tangent space to itself is the identity.
-  rfl
-
 /-- The pullback of any form along `f` is basic for `f`. -/
 @[simp]
 theorem isBasic_mpullback (ω : RoughForm I' M' V k) : IsBasic I' f (mpullback I I' f ω) := by
@@ -148,6 +144,13 @@ theorem IsBasic.mpullback_descendedForm {α : RoughForm I M V k} (hα : IsBasic 
   -- `df_x vᵢ` to a vector with the same image under `df_x'`.
   exact hα h.choose_spec.1 _ v fun i ↦ h.choose_spec.2.rightInverse_rightInverse _
 
+/-- The descent of a basic form `α` evaluates on images under the derivative of `f` as `α`:
+`(descendedForm α)_(f x)(df_x v₁, …, df_x vₖ) = α_x(v₁, …, vₖ)`. -/
+theorem IsBasic.descendedForm_apply_mfderiv {α : RoughForm I M V k} (hα : IsBasic I' f α)
+    (hf : ∀ x, (mfderiv I I' f x).HasRightInverse) (x : M) (v : Fin k → TangentSpace I x) :
+    descendedForm I I' f α (f x) (fun i ↦ mfderiv I I' f x (v i)) = α x v := by
+  rw [← mpullback_apply, hα.mpullback_descendedForm hf]
+
 /-- **Basic forms are the pullbacks.** If every derivative of `f` has a continuous right inverse,
 for instance for a submersion with boundaryless source, a form on `M` is the pullback of a form on
 `M'` exactly when it is basic for `f`. -/
@@ -176,23 +179,9 @@ theorem IsSubmersionAt.contMDiffAt_mpullback_form_iff (hf : IsSubmersionAt I I' 
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (mpullback I I' f ω y)) x ↔
       ContMDiffAt I' (I'.prod 𝓘(ℝ, E' [⋀^Fin k]→L[ℝ] F)) m
         (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f x) := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    exact absurd hmn (by simp)
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mpullback_form hf.contMDiffAt hmn⟩
-  -- Near `f x`, the form `ω` is the pullback of `f^* ω` along a local section `s` of `f`.
+  -- Near `f x`, the form `ω` is the pullback of `f^* ω` along a local section of `f`.
   obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := hf.exists_contMDiffOn_section
-  have hsc : ContMDiffAt I' I n s (f x) := hs.contMDiffAt (hU.mem_nhds hxU)
-  have hpull := (hsx ▸ h).mpullback_form hsc hmn
-  refine hpull.congr_of_eventuallyEq ?_
-  -- `f` is a submersion near `x`, hence at `s y` for `y` near `f x`.
-  have hfs' : ∀ᶠ y in 𝓝 (f x), IsSubmersionAt I I' n f (s y) :=
-    hsc.continuousAt.tendsto.eventually (by rw [hsx]; exact isOpen_isSubmersionAt.mem_nhds hf)
-  filter_upwards [hfs', hU.mem_nhds hxU] with y hy hyU
-  have hsy : MDifferentiableAt I' I s y := (hs.contMDiffAt (hU.mem_nhds hyU)).mdifferentiableAt hn
-  have hid : f ∘ s =ᶠ[𝓝 y] id := eventually_of_mem (hU.mem_nhds hyU) hfs
-  rw [← mpullback_comp_at hsy (hy.contMDiffAt.mdifferentiableAt hn), hid.mpullback_eq,
-    mpullback_id]
+  exact contMDiffAt_mpullback_form_iff_of_section hU hxU hsx hs hfs hf.contMDiffAt hmn
 
 /-- For a surjective `C^n` submersion `f` with boundaryless source and `m + 1 ≤ n`, a form is
 `C^m` exactly when its pullback along `f` is. -/
@@ -223,13 +212,11 @@ theorem IsSubmersion.exists_smoothForm_mpullback_eq_iff (hf : IsSubmersion I I' 
 
 omit [I.Boundaryless] in
 /-- Along a surjective smooth submersion, a smooth form is closed exactly when its pullback is. -/
-theorem IsSubmersion.isClosed_mpullback_iff [IsManifold I ∞ M] [IsManifold I' ∞ M']
+theorem IsSubmersion.isClosed_mpullback_iff [IsManifold I 2 M] [IsManifold I' 2 M']
     (hf : IsSubmersion I I' ∞ f) (hsurj : Surjective f) {φ : SmoothForm I' M' F k} :
-    (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed := by
-  rw [SmoothForm.isClosed_def, SmoothForm.isClosed_def, ← mextDerivₗ_apply,
-    SmoothForm.mextDerivₗ_mpullback, SmoothForm.coe_mpullback, mextDerivₗ_apply]
-  exact (mpullback_injective_of_surjective hsurj
-    (fun x ↦ hf.surjective_mfderiv (by simp) x)).eq_iff' (mpullback_zero f)
+    (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed :=
+  SmoothForm.isClosed_mpullback_iff_of_surjective hf.contMDiff hsurj
+    (hf.surjective_mfderiv (by simp))
 
 end Manifold
 
@@ -237,15 +224,7 @@ namespace TauCeti.SmoothForm
 
 open scoped ContDiff
 
-variable [IsManifold I ∞ M] [IsManifold I' ∞ M'] [I.Boundaryless]
-
-omit [I.Boundaryless] in
-/-- Pullback of smooth forms along a surjective submersion is injective. -/
-theorem mpullback_injective_of_isSubmersion (hf : IsSubmersion I I' ∞ f)
-    (hsurj : Surjective f) :
-    Injective (mpullback (F := F) (k := k) f hf.contMDiff) := fun _ _ h ↦
-  Subtype.ext <| mpullback_injective_of_surjective hsurj (hf.surjective_mfderiv (by simp))
-    (by simpa only [coe_mpullback] using congrArg Subtype.val h)
+variable [IsManifold I 1 M] [IsManifold I' 1 M'] [I.Boundaryless]
 
 /-- The descent of a smooth form `α` that is basic for a surjective smooth submersion `f` with
 boundaryless source: the unique smooth form on `M'` whose pullback along `f` is `α`
@@ -275,16 +254,31 @@ theorem mpullback_descendedForm : mpullback f hf.contMDiff (descendedForm hf hsu
 theorem eq_descendedForm_iff {β : SmoothForm I' M' F k} :
     β = descendedForm hf hsurj α hα ↔ mpullback f hf.contMDiff β = α :=
   ⟨fun h ↦ h ▸ mpullback_descendedForm, fun h ↦
-    mpullback_injective_of_isSubmersion hf hsurj (h.trans mpullback_descendedForm.symm)⟩
+    mpullback_injective_of_surjective hf.contMDiff hsurj (hf.surjective_mfderiv (by simp))
+      (h.trans mpullback_descendedForm.symm)⟩
+
+/-- The descent of a smooth basic form evaluates on images under the derivative of `f` as the
+form. -/
+theorem descendedForm_apply_mfderiv (x : M) (v : Fin k → TangentSpace I x) :
+    (descendedForm hf hsurj α hα).1 (f x) (fun i ↦ mfderiv I I' f x (v i)) = α.1 x v :=
+  hα.descendedForm_apply_mfderiv (hf.hasRightInverse_mfderiv (by simp)) x v
+
+variable [IsManifold I 2 M] [IsManifold I' 2 M']
+
+/-- The exterior derivative of a smooth form that is basic for a surjective smooth submersion is
+basic. -/
+theorem isBasic_mextDerivₗ (hf : IsSubmersion I I' ∞ f) (hsurj : Surjective f)
+    {α : SmoothForm I M F k} (hα : RoughForm.IsBasic (V := F) I' f α.1) :
+    RoughForm.IsBasic (V := F) I' f (mextDerivₗ I k α).1 := by
+  obtain ⟨β, rfl⟩ := (hf.exists_smoothForm_mpullback_eq_iff hsurj).mpr hα
+  rw [mextDerivₗ_mpullback, coe_mpullback]
+  exact RoughForm.isBasic_mpullback _
 
 /-- The exterior derivative of the descent of a smooth basic form is the descent of its exterior
 derivative. -/
 theorem mextDerivₗ_descendedForm :
     mextDerivₗ I' k (descendedForm hf hsurj α hα) =
-      descendedForm hf hsurj (mextDerivₗ I k α) (by
-        rw [← mpullback_descendedForm (hf := hf) (hsurj := hsurj) (hα := hα),
-          mextDerivₗ_mpullback, coe_mpullback]
-        exact RoughForm.isBasic_mpullback _) := by
+      descendedForm hf hsurj (mextDerivₗ I k α) (isBasic_mextDerivₗ hf hsurj hα) := by
   rw [eq_descendedForm_iff, ← mextDerivₗ_mpullback, mpullback_descendedForm]
 
 /-- The descent of a smooth basic form is closed exactly when the form is closed. -/
