@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Recut
 import TauCeti.Data.Finset.Basic
-import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Geometry
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.MixedSideRecut
 
 /-!
 # Mixed-side commutation pentagon pairs
@@ -39,12 +39,6 @@ unpaired, and it is the only counted composite with these two rectangles.
 
 ## Main results
 
-* `toRectangleDecomposition_ne_recut_of_right_eq_left` and
-  `toRectangleDecomposition_ne_recut_of_left_eq_right`, in the namespace
-  `TauCeti.GridHexagonCompositeDecomposition`: the recut of two empty rectangles sharing the
-  replaced grid line with opposite orientations, with the two turn rows placed as for a mixed-side
-  pentagon pair, underlies no hexagon composite. They hold for arbitrary turn rows, so they also
-  serve the mixed-side pairs of a crossing change.
 * `TauCeti.GridDiagram.existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair` and
   `TauCeti.GridDiagram.existsUnique_unpairedHexagonComposite_of_initialTerminalPentagonPair`: a
   counted off-diagonal mixed-side pentagon pair has the same underlying rectangle decomposition
@@ -59,99 +53,6 @@ combinatorial link Floer homology*, Section 3.1, Proposition 3.2 (arXiv:math/061
 
 public section
 
-namespace TauCeti.GridHexagonCompositeDecomposition
-
-variable {n : ℕ} {a s s' : Fin n} {x z : GridState n}
-
-/-- One of the two rectangles under a hexagon composite has the replaced grid line as a side and
-both turn rows among its rows. -/
-private theorem side_turns (F : GridHexagonCompositeDecomposition a s s' x z) :
-    ((F.toRectangleDecomposition.first.left = finRotate n a ∨
-          F.toRectangleDecomposition.first.right = finRotate n a) ∧
-        s ∈ Grid.cIco F.toRectangleDecomposition.first.bottom
-          F.toRectangleDecomposition.first.top ∧
-        s' ∈ Grid.cIco F.toRectangleDecomposition.first.bottom
-          F.toRectangleDecomposition.first.top) ∨
-      ((F.toRectangleDecomposition.second.left = finRotate n a ∨
-          F.toRectangleDecomposition.second.right = finRotate n a) ∧
-        s ∈ Grid.cIco F.toRectangleDecomposition.second.bottom
-          F.toRectangleDecomposition.second.top ∧
-        s' ∈ Grid.cIco F.toRectangleDecomposition.second.bottom
-          F.toRectangleDecomposition.second.top) := by
-  have key {u v : GridState n} (H : GridCommutationHexagonBetween a s s' u v) :=
-    And.intro H.left_eq_or_right_eq <| And.intro
-      (H.pair_subset_cIco_bottom_top (Finset.mem_insert_self _ _))
-      (H.pair_subset_cIco_bottom_top (Finset.mem_insert_of_mem (Finset.mem_singleton_self _)))
-  cases F with
-  | inl F =>
-    rw [toRectangleDecomposition_inl]
-    exact Or.inl (key F.hexagon)
-  | inr F =>
-    rw [toRectangleDecomposition_inr]
-    exact Or.inr (key F.hexagon)
-
-/-- Let the empty rectangles of an off-diagonal decomposition `D` share the grid line
-`finRotate n a`, terminal for the first and initial for the second, as the rectangles of a
-terminal-side pentagon followed by an initial-side one do. If the first rectangle contains the row
-`s` and the rows from its bottom up to the top of the second contain `s'`, then the recut of `D`
-underlies no hexagon composite with turn rows `s` and `s'`: one recut rectangle has no side on the
-grid line, and the other misses one of the two rows. -/
-theorem toRectangleDecomposition_ne_recut_of_right_eq_left {D : GridRectangleDecomposition x z}
-    (hright : D.first.right = finRotate n a) (hleft : D.second.left = finRotate n a)
-    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
-    (hs : s ∈ Grid.cIco D.first.bottom D.first.top)
-    (hs' : s' ∈ Grid.cIco D.first.bottom D.second.top)
-    (F : GridHexagonCompositeDecomposition a s s' x z) :
-    F.toRectangleDecomposition ≠ D.recut hone hfirst hsecond := by
-  intro hF
-  have hdata := D.isRecutOfRightEqLeft_recut (hright.trans hleft.symm) hone hfirst hsecond
-  rw [← hF] at hdata
-  have hl : D.first.left ≠ finRotate n a := fun h => D.first.left_ne_right (h.trans hright.symm)
-  have hr : D.second.right ≠ finRotate n a := fun h => D.second.left_ne_right (hleft.trans h.symm)
-  rcases hdata.recut_geometry hone with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
-    rcases F.side_turns with ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
-  · rw [h1b, h1t] at hturn
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs hturn
-  · rw [h2l, h2r] at hside
-    exact hside.elim hl hr
-  · rw [h1l, h1r] at hside
-    exact hside.elim hl hr
-  · rw [h2b, h2t] at hturn'
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs' hturn'
-
-/-- Let the empty rectangles of an off-diagonal decomposition `D` share the grid line
-`finRotate n a`, initial for the first and terminal for the second, as the rectangles of an
-initial-side pentagon followed by a terminal-side one do. If the first rectangle contains the row
-`s` and the rows from the bottom of the second up to the top of the first contain `s'`, then the
-recut of `D` underlies no hexagon composite with turn rows `s` and `s'`: one recut rectangle has
-no side on the grid line, and the other misses one of the two rows. -/
-theorem toRectangleDecomposition_ne_recut_of_left_eq_right {D : GridRectangleDecomposition x z}
-    (hleft : D.first.left = finRotate n a) (hright : D.second.right = finRotate n a)
-    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty)
-    (hs : s ∈ Grid.cIco D.first.bottom D.first.top)
-    (hs' : s' ∈ Grid.cIco D.second.bottom D.first.top)
-    (F : GridHexagonCompositeDecomposition a s s' x z) :
-    F.toRectangleDecomposition ≠ D.recut hone hfirst hsecond := by
-  intro hF
-  have hdata := D.isRecutOfLeftEqRight_recut (hleft.trans hright.symm) hone hfirst hsecond
-  rw [← hF] at hdata
-  have hl : D.second.left ≠ finRotate n a := fun h => D.second.left_ne_right (h.trans hright.symm)
-  have hr : D.first.right ≠ finRotate n a := fun h => D.first.left_ne_right (hleft.trans h.symm)
-  rcases hdata.recut_geometry hone with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
-    rcases F.side_turns with ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
-  · rw [h1b, h1t] at hturn
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn hs
-  · rw [h2l, h2r] at hside
-    exact hside.elim hl hr
-  · rw [h1l, h1r] at hside
-    exact hside.elim hl hr
-  · rw [h2b, h2t] at hturn'
-    exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn' hs'
-
-end TauCeti.GridHexagonCompositeDecomposition
-
 namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
@@ -160,6 +61,14 @@ local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
 /-! ### Terminal-side followed by initial-side -/
+
+/-- The common side of a terminal--initial pentagon pair is terminal for the first rectangle and
+initial for the second. -/
+private theorem terminalInitialPentagonPair_right_eq_left {x y z : GridState n}
+    (P : GridPentagonBetween a C.turnRow x y)
+    (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z) :
+    P.right = Q.left := by
+  rw [P.right_eq, Q.left_eq, C.reverse_column]
 
 /-- The underlying rectangles of a terminal-side pentagon and a following initial-side pentagon
 for the reverse commutation share their intermediate grid line. Away from the diagonal it is
@@ -170,23 +79,9 @@ theorem hasOneCommonSide_terminalInitialPentagonPair {x y z : GridState n}
     (hzx : z ≠ x) :
     GridRectangleDecomposition.HasOneCommonSide
       (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
-        GridRectangleDecomposition x z) := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  have hb : b ∈ D.commonSideColumns := by
-    rw [D.mem_commonSideColumns]
-    simp only [GridRectangleBetween.mem_sideColumns, D]
-    exact ⟨Or.inr P.right_eq.symm,
-      Or.inl ((congrArg (finRotate n) C.reverse_column).symm.trans Q.left_eq.symm)⟩
-  exact D.hasOneCommonSide_of_mem_commonSideColumns hb hzx
-
-/-- The common side of a terminal--initial pentagon pair is terminal for the first rectangle and
-initial for the second. -/
-private theorem terminalInitialPentagonPair_right_eq_left {x y z : GridState n}
-    (P : GridPentagonBetween a C.turnRow x y)
-    (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z) :
-    P.right = Q.left := by
-  rw [P.right_eq, Q.left_eq, C.reverse_column]
+        GridRectangleDecomposition x z) :=
+  GridRectangleDecomposition.hasOneCommonSide_of_right_eq_left_of_ne _
+    (G.terminalInitialPentagonPair_right_eq_left C P Q) hzx
 
 /-- The canonical empty-rectangle recut of an off-diagonal terminal--initial pentagon pair. -/
 noncomputable def recutTerminalInitialPentagonPair {x y z : GridState n}
@@ -239,6 +134,14 @@ theorem isRecutOfRightEqLeft_recutTerminalInitialPentagonPair {x y z : GridState
 
 /-! ### Initial-side followed by terminal-side -/
 
+/-- The common side of an initial--terminal pentagon pair is initial for the first rectangle and
+terminal for the second. -/
+private theorem initialTerminalPentagonPair_left_eq_right {x y z : GridState n}
+    (P : GridInitialPentagonBetween a C.turnRow x y)
+    (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z) :
+    P.left = Q.right := by
+  rw [P.left_eq, Q.right_eq, C.reverse_column]
+
 /-- The underlying rectangles of an initial-side pentagon and a following terminal-side pentagon
 for the reverse commutation share their intermediate grid line. Away from the diagonal it is
 their unique common side. -/
@@ -248,23 +151,9 @@ theorem hasOneCommonSide_initialTerminalPentagonPair {x y z : GridState n}
     (hzx : z ≠ x) :
     GridRectangleDecomposition.HasOneCommonSide
       (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
-        GridRectangleDecomposition x z) := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  have hb : b ∈ D.commonSideColumns := by
-    rw [D.mem_commonSideColumns]
-    simp only [GridRectangleBetween.mem_sideColumns, D]
-    exact ⟨Or.inl P.left_eq.symm,
-      Or.inr ((congrArg (finRotate n) C.reverse_column).symm.trans Q.right_eq.symm)⟩
-  exact D.hasOneCommonSide_of_mem_commonSideColumns hb hzx
-
-/-- The common side of an initial--terminal pentagon pair is initial for the first rectangle and
-terminal for the second. -/
-private theorem initialTerminalPentagonPair_left_eq_right {x y z : GridState n}
-    (P : GridInitialPentagonBetween a C.turnRow x y)
-    (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z) :
-    P.left = Q.right := by
-  rw [P.left_eq, Q.right_eq, C.reverse_column]
+        GridRectangleDecomposition x z) :=
+  GridRectangleDecomposition.hasOneCommonSide_of_left_eq_right_of_ne _
+    (G.initialTerminalPentagonPair_left_eq_right C P Q) hzx
 
 /-- The canonical empty-rectangle recut of an off-diagonal initial--terminal pentagon pair. -/
 noncomputable def recutInitialTerminalPentagonPair {x y z : GridState n}
@@ -536,18 +425,15 @@ section TerminalInitial
 variable {x y z : GridState n} (P : GridPentagonBetween C.column C.turnRow x y)
   (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z)
 
-/-- A terminal-side pentagon and a following initial-side reverse pentagon share their bottom
-row. -/
-private theorem terminalInitial_bottom_eq : Q.bottom = P.bottom := by
-  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, Q.left_eq,
-    C.reverse_column, ← P.right_eq, P.map_right]
-
 /-- The reverse turn row of a terminal--initial pentagon pair lies in the rows from the common
 bottom row up to the top row of the reverse pentagon. -/
 private theorem terminalInitial_oppositeTurnRow_mem_cIco :
     C.oppositeTurnRow ∈ Grid.cIco P.bottom Q.top := by
-  simpa only [C.reverse_turnRow, G.terminalInitial_bottom_eq C P Q] using
-    Q.turn_mem_cIco_bottom_top
+  have hbottom : Q.bottom = P.bottom :=
+    GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+      (G.terminalInitialPentagonPair_right_eq_left C P Q)
+  simpa only [C.reverse_turnRow, hbottom] using Q.turn_mem_cIco_bottom_top
 
 /-- The weight of a terminal--initial pentagon pair is the product of the `O`-weights of the
 squares of the forward pentagon and of the reverse pentagon read in `G`. -/
@@ -579,7 +465,10 @@ private theorem terminalInitial_rectangleHexagon
       hturn.1, hturn.2⟩
   have hH : H.toGridRectangleBetween = Q.toGridRectangleBetween :=
     GridCommutationHexagonBetween.toGridRectangleBetween_inr _
-  have hbottom := G.terminalInitial_bottom_eq C P Q
+  have hbottom : Q.bottom = P.bottom :=
+    GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+      (G.terminalInitialPentagonPair_right_eq_left C P Q)
   have hs := P.turn_mem_cIco_bottom_top
   have hs' := G.terminalInitial_oppositeTurnRow_mem_cIco C P Q
   obtain ⟨hQoff, hQcol⟩ := G.map_swapColumns_reverse_squares C Q.mem_coveredSquares_iff_of_ne
@@ -626,7 +515,10 @@ private theorem terminalInitial_hexagonRectangle
     .inl ⟨P.toGridRectangleBetween, P.right_eq, hturn.1, hturn.2⟩
   have hH : H.toGridRectangleBetween = P.toGridRectangleBetween :=
     GridCommutationHexagonBetween.toGridRectangleBetween_inl _
-  have hbottom := G.terminalInitial_bottom_eq C P Q
+  have hbottom : Q.bottom = P.bottom :=
+    GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+      (G.terminalInitialPentagonPair_right_eq_left C P Q)
   have hs := P.turn_mem_cIco_bottom_top
   have hs' := G.terminalInitial_oppositeTurnRow_mem_cIco C P Q
   obtain ⟨hQoff, hQcol⟩ := G.map_swapColumns_reverse_squares C Q.mem_coveredSquares_iff_of_ne
@@ -666,18 +558,15 @@ section InitialTerminal
 variable {x y z : GridState n} (P : GridInitialPentagonBetween C.column C.turnRow x y)
   (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
 
-/-- An initial-side pentagon and a following terminal-side reverse pentagon share their top
-row. -/
-private theorem initialTerminal_top_eq : Q.top = P.top := by
-  rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, Q.right_eq,
-    C.reverse_column, ← P.left_eq, P.map_left]
-
 /-- The reverse turn row of an initial--terminal pentagon pair lies in the rows from the bottom row
 of the reverse pentagon up to the common top row. -/
 private theorem initialTerminal_oppositeTurnRow_mem_cIco :
     C.oppositeTurnRow ∈ Grid.cIco Q.bottom P.top := by
-  simpa only [C.reverse_turnRow, G.initialTerminal_top_eq C P Q] using
-    Q.turn_mem_cIco_bottom_top
+  have htop : Q.top = P.top :=
+    GridRectangleDecomposition.second_top_eq_first_top_of_left_eq_right
+      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+      (G.initialTerminalPentagonPair_left_eq_right C P Q)
+  simpa only [C.reverse_turnRow, htop] using Q.turn_mem_cIco_bottom_top
 
 /-- The weight of an initial--terminal pentagon pair is the product of the `O`-weights of the
 squares of the forward pentagon and of the reverse pentagon read in `G`. -/
@@ -709,7 +598,10 @@ private theorem initialTerminal_hexagonRectangle
     .inr ⟨P.toGridRectangleBetween, P.left_eq, hs, hturn⟩
   have hH : H.toGridRectangleBetween = P.toGridRectangleBetween :=
     GridCommutationHexagonBetween.toGridRectangleBetween_inr _
-  have htop := G.initialTerminal_top_eq C P Q
+  have htop : Q.top = P.top :=
+    GridRectangleDecomposition.second_top_eq_first_top_of_left_eq_right
+      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+      (G.initialTerminalPentagonPair_left_eq_right C P Q)
   have hs' := G.initialTerminal_oppositeTurnRow_mem_cIco C P Q
   obtain ⟨hQoff, hQcol⟩ := G.map_swapColumns_reverse_squares C Q.mem_coveredSquares_iff_of_ne
     Q.mk_mem_coveredSquares_left_column Q.mk_mem_coveredSquares_right_column
@@ -753,7 +645,10 @@ private theorem initialTerminal_rectangleHexagon
   obtain ⟨hp, hpX⟩ := (G.mem_initialPentagons P).mp hP
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   have hs := P.turn_mem_cIco_bottom_top
-  have htop := G.initialTerminal_top_eq C P Q
+  have htop : Q.top = P.top :=
+    GridRectangleDecomposition.second_top_eq_first_top_of_left_eq_right
+      ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+      (G.initialTerminalPentagonPair_left_eq_right C P Q)
   have hs' := G.initialTerminal_oppositeTurnRow_mem_cIco C P Q
   have hs'Q : C.oppositeTurnRow ∈ Grid.cIco Q.bottom Q.top := by rwa [htop]
   have hturnQ : C.turnRow ∈ Grid.cIoo C.oppositeTurnRow Q.top := by rwa [htop]
@@ -814,7 +709,9 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair
     rcases Grid.mem_cIco_and_mem_cIoo_or_mem_cIco_and_mem_cIoo_of_ne P.turn_mem_cIco_bottom_top
         (G.terminalInitial_oppositeTurnRow_mem_cIco C P Q) C.turnRow_ne_oppositeTurnRow with
       hturn | hturn
-    · rw [← G.terminalInitial_bottom_eq C P Q] at hturn
+    · rw [← GridRectangleDecomposition.second_bottom_eq_first_bottom_of_right_eq_left
+        ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+        (G.terminalInitialPentagonPair_right_eq_left C P Q)] at hturn
       exact G.terminalInitial_rectangleHexagon C R P Q hP hQ hturn
     · exact G.terminalInitial_hexagonRectangle C R P Q hP hQ hturn
   rw [← hFw]
