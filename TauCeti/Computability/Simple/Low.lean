@@ -13,8 +13,7 @@ public import Mathlib.Order.Filter.AtTopBot.Defs
 import TauCeti.Computability.Priority.Injury.Causes
 import TauCeti.Computability.Primrec.Bitwise
 import TauCeti.Computability.Primrec.List
-import Mathlib.Data.Set.Card.Arithmetic
-import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Data.Set.Card
 import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Order.Filter.Finite
 
@@ -93,6 +92,12 @@ def diagRun (D : Finset ℕ) (s e : ℕ) : Option Oracle.Single.Code.Halt :=
   Oracle.Single.Code.evaln (fun z => some (if z ∈ D then 1 else 0)) s
     (Denumerable.ofNat Oracle.Single.Code e) e
 
+/-- Unfolding `diagRun`. -/
+theorem diagRun_def (D : Finset ℕ) (s e : ℕ) :
+    diagRun D s e = Oracle.Single.Code.evaln (fun z => some (if z ∈ D then 1 else 0)) s
+      (Denumerable.ofNat Oracle.Single.Code e) e :=
+  (rfl)
+
 /-- The use of the diagonal stage computation `Φ_{e,s}^D(e)`, or `0` when it fails. -/
 def diagUse (D : Finset ℕ) (s e : ℕ) : ℕ :=
   ((diagRun D s e).map Oracle.Single.Code.Halt.use).getD 0
@@ -111,25 +116,31 @@ theorem diagUse_eq_zero_of_diagRun_eq_none {D : Finset ℕ} {s e : ℕ} (h : dia
 the current finite set is `D`: the stage `W_{i,s}` of the domain of the code
 `Denumerable.ofNat Nat.Partrec.Code i` is disjoint from `D`, and `x` is an element of `W_{i,s}`
 with `2 * i < x` and `diagUse D s e < x` for every `e ≤ i`. -/
-def RequiresAttention (D : Finset ℕ) (s i x : ℕ) : Prop :=
-  Disjoint ((Denumerable.ofNat Nat.Partrec.Code i).domStage s) D ∧
-    x ∈ (Denumerable.ofNat Nat.Partrec.Code i).domStage s ∧ 2 * i < x ∧
-      ∀ e ≤ i, diagUse D s e < x
+structure RequiresAttention (D : Finset ℕ) (s i x : ℕ) : Prop where
+  /-- The stage `W_{i,s}` is disjoint from the current set. -/
+  disjoint : Disjoint ((Denumerable.ofNat Nat.Partrec.Code i).domStage s) D
+  /-- The witness lies in the stage `W_{i,s}`. -/
+  mem_domStage : x ∈ (Denumerable.ofNat Nat.Partrec.Code i).domStage s
+  /-- The witness exceeds `2 * i`. -/
+  two_mul_lt : 2 * i < x
+  /-- The witness exceeds the use of every diagonal stage computation of priority at most `i`. -/
+  diagUse_lt : ∀ e ≤ i, diagUse D s e < x
 
-/-- Unfolding `RequiresAttention`. -/
+/-- Unfolding `RequiresAttention` into its four clauses. -/
 theorem requiresAttention_iff {D : Finset ℕ} {s i x : ℕ} :
     RequiresAttention D s i x ↔
       Disjoint ((Denumerable.ofNat Nat.Partrec.Code i).domStage s) D ∧
         x ∈ (Denumerable.ofNat Nat.Partrec.Code i).domStage s ∧ 2 * i < x ∧
           ∀ e ≤ i, diagUse D s e < x :=
-  Iff.rfl
+  ⟨fun h => ⟨h.disjoint, h.mem_domStage, h.two_mul_lt, h.diagUse_lt⟩,
+    fun ⟨h₁, h₂, h₃, h₄⟩ => ⟨h₁, h₂, h₃, h₄⟩⟩
 
 instance (D : Finset ℕ) (s i x : ℕ) : Decidable (RequiresAttention D s i x) :=
   decidable_of_iff' _ requiresAttention_iff
 
 /-- A witness lies below the stage, since `W_{i,s}` only contains numbers below `s`. -/
 theorem RequiresAttention.lt {D : Finset ℕ} {s i x : ℕ} (h : RequiresAttention D s i x) : x < s :=
-  Finset.mem_range.1 (Nat.Partrec.Code.domStage_subset_range _ _ h.2.1)
+  Finset.mem_range.1 (Nat.Partrec.Code.domStage_subset_range _ _ h.mem_domStage)
 
 /-- The **action** at stage `s` when the current set is `D`: the least `i` such that `P_i`
 requires attention, together with its least witness, or `none` when no positive requirement
@@ -152,7 +163,7 @@ theorem attention_eq_some_iff {D : Finset ℕ} {s i x : ℕ} :
     exact ⟨hx, fun j hj y hy => hmin j hj y hy.lt hy, hxmin⟩
   · rintro ⟨hx, hmin, hxmin⟩
     have hxs := hx.lt
-    have hix := hx.2.2.1
+    have hix := hx.two_mul_lt
     exact ⟨i, ⟨⟨x, hxs, hx⟩, by omega, fun j hj y _ => hmin j hj y⟩, x, ⟨hx, hxs, hxmin⟩,
       rfl, rfl⟩
 
@@ -162,7 +173,7 @@ theorem attention_eq_none_iff {D : Finset ℕ} {s : ℕ} :
   refine ⟨fun h i x hx => ?_, fun h => ?_⟩
   · -- some requirement requires attention, so the search for the least one succeeds
     have hi : ((List.range s).find? fun i => decide (∃ x < s, RequiresAttention D s i x)).isSome :=
-      List.find?_isSome.2 ⟨i, List.mem_range.2 (by have := hx.lt; have := hx.2.2.1; omega),
+      List.find?_isSome.2 ⟨i, List.mem_range.2 (by have := hx.lt; have := hx.two_mul_lt; omega),
         decide_eq_true ⟨x, hx.lt, hx⟩⟩
     obtain ⟨j, hj⟩ := Option.isSome_iff_exists.1 hi
     obtain ⟨⟨y, -, hy⟩, -⟩ := List.find?_range_eq_some.1 hj |>.imp_left of_decide_eq_true
@@ -216,7 +227,7 @@ theorem mem_fresh_stage {s x : ℕ} :
   · rintro ⟨i, h⟩
     obtain ⟨hx, -⟩ := attention_eq_some_iff.1 h
     rw [stage_succ_of_attention_eq_some h]
-    exact ⟨Finset.mem_insert_self _ _, Finset.disjoint_left.1 hx.1 hx.2.1⟩
+    exact ⟨Finset.mem_insert_self _ _, Finset.disjoint_left.1 hx.disjoint hx.mem_domStage⟩
 
 /-- The restraint `r(e, s)` of the negative requirement `N_e` at stage `s`: the use of the
 diagonal stage computation `Φ_{e,s}^{A_s}(e)`, or `0` when it fails. It is always active, and
@@ -224,9 +235,24 @@ diagonal stage computation `Φ_{e,s}^{A_s}(e)`, or `0` when it fails. It is alwa
 def restraint (e s : ℕ) : Option ℕ :=
   some (diagUse (stage s) s e)
 
+/-- The restraint of `N_e` at stage `s` is the use of `Φ_{e,s}^{A_s}(e)`. -/
+@[simp]
+theorem restraint_eq (e s : ℕ) : restraint e s = some (diagUse (stage s) s e) :=
+  (rfl)
+
+/-- The restraint `r(e, s)` is `b` exactly when `b` is the use of `Φ_{e,s}^{A_s}(e)`. -/
+theorem restraint_eq_some_iff {e s b : ℕ} : restraint e s = some b ↔ diagUse (stage s) s e = b :=
+  by rw [restraint_eq, Option.some.injEq]
+
 /-- The numbers enumerated by the positive requirement `P_i`. -/
 def enumeratedBy (i : ℕ) : Set ℕ :=
   {x | ∃ s, attention (stage s) s = some (i, x)}
+
+/-- A number is enumerated by `P_i` exactly when it is the witness of an action of `P_i`. -/
+@[simp]
+theorem mem_enumeratedBy {i x : ℕ} :
+    x ∈ enumeratedBy i ↔ ∃ s, attention (stage s) s = some (i, x) :=
+  Iff.rfl
 
 /-- An action at stage `s` is never repeated at a later stage by the same requirement, since its
 witness keeps `W_i` from being disjoint from the later stages. -/
@@ -234,10 +260,10 @@ private theorem not_lt_of_attention_eq_some {s t i x y : ℕ}
     (hs : attention (stage s) s = some (i, x)) (ht : attention (stage t) t = some (i, y)) :
     ¬s < t := by
   intro hst
-  have hxs := (attention_eq_some_iff.1 hs).1.2.1
+  have hxs := (attention_eq_some_iff.1 hs).1.mem_domStage
   have hxt : x ∈ stage t :=
     monotone_stage hst (stage_succ_of_attention_eq_some hs ▸ Finset.mem_insert_self _ _)
-  exact Finset.disjoint_left.1 (attention_eq_some_iff.1 ht).1.1
+  exact Finset.disjoint_left.1 (attention_eq_some_iff.1 ht).1.disjoint
     (Nat.Partrec.Code.monotone_domStage _ hst.le hxs) hxt
 
 /-- **Each positive requirement acts at most once.** -/
@@ -254,7 +280,7 @@ theorem subsingleton_enumeratedBy (i : ℕ) : (enumeratedBy i).Subsingleton :=
 /-- An entry of `P_i` exceeds `2 * i`. -/
 theorem lt_of_mem_enumeratedBy {i x : ℕ} (hx : x ∈ enumeratedBy i) : 2 * i < x :=
   let ⟨_, hs⟩ := hx
-  (attention_eq_some_iff.1 hs).1.2.2.1
+  (attention_eq_some_iff.1 hs).1.two_mul_lt
 
 end LowSimple
 
@@ -265,7 +291,16 @@ open LowSimple
 def lowSimpleSet : Set ℕ :=
   stageLimit stage
 
+/-- The constructed set is the limit of the stages. -/
+theorem lowSimpleSet_eq_stageLimit : lowSimpleSet = stageLimit stage :=
+  (rfl)
+
+/-- A number is in the constructed set exactly when it appears at some stage. -/
+theorem mem_lowSimpleSet_iff_exists_stage {x : ℕ} : x ∈ lowSimpleSet ↔ ∃ s, x ∈ stage s := by
+  rw [lowSimpleSet_eq_stageLimit, mem_stageLimit]
+
 /-- Every element of the constructed set was enumerated by a positive requirement. -/
+@[simp]
 theorem mem_lowSimpleSet {x : ℕ} : x ∈ lowSimpleSet ↔ ∃ i, x ∈ enumeratedBy i := by
   constructor
   · intro hx
@@ -301,29 +336,17 @@ theorem primrec_diagUse :
     option_map primrec_diagRun (Oracle.Single.Code.Halt.primrec_use.comp snd).to₂
   exact option_getD.comp huse (const 0)
 
-private theorem primrecRel_mem_domStage_ofNat :
-    PrimrecRel fun (q : ℕ × ℕ) (y : ℕ) =>
-      y ∈ (Denumerable.ofNat Nat.Partrec.Code q.1).domStage q.2 :=
-  Nat.Partrec.Code.primrecRel_mem_domStage.comp (((Primrec.ofNat _).comp (fst.comp fst)).pair
-    (snd.comp fst)) snd
-
 /-- Requiring attention is primitive recursive in the binary code of the current set, the stage,
 the requirement and the witness. -/
 private theorem primrecPred_requiresAttention :
     PrimrecPred fun q : ℕ × ℕ × ℕ × ℕ =>
       RequiresAttention (Finset.equivBitIndices q.1) q.2.1 q.2.2.1 q.2.2.2 := by
-  -- disjointness, checked below the stage
-  have hR : PrimrecRel fun (y : ℕ) (q : ℕ × ℕ × ℕ × ℕ) =>
-      ¬y ∈ (Denumerable.ofNat Nat.Partrec.Code q.2.2.1).domStage q.2.1 ∨
-        ¬y ∈ Finset.equivBitIndices q.1 :=
-    (primrecRel_mem_domStage_ofNat.comp ((fst.comp (snd.comp snd)).comp snd |>.pair
-      ((fst.comp snd).comp snd)) fst).not.or
-      (mem_equivBitIndices.comp (fst.comp snd) fst).not
-  have hdisj : PrimrecPred fun q : ℕ × ℕ × ℕ × ℕ => ∀ y < q.2.1,
-      ¬y ∈ (Denumerable.ofNat Nat.Partrec.Code q.2.2.1).domStage q.2.1 ∨
-        ¬y ∈ Finset.equivBitIndices q.1 :=
-    (hR.forall_mem_list.comp (list_range.comp (fst.comp snd)) Primrec.id).of_eq fun q => by
-      simp
+  -- disjointness, as a zero binary intersection
+  have hdisj : PrimrecPred fun q : ℕ × ℕ × ℕ × ℕ =>
+      Finset.equivBitIndices.symm
+        ((Denumerable.ofNat Nat.Partrec.Code q.2.2.1).domStage q.2.1) &&& q.1 = 0 :=
+    Primrec.eq.comp (nat_land.comp (Nat.Partrec.Code.primrec_domStage.comp
+      (((Primrec.ofNat _).comp (fst.comp (snd.comp snd))).pair (fst.comp snd))) fst) (const 0)
   -- the bound on the diagonal uses
   have hg : Primrec fun a : ℕ × ℕ × ℕ × ℕ × ℕ => (a.2.1, a.2.2.1, a.1) :=
     (fst.comp snd).pair ((fst.comp (snd.comp snd)).pair fst)
@@ -337,16 +360,17 @@ private theorem primrecPred_requiresAttention :
       Primrec.id).of_eq fun q => by simp
   have hmem : PrimrecPred fun q : ℕ × ℕ × ℕ × ℕ =>
       q.2.2.2 ∈ (Denumerable.ofNat Nat.Partrec.Code q.2.2.1).domStage q.2.1 :=
-    primrecRel_mem_domStage_ofNat.comp ((fst.comp (snd.comp snd)).pair (fst.comp snd))
+    Nat.Partrec.Code.primrecRel_mem_domStage_ofNat.comp
+      ((fst.comp (snd.comp snd)).pair (fst.comp snd))
       (snd.comp (snd.comp snd))
   have hlt : PrimrecPred fun q : ℕ × ℕ × ℕ × ℕ => 2 * q.2.2.1 < q.2.2.2 :=
     nat_lt.comp (nat_mul.comp (const 2) (fst.comp (snd.comp snd))) (snd.comp (snd.comp snd))
   refine (hdisj.and (hmem.and (hlt.and huse))).of_eq fun q => ?_
-  rw [requiresAttention_iff, Finset.disjoint_left]
-  refine and_congr ⟨fun h y hy => (h y (Finset.mem_range.1
-    (Nat.Partrec.Code.domStage_subset_range _ _ hy))).resolve_left (not_not.2 hy),
-    fun h y _ => not_or_of_imp (@h y)⟩
-    (and_congr Iff.rfl (and_congr Iff.rfl ?_))
+  have hzero (m : ℕ) : m = 0 ↔ Finset.equivBitIndices m = ∅ := by
+    rw [← Equiv.eq_symm_apply]
+    simp
+  rw [requiresAttention_iff, Finset.disjoint_iff_inter_eq_empty, hzero (_ &&& _),
+    Finset.equivBitIndices_land, Equiv.apply_symm_apply]
   simp only [Nat.lt_succ_iff]
 
 /-- The action is primitive recursive in the binary code of the current set and the stage. -/
@@ -361,11 +385,9 @@ private theorem primrec_attention :
       ∃ x < q.2, RequiresAttention (Finset.equivBitIndices q.1) q.2 i x :=
     (hR.exists_mem_list.comp (list_range.comp (snd.comp fst)) Primrec.id).of_eq fun q => by
       simp
-  have hg' : Primrec fun a : ((ℕ × ℕ) × ℕ) × ℕ => (a.1.1.1, a.1.1.2, a.1.2, a.2) :=
-    (fst.comp (fst.comp fst)).pair ((snd.comp (fst.comp fst)).pair ((snd.comp fst).pair snd))
   have hR' : PrimrecRel fun (p : (ℕ × ℕ) × ℕ) (x : ℕ) =>
       RequiresAttention (Finset.equivBitIndices p.1.1) p.1.2 p.2 x :=
-    (primrecPred_requiresAttention.comp hg').of_eq fun _ => Iff.rfl
+    hR.comp snd fst
   have hpair : Primrec₂ fun (p : (ℕ × ℕ) × ℕ) (x : ℕ) => (p.2, x) :=
     (snd.comp fst).pair snd
   exact option_bind (list_find? (list_range.comp snd) hex.decide)
@@ -385,16 +407,14 @@ theorem primrec_stage : Primrec fun s => Finset.equivBitIndices.symm (stage s) :
     simp only [ih, Equiv.apply_symm_apply]
     rcases h : attention (stage s) s with _ | ⟨i, x⟩
     · simp [stage_succ_of_attention_eq_none h]
-    · apply Finset.equivBitIndices.injective
-      ext y
-      simp [stage_succ_of_attention_eq_some h, Nat.testBit_two_pow, eq_comm (a := x), or_comm]
+    · simp only [Option.elim_some, stage_succ_of_attention_eq_some h,
+        Finset.equivBitIndices_symm_insert]
 
 end LowSimple
 
 /-- The constructed set is c.e. -/
 theorem rePred_mem_lowSimpleSet : REPred (· ∈ lowSimpleSet) :=
-  rePred_mem_stageLimit <| (Primrec.mem_equivBitIndices.comp (primrec_stage.comp Primrec.fst)
-    Primrec.snd).decide.to_comp.computablePred.of_eq fun q => by simp
+  rePred_iff_exists_stages.2 ⟨stage, monotone_stage, stage_zero, primrec_stage.to_comp, rfl⟩
 
 /-! ### Coinfiniteness -/
 
@@ -407,14 +427,9 @@ theorem ncard_lowSimpleSet_inter_Iic_le (n : ℕ) : (lowSimpleSet ∩ Set.Iic (2
     have := lt_of_mem_enumeratedBy hi
     simp only [Set.mem_Iic] at hxn
     exact Set.mem_iUnion₂.2 ⟨i, Finset.mem_range.2 (by omega), hi⟩
-  have hfin : (⋃ i ∈ Finset.range n, enumeratedBy i).Finite :=
-    (Finset.range n).finite_toSet.biUnion fun i _ => (subsingleton_enumeratedBy i).finite
-  calc (lowSimpleSet ∩ Set.Iic (2 * n)).ncard
-      ≤ (⋃ i ∈ Finset.range n, enumeratedBy i).ncard := Set.ncard_le_ncard hsub hfin
-    _ ≤ ∑ i ∈ Finset.range n, (enumeratedBy i).ncard := (Finset.range n).set_ncard_biUnion_le _
-    _ ≤ ∑ _i ∈ Finset.range n, 1 := Finset.sum_le_sum fun i _ =>
-        (Set.ncard_le_one (subsingleton_enumeratedBy i).finite).2 (subsingleton_enumeratedBy i)
-    _ = n := by simp
+  simpa using (Set.finite_and_ncard_le_sum_of_subset_biUnion (b := fun _ => 1) hsub fun i _ =>
+    ⟨(subsingleton_enumeratedBy i).finite,
+      (Set.ncard_le_one (subsingleton_enumeratedBy i).finite).2 (subsingleton_enumeratedBy i)⟩).2
 
 /-- The complement of the constructed set is infinite. -/
 theorem infinite_compl_lowSimpleSet : lowSimpleSetᶜ.Infinite :=
@@ -431,9 +446,9 @@ theorem exists_lt_of_mem_injuriesAt {e s x : ℕ} (hx : x ∈ injuriesAt stage r
   obtain ⟨i, h⟩ := mem_fresh_stage.1 (injuriesAt_subset_fresh hx)
   refine ⟨i, ?_, h⟩
   obtain ⟨-, -, b, hb, hxb⟩ := mem_injuriesAt.1 hx
-  obtain rfl : diagUse (stage s) s e = b := Option.some.inj hb
+  obtain rfl : diagUse (stage s) s e = b := restraint_eq_some_iff.1 hb
   by_contra hie
-  exact absurd hxb (not_le.2 ((attention_eq_some_iff.1 h).1.2.2.2 e (not_lt.1 hie)))
+  exact absurd hxb (not_le.2 ((attention_eq_some_iff.1 h).1.diagUse_lt e (not_lt.1 hie)))
 
 /-- **Finite injury.** At most `e` numbers ever injure the negative requirement `N_e`. -/
 theorem finite_injurySet_and_ncard_le (e : ℕ) :
@@ -449,13 +464,16 @@ use. -/
 theorem diagRun_succ_eq_some {e s : ℕ} {d : Oracle.Single.Code.Halt}
     (hd : diagRun (stage s) s e = some d) (hinj : injuriesAt stage restraint e s = ∅) :
     diagRun (stage (s + 1)) (s + 1) e = some d := by
+  rw [diagRun_def] at hd ⊢
   refine Oracle.Single.Code.evaln_eq_some_of_eqOn
     (Oracle.Single.Code.evaln_mono s.le_succ hd) fun z hz => ?_
   -- a number below the use that entered would injure `N_e`
   have hzs : z ∈ stage (s + 1) ↔ z ∈ stage s := by
     refine ⟨fun hz' => by_contra fun hzs => ?_, fun hzs => monotone_stage s.le_succ hzs⟩
     have : z ∈ injuriesAt stage restraint e s := mem_injuriesAt.2
-      ⟨hz', hzs, _, rfl, by rw [diagUse_eq_of_diagRun_eq_some hd]; exact (Set.mem_Iio.1 hz).le⟩
+      ⟨hz', hzs, _, restraint_eq_some_iff.2 rfl, by
+        rw [diagUse_eq_of_diagRun_eq_some ((diagRun_def _ _ _).trans hd)]
+        exact (Set.mem_Iio.1 hz).le⟩
     simp [hinj] at this
   simp [hzs]
 
@@ -481,7 +499,7 @@ theorem exists_eventually_restraint_eq (e : ℕ) :
     ∃ b, ∀ᶠ s in atTop, restraint e s = some b := by
   obtain ⟨o, ho⟩ := exists_eventually_diagRun_eq e
   exact ⟨(o.map Oracle.Single.Code.Halt.use).getD 0, ho.mono fun s hs => by
-    simp [restraint, diagUse, hs]⟩
+    simp [diagUse, hs]⟩
 
 /-- Each positive requirement eventually stops acting. -/
 private theorem eventually_attention_ne (i : ℕ) :
@@ -530,7 +548,7 @@ theorem inter_lowSimpleSet_nonempty {c : Nat.Partrec.Code} (hc : {x | (c.eval x)
       rw [Nat.Partrec.Code.stageLimit_domStage] at hyW'
       exact Set.disjoint_left.1 hdisj hyW' (subset_stageLimit _ s hys)
     · have hre := hRs e (Finset.mem_range.2 (Nat.lt_succ_of_le he))
-      simp only [restraint, Option.some.injEq] at hre
+      rw [restraint_eq_some_iff] at hre
       rw [hre]
       exact lt_of_le_of_lt ((Finset.le_sup (Finset.mem_range.2 (Nat.lt_succ_of_le he))).trans
         (le_max_right _ _)) hx
@@ -545,7 +563,7 @@ theorem inter_lowSimpleSet_nonempty {c : Nat.Partrec.Code} (hc : {x | (c.eval x)
     · exact absurd hreq (hmin i hij x)
   have hyW : y ∈ {x | (c.eval x).Dom} := by
     rw [← Nat.Partrec.Code.stageLimit_domStage]
-    exact subset_stageLimit _ s (hci ▸ hy.2.1)
+    exact subset_stageLimit _ s (hci ▸ hy.mem_domStage)
   exact Set.disjoint_left.1 hdisj hyW (mem_lowSimpleSet.2 ⟨i, s, hjy⟩)
 
 /-- **The constructed set is simple.** -/

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Simple.Basic
-import Mathlib.Data.Set.Finite.Lattice
+public import Mathlib.Data.Set.Card
+import TauCeti.Data.Set.Card
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
