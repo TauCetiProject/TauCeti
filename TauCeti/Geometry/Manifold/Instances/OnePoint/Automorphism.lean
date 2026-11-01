@@ -20,16 +20,6 @@ Every biholomorphism `f` of the Riemann sphere `OnePoint ℂ` is a Möbius trans
 `C^n` diffeomorphism over `ℂ` for some order `n ≠ 0`, so every such diffeomorphism is
 holomorphic.
 
-The proof normalizes infinity. If `f ∞ = ∞`, then `f` restricts to an injective entire function
-`g : ℂ → ℂ`. Read in the inverted chart at `∞`, the map `f` becomes a holomorphic function `h`
-with `h 0 = 0`, and `h' 0 ≠ 0` because the chart expression of `f.symm` is a local inverse of `h`.
-Since `h w = (g w⁻¹)⁻¹`, the difference quotient `(g z - g 0) / z` tends to `(h' 0)⁻¹` as `z`
-tends to infinity. It is entire by the removable singularity theorem, so it is constant by
-Liouville's theorem, and `g` is affine (`Diffeomorph.exists_apply_coe_eq_mul_add`). An affine map
-fixing `0` and `1` is the identity, so a biholomorphism fixing `0`, `1` and `∞` is the identity
-(`Diffeomorph.eq_refl_of_apply_zero_one_infty_eq_self`). Composing with the Möbius transformation
-carrying `0`, `1`, `∞` to `f 0`, `f 1`, `f ∞` gives the general case.
-
 Consequently, on a manifold biholomorphic to the Riemann sphere, the biholomorphisms fixing three
 distinct points form the trivial group (`Diffeomorph.fixingSubgroup_eq_bot_of_two_lt_encard`).
 Together with `Diffeomorph.infinite_fixingSubgroup_of_encard_le_two`, the biholomorphisms fixing a
@@ -100,6 +90,13 @@ private theorem exists_hasDerivAt_invChart_comp (hn : n ≠ 0) (hf : f ∞ = ∞
   exact ⟨_, right_ne_zero_of_mul_eq_one
     (hcomp.unique ((hasDerivAt_id 0).congr_of_eventuallyEq hleft)), hasDerivAt_deriv_iff.mpr
       (differentiableAt_invChart_comp f hn hf)⟩
+
+/- Proof sketch for the affine classification. The finite part `g` of `f` is an injective entire
+function. Read in the inverted chart at `∞`, the map `f` becomes a holomorphic function `h` with
+`h 0 = 0`, and `h' 0 ≠ 0` because the chart expression of `f.symm` is a local inverse of `h`.
+Since `h w = (g w⁻¹)⁻¹`, the difference quotient `(g z - g 0) / z` tends to `(h' 0)⁻¹` as `z`
+tends to infinity. It is entire by the removable singularity theorem, so it is constant by
+Liouville's theorem, and `g` is affine. -/
 
 /-- **A biholomorphism of the Riemann sphere fixing `∞` is affine.** It is `z ↦ a * z + b` on `ℂ`,
 for some `a ≠ 0` and `b`. -/
