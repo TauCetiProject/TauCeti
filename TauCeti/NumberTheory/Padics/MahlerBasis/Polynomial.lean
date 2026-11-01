@@ -73,9 +73,7 @@ theorem mahlerEquiv_pow_smul_apply (k n : ℕ) (a : E) :
     mahlerEquiv E ((ContinuousMap.id ℤ_[p]) ^ k • ContinuousMap.const ℤ_[p] a) n =
       (n.factorial * k.stirlingSecond n) • a := by
   rw [pow_smul_eq_sum_mahlerTerm]
-  have hterm (b : E) (j : ℕ) : mahlerEquiv (p := p) E (mahlerTerm b j) = single j b := by
-    rw [← mahlerEquiv_symm_single, LinearIsometryEquiv.apply_symm_apply]
-  simp only [map_sum, hterm, sum_single_apply]
+  simp only [map_sum, mahlerEquiv_mahlerTerm, sum_single_apply]
   by_cases hn : n < k + 1
   · simp [hn]
   · simp [hn, Nat.stirlingSecond_eq_zero_of_lt (by omega : k < n)]
@@ -116,18 +114,18 @@ factorial-weighted Stirling coefficients, not in general of its monomial coeffic
 theorem nnnorm_toContinuousMap_eq_sup_stirlingSecond (P : ℤ_[p][X]) :
     ‖P.toContinuousMap‖₊ = (Finset.range (P.natDegree + 1)).sup fun n ↦
       ‖∑ k ∈ P.support, P.coeff k * (n.factorial * k.stirlingSecond n : ℕ)‖₊ := by
-  let a := PadicInt.mahlerEquiv ℤ_[p] P.toContinuousMap
-  have hnorm : ‖P.toContinuousMap‖₊ = ‖a‖₊ :=
-    (PadicInt.mahlerEquiv ℤ_[p]).nnnorm_map P.toContinuousMap |>.symm
-  simp only [← mahlerEquiv_toContinuousMap_apply]
-  rw [hnorm]
-  apply le_antisymm
-  · exact_mod_cast (ZeroAtInftyContinuousMap.norm_le (NNReal.coe_nonneg _)).2 (fun n ↦ by
-      by_cases hn : n < P.natDegree + 1
-      · exact_mod_cast Finset.le_sup (f := fun n ↦ ‖a n‖₊) (Finset.mem_range.mpr hn)
-      · simp [a, mahlerEquiv_toContinuousMap_eq_zero_of_natDegree_lt P (by omega :
-          P.natDegree < n)])
-  · exact Finset.sup_le fun n _ ↦ by exact_mod_cast norm_coe_le_norm a n
+  have hfinite : PadicInt.mahlerEquiv ℤ_[p] P.toContinuousMap =
+      ∑ n ∈ Finset.range (P.natDegree + 1),
+        single n (PadicInt.mahlerEquiv ℤ_[p] P.toContinuousMap n) := by
+    ext n
+    rw [sum_single_apply]
+    by_cases hn : n < P.natDegree + 1
+    · simp [hn]
+    · simp [hn, mahlerEquiv_toContinuousMap_eq_zero_of_natDegree_lt P (by omega :
+        P.natDegree < n)]
+  rw [← (PadicInt.mahlerEquiv ℤ_[p]).nnnorm_map P.toContinuousMap, hfinite,
+    nnnorm_sum_single]
+  simp only [mahlerEquiv_toContinuousMap_apply]
 
 end Polynomial
 
