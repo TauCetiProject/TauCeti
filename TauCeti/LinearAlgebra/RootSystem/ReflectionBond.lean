@@ -31,8 +31,10 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
   positive reflection is `0`, and `RootPairing.reflectionBond_self` says the bond of a weight with
   itself is `0`.
 * `RootPairing.reflectionBond_reflection`: the bond of `x` and `s_β x` is `-⟨x, β^∨⟩`.
-* `RootPairing.reflectionBond_dvd_sub`: the bond of `x` and `y` divides `f x - f y` for every
-  linear form `f`.
+* `RootPairing.reflectionBond_dvd_sub`: when `y = s_β x` for a positive root `β`, the bond of `x`
+  and `y` divides `f x - f y` for every linear form `f`.
+* `RootPairing.reflection_weylGroupToPerm_smul` and `RootPairing.reflection_indexNeg_neg`: the
+  reflection in `w β` sends `w x` to `w (s_β x)`, and the reflection in `-β` is that in `β`.
 * `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
   sign.
 
@@ -63,6 +65,23 @@ noncomputable def reflectionBond (x y : M) : R :=
   if h : ∃ β, b.IsPos β ∧ P.reflection β x = y then P.coroot' h.choose y else 0
 
 variable {P b}
+
+omit [CharZero R] in
+/-- **Transporting a reflection by the Weyl group.** The reflection in the image `w β` of a root
+index `β` sends `w x` to `w (s_β x)`. -/
+theorem reflection_weylGroupToPerm_smul (w : P.weylGroup) (β : ι) (x : M) :
+    P.reflection (P.weylGroupToPerm w β) (w • x) = w • P.reflection β x := by
+  rw [← Equiv.reflection_smul, ← weylGroup.ofIdx_smul, weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+    mul_smul, mul_smul, inv_smul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul]
+
+omit [CharZero R] in
+/-- The reflection in the negative `-β = s_β β` of a root is the reflection in `β`. -/
+theorem reflection_indexNeg_neg (β : ι) :
+    letI := P.indexNeg
+    P.reflection (-β) = P.reflection β := by
+  ext x
+  rw [indexNeg_neg, reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
+    reflection_same]
 
 /-- The bond of two weights related by a reflection in a positive root `β` is `⟨y, β^∨⟩`. -/
 theorem reflectionBond_eq_coroot' [P.IsReduced] {β : ι} (hβ : b.IsPos β) {x y : M}
@@ -122,22 +141,16 @@ theorem abs_reflectionBond_smul_smul [LinearOrder R] [P.IsReduced] {β : ι}
     (hβ : b.IsPos β) {x y : M} (h : P.reflection β x = y) (hne : y ≠ x) (w : P.weylGroup) :
     |P.reflectionBond b (w • x) (w • y)| = |P.reflectionBond b x y| := by
   have hne' : w • y ≠ w • x := fun h' ↦ hne (smul_left_cancel w h')
-  -- `w y` is the reflection of `w x` in the root `γ = w β`.
-  set γ := P.weylGroupToPerm w β
-  have hγ : P.reflection γ (w • x) = w • y := by
-    rw [← h, ← Equiv.reflection_smul, ← weylGroup.ofIdx_smul,
-      weylGroup.ofIdx_weylGroupToPerm_eq_conj, ← mul_smul, mul_assoc, mul_assoc, inv_mul_cancel,
-      mul_one, mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul]
+  -- `w y` is the reflection of `w x` in the root `w β`.
+  have hγ : P.reflection (P.weylGroupToPerm w β) (w • x) = w • y := by
+    rw [reflection_weylGroupToPerm_smul, h]
   rw [reflectionBond_eq_coroot' hβ h hne]
   let := P.indexNeg
-  rcases Base.IsPos.or_neg b γ with hpos | hneg
+  rcases Base.IsPos.or_neg b (P.weylGroupToPerm w β) with hpos | hneg
   · rw [reflectionBond_eq_coroot' hpos hγ hne', coroot'_weylGroupToPerm_smul]
-  · -- The reflection in `-γ` is the reflection in `γ`, and its coroot is `-γ^∨`.
-    have hrefl : P.reflection (-γ) (w • x) = w • y := by
-      rw [indexNeg_neg, reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
-        reflection_same, hγ]
-    rw [reflectionBond_eq_coroot' hneg hrefl hne', indexNeg_neg, ← coroot'_reflection,
-      coroot'_reflection_self, coroot'_weylGroupToPerm_smul, abs_neg]
+  · -- The reflection in `-w β` is the reflection in `w β`, and its coroot is `-(w β)^∨`.
+    rw [reflectionBond_eq_coroot' hneg (by rwa [reflection_indexNeg_neg]) hne', indexNeg_neg,
+      ← coroot'_reflection, coroot'_reflection_self, coroot'_weylGroupToPerm_smul, abs_neg]
 
 /-- **Translating by a weight on every wall leaves bonds unchanged.** If every coroot vanishes on
 `χ`, as for a central weight, every reflection fixes `χ`, so `s_β (x + χ) = y + χ` exactly when

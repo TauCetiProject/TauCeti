@@ -61,7 +61,8 @@ construction and their gcd is defined.
   `a ⟨x_{h-1} λ, β_h^∨⟩ ∈ ℤ` for the positive root label `β_h` of each cover.
 * `TauCeti.dvd_bondGcd_iff` and `TauCeti.bondGcd_dvd`: the bond gcd is the gcd of the bonds, as a
   divisibility characterization.
-* `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty.
+* `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty;
+  `TauCeti.bondGcd_eq_zero_of_length_eq_zero` says a chain of length `0` has bond gcd `0`.
 * `TauCeti.bondGcd_smash` and `TauCeti.isAChain_smash_iff`: the bond gcd and the `a`-chain
   condition of a concatenation of two chains; `TauCeti.bondGcd_snoc` and
   `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover, and
@@ -332,13 +333,20 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
+omit [P.flip.IsReduced] in
+/-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
+theorem bondGcd_eq_zero_of_length_eq_zero
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
+    bondGcd lam C = 0 :=
+  Finset.gcd_eq_zero_iff.mpr fun i _ ↦ (Fin.cast h i).elim0
+
 /-- The bond gcd of a saturated chain of `W / W_λ` vanishes exactly when the chain has length `0`:
 the bonds of covers are positive. -/
 theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     bondGcd lam C = 0 ↔ C.length = 0 := by
-  rw [bondGcd, Finset.gcd_eq_zero_iff]
-  refine ⟨fun h ↦ ?_, fun h i ↦ (Fin.cast h i).elim0⟩
+  refine ⟨fun h ↦ ?_, bondGcd_eq_zero_of_length_eq_zero⟩
+  rw [bondGcd, Finset.gcd_eq_zero_iff] at h
   by_contra hC
   have hpos := reflectionBond_pos_of_minimalCosetRepCovBy hlam
     (C.minimalCosetRepCovBy ⟨0, Nat.pos_of_ne_zero hC⟩)

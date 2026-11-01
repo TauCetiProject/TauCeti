@@ -127,8 +127,7 @@ theorem existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy
     · exact ⟨_, hj, hmem⟩
     · -- The reflection in `-j` is the reflection in `j`.
       refine ⟨_, hj, ?_⟩
-      rw [← hmem, indexNeg_neg, reflection_reflectionPerm, LinearEquiv.mul_apply,
-        LinearEquiv.mul_apply, reflection_same]
+      rw [← hmem, reflection_indexNeg_neg]
   exact ⟨β, ⟨hβ, hβx⟩, fun γ ⟨hγ, hγx⟩ ↦
     (eq_of_isPos_of_reflection_eq hβ hγ (hβx.trans hγx.symm) (by rwa [hβx])).symm⟩
 
@@ -241,12 +240,11 @@ theorem exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy (hlam : lam ∈ domina
     ∃ z : ℤ, a * (f (x • lam) - f (y • lam) : ℤ) = z := by
   obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
   obtain ⟨z, hz⟩ := ha
-  rw [reflectionBond_eq_neg_coroot' hβ hβx (smul_ne_smul_of_minimalCosetRepCovBy hlam h)] at hz
-  refine ⟨-(z * f (P.root β)), ?_⟩
-  rw [← hβx, P.reflection_apply, map_sub, sub_sub_cancel, LinearMap.map_smul, smul_eq_mul]
-  push_cast at hz ⊢
-  rw [← hz]
-  ring
+  obtain ⟨k, hk⟩ := reflectionBond_dvd_sub hβ hβx f
+  refine ⟨z * k, ?_⟩
+  rw [hk]
+  push_cast
+  rw [← mul_assoc, hz]
 
 /-- **Left multiplication preserves the bonds of covers.** If `y ⋖ x` is a cover of `W / W_λ`, then
 for every element `w` of the Weyl group the bond of `(w x) λ` and `(w y) λ` has the same absolute

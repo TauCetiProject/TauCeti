@@ -54,6 +54,9 @@ property of the Bruhat order provides the required comparisons.
 * `TauCeti.intervalBondGcd_self`, `TauCeti.intervalBondGcd_of_minimalCosetRepCovBy` and
   `TauCeti.intervalBondGcd_eq_gcd`: `d_λ(x, x) = 0`, the interval gcd of a cover is its bond, and
   `d_λ(x, z) = gcd(d_λ(x, y), d_λ(y, z))` for `z ≤ y ≤ x`.
+* `TauCeti.intervalBondGcd_eq_zero_iff` and `TauCeti.intervalBondGcd_eq_zero_of_not_bruhatLE`:
+  for minimal coset representatives `y ≤ x`, `d_λ(x, y) = 0` exactly when `x = y`, and
+  `d_λ(x, y) = 0` unless `y ≤ x`.
 
 ## References
 
@@ -77,6 +80,13 @@ variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup 
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M}
 
 /-! ### Chain independence of the bond gcd -/
+
+/-- Integers congruent modulo `d` have the same gcd with `d`. -/
+private theorem natAbs_gcd_eq_of_dvd_sub {u v d : ℤ} (h : d ∣ u - v) :
+    u.natAbs.gcd d.natAbs = v.natAbs.gcd d.natAbs := by
+  have := Int.gcd_sub_right_right_of_dvd u h
+  rw [sub_sub_cancel, Int.gcd_eq_natAbs_gcd_natAbs, Int.gcd_eq_natAbs_gcd_natAbs] at this
+  rw [Nat.gcd_comm, ← this, Nat.gcd_comm]
 
 variable (b) in
 /-- The bond gcd of the saturated chains of `W / W_λ` starting at `x` depends only on their last
@@ -108,47 +118,46 @@ private theorem bondGcd_eq_gcd_of_not_isLeftDescent (hlam : lam ∈ dominantCham
     (hD : D.head.1 = (weylCoxeterSystem P b).simple i * x) (hDl : D.last.1 = C.last.1) :
     bondGcd lam C = (P.coroot' i (x • lam)).natAbs.gcd (bondGcd lam D) := by
   have hix := (weylCoxeterSystem P b).isLeftDescent_iff.mp hi
-  have hlen : C.length ≠ 0 := fun h0 ↦ hy <| by
-    rwa [RelSeries.subsingleton_of_length_eq_zero h0 C.last_mem C.head_mem, hC]
-  -- Split off the first cover `c ⋖ x` of `C`; its tail `C'` runs from `c` down to `y`.
-  have hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
-      (C.tail hlen).head.1 C.head.1 := C.step ⟨0, Nat.pos_of_ne_zero hlen⟩
-  rw [hC] at hcov
-  have hlast : (C.tail hlen).last = C.last := RelSeries.last_tail C hlen
-  have hclen := hcov.length_add_one_eq
-  rw [bondGcd_eq_gcd_bondGcd_tail C hlen, hC]
-  by_cases hc : (C.tail hlen).head.1 = (weylCoxeterSystem P b).simple i * x
-  · -- The chain passes through `sᵢ x`.
-    rw [hc, reflectionBond_smul_simple_mul_smul, Int.natAbs_neg,
-      hCI _ (by omega) (C.tail hlen) D hc hD (by rw [hlast, hDl])]
-  -- Otherwise `sᵢ c ⋖ c` and `sᵢ c ⋖ sᵢ x`; compare both sides with a chain `E` from `sᵢ c` to `y`.
-  have hci := hcov.isLeftDescent_of_ne hi hc
-  have hcovc := CoxeterSystem.minimalCosetRepCovBy_simple_mul_of_isLeftDescent
-    (C.tail hlen).head.2 hci
-  have hcovx := hcov.simple_mul_of_isLeftDescent hci hi
-  have hyc : (weylCoxeterSystem P b).BruhatLE C.last.1
-      ((weylCoxeterSystem P b).simple i * (C.tail hlen).head.1) := by
-    have := CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head (C.tail hlen)
-    rw [hlast] at this
-    exact this.bruhatLE_simple_mul hy
-  obtain ⟨E, hEh, hEl⟩ := CoxeterSystem.exists_minimalCosetRepChain C.last.2
-    hcovc.isMinimalCosetRep_left hyc
-  have h₁ := hCI _ (by omega) (C.tail hlen)
-    (E.cons (C.tail hlen).head (by rw [hEh]; exact hcovc)) rfl rfl
-    (by rw [RelSeries.last_cons, hEl, hlast])
-  have h₂ := hCI _ (by omega) D (E.cons ⟨_, hcovx.isMinimalCosetRep_right⟩
-    (by rw [hEh]; exact hcovx)) hD rfl (by rw [RelSeries.last_cons, hEl, hDl])
-  -- The bonds of `sᵢ c ⋖ sᵢ x` and `c ⋖ x` agree, and `|⟨c λ, αᵢ^∨⟩| ≡ |⟨x λ, αᵢ^∨⟩|` modulo it.
-  obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
-    existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hcov
-  have key := Int.gcd_sub_right_right_of_dvd (P.coroot' i (x • lam))
-    (reflectionBond_dvd_sub hβ hβx (P.coroot' i))
-  rw [sub_sub_cancel, Int.gcd_eq_natAbs_gcd_natAbs, Int.gcd_eq_natAbs_gcd_natAbs] at key
-  rw [h₁, h₂, bondGcd_cons, bondGcd_cons, hEh]
-  dsimp only
-  rw [natAbs_reflectionBond_mul_smul_mul_smul hlam hcov, reflectionBond_smul_simple_mul_smul,
-    Int.natAbs_neg, ← Nat.gcd_assoc, ← Nat.gcd_assoc, key,
-    Nat.gcd_comm (P.coroot' i (x • lam)).natAbs]
+  induction C using RelSeries.inductionOn with
+  | singleton y =>
+    rw [RelSeries.head_singleton] at hC
+    rw [RelSeries.last_singleton, hC] at hy
+    exact absurd hi hy
+  | cons C c hcov _ =>
+    -- The chain is a first cover `C.head ⋖ x` followed by a chain `C` down to `y`.
+    replace hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
+        C.head.1 c.1 := hcov
+    rw [RelSeries.head_cons] at hC
+    rw [RelSeries.last_cons] at hy hDl
+    subst hC
+    have hclen := hcov.length_add_one_eq
+    rw [bondGcd_cons]
+    by_cases hc : C.head.1 = (weylCoxeterSystem P b).simple i * c.1
+    · -- The chain passes through `sᵢ x`.
+      rw [hc, reflectionBond_smul_simple_mul_smul, Int.natAbs_neg,
+        hCI _ (by omega) C D hc hD hDl.symm]
+    -- Otherwise `sᵢ C.head ⋖ C.head` and `sᵢ C.head ⋖ sᵢ x`; compare both sides with a chain `E`
+    -- from `sᵢ C.head` down to `y`.
+    have hci := hcov.isLeftDescent_of_ne hi hc
+    have hcovc := CoxeterSystem.minimalCosetRepCovBy_simple_mul_of_isLeftDescent C.head.2 hci
+    have hcovx := hcov.simple_mul_of_isLeftDescent hci hi
+    obtain ⟨E, hEh, hEl⟩ := CoxeterSystem.exists_minimalCosetRepChain C.last.2
+      hcovc.isMinimalCosetRep_left
+      ((CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head C).bruhatLE_simple_mul hy)
+    have h₁ := hCI _ (by omega) C (E.cons C.head (by rw [hEh]; exact hcovc)) rfl rfl
+      (by rw [RelSeries.last_cons, hEl])
+    have h₂ := hCI _ (by omega) D (E.cons ⟨_, hcovx.isMinimalCosetRep_right⟩
+      (by rw [hEh]; exact hcovx)) hD rfl (by rw [RelSeries.last_cons, hEl, hDl])
+    -- The bonds of `sᵢ C.head ⋖ sᵢ x` and `C.head ⋖ x` agree, and `⟨C.head λ, αᵢ^∨⟩` and
+    -- `⟨x λ, αᵢ^∨⟩` are congruent modulo it.
+    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
+      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hcov
+    rw [h₁, h₂, bondGcd_cons, bondGcd_cons, hEh]
+    dsimp only
+    rw [natAbs_reflectionBond_mul_smul_mul_smul hlam hcov, reflectionBond_smul_simple_mul_smul,
+      Int.natAbs_neg, ← Nat.gcd_assoc, ← Nat.gcd_assoc,
+      Nat.gcd_comm _ (P.coroot' i (C.head.1 • lam)).natAbs,
+      ← natAbs_gcd_eq_of_dvd_sub (reflectionBond_dvd_sub hβ hβx (P.coroot' i))]
 
 /-- **Transport of chains along a common left descent.** If the bond gcd is chain independent below
 `x`, and its transport along common left descents holds below `x`, then it holds at `x`. -/
@@ -160,52 +169,51 @@ private theorem descentTransport (hlam : lam ∈ dominantChamber P b) {x : P.wey
     DescentTransport b lam x := by
   intro i hi C D hC hy hD hDl
   have hix := (weylCoxeterSystem P b).isLeftDescent_iff.mp hi
-  by_cases hlen : C.length = 0
-  · -- Both chains have length `0`.
-    have hCl := RelSeries.subsingleton_of_length_eq_zero hlen C.last_mem C.head_mem
+  induction C using RelSeries.inductionOn with
+  | singleton y =>
+    -- Both chains have length `0`.
+    rw [RelSeries.head_singleton] at hC
+    rw [RelSeries.last_singleton] at hDl
     have hDlen : D.length = 0 := by
       have := D.length_last_add_length
-      rw [hDl, hD, hCl, hC] at this
+      rw [hDl, hD, hC] at this
       omega
-    rw [(bondGcd_eq_zero_iff hlam).mpr hlen, (bondGcd_eq_zero_iff hlam).mpr hDlen]
-  -- Split off the first cover `c ⋖ x` of `C`; its tail `C'` runs from `c` down to `y`.
-  have hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
-      (C.tail hlen).head.1 C.head.1 := C.step ⟨0, Nat.pos_of_ne_zero hlen⟩
-  rw [hC] at hcov
-  have hlast : (C.tail hlen).last = C.last := RelSeries.last_tail C hlen
-  have hclen := hcov.length_add_one_eq
-  have hcovy := CoxeterSystem.minimalCosetRepCovBy_simple_mul_of_isLeftDescent C.last.2 hy
-  rw [bondGcd_eq_gcd_bondGcd_tail C hlen, hC]
-  by_cases hc : (C.tail hlen).head.1 = (weylCoxeterSystem P b).simple i * x
-  · -- The chain passes through `sᵢ x`: compare `D` with `C'` followed by `sᵢ y ⋖ y`.
-    have hD₀ := hCI _ (by omega) D ((C.tail hlen).snoc ⟨_, hcovy.isMinimalCosetRep_left⟩
-      (by rw [hlast]; exact hcovy)) hD (by rw [RelSeries.head_snoc, hc])
-      (by rw [RelSeries.last_snoc, hDl])
-    -- `d(C')` divides `⟨sᵢ x λ - y λ, αᵢ^∨⟩ = -(⟨x λ, αᵢ^∨⟩ + ⟨y λ, αᵢ^∨⟩)`.
-    have hd := bondGcd_dvd_sub hlam (C.tail hlen) (P.coroot' i)
-    rw [hc, hlast, coroot'_simple_mul_smul, ← neg_add', dvd_neg] at hd
-    have key := Int.gcd_sub_right_right_of_dvd (P.coroot' i (x • lam)) hd
-    rw [sub_add_cancel_left, Int.gcd_neg, Int.gcd_eq_natAbs_gcd_natAbs,
-      Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast] at key
-    rw [hD₀, bondGcd_snoc, hlast, hc, reflectionBond_smul_simple_mul_smul,
-      reflectionBond_smul_simple_mul_smul, Int.natAbs_neg, Int.natAbs_neg, Nat.gcd_comm, key]
-  -- Otherwise `sᵢ c ⋖ c` and `sᵢ c ⋖ sᵢ x`; transport `C'` to a chain `E` from `sᵢ c` to `sᵢ y`.
-  have hci := hcov.isLeftDescent_of_ne hi hc
-  have hcovx := hcov.simple_mul_of_isLeftDescent hci hi
-  have hyc : (weylCoxeterSystem P b).BruhatLE ((weylCoxeterSystem P b).simple i * C.last.1)
-      ((weylCoxeterSystem P b).simple i * (C.tail hlen).head.1) := by
-    have := CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head (C.tail hlen)
-    rw [hlast] at this
-    exact this.simple_mul_simple_mul_of_isLeftDescent hy hci
-  obtain ⟨E, hEh, hEl⟩ := CoxeterSystem.exists_minimalCosetRepChain
-    hcovy.isMinimalCosetRep_left hcovx.isMinimalCosetRep_left hyc
-  have h₁ := hB _ (by omega) i hci (C.tail hlen) E rfl (by rwa [hlast]) (by rw [hEh])
-    (by rw [hEl, hlast])
-  have h₂ := hCI _ (by omega) D (E.cons ⟨_, hcovx.isMinimalCosetRep_right⟩
-    (by rw [hEh]; exact hcovx)) hD rfl (by rw [RelSeries.last_cons, hEl, hDl])
-  rw [h₁, h₂, bondGcd_cons, hEh]
-  dsimp only
-  rw [natAbs_reflectionBond_mul_smul_mul_smul hlam hcov]
+    rw [bondGcd_eq_zero_of_length_eq_zero rfl, bondGcd_eq_zero_of_length_eq_zero hDlen]
+  | cons C c hcov _ =>
+    -- The chain is a first cover `C.head ⋖ x` followed by a chain `C` down to `y`.
+    replace hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
+        C.head.1 c.1 := hcov
+    rw [RelSeries.head_cons] at hC
+    rw [RelSeries.last_cons] at hy hDl
+    subst hC
+    have hclen := hcov.length_add_one_eq
+    have hcovy := CoxeterSystem.minimalCosetRepCovBy_simple_mul_of_isLeftDescent C.last.2 hy
+    rw [bondGcd_cons]
+    by_cases hc : C.head.1 = (weylCoxeterSystem P b).simple i * c.1
+    · -- The chain passes through `sᵢ x`: compare `D` with `C` followed by `sᵢ y ⋖ y`.
+      have hD₀ := hCI _ (by omega) D (C.snoc ⟨_, hcovy.isMinimalCosetRep_left⟩ hcovy) hD
+        (by rw [RelSeries.head_snoc, hc]) (by rw [RelSeries.last_snoc, hDl])
+      -- `d(C)` divides `⟨sᵢ x λ - y λ, αᵢ^∨⟩ = -⟨x λ, αᵢ^∨⟩ - ⟨y λ, αᵢ^∨⟩`.
+      have hd := bondGcd_dvd_sub hlam C (P.coroot' i)
+      rw [hc, coroot'_simple_mul_smul] at hd
+      have key := natAbs_gcd_eq_of_dvd_sub hd
+      rw [Int.natAbs_neg, Int.natAbs_natCast] at key
+      rw [hD₀, bondGcd_snoc, hc, reflectionBond_smul_simple_mul_smul,
+        reflectionBond_smul_simple_mul_smul, Int.natAbs_neg, Int.natAbs_neg, key, Nat.gcd_comm]
+    -- Otherwise `sᵢ C.head ⋖ C.head` and `sᵢ C.head ⋖ sᵢ x`; transport `C` to a chain `E` from
+    -- `sᵢ C.head` down to `sᵢ y`.
+    have hci := hcov.isLeftDescent_of_ne hi hc
+    have hcovx := hcov.simple_mul_of_isLeftDescent hci hi
+    obtain ⟨E, hEh, hEl⟩ := CoxeterSystem.exists_minimalCosetRepChain
+      hcovy.isMinimalCosetRep_left hcovx.isMinimalCosetRep_left
+      (CoxeterSystem.BruhatLE.simple_mul_simple_mul_of_isLeftDescent
+        (CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head C) hy hci)
+    have h₁ := hB _ (by omega) i hci C E rfl hy (by rw [hEh]) (by rw [hEl])
+    have h₂ := hCI _ (by omega) D (E.cons ⟨_, hcovx.isMinimalCosetRep_right⟩
+      (by rw [hEh]; exact hcovx)) hD rfl (by rw [RelSeries.last_cons, hEl, hDl])
+    rw [h₁, h₂, bondGcd_cons, hEh]
+    dsimp only
+    rw [natAbs_reflectionBond_mul_smul_mul_smul hlam hcov]
 
 /-- **Chain independence at `x`**, from chain independence below `x` and the transport of chains
 along common left descents at `x`. -/
@@ -220,7 +228,7 @@ private theorem chainIndep (hlam : lam ∈ dominantChamber P b) {x : P.weylGroup
         (hE : E.head.1 = 1) : bondGcd lam E = 0 := by
       have := E.length_last_add_length
       rw [hE, CoxeterSystem.length_one] at this
-      exact (bondGcd_eq_zero_iff hlam).mpr (by omega)
+      exact bondGcd_eq_zero_of_length_eq_zero (by omega)
     rw [h₀ C hC, h₀ C' hC']
   obtain ⟨i, hi⟩ := (weylCoxeterSystem P b).exists_leftDescent_of_ne_one hx1
   have hx : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) x := hC ▸ C.head.2
@@ -269,9 +277,9 @@ open Classical in
 variable (b) in
 /-- The **interval bond gcd** `d_λ(x, y)` of minimal coset representatives `y ≤ x` of the
 stabilizer of `λ`: the bond gcd of any saturated chain of `W / W_λ` from `x` down to `y`. It does
-not depend on the chain (`TauCeti.bondGcd_eq_intervalBondGcd`), and `d_λ(x, x) = 0`. When there is
-no such chain, that is when `x` and `y` are not comparable minimal coset representatives, it is
-`0`. -/
+not depend on the chain (`TauCeti.bondGcd_eq_intervalBondGcd`), and `d_λ(x, x) = 0`. It is `0`
+unless `y ≤ x` are both minimal coset representatives of `W_λ`, that is when there is no saturated
+chain from `x` down to `y`. -/
 noncomputable def intervalBondGcd (lam : M) (x y : P.weylGroup) : ℕ :=
   if h : ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
       C.head.1 = x ∧ C.last.1 = y then bondGcd lam h.choose else 0
@@ -286,17 +294,41 @@ theorem bondGcd_eq_intervalBondGcd (hlam : lam ∈ dominantChamber P b)
   exact bondGcd_eq_of_head_eq_of_last_eq hlam (Subtype.ext h.choose_spec.1.symm)
     (Subtype.ext h.choose_spec.2.symm)
 
+omit [P.flip.IsReduced] in
 /-- The interval bond gcd `d_λ(x, x)` vanishes. -/
 @[simp]
-theorem intervalBondGcd_self (hlam : lam ∈ dominantChamber P b) (x : P.weylGroup) :
-    intervalBondGcd b lam x x = 0 := by
+theorem intervalBondGcd_self (x : P.weylGroup) : intervalBondGcd b lam x x = 0 := by
   rw [intervalBondGcd]
   split_ifs with h
   · obtain ⟨hhead, hlast⟩ := h.choose_spec
     have := h.choose.length_last_add_length
     rw [hhead, hlast] at this
-    exact (bondGcd_eq_zero_iff hlam).mpr (by omega)
+    exact bondGcd_eq_zero_of_length_eq_zero (by omega)
   · rfl
+
+omit [P.flip.IsReduced] in
+/-- The interval bond gcd `d_λ(x, y)` vanishes unless `y ≤ x`: then no saturated chain runs from `x`
+down to `y`. -/
+theorem intervalBondGcd_eq_zero_of_not_bruhatLE {x y : P.weylGroup}
+    (h : ¬(weylCoxeterSystem P b).BruhatLE y x) : intervalBondGcd b lam x y = 0 := by
+  rw [intervalBondGcd]
+  split_ifs with hC
+  · obtain ⟨C, rfl, rfl⟩ := hC
+    exact (h (CoxeterSystem.MinimalCosetRepChain.bruhatLE_last_head C)).elim
+  · rfl
+
+/-- For minimal coset representatives `y ≤ x`, the interval bond gcd `d_λ(x, y)` vanishes exactly
+when `x = y`: the bonds of covers are positive. -/
+theorem intervalBondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
+    (hx : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) x)
+    (hy : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) y)
+    (hyx : (weylCoxeterSystem P b).BruhatLE y x) : intervalBondGcd b lam x y = 0 ↔ x = y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ intervalBondGcd_self x⟩
+  obtain ⟨C, hCh, hCl⟩ := CoxeterSystem.exists_minimalCosetRepChain hy hx hyx
+  have hCx : C.head.1 = x := by rw [hCh]
+  have hCy : C.last.1 = y := by rw [hCl]
+  rw [← hCx, ← hCy, ← bondGcd_eq_intervalBondGcd hlam, bondGcd_eq_zero_iff hlam] at h
+  rw [← hCx, ← hCy, RelSeries.subsingleton_of_length_eq_zero h C.head_mem C.last_mem]
 
 /-- The interval bond gcd of a cover `y ⋖ x` of `W / W_λ` is its bond `b_λ(x, y)`. -/
 theorem intervalBondGcd_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
@@ -318,7 +350,7 @@ theorem intervalBondGcd_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber 
     rw [← RelSeries.last_tail C (by omega)]
     exact RelSeries.subsingleton_of_length_eq_zero ht (RelSeries.head_mem _) (RelSeries.last_mem _)
   rw [← hx, ← hy, ← bondGcd_eq_intervalBondGcd hlam, bondGcd_eq_gcd_bondGcd_tail C (by omega),
-    (bondGcd_eq_zero_iff hlam).mpr ht, Nat.gcd_zero_right, hth]
+    bondGcd_eq_zero_of_length_eq_zero ht, Nat.gcd_zero_right, hth]
 
 /-- **The interval bond gcd of a concatenation.** For minimal coset representatives `z ≤ y ≤ x`,
 `d_λ(x, z) = gcd(d_λ(x, y), d_λ(y, z))`. -/
