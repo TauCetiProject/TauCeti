@@ -1,0 +1,279 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction
+public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
+import Mathlib.FieldTheory.Minpoly.Field
+import Mathlib.RingTheory.Localization.Away.Basic
+import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+import TauCeti.RingTheory.Spectrum.Prime.Topology
+
+/-!
+# Connectedness of the Weil restriction of the multiplicative group
+
+Let `B` be a finite-dimensional commutative algebra over a field `k`. The Weil restriction
+`Res_{B/k} 𝔾ₘ`, with coordinate Hopf algebra `WeilRestriction k B B[T;T⁻¹]`, is geometrically
+connected. This applies in particular to `B = K` for a finite field extension `K / k`. Together
+with smoothness and commutativity (`WeilRestriction.instSmooth`, `WeilRestriction.instIsCocomm`),
+`Res_{K/k} 𝔾ₘ` is then a smooth connected commutative group. For `K / k` purely inseparable and
+nontrivial it is the standard example of a pseudo-reductive group which is not reductive; neither
+of these two properties is proved here.
+
+## Main declarations
+
+* `TauCeti.Algebra.WeilRestriction.geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup`:
+  the Weil restriction of `𝔾ₘ` along a finite-dimensional algebra over a field is geometrically
+  connected.
+
+## Implementation notes
+
+Geometrically, `Res_{B/k} 𝔾ₘ` is the open subscheme of the affine space of `B` on which the norm
+does not vanish, so it is irreducible. The proof here avoids norms and works with idempotents
+and points. Over an algebraically closed extension `Ω` of `k`, an `Ω`-point is a unit `u` of
+`B ⊗[k] Ω`. If `p` is a nonzero polynomial over `Ω` annihilating `u` with `p(0) ≠ 0`, and
+`n = deg p`, put
+
+```text
+ρ(s) = ∑ᵢ pᵢ sⁿ⁻ⁱ (s - 1)ⁱ.
+```
+
+Then `1 - s + s u` divides `ρ(s)`, while `ρ(0) = ± pₙ` and `ρ(1) = p₀` are nonzero. Hence
+`s ↦ 1 - s + s u` is a point of `Res_{B/k} 𝔾ₘ` with values in the domain `Ω[s][1/ρ]`, joining the
+identity at `s = 0` to `u` at `s = 1`. An idempotent takes the value `0` or `1` on such a path, so
+every idempotent of the geometric coordinate ring has the same value at every `Ω`-point. By the
+Nullstellensatz it is `0` or `1`.
+
+## References
+
+* B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), §1.1 and §A.5.
+* J. S. Milne, *Algebraic Groups* (2017), §2.i.
+-/
+
+public section
+
+open Polynomial WithConv
+open scoped LaurentPolynomial TensorProduct
+
+namespace TauCeti.Algebra.WeilRestriction
+
+universe u
+
+section PathPolynomial
+
+variable {K : Type*} [CommRing K]
+
+/-- The polynomial `ρ(s) = ∑ᵢ pᵢ sⁿ⁻ⁱ (s - 1)ⁱ`, with `n` the degree of `p`. When `p`
+annihilates `u`, it is divisible by `1 - s + s u`. -/
+private noncomputable def pathPolynomial (p : K[X]) : K[X] :=
+  ∑ i ∈ Finset.range (p.natDegree + 1), C (p.coeff i) * X ^ (p.natDegree - i) * (X - 1) ^ i
+
+/-- If `p` annihilates `u`, then `1 - s + s u` divides `ρ(s)`. -/
+private theorem dvd_eval₂_pathPolynomial {S : Type*} [CommRing S] (κ : K →+* S) (p : K[X])
+    {s u : S} (hu : p.eval₂ κ u = 0) :
+    1 - s + s * u ∣ (pathPolynomial p).eval₂ κ s := by
+  have hzero : ∑ i ∈ Finset.range (p.natDegree + 1),
+      κ (p.coeff i) * s ^ (p.natDegree - i) * (s * u) ^ i = 0 := by
+    rw [← mul_zero (s ^ p.natDegree), ← hu, eval₂_eq_sum_range, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [← pow_sub_mul_pow s (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))]
+    ring
+  have hsum : (pathPolynomial p).eval₂ κ s = ∑ i ∈ Finset.range (p.natDegree + 1),
+      κ (p.coeff i) * s ^ (p.natDegree - i) * ((s - 1) ^ i - (s * u) ^ i) := by
+    simp only [mul_sub, Finset.sum_sub_distrib, hzero, sub_zero, pathPolynomial,
+      eval₂_finsetSum, eval₂_mul, eval₂_C, eval₂_pow, eval₂_sub, eval₂_X,
+      eval₂_one]
+  rw [hsum]
+  refine Finset.dvd_sum fun i _ ↦ Dvd.dvd.mul_left ?_ _
+  have h := sub_dvd_pow_sub_pow (s - 1) (s * u) i
+  rwa [show s - 1 - s * u = -(1 - s + s * u) by ring, neg_dvd] at h
+
+private theorem eval_one_pathPolynomial (p : K[X]) : (pathPolynomial p).eval 1 = p.coeff 0 := by
+  rw [pathPolynomial, eval_finsetSum, Finset.sum_eq_single 0]
+  · simp
+  · intro i _ hi
+    simp [zero_pow hi]
+  · simp
+
+private theorem eval_zero_pathPolynomial (p : K[X]) :
+    (pathPolynomial p).eval 0 = (-1) ^ p.natDegree * p.leadingCoeff := by
+  rw [pathPolynomial, eval_finsetSum, Finset.sum_eq_single p.natDegree]
+  · simp [mul_comm]
+  · intro i hi hne
+    have : p.natDegree - i ≠ 0 := by
+      have := Finset.mem_range.mp hi
+      omega
+    simp [zero_pow this]
+  · simp
+
+end PathPolynomial
+
+variable {k : Type u} {B : Type*} [Field k] [CommRing B] [Algebra k B]
+
+/-- Evaluation `s ↦ a` on `K[s][1/ρ]`, defined when `ρ(a) ≠ 0`. -/
+private noncomputable def evalAway {K : Type*} [Field K] (ρ : K[X]) (a : K) (ha : ρ.eval a ≠ 0) :
+    Localization.Away ρ →ₐ[K] K :=
+  IsLocalization.liftAlgHom (M := Submonoid.powers ρ) (f := aeval a) (by
+    rintro ⟨_, n, rfl⟩
+    simpa using (isUnit_iff_ne_zero.mpr ha).pow n)
+
+private theorem evalAway_algebraMap {K : Type*} [Field K] (ρ : K[X]) (a : K)
+    (ha : ρ.eval a ≠ 0) (q : K[X]) :
+    evalAway ρ a ha (algebraMap K[X] (Localization.Away ρ) q) = q.eval a := by
+  simp [evalAway, IsLocalization.lift_eq]
+
+section Path
+
+variable {K : Type*} [Field K] [Algebra k K] (p : K[X]) (u : B ⊗[k] K)
+
+/-- The path `s ↦ 1 - s + s u` in `B ⊗[k] K[s][1/ρ]`, where `ρ = pathPolynomial p`. -/
+private noncomputable def pathElement : B ⊗[k] Localization.Away (pathPolynomial p) :=
+  1 - 1 ⊗ₜ algebraMap K[X] _ X + 1 ⊗ₜ algebraMap K[X] _ X *
+    Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K _) u
+
+/-- If `p` annihilates `u`, then the path `s ↦ 1 - s + s u` consists of units: it divides the
+unit `ρ(s)`. -/
+private theorem isUnit_pathElement
+    (hpu : p.eval₂ (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom u = 0) :
+    IsUnit (pathElement p u) := by
+  let D := Localization.Away (pathPolynomial p)
+  let ι : B ⊗[k] K →ₐ[B] B ⊗[k] D :=
+    Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K D)
+  let ψ : K[X] →+* B ⊗[k] D :=
+    (Algebra.TensorProduct.includeRight : D →ₐ[k] B ⊗[k] D).toRingHom.comp (algebraMap K[X] D)
+  have hC : ψ.comp C = ι.toRingHom.comp
+      (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom := by
+    ext a
+    simp [ψ, ι, IsScalarTower.algebraMap_apply K K[X] D]
+  have hu : p.eval₂ (ψ.comp C) (ι u) = 0 := by
+    have h := congrArg ι.toRingHom hpu
+    rw [Polynomial.hom_eval₂, map_zero] at h
+    rw [hC]
+    exact h
+  have hX : ψ X = 1 ⊗ₜ algebraMap K[X] D X := by simp [ψ]
+  refine isUnit_of_dvd_unit (dvd_eval₂_pathPolynomial (ψ.comp C) p hu) ?_
+  rw [← hX, ← Polynomial.hom_eval₂, eval₂_C_X]
+  exact (IsLocalization.Away.algebraMap_isUnit (S := D) (pathPolynomial p)).map
+    (Algebra.TensorProduct.includeRight : D →ₐ[k] B ⊗[k] D)
+
+/-- Evaluating the path `s ↦ 1 - s + s u` at `s = a`. -/
+private theorem lTensor_evalAway_pathElement (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
+    Algebra.TensorProduct.lTensor (S := B) B ((evalAway _ a ha).restrictScalars k)
+        (pathElement p u) = 1 - (1 : B) ⊗ₜ[k] a + (1 : B) ⊗ₜ[k] a * u := by
+  have hu : Algebra.TensorProduct.lTensor (S := B) B ((evalAway _ a ha).restrictScalars k)
+      (Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K _) u) = u := by
+    have h : (Algebra.TensorProduct.lTensor (S := B) B ((evalAway _ a ha).restrictScalars k)).comp
+        (Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K _)) =
+          AlgHom.id B (B ⊗[k] K) := by
+      ext a'
+      simp only [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
+        Algebra.TensorProduct.map_tmul, AlgHom.id_apply, IsScalarTower.coe_toAlgHom',
+        AlgHom.coe_restrictScalars']
+      exact congrArg _ ((evalAway _ a ha).commutes a')
+    exact AlgHom.congr_fun h u
+  simp [pathElement, hu, evalAway_algebraMap]
+
+end Path
+
+variable [Module.Finite k B]
+
+/-- A unit of `B ⊗[k] K` is annihilated by a nonzero polynomial over `K` with nonzero constant
+coefficient, for instance its minimal polynomial. -/
+private theorem exists_eval₂_eq_zero_of_unit {K : Type u} [Field K] [Algebra k K]
+    (u : (B ⊗[k] K)ˣ) :
+    ∃ p : K[X], p ≠ 0 ∧ p.coeff 0 ≠ 0 ∧
+      p.eval₂ (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom u = 0 := by
+  let c := Algebra.TensorProduct.comm k B K
+  let v : K ⊗[k] B := c u
+  have hv : IsUnit v := u.isUnit.map c
+  have hint : IsIntegral K v := Algebra.IsIntegral.isIntegral v
+  set m := minpoly K v
+  have hm : m ≠ 0 := minpoly.ne_zero hint
+  have hmv : aeval v m = 0 := minpoly.aeval K v
+  refine ⟨m, hm, fun h0 ↦ ?_, ?_⟩
+  · have hdiv : divX m ≠ 0 := fun h ↦ hm (by rw [divX_eq_zero_iff, h0, C_0] at h; exact h)
+    have hX : aeval v (divX m) = 0 := by
+      have := divX_mul_X_add m
+      rw [h0, C_0, add_zero] at this
+      rw [← this, map_mul, aeval_X] at hmv
+      exact (hv.mul_left_eq_zero).mp hmv
+    exact absurd (minpoly.degree_le_of_ne_zero K v hdiv hX) (not_le.mpr (degree_divX_lt hm))
+  · have hc : (c.symm : K ⊗[k] B →+* B ⊗[k] K).comp (algebraMap K (K ⊗[k] B)) =
+        (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom := by
+      ext a
+      simp [c, Algebra.TensorProduct.algebraMap_apply]
+    have := congrArg (c.symm : K ⊗[k] B →+* B ⊗[k] K) hmv
+    rw [aeval_def, Polynomial.hom_eval₂, hc, map_zero] at this
+    simpa [v] using this
+
+/-- Every point of `Res_{B/k} 𝔾ₘ` with values in a field `K` is joined to the identity by a point
+with values in a domain. Consequently an idempotent of `K ⊗[k] O(Res_{B/k} 𝔾ₘ)` takes the same
+value at every `K`-point as at the identity. -/
+private theorem liftEquiv_apply_eq_one_apply_of_isIdempotentElem {K : Type u} [Field K]
+    [Algebra k K] {e : K ⊗[k] WeilRestriction k B B[T;T⁻¹]} (he : IsIdempotentElem e)
+    (f : WeilRestriction k B B[T;T⁻¹] →ₐ[k] K) :
+    AlgHom.liftEquiv k K _ K f e =
+      AlgHom.liftEquiv k K _ K (1 : WithConv (WeilRestriction k B B[T;T⁻¹] →ₐ[k] K)).ofConv e := by
+  let u := multiplicativeGroupPoints k B K (toConv f)
+  obtain ⟨p, hp, hp0, hpu⟩ := exists_eval₂_eq_zero_of_unit u
+  have hρ1 : (pathPolynomial p).eval 1 ≠ 0 := by rwa [eval_one_pathPolynomial]
+  have hρ0 : (pathPolynomial p).eval 0 ≠ 0 := by
+    rw [eval_zero_pathPolynomial]
+    exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (leadingCoeff_ne_zero.mpr hp)
+  have : IsDomain (Localization.Away (pathPolynomial p)) :=
+    IsLocalization.isDomain_localization <| powers_le_nonZeroDivisors_of_noZeroDivisors
+      fun h ↦ hρ1 (by rw [h, eval_zero])
+  -- the point of `Res_{B/k} 𝔾ₘ` over `K[s][1/ρ]` given by the path `s ↦ 1 - s + s u`
+  let x := ((multiplicativeGroupPoints k B _).symm (isUnit_pathElement p u hpu).unit).ofConv
+  have hpath (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
+      (multiplicativeGroupPoints k B K (toConv (((evalAway _ a ha).restrictScalars k).comp x)) :
+        B ⊗[k] K) = 1 - (1 : B) ⊗ₜ[k] a + (1 : B) ⊗ₜ[k] a * u := by
+    rw [multiplicativeGroupPoints_naturality, MulEquiv.apply_symm_apply,
+      Units.coe_map, MonoidHom.coe_ofClass, IsUnit.unit_spec, lTensor_evalAway_pathElement]
+  have h₁ : ((evalAway _ 1 hρ1).restrictScalars k).comp x = f := by
+    refine toConv_injective ((multiplicativeGroupPoints k B K).injective (Units.ext ?_))
+    rw [hpath, ← Algebra.TensorProduct.one_def]
+    ring
+  have h₀ : ((evalAway _ 0 hρ0).restrictScalars k).comp x =
+      (1 : WithConv (WeilRestriction k B B[T;T⁻¹] →ₐ[k] K)).ofConv := by
+    refine toConv_injective ((multiplicativeGroupPoints k B K).injective (Units.ext ?_))
+    rw [hpath, toConv_ofConv, map_one]
+    simp
+  -- an idempotent takes the value `0` or `1` along a path valued in a domain
+  have hΨ (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
+      (evalAway _ a ha).comp (AlgHom.liftEquiv k K _ _ x) =
+        AlgHom.liftEquiv k K _ K (((evalAway _ a ha).restrictScalars k).comp x) :=
+    Algebra.TensorProduct.ext_ring (AlgHom.ext fun w ↦ by simp)
+  rw [← h₁, ← h₀, ← hΨ, ← hΨ, AlgHom.comp_apply, AlgHom.comp_apply]
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (he.map (AlgHom.liftEquiv k K _ _ x)) with h | h <;>
+    simp [h]
+
+/-- **The Weil restriction of `𝔾ₘ` is geometrically connected.** For a finite-dimensional
+commutative algebra `B` over a field `k`, the coordinate Hopf algebra
+`WeilRestriction k B B[T;T⁻¹]` of `Res_{B/k} 𝔾ₘ` stays connected after every extension of `k`. -/
+theorem geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup :
+    geometricallyConnectedCommHopfAlgProperty k
+      (CommHopfAlgCat.of k (WeilRestriction k B B[T;T⁻¹])) := by
+  rw [geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed]
+  intro K _ _ _
+  let W := WeilRestriction k B B[T;T⁻¹]
+  suffices ConnectedSpace (PrimeSpectrum (K ⊗[k] W)) by
+    let c := Algebra.TensorProduct.comm k W K
+    exact c.toRingHom.connectedSpace_primeSpectrum_of_injective c.injective
+  let f₀ := AlgHom.liftEquiv k K W K (1 : WithConv (W →ₐ[k] K)).ofConv
+  have : Nontrivial (K ⊗[k] W) := f₀.toRingHom.domain_nontrivial
+  refine connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr fun e he ↦ ?_
+  have hconst (F : K ⊗[k] W →ₐ[K] K) : F e = f₀ e := by
+    rw [← (AlgHom.liftEquiv k K W K).apply_symm_apply F]
+    exact liftEquiv_apply_eq_one_apply_of_isIdempotentElem he _
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (he.map f₀) with h | h
+  · exact .inl (eq_of_isIdempotentElem_of_forall_algHom_apply_eq (k := K) (K := K) he .zero
+      fun F ↦ by rw [hconst, h, map_zero])
+  · exact .inr (eq_of_isIdempotentElem_of_forall_algHom_apply_eq (k := K) (K := K) he .one
+      fun F ↦ by rw [hconst, h, map_one])
+
+end TauCeti.Algebra.WeilRestriction
