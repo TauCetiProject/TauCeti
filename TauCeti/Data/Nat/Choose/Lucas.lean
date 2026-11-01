@@ -21,12 +21,17 @@ When `p` divides `n ≠ 0`, the last base-`p` digit of `n - 1` is `p - 1`, so Lu
 gives `choose (n - 1) (p - 1) ≡ 1 [MOD p]`; this is the congruence behind Frobenius descent for
 symmetric 2-cocycles.
 
+Grouping the base-`p` digits in blocks of `h`, Lucas' theorem also holds in base `pʰ`: the last
+`h` digits contribute the binomial coefficient of the residues modulo `pʰ`.
+
 ## Main results
 
 * `Choose.choose_mul_add_mul_modEq_choose_nat`: `choose (p * a + c) (p * b) ≡ choose a b [MOD p]`
   for `c < p`.
 * `Choose.choose_sub_one_sub_one_modEq_one`: `choose (n - 1) (p - 1) ≡ 1 [MOD p]` when `p ∣ n`
   and `n ≠ 0`.
+* `Choose.choose_pow_mul_add_modEq_choose_mul_choose_nat`:
+  `choose (p ^ h * m + a) (p ^ h * l + b) ≡ choose m l * choose a b [MOD p]` for `a, b < p ^ h`.
 * `TauCeti.Choose.choose_mul_choose_add_choose_modEq`: the parity identity
   `C(2m, 2) C(2m - 1, 2) + C(2m + 1, 4) ≡ C(m, 2) [MOD 2]`.
 -/
@@ -61,6 +66,31 @@ theorem choose_sub_one_sub_one_modEq_one {n : ℕ} (hpn : p ∣ n) (hn : n ≠ 0
     rw [hsplit, Nat.add_mul_mod_self_left, h₁]
   refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
   rw [hmod, h₁, h₂, Nat.choose_self, Nat.choose_zero_right]
+
+/-- **Lucas' theorem in base `p ^ h`.** For a prime `p` and `a, b < p ^ h`, the binomial
+coefficient `choose (p ^ h * m + a) (p ^ h * l + b)` is congruent to `choose m l * choose a b`
+modulo `p`: the last `h` base-`p` digits of the two indices contribute `choose a b`. -/
+theorem choose_pow_mul_add_modEq_choose_mul_choose_nat {h m l : ℕ} (ha : a < p ^ h)
+    (hb : b < p ^ h) :
+    Nat.choose (p ^ h * m + a) (p ^ h * l + b) ≡ Nat.choose m l * Nat.choose a b [MOD p] := by
+  induction h generalizing a b with
+  | zero =>
+    obtain rfl : a = 0 := by simpa using ha
+    obtain rfl : b = 0 := by simpa using hb
+    simp [Nat.ModEq.refl]
+  | succ h ih =>
+    have hp : 0 < p := (Fact.out : p.Prime).pos
+    have hdiv {c : ℕ} (hc : c < p ^ (h + 1)) : c / p < p ^ h :=
+      (Nat.div_lt_iff_lt_mul hp).mpr (by rwa [← pow_succ])
+    have hdigit (c n : ℕ) :
+        (p ^ (h + 1) * n + c) % p = c % p ∧ (p ^ (h + 1) * n + c) / p = p ^ h * n + c / p := by
+      rw [pow_succ', mul_assoc, Nat.mul_add_mod, Nat.mul_add_div hp]
+      exact ⟨rfl, rfl⟩
+    refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
+    rw [(hdigit a m).1, (hdigit a m).2, (hdigit b l).1, (hdigit b l).2]
+    refine ((ih (hdiv ha) (hdiv hb)).mul_left _).trans ?_
+    rw [mul_left_comm]
+    exact (choose_modEq_choose_mod_mul_choose_div_nat.symm).mul_left _
 
 end Choose
 
