@@ -85,15 +85,6 @@ variable [Monoid G] [TopologicalSpace G] [DiscreteTopology G] [MulAction G X]
 
 variable {I G X F k}
 
-/-- The point underlying the source of an arrow of `G ⋉ X`, as a map from the arrow manifold to
-`X`, is a local diffeomorphism: the source map followed by the object diffeomorphism. -/
-private theorem isLocalDiffeomorph_back_left :
-    IsLocalDiffeomorph I I ∞ fun b : Quiver.Total (ActionCategory G X) ↦ b.left.back := by
-  have h : IsLocalDiffeomorph I I ∞ (objectDiffeomorph I ∞ G X ∘ Quiver.Total.left) := fun a ↦
-    IsLocalDiffeomorphAt.comp (K := I) (hf := isLocalDiffeomorph_source I ∞ G X a)
-      (hg := (objectDiffeomorph I ∞ G X).isLocalDiffeomorph _)
-  simpa only [Function.comp_def, objectDiffeomorph_apply] using h
-
 variable [ContMDiffConstSMul I ∞ G X]
 
 /-- At an arrow labelled `g`, the pullback of a form on `X` along the point underlying the target
@@ -108,7 +99,7 @@ private theorem mpullback_back_right_apply (α : RoughForm I X F k)
       (a.hom.hom • ·) ∘ fun b ↦ b.left.back :=
     eventually_back_right_eq_smul a
   rw [hev.mpullback_eq, mpullback_comp_at
-    (isLocalDiffeomorph_back_left.contMDiff.mdifferentiableAt (by simp))
+    ((isLocalDiffeomorph_back_left I ∞ G X).contMDiff.mdifferentiableAt (by simp))
     ((contMDiff_const_smul (I := I) (n := ∞) a.hom.hom).mdifferentiableAt (by simp))]
 
 /-- A rough form on `X` has the same pullbacks along the points underlying the source and the
@@ -128,7 +119,8 @@ private theorem mpullback_back_left_eq_mpullback_back_right_iff (α : RoughForm 
     rw [mpullback_back_right_apply, ha] at this
     rw [← hx]
     exact ((mpullback_apply_eq_mpullback_apply_iff
-      (isLocalDiffeomorph_back_left.isInvertible_mfderiv (by simp) a).surjective).1 this).symm
+      ((isLocalDiffeomorph_back_left I ∞ G X).isInvertible_mfderiv (by simp) a).surjective).1
+        this).symm
   · rw [mpullback_back_right_apply, h]
 
 variable [IsManifold I ∞ X]
@@ -249,11 +241,6 @@ theorem mpullback_map_obj_mem_invariantForms {E' H' : Type*} [NormedAddCommGroup
 
 section Pullback
 
-omit [TopologicalSpace X] [TopologicalSpace G] [DiscreteTopology G] in
-/-- Objects of an action category are determined by their underlying points. -/
-private theorem ext_back {a b : ActionCategory G X} (h : a.back = b.back) : a = b := by
-  rw [← back_coe a, ← back_coe b, h]
-
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} {G' Y : Type*} [Monoid G'] [TopologicalSpace G']
   [DiscreteTopology G'] [MulAction G' Y] [TopologicalSpace Y] [ChartedSpace H' Y]
@@ -281,7 +268,7 @@ theorem invariantForms.mpullback_id :
     invariantForms.mpullback (I := I) (I' := I) (F := F) k (MonoidHom.id G)
       (MulActionHom.id G : X →[G] X) contMDiff_id = LinearMap.id := by
   have hid : (map (MonoidHom.id G) (MulActionHom.id G : X →[G] X)).obj = id :=
-    funext fun a ↦ ext_back (back_map_obj _ _ a)
+    funext fun a ↦ back_injective (back_map_obj _ _ a)
   ext φ : 1
   apply Subtype.ext
   simp only [invariantForms.coe_mpullback, hid, SmoothForm.mpullback_id, LinearMap.id_apply]
@@ -296,7 +283,7 @@ theorem invariantForms.mpullback_comp {E'' H'' : Type*} [NormedAddCommGroup E'']
     invariantForms.mpullback (F := F) k (ψ.comp φ) (g.comp f (κ := ⟨rfl⟩)) (hg.comp hf) =
       (invariantForms.mpullback k φ f hf).comp (invariantForms.mpullback k ψ g hg) := by
   have hcomp : (map (ψ.comp φ) (g.comp f (κ := ⟨rfl⟩))).obj = (map ψ g).obj ∘ (map φ f).obj :=
-    funext fun a ↦ ext_back <| by
+    funext fun a ↦ back_injective <| by
       rw [back_map_obj, Function.comp_apply, back_map_obj, back_map_obj, MulActionHom.comp_apply]
   ext χ : 1
   apply Subtype.ext

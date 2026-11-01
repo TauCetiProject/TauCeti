@@ -51,7 +51,8 @@ action, `TauCeti.ActionGroupoid.isProperMap_source_target_iff` makes it a proper
   the `C^n` maps into the objects and into the arrows.
 * `TauCeti.ActionGroupoid.isLocalDiffeomorph_source` and
   `TauCeti.ActionGroupoid.isLocalDiffeomorph_target`: source and target are `C^n` local
-  diffeomorphisms.
+  diffeomorphisms; so is the point underlying the source
+  (`TauCeti.ActionGroupoid.isLocalDiffeomorph_back_left`).
 * `TauCeti.ActionGroupoid.contMDiff_sourceChart_symm`: each label gives a `C^n` section of the
   source map.
 * `TauCeti.ActionGroupoid.contMDiff_unit`, `TauCeti.ActionGroupoid.contMDiff_inverse` and
@@ -135,6 +136,16 @@ theorem isLocalDiffeomorph_source :
       (Quiver.Total.left : Quiver.Total (ActionCategory G X) → ActionCategory G X) :=
   (isLocalHomeomorph_source G X).isLocalDiffeomorph_chartedSpaceComap
 
+/-- The point underlying the source of an arrow of the action groupoid of a discrete monoid, as a
+map from the arrows to `X`, is a `C^n` local diffeomorphism: the source map followed by the object
+diffeomorphism. -/
+theorem isLocalDiffeomorph_back_left :
+    IsLocalDiffeomorph I I n fun f : Quiver.Total (ActionCategory G X) ↦ f.left.back := by
+  have h : IsLocalDiffeomorph I I n (objectDiffeomorph I n G X ∘ Quiver.Total.left) := fun a ↦
+    IsLocalDiffeomorphAt.comp (K := I) (hf := isLocalDiffeomorph_source I n G X a)
+      (hg := (objectDiffeomorph I n G X).isLocalDiffeomorph _)
+  simpa only [Function.comp_def, objectDiffeomorph_apply] using h
+
 variable {G X} in
 /-- A map into the arrows of the action category of a discrete monoid is `C^n` exactly when it is
 continuous and the sources of its arrows depend `C^n` on the parameter. -/
@@ -156,17 +167,6 @@ theorem contMDiff_unit :
     ContMDiff I I n fun x : ActionCategory G X ↦
       (⟨x, x, 𝟙 x⟩ : Quiver.Total (ActionCategory G X)) :=
   (contMDiff_arrows_iff I n).2 ⟨continuous_unit G X, contMDiff_id⟩
-
-variable {G X} in
-/-- Near an arrow `f`, every arrow has the label of `f`, so there its target is the translate of
-its source by that fixed label. -/
-theorem eventually_back_right_eq_smul (f : Quiver.Total (ActionCategory G X)) :
-    ∀ᶠ a in 𝓝 f, a.right.back = f.hom.hom • a.left.back := by
-  filter_upwards [((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl]
-    with a ha
-  rw [Set.mem_preimage, Set.mem_singleton_iff] at ha
-  rw [← ha]
-  exact a.hom.map_val.symm
 
 /-- The target map of the action groupoid of a discrete monoid acting by `C^n` maps is `C^n`. -/
 theorem contMDiff_target [ContMDiffConstSMul I n G X] :
