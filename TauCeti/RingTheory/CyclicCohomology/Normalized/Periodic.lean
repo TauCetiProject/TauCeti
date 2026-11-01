@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CyclicCohomology.Normalized
+public import TauCeti.RingTheory.CyclicCohomology.Normalized.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.DFinsupp
