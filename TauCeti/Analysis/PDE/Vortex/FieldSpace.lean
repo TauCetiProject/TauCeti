@@ -77,8 +77,10 @@ theorem referenceField_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ) (z : ℂ) :
 @[simp]
 theorem sectionValue_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) (z : ℂ) :
     sectionValue (referenceField f m) z = referenceSection f m z := by
-  rw [sectionValue_apply]
-  apply Complex.ext <;> simp [referenceField] <;> ring
+  conv_rhs => rw [← re_add_im (referenceSection f m z)]
+  rw [sectionValue_apply, referenceField_apply]
+  simp only [Fin.isValue, Matrix.cons_val, ofReal_div, ofReal_ofNat]
+  ring
 
 /-- The connection coordinates of the reference field represent the reference one-form:
 `referenceConnection f m z = i (b₁ ds + b₂ dt)`. -/
@@ -86,9 +88,12 @@ theorem referenceConnection_apply_eq_I_mul (f : ContDiffBump (0 : ℝ)) (m : ℕ
     referenceConnection f m z v =
       I * ((referenceField f m z 0 * v.re + referenceField f m z 1 * v.im : ℝ) : ℂ) := by
   have hv : (v / z).im = v.re * (1 / z).im + v.im * (I / z).im := by
-    simp [Complex.div_im]
+    simp only [div_im, one_re, one_im, I_re, I_im]
     ring
-  apply Complex.ext <;> simp [referenceField, referenceConnection_apply, hv]
+  simp only [referenceField_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+    referenceConnection_apply, hv, mul_re, mul_im, neg_re, neg_im, natCast_re, natCast_im, I_re,
+    I_im, ofReal_re, ofReal_im, ofReal_add, ofReal_mul, ofReal_neg, ofReal_natCast, ofReal_zero,
+    ofReal_one]
   ring
 
 /-- The reference field is smooth. -/
@@ -118,59 +123,62 @@ theorem hasCompactSupport_referenceField_sub (f g : ContDiffBump (0 : ℝ)) (m :
     (image_eq_zero_of_notMem_tsupport (f := referenceSection f m - referenceSection g m) hz.2)
   simp only [Pi.sub_apply, referenceField_apply, hcz, hsz, sub_self]
 
+/-- Off a large disc, points are nonzero and lie where the cutoff of the reference pair is
+inactive. -/
+private theorem eventually_ne_zero_and_rOut_le (f : ContDiffBump (0 : ℝ)) :
+    ∀ᶠ z in cocompact ℂ, z ≠ 0 ∧ f.rOut ≤ ‖z‖ ^ 2 := by
+  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (f.rOut + 1)] with z hz
+  have hr := f.rOut_pos
+  exact ⟨norm_pos_iff.1 (by linarith), by nlinarith⟩
+
 /-- The degree-zero reference field differs from the vacuum by a compactly supported field. -/
 theorem hasCompactSupport_referenceField_zero_sub_vacuumField (f : ContDiffBump (0 : ℝ)) :
     HasCompactSupport (referenceField f 0 - vacuumField) := by
-  apply HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (f.rOut + 1))
-  intro z hz
-  have hnorm : f.rOut + 1 < ‖z‖ := by simpa using hz
-  have hz : f.rOut ≤ ‖z‖ ^ 2 := by nlinarith [f.rOut_pos]
+  rw [hasCompactSupport_iff_eventuallyEq, coclosedCompact_eq_cocompact]
+  filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
   have hf0 : f (‖z‖ ^ 2) = 0 :=
-    f.zero_of_le_dist (by simpa [Real.dist_eq, abs_of_nonneg] using hz)
+    f.zero_of_le_dist (by simpa [Real.dist_eq, abs_of_nonneg] using hz.2)
   ext i
   fin_cases i <;> simp [referenceField_apply, vacuumField_apply, hf0]
 
 /-! ### Sobolev fields -/
 
+/-- The tempered distributions in the Bessel-potential space `H^s`, as a complex submodule. -/
+private def sobolevDistributions (s : ℝ) : Submodule ℂ 𝓢'(ℂ, ℂ) where
+  carrier := {T | MemSobolev s 2 T}
+  add_mem' := MemSobolev.add
+  zero_mem' := memSobolev_fun_zero ℂ ℂ s 2
+  smul_mem' c _ h := h.smul c
+
+/-- The real `L²` functions whose complexified tempered distribution lies in `H^s`. -/
+private def realSobolev (s : ℝ) : Submodule ℝ (Lp ℝ 2 (volume : Measure ℂ)) :=
+  ((sobolevDistributions s).restrictScalars ℝ).comap
+    (((Lp.toTemperedDistributionCLM ℂ (volume : Measure ℂ) 2).restrictScalars ℝ).toLinearMap ∘ₗ
+      ofRealCLM.compLpₗ (p := 2) (μ := (volume : Measure ℂ)))
+
 /-- The real Sobolev space `H^s(ℂ; ℝ⁴)` of fields: each coordinate is the value of a real `L²`
 function whose complexified tempered distribution lies in the Bessel-potential space `H^s`. -/
 def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
   carrier := {y | ∀ i, ∃ u : Lp ℝ 2 (volume : Measure ℂ), u =ᵐ[volume] (fun z ↦ y z i) ∧
-    MemSobolev s 2 (Lp.toTemperedDistribution (ofRealCLM.compLp u))}
+    u ∈ realSobolev s}
   add_mem' := by
     rintro y₁ y₂ h₁ h₂ i
     obtain ⟨u₁, hu₁, hs₁⟩ := h₁ i
     obtain ⟨u₂, hu₂, hs₂⟩ := h₂ i
-    refine ⟨u₁ + u₂, ?_, ?_⟩
-    · filter_upwards [Lp.coeFn_add u₁ u₂, hu₁, hu₂] with z h h₁ h₂
-      rw [h, Pi.add_apply, h₁, h₂]
-      simp
-    · have h := map_add (ofRealCLM.compLpₗ (p := 2) (μ := (volume : Measure ℂ))) u₁ u₂
-      simp only [ContinuousLinearMap.compLpₗ_apply] at h
-      rw [h, ← Lp.toTemperedDistributionCLM_apply, map_add]
-      exact hs₁.add hs₂
+    refine ⟨u₁ + u₂, ?_, add_mem hs₁ hs₂⟩
+    filter_upwards [Lp.coeFn_add u₁ u₂, hu₁, hu₂] with z h h₁ h₂
+    rw [h, Pi.add_apply, h₁, h₂, Pi.add_apply, PiLp.add_apply]
   zero_mem' := by
     intro i
-    refine ⟨0, ?_, ?_⟩
-    · filter_upwards [Lp.coeFn_zero ℝ 2 (volume : Measure ℂ)] with z h
-      rw [h]
-      simp
-    · have h := map_zero (ofRealCLM.compLpₗ (p := 2) (μ := (volume : Measure ℂ)))
-      simp only [ContinuousLinearMap.compLpₗ_apply] at h
-      rw [h, ← Lp.toTemperedDistributionCLM_apply, map_zero]
-      exact memSobolev_fun_zero ℂ ℂ s 2
+    refine ⟨0, ?_, zero_mem _⟩
+    filter_upwards [Lp.coeFn_zero ℝ 2 (volume : Measure ℂ)] with z h
+    rw [h, Pi.zero_apply, Pi.zero_apply, PiLp.zero_apply]
   smul_mem' := by
     rintro c y h i
     obtain ⟨u, hu, hs⟩ := h i
-    refine ⟨c • u, ?_, ?_⟩
-    · filter_upwards [Lp.coeFn_smul c u, hu] with z h h'
-      rw [h, Pi.smul_apply, h']
-      simp
-    · have h := map_smul (ofRealCLM.compLpₗ (p := 2) (μ := (volume : Measure ℂ))) c u
-      simp only [ContinuousLinearMap.compLpₗ_apply] at h
-      rw [h, RCLike.real_smul_eq_coe_smul (K := ℂ), ← Lp.toTemperedDistributionCLM_apply,
-        map_smul]
-      exact hs.smul _
+    refine ⟨c • u, ?_, Submodule.smul_mem _ c hs⟩
+    filter_upwards [Lp.coeFn_smul c u, hu] with z h h'
+    rw [h, Pi.smul_apply, h', Pi.smul_apply, PiLp.smul_apply]
 
 /-- Membership in `H^s`, coordinate by coordinate. -/
 theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
@@ -204,7 +212,7 @@ theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     Tendsto y (cocompact ℂ) (𝓝 0) := by
   have hcomp : ∀ i, Tendsto (fun z ↦ y z i) (cocompact ℂ) (𝓝 0) := by
     intro i
-    obtain ⟨u, hu, hS⟩ := hy i
+    obtain ⟨u, hu, hS⟩ := mem_sobolevFields.1 hy i
     have hs' : (finrank ℝ ℂ : ℝ) < 2 * s := by
       rw [Complex.finrank_real_complex]
       push_cast
@@ -295,28 +303,18 @@ theorem tendsto_sectionValue_mul_inv_pow {f : ContDiffBump (0 : ℝ)} {m : ℕ} 
     simp only [Function.comp_apply, Pi.sub_apply, PiLp.sub_apply, sectionValue_apply, ofReal_sub]
     ring
   -- Off a large disc the reference section is the unit winding phase.
-  have hev : ∀ᶠ z in cocompact ℂ, f.rOut + 1 ≤ ‖z‖ :=
-    tendsto_norm_cocompact_atTop.eventually_ge_atTop _
   have hsmall : Tendsto (fun z ↦ (sectionValue x z - referenceSection f m z) *
       ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 0) := by
     refine squeeze_zero_norm' ?_ (tendsto_norm_zero.comp hd)
-    filter_upwards [hev] with z hz
-    have hz0 : z ≠ 0 := by
-      rintro rfl
-      simp at hz
-      linarith [f.rOut_pos]
-    simp [norm_ne_zero_iff.2 hz0]
+    filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
+    simp [norm_ne_zero_iff.2 hz.1]
   have := (tendsto_const_nhds (x := (1 : ℂ))).add hsmall
   rw [add_zero] at this
   refine this.congr' ?_
-  filter_upwards [hev] with z hz
-  have hz2 : f.rOut ≤ ‖z‖ ^ 2 := by nlinarith [f.rOut_pos]
-  have hz0 : z ≠ 0 := by
-    rintro rfl
-    simp at hz
-    linarith [f.rOut_pos]
-  have hphase : (z / (‖z‖ : ℂ)) ^ m ≠ 0 := by
-    simp [hz0]
+  filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
+  obtain ⟨hz0, hz2⟩ := hz
+  have hphase : (z / (‖z‖ : ℂ)) ^ m ≠ 0 :=
+    pow_ne_zero _ (div_ne_zero hz0 (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz0)))
   rw [referenceSection_eq_phase f m hz2, sub_mul, mul_inv_cancel₀ hphase]
   ring
 
@@ -329,14 +327,11 @@ theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m :
   have h := (tendsto_sectionValue_mul_inv_pow hs hx hcont).norm.pow 2
   rw [norm_one, one_pow] at h
   refine h.congr' ?_
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop 1] with z hz
-  have hz0 : z ≠ 0 := by
-    rintro rfl
-    norm_num at hz
+  filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
   rw [norm_mul, norm_inv, norm_pow, norm_div]
-  simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz0), one_pow, inv_one, mul_one]
+  simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz.1), one_pow, inv_one, mul_one]
   rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
-  simp
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
 
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
