@@ -16,7 +16,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 /-!
 # Finite free resolutions of complexes with finitely generated homology
 
-Let `R` be a Noetherian commutative ring. A complex of `R`-modules whose homology is finitely
+Let `R` be a (left) Noetherian ring. A complex of `R`-modules whose homology is finitely
 generated in every degree, and vanishes in high cohomological degrees, receives a
 quasi-isomorphism from a complex of finitely generated free `R`-modules with the same bound:
 
@@ -60,7 +60,7 @@ universe u
 
 namespace ChainComplex
 
-variable {R : Type u} [CommRing R]
+variable {R : Type u} [Ring R]
 
 namespace FiniteFreeResolution
 
@@ -280,7 +280,7 @@ namespace CochainComplex
 
 open HomologicalComplex
 
-variable {R : Type u} [CommRing R]
+variable {R : Type u} [Ring R]
 
 /-- Over a Noetherian ring, every cochain complex `K` of modules indexed by `ℤ` whose cohomology
 is finitely generated in every degree and vanishes in degrees `> n` receives a quasi-isomorphism
