@@ -131,7 +131,7 @@ theorem IsSupportingLine.finite_supportingFace {h : ℕ → WithTop ℝ} {τ d �
   obtain ⟨N, hN⟩ := exists_nat_gt ((c - d) / (τ - σ))
   apply (Set.finite_Iio N).subset
   intro n hn
-  have hbound := hd n
+  have hbound := isSupportingLine_iff_forall.mp hd n
   rw [mem_supportingFace.mp hn, WithTop.coe_le_coe] at hbound
   have hN' := (div_lt_iff₀ (sub_pos.mpr hστ)).mp hN
   have hn' : (n : ℝ) < N := by nlinarith
