@@ -112,7 +112,6 @@ theorem gaussianEnsemble_trace_sq (β n : ℕ) (g : Fin n → Fin n → ℝ) :
   rw [conjTranspose_apply] at this
   rw [← this, Complex.star_def, Complex.mul_conj]
 
-set_option linter.flexible false in
 /-- Entrywise squared moduli of the `β = 1` ensemble: `2 g i i ^ 2 / n` on the diagonal and
 `g i j ^ 2 / n` above it. -/
 theorem gaussianEnsemble_one_normSq_apply (n : ℕ) (g : Fin n → Fin n → ℝ) (i j : Fin n) :
@@ -123,10 +122,9 @@ theorem gaussianEnsemble_one_normSq_apply (n : ℕ) (g : Fin n → Fin n → ℝ
     rw [← Complex.ofReal_inv, Complex.normSq_ofReal, ← mul_inv,
       Real.mul_self_sqrt (Nat.cast_nonneg n)]
   simp only [gaussianEnsemble, of_apply, map_mul, hs, ↓reduceIte]
-  split_ifs <;> simp [Complex.normSq_apply, div_eq_inv_mul] <;>
-    first | (left; linear_combination g i i ^ 2 * h3) | (left; ring1)
+  split_ifs <;> rw [Complex.normSq_ofReal] <;>
+    first | linear_combination (g i i ^ 2 / n) * h3 | ring
 
-set_option linter.flexible false in
 /-- Entrywise squared moduli of the `β = 2` ensemble: `g i i ^ 2 / n` on the diagonal and
 `(g i j ^ 2 + g j i ^ 2) / (2 n)` off it. -/
 theorem gaussianEnsemble_two_normSq_apply (n : ℕ) (g : Fin n → Fin n → ℝ) (i j : Fin n) :
@@ -137,9 +135,24 @@ theorem gaussianEnsemble_two_normSq_apply (n : ℕ) (g : Fin n → Fin n → ℝ
     rw [← Complex.ofReal_inv, Complex.normSq_ofReal, ← mul_inv,
       Real.mul_self_sqrt (Nat.cast_nonneg n)]
   have h21 : ¬ (2 : ℕ) = 1 := by norm_num
+  have hadd : ∀ x y : ℝ, Complex.normSq (((x : ℂ) + Complex.I * y) / (Real.sqrt 2 : ℝ)) =
+      (x ^ 2 + y ^ 2) / 2 := fun x y ↦ by
+    rw [map_div₀, Complex.normSq_ofReal, mul_comm Complex.I, Complex.normSq_add_mul_I,
+      Real.mul_self_sqrt (by norm_num)]
+  have hsub : ∀ x y : ℝ, Complex.normSq (((x : ℂ) - Complex.I * y) / (Real.sqrt 2 : ℝ)) =
+      (x ^ 2 + y ^ 2) / 2 := fun x y ↦ by
+    have : (x : ℂ) - Complex.I * y = x + ((-y : ℝ) : ℂ) * Complex.I := by push_cast; ring
+    rw [this, map_div₀, Complex.normSq_ofReal, Complex.normSq_add_mul_I,
+      Real.mul_self_sqrt (by norm_num)]
+    ring
   simp only [gaussianEnsemble, of_apply, map_mul, hs, h21, ↓reduceIte]
-  split_ifs <;> simp [Complex.normSq_apply, div_eq_inv_mul] <;>
-    first | (left; linear_combination ((g i j ^ 2 + g j i ^ 2) / 4) * h3) | (left; ring1)
+  split_ifs
+  · rw [Complex.normSq_ofReal]
+    ring
+  · rw [hadd]
+    ring
+  · rw [hsub]
+    ring
 
 /-- The expectation of the normalized trace of the square of `gaussianEnsemble β n g` is the
 average of the expected squared moduli of its entries. -/
