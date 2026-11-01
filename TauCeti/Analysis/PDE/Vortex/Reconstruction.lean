@@ -180,8 +180,9 @@ theorem equation_amplitudeField_eq_zero_iff {u : ℂ → ℝ} {f : ℂ → ℂ} 
     · exact hh.2
 
 /-- A zero of finite holomorphic order `m` retains its multiplicity: the reconstructed
-section locally factors as `(w - z)^m` times a nonvanishing `C^n` function. This statement
-also includes `m = 0`, and does not require solving the scalar equation. -/
+section locally factors as `(w - z)^m` times a function `g` that is `C^n` at `z` with
+`g z ≠ 0`. This statement also includes `m = 0`, and does not require solving the scalar
+equation. -/
 theorem exists_amplitudeField_section_eq_pow_mul {u : ℂ → ℝ} {f : ℂ → ℂ} {z : ℂ} {m : ℕ}
     {n : ℕ∞} (hu : ContDiffAt ℝ n u z) (hf : AnalyticAt ℂ f z)
     (hm : analyticOrderAt f z = m) :
