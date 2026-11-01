@@ -17,7 +17,7 @@ Its three-cycle Galois-map computation distinguishes right translation from its 
 
 namespace TauCeti.Algebra
 
-open TensorProduct
+open _root_.TensorProduct
 
 attribute [local instance] rightRegularMulSemiringAction
 

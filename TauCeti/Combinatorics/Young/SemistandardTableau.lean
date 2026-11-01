@@ -36,6 +36,11 @@ theorem entry_le_of_le (T : SemistandardYoungTableau μ) {i₁ i₂ j₁ j₂ : 
     (hj : j₁ ≤ j₂) (hc : ((i₂, j₂) : ℕ × ℕ) ∈ μ) : T i₁ j₁ ≤ T i₂ j₂ :=
   (T.row_weak_of_le hj (μ.up_left_mem hi le_rfl hc)).trans (T.col_weak hi hc)
 
+/-- Column strictness, for a cell given by a bound on its column. -/
+theorem col_strict_of_lt_rowLen (T : SemistandardYoungTableau μ) {r r' c : ℕ}
+    (h : r' < r) (hc : c < μ.rowLen r) : T r' c < T r c :=
+  T.col_strict h (YoungDiagram.mem_iff_lt_rowLen.mpr hc)
+
 /-- The entries of a semistandard Young tableau increase strictly down a column, so the entry in
 row `i` is at least `i`. -/
 theorem le_entry (T : SemistandardYoungTableau μ) {i j : ℕ} (h : (i, j) ∈ μ) : i ≤ T i j := by
