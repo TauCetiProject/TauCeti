@@ -294,7 +294,7 @@ theorem isPLOn_iff_forall_isPLWithinAt : IsPLOn f s ↔ ∀ x ∈ s, IsPLWithinA
     simpa only [IsPLWithinAt, insert_eq_of_mem hx] using h x hx⟩
 
 /-- A continuous affine map is piecewise linear within every set at every point. -/
-theorem isPLWithinAt_continuousAffineMap (A : E →ᴬ[ℝ] F) (s : Set E) (x : E) :
+theorem _root_.ContinuousAffineMap.isPLWithinAt (A : E →ᴬ[ℝ] F) (s : Set E) (x : E) :
     IsPLWithinAt (⇑A) s x :=
   ⟨univ, univ_mem, isPiecewiseAffineOn_continuousAffineMap A univ⟩
 

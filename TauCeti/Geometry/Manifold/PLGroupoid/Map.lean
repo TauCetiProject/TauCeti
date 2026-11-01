@@ -84,7 +84,7 @@ def PLWithinAtProp (f : H → H') (s : Set H) (x : H) : Prop :=
 
 /-- The identity of a model space is piecewise linear everywhere. -/
 theorem plWithinAtProp_id (x : H) : PLWithinAtProp I I id univ x :=
-  (isPLWithinAt_continuousAffineMap (ContinuousAffineMap.id ℝ E) _ _).congr
+  ((ContinuousAffineMap.id ℝ E).isPLWithinAt _ _).congr
     (fun y hy => by simp [I.right_inv hy.2]) (by simp)
 
 /-- **Piecewise linearity is a local invariant property**: in the model it is local, and invariant
@@ -199,8 +199,8 @@ theorem isPLMap_id : IsPLMap I I (id : M → M) :=
 /-- A constant map is PL. -/
 theorem isPLMap_const (c : M') : IsPLMap I I' fun _ : M => c := by
   refine fun x => isPLMapAt_iff.2 ⟨continuousAt_const, ?_⟩
-  refine (isPLWithinAt_continuousAffineMap
-    (ContinuousAffineMap.const ℝ E (I' (chartAt H' c c))) _ _).congr (fun _ _ => ?_) ?_ <;> simp
+  refine ((ContinuousAffineMap.const ℝ E (I' (chartAt H' c c))).isPLWithinAt _ _).congr
+    (fun _ _ => ?_) ?_ <;> simp
 
 /-- A chart of the maximal PL atlas is PL on its source. -/
 theorem isPLMapAt_of_mem_maximalAtlas {e : OpenPartialHomeomorph M H}
