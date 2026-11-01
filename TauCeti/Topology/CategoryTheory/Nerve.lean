@@ -89,7 +89,7 @@ theorem totalArrow_mapComposableArrows_obj (φ : C ⥤ D) (F : ComposableArrows 
   (rfl)
 
 /-- A string of composable arrows is determined by its arrows. -/
-theorem totalArrow_injective {F G : ComposableArrows C n}
+theorem ext_of_totalArrow {F G : ComposableArrows C n}
     (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
   refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
   rw [show g = homOfLE g.le from Subsingleton.elim _ _]
@@ -135,11 +135,11 @@ theorem continuous_mapComposableArrows_obj {φ : C ⥤ D} (hφ : Continuous φ.t
 arrows. -/
 theorem isEmbedding_mapComposableArrows_obj {φ : C ⥤ D} (hφ : IsEmbedding φ.toPrefunctor.mapTotal) :
     IsEmbedding (φ.mapComposableArrows n).obj := by
-  refine ⟨⟨?_⟩, fun F G h ↦ totalArrow_injective fun i j hij ↦ hφ.injective ?_⟩
+  refine ⟨⟨?_⟩, fun F G h ↦ ext_of_totalArrow fun i j hij ↦ hφ.injective ?_⟩
   · simp only [instTopologicalSpace, induced_iInf, induced_compose]
     refine iInf_congr fun i ↦ iInf_congr fun j ↦ iInf_congr fun hij ↦ ?_
     rw [hφ.eq_induced, induced_compose]
-    rfl
+    simp only [Function.comp_def, totalArrow_mapComposableArrows_obj]
   · simpa only [totalArrow_mapComposableArrows_obj] using
       congrArg (fun F ↦ totalArrow F i j hij) h
 
@@ -182,7 +182,7 @@ realization of its topological nerve, with degeneracies forgotten. -/
 variable {C} {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
 
 /-- The map of topological nerves induced by a functor that is continuous on total arrows. -/
-@[expose] def topologicalNerveMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
+def topologicalNerveMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
     topologicalNerve C ⟶ topologicalNerve D where
   app Δ := TopCat.ofHom ⟨(nerveMap φ).app Δ,
     ComposableArrows.continuous_mapComposableArrows_obj hφ⟩

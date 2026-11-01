@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # Functoriality of action categories and subgroup restrictions
@@ -153,6 +154,19 @@ def restrictLift {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
   map_comp g g' := Functor.Elements.hom_ext
     ((congrArg Functor.Elements.Hom.hom (F.map_comp g g')).trans (ActionCategory.comp_hom _ _))
 
+/-- The lift of a functor along the restriction inclusion sends an object to the point of `U`
+underlying its image. -/
+@[simp]
+theorem back_restrictLift_obj {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
+    (hF : ∀ j, (F.obj j).back ∈ U) (j : J) :
+    ((restrictLift U F hF).obj j).back = ⟨(F.obj j).back, hF j⟩ := (rfl)
+
+/-- The lift of a functor along the restriction inclusion keeps the label of each arrow. -/
+@[simp]
+theorem restrictLift_map_hom {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
+    (hF : ∀ j, (F.obj j).back ∈ U) {j j' : J} (g : j ⟶ j') :
+    ((restrictLift U F hF).map g).hom = (F.map g).hom := (rfl)
+
 /-- The lift of a functor along the restriction inclusion recovers the functor. -/
 @[simp]
 theorem restrictLift_comp_restrict {J : Type*} [Category J] (F : J ⥤ ActionCategory M X)
@@ -217,10 +231,7 @@ theorem full_inclusion_iff :
 /-- For a slice `S` for `H`, the arrows of `H ⋉ S` are, through the inclusion, exactly the arrows
 of `G ⋉ X` with source and target in `S`. -/
 theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈ S → g ∈ H) :
-    Set.range (fun f : Quiver.Total (ActionCategory H S) =>
-      (⟨(inclusion S).obj f.left, (inclusion S).obj f.right, (inclusion S).map f.hom⟩ :
-        Quiver.Total (ActionCategory G X))) =
-      {f | f.left.back ∈ S ∧ f.right.back ∈ S} := by
+    Set.range (inclusion S).toPrefunctor.mapTotal = {f | f.left.back ∈ S ∧ f.right.back ∈ S} := by
   ext ⟨l, r, g⟩
   refine ⟨?_, fun hf => ?_⟩
   · rintro ⟨f, hf⟩
@@ -231,7 +242,8 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
       simpa [range_inclusion_obj] using hf.1
     obtain ⟨b, rfl⟩ : r ∈ Set.range (inclusion S).obj := by
       simpa [range_inclusion_obj] using hf.2
-    exact ⟨⟨a, b, (inclusion S).preimage g⟩, by simp⟩
+    exact ⟨⟨a, b, (inclusion S).preimage g⟩,
+      congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)⟩
 
 end Inclusion
 

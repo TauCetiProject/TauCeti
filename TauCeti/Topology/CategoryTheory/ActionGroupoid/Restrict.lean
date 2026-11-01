@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Nerve
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Nerve
 
 /-!
@@ -46,22 +46,7 @@ namespace TauCeti.ActionGroupoid
 section Monoid
 
 variable {M X : Type*} [Monoid M] [MulAction M X] (U : SubMulAction M X)
-
-/-- A string of composable arrows of `M ⋉ X` comes from `M ⋉ U` exactly when its first vertex lies
-in the invariant subset `U`. -/
-theorem range_mapComposableArrows_obj_restrict (n : ℕ) :
-    range ((restrict U).mapComposableArrows n).obj = {F | (F.obj 0).back ∈ U} := by
-  ext F
-  refine ⟨?_, fun hF => ?_⟩
-  · rintro ⟨F', rfl⟩
-    simp
-  · -- Every vertex is a translate of the first one, so it lies in `U` as well.
-    have hF' (i : Fin (n + 1)) : (F.obj i).back ∈ U := by
-      convert U.smul_mem (F.map (homOfLE (Fin.zero_le i))).hom hF using 1
-      exact (F.map _).map_val.symm
-    exact ⟨restrictLift U F hF', restrictLift_comp_restrict U F hF'⟩
-
-variable [TopologicalSpace M] [TopologicalSpace X]
+  [TopologicalSpace M] [TopologicalSpace X]
 
 /-- The inclusion of the action groupoid on an invariant subset is an embedding on total arrows.
 In label-source coordinates it is the product of the identity of `M` and the inclusion of the
@@ -124,6 +109,7 @@ a `G`-invariant subset `U` is the image of the fat classifying space of `G ⋉ U
 theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_restrict :
     coarseMap G X ⁻¹' (Quotient.mk _ '' (U : Set X)) =
       range (fatClassifyingSpaceMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous) :=
-  fatRealization.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
+  coarseMap_eq_augment G X ▸
+    fatRealization.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
 
 end TauCeti.ActionGroupoid
