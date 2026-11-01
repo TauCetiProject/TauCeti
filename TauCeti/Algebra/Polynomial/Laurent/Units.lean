@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Polynomial.Laurent
 /-!
 # Constant units of Laurent polynomials
 
-A constant Laurent polynomial `C r` is a unit exactly when its coefficient `r` is a unit. Evaluation
-at `T = 1` is a ring map retracting `C`, so it carries an inverse of `C r` to an inverse of `r`.
-This is the Laurent counterpart of Mathlib's `Polynomial.isUnit_C`.
+A constant Laurent polynomial `C r` is a unit exactly when its coefficient `r` is a unit. The map
+`C` is Mathlib's `AddMonoidAlgebra.singleZeroRingHom`, which is a local ring homomorphism. This is
+the Laurent counterpart of Mathlib's `Polynomial.isUnit_C`.
 
 ## Main results
 
@@ -23,10 +23,11 @@ public section
 
 namespace LaurentPolynomial
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- A constant Laurent polynomial is a unit exactly when its coefficient is. -/
+@[simp]
 theorem isUnit_C {r : R} : IsUnit (C r : R[T;T⁻¹]) ↔ IsUnit r :=
-  ⟨fun h ↦ by simpa using h.map (eval₂ (RingHom.id R) 1), fun h ↦ h.map C⟩
+  isUnit_map_iff (AddMonoidAlgebra.singleZeroRingHom (R := R) (M := ℤ)) r
 
 end LaurentPolynomial
