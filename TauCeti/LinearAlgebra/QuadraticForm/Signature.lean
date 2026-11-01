@@ -88,7 +88,7 @@ theorem sigNeg_eq_sigPos_of_comp_eq_neg (Q : _root_.QuadraticForm R M) (e : M �
 inertia: the automorphism `a + b ↦ a - b` negates it, since `Q (a + b)` is the polar pairing of
 `a` and `b`. -/
 theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submodule R M}
-    (hAB : IsCompl A B) (hA : ∀ x ∈ A, Q x = 0) (hB : ∀ x ∈ B, Q x = 0) :
+    (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A) (hB : Q.IsTotallyIsotropic B) :
     sigNeg Q = sigPos Q := by
   let e : M ≃ₗ[R] M := (Submodule.prodEquivOfIsCompl A B hAB).symm ≪≫ₗ
     (LinearEquiv.refl R A).prodCongr (LinearEquiv.neg R) ≪≫ₗ Submodule.prodEquivOfIsCompl A B hAB
@@ -97,7 +97,7 @@ theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submod
   simp only [e, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
     LinearEquiv.neg_apply, Submodule.coe_prodEquivOfIsCompl', Submodule.coe_neg]
   rw [QuadraticMap.map_add Q, QuadraticMap.map_add Q, QuadraticMap.map_neg, polar_neg_right]
-  simp [hA a a.2, hB b b.2]
+  simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
 
 variable [IsStrictOrderedRing R]
 
@@ -337,24 +337,26 @@ theorem sigPos_add_sigNeg_of_nondegenerate (Q : _root_.QuadraticForm K M) (hQ : 
 
 /-- A nondegenerate quadratic form vanishing on two complementary subspaces `A` and `B` has
 positive index of inertia `dim A`; swapping the roles gives `dim A = dim B`. For example, the real
-intersection form of `S¹ × Y`, for a closed oriented three-manifold `Y`, vanishes on the classes
-pulled back from `Y` and on their products with the circle class, so its positive index is
-`b₁(Y)`. Combine with `QuadraticMap.nondegenerate_of_isCompl` when nondegeneracy comes from a
-perfect pairing of `A` with `B`. -/
+intersection form on `H²(S¹ × Y)`, for a closed oriented three-manifold `Y`, vanishes on `p*H²(Y)`
+and on `[ds] ∪ p*H¹(Y)`, which Poincaré duality pairs perfectly, so its positive index is
+`dim H²(Y) = b₁(Y)`. Combine with `QuadraticMap.nondegenerate_of_isCompl` when nondegeneracy
+comes from a perfect pairing of `A` with `B`. -/
 theorem sigPos_eq_finrank_of_isCompl (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate)
-    {A B : Subspace K M} (hAB : IsCompl A B) (hA : ∀ x ∈ A, Q x = 0) (hB : ∀ x ∈ B, Q x = 0) :
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A)
+    (hB : Q.IsTotallyIsotropic B) :
     sigPos Q = Module.finrank K A := by
   have hsum := sigPos_add_sigNeg_of_nondegenerate Q hQ
   rw [sigNeg_eq_sigPos_of_isCompl Q hAB hA hB] at hsum
   have hdim := Submodule.finrank_add_eq_of_isCompl hAB
-  have hleA := sigPos_add_finrank_le_of_nonpos (V := A) fun x hx ↦ (hA x hx).le
-  have hleB := sigPos_add_finrank_le_of_nonpos (V := B) fun x hx ↦ (hB x hx).le
+  have hleA := sigPos_add_finrank_le_of_nonpos (V := A) fun _ hx ↦ (hA.apply_eq_zero hx).le
+  have hleB := sigPos_add_finrank_le_of_nonpos (V := B) fun _ hx ↦ (hB.apply_eq_zero hx).le
   omega
 
 /-- A nondegenerate quadratic form vanishing on two complementary subspaces `A` and `B` has
 negative index of inertia `dim A`. -/
 theorem sigNeg_eq_finrank_of_isCompl (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate)
-    {A B : Subspace K M} (hAB : IsCompl A B) (hA : ∀ x ∈ A, Q x = 0) (hB : ∀ x ∈ B, Q x = 0) :
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A)
+    (hB : Q.IsTotallyIsotropic B) :
     sigNeg Q = Module.finrank K A := by
   rw [sigNeg_eq_sigPos_of_isCompl Q hAB hA hB, sigPos_eq_finrank_of_isCompl Q hQ hAB hA hB]
 

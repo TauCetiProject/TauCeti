@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 
 /-!
 # Radical API for quadratic forms
@@ -189,7 +190,7 @@ its polar form pairs them perfectly: no nonzero vector of `A` is polar orthogona
 and no nonzero vector of `B` is polar orthogonal to all of `A`. This holds in every
 characteristic. -/
 theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
-    (hAB : IsCompl A B) (hA : ∀ x ∈ A, Q x = 0) (hB : ∀ x ∈ B, Q x = 0)
+    (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A) (hB : Q.IsTotallyIsotropic B)
     (hAB_sep : ∀ a ∈ A, (∀ b ∈ B, polar Q a b = 0) → a = 0)
     (hBA_sep : ∀ b ∈ B, (∀ a ∈ A, polar Q a b = 0) → b = 0) : Q.Nondegenerate := by
   refine nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.ker_eq_bot'.mpr fun x hx ↦ ?_)
@@ -197,11 +198,9 @@ theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
   have hx' (y : M) : polar Q (a + b) y = 0 := by
     simpa only [polarBilin_apply_apply, LinearMap.zero_apply] using LinearMap.congr_fun hx y
   have ha0 : a = 0 := hAB_sep a ha fun b' hb' ↦ by
-    have hbb' : polar Q b b' = 0 := by simp [polar, hB _ hb, hB _ hb', hB _ (B.add_mem hb hb')]
-    simpa only [polar_add_left, hbb', add_zero] using hx' b'
+    simpa only [polar_add_left, hB.polar_eq_zero hb hb', add_zero] using hx' b'
   have hb0 : b = 0 := hBA_sep b hb fun a' ha' ↦ by
-    have haa' : polar Q a a' = 0 := by simp [polar, hA _ ha, hA _ ha', hA _ (A.add_mem ha ha')]
-    simpa only [polar_add_left, haa', zero_add, polar_comm Q b a'] using hx' a'
+    simpa only [polar_add_left, hA.polar_eq_zero ha ha', zero_add, polar_comm Q b a'] using hx' a'
   simp [ha0, hb0]
 
 /-- The polar orthogonal complement of a complement to the radical is the radical. -/
