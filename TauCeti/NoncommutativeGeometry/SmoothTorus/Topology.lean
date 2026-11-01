@@ -102,7 +102,7 @@ theorem hasSum_seminorm (k : ℕ) (a : SmoothNoncommutativeTorus θ) :
 theorem norm_coeff_mul_weight_pow_le_seminorm (k : ℕ) (a : SmoothNoncommutativeTorus θ)
     (x : ℤ × ℤ) : ‖a.coeff x‖ * weight x ^ k ≤ seminorm θ k a :=
   (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k).le_tsum x fun _ _ ↦
-    mul_nonneg (norm_nonneg _) (pow_nonneg (weight_pos _).le _)
+    norm_mul_weight_pow_nonneg _ _ k
 
 theorem norm_coeff_le_seminorm_zero (a : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
     ‖a.coeff x‖ ≤ seminorm θ 0 a := by
@@ -132,63 +132,56 @@ theorem seminorm_star (k : ℕ) (a : SmoothNoncommutativeTorus θ) :
   rw [seminorm_apply, seminorm_apply, ← (Equiv.neg (ℤ × ℤ)).tsum_eq]
   simp
 
-/-- The seminorms are submultiplicative. -/
-theorem seminorm_mul_le (k : ℕ) (a b : SmoothNoncommutativeTorus θ) :
-    seminorm θ k (a * b) ≤ seminorm θ k a * seminorm θ k b := by
-  set f : ℤ × ℤ → ℝ := fun y ↦ ‖a.coeff y‖ * weight y ^ k
-  set g : ℤ × ℤ → ℝ := fun z ↦ ‖b.coeff z‖ * weight z ^ k
-  have hf : Summable f := a.isRapidDecay_coeff.summable_norm_mul_weight_pow k
-  have hg : Summable g := b.isRapidDecay_coeff.summable_norm_mul_weight_pow k
-  have hf0 : 0 ≤ f := fun _ ↦ mul_nonneg (norm_nonneg _) (pow_nonneg (weight_pos _).le _)
-  have hg0 : 0 ≤ g := fun _ ↦ mul_nonneg (norm_nonneg _) (pow_nonneg (weight_pos _).le _)
-  -- the product of the two sums, as a sum over `(y, z)`, reindexed by `(x, y) = (y + z, y)`
-  set F : (ℤ × ℤ) × (ℤ × ℤ) → ℝ := fun p ↦ f p.2 * g (p.1 - p.2)
+/-- The weighted coefficients of a product are bounded by the convolution of the weighted
+coefficients of its factors. -/
+theorem norm_coeff_mul_mul_weight_pow_le (k : ℕ) (a b : SmoothNoncommutativeTorus θ)
+    (x : ℤ × ℤ) :
+    ‖(a * b).coeff x‖ * weight x ^ k ≤
+      ∑' y, ‖a.coeff y‖ * weight y ^ k * (‖b.coeff (x - y)‖ * weight (x - y) ^ k) := by
+  have hs : Summable fun y ↦
+      ‖a.coeff y‖ * weight y ^ k * (‖b.coeff (x - y)‖ * weight (x - y) ^ k) :=
+    ((a.isRapidDecay_coeff.summable_norm_mul_weight_pow k).mul_right
+      (seminorm θ k b)).of_nonneg_of_le
+      (fun y ↦ mul_nonneg (norm_mul_weight_pow_nonneg _ y k) (norm_mul_weight_pow_nonneg _ _ k))
+      fun y ↦ mul_le_mul_of_nonneg_left (norm_coeff_mul_weight_pow_le_seminorm k b (x - y))
+        (norm_mul_weight_pow_nonneg _ y k)
+  rw [coeff_mul]
+  calc ‖∑' y, a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖ * weight x ^ k
+      ≤ (∑' y, ‖a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖) * weight x ^ k :=
+        mul_le_mul_of_nonneg_right (norm_tsum_le_tsum_norm (summable_norm_mul_coeff a b x))
+          (pow_nonneg (weight_pos x).le k)
+    _ = ∑' y, ‖a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖ * weight x ^ k :=
+        tsum_mul_right.symm
+    _ ≤ _ := Summable.tsum_le_tsum (fun y ↦ norm_mul_coeff_mul_weight_pow_le a b x y k)
+        ((summable_norm_mul_coeff a b x).mul_right _) hs
+
+/-- The convolution `∑ₓ ∑_y f y g (x - y)` of two nonnegative summable functions on `ℤ × ℤ`
+sums to `(∑ f) (∑ g)`. -/
+private theorem hasSum_tsum_mul_sub {f g : ℤ × ℤ → ℝ} (hf : Summable f) (hg : Summable g)
+    (hf0 : 0 ≤ f) (hg0 : 0 ≤ g) :
+    HasSum (fun x ↦ ∑' y, f y * g (x - y)) ((∑' y, f y) * ∑' z, g z) := by
+  -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (y + z, y)`
   let e : (ℤ × ℤ) × (ℤ × ℤ) ≃ (ℤ × ℤ) × (ℤ × ℤ) :=
     { toFun p := (p.1 + p.2, p.1)
       invFun q := (q.2, q.1 - q.2)
       left_inv p := by simp
       right_inv q := by simp }
-  have hFe : F ∘ e = fun p ↦ f p.1 * g p.2 := by
+  have hF : HasSum (fun p : (ℤ × ℤ) × (ℤ × ℤ) ↦ f p.2 * g (p.1 - p.2))
+      ((∑' y, f y) * ∑' z, g z) := by
+    rw [← e.hasSum_iff]
+    convert hf.hasSum.mul hg.hasSum (hf.mul_of_nonneg hg hf0 hg0) using 1
     ext p
-    simp [F, e]
-  have hprod : Summable fun p : (ℤ × ℤ) × (ℤ × ℤ) ↦ f p.1 * g p.2 :=
-    hf.mul_of_nonneg hg hf0 hg0
-  have hF : Summable F := by
-    rw [← e.summable_iff, hFe]
-    exact hprod
-  have hFx (x : ℤ × ℤ) : Summable fun y ↦ F (x, y) := hF.prod_factor x
-  calc seminorm θ k (a * b)
-      ≤ ∑' x, ∑' y, F (x, y) := by
-        refine ((a * b).isRapidDecay_coeff.summable_norm_mul_weight_pow k).tsum_le_tsum
-          (fun x ↦ ?_) hF.prod
-        rw [coeff_mul]
-        calc ‖∑' y, a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖ * weight x ^ k
-            ≤ (∑' y, ‖a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖) * weight x ^ k :=
-              mul_le_mul_of_nonneg_right (norm_tsum_le_tsum_norm
-                (summable_norm_mul_coeff a b x))
-                (pow_nonneg (weight_pos x).le k)
-          _ = ∑' y, ‖a.coeff y * b.coeff (x - y) * twist θ y (x - y)‖ * weight x ^ k :=
-              tsum_mul_right.symm
-          _ ≤ ∑' y, F (x, y) := by
-              refine Summable.tsum_le_tsum (fun y ↦ ?_) ?_ (hFx x)
-              · simp only [F, f, g, norm_mul, Circle.norm_coe, mul_one]
-                calc ‖a.coeff y‖ * ‖b.coeff (x - y)‖ * weight x ^ k
-                    ≤ ‖a.coeff y‖ * ‖b.coeff (x - y)‖ * (weight y ^ k * weight (x - y) ^ k) := by
-                      gcongr
-                      rw [← mul_pow]
-                      gcongr
-                      · exact (weight_pos _).le
-                      · simpa using weight_add_le y (x - y)
-                  _ = ‖a.coeff y‖ * weight y ^ k * (‖b.coeff (x - y)‖ * weight (x - y) ^ k) := by
-                      ring
-              · exact (summable_norm_mul_coeff a b x).mul_right _
-    _ = ∑' p, F p := hF.tsum_prod.symm
-    _ = ∑' p : (ℤ × ℤ) × (ℤ × ℤ), f p.1 * g p.2 := by rw [← hFe]; exact (e.tsum_eq F).symm
-    _ = seminorm θ k a * seminorm θ k b := by
-        rw [seminorm_apply, seminorm_apply]
-        exact (tsum_mul_tsum_of_summable_norm (f := f) (g := g)
-          (by simpa only [Real.norm_eq_abs] using hf.abs)
-          (by simpa only [Real.norm_eq_abs] using hg.abs)).symm
+    simp [e]
+  exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum
+
+/-- The seminorms are submultiplicative. -/
+theorem seminorm_mul_le (k : ℕ) (a b : SmoothNoncommutativeTorus θ) :
+    seminorm θ k (a * b) ≤ seminorm θ k a * seminorm θ k b := by
+  rw [seminorm_apply, seminorm_apply]
+  exact hasSum_le (norm_coeff_mul_mul_weight_pow_le k a b) (hasSum_seminorm k (a * b))
+    (hasSum_tsum_mul_sub (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
+      (b.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
+      (fun y ↦ norm_mul_weight_pow_nonneg _ y k) fun z ↦ norm_mul_weight_pow_nonneg _ z k)
 
 /-! ### The topology -/
 
@@ -282,6 +275,7 @@ instance instIsTopologicalRing : IsTopologicalRing (SmoothNoncommutativeTorus θ
 /-! ### Continuity of the coefficients -/
 
 /-- Each Fourier coefficient is a continuous function on the smooth noncommutative torus. -/
+@[fun_prop]
 theorem continuous_coeff (x : ℤ × ℤ) :
     Continuous fun a : SmoothNoncommutativeTorus θ ↦ a.coeff x :=
   continuous_iff_continuousAt.2 fun a ↦ Metric.tendsto_nhds.2 fun ε hε ↦ by
@@ -290,6 +284,7 @@ theorem continuous_coeff (x : ℤ × ℤ) :
     exact (norm_coeff_le_seminorm_zero _ x).trans_lt hb
 
 /-- The canonical trace is continuous. -/
+@[fun_prop]
 theorem continuous_trace : Continuous (trace θ) :=
   (continuous_coeff 0).congr fun a ↦ (trace_apply a).symm
 
@@ -340,7 +335,7 @@ private theorem exists_tendsto_of_cauchySeq {u : ℕ → SmoothNoncommutativeTor
         ≤ seminorm θ k (u m - u n) := by
           rw [seminorm_apply]
           simpa using ((u m - u n).isRapidDecay_coeff.summable_norm_mul_weight_pow k).sum_le_tsum s
-            fun x _ ↦ mul_nonneg (norm_nonneg _) (pow_nonneg (weight_pos _).le _)
+            fun x _ ↦ norm_mul_weight_pow_nonneg _ x k
       _ ≤ ε := (hN m hm n hn).le
   have hdecay : IsRapidDecay c := by
     refine isRapidDecay_iff.2 fun k ↦ ?_
