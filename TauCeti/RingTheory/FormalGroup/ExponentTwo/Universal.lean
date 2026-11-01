@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Coordinates
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
--- Proof-only: graded normalised logarithms and evaluation of weighted homogeneous polynomials in
--- graded rings.
+-- Proof-only: the powers-of-`b` dichotomy, graded normalised logarithms and evaluation of weighted
+-- homogeneous polynomials in graded rings.
+import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.FormalGroup.ExponentTwo.Graded
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -106,13 +107,6 @@ private def logCoeffs (i : ℕ+) : ExponentTwoLazardRing :=
 def log : FormalCoordinate ExponentTwoLazardRing :=
   FormalCoordinate.ofStrictCoeffs logCoeffs
 
-/-- Every `n + 2` is either not a power of two or a power `2ᵏ` with `k ≥ 1`. -/
-private theorem forall_ne_two_pow_or_exists (n : ℕ) :
-    (∀ k : ℕ, n + 1 + 1 ≠ 2 ^ k) ∨ ∃ k, 0 < k ∧ n + 1 + 1 = 2 ^ k := by
-  refine or_iff_not_imp_left.2 fun hn ↦ ?_
-  obtain ⟨k, hk⟩ := not_forall_not.mp hn
-  exact ⟨k, Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hk, hk⟩
-
 /-- The universal normalised logarithm has the generator `aᵢ` as its coefficient of `X^(i + 1)`. -/
 @[simp]
 theorem coeff_succ_log (i : Index) : PowerSeries.coeff (i.1 + 1) log.toPowerSeries = X i := by
@@ -189,7 +183,7 @@ private theorem toPowerSeries_map_log_eq (f : ExponentTwoLazardRing →+* R) {g 
   · simp [h₀]
   · simp [h₁]
   · rw [FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map]
-    obtain hn | ⟨k, hk0, hk⟩ := forall_ne_two_pow_or_exists n
+    obtain hn | ⟨k, hk0, hk⟩ := Nat.forall_ne_pow_or_exists_pos_eq_pow (by omega : n + 1 + 1 ≠ 1)
     · rw [coeff_add_two_log hn, hX, Nat.succPNat_coe, Nat.succ_eq_add_one]
     · rw [hk, coeff_two_pow_log hk0, hp k hk0, map_zero]
 
@@ -281,7 +275,7 @@ theorem coeff_log_mem_grading (n : ℕ) :
   · simp [zero_mem]
   · rw [zero_add, coeff_one_log]
     exact SetLike.GradedOne.one_mem (A := grading)
-  · obtain hn | ⟨k, hk0, hk⟩ := forall_ne_two_pow_or_exists n
+  · obtain hn | ⟨k, hk0, hk⟩ := Nat.forall_ne_pow_or_exists_pos_eq_pow (by omega : n + 1 + 1 ≠ 1)
     · rw [coeff_add_two_log hn, Nat.add_sub_cancel]
       convert X_mem_grading _ using 2
       exact (Nat.succPNat_coe n).symm
