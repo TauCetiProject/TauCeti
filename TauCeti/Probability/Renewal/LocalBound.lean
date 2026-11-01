@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Measure
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # The local renewal bound
@@ -75,10 +76,8 @@ private theorem pairwise_disjoint_firstArrivalGE :
 /-- The first index with `t ≤ arrival T m` is determined by the increments `T 0, …, T (m - 1)`. -/
 private theorem measurableSet_firstArrivalGE (m : ℕ) :
     MeasurableSet[blockSigma T (Iio m)] (firstArrivalGE T t m) := by
-  have harr {j : ℕ} (hj : j ≤ m) : Measurable[blockSigma T (Iio m)] (arrival T j) := by
-    simp only [funext (arrival_def T j)]
-    exact Finset.measurable_sum _ fun i hi ↦
-      measurable_blockSigma_of_mem (by simp only [Finset.mem_range] at hi; simp; omega)
+  have harr {j : ℕ} (hj : j ≤ m) : Measurable[blockSigma T (Iio m)] (arrival T j) :=
+    measurable_arrival_of_lt fun i hi ↦ measurable_blockSigma_of_mem (hi.trans_le hj)
   simp only [firstArrivalGE, ofPred_and, ofPred_forall]
   refine (measurableSet_le measurable_const (harr le_rfl)).inter ?_
   exact MeasurableSet.iInter fun j ↦ MeasurableSet.iInter fun hj ↦
@@ -103,7 +102,7 @@ private theorem preimage_arrival_Icc_inter_firstArrivalGE_subset (m k : ℕ) :
   rintro ω ⟨hω, hE⟩
   refine ⟨hE, ?_⟩
   have hle := hω.2
-  rw [add_comm, arrival_add] at hle
+  rw [Nat.add_comm k m, arrival_add] at hle
   refine le_of_add_le_add_left (a := t) ?_
   calc t + arrival (fun i ↦ T (m + i)) k ω
       ≤ arrival T m ω + arrival (fun i ↦ T (m + i)) k ω := by gcongr; exact hE.1
@@ -131,9 +130,8 @@ private theorem renewalMeasure_map_Icc_add_le (hT : ∀ n, Measurable (T n))
       rw [blockSigma_def, blockSigma_def]
       exact indep_iSup_of_disjoint (fun i ↦ (hT i).comap_le) hindep.iIndep
         (Iio_disjoint_Ici le_rfl)
-    have hD : Measurable[blockSigma T (Ici m)] (arrival (fun i ↦ T (m + i)) k) := by
-      simp only [funext (arrival_def (fun i ↦ T (m + i)) k)]
-      exact Finset.measurable_sum _ fun i _ ↦ measurable_blockSigma_of_mem (by simp)
+    have hD : Measurable[blockSigma T (Ici m)] (arrival (fun i ↦ T (m + i)) k) :=
+      measurable_arrival_of_lt fun i _ ↦ measurable_blockSigma_of_mem (by simp)
     rw [(Indep_iff _ _ P).1 hI _ _ (measurableSet_firstArrivalGE m) (hD measurableSet_Iic),
       hlaw m k measurableSet_Iic]
   have hA : MeasurableSet (Icc t (t + h)) := measurableSet_Icc
@@ -181,11 +179,9 @@ theorem renewalMeasure_Icc_add_le (t h : ℝ≥0) :
   -- Realize i.i.d. increments with law `μ` as the coordinates of the product measure.
   set P := Measure.infinitePi fun _ : ℕ ↦ μ
   have hT : ∀ n, Measurable fun w : ℕ → ℝ≥0 ↦ w n := measurable_pi_apply
-  have hindep : iIndepFun (fun n (w : ℕ → ℝ≥0) ↦ w n) P :=
-    iIndepFun_infinitePi (P := fun _ : ℕ ↦ μ) (X := fun _ x ↦ x) fun _ ↦ measurable_id
+  have hindep : iIndepFun _ P := TauCeti.Probability.iIndepFun_eval_infinitePi _
+  have hid (n : ℕ) : IdentDistrib _ _ P P := TauCeti.Probability.identDistrib_eval_infinitePi μ n 0
   have hmap : ∀ n, P.map (fun w ↦ w n) = μ := fun n ↦ infinitePi_map_eval _ n
-  have hid : ∀ n, IdentDistrib (fun w : ℕ → ℝ≥0 ↦ w n) (fun w ↦ w 0) P P := fun n ↦
-    ⟨(hT n).aemeasurable, (hT 0).aemeasurable, by rw [hmap, hmap]⟩
   simpa only [hmap 0] using TauCeti.Probability.renewalMeasure_map_Icc_add_le hT hindep hid t h
 
 /-- **Uniform bound on the renewal increments.** For a probability measure `μ` on `ℝ≥0`, the

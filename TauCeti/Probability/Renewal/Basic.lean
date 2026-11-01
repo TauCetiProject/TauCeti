@@ -103,11 +103,16 @@ lemma arrival_add (m k : ℕ) (ω : Ω) :
 lemma monotone_arrival (ω : Ω) : Monotone fun n ↦ arrival T n ω :=
   monotone_nat_of_le_succ fun n ↦ by simp [arrival_succ]
 
+/-- The `n`-th arrival time is measurable as soon as the increments `T 0, …, T (n - 1)` are. -/
+lemma measurable_arrival_of_lt {_ : MeasurableSpace Ω} {T : ℕ → Ω → ℝ≥0} {n : ℕ}
+    (hT : ∀ i < n, Measurable (T i)) : Measurable (arrival T n) := by
+  simp only [funext (arrival_def T n)]
+  exact Finset.measurable_fun_sum _ fun i hi ↦ hT i (Finset.mem_range.1 hi)
+
 @[fun_prop]
 lemma measurable_arrival [MeasurableSpace Ω] {T : ℕ → Ω → ℝ≥0} (hT : ∀ n, Measurable (T n))
-    (n : ℕ) : Measurable (arrival T n) := by
-  simp only [funext (arrival_def T n)]
-  exact Finset.measurable_fun_sum _ fun i _ ↦ hT i
+    (n : ℕ) : Measurable (arrival T n) :=
+  measurable_arrival_of_lt fun i _ ↦ hT i
 
 /-! ### The counting process -/
 
