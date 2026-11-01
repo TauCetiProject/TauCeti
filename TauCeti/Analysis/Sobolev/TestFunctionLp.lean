@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 public import TauCeti.Analysis.Distribution.TestFunction.Dilation
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
+public import TauCeti.MeasureTheory.Measure.Haar.Restrict
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.L2Space
@@ -356,12 +357,6 @@ theorem gradientTestFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : 
 end GradientTranslation
 
 /-! ### Dilation on the whole space -/
-
-/-- The whole-space restriction of an additive Haar measure is an additive Haar measure. -/
-instance instIsAddHaarMeasureRestrictTop {G : Type*} [MeasurableSpace G] [TopologicalSpace G]
-    [AddGroup G] {μ : Measure G} [μ.IsAddHaarMeasure] :
-    (μ.restrict (⊤ : Opens G)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : μ.IsAddHaarMeasure)
 
 section Dilation
 

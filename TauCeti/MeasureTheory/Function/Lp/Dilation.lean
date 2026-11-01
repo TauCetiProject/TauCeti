@@ -21,8 +21,10 @@ the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integ
 
 Normalizing by the inverse factor turns dilation into a linear isometric equivalence
 `f ↦ r ^ (-n / p) • f (r⁻¹ • ·)` of `Lᵖ`, and these equivalences form an action of the positive
-reals. They are the `Lᵖ`-isometric dilations of scale-invariant problems such as the sharp Sobolev
-inequality, where the critical `Lᵖ` norm and the `Lᵖ` norm of the gradient are both invariant.
+reals. They describe the dilations of scale-invariant problems such as the sharp Sobolev
+inequality: dilating a homogeneous Sobolev function acts by the normalized dilation at exponent `p`
+on its gradient and at the Sobolev-conjugate exponent `p⋆` on the function itself, so both the `Lᵖ`
+norm of the gradient and the critical `L^{p⋆}` norm are invariant.
 
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
 `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
