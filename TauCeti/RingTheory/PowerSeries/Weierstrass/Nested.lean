@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 public import TauCeti.RingTheory.PowerSeries.EvalAt
-public import TauCeti.Analysis.Normed.Unbundled.RootBound
+public import TauCeti.RingTheory.PowerSeries.MulDistinguished
 public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.Analysis.Normed.Algebra.Ultra
 
@@ -90,32 +90,6 @@ theorem IsDistinguished.exists_isMonicOfDegree_mul_eq_of_preparations
            rw [hA, map_mul]; ring
   exact ⟨A, hAm, hA, isUnit_of_mul_isUnit_right (hrel ▸ hu)⟩
 
-/-- Every root of a monic polynomial distinguished in its full degree lies in its closed
-disc. The coefficient ring need not be complete or a field. -/
-theorem IsDistinguished.norm_le_of_eval_eq_zero
-    (hP : IsDistinguished r d (P : PowerSeries R)) (hr : 0 < r)
-    (hm : P.IsMonicOfDegree d) {x : R} (hx : P.eval x = 0) : ‖x‖ ≤ r := by
-  have : Nontrivial R := nontrivial_of_ne _ _ hP.coeff_ne_zero
-  have : NormOneClass R := NormMulClass.toNormOneClass
-  obtain ⟨i, hi, hxi⟩ := hm.monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    (f := normRingNorm R) (fun a n _ => norm_pow a n)
-    IsUltrametricDist.isNonarchimedean_norm hx
-  rw [hm.natDegree_eq] at hi hxi
-  -- The bundled seminorm here is the original norm.
-  have hxi' : ‖x‖ ^ (d - i) ≤ ‖P.coeff i‖ := hxi
-  have hcoeff : ‖P.coeff i‖ * r ^ i ≤ r ^ d := by
-    have h := _root_.PowerSeries.le_gaussNorm norm r (P : PowerSeries R) hP.hasGaussNorm i
-    rw [← hP.norm_coeff_mul_pow_eq, hm.coeff_coe_self, norm_one, one_mul,
-      Polynomial.coeff_coe] at h
-    exact h
-  have hpow : ‖x‖ ^ (d - i) ≤ r ^ (d - i) := by
-    apply (mul_le_mul_iff_left₀ (pow_pos hr i)).mp
-    calc ‖x‖ ^ (d - i) * r ^ i ≤ ‖P.coeff i‖ * r ^ i :=
-           mul_le_mul_of_nonneg_right hxi' (pow_nonneg hr.le i)
-      _ ≤ r ^ (d - i) * r ^ i := by
-           simpa only [← pow_add, Nat.sub_add_cancel hi.le] using hcoeff
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) hr.le (Nat.sub_ne_zero_of_lt hi)).mp hpow
-
 section Field
 
 variable {K L : Type*} [NormedField K] [IsUltrametricDist K]
@@ -137,14 +111,8 @@ theorem IsDistinguished.norm_mem_Ioc_of_aeval_eq_zero
       rw [Polynomial.eval_map_algebraMap]
       exact Polynomial.aeval_eq_zero_of_dvd_aeval_eq_zero hA hx
     have hd : IsDistinguished s d (P.map (algebraMap K L) : PowerSeries L) := by
-      apply isDistinguished_of_isMonicOfDegree (hr.trans_le hrs) (hm.map _)
-      intro i hi
-      simp only [Polynomial.coeff_map, norm_algebraMap']
-      calc ‖P.coeff i‖ * s ^ i ≤ (P : PowerSeries K).gaussNorm norm s := by
-             simpa only [Polynomial.coeff_coe] using
-               _root_.PowerSeries.le_gaussNorm norm s (P : PowerSeries K) hP.hasGaussNorm i
-        _ = s ^ d := by
-             rw [← hP.norm_coeff_mul_pow_eq, hm.coeff_coe_self, norm_one, one_mul]
+      rw [Polynomial.polynomial_map_coe]
+      exact hP.map (algebraMap K L) (norm_algebraMap' L)
     exact hd.norm_le_of_eval_eq_zero (hr.trans_le hrs) (hm.map _) hroot
   refine ⟨lt_of_not_ge (fun hsmall => ?_), hlarge⟩
   have hunit := hu.map (_root_.PowerSeries.IsRestricted.evalAtHom K hsmall)
