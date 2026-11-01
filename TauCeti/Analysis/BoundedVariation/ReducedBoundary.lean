@@ -239,16 +239,13 @@ theorem integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal
 /-! ### Concentration of the outer normal -/
 
 /-- The outer normal is integrable against the perimeter measure on sets of finite measure. -/
-theorem integrableOn_outerNormal (hx : x ∈ reducedBoundary μ Ω s) {S : Set Ω}
-    (hS : variationMeasure μ Ω (s.indicator 1) S ≠ ∞) :
+theorem integrableOn_outerNormal {S : Set Ω} (hS : variationMeasure μ Ω (s.indicator 1) S ≠ ∞) :
     IntegrableOn (fun y : Ω => outerNormal μ Ω s y) S (variationMeasure μ Ω (s.indicator 1)) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   refine Measure.integrableOn_of_bounded hS ?_ (M := 1) ?_
   · exact (measurable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).neg
       |>.aestronglyMeasurable.congr (ae_outerNormal_eq.mono fun _ h => h.symm)
-  · filter_upwards [ae_restrict_of_ae ae_outerNormal_eq,
-      ae_restrict_of_ae (ae_norm_polarDensity_eq_one hu hfin)] with y h1 h2
-    rw [h1, norm_neg, h2]
+  · filter_upwards [ae_restrict_of_ae ae_mem_reducedBoundary] with y hy
+    exact (norm_outerNormal hy).le
 
 /-- At a point `x` of the reduced boundary, for every `η > 0` and every small `r`, the perimeter
 measure of `closedBall x r` is finite and
@@ -293,7 +290,7 @@ theorem eventually_setIntegral_norm_outerNormal_sub_le
   have hSfin : lam S ≠ ∞ := hS.measure_lt_top.ne
   refine ⟨hSfin, ?_⟩
   have hSm : MeasurableSet S := hS.isClosed.measurableSet
-  have hn : IntegrableOn n S lam := integrableOn_outerNormal hx hSfin
+  have hn : IntegrableOn n S lam := integrableOn_outerNormal hSfin
   have hc (c : ℝ) : IntegrableOn (fun _ => c) S lam := integrableOn_const hSfin
   have hν' : IntegrableOn (fun _ => ν) S lam := integrableOn_const hSfin
   have hin : IntegrableOn (fun y => ⟪ν, n y⟫) S lam := Integrable.const_inner ν hn
@@ -335,7 +332,7 @@ theorem tendsto_setLIntegral_enorm_outerNormal_sub_div (hx : x ∈ reducedBounda
   set S := ((↑) : Ω → E) ⁻¹' closedBall x r
   refine ENNReal.div_le_of_le_mul ?_
   have hi : IntegrableOn (fun y : Ω => outerNormal μ Ω s y - outerNormal μ Ω s x) S lam :=
-    (integrableOn_outerNormal hx hSfin).sub (integrableOn_const hSfin)
+    (integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)
   rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
   calc ENNReal.ofReal (∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ ∂lam)
       ≤ ENNReal.ofReal (2 * (δ.toReal / 2) * lam.real S) := ENNReal.ofReal_le_ofReal hr

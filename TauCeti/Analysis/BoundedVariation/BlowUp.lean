@@ -78,7 +78,7 @@ private theorem neg_mul_setIntegral_le_integral_inner_outerNormal
   set ν := outerNormal μ Ω s x
   have hg : IntegrableOn (fun y : Ω => -(M * ‖outerNormal μ Ω s y - ν‖)) S
       (variationMeasure μ Ω (s.indicator 1)) :=
-    (((integrableOn_outerNormal hx hSfin).sub (integrableOn_const hSfin)).norm.const_mul M).neg
+    (((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm.const_mul M).neg
   rw [← integral_const_mul, ← integral_neg, ← integral_indicator hSm]
   refine integral_mono (hg.integrable_indicator hSm) ?_ fun y => ?_
   · refine (integrable_inner_polarDensity hu hfin ψ.continuous ψ.hasCompactSupport
@@ -163,7 +163,7 @@ theorem eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage
     eventually_forall_tsupport_add_smul_mem (reducedBoundary_subset hx) φ,
     self_mem_nhdsWithin] with r ⟨⟨_, h1⟩, h2⟩ hΩ (hr : 0 < r)
   set S := ((↑) : Ω → E) ⁻¹' closedBall x (R' * r)
-  obtain ⟨ψ, hψ, hdiv⟩ := exists_testFunction_eq_comp φ hr.ne' hΩ
+  obtain ⟨ψ, hψ, hdiv⟩ := TestFunction.exists_eq_comp φ hr.ne' hΩ
   rw [(integrable_and_integral_divergenceCLM_mul_indicator_preimage hu hfin φ hr hdiv).2]
   -- The field `ψ` vanishes off `S`.
   have hψS (y : Ω) (hy : y ∉ S) : ψ y = 0 := by
@@ -221,7 +221,7 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
   have hint : ∀ᶠ i in l, Integrable (fun y => g y * (S i).indicator 1 y) μ := by
     filter_upwards [hr.eventually (eventually_forall_tsupport_add_smul_mem
       (reducedBoundary_subset hx) φ), hr.eventually self_mem_nhdsWithin] with i hΩ (hri : 0 < r i)
-    obtain ⟨ψ, -, hdiv⟩ := exists_testFunction_eq_comp φ hri.ne' hΩ
+    obtain ⟨ψ, -, hdiv⟩ := TestFunction.exists_eq_comp φ hri.ne' hΩ
     exact (integrable_and_integral_divergenceCLM_mul_indicator_preimage hu hfin φ hri hdiv).1
   have hJ : Integrable (fun y => g y * F.indicator 1 y) μ := by
     refine (integrable_smul_of_locallyIntegrableOn

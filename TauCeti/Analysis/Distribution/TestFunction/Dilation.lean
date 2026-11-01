@@ -15,7 +15,7 @@ Dilating the support of a test function by a nonzero real scalar amounts to prec
 its inverse. The derivative and divergence acquire the inverse scalar. These formulas transport
 the test-field pairings that define distributional variation and perimeter under dilations.
 Combining dilation with translation rescales a test vector field around a point `x`
-(`TauCeti.exists_testFunction_eq_comp`); for small ratios the rescaled support stays inside any
+(`TestFunction.exists_eq_comp`); for small ratios the rescaled support stays inside any
 open neighbourhood of `x` (`TauCeti.eventually_forall_tsupport_add_smul_mem`).
 -/
 
@@ -84,9 +84,32 @@ theorem divergenceCLM_dilateTestFunction [FiniteDimensional ℝ E]
   ext y
   simp
 
+/-- For small `r > 0` the support of a test function on `E`, rescaled by `r` around `x ∈ Ω`, lies
+in `Ω`. -/
+theorem eventually_forall_tsupport_add_smul_mem {x : E} (hx : x ∈ Ω) (φ : 𝓓((⊤ : Opens E), F)) :
+    ∀ᶠ r in 𝓝[>] (0 : ℝ), ∀ y ∈ tsupport φ, x + r • y ∈ Ω := by
+  obtain ⟨R, hR⟩ := φ.hasCompactSupport.isCompact.isBounded.subset_closedBall 0
+  obtain ⟨ε, hε, hεΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hx)
+  have hR1 : 0 < max R 1 := lt_max_of_lt_right one_pos
+  filter_upwards [Ioo_mem_nhdsGT (div_pos hε hR1)] with r hr y hy
+  refine hεΩ ?_
+  have hy' : ‖y‖ ≤ max R 1 := (mem_closedBall_zero_iff.1 (hR hy)).trans (le_max_left _ _)
+  rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hr.1.le]
+  calc r * ‖y‖ ≤ r * max R 1 := mul_le_mul_of_nonneg_left hy' hr.1.le
+    _ ≤ ε := ((lt_div_iff₀ hR1).1 hr.2).le
+
+end TauCeti
+
+namespace TestFunction
+
+open Set TauCeti TopologicalSpace
+open scoped Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
+
 /-- Rescaling a test vector field on `E` around `x` by a ratio `r ≠ 0` gives a test vector field
 on `Ω`, provided the rescaled support lies in `Ω`. -/
-theorem exists_testFunction_eq_comp [FiniteDimensional ℝ E] {x : E} (φ : 𝓓((⊤ : Opens E), E))
+theorem exists_eq_comp [FiniteDimensional ℝ E] {x : E} (φ : 𝓓((⊤ : Opens E), E))
     {r : ℝ} (hr : r ≠ 0) (hΩ : ∀ y ∈ tsupport φ, x + r • y ∈ Ω) :
     ∃ ψ : 𝓓(Ω, E), (∀ y, ψ y = φ (r⁻¹ • (y - x))) ∧
       ∀ y, divergenceCLM ψ y = r⁻¹ * divergenceCLM φ (r⁻¹ • (y - x)) := by
@@ -112,18 +135,4 @@ theorem exists_testFunction_eq_comp [FiniteDimensional ℝ E] {x : E} (φ : 𝓓
     translateTestFunction_apply, divergenceCLM_dilateTestFunction]
   simp only [IsSMulApply.smul_apply, dilateTestFunction_apply, smul_eq_mul]
 
-/-- For small `r > 0` the support of a test function on `E`, rescaled by `r` around `x ∈ Ω`, lies
-in `Ω`. -/
-theorem eventually_forall_tsupport_add_smul_mem {x : E} (hx : x ∈ Ω) (φ : 𝓓((⊤ : Opens E), F)) :
-    ∀ᶠ r in 𝓝[>] (0 : ℝ), ∀ y ∈ tsupport φ, x + r • y ∈ Ω := by
-  obtain ⟨R, hR⟩ := φ.hasCompactSupport.isCompact.isBounded.subset_closedBall 0
-  obtain ⟨ε, hε, hεΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hx)
-  have hR1 : 0 < max R 1 := lt_max_of_lt_right one_pos
-  filter_upwards [Ioo_mem_nhdsGT (div_pos hε hR1)] with r hr y hy
-  refine hεΩ ?_
-  have hy' : ‖y‖ ≤ max R 1 := (mem_closedBall_zero_iff.1 (hR hy)).trans (le_max_left _ _)
-  rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hr.1.le]
-  calc r * ‖y‖ ≤ r * max R 1 := mul_le_mul_of_nonneg_left hy' hr.1.le
-    _ ≤ ε := ((lt_div_iff₀ hR1).1 hr.2).le
-
-end TauCeti
+end TestFunction
