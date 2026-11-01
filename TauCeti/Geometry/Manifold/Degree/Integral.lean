@@ -142,7 +142,7 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [C
   have hψ_zero (x : s) (z : M) (hz : z ∉ (e x).source) : ψ x z = 0 := by
     simp only [ψ, indicator_of_notMem hz, zero_smul]
   have hpull_zero (z : M) (hz : f z ∉ K) : mpullback I J f φ z = 0 :=
-    RoughForm.mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport hz)
+    mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport hz)
   -- On each sheet the support of `ψ x` lies in the compact image of `K` under the inverse.
   have hK (x : s) : IsCompact ((e x).symm '' K) :=
     hφ.isCompact.image_of_continuousOn ((e x).continuousOn_symm.mono (hφV.trans (hVt x)))
@@ -178,11 +178,11 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [C
     · rw [h, Int.cast_one, one_mul]
       exact (e x).integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe x) (hmd x)
         (fun z hz ↦ orientationSign_eq_one_iff.mp ((hsgn x z hz).trans h)) hφ
-        (hφV.trans (hVt x)) (hψc x) (hψs x) (hψ_eq x)
+        (hφV.trans (hVt x)) (hψs x) (hψ_eq x)
     · rw [h, Int.cast_neg, Int.cast_one, neg_one_mul]
       exact (e x).integralTopForm_of_eq_mpullback_of_isOrientationReversingAt (hfe x) (hmd x)
         (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn x z hz).trans h)) hφ
-        (hφV.trans (hVt x)) (hψc x) (hψs x) (hψ_eq x)
+        (hφV.trans (hVt x)) (hψs x) (hψ_eq x)
   rw [hsum, integralTopForm_sum o ψ Finset.univ fun x _ ↦
       (e x).integrableTopForm_of_eq_mpullback (hfe x) (hmd x) hφ (hψc x) (hψs x) (hψ_eq x),
     degreeAtRegularValue_eq_sum hs, Int.cast_sum, Finset.sum_mul,

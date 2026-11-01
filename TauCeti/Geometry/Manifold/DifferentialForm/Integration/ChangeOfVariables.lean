@@ -22,7 +22,7 @@ allowed: derivatives in charts are taken within the model range.
 
 The same holds locally. Let `e` be an open partial homeomorphism agreeing with a differentiable
 map `f` on its source, and let `φ` be an integrable top form supported in the target of `e`. A
-form `ψ` with compact support in the source that agrees there with `f^*φ` has integral `∫_N φ`
+form `ψ` supported in the source that agrees there with `f^*φ` has integral `∫_N φ`
 when `f` preserves orientation on the source, and `-∫_N φ` when it reverses it. This is how the
 pullback along a map that is only locally a diffeomorphism, such as the sheets of a covering or of
 a map over a regular value, is integrated piece by piece. The homeomorphism case is the special
@@ -229,22 +229,20 @@ theorem integrableTopForm_of_eq_mpullback (hfe : EqOn f e e.source)
 
 /-- **Change of variables for top forms along an open partial homeomorphism.** Let `e` agree on its
 source with a map `f` that is differentiable and orientation preserving there, and let `φ` be an
-integrable top form supported in the target of `e`. A form `ψ` with compact support in the source
-of `e` that agrees there with `f^*φ` has the same integral as `φ`: `∫_M ψ = ∫_N φ`. -/
+integrable top form supported in the target of `e`. A form `ψ` supported in the source of `e` that
+agrees there with `f^*φ` has the same integral as `φ`: `∫_M ψ = ∫_N φ`. -/
 theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn f e e.source)
     (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x) {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationPreservingAt o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
     (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
-    (hψc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ))
     (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
     (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
     integralTopForm o ψ = integralTopForm o' φ := by
   classical
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  have hψi := e.integrableTopForm_of_eq_mpullback hfe hf hφ hψc hψ hψφ
   -- `e` carries the support of `ψ` into the support of `φ`, since `ψ` is `f^*φ` on the source.
   have hsupp (x : M) (hx : x ∈ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ) :
       e x ∈ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ := by
@@ -252,7 +250,13 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
     rintro _ ⟨z, hz, rfl⟩ hφz
     have hzs := hψ (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ hz)
     have hφz' : φ (f z) = 0 := by rw [hfe hzs]; exact hφz
-    exact hz ((hψφ z hzs).trans (RoughForm.mpullback_apply_eq_zero hφz'))
+    exact hz ((hψφ z hzs).trans (mpullback_apply_eq_zero hφz'))
+  -- Hence the support of `ψ` is a closed subset of the compact image of the support of `φ`.
+  have hψc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ) :=
+    (hφ.isCompact.image_of_continuousOn (e.continuousOn_symm.mono hφt)).of_isClosed_subset
+      (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) _)
+      fun x hx ↦ ⟨e x, hsupp x hx, e.left_inv (hψ hx)⟩
+  have hψi := e.integrableTopForm_of_eq_mpullback hfe hf hφ hψc hψ hψφ
   -- Represent both orientations by lifts with the same model orientation.
   obtain ⟨l, rfl⟩ := o.exists_lift
   obtain ⟨l', rfl, hl⟩ : ∃ l' : Manifold.OrientationLift J N (Fin k),
@@ -329,14 +333,13 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationReversingAt (hfe : EqOn 
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationReversingAt o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
     (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
-    (hψc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ))
     (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
     (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
     integralTopForm o ψ = -integralTopForm o' φ := by
   rw [← integralTopForm_neg]
   exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe hf
     (fun x hx ↦ (Manifold.Orientation.isOrientationPreservingAt_neg_right o o' f x).2 (ho x hx))
-    hφ hφt hψc hψ hψφ
+    hφ hφt hψ hψφ
 
 end OpenPartialHomeomorph
 
@@ -391,11 +394,7 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt (f : M ≃ₜ N)
     (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = integralTopForm o' φ := by
   by_cases hφ : IntegrableTopForm φ
   · exact f.toOpenPartialHomeomorph.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt
-      (fun _ _ ↦ rfl) (fun x _ ↦ hf x) (fun x _ ↦ ho x) hφ (by simp)
-      ((f.isCompact_preimage.mpr hφ.isCompact).of_isClosed_subset
-        (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) _)
-        (RoughForm.tsupport_mpullback_subset_preimage f.continuous φ))
-      (by simp) fun _ _ ↦ rfl
+      (fun _ _ ↦ rfl) (fun x _ ↦ hf x) (fun x _ ↦ ho x) hφ (by simp) (by simp) fun _ _ ↦ rfl
   · rw [integralTopForm_eq_zero_of_not_integrable _ _ hφ,
       integralTopForm_eq_zero_of_not_integrable _ _
         (mt (f.integrableTopForm_mpullback_iff hf (fun x ↦ (ho x).isInvertible_mfderiv) φ).mp hφ)]
