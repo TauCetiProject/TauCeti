@@ -25,11 +25,11 @@ positive-definite matrix `S` solves the fixed-point equation
 `S = ∑ j, w j • (S^(1/2) * C j * S^(1/2))^(1/2)`.
 
 Then for every probability law `ν` the quadratic barycentric cost `∑ j, w j * W₂(ν, μ j) ^ 2` is
-at least the cost `∑ j, w j * B(m̄, m j, S, C j)` of the Gaussian law with mean
-`m̄ = ∑ j, w j • m j` and covariance `S` computed as if every `μ j` were Gaussian, where `B` is the
-Bures expression `TauCeti.gaussianWassersteinSq`. The input laws need not be Gaussian. When they
+at least the cost `∑ j, w j * B(mbar, m j, S, C j)` of the Gaussian law with mean
+`mbar = ∑ j, w j • m j` and covariance `S` computed as if every `μ j` were Gaussian, where `B` is
+the Bures expression `TauCeti.gaussianWassersteinSq`. The input laws need not be Gaussian. When they
 are, the bound is attained by that Gaussian law, so the fixed-point equation characterizes a
-Gaussian barycenter: the Gaussian law with mean `m̄` and covariance `S` is a quadratic Fréchet
+Gaussian barycenter: the Gaussian law with mean `mbar` and covariance `S` is a quadratic Fréchet
 barycenter in `P₂`, and the only one as soon as an input with positive weight has a
 positive-definite covariance.
 
@@ -53,7 +53,7 @@ range of `A j`, which carries the centred `j`th coordinate almost surely.
 * `TauCeti.sum_mul_ofReal_gaussianWassersteinSq_le`: the Gaussian lower bound for the
   barycentric cost of arbitrary laws with finite second moments.
 * `TauCeti.Probability.isFrechetBarycenter_sum_smul_dirac_multivariateGaussian`: the Gaussian law
-  with mean `m̄` and covariance `S` is a barycenter of Gaussian laws.
+  with mean `mbar` and covariance `S` is a barycenter of Gaussian laws.
 * `TauCeti.Probability.frechetBarycenters_sum_smul_dirac_multivariateGaussian`: it is the unique
   barycenter when an input with positive weight is nondegenerate.
 
@@ -279,7 +279,7 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
 variable [DecidableEq ι]
 
 /-- The weighted Bures cost of a solution `S` of the fixed-point equation, measured from the
-weighted mean `m̄` of the means: the cross terms add up to `tr S`. -/
+weighted mean `mbar` of the means: the cross terms add up to `tr S`. -/
 private theorem sum_mul_gaussianWassersteinSq_eq (hw : ∑ j, w j = 1)
     (m : J → EuclideanSpace ℝ ι) (C : J → Matrix ι ι ℝ)
     (hfix : S = ∑ j, (w j : ℝ) • CFC.sqrt (CFC.sqrt S * C j * CFC.sqrt S)) :
@@ -303,8 +303,8 @@ private theorem sum_mul_gaussianWassersteinSq_eq (hw : ∑ j, w j = 1)
 on `ℝⁿ` with finite second moments, means `m j` and covariance matrices `C j`, let `w j` be
 nonnegative weights summing to `1`, and let the positive-definite matrix `S` solve
 `S = ∑ j, w j • (S^(1/2) * C j * S^(1/2))^(1/2)`. Then for every probability law `ν`,
-`∑ j, w j * W₂(ν, μ j) ^ 2` is at least `∑ j, w j * B(m̄, m j, S, C j)`, where
-`m̄ = ∑ j, w j • m j` and `B = gaussianWassersteinSq` is the Bures expression, the squared
+`∑ j, w j * W₂(ν, μ j) ^ 2` is at least `∑ j, w j * B(mbar, m j, S, C j)`, where
+`mbar = ∑ j, w j • m j` and `B = gaussianWassersteinSq` is the Bures expression, the squared
 `W₂` distance between Gaussian laws with these means and covariances. -/
 theorem sum_mul_ofReal_gaussianWassersteinSq_le (hw : ∑ j, w j = 1)
     [∀ j, IsProbabilityMeasure (μ j)] (hμ : ∀ j, MemLp id 2 (μ j)) (hS : S.PosDef)
@@ -314,8 +314,9 @@ theorem sum_mul_ofReal_gaussianWassersteinSq_le (hw : ∑ j, w j = 1)
         (∫ y, y ∂μ j) S (covMatrix (μ j))) ≤
       ∑ j, (w j : ℝ≥0∞) * wassersteinEDist 2 ν (μ j) ^ 2 := by
   -- The cost of `ν` dominates the multi-marginal cost `∫ F dγ` of some multi-coupling `γ`. By the
-  -- weighted variance decomposition about `m̄`, that cost is `∑ i, w i * (‖m i - m̄‖ ^ 2 + tr C i)`
-  -- minus the second moment of the centred weighted mean `W`, which is at most `tr S`.
+  -- weighted variance decomposition about `mbar`, that cost is
+  -- `∑ i, w i * (‖m i - mbar‖ ^ 2 + tr C i)` minus the second moment of the centred weighted
+  -- mean `W`, which is at most `tr S`.
   obtain ⟨γ, hγ, hle⟩ := exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le hw μ ν
   refine le_trans ?_ (le_self_add.trans hle)
   obtain ⟨j₀, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
@@ -329,7 +330,7 @@ theorem sum_mul_ofReal_gaussianWassersteinSq_le (hw : ∑ j, w j = 1)
   have hcoord (j : J) : MemLp (fun x : J → EuclideanSpace ℝ ι ↦ x j) 2 γ :=
     hγ.memLp_comp_eval j (hμ j)
   have hC (j : J) : (covMatrix (μ j)).PosSemidef := posSemidef_covMatrix _ (hμ j)
-  -- The weighted variance decomposition about `m̄`.
+  -- The weighted variance decomposition about `mbar`.
   have hF (x : J → EuclideanSpace ℝ ι) :
       F x = ∑ i, (w i : ℝ) * ‖x i - mbar‖ ^ 2 - ‖W x‖ ^ 2 := by
     have h := Finset.univ.sum_mul_norm_sub_sq_eq hw' mbar x
