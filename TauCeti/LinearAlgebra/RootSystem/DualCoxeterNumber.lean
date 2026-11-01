@@ -135,8 +135,9 @@ theorem two_le_dualCoxeterNumber : 2 ≤ b.dualCoxeterNumber := by
 /-- **The dual Coxeter number is nonzero in the coefficient ring**, which has characteristic zero.
 -/
 theorem cast_dualCoxeterNumber_ne_zero : (b.dualCoxeterNumber : R) ≠ 0 := by
-  have := b.two_le_dualCoxeterNumber
-  exact_mod_cast (show b.dualCoxeterNumber ≠ 0 by omega)
+  have h2 := b.two_le_dualCoxeterNumber
+  have h : b.dualCoxeterNumber ≠ 0 := by omega
+  exact_mod_cast h
 
 variable [P.IsIrreducible]
 

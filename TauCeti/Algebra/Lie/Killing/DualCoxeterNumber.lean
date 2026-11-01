@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Weights.IsSimple
 public import TauCeti.Algebra.Lie.Killing.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
+public import TauCeti.Algebra.Lie.Weights.IsSimple
 public import TauCeti.LinearAlgebra.RootSystem.DualCoxeterNumber
 
 /-!
@@ -70,23 +70,6 @@ for every base; that `h^∨` does not depend on the base is not proved here.
 public section
 
 open LieAlgebra LieAlgebra.IsKilling LieModule Module
-
-namespace LieAlgebra.IsKilling
-
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
-
-/-- **A simple Lie algebra has a root** with respect to every splitting Cartan subalgebra: its root
-system is irreducible, so its weight space `H^*` is nontrivial and spanned by the roots. -/
-instance nonempty_root_of_isSimple [IsSimple K L] : Nonempty H.root := by
-  by_contra h
-  rw [not_nonempty_iff] at h
-  have := RootPairing.IsIrreducible.nontrivial (P := rootSystem H)
-  have hspan := RootPairing.IsRootSystem.span_root_eq_top (P := rootSystem H)
-  rw [Set.range_eq_empty, Submodule.span_empty] at hspan
-  exact bot_ne_top hspan
-
-end LieAlgebra.IsKilling
 
 namespace RootPairing.Base
 
@@ -173,8 +156,8 @@ theorem killingForm_eq_smul_iff_apply_coroot_highestRoot_eq_two {Φ : LinearMap.
     obtain ⟨d, rfl⟩ := TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ
     rw [LinearMap.smul_apply, LinearMap.smul_apply, b.killingForm_coroot_highestRoot,
       smul_eq_mul] at h
-    rw [smul_smul, show 2 * (b.dualCoxeterNumber : K) * d = 1 by linear_combination h / 2,
-      one_smul]
+    have hd : 2 * (b.dualCoxeterNumber : K) * d = 1 := by linear_combination h / 2
+    rw [smul_smul, hd, one_smul]
 
 /-- **The Killing form is `2 h^∨` times the invariant form for whose dual the highest root has
 squared length `2`**: if `t ∈ H` represents `θ` for an invariant form `Φ` on a simple Lie algebra
@@ -193,8 +176,9 @@ theorem killingForm_eq_smul_iff_apply_self_eq_two {Φ : LinearMap.BilinForm K L}
     obtain ⟨d, rfl⟩ := TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ
     have hd := b.mul_smul_killingForm_apply_self d ht
     rw [h] at hd
-    rw [smul_smul, show 2 * (b.dualCoxeterNumber : K) * d = 1 by
-      field_simp at hd; linear_combination hd, one_smul]
+    field_simp at hd
+    have hd' : 2 * (b.dualCoxeterNumber : K) * d = 1 := by linear_combination hd
+    rw [smul_smul, hd', one_smul]
 
 /-- **The critical level**: if the invariant form `Φ` is normalised by `Φ(θ^∨, θ^∨) = 2`, then
 `κ_c = -½ κ` is `-h^∨ Φ`. -/
