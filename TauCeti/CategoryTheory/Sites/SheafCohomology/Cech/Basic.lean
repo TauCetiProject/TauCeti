@@ -75,6 +75,8 @@ be added or removed.
   natural in `P`.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
   invariant under isomorphisms of presheaves.
+* `TauCeti.CategoryTheory.cechComplexFunctor_map_f`: a morphism of presheaves acts on the Čech
+  complexes factorwise; in particular `CategoryTheory.cechComplexFunctor U` is additive.
 
 ## References
 
@@ -232,6 +234,25 @@ theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
     ((cechComplexFunctor U).map α).f n ≫ Pi.π _ a =
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
   Pi.map_π (fun _ ↦ α.app _) a
+
+/-- The degree `n` component of `(cechComplexFunctor U).map α` is the product of the components of
+`α` at the products `U (a 0) × ⋯ × U (a n)`. -/
+theorem cechComplexFunctor_map_f {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
+    ((cechComplexFunctor U).map α).f n =
+      Limits.Pi.map fun a : Fin (n + 1) → ι ↦ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
+  Pi.hom_ext _ _ fun a ↦ (cechComplexFunctor_map_f_π U P α n a).trans
+    (Pi.map_π (fun a : Fin (n + 1) → ι ↦ α.app (op (∏ᶜ fun j ↦ U (a j)))) a).symm
+
+/-- The Čech complex is additive in the presheaf, since a morphism of presheaves acts on it
+factorwise. -/
+instance : (cechComplexFunctor U : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ).Additive where
+  map_add {P Q α β} := by
+    ext n : 1
+    refine Pi.hom_ext _ _ fun a ↦ ?_
+    exact (cechComplexFunctor_map_f_π U P (α + β) n a).trans <|
+      (congrArg _ (NatTrans.app_add _ α β)).trans <| (Preadditive.comp_add _ _ _ _ _ _).trans <|
+        (congrArg₂ (· + ·) (cechComplexFunctor_map_f_π U P α n a).symm
+          (cechComplexFunctor_map_f_π U P β n a).symm).trans (Preadditive.add_comp _ _ _ _ _ _).symm
 
 /-! ### Maps of families
 
