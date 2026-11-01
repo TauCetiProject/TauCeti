@@ -123,10 +123,8 @@ def lpTopEquiv : Mean G ≃ {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M linftyOne = 
   toFun m := ⟨{
       toLinearMap := m.toPositiveLinearMap.toLinearMap ∘ₗ ((UCB.discreteLinearIsometryEquiv G).trans
         (toLpTopLinearIsometryEquiv μ ℝ)).symm.toLinearEquiv.toLinearMap
-      monotone' := fun _ _ h => OrderHomClass.mono m (by simpa using h) }, by
-    have h₁ : (toLpTopLinearIsometryEquiv μ ℝ).symm linftyOne = 1 := by
-      rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
-    exact (congrArg m (by simp [h₁])).trans m.map_one⟩
+      monotone' := fun _ _ h => OrderHomClass.mono m (by simpa using h) },
+    (congrArg m (by simp)).trans m.map_one⟩
   invFun M := ofLpTop M.1 M.2
   left_inv m := ext fun f => (ofLpTop_apply _ _ f).trans
     (congrArg m (by simpa using (UCB.discreteAlgEquiv G).symm_apply_apply f))

@@ -224,4 +224,11 @@ theorem toLpTopLinearIsometryEquiv_symm_le_symm_iff [DiscreteTopology α] [μ.Is
 theorem toLpTop_one : toLpTop μ ℝ (1 : α →ᵇ ℝ) = TauCeti.linftyOne :=
   Lp.ext ((coeFn_toLpTop μ 1).trans TauCeti.coeFn_linftyOne.symm)
 
+/-- On a discrete space, if `μ` charges every point, the constant class one in `L∞` is
+represented by the constant function one. -/
+@[simp]
+theorem toLpTopLinearIsometryEquiv_symm_linftyOne [DiscreteTopology α] [μ.IsOpenPosMeasure] :
+    (toLpTopLinearIsometryEquiv μ ℝ).symm TauCeti.linftyOne = (1 : α →ᵇ ℝ) := by
+  rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
+
 end BoundedContinuousFunction
