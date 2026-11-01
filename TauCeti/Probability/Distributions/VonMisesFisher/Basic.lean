@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.BoundedMemLp
 public import TauCeti.MeasureTheory.Measure.Tilted
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
