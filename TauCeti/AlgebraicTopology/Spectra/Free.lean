@@ -111,9 +111,10 @@ instance isIso_freeι_zero (K : PointedSSet.{0}) :
     IsIso (freeι 0 K) := by
   let _ : Unique (FiniteBijection.mk 0 ⟶ FiniteBijection.mk 0) :=
     ⟨⟨𝟙 _⟩, fun _ ↦ FiniteBijection.hom_ext fun i ↦ i.elim0⟩
-  change IsIso (Limits.Sigma.ι (fun _ : FiniteBijection.mk 0 ⟶ FiniteBijection.mk 0 ↦ K) default)
-  rw [← Limits.coproductUniqueIso_inv]
-  infer_instance
+  -- `freeι 0 K` includes the summand of `𝟙 _ = default` into a coproduct with a single summand.
+  rw [freeι, Subsingleton.elim (𝟙 (FiniteBijection.mk 0)) default,
+    ← Limits.coproductUniqueIso_inv]
+  exact (Limits.coproductUniqueIso _).isIso_inv
 
 /-- The map `G₀ S⁰ ⟶ 𝟙` adjoint to the identification `S⁰ ≅ 𝟙₀` of level zero of the unit. -/
 private noncomputable def freeZeroUnitHom :

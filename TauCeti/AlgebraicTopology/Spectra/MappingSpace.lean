@@ -97,7 +97,7 @@ instance isIso_tensorFreeZeroι (X : SymmetricSequence.{0}) (K : PointedSSet.{0}
   exact IsIso.comp_isIso' inferInstance this
 
 /-- The level isomorphism `X_n ∧ K ⟶ (X ⊗ G₀ K)_n` is natural in the symmetric sequence `X`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma tensorFreeZeroι_naturality_left {X Y : SymmetricSequence.{0}} (f : X ⟶ Y)
     (K : PointedSSet.{0}) (n : ℕ) :
     f.natTrans.app (FiniteBijection.mk n) ▷ K ≫ tensorFreeZeroι Y K n =
@@ -108,7 +108,7 @@ lemma tensorFreeZeroι_naturality_left {X Y : SymmetricSequence.{0}} (f : X ⟶ 
   rw [DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc, whisker_exchange_assoc]
 
 /-- The level isomorphism `X_n ∧ K ⟶ (X ⊗ G₀ K)_n` is natural in the pointed simplicial set `K`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma tensorFreeZeroι_naturality_right (X : SymmetricSequence.{0}) {K L : PointedSSet.{0}}
     (f : K ⟶ L) (n : ℕ) :
     X.functor.obj (FiniteBijection.mk n) ◁ f ≫ tensorFreeZeroι X L n =
@@ -121,7 +121,7 @@ lemma tensorFreeZeroι_naturality_right (X : SymmetricSequence.{0}) {K L : Point
 
 /-- The level isomorphism `X_n ∧ K ⟶ (X ⊗ G₀ K)_n` is `Σ_n`-equivariant, for the action on
 `X_n`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma map_whiskerRight_comp_tensorFreeZeroι (X : SymmetricSequence.{0}) (K : PointedSSet.{0})
     {n m : ℕ} (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
     X.functor.map σ ▷ K ≫ tensorFreeZeroι X K m =
@@ -140,6 +140,7 @@ lemma map_whiskerRight_comp_tensorFreeZeroι (X : SymmetricSequence.{0}) (K : Po
   exact congrArg (fun g ↦ _ ≫ _ ≫ (X ⊗ (free 0).obj K).functor.map g) (rightUnitor_naturality σ)
 
 /-- In level `n`, `X ⊗ G₀ S⁰ ≅ X ⊗ 𝟙 ≅ X` is the right unitor `X_n ∧ S⁰ ≅ X_n`. -/
+@[reassoc]
 lemma tensorFreeZeroι_comp_whiskerLeft_freeZeroUnitIso_hom (X : SymmetricSequence.{0}) (n : ℕ) :
     tensorFreeZeroι X (𝟙_ _) n ≫
       (X ◁ freeZeroUnitIso.hom ≫ (ρ_ X).hom).natTrans.app (FiniteBijection.mk n) =
@@ -201,12 +202,43 @@ lemma levelSmashMappingSpaceAdjunction_homEquiv_apply (X : SymmetricSpectrum)
   -- The right adjoint evaluates a map of symmetric sequences at level zero.
   rfl
 
+/-- The inverse of the adjunction `X ∧ - ⊣ Map(X, -)` extends a based map `K ⟶ Map(X, Y)` to a
+map of symmetric sequences `G₀ K ⟶ Hom_S(X, Y)` and uncurries it. -/
+lemma levelSmashMappingSpaceAdjunction_homEquiv_symm_apply (X : SymmetricSpectrum)
+    {K : PointedSSet.{0}} {Y : SymmetricSpectrum} (g : K ⟶ (mappingSpace X).obj Y) :
+    ((levelSmashMappingSpaceAdjunction X).homEquiv K Y).symm g =
+      (Mod.ihomHomEquiv X _ Y).symm
+        (((SymmetricSequence.freeEvaluationAdjunction 0).homEquiv K _).symm g) := by
+  have h := congrFun (congrFun ((SymmetricSequence.freeEvaluationAdjunction 0).comp_homEquiv
+    (Mod.ihomAdjunction X)) K) Y
+  rw [Mod.ihomAdjunction_homEquiv] at h
+  -- The inverse of a composite of bijections applies the inverses in turn.
+  exact congrArg (fun e ↦ e.symm g) h
+
 /-- The `m`-simplices of the mapping space `Map(X, Y)` are the spectrum maps `X ∧ Δ[m]₊ ⟶ Y`. -/
 noncomputable def mappingSpaceSimplexEquiv (X Y : SymmetricSpectrum) (m : SimplexCategory) :
     ((mappingSpace X).obj Y).right.obj (Opposite.op m) ≃
       ((levelSmash X).obj (PointedSSet.addBasepoint.obj (SSet.stdSimplex.obj m)) ⟶ Y) :=
   SSet.yonedaEquiv.symm.trans ((PointedSSet.addBasepointHomEquiv _ _).symm.trans
     ((levelSmashMappingSpaceAdjunction X).homEquiv _ _).symm)
+
+/-- An `m`-simplex of `Map(X, Y)` gives the spectrum map `X ∧ Δ[m]₊ ⟶ Y` adjoint to the based map
+`Δ[m]₊ ⟶ Map(X, Y)` that it classifies. -/
+lemma mappingSpaceSimplexEquiv_apply (X Y : SymmetricSpectrum) (m : SimplexCategory)
+    (x : ((mappingSpace X).obj Y).right.obj (Opposite.op m)) :
+    mappingSpaceSimplexEquiv X Y m x =
+      ((levelSmashMappingSpaceAdjunction X).homEquiv _ _).symm
+        ((PointedSSet.addBasepointHomEquiv _ _).symm (SSet.yonedaEquiv.symm x)) :=
+  (rfl)
+
+/-- A spectrum map `X ∧ Δ[m]₊ ⟶ Y` gives the `m`-simplex of `Map(X, Y)` classifying its adjoint
+`Δ[m] ⟶ Map(X, Y)`. -/
+lemma mappingSpaceSimplexEquiv_symm_apply (X Y : SymmetricSpectrum) (m : SimplexCategory)
+    (f : (levelSmash X).obj (PointedSSet.addBasepoint.obj (SSet.stdSimplex.obj m)) ⟶ Y) :
+    (mappingSpaceSimplexEquiv X Y m).symm f =
+      SSet.yonedaEquiv (PointedSSet.addBasepointHomEquiv _ _
+        ((levelSmashMappingSpaceAdjunction X).homEquiv _ _ f)) :=
+  (rfl)
 
 /-- The unit isomorphism `X ∧ S⁰ ≅ X`, through `G₀ S⁰ ≅ 𝟙` and the right unitor. In every level
 it is the right unitor `X_n ∧ S⁰ ≅ X_n` (`tensorFreeZeroι_comp_levelSmashUnitIso_hom`). -/
