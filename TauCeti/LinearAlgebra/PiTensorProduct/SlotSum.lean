@@ -54,7 +54,8 @@ satisfies `D H + H D = 1 - e ⊗ ⋯ ⊗ e` (`TauCeti.PiTensorProduct.slotSum_co
 cross terms appear twice and cancel, and the diagonal terms telescope. This is the sign-free,
 characteristic-two form of the tensor trick, whose Koszul-signed version on words of every length
 is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The homotopy depends on
-the ordering, but it need not be equivariant for anything.
+the ordering, but it need not be equivariant for anything. Like the slot sum, it is natural in
+factorwise maps intertwining the data `e` and `h` (`TauCeti.PiTensorProduct.slotHomotopy_comp_map`).
 
 Finally, gradings `ℳ i` of the factors `M i` induce the total-degree grading of `⨂[R] i, M i`
 (`TauCeti.PiTensorProduct.totalDegreePiece`), spanned by pure tensors of homogeneous factors whose
@@ -410,6 +411,23 @@ theorem slotHomotopy_tprod (e h : Module.End R M) (m : ι → M) :
   · simp
   · simp only [update_of_ne hj]
     split_ifs <;> rfl
+
+/-- **Naturality of the slot homotopy**: a family of factorwise maps intertwining `e'` with `e`
+and `h'` with `h` intertwines their slot homotopies. -/
+theorem slotHomotopy_comp_map {e h : Module.End R M} {e' h' : Module.End R N}
+    (g : ι → N →ₗ[R] M) (he : ∀ i, e ∘ₗ g i = g i ∘ₗ e') (hh : ∀ i, h ∘ₗ g i = g i ∘ₗ h') :
+    slotHomotopy ι e h ∘ₗ PiTensorProduct.map g =
+      PiTensorProduct.map g ∘ₗ slotHomotopy ι e' h' := by
+  ext m
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, PiTensorProduct.map_tprod,
+    slotHomotopy_tprod, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ (funext fun j ↦ ?_)
+  rcases eq_or_ne j i with rfl | hj
+  · simpa using LinearMap.congr_fun (hh j) (m j)
+  · simp only [update_of_ne hj]
+    split_ifs
+    · exact LinearMap.congr_fun (he j) (m j)
+    · rfl
 
 variable [AddCommMonoid A] {ℳ : A → Submodule R M}
 
