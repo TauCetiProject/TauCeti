@@ -80,15 +80,11 @@ theorem nondegenerate_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.Bili
 modules with their duals. -/
 private theorem bijective_prod {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N}
     (hB : Function.Bijective B) (hC : Function.Bijective C) : Function.Bijective (B.prod C) := by
-  refine ⟨fun x y hxy ↦ Prod.ext (hB.1 (LinearMap.ext fun z ↦ ?_))
-    (hC.1 (LinearMap.ext fun z ↦ ?_)), fun f ↦ ?_⟩
-  · simpa using LinearMap.congr_fun hxy (z, 0)
-  · simpa using LinearMap.congr_fun hxy (0, z)
-  obtain ⟨a, ha⟩ := hB.2 (f.comp (LinearMap.inl R M N))
-  obtain ⟨b, hb⟩ := hC.2 (f.comp (LinearMap.inr R M N))
-  refine ⟨(a, b), LinearMap.prod_ext (LinearMap.ext fun z ↦ ?_) (LinearMap.ext fun z ↦ ?_)⟩
-  · simpa using LinearMap.congr_fun ha z
-  · simpa using LinearMap.congr_fun hb z
+  have : ⇑(B.prod C) = Module.dualProdDualEquivDual R M N ∘ Prod.map B C :=
+    funext fun _ ↦ LinearMap.prod_ext (LinearMap.ext fun _ ↦ by simp)
+      (LinearMap.ext fun _ ↦ by simp)
+  rw [this]
+  exact (Module.dualProdDualEquivDual R M N).bijective.comp (hB.prodMap hC)
 
 /-- A product of perfect pairings is a perfect pairing. -/
 instance instIsPerfPairProd {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N}

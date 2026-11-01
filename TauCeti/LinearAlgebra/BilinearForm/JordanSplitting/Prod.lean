@@ -11,8 +11,8 @@ import TauCeti.LinearAlgebra.Submodule.Prod
 /-!
 # Jordan splittings of orthogonal sums
 
-The constituent of scale `π ^ i` of an orthogonal sum is the orthogonal sum of the constituents
-of scale `π ^ i`: if `N` is a Jordan splitting of a form `B` on `M` and `N'` one of a form `C`
+Jordan splittings of two forms combine scale by scale into a Jordan splitting of their orthogonal
+sum: if `N` is a Jordan splitting of a form `B` on `M` and `N'` one of a form `C`
 on `M'`, then the products `N i × N' i` form a Jordan splitting of the block-diagonal form
 `B.prod C` on `M × M'` (`LinearMap.BilinForm.IsJordanSplitting.prod`). This is how the Jordan
 data of an orthogonal sum of lattices are read off those of the summands.

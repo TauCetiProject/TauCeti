@@ -13,12 +13,12 @@ import TauCeti.NumberTheory.IntegralLattice.JordanSplitting
 /-!
 # The dyadic density profile of an orthogonal sum
 
-The Jordan splitting of an orthogonal sum is the sum of the Jordan splittings of the summands,
-constituent by constituent (`LinearMap.BilinForm.IsJordanSplitting.prod`). Its constituent of
-scale `π ^ i` has rank the sum of the two ranks, and it is of type I exactly when one of the two
-summed constituents is: a self-pairing `B x x + C y y` escapes `π ^ (i + 1)` only if one of
-`B x x` and `C y y` does. So the dyadic density profile of `L ⊕ M` is the sum of the profiles of
-`L` and `M`, and Cho's exponents of `L ⊕ M` are computed from those of `L` and `M` by
+The sum of Jordan splittings of the summands, constituent by constituent, is a Jordan splitting
+of the orthogonal sum (`LinearMap.BilinForm.IsJordanSplitting.prod`). The constituent of scale
+`π ^ i` of that splitting has rank the sum of the two ranks, and it is of type I exactly when one
+of the two summed constituents is: a self-pairing `B x x + C y y` escapes `π ^ (i + 1)` only if
+one of `B x x` and `C y y` does. So the dyadic density profile of `L ⊕ M` is the sum of the
+profiles of `L` and `M`, and Cho's exponents of `L ⊕ M` are computed from those of `L` and `M` by
 `TauCeti.DyadicJordanProfile.nM_add`, `TauCeti.DyadicJordanProfile.nQ_add` and
 `TauCeti.DyadicJordanProfile.densityExponent_add` when the dyadic scales of `L` lie below those
 of `M`.
