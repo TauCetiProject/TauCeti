@@ -11,11 +11,11 @@ import TauCeti.Geometry.Manifold.Gluing.OpenSubsets
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
-# Regression examples: complex manifolds from two-chart gluings
+# Examples: complex manifolds from two-chart gluings
 
-These examples apply the compatible-gluing theorem `TopCat.GlueData.IsCompatible.isManifold` to
-two gluings of two copies of open subsets of `ℂ`, from a downstream module and without unfolding
-the glued atlas:
+The compatible-gluing theorem `TopCat.GlueData.IsCompatible.isManifold` makes two-chart gluings
+of open subsets of `ℂ` into complex analytic manifolds. These examples show that open gluing
+produces non-Hausdorff complex manifolds and recovers the Riemann sphere:
 
 * the plane with a doubled origin, the double `TauCeti.doubleGlueData ℂ U` with `U = {0}ᶜ`, is a
   complex analytic manifold whose two copies of `ℂ` include by local biholomorphisms, although it

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Gluing.GlueData
 public import TauCeti.Topology.Category.TopCat.GlueData.Double
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Doubling a manifold along an open subset
