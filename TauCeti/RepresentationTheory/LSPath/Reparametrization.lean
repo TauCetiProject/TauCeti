@@ -107,6 +107,12 @@ theorem duration_cons (x : 𝕜 × V) (p : List (𝕜 × V)) :
 theorem duration_append (p q : List (𝕜 × V)) : duration (p ++ q) = duration p + duration q := by
   rw [duration_def, duration_def, duration_def, List.map_append, List.sum_append]
 
+/-- The total duration is the time coordinate of the sum of the `(duration, segment)` pairs. -/
+theorem duration_eq_fst_sum [AddMonoid V] (p : List (𝕜 × V)) : duration p = p.sum.1 := by
+  induction p with
+  | nil => rfl
+  | cons x p ih => simp [ih]
+
 end Duration
 
 section IsTimed
