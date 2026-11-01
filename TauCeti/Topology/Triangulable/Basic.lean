@@ -17,8 +17,6 @@ manifold structure: no link condition is imposed on the witnessing complex.
 This file supplies the homeomorphism-invariance API and shows that realizations and discrete
 topological spaces are triangulable.
 
-This is the general triangulability notion fixed in layer 11 of the geometric-topology roadmap.
-
 ## Main definitions
 
 * `IsTriangulable`: a space is homeomorphic to the realization of an abstract simplicial complex.
