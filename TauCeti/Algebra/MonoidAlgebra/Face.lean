@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.Algebra.MonoidAlgebra.Ideal
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
@@ -42,7 +43,7 @@ variable {M R : Type*} [AddCommMonoid M] [CommSemiring R]
 When `F` is a face, this cuts out its closed affine semigroup subscheme. -/
 noncomputable def faceIdeal (F : AddSubmonoid M) (R : Type*) [CommSemiring R] :
     Ideal (AddMonoidAlgebra R M) :=
-  Ideal.span {p | ∃ a ∉ F, p = single a 1}
+  Ideal.span (of' R M '' (F : Set M)ᶜ)
 
 /-- Restriction to a face: retain monomials on the face and kill those outside it. -/
 noncomputable def faceRestriction (F : AddSubmonoid M) (hF : F.AddSaturated)
@@ -50,7 +51,10 @@ noncomputable def faceRestriction (F : AddSubmonoid M) (hF : F.AddSaturated)
   classical
   exact AddMonoidAlgebra.lift R _ M
     { toFun := fun a ↦ if h : a.toAdd ∈ F then single ⟨a.toAdd, h⟩ 1 else 0
-      map_one' := by simp [one_def]; rfl
+      map_one' := by
+        simp [one_def]
+        -- The subtype representative of zero is definitionally the zero of `F`.
+        rfl
       map_mul' := by
         intro a b
         by_cases ha : a.toAdd ∈ F <;> by_cases hb : b.toAdd ∈ F <;>
@@ -58,36 +62,42 @@ noncomputable def faceRestriction (F : AddSubmonoid M) (hF : F.AddSaturated)
 
 variable (F : AddSubmonoid M) (hF : F.AddSaturated)
 
+/-- Face restriction is coefficient pullback along the inclusion of the face. -/
+theorem faceRestriction_eq_comapDomain (p : AddMonoidAlgebra R M) :
+    F.faceRestriction hF R p = comapDomain Subtype.val Subtype.val_injective p := by
+  classical
+  induction p using AddMonoidAlgebra.induction_on with
+  | of b =>
+    by_cases hb : b ∈ F
+    · simpa [faceRestriction, of_apply, AddMonoidAlgebra.lift_single, hb] using
+        (comapDomain_single_map Subtype.val Subtype.val_injective ⟨b, hb⟩ (1 : R)).symm
+    · ext a
+      simp [faceRestriction, of_apply, AddMonoidAlgebra.lift_single, hb]
+  | add p q hp hq => simp [hp, hq]
+  | smul r p hp =>
+    ext a
+    simp [hp]
+
 /-- Restriction retains a monomial on the face. -/
 @[simp]
 theorem faceRestriction_single_mem (a : F) (r : R) :
     F.faceRestriction hF R (single (a : M) r) = single a r := by
-  classical
-  simp [faceRestriction, AddMonoidAlgebra.lift_single, a.property]
+  rw [faceRestriction_eq_comapDomain, comapDomain_single_map]
 
 /-- Restriction kills a monomial outside the face. -/
 @[simp]
 theorem faceRestriction_single_of_notMem {a : M} (ha : a ∉ F) (r : R) :
     F.faceRestriction hF R (single a r) = 0 := by
-  classical
-  simp [faceRestriction, AddMonoidAlgebra.lift_single, ha]
+  rw [faceRestriction_eq_comapDomain]
+  ext b
+  have hab : a ≠ (b : M) := fun h ↦ ha (h ▸ b.property)
+  simp [hab]
 
 /-- The coefficients of restriction are the original coefficients on the face. -/
 @[simp]
 theorem coeff_faceRestriction (p : AddMonoidAlgebra R M) (a : F) :
     (F.faceRestriction hF R p).coeff a = p.coeff (a : M) := by
-  classical
-  induction p using AddMonoidAlgebra.induction_on with
-  | of b =>
-    by_cases hb : b ∈ F
-    · have h := congrArg (fun q : AddMonoidAlgebra R F ↦ q.coeff a)
-        (F.faceRestriction_single_mem hF ⟨b, hb⟩ (1 : R))
-      simpa only [of_apply, toAdd_ofAdd] using
-        h.trans (by simp [Finsupp.single_apply, Subtype.ext_iff])
-    · simp [of_apply, F.faceRestriction_single_of_notMem hF hb,
-        show b ≠ (a : M) from fun h ↦ hb (h ▸ a.property)]
-  | add p q hp hq => simp [hp, hq]
-  | smul r p hp => simp [hp]
+  simp [faceRestriction_eq_comapDomain]
 
 /-- Extending face monomials to the ambient monoid is a section of restriction. -/
 @[simp]
@@ -100,31 +110,25 @@ theorem faceRestriction_mapDomain (p : AddMonoidAlgebra R F) :
 theorem faceRestriction_surjective : Function.Surjective (F.faceRestriction hF R) :=
   fun p ↦ ⟨mapDomainAlgHom R R F.subtype p, F.faceRestriction_mapDomain hF p⟩
 
-/-- The monomial face ideal is exactly the kernel of restriction. -/
-theorem ker_faceRestriction : RingHom.ker (F.faceRestriction hF R) = F.faceIdeal R := by
-  classical
-  apply le_antisymm
-  · intro p hp
-    have hc (a : F) : p.coeff (a : M) = 0 := by
-      simpa using congrArg (fun q : AddMonoidAlgebra R F ↦ q.coeff a) hp
-    rw [← sum_coeff_single p, Finsupp.sum]
-    apply Submodule.sum_mem
-    intro a ha
-    by_cases h : a ∈ F
-    · simp [hc ⟨a, h⟩]
-    · have hm : single a (1 : R) ∈ F.faceIdeal R :=
-        Ideal.subset_span ⟨a, h, rfl⟩
-      simpa [single_mul_single] using
-        (F.faceIdeal R).mul_mem_left (single 0 (p.coeff a)) hm
-  · apply Ideal.span_le.mpr
-    rintro _ ⟨a, ha, rfl⟩
-    exact F.faceRestriction_single_of_notMem hF ha 1
-
 include hF in
 /-- Membership in the face ideal means that every coefficient on the face vanishes. -/
 theorem mem_faceIdeal_iff (p : AddMonoidAlgebra R M) :
     p ∈ F.faceIdeal R ↔ ∀ a : F, p.coeff (a : M) = 0 := by
-  rw [← F.ker_faceRestriction hF, RingHom.mem_ker, ← coeff_inj]
+  classical
+  rw [faceIdeal, mem_ideal_span_of'_image]
+  constructor
+  · intro hp a
+    by_contra ha
+    obtain ⟨b, hb, d, hd⟩ := hp a (Finsupp.mem_support_iff.mpr ha)
+    exact hb ((hF.add_mem_iff.mp (hd ▸ a.property)).2)
+  · intro hp a ha
+    refine ⟨a, ?_, 0, (zero_add a).symm⟩
+    exact fun h ↦ (Finsupp.mem_support_iff.mp ha) (hp ⟨a, h⟩)
+
+/-- The monomial face ideal is exactly the kernel of restriction. -/
+theorem ker_faceRestriction : RingHom.ker (F.faceRestriction hF R) = F.faceIdeal R := by
+  ext p
+  rw [F.mem_faceIdeal_iff hF, RingHom.mem_ker, ← coeff_inj]
   simp [Finsupp.ext_iff]
 
 include hF in
@@ -150,7 +154,7 @@ theorem faceIdeal_le_faceIdeal_iff [Nontrivial R] (G : AddSubmonoid M)
   constructor
   · intro h a ha
     by_contra hnot
-    have hm : single a (1 : R) ∈ F.faceIdeal R := Ideal.subset_span ⟨a, hnot, rfl⟩
+    have hm : single a (1 : R) ∈ F.faceIdeal R := Ideal.subset_span ⟨a, hnot, of'_apply a⟩
     simpa [ha] using (G.single_mem_faceIdeal_iff hG a 1).mp (h hm)
   · intro h
     apply Ideal.span_le.mpr
