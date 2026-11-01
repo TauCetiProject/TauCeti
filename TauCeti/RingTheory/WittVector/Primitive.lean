@@ -62,9 +62,9 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 * `WittVector.isPrimitive_iff_exists_eq_unit_mul`: the primitive elements are exactly the unit
   multiples of the elements `p + [ϖ] α` with `ϖ` topologically nilpotent.
 * `WittVector.isPrimitive_units_mul`: primitivity is invariant under multiplication by units.
-* `WittVector.IsPrimitive.isUnit_of_eq_mul`: if `ξ` and `ξ' = y ξ` are primitive, `y` is a unit,
-  and `WittVector.IsPrimitive.associated_of_dvd`: primitive elements dividing each other are
-  associated.
+* `WittVector.IsPrimitive.isUnit_of_eq_mul`: if `ξ` is primitive and `ξ' = y ξ` is distinguished,
+  `y` is a unit, and `WittVector.IsPrimitive.associated_of_dvd`: a primitive element dividing a
+  distinguished one is associated to it.
 * `WittVector.IsDistinguished.teichmuller_dvd_of_dvd_mul`: `ξ` is a nonzerodivisor modulo `[ϖ]`.
 * `WittVector.IsDistinguished.mem_nonZeroDivisors`, `WittVector.IsPrimitive.mem_nonZeroDivisors`:
   distinguished elements with `ξ₀` in the radical of `(ϖ)`, and hence primitive elements, are
@@ -232,10 +232,11 @@ theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
   exact isUnit_iff_isUnit_coeff_zero.mpr <|
     (isUnit_pow_iff hp.out.ne_zero).mp (isUnit_of_mul_isUnit_left hy)
 
-/-- **Primitive elements dividing each other are associated.** Under the hypotheses of
-`WittVector.IsPrimitive.isUnit_of_eq_mul`, if a primitive `ξ` divides a distinguished `ξ'`, then
-`ξ` and `ξ'` are associated; in particular two primitive elements generating comparable principal
-ideals are associated (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
+/-- **A primitive element dividing a distinguished element is associated to it.** Under the
+hypotheses of `WittVector.IsPrimitive.isUnit_of_eq_mul`, if a primitive `ξ` divides a
+distinguished `ξ'`, then `ξ` and `ξ'` are associated; in particular two primitive elements
+generating comparable principal ideals are associated (Kedlaya, *Sheaves, stacks, and shtukas*,
+Remark 2.3.5). -/
 theorem IsPrimitive.associated_of_dvd {ξ ξ' : 𝕎 S} (hξ : ξ.IsPrimitive)
     (hξ' : ξ'.IsDistinguished) (h : ξ ∣ ξ') : Associated ξ ξ' := by
   obtain ⟨y, rfl⟩ := h
