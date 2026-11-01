@@ -266,12 +266,7 @@ theorem isIso_appTop_pullback_fst_ι_of_isWeaklyRegular (C : Type u) [CommRing C
     simpa using hab.of_flat (S := C)
   have hbij := AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg
     (hD ha) (hD hb)
-  -- By definition, `toOpenₗ C C U` is the restriction of sections of `Spec C` from `⊤` to `U`,
-  -- precomposed with the bijection `C → Γ(Spec C, 𝒪)`.
-  have hcomp : ⇑(AlgebraicGeometry.StructureSheaf.toOpenₗ C C ((f ⁻¹ᵁ W).ι ''ᵁ ⊤)) =
-      (f ⁻¹ᵁ W).ι.appTop ∘ AlgebraicGeometry.StructureSheaf.toOpenₗ C C ⊤ := rfl
-  rw [hcomp] at hbij
-  exact (ConcreteCategory.isIso_iff_bijective _).mpr ((Function.Bijective.of_comp_iff _
-    AlgebraicGeometry.StructureSheaf.toOpenₗ_top_bijective).mp hbij)
+  rw [ConcreteCategory.isIso_iff_bijective, Scheme.Opens.ι_appTop]
+  exact (Spec.presheaf_map_leTop_bijective_iff _).mpr hbij
 
 end TauCeti.AlgebraicGeometry

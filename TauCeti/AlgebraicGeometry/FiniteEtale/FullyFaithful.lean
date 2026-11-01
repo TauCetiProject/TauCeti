@@ -109,7 +109,7 @@ noncomputable def fullyFaithfulPullbackιOfTwoLeDepth [IsNoetherianRing R] (W : 
   have ⟨_, _⟩ : (pullback W.ι).Full ∧ (pullback W.ι).Faithful := by
     obtain ⟨a, b, hab, ha, hb⟩ :=
       TauCeti.AlgebraicGeometry.StructureSheaf.exists_isWeaklyRegular_basicOpen_le_of_two_le_depth
-        (M := R) W fun p hp ↦ (depth_localizedModule_self p.asIdeal).trans_ge (h p hp)
+        (M := R) W fun p hp ↦ p.asIdeal.depth_localizedModule_self.trans_ge (h p hp)
     exact ⟨(fullyFaithfulPullbackιOfIsWeaklyRegular W hab ha hb).full,
       (fullyFaithfulPullbackιOfIsWeaklyRegular W hab ha hb).faithful⟩
   .ofFullyFaithful _
@@ -125,6 +125,6 @@ noncomputable def fullyFaithfulPullbackιOfTwoLeDepthOfIsLocalRing [IsLocalRing 
     -- The only point outside `W` is the closed point, at which the localization is `R` itself.
     obtain rfl : p = closedPoint R := not_not.mp (mt (hW p) hp)
     have := (le_depth_iff_forall_isMaximal (S := R) (N := R) 2).mp hdepth (maximalIdeal R)
-    rwa [depth_localizedModule_self] at this
+    rwa [Ideal.depth_localizedModule_self] at this
 
 end TauCeti.FiniteEtaleScheme
