@@ -126,10 +126,9 @@ theorem isDomain_tensorProduct_of_isGeometricallyReduced (hex : IsIntegrallyClos
   let φ : A ⊗[k] F →ₐ[k] Ω ⊗[k] F :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A Ω) (AlgHom.id k F)
   have hφ : Function.Injective φ := by
-    -- Expose the underlying linear map, whose coercion is definitionally that of `φ`, as an
-    -- `rTensor`, and apply flatness of `F` over `k`.
-    change Function.Injective φ.toLinearMap
-    rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
+    -- Rewrite `φ` as an `rTensor` and apply flatness of `F` over `k`.
+    rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+      TensorProduct.AlgebraTensorModule.map_eq]
     exact Module.Flat.rTensor_preserves_injective_linearMap
       (IsScalarTower.toAlgHom k A Ω).toLinearMap hA
   exact (hφ.comp (Algebra.TensorProduct.comm k F A).injective).isDomain
