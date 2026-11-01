@@ -40,6 +40,17 @@ theorem coe_modularGroup_S {R : Type u} [CommRing R] :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- Entrywise coefficient mapping preserves the standard Weyl representative `S`. -/
+@[simp]
+theorem map_modularGroup_S {R A : Type*} [CommRing R] [CommRing A] (φ : R →+* A) :
+    Matrix.SpecialLinearGroup.map φ ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)) =
+      ((ModularGroup.S : SL(2, ℤ)) : SL(2, A)) := by
+  apply Subtype.ext
+  rw [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+    coe_modularGroup_S, coe_modularGroup_S]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
 open ModularGroup in
 /-- `S` and `U = T S` generate `SL₂(ℤ)`. -/
 theorem closure_S_T_mul_S : Subgroup.closure {S, T * S} = (⊤ : Subgroup SL(2, ℤ)) := by
