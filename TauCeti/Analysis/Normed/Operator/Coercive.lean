@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Stability and uniformity of coercive bilinear forms
@@ -15,34 +15,17 @@ public import Mathlib.Topology.Order.Compact
 Coercivity of a real continuous bilinear form is stable under perturbation in operator norm.
 The estimate keeps track of the loss in the coercivity constant and does not require symmetry
 or finite dimension. In finite dimension, coercivity is equivalent to strict positivity on
-nonzero diagonal arguments. A compact family of such forms has a common coercivity constant.
+nonzero diagonal arguments, using `IsCompact.exists_pos_forall_mul_norm_sq_le` for the converse.
 
 For symmetric forms these results describe the open positive-definite cone, the model fibre
-of the bundle of Riemannian metrics. The compact-family estimate is useful when comparing
-metrics in local bundle coordinates: it gives a uniform margin for perturbing a metric.
+of the bundle of Riemannian metrics. For finite-dimensional openness and compact-family bounds,
+see `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos` and
+`IsCompact.exists_pos_forall_mul_norm_sq_le`.
 -/
 
 public section
 
 open Set Metric Topology
-
-namespace ContinuousLinearMap
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A quadratic lower bound on the unit sphere extends to every vector by homogeneity. -/
-theorem le_apply_self_of_forall_norm_eq_one (B : E →L[ℝ] E →L[ℝ] ℝ) {c : ℝ}
-    (h : ∀ v, ‖v‖ = 1 → c ≤ B v v) (v : E) :
-    c * ‖v‖ * ‖v‖ ≤ B v v := by
-  by_cases hv : v = 0
-  · simp [hv]
-  · have hunit := h ((‖v‖⁻¹ : ℝ) • v) (norm_smul_inv_norm hv)
-    have hscale : B v v = ‖v‖ * ‖v‖ * B ((‖v‖⁻¹ : ℝ) • v) ((‖v‖⁻¹ : ℝ) • v) := by
-      simp [map_smul, smul_eq_mul, field]
-    rw [hscale]
-    nlinarith [mul_le_mul_of_nonneg_left hunit (mul_self_nonneg ‖v‖)]
-
-end ContinuousLinearMap
 
 namespace ContinuousLinearMap
 
@@ -118,51 +101,8 @@ theorem isCoercive_iff_apply_self_pos [FiniteDimensional ℝ E]
     (B : E →L[ℝ] E →L[ℝ] ℝ) :
     IsCoercive B ↔ ∀ v, v ≠ 0 → 0 < B v v := by
   refine ⟨fun h v hv ↦ h.apply_self_pos hv, fun h ↦ ?_⟩
-  obtain ⟨c, hc, hbound⟩ := (isCompact_sphere (0 : E) 1).exists_forall_le'
-    (B.continuous.clm_apply continuous_id).continuousOn
-    (fun v hv ↦ h v (by
-      have := mem_sphere_zero_iff_norm.mp hv
-      intro hv0
-      simp [hv0] at this))
-  exact ⟨c, hc, B.le_apply_self_of_forall_norm_eq_one
-    (fun v hv ↦ hbound v (mem_sphere_zero_iff_norm.mpr hv))⟩
+  obtain ⟨c, hc, hbound⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le
+    (b := fun _ ↦ B) continuousOn_const fun _ _ ↦ h
+  exact ⟨c, hc, fun v ↦ by simpa only [sq, mul_assoc] using hbound () rfl v⟩
 
 end ContinuousLinearMap
-
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Strictly positive diagonal forms form an open set in finite dimension. Restriction to the
-symmetric subspace gives the open cone of positive-definite symmetric forms. -/
-theorem isOpen_setOf_apply_self_pos [FiniteDimensional ℝ E] :
-    IsOpen {B : E →L[ℝ] E →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < B v v} := by
-  simpa only [← ContinuousLinearMap.isCoercive_iff_apply_self_pos] using
-    (isOpen_setOf_isCoercive (E := E))
-
-end TauCeti
-
-namespace IsCompact
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A continuous compact family of strictly positive diagonal forms in finite dimension has a
-common positive coercivity constant. The parameter set may be empty. -/
-theorem exists_pos_forall_le_apply_self [FiniteDimensional ℝ E]
-    {P : Type*} [TopologicalSpace P] {K : Set P} (hK : IsCompact K)
-    {B : P → E →L[ℝ] E →L[ℝ] ℝ} (hB : ContinuousOn B K)
-    (hpos : ∀ p ∈ K, ∀ v, v ≠ 0 → 0 < B p v v) :
-    ∃ c : ℝ, 0 < c ∧ ∀ p ∈ K, ∀ v, c * ‖v‖ * ‖v‖ ≤ B p v v := by
-  have hcont : ContinuousOn (fun q : P × E ↦ B q.1 q.2 q.2) (K ×ˢ sphere (0 : E) 1) :=
-    ((hB.comp continuous_fst.continuousOn
-      (fun q (h : q ∈ K ×ˢ sphere (0 : E) 1) ↦ h.1)).clm_apply
-      continuous_snd.continuousOn).clm_apply continuous_snd.continuousOn
-  obtain ⟨c, hc, hbound⟩ := (hK.prod (isCompact_sphere (0 : E) 1)).exists_forall_le'
-    hcont (fun q hq ↦ hpos q.1 hq.1 q.2 (by
-      have := mem_sphere_zero_iff_norm.mp hq.2
-      intro hv
-      simp [hv] at this))
-  exact ⟨c, hc, fun p hp ↦ (B p).le_apply_self_of_forall_norm_eq_one
-    (fun v hv ↦ hbound (p, v) ⟨hp, mem_sphere_zero_iff_norm.mpr hv⟩)⟩
-
-end IsCompact
