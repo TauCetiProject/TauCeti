@@ -53,6 +53,8 @@ the modes of `Û(ĝ_Ψ)` at central value `1` to those of `Û(ĝ_Φ)` at central
 
 * `TauCeti.CurrentAlgebra.hasSum_normalOrderedMode`: `:x y:_n` is the sum of its normally ordered
   summands.
+* `TauCeti.CurrentAlgebra.summable_normalOrderedSummand`: the summands ordered at any cut form a
+  summable family.
 * `TauCeti.CurrentAlgebra.limπ_normalOrderedMode`: its coordinates are finite sums.
 * `TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`: its action on a smooth vector is a finite
   sum.
@@ -133,8 +135,9 @@ private theorem normalOrderedSummand_mem_orderLeftIdeal {p n m N : ℤ}
       (envelopingι_mem_orderLeftIdeal (single_tmul_mem_orderSubmodule R L (by omega) 1 x))
 
 variable (Φ hΦ hΦs a) in
-/-- The normally ordered summands at any cut form a summable family in the completion. -/
-private theorem summable_normalOrderedSummand (p n : ℤ) (x y : L) :
+/-- The normally ordered summands at any cut form a summable family in the completion: modulo
+each `I_N`, all summands outside a finite window vanish. -/
+theorem summable_normalOrderedSummand (p n : ℤ) (x y : L) :
     Summable fun m ↦
       toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) := by
   refine (ModuleTower.summable_iff_forall_eventually_limπ_eq_zero _ _).2 fun N ↦ ?_
@@ -232,8 +235,9 @@ private theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
 
 /-- **Moving the cut of the normal ordering.** If the summands of `:x y:_n` are ordered at the cut
 `p` instead of `0`, putting `xₘ` on the left exactly when `m < p`, the series still converges in
-`Û`, and its sum differs from `:x y:_n` by the commutators `[xₘ, y_{n-m}]` for `0 ≤ m < p`, minus
-those for `p ≤ m < 0`. At most one of these two finite sums is nonempty. -/
+`Û` (`TauCeti.CurrentAlgebra.summable_normalOrderedSummand`), and its sum differs from `:x y:_n`
+by the commutators `[xₘ, y_{n-m}]` for `0 ≤ m < p`, minus those for `p ≤ m < 0`. At most one of
+these two finite sums is nonempty. -/
 theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
     ∑' m, toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
       normalOrderedMode Φ hΦ hΦs a n x y + toCompletedEnveloping Φ hΦ hΦs a
