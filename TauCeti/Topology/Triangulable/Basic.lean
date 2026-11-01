@@ -41,6 +41,12 @@ def IsTriangulable.{v, u} (X : Type u) [TopologicalSpace X] : Prop :=
   ∃ (ι : Type v) (K : AbstractSimplicialComplex ι),
     Nonempty (AbstractSimplicialComplex.Realization K ≃ₜ X)
 
+/-- Triangulability is witnessed by a homeomorphism from a simplicial realization. -/
+theorem isTriangulable_iff.{v, u} (X : Type u) [TopologicalSpace X] :
+    IsTriangulable.{v} X ↔ ∃ (ι : Type v) (K : AbstractSimplicialComplex ι),
+      Nonempty (AbstractSimplicialComplex.Realization K ≃ₜ X) :=
+  Iff.rfl
+
 universe u v w
 
 end TauCeti
