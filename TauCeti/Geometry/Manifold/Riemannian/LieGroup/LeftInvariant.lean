@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Homogeneous
-import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Section
 
 /-!
 # Left-invariant Riemannian metrics on Lie groups
@@ -35,7 +35,7 @@ or connectedness of `G` is needed.
 
 The hypothesis that left-invariant fields have constant inner products is the one under which
 `TauCeti.Geometry.Manifold.Riemannian.LieGroup.BiInvariant` computes the Levi-Civita connection and
-curvature of a left-invariant metric; `leftInvariantMetric_inner_mulInvariantVectorField` supplies
+curvature of a left-invariant metric; `inner_mulInvariantVectorField_leftInvariantMetric` supplies
 it for the metric constructed here.
 
 ## Main definitions
@@ -113,63 +113,27 @@ theorem contMDiff_leftInvariantBilinearForm [IsManifold I 1 G] {m n : ℕ∞ω} 
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : G ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
         (leftInvariantBilinearForm b x)) := by
-  -- In the tangent coordinates at `x₀` and at `x₀⁻¹ * x₀ = 1`, the section is the constant form
-  -- `b` read at the identity, pulled back along the derivative of `L_{x⁻¹}` at `x`. That
-  -- derivative depends smoothly on `x` by `ContMDiffAt.mfderiv`. The argument adapts the proof of
-  -- `Bundle.contMDiffAt_bilinearForm_pullback`, with a parameter-dependent map in place of a
-  -- fixed one.
+  -- This is the pullback of the constant form `b` over `x⁻¹ * x = 1` along the derivative of
+  -- `L_{x⁻¹}` at `x`, which depends smoothly on `x` in tangent coordinates.
   intro x₀
-  refine (contMDiffAt_section x₀).2 ?_
-  let T := trivializationAt E (TangentSpace I : G → Type _) (x₀⁻¹ * x₀)
-  have h1 : (1 : G) ∈ T.baseSet := by
-    simpa only [T, inv_mul_cancel] using
-      mem_baseSet_trivializationAt E (TangentSpace I : G → Type _) (x₀⁻¹ * x₀)
-  -- In these coordinates `b` is a constant bilinear form on the model space.
-  set b' : E →L[ℝ] E →L[ℝ] ℝ :=
-    (ContinuousLinearMap.precomp ℝ (T.symmL ℝ 1)).comp (b.comp (T.symmL ℝ 1)) with hb'
-  -- The derivative of `L_{x⁻¹}` at `x`, read in the tangent coordinates at `x₀` and at `1`.
-  set D := inTangentCoordinates I I id (fun x : G ↦ x⁻¹ * x)
-    (fun x : G ↦ mfderiv I I (x⁻¹ * ·) x) x₀ with hDdef
-  have hD : ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E) m D x₀ :=
-    ContMDiffAt.mfderiv (I := I) (I' := I) (x₀ := x₀) (fun x y : G ↦ x⁻¹ * y) (fun x ↦ x)
+  refine contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates (f := fun x : G ↦ x⁻¹ * x)
+    (b := fun _ ↦ b) ?_ ?_
+  · have hconst : (fun x : G ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : G ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) (x⁻¹ * x) b) =
+        fun _ ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+          (E := fun y : G ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) 1 b := by
+      funext x
+      rw [inv_mul_cancel]
+    rw [hconst]
+    exact contMDiffAt_const
+  · exact ContMDiffAt.mfderiv (fun x y : G ↦ x⁻¹ * y) (fun x ↦ x)
       (((contMDiff_inv I n).comp contMDiff_fst).mul contMDiff_snd).contMDiffAt
       contMDiffAt_id hmn
-  -- Keep `D` and `b'` opaque, so that unification does not unfold the coordinate expressions.
-  clear_value D b'
-  have hcoord : ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) m
-      (fun x ↦ (ContinuousLinearMap.precomp ℝ (D x)).comp (b'.comp (D x))) x₀ := by
-    have hpair : ContMDiffAt I 𝓘(ℝ, (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E)) m
-        (fun x ↦ (b', D x)) x₀ :=
-      contMDiffAt_const.prodMk_space hD
-    have hP : ContMDiff 𝓘(ℝ, (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E)) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) m
-        (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E) ↦
-          (ContinuousLinearMap.precomp ℝ p.2).comp (p.1.comp p.2)) :=
-      ContinuousLinearMap.contDiff_precomp_comp.contMDiff
-    exact hP.contMDiffAt.comp x₀ hpair
-  refine hcoord.congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt E (TangentSpace I : G → Type _) x₀).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt E (TangentSpace I : G → Type _) x₀)] with y hy
-  have hyhom : y ∈ (trivializationAt (E →L[ℝ] ℝ)
-      (fun z : G ↦ TangentSpace I z →L[ℝ] ℝ) x₀).baseSet := by
-    simpa using hy
-  ext v w
-  simp only [hDdef, hb', hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-    inTangentCoordinates, Function.comp_apply, ContinuousLinearMap.coe_comp,
-    Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply, hyhom,
-    ite_true, Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet, Set.mem_univ,
-    Trivial.trivialization_apply, id, ContinuousLinearMap.precomp_apply,
-    leftInvariantBilinearForm_apply]
-  -- Reading a vector over `y⁻¹ * y = 1` in the trivialization `T` and back recovers it.
-  have key (z : G) (hz : z = 1) (u : TangentSpace I z) : T.symmL ℝ 1 (T ⟨z, u⟩).2 = u := by
-    subst hz
-    rw [Trivialization.symmL_apply _ h1]
-    exact Trivialization.symm_apply_apply_mk _ h1 u
-  have hmem : y⁻¹ * y ∈ T.baseSet := by
-    rw [inv_mul_cancel]
-    exact h1
-  simp only [T] at hmem key
-  simp only [hmem, ↓reduceIte]
-  rw [key _ (inv_mul_cancel y), key _ (inv_mul_cancel y)]
+
+/-- On a `C^n` Lie group with `m + 1 ≤ n`, multiplication is `C^1`. -/
+private theorem contMDiffMul_one_of_add_one_le {m n : ℕ∞ω} [LieGroup I n G]
+    (hmn : m + 1 ≤ n) : ContMDiffMul I 1 G :=
+  ContMDiffMul.of_le (le_add_self.trans hmn)
 
 variable [FiniteDimensional ℝ E] [IsManifold I 1 G] {m n : ℕ∞ω} [LieGroup I n G]
 
@@ -179,31 +143,23 @@ translates to the identity by `L_{x⁻¹}`. It is `C^m` on a `C^n` Lie group whe
 def leftInvariantMetric (hmn : m + 1 ≤ n)
     (b : TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G) →L[ℝ] ℝ)
     (hsymm : ∀ v w, b v w = b w v) (hpos : ∀ v, v ≠ 0 → 0 < b v v) :
-    ContMDiffRiemannianMetric I m E (fun x : G ↦ TangentSpace I x) where
-  inner := leftInvariantBilinearForm b
-  symm x v w := hsymm _ _
-  pos x v hv := by
-    have : ContMDiffMul I 1 G := ContMDiffMul.of_le (le_add_self.trans hmn)
-    exact hpos _ ((map_ne_zero_iff _ (mfderiv_inv_mul_injective x)).2 hv)
-  isVonNBounded x := by
-    -- The tangent space carries only its bundle topology; use the norm of the model space.
-    let _ : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
-    let _ : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
-    have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
-    have : ContMDiffMul I 1 G := ContMDiffMul.of_le (le_add_self.trans hmn)
-    exact (leftInvariantBilinearForm b x).isVonNBounded_setOf_lt_one_of_pos fun v hv ↦
-      hpos _ ((map_ne_zero_iff _ (mfderiv_inv_mul_injective x)).2 hv)
-  contMDiff := contMDiff_leftInvariantBilinearForm hmn b
+    ContMDiffRiemannianMetric I m E (fun x : G ↦ TangentSpace I x) :=
+  have := contMDiffMul_one_of_add_one_le (I := I) (G := G) hmn
+  ContMDiffRiemannianMetric.ofPositiveDefiniteSection
+    ⟨leftInvariantBilinearForm b, contMDiff_leftInvariantBilinearForm hmn b⟩
+    ((TauCeti.Manifold.mem_positiveDefiniteBilinearSections _).2
+      ⟨(TauCeti.Manifold.mem_symmetricBilinearSections _).2 fun _ _ _ ↦ hsymm _ _,
+        fun x _ hv ↦ hpos _ ((map_ne_zero_iff _ (mfderiv_inv_mul_injective x)).2 hv)⟩)
 
 variable (hmn : m + 1 ≤ n) (b : TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G) →L[ℝ] ℝ)
   (hsymm : ∀ v w, b v w = b w v) (hpos : ∀ v, v ≠ 0 → 0 < b v v)
 
 /-- The left-invariant metric evaluates `b` on the translates to the identity. -/
-@[simp]
+@[simp low]
 theorem leftInvariantMetric_inner (x : G) (v w : TangentSpace I x) :
     (leftInvariantMetric hmn b hsymm hpos).inner x v w =
       b (mfderiv I I (x⁻¹ * ·) x v) (mfderiv I I (x⁻¹ * ·) x w) :=
-  (rfl)
+  ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner _ _ x v w
 
 /-- At the identity, the left-invariant metric is `b`. -/
 @[simp]
@@ -215,20 +171,35 @@ theorem leftInvariantMetric_inner_one :
 
 /-- Left-invariant vector fields have constant inner products for the left-invariant metric:
 `⟪X_a, X_c⟫ = b(a, c)` at every point. -/
+@[simp]
 theorem leftInvariantMetric_inner_mulInvariantVectorField (x : G)
     (a c : TangentSpace I (1 : G)) :
     (leftInvariantMetric hmn b hsymm hpos).inner x (mulInvariantVectorField a x)
         (mulInvariantVectorField c x) = b a c := by
-  have : ContMDiffMul I 1 G := ContMDiffMul.of_le (le_add_self.trans hmn)
+  have := contMDiffMul_one_of_add_one_le (I := I) (G := G) hmn
   rw [leftInvariantMetric_inner, mfderiv_inv_mul_mulInvariantVectorField,
     mfderiv_inv_mul_mulInvariantVectorField]
+
+/-- For the Riemannian bundle structure given by the left-invariant metric of `b`, the
+left-invariant vector fields have the constant inner products `⟪X_a, X_c⟫ = ⟪a, c⟫`: this is the
+hypothesis of `TauCeti.mulLeftIsom` and of the completeness theorems below. -/
+theorem inner_mulInvariantVectorField_leftInvariantMetric (x : G)
+    (a c : TangentSpace I (1 : G)) :
+    letI : RiemannianBundle (fun x : G ↦ TangentSpace I x) :=
+      ⟨(leftInvariantMetric hmn b hsymm hpos).toRiemannianMetric⟩
+    inner ℝ (mulInvariantVectorField a x) (mulInvariantVectorField c x) = inner ℝ a c :=
+  -- The inner product of the installed bundle is `(leftInvariantMetric hmn b hsymm hpos).inner`
+  -- by definition of the instance, at every point including the identity.
+  (leftInvariantMetric_inner_mulInvariantVectorField hmn b hsymm hpos x a c).trans
+    (DFunLike.congr_fun (DFunLike.congr_fun (leftInvariantMetric_inner_one hmn b hsymm hpos) a)
+      c).symm
 
 /-- Left translations preserve the left-invariant metric. -/
 theorem leftInvariantMetric_inner_mfderiv_mul_left (g x : G) (v w : TangentSpace I x) :
     (leftInvariantMetric hmn b hsymm hpos).inner (g * x) (mfderiv I I (g * ·) x v)
         (mfderiv I I (g * ·) x w) =
       (leftInvariantMetric hmn b hsymm hpos).inner x v w := by
-  have : ContMDiffMul I 1 G := ContMDiffMul.of_le (le_add_self.trans hmn)
+  have := contMDiffMul_one_of_add_one_le (I := I) (G := G) hmn
   obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
   obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
   rw [mfderiv_mul_left_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField,
@@ -241,7 +212,7 @@ theorem eq_leftInvariantMetric (g : ContMDiffRiemannianMetric I m E (fun x : G �
     (hg : ∀ (x : G) (a c : TangentSpace I (1 : G)),
       g.inner x (mulInvariantVectorField a x) (mulInvariantVectorField c x) = b a c) :
     g = leftInvariantMetric hmn b hsymm hpos := by
-  have : ContMDiffMul I 1 G := ContMDiffMul.of_le (le_add_self.trans hmn)
+  have := contMDiffMul_one_of_add_one_le (I := I) (G := G) hmn
   ext x v w
   obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
   obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
@@ -251,8 +222,9 @@ end Construction
 
 section BiInvariant
 
+-- The instance `LieGroup I 1 G`, implied by `hmn`, is needed to state the adjoint action.
 variable [FiniteDimensional ℝ E] {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I ∞ G] {m : ℕ∞ω} (hm : m + 1 ≤ ∞)
+  {m n : ℕ∞ω} [LieGroup I n G] [LieGroup I 1 G] (hmn : m + 1 ≤ n)
   (b : TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G) →L[ℝ] ℝ)
   (hsymm : ∀ v w, b v w = b w v) (hpos : ∀ v, v ≠ 0 → 0 < b v v)
 
@@ -262,9 +234,9 @@ theorem leftInvariantMetric_inner_mfderiv_mul_right
     (had : ∀ (g : G) (a c : TangentSpace I (1 : G)),
       b (Lie.adjointContinuousLinearMap g a) (Lie.adjointContinuousLinearMap g c) = b a c)
     (g x : G) (v w : TangentSpace I x) :
-    (leftInvariantMetric hm b hsymm hpos).inner (x * g) (mfderiv I I (· * g) x v)
+    (leftInvariantMetric hmn b hsymm hpos).inner (x * g) (mfderiv I I (· * g) x v)
         (mfderiv I I (· * g) x w) =
-      (leftInvariantMetric hm b hsymm hpos).inner x v w := by
+      (leftInvariantMetric hmn b hsymm hpos).inner x v w := by
   obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
   obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
   rw [Lie.mfderiv_mul_right_mulInvariantVectorField, Lie.mfderiv_mul_right_mulInvariantVectorField,
@@ -285,7 +257,7 @@ theorem inner_mfderiv_mul_left_of_inner_mulInvariantVectorField
       inner ℝ (mulInvariantVectorField a x) (mulInvariantVectorField c x) = inner ℝ a c)
     (g x : G) (v w : TangentSpace I x) :
     inner ℝ (mfderiv I I (g * ·) x v) (mfderiv I I (g * ·) x w) = inner ℝ v w := by
-  have : ContMDiffMul I 1 G := ContMDiffMul.of_le (n := ∞) (by simp)
+  have := contMDiffMul_one_of_add_one_le (I := I) (G := G) (m := 0) (n := ∞) (by simp)
   obtain ⟨a, rfl⟩ := exists_mulInvariantVectorField_eq v
   obtain ⟨c, rfl⟩ := exists_mulInvariantVectorField_eq w
   rw [mfderiv_mul_left_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hL, hL]
@@ -383,12 +355,8 @@ theorem completeSpace_leftInvariantMetric {m : ℕ∞ω} (hm : m + 1 ≤ ∞)
   haveI : IsContinuousRiemannianBundle E (fun x : G ↦ TangentSpace I x) :=
     Bundle.instIsContinuousRiemannianBundle
       (leftInvariantMetric hm b hsymm hpos).toContinuousRiemannianMetric
-  -- The inner product of the installed bundle is `(leftInvariantMetric hm b hsymm hpos).inner`
-  -- by definition of the instance, at every point including the identity.
-  completeSpace_ofRiemannianMetric_of_inner_mulInvariantVectorField fun x a c ↦
-    (leftInvariantMetric_inner_mulInvariantVectorField hm b hsymm hpos x a c).trans
-      (DFunLike.congr_fun (DFunLike.congr_fun (leftInvariantMetric_inner_one hm b hsymm hpos) a)
-        c).symm
+  completeSpace_ofRiemannianMetric_of_inner_mulInvariantVectorField
+    (inner_mulInvariantVectorField_leftInvariantMetric hm b hsymm hpos)
 
 end Completeness
 

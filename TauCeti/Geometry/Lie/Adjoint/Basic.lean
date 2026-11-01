@@ -203,17 +203,17 @@ theorem mfderiv_mul_right_mulInvariantVectorField (g x : G) (X : GroupLieAlgebra
   have hfun : (fun y : G ↦ g * y) ∘ C = (· * g) := by
     funext y
     simp [C, mul_assoc]
-  have hD : HasMFDerivAt I I (· * g) x
-      ((mfderiv I I (g * ·) (C x)).comp (mfderiv I I C x)) :=
-    hfun ▸ (contMDiffAt_mul_left.mdifferentiableAt hreg).hasMFDerivAt.comp x
-      ((C.mdifferentiable (by simp)) x).hasMFDerivAt
   have hpt : g * C x = x * g := by
     simp [C, mul_assoc]
+  have hD : HasMFDerivAt I I (· * g) x
+      ((mfderiv I I (g * ·) (C x)).comp (mfderiv I I C x)) := by
+    rw [← hfun]
+    exact (contMDiffAt_mul_left.mdifferentiableAt hreg).hasMFDerivAt.comp x
+      ((C.mdifferentiable (by simp)) x).hasMFDerivAt
   rw [hD.mfderiv]
   -- Evaluate the composite derivative one factor at a time.
-  exact (congrArg (mfderiv I I (g * ·) (C x))
-    (mfderiv_conjugation_mulInvariantVectorField g⁻¹ x X)).trans
-      ((mfderiv_mul_left_mulInvariantVectorField g (C x) _).trans (by rw [hpt]))
+  change mfderiv I I (g * ·) (C x) (mfderiv I I C x (mulInvariantVectorField X x)) = _
+  rw [mfderiv_conjugation_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hpt]
 
 /-- Pullback through inverse conjugation is the derivative of forward conjugation. -/
 theorem mpullback_conjugation (g x : G) (V : ∀ y : G, TangentSpace I y) :
