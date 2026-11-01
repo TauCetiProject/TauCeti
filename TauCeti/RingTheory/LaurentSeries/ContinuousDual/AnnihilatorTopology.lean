@@ -195,9 +195,7 @@ continuous for the annihilator topologies, since coefficientwise maps preserve l
 noncomputable def hahnModuleDualMap (u : V →ₗ[R] W) :
     (HahnModule ℤ R W →L[R] R) →L[R] (HahnModule ℤ R V →L[R] R) := by
   let f : (HahnModule ℤ R W →L[R] R) →ₗ[R] (HahnModule ℤ R V →L[R] R) :=
-    { toFun := fun ℓ ↦ ℓ.comp u.hahnModuleMap
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
+    u.hahnModuleMap.lcomp R
   refine ⟨f, continuous_of_continuousAt_zero f ?_⟩
   rw [ContinuousAt, map_zero]
   refine ((hasBasis_nhds_zero R W).tendsto_iff (hasBasis_nhds_zero R V)).mpr
