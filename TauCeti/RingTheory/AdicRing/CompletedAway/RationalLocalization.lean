@@ -12,6 +12,7 @@ import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.UniformCompletion
 import TauCeti.RingTheory.Huber.Completion.Noetherian
 import TauCeti.RingTheory.Huber.LocalizationTopology.Adic
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The completed localisation as a rational localisation
@@ -75,17 +76,6 @@ private theorem isAdic_locUniformSpace :
   have h := isAdic_locTopology_adic_one hI hfg f S hden
   rwa [← locUniformSpace_toTopologicalSpace] at h
 
-omit [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] in
-/-- The localisation isomorphism `Localization.Away f ≃ₐ[A] S` carries the extension of `I` to
-`Localization.Away f` onto its extension to `S`. -/
-private theorem map_map_algEquiv :
-    (I.map (algebraMap A (Localization.Away f))).map
-        (IsLocalization.algEquiv (Submonoid.powers f) (Localization.Away f) S) =
-      I.map (algebraMap A S) := by
-  let e := IsLocalization.algEquiv (Submonoid.powers f) (Localization.Away f) S
-  exact (Ideal.map_map (algebraMap A _) (e : Localization.Away f →+* S)).trans
-    (congrArg (Ideal.map · I) (RingHom.ext e.commutes))
-
 /-- The **completed localisation is the rational localisation** `A⟨1/f⟩`: for an adic ring `A`
 of finite ideal type and a finitely generated ideal of definition `I`, the completed localisation
 `A_{f}` is isomorphic to the uniform completion of `A_f` for the localisation topology of the pair
@@ -98,8 +88,8 @@ noncomputable def completionLocEquiv :
   letI := locUniformSpace (adic I hI hfg) {1} f S hden
   letI := isUniformAddGroup_locUniformSpace (adic I hI hfg) {1} f S hden
   letI := isTopologicalRing_locUniformSpace (adic I hI hfg) {1} f S hden
-  ((idealEquiv f I hI hfg).trans
-      (AdicCompletion.congrₐ _ (map_map_algEquiv S))).toRingEquiv.trans
+  ((idealEquiv f I hI hfg).trans (AdicCompletion.congrₐ _ <| Ideal.map_map_algebraMap
+      (IsLocalization.algEquiv (Submonoid.powers f) (Localization.Away f) S) I)).toRingEquiv.trans
     (IsAdic.completionEquivAdicCompletion (isAdic_locUniformSpace hI hfg S hden) (hfg.map _)).symm
 
 /-- The comparison sends the image of `a ∈ A` in the completed localisation to its image in
