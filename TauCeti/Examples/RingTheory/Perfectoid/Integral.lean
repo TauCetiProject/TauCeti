@@ -46,7 +46,7 @@ example : letI : Fact ¬IsUnit (p : ZMod p) := ⟨IsIntegralPerfectoid.not_isUni
 
 -- With `π = 0`, the Frobenius `𝔽_p ⧸ 0 → 𝔽_p ⧸ 0` is surjective.
 example (h : (0 : ZMod p) ^ p ∣ (p : ZMod p)) : Function.Surjective (frobeniusModPow p h) :=
-  IsIntegralPerfectoid.surjective_frobeniusModPow h
+  IsIntegralPerfectoid.frobeniusModPow_surjective h
 
 /-! ### The zero ring -/
 
@@ -61,8 +61,7 @@ example : IsUnit (p : PUnit) := isUnit_of_subsingleton _
 -- is not a unit and `p ∣ π`; then `p ^ p ∣ π ^ p ∣ p` would make `p` a unit.
 example : ¬IsIntegralPerfectoid p ℤ_[p] := by
   rintro ⟨⟨π, hπ, hc⟩, -, -⟩
-  have hπu : ¬IsUnit π := fun hu ↦ bot_ne_top <| jacobson_eq_top_iff.mp <|
-    eq_top_of_isUnit_mem _ (IsAdicComplete.le_jacobson_bot _ (mem_span_singleton_self π)) hu
+  have hπu : ¬IsUnit π := IsAdicComplete.not_isUnit_of_mem (mem_span_singleton_self π)
   have hpπ : (p : ℤ_[p]) ∣ π :=
     (PadicInt.norm_lt_one_iff_dvd π).mp (PadicInt.not_isUnit_iff.mp hπu)
   obtain ⟨c, hc⟩ := (pow_dvd_pow_of_dvd hpπ p).trans hπ
@@ -88,9 +87,7 @@ example : ¬IsIntegralPerfectoid p (Polynomial (ZMod p)) := by
 
 -- But `𝔽_p[X]` does satisfy the adic condition, with `π = 0`.
 example : ∃ π : Polynomial (ZMod p), π ^ p ∣ (p : Polynomial (ZMod p)) ∧
-    IsAdicComplete (span {π}) (Polynomial (ZMod p)) := by
-  refine ⟨0, by simp, ?_⟩
-  rw [span_singleton_eq_bot.mpr rfl]
-  infer_instance
+    IsAdicComplete (span {π}) (Polynomial (ZMod p)) :=
+  ⟨0, by simp, inferInstance⟩
 
 end TauCeti.Examples

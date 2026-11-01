@@ -23,7 +23,8 @@ Fix a prime `p`. A commutative ring `A` is *integral perfectoid* (Bhatt–Morrow
 
 This is the integral counterpart of a perfectoid Tate ring: no topology is given, and the
 definition does not depend on a choice of `π`. Integral perfectoid rings may have `p`-torsion and
-need not be domains, and perfect rings of characteristic `p` are the examples with `π = 0`.
+need not be domains. Perfect rings of characteristic `p` are examples, with `π = 0`
+(`of_perfectRing`).
 
 Mathlib's `PreTilt` and `fontaineTheta` need `p` to be a nonunit, as an instance argument. The
 completeness clause makes `A` `p`-adically complete, since `π ∣ p`, and then `p` lies in the
@@ -45,7 +46,7 @@ unique map to `A` has principal kernel anyway.
   Mathlib's Fontaine map is principal.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.exists_natCast_dvd_sub_pow`: every element is a
   `p`-th power modulo `p`.
-* `TauCeti.Perfectoid.IsIntegralPerfectoid.surjective_frobeniusModPow`: for every `π` with
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.frobeniusModPow_surjective`: for every `π` with
   `π ^ p ∣ p`, Frobenius `A ⧸ π → A ⧸ π ^ p` is surjective.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_perfectRing`: a perfect ring of characteristic `p`
   is integral perfectoid; the kernel of `θ` is `(p)` (`WittVector.ker_fontaineTheta_eq_span_p`).
@@ -98,9 +99,8 @@ instance isAdicComplete_span_natCast : IsAdicComplete (span {(p : A)}) A := by
 /-- In a nonzero integral perfectoid ring, `p` is not a unit: by completeness, `p` lies in the
 Jacobson radical. This supplies the standing hypothesis of Mathlib's `PreTilt` and
 `WittVector.fontaineTheta`. -/
-theorem not_isUnit_natCast [Nontrivial A] : ¬IsUnit (p : A) := fun h ↦
-  bot_ne_top <| jacobson_eq_top_iff.mp <| eq_top_of_isUnit_mem _
-    (IsAdicComplete.le_jacobson_bot _ (mem_span_singleton_self (p : A))) h
+theorem not_isUnit_natCast [Nontrivial A] : ¬IsUnit (p : A) :=
+  IsAdicComplete.not_isUnit_of_mem (mem_span_singleton_self (p : A))
 
 /-- The kernel of Fontaine's map `θ : W(A♭) → A` of an integral perfectoid ring is principal. -/
 theorem isPrincipal_ker_fontaineTheta [Fact ¬IsUnit (p : A)] :
@@ -118,7 +118,7 @@ theorem exists_natCast_dvd_sub_pow (x : A) : ∃ y, (p : A) ∣ x - y ^ p := by
 /-- In an integral perfectoid ring, Frobenius `A ⧸ π → A ⧸ π ^ p` is surjective for every `π`
 with `π ^ p ∣ p`, with no completeness assumption on `π`. This is the surjectivity half of
 Bhatt–Morrow–Scholze, *Integral p-adic Hodge theory*, Lemma 3.10(i). -/
-theorem surjective_frobeniusModPow {π : A} (h : π ^ p ∣ (p : A)) :
+theorem frobeniusModPow_surjective {π : A} (h : π ^ p ∣ (p : A)) :
     Function.Surjective (frobeniusModPow p h) :=
   (frobeniusModPow_surjective_iff h).mpr fun x ↦
     (exists_natCast_dvd_sub_pow x).imp fun _ ↦ h.trans
@@ -129,10 +129,7 @@ end Basic
 `0`-adically complete, Frobenius is bijective, and the kernel of `θ` is `(p)`
 (`WittVector.ker_fontaineTheta_eq_span_p`). -/
 instance of_perfectRing [CharP A p] [PerfectRing A p] : IsIntegralPerfectoid p A where
-  exists_adic_element := by
-    refine ⟨0, by simp, ?_⟩
-    rw [span_singleton_eq_bot.mpr rfl]
-    infer_instance
+  exists_adic_element := ⟨0, by simp, inferInstance⟩
   frobenius_surjective x := by
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     refine ⟨Ideal.Quotient.mk _ ((frobeniusEquiv A p).symm x), ?_⟩
@@ -145,10 +142,7 @@ instance of_perfectRing [CharP A p] [PerfectRing A p] : IsIntegralPerfectoid p A
 
 /-- The zero ring is integral perfectoid. -/
 theorem of_subsingleton [Subsingleton A] : IsIntegralPerfectoid p A where
-  exists_adic_element := by
-    refine ⟨0, ⟨0, Subsingleton.elim _ _⟩, ?_⟩
-    rw [span_singleton_eq_bot.mpr rfl]
-    infer_instance
+  exists_adic_element := ⟨0, ⟨0, Subsingleton.elim _ _⟩, inferInstance⟩
   frobenius_surjective x := by
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     refine ⟨Ideal.Quotient.mk _ x, ?_⟩

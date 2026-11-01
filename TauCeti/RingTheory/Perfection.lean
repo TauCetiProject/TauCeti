@@ -51,9 +51,9 @@ section Reduced
 
 variable {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] [IsReduced R]
 
-/-- **In the perfection of a reduced ring, each coordinate detects zero.** If one coordinate of a
-compatible system of `p`-th roots vanishes, all later ones are nilpotent and all earlier ones are
-powers of it. -/
+/-- **In the perfection of a reduced ring, each coordinate detects zero.** For `f` in the
+perfection of a reduced ring of characteristic `p`, `coeff n f = 0` if and only if `f = 0`. -/
+@[simp]
 theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔ f = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
   have hlater (m : ℕ) : coeff R p (n + m) f = 0 := by
@@ -61,9 +61,8 @@ theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔
     | zero => exact h
     | succ m ih => exact IsNilpotent.eq_zero ⟨p, by rw [← add_assoc, coeff_pow_p', ih]⟩
   ext k
-  rw [map_zero, ← coeffMonoidHom_eq_coeff, ← coeffMonoidHom_pow_p_pow' f k n,
-    coeffMonoidHom_eq_coeff, add_comm, hlater,
-    zero_pow (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)]
+  rw [map_zero]
+  exact not_not.mp fun hk ↦ coeff_ne_zero_of_le hk (Nat.le_add_left k n) (hlater k)
 
 end Reduced
 
