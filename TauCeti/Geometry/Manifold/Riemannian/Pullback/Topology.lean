@@ -49,7 +49,7 @@ coordinate derivatives.
 * `Bundle.ContMDiffRiemannianMetric.chartCkTopology_eq_induced`: the chart Cᵏ topology is induced
   by the charts at the points of any set whose chart domains cover `M`.
 * `Bundle.ContMDiffRiemannianMetric.exists_finset_tendsto_chartCk_iff`: on a compact manifold the
-  chart Cᵏ topology is described by finitely many compact chart sets.
+  chart Cᵏ topologies of all orders are described by the same finitely many compact chart sets.
 
 ## References
 
@@ -370,12 +370,13 @@ theorem chartCkTopology_eq_induced (k : ℕ∞) {S : Set M}
 /-- **Finite-atlas description of the chart Cᵏ topology.** On a compact manifold there are
 finitely many points `x` and compact sets `K x` in their chart targets such that metrics converge
 in the chart Cᵏ topology exactly when their coordinate derivatives of order at most `k` in these
-finitely many charts converge uniformly on these sets. For finite `k` this is convergence for
-finitely many seminorms, the suprema over `K x` of the norms of these derivatives. -/
-theorem exists_finset_tendsto_chartCk_iff [CompactSpace M] (k : ℕ∞) :
+finitely many charts converge uniformly on these sets. The same finite atlas works for every
+order `k`. For finite `k` this is convergence for finitely many seminorms, the suprema over `K x`
+of the norms of these derivatives. -/
+theorem exists_finset_tendsto_chartCk_iff [CompactSpace M] :
     ∃ (s : Finset M) (K : M → Set E),
       (∀ x ∈ s, IsCompact (K x) ∧ K x ⊆ (extChartAt I x).target) ∧
-      ∀ {P : Type*} {l : Filter P}
+      ∀ (k : ℕ∞) {P : Type*} {l : Filter P}
         {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
         {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)},
         withMetricOperatorNorms E in
@@ -392,7 +393,7 @@ theorem exists_finset_tendsto_chartCk_iff [CompactSpace M] (k : ℕ∞) :
     (fun y ↦ (continuousOn_extChartAt y).isOpen_inter_preimage (isOpen_extChartAt_source y)
       isOpen_interior)
     fun y _ ↦ mem_iUnion.mpr ⟨y, mem_extChartAt_source y, mem_interior_iff_mem_nhds.mpr (hKn y)⟩
-  refine ⟨s, K, fun x _ ↦ ⟨hKc x, hKt x⟩, fun {P l g g₀} ↦ ?_⟩
+  refine ⟨s, K, fun x _ ↦ ⟨hKc x, hKt x⟩, fun k {P l g g₀} ↦ ?_⟩
   have hcover (y : M) : ∃ i : s, y ∈ (extChartAt I (i : M)).source ∧
       K i ∈ 𝓝 (extChartAt I (i : M) y) := by
     obtain ⟨x, hx, hy⟩ := mem_iUnion₂.mp (hs (mem_univ y))
