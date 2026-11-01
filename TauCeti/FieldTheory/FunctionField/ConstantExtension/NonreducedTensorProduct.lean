@@ -132,6 +132,21 @@ def IsPIndependentPair (a b : k) : Prop :=
   ∀ c : ℕ → ℕ → k,
     ∑ i ∈ range p, ∑ j ∈ range p, c i j ^ p * a ^ i * b ^ j = 0 → ∀ i < p, ∀ j < p, c i j = 0
 
+omit hp [CharP k p] in
+/-- Unfolding `IsPIndependentPair`: every vanishing combination `∑ cᵢⱼ ^ p a ^ i b ^ j` with
+`i, j < p` has zero coefficients. -/
+theorem isPIndependentPair_iff : IsPIndependentPair p a b ↔ ∀ c : ℕ → ℕ → k,
+    ∑ i ∈ range p, ∑ j ∈ range p, c i j ^ p * a ^ i * b ^ j = 0 → ∀ i < p, ∀ j < p, c i j = 0 :=
+  Iff.rfl
+
+omit hp [CharP k p] in
+/-- A vanishing combination `∑ cᵢⱼ ^ p a ^ i b ^ j` of a `p`-independent pair has all its
+coefficients `cᵢⱼ` with `i, j < p` equal to zero. -/
+theorem IsPIndependentPair.eq_zero (hab : IsPIndependentPair p a b) {c : ℕ → ℕ → k}
+    (h : ∑ i ∈ range p, ∑ j ∈ range p, c i j ^ p * a ^ i * b ^ j = 0) {i j : ℕ} (hi : i < p)
+    (hj : j < p) : c i j = 0 :=
+  hab c h i hi j hj
+
 section PIndependent
 
 variable (hab : IsPIndependentPair p a b)
@@ -145,7 +160,7 @@ private theorem eq_zero_of_sum_pow_mul_C_eq_zero
   ext n
   have hn := congrArg (coeff · (p * n)) h
   simp only [coeff_sum_pow_mul_C, coeff_zero] at hn
-  exact hab (fun i j ↦ (P i j).coeff n) hn i hi j hj
+  exact hab.eq_zero (c := fun i j ↦ (P i j).coeff n) hn hi hj
 
 /-- **The key coefficient comparison.** If `∑_{i < p} gᵢ ^ p (a + b X ^ p) ^ i = e h ^ p` in `k[X]`
 with `e ∈ k` and `h ≠ 0`, then `gᵢ = 0` for `0 < i < p`. Comparing the coefficients of
@@ -255,8 +270,8 @@ theorem notMem_span_pair_of_pow_eq
   have hpow := congrArg (· ^ p) h
   simp only [add_pow_char, Algebra.smul_def, mul_pow, mul_one, hα, hβ, ← map_pow,
     ← map_mul, ← map_add] at hpow
-  have := hab (fun i j ↦ if i = 0 ∧ j = 0 then c₀ else if i = 1 ∧ j = 0 then -1 else
-      if i = 0 ∧ j = 1 then c₂ else 0) ?_ 1 hp.out.one_lt 0 hp.out.pos
+  have := hab.eq_zero (c := fun i j ↦ if i = 0 ∧ j = 0 then c₀ else if i = 1 ∧ j = 0 then -1 else
+      if i = 0 ∧ j = 1 then c₂ else 0) ?_ hp.out.one_lt hp.out.pos
   · simp at this
   · have hpa := (algebraMap k K).injective hpow
     have hp0 : p ≠ 0 := hp.out.ne_zero
