@@ -58,17 +58,6 @@ open Filter TensorProduct
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] {A : Type*} [CommRing A] [Algebra K A]
   (P : FringePresentation K A)
 
-/-- `A` is an algebra over each stage `A_ρ` of a fringe presentation, through the map
-`A_ρ → A`. -/
-noncomputable instance (ρ : Set.Ioc (1 : ℝ) P.radius) : Algebra (P.stage ρ) A :=
-  (P.ofStage ρ).toRingHom.toAlgebra
-
-/-- The structure map of `A` as an `A_ρ`-algebra is the stage map `A_ρ → A`. -/
-@[simp]
-theorem algebraMap_stage_apply (ρ : Set.Ioc (1 : ℝ) P.radius) (x : P.stage ρ) :
-    algebraMap (P.stage ρ) A x = P.ofStage ρ x :=
-  (rfl)
-
 /-- **Finitely presented modules descend to a fringe stage.** A finitely presented `A`-module `M`
 is, for every radius `ρ` close enough to `1`, the base change `A ⊗[A_ρ] (A_ρⁿ ⧸ N)` of a
 finitely presented module over the stage `A_ρ`. -/

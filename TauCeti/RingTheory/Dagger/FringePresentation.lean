@@ -45,7 +45,8 @@ radii are arbitrarily close to `1`.
 * `TauCeti.Dagger.FringePresentation K A`: a fringe presentation of the `K`-algebra `A`.
 * `TauCeti.Dagger.FringePresentation.stage`: the stage `A_ρ`, for `ρ ∈ (1, ρ₀]`.
 * `TauCeti.Dagger.FringePresentation.stageMap`: the transition map `A_ρ' → A_ρ` for `ρ ≤ ρ'`.
-* `TauCeti.Dagger.FringePresentation.ofStage`: the map `A_ρ → A`.
+* `TauCeti.Dagger.FringePresentation.ofStage`: the map `A_ρ → A`, which makes `A` an
+  `A_ρ`-algebra.
 * `TauCeti.Dagger.FringePresentation.fringeAlgebra`: the fringe algebra `B_ρ`, the image of
   `A_ρ` in `A`.
 * `TauCeti.Dagger.FringePresentation.lift`: the map out of `A` induced by a compatible family of
@@ -229,6 +230,17 @@ bundled maps. -/
 theorem ofStage_comp_stageMap {ρ ρ' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ ρ') :
     (P.ofStage ρ).comp (P.stageMap h) = P.ofStage ρ' :=
   AlgHom.ext (P.ofStage_stageMap h)
+
+/-- `A` is an algebra over each stage `A_ρ` of a fringe presentation, through the map
+`A_ρ → A`. -/
+noncomputable instance (ρ : Set.Ioc (1 : ℝ) P.radius) : Algebra (P.stage ρ) A :=
+  (P.ofStage ρ).toRingHom.toAlgebra
+
+/-- The structure map of `A` as an `A_ρ`-algebra is the stage map `A_ρ → A`. -/
+@[simp]
+theorem algebraMap_stage_apply (ρ : Set.Ioc (1 : ℝ) P.radius) (x : P.stage ρ) :
+    algebraMap (P.stage ρ) A x = P.ofStage ρ x :=
+  (rfl)
 
 /-- The **fringe algebra** `B_ρ ⊆ A` of a fringe presentation: the image of the stage `A_ρ`. -/
 noncomputable def fringeAlgebra (ρ : Set.Ioc (1 : ℝ) P.radius) : Subalgebra K A :=
