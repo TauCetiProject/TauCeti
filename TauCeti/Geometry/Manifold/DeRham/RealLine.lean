@@ -16,12 +16,16 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 # Compactly supported de Rham cohomology of the real line
 
 Integration identifies the top compactly supported de Rham cohomology of the real line with `ℝ`:
-for every orientation `o` of `ℝ`, integration `H¹_c(ℝ) → ℝ` is a linear isomorphism
-(`TauCeti.compactlySupportedDeRhamCohomologyRealEquiv`). Together with the vanishing of `H⁰_c` on
-preconnected noncompact manifolds (`TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`)
-and above the dimension (`TauCeti.subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt`),
-this computes `H^•_c(ℝ)` in every degree. Compact supports are not homotopy invariant, so this is
-not a consequence of the vanishing of `H^•_dR(ℝ)` in positive degrees.
+for every orientation `o` of `ℝ`, integration `H¹_c(ℝ) → ℝ` is bijective
+(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`). Together with the
+vanishing of `H⁰_c` on preconnected noncompact manifolds
+(`TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`) and above the dimension
+(`TauCeti.subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt`), this computes
+`H^•_c(ℝ)` in every degree. Compact supports are not homotopy invariant, so this is
+not a consequence of the vanishing of `H^•_dR(ℝ)` in positive degrees. This is the
+one-dimensional case of the top compactly supported cohomology of every finite-dimensional real
+normed space, `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`, whose
+proof uses it for `n = 1`.
 
 Injectivity is the heart of the matter: a compactly supported `1`-form `φ` on `ℝ` with integral
 zero is the differential of a compactly supported function
@@ -29,7 +33,8 @@ zero is the differential of a compactly supported function
 smooth `F`; by the fundamental theorem of calculus `F` is constant on each of the two components
 of the complement of a large interval containing the support of `φ`, and the two constants differ
 by the integral of `φ`. When that integral vanishes, `F` minus the common constant is compactly
-supported. Surjectivity comes from a normalized bump function times `dx`.
+supported. Surjectivity comes from a normalized bump function times `dx`
+(`Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`).
 
 ## Main declarations
 
@@ -40,8 +45,6 @@ supported. Surjectivity comes from a normalized bump function times `dx`.
   with integral zero is compactly supported exact.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`: integration
   `H¹_c(ℝ) → ℝ` is bijective, for either orientation of `ℝ`.
-* `TauCeti.compactlySupportedDeRhamCohomologyRealEquiv`: the resulting isomorphism
-  `H¹_c(ℝ) ≃ₗ[ℝ] ℝ`.
 
 ## References
 
@@ -126,10 +129,11 @@ theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 
 /-- Integration `H¹_c(ℝ) → ℝ` against the standard orientation is bijective. -/
 private theorem bijective_integral_standard :
     Function.Bijective (compactlySupportedDeRhamCohomology.integral Manifold.Orientation.real) := by
-  obtain ⟨φ₁, hφ₁⟩ :=
-    exists_compactlySupportedClosedForms_integralTopForm_eq_one (Module.Basis.singleton (Fin 1) ℝ)
-  -- `Manifold.Orientation.real` is by definition the orientation of the singleton basis.
-  change integralTopForm Manifold.Orientation.real φ₁.1.1 = 1 at hφ₁
+  obtain ⟨φ₁, hφ₁⟩ : ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1,
+      integralTopForm Manifold.Orientation.real φ.1.1 = 1 := by
+    rw [Manifold.Orientation.real]
+    exact Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one
+      (Module.Basis.singleton (Fin 1) ℝ) _
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦
     ⟨y • compactlySupportedDeRhamCohomology.mk _ 1 φ₁, by simp [hφ₁]⟩⟩
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ 1 x
@@ -151,20 +155,5 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_real
   · rw [compactlySupportedDeRhamCohomology.integral_neg]
     exact ⟨fun x y hxy ↦ hi (neg_injective hxy),
       fun y ↦ (hs (-y)).imp fun x hx ↦ by simp [hx]⟩
-
-/-- **Top compactly supported cohomology of the line.** For an orientation `o` of `ℝ`,
-integration is a linear isomorphism `H¹_c(ℝ) ≃ₗ[ℝ] ℝ`. -/
-def compactlySupportedDeRhamCohomologyRealEquiv (o : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1)) :
-    compactlySupportedDeRhamCohomology 𝓘(ℝ, ℝ) ℝ 1 ≃ₗ[ℝ] ℝ :=
-  LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_real o)
-
-/-- The isomorphism `H¹_c(ℝ) ≃ₗ[ℝ] ℝ` is integration. -/
-@[simp]
-theorem compactlySupportedDeRhamCohomologyRealEquiv_apply
-    (o : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1))
-    (x : compactlySupportedDeRhamCohomology 𝓘(ℝ, ℝ) ℝ 1) :
-    compactlySupportedDeRhamCohomologyRealEquiv o x =
-      compactlySupportedDeRhamCohomology.integral o x :=
-  LinearEquiv.ofBijective_apply _ _
 
 end TauCeti
