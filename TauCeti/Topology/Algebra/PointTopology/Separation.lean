@@ -59,7 +59,8 @@ variable {k A R : Type*} [CommSemiring k] [Semiring A] [Algebra k A] [Semiring R
 instance instT2Space [T2Space R] : T2Space (A →ₐ[k] R) :=
   isEmbedding_coeFn.t2Space
 
-/-- The group of points with values in a Hausdorff ring is Hausdorff. -/
+/-- The convolution type `WithConv (A →ₐ[k] R)` of points with values in a Hausdorff ring is a
+Hausdorff space. -/
 instance instT2SpaceWithConv [T2Space R] : T2Space (WithConv (A →ₐ[k] R)) :=
   isHomeomorph_ofConv.isEmbedding.t2Space
 
@@ -69,7 +70,8 @@ instance instTotallyDisconnectedSpace [TotallyDisconnectedSpace R] :
   isEmbedding_coeFn.isTotallyDisconnected_range.mp
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)
 
-/-- The group of points with values in a totally disconnected ring is totally disconnected. -/
+/-- The convolution type `WithConv (A →ₐ[k] R)` of points with values in a totally disconnected
+ring is a totally disconnected space. -/
 instance instTotallyDisconnectedSpaceWithConv [TotallyDisconnectedSpace R] :
     TotallyDisconnectedSpace (WithConv (A →ₐ[k] R)) :=
   isHomeomorph_ofConv.isEmbedding.isTotallyDisconnected_range.mp
@@ -90,8 +92,8 @@ instance instSecondCountableTopology [SecondCountableTopology R] [Algebra.Finite
   exact (isEmbedding_eval_generators (a := ((↑) : s → A))
     (by simpa using hs)).secondCountableTopology
 
-/-- The group of points of a finite type algebra with values in a second countable ring is second
-countable. -/
+/-- The convolution type `WithConv (A →ₐ[k] R)` of points of a finite type algebra with values in a
+second countable ring is a second countable space. -/
 instance instSecondCountableTopologyWithConv [SecondCountableTopology R]
     [Algebra.FiniteType k A] : SecondCountableTopology (WithConv (A →ₐ[k] R)) :=
   isHomeomorph_ofConv.isEmbedding.secondCountableTopology
@@ -106,8 +108,8 @@ variable {k A R : Type*} [CommRing k] [CommRing A] [Algebra k A] [CommRing R] [A
 
 attribute [instance] locallyCompactSpace_of_finiteType
 
-/-- The group of points of a finite type algebra with values in a locally compact T1 ring is
-locally compact. -/
+/-- The convolution type `WithConv (A →ₐ[k] R)` of points of a finite type algebra with values in a
+locally compact T1 ring is a locally compact space. -/
 instance instLocallyCompactSpaceWithConv : LocallyCompactSpace (WithConv (A →ₐ[k] R)) :=
   isHomeomorph_ofConv.isClosedEmbedding.locallyCompactSpace
 

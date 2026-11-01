@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
-public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
 
 /-!
@@ -15,8 +13,10 @@ public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
 Let `R` be a ring whose topology is the one defined by its valuative relation
 (`IsValuativeTopology R`). The open balls `{x | v x < γ}` around `0` are additive subgroups and form
 a neighbourhood basis of `0`, so `R` is a nonarchimedean topological ring. Mathlib records this only
-for the topology `ValuativeRel.topologicalSpace` that it builds from the relation by hand; here it
-is an instance for every topology satisfying `IsValuativeTopology R`.
+for the topology `ValuativeRel.topologicalSpace` that it builds from the relation by hand
+(`ValuativeRel.nonarchimedeanRing`); here it is an instance for every topology satisfying
+`IsValuativeTopology R`, obtained by transporting Mathlib's instance along
+`Valuation.toTopologicalSpace_eq`.
 
 Combined with Mathlib's `NonarchimedeanAddGroup.instTotallySeparated`, this makes every Hausdorff
 valuative ring totally separated, hence totally disconnected. A division ring with a valuative
@@ -33,16 +33,12 @@ public section
 
 namespace TauCeti
 
-open IsValuativeTopology
-
 variable {R : Type*} [Ring R] [ValuativeRel R] [TopologicalSpace R] [IsValuativeTopology R]
 
 /-- A ring whose topology is defined by its valuative relation is a nonarchimedean ring: every
 neighbourhood of `0` contains an open ball `{x | v x < γ}`, which is an open additive subgroup. -/
-instance (priority := low) instNonarchimedeanRingOfIsValuativeTopology : NonarchimedeanRing R where
-  is_nonarchimedean U hU := by
-    obtain ⟨γ, -, hγ⟩ := (hasBasis_nhds_zero R).mem_iff.mp hU
-    let V := (ValuativeRel.valuation R).ltAddSubgroup γ
-    exact ⟨⟨V, V.isOpen_of_mem_nhds ((hasBasis_nhds_zero R).mem_of_mem trivial)⟩, hγ⟩
+instance (priority := low) instNonarchimedeanRingOfIsValuativeTopology : NonarchimedeanRing R := by
+  rw [(ValuativeRel.valuation R).toTopologicalSpace_eq]
+  exact ValuativeRel.nonarchimedeanRing R
 
 end TauCeti

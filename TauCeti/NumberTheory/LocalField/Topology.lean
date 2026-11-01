@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.NumberTheory.LocalField.NormedField
 public import TauCeti.Topology.Algebra.ValuativeRel.Nonarchimedean
 
@@ -51,5 +52,10 @@ instance instSecondCountableTopologyOfIsNonarchimedeanLocalField : SecondCountab
   have h : @SecondCountableTopology K (normalizedNormedFieldTopology K) :=
     secondCountable_of_proper
   rwa [normalizedNormedField_topology_eq] at h
+
+/- A nonarchimedean local field is totally disconnected, by
+`TauCeti.instNonarchimedeanRingOfIsValuativeTopology`, Mathlib's
+`NonarchimedeanAddGroup.instTotallySeparated` and `IsValuativeTopology.instT2Space`. -/
+example : TotallyDisconnectedSpace K := inferInstance
 
 end TauCeti
