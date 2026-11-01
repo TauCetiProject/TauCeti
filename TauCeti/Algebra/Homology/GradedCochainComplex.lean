@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Homology.Homotopy
 import Mathlib.Algebra.Homology.Additive
 import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # The cochain complex of a family of submodules with a differential
@@ -54,20 +55,6 @@ interface to `gradedCochainComplex`.
 public section
 
 open CategoryTheory
-
-namespace LinearMap
-
-variable {R M N P : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid P]
-  [Module R M] [Module R N] [Module R P]
-
-/-- If `f` intertwines `dM` with `dN` and `g` intertwines `dN` with `dP`, then `g ∘ f`
-intertwines `dM` with `dP`. -/
-theorem comp_comm_comp {dM : M →ₗ[R] M} {dN : N →ₗ[R] N} {dP : P →ₗ[R] P} {f : M →ₗ[R] N}
-    {g : N →ₗ[R] P} (hg : dP ∘ₗ g = g ∘ₗ dN) (hf : dN ∘ₗ f = f ∘ₗ dM) :
-    dP ∘ₗ (g ∘ₗ f) = (g ∘ₗ f) ∘ₗ dM := by
-  rw [← comp_assoc, hg, comp_assoc, hf, comp_assoc]
-
-end LinearMap
 
 namespace TauCeti
 

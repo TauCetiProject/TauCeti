@@ -175,7 +175,7 @@ theorem tensorHomotopyFunctor_map_dgClosedToHomotopy_map
       eqToHom (tensorHomotopyFunctor_obj_of hN M) ≫
         (HomotopyCategory.quotient _ _).map (tensorCochainComplexMap hN f) ≫
           eqToHom (tensorHomotopyFunctor_obj_of hN M').symm := by
-  change (DGHomotopyCategory.lift R _ _).map _ = _
+  unfold tensorHomotopyFunctor
   rw [DGHomotopyCategory.lift_map_dgClosedToHomotopy_map, Functor.comp_map,
     tensorCochainComplexFunctor_map, Functor.map_comp, Functor.map_comp, eqToHom_map,
     eqToHom_map]
