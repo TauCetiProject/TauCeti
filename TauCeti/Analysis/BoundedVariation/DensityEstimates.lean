@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.CutByBall
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
+import TauCeti.Analysis.Calculus.PowerGrowth
+import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
+import TauCeti.Analysis.BoundedVariation.Sobolev
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -19,7 +23,7 @@ import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
-# The derivative of a set of finite perimeter on balls, and the upper density estimate
+# The derivative of a set of finite perimeter on balls, and the density estimates
 
 Let `Ω` be an open set of a finite-dimensional real inner product space `E` and `s` a set of
 locally finite perimeter in `Ω`, with `Dχ_s = σ |Dχ_s|` the polar decomposition of the derivative
@@ -49,12 +53,34 @@ which gives the **upper density estimate**: for every `t > 1` and every small `r
 `|Dχ_s| (closedBall x r) ≤ t n μ(ball 0 1) r^(n - 1)`,     `n = dim E`
 
 (`TauCeti.eventually_variationMeasure_closedBall_le`), and the same bound for the relative
-perimeter `P(s; ball x r)` (`TauCeti.eventually_perimeter_ball_le`). This is one of the density
-estimates at points of the reduced boundary behind De Giorgi's structure theorem. Neither finite
-perimeter nor finite measure of `s` is assumed: the estimates at every radius and at the reduced
-boundary only use that `s` has locally finite perimeter in `Ω`, and the forms with `m'(r)` also
-use that `s` is null-measurable and that `μ` is finite on compact sets. Only the upper density
-estimates use that `μ` is an additive Haar measure.
+perimeter `P(s; ball x r)` (`TauCeti.eventually_perimeter_ball_le`).
+
+When `n ≥ 2`, the **lower density estimates** bound `s`, its complement and the perimeter from
+below at the same scales. Let `p = n / (n - 1)` and let `C` be the constant
+`MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the nonsharp isoperimetric inequality
+`TauCeti.measure_rpow_le_perimeter`. For every `t > 2` and every small `r > 0`,
+
+`(r / (t n C)) ^ n ≤ μ(s ∩ ball x r)`,    `(r / (t n C)) ^ n ≤ μ(ball x r \ s)`
+
+(`TauCeti.eventually_ofReal_div_pow_le_measure_inter_ball`,
+`TauCeti.eventually_ofReal_div_pow_le_measure_ball_sdiff`), and by the relative isoperimetric
+inequality `TauCeti.min_measure_inter_measure_sdiff_rpow_le_perimeter`,
+
+`(r / (t n C)) ^ (n - 1) ≤ 2 ^ (n + 1) μ(ball 0 1) ^ (-1/n) P(s; ball x r)`
+
+(`TauCeti.eventually_ofReal_div_pow_le_perimeter_ball`). The constants depend only on `μ` and
+`t`, not on `s` or `x`. For the volume bounds, the bound on `Dχ_s (closedBall x r)` and the
+cut-by-ball estimate `TauCeti.ae_perimeter_inter_ball_le` give `P(s ∩ ball x r) ≤ t m'(r)` at
+almost every small radius. The isoperimetric inequality for `s ∩ ball x r` turns this into
+`m(r) ^ (1 - 1/n) ≤ t C m'(r)`, which integrates to the lower bound on `m`
+(`Monotone.div_pow_le_of_ae_rpow_le_mul_deriv`). The complement has the same reduced boundary,
+which gives its bound.
+
+These are the density estimates at points of the reduced boundary behind De Giorgi's structure
+theorem. Neither finite perimeter nor finite measure of `s` is assumed: the estimates at every
+radius and at the reduced boundary only use that `s` has locally finite perimeter in `Ω`, and the
+forms with `m'(r)` also use that `s` is null-measurable and that `μ` is finite on compact sets.
+Only the upper and lower density estimates use that `μ` is an additive Haar measure.
 
 ## References
 
@@ -276,6 +302,18 @@ theorem eventually_variationMeasure_closedBall_le [μ.IsAddHaarMeasure]
     hD).liminf_eq]
   exact liminf_le_liminf (.of_forall fun h => by gcongr; exact subset_univ s)
 
+/-- The relative perimeter of `s` in a ball contained in `Ω` is at most the perimeter measure of
+the closed ball. -/
+theorem perimeter_ball_le_variationMeasure_closedBall
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
+    (hΩ : ball x r ⊆ Ω) :
+    perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin (U := ⟨ball x r, isOpen_ball⟩) hΩ]
+  exact measure_mono (preimage_mono ball_subset_closedBall)
+
 /-- **The upper density estimate for the relative perimeter.** Against an additive Haar measure,
 at a point `x` of the reduced boundary of `s` in `Ω`, for every `t > 1` and every small `r > 0`,
 
@@ -289,10 +327,162 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   filter_upwards [eventually_variationMeasure_closedBall_le hx ht, Ioc_mem_nhdsGT hε]
     with r hr hrε
-  have hball : ball x r ⊆ closedBall x r := ball_subset_closedBall
-  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin
-    (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
-  exact (measure_mono (preimage_mono hball)).trans hr
+  exact (perimeter_ball_le_variationMeasure_closedBall hu hfin
+    (ball_subset_closedBall.trans ((closedBall_subset_closedBall hrε.2).trans hεΩ))).trans hr
+
+/-! ### The lower density estimates -/
+
+section LowerDensity
+
+variable [μ.IsAddHaarMeasure] {p : ℝ≥0}
+
+/-- At a point `x` of the reduced boundary of a null-measurable set `s`, for every `t > 1` and
+almost every small radius `ρ`, cutting `s` by `ball x ρ` gives a set of perimeter at most
+`(t + 1) m'(ρ)`, where `m(ρ) = μ(s ∩ ball x ρ)`: the relative perimeter `P(s; ball x ρ)` is at most
+`t m'(ρ)`, and the cut costs at most another `m'(ρ)`. -/
+private theorem exists_ae_perimeter_inter_ball_le_mul_deriv (hs : NullMeasurableSet s μ)
+    (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0} (ht : 1 < t) :
+    ∃ δ > 0, ∀ᵐ ρ, ρ ∈ Ioo 0 δ → perimeter μ ⊤ (s ∩ ball x ρ) ≤
+      (t + 1) * ENNReal.ofReal (deriv (fun ρ => μ.real (s ∩ ball x ρ)) ρ) := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  obtain ⟨ε, hε, hεΩ⟩ :=
+    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  obtain ⟨δ, hδ, hδsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
+    (eventually_variationMeasure_closedBall_le_mul_enorm_setIntegral hx ht)
+  refine ⟨min δ ε, lt_min hδ hε, ?_⟩
+  filter_upwards [(monotone_measureReal_inter_ball μ s x).ae_differentiableAt,
+    ae_perimeter_inter_ball_le hs x] with ρ hdiff hcut hρ
+  have hρΩ : closedBall x ρ ⊆ Ω :=
+    (closedBall_subset_closedBall (hρ.2.le.trans (min_le_right _ _))).trans hεΩ
+  have hP := (perimeter_ball_le_variationMeasure_closedBall hu hfin
+    (ball_subset_closedBall.trans hρΩ)).trans ((hδsub ⟨hρ.1, hρ.2.trans_le
+      (min_le_left _ _)⟩).trans (mul_le_mul_right
+      (enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hu hfin hs hρΩ
+        hdiff.hasDerivAt.hasDerivWithinAt) _))
+  calc perimeter μ ⊤ (s ∩ ball x ρ)
+      ≤ perimeter μ ⟨ball x ρ, isOpen_ball⟩ s +
+        ENNReal.ofReal (deriv (fun ρ => μ.real (s ∩ ball x ρ)) ρ) := hcut
+    _ ≤ _ := by rw [add_mul, one_mul]; gcongr
+
+/-- The lower volume density estimate for a null-measurable set. This is
+`TauCeti.eventually_ofReal_div_pow_le_measure_inter_ball` with the extra hypothesis that `s` is
+null-measurable, which the cut-by-ball estimate and the isoperimetric inequality need. -/
+private theorem eventually_ofReal_div_pow_le_measure_inter_ball_of_nullMeasurableSet
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hs : NullMeasurableSet s μ)
+    (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0} (ht : 2 < t) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r / (t * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      finrank ℝ E ≤ μ (s ∩ ball x r) := by
+  set C : ℝ≥0 := eLpNormLESNormFDerivOneConst μ p
+  set m : ℝ → ℝ := fun ρ => μ.real (s ∩ ball x ρ)
+  have hpn : (p : ℝ)⁻¹ = 1 - (finrank ℝ E : ℝ)⁻¹ := by
+    have h := congrArg ((↑) : ℝ≥0 → ℝ) hp.inv_add_inv_eq_one
+    push_cast at h
+    linarith
+  have hfin_m (ρ : ℝ) : μ (s ∩ ball x ρ) ≠ ∞ :=
+    measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
+  have ht' : ((t - 1 : ℝ≥0) : ℝ≥0∞) + 1 = t := by
+    rw [← ENNReal.coe_one, ← ENNReal.coe_add, tsub_add_cancel_of_le (one_le_two.trans ht.le)]
+  obtain ⟨δ, hδ, hP⟩ := exists_ae_perimeter_inter_ball_le_mul_deriv hs hx
+    (lt_tsub_iff_right.2 (by rwa [one_add_one_eq_two]) : 1 < t - 1)
+  rw [ht'] at hP
+  -- The isoperimetric inequality for `s ∩ ball x ρ` gives `m ^ (1 - 1/n) ≤ t C m'` at almost
+  -- every small radius.
+  have hderiv : ∀ᵐ ρ, ρ ∈ Ioo 0 δ → m ρ ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤ t * C * deriv m ρ := by
+    filter_upwards [hP] with ρ hPρ hρ
+    have hA : 0 < m ρ ^ (1 - (finrank ℝ E : ℝ)⁻¹) := Real.rpow_pos_of_pos
+      (ENNReal.toReal_pos (measure_inter_ball_pos hx hρ.1).ne' (hfin_m ρ)) _
+    have h := (measure_rpow_le_perimeter (hs.inter measurableSet_ball.nullMeasurableSet)
+      (hfin_m ρ) hp).trans (mul_le_mul_right (hPρ hρ) _)
+    rw [← ofReal_measureReal (hfin_m ρ), ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg
+      (inv_nonneg.2 p.coe_nonneg), hpn, ← ENNReal.ofReal_coe_nnreal (p := C),
+      ← ENNReal.ofReal_coe_nnreal (p := t), ← ENNReal.ofReal_mul t.coe_nonneg,
+      ← ENNReal.ofReal_mul C.coe_nonneg, ENNReal.ofReal_le_ofReal_iff'] at h
+    exact (h.resolve_right hA.not_ge).trans_eq (by ring)
+  -- Integrate the differential inequality.
+  filter_upwards [Ioo_mem_nhdsGT hδ] with r hr
+  have h := (monotone_measureReal_inter_ball μ s x).div_pow_le_of_ae_rpow_le_mul_deriv
+    measureReal_nonneg (by exact_mod_cast hp.pos.ne') (by positivity)
+    (fun ρ hρ => ENNReal.toReal_pos (measure_inter_ball_pos hx hρ.1).ne' (hfin_m ρ)) hderiv
+    (Ioo_subset_Icc_self hr)
+  rw [← ofReal_measureReal (hfin_m r), ← ENNReal.ofReal_pow (div_nonneg hr.1.le (by positivity))]
+  exact ENNReal.ofReal_le_ofReal (h.trans_eq' (by ring))
+
+/-- **The lower volume density estimate at the reduced boundary.** Let `E` have dimension `n ≥ 2`,
+let `p = n / (n - 1)`, and let `C` be the constant
+`MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the nonsharp isoperimetric inequality. Against
+an additive Haar measure, at a point `x` of the reduced boundary of `s` in `Ω`, for every `t > 2`
+and every small `r > 0`,
+
+`(r / (t n C)) ^ n ≤ μ(s ∩ ball x r)`. -/
+theorem eventually_ofReal_div_pow_le_measure_inter_ball
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0}
+    (ht : 2 < t) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r / (t * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      finrank ℝ E ≤ μ (s ∩ ball x r) := by
+  -- Replace `s` by `s ∩ Ω`, which is null-measurable and has the same reduced boundary.
+  obtain ⟨hu, -⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  have hΩ : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
+  have hs : NullMeasurableSet (s ∩ Ω) μ := (nullMeasurableSet_restrict hΩ.nullMeasurableSet).1
+    ((aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable)
+  have hsΩ : s ∩ Ω =ᵐ[μ.restrict Ω] s := by
+    filter_upwards [ae_restrict_mem hΩ] with y hy
+    simp [hy]
+  obtain ⟨ε, hε, hεΩ⟩ :=
+    nhds_basis_ball.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [eventually_ofReal_div_pow_le_measure_inter_ball_of_nullMeasurableSet hp hs
+    (by rwa [reducedBoundary_congr_ae hsΩ]) ht, Ioo_mem_nhdsGT hε] with r hr hrε
+  rwa [inter_assoc, inter_eq_right.2 ((ball_subset_ball hrε.2.le).trans hεΩ)] at hr
+
+/-- **The lower volume density estimate for the complement at the reduced boundary.** With the
+notation of `TauCeti.eventually_ofReal_div_pow_le_measure_inter_ball`, for every `t > 2` and every
+small `r > 0`,
+
+`(r / (t n C)) ^ n ≤ μ(ball x r \ s)`. -/
+theorem eventually_ofReal_div_pow_le_measure_ball_sdiff
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0}
+    (ht : 2 < t) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r / (t * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      finrank ℝ E ≤ μ (ball x r \ s) := by
+  simpa only [sdiff_eq_compl_inter] using
+    eventually_ofReal_div_pow_le_measure_inter_ball hp (by rwa [reducedBoundary_compl]) ht
+
+/-- **The lower perimeter density estimate at the reduced boundary.** With the notation of
+`TauCeti.eventually_ofReal_div_pow_le_measure_inter_ball`, for every `t > 2` and every small
+`r > 0`,
+
+`(r / (t n C)) ^ (n - 1) ≤ 2 ^ (n + 1) μ(ball 0 1) ^ (-1/n) P(s; ball x r)`. -/
+theorem eventually_ofReal_div_pow_le_perimeter_ball
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0}
+    (ht : 2 < t) :
+    ∀ᶠ r in 𝓝[>] 0, ENNReal.ofReal (r / (t * finrank ℝ E * eLpNormLESNormFDerivOneConst μ p)) ^
+      (finrank ℝ E - 1) ≤
+        ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
+          perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
+  set n := finrank ℝ E
+  have hn : 2 ≤ n := by
+    have := hp.lt
+    exact_mod_cast this
+  obtain ⟨hu, -⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  obtain ⟨ε, hε, hεΩ⟩ :=
+    nhds_basis_ball.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [eventually_ofReal_div_pow_le_measure_inter_ball hp hx ht,
+    eventually_ofReal_div_pow_le_measure_ball_sdiff hp hx ht, Ioo_mem_nhdsGT hε]
+    with r hin hout hrε
+  have hball : ball x r ⊆ Ω := (ball_subset_ball hrε.2.le).trans hεΩ
+  have hs : NullMeasurableSet s (μ.restrict (ball x r)) :=
+    (aemeasurable_indicator_const_iff (1 : ℝ)).1
+      (hu.aestronglyMeasurable.mono_measure (Measure.restrict_mono hball le_rfl)).aemeasurable
+  refine le_trans ?_ (min_measure_inter_measure_sdiff_rpow_le_perimeter hn hs subset_rfl)
+  have hexp : (n : ℝ) * (1 - (n : ℝ)⁻¹) = ((n - 1 : ℕ) : ℝ) := by
+    rw [Nat.cast_sub (by omega), Nat.cast_one, mul_sub, mul_one,
+      mul_inv_cancel₀ (by exact_mod_cast (by omega : n ≠ 0))]
+  calc ENNReal.ofReal (r / (t * n * eLpNormLESNormFDerivOneConst μ p)) ^ (n - 1)
+      = (ENNReal.ofReal (r / (t * n * eLpNormLESNormFDerivOneConst μ p)) ^ n) ^
+          (1 - (n : ℝ)⁻¹) := by
+        rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, hexp]
+    _ ≤ _ := ENNReal.rpow_le_rpow (le_min hin hout)
+        (sub_nonneg.2 (inv_le_one_of_one_le₀ (by exact_mod_cast (by omega : 1 ≤ n))))
+
+end LowerDensity
 
 end TauCeti

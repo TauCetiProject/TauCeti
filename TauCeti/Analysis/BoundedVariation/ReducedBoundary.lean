@@ -41,6 +41,7 @@ proves their basic properties.
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
   (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence, when `μ` is an additive
   Haar measure, in the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
+  Every ball around it meets `s` in a set of positive measure (`TauCeti.measure_inter_ball_pos`).
 * The reduced boundary and the outer normal only depend on `s` almost everywhere on `Ω`
   (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`). When `μ` is an additive
   Haar measure, the complement has the same reduced boundary with the opposite normal
@@ -156,6 +157,27 @@ theorem reducedBoundary_eq_empty_of_not (h : ¬(LocallyIntegrableOn (s.indicator
     reducedBoundary μ Ω s = ∅ :=
   eq_empty_of_forall_notMem fun _ hx =>
     h (locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx)
+
+/-- **The set has positive measure near its reduced boundary.** Every ball of positive radius
+around a point of `∂*s` meets `s` in a set of positive measure: otherwise `s` would be null near
+`x`, and the perimeter measure would vanish there. -/
+theorem measure_inter_ball_pos (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r) :
+    0 < μ (s ∩ ball x r) := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  obtain ⟨ε, hε, hεΩ⟩ :=
+    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  refine pos_iff_ne_zero.2 fun h0 =>
+    variationMeasure_preimage_closedBall_ne_zero hx (lt_min (half_pos hr) hε) ?_
+  set U : Opens E := ⟨ball x r, isOpen_ball⟩ ⊓ Ω
+  have hsU : s =ᵐ[μ.restrict U] (∅ : Set E) := by
+    rw [ae_eq_empty, Measure.restrict_apply' U.isOpen.measurableSet]
+    exact measure_mono_null (inter_subset_inter_right _ inter_subset_left) h0
+  refine measure_mono_null (preimage_mono (t := (U : Set E)) fun y hy => ⟨?_, ?_⟩) ?_
+  · exact mem_ball.2 ((mem_closedBall.1 hy).trans_lt
+      ((min_le_left _ _).trans_lt (half_lt_self hr)))
+  · exact hεΩ (closedBall_subset_closedBall (min_le_right _ _) hy)
+  · rw [variationMeasure_preimage_coe hu hfin inf_le_right, ← perimeter_def,
+      perimeter_congr_ae hsU, perimeter_empty]
 
 /-- **The reduced boundary lies in the topological frontier.** Near a point outside the frontier
 of `s`, the indicator of `s` is constant, so the perimeter measure vanishes there. -/
