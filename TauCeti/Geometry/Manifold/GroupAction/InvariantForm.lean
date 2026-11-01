@@ -148,8 +148,8 @@ theorem mpullback_objectDiffeomorph_mem_invariantForms_iff {α : SmoothForm I X 
     SmoothForm.mpullback (objectDiffeomorph I ∞ G X) (objectDiffeomorph I ∞ G X).contMDiff α ∈
         invariantForms I G X F k ↔
       ∀ g : G, SmoothForm.mpullback (g • ·) (contMDiff_const_smul g) α = α := by
-  rw [mem_invariantForms_iff, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
-    ← SmoothForm.mpullback_comp, ← SmoothForm.mpullback_comp, Subtype.ext_iff]
+  rw [mem_invariantForms_iff, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback,
+    Subtype.ext_iff]
   simp only [SmoothForm.coe_mpullback, Subtype.ext_iff, Function.comp_def,
     objectDiffeomorph_apply]
   exact mpullback_back_left_eq_mpullback_back_right_iff α.1
@@ -229,14 +229,12 @@ theorem mpullback_map_obj_mem_invariantForms {E' H' : Type*} [NormedAddCommGroup
   -- The functor commutes with the source and target maps, by the definition of its arrow map.
   calc _ = SmoothForm.mpullback _ hmap (SmoothForm.mpullback Quiver.Total.left
           (isLocalDiffeomorph_source I' ∞ G' Y).contMDiff ψ) := by
-        rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, ← LinearMap.comp_apply,
-          ← SmoothForm.mpullback_comp]
+        rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
         rfl
     _ = SmoothForm.mpullback _ hmap (SmoothForm.mpullback Quiver.Total.right
           (contMDiff_target I' ∞ G' Y) ψ) := by rw [hψ]
     _ = _ := by
-        rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, ← LinearMap.comp_apply,
-          ← SmoothForm.mpullback_comp]
+        rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
         rfl
 
 section Pullback
@@ -288,8 +286,7 @@ theorem invariantForms.mpullback_comp {E'' H'' : Type*} [NormedAddCommGroup E'']
   ext χ : 1
   apply Subtype.ext
   simp only [invariantForms.coe_mpullback, hcomp, LinearMap.comp_apply]
-  exact LinearMap.congr_fun (SmoothForm.mpullback_comp _ _ (contMDiff_map_obj I ∞ φ f hf)
-    (contMDiff_map_obj I' ∞ ψ g hg)) χ.1
+  exact (SmoothForm.mpullback_mpullback _ _ _ _ χ.1).symm
 
 /-- Pullback of invariant forms commutes with the exterior derivative. -/
 theorem invariantForms.mextDerivₗ_mpullback (φ : G →* G') (f : X →ₑ[φ] Y)
@@ -310,29 +307,17 @@ variable [Group G] [TopologicalSpace G] [DiscreteTopology G] [MulAction G X]
 
 variable {I G X F k}
 
-omit [TopologicalSpace G] [DiscreteTopology G] in
-/-- Pullback along the orbit map from the objects of `G ⋉ X` is pullback to `X` along the orbit
-projection, followed by transport to the objects. -/
-private theorem mpullback_quotientMk_comp_objectDiffeomorph
-    (β : SmoothForm I (MulAction.orbitRel.Quotient G X) F k) :
-    SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G X) ∘ objectDiffeomorph I ∞ G X)
-        (isLocalDiffeomorph_quotientMk.contMDiff.comp (objectDiffeomorph I ∞ G X).contMDiff) β =
-      SmoothForm.mpullback (objectDiffeomorph I ∞ G X) (objectDiffeomorph I ∞ G X).contMDiff
-        (SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G X))
-          isLocalDiffeomorph_quotientMk.contMDiff β) :=
-  LinearMap.congr_fun (SmoothForm.mpullback_comp _ _ (objectDiffeomorph I ∞ G X).contMDiff
-    isLocalDiffeomorph_quotientMk.contMDiff) β
-
 /-- The pullback of a form on the orbit manifold to the objects of `G ⋉ X` is invariant. -/
 theorem mpullback_quotientMk_mem_invariantForms
     (β : SmoothForm I (MulAction.orbitRel.Quotient G X) F k) :
     SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G X) ∘ objectDiffeomorph I ∞ G X)
       (isLocalDiffeomorph_quotientMk.contMDiff.comp (objectDiffeomorph I ∞ G X).contMDiff) β ∈
         invariantForms I G X F k := by
-  rw [mpullback_quotientMk_comp_objectDiffeomorph,
+  rw [← SmoothForm.mpullback_mpullback _ _ (objectDiffeomorph I ∞ G X).contMDiff
+      isLocalDiffeomorph_quotientMk.contMDiff,
     mpullback_objectDiffeomorph_mem_invariantForms_iff]
   intro g
-  rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+  rw [SmoothForm.mpullback_mpullback]
   congr 2
   exact funext fun x ↦ Quotient.sound (MulAction.mem_orbit x g)
 
@@ -352,12 +337,15 @@ def invariantFormsEquivQuotient :
         symm
         rw [SmoothForm.eq_descend_iff]
         simp only [LinearMap.toFun_eq_coe, LinearMap.codRestrict_apply]
-        rw [mpullback_quotientMk_comp_objectDiffeomorph,
+        rw [← SmoothForm.mpullback_mpullback _ _ (objectDiffeomorph I ∞ G X).contMDiff
+            isLocalDiffeomorph_quotientMk.contMDiff,
           SmoothForm.mpullback_symm_mpullback]
       right_inv φ := by
         apply Subtype.ext
         simp only [LinearMap.toFun_eq_coe, LinearMap.codRestrict_apply]
-        rw [mpullback_quotientMk_comp_objectDiffeomorph, SmoothForm.mpullback_quotientMk_descend,
+        rw [← SmoothForm.mpullback_mpullback _ _ (objectDiffeomorph I ∞ G X).contMDiff
+            isLocalDiffeomorph_quotientMk.contMDiff,
+          SmoothForm.mpullback_quotientMk_descend,
           SmoothForm.mpullback_mpullback_symm] }
 
 /-- The invariant form corresponding to a form on the orbit manifold is its pullback along the

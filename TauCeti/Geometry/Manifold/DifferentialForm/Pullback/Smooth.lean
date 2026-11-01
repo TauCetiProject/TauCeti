@@ -279,12 +279,18 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   exact TauCeti.mpullback_comp (F := F)
     (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
 
+/-- Pulling a form back along `g` and then along `f` is pulling it back along `g ∘ f`. -/
+theorem mpullback_mpullback (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ f)
+    (hg : ContMDiff I' I'' ∞ g) (β : SmoothForm I'' M'' F k) :
+    mpullback f hf (mpullback g hg β) = mpullback (g ∘ f) (hg.comp hf) β :=
+  (LinearMap.congr_fun (mpullback_comp f g hf hg) β).symm
+
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
     Function.Injective (mpullback (F := F) (k := k) f hf) := by
   refine Function.LeftInverse.injective (g := mpullback g hg) fun φ ↦ ?_
-  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  rw [mpullback_mpullback]
   simp only [hfg.comp_eq_id, mpullback_id, LinearMap.id_apply]
 
 /-- Pullback along the projection of a smooth vector bundle is injective: the zero section is a
@@ -301,7 +307,7 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
 theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}
     {β : SmoothForm I' M' F k} (h : mpullback φ φ.contMDiff β = α) :
     mpullback φ.symm φ.symm.contMDiff α = β := by
-  rw [← h, ← LinearMap.comp_apply, ← mpullback_comp]
+  rw [← h, mpullback_mpullback]
   have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
   simp only [hid, mpullback_id, LinearMap.id_apply]
 
