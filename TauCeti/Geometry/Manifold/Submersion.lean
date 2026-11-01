@@ -29,14 +29,13 @@ every point `x` there are charts `φ` of `M` and `ψ` of `N` and a continuous li
 `L : E ≃L[𝕜] E'' × F` in which `f` reads as `u ↦ (L u).1`. On the whole source of `φ`, the
 derivative of `f` read through the derivative of `ψ` is `(L (dφ v)).1`
 (`Manifold.IsSubmersionAtOfComplement.mfderiv_extend_comp_mfderiv`), so `mfderiv f y` is
-surjective and its kernel is the preimage under `dφ` of the fixed subspace `L⁻¹ (0 × F)` of the
-model space.
+surjective, it has a continuous right inverse since the projection `u ↦ (L u).1` has one
+(`Manifold.IsSubmersionAt.hasRightInverse_mfderiv`; Mathlib lists this as a TODO), and its kernel
+is the preimage under `dφ` of the fixed subspace `L⁻¹ (0 × F)` of the model space.
 
 When the model of the source has no boundary, a submersion at `x` has a `C^n` local section through
 `x` over an open neighbourhood of `f x`, read off from the normal-form charts
-(`Manifold.IsSubmersionAt.exists_contMDiffOn_section`). Differentiating the identity `f ∘ s = id`
-shows that the derivative of `f` at `x` has a continuous right inverse, the derivative of the
-section (`Manifold.IsSubmersionAt.hasRightInverse_mfderiv`); Mathlib lists this as a TODO.
+(`Manifold.IsSubmersionAt.exists_contMDiffOn_section`).
 
 ## Main results
 
@@ -46,13 +45,14 @@ section (`Manifold.IsSubmersionAt.hasRightInverse_mfderiv`); Mathlib lists this 
 * `Manifold.IsSubmersionAtOfComplement.surjective_mfderiv`,
   `Manifold.IsSubmersionAt.surjective_mfderiv` and `Manifold.IsSubmersion.surjective_mfderiv`: the
   derivative of a submersion is surjective. Mathlib lists this as a TODO.
+* `Manifold.IsSubmersionAtOfComplement.hasRightInverse_mfderiv`,
+  `Manifold.IsSubmersionAt.hasRightInverse_mfderiv` and
+  `Manifold.IsSubmersion.hasRightInverse_mfderiv`: the derivative of a submersion has a continuous
+  right inverse.
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_eq_zero_iff`: the kernel of the derivative on the
   source of the normal-form chart.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_section`,
   `Manifold.IsSubmersionAt.exists_contMDiffOn_section`: local sections of a submersion.
-* `Manifold.IsSubmersionAt.hasRightInverse_mfderiv`,
-  `Manifold.IsSubmersion.hasRightInverse_mfderiv`: the derivative of a submersion has a continuous
-  right inverse.
 
 ## References
 
@@ -165,6 +165,26 @@ include h in
 theorem surjective_mfderiv (hn : n ≠ 0) : Surjective (mfderiv I J f x) :=
   h.surjective_mfderiv_of_mem hn h.mem_domChart_source
 
+/-- At any point of the source of the domain chart `φ`, the derivative of a submersion has a
+continuous right inverse: read through the invertible derivatives of the charts it is the
+projection `u ↦ (L u).1`, which has one. -/
+theorem hasRightInverse_mfderiv_of_mem (hn : n ≠ 0) {y : M} (hy : y ∈ h.domChart.source) :
+    (mfderiv I J f y).HasRightInverse := by
+  obtain ⟨e, he⟩ := h.isInvertible_mfderiv_codChart_extend hn hy
+  have hP : (h.projection.comp (mfderiv I 𝓘(𝕜, E) (h.domChart.extend I) y)).HasRightInverse :=
+    (ContinuousLinearMap.HasRightInverse.fst.comp h.equiv.hasRightInverse).comp
+      (.of_isInvertible (h.isInvertible_mfderiv_domChart_extend hn hy))
+  rw [← h.mfderiv_extend_comp_mfderiv hn hy, ← he] at hP
+  -- Undo the invertible derivative `e` of the codomain chart.
+  refine hP.continuousLinearEquivalence_comp (g := e.symm) |>.congr ?_
+  ext v
+  exact (e.symm_apply_apply _).symm
+
+include h in
+/-- **The derivative of a submersion has a continuous right inverse.** -/
+theorem hasRightInverse_mfderiv (hn : n ≠ 0) : (mfderiv I J f x).HasRightInverse :=
+  h.hasRightInverse_mfderiv_of_mem hn h.mem_domChart_source
+
 /-- On the source of the domain chart `φ` of a submersion, a tangent vector `v` lies in the
 kernel of the derivative of `f` exactly when its image `dφ v` in the model space lies in
 `L⁻¹ (0 × F)`. -/
@@ -188,6 +208,16 @@ theorem IsSubmersionAt.surjective_mfderiv (h : IsSubmersionAt I J n f x) (hn : n
 theorem IsSubmersion.surjective_mfderiv (h : IsSubmersion I J n f) (hn : n ≠ 0) (x : M) :
     Surjective (mfderiv I J f x) :=
   (h.isSubmersionAt x).surjective_mfderiv hn
+
+/-- **The derivative of a submersion has a continuous right inverse.** -/
+theorem IsSubmersionAt.hasRightInverse_mfderiv (h : IsSubmersionAt I J n f x) (hn : n ≠ 0) :
+    (mfderiv I J f x).HasRightInverse :=
+  h.isSubmersionAtOfComplement_complement.hasRightInverse_mfderiv hn
+
+/-- **The derivative of a submersion has a continuous right inverse** at every point. -/
+theorem IsSubmersion.hasRightInverse_mfderiv (h : IsSubmersion I J n f) (hn : n ≠ 0) (x : M) :
+    (mfderiv I J f x).HasRightInverse :=
+  (h.isSubmersionAt x).hasRightInverse_mfderiv hn
 
 end Derivative
 
@@ -259,33 +289,6 @@ theorem IsSubmersionAt.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmer
     ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
       ∀ y ∈ U, f (s y) = y :=
   h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_section
-
-/-- **The derivative of a submersion has a continuous right inverse**, when the model of the
-source has no boundary: the derivative of a local section through `x`. -/
-theorem IsSubmersionAt.hasRightInverse_mfderiv [I.Boundaryless] (h : IsSubmersionAt I J n f x)
-    (hn : n ≠ 0) : (mfderiv I J f x).HasRightInverse := by
-  obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section
-  have hsd : MDifferentiableAt J I s (f x) :=
-    ((hs.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt hn)
-  have hfd : MDifferentiableAt I J f (s (f x)) := by
-    rw [hsx]
-    exact h.contMDiffAt.mdifferentiableAt hn
-  have hid : f ∘ s =ᶠ[𝓝 (f x)] id := eventually_of_mem (hU.mem_nhds hxU) hfs
-  have hcomp := mfderiv_comp (f x) hfd hsd
-  rw [hid.mfderiv_eq, mfderiv_id] at hcomp
-  -- The tangent spaces at `s (f x)` and `x` are both the model space, so the derivative of `s`
-  -- at `f x` is a right inverse of the derivative of `f` at `x = s (f x)`.
-  refine ⟨mfderiv J I s (f x), fun v ↦ ?_⟩
-  have hv := congrArg (· v) hcomp
-  simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply] at hv
-  rw [hsx] at hv
-  exact hv.symm
-
-/-- **The derivative of a submersion has a continuous right inverse** at every point, when the
-model of the source has no boundary. -/
-theorem IsSubmersion.hasRightInverse_mfderiv [I.Boundaryless] (h : IsSubmersion I J n f)
-    (hn : n ≠ 0) (x : M) : (mfderiv I J f x).HasRightInverse :=
-  (h.isSubmersionAt x).hasRightInverse_mfderiv hn
 
 end LocalSection
 
