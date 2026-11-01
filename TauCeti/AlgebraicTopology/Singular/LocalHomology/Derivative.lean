@@ -99,20 +99,24 @@ theorem localHomologyMap_affine_eq_sign_det_smul {U : Set E} {x : E} (hx : x ∈
   have hτ : τ ⁻¹' {c} ⊆ {0} := fun z hz ↦ add_eq_left.1 hz
   have hf' : (f' : C(E, E)) ⁻¹' {0} ⊆ {0} := fun z hz ↦
     (f'.toContinuousLinearEquivOfDetNeZero hdet).map_eq_zero_iff.1 hz
+  have hτf'σ : (τ.comp (f' : C(E, E))).comp σ = ⟨fun y : U ↦ c + f' (y - x), by fun_prop⟩ := by
+    ext y
+    simp [σ, τ]
+  have hτσ : τ.comp σ = ⟨fun y : U ↦ c + (y - x), by fun_prop⟩ := by
+    ext y
+    simp [σ, τ]
   have hlin : localHomologyMap R (f' : C(E, E)) hf' k = (SignType.sign f'.det : ℤ) • 𝟙 _ := by
     rw [localHomologyMap_def]
     exact singularHomologyMap_continuousLinearMap_compl_zero R f' _ k
   calc _ = localHomologyMap R σ hσ k ≫ localHomologyMap R (f' : C(E, E)) hf' k ≫
           localHomologyMap R τ hτ k := by
         rw [localHomologyMap_comp, localHomologyMap_comp]
-        -- The composite `τ ∘ f' ∘ σ` is the affine map, pointwise by definition.
-        congr 1
+        simp only [hτf'σ]
     _ = (SignType.sign f'.det : ℤ) • (localHomologyMap R σ hσ k ≫ localHomologyMap R τ hτ k) := by
         rw [hlin, Preadditive.zsmul_comp, Category.id_comp, Preadditive.comp_zsmul]
     _ = _ := by
         rw [localHomologyMap_comp]
-        -- The composite `τ ∘ σ` is the translation, pointwise by definition.
-        congr 2
+        simp only [hτσ]
 
 end Affine
 
@@ -182,8 +186,10 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
   -- On `B`, the straight-line homotopy from `f` to its linearization avoids `f x` off `x`.
   refine localHomologyMap_eq_of_homotopy R (ContinuousMap.Homotopy.affine _ _)
     (fun t y hy ↦ ?_) _ _ k
-  rw [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module]
-  exact segment_ne_of_norm_remainder_le hC K.coe_nonneg hKε (hrU y.2).2
+  have hfι : (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, F)).comp ι y = f y := rfl
+  have hrem : ‖f y - f x - f' (y - x)‖ ≤ ε * ‖(y : E) - x‖ := (hrU y.2).2
+  rw [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module, hfι]
+  exact segment_ne_of_norm_remainder_le hC K.coe_nonneg hKε hrem
     (fun h ↦ hy (Subtype.ext h)) t.2.1 t.2.2
 
 end Linearization
