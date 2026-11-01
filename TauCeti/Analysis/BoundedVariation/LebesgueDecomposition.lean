@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -17,16 +19,18 @@ For a locally integrable function of locally finite variation, write `Du = σ |D
 `polarDensity`. Relative to a σ-finite reference measure `ν` on the open domain, the absolutely
 continuous part of `Du` has density `acDerivativeDensity μ Ω u ν = (d|Du|/dν) σ`. The remaining
 part is `σ (|Du|.singularPart ν)`. We prove the distributional identity for their sum and the
-exact splitting of variation, including local integrability of the density. Taking
+splitting of the variation measure, including local integrability of the density. Taking
 `ν = μ.comap Subtype.val` gives the usual absolutely continuous/singular decomposition on the
 domain. No global finiteness of `|Du|` or integrability of `u` is required.
 
-The singular part uses Mathlib's `Measure.singularPart`, which is mutually singular to `ν`.
-The polar field still has norm one almost everywhere for that measure, since it is dominated
-by `|Du|`. Thus the splitting has no cancellation: the variation of the absolutely continuous
-part is `‖acDerivativeDensity μ Ω u ν‖ ν` and the remaining variation is precisely
-`|Du|.singularPart ν`. These statements describe the derivative through its action on test
-fields; no globally finite vector measure is imposed on an unbounded domain.
+The variation measure satisfies
+`|Du| = ν.withDensity (fun x => ‖acDerivativeDensity μ Ω u ν x‖ₑ) + |Du|.singularPart ν`
+(`withDensity_enorm_acDerivativeDensity_add_singularPart`). The second measure is mutually
+singular to `ν` by Mathlib's `Measure.mutuallySingular_singularPart`. The distributional
+identity describes the derivative through its action on test fields; no globally finite
+vector measure is imposed on an unbounded domain. The density is unique `ν`-almost everywhere
+among locally integrable densities in such a decomposition (`ae_eq_acDerivativeDensity`),
+including when the competing singular reference measure is not σ-finite.
 
 ## References
 
@@ -71,20 +75,18 @@ include hu hfin
 
 /-- The norm of the absolutely continuous derivative density is exactly `d|Du|/dν`,
 including where this Radon–Nikodym derivative vanishes. -/
-theorem ae_enorm_acDerivativeDensity :
+theorem ae_enorm_acDerivativeDensity_eq_rnDeriv :
     (fun x => ‖acDerivativeDensity μ Ω u ν x‖ₑ) =ᵐ[ν]
       (variationMeasure μ Ω u).rnDeriv ν := by
   have := Ω.isOpen.locallyCompactSpace
-  have hnorm := (ae_norm_polarDensity_eq_one hu hfin).filter_mono
-    (Measure.absolutelyContinuous_of_le (Measure.withDensity_rnDeriv_le
-      (variationMeasure μ Ω u) ν)).ae_le
-  rw [ae_withDensity_iff (Measure.measurable_rnDeriv _ _)] at hnorm
+  have hnorm := Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero (ν := ν)
+    (ae_iff.1 (ae_norm_polarDensity_eq_one hu hfin))
   filter_upwards [hnorm, Measure.rnDeriv_ne_top (variationMeasure μ Ω u) ν] with x hx htop
   rw [acDerivativeDensity_def, enorm_smul, Real.enorm_eq_ofReal
     ENNReal.toReal_nonneg, ENNReal.ofReal_toReal htop]
   by_cases hzero : (variationMeasure μ Ω u).rnDeriv ν x = 0
   · simp [hzero]
-  · rw [← ofReal_norm, hx hzero, ENNReal.ofReal_one, mul_one]
+  · rw [← ofReal_norm, not_imp_comm.mp hx hzero, ENNReal.ofReal_one, mul_one]
 
 /-- The variation measure splits into the norm of the absolutely continuous derivative
 and the singular variation measure. The latter is mutually singular to `ν`. -/
@@ -92,7 +94,7 @@ theorem withDensity_enorm_acDerivativeDensity_add_singularPart [SigmaFinite ν] 
     ν.withDensity (fun x => ‖acDerivativeDensity μ Ω u ν x‖ₑ) +
       (variationMeasure μ Ω u).singularPart ν = variationMeasure μ Ω u := by
   have := Ω.isOpen.locallyCompactSpace
-  rw [withDensity_congr_ae (ae_enorm_acDerivativeDensity hu hfin ν)]
+  rw [withDensity_congr_ae (ae_enorm_acDerivativeDensity_eq_rnDeriv hu hfin ν)]
   exact Measure.rnDeriv_add_singularPart _ _
 
 /-- On every subset, variation is the integral of the norm of the absolutely continuous
@@ -112,7 +114,7 @@ theorem locallyIntegrable_acDerivativeDensity :
   refine locallyIntegrable_iff.2 fun K hK =>
     ⟨(measurable_acDerivativeDensity ν).aestronglyMeasurable.restrict, ?_⟩
   apply hasFiniteIntegral_iff_enorm.mpr
-  rw [lintegral_congr_ae (ae_restrict_of_ae (ae_enorm_acDerivativeDensity hu hfin ν))]
+  rw [lintegral_congr_ae (ae_restrict_of_ae (ae_enorm_acDerivativeDensity_eq_rnDeriv hu hfin ν))]
   exact (Measure.setLIntegral_rnDeriv_le K).trans_lt hK.measure_lt_top
 
 omit hfin in
@@ -126,7 +128,7 @@ theorem integrable_acDerivativeDensity (hvar : totalVariationOn μ Ω u ≠ ∞)
     fun _ _ hK => ⟨Ω, hK, hvar⟩
   refine ⟨(measurable_acDerivativeDensity ν).aestronglyMeasurable, ?_⟩
   apply hasFiniteIntegral_iff_enorm.mpr
-  rw [lintegral_congr_ae (ae_enorm_acDerivativeDensity hu hfin ν)]
+  rw [lintegral_congr_ae (ae_enorm_acDerivativeDensity_eq_rnDeriv hu hfin ν)]
   have hmass : variationMeasure μ Ω u univ < ∞ := by
     rw [variationMeasure_univ hu hfin]
     exact hvar.lt_top
@@ -135,7 +137,8 @@ theorem integrable_acDerivativeDensity (hvar : totalVariationOn μ Ω u ≠ ∞)
 /-- **Lebesgue decomposition of the BV derivative.** The distributional derivative is the sum
 of the density `acDerivativeDensity μ Ω u ν` against `ν` and the polar field against the singular
 part of `|Du|`. Both pairings are integrable because the test field has compact support. -/
-theorem integral_divergenceCLM_mul_eq_neg_add_singularPart [SigmaFinite ν] (φ : 𝓓(Ω, E)) :
+theorem integral_divergenceCLM_mul_eq_neg_integral_inner_acDerivativeDensity_sub_singularPart
+    [SigmaFinite ν] (φ : 𝓓(Ω, E)) :
     ∫ x, divergenceCLM φ x * u x ∂μ =
       -(∫ x, ⟪φ x, acDerivativeDensity μ Ω u ν x⟫ ∂ν) -
         ∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂(variationMeasure μ Ω u).singularPart ν := by
@@ -156,20 +159,98 @@ theorem integral_divergenceCLM_mul_eq_neg_add_singularPart [SigmaFinite ν] (φ 
   rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, ← hsplit]
   simp only [acDerivativeDensity_def, inner_smul_right, smul_eq_mul, neg_add, sub_eq_add_neg, lam]
 
+/-- **Uniqueness of the absolutely continuous derivative density.** Any locally integrable
+`g` representing `Du` together with a locally integrable density against a measure singular
+to `ν` agrees with `acDerivativeDensity` at `ν`-almost every point. -/
+theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measure Ω}
+    (hg : LocallyIntegrable g ν) (hτ : LocallyIntegrable τ ξ) (hξ : ξ ⟂ₘ ν)
+    (h : ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ =
+      -(∫ x, ⟪φ x, g x⟫ ∂ν) - ∫ x : Ω, ⟪φ x, τ x⟫ ∂ξ) :
+    g =ᵐ[ν] acDerivativeDensity μ Ω u ν := by
+  have := Ω.isOpen.locallyCompactSpace
+  let ω := (variationMeasure μ Ω u).singularPart ν
+  have hσ : LocallyIntegrable (polarDensity μ Ω u) ω :=
+    (locallyIntegrable_polarDensity hu hfin).mono_measure (Measure.singularPart_le _ _)
+  -- The norms of the two singular densities give a locally finite dominating measure,
+  -- even when the candidate singular reference measure itself is not σ-finite.
+  let η := ξ.withDensity (fun x => ‖τ x‖ₑ) +
+    ω.withDensity (fun x => ‖polarDensity μ Ω u x‖ₑ)
+  have : IsFiniteMeasureOnCompacts η := ⟨fun K hK => by
+    simp only [η, Measure.add_apply, withDensity_apply _ hK.measurableSet]
+    exact ENNReal.add_lt_top.2
+      ⟨hasFiniteIntegral_iff_enorm.1 (hτ.integrableOn_isCompact hK).2,
+        hasFiniteIntegral_iff_enorm.1 (hσ.integrableOn_isCompact hK).2⟩⟩
+  have hην : η ⟂ₘ ν :=
+    (hξ.mono_ac (withDensity_absolutelyContinuous _ _) Measure.AbsolutelyContinuous.rfl).add_left
+      ((Measure.mutuallySingular_singularPart _ _).mono_ac
+        (withDensity_absolutelyContinuous _ _) Measure.AbsolutelyContinuous.rfl)
+  let ρ := ν + η
+  have hνρ : ν ≪ ρ := Measure.AbsolutelyContinuous.rfl.add_right _
+  have hηρ : η ≪ ρ := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+  -- Transfer the difference of the absolutely continuous densities to the common measure.
+  let f := fun x => (ν.rnDeriv ρ x).toReal • (g x - acDerivativeDensity μ Ω u ν x)
+  have hg' := hg.sub (locallyIntegrable_acDerivativeDensity hu hfin ν)
+  have hf : LocallyIntegrable f ρ := by
+    refine locallyIntegrable_iff.2 fun K hK => ?_
+    have hi := (integrable_rnDeriv_smul_iff hνρ).2
+      ((integrable_indicator_iff hK.measurableSet).2 (hg'.integrableOn_isCompact hK))
+    apply (integrable_indicator_iff hK.measurableSet).1
+    convert hi using 1
+    ext x
+    by_cases hx : x ∈ K <;> simp [f, hx]
+  have hle := ae_enorm_le_of_forall_enorm_integral_inner_le hf
+    (Measure.measurable_rnDeriv η ρ)
+    (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
+    fun U hU φ hφU hφ => by
+      -- Bound each singular pairing by its norm measure on the support of the test field.
+      have hbound (m : Measure Ω) (v : Ω → E) :
+          ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
+            m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' (U : Set E)) := by
+        rw [withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe),
+          ← lintegral_indicator (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
+        refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+        by_cases hx : x ∈ ((↑) ⁻¹' (U : Set E) : Set Ω)
+        · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
+            (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
+        · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
+          simp [hx, hzero]
+      have hint {v : Ω → E} (hv : LocallyIntegrable v ν) :
+          Integrable (fun x : Ω => ⟪φ x, v x⟫) ν :=
+        (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
+          (ae_of_all _ fun x => innerSL_apply_apply ℝ _ _)
+      have heq : ∫ x : Ω, ⟪φ x, f x⟫ ∂ρ =
+          (∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂ω) - ∫ x : Ω, ⟪φ x, τ x⟫ ∂ξ := by
+        simp only [f, inner_smul_right, inner_sub_right]
+        rw [integral_toReal_rnDeriv_mul hνρ,
+          integral_sub (hint hg) (hint (locallyIntegrable_acDerivativeDensity hu hfin ν))]
+        have h₁ := h φ
+        have h₂ :=
+          integral_divergenceCLM_mul_eq_neg_integral_inner_acDerivativeDensity_sub_singularPart
+            hu hfin ν φ
+        linarith
+      rw [heq, Measure.setLIntegral_rnDeriv hηρ]
+      exact enorm_sub_le.trans (by
+        simpa only [η, Measure.add_apply, add_comm] using add_le_add
+          (hbound ω (polarDensity μ Ω u)) (hbound ξ τ))
+  -- The singular bound vanishes ν-a.e., while the density of ν in ρ is positive there.
+  filter_upwards [hνρ.ae_le hle, Measure.rnDeriv_eq_zero_of_mutuallySingular hην hνρ,
+    Measure.rnDeriv_pos hνρ, hνρ.ae_le (Measure.rnDeriv_ne_top ν ρ)] with x hx hz hp ht
+  have hc : (ν.rnDeriv ρ x).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr ⟨hp.ne', ht⟩
+  simpa [hz, f, smul_eq_zero, hc, sub_eq_zero] using hx
+
 omit hu hfin in
 /-- The absolutely continuous derivative density is unchanged almost everywhere if the
 original function is changed on a null subset of its domain. -/
 theorem acDerivativeDensity_congr_ae {v : E → ℝ} (h : u =ᵐ[μ.restrict Ω] v) :
     acDerivativeDensity μ Ω u ν =ᵐ[ν] acDerivativeDensity μ Ω v ν := by
   have hlam := variationMeasure_congr_ae h
-  have hpolar := (polarDensity_congr_ae h).filter_mono
-    (Measure.absolutelyContinuous_of_le (Measure.withDensity_rnDeriv_le
-      (variationMeasure μ Ω u) ν)).ae_le
-  simp only [Filter.EventuallyEq, ae_withDensity_iff (Measure.measurable_rnDeriv _ _)] at hpolar
+  have hpolar := Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero (ν := ν)
+    (ae_iff.1 (polarDensity_congr_ae h))
   filter_upwards [hpolar] with x hx
   rw [acDerivativeDensity_def, acDerivativeDensity_def, ← hlam]
   by_cases hzero : (variationMeasure μ Ω u).rnDeriv ν x = 0
   · simp [hzero]
-  · rw [hx hzero]
+  · rw [not_imp_comm.mp hx hzero]
 
 end TauCeti
