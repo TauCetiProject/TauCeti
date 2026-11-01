@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Reversal
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SwapFactors
 
 /-!
@@ -71,7 +72,9 @@ travel.
   equivalence relation they generate has half as many classes as their product has orbits.
 * `TauCeti.PerfectMatching.orbitCount_mul_reconnect`: reconnecting a perfect matching so that it
   joins a point to its partner under an involution `T` cuts off a new two-point circle, adding
-  two orbits to the product with `T`.
+  two orbits to the product with `T`. When `T` and the matching attain the Euler bound
+  `TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
+  (`TauCeti.PerfectMatching.orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq`).
 
 ## References
 
@@ -753,6 +756,54 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
     ⟨1, by simp [swap_apply_of_ne_of_ne (D.apply_ne a) h₂]⟩
   rw [hval, ← mul_assoc, ← mul_assoc, orbitCount_mul_swap_of_sameCycle hD hs₂,
     orbitCount_mul_swap_of_sameCycle h₁ hs₁.symm]
+
+/-- **Suppressing a vertex of degree two keeps a sphere a sphere.** Let `T` and `D.val` attain the
+Euler bound `TauCeti.orbitCount_add_orbitCount_add_orbitCount_mul_le`, and let `T` exchange `a`
+with `T a ≠ a`, a vertex of degree two. Reconnecting `D` so that it joins `a` to `T a` detaches
+this vertex as a loop of its own, joining the two arcs that ended there; the bound is attained
+again. -/
+theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
+    (D : PerfectMatching α) {T : Perm α} {a : α} (hT : T (T a) = a) (ha : T a ≠ a)
+    (h : orbitCount T + orbitCount D.val + orbitCount (D.val * T) =
+      Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient (Subgroup.closure {T, D.val}) α)) :
+    orbitCount T + orbitCount (D.reconnect a (T a)).val +
+        orbitCount ((D.reconnect a (T a)).val * T) =
+      Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient
+        (Subgroup.closure {T, (D.reconnect a (T a)).val}) α) := by
+  by_cases hD : D.val a = T a
+  · rwa [← hD, reconnect_partner]
+  have hbound := orbitCount_add_orbitCount_add_orbitCount_mul_le T (D.reconnect a (T a)).val
+  set K := Subgroup.closure {T, (D.reconnect a (T a)).val}
+  -- The new loop adds two faces, its two sides.
+  have hface := D.orbitCount_mul_reconnect hT ha hD
+  rw [orbitCount_mul_comm T, orbitCount_mul_comm T] at hface
+  have hedge : orbitCount (D.reconnect a (T a)).val = orbitCount D.val := by
+    rw [reconnect_val, orbitCount_permCongr]
+  -- Reconnecting back by the same transposition recovers `D`, so at most one component is added.
+  have hle : Subgroup.closure {T, D.val} ≤
+      Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) := by
+    rw [Subgroup.closure_le]
+    have hK : (K : Set (Perm α)) ⊆
+        Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
+      fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
+    have hs : swap (D.val a) (T a) ∈
+        Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
+      Subgroup.subset_closure (Set.mem_insert _ _)
+    rintro g (rfl | rfl)
+    · exact hK (Subgroup.subset_closure (by simp))
+    · have hval : D.val = swap (D.val a) (T a) * (D.reconnect a (T a)).val *
+          swap (D.val a) (T a) := by
+        rw [reconnect_val, permCongr_eq_mul, swap_inv, ← mul_assoc, ← mul_assoc, swap_mul_self,
+          one_mul, mul_assoc, swap_mul_self, mul_one]
+      have hr : (D.reconnect a (T a)).val ∈
+          Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
+        hK (Subgroup.subset_closure (by simp))
+      have hm := mul_mem (mul_mem hs hr) hs
+      rwa [← hval] at hm
+  have hanti := MulAction.card_orbitRelQuotient_anti (X := α) hle
+  have := card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one K
+    (D.val a) (T a)
+  omega
 
 end PinchOff
 
