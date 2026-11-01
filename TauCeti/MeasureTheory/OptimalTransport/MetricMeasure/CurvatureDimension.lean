@@ -128,25 +128,6 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 section FiniteEntropy
 
-omit [SecondCountableTopology X] in
-/-- The normalised restriction `m[|s]` of `m` to a bounded measurable set `s` of positive, finite
-`m`-measure is a law of finite `p`-moment, for every exponent `p`. -/
-theorem exists_coe_eq_cond {p : ℝ≥0∞} {s : Set X} (hs : MeasurableSet s)
-    (hbdd : Bornology.IsBounded s) (hs0 : m s ≠ 0) (hstop : m s ≠ ∞) :
-    ∃ μ : WassersteinSpace p X, ((μ : ProbabilityMeasure X) : Measure X) = m[|s] := by
-  have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite hs0 hstop
-  obtain ⟨x, -⟩ := nonempty_of_measure_ne_zero hs0
-  obtain ⟨R, hR⟩ := hbdd.subset_closedBall x
-  have hmom : HasFiniteMoment p m[|s] :=
-    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal R)
-      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
-      ((ae_cond_mem hs).mono fun y hy ↦ by
-        rw [enorm_eq_self, edist_dist]
-        exact ENNReal.ofReal_le_ofReal (mem_closedBall'.1 (hR hy)))⟩
-  exact ⟨.mk ⟨_, hprob⟩ hmom,
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)⟩
-
 /-- **Dirac masses on the support are limits of laws of finite entropy.** If `m` is locally
 finite and `x` lies in the support of `m`, then for every `r > 0` some law `μ` of finite
 `p`-moment and finite entropy, `Ent_m(μ) ∉ {⊥, ⊤}`, is within `W_p`-distance `r` of `δ_x`. One can
@@ -172,7 +153,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
   have hdens : m[|s] = m.withDensity fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ≥0∞) := by
     simp_rw [ENNReal.coe_indicator, withDensity_indicator hs, withDensity_const, hc]
     rw [ProbabilityTheory.cond]
-  obtain ⟨μ, hμ⟩ := exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
+  obtain ⟨μ, hμ⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
   have hW : wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
       ENNReal.ofReal r := by
     have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
@@ -422,10 +403,10 @@ theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (
       ((hball z).mono fun _ hw ↦ ball_subset_closedBall hw))
   have hpos {z : X} (hz : z ∈ M.support) : M.reference (ball z r) ≠ 0 :=
     ((M.mem_support_iff z).1 hz _ (ball_mem_nhds z hr)).ne'
-  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond (p := 2) measurableSet_ball isBounded_ball (hpos hx)
-    (M.finite_bounded _ isBounded_ball).ne
-  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond (p := 2) measurableSet_ball isBounded_ball (hpos hy)
-    (M.finite_bounded _ isBounded_ball).ne
+  obtain ⟨μ₀, hμ₀⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+    isBounded_ball (hpos hx) (M.finite_bounded _ isBounded_ball).ne
+  obtain ⟨μ₁, hμ₁⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+    isBounded_ball (hpos hy) (M.finite_bounded _ isBounded_ball).ne
   have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference :=
     hμ₀ ▸ cond_absolutelyContinuous
   obtain ⟨q, hq, γ, hγ, hall⟩ := h hac₀ (hμ₁ ▸ cond_absolutelyContinuous) (hμ₀ ▸ hbdd x)
