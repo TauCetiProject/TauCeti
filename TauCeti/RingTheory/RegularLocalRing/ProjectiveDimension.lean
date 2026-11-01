@@ -89,7 +89,8 @@ dimension of finite modules (`ModuleCat.projectiveDimension_tensorProduct`), so 
 regular ring `R` also bounds the finite `A`-modules. For a flat local
 homomorphism of Noetherian local rings and the residue field of `A`, this is the finite projective
 dimension from which Serre's characterization of regular local rings deduces that `A` is regular
-(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)).
+(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)). If moreover `R` has finite Krull
+dimension, this bound makes the global dimension of `A` finite, so `A` is a regular ring.
 
 ## References
 
@@ -409,10 +410,9 @@ theorem IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat [IsR
   rw [← ModuleCat.projectiveDimension_tensorProduct R M]
   exact ModuleCat.projectiveDimension_le_ringKrullDim _
 
-/-- **Regularity descends along faithfully flat algebras of finite dimension.** If a regular ring
-`R` of finite Krull dimension is faithfully flat over a Noetherian ring `A`, then `A` is a regular
-ring: every finite `A`-module has projective dimension at most `dim R`, so `A` has finite global
-dimension. -/
+/-- **Regularity descends along faithfully flat extensions by regular rings of finite Krull
+dimension.** If a regular ring `R` of finite Krull dimension is faithfully flat over a Noetherian
+ring `A`, then `A` is a regular ring. -/
 theorem IsRegularRing.of_faithfullyFlat [IsRegularRing R] (hR : ringKrullDim R ≠ ⊤) :
     IsRegularRing A := by
   obtain ⟨n, hn⟩ : ∃ n : ℕ, ringKrullDim R ≤ n := by
