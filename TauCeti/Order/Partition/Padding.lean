@@ -59,7 +59,8 @@ theorem exists_embedding_prod_fin (P : Finpartition s) {m : ℕ}
       (Equiv.sigmaEquivProd P.parts (Fin m)).toEmbedding)
   refine ⟨e, fun A x ↦ ?_⟩
   -- The sigma enumeration and its fiberwise embeddings leave the cell index unchanged.
-  have hfst (x : s) : (e x).1 = ⟨P.part x.1, P.part_mem.2 x.2⟩ := rfl
+  have hfst (x : s) : (e x).1 = ⟨P.part x.1, P.part_mem.2 x.2⟩ := by
+    simp [e, equivSigmaParts, Function.Embedding.sigmaMap, Equiv.sigmaEquivProd, Sigma.map]
   rw [hfst, Subtype.ext_iff]
   exact P.part_eq_iff_mem A.2
 
@@ -104,7 +105,7 @@ theorem IsEquipartition.exists_divisible_padding (hP : P.IsEquipartition) (hs : 
     simp only [mem_filter, mem_univ, true_and, cell, mem_product, mem_singleton,
       and_true, eq_comm]
   have hparts : Q.parts = univ.image cell := by
-    simp only [Q, ofSetoid, ofSetSetoid_parts, Setoid.ker, Function.onFun, hfilter]
+    simp only [Q, ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
     ext B
     simp only [mem_image, mem_univ, true_and]
     exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩,
