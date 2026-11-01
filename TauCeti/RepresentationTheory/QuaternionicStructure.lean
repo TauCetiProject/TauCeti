@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Complex.Basic
 public import Mathlib.RepresentationTheory.Basic
 
 /-!
@@ -15,12 +14,13 @@ A **quaternionic structure** on a representation `ρ` of `G` on a complex vector
 conjugate-linear map `J : V →ₗ⋆[ℂ] V` with `J (J v) = -v` that commutes with the action.  It is the
 `-1` case of the Frobenius-Schur reality trichotomy; the `1` case is a real structure, a
 conjugate-linear *involution* commuting with the action, `Representation.IsRealStructure` in
-`TauCeti/RepresentationTheory/RealForm.lean`.
+`TauCeti/RepresentationTheory/RealForm.lean`.  The predicate is stated over any commutative star
+ring `k`, semilinear for `starRingEnd k`; the classical notion is the case `k = ℂ`.
 
-The two predicates differ only in the sign of the square, and the constructions in
+Up to the sign of the square the two predicates are alike, and the constructions in
 `TauCeti/RepresentationTheory/InvariantForm/StructureMap.lean` treat them together.  What separates
 them is that a quaternionic structure has no nonzero fixed vector
-(`Representation.IsQuaternionicStructure.eq_zero_of_apply_eq_self`), so, unlike a real structure,
+(`Representation.IsQuaternionicStructure.apply_eq_self_iff`), so, unlike a real structure,
 it cuts out no real form; that is why the real-form theory lives beside
 `Representation.IsRealStructure` while this predicate stands on its own.
 
@@ -39,8 +39,8 @@ value `-1` off it, are in
 ## Main results
 
 * `Representation.IsQuaternionicStructure.bijective`: a quaternionic structure is bijective.
-* `Representation.IsQuaternionicStructure.eq_zero_of_apply_eq_self`: a quaternionic structure has no
-  nonzero fixed vector.
+* `Representation.IsQuaternionicStructure.apply_eq_self_iff`: a quaternionic structure fixes only
+  `0`.
 
 ## References
 
@@ -52,20 +52,20 @@ public section
 
 namespace Representation
 
-variable {G V : Type*} [Monoid G] [AddCommGroup V] [Module ℂ V] {ρ : Representation ℂ G V}
+variable {k G V : Type*} [CommSemiring k] [StarRing k] [Monoid G] [AddCommGroup V] [Module k V]
+  {ρ : Representation k G V}
 
 variable (ρ) in
-/-- A **quaternionic structure** on a complex representation: a conjugate-linear map `J` of the
-underlying space that squares to `-1` and commutes with the action.  It is the `-1` case of the
+/-- A **quaternionic structure** on a representation over a commutative star ring `k`: a map `J` of
+the underlying space, semilinear for `starRingEnd k`, that squares to `-1` and commutes with the
+action.  For `k = ℂ` it is a conjugate-linear map, and the predicate is the `-1` case of the
 Frobenius-Schur reality trichotomy, `Representation.IsRealStructure` being the `1` case.
 
-The two predicates differ only in the sign of the square, and the constructions of
-`TauCeti/RepresentationTheory/InvariantForm/StructureMap.lean` treat them together; what separates
-them is that a quaternionic structure has no nonzero fixed vector
-(`Representation.IsQuaternionicStructure.eq_zero_of_apply_eq_self`), so no real form attaches to it.
+A quaternionic structure has no nonzero fixed vector
+(`Representation.IsQuaternionicStructure.apply_eq_self_iff`), so no real form attaches to it.
 The map is carried unbundled, matching `Representation.IsRealStructure` and
 `TauCeti.Representation.IsInvariantForm`. -/
-structure IsQuaternionicStructure (J : V →ₛₗ[starRingEnd ℂ] V) : Prop where
+structure IsQuaternionicStructure (J : V →ₛₗ[starRingEnd k] V) : Prop where
   /-- The map squares to `-1`. -/
   sq_eq_neg (v : V) : J (J v) = -v
   /-- The map intertwines the action with itself. -/
@@ -85,7 +85,7 @@ attribute [simp] IsQuaternionicStructure.isIntertwining
 
 namespace IsQuaternionicStructure
 
-variable {J : V →ₛₗ[starRingEnd ℂ] V} (h : IsQuaternionicStructure ρ J)
+variable {J : V →ₛₗ[starRingEnd k] V} (h : IsQuaternionicStructure ρ J)
 
 include h
 
@@ -93,18 +93,16 @@ include h
 of the bijectivity a real structure has as an involution. -/
 theorem bijective : Function.Bijective ⇑J :=
   Function.bijective_iff_has_inverse.mpr
-    ⟨fun v => -J v, fun v => by simp [h.sq_eq_neg], fun v => by simp [map_neg, h.sq_eq_neg]⟩
+    ⟨fun v => -J v, fun v => by simp [h.sq_eq_neg], fun v => by simp [h.sq_eq_neg]⟩
 
-/-- **A quaternionic structure has no nonzero fixed vector**: a fixed vector satisfies `v = -v`.
-So, unlike a real structure, it cuts out no real form; its fixed points are `0`. -/
-theorem eq_zero_of_apply_eq_self {v : V} (hv : J v = v) : v = 0 := by
-  have hneg : v = -v := by
-    have hsq := h.sq_eq_neg v
-    rwa [hv, hv] at hsq
-  have h2 : (2 : ℂ) • v = 0 := by
-    rw [two_smul]
-    exact add_eq_zero_iff_eq_neg.mpr hneg
-  exact (smul_eq_zero.mp h2).resolve_left two_ne_zero
+/-- **A quaternionic structure fixes only `0`**: a fixed vector satisfies `v = -v`, which forces
+`v = 0` once `2` is not a zero divisor on `V`, as over `ℂ`.  So, unlike a real structure, a
+quaternionic structure cuts out no real form. -/
+theorem apply_eq_self_iff [IsDomain k] [CharZero k] [Module.IsTorsionFree k V] {v : V} :
+    J v = v ↔ v = 0 := by
+  have := HasUniqueDiv.of_isTorsionFree k V
+  refine ⟨fun hv => self_eq_neg.mp ?_, fun hv => by simp [hv]⟩
+  simpa [hv] using h.sq_eq_neg v
 
 end IsQuaternionicStructure
 
