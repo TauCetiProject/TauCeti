@@ -246,7 +246,10 @@ abbrev supportedModuleHSheaf (n : ℕ) : Sheaf (Opens.grothendieckTopology X) (M
   (presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj
     (F.supportedModuleHPresheaf S n)
 
-/-- The functor of module-valued local cohomology in degree `n`. -/
+/-- The functor of module-valued local cohomology in degree `n`.
+
+The body is exposed so its objects are definitionally the local cohomology sheaves;
+its action on morphisms is characterized by `supportedModuleHPresheafFunctor_map_toSheafify`. -/
 @[expose]
 def supportedModuleHSheafFunctor (n : ℕ) :
     Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤
@@ -257,6 +260,17 @@ def supportedModuleHSheafFunctor (n : ℕ) :
 lemma supportedModuleHSheafFunctor_obj (n : ℕ) :
     (supportedModuleHSheafFunctor S n).obj F = F.supportedModuleHSheaf S n :=
   (rfl)
+
+/-- The local cohomology map is induced by the supported cohomology presheaf map through
+sheafification, in every degree. -/
+@[simp, reassoc]
+lemma supportedModuleHPresheafFunctor_map_toSheafify (n : ℕ)
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (f : F ⟶ G) :
+    (supportedModuleHPresheafFunctor S n).map f ≫
+        toSheafify (Opens.grothendieckTopology X) (G.supportedModuleHPresheaf S n) =
+      toSheafify (Opens.grothendieckTopology X) (F.supportedModuleHPresheaf S n) ≫
+        ((supportedModuleHSheafFunctor S n).map f).hom :=
+  toSheafify_naturality _ _
 
 /-- The degree-zero local cohomology sheaf is the sheaf of supported sections. -/
 def supportedModuleHSheafZeroIso : F.supportedModuleHSheaf S 0 ≅ F.supportedSubmoduleSheaf S :=
