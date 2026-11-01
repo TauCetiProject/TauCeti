@@ -198,7 +198,8 @@ theorem evalInvSub_add_toMeromorphicGerms_eq_iff {φ : meromorphicGerms ℂ a} {
   refine ⟨?_, fun ⟨hφP, hφs⟩ ↦ ?_⟩
   · rintro rfl
     have hφP : principalPart (evalInvSub a P + toMeromorphicGerms a s) = P := by
-      rw [map_add, principalPart_evalInvSub hP, principalPart_toMeromorphicGerms, add_zero]
+      rw [map_add, principalPart_evalInvSub_of_coeff_zero hP, principalPart_toMeromorphicGerms,
+        add_zero]
     refine ⟨hφP, toMeromorphicGerms_injective a ?_⟩
     rw [toMeromorphicGerms_regularPart, hφP, add_sub_cancel_left]
   · rw [← hφP, ← hφs, evalInvSub_principalPart_add_toMeromorphicGerms_regularPart]

@@ -223,11 +223,19 @@ theorem principalPart_eq_iff {φ : meromorphicGerms 𝕜 a} {P : 𝕜[X]} :
   · obtain ⟨g', hg', hgφ'⟩ := exists_analyticAt_coe_sub_evalInvSub_principalPart φ
     exact eq_of_coe_sub_evalInvSub_eq (coeff_zero_principalPart φ) hP hg' hg hgφ' hgφ
 
-/-- A polynomial without constant term in the inverse coordinate is its own principal part. -/
+/-- The principal part of a polynomial in the inverse coordinate is the polynomial with its
+constant term removed. -/
 @[simp]
-theorem principalPart_evalInvSub {P : 𝕜[X]} (hP : P.coeff 0 = 0) :
-    principalPart (evalInvSub a P) = P :=
-  principalPart_eq_iff.2 ⟨hP, 0, analyticAt_const, by rw [sub_self, ZeroMemClass.coe_zero]; rfl⟩
+theorem principalPart_evalInvSub {P : 𝕜[X]} :
+    principalPart (evalInvSub a P) = P - C (P.coeff 0) :=
+  principalPart_eq_iff.2 ⟨by simp, fun _ ↦ P.coeff 0, analyticAt_const, by
+    rw [map_sub, sub_sub_cancel, coe_evalInvSub]
+    simp_rw [eval_C]⟩
+
+/-- A polynomial without constant term in the inverse coordinate is its own principal part. -/
+theorem principalPart_evalInvSub_of_coeff_zero {P : 𝕜[X]} (hP : P.coeff 0 = 0) :
+    principalPart (evalInvSub a P) = P := by
+  rw [principalPart_evalInvSub, hP, C_0, sub_zero]
 
 /-- The principal part of a meromorphic germ vanishes exactly when the germ is that of a function
 analytic at `a`. -/
