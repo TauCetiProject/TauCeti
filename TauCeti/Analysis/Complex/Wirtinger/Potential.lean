@@ -47,8 +47,7 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport {f 
       convert hfc.contDiff_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
         Complex.locallyIntegrable_inv hf using 1
       funext w
-      rw [convolution_eq_swap]
-      rfl
+      simp only [convolution_eq_swap, ContinuousLinearMap.lsmul_apply]
     exact hc.const_smul _
   refine ⟨fun w ↦ (2 : ℂ) • T w, hT.const_smul _, fun z ↦ ?_⟩
   have he := hfc.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul
