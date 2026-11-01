@@ -201,6 +201,7 @@ theorem FiniteQuadraticModule.Isometry.coordinatePowerDiscriminant_apply {hL : L
 
 /-- In each coordinate of `(A_L)^ι`, the coordinatewise quadratic alphabet isometry is the
 alphabet isometry applied to that coordinate. -/
+@[simp]
 theorem FiniteQuadraticModule.Isometry.discriminantGroupPiEquiv_coordinatePowerDiscriminant_apply
     {hL : L.IsEven} {ι : Type v} [Fintype ι] {A : FiniteQuadraticModule.{w}}
     (f : Isometry A (L.discriminantQuadraticModule hL)) (x : ι → A) (i : ι) :
