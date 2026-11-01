@@ -56,6 +56,12 @@ variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
 
+/-- The complement of the subspace of the pair `(X, X \ A)` is compact when `A` is. -/
+lemma isCompact_compl_range_ofSubset_compl_map {A : Set X} (hA : IsCompact A) :
+    IsCompact (Set.range (ofSubset Aᶜ).map)ᶜ := by
+  rw [range_ofSubset_map]
+  exact (compl_compl A).symm ▸ hA
+
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
