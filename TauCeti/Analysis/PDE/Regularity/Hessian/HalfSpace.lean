@@ -39,7 +39,8 @@ The odd reflection `v` of `u` across the boundary hyperplane lies in `W^{2,p}(�
 (`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`), and its weak Hessian is `D²u` on `H`
 and `R ∘ D²u(ρ x) ∘ R` up to sign on the other side, where `ρ` is the reflection in the boundary
 hyperplane and `R` its linear part. Since `R` is an involution, the trace of `R ∘ M ∘ R` is the
-trace of `M`, so `Δv` is the odd reflection of `f`, whose `Lᵖ` norm is at most `2 ‖f‖_{Lᵖ(H)}`.
+trace of `M`, so `Δv` is the odd reflection of `f`, whose `Lᵖ` norm is at most `2 ‖f‖_{Lᵖ(H)}`
+(`TauCeti.eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection`).
 The whole-space estimate
 (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`) bounds `D²v`, and
 `D²u` is the restriction of `D²v` to `H`.
@@ -62,90 +63,7 @@ open scoped ENNReal NNReal Laplacian Distributions
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- Conjugating by the reflection `R (s, z) = (-s, z)` preserves the trace of an endomorphism. -/
-private theorem traceCLM_normalLinearReflection_comp_comp
-    (M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-    traceCLM ℝ (WithLp 2 (ℝ × E))
-        (((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L M ∘L
-          ((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) =
-      traceCLM ℝ (WithLp 2 (ℝ × E)) M := by
-  set R : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E) :=
-    ((normalLinearReflection E).toContinuousLinearEquiv :
-      WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-  have hRR : R ∘L R = ContinuousLinearMap.id ℝ _ := by
-    ext x
-    exact normalLinearReflection_normalLinearReflection x
-  rw [traceCLM_apply, traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
-    ContinuousLinearMap.toLinearMap_comp, LinearMap.trace_comp_comm', LinearMap.comp_assoc,
-    ← ContinuousLinearMap.toLinearMap_comp, hRR, ContinuousLinearMap.coe_id, LinearMap.comp_id]
-
-variable [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞}
-
-/-- An endomorphism field `w` on `ℝ × E` that is the odd reflection of a field `d` on the
-half-space `H = {x | a < x.fst}`, in the sense of
-`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`, agrees with `d` on `H`. -/
-private theorem ae_restrict_eq_of_ae_eq_sub_comp_normalReflection {a : ℝ}
-    {d w : WithLp 2 (ℝ × E) → IteratedGradient (WithLp 2 (ℝ × E)) 1}
-    (hw : w =ᵐ[volume] fun x =>
-      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d x -
-        ((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
-          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d
-            (normalReflection E a x) ∘L
-          ((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) :
-    d =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] w := by
-  have hH := (normalHalfSpace (E := E) a).isOpen.measurableSet
-  filter_upwards [ae_restrict_mem hH, ae_restrict_of_ae hw] with x hx hwx
-  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
-    fun h => lt_asymm ((mem_normalHalfSpace a x).1 hx)
-      ((normalReflection_mem_normalHalfSpace_iff a x).1 h)
-  rw [hwx, indicator_of_mem hx, indicator_of_notMem hρx, ContinuousLinearMap.zero_comp,
-    ContinuousLinearMap.comp_zero, sub_zero]
-
-/-- The trace of the odd reflection `w` of an endomorphism field `d` on the half-space
-`H = {x | a < x.fst}` is the odd reflection of the trace of `d`, so its `Lᵖ` norm on `ℝ × E` is at
-most twice the `Lᵖ` norm of the trace of `d` on `H`. -/
-private theorem eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection [Fact (1 ≤ p)] {a : ℝ}
-    {d w : WithLp 2 (ℝ × E) → IteratedGradient (WithLp 2 (ℝ × E)) 1}
-    (hd : AEStronglyMeasurable d (volume.restrict (normalHalfSpace (E := E) a)))
-    (hw : w =ᵐ[volume] fun x =>
-      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d x -
-        ((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
-          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d
-            (normalReflection E a x) ∘L
-          ((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) :
-    eLpNorm (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (w x)) p volume ≤
-      2 * eLpNorm (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (d x)) p
-        (volume.restrict (normalHalfSpace (E := E) a)) := by
-  set H := (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-  have hH : MeasurableSet H := (normalHalfSpace (E := E) a).isOpen.measurableSet
-  have hρ := measurePreserving_normalReflection (E := E) a
-  set T := traceCLM ℝ (WithLp 2 (ℝ × E))
-  -- The trace of `w` is the odd reflection of `φ`, the trace of `d` extended by zero off `H`.
-  obtain ⟨φ, hφ⟩ : ∃ φ : WithLp 2 (ℝ × E) → ℝ, φ = H.indicator fun x => T (d x) := ⟨_, rfl⟩
-  have hφm : AEStronglyMeasurable φ volume :=
-    hφ ▸ (aestronglyMeasurable_indicator_iff hH).2 (T.continuous.comp_aestronglyMeasurable hd)
-  have hTφ (y : WithLp 2 (ℝ × E)) : T (H.indicator d y) = φ y := by
-    by_cases hy : y ∈ H <;> simp [hφ, hy]
-  have hae : (fun x => T (w x)) =ᵐ[volume] φ - φ ∘ normalReflection E a := by
-    filter_upwards [hw] with x hwx
-    rw [hwx, map_sub, traceCLM_normalLinearReflection_comp_comp, hTφ, hTφ, Pi.sub_apply,
-      Function.comp_apply]
-  calc eLpNorm (fun x => T (w x)) p volume
-      = eLpNorm (φ - φ ∘ normalReflection E a) p volume := eLpNorm_congr_ae hae
-    _ ≤ eLpNorm φ p volume + eLpNorm (φ ∘ normalReflection E a) p volume :=
-      eLpNorm_sub_le Fact.out
-    _ = 2 * eLpNorm (fun x => T (d x)) p (volume.restrict H) := by
-      rw [eLpNorm_comp_measurePreserving hφm hρ, ← two_mul, hφ,
-        eLpNorm_indicator_eq_eLpNorm_restrict hH.nullMeasurableSet]
-
-variable [Fact (1 ≤ p)]
+  [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **The Calderón–Zygmund estimate on a half-space with zero boundary values.** Let `1 < p < ∞`.
 There is a constant `C` such that, for every half-space `H = {x | a < x.fst}` of `ℝ × E`, every
