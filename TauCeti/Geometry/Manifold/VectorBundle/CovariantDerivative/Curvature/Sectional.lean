@@ -145,7 +145,7 @@ theorem IsMetricCompatible.sectionalCurvature_comm
 /-- An upper sectional-curvature bound is equivalent to the corresponding bound on every
 curvature numerator, including dependent pairs. The latter have zero numerator and Gram
 determinant, so no dimension or nonzero-vector hypothesis is needed. -/
-theorem sectionalCurvature_le_iff (hcov : CovariantDerivative.IsMetricCompatible
+theorem forall_sectionalCurvature_le_iff (hcov : CovariantDerivative.IsMetricCompatible
     (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (κ : ℝ) :
     (∀ u v : TangentSpace I x, LinearIndependent ℝ ![u, v] →
       cov.sectionalCurvature hcov x u v ≤ κ) ↔
@@ -161,9 +161,11 @@ theorem sectionalCurvature_le_iff (hcov : CovariantDerivative.IsMetricCompatible
       · simp [hu, Matrix.real_det_gram_fin_two]
       · obtain ⟨c, hc⟩ := not_forall.mp ((LinearIndependent.pair_iff' hu).not.mp huv)
         rw [← not_not.mp hc]
-        simp [Matrix.real_det_gram_fin_two, inner_smul_right, norm_smul, mul_pow,
-          Real.norm_eq_abs, sq_abs]
-        nlinarith
+        simp only [map_smul, cov.curvatureTensor_self, LinearMap.zero_apply, smul_zero,
+          inner_zero_left, Matrix.real_det_gram_fin_two, real_inner_smul_left,
+          real_inner_smul_right]
+        ring_nf
+        exact le_rfl
   · exact (div_le_iff₀ (hind u v huv)).2 (h u v)
 
 /-- A connection has sectional curvature `k` at `x` when every tangent two-plane at `x` has

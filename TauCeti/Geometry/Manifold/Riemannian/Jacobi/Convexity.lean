@@ -80,20 +80,13 @@ theorem IsJacobiFieldOn.convexOn_norm_sq_of_sectionalCurvature_nonpos
         (γ r) u v ≤ 0) :
     ConvexOn ℝ s (fun r ↦ ‖V r‖ ^ 2) := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hfirst (r : ℝ) (hr : r ∈ s) :
-      HasDerivWithinAt (fun r ↦ ‖V r‖ ^ 2)
-        (2 * ⟪alongCurveWithin (leviCivitaConnection I M) γ V s r, V r⟫_ℝ) s r := by
-    have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn r hr)
-      (h.isGeodesicCurveOn.mdifferentiableOn r hr)
-      (h.differentiableWithinAt_sectionCoord hr) (h.differentiableWithinAt_sectionCoord hr)
-    simpa only [real_inner_self_eq_norm_sq, real_inner_comm (V r), two_mul] using hd
   refine convexOn_of_hasDerivWithinAt2_nonneg (Real.convex_iff_isPreconnected.2 hs)
-    (fun r hr ↦ (hfirst r hr).continuousWithinAt)
-    (fun r hr ↦ (hfirst r (interior_subset hr)).mono interior_subset)
+    (fun r hr ↦ (h.hasDerivWithinAt_norm_sq hr).continuousWithinAt)
+    (fun r hr ↦ (h.hasDerivWithinAt_norm_sq (interior_subset hr)).mono interior_subset)
     (fun r hr ↦ ((h.hasDerivWithinAt_inner_alongCurveWithin_self (interior_subset hr)).const_mul
       2).mono interior_subset) ?_
   intro r hr
-  have hc := ((leviCivitaConnection I M).sectionalCurvature_le_iff hm (γ r) 0).1
+  have hc := ((leviCivitaConnection I M).forall_sectionalCurvature_le_iff hm (γ r) 0).1
     (hK r (interior_subset hr)) (V r) (curveVelocityWithin I γ s r)
   simp only [zero_mul] at hc
   exact mul_nonneg (by norm_num) (sub_nonneg.2 (hc.trans (sq_nonneg _)))
@@ -106,8 +99,10 @@ theorem IsJacobiFieldOn.eq_zero_of_endpoints_eq_zero_of_sectionalCurvature_nonpo
     (hK : ∀ r ∈ s, ∀ u v : TangentSpace I (γ r), LinearIndependent ℝ ![u, v] →
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
         (γ r) u v ≤ 0)
-    (ha : a ∈ s) (hb : b ∈ s) (hab : a < b) (hVa : V a = 0) (hVb : V b = 0)
+    (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) (hVa : V a = 0) (hVb : V b = 0)
     (ht : t ∈ s) : V t = 0 := by
+  wlog hlt : a < b generalizing a b
+  · exact this hb ha hab.symm hVb hVa (hab.lt_or_gt.resolve_left hlt)
   have hc := h.convexOn_norm_sq_of_sectionalCurvature_nonpos hs hK
   have hz (r : ℝ) (hr : r ∈ Icc a b) : V r = 0 := by
     have hle := hc.le_max_of_mem_Icc ha hb hr
@@ -119,8 +114,8 @@ theorem IsJacobiFieldOn.eq_zero_of_endpoints_eq_zero_of_sectionalCurvature_nonpo
       (fun r ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ V s r, V r⟫_ℝ)
       0 (Icc a b) a :=
     (hasDerivWithinAt_const a (Icc a b) (0 : ℝ)).congr_of_mem
-      (fun r hr ↦ by simp [hz r hr]) (left_mem_Icc.2 hab.le)
-  have heq := (uniqueDiffOn_Icc hab a (left_mem_Icc.2 hab.le)).eq_deriv _ hd hd₀
+      (fun r hr ↦ by simp [hz r hr]) (left_mem_Icc.2 hlt.le)
+  have heq := (uniqueDiffOn_Icc hlt a (left_mem_Icc.2 hlt.le)).eq_deriv _ hd hd₀
   simp only [hVa, map_zero, LinearMap.zero_apply, inner_zero_right, sub_zero] at heq
   have hDV : alongCurveWithin (leviCivitaConnection I M) γ V s a = 0 :=
     norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 heq)
@@ -133,7 +128,7 @@ theorem IsJacobiFieldOn.eq_of_endpoints_eq_of_sectionalCurvature_nonpos
     (hK : ∀ r ∈ s, ∀ u v : TangentSpace I (γ r), LinearIndependent ℝ ![u, v] →
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
         (γ r) u v ≤ 0)
-    (ha : a ∈ s) (hb : b ∈ s) (hab : a < b) (h₀ : V a = W a) (h₁ : V b = W b)
+    (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) (h₀ : V a = W a) (h₁ : V b = W b)
     (ht : t ∈ s) : V t = W t := by
   have h := (hV.add (hW.const_smul (-1))).eq_zero_of_endpoints_eq_zero_of_sectionalCurvature_nonpos
     hs hK ha hb hab (by simp [h₀]) (by simp [h₁]) ht
