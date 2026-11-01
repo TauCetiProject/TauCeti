@@ -256,12 +256,14 @@ theorem pow_card_pow_mem_span_of_cartier_stable {T : Set (PowerSeries K)}
     -- Apply the `q ^ j`-th power map to `h = ∑_{r < q} X ^ r * (Λ_r h) ^ q`.
     have hsum := congrArg (F ^ j) (eq_sum_X_pow_mul_cartier_pow h)
     rw [hFj, map_sum] at hsum
-    beta_reduce
-    rw [SetLike.mem_coe, hsum]
+    -- The membership goal is stated for the image function applied to `h`.
+    change h ^ q ^ j ∈ M (j + 1)
+    rw [hsum]
     refine Submodule.sum_mem _ fun r hr ↦ ?_
     have hterm : (F ^ j) (X ^ r * cartier K q r h ^ q) =
         ((Polynomial.X : Polynomial K) ^ (q ^ j * r)) • cartier K q r h ^ q ^ (j + 1) := by
-      simp [hFj, Algebra.smul_def, algebraMap_apply']
+      simp only [hFj, Algebra.smul_def, algebraMap_apply', Algebra.algebraMap_self,
+        Polynomial.coe_pow, Polynomial.coe_X, map_id, id_eq]
       ring
     rw [hterm]
     exact Submodule.smul_mem _ _ <|
