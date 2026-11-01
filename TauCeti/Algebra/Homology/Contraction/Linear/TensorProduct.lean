@@ -115,22 +115,22 @@ theorem rTensor_homotopy :
 theorem isHomogeneous_rTensor_incl (K : InternalGrading R C) :
     LinearMap.IsHomogeneous (c.rTensor G H b hh hi hp).incl
       (H.tensorProduct K).piece (G.tensorProduct K).piece 0 := by
-  simpa only [rTensor_incl, LinearMap.rTensor_def, add_zero] using
-    hi.tensorProduct (LinearMap.isHomogeneous_id (R := R) K.piece)
+  rw [rTensor_incl]
+  exact hi.rTensor K
 
 /-- The tensor extension's projection has degree zero for any grading on the right factor. -/
 theorem isHomogeneous_rTensor_proj (K : InternalGrading R C) :
     LinearMap.IsHomogeneous (c.rTensor G H b hh hi hp).proj
       (G.tensorProduct K).piece (H.tensorProduct K).piece 0 := by
-  simpa only [rTensor_proj, LinearMap.rTensor_def, add_zero] using
-    hp.tensorProduct (LinearMap.isHomogeneous_id (R := R) K.piece)
+  rw [rTensor_proj]
+  exact hp.rTensor K
 
 /-- The tensor extension's homotopy has degree minus one for any grading on the right factor. -/
 theorem isHomogeneous_rTensor_homotopy (K : InternalGrading R C) :
     LinearMap.IsHomogeneous (c.rTensor G H b hh hi hp).homotopy
       (G.tensorProduct K).piece (G.tensorProduct K).piece (-1) := by
-  simpa only [rTensor_homotopy, LinearMap.rTensor_def, add_zero] using
-    hh.tensorProduct (LinearMap.isHomogeneous_id (R := R) K.piece)
+  rw [rTensor_homotopy]
+  exact hh.rTensor K
 
 end LinearContraction
 
