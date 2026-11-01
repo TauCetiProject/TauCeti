@@ -35,7 +35,7 @@ over `X'` (`AlgebraicGeometry.Scheme.IdealSheafData.blowupBaseChangeHom`).
 When `g` is a closed immersion, for instance the inclusion of a closed subscheme `Z` of `X`, the
 morphism `Bl_{I.comap g} Z ⟶ Bl_I X` is therefore a closed immersion. This closed subscheme of
 `Bl_I X`, the blowup of `Z` along the inverse image of the centre, is the *strict transform* of
-`Z` in the sense of the Stacks Project (Lemma 080D); the description of the strict transform as
+`Z` (Stacks Project, Definition 080D and Lemma 080E); the description of the strict transform as
 the scheme-theoretic closure of the inverse image of `Z ∖ V(I)` is not treated here.
 
 ## Main definitions
@@ -55,15 +55,19 @@ the scheme-theoretic closure of the inverse image of `Z ∖ V(I)` is not treated
 * `AlgebraicGeometry.Scheme.IdealSheafData.isClosedImmersion_blowupMap`: for a closed immersion
   `g`, the morphism of blowups `Bl_{I.comap g} X' ⟶ Bl_I X` is a closed immersion;
   `AlgebraicGeometry.Scheme.IdealSheafData.isOpenImmersion_blowupMap`: for an open immersion `g`
-  it is an open immersion.
+  it is an open immersion, onto the preimage of the image of `g`
+  (`AlgebraicGeometry.Scheme.IdealSheafData.opensRange_blowupMap`).
 
 ## References
 
 * [The Stacks Project, Lemma 0805](https://stacks.math.columbia.edu/tag/0805): the blowup of the
   inverse image of the centre is a closed subscheme of the base change of the blowup, equal to it
   for flat base change.
-* [The Stacks Project, Lemma 080D](https://stacks.math.columbia.edu/tag/080D): the strict
-  transform of a closed subscheme is the blowup of that closed subscheme.
+* [The Stacks Project, Definition 080D](https://stacks.math.columbia.edu/tag/080D): the strict
+  transform.
+* [The Stacks Project, Lemma 080E](https://stacks.math.columbia.edu/tag/080E): the strict
+  transform of a closed subscheme is the blowup of that closed subscheme along the inverse image
+  of the centre.
 -/
 
 public section
@@ -107,6 +111,22 @@ theorem eq_blowupMap {h : (I.comap g).blowup ⟶ I.blowup}
     (hh : h ≫ I.blowupToBase = (I.comap g).blowupToBase ≫ g) : h = I.blowupMap g :=
   I.eq_blowupLift _ hh
 
+/-- Lifting through `Bl_{I.comap g} X'` and then mapping to `Bl_I X` is lifting the composite
+through `Bl_I X`. -/
+@[reassoc]
+theorem blowupLift_blowupMap {T : Scheme.{u}} (f : T ⟶ X')
+    (hf : ((I.comap g).comap f).IsEffectiveCartier) (hfg : (I.comap (f ≫ g)).IsEffectiveCartier) :
+    (I.comap g).blowupLift f hf ≫ I.blowupMap g = I.blowupLift (f ≫ g) hfg :=
+  I.eq_blowupLift hfg
+    (by rw [Category.assoc, blowupMap_blowupToBase, blowupLift_blowupToBase_assoc])
+
+/-- The exceptional divisor of `Bl_I X` pulls back along the morphism of blowups to the exceptional
+divisor of `Bl_{I.comap g} X'`. -/
+theorem comap_comap_blowupMap :
+    (I.comap I.blowupToBase).comap (I.blowupMap g) =
+      (I.comap g).comap (I.comap g).blowupToBase := by
+  rw [← comap_comp, blowupMap_blowupToBase, comap_comp]
+
 /-- The **comparison of blowups under base change**: the morphism
 `Bl_{I.comap g} X' ⟶ X' ×_X Bl_I X` with components the structure morphism of the blowup of `X'`
 and the morphism of blowups. It is a closed immersion (`isClosedImmersion_blowupBaseChangeHom`),
@@ -125,6 +145,15 @@ theorem blowupBaseChangeHom_fst :
 theorem blowupBaseChangeHom_snd :
     I.blowupBaseChangeHom g ≫ pullback.snd _ _ = I.blowupMap g :=
   pullback.lift_snd _ _ _
+
+/-- Two morphisms into `X' ×_X Bl_I X` agree if they agree after projecting to `X'` and the
+centre `V(I)` pulls back to an effective Cartier divisor along their common composite to `X`. -/
+theorem pullback_blowupToBase_hom_ext {T : Scheme.{u}} {u v : T ⟶ pullback g I.blowupToBase}
+    (h : u ≫ pullback.fst _ _ = v ≫ pullback.fst _ _)
+    (hf : (I.comap (u ≫ pullback.fst _ _ ≫ g)).IsEffectiveCartier) : u = v := by
+  refine pullback.hom_ext h (I.blowup_hom_ext ?_ ?_)
+  · simp only [Category.assoc, ← pullback.condition, reassoc_of% h]
+  · rwa [Category.assoc, ← pullback.condition]
 
 /-! ### Flat base change -/
 
@@ -146,17 +175,12 @@ private theorem isEffectiveCartier_comap_comap_pullback_fst :
 instance isIso_blowupBaseChangeHom : IsIso (I.blowupBaseChangeHom g) := by
   set ψ := (I.comap g).blowupLift (pullback.fst g I.blowupToBase)
     (I.isEffectiveCartier_comap_comap_pullback_fst g)
-  have hψ : ψ ≫ I.blowupMap g ≫ I.blowupToBase = pullback.fst _ _ ≫ g := by
-    rw [blowupMap_blowupToBase, (I.comap g).blowupLift_blowupToBase_assoc]
   refine ⟨ψ, ?_, ?_⟩
   · refine (I.comap g).blowup_hom_ext (by simp [ψ]) ?_
     simpa [ψ] using (I.comap g).isEffectiveCartier_comap_blowupToBase
-  · refine pullback.hom_ext (by simp [ψ]) ?_
-    have h : ((ψ ≫ I.blowupBaseChangeHom g) ≫ pullback.snd _ _) ≫ I.blowupToBase =
-        pullback.fst _ _ ≫ g := by
-      simpa only [Category.assoc, blowupBaseChangeHom_snd] using hψ
-    refine I.blowup_hom_ext (h.trans (by simp [pullback.condition])) ?_
-    rw [h, comap_comp]
+  · refine I.pullback_blowupToBase_hom_ext g (by simp [ψ]) ?_
+    rw [Category.assoc, blowupBaseChangeHom_fst_assoc, (I.comap g).blowupLift_blowupToBase_assoc,
+      comap_comp]
     exact I.isEffectiveCartier_comap_comap_pullback_fst g
 
 /-- **The blowup of `X'` along the inverse image of the centre is the base change of the blowup
@@ -171,9 +195,19 @@ theorem isPullback_blowupMap_of_flat :
 end Flat
 
 /-- **Blowing up commutes with restriction to open subschemes**: for an open immersion `g`, the
-morphism of blowups `Bl_{I.comap g} X' ⟶ Bl_I X` is an open immersion. -/
+morphism of blowups `Bl_{I.comap g} X' ⟶ Bl_I X` is an open immersion, with image the preimage of
+the image of `g` (`opensRange_blowupMap`). -/
 instance isOpenImmersion_blowupMap [IsOpenImmersion g] : IsOpenImmersion (I.blowupMap g) :=
   MorphismProperty.of_isPullback (I.isPullback_blowupMap_of_flat g) ‹_›
+
+/-- For an open immersion `g`, the image of the morphism of blowups is the preimage in `Bl_I X` of
+the image of `g`. -/
+theorem opensRange_blowupMap [IsOpenImmersion g] :
+    (I.blowupMap g).opensRange = I.blowupToBase ⁻¹ᵁ g.opensRange := by
+  rw [← Scheme.Hom.opensRange_pullbackSnd,
+    ← Scheme.Hom.opensRange_comp_of_isIso (I.blowupBaseChangeHom g)]
+  congr 1
+  exact (I.blowupBaseChangeHom_snd g).symm
 
 /-! ### The comparison is a closed immersion -/
 
@@ -187,6 +221,9 @@ private theorem exists_isClosedImmersion_reesAlgebra {R S : CommRingCat.{u}} (φ
       IsClosedImmersion c ∧ c ≫ pullback.snd _ _ = Proj.toSpecCoeff (reesAlgebra.grade J') := by
   subst hJ
   let := φ.hom.toAlgebra
+  -- with this algebra structure `algebraMap R S` is `φ.hom` by definition
+  -- (`RingHom.algebraMap_toAlgebra`), and `CommRingCat.ofHom φ.hom` is `φ` by definition
+  -- (`CommRingCat.ofHom_hom`), so the affine comparison has exactly the required type
   exact ⟨affineBlowupBaseChangeHom J S, inferInstance, affineBlowupBaseChangeHom_snd J S⟩
 
 /-- Over affine opens `U` of `X` and `U'` of `X'` with `g(U') ⊆ U`, the comparison of blowups is
@@ -222,17 +259,10 @@ private theorem exists_isPullback_blowupBaseChangeHom {U : X.Opens} {U' : X'.Ope
       c ≫ pullback.snd _ _ ≫ hU'.fromSpec := by
     rw [blowupChart_blowupToBase, reassoc_of% hcs]
   have hcomm : (I.comap g).blowupChart hU' ≫ I.blowupBaseChangeHom g = c ≫ b := by
-    refine pullback.hom_ext (by rw [Category.assoc, Category.assoc, blowupBaseChangeHom_fst,
-      hbfst, h₁]) ?_
-    have h₂ : (((I.comap g).blowupChart hU' ≫ I.blowupBaseChangeHom g) ≫ pullback.snd _ _) ≫
-        I.blowupToBase = (I.comap g).blowupChart hU' ≫ (I.comap g).blowupToBase ≫ g := by
-      simp only [Category.assoc, blowupBaseChangeHom_snd_assoc, blowupMap_blowupToBase]
-    refine I.blowup_hom_ext ?_ ?_
-    · rw [h₂, reassoc_of% h₁, ← hsq]
-      simp only [Category.assoc, reassoc_of% hbsnd, blowupChart_blowupToBase,
-        pullback.condition_assoc]
-    · rw [h₂, comap_comp, comap_comp]
-      exact (I.comap g).isEffectiveCartier_comap_blowupToBase.comap _
+    refine I.pullback_blowupToBase_hom_ext g (by rw [Category.assoc, Category.assoc,
+      blowupBaseChangeHom_fst, hbfst, h₁]) ?_
+    rw [Category.assoc, blowupBaseChangeHom_fst_assoc, comap_comp, comap_comp]
+    exact (I.comap g).isEffectiveCartier_comap_blowupToBase.comap _
   refine ⟨_, b, c, MorphismProperty.of_isPullback hbot.flip inferInstance, hc,
     IsPullback.of_bot ?_ hcomm hbot, fun p hp ↦ ?_⟩
   · simpa [hcs] using ((I.comap g).isPullback_blowupChart_fromSpec hU').flip
@@ -246,12 +276,13 @@ the blowup**: for every morphism `g : X' ⟶ X`, the comparison
 instance isClosedImmersion_blowupBaseChangeHom :
     IsClosedImmersion (I.blowupBaseChangeHom g) := by
   refine IsZariskiLocalAtTarget.of_forall_exists_morphismRestrict fun p ↦ ?_
-  obtain ⟨U, hU, hpU, -⟩ :=
-    exists_isAffineOpen_mem_and_subset (show g (pullback.fst g I.blowupToBase p) ∈ ⊤ from trivial)
-  obtain ⟨U', hU', hpU', hU'U⟩ := exists_isAffineOpen_mem_and_subset
-    (show pullback.fst g I.blowupToBase p ∈ g ⁻¹ᵁ U from hpU)
+  obtain ⟨U, hU, hpU, -⟩ := exists_isAffineOpen_mem_and_subset
+    (TopologicalSpace.Opens.mem_top (g (pullback.fst g I.blowupToBase p)))
+  obtain ⟨U', hU', hpU', hU'U⟩ :=
+    exists_isAffineOpen_mem_and_subset ((Scheme.Hom.mem_preimage g).mpr hpU)
   obtain ⟨B, b, c, _, hc, hbc, hb⟩ := I.exists_isPullback_blowupBaseChangeHom g hU hU' hU'U
-  refine ⟨b.opensRange, hb hpU', ?_⟩
+  refine ⟨b.opensRange,
+    Scheme.Hom.mem_opensRange.mpr (Set.mem_range.mp (hb (Set.mem_preimage.mpr hpU'))), ?_⟩
   refine (MorphismProperty.arrow_mk_iso_iff _ (morphismRestrictOpensRange _ b)).mpr ?_
   refine (MorphismProperty.arrow_mk_iso_iff _ (Arrow.isoMk hbc.isoPullback (Iso.refl _) ?_)).mp hc
   rw [Iso.refl_hom, Category.comp_id]
@@ -259,7 +290,7 @@ instance isClosedImmersion_blowupBaseChangeHom :
 
 /-- **The blowup of a closed subscheme is a closed subscheme of the blowup**: for a closed
 immersion `g : X' ⟶ X`, the morphism of blowups `Bl_{I.comap g} X' ⟶ Bl_I X` is a closed
-immersion. Its image is the strict transform of `X'` (Stacks Project, Lemma 080D). -/
+immersion. Its image is the strict transform of `X'` (Stacks Project, Lemma 080E). -/
 instance isClosedImmersion_blowupMap [IsClosedImmersion g] :
     IsClosedImmersion (I.blowupMap g) := by
   rw [← blowupBaseChangeHom_snd]
