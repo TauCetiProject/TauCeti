@@ -32,7 +32,8 @@ perturbation theory.
 * `LinearMap.polarIsometry`: the canonical polar factor `A |A|⁻¹` of an injective map, as an
   isometric embedding.
 * `LinearMap.coe_polarIsometry`: the isometric factor is `LinearMap.polarFactor`, so the
-  factorization `A = W |A|` and the equality of ranges come from the polar-factor API.
+  factorization `A = W |A|` comes from the polar-factor API.
+* `LinearMap.range_polarIsometry`: the isometric factor has the same range as `A`.
 * `LinearMap.IsPositive.eq_operatorAbs_of_comp_eq`, `LinearMap.eq_polarIsometry_of_comp_eq`:
   uniqueness of the factorization, including the invertible endomorphism case `A = U P`
   with `U` unitary and `P` positive.
@@ -97,6 +98,10 @@ theorem polarIsometry_toLinearMap : (A.polarIsometry hA).toLinearMap = A.polarFa
 @[simp]
 theorem coe_polarIsometry : ⇑(A.polarIsometry hA) = A.polarFactor :=
   (rfl)
+
+/-- The isometric polar factor of `A` has the same range as `A`. -/
+theorem range_polarIsometry : Set.range (A.polarIsometry hA) = Set.range A := by
+  rw [coe_polarIsometry, ← coe_range, range_polarFactor, coe_range]
 
 theorem polarIsometry_apply (y : E) :
     A.polarIsometry hA y = A ((A.operatorAbsEquiv hA).symm y) := by

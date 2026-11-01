@@ -95,9 +95,7 @@ private theorem ae_density_bounds_of_approx (hEm : NullMeasurableSet E μHE[k])
   obtain ⟨hlip, hanti⟩ := lipschitzOnWith_and_antilipschitzWith_of_approx hA hε happ
   -- The isometric polar factor of `A` parametrizes the `k`-plane `range A`.
   set ι := (A : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] V).polarIsometry hA
-  have hιA : range ι = range A := by
-    rw [LinearMap.coe_polarIsometry, ← LinearMap.coe_range, LinearMap.range_polarFactor,
-      LinearMap.coe_range, ContinuousLinearMap.coe_coe]
+  have hιA : range ι = range A := LinearMap.range_polarIsometry _ hA
   -- Read through `A`, the piece is a bi-Lipschitz image of the subset `A '' P` of a `k`-plane.
   have himage : (f ∘ invFun A) '' (A '' P) = f '' P := by
     rw [image_image]
