@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Augmentation.Projection
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Permutation
+import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 
 /-!
 # Invariants of the reflection representation of the symmetric group
@@ -59,6 +60,8 @@ and its invariant polynomial functions form a polynomial algebra on a generator 
   `TauCeti.coe_esymmStandardInvariantsEquiv_X_eq_sum` computing the generators and
   `TauCeti.esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule` giving their degrees
   `2, …, n + 1`.
+* `TauCeti.map_univ_eq_of_bijective_aeval_standardRepresentation_dual`: every system of basic
+  invariants of the reflection representation has the multiset of degrees `{2, …, n + 1}`.
 
 ## References
 
@@ -278,5 +281,29 @@ theorem esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule
   rw [coe_esymmStandardInvariantsEquiv_X]
   exact SymmetricAlgebra.map_mem_homogeneousSubmodule _
     (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn i.succ)
+
+omit [DecidableEq σ] in
+/-- **The degrees of the reflection representation of `S_σ` are `2, …, n + 1`.** Let `σ` have
+`n + 1` elements, with `n + 1` invertible in `K`. Then every system of basic invariants of the
+reflection representation, that is, every family of homogeneous invariants of degrees `d i` on
+which the invariant algebra is a polynomial algebra, has the multiset of degrees
+`{2, …, n + 1}`. -/
+theorem map_univ_eq_of_bijective_aeval_standardRepresentation_dual [Nontrivial K]
+    (h : IsUnit (Fintype.card σ : K)) (hn : Fintype.card σ = n + 1) {ι : Type*} [Fintype ι]
+    {f : ι → (standardRepresentation K σ).dual.symmetricAlgebraInvariants} {d : ι → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K
+        (Module.Dual K (augmentationSubrepresentation K (Equiv.Perm σ) σ).toSubmodule)) ∈
+      SymmetricAlgebra.homogeneousSubmodule K _ (d i))
+    (hbij : Function.Bijective (aeval (R := K) f)) :
+    Finset.univ.val.map d = (Multiset.range n).map (· + 2) := by
+  classical
+  set e := esymmStandardInvariantsEquiv K h hn
+  have he : Function.Bijective (aeval (R := K) fun i ↦ e (X i)) := by
+    rw [(algHom_ext fun i ↦ by simp : aeval (fun i ↦ e (X i)) = e.toAlgHom)]
+    exact e.bijective
+  rw [Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants _ hf hbij
+    (esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule K h hn) he,
+    Finset.val_univ_fin, Multiset.range, Multiset.map_coe, Multiset.map_coe,
+    ← List.map_coe_finRange_eq_range, List.map_map, Function.comp_def]
 
 end TauCeti

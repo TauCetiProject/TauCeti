@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
 /-!
@@ -57,6 +58,8 @@ invertible. The cases `n = 0` and `n = 1` are included: the invariant algebra is
   `coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero` identifying `e₁` with the coefficient sum, and
   `esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule` giving their degrees
   `1, …, n`.
+* `Representation.map_univ_eq_of_bijective_aeval_ofMulAction_perm_dual`: every system of basic
+  invariants of the full permutation representation has the multiset of degrees `{1, …, n}`.
 
 ## References
 
@@ -229,6 +232,28 @@ theorem esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule
       (b := (MonoidAlgebra.basis σ K).dualBasis),
     AlgEquiv.apply_symm_apply]
   exact isHomogeneous_esymm _
+
+omit [DecidableEq σ] in
+/-- **The degrees of the full permutation representation of `S_σ` are `1, …, n`.** If `σ` has `n`
+elements, then every system of basic invariants of `Sym(K[σ]*)^(S_σ)`, that is, every family of
+homogeneous invariants of degrees `d i` on which the invariant algebra is a polynomial algebra,
+has the multiset of degrees `{1, …, n}`. -/
+theorem map_univ_eq_of_bijective_aeval_ofMulAction_perm_dual [Nontrivial K]
+    (hn : Fintype.card σ = n) {ι : Type*} [Fintype ι]
+    {f : ι → (ofMulAction K (Equiv.Perm σ) σ).dual.symmetricAlgebraInvariants} {d : ι → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K K[σ])) ∈
+      homogeneousSubmodule K (Module.Dual K K[σ]) (d i))
+    (hbij : Function.Bijective (aeval (R := K) f)) :
+    Finset.univ.val.map d = (Multiset.range n).map (· + 1) := by
+  classical
+  set e := esymmSymmetricAlgebraInvariantsEquiv K σ hn
+  have he : Function.Bijective (aeval (R := K) fun i ↦ e (X i)) := by
+    rw [(algHom_ext fun i ↦ by simp : aeval (fun i ↦ e (X i)) = e.toAlgHom)]
+    exact e.bijective
+  rw [_root_.Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants _ hf hbij
+    (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn) he,
+    Finset.val_univ_fin, Multiset.range, Multiset.map_coe, Multiset.map_coe,
+    ← List.map_coe_finRange_eq_range, List.map_map, Function.comp_def]
 
 end Perm
 
