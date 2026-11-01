@@ -47,9 +47,10 @@ with a form valid at every point when both factors are `C²` on an open set cont
 of one of them (a cutoff), the second-order chain rule through a function of one variable, and
 the comparison of second derivatives over a field and over a larger field. Along a curve the
 second-order chain rule reads `(f ∘ γ)'' = D²f(γ', γ') + Df(γ'')`, so a line along which a map is
-affine is isotropic for its second derivative. No statement here
-mentions critical points as such, so all of them belong here rather than with the Morse theory
-that uses them.
+affine is isotropic for its second derivative. For scalar-valued `f` and `φ`, post-composition
+with `φ` preserves vanishing of the differential when `φ′ ≠ 0`; at a point where `Df = 0`, it
+multiplies the second derivative by `φ′`. These derivative identities are independent of the
+Morse-theoretic definitions that use them.
 
 ## Main results
 
@@ -77,8 +78,12 @@ that uses them.
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
+* `TauCeti.fderiv_scalar_comp_eq_zero_iff`: post-composition with a scalar function whose
+  derivative is nonzero preserves vanishing of the differential.
 * `TauCeti.fderiv_fderiv_scalar_comp_apply`: the second-order chain rule through a function of
   one variable.
+* `TauCeti.fderiv_fderiv_scalar_comp_of_fderiv_eq_zero`: where the inner differential vanishes,
+  scalar post-composition multiplies the second derivative by the outer derivative.
 * `TauCeti.iteratedDeriv_two_comp`: the second derivative of a map along a curve.
 * `TauCeti.fderiv_fderiv_apply_self_eq_zero_of_eventually_eq_add_smul`: a line along which a map
   is affine is isotropic for its second derivative.
