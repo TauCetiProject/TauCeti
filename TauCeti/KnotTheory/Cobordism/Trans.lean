@@ -1,0 +1,974 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.KnotTheory.Cobordism.Basic
+public import TauCeti.Geometry.Manifold.Instances.Quotient
+
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
+import TauCeti.Geometry.Manifold.Orientation.OpenSubset
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
+
+/-!
+# Composing knot cobordisms
+
+Knot cobordisms compose: a cobordism `S₁` from `K₀` to `K₁` followed by a cobordism `S₂` from `K₁`
+to `K₂` is a cobordism from `K₀` to `K₂`, obtained by stacking the surface of `S₂` on top of that
+of `S₁` in `Sⁿ × [0, 1]`. This is the composition of the category whose morphisms are knot
+cobordisms, and with the genus it is the step behind the triangle inequality for the cobordism
+distance.
+
+Knot cobordisms are recorded in collared form (`TauCeti.KnotCobordism`): a boundaryless surface,
+smoothly embedded in `Sⁿ × ℝ`, which is the cylinder over the initial knot at heights at most `ε`
+and the cylinder over the final knot at heights at least `1 - ε`. The composite
+`TauCeti.KnotCobordism.trans` runs `S₁` over the heights `[0, 1 / 2]`, halving its heights, and
+`S₂` over `[1 / 2, 1]`, moving its heights `t` to `(t + 1) / 2`. In a band of heights around
+`1 / 2` both rescaled surfaces are the same cylinder over `K₁`. The surface of the composite is
+glued from the part of `S₁` below the top of that band and the part of `S₂` above its bottom,
+identifying the points with the same image in `Sⁿ × ℝ`:
+
+* its charts are pushed forward from the two parts along the quotient map, which has smooth local
+  deck transformations because a smooth map into the image of a smooth embedding factors smoothly
+  through it (`Manifold.IsImmersionAt.exists_contMDiffAt_comp_eventuallyEq`);
+* its embedding into `Sⁿ × ℝ` is a topological embedding by construction, and an immersion because
+  on each part it is a rescaled embedding of `S₁` or `S₂` read through a local diffeomorphism;
+* it is connected, being the union of the two halves with their heights pushed towards `1 / 2`,
+  two connected sets meeting along `K₁ × {1 / 2}`;
+* it is orientable: the overlap of the two parts is a connected annulus, so orientations of `S₁`
+  and `S₂` can be chosen to agree on it, and they are then carried to the composite.
+
+The embedded surface of the composite is described by
+`TauCeti.KnotCobordism.range_toFun_trans_inter_snd_le` and
+`TauCeti.KnotCobordism.range_toFun_trans_inter_le_snd`: below height `1 / 2` it is the part of `S₁`
+over `Sⁿ × [0, 1]` with halved heights, and above it the part of `S₂` over `Sⁿ × [0, 1]` with
+heights moved to `(t + 1) / 2`. Classically the genus of the composite is the sum of the genera;
+that computation, which gives the triangle inequality for the cobordism distance, is not done here.
+
+## Main definitions
+
+* `TauCeti.KnotCobordism.trans`: the composite of two knot cobordisms.
+
+## Main results
+
+* `TauCeti.KnotCobordism.range_toFun_trans_inter_snd_le`,
+  `TauCeti.KnotCobordism.range_toFun_trans_inter_le_snd`: the lower and upper halves of the
+  embedded surface of the composite.
+
+## References
+
+* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 8, for
+  knot cobordism.
+* J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Springer GTM 218 (2013),
+  Chapter 15, for gluing orientations along a connected overlap.
+-/
+
+public section
+
+noncomputable section
+
+open Function Filter Manifold Metric Module Set Topology
+open scoped Manifold ContDiff
+
+namespace TauCeti
+
+namespace KnotCobordism
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] {K₀ K₁ K₂ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+  (S₁ : KnotCobordism K₀ K₁) (S₂ : KnotCobordism K₁ K₂)
+
+/-! ### The two halves of the composite -/
+
+/-- The width of the collar at the top of `S₁` used for the composite, at most `1 / 2`. -/
+private def topWidth : ℝ :=
+  min S₁.exists_pos_range_inter_le_snd.choose (1 / 2)
+
+/-- The width of the collar at the bottom of `S₂` used for the composite, at most `1 / 2`. -/
+private def botWidth : ℝ :=
+  min S₂.exists_pos_range_inter_snd_le.choose (1 / 2)
+
+private theorem topWidth_pos : 0 < topWidth S₁ :=
+  lt_min S₁.exists_pos_range_inter_le_snd.choose_spec.1 one_half_pos
+
+private theorem botWidth_pos : 0 < botWidth S₂ :=
+  lt_min S₂.exists_pos_range_inter_snd_le.choose_spec.1 one_half_pos
+
+private theorem topWidth_le : topWidth S₁ ≤ 1 / 2 := min_le_right _ _
+
+private theorem botWidth_le : botWidth S₂ ≤ 1 / 2 := min_le_right _ _
+
+/-- Above height `1 - topWidth S₁`, the surface of `S₁` is the cylinder over `K₁`. -/
+private theorem mem_range_iff_of_topWidth_le {p : sphere (0 : E) 1 × ℝ}
+    (hp : 1 - topWidth S₁ ≤ p.2) : p ∈ range S₁.toFun ↔ p.1 ∈ range K₁ := by
+  have h := Set.ext_iff.1 S₁.exists_pos_range_inter_le_snd.choose_spec.2 p
+  have hw : topWidth S₁ ≤ S₁.exists_pos_range_inter_le_snd.choose := min_le_left _ _
+  have hp' : 1 - S₁.exists_pos_range_inter_le_snd.choose ≤ p.2 := by linarith
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici] at h
+  exact ⟨fun hr ↦ (h.1 ⟨hr, hp'⟩).1, fun hK ↦ (h.2 ⟨hK, hp'⟩).1⟩
+
+/-- Below height `botWidth S₂`, the surface of `S₂` is the cylinder over `K₁`. -/
+private theorem mem_range_iff_of_le_botWidth {p : sphere (0 : E) 1 × ℝ}
+    (hp : p.2 ≤ botWidth S₂) : p ∈ range S₂.toFun ↔ p.1 ∈ range K₁ := by
+  have h := Set.ext_iff.1 S₂.exists_pos_range_inter_snd_le.choose_spec.2 p
+  have hp' : p.2 ≤ S₂.exists_pos_range_inter_snd_le.choose :=
+    hp.trans (min_le_left _ _)
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Iic] at h
+  exact ⟨fun hr ↦ (h.1 ⟨hr, hp'⟩).1, fun hK ↦ (h.2 ⟨hK, hp'⟩).1⟩
+
+/-- The lower half of the composite: the surface of `S₁` with its heights halved. -/
+private def lower (x : S₁.carrier) : sphere (0 : E) 1 × ℝ :=
+  ((S₁.toFun x).1, (S₁.toFun x).2 / 2)
+
+/-- The upper half of the composite: the surface of `S₂` with its heights `t` moved to
+`(t + 1) / 2`. -/
+private def upper (y : S₂.carrier) : sphere (0 : E) 1 × ℝ :=
+  ((S₂.toFun y).1, ((S₂.toFun y).2 + 1) / 2)
+
+private theorem lower_snd (x : S₁.carrier) : (lower S₁ x).2 = (S₁.toFun x).2 / 2 :=
+  (rfl)
+
+private theorem upper_snd (y : S₂.carrier) : (upper S₂ y).2 = ((S₂.toFun y).2 + 1) / 2 :=
+  (rfl)
+
+private theorem isSmoothEmbedding_lower :
+    IsSmoothEmbedding ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (lower S₁) := by
+  convert isSmoothEmbedding_diffeomorph_comp S₁.isSmoothEmbedding
+    ((Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) ∞).prodCongr
+      (Diffeomorph.smulAdd ∞ (1 / 2 : ℝ) (0 : ℝ) (by norm_num))) using 1
+  ext x <;> simp [lower, Diffeomorph.coe_prodCongr, Diffeomorph.smulAdd_apply, div_eq_inv_mul]
+
+private theorem isSmoothEmbedding_upper :
+    IsSmoothEmbedding ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (upper S₂) := by
+  convert isSmoothEmbedding_diffeomorph_comp S₂.isSmoothEmbedding
+    ((Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) ∞).prodCongr
+      (Diffeomorph.smulAdd ∞ (1 / 2 : ℝ) (1 / 2 : ℝ) (by norm_num))) using 1
+  ext y <;> simp [upper, Diffeomorph.coe_prodCongr, Diffeomorph.smulAdd_apply]; ring
+
+private theorem mem_range_lower_iff {p : sphere (0 : E) 1 × ℝ} :
+    p ∈ range (lower S₁) ↔ (p.1, 2 * p.2) ∈ range S₁.toFun := by
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨x, Prod.ext rfl (by simp only [lower]; ring)⟩
+  · rintro ⟨x, hx⟩
+    refine ⟨x, Prod.ext (by simp [lower, hx]) ?_⟩
+    simp only [lower, hx]
+    ring
+
+private theorem mem_range_upper_iff {p : sphere (0 : E) 1 × ℝ} :
+    p ∈ range (upper S₂) ↔ (p.1, 2 * p.2 - 1) ∈ range S₂.toFun := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    exact ⟨y, Prod.ext rfl (by simp only [upper]; ring)⟩
+  · rintro ⟨y, hy⟩
+    refine ⟨y, Prod.ext (by simp [upper, hy]) ?_⟩
+    simp only [upper, hy]
+    ring
+
+/-- Above height `(1 - topWidth S₁) / 2`, the lower half is the cylinder over `K₁`. -/
+private theorem mem_range_lower_iff_of_le {p : sphere (0 : E) 1 × ℝ}
+    (hp : (1 - topWidth S₁) / 2 ≤ p.2) : p ∈ range (lower S₁) ↔ p.1 ∈ range K₁ := by
+  rw [mem_range_lower_iff]
+  exact mem_range_iff_of_topWidth_le S₁ (by dsimp only; linarith)
+
+/-- Below height `(1 + botWidth S₂) / 2`, the upper half is the cylinder over `K₁`. -/
+private theorem mem_range_upper_iff_of_le {p : sphere (0 : E) 1 × ℝ}
+    (hp : p.2 ≤ (1 + botWidth S₂) / 2) : p ∈ range (upper S₂) ↔ p.1 ∈ range K₁ := by
+  rw [mem_range_upper_iff]
+  exact mem_range_iff_of_le_botWidth S₂ (by dsimp only; linarith)
+
+/-- In the band of heights between `(1 - topWidth S₁) / 2` and `(1 + botWidth S₂) / 2` the two
+halves are the same cylinder over `K₁`. -/
+private theorem mem_range_lower_iff_mem_range_upper {p : sphere (0 : E) 1 × ℝ}
+    (h₁ : (1 - topWidth S₁) / 2 ≤ p.2) (h₂ : p.2 ≤ (1 + botWidth S₂) / 2) :
+    p ∈ range (lower S₁) ↔ p ∈ range (upper S₂) :=
+  (mem_range_lower_iff_of_le S₁ h₁).trans (mem_range_upper_iff_of_le S₂ h₂).symm
+
+/-- The part of `S₁` used for the composite: the points below height `1 + botWidth S₂`, which
+lie below height `(1 + botWidth S₂) / 2` in the lower half. -/
+private def lowerPiece : TopologicalSpace.Opens S₁.carrier :=
+  ⟨{x | (S₁.toFun x).2 < 1 + botWidth S₂},
+    isOpen_lt (continuous_snd.comp S₁.isSmoothEmbedding.isEmbedding.continuous) continuous_const⟩
+
+/-- The part of `S₂` used for the composite: the points above height `-topWidth S₁`, which lie
+above height `(1 - topWidth S₁) / 2` in the upper half. -/
+private def upperPiece : TopologicalSpace.Opens S₂.carrier :=
+  ⟨{y | -topWidth S₁ < (S₂.toFun y).2},
+    isOpen_lt continuous_const (continuous_snd.comp S₂.isSmoothEmbedding.isEmbedding.continuous)⟩
+
+private theorem mem_lowerPiece_iff {x : S₁.carrier} :
+    x ∈ lowerPiece S₁ S₂ ↔ (lower S₁ x).2 < (1 + botWidth S₂) / 2 := by
+  rw [lower_snd]
+  refine ⟨fun h ↦ ?_, fun h ↦ (by linarith : (S₁.toFun x).2 < 1 + botWidth S₂)⟩
+  have h' : (S₁.toFun x).2 < 1 + botWidth S₂ := h
+  linarith
+
+private theorem mem_upperPiece_iff {y : S₂.carrier} :
+    y ∈ upperPiece S₁ S₂ ↔ (1 - topWidth S₁) / 2 < (upper S₂ y).2 := by
+  rw [upper_snd]
+  refine ⟨fun h ↦ ?_, fun h ↦ (by linarith : -topWidth S₁ < (S₂.toFun y).2)⟩
+  have h' : -topWidth S₁ < (S₂.toFun y).2 := h
+  linarith
+
+/-- The disjoint union of the two parts of `S₁` and `S₂` used for the composite. -/
+private abbrev Pieces : Type :=
+  lowerPiece S₁ S₂ ⊕ upperPiece S₁ S₂
+
+/-- The embedding of each part into `Sⁿ × ℝ`, through the lower and upper halves. -/
+private def piecesMap : Pieces S₁ S₂ → sphere (0 : E) 1 × ℝ :=
+  Sum.elim (fun x ↦ lower S₁ x) (fun y ↦ upper S₂ y)
+
+/-! ### The surface of the composite -/
+
+/-- The surface of the composite: the two parts glued along the points with the same image in
+`Sⁿ × ℝ`. -/
+private def Stack : Type :=
+  Quotient (Setoid.ker (piecesMap S₁ S₂))
+
+/-- The embedding of the surface of the composite into `Sⁿ × ℝ`. -/
+private def stackMap : Stack S₁ S₂ → sphere (0 : E) 1 × ℝ :=
+  Setoid.kerLift (piecesMap S₁ S₂)
+
+/-- The surface of the composite carries the topology of its image in `Sⁿ × ℝ`. -/
+private instance : TopologicalSpace (Stack S₁ S₂) :=
+  .induced (stackMap S₁ S₂) inferInstance
+
+/-- The quotient map from the two parts to the surface of the composite. -/
+private def proj : Pieces S₁ S₂ → Stack S₁ S₂ :=
+  Quotient.mk _
+
+private theorem stackMap_proj (z : Pieces S₁ S₂) :
+    stackMap S₁ S₂ (proj S₁ S₂ z) = piecesMap S₁ S₂ z :=
+  (rfl)
+
+private theorem proj_eq_proj_iff {z w : Pieces S₁ S₂} :
+    proj S₁ S₂ z = proj S₁ S₂ w ↔ piecesMap S₁ S₂ z = piecesMap S₁ S₂ w :=
+  Quotient.eq
+
+private theorem proj_surjective : Surjective (proj S₁ S₂) :=
+  Quotient.mk_surjective
+
+private theorem isEmbedding_stackMap : IsEmbedding (stackMap S₁ S₂) :=
+  ⟨⟨rfl⟩, Setoid.kerLift_injective _⟩
+
+private theorem range_stackMap : range (stackMap S₁ S₂) = range (piecesMap S₁ S₂) := by
+  rw [← (proj_surjective S₁ S₂).range_comp]
+  rfl
+
+private theorem continuous_proj : Continuous (proj S₁ S₂) :=
+  continuous_induced_rng.2 <| continuous_sum_dom.2
+    ⟨(isSmoothEmbedding_lower S₁).isEmbedding.continuous.comp continuous_subtype_val,
+      (isSmoothEmbedding_upper S₂).isEmbedding.continuous.comp continuous_subtype_val⟩
+
+/-- The range of the lower part in the composite: the points below height
+`(1 + botWidth S₂) / 2`. -/
+private theorem range_proj_inl :
+    range (proj S₁ S₂ ∘ Sum.inl) = {t | (stackMap S₁ S₂ t).2 < (1 + botWidth S₂) / 2} := by
+  ext t
+  obtain ⟨z, rfl⟩ := proj_surjective S₁ S₂ t
+  simp only [mem_range, comp_apply, mem_ofPred_eq, stackMap_proj]
+  refine ⟨?_, fun hz ↦ ?_⟩
+  · rintro ⟨x, hx⟩
+    rw [← stackMap_proj, ← hx, stackMap_proj]
+    exact (mem_lowerPiece_iff S₁ S₂).1 x.2
+  rcases z with x | y
+  · exact ⟨x, rfl⟩
+  · -- A point of the upper part below that height lies on the cylinder over `K₁`.
+    have hy := (mem_upperPiece_iff S₁ S₂).1 y.2
+    obtain ⟨x, hx⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hy.le hz.le).2
+      (mem_range_self (y : S₂.carrier))
+    refine ⟨⟨x, (mem_lowerPiece_iff S₁ S₂).2 ?_⟩, (proj_eq_proj_iff S₁ S₂).2 hx⟩
+    rw [hx]
+    exact hz
+
+/-- The range of the upper part in the composite: the points above height
+`(1 - topWidth S₁) / 2`. -/
+private theorem range_proj_inr :
+    range (proj S₁ S₂ ∘ Sum.inr) = {t | (1 - topWidth S₁) / 2 < (stackMap S₁ S₂ t).2} := by
+  ext t
+  obtain ⟨z, rfl⟩ := proj_surjective S₁ S₂ t
+  simp only [mem_range, comp_apply, mem_ofPred_eq, stackMap_proj]
+  refine ⟨?_, fun hz ↦ ?_⟩
+  · rintro ⟨y, hy⟩
+    rw [← stackMap_proj, ← hy, stackMap_proj]
+    exact (mem_upperPiece_iff S₁ S₂).1 y.2
+  rcases z with x | y
+  · -- A point of the lower part above that height lies on the cylinder over `K₁`.
+    have hx := (mem_lowerPiece_iff S₁ S₂).1 x.2
+    obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hz.le hx.le).1
+      (mem_range_self (x : S₁.carrier))
+    refine ⟨⟨y, (mem_upperPiece_iff S₁ S₂).2 ?_⟩, (proj_eq_proj_iff S₁ S₂).2 hy⟩
+    rw [hy]
+    exact hz
+  · exact ⟨y, rfl⟩
+
+private theorem isOpenEmbedding_proj_inl : IsOpenEmbedding (proj S₁ S₂ ∘ Sum.inl) := by
+  have he : IsEmbedding (stackMap S₁ S₂ ∘ (proj S₁ S₂ ∘ Sum.inl)) :=
+    (isSmoothEmbedding_lower S₁).isEmbedding.comp IsEmbedding.subtypeVal
+  refine ⟨⟨(isEmbedding_stackMap S₁ S₂).isInducing.of_comp_iff.1 he.isInducing,
+    fun x x' h ↦ he.injective (congrArg (stackMap S₁ S₂) h)⟩, ?_⟩
+  rw [range_proj_inl]
+  exact isOpen_lt (continuous_snd.comp (isEmbedding_stackMap S₁ S₂).continuous) continuous_const
+
+private theorem isOpenEmbedding_proj_inr : IsOpenEmbedding (proj S₁ S₂ ∘ Sum.inr) := by
+  have he : IsEmbedding (stackMap S₁ S₂ ∘ (proj S₁ S₂ ∘ Sum.inr)) :=
+    (isSmoothEmbedding_upper S₂).isEmbedding.comp IsEmbedding.subtypeVal
+  refine ⟨⟨(isEmbedding_stackMap S₁ S₂).isInducing.of_comp_iff.1 he.isInducing,
+    fun y y' h ↦ he.injective (congrArg (stackMap S₁ S₂) h)⟩, ?_⟩
+  rw [range_proj_inr]
+  exact isOpen_lt continuous_const (continuous_snd.comp (isEmbedding_stackMap S₁ S₂).continuous)
+
+/-- The quotient map is a local homeomorphism: it is an open embedding on each part. -/
+private theorem isLocalHomeomorph_proj : IsLocalHomeomorph (proj S₁ S₂) := by
+  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.2 fun z ↦ ?_
+  rcases z with x | y
+  · refine ⟨range Sum.inl, IsOpenEmbedding.inl.isOpen_range.mem_nhds (mem_range_self x), ?_⟩
+    let e := (IsEmbedding.inl (X := lowerPiece S₁ S₂) (Y := upperPiece S₁ S₂)).toHomeomorph
+    convert (isOpenEmbedding_proj_inl S₁ S₂).comp e.symm.isOpenEmbedding using 1
+    funext u
+    simp only [domRestrict_apply, comp_apply]
+    congr 1
+    exact (congrArg Subtype.val (e.apply_symm_apply u)).symm
+  · refine ⟨range Sum.inr, IsOpenEmbedding.inr.isOpen_range.mem_nhds (mem_range_self y), ?_⟩
+    let e := (IsEmbedding.inr (X := lowerPiece S₁ S₂) (Y := upperPiece S₁ S₂)).toHomeomorph
+    convert (isOpenEmbedding_proj_inr S₁ S₂).comp e.symm.isOpenEmbedding using 1
+    funext u
+    simp only [domRestrict_apply, comp_apply]
+    congr 1
+    exact (congrArg Subtype.val (e.apply_symm_apply u)).symm
+
+/-- A point `x` of the lower part and a point `y` of the upper part with the same image are related
+by a map from the lower part to the upper part, smooth at `x`, under which the two halves agree
+near `x`. -/
+private theorem exists_deck_lower_upper {x : lowerPiece S₁ S₂} {y : upperPiece S₁ S₂}
+    (h : lower S₁ x = upper S₂ y) :
+    ∃ τ : lowerPiece S₁ S₂ → upperPiece S₁ S₂,
+      ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ τ x ∧ τ x = y ∧
+        (fun q ↦ upper S₂ (τ q)) =ᶠ[𝓝 x] fun q ↦ lower S₁ q := by
+  have hf : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+      (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) y :=
+    isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val y)
+      ((isSmoothEmbedding_upper S₂).isImmersion.isImmersionAt _)
+  have hg : ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+      (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) x :=
+    ((isSmoothEmbedding_lower S₁).isImmersion.contMDiff.comp contMDiff_subtype_val).contMDiffAt
+  -- Near `x` the lower part stays above height `(1 - topWidth S₁) / 2`, where it is the
+  -- cylinder over `K₁`, which the upper part also covers.
+  have hopen : IsOpen {q : lowerPiece S₁ S₂ | (1 - topWidth S₁) / 2 < (lower S₁ q).2} :=
+    isOpen_lt continuous_const (continuous_snd.comp
+      ((isSmoothEmbedding_lower S₁).isEmbedding.continuous.comp continuous_subtype_val))
+  have hx : (1 - topWidth S₁) / 2 < (lower S₁ x).2 := h ▸ (mem_upperPiece_iff S₁ S₂).1 y.2
+  have hrange : ∀ᶠ q in 𝓝 x, (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) q ∈
+      range (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) := by
+    filter_upwards [hopen.mem_nhds hx] with q hq
+    obtain ⟨y', hy'⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hq.le
+      ((mem_lowerPiece_iff S₁ S₂).1 q.2).le).1 (mem_range_self (q : S₁.carrier))
+    exact ⟨⟨y', (mem_upperPiece_iff S₁ S₂).2 (hy' ▸ hq)⟩, hy'⟩
+  exact hf.exists_contMDiffAt_comp_eventuallyEq
+    ((isSmoothEmbedding_upper S₂).isEmbedding.comp IsEmbedding.subtypeVal) hg h hrange
+
+/-- A point `y` of the upper part and a point `x` of the lower part with the same image are related
+by a map from the upper part to the lower part, smooth at `y`, under which the two halves agree
+near `y`. -/
+private theorem exists_deck_upper_lower {x : lowerPiece S₁ S₂} {y : upperPiece S₁ S₂}
+    (h : lower S₁ x = upper S₂ y) :
+    ∃ τ : upperPiece S₁ S₂ → lowerPiece S₁ S₂,
+      ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ τ y ∧ τ y = x ∧
+        (fun q ↦ lower S₁ (τ q)) =ᶠ[𝓝 y] fun q ↦ upper S₂ q := by
+  have hf : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+      (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) x :=
+    isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val x)
+      ((isSmoothEmbedding_lower S₁).isImmersion.isImmersionAt _)
+  have hg : ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+      (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) y :=
+    ((isSmoothEmbedding_upper S₂).isImmersion.contMDiff.comp contMDiff_subtype_val).contMDiffAt
+  -- Near `y` the upper part stays below height `(1 + botWidth S₂) / 2`, where it is the
+  -- cylinder over `K₁`, which the lower part also covers.
+  have hopen : IsOpen {q : upperPiece S₁ S₂ | (upper S₂ q).2 < (1 + botWidth S₂) / 2} :=
+    isOpen_lt (continuous_snd.comp
+      ((isSmoothEmbedding_upper S₂).isEmbedding.continuous.comp continuous_subtype_val))
+      continuous_const
+  have hy : (upper S₂ y).2 < (1 + botWidth S₂) / 2 := h ▸ (mem_lowerPiece_iff S₁ S₂).1 x.2
+  have hrange : ∀ᶠ q in 𝓝 y, (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) q ∈
+      range (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) := by
+    filter_upwards [hopen.mem_nhds hy] with q hq
+    obtain ⟨x', hx'⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂
+      ((mem_upperPiece_iff S₁ S₂).1 q.2).le hq.le).2 (mem_range_self (q : S₂.carrier))
+    exact ⟨⟨x', (mem_lowerPiece_iff S₁ S₂).2 (hx' ▸ hq)⟩, hx'⟩
+  exact hf.exists_contMDiffAt_comp_eventuallyEq
+    ((isSmoothEmbedding_lower S₁).isEmbedding.comp IsEmbedding.subtypeVal) hg h.symm hrange
+
+/-- The quotient map has smooth local deck transformations: two points of the parts with the same
+image in the composite are related by a map smooth at the first, commuting with the quotient
+map near it. -/
+private theorem proj_deck (z w : Pieces S₁ S₂) (h : proj S₁ S₂ z = proj S₁ S₂ w) :
+    ∃ φ : Pieces S₁ S₂ → Pieces S₁ S₂,
+      ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ φ z ∧ φ z = w ∧
+        proj S₁ S₂ ∘ φ =ᶠ[𝓝 z] proj S₁ S₂ := by
+  have hw := (proj_eq_proj_iff S₁ S₂).1 h
+  rcases z with x | y <;> rcases w with x' | y'
+  · obtain rfl : x = x' := Subtype.ext ((isSmoothEmbedding_lower S₁).isEmbedding.injective hw)
+    exact ⟨id, contMDiffAt_id, rfl, .rfl⟩
+  · obtain ⟨τ, hτ, rfl, hτeq⟩ := exists_deck_lower_upper S₁ S₂ hw
+    refine ⟨Sum.elim (Sum.inr ∘ τ) Sum.inr,
+      ((isLocalDiffeomorph_sumInl x).contMDiffAt_comp_iff le_rfl).1
+        (ContMDiff.inr.contMDiffAt.comp x hτ), rfl, ?_⟩
+    rw [← IsOpenEmbedding.inl.map_nhds_eq]
+    exact Filter.eventually_map.2 (hτeq.mono fun q hq ↦ (proj_eq_proj_iff S₁ S₂).2 hq)
+  · obtain ⟨τ, hτ, rfl, hτeq⟩ := exists_deck_upper_lower S₁ S₂ hw.symm
+    refine ⟨Sum.elim Sum.inl (Sum.inl ∘ τ),
+      ((isLocalDiffeomorph_sumInr y).contMDiffAt_comp_iff le_rfl).1
+        (ContMDiff.inl.contMDiffAt.comp y hτ), rfl, ?_⟩
+    rw [← IsOpenEmbedding.inr.map_nhds_eq]
+    exact Filter.eventually_map.2 (hτeq.mono fun q hq ↦ (proj_eq_proj_iff S₁ S₂).2 hq)
+  · obtain rfl : y = y' := Subtype.ext ((isSmoothEmbedding_upper S₂).isEmbedding.injective hw)
+    exact ⟨id, contMDiffAt_id, rfl, .rfl⟩
+
+/-- The charts of the surface of the composite, pushed forward from the two parts. -/
+private instance : ChartedSpace (ModelProd (EuclideanSpace ℝ (Fin 1)) ℝ) (Stack S₁ S₂) :=
+  (isLocalHomeomorph_proj S₁ S₂).chartedSpaceOfRightInverse
+    (rightInverse_surjInv (proj_surjective S₁ S₂))
+
+private instance : IsManifold ((𝓡 1).prod 𝓘(ℝ)) ∞ (Stack S₁ S₂) :=
+  (isLocalHomeomorph_proj S₁ S₂).isManifold_chartedSpaceOfRightInverse _ (proj_deck S₁ S₂)
+
+private theorem isLocalDiffeomorph_proj :
+    IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (proj S₁ S₂) :=
+  (isLocalHomeomorph_proj S₁ S₂).isLocalDiffeomorph_chartedSpaceOfRightInverse _ (proj_deck S₁ S₂)
+
+private theorem isLocalDiffeomorph_proj_inl :
+    IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (proj S₁ S₂ ∘ Sum.inl) :=
+  fun x ↦ (isLocalDiffeomorph_sumInl x).comp (hg := isLocalDiffeomorph_proj S₁ S₂ _)
+
+private theorem isLocalDiffeomorph_proj_inr :
+    IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (proj S₁ S₂ ∘ Sum.inr) :=
+  fun y ↦ (isLocalDiffeomorph_sumInr y).comp (hg := isLocalDiffeomorph_proj S₁ S₂ _)
+
+/-- The surface of the composite is smoothly embedded in `Sⁿ × ℝ`: on each part its embedding is
+a half of the composite, read through a local diffeomorphism. -/
+private theorem isSmoothEmbedding_stackMap :
+    IsSmoothEmbedding ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (stackMap S₁ S₂) := by
+  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun t ↦ ?_, isEmbedding_stackMap S₁ S₂⟩
+  obtain ⟨z, rfl⟩ := proj_surjective S₁ S₂ t
+  rcases z with x | y
+  · have h : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+        (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) x :=
+      isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val x)
+        ((isSmoothEmbedding_lower S₁).isImmersion.isImmersionAt _)
+    exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
+      (g := proj S₁ S₂ ∘ Sum.inl) (isLocalDiffeomorph_proj_inl S₁ S₂ x) h
+  · have h : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+        (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) y :=
+      isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val y)
+        ((isSmoothEmbedding_upper S₂).isImmersion.isImmersionAt _)
+    exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
+      (g := proj S₁ S₂ ∘ Sum.inr) (isLocalDiffeomorph_proj_inr S₁ S₂ y) h
+
+/-- The image of the composite: the lower half below height `(1 + botWidth S₂) / 2` and the upper
+half above height `(1 - topWidth S₁) / 2`. -/
+private theorem mem_range_stackMap_iff {p : sphere (0 : E) 1 × ℝ} :
+    p ∈ range (stackMap S₁ S₂) ↔ (p ∈ range (lower S₁) ∧ p.2 < (1 + botWidth S₂) / 2) ∨
+      (p ∈ range (upper S₂) ∧ (1 - topWidth S₁) / 2 < p.2) := by
+  rw [range_stackMap]
+  constructor
+  · rintro ⟨x | y, rfl⟩
+    · exact .inl ⟨mem_range_self _, (mem_lowerPiece_iff S₁ S₂).1 x.2⟩
+    · exact .inr ⟨mem_range_self _, (mem_upperPiece_iff S₁ S₂).1 y.2⟩
+  · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨y, rfl⟩, hy⟩)
+    · exact ⟨.inl ⟨x, (mem_lowerPiece_iff S₁ S₂).2 hx⟩, rfl⟩
+    · exact ⟨.inr ⟨y, (mem_upperPiece_iff S₁ S₂).2 hy⟩, rfl⟩
+
+private theorem quarter_le_sub : 1 / 4 ≤ (1 - topWidth S₁) / 2 := by
+  linarith [topWidth_le S₁]
+
+private theorem sub_lt_half : (1 - topWidth S₁) / 2 < 1 / 2 := by
+  linarith [topWidth_pos S₁]
+
+private theorem half_lt_add : 1 / 2 < (1 + botWidth S₂) / 2 := by
+  linarith [botWidth_pos S₂]
+
+private theorem add_le_three_quarters : (1 + botWidth S₂) / 2 ≤ 3 / 4 := by
+  linarith [botWidth_le S₂]
+
+/-- The image of the composite is connected: it is the union of the lower half with its heights
+capped at `1 / 2` and the upper half with its heights raised to at least `1 / 2`, two connected
+sets meeting along the circle `K₁` at height `1 / 2`. -/
+private theorem isPreconnected_range_stackMap : IsPreconnected (range (stackMap S₁ S₂)) := by
+  let P : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ := fun p ↦ (p.1, min p.2 (1 / 2))
+  let Q : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ := fun p ↦ (p.1, max p.2 (1 / 2))
+  have hP : Continuous P := by fun_prop
+  have hQ : Continuous Q := by fun_prop
+  have hA : IsPreconnected (range (P ∘ lower S₁)) :=
+    isPreconnected_range (hP.comp (isSmoothEmbedding_lower S₁).isEmbedding.continuous)
+  have hB : IsPreconnected (range (Q ∘ upper S₂)) :=
+    isPreconnected_range (hQ.comp (isSmoothEmbedding_upper S₂).isEmbedding.continuous)
+  have h₁ := sub_lt_half S₁
+  have h₂ := half_lt_add S₂
+  have hPfix (p : sphere (0 : E) 1 × ℝ) (hp : p.2 ≤ 1 / 2) : P p = p :=
+    Prod.ext rfl (min_eq_left hp)
+  have hQfix (p : sphere (0 : E) 1 × ℝ) (hp : 1 / 2 ≤ p.2) : Q p = p :=
+    Prod.ext rfl (max_eq_left hp)
+  -- On the circle `K₁` at height `1 / 2` both halves are the cylinder over `K₁`.
+  have hp₀A : (K₁ 1, (1 / 2 : ℝ)) ∈ range (P ∘ lower S₁) := by
+    obtain ⟨x, hx⟩ := (mem_range_lower_iff_of_le S₁ (p := (K₁ 1, 1 / 2)) h₁.le).2
+      (mem_range_self (f := ⇑K₁) 1)
+    exact ⟨x, by rw [comp_apply, hx, hPfix _ le_rfl]⟩
+  have hp₀B : (K₁ 1, (1 / 2 : ℝ)) ∈ range (Q ∘ upper S₂) := by
+    obtain ⟨y, hy⟩ := (mem_range_upper_iff_of_le S₂ (p := (K₁ 1, 1 / 2)) h₂.le).2
+      (mem_range_self (f := ⇑K₁) 1)
+    exact ⟨y, by rw [comp_apply, hy, hQfix _ le_rfl]⟩
+  convert hA.union _ hp₀A hp₀B hB using 1
+  ext p
+  rw [mem_range_stackMap_iff, mem_union]
+  constructor
+  · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨y, rfl⟩, hy⟩)
+    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
+      · exact .inl ⟨x, hPfix _ hle⟩
+      · obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ (h₁.trans hlt).le hx.le).1
+          (mem_range_self x)
+        exact .inr ⟨y, by rw [comp_apply, hy, hQfix _ hlt.le]⟩
+    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
+      · exact .inr ⟨y, hQfix _ hle⟩
+      · obtain ⟨x, hx⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hy.le (hlt.trans h₂).le).2
+          (mem_range_self y)
+        exact .inl ⟨x, by rw [comp_apply, hx, hPfix _ hlt.le]⟩
+  · rintro (⟨x, rfl⟩ | ⟨y, rfl⟩)
+    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
+      · rw [comp_apply, hPfix _ hle]
+        exact .inl ⟨mem_range_self x, hle.trans_lt h₂⟩
+      · have hK := (mem_range_lower_iff_of_le S₁ (h₁.trans hlt).le).1 (mem_range_self x)
+        have hPx : P (lower S₁ x) = ((lower S₁ x).1, 1 / 2) := Prod.ext rfl (min_eq_right hlt.le)
+        rw [comp_apply, hPx]
+        exact .inl ⟨(mem_range_lower_iff_of_le S₁ h₁.le).2 hK, h₂⟩
+    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
+      · rw [comp_apply, hQfix _ hle]
+        exact .inr ⟨mem_range_self y, h₁.trans_le hle⟩
+      · have hK := (mem_range_upper_iff_of_le S₂ (hlt.trans h₂).le).1 (mem_range_self y)
+        have hQy : Q (upper S₂ y) = ((upper S₂ y).1, 1 / 2) := Prod.ext rfl (max_eq_right hlt.le)
+        rw [comp_apply, hQy]
+        exact .inr ⟨(mem_range_upper_iff_of_le S₂ h₂.le).2 hK, h₁⟩
+
+private instance : ConnectedSpace (Stack S₁ S₂) := by
+  have hne : (range (stackMap S₁ S₂)).Nonempty :=
+    ⟨(K₁ 1, 1 / 2), (mem_range_stackMap_iff S₁ S₂).2 (.inl ⟨(mem_range_lower_iff_of_le S₁
+      (p := (K₁ 1, 1 / 2)) (sub_lt_half S₁).le).2 (mem_range_self (f := ⇑K₁) 1),
+      half_lt_add S₂⟩)⟩
+  obtain ⟨_, t, -⟩ := hne
+  refine connectedSpace_iff_univ.2 ⟨⟨t, mem_univ t⟩, ?_⟩
+  refine (isEmbedding_stackMap S₁ S₂).isInducing.isPreconnected_image.1 ?_
+  rw [image_univ]
+  exact isPreconnected_range_stackMap S₁ S₂
+
+/-- The part of the composite over the slab `Sⁿ × [0, 1]` is compact: it is the union of the
+parts of the two halves over the slabs `Sⁿ × [0, 1 / 2]` and `Sⁿ × [1 / 2, 1]`, which are the
+images of the compact parts of `S₁` and `S₂` over `Sⁿ × [0, 1]`. -/
+private theorem isCompact_preimage_Icc_stackMap :
+    IsCompact {t : Stack S₁ S₂ | (stackMap S₁ S₂ t).2 ∈ Icc (0 : ℝ) 1} := by
+  have hL : IsCompact (lower S₁ '' {x | (S₁.toFun x).2 ∈ Icc (0 : ℝ) 1}) :=
+    S₁.isCompact_preimage_Icc.image (isSmoothEmbedding_lower S₁).isEmbedding.continuous
+  have hU : IsCompact (upper S₂ '' {y | (S₂.toFun y).2 ∈ Icc (0 : ℝ) 1}) :=
+    S₂.isCompact_preimage_Icc.image (isSmoothEmbedding_upper S₂).isEmbedding.continuous
+  have h₁ := sub_lt_half S₁
+  have h₂ := half_lt_add S₂
+  have hlow (x : S₁.carrier) : (lower S₁ x).2 = (S₁.toFun x).2 / 2 := rfl
+  have hup (y : S₂.carrier) : (upper S₂ y).2 = ((S₂.toFun y).2 + 1) / 2 := rfl
+  have hsub : lower S₁ '' {x | (S₁.toFun x).2 ∈ Icc (0 : ℝ) 1} ∪
+      upper S₂ '' {y | (S₂.toFun y).2 ∈ Icc (0 : ℝ) 1} ⊆ range (stackMap S₁ S₂) := by
+    rintro _ (⟨x, hx, rfl⟩ | ⟨y, hy, rfl⟩)
+    · exact (mem_range_stackMap_iff S₁ S₂).2
+        (.inl ⟨mem_range_self x, by rw [hlow]; linarith [hx.2]⟩)
+    · exact (mem_range_stackMap_iff S₁ S₂).2
+        (.inr ⟨mem_range_self y, by rw [hup]; linarith [hy.1]⟩)
+  convert (isEmbedding_stackMap S₁ S₂).isInducing.isCompact_preimage' (hL.union hU) hsub using 1
+  ext t
+  have ht := (mem_range_stackMap_iff S₁ S₂).1 (mem_range_self (f := stackMap S₁ S₂) t)
+  simp only [mem_ofPred_eq, mem_preimage, mem_union, mem_image, mem_Icc]
+  constructor
+  · rintro ⟨h0, h1⟩
+    rcases le_or_gt (stackMap S₁ S₂ t).2 (1 / 2) with hle | hlt
+    · -- Below height `1 / 2` the composite is the lower half.
+      have hl : stackMap S₁ S₂ t ∈ range (lower S₁) := by
+        rcases ht with ⟨hl, -⟩ | ⟨hu, hp⟩
+        · exact hl
+        · exact (mem_range_lower_iff_mem_range_upper S₁ S₂ hp.le (hle.trans h₂.le)).2 hu
+      obtain ⟨x, hx⟩ := hl
+      have hx2 := hlow x
+      rw [hx] at hx2
+      exact .inl ⟨x, ⟨by linarith, by linarith⟩, hx⟩
+    · -- Above height `1 / 2` the composite is the upper half.
+      have hu : stackMap S₁ S₂ t ∈ range (upper S₂) := by
+        rcases ht with ⟨hl, hp⟩ | ⟨hu, -⟩
+        · exact (mem_range_lower_iff_mem_range_upper S₁ S₂ (h₁.trans hlt).le hp.le).1 hl
+        · exact hu
+      obtain ⟨y, hy⟩ := hu
+      have hy2 := hup y
+      rw [hy] at hy2
+      exact .inr ⟨y, ⟨by linarith, by linarith⟩, hy⟩
+  · rintro (⟨x, hx, hxt⟩ | ⟨y, hy, hyt⟩)
+    · have hx2 := hlow x
+      rw [hxt] at hx2
+      constructor <;> linarith [hx.1, hx.2]
+    · have hy2 := hup y
+      rw [hyt] at hy2
+      constructor <;> linarith [hy.1, hy.2]
+
+/-- Near height `0` the composite is the cylinder over `K₀`, as `S₁` is. -/
+private theorem exists_pos_range_stackMap_inter_snd_le :
+    ∃ ε > 0, range (stackMap S₁ S₂) ∩ {p | p.2 ≤ ε} = range K₀ ×ˢ Iic ε := by
+  obtain ⟨ε₀, hε₀, h₀⟩ := S₁.exists_pos_range_inter_snd_le
+  refine ⟨min (ε₀ / 2) (1 / 8), lt_min (half_pos hε₀) (by norm_num), Set.ext fun p ↦ ?_⟩
+  have hq := quarter_le_sub S₁
+  have h₂ := half_lt_add S₂
+  have hm₁ := min_le_left (ε₀ / 2) (1 / 8)
+  have hm₂ := min_le_right (ε₀ / 2) (1 / 8)
+  have key := Set.ext_iff.1 h₀ (p.1, 2 * p.2)
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Iic] at key ⊢
+  constructor
+  · rintro ⟨hp, hle⟩
+    rcases (mem_range_stackMap_iff S₁ S₂).1 hp with ⟨hl, -⟩ | ⟨-, hu⟩
+    · exact ⟨(key.1 ⟨(mem_range_lower_iff S₁).1 hl, by linarith⟩).1, hle⟩
+    · linarith
+  · rintro ⟨hK, hle⟩
+    refine ⟨(mem_range_stackMap_iff S₁ S₂).2
+      (.inl ⟨(mem_range_lower_iff S₁).2 (key.2 ⟨hK, by linarith⟩).1, by linarith⟩), hle⟩
+
+/-- Near height `1` the composite is the cylinder over `K₂`, as `S₂` is. -/
+private theorem exists_pos_range_stackMap_inter_le_snd :
+    ∃ ε > 0, range (stackMap S₁ S₂) ∩ {p | 1 - ε ≤ p.2} = range K₂ ×ˢ Ici (1 - ε) := by
+  obtain ⟨ε₃, hε₃, h₃⟩ := S₂.exists_pos_range_inter_le_snd
+  refine ⟨min (ε₃ / 2) (1 / 8), lt_min (half_pos hε₃) (by norm_num), Set.ext fun p ↦ ?_⟩
+  have hq := add_le_three_quarters S₂
+  have h₁ := sub_lt_half S₁
+  have hm₁ := min_le_left (ε₃ / 2) (1 / 8)
+  have hm₂ := min_le_right (ε₃ / 2) (1 / 8)
+  have key := Set.ext_iff.1 h₃ (p.1, 2 * p.2 - 1)
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici] at key ⊢
+  constructor
+  · rintro ⟨hp, hle⟩
+    rcases (mem_range_stackMap_iff S₁ S₂).1 hp with ⟨-, hl⟩ | ⟨hu, -⟩
+    · linarith
+    · exact ⟨(key.1 ⟨(mem_range_upper_iff S₂).1 hu, by linarith⟩).1, hle⟩
+  · rintro ⟨hK, hle⟩
+    refine ⟨(mem_range_stackMap_iff S₁ S₂).2
+      (.inr ⟨(mem_range_upper_iff S₂).2 (key.2 ⟨hK, by linarith⟩).1, by linarith⟩), hle⟩
+
+/-! ### Orientability of the composite -/
+
+/-- The overlap of the two parts, read in the lower part: the points above height
+`(1 - topWidth S₁) / 2` in the lower half, where it is the cylinder over `K₁`. -/
+private def overlap : TopologicalSpace.Opens (lowerPiece S₁ S₂) :=
+  ⟨{q | (1 - topWidth S₁) / 2 < (lower S₁ q).2}, isOpen_lt continuous_const (continuous_snd.comp
+    ((isSmoothEmbedding_lower S₁).isEmbedding.continuous.comp continuous_subtype_val))⟩
+
+private theorem exists_upper_eq_lower (w : overlap S₁ S₂) :
+    ∃ y : upperPiece S₁ S₂, upper S₂ y = lower S₁ (w : lowerPiece S₁ S₂) := by
+  obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ w.2.le
+    ((mem_lowerPiece_iff S₁ S₂).1 (w : lowerPiece S₁ S₂).2).le).1 (mem_range_self _)
+  exact ⟨⟨y, (mem_upperPiece_iff S₁ S₂).2 (hy ▸ w.2)⟩, hy⟩
+
+/-- The transition from the overlap, in the lower part, to the upper part: the point of the upper
+part with the same image. -/
+private def transition (w : overlap S₁ S₂) : upperPiece S₁ S₂ :=
+  (exists_upper_eq_lower S₁ S₂ w).choose
+
+private theorem upper_transition (w : overlap S₁ S₂) :
+    upper S₂ (transition S₁ S₂ w) = lower S₁ (w : lowerPiece S₁ S₂) :=
+  (exists_upper_eq_lower S₁ S₂ w).choose_spec
+
+private theorem upper_injective : Injective fun y : upperPiece S₁ S₂ ↦ upper S₂ y :=
+  fun _ _ h ↦ Subtype.ext ((isSmoothEmbedding_upper S₂).isEmbedding.injective h)
+
+/-- On the overlap, the transition followed by the upper part is the inclusion followed by the
+lower part. -/
+private theorem proj_inr_comp_transition :
+    (proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂ = (proj S₁ S₂ ∘ Sum.inl) ∘ Subtype.val :=
+  funext fun w ↦ (proj_eq_proj_iff S₁ S₂).2 (upper_transition S₁ S₂ w)
+
+private theorem contMDiff_transition :
+    ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
+  intro w
+  obtain ⟨τ, hτ, hτw, hτeq⟩ := exists_deck_lower_upper S₁ S₂ (upper_transition S₁ S₂ w).symm
+  refine (hτ.comp w contMDiff_subtype_val.contMDiffAt).congr_of_eventuallyEq ?_
+  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds hτeq] with w' hw'
+  exact upper_injective S₁ S₂ ((upper_transition S₁ S₂ w').trans hw'.symm)
+
+private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
+    (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (transition S₁ S₂) w).IsInvertible := by
+  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  have h₂ := isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w)
+  have h₁ := isLocalDiffeomorph_proj_inl S₁ S₂ (w : lowerPiece S₁ S₂)
+  have hv := isLocalDiffeomorph_subtype_val (I := (𝓡 1).prod 𝓘(ℝ)) (n := ∞) w
+  -- The derivative of `proj ∘ inr ∘ transition` is that of `proj ∘ inl ∘ val`, a composite of
+  -- derivatives of local diffeomorphisms.
+  have heq := (Filter.EventuallyEq.of_eq (proj_inr_comp_transition S₁ S₂)
+    (l := 𝓝 w)).mfderiv_eq (I := (𝓡 1).prod 𝓘(ℝ)) (I' := (𝓡 1).prod 𝓘(ℝ))
+  rw [mfderiv_comp w (h₂.mdifferentiableAt hn)
+      ((contMDiff_transition S₁ S₂ w).mdifferentiableAt hn),
+    mfderiv_comp w (h₁.mdifferentiableAt hn) (hv.mdifferentiableAt hn),
+    ← h₂.mfderivToContinuousLinearEquiv_coe hn] at heq
+  rw [← ContinuousLinearMap.isInvertible_equiv_comp (e := h₂.mfderivToContinuousLinearEquiv hn),
+    heq, ContinuousLinearMap.isInvertible_equiv_comp]
+  exact (h₁.isInvertible_mfderiv hn).comp (hv.isInvertible_mfderiv hn)
+
+/-- The index type of orientations of surfaces modelled on `ℝ¹ × ℝ`. -/
+private abbrev OrientationIndex : Type :=
+  Fin (finrank ℝ (EuclideanSpace ℝ (Fin 1) × ℝ))
+
+private theorem infty_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by simp
+
+private theorem mem_overlap_iff {q : lowerPiece S₁ S₂} :
+    q ∈ overlap S₁ S₂ ↔ (1 - topWidth S₁) / 2 < (lower S₁ q).2 :=
+  Iff.rfl
+
+/-- The overlap is connected: its image is the cylinder over `K₁` over an open interval of
+heights. -/
+private instance : PreconnectedSpace (overlap S₁ S₂) := by
+  let g : overlap S₁ S₂ → sphere (0 : E) 1 × ℝ :=
+    fun w ↦ lower S₁ ((w : lowerPiece S₁ S₂) : S₁.carrier)
+  have hg : IsEmbedding g := ((isSmoothEmbedding_lower S₁).isEmbedding.comp
+    IsEmbedding.subtypeVal).comp IsEmbedding.subtypeVal
+  have hrange : range g = range K₁ ×ˢ Ioo ((1 - topWidth S₁) / 2) ((1 + botWidth S₂) / 2) := by
+    ext p
+    constructor
+    · rintro ⟨w, rfl⟩
+      exact ⟨(mem_range_lower_iff_of_le S₁ ((mem_overlap_iff S₁ S₂).1 w.2).le).1
+        (mem_range_self _), (mem_overlap_iff S₁ S₂).1 w.2,
+        (mem_lowerPiece_iff S₁ S₂).1 (w : lowerPiece S₁ S₂).2⟩
+    · rintro ⟨hK, h₁, h₂⟩
+      obtain ⟨x, hx⟩ := (mem_range_lower_iff_of_le S₁ h₁.le).2 hK
+      exact ⟨⟨⟨x, (mem_lowerPiece_iff S₁ S₂).2 (hx ▸ h₂)⟩, (mem_overlap_iff S₁ S₂).2 (hx ▸ h₁)⟩,
+        hx⟩
+  refine ⟨hg.isInducing.isPreconnected_image.1 ?_⟩
+  rw [image_univ, hrange]
+  exact (isPreconnected_range K₁.isEmbedding.continuous).prod isPreconnected_Ioo
+
+open Manifold.Orientation
+
+/-- Orientations of `S₁` and `S₂`, restricted to the two parts, can be chosen so that the transition
+preserves orientation on the overlap: the overlap is connected, so the restricted orientation of
+`S₁` there is either the pullback of that of `S₂` or its opposite. -/
+private theorem exists_orientation_transition :
+    ∃ (o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂)
+        OrientationIndex)
+      (o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂)
+        OrientationIndex),
+      ∀ w : overlap S₁ S₂,
+        IsOrientationPreservingAt (o₁.restrict (overlap S₁ S₂)) o₂ (transition S₁ S₂) w := by
+  obtain ⟨o₁⟩ := S₁.orientable.nonempty_orientation
+  obtain ⟨o₂⟩ := S₂.orientable.nonempty_orientation
+  have hT := (contMDiff_transition S₁ S₂).of_le (m := 1)
+    (ENat.one_le_iff_ne_zero_withTop.mpr infty_ne_zero)
+  rcases ((o₁.restrict (lowerPiece S₁ S₂)).restrict (overlap S₁ S₂)).eq_or_eq_neg
+    ((o₂.restrict (upperPiece S₁ S₂)).pullback hT (isInvertible_mfderiv_transition S₁ S₂)
+      o₂.card_eq) with h | h
+  · refine ⟨o₁.restrict (lowerPiece S₁ S₂), o₂.restrict (upperPiece S₁ S₂), fun w ↦ ?_⟩
+    rw [h]
+    exact isOrientationPreservingAt_pullback _ _ _ _ w
+  · refine ⟨o₁.restrict (lowerPiece S₁ S₂), -o₂.restrict (upperPiece S₁ S₂), fun w ↦ ?_⟩
+    rw [h, ← pullback_neg]
+    exact isOrientationPreservingAt_pullback _ _ _ _ w
+
+/-- The derivative at `x` of the inclusion of the lower part into the composite. -/
+private def derivInl (x : lowerPiece S₁ S₂) :
+    TangentSpace ((𝓡 1).prod 𝓘(ℝ)) x ≃L[ℝ]
+      TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (proj S₁ S₂ (.inl x)) :=
+  (isLocalDiffeomorph_proj_inl S₁ S₂ x).mfderivToContinuousLinearEquiv infty_ne_zero
+
+/-- The derivative at `y` of the inclusion of the upper part into the composite. -/
+private def derivInr (y : upperPiece S₁ S₂) :
+    TangentSpace ((𝓡 1).prod 𝓘(ℝ)) y ≃L[ℝ]
+      TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (proj S₁ S₂ (.inr y)) :=
+  (isLocalDiffeomorph_proj_inr S₁ S₂ y).mfderivToContinuousLinearEquiv infty_ne_zero
+
+/-- The tangent orientation at the image of a point of one of the parts, carried from an
+orientation of that part by the derivative of its inclusion into the composite. -/
+private def auxOrientation
+    (o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂) OrientationIndex)
+    (o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂) OrientationIndex) :
+    ∀ z : Pieces S₁ S₂,
+      _root_.Orientation ℝ (TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (proj S₁ S₂ z)) OrientationIndex
+  | .inl x => _root_.Orientation.map OrientationIndex (derivInl S₁ S₂ x).toLinearEquiv
+      (o₁.orientationAt x)
+  | .inr y => _root_.Orientation.map OrientationIndex (derivInr S₁ S₂ y).toLinearEquiv
+      (o₂.orientationAt y)
+
+/-- The transition from the overlap to the upper part preserves orientation from `o₁` to `o₂`. -/
+private def TransitionPreserves
+    (o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂)
+      OrientationIndex)
+    (o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂)
+      OrientationIndex) : Prop :=
+  ∀ w : overlap S₁ S₂,
+    IsOrientationPreservingAt (o₁.restrict (overlap S₁ S₂)) o₂ (transition S₁ S₂) w
+
+variable {S₁ S₂}
+
+
+/-- If the transition preserves orientation, the orientations carried from the two parts agree at
+a point of the overlap. -/
+private theorem auxOrientation_inl_eq_inr
+    {o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂)
+      OrientationIndex}
+    {o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂)
+      OrientationIndex}
+    (ho : TransitionPreserves S₁ S₂ o₁ o₂)
+    (w : overlap S₁ S₂) :
+    auxOrientation S₁ S₂ o₁ o₂ (.inl (w : lowerPiece S₁ S₂)) =
+      auxOrientation S₁ S₂ o₁ o₂ (.inr (transition S₁ S₂ w)) := by
+  obtain ⟨A, hA, hAo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1
+    (isOrientationPreservingAt_restrict o₁ (overlap S₁ S₂) w)
+  obtain ⟨B, hB, hBo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 (ho w)
+  -- The two composites of derivatives are the derivatives of the same map out of the overlap.
+  have hL : A.toLinearEquiv.trans (derivInl S₁ S₂ w).toLinearEquiv =
+      B.toLinearEquiv.trans (derivInr S₁ S₂ (transition S₁ S₂ w)).toLinearEquiv := by
+    have h₁ := mfderiv_comp w
+      ((isLocalDiffeomorph_proj_inl S₁ S₂ w).mdifferentiableAt infty_ne_zero)
+      ((isLocalDiffeomorph_subtype_val (n := ∞) w).mdifferentiableAt infty_ne_zero)
+    have h₂ := mfderiv_comp w
+      ((isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w)).mdifferentiableAt infty_ne_zero)
+      ((contMDiff_transition S₁ S₂ w).mdifferentiableAt infty_ne_zero)
+    rw [← proj_inr_comp_transition, h₂, ← hA, ← hB] at h₁
+    ext v
+    exact (congrArg (fun L ↦ L v) h₁).symm
+  rw [auxOrientation, auxOrientation, ← hAo, ← hBo, ← _root_.Orientation.map_trans,
+    ← _root_.Orientation.map_trans]
+  exact congrArg (fun L ↦ _root_.Orientation.map OrientationIndex L
+    ((o₁.restrict (overlap S₁ S₂)).orientationAt w)) hL
+
+/-- If the transition preserves orientation, the orientations carried from the two parts agree at
+any two points with the same image in the composite. -/
+private theorem auxOrientation_eq_of_proj_eq
+    {o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂)
+      OrientationIndex}
+    {o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂)
+      OrientationIndex}
+    (ho : TransitionPreserves S₁ S₂ o₁ o₂)
+    {z z' : Pieces S₁ S₂} (h : proj S₁ S₂ z = proj S₁ S₂ z') :
+    auxOrientation S₁ S₂ o₁ o₂ z = auxOrientation S₁ S₂ o₁ o₂ z' := by
+  have hw := (proj_eq_proj_iff S₁ S₂).1 h
+  rcases z with x | y <;> rcases z' with x' | y'
+  · obtain rfl : x = x' := Subtype.ext ((isSmoothEmbedding_lower S₁).isEmbedding.injective hw)
+    rfl
+  · -- The point `x` lies in the overlap, and `y'` is its transition.
+    have hw' : lower S₁ x = upper S₂ y' := hw
+    have hx : x ∈ overlap S₁ S₂ := by
+      rw [mem_overlap_iff, hw']
+      exact (mem_upperPiece_iff S₁ S₂).1 y'.2
+    obtain rfl : transition S₁ S₂ ⟨x, hx⟩ = y' :=
+      upper_injective S₁ S₂ ((upper_transition S₁ S₂ ⟨x, hx⟩).trans hw)
+    exact auxOrientation_inl_eq_inr ho ⟨x, hx⟩
+  · have hw' : upper S₂ y = lower S₁ x' := hw
+    have hx' : x' ∈ overlap S₁ S₂ := by
+      rw [mem_overlap_iff, ← hw']
+      exact (mem_upperPiece_iff S₁ S₂).1 y.2
+    obtain rfl : transition S₁ S₂ ⟨x', hx'⟩ = y :=
+      upper_injective S₁ S₂ ((upper_transition S₁ S₂ ⟨x', hx'⟩).trans hw.symm)
+    exact (auxOrientation_inl_eq_inr ho ⟨x', hx'⟩).symm
+  · obtain rfl : y = y' := upper_injective S₁ S₂ hw
+    rfl
+
+variable (S₁ S₂) in
+/-- The tangent orientations of the composite, carried from the parts through a chosen preimage. -/
+private def tangentOrientation
+    (o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂) OrientationIndex)
+    (o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂) OrientationIndex)
+    (t : Stack S₁ S₂) :
+    _root_.Orientation ℝ (TangentSpace ((𝓡 1).prod 𝓘(ℝ)) t) OrientationIndex :=
+  auxOrientation S₁ S₂ o₁ o₂ (surjInv (proj_surjective S₁ S₂) t)
+
+private theorem tangentOrientation_proj
+    {o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂)
+      OrientationIndex}
+    {o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂)
+      OrientationIndex}
+    (ho : TransitionPreserves S₁ S₂ o₁ o₂)
+    (z : Pieces S₁ S₂) :
+    tangentOrientation S₁ S₂ o₁ o₂ (proj S₁ S₂ z) = auxOrientation S₁ S₂ o₁ o₂ z :=
+  auxOrientation_eq_of_proj_eq ho (surjInv_eq (proj_surjective S₁ S₂) _)
+
+variable (S₁ S₂)
+
+/-- The surface of the composite is orientable: the orientations of the two parts, chosen to agree
+on the overlap, are carried to the composite by the derivatives of the inclusions. -/
+private instance : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Stack S₁ S₂) := by
+  obtain ⟨o₁, o₂, ho⟩ := exists_orientation_transition S₁ S₂
+  have : NeZero (∞ : ℕ∞ω) := ⟨infty_ne_zero⟩
+  refine orientable_iff_nonempty_vectorBundleOrientation.2
+    ⟨⟨tangentOrientation S₁ S₂ o₁ o₂, fun b ↦ ?_⟩⟩
+  -- Near the image of a point of a part, the tangent orientations are carried from that part by
+  -- a local diffeomorphism, so they are locally constant.
+  obtain ⟨z, rfl⟩ := proj_surjective S₁ S₂ b
+  rcases z with x | y
+  · exact (isLocalDiffeomorph_proj_inl S₁ S₂ x).eventually_mapOrientation_eq o₁
+      (tangentOrientation S₁ S₂ o₁ o₂) (.of_forall fun x' ↦ ⟨derivInl S₁ S₂ x', by simp [derivInl],
+        (tangentOrientation_proj ho (.inl x')).symm⟩)
+  · exact (isLocalDiffeomorph_proj_inr S₁ S₂ y).eventually_mapOrientation_eq o₂
+      (tangentOrientation S₁ S₂ o₁ o₂) (.of_forall fun y' ↦ ⟨derivInr S₁ S₂ y', by simp [derivInr],
+        (tangentOrientation_proj ho (.inr y')).symm⟩)
+
+/-! ### The composite -/
+
+/-- **Composing knot cobordisms.** A knot cobordism `S₁` from `K₀` to `K₁` followed by a knot
+cobordism `S₂` from `K₁` to `K₂` is a knot cobordism from `K₀` to `K₂`: the surface of `S₁` with
+its heights halved, run over `[0, 1 / 2]`, stacked on the surface of `S₂` with its heights `t` moved
+to `(t + 1) / 2`, run over `[1 / 2, 1]`. Near the level `1 / 2` both are the cylinder over `K₁`, so
+the two surfaces are glued along a neighbourhood of the circle `K₁ × {1 / 2}`. -/
+def trans : KnotCobordism K₀ K₂ where
+  carrier := Stack S₁ S₂
+  toFun := stackMap S₁ S₂
+  isSmoothEmbedding := isSmoothEmbedding_stackMap S₁ S₂
+  isCompact_preimage_Icc := isCompact_preimage_Icc_stackMap S₁ S₂
+  exists_pos_range_inter_snd_le := exists_pos_range_stackMap_inter_snd_le S₁ S₂
+  exists_pos_range_inter_le_snd := exists_pos_range_stackMap_inter_le_snd S₁ S₂
+
+/-- **The lower half of the composite** is the part of the surface of `S₁` over the slab
+`Sⁿ × [0, 1]`, with its heights halved. -/
+theorem range_toFun_trans_inter_snd_le :
+    range (S₁.trans S₂).toFun ∩ {p | p.2 ≤ 1 / 2} =
+      (fun p ↦ (p.1, p.2 / 2)) '' (range S₁.toFun ∩ {p | p.2 ≤ 1}) := by
+  have h₂ := half_lt_add S₂
+  ext p
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_image]
+  constructor
+  · rintro ⟨hp, hle⟩
+    have hl : p ∈ range (lower S₁) := by
+      rcases (mem_range_stackMap_iff S₁ S₂).1 hp with ⟨hl, -⟩ | ⟨hu, hp'⟩
+      · exact hl
+      · exact (mem_range_lower_iff_mem_range_upper S₁ S₂ hp'.le (hle.trans h₂.le)).2 hu
+    obtain ⟨x, rfl⟩ := hl
+    exact ⟨S₁.toFun x, ⟨mem_range_self x, by linarith [lower_snd S₁ x]⟩, rfl⟩
+  · rintro ⟨_, ⟨⟨x, rfl⟩, hx⟩, rfl⟩
+    refine ⟨(mem_range_stackMap_iff S₁ S₂).2 (.inl ⟨mem_range_self x, ?_⟩), ?_⟩ <;>
+      linarith [lower_snd S₁ x]
+
+/-- **The upper half of the composite** is the part of the surface of `S₂` over the slab
+`Sⁿ × [0, 1]`, with its heights `t` moved to `(t + 1) / 2`. -/
+theorem range_toFun_trans_inter_le_snd :
+    range (S₁.trans S₂).toFun ∩ {p | 1 / 2 ≤ p.2} =
+      (fun p ↦ (p.1, (p.2 + 1) / 2)) '' (range S₂.toFun ∩ {p | 0 ≤ p.2}) := by
+  have h₁ := sub_lt_half S₁
+  ext p
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_image]
+  constructor
+  · rintro ⟨hp, hle⟩
+    have hu : p ∈ range (upper S₂) := by
+      rcases (mem_range_stackMap_iff S₁ S₂).1 hp with ⟨hl, hp'⟩ | ⟨hu, -⟩
+      · exact (mem_range_lower_iff_mem_range_upper S₁ S₂ (h₁.le.trans hle) hp'.le).1 hl
+      · exact hu
+    obtain ⟨y, rfl⟩ := hu
+    exact ⟨S₂.toFun y, ⟨mem_range_self y, by linarith [upper_snd S₂ y]⟩, rfl⟩
+  · rintro ⟨_, ⟨⟨y, rfl⟩, hy⟩, rfl⟩
+    refine ⟨(mem_range_stackMap_iff S₁ S₂).2 (.inr ⟨mem_range_self y, ?_⟩), ?_⟩ <;>
+      linarith [upper_snd S₂ y]
+
+end KnotCobordism
+
+end TauCeti

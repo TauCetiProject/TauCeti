@@ -40,6 +40,8 @@ are the basic examples of the latter
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
 * `TauCeti.isImmersion_comp_isLocalDiffeomorph`, `TauCeti.isImmersion_isLocalDiffeomorphAt_comp`:
   the corresponding statements for immersions.
+* `TauCeti.isImmersionAt_of_comp_isLocalDiffeomorphAt`: conversely, a map is an immersion at `g x`
+  when its composite with a local diffeomorphism `g` at `x` is an immersion at `x`.
 * `TauCeti.isSmoothEmbedding_comp_isLocalDiffeomorph`,
   `TauCeti.isSmoothEmbedding_isLocalDiffeomorphAt_comp`: the corresponding statements for smooth
   embeddings.
@@ -116,6 +118,16 @@ theorem isImmersionAt_comp_isLocalDiffeomorphAt [IsManifold I n M']
     (h : IsImmersionAt I J n f (g x)) : IsImmersionAt I J n (f ∘ g) x :=
   (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hg
     h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-- A map is an immersion at `g x` when its composite with a local diffeomorphism `g` at `x` is an
+immersion at `x`: near `g x` the map is the composite followed by a local inverse of `g`. -/
+theorem isImmersionAt_of_comp_isLocalDiffeomorphAt [IsManifold I n M]
+    {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x)
+    (h : IsImmersionAt I J n (f ∘ g) x) : IsImmersionAt I J n f (g x) := by
+  have h' : IsImmersionAt I J n (f ∘ g) (hg.localInverse (g x)) := by
+    rwa [hg.localInverse_left_inv hg.localInverse_mem_target]
+  exact (isImmersionAt_comp_isLocalDiffeomorphAt hg.localInverse_isLocalDiffeomorphAt
+    h').congr_of_eventuallyEq (hg.localInverse_eventuallyEq_right.fun_comp f)
 
 /-- Precomposing an immersion with a fixed complement by a local diffeomorphism gives an immersion
 with the same complement. -/
