@@ -23,6 +23,7 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
   coordinate map `Perfection.coeffMonoidHom M p n`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
+* `PreTilt.coeff_eq_zero_iff`: the same for the tilt `PreTilt O p` when `O ⧸ p` is reduced.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -67,6 +68,20 @@ theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔
 end Reduced
 
 end Perfection
+
+namespace PreTilt
+
+variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
+  [IsReduced (ModP O p)]
+
+/-- **If `O ⧸ p` is reduced, each coordinate of the tilt detects zero.** For `f` in
+`PreTilt O p`, `coeff n f = 0` if and only if `f = 0`. -/
+@[simp]
+theorem coeff_eq_zero_iff (n : ℕ) {f : PreTilt O p} : coeff n f = 0 ↔ f = 0 :=
+  -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
+  Perfection.coeff_eq_zero_iff (R := ModP O p) n
+
+end PreTilt
 
 namespace TauCeti
 
