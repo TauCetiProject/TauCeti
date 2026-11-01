@@ -40,6 +40,41 @@ open Polynomial
 
 namespace Ideal
 
+variable {R A G : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [Group G] [Finite G] [MulSemiringAction G A] [Algebra.IsInvariant R A G]
+
+/-- An element whose displacements by nonidentity group elements avoid a prime has zero
+universal differential in the local ring over the invariant base. -/
+theorem differential_eq_zero_of_forall_sub_smul_notMem (Q : Ideal A) [Q.IsPrime] {a : A}
+    (ha : ∀ g : G, g ≠ 1 → a - g • a ∉ Q) :
+    KaehlerDifferential.D R (Localization.AtPrime Q)
+      (algebraMap A (Localization.AtPrime Q) a) = 0 := by
+  classical
+  let := Fintype.ofFinite G
+  let S := Localization.AtPrime Q
+  let D := (KaehlerDifferential.D R S).compAlgebraMap A
+  -- The orbit polynomial has invariant coefficients, so it differentiates over `R`.
+  obtain ⟨p, hp⟩ := Algebra.IsInvariant.charpoly_mem_lifts R A G a
+  simp only [coe_mapRingHom] at hp
+  have hpa : aeval a p = 0 := by
+    rw [aeval_def, ← eval_map, hp, MulSemiringAction.eval_charpoly]
+  have hder : aeval a p.derivative =
+      ∏ g ∈ Finset.univ.erase (1 : G), (a - g • a) := by
+    rw [← Polynomial.aeval_map_algebraMap A, ← derivative_map, hp,
+      coe_aeval_eq_eval, MulSemiringAction.eval_derivative_charpoly]
+  have hunit : IsUnit (algebraMap A S (aeval a p.derivative)) := by
+    apply IsLocalization.map_units S
+      (⟨_, ?_⟩ : Q.primeCompl)
+    rw [hder]
+    exact fun h ↦ by
+      obtain ⟨g, hg, h⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp h
+      exact ha g (Finset.mem_erase.mp hg).1 h
+  have hzero := D.map_aeval p a
+  rw [hpa, map_zero] at hzero
+  have hDa : D a = 0 := hunit.smul_eq_zero.mp (by
+    simpa only [IsScalarTower.algebraMap_smul] using hzero.symm)
+  exact hDa
+
 variable {k R A G : Type*} [Field k] [Infinite k] [CommRing R] [CommRing A]
   [Algebra k R] [Algebra R A] [Algebra k A] [IsScalarTower k R A]
   [Group G] [Finite G] [MulSemiringAction G A] [SMulCommClass G R A]
@@ -64,6 +99,9 @@ theorem isUnramifiedAt_of_inertia_eq_bot (Q : Ideal A) [Q.IsPrime]
     let U : Option {g : G // g ≠ 1} → Submodule k A
       | none => LinearMap.ker d
       | some g => (Q.restrictScalars k).comap (L g)
+    have mem_U (g : {g : G // g ≠ 1}) (a : A) :
+        a ∈ U (some g) ↔ (g : G) • a - a ∈ Q := by
+      simp [U, L, Submodule.mem_comap, MulSemiringAction.toAlgHom_apply]
     have hU : ∀ i, U i ≠ ⊤ := by
       intro i
       cases i with
@@ -72,34 +110,14 @@ theorem isUnramifiedAt_of_inertia_eq_bot (Q : Ideal A) [Q.IsPrime]
         intro h
         have hg : (g : G) ∈ Q.inertia G := Ideal.mem_inertia.2 fun a ↦ by
           have ha : a ∈ U (some g) := h ▸ Submodule.mem_top
-          exact ha
+          exact (mem_U g a).mp ha
         exact g.2 (by simpa [hQ] using hg)
     obtain ⟨a, ha⟩ := Submodule.exists_forall_notMem_of_forall_ne_top U hU
     have hdiff (g : G) (hg : g ≠ 1) : a - g • a ∉ Q := by
       intro h
       have hneg : g • a - a ∈ Q := by simpa only [neg_sub] using Q.neg_mem h
-      exact ha (some ⟨g, hg⟩) hneg
-    -- The orbit polynomial has invariant coefficients, so it differentiates over `R`.
-    obtain ⟨p, hp⟩ := Algebra.IsInvariant.charpoly_mem_lifts R A G a
-    simp only [coe_mapRingHom] at hp
-    have hpa : aeval a p = 0 := by
-      rw [aeval_def, ← eval_map, hp, MulSemiringAction.eval_charpoly]
-    have hder : aeval a p.derivative =
-        ∏ g ∈ Finset.univ.erase (1 : G), (a - g • a) := by
-      rw [← Polynomial.aeval_map_algebraMap A, ← derivative_map, hp,
-        coe_aeval_eq_eval, MulSemiringAction.eval_derivative_charpoly]
-    have hunit : IsUnit (algebraMap A S (aeval a p.derivative)) := by
-      apply IsLocalization.map_units S
-        (⟨_, ?_⟩ : Q.primeCompl)
-      rw [hder]
-      exact fun h ↦ by
-        obtain ⟨g, hg, h⟩ := (Ideal.IsPrime.prod_mem_iff (p := Q)).mp h
-        exact hdiff g (Finset.mem_erase.mp hg).1 h
-    have hzero := D.map_aeval p a
-    rw [hpa, map_zero] at hzero
-    have hDa : D a = 0 := hunit.smul_eq_zero.mp (by
-      simpa only [IsScalarTower.algebraMap_smul] using hzero.symm)
-    exact ha none hDa
+      exact ha (some ⟨g, hg⟩) ((mem_U ⟨g, hg⟩ a).mpr hneg)
+    exact ha none (Q.differential_eq_zero_of_forall_sub_smul_notMem hdiff)
   have hD (a : A) : KaehlerDifferential.D R S (algebraMap A S a) = 0 :=
     LinearMap.congr_fun hd a
   have hzero : (⊤ : Submodule S Ω[S⁄R]) ≤ ⊥ := by
