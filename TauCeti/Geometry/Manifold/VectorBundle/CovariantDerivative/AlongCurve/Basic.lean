@@ -269,6 +269,7 @@ theorem alongCurve_zero (t : 𝕜) :
 /-- Along a constant curve at `x`, the moving-chart candidate within a parameter set is the
 ordinary derivative within that set of the field, read in the model space `E = T_x M`, wherever
 the set has unique derivatives.  No differentiability of the field is needed. -/
+@[simp]
 theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜}
     (hs : UniqueDiffWithinAt 𝕜 s t) :
     alongCurveWithin cov (fun _ : 𝕜 ↦ x) W s t = derivWithin W s t := by
