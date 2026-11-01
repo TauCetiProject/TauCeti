@@ -298,12 +298,8 @@ theorem map_univ_eq_of_bijective_aeval_standardRepresentation_dual [Nontrivial K
     (hbij : Function.Bijective (aeval (R := K) f)) :
     Finset.univ.val.map d = (Multiset.range n).map (· + 2) := by
   classical
-  set e := esymmStandardInvariantsEquiv K h hn
-  have he : Function.Bijective (aeval (R := K) fun i ↦ e (X i)) := by
-    rw [(algHom_ext fun i ↦ by simp : aeval (fun i ↦ e (X i)) = e.toAlgHom)]
-    exact e.bijective
-  rw [Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants _ hf hbij
-    (esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule K h hn) he]
+  rw [Representation.map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants _ hf
+    hbij _ (esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule K h hn)]
   exact Fin.univ_val_map_eq_map_range (· + 2) n
 
 end TauCeti

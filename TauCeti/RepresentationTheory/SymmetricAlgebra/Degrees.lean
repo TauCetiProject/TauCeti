@@ -51,6 +51,8 @@ average over `G` of `det(1 - t g)⁻¹` through the degrees.
   namespace `Representation`): the Hilbert series of the invariants is `∏ᵢ (1 - t ^ d i)⁻¹`.
 * `Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants`: two systems of basic
   invariants have the same multiset of degrees.
+* `Representation.map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants`: the
+  same, with the second system given by an algebra isomorphism from a polynomial algebra.
 
 ## References
 
@@ -129,6 +131,19 @@ theorem map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants [Fintype κ]
     (ρ.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hbij.1)
     (fun j ↦ (Subalgebra.mem_grading_iff _ _).2 (hf' j)) hbij'
     (ρ.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf' hbij'.1)
+
+/-- **The degrees of basic invariants are intrinsic**, comparing with a system of basic invariants
+given by an algebra isomorphism `e : R[Xⱼ] ≃ₐ[R] Sym(M)^G` that sends each `Xⱼ` to an invariant
+homogeneous of degree `d' j`. -/
+theorem map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants [Fintype κ]
+    {d' : κ → ℕ} (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hbij : Function.Bijective (aeval (R := R) f))
+    (e : MvPolynomial κ R ≃ₐ[R] ρ.symmetricAlgebraInvariants)
+    (he : ∀ j, (e (X j) : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d' j)) :
+    Finset.univ.val.map d = Finset.univ.val.map d' := by
+  refine ρ.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants hf hbij he ?_
+  rw [(algHom_ext fun j ↦ by simp : aeval (fun j ↦ e (X j)) = e.toAlgHom)]
+  exact e.bijective
 
 end CommRing
 

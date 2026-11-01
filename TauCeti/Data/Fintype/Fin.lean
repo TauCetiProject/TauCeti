@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.Fin
 public import Mathlib.Data.Multiset.Range
+import Mathlib.Order.Interval.Finset.Nat
 
 /-!
 # Multisets of values indexed by `Fin n`
@@ -24,7 +25,8 @@ namespace Fin
 /-- The multiset of values `g i` for `i : Fin n` is the image of `Multiset.range n` under `g`. -/
 theorem univ_val_map_eq_map_range {α : Type*} (g : ℕ → α) (n : ℕ) :
     Finset.univ.val.map (fun i : Fin n ↦ g i) = (Multiset.range n).map g := by
-  rw [univ_val_map, List.ofFn_eq_map, Multiset.range, Multiset.map_coe,
-    ← List.map_coe_finRange_eq_range, List.map_map, Function.comp_def]
+  rw [← Finset.range_val, ← Nat.Iio_eq_range, ← map_valEmbedding_univ, Finset.map_val,
+    Multiset.map_map]
+  rfl
 
 end Fin

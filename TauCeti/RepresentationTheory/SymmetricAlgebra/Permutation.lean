@@ -247,12 +247,8 @@ theorem map_univ_eq_of_bijective_aeval_ofMulAction_perm_dual [Nontrivial K]
     (hbij : Function.Bijective (aeval (R := K) f)) :
     Finset.univ.val.map d = (Multiset.range n).map (· + 1) := by
   classical
-  set e := esymmSymmetricAlgebraInvariantsEquiv K σ hn
-  have he : Function.Bijective (aeval (R := K) fun i ↦ e (X i)) := by
-    rw [(algHom_ext fun i ↦ by simp : aeval (fun i ↦ e (X i)) = e.toAlgHom)]
-    exact e.bijective
-  rw [_root_.Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants _ hf hbij
-    (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn) he]
+  rw [_root_.Representation.map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants
+    _ hf hbij _ (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn)]
   exact Fin.univ_val_map_eq_map_range (· + 1) n
 
 end Perm
