@@ -106,8 +106,8 @@ theorem pullbackLift_map {B' : Type*} (f : B' → B) (Φ : ∀ b, E b ≃ₗᵢ[
   exact (pullbackLift_mk (F := F') f x (φ.trans (Φ (f x)))).trans
     (congrArg (map Φ) (pullbackLift_mk f x φ)).symm
 
-/-- Frame maps induced by isometries are determined by their isometries, once every fibre of `E`
-admits an orthonormal frame modelled on `V`. -/
+/-- Families of fibrewise isometries are determined by their induced frame maps, once every fibre
+of `E` admits an orthonormal frame modelled on `V`. -/
 theorem map_injective (hV : ∀ b, Nonempty (V ≃ₗᵢ[ℝ] E b)) :
     Function.Injective
       (map : (∀ b, E b ≃ₗᵢ[ℝ] E' b) →
@@ -138,8 +138,7 @@ theorem exists_eq_map [CompleteSpace V] (hV : ∀ b, Nonempty (V ≃ₗᵢ[ℝ] 
     simp [Φ]
   refine ⟨Φ, funext fun p ↦ ?_⟩
   -- Every other frame over `b` is a translate of `φ b`, and both maps are equivariant.
-  obtain ⟨g, hg⟩ := exists_smul_eq_iff.2 (show (⟨p.proj, φ p.proj⟩ :
-    OrthonormalFrameBundle F E V).proj = p.proj from rfl)
+  obtain ⟨g, hg⟩ := (exists_smul_eq_iff (p := ⟨p.proj, φ p.proj⟩) (q := p)).2 rfl
   rw [← hg, hsmul, map_smul, hΦ]
 
 section Topology
