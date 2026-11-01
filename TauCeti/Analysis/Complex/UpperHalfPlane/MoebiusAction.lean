@@ -44,6 +44,8 @@ unfolded by hand.
   a fractional-linear bijection of the upper half-plane.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
   part up to a `normSq` factor, and is an involution of `ℍ`.
+* `ModularGroup.smul_eq_vadd_smul_S_smul_vadd`: for `c ≠ 0`, `A τ = a / c - 1 / (c² (τ + d / c))`,
+  the decomposition of `A ∈ SL(2, ℤ)` into translations, a scaling and the inversion `S`.
 
 ## Provenance
 
@@ -168,6 +170,29 @@ lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := b
 /-- The inversion `S` is an involution of `ℍ`. -/
 lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
   rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
+
+/-- For `A = !![a, b; c, d] ∈ SL(2, ℤ)` with `c ≠ 0`, `A τ = a / c - 1 / (c² (τ + d / c))`: the
+Möbius transformation `A` is the translation by `d / c`, then the inversion `S`, then the
+scaling by `c⁻²`, then the translation by `a / c`. -/
+theorem smul_eq_vadd_smul_S_smul_vadd (A : SL(2, ℤ)) (hc : A 1 0 ≠ 0) (τ : ℍ) :
+    A • τ = ((A 0 0 : ℝ) / A 1 0) +ᵥ
+      (⟨((A 1 0 : ℝ) ^ 2)⁻¹, inv_pos.2 (sq_pos_of_ne_zero (Int.cast_ne_zero.2 hc))⟩ :
+        {r : ℝ // 0 < r}) • (S • (((A 1 1 : ℝ) / A 1 0) +ᵥ τ)) := by
+  have hc' : (A 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.2 hc
+  -- `field_simp` needs the denominator `c τ + d` in both of the orders it meets.
+  have hden : (τ : ℂ) * A 1 0 + A 1 1 ≠ 0 := by
+    simpa [denom_apply, mul_comm] using denom_ne_zero (A : GL (Fin 2) ℝ) τ
+  have hden' : (A 1 1 : ℂ) + τ * A 1 0 ≠ 0 := by rwa [add_comm]
+  have hdet : (A 0 0 : ℂ) * A 1 1 - A 0 1 * A 1 0 = 1 := by
+    have h := A.det_coe
+    rw [Matrix.det_fin_two] at h
+    exact_mod_cast h
+  ext
+  rw [coe_specialLinearGroup_apply, coe_vadd, coe_pos_real_smul, modular_S_smul]
+  simp only [coe_vadd, Complex.real_smul, algebraMap_int_eq, eq_intCast]
+  push_cast
+  field_simp
+  linear_combination -((A 1 0 : ℂ) * τ + A 1 1) * hdet
 
 end ModularGroup
 

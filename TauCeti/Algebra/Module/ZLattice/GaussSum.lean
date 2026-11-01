@@ -78,6 +78,8 @@ multiple `t` of the level prime to `a`.
 
 ## Main statements
 
+* `ZLattice.gaussTerm_mk_eq_gaussTerm_zero_mul`: the twisted Gauss summand is the untwisted one
+  times `e(⟪y, m⟫ / c)`.
 * `ZLattice.norm_gaussSumTwisted_le`: `‖G_L(a, c; m)‖ ≤ |L / cL|`.
 * `ZLattice.gaussSumTwisted_eq_of_modEq`, `ZLattice.gaussSum_eq_of_modEq`: the Gauss sums depend
   on `a` only modulo `c`.
@@ -169,6 +171,18 @@ theorem norm_gaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
   rw [gaussTerm_mk, norm_exp]
   simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   simp
+
+/-- The twisted Gauss summand of the class of `v ∈ L` is the untwisted one times the phase
+`e(⟪v, m⟫ / c)`. -/
+theorem gaussTerm_mk_eq_gaussTerm_zero_mul (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
+    (v : L) :
+    gaussTerm L hL a c m (Submodule.Quotient.mk v) =
+      gaussTerm L hL a c 0 (Submodule.Quotient.mk v) *
+        cexp (2 * π * I * ⟪(c : ℝ)⁻¹ • (v : E), (m : E)⟫) := by
+  rw [gaussTerm_mk, gaussTerm_mk, ← exp_add, real_inner_smul_left, ZeroMemClass.coe_zero,
+    inner_zero_right, add_zero]
+  push_cast
+  ring_nf
 
 end GaussTerm
 
