@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
 public import TauCeti.CategoryTheory.Bicategory.Biequivalence
 public import TauCeti.CategoryTheory.Bicategory.FunctorBicategory.Precomp
 
