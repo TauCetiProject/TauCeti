@@ -285,6 +285,18 @@ theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeas
   have h : ν (Iic c) = 0 := (measure_congr Iio_ae_eq_Iic).symm.trans hc
   rw [cdf_eq_real, measureReal_def, h, ENNReal.toReal_zero]
 
+/-- The cdf is zero at a point strictly below almost every sample. -/
+theorem cdf_eq_zero_of_ae_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {x : ℝ}
+    (hν : ∀ᵐ y ∂ν, x < y) : cdf ν x = 0 := by
+  rw [cdf_eq_real, measureReal_eq_zero_iff]
+  exact measure_eq_zero_iff_ae_notMem.2 (hν.mono fun _ hy ↦ not_le_of_gt hy)
+
+/-- The cdf is one at a point bounding almost every sample from above. -/
+theorem cdf_eq_one_of_ae_le (ν : Measure ℝ) [IsProbabilityMeasure ν] {x : ℝ}
+    (hν : ∀ᵐ y ∂ν, y ≤ x) : cdf ν x = 1 := by
+  have heq : Iic x =ᵐ[ν] univ := Filter.eventuallyEqSet_univ.2 hν
+  rw [cdf_eq_real, measureReal_congr heq, probReal_univ]
+
 /-- A half-open interval has positive mass exactly when the cdf strictly increases across its
 endpoints. -/
 theorem measure_Ioc_pos_iff_cdf_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b : ℝ} :
@@ -313,6 +325,43 @@ theorem strictMonoOn_cdf_of_subset_support (ν : Measure ℝ) [IsProbabilityMeas
   obtain ⟨c, hac, hcb⟩ := exists_between hab
   exact ((mem_support_iff_forall _).mp (hν (hs.out ha hb ⟨hac.le, hcb.le⟩)) (Ioo a b)
     (Ioo_mem_nhds hac hcb)).trans_le (measure_mono Ioo_subset_Ioc_self)
+
+/-- A law carried by an open interval with full closed-interval support has positive cdf
+exactly above the lower endpoint. -/
+theorem cdf_pos_iff_of_support_eq_Icc (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b x : ℝ}
+    (hν : ∀ᵐ y ∂ν, y ∈ Ioo a b) (hsupport : ν.support = Icc a b) :
+    0 < cdf ν x ↔ a < x := by
+  obtain ⟨y, hy⟩ := hν.exists
+  have hab : a ≤ b := (hy.1.trans hy.2).le
+  have hmono := strictMonoOn_cdf_of_subset_support ν ordConnected_Icc
+    (by rw [hsupport])
+  constructor
+  · contrapose!
+    intro hx
+    simp [cdf_eq_zero_of_ae_lt ν (hν.mono fun _ hz ↦ hx.trans_lt hz.1)]
+  · intro hx
+    by_cases h : b ≤ x
+    · simp [cdf_eq_one_of_ae_le ν (hν.mono fun _ hz ↦ hz.2.le.trans h)]
+    · exact (cdf_nonneg ν a).trans_lt
+        (hmono ⟨le_rfl, hab⟩ ⟨hx.le, (not_le.mp h).le⟩ hx)
+
+/-- A law carried by an open interval with full closed-interval support has cdf below one
+exactly below the upper endpoint. -/
+theorem cdf_lt_one_iff_of_support_eq_Icc (ν : Measure ℝ) [IsProbabilityMeasure ν] {a b x : ℝ}
+    (hν : ∀ᵐ y ∂ν, y ∈ Ioo a b) (hsupport : ν.support = Icc a b) :
+    cdf ν x < 1 ↔ x < b := by
+  obtain ⟨y, hy⟩ := hν.exists
+  have hab : a ≤ b := (hy.1.trans hy.2).le
+  have hmono := strictMonoOn_cdf_of_subset_support ν ordConnected_Icc
+    (by rw [hsupport])
+  constructor
+  · contrapose!
+    intro hx
+    simp [cdf_eq_one_of_ae_le ν (hν.mono fun _ hz ↦ hz.2.le.trans hx)]
+  · intro hx
+    by_cases h : x ≤ a
+    · simp [cdf_eq_zero_of_ae_lt ν (hν.mono fun _ hz ↦ h.trans_lt hz.1)]
+    · exact (hmono ⟨(not_le.mp h).le, hx.le⟩ ⟨hab, le_rfl⟩ hx).trans_le (cdf_le_one ν b)
 
 /-- A cdf that increases strictly on a right half-line is below one at every finite cutoff. -/
 theorem cdf_lt_one_of_strictMonoOn_Ici (ν : Measure ℝ) {c : ℝ}
