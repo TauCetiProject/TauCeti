@@ -35,13 +35,6 @@ theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
     0 < cos θ :=
   cos_pos_of_mem_Ioo (Set.uIoo_subset_Ioo (abs_le.mp ha) (abs_le.mp hb) hθ)
 
-/-- A point strictly between `0` and a sine value has square strictly less than `1`. -/
-theorem sq_lt_one_of_mem_sin_interval {φ t : ℝ} (ht : t ∈ Set.uIoo 0 (sin φ)) :
-    t ^ 2 < 1 := by
-  have hlow : -1 < t := lt_of_le_of_lt (le_min (by norm_num) (neg_one_le_sin φ)) ht.1
-  have hupp : t < 1 := lt_of_lt_of_le ht.2 (max_le (by norm_num) (sin_le_one φ))
-  nlinarith
-
 /-- The sine is nonpositive on `[π, 2π]`. -/
 theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
   rw [← sin_sub_two_pi]
