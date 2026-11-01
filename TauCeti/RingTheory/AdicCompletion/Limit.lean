@@ -139,7 +139,9 @@ private theorem factorPow_comp_coneFamily (s : Cone (Ideal.quotientPowSuccDiagra
   have key (z : R ⧸ I ^ (n + 1)) : Ideal.Quotient.factorPow I hmn
       (Ideal.Quotient.factorPow I n.le_succ z) = Ideal.Quotient.factorPow I m.le_succ
         ((Ideal.quotientPowSuccDiagram I).map (homOfLE hmn).op z) := by
-    -- both sides are the class of `y` modulo `I ^ m`
+    -- both sides are the class of `y` modulo `I ^ m`. `simp` rewrites the transition map by
+    -- `Ideal.quotientPowSuccDiagram_map` but cannot evaluate it on the diagram's objects, which
+    -- are not reducibly `CommRingCat.of`, so the step is closed by `rfl`
     obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
     rfl
   exact (key _).trans (congrArg _ congr($(s.w (homOfLE hmn).op).hom x))

@@ -440,8 +440,9 @@ private theorem factor_comp_quotEquivOfEq (f : A) {m n : ℕ} (h : n ≤ m) :
     CommRingCat.ofHom (Ideal.quotEquivOfEq (Ideal.map_pow _ I (m + 1))).toRingHom ≫
       (Ideal.quotientPowSuccDiagram (I.map (algebraMap A (Localization.Away f)))).map
         (homOfLE h).op := by
-  -- both sides send the class of `x ∈ A_f` to its class; `Ideal.quotientPowSuccDiagram` is not
-  -- reducible, so its transition map is only unfolded by `rfl`
+  -- both sides send the class of `x ∈ A_f` to its class. `simp` rewrites the transition map by
+  -- `Ideal.quotientPowSuccDiagram_map` but cannot evaluate the resulting composite, whose objects
+  -- are the diagram's objects rather than `CommRingCat.of`, so the step is closed by `rfl`
   ext x
   rfl
 
@@ -503,24 +504,17 @@ theorem globalSectionsIso_inv_comp_basicOpenSectionsAdicCompletionIso_hom (hI : 
       CommRingCat.ofHom (algebraMap A (AdicCompletion (I.map (algebraMap A (Localization.Away f)))
         (Localization.Away f))) := by
   refine (AdicCompletion.isLimitQuotientPowSuccCone _).hom_ext fun n ↦ ?_
-  -- the projections of the limit cone are the evaluation maps `evalₐ`
-  have h : ((globalSectionsIso hI).inv ≫
-      (structureSheaf hI).obj.map (homOfLE (le_top : basicOpen f ≤ ⊤)).op ≫
-        (basicOpenSectionsAdicCompletionIso hI f).hom) ≫
-          CommRingCat.ofHom (AdicCompletion.evalₐ (I.map (algebraMap A (Localization.Away f)))
-            (n.unop + 1) : _ →+* _) =
-      CommRingCat.ofHom (algebraMap A (AdicCompletion (I.map (algebraMap A (Localization.Away f)))
-        (Localization.Away f))) ≫ CommRingCat.ofHom (AdicCompletion.evalₐ
-          (I.map (algebraMap A (Localization.Away f))) (n.unop + 1) :
-            AdicCompletion (I.map (algebraMap A (Localization.Away f))) (Localization.Away f) →+*
-              Localization.Away f ⧸ I.map (algebraMap A (Localization.Away f)) ^ (n.unop + 1)) := by
-    rw [Category.assoc, Category.assoc, basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ,
-      (quotientProjection hI n.unop).hom.naturality_assoc,
-      globalSectionsIso_inv_comp_quotientProjection_assoc,
-      quotientSheafGlobalSectionsIso_inv_comp_quotientSheafBasicOpenIso_hom_assoc]
-    ext a
-    simp [← Ideal.Quotient.mk_algebraMap, Ideal.quotEquivOfEq_mk]
-  exact h
+  -- the projections of the limit cone are the evaluation maps `evalₐ`; the `change` reads the
+  -- cone's apex and the diagram's objects as the rings they are, so that `Category.assoc` applies
+  rw [AdicCompletion.quotientPowSuccCone_π_app]
+  change (_ : _ ⟶ CommRingCat.of (AdicCompletion _ _)) ≫ (_ : _ ⟶ CommRingCat.of (_ ⧸ _)) =
+    (_ : _ ⟶ CommRingCat.of (AdicCompletion _ _)) ≫ (_ : _ ⟶ CommRingCat.of (_ ⧸ _))
+  rw [Category.assoc, Category.assoc, basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ,
+    (quotientProjection hI n.unop).hom.naturality_assoc,
+    globalSectionsIso_inv_comp_quotientProjection_assoc,
+    quotientSheafGlobalSectionsIso_inv_comp_quotientSheafBasicOpenIso_hom_assoc]
+  ext a
+  simp [← Ideal.Quotient.mk_algebraMap, Ideal.quotEquivOfEq_mk]
 
 end BasicOpenSections
 
