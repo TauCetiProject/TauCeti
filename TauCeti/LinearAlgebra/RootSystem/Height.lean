@@ -26,6 +26,7 @@ a base is determined by the indices of its simple roots.
 ## Main results
 
 * `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
+* `RootPairing.Base.height_eq_one_iff`: the roots of height one are exactly the simple roots.
 * `RootPairing.pairingIn_eq_sum_of_root_eq_sum` reads the Cartan integers of an integral
   combination of roots off those of its summands.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
@@ -55,6 +56,17 @@ theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
   cases b'
   subst h
   rfl
+
+/-- **The roots of height one are exactly the simple roots.** -/
+theorem height_eq_one_iff [Finite ι] [IsDomain R] [CharZero R] [P.IsCrystallographic]
+    (b : P.Base) {i : ι} : b.height i = 1 ↔ i ∈ b.support := by
+  refine ⟨fun h ↦ ?_, height_one_of_mem_support⟩
+  -- A positive root which is not simple is a simple root plus a positive root, of height `≥ 2`.
+  refine IsPos.induction_on_add (b := b) (i := i) (p := fun i ↦ b.height i = 1 → i ∈ b.support)
+    (b.isPos_iff.mpr (by omega)) (fun i hi _ ↦ hi) (fun i j k hk _ hj hk₁ ↦ ?_) h
+  have := b.height_add hk
+  rw [height_one_of_mem_support hj, hk₁] at this
+  exact absurd (by omega) (b.height_ne_zero i)
 
 end RootPairing.Base
 
