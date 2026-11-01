@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.RingTheory.PowerSeries.MulDistinguished
 import Mathlib.Algebra.Polynomial.Monic
 
 /-!
@@ -22,13 +23,14 @@ This file characterises Weierstrass polynomials by their coefficients and by the
 leading term, or equivalently when the Gauss norm of `p` at `c` is `cˢ`. At the unit radius these
 say that every coefficient of `p` has norm at most one, and that `p` has Gauss norm one.
 
-Weierstrass polynomials are closed under products (`TauCeti.PowerSeries.IsDistinguished.mul`).
-Over a ring whose norm is multiplicative, such as a Tate algebra over a complete nonarchimedean
-field, they are also closed under taking monic factors: a monic polynomial of degree `s` has Gauss
-norm at least `cˢ`, so a product of two monic polynomials has Gauss norm `cˢ` exactly when both
-factors do. Multiplicativity of the norm cannot be dropped here. Over the dual numbers `K[ε]` of a
-nonarchimedean field `K`, with the norm `‖x + yε‖ = max ‖x‖ (C ‖y‖)` for some `C > 1`, the product
-`(X - ε) * (X + ε) = X ^ 2` is a Weierstrass polynomial at the unit radius, but `X - ε` is not.
+Over a ring with an ultrametric norm, Weierstrass polynomials are closed under products
+(`TauCeti.PowerSeries.IsDistinguished.mul`). If the norm is also multiplicative, as for a Tate
+algebra over a complete nonarchimedean field, they are closed under taking monic factors: a monic
+polynomial of degree `s` has Gauss norm at least `cˢ`, so a product of two monic polynomials has
+Gauss norm `cˢ` exactly when both factors do. Multiplicativity of the norm cannot be dropped here.
+Over the dual numbers `K[ε]` of a nonarchimedean field `K`, with the norm
+`‖x + yε‖ = max ‖x‖ (C ‖y‖)` for some `C > 1`, the product `(X - ε) * (X + ε) = X ^ 2` is a
+Weierstrass polynomial at the unit radius, but `X - ε` is not.
 
 ## Main results
 
@@ -40,10 +42,11 @@ nonarchimedean field `K`, with the norm `‖x + yε‖ = max ‖x‖ (C ‖y‖)
   of degree `s` iff its Gauss norm is `cˢ`.
 * `TauCeti.PowerSeries.isDistinguished_one_iff_of_isMonicOfDegree`: at the unit radius, it is
   distinguished iff all its coefficients have norm at most one.
-* `TauCeti.PowerSeries.isDistinguished_mul_iff_of_isMonicOfDegree`: for a multiplicative norm, a
-  product of monic polynomials is a Weierstrass polynomial iff both factors are.
-* `TauCeti.PowerSeries.IsDistinguished.of_dvd`: for a multiplicative norm, every monic factor of a
-  Weierstrass polynomial is a Weierstrass polynomial.
+* `TauCeti.PowerSeries.isDistinguished_mul_iff_of_isMonicOfDegree`: for a multiplicative
+  ultrametric norm, a product of monic polynomials is a Weierstrass polynomial iff both factors
+  are.
+* `TauCeti.PowerSeries.IsDistinguished.of_dvd`: for a multiplicative ultrametric norm, every monic
+  factor of a Weierstrass polynomial is a Weierstrass polynomial.
 
 ## References
 
@@ -97,20 +100,20 @@ theorem pow_le_gaussNorm_of_isMonicOfDegree (hp : p.IsMonicOfDegree s) :
 Gauss norm at `c` is `cˢ`. -/
 theorem isDistinguished_iff_gaussNorm_eq_of_isMonicOfDegree (hc : 0 < c)
     (hp : p.IsMonicOfDegree s) :
-    IsDistinguished c s (p : PowerSeries R) ↔ (p : PowerSeries R).gaussNorm norm c = c ^ s := by
-  refine ⟨fun h ↦ ?_, fun h ↦ (isDistinguished_iff_of_isMonicOfDegree hc hp).mpr fun k _ ↦ ?_⟩
-  · simpa [hp.coeff_coe_self] using h.norm_coeff_mul_pow_eq.symm
-  · simpa [h] using PowerSeries.le_gaussNorm norm c _
-      (hasGaussNorm_of_isRestricted (isRestricted_polynomial p)) k
+    IsDistinguished c s (p : PowerSeries R) ↔ (p : PowerSeries R).gaussNorm norm c = c ^ s :=
+  -- For a monic polynomial the distinguished coefficient is `1`, a multiplicative unit.
+  ⟨fun h ↦ (isMulDistinguished_iff_gaussNorm_eq hc hp).mp
+      ⟨h, by rw [hp.coeff_coe_self]; exact isNormMulUnit_one⟩,
+    fun h ↦ ((isMulDistinguished_iff_gaussNorm_eq hc hp).mpr h).toIsDistinguished⟩
 
 end NormedRing
 
 section NormMulClass
 
-variable {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {i j : ℕ}
-  {p q : Polynomial R}
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {i j s : ℕ}
+  {p q w : Polynomial R}
 
-/-- For a multiplicative norm, a product of monic polynomials of degrees `i` and `j` is
+/-- For a multiplicative ultrametric norm, a product of monic polynomials of degrees `i` and `j` is
 distinguished of degree `i + j` at a radius `c > 0` iff each factor is distinguished of its
 degree. -/
 theorem isDistinguished_mul_iff_of_isMonicOfDegree (hc : 0 < c) (hp : p.IsMonicOfDegree i)
@@ -137,16 +140,9 @@ theorem isDistinguished_mul_iff_of_isMonicOfDegree (hc : 0 < c) (hp : p.IsMonicO
     constructor <;> nlinarith
   · exact hpd.mul hqd hc (norm_mul _ _)
 
-end NormMulClass
-
-section CommRing
-
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {s : ℕ}
-  {p w : Polynomial R}
-
-/-- For a multiplicative norm, a monic factor `p` of a monic polynomial `w` of degree `s` which is
-distinguished of degree `s` at a radius `c > 0` is distinguished of its own degree at `c`: monic
-factors of Weierstrass polynomials are Weierstrass polynomials. -/
+/-- For a multiplicative ultrametric norm, a monic factor `p` of a monic polynomial `w` of degree
+`s` which is distinguished of degree `s` at a radius `c > 0` is distinguished of its own degree at
+`c`: monic factors of Weierstrass polynomials are Weierstrass polynomials. -/
 theorem IsDistinguished.of_dvd (hw : IsDistinguished c s (w : PowerSeries R)) (hc : 0 < c)
     (hwm : w.IsMonicOfDegree s) (hp : p.Monic) (hpw : p ∣ w) :
     IsDistinguished c p.natDegree (p : PowerSeries R) := by
@@ -158,6 +154,6 @@ theorem IsDistinguished.of_dvd (hw : IsDistinguished c s (w : PowerSeries R)) (h
   rw [Polynomial.coe_mul] at hw
   exact ((isDistinguished_mul_iff_of_isMonicOfDegree hc ⟨rfl, hp⟩ ⟨rfl, hq⟩).mp hw).1
 
-end CommRing
+end NormMulClass
 
 end TauCeti.PowerSeries
