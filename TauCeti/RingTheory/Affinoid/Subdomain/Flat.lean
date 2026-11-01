@@ -88,7 +88,7 @@ theorem faithfullyFlat_pi_algebraMap {ι : Type*} [Finite ι] {m : ι → ℕ}
   refine RingHom.FaithfullyFlat.pi_of_exists_map_ne_top (fun i ↦ flat_algebraMap hA (h i))
     fun M hM ↦ ?_
   obtain ⟨i, hi⟩ := hcover ⟨M, hM⟩
-  rw [← range_maximalSpectrumComap hA (h i)] at hi
+  rw [← (isAffinoidSubdomainMap hA (h i)).range_maximalSpectrumComap hA] at hi
   obtain ⟨y, hy⟩ := hi
   have hcomap : y.asIdeal.comap (algebraMap A _) = M := by
     have hy' := congrArg MaximalSpectrum.asIdeal hy

@@ -99,9 +99,40 @@ theorem filter_cubeState_eq_false (S : Finset (Fin n)) :
   ext
   simp
 
+end TauCeti.PDCode
+
+namespace TauCeti.OrientedPDCode
+
+variable {n : ℕ} (D : OrientedPDCode n)
+
+/-- A cube vertex `S` has normalized cochain degree `|S| - n₋`. -/
+@[simp]
+theorem stateCochainDegree_cubeState (S : Finset (Fin n)) :
+    D.stateCochainDegree (PDCode.cubeState S) = (#S : ℤ) - D.negativeCrossingCount := by
+  rw [stateCochainDegree_def, PDCode.filter_cubeState_eq_false]
+
+/-- A cube vertex `S` has quantum shift `|S| + n₊ - 2n₋`. -/
+@[simp]
+theorem stateQuantumShift_cubeState (S : Finset (Fin n)) :
+    D.stateQuantumShift (PDCode.cubeState S) =
+      (#S : ℤ) + D.positiveCrossingCount - 2 * D.negativeCrossingCount := by
+  rw [stateQuantumShift_def, PDCode.filter_cubeState_eq_false]
+
+end TauCeti.OrientedPDCode
+
+namespace TauCeti.PDCode
+
+variable {n : ℕ}
+
 /-- The vertex `S` is recovered from its state. -/
 theorem cubeState_injective : Function.Injective (cubeState (n := n)) := fun S T h ↦ by
   rw [← filter_cubeState_eq_false S, ← filter_cubeState_eq_false T, h]
+
+/-- The vertices of the cube correspond bijectively to the states: the state `s` is the state of
+the vertex formed by its `B`-smoothings. -/
+theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
+  ⟨cubeState_injective, fun s ↦
+    ⟨({i | s i = false} : Finset (Fin n)), by funext i; simp [cubeState_apply]⟩⟩
 
 /-- Along an edge `S ⋖ T` of the cube, the states of `S` and `T` agree away from the added
 crossing `a ∈ T \ S`. -/

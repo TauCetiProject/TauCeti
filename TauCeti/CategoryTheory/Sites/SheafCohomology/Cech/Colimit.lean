@@ -37,24 +37,22 @@ the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
   for the system `E`, as a functor of the presheaf.
 * `TauCeti.CategoryTheory.cechCohomologyι E hE n j`: the structure map from the Čech cohomology
   of the family `E j`.
-* `TauCeti.CategoryTheory.cechCohomologyDesc E hE n f hf`: the map out of the Čech cohomology
-  induced by a compatible family of maps out of the Čech cohomologies of the families of the
-  system.
-* `TauCeti.CategoryTheory.cechCohomologyιOfRefinement E hE n G hG`: the structure map from the Čech
-  cohomology of a family `G` refined by some member of the system.
+* `TauCeti.CategoryTheory.isColimitCechCohomologyCocone A E hE n`: the Čech cohomology for the
+  system, with the structure maps, is a colimit of the diagram of functors of the presheaf.
+* `TauCeti.CategoryTheory.cechCohomologyDesc E hE n f hf`: the map out of the Čech cohomology of
+  a presheaf induced by a compatible family of maps out of the Čech cohomologies of the families
+  of the system.
 * `TauCeti.CategoryTheory.cechCohomologyZeroIso`: the identification of degree `0` Čech
   cohomology with `P(T)` when `P` satisfies the sheaf condition for every family of the system.
 
 ## Main results
 
-* `TauCeti.CategoryTheory.cechCohomologyDiagram_map_app`: the transition map is the map induced by
+* `TauCeti.CategoryTheory.cechCohomologyDiagram_map`: the transition map is the map induced by
   any morphism of families.
-* `TauCeti.CategoryTheory.homologyMap_cechComplexMap_comp_cechCohomologyι_app`: the structure maps
-  are compatible with the maps induced by morphisms of families.
+* `TauCeti.CategoryTheory.cechComplexHomologyMap_comp_cechCohomologyι`: the structure maps are
+  compatible with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.isZero_cechCohomology_obj`: the Čech cohomology vanishes if every family
   of the system is empty.
-* `TauCeti.CategoryTheory.cechCohomologyιOfRefinement_app_eq`: for a directed system, the structure
-  map from a refined family agrees with the map through any member of the system refining it.
 * `TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0`
   is natural in the presheaf.
 
@@ -87,34 +85,21 @@ variable (A) in
 /-- The degree `n` Čech cohomology of presheaves for the families of the system `E`, as a diagram
 indexed by `J`. Its value at `j` is the functor `P ↦ Hⁿ(Č(E j, P))`, and its transition map for
 `i ≤ j` is induced by a morphism of families `E j ⟶ E i`; any such morphism gives the same map
-(`cechCohomologyDiagram_map_app`). The body is exposed so that the values of the diagram unfold to
+(`cechCohomologyDiagram_map`). The body is exposed so that the values of the diagram unfold to
 Čech cohomology objects, which the statements about its maps need. -/
 @[expose, simps obj]
 def cechCohomologyDiagram : J ⥤ (Cᵒᵖ ⥤ A) ⥤ A where
   obj j := cechComplexFunctor (E j).obj ⋙ HomologicalComplex.homologyFunctor A _ n
-  map {i j} f :=
-    { app P := HomologicalComplex.homologyMap (cechComplexMap P (hE (leOfHom f)).some) n
-      naturality P Q α := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
-        (congrArg (HomologicalComplex.homologyMap · n) (cechComplexMap_naturality P α _)).trans
-          (HomologicalComplex.homologyMap_comp _ _ n) }
-  map_id j := by
-    ext P
-    exact ((cechComplexMapHomotopy P _ (𝟙 _)).homologyMap_eq n).trans <|
-      (congrArg (HomologicalComplex.homologyMap · n) (cechComplexMap_id P)).trans
-        (HomologicalComplex.homologyMap_id _ n)
-  map_comp {i j k} f g := by
-    ext P
-    exact ((cechComplexMapHomotopy P _
-      ((hE (leOfHom g)).some ≫ (hE (leOfHom f)).some)).homologyMap_eq n).trans <|
-        (congrArg (HomologicalComplex.homologyMap · n) (cechComplexMap_comp P _ _)).trans
-          (HomologicalComplex.homologyMap_comp _ _ n)
+  map f := cechComplexHomologyMap A n (hE (leOfHom f)).some
+  map_id _ := (cechComplexHomologyMap_eq A n _ _).trans (cechComplexHomologyMap_id A n)
+  map_comp _ _ := (cechComplexHomologyMap_eq A n _ _).trans (cechComplexHomologyMap_comp A n _ _)
 
+variable (A) in
 /-- **The transition maps do not depend on the refinement maps.** For `i ≤ j`, the transition map
 of the diagram is the map on Čech cohomology induced by any morphism of families `E j ⟶ E i`. -/
-theorem cechCohomologyDiagram_map_app {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) (P : Cᵒᵖ ⥤ A) :
-    ((cechCohomologyDiagram A E hE n).map f).app P =
-      HomologicalComplex.homologyMap (cechComplexMap P φ) n :=
-  (cechComplexMapHomotopy P _ φ).homologyMap_eq n
+theorem cechCohomologyDiagram_map {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
+    (cechCohomologyDiagram A E hE n).map f = cechComplexHomologyMap A n φ :=
+  cechComplexHomologyMap_eq A n _ φ
 
 /-! ### The colimit -/
 
@@ -154,16 +139,40 @@ theorem cechCohomologyDiagram_map_comp_cechCohomologyι {i j : J} (f : i ⟶ j) 
   ext P
   exact colimit.w ((cechCohomologyDiagram A E hE n).flip.obj P) f
 
+variable (A) in
 /-- The structure maps are compatible with the map on Čech cohomology induced by any morphism of
 families `E j ⟶ E i`, for `i ≤ j`. -/
 @[reassoc]
-theorem homologyMap_cechComplexMap_comp_cechCohomologyι_app {i j : J} (h : i ≤ j)
-    (φ : E j ⟶ E i) (P : Cᵒᵖ ⥤ A) :
-    HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫ (cechCohomologyι E hE n j).app P =
-      (cechCohomologyι E hE n i).app P :=
-  (congrArg (· ≫ (cechCohomologyι E hE n j).app P)
-    (cechCohomologyDiagram_map_app E hE n (homOfLE h) φ P)).symm.trans
-      (NatTrans.congr_app (cechCohomologyDiagram_map_comp_cechCohomologyι E hE n (homOfLE h)) P)
+theorem cechComplexHomologyMap_comp_cechCohomologyι {i j : J} (h : i ≤ j) (φ : E j ⟶ E i) :
+    cechComplexHomologyMap A n φ ≫ cechCohomologyι E hE n j = cechCohomologyι E hE n i :=
+  (congrArg (· ≫ cechCohomologyι E hE n j)
+    (cechCohomologyDiagram_map A E hE n (homOfLE h) φ)).symm.trans
+      (cechCohomologyDiagram_map_comp_cechCohomologyι E hE n (homOfLE h))
+
+variable (A) in
+/-- The Čech cohomology for the system, as a cocone over the diagram of functors of the presheaf
+whose legs are the structure maps. The body is exposed so that its cocone point unfolds to
+`cechCohomology A E hE n`, which maps built from `isColimitCechCohomologyCocone` need. -/
+@[expose, simps]
+def cechCohomologyCocone : Cocone (cechCohomologyDiagram A E hE n) where
+  pt := cechCohomology A E hE n
+  ι :=
+    { app := cechCohomologyι E hE n
+      naturality _ _ f := (cechCohomologyDiagram_map_comp_cechCohomologyι E hE n f).trans
+        (Category.comp_id _).symm }
+
+variable (A) in
+/-- The Čech cohomology for the system is the colimit of the diagram of functors of the presheaf,
+since colimits of functors are computed pointwise. -/
+def isColimitCechCohomologyCocone : IsColimit (cechCohomologyCocone A E hE n) :=
+  pointwiseIsColimit (cechCohomologyDiagram A E hE n)
+
+variable (A) in
+/-- Two maps out of the Čech cohomology for the system agree as soon as they agree after every
+structure map. -/
+theorem cechCohomology_hom_ext {G : (Cᵒᵖ ⥤ A) ⥤ A} {f g : cechCohomology A E hE n ⟶ G}
+    (h : ∀ j, cechCohomologyι E hE n j ≫ f = cechCohomologyι E hE n j ≫ g) : f = g :=
+  (isColimitCechCohomologyCocone A E hE n).hom_ext h
 
 variable {E hE n} in
 /-- Two maps out of the Čech cohomology of `P` for the system agree as soon as they agree after
@@ -200,8 +209,8 @@ def cechCohomologyDesc {P : Cᵒᵖ ⥤ A} {Y : A}
       ι :=
         { app := f
           naturality _ j h :=
-            (cechCohomologyDiagram_map_app E hE n h (hE (leOfHom h)).some P =≫ f j).trans
-              ((hf (leOfHom h) _).trans (Category.comp_id _).symm) } }
+            (NatTrans.congr_app (cechCohomologyDiagram_map A E hE n h (hE (leOfHom h)).some) P
+              =≫ f j).trans ((hf (leOfHom h) _).trans (Category.comp_id _).symm) } }
 
 /-- The map out of the Čech cohomology induced by a compatible family restricts to that family
 along each structure map. -/
@@ -212,92 +221,6 @@ theorem cechCohomologyι_app_cechCohomologyDesc {P : Cᵒᵖ ⥤ A} {Y : A}
       HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫ f j = f i) (j : J) :
     (cechCohomologyι E hE n j).app P ≫ cechCohomologyDesc E hE n f hf = f j :=
   colimit.ι_desc _ j
-
-/-! ### Maps from refined families
-
-A family `G` that is refined by some member `E i` of the system, but need not belong to the system
-itself, also has a structure map from its Čech cohomology to the Čech cohomology for the system.
-For open covers, this is the map from the Čech cohomology of an arbitrary cover. -/
-
-/-- The structure map from the degree `n` Čech cohomology of a family `G` refined by some member of
-the system, natural in the presheaf. It is the map induced by a chosen morphism of families
-`E i ⟶ G`, followed by the structure map at `i`; when `J` is directed, it does not depend on the
-choice (`cechCohomologyιOfRefinement_app_eq`). -/
-def cechCohomologyιOfRefinement (G : FormalCoproduct.{w} C) (hG : ∃ i, Nonempty (E i ⟶ G)) :
-    cechComplexFunctor G.obj ⋙ HomologicalComplex.homologyFunctor A _ n ⟶
-      cechCohomology A E hE n where
-  app P := HomologicalComplex.homologyMap (cechComplexMap P hG.choose_spec.some) n ≫
-    (cechCohomologyι E hE n hG.choose).app P
-  naturality P _ α :=
-    -- the map induced by the refinement and the structure map are both natural in the presheaf
-    (HomologicalComplex.homologyMap_comp_assoc _ _ n _).symm.trans <|
-      (congrArg (HomologicalComplex.homologyMap · n ≫ _) (cechComplexMap_naturality P α _)).trans <|
-        (HomologicalComplex.homologyMap_comp_assoc _ _ n _).trans <|
-          (_ ≫= (cechCohomologyι E hE n hG.choose).naturality α).trans (Category.assoc _ _ _).symm
-
-/-- Passing from a member `E i` refining a family `G` to a finer member `E j` does not change the
-composite of the induced map on cohomology with the structure map. -/
-private lemma homologyMap_comp_cechCohomologyι_app_eq_of_le (P : Cᵒᵖ ⥤ A)
-    {G : FormalCoproduct.{w} C} {i j : J} (hij : i ≤ j) (ψ : E j ⟶ E i) (φ : E i ⟶ G) :
-    HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫ (cechCohomologyι E hE n i).app P =
-      HomologicalComplex.homologyMap (cechComplexMap P (ψ ≫ φ)) n ≫
-        (cechCohomologyι E hE n j).app P :=
-  (_ ≫= homologyMap_cechComplexMap_comp_cechCohomologyι_app E hE n hij ψ P).symm.trans <|
-    (HomologicalComplex.homologyMap_comp_assoc _ _ n _).symm.trans <|
-      congrArg (HomologicalComplex.homologyMap · n ≫ _) (cechComplexMap_comp P ψ φ).symm
-
-section Directed
-
-variable [IsDirected J (· ≤ ·)]
-
-/-- Any two members of a directed system refining a family `G` give the same composite of the
-induced map on cohomology with the structure map. -/
-private lemma homologyMap_comp_cechCohomologyι_app_eq (P : Cᵒᵖ ⥤ A) {G : FormalCoproduct.{w} C}
-    {i₁ i₂ : J} (φ₁ : E i₁ ⟶ G) (φ₂ : E i₂ ⟶ G) :
-    HomologicalComplex.homologyMap (cechComplexMap P φ₁) n ≫ (cechCohomologyι E hE n i₁).app P =
-      HomologicalComplex.homologyMap (cechComplexMap P φ₂) n ≫
-        (cechCohomologyι E hE n i₂).app P := by
-  -- compare both on a common upper bound `j` of `i₁` and `i₂`
-  obtain ⟨j, h₁, h₂⟩ := exists_ge_ge i₁ i₂
-  rw [homologyMap_comp_cechCohomologyι_app_eq_of_le E hE n P h₁ (hE h₁).some,
-    homologyMap_comp_cechCohomologyι_app_eq_of_le E hE n P h₂ (hE h₂).some,
-    (cechComplexMapHomotopy P _ _).homologyMap_eq n]
-
-/-- The structure map from the Čech cohomology of a refined family `G` is the map induced by any
-morphism of families `E i ⟶ G`, followed by the structure map at `i`. -/
-theorem cechCohomologyιOfRefinement_app_eq (G : FormalCoproduct.{w} C)
-    (hG : ∃ i, Nonempty (E i ⟶ G)) (i : J) (φ : E i ⟶ G) (P : Cᵒᵖ ⥤ A) :
-    (cechCohomologyιOfRefinement E hE n G hG).app P =
-      HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫ (cechCohomologyι E hE n i).app P :=
-  homologyMap_comp_cechCohomologyι_app_eq E hE n P _ _
-
-/-- On a member of the system, the structure map for refined families is the structure map of the
-colimit. -/
-@[simp]
-theorem cechCohomologyιOfRefinement_app_self (j : J) (hG : ∃ i, Nonempty (E i ⟶ E j))
-    (P : Cᵒᵖ ⥤ A) :
-    (cechCohomologyιOfRefinement E hE n (E j) hG).app P = (cechCohomologyι E hE n j).app P := by
-  rw [cechCohomologyιOfRefinement_app_eq E hE n (E j) hG j (𝟙 _), cechComplexMap_id,
-    HomologicalComplex.homologyMap_id]
-  exact Category.id_comp _
-
-/-- The structure maps from the Čech cohomology of refined families are compatible with morphisms
-of families: for `φ : H ⟶ G`, the map induced by `φ` on cohomology followed by the structure map
-from `H` is the structure map from `G`. -/
-@[reassoc]
-theorem homologyMap_cechComplexMap_comp_cechCohomologyιOfRefinement_app
-    {G H : FormalCoproduct.{w} C} (hG : ∃ i, Nonempty (E i ⟶ G)) (hH : ∃ i, Nonempty (E i ⟶ H))
-    (φ : H ⟶ G) (P : Cᵒᵖ ⥤ A) :
-    HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫
-        (cechCohomologyιOfRefinement E hE n H hH).app P =
-      (cechCohomologyιOfRefinement E hE n G hG).app P := by
-  obtain ⟨i, ⟨ψ⟩⟩ := hH
-  rw [cechCohomologyιOfRefinement_app_eq E hE n H _ i ψ,
-    cechCohomologyιOfRefinement_app_eq E hE n G hG i (ψ ≫ φ)]
-  exact ((congrArg (HomologicalComplex.homologyMap · n ≫ _) (cechComplexMap_comp P ψ φ)).trans
-    (HomologicalComplex.homologyMap_comp_assoc _ _ n _)).symm
-
-end Directed
 
 /-! ### Degree zero -/
 
@@ -312,7 +235,8 @@ private def cechCohomologyZeroAugmentation :
   app j := (HomologicalComplex.singleObjHomologySelfIso _ 0 _).inv ≫
     HomologicalComplex.homologyMap (cechAugmentation (E j).obj hT P) 0
   naturality {i j} f := by
-    rw [Functor.flip_obj_map, cechCohomologyDiagram_map_app E hE 0 f (hE (leOfHom f)).some]
+    rw [Functor.flip_obj_map, cechCohomologyDiagram_map A E hE 0 f (hE (leOfHom f)).some,
+      cechComplexHomologyMap_app]
     -- the augmentations are compatible with the maps induced by morphisms of families
     exact (Category.id_comp _).trans <| (_ ≫= ((congrArg (HomologicalComplex.homologyMap · 0)
       (cechAugmentation_comp_cechComplexMap hT P _)).symm.trans
