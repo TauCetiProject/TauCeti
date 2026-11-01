@@ -49,15 +49,12 @@ theorem chartMetric_sumTangentSpace_inl
     (g.sumTangentSpace h).toNondegenerateMetric.chartMetric (Sum.inl x) z =
       g.toNondegenerateMetric.chartMetric x z := by
   have hz' : z ∈ (extChartAt I (Sum.inl x : M ⊕ N)).target := by
-    simpa [extChartAt, ChartedSpace.sum_chartAt_inl] using hz
+    simpa only [TauCeti.Manifold.extChartAt_target_sumInl] using hz
   have hy : (extChartAt I x).symm z ∈ (chartAt H x).source := by
     simpa using (extChartAt I x).map_target hz
-  have hinv : (extChartAt I (Sum.inl x : M ⊕ N)).symm z =
-      Sum.inl ((extChartAt I x).symm z) := by
-    simp [extChartAt, ChartedSpace.sum_chartAt_inl]
   ext v w
   rw [(g.sumTangentSpace h).toNondegenerateMetric.chartMetric_apply hz',
-    g.toNondegenerateMetric.chartMetric_apply hz, hinv]
+    g.toNondegenerateMetric.chartMetric_apply hz, TauCeti.Manifold.extChartAt_symm_sumInl]
   simp only [toNondegenerateMetric_apply]
   have hbase : (extChartAt I x).symm z ∈
       (trivializationAt E (TangentSpace I : M → Type _) x).baseSet := by simpa using hy
@@ -78,15 +75,12 @@ theorem chartMetric_sumTangentSpace_inr
     (g.sumTangentSpace h).toNondegenerateMetric.chartMetric (Sum.inr x) z =
       h.toNondegenerateMetric.chartMetric x z := by
   have hz' : z ∈ (extChartAt I (Sum.inr x : M ⊕ N)).target := by
-    simpa [extChartAt, ChartedSpace.sum_chartAt_inr] using hz
+    simpa only [TauCeti.Manifold.extChartAt_target_sumInr] using hz
   have hy : (extChartAt I x).symm z ∈ (chartAt H x).source := by
     simpa using (extChartAt I x).map_target hz
-  have hinv : (extChartAt I (Sum.inr x : M ⊕ N)).symm z =
-      Sum.inr ((extChartAt I x).symm z) := by
-    simp [extChartAt, ChartedSpace.sum_chartAt_inr]
   ext v w
   rw [(g.sumTangentSpace h).toNondegenerateMetric.chartMetric_apply hz',
-    h.toNondegenerateMetric.chartMetric_apply hz, hinv]
+    h.toNondegenerateMetric.chartMetric_apply hz, TauCeti.Manifold.extChartAt_symm_sumInr]
   simp only [toNondegenerateMetric_apply]
   have hbase : (extChartAt I x).symm z ∈
       (trivializationAt E (TangentSpace I : N → Type _) x).baseSet := by simpa using hy
@@ -141,14 +135,10 @@ theorem continuous_sumTangentSpace {P : Type*} [TopologicalSpace P]
     @Continuous _ _ _ (chartCkTopology k) (fun p ↦ (g p).sumTangentSpace (h p)) := by
   rw [continuous_chartCk_iff] at hg hh ⊢
   rintro (x | x) m hm
-  · have htarget : (extChartAt I (Sum.inl x : M ⊕ N)).target =
-        (extChartAt I x).target := by simp [extChartAt, ChartedSpace.sum_chartAt_inl]
-    rw [htarget]
+  · rw [TauCeti.Manifold.extChartAt_target_sumInl]
     exact (hg x m hm).congr fun q ↦
       (iteratedFDeriv_chartMetric_sumTangentSpace_inl (g q.1) (h q.1) x m q.2.property).symm
-  · have htarget : (extChartAt I (Sum.inr x : M ⊕ N)).target =
-        (extChartAt I x).target := by simp [extChartAt, ChartedSpace.sum_chartAt_inr]
-    rw [htarget]
+  · rw [TauCeti.Manifold.extChartAt_target_sumInr]
     exact (hh x m hm).congr fun q ↦
       (iteratedFDeriv_chartMetric_sumTangentSpace_inr (g q.1) (h q.1) x m q.2.property).symm
 
@@ -166,18 +156,14 @@ theorem continuous_sumTangentSpace_iff {P : Type*} [TopologicalSpace P]
   constructor
   · rw [continuous_chartCk_iff]
     intro x m hm
-    have htarget : (extChartAt I (Sum.inl x : M ⊕ N)).target =
-        (extChartAt I x).target := by simp [extChartAt, ChartedSpace.sum_chartAt_inl]
     have hc := hs (Sum.inl x) m hm
-    rw [htarget] at hc
+    rw [TauCeti.Manifold.extChartAt_target_sumInl] at hc
     exact hc.congr fun q ↦
       iteratedFDeriv_chartMetric_sumTangentSpace_inl (g q.1) (h q.1) x m q.2.property
   · rw [continuous_chartCk_iff]
     intro x m hm
-    have htarget : (extChartAt I (Sum.inr x : M ⊕ N)).target =
-        (extChartAt I x).target := by simp [extChartAt, ChartedSpace.sum_chartAt_inr]
     have hc := hs (Sum.inr x) m hm
-    rw [htarget] at hc
+    rw [TauCeti.Manifold.extChartAt_target_sumInr] at hc
     exact hc.congr fun q ↦
       iteratedFDeriv_chartMetric_sumTangentSpace_inr (g q.1) (h q.1) x m q.2.property
 
