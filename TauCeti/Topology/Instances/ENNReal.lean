@@ -23,13 +23,15 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   to `b` when `wᵢ → 0`.
 * `ENNReal.le_liminf_add` and `ENNReal.sum_liminf_le_liminf_sum`: the sum of the lower limits of
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
+* `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
+  `a ≤ b + c`.
 -/
 
 public section
 
 namespace TauCeti
 
-open scoped ENNReal
+open scoped ENNReal NNReal Topology
 
 variable {E : Type*} [TopologicalSpace E] [ESeminormedAddMonoid E]
 
@@ -81,5 +83,17 @@ theorem _root_.ENNReal.sum_liminf_le_liminf_sum {ι κ : Type*} {l : Filter ι} 
   | insert j s hj ih =>
     simp only [Finset.sum_insert hj]
     exact (add_le_add le_rfl ih).trans (ENNReal.le_liminf_add _ _)
+
+/-- If `a ≤ b + t c` for every factor `t > 1`, then `a ≤ b + c`. This lets a family of estimates
+with an arbitrarily small loss factor pass to the sharp estimate. -/
+theorem _root_.ENNReal.le_add_of_forall_one_lt_le_add_mul {a b c : ℝ≥0∞}
+    (h : ∀ t : ℝ≥0, 1 < t → a ≤ b + t * c) : a ≤ b + c := by
+  rcases eq_or_ne c ∞ with rfl | hc
+  · simp
+  have h1 : Filter.Tendsto (fun t : ℝ≥0 => (t : ℝ≥0∞)) (𝓝[>] 1) (𝓝 1) := by
+    simpa using (ENNReal.continuous_coe.tendsto 1).mono_left nhdsWithin_le_nhds
+  have hlim : Filter.Tendsto (fun t : ℝ≥0 => b + t * c) (𝓝[>] 1) (𝓝 (b + c)) := by
+    simpa using tendsto_const_nhds.add (ENNReal.Tendsto.mul_const h1 (Or.inr hc))
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
 
 end TauCeti
