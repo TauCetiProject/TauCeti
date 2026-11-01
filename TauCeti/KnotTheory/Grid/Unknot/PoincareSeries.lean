@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.FullyBlocked
-public import TauCeti.KnotTheory.Grid.Move.Stabilization
 public import TauCeti.KnotTheory.Grid.Move.Unknot
 public import TauCeti.KnotTheory.Grid.SmallGrid.Homology
 public import TauCeti.KnotTheory.Grid.Stabilization.FullyBlocked.Homology
@@ -44,20 +43,6 @@ public section
 
 namespace TauCeti.OddComponentGridDiagram
 
-/-- The south-west `X`-stabilization of the standard unknot grid of size `n + 2` splitting the
-`X`-marking of its first column differs from the standard unknot grid of size `n + 3` by
-exchanging the two columns of the new block. -/
-private theorem isColumnCommutation_stabilizeX_zero_unknot (n : ℕ) :
-    GridDiagram.IsColumnCommutation
-      ((GridDiagram.isKnot_unknot n).toOddComponentGridDiagram.stabilizeX 0).1
-      (GridDiagram.unknot (n + 1)) := by
-  have h := (GridDiagram.unknot n).isColumnCommutation_stabilizeX_castSucc_X_castSucc 0
-  have hX : ((GridDiagram.unknot n).X 0).castSucc = 1 := by
-    rw [GridDiagram.unknot_X_apply_eq_add_one, zero_add]
-    rfl
-  rw [val_stabilizeX, hX]
-  rwa [hX, Fin.succ_zero_eq_one, ← GridDiagram.unknot_succ_eq_stabilizeX] at h
-
 /-- **The fully blocked homology of the unknot grids.** The standard unknot grid of size `n + 2`
 has fully blocked Poincaré series `W ^ (n + 1)`: its fully blocked homology is `W ^ (n + 1)` as a
 bigraded vector space. -/
@@ -67,13 +52,18 @@ theorem bigradedFullyBlockedHomologyPoincareSeries_unknot (n : ℕ) :
       Bigraded.W ^ (n + 1) := by
   induction n with
   | zero =>
-    rw [show (GridDiagram.isKnot_unknot 0).toOddComponentGridDiagram = twoByTwo from
-      Subtype.ext GridDiagram.unknot_zero, bigradedFullyBlockedHomologyPoincareSeries_twoByTwo,
-      zero_add, pow_one]
+    have h : (GridDiagram.isKnot_unknot 0).toOddComponentGridDiagram = twoByTwo :=
+      Subtype.ext GridDiagram.unknot_zero
+    rw [h, bigradedFullyBlockedHomologyPoincareSeries_twoByTwo, zero_add, pow_one]
   | succ n ih =>
+    have h : GridDiagram.IsColumnCommutation
+        ((GridDiagram.isKnot_unknot n).toOddComponentGridDiagram.stabilizeX 0).1
+        (GridDiagram.unknot (n + 1)) := by
+      rw [val_stabilizeX, GridDiagram.unknot_X_apply_eq_add_one, zero_add, Fin.castSucc_zero,
+        Fin.castSucc_one]
+      exact GridDiagram.isColumnCommutation_stabilizeX_zero_unknot n
     rw [← bigradedFullyBlockedHomologyPoincareSeries_eq_of_isColumnCommutation
-      (G' := (GridDiagram.isKnot_unknot (n + 1)).toOddComponentGridDiagram)
-      (isColumnCommutation_stabilizeX_zero_unknot n),
+      (G' := (GridDiagram.isKnot_unknot (n + 1)).toOddComponentGridDiagram) h,
       bigradedFullyBlockedHomologyPoincareSeries_stabilizeX, ih, ← pow_succ]
 
 end TauCeti.OddComponentGridDiagram

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.Grid.Move.Stabilization
 public import TauCeti.KnotTheory.Grid.Move.Transpose
 
 /-!
@@ -27,6 +28,8 @@ the grid size used to present it.
   consecutive standard unknot grids.
 * `TauCeti.GridDiagram.isXStabilization_unknot_succ`: consecutive standard unknot grids are related
   by an `X`-stabilization.
+* `TauCeti.GridDiagram.isColumnCommutation_stabilizeX_zero_unknot`: the south-west stabilization
+  splitting the first column of a standard unknot grid commutes to the next standard unknot grid.
 * `TauCeti.GridDiagram.toGridLink_unknot`: every standard unknot grid presents the unknot.
 * `TauCeti.GridLink.isKnot_unknot`: the unknot is a knot.
 
@@ -85,6 +88,17 @@ theorem isXStabilization_unknot_succ (n : ℕ) : IsXStabilization (unknot n) (un
   · ext
     simp only [unknot_X_apply_eq_add_one, Fin.succAbove, Fin.lt_def]
     simp [Fin.val_add_one, Fin.ext_iff, Nat.mod_eq_of_lt]
+
+/-- The south-west `X`-stabilization of the standard unknot grid of size `n + 2` splitting the
+`X`-marking of its first column differs from the standard unknot grid of size `n + 3` by
+exchanging the two columns of the new block. -/
+theorem isColumnCommutation_stabilizeX_zero_unknot (n : ℕ) :
+    IsColumnCommutation ((unknot n).stabilizeX 0 1 0) (unknot (n + 1)) := by
+  have h := (unknot n).isColumnCommutation_stabilizeX_castSucc_X_castSucc 0
+  have hX : ((unknot n).X 0).castSucc = 1 := by
+    rw [unknot_X_apply_eq_add_one, zero_add]
+    rfl
+  rwa [hX, Fin.castSucc_zero, Fin.succ_zero_eq_one, ← unknot_succ_eq_stabilizeX] at h
 
 end GridDiagram
 
