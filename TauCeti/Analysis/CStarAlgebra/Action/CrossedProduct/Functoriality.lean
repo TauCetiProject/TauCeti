@@ -55,51 +55,22 @@ variable {G : Type u} {A B C : Type v} [Group G] [TopologicalSpace G]
 
 namespace Hom
 
-open FullConvolutionAlgebra FullCrossedProduct
+open FullCrossedProduct
 
 variable (φ : Hom α β)
-
-/-- The coefficient map into the target crossed product, bounded for the source full
-seminorm. -/
-private def fullCrossedProductMapCLM :
-    FullConvolutionAlgebra α μ →L[ℂ] FullCrossedProduct β μ :=
-  (((of β μ).comp (φ.convolutionMap μ) :
-      ConvolutionAlgebra α μ →ₗ[ℂ] FullCrossedProduct β μ).comp
-    ((toFullStarAlgEquiv α μ).symm :
-      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
-        simpa [norm_def] using φ.fullSeminorm_convolutionMap_le μ (ofFull f)
-
-private theorem fromCompletion_fullCrossedProductMapCLM_of (f : ConvolutionAlgebra α μ) :
-    (fullCrossedProductMapCLM μ φ).fromCompletion (of α μ f) =
-      of β μ (φ.convolutionMap μ f) := by
-  simpa [fullCrossedProductMapCLM] using
-    ContinuousLinearMap.fromCompletion_apply_coe (fullCrossedProductMapCLM μ φ) (toFull f)
 
 /-- The nonunital star-algebra homomorphism of full crossed products induced by an equivariant
 coefficient homomorphism. Its value on compact-support coefficients is given by
 `fullCrossedProductMap_of`. -/
-def fullCrossedProductMap : FullCrossedProduct α μ →⋆ₙₐ[ℂ] FullCrossedProduct β μ where
-  toFun := (fullCrossedProductMapCLM μ φ).fromCompletion
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_smul' := map_smul _
-  map_mul' x y := by
-    induction x using FullCrossedProduct.induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f =>
-      induction y using FullCrossedProduct.induction_on with
-      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih g => simp only [← map_mul, fromCompletion_fullCrossedProductMapCLM_of]
-  map_star' x := by
-    induction x using FullCrossedProduct.induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f => simp only [← map_star, fromCompletion_fullCrossedProductMapCLM_of]
+def fullCrossedProductMap : FullCrossedProduct α μ →⋆ₙₐ[ℂ] FullCrossedProduct β μ :=
+  lift ((of β μ).comp (φ.convolutionMap μ))
+    (fun f => by simpa using φ.fullSeminorm_convolutionMap_le μ f)
 
 /-- The induced full crossed-product map acts pointwise on compact-support coefficients. -/
 @[simp]
 theorem fullCrossedProductMap_of (f : ConvolutionAlgebra α μ) :
     φ.fullCrossedProductMap μ (of α μ f) = of β μ (φ.convolutionMap μ f) :=
-  fromCompletion_fullCrossedProductMapCLM_of μ φ f
+  lift_of _ _ f
 
 /-- The compact-support inclusion is natural under equivariant coefficient maps. -/
 @[simp]
