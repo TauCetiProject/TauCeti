@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Spectrum
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -49,8 +49,12 @@ theorem IsPrCompact.isUnit_one_sub_smul_iff (hu : u.IsPrCompact) {a : R} :
     IsUnit (1 - a • u) ↔ IsUnit (u.charPowerSeries.evalAt a) := by
   classical
   obtain ⟨J, _, _, i, r, hri⟩ := (TauCeti.hasPr_def R M).mp hu.hasPr_source
-  rw [hu.charPowerSeries_eq hri,
-    ← (hu.isRowCompact_comp i r).isUnit_one_sub_smul_iff]
+  rw [hu.charPowerSeries_eq hri]
+  have hv := hu.isRowCompact_comp i r
+  have hmodel : IsUnit (1 - a • i.comp (u.comp r)) ↔
+      IsUnit ((i.comp (u.comp r)).matrixCoeff.charPowerSeries.evalAt a) :=
+    ⟨hv.isUnit_evalAt_charPowerSeries_of_isUnit_one_sub_smul, hv.isUnit_one_sub_smul⟩
+  rw [← hmodel]
   have hscale : a • i.comp (u.comp r) = i.comp ((a • u).comp r) := by
     simp only [smul_comp, comp_smul]
   rw [hscale, isUnit_one_sub_comp_comm, comp_assoc, hri, comp_id]
