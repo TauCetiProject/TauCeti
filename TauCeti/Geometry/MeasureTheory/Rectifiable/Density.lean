@@ -10,10 +10,9 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Order.LiminfLimsup
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Topology.Instances.ENNReal.Lemmas
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Polar.Isometry
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 
@@ -74,7 +73,6 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E : Set V}
 
-omit [FiniteDimensional ℝ V] in
 /-- On a piece `f '' P` where the Lipschitz map `f` is within relative error `ε < 1` of an injective
 linear map, a set `E` of finite measure has upper density at most `((1 - ε)⁻¹ (1 + ε)) ^ k` and
 lower density at least the inverse, at almost every point of `E ∩ f '' P`. -/
@@ -95,7 +93,11 @@ private theorem ae_density_bounds_of_approx (hEm : NullMeasurableSet E μHE[k])
   obtain ⟨L, hL⟩ := exists_antilipschitzWith_domRestrict_of_approx hA (by exact_mod_cast hε) happ
   replace hA := hA hP
   obtain ⟨hlip, hanti⟩ := lipschitzOnWith_and_antilipschitzWith_of_approx hA hε happ
-  obtain ⟨ι, hιA⟩ := (A : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] V).exists_linearIsometry_range_eq hA
+  -- The isometric polar factor of `A` parametrizes the `k`-plane `range A`.
+  set ι := (A : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] V).polarIsometry hA
+  have hιA : range ι = range A := by
+    rw [LinearMap.coe_polarIsometry, ← LinearMap.coe_range, LinearMap.range_polarFactor,
+      LinearMap.coe_range, ContinuousLinearMap.coe_coe]
   -- Read through `A`, the piece is a bi-Lipschitz image of the subset `A '' P` of a `k`-plane.
   have himage : (f ∘ invFun A) '' (A '' P) = f '' P := by
     rw [image_image]
@@ -167,7 +169,7 @@ private theorem CountablyRectifiable.ae_tendsto_of_ne_top (hE : CountablyRectifi
     have h : Tendsto (fun n => (1 - ε n)⁻¹ * (1 + ε n)) atTop (𝓝 ((1 - 0)⁻¹ * (1 + 0))) :=
       ((tendsto_const_nhds.sub hεlim).inv₀ (by simp)).mul (tendsto_const_nhds.add hεlim)
     have := ((ENNReal.continuous_pow k).tendsto _).comp ((ENNReal.continuous_coe.tendsto _).comp h)
-    rwa [tsub_zero, inv_one, add_zero, mul_one, ENNReal.coe_one, one_pow] at this
+    simpa [c, Function.comp_def] using this
   filter_upwards [ae_all_iff.2 fun n => hE.ae_density_bounds hEm hfin (hε0 n) (hε1 n)]
     with y hy hyE
   refine tendsto_of_le_liminf_of_limsup_le ?_ ?_

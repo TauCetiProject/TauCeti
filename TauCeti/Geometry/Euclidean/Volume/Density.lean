@@ -137,8 +137,9 @@ theorem limsup_euclideanHausdorffMeasure_image_inter_closedBall_div_le
         exact (measure_mono hsub).trans
           ((hψ.mono inter_subset_left).euclideanHausdorffMeasure_image_le k)
     _ = _ := by
-        rw [mul_div_assoc, TauCeti.div_volume_closedBall_eq_mul k _ ha hr.le, ← mul_assoc,
-          ← mul_pow, ← ENNReal.coe_mul, mul_comm b a]
+        rw [mul_div_assoc, TauCeti.div_volume_closedBall_eq_mul k _ ha hr.le]
+        push_cast
+        ring
 
 /-- **Lower density under a bi-Lipschitz map.** Let `ψ` be `b`-Lipschitz on `G` with
 `a`-Lipschitz inverse. If `G` has `k`-dimensional density one at `x ∈ G`, then the lower
@@ -183,11 +184,13 @@ theorem le_liminf_euclideanHausdorffMeasure_image_inter_closedBall_div
           (hφ.mono (image_mono inter_subset_left)).euclideanHausdorffMeasure_image_le k
       _ ≤ _ := by gcongr
   dsimp only [comp_apply]
-  rw [TauCeti.div_volume_closedBall_eq_mul k _ hb (by positivity), hr', ENNReal.coe_mul, mul_pow,
-    mul_comm ((a : ℝ≥0∞) ^ k), mul_assoc]
-  gcongr
-  rw [← mul_div_assoc]
-  gcongr
+  rw [TauCeti.div_volume_closedBall_eq_mul k _ hb (by positivity), hr']
+  calc _ ≤ (b : ℝ≥0∞) ^ k * ((a : ℝ≥0∞) ^ k * μHE[k] (ψ '' G ∩ closedBall (ψ x) r) /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) := by gcongr
+    _ = _ := by
+        rw [mul_div_assoc]
+        push_cast
+        ring
 
 end LipschitzOnWith
 

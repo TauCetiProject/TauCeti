@@ -16,9 +16,8 @@ coverage, up to normalized Hausdorff measure zero, by countably many bi-Lipschit
 with Borel domains. No measurability or local finiteness of the rectifiable set is assumed.
 The patches may extend beyond the set, as in `CountablyRectifiable` itself.
 
-Countably rectifiable sets are also covered, up to a null set, by the ranges of countably many
-Lipschitz maps defined on all of `EuclideanSpace ℝ (Fin k)`
-(`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`); these need not be bi-Lipschitz.
+The construction starts from a cover by countably many Lipschitz maps defined on all of
+`EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
 Bi-Lipschitz patches have Lipschitz inverse coordinates, allowing measure and density estimates
 to be transferred between a rectifiable set and its parameter domains. A Lipschitz map is
 decomposed on its regular points using `LipschitzWith.exists_bilipschitz_cover`.
@@ -41,30 +40,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
 
 namespace TauCeti
-
-/-- A countably `k`-rectifiable subset of a finite-dimensional inner product space is covered, up
-to a `μHE[k]`-null set, by the ranges of countably many Lipschitz maps defined on all of
-`EuclideanSpace ℝ (Fin k)`. -/
-theorem CountablyRectifiable.exists_lipschitzWith_cover {k : ℕ} {s : Set V}
-    (hs : CountablyRectifiable k s) :
-    ∃ F : ℕ → EuclideanSpace ℝ (Fin k) → V, (∀ n, ∃ K : ℝ≥0, LipschitzWith K (F n)) ∧
-      μHE[k] (s \ ⋃ n, range (F n)) = 0 := by
-  classical
-  obtain ⟨A, f, hf, hnull⟩ := countablyRectifiable_iff.mp hs
-  choose K hK using hf
-  have hext (n : ℕ) : ∃ F : EuclideanSpace ℝ (Fin k) → V,
-      (∃ K' : ℝ≥0, LipschitzWith K' F) ∧ ∀ x : A n, F x = f n x := by
-    -- Extend subtype-valued patches to the whole parameter space.
-    let g : EuclideanSpace ℝ (Fin k) → V := Function.extend Subtype.val (f n) (fun _ ↦ 0)
-    have hg (x : A n) : g x = f n x := Subtype.val_injective.extend_apply _ _ x
-    have hlip : LipschitzOnWith (K n) g (A n) := fun x hx y hy ↦ by
-      simpa only [hg ⟨x, hx⟩, hg ⟨y, hy⟩, Subtype.edist_eq] using hK n ⟨x, hx⟩ ⟨y, hy⟩
-    obtain ⟨F, hF, hFeq⟩ := hlip.extend_finite_dimension
-    exact ⟨F, ⟨_, hF⟩, fun x ↦ (hFeq x.property).symm.trans (hg x)⟩
-  choose F hF hFf using hext
-  refine ⟨F, hF, measure_mono_null (sdiff_subset_sdiff_right (iUnion_mono fun n ↦ ?_)) hnull⟩
-  rintro _ ⟨x, rfl⟩
-  exact ⟨x, hFf n x⟩
 
 /-- A countably rectifiable set in a Euclidean space admits countably many bi-Lipschitz
 patches with Borel domains, covering it up to normalized Hausdorff measure zero. Neither

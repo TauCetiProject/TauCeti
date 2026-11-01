@@ -140,8 +140,9 @@ theorem exists_partition_linear_approximation_of_hasFDerivWithinAt [FiniteDimens
   calc ‖f x - f y - A n (x - y)‖ ≤ r (A n) * ‖x - y‖ := happ n x hx y hy
     _ ≤ r (A n) * (c (A n) * ‖A n (x - y)‖) := by gcongr
     _ = δ * ‖A n (x - y)‖ := by
-        rw [← mul_assoc, NNReal.coe_div, div_mul_cancel₀ _ (NNReal.coe_pos.2 (hc (A n))).ne',
-          Real.coe_toNNReal _ hδ.le]
+        have hc0 := (NNReal.coe_pos.2 (hc (A n))).ne'
+        simp only [r, NNReal.coe_div, Real.coe_toNNReal _ hδ.le]
+        field_simp
 
 end Approximation
 
