@@ -104,7 +104,7 @@ theorem directSumObj_differential_apply (x : directSumObj M) (i : ι) :
 
 /-- The inclusion of one DG bimodule into their direct sum. -/
 def directSumι (i : ι) : DGBimoduleHom (M i).isDGBimodule (directSumObj M).isDGBimodule := by
-  classical
+  letI := Classical.decEq ι
   refine ⟨{ toLinearMap := DirectSum.lof Bᵐᵒᵖ ι (fun i ↦ M i) i
             map_mem' := ?_
             map_d' := ?_ }, ?_⟩
@@ -122,21 +122,23 @@ def directSumι (i : ι) : DGBimoduleHom (M i).isDGBimodule (directSumObj M).isD
 /-- On elements, the inclusion is the usual finitely supported single-coordinate map. -/
 @[simp]
 theorem directSumι_apply (i : ι) (x : M i) :
-    directSumι M i x = @DirectSum.of ι (fun i ↦ M i) _ (Classical.decEq ι) i x := (rfl)
+    directSumι M i x = @DirectSum.of ι (fun i ↦ M i) _ (Classical.decEq ι) i x :=
+  -- Both the inclusion and the single-coordinate map use the same explicit instance.
+  (rfl)
 
 variable {M}
 
 private def directSumDescLinearMap {N : DGBimoduleCat hA hB}
     (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) :
     (⨁ i, M i) →ₗ[Bᵐᵒᵖ] N := by
-  classical
+  letI := Classical.decEq ι
   exact DirectSum.toModule Bᵐᵒᵖ ι N (fun i ↦ (f i).val.toLinearMap)
 
 private theorem directSumDescLinearMap_of {N : DGBimoduleCat hA hB}
     (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) (i : ι) (x : M i) :
     directSumDescLinearMap f
       (@DirectSum.of ι (fun i ↦ M i) _ (Classical.decEq ι) i x) = f i x := by
-  classical
+  let := Classical.decEq ι
   simpa only [directSumDescLinearMap, DirectSum.lof_eq_of,
     DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val] using
     (DirectSum.toModule_lof Bᵐᵒᵖ (φ := fun i ↦ (f i).val.toLinearMap) i x)
