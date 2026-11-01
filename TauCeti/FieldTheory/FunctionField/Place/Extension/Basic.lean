@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
 
 /-!
@@ -94,6 +95,11 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
   `[k' : k] · deg P' = f(P' ∣ P) · deg P`, the comparison of the degrees of `P'` and of the place
   it lies over.
+* `TauCeti.Place.algebraMap_residueField_algebraMap`: the two routes from `k` into `F'_{P'}`,
+  through `F_P` and through `k'`, agree.
+* `TauCeti.Place.not_isSeparable_residueField_of_degree_eq_one`: over a place of degree one, the
+  residue extension is not separable once the constants `k'` contain a purely inseparable element
+  outside `k`.
 * `TauCeti.Place.isFractionRing_integralClosure`,
   `TauCeti.Place.isLocalization_integralClosure`,
   `TauCeti.Place.isDedekindDomain_integralClosure`,
@@ -586,6 +592,47 @@ theorem finrank_mul_degree_eq_relativeDegree_mul_degree_restrict :
     Module.finrank_mul_finrank k (P'.restrict k F).ResidueField P'.ResidueField]
 
 end ResidueField
+
+section ResidueConstants
+
+variable [Algebra.IsIntegral F F']
+
+/-- A constant of `k`, reduced at the place below `P'` and carried up to `F'_{P'}`, is the
+residue at `P'` of the same constant seen in `k'`. -/
+theorem algebraMap_residueField_algebraMap (P' : Place k' F') (c : k) :
+    algebraMap (P'.restrict k F).ResidueField P'.ResidueField
+        (algebraMap k (P'.restrict k F).ResidueField c) =
+      algebraMap k' P'.ResidueField (algebraMap k k' c) := by
+  rw [algebraMap_residueField (R := k), algebraMap_residueField (R := k'),
+    IsLocalRing.ResidueField.algebraMap_residue]
+  congr 1
+  apply Subtype.ext
+  rw [coe_algebraMap_integers, coe_algebraMap_constants, coe_algebraMap_constants,
+    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+
+/-- **A purely inseparable constant makes the residue extension at a rational place
+inseparable**: if `P'` lies over a place of degree one and `k'` contains `α ∉ k` with
+`α ^ (q ^ n) ∈ k`, where `q` is the exponential characteristic of `k`, then `F'_{P'}` is not
+separable over the residue field of the place below. -/
+theorem not_isSeparable_residueField_of_degree_eq_one (P' : Place k' F')
+    (hP : (P'.restrict k F).degree = 1) (q : ℕ) [ExpChar k q] {α : k'}
+    (hα : α ∉ (algebraMap k k').range) {n : ℕ} (hn : α ^ q ^ n ∈ (algebraMap k k').range) :
+    ¬ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField := by
+  -- The residue of `α` would lie in the perfect closure of `F_P = k`, hence in `F_P = k`.
+  intro hsep
+  set S := (P'.restrict k F).ResidueField
+  have := expChar_of_injective_algebraMap (algebraMap k S).injective q
+  obtain ⟨c, hc⟩ := hn
+  have hmem : algebraMap k' P'.ResidueField α ∈ perfectClosure S P'.ResidueField := by
+    rw [mem_perfectClosure_iff_pow_mem q]
+    exact ⟨n, algebraMap k S c, by rw [algebraMap_residueField_algebraMap, hc, map_pow]⟩
+  rw [perfectClosure.eq_bot_of_isSeparable, IntermediateField.mem_bot] at hmem
+  obtain ⟨s, hs⟩ := hmem
+  obtain ⟨d, rfl⟩ := (degree_eq_one_iff_algebraMap_surjective _).mp hP s
+  rw [algebraMap_residueField_algebraMap] at hs
+  exact hα ⟨d, (algebraMap k' P'.ResidueField).injective hs⟩
+
+end ResidueConstants
 
 section Independence
 

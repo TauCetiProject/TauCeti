@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # The model space `C₀(I, E)` on a discrete index
@@ -33,6 +34,10 @@ This file develops the coordinate structure of `C₀(I, E)`:
   (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
+* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
+  `evalCLM R i` of `C₀(I, R)` are weak-star null along the cofinite filter;
+* `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
+  `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
   coordinate when `I` is nonempty;
 * `ZeroAtInftyContinuousMap.hasSum_single`: every `f` is the unconditional sum of its coordinate
@@ -152,6 +157,57 @@ theorem single_eq_zero_iff {i : I} {b : β} : single i b = 0 ↔ b = 0 :=
   (single_injective i).eq_iff' (single_zero i)
 
 end Zero
+
+/-! ### Prepending a coordinate to a null sequence -/
+
+section Cons
+
+variable [TopologicalSpace β] [Zero β]
+
+/-- Prepend one entry to a sequence vanishing at infinity. -/
+def cons (b : β) (f : C₀(ℕ, β)) : C₀(ℕ, β) :=
+  mkOfDiscrete (Nat.rec b (fun n _ ↦ f n)) <| by
+    rw [Nat.cofinite_eq_atTop]
+    apply (tendsto_add_atTop_iff_nat 1).mp
+    simpa using (cocompact_eq_atTop (α := ℕ) ▸ zero_at_infty f)
+
+@[simp]
+theorem cons_apply_zero (b : β) (f : C₀(ℕ, β)) : cons b f 0 = b := (rfl)
+
+@[simp]
+theorem cons_apply_succ (b : β) (f : C₀(ℕ, β)) (n : ℕ) : cons b f (n + 1) = f n := (rfl)
+
+end Cons
+
+variable [TopologicalSpace β] in
+/-- Prepending entries commutes with addition. -/
+theorem cons_add [AddZeroClass β] [ContinuousAdd β] (b c : β) (f g : C₀(ℕ, β)) :
+    cons (b + c) (f + g) = cons b f + cons c g := by
+  ext n
+  cases n <;> simp
+
+variable [TopologicalSpace β] [Zero β] in
+/-- Prepending entries commutes with scalar multiplication. -/
+theorem cons_smul {R : Type*} [SMulZeroClass R β] [ContinuousConstSMul R β]
+    (r : R) (b : β) (f : C₀(ℕ, β)) : cons (r • b) (r • f) = r • cons b f := by
+  ext n
+  cases n <;> simp
+
+/-- The norm of a sequence with a prepended entry is the maximum of the two norms. -/
+@[simp]
+theorem norm_cons [SeminormedAddCommGroup β] (b : β) (f : C₀(ℕ, β)) :
+    ‖cons b f‖ = max ‖b‖ ‖f‖ := by
+  apply le_antisymm
+  · apply (norm_le (le_max_of_le_left (norm_nonneg b))).mpr
+    intro n
+    cases n with
+    | zero => simp
+    | succ n => simpa only [cons_apply_succ] using
+        (norm_coe_le_norm f n).trans (le_max_right ‖b‖ _)
+  · apply max_le
+    · simpa using norm_coe_le_norm (cons b f) 0
+    · exact (norm_le (norm_nonneg _)).mpr fun n ↦ by
+        simpa using norm_coe_le_norm (cons b f) (n + 1)
 
 section Algebra
 
@@ -354,6 +410,17 @@ theorem not_tendsto_single_cofinite [NormedAddCommGroup β] [DecidableEq I] [Inf
   have h1 := h.norm
   simp only [norm_single, norm_zero] at h1
   exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
+
+variable (R : Type*) [SeminormedCommRing R] in
+/-- The coordinate functionals of `C₀(I, R)` tend to zero in the weak-star topology along the
+cofinite filter. -/
+theorem tendsto_toWeakDual_evalCLM_cofinite :
+    Tendsto (fun i : I ↦ StrongDual.toWeakDual (evalCLM R i : StrongDual R C₀(I, R))) cofinite
+      (𝓝 0) :=
+  tendsto_iff_forall_eval_tendsto_topDualPairing.2 fun f ↦ by
+    have : Tendsto (fun i ↦ evalCLM R i f) cofinite (𝓝 0) := by simpa using f.tendsto_cofinite
+    -- `topDualPairing R _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
+    exact this
 
 section Ring
 
