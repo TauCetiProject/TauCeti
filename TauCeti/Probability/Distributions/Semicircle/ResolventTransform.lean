@@ -70,33 +70,15 @@ Laurent series `-∑ₙ vⁿ Cₙ (z - a)^(-(2n+1))` whose coefficients are the 
 theorem hasSum_resolventTransform_semicircleReal (hz : 2 * √(v : ℝ) < ‖z - a‖) :
     HasSum (fun n ↦ -((v : ℂ) ^ n * catalan n) * (z - a)⁻¹ ^ (2 * n + 1))
       (resolventTransform (semicircleReal a v) z) := by
-  set R := 2 * √(v : ℝ)
-  set w := z - a
-  have hR : 0 ≤ R := by positivity
-  have hw : 0 < ‖w‖ := hR.trans_lt hz
-  have hρ : R * ‖w‖⁻¹ < 1 := by rwa [← div_eq_mul_inv, div_lt_one hw]
-  have hnorm : ∀ᵐ x : ℝ ∂semicircleReal a v, ‖(x : ℂ) - a‖ ≤ R := by
+  have hnorm : ∀ᵐ x : ℝ ∂semicircleReal a v, ‖(x : ℂ) - a‖ ≤ 2 * √(v : ℝ) := by
     filter_upwards [ae_mem_Icc_semicircleReal a v] with x hx
     rw [← ofReal_sub, norm_real, Real.norm_eq_abs, abs_sub_le_iff]
     constructor <;> linarith [hx.1, hx.2]
-  -- Integrate the geometric expansion of `(x - z)⁻¹` in powers of `(x - a) / (z - a)`.
-  have hint : HasSum (fun n ↦ ∫ x, -(((x : ℂ) - a) ^ n * w⁻¹ ^ (n + 1)) ∂semicircleReal a v)
-      (resolventTransform (semicircleReal a v) z) := by
-    rw [resolventTransform_apply]
-    refine hasSum_integral_of_dominated_convergence (fun n _ ↦ R ^ n * ‖w‖⁻¹ ^ (n + 1))
-      (fun n ↦ by fun_prop) (fun n ↦ ?_) (ae_of_all _ fun _ ↦ ?_) (integrable_const _) ?_
-    · filter_upwards [hnorm] with x hx
-      rw [norm_neg, norm_mul, norm_pow, norm_pow, norm_inv]
-      gcongr
-    · simpa only [pow_succ, mul_pow, ← mul_assoc] using
-        ((summable_geometric_of_lt_one (by positivity) hρ).mul_right ‖w‖⁻¹)
-    · filter_upwards [hnorm] with x hx
-      exact Complex.hasSum_resolvent_real (hx.trans_lt hz)
+  have hint := hasSum_resolventTransform_of_ae_norm_le hnorm hz
   -- Compute each term from the central moments; the odd ones vanish.
-  have hterm (n : ℕ) : ∫ x, -(((x : ℂ) - a) ^ n * w⁻¹ ^ (n + 1)) ∂semicircleReal a v =
-      -((∫ x, (x - a) ^ n ∂semicircleReal a v : ℝ) : ℂ) * w⁻¹ ^ (n + 1) := by
-    simp only [integral_neg, integral_mul_const, ← integral_complex_ofReal, ofReal_pow, ofReal_sub,
-      neg_mul]
+  have hterm (n : ℕ) : -(∫ x, ((x : ℂ) - a) ^ n ∂semicircleReal a v) * (z - a)⁻¹ ^ (n + 1) =
+      -((∫ x, (x - a) ^ n ∂semicircleReal a v : ℝ) : ℂ) * (z - a)⁻¹ ^ (n + 1) := by
+    simp only [← integral_complex_ofReal, ofReal_pow, ofReal_sub]
   simp only [hterm] at hint
   refine ((Function.Injective.hasSum_iff (g := fun n ↦ 2 * n)
     (fun _ _ h ↦ by simpa using h) fun n hn ↦ ?_).2 hint).congr_fun fun n ↦ ?_

@@ -30,6 +30,8 @@ infinity, used when the moment method and the resolvent method are compared for 
 
 * `Complex.hasSum_resolvent_real`: the geometric series of the kernel `(x - z)⁻¹` in powers of
   `(x - c) / (z - c)`, for `|x - c| < |z - c|`.
+* `MeasureTheory.hasSum_resolventTransform_of_ae_norm_le`: the convergent expansion in central
+  moments about `c`, for a measure concentrated on `|x - c| ≤ R` and `R < |z - c|`.
 * `MeasureTheory.resolventTransform_add_sum_eq`: the exact expansion, with integral remainder.
 * `MeasureTheory.norm_resolventTransform_add_sum_le`: the bound on the remainder.
 * `MeasureTheory.tendsto_mul_I_pow_mul_resolventTransform_add_sum`: the sharp asymptotic of the
@@ -72,6 +74,33 @@ end Complex
 namespace MeasureTheory
 
 variable {μ : Measure ℝ}
+
+/-- **Convergent moment expansion of the resolvent transform.** If a finite measure `μ` on `ℝ` is
+concentrated on `|x - c| ≤ R` and `R < |z - c|`, then
+`m_μ(z) = -∑ₙ (∫ (x - c) ^ n dμ) (z - c)^(-(n+1))`. -/
+theorem hasSum_resolventTransform_of_ae_norm_le [IsFiniteMeasure μ] {z c : ℂ} {R : ℝ}
+    (hμ : ∀ᵐ x : ℝ ∂μ, ‖(x : ℂ) - c‖ ≤ R) (hz : R < ‖z - c‖) :
+    HasSum (fun n ↦ -(∫ x, ((x : ℂ) - c) ^ n ∂μ) * (z - c)⁻¹ ^ (n + 1))
+      (resolventTransform μ z) := by
+  -- Dominate the terms by a geometric series with nonnegative ratio `max R 0 / |z - c|`.
+  set R' := max R 0
+  have hρ : R' * ‖z - c‖⁻¹ < 1 := by
+    rcases (norm_nonneg (z - c)).eq_or_lt with h | h
+    · simp [← h]
+    · rw [← div_eq_mul_inv, div_lt_one h]
+      exact max_lt hz h
+  simp_rw [← integral_neg, ← integral_mul_const, neg_mul]
+  rw [resolventTransform_apply]
+  refine hasSum_integral_of_dominated_convergence (fun n _ ↦ R' ^ n * ‖z - c‖⁻¹ ^ (n + 1))
+    (fun n ↦ by fun_prop) (fun n ↦ ?_) (ae_of_all _ fun _ ↦ ?_) (integrable_const _) ?_
+  · filter_upwards [hμ] with x hx
+    rw [norm_neg, norm_mul, norm_pow, norm_pow, norm_inv]
+    gcongr
+    exact hx.trans (le_max_left R 0)
+  · simpa only [pow_succ, mul_pow, ← mul_assoc] using
+      ((summable_geometric_of_lt_one (by positivity) hρ).mul_right ‖z - c‖⁻¹)
+  · filter_upwards [hμ] with x hx
+    exact Complex.hasSum_resolvent_real (hx.trans_lt hz)
 
 /-- The geometric expansion of the real resolvent kernel in powers of `z⁻¹`. -/
 private lemma resolvent_add_sum_eq {z : ℂ} (hz : z.im ≠ 0) (x : ℝ) (r : ℕ) :
