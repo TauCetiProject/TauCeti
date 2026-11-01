@@ -67,6 +67,8 @@ is the least period of `x`.
 * `TauCeti.SmoothMappingTorus.isImmersion_closedOrbit`,
   `TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit_iff`: `γ` is an immersion, and it is a
   smooth embedding exactly when `d` is the least period of `x`.
+* `TauCeti.SmoothMappingTorus.mfderiv_orbitTorus_apply`: the differential of the orbit torus sends
+  `a ∂_s + b ∂_θ` to `a ∂_s + b T`.
 * `TauCeti.SmoothMappingTorus.range_orbitTorus`,
   `TauCeti.SmoothMappingTorus.isSmoothEmbedding_orbitTorus_iff`: the orbit torus has image
   `(ℝ / ℤ) × range γ`, and it is a smooth embedding exactly when `d` is the least period of `x`.
@@ -439,6 +441,26 @@ theorem isSmoothEmbedding_orbitTorus_iff [I.Boundaryless] [FiniteDimensional ℝ
   exact Manifold.IsSmoothEmbedding.id.prodMap ((isSmoothEmbedding_closedOrbit_iff h hn).2 hd)
 
 end OrbitTorus
+
+section OrbitTorusDerivative
+
+variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
+  {φ : M ≃ₘ⟮I, I⟯ M} {x : M} {d : ℕ} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
+
+/-- The differential of the orbit torus sends `a ∂_s + b ∂_θ` to `a ∂_s + b T`, where `T = ∂_t` is
+the suspension vector field. -/
+theorem mfderiv_orbitTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) (a b : ℝ) :
+    mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ hx) p
+        ((Manifold.tangentSpaceProdEquiv p).symm (a, b)) =
+      (Manifold.tangentSpaceProdEquiv (orbitTorus φ hx p)).symm
+        (a, b • timeVectorField φ (orbitTorus φ hx p).2) := by
+  rw [orbitTorus, Manifold.mfderiv_prodMap_apply mdifferentiableAt_id
+    (((contMDiff_closedOrbit (n := ∞) hx) p.2).mdifferentiableAt (by simp)), mfderiv_id,
+    mfderiv_closedOrbit]
+  -- The two sides agree componentwise by definition: `id a = a` and `(smulRight 1 T) b = b • T`.
+  rfl
+
+end OrbitTorusDerivative
 
 end SmoothMappingTorus
 

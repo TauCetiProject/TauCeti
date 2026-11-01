@@ -60,6 +60,8 @@ structure is compatible with `Ω`.
   the covering map is complex linear for the block structure and its descent.
 * `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure_mk`: the descended structure in the
   coordinates `(s, t, x)`.
+* `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure_apply_symm_one_zero`: the descended
+  structure sends `∂_s` to `T`.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_suspensionAlmostComplexStructure`:
   `Ω(w, J w) = a² + b² + σ(v, K v)`.
 * `TauCeti.SmoothMappingTorus.tames_suspensionAlmostComplexStructure`: vertical tameness descends.
@@ -257,6 +259,22 @@ theorem suspensionAlmostComplexStructure_mk (s t : ℝ) (x : M) (a b : ℝ) (v :
   refine (suspensionAlmostComplexStructure_apply_mfderiv φ hK hs ht ((s, t), x) _).trans ?_
   rw [SmoothAlmostComplexStructure.prodFamily_apply]
   simp only [ContinuousLinearEquiv.apply_symm_apply, hJ]
+
+/-- The descended structure is of block form: it sends `∂_s` to the suspension vector field
+`T = ∂_t` at every point of `(ℝ / ℤ) × Y_φ`. -/
+theorem suspensionAlmostComplexStructure_apply_symm_one_zero
+    (q : UnitAddCircle × SmoothMappingTorus φ) :
+    suspensionAlmostComplexStructure φ hK hs ht q
+        ((Manifold.tangentSpaceProdEquiv q).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv q).symm ((0 : ℝ), timeVectorField φ q.2) := by
+  obtain ⟨⟨⟨s, t⟩, x⟩, rfl⟩ := suspensionCover_surjective φ q
+  have h := suspensionAlmostComplexStructure_mk φ hK hs ht s t x 1 0 0
+  have h0 : (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := I) (t, x)).symm
+      ((0 : ℝ), (0 : TangentSpace I x)) = 0 :=
+    map_zero _
+  rw [h0, map_zero, map_zero, neg_zero] at h
+  rw [suspensionCover_apply, timeVectorField_mk]
+  exact h
 
 /-- The quadratic form of `Ω` and the descended structure: at `([s], [t, x])`,
 `Ω(w, J w) = a² + b² + σ(v, K_((s, t), x) v)` for `w = a ∂_s + b ∂_t + v`. -/
