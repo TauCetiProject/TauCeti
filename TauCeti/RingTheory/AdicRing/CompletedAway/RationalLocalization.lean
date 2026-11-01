@@ -185,13 +185,10 @@ noncomputable def completionLocEquiv :
     (completion_locTopology_ringHom_ext_of_continuous (adic I hI hfg) {1} f S hden _ _
       ((continuous_toCompletion hI hfg S hden).comp (continuous_ofCompletion hI hfg S hden))
       continuous_id <| RingHom.ext fun a ↦ by
-        rw [RingHom.comp_apply, RingHom.comp_apply, toCompletionLoc_apply, ofCompletion_coe,
-          IsLocalization.Away.lift_eq, toCompletion_algebraMap, RingHom.comp_apply,
-          RingHom.id_apply])
+        simp [toCompletionLoc_apply, ofCompletion_coe, toCompletion_algebraMap])
     (ringHom_ext A f ((continuous_ofCompletion hI hfg S hden).comp
       (continuous_toCompletion hI hfg S hden)) continuous_id <| RingHom.ext fun a ↦ by
-        rw [RingHom.comp_apply, RingHom.comp_apply, toCompletion_algebraMap, toCompletionLoc_apply,
-          ofCompletion_coe, IsLocalization.Away.lift_eq, RingHom.comp_apply, RingHom.id_apply])
+        simp [toCompletion_algebraMap, toCompletionLoc_apply, ofCompletion_coe])
 
 /-- The comparison sends the image of `a ∈ A` in the completed localisation to its image in
 `A⟨1/f⟩`. -/
