@@ -95,13 +95,28 @@ theorem map_malcevOrWord {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (f :
     (a b x y : G) : f (malcevOrWord a b x y) = malcevOrWord (f a) (f b) (f x) (f y) := by
   simp [malcevOrWord, map_commutatorElement]
 
+/-- The trivial solution of Malcev's equation, in every group. -/
+@[simp]
+theorem malcevWord_one_one (a b : G) : malcevWord a b 1 1 = 1 := by
+  simp [malcevWord]
+
+/-- `malcevOrWord a b x y` vanishes when `x = 1`, in every group. -/
+@[simp]
+theorem malcevOrWord_one_left (a b y : G) : malcevOrWord a b 1 y = 1 := by
+  simp [malcevOrWord]
+
+/-- `malcevOrWord a b x y` vanishes when `y = 1`, in every group. -/
+@[simp]
+theorem malcevOrWord_one_right (a b x : G) : malcevOrWord a b x 1 = 1 := by
+  simp [malcevOrWord]
+
 /-- **Malcev's equation** (Kharlampovich–Myasnikov, Lemma 3). In a torsion-free CSA group
 satisfying Vaught's condition, if `a` and `b` do not commute, then
 `x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2` holds only for `x = y = 1`. -/
 theorem _root_.Group.IsVaught.malcevWord_eq_one_iff [IsMulTorsionFree G] (hV : IsVaught G)
     (hG : IsCSA G) {a b x y : G} (hab : ¬Commute a b) :
     malcevWord a b x y = 1 ↔ x = 1 ∧ y = 1 := by
-  refine ⟨fun h => ?_, fun ⟨hx, hy⟩ => by simp [hx, hy, malcevWord]⟩
+  refine ⟨fun h => ?_, fun ⟨hx, hy⟩ => by simp [hx, hy]⟩
   have hT := (isCommTransitive_iff G).1 hG.isCommTransitive
   have := hG.isCommTransitive.hasUniqueRoots
   have hconj := (isCSA_iff_isCommTransitive_and_commute_conj.1 hG).2
