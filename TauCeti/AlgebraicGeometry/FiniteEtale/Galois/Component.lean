@@ -29,6 +29,9 @@ component are joined by an étale path.
   and closed subset of the base are not joined by an étale path.
 * `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso_of_mem_connectedComponent`: geometric points of the
   same connected component are joined by an étale path when that component is open.
+* `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen`: if the
+  connected component of `x` is open, a geometric point is joined to `x` by an étale path if and
+  only if it lies in that component.
 * `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso_iff_mem_connectedComponent`: if the base is locally
   connected, for instance locally Noetherian, two geometric points are joined by an étale path if
   and only if they lie in the same connected component.
@@ -96,14 +99,21 @@ theorem nonempty_fiber_iso_of_mem_connectedComponent {x : Spec (.of Ω) ⟶ S}
     (IsOpenImmersion.lift C.ι y (hrange y hy))
   rwa [IsOpenImmersion.lift_fac, IsOpenImmersion.lift_fac] at this
 
+/-- If the connected component of `x` is open, a geometric point `y` is joined to `x` by an étale
+path if and only if it lies in that component. -/
+theorem nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen {x : Spec (.of Ω) ⟶ S}
+    {y : Spec (.of Ω') ⟶ S} (hC : IsOpen (connectedComponent (x default))) :
+    Nonempty (fiber x ≅ fiber y) ↔ y default ∈ connectedComponent (x default) :=
+  ⟨fun ⟨e⟩ ↦ by_contra fun hy ↦ (isEmpty_fiber_iso_of_isClopen ⟨isClosed_connectedComponent, hC⟩
+      mem_connectedComponent hy).false e,
+    nonempty_fiber_iso_of_mem_connectedComponent hC⟩
+
 /-- Over a locally connected base, for instance a locally Noetherian one, two geometric points are
 joined by an étale path if and only if they lie in the same connected component. In particular,
 geometric points of different connected components admit no étale path. -/
 theorem nonempty_fiber_iso_iff_mem_connectedComponent [LocallyConnectedSpace S]
     {x : Spec (.of Ω) ⟶ S} {y : Spec (.of Ω') ⟶ S} :
     Nonempty (fiber x ≅ fiber y) ↔ y default ∈ connectedComponent (x default) :=
-  ⟨fun ⟨e⟩ ↦ by_contra fun hy ↦
-      (isEmpty_fiber_iso_of_isClopen isClopen_connectedComponent mem_connectedComponent hy).false e,
-    nonempty_fiber_iso_of_mem_connectedComponent isOpen_connectedComponent⟩
+  nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen isOpen_connectedComponent
 
 end TauCeti.FiniteEtaleScheme
