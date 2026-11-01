@@ -146,10 +146,12 @@ section CommRing
 
 variable {R κ ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] {A : Matrix ι ι R}
 
+@[simp]
 theorem blockSubst_inv_blockSubst (hA : IsUnit A.det) (P : MvPolynomial (κ × ι) R) :
     blockSubst A⁻¹ (blockSubst A P) = P := by
   rw [← blockSubst_mul_apply, mul_nonsing_inv A hA, blockSubst_one, AlgHom.id_apply]
 
+@[simp]
 theorem blockSubst_blockSubst_inv (hA : IsUnit A.det) (P : MvPolynomial (κ × ι) R) :
     blockSubst A (blockSubst A⁻¹ P) = P := by
   rw [← blockSubst_mul_apply, nonsing_inv_mul A hA, blockSubst_one, AlgHom.id_apply]
