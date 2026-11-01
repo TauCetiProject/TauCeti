@@ -50,10 +50,7 @@ def tensor (A D : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 𝕜 B whe
       coordChange := fun i j x =>
         (A.core.coordChange i j x).kronecker (D.core.coordChange i j x)
       coordChange_self := fun i x hx v => by
-        rw [show A.core.coordChange i i x = .id 𝕜 _ from
-            ContinuousLinearMap.ext (A.core.coordChange_self i x hx.1),
-          show D.core.coordChange i i x = .id 𝕜 _ from
-            ContinuousLinearMap.ext (D.core.coordChange_self i x hx.2),
+        rw [A.core.coordChange_self_eq_id hx.1, D.core.coordChange_self_eq_id hx.2,
           ContinuousLinearMap.id_kronecker_id, ContinuousLinearMap.id_apply]
       continuousOn_coordChange := fun i j =>
         ((A.core.continuousOn_coordChange i j).mono
@@ -64,12 +61,8 @@ def tensor (A D : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 𝕜 B whe
               (A.core.baseSet j ∩ D.core.baseSet j)) => ⟨h.1.2, h.2.2⟩))
       coordChange_comp := fun i j k x hx v => by
         rw [← ContinuousLinearMap.comp_apply, ContinuousLinearMap.kronecker_comp_kronecker,
-          show (A.core.coordChange j k x).comp (A.core.coordChange i j x) =
-            A.core.coordChange i k x from ContinuousLinearMap.ext
-              (A.core.coordChange_comp i j k x ⟨⟨hx.1.1.1, hx.1.2.1⟩, hx.2.1⟩),
-          show (D.core.coordChange j k x).comp (D.core.coordChange i j x) =
-            D.core.coordChange i k x from ContinuousLinearMap.ext
-              (D.core.coordChange_comp i j k x ⟨⟨hx.1.1.2, hx.1.2.2⟩, hx.2.2⟩)] }
+          A.core.coordChange_linear_comp i j k x ⟨⟨hx.1.1.1, hx.1.2.1⟩, hx.2.1⟩,
+          D.core.coordChange_linear_comp i j k x ⟨⟨hx.1.1.2, hx.1.2.2⟩, hx.2.2⟩] }
   indexAt_eq := fun _ => rfl
 
 @[simp] theorem rank_tensor (A D : FiniteRankBundleCore 𝕜 B) :
@@ -100,12 +93,8 @@ def tensorHom (f : A ⟶ A') (g : D ⟶ D') : tensor A D ⟶ tensor A' D' where
       ((f.operator i' j' ⟨x, hi'.1, hj'.1⟩).kronecker (g.operator i' j' ⟨x, hi'.2, hj'.2⟩)).comp
         ((A.core.coordChange i i' x).kronecker (D.core.coordChange i i' x)) v
     rw [ContinuousLinearMap.kronecker_comp_kronecker, ContinuousLinearMap.kronecker_comp_kronecker,
-      show (A'.core.coordChange j j' x).comp (f.operator i j ⟨x, hi.1, hj.1⟩) =
-        (f.operator i' j' ⟨x, hi'.1, hj'.1⟩).comp (A.core.coordChange i i' x) from
-          ContinuousLinearMap.ext (f.compatible i i' j j' x hi.1 hi'.1 hj.1 hj'.1),
-      show (D'.core.coordChange j j' x).comp (g.operator i j ⟨x, hi.2, hj.2⟩) =
-        (g.operator i' j' ⟨x, hi'.2, hj'.2⟩).comp (D.core.coordChange i i' x) from
-          ContinuousLinearMap.ext (g.compatible i i' j j' x hi.2 hi'.2 hj.2 hj'.2)]
+      f.coordChange_comp_operator i i' j j' x hi.1 hi'.1 hj.1 hj'.1,
+      g.coordChange_comp_operator i i' j j' x hi.2 hi'.2 hj.2 hj'.2]
 
 /-- On every fibre, the tensor product of two bundle maps is the Kronecker product of their
 fibre maps. -/
@@ -117,6 +106,7 @@ fibre maps. -/
       CoordinateHom.fiberMap_def _ x
     _ = _ := by rw [operator_self, operator_self]
 
+/-- The tensor product of two identity morphisms is the identity. -/
 @[simp] theorem id_tensorHom_id (A D : FiniteRankBundleCore 𝕜 B) :
     tensorHom (𝟙 A) (𝟙 D) = 𝟙 (tensor A D) := by
   apply hom_ext
@@ -128,6 +118,8 @@ fibre maps. -/
 -- model, which the Kronecker-product lemmas state for `Fin (A.rank * D.rank) → 𝕜`; the exposed
 -- rank projection identifies the two models.
 
+/-- Tensor products of morphisms compose factorwise: composing in both factors simultaneously
+commutes with forming the tensor product. -/
 @[reassoc (attr := simp)] theorem tensorHom_comp_tensorHom (f : A ⟶ A') (f' : A' ⟶ A'')
     (g : D ⟶ D') (g' : D' ⟶ D'') :
     tensorHom f g ≫ tensorHom f' g' = tensorHom (f ≫ f') (g ≫ g') := by

@@ -61,11 +61,14 @@ section Continuity
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X] {m n m' n' : ℕ}
   {f : X → (Fin m → 𝕜) →L[𝕜] (Fin m' → 𝕜)} {g : X → (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)}
 
+/-- The Kronecker product of two operator families continuous on a set is continuous on that
+set. -/
 @[fun_prop]
 theorem ContinuousOn.clm_kronecker {s : Set X} (hf : ContinuousOn f s)
     (hg : ContinuousOn g s) : ContinuousOn (fun x ↦ (f x).kronecker (g x)) s :=
   (ContinuousLinearMap.kroneckerL 𝕜 m n m' n').continuous₂.comp_continuousOn (hf.prodMk hg)
 
+/-- The Kronecker product of two continuous operator families is continuous. -/
 @[fun_prop]
 theorem Continuous.clm_kronecker (hf : Continuous f) (hg : Continuous g) :
     Continuous fun x ↦ (f x).kronecker (g x) :=

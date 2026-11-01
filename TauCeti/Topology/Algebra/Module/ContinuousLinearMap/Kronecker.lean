@@ -27,7 +27,8 @@ the transition maps and morphisms of tensor products of vector bundles presented
 coordinate charts. The norm bound and continuity in the two factors are in
 `TauCeti.Analysis.Normed.Operator.Kronecker`.
 
-The matrix comparison uses Mathlib's `Matrix.kronecker` and `LinearMap.toMatrix'`.
+The matrix comparison uses Mathlib's `Matrix.kronecker` and `LinearMap.toMatrix'`; through it
+the mixed-product law is Mathlib's `Matrix.mul_kronecker_mul`.
 -/
 
 public section
@@ -100,12 +101,14 @@ theorem kronecker_add [ContinuousAdd R] :
   simp only [kronecker_apply, _root_.add_apply, Pi.add_apply]
   rw [← Pi.add_def, map_add, Pi.add_apply]
 
-theorem smul_kronecker [ContinuousMul R] (c : R) : (c • f).kronecker g = c • f.kronecker g := by
+theorem smul_kronecker [ContinuousConstSMul R R] (c : R) :
+    (c • f).kronecker g = c • f.kronecker g := by
   refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
   obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
   simp
 
-theorem kronecker_smul [ContinuousMul R] (c : R) : f.kronecker (c • g) = c • f.kronecker g := by
+theorem kronecker_smul [ContinuousConstSMul R R] (c : R) :
+    f.kronecker (c • g) = c • f.kronecker g := by
   refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
   obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
   simp only [kronecker_apply, _root_.smul_apply, Pi.smul_apply]
@@ -113,30 +116,17 @@ theorem kronecker_smul [ContinuousMul R] (c : R) : f.kronecker (c • g) = c •
 
 end Apply
 
-/-- The mixed-product law: Kronecker products compose factorwise. -/
+/-- The mixed-product law: Kronecker products compose factorwise. This is
+`Matrix.mul_kronecker_mul` for the matrices of the operators. -/
 theorem kronecker_comp_kronecker (f : (Fin m' → R) →L[R] (Fin m'' → R))
     (g : (Fin n' → R) →L[R] (Fin n'' → R)) (f' : (Fin m → R) →L[R] (Fin m' → R))
     (g' : (Fin n → R) →L[R] (Fin n' → R)) :
     (f.kronecker g).comp (f'.kronecker g') = (f.comp f').kronecker (g.comp g') := by
-  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
-  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
-  simp only [comp_apply, kronecker_apply]
-  refine congrArg (fun u ↦ f u i) (funext fun i' ↦ ?_)
-  -- It remains to show that `g` on rows commutes with `f'` on columns. Expand `f'` in the
-  -- standard basis, so that its action on columns is a linear combination of rows.
-  have hf (u : Fin m → R) : f' u i' = ∑ l, u l * f' (Pi.single l 1) i' := by
-    calc f' u i' = f' (∑ l, u l • Pi.single (M := fun _ ↦ R) l 1) i' := by
-          rw [← pi_eq_sum_univ' u]
-      _ = _ := by simp only [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-  have key (w : Fin m → Fin n' → R) :
-      g (fun j' ↦ f' (fun l ↦ w l j') i') j = f' (fun l ↦ g (w l) j) i' := by
-    have hrow : (fun j' ↦ f' (fun l ↦ w l j') i') = ∑ l, f' (Pi.single l 1) i' • w l := by
-      ext j'
-      rw [hf]
-      simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
-    rw [hrow, hf]
-    simp only [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
-  exact key fun l j' ↦ g' (fun j'' ↦ v (finProdFinEquiv (l, j''))) j'
+  refine coe_injective <| LinearMap.toMatrix'.injective ?_
+  rw [toLinearMap_comp, LinearMap.toMatrix'_comp, toMatrix'_kronecker, toMatrix'_kronecker,
+    toMatrix'_kronecker, toLinearMap_comp, toLinearMap_comp, LinearMap.toMatrix'_comp,
+    LinearMap.toMatrix'_comp, Matrix.reindex_apply, Matrix.reindex_apply, Matrix.reindex_apply,
+    Matrix.submatrix_mul_equiv, Matrix.mul_kronecker_mul]
 
 @[simp] theorem zero_kronecker (g : (Fin n → R) →L[R] (Fin n' → R)) :
     (0 : (Fin m → R) →L[R] (Fin m' → R)).kronecker g = 0 := by
