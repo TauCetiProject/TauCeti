@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 import Mathlib.Algebra.Order.Interval.Set.Group
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Compact one-dimensional manifolds have an even number of boundary points
@@ -740,16 +741,6 @@ section LocalModels
 variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {B : Set X}
 
-/-- An open embedding of the interior of a neighbourhood of `x` into the half-line model, extended
-by `OpenPartialHomeomorph.lift_openEmbedding`, is a chart around `x`. -/
-private theorem exists_openPartialHomeomorph_of_isOpenEmbedding {N : Set X} {x : X}
-    (hx : x ∈ interior N) {g : interior N → EuclideanHalfSpace 1} (hg : IsOpenEmbedding g) :
-    ∃ c : OpenPartialHomeomorph X (EuclideanHalfSpace 1), x ∈ c.source ∧ c x = g ⟨x, hx⟩ := by
-  have : Nonempty (interior N) := ⟨⟨x, hx⟩⟩
-  have hi := (isOpen_interior (s := N)).isOpenEmbedding_subtypeVal
-  refine ⟨(hg.toOpenPartialHomeomorph g).lift_openEmbedding hi, ⟨⟨x, hx⟩, mem_univ _, rfl⟩, ?_⟩
-  simpa using (hg.toOpenPartialHomeomorph g).lift_openEmbedding_apply hi (x := ⟨x, hx⟩)
-
 /-- A point with a neighbourhood homeomorphic to `[0, ε)`, by a homeomorphism sending `0` to it,
 lies in a chart of the half-line model reading it with coordinate `0`. -/
 private theorem exists_openPartialHomeomorph_coord_eq_zero {x : X} {N : Set X} (hN : N ∈ 𝓝 x)
@@ -764,7 +755,10 @@ private theorem exists_openPartialHomeomorph_coord_eq_zero {x : X} {N : Set X} (
         (e.symm.isOpenEmbedding.comp
           (IsOpenEmbedding.inclusion interior_subset
             (isOpen_interior.preimage continuous_subtype_val))))
-  obtain ⟨c, hxc, hcx⟩ := exists_openPartialHomeomorph_of_isOpenEmbedding hx hg
+  obtain ⟨c, hcs, hcg⟩ :=
+    OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding isOpen_interior hg ⟨x, hx⟩
+  have hxc : x ∈ c.source := hcs ▸ hx
+  have hcx : c x = g ⟨x, hx⟩ := hcg ⟨x, hx⟩
   refine ⟨c, hxc, ?_⟩
   have he : e.symm (inclusion interior_subset ⟨x, hx⟩) = ⟨0, left_mem_Ico.2 hε⟩ :=
     e.symm_apply_eq.2 (Subtype.ext hex.symm)
@@ -786,7 +780,10 @@ private theorem exists_openPartialHomeomorph_coord_pos (hF : Module.finrank ℝ 
       (hV.isOpenEmbedding_subtypeVal.comp (e.symm.isOpenEmbedding.comp
         (IsOpenEmbedding.inclusion interior_subset
           (isOpen_interior.preimage continuous_subtype_val)))))
-  obtain ⟨c, hxc, hcx⟩ := exists_openPartialHomeomorph_of_isOpenEmbedding hx hg
+  obtain ⟨c, hcs, hcg⟩ :=
+    OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding isOpen_interior hg ⟨x, hx⟩
+  have hxc : x ∈ c.source := hcs ▸ hx
+  have hcx : c x = g ⟨x, hx⟩ := hcg ⟨x, hx⟩
   refine ⟨c, hxc, ?_⟩
   rw [hcx]
   exact (range_interiorEmbedding 0).subset (mem_range_self _)
