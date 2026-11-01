@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.Energy
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
-import TauCeti.MeasureTheory.Integral.AbsRpowDeriv
+import TauCeti.MeasureTheory.Integral.AbsRpow
 
 /-!
 # The Yamabe quotient and its Euler–Lagrange equation
@@ -151,17 +151,6 @@ private theorem integrable_of_continuous {f : M → ℝ} (hf : Continuous f) :
     Integrable f (riemannianVolume I M) :=
   hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
 
-omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The denominator `∫ |u| ^ p dV` of the Yamabe quotient is positive for a continuous `u ≠ 0`
-and `p > 0`. -/
-private theorem integral_abs_rpow_pos {u : M → ℝ} (hu : Continuous u) (hu0 : u ≠ 0) {p : ℝ}
-    (hp : 0 < p) :
-    0 < ∫ x, |u x| ^ p ∂riemannianVolume I M := by
-  obtain ⟨x, hx⟩ := Function.ne_iff.1 hu0
-  exact (hu.abs.rpow_const fun _ ↦ Or.inr hp.le).integral_pos_of_hasCompactSupport_nonneg_nonzero
-    (HasCompactSupport.of_compactSpace _) (fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _)
-    (Real.rpow_pos_of_pos (abs_pos.2 hx) p).ne'
-
 /-- The energy `∫ (aₙ |grad (u + t v)|² + Scal_g (u + t v)²) dV` of `u + t v` is a quadratic
 polynomial in `t`, with derivative `2 ∫ (aₙ ⟪grad v, grad u⟫ + Scal_g v u) dV` at `t = 0`. -/
 private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 1 u)
@@ -281,16 +270,6 @@ theorem hasDerivAt_yamabeQuotient_add_smul (hn : 2 < finrank ℝ E) {u v : M →
 
 variable [I.Boundaryless]
 
-/-- On a closed manifold, the bilinear energy form of a `C¹` function `v` and a `C²` function `u`
-is `∫ v L_g u dV`. -/
-private theorem integral_energy_eq_integral_mul_conformalLaplacian {u v : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) 2 u) (hv : ContMDiff I 𝓘(ℝ) 1 v) :
-    ∫ x, (conformalCoefficient (finrank ℝ E) * inner ℝ (mgradient I v x) (mgradient I u x) +
-        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (v x * u x))
-        ∂riemannianVolume I M =
-      ∫ x, v x * conformalLaplacian I u x ∂riemannianVolume I M :=
-  (integral_mul_conformalLaplacian hv (HasCompactSupport.of_compactSpace v) hu).symm
-
 /-- **The multiplier of the Euler–Lagrange equation.** On a closed manifold of dimension `n > 2`,
 if a `C²` function `u` solves `L_g u = λ |u| ^ (pₙ - 2) u`, then
 `Q_g(u) = λ (∫ |u| ^ pₙ dV) ^ (1 - 2 / pₙ)`. -/
@@ -364,7 +343,7 @@ private theorem hasDerivAt_yamabeQuotient_add_smul_eq_integral (hn : 2 < finrank
     funext x
     ring
   rw [hsplit, integral_sub hL (hJ.const_mul _), integral_const_mul,
-    integral_energy_eq_integral_mul_conformalLaplacian hu hv]
+    ← integral_mul_conformalLaplacian hv (HasCompactSupport.of_compactSpace v) hu]
   have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   field_simp
 
@@ -383,7 +362,7 @@ theorem forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_
   set N := ∫ x, |u x| ^ p ∂riemannianVolume I M
   have hN0 : 0 < N := integral_abs_rpow_pos hu.continuous hu0 (by linarith)
   have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
-  set c₀ := yamabeQuotient I u * N ^ (2 / p) / N
+  set c₀ := yamabeQuotient I u * N ^ (2 / p) / N with hc₀_def
   constructor
   · intro hcrit
     have hcont : Continuous fun x ↦
@@ -405,11 +384,12 @@ theorem forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_
     exact congrFun ((hcont.ae_eq_iff_eq _ continuous_zero).1 hae) x
   · rintro ⟨c, hc⟩ v hv
     -- The multiplier of a solution is `c₀`.
+    -- `Q_g(u) = c N ^ (1 - 2 / p)`, so `c₀ = c N ^ (1 - 2 / p) N ^ (2 / p) / N = c N / N = c`.
+    have hpow : N ^ (1 - 2 / p) * N ^ (2 / p) = N := by
+      rw [← Real.rpow_add hN0, sub_add_cancel, Real.rpow_one]
     have hc₀ : c₀ = c := by
-      rw [show c₀ = yamabeQuotient I u * N ^ (2 / p) / N from rfl,
-        yamabeQuotient_eq_of_conformalLaplacian_eq hn hu hc, mul_assoc,
-        ← Real.rpow_add hN0, sub_add_cancel, Real.rpow_one, mul_div_assoc,
-        div_self hN0.ne', mul_one]
+      rw [hc₀_def, yamabeQuotient_eq_of_conformalLaplacian_eq hn hu hc, mul_assoc, hpow,
+        mul_div_cancel_right₀ c hN0.ne']
     have hint (x : M) : v x * (conformalLaplacian I u x - c₀ * (|u x| ^ (p - 2) * u x)) = 0 := by
       rw [hc x, hc₀, sub_self, mul_zero]
     convert hasDerivAt_yamabeQuotient_add_smul_eq_integral hn hu (hv.of_le (by simp)) hu0 using 1

@@ -8,14 +8,19 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.InnerProductSpace.NormPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
-# Differentiating the integral of `|u + t v| ^ p`
+# Positivity and derivative of the integral of `|u| ^ p`
+
+For a continuous function `u ≠ 0` on a compact space with a finite measure that is positive on
+nonempty open sets, the integral `∫ |u| ^ p dμ` is positive for every `p > 0`.
 
 For `p > 1` the function `s ↦ |s| ^ p` is differentiable with derivative `p |s| ^ (p - 2) s`
 (`hasDerivAt_abs_rpow`). This file differentiates the integral `t ↦ ∫ |u + t v| ^ p dμ` under the
@@ -29,6 +34,7 @@ This is the directional derivative of the `p`-th power of the `Lᵖ` norm at `u`
 
 ## Main declarations
 
+* `TauCeti.integral_abs_rpow_pos`: positivity of `∫ |u| ^ p dμ` for a continuous `u ≠ 0`.
 * `TauCeti.hasDerivAt_integral_abs_add_mul_rpow`: the derivative of `t ↦ ∫ |u + t v| ^ p dμ` at
   `t = 0`.
 -/
@@ -41,6 +47,16 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
   [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasure μ]
+
+/-- The integral `∫ |u| ^ p dμ` of a continuous function `u ≠ 0` on a compact space is positive
+for `p > 0`, when the finite measure `μ` is positive on nonempty open sets. -/
+theorem integral_abs_rpow_pos [μ.IsOpenPosMeasure] {u : X → ℝ} (hu : Continuous u) (hu0 : u ≠ 0)
+    {p : ℝ} (hp : 0 < p) :
+    0 < ∫ x, |u x| ^ p ∂μ := by
+  obtain ⟨x, hx⟩ := Function.ne_iff.1 hu0
+  exact (hu.abs.rpow_const fun _ ↦ Or.inr hp.le).integral_pos_of_hasCompactSupport_nonneg_nonzero
+    (HasCompactSupport.of_compactSpace _) (fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _)
+    (Real.rpow_pos_of_pos (abs_pos.2 hx) p).ne'
 
 /-- **Differentiating `∫ |u + t v| ^ p dμ`.** For continuous `u` and `v` on a compact space with
 a finite measure and `p > 1`, the derivative of `t ↦ ∫ |u + t v| ^ p dμ` at `t = 0` is
