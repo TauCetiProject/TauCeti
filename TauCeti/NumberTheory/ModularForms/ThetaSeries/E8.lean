@@ -44,7 +44,7 @@ open scoped ArithmeticFunction.sigma
 namespace TauCeti.IntegralLattice
 
 /-- The theta series of the real model of the E₈ root lattice is the normalized Eisenstein
-series `E₄`. No root count is required. -/
+series `E₄`. -/
 @[simp]
 theorem thetaSeries_realModel_typeE₈RootLattice :
     ZLattice.thetaSeries (typeE₈RootLattice.realModel isPosDef_typeE₈RootLattice) = E₄ := by
@@ -53,8 +53,7 @@ theorem thetaSeries_realModel_typeE₈RootLattice :
   · exact (typeE₈RootLattice.isUnimodular_realModel_iff _).mpr isUnimodular_typeE₈RootLattice
   · simp [RealModelSpace.finrank_eq, finrank_carrier]
 
-/-- The E₈ root lattice has `240 σ₃(m)` vectors of rational norm `2m` for every `m ≥ 1`.
-This is read from its theta series, not from an enumeration of vectors. -/
+/-- The E₈ root lattice has `240 σ₃(m)` vectors of rational norm `2m` for every `m ≥ 1`. -/
 theorem representationNumber_typeE₈RootLattice_two_mul {m : ℕ} (hm : m ≠ 0) :
     typeE₈RootLattice.representationNumber (2 * m) = 240 * σ 3 m := by
   have h := ZLattice.IsEven.representationNumber_two_mul_of_finrank_eq_eight
