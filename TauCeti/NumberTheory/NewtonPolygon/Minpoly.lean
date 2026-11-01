@@ -55,18 +55,6 @@ public section
 
 namespace Polynomial
 
-/-- An irreducible polynomial with zero constant coefficient is a scalar multiple of `X`, so it
-has no finite slopes. -/
-private theorem newtonSlopes_eq_zero_of_irreducible_of_coeff_zero_eq_zero {F : Type*} [Field F]
-    {u : AddValuation F (WithTop ℝ)} {f : F[X]} (hf : Irreducible f) (hc : f.coeff 0 = 0) :
-    f.newtonSlopes u = 0 := by
-  obtain ⟨q, rfl⟩ := X_dvd_iff.mpr hc
-  have hq : IsUnit q := (hf.isUnit_or_isUnit rfl).resolve_left not_isUnit_X
-  have hcard := card_newtonSlopes (X * q) u fun x => u.top_iff.mp
-  rw [natDegree_mul X_ne_zero hq.ne_zero, natTrailingDegree_mul X_ne_zero hq.ne_zero,
-    natDegree_eq_zero_of_isUnit hq, natDegree_X, natTrailingDegree_X] at hcard
-  exact Multiset.card_eq_zero.mp (by omega)
-
 variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
   {v : AddValuation K (WithTop ℝ)} {b : ℝ}
 
@@ -79,49 +67,29 @@ theorem forall_mem_newtonSlopes_eq_of_irreducible (hb : 1 < b)
     ∀ s ∈ f.newtonSlopes v,
       s = ((v f.leadingCoeff).untop₀ - (v (f.coeff 0)).untop₀) / f.natDegree := by
   by_cases hc : f.coeff 0 = 0
-  · simp [newtonSlopes_eq_zero_of_irreducible_of_coeff_zero_eq_zero hf hc]
-  have hf0 := hf.ne_zero
-  have hl0 : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
-  have hd : (f.natDegree : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hf.natDegree_pos.ne'
+  · -- `f` is a scalar multiple of `X`, which has no finite slopes.
+    obtain ⟨q, rfl⟩ := X_dvd_iff.mpr hc
+    obtain ⟨c, -, rfl⟩ :=
+      Polynomial.isUnit_iff.mp ((hf.isUnit_or_isUnit rfl).resolve_left not_isUnit_X)
+    rw [X_mul_C, C_mul_X_eq_monomial, newtonSlopes_monomial]
+    simp
+  have hl0 : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf.ne_zero
   have hb0 : 0 < b := zero_lt_one.trans hb
   set m := ((v f.leadingCoeff).untop₀ - (v (f.coeff 0)).untop₀) / f.natDegree
-  set ρ := b ^ m
-  have hρ : 0 ≤ ρ := (Real.rpow_pos_of_pos hb0 m).le
-  -- The constant term has norm `‖a_d‖ ρ ^ d`.
-  have hconst : ‖f.leadingCoeff‖ * ρ ^ f.natDegree = ‖f.coeff 0‖ := by
+  -- The constant term has norm `‖a_d‖ (b ^ m) ^ d`.
+  have hconst : ‖f.leadingCoeff‖ * (b ^ m) ^ f.natDegree = ‖f.coeff 0‖ := by
     rw [hv _ hl0, hv _ hc, ← Real.rpow_mul_natCast hb0.le, ← Real.rpow_add hb0]
     congr 1
     simp only [m]
-    field_simp
+    field_simp [Nat.cast_ne_zero.mpr hf.natDegree_pos.ne']
     ring
-  -- The monic normalisation `g` of `f` has spectral value `ρ`.
-  set g := f * C f.leadingCoeff⁻¹
-  have hg : g.Monic := monic_mul_leadingCoeff_inv hf0
-  have hgd : g.natDegree = f.natDegree := natDegree_mul_leadingCoeff_inv f hf0
-  have hgcoeff (n : ℕ) : ‖g.coeff n‖ * ‖f.leadingCoeff‖ = ‖f.coeff n‖ := by
-    rw [coeff_mul_C, norm_mul, norm_inv, inv_mul_cancel_right₀ (norm_ne_zero_iff.mpr hl0)]
-  have hg0 : ‖g.coeff 0‖ = ρ ^ f.natDegree := by
-    apply mul_right_cancel₀ (norm_ne_zero_iff.mpr hl0)
-    rw [hgcoeff, ← hconst, mul_comm]
-  have hspec : spectralValue g = ρ := by
-    rw [spectralValue_eq_norm_coeff_zero_rpow_of_irreducible hg
-      (irreducible_mul_leadingCoeff_inv.mpr hf), hgd, one_div, hg0]
-    exact Real.pow_rpow_inv_natCast hρ hf.natDegree_pos.ne'
   have htr : f.natTrailingDegree = 0 :=
     natTrailingDegree_eq_zero_of_constantCoeff_ne_zero (by simpa using hc)
   refine (forall_mem_newtonSlopes_eq_iff_norm_coeff_mul_rpow_pow_le hb hv).mpr
     ⟨?_, fun n => ?_⟩ <;> rw [trailingCoeff, htr, pow_zero, mul_one]
   · exact hconst
-  rcases le_or_gt n f.natDegree with hn | hn
-  · calc ‖f.coeff n‖ * ρ ^ n
-        = ‖g.coeff n‖ * ‖f.leadingCoeff‖ * ρ ^ n := by rw [hgcoeff]
-      _ ≤ ρ ^ (f.natDegree - n) * ‖f.leadingCoeff‖ * ρ ^ n := by
-        gcongr
-        simpa [hspec, hgd] using hg.norm_coeff_le_spectralValue_pow n
-      _ = ‖f.coeff 0‖ := by
-        rw [← hconst, mul_comm _ ‖_‖, mul_assoc, ← pow_add, Nat.sub_add_cancel hn]
-  · rw [coeff_eq_zero_of_natDegree_lt hn, norm_zero, zero_mul]
-    exact norm_nonneg _
+  · exact norm_coeff_mul_pow_le_norm_coeff_zero_of_irreducible hf
+      (Real.rpow_pos_of_pos hb0 m).le hconst n
 
 end Polynomial
 

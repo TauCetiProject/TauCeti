@@ -21,8 +21,9 @@ monic irreducible polynomial of degree `d` is attained at the constant coefficie
 `AdjoinRoot p`, whose spectral norm is by definition `spectralValue p`, and Mathlib's
 `spectralNorm_eq_norm_coeff_zero_rpow` computes that spectral norm as `‖a₀‖ ^ (1 / d)`; the
 latter rests on the fact that all roots of `p` have the same spectral norm. Combining the two,
-`‖aᵢ‖ ≤ ‖a₀‖ ^ ((d - i) / d)` for every coefficient: in the language of Newton polygons, an
-irreducible polynomial over a complete field is pure.
+`‖aᵢ‖ ≤ ‖a₀‖ ^ ((d - i) / d)` for every coefficient. Without normalising, an irreducible `f` of
+degree `d` satisfies `‖aᵢ‖ ρ ^ i ≤ ‖a₀‖` whenever `‖a_d‖ ρ ^ d = ‖a₀‖`: in the language of Newton
+polygons, an irreducible polynomial over a complete field is pure.
 
 ## Main results
 
@@ -30,6 +31,9 @@ irreducible polynomial over a complete field is pure.
   monic polynomial `p`.
 * `Polynomial.spectralValue_eq_norm_coeff_zero_rpow_of_irreducible`: over a complete
   ultrametric field, a monic irreducible polynomial has spectral value `‖a₀‖ ^ (1 / d)`.
+* `Polynomial.norm_coeff_mul_pow_le_norm_coeff_zero_of_irreducible`: over a complete
+  ultrametric field, an irreducible polynomial satisfies `‖aᵢ‖ ρ ^ i ≤ ‖a₀‖` for the radius `ρ`
+  with `‖a_d‖ ρ ^ d = ‖a₀‖`.
 
 ## References
 
@@ -69,5 +73,37 @@ theorem spectralValue_eq_norm_coeff_zero_rpow_of_irreducible {p : K[X]} (hm : p.
   have h := spectralNorm.spectralNorm_eq_norm_coeff_zero_rpow K (AdjoinRoot p) (AdjoinRoot.root p)
   unfold spectralNorm at h
   rwa [hmin] at h
+
+/-- Over a complete nontrivially normed field with an ultrametric norm, let `f` be irreducible of
+degree `d` and let `ρ ≥ 0` balance its leading and constant terms, `‖a_d‖ ρ ^ d = ‖a₀‖`. Then
+every term satisfies `‖aᵢ‖ ρ ^ i ≤ ‖a₀‖`. -/
+theorem norm_coeff_mul_pow_le_norm_coeff_zero_of_irreducible {f : K[X]} (hf : Irreducible f)
+    {ρ : ℝ} (hρ : 0 ≤ ρ) (hconst : ‖f.leadingCoeff‖ * ρ ^ f.natDegree = ‖f.coeff 0‖) (i : ℕ) :
+    ‖f.coeff i‖ * ρ ^ i ≤ ‖f.coeff 0‖ := by
+  have hf0 := hf.ne_zero
+  have hl0 : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
+  -- The monic normalisation `g` of `f` has spectral value `ρ`.
+  set g := f * C f.leadingCoeff⁻¹
+  have hg : g.Monic := monic_mul_leadingCoeff_inv hf0
+  have hgd : g.natDegree = f.natDegree := natDegree_mul_leadingCoeff_inv f hf0
+  have hgcoeff (n : ℕ) : ‖g.coeff n‖ * ‖f.leadingCoeff‖ = ‖f.coeff n‖ := by
+    rw [coeff_mul_C, norm_mul, norm_inv, inv_mul_cancel_right₀ (norm_ne_zero_iff.mpr hl0)]
+  have hg0 : ‖g.coeff 0‖ = ρ ^ f.natDegree := by
+    apply mul_right_cancel₀ (norm_ne_zero_iff.mpr hl0)
+    rw [hgcoeff, ← hconst, mul_comm]
+  have hspec : spectralValue g = ρ := by
+    rw [spectralValue_eq_norm_coeff_zero_rpow_of_irreducible hg
+      (irreducible_mul_leadingCoeff_inv.mpr hf), hgd, one_div, hg0]
+    exact Real.pow_rpow_inv_natCast hρ hf.natDegree_pos.ne'
+  rcases le_or_gt i f.natDegree with hi | hi
+  · calc ‖f.coeff i‖ * ρ ^ i
+        = ‖g.coeff i‖ * ‖f.leadingCoeff‖ * ρ ^ i := by rw [hgcoeff]
+      _ ≤ ρ ^ (f.natDegree - i) * ‖f.leadingCoeff‖ * ρ ^ i := by
+        gcongr
+        simpa [hspec, hgd] using hg.norm_coeff_le_spectralValue_pow i
+      _ = ‖f.coeff 0‖ := by
+        rw [← hconst, mul_comm _ ‖_‖, mul_assoc, ← pow_add, Nat.sub_add_cancel hi]
+  · rw [coeff_eq_zero_of_natDegree_lt hi, norm_zero, zero_mul]
+    exact norm_nonneg _
 
 end Polynomial
