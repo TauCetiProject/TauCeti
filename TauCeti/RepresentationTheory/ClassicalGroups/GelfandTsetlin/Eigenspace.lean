@@ -14,22 +14,17 @@ import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Eigenvalue
 
 The rational Weyl module `V_λ` of `GL n ℂ` is the internal direct sum of its Gelfand–Tsetlin
 lines `TauCeti.gtLine λ P`, one for each Gelfand–Tsetlin pattern `P` with top weight `λ`
-(`TauCeti.isInternal_gtLine`). This file draws the two consequences of that decomposition.
+(`TauCeti.isInternal_gtLine`). This file characterizes the lines intrinsically.
 
-* **Dimension.** Each line is one-dimensional, so `dim V_λ` is the number of patterns with top
-  weight `λ`. The count is read off from the Gelfand–Tsetlin decomposition, that is, from the
-  iterated multiplicity-free branching `GL (n + 1) ↓ GL n` that built the lines.
-* **Intrinsic characterization.** The Gelfand–Tsetlin generators, the images in `U(𝔤𝔩ₙ)` of the
-  Gelfand invariants of the upper-left corners `𝔤𝔩₁ ⊂ ⋯ ⊂ 𝔤𝔩ₙ`, act on the line of `P` by
-  scalars read off the rows of `P`, and these scalars determine `P`. Hence the line of `P` is
-  *exactly* the joint eigenspace of the generators for the eigenvalues of `P`, and every nonzero
-  joint eigenspace of the generators is one of the lines. So the Gelfand–Tsetlin decomposition is
-  the joint eigenspace decomposition of the generators.
+The Gelfand–Tsetlin generators, the images in `U(𝔤𝔩ₙ)` of the Gelfand invariants of the
+upper-left corners `𝔤𝔩₁ ⊂ ⋯ ⊂ 𝔤𝔩ₙ`, act on the line of `P` by scalars read off the rows of `P`,
+and these scalars determine `P`. Hence the line of `P` is *exactly* the joint eigenspace of the
+generators for the eigenvalues of `P`, and every nonzero joint eigenspace of the generators is
+one of the lines. So the Gelfand–Tsetlin decomposition is the joint eigenspace decomposition of
+the generators.
 
 ## Main results
 
-* `TauCeti.finrank_rationalWeylFDRep_eq_card_gtPattern`: `dim V_λ` is the number of
-  Gelfand–Tsetlin patterns with top weight `λ`.
 * `TauCeti.iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine`: the Gelfand–Tsetlin line of `P` is
   the joint eigenspace of the Gelfand–Tsetlin generators for the eigenvalues of `P`.
 * `TauCeti.exists_iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine`: every nonzero joint
@@ -53,18 +48,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-- **The Gelfand–Tsetlin dimension count.** The rational Weyl module `V_λ` of `GL n ℂ` has
-dimension the number of Gelfand–Tsetlin patterns with top weight `λ`, since it is the internal
-direct sum of the Gelfand–Tsetlin lines of these patterns. -/
-theorem finrank_rationalWeylFDRep_eq_card_gtPattern (l : DominantWeight n) :
-    finrank ℂ (rationalWeylFDRep ℂ n l) = Nat.card {P : GTPattern n // P.topWeight = l} := by
-  classical
-  -- Fix the additive group of the submodule carrier before inferring the module structures on the
-  -- lines, as in `TauCeti.isInternal_gtLine`.
-  let _ : AddCommGroup (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule := inferInstance
-  exact (finrank_eq_nat_card_basis ((isInternal_gtLine l).collectedBasis fun P ↦
-    finBasisOfFinrankEq ℂ _ (finrank_gtLine l P))).trans (Nat.card_congr (Equiv.sigmaUnique _ _))
 
 /-- The joint eigenspace of the Gelfand–Tsetlin generators of `V_λ`, indexed by the level `k ≤ n`
 and the degree `r`, is the joint eigenspace of the same family indexed by the pairs `(k, r)`, the

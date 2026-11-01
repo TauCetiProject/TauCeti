@@ -47,6 +47,8 @@ these lines.
 * `TauCeti.finrank_gtLine`: each Gelfand–Tsetlin line is one-dimensional.
 * `TauCeti.isInternal_gtLine`: the rational Weyl module is the internal direct sum of the
   Gelfand–Tsetlin lines of the patterns with its top weight.
+* `TauCeti.finrank_rationalWeylFDRep_eq_card_gtPattern`: the rational Weyl module `V_λ` has
+  dimension the number of Gelfand–Tsetlin patterns with top weight `λ`.
 
 ## References
 
@@ -201,5 +203,12 @@ theorem isInternal_gtLine : ∀ {n : ℕ} (l : DominantWeight n), DirectSum.IsIn
       (M := (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule)
       (hsigma.submodule_iSupIndep.comp (GTPattern.truncateTopWeightSigmaEquiv l).injective)
       ((GTPattern.truncateTopWeightSigmaEquiv l).iSup_comp.trans hsigma.submodule_iSup_eq_top)
+
+/-- **The Gelfand–Tsetlin dimension count.** The rational Weyl module `V_λ` of `GL n ℂ` has
+dimension the number of Gelfand–Tsetlin patterns with top weight `λ`, the number of lines in its
+decomposition `TauCeti.isInternal_gtLine`. Both sides equal the Weyl dimension of `λ`. -/
+theorem finrank_rationalWeylFDRep_eq_card_gtPattern {n : ℕ} (l : DominantWeight n) :
+    finrank ℂ (rationalWeylFDRep ℂ n l) = Nat.card {P : GTPattern n // P.topWeight = l} :=
+  (finrank_rationalWeylFDRep ℂ n l).trans (GTPattern.card_topWeight_eq_weylDimension l).symm
 
 end TauCeti
