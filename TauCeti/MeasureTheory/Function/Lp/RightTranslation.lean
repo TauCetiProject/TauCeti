@@ -313,8 +313,7 @@ theorem integral_modularInversion (f : Lp E 1 μ) :
   rw [integral_congr_ae (coeFn_modularInversion f)]
   have h := integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
     fun x => (modularCharacter x⁻¹ : ℝ) • f x
-  simp only [inv_inv, smul_smul, ← NNReal.coe_mul, ← map_mul, mul_inv_cancel, map_one,
-    NNReal.coe_one, one_smul] at h
+  simp only [inv_inv, smul_smul, modularCharacter_mul_inv, one_smul] at h
   simpa using h
 
 /-- Right translation on `L¹` preserves the integral: the weight `c(g⁻¹)` of

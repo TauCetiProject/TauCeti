@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
 
@@ -16,8 +15,7 @@ public import Mathlib.Topology.UrysohnsLemma
 
 Let `μ` be a regular measure on a locally compact regular space `X` with its Borel σ-algebra, for
 instance a Haar measure on a locally compact group. This file proves that compactly supported
-continuous functions are dense in `Lᵖ(X, μ)` for `p < ∞`, and that every neighbourhood of a point
-supports a nonnegative `L¹` function of integral one.
+continuous functions are dense in `Lᵖ(X, μ)` for `p < ∞`.
 
 Mathlib's `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` assumes a normal space,
 which a locally compact group need not be. Here the indicator function of a measurable set `t` of
@@ -26,9 +24,6 @@ finite measure is approximated directly: choose a compact closed `K ⊆ t` and a
 holds in every locally compact regular space. Mathlib's `MeasureTheory.MemLp.induction_dense`
 extends the approximation from indicator functions to all of `Lᵖ`.
 
-The normalized indicator functions of neighbourhoods of the identity of a locally compact group are
-the kernels of the approximate identities for convolution.
-
 ## Main results
 
 * `MeasureTheory.exists_hasCompactSupport_eLpNorm_sub_indicator_le`: a constant multiple of the
@@ -36,8 +31,8 @@ the kernels of the approximate identities for convolution.
   supported continuous functions.
 * `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace`: every
   `Lᵖ` function, `p < ∞`, is approximated in `Lᵖ` by compactly supported continuous functions.
-* `MeasureTheory.Lp.exists_nonneg_integral_eq_one_of_mem_nhds`: every neighbourhood of a point
-  supports a nonnegative `L¹` function of integral one.
+* `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport`: the classes of compactly supported
+  continuous functions are dense in `Lᵖ`, `p < ∞`.
 
 ## References
 
@@ -118,37 +113,20 @@ theorem MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace (hp
     (fun _ _ hf hg => ⟨hf.1.add hg.1, hf.2.add hg.2⟩) hε
   exact ⟨g, hgs, hfg, hgc, hgc.memLp_of_hasCompactSupport hgs⟩
 
+/-- **Density of compactly supported continuous functions in `Lᵖ`** for a regular measure on a
+locally compact regular space, `p < ∞`: the classes of compactly supported continuous functions
+are dense in `Lp E p μ`. -/
+theorem Lp.dense_setOf_continuous_hasCompactSupport [Fact (1 ≤ p)] (hp : p ≠ ∞) :
+    Dense {u : Lp E p μ | ∃ f : X → E, Continuous f ∧ HasCompactSupport f ∧ u =ᵐ[μ] f} := by
+  refine Metric.dense_iff.2 fun u r hr => ?_
+  obtain ⟨f, hfs, hf, hfc, hfp⟩ :=
+    (Lp.memLp u).exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace hp
+      (ENNReal.ofReal_pos.2 (half_pos hr)).ne'
+  refine ⟨hfp.toLp f, ?_, f, hfc, hfs, hfp.coeFn_toLp⟩
+  rw [Metric.mem_ball, dist_comm, Lp.dist_def,
+    eLpNorm_congr_ae (EventuallyEq.rfl.sub hfp.coeFn_toLp)]
+  exact (ENNReal.toReal_le_of_le_ofReal (half_pos hr).le hf).trans_lt (half_lt_self hr)
+
 end Dense
-
-namespace Lp
-
-variable [OpensMeasurableSpace X] [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ]
-
-/-- Every neighbourhood `U` of a point `x` of a locally compact space supports a nonnegative `L¹`
-kernel of integral one: the normalized indicator function of the interior of a compact
-neighbourhood of `x` inside `U`. On a locally compact group, kernels for the neighbourhoods of `1`
-feed `MeasureTheory.Lp.tendsto_convolutionL_left` and
-`MeasureTheory.Lp.tendsto_convolutionL_right`. -/
-theorem exists_nonneg_integral_eq_one_of_mem_nhds {x : X} {U : Set X} (hU : U ∈ 𝓝 x) :
-    ∃ k : Lp ℝ 1 μ, 0 ≤ k ∧ ∫ y, k y ∂μ = 1 ∧ ∀ᵐ y ∂μ, y ∉ U → k y = 0 := by
-  obtain ⟨V, hV1, hVU, hVc⟩ := local_compact_nhds hU
-  have hW1 : interior V ∈ 𝓝 x := isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hV1)
-  have hWm : MeasurableSet (interior V) := isOpen_interior.measurableSet
-  have hWfin : μ (interior V) ≠ ∞ :=
-    ((measure_mono interior_subset).trans_lt hVc.measure_lt_top).ne
-  have hWpos : μ.real (interior V) ≠ 0 :=
-    (ENNReal.toReal_pos (Measure.measure_pos_of_mem_nhds μ hW1).ne' hWfin).ne'
-  refine ⟨indicatorConstLp 1 hWm hWfin (μ.real (interior V))⁻¹, ?_, ?_, ?_⟩
-  · rw [← coeFn_nonneg]
-    filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := hWm) (hμs := hWfin)
-      (c := (μ.real (interior V))⁻¹)] with y hy
-    rw [hy]
-    exact Set.indicator_nonneg (fun _ _ => inv_nonneg.2 measureReal_nonneg) y
-  · rw [integral_indicatorConstLp, smul_eq_mul, mul_inv_cancel₀ hWpos]
-  · filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := hWm) (hμs := hWfin)
-      (c := (μ.real (interior V))⁻¹)] with y hy hyU
-    rw [hy, Set.indicator_of_notMem fun hyV => hyU (hVU (interior_subset hyV))]
-
-end Lp
 
 end MeasureTheory
