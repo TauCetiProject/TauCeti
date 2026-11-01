@@ -31,9 +31,6 @@ of `d⁺`.
 
 ## Main results
 
-* `TauCeti.SmoothForm.selfDualPart_mem_compactlySupportedForms`,
-  `TauCeti.SmoothForm.antiSelfDualPart_mem_compactlySupportedForms`: the projections preserve
-  compact support.
 * `TauCeti.SmoothForm.integralTopForm_inner_self_eq_add`:
   `∫_M |β|² vol = ∫_M |β⁺|² vol + ∫_M |β⁻|² vol` for every compactly supported `β`.
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_self_eq_antiSelfDualPart`: for a
@@ -73,35 +70,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 namespace SmoothForm
 
-/-! ### Compact support of the self-dual and anti-self-dual parts -/
-
-/-- The self-dual part of a compactly supported form is compactly supported. -/
-theorem selfDualPart_mem_compactlySupportedForms {β : SmoothForm I M ℝ k}
-    (hβ : β ∈ compactlySupportedForms I M k) :
-    selfDualPart o β ∈ compactlySupportedForms I M k := by
-  have h : selfDualPart o β = (2⁻¹ : ℝ) • (β + hodgeStar o rfl β) :=
-    Subtype.ext <| by
-      rw [coe_selfDualPart, RoughForm.selfDualPart_apply, Submodule.coe_smul, Submodule.coe_add,
-        coe_hodgeStar]
-  rw [h]
-  exact Submodule.smul_mem _ _ (add_mem hβ (hodgeStar_mem_compactlySupportedForms o rfl hβ))
-
-/-- The anti-self-dual part of a compactly supported form is compactly supported. -/
-theorem antiSelfDualPart_mem_compactlySupportedForms {β : SmoothForm I M ℝ k}
-    (hβ : β ∈ compactlySupportedForms I M k) :
-    antiSelfDualPart o β ∈ compactlySupportedForms I M k := by
-  have h : antiSelfDualPart o β = (2⁻¹ : ℝ) • (β - hodgeStar o rfl β) :=
-    Subtype.ext <| by
-      rw [coe_antiSelfDualPart, RoughForm.antiSelfDualPart_apply, Submodule.coe_smul,
-        Submodule.coe_sub, coe_hodgeStar]
-  rw [h]
-  exact Submodule.smul_mem _ _ (sub_mem hβ (hodgeStar_mem_compactlySupportedForms o rfl hβ))
-
 /-! ### The energy identity -/
 
-/-- **Pythagoras for the `L²` norm**: the `L²` norm of a compactly supported middle-degree form
-on an oriented Riemannian manifold of dimension `k + k`, `k` even, is the sum of those of its
-self-dual and anti-self-dual parts, `∫_M |β|² vol = ∫_M |β⁺|² vol + ∫_M |β⁻|² vol`. -/
+/-- **Pythagoras for the squared `L²` norm**: the squared `L²` norm of a compactly supported
+middle-degree form on an oriented Riemannian manifold of dimension `k + k`, `k` even, is the sum
+of the squared `L²` norms of its self-dual and anti-self-dual parts,
+`∫_M |β|² vol = ∫_M |β⁺|² vol + ∫_M |β⁻|² vol`. -/
 theorem integralTopForm_inner_self_eq_add (hk : Even k) {β : SmoothForm I M ℝ k}
     (hc : β ∈ compactlySupportedForms I M k) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (β.1 x) •
@@ -126,7 +100,7 @@ variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 
 /-- **The energy identity**: on an oriented boundaryless Riemannian manifold of dimension `k + k`
 with `k` even, the self-dual and anti-self-dual parts of a compactly supported exact `k`-form `β`
-have the same `L²` norm, `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`. -/
+have the same squared `L²` norm, `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`. -/
 theorem integralTopForm_inner_selfDualPart_self_eq_antiSelfDualPart (hk : Even k)
     {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k) (hc : β ∈ compactlySupportedForms I M k) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
@@ -158,9 +132,9 @@ theorem integralTopForm_inner_selfDualPart_self_eq_antiSelfDualPart (hk : Even k
     integralTopForm_smul] at h0
   linarith
 
-/-- The `L²` norm of a compactly supported exact form `β` of degree `k`, on an oriented
-boundaryless Riemannian manifold of dimension `k + k` with `k` even, is twice that of its
-self-dual part: `∫_M |β|² vol = 2 ∫_M |β⁺|² vol`. -/
+/-- The squared `L²` norm of a compactly supported exact form `β` of degree `k`, on an oriented
+boundaryless Riemannian manifold of dimension `k + k` with `k` even, is twice the squared `L²`
+norm of its self-dual part: `∫_M |β|² vol = 2 ∫_M |β⁺|² vol`. -/
 theorem integralTopForm_inner_self_eq_two_mul_selfDualPart (hk : Even k)
     {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
     (hc : β ∈ compactlySupportedForms I M k) :
@@ -172,9 +146,9 @@ theorem integralTopForm_inner_self_eq_two_mul_selfDualPart (hk : Even k)
     ← integralTopForm_inner_selfDualPart_self_eq_antiSelfDualPart o hk hβ hc]
   ring
 
-/-- The `L²` norm of a compactly supported exact form `β` of degree `k`, on an oriented
-boundaryless Riemannian manifold of dimension `k + k` with `k` even, is twice that of its
-anti-self-dual part: `∫_M |β|² vol = 2 ∫_M |β⁻|² vol`. -/
+/-- The squared `L²` norm of a compactly supported exact form `β` of degree `k`, on an oriented
+boundaryless Riemannian manifold of dimension `k + k` with `k` even, is twice the squared `L²`
+norm of its anti-self-dual part: `∫_M |β|² vol = 2 ∫_M |β⁻|² vol`. -/
 theorem integralTopForm_inner_self_eq_two_mul_antiSelfDualPart (hk : Even k)
     {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
     (hc : β ∈ compactlySupportedForms I M k) :

@@ -19,7 +19,8 @@ zero in `a` that vanish at a reducible configuration `ψ = 0`, the first-order o
 where `d*` is the codifferential and `(da)⁺ = (da + ⋆da) / 2` the self-dual part of `da`. The
 factor `-2` comes from the active `Spinᶜ` gauge convention `A ↦ A - 2 u⁻¹ du`, whose
 infinitesimal action on connections is `ξ ↦ -2 dξ`, with formal adjoint `-2 d*`. As elsewhere,
-imaginary forms are indexed by real forms, so `T` is a real-linear map on real one-forms
+imaginary forms are indexed by real forms, so `T` is a real-linear map from real one-forms to
+pairs of a real function and a real self-dual two-form
 (`TauCeti.SeibergWitten.connectionDeformation`).
 
 On a closed four-manifold this file identifies the kernel of `T` with the harmonic one-forms,
@@ -36,12 +37,11 @@ decomposition and are not proved here.
 ## Main definitions
 
 * `TauCeti.SeibergWitten.connectionDeformation o`: the operator `T a = (-2 d*a, (da)⁺)` from
-  smooth one-forms to pairs of a smooth function and a smooth two-form.
+  smooth one-forms to pairs of a smooth function and a smooth self-dual two-form
+  (`TauCeti.SmoothForm.selfDualForms`).
 
 ## Main results
 
-* `TauCeti.SeibergWitten.hodgeStar_connectionDeformation_snd`: the second component of `T a` is
-  self-dual.
 * `TauCeti.SeibergWitten.connectionDeformation_eq_zero_iff`: for a one-form `a` with compactly
   supported `da`, `T a = 0` if and only if `da = 0` and `d*a = 0`; on a compact manifold,
   `TauCeti.SeibergWitten.ker_connectionDeformation` states this as an equality of kernels.
@@ -77,12 +77,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   (o : Manifold.Orientation I M (Fin (2 + 2)))
 
 /-- The connection part `T a = (-2 d*a, (da)⁺)` of the Seiberg–Witten deformation operator on an
-oriented Riemannian four-manifold, from one-forms to pairs of a function and a two-form. Its
-second component is self-dual (`TauCeti.SeibergWitten.hodgeStar_connectionDeformation_snd`). -/
+oriented Riemannian four-manifold, from one-forms to pairs of a function and a self-dual
+two-form. -/
 def connectionDeformation :
-    SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I M ℝ 0 × SmoothForm I M ℝ 2 :=
+    SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I M ℝ 0 × selfDualForms o :=
   ((-2 : ℝ) • codifferential o (k := 0) (l := 3) rfl).prod
-    (selfDualPart o ∘ₗ mextDerivₗ I 1)
+    ((selfDualPart o ∘ₗ mextDerivₗ I 1).codRestrict (selfDualForms o) fun _ ↦
+      selfDualPart_mem_selfDualForms o even_two _)
 
 /-- The first component of `T a` is `-2 d*a`. -/
 @[simp]
@@ -93,13 +94,8 @@ theorem connectionDeformation_apply_fst (a : SmoothForm I M ℝ 1) :
 /-- The second component of `T a` is `(da)⁺`. -/
 @[simp]
 theorem connectionDeformation_apply_snd (a : SmoothForm I M ℝ 1) :
-    (connectionDeformation o a).2 = selfDualPart o (mextDerivₗ I 1 a) :=
+    ((connectionDeformation o a).2 : SmoothForm I M ℝ 2) = selfDualPart o (mextDerivₗ I 1 a) :=
   (rfl)
-
-/-- The second component of `T a` is a self-dual two-form. -/
-theorem hodgeStar_connectionDeformation_snd (a : SmoothForm I M ℝ 1) :
-    hodgeStar o rfl (connectionDeformation o a).2 = (connectionDeformation o a).2 := by
-  rw [connectionDeformation_apply_snd, hodgeStar_selfDualPart o even_two]
 
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 
@@ -110,8 +106,9 @@ theorem connectionDeformation_eq_zero_iff {a : SmoothForm I M ℝ 1}
     (ha : mextDerivₗ I 1 a ∈ compactlySupportedForms I M 2) :
     connectionDeformation o a = 0 ↔
       mextDerivₗ I 1 a = 0 ∧ codifferential o (k := 0) (l := 3) rfl a = 0 := by
-  rw [Prod.ext_iff, connectionDeformation_apply_fst, connectionDeformation_apply_snd,
-    Prod.fst_zero, Prod.snd_zero, smul_eq_zero, and_comm]
+  rw [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero,
+    ← Submodule.coe_eq_zero (x := (connectionDeformation o a).2),
+    connectionDeformation_apply_fst, connectionDeformation_apply_snd, smul_eq_zero, and_comm]
   simp only [neg_eq_zero, OfNat.ofNat_ne_zero, false_or]
   refine and_congr_left fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
   exact eq_zero_of_mem_exactForms_of_selfDualPart_eq_zero o even_two
@@ -151,7 +148,8 @@ theorem integralTopForm_inner_connectionDeformation_snd_eq_zero [CompactSpace M]
     (a : SmoothForm I M ℝ 1) {γ : SmoothForm I M ℝ 2} (hγ : mextDerivₗ I 2 γ = 0)
     (hγ' : hodgeStar o rfl γ = γ) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-      ((connectionDeformation o a).2.1 x) (γ.1 x) • riemannianVolumeForm o x) = 0 := by
+      (((connectionDeformation o a).2 : SmoothForm I M ℝ 2).1 x) (γ.1 x) •
+        riemannianVolumeForm o x) = 0 := by
   rw [connectionDeformation_apply_snd]
   exact integralTopForm_inner_selfDualPart_eq_zero o even_two
     (by rw [exactForms_succ]; exact LinearMap.mem_range_self _ a)

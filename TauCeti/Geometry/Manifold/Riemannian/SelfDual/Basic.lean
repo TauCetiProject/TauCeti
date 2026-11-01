@@ -39,6 +39,8 @@ they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualP
   `α ↦ (α ± ⋆α) / 2`.
 * `TauCeti.SmoothForm.selfDualPart`, `TauCeti.SmoothForm.antiSelfDualPart`: the same projections
   of smooth forms.
+* `TauCeti.SmoothForm.selfDualForms`, `TauCeti.SmoothForm.antiSelfDualForms`: the smooth
+  self-dual and anti-self-dual forms, the `±1` eigenspaces of the Hodge star of smooth forms.
 
 ## Main results
 
@@ -56,6 +58,9 @@ they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualP
   likewise for `Λ⁻`.
 * `TauCeti.IsSmoothForm.selfDualPart`, `TauCeti.IsSmoothForm.antiSelfDualPart`: the projections
   preserve `C^n` forms.
+* `TauCeti.SmoothForm.selfDualPart_mem_compactlySupportedForms`,
+  `TauCeti.SmoothForm.antiSelfDualPart_mem_compactlySupportedForms`: the projections preserve
+  compact support.
 
 ## References
 
@@ -444,6 +449,66 @@ theorem antiSelfDualPart_selfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) 
   Subtype.ext <| by
     rw [coe_antiSelfDualPart, coe_selfDualPart, RoughForm.antiSelfDualPart_selfDualPart o hk,
       Submodule.coe_zero]
+
+/-! ### Smooth self-dual and anti-self-dual forms -/
+
+/-- The smooth **self-dual** middle-degree forms `Ω⁺`: the `+1` eigenspace of the Hodge star of
+smooth forms, the smooth forms with `⋆α = α`. -/
+def selfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
+  Module.End.eigenspace (hodgeStar o rfl) 1
+
+/-- The smooth **anti-self-dual** middle-degree forms `Ω⁻`: the `-1` eigenspace of the Hodge star
+of smooth forms, the smooth forms with `⋆α = -α`. -/
+def antiSelfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
+  Module.End.eigenspace (hodgeStar o rfl) (-1)
+
+variable {o} in
+/-- A smooth form is self-dual exactly when `⋆α = α`. -/
+@[simp]
+theorem mem_selfDualForms {α : SmoothForm I M ℝ k} :
+    α ∈ selfDualForms o ↔ hodgeStar o rfl α = α := by
+  rw [selfDualForms, Module.End.mem_eigenspace_iff, one_smul]
+
+variable {o} in
+/-- A smooth form is anti-self-dual exactly when `⋆α = -α`. -/
+@[simp]
+theorem mem_antiSelfDualForms {α : SmoothForm I M ℝ k} :
+    α ∈ antiSelfDualForms o ↔ hodgeStar o rfl α = -α := by
+  rw [antiSelfDualForms, Module.End.mem_eigenspace_iff, neg_one_smul]
+
+/-- The self-dual part of a smooth form is a smooth self-dual form. -/
+theorem selfDualPart_mem_selfDualForms (hk : Even k) (α : SmoothForm I M ℝ k) :
+    selfDualPart o α ∈ selfDualForms o :=
+  mem_selfDualForms.2 (hodgeStar_selfDualPart o hk α)
+
+/-- The anti-self-dual part of a smooth form is a smooth anti-self-dual form. -/
+theorem antiSelfDualPart_mem_antiSelfDualForms (hk : Even k) (α : SmoothForm I M ℝ k) :
+    antiSelfDualPart o α ∈ antiSelfDualForms o :=
+  mem_antiSelfDualForms.2 (hodgeStar_antiSelfDualPart o hk α)
+
+/-! ### Compact support of the self-dual and anti-self-dual parts -/
+
+/-- The self-dual part of a compactly supported form is compactly supported. -/
+theorem selfDualPart_mem_compactlySupportedForms {β : SmoothForm I M ℝ k}
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    selfDualPart o β ∈ compactlySupportedForms I M k := by
+  have h : selfDualPart o β = (2⁻¹ : ℝ) • (β + hodgeStar o rfl β) :=
+    Subtype.ext <| by
+      rw [coe_selfDualPart, RoughForm.selfDualPart_apply, Submodule.coe_smul, Submodule.coe_add,
+        coe_hodgeStar]
+  rw [h]
+  exact Submodule.smul_mem _ _ (add_mem hβ (hodgeStar_mem_compactlySupportedForms o rfl hβ))
+
+/-- The anti-self-dual part of a compactly supported form is compactly supported. -/
+theorem antiSelfDualPart_mem_compactlySupportedForms {β : SmoothForm I M ℝ k}
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    antiSelfDualPart o β ∈ compactlySupportedForms I M k := by
+  have h : antiSelfDualPart o β = (2⁻¹ : ℝ) • (β - hodgeStar o rfl β) :=
+    Subtype.ext <| by
+      rw [coe_antiSelfDualPart, RoughForm.antiSelfDualPart_apply, Submodule.coe_smul,
+        Submodule.coe_sub, coe_hodgeStar]
+  rw [h]
+  exact Submodule.smul_mem _ _ (sub_mem hβ (hodgeStar_mem_compactlySupportedForms o rfl hβ))
 
 end SmoothForm
 

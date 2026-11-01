@@ -54,9 +54,9 @@ it squares to zero, and it does not enlarge supports. The pairing `∫_M ⟨α, 
   formal adjoint of `d`,
   `∫_M ⟨dα, β⟩ vol = ∫_M ⟨α, d*β⟩ vol`.
 * `TauCeti.SmoothForm.integralTopForm_inner_self_nonneg`,
-  `TauCeti.SmoothForm.integralTopForm_inner_self_eq_zero_iff`: the `L²` norm `∫_M |α|² vol` is
-  nonnegative, and for compactly supported `α` in positive dimension it vanishes only for
-  `α = 0`.
+  `TauCeti.SmoothForm.integralTopForm_inner_self_eq_zero_iff`: the squared `L²` norm
+  `∫_M |α|² vol` is nonnegative, and for compactly supported `α` in positive dimension it
+  vanishes only for `α = 0`.
 
 ## References
 
@@ -190,38 +190,7 @@ theorem mextDeriv_wedge_hodgeStar (o : Manifold.Orientation I M (Fin (k + l + 1)
   linear_combination (alternatingFormInner (TangentSpace I x) k (α.1 x)
     ((codifferential o _ β).1 x) * riemannianVolumeForm o x v) * hsign
 
-/-! ### The `L²` norm of forms -/
-
-/-- The Hodge star of smooth forms preserves compact support. -/
-theorem hodgeStar_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
-    (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
-    hodgeStar o hkl α ∈ compactlySupportedForms I M l := by
-  rw [mem_compactlySupportedForms, coe_hodgeStar]
-  exact ((mem_compactlySupportedForms I).1 hα).of_isClosed_subset (isClosed_tsupport _)
-    (RoughForm.tsupport_hodgeStar_subset o hkl α.1)
-
-/-- The density `⟨α, β⟩ vol` of two smooth `k`-forms on an oriented Riemannian manifold of
-dimension `m = k + l` is a smooth top form. -/
-theorem isSmoothForm_inner_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
-    (hkl : k + l = m) (α β : SmoothForm I M ℝ k) :
-    IsSmoothForm I ∞ (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
-      riemannianVolumeForm o x) := by
-  rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl]
-  exact isSmoothForm _
-
-/-- The density `⟨α, β⟩ vol` of two smooth `k`-forms on an oriented Riemannian manifold of
-dimension `m = k + l` is compactly supported when `α` or `β` is. -/
-theorem isCompact_tsupport_inner_smul_riemannianVolumeForm
-    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α β : SmoothForm I M ℝ k}
-    (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
-    IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
-      (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
-        riemannianVolumeForm o x)) := by
-  rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl, ← mem_compactlySupportedForms I,
-    cast_mem_compactlySupportedForms_iff I hkl, mem_compactlySupportedForms, coe_wedge,
-    coe_hodgeStar]
-  rw [mem_compactlySupportedForms, mem_compactlySupportedForms] at h
-  exact RoughForm.isCompact_tsupport_wedge_hodgeStar o hkl α.1 β.1 h
+/-! ### The squared `L²` norm of forms -/
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The density `|α|² vol` takes nonnegative values on positively oriented tangent bases. -/
@@ -236,17 +205,18 @@ private theorem inner_self_smul_riemannianVolumeForm_apply_nonneg
     (Orientation.volumeForm_apply_pos_iff.2 hc).le
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- **The `L²` norm of a form is nonnegative**: `0 ≤ ∫_M |α|² vol` on an oriented Riemannian
-manifold of positive dimension, where `|α|²` is the pointwise inner product of `α` with itself. -/
+/-- **The squared `L²` norm of a form is nonnegative**: `0 ≤ ∫_M |α|² vol` on an oriented
+Riemannian manifold of positive dimension, where `|α|²` is the pointwise inner product of `α` with
+itself. -/
 theorem integralTopForm_inner_self_nonneg [NeZero m] (o : Manifold.Orientation I M (Fin m))
     (α : SmoothForm I M ℝ k) :
     0 ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
       riemannianVolumeForm o x) :=
   integralTopForm_nonneg o (inner_self_smul_riemannianVolumeForm_apply_nonneg o α)
 
-/-- **The `L²` norm of forms is definite**: on an oriented Riemannian manifold of positive
-dimension `m = k + l`, a compactly supported smooth `k`-form `α` with `∫_M |α|² vol = 0`
-vanishes. -/
+/-- **The squared `L²` norm of forms is definite**: on an oriented Riemannian manifold of
+positive dimension `m = k + l`, a compactly supported smooth `k`-form `α` with
+`∫_M |α|² vol = 0` vanishes. -/
 theorem integralTopForm_inner_self_eq_zero_iff [NeZero m] (o : Manifold.Orientation I M (Fin m))
     (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
