@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
@@ -28,6 +29,8 @@ Only the second measure needs to be s-finite.
   seminorm of its section seminorms.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
+* `TauCeti.ae_memLp_two_prod_left` — for a square integrable measurable function on a product,
+  almost every section is square integrable.
 -/
 
 public section
@@ -192,5 +195,13 @@ theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [C
     rw [eLpNorm_const_mul_ennreal hg.enorm.aestronglyMeasurable, eLpNorm_enorm _ hg]
   simp_rw [hsec, mul_comm _ (eLpNorm g p ν)]
   rw [eLpNorm_const_mul_ennreal hf.enorm.aestronglyMeasurable, eLpNorm_enorm _ hf, mul_comm]
+
+/-- For a square integrable measurable `F` on a product, almost every section `w ↦ F (a, w)` is
+square integrable. -/
+theorem ae_memLp_two_prod_left [SFinite μ] [SFinite ν] {F : α × β → ℝ} (hF : Measurable F)
+    (hL : MemLp F 2 (μ.prod ν)) : ∀ᵐ a ∂μ, MemLp (fun w => F (a, w)) 2 ν := by
+  filter_upwards [hL.integrable_sq.prod_right_ae] with a ha
+  exact (memLp_two_iff_integrable_sq
+    (hF.comp measurable_prodMk_left).aestronglyMeasurable).2 ha
 
 end TauCeti

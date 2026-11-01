@@ -5,34 +5,30 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Probability.Moments.Variance
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import TauCeti.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # The Efron–Stein inequality
 
 This file proves the Efron–Stein inequality for a square-integrable measurable function of
-independent coordinates, stated on `Measure.pi`. If `X` has law `Measure.pi μ`, then
-`Var f(X) ≤ ∑ i, E[Var_i f(X)]`, where `Var_i f(x)` is the variance of
+independent coordinates, stated on `Measure.pi` over an arbitrary finite index type. If `X` has law
+`Measure.pi μ`, then `Var f(X) ≤ ∑ i, E[Var_i f(X)]`, where `Var_i f(x)` is the variance of
 `y ↦ f (Function.update x i y)` under `μ i`, i.e. the variance of `f` in the `i`-th coordinate
 with all other coordinates frozen.
 
-The proof is by induction on the number of coordinates. The two-factor step is the law of total
-variance, `evariance_prod_eq`, combined with Jensen's inequality for the variance of an average,
+The proof is by induction on the number of coordinates, for the index type `Fin n`, followed by
+transport along an equivalence `Fin n ≃ ι`. The two-factor step is the law of total variance,
+`evariance_prod_eq`, combined with Jensen's inequality for the variance of an average,
 `evariance_integral_prod_le`; together they give the two-variable inequality
 `evariance_prod_le`.
 
 ## Main results
 
-* `TauCeti.Probability.evariance_prod_eq`: the law of total variance on a product of two
-  probability spaces;
-* `TauCeti.Probability.evariance_integral_prod_le`: Jensen's inequality for the variance of an
-  average;
 * `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein inequality;
-* `TauCeti.Probability.measurable_evariance_update`: measurability of the coordinatewise variance;
-* `TauCeti.Probability.efronStein_fin`: the Efron–Stein inequality on `Measure.pi` over `Fin n`,
-  with arbitrary (dependent) coordinate spaces.
+* `TauCeti.Probability.efronStein`: the Efron–Stein inequality on `Measure.pi` over a finite index
+  type, with arbitrary (dependent) coordinate spaces.
 
 ## References
 
@@ -51,152 +47,28 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-/-- Jensen's inequality in `ℝ≥0∞` form: on a probability space, the square of the integral of
-`‖u‖ₑ` is at most the integral of `‖u‖ₑ ^ 2`. -/
-theorem sq_lintegral_enorm_le {β : Type*} [MeasurableSpace β] {π : Measure β}
-    [IsProbabilityMeasure π] {u : β → ℝ} (hu : AEStronglyMeasurable u π) :
-    (∫⁻ w, ‖u w‖ₑ ∂π) ^ 2 ≤ ∫⁻ w, ‖u w‖ₑ ^ 2 ∂π := by
-  have h := eLpNorm_le_eLpNorm_of_exponent_le (μ := π) (f := u) one_le_two
-  rw [eLpNorm_one_eq_lintegral_enorm hu,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top hu] at h
-  have h' : ∫⁻ w, ‖u w‖ₑ ∂π ≤ (∫⁻ w, ‖u w‖ₑ ^ 2 ∂π) ^ ((1 : ℝ) / 2) := by
-    simpa [ENNReal.toReal_ofNat, ENNReal.rpow_two] using h
-  calc (∫⁻ w, ‖u w‖ₑ ∂π) ^ 2 ≤ ((∫⁻ w, ‖u w‖ₑ ^ 2 ∂π) ^ ((1 : ℝ) / 2)) ^ 2 :=
-        pow_le_pow_left' h' 2
-    _ = ∫⁻ w, ‖u w‖ₑ ^ 2 ∂π := by
-        rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
-        norm_num
-
-section Prod
-
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
-  [IsProbabilityMeasure ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
-
-/-- For a square integrable measurable `F` on a product, almost every section `w ↦ F (a, w)` is
-square integrable. -/
-theorem ae_memLp_two_prod_left (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
-    ∀ᵐ a ∂ν, MemLp (fun w => F (a, w)) 2 π := by
-  filter_upwards [hL.integrable_sq.prod_right_ae] with a ha
-  exact (memLp_two_iff_integrable_sq
-    (hF.comp measurable_prodMk_left).aestronglyMeasurable).2 ha
-
-/-- The law of total variance on a product of probability spaces: the variance of a square
-integrable `F` splits into the average of the variances in the second coordinate and the variance
-of the average over the second coordinate. -/
-theorem evariance_prod_eq (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
-    evariance F (ν.prod π) = ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
-      evariance (fun a => ∫ w, F (a, w) ∂π) ν := by
-  have hint : Integrable F (ν.prod π) := hL.integrable one_le_two
-  have hsq : Integrable (fun p => F p ^ 2) (ν.prod π) := hL.integrable_sq
-  have hslice : ∀ᵐ a ∂ν, MemLp (fun w => F (a, w)) 2 π := ae_memLp_two_prod_left hF hL
-  have hgm : StronglyMeasurable (fun a => ∫ w, F (a, w) ∂π) :=
-    hF.stronglyMeasurable.integral_prod_right'
-  have hs : Integrable (fun a => ∫ w, F (a, w) ^ 2 ∂π) ν := hsq.integral_prod_left
-  have hvar : ∀ᵐ a ∂ν, variance (fun w => F (a, w)) π =
-      (∫ w, F (a, w) ^ 2 ∂π) - (∫ w, F (a, w) ∂π) ^ 2 := by
-    filter_upwards [hslice] with a ha
-    simpa [Pi.pow_apply] using variance_eq_sub ha
-  have hg2 : Integrable (fun a => (∫ w, F (a, w) ∂π) ^ 2) ν := by
-    refine hs.mono' (hgm.aestronglyMeasurable.pow 2) ?_
-    filter_upwards [hslice, hvar] with a ha hv
-    have := variance_nonneg (fun w => F (a, w)) π
-    rw [Real.norm_of_nonneg (sq_nonneg _)]
-    linarith
-  have hgL : MemLp (fun a => ∫ w, F (a, w) ∂π) 2 ν :=
-    (memLp_two_iff_integrable_sq hgm.aestronglyMeasurable).2 hg2
-  have hvarint : Integrable (fun a => variance (fun w => F (a, w)) π) ν :=
-    (hs.sub hg2).congr (by filter_upwards [hvar] with a ha using ha.symm)
-  have hE1 : ∫ p, F p ^ 2 ∂(ν.prod π) = ∫ a, ∫ w, F (a, w) ^ 2 ∂π ∂ν := integral_prod _ hsq
-  have hE2 : ∫ p, F p ∂(ν.prod π) = ∫ a, ∫ w, F (a, w) ∂π ∂ν := integral_prod _ hint
-  have hE3 : ∫ a, variance (fun w => F (a, w)) π ∂ν =
-      (∫ a, ∫ w, F (a, w) ^ 2 ∂π ∂ν) - ∫ a, (∫ w, F (a, w) ∂π) ^ 2 ∂ν := by
-    rw [integral_congr_ae hvar, integral_sub hs hg2]
-  have hE4 := variance_eq_sub hgL
-  have hE5 := variance_eq_sub hL
-  simp only [Pi.pow_apply] at hE4 hE5
-  have hlint : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν =
-      ENNReal.ofReal (∫ a, variance (fun w => F (a, w)) π ∂ν) := by
-    rw [ofReal_integral_eq_lintegral_ofReal hvarint
-      (Filter.Eventually.of_forall fun a => variance_nonneg _ _)]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hslice] with a ha
-    exact (ofReal_variance ha).symm
-  rw [hlint, ← ofReal_variance hL, ← ofReal_variance hgL,
-    ← ENNReal.ofReal_add (integral_nonneg fun a => variance_nonneg _ _) (variance_nonneg _ _)]
-  congr 1
-  rw [hE5, hE4, hE3, hE1, hE2]
-  ring
-
-/-- Jensen's inequality for the variance of an average: the variance of the average over the
-second coordinate is at most the average over the second coordinate of the variances in the first
-coordinate. -/
-theorem evariance_integral_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
-    evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
-      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  have hint : Integrable F (ν.prod π) := hL.integrable one_le_two
-  have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
-    (hF.comp measurable_swap).stronglyMeasurable.integral_prod_right'
-  have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
-  have hm_eq : ∫ w, ∫ a, F (a, w) ∂ν ∂π = ∫ a, ∫ w, F (a, w) ∂π ∂ν := by
-    rw [← integral_prod_symm _ hint, integral_prod _ hint]
-  have hae : ∀ᵐ a ∂ν, ‖(∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν‖ₑ ^ 2 ≤
-      ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π := by
-    filter_upwards [hint.prod_right_ae] with a ha
-    have hsub : (∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν =
-        ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
-      rw [integral_sub ha hmint, hm_eq]
-    rw [hsub]
-    calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
-        ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
-          gcongr
-          exact enorm_integral_le_lintegral_enorm _
-      _ ≤ _ := sq_lintegral_enorm_le
-          (((hF.comp measurable_prodMk_left).sub hmm.measurable).aestronglyMeasurable)
-  calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
-      ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
-    _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
-        lintegral_lintegral_swap
-          ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
-    _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
-
 /-- The two-factor Efron–Stein inequality. -/
-theorem evariance_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
+theorem evariance_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {ν : Measure α} {π : Measure β} [IsProbabilityMeasure ν] [IsProbabilityMeasure π]
+    {F : α × β → ℝ} (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   rw [evariance_prod_eq hF hL]
   gcongr
   exact evariance_integral_prod_le hF hL
 
-end Prod
-
 universe u
 
-/-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
-measurable function of `x`. -/
-theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → Type*}
-    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, SFinite (μ i)] (i : ι)
-    {f : (∀ i, α i) → ℝ} (hf : Measurable f) :
-    Measurable fun x => evariance (fun y => f (Function.update x i y)) (μ i) := by
-  have hu : Measurable fun p : (∀ i, α i) × α i => f (Function.update p.1 i p.2) :=
-    hf.comp measurable_update'
-  have hm : StronglyMeasurable fun x => ∫ y, f (Function.update x i y) ∂μ i :=
-    hu.stronglyMeasurable.integral_prod_right'
-  exact Measurable.lintegral_prod_right'
-    (f := fun p : (∀ i, α i) × α i =>
-      ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
-    ((hu.sub (hm.measurable.comp measurable_fst)).enorm.pow_const 2)
-
-/-- The Efron–Stein inequality on `Measure.pi` over `Fin n`: for a square integrable measurable
-function `f` of independent coordinates, the variance of `f` is at most the sum over `i` of the
-average variance of `f` in coordinate `i` with the other coordinates frozen. -/
-theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
+/-- The Efron–Stein inequality on `Measure.pi` over `Fin n`. -/
+private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
     (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {f : (∀ i, α i) → ℝ},
     Measurable f → MemLp f 2 (Measure.pi μ) →
     evariance f (Measure.pi μ) ≤
       ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ
   | 0, α, _, μ, _, f, _, _ => by
     have hc : ∀ ω, ∫ x, f x ∂Measure.pi μ = f ω := fun ω => by
-      rw [show f = fun _ => f ω from funext fun x => by rw [Subsingleton.elim x ω]]
+      have hconst : f = fun _ => f ω := funext fun x => by rw [Subsingleton.elim x ω]
+      rw [hconst]
       simp
     have h0 : ∀ ω, ‖f ω - f default‖ₑ ^ 2 = 0 := fun ω => by
       rw [Subsingleton.elim ω default]
@@ -237,7 +109,7 @@ theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, Measurabl
       intro a w
       simp only [hGdef, hFdef, he, MeasurableEquiv.piFinSuccAbove_symm_apply,
         Fin.insertNthEquiv, Equiv.coe_fn_mk, Fin.update_insertNth]
-    have hslice := ae_memLp_two_prod_left hFm hFL
+    have hslice := TauCeti.ae_memLp_two_prod_left hFm hFL
     have hGp : ∀ j, Measurable fun p => G j (e.symm p) := fun j =>
       (hGm j).comp e.symm.measurable
     have h1 : ∫⁻ a, evariance (fun w => F (a, w)) (Measure.pi fun j => μ (Fin.succAbove 0 j))
@@ -266,5 +138,53 @@ theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, Measurabl
       _ ≤ (∑ j : Fin n, ∫⁻ x, G (Fin.succAbove 0 j) x ∂Measure.pi μ) +
           ∫⁻ x, G 0 x ∂Measure.pi μ := add_le_add h1 h2.le
       _ = ∑ i, ∫⁻ x, G i x ∂Measure.pi μ := by rw [Fin.sum_univ_succAbove _ 0, add_comm]
+
+/-- **The Efron–Stein inequality** on `Measure.pi` over a finite index type: for a square
+integrable measurable function `f` of independent coordinates, the variance of `f` is at most the
+sum over `i` of the average variance of `f` in coordinate `i` with the other coordinates frozen. -/
+theorem efronStein {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type u}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {f : (∀ i, α i) → ℝ} (hf : Measurable f) (hL : MemLp f 2 (Measure.pi μ)) :
+    evariance f (Measure.pi μ) ≤
+      ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ := by
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  let Φ := MeasurableEquiv.piCongrLeft α e
+  have mp : MeasurePreserving Φ (Measure.pi fun k => μ (e k)) (Measure.pi μ) :=
+    measurePreserving_piCongrLeft μ e
+  have hupd : ∀ (k : Fin (Fintype.card ι)) (y : ∀ k, α (e k)) (v : α (e k)),
+      Φ (Function.update y k v) = Function.update (Φ y) (e k) v := by
+    intro k y v
+    funext i
+    obtain ⟨a, rfl⟩ := e.surjective i
+    by_cases h : a = k
+    · subst h
+      simp [Φ, MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply]
+    · rw [Function.update_of_ne (e.injective.ne h)]
+      simp [Φ, MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply,
+        Function.update_of_ne h]
+  have hEv : evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) =
+      evariance f (Measure.pi μ) := by
+    rw [evariance, evariance, mp.integral_comp' f]
+    exact mp.lintegral_comp_emb Φ.measurableEmbedding
+      (fun x => ‖f x - ∫ x', f x' ∂Measure.pi μ‖ₑ ^ 2)
+  have hterm : ∀ k : Fin (Fintype.card ι),
+      ∫⁻ y, evariance (fun v => f (Φ (Function.update y k v))) (μ (e k))
+          ∂Measure.pi (fun k => μ (e k)) =
+        ∫⁻ x, evariance (fun v => f (Function.update x (e k) v)) (μ (e k)) ∂Measure.pi μ := by
+    intro k
+    simp_rw [hupd]
+    exact mp.lintegral_comp_emb Φ.measurableEmbedding
+      (fun x => evariance (fun v => f (Function.update x (e k) v)) (μ (e k)))
+  calc evariance f (Measure.pi μ)
+      = evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) := hEv.symm
+    _ ≤ ∑ k, ∫⁻ y, evariance (fun v => f (Φ (Function.update y k v))) (μ (e k))
+          ∂Measure.pi (fun k => μ (e k)) :=
+        efronStein_fin (α := fun k => α (e k)) (fun k => μ (e k)) (f := fun x => f (Φ x))
+          (hf.comp Φ.measurable) (hL.comp_measurePreserving mp)
+    _ = ∑ k, ∫⁻ x, evariance (fun v => f (Function.update x (e k) v)) (μ (e k)) ∂Measure.pi μ :=
+        Finset.sum_congr rfl fun k _ => hterm k
+    _ = ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ :=
+        Equiv.sum_comp e fun i =>
+          ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ
 
 end TauCeti.Probability
