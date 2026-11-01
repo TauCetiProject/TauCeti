@@ -12,8 +12,9 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
-positive operators close to the identity. The file also records that `c √u`
-tends to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`.
+positive operators close to the identity. The file also records that the square root is
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, and that `c √u` tends to `0` as `u → 0`, and through
+positive values as `u → 0⁺` when `c > 0`.
 
 ## Main results
 
@@ -21,6 +22,7 @@ tends to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c >
   `|√μ - 1| ≤ |μ - 1|`.
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
+* `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
@@ -91,6 +93,22 @@ theorem abs_one_sub_inv_sqrt_le {μ δ : ℝ} (hδ : δ ≤ 1 / 2) (hμ : |μ - 
   have hle_inv : 1 - δ ≤ s⁻¹ := by
     rw [inv_eq_one_div, le_div_iff₀ hs0]; linarith [hhigh]
   exact ⟨by linarith [hinv_le], by linarith [hle_inv]⟩
+
+/-- For all reals `t` and `s`, `√t ≤ √s + √|t - s|`. -/
+theorem sqrt_le_sqrt_add_sqrt_abs_sub (t s : ℝ) : √t ≤ √s + √|t - s| := by
+  rw [sqrt_le_left (by positivity)]
+  have hts := sq_sqrt (abs_nonneg (t - s))
+  rcases le_total 0 s with hs | hs
+  · nlinarith [sq_sqrt hs, le_abs_self (t - s), mul_nonneg (sqrt_nonneg s) (sqrt_nonneg |t - s|)]
+  · rw [sqrt_eq_zero_of_nonpos hs]
+    nlinarith [le_abs_self (t - s)]
+
+/-- **The square root is `1/2`-Hölder.** For all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`. -/
+theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
+  have h₁ := sqrt_le_sqrt_add_sqrt_abs_sub t s
+  have h₂ := sqrt_le_sqrt_add_sqrt_abs_sub s t
+  rw [abs_sub_comm s t] at h₂
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 /-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
 theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by

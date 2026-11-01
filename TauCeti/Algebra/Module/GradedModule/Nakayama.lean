@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Generated
 
 /-!

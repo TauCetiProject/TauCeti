@@ -34,6 +34,9 @@ closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dime
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le`:
   `μ (ball 0 1) (diam (ball x r))ⁿ⁺¹ / μ (ball x r) ≤ 2ⁿ⁺¹ r` in dimension `n`.
+* `MeasureTheory.Measure.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le`:
+  `μ (ball 0 1) ^ (1 - 1/n) (diam (ball x r))ⁿ / μ (ball x r) ≤ 2ⁿ μ (ball 0 1) ^ (-1/n)` in
+  dimension `n`.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: closed and open balls agree up to a null
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
@@ -110,6 +113,31 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le
         gcongr
         exact diam_ball hr.le
     _ = 2 ^ (finrank ℝ E + 1) * r * (r ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
+
+/-- For a ball of radius `r > 0` in dimension `n`, the ratio
+`μ (ball 0 1) ^ (1 - 1/n) * (diam (ball x r)) ^ n / μ (ball x r)` of real measures is at most
+`2 ^ n / μ (ball 0 1) ^ (1/n)`, whatever the radius. This is the constant of the localized
+Poincaré–Wirtinger inequality on a convex domain, evaluated on a ball. -/
+theorem _root_.MeasureTheory.Measure.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 < r) :
+    mu.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * diam (ball x r) ^ finrank ℝ E /
+        mu.real (ball x r) ≤
+      2 ^ finrank ℝ E / mu.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹ := by
+  set n := finrank ℝ E
+  set ω := mu.real (ball (0 : E) 1)
+  have homega : 0 < ω :=
+    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+  rw [mu.addHaar_real_ball_of_pos x hr]
+  calc ω ^ (1 - (n : ℝ)⁻¹) * diam (ball x r) ^ n / (r ^ n * ω)
+      ≤ ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω) := by
+        gcongr
+        exact diam_ball hr.le
+    _ = 2 ^ n / ω ^ (n : ℝ)⁻¹ := by
+        rw [Real.rpow_sub homega, Real.rpow_one]
+        field_simp
+        ring
 
 /-- Closed and open balls agree up to a null set in a nontrivial finite-dimensional space. -/
 theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball

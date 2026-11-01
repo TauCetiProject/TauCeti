@@ -193,10 +193,10 @@ theorem IsJordanCurve.subsingleton_or_exists_injective_path (h : IsJordanCurve C
 /-- The complement in the curve of the image of a closed arc of angles is the image of the
 complementary open arc, by `TauCeti.compl_circleExp_image_Icc` and injectivity of the
 parametrization. -/
-private lemma sdiff_eq_jordanParam_image (e : C ≃ₜ Circle) {a b : ℝ} (hab : a ≤ b)
-    (hlt : b - a < 2 * π) (hSeq : S = jordanParam e '' (Circle.exp '' Icc a b)) :
+private lemma sdiff_eq_jordanParam_image (e : C ≃ₜ Circle) {a b : ℝ}
+    (hSeq : S = jordanParam e '' (Circle.exp '' Icc a b)) :
     C \ S = jordanParam e '' (Circle.exp '' Ioo b (a + 2 * π)) := by
-  rw [← compl_circleExp_image_Icc hab hlt, compl_eq_univ_sdiff, hSeq,
+  rw [← compl_circleExp_image_Icc, compl_eq_univ_sdiff, hSeq,
     (jordanParam_injective e).injOn.image_sdiff_subset (subset_univ _), image_univ,
     range_jordanParam]
 
@@ -211,7 +211,7 @@ theorem IsJordanCurve.isPathConnected_sdiff (h : IsJordanCurve C) (hSC : S ⊆ C
     exact h.isPathConnected
   obtain ⟨e⟩ := isJordanCurve_iff.mp h
   obtain ⟨a, b, hab, hlt, hSeq⟩ := exists_eq_jordanParam_image e hSC hS hpre hne hSne
-  rw [sdiff_eq_jordanParam_image e hab hlt hSeq]
+  rw [sdiff_eq_jordanParam_image e hSeq]
   refine IsPathConnected.image' ?_ (continuous_jordanParam e).continuousOn
   exact ((convex_Ioo b (a + 2 * π)).isPathConnected
     (nonempty_Ioo.mpr (by linarith))).image' Circle.exp.continuous.continuousOn
@@ -250,7 +250,7 @@ theorem IsJordanCurve.exists_notMem_closure_sdiff [T2Space X] (h : IsJordanCurve
   have hLclosed : IsClosed (jordanParam e '' (Circle.exp '' Icc b (a + 2 * π))) :=
     ((isCompact_Icc.image Circle.exp.continuous).image (continuous_jordanParam e)).isClosed
   have hsub : C \ S ⊆ jordanParam e '' (Circle.exp '' Icc b (a + 2 * π)) := by
-    rw [sdiff_eq_jordanParam_image e hab hlt hSeq]
+    rw [sdiff_eq_jordanParam_image e hSeq]
     exact image_mono (image_mono Ioo_subset_Icc_self)
   have hmmem : (a + b) / 2 ∈ Icc a b := ⟨by linarith, by linarith⟩
   have hpS : jordanParam e (Circle.exp ((a + b) / 2)) ∈ S := by

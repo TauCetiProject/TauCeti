@@ -30,6 +30,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 * `IsAdic.comap` : an adic topology transports along an inducing ring equivalence, without
   separate assumptions that either ring has continuous operations.
 * `IsAdic.isOpen_pow` : in a ring whose topology is `I`-adic, every power of `I` is open.
+* `IsAdic.isOpen_iff_le_of_isRadical` : in a ring whose topology is `I`-adic, a radical ideal is
+  open if and only if it contains `I`.
 * `IsAdic.isClosed_pow` : in a ring whose topology is `I`-adic, every power of `I` is closed —
   an open additive subgroup of a topological group being closed.
 * `IsAdic.tendsto_zero_of_mem_pow` : a family whose members lie in growing powers of `I` tends to
@@ -41,6 +43,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   of `I`.
 * `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is linearly topologized, the
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
+* `IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
+  topology to the adic topology of the extended ideal, without finite generation or completeness.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
 * `IsAdic.continuous_iff_map_le_radical` and
@@ -65,6 +69,7 @@ which is the reading taken here.
 
 The ideal-of-definition criterion and the results about radicals additionally follow
 A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.1.4–7.1.7.
+The open-quotient transport theorem follows Ch. 0, (7.3.5).
 -/
 
 public section
@@ -103,6 +108,18 @@ additive subgroup, and an open subgroup of a topological group is closed. -/
 theorem isClosed_pow (hI : IsAdic I) (n : ℕ) : IsClosed ((I ^ n : Ideal R) : Set R) :=
   have : NonarchimedeanRing R := hI ▸ I.nonarchimedean
   AddSubgroup.isClosed_of_isOpen (I ^ n).toAddSubgroup (hI.isOpen_pow n)
+
+/-- In a ring whose topology is the `I`-adic one, a radical ideal (for instance a prime ideal) is
+open if and only if it contains `I`: an open radical ideal contains a power of `I`, hence `I`
+itself. -/
+theorem isOpen_iff_le_of_isRadical (hI : IsAdic I) {P : Ideal R} (hP : P.IsRadical) :
+    IsOpen (P : Set R) ↔ I ≤ P := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds P.zero_mem)
+    exact fun x hx ↦ hP ⟨n, hn (Ideal.pow_mem_pow hx n)⟩
+  · exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := P.toAddSubgroup) h
+      (by simpa using hI.isOpen_pow 1)
 
 open Filter Topology in
 /-- In a ring whose topology is the `I`-adic one, a family whose members lie in growing powers of
@@ -260,6 +277,24 @@ theorem of_radical_eq {J : Ideal R} (hI : IsAdic I) (hIfg : I.FG) (hJfg : J.FG)
     refine ⟨m * n, subset_trans ?_ hn⟩
     rw [pow_mul]
     exact Ideal.pow_right_mono hm n
+
+/-- An open quotient of an adic ring has the adic topology of the extended ideal. Neither
+finite generation nor completeness of the defining ideal is required. -/
+theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
+    [TopologicalSpace R] [TopologicalSpace S] [IsTopologicalRing S]
+    {I : Ideal R} (hI : IsAdic I) (f : R →+* S) (hf : IsOpenQuotientMap f) :
+    IsAdic (I.map f) := by
+  have hmap (n : ℕ) : (((I.map f) ^ n : Ideal S) : Set S) =
+      f '' ((I ^ n : Ideal R) : Set R) := by
+    rw [← Ideal.map_pow, Ideal.map_eq_image_of_surjective f hf.surjective]
+  refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [hmap]
+    exact hf.isOpenMap _ (hI.isOpen_pow n)
+  · obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp
+      (hf.continuous.continuousAt.preimage_mem_nhds (by simpa using hs))
+    refine ⟨n, ?_⟩
+    rw [hmap]
+    exact Set.image_subset_iff.mpr hn
 
 end IsAdic
 

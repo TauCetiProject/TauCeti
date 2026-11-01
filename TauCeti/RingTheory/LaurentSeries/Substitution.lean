@@ -61,6 +61,8 @@ substitution of the image of `φ` into the image of `f`.
   `HahnSeries.embDomainRingHom` along `n ↦ e * n`, with coefficient formulas
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_mul` and
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_of_not_dvd`.
+* `TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand`: for `d > 0`, the substitution `X ↦ X ^ d` is
+  the expansion `LaurentSeries.expand K d`.
 * `TauCeti.LaurentSeries.rescale_toAlgHom`: unit rescaling agrees with substitution `X ↦ a X`.
 * `TauCeti.LaurentSeries.coeff_substAlgHom_C_mul_X`: the substitution `X ↦ a X` multiplies
   the coefficient of `Xⁿ` by `a ^ n`, for every integer `n`.
@@ -297,6 +299,19 @@ theorem coeff_substAlgHom_X_pow_of_not_dvd {e : ℕ} (he : e ≠ 0) (f : K⸨X�
     (substAlgHom (φ := X ^ e) (by simp [he]) (pow_ne_zero e X_ne_zero) f).coeff n = 0 := by
   rw [← AlgHom.coe_toRingHom, substAlgHom_X_pow he]
   exact embDomain_of_notMem_range fun ⟨k, hk⟩ ↦ hn ⟨k, hk.symm⟩
+
+/-- The ramified substitution `X ↦ X ^ d`, for `d > 0`, is the expansion
+`LaurentSeries.expand K d`. -/
+theorem substAlgHom_X_pow_eq_expand (d : ℕ+) :
+    substAlgHom (K := K) (φ := X ^ (d : ℕ)) (by simp) (pow_ne_zero _ X_ne_zero) =
+      _root_.LaurentSeries.expand K d := by
+  ext f n
+  by_cases hn : (d : ℤ) ∣ n
+  · obtain ⟨k, rfl⟩ := hn
+    rw [_root_.LaurentSeries.coeff_expand_mul]
+    exact coeff_substAlgHom_X_pow_mul d.ne_zero f k
+  · rw [_root_.LaurentSeries.coeff_expand_of_not_dvd d f hn]
+    exact coeff_substAlgHom_X_pow_of_not_dvd d.ne_zero f hn
 
 /-- Rescaling by `a` is the substitution `X ↦ a X`, so it inherits, for instance, continuity and
 the chain rule from `substAlgHom`. -/

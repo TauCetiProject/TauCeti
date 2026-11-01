@@ -76,7 +76,8 @@ theorem epi_iff_surjective {G : Type v} [Group G] [TopologicalSpace G] [Separate
   have : DiscreteTopology (TopRep.coker f.hom).V :=
     QuotientAddGroup.discreteTopology (N := f.hom.hom.range.toAddSubgroup) (isOpen_discrete _)
   let Q : SmoothDiscreteTopRep.{u, v, w} R G :=
-    ⟨TopRep.coker f.hom, .of_surjective _ (TopRep.cokerπ_surjective f.hom) B.property⟩
+    ⟨TopRep.coker f.hom,
+      .of_surjective _ (TopRep.cokerπ_surjective f.hom) B.property.stabilizer_isOpen⟩
   let p : B ⟶ Q := ObjectProperty.homMk (TopRep.cokerπ f.hom)
   have hp : p = 0 := (cancel_epi f).1 <| ObjectProperty.hom_ext _ (by simp [p])
   have h := congr(($hp).hom.hom b)

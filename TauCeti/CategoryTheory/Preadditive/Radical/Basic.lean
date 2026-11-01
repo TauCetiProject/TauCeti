@@ -19,7 +19,7 @@ import Mathlib.RingTheory.LocalRing.Basic
 -- Non-public: categorical Jacobson's lemma and the elementwise
 -- description of the Jacobson radical of a noncommutative ring are used only inside proofs.
 import TauCeti.CategoryTheory.Preadditive.Jacobson
-import TauCeti.RingTheory.Jacobson.MulOpposite
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The radical of a preadditive category

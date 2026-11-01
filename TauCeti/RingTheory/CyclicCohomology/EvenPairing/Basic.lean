@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Idempotent
 public import Mathlib.Data.Nat.Factorial.Basic
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
@@ -33,6 +34,7 @@ cyclicity in odd degree forces `ψ(e, …, e) = -ψ(e, …, e)`.
 * `TauCeti.apply_const_eq_zero_of_mem_cyclicCoboundaries`: when `2` is invertible, an
   even-degree cyclic coboundary vanishes on constant idempotent tuples.
 * `TauCeti.cyclicCohomology.evenPairing_mk`: the pairing evaluated on the class of a cocycle.
+* `TauCeti.cyclicCohomology.evenPairing_zero`: the zero idempotent pairs to zero.
 * `TauCeti.cyclicCohomology.evenPairing_matrixExtension_mk`: Connes' formula
   `⟨[e], [φ]⟩ = (m!)⁻¹ (φ#Tr)(e, …, e)` for an idempotent matrix `e`.
 * `TauCeti.cyclicCohomology.evenPairing_fromBlocks_matrixExtension`: the pairing is additive on
@@ -54,11 +56,12 @@ open scoped Nat
 
 section Coboundary
 
-variable {R A M : Type*} [CommRing R] [Invertible (2 : R)] [NonUnitalSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+variable {R A M : Type*} [Semiring R] [Invertible (2 : R)] [NonUnitalNonAssocSemiring A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
 /-- When `2` is invertible, a cyclic coboundary of even degree vanishes on a constant tuple with
-idempotent entry. -/
+idempotent entry. Associativity is not required: each Hochschild face fixes this tuple. -/
 theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {e : A}
     (he : IsIdempotentElem e) :
@@ -75,12 +78,8 @@ theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
     simp only [hodd, ↓reduceIte]
     -- Cyclicity in odd degree gives `v = -v` for the value `v = ψ(e, …, e)`, so `2 • v = 0`.
     have h := apply_const_eq_neg_of_mem_cyclicCochains ψ.2 (Nat.not_even_iff_odd.1 hodd) e
-    have h2 : (2 : R) • (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (fun _ ↦ e) = 0 := by
-      rw [two_smul]
-      nth_rw 2 [h]
-      exact add_neg_cancel _
-    rw [← one_smul R ((ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) fun _ ↦ e),
-      ← invOf_mul_self (2 : R), mul_smul, h2, smul_zero]
+    apply (isUnit_of_invertible (2 : R)).smul_eq_zero.mp
+    simpa only [two_smul] using eq_neg_iff_add_eq_zero.mp h
 
 end Coboundary
 
@@ -112,6 +111,14 @@ theorem evenPairing_mk (e : A) (he : IsIdempotentElem e) (m : ℕ)
       (m ! : R)⁻¹ • ((φ : cyclicCochains R A M (2 * m)) :
         MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   simp [evenPairing]
+
+/-- The even pairing of the zero idempotent vanishes. -/
+@[simp]
+theorem evenPairing_zero (m : ℕ) :
+    evenPairing (R := R) (M := M) (0 : A) IsIdempotentElem.zero m = 0 := by
+  ext φ
+  simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk, LinearMap.zero_apply]
+  rw [MultilinearMap.map_coord_zero _ 0 rfl, smul_zero]
 
 /-- **Connes' even pairing** of an idempotent matrix `e` with cyclic cohomology: on the class of a
 cyclic cocycle `φ` of degree `2m`, it is `(m!)⁻¹ (φ#Tr)(e, …, e)`. -/

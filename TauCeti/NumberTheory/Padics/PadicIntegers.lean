@@ -45,6 +45,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`, so that every
   series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`).
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
+* `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
@@ -73,6 +74,11 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
+
+## Main definitions
+
+* `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_[p]ˣ`.
+  It is nontrivial for `k > 0` (`PadicInt.unitsPowCharacter_ne_one`).
 -/
 
 public section
@@ -96,6 +102,14 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
   IsLocalRing.isUnit_of_mem_nonunits_one_sub_self _ <| by
     rw [sub_add_cancel_left, mem_nonunits, norm_neg]
     exact (norm_lt_one_iff_dvd x).mpr hx
+
+/-- In `ℤ_p`, `d` is a unit whenever `p ∣ 1 - d ^ 2`. -/
+theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2) : IsUnit d := by
+  by_contra hd
+  have hpd : (p : ℤ_[p]) ∣ d := (norm_lt_one_iff_dvd d).mp (mem_nonunits.mp hd)
+  have h1 : (p : ℤ_[p]) ∣ 1 := by
+    simpa using h.add (dvd_pow hpd two_ne_zero)
+  exact irreducible_p.not_isUnit (isUnit_of_dvd_one h1)
 
 /-- A natural number prime to `p` is a unit in `ℤ_p`. -/
 theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
@@ -183,6 +197,28 @@ instance compactSpace_units : CompactSpace ℤ_[p]ˣ := by
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
   ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+
+variable (p) in
+/-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
+`ℤ_p`. -/
+noncomputable def unitsPowCharacter (k : ℕ) : ℤ_[p]ˣ →ₜ* ℤ_[p] where
+  toMonoidHom := (powMonoidHom k).comp (Units.coeHom ℤ_[p])
+  continuous_toFun := Units.continuous_val.pow k
+
+@[simp]
+theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
+    unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
+  (rfl)
+
+/-- For `k > 0` the power character `u ↦ u ^ k` of `ℤ_pˣ` is nontrivial: it does not send the
+unit `1 + p` to `1`. -/
+theorem unitsPowCharacter_ne_one {k : ℕ} (hk : 0 < k) : unitsPowCharacter p k ≠ 1 := by
+  intro h
+  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
+  have hpow := congrArg (fun κ : ℤ_[p]ˣ →ₜ* ℤ_[p] => κ a) h
+  simp only [unitsPowCharacter_apply, ha, ContinuousMonoidHom.coe_one, Pi.one_apply] at hpow
+  have h1 : (1 + p) ^ k = 1 := by exact_mod_cast hpow
+  exact (Nat.one_lt_pow hk.ne' (by have := (Fact.out : p.Prime).pos; omega)).ne' h1
 
 /-- **Divisibility from the norm**: in `ℤ_p`, `y` divides every `x` with `‖x‖ ≤ ‖y‖`, because `x`
 then lies in the ideal `p^{v_p(y)} ℤ_p = y ℤ_p` when `y ≠ 0`, and vanishes when `y = 0`. -/

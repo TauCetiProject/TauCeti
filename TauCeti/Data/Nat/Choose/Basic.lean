@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
@@ -19,11 +20,11 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities for the second binomial coefficient and the sum `2ⁿ - 2` of the
-inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's convolution
-`∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
-supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
-summation index. The weighted sum is again a single binomial coefficient,
+Besides three identities and a parity formula for the second binomial coefficient and the sum
+`2ⁿ - 2` of the inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's
+convolution `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a
+law supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of
+the summation index. The weighted sum is again a single binomial coefficient,
 `(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
 
 ## Main results
@@ -32,14 +33,20 @@ summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
+  parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
   falling factorial of the summation index.
+* `Nat.add_choose_mul_choose_mul_choose`: choosing `r` of `i` objects and `s` of `j` objects
+  factors through choosing `r + s` of all `i + j` objects.
 * `Nat.add_ascFactorial_mul_multichoose`: a rising factorial absorbed into a multiset
   coefficient, `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`.
+* `Nat.mem_filter_range_not_dvd_choose`: among `k ≤ n`, the condition `p ∤ n choose k` alone
+  decides membership, since `n choose k = 0` for `k > n`.
 
 ## References
 
@@ -92,6 +99,25 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
+first and `1` to the second. -/
+theorem even_choose_two_iff (m : ℕ) : Even (m.choose 2) ↔ Even (m / 2) := by
+  induction m using Nat.twoStepInduction with
+  | zero => decide
+  | one => decide
+  | more m ih _ =>
+    have h : (m + 2).choose 2 = m.choose 2 + 2 * m + 1 := by
+      rw [add_choose_two, Nat.choose_self]
+      ring
+    rw [h, show (m + 2) / 2 = m / 2 + 1 by omega]
+    simp [Nat.even_add_one, parity_simps, ih]
+
+/-- The sign `(-1) ^ C(m, 2)` of the order-reversing permutation of `m` letters is
+`(-1) ^ ⌊m / 2⌋`. -/
+theorem neg_one_pow_choose_two {R : Type*} [Monoid R] [HasDistribNeg R] (m : ℕ) :
+    (-1 : R) ^ m.choose 2 = (-1) ^ (m / 2) :=
+  neg_one_pow_congr (even_choose_two_iff m)
 
 /-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
 theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
@@ -167,5 +193,27 @@ theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r
     rwa [hsub_add]
   · rw [Nat.descFactorial_eq_zero_iff_lt.2 hmA] at key ⊢
     simpa using key
+
+/-- **Choosing from two blocks at once.** Choosing an `i`-element block of `i + j` objects, then
+`r` elements of that block and `s` elements of its complement, amounts to choosing the `r + s`
+selected elements first, then which `r` of them lie in the block, and finally which `j - s` of the
+unselected elements lie in the complement:
+`C(i + j, i) * C(i, r) * C(j, s) = C(i + j, r + s) * C(r + s, r) * C(i + j - (r + s), j - s)`.
+
+In particular `C(i + j, r + s)` divides `C(i + j, i) * C(i, r) * C(j, s)`. -/
+theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hr : r ≤ i) (hs : s ≤ j) :
+    (i + j).choose i * i.choose r * j.choose s =
+      (i + j).choose (r + s) * (r + s).choose r * (i + j - (r + s)).choose (j - s) := by
+  rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), Nat.mul_assoc,
+    choose_mul hs, ← Nat.mul_assoc, choose_mul (Nat.le_add_right r s),
+    Nat.add_sub_cancel_left, Nat.sub_sub]
+
+/-- Membership in the set of `k ≤ n` with `p ∤ n choose k` only depends on the divisibility:
+`n choose k = 0` is divisible by `p` for `k > n`. -/
+theorem mem_filter_range_not_dvd_choose {p n k : ℕ} :
+    k ∈ {k ∈ range (n + 1) | ¬p ∣ n.choose k} ↔ ¬p ∣ n.choose k := by
+  refine ⟨fun h ↦ (mem_filter.mp h).2, fun h ↦ mem_filter.mpr ⟨mem_range.mpr ?_, h⟩⟩
+  by_contra! hk
+  exact h (by simp [choose_eq_zero_of_lt (lt_of_succ_le hk)])
 
 end Nat

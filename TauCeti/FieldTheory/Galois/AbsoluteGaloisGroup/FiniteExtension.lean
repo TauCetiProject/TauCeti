@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
@@ -12,6 +13,7 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 -- Proof-only: a `K`-algebra of dimension two has no subalgebras but `⊥` and `⊤`.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -79,6 +81,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   `L/K`, the isomorphism `Field.absoluteGaloisGroup K ⧸ U ≃* Gal(L/K)`.
 
 ## Main results
+
+* `TauCeti.exists_le_hasEnoughRootsOfUnity`: below every open subgroup, there is an open subgroup
+  whose fixed field contains the `p`-th roots of unity when `p` is nonzero in the base field.
 
 * `TauCeti.mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top`,
   `TauCeti.mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two`: when `x` generates `L`, for instance
@@ -524,6 +529,30 @@ instance finiteDimensional_fixedField_toSubgroup (U : OpenSubgroup (AbsoluteGalo
     FiniteDimensional K (fixedField U.toSubgroup) := by
   rw [← InfiniteGalois.isOpen_iff_finite, ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl]
   exact U.isOpen
+
+variable {K} in
+/-- Below every open subgroup `W` of `G_K` lies an open subgroup whose fixed field contains the
+`p`-th roots of unity: the subgroup fixing `F(ζ_p)`, for `F` the fixed field of `W`. -/
+theorem exists_le_hasEnoughRootsOfUnity (p : ℕ) [NeZero (p : K)]
+    (W : OpenSubgroup (AbsoluteGaloisGroup K)) :
+    ∃ (W' : OpenSubgroup (AbsoluteGaloisGroup K)) (E : IntermediateField K (SeparableClosure K)),
+      W' ≤ W ∧ fixedField W'.toSubgroup = E ∧ FiniteDimensional K E ∧
+        HasEnoughRootsOfUnity E p := by
+  have : NeZero p := ⟨by
+    intro hp
+    exact NeZero.ne (p : K) (by simp only [hp, Nat.cast_zero])⟩
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) p
+  have : FiniteDimensional K K⟮ζ⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ζ)
+  let E := fixedField W.toSubgroup ⊔ K⟮ζ⟯
+  refine ⟨⟨E.fixingSubgroup, E.fixingSubgroup_isOpen⟩, E, ?_,
+    InfiniteGalois.fixedField_fixingSubgroup E, inferInstance, ?_⟩
+  · exact OpenSubgroup.toSubgroup_le.1 <|
+      (IntermediateField.fixingSubgroup_antitone le_sup_left).trans
+        (toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl).ge
+  · have hζE : IsPrimitiveRoot
+        (⟨ζ, (le_sup_right : K⟮ζ⟯ ≤ E) (mem_adjoin_simple_self K ζ)⟩ : E) p :=
+      hζ.of_map_of_injective (f := E.val) Subtype.val_injective
+    exact .of_card_le hζE.card_rootsOfUnity.ge
 
 variable {K} in
 /-- **Products over `G_K ⧸ U` are products over `Gal(E/K)`**: if the fixed field of the open

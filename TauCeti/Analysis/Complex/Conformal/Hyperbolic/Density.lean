@@ -56,16 +56,10 @@ comparison of the hyperbolic distance with the pseudo-hyperbolic expression,
   hyperbolic and Euclidean metrics are infinitesimally equal there.
 * `TauCeti.integral_one_sub_sq_inv_eq_hyperbolicDist_zero` — the radial form of the density.
 
-This carries the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`) onto its infinitesimal side, and reuses Tau Ceti's
-pseudo-hyperbolic and hyperbolic-distance API throughout. As with the rest of the L0--L3
-conformal-mapping material, it is coordinated with the upstream Mathlib Riemann mapping effort
-leanprover-community/mathlib4#33505 and should be refactored to upstream API if that work lands
-a human-curated Poincaré metric; Mathlib's preceding human-curated work in
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean` is neither
-duplicated nor extended here. Mathlib has the hyperbolic metric on the upper half-plane
-(`Analysis/Complex/UpperHalfPlane/Metric.lean`), but records no density statement for it
-either.
+These results describe the infinitesimal side of the hyperbolic metric on `𝔻`, and reuse
+Tau Ceti's pseudo-hyperbolic and hyperbolic-distance API throughout. Mathlib has the hyperbolic
+metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane/Metric.lean`), but records no
+density statement for it.
 -/
 
 public section

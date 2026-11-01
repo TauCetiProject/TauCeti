@@ -17,7 +17,7 @@ corresponding idempotent projectives. If the full bigraded Ext Poincare matrix o
 diagonal, the general linear-resolution criterion shows that chosen minimal resolutions of the
 `S i` are linear. The Cartan--Poincare identity then gives
 
-`C^T * P(-q) = 1`.
+`C^T * P(-q) = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`.
 
 The bigraded condition is essential in the converse.  The diagonal polynomial `P` forgets all
 off-diagonal Ext groups, while the q-Euler form can cancel groups in different cohomological
@@ -61,7 +61,7 @@ variable [Module.Finite k A] [Fintype I] [DecidableEq I]
   (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hI : ∀ i, (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜)
   (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
-  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
+  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
   (hS : IsExhaustiveGradedSimpleFamily S)
   (bP : Module.Basis I (LaurentPolynomial ℤ)
     (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
@@ -72,7 +72,7 @@ variable [Module.Finite k A] [Fintype I] [DecidableEq I]
 include hbP in
 /-- **Full bigraded diagonality implies the Cartan--Poincare identity.**  If every entry of the
 full bigraded Ext Poincare matrix is diagonal, then the chosen minimal resolutions are linear and
-`C^T * P(-q) = 1` in the chosen projective and simple bases.
+`C^T * P(-q) = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))` in the chosen projective and simple bases.
 
 The hypothesis retains the off-diagonal Ext data needed to detect linearity.  The conclusion uses
 the diagonal Poincare matrix because, after linearity is known, those are all the surviving Ext
@@ -90,23 +90,28 @@ theorem cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal
         (bigradedExtPoincareMatrix (fun i ↦ (S i).obj)
           (fun i j ↦ (h.isGradedEulerAdmissible (S i).property (S j).property).internallyFinite)
           b i j)) :
-    (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasis S he he₀ hne hself hS))ᵀ *
+    (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS))ᵀ *
         (diagonalExtPoincareMatrix.{uA} k (fun i ↦ (S i).obj) b).map
-          (Polynomial.eval₂RingHom C (-T 1)) = 1 := by
+          (Polynomial.eval₂RingHom C (-T 1)) =
+      Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
   have hlin : ∀ i, (r i).IsLinear :=
     (forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
       S hS hconc h r hr hneg hb).2 hdiag
-  exact gradedCartanMatrix_transpose_mul_diagonalExtPoincareMatrix_map_eq_one
-    S he he₀ hI hne hself hS bP hbP h (fun i ↦ ⟨r i, hlin i⟩) hconc hb
+  exact gradedCartanMatrix_transpose_mul_diagonalExtPoincareMatrix_map_eq_diagonal
+    S he he₀ hI hne bP hbP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)
+    (fun i ↦ gradedSimpleClassBasisOfNeZero_apply S he he₀ hne hself hS i)
+    h (fun i ↦ ⟨r i, hlin i⟩) hconc hb
 
 include hbP in
 /-- **The Cartan--Poincare identity over a semisimple degree-zero part.** If `A` is
 finite-dimensional and nonnegatively graded, its degree-zero part is semisimple, the chosen
 simples are concentrated in degree zero, and their full bigraded Ext Poincare matrix is diagonal,
-then `C^T * P(-q) = 1`.
+then `C^T * P(-q) = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`.
 
-The semisimplicity hypothesis supplies minimal projective resolutions with finite-dimensional
-terms, so no resolutions or minimality witnesses occur in the public statement. -/
+The diagonal entries are nonzero and need not be one; for projective covers of degree-zero
+simples they are the constants `dim_k End_A(Sᵢ)`. The semisimplicity hypothesis supplies minimal
+projective resolutions with finite-dimensional terms, so no resolutions or minimality witnesses
+occur in the public statement. -/
 theorem cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal_of_semisimple
     [IsSemisimpleRing (𝒜 0)]
     (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
@@ -119,9 +124,10 @@ theorem cartan_poincare_of_bigradedExtPoincareMatrix_isDiagonal_of_semisimple
         (bigradedExtPoincareMatrix (fun i ↦ (S i).obj)
           (fun i j ↦ (h.isGradedEulerAdmissible (S i).property (S j).property).internallyFinite)
           b i j)) :
-    (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasis S he he₀ hne hself hS))ᵀ *
+    (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS))ᵀ *
         (diagonalExtPoincareMatrix.{uA} k (fun i ↦ (S i).obj) b).map
-          (Polynomial.eval₂RingHom C (-T 1)) = 1 := by
+          (Polynomial.eval₂RingHom C (-T 1)) =
+      Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
   classical
   choose r hr hfinite using fun i ↦
     GradedProjectiveResolution.exists_isMinimal_of_finite hneg (S i).obj

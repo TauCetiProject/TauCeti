@@ -19,9 +19,6 @@ gives the fundamental group of a torus. For a finite product of circles this is 
 abelian group `(Multiplicative ℤ)ᵏ`; in particular the standard two-torus
 `AddCircle p × AddCircle q` has fundamental group `Multiplicative ℤ × Multiplicative ℤ`.
 
-This realises the universal-covers roadmap Stage 4 "applications" target `π_n(Tᵏ)` at
-`n = 1`: `π₁(Tᵏ) ≅ ℤᵏ`.
-
 ## Main declarations
 
 * `AddCircle.prodFundamentalGroupMulEquiv`:

@@ -736,7 +736,8 @@ theorem absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent
     (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S)
     (hu : ∀ t ∈ Icc 0 T, Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
     AbsolutelyContinuousOnInterval u 0 T :=
-  absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top one_lt_two hτ hτ0 hT
+  absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top one_lt_two
+    (Eventually.of_forall hτ) hτ0 hT
     (fun s hs t ht ↦ hd (hu s hs) (hu t ht))
     (liminf_sum_edist_rpow_ne_top hτ₀ h₀ hτ hτ0 hU hU0 hS hT)
 
@@ -761,7 +762,8 @@ theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
     ∑ n ∈ Finset.range (N k), edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k)
   -- The action bound: `A₂(u) / 2 ≤ liminf P`.
   have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop := by
-    have h := curveAction_le_liminf_sum_edist_rpow (l := atTop) one_lt_two hτ hτ0 hT
+    have h := curveAction_le_liminf_sum_edist_rpow (l := atTop) one_lt_two
+      (Eventually.of_forall hτ) hτ0 hT
       (fun s hs t ht ↦ hd (hu s hs) (hu t ht))
     simp only [edist_rpow_two_div_rpow_eq, ← Finset.mul_sum] at h
     rw [ENNReal.liminf_const_mul_of_ne_top ENNReal.ofNat_ne_top] at h
@@ -824,7 +826,7 @@ theorem IsGeneralizedMinimizingMovement.curveAction_ne_top
     curveAction 2 u 0 T ≠ ⊤ := by
   obtain ⟨τ, U, hτ, hτ0, hU, hU0, ⟨S, hS⟩, hconv⟩ := isGeneralizedMinimizingMovement_iff.1 h
   exact ne_top_of_le_ne_top (liminf_sum_edist_rpow_ne_top hτ₀ h₀ hτ hτ0 hU hU0 hS hT)
-    (curveAction_le_liminf_sum_edist_rpow one_lt_two hτ hτ0 hT
+    (curveAction_le_liminf_sum_edist_rpow one_lt_two (Eventually.of_forall hτ) hτ0 hT
       fun s hs t ht ↦ hd (hconv s hs.1) (hconv t ht.1))
 
 end PseudoMetricSpace

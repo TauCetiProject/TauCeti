@@ -8,13 +8,14 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 
 /-!
-# The quadratic truncation and Taylor estimate for the exponential
+# The normed-algebra exponential
 
 For an algebra `A` over a field, with `A` a topological ring, the third partial sum of
 `NormedSpace.expSeries` is `1 + x + 2⁻¹ • x ^ 2`. This identity needs no norm or completeness
 assumption.
 In a complete normed algebra, the exponential agrees with this quadratic truncation to third
-order at the origin. This file records that estimate in `Asymptotics.IsBigO` form.
+order at the origin, and it is multiplicative on scalar multiples of a fixed element
+(`NormedSpace.exp_add_smul`). This file records that estimate in `Asymptotics.IsBigO` form.
 
 The exponential is analytic at `0` with power series `NormedSpace.expSeries`, so the statement is
 the Taylor formula `HasFPowerSeriesAt.isBigO_sub_partialSum_pow` at `n = 3`, once the third partial
@@ -27,6 +28,7 @@ Baker--Campbell--Hausdorff expansion.
   `1 + x + 2⁻¹ • x ^ 2`.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
+* `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
 -/
 
 public section
@@ -62,5 +64,20 @@ theorem isBigO_exp_sub_quadratic :
     (fun x : A ↦ exp x - (1 + x + (2⁻¹ : 𝕂) • x ^ 2)) =O[𝓝 (0 : A)] fun x ↦ ‖x‖ ^ 3 := by
   simpa only [zero_add, expSeries_partialSum_three] using
     (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕂) (𝔸 := A)).isBigO_sub_partialSum_pow 3
+
+/-! ### Additivity and cancellation in a complete normed algebra -/
+
+section Normed
+
+variable {𝕂 A : Type*} [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A] [NormedAlgebra ℚ A]
+  [CompleteSpace A]
+
+/-- The exponential is multiplicative on scalar multiples of a fixed element:
+`exp ((s + t) • a) = exp (s • a) * exp (t • a)`. -/
+theorem exp_add_smul (a : A) (s t : 𝕂) :
+    exp ((s + t) • a) = exp (s • a) * exp (t • a) := by
+  rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
+
+end Normed
 
 end NormedSpace

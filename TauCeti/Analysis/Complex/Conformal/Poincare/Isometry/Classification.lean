@@ -81,16 +81,6 @@ Mathlib's own, `ℂ` carrying the `InnerProductSpace ℝ ℂ` instance with `⟪
   `TauCeti.PoincareDisc.bijective_of_isometry` — an isometric self-embedding of the Poincaré disc
   is a bijection.
 
-## Coordination with upstream Mathlib
-
-Mathlib has no Poincaré metric on the disc at all — its hyperbolic material lives on
-`UpperHalfPlane` — so it has no classification of the isometries of one, and this file is new Lean
-formalization rather than a temporary shim. The in-progress human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), together with the
-preceding `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`, stops
-at the mapping theorem and contains nothing of this; should a human-curated Poincaré metric and
-its isometry group land upstream, this file is to be refactored onto it.
-
 ## References
 
 * L. V. Ahlfors, *Conformal Invariants: Topics in Geometric Function Theory*, Ch. 1.

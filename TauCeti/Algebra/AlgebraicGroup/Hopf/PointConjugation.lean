@@ -29,7 +29,7 @@ schemes, in particular conjugacy of Borel subgroups and maximal tori.
 * `TauCeti.HopfAlgebra.pointConjugationFiniteTypeIso`: the same automorphism as an isomorphism
   in the category of finite-type commutative Hopf algebras.
 
-* `AlgHom.apply_pointConjugationAlgHom`: evaluation of point conjugation as contraction of the
+* `LinearMap.apply_pointConjugationAlgHom`: evaluation of point conjugation as contraction of the
   universal conjugation tensor.
 
 ## References
@@ -246,23 +246,23 @@ theorem comp_pointConjugationAlgHom_mapDomain_of_isCocomm (π : H →ₐc[R] K)
 
 end BialgHom
 
-namespace AlgHom
+namespace LinearMap
 
 open scoped TensorProduct
 
-variable {R H A : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
-  [CommSemiring A] [Algebra R A]
+variable {R H M : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
+  [AddCommMonoid M] [Module R M]
 
-/-- Evaluation of rational conjugation is specialization of its universal coordinate morphism
-in the conjugating variable, followed by evaluation in the acted-on variable. -/
-theorem apply_pointConjugationAlgHom (f : H →ₐ[R] A) (g : WithConv (H →ₐ[R] R)) (x : H) :
+/-- Applying a linear map to rational conjugation is specialization of the universal conjugation
+morphism in the conjugating variable, followed by the linear map in the acted-on variable. -/
+theorem apply_pointConjugationAlgHom (f : H →ₗ[R] M) (g : WithConv (H →ₐ[R] R)) (x : H) :
     f (TauCeti.HopfAlgebra.pointConjugationAlgHom g x) =
-      TensorProduct.lid R A (TensorProduct.map g.ofConv.toLinearMap f.toLinearMap
+      TensorProduct.lid R M (TensorProduct.map g.ofConv.toLinearMap f
         (TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x)) := by
   rw [TauCeti.HopfAlgebra.pointConjugationAlgHom, AlgHom.comp_apply]
   induction TauCeti.HopfAlgebra.conjugationAlgHom (R := R) (H := H) x
       using TensorProduct.inductionOn with
   | add a b ha hb => simp_all
-  | tmul a b => simp [AlgHom.mapValue_apply, Algebra.smul_def]
+  | tmul a b => simp [AlgHom.mapValue_apply, ← Algebra.smul_def]
 
-end AlgHom
+end LinearMap

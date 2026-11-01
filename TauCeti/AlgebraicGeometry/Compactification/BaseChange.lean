@@ -36,6 +36,25 @@ namespace Compactification
 
 noncomputable section
 
+/-- The special fibre of a principal open is empty along a ring map that kills its defining
+element. -/
+theorem isEmpty_pullback_localizationAway {R A : CommRingCat.{u}}
+    (r : R) (φ : R →+* A) (hφ : φ r = 0) :
+    IsEmpty ↑(pullback (localizationAway r).j (Spec.map (CommRingCat.ofHom φ))) := by
+  -- Normalize the dependent endpoints of the compactification before using the affine API.
+  dsimp only [localizationAway, j, Xbar, ofHom]
+  apply Scheme.isEmpty_pullback
+  rw [Set.disjoint_left]
+  rintro _ ⟨x, rfl⟩ ⟨y, hy⟩
+  have hx : r ∉ (PrimeSpectrum.comap (algebraMap R (Localization.Away r)) x).asIdeal := by
+    have : x.asIdeal.IsPrime := x.isPrime
+    exact x.asIdeal.notMem_of_isUnit (IsLocalization.Away.algebraMap_isUnit r)
+  have hy' := congrArg (fun p : Spec (CommRingCat.of R) ↦ p.asIdeal) hy
+  simp only [Spec.map_apply, CommRingCat.hom_ofHom] at hy'
+  have hy0 : r ∈ (PrimeSpectrum.comap φ y).asIdeal :=
+    (PrimeSpectrum.comap_asIdeal φ y).symm ▸ Ideal.mem_comap.mpr (hφ ▸ y.asIdeal.zero_mem)
+  exact hx (hy' ▸ hy0)
+
 /-- The open interior map induced on the pullbacks of a compactification. -/
 private def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
     pullback f g ⟶ pullback C.p g :=

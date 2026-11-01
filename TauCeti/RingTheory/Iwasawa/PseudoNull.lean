@@ -43,7 +43,9 @@ dimension two with finite residue field.
   every prime of its support has height at least two.
 * `TauCeti.Iwasawa.isPseudoNull_iff_annihilator`: the annihilator criterion, every prime
   containing `ann_A M` has height at least two; for a quotient `A ⧸ I` this is
-  `TauCeti.Iwasawa.isPseudoNull_quotient_iff`.
+  `TauCeti.Iwasawa.isPseudoNull_quotient_iff`. A variant relative to another module `N`,
+  `TauCeti.Iwasawa.isPseudoNull_of_mem_annihilator`, needs only one annihilating element lying in
+  no prime of height at most one in the support of `N`.
 * `TauCeti.Iwasawa.IsPseudoNull.isTorsion`: over a domain, pseudo-null modules are torsion.
 * `TauCeti.Iwasawa.isPseudoNull_iff_subsingleton`: over a ring of dimension at most one, such as a
   Dedekind domain, only the zero module is pseudo-null.
@@ -108,6 +110,16 @@ theorem isPseudoNull_iff_annihilator [Module.Finite A M] :
 theorem isPseudoNull_quotient_iff (I : Ideal A) :
     IsPseudoNull A (A ⧸ I) ↔ ∀ 𝔭 : PrimeSpectrum A, I ≤ 𝔭.asIdeal → 1 < 𝔭.asIdeal.height := by
   rw [isPseudoNull_iff_annihilator, Ideal.annihilator_quotient]
+
+/-- A finitely generated module `M` killed by `a`, with support inside the support of `N`, is
+pseudo-null, provided `a` lies in no prime of height at most one in the support of `N`. -/
+theorem isPseudoNull_of_mem_annihilator {N : Type*} [AddCommGroup N] [Module A N]
+    [Module.Finite A M] {a : A}
+    (ha : ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal)
+    (haM : a ∈ Module.annihilator A M) (hM : Module.support A M ⊆ Module.support A N) :
+    IsPseudoNull A M :=
+  isPseudoNull_iff_support.mpr ⟨‹_›, fun 𝔭 h𝔭 ↦ not_le.mp fun hht ↦
+    ha 𝔭 (hM h𝔭) hht (Module.annihilator_le_of_mem_support h𝔭 haM)⟩
 
 /-- The zero module is pseudo-null. -/
 theorem IsPseudoNull.of_subsingleton [Subsingleton M] : IsPseudoNull A M :=
@@ -203,17 +215,8 @@ example (p : ℕ) [Fact p.Prime] :
     IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p]), X}) ∧
       ¬ IsPseudoNull ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) := by
   refine ⟨(isPseudoNull_quotient_iff _).mpr fun 𝔮 h𝔮 ↦ ?_, fun h ↦ ?_⟩
-  · have hX : X ∉ Ideal.span {C (p : ℤ_[p])} := by
-      rw [← PadicInt.ker_map_toZMod, RingHom.mem_ker, map_X]
-      exact X_ne_zero
-    have h1 : Ideal.span {C (p : ℤ_[p])} < 𝔮.asIdeal := by
-      refine lt_of_le_of_ne (Ideal.span_le.mpr ?_) fun h ↦ hX (h ▸ h𝔮 (Ideal.subset_span ?_))
-      · exact Set.singleton_subset_iff.mpr (h𝔮 (Ideal.subset_span (by simp)))
-      · simp
-    have := PadicInt.isPrime_span_C_p (p := p)
-    have h2 := Ideal.height_add_one_le_of_lt_of_isPrime h1
-    rw [PadicInt.height_span_C_p] at h2
-    exact lt_of_lt_of_le (by norm_num) h2
+  · exact PadicInt.one_lt_height_of_C_p_mem_of_X_mem (h𝔮 (Ideal.subset_span (by simp)))
+      (h𝔮 (Ideal.subset_span (by simp)))
   · exact ((isPseudoNull_quotient_iff _).mp h ⟨_, PadicInt.isPrime_span_C_p⟩ le_rfl).ne'
       PadicInt.height_span_C_p
 

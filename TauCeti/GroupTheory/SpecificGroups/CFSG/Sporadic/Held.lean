@@ -152,20 +152,25 @@ generators `a` and `b`.
 The ATLAS lists this as a full presentation of the abstract group, separately from the
 semi-presentation used to recognize standard generators in a group already constructed. No
 structural property of the presented group is asserted here: this definition records only the
-cited generators and relations. -/
+cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group Representations,
+version 3; presentation contributed by John Bray.
+
+Source locator: HeG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/HeG1-P1
+
+Generator convention: The ATLAS standard generators a and b, in that order, so index 0 is a and
+index 1 is b. Products are read left to right, negative exponents denote inverses, and [r,s]
+denotes r^-1 s^-1 r s.
+
+Transcription notes: The seven displayed words are stored as seven relators equal to the identity.
+ATLAS distinguishes HeG1-P1 from its semi-presentation. GAP 4.15.1 with AtlasRep 2.1.9 checks
+these relators on the independent ATLAS 2058-point generators, which generate a simple group of
+order 4030387200. -/
 def hePresentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-    Representations, version 3; presentation contributed by John Bray"
-  sourceLocator := "HeG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/HeG1-P1"
-  generatorConvention := "The ATLAS standard generators a and b, in that order, so index 0 is a \
-    and index 1 is b. Products are read left to right, negative exponents denote inverses, and \
-    [r,s] denotes r^-1 s^-1 r s."
-  transcriptionNotes := "The seven displayed words are stored as seven relators equal to the \
-    identity. ATLAS distinguishes HeG1-P1 from its semi-presentation. GAP 4.15.1 with AtlasRep \
-    2.1.9 checks these relators on the independent ATLAS 2058-point generators, which generate a \
-    simple group of order 4030387200."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 7
   transcribed :=
     [ .pow a 2,
@@ -176,54 +181,15 @@ def hePresentation : GroupPresentation where
       .commInvInv a commutatorWord,
       finalWord ]
 
-/-- The generator names recorded for `He`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `He`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem hePresentation_generatorNames : hePresentation.generatorNames = ["a", "b"] := by
-  simp [hePresentation]
-
-/-- The source recorded for `He`. The row's body is sealed, so this equation publishes the citation
-itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem hePresentation_source :
-    hePresentation.source = "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-      Representations, version 3; presentation contributed by John Bray" := by
-  simp [hePresentation]
-
-/-- The locator recorded for `He`, pointing at the presentation inside its source. -/
-@[simp]
-theorem hePresentation_sourceLocator :
-    hePresentation.sourceLocator =
-      "HeG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/HeG1-P1" := by
-  simp [hePresentation]
-
-/-- The generator convention recorded for `He`, fixing which generator each relator index names and
-which commutator convention the source uses. -/
-@[simp]
-theorem hePresentation_generatorConvention :
-    hePresentation.generatorConvention = "The ATLAS standard generators a and b, in that order, \
-      so index 0 is a and index 1 is b. Products are read left to right, negative exponents denote \
-      inverses, and [r,s] denotes r^-1 s^-1 r s." := by
-  simp [hePresentation]
-
-/-- The transcription notes recorded for `He`. -/
-@[simp]
-theorem hePresentation_transcriptionNotes :
-    hePresentation.transcriptionNotes = "The seven displayed words are stored as seven relators \
-      equal to the identity. ATLAS distinguishes HeG1-P1 from its semi-presentation. GAP 4.15.1 \
-      with AtlasRep 2.1.9 checks these relators on the independent ATLAS 2058-point generators, \
-      which generate a simple group of order 4030387200." := by
-  simp [hePresentation]
-
-/-- The generator count `He`'s source states. With
-`TauCeti.Sporadic.hePresentation_generatorNames` this makes
-`TauCeti.Sporadic.hePresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem hePresentation_expectedGeneratorCount : hePresentation.expectedGeneratorCount = 2 := by
+theorem hePresentation_generatorCount : hePresentation.generatorCount = 2 := by
   simp [hePresentation]
 
 /-- The relator count `He`'s source states; see
-`TauCeti.Sporadic.hePresentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.hePresentation_generatorCount`. -/
 @[simp]
 theorem hePresentation_expectedRelatorCount : hePresentation.expectedRelatorCount = 7 := by
   simp [hePresentation]
@@ -236,7 +202,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.hePresentation_generatorNames`. -/
+`TauCeti.Sporadic.hePresentation_generatorCount`. -/
 @[simp]
 theorem hePresentation_transcribed :
     hePresentation.transcribed =
@@ -265,7 +231,7 @@ theorem hePresentation_transcribed :
           .pow (.gen ⟨1, by simp⟩) 2 ] := by
   simp [hePresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `He` agree with the transcribed data. -/
+/-- The relator count recorded for `He` agrees with the transcribed data. -/
 theorem hePresentation_matchesMetadata : hePresentation.matchesMetadata := by decide
 
 /-- The lengths of the seven compiled relator words for `He`, in the order of the source.

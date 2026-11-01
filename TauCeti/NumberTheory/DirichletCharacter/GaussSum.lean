@@ -111,6 +111,15 @@ theorem gaussSum_ne_zero_of_isPrimitive
   rw [ZMod.card] at hprod
   exact left_ne_zero_of_mul (hprod ▸ hn)
 
+/-- If the level `n` is nonzero in `R`, the Gauss sum of the inverse of a primitive Dirichlet
+character against a primitive additive character is nonzero. -/
+theorem gaussSum_inv_ne_zero_of_isPrimitive
+    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n] (hn : (n : R) ≠ 0)
+    {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
+    {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
+    gaussSum χ⁻¹ e ≠ 0 :=
+  gaussSum_ne_zero_of_isPrimitive hn (by rwa [isPrimitive_def, conductor_inv]) he
+
 /-- The square of the Gauss sum of a primitive quadratic Dirichlet character is its value at
 `-1` times the level. -/
 theorem gaussSum_sq_of_isPrimitive_of_isQuadratic

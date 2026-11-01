@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
 import Mathlib.Data.Nat.Totient
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # The conductor of the trivial subgroup of a ray class group of `ℚ`
@@ -76,7 +77,7 @@ private theorem exists_eq_ratModulus_or_eq_ratFiniteModulus {𝔫 : Modulus ℚ}
   have hspan := Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔫.finitePart
   obtain ⟨hfin, hinf⟩ := Modulus.dvd_iff.mp h
   rw [← hspan, ratModulus_finitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-    Rat.RingOfIntegers.natCast_dvd_natCast] at hfin
+    NumberField.RingOfIntegers.natCast_dvd_natCast] at hfin
   rw [ratModulus_infinitePart] at hinf
   refine ⟨_, hd, hfin, ?_⟩
   rcases Finset.subset_singleton_iff.mp hinf with hinf | hinf

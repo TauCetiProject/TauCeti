@@ -45,6 +45,25 @@ theorem getD_getElem?_sturmSeq {p : K[X]} (hp : p ≠ 0) (q : K[X]) :
   · simp only [hq, sturmSeq_zero_left, List.head?_nil, Option.getD_none]
   · simp only [head?_sturmSeq hq, Option.getD_some]
 
+/-- An entry at index zero of a Sturm sequence is its first input. -/
+theorem eq_of_getElem?_zero_sturmSeq {p q a : K[X]}
+    (ha : (sturmSeq p q)[0]? = some a) : a = p := by
+  have hp : p ≠ 0 := by rintro rfl; simp at ha
+  simpa [sturmSeq_cons hp] using ha.symm
+
+/-- An entry at index one of a Sturm sequence is its second input. -/
+theorem eq_of_getElem?_one_sturmSeq {p q b : K[X]}
+    (hb : (sturmSeq p q)[1]? = some b) : b = q := by
+  have hp : p ≠ 0 := by rintro rfl; simp at hb
+  have h := congrArg (fun o ↦ o.getD 0) hb
+  simpa only [getD_getElem?_sturmSeq hp, Option.getD_some] using h.symm
+
+/-- If a Sturm sequence has an entry at a successor index, it has a preceding entry. -/
+theorem exists_getElem?_sturmSeq_of_succ {p q s : K[X]} {i : ℕ}
+    (hs : (sturmSeq p q)[i + 1]? = some s) : ∃ a, (sturmSeq p q)[i]? = some a := by
+  have hi := (List.getElem?_eq_some_iff.mp hs).1
+  exact ⟨_, List.getElem?_eq_getElem (by omega)⟩
+
 /-- Every entry of a Sturm sequence after the second is the negated remainder of its two
 predecessors. -/
 theorem eq_neg_mod_of_getElem?_sturmSeq {p q a b c : K[X]} {i : ℕ}

@@ -25,6 +25,10 @@ Chapter 7.
 The curvature predicate is stated for an arbitrary connection and then specialized to the
 Levi-Civita connection of a bundled metric. This keeps the curvature equation explicit and makes
 the convention visible: `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)`.
+
+On a compact manifold completeness is automatic, so there a hyperbolic metric is just a smooth
+metric of constant curvature `-1` (`TauCeti.HyperbolicMetric.ofCompactSpace`,
+`TauCeti.isHyperbolic_iff_exists_isConstantCurvatureTensor`).
 -/
 
 public section
@@ -71,6 +75,27 @@ theorem isHyperbolic_iff : IsHyperbolic (I := I) (M := M) ↔
 
 namespace HyperbolicMetric
 
+/-- On a compact manifold every smooth metric of constant curvature `-1` is a hyperbolic metric:
+a compact metric space is complete, so completeness of the Riemannian distance is automatic. -/
+def ofCompactSpace [CompactSpace M]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : g.IsConstantCurvatureTensor (-1)) : HyperbolicMetric (I := I) (M := M) where
+  metric := g
+  complete :=
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+      IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+        (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+    letI : MetricSpace M := MetricSpace.ofRiemannianMetric I M
+    complete_of_compact
+  curvature := hg
+
+@[simp]
+theorem metric_ofCompactSpace [CompactSpace M]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : g.IsConstantCurvatureTensor (-1)) : (ofCompactSpace hg).metric = g :=
+  (rfl)
+
 /-- The curvature equation carried by a hyperbolic metric, evaluated at one tangent triple. -/
 @[simp]
 theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
@@ -99,6 +124,14 @@ theorem hasConstantSectionalCurvature (g : HyperbolicMetric (I := I) (M := M)) :
   exact g.curvatureTensor_eq x w u v
 
 end HyperbolicMetric
+
+/-- A compact manifold is hyperbolic exactly when it carries a smooth metric of constant curvature
+`-1`; completeness is automatic. -/
+theorem isHyperbolic_iff_exists_isConstantCurvatureTensor [CompactSpace M] :
+    IsHyperbolic (I := I) (M := M) ↔
+      ∃ g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x),
+        g.IsConstantCurvatureTensor (-1) :=
+  ⟨fun ⟨G⟩ ↦ ⟨G.metric, G.curvature⟩, fun ⟨_, hg⟩ ↦ ⟨HyperbolicMetric.ofCompactSpace hg⟩⟩
 
 /-- An `IsHyperbolic` witness has scalar curvature
 `n (n - 1) (-1)` in real tangent-space dimension `n`. -/

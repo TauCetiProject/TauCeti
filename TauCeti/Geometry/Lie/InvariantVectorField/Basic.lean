@@ -34,6 +34,7 @@ the tangent map of multiplication, it is differentiable wherever `V` is.
 * `tangentMap_mul_prod_apply`: the value of that tangent map is the sum of the two partial
   derivatives of multiplication.
 * `mfderiv_mul_apply_one`: at the identity pair, the derivative of multiplication is addition.
+* `GroupLieAlgebra.mfderiv_inv_one_apply`: at the identity, the derivative of inversion is negation.
 * `mfderiv_mul_left_mulInvariantVectorField`: left translation intertwines a left-invariant vector
   field with itself.
 * `contMDiff_tangentMap_mul_prod_comp`: regularity after feeding two smooth tangent-bundle inputs
@@ -122,6 +123,39 @@ theorem mfderiv_mul_apply_one [ContMDiffMul I 1 G] (v w : GroupLieAlgebra I G) :
   rw [show (fun z : G => z * 1) = id by funext z; simp,
     show (fun z : G => 1 * z) = id by funext z; simp, mfderiv_id] at hmul_apply
   exact hmul_apply
+
+namespace GroupLieAlgebra
+
+/-- At the identity, the derivative of inversion is negation on the tangent Lie algebra. -/
+theorem mfderiv_inv_one_apply [LieGroup I 1 G] (v : GroupLieAlgebra I G) :
+    mfderiv I I (fun g : G => g⁻¹) 1 v = -v := by
+  /- Differentiate the constant map `g ↦ g * g⁻¹ = 1` at `1` by the chain rule through
+  `g ↦ (g, g⁻¹)`: its derivative `v ↦ v + d(inv)₁ v` vanishes. -/
+  have hpair := (hasMFDerivAt_id (I := I) (1 : G)).prodMk
+    ((contMDiff_inv I 1).mdifferentiableAt one_ne_zero).hasMFDerivAt
+  have hmul : HasMFDerivAt (I.prod I) I (fun p : G × G => p.1 * p.2) (id 1, (1 : G)⁻¹)
+      (mfderiv (I.prod I) I (fun p : G × G => p.1 * p.2) (id 1, (1 : G)⁻¹)) :=
+    ((contMDiff_mul I 1).mdifferentiableAt one_ne_zero).hasMFDerivAt
+  have hconst : (fun p : G × G => p.1 * p.2) ∘ (fun g : G => (id g, g⁻¹)) = fun _ => 1 := by
+    funext g
+    simp
+  have hcomp := (hmul.comp 1 hpair).mfderiv
+  rw [hconst, mfderiv_const] at hcomp
+  -- Applying the composite `d(mul) ∘ (id, d(inv))` to `v` is by definition applying `d(mul)` to
+  -- the pair `(v, d(inv) v)`. The tangent space at `(id 1, 1⁻¹)` is not syntactically the product
+  -- of tangent spaces at `1`, so `ContinuousLinearMap.comp_apply` and `prod_apply` do not rewrite.
+  have h : mfderiv (I.prod I) I (fun p : G × G => p.1 * p.2) (id 1, (1 : G)⁻¹)
+      (v, mfderiv I I (fun g : G => g⁻¹) 1 v) = 0 :=
+    (congrArg (fun L => L v) hcomp).symm
+  -- Evaluate the derivative of multiplication at `(id 1, 1⁻¹) = (1, 1)` by `mfderiv_mul_apply_one`.
+  have hadd : ∀ p : G × G, p = (1, 1) → ∀ w : GroupLieAlgebra I G,
+      mfderiv (I.prod I) I (fun p : G × G => p.1 * p.2) p (v, w) = v + w := by
+    rintro p rfl w
+    exact mfderiv_mul_apply_one v w
+  exact eq_neg_of_add_eq_zero_right
+    ((hadd (id 1, (1 : G)⁻¹) (by simp) (mfderiv I I (fun g : G => g⁻¹) 1 v)).symm.trans h)
+
+end GroupLieAlgebra
 
 end MultiplicationAtOne
 

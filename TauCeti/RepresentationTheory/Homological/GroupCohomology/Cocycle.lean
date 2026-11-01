@@ -11,10 +11,10 @@ import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
 
 /-!
-# Identities of unbundled `1`-cocycles
+# Identities of unbundled cocycles
 
-Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
-`groupCohomology.IsCocycle₁`, which need no topology and no representation:
+Facts about cocycles in the sense of Mathlib's unbundled `groupCohomology.IsCocycle₁` and
+`groupCohomology.IsCocycle₂`, which need no topology and no representation:
 
 * `groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁`: conjugating the argument by `k` and
   then acting by `k` adds `m • f k - f k` to the value at `m`, for any scalar multiplication of
@@ -28,15 +28,13 @@ Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
 
 * `TauCeti.isCocycle₁_ext_of_forall_mem_zpowers`: a one-cocycle on a cyclic group is
   determined by its value at a generator.
-* `TauCeti.groupNorm`: the sum of the scalar actions of a finite group, as an additive
-  homomorphism, with no topology or representation required. For a finite normal subgroup it
-  commutes with the action of the ambient group (`TauCeti.groupNorm_smul`), and so is a
-  `G`-equivariant additive endomorphism (`TauCeti.groupNormHom`).
+* `TauCeti.isCocycle₂_ext_of_forall_mem_zpowers`: a two-cocycle on a cyclic group is
+  determined by its values with the generator as second argument.
 * `TauCeti.sum_smul_apply_eq_zero_of_isCocycle₁`: on a finite group, the group norm kills
   every value of a one-cocycle.
 
 Continuous cohomology uses the conjugation identity in the five-term sequence and in
-transgression, and the cyclic-group facts in the vanishing criterion.
+transgression, and the cyclic-group facts in its first and second cohomology computations.
 -/
 
 public section
@@ -91,39 +89,6 @@ namespace TauCeti
 
 open groupCohomology
 
-/-- The group norm, `m ↦ ∑ x, x • m`, as an additive homomorphism. It needs only a finite
-scalar type and distributive scalar multiplication on an additive commutative monoid. -/
-def groupNorm (G M : Type*) [Fintype G] [AddCommMonoid M] [DistribSMul G M] : M →+ M :=
-  ∑ x : G, DistribSMul.toAddMonoidHom M x
-
-/-- Applying the group norm sums the scalar translates of the argument. -/
-@[simp]
-theorem groupNorm_apply (G M : Type*) [Fintype G] [AddCommMonoid M] [DistribSMul G M]
-    (m : M) : groupNorm G M m = ∑ x : G, x • m := by
-  simp [groupNorm]
-
-/-- The norm of a finite normal subgroup `N` of `G` commutes with the action of `G`: conjugation
-by `g` permutes `N`. -/
-theorem groupNorm_smul {G M : Type*} [Group G] [AddCommMonoid M] [DistribMulAction G M]
-    (N : Subgroup G) [N.Normal] [Fintype N] (g : G) (m : M) :
-    groupNorm N M (g • m) = g • groupNorm N M m := by
-  simp only [groupNorm_apply, Finset.smul_sum, Subgroup.smul_def]
-  exact Fintype.sum_equiv (MulAut.conjNormal g⁻¹).toEquiv _ _ fun n ↦ by
-    simp [← mul_smul, mul_assoc]
-
-/-- The norm of a finite normal subgroup `N` of `G`, as a `G`-equivariant additive endomorphism
-of `M` (`TauCeti.groupNorm_smul`). -/
-def groupNormHom {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N] (M : Type*)
-    [AddCommMonoid M] [DistribMulAction G M] : M →+[G] M :=
-  { groupNorm N M with map_smul' := groupNorm_smul N }
-
-/-- The equivariant norm `groupNormHom N M` is the group norm of `N`. -/
-@[simp]
-theorem groupNormHom_apply {G : Type*} [Group G] (N : Subgroup G) [N.Normal] [Fintype N]
-    (M : Type*) [AddCommMonoid M] [DistribMulAction G M] (m : M) :
-    groupNormHom N M m = groupNorm N M m :=
-  (rfl)
-
 variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 
 /-- Two one-cocycles on a cyclic group agree if they agree at a generator. No finiteness or
@@ -146,6 +111,36 @@ theorem isCocycle₁_ext_of_forall_mem_zpowers {f f' : G → M} (g : G)
   have hle : Subgroup.zpowers g ≤ S := Subgroup.zpowers_le.mpr h
   funext x
   exact hle (hg x)
+
+/-- Two `2`-cocycles on a cyclic group agree if they agree whenever the second argument is a
+generator. No finiteness or continuity hypothesis is needed, and the action need not be
+distributive. -/
+theorem isCocycle₂_ext_of_forall_mem_zpowers {f f' : G × G → M} (g : G)
+    (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (hf : IsCocycle₂ f) (hf' : IsCocycle₂ f')
+    (h : ∀ x : G, f (x, g) = f' (x, g)) : f = f' := by
+  have h11 : f (1, 1) = f' (1, 1) := by
+    rw [← map_one_fst_of_isCocycle₂ hf g, ← map_one_fst_of_isCocycle₂ hf' g]
+    exact h 1
+  have hone (x : G) : f (x, 1) = f' (x, 1) := by
+    rw [map_one_snd_of_isCocycle₂ hf, map_one_snd_of_isCocycle₂ hf', h11]
+  let S : Subgroup G :=
+    { carrier := {y | ∀ x : G, f (x, y) = f' (x, y)}
+      one_mem' := hone
+      mul_mem' := by
+        intro y z hy hz x
+        have hmul := hf x y z
+        rw [hz (x * y), hy x, hz y] at hmul
+        exact add_left_cancel (hmul.symm.trans (hf' x y z))
+      inv_mem' := by
+        intro y hy x
+        have hinv := hf x y⁻¹ y
+        have hinv' := hf' x y⁻¹ y
+        rw [inv_mul_cancel] at hinv hinv'
+        rw [hy (x * y⁻¹), hy y⁻¹, hone x] at hinv
+        exact add_left_cancel (hinv.trans hinv'.symm) }
+  have hle : Subgroup.zpowers g ≤ S := Subgroup.zpowers_le.mpr h
+  funext ⟨x, y⟩
+  exact hle (hg y) x
 
 omit [MulAction G M] in
 /-- The value of a one-cocycle on a finite group lies in the kernel of the group norm.

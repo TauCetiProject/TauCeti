@@ -25,8 +25,13 @@ the finite cyclic group it generates, since every element of that group acts by 
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
+* `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
 * `Diffeomorph.constSmul`: the diffeomorphism given by a fixed element of a pointwise-smooth
-  group action.
+  group action. It sends the identity element to the identity diffeomorphism and products to
+  composites (`Diffeomorph.constSmul_one`, `Diffeomorph.constSmul_mul`).
+* `Diffeomorph.constSmul_injective`, `Diffeomorph.infinite_of_faithfulSMul`: for a faithful
+  action these diffeomorphisms are distinct, so an infinite group acting faithfully gives
+  infinitely many diffeomorphisms.
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
   does every element of the cyclic group it generates.
 -/
@@ -54,6 +59,18 @@ instance SetLike.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {G S : Type*} [SetLike S G] [SMul G M]
     [ContMDiffConstSMul I n G M] (s : S) : ContMDiffConstSMul I n s M where
   contMDiff_const_smul g := contMDiff_const_smul (g : G)
+
+/-- The orbit map `g ↦ g • x` of a `C^n` action is `C^n`. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^n` additive action is `C^n`. -/]
+theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
+  contMDiff_id.smul contMDiff_const
 
 namespace Diffeomorph
 
@@ -86,6 +103,20 @@ lemma constSmul_apply (x : M) : constSmul I n g x = g • x := (rfl)
   negation. -/]
 lemma constSmul_symm_apply (x : M) : (constSmul I n g).symm x = g⁻¹ • x := (rfl)
 
+/-- The diffeomorphism associated to a fixed group element is the function `x ↦ g • x`. -/
+@[to_additive
+  /-- The diffeomorphism associated to a fixed additive-group element is the function
+  `x ↦ g +ᵥ x`. -/]
+lemma coe_constSmul : ⇑(constSmul I n g : M ≃ₘ^n⟮I, I⟯ M) = fun x ↦ g • x := (rfl)
+
+/-- The inverse of the diffeomorphism associated to a fixed group element is the function
+`x ↦ g⁻¹ • x`. -/
+@[to_additive
+  /-- The inverse of the diffeomorphism associated to a fixed additive-group element is the
+  function `x ↦ -g +ᵥ x`. -/]
+lemma coe_constSmul_symm :
+    ⇑(constSmul I n g : M ≃ₘ^n⟮I, I⟯ M).symm = fun x ↦ g⁻¹ • x := (rfl)
+
 /-- Taking the inverse of a fixed-action diffeomorphism inverts the acting group element. -/
 @[to_additive
   /-- Taking the inverse of a fixed-action diffeomorphism negates the acting additive-group
@@ -94,6 +125,35 @@ lemma constSmul_symm :
     (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M).symm = constSmul I n g⁻¹ :=
   Diffeomorph.ext fun x ↦ by
     rw [constSmul_symm_apply, constSmul_apply]
+
+/-- The identity element acts by the identity diffeomorphism. -/
+@[to_additive (attr := simp)
+  /-- The zero element acts by the identity diffeomorphism. -/]
+lemma constSmul_one : constSmul I n (1 : G) = Diffeomorph.refl I M n :=
+  Diffeomorph.ext fun x ↦ one_smul G x
+
+/-- The diffeomorphism of a product of group elements is the composite of their diffeomorphisms,
+the right-hand factor acting first. -/
+@[to_additive
+  /-- The diffeomorphism of a sum of additive-group elements is the composite of their
+  diffeomorphisms, the right-hand summand acting first. -/]
+lemma constSmul_mul (h : G) :
+    constSmul I n (g * h) = (constSmul I n h).trans (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M) :=
+  Diffeomorph.ext fun x ↦ mul_smul g h x
+
+/-- Distinct elements of a group acting faithfully give distinct diffeomorphisms. -/
+@[to_additive
+  /-- Distinct elements of an additive group acting faithfully give distinct diffeomorphisms. -/]
+theorem constSmul_injective [FaithfulSMul G M] :
+    Function.Injective (constSmul I n : G → M ≃ₘ^n⟮I, I⟯ M) :=
+  fun _ _ h ↦ eq_of_smul_eq_smul fun x ↦ DFunLike.congr_fun h x
+
+/-- An infinite group acting faithfully by `C^n` maps gives infinitely many `C^n`
+self-diffeomorphisms. -/
+@[to_additive /-- An infinite additive group acting faithfully by `C^n` maps gives infinitely many
+`C^n` self-diffeomorphisms; for instance the translations of an infinite additive Lie group. -/]
+theorem infinite_of_faithfulSMul [Infinite G] [FaithfulSMul G M] : Infinite (M ≃ₘ^n⟮I, I⟯ M) :=
+  Infinite.of_injective _ (constSmul_injective (I := I) (n := n) (G := G))
 
 end Diffeomorph
 

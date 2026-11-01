@@ -186,9 +186,9 @@ theorem hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule :
 
 end Uniform
 
-section RingGroup
+section Group
 
-variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
+variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommGroup M] [UniformSpace M]
   [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
 /-- The uniform coefficient structure is compatible with addition. -/
@@ -201,13 +201,6 @@ theorem isUniformAddGroup_restrictedMvPowerSeriesSubmodule :
       map_add' := fun _ _ ↦ rfl }
   exact IsUniformInducing.isUniformAddGroup c
     isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients
-
-end RingGroup
-
-section Group
-
-variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommGroup M] [UniformSpace M]
-  [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
 /-- Each fixed scalar acts uniformly continuously on the restricted module. -/
 theorem uniformContinuousConstSMul_restrictedMvPowerSeriesSubmodule :

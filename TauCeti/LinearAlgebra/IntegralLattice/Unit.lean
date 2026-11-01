@@ -100,6 +100,11 @@ theorem coe_unitLatticeBasis_apply (i : ι) :
     (unitLatticeBasis ι i : ι → ℚ) = Pi.basisFun ℚ ι i :=
   ofGramMatrix.coe_basis _ _ _ i
 
+/-- The coordinate vector `eᵢ` lies in the standard unit lattice. -/
+theorem single_one_mem_unitLattice_carrier [DecidableEq ι] (i : ι) :
+    Pi.single i (1 : ℚ) ∈ (unitLattice ι).carrier :=
+  (mem_unitLattice_carrier_iff ι _).2 fun j ↦ ⟨(Pi.single i 1 : ι → ℤ) j, by simp [Pi.single_apply]⟩
+
 /-- The Gram matrix of the standard integral basis is the identity matrix. -/
 @[simp]
 theorem gramMatrix_unitLatticeBasis [DecidableEq ι] :

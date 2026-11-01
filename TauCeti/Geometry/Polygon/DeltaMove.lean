@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Geometry.Polygon.Simple
@@ -17,8 +18,10 @@ across a triangle `D` one of whose sides is an edge `u` of `k`: if `D ∩ k = u`
 replaced by the other two sides of `D`. The inverse operation `Δ⁻¹` removes a vertex in the same
 way. Two polygonal knots are *combinatorially equivalent* (Burde–Zieschang, Definition 1.7) when
 a finite sequence of Δ- and Δ⁻¹-moves transforms one into the other; for knots in `ℝ³` or `S³`
-this is the same as being ambient isotopic (Burde–Zieschang, Proposition 1.10, not formalized
-here).
+this is the same as being ambient isotopic (Burde–Zieschang, Proposition 1.10). That
+combinatorially equivalent polygons are ambient isotopic is
+`TauCeti.SimplePolygon.CombinatoriallyEquivalent.exists_ambientIsotopy_image_boundary`, in
+`TauCeti.Geometry.Polygon.AmbientIsotopy`; the converse is not formalized.
 
 Polygons are Mathlib's `Polygon P n`, cyclic lists of vertices. The Δ-move across edge `i` with new
 vertex `c` is `Polygon.insertVertex`, which puts `c` between vertex `i` and the next one; it
@@ -359,108 +362,13 @@ theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple
   · rw [Fin.finRotate_succ_succAbove_of_ne h₂] at e
     exact .inr ⟨Fin.succAbove_right_injective e, insertVertex_apply_succAbove _ _ _ _⟩
 
-/-- After a Δ-move on a simple polygon, an old edge `k` meets the first new edge only at vertex
-`i`, which it reaches as the edge before vertex `i`. This is the condition of
-`Polygon.IsSimple.eq_vertex_of_mem_edgeSet` for these two edges. -/
-private theorem eq_vertex_of_mem_affineSegment_left (hp : poly.IsSimple R) {k : Fin n}
-    (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k) (hx : x ∈ affineSegment R (poly i) c) :
-    (i.castSucc = finRotate (n + 1) (i.succ.succAbove k) ∧
-        x = poly.insertVertex i c i.castSucc) ∨
-      (i.succ.succAbove k = finRotate (n + 1) i.castSucc ∧
-        x = poly.insertVertex i c (i.succ.succAbove k)) := by
-  rcases h.edgeSet_inter_closedInterior_subset hk
-      ⟨hxk, h.affineSegment_left_subset_closedInterior hx⟩ with rfl | rfl
-  · rcases hp.eq_vertex_of_mem_edgeSet hk hxk (left_mem_affineSegment _ _ _) with
-      ⟨e, -⟩ | ⟨e₁, e₂⟩
-    · refine .inl ⟨?_, (insertVertex_apply_castSucc_self _ _ _).symm⟩
-      rw [Fin.finRotate_succ_succAbove_of_ne hk, ← e, Fin.succAbove_succ_self]
-    · subst e₁
-      exact absurd e₂ h.left_ne_right
-  · exact absurd hx h.right_notMem_affineSegment
-
-/-- After a Δ-move on a simple polygon, an old edge `k` meets the second new edge only at the
-vertex after `i`, which it reaches as the edge after that vertex. This is the condition of
-`Polygon.IsSimple.eq_vertex_of_mem_edgeSet` for these two edges. -/
-private theorem eq_vertex_of_mem_affineSegment_right (hp : poly.IsSimple R) {k : Fin n}
-    (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k)
-    (hx : x ∈ affineSegment R c (poly (finRotate n i))) :
-    (i.succ = finRotate (n + 1) (i.succ.succAbove k) ∧ x = poly.insertVertex i c i.succ) ∨
-      (i.succ.succAbove k = finRotate (n + 1) i.succ ∧
-        x = poly.insertVertex i c (i.succ.succAbove k)) := by
-  rcases h.edgeSet_inter_closedInterior_subset hk
-      ⟨hxk, h.affineSegment_right_subset_closedInterior hx⟩ with rfl | rfl
-  · exact absurd hx h.left_notMem_affineSegment
-  · rcases hp.eq_vertex_of_mem_edgeSet hk hxk (right_mem_affineSegment _ _ _) with
-      ⟨-, e⟩ | ⟨e, -⟩
-    · exact absurd e.symm h.left_ne_right
-    · subst e
-      exact .inr ⟨(Fin.finRotate_succ_eq_succ_succAbove i).symm,
-        (insertVertex_apply_succAbove _ _ _ _).symm⟩
-
 /-- **A Δ-move keeps a polygon simple.** -/
 theorem isSimple_insertVertex (hp : poly.IsSimple R) :
-    (poly.insertVertex i c).IsSimple R := by
-  refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
-  · obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
-    · rw [insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
-      exact h.apex_ne_right
-    · by_cases hk : k = i
-      · subst hk
-        rw [Fin.succAbove_succ_self, finRotate_apply, Fin.coeSucc_eq_succ,
-          insertVertex_apply_castSucc_self, insertVertex_apply_succ_self]
-        exact h.left_ne_apex
-      · rw [Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
-          insertVertex_apply_succAbove]
-        exact hp.hasNondegenerateEdges k
-  -- The two new edges meet only at the new vertex.
-  have new (hx₁ : x ∈ affineSegment R (poly i) c)
-      (hx₂ : x ∈ affineSegment R c (poly (finRotate n i))) :
-      i.succ = finRotate (n + 1) i.castSucc ∧ x = poly.insertVertex i c i.succ := by
-    rw [insertVertex_apply_succ_self]
-    exact ⟨by rw [finRotate_apply, Fin.coeSucc_eq_succ],
-      h.affineSegment_inter_affineSegment.subset ⟨hx₁, hx₂⟩⟩
-  -- An index of the new polygon is the second new edge `i.succ`, the first new edge
-  -- `i.succ.succAbove i`, or an old edge `i.succ.succAbove k` with `k ≠ i`.
-  obtain rfl | ⟨k₁, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j₁ <;>
-    obtain rfl | ⟨k₂, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j₂
-  · exact absurd rfl hne
-  · rw [edgeSet_insertVertex_succ_self] at hx₁
-    by_cases hk₂ : k₂ = i
-    · subst hk₂
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₂
-      rw [Fin.succAbove_succ_self]
-      exact .inr (new hx₂ hx₁)
-    · rw [edgeSet_insertVertex_succAbove _ _ _ hk₂] at hx₂
-      exact (h.eq_vertex_of_mem_affineSegment_right hp hk₂ hx₂ hx₁).symm
-  · rw [edgeSet_insertVertex_succ_self] at hx₂
-    by_cases hk₁ : k₁ = i
-    · subst hk₁
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₁
-      rw [Fin.succAbove_succ_self]
-      exact .inl (new hx₁ hx₂)
-    · rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
-      exact h.eq_vertex_of_mem_affineSegment_right hp hk₁ hx₁ hx₂
-  · have hk : k₁ ≠ k₂ := fun e => hne (e ▸ rfl)
-    by_cases hk₁ : k₁ = i
-    · subst hk₁
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₁
-      rw [edgeSet_insertVertex_succAbove _ _ _ hk.symm] at hx₂
-      rw [Fin.succAbove_succ_self]
-      exact (h.eq_vertex_of_mem_affineSegment_left hp hk.symm hx₂ hx₁).symm
-    by_cases hk₂ : k₂ = i
-    · subst hk₂
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₂
-      rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
-      rw [Fin.succAbove_succ_self]
-      exact h.eq_vertex_of_mem_affineSegment_left hp hk₁ hx₁ hx₂
-    -- Two old edges meet in the new polygon as they did in the old one.
-    rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
-    rw [edgeSet_insertVertex_succAbove _ _ _ hk₂] at hx₂
-    rcases hp.eq_vertex_of_mem_edgeSet hk hx₁ hx₂ with ⟨e, rfl⟩ | ⟨e, rfl⟩
-    · exact .inl ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₁, e],
-        (insertVertex_apply_succAbove _ _ _ _).symm⟩
-    · exact .inr ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₂, e],
-        (insertVertex_apply_succAbove _ _ _ _).symm⟩
+    (poly.insertVertex i c).IsSimple R :=
+  hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
+    (fun _ hk _ hx ↦ h.edgeSet_inter_closedInterior_subset hk
+      ⟨hx.1, hx.2.elim (fun hx ↦ h.affineSegment_left_subset_closedInterior hx)
+        (fun hx ↦ h.affineSegment_right_subset_closedInterior hx)⟩)
 
 /-- **A Δ-move keeps a polygon simple, and so does its inverse.** -/
 theorem isSimple_insertVertex_iff :
@@ -472,6 +380,36 @@ end IsDeltaMove
 end Simplicity
 
 end DeltaMove
+
+section Apex
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
+  {poly : Polygon V n} {i : Fin n} {c : V}
+
+/-- Moving the apex of a Δ-move inside its triangle gives another Δ-move, provided the new
+apex does not lie on the affine line of the replaced edge. -/
+theorem IsDeltaMove.of_mem_closedInterior (h : poly.IsDeltaMove R i c) {c' : V}
+    (hc' : c' ∈ h.triangle.closedInterior)
+    (hne : c' ∉ affineSpan R {poly i, poly (finRotate n i)}) :
+    poly.IsDeltaMove R i c' := by
+  have hconv : Convex R h.triangle.closedInterior := by
+    rw [← Affine.Simplex.convexHull_eq_closedInterior]
+    exact convex_convexHull _ _
+  have hind : AffineIndependent R ![poly i, poly (finRotate n i), c'] :=
+    affineIndependent_of_ne_of_mem_of_mem_of_notMem h.left_ne_right
+      (left_mem_affineSpan_pair _ _ _) (right_mem_affineSpan_pair _ _ _) hne
+  refine ⟨hind, fun k hk x hx ↦ h.edgeSet_inter_closedInterior_subset hk ⟨hx.1, ?_⟩⟩
+  have hsub : (⟨_, hind⟩ : Affine.Triangle R V).closedInterior ⊆ h.triangle.closedInterior := by
+    rw [← Affine.Simplex.convexHull_eq_closedInterior]
+    refine convexHull_min ?_ hconv
+    rintro x ⟨j, rfl⟩
+    fin_cases j
+    · exact h.edgeSet_subset_closedInterior (left_mem_affineSegment _ _ _)
+    · exact h.edgeSet_subset_closedInterior (right_mem_affineSegment _ _ _)
+    · exact hc'
+  exact hsub hx.2
+
+end Apex
 
 end Polygon
 
@@ -624,7 +562,9 @@ inductive IsElementaryMove : SimplePolygon R P → SimplePolygon R P → Prop
 equivalence relation generated by Δ-moves, including the degenerate ones that subdivide an edge,
 and cyclic relabellings. For simple polygons in `ℝ³`,
 the polygonal presentations of oriented knots, it coincides with ambient isotopy of oriented knots
-(Burde–Zieschang, Proposition 1.10, not formalized here). -/
+(Burde–Zieschang, Proposition 1.10). One direction is
+`TauCeti.SimplePolygon.CombinatoriallyEquivalent.exists_ambientIsotopy_image_boundary`; the
+converse is not formalized. -/
 def CombinatoriallyEquivalent : SimplePolygon R P → SimplePolygon R P → Prop :=
   Relation.EqvGen IsElementaryMove
 

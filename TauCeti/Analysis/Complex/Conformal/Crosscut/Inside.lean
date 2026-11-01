@@ -34,11 +34,6 @@ filled hull. No Jordan curve theorem is used.
 
 This is the planar-separation step of the `ConformalMapping` roadmap (L5).
 
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, and Mathlib has no boundary correspondence for
-conformal maps, so this is new Lean formalization rather than a temporary shim.
-
 ## Main results
 
 * `TauCeti.exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall` — **the transversal

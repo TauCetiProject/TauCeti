@@ -16,6 +16,11 @@ The adjugate identity `adj A * A = det A • 1` also acts on vectors with entrie
 family `v` of elements of a `K`-module satisfies the linear relations `∑ⱼ A i j • v j = 0`, then
 `det A` kills every `v k` (`Matrix.det_smul_eq_zero_of_sum_smul_eq_zero`). This is the
 determinant trick behind the Cayley–Hamilton and Nakayama arguments for finitely generated modules.
+
+The same identity cancels a square matrix `A` with `A * B = c • 1` for a non-zero-divisor `c`, so
+that `B * A = c • 1` as well (`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is
+`mul_eq_one_comm`; for general `c` it compares a form with its `c`-scaled dual, whose Gram matrix
+is `c` times the inverse Gram matrix.
 -/
 
 public section
@@ -58,5 +63,21 @@ theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [Decida
         simp only [mul_apply, Finset.sum_smul, Finset.smul_sum, mul_smul]
         exact Finset.sum_comm
     _ = 0 := by simp [hv]
+
+/-- **Inverses up to a scalar commute.** If `A * B = c • 1` for square matrices over a commutative
+ring and a non-zero-divisor `c`, then `B * A = c • 1`. -/
+theorem mul_eq_smul_one_comm {n : Type*} [Fintype n] [DecidableEq n] {A B : Matrix n n K} {c : K}
+    (hc : c ∈ nonZeroDivisors K) : A * B = c • 1 ↔ B * A = c • 1 := by
+  suffices key : ∀ A B : Matrix n n K, A * B = c • 1 → B * A = c • 1 from ⟨key A B, key B A⟩
+  intro A B h
+  -- `det A` divides a power of `c`, so it is a non-zero-divisor and cancels `A` on the left.
+  have hdet : A.det ∈ nonZeroDivisors K := by
+    have := congrArg det h
+    rw [det_mul, det_smul, det_one, mul_one] at this
+    exact (mul_mem_nonZeroDivisors.mp (this ▸ pow_mem hc _)).1
+  refine (isRegular_of_isLeftRegular_det
+    (isRegular_iff_mem_nonZeroDivisors.mpr hdet).left).left ?_
+  change A * (B * A) = A * (c • 1)
+  rw [← Matrix.mul_assoc, h, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul, Matrix.mul_one]
 
 end Matrix

@@ -9,18 +9,21 @@ public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Data.Fin.Basic
 
 /-!
-# Relabelling and inserting vertices of polygons
+# Relabelling, inserting vertices and images of polygons
 
-Two operations on Mathlib's `Polygon P n`, a cyclic list of vertices. The cyclic relabelling
+Three operations on Mathlib's `Polygon P n`, a cyclic list of vertices. The cyclic relabelling
 `Polygon.rotate` moves the base point of the vertex list one step along the polygon; it has the
 same edges in the same cyclic order, so it presents the same oriented polygon. Inserting a vertex,
 `Polygon.insertVertex poly i c`, puts the new vertex `c` between vertex `i` and the next one, which
-replaces edge `i` by the two segments through `c`.
+replaces edge `i` by the two segments through `c`. The image `poly.map f` of a polygon under a
+map `f` is the polygon whose vertices are the images of those of `poly`; for an affine map `f`, its
+edges are the images of the edges of `poly` (`Polygon.edgeSet_map`).
 
 ## Main definitions
 
 * `Polygon.rotate`: the cyclic relabelling of the vertices of a polygon.
 * `Polygon.insertVertex`: the polygon with a new vertex inserted after vertex `i`.
+* `Polygon.map f poly`: the polygon with vertices `f (poly i)`.
 
 The file also records the elementary description of the boundary of a polygon as the union of
 the paths of its edges, and the fact that the vertices lie on the boundary.
@@ -34,6 +37,8 @@ the paths of its edges, and the fact that the vertices lie on the boundary.
   segments from vertex `i` to `c` and from `c` to the next vertex.
 * `Polygon.boundary_insertVertex_edgePath`: subdividing an edge at one of its points does not
   change the boundary.
+* `Polygon.boundary_map`: the boundary of the image under an affine map is the image of the
+  boundary.
 -/
 
 public section
@@ -247,5 +252,53 @@ theorem boundary_insertVertex_edgePath (hs : s ∈ Icc (0 : R) 1) :
     · exact .inl ⟨k, hk, hx⟩
 
 end Subdivide
+
+/-! ### Images under maps -/
+
+section Map
+
+variable {V' P' : Type*}
+
+/-- The **image of a polygon** under a map `f`: the polygon with vertices `f (poly i)`. -/
+def map (f : P → P') (poly : Polygon P n) : Polygon P' n :=
+  ⟨fun i ↦ f (poly i)⟩
+
+/-- The vertices of the image of a polygon are the images of its vertices. -/
+@[simp]
+theorem map_apply (f : P → P') (poly : Polygon P n) (i : Fin n) : poly.map f i = f (poly i) :=
+  (rfl)
+
+/-- The image of a polygon under the identity is the polygon itself. -/
+@[simp]
+theorem map_id (poly : Polygon P n) : poly.map id = poly :=
+  (rfl)
+
+/-- Taking images of polygons is compatible with composition of maps. -/
+theorem map_map {P'' : Type*} (f : P → P') (g : P' → P'') (poly : Polygon P n) :
+    (poly.map f).map g = poly.map (g ∘ f) :=
+  (rfl)
+
+variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P] [AddCommGroup V'] [Module R V']
+  [AddTorsor V' P'] (f : P →ᵃ[R] P') (poly : Polygon P n)
+
+/-- The edges of the image of a polygon under an affine map are the images of its edges. -/
+theorem edgePath_map (i : Fin n) : (poly.map f).edgePath R i = f.comp (poly.edgePath R i) :=
+  (f.comp_lineMap _ _).symm
+
+variable [PartialOrder R]
+
+/-- The edge sets of the image of a polygon under an affine map are the images of its edge
+sets. -/
+@[simp]
+theorem edgeSet_map (i : Fin n) : (poly.map f).edgeSet R i = f '' poly.edgeSet R i := by
+  rw [edgeSet_eq_image_edgePath, edgeSet_eq_image_edgePath, edgePath_map, AffineMap.coe_comp,
+    image_comp]
+
+/-- The boundary of the image of a polygon under an affine map is the image of its boundary. -/
+@[simp]
+theorem boundary_map : (poly.map f).boundary R = f '' poly.boundary R := by
+  simp only [boundary, edgeSet_map, image_iUnion]
+
+end Map
 
 end Polygon

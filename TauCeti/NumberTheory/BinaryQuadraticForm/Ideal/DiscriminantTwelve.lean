@@ -106,31 +106,19 @@ def discrimTwelveNegativeLeading : primitiveForms 12 :=
     discrimTwelveNegativeLeading.val = (⟨-1, 0, 3⟩ : BinaryQuadraticForm ℤ) := by
   rfl
 
-private theorem invertibleFractionalIdeal_eq_one_of_discrimTwelve (f : primitiveForms 12)
-    (ha : f.val.a = 1 ∨ f.val.a = -1) :
-    f.val.invertibleFractionalIdeal 12 ((mem_primitiveForms 12 f.val).mp f.property).1
-      ((mem_primitiveForms 12 f.val).mp f.property).2 = 1 := by
-  apply Units.ext
-  rw [coe_invertibleFractionalIdeal, Units.val_one]
-  refine le_antisymm (fractionalIdeal_le_one _ _ _) (FractionalIdeal.one_le.mpr ?_)
-  apply (mem_fractionalIdeal_iff _ _ _ _).mpr
-  rcases ha with ha | ha
-  · exact ⟨1, 0, by simp [ha]⟩
-  · exact ⟨-1, 0, by simp [ha]⟩
-
 /-- The raw ideal of `x² - 3y²` is the unit ideal of the discriminant-twelve order. -/
 theorem invertibleFractionalIdeal_discrimTwelvePositiveLeading_eq_one :
     discrimTwelvePositiveLeading.val.invertibleFractionalIdeal 12
       ((mem_primitiveForms 12 _).mp discrimTwelvePositiveLeading.property).1
       ((mem_primitiveForms 12 _).mp discrimTwelvePositiveLeading.property).2 = 1 :=
-  invertibleFractionalIdeal_eq_one_of_discrimTwelve _ (by simp)
+  invertibleFractionalIdeal_eq_one_of_isUnit_a _ _ _ _ (by simp)
 
 /-- The raw ideal of `-x² + 3y²` is the same unit ideal. -/
 theorem invertibleFractionalIdeal_discrimTwelveNegativeLeading_eq_one :
     discrimTwelveNegativeLeading.val.invertibleFractionalIdeal 12
       ((mem_primitiveForms 12 _).mp discrimTwelveNegativeLeading.property).1
       ((mem_primitiveForms 12 _).mp discrimTwelveNegativeLeading.property).2 = 1 :=
-  invertibleFractionalIdeal_eq_one_of_discrimTwelve _ (by simp)
+  invertibleFractionalIdeal_eq_one_of_isUnit_a _ _ _ _ (by simp)
 
 /-- The oriented narrow class of `x² - 3y²` is trivial. -/
 theorem narrowPicClass_discrimTwelvePositiveLeading :

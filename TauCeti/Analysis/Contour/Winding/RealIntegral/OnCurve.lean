@@ -243,7 +243,7 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
       L.im = ∫ t in a..b, realWindingIntegrand (γ t - s) (deriv γ t) := by
   classical
   rcases hab.eq_or_lt with rfl | hab
-  · refine ⟨?_, .refl, 0, HasCauchyPVAt.of_eq γ rfl _ s, by simp, by simp⟩
+  · refine ⟨?_, .refl, 0, HasCauchyPVAt.refl γ a _ s, by simp, by simp⟩
     -- A degenerate `[a, a]` interval is a single point, trivially bounded.
     have hsingle : Icc a a = {a} := Set.Icc_self a
     rw [hsingle, Set.image_singleton]

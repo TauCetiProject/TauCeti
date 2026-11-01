@@ -273,6 +273,7 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
   refine Finset.sum_congr rfl fun chi _ ↦ ?_
   have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
     LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
-  rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm, finrank_toSubmodule]
+  rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm,
+    LieSubmodule.finrank_toSubmodule]
 
 end TauCeti

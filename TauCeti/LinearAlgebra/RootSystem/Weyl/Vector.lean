@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
+public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
+public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 /-!
 # The Weyl vector of a base
@@ -50,6 +52,15 @@ positive coroot is not merely positive but at least `1`, being a positive intege
 * `TauCeti.reflection_twoWeylVector` and `TauCeti.reflection_weylVector`: `sᵢ(2ρ) = 2ρ - 2αᵢ` and
   `sᵢ(ρ) = ρ - αᵢ`.
 * `TauCeti.sum_root_negRootsFinset`: the sum of the negative roots is `-2ρ`.
+* `TauCeti.smul_twoWeylVector_sub_twoWeylVector` and `TauCeti.smul_weylVector_sub_weylVector`:
+  a Weyl-group element `w` moves `2ρ` and `ρ` by a sum of roots,
+  `w (2ρ) - 2ρ = -2 ∑_{α > 0, w⁻¹ α < 0} α` and `w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`.
+* `TauCeti.smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one` and
+  `TauCeti.smul_sub_eq_neg_sum_inversionsFinset_of_forall_coroot'_eq_one`: a weight `d` pairing
+  to `1` with every simple coroot differs from `ρ` by a Weyl-invariant weight, `2d - 2ρ`, and so
+  moves as `ρ` does, `w d - d = -∑_{α > 0, w⁻¹ α < 0} α`, as soon as `2` is a non-zero-divisor on
+  the weight space. No halving is needed, so this applies to integral weight lattices in which `ρ`
+  does not exist.
 * `TauCeti.coroot'_twoWeylVector_eq_two_mul_height_flip` and
   `TauCeti.coroot'_weylVector_eq_height_flip`: `⟨2ρ, α^∨⟩ = 2 ht(α^∨)` and `⟨ρ, α^∨⟩ = ht(α^∨)` for
   an arbitrary root `α`, the general form of the two preceding identities.
@@ -79,7 +90,8 @@ positive-root combinatorics it needs already lives, so that the Lie-algebra vers
 specialization rather than a rebuild.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, GTM 9, Ch. III, §10.2 and §13.3.
+Theory*, GTM 9, Ch. III, §10.2, §10.3 and §13.3. The inversion-sum identity also appears in
+N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Ch. VI, §1, no. 10.
 -/
 
 public section
@@ -201,6 +213,73 @@ theorem sum_root_negRootsFinset :
     exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b j).symm
   · simp
 
+/-- **A Weyl-group element moves the sum of the positive roots by minus twice the sum of the
+inversions of its inverse**: `w (2ρ) - 2ρ = -2 ∑_{α > 0, w⁻¹ α < 0} α`. -/
+theorem smul_twoWeylVector_sub_twoWeylVector (w : P.weylGroup) :
+    w • twoWeylVector P b - twoWeylVector P b =
+      -(2 : R) • ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  classical
+  let := P.indexNeg
+  -- `w` keeps the part of `2ρ` over the roots it keeps positive, and negates the rest.
+  have hw : w • twoWeylVector P b =
+      ∑ i ∈ posRootsFinset P b \ inversionsFinset P b w⁻¹, P.root i -
+        ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+    rw [twoWeylVector_def, Finset.smul_sum,
+      ← Finset.sum_sdiff (inversionsFinset_subset_posRootsFinset P b w)]
+    simp_rw [weylGroup_apply_root]
+    rw [sum_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm, sub_eq_add_neg,
+      ← sum_inversionsFinset_comp_neg_weylGroupToPerm P b w P.root, ← Finset.sum_neg_distrib]
+    refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
+    rw [root_neg_index, neg_neg]
+  rw [hw, twoWeylVector_def,
+    ← Finset.sum_sdiff (inversionsFinset_subset_posRootsFinset P b w⁻¹)]
+  module
+
+section Substitute
+
+/-! ### Integral substitutes for the Weyl vector
+
+Over an integral weight lattice `ρ` itself need not exist, since the sum of the positive roots
+need not be divisible by `2`. A weight `d` pairing to `1` with every simple coroot can play its
+role: `2d - 2ρ` is killed by every simple coroot, hence fixed by the Weyl group, so `d` moves under
+the Weyl group exactly as `ρ` would. -/
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
+
+/-- If `⟨d, αᵢ^∨⟩ = 1` for a simple root `αᵢ`, then `αᵢ^∨` kills `2d - 2ρ`. -/
+theorem coroot'_two_smul_sub_twoWeylVector_eq_zero {d : M} {i : ι} (hi : i ∈ b.support)
+    (hd : P.coroot' i d = 1) :
+    P.coroot' i ((2 : R) • d - twoWeylVector P b) = 0 := by
+  rw [map_sub, map_smul, hd, coroot'_twoWeylVector P b hi, smul_eq_mul, mul_one, sub_self]
+
+/-- **A weight pairing to `1` with every simple coroot differs from `ρ` by a Weyl-invariant
+weight**: if `⟨d, αᵢ^∨⟩ = 1` for every simple root, then `2d - 2ρ` is fixed by the Weyl group. -/
+theorem smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one {d : M}
+    (hd : ∀ i ∈ b.support, P.coroot' i d = 1) (w : P.weylGroup) :
+    w • ((2 : R) • d - twoWeylVector P b) = (2 : R) • d - twoWeylVector P b :=
+  smul_eq_self_of_forall_coroot'_eq_zero b
+    (fun i hi ↦ coroot'_two_smul_sub_twoWeylVector_eq_zero P b hi (hd i hi)) w
+
+/-- **A weight pairing to `1` with every simple coroot moves as the Weyl vector does**: if
+`⟨d, αᵢ^∨⟩ = 1` for every simple root and `2` is a non-zero-divisor on `M`, then
+`w d - d = -∑_{α > 0, w⁻¹ α < 0} α`, the shift `TauCeti.smul_weylVector_sub_weylVector` of `ρ`. -/
+theorem smul_sub_eq_neg_sum_inversionsFinset_of_forall_coroot'_eq_one {d : M}
+    (hd : ∀ i ∈ b.support, P.coroot' i d = 1) (h2 : IsSMulRegular M (2 : R))
+    (w : P.weylGroup) :
+    w • d - d = -∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  refine h2 ?_
+  have h := smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one P b hd w
+  have h' := smul_twoWeylVector_sub_twoWeylVector P b w
+  rw [smul_sub, smul_comm w (2 : R) d] at h
+  dsimp only
+  -- `linear_combination` would read the Weyl-group scalars as coefficients, so the two translates
+  -- are made atoms first.
+  generalize w • d = a at h ⊢
+  generalize w • twoWeylVector P b = t at h h'
+  linear_combination (norm := module) h + h'
+
+end Substitute
+
 section Weyl
 
 variable [Invertible (2 : R)]
@@ -216,6 +295,14 @@ lemma weylVector_def : weylVector P b = ⅟(2 : R) • twoWeylVector P b := by
 @[simp]
 lemma two_smul_weylVector : (2 : R) • weylVector P b = twoWeylVector P b := by
   rw [weylVector, smul_smul, mul_invOf_self, one_smul]
+
+/-- **A Weyl-group element moves the Weyl vector by minus the inversions of its inverse**:
+`w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`. In particular `w ρ - ρ` is a sum of roots, whether or not
+`ρ` is. -/
+theorem smul_weylVector_sub_weylVector (w : P.weylGroup) :
+    w • weylVector P b - weylVector P b = -∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  rw [weylVector_def, smul_comm, ← smul_sub, smul_twoWeylVector_sub_twoWeylVector, smul_smul,
+    mul_neg, invOf_mul_self, neg_one_smul]
 
 variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 

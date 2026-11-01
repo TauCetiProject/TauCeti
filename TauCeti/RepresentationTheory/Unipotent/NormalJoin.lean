@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.GroupTheory.SemidirectProduct
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.RepresentationTheory.Unipotent.Solvable
 import Mathlib.RepresentationTheory.Invariants
 import Mathlib.RingTheory.Nilpotent.Lemmas
@@ -134,9 +134,7 @@ private theorem _root_.Representation.isNilpotent_sub_one_of_normal_isUnipotent
           rho.exists_common_fixed_vector_of_le_normalizer_isUnipotent U W hWU hU hW
         have hfixed (z : G) : rho z x = x := by
           have hz : z ∈ U ⊔ W := by rw [hUW]; exact Subgroup.mem_top z
-          obtain ⟨u, hu, w, hw, rfl⟩ :=
-            (TauCeti.Subgroup.mem_sup_of_right_le_normalizer_left
-              (H := U) (K := W) hWU).mp hz
+          obtain ⟨u, hu, w, hw, rfl⟩ := (Subgroup.mem_sup_of_right_le_normalizer_left hWU).mp hz
           rw [map_mul, Module.End.mul_apply, hxW ⟨w, hw⟩, hxU ⟨u, hu⟩]
         let p : Submodule K V := K ∙ x
         have hpdim : finrank K p = 1 := finrank_span_singleton hx

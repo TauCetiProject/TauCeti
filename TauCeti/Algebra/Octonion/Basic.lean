@@ -71,7 +71,9 @@ nothing more.
   `QuadraticMap.polar` API supplies the associated symmetric bilinear form. That form is visible
   inside the algebra as `TauCeti.Octonion.mul_conj_add_mul_conj`,
   `x * conj y + y * conj x = QuadraticMap.polar (normQuadraticForm R) x y • 1`, and it is the trace
-  form of the composition algebra, `TauCeti.Octonion.trace_mul_conj`; when `2` is invertible the
+  form of the composition algebra, `TauCeti.Octonion.trace_mul_conj`, read against a conjugate as
+  `TauCeti.Octonion.polar_normQuadraticForm_conj_left` and
+  `TauCeti.Octonion.polar_normQuadraticForm_conj_right`; when `2` is invertible the
   associated form is half of it, `TauCeti.Octonion.associated_normQuadraticForm_apply`.
 * `TauCeti.Octonion.left_alternative`, `TauCeti.Octonion.right_alternative` and
   `TauCeti.Octonion.flexible`: `𝕆` is **alternative** and **flexible**.
@@ -589,6 +591,18 @@ theorem trace_mul_conj (x y : Octonion R) :
     trace (x * conj y) = QuadraticMap.polar (normQuadraticForm R) x y := by
   simp [polar_normQuadraticForm, dotProduct_comm]
   ring
+
+/-- The polar form of the norm against a conjugate in the first slot is a trace:
+`polar N (conj x) y = trace (y * x)`. -/
+theorem polar_normQuadraticForm_conj_left (x y : Octonion R) :
+    QuadraticMap.polar (normQuadraticForm R) (conj x) y = trace (y * x) := by
+  rw [← trace_mul_conj, ← conj_mul, trace_conj]
+
+/-- The polar form of the norm against a conjugate in the second slot is a trace:
+`polar N x (conj y) = trace (x * y)`. -/
+theorem polar_normQuadraticForm_conj_right (x y : Octonion R) :
+    QuadraticMap.polar (normQuadraticForm R) x (conj y) = trace (x * y) := by
+  rw [← trace_mul_conj, conj_conj]
 
 /-- Left multiplication by `x` is adjoint to left multiplication by `conj x` for the polar
 form of the norm. This identity does not require that `2` be invertible. -/

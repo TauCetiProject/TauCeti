@@ -57,12 +57,7 @@ are stated at that generality in `Analysis/Complex/UnitDisc/Basic.lean`.
 
 This completes the conformal-mapping roadmap's L2 description of the disc automorphism group
 `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}` (see `ConformalMapping/README.md`), whose existence half is
-`TauCeti.mem_unitDiscAut_iff`.  As with the rest of the L0--L3 conformal-mapping material it is
-coordinated with the upstream Mathlib Riemann-mapping effort
-leanprover-community/mathlib4#33505, whose preceding human-curated work is
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`; neither contains
-a disc automorphism group, and should one land upstream these declarations are a temporary shim to
-be deleted and their consumers refactored onto it.
+`TauCeti.mem_unitDiscAut_iff`.
 
 ## References
 

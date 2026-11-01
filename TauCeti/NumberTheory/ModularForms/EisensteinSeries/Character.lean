@@ -46,6 +46,9 @@ which are not treated in this file.
   `Γ₀(N)`, on integer pairs and on residue pairs.
 * `TauCeti.EisensteinSeries.sum_charWeight_eq_zero`: unless both characters are trivial, the
   weights sum to zero over the residue pairs modulo `N`.
+* `TauCeti.EisensteinSeries.tsum_charWeight_mul_zpow`: the sum of the weight over the multiples
+  of an integer pair against `n^(-k)`, which gives the constant terms of the series with
+  character at the cusps.
 * `TauCeti.EisensteinSeries.slash_Gamma1_eq_self_of_slash_Gamma0_eq`,
   `TauCeti.EisensteinSeries.mem_modFormCharSpace_of_slash_Gamma0_eq`: a function on which `Γ₀(N)`
   acts by `ψ(d) φ(d)` is `Γ₁(N)`-invariant, and a modular form of this kind lies in `M_k(N, ψφ)`.
@@ -168,6 +171,40 @@ theorem sum_charWeight_eq_zero [NeZero N] (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ 
     simpa [hSw, MulChar.inv_apply_eq_inv'] using hw
 
 variable {k : ℤ}
+
+/-- The sum of the character weight over the multiples of an integer pair `(-c, a)`: it vanishes
+unless `v ∣ c`, and otherwise factors through the series of `ψ φ⁻¹`. The identity holds for
+every exponent `k`; it is used for the constant terms of the series with character in weight
+`k ≥ 3` and, for pairs other than the trivial one, in weight two. -/
+theorem tsum_charWeight_mul_zpow [NeZero N] (huv : u * v ∣ N) (c a : ℤ) :
+    ∑' n : ℤ, charWeight N ψ φ ((↑) ∘ ![-(n * c), n * a]) * (n : ℂ) ^ (-k) =
+      if (v : ℤ) ∣ c then
+        ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) *
+          ∑' n : ℤ, ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-k)
+      else 0 := by
+  simp only [charWeight_intCast ψ φ huv, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  split_ifs with hc
+  · obtain ⟨c, rfl⟩ := hc
+    have hv : (v : ℤ) ≠ 0 := by
+      have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
+      exact_mod_cast this
+    rw [Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left]
+    refine tsum_congr fun n ↦ ?_
+    have hdvd : (v : ℤ) ∣ -(n * (v * c)) := Dvd.intro (-(n * c)) (by ring)
+    have hfactor : -(n * (v * c)) = (v : ℤ) * (n * -c) := by ring
+    have hquot : -(n * (v * c)) / (v : ℤ) = n * -c := by
+      rw [hfactor, Int.mul_ediv_cancel_left _ hv]
+    rw [hquot]
+    simp only [hdvd, ↓reduceIte, Int.cast_mul, map_mul]
+    ring
+  · refine (tsum_congr fun n ↦ ?_).trans tsum_zero
+    split_ifs with hn
+    · rw [MulChar.map_nonunit φ⁻¹, mul_zero, zero_mul]
+      intro hu
+      rw [ZMod.coe_int_isUnit_iff_isCoprime] at hu
+      exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
+    · rw [zero_mul]
 
 /-- **The transformation of the weight under `Γ₀(N)`.** For `γ ∈ Γ₀(N)` with lower-right entry
 `d`, right multiplication by `γ⁻¹` multiplies the weight by `ψ(d) φ(d)`. -/

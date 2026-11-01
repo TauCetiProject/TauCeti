@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra
+public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Bidual
+public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Pullback
 
 /-!
@@ -26,6 +27,25 @@ of `q^* E`, a section corresponding to evaluation at it. The correspondence is n
 vector bundle: a morphism `a : E ⟶ F` acts on points of the total spaces as `q^* a` acts on
 sections (`totalSpaceHomEquiv_comp_map`).
 
+The total space commutes with base change: for `f : Y ⟶ X`, the total space `𝕍(f^* E)` of the
+pulled-back bundle is the fibre product `Y ×_X 𝕍(E)`, naturally in `E`
+(`totalSpaceSchemeBaseChangeIso`). This combines `f^* (E^∨) ≅ (f^* E)^∨` with the base change
+`Spec_Y (Sym (f^* F)) ≅ Y ×_X Spec_X (Sym F)` of the relative spectrum of a symmetric algebra.
+
+## Notation
+
+In this file `𝕍(E)` denotes the total space `Spec_X (Sym E^∨)` of a finite locally free sheaf `E`,
+which is covariant in `E` and whose sections are the sections of `E`. The references below use the
+dual convention: Hartshorne (Exercise II.5.18(a)), the Stacks Project (Definition 27.6.1,
+[Tag 01M2](https://stacks.math.columbia.edu/tag/01M2)) and EGA II (1.7.8) define the vector bundle
+of a sheaf `F` as `V(F) = Spec_X (Sym F)`, which is contravariant in `F` and whose sheaf of sections
+is `F^∨` (Hartshorne, Exercise II.5.18(c); EGA II, 1.7.9). Following them, the docs of the relative
+spectrum `Spec_X (Sym F)` and of `linearSpec X` in this library write `𝕍(F) = Spec_X (Sym F)`. In
+that notation the total space of `E` is `𝕍(E^∨)`, whose sheaf of sections is `E^∨∨ ≅ E`. The
+description of its points over an arbitrary scheme `q : T ⟶ X` (`totalSpaceHomEquiv`) is EGA II
+(1.7.8) applied to `F = E^∨`: the points of `V(F)` over `T` are the linear maps `F ⟶ q_* 𝒪_T`.
+Hartshorne's exercise describes only sections over open subsets of `X`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.totalSpaceScheme X`: the functor `E ↦ Spec_X (Sym E^∨)` from finite
@@ -34,9 +54,13 @@ sections (`totalSpaceHomEquiv_comp_map`).
   are global sections of `q^* E`;
 * `TauCeti.AlgebraicGeometry.totalSpaceHomEquiv_symm_apply`: the morphism of a section `s` is the
   one whose linear functional on `q^* (E^∨) ≅ (q^* E)^∨` is evaluation at `s`;
-* `TauCeti.AlgebraicGeometry.totalSpaceHomEquiv_comp_map`: naturality in the vector bundle.
+* `TauCeti.AlgebraicGeometry.totalSpaceHomEquiv_comp_map`: naturality in the vector bundle;
+* `TauCeti.AlgebraicGeometry.totalSpaceSchemeBaseChangeIso`: the total space of `f^* E` is the
+  base change of the total space of `E`, naturally in `E`.
 
 ## References
+
+These use the convention `V(F) = Spec_X (Sym F)`; see Notation.
 
 * R. Hartshorne, *Algebraic Geometry*, Exercise II.5.18.
 * The Stacks Project, [Tag 01M1](https://stacks.math.columbia.edu/tag/01M1).
@@ -62,7 +86,8 @@ variable (X : Scheme.{u})
 -- `totalSpaceScheme_map` can be stated without transport along `totalSpaceScheme_obj`.
 /-- The geometric total space `𝕍(E) = Spec_X (Sym E^∨)` of a finite locally free sheaf `E`, as a
 covariant functor to affine schemes over `X`: the dual `E^∨ = 𝓗om(E, 𝒪_X)`, viewed as a
-quasicoherent sheaf, followed by the relative spectrum of its symmetric algebra. -/
+quasicoherent sheaf, followed by the relative spectrum of its symmetric algebra. In the notation
+`𝕍(F) = Spec_X (Sym F)` of the references and of `linearSpec X`, it is `𝕍(E^∨)`. -/
 @[expose]
 def totalSpaceScheme : FiniteLocallyFreeSheaf X ⥤ AffineSchemeOver X :=
   dualFunctor.rightOp ⋙ (toQuasicoherent X).op ⋙ (symmetricAlgebra X).op ⋙ relativeSpec X
@@ -182,6 +207,51 @@ theorem totalSpaceHomEquiv_comp_map {E F : FiniteLocallyFreeSheaf X} (a : E ⟶ 
       ((Scheme.Modules.pullback T.hom).map a.hom)))
   exact (Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ _) hinv).trans (Category.assoc _ _ _))
+
+
+section BaseChange
+
+variable {Y : Scheme.{u}} (f : Y ⟶ X)
+
+/-- **Base change of the total space of a vector bundle.** For a morphism of schemes `f : Y ⟶ X`
+and a finite locally free sheaf `E` on `X`, the total space `𝕍(f^* E)` of the pulled-back bundle
+is the base change `Y ×_X 𝕍(E)` of the total space of `E`, as affine schemes over `Y` and
+naturally in `E`. It combines the identification `f^* (E^∨) ≅ (f^* E)^∨` (`pullbackDualIso`) with
+the base change of the relative spectrum of a symmetric algebra
+(`relativeSpecSymmetricAlgebraBaseChangeIso`). -/
+def totalSpaceSchemeBaseChangeIso :
+    FiniteLocallyFreeSheaf.pullback f ⋙ totalSpaceScheme Y ≅
+      totalSpaceScheme X ⋙ baseChangeAffineSchemeOver f :=
+  Functor.isoWhiskerRight
+      (NatIso.ofComponents (F := FiniteLocallyFreeSheaf.pullback f ⋙ dualFunctor.rightOp)
+        (G := dualFunctor.rightOp ⋙ (FiniteLocallyFreeSheaf.pullback f).op)
+        (fun E ↦ (pullbackDualIso f E).op)
+        fun g ↦ Quiver.Hom.unop_inj (pullbackDualIso_naturality f g).symm)
+      ((toQuasicoherent Y).op ⋙ (symmetricAlgebra Y).op ⋙ relativeSpec Y) ≪≫
+    Functor.isoWhiskerLeft dualFunctor.rightOp
+      (Functor.isoWhiskerRight
+        ((NatIso.op (pullbackToQuasicoherentIso f)).symm :
+          (FiniteLocallyFreeSheaf.pullback f).op ⋙ (toQuasicoherent Y).op ≅
+            (toQuasicoherent X).op ⋙ (QuasicoherentSheaf.pullback f).op)
+        ((symmetricAlgebra Y).op ⋙ relativeSpec Y)) ≪≫
+    Functor.isoWhiskerLeft (dualFunctor.rightOp ⋙ (toQuasicoherent X).op)
+      (relativeSpecSymmetricAlgebraBaseChangeIso f)
+
+/-- The component of `totalSpaceSchemeBaseChangeIso` at `E` is relative Spec of the symmetric
+algebra of the identification `f^* (E^∨) ≅ (f^* E)^∨` and of the identification of the two
+pullbacks of `E^∨` as a quasicoherent sheaf, followed by the component of
+`relativeSpecSymmetricAlgebraBaseChangeIso` at `E^∨`. -/
+lemma totalSpaceSchemeBaseChangeIso_hom_app (E : FiniteLocallyFreeSheaf X) :
+    (totalSpaceSchemeBaseChangeIso f).hom.app E =
+      (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).hom)).op ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op ≫
+          (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
+            (op ((toQuasicoherent X).obj (dual E))) :=
+  (rfl)
+
+end BaseChange
 
 end
 

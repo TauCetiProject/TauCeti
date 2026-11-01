@@ -57,6 +57,9 @@ circles along which the saddle cobordism of a merge acts, and in reverse that of
 * `TauCeti.PDCode.stateLoopCount_add_card_circlesAt`: the change in the number of circles is the
   change in the number of circles through `c`; in particular it is at most one
   (`TauCeti.PDCode.stateLoopCount_le_stateLoopCount_add_one`).
+* `TauCeti.PDCode.eqvGen_circleStep_of_forall_card_circlesAt_eq_one`: if only one circle of `t`
+  passes through each crossing at which `s` and `t` differ, every circle of `s` lies on a circle
+  of `t`.
 
 ## References
 
@@ -133,6 +136,16 @@ theorem card_circlesAt_eq_two_iff :
     #(D.circlesAt s c) = 2 ↔
       (⟦D.crossing c 0⟧ : D.CrossingCircle s) ≠ ⟦D.crossing c 2⟧ := by
   rw [circlesAt_eq_pair, card_pair_eq_two_iff]
+
+/-- One circle passes through the crossing `c` exactly when the half-edges in the opposite slots
+`0` and `2` lie on one circle. -/
+theorem card_circlesAt_eq_one_iff :
+    #(D.circlesAt s c) = 1 ↔
+      (⟦D.crossing c 0⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧ := by
+  rw [← not_ne_iff (a := (⟦D.crossing c 0⟧ : D.CrossingCircle s)), ← card_circlesAt_eq_two_iff]
+  have := D.card_circlesAt_le_two s c
+  have := (D.circlesAt_nonempty s c).card_pos
+  omega
 
 end CirclesAt
 
@@ -333,6 +346,40 @@ theorem card_circlesAt_eq_one_of_card_circlesAt_eq_two (hst : ∀ j, j ≠ c →
 
 end Changed
 
+/-! ### Coarser smoothings -/
+
+section Coarsening
+
+variable (D : PDCode n) {s t : Fin n → Bool}
+
+/-- If only one circle of `t` passes through each crossing at which `s` and `t` differ, then
+half-edges on one circle of `s` lie on one circle of `t`. -/
+theorem eqvGen_circleStep_of_forall_card_circlesAt_eq_one
+    (h : ∀ j, s j ≠ t j → #(D.circlesAt t j) = 1) {x y : Fin (4 * n)}
+    (hxy : EqvGen (D.CircleStep s) x y) : EqvGen (D.CircleStep t) x y := by
+  induction hxy with
+  | rel y z hyz =>
+    rcases hyz with rfl | rfl
+    · exact .rel _ _ (.inl rfl)
+    obtain ⟨y, rfl⟩ := D.halfEdge.surjective y
+    obtain ⟨⟨j, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
+    rw [smoothingTurn_crossing]
+    by_cases hj : s j = t j
+    · refine .rel _ _ (.inr ?_)
+      rw [smoothingTurn_crossing, D.smoothingChoice_eq_smoothingChoice hj]
+    -- Both ends of a smoothing arc at `j` lie on the only circle of `t` through `j`.
+    obtain ⟨C, hC⟩ := card_eq_one.1 (h j hj)
+    have h₁ := D.mk_crossing_mem_circlesAt t j k
+    have h₂ := D.mk_crossing_mem_circlesAt t j (slotSmoothing (D.smoothingChoice s j) k)
+    rw [hC, mem_singleton] at h₁ h₂
+    rw [← crossing_apply]
+    exact Quotient.exact (h₁.trans h₂.symm)
+  | refl => exact .refl _
+  | symm _ _ _ ih => exact .symm _ _ ih
+  | trans _ _ _ _ _ ih₁ ih₂ => exact .trans _ _ _ ih₁ ih₂
+
+end Coarsening
+
 /-! ### The saddle correspondence -/
 
 section Saddle
@@ -345,27 +392,10 @@ include hst ht
 `s` lie on one circle of `t`. -/
 theorem eqvGen_circleStep_of_card_circlesAt_eq_one {x y : Fin (4 * n)}
     (h : EqvGen (D.CircleStep s) x y) : EqvGen (D.CircleStep t) x y := by
-  obtain ⟨C, hC⟩ := card_eq_one.1 ht
-  induction h with
-  | rel y z hyz =>
-    rcases hyz with rfl | rfl
-    · exact .rel _ _ (.inl rfl)
-    by_cases hy : ∀ k, D.crossing c k ≠ y
-    · exact .rel _ _ (.inr (D.smoothingTurn_apply_eq_smoothingTurn_apply
-        (fun j hj ↦ D.smoothingChoice_eq_smoothingChoice (hst j hj)) hy))
-    -- The two ends of a smoothing arc at `c` lie on the only circle of `t` through `c`.
-    obtain ⟨k, rfl⟩ := not_forall_not.1 hy
-    have h₁ := D.mk_crossing_mem_circlesAt t c k
-    have h₂ := D.mk_crossing_mem_circlesAt t c (slotSmoothing (D.smoothingChoice s c) k)
-    rw [hC, mem_singleton] at h₁ h₂
-    have hσ : D.smoothingTurn (D.smoothingChoice s) (D.crossing c k) =
-        D.crossing c (slotSmoothing (D.smoothingChoice s c) k) := by
-      simp
-    rw [hσ]
-    exact Quotient.exact (h₁.trans h₂.symm)
-  | refl => exact .refl _
-  | symm _ _ _ ih => exact .symm _ _ ih
-  | trans _ _ _ _ _ ih₁ ih₂ => exact .trans _ _ _ ih₁ ih₂
+  refine D.eqvGen_circleStep_of_forall_card_circlesAt_eq_one (fun j hj ↦ ?_) h
+  by_cases hjc : j = c
+  · exact hjc ▸ ht
+  · exact absurd (hst j hjc) hj
 
 /-- **The saddle correspondence of circles.** When only one circle of `t` passes through the
 crossing `c`, the circle of a half-edge in the smoothing `s` determines its circle in the

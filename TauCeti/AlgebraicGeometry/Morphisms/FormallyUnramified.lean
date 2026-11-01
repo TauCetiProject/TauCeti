@@ -7,6 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Fiber
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.RingTheory.Unramified.Fiber
 
@@ -27,9 +30,21 @@ open subscheme of their source (`isOpenImmersion_equalizer_ι_left`): it is a ba
 diagonal, which is an open immersion by Mathlib's `FormallyUnramified.isOpenImmersion_diagonal`.
 In particular two sections of an unramified morphism agree on an open subscheme.
 
+If the target is also separated, two morphisms that agree after a dominant morphism are
+equal (`ext_of_isDominant_of_isSeparated_of_formallyUnramified`). Unlike Mathlib's
+`ext_of_isDominant_of_isSeparated`, whose equalizer argument this follows, this does not
+require a reduced source: the equalizer is open as well as closed.
+
+For the same reason, a morphism formally unramified and locally of finite type is a monomorphism
+exactly when it is universally injective
+(`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
+immersion, which is an isomorphism exactly when it is surjective.
+
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
+* The Stacks Project, Tag 05VH (an unramified universally injective morphism is a
+  monomorphism).
 -/
 
 public section
@@ -127,5 +142,40 @@ instance isOpenImmersion_equalizer_ι_left {S : Scheme} {X Y : Over S} [Formally
     (Over.prodLeftIsoPullback Y Y).hom]
   convert! (inferInstance : IsOpenImmersion (pullback.diagonal Y.hom))
   ext1 <;> simp [← Over.comp_left]
+
+/-- Morphisms into a separated unramified scheme agree if they agree after precomposition
+with a dominant morphism. The source may be nonreduced. -/
+theorem ext_of_isDominant_of_isSeparated_of_formallyUnramified {W Z : Scheme.{u}}
+    {f g : X ⟶ Y} (s : Y ⟶ Z) [IsSeparated s] [FormallyUnramified s]
+    [LocallyOfFiniteType s] (h : f ≫ s = g ≫ s)
+    (ι : W ⟶ X) [IsDominant ι] (hU : ι ≫ f = ι ≫ g) : f = g := by
+  let X' : Over Z := Over.mk (f ≫ s)
+  let Y' : Over Z := Over.mk s
+  let U' : Over Z := Over.mk (ι ≫ f ≫ s)
+  let f' : X' ⟶ Y' := Over.homMk f
+  let g' : X' ⟶ Y' := Over.homMk g h.symm
+  let ι' : U' ⟶ X' := Over.homMk ι
+  have : IsSeparated Y'.hom := ‹IsSeparated s›
+  have : FormallyUnramified Y'.hom := ‹FormallyUnramified s›
+  have : LocallyOfFiniteType Y'.hom := ‹LocallyOfFiniteType s›
+  have : IsDominant (equalizer.ι f' g').left := by
+    apply +allowSynthFailures IsDominant.of_comp (equalizer.lift ι' (by ext1; exact hU)).left
+    simpa only [← Over.comp_left, equalizer.lift_ι, ι', Over.homMk_left] using
+      (inferInstance : IsDominant ι)
+  have : Surjective (equalizer.ι f' g').left :=
+    surjective_of_isDominant_of_isClosed_range _ (Scheme.Hom.isClosedEmbedding _).isClosed_range
+  have : IsIso (equalizer.ι f' g').left :=
+    (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, inferInstance⟩
+  rw [← cancel_epi (equalizer.ι f' g').left]
+  exact congrArg (fun k ↦ k.left) (equalizer.condition f' g')
+
+/-- **An unramified morphism is a monomorphism exactly when it is universally injective.**
+Stacks, Tag 05VH. -/
+theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [FormallyUnramified f]
+    [LocallyOfFiniteType f] : Mono f ↔ UniversallyInjective f := by
+  refine ⟨fun _ ↦ inferInstance, fun hf ↦ ?_⟩
+  -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
+  rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
+  exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
 
 end AlgebraicGeometry

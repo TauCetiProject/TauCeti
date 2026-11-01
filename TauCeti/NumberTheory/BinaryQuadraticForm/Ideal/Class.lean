@@ -70,6 +70,11 @@ theorem picClass_def (f : primitiveForms D) :
       ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal D
         ((mem_primitiveForms D f).mp f.2).1 ((mem_primitiveForms D f).mp f.2).2) := (rfl)
 
+/-- **A form whose leading coefficient is a unit has trivial Picard class.** -/
+theorem picClass_eq_one_of_isUnit_a {f : primitiveForms D}
+    (ha : IsUnit (f : BinaryQuadraticForm ℤ).a) : picClass D hD f = 1 := by
+  rw [picClass_def, invertibleFractionalIdeal_eq_one_of_isUnit_a _ D _ _ ha, map_one]
+
 /-- **Properly equivalent forms have the same Picard class.** -/
 @[simp] theorem picClass_smul (γ : SL(2, ℤ)) (f : primitiveForms D) :
     picClass D hD (γ • f) = picClass D hD f := by

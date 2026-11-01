@@ -33,6 +33,8 @@ zero and returns `0`.
 * `CovariantDerivative.ricciTensor_eq_smul_schoutenTensor_add`: `Ric = (n - 2) P + (tr_g P) g`.
 * `CovariantDerivative.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub`: constant
   curvature `κ` gives `P = (κ / 2) g`.
+* `CovariantDerivative.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero`: zero curvature gives
+  `P = 0`.
 * `CovariantDerivative.mdifferentiableAt_schoutenTensor_apply`: for a smooth metric, `P` pairs
   differentiable vector fields to differentiable functions.
 
@@ -129,6 +131,13 @@ theorem IsMetricCompatible.schoutenTensor_isSymm
   ⟨fun u v ↦ by
     rw [RingHom.id_apply, schoutenTensor_apply, schoutenTensor_apply,
       IsMetricCompatible.ricciTensor_comm (cov := cov) hcov ht x u v, real_inner_comm u v]⟩
+
+/-- A point with zero curvature tensor has zero Schouten tensor. -/
+theorem schoutenTensor_eq_zero_of_curvatureTensor_eq_zero (x : M) (h : curvature x = 0) :
+    cov.schoutenTensor x = 0 := by
+  ext u v
+  simp [cov.ricciTensor_eq_zero_of_curvatureTensor_eq_zero x h,
+    cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x h]
 
 /-- The Schouten tensor of the constant-curvature model
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)` is `(κ / 2) g`, in dimension at least `3`. -/

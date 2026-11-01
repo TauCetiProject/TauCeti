@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.TotalVariation
+public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
+import TauCeti.MeasureTheory.Function.Lp.Subsequence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 
 /-!
@@ -43,12 +44,24 @@ A cutoff equal to one near `K` and supported in `Ω` turns the family into one s
 compact set, bounded in `L¹` and in variation on the whole space, to which the translation
 estimate and the Fréchet–Kolmogorov criterion apply.
 
+A diagonal argument over a compact exhaustion of `Ω`
+(`TauCeti.exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure`) turns this into sequential
+compactness: a sequence locally bounded in `L¹` and in variation on `Ω` has a subsequence
+converging in `L¹_loc(Ω)`. For indicators, the limit is again an indicator up to a null set, so
+a sequence of sets with locally bounded perimeter in `Ω` has a subsequence converging locally in
+measure to a measurable set, whose perimeter is controlled by `TauCeti.perimeter_le_liminf`. No
+bound on the volumes is needed, as in the blow-up arguments for sets of finite perimeter.
+
 ## Main results
 
 * `TauCeti.totallyBounded_of_setLIntegral_le_of_totalVariationOn_le` and
   `TauCeti.isCompact_closure_of_setLIntegral_le_of_totalVariationOn_le`: a family bounded in
   `L¹(Ω)` and in variation on `Ω` is totally bounded, and relatively compact, in `L¹(K)` for every
   compact `K ⊆ Ω`.
+* `TauCeti.exists_subseq_tendsto_setLIntegral_enorm_sub_of_totalVariationOn_le`: a sequence locally
+  bounded in `L¹` and in variation on `Ω` has a subsequence converging in `L¹_loc(Ω)`.
+* `TauCeti.exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le`: compactness for sets of
+  locally finite perimeter.
 
 ## References
 
@@ -56,7 +69,8 @@ estimate and the Fréchet–Kolmogorov criterion apply.
   Problems*, Theorem 3.23.
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, §5.2,
   Theorem 5.5.
-* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Theorem 12.26.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Theorem 12.26 and
+  Corollary 12.27.
 -/
 
 public section
@@ -66,7 +80,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Filter Function Metric Set TopologicalSpace TestFunction
-open scoped ENNReal NNReal ContDiff Distributions Topology
+open scoped ENNReal NNReal ContDiff Distributions Topology symmDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Opens E}
@@ -159,5 +173,117 @@ theorem isCompact_closure_of_setLIntegral_le_of_totalVariationOn_le (hK : IsComp
     IsCompact (closure {f : Lp ℝ 1 (μ.restrict K) | ∃ u ∈ S, f =ᵐ[μ.restrict K] u}) :=
   (totallyBounded_of_setLIntegral_le_of_totalVariationOn_le hK hKΩ hM hmeas hbdd
     hvar).closure.isCompact_of_isClosed isClosed_closure
+
+/-! ### Sequential compactness in `L¹_loc` -/
+
+/-- **Sequential compactness of sequences of locally bounded variation.** Let `u n` be a sequence
+of functions that is locally bounded in `L¹` and in variation on `Ω`: every compact `K ⊆ Ω` has an
+open neighbourhood `U ⊆ Ω` on which `∫_U |u n|` and `|D(u n)|(U)` are bounded uniformly in `n`.
+Then a subsequence converges in `L¹_loc(Ω)` to a locally integrable function `v`: for every
+compact `K ⊆ Ω`, `∫_K |u (φ j) - v| → 0`.
+
+The variation of the limit is controlled by lower semicontinuity
+(`TauCeti.totalVariationOn_le_liminf`). -/
+theorem exists_subseq_tendsto_setLIntegral_enorm_sub_of_totalVariationOn_le {u : ℕ → E → ℝ}
+    (hmeas : ∀ n, AEStronglyMeasurable (u n) (μ.restrict Ω))
+    (hbdd : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ U ≤ Ω ∧ ∃ M : ℝ≥0,
+      ∀ n, ∫⁻ x in U, ‖u n x‖ₑ ∂μ ≤ M ∧ totalVariationOn μ U (u n) ≤ M) :
+    ∃ v : E → ℝ, LocallyIntegrableOn v Ω μ ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      ∀ K, IsCompact K → K ⊆ Ω →
+        Tendsto (fun j => ∫⁻ x in K, ‖u (φ j) x - v x‖ₑ ∂μ) atTop (𝓝 0) := by
+  have hint (n : ℕ) (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+      MemLp (u n) 1 (μ.restrict K) := by
+    obtain ⟨U, hKU, hUΩ, M, hb⟩ := hbdd K hK hKΩ
+    refine memLp_one_iff_integrable.2 (IntegrableOn.mono_set ?_ hKU)
+    exact ⟨(hmeas n).mono_measure (Measure.restrict_mono hUΩ le_rfl),
+      (hb n).1.trans_lt ENNReal.coe_lt_top⟩
+  -- On each compact `K ⊆ Ω` the sequence is relatively compact in `L¹(K)`.
+  obtain ⟨v, hv, φ, hφ, hlim⟩ := exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure Ω.isOpen
+    hint fun K hK hKΩ => by
+      obtain ⟨U, hKU, hUΩ, M, hb⟩ := hbdd K hK hKΩ
+      simpa using isCompact_closure_of_setLIntegral_le_of_totalVariationOn_le (S := range u)
+        (M := M) hK hKU ENNReal.coe_ne_top
+        (by rintro _ ⟨n, rfl⟩; exact (hmeas n).mono_measure (Measure.restrict_mono hUΩ le_rfl))
+        (by rintro _ ⟨n, rfl⟩; exact (hb n).1) (by rintro _ ⟨n, rfl⟩; exact (hb n).2)
+  refine ⟨v, (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK =>
+    memLp_one_iff_integrable.1 (hv K hK hKΩ), φ, hφ, fun K hK hKΩ =>
+      (hlim K hK hKΩ).congr fun j => ?_⟩
+  rw [eLpNorm_one_eq_lintegral_enorm ((hint _ K hK hKΩ).aestronglyMeasurable.sub
+    (hv K hK hKΩ).aestronglyMeasurable)]
+  simp only [Pi.sub_apply]
+
+/-- **Compactness for sets of locally finite perimeter.** Let `s n` be a sequence of
+null-measurable sets with locally bounded perimeter in `Ω`: every compact `K ⊆ Ω` has an open
+neighbourhood `U ⊆ Ω` with `P(s n; U)` bounded uniformly in `n`. Then a subsequence converges
+locally in measure in `Ω` to a measurable set `t`: `μ ((s (φ j) ∆ t) ∩ K) → 0` for every compact
+`K ⊆ Ω`. No bound on the volumes of the sets is needed.
+
+By lower semicontinuity (`TauCeti.perimeter_le_liminf`), `P(t; U) ≤ liminf P(s (φ j); U)` for
+every open `U ⊆ Ω`, so `t` has locally finite perimeter in `Ω`. -/
+theorem exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le {s : ℕ → Set E}
+    (hs : ∀ n, NullMeasurableSet (s n) μ)
+    (hP : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ U ≤ Ω ∧ ∃ M : ℝ≥0,
+      ∀ n, perimeter μ U (s n) ≤ M) :
+    ∃ t, MeasurableSet t ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun j => μ ((s (φ j) ∆ t) ∩ K)) atTop (𝓝 0) := by
+  -- The indicators are locally bounded in `L¹`, since `μ` is locally finite.
+  have hbdd (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ U ≤ Ω ∧ ∃ M : ℝ≥0,
+        ∀ n, ∫⁻ x in U, ‖(s n).indicator (1 : E → ℝ) x‖ₑ ∂μ ≤ M ∧
+          totalVariationOn μ U ((s n).indicator 1) ≤ M := by
+    obtain ⟨U, hKU, hUΩ, M, hM⟩ := hP K hK hKΩ
+    obtain ⟨V, hV, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
+    refine ⟨⟨V, hV⟩, hKV, (subset_closure.trans hVU).trans hUΩ,
+      M + (μ (closure V)).toNNReal, fun n => ⟨?_, ?_⟩⟩
+    · calc ∫⁻ x in V, ‖(s n).indicator (1 : E → ℝ) x‖ₑ ∂μ ≤ ∫⁻ _ in V, 1 ∂μ :=
+            lintegral_mono fun x => (enorm_indicator_le_enorm_self _ x).trans (by simp)
+        _ ≤ (μ (closure V)).toNNReal := by
+            rw [setLIntegral_one, ENNReal.coe_toNNReal hVc.measure_lt_top.ne]
+            exact measure_mono subset_closure
+        _ ≤ _ := by gcongr; exact le_add_self
+    · rw [← perimeter_def]
+      calc perimeter μ ⟨V, hV⟩ (s n) ≤ perimeter μ U (s n) :=
+            perimeter_mono (Ω' := ⟨V, hV⟩) (Ω := U) (subset_closure.trans hVU)
+        _ ≤ _ := (hM n).trans (by gcongr; exact le_self_add)
+  obtain ⟨v, hv, φ, hφ, hlim⟩ := exists_subseq_tendsto_setLIntegral_enorm_sub_of_totalVariationOn_le
+    (fun n => (aestronglyMeasurable_const.indicator₀ (hs n)).restrict) hbdd
+  -- The limit is close to the indicator of the set `t` where a measurable representative `w` of
+  -- `v` exceeds `1/2`, since `|1_s - 1_t| ≤ 2 |1_s - w|` pointwise.
+  let w := hv.aestronglyMeasurable.mk v
+  have hw : Measurable w := hv.aestronglyMeasurable.stronglyMeasurable_mk.measurable
+  refine ⟨{x | 1 / 2 < w x}, measurableSet_lt measurable_const hw, φ, hφ, fun K hK hKΩ => ?_⟩
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.const_mul (a := 2) (hlim K hK hKΩ) (.inr (by simp)))
+    (fun _ => zero_le) fun j => ?_
+  have hpt (x : E) : (s (φ j) ∆ {x | 1 / 2 < w x}).indicator 1 x ≤
+      2 * ‖(s (φ j)).indicator (1 : E → ℝ) x - w x‖ₑ := by
+    have key {r : ℝ} (hr : 1 / 2 ≤ |r|) : (1 : ℝ≥0∞) ≤ 2 * ‖r‖ₑ := by
+      rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (by norm_num),
+        ENNReal.one_le_ofReal]
+      linarith
+    by_cases h₁ : x ∈ s (φ j) <;> by_cases h₂ : 1 / 2 < w x
+    · rw [indicator_of_notMem (by simp [mem_symmDiff, h₁]; linarith)]
+      exact zero_le
+    · rw [indicator_of_mem (by simp [mem_symmDiff, h₁]; linarith), indicator_of_mem h₁,
+        Pi.one_apply, Pi.one_apply]
+      exact key (by rw [abs_of_nonneg (by linarith)]; linarith)
+    · rw [indicator_of_mem (by simp [mem_symmDiff, h₁]; linarith), indicator_of_notMem h₁,
+        Pi.one_apply]
+      exact key (by rw [zero_sub, abs_neg, abs_of_pos (by linarith)]; linarith)
+    · rw [indicator_of_notMem (by simp [mem_symmDiff, h₁]; linarith)]
+      exact zero_le
+  calc μ ((s (φ j) ∆ {x | 1 / 2 < w x}) ∩ K)
+      = ∫⁻ x in K, (s (φ j) ∆ {x | 1 / 2 < w x}).indicator 1 x ∂μ := by
+        rw [lintegral_indicator_one₀ (((hs _).symmDiff
+          (measurableSet_lt measurable_const hw).nullMeasurableSet).mono Measure.restrict_le_self),
+          Measure.restrict_apply' hK.isClosed.measurableSet]
+    _ ≤ ∫⁻ x in K, 2 * ‖(s (φ j)).indicator (1 : E → ℝ) x - v x‖ₑ ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset hKΩ
+          hv.aestronglyMeasurable.ae_eq_mk] with x hx
+        rw [hx]
+        exact hpt x
+    _ = 2 * ∫⁻ x in K, ‖(s (φ j)).indicator (1 : E → ℝ) x - v x‖ₑ ∂μ :=
+        lintegral_const_mul' _ _ (by simp)
 
 end TauCeti

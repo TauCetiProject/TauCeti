@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.AddInv
-public import TauCeti.RingTheory.FormalGroup.Logarithm
+public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
 
@@ -40,6 +40,7 @@ IV.6.1).
 ## Main definitions
 
 * `FormalGroup.nsmulSeries`: the multiplication-by-`n` series `[n]_F(T)`.
+* `FormalGroup.nsmulHom`: multiplication by `n` as an endomorphism of a commutative formal group.
 
 ## Main results
 
@@ -59,6 +60,8 @@ IV.6.1).
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
 * `FormalGroup.exists_nsmulSeries_eq_of_prime`: `[p]_F(T) = p T u(T) + Tᵖ h(T)` with `u(0) = 1`.
+* `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
+  multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
 
 ## References
 
@@ -175,6 +178,16 @@ theorem subst_toPowerSeries_nsmulSeries [F.IsComm] (n : ℕ) :
   funext s
   rw [PowerSeries.toMvPowerSeries_eq_subst, F.subst_nsmulSeries ⟨X s, PowerSeries.HasSubst.X s⟩]
   fin_cases s <;> rfl
+
+/-- Multiplication by `n` as an endomorphism of a commutative formal group law. -/
+noncomputable def nsmulHom [F.IsComm] (n : ℕ) : TauCeti.FormalGroupHom F F where
+  toPowerSeries := F.nsmulSeries n
+  zero_constantCoeff := F.constantCoeff_nsmulSeries n
+  hom := F.subst_toPowerSeries_nsmulSeries n
+
+@[simp]
+theorem nsmulHom_toPowerSeries [F.IsComm] (n : ℕ) :
+    (F.nsmulHom n).toPowerSeries = F.nsmulSeries n := (rfl)
 
 /-- Multiplication by `n` on the additive formal group law `X + Y` is `[n](T) = n T`. -/
 @[simp]
@@ -326,3 +339,23 @@ theorem exists_nsmulSeries_eq_of_prime [F.IsComm] {p : ℕ} (hp : p.Prime) :
   · simp [hj.ne', hjp.not_gt]
 
 end FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+variable {R : Type*} [CommRing R] {F G : FormalGroup R}
+
+/-- **Homomorphisms commute with multiplication by `n`**: if `f` is a homomorphism of formal group
+laws from `F` to `G`, then `f([n]_F(T)) = [n]_G(f(T))`. Neither law needs to be commutative. -/
+theorem subst_nsmulSeries (f : FormalGroupHom F G) (n : ℕ) :
+    PowerSeries.subst (F.nsmulSeries n) f.toPowerSeries =
+      PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) := by
+  -- `f` is additive on power-series points, and sends the tautological point `T` to `f(T)`
+  have hF : (n • F.tautologicalPoint).val = F.nsmulSeries n := by
+    rw [← F.subst_nsmulSeries, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
+  have hG : (n • f.applyPoint F.tautologicalPoint).val =
+      PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) := by
+    rw [← G.subst_nsmulSeries, applyPoint_val, FormalGroup.val_tautologicalPoint,
+      PowerSeries.X_subst]
+  rw [← hF, ← hG, ← applyPoint_val, ← toAddMonoidHom_apply, map_nsmul, toAddMonoidHom_apply]
+
+end TauCeti.FormalGroupHom

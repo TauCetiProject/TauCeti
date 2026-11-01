@@ -35,13 +35,6 @@ equivalence and `ConformalAt` API from a holomorphic bijection.
 * `DifferentiableOn.conformalAt_of_isOpen_of_injOn` proves its pointwise conformality.
 * `DifferentiableOn.conformalAt_toOpenPartialHomeomorph_symm` proves conformality of the
   inverse.
-
-## Coordination with upstream Mathlib
-
-This L0--L3 infrastructure overlaps the Riemann-mapping development in
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505). It is a temporary
-shim: replace it with public human-curated Mathlib API, and refactor its consumers, if that
-development exports the same packaging.
 -/
 
 public section

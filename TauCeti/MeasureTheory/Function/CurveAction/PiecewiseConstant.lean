@@ -31,7 +31,10 @@ for all `s, t ∈ [0, T]`, and their discrete `p`-actions have finite lower limi
 `1 < p`, then `u` is absolutely continuous on `[0, T]` and its `p`-action is at most that lower
 limit. The weak form of convergence covers convergence for a topology weaker than that of the
 metric, for which the distance is lower semicontinuous, as for narrow convergence of
-probability measures and the Wasserstein distance.
+probability measures and the Wasserstein distance. The discrete sequences may take values in
+a different weak extended pseudometric space from the pseudometric space of the limit curve;
+the comparison of distances is the only relation required between the two carriers. Positivity
+of the time steps is required only eventually along the convergence filter.
 
 Both results rest on the discrete Hölder estimate: the distance between the interpolant at times
 `s ≤ t` is at most the sum of the steps taken in between, of which there are at most
@@ -65,9 +68,13 @@ open scoped ENNReal NNReal Interval
 
 namespace TauCeti
 
-section PseudoEMetricSpace
+section WeakPseudoEMetricSpace
 
-variable {X : Type*} [PseudoEMetricSpace X] {p : ℝ} {τ : ℝ≥0} {U : ℕ → X}
+variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X] {p : ℝ}
+
+section Step
+
+variable {τ : ℝ≥0} {U : ℕ → X}
 
 /-- **Discrete Hölder estimate** on one interval: for `s ≤ t`, the `p`-th power of the distance
 between the piecewise constant interpolant at times `s` and `t` is at most
@@ -229,20 +236,19 @@ private lemma edist_ceil_div_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T h t : 
         simp only [indicator, div_eq_mul_inv]
         split_ifs <;> ring
 
-end PseudoEMetricSpace
+end Step
 
-section PseudoMetricSpace
-
-variable {X : Type*} [PseudoMetricSpace X] {p : ℝ} {ι : Type*} {l : Filter ι} {τ : ι → ℝ≥0}
-  {U : ι → ℕ → X} {u : ℝ → X} {T : ℝ}
+variable {Y : Type*} {ι : Type*} {l : Filter ι} {τ : ι → ℝ≥0}
+  {U : ι → ℕ → X} {u : ℝ → Y} {T : ℝ}
 
 /-- **Absolute continuity of a limit of piecewise constant interpolants.** Let `U i` be sequences
-of points with time steps `τ i > 0` tending to `0`, and let `u` be a curve with
+of points in a weak extended pseudometric space with eventually positive time steps tending to
+`0`, and let `u` be a curve in a possibly different pseudometric space with
 `d(u s, u t) ≤ liminf_i d(U i ⌈s / τ i⌉₊, U i ⌈t / τ i⌉₊)` for all `s, t ∈ [0, T]`. If the discrete
 `p`-actions `∑_{n < ⌈T / τ i⌉₊} d(U i n, U i (n + 1)) ^ p / τ i ^ (p - 1)` have finite lower limit,
 for an exponent `1 < p`, then `u` is absolutely continuous on `[0, T]`. -/
-theorem absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top (hp : 1 < p)
-    (hτ : ∀ i, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0)) (hT : 0 ≤ T)
+theorem absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top [PseudoMetricSpace Y]
+    (hp : 1 < p) (hτ : ∀ᶠ i in l, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0)) (hT : 0 ≤ T)
     (hu : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T,
       edist (u s) (u t) ≤ liminf (fun i ↦ edist (U i ⌈s / τ i⌉₊) (U i ⌈t / τ i⌉₊)) l)
     (hS : liminf (fun i ↦ ∑ n ∈ Finset.range ⌈T / τ i⌉₊,
@@ -276,8 +282,8 @@ theorem absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top (hp : 1 <
         Monotone.map_liminf_of_continuousAt (fun _ _ h ↦ ENNReal.rpow_le_rpow h (by linarith)) _
           ENNReal.continuous_rpow_const.continuousAt
     _ ≤ liminf (fun i ↦ (V + k * (τ i : ℝ≥0∞)) ^ (p - 1) * S i) l :=
-        liminf_le_liminf (Eventually.of_forall fun i ↦
-          sum_edist_ceil_div_rpow_le hp.le (hτ i) hT hE)
+        liminf_le_liminf (hτ.mono fun i hi ↦
+          sum_edist_ceil_div_rpow_le hp.le hi hT hE)
     _ ≤ limsup (fun i ↦ (V + k * (τ i : ℝ≥0∞)) ^ (p - 1)) l * liminf S l :=
         ENNReal.liminf_mul_le (Or.inr hS) (Or.inl (hfac.limsup_eq ▸
           ENNReal.rpow_ne_top_of_nonneg (by linarith) hV))
@@ -288,8 +294,8 @@ theorem absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top (hp : 1 <
 by the discrete Hölder estimate, each step of an interpolant contributes to the difference quotient
 at the times `t` of a window `(n τ - h, n τ]` of length `h`, and Fatou's lemma passes to the limit.
 -/
-private lemma lintegral_edist_div_rpow_le_liminf [l.IsCountablyGenerated] (hp : 1 ≤ p)
-    (hτ : ∀ i, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0))
+private lemma lintegral_edist_div_rpow_le_liminf [EDist Y] [l.IsCountablyGenerated] (hp : 1 ≤ p)
+    (hτ : ∀ᶠ i in l, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0))
     (hu : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T,
       edist (u s) (u t) ≤ liminf (fun i ↦ edist (U i ⌈s / τ i⌉₊) (U i ⌈t / τ i⌉₊)) l)
     {h : ℝ} (hh : 0 < h) :
@@ -343,8 +349,8 @@ private lemma lintegral_edist_div_rpow_le_liminf [l.IsCountablyGenerated] (hp : 
               hg.map_liminf_of_continuousAt _ ((ENNReal.continuous_rpow_const.comp
                 (ENNReal.continuous_div_const H hH)).continuousAt)
           _ ≤ liminf (fun i ↦ F i t) l :=
-              liminf_le_liminf (Eventually.of_forall fun i ↦
-                edist_ceil_div_div_rpow_le hp (hτ i) hh ht.2)
+              liminf_le_liminf (hτ.mono fun i hi ↦
+                edist_ceil_div_div_rpow_le hp hi hh ht.2)
     _ ≤ liminf (fun i ↦ ∫⁻ t in Ioc 0 (T - h), F i t) l :=
         lintegral_liminf_le fun i ↦ hF_meas i
     _ ≤ liminf (fun i ↦ c i * S i) l := liminf_le_liminf (Eventually.of_forall hF_int)
@@ -353,14 +359,15 @@ private lemma lintegral_edist_div_rpow_le_liminf [l.IsCountablyGenerated] (hp : 
     _ = liminf S l := by rw [hc.limsup_eq, one_mul]
 
 /-- **Lower semicontinuity of the action along piecewise constant interpolants.** Let `U i` be
-sequences of points with time steps `τ i > 0` tending to `0` along a countably generated filter,
-and let `u` be a curve with `d(u s, u t) ≤ liminf_i d(U i ⌈s / τ i⌉₊, U i ⌈t / τ i⌉₊)` for all
+sequences of points in a weak extended pseudometric space with eventually positive time steps
+tending to `0` along a countably generated filter, and let `u` be a curve in a possibly different
+pseudometric space with `d(u s, u t) ≤ liminf_i d(U i ⌈s / τ i⌉₊, U i ⌈t / τ i⌉₊)` for all
 `s, t ∈ [0, T]`. Then for `1 < p` the `p`-action of `u` over `[0, T]` is at most the lower limit of
 the discrete `p`-actions `∑_{n < ⌈T / τ i⌉₊} d(U i n, U i (n + 1)) ^ p / τ i ^ (p - 1)`. When this
 lower limit is finite, `u` is absolutely continuous on `[0, T]` by
 `TauCeti.absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top`. -/
-theorem curveAction_le_liminf_sum_edist_rpow [l.IsCountablyGenerated] (hp : 1 < p)
-    (hτ : ∀ i, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0)) (hT : 0 ≤ T)
+theorem curveAction_le_liminf_sum_edist_rpow [PseudoMetricSpace Y] [l.IsCountablyGenerated]
+    (hp : 1 < p) (hτ : ∀ᶠ i in l, 0 < τ i) (hτ0 : Tendsto τ l (𝓝 0)) (hT : 0 ≤ T)
     (hu : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T,
       edist (u s) (u t) ≤ liminf (fun i ↦ edist (U i ⌈s / τ i⌉₊) (U i ⌈t / τ i⌉₊)) l) :
     curveAction p u 0 T ≤ liminf (fun i ↦ ∑ n ∈ Finset.range ⌈T / τ i⌉₊,
@@ -374,6 +381,6 @@ theorem curveAction_le_liminf_sum_edist_rpow [l.IsCountablyGenerated] (hp : 1 < 
   filter_upwards [self_mem_nhdsWithin] with h (hh : 0 < h)
   exact lintegral_edist_div_rpow_le_liminf hp.le hτ hτ0 hu hh
 
-end PseudoMetricSpace
+end WeakPseudoEMetricSpace
 
 end TauCeti

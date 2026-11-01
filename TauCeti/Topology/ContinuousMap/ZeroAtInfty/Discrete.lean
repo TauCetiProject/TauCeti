@@ -33,6 +33,8 @@ This file develops the coordinate structure of `C₀(I, E)`:
   (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
+* `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
+  `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
   coordinate when `I` is nonempty;
 * `ZeroAtInftyContinuousMap.hasSum_single`: every `f` is the unconditional sum of its coordinate
@@ -49,7 +51,9 @@ This file develops the coordinate structure of `C₀(I, E)`:
   are determined by their values on coordinate vectors;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
   onto a set `S` of indices, of norm at most one; on `C₀(I, R)` it has finite rank when `S` is
-  finite (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`).
+  finite (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`); these projections converge
+  to the original family when every coordinate is retained eventually
+  (`ZeroAtInftyContinuousMap.tendsto_indicatorCLM`).
 
 It also compares the model spaces over different discrete index types. These isometries send
 coordinate vectors to coordinate vectors and commute with the coordinatewise action
@@ -151,6 +155,57 @@ theorem single_eq_zero_iff {i : I} {b : β} : single i b = 0 ↔ b = 0 :=
 
 end Zero
 
+/-! ### Prepending a coordinate to a null sequence -/
+
+section Cons
+
+variable [TopologicalSpace β] [Zero β]
+
+/-- Prepend one entry to a sequence vanishing at infinity. -/
+def cons (b : β) (f : C₀(ℕ, β)) : C₀(ℕ, β) :=
+  mkOfDiscrete (Nat.rec b (fun n _ ↦ f n)) <| by
+    rw [Nat.cofinite_eq_atTop]
+    apply (tendsto_add_atTop_iff_nat 1).mp
+    simpa using (cocompact_eq_atTop (α := ℕ) ▸ zero_at_infty f)
+
+@[simp]
+theorem cons_apply_zero (b : β) (f : C₀(ℕ, β)) : cons b f 0 = b := (rfl)
+
+@[simp]
+theorem cons_apply_succ (b : β) (f : C₀(ℕ, β)) (n : ℕ) : cons b f (n + 1) = f n := (rfl)
+
+end Cons
+
+variable [TopologicalSpace β] in
+/-- Prepending entries commutes with addition. -/
+theorem cons_add [AddZeroClass β] [ContinuousAdd β] (b c : β) (f g : C₀(ℕ, β)) :
+    cons (b + c) (f + g) = cons b f + cons c g := by
+  ext n
+  cases n <;> simp
+
+variable [TopologicalSpace β] [Zero β] in
+/-- Prepending entries commutes with scalar multiplication. -/
+theorem cons_smul {R : Type*} [SMulZeroClass R β] [ContinuousConstSMul R β]
+    (r : R) (b : β) (f : C₀(ℕ, β)) : cons (r • b) (r • f) = r • cons b f := by
+  ext n
+  cases n <;> simp
+
+/-- The norm of a sequence with a prepended entry is the maximum of the two norms. -/
+@[simp]
+theorem norm_cons [SeminormedAddCommGroup β] (b : β) (f : C₀(ℕ, β)) :
+    ‖cons b f‖ = max ‖b‖ ‖f‖ := by
+  apply le_antisymm
+  · apply (norm_le (le_max_of_le_left (norm_nonneg b))).mpr
+    intro n
+    cases n with
+    | zero => simp
+    | succ n => simpa only [cons_apply_succ] using
+        (norm_coe_le_norm f n).trans (le_max_right ‖b‖ _)
+  · apply max_le
+    · simpa using norm_coe_le_norm (cons b f) 0
+    · exact (norm_le (norm_nonneg _)).mpr fun n ↦ by
+        simpa using norm_coe_le_norm (cons b f) (n + 1)
+
 section Algebra
 
 variable [DecidableEq I] [TopologicalSpace β]
@@ -190,6 +245,99 @@ theorem sum_single_apply [AddCommMonoid β] [ContinuousAdd β] (b : I → β) (s
 
 end Algebra
 
+section Indicator
+
+/-! ### Coordinate projections -/
+
+variable [SeminormedAddCommGroup β]
+
+private theorem norm_mkOfDiscrete_indicator_le (S : Set I) (f : C₀(I, β)) :
+    ‖mkOfDiscrete (S.indicator f) (tendsto_indicator_cofinite S f)‖ ≤ ‖f‖ := by
+  refine (norm_le (norm_nonneg f)).2 fun i ↦ ?_
+  rw [coe_mkOfDiscrete]
+  exact norm_indicator_le_norm_self f i |>.trans (norm_coe_le_norm f i)
+
+variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β]
+
+/-- The **coordinate projection** onto a set `S` of indices: the continuous linear map sending
+`f` to the family `S.indicator f`, which keeps the coordinates in `S` and replaces the others by
+zero. It has norm at most one (`norm_indicatorCLM_apply_le`), and for finite `S` it is the
+partial sum of the coordinate expansion over `S` (`indicatorCLM_finset_apply`). -/
+noncomputable def indicatorCLM (S : Set I) : C₀(I, β) →L[R] C₀(I, β) :=
+  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
+  let L : C₀(I, β) →ₗ[R] C₀(I, β) :=
+    { toFun f := mkOfDiscrete (S.indicator f) (tendsto_indicator_cofinite S f)
+      map_add' f g := by ext i; by_cases hi : i ∈ S <;> simp [hi]
+      map_smul' c f := by ext i; by_cases hi : i ∈ S <;> simp [hi] }
+  { L with
+    cont := AddMonoidHomClass.continuous_of_bound L 1 fun f ↦ by
+      simpa only [L, LinearMap.coe_mk, AddHom.coe_mk, one_mul] using
+        norm_mkOfDiscrete_indicator_le S f }
+
+variable {R}
+
+@[simp]
+theorem coe_indicatorCLM (S : Set I) (f : C₀(I, β)) : ⇑(indicatorCLM R S f) = S.indicator f :=
+  (rfl)
+
+variable (R) in
+/-- Coordinate projections converge to a family vanishing at infinity if every coordinate is
+retained eventually. The sets need not be finite or increasing. -/
+theorem tendsto_indicatorCLM {ι : Type*} {s : ι → Set I} {l : Filter ι}
+    (hs : ∀ i, ∀ᶠ k in l, i ∈ s k) (f : C₀(I, β)) :
+    Tendsto (fun k ↦ indicatorCLM R (s k) f) l (𝓝 f) := by
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  have hfin : {i | ¬‖f i‖ < ε / 2}.Finite :=
+    eventually_cofinite.1 (NormedAddGroup.tendsto_nhds_zero.1 f.tendsto_cofinite _ (half_pos hε))
+  filter_upwards [hfin.eventually_all.2 (fun i _ ↦ hs i)] with k hk
+  rw [dist_eq_norm]
+  refine ((norm_le (half_pos hε).le).2 fun i ↦ ?_).trans_lt (half_lt_self hε)
+  by_cases hi : i ∈ s k
+  · simpa [coe_indicatorCLM, hi] using (half_pos hε).le
+  · have hsmall : ‖f i‖ < ε / 2 := not_not.1 fun hbad ↦ hi (hk i hbad)
+    simpa [coe_indicatorCLM, hi] using hsmall.le
+
+/-- The coordinate projections have norm at most one. -/
+theorem norm_indicatorCLM_apply_le (S : Set I) (f : C₀(I, β)) : ‖indicatorCLM R S f‖ ≤ ‖f‖ :=
+  norm_mkOfDiscrete_indicator_le S f
+
+@[simp]
+theorem indicatorCLM_univ :
+    (indicatorCLM R Set.univ : C₀(I, β) →L[R] C₀(I, β)) = ContinuousLinearMap.id R _ := by
+  ext; simp
+
+@[simp]
+theorem indicatorCLM_empty : (indicatorCLM R ∅ : C₀(I, β) →L[R] C₀(I, β)) = 0 := by
+  ext; simp
+
+/-- The projections onto a set of indices and onto its complement add up to the identity. -/
+theorem indicatorCLM_add_indicatorCLM_compl (S : Set I) :
+    (indicatorCLM R S + indicatorCLM R Sᶜ : C₀(I, β) →L[R] C₀(I, β)) =
+      ContinuousLinearMap.id R _ := by
+  ext f i
+  by_cases hi : i ∈ S <;> simp [hi]
+
+/-- For a finite set `s`, the coordinate projection onto `s` is the partial sum of the coordinate
+expansion over `s`. -/
+theorem indicatorCLM_finset_apply [DecidableEq I] (s : Finset I) (f : C₀(I, β)) :
+    indicatorCLM R (s : Set I) f = ∑ i ∈ s, single i (f i) := by
+  ext j
+  simp [sum_single_apply, Set.indicator_apply]
+
+/-- The coordinate projection of `C₀(I, R)` onto a finite set of indices has finite rank: its
+range lies in the span of the corresponding unit vectors. -/
+theorem isFiniteRank_indicatorCLM {R : Type*} [SeminormedRing R] (s : Finset I) :
+    ((indicatorCLM R (s : Set I) : C₀(I, R) →L[R] C₀(I, R)) :
+      C₀(I, R) →ₗ[R] C₀(I, R)).IsFiniteRank := by
+  classical
+  refine LinearMap.isFiniteRank_iff_forall_mem.2 ⟨Submodule.span R ((single · (1 : R)) '' s),
+    Submodule.fg_span (s.finite_toSet.image _), fun f ↦ ?_⟩
+  rw [ContinuousLinearMap.coe_coe, indicatorCLM_finset_apply]
+  exact Submodule.sum_mem _ fun i hi ↦ smul_single_one i (f i) ▸
+    Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
+
+end Indicator
+
 section Normed
 
 variable [SeminormedAddCommGroup β]
@@ -228,17 +376,9 @@ variable [DecidableEq I]
 /-- **Coordinate expansion**: every `f ∈ C₀(I, β)` is the unconditional sum of its coordinate
 vectors `single i (f i)`. -/
 theorem hasSum_single (f : C₀(I, β)) : HasSum (fun i ↦ single i (f i)) f := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  have hfin : {j | ¬‖f j‖ < ε / 2}.Finite := eventually_cofinite.1 <|
-    (by simpa using f.tendsto_cofinite.norm : Tendsto (fun j ↦ ‖f j‖) cofinite (𝓝 0))
-      |>.eventually_lt_const (half_pos hε)
-  refine ⟨hfin.toFinset, fun s hs ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine ((norm_le (half_pos hε).le).2 fun j ↦ ?_).trans_lt (half_lt_self hε)
-  by_cases hj : j ∈ s
-  · simpa [sum_single_apply, hj] using (half_pos hε).le
-  · have : ‖f j‖ < ε / 2 := not_not.1 fun h ↦ hj (hs (by simpa using h))
-    simpa [sum_single_apply, hj] using this.le
+  simpa only [HasSum, SummationFilter.unconditional_filter, indicatorCLM_finset_apply] using
+    tendsto_indicatorCLM ℕ (s := fun s : Finset I ↦ (s : Set I))
+      eventually_finset_mem_atTop f
 
 /-- Continuous linear maps out of `C₀(I, β)` agreeing on all coordinate vectors are equal. -/
 theorem continuousLinearMap_ext {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]
@@ -306,82 +446,6 @@ theorem continuousLinearMap_ext_single_one {M : Type*} [AddCommMonoid M] [Module
   continuousLinearMap_ext fun i r ↦ by rw [← smul_single_one, map_smul, map_smul, h]
 
 end Ring
-
-section Indicator
-
-/-! ### Coordinate projections -/
-
-variable [SeminormedAddCommGroup β]
-
-private theorem norm_mkOfDiscrete_indicator_le (S : Set I) (f : C₀(I, β)) :
-    ‖mkOfDiscrete (S.indicator f) (tendsto_indicator_cofinite S f)‖ ≤ ‖f‖ := by
-  refine (norm_le (norm_nonneg f)).2 fun i ↦ ?_
-  rw [coe_mkOfDiscrete]
-  exact norm_indicator_le_norm_self f i |>.trans (norm_coe_le_norm f i)
-
-variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β]
-
-/-- The **coordinate projection** onto a set `S` of indices: the continuous linear map sending
-`f` to the family `S.indicator f`, which keeps the coordinates in `S` and replaces the others by
-zero. It has norm at most one (`norm_indicatorCLM_apply_le`), and for finite `S` it is the
-partial sum of the coordinate expansion over `S` (`indicatorCLM_finset_apply`). -/
-noncomputable def indicatorCLM (S : Set I) : C₀(I, β) →L[R] C₀(I, β) :=
-  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
-  let L : C₀(I, β) →ₗ[R] C₀(I, β) :=
-    { toFun f := mkOfDiscrete (S.indicator f) (tendsto_indicator_cofinite S f)
-      map_add' f g := by ext i; by_cases hi : i ∈ S <;> simp [hi]
-      map_smul' c f := by ext i; by_cases hi : i ∈ S <;> simp [hi] }
-  { L with
-    cont := AddMonoidHomClass.continuous_of_bound L 1 fun f ↦ by
-      simpa only [L, LinearMap.coe_mk, AddHom.coe_mk, one_mul] using
-        norm_mkOfDiscrete_indicator_le S f }
-
-variable {R}
-
-@[simp]
-theorem coe_indicatorCLM (S : Set I) (f : C₀(I, β)) : ⇑(indicatorCLM R S f) = S.indicator f :=
-  (rfl)
-
-/-- The coordinate projections have norm at most one. -/
-theorem norm_indicatorCLM_apply_le (S : Set I) (f : C₀(I, β)) : ‖indicatorCLM R S f‖ ≤ ‖f‖ :=
-  norm_mkOfDiscrete_indicator_le S f
-
-@[simp]
-theorem indicatorCLM_univ :
-    (indicatorCLM R Set.univ : C₀(I, β) →L[R] C₀(I, β)) = ContinuousLinearMap.id R _ := by
-  ext; simp
-
-@[simp]
-theorem indicatorCLM_empty : (indicatorCLM R ∅ : C₀(I, β) →L[R] C₀(I, β)) = 0 := by
-  ext; simp
-
-/-- The projections onto a set of indices and onto its complement add up to the identity. -/
-theorem indicatorCLM_add_indicatorCLM_compl (S : Set I) :
-    (indicatorCLM R S + indicatorCLM R Sᶜ : C₀(I, β) →L[R] C₀(I, β)) =
-      ContinuousLinearMap.id R _ := by
-  ext f i
-  by_cases hi : i ∈ S <;> simp [hi]
-
-/-- For a finite set `s`, the coordinate projection onto `s` is the partial sum of the coordinate
-expansion over `s`. -/
-theorem indicatorCLM_finset_apply [DecidableEq I] (s : Finset I) (f : C₀(I, β)) :
-    indicatorCLM R (s : Set I) f = ∑ i ∈ s, single i (f i) := by
-  ext j
-  simp [sum_single_apply, Set.indicator_apply]
-
-/-- The coordinate projection of `C₀(I, R)` onto a finite set of indices has finite rank: its
-range lies in the span of the corresponding unit vectors. -/
-theorem isFiniteRank_indicatorCLM {R : Type*} [SeminormedRing R] (s : Finset I) :
-    ((indicatorCLM R (s : Set I) : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)).IsFiniteRank := by
-  classical
-  refine LinearMap.isFiniteRank_iff_forall_mem.2 ⟨Submodule.span R ((single · (1 : R)) '' s),
-    Submodule.fg_span (s.finite_toSet.image _), fun f ↦ ?_⟩
-  rw [ContinuousLinearMap.coe_coe, indicatorCLM_finset_apply]
-  exact Submodule.sum_mem _ fun i hi ↦ smul_single_one i (f i) ▸
-    Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
-
-end Indicator
 
 /-! ### Changes of index -/
 

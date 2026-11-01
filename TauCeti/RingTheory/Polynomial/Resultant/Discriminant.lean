@@ -89,6 +89,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
   homomorphism into a field, and its specialization to reduction of an integral polynomial modulo
   a prime not dividing the leading coefficient, in particular of a monic one.
+* `Polynomial.Monic.resultant_deriv_eq_zero_iff`: over a field, the resultant of a monic
+  polynomial and its derivative vanishes exactly when the polynomial is not separable.
 * `Polynomial.discr_eq_discrim_of_degree_eq_two`: the discriminant of a quadratic is Mathlib's
   `discrim` of its coefficients, `b ^ 2 - 4ac`.
 * `Cubic.toPoly_discr`: the two discriminants of a cubic with nonzero leading coefficient agree,
@@ -717,6 +719,14 @@ monic polynomial over `ℤ` with nonzero discriminant that is not separable. -/
 theorem discr_ne_zero_iff {K : Type*} [Field K] {f : K[X]}
     (hf : f.Monic) : f.discr ≠ 0 ↔ f.Separable := by
   rw [← hf.isUnit_discr_iff, isUnit_iff_ne_zero]
+
+/-- Over a field, the resultant of a monic polynomial and its derivative, taken at the degree
+bounds `f.natDegree` and `f.natDegree - 1`, vanishes exactly when the polynomial is not
+separable. -/
+theorem resultant_deriv_eq_zero_iff {K : Type*} [Field K] {f : K[X]} (hf : f.Monic) :
+    f.resultant f.derivative f.natDegree (f.natDegree - 1) = 0 ↔ ¬ f.Separable := by
+  rw [← hf.discr_ne_zero_iff, not_not, hf.resultant_deriv]
+  simp
 
 end Monic
 

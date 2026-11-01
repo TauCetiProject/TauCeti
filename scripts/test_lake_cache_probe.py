@@ -147,7 +147,6 @@ class MainWorkflowFallback(unittest.TestCase):
         self.assertIn('echo "staged=true"', block)
         self.assertIn(
             "if: ${{ needs.build.result == 'success' && "
-            "needs['duplicate-audit-tests'].result == 'success' && "
             "needs.build.outputs.staged == 'true' }}", self.workflow)
 
 

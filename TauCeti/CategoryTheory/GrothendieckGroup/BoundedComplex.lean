@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Algebra.Homology.Contractible
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
+public import Mathlib.Order.Interval.Finset.SuccPred
+public import Mathlib.Order.SuccPred.Int
 
 /-!
 # The Euler characteristic of a bounded complex in split `K₀`
@@ -58,6 +61,8 @@ on distinguished triangles. The comparison itself is proved in
   characteristic of a mapping cone is `χ(L) - χ(K)`, and shifting by `m` multiplies it by `(-1)ᵐ`.
 * `TauCeti.SplitK0.eulerChar_eq_eulerChar`: independence of the summation range for a bounded
   complex.
+* `TauCeti.SplitK0.eulerChar_Icc_add_one`: splitting off the top term, through the brutal
+  truncation below it.
 
 ## References
 
@@ -233,6 +238,20 @@ theorem eulerChar_eq_eulerChar (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
     (hs : Finset.Icc a b ⊆ s) (ht : Finset.Icc a b ⊆ t) : eulerChar K s = eulerChar K t :=
   eulerChar_eq_eulerChar_of_isZero K (fun _ hn => K.isZero_X_of_notMem_Icc a b fun h => hn (hs h))
     fun _ hn => K.isZero_X_of_notMem_Icc a b fun h => hn (ht h)
+
+/-- **Splitting off the top term of an Euler characteristic**: over an interval `[a, b + 1]`, the
+Euler characteristic of `K` is the signed class of its term in degree `b + 1` plus the Euler
+characteristic over `[a, b]` of its brutal truncation in degrees `≤ b`. -/
+theorem eulerChar_Icc_add_one [HasZeroObject C] {a b : ℤ} (hab : a ≤ b + 1) :
+    eulerChar K (Finset.Icc a (b + 1)) = ((b + 1).negOnePow : ℤ) • of (K.X (b + 1)) +
+      eulerChar (K.stupidTrunc (ComplexShape.embeddingUpIntLE b)) (Finset.Icc a b) := by
+  rw [← Order.succ_eq_add_one, ← Finset.insert_Icc_right_eq_Icc_succ (by simpa using hab),
+    eulerChar_insert K (by simp), Order.succ_eq_add_one, eulerChar_def, eulerChar_def]
+  congr 1
+  -- In degrees `≤ b` the truncation has the terms of `K`.
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have := K.isIso_πStupidTruncLE_f b (Finset.mem_Icc.1 hn).2
+  rw [of_congr (asIso ((K.πStupidTruncLE b).f n))]
 
 end Range
 

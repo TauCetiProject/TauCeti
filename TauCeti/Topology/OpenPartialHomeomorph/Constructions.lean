@@ -16,6 +16,8 @@ zero-slice subgroup charts use it after translating an ambient chart. Continuous
 inverse on open sets also give an open partial homeomorphism on their mutual restrictions
 (`ContinuousOn.toOpenPartialHomeomorph`). Composing with an open partial homeomorphism preserves
 open embeddings whose ranges lie in its source (`OpenPartialHomeomorph.isOpenEmbedding_comp`).
+Finite products of open partial homeomorphisms commute with inverses and composition
+(`OpenPartialHomeomorph.pi_symm`, `OpenPartialHomeomorph.pi_trans`), as for partial equivalences.
 
 ## Main definitions
 
@@ -168,6 +170,28 @@ theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
     ((e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).symm z : X) = e.symm (ι z) := by
   classical
   simp [subtypeCoord, hz]
+
+section Pi
+
+variable {ι : Type*} [Finite ι] {X Y Z : ι → Type*} [∀ i, TopologicalSpace (X i)]
+  [∀ i, TopologicalSpace (Y i)] [∀ i, TopologicalSpace (Z i)]
+
+/-- The inverse of a finite product of open partial homeomorphisms is the product of the
+inverses. -/
+@[simp, mfld_simps]
+theorem pi_symm (e : ∀ i, OpenPartialHomeomorph (X i) (Y i)) :
+    (OpenPartialHomeomorph.pi e).symm = .pi fun i ↦ (e i).symm :=
+  toPartialEquiv_injective (PartialEquiv.pi_symm _)
+
+/-- The composition of two finite products of open partial homeomorphisms is the product of the
+compositions. -/
+@[simp, mfld_simps]
+theorem pi_trans (e : ∀ i, OpenPartialHomeomorph (X i) (Y i))
+    (e' : ∀ i, OpenPartialHomeomorph (Y i) (Z i)) :
+    (OpenPartialHomeomorph.pi e).trans (.pi e') = .pi fun i ↦ (e i).trans (e' i) :=
+  toPartialEquiv_injective (PartialEquiv.pi_trans _ _)
+
+end Pi
 
 end OpenPartialHomeomorph
 

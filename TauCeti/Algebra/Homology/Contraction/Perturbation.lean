@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
-public import TauCeti.Algebra.Homology.Contraction.Linear
+public import TauCeti.Algebra.Homology.Contraction.Linear.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.Algebra.Ring.Units
 import Mathlib.Tactic.LinearCombination

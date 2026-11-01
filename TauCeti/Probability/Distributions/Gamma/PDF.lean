@@ -25,6 +25,23 @@ theorem measurable_gammaPDF (a r : ℝ) : Measurable (gammaPDF a r) := by
   unfold gammaPDF
   exact (measurable_gammaPDFReal a r).ennreal_ofReal
 
+/-- The Gamma density at a natural shape is the corresponding Erlang density formula. -/
+theorem gammaPDFReal_nat_eq {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hx : 0 ≤ x) :
+    gammaPDFReal k r x = r ^ k / (k - 1).factorial * x ^ (k - 1) * Real.exp (-(r * x)) := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  have hpow : x ^ ((↑(j + 1) : ℝ) - 1) = x ^ j := by
+    rw [Nat.cast_succ, add_sub_cancel_right, Real.rpow_natCast]
+  rw [gammaPDFReal, ite_eq_left hx, Real.rpow_natCast, hpow,
+    Nat.cast_succ, Real.Gamma_nat_eq_factorial, Nat.add_sub_cancel]
+
+/-- Dividing the Erlang density of shape `k` and rate `r` by `r ^ k` leaves
+`x ^ (k - 1) * exp (-(r * x)) / (k - 1)!`. -/
+theorem gammaPDFReal_nat_div_pow {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hr : r ≠ 0) (hx : 0 ≤ x) :
+    gammaPDFReal k r x / r ^ k = x ^ (k - 1) * Real.exp (-(r * x)) / (k - 1).factorial := by
+  rw [gammaPDFReal_nat_eq hk hx]
+  have := Nat.factorial_pos (k - 1)
+  field_simp
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A variable with a Gamma law has a density. -/

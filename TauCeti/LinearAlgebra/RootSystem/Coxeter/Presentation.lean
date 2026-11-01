@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 import all TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -155,7 +155,8 @@ The canonical homomorphism from the Coxeter group of a base to the Weyl group is
 theorem weylCoxeterHom_injective : Function.Injective (weylCoxeterHom P b) :=
   (coxeterMatrixOfBase P b).toCoxeterSystem.injective_of_exchange (weylCoxeterHom P b)
     (fun w ↦ (inversions P b w).ncard) (orderOf_weylCoxeterHom_simple_mul_simple P b)
-    (isLeast_ncard_inversions_weylCoxeterHom P b) (exchange_weylCoxeterHom P b)
+    (fun w ↦ isLeast_ncard_inversions_weylCoxeterHom P b (weylCoxeterHom P b w))
+    (exchange_weylCoxeterHom P b)
 
 /-- **The Weyl group is a Coxeter system.** For a base `b` of a finite reduced crystallographic
 root system, the Weyl group with the simple reflections of `b` is a Coxeter system for the Coxeter

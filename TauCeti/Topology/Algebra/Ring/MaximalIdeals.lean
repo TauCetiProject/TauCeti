@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Maximal
+public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -22,6 +23,14 @@ Huber rings and reads Wedhorn's Proposition 7.51 off it, but nothing here mentio
 nonarchimedean topology, or commutativity: `Ideal A` is the lattice of left ideals of a ring `A`,
 and a proper left ideal already avoids the units.
 
+The same openness controls extension of ideals along a ring homomorphism `f : A → B` with dense
+range. The extension `I B` lies in the closure of `f '' I`, since `b f(a)` is a limit of the
+elements `f(w a)`. If `f` is moreover a local homomorphism, `f '' I` avoids the units of `B` for a
+proper ideal `I`, and so does its closure; hence `I B` is proper, and for a maximal ideal `I` the
+contraction of `I B` is `I` again. This applies to a dense subalgebra whose units are exactly the
+elements invertible in a complete normed ambient algebra, such as overconvergent power series
+inside the Tate algebra.
+
 Contrast `TauCeti.Topology.Algebra.Nonarchimedean.MaximalIdeals`, which proves maximal ideals
 *open*. That argument needs a linear topology and is vacuous for a Tate ring, where no proper ideal
 is open; closedness is the form that survives.
@@ -32,13 +41,20 @@ is open; closedness is the form that survives.
   again proper once the unit group is open.
 * `Ideal.isClosed_of_isMaximal_of_isOpen_isUnit` : a maximal ideal of a topological ring is closed
   once the unit group is open.
+* `Ideal.map_subset_closure_image_of_denseRange` : along a ring homomorphism with dense range, the
+  extension of an ideal lies in the closure of its image.
+* `Ideal.map_ne_top_of_denseRange` : along a dense local homomorphism into a topological ring with
+  open unit group, the extension of a proper ideal is proper.
+* `Ideal.comap_map_of_isMaximal_of_denseRange` : in that situation, the extension of a maximal
+  ideal contracts back to it.
 
 ## Provenance
 
 Adapted from AINTLIB (see References), section `MaximalIdealClosed` of the source file, where the
 statement is `isClosed_of_isMaximal_of_isOpen_units`. The argument is that file's; the
 commutativity hypothesis is dropped, and the properness step, which uses nothing about maximality,
-is separated out as `Ideal.closure_ne_top_of_isOpen_isUnit`.
+is separated out as `Ideal.closure_ne_top_of_isOpen_isUnit`. The results on dense-range
+homomorphisms do not come from that source.
 
 ## References
 
@@ -67,5 +83,45 @@ theorem Ideal.isClosed_of_isMaximal_of_isOpen_isUnit {A : Type*} [Ring A] [Topol
   exact (Ideal.IsMaximal.eq_of_le ‹_›
     (Ideal.closure_ne_top_of_isOpen_isUnit hU (Ideal.IsMaximal.ne_top ‹_›))
     fun x hx ↦ subset_closure hx).symm
+
+/-- **The extension of an ideal along a ring homomorphism with dense range lies in the closure of
+the image of the ideal.** -/
+theorem Ideal.map_subset_closure_image_of_denseRange {A B F : Type*} [Semiring A] [Semiring B]
+    [TopologicalSpace B] [IsTopologicalSemiring B] [FunLike F A B] [RingHomClass F A B] {f : F}
+    (hf : DenseRange f) (I : Ideal A) :
+    (Ideal.map f I : Set B) ⊆ closure (f '' I) := by
+  intro x hx
+  induction hx using Submodule.span_induction with
+  | mem x hx => exact subset_closure hx
+  | zero => exact subset_closure ⟨0, I.zero_mem, map_zero f⟩
+  | add x y _ _ hx hy =>
+    exact map_mem_closure₂ continuous_add hx hy fun _ ⟨a, ha, hax⟩ _ ⟨b, hb, hby⟩ ↦
+      ⟨a + b, I.add_mem ha hb, by rw [map_add, hax, hby]⟩
+  | smul b x _ hx =>
+    refine hf.induction_on (p := fun b ↦ b * x ∈ closure (f '' I)) b
+      (isClosed_closure.preimage (continuous_id.mul continuous_const)) fun w ↦ ?_
+    exact map_mem_closure (continuous_const.mul continuous_id) hx fun _ ⟨a, ha, hay⟩ ↦
+      ⟨w * a, I.mul_mem_left w ha, by rw [map_mul, hay]⟩
+
+/-- **The extension of a proper ideal along a dense local homomorphism is proper**, once the unit
+group of the target is open. -/
+theorem Ideal.map_ne_top_of_denseRange {A B F : Type*} [Semiring A] [Semiring B]
+    [TopologicalSpace B] [IsTopologicalSemiring B] [FunLike F A B] [RingHomClass F A B]
+    (hU : IsOpen {b : B | IsUnit b}) {f : F} [IsLocalHom f] (hf : DenseRange f) {I : Ideal A}
+    (hI : I ≠ ⊤) : Ideal.map f I ≠ ⊤ := by
+  rw [Ideal.ne_top_iff_one]
+  refine fun h1 ↦ (closure_minimal ?_ hU.isClosed_compl
+    (Ideal.map_subset_closure_image_of_denseRange hf I h1)) isUnit_one
+  rintro _ ⟨a, ha, rfl⟩ hu
+  exact hI (Ideal.eq_top_of_isUnit_mem I ha (isUnit_of_map_unit f a hu))
+
+/-- **The extension of a maximal ideal along a dense local homomorphism contracts back to it**,
+once the unit group of the target is open. -/
+theorem Ideal.comap_map_of_isMaximal_of_denseRange {A B F : Type*} [Semiring A] [Semiring B]
+    [TopologicalSpace B] [IsTopologicalSemiring B] [FunLike F A B] [RingHomClass F A B]
+    (hU : IsOpen {b : B | IsUnit b}) {f : F} [IsLocalHom f] (hf : DenseRange f) (I : Ideal A)
+    [hI : I.IsMaximal] : (Ideal.map f I).comap f = I :=
+  (hI.eq_of_le (Ideal.comap_ne_top _ (Ideal.map_ne_top_of_denseRange hU hf hI.ne_top))
+    Ideal.le_comap_map).symm
 
 end

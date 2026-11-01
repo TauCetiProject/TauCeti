@@ -38,17 +38,12 @@ theorem killingForm_ne_zero_of_mem_rootSpace {α : Weight K H L} (hα : α.IsNon
     (he : e ∈ rootSpace H α) (he₀ : e ≠ 0) (hf : f ∈ rootSpace H (-α)) (hf₀ : f ≠ 0) :
     killingForm K L e f ≠ 0 := by
   intro hef
-  have hspan := LieAlgebra.IsKilling.toSubmodule_rootSpace_eq_span (-α) hα.neg f hf₀ hf
-  have heker := mem_ker_killingForm_of_mem_rootSpace_of_forall_rootSpace_neg K L H he fun y hy ↦ by
-    have hspan' : (rootSpace H (-((α : Weight K H L) : H → K))).toSubmodule = K ∙ f := by
-      simpa only [Weight.coe_neg] using hspan
-    -- Passing from a Lie submodule to its underlying submodule is definitional.
-    change y ∈ (rootSpace H (-((α : Weight K H L) : H → K))).toSubmodule at hy
-    rw [hspan'] at hy
-    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hy
-    simp [hef]
-  rw [ker_killingForm_eq_bot] at heker
-  exact he₀ heker
+  refine he₀ ?_
+  rw [← Submodule.mem_bot K, ← ker_killingForm_eq_bot K L]
+  refine mem_ker_killingForm_of_mem_rootSpace_of_forall_rootSpace_neg K L H he fun y hy ↦ ?_
+  obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp <|
+    (toSubmodule_rootSpace_eq_span (-α) hα.neg f hf₀ hf).le hy
+  simp [hef]
 
 omit [CharZero K] in
 /-- The roots of a Lie algebra with non-degenerate Killing form are closed under negation, so a
@@ -56,19 +51,14 @@ functional on the Cartan subalgebra is a root exactly when its negative is. -/
 @[simp]
 theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
     rootSpace H (-χ) = ⊥ ↔ rootSpace H χ = ⊥ := by
-  have key : ∀ ψ : H → K, rootSpace H ψ ≠ ⊥ → rootSpace H (-ψ) ≠ ⊥ := fun ψ hψ ↦
+  have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra hne
-    exact key χ hne h
-  · by_contra hne
-    exact key (-χ) hne (by rwa [neg_neg])
+  exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in
-/-- **A splitting Cartan subalgebra is abelian**, so any two of its elements have zero bracket in
-the ambient Lie algebra. -/
+/-- **A Cartan subalgebra of a Lie algebra with non-degenerate Killing form is abelian**, so any
+two of its elements have zero bracket in the ambient Lie algebra. -/
 theorem lie_cartan_cartan_eq_zero (y z : H) : ⁅(y : L), (z : L)⁆ = 0 := by
-  have h := trivial_lie_zero H H y z
-  simpa only [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero] using congrArg Subtype.val h
+  rw [← LieSubalgebra.coe_bracket, trivial_lie_zero, ZeroMemClass.coe_zero]
 
 end TauCeti

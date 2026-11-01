@@ -29,7 +29,8 @@ the tensor algebra the same way.
 
 The degree-zero projection is the augmentation `SymmetricAlgebra.algebraMapInv`, which sends every
 generator to zero. Hence the irrelevant ideal of elements with zero constant term is the kernel of
-the augmentation, and it is a radical ideal over a reduced base.
+the augmentation, and it is a radical ideal over a reduced base, a prime ideal over a domain and
+a maximal ideal over a field.
 
 ## Main results
 
@@ -38,6 +39,8 @@ the augmentation, and it is a radical ideal over a reduced base.
 * `toIdeal_irrelevant_eq_ker_algebraMapInv`: the irrelevant ideal is the kernel of the
   augmentation.
 * `isRadical_toIdeal_irrelevant`: over a reduced base, the irrelevant ideal is radical.
+* `isPrime_toIdeal_irrelevant` and `isMaximal_toIdeal_irrelevant`: over a domain, respectively a
+  field, the irrelevant ideal is prime, respectively maximal.
 -/
 
 public section
@@ -118,5 +121,19 @@ theorem isRadical_toIdeal_irrelevant [IsReduced R] :
   rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
   exact (RingHom.ker_isRadical_iff_reduced_of_surjective
     (SymmetricAlgebra.algebraMap_leftInverse M).surjective).2 ‹_›
+
+/-- Over a domain, the irrelevant ideal of a symmetric algebra is prime: the quotient by it is the
+base ring. -/
+instance isPrime_toIdeal_irrelevant [IsDomain R] :
+    (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.IsPrime := by
+  rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
+  exact RingHom.ker_isPrime _
+
+/-- Over a field, the irrelevant ideal of a symmetric algebra is maximal: the quotient by it is the
+base field. -/
+instance isMaximal_toIdeal_irrelevant (K : Type*) [Field K] [Module K M] :
+    (HomogeneousIdeal.irrelevant (homogeneousSubmodule K M)).toIdeal.IsMaximal := by
+  rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
+  exact RingHom.ker_isMaximal_of_surjective _ (SymmetricAlgebra.algebraMap_leftInverse M).surjective
 
 end TauCeti.SymmetricAlgebra

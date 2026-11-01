@@ -47,7 +47,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
     Comodule.differential (R := R) (H := H) d x =
       ⁅(cotangentDualLieEquiv (R := R) (H := H)).symm d, x⁆ := by
   -- The proof combines `Derivation.adDerivation_dualNumber_apply` with
-  -- `TauCeti.Comodule.snd_endOfPoint_derivationToDualNumberEquivLift`.
+  -- `TauCeti.Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift`.
   let C := Bialgebra.CounitAlgebra R H R
   let V := Module.Dual R (Bialgebra.CotangentSpace R H)
   let s : DualNumber C →ₗ[R] R := (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
@@ -97,7 +97,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   ext a
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H R).injective
   rw [cotangentDualLieEquiv_apply,
-    ← Comodule.snd_endOfPoint_derivationToDualNumberEquivLift, hcoeff]
+    ← Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift, hcoeff]
   rw [hinit] at haction
   have ha := DFunLike.congr_fun haction a
   -- The tangent-point equivalence packages the same dual-number lift.

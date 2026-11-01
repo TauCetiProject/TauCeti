@@ -31,7 +31,9 @@ boundary are not required.
 
 For the convention
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)`, the scalar curvature is `n (n - 1) κ` in
-real dimension `n`.
+real dimension `n`. Consequently, in dimension at least two, a function `κ` for which the curvature
+has this form near a point is differentiable there
+(`CovariantDerivative.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub`).
 
 The definition and convention follow J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7.
@@ -40,7 +42,7 @@ Springer GTM 176 (2018), Chapter 7.
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -178,6 +180,24 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
   simp only [smul_eq_mul]
   ring
 
+/-- In dimension at least two, a function `κ` for which the curvature tensor has the pointwise
+constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x` is
+differentiable at `x`: near `x` it is the smooth scalar curvature divided by `n (n - 1)`. -/
+theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+    (hdim : 2 ≤ Module.finrank ℝ E) {κ : M → ℝ} {x : M}
+    (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
+      curvature y w u v = κ y • (inner ℝ u v • w - inner ℝ w v • u)) :
+    MDifferentiableAt I 𝓘(ℝ) κ x := by
+  have hn : ((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 1)) ≠ 0 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
+    nlinarith
+  refine (((cov.contMDiff_scalarCurvature.div_const ((Module.finrank ℝ E : ℝ) *
+    (Module.finrank ℝ E - 1))).mdifferentiable (by simp)) x).congr_of_eventuallyEq ?_
+  filter_upwards [hκ] with y hy
+  rw [cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy, eq_div_iff hn]
+  exact mul_comm _ _
+
 end CovariantDerivative
 
 namespace Bundle.ContMDiffRiemannianMetric
@@ -224,36 +244,15 @@ theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(�
       (f x)⁻¹ * ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
         (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
-  classical
-  -- `b` as a basis, with its orthonormality recorded through the inner products of `g` itself.
-  obtain ⟨b₀, hb₀, hb⟩ : ∃ b₀ : Module.Basis ι ℝ (TangentSpace I x), ⇑b₀ = ⇑b ∧
-      ∀ i j, g.inner x (b₀ i) (b₀ j) = if i = j then 1 else 0 := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    refine ⟨b.toBasis, b.coe_toBasis, fun i j ↦ ?_⟩
-    rw [b.coe_toBasis, ← inner_riemannianBundle]
-    exact orthonormal_iff_ite.1 b.orthonormal i j
-  rw [← hb₀]
-  set s := Real.sqrt (f x)
-  have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
-  have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
+  obtain ⟨b', hb'⟩ := g.exists_orthonormalBasis_rescale hf hf_pos b
+  have hss : (Real.sqrt (f x))⁻¹ * (Real.sqrt (f x))⁻¹ = (f x)⁻¹ := by
+    rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
   rw [scalarCurvature_def]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-  -- Dividing `b` by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
-  have hon : Orthonormal ℝ (b₀.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
-    split_ifs
-    · field_simp
-      exact (Real.sq_sqrt (hf_pos x).le).symm
-    · simp
-  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b₀.unitsSMul _).toOrthonormalBasis hon),
-    Finset.mul_sum]
+  rw [CovariantDerivative.scalarCurvature_eq_sum _ x b', Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
+  simp only [hb', map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
 
 /-- The scalar curvature of a smooth Riemannian metric is a smooth function. -/
 theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature := by

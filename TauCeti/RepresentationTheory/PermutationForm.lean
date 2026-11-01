@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.RepresentationTheory.Submodule
-public import Mathlib.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The invariant form on a permutation representation
@@ -289,11 +289,7 @@ theorem isCompl_orthogonalSubrepresentation
   have h : IsCompl σ.toSubmodule ((permutationForm k X).orthogonal σ.toSubmodule) :=
     LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate permutationForm_isRefl
       (permutationForm_restrict_nondegenerate σ.toSubmodule)
-  constructor
-  · rw [disjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.inf_eq_bot
-  · rw [codisjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.sup_eq_top
+  exact Subrepresentation.isCompl_toSubmodule.mp h
 
 end OrderedField
 

@@ -279,18 +279,9 @@ private theorem exists_card_dotProduct_mulVec_eq (hA : A.IsSymm) (hF : ringChar 
       rw [← hcongr, hPAP]
       simp only [dotProduct, mulVec_diagonal]
       exact sum_congr rfl fun i _ ↦ by ring
-    have hinv : P⁻¹ * P = 1 := nonsing_inv_mul P ((isUnit_iff_isUnit_det P).mp hP)
-    have hinv' : P * P⁻¹ = 1 := mul_nonsing_inv P ((isUnit_iff_isUnit_det P).mp hP)
-    refine (card_nbij' (fun y ↦ P *ᵥ y) (fun x ↦ P⁻¹ *ᵥ x) ?_ ?_ ?_ ?_).symm
-    · intro y hy
-      simpa only [mem_coe, mem_filter, mem_univ, true_and, hform] using hy
-    · intro x hx
-      simp only [mem_coe, mem_filter, mem_univ, true_and] at hx ⊢
-      rw [← hform, mulVec_mulVec, hinv', one_mulVec, hx]
-    · intro y _
-      simp only [mulVec_mulVec, hinv, one_mulVec]
-    · intro x _
-      simp only [mulVec_mulVec, hinv', one_mulVec]
+    refine (card_bijective P.mulVec
+      ⟨mulVec_injective_of_isUnit hP, mulVec_surjective_iff_isUnit.mpr hP⟩ fun y ↦ ?_).symm
+    simp only [mem_filter, mem_univ, true_and, hform]
 
 /-- **Points on a nondegenerate quadric in odd rank.** Over a finite field of odd characteristic
 with `q` elements, if `A` is a symmetric matrix with `det A ≠ 0` indexed by a type with `2m + 1`

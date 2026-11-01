@@ -25,7 +25,10 @@ Both bounds come from one estimate, `Height.mulHeight₁_sum_le_prod_mulHeightAf
 of a finite sum is bounded, at every absolute value, by the product of the affine local factors
 of a fixed family of tuples, then the height of the sum is at most `#s ^ totalWeight K` times the
 product of the affine heights of the tuples. The factor `#s` is paid only at the archimedean
-places; at the nonarchimedean places the ultrametric inequality makes it disappear.
+places; at the nonarchimedean places the ultrametric inequality makes it disappear. It is in turn
+an instance of the local-to-global bound `Height.mulHeight₁_le_pow_mul_prod_mulHeightAff`: local
+bounds by `C` times the affine local factors at the archimedean places, and by the affine local
+factors alone at the nonarchimedean places, give the height bound with constant `C ^ totalWeight K`.
 
 ## Main results
 
@@ -68,6 +71,34 @@ open AdmissibleAbsValues
 
 variable {K : Type*} [Field K] [AdmissibleAbsValues K] {ι : Type*}
 
+/-- **Local-to-global bound.** Let `y : κ → ι → K` be a finite family of tuples and `C ≥ 1`. If
+`v z ≤ C * ∏ k, max (⨆ i, v (y k i)) 1` at every archimedean absolute value `v` and
+`v z ≤ ∏ k, max (⨆ i, v (y k i)) 1` at every nonarchimedean one, then the height of `z` is at
+most `C ^ totalWeight K` times the product of the affine heights of the tuples `y k`. -/
+theorem mulHeight₁_le_pow_mul_prod_mulHeightAff {κ : Type*} [Fintype κ] [Finite ι] {C : ℝ}
+    (hC : 1 ≤ C) (z : K) (y : κ → ι → K)
+    (harch : ∀ v ∈ archAbsVal, v z ≤ C * ∏ k, max (⨆ i, v (y k i)) 1)
+    (hnonarch : ∀ v ∈ nonarchAbsVal, v z ≤ ∏ k, max (⨆ i, v (y k i)) 1) :
+    mulHeight₁ z ≤ C ^ totalWeight K * ∏ k, mulHeightAff (y k) := by
+  -- `M v` is the product of the affine local factors at `v`; it is at least `1`.
+  set M : AbsoluteValue K ℝ → ℝ := fun v ↦ ∏ k, max (⨆ i, v (y k i)) 1
+  have hM1 (v : AbsoluteValue K ℝ) : 1 ≤ M v :=
+    one_le_prod₀ fun _ _ ↦ le_max_right _ _
+  -- Split both sides place by place, and absorb `C ^ totalWeight K` into the archimedean product
+  -- as one factor `C` per archimedean place.
+  simp only [mulHeight₁_eq, prod_mulHeightAff_eq, totalWeight]
+  rw [← Multiset.prod_replicate, ← Multiset.map_const, ← mul_assoc, ← Multiset.prod_map_mul]
+  simp only [Function.const_apply]
+  gcongr
+  · exact finprod_nonneg fun _ ↦ by positivity
+  · exact Multiset.prod_map_nonneg fun _ _ ↦ by positivity
+  · exact Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ zero_le_one.trans (le_max_right _ _))
+      fun v hv ↦ max_le (harch v hv) (one_le_mul_of_one_le_of_one_le hC (hM1 v))
+  · exact finprod_le_finprod₀ (by fun_prop) (fun _ ↦ zero_le_one.trans (le_max_right _ _))
+      (Function.HasFiniteMulSupport.prod (fun k ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k))
+        univ)
+      fun v ↦ max_le (hnonarch v v.prop) (hM1 v)
+
 /-- **Local-to-global bound for sums.** Let `y : κ → ι → K` be a finite family of tuples, and let
 every term `t a`, `a ∈ s`, of a nonempty finite sum satisfy `v (t a) ≤ ∏ k, max (⨆ i, v (y k i)) 1`
 at every absolute value `v`. Then the height of the sum is at most `#s ^ totalWeight K` times the
@@ -76,35 +107,14 @@ theorem mulHeight₁_sum_le_prod_mulHeightAff {α κ : Type*} [Fintype κ] [Fini
     {s : Finset α} (hs : s.Nonempty) (t : α → K) (y : κ → ι → K)
     (ht : ∀ v : AbsoluteValue K ℝ, ∀ a ∈ s, v (t a) ≤ ∏ k, max (⨆ i, v (y k i)) 1) :
     mulHeight₁ (∑ a ∈ s, t a) ≤ #s ^ totalWeight K * ∏ k, mulHeightAff (y k) := by
-  -- `M v` is the product of the affine local factors at `v`; it is at least `1`.
-  set M : AbsoluteValue K ℝ → ℝ := fun v ↦ ∏ k, max (⨆ i, v (y k i)) 1
-  have hM1 (v : AbsoluteValue K ℝ) : 1 ≤ M v :=
-    one_le_prod₀ fun _ _ ↦ le_max_right _ _
+  refine mulHeight₁_le_pow_mul_prod_mulHeightAff (by exact_mod_cast hs.card_pos) _ y
+    (fun v _ ↦ ?_) fun v hv ↦ ?_
   -- At an arbitrary place the triangle inequality costs the factor `#s`.
-  have harch (v : AbsoluteValue K ℝ) : max (v (∑ a ∈ s, t a)) 1 ≤ #s * M v := by
-    have hcard : (1 : ℝ) ≤ #s := by exact_mod_cast hs.card_pos
-    refine max_le ?_ (one_le_mul_of_one_le_of_one_le hcard (hM1 v))
-    calc v (∑ a ∈ s, t a) ≤ ∑ a ∈ s, v (t a) := v.sum_le _ _
-      _ ≤ ∑ _a ∈ s, M v := sum_le_sum (ht v)
-      _ = #s * M v := by rw [sum_const, nsmul_eq_mul]
+  · calc v (∑ a ∈ s, t a) ≤ ∑ a ∈ s, v (t a) := v.sum_le _ _
+      _ ≤ ∑ _a ∈ s, ∏ k, max (⨆ i, v (y k i)) 1 := sum_le_sum (ht v)
+      _ = #s * ∏ k, max (⨆ i, v (y k i)) 1 := by rw [sum_const, nsmul_eq_mul]
   -- At a nonarchimedean place the ultrametric inequality removes it.
-  have hnonarch {v : AbsoluteValue K ℝ} (hv : IsNonarchimedean v) :
-      max (v (∑ a ∈ s, t a)) 1 ≤ M v :=
-    max_le ((hv.apply_sum_le_sup hs).trans (sup'_le hs _ (ht v))) (hM1 v)
-  -- Split both sides place by place, and absorb `#s ^ totalWeight K` into the archimedean product
-  -- as one factor `#s` per archimedean place.
-  simp only [mulHeight₁_eq, prod_mulHeightAff_eq, totalWeight]
-  rw [← Multiset.prod_replicate, ← Multiset.map_const, ← mul_assoc, ← Multiset.prod_map_mul]
-  simp only [Function.const_apply]
-  gcongr
-  · exact finprod_nonneg fun _ ↦ by positivity
-  · exact Multiset.prod_map_nonneg fun _ _ ↦ by positivity
-  · exact Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ zero_le_one.trans (le_max_right _ _))
-      fun v _ ↦ harch v
-  · exact finprod_le_finprod₀ (by fun_prop) (fun _ ↦ zero_le_one.trans (le_max_right _ _))
-      (Function.HasFiniteMulSupport.prod (fun k ↦ hasFiniteMulSupport_max_iSup_nonarchAbsVal (y k))
-        univ)
-      fun v ↦ hnonarch (isNonarchimedean _ v.prop)
+  · exact ((isNonarchimedean v hv).apply_sum_le_sup hs).trans (sup'_le hs _ (ht v))
 
 /-! ### The value of a linear form -/
 

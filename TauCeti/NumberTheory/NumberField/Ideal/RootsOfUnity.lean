@@ -22,6 +22,8 @@ unity of the residue field, such as `x ^ ((N P - 1) / n)`, lifts uniquely to `�
 ## Main results
 
 * `NumberField.dvd_absNorm_sub_one`: `n ∣ N P - 1`.
+* `NumberField.absNorm_modEq_one`: more generally, `N 𝔞 ≡ 1 (mod n)` for every ideal `𝔞` whose
+  norm is prime to `n`.
 * `Ideal.eq_of_pow_eq_one_of_mk_eq`: two `n`-th roots of unity of `𝓞 K` congruent modulo a
   proper ideal `P` with `N P` prime to `n` are equal.
 * `Ideal.rootsOfUnityEquivQuot`: reduction modulo `P` as an isomorphism between the `n`-th roots
@@ -58,6 +60,26 @@ theorem NumberField.dvd_absNorm_sub_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUn
     (Ideal.absNorm_eq_one_iff.not.mpr Ideal.IsPrime.ne_top') hP)
   rwa [HasEnoughRootsOfUnity.natCard_rootsOfUnity, Nat.card_units,
     ← Ideal.absNorm_eq_natCard] at h
+
+/-- **The norm of an ideal prime to `n` is one modulo `n`.** If `𝓞 K` contains a primitive
+`n`-th root of unity and the absolute norm of the ideal `𝔞` is prime to `n`, then
+`N 𝔞 ≡ 1 (mod n)`. For a prime `𝔞` this is `NumberField.dvd_absNorm_sub_one`. -/
+theorem NumberField.absNorm_modEq_one {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity (𝓞 K) n]
+    {𝔞 : Ideal (𝓞 K)} (h𝔞 : (Ideal.absNorm 𝔞).Coprime n) : Ideal.absNorm 𝔞 ≡ 1 [MOD n] := by
+  -- Induct on the factorisation of `𝔞` into primes; the norm is multiplicative.
+  induction 𝔞 using UniqueFactorizationMonoid.induction_on_prime with
+  | h₁ =>
+    rw [Ideal.zero_eq_bot, Ideal.absNorm_bot, Nat.coprime_zero_left] at h𝔞
+    rw [h𝔞]
+    exact Nat.modEq_one
+  | h₂ 𝔞 h => rw [Ideal.isUnit_iff.mp h, Ideal.absNorm_top]
+  | h₃ 𝔞 P _ hP ih =>
+    have := Ideal.isPrime_of_prime hP
+    rw [map_mul, Nat.coprime_mul_iff_left] at h𝔞
+    rw [map_mul]
+    have hP₀ : 1 ≤ Ideal.absNorm P :=
+      Nat.one_le_iff_ne_zero.mpr (Ideal.absNorm_eq_zero_iff.not.mpr hP.ne_zero)
+    simpa using ((Nat.modEq_iff_dvd' hP₀).mpr (dvd_absNorm_sub_one h𝔞.1)).symm.mul (ih h𝔞.2)
 
 namespace Ideal
 

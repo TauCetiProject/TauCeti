@@ -41,6 +41,9 @@ bookkeeping that attaches one vertex at infinity of the Schwarz--Christoffel for
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary` to each end of a
 polygonal domain with several ends.
 
+Conversely, if `g` has a nonzero limit at infinity and the assigned ends are unbounded subsets
+of `U`, every end is reached by a real zero of `g`.
+
 ## Main results
 
 * `TauCeti.eq_of_eventually_mem_of_inverted_coordinate_eq_zero`: two zeros of the inverted
@@ -49,6 +52,9 @@ polygonal domain with several ends.
   coordinate are matched injectively to the ends.
 * `TauCeti.finite_setOf_inverted_coordinate_eq_zero`: with finitely many ends, the inverted
   coordinate has finitely many zeros.
+
+* `TauCeti.surjective_of_eventually_mem_end`: an assignment to disjoint unbounded ends is
+  surjective when the inverted coordinate has a nonzero limit at infinity.
 
 ## References
 
@@ -195,5 +201,60 @@ theorem finite_setOf_inverted_coordinate_eq_zero {ι : Type*} [Finite ι] {E : �
     exists_injective_end_of_inverted_coordinate_eq_zero hgc hgd hgf hgne hfU hEo hEd hEU hE
   have : Finite {x : ℝ // g x = 0} := Finite.of_injective φ hφ
   exact Set.toFinite _
+
+/-- **Every end is reached.**  Let `g` be continuous on the closed upper half-plane and nonzero in
+the open one, with a nonzero limit at infinity, and let `F = q + g⁻¹` map the upper half-plane onto
+`U`.  If the real zeros of `g` are assigned to pairwise disjoint unbounded ends `E k ⊆ U` so that
+near each zero `F` takes its values in the assigned end, then every end is assigned to some zero. -/
+theorem surjective_of_eventually_mem_end {κ : Type*} {g : ℂ → ℂ} {q c₀ : ℂ} {U : Set ℂ}
+    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
+    (hginf : Tendsto g (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 c₀)) (hc₀ : c₀ ≠ 0)
+    (hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U) {E : κ → Set ℂ}
+    (hEd : Pairwise (Disjoint on E)) (hEU : ∀ k, E k ⊆ U) (hEb : ∀ k, ¬IsBounded (E k))
+    {m : {x : ℝ // g x = 0} → κ}
+    (hm : ∀ x, ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ), q + (g z)⁻¹ ∈ E (m x)) :
+    Surjective m := by
+  intro k
+  by_contra! hk
+  -- near each zero `x` of `g`, the values of `q + g⁻¹` avoid `E k`
+  choose r hr hball using fun x => Metric.mem_nhdsWithin_iff.mp (hm x)
+  set O := ⋃ x : {x : ℝ // g x = 0}, ball ((x : ℝ) : ℂ) (r x)
+  have hO {z : ℂ} (hz : z ∈ O) (hzH : 0 < z.im) : q + (g z)⁻¹ ∉ E k := by
+    obtain ⟨x, hx⟩ := mem_iUnion.mp hz
+    exact fun h => (hEd (hk x)).ne_of_mem (hball x ⟨hx, hzH⟩) h rfl
+  -- far out, `g` stays away from `0`, near its nonzero limit
+  obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
+    (eventually_inf_principal.mp (hginf.norm.eventually
+      (lt_mem_nhds (half_lt_self (norm_pos_iff.mpr hc₀)))))
+  -- on the remaining compact part of the closed upper half-plane, `g` has no zeros
+  set K := (closedBall (0 : ℂ) R₀ ∩ {z : ℂ | 0 ≤ z.im}) \ O
+  have hKc : IsCompact K := ((isCompact_closedBall 0 R₀).inter_right
+    (isClosed_le continuous_const continuous_im)).diff (isOpen_iUnion fun _ => isOpen_ball)
+  have hKg : ∀ z ∈ K, 0 < ‖g z‖ := by
+    rintro z ⟨⟨-, hz⟩, hzO⟩
+    refine norm_pos_iff.mpr fun hgz => ?_
+    have hz' : 0 ≤ z.im := hz
+    rcases hz'.eq_or_lt with hz0 | hz0
+    · have hzx : z = ((z.re : ℝ) : ℂ) := Complex.ext (by simp) (by simp [← hz0])
+      refine hzO (mem_iUnion.mpr ⟨⟨z.re, by rw [← hzx]; exact hgz⟩, ?_⟩)
+      have hd : dist z ((z.re : ℝ) : ℂ) = 0 := by rw [← hzx, dist_self]
+      rw [mem_ball, hd]
+      exact hr _
+    · exact hgne z hz0 hgz
+  obtain ⟨δ', hδ', hK⟩ := hKc.exists_forall_le' (hgc.norm.mono fun z hz => hz.1.2) hKg
+  -- so on the preimage of `E k` the coordinate `g` is bounded away from `0`, and `E k` is bounded
+  set δ := min (‖c₀‖ / 2) δ'
+  have hδ : 0 < δ := lt_min (half_pos (norm_pos_iff.mpr hc₀)) hδ'
+  have hHc : ∀ z ∈ upperHalfPlaneSet, z ∈ {z : ℂ | 0 ≤ z.im} := fun z (hz : 0 < z.im) => hz.le
+  have hgδ : ∀ z ∈ upperHalfPlaneSet, q + (g z)⁻¹ ∈ E k → δ ≤ ‖g z‖ := by
+    intro z hz hzE
+    by_cases hzR : R₀ ≤ ‖z‖
+    · exact (min_le_left _ _).trans (hR₀ hzR (hHc z hz)).le
+    · refine (min_le_right _ _).trans (hK z ⟨⟨?_, hHc z hz⟩, fun hzO => hO hzO hz hzE⟩)
+      simpa using (not_le.mp hzR).le
+  refine hEb k (isBounded_iff_forall_norm_le.mpr ⟨‖q‖ + δ⁻¹, fun w hw => ?_⟩)
+  obtain ⟨z, hz, rfl⟩ := hgU ▸ hEU k hw
+  calc ‖q + (g z)⁻¹‖ ≤ ‖q‖ + ‖g z‖⁻¹ := by simpa using norm_add_le q (g z)⁻¹
+    _ ≤ ‖q‖ + δ⁻¹ := by gcongr; exact hgδ z hz hw
 
 end TauCeti

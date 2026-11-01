@@ -42,7 +42,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint

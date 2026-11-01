@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
 
 /-!
-# Diagonal indices along `atTop`
+# Diagonal indices and floor cutoffs along `atTop`
 
 If for every `k` a property `P k n` holds for all large `n`, then an index `κ n` tending to
 infinity can be chosen so slowly that `P (κ n) n` holds for all large `n`
@@ -24,6 +25,19 @@ The second statement is the diagonal extraction of a subsequence along which cou
 sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
 each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
 them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+
+Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
+semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
+partial sums `∑ n ≤ x` taken over real and over natural cutoffs. More generally, a reindexing
+`g : ℕ → ℕ` that tends to infinity and eventually never increases by more than one at a time
+takes every large value, so `map g atTop = atTop` (`TauCeti.map_atTop_eq_of_le_add_one`) and
+`u ∘ g` converges exactly when `u` does (`TauCeti.tendsto_comp_iff_of_le_add_one`). For instance,
+a partial product over the primes `p ≤ n` is a function of the prime count `π n`, which moves in
+steps of at most one.
+
+In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
+numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
+(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
 -/
 
 public section
@@ -85,5 +99,66 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
       tendsto_id)).congr' ?_⟩
     filter_upwards [eventually_ge_atTop j] with n hn
     simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+
+/-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
+floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
+theorem tendsto_comp_natFloor_iff {R X : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] {u : ℕ → X} {l : Filter X} :
+    Tendsto (fun x : R ↦ u ⌊x⌋₊) atTop l ↔ Tendsto u atTop l := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp ?_⟩
+  · have hcast : Tendsto (fun n : ℕ ↦ (n : R)) atTop atTop :=
+      tendsto_atTop_atTop.2 fun x ↦ ⟨⌈x⌉₊, fun n hn ↦ (Nat.le_ceil x).trans (mod_cast hn)⟩
+    simpa [Function.comp_def] using h.comp hcast
+  · exact tendsto_atTop_atTop.2 fun n ↦ ⟨n, fun x hx ↦ Nat.le_floor hx⟩
+
+/-- A map `g : ℕ → ℕ` that tends to infinity and eventually increases by at most one at each step
+takes every large value, so it pushes `atTop` forward to `atTop`. -/
+theorem map_atTop_eq_of_le_add_one {g : ℕ → ℕ} (hg : Tendsto g atTop atTop)
+    (hle : ∀ᶠ n in atTop, g (n + 1) ≤ g n + 1) : map g atTop = atTop := by
+  classical
+  refine le_antisymm hg (le_map fun s hs ↦ ?_)
+  obtain ⟨K, hK⟩ := eventually_atTop.1 ((eventually_mem_set.2 hs).and hle)
+  -- Every value `m ≥ g K` is attained at some index `n ≥ K`.
+  suffices h : ∀ m, g K ≤ m → ∃ n, K ≤ n ∧ g n = m from mem_atTop_sets.2 ⟨g K, fun m hm ↦ by
+    obtain ⟨n, hn, rfl⟩ := h m hm
+    exact ⟨n, (hK n hn).1, rfl⟩⟩
+  intro m hm
+  induction m, hm using Nat.le_induction with
+  | base => exact ⟨K, le_rfl, rfl⟩
+  | succ m _ ih =>
+    obtain ⟨n, hn, rfl⟩ := ih
+    -- The first index after `n` where `g` exceeds `g n` is where it takes the value `g n + 1`.
+    have hex : ∃ i, g n + 1 ≤ g (n + i) := by
+      obtain ⟨a, ha⟩ := (hg.eventually_ge_atTop (g n + 1)).exists_forall_of_atTop
+      exact ⟨a, ha _ (Nat.le_add_left a n)⟩
+    obtain ⟨j, hj⟩ := Nat.exists_eq_add_one_of_ne_zero (n := Nat.find hex) fun h0 ↦ by
+      simpa [h0] using Nat.find_spec hex
+    have hmin : ¬g n + 1 ≤ g (n + j) := Nat.find_min hex (by omega)
+    have hspec : g n + 1 ≤ g (n + j + 1) := by simpa [hj, add_assoc] using Nat.find_spec hex
+    exact ⟨n + j + 1, by omega, le_antisymm ((hK (n + j) (by omega)).2.trans (by omega)) hspec⟩
+
+/-- If `g : ℕ → ℕ` tends to infinity and eventually increases by at most one at each step, then
+`u ∘ g` converges along `atTop` exactly when `u` does. -/
+theorem tendsto_comp_iff_of_le_add_one {X : Type*} {g : ℕ → ℕ} (hg : Tendsto g atTop atTop)
+    (hle : ∀ᶠ n in atTop, g (n + 1) ≤ g n + 1) {u : ℕ → X} {l : Filter X} :
+    Tendsto (u ∘ g) atTop l ↔ Tendsto u atTop l := by
+  rw [← tendsto_map'_iff, map_atTop_eq_of_le_add_one hg hle]
+
+/-- In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large
+natural numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`. -/
+theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [CharZero R]
+    (a b : R) : ∀ᶠ k : ℕ in atTop, (a + k * b = 0 ↔ a = 0 ∧ b = 0) := by
+  by_cases h : ∃ k₀ : ℕ, a + k₀ * b = 0
+  · obtain ⟨k₀, hk₀⟩ := h
+    filter_upwards [eventually_gt_atTop k₀] with k hk
+    refine ⟨fun hk' ↦ ?_, fun ⟨ha, hb⟩ ↦ by simp [ha, hb]⟩
+    -- Two vanishing values `k₀ < k` force `(k - k₀) * b = 0`, hence `b = 0`.
+    have hb : b = 0 := by
+      have : ((k : R) - k₀) * b = 0 := by
+        rw [sub_mul, ← add_sub_add_left_eq_sub _ _ a, hk', hk₀, sub_zero]
+      exact (mul_eq_zero.1 this).resolve_left (sub_ne_zero.2 (Nat.cast_injective.ne hk.ne'))
+    exact ⟨by simpa [hb] using hk', hb⟩
+  · push Not at h
+    exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 end TauCeti

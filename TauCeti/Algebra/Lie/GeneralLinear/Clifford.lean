@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.TraceForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 import Mathlib.Algebra.Lie.Classical
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Matrix.Single
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -235,7 +235,7 @@ private theorem matrixUnit_ι_mul_eq_bivector_add (i j k : n) :
 theorem glCliffordHom_single (i j : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)) =
       (2⁻¹ : K) • ∑ k : n,
-          carGenerator (K := K) i k * carGenerator k j := by
+          carGenerator (R := K) i k * carGenerator k j := by
   simp_rw [carGenerator_def]
   rw [glCliffordHom_normalOrdering]
   simp_rw [matrixUnit_ι_mul_eq_bivector_add]
@@ -258,10 +258,10 @@ theorem glCliffordHom_single (i j : n) :
 matrix-unit commutator. -/
 theorem glCliffordHom_single_lie_carGenerator (i j a b : n) :
     ⁅glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)),
-        carGenerator (K := K) a b⁆ =
-      (if j = a then carGenerator (K := K) i b else 0) -
-        if b = i then carGenerator (K := K) a j else 0 := by
-  rw [carGenerator_def, glCliffordHom_lie_ι, lie_single_single]
+        carGenerator (R := K) a b⁆ =
+      (if j = a then carGenerator (R := K) i b else 0) -
+        if b = i then carGenerator (R := K) a j else 0 := by
+  rw [carGenerator_def, glCliffordHom_lie_ι, Matrix.lie_single_single]
   simp only [map_sub, apply_ite, map_zero, one_mul]
   split_ifs <;> simp only [carGenerator_def]
 

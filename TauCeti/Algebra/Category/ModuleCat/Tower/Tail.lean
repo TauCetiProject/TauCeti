@@ -15,7 +15,8 @@ public import Mathlib.CategoryTheory.Whiskering
 Deleting the first `k` terms of a tower changes neither its limit nor its first derived limit.
 The comparison maps restrict product families to the tail; their inverses are induced by the
 composite transition maps from the tail back to the original tower. Both comparisons are natural
-in tower morphisms. No surjectivity or Mittag-Leffler hypothesis is needed.
+in tower morphisms. No surjectivity or Mittag-Leffler hypothesis is needed. Consequently, a tower
+whose transitions are surjective from some index on has vanishing `lim¹`.
 
 The proof uses the shift presentation of `lim` and `lim¹` from `ModuleTower.Basic`: a finite
 telescoping sum makes the composite of restriction and transition equal to the identity modulo
@@ -196,6 +197,15 @@ theorem limOneTailEquiv_symm_mk (x : (F.tail k).Product) :
       Submodule.Quotient.mk (productMap (F.tailToSelf k) x) := by
   simp only [limOneTailEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
     limOneMap_mk]
+
+/-- **Eventually surjective towers have vanishing `lim¹`.** If the transition maps `Aₙ₊₁ → Aₙ`
+are surjective for all `n ≥ k`, then `lim¹ A` vanishes. -/
+theorem subsingleton_limOne_of_surjective_of_le
+    (h : ∀ n, k ≤ n → Function.Surjective (F.transition n)) : Subsingleton F.limOne :=
+  (F.limOneTailEquiv k).toEquiv.subsingleton_congr.2 <|
+    (F.tail k).subsingleton_limOne_of_surjective fun n ↦ by
+      rw [tail_transition]
+      exact h _ (Nat.le_add_right k n)
 
 variable {F} {G : ModuleTower.{v} R}
 

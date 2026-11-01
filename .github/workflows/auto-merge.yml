@@ -37,17 +37,13 @@ concurrency:
 jobs:
   resolve:
     runs-on: ubuntu-latest
-    # Only react to a head update, a successful build, or a review-state comment on a PR. For edits,
-    # inspect the old body too so removing a marker still triggers reconciliation.
+    # Pushes and comments already identify their PR. Only a completed build whose event omits
+    # the association needs a separate API lookup; ordinary events start just the policy job.
     if: >
-      github.event_name == 'pull_request_target'
-      || (github.event_name == 'workflow_run'
+      github.event_name == 'workflow_run'
         && github.event.workflow_run.conclusion == 'success'
-        && github.event.workflow_run.event == 'pull_request_target')
-      || (github.event_name == 'issue_comment'
-        && github.event.issue.pull_request != null
-        && (contains(github.event.comment.body, 'tauceti-scoreboard')
-          || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
+        && github.event.workflow_run.event == 'pull_request_target'
+        && !github.event.workflow_run.pull_requests[0].number
     outputs:
       pr: ${{ steps.r.outputs.pr }}
     steps:
@@ -57,33 +53,37 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          case "${{ github.event_name }}" in
-            issue_comment)
-              pr="${{ github.event.issue.number }}" ;;
-            pull_request_target)
-              pr="${{ github.event.pull_request.number }}" ;;
-            *)
-              pr="${{ github.event.workflow_run.pull_requests[0].number }}"
-              if [ -z "$pr" ]; then
-                pr=$(gh api "repos/$REPO/commits/${{ github.event.workflow_run.head_sha }}/pulls" --jq '.[0].number // empty')
-              fi ;;
-          esac
+          pr=$(gh api "repos/$REPO/commits/${{ github.event.workflow_run.head_sha }}/pulls" --jq '.[0].number // empty')
           echo "pr=$pr" >> "$GITHUB_OUTPUT"
 
   merge:
     needs: resolve
-    if: ${{ needs.resolve.outputs.pr != '' }}
+    # A skipped lookup must not skip a PR already identified by the event. Keep the original
+    # event filters here, including edits/deletions that remove a scoreboard marker: review
+    # revocations must reach the same pinned policy as approvals.
+    if: >-
+      ${{ !cancelled() && (
+        github.event_name == 'pull_request_target'
+        || (github.event_name == 'workflow_run'
+          && github.event.workflow_run.conclusion == 'success'
+          && github.event.workflow_run.event == 'pull_request_target'
+          && (github.event.workflow_run.pull_requests[0].number
+            || (needs.resolve.result == 'success' && needs.resolve.outputs.pr != '')))
+        || (github.event_name == 'issue_comment'
+          && github.event.issue.pull_request != null
+          && (contains(github.event.comment.body, 'tauceti-scoreboard')
+            || contains(github.event.changes.body.from, 'tauceti-scoreboard')))) }}
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@14d5db7642210a3cec00059feb33ac33a45daa5d
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@32ce2069308080df4e08df14c2160012a51c8152
     with:
-      review_ref: 14d5db7642210a3cec00059feb33ac33a45daa5d
+      review_ref: 32ce2069308080df4e08df14c2160012a51c8152
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: 0f4096297f058bff8ccd873067aab7120202aecf
-      pr: ${{ needs.resolve.outputs.pr }}
+      tools_ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+      pr: ${{ format('{0}', github.event.issue.number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || needs.resolve.outputs.pr) }}
       merge_backend: ${{ vars.MERGE_BACKEND || 'queue' }}
     # Pass only the App credentials merge-only needs, not all of TauCeti's secrets.
     secrets:

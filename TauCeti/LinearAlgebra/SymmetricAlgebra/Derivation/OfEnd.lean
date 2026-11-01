@@ -20,14 +20,16 @@ derivation of the symmetric algebra `SymmetricAlgebra R M`, sending each generat
 algebra. It is natural with respect to symmetric-algebra maps, and each induced derivation
 preserves every homogeneous submodule.
 
-Specialising `f` to the adjoint endomorphisms of a Lie algebra gives the adjoint action on its
-symmetric algebra; see `TauCeti.LinearAlgebra.SymmetricAlgebra.AdjointAction`.
+Specialising `f` to the endomorphisms `⁅x, -⁆` of a Lie module gives the action of a Lie algebra
+on its symmetric algebra, including the adjoint action; see
+`TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule`.
 
 ## Main definitions and results
 
 * `SymmetricAlgebra.derivationOfEnd`: the Lie algebra homomorphism from `Module.End R M`
   to derivations of `SymmetricAlgebra R M`.
 * `SymmetricAlgebra.derivationOfEnd_ι`: the induced derivation sends `ι x` to `ι (f x)`.
+* `SymmetricAlgebra.iterate_derivationOfEnd_ι`: its iterates send `ι x` to `ι (fⁿ x)`.
 * `SymmetricAlgebra.map_apply_derivationOfEnd`: naturality under a linear map intertwining
   two endomorphisms.
 * `SymmetricAlgebra.derivationOfEnd_mem_homogeneousSubmodule`: the induced derivation
@@ -65,6 +67,15 @@ theorem derivationOfEnd_apply (f : Module.End R M) :
 theorem derivationOfEnd_ι (f : Module.End R M) (x : M) :
     derivationOfEnd R M f (ι R M x) = ι R M (f x) := by
   rw [derivationOfEnd_apply, mkDerivation_ι, LinearMap.comp_apply]
+
+/-- The iterates of the derivation induced by `f` act on generators by the powers of `f`. -/
+@[simp]
+theorem iterate_derivationOfEnd_ι (f : Module.End R M) (n : ℕ) (x : M) :
+    (derivationOfEnd R M f)^[n] (ι R M x) = ι R M ((f ^ n) x) := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => rw [Function.iterate_succ_apply, derivationOfEnd_ι, ih, pow_succ,
+      Module.End.mul_apply]
 
 section Naturality
 

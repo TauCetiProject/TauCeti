@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Nondegeneracy of the real inner product
@@ -19,6 +21,11 @@ moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exterio
 requires of its bilinear form. Its pullback along an injective linear map, such as the metric
 induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
 is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
+
+The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
+in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
+matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate frame of a Riemannian metric, these
+are the coordinate covectors `dxⁱ` with their musical isomorphism `gⁱʲ ∂ⱼ`.
 -/
 
 public section
@@ -55,3 +62,39 @@ theorem eq_of_forall_inner_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {L :
   simp [H]
 
 end TauCeti
+
+namespace Module.Basis
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The inner product with the `i`-th vector of the dual basis of `b` is the `i`-th coordinate
+in `b`. -/
+theorem inner_dualBasis_left {ι : Type*} [DecidableEq ι] [Finite ι] (b : Basis ι ℝ E) (i : ι)
+    (v : E) :
+    ⟪LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i, v⟫ = b.repr v i := by
+  have : innerₗ E (LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i) =
+      b.coord i :=
+    b.ext fun j ↦ by
+      rw [LinearMap.BilinForm.apply_dualBasis_left, coord_apply, repr_self, Finsupp.single_apply]
+  simpa using LinearMap.congr_fun this v
+
+/-- **The dual basis through the inverse Gram matrix**: the `i`-th vector of the dual basis of
+`b` is `∑ⱼ (G⁻¹)ᵢⱼ bⱼ`, where `G = (⟪bᵢ, bⱼ⟫)` is the Gram matrix of `b`. -/
+theorem dualBasis_innerₗ_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E)
+    (i : ι) :
+    LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i =
+      ∑ j, (Matrix.gram ℝ b)⁻¹ i j • b j := by
+  have hdet : IsUnit (Matrix.gram ℝ b).det :=
+    isUnit_iff_ne_zero.2 (Matrix.det_gram_ne_zero_iff_linearIndependent.2 b.linearIndependent)
+  refine InnerProductSpace.ext_inner_right_basis b fun l ↦ ?_
+  have h := congr_fun (congr_fun (Matrix.nonsing_inv_mul _ hdet) i) l
+  rw [Matrix.mul_apply] at h
+  simp only [inner_dualBasis_left, repr_self, Finsupp.single_apply, sum_inner,
+    real_inner_smul_left]
+  simp only [Matrix.gram_apply, Matrix.one_apply] at h
+  rw [h]
+  simp [eq_comm]
+
+end Module.Basis

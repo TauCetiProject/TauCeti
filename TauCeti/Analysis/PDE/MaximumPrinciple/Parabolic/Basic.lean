@@ -143,7 +143,7 @@ theorem le_of_deriv_le_laplacian_add_fderiv_le_parabolicBoundary (hK : IsCompact
   intro t ht x hx
   -- Below the top, let `ε → 0` in the perturbed bound `u - εt ≤ m`.
   have hlt : ∀ s ∈ Ico 0 T, u s x ≤ m := fun s hs ↦
-    le_of_forall_pos_mul_le hs.1 fun ε hε ↦ by
+    le_of_forall_pos_mul_le (C := s) fun ε hε ↦ by
       have := sub_mul_le_of_deriv_le_laplacian_add_fderiv hK hcont hcd hdiff hsub hinit hlat
         hε hs.2 ⟨hs.1, le_rfl⟩ hx
       linarith

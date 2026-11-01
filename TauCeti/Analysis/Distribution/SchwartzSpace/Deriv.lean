@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 # Directional differentiation and linear maps on Schwartz space
 
 Directional derivatives of a Schwartz function commute, since its second derivative is symmetric.
+The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
+the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
 
 Applying a continuous real-linear map to the values of a Schwartz function commutes with
@@ -84,6 +86,15 @@ theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_
   rw [lineDerivOp_apply_eq_fderiv, lineDerivOp_apply_eq_fderiv, hfun, hfun,
     fderiv_clm_apply hd (differentiableAt_const _), fderiv_clm_apply hd (differentiableAt_const _)]
   simpa using ((f.smooth 2).contDiffAt.isSymmSndFDerivAt (by simp)).eq v w
+
+/-- A coordinate partial derivative of a Schwartz function with values in Euclidean space is a
+coordinate of its line derivative. -/
+theorem fderiv_apply_eq_lineDerivOp_apply {ι : Type*} [Fintype ι]
+    (f : 𝓢(V, EuclideanSpace ℝ ι)) (i : ι) (x v : V) :
+    fderiv ℝ (fun y ↦ f y i) x v = ∂_{v} f x i := by
+  have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp x f.differentiableAt.hasFDerivAt).fderiv
+  simpa [Function.comp_def, lineDerivOp_apply_eq_fderiv] using
+    congrArg (fun L : V →L[ℝ] ℝ ↦ L v) hp
 
 open Laplacian in
 /-- **The Laplacian on the plane in coordinates**: `Δ f = ∂₁² f + ∂₂² f` for a Schwartz function

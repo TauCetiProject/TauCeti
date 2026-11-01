@@ -45,6 +45,8 @@ formula.
 ## Main results
 
 * `TauCeti.eval_periodPolynomial`: `r_f(x, y) = ∫₀^{i∞} f(τ) (x - τy)ʷ dτ`.
+* `TauCeti.coe_periodPolynomial_eq_binaryFormDual`: `r_f` is the binary form attached to the
+  period map of `f` on the symbols `{∞, 0} ⊗ P`.
 * `TauCeti.periodPolynomial_injective`: `f ↦ r_f` is injective.
 
 ## References
@@ -190,6 +192,17 @@ functional `P ↦ ∫₀^{i∞} f(τ) P(τ, 1) dτ`, the period map of `f` on th
 `{∞, 0} ⊗ P`; it lies in `W_w` because of the two-term and three-term Manin relations. -/
 def periodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] periodPolynomials ℂ w :=
   (periodForm hk).codRestrict _ (periodForm_mem_periodPolynomials hk)
+
+/-- **The period polynomial through the period map.** For a cusp form `F` for the image of
+`⊤ : Subgroup SL(2, ℤ)` with the same underlying function as `f`, the period polynomial `r_f` is
+the binary form attached by `TauCeti.binaryFormDual` to the functional `P ↦ ⟪F, {∞, 0} ⊗ P⟫` of the
+period map. -/
+theorem coe_periodPolynomial_eq_binaryFormDual (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
+    {F : CuspForm ((⊤ : Subgroup SL(2, ℤ)).map (mapGL ℝ)) k} (hF : ⇑F = ⇑f) :
+    (periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) =
+      binaryFormDual ℂ w (periodMap ℂ ⊤ hk F ∘ₗ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ)) := by
+  obtain rfl : F = toTop f := CuspForm.ext fun z ↦ by rw [toTop_apply, ← hF]
+  rw [periodPolynomial, LinearMap.codRestrict_apply, periodForm_apply]
 
 /-- **The values of the period polynomial**: `r_f(x, y) = ∫₀^{i∞} f(τ) (x - τy)ʷ dτ`. -/
 @[simp]

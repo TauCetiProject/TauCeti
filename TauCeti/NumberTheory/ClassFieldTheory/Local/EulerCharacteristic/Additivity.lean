@@ -56,13 +56,15 @@ theorem localEulerCharacteristic_mul_of_exact (hn : IsUnit (n : F)) {A B C : Gal
     haveI : Finite A.V := .of_injective _ hf
     haveI : Finite C.V := .of_surjective _ hg
     haveI : Fact (IsSmoothDiscrete (ZMod n) A) := ⟨.of_injective f hf Fact.out⟩
-    haveI : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective g hg Fact.out⟩
+    haveI : Fact (IsSmoothDiscrete (ZMod n) C) :=
+      ⟨.of_surjective g hg (IsSmoothDiscrete.stabilizer_isOpen Fact.out)⟩
     localEulerCharacteristic hn.ne_zero B =
       localEulerCharacteristic hn.ne_zero A * localEulerCharacteristic hn.ne_zero C := by
   have : Finite A.V := .of_injective _ hf
   have : Finite C.V := .of_surjective _ hg
   have : Fact (IsSmoothDiscrete (ZMod n) A) := ⟨.of_injective f hf Fact.out⟩
-  have : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective g hg Fact.out⟩
+  have : Fact (IsSmoothDiscrete (ZMod n) C) :=
+    ⟨.of_surjective g hg (IsSmoothDiscrete.stabilizer_isOpen Fact.out)⟩
   let G := Field.absoluteGaloisGroup F
   let _ : DiscreteTopology A.V :=
     (Fact.out : IsSmoothDiscrete (ZMod n) A).discreteTopology

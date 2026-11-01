@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
+import Mathlib.Tactic.Group
 
 /-!
 # Maps of subgroups
@@ -43,11 +44,15 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
+* `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
+  of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
+* `QuotientGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N` is everything exactly when
+  `N ⊔ K = ⊤`.
 * `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
   equalities of the domain and codomain preserves injectivity and surjectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
@@ -330,6 +335,21 @@ theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
   simp only [Subgroup.coe_map, Subgroup.coe_inf, Subgroup.coe_comap]
   exact Set.image_inter_preimage f H K
 
+/-- The normal core of `f⁻¹(B)` is the preimage of the normal core of `B` as soon as every element
+of the target is `f x * b` with `b ∈ B`: conjugating by `f x * b` is conjugating by `f x` and
+then by `b`, and `b` normalizes `B`. -/
+theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) {B : Subgroup H}
+    (hf : ∀ g, ∃ x, ∃ b ∈ B, f x * b = g) :
+    (B.comap f).normalCore = B.normalCore.comap f := by
+  refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
+  -- Write `g⁻¹ = f y * b`, so that `g (f x) g⁻¹ = b⁻¹ f (y⁻¹ x y) b`.
+  obtain ⟨y, b, hb, hyb⟩ := hf g⁻¹
+  have hconj : g * f x * g⁻¹ = b⁻¹ * f (y⁻¹ * x * y⁻¹⁻¹) * b⁻¹⁻¹ := by
+    rw [← inv_inv g, ← hyb, map_mul, map_mul, map_inv, inv_inv]
+    group
+  rw [hconj]
+  exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
+
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
 
@@ -367,6 +387,15 @@ theorem _root_.Subgroup.map_quotientGroupMap_map_mk' (R : Subgroup G) {N : Subgr
       (QuotientGroup.mk' M).comp f :=
     MonoidHom.ext fun x ↦ QuotientGroup.map_mk' N M f h x
   rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-- The image of `K` in `G ⧸ N` is everything exactly when `N` and `K` together generate `G`.
+The group analogue of Mathlib's `Submodule.map_mkQ_eq_top`. -/
+theorem _root_.QuotientGroup.map_mk'_eq_top {N : Subgroup G} [N.Normal] {K : Subgroup G} :
+    K.map (QuotientGroup.mk' N) = ⊤ ↔ N ⊔ K = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [sup_comm, ← QuotientGroup.ker_mk' N, ← Subgroup.comap_map_eq, h, Subgroup.comap_top]
+  · rw [← bot_sup_eq (K.map _), ← QuotientGroup.map_mk'_self N, ← Subgroup.map_sup, h,
+      Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective N)]
 
 /-! ## Transporting a coset space along an isomorphism -/
 

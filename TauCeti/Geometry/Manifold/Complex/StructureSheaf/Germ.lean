@@ -24,7 +24,11 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
-  germs of the functions which are complex analytic (`ContMDiffAt` at order `ω`) near `x`.
+  germs of the functions which are complex analytic (`ContMDiffAt` at order `ω`) near `x`;
+* `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
+  with the same germ;
+* `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
+  is composition of germs with `f`.
 
 This is the bridge between the categorical stalk and concrete function germs, used to compare
 holomorphic germs with meromorphic germs on punctured neighbourhoods.
@@ -176,5 +180,33 @@ theorem exists_toFilterGerm_nhds_eq_iff {x : X} {f : X → ℂ} :
   rw [hgs, Germ.coe_eq] at hs
   filter_upwards [hg, hs.eventuallyEq_nhds] with y hy hgf
   exact hy.congr_of_eventuallyEq hgf.symm
+
+/-- The value of a holomorphic germ is the value at the base point of any function with the same
+germ along `𝓝 x`. -/
+theorem eval_eq_of_toFilterGerm_eq {x : X} {s : (holomorphicStructureSheaf I X).presheaf.stalk x}
+    {f : X → ℂ} (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : eval I X x s = f x := by
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq s
+  rw [toFilterGerm_germ le_rfl hx g _ fun y ↦
+    (Subtype.val_injective.extend_apply _ (0 : X → ℂ) y).symm, Germ.coe_eq] at h
+  rw [eval_germ, ← h.eq_of_nhds]
+  exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (⟨x, hx⟩ : U)).symm
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
+  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+
+/-- The germ of the pullback of a holomorphic germ along a complex analytic map `f` is the
+composition with `f` of the germ. -/
+theorem toFilterGerm_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f x)) :
+    toFilterGerm I X x (𝓝 x) le_rfl (stalkPrecomp I X f hf x s) =
+      (toFilterGerm J Y (f x) (𝓝 (f x)) le_rfl s).compTendsto f (hf.continuous.tendsto x) := by
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
+  have hg : ∀ y : U, toFun J Y (op U) g y = (Subtype.val.extend (toFun J Y (op U) g) 0 : Y → ℂ) y :=
+    fun y ↦ (Subtype.val_injective.extend_apply _ (0 : Y → ℂ) y).symm
+  rw [stalkPrecomp_germ, toFilterGerm_germ le_rfl hx g _ hg]
+  exact (toFilterGerm_germ (U := (Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) le_rfl hx _
+    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.1, y.2⟩)).trans
+    (Germ.coe_compTendsto _ _).symm
 
 end TauCeti.holomorphicStructureSheaf

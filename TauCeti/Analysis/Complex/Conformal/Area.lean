@@ -84,15 +84,6 @@ because that is what Mathlib's weighted change of variables asks for.
   `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul` — the change of variables formula for a
   holomorphic injection, in Lebesgue, integrability and Bochner form.
 
-## Coordination with upstream Mathlib
-
-Mathlib has the change-of-variables formula but no area formula for holomorphic maps: a grep of
-the pinned Mathlib for `lintegral_abs_det_fderiv` finds only the polar-coordinate and
-upper-half-plane applications, neither of which computes the area of a conformal image. Layer L5 is
-absent from [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the
-in-progress human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem
-itself, so this file is new Lean formalization rather than a temporary shim.
-
 ## References
 
 * Ch. Pommerenke, *Boundary Behaviour of Conformal Maps*, §2.2 (the length–area method).

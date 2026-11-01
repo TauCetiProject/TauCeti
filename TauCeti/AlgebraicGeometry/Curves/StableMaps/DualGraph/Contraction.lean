@@ -51,6 +51,9 @@ graph.
   stable range, iterated stabilization steps reach a stable decorated graph.
 * `TauCeti.DualGraph.DegreeDecoration.stabilizationStep_zero_iff`: for the zero decoration,
   stabilization steps are the stabilization steps of the underlying graph.
+* `TauCeti.DualGraph.DegreeDecoration.StabilizationStep.labelledStabilizationStep`: a decorated
+  stabilization step is a labelled stabilization step
+  (`TauCeti.DualGraph.LabelledStabilizationStep`) contracting a vertex of degree zero.
 
 ## References
 
@@ -205,6 +208,23 @@ theorem totalDegree_eq (h : StabilizationStep x y) : y.2.totalDegree = x.2.total
       ((isRationalBridge_iff _).mp hv).2.2 hm
     rwa [hd, add_zero] at this
 
+/-- A stabilization step of decorated graphs is a labelled stabilization step for the labelling of
+the vertices by their degrees, contracting a vertex of degree zero. -/
+theorem labelledStabilizationStep (h : StabilizationStep x y) :
+    LabelledStabilizationStep (· = 0) ⟨x.1, x.2.componentDegree⟩ ⟨y.1, y.2.componentDegree⟩ := by
+  cases h with
+  | @contractTail G D v hv hm hd =>
+    dsimp only
+    rw [show (D.contractTail (G.isRationalTail_iff.mp hv).2).componentDegree =
+      fun w ↦ D.componentDegree w.1 from funext (D.componentDegree_contractTail _)]
+    exact .contractTail _ hv hm hd
+  | @contractBridge G D v hv hm hd =>
+    dsimp only
+    rw [show (D.contractBridge (G.isRationalBridge_iff.mp hv).2.1
+        (G.isRationalBridge_iff.mp hv).2.2 hm).componentDegree =
+      fun w ↦ D.componentDegree w.1 from funext (D.componentDegree_contractBridge _ _ _)]
+    exact .contractBridge _ hv hm hd
+
 /-- A stabilization step contracts a vertex of degree zero and nonpositive log-canonical degree. -/
 theorem exists_componentDegree_eq_zero_and_logCanonicalDegree_nonpos (h : StabilizationStep x y) :
     ∃ v, x.2.componentDegree v = 0 ∧ x.1.logCanonicalDegree v ≤ 0 := by
@@ -219,6 +239,24 @@ end StabilizationStep
 theorem IsStable.not_stabilizationStep (hx : x.2.IsStable) : ¬ StabilizationStep x y := fun h ↦
   have ⟨v, hd, hv⟩ := h.exists_componentDegree_eq_zero_and_logCanonicalDegree_nonpos
   (x.2.isStable_iff.mp hx v hd).not_ge hv
+
+/-- A stable decorated graph admits no labelled stabilization step contracting a vertex of degree
+zero: such a vertex would have nonpositive log-canonical degree. -/
+theorem IsStable.not_labelledStabilizationStep {G : DualGraph.{u} ι} {D : G.DegreeDecoration}
+    (hD : D.IsStable) {z : Σ G : DualGraph.{u} ι, G.Vertex → ℕ} :
+    ¬ LabelledStabilizationStep (· = 0) ⟨G, D.componentDegree⟩ z := fun h ↦
+  have ⟨v, hd, hv⟩ := h.exists_logCanonicalDegree_nonpos
+  (D.isStable_iff.mp hD v hd).not_ge hv
+
+/-- Iterated stabilization steps of decorated graphs are iterated labelled stabilization steps for
+the labelling of the vertices by their degrees. -/
+theorem reflTransGen_labelledStabilizationStep_of_reflTransGen
+    (h : Relation.ReflTransGen StabilizationStep x y) :
+    Relation.ReflTransGen (LabelledStabilizationStep (· = 0))
+      ⟨x.1, x.2.componentDegree⟩ ⟨y.1, y.2.componentDegree⟩ :=
+  h.lift (fun x : Σ G : DualGraph.{u} ι, G.DegreeDecoration ↦
+      (⟨x.1, x.2.componentDegree⟩ : Σ G : DualGraph.{u} ι, G.Vertex → ℕ))
+    fun _ _ ↦ StabilizationStep.labelledStabilizationStep
 
 /-- Iterated stabilization steps preserve the arithmetic genus. -/
 theorem arithmeticGenus_eq_of_reflTransGen (h : Relation.ReflTransGen StabilizationStep x y) :

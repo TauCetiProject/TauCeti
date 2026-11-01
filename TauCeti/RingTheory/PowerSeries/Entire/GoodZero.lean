@@ -41,6 +41,8 @@ may be renormalised to `(1 - a⁻¹ X)ʰ`.
   at `a`.
 * `PowerSeries.IsEntire.isGoodZero_iff`: factorisation of an entire series at a good zero.
 * `PowerSeries.IsGoodZero.mul`: the orders of good zeros of entire series add under products.
+* `PowerSeries.IsEntire.isGoodZero_mul_iff_of_isUnit`: a factor which is a unit at `a` does not
+  change good zeros at `a`.
 * `PowerSeries.IsGoodZero.isUnit` and `PowerSeries.IsGoodZero.exists_eq_one_sub_C_mul_X_pow_mul`:
   for `f(0) = 1`, a good zero `a` of positive order `h` is a unit and `f = (1 - a⁻¹ X)ʰ G` with
   `G` entire, `G(0) = 1` and `G(a)` a unit.
@@ -174,6 +176,23 @@ theorem IsGoodZero.mul (hf : f.IsEntire) (hg : g.IsEntire) (hfa : f.IsGoodZero a
   obtain ⟨g₁, hg₁, rfl, hg₁a⟩ := hg.isGoodZero_iff.mp hga
   rw [mul_mul_mul_comm, ← pow_add, (hf₁.mul hg₁).isGoodZero_X_sub_C_pow_mul_iff, hf₁.evalAt_mul hg₁]
   exact hf₁a.mul hg₁a
+
+/-- **Cancelling a unit factor.** If `g(a)` is a unit, then `f * g` has a good zero of order `h`
+at `a` exactly when `f` does. -/
+theorem IsEntire.isGoodZero_mul_iff_of_isUnit (hf : f.IsEntire) (hg : g.IsEntire)
+    (hga : IsUnit (g.evalAt a)) : (f * g).IsGoodZero a h ↔ f.IsGoodZero a h := by
+  refine ⟨fun hfg ↦ ?_, fun hfa ↦ by simpa using hfa.mul hf hg (isGoodZero_zero_iff.mpr hga)⟩
+  have hlt : ∀ j < h, (PowerSeries.hasseDeriv j f).evalAt a = 0 := by
+    intro j
+    induction j using Nat.strong_induction_on with
+    | _ j ih =>
+      intro hj
+      have hj' := hfg.evalAt_hasseDeriv_eq_zero hj
+      rw [hf.evalAt_hasseDeriv_mul_of_forall_lt hg fun i hi ↦ ih i hi (hi.trans hj)] at hj'
+      exact hga.mul_left_eq_zero.mp hj'
+  have hh := hfg.isUnit_evalAt_hasseDeriv
+  rw [hf.evalAt_hasseDeriv_mul_of_forall_lt hg hlt] at hh
+  exact ⟨hlt, isUnit_of_mul_isUnit_left hh⟩
 
 /-- **Good zeros of normalised series are units.** If an entire series `f` with `f(0) = 1` has a
 good zero of positive order at `a`, then `a` is a unit. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.Killing
-public import TauCeti.Algebra.Lie.InnerAutomorphism
+public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
@@ -72,6 +72,8 @@ statement above then reads as a relation in the group of units rather than in th
 * `TauCeti.weylAut_apply_of_lie_eq_zero`: it fixes the joint centraliser of `e` and `f`.
 * `TauCeti.weylAut_apply_of_lie_eq_smul`: the reflection formula `y ↦ y - c • h`.
 * `TauCeti.lie_weylAut_apply`: the reflected weight of the image of an eigenvector.
+* `IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra`: the Weyl automorphism lies in the group
+  `TauCeti.intLieAlgebra K L` of inner automorphisms.
 * `TauCeti.weylAut_mem_rootSpace`, `TauCeti.weylAut_map_rootSpace` and
   `TauCeti.exists_lieEquiv_forall_mem_rootSpace`: in the Killing setting, `weylAut` carries root
   spaces onto reflected root spaces.
@@ -256,6 +258,29 @@ lemma lie_weylAut_apply (t : IsSl2Triple h e f) {y z : L} {c d m : K}
     _ = (d - c * m) • weylAut t he hf z := by rw [key, map_smul]
 
 end CommRing
+
+section IntLieAlgebra
+
+open LinearMap.GeneralLinearGroup
+
+variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
+
+/-- **The Weyl automorphism of an `sl₂` triple is inner**: `exp (ad e) exp (-ad f) exp (ad e)` lies
+in `Int L`. -/
+theorem _root_.IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra {h e f : L}
+    (t : IsSl2Triple h e f) (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) :
+    ofLinearEquiv (weylAut t he hf).toLinearEquiv ∈ intLieAlgebra K L := by
+  have hf' : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
+  have h : ofLinearEquiv (weylAut t he hf).toLinearEquiv =
+      ofLinearEquiv (expAd e he).toLinearEquiv * ofLinearEquiv (expAd (-f) hf').toLinearEquiv *
+        ofLinearEquiv (expAd e he).toLinearEquiv := by
+    ext y
+    simp [weylAut_apply]
+  rw [h]
+  exact mul_mem (mul_mem (ofLinearEquiv_expAd_mem_intLieAlgebra e he)
+    (ofLinearEquiv_expAd_mem_intLieAlgebra (-f) hf')) (ofLinearEquiv_expAd_mem_intLieAlgebra e he)
+
+end IntLieAlgebra
 
 section Killing
 

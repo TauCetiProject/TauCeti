@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 
 import TauCeti.Topology.Algebra.Module.Complement
 
 /-!
 # Fredholm operators
 
-This file extends Mathlib's notion of a **Fredholm operator** with finite-dimensional examples
-and invariance under scalar multiplication and continuous linear changes of coordinates.
+This file extends Mathlib's notion of a **Fredholm operator** with finite-dimensional examples,
+invariance under scalar multiplication and continuous linear changes of coordinates, and
+preservation under restriction of scalars along a finite extension of scalar fields.
 All Fredholm hypotheses use `ContinuousLinearMap.IsFredholm` directly. That predicate asks for a
 strict map with closed range, finite-dimensional kernel and cokernel, and a topologically
 complemented kernel. Between Banach spaces over an `IsRCLikeNormedField`, finite-dimensional
@@ -34,6 +36,10 @@ intended throughout.
   `ContinuousLinearMap.IsFredholm.equiv_comp`: composing with a continuous linear equivalence on
   either side preserves Fredholmness. These implications hold between topological modules over any
   `NontriviallyNormedField`, without completeness or separation assumptions.
+* `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
+  over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
+  a complex Fredholm operator is Fredholm. Its index is computed by
+  `ContinuousLinearMap.index_restrictScalars`.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -137,5 +143,31 @@ lemma IsFredholm.neg {T : E →L[𝕜] F} (hT : IsFredholm T) : IsFredholm (-T) 
   convert hT.equiv_comp (ContinuousLinearEquiv.neg 𝕜) using 1
   ext x
   simp
+
+section RestrictScalars
+
+variable (𝕜) {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [Module 𝕜 𝕜'] [Module.Finite 𝕜 𝕜']
+  [Module 𝕜' E] [IsScalarTower 𝕜 𝕜' E] [Module 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+
+/-- Restricting scalars along a finite extension `𝕜 → 𝕜'` of nontrivially normed fields preserves
+Fredholmness. In particular the realification of a complex Fredholm operator is Fredholm. -/
+lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
+    IsFredholm (T.restrictScalars 𝕜) where
+  isStrictMap := by simpa only [coe_restrictScalars'] using hT.isStrictMap
+  isClosed_range := by
+    simpa only [coe_restrictScalars, LinearMap.range_restrictScalars,
+      Submodule.coe_restrictScalars] using hT.isClosed_range
+  finite_ker := by
+    have := hT.finite_ker
+    -- The kernel of the restricted map is `T.ker` with the `𝕜`-structure inherited from `E`.
+    have : FiniteDimensional 𝕜 T.ker := Module.Finite.trans 𝕜' T.ker
+    exact this
+  finite_coker := by
+    have := hT.finite_coker
+    have : FiniteDimensional 𝕜 (F ⧸ T.range) := Module.Finite.trans 𝕜' _
+    exact (Submodule.Quotient.restrictScalarsEquiv 𝕜 T.range).symm.finiteDimensional
+  closedComplemented_ker := hT.closedComplemented_ker.restrictScalars 𝕜
+
+end RestrictScalars
 
 end ContinuousLinearMap

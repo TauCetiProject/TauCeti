@@ -326,6 +326,17 @@ theorem stasheffSum_congr {e : ℕ → ℤ} {y : ℕ → A} (n : ℕ)
   · intro i hi
     exact hx i (by omega)
 
+/-- The arity-one identity is `m₁ m₁ = 0`. -/
+theorem stasheffSum_one : stasheffSum m d x 1 = m 1 ![m 1 ![x 0]] := by
+  simp [stasheffSum_def, stasheffTerm_def, Finset.sum_range_succ]
+
+/-- When `m 3` and `m 4` vanish, the arity-four identity is vacuous. -/
+theorem stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero
+    (h₃ : m 3 = 0) (h₄ : m 4 = 0) :
+    stasheffSum m d x 4 = 0 := by
+  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top,
+    stasheffTerm_eq_zero_of_inner_eq_zero, stasheffTerm_eq_zero_of_outer_eq_zero, h₃, h₄]
+
 /-- **Naturality of the Stasheff sums.** A linear map which intertwines two families of
 operations intertwines their Stasheff sums. -/
 theorem map_stasheffSum {B : Type*} [AddCommMonoid B] [Module R B] (f : A →ₗ[R] B)
@@ -458,127 +469,26 @@ theorem suspendedStasheffSum_eq_zero_iff (n : ℕ) :
 
 end SuspendedStasheff
 
-/-! ### The identities in arities one to four -/
+/-! ### Explicit identities in arities two to four -/
 
 section LowArity
 
 variable [Ring R] [AddCommGroup A] [Module R A]
 variable (m : ∀ k : ℕ, MultilinearMap R (fun _ : Fin k ↦ A) A) (d : ℕ → ℤ) (x : ℕ → A)
 
-/- Keep the implementation-level sign and tuple normalization in this private layer.  The
-displayed identities below then only choose the relevant terms and collect them additively. -/
-private theorem stasheffTerm_normalize (p s t : ℕ) :
-    stasheffTerm m d x p s t =
-      negOnePowCast R ((p : ℤ) + s * t) •
-        negOnePowCast R ((2 - s) * ∑ i ∈ Finset.range p, d i) •
-          evalNat (m (p + 1 + t))
-            (replaceBlock x p s (evalNat (m s) fun j ↦ x (p + j))) := by
-  rw [stasheffTerm_def, negOnePowCast_add, mul_smul]
-
-private theorem evalNat_replaceBlock_one (s : ℕ) (v : A) :
-    evalNat (m 1) (replaceBlock x 0 s v) = m 1 ![v] := by
-  simp only [evalNat_one, replaceBlock_self]
-
-private theorem evalNat_replaceBlock_two_zero (s : ℕ) (v : A) :
-    evalNat (m 2) (replaceBlock x 0 s v) = m 2 ![v, x s] := by
-  simp [evalNat_two]
-
-private theorem evalNat_replaceBlock_two_one (s : ℕ) (v : A) :
-    evalNat (m 2) (replaceBlock x 1 s v) = m 2 ![x 0, v] := by
-  simp [evalNat_two]
-
-private theorem evalNat_replaceBlock_three_zero (s : ℕ) (v : A) :
-    evalNat (m 3) (replaceBlock x 0 s v) = m 3 ![v, x s, x (s + 1)] := by
-  simp [evalNat_three, Nat.add_comm]
-
-private theorem evalNat_replaceBlock_three_one (s : ℕ) (v : A) :
-    evalNat (m 3) (replaceBlock x 1 s v) = m 3 ![x 0, v, x (s + 1)] := by
-  simp [evalNat_three, Nat.add_comm]
-
-private theorem evalNat_replaceBlock_three_two (s : ℕ) (v : A) :
-    evalNat (m 3) (replaceBlock x 2 s v) = m 3 ![x 0, x 1, v] := by
-  simp [evalNat_three]
-
-private theorem evalNat_replaceBlock_four_zero (s : ℕ) (v : A) :
-    evalNat (m 4) (replaceBlock x 0 s v) = m 4 ![v, x s, x (s + 1), x (s + 2)] := by
-  simp [evalNat_four, Nat.add_comm]
-
-private theorem evalNat_replaceBlock_four_one (s : ℕ) (v : A) :
-    evalNat (m 4) (replaceBlock x 1 s v) = m 4 ![x 0, v, x (s + 1), x (s + 2)] := by
-  simp [evalNat_four, Nat.add_comm]
-
-private theorem evalNat_replaceBlock_four_two (s : ℕ) (v : A) :
-    evalNat (m 4) (replaceBlock x 2 s v) = m 4 ![x 0, x 1, v, x (s + 2)] := by
-  simp [evalNat_four, Nat.add_comm]
-
-private theorem evalNat_replaceBlock_four_three (s : ℕ) (v : A) :
-    evalNat (m 4) (replaceBlock x 3 s v) = m 4 ![x 0, x 1, x 2, v] := by
-  simp [evalNat_four]
-
-/- These expansions isolate the finite indexing arithmetic from the element-level sign audit
-below.  Keeping them private avoids adding arity-specific combinatorics to the public API. -/
-private theorem stasheffSum_one_terms :
-    stasheffSum m d x 1 = stasheffTerm m d x 0 1 0 := by
-  simp [stasheffSum_def, Finset.sum_range_succ]
-
-private theorem stasheffSum_two_terms :
-    stasheffSum m d x 2 = stasheffTerm m d x 0 1 1 + stasheffTerm m d x 0 2 0
-      + stasheffTerm m d x 1 1 0 := by
-  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top, add_assoc]
-
-private theorem stasheffSum_three_terms :
-    stasheffSum m d x 3 = stasheffTerm m d x 0 1 2 + stasheffTerm m d x 0 2 1
-      + stasheffTerm m d x 0 3 0 + stasheffTerm m d x 1 1 1
-      + stasheffTerm m d x 1 2 0 + stasheffTerm m d x 2 1 0 := by
-  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top, add_assoc]
-
-private theorem stasheffSum_four_terms :
-    stasheffSum m d x 4 = stasheffTerm m d x 0 1 3 + stasheffTerm m d x 0 2 2
-      + stasheffTerm m d x 0 3 1 + stasheffTerm m d x 0 4 0
-      + stasheffTerm m d x 1 1 2 + stasheffTerm m d x 1 2 1
-      + stasheffTerm m d x 1 3 0 + stasheffTerm m d x 2 1 1
-      + stasheffTerm m d x 2 2 0 + stasheffTerm m d x 3 1 0 := by
-  simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top, add_assoc]
-
-private theorem negOnePowCast_two_normalize : negOnePowCast R 2 = 1 :=
-  negOnePowCast_even (by norm_num)
-
-private theorem negOnePowCast_three_normalize : negOnePowCast R 3 = -1 :=
-  negOnePowCast_odd (by use 1; norm_num)
-
-private theorem negOnePowCast_four_normalize : negOnePowCast R 4 = 1 :=
-  negOnePowCast_even (by use 2; norm_num)
-
-/- Centralize the implementation-level reduction used after selecting the terms of a low-arity
-Stasheff sum.  The public proofs below depend only on this local normalization interface. -/
+/- Expand the finite sums before normalizing their tuples and signs. The insertion API evaluates
+each operation and collapses its block; the integer sign character computes the constant signs. -/
 local macro "normalize_stasheff" : tactic =>
   `(tactic|
-    simp only [stasheffTerm_normalize, evalNat_replaceBlock_one,
-      evalNat_replaceBlock_two_zero, evalNat_replaceBlock_two_one,
-      evalNat_replaceBlock_three_zero, evalNat_replaceBlock_three_one,
-      evalNat_replaceBlock_three_two, evalNat_replaceBlock_four_zero,
-      evalNat_replaceBlock_four_one, evalNat_replaceBlock_four_two,
-      evalNat_replaceBlock_four_three] <;>
-    simp only [Nat.reduceAdd, CharP.cast_eq_zero,
-      Finset.sum_range_succ, Finset.range_one, Finset.sum_singleton, Finset.range_zero,
-      Finset.sum_empty, mul_zero, mul_one, one_mul, zero_add, add_zero, Nat.cast_one,
-      Nat.cast_ofNat, Int.reduceAdd, Int.reduceMul, Int.reduceSub, neg_mul,
-      evalNat_one, evalNat_two, evalNat_three, evalNat_four, sub_self, zero_mul] <;>
-    simp only [negOnePowCast_zero, negOnePowCast_one, negOnePowCast_two_normalize,
-      negOnePowCast_three_normalize, negOnePowCast_four_normalize, negOnePowCast_neg,
-      one_smul, neg_smul])
-
-/-- The arity-one identity is `m₁ m₁ = 0`. -/
-theorem stasheffSum_one : stasheffSum m d x 1 = m 1 ![m 1 ![x 0]] := by
-  rw [stasheffSum_one_terms]
-  normalize_stasheff
+    simp [stasheffSum_def, Finset.sum_range_succ, Finset.sum_Icc_succ_top] <;>
+    simp [stasheffTerm_def, Finset.sum_range_succ, negOnePowCast_add, mul_smul] <;>
+    norm_num [negOnePowCast_eq_intCast])
 
 /-- The arity-two identity, evaluated: `m₁ m₂ - m₂ (m₁ ⊗ 1) - m₂ (1 ⊗ m₁)`, where the Koszul rule
 turns the last term into `(-1) ^ (d 0)` times `m₂ (a, m₁ b)`. -/
 theorem stasheffSum_two : stasheffSum m d x 2
     = m 1 ![m 2 ![x 0, x 1]] - m 2 ![m 1 ![x 0], x 1]
       - negOnePowCast R (d 0) • m 2 ![x 0, m 1 ![x 1]] := by
-  rw [stasheffSum_two_terms]
   normalize_stasheff
   abel
 
@@ -592,7 +502,6 @@ theorem stasheffSum_three : stasheffSum m d x 3
       + m 3 ![m 1 ![x 0], x 1, x 2]
       + negOnePowCast R (d 0) • m 3 ![x 0, m 1 ![x 1], x 2]
       + negOnePowCast R (d 0 + d 1) • m 3 ![x 0, x 1, m 1 ![x 2]] := by
-  rw [stasheffSum_three_terms]
   normalize_stasheff
   abel
 
@@ -611,7 +520,6 @@ theorem stasheffSum_four : stasheffSum m d x 4
       - negOnePowCast R (d 0) • m 4 ![x 0, m 1 ![x 1], x 2, x 3]
       - negOnePowCast R (d 0 + d 1) • m 4 ![x 0, x 1, m 1 ![x 2], x 3]
       - negOnePowCast R (d 0 + d 1 + d 2) • m 4 ![x 0, x 1, x 2, m 1 ![x 3]] := by
-  rw [stasheffSum_four_terms]
   normalize_stasheff
   abel
 
@@ -629,16 +537,6 @@ theorem stasheffSum_three_eq_zero_iff_of_m_three_eq_zero (h₃ : m 3 = 0) :
   rw [stasheffSum_three, h₃]
   simp only [_root_.zero_apply, hz1, smul_zero, add_zero, zero_add]
   rw [sub_eq_zero]
-
-/-- When `m 3` and `m 4` vanish, the arity-four identity is vacuous. -/
-theorem stasheffSum_four_eq_zero_of_m_three_eq_zero_of_m_four_eq_zero
-    (h₃ : m 3 = 0) (h₄ : m 4 = 0) :
-    stasheffSum m d x 4 = 0 := by
-  have hz1 : m 1 ![(0 : A)] = 0 := (m 1).map_coord_zero 0 rfl
-  have hz2 : ∀ y : A, m 2 ![0, y] = 0 := fun y ↦ (m 2).map_coord_zero 0 rfl
-  have hz2' : ∀ y : A, m 2 ![y, 0] = 0 := fun y ↦ (m 2).map_coord_zero 1 rfl
-  rw [stasheffSum_four, h₃, h₄]
-  simp only [_root_.zero_apply, hz1, hz2, sub_self, hz2', smul_zero, add_zero]
 
 end LowArity
 

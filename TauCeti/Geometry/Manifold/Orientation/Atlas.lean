@@ -161,9 +161,6 @@ theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]
 
 /-- A manifold whose given atlas has positive transition derivatives is orientable. -/
 theorem Orientable.of_hasGroupoid [HasGroupoid M (orientationPreservingGroupoid I)] :
-    Orientable I M := by
-  apply IsOrientedAtlas.orientable (n := 1) (A := atlas H M)
-  exact ⟨IsManifold.subset_maximalAtlas,
-    fun x ↦ ⟨chartAt H x, chart_mem_atlas H x, mem_chart_source H x⟩,
-    fun he he' ↦ HasGroupoid.compatible he he'⟩
+    Orientable I M :=
+  (isOrientedAtlas_atlas I 1 M).orientable
 end TauCeti

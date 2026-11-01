@@ -25,8 +25,8 @@ Write `Fⱼ(a)` for the Hermitian matrix whose only nonzero entry is the octonio
 derivation is killed on each kind of generator separately; on a diagonal idempotent more is true,
 `D Eᵢ` has no diagonal at all
 (`TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero`). Only the Peirce calculus of
-the frame enters, so no Jordan identity is needed — which is just as well, since `J` is not yet
-known here to satisfy one.
+the frame enters; the Jordan identity of `J`, proved in `TauCeti/Algebra/AlbertAlgebra/Jordan.lean`,
+is not needed.
 
 The trace-zero subspace is therefore a Lie submodule
 (`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`), the candidate fundamental representation, of

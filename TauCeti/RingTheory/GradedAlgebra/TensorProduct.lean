@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Graded.Internal
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 
 /-!
 # The graded tensor product of two internally `ℤ`-graded algebras is graded

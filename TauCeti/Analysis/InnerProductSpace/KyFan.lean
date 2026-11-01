@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.Convex.Majorization
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 
 /-!
@@ -53,7 +54,15 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.kyFanSum_smul`, `LinearMap.kyFanSum_adjoint`,
   `LinearMap.kyFanSum_linearIsometryEquiv_comp`, `LinearMap.kyFanSum_comp_linearIsometryEquiv`:
   homogeneity, and invariance under adjoints and isometric changes of coordinates.
+* `LinearMap.kyFanSum_subtype_comp_comp_orthogonalProjectionOnto`: extending a map by zero
+  between source and target ambient spaces preserves its Ky Fan sums.
 * `LinearMap.IsSymmetric.sum_re_inner_apply_self_le_sum_eigenvalues`: Ky Fan's trace inequality.
+
+## Provenance
+
+The zero-extension Ky Fan identity is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the
+AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## References
 
@@ -376,6 +385,27 @@ theorem kyFanSum_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : E' ≃ₗ�
       (hv.comp_linearIsometryEquiv V.symm)
     rw [Fintype.card_fin] at h
     simpa using h.trans (kyFanSum_mono _ hm)
+
+/-- Extending a map `T : U → W` by zero on `Uᗮ`, then including the image
+in the target ambient space, does not change its Ky Fan singular-value sums. -/
+@[simp]
+theorem kyFanSum_subtype_comp_comp_orthogonalProjectionOnto
+    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F) [U.HasOrthogonalProjection]
+    (T : U →ₗ[𝕜] W) (k : ℕ) :
+    (W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap).kyFanSum k =
+      T.kyFanSum k := by
+  have hU : LinearMap.adjoint U.subtypeₗᵢ.toLinearMap =
+      U.orthogonalProjectionOnto.toLinearMap := by
+    simpa only [Submodule.subtypeₗᵢ_toLinearMap] using U.adjoint_subtype
+  have hcomp :
+      W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap =
+        (W.subtypeₗᵢ.toLinearMap ∘ₗ T) ∘ₗ
+          LinearMap.adjoint U.subtypeₗᵢ.toLinearMap := by
+    simp only [← hU, Submodule.subtypeₗᵢ_toLinearMap, LinearMap.comp_assoc]
+  rw [hcomp]
+  simp only [LinearMap.kyFanSum_def,
+    LinearMap.singularValues_comp_adjoint_linearIsometry,
+    LinearMap.singularValues_linearIsometry_comp]
 
 namespace IsSymmetric
 

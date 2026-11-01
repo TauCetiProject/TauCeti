@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 
 /-!
 # Indexing the prime-power ideals by a prime and an exponent

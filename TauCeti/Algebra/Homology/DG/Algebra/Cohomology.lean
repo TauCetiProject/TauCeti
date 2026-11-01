@@ -11,6 +11,7 @@ public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.Algebra.Homology.DG.Module.Defs
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
+public import TauCeti.RingTheory.GradedAlgebra.Subalgebra
 
 /-!
 # The cohomology algebra of a differential graded algebra
@@ -96,13 +97,15 @@ lemma mem_cycles (h : IsDGAlgebra 𝒜 d) {a : A} : a ∈ h.cycles ↔ d a = 0 :
 theorem map_mem_cycles (h : IsDGAlgebra 𝒜 d) (a : A) : d a ∈ h.cycles :=
   h.sq_zero a
 
-/-- The degree-`p` homogeneous cycles, as a submodule of the algebra of cycles. -/
-def cyclesDeg (h : IsDGAlgebra 𝒜 d) (p : ℤ) : Submodule R h.cycles :=
-  (𝒜 p).comap h.cycles.val.toLinearMap
+/-- The degree-`p` homogeneous cycles, as a submodule of the algebra of cycles: the grading
+`Subalgebra.grading` induced on the cycles by the ambient grading. -/
+@[expose] def cyclesDeg (h : IsDGAlgebra 𝒜 d) (p : ℤ) : Submodule R h.cycles :=
+  h.cycles.grading 𝒜 p
 
 @[simp]
 lemma mem_cyclesDeg (h : IsDGAlgebra 𝒜 d) {p : ℤ} {z : h.cycles} :
-    z ∈ h.cyclesDeg p ↔ (z : A) ∈ 𝒜 p := Iff.rfl
+    z ∈ h.cyclesDeg p ↔ (z : A) ∈ 𝒜 p :=
+  Subalgebra.mem_grading_iff _ _
 
 /-- The cycles are closed under every homogeneous projection of the ambient grading. -/
 theorem isHomogeneous_cycles (h : IsDGAlgebra 𝒜 d) :
@@ -113,18 +116,8 @@ theorem isHomogeneous_cycles (h : IsDGAlgebra 𝒜 d) :
 
 /-- The cycles inherit the grading of the ambient differential graded algebra. -/
 noncomputable instance instGradedAlgebraCyclesDeg (h : IsDGAlgebra 𝒜 d) :
-    GradedAlgebra h.cyclesDeg := by
-  letI : DirectSum.Decomposition h.cyclesDeg :=
-    DirectSum.Decomposition.restrict 𝒜 h.cyclesDeg h.cycles.val.toLinearMap
-      Subtype.val_injective (fun _ _ ↦ h.mem_cyclesDeg) fun p z ↦
-        ⟨⟨(decompose 𝒜 (z : A) p : A), h.isHomogeneous_cycles p z.2⟩, rfl⟩
-  exact
-  { (inferInstance : DirectSum.Decomposition h.cyclesDeg) with
-    one_mem := by
-      simpa only [mem_cyclesDeg, Subalgebra.coe_one] using SetLike.one_mem_graded 𝒜
-    mul_mem := fun _ _ _ _ hx hy => by
-      rw [h.mem_cyclesDeg] at hx hy ⊢
-      simpa only [Subalgebra.coe_mul] using SetLike.mul_mem_graded hx hy }
+    GradedAlgebra h.cyclesDeg :=
+  Subalgebra.gradedAlgebra h.isHomogeneous_cycles
 
 /-- Every cycle is a sum of homogeneous cycles: the homogeneous components of a cycle are cycles,
 and they add up to it. -/

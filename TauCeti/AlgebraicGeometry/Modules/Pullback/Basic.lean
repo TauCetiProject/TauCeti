@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
-public import TauCeti.AlgebraicGeometry.Modules.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 

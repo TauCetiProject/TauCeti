@@ -34,6 +34,8 @@ keeps matrices upper-triangular, so it permutes the `⟨T⟩`-orbits that meet `
 
 * `TauCeti.TraceFormulaMatrixModule.coeff_upperTriangularSum`: `Tₙ^∞` is the indicator function
   of `ℳₙ^∞`.
+* `TauCeti.TraceFormulaMatrixModule.upperTriangularSum_eq_sum_reps`: `Tₙ^∞` as a sum over the
+  matrices of `FixedDetMatrices.reps n`.
 * `TauCeti.TraceFormulaMatrixModule.upperTriangularSum_zero`: `T₀^∞ = 0`.
 * `TauCeti.TraceFormulaMatrixModule.mapDomain_coeff_upperTriangularSum_apply`: for `n ≠ 0`,
   every `SL(2, ℤ)`-orbit sum of `Tₙ^∞` is `1`.
@@ -74,6 +76,18 @@ theorem coeff_upperTriangularSum (x : TraceFormulaMatrixModule n) :
     (upperTriangularSum k n).coeff x = (upperTriangularReps n).indicator 1 x := by
   classical
   simp [upperTriangularSum, Finsupp.single_apply, Set.indicator_apply]
+
+variable (k n) in
+/-- `Tₙ^∞` is the sum of the classes of the matrices `(a b; 0 d)` of `FixedDetMatrices.reps n`. -/
+theorem upperTriangularSum_eq_sum_reps :
+    upperTriangularSum k n = ∑ A : FixedDetMatrices.reps n, single (mk A.1) 1 := by
+  classical
+  rw [upperTriangularSum, ← Finset.sum_image (s := Finset.univ) (f := fun x ↦ single x (1 : k))
+    (g := fun A : FixedDetMatrices.reps n ↦ mk A.1)
+    fun A _ B _ h ↦ Subtype.ext (mk_injOn_reps A.2 B.2 h)]
+  congr 1
+  ext x
+  simp [mem_upperTriangularReps]
 
 /-- `T₀^∞ = 0`. -/
 @[simp]

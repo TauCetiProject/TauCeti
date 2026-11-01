@@ -262,9 +262,9 @@ theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T 
     letI := isTopologicalRing_locUniformSpace P T s S hden
     toCompletionLoc P T s S hden a = (algebraMap A S a : UniformSpace.Completion S) := (rfl)
 
-/-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals.** This
-is the openness hypothesis `hopen` of `presentationLimitPreAdicSpaceComap`, so it lets the structure
-map of a rational localisation induce a morphism of pre-adic spaces. -/
+/-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals.** Under
+the induced map of adic spectra, preimages of rational subsets of `Spa(A, A⁺)` are therefore
+rational subsets again. -/
 theorem isOpen_map_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :

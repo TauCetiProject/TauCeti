@@ -17,7 +17,7 @@ recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠
 monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`),
 and at a zero the divided difference `dslope f a` has order one less than `f`.
 The finiteness a zero count also needs is
-`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
+`AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
 ## Main declarations

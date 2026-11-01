@@ -63,6 +63,14 @@ def stdComplexLineReal : ℝ × ℝ :=
 def stdComplexLineImag : ℝ × ℝ :=
   (0, 1)
 
+/-- The real coordinate vector is the standard pair `(1, 0)`. -/
+lemma stdComplexLineReal_eq : stdComplexLineReal = (1, 0) :=
+  rfl
+
+/-- The imaginary coordinate vector is the standard pair `(0, 1)`. -/
+lemma stdComplexLineImag_eq : stdComplexLineImag = (0, 1) :=
+  rfl
+
 @[simp]
 lemma stdComplexLineReal_fst : stdComplexLineReal.1 = 1 :=
   rfl

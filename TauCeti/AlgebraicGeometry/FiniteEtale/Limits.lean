@@ -27,10 +27,14 @@ the remaining half of (G2), are not treated here.
 * `TauCeti.FiniteEtaleScheme.isOpenImmersion_hom_left`,
   `TauCeti.FiniteEtaleScheme.isClosedImmersion_hom_left`: the underlying morphism of a
   monomorphism of finite étale schemes is an open and closed immersion.
+* `TauCeti.FiniteEtaleScheme.clopenSubscheme`: an open and closed subscheme of a finite étale
+  `S`-scheme, as a finite étale `S`-scheme, with its inclusion `clopenSubschemeι`.
 * `TauCeti.FiniteEtaleScheme.exists_isColimit_binaryCofanMk_of_mono`: every monomorphism of
   finite étale schemes is the first inclusion of a binary coproduct.
 * `TauCeti.FiniteEtaleScheme.epi_iff_surjective`: a morphism of finite étale schemes is an
   epimorphism if and only if its underlying morphism of schemes is surjective.
+* The category `FiniteEtaleScheme S` is balanced: a morphism that is both a monomorphism and an
+  epimorphism is an isomorphism.
 * The category `FiniteEtaleScheme S` is finitary extensive: finite coproducts are disjoint and
   stable under pullback.
 * The category `FiniteEtaleScheme S` is closed in `Over S` under binary products, so it inherits
@@ -166,6 +170,33 @@ immersion. -/
 instance isClosedImmersion_hom_left (i : X ⟶ Y) [Mono i] : IsClosedImmersion i.hom.left :=
   IsClosedImmersion.of_isPreimmersion _ i.hom.left.isClosedMap.isClosed_range
 
+/-- An open subscheme `U` of a finite étale `S`-scheme `Y` that is also closed in `Y` is finite
+étale over `S`: its inclusion is an open and closed immersion. -/
+noncomputable def clopenSubscheme (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
+    FiniteEtaleScheme S :=
+  have : IsClosedImmersion U.ι := .of_isPreimmersion _ (by rwa [Scheme.Opens.range_ι])
+  ⟨Over.mk (U.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
+    ⟨inferInstanceAs (IsFinite (U.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (U.ι ≫ Y.obj.hom))⟩⟩
+
+/-- The inclusion of an open and closed subscheme of a finite étale `S`-scheme `Y` into `Y`. -/
+noncomputable def clopenSubschemeι (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
+    clopenSubscheme U hU ⟶ Y :=
+  ObjectProperty.homMk (Over.homMk U.ι rfl)
+
+/-- The inclusion of an open and closed subscheme is a monomorphism. -/
+instance (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
+    Mono (clopenSubschemeι U hU) := by
+  have : Mono ((finiteEtaleSchemeProperty S).ι.map (clopenSubschemeι U hU)) :=
+    Over.mono_of_mono_left (hk := inferInstanceAs (Mono U.ι)) _
+  exact (finiteEtaleSchemeProperty S).ι.mono_of_mono_map this
+
+/-- The image of the inclusion of an open and closed subscheme `U` is `U`. -/
+@[simp]
+theorem range_clopenSubschemeι_hom_left (U : Y.obj.left.Opens)
+    (hU : IsClosed (U : Set Y.obj.left)) :
+    Set.range (clopenSubschemeι U hU).hom.left = U :=
+  Scheme.Opens.range_ι U
+
 /-- Every monomorphism `i : X ⟶ Y` of finite étale schemes over `S` is the inclusion of a direct
 summand: there is a finite étale `Z` over `S` with a morphism `u : Z ⟶ Y` exhibiting `Y` as the
 coproduct of `X` and `Z`. Here `Z` is the open complement of the image of `i`. -/
@@ -173,23 +204,18 @@ theorem exists_isColimit_binaryCofanMk_of_mono (i : X ⟶ Y) [Mono i] :
     ∃ (Z : FiniteEtaleScheme S) (u : Z ⟶ Y), Nonempty (IsColimit (BinaryCofan.mk i u)) := by
   let U : Y.obj.left.Opens :=
     ⟨(Set.range i.hom.left)ᶜ, i.hom.left.isClosedMap.isClosed_range.isOpen_compl⟩
-  have : IsClosedImmersion U.ι := IsClosedImmersion.of_isPreimmersion _ (by
-    rw [Scheme.Opens.range_ι]
-    exact i.hom.left.isOpenEmbedding.isOpen_range.isClosed_compl)
-  let Z : FiniteEtaleScheme S :=
-    ⟨Over.mk (U.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
-      ⟨inferInstanceAs (IsFinite (U.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (U.ι ≫ Y.obj.hom))⟩⟩
-  let u : Z ⟶ Y := ObjectProperty.homMk (Over.homMk U.ι rfl)
-  have hU : IsCompl i.hom.left.opensRange U.ι.opensRange := by
+  have hU : IsClosed (U : Set Y.obj.left) := i.hom.left.isOpenEmbedding.isOpen_range.isClosed_compl
+  have hU' : IsCompl i.hom.left.opensRange U.ι.opensRange := by
     rw [Scheme.Opens.opensRange_ι]
     constructor
     · rw [disjoint_iff, ← SetLike.coe_set_eq]
       simp [U]
     · rw [codisjoint_iff, ← SetLike.coe_set_eq]
       simp [U]
-  obtain ⟨h⟩ := nonempty_isColimit_binaryCofanMk_of_isCompl i.hom.left U.ι hU
-  exact ⟨Z, u, ⟨isColimitOfReflects ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S)
-    ((isColimitMapCoconeBinaryCofanEquiv _ _ _).symm h)⟩⟩
+  obtain ⟨h⟩ := nonempty_isColimit_binaryCofanMk_of_isCompl i.hom.left U.ι hU'
+  exact ⟨clopenSubscheme U hU, clopenSubschemeι U hU,
+    ⟨isColimitOfReflects ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S)
+      ((isColimitMapCoconeBinaryCofanEquiv _ _ _).symm h)⟩⟩
 
 /-- A morphism of finite étale schemes whose underlying morphism of schemes is surjective is an
 epimorphism. -/
@@ -205,20 +231,13 @@ instance surjective_hom_left (g : X ⟶ Y) [Epi g] : Surjective g.hom.left := by
   -- through `W`, the two inclusions `Y ⟶ Y ⨿ Y` agree on `Z`, so `Z` is initial by disjointness
   -- of coproducts, and `W` is all of `Y`.
   let W : Y.obj.left.Opens := ⟨_, g.hom.left.isOpenMap.isOpen_range⟩
-  have : IsClosedImmersion W.ι := .of_isPreimmersion _ (by
-    rw [Scheme.Opens.range_ι]
-    exact g.hom.left.isClosedMap.isClosed_range)
-  let W' : FiniteEtaleScheme S :=
-    ⟨Over.mk (W.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
-      ⟨inferInstanceAs (IsFinite (W.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (W.ι ≫ Y.obj.hom))⟩⟩
-  let w : W' ⟶ Y := ObjectProperty.homMk (Over.homMk W.ι rfl)
-  have : Mono ((finiteEtaleSchemeProperty S).ι.map w) :=
-    Over.mono_of_mono_left (hk := inferInstanceAs (Mono W.ι)) _
-  have : Mono w := (finiteEtaleSchemeProperty S).ι.mono_of_mono_map this
+  let W' := clopenSubscheme W g.hom.left.isClosedMap.isClosed_range
+  let w : W' ⟶ Y := clopenSubschemeι W g.hom.left.isClosedMap.isClosed_range
   obtain ⟨Z, u, ⟨hc⟩⟩ := exists_isColimit_binaryCofanMk_of_mono w
   -- The factorization `g = g' ≫ w`.
   let g' : X ⟶ W' := ObjectProperty.homMk (Over.homMk
-    (IsOpenImmersion.lift W.ι g.hom.left (by rw [Scheme.Opens.range_ι]; rfl)) (by simp [W']))
+    (IsOpenImmersion.lift w.hom.left g.hom.left (by rw [range_clopenSubschemeι_hom_left]; rfl))
+    (by rw [← Over.w w.hom, IsOpenImmersion.lift_fac_assoc, Over.w g.hom]))
   have hg : g' ≫ w = g :=
     ObjectProperty.hom_ext _ (Over.OverMorphism.ext (IsOpenImmersion.lift_fac _ _ _))
   have hw : w ≫ hc.desc (BinaryCofan.mk (w ≫ coprod.inl) (u ≫ coprod.inr)) = w ≫ coprod.inl :=
@@ -246,6 +265,15 @@ instance surjective_hom_left (g : X ⟶ Y) [Epi g] : Surjective g.hom.left := by
 of schemes is surjective. -/
 theorem epi_iff_surjective (g : X ⟶ Y) : Epi g ↔ Surjective g.hom.left :=
   ⟨fun _ ↦ inferInstance, fun _ ↦ epi_of_surjective g⟩
+
+/-- The category of finite étale schemes over `S` is balanced: the underlying morphism of a
+monomorphism that is also an epimorphism is a surjective open immersion, hence an
+isomorphism. -/
+instance : Balanced (FiniteEtaleScheme S) where
+  isIso_of_mono_of_epi f _ _ := by
+    have : IsIso (((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S).map f) :=
+      (isIso_iff_isOpenImmersion_and_surjective f.hom.left).mpr ⟨inferInstance, inferInstance⟩
+    exact isIso_of_reflects_iso f ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S)
 
 end FiniteEtaleScheme
 

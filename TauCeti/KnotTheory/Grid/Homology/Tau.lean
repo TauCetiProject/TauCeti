@@ -24,7 +24,7 @@ degrees. Over a Noetherian `K`, when `GH⁻(G)` is not a torsion module that sup
 (`GridDiagram.IsKnot.isGreatest_nonTorsionDegrees_neg_tau`), so `-τ(G)` is the Alexander degree
 of a homogeneous non-torsion class and every such class has degree at most `-τ(G)`
 (`GridDiagram.IsKnot.le_neg_tau`). If `GH⁻(G)` were torsion the supremum would be that of the
-empty set, which Mathlib takes to be `0`.
+empty set, which Mathlib takes to be `0` (`GridDiagram.IsKnot.tau_eq_zero_of_isTorsion`).
 
 Two transfer principles are recorded, which are the algebraic content of the inequalities
 satisfied by `τ` under chain maps between grid complexes. A graded `K[U]`-isomorphism of
@@ -54,6 +54,7 @@ hypotheses; their values of `τ` are in `TorusLink/Tau.lean`.
   `TauCeti.GridDiagram.IsKnot.le_neg_tau`: over a Noetherian `K`, `-τ(G)` is the greatest
   non-torsion Alexander degree when `GH⁻(G)` is not torsion, and an upper bound for the
   non-torsion degrees without that hypothesis.
+* `TauCeti.GridDiagram.IsKnot.tau_eq_zero_of_isTorsion`: `τ(G) = 0` when `GH⁻(G)` is torsion.
 * `TauCeti.GridDiagram.IsKnot.tau_eq_of_linearEquiv`: a degree-zero graded `K[U]`-isomorphism
   of unblocked homologies identifies the invariants.
 * `TauCeti.GridDiagram.IsKnot.tau_eq_of_semilinearMap`: so does a grading-preserving bijection
@@ -103,6 +104,18 @@ theorem tau_def :
     letI := hG.unblockedHomologyModule K
     hG.tau K = -(hG.alexanderUnblockedHomologyGrading K).supNonTorsionDegree :=
   (rfl)
+
+/-- If `GH⁻(G)` is a torsion `K[U]`-module, then `τ(G) = 0`: there is no homogeneous non-torsion
+class, and the supremum of the empty set of degrees is `0`. -/
+theorem tau_eq_zero_of_isTorsion :
+    letI := hG.unblockedHomologyModule K
+    Module.IsTorsion K[X] (G.unblockedHomology K) → hG.tau K = 0 := by
+  let _ := hG.unblockedHomologyModule K
+  intro hT
+  rw [tau_def, InternalGrading.supNonTorsionDegree_def,
+    Set.not_nonempty_iff_eq_empty.mp fun h ↦
+      (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp h hT,
+    Int.csSup_empty, neg_zero]
 
 section Transfer
 

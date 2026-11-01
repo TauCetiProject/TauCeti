@@ -17,11 +17,15 @@ If two continuous linear images of the increments of a map near `x` satisfy a no
 `‖L (φ y - φ x)‖ ≤ A * ‖M (φ y - φ x)‖`, then so do the corresponding images of its derivative at
 `x`. For instance, tangent vectors to a set whose points have heights bounded by `A` times the
 distances of their base points obey the same bound.
+
+`LipschitzWith.norm_fderiv_comp_le` applies this comparison to postcomposition by a Lipschitz
+map, without assuming differentiability of the outer map.
 -/
 
 public section
 
 open Filter Topology
+open scoped NNReal
 
 variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -50,3 +54,20 @@ theorem HasFDerivAt.norm_apply_le_mul_norm_apply {φ : E → F} {φ' : E →L[�
   simp only [zero_add, zero_smul, add_zero, Function.comp_apply, map_smul, norm_smul]
   rw [mul_left_comm]
   exact mul_le_mul_of_nonneg_left hs (norm_nonneg _)
+
+/-- Postcomposition by a `C`-Lipschitz map multiplies the norm of the derivative by at most `C`.
+The outer map need not be differentiable, even at the value of the inner map. -/
+theorem LipschitzWith.norm_fderiv_comp_le {f : E → F} {g : F → G} {C : ℝ≥0}
+    (hg : LipschitzWith C g) {x : E} (hf : DifferentiableAt 𝕜 f x) :
+    ‖fderiv 𝕜 (g ∘ f) x‖ ≤ C * ‖fderiv 𝕜 f x‖ := by
+  by_cases hgf : DifferentiableAt 𝕜 (g ∘ f) x
+  · have hpair := hgf.hasFDerivAt.prodMk hf.hasFDerivAt
+    have hbound (v : E) : ‖fderiv 𝕜 (g ∘ f) x v‖ ≤ C * ‖fderiv 𝕜 f x v‖ := by
+      simpa using hpair.norm_apply_le_mul_norm_apply
+        (L := ContinuousLinearMap.fst 𝕜 G F) (M := ContinuousLinearMap.snd 𝕜 G F)
+        (.of_forall fun y => hg.norm_sub_le (f y) (f x)) v
+    exact ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg C.coe_nonneg (norm_nonneg _))
+      fun v => (hbound v).trans <| by
+        simpa only [mul_assoc] using
+          mul_le_mul_of_nonneg_left ((fderiv 𝕜 f x).le_opNorm v) C.coe_nonneg
+  · simp [fderiv_zero_of_not_differentiableAt hgf, mul_nonneg C.coe_nonneg (norm_nonneg _)]

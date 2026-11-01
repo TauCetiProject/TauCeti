@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
+public import TauCeti.RingTheory.HochschildCohomology.Complex
 public import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.Algebra.Ring.GeomSum
 
@@ -32,6 +33,9 @@ So `HC²ᵏ(R; M) ≅ M` whenever multiplication by `2` is injective on `M`, for
 `HC²ᵏ(ℂ) ≅ ℂ` and `HC²ᵏ⁺¹(ℂ) = 0`. Over a general commutative ring,
 `HC²ᵏ⁺²(R; M) ≅ M ⧸ M[2]` where `M[2]` is the `2`-torsion submodule.
 
+The same computation shows that the Hochschild cohomology `HHⁿ(R, Hom_R(R, M))` vanishes for
+`n ≠ 0`: the Hochschild complex is `M →0 M →id M →0 M →id ⋯`.
+
 This is the unreduced cyclic-cochain theory of the ground ring. As in
 `TauCeti.RingTheory.CyclicCohomology.Cohomology`, it agrees with the cyclic-bicomplex theory
 when `R` contains `ℚ`. It contrasts with the reduced theory of
@@ -52,6 +56,7 @@ when `R` contains `ℚ`. It contrasts with the reduced theory of
 * `TauCeti.cyclicCocycles_self_of_even`, `TauCeti.cyclicCocycles_self_of_odd`: the cyclic cocycles
   of the ground ring are all cochains in even degree and zero in odd degree.
 * `TauCeti.isZero_cyclicCohomology_self_of_odd`: `HCⁿ(R; M) = 0` for odd `n`.
+* `TauCeti.isZero_hochschildCohomology_self`: `HHⁿ(R, Hom_R(R, M)) = 0` for `n ≠ 0`.
 * `TauCeti.cyclicCohomology.mkPiRing_surjective`, `TauCeti.cyclicCohomology.ker_mkPiRing`: the
   class map is surjective, with kernel the `2`-torsion of `M` in positive even degree.
 
@@ -193,6 +198,30 @@ theorem isZero_cyclicCohomology_self_of_odd (hn : Odd n) :
   obtain ⟨φ, rfl⟩ := cyclicCohomology.mk_surjective R R M n x
   obtain ⟨ψ, rfl⟩ := cyclicCohomology.mk_surjective R R M n y
   rw [h φ, h ψ]
+
+/-! ### Hochschild cohomology -/
+
+/-- The Hochschild cohomology `HHⁿ(R, Hom_R(R, M))` of the ground ring vanishes in positive
+degree: in even degree every cochain is the coboundary of a product cochain, and in odd degree the
+only cocycle is zero. -/
+theorem isZero_hochschildCohomology_self (hn : n ≠ 0) :
+    IsZero (hochschildCohomology R R M n) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [ModuleCat.isZero_iff_subsingleton]
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R R M (n + 1) c
+  rw [hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff]
+  rcases Nat.even_or_odd n with hn | hn
+  · -- in odd degree `n + 1` the cocycle condition forces `φ (1, …, 1) = 0`
+    have h := congrArg (fun ψ ↦ ψ fun _ ↦ (1 : R))
+      (hochschildCoboundary_self_of_odd R M hn.add_one φ.1)
+    simp only [mem_hochschildCocycles_iff.1 φ.2, zero_apply,
+      MultilinearMap.mkPiRing_apply, Finset.prod_const_one, one_smul] at h
+    refine ⟨0, ?_⟩
+    rw [map_zero, ← φ.1.mkPiRing_apply_one_eq_self, ← h, MultilinearMap.mkPiRing_zero]
+  · -- in even degree `n + 1` the cochain is the coboundary of a product cochain
+    exact ⟨MultilinearMap.mkPiRing R (Fin (n + 1)) (φ.1 fun _ ↦ 1), by
+      rw [hochschildCoboundary_mkPiRing_of_odd R M hn, φ.1.mkPiRing_apply_one_eq_self]⟩
 
 namespace cyclicCohomology
 

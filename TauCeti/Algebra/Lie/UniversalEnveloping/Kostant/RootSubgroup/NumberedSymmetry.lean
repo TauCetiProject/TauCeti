@@ -98,25 +98,15 @@ theorem baseChangeInvariantRestrictUnit_mul_kostantRootSubgroupParam (A : CommAl
         kostantRootSubgroupParam e h ρ M hM i (hnil i) A t =
       kostantRootSubgroupParam e h ρ M hM (σ i) (hnil (σ i)) A t *
         baseChangeInvariantRestrictUnit (R := A) θ.toAddEquiv M hθM := by
-  have hk : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^
-      nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) = 0 :=
-    pow_nilpotencyClass (hnil i)
   have hint : ∀ v : V,
       θ (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) • v) =
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e (σ i))) • θ v :=
     fun v => by simpa only [Module.End.smul_def] using hθe i v
-  have hY : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e (σ i))) =
-      θ.conjAlgEquiv ℚ (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) := by
-    ext v
-    simpa [LinearEquiv.conjAlgEquiv_apply] using (hθe i (θ.symm v)).symm
-  have hky : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e (σ i))) ^
-      nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) = 0 := by
-    rw [hY, ← map_pow, hk, map_zero]
   refine Units.ext (LinearMap.ext fun z => ?_)
   rw [Units.val_mul, Units.val_mul, Module.End.mul_apply, Module.End.mul_apply,
     kostantRootSubgroupParam_val_apply, kostantRootSubgroupParam_val_apply,
     val_baseChangeInvariantRestrictUnit_apply, val_baseChangeInvariantRestrictUnit_apply]
-  exact baseChange_invariantRestrict_baseChangeExp θ M hθM hint _ hk hky _ z
+  exact θ.baseChange_invariantRestrict_baseChangeExp M hθM hint _ (hnil i) (hnil (σ i)) _ z
 
 include hθe in
 /-- The pinning equation for a numbered symmetry: conjugation by the scalar extension of `θ`

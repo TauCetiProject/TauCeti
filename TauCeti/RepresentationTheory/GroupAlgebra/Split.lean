@@ -12,7 +12,7 @@ import TauCeti.RepresentationTheory.Simple.Basic
 import Mathlib.RepresentationTheory.Maschke
 
 /-!
-# Split group algebras from scalar Schur
+# Split group algebras and scalar Schur
 
 For a finite group whose order is invertible in the coefficient field, scalar Schur
 means that every simple finite-dimensional representation has a one-dimensional
@@ -27,6 +27,8 @@ and the field. Maschke supplies semisimplicity independently of scalar Schur.
 
 These results do not require algebraic closure or characteristic zero. They separate
 the splitting condition from the invertibility of the group order.
+The converse recovers scalar Schur from any split presentation, so the two
+conditions are equivalent when the group order is invertible.
 
 ## References
 
@@ -96,5 +98,18 @@ theorem nonempty_splitWedderburnAlgebraPresentation_of_scalarSchur
   have : NeZero (Nat.card G : k) := ⟨hG.ne_zero⟩
   exact IsSemisimpleRing.nonempty_splitWedderburnAlgebraPresentation_of_finrank_end_eq_one k k[G]
     ((forall_finrank_end_eq_one_iff_forall_ideal_finrank_end_eq_one k G hG).mp hSplitG)
+
+/-- A finite group algebra is split if and only if every simple finite-dimensional
+representation has a one-dimensional endomorphism space, provided that the group
+order is invertible in the coefficient field. No algebraic closure or
+characteristic-zero hypothesis is needed. -/
+theorem nonempty_splitWedderburnAlgebraPresentation_iff_scalarSchur
+    (hG : IsUnit (Nat.card G : k)) :
+    Nonempty (SplitWedderburnAlgebraPresentation k k[G]) ↔
+      ∀ V : FDRep k G, Simple V → Module.finrank k (V ⟶ V) = 1 := by
+  have : NeZero (Nat.card G : k) := ⟨hG.ne_zero⟩
+  exact (IsSemisimpleRing.nonempty_splitWedderburnAlgebraPresentation_iff_finrank_end_eq_one
+    k k[G]).trans
+      (forall_finrank_end_eq_one_iff_forall_ideal_finrank_end_eq_one k G hG).symm
 
 end TauCeti

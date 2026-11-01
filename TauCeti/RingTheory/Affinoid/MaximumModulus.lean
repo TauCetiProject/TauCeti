@@ -166,6 +166,17 @@ theorem exists_pointNorm_eq_supSeminorm {A : Type*} [CommRing A] [Algebra K A] [
   rw [hA𝔭.pointNorm_maximalSpectrumComap, ← hsup]
   exact hy
 
+/-- By the maximum modulus principle, a positive real bounds the supremum seminorm strictly
+exactly when it bounds every value strictly. -/
+theorem supSeminorm_lt_iff {A : Type*} [CommRing A] [Algebra K A] (hA : IsAffinoidAlgebra K A)
+    {f : A} {r : ℝ} (hr : 0 < r) : supSeminorm K f < r ↔ ∀ x, pointNorm K x f < r := by
+  refine ⟨fun h x ↦ (hA.pointNorm_le_supSeminorm x f).trans_lt h, fun h ↦ ?_⟩
+  cases subsingleton_or_nontrivial A with
+  | inl _ => rwa [supSeminorm_eq_zero_of_subsingleton]
+  | inr _ =>
+    obtain ⟨x, hx⟩ := hA.exists_pointNorm_eq_supSeminorm f
+    exact hx ▸ h x
+
 end IsAffinoidAlgebra
 
 end TauCeti

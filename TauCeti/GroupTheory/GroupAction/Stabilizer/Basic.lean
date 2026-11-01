@@ -1,0 +1,528 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Algebra.Pointwise.Stabilizer
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.GroupTheory.GroupAction.Basic
+public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import Mathlib.GroupTheory.Coset.Card
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.GroupTheory.QuotientGroup.Basic
+
+/-!
+# Point stabilisers: their cardinality, and when they are normal
+
+A homomorphism of acting groups compatible at a point restricts to a homomorphism of its
+stabilizers. This restriction has the original kernel inside the source stabilizer, and is
+surjective when the original homomorphism is. A subgroup inclusion restricts to an injective
+map on point stabilizers, so the smaller stabilizer order divides the larger one.
+
+A count defined through a point stabiliser is useful only alongside the rules for moving it.
+Three such rules are recorded here, all consequences of Mathlib machinery rather than new
+mathematics, and all stated for `Nat.card` because that is the form a numerical invariant of
+an orbit is wanted in. The first of them is what lets the count descend to the orbit space, so
+that descent is recorded here as well, as the definition `cardStabilizerOnOrbit`.
+
+*Along an orbit* the stabiliser order does not change: related points have conjugate
+stabilisers, by `MulAction.stabilizerEquivStabilizerOfOrbitRel`.
+
+*Along an equivariant injection* it does not change either: a map `α → β` carrying the action of
+`G` to that of `H` along a group isomorphism `G ≃* H`, and separating the point from its
+translates, identifies the stabilisers. So when the map is an equivalence, the equivalence of
+orbit spaces it induces, `TauCeti.MulAction.orbitRelQuotientCongr`, preserves
+`cardStabilizerOnOrbit`, and so does the splitting `TauCeti.MulAction.orbitRelQuotientSumEquiv` of
+the orbit space of an action on a sum `α ⊕ β`. These are what move a weighted count of orbits from
+one action to another.
+
+*Along a surjection* it divides: if `f : G →* H` is onto and the two actions agree at the point
+in question, then the `G`-order of that point's stabiliser is `Nat.card f.ker` times its
+`H`-order. Taking `f` to be a quotient map gives the projective case, where the divisor is the
+subgroup quotiented out.
+
+Over a single point the stabiliser also counts the group elements carrying a base point into a
+subset of its orbit: each target point is reached by exactly one coset of the stabiliser.
+
+A set is stabilized by a group element exactly when the element and its inverse both map the set
+into itself; this is how stabilizers of sets are compared with monoids of maps preserving a set.
+
+Finally, a group of prime order acting on its own finite subsets by translation has trivial
+stabilisers away from the two fixed points `∅` and `univ`: a stabiliser is a subgroup, so it is
+trivial or everything, and a subset fixed by every translation is empty or everything.
+
+A point stabiliser of a permutation representation `ρ : G →* Equiv.Perm α` is a subgroup of the
+source, namely the comap of the stabiliser in `Equiv.Perm α`. The last two results say when that
+subgroup is the kernel — so in particular normal — and, for a transitive representation, that
+normality of it is equivalent to freeness of the action of the image.
+
+## Main results
+
+* `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
+  with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
+  surjectivity and kernel.
+
+* `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
+  inverse map the set into itself.
+* `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
+  translation on its nonempty proper finite subsets.
+* `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
+  with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
+* `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
+  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+* `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
+  into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
+* `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
+  to another along a group isomorphism, if it separates the point from its translates.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
+  `TauCeti.MulAction.orbitRelQuotientCongr` induced by an equivariant equivalence preserves the
+  stabiliser orders.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm`: the splitting
+  `TauCeti.MulAction.orbitRelQuotientSumEquiv` of the orbit space of an action on `α ⊕ β`
+  preserves the stabiliser orders.
+* `TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer`: the stabiliser order divides by
+  `Nat.card f.ker` along a surjection `f`, with
+  `TauCeti.card_stabilizer_eq_card_subgroup_mul_card_stabilizer_quotient` the quotient-map
+  corollary and
+  `TauCeti.card_stabilizer_eq_card_subgroupOf_mul_card_stabilizer_map` its relative form, for a
+  subgroup mapped into the quotient.
+* `TauCeti.card_stabilizer_subgroupOf`: the degenerate case of that surjection, where the map is
+  the isomorphism `𝒢.subgroupOf ℋ ≃* 𝒢` and the order is unchanged.
+* `TauCeti.card_stabilizer_coset_eq_card_stabilizer_inv_smul`: the class of `g` in `G ⧸ H` has,
+  inside `stabilizer G p`, a stabiliser of the same order as `g⁻¹ • p` has inside `H` —
+  conjugation by `g` is the bijection.
+* `MonoidHom.comap_stabilizer_eq_ker`: the point stabiliser of a permutation representation is
+  its kernel as soon as the image has trivial stabiliser at that point, and
+  `MonoidHom.normal_comap_stabilizer_iff_isCancelSMul`: for a transitive representation that
+  happens exactly when the image acts freely, which is exactly when the point stabiliser is
+  normal.
+-/
+
+public section
+
+namespace Subgroup
+
+variable {G X : Type*} [Group G] [MulAction G X]
+  {Δ Γ : Subgroup G} (h : Δ ≤ Γ) (x : X)
+
+/-- Inclusion of groups restricts to an inclusion of their stabilizers at the same point. -/
+def stabilizerInclusion : MulAction.stabilizer Δ x →* MulAction.stabilizer Γ x where
+  toFun g := ⟨⟨g.1.1, h g.1.2⟩, g.2⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- The inclusion of point stabilizers is injective. -/
+theorem stabilizerInclusion_injective : Function.Injective (stabilizerInclusion h x) := by
+  intro a b hab
+  exact Subtype.ext (Subtype.ext (congrArg (fun g : MulAction.stabilizer Γ x => g.1.1) hab))
+
+/-- The stabilizer order for a subgroup divides that for a larger group. -/
+theorem card_stabilizer_dvd_card_stabilizer (h : Δ ≤ Γ) (x : X) :
+    Nat.card (MulAction.stabilizer Δ x) ∣ Nat.card (MulAction.stabilizer Γ x) :=
+  card_dvd_of_injective (stabilizerInclusion h x) (stabilizerInclusion_injective h x)
+
+open MulAction
+
+/-- Restricting a group action to a smaller subgroup preserves finiteness of a point
+stabilizer. -/
+theorem finite_stabilizer_of_le {G X : Type*} [Group G] [MulAction G X]
+    {Δ Γ : Subgroup G} (h : Δ ≤ Γ) (x : X)
+    [Finite (stabilizer Γ x)] : Finite (stabilizer Δ x) := by
+  let f : stabilizer Δ x → stabilizer Γ x := fun g =>
+    ⟨⟨g.1.1, h g.1.2⟩, by
+      simpa only [mem_stabilizer_iff, Subgroup.smul_def] using g.2⟩
+  exact Finite.of_injective f (by
+    intro a b hab
+    apply Subtype.ext
+    apply Subtype.ext
+    exact congrArg (fun y : stabilizer Γ x => (y.1 : Γ).1) hab)
+
+end Subgroup
+
+namespace MonoidHom
+
+variable {G H α : Type*} [Group G] [Group H] [MulAction G α] [MulAction H α]
+
+-- Adapted from the shared stabilizer restriction in
+-- https://github.com/TauCetiProject/TauCeti/pull/20774/commits/453aea4ba653d79832226b40eacc05787333934e
+/-- A homomorphism of acting groups compatible at `a` restricts to its stabilizers. -/
+def stabilizerMap (f : G →* H) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) :
+    MulAction.stabilizer G a →* MulAction.stabilizer H a :=
+  (f.comp (MulAction.stabilizer G a).subtype).codRestrict _ fun g ↦ by
+    simpa only [MonoidHom.comp_apply, Subgroup.subtype_apply,
+      MulAction.mem_stabilizer_iff, hcompat] using g.2
+
+/-- The restricted homomorphism has the same underlying value as the original map. -/
+@[simp]
+theorem stabilizerMap_apply (f : G →* H) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) (g : MulAction.stabilizer G a) :
+    (stabilizerMap f a hcompat g : H) = f g := (rfl)
+
+/-- Surjectivity of a compatible group homomorphism descends to point stabilizers. -/
+theorem stabilizerMap_surjective
+    (f : G →* H) (hf : Function.Surjective f) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) : Function.Surjective (stabilizerMap f a hcompat) := by
+  rintro ⟨q, hq⟩
+  obtain ⟨g, rfl⟩ := hf q
+  have hg : g ∈ MulAction.stabilizer G a := by
+    simpa only [MulAction.mem_stabilizer_iff, hcompat] using hq
+  exact ⟨⟨g, hg⟩, Subtype.ext (stabilizerMap_apply f a hcompat ⟨g, hg⟩)⟩
+
+/-- The stabilizer map kills exactly the original kernel elements in the stabilizer. -/
+@[simp]
+theorem ker_stabilizerMap (f : G →* H) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) :
+    (stabilizerMap f a hcompat).ker = f.ker.subgroupOf (MulAction.stabilizer G a) :=
+  MonoidHom.ker_codRestrict _ _ _
+
+end MonoidHom
+
+namespace TauCeti
+
+open Set in
+open scoped Pointwise in
+/-- A point in a set disjoint from each of its nontrivial translates has trivial stabilizer.
+
+Injectivity of the orbit projection on the set alone does not imply this: it separates points,
+whereas triviality of a stabilizer distinguishes group elements acting at the same point. -/
+theorem stabilizer_eq_bot_of_disjoint_smul
+    {G X : Type*} [Group G] [MulAction G X] {U : Set X}
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) {x : X} (hx : x ∈ U) :
+    MulAction.stabilizer G x = ⊥ := by
+  apply (Subgroup.eq_bot_iff_forall _).mpr
+  intro g hg
+  have hgx := MulAction.mem_stabilizer_iff.mp hg
+  by_contra hne
+  exact disjoint_left.mp (hU g hne) (hgx ▸ smul_mem_smul_set hx) hx
+
+variable {G α : Type*} [Group G] [MulAction G α]
+
+open Set in
+open scoped Pointwise in
+/-- An element stabilizes a set if and only if it and its inverse map the set into itself. -/
+theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
+    a ∈ MulAction.stabilizer G s ↔ MapsTo (a • ·) s s ∧ MapsTo (a⁻¹ • ·) s s := by
+  rw [MulAction.mem_stabilizer_set]
+  refine ⟨fun h => ⟨fun x hx => (h x).2 hx, fun x hx => (h _).1 (by simpa using hx)⟩,
+    fun h x => ⟨fun hx => by simpa using h.2 hx, fun hx => h.1 hx⟩⟩
+
+/-- Two group elements carrying the same point to `y` differ by an element stabilizing `y`. -/
+theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
+    (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
+  rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
+
+/-- **The order of a stabiliser is constant along an orbit**: points related by the orbit
+relation have conjugate stabilisers, hence stabilisers of equal cardinality.
+
+This is what lets a count defined through a point stabiliser — the order `e_P` of an elliptic
+point of a Fuchsian group, say — be read as an invariant of the orbit. It holds with no
+finiteness hypothesis: for an infinite stabiliser both sides are `0`, by `Nat.card`'s
+convention. -/
+theorem card_stabilizer_of_orbitRel {a b : α} (h : MulAction.orbitRel G α a b) :
+    Nat.card (MulAction.stabilizer G a) = Nat.card (MulAction.stabilizer G b) :=
+  Nat.card_congr (MulAction.stabilizerEquivStabilizerOfOrbitRel h).toEquiv
+
+/-- The orbit invariance of `card_stabilizer_of_orbitRel` in the form wanted when the second
+point is presented as a translate of the first.
+
+Not `@[simp]`: whether `Nat.card (MulAction.stabilizer G (g • a))` is in normal form depends on
+the action, since a `simp` lemma for the particular `•` can rewrite inside it. -/
+theorem card_stabilizer_smul (g : G) (a : α) :
+    Nat.card (MulAction.stabilizer G (g • a)) = Nat.card (MulAction.stabilizer G a) :=
+  card_stabilizer_of_orbitRel (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit a g))
+
+/-- **The stabiliser order as a function on the orbit space.** `card_stabilizer_of_orbitRel`
+says the order is constant along an orbit, so it descends to `MulAction.orbitRel.Quotient G α`,
+which is the form wanted when the count is summed over orbits rather than over points.
+
+Note this counts the stabiliser in `G` itself. When the action is not faithful the kernel sits
+inside every stabiliser and inflates each value by `Nat.card` of it — so for a group acting
+through a quotient, this is the order upstairs, not the order of the group that acts
+effectively. `card_stabilizer_eq_card_subgroup_mul_card_stabilizer_quotient` is the conversion
+between the two. -/
+noncomputable def cardStabilizerOnOrbit (q : MulAction.orbitRel.Quotient G α) : ℕ :=
+  Quotient.liftOn' q (fun a ↦ Nat.card (MulAction.stabilizer G a))
+    fun _ _ h ↦ card_stabilizer_of_orbitRel h
+
+/-- Evaluating `cardStabilizerOnOrbit` on the orbit of `a` recovers the stabiliser order at
+`a`. -/
+@[simp]
+theorem cardStabilizerOnOrbit_mk (a : α) :
+    cardStabilizerOnOrbit (Quotient.mk'' a : MulAction.orbitRel.Quotient G α) =
+      Nat.card (MulAction.stabilizer G a) := by
+  unfold cardStabilizerOnOrbit
+  rfl
+
+section Congr
+
+variable {H β : Type*} [Group H] [MulAction H β]
+
+/-- **Stabiliser orders are preserved by an equivariant injection**: if `f : α → β` carries the
+`G`-action at `a` to the `H`-action along a group isomorphism `φ : G ≃* H`, and separates `a`
+from its translates, then `φ` maps the stabiliser of `a` onto that of `f a`, so the two have the
+same order.
+
+Both hypotheses are asked for only at `a`, as that is all the count needs: a caller holding an
+equivariant injective `f` supplies `fun g ↦ hφ g a` and `fun _ h ↦ hf h`. -/
+theorem card_stabilizer_congr (φ : G ≃* H) {f : α → β} (a : α)
+    (hφ : ∀ g : G, f (g • a) = φ g • f a) (hf : ∀ g : G, f (g • a) = f a → g • a = a) :
+    Nat.card (MulAction.stabilizer H (f a)) = Nat.card (MulAction.stabilizer G a) :=
+  Nat.card_congr (φ.toEquiv.subtypeEquiv fun g ↦ by
+    simpa [← hφ] using ⟨congrArg f, hf g⟩).symm
+
+/-- `MulAction.orbitRelQuotientCongr` preserves the stabiliser order of an orbit. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientCongr (φ : G ≃* H) (e : α ≃ β)
+    (he : ∀ (g : G) (a : α), e (g • a) = φ g • e a) (q : MulAction.orbitRel.Quotient G α) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientCongr φ e he q) = cardStabilizerOnOrbit q :=
+  Quotient.inductionOn' q fun a ↦ by simpa only [MulAction.orbitRelQuotientCongr_mk,
+    cardStabilizerOnOrbit_mk] using card_stabilizer_congr φ a (he · a) fun _ h ↦ e.injective h
+
+end Congr
+
+section Sum
+
+variable {β : Type*} [MulAction G β]
+
+/-- `MulAction.orbitRelQuotientSumEquiv` preserves the stabiliser order of an orbit: the orbit it
+sends to `Sum.inl q` or to `Sum.inr q` has the stabiliser order of `q`. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm
+    (s : MulAction.orbitRel.Quotient G α ⊕ MulAction.orbitRel.Quotient G β) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientSumEquiv.symm s) =
+      s.elim cardStabilizerOnOrbit cardStabilizerOnOrbit := by
+  rcases s with (q | q) <;> induction q using Quotient.inductionOn' <;>
+    simp only [MulAction.orbitRelQuotientSumEquiv_symm_inl_mk,
+      MulAction.orbitRelQuotientSumEquiv_symm_inr_mk, cardStabilizerOnOrbit_mk, Sum.elim_inl,
+      Sum.elim_inr] <;>
+    exact card_stabilizer_congr (.refl G) _ (by simp) (by simp)
+
+end Sum
+
+/-- **A surjection of acting groups divides stabiliser orders by its kernel**: if `f : G →* H`
+is surjective and the `H`-action agrees with the `G`-action along `f` *at the point `a`*, then
+the stabiliser of `a` in `G` is `Nat.card f.ker` times its stabiliser in `H`.
+
+Compatibility is asked for only at `a`, not globally, since that is all the count needs; a
+caller holding the global statement supplies `fun g ↦ h g a`. -/
+theorem card_stabilizer_eq_card_ker_mul_card_stabilizer {H : Type*} [Group H] [MulAction H α]
+    (f : G →* H) (hf : Function.Surjective f) (a : α) (hcompat : ∀ g : G, f g • a = g • a) :
+    Nat.card (MulAction.stabilizer G a) =
+      Nat.card f.ker * Nat.card (MulAction.stabilizer H a) := by
+  have hle : f.ker ≤ MulAction.stabilizer G a := fun n hn ↦ by
+    rw [MulAction.mem_stabilizer_iff, ← hcompat n, MonoidHom.mem_ker.mp hn, one_smul]
+  let φ := f.stabilizerMap a hcompat
+  have hsurj : Function.Surjective φ := f.stabilizerMap_surjective hf a hcompat
+  have hker : φ.ker = f.ker.subgroupOf (MulAction.stabilizer G a) :=
+    f.ker_stabilizerMap a hcompat
+  rw [← φ.ker.card_mul_index, Subgroup.index_ker, MonoidHom.range_eq_top.mpr hsurj, hker,
+    Nat.card_congr (Subgroup.subgroupOfEquivOfLe hle).toEquiv]
+  simp
+
+/-- **Passing to a quotient group divides stabiliser orders by the subgroup**: the case of
+`card_stabilizer_eq_card_ker_mul_card_stabilizer` for the quotient map, whose kernel is `N`.
+
+This is the step from a matrix-group stabiliser order to the projective one. The divisor is
+`Nat.card N` in general; for `SL(2, ℤ) ↠ PSL(2, ℤ)` that is the centre `±1`, so there the
+elliptic orders `e_P` are the matrix counts halved. For a Fuchsian `Γ` with `-I ∉ Γ` the two
+counts coincide. -/
+theorem card_stabilizer_eq_card_subgroup_mul_card_stabilizer_quotient (N : Subgroup G) [N.Normal]
+    [MulAction (G ⧸ N) α] (a : α)
+    (hcompat : ∀ g : G, (QuotientGroup.mk g : G ⧸ N) • a = g • a) :
+    Nat.card (MulAction.stabilizer G a) =
+      Nat.card N * Nat.card (MulAction.stabilizer (G ⧸ N) a) := by
+  have h := card_stabilizer_eq_card_ker_mul_card_stabilizer (QuotientGroup.mk' N)
+    (QuotientGroup.mk'_surjective N) a hcompat
+  rwa [QuotientGroup.ker_mk'] at h
+
+/-- **The relative form: a subgroup, and its image in the quotient.** For `Γ ≤ G`, the stabiliser
+of `a` in `Γ` is `Nat.card (N.subgroupOf Γ)` — the part of `N` that `Γ` actually contains — times
+the stabiliser of `a` in the image of `Γ` in `G ⧸ N`.
+
+`card_stabilizer_eq_card_subgroup_mul_card_stabilizer_quotient` is the case `Γ = ⊤`, where the
+divisor is all of `N`. The relative statement is what a Fuchsian group needs, where `Γ` is a
+subgroup of `SL(2, ℤ)` and `N` the centre: there the divisor measures how much of `±I` lies in
+`Γ`, and the projective elliptic order `e_P` is the matrix stabiliser order divided by it.
+Evaluating that divisor is a fact about the particular `Γ` and is not proved here. -/
+theorem card_stabilizer_eq_card_subgroupOf_mul_card_stabilizer_map (N : Subgroup G) [N.Normal]
+    [MulAction (G ⧸ N) α] (Γ : Subgroup G) (a : α)
+    (hcompat : ∀ g : Γ, (QuotientGroup.mk (g : G) : G ⧸ N) • a = (g : G) • a) :
+    Nat.card (MulAction.stabilizer Γ a) = Nat.card (N.subgroupOf Γ) *
+      Nat.card (MulAction.stabilizer (Γ.map (QuotientGroup.mk' N)) a) := by
+  rw [card_stabilizer_eq_card_ker_mul_card_stabilizer ((QuotientGroup.mk' N).subgroupMap Γ)
+    (MonoidHom.subgroupMap_surjective _ _) a hcompat, Subgroup.ker_subgroupMap,
+    QuotientGroup.ker_mk']
+
+/-- **Stabiliser orders agree across `subgroupOf`.** For `𝒢 ≤ ℋ`, a point has the same stabiliser
+order in `𝒢.subgroupOf ℋ` as in `𝒢` itself.
+
+This is the transport wanted whenever an orbit count produced inside `ℋ` has to be read against
+the `𝒢`-orbit it weights, since `cardStabilizerOnOrbit` reads the order in `𝒢`. Mathlib's
+`stabilizerEquivStabilizer` transports between two *points* of one group, not between two groups
+at one point, so it does not apply here. -/
+-- Not `@[simp]`, tested: the same reason as `card_stabilizer_smul` above — the left-hand side is
+-- not in simp-normal form, because `MulAction.mem_stabilizer_iff` rewrites the membership
+-- condition underneath the `Nat.card`, taking it to `Nat.card { x // x • a = a }`. `simpNF`
+-- rejects the attribute.
+theorem card_stabilizer_subgroupOf {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ) (a : α) :
+    Nat.card (MulAction.stabilizer (↥(𝒢.subgroupOf ℋ)) a) =
+      Nat.card (MulAction.stabilizer 𝒢 a) := by
+  -- the degenerate case of `card_stabilizer_eq_card_ker_mul_card_stabilizer`: the two groups act
+  -- through the same elements of `G`, so the comparison map `Subgroup.subgroupOfEquivOfLe` is an
+  -- isomorphism and the kernel factor is `1`
+  rw [card_stabilizer_eq_card_ker_mul_card_stabilizer (Subgroup.subgroupOfEquivOfLe hle).toMonoidHom
+      (Subgroup.subgroupOfEquivOfLe hle).surjective a
+      -- both groups act through the same element of `G`; `Subgroup.smul_def` unfolds the two
+      -- `Subgroup.instMulAction` layers and `subgroupOfEquivOfLe`'s structure projection, rather
+      -- than leaving that chain to `rfl`
+      fun g ↦ by simp [Subgroup.smul_def],
+    MonoidHom.ker_eq_bot _ (Subgroup.subgroupOfEquivOfLe hle).injective]
+  simp
+
+open _root_.MulAction in
+open scoped Pointwise in
+/-- **The stabiliser of a coset and the stabiliser of the translated point have the same order.**
+The class of `g` in `G ⧸ H` is stabilised inside `stabilizer G p` by exactly as many elements as
+`g⁻¹ • p` is stabilised by inside `H`.
+
+Stated at the level of a single group acting on `α`; the two-group form used below is the instance
+`G := ↥ℋ`, `H := 𝒢.subgroupOf ℋ`, `g := ↑h`. -/
+-- Not `@[simp]`, tested: `simpNF` runs over
+-- the whole library, so the downstream global `@[simp]`
+-- `TauCeti.stabilizer_eq_mackeySubgroup_subgroupOf` rewrites the left-hand side to
+-- `Nat.card ((mackeySubgroup g H (stabilizer G p)).subgroupOf (stabilizer G p))` regardless of
+-- which module carries the attribute. The obstruction is that lemma, not this one's placement.
+theorem card_stabilizer_coset_eq_card_stabilizer_inv_smul (H : Subgroup G) (p : α) (g : G) :
+    Nat.card (stabilizer (↥(stabilizer G p)) ((g : G ⧸ H))) =
+      Nat.card (stabilizer (↥H) (g⁻¹ • p)) := by
+  -- conjugation by `g` is the bijection: an `x` fixing `p` and fixing the class of `g` satisfies
+  -- `g⁻¹ * x * g ∈ H`, and that conjugate fixes `g⁻¹ • p`; conjugating back is the inverse
+  refine Nat.card_congr ⟨fun x => ⟨⟨g⁻¹ * (x : G) * g, ?_⟩, ?_⟩,
+    fun h => ⟨⟨g * (h : G) * g⁻¹, ?_⟩, ?_⟩, fun x => ?_, fun h => ?_⟩
+  · -- the stabiliser of a coset is the conjugate subgroup, by `stabilizer_quotientGroup_mk`
+    have hx := x.2
+    rw [mem_stabilizer_iff, Subgroup.smul_def, ← mem_stabilizer_iff,
+      stabilizer_quotientGroup_mk, mem_conj_smul] at hx
+    exact hx
+  · -- `g⁻¹ * x * g` sends `g⁻¹ • p` to `g⁻¹ • (x • p)`, and `x` fixes `p`
+    have hp := (x : ↥(stabilizer G p)).2
+    rw [mem_stabilizer_iff] at hp
+    rw [mem_stabilizer_iff, Subgroup.smul_def, mul_smul, mul_smul, smul_inv_smul, hp]
+  · -- `hh` is stated for the `↥H`-action; `Subgroup.smul_def` puts it in the `G`-action the
+    -- conjugated element acts by
+    have hh := h.2
+    rw [mem_stabilizer_iff, Subgroup.smul_def] at hh
+    rw [mem_stabilizer_iff, mul_smul, mul_smul, hh, smul_inv_smul]
+  · -- same route back: membership in the conjugate subgroup is `h ∈ H` after cancellation
+    rw [mem_stabilizer_iff, Subgroup.smul_def, ← mem_stabilizer_iff,
+      stabilizer_quotientGroup_mk, mem_conj_smul]
+    simp [mul_assoc]
+  · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
+  · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
+
+open _root_.MulAction in
+/-- **Counting group elements by where they send a point.** If every point of `S` lies in the
+orbit of `b`, then the elements `g` with `g • b ∈ S` number `|S|` times the order of the
+stabilizer of `b`: over each point of `S` they form a coset of that stabilizer. -/
+theorem natCard_smul_mem_eq_natCard_mul_natCard_stabilizer (b : α) {S : Set α}
+    (hS : S ⊆ orbit G b) :
+    Nat.card {g : G // g • b ∈ S} = Nat.card S * Nat.card (stabilizer G b) := by
+  -- The orbit-stabilizer decomposition `G ≃ orbit G b × stabilizer G b` has orbit component
+  -- `g • b`, the coset of `g` read through `orbitEquivQuotientStabilizer`.
+  have hfst (g : G) : (((orbitProdStabilizerEquivGroup G b).symm g).1 : α) = g • b :=
+    orbitEquivQuotientStabilizer_symm_apply G b g
+  calc Nat.card {g : G // g • b ∈ S}
+      = Nat.card {p : orbit G b × stabilizer G b // (p.1 : α) ∈ S} :=
+        Nat.card_congr ((orbitProdStabilizerEquivGroup G b).symm.subtypeEquiv fun g ↦ by
+          rw [hfst])
+    _ = Nat.card ({o : orbit G b // (o : α) ∈ S} × stabilizer G b) :=
+        Nat.card_congr
+          (Equiv.prodSubtypeFstEquivSubtypeProd (p := fun o : orbit G b ↦ (o : α) ∈ S))
+    _ = Nat.card S * Nat.card (stabilizer G b) := by
+        rw [Nat.card_prod, Nat.card_congr (Equiv.subtypeSubtypeEquivSubtype fun hx ↦ hS hx)]
+
+section PrimeCard
+
+open scoped Pointwise
+
+/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
+prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
+trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
+    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+    MulAction.stabilizer G S = ⊥ := by
+  have := Fact.mk hG
+  refine (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right fun htop ↦ hS ?_
+  obtain ⟨a, ha⟩ := hne
+  refine Finset.eq_univ_of_forall fun b ↦ ?_
+  have hb : b * a⁻¹ ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
+  rw [MulAction.mem_stabilizer_iff] at hb
+  have hmem := Finset.smul_mem_smul_finset (a := b * a⁻¹) ha
+  rwa [hb, smul_eq_mul, inv_mul_cancel_right] at hmem
+
+end PrimeCard
+
+end TauCeti
+
+namespace MonoidHom
+
+open Equiv
+
+variable {G α : Type*} [Group G]
+
+/-- If a point has trivial stabiliser under the image of a permutation representation, then its
+stabiliser in the source is the kernel of the representation. -/
+theorem comap_stabilizer_eq_ker (ρ : G →* Perm α) (i : α)
+    (hi : MulAction.stabilizer ρ.range i = ⊥) :
+    (MulAction.stabilizer (Perm α) i).comap ρ = ρ.ker := by
+  ext g
+  rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, MonoidHom.mem_ker]
+  refine ⟨fun hg => ?_, fun hg => by rw [hg, one_smul]⟩
+  let h : ρ.range := ⟨ρ g, MonoidHom.mem_range.mpr ⟨g, rfl⟩⟩
+  have hh : h = 1 := by
+    rw [← Subgroup.mem_bot, ← hi, MulAction.mem_stabilizer_iff]
+    exact hg
+  exact congrArg Subtype.val hh
+
+/-- For a transitive permutation representation, a point stabiliser is normal in the source
+exactly when the image acts freely. -/
+theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
+    (hρ : MulAction.IsPretransitive ρ.range α) (i : α) :
+    ((MulAction.stabilizer (Perm α) i).comap ρ).Normal ↔ IsCancelSMul ρ.range α := by
+  refine ⟨fun hN => ?_, fun hfree => ?_⟩
+  · set K := (MulAction.stabilizer (Perm α) i).comap ρ
+    have hK : ∀ (g : G) (j : α), ρ g j = j ↔ g ∈ K := by
+      intro g j
+      obtain ⟨h, hh⟩ := hρ.exists_smul_eq i j
+      obtain ⟨k, hk⟩ : (h : Perm α) ∈ ρ.range := h.2
+      have hki : ρ k i = j := hk ▸ hh
+      have hconj : k⁻¹ * g * k ∈ K ↔ ρ g j = j := by
+        rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff]
+        simp only [map_mul, map_inv, Perm.smul_def, Perm.mul_apply]
+        calc
+          (ρ k)⁻¹ (ρ g (ρ k i)) = i ↔ ρ g (ρ k i) = ρ k i := by
+            rw [Perm.inv_eq_iff_eq]
+          _ ↔ ρ g j = j := by rw [hki]
+      rw [← hconj]
+      exact ⟨fun hg => by simpa [mul_assoc] using hN.conj_mem _ hg k,
+        fun hg => by simpa using hN.conj_mem _ hg k⁻¹⟩
+    refine isCancelSMul_iff_stabilizer_eq_bot.mpr fun j => ?_
+    refine (Subgroup.eq_bot_iff_forall _).mpr fun h hh => ?_
+    obtain ⟨g, hg⟩ : (h : Perm α) ∈ ρ.range := h.2
+    have hgj : ρ g j = j := hg ▸ hh
+    refine Subtype.ext <| hg ▸ Equiv.ext fun k => ?_
+    exact (hK g k).mpr ((hK g j).mp hgj)
+  · rw [comap_stabilizer_eq_ker ρ i (IsCancelSMul.stabilizer_eq_bot i)]
+    infer_instance
+
+end MonoidHom
+
+end

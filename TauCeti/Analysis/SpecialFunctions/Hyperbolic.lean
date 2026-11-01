@@ -7,16 +7,21 @@ module
 
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
-# The addition formula and the monotonicity of the hyperbolic tangent, and `sinh (r / 2)`
+# The addition formula and the monotonicity of the hyperbolic tangent, and bounds on `sinh`
 
 Mathlib's `Analysis/Complex/Trigonometric.lean` defines `Real.sinh`, `Real.cosh` and `Real.tanh`
 and proves the two addition formulae `Real.sinh_add` and `Real.cosh_add`, but records none for
 `Real.tanh`; `Analysis/SpecialFunctions/Artanh.lean` inverts `Real.tanh` on `(-1, 1)` and proves
 that the inverse is strictly monotone, but does not state the monotonicity of `Real.tanh`
-itself, nor its continuity. This file supplies these, together with the square of
-`Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`.
+itself, nor its continuity or smoothness. This file supplies these, together with the square of
+`Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
+`sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of Mathlib's
+`Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l)) / l`.
 
 ## Main declarations
 
@@ -24,9 +29,15 @@ itself, nor its continuity. This file supplies these, together with the square o
   tangent of a sum is the Möbius sum of the hyperbolic tangents.
 * `Real.tanh_strictMono` and `Real.tanh_lt_tanh_iff` — `Real.tanh` is strictly monotone, so it
   compares two real numbers exactly as they compare, and is positive on the positive reals.
-* `Real.tanh_nonneg` and `Real.continuous_tanh` — `Real.tanh` is nonnegative on `[0, ∞)` and
-  continuous.
+* `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
+  `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
+* `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
+  exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
+  distribution on `[0, 1]`, which is what makes the volume of a simplex cut from a cube
+  exponentially small below its centre.
+* `Real.one_sub_exp_neg_div_le_exp` — `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)`: the
+  resulting bound on that exponential moment, for every real `l`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
@@ -90,6 +101,11 @@ theorem _root_.Real.tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔
 theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := by
   simpa only [Real.tanh_zero] using Real.tanh_strictMono.monotone hx
 
+/-- The hyperbolic tangent is negative exactly on the negative reals. -/
+@[simp]
+theorem _root_.Real.tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
+  simpa only [Real.tanh_zero] using @Real.tanh_lt_tanh_iff x 0
+
 /-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
 positive function `exp x + exp (-x)`. -/
 @[continuity, fun_prop]
@@ -98,11 +114,63 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
   exact (by fun_prop : Continuous fun x ↦ Real.exp x - Real.exp (-x)).div (by fun_prop)
     fun x ↦ (add_pos (Real.exp_pos x) (Real.exp_pos (-x))).ne'
 
+/-- The hyperbolic tangent is smooth: it is the quotient of `sinh` by the positive function
+`cosh`. -/
+@[fun_prop]
+theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
+  simp_rw [funext Real.tanh_eq_sinh_div_cosh]
+  exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'
+
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/
 theorem _root_.Real.four_mul_sinh_half_sq (r : ℝ) :
     4 * Real.sinh (r / 2) ^ 2 = (Real.exp (r / 2) - Real.exp (-(r / 2))) ^ 2 := by
   rw [Real.sinh_eq]
   ring
+
+/-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of `Real.cosh_le_exp_half_sq`.
+The constant `6` is sharp: the cubic terms of the two power series agree. -/
+theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
+    Real.sinh x ≤ x * Real.exp (x ^ 2 / 6) := by
+  -- Compare the power series `∑ x ^ (2 k + 1) / (2 k + 1)!` and
+  -- `∑ x ^ (2 k + 1) / (6 ^ k * k !)` termwise, using
+  -- `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`.
+  rw [Real.sinh_eq_tsum, Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum ℝ, ← tsum_mul_left]
+  refine x.hasSum_sinh.summable.tsum_le_tsum (fun k ↦ ?_)
+    ((NormedSpace.expSeries_summable' (x ^ 2 / 6)).mul_left x)
+  have h : x * ((k.factorial : ℝ)⁻¹ • (x ^ 2 / 6) ^ k) =
+      x ^ (2 * k + 1) / ((6 ^ k * k.factorial : ℕ) : ℝ) := by
+    push_cast
+    rw [smul_eq_mul, div_pow, ← pow_mul, pow_succ]
+    field_simp
+  rw [h]
+  gcongr
+  exact Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one k
+
+/-- `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)` for every real `l`. For `l ≠ 0` the
+left side is the exponential moment `∫₀¹ exp (-l x) dx`; at `l = 0` it is `0`. -/
+theorem _root_.Real.one_sub_exp_neg_div_le_exp (l : ℝ) :
+    (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
+  -- Write the left side as `exp (-(l / 2)) * (2 * sinh (l / 2) / l)`. The factor
+  -- `2 * sinh (l / 2) / l` is even in `l`, so `Real.sinh_le_mul_exp_sq_div_six` at `|l| / 2`
+  -- bounds it by `exp (l ^ 2 / 24)`.
+  have h1 : 1 - Real.exp (-l) = Real.exp (-(l / 2)) * (2 * Real.sinh (l / 2)) := by
+    have ha : Real.exp (-(l / 2)) * Real.exp (l / 2) = 1 := by rw [← Real.exp_add]; simp
+    have hb : Real.exp (-l) = Real.exp (-(l / 2)) ^ 2 := by rw [← Real.exp_nat_mul]; ring_nf
+    rw [Real.sinh_eq]
+    linear_combination -ha - hb
+  have hsq : (l / 2) ^ 2 / 6 = l ^ 2 / 24 := by ring
+  rw [h1, Real.exp_add, mul_div_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+  rcases lt_trichotomy l 0 with hl | rfl | hl
+  · have h := Real.sinh_le_mul_exp_sq_div_six (by linarith : 0 ≤ -(l / 2))
+    rw [Real.sinh_neg, neg_sq, hsq] at h
+    rw [div_le_iff_of_neg hl]
+    linarith
+  · simp
+  · have h := Real.sinh_le_mul_exp_sq_div_six (half_pos hl).le
+    rw [hsq] at h
+    rw [div_le_iff₀ hl]
+    linarith
 
 end TauCeti

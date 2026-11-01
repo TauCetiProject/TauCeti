@@ -38,7 +38,7 @@ special cases.
 
 * `TauCeti.baseFieldAlgEquivOfIsSepClosed`: an algebraic central division algebra over a
   separably closed field is the base field.
-* `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed`: a finite-dimensional central simple
+* `IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed`: a finite-dimensional central simple
   algebra over a separably closed field is a full matrix algebra.
 
 ## References
@@ -49,9 +49,9 @@ See N. Jacobson, *Basic Algebra II*, 2nd ed., Chapter 15, and P. Gille and T. Sz
 
 public section
 
-namespace TauCeti
-
 universe u
+
+namespace TauCeti
 
 /-! ### Central division algebras over a separably closed field -/
 
@@ -94,6 +94,8 @@ theorem finrank_eq_one_of_isSepClosed : Module.finrank K D = 1 := by
 
 end Division
 
+end TauCeti
+
 /-! ### Central simple algebras -/
 
 namespace IsSimpleRing
@@ -108,8 +110,6 @@ theorem exists_algEquiv_matrix_of_isSepClosed :
     ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
       Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) :=
   exists_algEquiv_matrix_of_forall_nonempty_algEquiv K A fun D ↦
-    ⟨baseFieldAlgEquivOfIsSepClosed K D⟩
+    ⟨TauCeti.baseFieldAlgEquivOfIsSepClosed K D⟩
 
 end IsSimpleRing
-
-end TauCeti

@@ -38,9 +38,9 @@ The exponent `1 ≤ p ≤ ∞` is arbitrary, including `p = ∞`.
 
 * `TauCeti.gromovWassersteinEDist_le_of_ae_isGeodesicSegment`: the displacement bound between
   interpolating kernels.
-* `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_isGeodesicSegment_zero` and
-  `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_isGeodesicSegment_one`: the interpolation starts
-  at the first measured kernel and ends at the second.
+* `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst` and
+  `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd` from
+  `GromovWasserstein.Basic` identify the endpoints of the interpolation up to distance `0`.
 * `TauCeti.GromovWassersteinSpace.instIsGeodesicSpace`: over a complete separable geodesic target,
   `GromovWassersteinSpace p Z` is a geodesic space.
 
@@ -107,34 +107,6 @@ theorem gromovWassersteinEDist_le_of_ae_isGeodesicSegment [SFinite π]
   filter_upwards [hg] with q hq
   simp only [id_eq, Pi.smul_apply, smul_eq_mul, enorm_eq_self, edist_dist, hq.dist_eq s hs t ht,
     Real.enorm_of_nonneg (mul_nonneg (abs_nonneg _) dist_nonneg)]
-
-/-- **The interpolation starts at the first kernel.** If `π` couples `μ` and `ν` and `g q` is,
-for `π ⊗ π`-almost every `q`, a geodesic segment starting at `ωX (q.1.1, q.2.1)`, then the kernel
-`g · 0` on `(X × Y, π)` is at Gromov–Wasserstein distance `0` from `(X, μ, ωX)`. -/
-theorem gromovWassersteinEDist_eq_zero_of_ae_isGeodesicSegment_zero [IsFiniteMeasure μ]
-    (hπ : IsCoupling π μ ν) (hωX : AEStronglyMeasurable ωX (μ.prod μ))
-    (hg : ∀ᵐ q ∂(π.prod π), IsGeodesicSegment (g q) (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
-    (p : ℝ≥0∞) :
-    gromovWassersteinEDist p π (fun q ↦ g q 0) μ ωX = 0 := by
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  have h0 : (fun q ↦ g q 0) =ᵐ[π.prod π] ωX ∘ Prod.map Prod.fst Prod.fst := by
-    filter_upwards [hg] with q hq using hq.source
-  rw [gromovWassersteinEDist_congr_ae h0 .rfl]
-  exact gromovWassersteinEDist_comp_prodMap_eq_zero hπ.measurePreserving_fst hωX p
-
-/-- **The interpolation ends at the second kernel.** If `π` couples `μ` and `ν` and `g q` is,
-for `π ⊗ π`-almost every `q`, a geodesic segment ending at `ωY (q.1.2, q.2.2)`, then the kernel
-`g · 1` on `(X × Y, π)` is at Gromov–Wasserstein distance `0` from `(Y, ν, ωY)`. -/
-theorem gromovWassersteinEDist_eq_zero_of_ae_isGeodesicSegment_one [IsFiniteMeasure ν]
-    (hπ : IsCoupling π μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
-    (hg : ∀ᵐ q ∂(π.prod π), IsGeodesicSegment (g q) (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
-    (p : ℝ≥0∞) :
-    gromovWassersteinEDist p π (fun q ↦ g q 1) ν ωY = 0 := by
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure_of_right
-  have h1 : (fun q ↦ g q 1) =ᵐ[π.prod π] ωY ∘ Prod.map Prod.snd Prod.snd := by
-    filter_upwards [hg] with q hq using hq.target
-  rw [gromovWassersteinEDist_congr_ae h1 .rfl]
-  exact gromovWassersteinEDist_comp_prodMap_eq_zero hπ.measurePreserving_snd hωY p
 
 /-- An interpolating kernel has finite `p`-size whenever the first kernel has finite `p`-size
 about `z` and the plan has finite distortion: each value lies within the endpoint discrepancy of
@@ -207,11 +179,11 @@ theorem isGeodesicSpace_of_ae_isGeodesicSegment
           memLp_edist_of_ae_isGeodesicSegment Fact.out hπ hg hgm t.2 hz hdis }
     refine ⟨fun t ↦ mk (M (projIcc 0 1 zero_le_one t)), isGeodesicSegment_of_dist_le ?_ ?_ ?_⟩
     · rw [projIcc_left, ← edist_eq_zero, edist_mk]
-      exact gromovWassersteinEDist_eq_zero_of_ae_isGeodesicSegment_zero hπ
-        K.aestronglyMeasurable_kernel hg p
+      exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst hπ
+        K.aestronglyMeasurable_kernel (hg.mono fun _ hq ↦ hq.source) p
     · rw [projIcc_right, ← edist_eq_zero, edist_mk]
-      exact gromovWassersteinEDist_eq_zero_of_ae_isGeodesicSegment_one hπ
-        L.aestronglyMeasurable_kernel hg p
+      exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd hπ
+        L.aestronglyMeasurable_kernel (hg.mono fun _ hq ↦ hq.target) p
     · intro s hs t ht hst
       have hle := gromovWassersteinEDist_le_of_ae_isGeodesicSegment hg hgm hs ht p
       rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hst)] at hle

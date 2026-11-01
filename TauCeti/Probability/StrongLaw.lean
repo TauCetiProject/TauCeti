@@ -13,12 +13,14 @@ import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 
 /-!
-# The strong law of large numbers on a countable product space
+# Strong laws of large numbers
 
 Mathlib's `ProbabilityTheory.strong_law_ae` takes a sequence of pairwise independent, identically
 distributed, integrable random variables on an abstract probability space. The canonical carrier of
 such a sequence is the countable power `Measure.infinitePi fun _ : ℕ => Q` with its coordinate maps,
-and this file specializes the strong law to it.
+and this file specializes the strong law to it. It also proves the infinite-mean extension for
+nonnegative real variables: their averages tend almost surely to infinity. This form permits
+inverting sums in renewal and occupation limit theorems without a finite-mean hypothesis.
 
 ## Main results
 
@@ -28,6 +30,8 @@ and this file specializes the strong law to it.
   event is measurable when the probability measure is allowed to vary.
 * `TauCeti.Probability.measure_compl_tendsto_average_integral_eq_zero` — the tagged product law
   `δ_Q ⊗ Q^{⊗ℕ}` gives that event full measure.
+* `TauCeti.Probability.strong_law_ae_real_of_lintegral_eq_top` — nonnegative i.i.d. averages
+  diverge almost surely when their extended mean is infinite; pairwise independence suffices.
 
 ## Implementation
 
@@ -48,6 +52,14 @@ general probability theory with no exchangeability in its statements. It is used
 strong law for conditionally i.i.d. processes in
 `TauCeti.Probability.Exchangeability.ConditionallyIID.StrongLaw`, where the conditional statement is
 reduced fibrewise to this one over the mixing law.
+
+The infinite-mean extension applies Mathlib's strong law to bounded truncations and uses
+monotone convergence to make their expectations arbitrarily large.
+
+## References
+
+* William Feller, *An Introduction to Probability Theory and Its Applications*, vol. II,
+  2nd edition, Wiley, 1971, Chapter XI, §1 (infinite-mean renewal limits).
 -/
 
 public section
@@ -132,6 +144,65 @@ theorem measure_compl_tendsto_average_integral_eq_zero {f : α → E} (hf : Meas
   rw [Measure.dirac_prod, Measure.map_apply measurable_prodMk_left
     (measurableSet_tendsto_average_integral hf).compl]
   exact ae_iff.mp hsl
+
+section InfiniteMean
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+
+/-- For pairwise independent identically distributed nonnegative real random variables with
+infinite extended mean, the sample averages tend almost surely to infinity.
+No integrability of the untruncated variables is required. -/
+theorem strong_law_ae_real_of_lintegral_eq_top (X : ℕ → Ω → ℝ)
+    (hpos : 0 ≤ᵐ[μ] X 0) (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) μ)
+    (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ)
+    (hmean : ∫⁻ ω, ENNReal.ofReal (X 0 ω) ∂μ = ⊤) :
+    ∀ᵐ ω ∂μ, Tendsto (fun n : ℕ ↦ (∑ i ∈ Finset.range n, X i ω) / n) atTop atTop := by
+  let Y (k n : ℕ) (ω : Ω) : ℝ := min (X n ω) k
+  have hYm (k : ℕ) : Measurable (fun x : ℝ ↦ min x (k : ℝ)) :=
+    measurable_id.min measurable_const
+  have hYi (k : ℕ) : Integrable (Y k 0) μ := by
+    refine (integrable_const (k : ℝ)).mono'
+      ((hYm k).comp_aemeasurable (hid 0).aemeasurable_fst).aestronglyMeasurable ?_
+    filter_upwards [hpos] with ω hω
+    simpa only [Y, Real.norm_eq_abs, abs_of_nonneg (le_min hω (Nat.cast_nonneg k))]
+      using min_le_right (X 0 ω) (k : ℝ)
+  -- Monotone convergence prevents all truncated expectations from sharing a finite bound.
+  have hlarge (b : ℝ) : ∃ k, b < ∫ ω, Y k 0 ω ∂μ := by
+    by_contra! h
+    have hsup : (fun ω ↦ ENNReal.ofReal (X 0 ω)) =
+        fun ω ↦ ⨆ k : ℕ, ENNReal.ofReal (Y k 0 ω) := by
+      funext ω
+      apply le_antisymm
+      · obtain ⟨k, hk⟩ := exists_nat_ge (X 0 ω)
+        exact le_iSup_of_le k (by simp [Y, min_eq_left hk])
+      · exact iSup_le fun k ↦ ENNReal.ofReal_le_ofReal (min_le_left _ _)
+    have hbound : ∫⁻ ω, ENNReal.ofReal (X 0 ω) ∂μ ≤ ENNReal.ofReal b := by
+      rw [hsup, lintegral_iSup']
+      · refine iSup_le fun k ↦ ?_
+        rw [← ofReal_integral_eq_lintegral_ofReal (hYi k)
+          (hpos.mono fun ω hω ↦ le_min hω (Nat.cast_nonneg k))]
+        exact ENNReal.ofReal_le_ofReal (h k)
+      · intro k
+        exact (hYm k).ennreal_ofReal.comp_aemeasurable
+          (hid 0).aemeasurable_fst
+      · exact Filter.Eventually.of_forall fun ω i j hij ↦
+          ENNReal.ofReal_le_ofReal (min_le_min_left _ (Nat.cast_le.2 hij))
+    exact (ENNReal.ofReal_lt_top).not_ge (hmean ▸ hbound)
+  have hsl (k : ℕ) : ∀ᵐ ω ∂μ,
+      Tendsto (fun n : ℕ ↦ (∑ i ∈ Finset.range n, Y k i ω) / n) atTop
+        (𝓝 (∫ ω, Y k 0 ω ∂μ)) :=
+    strong_law_ae_real (Y k) (hYi k)
+      (fun i j hij ↦ (hindep hij).comp (hYm k) (hYm k))
+      (fun i ↦ (hid i).comp (hYm k))
+  -- Intersect only countably many strong-law events, then choose the truncation for each bound.
+  filter_upwards [ae_all_iff.2 hsl] with ω hω
+  refine tendsto_atTop.2 fun b ↦ ?_
+  obtain ⟨k, hk⟩ := hlarge b
+  filter_upwards [(hω k).eventually (lt_mem_nhds hk)] with n hn
+  exact hn.le.trans (div_le_div_of_nonneg_right
+    (Finset.sum_le_sum fun i _ ↦ min_le_left _ _) (Nat.cast_nonneg n))
+
+end InfiniteMean
 
 end Probability
 

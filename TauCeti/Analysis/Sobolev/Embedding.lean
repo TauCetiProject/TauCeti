@@ -63,8 +63,10 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient`: the Gagliardo--Nirenberg--Sobolev
   inequality on `W^{1,p}_0(Ω)` at the critical exponent `p⋆`.
-* `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient_of_isBounded`: the same for every `q ≤ p⋆`
-  when `Ω` is bounded.
+* `TauCeti.norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp`: the same inequality between
+  the `L^{p⋆}` class of a test function and the `Lᵖ` class of its gradient.
+* `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient_of_isBounded`: the inequality on
+  `W^{1,p}_0(Ω)` for every `q ≤ p⋆` when `Ω` is bounded.
 * `TauCeti.W1p.memLp_value_of_mem_w1p0Submodule`: a `W^{1,p}_0(Ω)` function is `L^{p⋆}`.
 * `TauCeti.W1p0.sobolevEmbeddingL`: the embedding `W^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`, together
   with `TauCeti.W1p0.coeFn_sobolevEmbeddingL` identifying it with the function itself and
@@ -297,6 +299,22 @@ theorem W1p.eLpNorm_value_le_mul_enorm_gradient (hpstar : pstar ≠ ∞)
     phi.hasCompactSupport hp1' hn hreal
   rwa [ENNReal.coe_toNNReal hpstar, ENNReal.coe_toNNReal hpne,
     ENNReal.coe_toNNReal_eq_toReal] at hphi
+
+/-- **The Gagliardo--Nirenberg--Sobolev inequality between test-function classes.** If `1 ≤ p`
+and the Sobolev conjugate `p⋆ ≠ ∞` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every test
+function `φ` on `Ω` satisfies `‖φ‖_{p⋆} ≤ C ‖∇φ‖_p` for its classes in `L^{p⋆}(Ω)` and
+`Lᵖ(Ω, E)`, with Mathlib's constant `MeasureTheory.SNormLESNormFDerivOfEqConst`. This is the
+bound along which a map defined on test functions by the gradient norm extends to its completion. -/
+theorem norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (phi : 𝓓(Omega, ℝ)) :
+    ‖testFunctionLp (mu := mu) pstar phi‖ ≤
+      SNormLESNormFDerivOfEqConst ℝ mu p.toReal * ‖gradientTestFunctionLp (mu := mu) p phi‖ := by
+  have h := W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp
+    (W1p.ofTestFunctionₗ_mem_w1p0Submodule (mu := mu) (p := p) phi)
+  rw [W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ,
+    eLpNorm_congr_ae (testFunctionLp_apply_ae p phi)] at h
+  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_enorm]
+  simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-! ### Subcritical exponents on a bounded domain -/
 

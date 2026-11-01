@@ -37,6 +37,8 @@ a time.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
+  applied to `b`.
 * `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
   trivialization is smooth on its base set.
 * `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
@@ -93,6 +95,12 @@ theorem symmL_basis_eq_localFrame (hx : x ∈ e.baseSet) (i : ι) :
   rw [e.symmL_apply hx]
   simp [Bundle.Trivialization.localFrame_apply_of_mem_baseSet,
     Bundle.Trivialization.basisAt, hx]
+
+/-- The basis of a fibre given by a trivialization is the continuous inverse of the
+trivialization applied to the model-fibre basis. -/
+theorem basisAt_apply (hx : x ∈ e.baseSet) (i : ι) : e.basisAt b hx i = e.symmL 𝕜 x (b i) := by
+  rw [Bundle.Trivialization.basisAt, Module.Basis.map_apply,
+    Bundle.Trivialization.linearEquivAt_symm_apply, e.symmL_apply hx]
 
 /-- A trivialization reads a vector of its local frame as the corresponding model-fibre basis
 vector. -/

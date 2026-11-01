@@ -29,6 +29,11 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
 * `TauCeti.ValuationSpectrum.comap φ` : The continuous map `Spv B → Spv A` induced by
   `φ : A →+* B`.
 * `TauCeti.ValuationSpectrum.supp v` : The support ideal `{a ∈ A | v(a) = 0}`.
+* `TauCeti.ValuationSpectrum.ofValuation_valuationSubring_valuation`,
+  `TauCeti.ValuationSpectrum.ofValuation_comap_valuation`,
+  `TauCeti.ValuationSpectrum.comap_ofValuation_valuation` and
+  `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
+  point of its valuation subring, compatibly with pullback.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
   Lemma 7.5, that the rational opens are stable under finite intersection.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_image_mul_right` : scaling every numerator and the
@@ -291,6 +296,12 @@ lemma comap_comp (φ : A →+* B) (ψ : B →+* C) :
   funext v
   exact ValuationSpectrum.ext (ValuativeRel.comap_comp φ ψ v.toValuativeRel)
 
+/-- Pulling back along `ψ` and then along `φ` is pulling back along `ψ.comp φ`: the pointwise
+form of `comap_comp`. Not `@[simp]`, since `comap_comp` rewrites the right side back. -/
+lemma comap_comap (φ : A →+* B) (ψ : B →+* C) (v : Spv C) :
+    comap φ (comap ψ v) = comap (ψ.comp φ) v := by
+  rw [comap_comp, Function.comp_apply]
+
 /-- `comap φ` is injective when `φ` is surjective. -/
 lemma comap_injective {φ : A →+* B} (hφ : Function.Surjective φ) :
     Function.Injective (comap φ) := by
@@ -412,6 +423,46 @@ lemma isEquiv_valuation_ofValuation {Γ₀ : Type*} [LinearOrderedCommGroupWithZ
     (w : Valuation A Γ₀) : Valuation.IsEquiv (ofValuation w).valuation w := by
   intro x y
   rw [valuation_le_iff, vle_ofValuation]
+
+section Field
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- A point of the valuation spectrum of a field is the point of its valuation subring. -/
+@[simp]
+theorem ofValuation_valuationSubring_valuation (w : Spv K) :
+    ofValuation w.valuation.valuationSubring.valuation = w :=
+  (ofValuation_eq_of_isEquiv
+    (Valuation.isEquiv_valuation_valuationSubring w.valuation).symm).trans (ofValuation_valuation w)
+
+/-- Pulling back the valuation of a valuation subring along a field homomorphism gives the point
+of the pulled-back valuation subring. -/
+@[simp]
+theorem ofValuation_comap_valuation (g : K →+* L) (W : ValuationSubring L) :
+    ofValuation (W.valuation.comap g) = ofValuation (W.comap g).valuation := by
+  refine ofValuation_eq_of_isEquiv ?_
+  rw [Valuation.isEquiv_iff_valuationSubring, ValuationSubring.valuationSubring_valuation]
+  ext x
+  simp [Valuation.mem_valuationSubring_iff, ValuationSubring.valuation_le_one_iff]
+
+/-- Pulling back the point of a valuation subring along a field homomorphism gives the point of
+the pulled-back valuation subring. Not `@[simp]`: `comap_ofValuation` and
+`ofValuation_comap_valuation` rewrite the left side to the right side. -/
+theorem comap_ofValuation_valuation (g : K →+* L) (W : ValuationSubring L) :
+    comap g (ofValuation W.valuation) = ofValuation (W.comap g).valuation := by
+  rw [comap_ofValuation, ofValuation_comap_valuation]
+
+/-- The valuation subring of a pulled-back point of the valuation spectrum of a field is the
+pullback of its valuation subring. -/
+@[simp]
+theorem valuationSubring_valuation_comap (g : K →+* L) (w : Spv L) :
+    (comap g w).valuation.valuationSubring = w.valuation.valuationSubring.comap g := by
+  ext x
+  have := valuation_le_iff (comap g w) x 1
+  rw [map_one, comap_vle, ← valuation_le_iff, map_one] at this
+  simpa [Valuation.mem_valuationSubring_iff] using this
+
+end Field
 
 section Quotient
 
@@ -585,33 +636,24 @@ theorem suppFun_comap {B : Type*} [CommRing B] (φ : A →+* B) (v : Spv B) :
 `Spv A` given by the trivial valuation attached to a prime ideal. -/
 noncomputable def trivialSection (p : PrimeSpectrum A) : Spv A :=
   ofValuation
-    (Valuation.trivialValuation p.asIdeal : Valuation A (WithZero (Multiplicative ℤ)))
+    (p.asIdeal.trivialValuation : Valuation A (WithZero (Multiplicative ℤ)))
 
 /-- The valuative relation of a trivial-valuation point: `v(f) ≤ v(s)` holds precisely
 when `f` lies in the prime or `s` does not. -/
 @[simp]
 lemma trivialSection_vle_iff (p : PrimeSpectrum A) (f s : A) :
     (trivialSection p).toValuativeRel.vle f s ↔ f ∈ p.asIdeal ∨ s ∉ p.asIdeal := by
-  rw [trivialSection, vle_ofValuation, Valuation.trivialValuation_apply,
-    Valuation.trivialValuation_apply]
-  constructor
-  · intro h
-    by_cases hf : f ∈ p.asIdeal
-    · exact Or.inl hf
-    · refine Or.inr fun hs ↦ ?_
-      rw [ite_eq_right hf, ite_eq_left hs] at h
-      simp at h
-  · rintro (hf | hs)
-    · simp [hf]
-    · rw [ite_eq_right hs]
-      split <;> simp
+  classical
+  rw [trivialSection, vle_ofValuation, Ideal.trivialValuation_apply,
+    Ideal.trivialValuation_apply]
+  split_ifs <;> simp_all
 
 /-- `trivialSection` is a section of the support map. -/
 @[simp]
 lemma suppFun_trivialSection (p : PrimeSpectrum A) : suppFun (trivialSection p) = p := by
   ext x
   rw [suppFun_asIdeal, trivialSection, supp_ofValuation, Valuation.mem_supp_iff,
-    Valuation.trivialValuation_eq_zero_iff]
+    Ideal.trivialValuation_eq_zero_iff]
 
 /-- The preimage of a basic open under `trivialSection` is the corresponding basic open of
 the prime spectrum: `trivialSection ⁻¹' Spv(A)(f/s) = D(s)`. -/

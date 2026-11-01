@@ -32,11 +32,16 @@ category by the number of critical points of a smooth function on a compact mani
 sublevel down past a critical level along the gradient flow costs at most one categorical open per
 critical point on that level.
 
+The count is additive on finite disjoint unions. A nullhomotopy of the inclusion joins every point
+of a categorical open set to a single point, so such a set meets at most one summand, and the
+count of the whole union is the sum of the counts of the summands. On a manifold with several
+components, this lets the critical-point bound be computed one component at a time.
+
 ## Main declarations
 
 * `TauCeti.LSCategoricalCover X A n`: a cover of `A` by `n` open subsets of `X` with nullhomotopic
-  inclusions, with restriction `mono`, concatenation `append`, padding by empty opens `pad`, and
-  pullback `comap`.
+  inclusions, with restriction `mono`, concatenation `append`, padding by empty opens `pad`,
+  pullback `comap`, and pushforward `map` along open embeddings.
 * `TauCeti.lsCategoryCount X A`: the least size of a categorical cover of `A`, attained when
   finite (`TauCeti.nonempty_lsCategoricalCover_of_lsCategoryCount_eq`).
 * `TauCeti.lsCategoryCount_le_iff`: `lsCategoryCount X A ≤ n` exactly when `A` has a categorical
@@ -52,6 +57,9 @@ critical point on that level.
   invariance under homotopy equivalences and homeomorphisms.
 * `TauCeti.lsCategoryCount_eq_zero` and `TauCeti.lsCategoryCount_pos`: the count vanishes exactly
   on the empty set.
+* `TauCeti.lsCategoryCount_eq_sum_inter`: additivity over finitely many pairwise disjoint clopen
+  sets, and `TauCeti.lsCategoryCount_sigma`, `TauCeti.lsCategoryCount_univ_sigma`: the count of a
+  finite disjoint union is the sum of the counts of its summands.
 * `TauCeti.lsCategoryCount_univ_of_contractibleSpace` and
   `TauCeti.lsCategoryCount_eq_encard`: a contractible space has count `1`, and in a discrete space
   the count of a set is its cardinality.
@@ -64,7 +72,8 @@ critical point on that level.
 
 public section
 
-open Set ContinuousMap TopologicalSpace
+open Set ContinuousMap TopologicalSpace Topology
+open scoped Function
 
 namespace TauCeti
 
@@ -88,17 +97,30 @@ theorem nullhomotopic_subtypeVal_of_subset_singleton {U : Set X} {x : X} (h : U 
   rw [show subtypeVal U = const U x from ContinuousMap.ext fun u ↦ h u.2]
   exact nullhomotopic_of_constant x
 
-/-- In a discrete space a set with nullhomotopic inclusion has at most one point: under a
-nullhomotopy of the inclusion, the track of a point is a path in a discrete space, hence constant.
--/
+/-- A set with nullhomotopic inclusion that meets a clopen set is contained in it: under a
+nullhomotopy of the inclusion, the track of each point is a path to the common endpoint, so every
+point lies in exactly the same clopen sets as that endpoint. In particular a categorical open set
+meets at most one component of a disjoint union. -/
+theorem subset_of_nullhomotopic_of_isClopen {U C : Set X} (h : (subtypeVal U).Nullhomotopic)
+    (hC : IsClopen C) (hUC : (U ∩ C).Nonempty) : U ⊆ C := by
+  obtain ⟨x, ⟨H⟩⟩ := h
+  have key (u : U) : (u : X) ∈ C ↔ x ∈ C := by
+    have hpre : IsPreconnected (range fun t ↦ H (t, u)) := isPreconnected_range (by fun_prop)
+    have h0 : (u : X) ∈ range fun t ↦ H (t, u) := ⟨0, by simp⟩
+    have h1 : x ∈ range fun t ↦ H (t, u) := ⟨1, by simp⟩
+    exact ⟨fun hu ↦ hpre.subset_isClopen hC ⟨_, h0, hu⟩ h1,
+      fun hx ↦ hpre.subset_isClopen hC ⟨_, h1, hx⟩ h0⟩
+  obtain ⟨u, hu, huC⟩ := hUC
+  exact fun v hv ↦ (key ⟨v, hv⟩).mpr ((key ⟨u, hu⟩).mp huC)
+
+/-- In a discrete space a set with nullhomotopic inclusion has at most one point, since every
+singleton is clopen. -/
 theorem exists_subset_singleton_of_nullhomotopic [DiscreteTopology X] {U : Set X}
     (h : (subtypeVal U).Nullhomotopic) : ∃ x, U ⊆ {x} := by
-  obtain ⟨x, ⟨H⟩⟩ := h
-  refine ⟨x, fun u hu ↦ ?_⟩
-  have := PreconnectedSpace.constant (inferInstance : PreconnectedSpace unitInterval)
-    (f := fun t ↦ H (t, ⟨u, hu⟩)) (by fun_prop) (x := 0) (y := 1)
-  simp only [Homotopy.apply_zero, Homotopy.apply_one, const_apply] at this
-  rwa [subtypeVal_apply] at this
+  obtain rfl | ⟨u, hu⟩ := U.eq_empty_or_nonempty
+  · obtain ⟨x, -⟩ := h
+    exact ⟨x, empty_subset _⟩
+  · exact ⟨u, subset_of_nullhomotopic_of_isClopen h (isClopen_discrete _) ⟨u, hu, rfl⟩⟩
 
 namespace LSCategoricalCover
 
@@ -210,6 +232,29 @@ theorem comap_opens {A : Set Y} (c : LSCategoricalCover X B n) (g : C(Y, X)) (r 
     (c.comap g r hrg hA).opens i = Opens.comap g (c.opens i) :=
   (rfl)
 
+/-- Pushforward of categorical covers along an open embedding `e : Y → X`: the images under `e` of
+a categorical cover of `A ⊆ Y` form a categorical cover of `e '' A`. -/
+def map {A : Set Y} (c : LSCategoricalCover Y A n) {e : Y → X} (he : IsOpenEmbedding e) :
+    LSCategoricalCover X (e '' A) n where
+  opens i := ⟨e '' c.opens i, he.isOpenMap _ (c.opens i).isOpen⟩
+  subset_iUnion := by
+    rintro _ ⟨y, hy, rfl⟩
+    obtain ⟨i, hi⟩ := mem_iUnion.mp (c.subset_iUnion hy)
+    exact mem_iUnion.mpr ⟨i, mem_image_of_mem e hi⟩
+  nullhomotopic i := by
+    -- The inclusion of `e '' U` is `e ∘ (inclusion of U) ∘ h⁻¹` for the homeomorphism
+    -- `h : U ≃ₜ e '' U` induced by `e`.
+    let h := he.isEmbedding.homeomorphImage (c.opens i : Set Y)
+    have hfac : subtypeVal (e '' c.opens i) = (⟨e, he.continuous⟩ : C(Y, X)).comp
+        ((subtypeVal _).comp (h.symm : C(e '' (c.opens i : Set Y), c.opens i))) :=
+      ContinuousMap.ext fun x ↦ (congrArg Subtype.val (h.apply_symm_apply x)).symm
+    exact hfac ▸ ((c.nullhomotopic i).comp_left _).comp_right _
+
+@[simp]
+theorem map_opens {A : Set Y} (c : LSCategoricalCover Y A n) {e : Y → X} (he : IsOpenEmbedding e)
+    (i : Fin n) : ((c.map he).opens i : Set X) = e '' c.opens i :=
+  (rfl)
+
 end LSCategoricalCover
 
 variable (X) in
@@ -314,6 +359,12 @@ theorem lsCategoryCount_le_of_mapsTo {A : Set Y} (g : C(Y, X)) (r : C(X, Y))
     lsCategoryCount Y A ≤ lsCategoryCount X B :=
   le_iInf₂ fun _ ⟨c⟩ ↦ (c.comap g r hrg hA).lsCategoryCount_le
 
+/-- Pushforward inequality for the Lusternik–Schnirelmann count along an open embedding
+`e : Y → X`: the count of `e '' A` in `X` is at most the count of `A` in `Y`. -/
+theorem _root_.Topology.IsOpenEmbedding.lsCategoryCount_image_le {e : Y → X}
+    (he : IsOpenEmbedding e) (A : Set Y) : lsCategoryCount X (e '' A) ≤ lsCategoryCount Y A :=
+  le_iInf₂ fun _ ⟨c⟩ ↦ (c.map he).lsCategoryCount_le
+
 /-- The deformation inequality: if `g : X → X` is homotopic to the identity and maps `A` into `B`,
 then the Lusternik–Schnirelmann count of `A` is at most that of `B`. -/
 theorem lsCategoryCount_le_of_homotopic_id (g : C(X, X))
@@ -395,6 +446,89 @@ theorem lsCategoryCount_eq_encard [DiscreteTopology X] (A : Set X) :
           iUnion_subset fun i ↦ (hx i).trans <| singleton_subset_iff.mpr (mem_range_self i)
       _ ≤ (univ : Set (Fin n)).encard := by rw [← image_univ]; exact encard_image_le _ _
       _ = n := by simp
+
+/-- The Lusternik–Schnirelmann count is additive over a finite family of pairwise disjoint clopen
+sets covering `A`. A categorical open set meeting one of these clopen sets lies inside it
+(`TauCeti.subset_of_nullhomotopic_of_isClopen`), so no open set of a categorical cover of `A`
+serves two of them. -/
+theorem lsCategoryCount_eq_sum_inter {ι : Type*} [Fintype ι] {C : ι → Set X}
+    (hC : ∀ i, IsClopen (C i)) (hd : Pairwise (Disjoint on C)) (hA : A ⊆ ⋃ i, C i) :
+    lsCategoryCount X A = ∑ i, lsCategoryCount X (A ∩ C i) := by
+  classical
+  refine le_antisymm ?_ (le_iInf₂ fun n ⟨c⟩ ↦ ?_)
+  · calc lsCategoryCount X A ≤ lsCategoryCount X (⋃ i ∈ Finset.univ, A ∩ C i) :=
+          lsCategoryCount_mono fun x hx ↦ by simpa [hx] using hA hx
+      _ ≤ ∑ i, lsCategoryCount X (A ∩ C i) := lsCategoryCount_biUnion_le _ _
+  -- `J i` collects the open sets of the cover meeting `C i`; they lie inside `C i`.
+  let J (i : ι) : Finset (Fin n) := {j | ((c.opens j : Set X) ∩ C i).Nonempty}
+  have hsub {i : ι} {j : Fin n} (hj : j ∈ J i) : (c.opens j : Set X) ⊆ C i :=
+    subset_of_nullhomotopic_of_isClopen (c.nullhomotopic j) (hC i) (by simpa [J] using hj)
+  have hJ (i : ι) : lsCategoryCount X (A ∩ C i) ≤ (J i).card := by
+    have hcover : A ∩ C i ⊆ ⋃ j ∈ J i, (c.opens j : Set X) := fun x ⟨hxA, hxC⟩ ↦ by
+      obtain ⟨j, hj⟩ := mem_iUnion.mp (c.subset_iUnion hxA)
+      exact mem_biUnion (by simpa [J] using ⟨x, hj, hxC⟩) hj
+    calc lsCategoryCount X (A ∩ C i) ≤ lsCategoryCount X (⋃ j ∈ J i, (c.opens j : Set X)) :=
+          lsCategoryCount_mono hcover
+      _ ≤ ∑ j ∈ J i, lsCategoryCount X (c.opens j) := lsCategoryCount_biUnion_le _ _
+      _ ≤ ∑ j ∈ J i, 1 := Finset.sum_le_sum fun j _ ↦
+          (LSCategoricalCover.single (c.opens j) subset_rfl (c.nullhomotopic j)).lsCategoryCount_le
+      _ = (J i).card := by simp
+  -- An open set meeting two of the disjoint sets `C i` would lie in both, so the `J i` are
+  -- disjoint.
+  have hJd : ((Finset.univ : Finset ι) : Set ι).PairwiseDisjoint J := by
+    intro i _ i' _ hii'
+    refine Finset.disjoint_left.mpr fun j hj hj' ↦ ?_
+    obtain ⟨x, hx, -⟩ : ((c.opens j : Set X) ∩ C i).Nonempty := by simpa [J] using hj
+    exact disjoint_left.mp (hd hii') (hsub hj hx) (hsub hj' hx)
+  calc ∑ i, lsCategoryCount X (A ∩ C i) ≤ ∑ i, ((J i).card : ℕ∞) :=
+        Finset.sum_le_sum fun i _ ↦ hJ i
+    _ = (Finset.univ.biUnion J).card := by rw [Finset.card_biUnion hJd, Nat.cast_sum]
+    _ ≤ n := by exact_mod_cast (Finset.card_le_univ _).trans (by simp)
+
+section Sigma
+
+variable {ι : Type*} {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
+
+/-- A summand of a disjoint union has the same Lusternik–Schnirelmann counts in the disjoint union
+as in itself. -/
+@[simp]
+theorem lsCategoryCount_image_sigmaMk (i : ι) (A : Set (Y i)) :
+    lsCategoryCount (Σ i, Y i) (Sigma.mk i '' A) = lsCategoryCount (Y i) A := by
+  refine le_antisymm (IsOpenEmbedding.sigmaMk.lsCategoryCount_image_le A) ?_
+  obtain rfl | ⟨y, -⟩ := A.eq_empty_or_nonempty
+  · simp
+  classical
+  -- Collapsing every other summand to `y` gives a retraction onto `Y i`.
+  let r : C(Σ i, Y i, Y i) :=
+    ⟨fun x ↦ if h : x.1 = i then h ▸ x.2 else y, continuous_sigma fun j ↦ by
+      by_cases h : j = i
+      · subst h
+        simpa using continuous_id'
+      · simpa [h] using continuous_const⟩
+  have hr : r.comp ⟨Sigma.mk i, continuous_sigmaMk⟩ = ContinuousMap.id (Y i) :=
+    ContinuousMap.ext fun a ↦ by simp [r]
+  exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_image _ _)
+
+/-- The Lusternik–Schnirelmann count of a subset of a finite disjoint union is the sum of the counts
+of its parts in the summands. Empty summands contribute `0`, and the sum is `⊤` as soon as one part
+has no finite categorical cover. -/
+theorem lsCategoryCount_sigma [Fintype ι] (A : Set (Σ i, Y i)) :
+    lsCategoryCount (Σ i, Y i) A = ∑ i, lsCategoryCount (Y i) (Sigma.mk i ⁻¹' A) := by
+  have hd : Pairwise (Disjoint on fun i ↦ range (Sigma.mk i : Y i → Σ i, Y i)) :=
+    fun _ _ hij ↦ disjoint_left.mpr fun _ ⟨_, ha⟩ ⟨_, hb⟩ ↦
+      hij (congrArg Sigma.fst (ha.trans hb.symm))
+  rw [lsCategoryCount_eq_sum_inter (fun i ↦ isClopen_range_sigmaMk) hd
+    fun x _ ↦ mem_iUnion.mpr ⟨x.1, x.2, rfl⟩]
+  simp_rw [← image_preimage_eq_inter_range, lsCategoryCount_image_sigmaMk]
+
+/-- The Lusternik–Schnirelmann count of a finite disjoint union is the sum of the counts of its
+summands. -/
+@[simp]
+theorem lsCategoryCount_univ_sigma [Fintype ι] :
+    lsCategoryCount (Σ i, Y i) univ = ∑ i, lsCategoryCount (Y i) univ := by
+  simp [lsCategoryCount_sigma]
+
+end Sigma
 
 end TauCeti
 

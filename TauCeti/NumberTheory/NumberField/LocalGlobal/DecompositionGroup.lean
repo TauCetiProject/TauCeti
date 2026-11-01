@@ -74,7 +74,9 @@ available in the `AdicCompletionExtension` scope.
   `IsDedekindDomain.HeightOneSpectrum.decompositionEquiv`: for `L/K` Galois the decomposition
   group of `w` is the Galois group of `L_w/K_v`.
 * `IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion`: for `L/K` Galois the local
-  extension `L_w/K_v` is Galois; and
+  extension `L_w/K_v` is Galois, and
+  `IsDedekindDomain.HeightOneSpectrum.isAbelianGalois_adicCompletion`: for `L/K` abelian it is
+  abelian; and
   `IsDedekindDomain.HeightOneSpectrum.card_algEquiv_adicCompletion`: a locally Galois completion
   has `e(w ∣ v) · f(w ∣ v)` automorphisms.
 * `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletion_fixedField`: for a subgroup `H` of
@@ -409,6 +411,23 @@ scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion
 
 end IsGalois
+
+section IsAbelianGalois
+
+variable (v w) [IsAbelianGalois K L]
+
+/-- **A completion of an abelian extension is abelian.** For `L/K` abelian the local extension
+`L_w/K_v` at a finite place `w` of `L` is an abelian Galois extension. -/
+-- The Galois group of `L_w/K_v` is the decomposition group of `w`, a subgroup of `Gal(L/K)`.
+theorem isAbelianGalois_adicCompletion :
+    IsAbelianGalois (v.adicCompletion K) (w.adicCompletion L) :=
+  have := (decompositionEquiv v w).surjective.isMulCommutative
+  ⟨⟩
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.isAbelianGalois_adicCompletion
+
+end IsAbelianGalois
 
 section IsGaloisAdicCompletion
 

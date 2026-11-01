@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.Data.Nat.Choose.Basic
 
@@ -30,11 +31,17 @@ Weighting the summands by a rising factorial `(k + r)⁽ᵐ⁾` of the position 
 gives again a single binomial coefficient, `r⁽ᵐ⁾ * C(N + m, K + m)`; these are the rising
 factorial moments of the negative hypergeometric law.
 
+The partial-sum complement identity partitions subsets according to the position of their `r`th
+element. Its recurrence follows from Pascal's identity, and the initial value is Mathlib's
+`Nat.add_choose_eq`.
+
 ## Main results
 
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
 * `Nat.sum_range_ascFactorial_mul_choose_mul_choose`: its version weighted by a rising factorial,
   `∑_{k ≤ N - K} (k + r)⁽ᵐ⁾ * C(k + r - 1, k) * C(N - r - k, K - r) = r⁽ᵐ⁾ * C(N + m, K + m)`.
+* `Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose`: the complementary partial
+  sums, distinguished by whether the `r`th element lies among the first `k + r` positions.
 
 ## References
 
@@ -103,5 +110,69 @@ theorem sum_range_ascFactorial_mul_choose_mul_choose {N K r : ℕ} (hr : r ≤ K
     have hk : k ≤ N - K := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
     rw [show k + r + m - 1 = r + m - 1 + k by omega, Nat.choose_symm_add,
       show N - r - k = K - r + (N - K - k) by omega]
+
+/-- Moving one element from the second population to the first in a partial Vandermonde sum
+changes it by the boundary term at the cutoff. -/
+theorem sum_range_choose_mul_choose_succ (m n K r : ℕ) (hr : r < K) :
+    (∑ j ∈ range (r + 1), (m + 1).choose j * n.choose (K - j)) +
+        m.choose r * n.choose (K - (r + 1)) =
+      ∑ j ∈ range (r + 1), m.choose j * (n + 1).choose (K - j) := by
+  induction r with
+  | zero =>
+    simp only [Nat.zero_add, sum_range_one, choose_zero_right, one_mul, Nat.sub_zero]
+    rw [choose_succ_left _ _ (by omega)]
+    omega
+  | succ r ih =>
+    have ih := ih (by omega)
+    rw [sum_range_succ _ (r + 1),
+      sum_range_succ (fun j ↦ m.choose j * (n + 1).choose (K - j)) (r + 1),
+      choose_succ_succ']
+    rw [choose_succ_left n (K - (r + 1)) (by omega)]
+    have heq : K - (r + 1) - 1 = K - (r + 1 + 1) := by omega
+    rw [heq]
+    nlinarith
+
+/-- A partial upper-index Vandermonde sum and its complementary lower tail add to the full
+binomial coefficient. It partitions `K`-element subsets by whether their `r`th element occurs
+among the first `k + r` positions. -/
+theorem sum_range_choose_mul_choose_add_sum_range_choose_mul_choose
+    {N K r k : ℕ} (hr : 0 < r) (hrK : r ≤ K) (hk : k + r ≤ N) :
+    (∑ i ∈ range (k + 1), (i + r - 1).choose i * (N - r - i).choose (K - r)) +
+        (∑ j ∈ range r, (k + r).choose j * (N - k - r).choose (K - j)) =
+      N.choose K := by
+  induction k with
+  | zero =>
+    have hsum := add_choose_eq r (N - r) K
+    rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+      (fun i j ↦ r.choose i * (N - r).choose j)] at hsum
+    have htruncate :
+        (∑ j ∈ range (K + 1), r.choose j * (N - r).choose (K - j)) =
+          ∑ j ∈ range (r + 1), r.choose j * (N - r).choose (K - j) := by
+      symm
+      apply sum_subset (range_mono (by omega))
+      intro j _ hj
+      simp only [mem_range, not_lt] at hj
+      simp [choose_eq_zero_of_lt (by omega : r < j)]
+    rw [htruncate, sum_range_succ] at hsum
+    simp only [sum_range_one, Nat.zero_add, choose_zero_right, one_mul, Nat.sub_zero,
+      choose_self] at *
+    rw [Nat.add_sub_of_le (by omega : r ≤ N)] at hsum
+    omega
+  | succ k ih =>
+    have ih := ih (by omega)
+    have hstep := sum_range_choose_mul_choose_succ (k + r) (N - (k + 1) - r) K
+      (r - 1) (by omega)
+    have heq : r - 1 + 1 = r := by omega
+    have hn : N - (k + 1) - r + 1 = N - k - r := by omega
+    rw [heq, hn, (choose_symm (by omega : r - 1 ≤ k + r)).symm] at hstep
+    have hi : k + r - (r - 1) = k + 1 := by omega
+    rw [hi] at hstep
+    rw [sum_range_succ]
+    have hm : k + 1 + r - 1 = k + r := by omega
+    have hsub : N - r - (k + 1) = N - (k + 1) - r := by omega
+    rw [hm, hsub]
+    have hadd : k + 1 + r = k + r + 1 := by omega
+    rw [hadd]
+    omega
 
 end Nat

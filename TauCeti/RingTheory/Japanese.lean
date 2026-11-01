@@ -303,7 +303,8 @@ theorem IsJapanese.of_isPurelyInseparable [IsDomain R] [IsNoetherianRing R] (K :
   have : Module.Finite R (integralClosure R E) := finite_integralClosure_of_isSeparable K M E
   -- Finiteness descends from `E` to `L` because `R` is Noetherian.
   exact TauCeti.IsIntegralClosure.finite_of_injective (C' := integralClosure R E)
-    ((IsScalarTower.toAlgHom K L E).restrictScalars R) (algebraMap L E).injective
+    (((IsScalarTower.toAlgHom K L E).restrictScalars R).comp (integralClosure R L).val)
+    ((algebraMap L E).injective.comp Subtype.val_injective)
 
 /-- A Noetherian domain is Japanese if and only if its integral closure in every finite purely
 inseparable extension of its fraction field is a finite module. Stacks, Lemma 10.161.12 (032N),

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Sphere.HemisphereGraph
-public import TauCeti.LowDimTopology.DehnSurgery.Filling
+public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
 public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
 
@@ -46,6 +46,8 @@ framing.
 * `TauCeti.framingNumber_unknotSolidTorus`: the standard solid torus neighbourhood of the unknot
   has framing number `0`.
 * `TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus`: its framing is the preferred framing.
+* `TauCeti.DehnFilling.nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude`: every filling
+  along the longitude with a matrix gluing is homeomorphic to `S¹ × S²`.
 
 ## References
 
@@ -216,5 +218,22 @@ theorem unknotZeroDehnFilling_gluing :
   (rfl)
 
 end ZeroSurgery
+
+namespace DehnFilling
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- **`0`-surgery on the unknot.** A Dehn filling of the exterior of the unknot along the longitude
+of its standard solid torus neighbourhood, the slope `0` in the preferred framing, whose gluing is
+induced by an invertible integral matrix, is homeomorphic to `S¹ × S²`. -/
+theorem nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude
+    (F : DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
+      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude Y)
+    {A : GL (Fin 2) ℤ} (hA : F.gluing = A.torusHomeomorph) :
+    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
+  F.nonempty_homeomorph_of_gluing_eq_torusHomeomorph unknotZeroDehnFilling hA
+    (by rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap])
+
+end DehnFilling
 
 end TauCeti

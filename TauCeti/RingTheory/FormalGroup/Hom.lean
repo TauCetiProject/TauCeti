@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Equiv
 public import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
 # Homomorphisms and isomorphisms of formal group laws
@@ -16,6 +18,12 @@ A homomorphism is a power series with zero constant term carrying one formal gro
 another. Composition is substitution. An isomorphism carries a specified inverse homomorphism;
 it is strict when its linear coefficient is one. These maps act on the native power-series
 points, including points with nilpotent, not necessarily zero, constant coefficient.
+
+Base change along a ring homomorphism `φ : R →+* S` applies `φ` to the coefficients of the
+series: `TauCeti.FormalGroupHom.map` and `TauCeti.FormalGroupIso.map` carry homomorphisms and
+isomorphisms between `F` and `G` to ones between `F.map φ` and `G.map φ`, compatibly with
+identities, composition, inverses and strictness. Base change along the identity ring
+homomorphism does nothing, and successive base changes agree with base change along the composite.
 
 The bundles `TauCeti.FormalGroupHom`, `TauCeti.FormalGroupIso`, and
 `TauCeti.FormalGroupIso.IsStrict` are adapted from Wenrong Zou's Mathlib PR #38213
@@ -45,6 +53,16 @@ structure FormalGroupHom (F G : FormalGroup R) where
     subst (fun i => toPowerSeries.toMvPowerSeries i) G.toPowerSeries
 
 namespace FormalGroupHom
+
+/-- Transport a homomorphism along an equality of source formal groups. -/
+def ofSourceEq {F' : FormalGroup R} (e : F = F') (f : FormalGroupHom F G) :
+    FormalGroupHom F' G := e ▸ f
+
+@[simp]
+theorem ofSourceEq_toPowerSeries {F' : FormalGroup R} (e : F = F')
+    (f : FormalGroupHom F G) : (ofSourceEq e f).toPowerSeries = f.toPowerSeries := by
+  subst F'
+  rfl
 
 /-- The series of a formal group homomorphism can be substituted. -/
 theorem hasSubst (f : FormalGroupHom F G) : PowerSeries.HasSubst f.toPowerSeries :=
@@ -277,6 +295,19 @@ theorem subst_toHom_invHom (f : FormalGroupIso F G) :
   have h := congrFun f.right_inv PowerSeries.X
   simpa [PowerSeries.subst_X f.invHom.hasSubst] using h
 
+/-- The linear coefficient of a formal group isomorphism is a unit. -/
+theorem isUnit_coeff_one (f : FormalGroupIso F G) :
+    IsUnit (PowerSeries.coeff 1 f.toHom.toPowerSeries) :=
+  PowerSeries.isUnit_coeff_one_of_subst_eq_X f.toHom.hasSubst f.subst_toHom_invHom
+
+/-- Over a nontrivial ring, the forward series of an isomorphism is nonzero: its linear
+coefficient is invertible. -/
+theorem toHom_toPowerSeries_ne_zero [Nontrivial R] (f : FormalGroupIso F G) :
+    f.toHom.toPowerSeries ≠ 0 := by
+  intro h0
+  have h := congrArg (PowerSeries.coeff 1) f.subst_invHom_toHom
+  simp [h0] at h
+
 /-- A formal group isomorphism is determined by its forward homomorphism. -/
 @[ext]
 theorem ext {f g : FormalGroupIso F G} (h : f.toHom = g.toHom) : f = g := by
@@ -437,5 +468,147 @@ theorem toAddEquiv_symm (f : FormalGroupIso F G) (σ : Type*) :
     f.symm.toAddEquiv σ = (f.toAddEquiv σ).symm := (rfl)
 
 end FormalGroupIso
+
+namespace FormalGroupHom
+
+/-- A homomorphism with invertible linear coefficient is a formal group isomorphism. -/
+noncomputable def toIso (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) : FormalGroupIso F G :=
+  .ofSubstEqX f
+    (f.ofInverse (f.toPowerSeries.substInvOfIsUnit hf)
+      (PowerSeries.constantCoeff_substInvOfIsUnit _ _)
+      (PowerSeries.subst_substInvOfIsUnit_right _ f.zero_constantCoeff _)
+      (PowerSeries.subst_substInvOfIsUnit_left _ f.zero_constantCoeff _))
+    (PowerSeries.subst_substInvOfIsUnit_right _ f.zero_constantCoeff _)
+    (PowerSeries.subst_substInvOfIsUnit_left _ f.zero_constantCoeff _)
+
+@[simp]
+theorem toIso_toHom (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) : (f.toIso hf).toHom = f := (rfl)
+
+@[simp]
+theorem toIso_invHom_toPowerSeries (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) :
+    (f.toIso hf).invHom.toPowerSeries = f.toPowerSeries.substInvOfIsUnit hf := (rfl)
+
+end FormalGroupHom
+
+/-! ### Base change -/
+
+section BaseChange
+
+variable {S : Type*} [CommRing S]
+
+namespace FormalGroupHom
+
+/-- The base change of a formal group homomorphism along a ring homomorphism `φ`: its series is
+obtained by applying `φ` to every coefficient, and it maps `F.map φ` to `G.map φ`. -/
+noncomputable def map (f : FormalGroupHom F G) (φ : R →+* S) :
+    FormalGroupHom (F.map φ) (G.map φ) where
+  toPowerSeries := f.toPowerSeries.map φ
+  zero_constantCoeff := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
+      PowerSeries.coeff_zero_eq_constantCoeff_apply, f.zero_constantCoeff, map_zero]
+  hom := by
+    have h := congrArg (MvPowerSeries.map φ) f.hom
+    rw [PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
+      MvPowerSeries.map_subst (.toMvPowerSeries f.zero_constantCoeff)] at h
+    simpa only [FormalGroup.map_toPowerSeries, PowerSeries.map_toMvPowerSeries] using h
+
+@[simp]
+theorem map_toPowerSeries (f : FormalGroupHom F G) (φ : R →+* S) :
+    (f.map φ).toPowerSeries = f.toPowerSeries.map φ := (rfl)
+
+/-- Base change sends the identity homomorphism to the identity homomorphism. -/
+@[simp]
+theorem map_id (φ : R →+* S) : (id F).map φ = id (F.map φ) := by
+  ext : 1
+  simp
+
+/-- Base change commutes with composition of homomorphisms. -/
+@[simp]
+theorem map_comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) (φ : R →+* S) :
+    (g.comp f).map φ = (g.map φ).comp (f.map φ) := by
+  ext : 1
+  -- `PowerSeries.map` is `MvPowerSeries.map` on the unit index type.
+  exact PowerSeries.map_subst f.hasSubst g.toPowerSeries
+
+/-- Base change along the identity ring homomorphism does nothing. The formal groups
+`F.map (RingHom.id R)` and `F` are definitionally equal, so no transport is needed. -/
+@[simp]
+theorem map_ringHomId (f : FormalGroupHom F G) :
+    (f.map (RingHom.id R) : FormalGroupHom F G) = f := (rfl)
+
+/-- Successive base changes agree with base change along the composite. The formal groups
+`(F.map φ).map ψ` and `F.map (ψ.comp φ)` are definitionally equal, so no transport is
+needed. -/
+@[simp]
+theorem map_map {T : Type*} [CommRing T] (f : FormalGroupHom F G) (φ : R →+* S) (ψ : S →+* T) :
+    ((f.map φ).map ψ : FormalGroupHom (F.map (ψ.comp φ)) (G.map (ψ.comp φ))) =
+      f.map (ψ.comp φ) := (rfl)
+
+end FormalGroupHom
+
+namespace FormalGroupIso
+
+/-- The base change of a formal group isomorphism along a ring homomorphism `φ`, with forward
+and inverse homomorphisms the base changes of those of `e`. -/
+noncomputable def map (e : FormalGroupIso F G) (φ : R →+* S) :
+    FormalGroupIso (F.map φ) (G.map φ) :=
+  .ofSubstEqX (e.toHom.map φ) (e.invHom.map φ)
+    -- `PowerSeries.map` is `MvPowerSeries.map` on the unit index type.
+    ((PowerSeries.map_subst e.invHom.hasSubst _).symm.trans
+      (by rw [subst_invHom_toHom]; exact PowerSeries.map_X φ))
+    ((PowerSeries.map_subst e.toHom.hasSubst _).symm.trans
+      (by rw [subst_toHom_invHom]; exact PowerSeries.map_X φ))
+
+@[simp]
+theorem map_toHom (e : FormalGroupIso F G) (φ : R →+* S) : (e.map φ).toHom = e.toHom.map φ :=
+  (rfl)
+
+@[simp]
+theorem map_invHom (e : FormalGroupIso F G) (φ : R →+* S) :
+    (e.map φ).invHom = e.invHom.map φ := (rfl)
+
+/-- Base change sends the identity isomorphism to the identity isomorphism. -/
+@[simp]
+theorem map_refl (φ : R →+* S) : (refl F).map φ = refl (F.map φ) := by
+  ext : 1
+  simp
+
+/-- Base change commutes with reversing an isomorphism. -/
+@[simp]
+theorem map_symm (e : FormalGroupIso F G) (φ : R →+* S) : e.symm.map φ = (e.map φ).symm := by
+  ext : 1
+  simp
+
+/-- Base change commutes with composition of isomorphisms. -/
+@[simp]
+theorem map_trans (e : FormalGroupIso F G) (e' : FormalGroupIso G H) (φ : R →+* S) :
+    (e.trans e').map φ = (e.map φ).trans (e'.map φ) := by
+  ext : 1
+  simp
+
+/-- Base change along the identity ring homomorphism does nothing. The formal groups
+`F.map (RingHom.id R)` and `F` are definitionally equal, so no transport is needed. -/
+@[simp]
+theorem map_ringHomId (e : FormalGroupIso F G) :
+    (e.map (RingHom.id R) : FormalGroupIso F G) = e := (rfl)
+
+/-- Successive base changes agree with base change along the composite. The formal groups
+`(F.map φ).map ψ` and `F.map (ψ.comp φ)` are definitionally equal, so no transport is
+needed. -/
+@[simp]
+theorem map_map {T : Type*} [CommRing T] (e : FormalGroupIso F G) (φ : R →+* S) (ψ : S →+* T) :
+    ((e.map φ).map ψ : FormalGroupIso (F.map (ψ.comp φ)) (G.map (ψ.comp φ))) =
+      e.map (ψ.comp φ) := (rfl)
+
+/-- The base change of a strict isomorphism is strict. -/
+instance (e : FormalGroupIso F G) [e.IsStrict] (φ : R →+* S) : (e.map φ).IsStrict where
+  coeff_one := by simp [IsStrict.coeff_one (f := e)]
+
+end FormalGroupIso
+
+end BaseChange
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -16,7 +17,8 @@ import Mathlib.LinearAlgebra.Isomorphisms
 A smooth map pulls smooth forms back and commutes with the exterior derivative. Consequently it
 induces a contravariant map on the de Rham complex and on de Rham cohomology. The induced map sends
 the class of a closed form to the class of its pullback, preserves identity maps, and reverses
-composition.
+composition. In particular a diffeomorphism induces a linear equivalence on de Rham cohomology,
+`TauCeti.deRhamCohomology.equivOfDiffeomorph`.
 
 Pullback also defines a cochain map of de Rham complexes, `TauCeti.deRhamComplex.map`, which
 induces the map on cohomology (`TauCeti.deRhamComplex.homologyMap_map`). It is stated for
@@ -162,6 +164,32 @@ theorem map_comp (f : M → M') (g : M' → M'')
     closedForms.mpullback_comp (I := I) (I' := I') (I'' := I'')
       (M := M) (M' := M') (M'' := M'') f g hf hg k]
   rfl
+
+/-- A smooth diffeomorphism `Φ : M ≃ M'` induces a linear equivalence `H^k(M') ≃ H^k(M)` on de Rham
+cohomology: pullback along `Φ`, with inverse pullback along `Φ.symm`. -/
+def equivOfDiffeomorph (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ) :
+    deRhamCohomology I' M' k ≃ₗ[ℝ] deRhamCohomology I M k :=
+  LinearEquiv.ofLinearMap (map Φ Φ.contMDiff k) (map Φ.symm Φ.symm.contMDiff k)
+    (by
+      rw [← map_comp]
+      convert map_id (I := I) (M := M) k
+      exact funext Φ.symm_apply_apply)
+    (by
+      rw [← map_comp]
+      convert map_id (I := I') (M := M') k
+      exact funext Φ.apply_symm_apply)
+
+/-- The equivalence induced by a diffeomorphism is pullback along it. -/
+@[simp]
+theorem equivOfDiffeomorph_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ) (c : deRhamCohomology I' M' k) :
+    equivOfDiffeomorph Φ k c = map Φ Φ.contMDiff k c :=
+  (rfl)
+
+/-- The inverse of the equivalence induced by a diffeomorphism is pullback along its inverse. -/
+@[simp]
+theorem equivOfDiffeomorph_symm_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ) (c : deRhamCohomology I M k) :
+    (equivOfDiffeomorph Φ k).symm c = map Φ.symm Φ.symm.contMDiff k c :=
+  (rfl)
 
 end deRhamCohomology
 

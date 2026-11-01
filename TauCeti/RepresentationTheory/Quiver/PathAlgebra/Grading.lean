@@ -146,6 +146,16 @@ theorem mem_gradeBy_iff {m : M} {f : pathAlgebra k Q} :
   rw [gradeBy_eq_span_image_basis, Module.Basis.mem_span_image]
   exact ⟨fun h _ hx => h hx, fun h _ hx => h _ hx⟩
 
+/-- A nonzero element homogeneous for two arrow weights has a path carrying both weights. -/
+theorem exists_path_of_ne_zero_mem_gradeBy_inf {M' : Type*} [AddMonoid M']
+    {wt' : ∀ {a b : Q}, (a ⟶ b) → M'} {m : M} {n : M'} {f : pathAlgebra k Q}
+    (hf : f ≠ 0) (hmem : f ∈ gradeBy k wt m ⊓ gradeBy k wt' n) :
+    ∃ x : Quiver.TotalPath Q, x.2.2.addWeight wt = m ∧ x.2.2.addWeight wt' = n := by
+  classical
+  obtain ⟨x, hx⟩ := Finsupp.support_nonempty_iff.mpr
+    (fun h => hf ((pathAlgebraBasis k Q).repr.map_eq_zero_iff.mp h))
+  exact ⟨x, mem_gradeBy_iff.mp hmem.1 x hx, mem_gradeBy_iff.mp hmem.2 x hx⟩
+
 variable (wt) in
 /-- A basis path is homogeneous of its own weight. -/
 theorem ofPath_mem_gradeBy (x : Quiver.TotalPath Q) :

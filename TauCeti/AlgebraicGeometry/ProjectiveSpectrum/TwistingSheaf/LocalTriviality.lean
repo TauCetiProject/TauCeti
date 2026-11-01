@@ -83,6 +83,14 @@ theorem mul_chartGenerator_apply (m : ℤ) (x : U) :
   congr 1
   omega
 
+/-- The product of the standard basis sections of `𝒪(m)` and `𝒪(n)` is the standard basis
+section of `𝒪(m + n)`. -/
+@[simp]
+theorem mul_chartGenerator (m : ℤ) :
+    mul 𝒜 U m n (chartGenerator m f hf U hU) (chartGenerator n f hf U hU) =
+      chartGenerator (m + n) f hf U hU :=
+  ext fun x ↦ mul_chartGenerator_apply n f hf U hU m x
+
 /-- The standard basis sections in opposite degrees multiply to one in each localization. -/
 theorem chartGenerator_apply_mul_chartGenerator_neg_apply (x : U) :
     (chartGenerator n f hf U hU).1 x * (chartGenerator (-n) f hf U hU).1 x = 1 := by

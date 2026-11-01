@@ -149,25 +149,12 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 namespace PairOfDefinition
 
-variable [IsTopologicalRing A]
-
 /-! ### Enlarging the ideal of definition -/
 
-/-- If `x ^ k ∈ I ^ n` then `(I ⊔ span {x}) ^ (n + k) ≤ I ^ n`: Mathlib's binomial bound splits the
-product into `I ^ n ⊔ span {x} ^ k`, and the second summand is `span {x ^ k}`, which `h` places
-inside `I ^ n`.
-
-Kept private: it is a general fact about ideals with no other consumer here, and Mathlib's
-`Ideal.sup_pow_add_le_pow_sup_pow` already does the binomial step. -/
-private theorem sup_span_singleton_pow_le {R : Type*} [CommRing R] (I : Ideal R) (x : R) (n k : ℕ)
-    (h : x ^ k ∈ I ^ n) : (I ⊔ Ideal.span {x}) ^ (n + k) ≤ I ^ n := by
-  refine Ideal.sup_pow_add_le_pow_sup_pow.trans (sup_le le_rfl ?_)
-  rw [Ideal.span_singleton_pow, Ideal.span_le, Set.singleton_subset_iff]
-  exact h
-
 /-- **Adjoining a topologically nilpotent element to the ideal of definition.** The ring of
-definition is unchanged and the ideal becomes `I ⊔ span {y}`. -/
-noncomputable def enlargeIdeal (Q : PairOfDefinition A) {y : Q.ringOfDefinition}
+definition is unchanged and the ideal becomes `I ⊔ span {y}`. This construction needs no continuity
+assumptions on the ambient ring: the adic topology of the ring of definition suffices. -/
+def enlargeIdeal (Q : PairOfDefinition A) {y : Q.ringOfDefinition}
     (hy : IsTopologicallyNilpotent y) : PairOfDefinition A where
   ringOfDefinition := Q.ringOfDefinition
   isOpen_ringOfDefinition := Q.isOpen_ringOfDefinition
@@ -175,15 +162,13 @@ noncomputable def enlargeIdeal (Q : PairOfDefinition A) {y : Q.ringOfDefinition}
   fg_idealOfDefinition := Submodule.FG.sup Q.fg_idealOfDefinition
     (by simpa [Ideal.span] using Submodule.fg_span_singleton y)
   isAdic_idealOfDefinition := by
-    obtain ⟨hopen, hnhd⟩ := isAdic_iff.mp Q.isAdic_idealOfDefinition
-    have hle : ∀ n : ℕ, (Q.idealOfDefinition ^ n : Ideal Q.ringOfDefinition)
-        ≤ (Q.idealOfDefinition ⊔ Ideal.span {y}) ^ n :=
-      fun n ↦ pow_le_pow_left' le_sup_left n
-    refine isAdic_iff.mpr ⟨fun n ↦ Ideal.isOpen_of_isOpen_subideal (hle n) (hopen n), fun s hs ↦ ?_⟩
-    obtain ⟨n, hn⟩ := hnhd s hs
-    obtain ⟨k, hk⟩ := hy.exists_pow_mem_of_mem_nhds ((hopen n).mem_nhds (Ideal.zero_mem _))
-    exact ⟨n + k,
-      (SetLike.coe_subset_coe.mpr (sup_span_singleton_pow_le _ _ _ _ hk)).trans hn⟩
+    apply Q.isAdic_idealOfDefinition.of_radical_eq Q.fg_idealOfDefinition
+      (Submodule.FG.sup Q.fg_idealOfDefinition
+        (by simpa [Ideal.span] using Submodule.fg_span_singleton y))
+    apply le_antisymm (Ideal.radical_mono le_sup_left)
+    apply Ideal.radical_le_radical_iff.mpr
+    exact sup_le Ideal.le_radical ((Ideal.span_singleton_le_iff_mem _).mpr
+      (Q.isAdic_idealOfDefinition.isTopologicallyNilpotent_iff_mem_radical.mp hy))
 
 /-- The ring of definition is unchanged by `enlargeIdeal`. -/
 @[simp]
@@ -219,6 +204,8 @@ theorem mem_enlargeIdeal_idealOfDefinition (Q : PairOfDefinition A) {y : Q.ringO
       (Q.enlargeIdeal hy).idealOfDefinition := by
   rw [Q.enlargeIdeal_idealOfDefinition hy]
   exact Ideal.mem_sup_right (Ideal.mem_span_singleton_self y)
+
+variable [IsTopologicalRing A]
 
 /-- Every power of the ideal of definition, carried into a larger subring `B`, is open in `B`.
 
@@ -332,16 +319,8 @@ theorem le_adjoin (P : PairOfDefinition A) (T : Finset A)
 theorem adjoin_idealOfDefinition (P : PairOfDefinition A) (T : Finset A)
     (hT : ∀ t ∈ T, IsPowerBounded t) :
     (P.adjoin T hT).idealOfDefinition =
-      P.idealOfDefinition.map (Subring.inclusion (P.le_adjoin T hT)) := by
-  have hadjoin_ideal : (P.adjoin T hT).idealOfDefinition =
-      P.idealOfDefinition.map (Subring.inclusion (P.le_adjoinRing T)) := rfl
-  have hinclusion : Subring.inclusion (P.le_adjoinRing T) =
-      Subring.inclusion (P.le_adjoin T hT) := by
-    apply RingHom.ext
-    intro x
-    apply Subtype.ext
-    rfl
-  exact hadjoin_ideal.trans (congrArg (fun f ↦ P.idealOfDefinition.map f) hinclusion)
+      P.idealOfDefinition.map (Subring.inclusion (P.le_adjoin T hT)) :=
+  P.enlarge_idealOfDefinition _ _ _
 
 /-- Every adjoined element belongs to the enlarged ring of definition. -/
 theorem mem_adjoin_of_mem (P : PairOfDefinition A) (T : Finset A)
@@ -695,25 +674,35 @@ theorem exists_pairOfDefinition_ringOfDefinition_le {C : Subring A} (hC : IsOpen
   exact ⟨Q, hQ ▸ inf_le_right⟩
 
 /-- **Wedhorn Corollary 6.4(4).** A bounded subring `B` contained in an open subring `C` is
-contained in a ring of definition which is itself contained in `C`: the candidate is
-`(A₀ ⊓ C) ⊔ B`, open because it contains the open `A₀ ⊓ C` and bounded as a join of two bounded
-subrings. -/
+contained in a ring of definition which is itself contained in `C`. -/
 theorem exists_pairOfDefinition_le_le {B C : Subring A} (hB : IsBounded (B : Set A))
     (hC : IsOpen (C : Set A)) (hBC : B ≤ C) :
     ∃ Q : PairOfDefinition A, B ≤ Q.ringOfDefinition ∧ Q.ringOfDefinition ≤ C := by
-  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
-  have hinf : IsOpen ((P.ringOfDefinition ⊓ C : Subring A) : Set A) := by
-    rw [Subring.coe_inf]
-    exact P.isOpen_ringOfDefinition.inter hC
-  obtain ⟨Q, hQ⟩ := exists_pairOfDefinition_ringOfDefinition_eq
-    ((P.ringOfDefinition ⊓ C) ⊔ B)
-    (AddSubgroup.isOpen_of_mem_nhds (g := 0)
-      (P.ringOfDefinition ⊓ C ⊔ B : Subring A).toAddSubgroup
-      (mem_of_superset (hinf.mem_nhds (by simp))
-      (SetLike.coe_subset_coe.mpr _root_.le_sup_left)))
-    (isBounded_sup _ _ (P.isBounded_ringOfDefinition.subset
-      (by rw [Subring.coe_inf]; exact Set.inter_subset_left)) hB)
-  exact ⟨Q, hQ ▸ _root_.le_sup_right, hQ ▸ sup_le inf_le_right hBC⟩
+  obtain ⟨P, hP⟩ := exists_pairOfDefinition_ringOfDefinition_le hC
+  refine ⟨P.enlargeSup B hB, P.le_enlargeSup_right B hB, ?_⟩
+  rw [P.enlargeSup_ringOfDefinition]
+  exact sup_le hP hBC
+
+/-- Finitely many power-bounded elements of an open subring lie in a single ring of definition
+contained in that subring. This allows finite power-bounded algebraic data to be treated inside
+an adic ring. -/
+theorem exists_pairOfDefinition_finset_subset {B : Subring A}
+    (hopen : IsOpen (B : Set A)) (s : Finset B) (hs : ∀ x ∈ s, IsPowerBounded (x : A)) :
+    ∃ P : PairOfDefinition A, P.ringOfDefinition ≤ B ∧
+      ∀ x ∈ s, (x : A) ∈ P.ringOfDefinition := by
+  classical
+  let t := s.image (fun x : B ↦ (x : A))
+  have ht : ∀ x ∈ t, IsPowerBounded x := by
+    intro x hx
+    obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
+    exact hs y hy
+  obtain ⟨P, hP, hPB⟩ := exists_pairOfDefinition_le_le
+    (isBounded_subringClosure t.finite_toSet ht) hopen
+    (Subring.closure_le.mpr (by
+      intro x hx
+      obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp hx
+      exact y.property))
+  exact ⟨P, hPB, fun x hx ↦ hP (Subring.subset_closure (Finset.mem_image_of_mem _ hx))⟩
 
 /-- **Wedhorn Corollary 6.4(5).** A Huber ring is adic — the whole ring is a ring of definition,
 so that its topology is the adic topology of a finitely generated ideal — exactly when it is

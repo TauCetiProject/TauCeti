@@ -333,39 +333,17 @@ variable [CharP R 2]
 decompositions they count pair off by reordering or by recutting, and paired decompositions have
 the same weight. -/
 theorem sum_XHomotopyDecompositions_eq_zero (k : Fin n) {x z : GridState n} (hzx : z ≠ x) :
-    ∑ D ∈ G.XHomotopyDecompositions k x z, G.unblockedDecompositionWeight R D = 0 := by
-  classical
-  set S := G.XHomotopyDecompositions k x z
-  rw [← Finset.sum_filter_add_sum_filter_not S (fun D => D.HasDisjointSides)]
-  have hdisjoint : ∑ D ∈ S.filter (fun D => D.HasDisjointSides),
-      G.unblockedDecompositionWeight R D = 0 := by
-    refine Finset.sum_involution
-      (fun D hD => D.commute (Finset.mem_filter.mp hD).2) (fun D hD => ?_) (fun D hD _ => ?_)
-      (fun D hD => ?_) (fun D hD => ?_)
-    · rw [G.unblockedDecompositionWeight_commute R D]
-      exact CharTwo.add_self_eq_zero _
-    · exact D.commute_ne _
-    · exact Finset.mem_filter.mpr ⟨G.commute_mem_XHomotopyDecompositions _
-        (Finset.mem_filter.mp hD).1, D.hasDisjointSides_commute _⟩
-    · exact D.commute_commute _
-  have hone : ∀ D ∈ S.filter (fun D => ¬D.HasDisjointSides), D.HasOneCommonSide := fun D hD =>
-    (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left (Finset.mem_filter.mp hD).2
-  have hempty : ∀ D ∈ S.filter (fun D => ¬D.HasDisjointSides),
-      D.first.IsEmpty ∧ D.second.IsEmpty := fun D hD =>
-    G.isEmpty_of_mem_XHomotopyDecompositions (Finset.mem_filter.mp hD).1
-  have hcommon : ∑ D ∈ S.filter (fun D => ¬D.HasDisjointSides),
-      G.unblockedDecompositionWeight R D = 0 := by
-    refine Finset.sum_involution
-      (fun D hD => D.recut (hone D hD) (hempty D hD).1 (hempty D hD).2) (fun D hD => ?_)
-      (fun D hD _ => ?_) (fun D hD => ?_) (fun D hD => ?_)
-    · rw [G.unblockedDecompositionWeight_recut R D]
-      exact CharTwo.add_self_eq_zero _
-    · exact D.recut_ne _ _ _
-    · exact Finset.mem_filter.mpr ⟨G.recut_mem_XHomotopyDecompositions _ _ _
-        (Finset.mem_filter.mp hD).1,
-        not_hasDisjointSides_of_hasOneCommonSide _ (D.hasOneCommonSide_recut _ _ _)⟩
-    · exact D.recut_recut _ _ _
-  rw [hdisjoint, hcommon, add_zero]
+    ∑ D ∈ G.XHomotopyDecompositions k x z, G.unblockedDecompositionWeight R D = 0 :=
+  GridRectangleDecomposition.sum_eq_zero_of_pairing hzx
+    (fun _ hD => G.isEmpty_of_mem_XHomotopyDecompositions hD)
+    (fun _ hD h => G.commute_mem_XHomotopyDecompositions h hD)
+    (fun _ hD hone hfirst hsecond => G.recut_mem_XHomotopyDecompositions hone hfirst hsecond hD) _
+    (fun D _ h => by
+      rw [G.unblockedDecompositionWeight_commute R D]
+      exact CharTwo.add_self_eq_zero _)
+    (fun D _ hone hfirst hsecond => by
+      rw [G.unblockedDecompositionWeight_recut R D]
+      exact CharTwo.add_self_eq_zero _)
 
 end GridDiagram
 

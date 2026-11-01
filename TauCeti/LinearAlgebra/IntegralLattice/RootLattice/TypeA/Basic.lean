@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
@@ -83,6 +84,10 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.discriminantPairing_zsmul_typeAFundamentalWeightClass`: the pairing on
   every pair of multiples of `ω₁`.
 * `TauCeti.IntegralLattice.typeAStandardQuadraticModule`: the cyclic model on `ℤ/(n+1)`.
+* `TauCeti.IntegralLattice.typeAOneZModStandardIsometry`: the identity comparison between the
+  `A₁` alphabet and the standard binary quadratic alphabet.
+* `TauCeti.IntegralLattice.typeAStandardQuadraticModule_one_quadratic`: the `A₁` quadratic value
+  on each binary residue.
 * `TauCeti.IntegralLattice.typeADiscriminantQuadraticIsometry`: the model is the discriminant
   quadratic module of the `Aₙ` root lattice.
 * `TauCeti.IntegralLattice.isNondegenerate_typeAStandardQuadraticModule`: the model is
@@ -557,6 +562,50 @@ theorem typeAStandardQuadraticModule_pairing_intCast (j k : ℤ) :
   rw [zsmul_eq_mul]
   push_cast
   field_simp
+
+/-- The standard `A₁` discriminant module is the binary standard quadratic alphabet, by the
+identity on its carrier `ZMod 2`. Both use the half-norm convention `q(a) = a² / 4`. -/
+noncomputable def typeAOneZModStandardIsometry :
+    FiniteQuadraticModule.Isometry (typeAStandardQuadraticModule 1)
+      (FiniteQuadraticModule.zmodStandard 2 even_two) where
+  toLinearEquiv := LinearEquiv.refl ℤ (ZMod 2)
+  map_app' a := by
+    -- Name the residue carrier explicitly before using its canonical integer representative.
+    change ZMod 2 at a
+    change (FiniteQuadraticModule.zmodStandard 2 even_two).quadratic a =
+      (typeAStandardQuadraticModule 1).quadratic a
+    have ha : (((a.val : ℤ) : ZMod 2)) = a := by
+      exact_mod_cast ZMod.natCast_rightInverse a
+    conv_lhs => rw [← ha]
+    conv_rhs => rw [← ha]
+    rw [FiniteQuadraticModule.zmodStandard_quadratic,
+      FiniteQuadraticModule.zmodStandardMap_intCast,
+      typeAStandardQuadraticModule_quadratic_intCast]
+    congr 1
+    norm_num [pow_two]
+
+/-- The binary comparison preserves the residue label. -/
+@[simp] theorem typeAOneZModStandardIsometry_apply (a : ZMod 2) :
+    typeAOneZModStandardIsometry a = a := by rfl
+
+/-- The inverse binary comparison preserves the residue label. -/
+@[simp] theorem typeAOneZModStandardIsometry_symm_apply (a : ZMod 2) :
+    typeAOneZModStandardIsometry.symm a = a := by rfl
+
+/-- The additive equivalence underlying the binary comparison is the identity. -/
+theorem typeAOneZModStandardIsometry_toAddEquiv :
+    typeAOneZModStandardIsometry.toAddEquiv = AddEquiv.refl (ZMod 2) := by rfl
+
+/-- In the standard `A₁` discriminant alphabet, a residue has quadratic value one quarter of
+its canonical representative. -/
+theorem typeAStandardQuadraticModule_one_quadratic (a : ZMod 2) :
+    (typeAStandardQuadraticModule 1).quadratic a =
+      (((a.val : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) := by
+  rw [← typeAOneZModStandardIsometry.map_app a,
+    typeAOneZModStandardIsometry_apply, FiniteQuadraticModule.zmodStandard_quadratic,
+    FiniteQuadraticModule.zmodStandardMap_val]
+  have hlt : a.val < 2 := a.isLt
+  interval_cases hval : a.val <;> norm_num
 
 /-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
 and `1/3` at either nonzero symbol. -/

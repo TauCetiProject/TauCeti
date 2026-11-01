@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Basis.Root
 public import TauCeti.Algebra.Octonion.Serre
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
-import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
+import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
 import TauCeti.Algebra.Lie.Weights.Eigenvector
 
 /-!
@@ -207,60 +207,62 @@ end Basis
 
 section Simple
 
-variable {K : Type*} [Field K]
+section CommRing
+
+variable {R : Type*} [CommRing R]
 
 /-- The `i`-th upper entry of the value of a derivation at a fixed octonion `y`, as a linear
 functional on `Der 𝕆`. -/
-private def coordV (y : Octonion K) (i : Fin 3) :
-    derivationLieAlgebra K (Octonion K) →ₗ[K] K where
-  toFun D := ((D : Module.End K (Octonion K)) y).v i
+private def coordV (y : Octonion R) (i : Fin 3) :
+    derivationLieAlgebra R (Octonion R) →ₗ[R] R where
+  toFun D := ((D : Module.End R (Octonion R)) y).v i
   map_add' D D' := by simp
   map_smul' c D := by simp
 
 /-- The `i`-th lower entry of the value of a derivation at a fixed octonion `y`, as a linear
 functional on `Der 𝕆`. -/
-private def coordW (y : Octonion K) (i : Fin 3) :
-    derivationLieAlgebra K (Octonion K) →ₗ[K] K where
-  toFun D := ((D : Module.End K (Octonion K)) y).w i
+private def coordW (y : Octonion R) (i : Fin 3) :
+    derivationLieAlgebra R (Octonion R) →ₗ[R] R where
+  toFun D := ((D : Module.End R (Octonion R)) y).w i
   map_add' D D' := by simp
   map_smul' c D := by simp
 
-@[simp] private theorem coordV_apply (y : Octonion K) (i : Fin 3)
-    (D : derivationLieAlgebra K (Octonion K)) :
-    coordV y i D = ((D : Module.End K (Octonion K)) y).v i := (rfl)
+@[simp] private theorem coordV_apply (y : Octonion R) (i : Fin 3)
+    (D : derivationLieAlgebra R (Octonion R)) :
+    coordV y i D = ((D : Module.End R (Octonion R)) y).v i := (rfl)
 
-@[simp] private theorem coordW_apply (y : Octonion K) (i : Fin 3)
-    (D : derivationLieAlgebra K (Octonion K)) :
-    coordW y i D = ((D : Module.End K (Octonion K)) y).w i := (rfl)
+@[simp] private theorem coordW_apply (y : Octonion R) (i : Fin 3)
+    (D : derivationLieAlgebra R (Octonion R)) :
+    coordW y i D = ((D : Module.End R (Octonion R)) y).w i := (rfl)
 
 /-- A special linear derivation kills the diagonal idempotent `⟨1, 0, 0, 0⟩`. -/
-private theorem slDerivation_apply_one (N : sl (Fin 3) K) :
-    (slDerivation N : Module.End K (Octonion K)) ⟨1, 0, 0, 0⟩ = 0 :=
+private theorem slDerivation_apply_diagonal_idempotent (N : sl (Fin 3) R) :
+    (slDerivation N : Module.End R (Octonion R)) ⟨1, 0, 0, 0⟩ = 0 :=
   Octonion.ext (by simp) (by simp) (by simp) (by simp)
 
-variable {N : sl (Fin 3) K} {d : Fin 3 → K}
+variable {N : sl (Fin 3) R} {d : Fin 3 → R}
 
 /-- The upper parameter `uᵢ` of a derivation has weight `dᵢ` under the special linear derivation
 of `diag d`. -/
-private theorem coordV_one_lie (hN : (N : Matrix (Fin 3) (Fin 3) K) = diagonal d) (i : Fin 3)
-    (D : derivationLieAlgebra K (Octonion K)) :
+private theorem coordV_one_lie (hN : (N : Matrix (Fin 3) (Fin 3) R) = diagonal d) (i : Fin 3)
+    (D : derivationLieAlgebra R (Octonion R)) :
     coordV ⟨1, 0, 0, 0⟩ i ⁅slDerivation N, D⁆ = d i * coordV ⟨1, 0, 0, 0⟩ i D := by
-  simp [slDerivation_apply_one, hN, mulVec_diagonal]
+  simp [slDerivation_apply_diagonal_idempotent, hN, mulVec_diagonal]
 
 /-- The lower parameter `tᵢ` of a derivation has weight `-dᵢ` under the special linear derivation
 of `diag d`. -/
-private theorem coordW_one_lie (hN : (N : Matrix (Fin 3) (Fin 3) K) = diagonal d) (i : Fin 3)
-    (D : derivationLieAlgebra K (Octonion K)) :
+private theorem coordW_one_lie (hN : (N : Matrix (Fin 3) (Fin 3) R) = diagonal d) (i : Fin 3)
+    (D : derivationLieAlgebra R (Octonion R)) :
     coordW ⟨1, 0, 0, 0⟩ i ⁅slDerivation N, D⁆ = -d i * coordW ⟨1, 0, 0, 0⟩ i D := by
-  simp [slDerivation_apply_one, hN, mulVec_diagonal]
+  simp [slDerivation_apply_diagonal_idempotent, hN, mulVec_diagonal]
 
 /-- The `(i, j)` entry of the `𝔰𝔩₃` parameter of a derivation has weight `dᵢ - dⱼ` under the
 special linear derivation of `diag d`. -/
-private theorem coordV_single_lie (hN : (N : Matrix (Fin 3) (Fin 3) K) = diagonal d)
-    (i j : Fin 3) (D : derivationLieAlgebra K (Octonion K)) :
+private theorem coordV_single_lie (hN : (N : Matrix (Fin 3) (Fin 3) R) = diagonal d)
+    (i j : Fin 3) (D : derivationLieAlgebra R (Octonion R)) :
     coordV ⟨0, 0, Pi.single j 1, 0⟩ i ⁅slDerivation N, D⁆ =
       (d i - d j) * coordV ⟨0, 0, Pi.single j 1, 0⟩ i D := by
-  have h : (slDerivation N : Module.End K (Octonion K)) ⟨0, 0, Pi.single j 1, 0⟩ =
+  have h : (slDerivation N : Module.End R (Octonion R)) ⟨0, 0, Pi.single j 1, 0⟩ =
       d j • ⟨0, 0, Pi.single j 1, 0⟩ :=
     Octonion.ext (by simp) (by simp) (by simp [hN, ← Pi.single_smul]) (by simp)
   simp [h, hN, mulVec_diagonal]
@@ -269,8 +271,8 @@ private theorem coordV_single_lie (hN : (N : Matrix (Fin 3) (Fin 3) K) = diagona
 /-- The Cartan generators of `Der 𝕆` are special linear derivations of diagonal matrices, namely
 of `diag(-1, 2, -1)` and `diag(1, -1, 0)`. -/
 private theorem exists_cartanDerivation_eq (k : Fin 2) :
-    ∃ (N : sl (Fin 3) K) (d : Fin 3 → K), cartanDerivation k = slDerivation N ∧
-      (N : Matrix (Fin 3) (Fin 3) K) = diagonal d := by
+    ∃ (N : sl (Fin 3) R) (d : Fin 3 → R), cartanDerivation k = slDerivation N ∧
+      (N : Matrix (Fin 3) (Fin 3) R) = diagonal d := by
   fin_cases k
   · refine ⟨_, ![-1, 2, -1], cartanDerivation_zero, ?_⟩
     ext i j
@@ -279,57 +281,53 @@ private theorem exists_cartanDerivation_eq (k : Fin 2) :
     ext i j
     fin_cases i <;> fin_cases j <;> norm_num [diagonal, single_apply]
 
-attribute [local instance 100] LieRing.ofAssociativeRing in
-/-- The matrix unit `Eⱼᵢ` has weight `dⱼ - dᵢ` under `diag d`, in `𝔰𝔩₃`. -/
-private theorem lie_single_of_eq_diagonal (hN : (N : Matrix (Fin 3) (Fin 3) K) = diagonal d)
-    {i j : Fin 3} (hji : j ≠ i) :
-    ⁅N, single j i hji (1 : K)⁆ = (d j - d i) • single j i hji 1 := by
-  ext : 1
-  rw [LieSubalgebra.coe_bracket, hN, val_single, SetLike.val_smul, val_single,
-    lie_single_of_mem_diagonalCartan (diagonal_mem_diagonalCartan d), diagonal_apply_eq,
-    diagonal_apply_eq]
-
-local notation "𝔥" => cartanSubalgebra K
+local notation "𝔥" => cartanSubalgebra R
 
 /-- The Cartan generator `Hₖ` as an element of the Cartan subalgebra. -/
 private def cartanElement (k : Fin 2) : 𝔥 :=
   ⟨cartanDerivation k, cartanDerivation_mem_cartanSubalgebra k⟩
 
 @[simp] private theorem coe_cartanElement (k : Fin 2) :
-    ((cartanElement (K := K) k : 𝔥) : derivationLieAlgebra K (Octonion K)) = cartanDerivation k :=
+    ((cartanElement (R := R) k : 𝔥) : derivationLieAlgebra R (Octonion R)) = cartanDerivation k :=
   (rfl)
 
 /-- Every element of the Cartan subalgebra is a combination of the two Cartan generators. -/
 private theorem exists_eq_sum_cartanElement (h : 𝔥) :
-    ∃ c : Fin 2 → K, h = ∑ k, c k • cartanElement k := by
+    ∃ c : Fin 2 → R, h = ∑ k, c k • cartanElement k := by
   obtain ⟨c, hc⟩ := exists_sum_cartanDerivation_eq h.2
   exact ⟨c, Subtype.ext (by rw [← hc]; simp)⟩
 
-/-- A generalized weight vector `x` of weight `χ` on which a linear functional `φ` does not vanish
-has `χ (Hₖ) = c`, if `φ` scales by `c` under the special linear derivation `Hₖ`. -/
-private theorem apply_cartanElement_eq {χ : 𝔥 → K} {x : derivationLieAlgebra K (Octonion K)}
-    (hx : x ∈ genWeightSpace (derivationLieAlgebra K (Octonion K)) χ) {k : Fin 2}
-    {N : sl (Fin 3) K} (hk : cartanDerivation k = slDerivation N)
-    {φ : derivationLieAlgebra K (Octonion K) →ₗ[K] K} {c : K}
-    (hφ : ∀ D, φ ⁅slDerivation N, D⁆ = c * φ D) (hx0 : φ x ≠ 0) : χ (cartanElement k) = c :=
-  apply_eq_of_mem_genWeightSpace hx _ φ (fun D => by
-    rw [LieSubalgebra.coe_bracket_of_module, coe_cartanElement, hk]
-    exact hφ D) hx0
-
-/-- A vector on which each Cartan generator acts by minus the value of a weight `χ` lies in the
+/-- A vector on which each Cartan generator acts by minus a linear functional `χ` lies in the
 generalized weight space of `-χ`. -/
 private theorem mem_genWeightSpace_neg
-    {χ : Weight K 𝔥 (derivationLieAlgebra K (Octonion K))}
-    {y : derivationLieAlgebra K (Octonion K)}
-    (hy : ∀ k, ⁅cartanDerivation (R := K) k, y⁆ = -χ (cartanElement k) • y) :
-    y ∈ genWeightSpace (derivationLieAlgebra K (Octonion K)) (-⇑χ) := by
+    {χ : Module.Dual R 𝔥}
+    {y : derivationLieAlgebra R (Octonion R)}
+    (hy : ∀ k, ⁅cartanDerivation (R := R) k, y⁆ = -χ (cartanElement k) • y) :
+    y ∈ genWeightSpace (derivationLieAlgebra R (Octonion R)) (-⇑χ) := by
   refine mem_genWeightSpace_of_forall_lie_eq_smul fun h => ?_
   obtain ⟨c, rfl⟩ := exists_eq_sum_cartanElement h
   simp only [Fin.sum_univ_two, AddMemClass.coe_add, SetLike.val_smul, coe_cartanElement, add_lie,
     smul_lie, hy, Pi.neg_apply, map_add, map_smul, smul_eq_mul]
   module
 
-variable [CharZero K]
+variable [IsDomain R]
+
+/-- A generalized weight vector `x` of weight `χ` on which a linear functional `φ` does not vanish
+has `χ (Hₖ) = c`, if `φ` scales by `c` under the special linear derivation `Hₖ`. -/
+private theorem apply_cartanElement_eq {χ : 𝔥 → R} {x : derivationLieAlgebra R (Octonion R)}
+    (hx : x ∈ genWeightSpace (derivationLieAlgebra R (Octonion R)) χ) {k : Fin 2}
+    {N : sl (Fin 3) R} (hk : cartanDerivation k = slDerivation N)
+    {φ : derivationLieAlgebra R (Octonion R) →ₗ[R] R} {c : R}
+    (hφ : ∀ D, φ ⁅slDerivation N, D⁆ = c * φ D) (hx0 : φ x ≠ 0) : χ (cartanElement k) = c :=
+  apply_eq_of_mem_genWeightSpace hx _ φ (fun D => by
+    rw [LieSubalgebra.coe_bracket_of_module, coe_cartanElement, hk]
+    exact hφ D) hx0
+
+end CommRing
+
+variable {K : Type*} [Field K] [CharZero K]
+
+local notation "𝔥" => cartanSubalgebra K
 
 variable (K) in
 /-- Over a field of characteristic zero, `TauCeti.Octonion.cartanSubalgebra` is a Cartan
@@ -357,14 +355,19 @@ private theorem eq_top_of_upperDerivation_mem {I : LieIdeal K (derivationLieAlge
   have hZ : slDerivation (slOfVectors (Pi.single i (1 : K)) (Pi.single i 1)) ∈ I := by
     rw [← lie_upperDerivation_lowerDerivation]
     exact lie_mem_left K _ I _ _ hi
+  have hdiag : (slOfVectors (Pi.single i (1 : K)) (Pi.single i 1) :
+      Matrix (Fin 3) (Fin 3) K) = diagonal (fun j => if j = i then (-2 : K) else 1) := by
+    ext j k
+    by_cases hji : j = i <;> by_cases hki : k = i <;> by_cases hjk : j = k <;>
+      simp_all [diagonal, vecMulVec_apply]
+    norm_num
   have hu : ∀ j, upperDerivation (Pi.single j (1 : K)) ∈ I := by
     intro j
     have h := lie_mem_left K _ I _ (upperDerivation (Pi.single j 1)) hZ
     have hv : (slOfVectors (Pi.single i (1 : K)) (Pi.single i 1) : Matrix (Fin 3) (Fin 3) K) *ᵥ
         Pi.single j 1 = (if j = i then (-2 : K) else 1) • Pi.single j 1 := by
-      ext l
-      fin_cases i <;> fin_cases j <;> fin_cases l <;>
-        norm_num [mulVec, dotProduct, Fin.sum_univ_three, vecMulVec_apply, Pi.single_apply]
+      rw [hdiag, diagonal_mulVec_single]
+      split_ifs <;> simp [← Pi.single_smul, Pi.single_neg]
     rw [lie_slDerivation_upperDerivation, hv, map_smul] at h
     exact (I.toSubmodule.smul_mem_iff (by split_ifs <;> norm_num)).mp h
   have hl : ∀ j, lowerDerivation (Pi.single j (1 : K)) ∈ I := by
@@ -373,9 +376,8 @@ private theorem eq_top_of_upperDerivation_mem {I : LieIdeal K (derivationLieAlge
     have hv : -((slOfVectors (Pi.single i (1 : K)) (Pi.single i 1) :
         Matrix (Fin 3) (Fin 3) K)ᵀ *ᵥ Pi.single j 1) =
           (if j = i then (2 : K) else -1) • Pi.single j 1 := by
-      ext l
-      fin_cases i <;> fin_cases j <;> fin_cases l <;>
-        norm_num [mulVec, dotProduct, Fin.sum_univ_three, vecMulVec_apply, Pi.single_apply]
+      rw [hdiag, diagonal_transpose, diagonal_mulVec_single]
+      split_ifs <;> simp [← Pi.single_smul, Pi.single_neg]
     rw [lie_slDerivation_lowerDerivation, hv, map_smul] at h
     exact (I.toSubmodule.smul_mem_iff (by split_ifs <;> norm_num)).mp h
   have htop := eq_top_of_upperDerivation_mem_of_lowerDerivation_mem
@@ -392,12 +394,9 @@ private theorem eq_top_of_slDerivation_mem {I : LieIdeal K (derivationLieAlgebra
   have h := lie_mem_left K _ I _ (upperDerivation (Pi.single i 1)) hN
   have hv : (N : Matrix (Fin 3) (Fin 3) K) *ᵥ Pi.single i 1 =
       (N : Matrix (Fin 3) (Fin 3) K) i i • Pi.single i 1 := by
-    ext l
-    rw [mulVec_single_one]
-    by_cases hl : l = i
-    · subst hl
-      simp
-    · simp [hl, hdiag hl]
+    simpa [diagonal_mulVec_single, ← Pi.single_smul] using
+      congrArg (fun A : Matrix (Fin 3) (Fin 3) K => A *ᵥ Pi.single i 1)
+        hdiag.diagonal_diag.symm
   rw [lie_slDerivation_upperDerivation, hv, map_smul] at h
   exact eq_top_of_upperDerivation_mem ((I.toSubmodule.smul_mem_iff hi).mp h)
 
@@ -434,10 +433,12 @@ private theorem eq_top_of_mem_genWeightSpace
   · -- A nonzero upper parameter `uᵢ`: bracket with the lower vector derivation of `eᵢ`.
     obtain ⟨i, hi⟩ := hu
     refine eq_top_of_lie_eq hxI hx (y := lowerDerivation (Pi.single i 1))
-      (mem_genWeightSpace_neg fun k => ?_) (i := i) (M := slOfVectors u (Pi.single i 1))
+      (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
+      (M := slOfVectors u (Pi.single i 1))
       (u := (2 : K) • (t ⨯₃ Pi.single i 1)) (t := -((M : Matrix (Fin 3) (Fin 3) K)ᵀ *ᵥ
         Pi.single i 1)) ?_ ?_
-    · obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (K := K) k
+    · simp only [Weight.toLinear_apply]
+      obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
       rw [apply_cartanElement_eq hx hk (coordV_one_lie hN i) (by simpa using hi), hk,
         lie_slDerivation_lowerDerivation, hN, diagonal_transpose, diagonal_mulVec_single,
         ← map_smul]
@@ -456,10 +457,12 @@ private theorem eq_top_of_mem_genWeightSpace
   · -- A nonzero lower parameter `tᵢ`: bracket with the upper vector derivation of `eᵢ`.
     obtain ⟨i, hi⟩ := ht
     refine eq_top_of_lie_eq hxI hx (y := upperDerivation (Pi.single i 1))
-      (mem_genWeightSpace_neg fun k => ?_) (i := i) (M := -slOfVectors (Pi.single i 1) t)
+      (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
+      (M := -slOfVectors (Pi.single i 1) t)
       (u := (M : Matrix (Fin 3) (Fin 3) K) *ᵥ Pi.single i 1)
       (t := (2 : K) • (u ⨯₃ Pi.single i 1)) ?_ ?_
-    · obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (K := K) k
+    · simp only [Weight.toLinear_apply]
+      obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
       rw [apply_cartanElement_eq hx hk (coordW_one_lie hN i) (by simpa using hi), hk,
         lie_slDerivation_upperDerivation, hN, diagonal_mulVec_single, neg_neg, ← map_smul]
       congr 1
@@ -478,12 +481,16 @@ private theorem eq_top_of_mem_genWeightSpace
   · -- A nonzero off-diagonal entry `Mᵢⱼ`: bracket with the special linear derivation of `Eⱼᵢ`.
     obtain ⟨i, j, hij, hi⟩ := hM
     refine eq_top_of_lie_eq hxI hx (y := slDerivation (single j i hij.symm 1))
-      (mem_genWeightSpace_neg fun k => ?_) (i := i) (M := ⁅M, single j i hij.symm 1⁆)
+      (mem_genWeightSpace_neg (χ := χ.toLinear) fun k => ?_) (i := i)
+      (M := ⁅M, single j i hij.symm 1⁆)
       (u := -((single j i hij.symm (1 : K) : Matrix (Fin 3) (Fin 3) K) *ᵥ u))
       (t := (single j i hij.symm (1 : K) : Matrix (Fin 3) (Fin 3) K)ᵀ *ᵥ t) ?_ ?_
-    · obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (K := K) k
+    · simp only [Weight.toLinear_apply]
+      obtain ⟨N, d, hk, hN⟩ := exists_cartanDerivation_eq (R := K) k
       rw [apply_cartanElement_eq hx hk (coordV_single_lie hN i j) (by simpa using hi), hk,
-        ← LieHom.map_lie, lie_single_of_eq_diagonal hN, map_smul, neg_sub]
+        ← LieHom.map_lie,
+        LieAlgebra.SpecialLinear.lie_single_of_isDiag (hN ▸ isDiag_diagonal d), map_smul, hN,
+        diagonal_apply_eq, diagonal_apply_eq, neg_sub]
     · simp [add_lie, ← lie_skew (upperDerivation _) (slDerivation _),
         ← lie_skew (lowerDerivation _) (slDerivation _), ← LieHom.map_lie]
     · simpa [Ring.lie_def, mul_apply, single_apply, hij.symm] using hi

@@ -19,14 +19,13 @@ the formal currents `R⸨X⸩ ⊗[R] L` with trivial coefficients. Since `[c_Φ]
 `TauCeti.CurrentAlgebra.invariantFormsResidueClass` on the submodule
 `TauCeti.LieModule.invariantForms R L L` of invariant symmetric forms.
 
-Over a characteristic-zero domain this map is injective for every Lie algebra `L`: a continuous
+Over every commutative ring this map is injective for every Lie algebra `L`: a continuous
 cohomology class determines the form whose residue cocycle represents it. When `L` is
 finite-dimensional with nondegenerate Killing form over a field of characteristic zero and the
-invariant forms are the multiples of one form `Ψ` which is nonzero on some bracket, the map is
-also surjective. For a simple Lie algebra over an algebraically closed field of characteristic
-zero, `Φ ↦ [c_Φ]` is therefore a linear equivalence from the invariant symmetric forms on `L` onto
-the continuous second cohomology of its formal loop algebra
-(`TauCeti.CurrentAlgebra.invariantFormsResidueClassEquiv`).
+invariant forms are the multiples of one form, the map is also surjective. For a simple Lie
+algebra over an algebraically closed field of characteristic zero, `Φ ↦ [c_Φ]` is therefore a
+linear equivalence from the invariant symmetric forms on `L` onto the continuous second cohomology
+of its formal loop algebra (`TauCeti.CurrentAlgebra.invariantFormsResidueClassEquiv`).
 
 The residue cocycle uses Mathlib's sign convention `Res(f dg) Φ(x, y)`. The affine cocycle
 `c_κ = -κ(x, y) Res(f dg)` of a level form `κ` is the residue cocycle of `Φ = -κ`, so the map
@@ -41,8 +40,8 @@ forms.
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.invariantFormsResidueClass_injective`: over a characteristic-zero
-  domain, distinct invariant symmetric forms have distinct residue classes.
+* `TauCeti.CurrentAlgebra.invariantFormsResidueClass_injective`: distinct invariant symmetric
+  forms have distinct residue classes.
 * `TauCeti.CurrentAlgebra.invariantFormsResidueClass_surjective`: every continuous class is the
   residue class of an invariant symmetric form.
 
@@ -83,9 +82,9 @@ theorem invariantFormsResidueClass_apply (Φ : invariantForms R L L) :
       residueClass R L Φ (mem_invariantForms_iff.mp Φ.2).1 (mem_invariantForms_iff.mp Φ.2).2 :=
   (rfl)
 
-/-- Over a characteristic-zero domain, the residue class map on invariant symmetric forms is
-injective. -/
-theorem invariantFormsResidueClass_injective [IsDomain R] [CharZero R] :
+/-- The residue class map on invariant symmetric forms is injective, over every commutative
+ring. -/
+theorem invariantFormsResidueClass_injective :
     Function.Injective (invariantFormsResidueClass R L) := fun _ _ h ↦
   Subtype.ext ((residueClass_inj _ _ _ _).mp h)
 
@@ -98,16 +97,30 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [Fini
 
 /-- **Every continuous class is a residue class.** Let `L` be a finite-dimensional Lie algebra with
 nondegenerate Killing form over a field of characteristic zero, whose invariant forms are the
-multiples of an invariant symmetric form `Ψ` which is nonzero on some bracket. Then every class in
-the continuous second cohomology of formal currents with trivial coefficients is the residue class
-of an invariant symmetric form. -/
+multiples of a single form `Ψ`. Then every class in the continuous second cohomology of formal
+currents with trivial coefficients is the residue class of an invariant symmetric form. -/
 theorem invariantFormsResidueClass_surjective {Ψ : LinearMap.BilinForm K L}
-    (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0) :
-    Function.Surjective (invariantFormsResidueClass K L) := fun a ↦ by
-  obtain ⟨t, rfl⟩ := exists_eq_smul_residueClass hΨ hΨs hspan hne a
-  exact ⟨t • ⟨Ψ, mem_invariantForms_iff.mpr ⟨hΨ, hΨs⟩⟩,
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ) :
+    Function.Surjective (invariantFormsResidueClass K L) := by
+  rcases subsingleton_or_nontrivial L with hL | hL
+  · exact fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
+  -- The Killing form is a multiple `t • Ψ` and nonzero on some bracket, so `t ≠ 0` and the
+  -- Killing form spans the invariant forms too.
+  have hκ := _root_.LieModule.traceForm_lieInvariant K L L
+  have hκs := LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L)
+  have hne := exists_killingForm_lie_ne_zero (K := K) (L := L)
+  obtain ⟨t, ht⟩ : ∃ t : K, killingForm K L = t • Ψ := hspan _ hκ
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    obtain ⟨x, y, z, h⟩ := hne
+    exact h (by rw [ht, zero_smul]; rfl)
+  have hspanκ (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) :
+      ∃ s : K, Φ = s • killingForm K L := by
+    obtain ⟨r, rfl⟩ := hspan Φ hΦ
+    exact ⟨r * t⁻¹, by rw [ht, smul_smul, mul_assoc, inv_mul_cancel₀ ht0, mul_one]⟩
+  intro a
+  obtain ⟨s, rfl⟩ := exists_eq_smul_residueClass hκ hκs hspanκ hne a
+  exact ⟨s • ⟨_, mem_invariantForms_iff.mpr ⟨hκ, hκs⟩⟩,
     by rw [map_smul, invariantFormsResidueClass_apply]⟩
 
 variable (K L) [IsAlgClosed K] [_root_.LieModule.IsIrreducible K L L]
@@ -120,13 +133,10 @@ continuous second cohomology of formal currents with trivial coefficients. -/
 def invariantFormsResidueClassEquiv :
     invariantForms K L L ≃ₗ[K] continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) K) :=
-  have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
   LinearEquiv.ofBijective (invariantFormsResidueClass K L)
     ⟨invariantFormsResidueClass_injective,
-      invariantFormsResidueClass_surjective (_root_.LieModule.traceForm_lieInvariant K L L)
-        (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))
-        (fun _ hΦ ↦ TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ)
-        exists_killingForm_lie_ne_zero⟩
+      invariantFormsResidueClass_surjective fun _ hΦ ↦
+        TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ⟩
 
 variable {K L}
 

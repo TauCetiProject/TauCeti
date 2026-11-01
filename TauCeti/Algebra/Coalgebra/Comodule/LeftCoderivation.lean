@@ -470,7 +470,7 @@ theorem IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_o
     (hrq : (((r * q).negOnePow : ℤ) : R) = -1) (hb2 : b ∘ₗ b = 0) :
     δ ∘ₗ (D ∘ₗ D) = (D ∘ₗ D).lTensor C ∘ₗ δ := by
   have hτb : G.koszulTwist r ∘ₗ b = (-1 : R) • (b ∘ₗ G.koszulTwist r) := by
-    rw [hb.koszulTwist_comp r, hrq]
+    simpa only [hrq] using hb.koszulTwist_comp_eq_smul r
   have h' : δ ∘ₗ D = (b.rTensor X + TensorProduct.map (G.koszulTwist r) D) ∘ₗ δ := by
     rw [h, LinearMap.add_comp]
   have hstep : (b.rTensor X + TensorProduct.map (G.koszulTwist r) D) ∘ₗ

@@ -55,23 +55,9 @@ noncomputable section
 generic point. -/
 private lemma eq_of_subset_compl_of_isGenericPoint [IrreducibleSpace X] {U : X.Opens} [Nonempty U]
     {T : Set X} (hTU : T ⊆ (U : Set X)ᶜ) {y : X} (hyGeneric : IsGenericPoint y T)
-    {x : CodimensionOnePoint X} (hxT : (x : X) ∈ T) : (x : X) = y := by
-  -- A strict specialisation from `x` would have coheight zero, hence be maximal, hence be the
-  -- generic point of `X` — which lies in `U`, contradicting `T ⊆ Uᶜ`.
-  by_contra hne
-  have hxylt : (x : X) < y := by
-    refine ⟨hyGeneric.specializes hxT, ?_⟩
-    intro hyx
-    exact hne (Inseparable.eq <| inseparable_iff_specializes_and.mpr
-      ⟨hyx, hyGeneric.specializes hxT⟩)
-  have hyMax : IsMax y :=
-    Order.coheight_eq_zero.mp <|
-      Order.lt_one_iff.mp <| (Order.coheight_eq_coe_iff.mp x.property).2.2 y hxylt
-  have hηU : genericPoint X ∈ U :=
-    (genericPoint_spec X).mem_open_set_iff U.isOpen |>.mpr <| by
-      obtain ⟨u⟩ := (inferInstance : Nonempty U)
-      exact ⟨u.1, Set.mem_univ _, u.property⟩
-  exact hTU hyGeneric.mem ((Scheme.eq_genericPoint_of_isMax hyMax).symm ▸ hηU)
+    {x : CodimensionOnePoint X} (hxT : (x : X) ∈ T) : (x : X) = y :=
+  (Scheme.eq_of_specializes_of_notMem (Set.nonempty_coe_sort.mp ‹Nonempty U›) x.property
+    (hyGeneric.specializes hxT) (hTU hyGeneric.mem)).symm
 
 /-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
 but finitely many codimension-one points. -/

@@ -149,7 +149,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have hq' : q' ≠ 1 := fun h ↦ hq1 (congrArg Subtype.val h)
   have : Fintype Q := Fintype.ofFinite Q
   rw [hg', LinearMap.trace_restrictScalars_smul_of_pow_eq_one S (MonoidAlgebra.lift A A Q 1) hm hS,
-    Algebra.trace_eq_matrix_trace (MonoidAlgebra.basis Q A), trace_leftMulMatrix_monoidAlgebra]
+    Algebra.trace_eq_matrix_trace (MonoidAlgebra.basis Q A), trace_leftMulMatrix]
   simp [hq'.symm]
 
 end TauCeti

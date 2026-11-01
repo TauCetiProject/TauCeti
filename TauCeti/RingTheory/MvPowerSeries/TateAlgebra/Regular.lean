@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.RingTheory.Ideal.MonicSpan
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
+import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
 # Tate algebras are regular at their maximal ideals
@@ -76,7 +77,7 @@ private theorem spanFinrank_le_natCard_option {σ : Type*} [Finite σ]
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
   let E : Tate (Option σ) ≃+* S :=
-    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Huber.restrictedOptionEquiv
+    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans restrictedOptionEquiv.toRingEquiv
   let g : S := E f
   rw [← Ideal.spanFinrank_map_eq_of_ringEquiv E M]
   set N : Ideal S := M.map E
@@ -140,13 +141,7 @@ instance isRegularLocalRing_localization_atPrime_of_isMaximal_isRestricted_subri
     [Finite σ] (M : Ideal (Tate σ)) [M.IsMaximal] :
     IsRegularLocalRing (Localization.AtPrime M) := by
   have : IsNoetherianRing (Tate σ) := isNoetherianRing_isRestricted_subring
-  apply IsRegularLocalRing.of_spanFinrank_maximalIdeal_le
-  rw [← Localization.AtPrime.map_eq_maximalIdeal,
-    IsLocalization.AtPrime.ringKrullDim_eq_height M (Localization.AtPrime M),
-    Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring]
-  have := Ideal.spanFinrank_map_le_of_fg (algebraMap (Tate σ) (Localization.AtPrime M))
-    (IsNoetherian.noetherian M)
-  rw [Ideal.spanFinrank_eq_natCard_of_isMaximal_isRestricted_subring] at this
-  exact_mod_cast this
+  apply M.isRegularLocalRing_localization_atPrime_of_spanFinrank_le_height
+  simp
 
 end TauCeti.MvPowerSeries

@@ -21,6 +21,8 @@ The generic restriction compatibility used to establish this result is provided 
 
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
   sheaf is invertible;
+* `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_forall_restrict`: a sheaf of modules
+  is invertible exactly when its restrictions to the members of an open cover are invertible;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback`: the pullback functor on line bundles.
 
 ## References
@@ -58,6 +60,32 @@ instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
         (Scheme.Modules.pullback (f ∣_ V i)).mapIso (e i).some ≪≫
         (Scheme.Modules.restrictPullbackObjIso f (V i) M).symm⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
+
+/-- **Invertibility is local**: a sheaf of modules on a scheme is invertible exactly when its
+restriction to every member of an open cover is invertible. -/
+theorem isInvertible_iff_forall_restrict (𝒰 : X.OpenCover) (M : X.Modules) :
+    isInvertible X M ↔ ∀ i, isInvertible (𝒰.X i) (M.restrict (𝒰.f i)) := by
+  refine ⟨fun _ i ↦ (isInvertible _).prop_of_iso
+    ((Scheme.Modules.restrictFunctorIsoPullback (𝒰.f i)).app M).symm inferInstance, fun h ↦ ?_⟩
+  -- Trivialize the restriction to each member `𝒰.X i` on an open cover `W i` of `𝒰.X i`, and
+  -- pick for every point of `X` a trivializing open `W i k` whose image contains it.
+  choose ι W hW e using fun i ↦ isInvertible_iff_exists_isOpenCover.mp (h i)
+  have hx (x : X) : ∃ i k, x ∈ 𝒰.f i ''ᵁ W i k := by
+    obtain ⟨i, y, rfl⟩ := 𝒰.exists_eq x
+    obtain ⟨k, hk⟩ := Opens.mem_iSup.mp ((hW i).iSup_eq_top.ge (Set.mem_univ y))
+    exact ⟨i, k, y, hk, rfl⟩
+  choose i k hk using hx
+  refine isInvertible_iff_exists_isOpenCover.mpr ⟨X, fun x ↦ 𝒰.f (i x) ''ᵁ W (i x) (k x),
+    IsOpenCover.mk (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hk x⟩), fun x ↦ ⟨?_⟩⟩
+  -- Transport the trivialization over `W i k` to its image along the isomorphism
+  -- `(𝒰.f i).isoImage (W i k)` of open subschemes.
+  set g := 𝒰.f (i x)
+  set V := W (i x) (k x)
+  exact (Scheme.Modules.restrictUnitIso (g.isoImage V).inv).symm ≪≫
+    (Scheme.Modules.restrictFunctor (g.isoImage V).inv).mapIso
+      ((e (i x) (k x)).some ≪≫ ((Scheme.Modules.restrictFunctorComp V.ι g).app M).symm) ≪≫
+    ((Scheme.Modules.restrictFunctorComp (g.isoImage V).inv (V.ι ≫ g)).app M).symm ≪≫
+    (Scheme.Modules.restrictFunctorCongr (g.isoImage_inv_ι V)).app M
 
 end SheafOfModules
 

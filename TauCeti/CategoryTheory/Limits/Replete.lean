@@ -1,0 +1,375 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.CategoryTheory.Abelian.Monomorphisms
+public import Mathlib.CategoryTheory.Filtered.Final
+public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
+public import Mathlib.CategoryTheory.Limits.Shapes.SequentialProduct
+public import Mathlib.CategoryTheory.Limits.Types.Images
+public import Mathlib.CategoryTheory.MorphismProperty.Limits
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Pi
+
+/-!
+# Replete categories
+
+A category is *replete* (Bhatt–Scholze) when sequential limits of epimorphisms are epimorphisms:
+for every tower `⋯ ⟶ F (n + 1) ⟶ F n ⟶ ⋯ ⟶ F 0` whose transition maps are epimorphisms, the
+projection `lim F ⟶ F 0` is an epimorphism. The category of types is replete. Repleteness is what
+makes inverse limits of sheaves behave like inverse limits of sets: on a replete topos, countable
+products are exact and derived limits of towers have amplitude `[0, 1]` (Bhatt–Scholze,
+Propositions 3.1.9 and 3.1.11).
+
+The main results here hold in a replete category in which epimorphisms are stable under base
+change. First, a morphism of towers `φ : F ⟶ G` induces an epimorphism `lim F ⟶ lim G` as soon as
+`F 0 ⟶ G 0` and every comparison map `F (n + 1) ⟶ F n ×_{G n} G (n + 1)` are epimorphisms
+(`TauCeti.IsReplete.epi_isLimitMap`). Levelwise epimorphisms do not suffice, already for sets.
+Second, a countable product of epimorphisms is an epimorphism (`TauCeti.IsReplete.epi_pi_map`), so
+countable products are exact in a replete abelian category (`TauCeti.IsReplete.countableAB4Star`).
+Light condensed sets and modules are replete, see `TauCeti.Condensed.Light.Replete`; sheaves with
+values in a concrete category over a replete topos form a replete category, see
+`TauCeti.CategoryTheory.Sites.Replete`.
+
+## Main declarations
+
+* `TauCeti.IsReplete`: replete categories.
+* `TauCeti.IsReplete.epi_π_app`: in a replete category, every projection of a sequential limit
+  of epimorphisms is an epimorphism.
+* `TauCeti.IsReplete.of_reflectsEpimorphisms`: repleteness descends along a functor that preserves
+  sequential limits and preserves and reflects epimorphisms.
+* `TauCeti.IsReplete.of_equivalence`: repleteness is invariant under equivalence of categories.
+* `TauCeti.IsReplete.epi_isLimitMap`: the induced map of limits of a morphism of towers whose
+  comparison maps are epimorphisms is an epimorphism.
+* `TauCeti.IsReplete.epi_pi_map`: a countable product of epimorphisms is an epimorphism.
+* `TauCeti.IsReplete.countableAB4Star`: a replete abelian category with countable products
+  satisfies `CountableAB4Star`.
+* `TauCeti.isReplete_type`: the category of types is replete.
+
+## Implementation notes
+
+`TauCeti.IsReplete.epi_isLimitMap` applies repleteness to the tower `lim G ×_{G n} F n`, whose
+transition maps are base changes of the comparison maps and whose limit is `lim F`.
+
+For `TauCeti.IsReplete.epi_pi_map` over `ℕ`, Mathlib's `CategoryTheory.Limits.SequentialProduct`
+exhibits `∏ X` as the limit of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose first projection
+is `∏ f`. Its transition maps apply one `f n` at a time, so they are base changes of the `f n`
+(`CategoryTheory.IsPullback.of_pi_map_of_isIso`), and repleteness applies. This generalizes
+Mathlib's proof that countable products of epimorphisms of light condensed modules are
+epimorphisms, in `Mathlib.Condensed.Light.Epi` (Dagur Asgeirsson), from light condensed modules to
+replete categories. A product over another nonempty countable type is a retract of a product over
+`ℕ`, by reindexing along a surjection.
+
+`TauCeti.IsReplete.countableAB4Star` likewise generalizes Mathlib's proof of `CountableAB4Star`
+for light condensed modules (`Mathlib.Condensed.Light.Epi` and `Mathlib.Condensed.Light.AB`) to
+replete abelian categories.
+
+## References
+
+* B. Bhatt and P. Scholze, *The pro-étale topology for schemes*, Astérisque 369 (2015),
+  Definition 3.1.1, Lemma 3.1.8 and Proposition 3.1.9.
+-/
+
+public section
+
+universe v v' u u'
+
+open CategoryTheory Limits
+
+namespace TauCeti
+
+variable (C : Type u) [Category.{v} C]
+
+/-- A category is **replete** when sequential limits of epimorphisms are epimorphisms: for every
+tower `⋯ ⟶ F (n + 1) ⟶ F n ⟶ ⋯ ⟶ F 0` whose transition maps are epimorphisms, the projection
+`lim F ⟶ F 0` of every limit cone is an epimorphism. Every projection `lim F ⟶ F n` is then an
+epimorphism (`TauCeti.IsReplete.epi_π_app`). -/
+class IsReplete : Prop where
+  /-- The projection `lim F ⟶ F 0` of a sequential limit of epimorphisms is an epimorphism. -/
+  epi_π_app_zero {F : ℕᵒᵖ ⥤ C} (hF : ∀ n, Epi (F.map (homOfLE (Nat.le_succ n)).op))
+    {c : Cone F} (hc : IsLimit c) : Epi (c.π.app ⟨0⟩)
+
+/-- The category of types is replete: a sequential limit of surjections is surjective. -/
+instance isReplete_type : IsReplete (Type u) where
+  epi_π_app_zero hF _ hc := (epi_iff_surjective _).2 <|
+    Types.surjective_π_app_zero_of_surjective_map hc fun n ↦ (epi_iff_surjective _).1 (hF n)
+
+namespace IsReplete
+
+variable {C}
+
+/-- In a replete category, every projection `lim F ⟶ F n` of a sequential limit of epimorphisms is
+an epimorphism. -/
+theorem epi_π_app [IsReplete C] {F : ℕᵒᵖ ⥤ C} (hF : ∀ n, Epi (F.map (homOfLE (Nat.le_succ n)).op))
+    {c : Cone F} (hc : IsLimit c) (n : ℕ) : Epi (c.π.app ⟨n⟩) := by
+  -- Reindex along `m ↦ n + m`, which is cofinal, so that the `n`-th projection becomes the first.
+  -- The transition maps of the reindexed tower are those of `F`, and its first projection is
+  -- `c.π.app ⟨n + 0⟩ = c.π.app ⟨n⟩`, by unfolding `Monotone.functor` and `Nat.add`.
+  have hmono : Monotone fun m : ℕ ↦ n + m := fun _ _ h ↦ Nat.add_le_add_left h n
+  have : hmono.functor.Final := hmono.final_functor_iff.2 fun m ↦ ⟨m, Nat.le_add_left m n⟩
+  exact epi_π_app_zero (F := hmono.functor.op ⋙ F) (c := c.whisker hmono.functor.op)
+    (fun m ↦ hF (n + m)) ((Functor.Initial.isLimitWhiskerEquiv hmono.functor.op c).symm hc)
+
+/-- **Repleteness descends along functors that preserve sequential limits and preserve and reflect
+epimorphisms.** If `G : D ⥤ C` is such a functor and `C` is replete, then so is `D`. -/
+theorem of_reflectsEpimorphisms [IsReplete C] {D : Type u'} [Category.{v'} D] (G : D ⥤ C)
+    [PreservesLimitsOfShape ℕᵒᵖ G] [G.PreservesEpimorphisms] [G.ReflectsEpimorphisms] :
+    IsReplete D where
+  epi_π_app_zero {_} hF {_} hc :=
+    G.epi_of_epi_map (epi_π_app_zero (fun n ↦ have := hF n; G.map_epi _) (isLimitOfPreserves G hc))
+
+/-- **Repleteness is invariant under equivalence of categories.** -/
+theorem of_equivalence [IsReplete C] {D : Type u'} [Category.{v'} D] (e : C ≌ D) : IsReplete D :=
+  of_reflectsEpimorphisms e.inverse
+
+section Map
+
+variable [HasPullbacks C] {F G : ℕᵒᵖ ⥤ C} (φ : F ⟶ G) (cG : Cone G)
+
+/-- The map `lim G ×_{G (n + 1)} F (n + 1) ⟶ lim G ×_{G n} F n` induced by the transition map
+of `F`. -/
+private noncomputable def pullbackTowerMap (n : ℕ) :
+    pullback (cG.π.app ⟨n + 1⟩) (φ.app ⟨n + 1⟩) ⟶ pullback (cG.π.app ⟨n⟩) (φ.app ⟨n⟩) :=
+  pullback.lift (pullback.fst _ _) (pullback.snd _ _ ≫ F.map (homOfLE (Nat.le_succ n)).op) (by
+    rw [Category.assoc, φ.naturality, ← cG.w (homOfLE (Nat.le_succ n)).op,
+      pullback.condition_assoc])
+
+/-- The tower `lim G ×_{G n} F n` used in the proof of `TauCeti.IsReplete.epi_isLimitMap`. -/
+private noncomputable def pullbackTower : ℕᵒᵖ ⥤ C :=
+  Functor.ofOpSequence (X := fun n ↦ pullback (cG.π.app ⟨n⟩) (φ.app ⟨n⟩)) (pullbackTowerMap φ cG)
+
+namespace pullbackTower
+
+/-- The projection `lim G ×_{G n} F n ⟶ lim G`. -/
+private noncomputable def fst (n : ℕ) : (pullbackTower φ cG).obj ⟨n⟩ ⟶ cG.pt :=
+  pullback.fst (cG.π.app ⟨n⟩) (φ.app ⟨n⟩)
+
+/-- The projection `lim G ×_{G n} F n ⟶ F n`. -/
+private noncomputable def snd (n : ℕ) : (pullbackTower φ cG).obj ⟨n⟩ ⟶ F.obj ⟨n⟩ :=
+  pullback.snd (cG.π.app ⟨n⟩) (φ.app ⟨n⟩)
+
+/-- The map into `lim G ×_{G n} F n` given by compatible maps into `lim G` and `F n`. -/
+private noncomputable def lift {Z : C} (n : ℕ) (a : Z ⟶ cG.pt) (b : Z ⟶ F.obj ⟨n⟩)
+    (w : a ≫ cG.π.app ⟨n⟩ = b ≫ φ.app ⟨n⟩) : Z ⟶ (pullbackTower φ cG).obj ⟨n⟩ :=
+  pullback.lift a b w
+
+@[reassoc (attr := simp)]
+private lemma lift_fst {Z : C} (n : ℕ) (a : Z ⟶ cG.pt) (b : Z ⟶ F.obj ⟨n⟩)
+    (w : a ≫ cG.π.app ⟨n⟩ = b ≫ φ.app ⟨n⟩) : lift φ cG n a b w ≫ fst φ cG n = a :=
+  pullback.lift_fst _ _ _
+
+@[reassoc (attr := simp)]
+private lemma lift_snd {Z : C} (n : ℕ) (a : Z ⟶ cG.pt) (b : Z ⟶ F.obj ⟨n⟩)
+    (w : a ≫ cG.π.app ⟨n⟩ = b ≫ φ.app ⟨n⟩) : lift φ cG n a b w ≫ snd φ cG n = b :=
+  pullback.lift_snd _ _ _
+
+private lemma hom_ext {Z : C} {n : ℕ} {f g : Z ⟶ (pullbackTower φ cG).obj ⟨n⟩}
+    (h₁ : f ≫ fst φ cG n = g ≫ fst φ cG n) (h₂ : f ≫ snd φ cG n = g ≫ snd φ cG n) : f = g :=
+  pullback.hom_ext h₁ h₂
+
+@[reassoc]
+private lemma condition (n : ℕ) : fst φ cG n ≫ cG.π.app ⟨n⟩ = snd φ cG n ≫ φ.app ⟨n⟩ :=
+  pullback.condition
+
+private lemma map_succ (n : ℕ) :
+    (pullbackTower φ cG).map (homOfLE (Nat.le_succ n)).op = pullbackTowerMap φ cG n :=
+  Functor.ofOpSequence_map_homOfLE_succ _ n
+
+@[reassoc (attr := simp)]
+private lemma map_succ_fst (n : ℕ) :
+    (pullbackTower φ cG).map (homOfLE (Nat.le_succ n)).op ≫ fst φ cG n = fst φ cG (n + 1) := by
+  rw [map_succ]
+  exact pullback.lift_fst _ _ _
+
+@[reassoc (attr := simp)]
+private lemma map_succ_snd (n : ℕ) :
+    (pullbackTower φ cG).map (homOfLE (Nat.le_succ n)).op ≫ snd φ cG n =
+      snd φ cG (n + 1) ≫ F.map (homOfLE (Nat.le_succ n)).op := by
+  rw [map_succ]
+  exact pullback.lift_snd _ _ _
+
+/-- The first projection of a cone over the tower `lim G ×_{G n} F n` does not depend on `n`. -/
+private lemma π_app_fst (s : Cone (pullbackTower φ cG)) (n : ℕ) :
+    s.π.app ⟨n⟩ ≫ fst φ cG n = s.π.app ⟨0⟩ ≫ fst φ cG 0 := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [← ih, ← s.w (homOfLE (Nat.le_succ n)).op, Category.assoc, map_succ_fst]
+
+/-- The transition maps of the tower `lim G ×_{G n} F n` are base changes of the comparison maps
+`F (n + 1) ⟶ F n ×_{G n} G (n + 1)`, along the map
+`lim G ×_{G n} F n ⟶ F n ×_{G n} G (n + 1)` induced by the projection `lim G ⟶ G (n + 1)`. -/
+private lemma isPullback_map_succ (n : ℕ) :
+    IsPullback (snd φ cG (n + 1)) ((pullbackTower φ cG).map (homOfLE (Nat.le_succ n)).op)
+      (pullback.lift (F.map (homOfLE (Nat.le_succ n)).op) (φ.app ⟨n + 1⟩) (φ.naturality _))
+      (pullback.lift (snd φ cG n) (fst φ cG n ≫ cG.π.app ⟨n + 1⟩) (by
+        rw [← condition, Category.assoc, cG.w (homOfLE (Nat.le_succ n)).op])) := by
+  -- Paste below it the square comparing `lim G ×_{G n} F n` with `F n ×_{G n} G (n + 1)`, which
+  -- is itself a pullback because pasting it with the square defining `F n ×_{G n} G (n + 1)`
+  -- gives the square defining `lim G ×_{G n} F n`.
+  have hbot : IsPullback
+      (pullback.lift (snd φ cG n) (fst φ cG n ≫ cG.π.app ⟨n + 1⟩) (by
+        rw [← condition, Category.assoc, cG.w (homOfLE (Nat.le_succ n)).op]))
+      (fst φ cG n) (pullback.snd _ _) (cG.π.app ⟨n + 1⟩) := by
+    refine IsPullback.of_right ?_ (pullback.lift_snd _ _ _) (IsPullback.of_hasPullback _ _)
+    rw [pullback.lift_fst, cG.w (homOfLE (Nat.le_succ n)).op]
+    exact (IsPullback.of_hasPullback (cG.π.app ⟨n⟩) (φ.app ⟨n⟩)).flip
+  refine IsPullback.of_bot ?_ (pullback.hom_ext (by simp) (by simp [condition])) hbot
+  rw [map_succ_fst, pullback.lift_snd]
+  exact (IsPullback.of_hasPullback (cG.π.app ⟨n + 1⟩) (φ.app ⟨n + 1⟩)).flip
+
+private lemma isPullback_fst_zero :
+    IsPullback (snd φ cG 0) (fst φ cG 0) (φ.app ⟨0⟩) (cG.π.app ⟨0⟩) :=
+  (IsPullback.of_hasPullback (cG.π.app ⟨0⟩) (φ.app ⟨0⟩)).flip
+
+variable {cG} (hcG : IsLimit cG) (cF : Cone F)
+
+/-- The cone over the tower `lim G ×_{G n} F n` with vertex `lim F`, with components given by
+the induced map `lim F ⟶ lim G` and the projections `lim F ⟶ F n`. -/
+private noncomputable abbrev cone : Cone (pullbackTower φ cG) where
+  pt := cF.pt
+  π := NatTrans.ofOpSequence
+    (fun n ↦ lift φ cG n (hcG.map cF φ) (cF.π.app ⟨n⟩) (IsLimit.map_π _ _ _ _)) fun n ↦
+      hom_ext φ cG (by simp) (by simp)
+
+/-- The cone `pullbackTower.cone` is a limit cone: `lim F` is the limit of the tower
+`lim G ×_{G n} F n`. -/
+private noncomputable def isLimitCone (hcF : IsLimit cF) :
+    IsLimit (cone φ hcG cF) where
+  lift s := hcF.lift
+    { pt := s.pt
+      π := NatTrans.ofOpSequence (fun n ↦ s.π.app ⟨n⟩ ≫ snd φ cG n) fun n ↦ by
+        dsimp only [Functor.const_obj_obj, Functor.const_obj_map]
+        rw [Category.id_comp, Category.assoc, ← map_succ_snd, ← Category.assoc, s.w] }
+  fac s := by
+    rintro ⟨n⟩
+    refine hom_ext φ cG (hcG.hom_ext fun ⟨m⟩ ↦ ?_) (by simp)
+    simp only [Category.assoc, NatTrans.ofOpSequence_app, lift_fst_assoc, IsLimit.map_π,
+      IsLimit.fac_assoc]
+    rw [← condition, ← Category.assoc, ← Category.assoc, π_app_fst φ cG s m, π_app_fst φ cG s n]
+  uniq s m hm := hcF.hom_ext fun ⟨n⟩ ↦ by
+    rw [IsLimit.fac, NatTrans.ofOpSequence_app, ← hm, Category.assoc, NatTrans.ofOpSequence_app,
+      lift_snd]
+
+end pullbackTower
+
+variable {cG} (hcG : IsLimit cG) [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange]
+  [IsReplete C]
+
+/-- **Epimorphisms of inverse limits** (Bhatt–Scholze, Lemma 3.1.8). In a replete category in
+which epimorphisms are stable under base change, let `φ : F ⟶ G` be a morphism of towers such that
+`F 0 ⟶ G 0` and every comparison map `F (n + 1) ⟶ F n ×_{G n} G (n + 1)` are epimorphisms. Then
+the induced map `lim F ⟶ lim G` is an epimorphism. -/
+theorem epi_isLimitMap {cF : Cone F} (hcF : IsLimit cF) (h₀ : Epi (φ.app ⟨0⟩))
+    (h : ∀ n, Epi (pullback.lift (F.map (homOfLE (Nat.le_succ n)).op) (φ.app ⟨n + 1⟩)
+      (φ.naturality _))) :
+    Epi (hcG.map cF φ) := by
+  have hW (n : ℕ) : Epi ((pullbackTower φ cG).map (homOfLE (Nat.le_succ n)).op) :=
+    MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
+      (pullbackTower.isPullback_map_succ φ cG n) (h n)
+  have hfst : Epi (pullbackTower.fst φ cG 0) :=
+    MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
+      (pullbackTower.isPullback_fst_zero φ cG) h₀
+  have hπ := epi_π_app_zero hW (pullbackTower.isLimitCone φ hcG cF hcF)
+  rw [← pullbackTower.lift_fst φ cG 0 (hcG.map cF φ) (cF.π.app ⟨0⟩) (IsLimit.map_π _ _ _ _)]
+  exact epi_comp' hπ hfst
+
+end Map
+
+section Products
+
+variable [IsReplete C] [HasCountableProducts C]
+  [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange]
+
+open SequentialProduct in
+/-- The case `α = ℕ` of `TauCeti.IsReplete.epi_pi_map`: `∏ f` is the first projection of the limit
+of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose transition maps apply one `f n` at a time.
+The argument generalizes Mathlib's proof for light condensed modules in
+`Mathlib.Condensed.Light.Epi` (Dagur Asgeirsson) to replete categories. -/
+private theorem epi_pi_map_nat {X Y : ℕ → C} (f : ∀ n, X n ⟶ Y n) [∀ n, Epi (f n)] :
+    Epi (Limits.Pi.map f) := by
+  have hF (n : ℕ) :
+      Epi ((Functor.ofOpSequence (functorMap f)).map (homOfLE (Nat.le_succ n)).op) := by
+    rw [Functor.ofOpSequence_map_homOfLE_succ]
+    refine MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
+      (IsPullback.of_pi_map_of_isIso _ n fun m hm ↦ ?_) ?_
+    · by_cases h : m < n
+      · simp only [h, ↓reduceDIte]
+        infer_instance
+      · simp only [h, ↓reduceDIte, show ¬m < n + 1 by omega]
+        infer_instance
+    · simp only [lt_irrefl, ↓reduceDIte, Nat.lt_succ_self, MorphismProperty.epimorphisms.iff]
+      infer_instance
+  -- The first projection of the limit cone is `∏ f`, followed by the identification of
+  -- `∏_{m ≥ 0} Y m` with `∏ Y`: the type ascription unfolds `SequentialProduct.cone`, as in
+  -- `SequentialProduct.cone_π_app` (proved by `rfl`), since rewriting along that lemma would
+  -- leave the cone's own objects in the statement.
+  have h₀ : Epi (Limits.Pi.map fun m ↦ if h : m < 0 then eqToHom (functorObj_eq_pos h).symm else
+      f m ≫ eqToHom (functorObj_eq_neg h).symm) :=
+    epi_π_app_zero hF (isLimit f)
+  have e : (Limits.Pi.map fun m ↦ if h : m < 0 then eqToHom (functorObj_eq_pos h).symm else
+      f m ≫ eqToHom (functorObj_eq_neg h).symm) = Limits.Pi.map f ≫
+        Limits.Pi.map fun m ↦ eqToHom (functorObj_eq_neg (Nat.not_lt_zero m)).symm := by
+    rw [Limits.Pi.map_comp_map]
+    simp
+  rw [e] at h₀
+  exact (epi_comp_iff_of_isIso _ (Limits.Pi.map fun m ↦
+    eqToHom (functorObj_eq_neg (M := X) (N := Y) (Nat.not_lt_zero m)).symm)).1 h₀
+
+/-- **Countable products of epimorphisms in a replete category** (Bhatt–Scholze, Proposition
+3.1.9). In a replete category with countable products, in which epimorphisms are stable under base
+change, a countable product of epimorphisms is an epimorphism. -/
+theorem epi_pi_map {α : Type} [Countable α] {X Y : α → C} (f : ∀ a, X a ⟶ Y a)
+    [∀ a, Epi (f a)] : Epi (Limits.Pi.map f) := by
+  rcases isEmpty_or_nonempty α with hα | hα
+  · -- Both products are empty, and `∏ X ⟶ ∏ Y` has a section.
+    exact (IsSplitEpi.mk' ⟨Pi.lift fun a ↦ isEmptyElim a, Pi.hom_ext _ _ fun a ↦ isEmptyElim a⟩).epi
+  -- Reindex along a surjection `s : ℕ → α` with a section `t`. The retraction
+  -- `r X : ∏ (X ∘ s) ⟶ ∏ X`, picking the factor `t a` for `a`, satisfies
+  -- `r X ≫ ∏ f = ∏ (f ∘ s) ≫ r Y`, and `r Y` is a split epimorphism.
+  obtain ⟨s, hs⟩ := exists_surjective_nat α
+  choose t ht using hs
+  let r (Z : α → C) : ∏ᶜ (fun n ↦ Z (s n)) ⟶ ∏ᶜ Z :=
+    Pi.lift fun a ↦ Pi.π (fun n ↦ Z (s n)) (t a) ≫ eqToHom (congrArg Z (ht a))
+  have hr (Z : α → C) (a : α) :
+      r Z ≫ Pi.π Z a = Pi.π (fun n ↦ Z (s n)) (t a) ≫ eqToHom (congrArg Z (ht a)) :=
+    Pi.lift_comp_π _ _
+  have hnat : r X ≫ Limits.Pi.map f = Limits.Pi.map (fun n ↦ f (s n)) ≫ r Y := by
+    refine Pi.hom_ext _ _ fun a ↦ ?_
+    simp [hr, reassoc_of% hr, eqToHom_naturality f (ht a)]
+  have : IsSplitEpi (r Y) := IsSplitEpi.mk' ⟨Pi.lift fun n ↦ Pi.π Y (s n),
+    Pi.hom_ext _ _ fun a ↦ by simpa [hr] using Pi.π_comp_eqToHom Y (ht a)⟩
+  have := epi_pi_map_nat fun n ↦ f (s n)
+  have : Epi (r X ≫ Limits.Pi.map f) := by
+    rw [hnat]
+    infer_instance
+  exact epi_of_epi (r X) _
+
+end Products
+
+/-- **Countable products are exact in a replete abelian category** (Bhatt–Scholze, Proposition
+3.1.9): a replete abelian category with countable products satisfies `CountableAB4Star`.
+This generalizes Mathlib's proof of `CountableAB4Star` for light condensed modules
+(`Mathlib.Condensed.Light.Epi` and `Mathlib.Condensed.Light.AB`, Dagur Asgeirsson) to replete
+abelian categories. -/
+instance countableAB4Star [Abelian C] [HasCountableProducts C] [IsReplete C] :
+    CountableAB4Star C where
+  ofShape α _ := by
+    have : (lim : (Discrete α ⥤ C) ⥤ C).PreservesEpimorphisms := ⟨fun {F G} φ _ ↦ by
+      have : ∀ a, Epi (φ.app ⟨a⟩) := fun a ↦ (NatTrans.epi_iff_epi_app φ).1 inferInstance _
+      have hφ : lim.map φ =
+          (Pi.isoLimit F).inv ≫ Limits.Pi.map (fun a ↦ φ.app ⟨a⟩) ≫ (Pi.isoLimit G).hom := by
+        apply limit.hom_ext
+        rintro ⟨a⟩
+        simp
+      rw [hφ]
+      have := epi_pi_map fun a ↦ φ.app ⟨a⟩
+      infer_instance⟩
+    exact hasExactLimitsOfShape_of_preservesEpi C (Discrete α)
+
+end IsReplete
+
+end TauCeti

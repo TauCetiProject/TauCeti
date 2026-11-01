@@ -92,7 +92,7 @@ private theorem nonempty_linearEquiv_eigenspace_neg_of_eq_top (t : IsSl2Triple h
   let _ (i : Fin k) :
       LieModule.IsIrreducible K (t.toLieSubalgebra K) (N i) := by
     let _ : LieModule.IsIrreducible K L (N i) := hirr i
-    exact isIrreducible_of_eq_top (M := N i) htop
+    exact (isIrreducible_iff_of_eq_top (M := N i) htop).2 inferInstance
   let b (i : Fin k) : Basis (Fin (n i + 1)) K (N i) := basisOfHasPrimitiveVectorWith (P i)
   let B : Basis (Σ i, Fin (n i + 1)) K M := hint.collectedBasis b
   let σ : Equiv.Perm (Σ i, Fin (n i + 1)) := Equiv.Perm.sigmaCongrRight fun _ ↦ Fin.revPerm

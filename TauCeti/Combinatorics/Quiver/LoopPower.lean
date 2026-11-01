@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Path
+public import Mathlib.Combinatorics.Quiver.Path.Weight
 public import Mathlib.Data.Fintype.EquivFin
 
 /-!
@@ -87,6 +87,15 @@ theorem _root_.Quiver.Path.length_loopPow (p : Quiver.Path a a) (n : ℕ) :
   | zero => rw [Quiver.Path.loopPow_zero, Quiver.Path.length_nil, Nat.zero_mul]
   | succ n ih =>
     rw [Quiver.Path.loopPow_succ, Quiver.Path.length_comp, ih, Nat.add_mul, Nat.one_mul]
+
+/-- Each turn around a closed path contributes its weight once. -/
+@[simp]
+theorem _root_.Quiver.Path.addWeight_loopPow {M : Type*} [AddMonoid M]
+    (p : Quiver.Path a a) (w : ∀ {i j : V}, (i ⟶ j) → M) (n : ℕ) :
+    (p.loopPow n).addWeight w = n • p.addWeight w := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [ih, succ_nsmul]
 
 /-- **The powers of a closed path add exponents.** With `Quiver.Path.loopPow_zero` this says that
 `n ↦ p.loopPow n` is a monoid homomorphism from `(ℕ, +)` into the closed paths at `a` under

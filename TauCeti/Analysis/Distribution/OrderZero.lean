@@ -252,41 +252,41 @@ private lemma extendₗ_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) :
     ((isApprox_toCompactlySupportedContinuousMap φ).tendsto_extend hT tendsto_const_nhds)
     tendsto_const_nhds
 
+/-- On a compact `K ⊆ Ω`, the extension of `T` keeps an order-zero bound: for the compactly
+supported continuous functions `g` supported in `K`, `|extendₗ hT g|` is at most a constant times
+any pointwise bound on `g`. -/
+private lemma exists_bound_extendₗ {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ C, ∀ g : C_c(Ω, ℝ), ((↑) : Ω → E) '' tsupport g ⊆ K → ∀ c, (∀ x, |zeroExt g x| ≤ c) →
+      |extendₗ hT g| ≤ C * c := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
+  obtain ⟨C, -, hC⟩ := exists_nonneg_bound hT hK.cthickening hδΩ
+  refine ⟨C, fun g hgK c hc => ?_⟩
+  obtain ⟨φ, hφK, hφ⟩ := exists_isApprox_of_subset g hK hgK hδ hδΩ
+  have h₀ := tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
+  refine le_of_tendsto_of_tendsto' (hφ.tendsto_extend hT h₀).abs
+    (by simpa only [add_zero] using (h₀.const_add c).const_mul C)
+    fun n => hC _ (hφK n) _ fun x => ?_
+  linarith [abs_sub_abs_le_abs_sub (φ n x) (zeroExt g x), hφ.2 n x, hc x]
+
 /-- The extension of `T` is bounded above on every order interval `[0, f]`. -/
 private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
     BddAbove (extendₗ hT '' Icc 0 f) := by
-  set K := ((↑) : Ω → E) '' tsupport f
-  obtain ⟨δ, hδ, hδΩ⟩ := (isCompact_image_tsupport f).exists_cthickening_subset_open Ω.isOpen
+  obtain ⟨C, hC⟩ := exists_bound_extendₗ hT (isCompact_image_tsupport f)
     (Subtype.coe_image_subset _ _)
-  obtain ⟨C, hC0, hC⟩ := exists_nonneg_bound hT (isCompact_image_tsupport f).cthickening hδΩ
   obtain ⟨B, hB⟩ := (continuous_zeroExt f).bounded_above_of_compact_support
     ((isCompact_image_tsupport f).of_isClosed_subset (isClosed_tsupport _)
       (tsupport_zeroExt_subset f))
   refine ⟨C * B, ?_⟩
   rintro _ ⟨g, ⟨hg, hgf⟩, rfl⟩
   -- `g` is supported where `f` is and is dominated by `f`.
-  have hgK : ((↑) : Ω → E) '' tsupport g ⊆ K := by
-    refine image_mono (closure_mono fun y hy => ?_)
-    exact (lt_of_lt_of_le (lt_of_le_of_ne (le_def.1 hg y) (Ne.symm hy)) (le_def.1 hgf y)).ne'
-  have hgB (x : E) : |zeroExt g x| ≤ B := by
-    refine le_trans ?_ (by simpa using hB x)
+  refine (le_abs_self _).trans (hC g (image_mono (closure_mono fun y hy => ?_)) B fun x => ?_)
+  · exact (lt_of_lt_of_le (lt_of_le_of_ne (le_def.1 hg y) (Ne.symm hy)) (le_def.1 hgf y)).ne'
+  · refine le_trans ?_ (by simpa using hB x)
     simp only [zeroExt_apply]
     split_ifs with h
     · exact abs_le_abs (le_def.1 hgf ⟨x, h⟩)
-        (by linarith [show 0 ≤ g ⟨x, h⟩ by simpa using le_def.1 hg ⟨x, h⟩,
-          le_def.1 hgf ⟨x, h⟩])
+        (by linarith [show 0 ≤ g ⟨x, h⟩ by simpa using le_def.1 hg ⟨x, h⟩, le_def.1 hgf ⟨x, h⟩])
     · simp
-  obtain ⟨φ, hφK, hφ⟩ := exists_isApprox_of_subset g (isCompact_image_tsupport f) hgK hδ hδΩ
-  have hbound (n : ℕ) : T (φ n) ≤ C * (B + 1 / ((n : ℝ) + 1)) := by
-    refine (le_abs_self _).trans (hC _ (hφK n) _ fun x => ?_)
-    have h₁ := hφ.2 n x
-    have h₂ := hgB x
-    rw [abs_le] at h₁ h₂ ⊢
-    constructor <;> linarith
-  have hlim : Tendsto (fun n : ℕ => C * (B + 1 / ((n : ℝ) + 1))) atTop (𝓝 (C * B)) := by
-    simpa using (tendsto_one_div_add_atTop_nhds_zero_nat.const_add B).const_mul C
-  exact le_of_tendsto_of_tendsto'
-    (hφ.tendsto_extend hT tendsto_one_div_add_atTop_nhds_zero_nat) hlim hbound
 
 /-! ### The Radon representation -/
 

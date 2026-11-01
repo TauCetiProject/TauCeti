@@ -16,7 +16,9 @@ element of a Hilbert basis of that subspace.  In particular, this lets Hilbert b
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
 It also records that a continuous linear map vanishing on all but finitely many vectors of a
-Hilbert basis has finite rank, since every vector is the sum of its basis expansion.
+Hilbert basis has finite rank, since every vector is the sum of its basis expansion, and that a
+continuous linear map is determined by its matrix entries in Hilbert bases of its source and
+target (`HilbertBasis.ext_inner_apply`).
 -/
 
 public section
@@ -37,6 +39,17 @@ theorem _root_.HilbertBasis.inner_eq_zero_of_forall_inner_eq_zero {K : Submodule
     simpa only [ContinuousLinearMap.comp_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
       innerSL_apply_apply, map_smul, hx, smul_zero] using hsum
   exact hzero.unique hasSum_zero
+
+/-- Two continuous linear maps between Hilbert spaces are equal when their matrix entries
+`⟪c i, A (b j)⟫` in Hilbert bases `b` of the source and `c` of the target agree. -/
+theorem _root_.HilbertBasis.ext_inner_apply {iota kappa F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (b : _root_.HilbertBasis iota 𝕜 E) (c : _root_.HilbertBasis kappa 𝕜 F)
+    {A B : E →L[𝕜] F} (h : ∀ i j, ⟪c i, A (b j)⟫_𝕜 = ⟪c i, B (b j)⟫_𝕜) : A = B := by
+  refine ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
+    ?_
+  rintro _ ⟨j, rfl⟩
+  exact c.repr.injective (lp.ext (funext fun i ↦ by
+    simp only [_root_.HilbertBasis.repr_apply_apply, h]))
 
 /-- A continuous linear map that vanishes on every vector of a Hilbert basis outside a finite set
 of indices has finite rank: its range is spanned by the images of the remaining basis vectors. -/

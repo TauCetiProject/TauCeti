@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration
+public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Constructions.Projective
 import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable

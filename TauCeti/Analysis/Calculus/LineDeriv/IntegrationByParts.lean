@@ -48,6 +48,8 @@ Lipschitz test function.
   bilinear form on a finite-dimensional space.
 * `TauCeti.integral_bilinForm_fderiv_apply_eq_zero_of_isAlt`: for an alternating bilinear form
   the integral vanishes.
+* `TauCeti.integral_fderiv_apply_eq_zero_of_hasCompactSupport`: the integral of a directional
+  derivative of a compactly supported `C¹` map vanishes.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -119,6 +121,18 @@ theorem integral_bilinear_fderiv_apply_comm (B : V →L[ℝ] V →L[ℝ] W) (hu 
     fun x ↦ (hu.contDiffAt.isSymmSndFDerivAt (by simp)).eq w v
   rw [step v w, step w v]
   simp only [hsymm]
+
+/-- The integral of a directional derivative of a compactly supported `C¹` map vanishes. -/
+theorem integral_fderiv_apply_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) (v : E) : ∫ x, fderiv ℝ u x v ∂μ = 0 := by
+  have h := integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable (μ := μ)
+    (f := fun _ ↦ (1 : ℝ)) (g := u) (v := v) (by simp)
+    (by simpa using ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+      |>.integrable_of_hasCompactSupport (hsupp.fderiv_apply (𝕜 := ℝ) v))
+    (by simpa using hu.continuous.integrable_of_hasCompactSupport hsupp)
+    (fun _ _ ↦ differentiableAt_const _)
+    (fun _ _ ↦ (hu.differentiable one_ne_zero).differentiableAt)
+  simpa using h
 
 variable [FiniteDimensional ℝ V]
 

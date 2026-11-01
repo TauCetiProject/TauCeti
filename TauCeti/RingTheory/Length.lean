@@ -56,6 +56,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_le_of_forall_fg`: the finite-generation reduction for `M ⧸ aM`.
 * `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: `A ⧸ I` has finite length when `I`
   contains a non-zero-divisor.
+* `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
+  at most one, a finitely generated module killed by a non-zero-divisor has finite length.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
@@ -65,6 +67,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   radical of `I` is the maximal ideal of a noetherian local ring. It is in the namespace of `Ideal`
   rather than that of `TauCeti` because its first explicit argument is an ideal, so that a consumer
   reads it as `I.isFiniteLength_quotient_of_radical_eq_maximalIdeal`.
+* `Ideal.isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal`: `M ⧸ I M` has finite
+  length for a finite module `M` when the radical of `I` is the maximal ideal.
 -/
 
 public section
@@ -239,6 +243,23 @@ theorem isFiniteLength_quotient_of_nonZeroDivisor_mem [IsNoetherianRing A] [Ring
   exact (isFiniteLength_quotient_span_singleton A hx).of_surjective
     (f := Submodule.factor hle) (Submodule.factor_surjective hle)
 
+/-- In a Noetherian ring of Krull dimension at most one, a finitely generated module whose
+annihilator contains a non-zero-divisor has finite length. -/
+theorem isFiniteLength_of_nonZeroDivisor_mem_annihilator [IsNoetherianRing A]
+    [Ring.KrullDimLE 1 A] [Module.Finite A M] {x : A} (hxM : x ∈ Module.annihilator A M)
+    (hx : x ∈ nonZeroDivisors A) : IsFiniteLength A M := by
+  -- `M` is a finitely generated module over the Artinian ring `A ⧸ Ann(M)`.
+  let _ := Module.quotientAnnihilator (R := A) (M := M)
+  obtain ⟨-, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_quotient_of_nonZeroDivisor_mem (Module.annihilator A M) hxM hx)
+  have : IsArtinianRing (A ⧸ Module.annihilator A M) := isArtinian_of_tower A inferInstance
+  have : Module.Finite (A ⧸ Module.annihilator A M) M :=
+    Module.Finite.of_restrictScalars_finite A _ M
+  have : IsArtinian A M :=
+    isArtinian_of_surjective_algebraMap (R := A ⧸ Module.annihilator A M)
+      Ideal.Quotient.mk_surjective
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, this⟩
+
 /-- **The length of `I ⧸ aI` for an ideal `I`.** For an ideal `I` with `A ⧸ I` of finite length
 and a non-zero-divisor `a`, `length (I ⧸ aI)` is the order of vanishing `Ring.ord A a`, which is
 by definition `length (A ⧸ aA)`.
@@ -335,6 +356,20 @@ theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
     isArtinianRing_iff_isNilpotent_maximalIdeal (A ⧸ I) |>.mpr hnil
   exact ⟨inferInstance,
     isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
+
+/-- **A finite module modulo a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a
+noetherian local ring, `I` an ideal whose radical is `𝔪` and `M` a finite `A`-module. Then
+`M ⧸ I M` is a finite module over the Artinian ring `A ⧸ I`, so it has finite length over `A`. -/
+theorem isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal (I : Ideal A)
+    (hI : I.radical = maximalIdeal A) (M : Type*) [AddCommGroup M] [Module A M]
+    [Module.Finite A M] : IsFiniteLength A (M ⧸ (I • ⊤ : Submodule A M)) := by
+  have hA := isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_quotient_of_radical_eq_maximalIdeal I hI)
+  have : IsArtinianRing (A ⧸ I) := isArtinian_of_tower A hA.2
+  have : Module.Finite (A ⧸ I) (M ⧸ (I • ⊤ : Submodule A M)) :=
+    Module.Finite.of_restrictScalars_finite A _ _
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
+    ⟨inferInstance, isArtinian_of_surjective_algebraMap (R := A ⧸ I) Ideal.Quotient.mk_surjective⟩
 
 end NoetherianLocalRing
 

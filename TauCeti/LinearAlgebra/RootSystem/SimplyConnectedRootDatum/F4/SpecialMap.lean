@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialMap
+public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Length
 
@@ -274,8 +274,8 @@ theorem f4Length_mul_pairing_f4SpecialIsogenyIndex (i j : Fin 48) :
       f4Length j * f4SimplyConnectedRootDatum.pairing i j := by
   simpa only [f4SimplyConnectedRootDatum_pairing, f4SimplyConnectedRootDatum_root,
     f4SimplyConnectedRootDatum_coroot] using
-    (mul_dotProduct_eq_of_mulVec_eq_smul f4SpecialIsogenyMatrix_mulVec_root
-      f4SpecialIsogenyMatrix_transpose_mulVec_coroot i j)
+    (mul_dotProduct_eq_of_mulVec_eq_smul (f4SpecialIsogenyMatrix_mulVec_root i)
+      (f4SpecialIsogenyMatrix_transpose_mulVec_coroot j))
 
 /-- The torus-point map contravariant to the F4 special character-lattice map. -/
 def f4SpecialIsogenyTorusMap {A : Type*} [CommRing A]

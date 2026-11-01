@@ -6,14 +6,16 @@ Authors: Codex
 module
 
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+public import Mathlib.RingTheory.RingHom.Flat
 
 /-!
-# Descent of faithful flatness
+# Descent of flatness and faithful flatness
 
-Faithful flatness of an algebra descends along a faithfully flat extension of the base.
-Thus faithful flatness can be established after extending scalars to a faithfully flat
-algebra. The ring-homomorphism formulation supplies the descent property used to descend
-finite faithfully flat morphisms, such as isogenies of affine group schemes.
+Flatness and faithful flatness of an algebra descend along a faithfully flat extension of the
+base. Thus both can be established after extending scalars to a faithfully flat algebra. The
+ring-homomorphism formulations supply the descent properties used to descend flat morphisms of
+schemes along fpqc covers, and finite faithfully flat morphisms such as isogenies of affine
+group schemes.
 -/
 
 public section
@@ -44,3 +46,11 @@ theorem RingHom.FaithfullyFlat.codescendsAlong_faithfullyFlat :
   refine .mk _ RingHom.FaithfullyFlat.respectsIso fun R S T _ _ _ _ _ h h' ↦ ?_
   rw [RingHom.faithfullyFlat_algebraMap_iff] at h h' ⊢
   exact Module.FaithfullyFlat.of_tensorProduct R S T
+
+/-- Flat ring maps descend along faithfully flat base change. -/
+theorem RingHom.Flat.codescendsAlong_faithfullyFlat :
+    RingHom.CodescendsAlong RingHom.Flat RingHom.FaithfullyFlat := by
+  refine .mk _ RingHom.Flat.respectsIso fun R S T _ _ _ _ _ h h' ↦ ?_
+  rw [RingHom.faithfullyFlat_algebraMap_iff] at h
+  rw [RingHom.flat_algebraMap_iff] at h' ⊢
+  exact Module.Flat.of_flat_tensorProduct R T S

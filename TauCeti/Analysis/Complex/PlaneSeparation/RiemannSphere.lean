@@ -19,6 +19,7 @@ is the Jordan–Brouwer separation theorem for the two-sphere,
 `TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`, transported along Mathlib's
 stereographic homeomorphism `onePointEquivSphereOfFinrankEq`, in the connected form
 `TauCeti.not_isPreconnected_compl_range_sphere` that holds because the sphere is a manifold.
+Transported the same way, the count itself says that `Jᶜ` has exactly two path components.
 
 The consequence used for unbounded Jordan domains is an exterior point. If `U ⊆ ℂ` is open and
 connected and its frontier, together with the point at infinity, is a Jordan curve of the Riemann
@@ -30,6 +31,9 @@ such a point turns it into a bounded Jordan domain of the plane.
 
 * `TauCeti.IsJordanCurve.not_isPreconnected_compl_onePoint` — a Jordan curve separates the Riemann
   sphere.
+* `TauCeti.IsJordanCurve.natCard_zerothHomotopy_compl_eq_two_onePoint` — **the Jordan curve
+  theorem on the Riemann sphere**: the complement of a Jordan curve has exactly two path
+  components.
 * `TauCeti.exists_notMem_closure_of_isJordanCurve_insert_infty` — an open connected set whose
   frontier, together with the point at infinity, is a Jordan curve of the Riemann sphere has a
   point outside its closure.
@@ -61,6 +65,31 @@ theorem IsJordanCurve.not_isPreconnected_compl_onePoint {J : Set (OnePoint ℂ)}
     (Φ.injective.comp ((jordanParam_injective e).comp φ.injective)) ?_
   rw [range_comp, range_comp, φ.range_coe, image_univ, range_jordanParam, ← Φ.image_compl]
   exact hconn.image _ Φ.continuous.continuousOn
+
+/-- **The Jordan curve theorem on the Riemann sphere.** The complement of a Jordan curve in
+`OnePoint ℂ` has exactly two path components. -/
+theorem IsJordanCurve.natCard_zerothHomotopy_compl_eq_two_onePoint {J : Set (OnePoint ℂ)}
+    (hJ : IsJordanCurve J) : Nat.card (ZerothHomotopy ↥Jᶜ) = 2 := by
+  obtain ⟨e⟩ := isJordanCurve_iff.mp hJ
+  -- stereographic projection carries `J` to an embedded circle of the sphere
+  let Φ : OnePoint ℂ ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
+    onePointEquivSphereOfFinrankEq (by simp)
+  let φ := sphereCircleHomeomorph (0 : ℂ) one_pos
+  have hrange : (range (Φ ∘ jordanParam e ∘ φ))ᶜ = Φ '' Jᶜ := by
+    rw [range_comp, range_comp, φ.range_coe, image_univ, range_jordanParam, Φ.image_compl]
+  let f : ↥Jᶜ ≃ₜ ↥(range (Φ ∘ jordanParam e ∘ φ))ᶜ :=
+    (Φ.image Jᶜ).trans (Homeomorph.setCongr hrange.symm)
+  rw [← natCard_zerothHomotopy_sphere_compl_range_eq_two (h := Φ ∘ jordanParam e ∘ φ) (by simp)
+    (Φ.continuous.comp ((continuous_jordanParam e).comp φ.continuous))
+    (Φ.injective.comp ((jordanParam_injective e).comp φ.injective))]
+  -- the homeomorphism `f` and its inverse carry paths to paths
+  exact Nat.card_congr
+    { toFun := ZerothHomotopy.lift (ZerothHomotopy.mk ∘ f) fun _ _ p =>
+        ZerothHomotopy.sound (p.map f.continuous)
+      invFun := ZerothHomotopy.lift (ZerothHomotopy.mk ∘ f.symm) fun _ _ p =>
+        ZerothHomotopy.sound (p.map f.symm.continuous)
+      left_inv := fun c => by induction c with | mk x => simp
+      right_inv := fun c => by induction c with | mk x => simp }
 
 /-- **An unbounded Jordan domain has an exterior point.** If `U ⊆ ℂ` is open and preconnected and
 its frontier, together with the point at infinity, is a Jordan curve of the Riemann sphere, then

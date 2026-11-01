@@ -23,11 +23,20 @@ The braid relation `TauCeti.smul_add_one_sub_smul_braid_relation` compares two w
 three values pairwise by affine combinations. It is the self-distributivity of the Alexander
 quandle, and gives the invariance of the Alexander module of a link diagram under the third
 Reidemeister move.
+
+The scalar rescaling identity `TauCeti.div_mul_smul_smul_cancel_left` cancels a nonzero factor
+in the denominator against a scalar action, including when the remaining denominator is zero.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Rescaling `k • v` by `a / (k * b)` is rescaling `v` by `a / b`. -/
+theorem div_mul_smul_smul_cancel_left {K M : Type*} [CommGroupWithZero K] [MulAction K M]
+    {k : K} (hk : k ≠ 0) (a b : K) (v : M) :
+    (a / (k * b)) • k • v = (a / b) • v := by
+  rw [smul_smul, div_mul_eq_mul_div, mul_comm a, mul_div_mul_left _ _ hk]
 
 /-- If `u` is a unit, then `x = u • y + (1 - u) • x` forces `x = y`. -/
 theorem _root_.IsUnit.eq_of_eq_smul_add_one_sub_smul {R M : Type*} [Ring R] [AddCommGroup M]

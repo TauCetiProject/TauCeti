@@ -1,0 +1,46 @@
+name: Website tests
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/website-tests.yml']
+  pull_request:
+    paths: ['web/**', '.github/workflows/website-tests.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  blog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install elan (pinned and checksum-verified)
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Cache website dependencies
+        uses: actions/cache@v4
+        with:
+          path: web/.lake
+          key: website-tests-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain') }}
+      - name: Test blog generation and navigation
+        run: python3 tests/test_blog.py

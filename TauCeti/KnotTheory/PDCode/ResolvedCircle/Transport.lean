@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.DisjointUnion.Basic
-public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Basic
+public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Saddle
 public import TauCeti.KnotTheory.PDCode.RotateCrossing
 
 /-!
@@ -23,6 +23,11 @@ to the arcs of `D'` and the traversal of `D` smoothed by `s` to the traversal of
 bijection of resolved circles, `TauCeti.PDCode.SmoothingEquiv.resolvedCircleCongr`, sending the
 circle through a half-edge to the circle through its image. Smoothing equivalences form a
 groupoid, and the induced bijections respect identities, inverses and composition.
+
+Transport carrying the slots of a crossing bijectively preserves the circles through that
+crossing and hence their number. When the source and target transports of a saddle use the
+same half-edge and isolated-circle bijections, the induced circle bijections commute with its
+saddle correspondence. This supplies the circle-level naturality square for resolution maps.
 
 The smoothing equivalences provided here are those of the native operations which keep the
 smoothed diagram:
@@ -193,6 +198,13 @@ theorem trans_assoc {r' : ℕ} {D₃ : PDCode r'} {s₃ : Fin r' → Bool}
 
 /-! ### The induced bijection of circles -/
 
+/-- A smoothing equivalence transports the native arc matching by conjugation. -/
+theorem edgePair_val_eq_permCongr (e : D.SmoothingEquiv s D' s') :
+    D'.edgePair.val = e.halfEdgeEquiv.permCongr D.edgePair.val := by
+  ext x
+  obtain ⟨x, rfl⟩ := e.halfEdgeEquiv.surjective x
+  rw [e.edgePair_apply, permCongr_apply, symm_apply_apply]
+
 /-- A smoothing equivalence transports the smoothed traversal. -/
 theorem statePerm_eq_permCongr (e : D.SmoothingEquiv s D' s') :
     D'.statePerm s' = e.halfEdgeEquiv.permCongr (D.statePerm s) := by
@@ -288,6 +300,50 @@ theorem resolvedCircleCongr_trans (e : D.SmoothingEquiv s D' s')
     (f : D'.SmoothingEquiv s' D'' s'') :
     (e.trans f).resolvedCircleCongr = e.resolvedCircleCongr.trans f.resolvedCircleCongr := by
   ext (c | i) <;> simp
+
+/-! ### Transport of the circles through a crossing and of saddle correspondences -/
+
+/-- A smoothing equivalence carrying the slots of `c` bijectively to those of `c'` carries
+exactly the circles through `c` to those through `c'`. The slot bijection permits a different
+choice of the first slot at the crossing. -/
+theorem image_crossingCircleCongr_circlesAt (e : D.SmoothingEquiv s D' s')
+    {c : Fin n} {c' : Fin m} (slots : Fin 4 ≃ Fin 4)
+    (hcross : ∀ k, e.halfEdgeEquiv (D.crossing c k) = D'.crossing c' (slots k)) :
+    (D.circlesAt s c).image e.crossingCircleCongr = D'.circlesAt s' c' := by
+  ext C
+  simp only [Finset.mem_image, mem_circlesAt]
+  constructor
+  · rintro ⟨_, ⟨k, rfl⟩, rfl⟩
+    exact ⟨slots k, by rw [crossingCircleCongr_mk, hcross]⟩
+  · rintro ⟨k, rfl⟩
+    exact ⟨⟦D.crossing c (slots.symm k)⟧, ⟨slots.symm k, rfl⟩, by
+      simp only [crossingCircleCongr_mk, hcross, slots.apply_symm_apply]⟩
+
+/-- The number of circles through a crossing is preserved when its slots are transported
+bijectively by a smoothing equivalence. In particular, the merge/split conditions transport. -/
+theorem card_circlesAt_eq (e : D.SmoothingEquiv s D' s')
+    {c : Fin n} {c' : Fin m} (slots : Fin 4 ≃ Fin 4)
+    (hcross : ∀ k, e.halfEdgeEquiv (D.crossing c k) = D'.crossing c' (slots k)) :
+    (D.circlesAt s c).card = (D'.circlesAt s' c').card := by
+  rw [← e.image_crossingCircleCongr_circlesAt slots hcross,
+    Finset.card_image_of_injective _ e.crossingCircleCongr.injective]
+
+/-- Saddle correspondences commute with smoothing equivalences that use the same half-edge
+and isolated-circle bijections at the two endpoints. Every unaffected circle is retained. -/
+theorem resolvedCircleCongr_saddleResolvedCircleMap
+    {t : Fin n → Bool} {t' : Fin m → Bool} {c : Fin n} {c' : Fin m}
+    (es : D.SmoothingEquiv s D' s') (et : D.SmoothingEquiv t D' t')
+    (hhalf : es.halfEdgeEquiv = et.halfEdgeEquiv)
+    (hisolated : es.crossinglessEquiv = et.crossinglessEquiv)
+    (hst : ∀ j, j ≠ c → s j = t j) (hst' : ∀ j, j ≠ c' → s' j = t' j)
+    (ht : (D.circlesAt t c).card = 1) (ht' : (D'.circlesAt t' c').card = 1)
+    (C : D.ResolvedCircle s) :
+    et.resolvedCircleCongr (D.saddleResolvedCircleMap hst ht C) =
+      D'.saddleResolvedCircleMap hst' ht' (es.resolvedCircleCongr C) := by
+  rcases C with C | i
+  · obtain ⟨x, rfl⟩ := Quotient.exists_rep C
+    simp [hhalf]
+  · simp [hisolated]
 
 /-! ### The smoothing equivalences of the native operations -/
 

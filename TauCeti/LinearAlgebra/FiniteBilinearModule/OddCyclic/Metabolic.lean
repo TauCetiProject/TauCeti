@@ -38,9 +38,8 @@ theorem not_isMetabolic_oddCyclic {m : ℕ} (hm : Odd m) {θ : ℤ}
     (hθ : IsCoprime (m : ℤ) θ) (hm' : ¬ IsSquare m) :
     ¬ (oddCyclic m hm θ).IsMetabolic := by
   intro h
-  have hcard : Nat.card (oddCyclic m hm θ) = m := Nat.card_zmod m
   have hnondeg := (isNondegenerate_oddCyclic_iff m hm θ).mpr hθ
-  exact hm' (hcard ▸ h.isSquare_natCard hnondeg)
+  exact hm' (natCard_oddCyclic m hm θ ▸ h.isSquare_natCard hnondeg)
 
 /-- The nondegenerate odd cyclic form of order five with coefficient two has zero Gauss sign
 and no quadratic Lagrangian. Thus vanishing of the Gauss sign does not imply metabolicity. -/

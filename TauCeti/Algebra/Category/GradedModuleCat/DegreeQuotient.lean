@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Module.GradedModule.Generated
 

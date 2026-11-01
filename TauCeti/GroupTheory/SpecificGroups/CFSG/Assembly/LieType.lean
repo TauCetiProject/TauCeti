@@ -36,6 +36,8 @@ The construction follows the family modules it imports.
 * `TauCeti.ValidLieTypeIndex.steinberg_suzuki`, `TauCeti.ValidLieTypeIndex.steinberg_reeG2`,
   `TauCeti.ValidLieTypeIndex.steinberg_reeF4` and `TauCeti.ValidLieTypeIndex.steinberg_tits`: on
   the four half-Frobenius constructors the Steinberg endomorphism is that of the family.
+* `TauCeti.ValidLieTypeIndex.steinberg_A`: on `Aₙ(q)` the Steinberg endomorphism is that of the
+  graph-twisted assembly.
 * `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius`: on ordinary
   and graph-twisted indices, the action on simple root subgroups permutes by the diagram
   automorphism and raises the parameter to the `q`-th power.
@@ -44,6 +46,9 @@ The construction follows the family modules it imports.
   the parameter to the odd half-Frobenius exponent.
 * `TauCeti.ValidLieTypeIndex.steinberg_steinberg_of_usesHalfFrobenius`: on half-Frobenius
   families, the Steinberg endomorphism squares to the `q`-power Frobenius.
+* `TauCeti.ValidLieTypeIndex.iterate_steinberg_twistOrder_of_not_usesHalfFrobenius`: on ordinary
+  and graph-twisted families, the twist-order iterate of the Steinberg endomorphism is that iterate
+  of the `q`-power Frobenius.
 * `TauCeti.ValidLieTypeIndex.Group_eq_of_not_usesHalfFrobenius`: on ordinary and graph-twisted
   families, the candidate group agrees with `GraphTwistedIndex.Group`.
 
@@ -96,6 +101,13 @@ theorem steinberg_reeF4 (hv : (LieTypeIndex.reeF4 m).Valid) :
 /-- On the Tits index the Steinberg endomorphism is that of the Tits construction. -/
 theorem steinberg_tits (hv : LieTypeIndex.tits.Valid) :
     steinberg ⟨_, hv⟩ = TitsLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `Aₙ(q)` the Steinberg endomorphism is that of the graph-twisted assembly, which is in turn
+that of the type-`A` family by `TauCeti.GraphTwistedIndex.steinberg_A`. -/
+theorem steinberg_A {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.A n q).Valid) :
+    steinberg ⟨_, hv⟩ =
+      GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ :=
   (rfl)
 
 end Branches
@@ -153,6 +165,23 @@ theorem steinberg_steinberg_of_usesHalfFrobenius (d : ValidLieTypeIndex)
   · exact ReeG2LieIndex.steinberg_steinberg ⟨⟨_, hv⟩, by simp⟩ g
   · exact ReeF4LieIndex.steinberg_steinberg ⟨⟨_, hv⟩, by simp⟩ g
   · exact TitsLieIndex.steinberg_steinberg ⟨⟨_, hv⟩, by simp⟩ g
+
+/-- On ordinary and graph-twisted families, the twist-order iterate of the assembled Steinberg map
+is that iterate of the indexed field-order Frobenius. The twist order is `1` on the nine untwisted
+families, `2` on `²Aₙ`, `²Dₙ` and `²E₆`, and `3` on `³D₄`. -/
+theorem iterate_steinberg_twistOrder_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
+    (h : ¬ d.1.UsesHalfFrobenius) :
+    (⇑d.steinberg)^[GraphTwistedIndex.twistOrder ⟨d, h⟩] =
+      (⇑d.frobenius)^[GraphTwistedIndex.twistOrder ⟨d, h⟩] := by
+  obtain ⟨d, hv⟩ := d
+  cases d
+  all_goals try { simp [LieTypeIndex.usesHalfFrobenius_iff] at h }
+  all_goals simp only [frobenius_A, frobenius_twistedA, frobenius_B, frobenius_C, frobenius_D,
+    frobenius_twistedD, frobenius_E6, frobenius_E7, frobenius_E8, frobenius_F4, frobenius_G2,
+    frobenius_twistedE6, frobenius_trialityD4]
+  -- On the thirteen ordinary and graph-twisted constructors the assembled Steinberg map is, by
+  -- definition, that of the graph-twisted assembly.
+  all_goals exact GraphTwistedIndex.iterate_steinberg_twistOrder ⟨⟨_, hv⟩, h⟩
 
 /-- The fixed subgroup of the family's Steinberg endomorphism. -/
 abbrev FixedPoints (d : ValidLieTypeIndex) : Type := ↥(fixedSubgroup d.steinberg)

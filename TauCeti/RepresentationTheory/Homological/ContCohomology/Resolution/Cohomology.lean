@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.RepresentationTheory.Continuous.TopRep.HomologicalComplex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Comparison
 
@@ -40,7 +42,9 @@ canonical:
   `TopRep.cohomologyClass_resolutionContraction`).
 
 Already without local compactness, the class is linear in the cocycle and cohomologous invariant
-cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`).
+cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`). In
+degree zero a cocycle is the augmentation of its retraction, so its class is the degree-zero class
+of that invariant vector (`TopRep.ResolutionContraction.cohomologyClass_eq_degreeZeroClass`).
 
 ## Main definitions
 
@@ -55,6 +59,8 @@ cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_o
   image of its class in `Hⁿ(Jᴳ)`.
 * `TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`: cohomologous invariant cocycles
   have the same class.
+* `TopRep.ResolutionContraction.cohomologyClass_eq_degreeZeroClass`: classes in degree zero are
+  degree-zero classes of invariant vectors.
 * `TopRep.ResolutionContraction.cohomologyMap_eq_of_ι_eq` and
   `TopRep.ResolutionContraction.cohomologyClass_eq_of_ι_eq`: independence of the contraction.
 * `TopRep.ResolutionContraction.cohomologyMap_comp_coeffMap`,
@@ -79,44 +85,7 @@ namespace TopRep
 universe u v w
 
 variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G]
-
-section ChainMap
-
-variable {J J' : CochainComplex (TopRep.{w} k G) ℕ}
-
-/-- A chain map of complexes of topological representations carries an invariant cocycle to an
-invariant cocycle. -/
-theorem d_mapInvariants_f_apply (f : J ⟶ J') {n : ℕ} (z : (J.X n).ρ.invariants)
-    (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
-    (J'.d n (n + 1)).hom ((f.f n).hom.mapInvariants z : (J'.X n).V) = 0 := by
-  rw [ContIntertwiningMap.mapInvariants_apply, ← ConcreteCategory.comp_apply, f.comm,
-    ConcreteCategory.comp_apply, hz, map_zero]
-
-/-- On the cohomology of invariants, a chain map `f : J ⟶ J'` carries the class of an invariant
-cocycle `z` to the class of `f z`. -/
-@[simp]
-theorem homologyMap_homologyπ_cyclesMkOfEq (f : J ⟶ J') {n : ℕ} (z : (J.X n).ρ.invariants)
-    (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
-    HomologicalComplex.homologyMap (((invariantsFunctor k G).mapHomologicalComplex _).map f) n
-        ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).homologyπ n
-          ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).cyclesMkOfEq z (n + 1)
-            (CochainComplex.next ℕ n) (Subtype.ext hz))) =
-      (((invariantsFunctor k G).mapHomologicalComplex _).obj J').homologyπ n
-        ((((invariantsFunctor k G).mapHomologicalComplex _).obj J').cyclesMkOfEq
-          ((f.f n).hom.mapInvariants z) (n + 1) (CochainComplex.next ℕ n)
-          (Subtype.ext (d_mapInvariants_f_apply f z hz))) := by
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
-    ConcreteCategory.comp_apply]
-  congr 1
-  apply HomologicalComplex.iCycles_injective
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-    HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq]
-  -- The invariants functor maps a morphism to its restriction to invariant elements.
-  rfl
-
-end ChainMap
-
-variable [TopologicalSpace G] [IsTopologicalGroup G]
+  [TopologicalSpace G] [IsTopologicalGroup G]
 
 namespace ResolutionContraction
 
@@ -168,8 +137,10 @@ theorem cohomologyMap_homologyπ {n : ℕ} (z : (J.X n).ρ.invariants)
     c.cohomologyMap n ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).homologyπ n
         ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).cyclesMkOfEq z (n + 1)
           (CochainComplex.next ℕ n) (Subtype.ext hz))) =
-      c.cohomologyClass z hz :=
-  (homologyMap_homologyπ_cyclesMkOfEq c.comparison z hz).trans (cochainClass_def _ _ _ _).symm
+      c.cohomologyClass z hz := by
+  rw [cohomologyMap_def, cohomologyClass_def, cochainClass_def,
+    HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
+  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor_map_hom (c.comparison.f n)]
 
 /-- The class of a sum of invariant cocycles is the sum of their classes. -/
 @[simp]
@@ -212,6 +183,18 @@ theorem cohomologyClass_eq_of_sub_eq_d {n : ℕ} (z z' : (J.X (n + 1)).ρ.invari
   rw [homogeneousCochains.d_apply, ContIntertwiningMap.mapInvariants_apply, d_comparison_f_apply,
     Submodule.coe_sub, ContIntertwiningMap.mapInvariants_apply,
     ContIntertwiningMap.mapInvariants_apply, ← map_sub, hy]
+
+/-- **The class of an invariant degree-zero cocycle is the degree-zero class of its retraction.**
+In degree zero a cocycle `z` of the contracted complex is `ι (proj z)`, so its class in
+`H⁰(G, X) = X^G` is the invariant vector `proj z`. -/
+theorem cohomologyClass_eq_degreeZeroClass (z : (J.X 0).ρ.invariants)
+    (hz : (J.d 0 (0 + 1)).hom (z : (J.X 0).V) = 0) :
+    c.cohomologyClass z hz = TauCeti.ContinuousCohomology.degreeZeroClass X (c.proj z)
+      (c.ρ_proj_of_d_eq_zero hz ((ContRepresentation.mem_invariants _).1 z.2)) := by
+  rw [cohomologyClass_def]
+  apply cochainClass_eq_degreeZeroClass
+  rw [ContIntertwiningMap.mapInvariants_apply, comparison_f_zero_apply_apply]
+  simp
 
 section Homotopy
 
@@ -280,7 +263,8 @@ theorem cohomologyClass_map {J' : CochainComplex (TopRep.{max v w} k G) ℕ}
       c.cohomologyClass z hz := by
   rw [← c.cohomologyMap_homologyπ z hz, ← c'.cohomologyMap_homologyπ _
     (d_mapInvariants_f_apply f z hz), ← c.homologyMap_comp_cohomologyMap c' f hf n,
-    ConcreteCategory.comp_apply, homologyMap_homologyπ_cyclesMkOfEq f z hz]
+    ConcreteCategory.comp_apply, HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
+  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor_map_hom (f.f n)]
 
 /-- **Naturality of classes in the coefficients.** For a chain map `f : J ⟶ J'` lying over a
 coefficient morphism `g : X ⟶ Y`, the coefficient map of `g` carries the class of an invariant
@@ -294,7 +278,8 @@ theorem coeffMap_cohomologyClass {Y : TopRep.{max v w} k G}
   rw [← c.cohomologyMap_homologyπ z hz, ← c'.cohomologyMap_homologyπ _
     (d_mapInvariants_f_apply f z hz), ← ConcreteCategory.comp_apply,
     c.cohomologyMap_comp_coeffMap c' g f hf n, ConcreteCategory.comp_apply,
-    homologyMap_homologyπ_cyclesMkOfEq f z hz]
+    HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
+  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor_map_hom (f.f n)]
 
 end Homotopy
 

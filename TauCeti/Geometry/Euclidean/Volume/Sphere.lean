@@ -86,8 +86,7 @@ namespace TauCeti
 
 section Scaling
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup F]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- The affine map `u ↦ c + r • u`, as a measurable equivalence. -/
 private def addSMulEquiv (c : E) {r : ℝ} (hr : r ≠ 0) : E ≃ᵐ E :=
@@ -138,8 +137,8 @@ theorem setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one (d : ℕ) (c : E
 /-- **Rescaling integrals over spheres.** For `r > 0`, integrating a function against
 `d`-dimensional Hausdorff measure on `sphere c r` amounts to integrating its pullback by
 `u ↦ c + r • u` over the unit sphere, with the factor `r ^ d`. -/
-theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one [NormedSpace ℝ F] (d : ℕ)
-    (c : E) {r : ℝ} (hr : 0 < r) (f : E → F) :
+theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (d : ℕ) (c : E) {r : ℝ} (hr : 0 < r) (f : E → F) :
     ∫ y in sphere c r, f y ∂μHE[d] = r ^ d • ∫ u in sphere 0 1, f (c + r • u) ∂μHE[d] := by
   rw [euclideanHausdorffMeasure_restrict_sphere_eq_smul_map d c hr, integral_smul_measure,
     ← funext (addSMulEquiv_apply c hr.ne'),
@@ -149,7 +148,8 @@ theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one [NormedSpace ℝ 
 
 /-- A function is integrable for `d`-dimensional Hausdorff measure on `sphere c r`, `r > 0`, if
 and only if its pullback by `u ↦ c + r • u` is integrable on the unit sphere. -/
-theorem integrableOn_sphere_iff (d : ℕ) (c : E) {r : ℝ} (hr : 0 < r) {f : E → F} :
+theorem integrableOn_sphere_iff {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] (d : ℕ)
+    (c : E) {r : ℝ} (hr : 0 < r) {f : E → F} :
     IntegrableOn f (sphere c r) μHE[d] ↔
       IntegrableOn (fun u ↦ f (c + r • u)) (sphere 0 1) μHE[d] := by
   rw [IntegrableOn, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map d c hr,

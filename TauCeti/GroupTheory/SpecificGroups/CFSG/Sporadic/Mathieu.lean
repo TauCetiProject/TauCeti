@@ -12,12 +12,11 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 
 This file carries three rows of the sporadic presentation manifest: cited finite presentations of
 the Mathieu groups `M₁₁`, `M₁₂` and `M₂₂`, transcribed from published sources in which each
-presentation is *proved* to define the named group. Each row is a `TauCeti.GroupPresentation`, so it
-records the generator names, the source and a locator inside it, the generator convention, the
-transcription notes, and the generator and relator counts stated by the source, together with the
-relator expressions themselves.
+presentation is *proved* to define the named group. Each row is a `TauCeti.GroupPresentation`
+recording the generator and relator counts and the relator expressions. Its docstring records the
+generator names, source and locator, generator convention, and transcription notes.
 
-Four decidable checks accompany every row. The first is the generator and relator counts. The second
+Four decidable checks accompany every row. The first is the relator count. The second
 spells the compiled words out letter by letter, so that a reviewer comparing the Lean data with the
 source never has to unfold the relator compiler. The third reads off from those letters the total
 number of them, against the length published by the source. The fourth is that every compiled word
@@ -29,10 +28,8 @@ spelling out its transcribed relator expressions with their generator indices. T
 `TauCeti.GroupPresentation.relators_def` and `TauCeti.GroupPresentation.mem_relatorSet_iff`, and
 with the interpretation equations of `TauCeti.Relator.toFreeGroup`, that equation determines the
 compiled words and the relations defining the presented group, so a consumer downstream of this
-file reasons about a row without unfolding it. Each row likewise publishes an equation for every
-one of its metadata fields — the source, the locator, the generator convention, the transcription
-notes and the two counts the source states — so an audit downstream sees the provenance a manifest
-row exists to record, and not merely the row's name.
+file reasons about a row without unfolding it. Each row also publishes equations for its generator
+count and expected relator count. Its provenance is documented alongside the definition.
 
 ## The manifest rows
 
@@ -224,22 +221,26 @@ local infixl:70 " ⬝ " => Relator.mul
 Campbell--Havas--Ramsay--Robertson.
 
 The source's two relators are `b A³ b A b³` and `b a B A B A b a B a`. This is a two-generator,
-two-relator presentation, which is efficient because `M₁₁` has trivial Schur multiplier. -/
+two-relator presentation, which is efficient because `M₁₁` has trivial Schur multiplier.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, Nice efficient presentations for
+all small simple groups and their covers, LMS J. Comput. Math. 7 (2004), 266-283.
+
+Source locator: Table 2 (p. 270), row M11, with the discussion in Section 5.8 (p. 275);
+doi:10.1112/S1461157000001121
+
+Generator convention: The generators a and b of the source, in that order, so index 0 is a and
+index 1 is b. An upper-case letter denotes the inverse of the corresponding generator, and each
+relator is a word that the source sets equal to the identity.
+
+Transcription notes: The relators are the source's b A^3 b A b^3 and b a B A B A b a B a,
+transcribed letter by letter. No commutator constructor is used, so the commutator convention of
+Relator does not enter. The source proves the presentation by coset enumeration over the trivial
+subgroup, using a total of 10428 cosets, and records the resulting order 7920. -/
 def m11Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, Nice efficient \
-    presentations for all small simple groups and their covers, LMS J. Comput. Math. 7 (2004), \
-    266-283"
-  sourceLocator := "Table 2 (p. 270), row M11, with the discussion in Section 5.8 (p. 275); \
-    doi:10.1112/S1461157000001121"
-  generatorConvention := "The generators a and b of the source, in that order, so index 0 is a and \
-    index 1 is b. An upper-case letter denotes the inverse of the corresponding generator, and \
-    each relator is a word that the source sets equal to the identity."
-  transcriptionNotes := "The relators are the source's b A^3 b A b^3 and b a B A B A b a B a, \
-    transcribed letter by letter. No commutator constructor is used, so the commutator convention \
-    of Relator does not enter. The source proves the presentation by coset enumeration over the \
-    trivial subgroup, using a total of 10428 cosets, and records the resulting order 7920."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 2
   transcribed :=
     [ -- b A A A b A b b b
@@ -247,56 +248,15 @@ def m11Presentation : GroupPresentation where
       -- b a B A B A b a B a
       genB ⬝ genA ⬝ invB ⬝ invA ⬝ invB ⬝ invA ⬝ genB ⬝ genA ⬝ invB ⬝ genA ]
 
-/-- The generator names recorded for `M₁₁`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `M₁₁`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem m11Presentation_generatorNames : m11Presentation.generatorNames = ["a", "b"] := by
-  simp [m11Presentation]
-
-/-- The source recorded for `M₁₁`. The row's body is sealed, so this equation is what publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem m11Presentation_source :
-    m11Presentation.source = "C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, Nice \
-      efficient presentations for all small simple groups and their covers, LMS J. Comput. Math. 7 \
-      (2004), 266-283" := by
-  simp [m11Presentation]
-
-/-- The locator recorded for `M₁₁`, pointing at the presentation inside its source. -/
-@[simp]
-theorem m11Presentation_sourceLocator :
-    m11Presentation.sourceLocator = "Table 2 (p. 270), row M11, with the discussion in Section 5.8 \
-      (p. 275); doi:10.1112/S1461157000001121" := by
-  simp [m11Presentation]
-
-/-- The generator convention recorded for `M₁₁`, fixing which generator each relator index names. -/
-@[simp]
-theorem m11Presentation_generatorConvention :
-    m11Presentation.generatorConvention = "The generators a and b of the source, in that order, so \
-      index 0 is a and index 1 is b. An upper-case letter denotes the inverse of the corresponding \
-      generator, and each relator is a word that the source sets equal to the identity." := by
-  simp [m11Presentation]
-
-/-- The transcription notes recorded for `M₁₁`, including the coset total of the source's
-enumeration. -/
-@[simp]
-theorem m11Presentation_transcriptionNotes :
-    m11Presentation.transcriptionNotes = "The relators are the source's b A^3 b A b^3 and b a B A \
-      B A b a B a, transcribed letter by letter. No commutator constructor is used, so the \
-      commutator convention of Relator does not enter. The source proves the presentation by coset \
-      enumeration over the trivial subgroup, using a total of 10428 cosets, and records the \
-      resulting order 7920." := by
-  simp [m11Presentation]
-
-/-- The generator count `M₁₁`'s source states. With
-`TauCeti.Sporadic.m11Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.m11Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem m11Presentation_expectedGeneratorCount : m11Presentation.expectedGeneratorCount = 2 := by
+theorem m11Presentation_generatorCount : m11Presentation.generatorCount = 2 := by
   simp [m11Presentation]
 
 /-- The relator count `M₁₁`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m11Presentation_expectedRelatorCount : m11Presentation.expectedRelatorCount = 2 := by
   simp [m11Presentation]
@@ -308,7 +268,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.m11Presentation_generatorNames`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m11Presentation_transcribed :
     m11Presentation.transcribed =
@@ -322,7 +282,7 @@ theorem m11Presentation_transcribed :
           .gen ⟨0, by simp⟩ ] := by
   simp [m11Presentation]
 
-/-- The generator and relator counts recorded for `M₁₁` agree with the transcribed data. -/
+/-- The relator count recorded for `M₁₁` agrees with the transcribed data. -/
 theorem m11Presentation_matchesMetadata : m11Presentation.matchesMetadata := by decide
 
 /-- The compiled relator words for `M₁₁`, spelled out. A letter `(i, true)` is the generator with
@@ -335,7 +295,7 @@ theorem m11Presentation_relatorLetters :
         [(1, true), (0, true), (1, false), (0, false), (1, false), (0, false), (1, true),
           (0, true), (1, false), (0, true)]] := by
   simp [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
-    GroupPresentation.generatorCount, FreeGroup.invRev, m11Presentation]
+    FreeGroup.invRev, m11Presentation]
 
 /-- The compiled relator words for `M₁₁` have the total length `19` published by the source. This is
 read off from the spelled-out letters rather than from the record. -/
@@ -360,23 +320,27 @@ theorem m11Presentation_relatorsCyclicallyReduced : m11Presentation.relatorsCycl
 /-- A finite presentation of the Mathieu group `M₁₂`, transcribed from row `M12` of Table 2 of
 Campbell--Havas--Ramsay--Robertson.
 
-The source's three relators are `(B a)³`, `a⁵ b⁶` and `a b² a B a² b a² b²`. -/
+The source's three relators are `(B a)³`, `a⁵ b⁶` and `a b² a B a² b a² b²`.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, Nice efficient presentations for
+all small simple groups and their covers, LMS J. Comput. Math. 7 (2004), 266-283.
+
+Source locator: Table 2 (p. 270), row M12, with the discussion in Section 5.17 (p. 279);
+doi:10.1112/S1461157000001121
+
+Generator convention: The generators a and b of the source, in that order, so index 0 is a and
+index 1 is b. An upper-case letter denotes the inverse of the corresponding generator, and each
+relator is a word that the source sets equal to the identity.
+
+Transcription notes: The relators are the source's (B a)^3, a^5 b^6 and a b^2 a B a^2 b a^2 b^2,
+transcribed letter by letter; the bracketed cube is kept as a power expression rather than
+expanded. No commutator constructor is used. The source proves the presentation by coset
+enumeration over the trivial subgroup, using a total of 119334 cosets, and records the resulting
+order 95040. -/
 def m12Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, Nice efficient \
-    presentations for all small simple groups and their covers, LMS J. Comput. Math. 7 (2004), \
-    266-283"
-  sourceLocator := "Table 2 (p. 270), row M12, with the discussion in Section 5.17 (p. 279); \
-    doi:10.1112/S1461157000001121"
-  generatorConvention := "The generators a and b of the source, in that order, so index 0 is a and \
-    index 1 is b. An upper-case letter denotes the inverse of the corresponding generator, and \
-    each relator is a word that the source sets equal to the identity."
-  transcriptionNotes := "The relators are the source's (B a)^3, a^5 b^6 and a b^2 a B a^2 b a^2 \
-    b^2, transcribed letter by letter; the bracketed cube is kept as a power expression rather \
-    than expanded. No commutator constructor is used. The source proves the presentation by coset \
-    enumeration over the trivial subgroup, using a total of 119334 cosets, and records the \
-    resulting order 95040."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 3
   transcribed :=
     [ -- (B a)³
@@ -386,54 +350,14 @@ def m12Presentation : GroupPresentation where
       -- a b b a B a a b a a b b
       genA ⬝ .pow genB 2 ⬝ genA ⬝ invB ⬝ .pow genA 2 ⬝ genB ⬝ .pow genA 2 ⬝ .pow genB 2 ]
 
-/-- The generator names recorded for `M₁₂`; see
-`TauCeti.Sporadic.m11Presentation_generatorNames`. -/
+/-- The number of generators in the presentation of `M₁₂`; see
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
-theorem m12Presentation_generatorNames : m12Presentation.generatorNames = ["a", "b"] := by
-  simp [m12Presentation]
-
-/-- The source recorded for `M₁₂`; see `TauCeti.Sporadic.m11Presentation_source`. -/
-@[simp]
-theorem m12Presentation_source :
-    m12Presentation.source = "C. M. Campbell, G. Havas, C. Ramsay and E. F. Robertson, Nice \
-      efficient presentations for all small simple groups and their covers, LMS J. Comput. Math. 7 \
-      (2004), 266-283" := by
-  simp [m12Presentation]
-
-/-- The locator recorded for `M₁₂`, pointing at the presentation inside its source. -/
-@[simp]
-theorem m12Presentation_sourceLocator :
-    m12Presentation.sourceLocator = "Table 2 (p. 270), row M12, with the discussion in Section \
-      5.17 (p. 279); doi:10.1112/S1461157000001121" := by
-  simp [m12Presentation]
-
-/-- The generator convention recorded for `M₁₂`, fixing which generator each relator index names. -/
-@[simp]
-theorem m12Presentation_generatorConvention :
-    m12Presentation.generatorConvention = "The generators a and b of the source, in that order, so \
-      index 0 is a and index 1 is b. An upper-case letter denotes the inverse of the corresponding \
-      generator, and each relator is a word that the source sets equal to the identity." := by
-  simp [m12Presentation]
-
-/-- The transcription notes recorded for `M₁₂`, including the coset total of the source's
-enumeration. -/
-@[simp]
-theorem m12Presentation_transcriptionNotes :
-    m12Presentation.transcriptionNotes = "The relators are the source's (B a)^3, a^5 b^6 and a \
-      b^2 a B a^2 b a^2 b^2, transcribed letter by letter; the bracketed cube is kept as a power \
-      expression rather than expanded. No commutator constructor is used. The source proves the \
-      presentation by coset enumeration over the trivial subgroup, using a total of 119334 cosets, \
-      and records the resulting order 95040." := by
-  simp [m12Presentation]
-
-/-- The generator count `M₁₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
-@[simp]
-theorem m12Presentation_expectedGeneratorCount : m12Presentation.expectedGeneratorCount = 2 := by
+theorem m12Presentation_generatorCount : m12Presentation.generatorCount = 2 := by
   simp [m12Presentation]
 
 /-- The relator count `M₁₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m12Presentation_expectedRelatorCount : m12Presentation.expectedRelatorCount = 3 := by
   simp [m12Presentation]
@@ -453,7 +377,7 @@ theorem m12Presentation_transcribed :
           .pow (.gen ⟨0, by simp⟩) 2 ⬝ .pow (.gen ⟨1, by simp⟩) 2 ] := by
   simp [m12Presentation]
 
-/-- The generator and relator counts recorded for `M₁₂` agree with the transcribed data. -/
+/-- The relator count recorded for `M₁₂` agrees with the transcribed data. -/
 theorem m12Presentation_matchesMetadata : m12Presentation.matchesMetadata := by decide
 
 /-- The compiled relator words for `M₁₂`, spelled out. A letter `(i, true)` is the generator with
@@ -467,7 +391,7 @@ theorem m12Presentation_relatorLetters :
         [(0, true), (1, true), (1, true), (0, true), (1, false), (0, true), (0, true), (1, true),
           (0, true), (0, true), (1, true), (1, true)]] := by
   simp [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
-    GroupPresentation.generatorCount, FreeGroup.invRev, m12Presentation]
+    FreeGroup.invRev, m12Presentation]
 
 /-- The compiled relator words for `M₁₂` have the total length `29` published by the source. This is
 read off from the spelled-out letters rather than from the record. -/
@@ -490,23 +414,28 @@ Conder--Havas--Ramsay.
 
 The source's three relators are `a⁴ b A b A b`, `a a b A B a b b A B` and `b¹¹`. The first two of
 them present the covering group of `M₂₂`, and the source obtains this presentation of `M₂₂` itself
-by adjoining `b¹¹`, a central element of order twelve in that cover. -/
+by adjoining `b¹¹`, a central element of order twelve in that cover.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: M. D. E. Conder, G. Havas and C. Ramsay, Efficient presentations for the Mathieu simple
+group M22 and its cover, in Finite Geometries, Groups, and Computation, Walter de Gruyter, Berlin,
+2006, 33-41.
+
+Source locator: Section 3.4 (p. 40), the presentation obtained from the presentation P8 of the
+cover by adjoining the central element b^11
+
+Generator convention: The generators a and b of the source, in that order, so index 0 is a and
+index 1 is b. An upper-case letter denotes the inverse of the corresponding generator, and each
+relator is a word that the source sets equal to the identity.
+
+Transcription notes: The relators are the source's a a a a b A b A b, a a b A B a b b A B and
+b^11, transcribed letter by letter, with the two runs of equal letters kept as powers. No
+commutator constructor is used. The source proves the presentation by coset enumeration over the
+trivial subgroup, using a total of 2104858 cosets, and describes it as the shortest presentation
+of M22 it found, of length 30. -/
 def m22Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "M. D. E. Conder, G. Havas and C. Ramsay, Efficient presentations for the Mathieu \
-    simple group M22 and its cover, in Finite Geometries, Groups, and Computation, Walter de \
-    Gruyter, Berlin, 2006, 33-41"
-  sourceLocator := "Section 3.4 (p. 40), the presentation obtained from the presentation P8 of \
-    the cover by adjoining the central element b^11"
-  generatorConvention := "The generators a and b of the source, in that order, so index 0 is a and \
-    index 1 is b. An upper-case letter denotes the inverse of the corresponding generator, and \
-    each relator is a word that the source sets equal to the identity."
-  transcriptionNotes := "The relators are the source's a a a a b A b A b, a a b A B a b b A B and \
-    b^11, transcribed letter by letter, with the two runs of equal letters kept as powers. No \
-    commutator constructor is used. The source proves the presentation by coset enumeration over \
-    the trivial subgroup, using a total of 2104858 cosets, and describes it as the shortest \
-    presentation of M22 it found, of length 30."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 3
   transcribed :=
     [ -- a a a a b A b A b
@@ -516,54 +445,14 @@ def m22Presentation : GroupPresentation where
       -- b¹¹
       .pow genB 11 ]
 
-/-- The generator names recorded for `M₂₂`; see
-`TauCeti.Sporadic.m11Presentation_generatorNames`. -/
+/-- The number of generators in the presentation of `M₂₂`; see
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
-theorem m22Presentation_generatorNames : m22Presentation.generatorNames = ["a", "b"] := by
-  simp [m22Presentation]
-
-/-- The source recorded for `M₂₂`; see `TauCeti.Sporadic.m11Presentation_source`. -/
-@[simp]
-theorem m22Presentation_source :
-    m22Presentation.source = "M. D. E. Conder, G. Havas and C. Ramsay, Efficient presentations for \
-      the Mathieu simple group M22 and its cover, in Finite Geometries, Groups, and Computation, \
-      Walter de Gruyter, Berlin, 2006, 33-41" := by
-  simp [m22Presentation]
-
-/-- The locator recorded for `M₂₂`, pointing at the presentation inside its source. -/
-@[simp]
-theorem m22Presentation_sourceLocator :
-    m22Presentation.sourceLocator = "Section 3.4 (p. 40), the presentation obtained from the \
-      presentation P8 of the cover by adjoining the central element b^11" := by
-  simp [m22Presentation]
-
-/-- The generator convention recorded for `M₂₂`, fixing which generator each relator index names. -/
-@[simp]
-theorem m22Presentation_generatorConvention :
-    m22Presentation.generatorConvention = "The generators a and b of the source, in that order, so \
-      index 0 is a and index 1 is b. An upper-case letter denotes the inverse of the corresponding \
-      generator, and each relator is a word that the source sets equal to the identity." := by
-  simp [m22Presentation]
-
-/-- The transcription notes recorded for `M₂₂`, including the coset total of the source's
-enumeration. -/
-@[simp]
-theorem m22Presentation_transcriptionNotes :
-    m22Presentation.transcriptionNotes = "The relators are the source's a a a a b A b A b, a a b A \
-      B a b b A B and b^11, transcribed letter by letter, with the two runs of equal letters kept \
-      as powers. No commutator constructor is used. The source proves the presentation by coset \
-      enumeration over the trivial subgroup, using a total of 2104858 cosets, and describes it as \
-      the shortest presentation of M22 it found, of length 30." := by
-  simp [m22Presentation]
-
-/-- The generator count `M₂₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
-@[simp]
-theorem m22Presentation_expectedGeneratorCount : m22Presentation.expectedGeneratorCount = 2 := by
+theorem m22Presentation_generatorCount : m22Presentation.generatorCount = 2 := by
   simp [m22Presentation]
 
 /-- The relator count `M₂₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m22Presentation_expectedRelatorCount : m22Presentation.expectedRelatorCount = 3 := by
   simp [m22Presentation]
@@ -584,7 +473,7 @@ theorem m22Presentation_transcribed :
         .pow (.gen ⟨1, by simp⟩) 11 ] := by
   simp [m22Presentation]
 
-/-- The generator and relator counts recorded for `M₂₂` agree with the transcribed data. -/
+/-- The relator count recorded for `M₂₂` agrees with the transcribed data. -/
 theorem m22Presentation_matchesMetadata : m22Presentation.matchesMetadata := by decide
 
 /-- The compiled relator words for `M₂₂`, spelled out. A letter `(i, true)` is the generator with
@@ -599,7 +488,7 @@ theorem m22Presentation_relatorLetters :
         [(1, true), (1, true), (1, true), (1, true), (1, true), (1, true), (1, true), (1, true),
           (1, true), (1, true), (1, true)]] := by
   simp [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
-    GroupPresentation.generatorCount, FreeGroup.invRev, m22Presentation]
+    FreeGroup.invRev, m22Presentation]
 
 /-- The compiled relator words for `M₂₂` have the total length `30` published by the source. This is
 read off from the spelled-out letters rather than from the record. -/

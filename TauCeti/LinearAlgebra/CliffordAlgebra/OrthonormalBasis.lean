@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the ordered-product and square formulas are used only inside proofs.
+-- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # Orthonormal bases in the Clifford algebra of minus the squared norm
@@ -32,6 +33,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   orthogonal for `Q`.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
+* `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
+  `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -78,6 +81,14 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
 end OrthonormalBasis
 
 namespace CliffordAlgebra
+
+/-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
+    (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
+  rw [even_ι_bilin_add_swap]
+  congr 1
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
 
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies

@@ -32,7 +32,7 @@ uses only that `A` is simple with centre `K` and that `B` is simple.
 
 Simplicity is a statement about `A ⊗[K] B` as a ring, so it applies unchanged to a scalar extension
 `L ⊗[K] A` along a field extension `L / K`, with `L` merely simple and `A` central simple: that is
-the orientation supplied by `TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right`. It is only the
+the orientation supplied by `IsSimpleRing.tensorProduct_of_isCentral_right`. It is only the
 simplicity half of "`L ⊗[K] A` is central simple over `L`". The centrality there is a statement
 about `L ⊗[K] A` as an `L`-algebra, over `L` and not over `K`, and is not proved here:
 `TauCeti.Algebra.IsCentral.tensorProduct` gives centrality over `K` and asks both factors to be
@@ -43,9 +43,9 @@ below rather than resting on it.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.tensorProduct`: `A ⊗[K] B` is simple when `A` is central simple and `B` is
+* `IsSimpleRing.tensorProduct`: `A ⊗[K] B` is simple when `A` is central simple and `B` is
   simple. Only one of the two factors has to be central.
-* `TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right`: the mirror-image statement, with `B`
+* `IsSimpleRing.tensorProduct_of_isCentral_right`: the mirror-image statement, with `B`
   central simple and `A` merely simple, obtained by transporting the previous one along
   `Algebra.TensorProduct.comm`. This is the orientation of a scalar extension `L ⊗[K] A`.
 
@@ -78,7 +78,7 @@ commutator `(a ⊗ₜ 1) * y - y * (a ⊗ₜ 1)` to vanish, so `y = 1 ⊗ₜ b` 
 `TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff`; simplicity of `B` then pushes `1`
 into `I`.
 
-Both appeals to simplicity in `TauCeti.IsSimpleRing.tensorProduct` are made by exhibiting a
+Both appeals to simplicity in `IsSimpleRing.tensorProduct` are made by exhibiting a
 two-sided ideal that is nonzero, hence everything: on the `A` side the `i₀`-th coordinates of the
 elements of a two-sided ideal `I` supported in a fixed finite set, built as a `TwoSidedIdeal.mk'`,
 and on the `B` side the `c : B` with `1 ⊗ₜ c ∈ I`, which is `I.comap` along
@@ -96,8 +96,6 @@ public section
 open Module
 
 open scoped TensorProduct
-
-namespace TauCeti
 
 namespace IsSimpleRing
 
@@ -139,7 +137,7 @@ private lemma exists_mem_repr_eq_one [IsSimpleRing A] {ι : Type*} (𝓑 : Basis
       Algebra.TensorProduct.basis_repr_mul_tmul_one ..⟩
   have hone : (1 : A) ∈ carrier := by
     have hmem : (Algebra.TensorProduct.basis A 𝓑).repr y₀ i₀ ∈ carrier := ⟨y₀, hy₀I, hy₀S, rfl⟩
-    have := _root_.IsSimpleRing.one_mem_of_ne_zero_mem
+    have := one_mem_of_ne_zero_mem
       (TwoSidedIdeal.mk' carrier hzero hadd hneg hmulleft hmulright) hne
       ((TwoSidedIdeal.mem_mk' ..).mpr hmem)
     exact (TwoSidedIdeal.mem_mk' ..).mp this
@@ -208,20 +206,20 @@ instance tensorProduct [Algebra.IsCentral K A] [IsSimpleRing A] [IsSimpleRing B]
   -- Every coordinate of `y` commutes with `A`, so `y = 1 ⊗ₜ b`.
   have hcomm := commute_tmul_one_of_repr_eq_one 𝓑 hi₀ hyI hyS hy1
     (fun z hz hlt => by_contra fun hz0 => hmin.not_lt ⟨hz, hz0⟩ hlt)
-  obtain ⟨b, rfl⟩ := Algebra.TensorProduct.forall_commute_tmul_one_iff.mp hcomm
+  obtain ⟨b, rfl⟩ := TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff.mp hcomm
   have hb : b ≠ 0 := by rintro rfl; exact hy0 (by simp)
   -- The `c : B` with `1 ⊗ₜ c ∈ I` form the preimage of `I` along `includeRight`, a two-sided
   -- ideal of the simple ring `B`; it contains `b ≠ 0`, hence it is everything.
   have honeB : (1 : B) ∈
       I.comap (Algebra.TensorProduct.includeRight : B →ₐ[K] A ⊗[K] B) :=
-    _root_.IsSimpleRing.one_mem_of_ne_zero_mem _ hb
+    one_mem_of_ne_zero_mem _ hb
       ((TwoSidedIdeal.mem_comap _).mpr (by simpa using hyI))
   rw [TwoSidedIdeal.mem_comap] at honeB
   simpa [Algebra.TensorProduct.one_def] using honeB
 
 variable (K A B) in
 /-- **The tensor product of a simple `K`-algebra with a central simple `K`-algebra is simple.** This
-is `TauCeti.IsSimpleRing.tensorProduct` with the roles of the two factors exchanged, so that it is
+is `IsSimpleRing.tensorProduct` with the roles of the two factors exchanged, so that it is
 the *right* factor that is central; it is the orientation of a scalar extension `L ⊗[K] A`, where
 `L / K` is a field extension and `A` is the central simple algebra. -/
 instance tensorProduct_of_isCentral_right [IsSimpleRing A] [Algebra.IsCentral K B]
@@ -252,5 +250,3 @@ example {L A : Type*} [Field L] [Algebra K L] [Ring A] [Algebra K A] [Algebra.Is
   inferInstance
 
 end Examples
-
-end TauCeti

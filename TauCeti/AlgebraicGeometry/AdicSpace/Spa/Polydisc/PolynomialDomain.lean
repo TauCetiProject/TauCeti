@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.HoledDisc
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Lemniscate
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.RationalSubset
+import TauCeti.RingTheory.Huber.Normed
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -41,6 +42,11 @@ common factor `gcd(fᵢ, g)` can be cancelled. Finite intersections of finite un
 are again finite unions of holed discs (`TauCeti.ValuationSpectrum.IsHoledDiscUnion.inter`), since
 two closed discs meet in a closed disc or not at all.
 
+Conversely every finite union of holed discs is rational
+(`TauCeti.ValuationSpectrum.IsHoledDiscUnion.mem_spaRationalFamily`), so over an algebraically
+closed nontrivially normed field the rational subsets of `X` are exactly the finite unions of
+holed discs.
+
 Coprimality cannot be dropped: for `f = T` and `g = c T` with `0 < ‖c‖ < 1`, the domain `X(f/g)`
 is the zero locus of `T`, while every nonempty holed disc contains a Gauss point, at which `T` does
 not vanish.
@@ -51,6 +57,8 @@ not vanish.
   coprime `f` and `g`, the domain `X(f/g)` is a finite union of holed discs.
 * `TauCeti.ValuationSpectrum.exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily`: every
   rational subset of `X` is a finite union of holed discs `TauCeti.ValuationSpectrum.holedDisc`.
+* `TauCeti.ValuationSpectrum.mem_spaRationalFamily_iff_isHoledDiscUnion`: a subset of `X` is
+  rational if and only if it is a finite union of holed discs.
 
 ## Implementation notes
 
@@ -448,5 +456,17 @@ theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
   rw [hU', setOf_forall_vle_eq_iInter_div_gcd hc.ne_zero hcG hp]
   exact isHoledDiscUnion_biInter G fun g _ ↦ isHoledDiscUnion_iff.mpr
     (exists_finset_setOf_vle_eq_iUnion_holedDisc (isCoprime_div_gcd_div_gcd hp))
+
+/-- **The rational subsets of the closed unit disc are exactly the finite unions of holed discs**,
+over an algebraically closed nontrivially normed ultrametric field. The forward direction is
+`exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily` and the converse is
+`IsHoledDiscUnion.mem_spaRationalFamily`. -/
+theorem mem_spaRationalFamily_iff_isHoledDiscUnion {K : Type*} [NontriviallyNormedField K]
+    [IsUltrametricDist K] [NonarchimedeanRing K] [IsAlgClosed K] {U : Set (closedPolydisc 1 K)} :
+    (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' U ∈
+      spaRationalFamily (powerBoundedSubring (𝒯 K)) ↔ IsHoledDiscUnion U :=
+  ⟨fun hU ↦ isHoledDiscUnion_iff.mpr
+      (exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily hU),
+    IsHoledDiscUnion.mem_spaRationalFamily⟩
 
 end TauCeti.ValuationSpectrum

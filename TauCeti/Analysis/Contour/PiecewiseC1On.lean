@@ -48,8 +48,8 @@ prerequisite for the homology Cauchy theorem and the generalized residue theorem
 * `Contour.IsPiecewiseC1On.exists_finset_differentiableAt`,
   `Contour.IsPiecewiseC1On.exists_countable_differentiableAt` — differentiability off a finite
   (hence countable) set, in the exact shapes the raw contour-integral lemmas consume.
-* `Contour.IsPiecewiseC1On.eventually_differentiableAt` (and its `_right`/`_left` one-sided
-  corollaries) — eventual differentiability near an interior parameter.
+* `Contour.IsPiecewiseC1On.eventually_differentiableAt` — eventual differentiability near an
+  interior parameter.
 * `Contour.IsPiecewiseC1On.intervalIntegrable_deriv` — the derivative is interval-integrable on
   `a..b`, glued across the breakpoints from the `C¹` pieces.
 * `Contour.IsPiecewiseC1On.isBounded_image_deriv` — the derivative has bounded image on
@@ -233,18 +233,6 @@ theorem IsPiecewiseC1On.eventually_differentiableAt (h : IsPiecewiseC1On γ a b)
   filter_upwards [nhdsWithin_le_nhds (hcl.isOpen_compl.mem_nhds (by simp)),
     nhdsWithin_le_nhds (isOpen_Ioo.mem_nhds ht₀), self_mem_nhdsWithin] with t htc htIoo htu
   exact hp t ⟨htIoo, fun htp => htc ⟨htp, fun h_eq => hu (h_eq ▸ htu)⟩⟩
-
-/-- Eventual differentiability from the right at an interior parameter. -/
-theorem IsPiecewiseC1On.eventually_differentiableAt_right (h : IsPiecewiseC1On γ a b)
-    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
-    ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t :=
-  h.eventually_differentiableAt ht₀ self_notMem_Ioi
-
-/-- Eventual differentiability from the left at an interior parameter. -/
-theorem IsPiecewiseC1On.eventually_differentiableAt_left (h : IsPiecewiseC1On γ a b)
-    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
-    ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t :=
-  h.eventually_differentiableAt ht₀ self_notMem_Iio
 
 /-- The derivative of a curve that is `C¹` on `[c, d]` is interval-integrable on `c..d`: the
 within-interval derivative is continuous on the compact piece, and agrees with `deriv` on the

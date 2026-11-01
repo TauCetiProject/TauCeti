@@ -11,7 +11,14 @@ public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Analytic inversion, its isometry compatibility, and orientation
+# Inversion: the punctured space, analyticity, isometries, and orientation
+
+Inversion in a sphere of positive radius exchanges the punctured open ball with the exterior of the
+closed ball (`TauCeti.dist_inversion_center_lt_iff`, `TauCeti.lt_dist_inversion_center_iff`). For a
+nonzero radius it restricts to an involutive self-homeomorphism of the complement of its centre
+(`TauCeti.inversionHomeomorph`). In an `RCLike` field it is given by the conjugate-reciprocal
+formula `c + R ^ 2 / conj (z - c)`, which in `ℂ` is the classical formula for reflection in a
+circle.
 
 Inversion is analytic away from its centre (`EuclideanGeometry.contDiffAt_inversion`). This
 extends the smooth regularity provided by Mathlib's `ContDiffAt.inversion` to the analytic order.
@@ -32,6 +39,9 @@ of one orientation class give an oriented atlas.
 
 ## Main results
 
+* `TauCeti.inversionHomeomorph`: inversion as a self-homeomorphism of the complement of its centre.
+* `TauCeti.inversion_eq_conj_reciprocal`: inversion in an `RCLike` field is
+  `z ↦ c + R ^ 2 / conj (z - c)`.
 * `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
 * `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
@@ -44,7 +54,7 @@ of one orientation class give an oriented atlas.
 public section
 
 open EuclideanGeometry
-open scoped ContDiff
+open scoped ComplexConjugate ContDiff
 
 namespace EuclideanGeometry
 
@@ -125,5 +135,58 @@ theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
     (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
       (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
   simp [EuclideanGeometry.inversion]
+
+/-- Inversion in a sphere of positive radius sends a point other than the centre into the open
+ball exactly when the point lies outside the closed ball. -/
+@[simp]
+theorem dist_inversion_center_lt_iff {c x : P} {R : ℝ} (hR : 0 < R) (hx : x ≠ c) :
+    dist (inversion c R x) c < R ↔ R < dist x c := by
+  rw [dist_inversion_center, div_lt_iff₀ (dist_pos.2 hx), sq, mul_lt_mul_iff_right₀ hR]
+
+/-- Inversion in a sphere of positive radius sends a point other than the centre outside the
+closed ball exactly when the point lies in the open ball. -/
+@[simp]
+theorem lt_dist_inversion_center_iff {c x : P} {R : ℝ} (hR : 0 < R) (hx : x ≠ c) :
+    R < dist (inversion c R x) c ↔ dist x c < R := by
+  rw [dist_inversion_center, lt_div_iff₀ (dist_pos.2 hx), sq, mul_lt_mul_iff_right₀ hR]
+
+/-- Inversion in a sphere of nonzero radius restricts to a self-homeomorphism of the complement of
+its centre. -/
+noncomputable def inversionHomeomorph (c : P) {R : ℝ} (hR : R ≠ 0) :
+    ({c}ᶜ : Set P) ≃ₜ ({c}ᶜ : Set P) where
+  toFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.2⟩
+  invFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.2⟩
+  left_inv x := Subtype.ext (inversion_inversion c hR x)
+  right_inv x := Subtype.ext (inversion_inversion c hR x)
+  continuous_toFun :=
+    (continuousOn_const.inversion continuousOn_const continuousOn_id fun _ ↦ id).domRestrict
+      |>.subtype_mk _
+  continuous_invFun :=
+    (continuousOn_const.inversion continuousOn_const continuousOn_id fun _ ↦ id).domRestrict
+      |>.subtype_mk _
+
+/-- The restricted inversion homeomorphism acts by inversion. -/
+@[simp]
+theorem coe_inversionHomeomorph_apply (c : P) {R : ℝ} (hR : R ≠ 0) (x : ({c}ᶜ : Set P)) :
+    (inversionHomeomorph c hR x : P) = inversion c R x :=
+  (rfl)
+
+/-- The restricted inversion homeomorphism is its own inverse. -/
+@[simp]
+theorem inversionHomeomorph_symm (c : P) {R : ℝ} (hR : R ≠ 0) :
+    (inversionHomeomorph c hR).symm = inversionHomeomorph c hR :=
+  Homeomorph.ext fun x ↦ (inversionHomeomorph c hR).symm_apply_eq.2 <|
+    Subtype.ext (inversion_inversion c hR x).symm
+
+/-- In an `RCLike` field, inversion in the sphere of centre `c` and radius `R` is given by the
+conjugate-reciprocal formula; in `ℂ` this is the standard formula for reflection in a circle. -/
+theorem inversion_eq_conj_reciprocal {𝕜 : Type*} [RCLike 𝕜] (c : 𝕜) (R : ℝ) (z : 𝕜) :
+    inversion c R z = c + (R : 𝕜) ^ 2 / conj (z - c) := by
+  simp only [inversion, vsub_eq_sub, vadd_eq_add, dist_eq_norm, RCLike.real_smul_eq_coe_mul]
+  push_cast
+  rw [add_comm, div_pow, ← RCLike.conj_mul]
+  rcases eq_or_ne (z - c) 0 with h | h
+  · simp [h]
+  · field_simp
 
 end TauCeti

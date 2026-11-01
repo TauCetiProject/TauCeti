@@ -317,6 +317,17 @@ instance : (discreteModules.{v} A).IsClosedUnderFiniteLimits where
     exact this ▸ isOpen_iInter_of_finite fun k =>
       discreteModules_iff_isOpen.1 (p.prop_diag_obj k) _ _⟩
 
+/-- The product of two discrete modules, with the componentwise action, is discrete. -/
+theorem discreteModules_prod {M : ModuleCat.{v} A} {N : ModuleCat.{v'} A}
+    (hM : discreteModules A M) (hN : discreteModules A N) :
+    discreteModules A (ModuleCat.of A (M × N)) := by
+  rw [discreteModules_iff_isOpen] at hM hN ⊢
+  intro m x
+  have : {a : A | a • m = x} = {a | a • m.1 = x.1} ∩ {a | a • m.2 = x.2} := by
+    ext a
+    simp [Prod.ext_iff]
+  exact this ▸ (hM m.1 x.1).inter (hN m.2 x.2)
+
 /-- The discrete modules form an abelian category. -/
 example : Abelian (discreteModules.{v} A).FullSubcategory :=
   inferInstance

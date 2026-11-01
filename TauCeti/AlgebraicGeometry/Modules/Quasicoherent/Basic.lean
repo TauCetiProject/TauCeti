@@ -150,6 +150,15 @@ def pullback {Y : Scheme.{u}} (f : X ⟶ Y) :
     fun E ↦ Scheme.Modules.isQuasicoherent_pullback f E.obj
 
 variable {X} in
+/-- Pullback of quasicoherent sheaves is the lift of pullback of modules to the full
+subcategories of quasicoherent sheaves. -/
+lemma pullback_def {Y : Scheme.{u}} (f : X ⟶ Y) :
+    pullback f = (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
+      ((_root_.SheafOfModules.isQuasicoherent Y.ringCatSheaf).ι ⋙ Scheme.Modules.pullback f)
+      fun E ↦ Scheme.Modules.isQuasicoherent_pullback f E.obj :=
+  (rfl)
+
+variable {X} in
 /-- The underlying sheaf of the pullback of a quasicoherent sheaf is its pullback as an
 `𝒪_Y`-module. -/
 @[simp]

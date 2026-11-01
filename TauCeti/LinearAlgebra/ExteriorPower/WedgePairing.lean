@@ -17,7 +17,8 @@ import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 Inside the exterior algebra, the wedge product of exterior powers is the algebra product, and the
 wedge product of pure exterior products concatenates their vector families. A trivialisation
 in a specified top degree gives the wedge pairing by composing the wedge product with that
-trivialisation; the degree transports disappear after identifying the degree with the finrank.
+trivialisation; the degree transports disappear after identifying the degree with the finrank,
+and a wedge pairing is the trivialisation of the exterior-algebra product of its arguments.
 On the exterior-power bases induced by a basis `b`, the wedge pairing of `e_s` and `e_t` is the
 shuffle sign of `s` times the volume of `b` when `s` and `t` are disjoint, and zero otherwise.
 The top exterior product `Module.Basis.topVector` of a basis indexed by `Fin n` is the wedge of
@@ -75,6 +76,22 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
       (wedge R M k l).compr₂ (hdeg ▸ vol) := by
   subst n
   rfl
+
+/-- The wedge pairing of `x` and `y` is `vol` of their product in the exterior algebra, read as an
+element `z` of the top exterior power. This removes the degree transport `k + l = finrank R M`
+built into `exteriorPower.wedgePairing`, so pairings with different splittings of the top degree
+can be compared through the exterior algebra. -/
+theorem wedgePairing_apply_eq_of_coe_mul_eq (vol : ⋀[R]^(Module.finrank R M) M ≃ₗ[R] R)
+    (hkl : k + l = Module.finrank R M) (x : ⋀[R]^k M) (y : ⋀[R]^l M)
+    (z : ⋀[R]^(Module.finrank R M) M) (h : (x : ExteriorAlgebra R M) * y = z) :
+    wedgePairing vol hkl x y = vol z := by
+  -- Evaluating a degree-transported functional only depends on the exterior-algebra element.
+  have key : ∀ {d e : ℕ} (hde : e = d) (f : ⋀[R]^e M →ₗ[R] R) (w : ⋀[R]^d M) (w' : ⋀[R]^e M),
+      (w : ExteriorAlgebra R M) = w' →
+        (Eq.rec (motive := fun d _ ↦ ⋀[R]^d M →ₗ[R] R) f hde) w = f w' := by
+    rintro d e rfl f w w' hw
+    exact congrArg f (Subtype.ext hw)
+  exact key _ _ _ _ (by simpa using h)
 
 /-- For a free module of finrank `n = k + l` and any linear functional `vol` on `⋀^n M`,
 precomposing `wedge` followed by `vol` with the exterior powers of an endomorphism `f` scales it

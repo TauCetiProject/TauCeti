@@ -33,6 +33,8 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 ## Main results
 
 * `PowerSeries.constantCoeff_rescale`: rescaling the variable keeps the constant coefficient.
+* `PowerSeries.rescale_exp_mul_rescale_neg_exp`, `PowerSeries.rescale_exp_mul_self`:
+  `e^{aX} e^{-aX} = 1` and `e^{aX} e^{aX} = e^{2aX}`.
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
@@ -59,6 +61,16 @@ noncomputable def expMonoidHom : Multiplicative R →* R⟦X⟧ where
   map_mul' a b := by simp [exp_mul_exp_eq_exp_add]
 
 variable {R}
+
+/-- `e^{aX} e^{-aX} = 1`. -/
+theorem rescale_exp_mul_rescale_neg_exp (a : R) :
+    rescale a (exp R) * rescale (-a) (exp R) = 1 := by
+  rw [exp_mul_exp_eq_exp_add, add_neg_cancel, rescale_zero_apply, constantCoeff_exp, map_one]
+
+/-- `e^{aX} e^{aX} = e^{2aX}`. -/
+theorem rescale_exp_mul_self (a : R) :
+    rescale a (exp R) * rescale a (exp R) = rescale (2 * a) (exp R) := by
+  rw [exp_mul_exp_eq_exp_add, two_mul]
 
 private theorem expMonoidHom_apply_def (a : Multiplicative R) :
     expMonoidHom R a = rescale a.toAdd (exp R) :=

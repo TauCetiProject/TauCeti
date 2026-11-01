@@ -27,6 +27,12 @@ the sheaf of types. The passage to a presheaf of modules via `PresheafOfModules.
 follows `AlgebraicGeometry.StructureSheaf.moduleStructurePresheaf` in Mathlib's
 `Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
 
+The fractions `r / s` form sections `AlgebraicGeometry.Proj.twistingSheaf.const`, and the
+difference of two of them is again a fraction
+(`AlgebraicGeometry.Proj.twistingSheaf.const_sub_const`). Every section
+of `𝒪(n)` is, near each point, such a fraction on a standard open `D₊(g)` with `g` of positive
+degree (`AlgebraicGeometry.Proj.twistingSheaf.locally_const_basicOpen`).
+
 We also define the components `A_j → Γ(U, 𝒪(j))`, `r ↦ r / 1`, of the graded map
 `A → ⨁ₙ Γ(Proj A, 𝒪(n))` (`AlgebraicGeometry.Proj.toTwistingSheaf`), and, over each open `U`,
 the `Γ(U, 𝒪)`-bilinear multiplication `Γ(U, 𝒪(m)) × Γ(U, 𝒪(n)) → Γ(U, 𝒪(m + n))` of sections,
@@ -326,6 +332,18 @@ theorem const_add {i j : ℕ} (h : (j : ℤ) = i + n) (r r' s : A) (hr : r ∈ �
       const h (r + r') s (add_mem hr hr') hs U hU :=
   ext fun _ ↦ Localization.add_mk_self _ _ _
 
+/-- The difference of the sections `r / s` and `r' / s'` is `(s' * r - s * r') / (s * s')`. -/
+theorem const_sub_const {i j i' j' : ℕ} (h : (j : ℤ) = i + n) (h' : (j' : ℤ) = i' + n)
+    {r s r' s' : A} (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i) (hr' : r' ∈ 𝒜 j') (hs' : s' ∈ 𝒜 i')
+    (hU : U ≤ basicOpen 𝒜 s) (hU' : U ≤ basicOpen 𝒜 s') :
+    const h r s hr hs U hU - const h' r' s' hr' hs' U hU' =
+      const (i := i + i') (j := i' + j) (by push_cast; omega) (s' * r - s * r') (s * s')
+        (sub_mem (SetLike.mul_mem_graded hs' hr)
+          (by convert SetLike.mul_mem_graded hs hr' using 2; omega))
+        (SetLike.mul_mem_graded hs hs') U
+        (fun x hx ↦ by simpa [basicOpen_mul] using And.intro (hU hx) (hU' hx)) :=
+  ext fun _ ↦ Localization.sub_mk ..
+
 /-- The sections `r / s` and `r' / s'` agree if `s' * r = s * r'`. -/
 theorem const_ext {i j i' j' : ℕ} {h : (j : ℤ) = i + n} {h' : (j' : ℤ) = i' + n} {r s r' s' : A}
     {hr : r ∈ 𝒜 j} {hs : s ∈ 𝒜 i} {hr' : r' ∈ 𝒜 j'} {hs' : s' ∈ 𝒜 i'} {hU : U ≤ basicOpen 𝒜 s}
@@ -340,6 +358,31 @@ theorem exists_const (s : Γ(twistingSheaf 𝒜 n, U)) (x : Proj 𝒜) (hx : x �
       (twistingSheaf 𝒜 n).presheaf.map iVU.op s = const h r t hr ht V hV := by
   obtain ⟨V, hxV, iVU, i, j, h, r, t, ht, w⟩ := s.2 ⟨x, hx⟩
   exact ⟨V, hxV, iVU, i, j, h, r, t, r.2, t.2, fun y hy ↦ ht ⟨y, hy⟩, ext fun y ↦ w y⟩
+
+/-- Every section of `𝒪(n)` is, near each point `x`, a fraction `r / g` on a standard open
+`D₊(g)` containing `x`, with `g` homogeneous of positive degree. -/
+theorem locally_const_basicOpen (s : Γ(twistingSheaf 𝒜 n, U)) (x : Proj 𝒜) (hx : x ∈ U) :
+    ∃ (i j : ℕ) (h : (j : ℤ) = i + n) (r g : A) (hr : r ∈ 𝒜 j) (hg : g ∈ 𝒜 i)
+      (iU : basicOpen 𝒜 g ⟶ U), 0 < i ∧ x ∈ basicOpen 𝒜 g ∧
+        (twistingSheaf 𝒜 n).presheaf.map iU.op s = const h r g hr hg _ le_rfl := by
+  obtain ⟨V, hxV, iVU, i, j, h, r, t, hr, ht, hV, hs⟩ := exists_const s x hx
+  -- a standard open `D₊(a) ∋ x` inside `V`, and a homogeneous component `aₘ` of `a` not in `x`
+  obtain ⟨_, ⟨a, rfl⟩, hxa, haV⟩ := Opens.isBasis_iff_nbhd.1 (isBasis_basicOpen 𝒜) hxV
+  obtain ⟨m, hm⟩ : ∃ m, x ∈ basicOpen 𝒜 (GradedRing.proj 𝒜 m a) := by
+    simpa [basicOpen_eq_iSup_proj 𝒜 a] using hxa
+  -- a homogeneous element `p` of positive degree not in `x`
+  obtain ⟨l, hl, p, hp, hpx⟩ := x.exists_le_mem_notMem 1
+  have hg : t * GradedRing.proj 𝒜 m a * p ∈ 𝒜 (i + m + l) :=
+    SetLike.mul_mem_graded (SetLike.mul_mem_graded ht (SetLike.coe_mem _)) hp
+  have hgV : basicOpen 𝒜 (t * GradedRing.proj 𝒜 m a * p) ≤ V := fun y hy ↦ by
+    simp only [basicOpen_mul, Opens.mem_inf] at hy
+    exact haV ((basicOpen_eq_iSup_proj 𝒜 a).ge (Opens.mem_iSup.2 ⟨m, hy.1.2⟩))
+  refine ⟨i + m + l, j + m + l, by push_cast; omega, r * GradedRing.proj 𝒜 m a * p, _,
+    SetLike.mul_mem_graded (SetLike.mul_mem_graded hr (SetLike.coe_mem _)) hp, hg,
+    homOfLE hgV ≫ iVU, by omega, ?_, ?_⟩
+  · simpa [basicOpen_mul] using ⟨⟨hV hxV, hm⟩, hpx⟩
+  · rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply, hs, res_const]
+    exact const_ext (by ring)
 
 variable (𝒜 U) in
 /-- The multiplication `Γ(U, 𝒪(m)) × Γ(U, 𝒪(n)) → Γ(U, 𝒪(m + n))`, bilinear over the sections of

@@ -310,6 +310,16 @@ theorem le_erfInv_iff (hy : y ∈ Ioo (-1) 1) : x ≤ erfInv y ↔ erf x ≤ y :
 theorem erfInv_zero : erfInv 0 = 0 := by
   simpa using erfInv_erf 0
 
+/-- The inverse error function is positive exactly on `(0, 1)`, including at the junk values
+outside `(-1, 1)`. -/
+@[simp]
+theorem erfInv_pos_iff : 0 < erfInv y ↔ y ∈ Ioo 0 1 := by
+  by_cases hy : y ∈ Ioo (-1) 1
+  · rw [lt_erfInv_iff hy, erf_zero]
+    exact ⟨fun h => ⟨h, hy.2⟩, fun h => h.1⟩
+  · rw [erfInv_of_notMem hy, lt_self_iff_false, false_iff]
+    exact fun h => hy ⟨by linarith [h.1], h.2⟩
+
 /-- The inverse error function is odd, including at the junk values outside `(-1, 1)`. -/
 @[simp]
 theorem erfInv_neg (y : ℝ) : erfInv (-y) = -erfInv y := by

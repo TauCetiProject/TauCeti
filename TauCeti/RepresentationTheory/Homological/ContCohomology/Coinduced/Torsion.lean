@@ -39,8 +39,7 @@ variable [DistribMulAction U M]
 theorem isPPrimaryTorsion_discreteCoind (hM : IsPPrimaryTorsion p M) :
     IsPPrimaryTorsion p (DiscreteCoind G U M) := by
   refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
-  let cf : C(G, M) := ⟨⇑f,
-    (IsLocallyConstant.iff_continuous _).1 (DiscreteCoind.isLocallyConstant f)⟩
+  let cf := DiscreteCoind.toContinuousMap G U M f
   obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 (hM.continuousMap G) cf
   refine ⟨k, DiscreteCoind.ext fun g ↦ ?_⟩
   -- `cf` has the same values as `f`, so evaluating `hk` at `g` gives `p ^ k • f g = 0`.

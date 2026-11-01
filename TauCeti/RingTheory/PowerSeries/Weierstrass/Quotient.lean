@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.Algebra.GroupWithZero.Irreducible
 
 /-!
 # Quotients by distinguished restricted power series
@@ -79,22 +80,9 @@ as a polynomial. -/
 theorem IsDistinguished.irreducible_of_irreducible_polynomialToRestricted
     (hp : IsDistinguished c s (p : PowerSeries R)) (hc : 0 < c)
     (hm : p.IsMonicOfDegree s) (h : Irreducible (polynomialToRestricted c p)) :
-    Irreducible p := by
+    Irreducible p :=
   have : Nontrivial R := nontrivial_of_ne _ _ hp.coeff_ne_zero
-  -- If the image of a factor `a` of `p = a * b` is a unit, then `p` divides `b` after passing
-  -- to restricted series, hence as polynomials; cancelling `b` shows that `a` is a unit.
-  have key (a b : Polynomial R) (hab : p = a * b) (ha : IsUnit (polynomialToRestricted c a)) :
-      IsUnit a := by
-    have hb : b ≠ 0 := right_ne_zero_of_mul (hab ▸ hm.ne_zero)
-    obtain ⟨d, hd⟩ := (hp.polynomialToRestricted_dvd_iff hc hm b).mp <| by
-      rw [hab, map_mul]
-      exact ha.mul_left_dvd.mpr dvd_rfl
-    rw [hab] at hd
-    exact IsUnit.of_mul_eq_one d (mul_left_cancel₀ hb (by linear_combination -hd))
-  refine ⟨fun hu ↦ h.not_isUnit (hu.map _), fun a b hab ↦ ?_⟩
-  rcases h.isUnit_or_isUnit (by rw [hab, map_mul]) with ha | hb
-  · exact Or.inl (key a b hab ha)
-  · exact Or.inr (key b a (hab.trans (mul_comm a b)) hb)
+  h.of_map_of_dvd hm.ne_zero fun g ↦ (hp.polynomialToRestricted_dvd_iff hc hm g).mp
 
 section Complete
 

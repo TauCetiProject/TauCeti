@@ -137,6 +137,11 @@ instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsQuasicoherent :=
 instance : HasFiniteBiproducts (FiniteLocallyFreeSheaf X) :=
   HasFiniteBiproducts.of_hasFiniteProducts
 
+/-- The category of finite locally free sheaves has binary biproducts `E ⊞ F`, computed in
+`X.Modules`. -/
+instance : HasBinaryBiproducts (FiniteLocallyFreeSheaf X) :=
+  hasBinaryBiproducts_of_finite_biproducts _
+
 variable (X)
 
 /-- The free sheaf on a finite type, as a finite locally free sheaf. -/

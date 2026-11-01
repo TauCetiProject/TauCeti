@@ -8,15 +8,16 @@ module
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.RingTheory.Nilpotent.Defs
+import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!
 # Commutators in semirings and rings
 
-This file records identities for translating a commutator eigenvector relation and for moving
-elements past powers when the two elements almost commute. Integer translation needs only a
-nonassociative ring; the power and nilpotency identities use associativity.
+This file records identities for translating a commutator eigenvector relation, moving elements
+past powers when the two elements almost commute, and commuting successive correction terms.
+Integer translation needs only a nonassociative ring; the other results use associativity.
 
 Over a semiring the hypothesis is written as a relation, `x * y = y * x + z`, since there is no
 subtraction to form a commutator with: the power identities need only that `z` commutes with the
@@ -43,9 +44,36 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
   commutator is a nonzero natural multiple of the element.
+* `Commute.of_commutator_eq_of_commutator_eq_smul`: commutation of the two successive
+  correction terms when the second coefficient is a unit.
 -/
 
 public section
+
+namespace Commute
+
+/-- If `x * y = y * x + z` and `x * z = z * x + c • w`, where `c` is a unit scalar,
+`x` commutes with `w`, and `y` commutes with `z`, then `z` commutes with `w`. -/
+theorem of_commutator_eq_of_commutator_eq_smul
+    {R A : Type*} [CommRing R] [Semiring A] [Algebra R A] {x y z w : A} {c : R}
+    (hxw : Commute x w) (hxy : x * y = y * x + z) (hxz : x * z = z * x + c • w)
+    (hyz : Commute y z) (hc : IsUnit c) : Commute z w := by
+  -- The scalar ring supplies subtraction even when `A` is presented as a semiring.
+  let : Ring A := Algebra.semiringToRing R
+  let : LieRing A := LieRing.ofAssociativeRing
+  have hxy' : ⁅x, y⁆ = z := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - y * x) hxy
+  have hxz' : ⁅x, z⁆ = c • w := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - z * x) hxz
+  have hyz' := commute_iff_lie_eq.mp hyz
+  have hyw : Commute y w := by
+    have h : c • ⁅y, w⁆ = 0 := by
+      simpa [hxy', hxz', hyz'] using (lie_lie x y z).symm
+    exact commute_iff_lie_eq.mpr (hc.smul_eq_zero.mp h)
+  rw [commute_iff_lie_eq, ← hxy', lie_lie]
+  simp [commute_iff_lie_eq.mp hyw, commute_iff_lie_eq.mp hxw]
+
+end Commute
 
 namespace TauCeti
 

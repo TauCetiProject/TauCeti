@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.MahlerBasis
 public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.Topology.ContinuousMap.Polynomial
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import Mathlib.RingTheory.PowerSeries.Binomial
 import Mathlib.RingTheory.PowerSeries.Order
@@ -28,6 +29,8 @@ additional scalars `S` acting on `E`; this scalar-linear refinement is
 
 * `TauCeti.id_mul_mahler`: multiplication by the coordinate function satisfies
   `x * mahler n = (n + 1) • mahler (n + 1) + n • mahler n`.
+* `TauCeti.factorial_smul_mahler`: `n ! • mahler n` is the descending Pochhammer polynomial
+  `x (x - 1) ⋯ (x - n + 1)`.
 * `PadicInt.mahlerEquiv_smul`: the Mahler coefficients commute with scalar actions.
 * `PadicInt.mahlerLinearIsometryEquiv`: Mahler's isometry as an `S`-linear isometric equivalence.
 * `PadicInt.mahlerEquiv_symm_single`: the Mahler series of a coordinate vector `single n a` is the
@@ -57,6 +60,15 @@ theorem id_mul_mahler (n : ℕ) :
     ContinuousMap.id_apply, mahler_apply]
   rw [hchoose, nsmul_eq_mul]
   ring
+
+/-- `n !` times the Mahler function `x choose n` is the descending Pochhammer polynomial
+`x (x - 1) ⋯ (x - n + 1)`. -/
+theorem factorial_smul_mahler (n : ℕ) :
+    n.factorial • mahler n = (descPochhammer ℤ_[p] n).toContinuousMap := by
+  refine ContinuousMap.ext fun x => ?_
+  rw [ContinuousMap.smul_apply, mahler_apply, ← Ring.descPochhammer_eq_factorial_smul_choose]
+  simp [← Polynomial.aeval_eq_smeval, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map,
+    descPochhammer_map]
 
 end TauCeti
 

@@ -33,7 +33,7 @@ holomorphic logarithm branch `L`, not from Mathlib's continuous root branch. The
 Inverting, `z ↦ (r/2) / (h z + w₀)` is holomorphic, injective, and bounded by `1/2`. Halving `r`
 is what makes the bound **strict**, landing in the open disc rather than its closure.
 
-## Attribution and upstream coordination
+## Attribution
 
 Two pieces of prior Mathlib work stand behind this file, both © Yury Kudryashov.
 
@@ -51,11 +51,6 @@ holomorphic upgrade of Mathlib's continuous *logarithm* branch
 `Complex.exists_continuousOn_eqOn_exp_comp` (`Mathlib.Analysis.Complex.BranchLogRoot`); Mathlib's
 continuous root API `Complex.exists_continuousOn_pow_eq` is not used. The existence half of this
 step is therefore Mathlib's; the sibling file `BranchLogRoot.lean` records that debt in detail.
-
-The Riemann mapping theorem is also being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. This declaration is an explicitly **temporary
-shim**: delete it and refactor downstream consumers onto the exported Mathlib version once it lands.
 
 ## Main statements
 

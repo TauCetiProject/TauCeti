@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -19,7 +19,8 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension. The orthogonal complement of a nonzero vector has codimension one.
+same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
+`dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -37,13 +38,27 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+## Provenance
+
+The submodule inclusion-adjoint identity is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the
+AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
+
 ## Main results
 
+* `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
+  onto that subspace.
+* `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
+  orthogonal projection is subspace inclusion.
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
+* `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
+  `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
+  have a common nonzero, and hence a common unit, orthogonal vector.
+* `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -236,7 +251,64 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
 
+/-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
+Both maps are regarded as finite-dimensional algebraic linear maps. -/
+@[simp]
+theorem adjoint_subtype [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint U.subtype = U.orthogonalProjectionOnto.toLinearMap := by
+  rw [eq_comm]
+  apply (LinearMap.eq_adjoint_iff
+    U.orthogonalProjectionOnto.toLinearMap U.subtype).2
+  intro x y
+  -- Identify the ambient action of the restricted orthogonal projection with
+  -- `starProjection`; the inner-product identity is then a projection property.
+  change ⟪U.starProjection x, (y : E)⟫_𝕜 = ⟪x, (y : E)⟫_𝕜
+  rw [U.inner_starProjection_left_eq_right,
+    U.starProjection_eq_self_iff.mpr y.2]
+
+/-- The algebraic adjoint of the orthogonal projection `E → U` is the inclusion `U → E`.
+This is the elementary simplification rule for the adjoints of cross-projections and
+self-adjoint compressions, together with `LinearMap.adjoint_comp`. -/
+@[simp]
+theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
+  rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
+
 end Submodule
+
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Fewer than `dim E` vectors have a common nonzero orthogonal vector: the orthogonal complement
+of their span is nontrivial. -/
+theorem exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E)
+    (hs : s.card < Module.finrank 𝕜 E) : ∃ e : E, e ≠ 0 ∧ ∀ u ∈ s, ⟪u, e⟫_𝕜 = 0 := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
+  set K := Submodule.span 𝕜 (s : Set E)
+  have hK : Module.finrank 𝕜 K < Module.finrank 𝕜 E := (finrank_span_finset_le_card s).trans_lt hs
+  obtain ⟨e, he, he₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := Kᗮ) fun h ↦ by
+    have := K.finrank_add_finrank_orthogonal
+    rw [h, finrank_bot] at this
+    omega
+  exact ⟨e, he₀, fun u hu ↦ Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hu) he⟩
+
+/-- Fewer than `dim E` vectors have a common orthogonal unit vector. -/
+theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E)
+    (hs : s.card < Module.finrank 𝕜 E) : ∃ e : E, ‖e‖ = 1 ∧ ∀ u ∈ s, ⟪u, e⟫_𝕜 = 0 := by
+  obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
+  exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
+    rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
+theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
+  rintro rfl
+  rw [inner_neg_left, neg_eq_zero, inner_self_eq_zero] at hab
+  exact hb hab
+
+end TauCeti
 
 namespace LinearMap
 

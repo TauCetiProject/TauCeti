@@ -99,8 +99,7 @@ def zigzagBraidProjectiveTensorCornerEquiv (i j : V) :
       (zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i) (ridSymm_smul k G j)).trans
     ((BalancedTensorProduct.outerFactors k Z (R i) (L j) (L i) k).trans
       (TensorProduct.congr (spanSingletonBalancedTensorProductEquivCorner k
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G j)) (TensorProduct.rid k (L i)))))
+        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)) (TensorProduct.rid k (L i)))))
 
 /-- On pure tensors, corner extraction multiplies the right ideal factor of `U_i` into `P_j`. -/
 @[simp]
@@ -110,7 +109,6 @@ theorem zigzagBraidProjectiveTensorCornerEquiv_tmul (i j : V) (l : L i) (r : R i
         ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r)) n) =
     spanSingletonBalancedTensorProductEquivCorner k
       (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-      (isIdempotentElem_zigzagAlgebraBasis_inl k G j)
       (BalancedTensorProduct.tmul k Z r n) ⊗ₜ[k] l := by
   simp only [zigzagBraidProjectiveTensorCornerEquiv, LinearEquiv.trans_apply]
   rw [GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv_tmul Γ Γ (U i) (P j)]
@@ -128,8 +126,7 @@ theorem zigzagBraidProjectiveTensorCornerEquiv_symm_tmul (i j : V)
       GradedModuleCat.bimoduleModuleTensorTmul Γ Γ (U i) (P j)
         ((zigzagBraidBimoduleFactorsEquiv k G i).symm
           (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
-        ⟨c, mem_span_singleton_of_mem_cornerSubmodule
-          (isIdempotentElem_zigzagAlgebraBasis_inl k G j) c.2⟩ := by
+        ⟨c, mem_span_singleton_of_mem_cornerSubmodule c.2⟩ := by
   apply (zigzagBraidProjectiveTensorCornerEquiv k G i j).injective
   rw [LinearEquiv.apply_symm_apply, zigzagBraidProjectiveTensorCornerEquiv_tmul]
   congr 1
@@ -142,8 +139,7 @@ theorem zigzagBraidProjectiveTensorCornerEquiv_symm_tmul (i j : V)
 
 /-- A corner element `c ∈ e_i Z e_j`, read in the vertex projective `P_j = Z e_j`. -/
 private def cornerToProjective {i j : V} (c : cornerSubmodule k (e i) (e j)) : L j :=
-  ⟨c, mem_span_singleton_of_mem_cornerSubmodule
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G j) c.2⟩
+  ⟨c, mem_span_singleton_of_mem_cornerSubmodule c.2⟩
 
 /-- Insert `P_i` into `U_i ⊗_Z P_j` along a corner element `c`: `z ↦ (z ⊗ e_i) ⊗ c`. -/
 private def insertCorner {i j : V} (c : cornerSubmodule k (e i) (e j)) : P i →ₗ[Z] T i j :=

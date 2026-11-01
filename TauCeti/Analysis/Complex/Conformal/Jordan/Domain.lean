@@ -13,7 +13,8 @@ public import TauCeti.Topology.UniformlyLocallyConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
 import TauCeti.Analysis.Complex.Conformal.SimplyConnected
-import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Jordan domains, and the domains a conformal map takes onto a disc
@@ -56,9 +57,10 @@ are.
   frontier statement `TauCeti.isJordanCurve_frontier_of_convex` that generalises the circle.
 * `TauCeti.isJordanDomain_ball` — its special case at a disc of positive radius, the basic example
   and the one Carathéodory's theorem compares every other Jordan domain to.
-* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff_of_locally_eq_line` — the inside of a
-  Jordan curve that is straight near one of its points, such as a simple polygon, is a Jordan
-  domain.
+* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff` — the inside of a Jordan curve is a
+  Jordan domain.
+* `TauCeti.IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull` — the outside
+  of a Jordan curve, inverted about a point of the inside and completed by `0`, is a Jordan domain.
 * `TauCeti.IsJordanDomain.isSimplyConnected` — a Jordan domain is simply connected, its frontier
   being connected; so it satisfies the hypotheses of the Riemann mapping theorem.
 * `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` — the boundary of a Jordan domain is
@@ -81,16 +83,6 @@ every theorem added in layers L0–L6, the results below are stated for maps of 
 `Conformal/BoundaryCorrespondence.lean`; the Jordan-curve vocabulary they are phrased in, together
 with the circle that models it, is in `TauCeti/Topology/JordanCurve/Basic.lean`, where the
 predicate and its transfer lemmas are stated for an arbitrary topological space.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no Jordan-curve vocabulary at all. So this file is new Lean formalization rather
-than a temporary shim. It consumes, through `Conformal/BoundaryCorrespondence.lean`, the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn`, to be refactored onto Mathlib once the
-upstream work lands.
 
 ## References
 
@@ -151,23 +143,46 @@ Riemann map. -/
 theorem isJordanDomain_ball (c : ℂ) (hr : 0 < r) : IsJordanDomain (ball c r) :=
   isJordanDomain_of_convex (convex_ball c r) isOpen_ball (nonempty_ball.mpr hr) isBounded_ball
 
-/-- **The inside of a Jordan curve with a straight piece is a Jordan domain.** If a Jordan curve
-`C` agrees with a line in a ball about one of its points — as a polygon does at an interior point
-of one of its sides — then its filled hull minus `C`, the bounded complementary component, is a
-Jordan domain with frontier `C`. -/
-theorem IsJordanCurve.isJordanDomain_filledHull_sdiff_of_locally_eq_line {C : Set ℂ}
-    (hC : IsJordanCurve C) {p v : ℂ} (hr : 0 < r)
-    (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) :
-    IsJordanDomain (filledHull C \ C) := by
-  obtain ⟨x, hx⟩ := hC.nonempty_filledHull_sdiff
-  have hU := hC.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line hr v hline hx
-  refine ⟨?_, ?_, (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset, ?_⟩
-  · rw [hU]
-    exact hC.isClosed.isOpen_compl.connectedComponentIn
-  · rw [hU]
-    exact isConnected_connectedComponentIn_iff.mpr hx.2
-  · rw [hC.frontier_filledHull_sdiff_of_locally_eq_line hr hline]
-    exact hC
+/-- **The inside of a Jordan curve is a Jordan domain.** For a Jordan curve `C ⊆ ℂ`, its filled
+hull minus `C`, the bounded complementary component, is a Jordan domain with frontier `C`. -/
+theorem IsJordanCurve.isJordanDomain_filledHull_sdiff {C : Set ℂ} (hC : IsJordanCurve C) :
+    IsJordanDomain (filledHull C \ C) where
+  isOpen := hC.isClosed.isOpen_filledHull_sdiff
+  isConnected := hC.isConnected_filledHull_sdiff
+  isBounded := (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset
+  isJordanCurve_frontier := hC.frontier_filledHull_sdiff.symm ▸ hC
+
+/-- **The inverted outside of a Jordan curve is a Jordan domain.** Inverting the outside
+`(filledHull C)ᶜ` of a Jordan curve `C ⊆ ℂ` about a point `p` of its inside and adding `0`, the
+image of infinity, gives a bounded domain whose frontier, the image of `C`
+(`TauCeti.IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull`), is a Jordan
+curve. -/
+theorem IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull {C : Set ℂ}
+    (hC : IsJordanCurve C) {p : ℂ} (hp : p ∈ filledHull C \ C) :
+    IsJordanDomain (insert 0 ((fun z : ℂ => (z - p)⁻¹) '' (filledHull C)ᶜ)) := by
+  have hpU := hC.notMem_closure_compl_filledHull hp
+  have hUc : Bornology.IsBounded (filledHull C)ᶜᶜ := by
+    rw [compl_compl]
+    exact isBounded_filledHull.mpr hC.isCompact.isBounded
+  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
+    rw [Complex.rank_real_complex]
+    exact Cardinal.one_lt_two
+  have hUb : ¬Bornology.IsBounded (filledHull C)ᶜ := fun h =>
+    NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
+  refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl hUc,
+    ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
+  · -- the inverted outside is connected, and `0`, the image of infinity, lies in its closure
+    have hcont : ContinuousOn (fun z : ℂ => (z - p)⁻¹) (filledHull C)ᶜ :=
+      ContinuousOn.inv₀ (by fun_prop) fun z hz =>
+        sub_ne_zero.mpr fun h => hpU (h ▸ subset_closure hz)
+    refine ((isConnected_compl_filledHull hrank hC.isCompact.isBounded).image _
+      hcont).subset_closure (subset_insert _ _) (insert_subset ?_ subset_closure)
+    rw [closure_image_inv_sub hUb]
+    exact mem_insert _ _
+  · rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp]
+    exact hC.image
+      (ContinuousOn.inv₀ (by fun_prop) fun z hz => sub_ne_zero.mpr fun h => hp.2 (h ▸ hz))
+      (inv_injective.comp (sub_left_injective (b := p))).injOn
 
 /-! ## Elementary consequences of being a Jordan domain -/
 

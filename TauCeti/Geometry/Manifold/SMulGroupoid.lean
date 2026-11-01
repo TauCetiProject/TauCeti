@@ -9,8 +9,10 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalInvariantProperties
+public import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 public import TauCeti.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # (G, X)-manifolds
@@ -67,8 +69,12 @@ here.
   smaller groupoid.
 * `TauCeti.contMDiffOn_of_mem_smulGroupoid`: for an action by `C^n` maps, every member of
   `smulGroupoid G X` is `C^n` on its source.
+* `TauCeti.smulGroupoid_le_contMDiffGroupoid`: for an action by `C^n` maps, `smulGroupoid G X` is
+  contained in the groupoid `TauCeti.contMDiffGroupoid I n X` of `C^n` local diffeomorphisms.
 * `TauCeti.isManifold_of_hasGroupoid_smulGroupoid`: a (G, X)-manifold is a `C^n` manifold when `G`
   acts by `C^n` maps on the `C^n` manifold `X`.
+* `TauCeti.contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid`: each `X`-valued chart of such a
+  manifold is then `C^n` on its source.
 * `TauCeti.hasGroupoid_smulGroupoid_quotient`: the orbit space of a free, properly discontinuous
   action of `Γ` on `X` is a (Γ, X)-manifold.
 
@@ -204,20 +210,48 @@ theorem contMDiffOn_of_mem_smulGroupoid {e : OpenPartialHomeomorph X X}
   obtain ⟨g, hg⟩ := smulPregroupoid_property.1 he.1 x hx
   exact ((contMDiff_const_smul g).contMDiffAt.congr_of_eventuallyEq hg).contMDiffWithinAt
 
+variable (I n G X) in
+/-- When `G` acts on `X` by `C^n` maps, every member of `smulGroupoid G X` is a `C^n` local
+diffeomorphism of `X`. -/
+theorem smulGroupoid_le_contMDiffGroupoid : smulGroupoid G X ≤ contMDiffGroupoid I n X :=
+  fun _ he ↦ mem_contMDiffGroupoid_iff.2 ⟨contMDiffOn_of_mem_smulGroupoid he,
+    contMDiffOn_of_mem_smulGroupoid ((smulGroupoid G X).symm he)⟩
+
 variable (I n G) in
 /-- A (G, X)-manifold, for an action of `G` by `C^n` maps on a `C^n` manifold `X` modelled on `I`,
 is a `C^n` manifold for the composite charts `ChartedSpace.comp H X M`. -/
 theorem isManifold_of_hasGroupoid_smulGroupoid [IsManifold I n X] (M : Type*)
     [TopologicalSpace M] [ChartedSpace X M] [HasGroupoid M (smulGroupoid G X)] :
     letI := ChartedSpace.comp H X M
-    IsManifold I n M := by
-  let := ChartedSpace.comp H X M
-  refine { StructureGroupoid.HasGroupoid.comp (smulGroupoid G X) fun e he ↦ ?_ with }
-  rw [isLocalStructomorphOn_contDiffGroupoid_iff]
-  exact ⟨contMDiffOn_of_mem_smulGroupoid he,
-    contMDiffOn_of_mem_smulGroupoid ((smulGroupoid G X).symm he)⟩
+    IsManifold I n M :=
+  haveI := hasGroupoid_of_le ‹HasGroupoid M (smulGroupoid G X)›
+    (smulGroupoid_le_contMDiffGroupoid I n G X)
+  isManifold_of_hasGroupoid_contMDiffGroupoid I n M
 
 end Smooth
+
+section ChartSmooth
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
+  {G X : Type*} [Group G] [TopologicalSpace X] [ChartedSpace H X] [MulAction G X]
+  [ContinuousConstSMul G X] [ContMDiffConstSMul I n G X]
+
+variable (G) in
+/-- In a (G, X)-manifold, for an action of `G` by `C^n` maps, every `X`-valued chart is `C^n` on
+its source for the composite charts `ChartedSpace.comp H X M`. -/
+theorem contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid {M : Type*} [TopologicalSpace M]
+    [ChartedSpace X M] [HasGroupoid M (smulGroupoid G X)] {e : OpenPartialHomeomorph M X}
+    (he : e ∈ atlas X M) :
+    letI := ChartedSpace.comp H X M
+    ContMDiffOn I I n e e.source := fun y hy ↦ by
+  let := ChartedSpace.comp H X M
+  -- Near `y`, the chart `e` is the preferred chart at `y` followed by the action of some `g`.
+  obtain ⟨g, hg⟩ := exists_smul_eventuallyEq_chartAt (G := G) he hy
+  exact (((contMDiff_const_smul g).contMDiffAt.comp y
+    (contMDiffAt_chartAt_comp y)).congr_of_eventuallyEq hg).contMDiffWithinAt
+
+end ChartSmooth
 
 /-! ### Quotients and deck transformations -/
 

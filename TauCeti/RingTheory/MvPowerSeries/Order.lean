@@ -67,6 +67,21 @@ theorem homogeneousComponent_one_X (i : σ) :
   rw [coeff_homogeneousComponent, coeff_X]
   split_ifs with h₁ h₂ h₂ <;> simp_all
 
+/-- In one variable, the degree-one homogeneous component of `f` is `c X`, where `c` is the
+coefficient of `X` in `f`. -/
+theorem homogeneousComponent_one_eq_C_mul_X (f : MvPowerSeries Unit R) :
+    homogeneousComponent 1 f = C (coeff (Finsupp.single () 1) f) * X () := by
+  classical
+  ext d
+  rw [coeff_homogeneousComponent, coeff_C_mul, coeff_X]
+  by_cases h : d = Finsupp.single () 1
+  · subst h
+    simp
+  · have hd : d.degree ≠ 1 := fun hd ↦ h <| by
+      ext
+      simpa [Finsupp.degree_eq_sum] using hd
+    simp [h, hd]
+
 /-- A homogeneous component of positive degree has no constant coefficient. -/
 @[simp]
 theorem constantCoeff_homogeneousComponent {p : ℕ} (hp : p ≠ 0) (f : MvPowerSeries σ R) :
