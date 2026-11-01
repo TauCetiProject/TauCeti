@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # The group `Spinᶜ(Q)`
@@ -44,10 +45,13 @@ a double cover of `SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)
 ## Main results
 
 * `CliffordAlgebra.mem_spinCKernel_iff`: the subgroup `spinCKernel Q hQ` is `{1, (-1, -1)}`.
+* `CliffordAlgebra.coe_spinCKernel`: the underlying set of that subgroup is the diagonal pair.
 * `CliffordAlgebra.spinCGroup.mk_eq_mk_iff`: `[s, z] = [s', z']` exactly when
   `(s', z') = (s, z)` or `(s', z') = (-s, -z)`.
 * `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_prod_det_iff`: the kernel of
   `Spinᶜ(Q) → SO(Q) × U(1)` is `{1, [1, -1]}`.
+* `CliffordAlgebra.spinCGroup.coe_ker_toSpecialOrthogonal_prod_det`: the underlying set of that
+  kernel is the pair `{1, [1, -1]}`.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_prod_det_surjective`: this map is onto when the
   Spin action is onto `SO(Q)`.
 
@@ -86,6 +90,13 @@ theorem mem_spinCKernel_iff {p : spinGroup Q × Circle} :
   · rintro (rfl | rfl)
     · exact one_mem _
     · exact Subgroup.mem_zpowers _
+
+/-- The underlying set of `spinCKernel Q hQ` is the diagonal pair `{1, (-1, -1)}`. -/
+theorem coe_spinCKernel :
+    (spinCKernel Q hQ : Set (spinGroup Q × Circle)) =
+      {1, (spinGroup.negOne Q hQ, -1)} := by
+  ext p
+  simp [mem_spinCKernel_iff]
 
 /-- `(-1, -1)` lies in `spinCKernel Q hQ`. -/
 theorem negOne_neg_one_mem_spinCKernel : (spinGroup.negOne Q hQ, -1) ∈ spinCKernel Q hQ :=
@@ -130,11 +141,7 @@ theorem ker_mk : (mk Q hQ).ker = spinCKernel Q hQ :=
 /-- Every fibre of `Spin(Q) × Circle → Spinᶜ(Q)` has exactly two elements. -/
 theorem card_fiber_mk (x : spinCGroup Q hQ) : Nat.card ((mk Q hQ) ⁻¹' {x}) = 2 := by
   rw [Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective (mk_surjective Q hQ) x), ker_mk]
-  have heq : (spinCKernel Q hQ : Set (spinGroup Q × Circle)) =
-      {1, (spinGroup.negOne Q hQ, -1)} := by
-    ext p
-    simp [mem_spinCKernel_iff]
-  refine (Nat.card_congr (Set.equivOfEq heq)).trans ?_
+  refine (Nat.card_congr (Set.equivOfEq (coe_spinCKernel Q hQ))).trans ?_
   exact Set.ncard_pair (by
     intro h
     exact spinGroup.negOne_ne_one Q hQ (congrArg Prod.fst h).symm)
@@ -285,6 +292,16 @@ theorem mem_ker_toSpecialOrthogonal_prod_det_iff [FiniteDimensional ℝ M] [Nont
     · exact Or.inl (mk_negOne_neg_one Q hQ)
   · rintro (h | h) <;> simp [h]
 
+/-- The underlying set of the frame-and-determinant kernel is `{1, [1, -1]}` for a
+finite-dimensional nondegenerate form in positive dimension. -/
+theorem coe_ker_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
+    (hQn : Q.Nondegenerate) :
+    (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)) =
+      {1, ofCircle Q hQ (-1)} := by
+  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
+  ext x
+  simp [mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn]
+
 /-- **`Spinᶜ(Q) → SO(Q) × U(1)` is onto** whenever the Spin action is onto `SO(Q)`: every unit
 complex number has a square root on the circle. -/
 theorem toSpecialOrthogonal_prod_det_surjective
@@ -303,18 +320,9 @@ theorem card_fiber_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
     (hsurj : Function.Surjective ((toSpecialOrthogonal Q hQ).prod (det Q hQ)))
     (y : TauCeti.QuadraticMap.specialOrthogonalGroup Q × Circle) :
     Nat.card (((toSpecialOrthogonal Q hQ).prod (det Q hQ)) ⁻¹' {y}) = 2 := by
-  have : Nontrivial M := by
-    by_contra hM
-    let _ : Subsingleton M := not_nontrivial_iff_subsingleton.mp hM
-    apply hQ
-    ext v
-    simpa only [Subsingleton.elim v 0, zero_apply] using Q.map_zero
   rw [Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective hsurj y)]
-  have heq : (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)) =
-      {1, ofCircle Q hQ (-1)} := by
-    ext x
-    simp [mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn]
-  refine (Nat.card_congr (Set.equivOfEq heq)).trans ?_
+  refine (Nat.card_congr
+    (Set.equivOfEq (coe_ker_toSpecialOrthogonal_prod_det Q hQ hQn))).trans ?_
   exact Set.ncard_pair (by
     intro h
     have hone : ofCircle Q hQ (1 : Circle) = 1 := map_one _

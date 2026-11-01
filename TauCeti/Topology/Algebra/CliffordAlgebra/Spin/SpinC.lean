@@ -50,11 +50,7 @@ namespace spinCGroup
 /-- The quotient topology on `Spinᶜ(Q)` is Hausdorff when Clifford multiplication is continuous. -/
 instance instT2Space [ContinuousMul (CliffordAlgebra Q)] : T2Space (spinCGroup Q hQ) := by
   let : IsClosed (spinCKernel Q hQ : Set (spinGroup Q × Circle)) := by
-    have heq : (spinCKernel Q hQ : Set (spinGroup Q × Circle)) =
-        {1, (spinGroup.negOne Q hQ, -1)} := by
-      ext p
-      simp [mem_spinCKernel_iff]
-    rw [heq]
+    rw [coe_spinCKernel]
     exact (Set.toFinite {1, (spinGroup.negOne Q hQ, (-1 : Circle))}).isClosed
   infer_instance
 
@@ -67,10 +63,8 @@ theorem isQuotientCoveringMap_mk [ContinuousMul (CliffordAlgebra Q)] :
     funext p
     exact mk_apply Q hQ p
   have hfinite : (spinCKernel Q hQ : Set (spinGroup Q × Circle)).Finite := by
-    apply (Set.toFinite {1, (spinGroup.negOne Q hQ, (-1 : Circle))}).subset
-    intro p hp
-    simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
-      (mem_spinCKernel_iff Q hQ).mp hp
+    rw [coe_spinCKernel]
+    exact Set.toFinite _
   exact (IsQuotientCoveringMap.subgroup_congr (mk Q hQ) (spinGroup Q × Circle)
     (mk Q hQ).ker (spinCKernel Q hQ) (ker_mk Q hQ)).mp <|
     hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom (by
@@ -115,12 +109,6 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
     (hdef : Q.PosDef ∨ (-Q).PosDef) :
     IsQuotientCoveringMap ((toSpecialOrthogonal Q hQ).prod (det Q hQ))
       ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker := by
-  have : Nonempty ι := by
-    by_contra hι
-    let _ : IsEmpty ι := not_nonempty_iff.mp hι
-    apply hQ
-    ext v
-    simpa only [Subsingleton.elim v 0, zero_apply] using Q.map_zero
   have hQn : Q.Nondegenerate := by
     rcases hdef with hpos | hneg
     · exact hpos.anisotropic.nondegenerate
@@ -141,10 +129,9 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
     (continuous_toSpecialOrthogonal_prod_det Q hQ)
   apply hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
   apply Set.Finite.isDiscrete
-  apply (Set.toFinite {1, ofCircle Q hQ (-1)}).subset
-  intro x hx
-  simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
-    (mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn x).mp hx
+  change (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)).Finite
+  rw [coe_ker_toSpecialOrthogonal_prod_det Q hQ hQn]
+  exact Set.toFinite _
 
 end spinCGroup
 
