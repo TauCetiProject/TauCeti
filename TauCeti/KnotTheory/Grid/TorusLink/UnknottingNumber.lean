@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.TorusLink.FullTwist
+public import TauCeti.KnotTheory.Grid.TorusLink.Move
 
 /-!
 # Unknotting numbers of torus link grids

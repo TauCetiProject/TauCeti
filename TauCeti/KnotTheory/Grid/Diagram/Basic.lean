@@ -1010,6 +1010,7 @@ theorem cast_rfl : G.cast rfl = G :=
 
 /-- The `O` marking of a transported grid diagram in a column is the transported `O` marking of
 the transported column. -/
+@[simp]
 theorem cast_O_apply {m : ℕ} (h : n = m) (c : Fin m) :
     (G.cast h).O c = Fin.cast h (G.O (Fin.cast h.symm c)) := by
   subst h
@@ -1017,6 +1018,7 @@ theorem cast_O_apply {m : ℕ} (h : n = m) (c : Fin m) :
 
 /-- The `X` marking of a transported grid diagram in a column is the transported `X` marking of
 the transported column. -/
+@[simp]
 theorem cast_X_apply {m : ℕ} (h : n = m) (c : Fin m) :
     (G.cast h).X c = Fin.cast h (G.X (Fin.cast h.symm c)) := by
   subst h

@@ -17,11 +17,6 @@ stabilizations to stabilizations (`GridDiagram.isStabilization_transpose`). So i
 moves to grid moves and descends to an involution `GridLink.transpose` of grid links. It fixes the
 unknot and preserves the number of components.
 
-The standard grid of the `(p + 1, q + 1)` torus link reflects to the standard grid of the
-`(q + 1, p + 1)` torus link (`GridDiagram.transpose_torusLink`), so the two present grid links
-exchanged by the reflection (`GridLink.toGridLink_transpose_torusLink`). In particular every
-standard `(1, q + 1)` torus link grid presents the unknot.
-
 Read as a planar diagram whose vertical segments cross over the horizontal ones, the reflection of
 a grid diagram presents the reverse of its link: reflecting the plane in the diagonal and changing
 every crossing compose to a rotation of space, and the orientation conventions of vertical and
@@ -40,10 +35,6 @@ is motivation only and is not formalized here.
 * `TauCeti.GridLink.transpose_transpose`: the reflection is an involution.
 * `TauCeti.GridLink.transpose_unknot`, `TauCeti.GridLink.componentCount_transpose`: it fixes the
   unknot and preserves the number of components.
-* `TauCeti.GridLink.toGridLink_transpose_torusLink`: it exchanges the grid links of the standard
-  `(p + 1, q + 1)` and `(q + 1, p + 1)` torus link grids.
-* `TauCeti.GridDiagram.toGridLink_torusLink_zero_left`: the standard `(1, q + 1)` torus link grid
-  presents the unknot.
 
 ## References
 
@@ -141,12 +132,6 @@ theorem componentCount_transpose (L : GridLink) : L.transpose.componentCount = L
 theorem isKnot_transpose {L : GridLink} : L.transpose.IsKnot ↔ L.IsKnot := by
   rw [isKnot_def, isKnot_def, componentCount_transpose]
 
-/-- The diagonal reflection exchanges the grid links of the standard `(p + 1, q + 1)` and
-`(q + 1, p + 1)` torus link grids. -/
-theorem toGridLink_transpose_torusLink (p q : ℕ) :
-    (GridDiagram.torusLink p q).transpose.toGridLink = (GridDiagram.torusLink q p).toGridLink := by
-  rw [GridDiagram.transpose_torusLink, GridDiagram.toGridLink_cast]
-
 end GridLink
 
 namespace GridDiagram
@@ -157,13 +142,6 @@ theorem movesTo_transpose_iff {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram 
     G.transpose.MovesTo G'.transpose ↔ G.MovesTo G' := by
   rw [← toGridLink_eq_iff_movesTo, ← toGridLink_eq_iff_movesTo, ← GridLink.transpose_toGridLink,
     ← GridLink.transpose_toGridLink, GridLink.transpose_inj]
-
-/-- The standard grid of the `(1, q + 1)` torus link presents the unknot: it is the diagonal
-reflection of the standard `(q + 1, 1)` torus link grid, which is a standard unknot grid. -/
-theorem toGridLink_torusLink_zero_left (q : ℕ) :
-    (torusLink 0 q).toGridLink = GridLink.unknot := by
-  rw [← GridLink.toGridLink_transpose_torusLink, torusLink_zero_right,
-    ← GridLink.transpose_toGridLink, toGridLink_unknot, GridLink.transpose_unknot]
 
 end GridDiagram
 

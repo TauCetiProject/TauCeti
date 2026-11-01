@@ -195,11 +195,11 @@ theorem transpose_torusLink :
       cast_O_apply, torusLink_O_apply]
     simp
   · rw [transpose_X, GridState.transpose_apply, Equiv.symm_apply_eq, Fin.ext_iff,
-      torusLink_X_toPerm, Fin.coe_finRotate_pow, cast_X_apply, Fin.val_cast,
-      torusLink_X_apply, Fin.coe_finRotate_pow, Fin.val_cast, Nat.add_comm (q + 1) (p + 1),
-      Nat.mod_add_mod,
-      show (c : ℕ) + (p + 1) + (q + 1) = c + (p + 1 + (q + 1)) by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
+      torusLink_X_toPerm, cast_X_apply, torusLink_X_apply]
+    simp only [Fin.coe_finRotate_pow, Fin.val_cast]
+    -- Shifting by `p + 1` and then by `q + 1` is the identity modulo `(p + 1) + (q + 1)`.
+    rw [Nat.add_comm (q + 1) (p + 1), Nat.mod_add_mod, Nat.add_assoc c, Nat.add_mod_right,
+      Nat.mod_eq_of_lt c.isLt]
 
 /-! ### The represented link and its components -/
 
