@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
 # The residue pairing on Laurent series
