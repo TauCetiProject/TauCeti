@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import Mathlib.Analysis.Normed.Operator.Banach
 
 /-!
 # Smooth Cayley paths of compatible almost complex structures
@@ -45,6 +44,8 @@ pullback by the monodromy.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.Compatible.almostComplexStructureAt_cayleyPath`: at each point, `J_t`
+  is the linear compatible Cayley path from `J₀ x` to `J₁ x`.
 * `TauCeti.SmoothTwoForm.Compatible.compatible_cayleyPath`: every `J_t` is compatible with `σ`.
 * `TauCeti.SmoothTwoForm.Compatible.cayleyPath_of_nonpos`,
   `TauCeti.SmoothTwoForm.Compatible.cayleyPath_of_one_le`: the path is `J₀` for `t ≤ 0` and `J₁`
@@ -69,120 +70,6 @@ noncomputable section
 
 namespace TauCeti
 
-/-! ### The Cayley path as a rational expression -/
-
-section Formula
-
-variable {R : Type*} [Ring R] [Algebra ℝ R]
-
-/-- The Cayley coordinate `-(1 + A B)(1 - A B)⁻¹` of `B` relative to `A`, in any real algebra. -/
-private def cayleyFormula (A B : R) : R :=
-  -((1 + A * B) * Ring.inverse (1 - A * B))
-
-/-- The point at parameter `b` of the Cayley segment from `A` to `B`, that is
-`A (1 + b C)(1 - b C)⁻¹` for the Cayley coordinate `C` of `B` relative to `A`. -/
-private def cayleyPathFormula (b : ℝ) (A B : R) : R :=
-  A * (1 + b • cayleyFormula A B) * Ring.inverse (1 - b • cayleyFormula A B)
-
-/-- Algebra isomorphisms commute with the Cayley coordinate expression. -/
-private theorem map_cayleyFormula {S F : Type*} [Ring S] [Algebra ℝ S] [EquivLike F R S]
-    [AlgEquivClass F ℝ R S] (f : F) (A B : R) :
-    f (cayleyFormula A B) = cayleyFormula (f A) (f B) := by
-  simp only [cayleyFormula, map_mul, map_add, map_one, map_neg, map_sub, map_ringInverse]
-
-/-- Algebra isomorphisms commute with the Cayley path expression. -/
-private theorem map_cayleyPathFormula {S F : Type*} [Ring S] [Algebra ℝ S] [EquivLike F R S]
-    [AlgEquivClass F ℝ R S] (f : F) (b : ℝ) (A B : R) :
-    f (cayleyPathFormula b A B) = cayleyPathFormula b (f A) (f B) := by
-  simp only [cayleyPathFormula, map_mul, map_add, map_one, map_smul, map_sub, map_ringInverse,
-    map_cayleyFormula]
-
-/-- The Cayley path expression is smooth in its parameter and both endpoints at any point where
-its two denominators are invertible. -/
-private theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra ℝ R]
-    [CompleteSpace R] {n : WithTop ℕ∞} {b : ℝ} {A B : R} (h₁ : IsUnit (1 - A * B))
-    (h₂ : IsUnit (1 - b • cayleyFormula A B)) :
-    ContDiffAt ℝ n (fun q : ℝ × R × R ↦ cayleyPathFormula q.1 q.2.1 q.2.2) (b, A, B) := by
-  have hinv {g : ℝ × R × R → R} (hg : ContDiffAt ℝ n g (b, A, B)) (hu : IsUnit (g (b, A, B))) :
-      ContDiffAt ℝ n (fun q ↦ Ring.inverse (g q)) (b, A, B) := by
-    obtain ⟨u, hu⟩ := hu
-    have hi := contDiffAt_ringInverse (n := n) ℝ u
-    rw [hu] at hi
-    exact hi.comp _ hg
-  have hA : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ q.2.1) (b, A, B) :=
-    contDiffAt_fst.comp _ contDiffAt_snd
-  have hB : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ q.2.2) (b, A, B) :=
-    contDiffAt_snd.comp _ contDiffAt_snd
-  have hAB := hA.mul hB
-  have hC : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ cayleyFormula q.2.1 q.2.2) (b, A, B) :=
-    ((contDiffAt_const.add hAB).mul (hinv (contDiffAt_const.sub hAB) h₁)).neg
-  have hbC := contDiffAt_fst.smul hC
-  exact (hA.mul (contDiffAt_const.add hbC)).mul (hinv (contDiffAt_const.sub hbC) h₂)
-
-end Formula
-
-/-! ### The linear Cayley path in operator-norm coordinates -/
-
-namespace SymplecticForm
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J₀ J₁ : AlmostComplexStructure V} {A B : V →L[ℝ] V}
-
-/-- For two tame structures, `1 - J₀ J₁` is invertible among continuous endomorphisms. -/
-private theorem Tames.isUnit_one_sub_mul_of_toLinearMap (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁)
-    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
-    IsUnit (1 - A * B) := by
-  rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
-  simpa [hA, hB] using h₀.isUnit_one_sub_mul h₁
-
-/-- In operator-norm coordinates, the Cayley transform is the rational expression
-`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`. -/
-private theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁)
-    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
-    LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
-  apply ContinuousLinearMap.coe_injective
-  have hinv := (h₀.isUnit_one_sub_mul_of_toLinearMap h₁ hA hB).map_ringInverse
-    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
-  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
-  rw [cayleyFormula, ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_mul,
-    hinv]
-  simp [AlmostComplexStructure.cayley_def, hA, hB]
-
-/-- In operator-norm coordinates, the compatible Cayley path from `J₀` to `J₁` at time `t` is
-`J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
-`β = smoothTransition t`. -/
-private theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Compatible J₁) (t : ℝ) (hA : A.toLinearMap = J₀.toLinearMap)
-    (hB : B.toLinearMap = J₁.toLinearMap) :
-    LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
-      cayleyPathFormula (smoothTransition t) A B := by
-  let C : V →L[ℝ] V := smoothTransition t • LinearMap.toContinuousLinearMap (J₀.cayley J₁)
-  have hC : C.toLinearMap ∈ ω.compatibleCayleyBall J₀ := by
-    simpa only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-      using h₀.smul_cayley_mem_compatibleCayleyBall h₁
-        ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
-  have hpath : h₀.cayleyPath h₁ t = (h₀.compatibleCayleyEquiv.symm ⟨C.toLinearMap, hC⟩).val := by
-    rw [h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
-    simp only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
-    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
-  rw [hpath, h₀.compatibleCayleyEquiv_symm_apply_toContinuousLinearMap C hC, cayleyPathFormula,
-    ← h₀.tames.toContinuousLinearMap_cayley h₁.tames hA hB, hA']
-
-/-- At every time, the denominator `1 - β C` of the compatible Cayley path is invertible. -/
-private theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Compatible J₁) (t : ℝ) (hA : A.toLinearMap = J₀.toLinearMap)
-    (hB : B.toLinearMap = J₁.toLinearMap) :
-    IsUnit (1 - smoothTransition t • cayleyFormula A B) := by
-  rw [← h₀.tames.toContinuousLinearMap_cayley h₁.tames hA hB]
-  refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀)
-    (compatibleCayleyBall_subset_cayleyBall ?_)
-  simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap] using
-    h₀.smul_cayley_mem_compatibleCayleyBall h₁
-      ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
-
-end SymplecticForm
-
 /-! ### The Cayley path of smooth compatible structures -/
 
 namespace SmoothTwoForm.Compatible
@@ -195,15 +82,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {σ : SmoothTwoForm I M} {J₀ J₁ : SmoothAlmostComplexStructure I M}
   (h₀ : σ.Compatible J₀) (h₁ : σ.Compatible J₁)
 
-/-- The pointwise compatible Cayley path at `x`. The tangent space `T_x M` is the model space
-`E`, which carries the norm required by the linear Cayley path; `TangentSpace I x` itself has no
-norm instance, so the path is formed on `E`. -/
-private def cayleyPathAt (t : ℝ) (x : M) : AlmostComplexStructure E :=
-  SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x) t
-
-/-- The pointwise compatible Cayley path at `x`, as a continuous endomorphism of `T_x M`. -/
+/-- The pointwise compatible Cayley path at `x`, as a continuous endomorphism of `T_x M`. The
+tangent space `T_x M` is the model space `E`, which carries the norm required by the linear
+Cayley path; `TangentSpace I x` itself has no norm instance, so the path is formed on `E`. -/
 private def cayleyPathEnd (t : ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x :=
-  LinearMap.toContinuousLinearMap (cayleyPathAt h₀ h₁ t x).toLinearMap
+  LinearMap.toContinuousLinearMap
+    (SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x)
+      t).toLinearMap
 
 /-- The pointwise path is the Cayley path expression in the fibre values of `J₀` and `J₁`. -/
 private theorem cayleyPathEnd_eq (t : ℝ) (x : M) :
@@ -276,20 +161,46 @@ def cayleyPath (t : ℝ) : SmoothAlmostComplexStructure I M where
     (contMDiff_cayleyPathEnd h₀ h₁).comp (contMDiff_const.prodMk contMDiff_id)⟩
   square_neg x := by
     ext v
-    -- The endomorphism at `x` is the pointwise path `cayleyPathAt`, which squares to `-1`.
-    exact (cayleyPathAt h₀ h₁ t x).apply_apply v
+    -- The section's value at `x` is `cayleyPathEnd h₀ h₁ t x`, the continuous version of the
+    -- pointwise path `J`, an almost complex structure on `E = T_x M`. Evaluating
+    -- `LinearMap.toContinuousLinearMap J.toLinearMap` is evaluating `J` by definition, but
+    -- `simp` cannot rewrite it across `TangentSpace I x = E`, so `J (J v) = -v` closes the goal.
+    change cayleyPathEnd h₀ h₁ t x (cayleyPathEnd h₀ h₁ t x v) = -v
+    simp only [cayleyPathEnd]
+    exact AlmostComplexStructure.apply_apply _ v
 
 /-- At each point, the path is the pointwise compatible Cayley path. -/
-private theorem almostComplexStructureAt_cayleyPath (t : ℝ) (x : M) :
-    (h₀.cayleyPath h₁ t).almostComplexStructureAt x = cayleyPathAt h₀ h₁ t x :=
+-- This is not a `simp` lemma: its right-hand side is a structure on the model space `E`, so
+-- rewriting with it turns `TangentSpace I x` terms into `E` terms that later `simp` lemmas, such
+-- as `cayley_almostComplexStructureAt_cayleyPath`, no longer match.
+theorem almostComplexStructureAt_cayleyPath (t : ℝ) (x : M) :
+    (h₀.cayleyPath h₁ t).almostComplexStructureAt x =
+      SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x) t :=
   AlmostComplexStructure.toLinearMap_injective <| by
     rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+    -- The endomorphism of `cayleyPath` at `x` is `cayleyPathEnd` by definition.
+    change (cayleyPathEnd h₀ h₁ t x).toLinearMap = _
+    -- Unfolding it leaves `LinearMap.coe_toContinuousLinearMap` for the pointwise path, read
+    -- on `TangentSpace I x = E`.
+    rw [cayleyPathEnd]
     exact LinearMap.coe_toContinuousLinearMap _
+
+/-- At each point, applying the path to a tangent vector applies the pointwise compatible Cayley
+path. -/
+-- This is not a `simp` lemma, for the same reason as `almostComplexStructureAt_cayleyPath`.
+theorem cayleyPath_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
+    h₀.cayleyPath h₁ t x v =
+      SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x)
+        t v := by
+  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    almostComplexStructureAt_cayleyPath]
+  rfl
 
 /-- A smooth almost complex structure agreeing with the pointwise path at every point is the
 path. -/
 private theorem cayleyPath_eq_of_forall {t : ℝ} {J : SmoothAlmostComplexStructure I M}
-    (h : ∀ x, cayleyPathAt h₀ h₁ t x = J.almostComplexStructureAt x) :
+    (h : ∀ x, SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x)
+      (h₁.compatibleAt x) t = J.almostComplexStructureAt x) :
     h₀.cayleyPath h₁ t = J := by
   ext x v
   rw [← (h₀.cayleyPath h₁ t).almostComplexStructureAt_apply x v,
