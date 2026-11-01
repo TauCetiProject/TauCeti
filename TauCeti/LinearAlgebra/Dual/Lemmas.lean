@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 A functional `f` with `f x = 1` splits a module into the line through `x` and the kernel of `f`.
 This file records the projection `id - f(·) • x` that this splitting defines, and the dimension
-count for the trace of `ker f` on a subspace on which `f` does not vanish.
+count for the trace of `ker f` on a subspace on which `f` does not vanish. A basis `X` with
+`f (X j) ≠ 0` yields a basis of `ker f` by moving each other `X i` into `ker f` along `X j`.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
 algebra is finite-dimensional is itself finite-dimensional.
@@ -28,6 +29,9 @@ so separate points.
   `Module.Dual.finrank_ker_add_one_of_ne_zero`.
 * `Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero`: the kernel of a nonzero functional has
   codimension one.
+* `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
+  `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
+  basis of `ker f`.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
@@ -79,6 +83,36 @@ theorem finrank_quotient_ker_eq_one_of_ne_zero {f : Dual K V} (hf : f ≠ 0) :
     finrank K (V ⧸ LinearMap.ker f) = 1 := by
   rw [(f.quotKerEquivOfSurjective (LinearMap.surjective_iff_ne_zero.2 hf)).finrank_eq,
     finrank_self]
+
+/-- Subtracting from each `X i`, `i ≠ j`, a multiple of `X j` preserves linear independence. The
+multiples `f (X i) / f (X j)` are those that move `X i` into the kernel of `f`. -/
+theorem linearIndependent_sub_div_smul (f : Dual K V) {ι : Type*} {X : ι → V}
+    (hX : LinearIndependent K X) (j : ι) :
+    LinearIndependent K fun i : {i // i ≠ j} ↦ X i - (f (X i) / f (X j)) • X j := by
+  classical
+  have h := (linearIndependent_add_smul_iff (v := X)
+    (c := Function.update (fun i ↦ -(f (X i) / f (X j))) j 0) (Function.update_self _ _ _)).2 hX
+  convert h.comp Subtype.val Subtype.val_injective using 1
+  ext i
+  simp [Function.update_of_ne i.2, sub_eq_add_neg]
+
+/-- If `X` is a family of `finrank K V` linearly independent vectors and `f (X j) ≠ 0`, the vectors
+`X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, span the kernel of `f`. Together with
+`Module.Dual.linearIndependent_sub_div_smul`, they form a basis of `ker f`. -/
+theorem span_sub_div_smul_eq_ker [FiniteDimensional K V] (f : Dual K V) {ι : Type*} [Fintype ι]
+    {X : ι → V} (hX : LinearIndependent K X) (hcard : Fintype.card ι = finrank K V) {j : ι}
+    (hj : f (X j) ≠ 0) :
+    Submodule.span K (Set.range fun i : {i // i ≠ j} ↦ X i - (f (X i) / f (X j)) • X j) =
+      LinearMap.ker f := by
+  classical
+  have hli := f.linearIndependent_sub_div_smul hX j
+  refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
+  · rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    simp [hj]
+  · have hker := finrank_ker_add_one_of_ne_zero fun h : f = 0 ↦ hj (by simp [h])
+    rw [finrank_span_eq_card hli, Fintype.card_subtype_compl, Fintype.card_subtype_eq, hcard]
+    exact Nat.sub_eq_of_eq_add hker.symm
 
 end DivisionRing
 
