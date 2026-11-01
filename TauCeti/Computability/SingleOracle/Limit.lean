@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.SingleOracle.Evaln
 public import TauCeti.Computability.Enumeration.Converges
+public import TauCeti.Computability.TuringDegree
 
 /-!
 # Oracle computations along approximations of the oracle
@@ -23,7 +24,7 @@ completeness of bounded evaluation, every value of a program relative to the lim
 eventually found by the stage computations with growing fuel. For a set enumerated in monotone
 finite stages, the set-oracle answers of the stages converge to those of the limit set, so this
 applies to the stage computations `Φ_{e,s}^{A_s}(x)`
-(`TauCeti.Enumeration.converges_indicator_stageLimit`).
+(`TauCeti.Oracle.Single.Code.converges_setAnswers_stageLimit`).
 
 **From the stages to the limit.** The converse fails without further information: a stage
 computation may read an address whose answer later changes. It holds when nothing enters the
@@ -40,6 +41,8 @@ consequences, for requirements that are not injured, are in
 * `TauCeti.Oracle.Single.Code.exists_eventually_evaln_eq_some_of_mem_eval`: every value of a
   program relative to the limit oracle is eventually found by the stage computations, with fuel
   growing along any clock tending to infinity.
+* `TauCeti.Oracle.Single.Code.converges_setAnswers_stageLimit`: under monotone stages, the
+  set-oracle answers of the stages converge to those of the limit set.
 * `TauCeti.Oracle.Single.Code.exists_eventually_evaln_setAnswers_eq_some_of_mem_eval`: a
   convergent computation relative to the limit of a monotone enumeration is eventually found by
   the stage computations against the finite stages.
@@ -95,19 +98,24 @@ theorem exists_eventually_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ}
 
 variable {A : ℕ → Finset ℕ}
 
+/-- Under monotone stages, the set-oracle answers of the stages `A s` converge pointwise to the
+set-oracle answers of the limit. -/
+theorem converges_setAnswers_stageLimit (hA : Monotone A) :
+    Converges (fun s => setAnswers (A s)) (setAnswers (stageLimit A)) :=
+  converges_iff_eventually.2 fun z =>
+    (converges_iff_eventually.1 (converges_indicator_stageLimit hA 1) z).mono fun _ hs => by
+      rw [setAnswers_apply, setAnswers_apply, hs]
+
 /-- **Stage computations against a monotone enumeration.** If a program relative to the set oracle
 of the limit of monotone finite stages `A s` has the value `y`, then a single run with output `y`
 and a fixed use succeeds, from some stage on, against the set oracle of `A s` with fuel `t s`, for
 any clock `t` tending to infinity. -/
 theorem exists_eventually_evaln_setAnswers_eq_some_of_mem_eval (hA : Monotone A) {t : ℕ → ℕ}
     (ht : Tendsto t atTop atTop) {y : ℕ}
-    (h : y ∈ eval (fun z => Part.some ((stageLimit A).indicator 1 z)) c n) :
+    (h : y ∈ eval (stageLimit A).oracle c n) :
     ∃ d : Halt, d.output = y ∧
       ∀ᶠ s in atTop, evaln (setAnswers (A s)) (t s) c n = some d :=
-  exists_eventually_evaln_eq_some_of_mem_eval (σ := setAnswers (stageLimit A))
-    (by simp) (converges_iff_eventually.2 fun z =>
-      (converges_iff_eventually.1 (converges_indicator_stageLimit hA 1) z).mono fun _ hs => by
-        rw [setAnswers_apply, setAnswers_apply, hs]) ht h
+  exists_eventually_evaln_eq_some_of_mem_eval (by simp) (converges_setAnswers_stageLimit hA) ht h
 
 /-! ### From the approximations to the limit oracle -/
 

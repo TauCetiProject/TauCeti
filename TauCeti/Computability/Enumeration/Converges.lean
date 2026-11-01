@@ -16,7 +16,7 @@ import Mathlib.Order.Filter.IndicatorFunction
 Under monotone stages, the finite stages `A s` of an enumeration approximate its limit in the sense
 of limit approximations: any function restricted to the stages converges pointwise to the same
 function restricted to the limit. In particular the set-oracle answers of the stages converge to
-those of the limit set.
+those of the limit set (`TauCeti.Oracle.Single.Code.converges_setAnswers_stageLimit`).
 
 ## Main results
 
