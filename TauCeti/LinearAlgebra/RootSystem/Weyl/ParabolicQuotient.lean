@@ -98,6 +98,13 @@ lemma _root_.RootPairing.mem_wallIndices {x : M} {i : b.support} :
     i ∈ P.wallIndices b x ↔ P.coroot' i x = 0 :=
   Iff.rfl
 
+/-- Adding a weight `χ` killed by the simple coroots, such as a central weight, does not change
+the walls through a weight. -/
+lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) : P.wallIndices b (x + χ) = P.wallIndices b x := by
+  ext i
+  rw [mem_wallIndices, mem_wallIndices, map_add, hχ i i.2, add_zero]
+
 variable (P b) [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
   [P.IsReduced] [P.flip.IsReduced] {lam : M}
 
