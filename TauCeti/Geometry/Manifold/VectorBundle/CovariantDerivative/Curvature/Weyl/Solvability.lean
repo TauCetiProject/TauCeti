@@ -10,6 +10,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 import TauCeti.Analysis.ODE.Frobenius
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -129,25 +130,6 @@ private theorem contDiff_metricCoeff : ContDiff ℝ ∞ (metricCoeff E) := by
       (b := id) (hC a) (hC b)
   exact contMDiff_iff_contDiff.1 h
 
-omit [IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x)] in
-private theorem inner_mgradient_model_space (φ : E → ℝ) (y v : E) :
-    ⟪mgradient 𝓘(ℝ, E) φ y, (tangentSpaceCastModel 𝓘(ℝ, E) y).symm v⟫_ℝ = fderiv ℝ φ y v := by
-  rw [inner_mgradient, mvfderiv_eq_fderiv]
-  -- `NormedSpace.fromTangentSpace y` is `tangentSpaceCastModel 𝓘(ℝ, E) y` by definition.
-  simp [NormedSpace.fromTangentSpace]
-
-omit [IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x)] in
-/-- In linear coordinates, the squared length of the gradient is `|dφ|² = dφ(g⁻¹ dφ)`. -/
-private theorem norm_mgradient_sq (φ : E → ℝ) (y : E) :
-    ‖mgradient 𝓘(ℝ, E) φ y‖ ^ 2 = fderiv ℝ φ y ((metricCoeff E y).inverse (fderiv ℝ φ y)) := by
-  have h : metricCoeff E y (tangentSpaceCastModel 𝓘(ℝ, E) y (mgradient 𝓘(ℝ, E) φ y)) =
-      fderiv ℝ φ y := by
-    ext v
-    rw [← inner_mgradient_model_space φ y v, inner_eq_metricCoeff]
-    simp
-  rw [← h, (isInvertible_metricCoeff y).inverse_apply_self, ← real_inner_self_eq_norm_sq,
-    inner_eq_metricCoeff]
-
 variable (E) in
 /-- The Schouten tensor of the model space, read as a field of bilinear forms on `E`. -/
 private def schoutenCoeff (y : E) : E →L[ℝ] E →L[ℝ] ℝ :=
@@ -241,7 +223,8 @@ private theorem hessian_sub_conformalFlatteningForm_model_space {φ : E → ℝ}
   rw [hessian_model_space_eq_fderiv_sub_christoffelSecondKind inner_eq_metricCoeff
       (contDiff_metricCoeff.differentiable (by simp) y) hφ,
     CovariantDerivative.conformalFlatteningForm_apply, flatteningField_apply_snd,
-    inner_mgradient_model_space, inner_mgradient_model_space, norm_mgradient_sq,
+    inner_mgradient_model_space, inner_mgradient_model_space,
+    norm_mgradient_sq_model_space (inner_eq_metricCoeff y),
     ← schoutenCoeff_apply, inner_eq_metricCoeff]
   simp only [ContinuousLinearEquiv.apply_symm_apply]
   ring
