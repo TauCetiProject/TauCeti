@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.AlgebraicTopology.Cohomology.Local.Linear
 
 /-!
 # Thom classes of trivial and trivializable bundles
@@ -39,6 +40,14 @@ these restrictions have Thom classes (`Bundle.Trivialization.exists_isThomClass_
 these are the local Thom classes over trivializing open sets that the Mayer–Vietoris argument of
 Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. The gluing over
 finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris`.
+
+Over a point `b` in the base sets of two linear trivializations `e` and `e'`, the fibre isomorphism
+of `e'` is that of `e` followed by the coordinate change `F ≃ F`
+(`Bundle.Trivialization.fiberPairIso_hom_comp_ofSubsetMap_coordChangeL`). The coordinate change
+acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant, so the pull-backs of a class of the fibre
+pair along `e` and along `e'` differ by that sign
+(`Bundle.Trivialization.singularCohomologyMap_fiberPairIso_hom_eq_sign_smul`). This is the
+transition rule an orientation controls when local Thom classes are glued.
 
 The gluing works with the Thom pair `(E|_W, E₀|_W)` of the restriction of `E` to a subset `W` of
 the base (`TauCeti.thomPairOver`). When `W` lies in the base set of a linear trivialization `e`,
@@ -78,6 +87,11 @@ instance a Thom class, is determined by its restrictions to the fibres
   class.
 * `Bundle.Trivialization.exists_isThomClass_pullback_baseSet`: the restriction of a bundle to the
   base set of any trivialization has a Thom class.
+* `Bundle.Trivialization.fiberPairIso_hom_comp_ofSubsetMap_coordChangeL`: the fibre isomorphisms
+  of two trivializations differ by the coordinate change.
+* `Bundle.Trivialization.singularCohomologyMap_fiberPairIso_hom_eq_sign_smul`: changing the
+  trivialization multiplies a pulled-back fibre class by the sign of the determinant of the
+  coordinate change.
 * `TauCeti.trivialThomPairIso`: the Thom pair of the trivial bundle is that of the product bundle.
 * `Bundle.Trivialization.isZero_singularCohomology_thomPair`: the relative cohomology of the Thom
   pair of a trivializable bundle vanishes below the rank.
@@ -287,7 +301,64 @@ theorem fiberThomPairMap_comp_thomPairIso_hom (he : e.baseSet = Set.univ) (b : B
   -- `TotalSpace.mk'` is `TotalSpace.mk` with the fibre made explicit.
   rfl
 
+variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
+
+/-- **The fibre isomorphisms of two trivializations differ by the coordinate change**: for linear
+trivializations `e` and `e'` whose base sets contain `b`, the isomorphism of fibre pairs
+`(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})` given by `e`, followed by the coordinate change from `e` to `e'`,
+is the one given by `e'`. -/
+theorem fiberPairIso_hom_comp_ofSubsetMap_coordChangeL (hb : b ∈ e.baseSet)
+    (hb' : b ∈ e'.baseSet) :
+    (e.fiberPairIso 𝕜 hb).hom ≫
+        TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL 𝕜 e' b : F →L[𝕜] F) : C(F, F)))
+          (fun _ hy ↦ (map_ne_zero_iff _ (ContinuousLinearEquiv.injective _)).2 hy) =
+      (e'.fiberPairIso 𝕜 hb').hom := by
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
+  -- Both sides send `x : E_b` to the second coordinate of `e' x`. The carriers of the pairs agree
+  -- with `E_b` and `F` only up to unfolding, so first split each composite into its evaluations.
+  change TopPair.Hom.fst (TopPair.ofSubsetMap _ _) (TopPair.Hom.fst (e.fiberPairIso 𝕜 hb).hom x) =
+    TopPair.Hom.fst (e'.fiberPairIso 𝕜 hb').hom x
+  rw [fiberPairIso_hom_fst_apply, fiberPairIso_hom_fst_apply]
+  refine (TopPair.ofSubsetMap_fst_apply (B := ({0}ᶜ : Set F)) (B' := ({0}ᶜ : Set F))
+    (TopCat.ofHom ((e.coordChangeL 𝕜 e' b : F →L[𝕜] F) : C(F, F)))
+    (fun _ hy ↦ (map_ne_zero_iff _ (ContinuousLinearEquiv.injective _)).2 hy)
+    (e.continuousLinearEquivAt 𝕜 b hb x)).trans ?_
+  -- The coordinate change undoes `e` and applies `e'`. The carrier of the pair is `F` only up to
+  -- unfolding, so the evaluation is computed separately.
+  have key : e.coordChangeL 𝕜 e' b (e.continuousLinearEquivAt 𝕜 b hb x) =
+      e'.continuousLinearEquivAt 𝕜 b hb' x := by
+    rw [coordChangeL_apply e e' ⟨hb, hb'⟩]
+    exact congrArg (fun y ↦ (e' ⟨b, y⟩).2) (symm_apply_apply_mk e hb x)
+  exact key
+
 end Geometry
+
+section CoordChange
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
+  [FiberBundle F E] (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ] {b : B}
+  (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet)
+  {K : Type*} [CommRing K] {R' M' : ModuleCat.{w} K} [Module.Projective K R']
+
+/-- **Changing the trivialization acts on fibre classes by the sign of the coordinate change.**
+For linear trivializations `e` and `e'` whose base sets contain `b`, the pull-back of a class
+`g ∈ Hⁿ(F, F ∖ {0}; R, M)`, `R` projective, to the fibre pair over `b` along `e'` is the pull-back
+along `e` multiplied by the sign of the determinant of the coordinate change from `e` to `e'`. -/
+theorem singularCohomologyMap_fiberPairIso_hom_eq_sign_smul {n : ℕ}
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M' n) :
+    TopPair.singularCohomologyMap (e'.fiberPairIso ℝ hb').hom n g =
+      (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
+        TopPair.singularCohomologyMap (e.fiberPairIso ℝ hb).hom n g := by
+  rw [← e.fiberPairIso_hom_comp_ofSubsetMap_coordChangeL ℝ e' hb hb',
+    TopPair.singularCohomologyMap_comp_apply,
+    singularCohomologyMap_continuousLinearMap_compl_zero R' M' (e.coordChangeL ℝ e' b : F →L[ℝ] F)
+      (fun _ hy ↦ (map_ne_zero_iff _ (ContinuousLinearEquiv.injective _)).2 hy) n]
+  simp only [ModuleCat.hom_zsmul, ModuleCat.hom_id, LinearMap.smul_apply, LinearMap.id_apply,
+    map_zsmul]
+
+end CoordChange
 
 section ThomPairOver
 
