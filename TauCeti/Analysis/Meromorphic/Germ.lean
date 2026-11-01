@@ -16,7 +16,7 @@ determined, as such, on a punctured neighbourhood of `a`: Mathlib's `Meromorphic
 value at `a` itself. This file collects the germs along the punctured neighbourhood filter
 `𝓝[≠] a` of the functions `𝕜 → 𝕜` which are meromorphic at `a` into a subring
 `TauCeti.meromorphicGerms 𝕜 a` of Mathlib's ring of germs `Filter.Germ (𝓝[≠] a) 𝕜`, and shows
-that it is a field.
+that it is a field. Constant functions give its natural algebra structure over `𝕜`.
 
 The inverse of a germ is the pointwise inverse. It is a multiplicative inverse because, by the
 principle of isolated zeros (`MeromorphicAt.eventually_eq_zero_or_eventually_ne_zero`), a
@@ -80,6 +80,26 @@ theorem coe_mem_meromorphicGerms {f : 𝕜 → 𝕜} :
   ⟨fun ⟨_, hg, hgf⟩ ↦ hg.congr (Germ.coe_eq.1 hgf), fun hf ↦ ⟨f, hf, rfl⟩⟩
 
 namespace meromorphicGerms
+
+/-- Scalars act on meromorphic germs through constant functions. -/
+instance : Algebra 𝕜 (meromorphicGerms 𝕜 a) :=
+  RingHom.toAlgebra
+    { toFun c := ⟨Germ.const c,
+        mem_meromorphicGerms_iff.mpr ⟨fun _ ↦ c, MeromorphicAt.const c a, rfl⟩⟩
+      map_zero' := rfl
+      map_one' := rfl
+      map_add' _ _ := rfl
+      map_mul' _ _ := rfl }
+
+@[simp, norm_cast]
+theorem coe_algebraMap (c : 𝕜) :
+    ((algebraMap 𝕜 (meromorphicGerms 𝕜 a) c : meromorphicGerms 𝕜 a) :
+      Germ (𝓝[≠] a) 𝕜) = Germ.const c := (rfl)
+
+@[simp, norm_cast]
+theorem coe_smul (c : 𝕜) (φ : meromorphicGerms 𝕜 a) :
+    ((c • φ : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) =
+      c • (φ : Germ (𝓝[≠] a) 𝕜) := (rfl)
 
 /-- The inverse of a meromorphic germ is its pointwise inverse. -/
 instance : Inv (meromorphicGerms 𝕜 a) where
