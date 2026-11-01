@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
+public import Mathlib.FieldTheory.RatFunc.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import Mathlib.RingTheory.TensorProduct.Maps
+import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.RingTheory.Etale.Field
+import Mathlib.RingTheory.LocalProperties.Reduced
+import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.PolynomialAlgebra
 import TauCeti.RingTheory.FiniteType.Tensor.Product
 import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
@@ -21,6 +26,8 @@ Extending the scalars of a reduced algebra by a separable algebraic field extens
 algebra, since the finite subextensions are étale. Consequently, if `F / E` is a separable algebraic
 extension of fields over `k` and `E ⊗[k] A` is reduced, then so is `F ⊗[k] A`.
 In particular, every reduced algebra over a perfect field is geometrically reduced.
+Localizing the first factor of a reduced tensor product keeps it reduced, so `RatFunc k ⊗[k] A` is
+reduced for every reduced `k`-algebra `A`.
 The tensor product of two reduced algebras over a perfect field is therefore reduced, with
 no finite-generation hypothesis on either factor.
 This supplies the reduced tensor square needed to form reductions of affine groups.
@@ -64,6 +71,37 @@ theorem isReduced_tensorProduct_of_isReduced_of_isSeparable (k : Type*) [CommRin
   -- `F ⊗[k] A = (E ⊗[k] A) ⊗[E] F`
   let e := tensorProductEquivBaseChange k E F A
   exact isReduced_of_injective e e.injective
+
+/-- Let `B` be a localization of the `k`-algebra `A`. If `A ⊗[k] L` is reduced, then so is
+`B ⊗[k] L`. -/
+theorem isReduced_tensorProduct_of_isLocalization {k : Type*} [CommRing k] {A : Type*} [CommRing A]
+    [Algebra k A] (M : Submonoid A) (B : Type*) [CommRing B] [Algebra k B] [Algebra A B]
+    [IsScalarTower k A B] [IsLocalization M B] (L : Type*) [CommRing L] [Algebra k L]
+    [IsReduced (A ⊗[k] L)] : IsReduced (B ⊗[k] L) := by
+  -- `B ⊗[k] L` is the localization of `A ⊗[k] L` at the image of `M`
+  let φ : A ⊗[k] L →ₐ[k] B ⊗[k] L :=
+    Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A B) (AlgHom.id k L)
+  algebraize [φ.toRingHom]
+  have : IsScalarTower A (A ⊗[k] L) (B ⊗[k] L) := .of_algebraMap_eq fun a ↦ by
+    simp [RingHom.algebraMap_toAlgebra, φ]
+  have := IsLocalization.tensorProduct_tensorProduct k L M B
+    (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  let e := IsLocalization.algEquiv (Algebra.algebraMapSubmonoid (A ⊗[k] L) M) (B ⊗[k] L)
+    (Localization (Algebra.algebraMapSubmonoid (A ⊗[k] L) M))
+  exact isReduced_of_injective e e.injective
+
+/-- The tensor product of a reduced algebra over a domain `k` with the rational function field
+`RatFunc k` is reduced. -/
+instance isReduced_ratFunc_tensorProduct {k : Type*} [CommRing k] [IsDomain k] {A : Type*}
+    [CommRing A] [IsReduced A] [Algebra k A] : IsReduced (RatFunc k ⊗[k] A) := by
+  -- `k[X] ⊗[k] A = A[X]` is reduced, and `RatFunc k` is a localization of `k[X]`
+  have : IsReduced (Polynomial A) :=
+    isReduced_of_injective (MvPolynomial.uniqueAlgEquiv A Unit).symm
+      (MvPolynomial.uniqueAlgEquiv A Unit).symm.injective
+  have : IsReduced (Polynomial k ⊗[k] A) :=
+    let e := (Algebra.TensorProduct.comm k _ A).trans (polyEquivTensor k A).symm
+    isReduced_of_injective e e.injective
+  exact isReduced_tensorProduct_of_isLocalization (nonZeroDivisors (Polynomial k)) _ A
 
 variable (k : Type*) [Field k] [PerfectField k]
 
