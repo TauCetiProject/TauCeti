@@ -35,7 +35,9 @@ for minimal resolutions this gives the elementary characterisation of linearity:
 graded projective resolution exactly when `Extⁿ(M, N)` vanishes for every graded module `N`
 concentrated in a single degree `p ≠ n`. In the finite-dimensional case it suffices to test
 finite-dimensional simple modules `N`; for `M` a graded simple this is the diagonal vanishing of
-the bigraded `Ext` between graded simples.
+the bigraded `Ext` between graded simples. Dropping the diagonal restriction, vanishing of
+`Extⁿ(M, N)` against all finite-dimensional simples from some degree on truncates the minimal
+resolution and so bounds the projective dimension of the underlying module of `M`.
 
 ## Main results
 
@@ -52,6 +54,8 @@ the bigraded `Ext` between graded simples.
   off the diagonal.
 * `TauCeti.GradedProjectiveResolution.exists_isLinear_iff_subsingleton_ext_simple`: the same
   criterion for finite-dimensional modules, tested against simple modules.
+* `TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT_of_subsingleton_ext_simple`:
+  eventual vanishing of Ext against simple modules bounds the ungraded projective dimension.
 
 ## References
 
@@ -600,6 +604,22 @@ theorem exists_isLinear_iff_subsingleton_ext_simple (M : GradedModuleCat.{max uA
     obtain ⟨r, hr, hfin⟩ := exists_isMinimal_of_finite hneg M
     have := hfin
     exact ⟨r, (hr.isLinear_iff_subsingleton_ext_simple hneg).mpr hExt⟩
+
+include hneg in
+/-- **Ext against simple modules bounds the projective dimension.** Over a finite-dimensional
+algebra as in `TauCeti.GradedProjectiveResolution.exists_isMinimal`, let `M` be a
+finite-dimensional graded module such that `Extⁿ(M, N)` vanishes for every `n ≥ d` and every
+finite-dimensional simple graded module `N`. Then the underlying `A`-module of `M` has projective
+dimension less than `d`. -/
+theorem hasProjectiveDimensionLT_of_subsingleton_ext_simple (M : GradedModuleCat.{max uA v} 𝒜)
+    [Module.Finite k M] (d : ℕ)
+    (hExt : ∀ n, d ≤ n → ∀ N : GradedModuleCat.{max uA v} 𝒜, Module.Finite k N → Simple N →
+      Subsingleton (Ext.{w} M N n)) :
+    HasProjectiveDimensionLT (GradedModuleCat.toModuleCat.obj M) d := by
+  obtain ⟨r, hr, hfin⟩ := exists_isMinimal_of_finite hneg M
+  have := hfin
+  exact r.hasProjectiveDimensionLT d fun n hn ↦
+    hr.subsingleton_of_subsingleton_ext_simple hneg n (hExt n hn)
 
 end Finite
 
