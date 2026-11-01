@@ -113,7 +113,9 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
         have hrect := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
         have hQr := Q.mk_mem_toGridRectangle_coveredSquares_left_column r
         simp only [hQ, hP, hrect, C.column_ne_next, hQr, htop]
-        have := Grid.cIoo_union_cIco_recut (r := r) ht' hturn
+        have hu := Finset.ext_iff.mp (Grid.cIoo_union_cIco_eq_union_of_mem_cIoo ht' hturn) r
+        have hi := Finset.ext_iff.mp (Grid.cIoo_inter_cIco_eq_inter_of_mem_cIoo ht' hturn) r
+        simp only [Finset.mem_union, Finset.mem_inter] at hu hi
         grind only
       · by_cases hb : p.1 = b
         · obtain ⟨c, r⟩ := p
@@ -124,7 +126,10 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
           have hrect := P.mk_mem_toGridRectangle_coveredSquares_right_column r
           have hQr := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
           simp only [hQ, hP, hrect, C.column_ne_next.symm, hQr, htop]
-          have := Grid.cIco_union_cIoo_cut (r := r) hs hturn
+          have hu := Finset.ext_iff.mp (Grid.cIco_union_cIoo_eq_sdiff_of_mem_cIoo hs hturn) r
+          have hd : r ∈ Grid.cIco P.bottom C.turnRow → r ∉ Grid.cIoo t P.top :=
+            fun hr => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIoo_of_mem_cIoo hs hturn) hr
+          simp only [Finset.mem_union, Finset.mem_sdiff] at hu
           grind only
         · simp only [hoff p ha hb, P.mem_coveredSquares_iff_of_ne ha hb, ha, hb,
             false_and, not_false_eq_true, and_true, or_false]
@@ -151,7 +156,10 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
         have hrect := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
         have hQr := Q.mk_mem_toGridRectangle_coveredSquares_left_column r
         simp only [hQ, hP, hrect, hQr, C.column_ne_next, htop]
-        have := Grid.cIco_union_cIoo_cut (r := r) ht' hturn
+        have hu := Finset.ext_iff.mp (Grid.cIco_union_cIoo_eq_sdiff_of_mem_cIoo ht' hturn) r
+        have hd : r ∈ Grid.cIco Q.bottom t → r ∉ Grid.cIoo C.turnRow P.top :=
+          fun hr => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIoo_of_mem_cIoo ht' hturn) hr
+        simp only [Finset.mem_union, Finset.mem_sdiff] at hu
         grind only
       · by_cases hb : p.1 = b
         · obtain ⟨c, r⟩ := p
@@ -162,7 +170,9 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
           have hrect := P.mk_mem_toGridRectangle_coveredSquares_right_column r
           have hQr := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
           simp only [hQ, hP, hrect, hQr, C.column_ne_next.symm, htop]
-          have := Grid.cIoo_union_cIco_recut (r := r) hs hturn
+          have hu := Finset.ext_iff.mp (Grid.cIoo_union_cIco_eq_union_of_mem_cIoo hs hturn) r
+          have hi := Finset.ext_iff.mp (Grid.cIoo_inter_cIco_eq_inter_of_mem_cIoo hs hturn) r
+          simp only [Finset.mem_union, Finset.mem_inter] at hu hi
           grind only
         · simp only [hoff p ha hb, P.mem_coveredSquares_iff_of_ne ha hb, ha, hb,
             false_and, not_false_eq_true, and_true, or_false]

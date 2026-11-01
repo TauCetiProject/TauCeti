@@ -507,24 +507,39 @@ theorem mem_cIoo_or_mem_cIoo_of_ne {a b c x y : Fin n}
   split_ifs at * <;> omega
 
 /-- Removing the closed arc from `s` to `t` inside the half-open arc from `B` to `T`
-leaves the disjoint arcs `cIco B s` and `cIoo t T`, expressed pointwise. -/
-theorem cIco_union_cIoo_cut {B T s t r : Fin n}
+leaves the arcs `cIco B s` and `cIoo t T`. -/
+theorem cIco_union_cIoo_eq_sdiff_of_mem_cIoo {B T s t : Fin n}
     (hs : s ∈ cIco B T) (ht : t ∈ cIoo s T) :
-    ((r ∈ cIco B s ∨ r ∈ cIoo t T) ↔
-      r ∈ cIco B T ∧ r ∉ insert t (cIco s t)) ∧
-    ¬(r ∈ cIco B s ∧ r ∈ cIoo t T) := by
-  simp only [mem_cIco, mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
+    cIco B s ∪ cIoo t T = cIco B T \ insert t (cIco s t) := by
+  ext r
+  simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_insert,
+    mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
   split_ifs at * <;> omega
 
-/-- Recutting the overlapping arcs `cIoo s T` and `cIco B t` at `t` preserves their union
-and intersection: the new arcs are `cIoo s t` and `cIco B T`, expressed pointwise. -/
-theorem cIoo_union_cIco_recut {B T s t r : Fin n}
-    (ht : t ∈ cIco B T) (hst : t ∈ cIoo s T) :
-    ((r ∈ cIoo s T ∨ r ∈ cIco B t) ↔
-      r ∈ cIoo s t ∨ r ∈ cIco B T) ∧
-    ((r ∈ cIoo s T ∧ r ∈ cIco B t) ↔
-      r ∈ cIoo s t ∧ r ∈ cIco B T) := by
+/-- The arcs before and after a closed subarc of a half-open cyclic interval are disjoint. -/
+theorem disjoint_cIco_cIoo_of_mem_cIoo {B T s t : Fin n}
+    (hs : s ∈ cIco B T) (ht : t ∈ cIoo s T) :
+    Disjoint (cIco B s) (cIoo t T) := by
+  rw [Finset.disjoint_left]
+  intro r hr hs'
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Recutting the overlapping arcs `cIoo s T` and `cIco B t` at `t` preserves their union. -/
+theorem cIoo_union_cIco_eq_union_of_mem_cIoo {B T s t : Fin n}
+    (ht : t ∈ cIco B T) (hst : t ∈ cIoo s T) :
+    cIoo s T ∪ cIco B t = cIoo s t ∪ cIco B T := by
+  ext r
+  simp only [Finset.mem_union, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Recutting the overlapping arcs `cIoo s T` and `cIco B t` at `t` preserves their
+intersection. -/
+theorem cIoo_inter_cIco_eq_inter_of_mem_cIoo {B T s t : Fin n}
+    (ht : t ∈ cIco B T) (hst : t ∈ cIoo s T) :
+    cIoo s T ∩ cIco B t = cIoo s t ∩ cIco B T := by
+  ext r
+  simp only [Finset.mem_inter, mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
   split_ifs at * <;> omega
 
 /-- An interior point cuts a clockwise open arc into two open arcs and the cutting point. -/
