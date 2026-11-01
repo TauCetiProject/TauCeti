@@ -42,7 +42,7 @@ inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup.
   `A[n ^ (k + 1)] ≤ ⟨y⟩`.
 * `TauCeti.Submodule.comap_torsion_le_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
-* `TauCeti.Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
+* `Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
   containing a nonzerodivisor is a torsion module.
 -/
 
@@ -222,20 +222,20 @@ theorem comap_torsion_le_of_comp_eq_smul {f : M →ₗ[R] N} {g : N →ₗ[R] M}
 
 end Submodule
 
+end TauCeti
+
 namespace Ideal
 
 /-- The quotient `R ⧸ I` of a commutative ring by an ideal containing a nonzerodivisor `a` is a
 torsion `R`-module: `a` annihilates it. For instance `R ⧸ (a)` is torsion for every
 nonzerodivisor `a`. -/
-theorem isTorsion_quotient_of_mem {R : Type*} [CommRing R] {I : _root_.Ideal R} {a : R}
+theorem isTorsion_quotient_of_mem {R : Type*} [CommRing R] {I : Ideal R} {a : R}
     (haI : a ∈ I) (ha : a ∈ R⁰) : Module.IsTorsion R (R ⧸ I) := by
   intro x
-  obtain ⟨y, rfl⟩ := _root_.Submodule.Quotient.mk_surjective I x
+  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective I x
   refine ⟨⟨a, ha⟩, ?_⟩
-  rw [Submonoid.mk_smul, ← _root_.Submodule.Quotient.mk_smul,
-    _root_.Submodule.Quotient.mk_eq_zero, smul_eq_mul]
-  exact _root_.Ideal.mul_mem_right y I haI
+  rw [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
+    smul_eq_mul]
+  exact I.mul_mem_right y haI
 
 end Ideal
-
-end TauCeti
