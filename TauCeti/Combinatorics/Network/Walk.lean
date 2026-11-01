@@ -295,9 +295,8 @@ theorem IsPath.isCycle_cons {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (e :
   rw [isPath_def, hhead, List.nodup_cons] at hp
   rw [isCycle_def]
   refine ⟨by simp, ?_⟩
-  rw [vertices_cons, List.concat_eq_append, hhead]
+  rw [vertices_cons, List.concat_eq_append, List.tail_append_of_ne_nil hne]
   -- The head and final copy of `s` are the permitted repeated cycle endpoint.
-  change (p.vertices.tail ++ [s]).Nodup
   exact hp.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp.1)
 
 /-- An initial segment of a path is a path. -/
@@ -483,19 +482,10 @@ theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.l
   | nil => simp at hc
   | @cons u _ p e =>
     obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset (Q := Q) p
-    refine ⟨p'.cons e, ⟨by simp, ?_⟩, ?_⟩
-    · have hv : (p'.cons e).vertices = p'.vertices.concat s :=
-        @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p' e
-      have hne : p'.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p'
-      have hh : p'.vertices.head hne = s := @Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p' hne
-      have hhead : p'.vertices = s :: p'.vertices.tail := by
-        conv_lhs => rw [← List.cons_head_tail hne, hh]
-      rw [isPath_def, hhead, List.nodup_cons] at hp'
-      rw [hv, List.concat_eq_append, List.tail_append_of_ne_nil hne]
-      exact hp'.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp'.1)
-    · rw [arrows_cons, arrows_cons]
-      exact List.append_subset.2
-        ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
+    refine ⟨p'.cons e, hp'.isCycle_cons e, ?_⟩
+    rw [arrows_cons, arrows_cons]
+    exact List.append_subset.2
+      ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
 
 /-! ### Bottlenecks -/
 

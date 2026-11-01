@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import TauCeti.Combinatorics.Network.Walk
+public import TauCeti.Combinatorics.Quiver.Reachable
 
 /-!
 # Directed cycles and strong connectivity
@@ -23,8 +23,6 @@ retain their identities. The results require no finiteness assumptions.
 
 * `TauCeti.ArrowWalk.liesOnCycle_iff_nonempty`: an arrow lies on a directed cycle exactly when its
   target can reach its source.
-* `TauCeti.IsWeaklyConnected`: every two vertices are joined by a walk after formally reversing
-  every arrow.
 * `TauCeti.isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle`: the directed bridge
   criterion.
 
@@ -74,26 +72,8 @@ theorem liesOnCycle_iff_nonempty (e : Q s t) :
 
 end ArrowWalk
 
-variable (Q) in
-/-- An arrow family is weakly connected when every ordered pair of vertices is joined by a walk
-after formally adjoining a reverse of every arrow. -/
-def IsWeaklyConnected : Prop :=
-  @Quiver.IsStronglyConnected (Quiver.Symmetrify V) (@Quiver.symmetrifyQuiver V ⟨Q⟩)
-
-/-- Weak connectivity unfolds to the existence of a symmetrified walk between every ordered pair
-of vertices. -/
-theorem isWeaklyConnected_def : IsWeaklyConnected Q ↔
-    ∀ s t : V, Nonempty
-      (@Quiver.Path (Quiver.Symmetrify V) (@Quiver.symmetrifyQuiver V ⟨Q⟩) s t) :=
-  Iff.rfl
-
-/-- A strongly connected arrow family is weakly connected. -/
-theorem Quiver.IsStronglyConnected.isWeaklyConnected
-    (h : @Quiver.IsStronglyConnected V ⟨Q⟩) : IsWeaklyConnected Q :=
-  @Quiver.IsStronglyConnected.isStronglyConnected_symmetrify V ⟨Q⟩ h
-
 /-- Every arrow of a strongly connected arrow family lies on a directed cycle. -/
-theorem Quiver.IsStronglyConnected.liesOnCycle
+theorem _root_.Quiver.IsStronglyConnected.liesOnCycle
     (h : @Quiver.IsStronglyConnected V ⟨Q⟩) {s t : V} (e : Q s t) :
     ArrowWalk.LiesOnCycle e :=
   (ArrowWalk.liesOnCycle_iff_nonempty e).2 (h t s)
@@ -118,13 +98,15 @@ theorem nonempty_arrowWalk_of_symmetrify
 /-- **Directed bridge criterion.** An arrow family is strongly connected exactly when it is
 weakly connected and every arrow lies on a directed cycle. -/
 theorem isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle :
-    @Quiver.IsStronglyConnected V ⟨Q⟩ ↔ IsWeaklyConnected Q ∧
+    @Quiver.IsStronglyConnected V ⟨Q⟩ ↔ @IsWeaklyConnected V ⟨Q⟩ ∧
       ∀ ⦃s t⦄ (e : Q s t), ArrowWalk.LiesOnCycle e := by
   constructor
   · intro h
-    exact ⟨Quiver.IsStronglyConnected.isWeaklyConnected h,
-      fun ⦃s t⦄ e ↦ Quiver.IsStronglyConnected.liesOnCycle h e⟩
+    exact ⟨(@isWeaklyConnected_def V ⟨Q⟩).2
+        (@Quiver.IsStronglyConnected.isStronglyConnected_symmetrify V ⟨Q⟩ h),
+      fun ⦃s t⦄ e ↦ h.liesOnCycle e⟩
   · rintro ⟨hweak, hcycle⟩ s t
-    exact nonempty_arrowWalk_of_symmetrify hcycle (hweak s t)
+    exact nonempty_arrowWalk_of_symmetrify hcycle
+      ((@isWeaklyConnected_def V ⟨Q⟩).1 hweak s t)
 
 end TauCeti
