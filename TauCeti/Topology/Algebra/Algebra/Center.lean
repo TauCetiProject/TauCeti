@@ -63,15 +63,16 @@ theorem mem_center_iff_forall_commute_of_topologicalClosure_adjoin_eq_top
 /-- An algebra map with dense range into a Hausdorff algebra with separately continuous
 multiplication sends the center into the center. -/
 theorem map_center_le_center_of_denseRange {B : Type*} [Semiring B] [Algebra R B]
-    [IsSemitopologicalSemiring A] [T2Space A] (f : B →ₐ[R] A) (hf : DenseRange f) :
+    [SeparatelyContinuousMul A] [T2Space A] (f : B →ₐ[R] A) (hf : DenseRange f) :
     (center R B).map f ≤ center R A := by
-  have hs : (Algebra.adjoin R (Set.range f)).topologicalClosure = ⊤ := by
-    rw [eq_top_iff, ← SetLike.coe_subset_coe, topologicalClosure_coe, ← AlgHom.coe_range,
-      Algebra.adjoin_eq, AlgHom.coe_range, hf.closure_range]
-    exact Set.subset_univ _
   rintro _ ⟨b, hb, rfl⟩
-  refine (mem_center_iff_forall_commute_of_topologicalClosure_adjoin_eq_top hs).2 ?_
-  rintro _ ⟨c, rfl⟩
-  exact Commute.map (mem_center_iff.1 hb c) f
+  -- The centralizer of `f b` is closed and contains the dense range of `f`.
+  have h : Set.range f ⊆ Set.centralizer {f b} := by
+    rintro _ ⟨c, rfl⟩ _ rfl
+    rw [← map_mul, ← map_mul, mem_center_iff.1 hb c]
+  refine mem_center_iff.2 fun x ↦ ?_
+  have hx :=
+    (Set.isClosed_centralizer {f b}).closure_subset_iff.2 h (hf.closure_eq ▸ Set.mem_univ x)
+  exact (hx (f b) rfl).symm
 
 end Subalgebra
