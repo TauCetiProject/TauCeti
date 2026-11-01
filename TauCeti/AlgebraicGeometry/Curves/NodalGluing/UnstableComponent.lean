@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.AuxiliaryMarks
+public import TauCeti.Geometry.Diffeomorphism.Congr
 public import TauCeti.Geometry.Manifold.Diffeomorph.Sigma
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FixingSubgroup
 
 /-!
-# Automorphisms supported on one component, and unstable rational components
+# Automorphisms supported on one component, and unstable rational and elliptic components
 
 A marked nodal curve is presented by its normalization components `X i`, its flag pairs and its
 marks. A diffeomorphism of a single component `X i` which fixes every special point of `X i`
@@ -30,6 +31,15 @@ biholomorphic to the Riemann sphere satisfies the stability condition `2 g_i - 2
 Applying this to every genus-zero component requires identifying such a component with the
 Riemann sphere, which is not done here.
 
+Likewise a component without special points that is diffeomorphic to an infinite additive group
+acting on itself by `C^n` translations, such as a complex torus `E / L` of positive dimension
+(`Submodule.instInfiniteOrbitRelQuotient`), has infinitely many diffeomorphisms, namely the
+translations, so the marked curve has infinitely many automorphisms fixing every label
+(`AuxiliaryAut.infinite_ordered_of_specialPoints_eq_empty`). Contrapositively, when the ordered
+automorphism group is finite, every component diffeomorphic to such a group carries a special point
+(`AuxiliaryAut.nonempty_specialPoints`). Over `ℂ` this is the stability condition
+`2 g_i - 2 + n_i > 0` for a component biholomorphic to a complex torus `ℂ / Λ`, of genus one.
+
 ## Main definitions
 
 * `NodalGluing.AuxiliaryAut.ofComponent`: the ordered automorphism extending a diffeomorphism of
@@ -45,6 +55,11 @@ Riemann sphere, which is not done here.
   diffeomorphic to the projective line with at most two special points.
 * `NodalGluing.AuxiliaryAut.two_lt_encard_specialPoints`: if the ordered automorphism group is
   finite, every component diffeomorphic to the projective line has at least three special points.
+* `NodalGluing.AuxiliaryAut.infinite_ordered_of_specialPoints_eq_empty`: a component without
+  special points diffeomorphic to an infinite group with `C^n` translations, such as a complex
+  torus, gives infinitely many ordered automorphisms.
+* `NodalGluing.AuxiliaryAut.nonempty_specialPoints`: if the ordered automorphism group is finite,
+  every such component carries a special point.
 
 ## References
 
@@ -189,6 +204,33 @@ theorem two_lt_encard_specialPoints [ProperSpace 𝕜] [Finite (ordered I n m)] 
     (e : X i ≃ₘ^n⟮I, 𝓘(𝕜)⟯ OnePoint 𝕜) : 2 < (m.specialPoints i).encard :=
   lt_of_not_ge fun h ↦ not_finite_iff_infinite.mpr
     (infinite_ordered_of_encard_specialPoints_le_two i e h) ‹_›
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {I' : ModelWithCorners 𝕜 E' H'} {G : Type*} [AddGroup G] [TopologicalSpace G] [ChartedSpace H' G]
+  [ContMDiffConstVAdd I' n G G] [Infinite G]
+
+/-- **An unstable elliptic component.** If the component `i` carries no special points and is
+diffeomorphic to an infinite additive group `G` whose translations are `C^n`, such as a complex
+torus `E / L` of positive dimension, the marked curve has infinitely many automorphisms fixing
+every label: the translations of `G` act on the component. -/
+theorem infinite_ordered_of_specialPoints_eq_empty (i : ι) (e : X i ≃ₘ^n⟮I, I'⟯ G)
+    (h : m.specialPoints i = ∅) : Infinite (ordered I n m) := by
+  have : Infinite (X i ≃ₘ^n⟮I, I⟯ X i) :=
+    (Diffeomorph.diffCongr e).toEquiv.infinite_iff.mpr
+      (Diffeomorph.infinite_of_faithfulVAdd (G := G))
+  have : Infinite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) := by
+    rw [h, Diffeomorph.fixingSubgroup_empty]
+    exact Subgroup.topEquiv.toEquiv.infinite_iff.mpr ‹_›
+  exact infinite_ordered_of_infinite_fixingSubgroup i
+
+/-- **Elliptic components of a curve with finite automorphism group are stable.** If the marked
+curve has finitely many automorphisms fixing every label, every component diffeomorphic to an
+infinite additive group with `C^n` translations, such as a complex torus `E / L` of positive
+dimension, carries a special point. -/
+theorem nonempty_specialPoints [Finite (ordered I n m)] (i : ι) (e : X i ≃ₘ^n⟮I, I'⟯ G) :
+    (m.specialPoints i).Nonempty :=
+  nonempty_iff_ne_empty.mpr fun h ↦ not_finite_iff_infinite.mpr
+    (infinite_ordered_of_specialPoints_eq_empty i e h) ‹_›
 
 end AuxiliaryAut
 

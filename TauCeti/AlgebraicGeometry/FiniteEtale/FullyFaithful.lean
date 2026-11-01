@@ -108,8 +108,8 @@ noncomputable def fullyFaithfulPullbackιOfTwoLeDepth [IsNoetherianRing R] (W : 
     (pullback W.ι).FullyFaithful :=
   have ⟨_, _⟩ : (pullback W.ι).Full ∧ (pullback W.ι).Faithful := by
     obtain ⟨a, b, hab, ha, hb⟩ :=
-      TauCeti.AlgebraicGeometry.exists_isWeaklyRegular_basicOpen_le_of_two_le_depth R W
-        fun p hp ↦ (depth_localizedModule_self p.asIdeal).trans_ge (h p hp)
+      TauCeti.AlgebraicGeometry.StructureSheaf.exists_isWeaklyRegular_basicOpen_le_of_two_le_depth
+        (M := R) W fun p hp ↦ (depth_localizedModule_self p.asIdeal).trans_ge (h p hp)
     exact ⟨(fullyFaithfulPullbackιOfIsWeaklyRegular W hab ha hb).full,
       (fullyFaithfulPullbackιOfIsWeaklyRegular W hab ha hb).faithful⟩
   .ofFullyFaithful _

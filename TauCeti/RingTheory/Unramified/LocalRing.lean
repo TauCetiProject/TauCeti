@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LocalRing.Quotient
 public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Unramified.LocalRing
 public import TauCeti.RingTheory.LocalRing.Localization
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 /-!
 # Unramifiedness of a local algebra at its maximal ideal
@@ -38,6 +39,13 @@ is zero, so the algebra would be a field. Over a discrete valuation ring this ma
 torsion-free, hence flat, which is what makes an unramified point over a regular point of
 codimension one étale.
 
+Formal unramifiedness of local algebras essentially of finite type descends along flat local
+homomorphisms: in a tower `A → B → C` of local homomorphisms with `C` flat over `B`, if `C` is
+formally unramified over `A` then so is `B`. Flatness makes `C` faithfully flat over `B`, so
+`𝔪_B` is recovered from `𝔪_B C = 𝔪_C = 𝔪_A C`, and the residue field of `B` is a subextension of
+the separable extension `κ_C / κ_A`. Stalk maps of a flat morphism of schemes are such
+homomorphisms, so this is how unramifiedness descends along flat surjections of schemes.
+
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is formally unramified iff `S` is unramified over `R` at `q`. Stalk maps of morphisms of
 affine schemes are such local homomorphisms, so this is how unramifiedness is read off from a stalk.
@@ -54,6 +62,8 @@ affine schemes are such local homomorphisms, so this is how unramifiedness is re
   maximal ideal.
 * `Algebra.FormallyUnramified.faithfulSMul_of_not_isField`: an unramified local algebra which is a
   domain but not a field, over a local ring of dimension at most one, is a faithful algebra.
+* `Algebra.FormallyUnramified.of_flat_of_formallyUnramified`: formal unramifiedness of local
+  algebras essentially of finite type descends along a flat local homomorphism.
 * `Localization.formallyUnramified_localRingHom_iff`: the local homomorphism `R_p → S_q` is formally
   unramified iff `S` is unramified over `R` at `q`.
 -/
@@ -143,6 +153,32 @@ theorem faithfulSMul_of_not_isField [Ring.DimensionLEOne R] [IsDomain S] (hS : �
   refine hS (IsLocalRing.isField_iff_maximalIdeal_eq.mpr ?_)
   rw [← map_maximalIdeal (R := R), ← IsLocalRing.eq_maximalIdeal hmax,
     Ideal.map_eq_bot_iff_le_ker]
+
+section FlatDescent
+
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra B C]
+  [Algebra A C] [IsScalarTower A B C] [IsLocalRing A] [IsLocalRing B] [IsLocalRing C]
+  [IsLocalHom (algebraMap A B)] [IsLocalHom (algebraMap B C)]
+
+/-- **Formal unramifiedness descends along flat local homomorphisms.** Let `A → B → C` be local
+homomorphisms of local rings with `B` and `C` essentially of finite type over `A` and `C` flat
+over `B`. If `C` is formally unramified over `A`, then so is `B`. -/
+theorem of_flat_of_formallyUnramified [Module.Flat B C] [EssFiniteType A B] [EssFiniteType A C]
+    [FormallyUnramified A C] : FormallyUnramified A B := by
+  have : IsLocalHom (algebraMap A C) := by
+    rw [IsScalarTower.algebraMap_eq A B C]
+    infer_instance
+  have : Module.FaithfullyFlat B C := .of_flat_of_isLocalHom
+  have : Algebra.IsSeparable (IsLocalRing.ResidueField A) (IsLocalRing.ResidueField B) :=
+    Algebra.isSeparable_tower_bot_of_isSeparable _ _ (IsLocalRing.ResidueField C)
+  -- Mathlib states `of_map_maximalIdeal` for `B` essentially of finite type over `A`.
+  refine of_map_maximalIdeal ?_
+  -- By faithful flatness it suffices to compare the extensions to `C`, where `𝔪_A C = 𝔪_C`.
+  rw [← Ideal.comap_map_eq_self_of_faithfullyFlat (B := C) ((IsLocalRing.maximalIdeal A).map _),
+    Ideal.map_map, ← IsScalarTower.algebraMap_eq, map_maximalIdeal]
+  exact IsLocalRing.maximalIdeal_comap _
+
+end FlatDescent
 
 end Algebra.FormallyUnramified
 
