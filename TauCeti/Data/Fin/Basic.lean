@@ -227,8 +227,7 @@ theorem apply_last_mul_inv_mul_partialProd_last {G : Type*} [Group G] {n : ℕ}
       (g * partialProd (init y) (last n))⁻¹ := by
   rw [partialProd_last_eq_init_mul, ← mul_assoc, mul_inv_rev, mul_inv_cancel_left]
 
-/-- Multiplying two adjacent entries of a tuple, not the last two, does not change its final
-partial product. -/
+/-- Multiplying two adjacent entries of a tuple does not change its final partial product. -/
 theorem partialProd_contractNth_castSucc {M : Type*} [Monoid M] {n : ℕ} (j : Fin n)
     (y : Fin (n + 1) → M) :
     partialProd (contractNth j.castSucc (· * ·) y) (last n) = partialProd y (last (n + 1)) := by
