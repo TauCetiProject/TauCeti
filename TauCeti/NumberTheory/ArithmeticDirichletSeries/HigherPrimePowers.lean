@@ -58,16 +58,14 @@ contributes at most `log x`.  Since a higher prime power of norm at most `x` has
 * `TauCeti.primePowerSummatory_indicator_isLittleO`: its specialization to the higher prime powers
   whose base lies in a prescribed set of primes.
 
-## Roadmap role
+## Use
 
-This is the prime and prime-power half of Layer **5.1** together with Layer **5.2** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, whose target 5.2 asks for "the generic
-`O(√x log² x)` estimate under the standard logarithmic prime-power weight" and for the
-hypotheses needed by other arithmetic weights.  Layer 10.2 consumes it as the named estimate
-turning an asymptotic for `ψ` into one for `ϑ`; the roadmap's own accounting there requires only
-the `o(x)` corollary.
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Prime/Psi.lean` consumes the estimate as
+`TauCeti.standardPrimePowerRemoval`, which turns an asymptotic for `ψ` into one for `ϑ`; only the
+`o(x)` corollary is needed there.
 
-The ideal-counting half of Layer 5.1 is a separate estimate: it is analytic, resting on Mathlib's
+The linear ideal count of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean` is a
+separate estimate: it is analytic, resting on Mathlib's
 `NumberField.Ideal.tendsto_norm_le_div_atTop₀`, and is not needed here.
 
 ## References

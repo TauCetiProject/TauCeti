@@ -60,6 +60,8 @@ ring is a regular ring in Mathlib's sense.
 * `TauCeti.IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat`: if a regular
   ring `R` is faithfully flat over a Noetherian ring `A`, every finite `A`-module has projective
   dimension at most `dim R`.
+* `TauCeti.IsRegularRing.of_faithfullyFlat`: a Noetherian ring over which a regular ring of finite
+  Krull dimension is faithfully flat is regular.
 
 ## Proof
 
@@ -87,7 +89,8 @@ dimension of finite modules (`ModuleCat.projectiveDimension_tensorProduct`), so 
 regular ring `R` also bounds the finite `A`-modules. For a flat local
 homomorphism of Noetherian local rings and the residue field of `A`, this is the finite projective
 dimension from which Serre's characterization of regular local rings deduces that `A` is regular
-(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)).
+(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)). If moreover `R` has finite Krull
+dimension, this bound makes the global dimension of `A` finite, so `A` is a regular ring.
 
 ## References
 
@@ -406,6 +409,25 @@ theorem IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat [IsR
   have : Small.{max u v} R := small_max R
   rw [← ModuleCat.projectiveDimension_tensorProduct R M]
   exact ModuleCat.projectiveDimension_le_ringKrullDim _
+
+/-- **Regularity descends along faithfully flat extensions by regular rings of finite Krull
+dimension.** If a regular ring `R` of finite Krull dimension is faithfully flat over a Noetherian
+ring `A`, then `A` is a regular ring. -/
+theorem IsRegularRing.of_faithfullyFlat [IsRegularRing R] (hR : ringKrullDim R ≠ ⊤) :
+    IsRegularRing A := by
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, ringKrullDim R ≤ n := by
+    induction h : ringKrullDim R using WithBot.recBotCoe with
+    | bot => exact ⟨0, bot_le⟩
+    | coe d =>
+      lift d to ℕ using by simpa [h] using hR
+      exact ⟨d, le_rfl⟩
+  have hA : globalDimension.{w} A ≤ n := by
+    refine ((globalDimension_le_tfae.{w} A n).out 2 1).mp ?_
+    intro M _
+    exact (projectiveDimension_le_iff _ n).mp
+      ((IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat (R := R) M).trans hn)
+  exact isRegularRing_of_globalDimension_lt_top.{w, w}
+    (hA.trans_lt (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top n)))
 
 end FaithfullyFlat
 
