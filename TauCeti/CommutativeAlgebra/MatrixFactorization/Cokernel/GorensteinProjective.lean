@@ -284,7 +284,6 @@ modulo `w` is the cokernel of `d₀` over `S`. -/
 theorem exact_d₀_quotientCokernelπ (X : MatrixFactorization S w) :
     Function.Exact X.obj.d₀.hom.hom (quotientCokernelπ X).hom := by
   intro y
-  change quotientCokernelπ X y = 0 ↔ _
   rw [quotientCokernelπ_apply]
   constructor
   · -- If `1 ⊗ y = d₀' (1 ⊗ x)`, then `y - d₀ x = w y' = d₀ (d₁ y')`.

@@ -154,10 +154,17 @@ private def quotientCokernelDesc (hf : Function.Injective f.hom.hom)
       have hfg₀ : f.hom ≫ g = 0 := by
         ext y
         exact hfg.apply_apply_eq_zero y
-      -- The reduction of `f` is its scalar extension, and the adjunction is natural.
-      change (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).map f.hom ≫ _ = 0
-      rw [← Adjunction.homEquiv_naturality_left_symm, hfg₀, Equiv.symm_apply_eq,
-        Adjunction.homEquiv_unit, Functor.map_zero, Limits.comp_zero]))
+      -- The adjunction is natural, so the adjoint of `g` kills the scalar extension of `f`.
+      have h : (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).map f.hom ≫
+          ((ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).homEquiv
+            _ _).symm g = 0 := by
+        rw [← Adjunction.homEquiv_naturality_left_symm, hfg₀, Equiv.symm_apply_eq,
+          Adjunction.homEquiv_unit, Functor.map_zero, Limits.comp_zero]
+      -- The reduction of `ofInjective f` has even differential the scalar extension of its
+      -- even differential, which is `f` by `ofInjective_obj_d₀`.
+      rw [← FGModuleCat.forget₂_map (((baseChangeFunctor _).obj _).obj.d₀),
+        baseChangeFunctor_obj_d₀, FGModuleCat.forget₂_map]
+      exact h))
 
 private theorem cokernelπ_quotientCokernelDesc (hf : Function.Injective f.hom.hom)
     (hfg : Function.Exact f.hom.hom g.hom) :
