@@ -12,8 +12,8 @@ import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 /-!
 # Descent of regularity along flat local homomorphisms
 
-A local ring faithfully flat in a regular local ring is regular. No Noetherianity assumption
-on the source is necessary: Noetherianity itself descends by faithful flatness. The projective
+A ring faithfully flat in a regular local ring is regular local. Neither locality nor
+Noetherianity of the source is necessary: both descend by faithful flatness. The projective
 dimension of the source residue field is then bounded by the dimension of the target, so
 Serre's criterion proves regularity.
 
@@ -38,10 +38,11 @@ namespace TauCeti.IsRegularLocalRing
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- A local ring faithfully flat in a regular local ring is regular. Noetherianity of the
-source follows from faithful flatness, rather than being an additional hypothesis. -/
-theorem of_faithfullyFlat [IsLocalRing R] [IsRegularLocalRing S]
+/-- A ring faithfully flat in a regular local ring is regular local. Locality and
+Noetherianity of the source follow from faithful flatness, rather than being hypotheses. -/
+theorem of_faithfullyFlat [IsRegularLocalRing S]
     [Module.FaithfullyFlat R S] : IsRegularLocalRing R := by
+  have := Module.FaithfullyFlat.isLocalRing R S
   have : IsNoetherianRing R :=
     Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
       (R := R) (A := S) (M := R) inferInstance

@@ -36,6 +36,8 @@ in the closed subset `V(q S)`, and the codimension of a point of `Spec A` inside
   `Spec A` inside `V(I)` is the height of its image in `A ⧸ I`.
 * `AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage`: for a flat morphism,
   the codimension of a point is that of its image plus that in its fibre.
+* `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le_of_flat_of_surjective`: a flat,
+  surjective morphism of locally Noetherian schemes cannot increase dimension.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective`: a flat,
   surjective, locally quasi-finite morphism of locally Noetherian schemes preserves dimension.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_opens_eq_of_flat_of_surjective`: the
@@ -165,19 +167,25 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
     exact b.2
   exact ⟨⟨v', hv'T⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
 
-/-- A flat, surjective, locally quasi-finite morphism of locally Noetherian schemes preserves
-Krull dimension. In particular, this applies to finite faithfully flat covers. -/
-theorem Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective
+/-- The target of a flat, surjective morphism of locally Noetherian schemes has Krull
+dimension at most that of the source. -/
+theorem Scheme.Hom.topologicalKrullDim_le_of_flat_of_surjective
     [IsLocallyNoetherian X] [IsLocallyNoetherian Y] (f : X ⟶ Y)
-    [Flat f] [Surjective f] [LocallyQuasiFinite f] :
-    topologicalKrullDim X = topologicalKrullDim Y := by
-  refine le_antisymm f.topologicalKrullDim_le ?_
+    [Flat f] [Surjective f] : topologicalKrullDim Y ≤ topologicalKrullDim X := by
   rw [TauCeti.topologicalKrullDim_eq_iSup_coheight, TauCeti.topologicalKrullDim_eq_iSup_coheight]
   refine iSup_le fun y ↦ ?_
   obtain ⟨x, rfl⟩ := f.surjective y
   refine le_iSup_of_le x (WithBot.coe_le_coe.mpr ?_)
   rw [f.coheight_eq_coheight_add_coheight_preimage x]
   exact le_self_add
+
+/-- A flat, surjective, locally quasi-finite morphism of locally Noetherian schemes preserves
+Krull dimension. In particular, this applies to finite faithfully flat covers. -/
+theorem Scheme.Hom.topologicalKrullDim_eq_of_flat_of_surjective
+    [IsLocallyNoetherian X] [IsLocallyNoetherian Y] (f : X ⟶ Y)
+    [Flat f] [Surjective f] [LocallyQuasiFinite f] :
+    topologicalKrullDim X = topologicalKrullDim Y :=
+  le_antisymm f.topologicalKrullDim_le f.topologicalKrullDim_le_of_flat_of_surjective
 
 /-- If every nonempty open of the source of a flat, surjective, locally quasi-finite morphism
 has dimension `d`, the same holds for every nonempty open of its target. This is the dimension
