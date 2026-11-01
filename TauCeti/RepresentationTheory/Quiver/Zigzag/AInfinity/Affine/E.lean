@@ -74,16 +74,6 @@ local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
 
 /-! ### Affine `E₆` -/
 
-/-- The affine diagram `E₆` is bipartite: its arms `1, 2`, `3, 4` and `5, 6` alternate from the
-trivalent node `0`. -/
-private theorem isBipartite_graph_E6 : AffineDynkinType.E6.graph.IsBipartite :=
-  ⟨SimpleGraph.Coloring.mk (![0, 1, 0, 1, 0, 1, 0] : Fin 7 → Fin 2)
-    (@fun v w ↦ by
-      revert v w
-      simp only [AffineDynkinType.graph_E6_adj]
-      simp only [AffineDynkinType.nodes_E6]
-      decide)⟩
-
 /-- The closed walk of the backtracks through the nodes `1`, `1` and `3` at the trivalent node `0`
 of the affine diagram `E₆`, in product order. -/
 private def affineE6Walk : Fin 6 → AffineDynkinType.E6.graph.Dart :=
@@ -103,23 +93,14 @@ theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra [Nontrivial k]
     (hG : AffineDynkinType.E6.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨6, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
-  exact not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction (n := 4)
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction (n := 4)
     (by norm_num) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
-      isBipartite_graph_E6 affineE6Matrix (by simp only [AffineDynkinType.graph_E6_adj]; decide)
+      AffineDynkinType.isBipartite_graph_E6 affineE6Matrix
+      (by simp only [AffineDynkinType.graph_E6_adj]; decide)
       (by decide) (by norm_num) (w := affineE6Walk) (by decide) (by decide))
 
 /-! ### Affine `E₇` -/
-
-/-- The affine diagram `E₇` is bipartite: its arms `1`, `2, 3, 4` and `5, 6, 7` alternate from the
-trivalent node `0`. -/
-private theorem isBipartite_graph_E7 : AffineDynkinType.E7.graph.IsBipartite :=
-  ⟨SimpleGraph.Coloring.mk (![0, 1, 1, 0, 1, 1, 0, 1] : Fin 8 → Fin 2)
-    (@fun v w ↦ by
-      revert v w
-      simp only [AffineDynkinType.graph_E7_adj]
-      simp only [AffineDynkinType.nodes_E7]
-      decide)⟩
 
 /-- The closed walk of the backtracks through the nodes `2`, `2`, `2` and `5` at the trivalent node
 `0` of the affine diagram `E₇`, in product order. -/
@@ -142,23 +123,14 @@ theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra [Nontrivial 
     (hG : AffineDynkinType.E7.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨8, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
-  exact not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction (n := 6)
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction (n := 6)
     (by norm_num) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
-      isBipartite_graph_E7 affineE7Matrix (by simp only [AffineDynkinType.graph_E7_adj]; decide)
+      AffineDynkinType.isBipartite_graph_E7 affineE7Matrix
+      (by simp only [AffineDynkinType.graph_E7_adj]; decide)
       (by decide) (by norm_num) (w := affineE7Walk) (by decide) (by decide))
 
 /-! ### Affine `E₈` -/
-
-/-- The affine diagram `E₈` is bipartite: its arms `1`, `2, 3` and `4, 5, 6, 7, 8` alternate from
-the trivalent node `0`. -/
-private theorem isBipartite_graph_E8 : AffineDynkinType.E8.graph.IsBipartite :=
-  ⟨SimpleGraph.Coloring.mk (![0, 1, 1, 0, 1, 0, 1, 0, 1] : Fin 9 → Fin 2)
-    (@fun v w ↦ by
-      revert v w
-      simp only [AffineDynkinType.graph_E8_adj]
-      simp only [AffineDynkinType.nodes_E8]
-      decide)⟩
 
 /-- The closed walk of the backtracks through the nodes `1`, `2`, `4`, `4`, `4` and `2` at the
 trivalent node `0` of the affine diagram `E₈`, in product order. -/
@@ -186,10 +158,11 @@ theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra [Nontrivial
     (hG : AffineDynkinType.E8.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨12, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
-  exact not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction (n := 10)
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction (n := 10)
     (by norm_num) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
-      isBipartite_graph_E8 affineE8Matrix (by simp only [AffineDynkinType.graph_E8_adj]; decide)
+      AffineDynkinType.isBipartite_graph_E8 affineE8Matrix
+      (by simp only [AffineDynkinType.graph_E8_adj]; decide)
       (by decide) (by norm_num) (w := affineE8Walk) (by decide) (by decide))
 
 end TauCeti

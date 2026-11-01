@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.LinearAlgebra.Matrix.Diagonal
+public import TauCeti.LinearAlgebra.Matrix.Kronecker
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 
@@ -112,20 +113,6 @@ private theorem sum_dartMatrix_mul_dartMatrix_symm (β : V → V → Matrix m m 
     ext ⟨a, i⟩ ⟨b, j⟩
     simp [Matrix.sum_apply, Finset.mul_sum]
   rw [hsum, hβ, kronecker_zero]
-
-omit [DecidableRel G.Adj] in
-/-- A product of block matrices along a chain of darts, each starting where the next one ends. -/
-private theorem list_prod_ofFn_single_kronecker {n : ℕ} (a b : Fin (n + 1) → V)
-    (X : Fin (n + 1) → Matrix m m k) (h : ∀ i : Fin n, b i.castSucc = a i.succ) :
-    (List.ofFn fun t ↦ Matrix.single (a t) (b t) (1 : k) ⊗ₖ X t).prod =
-      Matrix.single (a 0) (b (Fin.last n)) 1 ⊗ₖ (List.ofFn X).prod := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [List.ofFn_succ, List.prod_cons, ih (fun i ↦ a i.succ) (fun i ↦ b i.succ)
-      (fun i ↦ X i.succ) (fun i ↦ h i.succ), List.ofFn_succ (f := X), List.prod_cons,
-      ← mul_kronecker_mul, show b 0 = a (Fin.succ 0) from h 0, Matrix.single_mul_single_same,
-      mul_one, Fin.succ_last]
 
 omit [DecidableRel G.Adj] in
 /-- **The twisted trace is anticyclic** on the block matrices of the darts, for a sign `ε` which

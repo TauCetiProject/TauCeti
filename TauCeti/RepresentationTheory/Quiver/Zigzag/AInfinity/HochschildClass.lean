@@ -92,8 +92,8 @@ loop operation, a Hochschild cocycle
 and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for the affine `Dₙ` graphs with `n ≥ 5`
 (`TauCeti.not_hochschildVanishesAt_four_affineD`), as it does for the affine `D₄` graph
 (`TauCeti.not_hochschildVanishesAt_four_affineD4`); see
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Basic` and
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic` and
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
 This is consistent with `TauCeti.zigzagBacktrackOperation_coboundary`, by which the sum of the loop
 operations of a backtrack walk `B d e` and of its rotation `B' d e` is a coboundary: `Λ` takes
@@ -126,8 +126,9 @@ the strict zigzag algebra, when `2` is invertible, is proved in
   deformation.
 * `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`: the higher operation of
   a loop deformation is a Hochschild cocycle, in every arity.
-* `TauCeti.not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction`: a higher
-  loop operation which is not a coboundary gives a nonzero class in `HH^{n + 2, -n}(Z, Z)`.
+* `TauCeti.not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction`:
+  a higher loop operation which is not a coboundary gives a nonzero class in
+  `HH^{n + 2, -n}(Z, Z)`.
 * `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra` and
   `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single`:
   quartic loop operations which are not Hochschild coboundaries.
@@ -690,7 +691,7 @@ omit [Fintype G.Dart] in
 operation of arity `n + 2` of a loop deformation, a Hochschild cocycle of the strict zigzag algebra
 by `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
 differential of any suspended cochain of degree zero, then `HH^{n + 2, -n}(Z, Z) ≠ 0`. -/
-theorem not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction {n : ℕ}
+theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction {n : ℕ}
     (hn : 1 ≤ n) (c : (Fin (n + 2) → G.Dart) →₀ k)
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
     (h : ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
@@ -928,8 +929,8 @@ a cochain of degree zero. -/
 theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k]
     {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ :=
-  not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction (n := 2) one_le_two
-    _ _
+  not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
+    (n := 2) one_le_two _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single hδ hv)
 
 end Four
@@ -1096,8 +1097,8 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk [Nont
     (hde' : d' ≠ e') (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
     (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ :=
-  not_hochschildVanishesAt_of_not_exists_hochschildDifferential_eq_obstruction (n := 2) one_le_two
-    _ _
+  not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
+    (n := 2) one_le_two _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk
       hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef')
 
