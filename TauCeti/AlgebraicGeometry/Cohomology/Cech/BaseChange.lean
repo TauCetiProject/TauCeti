@@ -23,10 +23,10 @@ scheme with affine diagonal. This file shows that the Čech complex `Č(U, M)` o
 sections computes the cohomology of every base change: `Hⁿ(Y, g^* M)` is the `n`-th cohomology of
 `R' ⊗_R Č(U, M)`, with no flatness of `R → R'`. When the sections of `M` over the finite
 intersections of `U` are flat `R`-modules, for instance when its sections over affine opens are,
-every term of `Č(U, M)` is flat (`TauCeti.CategoryTheory.flat_cechComplexFunctor_obj_X`). Together
-these are the first step of the theory of cohomology and base change: the cohomology of all the
-base changes of `M`, in particular of all its fibres `X ×_R κ(p)`, is computed by a single complex
-of flat `R`-modules.
+every term of `Č(U, M)` is flat (`TauCeti.CategoryTheory.flat_cechComplexFunctor_obj_X`).
+Together, for such `M`, these are the first step of the theory of cohomology and base change: the
+cohomology of all the base changes of `M`, in particular of all its fibres `X ×_R κ(p)`, is
+computed by a single complex of flat `R`-modules.
 
 When `R → R'` is flat, extension of scalars commutes with taking cohomology, which gives flat base
 change `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` in every degree `n`.
@@ -235,12 +235,6 @@ private lemma isIso_cechComplexFunctor_map_sectionsPullbackExtend (U : ι → X.
     exact Pi.map_isIso φ
   exact HomologicalComplex.Hom.isIso_of_components _
 
-/-- The inverse images under `g` of the finite intersections of `U` are the finite intersections
-of the inverse images, so `cechComplexCompIso` applies to `g⁻¹`. -/
-private lemma nonempty_pi_preimage_hom_preimage_pi (U : ι → X.Opens) (k : ℕ) (a : Fin (k + 1) → ι) :
-    Nonempty ((∏ᶜ fun j ↦ g ⁻¹ᵁ U (a j)) ⟶ g ⁻¹ᵁ ∏ᶜ fun j ↦ U (a j)) :=
-  ⟨homOfLE (g.preimage_finite_product _).ge⟩
-
 /-- **The Čech complex commutes with base change.** Extending scalars from `R` to `R'` in the
 Čech complex of the sections of `M` for `U` gives the Čech complex of the sections of `g^* M` for
 `g⁻¹ U`. No flatness of `R → R'` is needed, as `U` has affine finite intersections. -/
@@ -255,7 +249,7 @@ def cechComplexBaseChangeIso [Finite ι] (U : ι → X.Opens) (M : X.Modules)
   (cechComplexFunctorMapIso U _).app _ ≪≫
     asIso ((cechComplexFunctor U).map (sectionsPullbackExtend H M)) ≪≫
     (cechComplexCompIso (Opens.map g.base) U _
-      (nonempty_pi_preimage_hom_preimage_pi (g := g) U)).symm
+      fun _ a ↦ g.nonempty_pi_preimage_hom fun j ↦ U (a j)).symm
 
 /-- The factor indexed by `a` of the degree `n` component of `cechComplexBaseChangeIso` is the
 component `R' ⊗_R Γ(M, W) ⟶ Γ(g^* M, g⁻¹ W)` of `sectionsPullbackExtend` at the intersection
@@ -274,7 +268,8 @@ theorem cechComplexBaseChangeIso_hom_f_π [Finite ι] (U : ι → X.Opens) (M : 
           ((sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)).map
             (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op := by
   let Q := (sectionsBasePresheafFunctor R').obj ((Scheme.Modules.pullback g).obj M)
-  let C := cechComplexCompIso (Opens.map g.base) U Q (nonempty_pi_preimage_hom_preimage_pi U)
+  let C := cechComplexCompIso (Opens.map g.base) U Q fun _ a ↦
+    g.nonempty_pi_preimage_hom fun j ↦ U (a j)
   let r := (homOfLE (g.preimage_finite_product fun j ↦ U (a j)).ge).op
   -- The restrictions between the equal opens `∏ g⁻¹ U (a j)` and `g⁻¹ ∏ U (a j)` are inverse.
   have hr : Q.map (Pi.lift fun j ↦ (Opens.map g.base).map (Pi.π (fun j ↦ U (a j)) j)).op ≫

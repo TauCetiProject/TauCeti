@@ -22,10 +22,11 @@ when `P` takes flat values on the nonempty finite intersections of `U`, every te
 a flat `R`-module (`TauCeti.CategoryTheory.flat_cechComplexFunctor_obj_X`).
 
 For a quasi-coherent sheaf `M` on a scheme over `R` and a cover `U` with affine finite
-intersections, with `P` the presheaf of `R`-modules of sections of `M`, this gives the complex of
-flat modules computing the cohomology of every base change of `M`
-(`TauCeti.AlgebraicGeometry.Cohomology.Cech.BaseChange`), as in the proof of Hartshorne's
-Proposition III.12.2.
+intersections, take `P` the presheaf of `R`-modules of sections of `M`. When the sections of `M`
+over the nonempty finite intersections of `U` are flat `R`-modules, for instance when its sections
+over affine opens are, this gives the complex of flat modules computing the cohomology of every
+base change of `M` (`TauCeti.AlgebraicGeometry.Cohomology.Cech.BaseChange`), as in the proof of
+Hartshorne's Proposition III.12.2.
 
 ## Main results
 
