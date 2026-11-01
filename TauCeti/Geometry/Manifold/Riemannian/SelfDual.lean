@@ -34,9 +34,11 @@ characteristic number, with the energies of `F⁺` and `F⁻`; the curvature equ
 Seiberg–Witten equations prescribes the self-dual part `F⁺`.
 
 For a `C^n` metric on a `C^(n+1)` manifold both projections preserve `C^n` forms; on smooth forms
-they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualPart`, the former
-landing in the smooth self-dual forms `TauCeti.SmoothForm.selfDualForms`. Reversing the orientation
-negates `⋆` and so exchanges the two parts (`TauCeti.RoughForm.selfDualPart_neg_orientation`).
+they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualPart`, the
+projections onto the smooth self-dual and anti-self-dual forms `TauCeti.SmoothForm.selfDualForms`
+and `TauCeti.SmoothForm.antiSelfDualForms`. Reversing the orientation negates `⋆` and so exchanges
+the two parts (`TauCeti.RoughForm.selfDualPart_neg_orientation`,
+`TauCeti.RoughForm.antiSelfDualPart_neg_orientation`).
 
 On a boundaryless manifold, Stokes' theorem gives `∫_M β ∧ β = 0` for a compactly supported exact
 form `β = dα`, so its self-dual and anti-self-dual parts have the same energy,
@@ -51,8 +53,9 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
   `α ↦ (α ± ⋆α) / 2`.
 * `TauCeti.SmoothForm.selfDualPart`, `TauCeti.SmoothForm.antiSelfDualPart`: the same projections
   of smooth forms.
-* `TauCeti.SmoothForm.selfDualForms`: the smooth self-dual forms, the `+1` eigenspace of the
-  Hodge star of smooth middle-degree forms.
+* `TauCeti.SmoothForm.selfDualForms`, `TauCeti.SmoothForm.antiSelfDualForms`: the smooth
+  self-dual and anti-self-dual forms, the `+1` and `-1` eigenspaces of the Hodge star of smooth
+  middle-degree forms.
 
 ## Main results
 
@@ -70,6 +73,9 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
   likewise for `Λ⁻`.
 * `TauCeti.IsSmoothForm.selfDualPart`, `TauCeti.IsSmoothForm.antiSelfDualPart`: the projections
   preserve `C^n` forms.
+* `TauCeti.SmoothForm.isProj_selfDualPart`, `TauCeti.SmoothForm.isProj_antiSelfDualPart`: on
+  smooth forms they are the projections onto the smooth `Ω⁺` and `Ω⁻`, which are the smooth forms
+  lying in the rough `Ω⁺` and `Ω⁻` (`TauCeti.SmoothForm.coe_mem_selfDualForms_iff`).
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart`: a compactly
   supported exact form has `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`.
 * `TauCeti.SmoothForm.eq_zero_of_selfDualPart_eq_zero`,
@@ -150,6 +156,12 @@ theorem antiSelfDualPart_apply (α : RoughForm I M ℝ k) :
 theorem selfDualPart_neg_orientation (α : RoughForm I M ℝ k) :
     selfDualPart (-o) α = antiSelfDualPart o α := by
   rw [selfDualPart_apply, antiSelfDualPart_apply, hodgeStar_neg_orientation, sub_eq_add_neg]
+
+/-- Reversing the orientation exchanges the anti-self-dual and self-dual parts. -/
+@[simp]
+theorem antiSelfDualPart_neg_orientation (α : RoughForm I M ℝ k) :
+    antiSelfDualPart (-o) α = selfDualPart o α := by
+  rw [← selfDualPart_neg_orientation, neg_neg]
 
 /-- The self-dual part of a form is supported in the support of the form. -/
 theorem tsupport_selfDualPart_subset (α : RoughForm I M ℝ k) :
@@ -490,10 +502,21 @@ theorem selfDualPart_neg_orientation (α : SmoothForm I M ℝ k) :
     selfDualPart (-o) α = antiSelfDualPart o α :=
   Subtype.ext (RoughForm.selfDualPart_neg_orientation o α)
 
+/-- Reversing the orientation exchanges the anti-self-dual and self-dual parts of smooth forms. -/
+@[simp]
+theorem antiSelfDualPart_neg_orientation (α : SmoothForm I M ℝ k) :
+    antiSelfDualPart (-o) α = selfDualPart o α :=
+  Subtype.ext (RoughForm.antiSelfDualPart_neg_orientation o α)
+
 /-- The **self-dual** smooth middle-degree forms `Ω⁺`: the `+1` eigenspace of the Hodge star, the
 smooth forms with `⋆α = α`. -/
 def selfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
   Module.End.eigenspace (hodgeStar o rfl) 1
+
+/-- The **anti-self-dual** smooth middle-degree forms `Ω⁻`: the `-1` eigenspace of the Hodge star,
+the smooth forms with `⋆α = -α`. -/
+def antiSelfDualForms : Submodule ℝ (SmoothForm I M ℝ k) :=
+  Module.End.eigenspace (hodgeStar o rfl) (-1)
 
 variable {o} in
 /-- A smooth form is self-dual exactly when `⋆α = α`. -/
@@ -502,10 +525,65 @@ theorem mem_selfDualForms {α : SmoothForm I M ℝ k} :
     α ∈ selfDualForms o ↔ hodgeStar o rfl α = α := by
   rw [selfDualForms, Module.End.mem_eigenspace_iff, one_smul]
 
+variable {o} in
+/-- A smooth form is anti-self-dual exactly when `⋆α = -α`. -/
+@[simp]
+theorem mem_antiSelfDualForms {α : SmoothForm I M ℝ k} :
+    α ∈ antiSelfDualForms o ↔ hodgeStar o rfl α = -α := by
+  rw [antiSelfDualForms, Module.End.mem_eigenspace_iff, neg_one_smul]
+
+variable {o} in
+/-- A smooth form is self-dual exactly when it is self-dual as a rough form. -/
+theorem coe_mem_selfDualForms_iff {α : SmoothForm I M ℝ k} :
+    (α : RoughForm I M ℝ k) ∈ RoughForm.selfDualForms o ↔ α ∈ selfDualForms o := by
+  rw [RoughForm.mem_selfDualForms, mem_selfDualForms, ← coe_hodgeStar, SetLike.coe_eq_coe]
+
+variable {o} in
+/-- A smooth form is anti-self-dual exactly when it is anti-self-dual as a rough form. -/
+theorem coe_mem_antiSelfDualForms_iff {α : SmoothForm I M ℝ k} :
+    (α : RoughForm I M ℝ k) ∈ RoughForm.antiSelfDualForms o ↔ α ∈ antiSelfDualForms o := by
+  rw [RoughForm.mem_antiSelfDualForms, mem_antiSelfDualForms, ← coe_hodgeStar,
+    ← Submodule.coe_neg, SetLike.coe_eq_coe]
+
 /-- The self-dual part of a smooth form is self-dual. -/
 theorem selfDualPart_mem_selfDualForms (hk : Even k) (α : SmoothForm I M ℝ k) :
     selfDualPart o α ∈ selfDualForms o :=
   mem_selfDualForms.2 (hodgeStar_selfDualPart o hk α)
+
+/-- The anti-self-dual part of a smooth form is anti-self-dual. -/
+theorem antiSelfDualPart_mem_antiSelfDualForms (hk : Even k) (α : SmoothForm I M ℝ k) :
+    antiSelfDualPart o α ∈ antiSelfDualForms o :=
+  mem_antiSelfDualForms.2 (hodgeStar_antiSelfDualPart o hk α)
+
+/-- `α ↦ (α + ⋆α) / 2` is a projection of smooth forms onto the smooth self-dual forms. -/
+theorem isProj_selfDualPart (hk : Even k) :
+    LinearMap.IsProj (selfDualForms o) (selfDualPart o) where
+  map_mem := selfDualPart_mem_selfDualForms o hk
+  map_id _ hα := Subtype.ext <|
+    (RoughForm.isProj_selfDualPart o hk).map_id _ (coe_mem_selfDualForms_iff.2 hα)
+
+/-- `α ↦ (α - ⋆α) / 2` is a projection of smooth forms onto the smooth anti-self-dual forms. -/
+theorem isProj_antiSelfDualPart (hk : Even k) :
+    LinearMap.IsProj (antiSelfDualForms o) (antiSelfDualPart o) where
+  map_mem := antiSelfDualPart_mem_antiSelfDualForms o hk
+  map_id _ hα := Subtype.ext <|
+    (RoughForm.isProj_antiSelfDualPart o hk).map_id _ (coe_mem_antiSelfDualForms_iff.2 hα)
+
+/-- The self-dual part of a smooth form vanishes exactly when the form is anti-self-dual. -/
+@[simp]
+theorem ker_selfDualPart :
+    LinearMap.ker (selfDualPart o) = antiSelfDualForms (I := I) (M := M) o := by
+  ext α
+  rw [LinearMap.mem_ker, ← coe_mem_antiSelfDualForms_iff, ← RoughForm.ker_selfDualPart,
+    LinearMap.mem_ker, ← coe_selfDualPart, ZeroMemClass.coe_eq_zero]
+
+/-- The anti-self-dual part of a smooth form vanishes exactly when the form is self-dual. -/
+@[simp]
+theorem ker_antiSelfDualPart :
+    LinearMap.ker (antiSelfDualPart o) = selfDualForms (I := I) (M := M) o := by
+  ext α
+  rw [LinearMap.mem_ker, ← coe_mem_selfDualForms_iff, ← RoughForm.ker_antiSelfDualPart,
+    LinearMap.mem_ker, ← coe_antiSelfDualPart, ZeroMemClass.coe_eq_zero]
 
 /-- The self-dual part of a compactly supported smooth form is compactly supported. -/
 theorem selfDualPart_mem_compactlySupportedForms {α : SmoothForm I M ℝ k}
