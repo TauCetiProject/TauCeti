@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # The cylinder over a sphere is the punctured space
@@ -35,6 +35,9 @@ charts of the sphere directly.
 
 ## Main results
 
+* `TauCeti.contMDiff_exp_smul_coe_sphere`: polar coordinates `(u, t) ↦ exp t • u` are smooth.
+* `TauCeti.mvfderiv_exp_smul_coe_sphere_apply`: the differential of polar coordinates sends
+  `(v, a)` at `(u, t)` to `e^t (v + a u)`.
 * `TauCeti.orientable_sphere_prod_real`, `TauCeti.orientable_circle_prod_real`: the cylinders
   `Sⁿ × ℝ` and `S¹ × ℝ` are orientable.
 -/
@@ -67,6 +70,12 @@ end Punctured
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
   [Fact (finrank ℝ V = n + 1)]
 
+/-- Polar coordinates `(u, t) ↦ exp t • u`, read in `V`, are smooth. -/
+theorem contMDiff_exp_smul_coe_sphere {m : ℕ∞ω} :
+    ContMDiff ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) m
+      (fun p : sphere (0 : V) 1 × ℝ ↦ Real.exp p.2 • (p.1 : V)) :=
+  (Real.contDiff_exp.contMDiff.comp contMDiff_snd).smul (contMDiff_coe_sphere.comp contMDiff_fst)
+
 /-- **Polar coordinates** on the punctured space: the diffeomorphism `(u, t) ↦ exp t • u` from the
 cylinder `Sⁿ × ℝ` onto `V ∖ {0}`, with inverse `v ↦ (v / ‖v‖, log ‖v‖)`. -/
 def sphereProdRealDiffeomorph :
@@ -86,10 +95,8 @@ def sphereProdRealDiffeomorph :
     have hv : ‖(v : V)‖ ≠ 0 := norm_ne_zero_iff.2 (mem_puncturedSpace.1 v.2)
     refine Subtype.ext ?_
     simp [Real.exp_log (lt_of_le_of_ne (norm_nonneg _) hv.symm), smul_smul, mul_inv_cancel₀ hv]
-  contMDiff_toFun := by
-    refine (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1 ?_
-    exact (Real.contDiff_exp.contMDiff.comp contMDiff_snd).smul
-      (contMDiff_coe_sphere.comp contMDiff_fst)
+  contMDiff_toFun :=
+    (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1 contMDiff_exp_smul_coe_sphere
   contMDiff_invFun := by
     refine ContMDiff.prodMk ?_ ?_
     · refine ContMDiff.codRestrict_sphere (f := fun v : puncturedSpace V => ‖(v : V)‖⁻¹ • (v : V))
@@ -114,6 +121,46 @@ theorem coe_sphereProdRealDiffeomorph_symm_apply_fst (v : puncturedSpace V) :
 theorem sphereProdRealDiffeomorph_symm_apply_snd (v : puncturedSpace V) :
     (sphereProdRealDiffeomorph (n := n) |>.symm v).2 = Real.log ‖(v : V)‖ :=
   (rfl)
+
+/-- The differential of polar coordinates `(u, t) ↦ e^t u`, the map underlying
+`TauCeti.sphereProdRealDiffeomorph`: a tangent vector `(v, a)` at `(u, t)` is sent to
+`e^t (v + a u)`, where `v` is read in `V`. -/
+theorem mvfderiv_exp_smul_coe_sphere_apply (p : sphere (0 : V) 1 × ℝ)
+    (v : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ Real.exp q.2 • (q.1 : V)) p v =
+      Real.exp p.2 • (mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1
+          (Manifold.tangentSpaceProdEquiv p v).1 +
+        NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 • (p.1 : V)) := by
+  have hι := (contMDiff_coe_sphere (E := V) (n := n) (m := 1) p.1).mdifferentiableAt one_ne_zero
+  have hexp : MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ) Real.exp p.2 :=
+    Real.differentiable_exp.mdifferentiable _
+  have h₁ : mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) p v =
+      mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (Manifold.tangentSpaceProdEquiv p v).1 := by
+    -- The chain rule `mvfderiv_comp_apply` matches a composition `f ∘ g` syntactically, so the
+    -- lambda is first restated as the composition `(↑) ∘ Prod.fst` it unfolds to.
+    rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) = (↑) ∘ Prod.fst from rfl,
+      mvfderiv_comp_apply _ hι mdifferentiableAt_fst, mfderiv_fst]
+    simp only [Manifold.tangentSpaceProdEquiv_apply]
+    -- `ContinuousLinearMap.fst` is the projection of the product.
+    rfl
+  have h₂ : mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ Real.exp q.2) p v =
+      Real.exp p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
+    -- As for `h₁`, the lambda is restated as the composition `Real.exp ∘ Prod.snd` so that the
+    -- chain rule applies.
+    rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ Real.exp q.2) = Real.exp ∘ Prod.snd from rfl,
+      mvfderiv_comp_apply _ hexp mdifferentiableAt_snd, mfderiv_snd, mvfderiv_eq_fderiv]
+    -- The derivative of `Real.exp` at `p.2` is multiplication by `Real.exp p.2`.
+    simp only [ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, Real.deriv_exp, smul_eq_mul,
+      Manifold.tangentSpaceProdEquiv_apply]
+    -- `ContinuousLinearMap.snd` is the projection of the product.
+    exact mul_comm _ _
+  have hd₁ : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
+      (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) p := hι.comp p mdifferentiableAt_fst
+  have hd₂ : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ)
+      (fun q : sphere (0 : V) 1 × ℝ ↦ Real.exp q.2) p := hexp.comp p mdifferentiableAt_snd
+  rw [mvfderiv_fun_smul hd₂ hd₁]
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, h₁, h₂, smul_add, smul_smul]
 
 /-- **The cylinder `Sⁿ × ℝ` is orientable**: pull back the orientation of `V` along polar
 coordinates `TauCeti.sphereProdRealDiffeomorph`. -/
