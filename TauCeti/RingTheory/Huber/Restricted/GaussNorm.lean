@@ -133,6 +133,14 @@ theorem restrictedMvPowerSeriesGaussEquiv_weightedX (i : Fin n) :
         ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ :=
   Subtype.ext (by simp)
 
+/-- The Gauss comparison sends the Huber inclusion of a polynomial to the Gauss-normed
+inclusion of the same polynomial. -/
+@[simp]
+theorem restrictedMvPowerSeriesGaussEquiv_weightedPolynomialHom (p : MvPolynomial (Fin n) R) :
+    restrictedMvPowerSeriesGaussEquiv (weightedPolynomialHom _ isWeightFamily_one_weight p) =
+      TauCeti.MvPowerSeries.polynomialToRestricted (fun _ : Fin n ↦ (1 : ℝ)) p :=
+  Subtype.ext (by simp)
+
 /-- The identity Gauss comparison also respects the coefficient-algebra structure. -/
 noncomputable def restrictedMvPowerSeriesGaussAlgEquiv :
     weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight ≃ₐ[R]
