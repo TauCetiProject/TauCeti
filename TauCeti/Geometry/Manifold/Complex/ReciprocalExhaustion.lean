@@ -39,15 +39,16 @@ variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 /-- The reciprocal of one plus a strictly plurisubharmonic function has index at least the
 complex dimension at every nondegenerate critical point of the original function where the
 denominator is nonzero.
-The complementary-index formula is available in
-`IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_inv_one_add_add_eq_finrank`. -/
+The complementary-index formula is
+`manifoldMorseIndex_inv_one_add_add_manifoldMorseIndex_eq_finrank` in the
+`IsManifoldNondegenerateCriticalPoint` namespace. -/
 theorem IsManifoldStrictlyPlurisubharmonicAt.le_manifoldMorseIndex_inv_one_add
     (h : IsManifoldStrictlyPlurisubharmonicAt E f x)
     (hc : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (hf : 1 + f x ≠ 0) :
     Module.finrank ℂ E ≤ manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ (1 + f y)⁻¹) x := by
   have hbound := h.manifoldMorseIndex_le hc.contMDiffAt
     (mvfderiv_eq_zero_iff.mp hc.mvfderiv_eq_zero)
-  have hsum := hc.manifoldMorseIndex_inv_one_add_add_eq_finrank hf
+  have hsum := hc.manifoldMorseIndex_inv_one_add_add_manifoldMorseIndex_eq_finrank hf
   have hdim : Module.finrank ℝ E = 2 * Module.finrank ℂ E :=
     finrank_real_eq_two_mul_finrank_complex
   omega

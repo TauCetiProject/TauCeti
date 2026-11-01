@@ -35,8 +35,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ} {φ : ℝ → ℝ} {x : M}
 
+namespace IsManifoldNondegenerateCriticalPoint
+
 /-- Scalar post-composition with nonzero derivative preserves nondegenerate critical points. -/
-theorem IsManifoldNondegenerateCriticalPoint.scalar_comp
+theorem scalar_comp
     (h : IsManifoldNondegenerateCriticalPoint I f x)
     (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) ≠ 0) :
     IsManifoldNondegenerateCriticalPoint I (φ ∘ f) x := by
@@ -49,7 +51,7 @@ theorem IsManifoldNondegenerateCriticalPoint.scalar_comp
 
 /-- A decreasing scalar change of values complements the manifold Morse index at a
 nondegenerate critical point. -/
-theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_scalar_comp_add_eq_finrank
+theorem manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank
     [FiniteDimensional ℝ E] (h : IsManifoldNondegenerateCriticalPoint I f x)
     (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) < 0) :
     manifoldMorseIndex I (φ ∘ f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
@@ -58,6 +60,8 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_scalar_comp_add_
   apply h.morseIndex_scalar_comp_add_morseIndex_eq_finrank
   · simpa using hφ
   · simpa using hφ'
+
+end IsManifoldNondegenerateCriticalPoint
 
 /-- On a boundaryless manifold, a scalar change with nonzero derivative preserves critical
 points. -/
@@ -105,24 +109,23 @@ theorem IsMorse.inv_one_add (h : IsMorse I f) (hf : ∀ x, 1 + f x ≠ 0) :
   · intro x
     exact (contDiffAt_const.add contDiffAt_id).inv (hf x)
   · intro x
-    have hne := hf x
-    have hd : HasDerivAt (fun t : ℝ ↦ (1 + t)⁻¹) (-1 / (1 + f x) ^ 2) (f x) := by
-      simpa using ((hasDerivAt_id (f x)).const_add 1).fun_inv hne
-    rw [hd.deriv]
-    simp [hne]
+    rw [deriv_fun_inv'' (differentiableAt_id.const_add 1) (hf x)]
+    simp [hf x]
+
+namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, taking the reciprocal of one plus the function
 complements its index, provided the denominator is nonzero. -/
-theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_inv_one_add_add_eq_finrank
+theorem manifoldMorseIndex_inv_one_add_add_manifoldMorseIndex_eq_finrank
     [FiniteDimensional ℝ E] (h : IsManifoldNondegenerateCriticalPoint I f x)
     (hf : 1 + f x ≠ 0) :
     manifoldMorseIndex I (fun y ↦ (1 + f y)⁻¹) x + manifoldMorseIndex I f x =
       Module.finrank ℝ E := by
-  apply h.manifoldMorseIndex_scalar_comp_add_eq_finrank (φ := fun t ↦ (1 + t)⁻¹)
-    ((contDiffAt_const.add contDiffAt_id).inv hf)
-  have hd : HasDerivAt (fun t : ℝ ↦ (1 + t)⁻¹) (-1 / (1 + f x) ^ 2) (f x) := by
-    simpa using ((hasDerivAt_id (f x)).const_add 1).fun_inv hf
-  rw [hd.deriv]
-  exact div_neg_of_neg_of_pos (by norm_num) (sq_pos_of_ne_zero hf)
+  apply h.manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank
+    (φ := fun t ↦ (1 + t)⁻¹) ((contDiffAt_const.add contDiffAt_id).inv hf)
+  rw [deriv_fun_inv'' (differentiableAt_id.const_add 1) hf]
+  simpa using div_neg_of_neg_of_pos (by norm_num : (-1 : ℝ) < 0) (sq_pos_of_ne_zero hf)
+
+end IsManifoldNondegenerateCriticalPoint
 
 end TauCeti
