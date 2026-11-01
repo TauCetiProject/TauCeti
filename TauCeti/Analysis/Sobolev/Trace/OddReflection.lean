@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Trace.Reflection
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
-public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
@@ -53,7 +52,6 @@ hyperplane, using the symmetry of the weak Hessian of `u`
 
 * `TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`: the odd reflection of a function
   in `W^{2,p}(H)` with first-order part in `W^{1,p}_0(H)` lies in `W^{2,p}(ℝ × E)`.
-* `TauCeti.traceCLM_normalLinearReflection_comp_comp`: conjugating by `R` preserves the trace.
 * `TauCeti.eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection`: the trace of the odd
   reflection of an endomorphism field on `H` has `Lᵖ` norm at most twice that of the trace of the
   field on `H`.
@@ -377,26 +375,6 @@ end Construction
 section Trace
 
 variable {p : ℝ≥0∞}
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Conjugating by the reflection `R (s, z) = (-s, z)` preserves the trace of an endomorphism. -/
-theorem traceCLM_normalLinearReflection_comp_comp
-    (M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-    traceCLM ℝ (WithLp 2 (ℝ × E))
-        (((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L M ∘L
-          ((normalLinearReflection E).toContinuousLinearEquiv :
-            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) =
-      traceCLM ℝ (WithLp 2 (ℝ × E)) M := by
-  set R : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E) :=
-    ((normalLinearReflection E).toContinuousLinearEquiv :
-      WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-  have hRR : R ∘L R = ContinuousLinearMap.id ℝ _ := by
-    ext x
-    exact normalLinearReflection_normalLinearReflection x
-  rw [traceCLM_apply, traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
-    ContinuousLinearMap.toLinearMap_comp, LinearMap.trace_comp_comm', LinearMap.comp_assoc,
-    ← ContinuousLinearMap.toLinearMap_comp, hRR, ContinuousLinearMap.coe_id, LinearMap.comp_id]
 
 /-- An endomorphism field `w` on `ℝ × E` that is the odd reflection of a field `d` on the
 half-space `H = {x | a < x.fst}`, in the sense of
