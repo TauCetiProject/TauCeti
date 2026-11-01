@@ -31,18 +31,19 @@ as `Φ` is nonzero. Indeed no multiple `t • c_Φ` with `t ≠ 0` is a cobounda
 continuous or not, since its restriction to polynomial currents is not.
 
 Conversely, when `L` is finite-dimensional with nondegenerate Killing form over a field of
-characteristic zero and `Ψ` spans the invariant forms, every continuous 2-cocycle `c` is
-`t • c_Ψ + d₁₂ f` with `f` continuous. On polynomial currents, the classification of
-`TauCeti.Algebra.Lie.Loop.Cocycle` writes `c` as `t • c_Ψ + d₁₂ g` for some one-cochain `g`. Joint
-continuity makes `c` vanish on pairs of currents of order at least some `N₀ ≥ 1`; since `L` is
-perfect, every mode `x_n` with `n ≥ 2 N₀` is a sum of brackets `⁅y_{N₀}, z_{n - N₀}⁆`, so `g`
-vanishes on these modes. Composing `g` with truncation at `2 N₀` therefore gives a continuous
-one-cochain `f` on formal currents extending `g`, and the continuous cochains `c` and
-`t • c_Ψ + d₁₂ f` agree on the dense polynomial currents, hence everywhere. Density alone would not
-suffice: it is the vanishing of `g` on high modes that makes `g` extend continuously. For a simple
-Lie algebra over an algebraically closed field of characteristic zero, the continuous second
-cohomology of its formal loop algebra is thus one-dimensional, spanned by the residue class of the
-Killing form.
+characteristic zero, for instance a semisimple Lie algebra, every continuous 2-cocycle `c` is
+`c_Ψ + d₁₂ f` for an invariant symmetric form `Ψ` and a continuous one-cochain `f`. On polynomial
+currents, the classification of `TauCeti.Algebra.Lie.Loop.Cocycle` writes `c` as `c_Ψ + d₁₂ g` for
+some one-cochain `g`. Joint continuity makes `c` vanish on pairs of currents of order at least some
+`N₀ ≥ 1`; since `L` is perfect, every mode `x_n` with `n ≥ 2 N₀` is a sum of brackets
+`⁅y_{N₀}, z_{n - N₀}⁆`, so `g` vanishes on these modes. Composing `g` with truncation at `2 N₀`
+therefore gives a continuous one-cochain `f` on formal currents extending `g`, and the continuous
+cochains `c` and `c_Ψ + d₁₂ f` agree on the dense polynomial currents, hence everywhere. Density
+alone would not suffice: it is the vanishing of `g` on high modes that makes `g` extend
+continuously. When `Ψ` spans the invariant forms, every continuous 2-cocycle is thus
+`t • c_Ψ + d₁₂ f`; for a simple Lie algebra over an algebraically closed field of characteristic
+zero, the continuous second cohomology of its formal loop algebra is one-dimensional, spanned by
+the residue class of the Killing form.
 
 The classification extends to an arbitrary vector space `Z` of coefficients with trivial action, of
 any dimension: `z ↦ [c_Ψ ⊗ z]`, the class of `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Ψ(x, y) • z`, is a linear
@@ -70,10 +71,14 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
   nonzero form vanishes only when the scalar does.
 * `TauCeti.CurrentAlgebra.residueClass_inj`: distinct invariant symmetric forms have distinct
   residue classes over every commutative ring.
-* `TauCeti.CurrentAlgebra.exists_eq_smul_twoCochainOfBilinear_add_d₁₂`: every continuous
-  2-cocycle is a multiple of the residue cocycle plus a continuous coboundary.
-* `TauCeti.CurrentAlgebra.exists_eq_smul_residueClass`: the residue class spans continuous second
-  cohomology.
+* `TauCeti.CurrentAlgebra.exists_eq_twoCochainOfBilinear_add_d₁₂`: every continuous 2-cocycle is
+  the residue cocycle of an invariant symmetric form plus a continuous coboundary.
+* `TauCeti.CurrentAlgebra.exists_eq_smul_twoCochainOfBilinear_add_d₁₂`: when `Ψ` spans the
+  invariant forms, every continuous 2-cocycle is a multiple of the residue cocycle of `Ψ` plus a
+  continuous coboundary.
+* `TauCeti.CurrentAlgebra.exists_eq_residueClass`: every continuous class is a residue class.
+* `TauCeti.CurrentAlgebra.exists_eq_smul_residueClass`: the residue class of a spanning form spans
+  continuous second cohomology.
 * `TauCeti.CurrentAlgebra.residueClassMap`: the residue class `z ↦ [c_Φ ⊗ z]` with coefficients
   in a module `Z` with trivial action.
 * `TauCeti.CurrentAlgebra.residueClassMap_injective`: it is injective for a nonzero form over a
@@ -343,36 +348,31 @@ open _root_.LieAlgebra
 
 /-- **Every continuous 2-cocycle on formal currents is a residue cocycle up to a continuous
 coboundary.** Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a
-field of characteristic zero, and `Ψ` an invariant symmetric form on `L` spanning the invariant
-forms and nonzero on some bracket. Every continuous 2-cocycle with trivial coefficients on formal
-currents is `t • c_Ψ + d₁₂ f` for a scalar `t` and a continuous one-cochain `f`. -/
-theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
-    (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0) {c : twoCochain K (currentAlgebra K L)
+field of characteristic zero, for instance a semisimple Lie algebra. Every continuous 2-cocycle
+with trivial coefficients on formal currents is `c_Ψ + d₁₂ f` for an invariant symmetric form `Ψ`
+on `L` and a continuous one-cochain `f`. -/
+theorem exists_eq_twoCochainOfBilinear_add_d₁₂ {c : twoCochain K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) K)}
     (hc : c ∈ continuousTwoCocycle K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) K)) :
-    ∃ t : K, ∃ f ∈ continuousOneCochain K (currentAlgebra K L)
+    ∃ (Ψ : LinearMap.BilinForm K L) (_ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm),
+      ∃ f ∈ continuousOneCochain K (currentAlgebra K L)
         (TrivialLieModule K (currentAlgebra K L) K),
-      c = t • twoCochainOfBilinear K L Ψ hΨs + d₁₂ K _ _ f := by
+      c = twoCochainOfBilinear K L Ψ hΨs + d₁₂ K _ _ f := by
   set eC := TrivialLieModule.equiv K (currentAlgebra K L) K
   set eP := TrivialLieModule.equiv K (loopAlgebra K ℤ L) K
   obtain ⟨hcc, hcz⟩ := mem_continuousTwoCocycle_iff.mp hc
-  -- On polynomial currents, `c` is `t • c_Ψ + d₁₂ g` for some, a priori discontinuous, `g`.
-  have hcP := twoCochainMap_mem_twoCocycle (eP.symm.toLinearMap ∘ₗ eC.toLinearMap) (ofLoop K L)
-    hcz
-  rw [TauCeti.LieAlgebra.LoopAlgebra.twoCocycle_eq_span_sup_range_d₁₂ hΨ hΨs hspan hne,
-    Submodule.mem_sup] at hcP
-  obtain ⟨_, hts, _, ⟨g, rfl⟩, hcP⟩ := hcP
-  obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hts
+  -- On polynomial currents, `c` is `c_Ψ + d₁₂ g` for some, a priori discontinuous, `g`.
+  obtain ⟨Ψ, hΨ, hΨs, g, hcP⟩ :=
+    TauCeti.LieAlgebra.LoopAlgebra.exists_eq_twoCochainOfBilinear_add_d₁₂ ⟨_,
+      twoCochainMap_mem_twoCocycle (eP.symm.toLinearMap ∘ₗ eC.toLinearMap) (ofLoop K L) hcz⟩
   have hcP_apply (u v : loopAlgebra K ℤ L) : eC (c (ofLoop K L u) (ofLoop K L v)) =
-      t * eP (LoopAlgebra.twoCochainOfBilinear K ℤ L Ψ hΨs u v) - eP (g ⁅u, v⁆) := by
+      eP (LoopAlgebra.twoCochainOfBilinear K ℤ L Ψ hΨs u v) - eP (g ⁅u, v⁆) := by
     have h := congrArg (fun c' ↦ eP (c' u v)) hcP
     simp only [twoCochainMap_apply_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply, add_apply_apply, smul_apply_apply, map_add, map_smul,
-      d₁₂_apply_apply_ofTrivial, map_neg, smul_eq_mul] at h
-    rw [← h, sub_eq_add_neg]
+      LinearEquiv.apply_symm_apply, add_apply_apply, map_add, d₁₂_apply_apply_ofTrivial,
+      map_neg] at h
+    rw [h, sub_eq_add_neg]
   -- By joint continuity, `c` vanishes on pairs of currents of order at least `N₀ ≥ 1`.
   obtain ⟨N, hN⟩ := (mem_continuousTwoCochain_iff_orderSubmodule.mp hcc).2
   set N₀ := max N 1
@@ -393,7 +393,7 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
     rw [hN _ (hmode _ _ le_rfl) _ (hmode _ _ (by omega))] at h
     simp only [map_zero, LoopAlgebra.twoCochainOfBilinear_apply_apply,
       TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul,
-      show N₀ + (n - N₀) ≠ 0 by omega, ↓reduceIte, mul_zero, zero_sub, zero_eq_neg] at h
+      show N₀ + (n - N₀) ≠ 0 by omega, ↓reduceIte, zero_sub, zero_eq_neg] at h
     exact eP.injective (by rw [h, map_zero])
   -- Truncating at `2 N₀` extends `g` to a continuous one-cochain `f` on formal currents.
   set f : oneCochain K (currentAlgebra K L) (TrivialLieModule K (currentAlgebra K L) K) :=
@@ -406,22 +406,73 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
     simp only [f, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
       apply_trunc_ofLoop K L g hg_mode]
   -- Both sides are continuous and agree on the dense polynomial currents.
-  refine ⟨t, f, hf, continuousTwoCochain_ext_on hcc
-    (add_mem (Submodule.smul_mem _ t (twoCochainOfBilinear_mem_continuousTwoCochain K L Ψ hΨs))
+  refine ⟨Ψ, hΨ, hΨs, f, hf, continuousTwoCochain_ext_on hcc
+    (add_mem (twoCochainOfBilinear_mem_continuousTwoCochain K L Ψ hΨs)
       (mem_continuousTwoCocycle_iff.mp (d₁₂_mem_continuousTwoCocycle_of_isTrivial hf)).1)
     (denseRange_ofLoop K L) ?_⟩
   rintro _ ⟨u, rfl⟩ _ ⟨v, rfl⟩
   apply eC.injective
-  simp only [hcP_apply, add_apply_apply, smul_apply_apply, map_add, map_smul,
-    d₁₂_apply_apply_ofTrivial, map_neg, ← LieHom.map_lie, hf_ofLoop, smul_eq_mul]
+  simp only [hcP_apply, add_apply_apply, map_add, d₁₂_apply_apply_ofTrivial, map_neg,
+    ← LieHom.map_lie, hf_ofLoop]
   rw [twoCochainOfBilinear_ofLoop]
   ring
+
+/-- **Every continuous 2-cocycle on formal currents is a multiple of a spanning residue cocycle up
+to a continuous coboundary.** Under the hypotheses of `exists_eq_twoCochainOfBilinear_add_d₁₂`,
+let `Ψ` be an invariant symmetric form on `L` spanning the invariant forms. Every continuous
+2-cocycle with trivial coefficients on formal currents is `t • c_Ψ + d₁₂ f` for a scalar `t` and a
+continuous one-cochain `f`. -/
+theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
+    (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
+    {c : twoCochain K (currentAlgebra K L) (TrivialLieModule K (currentAlgebra K L) K)}
+    (hc : c ∈ continuousTwoCocycle K (currentAlgebra K L)
+      (TrivialLieModule K (currentAlgebra K L) K)) :
+    ∃ t : K, ∃ f ∈ continuousOneCochain K (currentAlgebra K L)
+        (TrivialLieModule K (currentAlgebra K L) K),
+      c = t • twoCochainOfBilinear K L Ψ hΨs + d₁₂ K _ _ f := by
+  obtain ⟨Φ, hΦ, hΦs, f, hf, rfl⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ hc
+  obtain ⟨t, rfl⟩ := hspan Φ hΦ
+  refine ⟨t, f, hf, ?_⟩
+  rw [← twoCocycleOfBilinear_coe K L (t • Ψ) hΦ hΦs, twoCocycleOfBilinear_smul K L t Ψ hΨ hΨs,
+    Submodule.coe_smul, twoCocycleOfBilinear_coe]
+
+/-- **Every continuous class is a residue class.** Under the hypotheses of
+`exists_eq_twoCochainOfBilinear_add_d₁₂`, every class in the continuous second cohomology of formal
+currents with trivial coefficients is the residue class of an invariant symmetric form on `L`. -/
+theorem exists_eq_residueClass
+    (a : continuousSecondCohomology K (currentAlgebra K L)
+      (TrivialLieModule K (currentAlgebra K L) K)) :
+    ∃ (Ψ : LinearMap.BilinForm K L) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm),
+      a = residueClass K L Ψ hΨ hΨs := by
+  obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
+  obtain ⟨Ψ, hΨ, hΨs, f, hf, hc⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ c.2
+  refine ⟨Ψ, hΨ, hΨs, ?_⟩
+  rw [residueClass_eq_mk, eq_comm, continuousSecondCohomologyMk_eq_iff]
+  exact ⟨-f, neg_mem hf, by
+    simp only [map_neg, AddSubgroupClass.coe_sub, hc]
+    abel⟩
+
+/-- **The continuous second cohomology of formal currents is spanned by the residue class.**
+Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, every class in the
+continuous second cohomology of formal currents with trivial coefficients is a multiple of the
+residue class of `Ψ`. -/
+theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
+    (hΨs : Ψ.IsSymm)
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
+    (a : continuousSecondCohomology K (currentAlgebra K L)
+      (TrivialLieModule K (currentAlgebra K L) K)) :
+    ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
+  obtain ⟨Φ, hΦ, hΦs, rfl⟩ := exists_eq_residueClass a
+  obtain ⟨t, rfl⟩ := hspan Φ hΦ
+  exact ⟨t, residueClass_smul t hΨ hΨs hΦ hΦs⟩
 
 variable {Z : Type*} [AddCommGroup Z] [Module K Z]
 
 /-- **Every continuous 2-cocycle with discrete coefficients is a residue cocycle up to a continuous
-coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, let `Z` be any
-vector space with trivial action, of arbitrary dimension. Every continuous 2-cocycle on formal
+coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, assume
+moreover that `Ψ` is nonzero on some bracket, and let `Z` be any vector space with trivial action,
+of arbitrary dimension. Every continuous 2-cocycle on formal
 currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f` for a vector `z` and a continuous one-cochain `f`.
 -/
 theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
@@ -438,7 +489,7 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   -- Each functional `φ` on the coefficients turns `c` into a scalar continuous cocycle, which by
   -- the scalar classification is `t φ • c_Ψ + d₁₂ (f φ)` with `f φ` continuous.
   choose t f _ hcf using fun φ : Module.Dual K (TrivialLieModule K (currentAlgebra K L) Z) ↦
-    exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨ hΨs hspan hne
+    exists_eq_smul_twoCochainOfBilinear_add_d₁₂ hΨ hΨs hspan
       (twoCochainMap_id_mem_continuousTwoCocycle (eK.symm.toLinearMap ∘ₗ φ) hc)
   have hcf_apply (φ) (a b : currentAlgebra K L) :
       φ (c a b) = t φ * residuePairing K L Ψ a b - eK (f φ ⁅a, b⁆) := by
@@ -488,8 +539,8 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   exact (add_sub_cancel _ c).symm
 
 /-- **Continuous second cohomology with discrete coefficients is spanned by residue classes.**
-Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, the residue class map with
-coefficients in any vector space `Z` with trivial action is surjective. -/
+Under the hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, the residue class map
+with coefficients in any vector space `Z` with trivial action is surjective. -/
 theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
@@ -504,23 +555,9 @@ theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieI
     simp only [map_neg, AddSubgroupClass.coe_sub, hc]
     abel⟩
 
-/-- **The continuous second cohomology of formal currents is spanned by the residue class.**
-Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, every class in the
-continuous second cohomology of formal currents with trivial coefficients is a multiple of the
-residue class of `Ψ`. -/
-theorem exists_eq_smul_residueClass {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
-    (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hne : ∃ x y z : L, Ψ ⁅x, y⁆ z ≠ 0)
-    (a : continuousSecondCohomology K (currentAlgebra K L)
-      (TrivialLieModule K (currentAlgebra K L) K)) :
-    ∃ t : K, a = t • residueClass K L Ψ hΨ hΨs := by
-  obtain ⟨t, rfl⟩ := residueClassMap_surjective (Z := K) hΨ hΨs hspan hne a
-  exact ⟨t, residueClassMap_self Ψ hΨ hΨs t⟩
-
 variable (Z) in
 /-- **Continuous second cohomology of formal currents with discrete coefficients.** Under the
-hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, for every vector space `Z` with
+hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, for every vector space `Z` with
 trivial action, of arbitrary dimension, the residue class map `z ↦ [c_Ψ ⊗ z]` is a linear
 equivalence from `Z` onto the continuous second cohomology of formal currents with coefficients in
 `Z`. For `Z = K` it sends `t` to `t • residueClass` (`residueClassMap_self`). -/
