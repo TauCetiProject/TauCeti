@@ -176,8 +176,8 @@ theorem coeff_maslovEuler (P : Series) (m : ℤ) :
 
 /-- **The two Euler characteristics agree exactly on diagonal series**, for a series with no
 coefficients strictly below the diagonal. The lower-triangularity hypothesis is needed: the
-series with coefficient one in bidegrees `(0, 1)` and `(1, 0)` has equal Euler characteristics
-`1 - T` but is not diagonal. -/
+series with coefficient one in bidegrees `(0, 2)` and `(2, 0)` has equal Euler characteristics
+`1 + T^2` but is not diagonal. -/
 theorem euler_eq_maslovEuler_iff_isDiagonal (P : Series)
     (hP : ∀ m a : ℤ, a < m → P.coeff (m, a) = 0) :
     euler P = maslovEuler P ↔ IsDiagonal P := by
