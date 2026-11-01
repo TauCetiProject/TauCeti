@@ -79,7 +79,8 @@ point-neighborhood covers `U`, ordered by refinement, of the degree `n` cohomolo
 complexes `Č(U, P)`. The transition maps are induced by refinement maps
 (`TauCeti.CategoryTheory.cechCohomologyDiagram_map_app`). -/
 abbrev cechCohomology : ((Opens X)ᵒᵖ ⥤ A) ⥤ A :=
-  TauCeti.CategoryTheory.cechCohomology A PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) n
+  TauCeti.CategoryTheory.cechCohomology A PointOpenCover.toFormalCoproduct
+    (fun U V ↦ (PointOpenCover.le_iff U V).1) n
 
 /-- **Čech cohomology vanishes on the empty space.** The only point-neighborhood cover of the empty
 space is the empty family, whose Čech complex is zero, so the Čech cohomology of every presheaf
@@ -109,7 +110,7 @@ theorem cechCohomologyιOfOpenCover_app_eq {ι : Type u} (U : ι → Opens X) (h
     (cechCohomologyιOfOpenCover n U hU).app P =
       HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) n ≫
         (TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
-          (fun _ _ h ↦ h) n V).app P :=
+          (fun U V ↦ (PointOpenCover.le_iff U V).1) n V).app P :=
   TauCeti.CategoryTheory.cechCohomologyιOfRefinement_app_eq _ _ n _ _ V φ P
 
 /-- On a point-neighborhood cover, the structure map from its Čech cohomology is the structure map
@@ -119,7 +120,7 @@ theorem cechCohomologyιOfOpenCover_app_pointOpenCover (V : PointOpenCover X)
     (P : (Opens X)ᵒᵖ ⥤ A) :
     (cechCohomologyιOfOpenCover n V.opens V.isOpenCover).app P =
       (TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
-        (fun _ _ h ↦ h) n V).app P :=
+        (fun U V ↦ (PointOpenCover.le_iff U V).1) n V).app P :=
   TauCeti.CategoryTheory.cechCohomologyιOfRefinement_app_self _ _ n V _ P
 
 /-- The structure maps from the Čech cohomology of open covers are compatible with refinement
@@ -152,9 +153,9 @@ theorem cechCohomologyZeroIso_hom (U : PointOpenCover X) :
         HomologicalComplex.homologyMap
           (TauCeti.CategoryTheory.cechAugmentation U.opens isTerminalTop F.obj) 0 ≫
             (TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
-              (fun _ _ h ↦ h) 0 U).app F.obj :=
+              (fun U V ↦ (PointOpenCover.le_iff U V).1) 0 U).app F.obj :=
   TauCeti.CategoryTheory.cechCohomologyZeroIso_hom PointOpenCover.toFormalCoproduct
-    (fun _ _ h ↦ h) isTerminalTop F.obj
+    (fun U V ↦ (PointOpenCover.le_iff U V).1) isTerminalTop F.obj
     (fun U ↦ quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U.opens U.isOpenCover F) U
 
 /-- The identification of the degree `0` Čech cohomology of a sheaf with its global sections is
