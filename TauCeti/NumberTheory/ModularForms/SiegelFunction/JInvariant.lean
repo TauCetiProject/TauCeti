@@ -85,10 +85,8 @@ private theorem tprod_one_sub_pow_odd_pow_mul_neg {s : ℂ} (hs : ‖s‖ < 1) :
   rw [hodd, ← mul_pow, tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd hs]
 
 private theorem exp_pi_I_mul_eq_qParam_two (τ : ℂ) : cexp (π * I * τ) = 𝕢 2 τ := by
-  rw [Function.Periodic.qParam]
-  congr 1
-  push_cast
-  ring
+  simpa using TauCeti.Periodic.exp_pi_mul_I_mul_eq_qParam_pow (h := 2) two_ne_zero (t := 1)
+    (m := 1) (by norm_num) τ
 
 private theorem exp_neg_pi_I_mul_div_twelve_pow_four (τ : ℂ) :
     cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
@@ -178,10 +176,7 @@ private theorem siegelFunction_half_zero_pow_twelve_mul {τ : ℂ} (hτ : 0 < τ
     siegelFunction ![1 / 2, 0] τ ^ 12 * siegelFunction ![1 / 2, 1 / 2] τ ^ 12 =
       -((𝕢 1 τ)⁻¹ * (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 24) := by
   have hq : 𝕢 1 τ = 𝕢 2 τ ^ 2 := by
-    rw [Function.Periodic.qParam, Function.Periodic.qParam, ← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
+    simpa using (TauCeti.Periodic.qParam_nat_mul_pow (h := 1) two_ne_zero τ).symm
   rw [siegelFunction_half_zero_pow_twelve hτ, siegelFunction_half_half_pow_twelve hτ, hq,
     ← tprod_one_sub_pow_odd_pow_mul_neg (Function.Periodic.norm_qParam_lt_one two_pos hτ)]
   ring

@@ -99,16 +99,11 @@ private theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
             ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8 := by ring
     _ = 16 * cexp (π * I * τ / 6) ^ 4 := by rw [heuler, I_pow_four]; ring
 
-/-- `q^{1/w} = e^{2π i τ / w} → 0` at `i∞`. -/
-private theorem tendsto_qParam_atImInfty_nhds {w : ℝ} (hw : 0 < w) :
-    Tendsto (fun τ : ℍ ↦ 𝕢 w τ) atImInfty (𝓝 0) :=
-  (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty hw).mono_right nhdsWithin_le_nhds
-
 /-- `(∏_{n ≥ 0} (1 - q^{2n+1}))⁸ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
 private theorem tendsto_tprod_one_sub_qParam_pow_odd_pow_eight :
     Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8) atImInfty (𝓝 1) := by
   have h := ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
-    (tendsto_qParam_atImInfty_nhds one_pos)).pow 8
+    (UpperHalfPlane.qParam_tendsto_atImInfty one_pos)).pow 8
   simpa using h
 
 /-- `e^{π i / 6}⁴ = e^{2π i / 3}`. -/
@@ -167,7 +162,7 @@ private theorem weberSum_pow_three_smul (γ : SL(2, ℤ)) (τ : ℍ) :
 /-- `g₀⁴ + g₁⁴ + g₂⁴ → 0` at `i∞`. -/
 private theorem tendsto_weberSum_atImInfty :
     Tendsto (fun τ : ℍ ↦ weberSum τ) atImInfty (𝓝 0) := by
-  have hq₃ := tendsto_qParam_atImInfty_nhds (w := 3) (by norm_num)
+  have hq₃ := UpperHalfPlane.qParam_tendsto_atImInfty (h := 3) (by norm_num)
   -- `g₀⁴ = 16 q^{1/3} / P(q)⁸ → 0` for `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
   have h₀ : Tendsto (fun τ : ℍ ↦ siegelFunction ![0, 1 / 2] τ ^ 4) atImInfty (𝓝 0) := by
     have h := (hq₃.const_mul 16).div tendsto_tprod_one_sub_qParam_pow_odd_pow_eight one_ne_zero
@@ -308,7 +303,7 @@ theorem gammaTwo_T_smul (τ : ℍ) :
 `Im τ → ∞`. -/
 theorem tendsto_gammaTwo_mul_qParam_atImInfty :
     Tendsto (fun τ : ℍ ↦ gammaTwo τ * 𝕢 3 τ) atImInfty (𝓝 1) := by
-  have hq₃ := tendsto_qParam_atImInfty_nhds (w := 3) (by norm_num)
+  have hq₃ := UpperHalfPlane.qParam_tendsto_atImInfty (h := 3) (by norm_num)
   have hP := tendsto_tprod_one_sub_qParam_pow_odd_pow_eight
   -- `γ₂ q^{1/3} = g₀⁸ q^{1/3} + P(q)⁸` with `g₀⁴ = 16 q^{1/3} / P(q)⁸`.
   have h := ((((hq₃.const_mul 16).div hP one_ne_zero).pow 2).mul hq₃).add hP
