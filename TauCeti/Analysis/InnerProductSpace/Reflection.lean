@@ -337,6 +337,21 @@ open scoped RealInnerProductSpace ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
+/-- Reflecting in the hyperplane orthogonal to `a` and then in the hyperplane orthogonal to a
+nonvanishing analytic normal `c t` is analytic jointly in the time and the vector. -/
+private theorem contDiff_reflection_trans_reflection {a : F} {c : ℝ → F} (hc : ContDiff ℝ ω c)
+    (hc₀ : ∀ t, c t ≠ 0) :
+    ContDiff ℝ ω fun p : ℝ × F => ((ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ c p.1)ᗮ.reflection) p.2 := by
+  have hy : ContDiff ℝ ω fun p : ℝ × F => (ℝ ∙ a)ᗮ.reflection p.2 :=
+    (ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd
+  have hcd : ContDiff ℝ ω fun p : ℝ × F => c p.1 := hc.comp contDiff_fst
+  have hR : (fun p : ℝ × F => ((ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ c p.1)ᗮ.reflection) p.2) = fun p =>
+      (ℝ ∙ a)ᗮ.reflection p.2 - (2 * (⟪c p.1, (ℝ ∙ a)ᗮ.reflection p.2⟫ / ‖c p.1‖ ^ 2)) • c p.1 :=
+    funext fun p => reflection_orthogonal_singleton_apply_div_norm_sq _ _
+  rw [hR]
+  exact hy.sub ((contDiff_const.mul ((hcd.inner ℝ hy).div ((contDiff_norm_sq ℝ).comp hcd)
+    fun p => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc₀ p.1)))).smul hcd)
+
 /-- The rotation from `a` toward `b` at time `t`: the reflection in the hyperplane orthogonal to
 `a`, followed by the reflection in the hyperplane orthogonal to `a + t² b`. -/
 private def pairRotation (a b : F) (t : ℝ) : F ≃ₗᵢ[ℝ] F :=
@@ -349,8 +364,8 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
     ∃ R : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ ω (fun p : ℝ × F => R p.1 p.2) ∧ (∀ x, R 0 x = x) ∧
       R 1 a = b ∧ ∀ x, ⟪a, x⟫ = 0 → ⟪b, x⟫ = 0 → R 1 x = x := by
   -- The moving normal `a + t² b` never vanishes, since `‖a‖ = ‖b‖` and `a ≠ -b`.
-  have hu (t : ℝ) : ‖a + t ^ 2 • b‖ ^ 2 ≠ 0 := by
-    refine pow_ne_zero 2 (norm_ne_zero_iff.2 fun h => hab ?_)
+  have hu (t : ℝ) : a + t ^ 2 • b ≠ 0 := by
+    refine fun h => hab ?_
     have h₁ : a = -(t ^ 2 • b) := eq_neg_of_add_eq_zero_left h
     have hs : t ^ 2 = 1 := by
       have := congrArg norm h₁
@@ -358,17 +373,8 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
         at this
     rw [h₁, hs, one_smul]
   refine ⟨pairRotation a b, ?_, fun x => ?_, ?_, fun x hax hbx => ?_⟩
-  · have hy : ContDiff ℝ ω fun p : ℝ × F => (ℝ ∙ a)ᗮ.reflection p.2 :=
-      (ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd
-    have hn : ContDiff ℝ ω fun p : ℝ × F => a + p.1 ^ 2 • b :=
-      contDiff_const.add ((contDiff_fst.pow 2).smul contDiff_const)
-    have hR : (fun p : ℝ × F => pairRotation a b p.1 p.2) = fun p =>
-        (ℝ ∙ a)ᗮ.reflection p.2 - (2 * (⟪a + p.1 ^ 2 • b, (ℝ ∙ a)ᗮ.reflection p.2⟫ /
-          ‖a + p.1 ^ 2 • b‖ ^ 2)) • (a + p.1 ^ 2 • b) :=
-      funext fun p => reflection_orthogonal_singleton_apply_div_norm_sq _ _
-    rw [hR]
-    exact hy.sub ((contDiff_const.mul ((hn.inner ℝ hy).div (contDiff_norm_sq ℝ |>.comp hn)
-      fun p => hu p.1)).smul hn)
+  · exact contDiff_reflection_trans_reflection (c := fun t => a + t ^ 2 • b)
+      (contDiff_const.add ((contDiff_id.pow 2).smul contDiff_const)) hu
   · simp [pairRotation]
   · have hc : 1 + ⟪a, b⟫ ≠ 0 := fun h =>
       hab ((inner_eq_neg_one_iff_of_norm_eq_one ha hb).1 (eq_neg_of_add_eq_zero_right h))
@@ -403,6 +409,12 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 private def IsJoinedToOne (e : F ≃ₗᵢ[ℝ] F) : Prop :=
   ∃ R : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ ω (fun p : ℝ × F => R p.1 p.2) ∧ (∀ x, R 0 x = x) ∧
     ∀ x, R 1 x = e x
+
+/-- The determinant of a product of linear isometries is the product of their determinants. -/
+private theorem det_toLinearEquiv_mul (e f : F ≃ₗᵢ[ℝ] F) :
+    (LinearEquiv.det (e * f).toLinearEquiv : ℝ) =
+      LinearEquiv.det e.toLinearEquiv * LinearEquiv.det f.toLinearEquiv := by
+  simp [mul_def]
 
 /-- The identity is joined to itself by the constant path. -/
 private theorem isJoinedToOne_one : IsJoinedToOne (1 : F ≃ₗᵢ[ℝ] F) :=
@@ -454,20 +466,10 @@ private theorem isJoinedToOne_reflection_mul_reflection_of_norm_eq_one {a b : F}
       rcases abs_eq_abs.mp (by simpa using hn) with h | h <;> linarith
     subst ht
     exact hab (by linear_combination (norm := module) (2 : ℝ) • h')
-  refine ⟨fun t => (ℝ ∙ c t)ᗮ.reflection * (ℝ ∙ a)ᗮ.reflection, ?_, fun x => ?_, fun x => ?_⟩
-  · have hy : ContDiff ℝ ω fun p : ℝ × F => (ℝ ∙ a)ᗮ.reflection p.2 :=
-      (ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd
-    have hcd : ContDiff ℝ ω fun p : ℝ × F => c p.1 :=
-      ((contDiff_const.sub contDiff_fst).smul contDiff_const).add
-        (contDiff_fst.smul contDiff_const)
-    have hR : (fun p : ℝ × F => ((ℝ ∙ c p.1)ᗮ.reflection * (ℝ ∙ a)ᗮ.reflection) p.2) = fun p =>
-        (ℝ ∙ a)ᗮ.reflection p.2 - (2 * (⟪c p.1, (ℝ ∙ a)ᗮ.reflection p.2⟫ / ‖c p.1‖ ^ 2)) •
-          c p.1 :=
-      funext fun p => by
-        rw [coe_mul, Function.comp_apply, TauCeti.reflection_orthogonal_singleton_apply_div_norm_sq]
-    rw [hR]
-    exact hy.sub ((contDiff_const.mul ((hcd.inner ℝ hy).div ((contDiff_norm_sq ℝ).comp hcd)
-      fun p => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc p.1)))).smul hcd)
+  refine ⟨fun t => (ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ c t)ᗮ.reflection, ?_, fun x => ?_, fun x => ?_⟩
+  · exact TauCeti.contDiff_reflection_trans_reflection (c := c)
+      (((contDiff_const.sub contDiff_id).smul contDiff_const).add (contDiff_id.smul contDiff_const))
+      hc
   · simp [c]
   · simp [c]
 
@@ -496,8 +498,8 @@ private theorem isJoinedToOne_list_prod [FiniteDimensional ℝ F] (l : List F) :
   induction l with
   | nil =>
     refine ⟨fun _ => isJoinedToOne_one, fun h => ?_⟩
-    rw [List.map_nil, List.prod_nil, one_def, toLinearEquiv_refl, LinearEquiv.det_refl] at h
-    norm_num at h
+    simp [one_def] at h
+    linarith
   | cons v l ih =>
     rw [List.map_cons, List.prod_cons]
     set φ := (l.map fun v => (ℝ ∙ v)ᗮ.reflection).prod
@@ -511,8 +513,8 @@ private theorem isJoinedToOne_list_prod [FiniteDimensional ℝ F] (l : List F) :
       simpa [hg] using ih
     have hdet : (LinearEquiv.det (g * φ).toLinearEquiv : ℝ) =
         -LinearEquiv.det φ.toLinearEquiv := by
-      rw [mul_def, toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
-        TauCeti.linearEquiv_det_reflection_orthogonal_singleton hv, neg_one_mul]
+      rw [det_toLinearEquiv_mul, TauCeti.linearEquiv_det_reflection_orthogonal_singleton hv,
+        neg_one_mul]
     rw [hdet]
     refine ⟨fun h => ?_, fun h a ha => ?_⟩
     · -- `g * φ` is the conjugate of `φ * g` by `g`.

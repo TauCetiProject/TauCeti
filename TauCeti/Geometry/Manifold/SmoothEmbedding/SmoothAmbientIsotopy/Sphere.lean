@@ -160,9 +160,7 @@ theorem smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph {EM HM M : 
     (f.transDiffeomorph (e₁.unitSphereDiffeomorph k)).SmoothAmbientIsotopic
       (f.transDiffeomorph (e₂.unitSphereDiffeomorph k)) := by
   have hdet : (LinearEquiv.det (e₁.symm.trans e₂).toLinearEquiv : ℝ) = 1 := by
-    rw [LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans,
-      LinearIsometryEquiv.toLinearEquiv_symm, LinearEquiv.det_symm, map_inv, Units.ext he,
-      mul_inv_cancel, Units.val_one]
+    simp [Units.ext he]
   obtain ⟨Φ, hΦ⟩ := exists_diffeotopy_final_apply_eq_of_det_eq_one (n := n) (m := k) hdet
   refine SmoothAmbientIsotopic.of_diffeotopy Φ fun x => Subtype.ext ?_
   rw [hΦ]
