@@ -206,6 +206,7 @@ instance isAddMonHom_totalSpaceFreeIso_hom :
   exact h
 
 /-- The coordinates of a sum of points of `𝕍(𝒪_X^I)` are the sums of their coordinates. -/
+@[simp]
 lemma totalSpaceFreeHomEquiv_add (T : Over X)
     (t₁ t₂ : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj (free X I))) :
     totalSpaceFreeHomEquiv I T (t₁ + t₂) =

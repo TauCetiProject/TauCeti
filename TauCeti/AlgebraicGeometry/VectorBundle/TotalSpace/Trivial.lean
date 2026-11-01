@@ -149,6 +149,7 @@ lemma totalSpaceTrivialHomAddEquiv_symm_apply (T : Over X) (c : Γ(T.left, ⊤))
 
 /-- **Points of the trivial line bundle are natural in the test scheme.** Composing a point with
 a morphism `g : T' ⟶ T` over `X` pulls back its global function along `g`. -/
+@[simp]
 lemma totalSpaceTrivialHomAddEquiv_comp {T' T : Over X} (g : T' ⟶ T)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj
       ((InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X)))) :
