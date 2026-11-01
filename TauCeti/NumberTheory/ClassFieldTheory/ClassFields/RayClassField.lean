@@ -32,8 +32,7 @@ correspondence.
   `rayClassField 𝔪 ≤ rayClassField 𝔫` exactly when `U_𝔫 ≤ U_𝔪`
   (`rayClassField_le_rayClassField_iff`).
 * The ray-class Artin map of `rayClassField 𝔪` at `𝔪` is an isomorphism
-  `Cl_𝔪 ≃* Gal(rayClassField 𝔪 / K)` (`rayClassArtinEquiv`): its kernel is the image of the norm
-  group, which is the ray subgroup, the kernel of the ray class map. Hence
+  `Cl_𝔪 ≃* Gal(rayClassField 𝔪 / K)` (`rayClassArtinEquiv`), hence
   `[rayClassField 𝔪 : K] = #Cl_𝔪` (`finrank_rayClassField`).
 
 The **Hilbert class field** `hilbertClassField K` is the ray class field of the trivial modulus,
@@ -63,6 +62,9 @@ the order of the narrow class group (`finrank_narrowHilbertClassField`).
   finite abelian extension with norm group the ray subgroup.
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_iff_le_rayClassField`: `𝔪` is admissible for a
   finite abelian `L/K` exactly when `L` embeds in the ray class field of `𝔪`.
+* `TauCeti.ClassFieldTheory.gal_rayClassField_equiv_rayClassGroup` and
+  `TauCeti.ClassFieldTheory.gal_hilbertClassField_equiv_classGroup`: the Galois groups of the ray
+  class field and the Hilbert class field are the ray class group and the class group.
 * `TauCeti.ClassFieldTheory.finrank_rayClassField`,
   `TauCeti.ClassFieldTheory.finrank_hilbertClassField` and
   `TauCeti.ClassFieldTheory.finrank_narrowHilbertClassField`: the degrees are the order of the ray
@@ -77,6 +79,7 @@ the order of the narrow class group (`finrank_narrowHilbertClassField`).
 public noncomputable section
 
 open NumberField TauCeti.GlobalNumberFields
+open scoped nonZeroDivisors
 
 namespace TauCeti.ClassFieldTheory
 
@@ -94,6 +97,12 @@ def rayNormSubgroup (𝔪 : Modulus K) : GlobalNormSubgroups K :=
 theorem rayNormSubgroup_toSubgroup (𝔪 : Modulus K) :
     (rayNormSubgroup 𝔪).1.toSubgroup = raySubgroup 𝔪 :=
   (rfl)
+
+/-- Inclusions of the bundled ray subgroups are inclusions of the ray subgroups. -/
+@[simp]
+theorem rayNormSubgroup_le_rayNormSubgroup_iff {𝔪 𝔫 : Modulus K} :
+    rayNormSubgroup 𝔪 ≤ rayNormSubgroup 𝔫 ↔ raySubgroup 𝔪 ≤ raySubgroup 𝔫 :=
+  Subtype.coe_le_coe.symm.trans OpenSubgroup.toSubgroup_le.symm
 
 /-- **The ray class field of a modulus** `𝔪` of a number field `K`: the class field in `Kˢ` of
 the ray subgroup of `𝔪` under the global class-field correspondence, that is, the unique finite
@@ -123,14 +132,16 @@ instance isAbelianGalois_rayClassField : IsAbelianGalois K (rayClassField 𝔪) 
   isAbelianGalois_classField_iff.2 (globalClassField (rayNormSubgroup 𝔪)).2
 
 /-- **The norm group of the ray class field is the ray subgroup**: `N(C_{K_𝔪}) = U_𝔪`. -/
+@[simp]
 theorem range_ideleClassNormMap_rayClassField :
     (ideleClassNormMap K (rayClassField 𝔪) :
         IdeleClassGroup (𝓞 (rayClassField 𝔪)) (rayClassField 𝔪) →* IdeleClassGroup (𝓞 K) K).range =
       raySubgroup 𝔪 :=
   (globalNormSubgroup_eq_range_classField K _).symm.trans
-    (globalClassField_normSubgroup (rayNormSubgroup 𝔪))
+    ((globalClassField_normSubgroup (rayNormSubgroup 𝔪)).trans (rayNormSubgroup_toSubgroup 𝔪))
 
 /-- A modulus is admissible for its own ray class field. -/
+@[simp]
 theorem isAdmissibleModulus_rayClassField : IsAdmissibleModulus K (rayClassField 𝔪) 𝔪 :=
   isAdmissibleModulus_iff.2 (range_ideleClassNormMap_rayClassField 𝔪).ge
 
@@ -169,7 +180,8 @@ variable {𝔪}
 /-- **Inclusions of ray class fields are inclusions of ray subgroups**, reversed. -/
 theorem rayClassField_le_rayClassField_iff {𝔫 : Modulus K} :
     rayClassField 𝔪 ≤ rayClassField 𝔫 ↔ raySubgroup 𝔫 ≤ raySubgroup 𝔪 :=
-  (globalClassField_orderReversing (rayNormSubgroup 𝔫) (rayNormSubgroup 𝔪)).symm
+  (globalClassField_orderReversing (rayNormSubgroup 𝔫) (rayNormSubgroup 𝔪)).symm.trans
+    rayNormSubgroup_le_rayNormSubgroup_iff
 
 /-- **Ray class fields grow with the modulus**: if `𝔪 ∣ 𝔫`, the ray class field of `𝔪` lies in
 that of `𝔫`. -/
@@ -181,9 +193,7 @@ theorem rayClassField_mono {𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) : rayClassFiel
 variable (𝔪)
 
 /-- **Ray-class reciprocity for the ray class field**: the ray-class Artin map
-`Cl_𝔪 →* Gal(rayClassField 𝔪 / K)` is an isomorphism. It is surjective as every ray-class Artin
-map is, and injective because its kernel is the image in `Cl_𝔪` of the norm group of the ray class
-field, which is the ray subgroup, the kernel of the ray class map. -/
+`Cl_𝔪 →* Gal(rayClassField 𝔪 / K)` is an isomorphism. -/
 def rayClassArtinEquiv : RayClassGroup 𝔪 ≃* Gal(rayClassField 𝔪/K) :=
   MulEquiv.ofBijective (rayClassArtinMap 𝔪 (isAdmissibleModulus_rayClassField 𝔪))
     ⟨(MonoidHom.ker_eq_bot_iff _).1 <| by
@@ -197,7 +207,14 @@ theorem rayClassArtinEquiv_apply (x : RayClassGroup 𝔪) :
     rayClassArtinEquiv 𝔪 x = rayClassArtinMap 𝔪 (isAdmissibleModulus_rayClassField 𝔪) x :=
   (rfl)
 
+/-- The Galois group of the ray class field of `𝔪` is the ray class group of `𝔪`, through the
+inverse of `rayClassArtinEquiv 𝔪`. -/
+theorem gal_rayClassField_equiv_rayClassGroup :
+    Nonempty (Gal(rayClassField 𝔪/K) ≃* RayClassGroup 𝔪) :=
+  ⟨(rayClassArtinEquiv 𝔪).symm⟩
+
 /-- **The degree of the ray class field of `𝔪` is the order of the ray class group of `𝔪`.** -/
+@[simp]
 theorem finrank_rayClassField :
     Module.finrank K (rayClassField 𝔪) = Nat.card (RayClassGroup 𝔪) := by
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (rayClassArtinEquiv 𝔪).toEquiv]
@@ -228,8 +245,8 @@ theorem hilbertClassField_le_narrowHilbertClassField :
   hilbertClassField_le_rayClassField _
 
 /-- **Reciprocity for the Hilbert class field**: the Artin map identifies the class group of `K`
-with the Galois group of the Hilbert class field. It is `rayClassArtinEquiv` at the trivial
-modulus, read on the class group through `oneEquivClassGroup`. -/
+with the Galois group of the Hilbert class field: `rayClassArtinEquiv` at the trivial modulus, read
+on the class group through `oneEquivClassGroup`. -/
 def hilbertClassArtinEquiv : ClassGroup (𝓞 K) ≃* Gal(hilbertClassField K/K) :=
   oneEquivClassGroup.symm.trans (rayClassArtinEquiv (Modulus.one K))
 
@@ -241,14 +258,39 @@ theorem hilbertClassArtinEquiv_oneEquivClassGroup (x : RayClassGroup (Modulus.on
     hilbertClassArtinEquiv K (oneEquivClassGroup x) = rayClassArtinEquiv (Modulus.one K) x := by
   rw [hilbertClassArtinEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
+variable {K} in
+/-- The Artin symbol of the class of a fractional ideal `I` in the Hilbert class field is the
+ray-class Artin symbol of `I` at the trivial modulus. -/
+@[simp]
+theorem hilbertClassArtinEquiv_mk (I : idealsPrimeTo (Modulus.one K)) :
+    hilbertClassArtinEquiv K (ClassGroup.mk K (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)) =
+      rayClassArtinEquiv (Modulus.one K) (rayClassMk (Modulus.one K) I) := by
+  rw [← oneEquivClassGroup_rayClassMk, hilbertClassArtinEquiv_oneEquivClassGroup]
+
+variable {K} in
+/-- The inverse of `hilbertClassArtinEquiv` is the inverse of the ray-class Artin isomorphism at
+the trivial modulus, followed by `oneEquivClassGroup`. -/
+@[simp]
+theorem hilbertClassArtinEquiv_symm_apply (σ : Gal(hilbertClassField K/K)) :
+    (hilbertClassArtinEquiv K).symm σ =
+      oneEquivClassGroup ((rayClassArtinEquiv (Modulus.one K)).symm σ) :=
+  (rfl)
+
+/-- The Galois group of the Hilbert class field is the class group, through the inverse of
+`hilbertClassArtinEquiv K`. -/
+theorem gal_hilbertClassField_equiv_classGroup :
+    Nonempty (Gal(hilbertClassField K/K) ≃* ClassGroup (𝓞 K)) :=
+  ⟨(hilbertClassArtinEquiv K).symm⟩
+
 /-- **The degree of the Hilbert class field is the class number.** -/
+@[simp high]
 theorem finrank_hilbertClassField : Module.finrank K (hilbertClassField K) = classNumber K := by
   rw [← IsGalois.card_aut_eq_finrank, ← Nat.card_congr (hilbertClassArtinEquiv K).toEquiv,
     classNumber, Nat.card_eq_fintype_card]
 
 /-- **Reciprocity for the narrow Hilbert class field**: the Artin map identifies the narrow class
-group of `K` with the Galois group of the narrow Hilbert class field. It is `rayClassArtinEquiv` at
-the narrow modulus, read on the narrow class group through `narrowEquivNarrowClassGroup`. -/
+group of `K` with the Galois group of the narrow Hilbert class field: `rayClassArtinEquiv` at the
+narrow modulus, read on the narrow class group through `narrowEquivNarrowClassGroup`. -/
 def narrowHilbertClassArtinEquiv : NarrowClassGroup K ≃* Gal(narrowHilbertClassField K/K) :=
   narrowEquivNarrowClassGroup.symm.trans (rayClassArtinEquiv (narrowModulus K))
 
@@ -262,7 +304,27 @@ theorem narrowHilbertClassArtinEquiv_narrowEquivNarrowClassGroup
       rayClassArtinEquiv (narrowModulus K) x := by
   rw [narrowHilbertClassArtinEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
+variable {K} in
+/-- The Artin symbol of the narrow class of a fractional ideal `I` in the narrow Hilbert class
+field is the ray-class Artin symbol of `I` at the narrow modulus. -/
+@[simp]
+theorem narrowHilbertClassArtinEquiv_mk (I : idealsPrimeTo (narrowModulus K)) :
+    narrowHilbertClassArtinEquiv K (NarrowClassGroup.mk (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)) =
+      rayClassArtinEquiv (narrowModulus K) (rayClassMk (narrowModulus K) I) := by
+  rw [← narrowEquivNarrowClassGroup_rayClassMk,
+    narrowHilbertClassArtinEquiv_narrowEquivNarrowClassGroup]
+
+variable {K} in
+/-- The inverse of `narrowHilbertClassArtinEquiv` is the inverse of the ray-class Artin
+isomorphism at the narrow modulus, followed by `narrowEquivNarrowClassGroup`. -/
+@[simp]
+theorem narrowHilbertClassArtinEquiv_symm_apply (σ : Gal(narrowHilbertClassField K/K)) :
+    (narrowHilbertClassArtinEquiv K).symm σ =
+      narrowEquivNarrowClassGroup ((rayClassArtinEquiv (narrowModulus K)).symm σ) :=
+  (rfl)
+
 /-- **The degree of the narrow Hilbert class field is the order of the narrow class group.** -/
+@[simp high]
 theorem finrank_narrowHilbertClassField :
     Module.finrank K (narrowHilbertClassField K) = Nat.card (NarrowClassGroup K) := by
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (narrowHilbertClassArtinEquiv K).toEquiv]
