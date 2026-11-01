@@ -25,8 +25,8 @@ central extension `ĝ = L((t)) ⊕ R K` acting by `h d/dt` on currents and killi
 (`TauCeti.CurrentAlgebra.vectorFieldExtensionDerivation`), and to a derivation of the level
 enveloping algebra `U(ĝ) / (ι K - a)` acting by `h d/dt` on the current generators
 (`TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation`), at every central value `a`, including
-`a = 0`. A derivation of `U(ĝ) / (ι K - a)` is determined by its values on the current generators
-(`TauCeti.CurrentAlgebra.derivation_ext_envelopingι`).
+`a = 0`. This lift is unique, since a derivation of `U(ĝ) / (ι K - a)` is determined by its values
+on the current generators (`TauCeti.CurrentAlgebra.derivation_ext_envelopingι`).
 
 If `h` has order at least `P`, the vector field `h d/dt` sends currents of order at least `N` to
 currents of order at least `P + N - 1`. So when `h` has positive order it preserves each order
@@ -240,27 +240,6 @@ variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsS
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
-
-/-- **A derivation of `U(ĝ) / (ι K - a)` is determined by its values on the current
-generators.** -/
-theorem derivation_ext_envelopingι {D₁ D₂ : derivationLieAlgebra R UK}
-    (h : ∀ u : C, (D₁ : Module.End R UK) (envelopingι Φ hΦ hΦs a u) =
-      (D₂ : Module.End R UK) (envelopingι Φ hΦ hΦs a u)) : D₁ = D₂ := by
-  -- The elements on which `D₁` and `D₂` agree contain the scalars and are closed under sums and
-  -- products, and the current generators generate the algebra.
-  refine derivationLieAlgebra.ext fun x ↦ ?_
-  have hx : x ∈ Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) := by
-    rw [adjoin_range_envelopingι]
-    exact Algebra.mem_top
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨u, rfl⟩ := hx
-    exact h u
-  | algebraMap r =>
-    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul,
-      derivationLieAlgebra.apply_one_eq_zero, derivationLieAlgebra.apply_one_eq_zero]
-  | add x y _ _ hx hy => rw [map_add, map_add, hx, hy]
-  | mul x y _ _ hx hy => rw [derivationLieAlgebra.leibniz, derivationLieAlgebra.leibniz, hx, hy]
 
 /-- The linear map `u ↦ ι u + ε ι(h u')` from the currents to the dual numbers over
 `U(ĝ) / (ι K - a)`. -/
