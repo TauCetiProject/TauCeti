@@ -14,7 +14,7 @@ import Mathlib.AlgebraicGeometry.Sites.Fpqc
 /-!
 # Faithfully flat homomorphisms as cokernels
 
-A quasi-compact faithfully flat homomorphism of commutative group schemes is the categorical
+A quasi-compact faithfully flat homomorphism of group schemes is the categorical
 cokernel of its scheme-theoretic kernel. Thus a homomorphism killing that kernel factors
 uniquely through the quotient. No smoothness or reducedness is required.
 
@@ -36,10 +36,10 @@ universe u
 namespace TauCeti.GroupScheme
 
 variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H)
-  [IsCommMonObj G.X] [QuasiCompact f.hom.hom.left] [Flat f.hom.hom.left]
+  [QuasiCompact f.hom.hom.left] [Flat f.hom.hom.left]
   [Surjective f.hom.hom.left]
 
-/-- A quasi-compact faithfully flat homomorphism of commutative group schemes is the
+/-- A quasi-compact faithfully flat homomorphism of group schemes is the
 cokernel of its kernel inclusion. -/
 noncomputable def isColimitKernelCofork :
     IsColimit (CokernelCofork.ofπ f (kernel.condition f)) := by
@@ -59,7 +59,12 @@ noncomputable def isColimitKernelCofork :
   apply Grp.isColimitCokernelCoforkOfTorsor
   have h := (isPullback_mul_of_isPullback_one f.hom.hom (kernel.ι f).hom.hom
     (isPullback_kernel_hom f)).flip
-  exact h.of_iso (β_ (kernel f).X G.X) (.refl _) (.refl _) (.refl _)
-    (by simp) (by simp [MonObj.comp_mul, mul_comm]) (by simp) (by simp)
+  -- Inverting both coordinates turns left translation into right translation.
+  exact h.of_iso ((β_ (kernel f).X G.X) ≪≫ (asIso ι[G.X] ⊗ᵢ asIso ι[(kernel f).X]))
+    (asIso ι[G.X]) (asIso ι[G.X]) (asIso ι[H.X])
+    (by simp [GrpObj.inv_eq_inv, GrpObj.comp_inv])
+    (by simp [MonObj.comp_mul, GrpObj.inv_eq_inv, GrpObj.comp_inv, GrpObj.inv_comp])
+    (by simp [GrpObj.inv_eq_inv, GrpObj.comp_inv, GrpObj.inv_comp])
+    (by simp [GrpObj.inv_eq_inv, GrpObj.comp_inv, GrpObj.inv_comp])
 
 end TauCeti.GroupScheme
