@@ -104,17 +104,9 @@ commutes with `u`, and `u` with the new letter, but the root does not commute wi
 theorem not_isCommTransitive_zpowers_of_isProperPower [IsMulTorsionFree G] {u : G}
     (hu : Group.IsProperPower u) (hu1 : u ≠ 1) :
     ¬ Group.IsCommTransitive
-      (HNNExtension G (zpowers u) (zpowers u) (MulEquiv.refl (zpowers u))) := by
-  intro h
-  obtain ⟨y, n, hn, rfl⟩ := Group.isProperPower_iff.1 hu
-  have hy : y ≠ 1 := by
-    rintro rfl
-    exact hu1 (one_pow n)
-  have hs := centralizer_le_of_isCommTransitive h (mem_zpowers _) hu1
-    (mem_centralizer_singleton_iff.2 (Commute.self_pow y n).eq)
-  have : n = 1 := by
-    simpa only [orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hy), Nat.gcd_zero_right]
-      using mem_zpowers_pow_iff.mp hs
-  omega
+      (HNNExtension G (zpowers u) (zpowers u) (MulEquiv.refl (zpowers u))) := fun h =>
+  Group.not_isProperPower_of_zpowers_eq_centralizer hu1
+    (le_antisymm (zpowers_le.2 (mem_centralizer_singleton_iff.2 rfl))
+      (centralizer_le_of_isCommTransitive h (mem_zpowers _) hu1)) hu
 
 end HNNExtension
