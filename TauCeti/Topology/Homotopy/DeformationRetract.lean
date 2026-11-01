@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.LocalAtTarget
+public import TauCeti.Topology.Homeomorph.Extend
 
 /-!
 # Deformation retractions
@@ -157,41 +158,6 @@ namespace Topology.IsOpenEmbedding
 open unitInterval
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {j : Y → X}
-
-/-- **A family of self-maps of an open piece extends by the identity.** Let `j : Y → X` be an open
-embedding and `G : Z × Y → Y` a continuous family of self-maps of `Y`. If the points outside the
-range of `j` have an open neighbourhood `V` such that every `G z` fixes the points of `j ⁻¹' V`,
-then the family transported along `j` extends by the identity to a continuous family of self-maps
-of `X`. -/
-theorem exists_continuousMap_extend_id (hj : IsOpenEmbedding j) {Z : Type*} [TopologicalSpace Z]
-    {V : Set X} (hV : IsOpen V) (hjV : (range j)ᶜ ⊆ V) (G : C(Z × Y, Y))
-    (hG : ∀ z y, j y ∈ V → G (z, y) = y) :
-    ∃ Φ : C(Z × X, X), (∀ z y, Φ (z, j y) = j (G (z, y))) ∧ ∀ z, ∀ x ∉ range j, Φ (z, x) = x := by
-  classical
-  let Φ : Z × X → X := fun p ↦ if hp : p.2 ∈ range j then j (G (p.1, hp.choose)) else p.2
-  have hΦj (z : Z) (y : Y) : Φ (z, j y) = j (G (z, y)) := by
-    have hy : j y ∈ range j := mem_range_self y
-    simp only [Φ, dite_eq_left hy, hj.injective hy.choose_spec]
-  -- `Φ` is the identity on `V`.
-  have hΦV (z : Z) (x : X) (hx : x ∈ V) : Φ (z, x) = x := by
-    by_cases hxj : x ∈ range j
-    · obtain ⟨y, rfl⟩ := hxj
-      rw [hΦj, hG z y hx]
-    · exact dite_eq_right hxj
-  refine ⟨⟨Φ, continuous_iff_continuousAt.2 fun p ↦ ?_⟩, hΦj, fun z x hx ↦ dite_eq_right hx⟩
-  obtain ⟨z, x⟩ := p
-  by_cases hxj : x ∈ range j
-  · -- Over the open range of `j`, `Φ` is the transported family.
-    obtain ⟨y, rfl⟩ := hxj
-    have hj' : IsOpenEmbedding (Prod.map id j : Z × Y → Z × X) := .prodMap .id hj
-    have hcomp : Φ ∘ Prod.map id j = j ∘ G := funext fun q ↦ hΦj q.1 q.2
-    refine (hj'.isInducing.continuousAt_iff'
-      (hj'.isOpen_range.mem_nhds (mem_range_self (z, y)))).1 ?_
-    rw [hcomp]
-    exact (hj.continuous.comp G.continuous).continuousAt
-  · -- Near a point outside the range of `j`, `Φ` is the identity.
-    exact continuousAt_snd.congr (Filter.eventually_of_mem
-      ((hV.preimage continuous_snd).mem_nhds (hjV hxj)) fun q hq ↦ (hΦV q.1 q.2 hq).symm)
 
 /-- **A strong deformation retraction extends by the identity off an open embedding.** Let
 `j : Y → X` be an open embedding and `T ⊆ S` subsets of `X`, with preimages `t ⊆ s` in `Y`.
