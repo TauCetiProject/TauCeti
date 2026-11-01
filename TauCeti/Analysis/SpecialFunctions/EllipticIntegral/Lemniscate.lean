@@ -121,6 +121,7 @@ private lemma integral_one_sub_pow_four_rpow_eq_integral_sin :
   rw [integral_comp_sin_eq_integral_rpow (abs_zero.trans_le pi_div_two_pos.le)
     (le_of_eq (abs_of_pos pi_div_two_pos)) (fun t ↦ (1 + t ^ 2) ^ (-1 / 2 : ℝ)),
     sin_zero, sin_pi_div_two]
+  simp only [smul_eq_mul]
   refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
   rw [uIoo_of_lt zero_lt_one] at ht
   have ht2 : t ^ 2 ≤ 1 := (sq_le_one_iff₀ ht.1.le).mpr ht.2.le
