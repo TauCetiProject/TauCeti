@@ -120,33 +120,59 @@ theorem homologyPeriodHom_hurewiczHomologyAddEquiv [PathConnectedSpace M] {x : M
       periodHom φ x (Additive.ofMul g) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of, homologyPeriodHom_hurewicz₁]
 
+/-- A homomorphism out of `H₁(M; ℤ)` is `homologyPeriodHom φ` once it is given on the classes of
+cycles by a linear map on singular `1`-chains which integrates `φ` along each singular
+`1`-simplex. -/
+private theorem homologyPeriodHom_eq_of_simplexChain
+    {g : ((singularChains ℤ).obj (.of M)).homology 1 →+ F}
+    (L : ((singularChains ℤ).obj (.of M)).X 1 →ₗ[ℤ] F)
+    (hg : ∀ c : cycles₁ (.of M), g (H₁AddEquivHomology (.of M) (H₁.mk c)) = L c)
+    (hL : ∀ s, L (simplexChain s 1) = pathClassIntegral φ (.mk (path₁ s))) :
+    homologyPeriodHom φ = g :=
+  homology_one_addMonoidHom_ext fun c ↦ by
+    rw [homologyPeriodHom_H₁AddEquivHomology_mk, hg]
+    refine LinearMap.congr_fun (singularChains_linearMap_ext fun s ↦ ?_) _
+    rw [chainsDesc_simplexChain_one, hL]
+
 /-- The periods of a sum of closed `C¹` forms are the sums of their periods. -/
 theorem homologyPeriodHom_add (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0)
     (hψ : IsSmoothForm I 1 ψ) (hψc : mextDeriv ψ = 0) :
-    homologyPeriodHom (φ + ψ) = homologyPeriodHom φ + homologyPeriodHom ψ := by
-  refine homology_one_addMonoidHom_ext fun c ↦ ?_
-  rw [AddMonoidHom.add_apply, homologyPeriodHom_H₁AddEquivHomology_mk,
-    homologyPeriodHom_H₁AddEquivHomology_mk, homologyPeriodHom_H₁AddEquivHomology_mk,
-    ← LinearMap.add_apply]
-  refine LinearMap.congr_fun (singularChains_linearMap_ext fun s ↦ ?_) _
-  rw [LinearMap.add_apply, chainsDesc_simplexChain_one, chainsDesc_simplexChain_one,
-    chainsDesc_simplexChain_one, pathClassIntegral_add hφ hφc hψ hψc]
+    homologyPeriodHom (φ + ψ) = homologyPeriodHom φ + homologyPeriodHom ψ :=
+  homologyPeriodHom_eq_of_simplexChain (chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s))) +
+      chainsDesc (fun s ↦ pathClassIntegral ψ (.mk (path₁ s))))
+    (fun c ↦ by
+      rw [AddMonoidHom.add_apply, homologyPeriodHom_H₁AddEquivHomology_mk,
+        homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.add_apply])
+    fun s ↦ by
+      rw [LinearMap.add_apply, chainsDesc_simplexChain_one, chainsDesc_simplexChain_one,
+        pathClassIntegral_add hφ hφc hψ hψc]
 
 /-- The periods of a real multiple of a form are the multiples of its periods. -/
 @[simp]
 theorem homologyPeriodHom_smul (a : ℝ) :
-    homologyPeriodHom (a • φ) = a • homologyPeriodHom φ := by
-  refine homology_one_addMonoidHom_ext fun c ↦ ?_
-  rw [AddMonoidHom.smul_apply, homologyPeriodHom_H₁AddEquivHomology_mk,
-    homologyPeriodHom_H₁AddEquivHomology_mk, ← LinearMap.smul_apply]
-  refine LinearMap.congr_fun (singularChains_linearMap_ext fun s ↦ ?_) _
-  rw [LinearMap.smul_apply, chainsDesc_simplexChain_one, chainsDesc_simplexChain_one,
-    pathClassIntegral_smul]
+    homologyPeriodHom (a • φ) = a • homologyPeriodHom φ :=
+  homologyPeriodHom_eq_of_simplexChain (a • chainsDesc fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
+    (fun c ↦ by
+      rw [AddMonoidHom.smul_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.smul_apply])
+    fun s ↦ by rw [LinearMap.smul_apply, chainsDesc_simplexChain_one, pathClassIntegral_smul]
 
 /-- The periods of the zero form vanish. -/
 @[simp]
 theorem homologyPeriodHom_zero : homologyPeriodHom (0 : RoughForm I M F 1) = 0 := by
   simpa using homologyPeriodHom_smul (φ := (0 : RoughForm I M F 1)) 0
+
+/-- **Stokes' theorem on singular `1`-chains.** The integral of `dψ` along a singular `1`-chain is
+the evaluation of the `0`-form `ψ` on its boundary. -/
+theorem chainsDesc_pathClassIntegral_mextDeriv {ψ : RoughForm I M F 0} (hψ : IsSmoothForm I 2 ψ) :
+    chainsDesc (fun s ↦ pathClassIntegral (mextDeriv ψ) (.mk (path₁ s))) =
+      chainsDesc (fun v ↦ ψ (_root_.TopCat.toSSetObj₀Equiv v) 0) ∘ₗ
+        (((singularChains ℤ).obj (.of M)).d 1 0).hom :=
+  singularChains_linearMap_ext fun s ↦ by
+    rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 0), Fin.sum_univ_two,
+      map_add, map_zsmul, map_zsmul, chainsDesc_simplexChain_one, chainsDesc_simplexChain_one,
+      chainsDesc_simplexChain_one, toSSetObj₀Equiv_δ_zero, toSSetObj₀Equiv_δ_one,
+      pathClassIntegral_mextDeriv hψ]
+    simp [sub_eq_add_neg]
 
 /-! ### Periods of de Rham classes on singular homology -/
 
@@ -155,19 +181,9 @@ theorem homologyPeriodHom_eq_zero_of_mem_exactForms {φ : SmoothForm I M ℝ 1}
     (hφ : φ ∈ exactForms I M 1) : homologyPeriodHom (φ : RoughForm I M ℝ 1) = 0 := by
   rw [exactForms_succ, LinearMap.mem_range] at hφ
   obtain ⟨ψ, rfl⟩ := hφ
-  -- The integral of `dψ` along a `1`-chain is the evaluation of `ψ` on its boundary.
-  have hd : chainsDesc (fun s ↦ pathClassIntegral (mextDerivₗ I 0 ψ : RoughForm I M ℝ 1)
-      (.mk (path₁ s))) =
-      chainsDesc (fun v ↦ (ψ : RoughForm I M ℝ 0) (_root_.TopCat.toSSetObj₀Equiv v) 0) ∘ₗ
-        (((singularChains ℤ).obj (.of M)).d 1 0).hom :=
-    singularChains_linearMap_ext fun s ↦ by
-      rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 0), Fin.sum_univ_two,
-        map_add, map_zsmul, map_zsmul, chainsDesc_simplexChain_one, chainsDesc_simplexChain_one,
-        chainsDesc_simplexChain_one, toSSetObj₀Equiv_δ_zero, toSSetObj₀Equiv_δ_one,
-        mextDerivₗ_apply, pathClassIntegral_mextDeriv (ψ.isSmoothForm.of_le (by simp))]
-      simp [sub_eq_add_neg]
   refine homology_one_addMonoidHom_ext fun c ↦ ?_
-  rw [homologyPeriodHom_H₁AddEquivHomology_mk, AddMonoidHom.zero_apply, hd, LinearMap.comp_apply,
+  rw [homologyPeriodHom_H₁AddEquivHomology_mk, AddMonoidHom.zero_apply, mextDerivₗ_apply,
+    chainsDesc_pathClassIntegral_mextDeriv (ψ.isSmoothForm.of_le (by simp)), LinearMap.comp_apply,
     mem_cycles₁_iff.1 c.2, map_zero]
 
 /-- **Periods on singular homology detect exactness.** A closed smooth real `1`-form on a

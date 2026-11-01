@@ -279,6 +279,14 @@ lemma H₁.mk_surjective : Function.Surjective (H₁.mk (X := X)) := by
   obtain ⟨c, hc⟩ := ShortComplex.moduleCatLeftHomologyData_π_hom_surjective (sc₁ X) h
   exact ⟨c, by rw [H₁.mk]; exact hc⟩
 
+/-- Two additive maps out of `H₁ X` agree once they agree on the classes of `1`-cycles. -/
+@[ext]
+lemma H₁.addMonoidHom_ext {A : Type*} [AddZeroClass A] {f g : H₁ X →+ A}
+    (h : ∀ c : cycles₁ X, f (H₁.mk c) = g (H₁.mk c)) : f = g := by
+  ext a
+  obtain ⟨c, rfl⟩ := H₁.mk_surjective a
+  exact h c
+
 lemma pathChain_mem_cycles₁ {x : X} (γ : Path x x) : pathChain ℤ γ.toContinuousMap ∈ cycles₁ X :=
   mem_cycles₁ (by rw [singularChains_d_pathChain]; simp)
 
@@ -740,10 +748,9 @@ they agree on the classes of `1`-cycles. -/
 lemma homology_one_addMonoidHom_ext {A : Type*} [AddZeroClass A]
     {f g : ((singularChains ℤ).obj X).homology 1 →+ A}
     (h : ∀ c : cycles₁ X, f (H₁AddEquivHomology X (H₁.mk c)) = g (H₁AddEquivHomology X (H₁.mk c))) :
-    f = g := by
-  ext a
-  obtain ⟨c, rfl⟩ := ((H₁AddEquivHomology X).surjective.comp H₁.mk_surjective) a
-  exact h c
+    f = g :=
+  (AddMonoidHom.cancel_right (H₁AddEquivHomology X).surjective).1 (H₁.addMonoidHom_ext h :
+    f.comp (H₁AddEquivHomology X).toAddMonoidHom = g.comp (H₁AddEquivHomology X).toAddMonoidHom)
 
 /-! ### The Hurewicz isomorphism -/
 
