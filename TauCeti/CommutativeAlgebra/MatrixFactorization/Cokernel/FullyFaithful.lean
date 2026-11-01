@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.GorensteinProjective
 
 /-!
 # The cokernel functor on matrix factorizations is fully faithful
@@ -97,8 +97,8 @@ private theorem exists_cokernelFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
     ConcreteCategory.congr_hom (Projective.factorThru_comp a (quotientCokernelπ Y)) y
   -- The even component lifts `f₁ ∘ d₀` along `d₀`.
   have hrange (x : X.obj.X₀) : f₁ (X.obj.d₀.hom x) ∈ LinearMap.range Y.obj.d₀.hom.hom := by
-    rw [← quotientCokernelπ_eq_zero_iff, hf₁,
-      (quotientCokernelπ_eq_zero_iff X _).2 ⟨x, rfl⟩, map_zero]
+    refine (exact_d₀_quotientCokernelπ Y _).1 ?_
+    rw [hf₁, (exact_d₀_quotientCokernelπ X _).2 ⟨x, rfl⟩, map_zero]
   obtain ⟨f₀, hf₀⟩ := Module.projective_lifting_property Y.obj.d₀.hom.hom.rangeRestrict
     ((f₁.hom ∘ₗ X.obj.d₀.hom.hom).codRestrict _ hrange) (LinearMap.surjective_rangeRestrict _)
   have hf₀' (x : X.obj.X₀) : Y.obj.d₀.hom (f₀ x) = f₁ (X.obj.d₀.hom x) :=
@@ -172,7 +172,7 @@ private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ non
     ConcreteCategory.congr_hom (Projective.factorThru_comp a u) y
   -- `g₁ - h` vanishes in the cokernel, so it is `d₀ k`.
   have ha (y : X.obj.X₁) : g.hom.f₁.hom y - h y ∈ LinearMap.range Y.obj.d₀.hom.hom := by
-    refine (quotientCokernelπ_eq_zero_iff Y _).1 ?_
+    refine (exact_d₀_quotientCokernelπ Y _).1 ?_
     rw [map_sub, sub_eq_zero]
     exact (quotientCokernelπ_naturality_apply g y).symm.trans
       ((ConcreteCategory.congr_hom hg (quotientCokernelπ X y)).trans
@@ -187,7 +187,7 @@ private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ non
   have hb (x : X.obj.X₀) : h (X.obj.d₀.hom x) ∈
       LinearMap.range (w • LinearMap.id : Y.obj.X₁ →ₗ[S] Y.obj.X₁) := by
     have : u (h (X.obj.d₀.hom x)) = 0 := by
-      rw [hh, (quotientCokernelπ_eq_zero_iff X _).2 ⟨x, rfl⟩, map_zero]
+      rw [hh, (exact_d₀_quotientCokernelπ X _).2 ⟨x, rfl⟩, map_zero]
     obtain ⟨y', hy'⟩ := (TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq w _).1 this
     exact ⟨y', hy'⟩
   obtain ⟨t, ht⟩ := Module.projective_lifting_property

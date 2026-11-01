@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.GorensteinProjective
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
@@ -28,9 +29,10 @@ Conversely, the cokernel of the reduction modulo `w` of any finite-projective ma
 (`TauCeti.MatrixFactorization.exact_d₀_quotientCokernelπ`), and `d₀` is injective when `w` is a
 non-zero-divisor. So for a non-zero-divisor `w`, the `R`-modules arising as such cokernels are
 exactly those with a resolution of length one by finitely generated projective `S`-modules
-(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff`). Over a Noetherian ring `S`, these
-are exactly the finitely generated `R`-modules of projective dimension at most one over `S`
-(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE`). In
+(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff`). Among the `R`-modules finitely
+presented over `S`, these are exactly those of projective dimension at most one over `S`
+(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE`); over a
+Noetherian ring `S`, this covers every finitely generated `R`-module. In
 particular every such module is Gorenstein-projective over `R`
 (`TauCeti.MatrixFactorization.isGorensteinProjective_of_exact`).
 
@@ -43,8 +45,6 @@ category of Gorenstein-projective `R`-modules, is not made here.
 
 * `TauCeti.MatrixFactorization.ofInjective`: the matrix factorization `P --f--> Q --d₁--> P` of an
   injective map `f` between finitely generated projective modules whose cokernel is killed by `w`.
-* `TauCeti.MatrixFactorization.quotientCokernelπ`: the surjection `y ↦ [1 ⊗ y]` from the odd
-  component onto the cokernel of the reduction modulo `w`.
 * `TauCeti.MatrixFactorization.quotientCokernelIsoOfExact`: the cokernel of the reduction of the
   matrix factorization of a resolution `0 → P → Q → M → 0` is `M`.
 
@@ -55,9 +55,11 @@ category of Gorenstein-projective `R`-modules, is not made here.
   resolution of length one by finitely generated projective `S`-modules.
 * `TauCeti.MatrixFactorization.quotientGorensteinProjectiveCokernel_essImage_iff`: the same
   description of the essential image of the cokernel functor to Gorenstein-projective modules.
-* `TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE`: over a
-  Noetherian ring, a finitely generated `S/(w)`-module is such a cokernel exactly when its
-  projective dimension over `S` is at most one.
+* `TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE`: an
+  `S/(w)`-module finitely presented over `S` is such a cokernel exactly when its projective
+  dimension over `S` is at most one; over a Noetherian ring this applies to every finitely
+  generated `S/(w)`-module
+  (`exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE_of_isNoetherianRing`).
 * `TauCeti.MatrixFactorization.isGorensteinProjective_of_exact` and
   `TauCeti.MatrixFactorization.isGorensteinProjective_of_hasProjectiveDimensionLE`: such modules
   are Gorenstein-projective over `S/(w)`.
@@ -132,90 +134,20 @@ theorem ofInjective_obj_d₁_eq_iff (d : Q ⟶ P) :
 
 end OfInjective
 
-/-! ### The cokernel of the reduction as a quotient of the odd component -/
-
-/-- The `S`-linear surjection `y ↦ [1 ⊗ y]` from the odd component onto the cokernel of the
-reduction modulo `w`, viewed as an `S`-module. Its kernel is the image of `d₀`
-(`TauCeti.MatrixFactorization.exact_d₀_quotientCokernelπ`). -/
-def quotientCokernelπ (X : MatrixFactorization S w) :
-    X.obj.X₁.obj ⟶ (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj
-      (cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj :=
-  (ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).unit.app
-      X.obj.X₁.obj ≫
-    (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map
-      (cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X))
-
-/-- On elements, `quotientCokernelπ` sends `y` to the class of `1 ⊗ y`. -/
-theorem quotientCokernelπ_apply (X : MatrixFactorization S w) (y : X.obj.X₁) :
-    quotientCokernelπ X y =
-      cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)
-        ((1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, Ideal.Quotient.mk (Ideal.span {w})] y) :=
-  (rfl)
-
-/-- Every element of the cokernel of the reduction is the class of `1 ⊗ y` for some `y`. -/
-theorem quotientCokernelπ_surjective (X : MatrixFactorization S w) :
-    Function.Surjective (quotientCokernelπ X) := by
-  intro m
-  obtain ⟨z, rfl⟩ :=
-    cokernelπ_surjective ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X) m
-  obtain ⟨y, rfl⟩ := TensorProduct.exists_one_tmul_eq (Ideal.span {w}) z
-  exact ⟨y, quotientCokernelπ_apply X y⟩
-
-/-- The kernel of `y ↦ [1 ⊗ y]` is the image of `d₀`: if `1 ⊗ y = d₀' (1 ⊗ x)`, then
-`y - d₀ x = w y' = d₀ (d₁ y')`. -/
-theorem quotientCokernelπ_eq_zero_iff (X : MatrixFactorization S w) (y : X.obj.X₁) :
-    quotientCokernelπ X y = 0 ↔ y ∈ LinearMap.range X.obj.d₀.hom.hom := by
-  rw [quotientCokernelπ_apply]
-  constructor
-  · intro h
-    obtain ⟨z, hz⟩ := (exact_d₀_cokernelπ _ _).1 h
-    obtain ⟨x, rfl⟩ := TensorProduct.exists_one_tmul_eq (M := X.obj.X₀) (Ideal.span {w}) z
-    have : (1 : S ⧸ Ideal.span {w}) ⊗ₜ[S] (y - X.obj.d₀.hom.hom x) = 0 := by
-      rw [TensorProduct.tmul_sub]
-      exact sub_eq_zero.2 hz.symm
-    obtain ⟨y', hy'⟩ := (TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq w _).1 this
-    refine ⟨x + X.obj.d₁.hom.hom y', ?_⟩
-    rw [map_add, d₁_comp_d₀_apply, hy', add_sub_cancel]
-  · rintro ⟨x, rfl⟩
-    exact (exact_d₀_cokernelπ _ _).2
-      ⟨(1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, Ideal.Quotient.mk (Ideal.span {w})] x, rfl⟩
-
-/-- The even differential and `y ↦ [1 ⊗ y]` form an exact pair: the cokernel of the reduction
-modulo `w` is the cokernel of `d₀` over `S`. -/
-theorem exact_d₀_quotientCokernelπ (X : MatrixFactorization S w) :
-    Function.Exact X.obj.d₀.hom.hom (quotientCokernelπ X).hom :=
-  fun y ↦ (quotientCokernelπ_eq_zero_iff X y).trans Iff.rfl
-
-/-- `y ↦ [1 ⊗ y]` is natural with respect to morphisms of matrix factorizations. -/
-theorem quotientCokernelπ_naturality_apply {X Y : MatrixFactorization S w} (g : X ⟶ Y)
-    (y : X.obj.X₁) :
-    (cokernelFunctor.map ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g)).hom
-        (quotientCokernelπ X y) = quotientCokernelπ Y (g.hom.f₁.hom y) :=
-  cokernelπ_naturality_apply ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g) _
-
 /-! ### The cokernel of a resolution of length one -/
 
 section Resolution
 
 variable {P Q : FGModuleCat.{u} S} {M : ModuleCat.{u} (S ⧸ Ideal.span {w})}
   {f : P ⟶ Q} {g : Q.obj ⟶ (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M}
-
-/-- If `P --f--> Q --g--> M` is exact and `M` is a module over `S/(w)`, then `w` kills the
-cokernel of `f`. -/
-theorem smul_mem_range_of_exact (hfg : Function.Exact f.hom.hom g.hom) (y : Q) :
-    w • y ∈ LinearMap.range f.hom.hom := by
-  refine (hfg _).1 ?_
-  rw [map_smul, ModuleCat.restrictScalars.smul_def, Ideal.Quotient.mk_singleton_self, zero_smul]
-  rfl
-
-variable [Module.Projective S P] [Module.Projective S Q]
+  [Module.Projective S P] [Module.Projective S Q]
 
 /-- The map from the cokernel of the reduction of `ofInjective f` to `M` induced by `g`: the
 adjoint `S/(w) ⊗ Q → M` of `g` kills the reduction of `f`. -/
 private def quotientCokernelDesc (hf : Function.Injective f.hom.hom)
     (hfg : Function.Exact f.hom.hom g.hom) :
     (cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj
-      (ofInjective f hf (smul_mem_range_of_exact hfg)))).obj ⟶ M :=
+      (ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))))).obj ⟶ M :=
   (isColimitCokernelπ _).desc (CokernelCofork.ofπ
     (((ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).homEquiv
       _ _).symm g) (by
@@ -230,7 +162,8 @@ private def quotientCokernelDesc (hf : Function.Injective f.hom.hom)
 private theorem cokernelπ_quotientCokernelDesc (hf : Function.Injective f.hom.hom)
     (hfg : Function.Exact f.hom.hom g.hom) :
     cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj
-        (ofInjective f hf (smul_mem_range_of_exact hfg))) ≫ quotientCokernelDesc hf hfg =
+        (ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w)))) ≫
+        quotientCokernelDesc hf hfg =
       ((ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).homEquiv
         _ _).symm g :=
   Cofork.IsColimit.π_desc (isColimitCokernelπ _)
@@ -238,11 +171,13 @@ private theorem cokernelπ_quotientCokernelDesc (hf : Function.Injective f.hom.h
 /-- Composed with `y ↦ [1 ⊗ y]`, the map induced by `g` is `g`. -/
 private theorem quotientCokernelπ_comp_quotientCokernelDesc (hf : Function.Injective f.hom.hom)
     (hfg : Function.Exact f.hom.hom g.hom) :
-    quotientCokernelπ (ofInjective f hf (smul_mem_range_of_exact hfg)) ≫
+    quotientCokernelπ
+        (ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))) ≫
       (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map
         (quotientCokernelDesc hf hfg) = g := by
   -- The class of `y` is the image of `1 ⊗ y`, on which the adjoint of `g` takes the value `g y`.
   ext y
+  refine (congrArg (quotientCokernelDesc hf hfg).hom (quotientCokernelπ_apply _ y)).trans ?_
   exact (ConcreteCategory.congr_hom (cokernelπ_quotientCokernelDesc hf hfg) _).trans
     (congrArg (fun k ↦ k.hom y)
       (((ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).homEquiv
@@ -255,7 +190,7 @@ isomorphism sends the class of `1 ⊗ y` to `g y`. -/
 def quotientCokernelIsoOfExact (hf : Function.Injective f.hom.hom)
     (hfg : Function.Exact f.hom.hom g.hom) (hg : Function.Surjective g) :
     (cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj
-      (ofInjective f hf (smul_mem_range_of_exact hfg)))).obj ≅ M :=
+      (ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))))).obj ≅ M :=
   have h := quotientCokernelπ_comp_quotientCokernelDesc hf hfg
   (LinearEquiv.ofBijective (quotientCokernelDesc hf hfg).hom
     ⟨fun a b hab ↦ by
@@ -264,8 +199,8 @@ def quotientCokernelIsoOfExact (hf : Function.Injective f.hom.hom)
       obtain ⟨b, rfl⟩ := quotientCokernelπ_surjective (ofInjective f hf _) b
       have hab' : g.hom a = g.hom b :=
         (ConcreteCategory.congr_hom h a).symm.trans (hab.trans (ConcreteCategory.congr_hom h b))
-      have hπ : quotientCokernelπ (ofInjective f hf (smul_mem_range_of_exact hfg)) (a - b) = 0 :=
-        (quotientCokernelπ_eq_zero_iff _ _).2
+      have hπ : quotientCokernelπ (ofInjective f hf _) (a - b) = 0 :=
+        (exact_d₀_quotientCokernelπ _ _).2
           ((hfg _).1 ((map_sub g.hom a b).trans (sub_eq_zero.2 hab')))
       rw [map_sub, sub_eq_zero] at hπ
       exact hπ,
@@ -277,7 +212,8 @@ def quotientCokernelIsoOfExact (hf : Function.Injective f.hom.hom)
 theorem quotientCokernelIsoOfExact_hom_quotientCokernelπ (hf : Function.Injective f.hom.hom)
     (hfg : Function.Exact f.hom.hom g.hom) (hg : Function.Surjective g) (y : Q) :
     (quotientCokernelIsoOfExact hf hfg hg).hom.hom
-      (quotientCokernelπ (ofInjective f hf (smul_mem_range_of_exact hfg)) y) = g y :=
+      (quotientCokernelπ
+        (ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))) y) = g y :=
   ConcreteCategory.congr_hom (quotientCokernelπ_comp_quotientCokernelDesc hf hfg) y
 
 /-- **Eisenbud's modules are Gorenstein-projective.** For a non-zero-divisor `w`, an
@@ -340,13 +276,14 @@ theorem quotientGorensteinProjectiveCokernel_essImage_iff (hw : w ∈ nonZeroDiv
     exact ⟨X, ⟨ObjectProperty.isoMk _
       (eqToIso (quotientGorensteinProjectiveCokernel_obj_obj hw X) ≪≫ e)⟩⟩
 
-/-- **Cokernels of matrix factorizations over a Noetherian ring.** For a non-zero-divisor `w` of a
-Noetherian ring `S`, a finitely generated `S/(w)`-module is isomorphic to the cokernel of the
+/-- **Cokernels of matrix factorizations by projective dimension.** For a non-zero-divisor `w`,
+an `S/(w)`-module that is finitely presented over `S` is isomorphic to the cokernel of the
 reduction modulo `w` of a finite-projective matrix factorization of `w` exactly when its
 projective dimension over `S` is at most one. -/
-theorem exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE [IsNoetherianRing S]
-    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
-    [Module.Finite (S ⧸ Ideal.span {w}) M] :
+theorem exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE (hw : w ∈ nonZeroDivisors S)
+    (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
+    [Module.FinitePresentation S
+      ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M)] :
     (∃ X : MatrixFactorization S w, Nonempty
       ((cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj
         X)).obj ≅ M)) ↔
@@ -365,11 +302,11 @@ theorem exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE [IsNoetherianRi
     exact hS.hasProjectiveDimensionLT_X₃ 1 inferInstance inferInstance
   · intro hM
     let M' := (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M
-    have : Module.Finite S M' := ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
-      Ideal.Quotient.mk_surjective M).2 ‹_›
     -- Present `M` over `S` by a finite free module; the kernel is finitely generated because
-    -- `S` is Noetherian, and projective because `M` has projective dimension at most one.
+    -- `M` is finitely presented, and projective because `M` has projective dimension at most one.
     obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' S M'
+    have : Module.Finite S (LinearMap.ker π) :=
+      Module.Finite.iff_fg.2 (Module.FinitePresentation.fg_ker π hπ)
     have hK : Module.Projective S (LinearMap.ker π) := by
       rw [IsProjective.iff_projective, projective_iff_hasProjectiveDimensionLE_zero]
       exact (π.hasProjectiveDimensionLE_succ_iff_ker hπ 0).1 hM
@@ -379,11 +316,31 @@ theorem exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE [IsNoetherianRi
       ModuleCat.ofHom (Y := M') π,
       Subtype.val_injective, LinearMap.exact_subtype_ker_map π, hπ⟩
 
-/-- For a non-zero-divisor `w` of a Noetherian ring `S`, a finitely generated `S/(w)`-module of
+/-- **Cokernels of matrix factorizations over a Noetherian ring.** For a non-zero-divisor `w` of a
+Noetherian ring `S`, a finitely generated `S/(w)`-module is isomorphic to the cokernel of the
+reduction modulo `w` of a finite-projective matrix factorization of `w` exactly when its
+projective dimension over `S` is at most one. -/
+theorem exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE_of_isNoetherianRing
+    [IsNoetherianRing S] (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
+    [Module.Finite (S ⧸ Ideal.span {w}) M] :
+    (∃ X : MatrixFactorization S w, Nonempty
+      ((cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj
+        X)).obj ≅ M)) ↔
+      HasProjectiveDimensionLE
+        ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 :=
+  have : Module.Finite S ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) :=
+    ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
+      Ideal.Quotient.mk_surjective M).2 ‹_›
+  have := Module.finitePresentation_of_finite S
+    ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M)
+  exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE hw M
+
+/-- For a non-zero-divisor `w`, an `S/(w)`-module that is finitely presented over `S` and has
 projective dimension at most one over `S` is Gorenstein-projective over `S/(w)`. -/
-theorem isGorensteinProjective_of_hasProjectiveDimensionLE [IsNoetherianRing S]
-    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
-    [Module.Finite (S ⧸ Ideal.span {w}) M]
+theorem isGorensteinProjective_of_hasProjectiveDimensionLE (hw : w ∈ nonZeroDivisors S)
+    (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
+    [Module.FinitePresentation S
+      ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M)]
     (hM : HasProjectiveDimensionLE
       ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1) :
     IsGorensteinProjective (S ⧸ Ideal.span {w}) M := by
