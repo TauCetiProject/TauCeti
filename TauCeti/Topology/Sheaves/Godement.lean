@@ -25,7 +25,7 @@ skyscraper sheaves (`godement_map_π`). The unit of the adjunction is the canoni
 `toGodement C X : F ⟶ godement C X F` (`toGodement_eq_unit`), whose coordinate at `x` sends a
 section over an open containing `x` to its germ at `x` (`toGodement_app_π_hom_app`), as the unit of
 the adjunction between the stalk at `x` and the skyscraper sheaf at `x` does
-(`stalkSkyscraperSheafAdjunction_unit_app_hom_app`).
+(`TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app`).
 
 A product of skyscraper sheaves whose values admit morphisms from the terminal object is flasque
 (`isFlasque_skyscraperProductFunctor_obj`): the restriction maps of each skyscraper presheaf are
@@ -76,22 +76,6 @@ universe u
 noncomputable section
 
 namespace TauCeti.Topology
-
-/-- The unit of the adjunction between the stalk at `x` and the skyscraper sheaf at `x` sends a
-section over an open `U` containing `x` to its germ at `x`. -/
-@[simp]
-theorem stalkSkyscraperSheafAdjunction_unit_app_hom_app {C : Type*}
-    [Category.{u} C] [HasTerminal C] [HasColimits C] {X : TopCat.{u}} (x : X)
-    [∀ U : Opens X, Decidable (x ∈ U)]
-    (F : X.Sheaf C) {U : Opens X} (hx : x ∈ U) :
-    ((stalkSkyscraperSheafAdjunction x).unit.app F).hom.app (op U) =
-      F.presheaf.germ U x hx ≫ eqToHom (ite_eq_left hx).symm := by
-  -- The unit of the sheaf adjunction is that of the presheaf adjunction on underlying presheaves.
-  change ((StalkSkyscraperPresheafAdjunctionAuxs.unit x).app F.presheaf).app (op U) = _
-  simp only [StalkSkyscraperPresheafAdjunctionAuxs.unit_app,
-    StalkSkyscraperPresheafAdjunctionAuxs.toSkyscraperPresheaf_app, Functor.id_obj,
-    Functor.comp_obj, TopCat.Presheaf.stalkFunctor_obj, Category.id_comp]
-  exact dite_eq_left hx
 
 section Adjunction
 

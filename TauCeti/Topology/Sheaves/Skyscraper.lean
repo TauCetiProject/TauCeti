@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Sheaves.Skyscraper
 
 /-!
-# Restriction maps of skyscraper presheaves are split
+# Skyscraper sheaves: split restriction maps and the stalk adjunction unit
 
 Let `A` be an object of a category with a terminal object `⊤_ C`, and suppose that the unique
 morphism `A ⟶ ⊤_ C` is a split epimorphism, that is, that there is some morphism `⊤_ C ⟶ A`. This
@@ -19,11 +19,17 @@ contains the point, and a morphism to a terminal object otherwise. Mathlib's
 `isFlasque_skyscraperSheaf_of_epi_from` proves the weaker statement that these maps are
 epimorphisms; split epimorphisms are moreover preserved by products of any size, which is what
 makes products of skyscraper sheaves, such as Godement sheaves, flasque.
+
+The unit of Mathlib's adjunction `stalkSkyscraperSheafAdjunction x` between the stalk at `x` and
+the skyscraper sheaf at `x` sends a section over an open containing `x` to its germ at `x`
+(`TauCeti.Topology.stalkSkyscraperSheafAdjunction_unit_app_hom_app`).
 -/
 
 public section
 
 open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
+
+universe u
 
 namespace TauCeti.Topology
 
@@ -47,5 +53,21 @@ instance isSplitEpi_skyscraperPresheaf_map {X : TopCat} (p₀ : X)
       · exact section_ (terminalIsTerminal.from A) ≫ eqToHom (ite_eq_left hU).symm
       · exact eqToHom (ite_eq_right hU).symm
     exact ⟨⟨terminal.from _ ≫ s, ((ite_eq_right hV).symm.ndrec terminalIsTerminal).hom_ext _ _⟩⟩
+
+/-- The unit of the adjunction between the stalk at `x` and the skyscraper sheaf at `x` sends a
+section over an open `U` containing `x` to its germ at `x`. -/
+@[simp]
+theorem stalkSkyscraperSheafAdjunction_unit_app_hom_app {C : Type*}
+    [Category.{u} C] [HasTerminal C] [HasColimits C] {X : TopCat.{u}} (x : X)
+    [∀ U : Opens X, Decidable (x ∈ U)]
+    (F : X.Sheaf C) {U : Opens X} (hx : x ∈ U) :
+    ((stalkSkyscraperSheafAdjunction x).unit.app F).hom.app (op U) =
+      F.presheaf.germ U x hx ≫ eqToHom (ite_eq_left hx).symm := by
+  -- The unit of the sheaf adjunction is that of the presheaf adjunction on underlying presheaves.
+  change ((StalkSkyscraperPresheafAdjunctionAuxs.unit x).app F.presheaf).app (op U) = _
+  simp only [StalkSkyscraperPresheafAdjunctionAuxs.unit_app,
+    StalkSkyscraperPresheafAdjunctionAuxs.toSkyscraperPresheaf_app, Functor.id_obj,
+    Functor.comp_obj, TopCat.Presheaf.stalkFunctor_obj, Category.id_comp]
+  exact dite_eq_left hx
 
 end TauCeti.Topology
