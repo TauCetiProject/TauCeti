@@ -131,11 +131,14 @@ theorem weakLpNorm_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι 
       (hn f).symm.trans_le (norm_eval_le_weakLpNorm p (x ∘ e) f)
 
 /-- The weak `Lᵖ` norm is continuous, being dominated by the strong `Lᵖ` norm. -/
-theorem continuous_weakLpNorm : Continuous (weakLpNorm (𝕜 := 𝕜) (ι := ι) (E := E) p) :=
-  Seminorm.continuous_of_le (q := (normSeminorm 𝕜 (PiLp p fun _ : ι ↦ E)).comp
-      (PiLp.continuousLinearEquiv p 𝕜 fun _ : ι ↦ E).symm.toLinearMap)
-    (continuous_norm.comp (PiLp.continuousLinearEquiv p 𝕜 fun _ : ι ↦ E).symm.continuous)
-    fun x ↦ weakLpNorm_le_norm p x
+theorem continuous_weakLpNorm : Continuous (weakLpNorm (𝕜 := 𝕜) (ι := ι) (E := E) p) := by
+  -- The strong `Lᵖ` norm `x ↦ ‖WithLp.toLp p x‖`, as a seminorm on `ι → E`.
+  set q := (normSeminorm 𝕜 (PiLp p fun _ : ι ↦ E)).comp
+    (PiLp.continuousLinearEquiv p 𝕜 fun _ : ι ↦ E).symm.toLinearMap
+  have hq (x : ι → E) : q x = ‖WithLp.toLp p x‖ := by simp [q]
+  refine Seminorm.continuous_of_le (q := q) ?_ fun x ↦
+    (weakLpNorm_le_norm p x).trans_eq (hq x).symm
+  simpa only [funext hq] using (PiLp.continuous_toLp p _).norm
 
 /-- **Hölder's inequality for weak norms.** Multiplying a finite family by scalar weights `c`
 multiplies its weak norm by at most the `ℓˢ` norm of the weights, when `1 / p = 1 / s + 1 / q`

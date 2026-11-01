@@ -191,9 +191,8 @@ private theorem summingENorm_one_le_ofReal_mul_norm {K : ℝ} (hK0 : 0 ≤ K)
     Lp.simpleFunc.dense (E := 𝕜) (μ := μ) ENNReal.one_ne_top).induction (fun x hx ↦ ?_)
     (isClosed_le ?_ (continuous_const.mul (TauCeti.continuous_weakLpNorm 1)))
   swap
-  · exact continuous_norm.comp
-      ((PiLp.continuousLinearEquiv 1 𝕜 fun _ : Fin n ↦ H).symm.continuous.comp
-        (continuous_pi fun i ↦ T.continuous.comp (continuous_apply i)))
+  · exact continuous_norm.comp ((PiLp.continuous_toLp 1 _).comp
+      (continuous_pi fun i ↦ T.continuous.comp (continuous_apply i)))
   -- The family `x` is given by the simple functions `g i`, jointly by `SimpleFunc.pi g`.
   set g : Fin n → SimpleFunc α 𝕜 := fun i ↦ Lp.simpleFunc.toSimpleFunc ⟨x i, hx i trivial⟩
   rw [PiLp.norm_eq_of_L1]
