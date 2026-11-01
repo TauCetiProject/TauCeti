@@ -27,8 +27,9 @@ example {T : Scheme} (g : T ⟶ Spec (CommRingCat.of (ZMod 2))) :
         2 1 (by simp) g).hom = 𝟙 _ := by
   rw [← Hom.qPowerFrobenius_baseChange]
   have h : qPowerFrobenius (ZMod 2) (𝟙 _) 1 (by simp) = 𝟙 _ := by
-    simpa using qPowerFrobenius_over (ZMod 2) (𝟙 _) 1 (by simp)
-  apply pullback.hom_ext <;> simp [Over.pullback, h]
+    simpa only [qPowerFrobenius_eq_iterated] using
+      iterateFrobenius_spec_eq_id (ZMod 2) 1 (by simp)
+  apply pullback.hom_ext <;> simp [h]
 
 -- The extension-field scalar action of absolute Frobenius is nontrivial.
 example : (Spec (CommRingCat.of (GaloisField 2 2))).frobenius 2

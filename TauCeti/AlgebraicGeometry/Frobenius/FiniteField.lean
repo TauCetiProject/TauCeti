@@ -44,9 +44,9 @@ scheme. The identification is its first projection. -/
 noncomputable def qPowerFrobeniusTwistIso :
     pullback f ((Spec (CommRingCat.of k)).iterateFrobenius p
       (natCast_spec_eq_zero (CommRingCat.of k)) a) ≅ X :=
-  pullback.congrHom rfl (by
-    simpa [qPowerFrobenius_eq_iterated] using qPowerFrobenius_over k (𝟙 _) a ha) ≪≫
-      asIso (pullback.fst f (𝟙 _))
+  pullback.congrHom rfl
+    ((iterateFrobenius_spec_eq_id k a ha).trans (iterateFrobenius_zero _).symm) ≪≫
+      f.iterateFrobeniusTwistZeroIso p (natCast_spec_eq_zero (CommRingCat.of k))
 
 /-- The finite-field twist identification is the first projection. -/
 @[simp]
@@ -58,17 +58,33 @@ theorem qPowerFrobeniusTwistIso_hom :
 @[reassoc]
 theorem qPowerFrobeniusTwistIso_hom_comp :
     (f.qPowerFrobeniusTwistIso p a ha).hom ≫ f = pullback.snd _ _ := by
-  have h := pullback.condition (f := f) (g := (Spec (CommRingCat.of k)).iterateFrobenius p
-    (natCast_spec_eq_zero (CommRingCat.of k)) a)
-  have hF : (Spec (CommRingCat.of k)).iterateFrobenius p
-      (natCast_spec_eq_zero (CommRingCat.of k)) a = 𝟙 _ := by
-    simpa [qPowerFrobenius_eq_iterated] using qPowerFrobenius_over k (𝟙 _) a ha
-  simpa [hF] using h
+  rw [qPowerFrobeniusTwistIso_hom, pullback.condition,
+    iterateFrobenius_spec_eq_id k a ha, Category.comp_id]
+
+/-- The inverse finite-field twist identification cancels the first projection. -/
+@[reassoc (attr := simp)]
+theorem qPowerFrobeniusTwistIso_inv_fst :
+    (f.qPowerFrobeniusTwistIso p a ha).inv ≫ pullback.fst _ _ = 𝟙 X := by
+  simpa only [qPowerFrobeniusTwistIso_hom] using
+    (f.qPowerFrobeniusTwistIso p a ha).inv_hom_id
+
+/-- The inverse finite-field twist identification respects the structure map. -/
+@[reassoc (attr := simp)]
+theorem qPowerFrobeniusTwistIso_inv_snd :
+    (f.qPowerFrobeniusTwistIso p a ha).inv ≫ pullback.snd _ _ = f := by
+  rw [← qPowerFrobeniusTwistIso_hom_comp f p a ha, Iso.inv_hom_id_assoc]
+
+/-- The first projection cancels the inverse finite-field twist identification. -/
+@[reassoc (attr := simp)]
+theorem fst_qPowerFrobeniusTwistIso_inv :
+    pullback.fst _ _ ≫ (f.qPowerFrobeniusTwistIso p a ha).inv = 𝟙 _ := by
+  simpa only [qPowerFrobeniusTwistIso_hom] using
+    (f.qPowerFrobeniusTwistIso p a ha).hom_inv_id
 
 /-- Relative Frobenius over a finite field becomes the absolute q-power map after
 identifying its twist with the original scheme. -/
 @[reassoc]
-theorem iterateRelativeFrobenius_qPowerFrobeniusTwistIso :
+theorem iterateRelativeFrobenius_qPowerFrobeniusTwistIso_hom :
     f.iterateRelativeFrobenius p (natCast_spec_eq_zero (CommRingCat.of k)) a ≫
         (f.qPowerFrobeniusTwistIso p a ha).hom = qPowerFrobenius k f a ha := by
   simp [qPowerFrobenius_eq_iterated]
@@ -79,24 +95,14 @@ noncomputable def qPowerFrobeniusTwistBaseChangeIso (g : T ⟶ Spec (CommRingCat
     pullback (pullback.snd f g)
       (T.iterateFrobenius p (natCast_eq_zero_of_hom g
         (natCast_spec_eq_zero (CommRingCat.of k))) a) ≅ pullback f g :=
-  ((f.isPullback_iterateFrobeniusTwistMap
-    (natCast_spec_eq_zero (CommRingCat.of k)) a g).of_iso
-      (fst' := f.iterateFrobeniusTwistMap p
-        (natCast_spec_eq_zero (CommRingCat.of k)) a g ≫
-          (f.qPowerFrobeniusTwistIso p a ha).hom)
-      (snd' := pullback.snd _ _) (f' := f) (g' := g)
-      (Iso.refl _) (f.qPowerFrobeniusTwistIso p a ha) (Iso.refl _) (Iso.refl _)
-      (by simp) (by simp)
-      (by simpa only [Iso.refl_hom, Category.comp_id] using
-        (f.qPowerFrobeniusTwistIso_hom_comp p a ha).symm)
-      (by simp)).isoPullback
+  pullbackLeftPullbackSndIso f g _ ≪≫ pullback.congrHom rfl (by
+    simpa [qPowerFrobenius_eq_iterated] using qPowerFrobenius_over k g a ha)
 
 /-- The first projection of the base-changed finite-field twist comparison. -/
 @[reassoc (attr := simp)]
 theorem qPowerFrobeniusTwistBaseChangeIso_hom_fst (g : T ⟶ Spec (CommRingCat.of k)) :
     (f.qPowerFrobeniusTwistBaseChangeIso p a ha g).hom ≫ pullback.fst f g =
-      f.iterateFrobeniusTwistMap p (natCast_spec_eq_zero (CommRingCat.of k)) a g ≫
-        (f.qPowerFrobeniusTwistIso p a ha).hom := by
+      pullback.fst _ _ ≫ pullback.fst f g := by
   simp [qPowerFrobeniusTwistBaseChangeIso]
 
 /-- The base-changed twist comparison is a morphism over the new base. -/
@@ -108,7 +114,7 @@ theorem qPowerFrobeniusTwistBaseChangeIso_hom_snd (g : T ⟶ Spec (CommRingCat.o
 
 /-- The inverse comparison has the prescribed projection to the original scheme. -/
 @[reassoc (attr := simp)]
-theorem qPowerFrobeniusTwistBaseChangeIso_inv_fst (g : T ⟶ Spec (CommRingCat.of k)) :
+theorem qPowerFrobeniusTwistBaseChangeIso_inv_fst_fst (g : T ⟶ Spec (CommRingCat.of k)) :
     (f.qPowerFrobeniusTwistBaseChangeIso p a ha g).inv ≫
         pullback.fst (pullback.snd f g)
           (T.iterateFrobenius p (natCast_eq_zero_of_hom g
@@ -135,12 +141,9 @@ theorem qPowerFrobenius_baseChange (g : T ⟶ Spec (CommRingCat.of k)) :
           (natCast_eq_zero_of_hom g (natCast_spec_eq_zero (CommRingCat.of k))) a ≫
         (f.qPowerFrobeniusTwistBaseChangeIso p a ha g).hom := by
   apply pullback.hom_ext
-  · have h := iterateFrobenius_naturality
-      (natCast_eq_zero_of_hom (pullback.snd f g)
-        (natCast_eq_zero_of_hom g (natCast_spec_eq_zero (CommRingCat.of k))))
-      (natCast_eq_zero_of_hom f (natCast_spec_eq_zero (CommRingCat.of k)))
-      (pullback.fst f g) a
-    simpa [Over.pullback, qPowerFrobenius_eq_iterated] using h.symm
-  · simp [Over.pullback]
+  · have h := qPowerFrobenius_naturality k (pullback.snd f g ≫ g) f
+      (pullback.fst f g) a ha
+    simpa [qPowerFrobenius_eq_iterated] using h.symm
+  · simp
 
 end AlgebraicGeometry.Scheme.Hom
