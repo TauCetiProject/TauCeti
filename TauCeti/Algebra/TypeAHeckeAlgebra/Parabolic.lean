@@ -34,7 +34,7 @@ minimal coset representatives `d`:
 The coefficients are linear for multiplication by `H_J` on the corresponding side. Both statements
 follow from the basis theorem `TauCeti.TypeAHeckeAlgebra.basisTw` and the unique factorizations
 `w = d * v` and `w = v * d` with `v ∈ W_J` and additive lengths
-(`CoxeterSystem.minimalCosetRepMulEquiv`, `CoxeterSystem.parabolicMulEquiv`), under which
+(`CoxeterSystem.minimalCosetRepProdParabolicEquiv`, `CoxeterSystem.parabolicProdEquiv`), under which
 `T_w = T_d * T_v`, respectively `T_w = T_v * T_d`. No hypothesis on the commutative ring `R` or on
 the unit `q` is needed.
 
@@ -49,7 +49,7 @@ the unit `q` is needed.
 
 ## Main results
 
-* `TauCeti.TypeAHeckeAlgebra.span_Tw_image_parabolic`: the elements `T_w`, `w ∈ W_J`, span `H_J`.
+* `TauCeti.TypeAHeckeAlgebra.span_image_Tw_parabolic`: the elements `T_w`, `w ∈ W_J`, span `H_J`.
 * `TauCeti.TypeAHeckeAlgebra.mem_parabolic_iff`: an element lies in `H_J` exactly when its
   coordinates in the basis `T_w` are supported in `W_J`.
 * `TauCeti.TypeAHeckeAlgebra.parabolicCosetEquivRight_op_smul` and
@@ -115,7 +115,7 @@ theorem Tw_mem_parabolic {J : Set (Fin (n - 1))} {w : W} (hw : w ∈ cs.paraboli
 
 /-- The parabolic subalgebra of `J` is spanned by the elements `T_w` with `w` in the standard
 parabolic subgroup of `J`. -/
-theorem span_Tw_image_parabolic (J : Set (Fin (n - 1))) :
+theorem span_image_Tw_parabolic (J : Set (Fin (n - 1))) :
     Submodule.span R (Tw q cs '' (cs.parabolic J : Set W)) =
       Subalgebra.toSubmodule (parabolic q J) := by
   refine le_antisymm (Submodule.span_le.mpr ?_) fun x hx ↦ ?_
@@ -130,7 +130,7 @@ parabolic subalgebra of `J` exactly when its coordinates in the basis `T_w` vani
 standard parabolic subgroup of `J`. -/
 theorem mem_parabolic_iff {J : Set (Fin (n - 1))} {x : TypeAHeckeAlgebra R q n} :
     x ∈ parabolic q J ↔ ↑((basisTw q cs).repr x).support ⊆ (cs.parabolic J : Set W) := by
-  rw [← Subalgebra.mem_toSubmodule, ← span_Tw_image_parabolic cs, ← coe_basisTw,
+  rw [← Subalgebra.mem_toSubmodule, ← span_image_Tw_parabolic cs, ← coe_basisTw,
     Module.Basis.mem_span_image]
 
 variable (q) in
@@ -144,7 +144,7 @@ noncomputable def parabolicBasis (J : Set (Fin (n - 1))) :
     refine (Submodule.map_injective_of_injective (f := (parabolic q J).val.toLinearMap)
       Subtype.val_injective ?_).ge
     rw [Submodule.map_span, ← Set.range_comp, Submodule.map_top]
-    convert span_Tw_image_parabolic (R := R) (q := q) cs J using 2
+    convert span_image_Tw_parabolic (R := R) (q := q) cs J using 2
     · -- the two sides are the ranges of `Subtype.val ∘ v` and of `fun w ↦ Tw q cs w`
       rw [Set.image_eq_range]
       rfl
@@ -159,6 +159,7 @@ theorem coe_parabolicBasis_apply (J : Set (Fin (n - 1))) (w : cs.parabolic J) :
 
 /-- The coordinates of an element of the parabolic subalgebra in its basis `T_w`, `w ∈ W_J`, are
 its coordinates in the basis `T_w` of the whole Hecke algebra. -/
+@[simp]
 theorem parabolicBasis_repr_apply (J : Set (Fin (n - 1))) (x : parabolic (R := R) q J)
     (w : cs.parabolic J) :
     (parabolicBasis q cs J).repr x w = (basisTw q cs).repr x w := by
@@ -187,7 +188,7 @@ noncomputable def parabolicCosetEquivRight (J : Set (Fin (n - 1))) :
     ({d : W // cs.IsMinimalCosetRep J d} →₀ parabolic (R := R) q J) ≃ₗ[R]
       TypeAHeckeAlgebra R q n :=
   (Finsupp.basis fun _ ↦ parabolicBasis q cs J).equiv (basisTw q cs)
-    ((Equiv.sigmaEquivProd _ _).trans (cs.minimalCosetRepMulEquiv J))
+    ((Equiv.sigmaEquivProd _ _).trans (cs.minimalCosetRepProdParabolicEquiv J))
 
 /-- The right coset isomorphism sends coefficients `h` to `∑ d, T_d * h d`. -/
 theorem parabolicCosetEquivRight_apply (J : Set (Fin (n - 1)))
@@ -247,7 +248,7 @@ noncomputable def parabolicCosetEquiv (J : Set (Fin (n - 1))) :
     ({d : W // ∀ i ∈ J, ¬ cs.IsLeftDescent d i} →₀ parabolic (R := R) q J) ≃ₗ[R]
       TypeAHeckeAlgebra R q n :=
   (Finsupp.basis fun _ ↦ parabolicBasis q cs J).equiv (basisTw q cs)
-    ((Equiv.sigmaEquivProd _ _).trans ((Equiv.prodComm _ _).trans (cs.parabolicMulEquiv J)))
+    ((Equiv.sigmaEquivProd _ _).trans ((Equiv.prodComm _ _).trans (cs.parabolicProdEquiv J)))
 
 /-- The left coset isomorphism sends coefficients `h` to `∑ d, h d * T_d`. -/
 theorem parabolicCosetEquiv_apply (J : Set (Fin (n - 1)))

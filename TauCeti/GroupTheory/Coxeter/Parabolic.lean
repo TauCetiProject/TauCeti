@@ -71,7 +71,7 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
   in `J`.
 * `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`: the unique factorization of an element of `W`
   as a minimal coset representative times a parabolic element.
-* `CoxeterSystem.minimalCosetRepMulEquiv`: the same factorization, as an equivalence
+* `CoxeterSystem.minimalCosetRepProdParabolicEquiv`: the same factorization, as an equivalence
   `{u // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W`.
 * `CoxeterSystem.IsMinimalCosetRep.eq_of_inv_mul_mem`: each left coset has only one minimal
   coset representative.
@@ -83,7 +83,7 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
   factorization, on the other side, with the left-descent form of the minimality condition;
-  `CoxeterSystem.parabolicMulEquiv` is that factorization as an equivalence.
+  `CoxeterSystem.parabolicProdEquiv` is that factorization as an equivalence.
 
 ## References
 
@@ -369,7 +369,7 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
 /-- **The factorization along a standard parabolic subgroup, as an equivalence.** Multiplication
 `(u, v) ↦ u * v` identifies pairs of a minimal coset representative `u` and an element `v` of
 `cs.parabolic J` with `W`, by `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`. -/
-noncomputable def minimalCosetRepMulEquiv (J : Set B) :
+noncomputable def minimalCosetRepProdParabolicEquiv (J : Set B) :
     {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W :=
   Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
     refine ⟨fun ⟨u, v⟩ ⟨u', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
@@ -381,11 +381,11 @@ noncomputable def minimalCosetRepMulEquiv (J : Set B) :
     · obtain ⟨⟨u, v⟩, ⟨hu, hv, hw⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul J w
       exact ⟨(⟨u, hu⟩, ⟨v, hv⟩), hw.symm⟩
 
-/-- `CoxeterSystem.minimalCosetRepMulEquiv` multiplies the two factors. -/
+/-- `CoxeterSystem.minimalCosetRepProdParabolicEquiv` multiplies the two factors. -/
 @[simp]
-theorem minimalCosetRepMulEquiv_apply (J : Set B)
+theorem minimalCosetRepProdParabolicEquiv_apply (J : Set B)
     (p : {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J) :
-    cs.minimalCosetRepMulEquiv J p = p.1.1 * p.2.1 :=
+    cs.minimalCosetRepProdParabolicEquiv J p = p.1.1 * p.2.1 :=
   (rfl)
 
 /-- **Minimal coset representatives are unique.** Two minimal representatives of the same left
@@ -464,7 +464,7 @@ theorem existsUnique_mem_parabolic_mul (J : Set B) (w : W) :
 /-- **The factorization on the other side, as an equivalence.** Multiplication `(x, v) ↦ x * v`
 identifies pairs of an element `x` of `cs.parabolic J` and an element `v` with no left descent in
 `J` with `W`, by `CoxeterSystem.existsUnique_mem_parabolic_mul`. -/
-noncomputable def parabolicMulEquiv (J : Set B) :
+noncomputable def parabolicProdEquiv (J : Set B) :
     cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i} ≃ W :=
   Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
     refine ⟨fun ⟨x, v⟩ ⟨x', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
@@ -476,11 +476,11 @@ noncomputable def parabolicMulEquiv (J : Set B) :
     · obtain ⟨⟨x, v⟩, ⟨hx, hv, hw⟩, -⟩ := cs.existsUnique_mem_parabolic_mul J w
       exact ⟨(⟨x, hx⟩, ⟨v, hv⟩), hw.symm⟩
 
-/-- `CoxeterSystem.parabolicMulEquiv` multiplies the two factors. -/
+/-- `CoxeterSystem.parabolicProdEquiv` multiplies the two factors. -/
 @[simp]
-theorem parabolicMulEquiv_apply (J : Set B)
+theorem parabolicProdEquiv_apply (J : Set B)
     (p : cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i}) :
-    cs.parabolicMulEquiv J p = p.1.1 * p.2.1 :=
+    cs.parabolicProdEquiv J p = p.1.1 * p.2.1 :=
   (rfl)
 
 end CoxeterSystem
