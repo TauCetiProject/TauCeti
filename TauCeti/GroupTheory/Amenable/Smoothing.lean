@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Linfty
-public import TauCeti.GroupTheory.Amenable.OrbitIntegral
+public import TauCeti.GroupTheory.Amenable.Convolution
 
 /-!
 # Smoothed extensions of invariant means to Haar `L∞`
@@ -95,8 +95,7 @@ theorem IsLeftInvariant.smoothing_toLpTop {m : Mean G} (hm : m.IsLeftInvariant)
     (h : Lp ℝ 1 μ) (f : UCB G) :
     m.smoothing h (BoundedContinuousFunction.toLpTop μ ℝ (f : G →ᵇ ℝ)) =
       (∫ y, h y ∂μ) * m f := by
-  rw [smoothing_apply, Lp.convolutionUCB_toLpTop]
-  exact hm.apply_integral_smul_leftTranslation (L1.integrable_coeFn h) f
+  simpa only [smoothing_apply] using hm.apply_convolutionUCB_toLpTop h f
 
 /-- A nonnegative integral-one kernel gives a smoothed functional of norm one. -/
 theorem norm_smoothing (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h)
