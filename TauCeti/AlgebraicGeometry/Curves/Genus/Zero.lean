@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
+import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
 import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 import TauCeti.AlgebraicGeometry.Modules.Differentials.Rational
@@ -198,18 +199,6 @@ variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
   [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
   [GeometricallyIntegral (X ↘ Spec (.of k))]
 
-/-- A smooth proper geometrically integral scheme of relative dimension one over `k` is a curve
-over `k` whose local rings at codimension-one points are discrete valuation rings. -/
-private theorem isCurveOver_and_isDiscreteValuationRing_of_smooth :
-    ∃ _ : X.IsCurveOver k,
-      ∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X)) := by
-  have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
-  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
-  exact ⟨⟨topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))⟩,
-    fun _ ↦ inferInstance⟩
-
 /-- **A smooth curve of genus zero is the projective line over every field in which it has a
 point.** Let `X` be a smooth proper geometrically integral curve over `k` with
 `dim_k H¹(X, 𝒪_X) = 0`, let `K / k` be a field extension and `Y = X ×_k K`. If some point `x` of
@@ -229,18 +218,16 @@ theorem exists_iso_projectiveLine_of_isPullback_of_genus_eq_zero {K : Type u} [F
     MorphismProperty.of_isPullback (P := @SmoothOfRelativeDimension 1) H inferInstance
   have : GeometricallyIntegral (Y ↘ Spec (.of K)) :=
     MorphismProperty.of_isPullback (P := @GeometricallyIntegral) H inferInstance
-  obtain ⟨_, _⟩ := Y.isCurveOver_and_isDiscreteValuationRing_of_smooth (k := K)
+  have := GeometricallyIntegral.isIntegral_of_subsingleton (Y ↘ Spec (.of K))
+  have := SmoothOfRelativeDimension.smooth 1 (Y ↘ Spec (.of K))
+  have := IsCurveOver.of_smooth K Y
+  have := isDiscreteValuationRing_stalk_of_smooth (X := Y) K
   -- The `K`-valued point `Spec K ⟶ Spec κ(x) ⟶ X` lies over `k`, so it is a section of `Y`.
   have hp : (Spec.map (CommRingCat.ofHom (φ : X.residueField x →+* K)) ≫
       X.fromSpecResidueField x) ≫ (X ↘ Spec (.of k)) =
         Spec.map (CommRingCat.ofHom (algebraMap k K)) := by
-    have hres : X.residue x =
-        CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) (X.residueField x)) := by
-      rw [Scheme.algebraMap_stalk_residueField_eq_residue, CommRingCat.ofHom_hom]
-    rw [Scheme.fromSpecResidueField, Category.assoc, Category.assoc,
-      X.fromSpecStalk_comp_over (k := k), ← Spec.map_comp, ← Spec.map_comp, hres,
-      ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq, ← CommRingCat.ofHom_comp,
-      AlgHom.comp_algebraMap]
+    rw [Category.assoc, X.fromSpecResidueField_comp_over (k := k), ← Spec.map_comp,
+      ← CommRingCat.ofHom_comp, AlgHom.comp_algebraMap]
   refine Y.exists_iso_projectiveLine_of_genus_eq_zero_of_section
     isIntegrallyClosedIn_functionField_of_geometricallyIntegral ?_
     (H.lift_snd _ (𝟙 _) (by rw [hp, Category.id_comp]))
@@ -254,7 +241,10 @@ theorem exists_finrank_residueField_le_two_and_isSeparable_of_genus_eq_zero
     (hg : finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) = 0) :
     ∃ x : X, FiniteDimensional k (X.residueField x) ∧ finrank k (X.residueField x) ≤ 2 ∧
       Algebra.IsSeparable k (X.residueField x) := by
-  obtain ⟨_, _⟩ := X.isCurveOver_and_isDiscreteValuationRing_of_smooth (k := k)
+  have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  have := IsCurveOver.of_smooth k X
+  have := isDiscreteValuationRing_stalk_of_smooth (X := X) k
   have hdim := IsCurveOver.coheight_le_one (k := k) (X := X)
   have hex := IsCurveOver.valuativeCriterion_existence k X
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
