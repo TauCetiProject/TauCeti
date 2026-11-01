@@ -154,14 +154,10 @@ theorem ext_component {f g : AInfinityBimoduleHom MM NN}
 theorem component_zero_zero_apply (f : AInfinityBimoduleHom MM NN) (x : M)
     (a : Fin 0 → A) (b : Fin 0 → B) :
     f.component 0 0 x a b = f.taylor ((1 ⊗ₜ x) ⊗ₜ 1) := by
-  rw [component_apply, suspendedComponent_tmul]
+  rw [component_apply, suspendedComponent_tmul, TensorWords.of_tprod_eq_subword,
+    TensorWords.subword_length_zero R _ le_rfl, TensorWords.of_tprod_eq_subword,
+    TensorWords.subword_length_zero R _ le_rfl]
   simp only [Nat.cast_zero, InternalGrading.koszulTwist_zero, LinearMap.id_apply]
-  congr 2
-  · congr 1
-    rw [TensorWords.one_eq_of_zero]
-    exact TensorWords.of_tprod_congr R A fun k ↦ k.elim0
-  · rw [TensorWords.one_eq_of_zero]
-    exact TensorWords.of_tprod_congr R B fun k ↦ k.elim0
 
 /-- The identity has no suspended component with a positive number of algebra inputs. -/
 @[simp]
