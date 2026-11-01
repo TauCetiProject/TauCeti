@@ -62,28 +62,16 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (r : ℕ)
 
-/-- **Reversal of the chain is a symmetry of the type-`A` Cartan matrix**, in the form consumed by
-`Matrix.ShellLieAlgebra.reindex`. -/
-theorem reindex_cartanMatrix_A_graphPermA :
-    (CartanMatrix.A r).reindex (graphPermA r) (graphPermA r) = CartanMatrix.A r := by
-  have hsymm : (graphPermA r).symm = graphPermA r :=
-    Equiv.ext fun i ↦ (Equiv.symm_apply_eq _).mpr (graphPermA_graphPermA r i).symm
-  ext i j
-  rw [reindex_apply, submatrix_apply, hsymm, ← DynkinType.cartanMatrix_A]
-  exact cartanMatrix_A_graphPermA r i j
-
 /-- The reversal of the chain relabels the type-`A` root `ε_p - ε_q`, in simple-root coordinates,
 as the root `ε_(rev q) - ε_(rev p)`. -/
 @[simp]
-theorem typeAPairRoot_comp_graphPermA_symm (p q : Fin (r + 1)) :
-    typeAPairRoot r p q ∘ (graphPermA r).symm = typeAPairRoot r q.rev p.rev := by
-  have hsymm : (graphPermA r).symm = graphPermA r :=
-    Equiv.ext fun i ↦ (Equiv.symm_apply_eq _).mpr (graphPermA_graphPermA r i).symm
+theorem typeAPairRoot_comp_graphPermA (p q : Fin (r + 1)) :
+    typeAPairRoot r p q ∘ graphPermA r = typeAPairRoot r q.rev p.rev := by
   ext k
   have := k.isLt
   have := p.isLt
   have := q.isLt
-  simp only [Function.comp_apply, hsymm, graphPermA_apply, typeAPairRoot_apply, Fin.le_def,
+  simp only [Function.comp_apply, graphPermA_apply, typeAPairRoot_apply, Fin.le_def,
     Fin.val_castSucc, Fin.val_rev]
   split_ifs <;> omega
 
@@ -96,7 +84,7 @@ theorem normTwoShellCongr_graphPermA_typeAPairRoot {p q : Fin (r + 1)} (hpq : p 
       ⟨typeAPairRoot r q.rev p.rev,
         typeAPairRoot_mem_normTwoShell r (Fin.rev_injective.ne hpq.symm)⟩ :=
   Subtype.ext <| by
-    rw [coe_normTwoShellCongr_apply, typeAPairRoot_comp_graphPermA_symm]
+    rw [coe_normTwoShellCongr_apply, graphPermA_symm, typeAPairRoot_comp_graphPermA]
 
 /-- **The pinned reversal of the type-`A` signed shell Lie algebra is the matrix graph
 automorphism.** Under the signed matrix comparison `TauCeti.typeAShellEquiv` of the signed shell
