@@ -292,16 +292,10 @@ theorem tendsto_sectionValue_mul_inv_pow {f : ContDiffBump (0 : ℝ)} {m : ℕ} 
     (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
     (hcont : Continuous x) :
     Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) := by
-  -- The section defect `α - α_m` is a continuous function of the field defect `x - x_m`.
-  have hsec : Continuous fun v : EuclideanSpace ℝ (Fin 4) ↦ 2 * ((v 2 : ℂ) + (v 3 : ℂ) * I) := by
-    fun_prop
-  have hd : Tendsto (fun z ↦ sectionValue x z - referenceSection f m z) (cocompact ℂ) (𝓝 0) := by
-    have := (hsec.tendsto 0).comp (tendsto_sub_referenceField hs hx hcont)
-    simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
-    refine this.congr fun z ↦ ?_
-    rw [← sectionValue_referenceField f m z]
-    simp only [Function.comp_apply, Pi.sub_apply, PiLp.sub_apply, sectionValue_apply, ofReal_sub]
-    ring
+  -- The section defect `α - α_m` is the section of the field defect `x - x_m`.
+  have hd : Tendsto (fun z ↦ sectionValue x z - referenceSection f m z) (cocompact ℂ) (𝓝 0) :=
+    (tendsto_sectionValue_zero (tendsto_sub_referenceField hs hx hcont)).congr fun z ↦ by
+      rw [sectionValue_sub, sectionValue_referenceField]
   -- Off a large disc the reference section is the unit winding phase.
   have hsmall : Tendsto (fun z ↦ (sectionValue x z - referenceSection f m z) *
       ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 0) := by
@@ -330,9 +324,7 @@ theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m :
   filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
   rw [norm_mul, norm_inv, norm_pow, norm_div]
   simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz.1), one_pow, inv_one, mul_one]
-  rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
-  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
-  ring
+  exact sq_norm_sectionValue x z
 
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
 differentiable connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/
