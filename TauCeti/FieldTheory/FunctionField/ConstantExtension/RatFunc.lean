@@ -15,8 +15,9 @@ import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 For a field extension `k' / k`, the rational function field `k'(X)` is the constant field
 extension `k(X) · k'` of `k(X)`, for any `k(X)`-algebra structure on `k'(X)` sending `X` to `X`.
-A polynomial over `k` is carried to the same polynomial over `k'`. When `k' / k` is finite, the
-place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`. In any
+A polynomial over `k` is carried to the same polynomial over `k'`; in particular, in
+characteristic `p`, `X ^ p - a` becomes `(X - b) ^ p` when `b ^ p = a`. When `k' / k` is finite,
+the place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`. In any
 algebraic extension of `k(X)`, a place lies over the place of an irreducible polynomial exactly
 when that polynomial vanishes there.
 
@@ -27,6 +28,8 @@ when that polynomial vanishes there.
 * `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
 * `TauCeti.algebraMap_ratFunc_algebraMap_polynomial`: the image in `k'(X)` of a polynomial over
   `k` is that polynomial with its coefficients mapped into `k'`.
+* `TauCeti.algebraMap_ratFunc_algebraMap_X_pow_sub_C`: in characteristic `p`, `X ^ p - a` becomes
+  `(X - b) ^ p` in `k'(X)` when `b ^ p = a`.
 * `TauCeti.Place.restrict_eq_adicOfIrreducible_iff`: a place of an algebraic extension of `k(X)`
   lies over the place of an irreducible polynomial `q` exactly when `q` vanishes there.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
@@ -69,14 +72,23 @@ theorem algebraMap_ratFunc_algebraMap_polynomial [Algebra k k']
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (q : k[X]) :
     algebraMap (RatFunc k) (RatFunc k') (algebraMap k[X] (RatFunc k) q) =
       algebraMap k'[X] (RatFunc k') (q.map (algebraMap k k')) := by
-  induction q using Polynomial.induction_on' with
-  | add p q hp hq => simp only [map_add, Polynomial.map_add, hp, hq]
-  | monomial n c =>
-    rw [← C_mul_X_pow_eq_monomial, map_mul, map_mul, map_pow, map_pow, RatFunc.algebraMap_X, hX,
-      Polynomial.map_mul, Polynomial.map_pow, map_X, map_C, map_mul, map_pow, RatFunc.algebraMap_X,
-      RatFunc.algebraMap_C, RatFunc.algebraMap_C, ← RatFunc.algebraMap_eq_C,
-      ← IsScalarTower.algebraMap_apply, ← RatFunc.algebraMap_eq_C,
-      ← IsScalarTower.algebraMap_apply k k' (RatFunc k')]
+  have h := map_aeval_eq_aeval_map (φ := algebraMap k k')
+    (ψ := algebraMap (RatFunc k) (RatFunc k')) ?_ q RatFunc.X
+  · rwa [RatFunc.aeval_X_left_eq_algebraMap, hX, RatFunc.aeval_X_left_eq_algebraMap] at h
+  · rw [← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq]
+
+open Polynomial in
+/-- **`X ^ p - a = (X - b) ^ p` in `k'(X)`** for `b ∈ k'` with `b ^ p = a`, in characteristic `p`,
+for any `k(X)`-algebra structure on `k'(X)` over `k` sending `X` to `X`. -/
+theorem algebraMap_ratFunc_algebraMap_X_pow_sub_C [Algebra k k']
+    [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) {p : ℕ} [Fact p.Prime]
+    [CharP k p] {a : k} {b : k'} (hb : b ^ p = algebraMap k k' a) :
+    algebraMap (RatFunc k) (RatFunc k') (algebraMap k[X] (RatFunc k) (X ^ p - C a)) =
+      algebraMap k'[X] (RatFunc k') (X - C b) ^ p := by
+  have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
+  rw [algebraMap_ratFunc_algebraMap_polynomial hX, Polynomial.map_sub, Polynomial.map_pow, map_X,
+    map_C, ← hb, ← map_pow, sub_pow_char, ← C_pow]
 
 namespace Place
 

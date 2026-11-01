@@ -42,8 +42,6 @@ found with `TauCeti.Place.restrict_eq_adicOfIrreducible_iff`.
 
 ## Main results
 
-* `TauCeti.Place.isSeparable_residueField_iff_of_degree_eq_one`: at a rational place over a
-  rational place, the residue extension is separable exactly when the constant extension is.
 * `TauCeti.Place.restrict_eq_adicOfIrreducible_X_sub_C_iff`,
   `TauCeti.Place.ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap` and
   `TauCeti.Place.relativeDegree_adicOfIrreducible_X_sub_C_algebraMap`: the place `t = c` of
@@ -72,35 +70,6 @@ open Polynomial
 namespace TauCeti
 
 namespace Place
-
-/-! ### Residue extensions at rational places -/
-
-section ResidueField
-
-variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
-
-/-- **At a rational place over a rational place, the residue extension is the constant
-extension**: if `P'` and the place `P` below it have degree one, then `F'_{P'} / F_P` is
-separable exactly when `k' / k` is, since the residue fields are `k'` and `k`. -/
-theorem isSeparable_residueField_iff_of_degree_eq_one (P' : Place k' F') (h' : P'.degree = 1)
-    (h : (P'.restrict k F).degree = 1) :
-    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ↔
-      Algebra.IsSeparable k k' := by
-  refine (Algebra.IsSeparable.iff_of_equiv_equiv
-    ((P'.restrict k F).residueFieldEquivOfDegreeEqOne h).toRingEquiv
-    (P'.residueFieldEquivOfDegreeEqOne h').toRingEquiv (RingHom.ext fun c ↦ ?_)).symm
-  -- Both sides are the residue at `P'` of the constant `c`, viewed in `F'`.
-  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
-    AlgEquiv.coe_toRingEquiv, residueFieldEquivOfDegreeEqOne_apply, algebraMap_residueField]
-  rw [IsLocalRing.ResidueField.algebraMap_residue]
-  congr 1
-  apply Subtype.ext
-  rw [coe_algebraMap_integers, coe_algebraMap_constants, coe_algebraMap_constants,
-    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
-
-end ResidueField
 
 /-! ### The constant field extension `K(t) / k(t)` -/
 
@@ -157,7 +126,7 @@ theorem isUnramified_adicOfIrreducible_X_sub_C_iff
       Algebra.IsSeparable k K := by
   set Q := adicOfIrreducible (irreducible_X_sub_C (algebraMap k K c))
   have hQ := (restrict_eq_adicOfIrreducible_X_sub_C_iff hX c Q).mpr rfl
-  have hsep := isSeparable_residueField_iff_of_degree_eq_one Q
+  have hsep := isSeparable_residueField_iff_of_degree_eq_one k (RatFunc k) Q
     (degree_adicOfIrreducible_X_sub_C _) (hQ ▸ degree_adicOfIrreducible_X_sub_C c)
   refine ⟨fun h ↦ hsep.mp (h.isSeparable hQ), fun h ↦
     (isUnramified_iff _).mpr ⟨⟨Q, hQ⟩, fun Q' hQ' ↦ ?_⟩⟩
@@ -185,17 +154,6 @@ theorem not_isUnramified_adicOfIrreducible_X_sub_C_of_pow_eq
   obtain ⟨c, rfl⟩ := hmem
   exact ha c ((algebraMap k K).injective (by rw [map_pow, hb]))
 
-omit [Algebra.IsIntegral (RatFunc k) (RatFunc K)] in
-/-- `t ^ p - a = (t - b) ^ p` in `K(t)`, for `b ^ p = a`. -/
-private theorem algebraMap_X_pow_sub_C
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
-    (hb : b ^ p = algebraMap k K a) :
-    algebraMap (RatFunc k) (RatFunc K) (algebraMap k[X] (RatFunc k) (X ^ p - C a)) =
-      algebraMap K[X] (RatFunc K) (X - C b) ^ p := by
-  have : CharP K p := charP_of_injective_algebraMap (algebraMap k K).injective p
-  rw [algebraMap_ratFunc_algebraMap_polynomial hX, Polynomial.map_sub, Polynomial.map_pow, map_X,
-    map_C, ← hb, ← map_pow, sub_pow_char, ← C_pow]
-
 /-- **The place `t = b` of `K(t)` is the only place over the place of `t ^ p - a` of `k(t)`**, for
 `a` not a `p`-th power in `k` and `b ^ p = a`. -/
 theorem restrict_eq_adicOfIrreducible_X_pow_sub_C_iff
@@ -203,8 +161,8 @@ theorem restrict_eq_adicOfIrreducible_X_pow_sub_C_iff
     (hb : b ^ p = algebraMap k K a) (Q : Place K (RatFunc K)) :
     Q.restrict k (RatFunc k) = adicOfIrreducible (X_pow_sub_C_irreducible_of_prime hp.out ha) ↔
       Q = adicOfIrreducible (irreducible_X_sub_C b) := by
-  rw [restrict_eq_adicOfIrreducible_iff, algebraMap_X_pow_sub_C hX hb, ord_pow,
-    ← ord_algebraMap_pos_iff (irreducible_X_sub_C b)]
+  rw [restrict_eq_adicOfIrreducible_iff, algebraMap_ratFunc_algebraMap_X_pow_sub_C hX hb,
+    ord_pow, ← ord_algebraMap_pos_iff (irreducible_X_sub_C b)]
   exact ⟨fun h ↦ pos_of_mul_pos_right h (Nat.cast_nonneg p),
     fun h ↦ mul_pos (by exact_mod_cast hp.out.pos) h⟩
 
@@ -218,7 +176,7 @@ theorem ramificationIdx_adicOfIrreducible_X_sub_C_of_pow_eq
   set Q := adicOfIrreducible (irreducible_X_sub_C b)
   have hQ := (restrict_eq_adicOfIrreducible_X_pow_sub_C_iff hX ha hb Q).mpr rfl
   have h := ord_algebraMap_restrict k (RatFunc k) Q (algebraMap k[X] (RatFunc k) (X ^ p - C a))
-  rw [hQ, algebraMap_X_pow_sub_C hX hb, ord_pow,
+  rw [hQ, algebraMap_ratFunc_algebraMap_X_pow_sub_C hX hb, ord_pow,
     ord_adicOfIrreducible_algebraMap_irreducible _ (irreducible_X_sub_C b),
     ord_adicOfIrreducible_algebraMap_irreducible _
       (X_pow_sub_C_irreducible_of_prime hp.out ha)] at h

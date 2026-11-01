@@ -94,6 +94,8 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
   `[k' : k] · deg P' = f(P' ∣ P) · deg P`, the comparison of the degrees of `P'` and of the place
   it lies over.
+* `TauCeti.Place.isSeparable_residueField_iff_of_degree_eq_one`: at a rational place over a
+  rational place, the residue extension is separable exactly when the constant extension is.
 * `TauCeti.Place.isFractionRing_integralClosure`,
   `TauCeti.Place.isLocalization_integralClosure`,
   `TauCeti.Place.isDedekindDomain_integralClosure`,
@@ -584,6 +586,25 @@ theorem finrank_mul_degree_eq_relativeDegree_mul_degree_restrict :
     Module.finrank_mul_finrank k k' P'.ResidueField,
     mul_comm (Module.finrank (P'.restrict k F).ResidueField P'.ResidueField),
     Module.finrank_mul_finrank k (P'.restrict k F).ResidueField P'.ResidueField]
+
+/-- **At a rational place over a rational place, the residue extension is the constant
+extension**: if `P'` and the place `P` below it have degree one, then `F'_{P'} / F_P` is
+separable exactly when `k' / k` is, since the residue fields are `k'` and `k`. -/
+theorem isSeparable_residueField_iff_of_degree_eq_one (h' : P'.degree = 1)
+    (h : (P'.restrict k F).degree = 1) :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ↔
+      Algebra.IsSeparable k k' := by
+  refine (Algebra.IsSeparable.iff_of_equiv_equiv
+    ((P'.restrict k F).residueFieldEquivOfDegreeEqOne h).toRingEquiv
+    (P'.residueFieldEquivOfDegreeEqOne h').toRingEquiv (RingHom.ext fun c ↦ ?_)).symm
+  -- Both sides are the residue at `P'` of the constant `c`, viewed in `F'`.
+  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, residueFieldEquivOfDegreeEqOne_apply, algebraMap_residueField]
+  rw [IsLocalRing.ResidueField.algebraMap_residue]
+  congr 1
+  apply Subtype.ext
+  rw [coe_algebraMap_integers, coe_algebraMap_constants, coe_algebraMap_constants,
+    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
 
 end ResidueField
 
