@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Smooth.Coreflection
 public import TauCeti.Algebra.Lie.Current.Enveloping
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Character
 
@@ -173,33 +173,15 @@ variable (Φ hΦ hΦs a) in
 `I_M b ⊆ I_N`. -/
 theorem exists_forall_mul_mem_orderLeftIdeal (b : UK) (N : ℤ) :
     ∃ M : ℤ, ∀ x ∈ orderLeftIdeal Φ hΦ hΦs a M, x * b ∈ orderLeftIdeal Φ hΦ hΦs a N := by
-  have hb : b ∈ Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) := by
-    rw [adjoin_range_envelopingι]
-    trivial
-  induction hb using Algebra.adjoin_induction generalizing N with
-  | mem b hb =>
-    obtain ⟨u, rfl⟩ := hb
-    obtain ⟨p, hu⟩ := exists_mem_orderSubmodule R L u
-    refine ⟨max N (max (N - p) (1 - p)), fun x hx ↦ ?_⟩
-    -- The elements whose right multiple by `u` lies in `I_N` form a left ideal.
-    refine (orderLeftIdeal_le_iff (I := (orderLeftIdeal Φ hΦ hΦs a N).comap
-      (LinearMap.toSpanSingleton UK UK (envelopingι Φ hΦ hΦs a u)))).2 (fun v hv ↦ ?_) hx
-    exact envelopingι_mul_envelopingι_mem_orderLeftIdeal hv hu (by omega) (by omega) (by omega)
-  | algebraMap r =>
-    refine ⟨N, fun x hx ↦ ?_⟩
-    rw [← Algebra.commutes, ← Algebra.smul_def]
-    exact (orderLeftIdeal Φ hΦ hΦs a N).smul_of_tower_mem r hx
-  | add b c _ _ hb hc =>
-    obtain ⟨M₁, h₁⟩ := hb N
-    obtain ⟨M₂, h₂⟩ := hc N
-    refine ⟨max M₁ M₂, fun x hx ↦ ?_⟩
-    rw [mul_add]
-    exact add_mem (h₁ x (orderLeftIdeal_antitone Φ hΦ hΦs a (le_max_left _ _) hx))
-      (h₂ x (orderLeftIdeal_antitone Φ hΦ hΦs a (le_max_right _ _) hx))
-  | mul b c _ _ hb hc =>
-    obtain ⟨M₁, h₁⟩ := hc N
-    obtain ⟨M, h⟩ := hb M₁
-    exact ⟨M, fun x hx ↦ mul_assoc x b c ▸ h₁ _ (h x hx)⟩
+  refine exists_forall_mul_mem_of_adjoin_eq_top (orderLeftIdeal_antitone Φ hΦ hΦs a).directed_ge
+    (adjoin_range_envelopingι Φ hΦ hΦs a) ?_ b N
+  rintro _ ⟨u, rfl⟩ N
+  obtain ⟨p, hu⟩ := exists_mem_orderSubmodule R L u
+  refine ⟨max N (max (N - p) (1 - p)), fun x hx ↦ ?_⟩
+  -- The elements whose right multiple by `u` lies in `I_N` form a left ideal.
+  refine (orderLeftIdeal_le_iff (I := (orderLeftIdeal Φ hΦ hΦs a N).comap
+    (LinearMap.toSpanSingleton UK UK (envelopingι Φ hΦ hΦs a u)))).2 (fun v hv ↦ ?_) hx
+  exact envelopingι_mul_envelopingι_mem_orderLeftIdeal hv hu (by omega) (by omega) (by omega)
 
 variable (Φ hΦ hΦs a) in
 /-- The right-shift estimate for the left ideals `I_n` of natural orders: for every `b` and `n`

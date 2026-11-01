@@ -29,7 +29,8 @@ maps between such extensions, both instances of the morphisms of central extensi
 * **Polynomial currents.** The extension of the polynomial loop algebra by Mathlib's residue
   cocycle `LieAlgebra.LoopAlgebra.twoCocycleOfBilinear` embeds in the extension of formal currents
   by the inclusion `TauCeti.CurrentAlgebra.ofLoop` on currents and the identity on the centre
-  (`TauCeti.CurrentAlgebra.ofLoopExtension`).
+  (`TauCeti.CurrentAlgebra.ofLoopExtension`), which sends the central element
+  `TauCeti.CurrentAlgebra.loopCentralElement` of the polynomial extension to `K`.
 
 The isomorphism `levelEquiv` for a unit `u` does not identify the representations on which the
 central elements act by `1`: pulling back along it a module on which `K` acts by `1` gives one on
@@ -213,6 +214,34 @@ theorem ofProd_symm_ofLoopExtension (v : ofTwoCocycle cP) :
 theorem proj_ofLoopExtension (v : ofTwoCocycle cP) :
     ofTwoCocycle.proj c (ofLoopExtension Φ hΦ hΦs v) = ofLoop R L (ofTwoCocycle.proj cP v) := by
   simp [ofLoopExtension]
+
+/-- The central element `K = (0, 1)` of the residue central extension of polynomial currents. -/
+def loopCentralElement : ofTwoCocycle cP :=
+  ofProd cP (0, (TrivialLieModule.equiv R P R).symm 1)
+
+/-- The coordinates of the central element of the polynomial extension are `(0, 1)`. -/
+@[simp]
+theorem ofProd_symm_loopCentralElement :
+    (ofProd cP).symm (loopCentralElement Φ hΦ hΦs) =
+      (0, (TrivialLieModule.equiv R P R).symm 1) := by
+  rw [loopCentralElement, Equiv.symm_apply_apply]
+
+/-- The polynomial embedding sends the central element `K` of the polynomial extension to the
+central element `K` of the formal one. -/
+@[simp]
+theorem ofLoopExtension_loopCentralElement :
+    ofLoopExtension Φ hΦ hΦs (loopCentralElement Φ hΦ hΦs) = centralElement Φ hΦ hΦs := by
+  simp [loopCentralElement, centralElement]
+
+/-- Every element of the polynomial extension is a polynomial current plus a multiple of `K`. -/
+theorem ofProd_eq_add_smul_loopCentralElement (u : P) (z : TrivialLieModule R P R) :
+    ofProd cP (u, z) =
+      ofProd cP (u, 0) + TrivialLieModule.equiv R P R z • loopCentralElement Φ hΦ hΦs := by
+  apply (ofProd cP).symm.injective
+  simp only [loopCentralElement, of_symm_add, of_symm_smul, Equiv.symm_apply_apply, Prod.smul_mk,
+    smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
+  apply (TrivialLieModule.equiv R P R).injective
+  simp
 
 /-- The residue central extension of polynomial currents embeds in that of formal currents. -/
 theorem ofLoopExtension_injective : Function.Injective (ofLoopExtension Φ hΦ hΦs) :=
