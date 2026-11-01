@@ -314,6 +314,19 @@ theorem legendreF_zero_modulus (φ : ℝ) : legendreF φ 0 = φ := by
 theorem legendreK_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreK k :=
   legendreF_pos hk (by positivity)
 
+/-- An elementary upper bound for the complete elliptic integral of the first kind,
+valid for either sign of the modulus. -/
+theorem legendreK_le_pi_div_two_mul_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreK k ≤ π / (2 * √(1 - k ^ 2)) := by
+  have h := integral_mono_on (by positivity : (0 : ℝ) ≤ π / 2)
+    (intervalIntegrable_legendreF_integrand hk 0 (π / 2)) intervalIntegrable_const
+    (fun θ _ ↦ legendreF_integrand_le hk θ)
+  have hr : (1 - k ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2))⁻¹ := by
+    simpa using legendreF_integrand_eq_inv_sqrt k (π / 2)
+  rw [hr] at h
+  simpa [legendreK_def, legendreF_def, intervalIntegral.integral_const, div_eq_mul_inv,
+    mul_assoc, mul_comm, mul_left_comm] using h
+
 @[simp]
 theorem legendreK_neg (k : ℝ) : legendreK (-k) = legendreK k := legendreF_neg_modulus _ k
 
