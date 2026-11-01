@@ -61,6 +61,8 @@ choice is confined to one weight space at a time.
   pairwise distinct integral weights are independent.
 * `TauCeti.UniversalEnvelopingAlgebra.isInternal_weightSublattice`: a Kostant-stable subgroup lying
   in the span of the integral joint weight spaces is their internal direct sum.
+* `TauCeti.UniversalEnvelopingAlgebra.mem_range_kostantWeightFin_iff`: the weights recorded by the
+  numbered weight basis are exactly those whose weight sublattice is nonzero.
 
 ## References
 
@@ -294,6 +296,20 @@ theorem isCartanWeightVector_kostantWeightBasisFin
       ((kostantWeightBasisFin e h ρ M hM hV x : M) : V) := by
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
+
+/-- **The weights recorded by the `Fin`-indexed weight basis are exactly the weights of the
+lattice**: an integral weight is carried by some vector of the basis if and only if its weight
+sublattice is nonzero. -/
+theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
+    μ ∈ Set.range (kostantWeightFin e h ρ M hM hV) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
+  refine ⟨?_, fun hμ => ?_⟩
+  · rintro ⟨x, rfl⟩
+    rw [Submodule.ne_bot_iff]
+    exact ⟨_, kostantWeightBasis_mem e h ρ M hM hV _, (kostantWeightBasis e h ρ M hM hV).ne_zero _⟩
+  · have := Submodule.nontrivial_iff_ne_bot.mpr hμ
+    obtain ⟨j⟩ := (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).index_nonempty
+    exact ⟨kostantWeightBasisIndexEquivFin e h ρ M hM hV ⟨μ, j⟩, by
+      simp only [kostantWeightFin, Equiv.symm_apply_apply]⟩
 
 end WeightBasis
 
