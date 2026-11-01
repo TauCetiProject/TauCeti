@@ -273,10 +273,12 @@ particular it does not depend on the isomorphism. -/
 theorem absoluteGaloisGroupEquivZHat_apply
     (e : puiseuxField K ≃ₐ[K⸨X⸩] AlgebraicClosure K⸨X⸩) (σ : Field.absoluteGaloisGroup K⸨X⸩) :
     absoluteGaloisGroupEquivZHat K ζ hζ σ = galEquivZHat K ζ hζ (e.symm.autCongr σ) := by
-  rw [← (galEquivZHat K ζ hζ).symm.injective.eq_iff, ContinuousMulEquiv.symm_apply_apply,
-    galEquivZHat_symm_apply, ← continuousMulEquivZHat_absoluteGaloisGroupEquivTateModule,
-    ← continuousMulEquivZHat_symm_apply hζ, ContinuousMulEquiv.symm_apply_apply,
-    absoluteGaloisGroupEquivTateModule_apply e, kummer_galEquivTateModule]
+  -- Both sides are `continuousMulEquivZHat ζ hζ` applied to the image of `e⁻¹ ∘ σ ∘ e` in the
+  -- Tate module; the body of `galEquivZHat` is not exposed, so compare through its inverse.
+  rw [← continuousMulEquivZHat_absoluteGaloisGroupEquivTateModule,
+    absoluteGaloisGroupEquivTateModule_apply e, ← (galEquivZHat K ζ hζ).symm_apply_eq,
+    galEquivZHat_symm_apply]
+  simp [← continuousMulEquivZHat_symm_apply hζ]
 
 /-- The automorphism with coordinate `a ∈ ℤ̂` is the one whose image in the Tate module is
 `zHat.lift ζ a`. -/
