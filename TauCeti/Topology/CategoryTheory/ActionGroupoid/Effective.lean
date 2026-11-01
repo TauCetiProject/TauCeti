@@ -29,13 +29,14 @@ the projection `TauCeti.ActionGroupoid.toEffective` is faithful exactly when eve
 trivial. Unlike the faithful quotient action of `G ⧸ ker` (`TauCeti.effectiveActionFunctor`),
 the effective quotient discards elements acting trivially near a point even when they act
 nontrivially elsewhere. The two agree when every germ kernel is the kernel of the action, as
-happens for actions by `C¹` maps with torsion stabilizers on a connected manifold
-(`TauCeti.germKernel_eq_ker`).
+happens for actions by `C¹` maps with torsion stabilizers on a preconnected Hausdorff manifold
+without boundary (`TauCeti.germKernel_eq_ker`).
 
 ## Main declarations
 
 * `TauCeti.ActionGroupoid.Effective G X`: the effective quotient of `G ⋉ X`, with its projection
-  `TauCeti.ActionGroupoid.toEffective G X`.
+  `TauCeti.ActionGroupoid.toEffective G X` and its universal property
+  `TauCeti.ActionGroupoid.Effective.lift`.
 * `TauCeti.ActionGroupoid.toEffective_map_eq_iff`: two arrows have the same image exactly when
   their labels agree near the source.
 * `TauCeti.ActionGroupoid.toEffective_map_eq_id_iff`: an automorphism of `x` becomes trivial
@@ -121,6 +122,49 @@ theorem toEffective_obj_objEquiv (x : X) :
     (toEffective G X).obj (ActionCategory.objEquiv G X x) = Effective.objEquiv G X x :=
   (rfl)
 
+@[simp]
+theorem Effective.objEquiv_symm_toEffective_obj (a : ActionCategory G X) :
+    (Effective.objEquiv G X).symm ((toEffective G X).obj a) = a.back :=
+  (rfl)
+
+section Lift
+
+variable {D : Type*} [Category* D] (F : ActionCategory G X ⥤ D)
+  (H : ∀ (a b : ActionCategory G X) (f f' : a ⟶ b), germRel G X f f' → F.map f = F.map f')
+
+/-- The universal property of the effective quotient: a functor out of `G ⋉ X` sending arrows
+with the same germ at their source to the same arrow factors through the effective quotient. -/
+@[expose] def Effective.lift : Effective G X ⥤ D :=
+  CategoryTheory.Quotient.lift (germRel G X) F H
+
+@[simp]
+theorem Effective.toEffective_comp_lift : toEffective G X ⋙ Effective.lift F H = F :=
+  CategoryTheory.Quotient.lift_spec _ _ _
+
+@[simp]
+theorem Effective.lift_obj_toEffective_obj (a : ActionCategory G X) :
+    (Effective.lift F H).obj ((toEffective G X).obj a) = F.obj a :=
+  (rfl)
+
+@[simp]
+theorem Effective.lift_map_toEffective_map {a b : ActionCategory G X} (f : a ⟶ b) :
+    (Effective.lift F H).map ((toEffective G X).map f) = F.map f :=
+  (rfl)
+
+/-- A functor out of the effective quotient that restricts to `F` along the projection is the
+induced functor `TauCeti.ActionGroupoid.Effective.lift F H`. -/
+theorem Effective.lift_unique (Φ : Effective G X ⥤ D) (hΦ : toEffective G X ⋙ Φ = F) :
+    Φ = Effective.lift F H :=
+  CategoryTheory.Quotient.lift_unique _ _ _ Φ hΦ
+
+/-- Two functors out of the effective quotient are equal when they agree after the projection
+from `G ⋉ X`. -/
+theorem Effective.ext_functor {F₁ F₂ : Effective G X ⥤ D}
+    (h : toEffective G X ⋙ F₁ = toEffective G X ⋙ F₂) : F₁ = F₂ :=
+  CategoryTheory.Quotient.lift_unique' _ _ _ h
+
+end Lift
+
 /-- Two objects of the effective quotient are isomorphic exactly when the corresponding points lie
 in the same orbit. -/
 theorem Effective.isIsomorphic_objEquiv_iff {x y : X} :
@@ -177,7 +221,7 @@ identity near some point acts trivially on all of `X`, the projection
 an equivalence. -/
 @[expose] def Effective.toQuotientKer (hker : ∀ x : X, germKernel G x ≤ (toPermHom G X).ker) :
     Effective G X ⥤ ActionCategory (G ⧸ (toPermHom G X).ker) X :=
-  CategoryTheory.Quotient.lift (germRel G X) (effectiveActionFunctor G X) fun _ _ f f' h ↦ by
+  Effective.lift (effectiveActionFunctor G X) fun _ _ f f' h ↦ by
     apply Functor.Elements.hom_ext
     rw [effectiveActionFunctor_map_hom, effectiveActionFunctor_map_hom, QuotientGroup.eq]
     exact hker _ (germRel_iff_mem_germKernel.mp h)
@@ -186,22 +230,25 @@ an equivalence. -/
 theorem Effective.toQuotientKer_map_toEffective_map {a b : ActionCategory G X} (f : a ⟶ b) :
     (Effective.toQuotientKer hker).map ((toEffective G X).map f) =
       (effectiveActionFunctor G X).map f :=
-  CategoryTheory.Quotient.lift_map_functor_map _ _ _ f
+  Effective.lift_map_toEffective_map _ _ f
+
+@[simp]
+theorem Effective.toQuotientKer_obj_objEquiv (x : X) :
+    (Effective.toQuotientKer hker).obj (Effective.objEquiv G X x) =
+      ActionCategory.objEquiv (G ⧸ (toPermHom G X).ker) X x :=
+  effectiveActionFunctor_obj G X x
 
 /-- The effective quotient followed by `TauCeti.ActionGroupoid.Effective.toQuotientKer` is the
 projection to the faithful quotient action groupoid. -/
 @[simp]
 theorem Effective.toEffective_comp_toQuotientKer :
     toEffective G X ⋙ Effective.toQuotientKer hker = effectiveActionFunctor G X :=
-  CategoryTheory.Quotient.lift_spec _ _ _
+  Effective.toEffective_comp_lift _ _
 
-instance : (Effective.toQuotientKer hker).Full where
-  map_surjective {a b} φ := by
-    obtain ⟨x, rfl⟩ := (Effective.objEquiv G X).surjective a
-    obtain ⟨y, rfl⟩ := (Effective.objEquiv G X).surjective b
-    obtain ⟨f, hf⟩ := (effectiveActionFunctor G X).map_surjective
-      (X := ActionCategory.objEquiv G X x) (Y := ActionCategory.objEquiv G X y) φ
-    exact ⟨(toEffective G X).map f, (Effective.toQuotientKer_map_toEffective_map f).trans hf⟩
+instance : (Effective.toQuotientKer hker).Full :=
+  Functor.full_of_comp_essSurj _ (toEffective G X) fun _ _ φ ↦
+    let ⟨f, hf⟩ := (effectiveActionFunctor G X).map_surjective φ
+    ⟨(toEffective G X).map f, (Effective.toQuotientKer_map_toEffective_map f).trans hf⟩
 
 instance : (Effective.toQuotientKer hker).EssSurj where
   mem_essImage y := ⟨Effective.objEquiv G X y.back,
@@ -270,11 +317,13 @@ germ kernel. -/
 theorem Effective.ker_stabilizerToAut (x : X) :
     (Effective.stabilizerToAut G x).ker = (germKernel G x).subgroupOf (stabilizer G x) := by
   ext g
-  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, Aut.ext_iff, Aut.one_asIso, Iso.ext_iff,
-    Iso.refl_hom, stabilizerToAut_apply_asIso_hom]
-  refine (toEffective_map_eq_id_iff (G := G)).trans ?_
-  rw [ActionCategory.stabilizerMulEquivAut_apply_hom_hom]
-  exact Iff.rfl
+  rw [MonoidHom.mem_ker, Aut.ext_iff, Iso.ext_iff, Aut.one_asIso, Iso.refl_hom,
+    stabilizerToAut_apply_asIso_hom]
+  -- The identity of `objEquiv G X x` is the image of the identity of `x` under `toEffective`,
+  -- and the source `(ActionCategory.objEquiv G X x).back` of the arrow is `x` by `coe_back`.
+  exact toEffective_map_eq_id_iff.trans (by
+    rw [ActionCategory.stabilizerMulEquivAut_apply_hom_hom, Subgroup.mem_subgroupOf,
+      ActionCategory.objEquiv, Equiv.coe_fn_mk, ActionCategory.coe_back])
 
 variable (G) in
 /-- The isotropy group of the effective quotient at `x` is the stabilizer of `x` divided by the
@@ -295,19 +344,15 @@ section Faithful
 
 variable {hker : ∀ x : X, germKernel G x ≤ (toPermHom G X).ker}
 
-instance : (Effective.toQuotientKer hker).Faithful where
-  map_injective {a b} φ ψ h := by
-    obtain ⟨x, rfl⟩ := (Effective.objEquiv G X).surjective a
-    obtain ⟨y, rfl⟩ := (Effective.objEquiv G X).surjective b
-    obtain ⟨f, rfl⟩ := (toEffective G X).map_surjective
-      (X := ActionCategory.objEquiv G X x) (Y := ActionCategory.objEquiv G X y) φ
-    obtain ⟨f', rfl⟩ := (toEffective G X).map_surjective
-      (X := ActionCategory.objEquiv G X x) (Y := ActionCategory.objEquiv G X y) ψ
+instance : (Effective.toQuotientKer hker).Faithful :=
+  Functor.faithful_of_comp_essSurj _ (toEffective G X) fun x _ φ ψ h ↦ by
+    obtain ⟨f, rfl⟩ := (toEffective G X).map_surjective φ
+    obtain ⟨f', rfl⟩ := (toEffective G X).map_surjective ψ
     have h' : (effectiveActionFunctor G X).map f = (effectiveActionFunctor G X).map f' :=
       (Effective.toQuotientKer_map_toEffective_map f).symm.trans
         (h.trans (Effective.toQuotientKer_map_toEffective_map f'))
     refine (toEffective_map_eq_iff_mem_germKernel (G := G)).mpr
-      (ker_toPermHom_le_germKernel x (QuotientGroup.eq (s := (toPermHom G X).ker).mp ?_))
+      (ker_toPermHom_le_germKernel x.back (QuotientGroup.eq (s := (toPermHom G X).ker).mp ?_))
     simpa only [effectiveActionFunctor_map_hom] using congrArg (fun f ↦ f.hom) h'
 
 instance : (Effective.toQuotientKer hker).IsEquivalence where
