@@ -129,10 +129,10 @@ lemma expAd_apply_eq_sum {x : L} (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) {k 
 
 /-- For an element with nilpotent adjoint action, `TauCeti.expAd` is the exponential of
 `LieAlgebra.ad x`. -/
-lemma expAd_apply (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) (hn : IsNilpotent (ad K L x))
-    (y : L) : expAd x hx y = IsNilpotent.exp (ad K L x) y := by
+lemma expAd_apply (x : L) (hn : IsNilpotent (ad K L x)) (y : L) :
+    expAd x hn.exists_pow_apply_eq_zero y = IsNilpotent.exp (ad K L x) y := by
   obtain ⟨k, hk⟩ := hn.exists_pow_apply_eq_zero y
-  rw [expAd_apply_eq_sum hx hk]
+  rw [expAd_apply_eq_sum _ hk]
   exact (IsNilpotent.exp_smul_eq_sum (M := L) hk hn).symm
 
 /-- An element centralised by `x` is fixed by `exp (ad x)`. -/
@@ -163,7 +163,7 @@ theorem _root_.LieHom.map_expAd {L' : Type*} [LieRing L'] [LieAlgebra K L'] [Lie
     (f : L →ₗ⁅K⁆ L') {x : L} (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0)
     (hfx : ∀ y, ∃ k, ((ad K L' (f x)) ^ k) y = 0) (y : L) :
     f (expAd x hx y) = expAd (f x) hfx (f y) := by
-  simp only [expAd, ← LieEquiv.coe_toLinearEquiv, LieDerivation.toLinearEquiv_locallyNilpotentExp]
+  simp only [expAd, LieDerivation.locallyNilpotentExp_apply]
   exact Module.End.map_locallyNilpotentExp _ _ _ f (fun z ↦ by
     simp only [LieDerivation.coe_ad_apply_eq_ad_apply, LieAlgebra.ad_apply, LieHom.map_lie]) y
 
@@ -201,7 +201,7 @@ Lie-algebra automorphisms above and root subgroup elements in a Chevalley group.
 theorem expAd_apply_eq_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x) :
     expAd (K := K) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx).exists_pow_apply_eq_zero y =
       IsNilpotent.exp x * y * IsNilpotent.exp (-x) := by
-  rw [expAd_apply _ _ (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx),
+  rw [expAd_apply _ (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx),
     LieAlgebra.ad_eq_lmul_left_sub_lmul_right (R := K)]
   have hleft : IsNilpotent (LinearMap.mulLeft K x) := by
     rwa [LinearMap.isNilpotent_mulLeft_iff]

@@ -202,11 +202,11 @@ theorem map_locallyNilpotentExp {S N F : Type*} [Semiring S] [AddCommGroup N] [M
 
 /-- For a nilpotent endomorphism, the exponential is Mathlib's `IsNilpotent.exp`. -/
 theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :
-    (locallyNilpotentExp f hf : Module.End R M) = IsNilpotent.exp f := by
+    (locallyNilpotentExp f hnil.exists_pow_apply_eq_zero : Module.End R M) = IsNilpotent.exp f := by
   obtain ⟨k, hk⟩ := hnil
   ext x
   rw [LinearEquiv.coe_coe,
-    locallyNilpotentExp_apply_eq_sum f hf (by rw [hk, LinearMap.zero_apply]),
+    locallyNilpotentExp_apply_eq_sum f _ (by rw [hk, LinearMap.zero_apply]),
     IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
   simp only [LinearMap.smul_apply]
 

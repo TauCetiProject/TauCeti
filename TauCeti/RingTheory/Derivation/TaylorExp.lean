@@ -230,12 +230,8 @@ theorem map_taylorExp {R' B : Type*} [CommSemiring R'] [CommRing B] [Algebra R' 
     (D' : Derivation R' B B) (hD' : ∀ b, ∃ n, D'^[n] b = 0) {F : Type*} [FunLike F A B]
     [AddMonoidHomClass F A B] (f : F) (hf : ∀ a, f (D a) = D' (f a)) (a : A) :
     f (taylorExp D hD a) = taylorExp D' hD' (f a) := by
-  have hiter : ∀ i, f (D^[i] a) = D'^[i] (f a) := fun i =>
-    Function.Semiconj.iterate_right hf i a
-  obtain ⟨n, hn⟩ := hD a
-  have hn' : D'^[n] (f a) = 0 := by rw [← hiter, hn, map_zero]
-  rw [taylorExp_apply_eq_sum D hD hn, taylorExp_apply_eq_sum D' hD' hn', map_sum]
-  exact sum_congr rfl fun i _ => by rw [map_rat_smul, hiter]
+  rw [taylorExp_apply_eq_locallyNilpotentExp, taylorExp_apply_eq_locallyNilpotentExp]
+  exact Module.End.map_locallyNilpotentExp _ _ _ f hf a
 
 end TaylorExp
 

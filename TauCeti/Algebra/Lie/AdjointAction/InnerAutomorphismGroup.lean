@@ -82,7 +82,7 @@ theorem coe_ofLinearEquiv_expAd (x : L) (hx : IsNilpotent (ad K L x)) :
     ((ofLinearEquiv (expAd x hx.exists_pow_apply_eq_zero).toLinearEquiv :
       LinearMap.GeneralLinearGroup K L) :
       Module.End K L) = IsNilpotent.exp (ad K L x) :=
-  LinearMap.ext (expAd_apply x hx.exists_pow_apply_eq_zero hx)
+  LinearMap.ext (expAd_apply x hx)
 
 /-- `Int L` lies in a subgroup `G` if and only if every generator `exp (ad x)` does. -/
 theorem intLieAlgebra_le_iff {G : Subgroup (LinearMap.GeneralLinearGroup K L)} :
