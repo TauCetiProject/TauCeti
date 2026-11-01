@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.Topology.Algebra.LinearMapCompletion
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Completion
 public import TauCeti.Topology.Algebra.Nonarchimedean.Lattice
 public import TauCeti.Topology.Algebra.UniformMulAction
@@ -43,8 +44,8 @@ From the universal property, continuous linear maps `f : V → V'`, `g : W → W
 * `TauCeti.Huber.banachTensorTopology A V W`: the tensor topology on `V ⊗[A] W`.
 * `TauCeti.Huber.banachTensorUniformSpace A V W`: its additive uniformity.
 * `TauCeti.Huber.BanachModule.CompletedTensor A V W`: the completed tensor product `V ⊗̂_A W`.
-* `TauCeti.Huber.BanachModule.CompletedTensor.equivCompletion`: the identification of `V ⊗̂_A W`
-  with Mathlib's `UniformSpace.Completion (V ⊗[A] W)`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.equivCompletion`: the continuous `A`-linear
+  identification of `V ⊗̂_A W` with Mathlib's `UniformSpace.Completion (V ⊗[A] W)`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.toCompletion`: the map `V ⊗[A] W → V ⊗̂_A W`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.tmul`: the bilinear map `(v, w) ↦ v ⊗ w`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lift`: the continuous linear map `V ⊗̂_A W → M`
@@ -219,10 +220,10 @@ noncomputable def toCompletion : V ⊗[A] W →ₗ[A] CompletedTensor A V W :=
   (Completion.toComplL : V ⊗[A] W →L[A] Completion (V ⊗[A] W)).toLinearMap
 
 /-- The identification of `V ⊗̂_A W` with Mathlib's `UniformSpace.Completion (V ⊗[A] W)` for the
-uniformity `banachTensorUniformSpace A V W`. -/
-def equivCompletion :
-    CompletedTensor A V W ≃ @Completion (V ⊗[A] W) (banachTensorUniformSpace A V W) :=
-  Equiv.refl _
+uniformity `banachTensorUniformSpace A V W`, as a continuous `A`-linear equivalence. -/
+noncomputable def equivCompletion :
+    CompletedTensor A V W ≃L[A] @Completion (V ⊗[A] W) (banachTensorUniformSpace A V W) :=
+  ContinuousLinearEquiv.refl A _
 
 /-- Under `equivCompletion`, `toCompletion` is Mathlib's canonical map `Completion.coe'`. -/
 @[simp]
