@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import TauCeti.MeasureTheory.VectorMeasure.ScalarIntegral
 public import TauCeti.MeasureTheory.VectorMeasure.Variation.Regular
