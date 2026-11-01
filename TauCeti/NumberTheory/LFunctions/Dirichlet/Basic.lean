@@ -167,7 +167,7 @@ theorem dirichletData_hasMeromorphicContinuation :
     intro s
     have hL := (DirichletCharacter.differentiable_completedLFunction hc).analyticAt s
     have hbase : (N : ℂ) ∈ slitPlane := natCast_mem_slitPlane.mpr (NeZero.ne N)
-    dsimp only [dirichletData]
+    rw [funext (dirichletData_completed χ hχ)]
     fun_prop (disch := assumption)
   exact ⟨fun s ↦ (ha s).meromorphicAt, by simp [hN], fun s _ ↦ ha s⟩
 

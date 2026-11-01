@@ -55,7 +55,7 @@ theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
   have h₀ := (ZMod.differentiable_completedLFunction₀ (χ ·)).analyticAt z
   have hpow := (differentiable_id.neg.const_cpow
     (Or.inl (Nat.cast_ne_zero.mpr (NeZero.ne N)))).analyticAt z
-  change MeromorphicAt (ZMod.completedLFunction (χ ·)) z
+  unfold completedLFunction
   rw [funext (ZMod.completedLFunction_eq (χ ·))]
   fun_prop
 
@@ -117,8 +117,10 @@ theorem rootNumber_inv : χ⁻¹.rootNumber = conj χ.rootNumber := by
       (TauCeti.ofReal_cpow_conj (Nat.cast_nonneg N) (1 / 2 : ℂ)).symm
   rw [rootNumber, rootNumber, map_div₀, map_div₀, hg, hp, map_pow, conj_I]
   rcases χ.even_or_odd with he | ho
-  · simp [even_inv_iff, he, show χ (-1) = 1 from he]
-  · simp [even_inv_iff, ho.not_even, show χ (-1) = -1 from ho]
+  · have hneg : χ (-1) = 1 := by simpa only [map_one] using Even.eval_neg χ 1 he
+    simp [even_inv_iff, he, hneg]
+  · have hneg : χ (-1) = -1 := by simpa only [map_one] using Odd.eval_neg χ 1 ho
+    simp [even_inv_iff, ho.not_even, hneg]
 
 /-- The root number of a primitive Dirichlet character has absolute value one. -/
 theorem IsPrimitive.norm_rootNumber {χ : DirichletCharacter ℂ N}
