@@ -145,14 +145,6 @@ private theorem exists_specialUnitaryToMatrix_eq_iff (A : Matrix n n ℂ) :
   · intro hA
     exact ⟨⟨_, hA⟩, by simp⟩
 
-/-- The matrix coordinates of an element of the Lie algebra of `SU(n)` are trace-free. -/
-theorem unitsLieAlgebraLieEquiv_coe_mem_sl
-    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
-      (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ)) :
-    unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) (X : LeftInvariantDerivation _ _) ∈
-      LieAlgebra.SpecialLinear.sl n ℂ :=
-  LieAlgebra.SpecialLinear.mem_sl_iff.2 ((exists_specialUnitaryToMatrix_eq_iff n _).1 ⟨X, rfl⟩).2
-
 /-- **`𝔰𝔩(n, ℂ)` is the complexification of the Lie algebra of `SU(n)`.**  The matrix coordinates
 of the Lie algebra of the special unitary group, with values in the trace-free matrices, exhibit
 `𝔰𝔩(n, ℂ)` as its base change from `ℝ` to `ℂ`: the trace-free matrices are closed under the
@@ -168,7 +160,7 @@ theorem isBaseChange_complex_GLSpecialUnitary :
             (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ) →ₗ⁅ℝ⁆ Matrix n n ℂ) :
         lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
           (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ) →ₗ[ℝ] Matrix n n ℂ)
-      (unitsLieAlgebraLieEquiv_coe_mem_sl n)) := by
+      (unitsLieAlgebraLieEquiv_coe_mem_sl (n := n))) := by
   refine LinearMap.isBaseChange_complex_codRestrict_of_star_eq_neg _ (fun A hA ↦ ?_) _
     (fun X Y h ↦ Subtype.ext ((unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).injective h))
     (fun X ↦ ((exists_specialUnitaryToMatrix_eq_iff n _).1 ⟨X, rfl⟩).1) fun A hA hskew ↦ ?_
@@ -184,7 +176,7 @@ private theorem coe_liftBaseChange_specialUnitary
       (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ)) :
     (((specialUnitaryToMatrix n : _ →ₗ[ℝ] Matrix n n ℂ).codRestrict
         ((LieAlgebra.SpecialLinear.sl n ℂ).toSubmodule.restrictScalars ℝ)
-        (unitsLieAlgebraLieEquiv_coe_mem_sl n)).liftBaseChange ℂ u : Matrix n n ℂ) =
+        (unitsLieAlgebraLieEquiv_coe_mem_sl (n := n))).liftBaseChange ℂ u : Matrix n n ℂ) =
       (specialUnitaryToMatrix n).liftBaseChange ℂ u := by
   induction u with
   | tmul c X =>
@@ -238,7 +230,7 @@ theorem specialUnitaryComplexificationLieEquiv_symm_apply
       (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ)) :
     (specialUnitaryComplexificationLieEquiv n).symm
         ⟨unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) (X : LeftInvariantDerivation _ _),
-          unitsLieAlgebraLieEquiv_coe_mem_sl n X⟩ =
+          unitsLieAlgebraLieEquiv_coe_mem_sl X⟩ =
       1 ⊗ₜ[ℝ] X := by
   rw [LieEquiv.symm_apply_eq]
   exact Subtype.ext (by rw [coe_specialUnitaryComplexificationLieEquiv_tmul, one_smul])
