@@ -41,7 +41,7 @@ critical points add up to that of `f`
 (`TauCeti.totalCriticalCount_eq_finsum_connectedComponents`), so summing these bounds over the
 components recovers the bound for `M`. In dimension zero the bound is an equality, both sides
 being the number of points of `M`
-(`TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_finrank_eq_zero`).
+(`TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`).
 
 ## Main declarations
 
@@ -55,7 +55,7 @@ being the number of points of `M`
   compact manifold.
 * `TauCeti.lsCategoryCount_univ_le_encard_criticalPoints_inter`: the same bound for a compact open
   part of `M`, such as a connected component of a compact manifold.
-* `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_finrank_eq_zero`: equality in dimension
+* `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`: equality in dimension
   zero.
 
 ## References
@@ -97,12 +97,11 @@ private theorem exists_pos_criticalPoints_inter_band_subset {b c : ℝ} (hcb : c
   constructor <;> linarith
 
 /-- **The Lusternik–Schnirelmann count in dimension zero.** On a manifold modelled on a
-zero-dimensional space every point is critical and every subset is open, so the
+zero-dimensional space `E` every point is critical and every subset is open, so the
 Lusternik–Schnirelmann count of `M` equals the number of critical points of any function `f`: both
 are the number of points of `M`, possibly `⊤`. -/
-theorem lsCategoryCount_univ_eq_totalCriticalCount_of_finrank_eq_zero [FiniteDimensional ℝ E]
-    (hE : Module.finrank ℝ E = 0) : lsCategoryCount M univ = totalCriticalCount I f := by
-  have : Subsingleton E := Module.finrank_zero_iff.mp hE
+theorem lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton [Subsingleton E] :
+    lsCategoryCount M univ = totalCriticalCount I f := by
   have : Subsingleton H := I.injective.subsingleton
   have : DiscreteTopology M := ChartedSpace.discreteTopology H M
   -- Each tangent space is the zero space `E`, on which the derivative of `f` vanishes.
