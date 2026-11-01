@@ -12,9 +12,9 @@ public import TauCeti.KnotTheory.Grid.TorusLink.Basic
 # The diagonal reflection of torus link grid links
 
 The standard grid of the `(p + 1, q + 1)` torus link reflects to the standard grid of the
-`(q + 1, p + 1)` torus link (`GridDiagram.transpose_torusLink`), so the two present grid links
-exchanged by the diagonal reflection of grid links (`GridLink.transpose`). In particular every
-standard `(1, q + 1)` torus link grid presents the unknot.
+`(q + 1, p + 1)` torus link (`GridDiagram.transpose_torusLink`), so the diagonal reflection of
+grid links (`GridLink.transpose`) exchanges the grid links the two grids present. In particular
+every standard `(1, q + 1)` torus link grid presents the unknot.
 
 ## Main results
 
