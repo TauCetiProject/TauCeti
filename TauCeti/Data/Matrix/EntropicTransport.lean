@@ -183,8 +183,8 @@ theorem entropicTransportValue_eq_of_isMinOn
 theorem entropicTransportObjective_add (C H : Matrix ι κ ℝ) (ε : ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (P : Matrix ι κ ℝ) :
     (C + H).entropicTransportObjective ε a b P = C.entropicTransportObjective ε a b P + ⟪H, P⟫ := by
-  simp only [entropicTransportObjective_def, frobenius_inner_def, add_apply, add_mul,
-    Finset.sum_add_distrib]
+  simp only [entropicTransportObjective_def, frobenius_inner_def, RCLike.inner_apply',
+    conj_trivial, add_apply, add_mul, Finset.sum_add_distrib]
   ring
 
 /-- **The Gibbs reformulation.** For nonzero marginals and a nonzero temperature, the regularised
@@ -299,7 +299,7 @@ private theorem mul_sum_sum_sub_mul_log_sub_log_eq (hε : 0 < ε) (ha : ∀ i, 0
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [sub_apply]
     ring
-  rw [frobenius_inner_def]
+  simp only [frobenius_inner_def, RCLike.inner_apply', conj_trivial]
   linarith
 
 /-- **The optimal plan is a Lipschitz function of the cost.** For a positive temperature and
