@@ -13,7 +13,8 @@ public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 A bounded operator `q` between seminormed spaces is a metric quotient map when `‖q‖ ≤ 1` and
 every vector of norm less than `r` is the image of a vector of norm less than `r`; equivalently,
 `q` maps each open ball about `0` onto the open ball of the same radius. The quotient projection
-`E → E ⧸ S` by a subspace is the basic example (`QuotientAddGroup.norm_lt_iff`).
+`E → E ⧸ S` by a subspace is the basic example (`Submodule.norm_mkQL_le` and
+`Submodule.ball_subset_image_mkQL_ball`).
 
 This file proves that the projective tensor product preserves metric quotient maps, for the
 algebraic and for the completed projective tensor products: if `f : E →L[𝕜] E'` and
@@ -66,14 +67,8 @@ theorem exists_map_eq_of_projectiveSeminorm_lt {f : E →ₗ[𝕜] E'} {g : F �
   set η := min 1 ((c - S) / (T + 1))
   have hη : 0 < η := lt_min one_pos (div_pos (sub_pos.2 hc) (by linarith))
   have hη₁ : η ≤ 1 := min_le_left _ _
-  have hx (i : Fin n) : ∃ a, f a = x i ∧ ‖a‖ < ‖x i‖ + η := by
-    obtain ⟨a, ha, hfa⟩ := hf _ (mem_ball_zero_iff.2 (lt_add_of_pos_right ‖x i‖ hη))
-    exact ⟨a, hfa, mem_ball_zero_iff.1 ha⟩
-  have hy (i : Fin n) : ∃ b, g b = y i ∧ ‖b‖ < ‖y i‖ + η := by
-    obtain ⟨b, hb, hgb⟩ := hg _ (mem_ball_zero_iff.2 (lt_add_of_pos_right ‖y i‖ hη))
-    exact ⟨b, hgb, mem_ball_zero_iff.1 hb⟩
-  choose a hfa ha using hx
-  choose b hgb hb using hy
+  choose a hfa ha using fun i ↦ TauCeti.exists_apply_eq_norm_lt_add hf (x i) hη
+  choose b hgb hb using fun i ↦ TauCeti.exists_apply_eq_norm_lt_add hg (y i) hη
   refine ⟨∑ i, a i ⊗ₜ b i, by simp [hfa, hgb], ?_⟩
   calc projectiveSeminorm 𝕜 E F (∑ i, a i ⊗ₜ b i) ≤ ∑ i, ‖a i‖ * ‖b i‖ :=
         projectiveSeminorm_sum_tmul_le _ _ _
@@ -99,6 +94,10 @@ variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
 
 namespace ProjectiveTensor
 
+/-- `mapL f g` has norm at most one when `f` and `g` do. -/
+private theorem norm_mapL_le_one (hf₁ : ‖f‖ ≤ 1) (hg₁ : ‖g‖ ≤ 1) : ‖mapL f g‖ ≤ 1 :=
+  (norm_mapL_le f g).trans ((mul_le_of_le_one_left (norm_nonneg g) hf₁).trans hg₁)
+
 /-- If `f` and `g` lift every vector of norm less than `r` to a vector of norm less than `r`,
 then so does `mapL f g` on projective tensor products. -/
 theorem ball_subset_image_mapL_ball (hf : ∀ r, ball (0 : E') r ⊆ f '' ball 0 r)
@@ -114,12 +113,8 @@ and both lift every vector of norm less than `r` to a vector of norm less than `
 `mapL f g` maps each open ball about `0` onto the open ball of the same radius. -/
 theorem image_mapL_ball (hf₁ : ‖f‖ ≤ 1) (hg₁ : ‖g‖ ≤ 1)
     (hf : ∀ r, ball (0 : E') r ⊆ f '' ball 0 r) (hg : ∀ r, ball (0 : F') r ⊆ g '' ball 0 r)
-    (r : ℝ) : mapL f g '' ball 0 r = ball 0 r := by
-  refine subset_antisymm ?_ (ball_subset_image_mapL_ball hf hg r)
-  have h : ‖mapL f g‖₊ ≤ 1 := by
-    rw [← NNReal.coe_le_one, coe_nnnorm]
-    exact (norm_mapL_le f g).trans ((mul_le_of_le_one_left (norm_nonneg g) hf₁).trans hg₁)
-  simpa using (((mapL f g).lipschitzWith.weaken h).mapsTo_ball one_ne_zero 0 r).image_subset
+    (r : ℝ) : mapL f g '' ball 0 r = ball 0 r :=
+  (mapL f g).image_ball_eq_ball (norm_mapL_le_one hf₁ hg₁) (ball_subset_image_mapL_ball hf hg) r
 
 end ProjectiveTensor
 
@@ -140,8 +135,7 @@ theorem image_mapL_ball (hf₁ : ‖f‖ ≤ 1) (hg₁ : ‖g‖ ≤ 1)
     (hf : ∀ r, ball (0 : E') r ⊆ f '' ball 0 r) (hg : ∀ r, ball (0 : F') r ⊆ g '' ball 0 r)
     (r : ℝ) : mapL f g '' ball 0 r = ball 0 r :=
   mapL_eq_completion f g ▸ (ProjectiveTensor.mapL f g).image_completion_ball
-    ((ProjectiveTensor.norm_mapL_le f g).trans
-      ((mul_le_of_le_one_left (norm_nonneg g) hf₁).trans hg₁))
+    (ProjectiveTensor.norm_mapL_le_one hf₁ hg₁)
     (ProjectiveTensor.ball_subset_image_mapL_ball hf hg) r
 
 end CompletedProjectiveTensor
