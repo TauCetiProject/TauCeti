@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Basic
 public import TauCeti.Algebra.BigOperators.Ring.SquareZero
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 
 /-!
 # Divided powers of quadratic elements in anticommuting generators
@@ -40,7 +41,12 @@ the wall-crossing formula for Seiberg–Witten invariants of four-manifolds with
 ## Main results
 
 * `TauCeti.commute_mul_of_anticommute`: `ν i * ν j` commutes with `ν k`.
+* `TauCeti.pairDividedPower_insert_succ`: the recursion for `u^[k + 1]` when a pair is added to
+  `P`.
+* `TauCeti.pairDividedPower_smul`, `TauCeti.pairDividedPower_neg`: `(c • u)^[k] = c ^ k • u^[k]`,
+  in particular `(-u)^[k] = (-1) ^ k • u^[k]`.
 * `TauCeti.factorial_smul_pairDividedPower`: `k ! • u^[k] = u ^ k`.
+* `TauCeti.pairDividedPower_mul`: `u^[m] * u^[n] = (m + n).choose m • u^[m + n]`.
 * `TauCeti.noncommProd_smul_mul_eq_zero_of_not_nodup`: the product over `t` vanishes when the
   endpoints of the pairs in `t` are not distinct.
 * `TauCeti.pairDividedPower_eq_sum_filter_nodup`: `u^[k]` is the sum over the `k`-element sets of
@@ -107,6 +113,42 @@ theorem pairDividedPower_eq_zero_of_card_lt (a : ι × ι → R) {P : Finset (ι
     (hk : P.card < k) : pairDividedPower hν a P k = 0 := by
   rw [pairDividedPower_def, Finset.powersetCard_eq_empty.2 hk, Finset.sum_empty]
 
+/-- Adding a pair `p ∉ P` to `P` adds `a p • (ν p.1 * ν p.2) * u^[k]` to the divided power
+`u^[k + 1]`. -/
+theorem pairDividedPower_insert_succ [DecidableEq ι] (a : ι × ι → R) {P : Finset (ι × ι)}
+    {p : ι × ι} (hp : p ∉ P) (k : ℕ) :
+    pairDividedPower hν a (insert p P) (k + 1) =
+      pairDividedPower hν a P (k + 1) + a p • (ν p.1 * ν p.2) * pairDividedPower hν a P k := by
+  rw [pairDividedPower_def, pairDividedPower_def, pairDividedPower_def,
+    Finset.sum_powersetCard_succ_insert hp, Finset.mul_sum]
+  exact congrArg _ (Finset.sum_congr rfl fun t ht ↦
+    Finset.noncommProd_insert_of_notMem _ _ _ _ fun h ↦ hp ((Finset.mem_powersetCard.1 ht).1 h))
+
+/-- Scaling the coefficients by `c` scales the `k`-th divided power by `c ^ k`. -/
+theorem pairDividedPower_smul (c : R) (a : ι × ι → R) (P : Finset (ι × ι)) (k : ℕ) :
+    pairDividedPower hν (c • a) P k = c ^ k • pairDividedPower hν a P k := by
+  classical
+  have key (t : Finset (ι × ι)) :
+      t.noncommProd (fun p ↦ (c • a) p • (ν p.1 * ν p.2))
+          ((pairwise_commute_smul_mul hν (c • a)).set_pairwise _) =
+        c ^ t.card • t.noncommProd (fun p ↦ a p • (ν p.1 * ν p.2))
+          ((pairwise_commute_smul_mul hν a).set_pairwise _) := by
+    induction t using Finset.induction_on with
+    | empty => rw [Finset.noncommProd_empty, Finset.noncommProd_empty, Finset.card_empty, pow_zero,
+        one_smul]
+    | insert p t hp ih =>
+      rw [Finset.noncommProd_insert_of_notMem _ _ _ _ hp,
+        Finset.noncommProd_insert_of_notMem _ _ _ _ hp, ih, Finset.card_insert_of_notMem hp,
+        pow_succ', Pi.smul_apply, smul_eq_mul, mul_smul, smul_mul_smul_comm]
+  rw [pairDividedPower_def, pairDividedPower_def, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun t ht ↦ by rw [key, (Finset.mem_powersetCard.1 ht).2]
+
+/-- Negating the coefficients multiplies the `k`-th divided power by `(-1) ^ k`. -/
+theorem pairDividedPower_neg {S : Type*} [CommRing S] [Algebra S A] (a : ι × ι → S)
+    (P : Finset (ι × ι)) (k : ℕ) :
+    pairDividedPower hν (-a) P k = (-1 : S) ^ k • pairDividedPower hν a P k := by
+  rw [← pairDividedPower_smul, neg_one_smul]
+
 variable (hν₀ : ∀ i, ν i * ν i = 0)
 include hν₀
 
@@ -124,8 +166,51 @@ theorem factorial_smul_pairDividedPower (a : ι × ι → R) (P : Finset (ι × 
   have hsq : ∀ p ∈ P, a p • (ν p.1 * ν p.2) * (a p • (ν p.1 * ν p.2)) = 0 := fun p _ ↦ by
     rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν p.1 p.2 p.1).eq,
       ← mul_assoc, hν₀, zero_mul, zero_mul, smul_zero]
-  rw [Finset.sum_pow_of_commute_of_mul_self_eq_zero _ _ (pairwise_commute_smul_mul hν a) hsq,
-    pairDividedPower_def]
+  rw [Finset.sum_pow_of_commute_of_mul_self_eq_zero _ _
+    ((pairwise_commute_smul_mul hν a).set_pairwise _) hsq, pairDividedPower_def]
+  exact congrArg _ (Finset.sum_coe_sort _ _).symm
+
+/-- **Multiplication of divided powers.** `u^[m] * u^[n] = (m + n).choose m • u^[m + n]`, with no
+division by factorials. -/
+theorem pairDividedPower_mul (a : ι × ι → R) (P : Finset (ι × ι)) (m n : ℕ) :
+    pairDividedPower hν a P m * pairDividedPower hν a P n =
+      (m + n).choose m • pairDividedPower hν a P (m + n) := by
+  classical
+  have hcomm (p : ι × ι) (Q : Finset (ι × ι)) (k : ℕ) :
+      Commute (a p • (ν p.1 * ν p.2)) (pairDividedPower hν a Q k) := by
+    rw [pairDividedPower_def]
+    exact Commute.sum_right _ _ _ fun t _ ↦ Finset.noncommProd_commute _ _ _ _ fun q _ ↦
+      (((commute_mul_of_anticommute hν p.1 p.2 q.1).mul_right
+        (commute_mul_of_anticommute hν p.1 p.2 q.2)).smul_left (a p)).smul_right (a q)
+  induction P using Finset.induction_on generalizing m n with
+  | empty =>
+    cases m with
+    | zero => simp
+    | succ m =>
+      rw [pairDividedPower_eq_zero_of_card_lt hν a (by simp), zero_mul,
+        pairDividedPower_eq_zero_of_card_lt hν a (by simp; omega), smul_zero]
+  | insert p P hp ih =>
+    cases m with
+    | zero => simp
+    | succ m =>
+      cases n with
+      | zero => simp
+      | succ n =>
+        have hpP := hcomm p P
+        have hww : a p • (ν p.1 * ν p.2) * (a p • (ν p.1 * ν p.2)) = 0 := by
+          rw [smul_mul_smul_comm, ← mul_assoc, (commute_mul_of_anticommute hν p.1 p.2 p.1).eq,
+            ← mul_assoc, hν₀, zero_mul, zero_mul, smul_zero]
+        have h1 := ih (m + 1) (n + 1)
+        have h2 := ih (m + 1) n
+        have h3 := ih m (n + 1)
+        rw [show m + 1 + (n + 1) = m + n + 1 + 1 by omega] at h1 ⊢
+        rw [show m + 1 + n = m + n + 1 by omega] at h2
+        rw [show m + (n + 1) = m + n + 1 by omega] at h3
+        simp only [pairDividedPower_insert_succ hν a hp]
+        rw [add_mul, mul_add, mul_add, h1, (hpP (m + 1)).symm.left_comm, h2, mul_assoc, h3,
+          mul_assoc, (hpP m).symm.left_comm, ← mul_assoc, hww, zero_mul, add_zero, add_assoc,
+          ← mul_add, ← add_smul, add_comm ((m + n + 1).choose (m + 1)), ← Nat.choose_succ_succ,
+          mul_smul_comm, ← smul_add]
 
 /-- Left multiplication by `ν i` kills the product over a set `t` of pairs as soon as `i` is an
 endpoint of a pair in `t`. -/

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Powerset
 
 /-!
-# Splitting a sum over the subsets of a finite set
+# Splitting sums over the subsets of a finite set
 
 A sum over all subsets of a finite set `s` with at least two elements splits into four parts:
 the empty set, the singletons, the subsets with at least two elements other than `s`, and `s`
@@ -17,12 +17,39 @@ itself. This is the bookkeeping behind expansions of the form
 `∏_{i ∈ s} (1 + x_i) = ∑_{S ⊆ s} ∏_{i ∈ S} x_i`, where the four parts are the constant term, the
 linear terms, the mixed terms, and the top-degree term.
 
+A product over the `n + 1`-element subsets of `insert a s`, with `a ∉ s`, splits into the
+product over the `n + 1`-element subsets of `s` and the product over the sets `insert a t` with `t`
+an `n`-element subset of `s`. This is the inductive step for elementary symmetric sums.
+
 ## Main results
 
 * `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
+* `Finset.prod_powersetCard_succ_insert`, `Finset.sum_powersetCard_succ_insert`: splitting over
+  the `n + 1`-element subsets of `insert a s`.
 -/
 
 public section
+
+namespace Finset
+
+variable {α β : Type*} [CommMonoid β]
+
+/-- A product over the `n + 1`-element subsets of `insert a s`, with `a ∉ s`, is the product over
+the `n + 1`-element subsets of `s` times the product over the sets `insert a t` with `t` an
+`n`-element subset of `s`. -/
+@[to_additive /-- A sum over the `n + 1`-element subsets of `insert a s`, with `a ∉ s`, is the sum
+over the `n + 1`-element subsets of `s` plus the sum over the sets `insert a t` with `t` an
+`n`-element subset of `s`. -/]
+theorem prod_powersetCard_succ_insert [DecidableEq α] {s : Finset α} {a : α} (ha : a ∉ s)
+    (n : ℕ) (f : Finset α → β) :
+    ∏ t ∈ (insert a s).powersetCard (n + 1), f t =
+      (∏ t ∈ s.powersetCard (n + 1), f t) * ∏ t ∈ s.powersetCard n, f (insert a t) := by
+  rw [powersetCard_succ_insert ha, prod_union, prod_image]
+  · exact insert_erase_invOn.2.injOn.mono fun t ht ↦
+      notMem_mono (mem_powersetCard.1 ht).1 ha
+  · aesop (add simp [disjoint_left, insert_subset_iff, mem_powersetCard])
+
+end Finset
 
 namespace TauCeti
 
