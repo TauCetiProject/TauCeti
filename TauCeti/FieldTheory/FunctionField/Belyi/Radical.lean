@@ -78,11 +78,8 @@ variable {k : Type*} [Field k]
 theorem ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty
     {P : Place k (RatFunc k)} (hP : P ∉ zeroOneInfty k) {c : k} (hc : c ≠ 0) (a b : ℤ) :
     P.ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) = 0 := by
-  simp only [mem_zeroOneInfty_iff, not_or] at hP
-  have h1 := ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
-  rw [map_one RatFunc.C] at h1
-  rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc, ord_X_eq_zero_of_ne hP.1 hP.2.2, h1,
-    mul_zero, mul_zero, add_zero]
+  obtain ⟨h0, h1⟩ := notMem_zeroOneInfty_iff.mp hP
+  rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc, h0, h1, mul_zero, mul_zero, add_zero]
 
 end Place
 
