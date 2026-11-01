@@ -34,6 +34,8 @@ supported. Surjectivity comes from a normalized bump function times `dx`.
 ## Main declarations
 
 * `TauCeti.Manifold.Orientation.real`: the standard orientation of `ℝ`.
+* `TauCeti.integralTopForm_real_eq_integral`: against `Manifold.Orientation.real`, the oriented
+  integral of a compactly supported `1`-form is the Lebesgue integral of its value on `1`.
 * `TauCeti.mem_exactCompactlySupportedForms_one_real`: a compactly supported `1`-form on `ℝ`
   with integral zero is compactly supported exact.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`: integration
@@ -108,7 +110,7 @@ def Manifold.Orientation.real : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) 
 
 /-- Against the standard orientation of `ℝ`, the oriented integral of a compactly supported
 continuous `1`-form is the Lebesgue integral of its value on the unit vector. -/
-private theorem integralTopForm_standard {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
+theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
     (hφ : IsSmoothForm 𝓘(ℝ, ℝ) 0 φ)
     (hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) φ)) :
     integralTopForm Manifold.Orientation.real φ = ∫ t, φ t fun _ ↦ 1 := by
@@ -133,7 +135,7 @@ private theorem bijective_integral_standard :
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ 1 x
   have hφ := (mem_compactlySupportedClosedForms _).mp φ.2
   rw [compactlySupportedDeRhamCohomology.integral_mk,
-    integralTopForm_standard (φ.1.isSmoothForm.of_le (by simp))
+    integralTopForm_real_eq_integral (φ.1.isSmoothForm.of_le (by simp))
       ((mem_compactlySupportedForms _).mp hφ.1)] at hx
   exact (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ 1 φ).mpr
     (mem_exactCompactlySupportedForms_one_real hφ.1 hx)
