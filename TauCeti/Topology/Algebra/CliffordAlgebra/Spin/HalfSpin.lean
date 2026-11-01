@@ -55,13 +55,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
 
-omit [FiniteDimensional ℂ W] [Fact (finrank ℝ V = 4)] in
-private theorem continuous_algHom_apply (w : W) :
-    Continuous (fun a ↦ ρ a w) := by
-  simpa [Function.comp_def, LinearMap.applyₗ_apply_apply] using
-    IsModuleTopology.continuous_of_linearMap
-    (((LinearMap.applyₗ (R := ℂ) w).restrictScalars ℝ).comp ρ.toLinearMap)
-
 omit [FiniteDimensional ℂ W] in
 /-- The Spin half-spin representation is continuous at each fixed spinor for the Clifford
 subtype topology. -/
