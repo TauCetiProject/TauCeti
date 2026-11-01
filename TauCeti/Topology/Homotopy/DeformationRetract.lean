@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
@@ -16,6 +17,12 @@ the image of the final inclusion throughout. Inclusions are expressed as continu
 so the result also applies to subspaces represented by different but homeomorphic types; for
 subsets of one space, `ContinuousMap.HomotopicRel.exists_inter_deformation_trans` states it with
 set inclusions.
+
+A strong deformation retraction of the part of a subspace `A` lying in an open subspace extends
+by the identity to all of `A`, provided it already fixes every point of an open set covering the
+rest of `A` (`ContinuousMap.HomotopicRel.exists_inter_deformation_of_isOpenEmbedding`). The open
+subspace is given as the range of an open embedding `e : M → X`, so the deformation may be
+constructed on a manifold `M` which is an open part of a space `X` that is not itself a manifold.
 
 A deformation retraction in the weak sense of `B` onto `A ⊆ B` is a deformation of `B` within
 itself, starting at the identity, ending inside `A`, and keeping `A` inside `A` at all times. The
@@ -32,7 +39,7 @@ points of `A` within `A`.
 
 public section
 
-open Set Function
+open Set Function Topology
 
 namespace ContinuousMap.HomotopicRel
 
@@ -92,6 +99,91 @@ theorem exists_inter_deformation_trans (hBA : B ⊆ A) (hSB : A ∩ S ⊆ B)
   exact ⟨(ContinuousMap.inclusion (inter_subset_inter_left S hBA)).comp (r₂.comp r₁),
     fun a ↦ Subtype.ext congr(Subtype.val $(H.symm.fst_eq_snd (x := ⟨a, a.2.1⟩) a.2.2)),
     ⟨H.symm⟩⟩
+
+open scoped unitInterval in
+variable {M : Type*} [TopologicalSpace M] {e : M → X} {A S V : Set X} {B T : Set M} in
+/-- **Strong deformation retractions extend by the identity across an open embedding.** Let
+`e : M → X` be an open embedding, let `A, S ⊆ X`, and let `V ⊆ X` be an open set such that `A`
+is covered by the range of `e` and `V`, and `A ∩ V ⊆ S`. If `B = e ⁻¹' A` strong deformation
+retracts onto `B ∩ T`, where `T = e ⁻¹' S`, relative to `T`, then `A` strong deformation retracts
+onto `A ∩ S` relative to `S`. The deformation of `A` is that of `B` on the range of `e` and the
+identity off it. -/
+theorem exists_inter_deformation_of_isOpenEmbedding (he : IsOpenEmbedding e) (hV : IsOpen V)
+    (hA : A ⊆ range e ∪ V) (hAV : A ∩ V ⊆ S) (hB : e ⁻¹' A = B) (hT : e ⁻¹' S = T)
+    (r : C(B, ↥(B ∩ T)))
+    (H : ((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel (.id B)
+      {x | (x : M) ∈ T}) :
+    ∃ r : C(A, ↥(A ∩ S)), (∀ a, r (ContinuousMap.inclusion inter_subset_left a) = a) ∧
+      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel (.id A)
+        {x | (x : X) ∈ S}) := by
+  subst hB hT
+  classical
+  -- The point of `B` over a point of `A` in the range of `e`.
+  let lift (a : A) (ha : (a : X) ∈ range e) : ↥(e ⁻¹' A) :=
+    ⟨he.isEmbedding.toHomeomorph.symm ⟨a, ha⟩, by
+      rw [mem_preimage, ← he.isEmbedding.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply]
+      exact a.2⟩
+  have e_lift (a : A) (ha) : e (lift a ha) = a := by
+    rw [← he.isEmbedding.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply]
+  let Φ (p : I × A) : A :=
+    if hp : (p.2 : X) ∈ range e then ⟨e (H (p.1, lift p.2 hp)), (H (p.1, lift p.2 hp)).2⟩
+    else p.2
+  -- The deformation fixes `S`, hence also `A ∩ V`.
+  have hfix (t : I) (a : A) (ha : (a : X) ∈ S) : Φ (t, a) = a := by
+    simp only [Φ]
+    split_ifs with h
+    · refine Subtype.ext ?_
+      simp only
+      rw [H.eq_snd t (show ((lift a h : M)) ∈ e ⁻¹' S by
+        rw [mem_preimage, e_lift]; exact ha)]
+      exact e_lift a h
+    · rfl
+  have hΦ : Continuous Φ := by
+    refine continuous_iff_continuousAt.2 fun p ↦ ?_
+    rcases hA p.2.2 with hp | hp
+    · -- On the open set of pairs over the range of `e`, `Φ` is the transported deformation.
+      have hW : IsOpen {q : I × A | (q.2 : X) ∈ range e} :=
+        he.isOpen_range.preimage (continuous_subtype_val.comp continuous_snd)
+      refine (ContinuousOn.continuousAt ?_ (hW.mem_nhds hp))
+      rw [continuousOn_iff_continuous_domRestrict]
+      have : {q : I × A | (q.2 : X) ∈ range e}.domRestrict Φ =
+          fun q ↦ ⟨e (H (q.1.1, lift q.1.2 q.2)), (H (q.1.1, lift q.1.2 q.2)).2⟩ :=
+        funext fun q ↦ dite_eq_left q.2
+      rw [this]
+      refine Continuous.subtype_mk (he.continuous.comp (continuous_subtype_val.comp
+        (H.continuous.comp (Continuous.prodMk (continuous_fst.comp continuous_subtype_val)
+          (Continuous.subtype_mk (he.isEmbedding.toHomeomorph.symm.continuous.comp
+            (Continuous.subtype_mk ((continuous_subtype_val.comp continuous_snd).comp
+              continuous_subtype_val) _)) _))))) _
+    · -- Near a point over `V`, `Φ` is the identity.
+      refine continuous_snd.continuousAt.congr ?_
+      filter_upwards [(hV.preimage (continuous_subtype_val.comp continuous_snd)).mem_nhds hp]
+        with q hq
+      exact (hfix q.1 q.2 (hAV ⟨q.2.2, hq⟩)).symm
+  have hS (a : A) : ((Φ (0, a) : A) : X) ∈ S := by
+    by_cases h : (a : X) ∈ range e
+    · simp only [Φ, h, dite_true, H.apply_zero]
+      exact (r (lift a h)).2.2
+    · have ha : (a : X) ∈ V := (hA a.2).resolve_left h
+      rw [hfix 0 a (hAV ⟨a.2, ha⟩)]
+      exact hAV ⟨a.2, ha⟩
+  refine ⟨⟨fun a ↦ ⟨Φ (0, a), mem_inter (Φ (0, a)).2 (hS a)⟩, ?_⟩, fun a ↦ ?_, ⟨?_⟩⟩
+  · exact Continuous.subtype_mk (continuous_subtype_val.comp
+      (hΦ.comp (continuous_const.prodMk continuous_id))) _
+  · have := congrArg Subtype.val (hfix 0 (ContinuousMap.inclusion inter_subset_left a) a.2.2)
+    exact Subtype.ext this
+  · exact
+      { toFun := Φ
+        continuous_toFun := hΦ
+        map_zero_left := fun a ↦ rfl
+        map_one_left := fun a ↦ by
+          by_cases h : (a : X) ∈ range e
+          · refine Subtype.ext ?_
+            simp only [Φ, h, dite_true, H.apply_one, ContinuousMap.id_apply, e_lift]
+          · simp only [Φ, h, dite_false, ContinuousMap.id_apply]
+        prop' := fun t a ha ↦ by
+          have := congrArg Subtype.val (hfix 0 a ha)
+          exact (hfix t a ha).trans (Subtype.ext this.symm) }
 
 end ContinuousMap.HomotopicRel
 
