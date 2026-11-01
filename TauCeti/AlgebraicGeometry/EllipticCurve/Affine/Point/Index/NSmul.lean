@@ -128,12 +128,15 @@ section DividingN
 
 local notation "m_u" => maximalIdeal O_u
 
-local instance : IsLinearTopology O_u O_u :=
+-- Named: anonymous `local instance`s here get the same generated names as the ones in
+-- `FormalGroup/Point/Torsion/Basic.lean`, and the names used in
+-- `FormalGroup/Point/Torsion/Free.lean` are already taken in this module's imports.
+private local instance isLinearTopology_adicCompletionIntegers_dividingN :
+    IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
 
-local instance : Fact (IsAdic m_u) :=
+private local instance fact_isAdic_maximalIdeal_dividingN : Fact (IsAdic m_u) :=
   ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
-
 
 open scoped Classical in
 /-- On a minimal integral model `C`, the image of `Ê(𝔪_u ^ (e + 1))` in `E₁(F_u)`, where
