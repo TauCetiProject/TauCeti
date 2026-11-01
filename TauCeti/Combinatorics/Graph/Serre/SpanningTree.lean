@@ -247,7 +247,7 @@ theorem eq_path {a b : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
     exact T.rev_mem f (T.mem_of_mem_darts_path hf)
 
 /-- The tree path between the endpoints of a tree dart is that dart. -/
-theorem path_src_tgt {e : Γ.E} (he : e ∈ T.darts) :
+@[simp] theorem path_src_tgt {e : Γ.E} (he : e ∈ T.darts) :
     T.path (Γ.src e) (Γ.tgt e) = (Γ.dart e).toPath :=
   (T.eq_path (Path.isReduced_toPath Γ _) (by simpa using he)).symm
 
