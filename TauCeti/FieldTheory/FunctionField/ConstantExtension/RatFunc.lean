@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+public import TauCeti.FieldTheory.RatFunc.Map
 import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
@@ -34,8 +35,6 @@ with ramification index one, and the conorm of the place is that single place.
 * `TauCeti.constantCompositum_eq_top_of_X_mem`: a compositum `F · k'` inside `k'(X)` containing
   `X` is all of `k'(X)`.
 * `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
-* `TauCeti.algebraMap_ratFunc_algebraMap_polynomial`: the image in `k'(X)` of a polynomial over
-  `k` is the polynomial with its coefficients mapped to `k'`.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
   infinity of `k(X)` exactly when it is the place at infinity of `k'(X)`.
 * `TauCeti.Place.restrict_adicOfIrreducible_eq_iff`: the finite place of `q'` lies over the
@@ -62,22 +61,6 @@ open Polynomial
 namespace TauCeti
 
 variable {k k' : Type*} [Field k] [Field k']
-
-section Polynomial
-
-variable [Algebra k k'] [Algebra (RatFunc k) (RatFunc k')]
-variable [IsScalarTower k (RatFunc k) (RatFunc k')]
-
-/-- A `k`-algebra map `k(X) → k'(X)` sending `X` to `X` maps a polynomial over `k` to the same
-polynomial with its coefficients read in `k'`. -/
-theorem algebraMap_ratFunc_algebraMap_polynomial
-    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (f : k[X]) :
-    algebraMap (RatFunc k) (RatFunc k') (algebraMap k[X] (RatFunc k) f) =
-      algebraMap k'[X] (RatFunc k') (f.map (algebraMap k k')) := by
-  rw [← RatFunc.aeval_X_left_eq_algebraMap, ← Polynomial.aeval_algebraMap_apply, hX,
-    ← RatFunc.aeval_X_left_eq_algebraMap, Polynomial.aeval_map_algebraMap]
-
-end Polynomial
 
 /-- **A compositum with `k'` containing `X` is all of `k'(X)`**: for any field `F` inside `k'(X)`,
 if `X` lies in `F · k'`, then `F · k' = k'(X)`. -/
