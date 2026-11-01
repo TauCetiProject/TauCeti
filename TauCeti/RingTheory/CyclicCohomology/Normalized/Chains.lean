@@ -218,7 +218,7 @@ namespace normalizedHochschildChains
 
 section Operators
 
-variable (R A : Type*) [CommRing R] [Ring A] [Module R A]
+variable (R A : Type*) [CommRing R] [NonAssocRing A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- The Hochschild boundary on normalized chains, lowering degree by one. -/
@@ -246,19 +246,6 @@ theorem _root_.LinearMap.comp_normalizedHochschild_b_tensor {n : ℕ}
   simp [b_tensor, hochschildCoboundary_apply]
 
 variable (R A)
-
-/-- The normalized Hochschild boundary squares to zero. -/
-@[simp]
-theorem b_b (n : ℕ) : b R A n ∘ₗ b R A (n + 1) = 0 := by
-  apply hom_ext
-  intro a
-  have hb : (b R A n).compMultilinearMap (tensor R A (n + 1)) =
-      hochschildCoboundary R A _ n (tensor R A n) := by
-    simpa using (LinearMap.id : normalizedHochschildChains R A n →ₗ[R] _)
-      |>.comp_normalizedHochschild_b_tensor
-  have h := MultilinearMap.congr_fun ((b R A n).comp_normalizedHochschild_b_tensor) a
-  simpa only [hb, hochschildCoboundary_hochschildCoboundary, zero_apply,
-    LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearMap.zero_apply] using h
 
 /-- The two normalized boundaries anticommute in positive degree. -/
 theorem b_B_add_B_b (n : ℕ) :
@@ -295,6 +282,26 @@ theorem b_B_zero : b R A 0 ∘ₗ B R A 0 = 0 := by
   simpa only [hb, connesB_hochschildCoboundary_zero, zero_apply,
     LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearMap.zero_apply] using h
 
+end Operators
+
+section Associative
+
+variable (R A : Type*) [CommRing R] [Ring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- The normalized Hochschild boundary squares to zero. -/
+@[simp]
+theorem b_b (n : ℕ) : b R A n ∘ₗ b R A (n + 1) = 0 := by
+  apply hom_ext
+  intro a
+  have hb : (b R A n).compMultilinearMap (tensor R A (n + 1)) =
+      hochschildCoboundary R A _ n (tensor R A n) := by
+    simpa using (LinearMap.id : normalizedHochschildChains R A n →ₗ[R] _)
+      |>.comp_normalizedHochschild_b_tensor
+  have h := MultilinearMap.congr_fun ((b R A n).comp_normalizedHochschild_b_tensor) a
+  simpa only [hb, hochschildCoboundary_hochschildCoboundary, zero_apply,
+    LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearMap.zero_apply] using h
+
 open CategoryTheory in
 /-- The native chain complex of normalized Hochschild chains with boundary `b`. -/
 def chainComplex : ChainComplex (ModuleCat R) ℕ :=
@@ -316,7 +323,7 @@ theorem chainComplex_d (n : ℕ) :
       (chainComplexXIso R A (n + 1)).hom ≫ ModuleCat.ofHom (b R A n) := by
   simp [chainComplex, chainComplexXIso]
 
-end Operators
+end Associative
 
 end normalizedHochschildChains
 
