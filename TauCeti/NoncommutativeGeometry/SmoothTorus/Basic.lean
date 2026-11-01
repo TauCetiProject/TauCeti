@@ -480,6 +480,7 @@ theorem isRapidDecay_star (a : SmoothNoncommutativeTorus θ) :
 instance : Star (SmoothNoncommutativeTorus θ) :=
   ⟨fun a ↦ ⟨_, isRapidDecay_star a⟩⟩
 
+@[simp]
 theorem coeff_star (a : SmoothNoncommutativeTorus θ) (x : ℤ × ℤ) :
     (star a).coeff x = conj (a.coeff (-x)) * twist θ x x :=
   (rfl)
@@ -513,10 +514,10 @@ private theorem star_mul' (a b : SmoothNoncommutativeTorus θ) : star (a * b) = 
 instance : StarRing (SmoothNoncommutativeTorus θ) where
   star_involutive a := by exact star_star' a
   star_mul a b := by exact star_mul' a b
-  star_add a b := by ext x; simp [coeff_star, add_mul]
+  star_add a b := by ext x; simp [add_mul]
 
 instance : StarModule ℂ (SmoothNoncommutativeTorus θ) where
-  star_smul c a := by ext x; simp [coeff_star, mul_assoc]
+  star_smul c a := by ext x; simp [mul_assoc]
 
 @[simp]
 theorem star_single (x : ℤ × ℤ) (c : ℂ) :
@@ -615,7 +616,7 @@ theorem trace_single (x : ℤ × ℤ) (c : ℂ) :
   simp [Pi.single_apply, eq_comm]
 
 theorem trace_star (a : SmoothNoncommutativeTorus θ) : trace θ (star a) = conj (trace θ a) := by
-  simp [coeff_star]
+  simp
 
 /-- The canonical trace is tracial. -/
 theorem trace_mul_comm (a b : SmoothNoncommutativeTorus θ) :
