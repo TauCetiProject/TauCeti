@@ -99,7 +99,7 @@ theorem besselI_eq_rpow_mul (ν x : ℝ) :
 
 /-- For `x > 0`, the regularized hypergeometric value `₀F₁(; a; x² / 4)` is
 `(x / 2) ^ (1 - a) * I_{a-1}(x)`. -/
-theorem regularizedHGFun_zero_singleton_eq_rpow_mul_besselI (a : ℝ) {x : ℝ} (hx : 0 < x) :
+theorem regularizedHGFun_zero_singleton_ofReal_re_eq_rpow_mul_besselI (a : ℝ) {x : ℝ} (hx : 0 < x) :
     (Complex.regularizedHGFun 0 {(a : ℂ)} (x ^ 2 / 4 : ℝ)).re =
       (x / 2) ^ (1 - a) * besselI (a - 1) x := by
   have hx2 : 0 < x / 2 := by positivity
@@ -181,7 +181,7 @@ theorem tendsto_rpow_neg_mul_besselI_nhdsGT_zero (ν : ℝ) :
   have h0 : (Complex.regularizedHGFun 0 {((ν + 1 : ℝ) : ℂ)} ((0 / 2) ^ 2 : ℝ)).re =
       (Gamma (ν + 1))⁻¹ := by
     have hzero : ((0 / 2) ^ 2 : ℝ) = 0 := by norm_num
-    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero_singleton_ofReal_zero]
+    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero_singleton_ofReal_zero_re]
   rw [h0] at hcont
   refine hcont.congr' (eventually_nhdsWithin_of_forall fun x (hx : 0 < x) => ?_)
   have hx2 : 0 < x / 2 := by positivity

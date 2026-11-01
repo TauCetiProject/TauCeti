@@ -51,7 +51,7 @@ theorem regularizedHGFunCoeff_zero_singleton (b : ℂ) (n : ℕ) :
 
 /-- At zero argument and a real parameter, the real part of `₀F₁(; b; 0)` is `1 / Γ(b)`,
 including the poles of `Γ`, where its inverse vanishes. -/
-theorem regularizedHGFun_zero_singleton_ofReal_zero (b : ℝ) :
+theorem regularizedHGFun_zero_singleton_ofReal_zero_re (b : ℝ) :
     (regularizedHGFun 0 {(b : ℂ)} 0).re = (Real.Gamma b)⁻¹ := by
   have h : regularizedHGFun 0 {(b : ℂ)} 0 = (((Real.Gamma b)⁻¹ : ℝ) : ℂ) := by
     rw [ofReal_inv, ← Gamma_ofReal]

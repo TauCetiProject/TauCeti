@@ -167,10 +167,10 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_regularizedHGFun
       (Gamma_pos_of_pos (div_pos
         (Nat.cast_pos.mpr (lt_of_lt_of_le zero_lt_two hd)) two_pos)).ne'
     rw [norm_zero, zero_pow two_ne_zero, zero_div, Complex.ofReal_zero,
-      Complex.regularizedHGFun_zero_singleton_ofReal_zero]
+      Complex.regularizedHGFun_zero_singleton_ofReal_zero_re]
     simp [hb]
   rw [integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη,
-    regularizedHGFun_zero_singleton_eq_rpow_mul_besselI _ (norm_pos_iff.mpr hη), neg_sub]
+    regularizedHGFun_zero_singleton_ofReal_re_eq_rpow_mul_besselI _ (norm_pos_iff.mpr hη), neg_sub]
 
 /-- **The von Mises–Fisher normalizer on the surface measure.** In dimension `d ≥ 2`, the surface
 integral of `exp ⟪η, x⟫` over the unit sphere is `(2 π) ^ (d / 2) * ‖η‖ ^ (1 - d / 2) *
