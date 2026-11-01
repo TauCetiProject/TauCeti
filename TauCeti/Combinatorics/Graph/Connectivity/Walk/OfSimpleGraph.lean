@@ -278,6 +278,14 @@ theorem liftToGraph_cons (h : G.toSimpleGraph.Adj x y) (p : G.toSimpleGraph.Walk
       .cons (Classical.choose h.2) (Classical.choose_spec h.2) p.liftToGraph :=
   (rfl)
 
+@[simp]
+theorem liftToGraph_append (p : G.toSimpleGraph.Walk x y) (q : G.toSimpleGraph.Walk y z) :
+    (p.append q).liftToGraph = p.liftToGraph.append q.liftToGraph := by
+  induction p with
+  | nil => rw [nil_append, liftToGraph_nil, Graph.Walk.nil_append]
+  | cons h p ih =>
+      rw [cons_append, liftToGraph_cons, liftToGraph_cons, ih, Graph.Walk.cons_append]
+
 /-- Lifting a simplified walk preserves its vertex sequence, after forgetting the actual-vertex
 membership proofs. -/
 @[simp]

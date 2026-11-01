@@ -7,16 +7,14 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Block
 
-import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
-
 /-!
 # Vertex blocks of multigraphs
 
 Vertex blocks and cut vertices do not see loops or parallel-edge multiplicities. This file
 therefore transports the simple-graph block theory to a multigraph through its underlying simple
-graph on the actual vertices. It identifies the native, walk-based multigraph cut-vertex predicate
-with the corresponding predicate after simplification, and gives the resulting block incidence
-criteria.
+graph on the actual vertices. Since native multigraph cut vertices agree with the cut vertices of
+the simplification (`Graph.isCutVertex_iff_toSimpleGraph_isCutVertex`), the simple-graph block
+incidence criteria transfer directly.
 
 In particular, every nonloop edge of a finite-vertex multigraph has both endpoints in a unique
 vertex block. Parallel edges have the same endpoint block, while loops lie in every induced block
@@ -35,72 +33,6 @@ universe u v
 namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
-
-/-! ### Cut vertices and simplification -/
-
-/-- A native multigraph cut vertex is a cut vertex of the underlying simple graph on the actual
-vertices. -/
-theorem isCutVertex_iff_toSimpleGraph_isCutVertex {v : α} (hv : v ∈ V(G)) :
-    G.IsCutVertex v ↔ G.toSimpleGraph.IsCutVertex ⟨v, hv⟩ := by
-  rw [Graph.isCutVertex_def, SimpleGraph.isCutVertex_iff_exists_forall_walk_mem_support]
-  constructor
-  -- A simple walk avoiding the alleged cut vertex can be lifted edge by edge to `G`.
-  · rintro ⟨x, y, hxv, hyv, hxy, hdelete⟩
-    let x' : V(G) := ⟨x, hxy.left_mem⟩
-    let y' : V(G) := ⟨y, hxy.right_mem⟩
-    let v' : V(G) := ⟨v, hv⟩
-    refine ⟨x', y', ?_, ?_, hxy.toSimpleGraph_reachable, fun p ↦ ?_⟩
-    · exact fun h ↦ hxv (congrArg Subtype.val h)
-    · exact fun h ↦ hyv (congrArg Subtype.val h)
-    · by_contra hvp
-      apply hdelete
-      rw [reachable_deleteVerts_iff_exists_walk]
-      refine ⟨p.liftToGraph, hxy.left_mem, fun z hz ↦ ?_⟩
-      rw [SimpleGraph.Walk.support_liftToGraph] at hz
-      obtain ⟨z', hz', rfl⟩ := List.mem_map.mp hz
-      simp only [mem_singleton_iff]
-      intro hzv
-      have hsub : z' = v' := Subtype.ext hzv
-      apply hvp
-      have heq : (⟨v, hv⟩ : V(G)) = z' := by simpa only [v'] using hsub.symm
-      rw [heq]
-      exact hz'
-  -- A walk after deletion maps into the simplification of `G` and still avoids `v`.
-  · rintro ⟨x, y, hxv, hyv, hxy, hall⟩
-    refine ⟨x, y, ?_, ?_, toSimpleGraph_reachable_iff.mp hxy, ?_⟩
-    · exact fun h ↦ hxv (Subtype.ext h)
-    · exact fun h ↦ hyv (Subtype.ext h)
-    · intro hdelete
-      let x' : V(G.deleteVerts ({v} : Set α)) := ⟨x, hdelete.left_mem⟩
-      let y' : V(G.deleteVerts ({v} : Set α)) := ⟨y, hdelete.right_mem⟩
-      have hdelete' : (G.deleteVerts ({v} : Set α)).Reachable (x' : α) (y' : α) := by
-        simpa only [x', y'] using hdelete
-      obtain ⟨p⟩ :=
-        (G.deleteVerts ({v} : Set α)).toSimpleGraph_reachable_iff.mpr hdelete'
-      let q := p.map (toSimpleGraphHomOfLE (G := G) deleteVerts_le)
-      have hqv : (⟨v, hv⟩ : V(G)) ∉ q.support := by
-        intro hvq
-        have hvq' : (⟨v, hv⟩ : V(G)) ∈
-            p.support.map (toSimpleGraphHomOfLE (G := G) deleteVerts_le) := by
-          simpa only [q, SimpleGraph.Walk.support_map] using hvq
-        obtain ⟨z, -, hzeq⟩ := List.mem_map.mp hvq'
-        have hzv : (z : α) ≠ v := by
-          have hzmem : (z : α) ∈ V(G) ∧ (z : α) ∉ ({v} : Set α) := by
-            simpa only [vertexSet_deleteVerts, mem_sdiff] using z.property
-          simpa only [mem_singleton_iff] using hzmem.2
-        have hval := congrArg Subtype.val hzeq
-        rw [coe_toSimpleGraphHomOfLE_apply] at hval
-        exact hzv hval
-      have hxq : toSimpleGraphHomOfLE (G := G) deleteVerts_le x' = x := by
-        apply Subtype.ext
-        simp only [coe_toSimpleGraphHomOfLE_apply, x']
-      have hyq : toSimpleGraphHomOfLE (G := G) deleteVerts_le y' = y := by
-        apply Subtype.ext
-        simp only [coe_toSimpleGraphHomOfLE_apply, y']
-      let q' : G.toSimpleGraph.Walk x y := q.copy hxq hyq
-      apply hqv
-      rw [← SimpleGraph.Walk.support_copy q hxq hyq]
-      exact hall q'
 
 /-! ### Vertex blocks -/
 
