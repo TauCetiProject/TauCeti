@@ -76,16 +76,18 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.Algebra TauCeti.Algebra.wordFiltration TauCeti.SymmetricAlgebra
 
-universe v
-
-variable (R : Type) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+universe u v
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
+/-! ### The PBW filtration of the centre -/
+
+section Filtration
+
+variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)
-
-/-! ### The PBW filtration of the centre -/
 
 /-- The PBW filtration of the centre of `U(L)`: its `n`-th step consists of the central elements
 of PBW degree at most `n`. -/
@@ -151,7 +153,7 @@ theorem centerPBWFiltrationPrevious_succ (n : ℕ) :
   simp
 
 /-- The degree-`n` successive quotient of the PBW filtration of the centre of `U(L)`. -/
-abbrev CenterPBWGradedPiece (n : ℕ) : Type v :=
+abbrev CenterPBWGradedPiece (n : ℕ) : Type max u v :=
   centerPBWFiltration R L n ⧸
     (centerPBWFiltrationPrevious R L n).submoduleOf (centerPBWFiltration R L n)
 
@@ -186,9 +188,17 @@ theorem centerPBWGradedToPBWGraded_injective (n : ℕ) :
         ← pbwFiltrationPrevious_def] at hx
       exact (Submodule.Quotient.mk_eq_zero _).mpr hx
 
+end Filtration
+
 /-! ### The symbols of central elements are Lie invariants -/
 
-variable {R L}
+section Symbol
+
+-- Symmetrization is only available for scalar rings in `Type`.
+variable {R : Type} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+local notation "U" => _root_.UniversalEnvelopingAlgebra R L
+local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)
 
 /-- **The PBW symbol of a central element is a Lie invariant.** If `z` is central of PBW degree at
 most `n` and the homogeneous polynomial `p ∈ S^n(L)` has the degree-`n` class of `z` as its PBW
@@ -315,5 +325,7 @@ theorem centerPBWGradedInvariantIso_symm_apply [Module.Free R L] (n : ℕ)
     ← centerPBWGradedInvariantIso_symbol]
   -- The two sides are the symbols of the same central element, built twice.
   rfl
+
+end Symbol
 
 end TauCeti.UniversalEnvelopingAlgebra
