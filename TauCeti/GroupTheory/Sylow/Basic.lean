@@ -96,6 +96,8 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   let Pg := Sylow.ofCard (Subgroup.zpowers g) (by rw [Nat.card_zpowers, hcard, hg])
   obtain ⟨x, hx⟩ := Pg.exists_isConj_of_orderOf_dvd_pow (g := h) (n := 1) (by simp [hh])
   obtain ⟨y, hy⟩ := isConj_iff.mp hx.symm
-  exact ⟨y, hy ▸ x.property⟩
+  have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
+  simp only [Pg, Sylow.coe_ofCard] at hmem
+  exact ⟨y, hy ▸ hmem⟩
 
 end TauCeti

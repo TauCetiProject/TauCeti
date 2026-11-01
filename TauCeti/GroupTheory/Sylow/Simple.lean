@@ -35,7 +35,7 @@ namespace Sylow
 /-- A set covers all order-`p` elements up to ambient conjugacy if and only if it covers the
 order-`p` elements of a single Sylow `p`-subgroup. The representatives need not lie in that
 Sylow subgroup. -/
-theorem forall_orderOf_eq_isConj_iff [Fact p.Prime] [Finite (Sylow p G)]
+theorem forall_orderOf_eq_exists_isConj_iff [Fact p.Prime] [Finite (Sylow p G)]
     (P : Sylow p G) (s : Set G) :
     (∀ g : G, orderOf g = p → ∃ x ∈ s, IsConj x g) ↔
       ∀ g : P, orderOf g = p → ∃ x ∈ s, IsConj x (g : G) := by
@@ -53,12 +53,12 @@ namespace Subgroup
 
 /-- A subgroup of the full `p`-part order can be used in place of a bundled Sylow subgroup when
 checking coverage of order-`p` elements up to ambient conjugacy. -/
-theorem forall_orderOf_eq_isConj_iff_of_card_eq [Finite G] [Fact p.Prime]
+theorem forall_orderOf_eq_exists_isConj_iff_of_card_eq [Finite G] [Fact p.Prime]
     (P : Subgroup G) (hP : Nat.card P = p ^ (Nat.card G).factorization p) (s : Set G) :
     (∀ g : G, orderOf g = p → ∃ x ∈ s, IsConj x g) ↔
       ∀ g : P, orderOf g = p → ∃ x ∈ s, IsConj x (g : G) := by
   rw [← Sylow.coe_ofCard P hP]
-  exact (Sylow.ofCard P hP).forall_orderOf_eq_isConj_iff s
+  exact (Sylow.ofCard P hP).forall_orderOf_eq_exists_isConj_iff s
 
 end Subgroup
 
@@ -66,12 +66,12 @@ namespace TauCeti
 
 /-- **Simplicity from Sylow-local conjugacy coverage and normal generation.** For each prime
 divisor `p` of the order of a nontrivial finite group, choose a subgroup `P p` with order equal
-to the full `p`-part. If its order-`p` elements are covered up to ambient conjugacy by a set of
-normal generators of the whole group, the group is simple.
+to the full `p`-part. If its order-`p` elements are covered up to ambient conjugacy by a set `s`
+of elements, each of which generates the whole group as a normal subgroup, the group is simple.
 
 The subgroup orders, local coverage, and normal generation are separate proof obligations.
 In particular, a subgroup with merely a prime-power order need not suffice. -/
-theorem isSimpleGroup_of_sylow_local_isConj [Finite G] [Nontrivial G]
+theorem isSimpleGroup_of_card_eq_of_normalClosure_eq_top_of_isConj [Finite G] [Nontrivial G]
     (P : ℕ → Subgroup G) {s : Set G}
     (hcard : ∀ p, p.Prime → p ∣ Nat.card G →
       Nat.card (P p) = p ^ (Nat.card G).factorization p)
@@ -82,7 +82,7 @@ theorem isSimpleGroup_of_sylow_local_isConj [Finite G] [Nontrivial G]
     fun g hg ↦ ?_
   have : Fact (orderOf g).Prime := ⟨hg⟩
   have hdvd := orderOf_dvd_natCard g
-  exact ((P (orderOf g)).forall_orderOf_eq_isConj_iff_of_card_eq
+  exact ((P (orderOf g)).forall_orderOf_eq_exists_isConj_iff_of_card_eq
     (hcard _ hg hdvd) s).mpr (hcover _ hg hdvd) g rfl
 
 end TauCeti
