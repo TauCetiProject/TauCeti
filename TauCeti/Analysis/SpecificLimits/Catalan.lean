@@ -33,7 +33,7 @@ open Finset
 
 namespace TauCeti
 
-variable {R : Type*} [NormedRing R] [NormOneClass R] {q : R}
+variable {R : Type*} [NormedRing R] {q : R}
 
 /-- The Catalan generating series converges absolutely inside the disc of radius `1 / 4`. -/
 theorem summable_norm_catalan_mul_pow (hq : ‖q‖ < 4⁻¹) :
@@ -42,13 +42,15 @@ theorem summable_norm_catalan_mul_pow (hq : ‖q‖ < 4⁻¹) :
     (Nat.le_mul_of_pos_left _ n.succ_pos).trans_eq (succ_mul_catalan_eq_centralBinom n)
       |>.trans (Nat.centralBinom_le_four_pow n)
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-    (summable_geometric_of_lt_one (by positivity) (by linarith : 4 * ‖q‖ < 1))
-  calc ‖(catalan n : R) * q ^ n‖ ≤ catalan n * ‖q‖ ^ n := by
-        refine (norm_mul_le _ _).trans (mul_le_mul ?_ (norm_pow_le _ _) (by positivity)
-          (by positivity))
-        simpa using Nat.norm_cast_le (α := R) (catalan n)
-    _ ≤ 4 ^ n * ‖q‖ ^ n := by gcongr; exact_mod_cast hle n
-    _ = (4 * ‖q‖) ^ n := (mul_pow _ _ _).symm
+    ((summable_geometric_of_lt_one (by positivity) (by linarith : 4 * ‖q‖ < 1)).mul_left
+      ‖(1 : R)‖)
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  calc ‖(catalan n : R) * q ^ n‖ ≤ catalan n * ‖(1 : R)‖ * ‖q‖ ^ n :=
+        (norm_mul_le _ _).trans (mul_le_mul (Nat.norm_cast_le _) (norm_pow_le' _ hn)
+          (by positivity) (by positivity))
+    _ ≤ 4 ^ n * ‖(1 : R)‖ * ‖q‖ ^ n := by gcongr; exact_mod_cast hle n
+    _ = ‖(1 : R)‖ * (4 * ‖q‖) ^ n := by ring
 
 variable [CompleteSpace R]
 
