@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier
-public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
+public import TauCeti.Probability.Distributions.Uniform.Ball.Support
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
@@ -70,7 +70,7 @@ theorem not_continuousOn_of_hasLaw_uniformBallMeasure (hR : 0 < R) (hr : 0 ≤ r
   intro hTc
   refine (hT.measure_eq_zero_or_measure_eq_zero_of_continuousOn (convex_ball c R).isPreconnected
     (ae_mem_ball_uniformBallMeasure hR)
-    (ball_subset_closedBall.trans (support_uniformBallMeasure hR.le).ge) hTc isClosed_closedBall
+    (ball_subset_closedBall.trans (support_uniformBallMeasure c R).ge) hTc isClosed_closedBall
     isClosed_closedBall (closedBall_disjoint_closedBall hab) ?_).elim ?_ ?_
   · simp only [Measure.smul_apply, Measure.add_apply, smul_eq_mul, compl_union]
     rw [measure_mono_null inter_subset_left (hnull a r),

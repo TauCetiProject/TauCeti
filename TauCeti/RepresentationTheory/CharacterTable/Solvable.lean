@@ -119,8 +119,8 @@ private theorem exists_ne_of_not_dvd_characterDegree [Invertible (Nat.card G : �
     exact Representation.isIntegral_char _ (isOfFinOrder_of_finite g).orderOf_pos.ne'
       (pow_orderOf_eq_one g)
   -- `p · (-z) = 1` with `-z` an algebraic integer makes `p` divide `1`
-  exact hp.ne_one (Nat.dvd_one.1 (dvd_of_isIntegral_of_natCast_mul_eq (m := 1) hzint.neg
-    (by push_cast; linear_combination -hone) hp.pos.ne'))
+  exact hp.ne_one (Nat.dvd_one.1 (hzint.neg.dvd_of_natCast_mul_eq (m := 1)
+    (by push_cast; linear_combination -hone)))
 
 /-- **A conjugacy class of prime-power size larger than one forces a proper normal subgroup.** If
 some element of a finite group has a conjugacy class of size `p ^ k` with `p` prime and `k ≠ 0`,

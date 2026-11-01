@@ -11,7 +11,6 @@ public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.OddSymmetric
-import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Beta.Cdf
 import TauCeti.Probability.Distributions.Uniform.Basic
@@ -47,9 +46,8 @@ times the inner product.
 
 * `TauCeti.Probability.isProbabilityMeasure_uniformBallMeasure_iff`: it is a probability
   measure exactly for nonnegative radius.
-* `TauCeti.Probability.uniformBallMeasure_absolutelyContinuous`,
-  `TauCeti.Probability.support_uniformBallMeasure`: for nonzero radius it is absolutely continuous
-  with respect to Lebesgue measure, and for nonnegative radius its support is the closed ball.
+* `TauCeti.Probability.uniformBallMeasure_absolutelyContinuous`: for nonzero radius it is
+  absolutely continuous with respect to Lebesgue measure.
 * `TauCeti.Probability.uniformBallMeasure_eq_withDensity`,
   `TauCeti.Probability.rnDeriv_uniformBallMeasure`: for nonzero radius, its density against
   Lebesgue measure.
@@ -167,23 +165,6 @@ theorem uniformBallMeasure_absolutelyContinuous (hr : r ≠ 0) :
     uniformBallMeasure c r ≪ volume := by
   rw [uniformBallMeasure_of_ne_zero hr]
   exact cond_absolutelyContinuous
-
-/-- For nonnegative radius the topological support of the uniform law on a ball is the closed
-ball. -/
-@[simp]
-theorem support_uniformBallMeasure (hr : 0 ≤ r) :
-    (uniformBallMeasure c r).support = closedBall c r := by
-  rcases hr.eq_or_lt with rfl | hr
-  · rw [uniformBallMeasure_zero_right, Measure.support_dirac, closure_singleton, closedBall_zero]
-  refine (Measure.support_subset_of_isClosed isClosed_closedBall
-    (ae_mem_closedBall_uniformBallMeasure c r)).antisymm ?_
-  rw [← closure_ball c hr.ne']
-  refine closure_minimal (fun x hx ↦ (Measure.mem_support_iff_forall x).2 fun U hU ↦ ?_)
-    Measure.isClosed_support
-  rw [uniformBallMeasure_apply hr.ne']
-  exact ENNReal.div_pos
-    (Measure.measure_pos_of_mem_nhds volume (Filter.inter_mem (isOpen_ball.mem_nhds hx) hU)).ne'
-    measure_ball_lt_top.ne
 
 end Definition
 
