@@ -139,13 +139,10 @@ theorem map_lieInvariants_lieCartanRestriction :
   refine le_antisymm (Subalgebra.map_le.mpr fun p hp ↦ lieCartanRestriction_mem_linearInvariants hp)
     fun q hq ↦ ?_
   -- the Weyl invariants are graded, so `q` is the sum of its homogeneous Weyl-invariant components
-  have hhom : DirectSum.SetLike.IsHomogeneous (homogeneousSubmodule K H) (linearInvariants H) :=
-    linearInvariants_eq_symmetricAlgebraInvariants (H := H) ▸
-      Representation.isHomogeneous_symmetricAlgebraInvariants _
   rw [← DirectSum.sum_support_decompose (homogeneousSubmodule K H) q]
   refine Subalgebra.sum_mem _ fun m _ ↦ ?_
   obtain ⟨p, ⟨hp, -⟩, hpq⟩ := linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants H m
-    ⟨hhom m hq, SetLike.coe_mem _⟩
+    ⟨isHomogeneous_linearInvariants m hq, SetLike.coe_mem _⟩
   exact ⟨p, hp, hpq⟩
 
 /-- **Chevalley's restriction theorem.** Restriction of polynomial functions from `L` to `H`,

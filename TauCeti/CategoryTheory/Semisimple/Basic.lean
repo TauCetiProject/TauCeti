@@ -28,6 +28,9 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
   equivalence.
 * `TauCeti.isSplitMono_of_nonzero_from_simple`: a nonzero morphism out of a simple object is a
   split monomorphism.
+* `CategoryTheory.Functor.hom_ext_of_simple`: a morphism out of the image of an object under an
+  additive functor is determined by its composites with the images of morphisms from simple
+  objects.
 * `TauCeti.natTrans_ext_of_simple`: a natural transformation out of an additive functor is
   determined by its components at the simple objects.
 -/
@@ -97,6 +100,24 @@ theorem isSplitMono_of_nonzero_from_simple {C : Type u} [Category.{v} C] [Abelia
   exact IsSplitMono.mk' ⟨e.hom ≫ biproduct.π g i ≫ inv (f ≫ e.hom ≫ biproduct.π g i), by
     simpa only [Category.assoc] using IsIso.hom_inv_id (f ≫ e.hom ≫ biproduct.π g i)⟩
 
+/-- In a finite semisimple category, the images under an additive functor of the morphisms from
+simple objects into `X` are jointly epimorphic: two morphisms out of `F.obj X` agreeing after
+precomposition with every `F.map s`, for `s : S ⟶ X` with `S` simple, are equal. -/
+theorem _root_.CategoryTheory.Functor.hom_ext_of_simple {C : Type u} [Category.{v} C] [Abelian C]
+    [IsFiniteSemisimpleCategory C] {D : Type u'} [Category.{v'} D] [Preadditive D]
+    (F : C ⥤ D) [F.Additive] {X : C} {Z : D} {f g : F.obj X ⟶ Z}
+    (h : ∀ (S : C) [Simple S] (s : S ⟶ X), F.map s ≫ f = F.map s ≫ g) : f = g := by
+  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  -- The identity of `X` is the sum of the composites through the summands of `⨁ a`.
+  have hX : 𝟙 X = ∑ i, (e.hom ≫ biproduct.π a i) ≫ biproduct.ι a i ≫ e.inv :=
+    calc 𝟙 X = e.hom ≫ (∑ i, biproduct.π a i ≫ biproduct.ι a i) ≫ e.inv := by
+          rw [biproduct.total, Category.id_comp, e.hom_inv_id]
+      _ = _ := by simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
+  rw [← Category.id_comp f, ← Category.id_comp g, ← F.map_id, hX, F.map_sum,
+    Preadditive.sum_comp, Preadditive.sum_comp]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [F.map_comp, Category.assoc, Category.assoc, h]
+
 /-- In a finite semisimple category, a natural transformation out of an additive functor is
 determined by its components at the simple objects. -/
 theorem natTrans_ext_of_simple {C : Type u} [Category.{v} C] [Abelian C]
@@ -104,13 +125,7 @@ theorem natTrans_ext_of_simple {C : Type u} [Category.{v} C] [Abelian C]
     {F G : C ⥤ D} [F.Additive] {α β : F ⟶ G} (h : ∀ (X : C) [Simple X], α.app X = β.app X) :
     α = β := by
   ext X
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  -- The images of the inclusions of the summands of `⨁ f` are jointly epimorphic.
-  have key : α.app (⨁ f) = β.app (⨁ f) := by
-    rw [← Category.id_comp (α.app _), ← Category.id_comp (β.app _), ← F.map_id,
-      ← biproduct.total, F.map_sum, Preadditive.sum_comp, Preadditive.sum_comp]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [F.map_comp, Category.assoc, Category.assoc, α.naturality, β.naturality, h]
-  rw [← cancel_mono (G.map e.hom), ← α.naturality, ← β.naturality, key]
+  refine F.hom_ext_of_simple fun S _ s ↦ ?_
+  rw [α.naturality, β.naturality, h]
 
 end TauCeti
