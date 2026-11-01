@@ -45,6 +45,11 @@ real function is a uniform limit of finite-valued bounded functions.
 
 `BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
 bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
+
+`BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
+natural-number division; dilations compose multiplicatively and commute with the pointwise
+operations. They are the operators under which Dixmier's generalized limits are invariant, see
+`TauCeti.Analysis.Normed.Order.GeneralizedLimit`.
 -/
 
 public section
@@ -224,5 +229,60 @@ theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f 
       Real.norm_eq_abs]
     rw [abs_of_nonneg (by linarith)]
     linarith
+
+section Dilate
+
+variable {β : Type*} [PseudoMetricSpace β]
+
+/-- The dilation of a bounded sequence `f` by `k`: the sequence `n ↦ f (n / k)`, with
+natural-number division. For `k ≥ 1` it repeats every entry of `f` exactly `k` times. -/
+def dilate (f : ℕ →ᵇ β) (k : ℕ) : ℕ →ᵇ β :=
+  f.compContinuous ⟨(· / k), continuous_of_discreteTopology⟩
+
+@[simp]
+theorem dilate_apply (f : ℕ →ᵇ β) (k n : ℕ) : f.dilate k n = f (n / k) :=
+  (rfl)
+
+@[simp]
+theorem dilate_one (f : ℕ →ᵇ β) : f.dilate 1 = f := by
+  ext n
+  simp
+
+/-- Dilations compose multiplicatively, since `n / l / k = n / (k * l)`. -/
+@[simp]
+theorem dilate_dilate (f : ℕ →ᵇ β) (k l : ℕ) : (f.dilate k).dilate l = f.dilate (k * l) := by
+  ext n
+  simp [Nat.div_div_eq_div_mul, mul_comm]
+
+@[simp]
+theorem zero_dilate [Zero β] (k : ℕ) : (0 : ℕ →ᵇ β).dilate k = 0 := by
+  ext n
+  simp
+
+@[simp]
+theorem smul_dilate {𝕜 : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [Zero β] [SMul 𝕜 β]
+    [IsBoundedSMul 𝕜 β] (c : 𝕜) (f : ℕ →ᵇ β) (k : ℕ) : (c • f).dilate k = c • f.dilate k := by
+  ext n
+  simp
+
+@[simp]
+theorem add_dilate [Add β] [BoundedAdd β] [ContinuousAdd β] (f g : ℕ →ᵇ β) (k : ℕ) :
+    (f + g).dilate k = f.dilate k + g.dilate k :=
+  (rfl)
+
+@[simp]
+theorem sub_dilate [Sub β] [BoundedSub β] [ContinuousSub β] (f g : ℕ →ᵇ β) (k : ℕ) :
+    (f - g).dilate k = f.dilate k - g.dilate k :=
+  (rfl)
+
+end Dilate
+
+/-- Dilations commute with negation. This is stated for a `SeminormedAddCommGroup` codomain, the
+setting of Mathlib's `Neg` instance on bounded continuous functions. -/
+@[simp]
+theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) (k : ℕ) :
+    (-f).dilate k = -f.dilate k := by
+  ext n
+  simp
 
 end BoundedContinuousFunction

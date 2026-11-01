@@ -26,7 +26,9 @@ symmetrizer of a one-column shape consumes.
 
 Finally, it describes images of exterior powers under induced maps: inside the exterior algebra,
 the image of `⋀ⁿ M` under `f` is the `n`th power of the degree-one image of `f`, and over a field an
-injective map embeds `⋀ⁿ V` with its binomial dimension.
+injective map embeds `⋀ⁿ V` with its binomial dimension. Over a field, an exterior product with
+more factors in a finite-dimensional subspace than its dimension vanishes, and moving the remaining
+factors by vectors of that subspace does not change the product.
 
 ## Main definitions
 
@@ -45,6 +47,11 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
+* `exteriorPower.map_bijective`: a bijective linear map induces bijections of exterior powers.
+* `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
+  than the dimension of a finite-dimensional subspace lie in that subspace.
+* `Submodule.ιMulti_eq_of_sub_mem`: an exterior product with at least `dim P` factors in a
+  subspace `P` is unchanged when its other factors are moved by vectors of `P`.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
@@ -253,7 +260,72 @@ theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
 
 end Field
 
+/-! ### Bijectivity of induced maps -/
+
+section Bijective
+
+variable [CommRing R] [AddCommGroup M] [Module R M] {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- A bijective linear map induces a bijective map on every exterior power. -/
+theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) :
+    Function.Bijective (map n f) :=
+  ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
+    map_surjective hf.2⟩
+
+end Bijective
+
 end exteriorPower
+
+/-! ### Exterior products with factors in a subspace -/
+
+namespace Submodule
+
+variable {K : Type*} [Field K] {V : Type*} [AddCommGroup V] [Module K V]
+
+/-- An exterior product vanishes as soon as more of its factors than the dimension of a
+finite-dimensional subspace lie in that subspace. -/
+theorem ιMulti_eq_zero_of_finrank_lt {n : ℕ} {x : Fin n → V} (P : Submodule K V)
+    [FiniteDimensional K P] (s : Finset (Fin n)) (hs : Module.finrank K P < s.card)
+    (hx : ∀ i ∈ s, x i ∈ P) : exteriorPower.ιMulti K n x = 0 := by
+  refine (exteriorPower.ιMulti K n).map_linearDependent x fun hli ↦ hs.not_ge ?_
+  have hli' : LinearIndependent K (fun i : s ↦ (⟨x i, hx i i.2⟩ : P)) :=
+    LinearIndependent.of_comp P.subtype (hli.comp _ Subtype.val_injective)
+  simpa using hli'.fintype_card_le_finrank
+
+/-- Let `P` be a finite-dimensional subspace and `s` a set of at least `dim P` indices at which
+the factors of an exterior product lie in `P`. Then moving the factors at the other indices by
+vectors of `P` does not change the product. -/
+theorem ιMulti_eq_of_sub_mem {n : ℕ} {x x' : Fin n → V} (P : Submodule K V)
+    [FiniteDimensional K P] (s : Finset (Fin n)) (hs : Module.finrank K P ≤ s.card)
+    (hx : ∀ i ∈ s, x i ∈ P) (heq : ∀ i ∈ s, x' i = x i) (hsub : ∀ i ∉ s, x i - x' i ∈ P) :
+    exteriorPower.ιMulti K n x = exteriorPower.ιMulti K n x' := by
+  classical
+  -- Replace the factors of `x` by those of `x'` one index at a time.
+  suffices ∀ t : Finset (Fin n),
+      exteriorPower.ιMulti K n (t.piecewise x' x) = exteriorPower.ιMulti K n x by
+    simpa using (this Finset.univ).symm
+  intro t
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert j t hj ih =>
+    set y := t.piecewise x' x
+    have hyj : y j = x j := Finset.piecewise_eq_of_notMem _ _ _ hj
+    rw [Finset.piecewise_insert, ← ih]
+    by_cases hjs : j ∈ s
+    · rw [heq j hjs, ← hyj, Function.update_eq_self]
+    -- The factors at `s` and the factor `x j - x' j` at `j` are `card s + 1` vectors of `P`.
+    have hzero : exteriorPower.ιMulti K n (Function.update y j (x j - x' j)) = 0 := by
+      refine P.ιMulti_eq_zero_of_finrank_lt (insert j s) ?_ fun i hi ↦ ?_
+      · rw [Finset.card_insert_of_notMem hjs]
+        omega
+      · rcases Finset.mem_insert.1 hi with rfl | hi
+        · simpa using hsub i hjs
+        · rw [Function.update_of_ne (ne_of_mem_of_not_mem hi hjs)]
+          by_cases hit : i ∈ t <;> simp [y, hit, heq i hi, hx i hi]
+    rw [AlternatingMap.map_update_sub, sub_eq_zero, ← hyj, Function.update_eq_self] at hzero
+    exact hzero.symm
+
+end Submodule
 
 namespace TauCeti
 

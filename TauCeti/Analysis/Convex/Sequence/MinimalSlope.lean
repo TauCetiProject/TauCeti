@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Sequence.Face
+public import TauCeti.Analysis.Convex.Sequence.Truncation
 import Mathlib.Data.Set.Finite.Lemmas
 
 /-!
@@ -22,6 +22,8 @@ Only finite endpoints enter the slope set. In particular an empty or singleton
 point set has no secant slope; the ray conclusions require a later finite point.
 These are the initial-step arguments for the minimal-slope construction, without
 asserting that the last point on an affine segment is a strict change of slope.
+At any finite contact point, reindexing the tail gives the corresponding formula
+for the first outgoing slope, so the construction can restart there.
 
 ## References
 
@@ -246,5 +248,23 @@ theorem unitSlope_lowerConvexEnvelope_eq_sInf_secantSlopes
     WithTop.untop₀_coe]
   push_cast
   ring
+
+namespace IsLowerConvexEnvelope
+
+variable {h : ℕ → WithTop ℝ}
+
+/-- The first outgoing edge at a finite contact is computed from the minimal secant
+slope of the coefficient tail. A later finite point excludes the singleton case. -/
+theorem unitSlope_eq_sInf_secantSlopes_tail (hh : IsLowerConvexEnvelope a h) {p : ℕ}
+    (hp : h p = a p) (hpf : a p ≠ ⊤)
+    (hne : (secantSlopes (fun n => a (n + p)) 0).Nonempty) :
+    unitSlope h p = sInf (secantSlopes (fun n => a (n + p)) 0) := by
+  have ht := hh.comp_add_right hp
+  have hs := unitSlope_lowerConvexEnvelope_eq_sInf_secantSlopes ht.isAdmissible
+    (p := 0) (by simpa using hpf) (fun n hn => by omega) hne
+  rw [← ht.eq_lowerConvexEnvelope] at hs
+  simpa only [unitSlope_def, zero_add, Nat.add_comm 1 p] using hs
+
+end IsLowerConvexEnvelope
 
 end TauCeti
