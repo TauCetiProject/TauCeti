@@ -55,8 +55,6 @@ commutative semiring.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`: **the Littlewood–Richardson rule**.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`: the
   Littlewood–Richardson rule with the Littlewood–Richardson coefficients `c^ν_{λ μ}`.
-* `TauCeti.sum_nsmul_diagramSchurPoly_eq_sum_colLen_le`: such sums only see the partitions with at
-  most `N` rows.
 
 ## References
 
@@ -330,17 +328,5 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
       fun hT i c hc =>
         (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
-
-/-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `m` only sees the
-partitions with at most `N` rows: the Schur polynomials of the others vanish. -/
-theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le {R : Type*} [CommSemiring R] {m : ℕ}
-    (c : m.Partition → ℕ) :
-    ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
-      ∑ ν : {ν : m.Partition // (ofPartition ν).colLen 0 ≤ N},
-        c ν.1 • diagramSchurPoly N R (ofPartition ν.1) := by
-  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ N,
-    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ N} => _) fun ν => by
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero],
-    add_zero]
 
 end TauCeti
