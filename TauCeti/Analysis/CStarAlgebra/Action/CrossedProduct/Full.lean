@@ -109,13 +109,10 @@ theorem ofFull_toFull (f : ConvolutionAlgebra α μ) : ofFull (toFull f) = f :=
 theorem toFull_ofFull (f : FullConvolutionAlgebra α μ) : toFull (ofFull f) = f :=
   (rfl)
 
-variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure]
+variable [IsTopologicalGroup G] [BorelSpace G] [μ.IsHaarMeasure]
 
 instance : NonUnitalRing (FullConvolutionAlgebra α μ) :=
   inferInstanceAs (NonUnitalRing (ConvolutionAlgebra α μ))
-
-instance : StarRing (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (StarRing (ConvolutionAlgebra α μ))
 
 instance : Module ℂ (FullConvolutionAlgebra α μ) :=
   inferInstanceAs (Module ℂ (ConvolutionAlgebra α μ))
@@ -126,8 +123,69 @@ instance : IsScalarTower ℂ (FullConvolutionAlgebra α μ) (FullConvolutionAlge
 instance : SMulCommClass ℂ (FullConvolutionAlgebra α μ) (FullConvolutionAlgebra α μ) :=
   inferInstanceAs (SMulCommClass ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ))
 
+@[simp]
+theorem toFull_zero : toFull (0 : ConvolutionAlgebra α μ) = 0 :=
+  (rfl)
+
+@[simp]
+theorem toFull_add (f g : ConvolutionAlgebra α μ) : toFull (f + g) = toFull f + toFull g :=
+  (rfl)
+
+@[simp]
+theorem toFull_neg (f : ConvolutionAlgebra α μ) : toFull (-f) = -toFull f :=
+  (rfl)
+
+@[simp]
+theorem toFull_sub (f g : ConvolutionAlgebra α μ) : toFull (f - g) = toFull f - toFull g :=
+  (rfl)
+
+@[simp]
+theorem toFull_mul (f g : ConvolutionAlgebra α μ) : toFull (f * g) = toFull f * toFull g :=
+  (rfl)
+
+@[simp]
+theorem toFull_smul (c : ℂ) (f : ConvolutionAlgebra α μ) : toFull (c • f) = c • toFull f :=
+  (rfl)
+
+@[simp]
+theorem ofFull_zero : ofFull (0 : FullConvolutionAlgebra α μ) = 0 :=
+  (rfl)
+
+@[simp]
+theorem ofFull_add (f g : FullConvolutionAlgebra α μ) : ofFull (f + g) = ofFull f + ofFull g :=
+  (rfl)
+
+@[simp]
+theorem ofFull_neg (f : FullConvolutionAlgebra α μ) : ofFull (-f) = -ofFull f :=
+  (rfl)
+
+@[simp]
+theorem ofFull_sub (f g : FullConvolutionAlgebra α μ) : ofFull (f - g) = ofFull f - ofFull g :=
+  (rfl)
+
+@[simp]
+theorem ofFull_mul (f g : FullConvolutionAlgebra α μ) : ofFull (f * g) = ofFull f * ofFull g :=
+  (rfl)
+
+@[simp]
+theorem ofFull_smul (c : ℂ) (f : FullConvolutionAlgebra α μ) : ofFull (c • f) = c • ofFull f :=
+  (rfl)
+
+variable [LocallyCompactSpace G]
+
+instance : StarRing (FullConvolutionAlgebra α μ) :=
+  inferInstanceAs (StarRing (ConvolutionAlgebra α μ))
+
 instance : StarModule ℂ (FullConvolutionAlgebra α μ) :=
   inferInstanceAs (StarModule ℂ (ConvolutionAlgebra α μ))
+
+@[simp]
+theorem toFull_star (f : ConvolutionAlgebra α μ) : toFull (star f) = star (toFull f) :=
+  (rfl)
+
+@[simp]
+theorem ofFull_star (f : FullConvolutionAlgebra α μ) : ofFull (star f) = star (ofFull f) :=
+  (rfl)
 
 variable (α μ) in
 /-- `FullConvolutionAlgebra.toFull` as an isomorphism of ⋆-algebras. -/
@@ -168,7 +226,7 @@ theorem norm_def (f : FullConvolutionAlgebra α μ) :
 instance : NormedSpace ℂ (FullConvolutionAlgebra α μ) where
   __ : Module ℂ (FullConvolutionAlgebra α μ) := inferInstance
   norm_smul_le c f := by
-    simp only [norm_def, ← toFullStarAlgEquiv_symm_apply, map_smul]
+    simp only [norm_def, ofFull_smul]
     exact (map_smul_eq_mul _ _ _).le
 
 /-- The full seminorm is submultiplicative, so the twisted convolution algebra is a seminormed
@@ -177,18 +235,17 @@ instance : NonUnitalSeminormedRing (FullConvolutionAlgebra α μ) where
   __ : SeminormedAddCommGroup (FullConvolutionAlgebra α μ) := inferInstance
   __ : NonUnitalRing (FullConvolutionAlgebra α μ) := inferInstance
   norm_mul_le f g := by
-    simpa only [norm_def, ← toFullStarAlgEquiv_symm_apply, map_mul] using
+    simpa only [norm_def, ofFull_mul] using
       ConvolutionAlgebra.fullSeminorm_mul_le (ofFull f) (ofFull g)
 
 /-- The twisted involution is isometric for the full seminorm. -/
 instance : NormedStarGroup (FullConvolutionAlgebra α μ) where
   norm_star_le f := by
-    simp only [norm_def, ← toFullStarAlgEquiv_symm_apply, map_star,
-      ConvolutionAlgebra.fullSeminorm_star, le_refl]
+    simp only [norm_def, ofFull_star, ConvolutionAlgebra.fullSeminorm_star, le_refl]
 
 /-- The full seminorm satisfies the C⋆-identity on the twisted convolution algebra. -/
 theorem norm_star_mul_self (f : FullConvolutionAlgebra α μ) : ‖star f * f‖ = ‖f‖ * ‖f‖ := by
-  simpa only [norm_def, ← toFullStarAlgEquiv_symm_apply, map_mul, map_star] using
+  simpa only [norm_def, ofFull_mul, ofFull_star] using
     ConvolutionAlgebra.fullSeminorm_star_mul_self (ofFull f)
 
 end FullConvolutionAlgebra
@@ -236,6 +293,7 @@ def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ whe
     exact Completion.coe_star _
 
 /-- The image of `f` under the completion map of `FullConvolutionAlgebra α μ` is `of α μ f`. -/
+@[simp]
 theorem coe_toFull_eq_of (f : ConvolutionAlgebra α μ) :
     ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) = of α μ f :=
   (rfl)
@@ -306,9 +364,8 @@ private def integratedFullCLM : FullConvolutionAlgebra α μ →L[ℂ] (H →L[�
 
 private theorem fromCompletion_integratedFullCLM_of (f : ConvolutionAlgebra α μ) :
     (integratedFullCLM μ P).fromCompletion (of α μ f) = P.integratedStarAlgHom μ f := by
-  have h := ContinuousLinearMap.fromCompletion_apply_coe (integratedFullCLM μ P) (toFull f)
-  rw [coe_toFull_eq_of] at h
-  simpa [integratedFullCLM] using h
+  simpa [integratedFullCLM] using
+    ContinuousLinearMap.fromCompletion_apply_coe (integratedFullCLM μ P) (toFull f)
 
 variable (μ) in
 /-- The integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
