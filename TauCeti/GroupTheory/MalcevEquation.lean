@@ -80,6 +80,15 @@ or `y = 1`. -/
 def malcevOrWord (a b x y : G) : G :=
   malcevWord a b ⁅x, y⁆ (malcevWord a b ⁅x, a * y * a⁻¹⁆ ⁅x, b * y * b⁻¹⁆)
 
+/-- The defining equation of Malcev's word, in every group. -/
+theorem malcevWord_def (a b x y : G) :
+    malcevWord a b x y = x ^ 2 * a * x ^ 2 * a⁻¹ * ((y * b * y * b⁻¹) ^ 2)⁻¹ := (rfl)
+
+/-- The defining equation of `malcevOrWord` in terms of Malcev's word, in every group. -/
+theorem malcevOrWord_def (a b x y : G) :
+    malcevOrWord a b x y =
+      malcevWord a b ⁅x, y⁆ (malcevWord a b ⁅x, a * y * a⁻¹⁆ ⁅x, b * y * b⁻¹⁆) := (rfl)
+
 /-- Malcev's word vanishes exactly when Malcev's equation holds. -/
 theorem malcevWord_eq_one_iff_eq {a b x y : G} :
     malcevWord a b x y = 1 ↔ x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2 :=
