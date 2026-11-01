@@ -83,9 +83,8 @@ germ kernel at their source. -/
 theorem germRel_iff_mem_germKernel {a b : ActionCategory G X} {f f' : a ⟶ b} :
     germRel G X f f' ↔ (f.hom : G)⁻¹ * f'.hom ∈ germKernel G a.back := by
   rw [germRel_iff]
-  exact (eventually_congr (.of_forall fun y ↦
-    (show (f.hom : G) • y = (f'.hom : G) • y ↔ ((f.hom : G)⁻¹ * f'.hom) • y = y by
-      rw [mul_smul, inv_smul_eq_iff, eq_comm]))).trans mem_germKernel.symm
+  refine (eventually_congr (.of_forall fun y ↦ ?_)).trans mem_germKernel.symm
+  rw [mul_smul, inv_smul_eq_iff, eq_comm]
 
 variable (G X)
 

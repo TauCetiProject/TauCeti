@@ -127,8 +127,8 @@ theorem stabilizer_le_normalizer_germKernel [ContinuousConstSMul G X] (x : X) :
   rw [mem_stabilizer_iff.mp hh] at hconj
   refine Subgroup.mem_normalizer_iff.mpr fun g ↦ ?_
   conv_rhs => rw [hconj]
-  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply,
-    show h⁻¹ * (h * g * h⁻¹) * h = g by simp [mul_assoc]]
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+  simp [mul_assoc]
 
 /-- The germ kernel at `x` is a normal subgroup of the stabilizer of `x`, so the isotropy at `x`
 has an effective quotient by its ineffective part. -/
