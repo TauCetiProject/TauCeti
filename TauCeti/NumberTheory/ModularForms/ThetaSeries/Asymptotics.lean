@@ -41,9 +41,9 @@ Gauss sum `ZLattice.gaussSum`. Along the imaginary axis `ε = i t` this reads
 
 `t^k Θ_L(a/c + i t) → G_L(a, c) / (c^{2k} covol L)` as `t → 0⁺`.
 
-The same splitting applies to the dual lattice at a cusp `b / a`, now over the classes of `L^∨`
-modulo `aL`: since `L` is even and `⟪y, ℓ⟫ ∈ ℤ` for `y ∈ L^∨` and `ℓ ∈ L`, the factor
-`exp (π i ‖x‖² b / a)` is constant on `y + aL`, equal to `e(b ‖y‖² / (2a))`, so
+Both statements hold, with the same proof, for any lattice `M` with `cL ≤ M ≤ L^∨` in place of `L`:
+since `L` is even and `⟪y, ℓ⟫ ∈ ℤ` for `y ∈ M` and `ℓ ∈ L`, the factor `exp (π i ‖x‖² a / c)` is
+constant on `y + cL`, equal to `e(a ‖y‖² / (2c))`. For `M = L^∨` at a cusp `b / a` this gives
 
 `Θ_{L^∨}(b/a + τ) = ∑_{y ∈ L^∨/aL} e(b ‖y‖² / (2a)) θ_{y+aL}(τ)`,
 
@@ -59,6 +59,10 @@ reciprocity law for the Gauss sums of an even lattice
 
 * `ZLattice.tendsto_pow_mul_thetaCoset_comap_S`, `ZLattice.tendsto_pow_mul_thetaSeries_comap_S`:
   `ε^k θ_{v+L}(ε) → i^k (covol L)⁻¹` as `ε` tends to the cusp `0`.
+* `ZLattice.IsEven.thetaSeries_vadd_eq_sum_of_le`,
+  `ZLattice.IsEven.tendsto_pow_mul_thetaSeries_vadd_comap_S_of_le`: the splitting of
+  `Θ_M(a/c + τ)` into theta series of translates of `cL`, and the asymptotic of `Θ_M` at the cusp
+  `a / c`, for any lattice `M` with `cL ≤ M ≤ L^∨`.
 * `ZLattice.IsEven.thetaSeries_vadd_eq_sum`: the splitting of `Θ_L(a/c + τ)` into theta series of
   translates of `cL`, weighted by Gauss summands.
 * `ZLattice.IsEven.tendsto_pow_mul_thetaSeries_vadd_comap_S`,
@@ -129,32 +133,49 @@ namespace IsEven
 
 variable {L}
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- **Splitting a theta series at the cusp `a / c`.** For an even lattice `L`, `a ∈ ℤ` and a
-positive integer `c`, `Θ_L(a/c + τ) = ∑_{y ∈ L/cL} e(a ‖y‖² / (2c)) θ_{y+cL}(τ)`: on each class
-`y + cL` the factor `exp (π i ‖x‖² a / c)` is the Gauss summand of `y`. -/
-theorem thetaSeries_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (τ : ℍ) :
-    thetaSeries L (((a : ℝ) / c) +ᵥ τ) = ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L,
-      gaussTerm L hL a c 0 y * thetaCoset ((c : ℝ) • L) ((Quotient.out y : L) : E) τ := by
-  rw [← (hasSum_thetaCoset_out L (natCast_smul_le L c) _).tsum_eq, tsum_fintype]
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **Splitting a theta series at the cusp `a / c` over an intermediate lattice.** Let `L` be even,
+`a ∈ ℤ`, `c` a positive integer and `M` a lattice with `cL ≤ M ≤ L^∨`. If `g` is a function on
+`M / cL` taking the value `e(a ‖v‖² / (2c))` at the class of each `v ∈ M`, then
+`Θ_M(a/c + τ) = ∑_{y ∈ M/cL} g(y) θ_{y+cL}(τ)`: since `⟪M, L⟫ ⊆ ℤ` and `L` is even, the factor
+`exp (π i ‖x‖² a / c)` is constant on each class `y + cL`. -/
+theorem thetaSeries_vadd_eq_sum_of_le (hL : IsEven L) {M : Submodule ℤ E} [DiscreteTopology M]
+    {c : ℕ} [NeZero c] (hcM : (c : ℝ) • L ≤ M) (hM : M ≤ dual L)
+    [Fintype (M ⧸ ((c : ℝ) • L).submoduleOf M)] (a : ℤ) {g : M ⧸ ((c : ℝ) • L).submoduleOf M → ℂ}
+    (hg : ∀ v : M, g (Submodule.Quotient.mk v) =
+      cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ))) (τ : ℍ) :
+    thetaSeries M (((a : ℝ) / c) +ᵥ τ) =
+      ∑ y, g y * thetaCoset ((c : ℝ) • L) ((Quotient.out y : M) : E) τ := by
+  rw [← (hasSum_thetaCoset_out M hcM _).tsum_eq, tsum_fintype]
   refine Finset.sum_congr rfl fun y _ ↦ ?_
   have hc : (c : ℝ) ≠ 0 := NeZero.ne _
   rw [thetaCoset_vadd_eq_mul _ _ (fun w hw ↦ ?_)]
   · congr 1
     conv_rhs => rw [← Submodule.Quotient.mk_out y]
-    rw [gaussTerm_mk, ZeroMemClass.coe_zero, inner_zero_right, add_zero]
+    rw [hg]
     congr 1
     push_cast
     field_simp
   · -- For `w = c u`, `(‖γ + w‖² - ‖γ‖²) a / c = 2 a ⟪γ, u⟫ + a c ‖u‖²`, an even integer.
     obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hw
-    obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ (Quotient.out y).2 _ hu
+    obtain ⟨i, hi⟩ := mem_dual.mp (hM (Quotient.out y).2) _ hu
     obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hu
     refine ⟨a * i + a * c * j, ?_⟩
     rw [norm_add_sq_real, norm_smul, inner_smul_right, hi, mul_pow, hj, Real.norm_natCast]
     push_cast
     field_simp
     ring
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Splitting a theta series at the cusp `a / c`.** For an even lattice `L`, `a ∈ ℤ` and a
+positive integer `c`, `Θ_L(a/c + τ) = ∑_{y ∈ L/cL} e(a ‖y‖² / (2c)) θ_{y+cL}(τ)`: on each class
+`y + cL` the factor `exp (π i ‖x‖² a / c)` is the Gauss summand of `y`. -/
+theorem thetaSeries_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (τ : ℍ) :
+    thetaSeries L (((a : ℝ) / c) +ᵥ τ) = ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L,
+      gaussTerm L hL a c 0 y * thetaCoset ((c : ℝ) • L) ((Quotient.out y : L) : E) τ :=
+  thetaSeries_vadd_eq_sum_of_le hL (natCast_smul_le L c)
+    (isIntegral_iff_le_dual.mp hL.isIntegral) a (fun v ↦ by
+      rw [gaussTerm_mk, ZeroMemClass.coe_zero, inner_zero_right, add_zero, div_div]) τ
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Splitting the theta series of the dual lattice at the cusp `b / a`.** For an even lattice
@@ -165,31 +186,38 @@ theorem thetaSeries_dual_vadd_eq_sum (hL : IsEven L) (b : ℤ) (a : ℕ) [NeZero
     [Fintype (dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))] (τ : ℍ) :
     thetaSeries (dual L) (((b : ℝ) / a) +ᵥ τ) =
       ∑ y : dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L),
-        dualGaussTerm L hL b a y * thetaCoset ((a : ℝ) • L) ((Quotient.out y : dual L) : E) τ := by
-  have hle : (a : ℝ) • L ≤ dual L :=
-    (natCast_smul_le L a).trans (isIntegral_iff_le_dual.mp hL.isIntegral)
-  rw [← (hasSum_thetaCoset_out (dual L) hle _).tsum_eq, tsum_fintype]
-  refine Finset.sum_congr rfl fun y _ ↦ ?_
-  have ha : (a : ℝ) ≠ 0 := NeZero.ne _
-  rw [thetaCoset_vadd_eq_mul _ _ (fun w hw ↦ ?_)]
-  · congr 1
-    conv_rhs => rw [← Submodule.Quotient.mk_out y]
-    rw [dualGaussTerm_mk]
-    congr 1
-    push_cast
-    field_simp
-  · -- For `w = a u`, `(‖γ + w‖² - ‖γ‖²) b / a = 2 b ⟪γ, u⟫ + a b ‖u‖²`, an even integer.
-    obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hw
-    obtain ⟨i, hi⟩ := mem_dual.mp (Quotient.out y).2 _ hu
-    obtain ⟨j, hj⟩ := isEven_iff.mp hL _ hu
-    refine ⟨b * i + b * a * j, ?_⟩
-    rw [norm_add_sq_real, norm_smul, inner_smul_right, hi, mul_pow, hj, Real.norm_natCast]
-    push_cast
-    field_simp
-    ring
+        dualGaussTerm L hL b a y * thetaCoset ((a : ℝ) • L) ((Quotient.out y : dual L) : E) τ :=
+  thetaSeries_vadd_eq_sum_of_le hL
+    ((natCast_smul_le L a).trans (isIntegral_iff_le_dual.mp hL.isIntegral)) le_rfl b
+    (dualGaussTerm_mk hL b a) τ
 
 variable (hL : IsEven L)
 include hL
+
+/-- **Theta series near the cusp `a / c` over an intermediate lattice**: if `dim E = 2k`, `L` is
+even, `a ∈ ℤ`, `c` is a positive integer, `cL ≤ M ≤ L^∨`, and `g` is a function on `M / cL` taking
+the value `e(a ‖v‖² / (2c))` at the class of each `v ∈ M`, then
+`ε^k Θ_M(a/c + ε) → i^k (∑_{y ∈ M/cL} g(y)) / (c^{2k} covol L)` as `ε → 0` with
+`im (-1/ε) → ∞`. -/
+theorem tendsto_pow_mul_thetaSeries_vadd_comap_S_of_le (hk : finrank ℝ E = 2 * k)
+    {M : Submodule ℤ E} [DiscreteTopology M] {c : ℕ} [NeZero c] (hcM : (c : ℝ) • L ≤ M)
+    (hM : M ≤ dual L)
+    [Fintype (M ⧸ ((c : ℝ) • L).submoduleOf M)] (a : ℤ) {g : M ⧸ ((c : ℝ) • L).submoduleOf M → ℂ}
+    (hg : ∀ v : M, g (Submodule.Quotient.mk v) =
+      cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ))) :
+    Tendsto (fun ε : ℍ ↦ (ε : ℂ) ^ k * thetaSeries M (((a : ℝ) / c) +ᵥ ε))
+      (comap (ModularGroup.S • ·) atImInfty)
+      (𝓝 (I ^ k * (∑ y, g y) / ((c : ℂ) ^ (2 * k) * covolume L))) := by
+  have h := tendsto_finsetSum (Finset.univ (α := M ⧸ ((c : ℝ) • L).submoduleOf M)) fun y _ ↦
+    (tendsto_pow_mul_thetaCoset_comap_S ((c : ℝ) • L) hk ((Quotient.out y : M) : E)).const_mul
+      (g y)
+  simp_rw [thetaSeries_vadd_eq_sum_of_le hL hcM hM a hg]
+  convert h using 2 with ε
+  · rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun y _ ↦ by ring
+  · rw [← Finset.sum_mul, covolume_natCast_smul L c MeasureTheory.volume, hk]
+    push_cast
+    field_simp
 
 /-- **Theta series of an even lattice near the cusp `a / c`**: if `dim E = 2k`, then for `a ∈ ℤ`
 and a positive integer `c`, `ε^k Θ_L(a/c + ε) → i^k G_L(a, c) / (c^{2k} covol L)` as `ε → 0` with
@@ -199,15 +227,10 @@ theorem tendsto_pow_mul_thetaSeries_vadd_comap_S (hk : finrank ℝ E = 2 * k) (a
     Tendsto (fun ε : ℍ ↦ (ε : ℂ) ^ k * thetaSeries L (((a : ℝ) / c) +ᵥ ε))
       (comap (ModularGroup.S • ·) atImInfty)
       (𝓝 (I ^ k * gaussSum L hL a c / ((c : ℂ) ^ (2 * k) * covolume L))) := by
-  have h := tendsto_finsetSum (Finset.univ (α := L ⧸ ((c : ℝ) • L).submoduleOf L)) fun y _ ↦
-    (tendsto_pow_mul_thetaCoset_comap_S ((c : ℝ) • L) hk ((Quotient.out y : L) : E)).const_mul
-      (gaussTerm L hL a c 0 y)
-  simp_rw [thetaSeries_vadd_eq_sum hL a c, Finset.mul_sum]
-  convert h using 2 with ε
-  · exact Finset.sum_congr rfl fun y _ ↦ by ring
-  · rw [gaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L c MeasureTheory.volume, hk]
-    push_cast
-    field_simp
+  rw [gaussSum_def]
+  exact tendsto_pow_mul_thetaSeries_vadd_comap_S_of_le hL hk (natCast_smul_le L c)
+    (isIntegral_iff_le_dual.mp hL.isIntegral) a (g := gaussTerm L hL a c 0) fun v ↦ by
+      rw [gaussTerm_mk, ZeroMemClass.coe_zero, inner_zero_right, add_zero, div_div]
 
 /-- **The dual theta series of an even lattice near the cusp `b / a`**: if `dim E = 2k`, then for
 `b ∈ ℤ` and a positive integer `a`,
@@ -218,16 +241,10 @@ theorem tendsto_pow_mul_thetaSeries_dual_vadd_comap_S (hk : finrank ℝ E = 2 * 
     Tendsto (fun ε : ℍ ↦ (ε : ℂ) ^ k * thetaSeries (dual L) (((b : ℝ) / a) +ᵥ ε))
       (comap (ModularGroup.S • ·) atImInfty)
       (𝓝 (I ^ k * dualGaussSum L hL b a / ((a : ℂ) ^ (2 * k) * covolume L))) := by
-  have h := tendsto_finsetSum
-    (Finset.univ (α := dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))) fun y _ ↦
-      (tendsto_pow_mul_thetaCoset_comap_S ((a : ℝ) • L) hk
-        ((Quotient.out y : dual L) : E)).const_mul (dualGaussTerm L hL b a y)
-  simp_rw [thetaSeries_dual_vadd_eq_sum hL b a, Finset.mul_sum]
-  convert h using 2 with ε
-  · exact Finset.sum_congr rfl fun y _ ↦ by ring
-  · rw [dualGaussSum_def, ← Finset.sum_mul, covolume_natCast_smul L a MeasureTheory.volume, hk]
-    push_cast
-    field_simp
+  rw [dualGaussSum_def]
+  exact tendsto_pow_mul_thetaSeries_vadd_comap_S_of_le hL hk
+    ((natCast_smul_le L a).trans (isIntegral_iff_le_dual.mp hL.isIntegral)) le_rfl b
+    (dualGaussTerm_mk hL b a)
 
 /-- **Theta series of an even lattice on a vertical line**: if `dim E = 2k`, then for `a ∈ ℤ` and a
 positive integer `c`, `t^k Θ_L(a/c + i t) → G_L(a, c) / (c^{2k} covol L)` as `t → 0⁺`, where
