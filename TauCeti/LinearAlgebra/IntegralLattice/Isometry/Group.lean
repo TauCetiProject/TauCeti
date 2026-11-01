@@ -42,6 +42,8 @@ and in rank one `O(L) = {±1}`.
 * `TauCeti.IntegralLattice.Isometry.det`: the determinant `O(L) →* ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup`: the subgroup `SO(L)` of determinant one.
 * `TauCeti.IntegralLattice.Isometry.neg`: negation, the element `-1` of `O(L)`.
+* `TauCeti.IntegralLattice.Isometry.unitsSMul`: multiplication by a unit `u` of `ℤ`, so the
+  identity for `u = 1` and negation for `u = -1`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toSpecialLinearGroup`: restriction to the
   carrier as a group homomorphism from `SO(L)` to the special linear group of the carrier.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix`: the matrix of a proper isometry in a
@@ -204,6 +206,30 @@ theorem det_neg (L : IntegralLattice V) : det L (neg L) = (-1) ^ Module.finrank 
     ext x
     simp
   rw [h, LinearMap.det_smul, LinearMap.det_id, mul_one]
+
+/-- Multiplication by a unit `u` of `ℤ`, that is by `±1`, is a self-isometry of every integral
+lattice. -/
+def unitsSMul (u : ℤˣ) (L : IntegralLattice V) : Isometry L L where
+  toIsometryEquiv :=
+    { toFun x := (u : ℤ) • x
+      invFun x := (u : ℤ) • x
+      map_add' := smul_add _
+      map_smul' c x := smul_comm _ c x
+      left_inv x := by simp [smul_smul]
+      right_inv x := by simp [smul_smul]
+      map_app' x y := by
+        simp only [map_zsmul, LinearMap.smul_apply, smul_smul, ← Units.val_mul,
+          Int.units_mul_self, Units.val_one, one_smul] }
+  map_carrier := by
+    ext x
+    simp only [Submodule.mem_map]
+    refine ⟨?_, fun hx ↦ ⟨(u : ℤ) • x, zsmul_mem hx _, by simp [smul_smul]⟩⟩
+    rintro ⟨y, hy, rfl⟩
+    exact zsmul_mem hy _
+
+@[simp]
+theorem unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V) (x : V) :
+    unitsSMul u L x = (u : ℤ) • x := (rfl)
 
 end Isometry
 

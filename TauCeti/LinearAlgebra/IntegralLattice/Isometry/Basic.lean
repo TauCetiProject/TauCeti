@@ -195,6 +195,14 @@ theorem symm_symm (e : Isometry L M) : e.symm.symm = e := by
   ext
   rfl
 
+/-- The inverse of the identification of equal lattices is the identification along the reversed
+equality. -/
+@[simp]
+theorem symm_ofEq {L M : IntegralLattice V} (h : L = M) : (ofEq h).symm = ofEq h.symm := by
+  subst h
+  ext
+  rfl
+
 /-- Composition of integral-lattice isometries. -/
 @[trans]
 def trans (e : Isometry L M) (f : Isometry M N) : Isometry L N where

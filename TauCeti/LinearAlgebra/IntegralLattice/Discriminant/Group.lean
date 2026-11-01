@@ -213,13 +213,6 @@ theorem discriminantGroupEquiv_trans (e : Isometry L M) (f : Isometry M N) :
     e.dualCarrierEquiv f.dualCarrierEquiv e.map_carrierInDual f.map_carrierInDual
       (by simpa only [dualCarrierEquiv_trans] using (e.trans f).map_carrierInDual)
 
-/-- Identifying equal lattices along the reversed equality induces the inverse of the
-discriminant-group equivalence induced along the equality. -/
-theorem discriminantGroupEquiv_ofEq_symm {L M : IntegralLattice V} (h : L = M) :
-    (ofEq h.symm).discriminantGroupEquiv = (ofEq h).discriminantGroupEquiv.symm := by
-  subst h
-  rw [ofEq_rfl, discriminantGroupEquiv_refl, LinearEquiv.refl_symm]
-
 end Isometry
 
 end IntegralLattice
