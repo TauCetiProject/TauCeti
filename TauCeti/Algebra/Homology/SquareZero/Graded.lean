@@ -21,7 +21,8 @@ The definitions need no hypothesis on `D` or `G`; in particular `M` need not be 
 the pieces `G i`. This covers completed modules, in which a completed combination need not be a
 sum of homogeneous ones. Unlike `TauCeti.gradedCochainComplex`, which assembles a differential of
 degree one into a cochain complex for Mathlib's categorical homology, these are concrete quotients
-whose elements are classes of elements of `M`, in the manner of `LinearMap.homology`.
+whose elements are classes of elements of `M`, in the manner of `LinearMap.homology` (the homology
+of a square-zero endomorphism, in `TauCeti.Algebra.Homology.SquareZero`).
 
 A bilinear map `μ : M₁ → M₂ → M₀` which shifts degree by `ε` and obeys the Leibniz rule
 `D₀ (μ a b) = μ (D₁ a) b + (-1)^i μ a (D₂ b)` for `a` of degree `i` sends two cocycles to a
@@ -40,6 +41,8 @@ bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyPro
 
 * `LinearMap.coboundaries_le_cocycles`: coboundaries are cocycles for a differential of degree
   one.
+* `LinearMap.cohomology_mk_eq_zero_iff`, `LinearMap.cohomology_mk_eq_mk_iff`: when the class of
+  a cocycle vanishes, and when two classes are equal.
 * `LinearMap.apply_mem_cocycles`, `LinearMap.apply_mem_coboundaries_of_left`,
   `LinearMap.apply_mem_coboundaries_of_right`: products of cocycles are cocycles, and products
   with a coboundary are coboundaries.
@@ -101,6 +104,20 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 degree-`i` cocycles modulo those which are degree-`i` coboundaries. -/
 abbrev cohomology : Type _ :=
   D.cocycles G i ⧸ (D.coboundaries G i).comap (D.cocycles G i).subtype
+
+variable {D G i}
+
+/-- The class of a cocycle vanishes in cohomology exactly when the cocycle is a coboundary. -/
+theorem cohomology_mk_eq_zero_iff {a : D.cocycles G i} :
+    (Submodule.Quotient.mk a : D.cohomology G i) = 0 ↔ (a : M) ∈ D.coboundaries G i :=
+  Submodule.Quotient.mk_eq_zero _
+
+/-- Two cocycles have the same class in cohomology exactly when their difference is a
+coboundary. -/
+theorem cohomology_mk_eq_mk_iff {a b : D.cocycles G i} :
+    (Submodule.Quotient.mk a : D.cohomology G i) = Submodule.Quotient.mk b ↔
+      (a - b : M) ∈ D.coboundaries G i :=
+  Submodule.Quotient.eq _
 
 end Ring
 
