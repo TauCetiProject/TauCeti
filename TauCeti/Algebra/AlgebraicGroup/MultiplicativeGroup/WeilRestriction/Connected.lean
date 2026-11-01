@@ -117,14 +117,12 @@ variable {k : Type u} {B : Type*} [Field k] [CommRing B] [Algebra k B]
 /-- Evaluation `s ↦ a` on `K[s][1/ρ]`, defined when `ρ(a) ≠ 0`. -/
 private noncomputable def evalAway {K : Type*} [Field K] (ρ : K[X]) (a : K) (ha : ρ.eval a ≠ 0) :
     Localization.Away ρ →ₐ[K] K :=
-  IsLocalization.liftAlgHom (M := Submonoid.powers ρ) (f := aeval a) (by
-    rintro ⟨_, n, rfl⟩
-    simpa using (isUnit_iff_ne_zero.mpr ha).pow n)
+  IsLocalization.Away.liftAlgHom ρ (f := aeval a) (by simpa using isUnit_iff_ne_zero.mpr ha)
 
 private theorem evalAway_algebraMap {K : Type*} [Field K] (ρ : K[X]) (a : K)
     (ha : ρ.eval a ≠ 0) (q : K[X]) :
     evalAway ρ a ha (algebraMap K[X] (Localization.Away ρ) q) = q.eval a := by
-  simp [evalAway, IsLocalization.lift_eq]
+  simp [evalAway, IsLocalization.Away.lift_eq]
 
 section Path
 
@@ -218,15 +216,14 @@ private theorem rightTranslationAlgHom_eq_self {K : Type u} [Field K] [Algebra k
     rw [eval_zero_pathPolynomial]
     exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (leadingCoeff_ne_zero.mpr hp)
   have : IsDomain (Localization.Away (pathPolynomial p)) :=
-    IsLocalization.isDomain_localization <| powers_le_nonZeroDivisors_of_noZeroDivisors
-      fun h ↦ hρ1 (by rw [h, eval_zero])
+    Localization.Away.isDomain fun h ↦ hρ1 (by rw [h, eval_zero])
   -- the point of `Res_{B/k} 𝔾ₘ` over `K[s][1/ρ]` given by the path `s ↦ 1 - s + s u`
   let x := ((multiplicativeGroupPoints k B _).symm (isUnit_pathElement p u hpu).unit).ofConv
   have hpath (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
       (multiplicativeGroupPoints k B K (toConv (((evalAway _ a ha).restrictScalars k).comp x)) :
         B ⊗[k] K) = 1 - (1 : B) ⊗ₜ[k] a + (1 : B) ⊗ₜ[k] a * u := by
-    rw [multiplicativeGroupPoints_naturality, MulEquiv.apply_symm_apply,
-      Units.coe_map, MonoidHom.coe_ofClass, IsUnit.unit_spec, lTensor_evalAway_pathElement]
+    rw [multiplicativeGroupPoints_naturality]
+    simp [lTensor_evalAway_pathElement]
   have h₁ : ((evalAway _ 1 hρ1).restrictScalars k).comp x = f := by
     refine toConv_injective ((multiplicativeGroupPoints k B K).injective (Units.ext ?_))
     rw [hpath, ← Algebra.TensorProduct.one_def]
@@ -242,10 +239,9 @@ private theorem rightTranslationAlgHom_eq_self {K : Type u} [Field K] [Algebra k
     Algebra.TensorProduct.ext_ring (AlgHom.ext fun w ↦ by simp)
   refine HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g
     (toConv (AlgHom.liftEquiv k K _ _ x)) (evalAway _ 1 hρ1) (evalAway _ 0 hρ0) ?_ ?_
-  · rw [AlgHom.mapValue_apply, ofConv_toConv, hΨ, h₁, Equiv.apply_symm_apply, toConv_ofConv]
-  · rw [AlgHom.mapValue_apply, ofConv_toConv, hΨ, h₀]
-    exact map_one (AlgHom.baseChangePointsMulEquiv (k := k) (K := K)
-      (A := WeilRestriction k B B[T;T⁻¹]) (R := K))
+  · simp [hΨ, h₁, f]
+  · rw [AlgHom.mapValue_apply, ofConv_toConv, hΨ, h₀,
+      ← AlgHom.baseChangePointsMulEquiv_apply_ofConv, toConv_ofConv, map_one]
 
 /-- **The Weil restriction of `𝔾ₘ` is geometrically connected.** For a finite-dimensional
 commutative algebra `B` over a field `k`, the coordinate Hopf algebra
