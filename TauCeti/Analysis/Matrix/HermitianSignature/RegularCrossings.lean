@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 public import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
 
@@ -28,14 +27,11 @@ the signatures of the crossing forms, in which a positive definite crossing form
 positively. The local jump at one regular crossing is
 `ContinuousLinearMap.eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`; between
 crossings the negative index is constant, because it is locally constant at nondegenerate forms
-(`ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt`).
+(`ContinuousLinearMap.sigNeg_toBilinForm_eq_of_isPreconnected`), and nondegenerate forms are
+open (`ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`).
 
 ## Main results
 
-* `ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions,
-  nondegenerate continuous bilinear forms form an open set.
-* `ContinuousLinearMap.sigNeg_toBilinForm_eq_of_isPreconnected`: the negative index is constant
-  along a continuous family of nondegenerate symmetric forms over a preconnected set.
 * `ContinuousLinearMap.finite_setOf_not_nondegenerate_toBilinForm`: a path with nondegenerate
   endpoints and only regular crossings has finitely many crossings.
 * `ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the negative
@@ -56,56 +52,7 @@ open scoped Finset
 
 namespace ContinuousLinearMap
 
-section Nondegenerate
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E]
-
-/-- In finite dimensions, the continuous bilinear forms whose bilinear form is nondegenerate form
-an open set. -/
-theorem isOpen_setOf_nondegenerate_toBilinForm :
-    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} := by
-  let b := Module.finBasis 𝕜 E
-  have hc : Continuous fun B : E →L[𝕜] E →L[𝕜] 𝕜 ↦ (B.toBilinForm.toMatrix b).det := by
-    refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
-    simpa only [LinearMap.BilinForm.toMatrix_apply, toBilinForm_apply] using
-      (continuous_id.clm_apply continuous_const).clm_apply continuous_const
-  have hset : {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} =
-      (fun B ↦ (B.toBilinForm.toMatrix b).det) ⁻¹' {0}ᶜ := by
-    ext B
-    exact LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b
-  rw [hset]
-  exact isOpen_compl_singleton.preimage hc
-
-end Nondegenerate
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- **The negative index is constant between crossings.** Along a family of symmetric continuous
-bilinear forms, continuous and nondegenerate on a preconnected set `s`, the negative index takes
-the same value at any two points of `s`. -/
-theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
-    {V : X → E →L[ℝ] E →L[ℝ] ℝ} {s : Set X} (hs : IsPreconnected s) (hc : ContinuousOn V s)
-    (hsymm : ∀ t ∈ s, (V t).toBilinForm.IsSymm)
-    (hnd : ∀ t ∈ s, (V t).toBilinForm.Nondegenerate) {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
-    sigNeg (V x).toBilinForm.toQuadraticMap = sigNeg (V y).toBilinForm.toQuadraticMap := by
-  refine hs.constant (f := fun t ↦ sigNeg (V t).toBilinForm.toQuadraticMap) (fun t ht ↦ ?_) hx hy
-  rw [continuousWithinAt_iff_continuousAt_domRestrict _ ht]
-  exact tendsto_nhds_of_eventually_eq <|
-    eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := s.domRestrict V) (x := ⟨t, ht⟩)
-      (Eventually.of_forall fun u ↦ hsymm u u.2) hc.domRestrict.continuousAt (hnd t ht)
-
-/-- The crossing form of a nondegenerate form lives on the zero space, so its signature
-vanishes. -/
-private theorem sigPos_sub_sigNeg_crossingForm_eq_zero {B : E →L[ℝ] E →L[ℝ] ℝ}
-    (hB : B.toBilinForm.Nondegenerate) (V' : E →L[ℝ] E →L[ℝ] ℝ) :
-    (sigPos (crossingForm B V') : ℤ) - sigNeg (crossingForm B V') = 0 := by
-  have hker : B.ker = ⊥ := by
-    rw [← ker_toBilinForm]
-    exact LinearMap.separatingLeft_iff_ker_eq_bot.1 hB.1
-  have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := crossingForm B V')
-  rw [Submodule.finrank_eq_zero.2 hker] at h
-  omega
 
 variable {V V' : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {a b : ℝ}
 
@@ -138,12 +85,9 @@ theorem finite_setOf_not_nondegenerate_toBilinForm (hc : ContinuousOn V (Icc a b
       with t ht htD
     exact htD.2 ht
 
-/-- The induction behind `sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`. If `S` is
-the finite set of crossings in `[a, b]`, then for every nondegenerate `s ∈ [a, b]` the negative
-index drops from `s` to `b` by the sum of the signatures of the crossing forms at the crossings
-after `s`. The induction is on the number of those crossings: the first crossing `c` after `s` is
-passed with `eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`, landing at a
-nondegenerate `t₂ > c` with no crossing in `(c, t₂]`. -/
+/-- Let `S` be the finite set of crossings in `[a, b]`. For every nondegenerate `s ∈ [a, b]`, the
+negative index drops from `s` to `b` by the sum of the signatures of the crossing forms at the
+crossings after `s`. -/
 private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
     (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm) (hb : (V b).toBilinForm.Nondegenerate)
     (hV : ∀ t ∈ Ioo a b, ¬(V t).toBilinForm.Nondegenerate → HasDerivAt V (V' t) t)
@@ -156,6 +100,9 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
         ((sigPos (crossingForm (V t) (V' t)) : ℤ) - sigNeg (crossingForm (V t) (V' t))) := by
   induction hn : #{t ∈ S | s < t} using Nat.strong_induction_on generalizing s with
   | _ n ih =>
+  -- Induct on the number of crossings after `s`: the first crossing `c` after `s` is passed with
+  -- `eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`, landing at a nondegenerate
+  -- `t₂ > c` with no crossing in `(c, t₂]`.
   -- Between a nondegenerate `s` and a later `u` with no crossing in between, the negative index
   -- does not change.
   have hconst {u : ℝ} (hsu : s ≤ u) (hu : u ≤ b)

@@ -46,6 +46,8 @@ the one-sided statements.
 
 ## Main results
 
+* `ContinuousLinearMap.sigPos_sub_sigNeg_crossingForm_eq_zero`: the crossing form at a
+  nondegenerate form has signature zero.
 * `ContinuousLinearMap.eventually_sigNeg_eq_add_sigNeg_crossingForm`: just after a regular
   crossing, the negative index of `V t` is that of `V t₀` plus that of the crossing form.
 * `ContinuousLinearMap.eventually_sigNeg_eq_add_sigPos_crossingForm`: just before a regular
@@ -111,6 +113,18 @@ private theorem exists_le_ker_of_posDef_neg_crossingForm (B D : E →L[ℝ] E �
     simpa using hM' ⟨y, hy⟩ hy0'
 
 variable [FiniteDimensional ℝ E] {V : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {t₀ : ℝ}
+
+/-- The crossing form of a nondegenerate form lives on the zero space, so its signature
+vanishes. -/
+theorem sigPos_sub_sigNeg_crossingForm_eq_zero {B : E →L[ℝ] E →L[ℝ] ℝ}
+    (hB : B.toBilinForm.Nondegenerate) (V' : E →L[ℝ] E →L[ℝ] ℝ) :
+    (sigPos (crossingForm B V') : ℤ) - sigNeg (crossingForm B V') = 0 := by
+  have hker : B.ker = ⊥ := by
+    rw [← ker_toBilinForm]
+    exact LinearMap.separatingLeft_iff_ker_eq_bot.1 hB.1
+  have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := crossingForm B V')
+  rw [Submodule.finrank_eq_zero.2 hker] at h
+  omega
 
 /-- The scalar inequality behind the key estimate: a term bounded by `-c₁ a²`, plus `h` times a
 term bounded by `C a² + 2 C a b - c₂ b²`, plus an error bounded by `c₂ h (2 a² + 2 b²) / 8`, is
