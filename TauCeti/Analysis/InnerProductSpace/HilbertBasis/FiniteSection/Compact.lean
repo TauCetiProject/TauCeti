@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Reflection
 public import TauCeti.Analysis.Normed.Operator.Compact.StrongConvergence
-import TauCeti.Analysis.Normed.Operator.DunfordPettis
+import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
