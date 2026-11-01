@@ -29,10 +29,12 @@ already known from the density of `W` in `T`. For injectivity we construct a ret
 `T → W ⧸ J` of `W → W ⧸ J`.
 
 * For every radius `ρ > 1` the restricted series `K{X/ρ}` lie in `W`, and they surject onto
-  `W ⧸ J` because the polynomials already do. So `W ⧸ J` is a quotient of the affinoid algebra
-  `K{X/ρ}`, and it inherits a complete ultrametric residue norm.
-* The class of each variable `Xᵢ` in `W ⧸ J` has supremum seminorm at most `ρ` for every `ρ > 1`,
-  since homomorphisms of affinoid algebras contract the supremum seminorm, hence at most `1`.
+  `W ⧸ J` because the polynomials already do. When some power `ρ ^ m` lies in `|K×|`, for
+  instance `ρ = ‖c‖ ^ (1 / m)` with `‖c‖ > 1`, the algebra `K{X/ρ}` is affinoid. So `W ⧸ J` is a
+  quotient of an affinoid algebra, and it inherits a complete ultrametric residue norm.
+* For each such affinoid radius `ρ`, the class of each variable `Xᵢ` in `W ⧸ J` has supremum
+  seminorm at most `ρ`, since homomorphisms of affinoid algebras contract the supremum seminorm.
+  These radii come arbitrarily close to `1`, so the seminorm is at most `1`.
   It is therefore power-bounded, and the universal property of `T` gives a continuous
   homomorphism `T → W ⧸ J` sending `Xᵢ` to its class.
 * Composed with `W → T`, this homomorphism agrees with the projection `W → W ⧸ J` on the
@@ -73,22 +75,12 @@ local notation "W " σ:max => washnitzerAlgebra σ K
 local notation "T " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 local notation "T[" ρ "] " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)
 
-/-- The inclusion of the series restricted at a radius `ρ > 1` into `W`, as a `K`-algebra map. -/
-private noncomputable def ofRestrictedₐ {ρ : ℝ} (hρ : 1 < ρ) : T[ρ] σ →ₐ[K] W σ where
-  __ := ofRestricted hρ fun _ ↦ le_rfl
-  commutes' r := Subtype.ext (coe_ofRestricted hρ (fun _ ↦ le_rfl) (algebraMap K _ r))
-
-omit [CompleteSpace K] [Finite σ] in
-@[simp]
-private theorem coe_ofRestrictedₐ {ρ : ℝ} (hρ : 1 < ρ) (f : T[ρ] σ) :
-    (ofRestrictedₐ hρ f : _root_.MvPowerSeries σ K) = f :=
-  coe_ofRestricted hρ (fun _ ↦ le_rfl) f
-
 /-- For a radius `ρ > 1`, every class of a finite quotient `W ⧸ J` is represented by a series
 restricted at `ρ`, since it is represented by a polynomial. -/
 private theorem surjective_mkₐ_comp_ofRestrictedₐ (J : Ideal (W σ))
     [Module.Finite K (W σ ⧸ J)] {ρ : ℝ} (hρ : 1 < ρ) :
-    Function.Surjective ((Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ (σ := σ) hρ)) := by
+    Function.Surjective
+      ((Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ (σ := σ) hρ fun _ ↦ le_rfl)) := by
   have : Algebra.IsIntegral K (W σ ⧸ J) := Algebra.IsIntegral.of_finite K _
   intro x
   obtain ⟨p, rfl⟩ := surjective_mkₐ_comp_ofMvPolynomial J x
@@ -116,9 +108,9 @@ private theorem supSeminorm_le_one (J : Ideal (W σ)) {S : Type*}
           Real.rpow_inv_natCast_pow hρ0.le hm⟩
     let x : T[‖c‖ ^ (m : ℝ)⁻¹] σ := ⟨_root_.MvPowerSeries.X i, isRestricted_X _ i⟩
     let φ : T[‖c‖ ^ (m : ℝ)⁻¹] σ →ₐ[K] S :=
-      e.toAlgHom.comp ((Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ hr))
-    have hx : ofRestrictedₐ hr x = X σ K i :=
-      Subtype.ext ((coe_ofRestrictedₐ hr x).trans (coe_X (R := K) i).symm)
+      e.toAlgHom.comp ((Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ hr fun _ ↦ le_rfl))
+    have hx : ofRestrictedₐ hr (fun _ ↦ le_rfl) x = X σ K i :=
+      Subtype.ext ((coe_ofRestrictedₐ hr _ x).trans (coe_X (R := K) i).symm)
     have hφ : φ x = e (Ideal.Quotient.mk J (X σ K i)) := by simp [φ, hx]
     have h1 := hT.supSeminorm_map_le hS φ x
     have h2 := hT.supSeminorm_le_norm x
@@ -171,7 +163,7 @@ private theorem exists_algHom_comp_toTate_eq (J : Ideal (W σ)) [Module.Finite K
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm K
   have hρ0 : 0 < ‖c‖ := zero_lt_one.trans hc
   have : Fact (0 < ‖c‖) := ⟨hρ0⟩
-  let θ := (Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ (σ := σ) hc)
+  let θ := (Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ (σ := σ) hc fun _ ↦ le_rfl)
   have hS : IsAffinoidAlgebra K (T[‖c‖] σ ⧸ RingHom.ker θ) :=
     (isAffinoidAlgebra_isRestricted_of_pow_eq_norm (r := fun _ : σ ↦ ‖c‖) fun _ ↦
       ⟨1, one_pos, Units.mk0 c (norm_pos_iff.mp hρ0), pow_one _⟩).quotient _
@@ -207,18 +199,6 @@ theorem quotientMap_map_toTate_bijective (J : Ideal (W σ)) [Module.Finite K (W 
   obtain ⟨x, hx⟩ := (quotientMap_toTate_bijective_of_finite (J.map (toTate σ K))).2 y
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
   exact ⟨Ideal.Quotient.mk J f, by simpa using hx⟩
-
-/-- The quotients of `W` by powers of a maximal ideal are finite-dimensional over `K`. -/
-private theorem finite_quotient_pow (m : Ideal (W σ)) [m.IsMaximal] (k : ℕ) :
-    Module.Finite K (W σ ⧸ m ^ k) := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · have : Subsingleton (W σ ⧸ m ^ 0) := by
-      rw [pow_zero, Ideal.one_eq_top]
-      exact Ideal.Quotient.subsingleton_iff.mpr rfl
-    exact Module.Finite.of_finite
-  · have : (m ^ k).radical.IsMaximal := by
-      rwa [Ideal.radical_pow m hk.ne', ‹m.IsMaximal›.isPrime.radical]
-    exact finite_quotient_of_isMaximal_radical (AlgHom.Finite.id K (W σ)) (m ^ k)
 
 /-- The infinitesimal neighbourhoods of `W` and `T` at a maximal ideal `𝔫` of `T` agree. -/
 private theorem quotientMap_map_pow_comap_toTate_bijective (𝔫 : Ideal (T σ)) [𝔫.IsMaximal]
