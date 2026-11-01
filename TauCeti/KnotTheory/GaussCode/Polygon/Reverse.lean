@@ -169,11 +169,7 @@ theorem exists_gaussCode_reverse_eq_relabel_reverse (hs : poly.IsSimple ℝ)
       hbp, Fin.rev_rev]
   -- Both strands of a crossing run backwards, which keeps the crossing sign.
   have hdet (u w : V) : b.det ![-u, -w, d] = b.det ![u, w, d] := by
-    have hv : ![-u, -w, d] = fun k ↦ ![(-1 : ℝ), -1, 1] k • ![u, w, d] k := by
-      ext k
-      fin_cases k <;> simp
-    rw [hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
-    simp
+    simpa using b.det_smul_smul_vecCons (-1) (-1) u w d
   have hfract (j) : Int.fract (visitTime hs hπ j) ≠ 0 :=
     (fract_mem_Ioo_of_mem_crossingTimes hπ (visitTime_mem_crossingTimes hs hπ j)).1.ne'
   have hsign (i) (hi : D.over (Fin.rev i) = true) :

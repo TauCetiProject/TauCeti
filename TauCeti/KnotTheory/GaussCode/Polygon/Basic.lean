@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.Geometry.Polygon.DoublePoint
 public import TauCeti.KnotTheory.GaussCode.Basic
 
@@ -602,15 +602,10 @@ theorem gaussCode_eq_of_strictMono
     obtain ⟨-, -, r, hr, hdir⟩ := hφt _ (hmem j)
     obtain ⟨-, -, r', hr', hdir'⟩ := hφt _ (hmem (D.partner.val j))
     -- The determinant of the edge directions is rescaled by the positive factor `r * r'`.
-    have hdet (u w : V) : b.det ![r • u, r' • w, d] = r * r' * b.det ![u, w, d] := by
-      have hv : ![r • u, r' • w, d] = fun k ↦ ![r, r', 1] k • ![u, w, d] k := by
-        ext k
-        fin_cases k <;> simp
-      rw [hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
-      simp
     refine Units.ext ?_
     rw [gaussCode_sign_visit b hs' hπ' hj', gaussCode_sign_visit b hs hπ hj, hvt, hvt', hdir,
-      hdir', hdet, sign_mul, sign_mul, sign_pos hr, sign_pos hr', one_mul, one_mul]
+      hdir', b.det_smul_smul_vecCons, sign_mul, sign_mul, sign_pos hr, sign_pos hr', one_mul,
+      one_mul]
   refine (BasedOrientedGaussCode.sigma_mk_eq_of_visit_lt_visit_iff hm (fun j k ↦ ?_)
     (fun j ↦ (hover j).symm) (fun j hj ↦ (hsign j hj).symm)).symm
   rw [gaussCode_visit_lt_visit_iff, gaussCode_visit_lt_visit_iff, hvt, hvt, hvt', hvt',
