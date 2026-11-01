@@ -209,11 +209,8 @@ variable {Z : Scheme.{u}}
 /-- Pullback along a morphism of schemes preserves the structure sheaf: `f^* 𝒪_Y ≅ 𝒪_X`, the
 isomorphism being Mathlib's comparison `SheafOfModules.pullbackObjUnitToUnit`. -/
 def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ 𝟙_ X.Modules :=
-  -- Mathlib's invertibility of `pullbackObjUnitToUnit` is stated for pushforwards known to be
-  -- right adjoints; the adjunction is recorded for `Scheme.Modules.pushforward`. Instance search
-  -- does not find the resulting `IsIso` instance, so it is passed explicitly.
-  let : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
+  -- Instance search does not find Mathlib's `IsIso` instance for `pullbackObjUnitToUnit`, so it
+  -- is passed explicitly.
   have : IsIso (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) :=
     SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _
   @asIso _ _ _ _ (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) this
@@ -221,10 +218,7 @@ def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ �
 /-- The hom of `pullbackObjUnitIso` is Mathlib's structure sheaf comparison map. -/
 @[simp]
 lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
-    (pullbackObjUnitIso f).hom =
-      (letI : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-        inferInstanceAs (pushforward f).IsRightAdjoint
-       SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) := by
+    (pullbackObjUnitIso f).hom = SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom := by
   rfl
 
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
@@ -384,12 +378,6 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
-  -- The site-level statement asks for the right adjoints by instance; for schemes they are
-  -- recorded on `Scheme.Modules.pushforward`.
-  have : (SheafOfModules.pushforward g.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward g).IsRightAdjoint
-  have : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
   TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
@@ -519,8 +507,6 @@ the restriction of `M` to the open image of `f`. -/
 def restrictOpensRangeIsoFree (M : Y.Modules) (f : X ⟶ Y) [IsOpenImmersion f] {I : Type u}
     (e : (pullback f).obj M ≅ SheafOfModules.free I) :
     M.restrict f.opensRange.ι ≅ SheafOfModules.free I :=
-  letI : (SheafOfModules.pushforward.{u} f.isoOpensRange.inv.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f.isoOpensRange.inv).IsRightAdjoint
   (restrictFunctorIsoPullback f.opensRange.ι).app M ≪≫
     (pullbackCongr f.isoOpensRange_inv_comp).symm.app M ≪≫
     ((pullbackComp f.isoOpensRange.inv f).app M).symm ≪≫

@@ -178,10 +178,8 @@ lemma pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeShea
 variable {X} in
 /-- Pullback of a free sheaf, expressed in the finite locally free category. -/
 noncomputable def pullbackFreeIso {Y : Scheme.{u}} (f : X ⟶ Y) (J : Type u) [Finite J] :
-    (pullback f).obj (free Y J) ≅ free X J := by
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
-  exact ObjectProperty.isoMk _
+    (pullback f).obj (free Y J) ≅ free X J :=
+  ObjectProperty.isoMk _
     (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
       SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J ≪≫
       eqToIso (free_obj X J).symm)
