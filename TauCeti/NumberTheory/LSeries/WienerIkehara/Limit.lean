@@ -37,7 +37,7 @@ values.
   combine into, and
   `TauCeti.LSeries.tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff` is its form
   for a smooth test function, where the half-line integrability hypothesis is automatic by
-  `TauCeti.integrable_fourier_of_contDiff_of_hasCompactSupport`.
+  `ContDiff.integrable_fourier_of_hasCompactSupport`.
 
 ## Provenance
 
@@ -192,7 +192,7 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral_boundary_of_contDiff (hx : 0 
       ∫ t : ℝ, G (1 + t * I) * psi t * (x : ℂ) ^ (t * I) :=
   tsum_term_mul_fourier_sub_pole_eq_integral_boundary hx hG hG' hsum
     (hpsi.continuous.integrable_of_hasCompactSupport hsupp) hsupp
-    (((integrable_fourier_of_contDiff_of_hasCompactSupport hpsi hsupp).comp_div
+    (((hpsi.integrable_fourier_of_hasCompactSupport hsupp).comp_div
       (by positivity)).integrableOn) hFsum
 
 end TauCeti.LSeries
