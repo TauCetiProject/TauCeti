@@ -106,6 +106,22 @@ theorem smoothModulesEquivalence_inverse_obj_smul
   exact ModuleTower.discreteModulesToSmooth_obj_smul
     (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) M b m
 
+/-- The image of a linear map of smooth modules is the same map. -/
+@[simp]
+theorem smoothModulesEquivalence_functor_map_hom_apply
+    {M N : (smoothModules.{v} (orderLeftIdeal Φ hΦ hΦs a)).FullSubcategory} (f : M ⟶ N)
+    (m : ((smoothModulesEquivalence Φ hΦ hΦs a).functor.obj M).obj) :
+    ((smoothModulesEquivalence Φ hΦ hΦs a).functor.map f).hom m = f.hom m :=
+  (rfl)
+
+/-- The restriction of a linear map of discrete modules over the completion is the same map. -/
+@[simp]
+theorem smoothModulesEquivalence_inverse_map_hom_apply
+    {M N : (discreteModules.{v} (CompletedEnveloping Φ hΦ hΦs a)).FullSubcategory} (f : M ⟶ N)
+    (m : ((smoothModulesEquivalence Φ hΦ hΦs a).inverse.obj M).obj) :
+    ((smoothModulesEquivalence Φ hΦ hΦs a).inverse.map f).hom m = f.hom m :=
+  (rfl)
+
 /-- The unit of the equivalence is the identity on the underlying abelian group. -/
 @[simp]
 theorem smoothModulesEquivalence_unitIso_hom_app_hom_apply

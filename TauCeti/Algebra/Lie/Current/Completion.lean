@@ -178,27 +178,31 @@ instance : IsScalarTower R UK (CompletedEnveloping Φ hΦ hΦs a) :=
 
 /-- **The canonical algebra map** `U → Û` from the enveloping algebra at a fixed level to its
 completion, sending an element to the family of its classes modulo the left ideals `I_n`. -/
-def toCompletedEnveloping : UK →ₐ[R] CompletedEnveloping Φ hΦ hΦs a where
-  toFun := ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a)
-  map_one' := rfl
-  map_mul' :=
-    ModuleTower.toLimQuotients_mul (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a)
-  map_zero' := map_zero _
-  map_add' := map_add _
-  commutes' _ := rfl
+def toCompletedEnveloping : UK →ₐ[R] CompletedEnveloping Φ hΦ hΦs a :=
+  { ModuleTower.toLimRingHom (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) with
+    commutes' r := congrFun (ModuleTower.coe_toLimRingHom _) (algebraMap R UK r) }
 
 @[simp]
 theorem coe_toCompletedEnveloping :
     ⇑(toCompletedEnveloping Φ hΦ hΦs a) =
       ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) :=
+  ModuleTower.coe_toLimRingHom _
+
+/-- The canonical algebra map `U → Û` is the canonical ring homomorphism
+`TauCeti.ModuleTower.toLimRingHom` into the completion. -/
+@[simp]
+theorem toRingHom_toCompletedEnveloping :
+    (toCompletedEnveloping Φ hΦ hΦs a : UK →+* CompletedEnveloping Φ hΦ hΦs a) =
+      ModuleTower.toLimRingHom (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) :=
   (rfl)
 
 variable {Φ hΦ hΦs a}
 
 /-- The action of `U` on its completion is left multiplication by the canonical image. -/
 theorem smul_eq_toCompletedEnveloping_mul (b : UK) (x : CompletedEnveloping Φ hΦ hΦs a) :
-    b • x = toCompletedEnveloping Φ hΦ hΦs a b * x :=
-  ModuleTower.smul_eq_limMul _ b x
+    b • x = toCompletedEnveloping Φ hΦ hΦs a b * x := by
+  rw [coe_toCompletedEnveloping]
+  exact ModuleTower.smul_eq_limMul _ b x
 
 variable (Φ hΦ hΦs a)
 
