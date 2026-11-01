@@ -91,6 +91,8 @@ structure StrongCkControl where
 
 namespace StrongCkControl
 
+attribute [simp] tolerance_pos
+
 variable [IsManifold I n M]
 
 /-- The strong `C^k` neighbourhood of `f` determined by a control: the maps whose coordinate
@@ -102,6 +104,7 @@ noncomputable def ball (c : StrongCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F
 
 /-- Membership in a strong `C^k` neighbourhood is control by every compact chart `C^k` seminorm
 of the family. -/
+@[simp]
 theorem mem_ball {c : StrongCkControl I M n} {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
     g ∈ c.ball f ↔
       ∀ i, chartCkSeminorm (c.center i) (c.compact i) c.order c.order_le (g - f) <
@@ -121,10 +124,9 @@ theorem mem_ball_iff_forall_norm_sub_lt {c : StrongCkControl I M n}
   exact forall_congr' fun i ↦ mem_ball_chartCkSeminorm_iff _ _ _ _ f g (c.tolerance_pos i)
 
 /-- A strong `C^k` neighbourhood of `f` contains `f`. -/
-@[simp]
 theorem mem_ball_self (c : StrongCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    f ∈ c.ball f :=
-  mem_ball.mpr fun i ↦ by simpa using c.tolerance_pos i
+    f ∈ c.ball f := by
+  simp
 
 /-- The same family and order, with the tolerances reduced by the distance of `g` from `f`. -/
 noncomputable def shrink (c : StrongCkControl I M n) {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
