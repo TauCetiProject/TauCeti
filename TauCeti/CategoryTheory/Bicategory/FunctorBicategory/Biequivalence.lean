@@ -76,7 +76,9 @@ variable {B : Type u₃} [Bicategory.{w₃, v₃} B] {Γ : Type u₁} [Category.
 variable (B Γ) in
 /-- The strong transformation `precomp B (𝟭 Γ).toPseudofunctor ⟶ Pseudofunctor.id _` with
 components `F.pullbackIdHom`. Its naturality isomorphisms are given by the unitors. -/
-def precompIdHom :
+-- The body is exposed so that the components of the unit and counit of `precompIdEquiv`, whose
+-- types mention the components of this transformation, can be stated.
+@[expose] def precompIdHom :
     precomp B (𝟭 Γ).toPseudofunctor ⟶ Pseudofunctor.id (LocallyDiscrete Γ ⥤ᵖ B) where
   app F := pullbackIdHom F
   naturality {F G} η := isoMk (fun x => ρ_ (η.app x) ≪≫ (λ_ (η.app x)).symm)
@@ -102,7 +104,9 @@ lemma precompIdHom_app (F : LocallyDiscrete Γ ⥤ᵖ B) :
 variable (B Γ) in
 /-- The strong transformation `Pseudofunctor.id _ ⟶ precomp B (𝟭 Γ).toPseudofunctor` with
 components `F.pullbackIdInv`. Its naturality isomorphisms are given by the unitors. -/
-def precompIdInv :
+-- The body is exposed so that the components of the unit and counit of `precompIdEquiv`, whose
+-- types mention the components of this transformation, can be stated.
+@[expose] def precompIdInv :
     Pseudofunctor.id (LocallyDiscrete Γ ⥤ᵖ B) ⟶ precomp B (𝟭 Γ).toPseudofunctor where
   app F := pullbackIdInv F
   naturality {F G} η := isoMk (fun x => ρ_ (η.app x) ≪≫ (λ_ (η.app x)).symm)
@@ -129,7 +133,9 @@ variable (B Γ) in
 /-- Pulling back along the identity functor is equivalent to the identity pseudofunctor of the
 bicategory of families indexed by `Γ`, through `precompIdHom` and `precompIdInv`. The unit and
 counit have components the unitors `λ_ (𝟙 (F.obj x))`. -/
-def precompIdEquiv :
+-- The body is exposed so that the types of the components of its unit and counit, which
+-- mention its `1`-morphisms, can be computed.
+@[expose] def precompIdEquiv :
     Bicategory.Equivalence (precomp B (𝟭 Γ).toPseudofunctor)
       (Pseudofunctor.id (LocallyDiscrete Γ ⥤ᵖ B)) :=
   Equivalence.mkOfAdjointifyCounit (f := precompIdHom B Γ) (g := precompIdInv B Γ)
@@ -153,6 +159,40 @@ lemma precompIdEquiv_hom : (precompIdEquiv B Γ).hom = precompIdHom B Γ :=
 @[simp]
 lemma precompIdEquiv_inv : (precompIdEquiv B Γ).inv = precompIdInv B Γ :=
   (rfl)
+
+@[simp]
+lemma precompIdEquiv_unit_hom_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompIdEquiv B Γ).unit.hom.as.app F).as.app x) = (λ_ (𝟙 (F.obj x))).inv :=
+  (rfl)
+
+@[simp]
+lemma precompIdEquiv_unit_inv_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompIdEquiv B Γ).unit.inv.as.app F).as.app x) = (λ_ (𝟙 (F.obj x))).hom :=
+  (rfl)
+
+/-- The adjointified counit of `precompIdEquiv` still has components the left unitors. -/
+@[simp]
+lemma precompIdEquiv_counit_hom_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompIdEquiv B Γ).counit.hom.as.app F).as.app x) = (λ_ (𝟙 (F.obj x))).hom := by
+  simp only [precompIdEquiv, Equivalence.mkOfAdjointifyCounit, adjointifyCounit, Iso.trans_hom,
+    Iso.symm_hom, whiskerLeftIso_hom, rightZigzagIso_hom, rightZigzag, bicategoricalComp,
+    BicategoricalCoherence.assoc'_iso, BicategoricalCoherence.refl_iso,
+    BicategoricalCoherence.whiskerRight_iso, whiskerRightIso_hom, Iso.refl_hom,
+    Bicategory.id_whiskerRight, Category.id_comp]
+  -- The component is a composite of unitors and an associator of `𝟙 X`, for `X` the object
+  -- of `F` at `x`.
+  have h (X : B) : 𝟙 X ◁ ((ρ_ (𝟙 X)).inv ≫ (𝟙 X ◁ (λ_ (𝟙 X)).inv ≫ (α_ (𝟙 X) (𝟙 X) (𝟙 X)).inv ≫
+      (λ_ (𝟙 X)).hom ▷ 𝟙 X) ≫ (λ_ (𝟙 X)).hom) ≫ (λ_ (𝟙 X)).hom = (λ_ (𝟙 X)).hom := by
+    bicategory
+  exact h _
+
+@[simp]
+lemma precompIdEquiv_counit_inv_as_app_as_app (F : LocallyDiscrete Γ ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompIdEquiv B Γ).counit.inv.as.app F).as.app x) = (λ_ (𝟙 (F.obj x))).inv := by
+  have h := congrArg (fun t => (t.as.app F).as.app x) (precompIdEquiv B Γ).counit.hom_inv_id
+  simp only [homCategory_comp_as_app, homCategory_id_as_app,
+    precompIdEquiv_counit_hom_as_app_as_app] at h
+  exact (Iso.hom_comp_eq_id _).1 h
 
 /-! ### Pulling back along a composite functor -/
 
@@ -181,7 +221,9 @@ variable (B) in
 /-- The strong transformation from pulling back along `f ⋙ g` to the composite of pulling back
 along `g` and along `f`, with components `F.pullbackCompHom f g`. Its naturality isomorphisms
 are given by the unitors. -/
-def precompCompHom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
+-- The body is exposed so that the components of the unit and counit of `precompCompEquiv`, whose
+-- types mention the components of this transformation, can be stated.
+@[expose] def precompCompHom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
     precomp B (f ⋙ g).toPseudofunctor ⟶
       (precomp B g.toPseudofunctor).comp (precomp B f.toPseudofunctor) where
   app F := pullbackCompHom f g F
@@ -211,7 +253,9 @@ variable (B) in
 /-- The strong transformation from the composite of pulling back along `g` and along `f` to
 pulling back along `f ⋙ g`, with components `F.pullbackCompInv f g`. Its naturality
 isomorphisms are given by the unitors. -/
-def precompCompInv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
+-- The body is exposed so that the components of the unit and counit of `precompCompEquiv`, whose
+-- types mention the components of this transformation, can be stated.
+@[expose] def precompCompInv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
     (precomp B g.toPseudofunctor).comp (precomp B f.toPseudofunctor) ⟶
       precomp B (f ⋙ g).toPseudofunctor where
   app F := pullbackCompInv f g F
@@ -241,7 +285,9 @@ variable (B) in
 /-- Pulling back along a composite functor `f ⋙ g` is equivalent to pulling back along `g` and
 then along `f`, through `precompCompHom` and `precompCompInv`. The unit and counit have
 components the unitors. -/
-def precompCompEquiv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
+-- The body is exposed so that the types of the components of its unit and counit, which
+-- mention its `1`-morphisms, can be computed.
+@[expose] def precompCompEquiv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
     Bicategory.Equivalence (precomp B (f ⋙ g).toPseudofunctor)
       ((precomp B g.toPseudofunctor).comp (precomp B f.toPseudofunctor)) :=
   Equivalence.mkOfAdjointifyCounit (f := precompCompHom B f g) (g := precompCompInv B f g)
@@ -268,6 +314,48 @@ lemma precompCompEquiv_hom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
 lemma precompCompEquiv_inv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
     (precompCompEquiv B f g).inv = precompCompInv B f g :=
   (rfl)
+
+@[simp]
+lemma precompCompEquiv_unit_hom_as_app_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    (F : LocallyDiscrete Λ' ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompCompEquiv B f g).unit.hom.as.app F).as.app x) =
+      (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).inv :=
+  (rfl)
+
+@[simp]
+lemma precompCompEquiv_unit_inv_as_app_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    (F : LocallyDiscrete Λ' ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompCompEquiv B f g).unit.inv.as.app F).as.app x) =
+      (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).hom :=
+  (rfl)
+
+/-- The adjointified counit of `precompCompEquiv` still has components the left unitors. -/
+@[simp]
+lemma precompCompEquiv_counit_hom_as_app_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    (F : LocallyDiscrete Λ' ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompCompEquiv B f g).counit.hom.as.app F).as.app x) =
+      (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).hom := by
+  simp only [precompCompEquiv, Equivalence.mkOfAdjointifyCounit, adjointifyCounit, Iso.trans_hom,
+    Iso.symm_hom, whiskerLeftIso_hom, rightZigzagIso_hom, rightZigzag, bicategoricalComp,
+    BicategoricalCoherence.assoc'_iso, BicategoricalCoherence.refl_iso,
+    BicategoricalCoherence.whiskerRight_iso, whiskerRightIso_hom, Iso.refl_hom,
+    Bicategory.id_whiskerRight, Category.id_comp]
+  -- The component is a composite of unitors and an associator of `𝟙 X`, for `X` the object
+  -- of `F` at `x`.
+  have h (X : B) : 𝟙 X ◁ ((ρ_ (𝟙 X)).inv ≫ (𝟙 X ◁ (λ_ (𝟙 X)).inv ≫ (α_ (𝟙 X) (𝟙 X) (𝟙 X)).inv ≫
+      (λ_ (𝟙 X)).hom ▷ 𝟙 X) ≫ (λ_ (𝟙 X)).hom) ≫ (λ_ (𝟙 X)).hom = (λ_ (𝟙 X)).hom := by
+    bicategory
+  exact h _
+
+@[simp]
+lemma precompCompEquiv_counit_inv_as_app_as_app (f : Γ ⥤ Λ) (g : Λ ⥤ Λ')
+    (F : LocallyDiscrete Λ' ⥤ᵖ B) (x : LocallyDiscrete Γ) :
+    (((precompCompEquiv B f g).counit.inv.as.app F).as.app x) =
+      (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).inv := by
+  have h := congrArg (fun t => (t.as.app F).as.app x) (precompCompEquiv B f g).counit.hom_inv_id
+  simp only [homCategory_comp_as_app, homCategory_id_as_app,
+    precompCompEquiv_counit_hom_as_app_as_app] at h
+  exact (Iso.hom_comp_eq_id _).1 h
 
 /-! ### The biequivalence induced by an equivalence of indexing categories -/
 
