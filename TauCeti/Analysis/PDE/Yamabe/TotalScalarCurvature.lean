@@ -54,7 +54,7 @@ conformal Laplacian of `g` is taken with `g` installed as the `RiemannianBundle`
 * `TauCeti.Yamabe.integral_mul_conformalLaplacian_rescale`:
   `∫ v L_ĝ v dV_ĝ = ∫ (u v) L_g (u v) dV_g`.
 * `TauCeti.Yamabe.integral_mul_conformalLaplacian_eq_mul_integral_rpow`: a positive solution of
-  `L_g u = c u ^ (pₙ - 1)` has `∫ u L_g u dV_g = c ∫ u ^ pₙ dV_g`.
+  `L_g u = c u ^ (q - 1)` has `∫ u L_g u dμ = c ∫ u ^ q dμ`.
 
 ## References
 
@@ -96,6 +96,24 @@ theorem rpow_criticalExponent_mul_scalarCurvature_rescale
     ring
   rw [scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x, ← mul_assoc,
     ← Real.rpow_add (hu_pos x), hexp, Real.rpow_one]
+
+/-- **Integral of the Euler–Lagrange equation.** Let `u` be a positive solution of
+`L_g u = c u ^ (q - 1)`, where `L_g` is the conformal Laplacian and `q` is a real exponent. Then
+`∫ u L_g u dμ = c ∫ u ^ q dμ` for every measure `μ`. For `q = pₙ = 2 n / (n - 2)` this is the
+integrated Yamabe equation. -/
+theorem integral_mul_conformalLaplacian_eq_mul_integral_rpow
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [MeasurableSpace M]
+    {μ : Measure M} {u : M → ℝ} (hu_pos : ∀ x, 0 < u x) {q c : ℝ}
+    (hu : ∀ x, conformalLaplacian I u x = c * u x ^ (q - 1)) :
+    ∫ x, u x * conformalLaplacian I u x ∂μ = c * ∫ x, u x ^ q ∂μ := by
+  rw [← integral_const_mul]
+  congr 1
+  funext x
+  have hpow := Real.rpow_add (hu_pos x) 1 (q - 1)
+  rw [Real.rpow_one, add_sub_cancel] at hpow
+  rw [hu, hpow]
+  ring
 
 variable [LindelofSpace M]
 
@@ -181,26 +199,5 @@ theorem integral_scalarCurvature_rescale_div_riemannianTotalVolume_rpow [Compact
           ∂riemannianVolume I (WithMetric g)) ^ (2 / criticalExponent (finrank ℝ E)) := by
   rw [integral_scalarCurvature_rescale g hn hu_pos,
     WithMetric.riemannianTotalVolume_rescale_rpow fun x ↦ (hu_pos x).le, criticalExponent_def]
-
-/-- **Integral of the Yamabe equation.** Let `u` be a positive solution of the Yamabe equation
-`L_g u = c u ^ (pₙ - 1)`, where `L_g` is the conformal Laplacian and `pₙ = 2 n / (n - 2)`. Then
-`∫ u L_g u dV_g = c ∫ u ^ pₙ dV_g`. -/
-theorem integral_mul_conformalLaplacian_eq_mul_integral_rpow
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    {u : M → ℝ} (hu_pos : ∀ x, 0 < u x) {c : ℝ}
-    (hu : ∀ x, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      conformalLaplacian I u x) = c * u x ^ (criticalExponent (finrank ℝ E) - 1)) :
-    ∫ x, u x.ofWithMetric *
-        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-          conformalLaplacian I u x.ofWithMetric) ∂riemannianVolume I (WithMetric g) =
-      c * ∫ x, u x.ofWithMetric ^ criticalExponent (finrank ℝ E)
-        ∂riemannianVolume I (WithMetric g) := by
-  rw [← integral_const_mul]
-  congr 1
-  funext x
-  have hpow := Real.rpow_add (hu_pos x.ofWithMetric) 1 (criticalExponent (finrank ℝ E) - 1)
-  rw [Real.rpow_one, add_sub_cancel] at hpow
-  rw [hu, hpow]
-  ring
 
 end TauCeti.Yamabe

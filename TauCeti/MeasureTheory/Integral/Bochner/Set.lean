@@ -17,7 +17,8 @@ integration variable lies in a fixed compact set has a continuous parametric int
 measure which is finite on compact sets. It also records that the indicator function of a
 bounded interval `[a, b)` is integrable against a locally finite measure, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets.
+on nonempty open sets. Against such a measure which is also finite on compact sets, a positive
+continuous function on a nonempty compact space has positive integral.
 
 ## Main statements
 
@@ -26,6 +27,8 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
+* `Continuous.integral_pos_of_forall_pos`: a positive continuous function on a nonempty compact
+  space has positive integral.
 -/
 
 public section
@@ -67,3 +70,12 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+/-- A positive continuous function on a nonempty compact space has positive integral, against a
+measure finite on compact sets and positive on nonempty open sets. -/
+theorem Continuous.integral_pos_of_forall_pos {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    [Nonempty X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ] {f : X → ℝ} (hf : Continuous f)
+    (hpos : ∀ x, 0 < f x) : 0 < ∫ x, f x ∂μ :=
+  hf.integral_pos_of_hasCompactSupport_nonneg_nonzero (.of_compactSpace f) (fun x ↦ (hpos x).le)
+    (hpos (Classical.arbitrary X)).ne'

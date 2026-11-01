@@ -25,7 +25,11 @@ symmetric in `f` and `u`, so `L_g` is formally self-adjoint, and for `f = u` it 
 `∫ u L_g u dV_g = ∫ (aₙ |grad u|² + Scal_g u²) dV_g`,
 
 the numerator of the Yamabe quotient `Q_g(u)`. On a closed manifold every function has compact
-support, so these identities hold for all `C²` functions.
+support, so these identities hold for all `C²` functions. There the energy
+`E(w) = ∫ (aₙ |grad w|² + Scal_g w²) dV_g` is a quadratic form whose polarization is
+`∫ v L_g u dV_g` by the self-adjointness, so
+`E(u + t v) = E(u) + 2 t ∫ v L_g u dV + t² E(v)` and the first variation of `E` at `u` in the
+direction `v` is `2 ∫ v L_g u dV`.
 
 Combined with the conformal covariance `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)` of the
 conformal Laplacian, whose integrated form is
@@ -53,6 +57,11 @@ while the gradient and scalar curvature of each metric are taken with that metri
   `∫ f L_g u dV = ∫ (L_g f) u dV`.
 * `TauCeti.Yamabe.integral_mul_conformalLaplacian_self`: the energy identity
   `∫ u L_g u dV = ∫ (aₙ |grad u|² + Scal_g u²) dV`.
+* `TauCeti.Yamabe.integral_energy_add_smul`: on a closed manifold,
+  `E(u + t v) = E(u) + 2 t ∫ v L_g u dV + t² E(v)` for the energy
+  `E(w) = ∫ (aₙ |grad w|² + Scal_g w²) dV`.
+* `TauCeti.Yamabe.hasDerivAt_integral_energy_add_smul`: the first variation `2 ∫ v L_g u dV` of
+  the energy.
 * `TauCeti.Yamabe.integral_energy_rescale`: the conformal invariance of the energy.
 
 ## References
@@ -168,6 +177,91 @@ theorem integral_mul_conformalLaplacian_self {u : M → ℝ} (hu : ContMDiff I �
     real_inner_self_eq_norm_sq, sq]
 
 end Energy
+
+section Variation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- **Expansion of the Yamabe energy along a line.** On a closed manifold, for `C²` functions
+`u`, `v` and every `t : ℝ`, `E(u + t v) = E(u) + 2 t ∫ v L_g u dV + t² E(v)`, where
+`E(w) = ∫ (aₙ |grad w|² + Scal_g w²) dV` and `L_g` is the conformal Laplacian. -/
+theorem integral_energy_add_smul {u v : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 2 u)
+    (hv : ContMDiff I 𝓘(ℝ) 2 v) (t : ℝ) :
+    ∫ x, (conformalCoefficient (finrank ℝ E) * ‖mgradient I (u + t • v) x‖ ^ 2 +
+        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (u + t • v) x ^ 2)
+        ∂riemannianVolume I M =
+      ∫ x, (conformalCoefficient (finrank ℝ E) * ‖mgradient I u x‖ ^ 2 +
+          (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * u x ^ 2)
+          ∂riemannianVolume I M +
+        2 * t * ∫ x, v x * conformalLaplacian I u x ∂riemannianVolume I M +
+        t ^ 2 * ∫ x, (conformalCoefficient (finrank ℝ E) * ‖mgradient I v x‖ ^ 2 +
+          (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * v x ^ 2)
+          ∂riemannianVolume I M := by
+  have htv : ContMDiff I 𝓘(ℝ) 2 (t • v) :=
+    ((contMDiff_const (c := t)).mul hv).congr fun x ↦ by simp
+  have hw : ContMDiff I 𝓘(ℝ) 2 (u + t • v) := hu.add htv
+  rw [← integral_mul_conformalLaplacian_self hw (.of_compactSpace _),
+    ← integral_mul_conformalLaplacian_self hu (.of_compactSpace _),
+    ← integral_mul_conformalLaplacian_self hv (.of_compactSpace _)]
+  have hint {f : M → ℝ} (hf : Continuous f) : Integrable f (riemannianVolume I M) :=
+    hf.integrable_of_hasCompactSupport (.of_compactSpace f)
+  have huc := hu.continuous
+  have hvc := hv.continuous
+  have hLu := (contMDiff_conformalLaplacian (k := 0) (by simp) (by simpa using hu)).continuous
+  have hLv := (contMDiff_conformalLaplacian (k := 0) (by simp) (by simpa using hv)).continuous
+  have hpt (x : M) : (u + t • v) x * conformalLaplacian I (u + t • v) x =
+      u x * conformalLaplacian I u x +
+        t * (u x * conformalLaplacian I v x + v x * conformalLaplacian I u x) +
+        t ^ 2 * (v x * conformalLaplacian I v x) := by
+    rw [conformalLaplacian_add I hu htv, conformalLaplacian_smul I t hv]
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    ring
+  -- Green's identity `∫ u L_g v = ∫ (L_g u) v` merges the two cross terms.
+  have hsym := integral_mul_conformalLaplacian_right_eq_left hu (.of_compactSpace _) hv
+  simp only [mul_comm (conformalLaplacian I u _) (v _)] at hsym
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
+    integral_add (hint (by fun_prop))
+      (hint (by fun_prop)),
+    integral_add (hint (by fun_prop))
+      (hint (by fun_prop)),
+    integral_const_mul, integral_const_mul,
+    integral_add (hint (by fun_prop))
+      (hint (by fun_prop)), hsym]
+  ring
+
+/-- **First variation of the Yamabe energy.** On a closed manifold, for `C²` functions `u` and
+`v`, the energy `E(u + t v) = ∫ (aₙ |grad (u + t v)|² + Scal_g (u + t v)²) dV` has derivative
+`2 ∫ v L_g u dV` at `t = 0`, where `L_g` is the conformal Laplacian. -/
+theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 2 u)
+    (hv : ContMDiff I 𝓘(ℝ) 2 v) :
+    HasDerivAt (fun t : ℝ ↦ ∫ x, (conformalCoefficient (finrank ℝ E) *
+        ‖mgradient I (u + t • v) x‖ ^ 2 +
+        (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (u + t • v) x ^ 2)
+        ∂riemannianVolume I M)
+      (2 * ∫ x, v x * conformalLaplacian I u x ∂riemannianVolume I M) 0 := by
+  simp only [integral_energy_add_smul hu hv]
+  set A := ∫ x, (conformalCoefficient (finrank ℝ E) * ‖mgradient I u x‖ ^ 2 +
+    (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * u x ^ 2)
+    ∂riemannianVolume I M
+  set B := ∫ x, v x * conformalLaplacian I u x ∂riemannianVolume I M
+  set C := ∫ x, (conformalCoefficient (finrank ℝ E) * ‖mgradient I v x‖ ^ 2 +
+    (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * v x ^ 2)
+    ∂riemannianVolume I M
+  have h := ((hasDerivAt_id (0 : ℝ)).const_mul (2 * B)).const_add A |>.add
+    ((hasDerivAt_pow 2 (0 : ℝ)).const_mul C)
+  convert h using 1
+  · funext t
+    simp only [Pi.add_apply, id]
+    ring
+  · simp
+
+end Variation
 
 section Rescale
 
