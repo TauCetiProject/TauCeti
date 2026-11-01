@@ -23,7 +23,8 @@ Up to powers of `q`, the three products on the right are Weber's modular functio
 and `𝔣`, so these identities express Weber's functions, and the level-two Siegel functions, as
 quotients of eta values. The file also records the square of the
 transformation of `η` under `S : τ ↦ -1/τ`, `η(-1/τ)² = -i τ η(τ)²`, which avoids the branch of
-`√τ` in Mathlib's `ModularForm.eta_comp_eq_csqrt_I_inv`.
+`√τ` in Mathlib's `ModularForm.eta_comp_eq_csqrt_I_inv`, and compares that transformation at `τ`
+and at `c τ` for real `c > 0`, where the branches of `√(c τ)` and `√τ` differ by the factor `√c`.
 
 ## Main results
 
@@ -31,6 +32,8 @@ transformation of `η` under `S : τ ↦ -1/τ`, `η(-1/τ)² = -i τ η(τ)²`,
 * `TauCeti.ModularForm.eta_two_mul`, `TauCeti.ModularForm.eta_div_two`,
   `TauCeti.ModularForm.eta_add_one_div_two`: the three product identities above.
 * `TauCeti.ModularForm.eta_neg_one_div_sq`: `η(-1/τ)² = -i τ η(τ)²` on the upper half-plane.
+* `TauCeti.ModularForm.eta_neg_one_div_ofReal_mul_mul`: `η(-1/(c τ)) η(τ) = √c η(c τ) η(-1/τ)`
+  for real `c > 0`.
 
 ## References
 
@@ -117,6 +120,26 @@ theorem eta_neg_one_div_sq {τ : ℂ} (hτ : 0 < τ.im) : η (-1 / τ) ^ 2 = -I 
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
   have hsq (z : ℂ) : Complex.sqrt z ^ 2 = z := by rw [Complex.sqrt, cpow_ofNat_inv_pow]
   rw [h, mul_pow, mul_pow, inv_pow, hsq, hsq, inv_I]
+  ring
+
+/-- **The `S`-transformation of `η` at a positive real multiple**: for real `c > 0`,
+`η(-1/(c τ)) η(τ) = √c η(c τ) η(-1/τ)` on the upper half-plane. The branch of `√(c τ)` in
+Mathlib's `ModularForm.eta_comp_eq_csqrt_I_inv` is `√c √τ`, so no sign is lost. -/
+theorem eta_neg_one_div_ofReal_mul_mul {c : ℝ} (hc : 0 < c) {τ : ℂ} (hτ : 0 < τ.im) :
+    η (-1 / (c * τ)) * η τ = √c * η (c * τ) * η (-1 / τ) := by
+  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
+  have hcτ : 0 < (c * τ : ℂ).im := by simpa [im_ofReal_mul] using mul_pos hc hτ
+  have h₁ : η (-1 / (c * τ)) = (Complex.sqrt I)⁻¹ * (Complex.sqrt (c * τ) * η (c * τ)) := by
+    simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hcτ
+  have h₂ : η (-1 / τ) = (Complex.sqrt I)⁻¹ * (Complex.sqrt τ * η τ) := by
+    simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
+  have hsq : Complex.sqrt (c * τ) = √c * Complex.sqrt τ := by
+    rw [Complex.sqrt, Complex.sqrt, cpow_def_of_ne_zero (mul_ne_zero (ofReal_ne_zero.2 hc.ne') hτ₀),
+      log_ofReal_mul hc hτ₀, add_mul, Complex.exp_add, cpow_def_of_ne_zero hτ₀,
+      Real.sqrt_eq_rpow, Real.rpow_def_of_pos hc, ofReal_exp]
+    push_cast
+    ring_nf
+  rw [h₁, h₂, hsq]
   ring
 
 end TauCeti.ModularForm
