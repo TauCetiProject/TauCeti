@@ -181,10 +181,7 @@ theorem tendsto_rpow_neg_mul_besselI_nhdsGT_zero (ν : ℝ) :
   have h0 : (Complex.regularizedHGFun 0 {((ν + 1 : ℝ) : ℂ)} ((0 / 2) ^ 2 : ℝ)).re =
       (Gamma (ν + 1))⁻¹ := by
     have hzero : ((0 / 2) ^ 2 : ℝ) = 0 := by norm_num
-    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero,
-      Complex.regularizedHGFunCoeff_zero_singleton]
-    simp only [Nat.factorial_zero, Nat.cast_one, one_mul, Nat.cast_zero, add_zero]
-    rw [Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.ofReal_re]
+    rw [hzero, Complex.ofReal_zero, Complex.regularizedHGFun_zero_singleton_ofReal_zero]
   rw [h0] at hcont
   refine hcont.congr' (eventually_nhdsWithin_of_forall fun x (hx : 0 < x) => ?_)
   have hx2 : 0 < x / 2 := by positivity
