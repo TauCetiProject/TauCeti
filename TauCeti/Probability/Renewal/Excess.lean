@@ -25,20 +25,20 @@ excess is strictly positive; on explosive paths the formula uses the exceptional
 
 For independent increments with common law `F` that are not almost surely zero, this file computes
 the law of the excess at each fixed time in terms of the renewal measure `U = ∑ n, F^{∗n}`. Writing
-`F̄ u = F((u, ∞))` for the tail of `F` and `F≤ u = F([0, u])` for its distribution function,
+`F> u = F((u, ∞))` for the tail of `F` and `F≤ u = F([0, u])` for its distribution function,
 
 ```text
-P(x < E t) = ∫_{[0, t]} F̄ (t - s + x) U(ds),
+P(x < E t) = ∫_{[0, t]} F> (t - s + x) U(ds),
 P(E t ≤ x) = ∫_{[0, t]} (F≤ (t - s + x) - F≤ (t - s)) U(ds).
 ```
 
 The first identity splits the event `x < E t` according to the value `n` of `N t`. Almost surely
 it is the disjoint union over `n` of the events `{arrival T n ≤ t, t + x < arrival T n + T n}`, and
 `arrival T n`, which has law `F^{∗n}`, is independent of `T n`. The second identity follows from the
-tail identity `∫_{[0, t]} F̄ (t - s) U(ds) = 1`
+tail identity `∫_{[0, t]} F> (t - s) U(ds) = 1`
 (`TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`). In the notation of
 `TauCeti.Probability.renewalConv`, both probabilities are of the form `h ∗ U`, so they solve the
-renewal equation `g = h + g ∗ F` with forcing terms `F̄ (t + x)` and `F≤ (t + x) - F≤ t`
+renewal equation `g = h + g ∗ F` with forcing terms `F> (t + x)` and `F≤ (t + x) - F≤ t`
 respectively. These representations are the input of the limit theorem for the excess.
 
 ## Main definitions
@@ -52,7 +52,7 @@ respectively. These representations are the input of the limit theorem for the e
 * `TauCeti.Probability.measurable_renewalExcess`: measurability of the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
-  `P(x < E t) = (F̄ (· + x) ∗ U) t`.
+  `P(x < E t) = (F> (· + x) ∗ U) t`.
 * `TauCeti.Probability.measureReal_renewalExcess_le`: the distribution function of the excess is
   `P(E t ≤ x) = ((F≤ (· + x) - F≤) ∗ U) t`.
 * `TauCeti.Probability.measureReal_lt_renewalExcess_eq_add`,
@@ -236,7 +236,7 @@ theorem measureReal_renewalExcess_le (hT : ∀ n, Measurable (T n)) (hindep : iI
   have hU := (Measure.renewalMeasure_Iic_lt_top F hF t).ne
   have hint (y : ℝ≥0) := integrableOn_Iic_sub (measurable_measureReal_Ioi_add F y)
     (fun u _ ↦ abs_measureReal_Ioi_add_le F u y) hU
-  -- `P(E t ≤ x) = 1 - P(x < E t)`, and `1 = (F̄ ∗ U) t` by the tail identity.
+  -- `P(E t ≤ x) = 1 - P(x < E t)`, and `1 = (F> ∗ U) t` by the tail identity.
   have hcompl : {ω | renewalExcess T t ω ≤ x} = {ω | x < renewalExcess T t ω}ᶜ := by
     ext
     simp
