@@ -39,8 +39,9 @@ is open; closedness is the form that survives.
 
 ## Main results
 
-* `Ideal.closure_ne_top_of_isOpen_isUnit` : the closure of a proper ideal of a topological ring is
-  again proper once the unit group is open.
+* `Ideal.topologicalClosure_ne_top_of_isOpen_isUnit` : the topological closure of a proper ideal
+  of a topological semiring is again proper once the unit group is open.
+* `Ideal.closure_ne_top_of_isOpen_isUnit` : the same for `Ideal.closure` over a topological ring.
 * `Ideal.isClosed_of_isMaximal_of_isOpen_isUnit` : a maximal ideal of a topological semiring is
   closed once the unit group is open.
 * `Ideal.map_subset_closure_image_of_denseRange` : along a ring homomorphism with dense range, the
@@ -54,11 +55,12 @@ is open; closedness is the form that survives.
 
 Adapted from AINTLIB (see References), section `MaximalIdealClosed` of the source file, where the
 statement is `isClosed_of_isMaximal_of_isOpen_units`. The argument is that file's; the
-commutativity hypothesis is dropped and the closedness statement is generalised to semirings,
-taking the closure as `Submodule.topologicalClosure` since `Ideal.closure` needs a ring. The
-properness step, which uses nothing about maximality, is also stated on its own for rings, as
-`Ideal.closure_ne_top_of_isOpen_isUnit`. The results on dense-range homomorphisms do not come from
-that source.
+commutativity hypothesis is dropped and the statement is generalised to semirings, taking the
+closure as `Submodule.topologicalClosure` since `Ideal.closure` needs a ring. The properness step,
+which uses nothing about maximality, is separated out as
+`Ideal.topologicalClosure_ne_top_of_isOpen_isUnit`, with the ring-level `Ideal.closure` form
+`Ideal.closure_ne_top_of_isOpen_isUnit` derived from it. The results on dense-range homomorphisms
+do not come from that source.
 
 ## References
 
@@ -69,23 +71,27 @@ that source.
 
 public section
 
+/-- **The topological closure of a proper ideal of a topological semiring is proper once the unit
+group is open.** -/
+theorem Ideal.topologicalClosure_ne_top_of_isOpen_isUnit {A : Type*} [Semiring A]
+    [TopologicalSpace A] [IsTopologicalSemiring A] (hU : IsOpen {a : A | IsUnit a}) {J : Ideal A}
+    (hJ : J ≠ ⊤) : J.topologicalClosure ≠ ⊤ := by
+  rw [Ideal.ne_top_iff_one]
+  exact fun h1 ↦ closure_minimal (coe_subset_nonunits hJ) hU.isClosed_compl h1 isUnit_one
+
 /-- **The closure of a proper ideal of a topological ring is proper once the unit group is
 open.** -/
 theorem Ideal.closure_ne_top_of_isOpen_isUnit {A : Type*} [Ring A] [TopologicalSpace A]
     [IsTopologicalRing A] (hU : IsOpen {a : A | IsUnit a}) {J : Ideal A} (hJ : J ≠ ⊤) :
-    J.closure ≠ ⊤ := by
-  rw [Ideal.ne_top_iff_one]
-  exact fun h1 ↦ closure_minimal (coe_subset_nonunits hJ) hU.isClosed_compl h1 isUnit_one
+    J.closure ≠ ⊤ :=
+  fun h ↦ J.topologicalClosure_ne_top_of_isOpen_isUnit hU hJ (SetLike.ext' (congrArg SetLike.coe h))
 
 /-- **A maximal ideal of a topological semiring is closed once the unit group is open.** -/
 theorem Ideal.isClosed_of_isMaximal_of_isOpen_isUnit {A : Type*} [Semiring A]
     [TopologicalSpace A] [IsTopologicalSemiring A] (hU : IsOpen {a : A | IsUnit a}) (𝔪 : Ideal A)
     [h𝔪 : 𝔪.IsMaximal] : IsClosed (𝔪 : Set A) := by
-  have hne : 𝔪.topologicalClosure ≠ ⊤ := by
-    rw [Ideal.ne_top_iff_one]
-    exact fun h1 ↦ closure_minimal (coe_subset_nonunits h𝔪.ne_top) hU.isClosed_compl h1
-      isUnit_one
-  rw [h𝔪.eq_of_le hne 𝔪.le_topologicalClosure]
+  rw [h𝔪.eq_of_le (𝔪.topologicalClosure_ne_top_of_isOpen_isUnit hU h𝔪.ne_top)
+    𝔪.le_topologicalClosure]
   exact 𝔪.isClosed_topologicalClosure
 
 /-- **The extension of an ideal along a ring homomorphism with dense range lies in the closure of
