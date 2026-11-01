@@ -11,12 +11,11 @@ public import Mathlib.Topology.Compactness.Compact
 /-!
 # Locally finite projected families
 
-Pairwise intersections of two locally finite families form a locally finite family indexed by
-all pairs, including diagonal pairs. Projection from a product preserves local finiteness when
-all members lie over one compact set in the second factor. No separation or local compactness
-assumption on either space is needed.
+Projection from a product preserves local finiteness when all members lie over one compact set
+in the second factor. No separation or local compactness assumption on either space is needed.
 
-These facts justify projecting a locally finite family of pairwise intersections after clipping
+Combined with `LocallyFinite.inter` from `TauCeti.Topology.LocallyFinite.Basic`, this justifies
+projecting a locally finite family of pairwise intersections after clipping
 in a bounded vertical strip: enclose the strip in a compact interval first. Projection without
 such a fibre bound need not preserve local finiteness. This is the projected-family argument in
 S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
@@ -37,18 +36,12 @@ in particular, they may be clipped to an open subset of the compact fibre bound.
 theorem image_fst_of_subset {s : ι → Set (X × Y)} (hs : LocallyFinite s) {K : Set Y}
     (hK : IsCompact K) (hsub : ∀ i, s i ⊆ Prod.snd ⁻¹' K) :
     LocallyFinite fun i ↦ Prod.fst '' s i := by
-  classical
-  choose U hU hfin using hs
   intro x
-  -- Cover the whole compact fibre by finitely many local finiteness neighbourhoods.
-  obtain ⟨a, -, ha⟩ := ((isCompact_singleton (x := x)).prod hK).elim_nhds_subcover_nhdsSet
-    (fun p _ ↦ hU p)
-  rw [isCompact_singleton.nhdsSet_prod_eq hK, nhdsSet_singleton] at ha
-  obtain ⟨V, hV, W, hW, hVW⟩ := mem_prod_iff.mp ha
-  refine ⟨V, hV, ((a.finite_toSet).biUnion fun p _ ↦ hfin p).subset ?_⟩
+  obtain ⟨W, hW, hfin⟩ := hs.exists_mem_nhdsSet_finite ((isCompact_singleton (x := x)).prod hK)
+  rw [isCompact_singleton.nhdsSet_prod_eq hK, nhdsSet_singleton] at hW
+  obtain ⟨V, hV, W', hW', hVW⟩ := mem_prod_iff.mp hW
+  refine ⟨V, hV, hfin.subset ?_⟩
   rintro i ⟨y, ⟨p, hp, rfl⟩, hy⟩
-  have hpW : p.2 ∈ W := subset_of_mem_nhdsSet hW (hsub i hp)
-  obtain ⟨q, hqa, hpq⟩ := mem_iUnion₂.mp (hVW ⟨hy, hpW⟩)
-  exact mem_biUnion hqa ⟨p, hp, hpq⟩
+  exact ⟨p, hp, hVW ⟨hy, subset_of_mem_nhdsSet hW' (hsub i hp)⟩⟩
 
 end LocallyFinite
