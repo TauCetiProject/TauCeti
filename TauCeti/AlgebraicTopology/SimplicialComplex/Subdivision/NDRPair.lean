@@ -72,6 +72,7 @@ theorem openSimplicialNeighborhoodControl_apply (y : Realization K) :
 
 /-- The control function of the open simplicial neighbourhood of `P` vanishes exactly on the
 polyhedron of `P`. -/
+@[simp]
 theorem openSimplicialNeighborhoodControl_eq_zero_iff {y : Realization K} :
     K.openSimplicialNeighborhoodControl P y = 0 ↔ y.1.support ∈ P := by
   have h := Set.ext_iff.1 (preimage_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem
@@ -82,6 +83,7 @@ theorem openSimplicialNeighborhoodControl_eq_zero_iff {y : Realization K} :
 
 /-- The control function of the open simplicial neighbourhood of `P` is less than one exactly on
 that neighbourhood. -/
+@[simp]
 theorem openSimplicialNeighborhoodControl_lt_one_iff {y : Realization K} :
     K.openSimplicialNeighborhoodControl P y < 1 ↔ y ∈ K.openSimplicialNeighborhood P := by
   have h := Set.ext_iff.1

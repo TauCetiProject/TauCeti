@@ -233,7 +233,8 @@ variable {U : Set X} {hAU : A ⊆ U} {r : C(U, A)}
   (D : (ContinuousMap.id U).HomotopyRel ((ContinuousMap.inclusion hAU).comp r) {x | ↑x ∈ A})
   (f : C(X, I))
 
-/-- The time `t * min 1 (3 - 4 f x)` at which `ofHomotopyRel` reads off the deformation `D`. -/
+/-- The time `t * max 0 (min 1 (3 - 4 f x))` at which `ofHomotopyRel` reads off the deformation
+`D`. -/
 private noncomputable def cutoffTime (p : I × X) : I :=
   p.1 * projIcc 0 1 zero_le_one (3 - 4 * (f p.2 : ℝ))
 
@@ -257,7 +258,8 @@ private theorem cutoff_of_notMem {p : I × X} (h : p.2 ∉ U) : cutoff D f p = p
 private theorem cutoff_of_le {x : X} (hx : 3 / 4 ≤ (f x : ℝ)) (t : I) : cutoff D f (t, x) = x := by
   by_cases h : x ∈ U
   · have h0 : cutoffTime f (t, x) = 0 := by
-      rw [cutoffTime, projIcc_eq_zero.2 (show 3 - 4 * (f x : ℝ) ≤ 0 by linarith)]
+      have hle : 3 - 4 * (f x : ℝ) ≤ 0 := by linarith
+      rw [cutoffTime, projIcc_eq_zero.2 hle]
       exact mul_zero t
     rw [cutoff_of_mem D f h, h0, D.apply_zero, ContinuousMap.id_apply]
   · exact cutoff_of_notMem D f h
@@ -280,9 +282,10 @@ private theorem continuous_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) : Continuou
   rcases lt_or_ge (f p.2 : ℝ) 1 with hp | hp
   · exact (continuousOn_cutoff D hfU).continuousAt (prod_mem_nhds Filter.univ_mem
       ((isOpen_lt f.continuous continuous_const).mem_nhds (Subtype.coe_lt_coe.1 hp)))
-  · refine continuousAt_snd.congr (Filter.eventuallyEq_of_mem (prod_mem_nhds Filter.univ_mem
-      ((isOpen_lt continuous_const (continuous_subtype_val.comp f.continuous)).mem_nhds
-        (show (3 / 4 : ℝ) < f p.2 by linarith))) fun q hq ↦ ?_)
+  · have hlt : (3 / 4 : ℝ) < f p.2 := by linarith
+    refine continuousAt_snd.congr (Filter.eventuallyEq_of_mem (prod_mem_nhds Filter.univ_mem
+      ((isOpen_lt continuous_const (continuous_subtype_val.comp f.continuous)).mem_nhds hlt))
+        fun q hq ↦ ?_)
     exact (cutoff_of_le D f (le_of_lt hq.2) q.1).symm
 
 private theorem coe_projIcc_two_mul (x : X) :
@@ -293,9 +296,9 @@ private theorem coe_projIcc_two_mul (x : X) :
 variable (hAU) in
 /-- **NDR data from a deformation of a neighbourhood.** Let `D` be a homotopy, relative to `A`,
 from the identity of a set `U ⊇ A` to a retraction onto `A`, and let `f : X → I` vanish exactly on
-`A` with `{f < 1} ⊆ U`. Cutting `D` off by the time factor `min 1 (3 - 4 f)` gives NDR data for
-`A`, with control function `min 1 (2 f)`. The deformation runs in full where `f ≤ 1 / 2` and moves
-no point where `3 / 4 ≤ f`. The set `U` need not be open. -/
+`A` with `{f < 1} ⊆ U`. Cutting `D` off by the time factor `max 0 (min 1 (3 - 4 f))` gives NDR
+data for `A`, with control function `min 1 (2 f)`. The deformation runs in full where `f ≤ 1 / 2`
+and moves no point where `3 / 4 ≤ f`. The set `U` need not be open. -/
 noncomputable def ofHomotopyRel (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, f x < 1 → x ∈ U) :
     NDRPair A where
   control := ⟨fun x ↦ projIcc 0 1 zero_le_one (2 * (f x : ℝ)), by fun_prop⟩
@@ -313,16 +316,18 @@ noncomputable def ofHomotopyRel (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, 
         ContinuousMap.id_apply]
     · exact cutoff_of_notMem D f h
   deformation_of_mem t x hx := by
-    rw [ContinuousMap.coe_mk, cutoff_of_mem D f (hAU hx),
-      D.eq_fst _ (show (⟨x, hAU hx⟩ : U) ∈ {x : U | ↑x ∈ A} from hx), ContinuousMap.id_apply]
+    have hxA : (⟨x, hAU hx⟩ : U) ∈ {x : U | ↑x ∈ A} := by
+      rwa [mem_ofPred_eq]
+    rw [ContinuousMap.coe_mk, cutoff_of_mem D f (hAU hx), D.eq_fst _ hxA, ContinuousMap.id_apply]
   deformation_one_mem {x} hx := by
     have hx : (f x : ℝ) < 1 / 2 := by
       have := Subtype.coe_lt_coe.2 hx
       rw [ContinuousMap.coe_mk, coe_projIcc_two_mul, Icc.coe_one] at this
       linarith [min_lt_iff.1 this |>.resolve_left (lt_irrefl 1)]
     have hU := hfU x (Subtype.coe_lt_coe.1 (hx.trans (by norm_num)))
+    have hle : (1 : ℝ) ≤ 3 - 4 * (f x : ℝ) := by linarith
     have h1 : cutoffTime f (1, x) = 1 := by
-      rw [cutoffTime, projIcc_eq_one.2 (show (1 : ℝ) ≤ 3 - 4 * (f x : ℝ) by linarith), one_mul]
+      rw [cutoffTime, projIcc_eq_one.2 hle, one_mul]
     rw [ContinuousMap.coe_mk, cutoff_of_mem D f hU, h1, D.apply_one]
     exact (r ⟨x, hU⟩).2
 
@@ -335,7 +340,7 @@ theorem coe_ofHomotopyRel_control (x : X) :
   coe_projIcc_two_mul f x
 
 /-- At a point of `U`, the deformation of `ofHomotopyRel` follows `D` with time scaled by
-`min 1 (3 - 4 f)`. -/
+`max 0 (min 1 (3 - 4 f))`. -/
 theorem ofHomotopyRel_deformation_of_mem (t : I) {x : X} (hx : x ∈ U) :
     (ofHomotopyRel hAU D f hf hfU).deformation (t, x) =
       D (t * projIcc 0 1 zero_le_one (3 - 4 * (f x : ℝ)), ⟨x, hx⟩) :=
@@ -350,8 +355,8 @@ theorem ofHomotopyRel_deformation_of_notMem (t : I) {x : X} (hx : x ∉ U) :
 theorem ofHomotopyRel_deformation_of_le_half (t : I) {x : X} (hx : (f x : ℝ) ≤ 1 / 2) :
     (ofHomotopyRel hAU D f hf hfU).deformation (t, x) =
       D (t, ⟨x, hfU x (Subtype.coe_lt_coe.1 (hx.trans_lt (by norm_num)))⟩) := by
-  rw [ofHomotopyRel_deformation_of_mem,
-    projIcc_eq_one.2 (show (1 : ℝ) ≤ 3 - 4 * (f x : ℝ) by linarith)]
+  have hle : (1 : ℝ) ≤ 3 - 4 * (f x : ℝ) := by linarith
+  rw [ofHomotopyRel_deformation_of_mem, projIcc_eq_one.2 hle]
   exact congrArg (fun s ↦ (D (s, _) : X)) (mul_one t)
 
 /-- Where `3 / 4 ≤ f`, the deformation of `ofHomotopyRel` does not move the point. -/

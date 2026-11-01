@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Retraction
 public import TauCeti.Topology.Homotopy.Extension.NDRPair
 
+import TauCeti.Algebra.BigOperators.Finprod
+
 /-!
 # Full subcomplexes are NDR pairs
 
@@ -52,17 +54,9 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} (K : AbstractSimplicialComplex ι) (s : Set ι)
 
-/-- The mass on `s` of finitely supported coordinates is the sum over the vertices in `s` of any
-finite set containing their support. -/
-private theorem mass_eq_sum_filter_of_support_subset [DecidablePred (· ∈ s)] {x : ι →₀ ℝ}
-    {t : Finset ι} (ht : x.support ⊆ t) : ∑ᶠ v ∈ s, x v = ∑ v ∈ t with v ∈ s, x v := by
-  refine finsum_mem_eq_sum_of_inter_support_eq _ (Set.ext fun v => ?_)
-  simp only [mem_inter_iff, Function.mem_support, Finset.coe_filter, mem_ofPred_eq]
-  exact ⟨fun h => ⟨⟨ht (Finsupp.mem_support_iff.2 h.2), h.1⟩, h.2⟩, fun h => ⟨h.1.2, h.2⟩⟩
-
 private theorem mass_eq_sum_filter [DecidablePred (· ∈ s)] (x : Realization K) :
     ∑ᶠ v ∈ s, x.1 v = ∑ v ∈ x.1.support with v ∈ s, x.1 v :=
-  mass_eq_sum_filter_of_support_subset s subset_rfl
+  TauCeti.finsum_mem_eq_sum_filter_of_support_subset _ s (Finsupp.fun_support_eq _).subset
 
 /-- The barycentric mass on `s` and the mass off `s` add up to one. -/
 private theorem mass_add_sum_filter_not [DecidablePred (· ∈ s)] (x : Realization K) :
@@ -93,7 +87,8 @@ private theorem continuous_mass : Continuous fun x : Realization K => ∑ᶠ v �
   refine (continuous_finsetSum (τ.1.filter (· ∈ s)) fun v _ =>
     (continuous_apply v).comp hcoord).congr fun y => ?_
   simp only [Function.comp_apply, faceInclusion_val]
-  exact (mass_eq_sum_filter_of_support_subset s (StandardSimplex.support_subset y)).symm
+  exact (TauCeti.finsum_mem_eq_sum_filter_of_support_subset _ s
+    ((Finsupp.fun_support_eq _).trans_subset (StandardSimplex.support_subset y))).symm
 
 /-- The control function of the open star of `s`: one minus the barycentric mass on `s`. It
 vanishes exactly on the polyhedron of the full subcomplex spanned by `s`, and is less than one
@@ -109,6 +104,7 @@ theorem coe_openStarControl_apply (x : Realization K) :
 
 /-- The control function of the open star of `s` vanishes exactly on the polyhedron of the full
 subcomplex spanned by `s`. -/
+@[simp]
 theorem openStarControl_eq_zero_iff {x : Realization K} :
     K.openStarControl s x = 0 ↔ (x.1.support : Set ι) ⊆ s := by
   classical
@@ -122,6 +118,7 @@ theorem openStarControl_eq_zero_iff {x : Realization K} :
     fun h v hv hs => absurd (h (Finsupp.mem_support_iff.2 hv)) hs⟩
 
 /-- The control function of the open star of `s` is less than one exactly on the open star. -/
+@[simp]
 theorem openStarControl_lt_one_iff {x : Realization K} :
     K.openStarControl s x < 1 ↔ x ∈ K.openStarRealizationSet s := by
   classical
