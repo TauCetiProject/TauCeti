@@ -64,16 +64,19 @@ maps of an action are exactly the shifts of any one of them by coadjoint-invaria
 * `TauCeti.momentDefect_mul`: the pointwise cocycle identity of the defect.
 * `TauCeti.SmoothTwoForm.IsMomentMap.momentDefect_eq`: for a moment map and an element acting
   symplectically on a preconnected manifold, the defect is independent of the point.
-* `TauCeti.SmoothTwoForm.IsMomentMap.momentDefect_mul_eq`: the defect is a `1`-cocycle of `G` with
-  values in the coadjoint representation.
+* `TauCeti.SmoothTwoForm.IsMomentMap.momentDefect_mul_eq`: for a moment map and `g` acting by a
+  symplectomorphism of a preconnected manifold, `θ(g k, x) = θ(g, x) + Ad*_g θ(k, x)`; for an
+  action by symplectomorphisms the defect is thus a `1`-cocycle of `G` with values in the
+  coadjoint representation.
 * `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff`: for an action by
   symplectomorphisms on a preconnected manifold, equivariance can be tested at a single point.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isEquivariantMomentMap_iff_exists_eq_add`:
   uniqueness of group-level moment maps up to coadjoint-invariant constants.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_momentDefect_one`: the derivative of the defect at
   the identity is the moment cocycle.
-* `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: over a
-  connected group, infinitesimal equivariance implies coadjoint equivariance.
+* `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: for a
+  preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
+  cocycle vanishes at one point is coadjoint-equivariant.
 
 ## References
 
