@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.FirstHomology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
@@ -203,6 +204,36 @@ def piCircleSingularHomologyIsoGroupHomology (n : ℕ) :
           Homeomorph.ulift.{u}.symm)).symm ≪≫
     torusSingularHomologyIsoGroupHomology k (fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_ne_zero) n
 
+/-- The identification `TauCeti.piCircleSingularHomologyIsoGroupHomology` is the map induced on
+homology by the inverse of the factorwise homeomorphism with the circle of period `1`, followed by
+`TauCeti.torusSingularHomologyIsoGroupHomology`. -/
+theorem piCircleSingularHomologyIsoGroupHomology_hom (n : ℕ) :
+    (piCircleSingularHomologyIsoGroupHomology k ι n).hom =
+      ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map
+          (TopCat.ofHom (Homeomorph.piCongrRight fun _ : ι ↦
+            (AddCircle.homeomorphCircle (one_ne_zero (α := ℝ))).trans
+              Homeomorph.ulift.{u}.symm).symm) ≫
+        (torusSingularHomologyIsoGroupHomology k (fun _ : ι ↦ (1 : ℝ))
+          (fun _ ↦ one_ne_zero) n).hom := by
+  -- Unfold the unexposed definition; the composite then holds by `rfl`.
+  rw [piCircleSingularHomologyIsoGroupHomology]
+  rfl
+
+/-- The inverse of `TauCeti.piCircleSingularHomologyIsoGroupHomology` is the inverse of
+`TauCeti.torusSingularHomologyIsoGroupHomology`, followed by the map induced on homology by the
+factorwise homeomorphism with the circle of period `1`. -/
+theorem piCircleSingularHomologyIsoGroupHomology_inv (n : ℕ) :
+    (piCircleSingularHomologyIsoGroupHomology k ι n).inv =
+      (torusSingularHomologyIsoGroupHomology k (fun _ : ι ↦ (1 : ℝ))
+          (fun _ ↦ one_ne_zero) n).inv ≫
+        ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map
+          (TopCat.ofHom (Homeomorph.piCongrRight fun _ : ι ↦
+            (AddCircle.homeomorphCircle (one_ne_zero (α := ℝ))).trans
+              Homeomorph.ulift.{u}.symm)) := by
+  -- Unfold the unexposed definition; the composite then holds by `rfl`.
+  rw [piCircleSingularHomologyIsoGroupHomology]
+  rfl
+
 /-- **The group homology of `ℤ^ι` is the exterior algebra on its first homology.** For every
 commutative ring `k` and finite `ι`, `⋀ⁿ H₁(ℤ^ι, k) ≃ Hₙ(ℤ^ι, k)` with trivial coefficients `k`.
 Under the identification of group homology with the homology of a torus
@@ -235,7 +266,6 @@ theorem groupHomologyPiMultiplicativeIntExteriorPowerEquiv_ιMulti (n : ℕ)
 torus. -/
 instance free_groupHomology_pi_multiplicative_int (n : ℕ) :
     Module.Free k (groupHomology (Rep.trivial k (ι → Multiplicative ℤ) k) n) :=
-  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
   .of_equiv (piCircleSingularHomologyIsoGroupHomology k ι n).toLinearEquiv
 
 /-- For every commutative ring `k` and finite `ι`, `Hₙ(ℤ^ι, k)` with trivial coefficients `k` is a
@@ -245,9 +275,7 @@ instance finite_groupHomology_pi_multiplicative_int (n : ℕ) :
   rcases subsingleton_or_nontrivial k with hk | hk
   · have := Module.subsingleton k (groupHomology (Rep.trivial k (ι → Multiplicative ℤ) k) n)
     infer_instance
-  · have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
-    have : Module.Finite k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Finite k k)
-    exact .equiv (piCircleSingularHomologyIsoGroupHomology k ι n).toLinearEquiv
+  · exact .equiv (piCircleSingularHomologyIsoGroupHomology k ι n).toLinearEquiv
 
 /-- **The rank of the group homology of `ℤ^ι`**: over a nontrivial commutative ring `k`,
 `rank Hₙ(ℤ^ι, k) = (card ι choose n)` with trivial coefficients `k`, as for the homology of a
@@ -256,11 +284,8 @@ torus. -/
 theorem finrank_groupHomology_pi_multiplicative_int [Nontrivial k] (n : ℕ) :
     Module.finrank k (groupHomology (Rep.trivial k (ι → Multiplicative ℤ) k) n) =
       (Nat.card ι).choose n := by
-  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
-  have : Module.Finite k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Finite k k)
   rw [← (piCircleSingularHomologyIsoGroupHomology k ι n).toLinearEquiv.finrank_eq,
-    finrank_singularHomology_pi_circle, show Module.finrank k (𝟙_ (ModuleCat.{u} k)) = 1 from
-      Module.finrank_self k, mul_one]
+    finrank_singularHomology_pi_circle, ModuleCat.finrank_tensorUnit, mul_one]
 
 variable {ι} in
 /-- **The group homology of `ℤ^ι` vanishes above degree `card ι`**, with trivial coefficients in
