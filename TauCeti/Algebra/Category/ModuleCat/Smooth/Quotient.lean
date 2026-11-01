@@ -61,12 +61,10 @@ theorem discreteModules_restrictScalars_quotient_iff (M : ModuleCat.{v} (A ⧸ I
   change (∀ m x : M, IsOpen {a : A | Ideal.Quotient.mk I a • m = x}) ↔
     ∀ m x : M, IsOpen {a : A ⧸ I | a • m = x}
   exact forall_congr' fun m => forall_congr' fun x =>
-    (Ideal.isQuotientMap_quotient_mk I).isOpen_preimage
+    I.isQuotientMap_mkQ.isOpen_preimage
       (s := {a : A ⧸ I | a • m = x})
 
 /-- Restriction of discrete quotient modules to modules annihilated by `I`. -/
--- Exposed so the unit and counit formulas can use elements of the original carrier.
-@[expose]
 def discreteQuotientRestriction : (discreteModules.{v} (A ⧸ I)).FullSubcategory ⥤
     (discreteAnnihilatedModules.{v} I).FullSubcategory :=
   (discreteAnnihilatedModules I).lift
@@ -94,16 +92,31 @@ theorem discreteQuotientDescentObj_mk_smul
       (discreteQuotientDescentObj I M).isModule.toSMul (Ideal.Quotient.mk I a) m = a • m :=
   (rfl)
 
+/-- Restricting the descended action recovers the original action. -/
+@[simp]
+theorem restrictScalars_discreteQuotientDescentObj_smul
+    (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) (a : A) (m : M.obj) :
+    @SMul.smul A ((ModuleCat.restrictScalars (Ideal.Quotient.mk I)).obj
+      (discreteQuotientDescentObj I M))
+      ((ModuleCat.restrictScalars (Ideal.Quotient.mk I)).obj
+        (discreteQuotientDescentObj I M)).isModule.toSMul a m = a • m :=
+  (ModuleCat.restrictScalars.smul_def' (M := discreteQuotientDescentObj I M) _ a m).trans
+    (discreteQuotientDescentObj_mk_smul I M a m)
+
 /-- The descended module is discrete for the quotient topology. -/
 theorem discreteModules_discreteQuotientDescentObj
     (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) :
     discreteModules (A ⧸ I) (discreteQuotientDescentObj I M) := by
-  rw [← discreteModules_restrictScalars_quotient_iff]
-  exact ((discreteAnnihilatedModules_iff I M.obj).mp M.property).1
+  rw [discreteModules_iff]
+  intro m
+  let : TopologicalSpace M.obj := ⊥
+  let : TopologicalSpace (discreteQuotientDescentObj I M) := ⊥
+  apply I.isQuotientMap_mkQ.continuous_iff.mpr
+  exact (discreteModules_iff.mp
+    ((discreteAnnihilatedModules_iff I M.obj).mp M.property).1 m).congr
+      fun a => (discreteQuotientDescentObj_mk_smul I M a m).symm
 
 /-- Descent of an annihilated discrete module to the quotient, retaining its carrier and maps. -/
--- Exposed for the same-carrier unit and counit formulas; the action is still characterized above.
-@[expose]
 def discreteQuotientDescent : (discreteAnnihilatedModules.{v} I).FullSubcategory ⥤
     (discreteModules.{v} (A ⧸ I)).FullSubcategory where
   obj M := ⟨discreteQuotientDescentObj I M, discreteModules_discreteQuotientDescentObj I M⟩
@@ -113,7 +126,9 @@ def discreteQuotientDescent : (discreteAnnihilatedModules.{v} I).FullSubcategory
       map_add' := f.hom.hom.map_add
       map_smul' := fun a m => by
         obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-        exact f.hom.hom.map_smul a m })
+        exact (congrArg f.hom (discreteQuotientDescentObj_mk_smul I M a m)).trans
+          ((f.hom.hom.map_smul a m).trans
+            (discreteQuotientDescentObj_mk_smul I N a (f.hom m)).symm) })
 
 /-- The restriction functor is native restriction of scalars after inclusion. -/
 @[simp]
@@ -122,12 +137,36 @@ theorem discreteQuotientRestriction_comp_ι :
       (discreteModules (A ⧸ I)).ι ⋙ ModuleCat.restrictScalars (Ideal.Quotient.mk I) := by
   rfl
 
+/-- The underlying module of restriction is native restriction of scalars. -/
+@[simp]
+theorem discreteQuotientRestriction_obj_obj
+    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) :
+    ((discreteQuotientRestriction I).obj M).obj =
+      (ModuleCat.restrictScalars (Ideal.Quotient.mk I)).obj M.obj := (rfl)
+
 /-- The underlying module of descent is the canonical quotient action. -/
 @[simp]
 theorem discreteQuotientDescent_obj_obj
     (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) :
     ((discreteQuotientDescent I).obj M).obj = discreteQuotientDescentObj I M := by
   rfl
+
+/-- Restriction acts on morphisms by native restriction of scalars. -/
+@[simp]
+theorem discreteQuotientRestriction_map_hom
+    {M N : (discreteModules.{v} (A ⧸ I)).FullSubcategory} (f : M ⟶ N) :
+    ((discreteQuotientRestriction I).map f).hom =
+      eqToHom (discreteQuotientRestriction_obj_obj I M) ≫
+        (ModuleCat.restrictScalars (Ideal.Quotient.mk I)).map f.hom ≫
+          eqToHom (discreteQuotientRestriction_obj_obj I N).symm := (rfl)
+
+/-- Descent keeps the underlying maps after identifying its canonical quotient actions. -/
+@[simp]
+theorem discreteQuotientDescent_map_apply
+    {M N : (discreteAnnihilatedModules.{v} I).FullSubcategory} (f : M ⟶ N) (m : M.obj) :
+    (eqToHom (discreteQuotientDescent_obj_obj I N)).hom
+      (((discreteQuotientDescent I).map f).hom.hom
+        ((eqToHom (discreteQuotientDescent_obj_obj I M).symm).hom m)) = f.hom m := (rfl)
 
 /-- Descent keeps the underlying abelian groups and maps. -/
 @[simp]
@@ -146,13 +185,14 @@ def discreteQuotientDescentRestrictionIso :
         (Y := M.obj)
         { toFun := fun m => m
           map_add' := fun _ _ => rfl
-          map_smul' := fun _ _ => rfl })
+          map_smul' := fun a m => restrictScalars_discreteQuotientDescentObj_smul I M a m })
       inv := ObjectProperty.homMk (ModuleCat.ofHom
         (X := M.obj)
         (Y := ((discreteQuotientDescent I ⋙ discreteQuotientRestriction I).obj M).obj)
         { toFun := fun m => m
           map_add' := fun _ _ => rfl
-          map_smul' := fun _ _ => rfl }) })
+          map_smul' := fun a m =>
+            (restrictScalars_discreteQuotientDescentObj_smul I M a m).symm }) })
 
 /-- Restriction followed by descent is naturally the identity, by identity maps. -/
 def discreteQuotientRestrictionDescentIso :
@@ -165,7 +205,9 @@ def discreteQuotientRestrictionDescentIso :
           map_add' := fun _ _ => rfl
           map_smul' := fun a m => by
             obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-            rfl })
+            exact (discreteQuotientDescentObj_mk_smul I
+              ((discreteQuotientRestriction I).obj M) a m).trans
+                (ModuleCat.restrictScalars.smul_def' (M := M.obj) _ a m) })
       inv := ObjectProperty.homMk (ModuleCat.ofHom
         (X := M.obj)
         (Y := ((discreteQuotientRestriction I ⋙ discreteQuotientDescent I).obj M).obj)
@@ -173,31 +215,51 @@ def discreteQuotientRestrictionDescentIso :
           map_add' := fun _ _ => rfl
           map_smul' := fun a m => by
             obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-            rfl }) })
+            exact ((discreteQuotientDescentObj_mk_smul I
+              ((discreteQuotientRestriction I).obj M) a m).trans
+                (ModuleCat.restrictScalars.smul_def' (M := M.obj) _ a m)).symm }) })
+
+/-- Descent followed by restriction retains the original abelian group. -/
+theorem discreteQuotientDescentRestriction_obj_forget
+    (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) :
+    (forget₂ (ModuleCat A) AddCommGrpCat).obj
+      ((discreteQuotientDescent I ⋙ discreteQuotientRestriction I).obj M).obj =
+        (forget₂ (ModuleCat A) AddCommGrpCat).obj M.obj := (rfl)
+
+/-- Restriction followed by descent retains the original abelian group. -/
+theorem discreteQuotientRestrictionDescent_obj_forget
+    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) :
+    (forget₂ (ModuleCat (A ⧸ I)) AddCommGrpCat).obj
+      ((discreteQuotientRestriction I ⋙ discreteQuotientDescent I).obj M).obj =
+        (forget₂ (ModuleCat (A ⧸ I)) AddCommGrpCat).obj M.obj := (rfl)
 
 @[simp]
-theorem discreteQuotientDescentRestrictionIso_hom_app_apply
-    (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) (m : M.obj) :
-    dsimp% (((discreteQuotientDescentRestrictionIso I).hom.app M).hom.hom m) = m := by
-  rfl
+theorem discreteQuotientDescentRestrictionIso_hom_app_forget
+    (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) :
+    AddCommGrpCat.ofHom
+      ((discreteQuotientDescentRestrictionIso I).hom.app M).hom.hom.toAddMonoidHom =
+        eqToHom (discreteQuotientDescentRestriction_obj_forget I M) := (rfl)
 
 @[simp]
-theorem discreteQuotientDescentRestrictionIso_inv_app_apply
-    (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) (m : M.obj) :
-    dsimp% (((discreteQuotientDescentRestrictionIso I).inv.app M).hom.hom m) = m := by
-  rfl
+theorem discreteQuotientDescentRestrictionIso_inv_app_forget
+    (M : (discreteAnnihilatedModules.{v} I).FullSubcategory) :
+    AddCommGrpCat.ofHom
+      ((discreteQuotientDescentRestrictionIso I).inv.app M).hom.hom.toAddMonoidHom =
+        eqToHom (discreteQuotientDescentRestriction_obj_forget I M).symm := (rfl)
 
 @[simp]
-theorem discreteQuotientRestrictionDescentIso_hom_app_apply
-    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) (m : M.obj) :
-    dsimp% (((discreteQuotientRestrictionDescentIso I).hom.app M).hom.hom m) = m := by
-  rfl
+theorem discreteQuotientRestrictionDescentIso_hom_app_forget
+    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) :
+    AddCommGrpCat.ofHom
+      ((discreteQuotientRestrictionDescentIso I).hom.app M).hom.hom.toAddMonoidHom =
+        eqToHom (discreteQuotientRestrictionDescent_obj_forget I M) := (rfl)
 
 @[simp]
-theorem discreteQuotientRestrictionDescentIso_inv_app_apply
-    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) (m : M.obj) :
-    dsimp% (((discreteQuotientRestrictionDescentIso I).inv.app M).hom.hom m) = m := by
-  rfl
+theorem discreteQuotientRestrictionDescentIso_inv_app_forget
+    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) :
+    AddCommGrpCat.ofHom
+      ((discreteQuotientRestrictionDescentIso I).inv.app M).hom.hom.toAddMonoidHom =
+        eqToHom (discreteQuotientRestrictionDescent_obj_forget I M).symm := (rfl)
 
 /-- Discrete quotient modules are equivalent to discrete modules annihilated by the ideal. -/
 def discreteQuotientEquivalence : (discreteModules.{v} (A ⧸ I)).FullSubcategory ≌
