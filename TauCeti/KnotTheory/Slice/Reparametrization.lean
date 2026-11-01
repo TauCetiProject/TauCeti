@@ -9,12 +9,13 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.CircleLift
 public import TauCeti.KnotTheory.Slice.Basic
 
 /-!
-# Sliceness does not depend on the parametrization
+# Sliceness does not depend on a parametrization given by a lift
 
 Smooth and topological sliceness (`TauCeti.IsSmoothlySlice`, `TauCeti.IsTopologicallySlice`) are
-stated for a parametrized knot `K : S¹ → Sⁿ`, but they are properties of the knot rather than of
-its parametrization: if `K' = K ∘ σ` for a diffeomorphism `σ` of the circle, then `K'` is slice
-exactly when `K` is. A slice disc `Φ` for `K` is reparametrized along with the knot, by a
+stated for a parametrized knot `K : S¹ → Sⁿ`, but they do not depend on the parametrization: if
+`K' = K ∘ σ` for a diffeomorphism `σ` of the circle given by a lift (below), then `K'` is slice
+exactly when `K` is. That every diffeomorphism of the circle is given by such a lift is not proved
+here. A slice disc `Φ` for `K` is reparametrized along with the knot, by a
 diffeomorphism `D` of the closed unit disc which is `σ` on the boundary circle: `Φ ∘ D` is a slice
 disc for `K'` (`TauCeti.IsSmoothSliceDisc.comp_diffeomorph`).
 

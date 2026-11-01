@@ -41,7 +41,9 @@ the norm (`TauCeti.norm_circleLiftDiffeomorph`), so it restricts to a diffeomorp
 The same radial interpolation through circle diffeomorphisms is
 `AddCircle.collarDiffeomorphOfLift`, on the product `ℝ × AddCircle T` of a collar coordinate and
 the circle. Here it is carried out directly on the plane, where it is the identity near the origin
-and so extends smoothly across the centre of the disc.
+and so extends smoothly across the centre of the disc. Both constructions use the interpolating
+lift lemmas `AddCircle.add_mul_sub_add_period`, `AddCircle.hasDerivAt_add_mul_sub` and
+`AddCircle.one_sub_add_mul_pos`.
 
 ## Main definitions
 
@@ -56,6 +58,8 @@ and so extends smoothly across the centre of the disc.
 * `TauCeti.circleLiftDiffeomorph_of_norm_le`: it is the identity on the disc of radius `1 / 3`.
 * `TauCeti.circleLiftDiffeomorph_mul_exp_of_le`: it is the circle map with lift `F` on each circle
   of radius at least `2 / 3`.
+* `TauCeti.norm_circleLiftDiffeomorph_symm`, `TauCeti.circleLiftDiffeomorph_symm_of_norm_le`,
+  `TauCeti.circleLiftDiffeomorph_symm_mul_exp_of_le`: the same for the inverse.
 * `TauCeti.circleLiftDiscDiffeomorph_inclusion`: on the boundary circle of the closed unit disc
   the restriction is the circle map with lift `F`.
 
@@ -95,10 +99,6 @@ private theorem weight_of_ge {r : ℝ} (hr : 2 / 3 ≤ r) : weight r = 1 :=
 private theorem contDiff_weight : ContDiff ℝ ∞ weight :=
   smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
 
-/-- The interpolating lift `x ↦ x + c * (F x - x)` at the weight `c`. -/
-private def interp (F : ℝ → ℝ) (c x : ℝ) : ℝ :=
-  x + c * (F x - x)
-
 /-- The angle by which the plane map turns the point `z`. -/
 private def angle (F : ℝ → ℝ) (z : ℂ) : ℝ :=
   weight ‖z‖ * (F (arg z) - arg z)
@@ -114,13 +114,6 @@ private theorem periodic_sub : Periodic (fun x ↦ F x - x) (2 * π) := fun x �
   simp only [hper]
   ring
 
-private theorem interp_add_two_pi (c x : ℝ) :
-    interp F c (x + 2 * π) = interp F c x + 2 * π := by
-  have := periodic_sub hper x
-  simp only [interp] at this ⊢
-  rw [this]
-  ring
-
 /-- The angle at `r * exp (x * I)`, `r > 0`, is computed from `x` itself, whatever the argument. -/
 private theorem angle_mul_exp {r : ℝ} (hr : 0 < r) (x : ℝ) :
     angle F (r * exp (x * I)) = weight r * (F x - x) := by
@@ -129,12 +122,13 @@ private theorem angle_mul_exp {r : ℝ} (hr : 0 < r) (x : ℝ) :
   rw [angle, hnorm, arg_real_mul _ hr, arg_exp_mul_I, ← self_sub_toIocDiv_zsmul]
   exact congrArg (weight r * ·) ((periodic_sub hper).sub_zsmul_eq _)
 
-/-- The plane map on the circle of radius `r` is the circle map with lift `interp F (weight r)`. -/
+/-- The plane map on the circle of radius `r` is the circle map with lift
+`x ↦ x + weight r * (F x - x)`. -/
 private theorem circleLiftMap_mul_exp {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
-    circleLiftMap F (r * exp (x * I)) = r * exp (interp F (weight r) x * I) := by
+    circleLiftMap F (r * exp (x * I)) = r * exp ((x + weight r * (F x - x) : ℝ) * I) := by
   rcases hr.eq_or_lt with rfl | hr
   · simp [circleLiftMap]
-  rw [circleLiftMap, angle_mul_exp hper hr, mul_assoc, ← Complex.exp_add, interp]
+  rw [circleLiftMap, angle_mul_exp hper hr, mul_assoc, ← Complex.exp_add]
   push_cast
   ring_nf
 
@@ -171,29 +165,22 @@ variable (hF : ContDiff ℝ ∞ F) (hpos : ∀ x, 0 < deriv F x)
 include hF hpos
 
 omit hper hpos in
-private theorem hasDerivAt_interp {c : ℝ} (x : ℝ) :
-    HasDerivAt (interp F c) ((1 - c) + c * deriv F x) x := by
-  have hd : HasDerivAt F (deriv F x) x :=
-    (hF.differentiable (by simp)).differentiableAt.hasDerivAt
-  convert (hasDerivAt_id x).add (((hd.sub (hasDerivAt_id x))).const_mul c) using 1
-  · rfl
-  · ring
-
-omit hper hF in
-private theorem deriv_interp_pos {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (x : ℝ) :
-    0 < (1 - c) + c * deriv F x := by
-  rcases hc₁.lt_or_eq with hc₁ | rfl
-  · exact add_pos_of_pos_of_nonneg (by linarith) (mul_nonneg hc₀ (hpos x).le)
-  · simpa using hpos x
+/-- The interpolating lift `x ↦ x + c * (F x - x)` has derivative `1 - c + c * F' x`. -/
+private theorem hasDerivAt_lift (c x : ℝ) :
+    HasDerivAt (fun y ↦ y + c * (F y - y)) (1 - c + c * deriv F x) x :=
+  AddCircle.hasDerivAt_add_mul_sub ((hF.differentiable (by simp)) x).hasDerivAt c
 
 omit hper hF hpos in
 private theorem weight_mem (r : ℝ) : 0 ≤ weight r ∧ weight r ≤ 1 :=
   ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩
 
+omit hper hF in
+private theorem deriv_lift_pos (r x : ℝ) : 0 < 1 - weight r + weight r * deriv F x :=
+  AddCircle.one_sub_add_mul_pos (weight_mem r).1 (weight_mem r).2 (hpos x)
+
 omit hper in
-private theorem strictMono_interp (r : ℝ) : StrictMono (interp F (weight r)) :=
-  strictMono_of_hasDerivAt_pos (fun x ↦ hasDerivAt_interp hF x)
-    (deriv_interp_pos hpos (weight_mem r).1 (weight_mem r).2)
+private theorem strictMono_lift (r : ℝ) : StrictMono fun x ↦ x + weight r * (F x - x) :=
+  strictMono_of_hasDerivAt_pos (hasDerivAt_lift hF _) (deriv_lift_pos hpos r)
 
 private theorem injective_circleLiftMap : Injective (circleLiftMap F) := by
   intro z w h
@@ -208,15 +195,17 @@ private theorem injective_circleLiftMap : Injective (circleLiftMap F) := by
   have h' := mul_left_cancel₀ (ofReal_ne_zero.2 h0) h
   obtain ⟨k, hk⟩ := Complex.exp_eq_exp_iff_exists_int.1 h'
   -- The two interpolated lifts differ by `2πk`, hence so do the arguments.
-  have hk' : interp F (weight ‖w‖) (arg z) = interp F (weight ‖w‖) (arg w + k * (2 * π)) := by
-    rw [AddCircle.lift_add_int_mul (interp_add_two_pi hper (weight ‖w‖)) (arg w) k]
+  have hk' : arg z + weight ‖w‖ * (F (arg z) - arg z) =
+      arg w + k * (2 * π) + weight ‖w‖ * (F (arg w + k * (2 * π)) - (arg w + k * (2 * π))) := by
+    rw [AddCircle.lift_add_int_mul (F := fun y ↦ y + weight ‖w‖ * (F y - y))
+      (AddCircle.add_mul_sub_add_period hper (weight ‖w‖)) (arg w) k]
     apply ofReal_injective
     have := congrArg (fun u : ℂ ↦ u / I) hk
     simp only [mul_div_assoc, div_self I_ne_zero, mul_one, add_div] at this
     rw [this]
     push_cast
     field_simp
-  have harg := (strictMono_interp hF hpos ‖w‖).injective hk'
+  have harg := (strictMono_lift hF hpos ‖w‖).injective hk'
   rw [hnorm, harg]
   congr 1
   rw [Complex.exp_eq_exp_iff_exists_int]
@@ -225,11 +214,11 @@ private theorem injective_circleLiftMap : Injective (circleLiftMap F) := by
 private theorem surjective_circleLiftMap : Surjective (circleLiftMap F) := by
   intro w
   have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
-  obtain ⟨G, -, hG, -, -⟩ := AddCircle.exists_lift_inverse (fun x ↦ hasDerivAt_interp hF x)
-    (interp_add_two_pi hper (weight ‖w‖))
-    (deriv_interp_pos hpos (weight_mem ‖w‖).1 (weight_mem ‖w‖).2)
+  obtain ⟨G, -, hG, -, -⟩ := AddCircle.exists_lift_inverse (hasDerivAt_lift hF (weight ‖w‖))
+    (AddCircle.add_mul_sub_add_period hper (weight ‖w‖)) (deriv_lift_pos hpos ‖w‖)
+  have hGw : G (arg w) + weight ‖w‖ * (F (G (arg w)) - G (arg w)) = arg w := hG (arg w)
   refine ⟨‖w‖ * exp (G (arg w) * I), ?_⟩
-  rw [circleLiftMap_mul_exp hper (norm_nonneg _), hG, norm_mul_exp_arg_mul_I]
+  rw [circleLiftMap_mul_exp hper (norm_nonneg _), hGw, norm_mul_exp_arg_mul_I]
 
 /-! ### The derivative -/
 
@@ -238,42 +227,41 @@ omit hpos in
 positive multiple of the angular direction at the image point. -/
 private theorem fderiv_circleLiftMap_mul_I {r : ℝ} (hr : 0 < r) (x : ℝ) :
     fderiv ℝ (circleLiftMap F) (r * exp (x * I)) (r * exp (x * I) * I) =
-      r * (exp (interp F (weight r) x * I) *
-        (((1 - weight r) + weight r * deriv F x : ℝ) * I)) := by
+      r * (exp ((x + weight r * (F x - x) : ℝ) * I) *
+        ((1 - weight r + weight r * deriv F x : ℝ) * I)) := by
   have hD : Differentiable ℝ (circleLiftMap F) :=
     (contDiff_circleLiftMap hper hF).differentiable (by simp)
   have hγ : HasDerivAt (fun t : ℝ ↦ (r : ℂ) * exp (t * I)) (r * exp (x * I) * I) x :=
     ((((hasDerivAt_id x).ofReal_comp.mul_const I).cexp).const_mul (r : ℂ)).congr_deriv
       (by simp only [id_eq, ofReal_one, one_mul]; ring)
   have h₂ : HasDerivAt (fun t : ℝ ↦ circleLiftMap F (r * exp (t * I)))
-      (r * (exp (interp F (weight r) x * I) *
-        (((1 - weight r) + weight r * deriv F x : ℝ) * I))) x := by
+      (r * (exp ((x + weight r * (F x - x) : ℝ) * I) *
+        ((1 - weight r + weight r * deriv F x : ℝ) * I))) x := by
     simp only [circleLiftMap_mul_exp hper hr.le]
-    exact (((hasDerivAt_interp (c := weight r) hF x).ofReal_comp.mul_const I).cexp).const_mul
-      (r : ℂ)
+    exact (((hasDerivAt_lift hF (weight r) x).ofReal_comp.mul_const I).cexp).const_mul (r : ℂ)
   exact ((hD _).hasFDerivAt.comp_hasDerivAt x hγ).unique h₂
 
 omit hpos in
 /-- The derivative of the plane map in the radial direction `exp (x * I)` at `r * exp (x * I)`: its
-component along the direction `exp (interp F (weight r) x * I)` of the image point is `1`. -/
+component along the direction `exp ((x + weight r * (F x - x)) * I)` of the image point is `1`. -/
 private theorem exists_fderiv_circleLiftMap_exp {r : ℝ} (hr : 0 < r) (x : ℝ) :
     ∃ a : ℝ, fderiv ℝ (circleLiftMap F) (r * exp (x * I)) (exp (x * I)) =
-      exp (interp F (weight r) x * I) * (1 + a * I) := by
+      exp ((x + weight r * (F x - x) : ℝ) * I) * (1 + a * I) := by
   have hD : Differentiable ℝ (circleLiftMap F) :=
     (contDiff_circleLiftMap hper hF).differentiable (by simp)
-  have hd : HasDerivAt (fun s : ℝ ↦ interp F (weight s) x)
-      (deriv (fun s : ℝ ↦ interp F (weight s) x) r) r :=
+  have hd : HasDerivAt (fun s : ℝ ↦ x + weight s * (F x - x))
+      (deriv (fun s : ℝ ↦ x + weight s * (F x - x)) r) r :=
     (((contDiff_weight.differentiable (by simp)).differentiableAt (x := r)).mul_const
       (F x - x)).const_add x |>.hasDerivAt
-  refine ⟨r * deriv (fun s : ℝ ↦ interp F (weight s) x) r, ?_⟩
+  refine ⟨r * deriv (fun s : ℝ ↦ x + weight s * (F x - x)) r, ?_⟩
   have hγ : HasDerivAt (fun s : ℝ ↦ (s : ℂ) * exp (x * I)) (exp (x * I)) r := by
     simpa using (hasDerivAt_id r).ofReal_comp.mul_const (exp (x * I))
   have h₂ : HasDerivAt (fun s : ℝ ↦ circleLiftMap F (s * exp (x * I)))
-      (exp (interp F (weight r) x * I) *
-        (1 + (r * deriv (fun s : ℝ ↦ interp F (weight s) x) r : ℝ) * I))
+      (exp ((x + weight r * (F x - x) : ℝ) * I) *
+        (1 + (r * deriv (fun s : ℝ ↦ x + weight s * (F x - x)) r : ℝ) * I))
       r := by
     have hev : (fun s : ℝ ↦ circleLiftMap F (s * exp (x * I))) =ᶠ[nhds r]
-        fun s : ℝ ↦ (s : ℂ) * exp (interp F (weight s) x * I) := by
+        fun s : ℝ ↦ (s : ℂ) * exp ((x + weight s * (F x - x) : ℝ) * I) := by
       filter_upwards [lt_mem_nhds hr] with s hs
       exact circleLiftMap_mul_exp hper hs.le x
     refine HasDerivAt.congr_of_eventuallyEq ?_ hev
@@ -282,6 +270,16 @@ private theorem exists_fderiv_circleLiftMap_exp {r : ℝ} (hr : 0 < r) (x : ℝ)
     · simp only [id_eq, ofReal_one, one_mul, ofReal_mul]
       ring
   exact ((hD _).hasFDerivAt.comp_hasDerivAt r hγ).unique h₂
+
+omit hper hF hpos in
+/-- A vector `v` in polar coordinates at a point `r * u` with `u ≠ 0`, `r ≠ 0`: its components
+along the radial direction `u` and the angular direction `r * u * I`. -/
+private theorem eq_re_mul_add_im_div_mul {u : ℂ} (hu : u ≠ 0) {r : ℝ} (hr : r ≠ 0) (v : ℂ) :
+    v = ((v / u).re : ℂ) * u + (((v / u).im / r : ℝ) : ℂ) * (r * u * I) := by
+  have hr' : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 hr
+  conv_lhs => rw [← div_mul_cancel₀ v hu, ← re_add_im (v / u)]
+  push_cast
+  field_simp
 
 /-- The derivative of the plane map is injective at every point: in the polar coordinates
 `r * exp (x * I)`, the radial direction goes to a vector with a nonzero radial component, and the
@@ -302,41 +300,28 @@ private theorem injective_fderiv_circleLiftMap (z : ℂ) :
   have hang := fderiv_circleLiftMap_mul_I hper hF hr x
   obtain ⟨a, ha⟩ := exists_fderiv_circleLiftMap_exp hper hF hr x
   -- A vector `v = s • exp (x * I) + t • (z * I)` goes to
-  -- `exp (interp F (weight r) x * I) * (s + (s * a + t * r * μ) * I)`, with `μ > 0`; this
+  -- `exp ((x + weight r * (F x - x)) * I) * (s + (s * a + t * r * μ) * I)`, with `μ > 0`; this
   -- vanishes only if `s = 0` and then `t = 0`.
-  have hμ := deriv_interp_pos hpos (weight_mem r).1 (weight_mem r).2 x
+  have hμ := deriv_lift_pos hpos r x
   refine (injective_iff_map_eq_zero D).2 fun v hv ↦ ?_
-  have hu : exp (x * I) ≠ 0 := exp_ne_zero _
-  have hv' : v = ((v / exp (x * I)).re : ℂ) * exp (x * I) +
-      (((v / exp (x * I)).im / r : ℝ) : ℂ) * (r * exp (x * I) * I) := by
-    have hr' : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 hr.ne'
-    conv_lhs => rw [← div_mul_cancel₀ v hu, ← re_add_im (v / exp (x * I))]
-    push_cast
-    field_simp
-  set s := (v / exp (x * I)).re
-  set t := (v / exp (x * I)).im / r
+  obtain ⟨s, t, rfl⟩ : ∃ s t : ℝ, v = s * exp (x * I) + t * (r * exp (x * I) * I) :=
+    ⟨_, _, eq_re_mul_add_im_div_mul (exp_ne_zero _) hr.ne' v⟩
   have hsmul (q : ℝ) (w : ℂ) : D (q * w) = q * D w := by
     simpa [Complex.real_smul] using D.map_smul q w
-  have hlin : D v = (s : ℂ) * D (exp (x * I)) + (t : ℂ) * D (r * exp (x * I) * I) := by
-    conv_lhs => rw [hv']
-    rw [map_add, hsmul, hsmul]
-  have hzero : exp (interp F (weight r) x * I) *
-      ((s : ℂ) + ((s * a + t * r * ((1 - weight r) + weight r * deriv F x) : ℝ) : ℂ) * I) = 0 := by
-    have hv0 := hv
-    rw [hlin, ha, hang] at hv0
-    rw [← hv0]
+  have hzero : exp ((x + weight r * (F x - x) : ℝ) * I) *
+      ((s : ℂ) + ((s * a + t * r * (1 - weight r + weight r * deriv F x) : ℝ) : ℂ) * I) = 0 := by
+    rw [← hv, map_add, hsmul, hsmul, ha, hang]
     push_cast
     ring
   have key := (mul_eq_zero.1 hzero).resolve_left (exp_ne_zero _)
   have hs : s = 0 := by simpa using congrArg re key
-  have ht : t * r * ((1 - weight r) + weight r * deriv F x) = 0 := by
+  have ht : t * r * (1 - weight r + weight r * deriv F x) = 0 := by
     simpa [hs] using congrArg im key
   have ht' : t = 0 := by
     rcases mul_eq_zero.1 ht with h | h
     · exact (mul_eq_zero.1 h).resolve_right hr.ne'
     · exact absurd h hμ.ne'
-  rw [hv', ← show s = _ from rfl, ← show t = _ from rfl, hs, ht']
-  simp
+  simp [hs, ht']
 
 /-! ### The diffeomorphisms -/
 
@@ -383,13 +368,13 @@ private theorem circleLiftDiffeomorph_apply (z : ℂ) :
 theorem circleLiftDiffeomorph_mul_exp {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
     circleLiftDiffeomorph hper hF hpos (r * exp (x * I)) =
       r * exp ((x + smoothTransition (3 * r - 1) * (F x - x) : ℝ) * I) := by
-  rw [circleLiftDiffeomorph_apply, circleLiftMap_mul_exp hper hr, interp, weight]
+  rw [circleLiftDiffeomorph_apply, circleLiftMap_mul_exp hper hr, weight]
 
 /-- On and outside the circle of radius `2 / 3` the diffeomorphism is the circle map with lift `F`
 on each circle about the origin. -/
 theorem circleLiftDiffeomorph_mul_exp_of_le {r : ℝ} (hr : 2 / 3 ≤ r) (x : ℝ) :
     circleLiftDiffeomorph hper hF hpos (r * exp (x * I)) = r * exp (F x * I) := by
-  rw [circleLiftDiffeomorph_apply, circleLiftMap_mul_exp hper (by linarith), interp,
+  rw [circleLiftDiffeomorph_apply, circleLiftMap_mul_exp hper (by linarith),
     weight_of_ge hr, one_mul, add_sub_cancel]
 
 /-- The diffeomorphism preserves the norm. -/
@@ -401,6 +386,26 @@ theorem norm_circleLiftDiffeomorph (z : ℂ) : ‖circleLiftDiffeomorph hper hF 
 theorem circleLiftDiffeomorph_of_norm_le {z : ℂ} (hz : ‖z‖ ≤ 1 / 3) :
     circleLiftDiffeomorph hper hF hpos z = z :=
   circleLiftMap_of_norm_le hz
+
+/-- The inverse diffeomorphism preserves the norm. -/
+@[simp]
+theorem norm_circleLiftDiffeomorph_symm (z : ℂ) :
+    ‖(circleLiftDiffeomorph hper hF hpos).symm z‖ = ‖z‖ := by
+  conv_rhs => rw [← (circleLiftDiffeomorph hper hF hpos).apply_symm_apply z]
+  rw [norm_circleLiftDiffeomorph]
+
+/-- The inverse diffeomorphism is the identity on the closed disc of radius `1 / 3`. -/
+theorem circleLiftDiffeomorph_symm_of_norm_le {z : ℂ} (hz : ‖z‖ ≤ 1 / 3) :
+    (circleLiftDiffeomorph hper hF hpos).symm z = z := by
+  conv_lhs => rw [← circleLiftDiffeomorph_of_norm_le hper hF hpos hz]
+  exact Diffeomorph.symm_apply_apply _ z
+
+/-- On and outside the circle of radius `2 / 3` the inverse diffeomorphism undoes the circle map
+with lift `F` on each circle about the origin. -/
+theorem circleLiftDiffeomorph_symm_mul_exp_of_le {r : ℝ} (hr : 2 / 3 ≤ r) (x : ℝ) :
+    (circleLiftDiffeomorph hper hF hpos).symm (r * exp (F x * I)) = r * exp (x * I) := by
+  conv_lhs => rw [← circleLiftDiffeomorph_mul_exp_of_le hper hF hpos hr x]
+  exact Diffeomorph.symm_apply_apply _ _
 
 /-- The diffeomorphism of the closed unit disc of `ℂ` extending the circle map with lift `F`. -/
 def circleLiftDiscDiffeomorph :
