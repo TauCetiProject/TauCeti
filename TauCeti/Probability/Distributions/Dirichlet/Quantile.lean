@@ -46,10 +46,8 @@ theorem quantile_map_eval_dirichletMeasure [DecidableEq ι] [Nontrivial ι]
     (ha : ∀ i, 0 < a i) (i : ι) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     ((dirichletMeasure a).map (fun x ↦ x i)).quantile u =
       inverseRegularizedIncompleteBeta (a i) (∑ j with j ≠ i, a j) u := by
-  have hb : 0 < ∑ j with j ≠ i, a j := by
-    obtain ⟨j, hj⟩ := exists_ne i
-    exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
-  rw [map_eval_dirichletMeasure ha i, quantile_betaMeasure (ha i) hb hu]
+  rw [map_eval_dirichletMeasure ha i,
+    quantile_betaMeasure (ha i) (sum_filter_ne_pos ha i) hu]
 
 /-- A Dirichlet law with one coordinate has constant interior coordinate quantile one. -/
 @[simp]
@@ -68,17 +66,14 @@ theorem tendsto_quantile_map_eval_dirichletMeasure_nhdsGT_zero (ha : ∀ i, 0 < 
       (𝓝 (if Fintype.card ι = 1 then 1 else 0)) := by
   classical
   rcases subsingleton_or_nontrivial ι with _ | _
-  · have hcard : Fintype.card ι = 1 :=
-      Fintype.card_eq_one_iff.2 ⟨i, fun j ↦ Subsingleton.elim j i⟩
+  · let : Unique ι := uniqueOfSubsingleton i
+    have hcard : Fintype.card ι = 1 := Fintype.card_unique
     simp only [hcard, ite_true]
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsGT (zero_lt_one : (0 : ℝ) < 1)] with u hu
     exact (quantile_map_eval_dirichletMeasure_of_card_eq_one ha hcard i hu).symm
-  · have hb : 0 < ∑ j with j ≠ i, a j := by
-      obtain ⟨j, hj⟩ := exists_ne i
-      exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
-    rw [ite_eq_right (ne_of_gt Fintype.one_lt_card), map_eval_dirichletMeasure ha i]
-    exact tendsto_quantile_betaMeasure_nhdsGT_zero (ha i) hb
+  · rw [ite_eq_right (ne_of_gt Fintype.one_lt_card), map_eval_dirichletMeasure ha i]
+    exact tendsto_quantile_betaMeasure_nhdsGT_zero (ha i) (sum_filter_ne_pos ha i)
 
 /-- At level one every valid Dirichlet coordinate quantile tends to one, including the
 constant coordinate of a one-coordinate law. -/
@@ -87,15 +82,12 @@ theorem tendsto_quantile_map_eval_dirichletMeasure_nhdsLT_one (ha : ∀ i, 0 < a
     Tendsto ((dirichletMeasure a).map (fun x ↦ x i)).quantile (𝓝[<] 1) (𝓝 1) := by
   classical
   rcases subsingleton_or_nontrivial ι with _ | _
-  · have hcard : Fintype.card ι = 1 :=
-      Fintype.card_eq_one_iff.2 ⟨i, fun j ↦ Subsingleton.elim j i⟩
+  · let : Unique ι := uniqueOfSubsingleton i
+    have hcard : Fintype.card ι = 1 := Fintype.card_unique
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsLT (zero_lt_one : (0 : ℝ) < 1)] with u hu
     exact (quantile_map_eval_dirichletMeasure_of_card_eq_one ha hcard i hu).symm
-  · have hb : 0 < ∑ j with j ≠ i, a j := by
-      obtain ⟨j, hj⟩ := exists_ne i
-      exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
-    rw [map_eval_dirichletMeasure ha i]
-    exact tendsto_quantile_betaMeasure_nhdsLT_one (ha i) hb
+  · rw [map_eval_dirichletMeasure ha i]
+    exact tendsto_quantile_betaMeasure_nhdsLT_one (ha i) (sum_filter_ne_pos ha i)
 
 end TauCeti.Probability
