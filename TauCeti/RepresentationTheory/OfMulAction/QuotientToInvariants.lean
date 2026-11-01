@@ -32,9 +32,11 @@ statement becomes purely combinatorial: if every element of `D` fixes as many po
 of `Y`, then every element of `D ⧸ I` fixes as many `I`-orbits of `X` as of `Y`.
 
 The motivating instance is the arithmetic of Gassmann triples. There `D` and `I` are the
-decomposition and inertia groups of a prime in a Galois group `G`, `X` and `Y` are the coset
-spaces `G ⧸ H` and `G ⧸ K` of two almost conjugate subgroups, and the `I`-orbits fixed by a
-Frobenius element record the residue degrees of the primes above.
+decomposition and inertia groups of a prime in a Galois group `G`, and `X` and `Y` are the coset
+spaces `G ⧸ H` and `G ⧸ K` of two almost conjugate subgroups. The cycles of a Frobenius element
+on the `I`-orbits correspond to the primes above, and their lengths are the residue degrees.
+The fixed-point counts of the powers of Frobenius on the `I`-orbits determine these cycle
+lengths, so equal counts give the same residue degrees, counted with multiplicity.
 
 ## Main definitions
 
