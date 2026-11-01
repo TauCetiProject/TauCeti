@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Artinian.Ring
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
-public import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.LocalProperties.Reduced
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 import TauCeti.RingTheory.Localization.Integral
@@ -24,24 +23,16 @@ which is integral over `R`, hence comes from `R`, and so cannot lie over primes 
 `Q`. Thus `E_Q` is a field, and `R_Q`, which is integrally closed in `E_Q`, is an integrally closed
 domain.
 
-This applies to the integral closure of any ring in a finite étale algebra over a field. Let `A` be
-a domain with fraction field `K` and `L` a finite étale `K`-algebra. The integral closure of `A` in
-`L` is normal, and `L` is its localization at the nonzero elements of `A`; it is a finite
-`A`-module when `A` is a Noetherian N-1 domain (`TauCeti.Ring.finite_integralClosure_of_etale`).
-So it is a finite normal `A`-algebra with generic fibre `L`, torsion free over `A` as a subring of
-the `K`-vector space `L`. This is the finite normal algebra attached to a finite étale cover of the
-punctured spectrum of a normal local domain, whose generic fibre is a finite étale algebra over
-the fraction field.
+This applies to the integral closure of any ring in a finite étale algebra over a field, a finite
+product of fields. It is the normality of the finite algebra attached to a finite étale cover of
+the punctured spectrum of a normal local domain, whose generic fibre is a finite étale algebra
+over the fraction field.
 
 ## Main results
 
 * `IsIntegrallyClosedIn.isDomain_localization_atPrime` and
   `IsIntegrallyClosedIn.isIntegrallyClosed_localization_atPrime`: a ring integrally closed in a
   reduced Artinian ring is normal.
-* `TauCeti.IsIntegralClosure.isLocalization_of_isIntegral`: the integral closure of a domain `A`
-  in an integral algebra over its fraction field has that algebra as its localization at the
-  nonzero elements of `A`. Mathlib's `IsIntegralClosure.isLocalization` is the case of a field,
-  and its proof carries over.
 
 ## References
 
@@ -58,8 +49,6 @@ the fraction field.
 -/
 
 public section
-
-open scoped nonZeroDivisors
 
 namespace IsIntegrallyClosedIn
 
@@ -149,29 +138,3 @@ theorem isIntegrallyClosed_localization_atPrime [IsArtinianRing E] [IsReduced E]
   (isDomain_and_isIntegrallyClosed_localization_atPrime E Q).2
 
 end IsIntegrallyClosedIn
-
-namespace TauCeti
-
-variable (A K L C : Type*) [CommRing A] [IsDomain A] [Field K] [Algebra A K] [IsFractionRing A K]
-  [CommRing L] [Algebra K L] [Algebra A L] [IsScalarTower A K L] [CommRing C] [Algebra C L]
-  [IsIntegralClosure C A L] [Algebra A C] [IsScalarTower A C L]
-
-/-- **The generic fibre of an integral closure.** Let `A` be a domain with fraction field `K` and
-`L` an integral `K`-algebra, not necessarily a domain. Then `L` is the localization of the
-integral closure of `A` in `L` at the nonzero elements of `A`. Mathlib's
-`IsIntegralClosure.isLocalization` is the case of a field `L`. -/
-theorem IsIntegralClosure.isLocalization_of_isIntegral [Algebra.IsIntegral K L] :
-    IsLocalization (Algebra.algebraMapSubmonoid C A⁰) L := by
-  refine ⟨?_, fun z ↦ ?_, fun {x y} h ↦ ⟨1, ?_⟩⟩
-  · -- A nonzero element of `A` is invertible in `K`, hence in the `K`-algebra `L`.
-    rintro ⟨_, a, ha, rfl⟩
-    rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply A K L]
-    exact (IsUnit.mk0 _ (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors ha)).map _
-  · obtain ⟨m, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization A⁰ z
-      (Algebra.IsIntegral.isIntegral (R := K) z)
-    obtain ⟨x, hx⟩ : ∃ x, algebraMap C L x = m • z := IsIntegralClosure.isIntegral_iff.mp hm
-    refine ⟨⟨x, algebraMap A C m, m, SetLike.coe_mem m, rfl⟩, ?_⟩
-    rw [← IsScalarTower.algebraMap_apply, hx, mul_comm, Submonoid.smul_def, Algebra.smul_def]
-  · simp only [IsIntegralClosure.algebraMap_injective C A L h]
-
-end TauCeti

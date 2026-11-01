@@ -89,6 +89,12 @@ every fraction field and every universe.
 ## References
 
 * [Stacks Project, Section 10.161 (032E)](https://stacks.math.columbia.edu/tag/032E)
+* The proof of `TauCeti.Ring.finite_integralClosure_of_etale` through the field factors follows
+  T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
+  `lean/Pcf/Stacks/Purity/FiniteNormalModel.lean`, where the base is integrally closed
+  (`finiteEtaleAlgebra_integralClosure_finite`).
 -/
 
 public section
@@ -277,10 +283,7 @@ theorem finite_integralClosure_of_isSeparable [IsDomain R] [IsNoetherianRing R]
 /-- **Finiteness of the integral closure in a finite étale algebra.** Let `R` be a Noetherian N-1
 domain with fraction field `K`, for instance an integrally closed Noetherian domain. Then the
 integral closure of `R` in a finite étale `K`-algebra `L`, that is, in a finite product of finite
-separable extensions of `K`, is a finite `R`-module. The proof through the field factors follows
-`finiteEtaleAlgebra_integralClosure_finite` in T. Dupuy, T. Tucker and Z. Wang,
-pcfawd-formalization (Apache-2.0), `Pcf/Stacks/Purity/FiniteNormalModel.lean`, where `R` is
-integrally closed. -/
+separable extensions of `K`, is a finite `R`-module. -/
 theorem finite_integralClosure_of_etale [IsDomain R] [IsNoetherianRing R] [IsN1 R]
     (K : Type*) (L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [CommRing L]
     [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra.Etale K L] :
