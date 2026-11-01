@@ -11,7 +11,6 @@ public import TauCeti.Computability.Enumeration.Code
 public import TauCeti.Computability.RE
 public import TauCeti.Computability.TuringDegree
 public import Mathlib.Order.Filter.AtTopBot.Basic
-import Mathlib.Order.Filter.Finite
 
 /-!
 # Preservation of agreement along a stage enumeration
@@ -28,7 +27,7 @@ including the length of agreement, and the agreements where the target bit does 
 It then proves the key step of Sacks's constructions, Soare's Lemma 1 in the proof of Theorem
 VII.3.1: when the requirement is injured only finitely often, `Φ_e^A = C` forces `C` to be
 computable. If `Φ_e^A` computes `C`, the length of agreement eventually exceeds every bound. After
-the last injury, an agreement at `x` is never lost while `C` does not change below `x`, so its
+the last injury, the computation at `x` is never lost while `C` does not change below `x`, so its
 output is the value of `Φ_e^A` at `x`; by induction on `x`, the stage `C s` is then already correct
 at `x`. Hence membership in `C` is decided by searching for a stage after the last injury whose
 length of agreement exceeds the argument. In a construction, this turns noncomputability of `C`
@@ -42,8 +41,6 @@ into the inequality `C ≠ Φ_e^A`.
   of computations**, with no hypothesis on the target.
 * `TauCeti.Oracle.Single.Code.agreesAt_succ_of_injuriesAt_eq_empty`: **one-step preservation of
   agreement** where the target bit does not change.
-* `TauCeti.Oracle.Single.Code.eventually_le_agreementLength_of_eval_eq`: if `Φ_e^A` computes `C`,
-  the length of agreement is eventually at least any given bound.
 * `TauCeti.Oracle.Single.Code.mem_stageLimit_iff_of_lt_agreementLength`: after the last injury,
   the stage `C s` is correct below the length of agreement at stage `s`.
 * `TauCeti.Oracle.Single.Code.computablePred_mem_stageLimit_of_eval_eq`: **Soare's Lemma 1**, a
@@ -109,47 +106,25 @@ open Filter TauCeti.Enumeration
 
 variable {s₀ : ℕ}
 
-/-- **Agreement eventually covers every prefix.** If the program `c`, relative to the limit of
-monotone stages `A`, computes the characteristic function of the limit of monotone stages `C`,
-then for every `n` the length of agreement of `c` against `A s` with target `C s` and fuel `s` is
-eventually at least `n`. -/
-theorem eventually_le_agreementLength_of_eval_eq (hA : Monotone A) (hC : Monotone C)
-    (heval : eval (stageLimit A).oracle c = (stageLimit C).oracle) (n : ℕ) :
-    ∀ᶠ s in atTop, n ≤ agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) := by
-  -- each argument below `n` eventually agrees, by the use principle
-  have hx : ∀ x ∈ Iio n, ∀ᶠ s in atTop,
-      AgreesAt (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) x := by
-    intro x _
-    have hmem : (stageLimit C).indicator 1 x ∈ eval (stageLimit A).oracle c x := by simp [heval]
-    obtain ⟨k, d, hd, hout⟩ := exists_evaln_eq_some_of_mem_eval (σ := setAnswers (stageLimit A))
-      (fun z y hy => by simpa [Part.mem_some_iff, eq_comm] using hy) hmem
-    obtain ⟨sA, hsA⟩ := finite_prefix_stabilizes hA d.use
-    obtain ⟨sC, hsC⟩ := finite_prefix_stabilizes hC (x + 1)
-    filter_upwards [eventually_ge_atTop (max k (max sA sC))] with s hs
-    simp only [max_le_iff] at hs
-    refine agreesAt_iff.2 ⟨d, evaln_mono hs.1 (evaln_eq_some_of_eqOn hd ?_), ?_⟩
-    · exact eqOn_setAnswers_iff.2 fun z hz => (hsA s hs.2.1 z hz).symm
-    · exact hout.trans (indicator_eq_indicator (hsC s hs.2.2 x x.lt_succ_self).symm rfl)
-  filter_upwards [(finite_Iio n).eventually_all.2 hx] with s hs
-  exact le_agreementLength_iff.2 fun x hx => hs x hx
-
 /-- **Soare's Lemma 1, correctness of late agreement.** Let the program `c`, relative to the limit
-of monotone stages `A`, compute the characteristic function of the limit of monotone stages `C`.
-Suppose that from stage `s₀` on, requirement `e` holds a restraint at least the agreement restraint
-of `c` against `A s` with target `C s` and fuel `s`, and is never injured. Then at every stage
-`s ≥ s₀`, membership in `C` below the length of agreement is already decided by `C s`. -/
+of monotone stages `A`, compute the characteristic function of the limit of monotone stages `C` at
+every argument up to and including `x`. Suppose that from stage `s₀` on, requirement `e` holds a
+restraint at least the agreement restraint of `c` against `A s` with target `C s` and fuel `s`, and
+is never injured. Then at every stage `s ≥ s₀` at which `x` is below the length of agreement,
+membership of `x` in `C` is already decided by `C s`. -/
 theorem mem_stageLimit_iff_of_lt_agreementLength (hA : Monotone A) (hC : Monotone C)
     (hr : ∀ s, s₀ ≤ s → ∃ b, r e s = some b ∧
       agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) ≤ b)
     (hI : ∀ s, s₀ ≤ s → injuriesAt A r e s = ∅)
-    (heval : eval (stageLimit A).oracle c = (stageLimit C).oracle) (hs : s₀ ≤ s)
+    (heval : ∀ y ≤ x, eval (stageLimit A).oracle c y = (stageLimit C).oracle y) (hs : s₀ ≤ s)
     (hx : x < agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1)) :
     x ∈ stageLimit C ↔ x ∈ C s := by
   induction x using Nat.strong_induction_on with
   | _ x ih =>
   -- below `x` the target does not change after stage `s`, by the induction hypothesis
   have hCx : ∀ u, s ≤ u → ∀ y < x, (y ∈ C u ↔ y ∈ C s) := fun u hu y hy =>
-    ⟨fun h => (ih y hy (hy.trans hx)).1 (subset_stageLimit C u h), fun h => hC hu h⟩
+    ⟨fun h => (ih y hy (fun z hz => heval z (hz.trans hy.le)) (hy.trans hx)).1
+      (subset_stageLimit C u h), fun h => hC hu h⟩
   -- so the agreeing run at `x` persists at every later stage
   obtain ⟨d, hd, hdx⟩ := agreesAt_iff.1 (agreesAt_of_lt_agreementLength hx)
   have hpres : ∀ t, s ≤ t → evaln (setAnswers (A t)) t c x = some d := fun t hst => by
@@ -167,8 +142,9 @@ theorem mem_stageLimit_iff_of_lt_agreementLength (hA : Monotone A) (hC : Monoton
       rw [setAnswers_apply, Option.some.injEq] at hy
       rw [Set.oracle_apply, Part.mem_some_iff, ← hy]
       exact indicator_eq_indicator (ht (max s t) (le_max_right s t) z hz) rfl
-  rw [heval, Set.oracle_apply, Part.mem_some_iff, hdx] at hmem
-  by_cases hxC : x ∈ stageLimit C <;> by_cases hxs : x ∈ C s <;> simp_all
+  rw [heval x le_rfl, Set.oracle_apply, Part.mem_some_iff, hdx] at hmem
+  by_cases hxC : x ∈ stageLimit C <;> by_cases hxs : x ∈ C s <;>
+    simp [hxC, hxs] at hmem ⊢
 
 /-- **Soare's Lemma 1.** Let `A` and `C` be the limits of monotone stages whose binary codes are
 computable, and let requirement `e` hold, at every stage `s`, a restraint at least the agreement
@@ -184,9 +160,7 @@ theorem computablePred_mem_stageLimit_of_eval_eq (hA : Monotone A) (hC : Monoton
     (heval : eval (stageLimit A).oracle c = (stageLimit C).oracle) :
     ComputablePred (· ∈ stageLimit C) := by
   obtain ⟨s₀, hs₀⟩ := (finite_injurySet_iff_eventually_eq_empty hA).1 hI
-  have hmemC : ComputablePred fun q : ℕ × ℕ => q.2 ∈ C q.1 :=
-    ((Primrec.mem_equivBitIndices.comp Primrec.fst Primrec.snd).decide.to_comp.comp
-      ((hCc.comp Computable.fst).pair Computable.snd)).computablePred.of_eq fun q => by simp
+  have hmemC := computablePred_mem_of_computable_equivBitIndices hCc
   have hlen : Computable fun s =>
       agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) :=
     (primrec_agreementLength_equivBitIndices.to_comp.comp
@@ -212,9 +186,10 @@ theorem computablePred_mem_stageLimit_of_eval_eq (hA : Monotone A) (hC : Monoton
       hlate).of_eq
       fun x => ⟨fun ⟨s, hs, hx, hxs⟩ => ?_, fun hx => ?_⟩⟩
   · exact (mem_stageLimit_iff_of_lt_agreementLength hA hC (fun s _ => hr s)
-      (fun s hs => hs₀ s hs) heval hs hx).not.2 hxs
+      (fun s hs => hs₀ s hs) (fun y _ => congrFun heval y) hs hx).not.2 hxs
   · obtain ⟨s, hs, hxs⟩ := ((eventually_ge_atTop s₀).and
-      (eventually_le_agreementLength_of_eval_eq hA hC heval (x + 1))).exists
+      (eventually_le_agreementLength_of_eval_eq hA hC (n := x + 1)
+        fun y _ => congrFun heval y)).exists
     exact ⟨s, hs, hxs, fun h => hx (subset_stageLimit C s h)⟩
 
 end Limit

@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Primrec
+public import TauCeti.Computability.Enumeration.Stage
+public import TauCeti.Computability.TuringDegree
+public import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Order.Filter.Finite
 
 /-!
 # Length of agreement and its restraint
@@ -48,6 +52,12 @@ program, uniformly in a parameter on which the answers and the target depend pri
 recursively. In particular they are primitive recursive in the binary codes of a finite stage
 `A s` and a finite target stage `C s`, which makes them usable in computable stage constructions.
 
+## Limits of stages
+
+When the answers and the target are the stages `A s` and `C s` of monotone enumerations, run with
+fuel `s`, and the program computes the limit of `C` relative to the limit of `A` below `n`, the use
+principle makes the length of agreement eventually at least `n`.
+
 ## Main definitions
 
 * `TauCeti.Oracle.Single.Code.AgreesAt`: a run succeeds with the target value.
@@ -83,6 +93,9 @@ recursively. In particular they are primitive recursive in the binary codes of a
   `TauCeti.Oracle.Single.Code.primrec_agreementLength_equivBitIndices`,
   `TauCeti.Oracle.Single.Code.primrec_agreementRestraint_equivBitIndices` to binary-coded finite
   sets: the length of agreement and the restraint are primitive recursive.
+* `TauCeti.Oracle.Single.Code.eventually_le_agreementLength_of_eval_eq`: if, relative to the limit
+  of monotone stages `A`, the program computes the limit of monotone stages `C` below `n`, then
+  the length of agreement against the stages is eventually at least `n`.
 
 ## References
 
@@ -262,22 +275,6 @@ theorem agreementRestraint_le_of_forall_Ico (hst : s ≤ t)
     exact (ih fun u hu => h u ⟨hu.1, hu.2.trans t.lt_succ_self⟩).trans
       (agreementRestraint_le_of_eqOn_agreementRestraint t.le_succ hστ hg)
 
-/-- **Preservation on an interval of stages.** Under the hypotheses of
-`agreementLength_le_of_forall_Ico`, a successful run at stage `s` at an argument up to and
-including the length of agreement is a successful run at stage `t`, with the same output and
-use. -/
-theorem evaln_eq_some_of_forall_Ico (hst : s ≤ t)
-    (h : ∀ u ∈ Ico s t, EqOn (σ u) (σ (u + 1)) (Iic (agreementRestraint (σ u) u c (g u))) ∧
-      ∀ x < agreementLength (σ u) u c (g u), g (u + 1) x = g u x)
-    (hx : x ≤ agreementLength (σ s) s c (g s)) (hd : evaln (σ s) s c x = some d) :
-    evaln (σ t) t c x = some d := by
-  induction t, hst using Nat.le_induction with
-  | base => exact hd
-  | succ t hst ih =>
-    have h' : ∀ u ∈ Ico s t, _ := fun u hu => h u ⟨hu.1, hu.2.trans t.lt_succ_self⟩
-    exact evaln_eq_some_of_eqOn_agreementRestraint t.le_succ (h t ⟨hst, t.lt_succ_self⟩).1
-      (hx.trans (agreementLength_le_of_forall_Ico hst h')) (ih h')
-
 /-- **Persistence of a prefix of agreement.** Along stages `σ u`, `g u` run with fuel `u`, if the
 run agrees with the target below `n` at stage `s`, it still does at stage `t`, provided that at
 every step in between the answers do not change at or below the agreement restraint and the target
@@ -309,6 +306,20 @@ theorem evaln_eq_some_of_forall_Ico_of_le {n : ℕ} (hst : s ≤ t)
     exact evaln_eq_some_of_eqOn_agreementRestraint t.le_succ (h t ⟨hst, t.lt_succ_self⟩).1
       (hx.trans (le_agreementLength_of_forall_Ico hst h' hn)) (ih h')
 
+/-- **Preservation on an interval of stages.** Under the hypotheses of
+`agreementLength_le_of_forall_Ico`, a successful run at stage `s` at an argument up to and
+including the length of agreement is a successful run at stage `t`, with the same output and
+use. -/
+theorem evaln_eq_some_of_forall_Ico (hst : s ≤ t)
+    (h : ∀ u ∈ Ico s t, EqOn (σ u) (σ (u + 1)) (Iic (agreementRestraint (σ u) u c (g u))) ∧
+      ∀ x < agreementLength (σ u) u c (g u), g (u + 1) x = g u x)
+    (hx : x ≤ agreementLength (σ s) s c (g s)) (hd : evaln (σ s) s c x = some d) :
+    evaln (σ t) t c x = some d :=
+  -- the length of agreement at stage `s` is a prefix on which the target does not change
+  evaln_eq_some_of_forall_Ico_of_le hst (fun u hu => ⟨(h u hu).1, fun y hy => (h u hu).2 y
+    (hy.trans_le (agreementLength_le_of_forall_Ico hu.1 fun v hv =>
+      h v ⟨hv.1, hv.2.trans hu.2⟩))⟩) le_rfl hx hd
+
 end Interval
 
 /-! ### Primitive recursiveness -/
@@ -319,6 +330,15 @@ open Primrec
 
 variable {α : Type*} [Primcodable α] {σ : α → ℕ → Option ℕ} {g : α → ℕ → ℕ}
 
+/-- A supremum over `Finset.range n` in `ℕ` is the right fold of `max` over `List.range n`. -/
+private theorem sup_range_eq_foldr_max (f : ℕ → ℕ) (n : ℕ) :
+    (Finset.range n).sup f = (List.range n).foldr (fun x a => max (f x) a) 0 := by
+  have h (l : List ℕ) : l.foldr (fun x a => max (f x) a) 0 = l.toFinset.sup f := by
+    induction l with
+    | nil => simp
+    | cons a l ih => simp [ih]
+  rw [h, show (List.range n).toFinset = Finset.range n by ext; simp]
+
 /-- Agreement is primitive recursive, uniformly in a parameter `a` on which the answers `σ a` and
 the target `g a` depend primitive recursively, and in the fuel, the program and the argument. -/
 theorem primrecPred_agreesAt (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
@@ -326,7 +346,7 @@ theorem primrecPred_agreesAt (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
   Primrec.eq.comp (option_map ((primrec_evaln hσ).comp
       ((fst.comp fst).pair ((fst.comp (snd.comp fst)).pair ((snd.comp (snd.comp fst)).pair snd))))
       (Halt.primrec_output.comp snd).to₂)
-    (option_some.comp (hg.comp (fst.comp fst) snd))
+    (option_some.comp (hg.comp (fst.comp fst) snd)) |>.of_eq fun _ => by simp [AgreesAt]
 
 /-- The length of agreement is primitive recursive, uniformly in a parameter `a` on which the
 answers `σ a` and the target `g a` depend primitive recursively, and in the fuel and the
@@ -357,10 +377,7 @@ theorem primrec_agreementRestraint (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
       ((snd.comp (snd.comp fst)).pair snd)))
   refine (list_foldr (list_range.comp (Primrec.succ.comp (primrec_agreementLength hσ hg))) (const 0)
     (nat_max.comp (huse.comp fst (fst.comp snd)) (snd.comp snd)).to₂).of_eq fun p => ?_
-  rw [agreementRestraint, Finset.sup_def, Finset.range_val, ← Multiset.coe_range,
-    Multiset.map_coe, Multiset.sup_coe, List.foldr_map]
-  -- on `ℕ`, `⊔` is `max` and `⊥` is `0` by definition
-  rfl
+  rw [agreementRestraint, sup_range_eq_foldr_max]
 
 /-- The length of agreement of a run against a finite set, with a finite set as target, is
 primitive recursive in their binary codes, the fuel and the program. -/
@@ -381,5 +398,40 @@ theorem primrec_agreementRestraint_equivBitIndices :
     (indicator_equivBitIndices.comp (snd.comp fst) snd).to₂
 
 end Primrec
+
+/-! ### Limits of stages -/
+
+section Limit
+
+open Filter TauCeti.Enumeration
+
+variable {A C : ℕ → Finset ℕ}
+
+/-- **Agreement eventually covers every prefix.** If the program `c`, relative to the limit of
+monotone stages `A`, computes the characteristic function of the limit of monotone stages `C` below
+`n`, then the length of agreement of `c` against `A s` with target `C s` and fuel `s` is eventually
+at least `n`. -/
+theorem eventually_le_agreementLength_of_eval_eq (hA : Monotone A) (hC : Monotone C) {n : ℕ}
+    (heval : ∀ x < n, eval (stageLimit A).oracle c x = (stageLimit C).oracle x) :
+    ∀ᶠ s in atTop, n ≤ agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) := by
+  -- each argument below `n` eventually agrees, by the use principle
+  have hx : ∀ x ∈ Iio n, ∀ᶠ s in atTop,
+      AgreesAt (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) x := by
+    intro x hxn
+    have hmem : (stageLimit C).indicator 1 x ∈ eval (stageLimit A).oracle c x := by
+      simp [heval x hxn]
+    obtain ⟨k, d, hd, hout⟩ := exists_evaln_eq_some_of_mem_eval (σ := setAnswers (stageLimit A))
+      (fun z y hy => by simpa [Part.mem_some_iff, eq_comm] using hy) hmem
+    obtain ⟨sA, hsA⟩ := finite_prefix_stabilizes hA d.use
+    obtain ⟨sC, hsC⟩ := finite_prefix_stabilizes hC (x + 1)
+    filter_upwards [eventually_ge_atTop (max k (max sA sC))] with s hs
+    simp only [max_le_iff] at hs
+    refine agreesAt_iff.2 ⟨d, evaln_mono hs.1 (evaln_eq_some_of_eqOn hd ?_), ?_⟩
+    · exact eqOn_setAnswers_iff.2 fun z hz => (hsA s hs.2.1 z hz).symm
+    · exact hout.trans (indicator_eq_indicator (hsC s hs.2.2 x x.lt_succ_self).symm rfl)
+  filter_upwards [(finite_Iio n).eventually_all.2 hx] with s hs
+  exact le_agreementLength_iff.2 fun x hx => hs x hx
+
+end Limit
 
 end TauCeti.Oracle.Single.Code
