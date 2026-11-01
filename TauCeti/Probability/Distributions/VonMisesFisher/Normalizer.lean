@@ -149,6 +149,34 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
   simp_rw [hF, ← cosh_eq_tsum, ← hcosh, integral_inner_pow_div_uniformSphereMeasure hd hη] at hsum
   exact hsum.unique hseries
 
+/-- The sphere normalizer in regularized hypergeometric form. Its argument is the squared
+norm divided by four, which permits differentiation without differentiating the norm. -/
+theorem integral_exp_inner_uniformSphereMeasure_eq_regularizedHGFun
+    (hd : 2 ≤ Module.finrank ℝ E) (η : E) :
+    ∫ x : sphere (0 : E) 1, exp ⟪η, (x : E)⟫ ∂uniformSphereMeasure E =
+      Gamma ((Module.finrank ℝ E : ℝ) / 2) *
+        (Complex.regularizedHGFun 0 {(((Module.finrank ℝ E : ℝ) / 2 : ℝ) : ℂ)}
+          (‖η‖ ^ 2 / 4 : ℝ)).re := by
+  by_cases hη : η = 0
+  · subst η
+    have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega :
+      0 < Module.finrank ℝ E)
+    have hb : Gamma ((Module.finrank ℝ E : ℝ) / 2) ≠ 0 :=
+      (Gamma_pos_of_pos (div_pos
+        (by exact_mod_cast (by omega : 0 < Module.finrank ℝ E)) two_pos)).ne'
+    simp only [norm_zero, zero_pow two_ne_zero, zero_div, Complex.ofReal_zero,
+      Complex.regularizedHGFun_zero, Complex.regularizedHGFunCoeff_zero_singleton,
+      Nat.factorial_zero, Nat.cast_one, one_mul, Nat.cast_zero, add_zero,
+      Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.ofReal_re]
+    simp [hb]
+  rw [integral_exp_inner_uniformSphereMeasure_eq_besselI hd hη,
+    besselI_eq_rpow_mul, sub_add_cancel]
+  have hp : 0 < ‖η‖ / 2 := by positivity
+  have hexp : 1 - (Module.finrank ℝ E : ℝ) / 2 +
+      ((Module.finrank ℝ E : ℝ) / 2 - 1) = 0 := by ring
+  have harg : (‖η‖ / 2) ^ 2 = ‖η‖ ^ 2 / 4 := by ring
+  rw [← mul_assoc, mul_assoc (Gamma _), ← rpow_add hp, hexp, rpow_zero, mul_one, harg]
+
 /-- **The von Mises–Fisher normalizer on the surface measure.** In dimension `d ≥ 2`, the surface
 integral of `exp ⟪η, x⟫` over the unit sphere is `(2 π) ^ (d / 2) * ‖η‖ ^ (1 - d / 2) *
 I_{d/2-1}(‖η‖)` for every `η ≠ 0`. -/
