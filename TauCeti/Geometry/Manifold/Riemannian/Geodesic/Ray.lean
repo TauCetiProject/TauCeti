@@ -29,10 +29,6 @@ minimizing for every `t ≥ 0`, and the geodesic `t ↦ exp_p (t • u)` is a ra
 
 In the namespace `TauCeti.Manifold`:
 
-* `isClosed_setOf_dist_riemannianExp_eq_norm`: if `exp_p` is everywhere defined, the minimizing
-  vectors at `p` form a closed set.
-* `dist_riemannianExp_smul_eq_norm`: a multiple `t • v`, `t ∈ [0, 1]`, of a minimizing vector `v`
-  is minimizing.
 * `isometry_riemannianExp_smul_of_forall_dist_eq`: if `‖u‖ = 1` and `t • u` is minimizing for
   every `t ≥ 0`, then `t ↦ exp_p (t • u)` is an isometric embedding of `[0, ∞)`.
 * `exists_norm_eq_one_isometry_riemannianExp_smul`: in a complete noncompact Riemannian manifold
@@ -68,27 +64,6 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M] {p : M}
 
-omit [IsRiemannianManifold I M] in
-/-- If the exponential map at `p` is defined on all of `T_p M`, the tangent vectors `v` at `p`
-with `dist p (exp_p v) = ‖v‖`, the initial velocities of minimizing geodesic segments on
-`[0, 1]`, form a closed set. -/
-theorem isClosed_setOf_dist_riemannianExp_eq_norm (ha : expDomain I M p = univ) :
-    IsClosed {v : TangentSpace I p | dist p (riemannianExp I M p v) = ‖v‖} := by
-  have hexp : Continuous (riemannianExp I M p) := by
-    rw [← continuousOn_univ, ← ha]
-    exact continuousOn_riemannianExp p
-  exact isClosed_eq (continuous_const.dist hexp) continuous_norm
-
-/-- **Subsegments of minimizing radial segments are minimizing.** If `v` lies in the domain of
-`exp_p` and `dist p (exp_p v) = ‖v‖`, then `dist p (exp_p (t • v)) = ‖t • v‖` for every
-`t ∈ [0, 1]`. -/
-theorem dist_riemannianExp_smul_eq_norm {v : TangentSpace I p} (hv : v ∈ expDomain I M p)
-    (hmin : dist p (riemannianExp I M p v) = ‖v‖) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    dist p (riemannianExp I M p (t • v)) = ‖t • v‖ := by
-  have h := dist_riemannianExp_smul_riemannianExp_smul hv hmin.ge
-    (left_mem_Icc.2 zero_le_one) ht
-  rwa [zero_smul, riemannianExp_zero, zero_sub, abs_neg, ← Real.norm_eq_abs, ← norm_smul] at h
-
 /-- **A radial geodesic that minimizes on every initial segment is a ray.** If `‖u‖ = 1` and
 `dist p (exp_p (t • u)) = t` for every `t ≥ 0`, then `t ↦ exp_p (t • u)` is an isometric
 embedding of `[0, ∞)`: `dist (exp_p (s • u)) (exp_p (t • u)) = |s - t|` for all `s, t ≥ 0`. -/
@@ -111,8 +86,11 @@ theorem isometry_riemannianExp_smul_of_forall_dist_eq {u : TangentSpace I p} (hu
     have hst' : s / t ∈ Icc (0 : ℝ) 1 := ⟨div_nonneg hs ht.le, (div_le_one ht).2 hst⟩
     have hd := dist_riemannianExp_smul_riemannianExp_smul hmem (by rw [hnorm, h t ht.le]) hst'
       (right_mem_Icc.2 zero_le_one)
-    rwa [smul_smul, div_mul_cancel₀ s ht.ne', one_smul, hnorm, abs_of_nonpos
-      (sub_nonpos.2 hst'.2), neg_sub, sub_mul, one_mul, div_mul_cancel₀ s ht.ne'] at hd
+    rw [smul_smul, div_mul_cancel₀ s ht.ne', one_smul, hnorm,
+      abs_of_nonpos (sub_nonpos.2 hst'.2)] at hd
+    rw [hd]
+    field_simp
+    ring
   refine Isometry.of_dist_eq fun s t ↦ ?_
   rw [Subtype.dist_eq, Real.dist_eq]
   rcases le_total (s : ℝ) t with hst | hts
@@ -134,11 +112,8 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
     isClosed_sphere.inter (hS.preimage (continuous_const_smul _))
   have hKmono (n : ℕ) : K (n + 1) ⊆ K n := by
     rintro u ⟨hu, hnu⟩
-    refine ⟨hu, ?_⟩
-    have hn : (0 : ℝ) < (n + 1 : ℕ) := by positivity
-    have h := dist_riemannianExp_smul_eq_norm (ha ▸ mem_univ _) hnu
-      (t := (n : ℝ) / (n + 1 : ℕ)) ⟨by positivity, (div_le_one hn).2 (by simp)⟩
-    rwa [smul_smul, div_mul_cancel₀ _ hn.ne'] at h
+    exact ⟨hu, dist_riemannianExp_smul_eq_norm_of_le (ha ▸ mem_univ _) hnu (Nat.cast_nonneg n)
+      (Nat.cast_le.2 n.le_succ)⟩
   -- A minimizing segment to a point at distance more than `n` gives an element of `K n`.
   have hKne (n : ℕ) : (K n).Nonempty := by
     obtain ⟨q, hq⟩ : ∃ q : M, (n : ℝ) < dist p q := by
@@ -148,23 +123,18 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
     obtain ⟨w, hwq, hw⟩ := exists_riemannianExp_eq_and_norm_eq_dist ha q
     have hw0 : 0 < ‖w‖ := hw ▸ (Nat.cast_nonneg n).trans_lt hq
     refine ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw0.ne'], ?_⟩
-    have h := dist_riemannianExp_smul_eq_norm (ha ▸ mem_univ w) (by rw [hwq, hw])
-      (t := (n : ℝ) / ‖w‖) ⟨by positivity, (div_le_one hw0).2 (hw ▸ hq.le)⟩
-    rwa [div_eq_mul_inv, ← smul_smul] at h
+    have hw' : ‖w‖ • ‖w‖⁻¹ • w = w := smul_inv_smul₀ hw0.ne' w
+    exact dist_riemannianExp_smul_eq_norm_of_le (ha ▸ mem_univ _) (by rw [hw', hwq, hw])
+      (Nat.cast_nonneg n) (hw ▸ hq.le)
   obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K hKmono
     hKne ((isCompact_sphere 0 1).of_isClosed_subset (hKclosed 0) inter_subset_left) hKclosed
   rw [mem_iInter] at hu
   have hu1 : ‖u‖ = 1 := mem_sphere_zero_iff_norm.1 (hu 0).1
   refine ⟨u, hu1, isometry_riemannianExp_smul_of_forall_dist_eq hu1 fun t ht ↦ ?_⟩
-  -- Every `t ≥ 0` is a fraction `t / n` of some `n ≥ t` with `n • u` minimizing.
+  -- Every `t ≥ 0` is at most some `n` with `n • u` minimizing.
   obtain ⟨n, hn⟩ := exists_nat_ge t
   have hnorm : ‖t • u‖ = t := by rw [norm_smul, hu1, mul_one, Real.norm_of_nonneg ht]
-  rcases ht.eq_or_lt with rfl | ht0
-  · rw [zero_smul, riemannianExp_zero, dist_self]
-  have hn0 : (0 : ℝ) < n := ht0.trans_le hn
-  have h := dist_riemannianExp_smul_eq_norm (ha ▸ mem_univ _) (hu n).2
-    (t := t / n) ⟨by positivity, (div_le_one hn0).2 hn⟩
-  rwa [smul_smul, div_mul_cancel₀ _ hn0.ne', hnorm] at h
+  exact (dist_riemannianExp_smul_eq_norm_of_le (ha ▸ mem_univ _) (hu n).2 ht hn).trans hnorm
 
 /-- **Rays exist.** In a complete noncompact Riemannian manifold, every point `p` is the origin of
 a geodesic `γ`, defined for all time, whose restriction to `[0, ∞)` is an isometric embedding:
