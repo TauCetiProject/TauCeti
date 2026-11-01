@@ -40,6 +40,7 @@ Riemannian manifold it is the compactness part of the Myers–Steenrod theorem.
 
 ## Main results
 
+* `Isometry.iterate`: the iterates of an isometric self-map are isometries.
 * `Isometry.surjective_of_compactSpace`: an isometric self-map of a compact metric space is
   surjective.
 * `IsometryEquiv.isInducing_coe`, `IsometryEquiv.tendsto_nhds_iff`, `IsometryEquiv.continuous_iff`:
@@ -68,6 +69,12 @@ open scoped ENNReal
 
 namespace Isometry
 
+/-- The iterates of an isometric self-map are isometries. -/
+protected theorem iterate {α : Type*} [PseudoEMetricSpace α] {f : α → α} (hf : Isometry f) :
+    ∀ n : ℕ, Isometry f^[n]
+  | 0 => isometry_id
+  | n + 1 => (hf.iterate n).comp hf
+
 variable {α : Type*} [EMetricSpace α] [CompactSpace α] {f : α → α}
 
 /-- An isometric self-map of a compact (extended) metric space is surjective. -/
@@ -78,13 +85,10 @@ theorem surjective_of_compactSpace (hf : Isometry f) : Surjective f := by
   obtain ⟨ε, hε, hball⟩ := EMetric.isOpen_iff.1
     (isCompact_range hf.continuous).isClosed.isOpen_compl x hx
   -- So distinct points of the orbit of `x` are at least `ε` apart.
-  have hiter (n : ℕ) (a b : α) : edist (f^[n] a) (f^[n] b) = edist a b := by
-    induction n with
-    | zero => rfl
-    | succ n ih => rw [iterate_succ_apply', iterate_succ_apply', hf.edist_eq, ih]
   have hsep {m n : ℕ} (hmn : m < n) : ε ≤ edist (f^[n] x) (f^[m] x) := by
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hmn
-    rw [show m + k + 1 = m + (k + 1) by omega, iterate_add_apply, hiter, iterate_succ_apply']
+    rw [show m + k + 1 = m + (k + 1) by omega, iterate_add_apply, (hf.iterate _).edist_eq,
+      iterate_succ_apply']
     by_contra h
     exact hball (Metric.mem_eball.2 (not_le.1 h)) (mem_range_self _)
   -- But a convergent subsequence of the orbit is Cauchy.
