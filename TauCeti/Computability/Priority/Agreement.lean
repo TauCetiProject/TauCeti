@@ -9,8 +9,6 @@ public import TauCeti.Computability.SingleOracle.Agreement
 public import TauCeti.Computability.Priority.Injury.Basic
 public import TauCeti.Computability.Enumeration.Code
 public import TauCeti.Computability.RE
-public import TauCeti.Computability.TuringDegree
-public import Mathlib.Order.Filter.AtTopBot.Basic
 
 /-!
 # Preservation of agreement along a stage enumeration
