@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.LSum
 public import TauCeti.KnotTheory.Jimbo.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Order
@@ -57,6 +58,8 @@ alphabets of this kind arise from the vector representation of the quantum super
 * `TauCeti.signedCheckedR_mul_comm`: operators on disjoint pairs of strands commute.
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
+* `TauCeti.signedCheckedR_comp_lmapDomain_snoc`: appending a letter intertwines the operators on
+  the same two strands of the shorter and longer words.
 * `TauCeti.inv_smul_signedCheckedR_mul_self`: the Hecke quadratic relation for `s⁻¹ • X`.
 * `TauCeti.signedCheckedR_eq_jimboGenerator`: the comparison with the Jimbo R-matrix for an
   alphabet of positive letters.
@@ -230,6 +233,18 @@ theorem signedCheckedR_single_apply_comm (s : R) (j k : Fin n) (v w : Fin n → 
     have hv' : w ∘ Equiv.swap j k ≠ v := fun h ↦ hv h.symm
     have hw' : v ∘ Equiv.swap j k ≠ w := fun h ↦ hw h.symm
     split_ifs <;> simp [hvw, Ne.symm hvw, hv', hw']
+
+/-- Appending a letter intertwines the signed checked R-matrix on two strands with the one on the
+same two strands of the longer words. -/
+theorem signedCheckedR_comp_lmapDomain_snoc (s : R) (j k : Fin n) (a : ι) :
+    (signedCheckedR pos s j.castSucc k.castSucc).comp
+        (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)) =
+      (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)).comp (signedCheckedR pos s j k) := by
+  ext w : 2
+  simp only [LinearMap.comp_apply, lsingle_apply]
+  rw [lmapDomain_apply, mapDomain_single, signedCheckedR_single_one, signedCheckedR_single_one]
+  simp only [Fin.snoc_castSucc, Fin.snoc_comp_swap_castSucc]
+  split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single]
 
 section Unit
 

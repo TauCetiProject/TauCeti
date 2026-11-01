@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
 public import TauCeti.Algebra.TypeAHeckeAlgebra.SignedCheckedR
+public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -47,7 +48,6 @@ Positivity is not considered: everything here is algebraic, over any commutative
 
 ## Main definitions
 
-* `TauCeti.productDensity`: the product density of a weight function on the word space.
 * `TauCeti.TypeAHeckeAlgebra.signedChecked`: the representation of the type-A Hecke algebra
   on the word space by the rescaled signed checked R-matrices.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace`: the weighted trace `x ↦ tr (ρ(x) * D)`.
@@ -85,17 +85,6 @@ variable {R : Type*} [CommRing R] {ι : Type*} {n : ℕ}
 
 section Density
 
-/-- The product density of the weights `p` on the word space: the basis word `w` is multiplied by
-`∏ i, p (w i)`. -/
-noncomputable def productDensity (p : ι → R) : Module.End R ((Fin n → ι) →₀ R) :=
-  linearCombination R fun w ↦ (∏ i, p (w i)) • single w 1
-
-/-- The product density acts diagonally in the word basis. -/
-@[simp]
-theorem productDensity_single_one (p : ι → R) (w : Fin n → ι) :
-    productDensity p (single w 1) = (∏ i, p (w i)) • single w 1 := by
-  simp [productDensity]
-
 variable [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos]
 
 /-- The product density commutes with the signed checked R-matrix on any two strands, which only
@@ -111,26 +100,6 @@ theorem commute_productDensity_signedCheckedR (p : ι → R) (s : R) (j k : Fin 
   split_ifs <;>
     simp_all only [map_smul, map_sub, map_neg, productDensity_single_one,
       signedCheckedR_single_one, ↓reduceIte] <;> module
-
-/-- Appending a letter intertwines the signed checked R-matrix on two strands with the one on the
-same two strands of the longer words. -/
-theorem signedCheckedR_comp_lmapDomain_snoc (s : R) (j k : Fin n) (a : ι) :
-    (signedCheckedR pos s j.castSucc k.castSucc).comp
-        (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)) =
-      (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)).comp (signedCheckedR pos s j k) := by
-  ext w : 2
-  have hswap : Fin.snoc w a ∘ Equiv.swap j.castSucc k.castSucc =
-      Fin.snoc (w ∘ Equiv.swap j k) a := by
-    funext i
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i
-    · simp [Equiv.swap_apply_of_ne_of_ne, (Fin.castSucc_lt_last j).ne.symm,
-        (Fin.castSucc_lt_last k).ne.symm]
-    · rw [comp_apply, ← (Fin.castSucc_injective n).map_swap j k i]
-      simp
-  simp only [LinearMap.comp_apply, lsingle_apply]
-  rw [lmapDomain_apply, mapDomain_single, signedCheckedR_single_one, signedCheckedR_single_one]
-  simp only [Fin.snoc_castSucc, hswap]
-  split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single]
 
 end Density
 
@@ -302,19 +271,14 @@ theorem atomicTrace_one : atomicTrace pos q p n 1 = (∑ a, p a) ^ n := by
   rw [← Fintype.prod_sum]
   simp
 
-omit [LinearOrder ι] [Fintype ι] in
-private theorem prod_snoc (w : Fin n → ι) (c : ι) :
-    (∏ i : Fin (n + 1), p ((Fin.snoc w c : Fin (n + 1) → ι) i)) = (∏ i, p (w i)) * p c := by
-  rw [Fin.prod_univ_castSucc]
-  simp
-
 /-- Adding an uncrossed last strand multiplies the atomic trace by the total weight. -/
 @[simp]
 theorem atomicTrace_strandIncl (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p (n + 1) (strandIncl R q n x) = atomicTrace pos q p n x * ∑ a, p a := by
   rw [atomicTrace_eq_sum, ← (Fin.snocEquiv (fun _ : Fin (n + 1) ↦ ι)).sum_comp]
   simp only [Fin.snocEquiv, Equiv.coe_fn_mk, Fintype.sum_prod_type,
-    signedChecked_strandIncl_single_snoc_apply_snoc, ite_true, prod_snoc]
+    signedChecked_strandIncl_single_snoc_apply_snoc, ite_true, Fin.prod_univ_castSucc (n := n),
+    Fin.snoc_castSucc, Fin.snoc_last]
   rw [atomicTrace_eq_sum, Finset.sum_mul, Finset.sum_comm]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   rw [Finset.mul_sum]
@@ -350,7 +314,8 @@ theorem atomicTrace_strandIncl_mul_T_last {z : R}
       z * atomicTrace pos q p (n + 1) x := by
   rw [atomicTrace_eq_sum, ← (Fin.snocEquiv (fun _ : Fin (n + 2) ↦ ι)).sum_comp]
   simp only [Fin.snocEquiv, Equiv.coe_fn_mk, Fintype.sum_prod_type,
-    signedChecked_strandIncl_mul_T_last_single_snoc_apply, prod_snoc]
+    signedChecked_strandIncl_mul_T_last_single_snoc_apply,
+    Fin.prod_univ_castSucc (n := n + 1), Fin.snoc_castSucc, Fin.snoc_last]
   rw [Finset.sum_comm, atomicTrace_eq_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   have hs := (sum_slice pos q p (w (Fin.last n))).trans (hz _)

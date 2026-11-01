@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Jimbo.Trace
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Adding an uncrossed strand in the Jimbo representation
@@ -48,18 +49,10 @@ theorem jimboGenerator_comp_lmapDomain_snoc (q : Rˣ) (j k : Fin n) (a : ι) :
         (jimboGenerator q j k) := by
   classical
   ext w : 2
-  have hswap : Fin.snoc w a ∘ Equiv.swap j.castSucc k.castSucc =
-      Fin.snoc (w ∘ Equiv.swap j k) a := by
-    funext i
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i
-    · simp [Equiv.swap_apply_of_ne_of_ne, (Fin.castSucc_lt_last j).ne.symm,
-        (Fin.castSucc_lt_last k).ne.symm]
-    · rw [comp_apply, ← (Fin.castSucc_injective n).map_swap j k i]
-      simp
   simp only [LinearMap.comp_apply, lsingle_apply]
   rw [lmapDomain_apply, mapDomain_single, jimboGenerator_single_one,
     jimboGenerator_single_one]
-  simp only [Fin.snoc_castSucc, hswap]
+  simp only [Fin.snoc_castSucc, Fin.snoc_comp_swap_castSucc]
   split_ifs <;> simp only [map_add, map_smul, lmapDomain_apply, mapDomain_single]
 
 /-- The action of a braid after adding an uncrossed strand is its original action with

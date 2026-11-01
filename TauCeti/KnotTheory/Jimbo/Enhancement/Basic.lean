@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Jimbo.Basic
+public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.Ring
@@ -77,32 +78,23 @@ section CommSemiring
 
 variable [CommSemiring R]
 
-/-- The tensor power of the diagonal enhancement: a basis word is multiplied by the
-product of the weights of its colours. -/
+/-- The tensor power of the diagonal enhancement: the product density of the enhancement
+weights, which multiplies a basis word by the product of the weights of its colours. -/
 noncomputable def jimboEnhancement (q : Rˣ) : Module.End R ((Fin n → Fin N) →₀ R) :=
-  linearCombination R fun w ↦ (∏ i, jimboWeight q (w i)) • single w 1
+  productDensity (jimboWeight q)
 
 /-- The enhancement acts diagonally in the canonical word basis. -/
 @[simp]
 theorem jimboEnhancement_single_one (q : Rˣ) (w : Fin n → Fin N) :
-    jimboEnhancement q (single w 1) = (∏ i, jimboWeight q (w i)) • single w 1 := by
-  simp [jimboEnhancement]
+    jimboEnhancement q (single w 1) = (∏ i, jimboWeight q (w i)) • single w 1 :=
+  productDensity_single_one _ w
 
 /-- The coefficient of a word after applying the tensor-power enhancement is its original
 coefficient multiplied by the product of the colour weights. -/
 @[simp]
 theorem jimboEnhancement_apply (q : Rˣ) (v : (Fin n → Fin N) →₀ R) (w : Fin n → Fin N) :
-    jimboEnhancement q v w = (∏ i, jimboWeight q (w i)) * v w := by
-  classical
-  induction v using Finsupp.induction_linear with
-  | zero => simp
-  | add v₁ v₂ h₁ h₂ => simp [h₁, h₂, mul_add]
-  | single u r =>
-    rw [← smul_single_one, map_smul, jimboEnhancement_single_one]
-    by_cases h : u = w
-    · subst w
-      simp [mul_comm]
-    · simp [h]
+    jimboEnhancement q v w = (∏ i, jimboWeight q (w i)) * v w :=
+  productDensity_apply _ v w
 
 /-- At `q = 1` the enhancement is the identity. -/
 @[simp]

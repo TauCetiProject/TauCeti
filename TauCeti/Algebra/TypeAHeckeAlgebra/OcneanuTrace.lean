@@ -515,8 +515,8 @@ variable {R : Type*} [CommRing R] {q : Rˣ}
 /-- **Finite Markov towers are restrictions of the Ocneanu trace.** A family of linear
 functionals `φ n` on the Hecke algebras on `n` strands which is normalized on zero strands,
 compatible with the tower maps, tracial at each level, and satisfies the Markov rule
-`φ (n + 2) (x * T (n + 1)) = z * φ (n + 1) x` for the last generator, is the Ocneanu trace with
-parameter `z` restricted along `toInfinite`. -/
+`φ (n + 2) (strandIncl R q (n + 1) x * T q (Fin.last n)) = z * φ (n + 1) x` for the last
+generator, is the Ocneanu trace with parameter `z` restricted along `toInfinite`. -/
 theorem eq_ocneanuTrace_toInfinite {z : R} (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R)
     (h_one : φ 0 1 = 1) (h_incl : ∀ n x, φ (n + 1) (strandIncl R q n x) = φ n x)
     (h_comm : ∀ n x y, φ n (x * y) = φ n (y * x))
