@@ -38,6 +38,7 @@ therefore smooth directions.
   `C^(n+1)` in time and initial condition near time `0`, for `n` finite or infinite.
 * `ODE.contDiff_globalSolution`: the global solution is `C^(n+1)` jointly in its initial condition
   and time, for every finite `n`.
+* `ODE.contDiff_globalSolution_of_one_le`: the same for a `C^n` field, `1 ≤ n`, finite or infinite.
 * `ODE.contDiff_globalSolution_apply`: every time-`t` map is `C^(n+1)`.
 * `ODE.exists_contDiffAt_localFlow`: a vector field which is `C^(n+1)` on a neighbourhood of a
   point has a local flow through the nearby points which is `C^(n+1)` in time and initial
@@ -196,6 +197,21 @@ theorem contDiff_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : Lips
     rw [hSuniv]
     exact Set.mem_univ t
   exact ht
+
+/-- **The global solution of a globally Lipschitz `C^n` field is `C^n` jointly in its initial
+condition and time**, for every order `1 ≤ n`, finite or infinite. -/
+theorem contDiff_globalSolution_of_one_le {n : ℕ∞} (hn : 1 ≤ n) (v : E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K v) (hvs : ContDiff ℝ n v) :
+    ContDiff ℝ n (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
+  induction n using ENat.recTopCoe with
+  | top =>
+    -- A smooth field is `C^(k+1)` for every `k`, hence so is its global solution.
+    refine contDiff_infty.2 fun k ↦ ?_
+    have hk : ContDiff ℝ (k + 1) v := hvs.of_le (by exact_mod_cast le_top)
+    exact (contDiff_globalSolution k v hv hk).of_le (by exact_mod_cast le_self_add)
+  | coe m =>
+    obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := Nat.exists_eq_add_of_le' (by exact_mod_cast hn)
+    exact_mod_cast contDiff_globalSolution k v hv (by exact_mod_cast hvs)
 
 /-- At every fixed time, the global solution of a globally Lipschitz `C^(n+1)` field is a
 `C^(n+1)` function of its initial condition. -/

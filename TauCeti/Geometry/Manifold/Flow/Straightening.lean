@@ -1,0 +1,138 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.ODE.Straightening
+public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.VectorField.Pullback
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+
+/-!
+# The straightening theorem for vector fields on a manifold
+
+Near a point `x` where a `C^m` vector field `v` on a finite-dimensional boundaryless manifold does
+not vanish, some chart of the `C^m` maximal atlas carries `v` to a constant vector field: the
+differential of the chart, read in the model vector space, sends `v y` to one fixed nonzero vector
+`u` at every point `y` of its domain (`TauCeti.exists_chart_mfderiv_eq_const`). In such a chart the
+integral curves of `v` are parallel straight lines traversed at unit speed along `u`.
+
+The field read in the extended chart at `x` is a nonvanishing `C^m` vector field on an open subset
+of the model space, so the flat straightening theorem
+`TauCeti.exists_openPartialHomeomorph_fderiv_eq_const` produces a change of coordinates there; read
+back through the extended chart, it is a chart of the manifold
+(`TauCeti.conj_chartAt_mem_maximalAtlas`).
+
+The manifold is `C^n` with `m + 1 ≤ n`, since a vector field read in a chart loses one derivative
+of the chart's regularity. Without the boundaryless hypothesis the statement fails: at a boundary
+point a chart preserves the boundary, while a field tangent to the boundary at one boundary point
+and transverse to it at nearby ones cannot become constant.
+
+## Main results
+
+* `TauCeti.exists_chart_mfderiv_eq_const`: a nonvanishing `C^m` vector field is constant in a
+  suitable chart of the `C^m` maximal atlas.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
+  Springer, 2013, Theorem 9.22 (canonical form near a regular point).
+-/
+
+public section
+
+noncomputable section
+
+open Set Filter Topology VectorField
+open scoped Manifold ContDiff
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **The straightening theorem** [Lee, Thm. 9.22]. Let `v` be a vector field on a `C^n` manifold
+with finite-dimensional boundaryless model, `C^m` on a neighbourhood of `x`, with `1 ≤ m`,
+`m + 1 ≤ n` and `v x ≠ 0`. Then some chart `e` of the `C^m` maximal atlas whose domain contains `x`
+carries `v` to a constant nonzero vector field: the differential of `I ∘ e` sends `v y` to the same
+vector `u ≠ 0` at every point `y` of the domain of `e`. -/
+theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
+    [IsManifold I 1 M] [IsManifold I n M] {v : (y : M) → TangentSpace I y} {U : Set M} {x : M}
+    (hv : ContMDiffOn I I.tangent m (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) U) (hU : U ∈ 𝓝 x)
+    (hx : v x ≠ 0) :
+    ∃ (e : OpenPartialHomeomorph M H) (u : E), e ∈ IsManifold.maximalAtlas I m M ∧
+      x ∈ e.source ∧ u ≠ 0 ∧ ∀ y ∈ e.source, mfderiv I 𝓘(ℝ, E) (I ∘ e) y (v y) = u := by
+  have hm1 : (1 : ℕ∞ω) ≤ m := by exact_mod_cast hm
+  have : IsManifold I m M := .of_le (le_self_add.trans hmn)
+  set e₀ := extChartAt I x with he₀
+  -- The field read in the extended chart at `x` is `C^m` near `e₀ x`.
+  set w : E → E := fun z ↦ mpullback 𝓘(ℝ, E) I e₀.symm v z
+  set S := e₀.target ∩ e₀.symm ⁻¹' interior U
+  have hSo : IsOpen S :=
+    (continuousOn_extChartAt_symm x).isOpen_inter_preimage (isOpen_extChartAt_target x)
+      isOpen_interior
+  have hxS : e₀ x ∈ S := by
+    refine ⟨mem_extChartAt_target x, ?_⟩
+    rw [mem_preimage, he₀, extChartAt_to_inv]
+    exact mem_interior_iff_mem_nhds.2 hU
+  have hwS : ContDiffOn ℝ m w S := fun z hz ↦ by
+    have hV : ContMDiffAt I I.tangent m (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) (e₀.symm z) :=
+      hv.contMDiffAt (mem_interior_iff_mem_nhds.1 hz.2)
+    have hf : ContMDiffAt 𝓘(ℝ, E) I n e₀.symm z :=
+      (contMDiffOn_extChartAt_symm x).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds hz.1)
+    have hf' := isInvertible_mfderivWithin_extChartAt_symm hz.1
+    rw [I.range_eq_univ, mfderivWithin_univ] at hf'
+    exact (contMDiffAt_vectorSpace_iff_contDiffAt.1
+      (hV.mpullback_vectorField_preimage hf hf' hmn)).contDiffWithinAt
+  -- At `e₀ y`, the coordinate field is the image of `v y` under the differential of `e₀`.
+  have hwe (y : M) (hy : y ∈ e₀.source) : w (e₀ y) = mfderiv I 𝓘(ℝ, E) e₀ y (v y) := by
+    have hinv := isInvertible_mfderivWithin_extChartAt_symm (e₀.map_source hy)
+    rw [I.range_eq_univ, mfderivWithin_univ] at hinv
+    have hcomp := mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I) hy
+    rw [I.range_eq_univ, mfderivWithin_univ] at hcomp
+    -- `w` is `mpullback` read in `E`, the tangent spaces of `E` being `E` by definition.
+    have key : (mpullback 𝓘(ℝ, E) I e₀.symm v (e₀ y) : E) = mfderiv I 𝓘(ℝ, E) e₀ y (v y) := by
+      rw [mpullback_apply, hinv.inverse_apply_eq, e₀.left_inv hy]
+      exact (DFunLike.congr_fun hcomp (v y)).symm
+    exact key
+  have hwx : w (e₀ x) ≠ 0 := by
+    rw [hwe x (mem_extChartAt_source x)]
+    exact fun h ↦ hx ((isInvertible_mfderiv_extChartAt (mem_extChartAt_source x)).injective
+      (h.trans (map_zero _).symm))
+  -- Straighten the coordinate field and read the new coordinates through the chart.
+  obtain ⟨φ, hxφ, hφ, hφs, hφw⟩ :=
+    exists_openPartialHomeomorph_fderiv_eq_const hm hwS (hSo.mem_nhds hxS) hwx
+  have hφA : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) m E := by
+    have h := trans_mem_maximalAtlas_of_contDiffAt
+      ((contDiffGroupoid m 𝓘(ℝ, E)).id_mem_maximalAtlas) hφ hφs
+    rwa [OpenPartialHomeomorph.refl_trans] at h
+  set e := (((chartAt H x).transHomeomorph I.toHomeomorph).trans φ).transHomeomorph
+    I.toHomeomorph.symm with he
+  have hes (y : M) : y ∈ e.source ↔ y ∈ e₀.source ∧ e₀ y ∈ φ.source := by
+    simp [he, he₀, extChartAt]
+  have heq : EqOn (I ∘ e) (φ ∘ e₀) e.source := fun y _ ↦ by
+    simp only [he, he₀, extChartAt, Function.comp_apply,
+      OpenPartialHomeomorph.transHomeomorph_apply, OpenPartialHomeomorph.trans_apply,
+      OpenPartialHomeomorph.extend_coe, ModelWithCorners.toHomeomorph_apply,
+      ModelWithCorners.toHomeomorph_symm_apply]
+    exact I.right_inv (I.range_eq_univ ▸ mem_univ _)
+  refine ⟨e, w (e₀ x), conj_chartAt_mem_maximalAtlas x hφA, (hes x).2
+    ⟨mem_extChartAt_source x, hxφ⟩, hwx, fun y hy ↦ ?_⟩
+  obtain ⟨hy₀, hyφ⟩ := (hes y).1 hy
+  have hφd : DifferentiableAt ℝ φ (e₀ y) :=
+    (hφ _ hyφ).differentiableAt (lt_of_lt_of_le zero_lt_one hm1).ne'
+  -- The differential of `I ∘ e = φ ∘ e₀` near `y`, by the chain rule.
+  have hd : mfderiv I 𝓘(ℝ, E) (I ∘ e) y = (fderiv ℝ φ (e₀ y)).comp (mfderiv I 𝓘(ℝ, E) e₀ y) := by
+    rw [(heq.eventuallyEq_of_mem (e.open_source.mem_nhds hy)).mfderiv_eq,
+      mfderiv_comp y hφd.mdifferentiableAt
+        (mdifferentiableAt_extChartAt (by rwa [← extChartAt_source (I := I)])),
+      mfderiv_eq_fderiv]
+    -- The tangent spaces of `E` are `E` by definition, so the remaining casts are identities.
+    rfl
+  rw [hd]
+  exact (congrArg (fderiv ℝ φ (e₀ y)) (hwe y hy₀).symm).trans (hφw _ hyφ)
+
+end TauCeti
