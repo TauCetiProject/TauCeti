@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
+public import Mathlib.RepresentationTheory.Rep.Iso
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
-# Change of groups on tensor coinvariants, and maps out of tensor coinvariants
+# Change of groups, maps out of tensor coinvariants, and coefficient exactness
 
 Let `f : G →* H` be a group homomorphism and `φ : A ⟶ Res(f)(B)` a compatible map of coefficient
 representations. A morphism `v : X ⟶ Res(f)(Y)` of `G`-representations induces the linear map
@@ -17,6 +19,13 @@ which sends the class of `a ⊗ x` to the class of `φ a ⊗ v x`. It is natural
 
 This is the degreewise construction underlying change of groups on the tensor coinvariants of
 complexes, `MonoidHom.coinvariantsTensorChainMap`.
+
+Tensor coinvariants with a projective representation are exact in the other representation
+(`CategoryTheory.ShortComplex.ShortExact.map_coinvariantsTensor_projective`). For a free
+representation the natural identification with finitely supported coefficient families proves
+exactness. A projective representation is a retract of a free one, so the result holds without
+any flatness assumption on the coefficient representations. This supplies coefficient long exact
+sequences for projective-resolution computations of group homology.
 
 For a `k`-module `N`, a `k`-linear map `X_G ⟶ N` out of the coinvariants is the same as a
 morphism of representations `X ⟶ N` to the trivial representation (`Rep.coinvariantsAdjunction`);
@@ -241,4 +250,126 @@ theorem coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp {A' : R
 
 end Group
 
+section Exactness
+
+variable {k G : Type u} [CommRing k] [Group G]
+  {A B : Rep.{u} k G}
+
+/-- The free tensor-coinvariant identification is natural in the coefficient representation. -/
+@[reassoc]
+theorem coinvariantsTensorFreeLEquiv_naturality (f : A ⟶ B) (α : Type u)
+    [DecidableEq α] :
+    ((coinvariantsTensor k G).map f).app (free k G α) ≫
+        (coinvariantsTensorFreeLEquiv B α).toModuleIso.hom =
+      (coinvariantsTensorFreeLEquiv A α).toModuleIso.hom ≫
+        ModuleCat.ofHom (Finsupp.mapRange.linearMap f.hom.toLinearMap) := by
+  rw [← cancel_epi (coinvariantsTensorFreeLEquiv A α).toModuleIso.inv]
+  apply ModuleCat.hom_ext
+  apply Finsupp.lhom_ext'
+  intro i
+  apply LinearMap.ext
+  intro a
+  simp [coinvariantsTensorFreeLEquiv, Representation.Coinvariants.map_mk]
+
+end Exactness
+
 end Rep
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Tensor coinvariants with a free representation preserve short exact coefficient sequences.
+There is no flatness assumption on the coefficients. -/
+theorem map_coinvariantsTensor_free {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.ShortExact) (α : Type u) :
+    (S.map ((coinvariantsTensor k G).flip.obj (free k G α))).ShortExact := by
+  classical
+  have hinj := (Rep.mono_iff_injective S.f).mp hS.mono_f
+  have hsurj := (Rep.epi_iff_surjective S.g).mp hS.epi_g
+  have hex := (hS.exact.map (forget₂ (Rep k G) (ModuleCat k))).moduleCat_range_eq_ker
+  let T : ShortComplex (ModuleCat k) := ShortComplex.mk
+    (ModuleCat.ofHom (Finsupp.mapRange.linearMap (α := α) S.f.hom.toLinearMap))
+    (ModuleCat.ofHom (Finsupp.mapRange.linearMap (α := α) S.g.hom.toLinearMap)) (by
+      apply ModuleCat.hom_ext
+      apply LinearMap.ext
+      intro x
+      apply Finsupp.ext
+      intro i
+      exact congrArg (fun f : S.X₁ ⟶ S.X₃ ↦ f.hom (x i)) S.zero)
+  have hT : T.ShortExact := by
+    refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
+    · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
+      exact (Finsupp.range_mapRange_linearMap _ (LinearMap.ker_eq_bot.mpr hinj) α).trans
+        ((congrArg (fun p ↦ Finsupp.submodule fun _ : α ↦ p) hex).trans
+          (Finsupp.ker_mapRange _ α).symm)
+    · exact (ModuleCat.mono_iff_injective _).mpr
+        (Finsupp.mapRange_injective _ (map_zero _) hinj)
+    · exact (ModuleCat.epi_iff_surjective _).mpr
+        (Finsupp.mapRange_surjective _ (map_zero _) hsurj)
+  exact (ShortComplex.shortExact_iff_of_iso (ShortComplex.isoMk
+    (coinvariantsTensorFreeLEquiv S.X₁ α).toModuleIso
+    (coinvariantsTensorFreeLEquiv S.X₂ α).toModuleIso
+    (coinvariantsTensorFreeLEquiv S.X₃ α).toModuleIso
+    (coinvariantsTensorFreeLEquiv_naturality S.f α).symm
+    (coinvariantsTensorFreeLEquiv_naturality S.g α).symm)).mpr hT
+
+/-- Tensor coinvariants with a projective representation preserve short exact sequences in the
+other representation. This is the exactness needed to form coefficient connecting maps when
+computing group homology from a projective resolution of the trivial representation. -/
+theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.ShortExact) (P : Rep.{u} k G) [Projective P] :
+    (S.map ((coinvariantsTensor k G).flip.obj P)).ShortExact := by
+  classical
+  -- Split the canonical free cover using projectivity.
+  let ε : Rep.free k G P ⟶ P := Rep.freeLift k G P id
+  have hε : Function.Surjective ε.hom := fun x ↦
+    ⟨Finsupp.single x (MonoidAlgebra.single 1 1), by
+      simp [ε, Rep.freeLift, Representation.freeLift_single_single]⟩
+  have : Epi ε := (Rep.epi_iff_surjective ε).mpr hε
+  let r : Retract P (Rep.free k G P) :=
+    ⟨Projective.factorThru (𝟙 P) ε, ε, Projective.factorThru_comp _ _⟩
+  let i := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.i)
+  let p := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.r)
+  have hip : i ≫ p = 𝟙 _ := by
+    ext : 1
+    all_goals
+      dsimp only [i, p, ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
+        ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₂, ShortComplex.mapNatTrans_τ₃]
+      rw [← NatTrans.comp_app, ← CategoryTheory.Functor.map_comp, r.retract,
+        CategoryTheory.Functor.map_id]
+      rfl
+  -- The coefficient sequence is a retract of the short exact free coefficient sequence.
+  have hfree := hS.map_coinvariantsTensor_free P
+  have hi₁ : Function.Injective i.τ₁ := by
+    apply Function.LeftInverse.injective (g := p.τ₁)
+    intro x
+    exact congrArg (fun f ↦ f.τ₁ x) hip
+  have hp₃ : Function.Surjective p.τ₃ := by
+    apply Function.RightInverse.surjective (g := i.τ₃)
+    intro x
+    exact congrArg (fun f ↦ f.τ₃ x) hip
+  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
+  · rw [ShortComplex.moduleCat_exact_iff]
+    intro x hx
+    have hix : (S.map ((coinvariantsTensor k G).flip.obj (free k G P))).g (i.τ₂ x) = 0 := by
+      rw [← ConcreteCategory.comp_apply, i.comm₂₃, ConcreteCategory.comp_apply, hx, map_zero]
+    obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).mp hfree.exact _ hix
+    refine ⟨p.τ₁ y, ?_⟩
+    rw [← ConcreteCategory.comp_apply, p.comm₁₂, ConcreteCategory.comp_apply, hy]
+    exact congrArg (fun f ↦ f.τ₂ x) hip
+  · apply (ModuleCat.mono_iff_injective _).mpr
+    intro x y hxy
+    apply hi₁
+    apply (ModuleCat.mono_iff_injective _).mp hfree.mono_f
+    exact (congrArg (fun f ↦ f x) i.comm₁₂).trans
+      ((congrArg i.τ₂ hxy).trans (congrArg (fun f ↦ f y) i.comm₁₂).symm)
+  · apply (ModuleCat.epi_iff_surjective _).mpr
+    intro x
+    obtain ⟨y, rfl⟩ := hp₃ x
+    obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective _).mp hfree.epi_g y
+    exact ⟨p.τ₂ z, congrArg (fun f ↦ f z) p.comm₂₃⟩
+
+end CategoryTheory.ShortComplex.ShortExact
