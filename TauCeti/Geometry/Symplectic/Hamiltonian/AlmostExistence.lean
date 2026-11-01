@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import TauCeti.Topology.Homotopy.AddCircle
 
 /-!
 # The contractible almost existence property
@@ -113,35 +114,6 @@ theorem HasContractibleClosedCharacteristic.mono
     (⟨inclusion hW, continuous_inclusion hW⟩ : C(W, W')).comp g,
     hg.comp_right _, hgγ⟩
 
-/-- A loop contractible in `W`, run at constant speed `a ≠ 0`, is a loop contractible in `W`:
-if `γ` is `T`-periodic with `T > 0` and its loop `ℝ/Tℤ → W` is contractible, then
-`t ↦ γ (t * a)` is periodic of the positive period `T / |a|`, with contractible loop. -/
-private theorem exists_nullhomotopic_comp_mul {γ : ℝ → M} {T a : ℝ} (hT : 0 < T) (ha : a ≠ 0)
-    (hper : Periodic γ T) {g : C(AddCircle T, W)} (hg : g.Nullhomotopic)
-    (hgγ : ∀ t : ℝ, (g t : M) = γ t) :
-    ∃ T' : ℝ, 0 < T' ∧ Periodic (fun t ↦ γ (t * a)) T' ∧
-      ∃ g' : C(AddCircle T', W), g'.Nullhomotopic ∧ ∀ t : ℝ, (g' t : M) = γ (t * a) := by
-  have hT' : 0 < T / |a| := div_pos hT (abs_pos.2 ha)
-  -- The reparametrization `ℝ/(T/|a|)ℤ → ℝ/Tℤ`, multiplication by `|a|`.
-  let e : C(AddCircle (T / |a|), AddCircle T) :=
-    ⟨_, (AddCircle.homeomorphAddCircle (T / |a|) T hT'.ne' hT.ne').continuous⟩
-  have he (t : ℝ) : e t = ((t * |a| : ℝ) : AddCircle T) := by
-    rw [ContinuousMap.coe_mk, AddCircle.homeomorphAddCircle_apply_mk, inv_div,
-      div_mul_cancel₀ _ hT.ne']
-  rcases ha.lt_or_gt with ha' | ha'
-  · -- Backwards: compose further with the reflection of the circle.
-    let n : C(AddCircle T, AddCircle T) := ⟨Neg.neg, continuous_neg⟩
-    have hn (x : AddCircle T) : n x = -x := rfl
-    refine ⟨T / |a|, hT', ?_, g.comp (n.comp e), hg.comp_left _, fun t ↦ ?_⟩
-    · rw [abs_of_neg ha', div_neg]
-      exact (hper.mul_const' a).neg
-    · rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, he, hn, ← AddCircle.coe_neg, hgγ,
-        abs_of_neg ha', mul_neg, neg_neg]
-  · refine ⟨T / |a|, hT', ?_, g.comp e, hg.comp_left _, fun t ↦ ?_⟩
-    · rw [abs_of_pos ha']
-      exact hper.mul_const' a
-    · rw [ContinuousMap.comp_apply, he, hgγ, abs_of_pos ha']
-
 /-- **Closed characteristics under rescaled Hamiltonian vector fields.** Let the level `F⁻¹(c)`
 lie in the level `G⁻¹(c')`, and let the Hamiltonian vector field of `G` for a second form `σ'` be
 `a` times that of `F` along `F⁻¹(c)`, for a constant `a ≠ 0`. Then every closed characteristic of
@@ -152,12 +124,14 @@ theorem HasContractibleClosedCharacteristic.of_hamiltonianVectorField_eq_smul
     (hX : ∀ x, F x = c →
       σ'.hamiltonianVectorField G x = a • σ.hamiltonianVectorField F x) :
     σ'.HasContractibleClosedCharacteristic W G c' := by
-  obtain ⟨T, γ, hT, hγ, hper, ⟨t₀, ht₀⟩, hlev, g, hg, hgγ⟩ := h
-  obtain ⟨T', hT', hper', g', hg', hgγ'⟩ := exists_nullhomotopic_comp_mul hT ha hper hg hgγ
-  refine ⟨T', fun t ↦ γ (t * a), hT', fun t ↦ ?_, hper', ⟨t₀ / a, ?_⟩, fun t ↦ hG _ (hlev _),
-    g', hg', hgγ'⟩
+  obtain ⟨T, γ, hT, hγ, -, ⟨t₀, ht₀⟩, hlev, g, hg, hgγ⟩ := h
+  obtain ⟨g', hg', hgg'⟩ := hg.exists_addCircle_comp_mul hT.ne' ha
+  have hgγ' (t : ℝ) : (g' t : M) = γ (t * a) := by rw [hgg', hgγ]
+  refine ⟨T / |a|, fun t ↦ γ (t * a), div_pos hT (abs_pos.2 ha), fun t ↦ ?_, fun t ↦ ?_,
+    ⟨t₀ / a, ?_⟩, fun t ↦ hG _ (hlev _), g', hg', hgγ'⟩
   · rw [hX _ (hlev _)]
     exact hγ.comp_mul a t
+  · simp only [← hgγ', AddCircle.coe_add_period]
   · simpa [div_mul_cancel₀ _ ha] using ht₀
 
 /-- **Closed characteristics under reparametrization of the energy.** If `φ` is differentiable at
