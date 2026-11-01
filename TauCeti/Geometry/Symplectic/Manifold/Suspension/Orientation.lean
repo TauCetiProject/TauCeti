@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
-public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Leaf
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -19,9 +18,11 @@ Let `φ` be a diffeomorphism of a locally compact Hausdorff smooth manifold `M`,
 smooth mapping torus, with suspension vector field `T = ∂_t`, and let `X_φ = (ℝ / ℤ)_s × Y_φ`. For
 a point `x` of positive period `d`, the orbit torus
 `τ : (ℝ / ℤ) × (ℝ / dℤ) → X_φ`, `(s, θ) ↦ (s, [θ, x])`
-(`TauCeti.SmoothMappingTorus.orbitTorus`) has differential `dτ (a, b) = a ∂_s + b T`. Orient the
-torus as the product of the positive orientations of its two circles
-(`AddCircle.orientation`), with the `s`-direction first.
+(`TauCeti.SmoothMappingTorus.orbitTorus`) agrees with the periodic torus
+`TauCeti.SmoothMappingTorus.periodicTorus`, so it has injective differential
+`dτ (a, b) = a ∂_s + b T` (`TauCeti.SmoothMappingTorus.mfderiv_periodicTorus`). Orient the torus as
+the product of the positive orientations of its two circles (`AddCircle.orientation`), with the
+`s`-direction first.
 
 Let `J` be an almost complex structure on `X_φ` of block form at a point of the orbit torus,
 `J ∂_s = T`, and let a map `u : (C, j) → (X_φ, J)` from a surface, pseudoholomorphic at `c`, factor
@@ -41,8 +42,6 @@ the embedded image `(ℝ / ℤ) × γ`.
 
 ## Main results
 
-* `mfderiv_orbitTorus`, `injective_mfderiv_orbitTorus`: the differential
-  `dτ (a, b) = a ∂_s + b T` of the orbit torus, and its injectivity.
 * `mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq`: for a factor `v` through the orbit
   torus of a pseudoholomorphic map, `dv e = (1, 0)` implies `dv (j e) = (0, 1)`.
 * `isOrientationPreservingAt_of_orbitTorus_comp_eq`: a factor through the orbit torus of a
@@ -80,27 +79,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
     (UnitAddCircle × SmoothMappingTorus φ)}
 
-/-- The differential of the orbit torus is `dτ (a, b) = a ∂_s + b T`. -/
-theorem mfderiv_orbitTorus (p : UnitAddCircle × AddCircle (d : ℝ)) (w : ℝ × ℝ) :
-    mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) p w =
-      (Manifold.tangentSpaceProdEquiv _).symm
-        (w.1, w.2 • timeVectorField φ (orbitTorus φ h p).2) := by
-  have hτ : orbitTorus φ h = periodicTorus φ h :=
-    funext fun p ↦ by rw [orbitTorus_apply, periodicTorus_apply]
-  rw [hτ, mfderiv_periodicTorus, periodicTorus_apply]
-
-/-- The differential of the orbit torus is injective. -/
-theorem injective_mfderiv_orbitTorus (p : UnitAddCircle × AddCircle (d : ℝ)) :
-    Injective (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) p) := by
-  intro w w' hw
-  have hw' := Prod.mk.inj ((Manifold.tangentSpaceProdEquiv _).symm.injective
-    ((mfderiv_orbitTorus h p w).symm.trans (hw.trans (mfderiv_orbitTorus h p w'))))
-  have hT : timeVectorField φ (orbitTorus φ h p).2 ≠ 0 := fun h0 ↦ by
-    have h1 := mfderiv_proj_timeVectorField φ (orbitTorus φ h p).2
-    rw [h0, map_zero] at h1
-    exact zero_ne_one (α := ℝ) h1
-  exact Prod.ext hw'.1 (smul_left_injective ℝ hT hw'.2)
-
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*}
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {C : Type*} [TopologicalSpace C]
   [ChartedSpace H' C] [IsManifold I' ∞ C] {j : SmoothAlmostComplexStructure I' C}
@@ -119,6 +97,14 @@ theorem mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq
     {e : TangentSpace I' c} (he : mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c e = ((1 : ℝ), (0 : ℝ))) :
     mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c (j c e) = ((0 : ℝ), (1 : ℝ)) := by
   subst hτv
+  have hτ : orbitTorus φ h = periodicTorus φ h :=
+    funext fun p ↦ by rw [orbitTorus_apply, periodicTorus_apply]
+  -- The differential of the orbit torus is `dτ (a, b) = a ∂_s + b T`.
+  have hdτ (w : ℝ × ℝ) :
+      mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c) w =
+        (Manifold.tangentSpaceProdEquiv _).symm
+          (w.1, w.2 • timeVectorField φ (orbitTorus φ h (v c)).2) := by
+    rw [hτ, mfderiv_periodicTorus, periodicTorus_apply]
   have hchain (w : TangentSpace I' c) :
       mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h ∘ v) c w =
         mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c)
@@ -126,7 +112,7 @@ theorem mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq
     rw [mfderiv_comp c ((contMDiff_orbitTorus h).mdifferentiableAt (by simp)) hv,
       ContinuousLinearMap.comp_apply]
   -- Apply `dτ`, which is injective and sends `(1, 0)` to `∂_s` and `(0, 1)` to `T`.
-  apply injective_mfderiv_orbitTorus h (v c)
+  apply hτ ▸ injective_mfderiv_periodicTorus h (v c)
   calc mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) (v c)
         (mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c (j c e))
       = J (orbitTorus φ h (v c))
@@ -135,12 +121,12 @@ theorem mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq
         exact hhol.mfderiv_apply_commute e
     _ = J (orbitTorus φ h (v c))
           ((Manifold.tangentSpaceProdEquiv (orbitTorus φ h (v c))).symm ((1 : ℝ), 0)) := by
-        rw [hchain, he, mfderiv_orbitTorus]
+        rw [hchain, he, hdτ]
         simp only [zero_smul]
     _ = (Manifold.tangentSpaceProdEquiv _).symm
           ((0 : ℝ), timeVectorField φ (orbitTorus φ h (v c)).2) := hS
     _ = _ := by
-        rw [mfderiv_orbitTorus]
+        rw [hdτ]
         simp only [one_smul]
 
 variable [FiniteDimensional ℝ E'] {o : Manifold.Orientation I' C (Fin 2)}
@@ -166,31 +152,17 @@ theorem isOrientationPreservingAt_of_orbitTorus_comp_eq
     mdifferentiableAt_of_mfderiv_injective (hL ▸ L.injective)
   -- The standard frame `((1, 0), (0, 1))` of the torus, which is positive for the product
   -- orientation, pulls back along `dv` to a frame `(e, j e)`.
-  let std : Module.Basis (Fin (1 + 1)) ℝ (ℝ × ℝ) :=
-    ((Module.Basis.singleton (Fin 1) ℝ).prod (Module.Basis.singleton (Fin 1) ℝ)).reindex
-      finSumFinEquiv
-  have hstd0 : std 0 = ((1 : ℝ), (0 : ℝ)) := by
-    have h0 : finSumFinEquiv.symm (0 : Fin (1 + 1)) = Sum.inl 0 :=
-      finSumFinEquiv_symm_apply_castAdd 0
-    simp [std, Module.Basis.prod_apply, h0]
-  have hstd1 : std 1 = ((0 : ℝ), (1 : ℝ)) := by
-    have h1 : finSumFinEquiv.symm (1 : Fin (1 + 1)) = Sum.inr 0 :=
-      finSumFinEquiv_symm_apply_natAdd 0
-    simp [std, Module.Basis.prod_apply, h1]
-  have hprod : ((AddCircle.orientation (1 : ℝ)).prod
-      (AddCircle.orientation (d : ℝ))).orientationAt (v c) = std.orientation := by
-    rw [Manifold.Orientation.orientationAt_prod, AddCircle.orientationAt_orientation,
-      AddCircle.orientationAt_orientation]
-    exact Orientation.prod_basis_orientation _ _ _ _
-  let b : Module.Basis (Fin 2) ℝ (TangentSpace I' c) := std.map L.symm.toLinearEquiv
-  have hLb (i : Fin 2) : L (b i) = std i := L.apply_symm_apply (std i)
+  let b : Module.Basis (Fin 2) ℝ (TangentSpace I' c) :=
+    (Module.Basis.finTwoProd ℝ).map L.symm.toLinearEquiv
+  have hLb (i : Fin 2) : L (b i) = Module.Basis.finTwoProd ℝ i :=
+    L.apply_symm_apply (Module.Basis.finTwoProd ℝ i)
   have hb : b 1 = j c (b 0) := by
     apply L.injective
-    rw [hLb, hstd1, hLw]
+    rw [hLb, Module.Basis.finTwoProd_one, hLw]
     exact (mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq h hv hτv hhol hS
-      (by rw [← hLw, hLb, hstd0])).symm
+      (by rw [← hLw, hLb, Module.Basis.finTwoProd_zero])).symm
   rw [Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ L hL, ← ho b hb,
-    ← Module.Basis.orientation_map, hprod]
+    ← Module.Basis.orientation_map, AddCircle.orientationAt_orientation_prod_orientation]
   congr 1
   ext i
   exact hLb i
