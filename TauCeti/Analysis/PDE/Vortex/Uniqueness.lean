@@ -150,34 +150,6 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
     (Real.eq_one_of_pos_of_log_eq_zero (lt_of_le_of_ne (by positivity) (hh₀' z).symm) hw₀)
 
-/-- **The section of a vortex determines its connection where it does not vanish.** If two fields
-satisfy the holomorphicity equation `∂bar_a α = 0`, have continuous connection components and the
-same section, and the zero set of that section has empty interior, then the fields are equal. -/
-theorem eq_of_forall_section_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx₀ : Continuous fun z ↦ x z 0) (hx₁ : Continuous fun z ↦ x z 1)
-    (hy₀ : Continuous fun z ↦ y z 0) (hy₁ : Continuous fun z ↦ y z 1)
-    (hxsol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
-    (hysol : ∀ z, equation y z 1 = 0 ∧ equation y z 2 = 0)
-    (h₂ : ∀ z, x z 2 = y z 2) (h₃ : ∀ z, x z 3 = y z 3)
-    (hdense : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0}) : x = y := by
-  -- Off the zeros of the section, the two holomorphicity equations are a nondegenerate linear
-  -- system for the difference of the connections.
-  have hb (z : ℂ) (hz : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0) : x z 0 = y z 0 ∧ x z 1 = y z 1 := by
-    obtain ⟨hx₁, hx₂⟩ := hxsol z
-    obtain ⟨hy₁, hy₂⟩ := hysol z
-    simp only [equation_apply_one, equation_apply_two, h₂, h₃] at hx₁ hx₂ hy₁ hy₂
-    have e₀ : (x z 0 - y z 0) * (y z 2 ^ 2 + y z 3 ^ 2) = 0 := by
-      linear_combination -y z 3 * (hx₁ - hy₁) + y z 2 * (hx₂ - hy₂)
-    have e₁ : (x z 1 - y z 1) * (y z 2 ^ 2 + y z 3 ^ 2) = 0 := by
-      linear_combination -y z 2 * (hx₁ - hy₁) - y z 3 * (hx₂ - hy₂)
-    exact ⟨sub_eq_zero.1 ((mul_eq_zero.1 e₀).resolve_right hz),
-      sub_eq_zero.1 ((mul_eq_zero.1 e₁).resolve_right hz)⟩
-  have h₀ := hx₀.ext_on hdense hy₀ fun z hz ↦ (hb z hz).1
-  have h₁ := hx₁.ext_on hdense hy₁ fun z hz ↦ (hb z hz).2
-  ext z i
-  fin_cases i
-  exacts [congrFun h₀ z, congrFun h₁ z, h₂ z, h₃ z]
-
 /-- **Uniqueness of plane vortices with the same zeros, modulo gauge.** Let `x` and `y` be
 solutions of the vortex equation on the plane with differentiable connections, `C²` sections and
 `|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²` function
