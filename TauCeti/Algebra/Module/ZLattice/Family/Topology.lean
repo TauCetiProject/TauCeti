@@ -25,7 +25,8 @@ that a manifold structure on it does not provide by itself.
 * The total space is Hausdorff when `Y` is (`TauCeti.t2Space_torusFamily`), and compact when
   `Y` is (`TauCeti.compactSpace_torusFamily`).
 * The total space is second countable when `Y` is
-  (`TauCeti.secondCountableTopology_torusFamily`). This needs only continuity of the periods:
+  (`TauCeti.secondCountableTopology_torusFamily`, in
+  `TauCeti.Algebra.Module.ZLattice.Family.Basic`). This needs only continuity of the periods:
   the orbit map of a group acting by homeomorphisms is open.
 
 With the complex-manifold structure of `TauCeti.Algebra.Module.ZLattice.Family.Manifold`, for a
@@ -45,8 +46,6 @@ holomorphic triviality.
   fibres are compact.
 * `TauCeti.t2Space_torusFamily`: the total space is Hausdorff over a Hausdorff base.
 * `TauCeti.compactSpace_torusFamily`: the total space is compact over a compact base.
-* `TauCeti.secondCountableTopology_torusFamily`: the total space is second countable over a
-  second-countable base.
 
 ## References
 
@@ -120,24 +119,5 @@ theorem compactSpace_torusFamily [CompactSpace Y] (hcont : ∀ l, Continuous fun
   exact e.symm.compactSpace
 
 end Trivialization
-
-section SecondCountable
-
-variable {Y : Type*} [TopologicalSpace Y] [SecondCountableTopology Y] {Λ : Type*} [AddCommGroup Λ]
-  {E : Type*} [AddCommGroup E] [TopologicalSpace E] [ContinuousAdd E] [SecondCountableTopology E]
-  (P : Y → Λ →ₗ[ℤ] E)
-
-/-- **A family of tori over a second-countable base is second countable.** If the periods depend
-continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is
-second countable whenever `Y` and `E` are, since its orbit map is open. No lattice hypothesis on
-the periods is needed. -/
-theorem secondCountableTopology_torusFamily (hcont : ∀ l, Continuous fun y ↦ P y l) :
-    letI := periodAddAction P
-    SecondCountableTopology (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-  letI := periodAddAction P
-  haveI := continuousConstVAdd_periodAddAction P hcont
-  ContinuousConstVAdd.secondCountableTopology
-
-end SecondCountable
 
 end TauCeti
