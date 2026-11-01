@@ -94,25 +94,6 @@ private lemma exists_affineSimpleRoot_apply_eq_root'_add {f : N ≃ᵃ[R] N}
     · exact ⟨0, by simp⟩
   exact ⟨j, m + c, fun x ↦ by rw [affineSimpleRoot_eq_root'_add, hm, hc]; push_cast; ring⟩
 
-/-- An affine root `α + n` of height `ht(α) + n (ht(θ) + 1) = 1` is an affine simple root. -/
-private lemma exists_affineSimpleRoot_eq_of_height_eq_one {j : ι} {n : ℤ}
-    (h : b.height j + n * (b.height b.highestRoot + 1) = 1) :
-    ∃ l, ∀ x, affineSimpleRoot b l x = P.root' j x + n := by
-  have hθ : 0 < b.height b.highestRoot := b.isPos_highestRoot
-  have hlo := b.neg_height_highestRoot_le_height j
-  have hhi := b.height_le_height_highestRoot j
-  obtain rfl | rfl | hn : n = 0 ∨ n = 1 ∨ (2 ≤ n ∨ n ≤ -1) := by omega
-  · -- `n = 0`: `α` has height `1`, so it is a simple root.
-    have hj : j ∈ b.support := (b.height_eq_one_iff).mp (by simpa using h)
-    exact ⟨some ⟨j, hj⟩, fun x ↦ by simp⟩
-  · -- `n = 1`: `α` has height `-ht(θ)`, so it is `-θ`.
-    obtain rfl : j = P.reflectionPerm b.highestRoot b.highestRoot := by
-      by_contra hne
-      have := b.neg_height_highestRoot_lt_height hne
-      omega
-    exact ⟨none, fun x ↦ by simp [root'_reflectionPerm_self, sub_eq_neg_add]⟩
-  · exact absurd h (by rcases hn with hn | hn <;> nlinarith)
-
 /-- **An element of `Ω` carries each affine simple root to an affine simple root**: for `f` in the
 stabilizer of the fundamental alcove, `aₖ ∘ f` is again an affine simple root. -/
 private lemma exists_affineSimpleRoot_comp_eq {f : N ≃ᵃ[R] N}

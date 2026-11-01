@@ -75,6 +75,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   the set of points at which every affine simple root is positive.
 * `RootPairing.sum_affineMarks_mul_affineSimpleRoot`: the null-root relation `∑ₖ mₖ aₖ = 1`,
   where the marks `mₖ` are the coefficients of `θ` and `m₀ = 1`.
+* `RootPairing.exists_affineSimpleRoot_eq_of_height_eq_one`: an affine root `α + n` of height
+  `ht(α) + n (ht(θ) + 1) = 1` is an affine simple root.
 * `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove
   is nonempty.
 * `RootPairing.exists_mem_fundamentalAlcove_root'_eq_height_div`: it contains a point at which
@@ -303,6 +305,27 @@ theorem mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos [PartialOrder R]
   simp only [mem_fundamentalAlcove, Option.forall, affineSimpleRoot_none, sub_pos,
     affineSimpleRoot_some, Subtype.forall]
   tauto
+
+/-- **An affine root `α + n` of height `ht(α) + n (ht(θ) + 1) = 1` is an affine simple root**: it
+is `αᵢ` (with `n = 0`) or `1 - θ` (with `n = 1`). -/
+lemma exists_affineSimpleRoot_eq_of_height_eq_one [IsDomain R] [P.IsCrystallographic]
+    [P.IsReduced] [P.IsIrreducible] {j : ι} {n : ℤ}
+    (h : b.height j + n * (b.height b.highestRoot + 1) = 1) :
+    ∃ l, ∀ x, affineSimpleRoot b l x = P.root' j x + n := by
+  have hθ : 0 < b.height b.highestRoot := b.isPos_highestRoot
+  have hlo := b.neg_height_highestRoot_le_height j
+  have hhi := b.height_le_height_highestRoot j
+  obtain rfl | rfl | hn : n = 0 ∨ n = 1 ∨ (2 ≤ n ∨ n ≤ -1) := by omega
+  · -- `n = 0`: `α` has height `1`, so it is a simple root.
+    have hj : j ∈ b.support := (b.height_eq_one_iff).mp (by simpa using h)
+    exact ⟨some ⟨j, hj⟩, fun x ↦ by simp⟩
+  · -- `n = 1`: `α` has height `-ht(θ)`, so it is `-θ`.
+    obtain rfl : j = P.reflectionPerm b.highestRoot b.highestRoot := by
+      by_contra hne
+      have := b.neg_height_highestRoot_lt_height hne
+      omega
+    exact ⟨none, fun x ↦ by simp [root'_reflectionPerm_self, sub_eq_neg_add]⟩
+  · exact absurd h (by rcases hn with hn | hn <;> nlinarith)
 
 end AffineSimpleRoot
 
