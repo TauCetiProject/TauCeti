@@ -67,8 +67,8 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   rw [mem_horn_iff_notMem_range] at hσ
   obtain ⟨j, hj, hj'⟩ := hσ
   have hk : σ k ≠ j := fun h ↦ hj' ⟨k, h⟩
-  -- The two sides are the vertex `σ k` and the vertex of the constant simplex at `i`.
-  change σ k = i
-  omega
+  rw [stdSimplex.obj₀Equiv_symm_apply]
+  -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
+  exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
 
 end SSet
