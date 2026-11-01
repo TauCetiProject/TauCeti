@@ -28,13 +28,13 @@ cohomology, so
 (`Rep.groupCohomologyIhomIso`). The complex `(A ⊗ P)_G` is the one whose homology is Mathlib's
 group homology `Hₙ(G, A)` (`groupHomologyIso`), so this is the cochain-level form of the duality
 between the group homology of `A` and the group cohomology of `Homₖ(A, N)`.
+This is how cohomology with local coefficients, computed from twisted chains of the form
+`(A ⊗ P)_G`, is compared with group cohomology.
 
 Both identifications commute with change of group: a homomorphism `f : G →* H`, a compatible
 coefficient map `φ : A ⟶ Rep.res f B` and an augmentation-preserving chain map between resolutions
 induce the same map on cohomology as Mathlib's `groupCohomology.map`, with precomposition by `φ`
 on the internal-hom coefficients (`MonoidHom.groupCohomologyIhomIso_inv_naturality`).
-This is how cohomology with local coefficients, computed from twisted chains of the form
-`(A ⊗ P)_G`, is compared with group cohomology.
 
 Both identifications are natural in the module `N` and, contravariantly, in the representation
 `A`. A linear map `g : N →ₗ[k] N'` acts on `Hom((A ⊗ P)_G, -)` by postcomposition and on
@@ -50,10 +50,6 @@ Both identifications are natural in the module `N` and, contravariantly, in the 
   complexes `Hom((A ⊗ P)_G, N) ≅ Hom_G(P, Homₖ(A, N))`.
 * `Rep.groupCohomologyIhomIso`: `Hⁿ(G, Homₖ(A, N)) ≅ Hⁿ(Hom((A ⊗ P)_G, N))` for a projective
   resolution `P` of `k`.
-* `MonoidHom.coinvariantsTensorObjLinearYonedaObjIso_hom_naturality`: change of group commutes
-  with the cochain isomorphism.
-* `MonoidHom.groupCohomologyIhomIso_inv_naturality` and
-  `MonoidHom.groupCohomologyIhomIso_hom_naturality`: naturality of the cohomology comparison.
 
 ## Main results
 
@@ -62,6 +58,10 @@ Both identifications are natural in the module `N` and, contravariantly, in the 
   isomorphism of cochain complexes is natural in the module and in the representation.
 * `Rep.groupCohomologyIhomIso_inv_naturality_right`,
   `Rep.groupCohomologyIhomIso_inv_naturality_left`: so is the identification of group cohomology.
+* `MonoidHom.coinvariantsTensorObjLinearYonedaObjIso_hom_naturality`: change of group commutes
+  with the cochain isomorphism.
+* `MonoidHom.groupCohomologyIhomIso_inv_naturality` and
+  `MonoidHom.groupCohomologyIhomIso_hom_naturality`: naturality of the cohomology comparison.
 
 ## References
 
