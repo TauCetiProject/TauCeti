@@ -21,8 +21,8 @@ are invariant under equivariant homotopy: a homotopy `H` from `f₀` to `f₁` t
 maps induces a homotopy between the maps of classifying spaces
 (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopy`).
 
-The main application is the local model of an orbifold chart. Suppose that `x` is a fixed point of
-`G` in `X` and that `X` contracts onto `x` through equivariant maps. Then the projection
+The main application is the local model of an orbifold chart. Suppose that `X` contracts onto a
+point `x` through equivariant maps, so that `x` is a fixed point of `G`. Then the projection
 `X → *` and the inclusion of `x` induce mutually inverse homotopy equivalences
 `B(G ⋉ X) ≃ₕ B(G ⋉ *)` (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopyEquivOfContraction`),
 where `G ⋉ *` is the point presentation `[*/G]`. Since `x` is fixed, the isotropy group of `x` in
@@ -91,64 +91,72 @@ def fatClassifyingSpaceHomotopy {f₀ f₁ : X →ₑ[MonoidHom.id G] Y} {hf₀ 
   (TauCeti.fatClassifyingSpaceHomotopy (fun s ↦ ActionCategory.map (MonoidHom.id G) (Hs s))
     hHs).cast (by simp only [h₀]) (by simp only [h₁])
 
+omit [TopologicalSpace G] in
+/-- A point onto which `X` contracts through `G`-equivariant maps is fixed by `G`. -/
+private theorem mem_fixedPoints_of_contraction {x : X}
+    {H : Homotopy (ContinuousMap.id X) (ContinuousMap.const X x)}
+    (hH : ∀ (s : unitInterval) (g : G) (y : X), H (s, g • y) = g • H (s, y)) :
+    x ∈ fixedPoints G X :=
+  fun g ↦ by simpa using (hH 1 g x).symm
+
+variable (G X) in
+omit [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y] in
+/-- The `G`-equivariant map from `X` to the point. -/
+private def toPoint : X →ₑ[MonoidHom.id G] PUnit.{u + 1} :=
+  ⟨fun _ ↦ PUnit.unit, fun _ _ ↦ rfl⟩
+
+omit [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y] in
+/-- The `G`-equivariant map from `Y` with constant value a fixed point `x` of `X`. -/
+private def constOfMemFixedPoints {x : X} (hx : x ∈ fixedPoints G X) :
+    Y →ₑ[MonoidHom.id G] X :=
+  ⟨fun _ ↦ x, fun g _ ↦ (hx g).symm⟩
+
+omit [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y] in
+@[simp]
+private theorem constOfMemFixedPoints_apply {x : X} (hx : x ∈ fixedPoints G X) (y : Y) :
+    constOfMemFixedPoints hx y = x :=
+  rfl
+
 variable (G) in
-/-- **The local model of an orbifold chart.** If `x` is a fixed point of `G` in `X` and `H` is a
-contraction of `X` onto `x` through `G`-equivariant maps, then the projection `X → *` induces a
+/-- **The local model of an orbifold chart.** If `H` is a contraction of `X` onto a point `x`
+through `G`-equivariant maps, then `x` is fixed by `G` and the projection `X → *` induces a
 homotopy equivalence `B(G ⋉ X) ≃ₕ B(G ⋉ *)` with the classifying space of the point presentation
 `[*/G]`. Its inverse is induced by the inclusion of `x`. -/
-def fatClassifyingSpaceHomotopyEquivOfContraction (x : X) (hx : x ∈ fixedPoints G X)
+def fatClassifyingSpaceHomotopyEquivOfContraction (x : X)
     (H : Homotopy (ContinuousMap.id X) (ContinuousMap.const X x))
     (hH : ∀ (s : unitInterval) (g : G) (y : X), H (s, g • y) = g • H (s, y)) :
     fatClassifyingSpace (ActionCategory G X) ≃ₕ
-      fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) := by
-  let p : X →ₑ[MonoidHom.id G] PUnit.{u + 1} := ⟨fun _ ↦ PUnit.unit, fun _ _ ↦ rfl⟩
-  let i : PUnit.{u + 1} →ₑ[MonoidHom.id G] X := ⟨fun _ ↦ x, fun g _ ↦ (hx g).symm⟩
-  let c : X →ₑ[MonoidHom.id G] X := ⟨fun _ ↦ x, fun g _ ↦ (hx g).symm⟩
-  have hi_apply (y : PUnit.{u + 1}) : i y = x := rfl
-  have hc_apply (y : X) : c y = x := rfl
-  have hp : Continuous p := continuous_const
-  have hi : Continuous i := continuous_const
-  -- Both composites are computed on each simplex: a string of `G ⋉ X` or `G ⋉ *` is determined
-  -- by its first point and its labels, which the functors induced by `p` and `i` keep.
-  have hpi : fatClassifyingSpaceMap _ (continuous_mapTotal_map continuous_id hi) ≫
-      fatClassifyingSpaceMap _ (continuous_mapTotal_map continuous_id hp) =
-        𝟙 (fatClassifyingSpace (ActionCategory G PUnit.{u + 1})) := by
-    rw [← fatClassifyingSpaceMap_comp, ← fatClassifyingSpaceMap_id]
-    exact fatClassifyingSpaceMap_eq_of_mapComposableArrows_obj _ _ fun n F ↦
-      ComposableArrows.ext_of_back_obj_zero_of_hom_map rfl fun _ ↦ by simp
-  have hip : fatClassifyingSpaceMap _ (continuous_mapTotal_map continuous_id hp) ≫
-      fatClassifyingSpaceMap _ (continuous_mapTotal_map continuous_id hi) =
-        fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G) c)
-          (continuous_mapTotal_map continuous_id continuous_const) := by
-    rw [← fatClassifyingSpaceMap_comp]
-    exact fatClassifyingSpaceMap_eq_of_mapComposableArrows_obj _ _ fun n F ↦
-      ComposableArrows.ext_of_back_obj_zero_of_hom_map (by simp [hi_apply, hc_apply])
-        fun _ ↦ by simp
-  have hid : fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G)
-      (MulActionHom.id G : X →ₑ[MonoidHom.id G] X))
-        (continuous_mapTotal_map continuous_id continuous_id) =
-          𝟙 (fatClassifyingSpace (ActionCategory G X)) := by
-    rw [← fatClassifyingSpaceMap_id]
-    exact fatClassifyingSpaceMap_eq_of_mapComposableArrows_obj _ _ fun n F ↦
-      ComposableArrows.ext_of_back_obj_zero_of_hom_map (by simp) fun _ ↦ by simp
-  refine ⟨(fatClassifyingSpaceMap _ (continuous_mapTotal_map continuous_id hp)).hom,
-    (fatClassifyingSpaceMap _ (continuous_mapTotal_map continuous_id hi)).hom, ?_, ?_⟩
-  · -- The composite is induced by the constant map `c`, which `H` joins to the identity.
-    rw [← TopCat.hom_comp, hip, ← TopCat.hom_id, ← hid]
-    exact ⟨(fatClassifyingSpaceHomotopy (f₀ := MulActionHom.id G) (f₁ := c)
-      (hf₁ := continuous_const) H hH).symm⟩
-  · rw [← TopCat.hom_comp, hpi, TopCat.hom_id]
-
-variable (x : X) (hx : x ∈ fixedPoints G X)
-  (H : Homotopy (ContinuousMap.id X) (ContinuousMap.const X x))
-  (hH : ∀ (s : unitInterval) (g : G) (y : X), H (s, g • y) = g • H (s, y))
-  (n : SemiSimplexCategory) (t : SemiSimplexCategory.toTop.obj n)
+      fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) where
+  toFun := (fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G) (toPoint G X))
+    (continuous_mapTotal_map continuous_id continuous_const)).hom
+  invFun := (fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G)
+      (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)))
+    (continuous_mapTotal_map continuous_id continuous_const)).hom
+  left_inv := by
+    -- The composite is induced by the constant map onto `x`, which `H` joins to the identity.
+    have hc : ActionCategory.map (MonoidHom.id G) (toPoint G X) ⋙
+        ActionCategory.map (MonoidHom.id G)
+          (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) =
+        ActionCategory.map (MonoidHom.id G)
+          (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) :=
+      (map_comp _ _ _).trans (congrArg _ (MulActionHom.ext fun _ ↦ rfl))
+    exact ⟨(fatClassifyingSpaceHomotopy (f₀ := MulActionHom.id G)
+      (f₁ := constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) (hf₁ := continuous_const)
+      H hH).symm.cast
+        (by rw [← TopCat.hom_comp, ← fatClassifyingSpaceMap_comp]; simp only [hc])
+        (by simp only [map_id, fatClassifyingSpaceMap_id, TopCat.hom_id])⟩
+  right_inv := by
+    have hp : (toPoint G X).comp (constOfMemFixedPoints (mem_fixedPoints_of_contraction hH)) =
+        MulActionHom.id G := MulActionHom.ext fun _ ↦ rfl
+    rw [← TopCat.hom_comp, ← fatClassifyingSpaceMap_comp]
+    simp only [map_comp, hp, map_id, fatClassifyingSpaceMap_id, TopCat.hom_id]
+    exact .refl _
 
 /-- The homotopy equivalence `B(G ⋉ X) ≃ₕ B(G ⋉ *)` of a contraction onto a fixed point keeps the
 labels of each string of composable arrows and forgets its points. -/
 theorem fatClassifyingSpaceHomotopyEquivOfContraction_apply_ι
     (F : ComposableArrows (ActionCategory G X) (SemiSimplexCategory.toSimplexCategory.obj n).len) :
-    fatClassifyingSpaceHomotopyEquivOfContraction G x hx H hH (fatRealization.ι _ n (F, t)) =
+    fatClassifyingSpaceHomotopyEquivOfContraction G x H hH (fatRealization.ι _ n (F, t)) =
       fatRealization.ι _ n
         ((nerveEquiv G PUnit.{u + 1} _).symm (PUnit.unit, (nerveEquiv G X _ F).2), t) :=
   (fatClassifyingSpaceMap_ι _ _ n F t).trans <| congrArg (fun F ↦ fatRealization.ι _ n (F, t)) <|
@@ -160,13 +168,14 @@ labels. -/
 theorem fatClassifyingSpaceHomotopyEquivOfContraction_symm_apply_ι
     (F : ComposableArrows (ActionCategory G PUnit.{u + 1})
       (SemiSimplexCategory.toSimplexCategory.obj n).len) :
-    (fatClassifyingSpaceHomotopyEquivOfContraction G x hx H hH).symm
+    (fatClassifyingSpaceHomotopyEquivOfContraction G x H hH).symm
         (fatRealization.ι _ n (F, t)) =
       fatRealization.ι _ n ((nerveEquiv G X _).symm (x, (nerveEquiv G PUnit.{u + 1} _ F).2), t) :=
   (fatClassifyingSpaceMap_ι _ _ n F t).trans <| congrArg (fun F ↦ fatRealization.ι _ n (F, t)) <|
     (nerveEquiv G X _).eq_symm_apply.2 <| Prod.ext
       -- The first point of the image string is the value at that point of the map onto `x`.
-      (by simp only [nerveEquiv_apply, Functor.mapComposableArrows_obj_obj, back_map_obj]; rfl)
+      (by simp only [nerveEquiv_apply, Functor.mapComposableArrows_obj_obj, back_map_obj,
+        constOfMemFixedPoints_apply])
       (funext fun _ ↦ by simp)
 
 section StarConvex
@@ -182,7 +191,7 @@ def fatClassifyingSpaceHomotopyEquivOfStarConvex (U : SubMulAction G E)
     (hU : StarConvex ℝ 0 (U : Set E)) (h0 : (0 : E) ∈ U) :
     fatClassifyingSpace (ActionCategory G U) ≃ₕ
       fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) :=
-  fatClassifyingSpaceHomotopyEquivOfContraction G ⟨0, h0⟩ (fun g ↦ Subtype.ext (smul_zero g))
+  fatClassifyingSpaceHomotopyEquivOfContraction G ⟨0, h0⟩
     { toFun p := ⟨(unitInterval.symm p.1 : ℝ) • (p.2 : E),
         hU.smul_mem p.2.2 (unitInterval.symm p.1).2.1 (unitInterval.symm p.1).2.2⟩
       continuous_toFun := Continuous.subtype_mk

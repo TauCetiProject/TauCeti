@@ -30,7 +30,8 @@ between categories with topologies on their arrows is continuous.
   one-sided inverse pair.
 * `Prefunctor.cast_mapPath_mapPath`: a prefunctor that undoes another on vertices and arrows
   undoes it on paths.
-* `Prefunctor.mapTotal`: the map induced by a prefunctor on total spaces of arrows.
+* `Prefunctor.mapTotal`: the map induced by a prefunctor on total spaces of arrows, with its
+  identity and composition laws `Prefunctor.mapTotal_id` and `Prefunctor.mapTotal_comp`.
 
 ## References
 
@@ -122,5 +123,14 @@ theorem _root_.Prefunctor.mapTotal_right (φ : Q ⥤q R) (f : Quiver.Total Q) :
 @[simp]
 theorem _root_.Prefunctor.mapTotal_hom (φ : Q ⥤q R) (f : Quiver.Total Q) :
     (φ.mapTotal f).hom = φ.map f.hom := (rfl)
+
+/-- The identity prefunctor induces the identity on total arrows. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_id : (𝟭q Q).mapTotal = id := (rfl)
+
+/-- A composite of prefunctors induces the composite of the maps on total arrows. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_comp (φ : Q ⥤q R) (ψ : R ⥤q S) :
+    (φ ⋙q ψ).mapTotal = ψ.mapTotal ∘ φ.mapTotal := (rfl)
 
 end TauCeti

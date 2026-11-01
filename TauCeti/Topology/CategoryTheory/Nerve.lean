@@ -200,13 +200,15 @@ theorem topologicalNerveMap_app_apply (Φ : C ⥤ D) (hΦ : Continuous Φ.toPref
 variable (C) in
 @[simp]
 theorem topologicalNerveMap_id :
-    topologicalNerveMap (𝟭 C) continuous_id = 𝟙 (topologicalNerve C) :=
+    topologicalNerveMap (𝟭 C) (Prefunctor.mapTotal_id (Q := C) ▸ continuous_id) =
+      𝟙 (topologicalNerve C) :=
   (rfl)
 
 theorem topologicalNerveMap_comp {E : Type u} [Category.{v} E] [TopologicalSpace (Quiver.Total E)]
     (Φ : C ⥤ D) (Ψ : D ⥤ E) (hΦ : Continuous Φ.toPrefunctor.mapTotal)
     (hΨ : Continuous Ψ.toPrefunctor.mapTotal) :
-    topologicalNerveMap (Φ ⋙ Ψ) (hΨ.comp hΦ) =
+    topologicalNerveMap (Φ ⋙ Ψ) (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸
+        hΨ.comp hΦ) =
       topologicalNerveMap Φ hΦ ≫ topologicalNerveMap Ψ hΨ :=
   (rfl)
 
@@ -241,13 +243,15 @@ theorem fatClassifyingSpaceMap_eq_of_mapComposableArrows_obj {Φ Ψ : C ⥤ D}
 variable (C) in
 @[simp]
 theorem fatClassifyingSpaceMap_id :
-    fatClassifyingSpaceMap (𝟭 C) continuous_id = 𝟙 (fatClassifyingSpace C) :=
+    fatClassifyingSpaceMap (𝟭 C) (Prefunctor.mapTotal_id (Q := C) ▸ continuous_id) =
+      𝟙 (fatClassifyingSpace C) :=
   fatRealization.map_id
 
 theorem fatClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     [TopologicalSpace (Quiver.Total E)] (Φ : C ⥤ D) (Ψ : D ⥤ E)
     (hΦ : Continuous Φ.toPrefunctor.mapTotal) (hΨ : Continuous Ψ.toPrefunctor.mapTotal) :
-    fatClassifyingSpaceMap (Φ ⋙ Ψ) (hΨ.comp hΦ) =
+    fatClassifyingSpaceMap (Φ ⋙ Ψ) (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸
+        hΨ.comp hΦ) =
       fatClassifyingSpaceMap Φ hΦ ≫ fatClassifyingSpaceMap Ψ hΨ :=
   fatRealization.map_comp (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ))
     (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Ψ hΨ))
