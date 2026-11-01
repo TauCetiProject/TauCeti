@@ -45,13 +45,13 @@ The auxiliary bounds `TauCeti.Real.integral_inv_log_pow_le` and
 the logarithm. They are stated for a general exponent because the identity above needs `n = 2`
 while `Li` itself is the case `n = 1`.
 
-## Roadmap role
+## Use in prime counting
 
-This is the analytic half of Layer **6.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`,
-which asks for `Li` together with `Li(x) ∼ x/log x` on the way to the transfer
-`ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)` that Layer 10.3 exports as `primeCount_asymptotic_of_primeTheta`.
-The weighted-remainder estimate `isLittleO_integral_div_mul_log_sq` is the analytic input to that
-transfer: it is what absorbs the integral produced by Abel summation.
+These are the analytic inputs to the transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`,
+`TauCeti.primeCount_asymptotic_of_primeTheta` in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean`. The weighted-remainder estimate
+`TauCeti.Real.isLittleO_integral_div_mul_log_sq` is what absorbs the integral produced by Abel
+summation there.
 
 ## References
 
