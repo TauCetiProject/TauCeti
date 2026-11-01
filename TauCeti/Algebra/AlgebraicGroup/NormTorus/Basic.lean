@@ -18,7 +18,7 @@ the Weil restriction `Res_{k'/k} 𝔾ₘ` over a commutative `k`-algebra `R` are
 `k' ⊗[k] R` (`TauCeti.Algebra.WeilRestriction.multiplicativeGroupPoints`). The norm of the free
 `R`-algebra `R ⊗[k] k'` of rank `d` gives a homomorphism `Nm : (k' ⊗[k] R)ˣ →* Rˣ`, natural in `R`:
 this is the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ` on points, and its kernel is the group of points
-of the norm-one torus `R^1_{k'/k} 𝔾ₘ`. For `ℂ/ℝ` on real points it is `z ↦ z z̄`.
+of the norm-one torus `R^1_{k'/k} 𝔾ₘ`. For `ℂ/ℝ` on real points it is `z ↦ z * conj z`.
 
 This file defines the norm on points and its kernel, computes the norm on the diagonal
 `Rˣ → (k' ⊗[k] R)ˣ` and on the units of `k'`, and proves its naturality in `R`. By the Yoneda
