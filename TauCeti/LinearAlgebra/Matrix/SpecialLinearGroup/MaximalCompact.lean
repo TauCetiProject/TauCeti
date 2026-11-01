@@ -82,6 +82,13 @@ theorem isCompact_comap_unitarySubgroup :
       Set (SpecialLinearGroup ι 𝕜)) :=
   isClosedEmbedding_toGL.isCompact_preimage GeneralLinearGroup.isCompact_unitarySubgroup
 
+/-- The image in `GL ι 𝕜` of a compact subgroup of `SL ι 𝕜` is compact. -/
+private theorem isCompact_map_toGL {K : Subgroup (SpecialLinearGroup ι 𝕜)}
+    (hK : IsCompact (K : Set (SpecialLinearGroup ι 𝕜))) :
+    IsCompact ((K.map toGL : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) := by
+  rw [Subgroup.coe_map]
+  exact hK.image continuous_toGL
+
 /-- **The determinant-one unitary matrices form a maximal compact subgroup of `SL ι 𝕜`**, in the
 elementwise form: an element of a compact subgroup containing every determinant-one unitary matrix
 is unitary. -/
@@ -94,11 +101,8 @@ theorem mem_comap_unitarySubgroup_of_isCompact_of_le {K : Subgroup (SpecialLinea
     GeneralLinearGroup.det_polarUnitary_of_det_eq_one _ (by simp)⟩
   have hV : toGL V = Unitary.toUnits (Units.polarUnitary (toGL g)) := Units.ext rfl
   have hVK : V ∈ K := hUK (by simp [hV])
-  have hKc : IsCompact ((K.map toGL : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) := by
-    rw [Subgroup.coe_map]
-    exact hK.image continuous_toGL
-  exact GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem hKc
-    ⟨g, hg, rfl⟩ ⟨V, hVK, hV⟩
+  exact GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem
+    (isCompact_map_toGL hK) ⟨g, hg, rfl⟩ ⟨V, hVK, hV⟩
 
 /-- **The determinant-one unitary matrices form a maximal compact subgroup of `SL ι 𝕜`.** A compact
 subgroup containing every determinant-one unitary matrix is the subgroup of determinant-one
@@ -125,12 +129,9 @@ theorem exists_conj_smul_le_comap_unitarySubgroup {K : Subgroup (SpecialLinearGr
     (hK : IsCompact (K : Set (SpecialLinearGroup ι 𝕜))) :
     ∃ g : SpecialLinearGroup ι 𝕜,
       MulAut.conj g • K ≤ (unitarySubgroup (GL ι 𝕜)).comap toGL := by
-  have hKc : IsCompact ((K.map toGL : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) := by
-    rw [Subgroup.coe_map]
-    exact hK.image continuous_toGL
   -- Conjugate `K` into the unitary matrices by `h : GL ι 𝕜`, and write `h = c V g`. Conjugation
   -- by the scalar `c` is trivial and conjugation by the unitary `V` preserves unitarity.
-  obtain ⟨h, hh⟩ := GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup hKc
+  obtain ⟨h, hh⟩ := GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup (isCompact_map_toGL hK)
   obtain ⟨c, V, hV, g, hcVg⟩ := GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq h
   refine ⟨g, fun x hx ↦ ?_⟩
   obtain ⟨k, hk, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
@@ -152,18 +153,8 @@ of the special unitary group `SU(n)`. -/
 theorem maximal_isCompact_iff {K : Subgroup (SpecialLinearGroup ι 𝕜)} :
     Maximal (fun H : Subgroup (SpecialLinearGroup ι 𝕜) ↦
         IsCompact (H : Set (SpecialLinearGroup ι 𝕜))) K ↔
-      ∃ g : SpecialLinearGroup ι 𝕜, K = MulAut.conj g • (unitarySubgroup (GL ι 𝕜)).comap toGL := by
-  constructor
-  · intro hK
-    obtain ⟨g, hg⟩ := exists_conj_smul_le_comap_unitarySubgroup hK.1
-    have hle : K ≤ MulAut.conj g⁻¹ • (unitarySubgroup (GL ι 𝕜)).comap toGL := by
-      rwa [map_inv, ← Subgroup.pointwise_smul_subset_iff]
-    exact ⟨g⁻¹, le_antisymm hle
-      (hK.2 (Subgroup.isCompact_conj_smul _ isCompact_comap_unitarySubgroup) hle)⟩
-  · rintro ⟨g, rfl⟩
-    refine ⟨Subgroup.isCompact_conj_smul g isCompact_comap_unitarySubgroup, fun L hL hle ↦ ?_⟩
-    rw [Subgroup.pointwise_smul_subset_iff, ← map_inv] at hle
-    rw [← eq_comap_unitarySubgroup_of_isCompact_of_le (Subgroup.isCompact_conj_smul _ hL) hle,
-      map_inv, smul_inv_smul]
+      ∃ g : SpecialLinearGroup ι 𝕜, K = MulAut.conj g • (unitarySubgroup (GL ι 𝕜)).comap toGL :=
+  Subgroup.maximal_isCompact_iff_exists_eq_conj_smul maximal_isCompact_comap_unitarySubgroup
+    fun _ ↦ exists_conj_smul_le_comap_unitarySubgroup
 
 end Matrix.SpecialLinearGroup

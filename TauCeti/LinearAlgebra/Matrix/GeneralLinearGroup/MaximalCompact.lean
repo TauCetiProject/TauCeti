@@ -75,10 +75,9 @@ variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
 namespace Matrix.GeneralLinearGroup
 
 open scoped MatrixOrder in
-/-- **A compact subgroup containing the unitary polar factor of an element contains no positive
-factor.** If `g` lies in a compact subgroup `K` of `GL ι 𝕜` together with the unitary factor `V` of
-its polar decomposition `g = P V`, then `g` is unitary: the positive definite factor `P = g V⁻¹`
-lies in `K`, and a positive definite matrix in a compact subgroup is the identity. -/
+/-- **An element of a compact subgroup that also contains its unitary polar factor is unitary.**
+If `g` lies in a compact subgroup `K` of `GL ι 𝕜` together with the unitary factor `V` of its polar
+decomposition `g = P V`, then `g` is unitary. -/
 theorem mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem {K : Subgroup (GL ι 𝕜)}
     (hK : IsCompact (K : Set (GL ι 𝕜))) {g : GL ι 𝕜} (hg : g ∈ K)
     (hV : Unitary.toUnits (Units.polarUnitary g) ∈ K) : g ∈ unitarySubgroup (GL ι 𝕜) := by
@@ -158,19 +157,9 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
 `U(n)`. -/
 theorem maximal_isCompact_iff {K : Subgroup (GL ι 𝕜)} :
     Maximal (fun H : Subgroup (GL ι 𝕜) ↦ IsCompact (H : Set (GL ι 𝕜))) K ↔
-      ∃ g : GL ι 𝕜, K = MulAut.conj g • unitarySubgroup (GL ι 𝕜) := by
-  constructor
-  · intro hK
-    obtain ⟨g, hg⟩ := exists_conj_smul_le_unitarySubgroup hK.1
-    have hle : K ≤ MulAut.conj g⁻¹ • unitarySubgroup (GL ι 𝕜) := by
-      rwa [map_inv, ← Subgroup.pointwise_smul_subset_iff]
-    exact ⟨g⁻¹,
-      le_antisymm hle (hK.2 (Subgroup.isCompact_conj_smul _ isCompact_unitarySubgroup) hle)⟩
-  · rintro ⟨g, rfl⟩
-    refine ⟨Subgroup.isCompact_conj_smul g isCompact_unitarySubgroup, fun L hL hle ↦ ?_⟩
-    rw [Subgroup.pointwise_smul_subset_iff] at hle
-    rw [← map_inv] at hle
-    rw [← eq_unitarySubgroup_of_isCompact_of_le (Subgroup.isCompact_conj_smul _ hL) hle, map_inv,
-      smul_inv_smul]
+      ∃ g : GL ι 𝕜, K = MulAut.conj g • unitarySubgroup (GL ι 𝕜) :=
+  Subgroup.maximal_isCompact_iff_exists_eq_conj_smul
+    ⟨isCompact_unitarySubgroup, fun _ hL hle ↦ (eq_unitarySubgroup_of_isCompact_of_le hL hle).le⟩
+    fun _ ↦ exists_conj_smul_le_unitarySubgroup
 
 end Matrix.GeneralLinearGroup

@@ -111,25 +111,24 @@ theorem exists_scalar_mul_mul_toGL_eq :
   set d := ‖(A : Matrix n n 𝕜).det‖ with hd_def
   have hd : 0 < d := norm_pos_iff.mpr hdet
   -- The positive real scalar `r` with `r ^ card n * ‖det A‖ = 1`.
-  set r : ℝ := d ^ (-(Fintype.card n : ℝ)⁻¹)
-  have hr : (r : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr (Real.rpow_pos_of_pos hd _).ne'
+  set r : ℝ := (d ^ (Fintype.card n : ℝ)⁻¹)⁻¹
+  have hr : (r : 𝕜) ≠ 0 :=
+    RCLike.ofReal_ne_zero.mpr (inv_pos.mpr (Real.rpow_pos_of_pos hd _)).ne'
   have hrd : r ^ Fintype.card n * d = 1 := by
     rcases isEmpty_or_nonempty n with hn | hn
     · simp [hd_def]
-    · rw [← Real.rpow_natCast, ← Real.rpow_mul hd.le, neg_mul,
-        inv_mul_cancel₀ (by exact_mod_cast Fintype.card_ne_zero), Real.rpow_neg_one,
-        inv_mul_cancel₀ hd.ne']
+    · simp [r, inv_pow, Real.rpow_inv_natCast_pow hd.le Fintype.card_ne_zero, hd.ne']
   set U : GL n 𝕜 := Unitary.toUnits (Units.polarUnitary A)
   set s : GL n 𝕜 := GeneralLinearGroup.scalar n (Units.mk0 (r : 𝕜) hr)
   have hdet' : ((s * (U⁻¹ * A) : GL n 𝕜) : Matrix n n 𝕜).det = 1 := by
-    -- The unitary factor has determinant `det A / ‖det A‖`.
+    -- The unitary factor has determinant `det A / ‖det A‖`, so `U⁻¹ A` has determinant `‖det A‖`.
     have hU : ((U : GL n 𝕜) : Matrix n n 𝕜).det = (A : Matrix n n 𝕜).det / d :=
       det_polarUnitary A
-    rw [← GeneralLinearGroup.val_det_apply, map_mul, map_mul, map_inv,
-      GeneralLinearGroup.det_scalar, Units.val_mul, Units.val_mul, Units.val_inv_eq_inv_val,
-      GeneralLinearGroup.val_det_apply, GeneralLinearGroup.val_det_apply, hU,
-      Units.val_pow_eq_pow_val, Units.val_mk0, inv_div, div_mul_cancel₀ _ hdet,
-      ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, hrd, RCLike.ofReal_one]
+    have hUA : ((U⁻¹ * A : GL n 𝕜) : Matrix n n 𝕜).det = d := by
+      rw [Units.val_mul, det_mul, coe_units_inv, det_nonsing_inv, Ring.inverse_eq_inv', hU]
+      field_simp
+    rw [Units.val_mul, det_mul, hUA]
+    simpa [s] using congrArg ((↑) : ℝ → 𝕜) hrd
   refine ⟨(Units.mk0 (r : 𝕜) hr)⁻¹, U, ?_, ⟨_, hdet'⟩, ?_⟩
   · rw [mem_unitarySubgroup_iff, Units.unitary_eq]
     exact (Units.polarUnitary A).2
