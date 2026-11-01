@@ -8,24 +8,30 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
-# Complementary arctangents at the corners of a rectangle
+# Complementary arctangents and arctangents of quotients
 
 Mathlib's `Real.arctan_inv_of_pos` gives `arctan x⁻¹ = π / 2 - arctan x`; the quotient form
 `arctan (u / v) + arctan (v / u) = π / 2` that occurs when the two legs of a right angle are named
 separately is not stated there.
 
+As `η` decreases to `0`, the angle `arctan (c / η)` tends to `π / 2` or `-(π / 2)` according to
+the sign of `c`. These limits describe the vanishing-width limit of the Cauchy (Poisson) kernel
+`η / (η² + x²)`, whose integrals are differences of such arctangents.
+
 ## Main results
 
 * `Real.arctan_div_add_arctan_div`: the quotient form of the complementary-angle law.
+* `Real.tendsto_arctan_div_nhdsGT_zero_of_pos`, `Real.tendsto_arctan_div_nhdsGT_zero_of_neg`:
+  the limits of `arctan (c / η)` as `η` decreases to `0`.
 * `TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I`: the four corner angles of a rectangle straddling
   the imaginary axis sum to a full turn.
 -/
 
 public section
 
-open Complex
+open Complex Filter
 
-open scoped Real
+open scoped Real Topology
 
 namespace Real
 
@@ -35,6 +41,20 @@ theorem arctan_div_add_arctan_div {u v : ℝ} (hu : 0 < u) (hv : 0 < v) :
     arctan (u / v) + arctan (v / u) = π / 2 := by
   rw [← inv_div u v, Real.arctan_inv_of_pos (by positivity)]
   ring
+
+/-- For positive `c`, `arctan (c / η)` tends to `π / 2` as `η` decreases to `0`. -/
+theorem tendsto_arctan_div_nhdsGT_zero_of_pos {c : ℝ} (hc : 0 < c) :
+    Tendsto (fun η : ℝ => arctan (c / η)) (𝓝[>] 0) (𝓝 (π / 2)) := by
+  have h : Tendsto (fun η : ℝ => c / η) (𝓝[>] 0) atTop := by
+    simpa only [div_eq_mul_inv] using tendsto_inv_nhdsGT_zero.const_mul_atTop hc
+  exact (tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp h
+
+/-- For negative `c`, `arctan (c / η)` tends to `-(π / 2)` as `η` decreases to `0`. -/
+theorem tendsto_arctan_div_nhdsGT_zero_of_neg {c : ℝ} (hc : c < 0) :
+    Tendsto (fun η : ℝ => arctan (c / η)) (𝓝[>] 0) (𝓝 (-(π / 2))) := by
+  have h : Tendsto (fun η : ℝ => c / η) (𝓝[>] 0) atBot := by
+    simpa only [div_eq_mul_inv] using tendsto_inv_nhdsGT_zero.const_mul_atTop_of_neg hc
+  exact (tendsto_arctan_atBot.mono_right nhdsWithin_le_nhds).comp h
 
 end Real
 
