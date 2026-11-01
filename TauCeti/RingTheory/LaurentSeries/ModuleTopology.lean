@@ -21,8 +21,9 @@ is equivalent to membership of every scalar coordinate in `U_a(K)`. Thus the lat
 agrees with the module topology over the Laurent field, independently of the chosen basis,
 and the resulting uniform additive group is complete.
 
-The algebraic comparison uses `HahnModule.tensorProductToHahnModule` and Mathlib's
-`Module.Basis.baseChange`, rather than a new scalar-extension construction.
+The algebraic comparison uses `HahnModule.tensorProductEquiv` and Mathlib's
+`Module.Basis.baseChange`. These results make `V((t))` a complete topological module over
+`K((t))` for use in continuous residue duality.
 -/
 
 public section
@@ -30,38 +31,53 @@ public section
 noncomputable section
 
 open HahnSeries HahnModule Filter Topology
-open scoped LaurentSeries
+open scoped LaurentSeries TensorProduct
 
 namespace Module.Basis
 
-/-- Use the coefficientwise action in the tensor product, as in the Hahn-module comparison.
-The default Laurent algebra has a propositionally equal action. -/
-private local instance instCoefficientAlgebra {R : Type*} [CommSemiring R] : Algebra R R⸨X⸩ :=
-  HahnSeries.instAlgebra
+-- Use the coefficientwise action in the tensor product, as in the Hahn-module comparison.
+-- The default Laurent algebra has a propositionally equal action.
+attribute [local instance 2000] HahnSeries.instAlgebra
 
 section Algebra
 
 variable {R V ι : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V] [Finite ι]
 
 /-- Scalar coordinate series in a finite basis of the coefficient space. -/
-def laurentSeriesEquiv (b : Basis ι R V) : HahnModule ℤ R V ≃ₗ[R⸨X⸩] (ι → R⸨X⸩) :=
-  (LinearEquiv.ofBijective (tensorProductToHahnModule ℤ R V)
-    (tensorProductToHahnModule_bijective_of_basis b)).symm ≪≫ₗ (b.baseChange R⸨X⸩).equivFun
+def laurentSeriesEquiv (b : Basis ι R V) : HahnModule ℤ R V ≃ₗ[R⸨X⸩] (ι → R⸨X⸩) := by
+  haveI := Module.Free.of_basis b
+  haveI := Module.Finite.of_basis b
+  exact (tensorProductEquiv ℤ R V).symm ≪≫ₗ (b.baseChange R⸨X⸩).equivFun
+
+/-- The coordinate comparison agrees with base change on scalar-extended vectors. -/
+@[simp]
+theorem laurentSeriesEquiv_tensorProductToHahnModule (b : Basis ι R V)
+    (z : HahnSeries ℤ R ⊗[R] V) :
+    b.laurentSeriesEquiv (tensorProductToHahnModule ℤ R V z) =
+      (b.baseChange R⸨X⸩).equivFun z := by
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
+  simp [laurentSeriesEquiv, ← tensorProductEquiv_apply]
 
 /-- The coefficient of a scalar coordinate series is the corresponding coordinate of the
 vector coefficient. -/
 @[simp]
 theorem coeff_laurentSeriesEquiv (b : Basis ι R V) (x : HahnModule ℤ R V) (i : ι) (n : ℤ) :
     (b.laurentSeriesEquiv x i).coeff n = b.repr (((of R).symm x).coeff n) i := by
-  obtain ⟨z, rfl⟩ := (tensorProductToHahnModule_bijective_of_basis b).surjective x
-  have hz : b.laurentSeriesEquiv (tensorProductToHahnModule ℤ R V z) =
-      (b.baseChange R⸨X⸩).equivFun z :=
-    congrArg (b.baseChange R⸨X⸩).equivFun (LinearEquiv.symm_apply_apply _ z)
-  rw [hz]
-  clear hz
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
+  obtain ⟨z, rfl⟩ := (tensorProductEquiv ℤ R V).surjective x
+  rw [tensorProductEquiv_apply, laurentSeriesEquiv_tensorProductToHahnModule]
   induction z using TensorProduct.inductionOn with
   | tmul f v => simp [Basis.equivFun_apply, mul_comm]
   | add z w hz hw => simp_all [Basis.equivFun_apply]
+
+/-- The inverse comparison reconstructs each vector coefficient from its coordinates. -/
+@[simp]
+theorem repr_coeff_laurentSeriesEquiv_symm (b : Basis ι R V) (y : ι → R⸨X⸩)
+    (i : ι) (n : ℤ) :
+    b.repr (((of R).symm (b.laurentSeriesEquiv.symm y)).coeff n) i = (y i).coeff n := by
+  rw [← coeff_laurentSeriesEquiv, LinearEquiv.apply_symm_apply]
 
 /-- In a finite coefficient basis, the lattice condition is a condition on every scalar
 coordinate series, with the same lower bound. -/
@@ -70,35 +86,30 @@ theorem mem_lattice_iff_laurentSeriesEquiv (b : Basis ι R V) (x : HahnModule �
       ∀ i, b.laurentSeriesEquiv x i ∈ TauCeti.LaurentSeries.lattice R R a := by
   simp only [TauCeti.HahnModule.mem_lattice_iff, TauCeti.LaurentSeries.mem_lattice_iff,
     coeff_laurentSeriesEquiv]
-  constructor
-  · intro h i n hn
-    simp [h n hn]
-  · intro h n hn
-    exact b.repr.injective (Finsupp.ext fun i ↦ by simpa using h i n hn)
+  simp_rw [← b.forall_coord_eq_zero_iff, Basis.coord_apply]
+  exact ⟨fun h i n hn ↦ h n hn i, fun h n hn i ↦ h i n hn⟩
 
 end Algebra
 
 variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
 
-/-- Every scalar coordinate projection is continuous for the lattice topology. -/
-theorem continuous_laurentSeriesEquiv_apply (b : Basis ι K V) (i : ι) :
-    Continuous (fun x : HahnModule ℤ K V ↦ b.laurentSeriesEquiv x i) := by
-  let f := (LinearMap.proj i).comp b.laurentSeriesEquiv.toLinearMap
-  apply continuous_of_continuousAt_zero f.toAddMonoidHom
-  rw [ContinuousAt, map_zero]
-  apply (TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice).tendsto_right_iff.mpr
-  intro a _
-  filter_upwards [TauCeti.HahnModule.lattice_mem_nhds_zero K V a] with x hx
-  exact (b.mem_lattice_iff_laurentSeriesEquiv x a).mp hx i
-
 /-- Scalar coordinate series identify the lattice topology with the finite product valuation
-topology. This holds for every finite basis, so the comparison is independent of basis choice. -/
+topology. Such an equivalence exists for every finite basis; the equivalence itself depends
+on the basis. -/
 def laurentSeriesContinuousLinearEquiv (b : Basis ι K V) :
     HahnModule ℤ K V ≃L[K⸨X⸩] (ι → K⸨X⸩) where
   __ := b.laurentSeriesEquiv
-  continuous_toFun := continuous_pi b.continuous_laurentSeriesEquiv_apply
+  continuous_toFun := by
+    apply continuous_of_continuousAt_zero b.laurentSeriesEquiv
+    rw [ContinuousAt, map_zero]
+    apply tendsto_pi_nhds.mpr
+    intro i
+    apply (TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice).tendsto_right_iff.mpr
+    intro a _
+    filter_upwards [TauCeti.HahnModule.lattice_mem_nhds_zero K V a] with x hx
+    exact (b.mem_lattice_iff_laurentSeriesEquiv x a).mp hx i
   continuous_invFun := by
-    apply continuous_of_continuousAt_zero b.laurentSeriesEquiv.symm.toAddMonoidHom
+    apply continuous_of_continuousAt_zero b.laurentSeriesEquiv.symm
     rw [ContinuousAt, map_zero]
     apply (TauCeti.HahnModule.hasBasis_nhds_zero_lattice K V).tendsto_right_iff.mpr
     intro a _
@@ -121,24 +132,17 @@ theorem coeff_laurentSeriesContinuousLinearEquiv (b : Basis ι K V) (x : HahnMod
       b.repr (((of K).symm x).coeff n) i :=
   b.coeff_laurentSeriesEquiv x i n
 
-end Module.Basis
+/-- The inverse topological comparison has the inverse coordinate map as its function. -/
+theorem laurentSeriesContinuousLinearEquiv_symm_apply (b : Basis ι K V) (y : ι → K⸨X⸩) :
+    b.laurentSeriesContinuousLinearEquiv.symm y = b.laurentSeriesEquiv.symm y := (rfl)
 
-namespace Module.Basis
-
-variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
-
-/-- Module-valued Laurent series are complete whenever the coefficient space has a finite
-basis. No topology on the coefficient field or coefficient space is used. -/
-theorem completeSpace_laurentSeries (b : Basis ι K V) : CompleteSpace (HahnModule ℤ K V) := by
-  let e := b.laurentSeriesContinuousLinearEquiv
-  let u : HahnModule ℤ K V ≃ᵤ (ι → K⸨X⸩) :=
-    { e.toEquiv with
-      uniformContinuous_toFun :=
-        uniformContinuous_addMonoidHom_of_continuous (f := e.toAddMonoidHom) e.continuous
-      uniformContinuous_invFun :=
-        uniformContinuous_addMonoidHom_of_continuous (f := e.symm.toAddMonoidHom)
-          e.symm.continuous }
-  exact u.completeSpace_iff.mpr inferInstance
+/-- The inverse coordinate homeomorphism reconstructs each vector coefficient. -/
+@[simp]
+theorem repr_coeff_laurentSeriesContinuousLinearEquiv_symm (b : Basis ι K V) (y : ι → K⸨X⸩)
+    (i : ι) (n : ℤ) :
+    b.repr (((of K).symm (b.laurentSeriesContinuousLinearEquiv.symm y)).coeff n) i =
+      (y i).coeff n := by
+  rw [laurentSeriesContinuousLinearEquiv_symm_apply, repr_coeff_laurentSeriesEquiv_symm]
 
 end Module.Basis
 
@@ -150,9 +154,5 @@ variable (K V : Type*) [Field K] [AddCommGroup V] [Module K V] [FiniteDimensiona
 valued Laurent field. In particular this topology does not depend on a coefficient basis. -/
 instance instIsModuleTopology : IsModuleTopology K⸨X⸩ (HahnModule ℤ K V) :=
   IsModuleTopology.iso (Module.Free.chooseBasis K V).laurentSeriesContinuousLinearEquiv.symm
-
-/-- Finite-dimensional module-valued Laurent series are complete for the lattice uniformity. -/
-instance instCompleteSpace : CompleteSpace (HahnModule ℤ K V) :=
-  (Module.Free.chooseBasis K V).completeSpace_laurentSeries
 
 end TauCeti.HahnModule
