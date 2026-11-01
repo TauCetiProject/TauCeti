@@ -41,41 +41,6 @@ universe u v
 
 variable {R : Type u} [CommRing R] [IsDomain R] [Algebra ℚ R] (n : ℕ)
 
-/-- A polynomial one-parameter subgroup of `GLₙ` through a unipotent matrix `g` is the
-finite exponential curve of `log g`. The conclusion identifies regular maps, not only points. -/
-theorem eq_nilpotentOneParameterCoordinateMap_log
-    (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
-    (hγ : ∀ s t : R, toConv ((aeval (s + t)).comp γ) =
-      toConv ((aeval s).comp γ) * toConv ((aeval t).comp γ))
-    (g : Matrix.GeneralLinearGroup (Fin n) R)
-    (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
-    (h : toConv ((aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
-    γ = nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
-  have : CharZero R := Algebra.charZero_of_charZero ℚ R
-  apply γ.eq_of_aeval_one_comp_eq _ hγ
-    (aeval_comp_nilpotentOneParameterCoordinateMap_add n _)
-  apply toConv_injective
-  rw [h, aeval_comp_nilpotentOneParameterCoordinateMap, toConv_ofConv]
-  congr 1
-  ext i j
-  simp [IsNilpotent.exp_log hg]
-
-/-- The velocity of a polynomial one-parameter subgroup of `GLₙ` is the logarithm of its
-unipotent value at parameter one. -/
-theorem tangentMatrix_curveVelocity_eq_log
-    (γ : coordinateHopfAlgebra R n →ₐ[R] R[X])
-    (hγ : ∀ s t : R, toConv ((aeval (s + t)).comp γ) =
-      toConv ((aeval s).comp γ) * toConv ((aeval t).comp γ))
-    (hzero : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n))
-    (g : Matrix.GeneralLinearGroup (Fin n) R)
-    (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
-    (h : toConv ((aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
-    tangentMatrix n (Bialgebra.curveVelocity γ hzero) =
-      IsNilpotent.log (g : Matrix (Fin n) (Fin n) R) := by
-  have heq := eq_nilpotentOneParameterCoordinateMap_log n γ hγ g hg h
-  subst γ
-  exact tangentMatrix_curveVelocity_nilpotentOneParameterCoordinateMap n _
-
 variable {H : Type v} [CommRing H] [_root_.Bialgebra R H] [Algebra ℚ H]
 
 /-- In any representation, the differential of an intrinsic exponential direction is the
