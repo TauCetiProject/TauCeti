@@ -111,6 +111,18 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
   rw [← smul_one_smul ℂ c f]
   exact hf.smul _
 
+/-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
+in every Bessel-potential space `H^{s,p}`. -/
+theorem memSobolev_of_ae_eq_of_hasCompactSupport {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {u : E → F} (hu : ContDiff ℝ (⊤ : ℕ∞) u) (hc : HasCompactSupport u)
+    {v : Lp F p (volume : Measure E)} (hv : v =ᵐ[volume] u) : MemSobolev s p (v : 𝓢'(E, F)) := by
+  have hv' : v = (hc.toSchwartzMap hu).toLp p := by
+    refine Lp.ext (hv.trans ?_)
+    filter_upwards [(hc.toSchwartzMap hu).coeFn_toLp p] with x hx
+    simp [hx]
+  rw [hv', Lp.toTemperedDistribution_toLp_eq (p := p)]
+  exact (hc.toSchwartzMap hu).memSobolev
+
 end normed
 
 section inner
