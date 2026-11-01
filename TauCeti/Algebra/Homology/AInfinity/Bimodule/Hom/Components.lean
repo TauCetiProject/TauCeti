@@ -71,44 +71,18 @@ theorem suspendedComponent_tmul_tprod_mem (f : AInfinityBimoduleHom MM NN) (i j 
     f.suspendedComponent i j ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ PiTensorProduct.tprod R b) ∈
       (NN.grading.shift 1).piece ((∑ k, d k) + p + (∑ k, e k)) := by
   rw [suspendedComponent_tmul]
-  have hz : ((TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
-      TensorWords.of R B j (PiTensorProduct.tprod R b)) ∈
-      (barGrading AA BB MM.grading).piece ((∑ k, d k) + p + (∑ k, e k)) := by
-    rw [barGrading_def]
-    exact InternalGrading.tmul_mem_tensorProduct _ _
-      (InternalGrading.tmul_mem_tensorProduct _ _
-        (by simpa only [TensorWords.grading_piece] using
-          TensorWords.mem_gradedPiece_of_tprod _ a d ha) hx)
-      (by simpa only [TensorWords.grading_piece] using
-        TensorWords.mem_gradedPiece_of_tprod _ b e hb)
-  simpa only [add_zero] using f.isHomogeneous_taylor.map_mem hz
+  simpa only [add_zero] using f.isHomogeneous_taylor.map_mem
+    (tmul_of_tprod_mem_barGrading AA BB MM.grading i j a d ha hx b e hb)
 
 /-- The suspended components determine a bimodule morphism. -/
 @[ext]
 theorem ext_suspendedComponent {f g : AInfinityBimoduleHom MM NN}
     (h : ∀ i j, f.suspendedComponent i j = g.suspendedComponent i j) : f = g := by
   apply ext
-  apply TensorProduct.ext'
-  intro u v
-  suffices hv : (TensorProduct.curry f.taylor).flip v =
-      (TensorProduct.curry g.taylor).flip v from LinearMap.congr_fun hv u
-  apply TensorProduct.ext'
-  intro w x
-  have hw : (TensorProduct.curry ((TensorProduct.curry f.taylor).flip v)).flip x =
-      (TensorProduct.curry ((TensorProduct.curry g.taylor).flip v)).flip x := by
-    apply TensorWords.linearMap_ext
-    intro i a
-    have hv : TensorProduct.curry f.taylor
-        (TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) =
-        TensorProduct.curry g.taylor
-          (TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) := by
-      apply TensorWords.linearMap_ext
-      intro j b
-      simpa only [TensorProduct.curry_apply, ← suspendedComponent_tmul] using
-        LinearMap.congr_fun (h i j) ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ
-          PiTensorProduct.tprod R b)
-    exact LinearMap.congr_fun hv v
-  exact LinearMap.congr_fun hw w
+  exact TensorWords.linearMap_ext_threefold R A fun i j a x b ↦ by
+    simpa only [← suspendedComponent_tmul] using
+      LinearMap.congr_fun (h i j) ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ
+        PiTensorProduct.tprod R b)
 
 /-- The unsuspended component of degree `-i-j`, curried with the module variable first. -/
 noncomputable def component (f : AInfinityBimoduleHom MM NN) (i j : ℕ) :
@@ -172,22 +146,12 @@ theorem suspendedComponent_tmul_tprod_of_mem (f : AInfinityBimoduleHom MM NN) (i
 /-- The unsuspended components determine a bimodule morphism. -/
 theorem ext_component {f g : AInfinityBimoduleHom MM NN}
     (h : ∀ i j, f.component i j = g.component i j) : f = g := by
-  apply ext_suspendedComponent
-  intro i j
-  apply TensorProduct.ext_threefold
-  intro w x v
-  induction w using PiTensorProduct.induction_on with
-  | smul_tprod r a =>
-    induction v using PiTensorProduct.induction_on with
-    | smul_tprod s b =>
-      simp only [TensorProduct.smul_tmul, TensorProduct.tmul_smul, map_smul]
-      rw [suspendedComponent_tmul_tprod, suspendedComponent_tmul_tprod, h]
-    | add v w hv hw => simp only [TensorProduct.tmul_add, map_add, hv, hw]
-  | add v w hv hw => simp only [TensorProduct.add_tmul, map_add, hv, hw]
+  exact ext_suspendedComponent fun i j ↦
+    unsuspend_injective AA.grading MM.grading BB.grading i j (h i j)
 
 /-- With no algebra inputs, unsuspension contributes no sign and both bar words are empty. -/
 @[simp]
-theorem component_zero_zero (f : AInfinityBimoduleHom MM NN) (x : M)
+theorem component_zero_zero_apply (f : AInfinityBimoduleHom MM NN) (x : M)
     (a : Fin 0 → A) (b : Fin 0 → B) :
     f.component 0 0 x a b = f.taylor ((1 ⊗ₜ x) ⊗ₜ 1) := by
   rw [component_apply, suspendedComponent_tmul]
