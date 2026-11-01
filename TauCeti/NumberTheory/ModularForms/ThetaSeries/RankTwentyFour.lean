@@ -33,22 +33,6 @@ public section
 open UpperHalfPlane ModularForm EisensteinSeries
 open scoped MatrixGroups
 
-namespace TauCeti
-
-private lemma qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
-    qExpansion 1
-      (ModularForm.mcast (by norm_num) (E₄.pow 3) +
-        c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
-      qExpansion 1 E₄ ^ 3 + c • qExpansion 1 ModularForm.discriminant := by
-  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
-      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
-        CuspForm.coe_discriminant
-  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
-    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
-  simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ]
-
-end TauCeti
-
 namespace ZLattice.IsEven
 
 -- The natural-weight APIs `thetaForm` and `sturm_bound_levelOne_nat` use `k = 12`:
@@ -73,7 +57,7 @@ theorem thetaForm_eq_E₄_cube_add_smul_discriminant (hL : IsEven L) (hU : IsUni
       qExpansion 1 (thetaSeries L) - (qExpansion 1 E₄ ^ 3 +
         ((representationNumber L 2 : ℂ) - 720) • qExpansion 1 ModularForm.discriminant) := by
     rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
-      TauCeti.qExpansion_E₄_cube_add_smul_discriminant,
+      TauCeti.ModularForm.qExpansion_E₄_cube_add_smul_discriminant,
       ZLattice.coe_thetaForm (k := 12) hL hU hr]
   apply sub_eq_zero.mp
   apply ModularForm.sturm_bound_levelOne_nat (k := 12)
@@ -108,7 +92,7 @@ theorem qExpansion_thetaSeries_eq_E₄_cube_add_smul_discriminant (hL : IsEven L
       ((representationNumber L 2 : ℂ) - 720) • qExpansion 1 ModularForm.discriminant := by
   have h := congrArg (fun f : ModularForm 𝒮ℒ 12 ↦ qExpansion 1 f)
     (hL.thetaForm_eq_E₄_cube_add_smul_discriminant hU hr)
-  rw [TauCeti.qExpansion_E₄_cube_add_smul_discriminant,
+  rw [TauCeti.ModularForm.qExpansion_E₄_cube_add_smul_discriminant,
     ZLattice.coe_thetaForm (k := 12) hL hU hr] at h
   exact h
 

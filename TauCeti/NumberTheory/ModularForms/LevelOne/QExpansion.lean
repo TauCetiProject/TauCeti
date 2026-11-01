@@ -92,6 +92,20 @@ theorem E₆_qExpansion_coeff_three : (qExpansion 1 E₆).coeff 3 = -122976 := b
   norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, bernoulli_six, ArithmeticFunction.sigma_apply,
     Nat.prime_three.divisors]
 
+/-- The `q`-expansion of the weight-`12` form `E₄³ + c Δ` is the corresponding linear
+combination of power series. -/
+theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
+    qExpansion 1
+      (ModularForm.mcast (by norm_num) (E₄.pow 3) +
+        c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
+      qExpansion 1 E₄ ^ 3 + c • qExpansion 1 ModularForm.discriminant := by
+  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
+      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
+        CuspForm.coe_discriminant
+  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
+    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
+  simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ]
+
 /-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the image of Mathlib's
 `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq_graded` under the `q`-expansion algebra
 homomorphism `ModularForm.qExpansionAlgHom`. -/
