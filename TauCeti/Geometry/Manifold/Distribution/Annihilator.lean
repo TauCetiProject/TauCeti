@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
+public import TauCeti.Geometry.Manifold.Distribution
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
