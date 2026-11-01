@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.Polynomial.Reverse
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Analytic order of polynomial evaluation
@@ -99,10 +100,7 @@ theorem eq_of_eventually_mul_eval_eq {p : Polynomial 𝕜} (hp : p ≠ 0) {v₁ 
     (h₁ : ContinuousAt v₁ w) (h₂ : ContinuousAt v₂ w)
     (h : ∀ᶠ t in 𝓝 w, v₁ t * p.eval t = v₂ t * p.eval t) : v₁ w = v₂ w := by
   have hne : ∀ᶠ t in 𝓝[≠] w, p.eval t ≠ 0 :=
-    (AnalyticOnNhd.eval_polynomial p w (Set.mem_univ w)
-      ).eventually_eq_zero_or_eventually_ne_zero.resolve_left fun h0 ↦ ENat.natCast_ne_top
-        (p.rootMultiplicity w)
-        ((analyticOrderAt_eval hp w).symm.trans (analyticOrderAt_eq_top.2 h0))
+    (eventually_eval_ne_zero_codiscrete hp).filter_mono (nhdsNE_le_codiscrete w)
   exact tendsto_nhds_unique_of_eventuallyEq (h₁.tendsto.mono_left nhdsWithin_le_nhds)
     (h₂.tendsto.mono_left nhdsWithin_le_nhds)
     (((h.filter_mono nhdsWithin_le_nhds).and hne).mono fun _ ht ↦ mul_right_cancel₀ ht.2 ht.1)
