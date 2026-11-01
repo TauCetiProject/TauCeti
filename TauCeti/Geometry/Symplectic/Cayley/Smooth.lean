@@ -132,6 +132,16 @@ def Compatible.cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁
       h₀.smul_cayley_mem_compatibleCayleyBall h₁
         ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩⟩).val
 
+/-- The path is the inverse compatible Cayley chart at the cutoff-scaled endpoint coordinate. -/
+theorem Compatible.cayleyPath_eq_compatibleCayleyEquiv_symm
+    (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
+    h₀.cayleyPath h₁ t =
+      (h₀.compatibleCayleyEquiv.symm
+        ⟨smoothTransition t • J₀.cayley J₁,
+          h₀.smul_cayley_mem_compatibleCayleyBall h₁
+            ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩⟩).val := by
+  rfl
+
 /-- The interpolated structure is compatible at every parameter, not only at its endpoints. -/
 theorem Compatible.compatible_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
     ω.Compatible (h₀.cayleyPath h₁ t) :=
@@ -141,12 +151,9 @@ theorem Compatible.compatible_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.
 @[simp]
 theorem Compatible.cayley_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
     J₀.cayley (h₀.cayleyPath h₁ t) = smoothTransition t • J₀.cayley J₁ := by
-  unfold Compatible.cayleyPath
+  rw [h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
   simpa only [Compatible.compatibleCayleyEquiv_apply_coe] using
-    congrArg Subtype.val (h₀.compatibleCayleyEquiv.apply_symm_apply
-      ⟨smoothTransition t • J₀.cayley J₁,
-        h₀.smul_cayley_mem_compatibleCayleyBall h₁
-          ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩⟩)
+    congrArg Subtype.val (h₀.compatibleCayleyEquiv.apply_symm_apply _)
 
 /-- Interpolating a structure with itself leaves it fixed at every parameter. -/
 @[simp]
@@ -179,9 +186,10 @@ theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Co
       LinearMap.coe_toContinuousLinearMap] using
       h₀.smul_cayley_mem_compatibleCayleyBall h₁
         ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
-  simpa only [C, Compatible.cayleyPath, ContinuousLinearMap.toLinearMap_smul,
-    LinearMap.coe_toContinuousLinearMap] using
-    h₀.contDiff_compatibleCayleyEquiv_symm hC
-      (smoothTransition.contDiff.smul contDiff_const)
+  convert h₀.contDiff_compatibleCayleyEquiv_symm (n := n) hC
+    (smoothTransition.contDiff.smul contDiff_const) using 1
+  funext t
+  rw [h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
+  simp only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
 
 end TauCeti.SymplecticForm
