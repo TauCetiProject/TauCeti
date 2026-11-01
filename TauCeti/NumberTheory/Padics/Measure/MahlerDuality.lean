@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import TauCeti.NumberTheory.Padics.Basic
-public import TauCeti.NumberTheory.Padics.MahlerBasis
+public import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.LinearCombination
 
 /-!

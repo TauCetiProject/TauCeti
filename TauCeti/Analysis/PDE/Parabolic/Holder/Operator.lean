@@ -254,10 +254,7 @@ private theorem shift_operator_eq (u : ParabolicC2HolderSpace α (EuclideanSpace
         c (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))) *
           u (slabMk x (projIcc t₀ t₁ ht.le (t + t₀)))) =
       euclideanParabolicOperatorL hα a b c u (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))) := by
-  have hx : fderiv ℝ (fun y ↦ u (slabMk y (projIcc t₀ t₁ ht.le (t + t₀)))) =
-      fun y ↦ spatialFDerivL u (slabMk y (projIcc t₀ t₁ ht.le (t + t₀))) :=
-    funext (u.fderiv_eq _)
-  rw [(hasDerivAt_shift u x h).deriv, hx, u.fderiv_spatialFDeriv_eq,
+  rw [(hasDerivAt_shift u x h).deriv, u.fderiv_fderiv_eq, u.fderiv_eq,
     euclideanParabolicOperatorL_apply]
   simp only [Matrix.of_apply, map_sum, map_smul, smul_eq_mul]
 
