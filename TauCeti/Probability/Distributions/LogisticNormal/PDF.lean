@@ -172,6 +172,15 @@ def logisticNormalChartPDFReal (r : ι) (m : EuclideanSpace ℝ {i // i ≠ r})
       ∏ i, dirichletChart r x i
   else 0
 
+open Classical in
+/-- The defining branch formula of the real-valued chart density. -/
+theorem logisticNormalChartPDFReal_def (r : ι) (m : EuclideanSpace ℝ {i // i ≠ r})
+    (S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ) (x : {i // i ≠ r} → ℝ) :
+    logisticNormalChartPDFReal r m S x = if x ∈ dirichletChartRegion r then
+      multivariateGaussianPDFReal m S (logisticNormalLogRatio r (dirichletChart r x)) /
+        ∏ i, dirichletChart r x i
+    else 0 := (rfl)
+
 /-- The extended-real chart density of the simplex logistic-normal law. -/
 def logisticNormalChartPDF (r : ι) (m : EuclideanSpace ℝ {i // i ≠ r})
     (S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ) (x : {i // i ≠ r} → ℝ) : ℝ≥0∞ :=
@@ -201,6 +210,7 @@ theorem logisticNormalChartPDFReal_of_notMem {x : {i // i ≠ r} → ℝ}
   simp [logisticNormalChartPDFReal, hx]
 
 /-- The explicit extended-real chart density on the chart region. -/
+@[simp]
 theorem logisticNormalChartPDF_of_mem {x : {i // i ≠ r} → ℝ}
     (hx : x ∈ dirichletChartRegion r) :
     logisticNormalChartPDF r m S x = ENNReal.ofReal
