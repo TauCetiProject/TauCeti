@@ -163,6 +163,7 @@ variable {F F₁ F₂ : Set (Σ k, L.Functions k)}
 
 /-- The members of the graph axioms of `F` are the totality and functionality sentences of the
 symbols in `F`. -/
+@[simp]
 theorem mem_graphAxioms_iff {φ : L.graphLanguage.Sentenceω} :
     φ ∈ graphAxioms F ↔ ∃ f ∈ F, f.2.graphTotality = φ ∨ f.2.graphFunctionality = φ := by
   simp only [graphAxioms, Set.mem_union, Set.mem_image, ← exists_or, and_or_left]
