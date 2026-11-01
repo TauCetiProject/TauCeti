@@ -99,9 +99,9 @@ theorem discreteUniformity_locUniformSpace (P : PairOfDefinition A) (T : Set A) 
     exact discreteTopology_locTopology P T s S hden
   exact DiscreteUniformity.of_discreteTopology
 
-/-- **The completed localisation `A⟨T/s⟩` of a discrete ring is discrete.** The canonical map from
-`Aₛ`, which is discrete, is a homeomorphism onto the completion, since `Aₛ` is already complete and
-Hausdorff. -/
+/-- **The completed localisation `A⟨T/s⟩` of a discrete ring is discrete.** The uniformity of `Aₛ`
+is discrete, so this is an instance of
+`UniformSpace.Completion.discreteTopology_of_discreteUniformity`. -/
 theorem discreteTopology_completion_locUniformSpace (P : PairOfDefinition A) (T : Set A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
@@ -109,8 +109,7 @@ theorem discreteTopology_completion_locUniformSpace (P : PairOfDefinition A) (T 
     DiscreteTopology (UniformSpace.Completion S) := by
   let _ := locUniformSpace P T s S hden
   have _ := discreteUniformity_locUniformSpace P T s S hden
-  exact (UniformSpace.Completion.UniformCompletion.completeEquivSelf (α := S)).toHomeomorph.symm
-    |>.discreteTopology
+  infer_instance
 
 /-- **`Aₛ ≃+* A⟨T/s⟩` over a discrete ring.** The localisation `Aₛ` is complete and Hausdorff for
 its discrete uniformity, so the canonical map into its completion `A⟨T/s⟩` is a ring isomorphism.
@@ -143,6 +142,22 @@ theorem completionLocEquivOfDiscreteTopology_apply (P : PairOfDefinition A) (T :
   let _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := discreteUniformity_locUniformSpace P T s S hden
   exact UniformSpace.Completion.completeRingEquivSelf_symm_apply S x
+
+/-- The inverse of the isomorphism `Aₛ ≃+* A⟨T/s⟩` sends the image of `x ∈ Aₛ` back to `x`. -/
+@[simp]
+theorem completionLocEquivOfDiscreteTopology_symm_coe (P : PairOfDefinition A) (T : Set A)
+    (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (x : S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (completionLocEquivOfDiscreteTopology P T s S hden).symm (x : UniformSpace.Completion S) =
+      x := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := discreteUniformity_locUniformSpace P T s S hden
+  exact UniformSpace.Completion.completeRingEquivSelf_coe S x
 
 end PairOfDefinition
 
