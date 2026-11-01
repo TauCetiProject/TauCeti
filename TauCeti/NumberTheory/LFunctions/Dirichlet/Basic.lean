@@ -36,7 +36,9 @@ is Mathlib's completed function multiplied by the conductor power. -/
 noncomputable def dirichletData {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
     (hχ : χ.IsPrimitive) : AnalyticLFunctionData where
   coeff := toArithmeticFunction (χ ·)
-  conductor := ⟨χ.conductor, by rw [hχ]; exact NeZero.pos N⟩
+  conductor := ⟨χ.conductor, by
+    rw [(DirichletCharacter.isPrimitive_def _).mp hχ]
+    exact NeZero.pos N⟩
   gammaR := {if χ.Even then 0 else 1}
   gammaC := 0
   rootNumber := χ.rootNumber
@@ -45,14 +47,23 @@ noncomputable def dirichletData {N : ℕ} [NeZero N] (χ : DirichletCharacter �
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
-@[simp]
 theorem dirichletData_coeff (n : ℕ) :
     (dirichletData χ hχ).coeff n = toArithmeticFunction (χ ·) n := (rfl)
+
+/-- At every positive index, the coefficient is the value of the Dirichlet character. -/
+@[simp]
+theorem dirichletData_coeff_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
+    (dirichletData χ hχ).coeff n = χ n :=
+  (χ.apply_eq_toArithmeticFunction_apply hn).symm
+
+@[simp]
+theorem dirichletData_coeff_zero : (dirichletData χ hχ).coeff 0 = 0 := by
+  simp only [dirichletData_coeff, ArithmeticFunction.map_zero]
 
 @[simp]
 theorem dirichletData_conductor : (dirichletData χ hχ).conductor = ⟨N, NeZero.pos N⟩ := by
   apply Subtype.ext
-  exact hχ
+  exact (DirichletCharacter.isPrimitive_def _).mp hχ
 
 open scoped Classical in
 @[simp]
@@ -90,11 +101,12 @@ theorem dirichletData_gammaFactor (s : ℂ) :
 @[simp]
 theorem dirichletData_modOne (χ : DirichletCharacter ℂ 1) (hχ : χ.IsPrimitive) :
     dirichletData χ hχ = riemannZetaData := by
-  have he : χ.Even := map_one χ
+  have he : χ.Even := χ.even_of_le_two (by decide)
   ext n
   · by_cases hn : n = 0
     · subst n; simp
-    · simp [toArithmeticFunction, hn, DirichletCharacter.level_one χ,
+    · rw [dirichletData_coeff_of_ne_zero χ hχ hn]
+      simp [hn, DirichletCharacter.level_one χ,
         MulChar.one_apply (isUnit_of_subsingleton (n : ZMod 1))]
   · simp
   · simp [he]
@@ -103,14 +115,40 @@ theorem dirichletData_modOne (χ : DirichletCharacter ℂ 1) (hχ : χ.IsPrimiti
   · simp [DirichletCharacter.completedLFunction_modOne_eq]
   · simp
 
+/-- The dual of a primitive Dirichlet card is the card of the inverse character. -/
+@[simp]
+theorem dirichletData_dual : (dirichletData χ hχ).dual = dirichletData χ⁻¹ hχ.inv := by
+  classical
+  by_cases hN : N = 1
+  · subst N
+    simp
+  have hc : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
+  ext n
+  · by_cases hn : n = 0
+    · subst n; simp
+    · simp only [AnalyticLFunctionData.dual_coeff, dirichletData_coeff_of_ne_zero _ _ hn]
+      exact MulChar.star_apply' χ (n : ZMod N)
+  · apply Subtype.ext
+    simp
+  · simp only [AnalyticLFunctionData.dual_gammaR, dirichletData_gammaR,
+      DirichletCharacter.even_inv_iff]
+    split_ifs <;> simp
+  · simp
+  · simp [DirichletCharacter.rootNumber_inv]
+  · have hp := (TauCeti.ofReal_cpow_conj (Nat.cast_nonneg N) (conj n / 2)).symm
+    simp only [map_div₀, map_ofNat, Complex.conj_conj, Complex.ofReal_natCast] at hp
+    simp only [AnalyticLFunctionData.dual_completed_apply, dirichletData_completed, map_mul,
+      hp, χ.completedLFunction_inv_conj (.inr hN) (.inr hc)]
+  · simp [hN]
+
 /-- The primitive Dirichlet card agrees with the associated Dirichlet series on `Re s > 1`. -/
 theorem dirichletData_hasDirichletAgreement :
     (dirichletData χ hχ).HasDirichletAgreement where
-  coeff_one := by simp [toArithmeticFunction]
+  coeff_one := by rw [dirichletData_coeff_of_ne_zero χ hχ one_ne_zero]; simp
   degree_pos := by simp
   completed_eq s hs := by
     have hL : LSeries (dirichletData χ hχ).coeff s = LSeries (χ ·) s :=
-      LSeries_congr (fun hn ↦ (χ.apply_eq_toArithmeticFunction_apply hn).symm) s
+      LSeries_congr (fun hn ↦ dirichletData_coeff_of_ne_zero χ hχ hn) s
     simp only [dirichletData_completed, dirichletData_conductor, PNat.mk_coe,
       dirichletData_gammaFactor, hL, χ.completedLFunction_eq_gammaFactor_mul_LSeries hs,
       mul_assoc]
@@ -124,8 +162,7 @@ theorem dirichletData_hasMeromorphicContinuation :
   · subst N
     rw [dirichletData_modOne]
     exact riemannZetaData_hasMeromorphicContinuation
-  have hc : χ ≠ 1 := fun hc ↦ hN <|
-    hχ.symm.trans ((DirichletCharacter.eq_one_iff_conductor_eq_one (χ := χ)).mp hc)
+  have hc : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
   have ha : ∀ s : ℂ, AnalyticAt ℂ (dirichletData χ hχ).completed s := by
     intro s
     have hL := (DirichletCharacter.differentiable_completedLFunction hc).analyticAt s
@@ -150,20 +187,18 @@ theorem dirichletData_hasFunctionalEquation :
     rw [← cpow_add _ _ (Nat.cast_ne_zero.mpr (NeZero.ne N))]
     congr 1
     ring
-  have hc : χ ≠ 1 := fun hc ↦ hN <|
-    hχ.symm.trans ((DirichletCharacter.eq_one_iff_conductor_eq_one (χ := χ)).mp hc)
-  have hconj := hχ.completedLFunction_inv (s := 1 - s) (.inr hN) (.inr hc)
-  have hNconj := (TauCeti.ofReal_cpow_conj (Nat.cast_nonneg N)
-    ((1 - conj s) / 2)).symm
-  simp only [Complex.ofReal_natCast, map_div₀, map_ofNat, map_sub, map_one,
-    Complex.conj_conj] at hNconj
-  simp only [dirichletData_completed, AnalyticLFunctionData.dual_completed_apply,
-    dirichletData_rootNumber, map_mul, map_sub, map_one, hNconj]
-  rw [← sub_sub_cancel 1 s, hχ.completedLFunction_one_sub (1 - s), sub_sub_cancel,
-    hconj]
+  rw [dirichletData_dual, dirichletData_completed, dirichletData_rootNumber,
+    dirichletData_completed]
+  have hfe : χ.completedLFunction s = (N : ℂ) ^ ((1 - s) - 1 / 2) * χ.rootNumber *
+      χ⁻¹.completedLFunction (1 - s) := by
+    simpa using hχ.completedLFunction_one_sub (1 - s)
+  rw [hfe]
   calc
-    _ = χ.rootNumber * ((N : ℂ) ^ (s / 2) * (N : ℂ) ^ ((1 - s) - 1 / 2)) *
-        conj (χ.completedLFunction (conj (1 - s))) := by ring
-    _ = _ := by rw [hpow]; simp [map_sub, mul_assoc]
+    (N : ℂ) ^ (s / 2) * ((N : ℂ) ^ ((1 - s) - 1 / 2) * χ.rootNumber *
+        χ⁻¹.completedLFunction (1 - s)) =
+      χ.rootNumber * ((N : ℂ) ^ (s / 2) * (N : ℂ) ^ ((1 - s) - 1 / 2)) *
+        χ⁻¹.completedLFunction (1 - s) := by ring
+    _ = χ.rootNumber * ((N : ℂ) ^ ((1 - s) / 2) * χ⁻¹.completedLFunction (1 - s)) := by
+      rw [hpow, mul_assoc]
 
 end TauCeti.LFunctions
