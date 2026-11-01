@@ -76,8 +76,8 @@ theorem quotientDifferentIdealEquivTraceDualQuotient_mk {δ : B}
     rw [LinearEquiv.symm_apply_apply]
     apply IsFractionRing.injective B L
     rw [equivTraceDualOfDifferentIdealEqSpan_symm_apply, hx]
-  -- The quotient map is induced by the division equivalence.
-  exact congrArg Submodule.Quotient.mk he
+  rw [← Ideal.Quotient.mk_eq_mk, quotientDifferentIdealEquivTraceDualQuotient,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe, he]
 
 /-- The inverse quotient comparison multiplies a complementary element by a generator of
 the different. -/
