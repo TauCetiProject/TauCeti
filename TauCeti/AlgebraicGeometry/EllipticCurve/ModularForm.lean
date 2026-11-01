@@ -414,17 +414,17 @@ private lemma eq_zero_of_aeval_eq_X_pow_mul_aeval {R : Type*} [CommSemiring R]
     simp at h0 h1
     omega
   have hg : (![X 0 ^ 4, X 0 ^ 6 * X 1] : Fin 2 → MvPolynomial (Fin 2) R) =
-      fun i ↦ monomial (expo i) 1 := by
+      fun i ↦ AddMonoidAlgebra.single (expo i) 1 := by
     funext i
-    fin_cases i <;> simp [monomial_single_add, ← X_pow_eq_monomial]
+    fin_cases i <;> simp [single_eq_monomial, monomial_single_add, ← X_pow_eq_monomial]
   have hX : (X 0 ^ 6 : MvPolynomial (Fin 2) R) = monomial (.single 0 6) 1 := X_pow_eq_monomial
   rw [hg, hX] at h
   constructor
   · ext d
-    rw [← TauCeti.coeff_aeval_monomial_linearCombination hAinj, h, coeff_monomial_mul',
+    rw [← TauCeti.coeff_aeval_single_linearCombination hAinj, h, coeff_monomial_mul',
       AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
     split_ifs with h6
-    · rw [TauCeti.coeff_aeval_monomial_of_notMem_range, mul_zero]
+    · rw [TauCeti.coeff_aeval_single_of_notMem_range, mul_zero]
       rintro ⟨d', hd'⟩
       exact hshift d' d (by rw [hd', tsub_add_cancel_of_le h6])
     · rfl
@@ -432,8 +432,8 @@ private lemma eq_zero_of_aeval_eq_X_pow_mul_aeval {R : Type*} [CommSemiring R]
     have h' := congrArg (·.coeff (A d + .single 0 6)) h
     simp only [coeff_monomial_mul', le_add_self, ↓reduceIte, add_tsub_cancel_right, one_mul] at h'
     rw [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply,
-      ← TauCeti.coeff_aeval_monomial_linearCombination hAinj, ← h',
-      TauCeti.coeff_aeval_monomial_of_notMem_range _ fun ⟨d', hd'⟩ ↦ hshift d d' hd'.symm]
+      ← TauCeti.coeff_aeval_single_linearCombination hAinj, ← h',
+      TauCeti.coeff_aeval_single_of_notMem_range _ fun ⟨d', hd'⟩ ↦ hshift d d' hd'.symm]
 
 /-- The Weierstrass curve with `a₁ = x`, `a₆ = -y` and all other coefficients zero, over the
 polynomial ring `(ℤ/6)[x, y]`. Its invariants are `c₄ = x⁴`, `c₆ = -x⁶` and `Δ = x⁶y`, since the
