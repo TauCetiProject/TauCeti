@@ -39,16 +39,6 @@ every `k` in the second.
   `TauCeti.Real.integrableOn_legendreE_algebraic_integrand`,
   `TauCeti.Real.integrableOn_legendrePi_algebraic_integrand`: integrability on `[-1, 1]`.
 
-## Implementation notes
-
-Mathlib's monotone change of variables `intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg`
-and its integrability counterpart `intervalIntegral.integrable_deriv_smul_comp_iff_of_deriv_nonneg`,
-applied to `t = sin θ` on `[-π/2, π/2]`, need no continuity of the integrand in `t`. On the open
-interval `(-π/2, π/2)`, each algebraic integrand at `t = sin θ`, multiplied by `cos θ`, is the
-trigonometric integrand, for every `k` and `α2`; this gives the identities. The integrability
-statements also use continuity of the trigonometric integrand, which holds for `k ^ 2 < 1` (and
-`α2 < 1`) in the first and third cases and for every `k` in the second.
-
 ## References
 
 * NIST *Digital Library of Mathematical Functions*, §19.2(ii), <https://dlmf.nist.gov/19.2.ii>.
@@ -62,6 +52,15 @@ namespace TauCeti.Real
 open _root_.Real MeasureTheory Set
 
 /-! ### The substitution `t = sin θ` -/
+
+/- Mathlib's monotone change of variables
+`intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg` and its integrability counterpart
+`intervalIntegral.integrable_deriv_smul_comp_iff_of_deriv_nonneg`, applied to `t = sin θ` on
+`[-π/2, π/2]`, need no continuity of the integrand in `t`. On the open interval `(-π/2, π/2)`,
+each algebraic integrand at `t = sin θ`, multiplied by `cos θ`, is the trigonometric integrand,
+for every `k` and `α2`; this gives the identities. The integrability statements also use
+continuity of the trigonometric integrand, which holds for `k ^ 2 < 1` (and `α2 < 1`) in the
+first and third cases and for every `k` in the second. -/
 
 /-- On `(-π/2, π/2)`, `cos θ * (1 - sin² θ)^(-1/2) = 1`. -/
 private lemma cos_mul_one_sub_sin_sq_rpow {θ : ℝ} (hθ : θ ∈ Ioo (-(π / 2)) (π / 2)) :
