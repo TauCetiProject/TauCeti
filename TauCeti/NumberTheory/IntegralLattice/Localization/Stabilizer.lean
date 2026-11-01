@@ -86,58 +86,15 @@ namespace IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
-section Coordinates
-
-variable (p : ℕ) [Fact p.Prime] {ι : Type*} (e : Basis ι ℤ L)
-
-/-- The canonical map `L_p → V_p` carries the scalar extension of a basis of `L` to the scalar
-extension of the corresponding rational basis of `V`. -/
-theorem localizationToCompletion_basis_baseChange (i : ι) :
-    L.localizationToCompletion p (e.baseChange ℤ_[p] i) =
-      (e.extendOfIsLattice ℚ).baseChange ℚ_[p] i := by
-  simp [Basis.baseChange_apply, Basis.extendOfIsLattice_apply]
-
-/-- The coordinates of a vector of `L_p`, read in `V_p`, are the images of its `ℤ_p`-coordinates:
-in the rational basis of a basis `e` of `L`, the image of `L_p` has `p`-adic integral
-coordinates. -/
-theorem repr_localizationToCompletion (x : L.LocalCarrier p) (i : ι) :
-    ((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr (L.localizationToCompletion p x) i =
-      ((e.baseChange ℤ_[p]).repr x i : ℚ_[p]) := by
-  classical
-  -- Both sides are `ℤ_p`-linear in `x`; compare them on the basis `e.baseChange ℤ_p`.
-  have h : (((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).coord i).restrictScalars ℤ_[p] ∘ₗ
-      L.localizationToCompletion p =
-        Algebra.linearMap ℤ_[p] ℚ_[p] ∘ₗ (e.baseChange ℤ_[p]).coord i :=
-    (e.baseChange ℤ_[p]).ext fun j ↦ by
-      simp only [LinearMap.coe_comp, Function.comp_apply,
-        localizationToCompletion_basis_baseChange, LinearMap.restrictScalars_apply,
-        Basis.coord_apply, Basis.repr_self, Algebra.linearMap_apply]
-      rw [Finsupp.single_apply, Finsupp.single_apply]
-      split_ifs <;> simp
-  exact LinearMap.congr_fun h x
-
-/-- In the rational basis of a basis `e` of `L`, the image of `L_p` in `V_p` consists of the
-vectors whose coordinates are `p`-adic integers. -/
-theorem mem_range_localizationToCompletion_iff (x : ℚ_[p] ⊗[ℚ] V) :
-    x ∈ LinearMap.range (L.localizationToCompletion p) ↔
-      ∀ i, ‖((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr x i‖ ≤ 1 := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨t, rfl⟩ i
-    rw [repr_localizationToCompletion]
-    exact (PadicInt.mem_subring_iff p).mp ((e.baseChange ℤ_[p]).repr t i).property
-  · let b := (e.extendOfIsLattice ℚ).baseChange ℚ_[p]
-    -- The `p`-adic integral coordinates of `x` are those of a vector of `L_p`.
-    refine ⟨(e.baseChange ℤ_[p]).repr.symm (Finsupp.ofSupportFinite
-      (fun i ↦ (⟨b.repr x i, (PadicInt.mem_subring_iff p).mpr (h i)⟩ : ℤ_[p]))
-      ((b.repr x).support.finite_toSet.subset fun i hi ↦
-        Finsupp.mem_support_iff.mpr fun h0 ↦ hi (Subtype.ext h0))), b.repr.injective ?_⟩
-    ext i
-    rw [repr_localizationToCompletion, LinearEquiv.apply_symm_apply]
-    rfl
-
-end Coordinates
-
 section Stabilizer
+
+/-- A linear automorphism carries a set onto itself exactly when it and its inverse map the set
+into itself. -/
+private theorem forall_apply_mem_iff_iff_mapsTo {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (g : M ≃ₗ[R] M) (s : Set M) :
+    (∀ x, g x ∈ s ↔ x ∈ s) ↔ Set.MapsTo g s s ∧ Set.MapsTo ⇑(g⁻¹) s s :=
+  ⟨fun h ↦ ⟨fun x hx ↦ (h x).mpr hx, fun x hx ↦ (h _).mp (by simpa using hx)⟩,
+    fun ⟨h, hinv⟩ x ↦ ⟨fun hx ↦ by simpa using hinv hx, fun hx ↦ h hx⟩⟩
 
 variable (p : ℕ) [Fact p.Prime]
 
@@ -151,8 +108,8 @@ def localStabilizer : Subgroup (orthogonalGroup (L.norm.baseChange ℚ_[p])) whe
   one_mem' _ := Iff.rfl
   mul_mem' {g h} hg hh x := (hg _).trans (hh x)
   inv_mem' {g} hg x := by
-    rw [← hg, Subgroup.coe_inv, ← LinearEquiv.mul_apply, mul_inv_cancel, LinearEquiv.coe_one,
-      id_eq]
+    rw [← hg]
+    simp
 
 variable {L p} in
 /-- An isometry of `V_p` lies in `K_p(L)` exactly when it maps the image of `L_p` onto itself. -/
@@ -171,19 +128,18 @@ theorem localStabilizer_eq_integralOrthogonalSubgroup {ι : Type*} [Fintype ι] 
     L.localStabilizer p =
       integralOrthogonalSubgroup (L.norm.baseChange ℚ_[p])
         ((e.extendOfIsLattice ℚ).baseChange ℚ_[p]) := by
-  have hspan (x : ℚ_[p] ⊗[ℚ] V) : x ∈ Submodule.span (PadicInt.subring p)
-      (Set.range ((e.extendOfIsLattice ℚ).baseChange ℚ_[p])) ↔
-        x ∈ LinearMap.range (L.localizationToCompletion p) := by
-    rw [Basis.mem_span_iff_repr_mem, L.mem_range_localizationToCompletion_iff p e]
+  have hspan : (Submodule.span (PadicInt.subring p)
+      (Set.range ((e.extendOfIsLattice ℚ).baseChange ℚ_[p])) : Set (ℚ_[p] ⊗[ℚ] V)) =
+        LinearMap.range (L.localizationToCompletion p) := Set.ext fun x ↦ by
+    rw [SetLike.mem_coe, SetLike.mem_coe, Basis.mem_span_iff_repr_mem,
+      L.mem_range_localizationToCompletion_iff p e]
     exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   ext g
-  rw [mem_integralOrthogonalSubgroup_iff_mem_span]
-  refine ⟨fun hg ↦ ⟨fun x hx ↦ (hspan _).mpr ((hg x).mpr ((hspan x).mp hx)), fun x hx ↦
-    (hspan _).mpr (((L.localStabilizer p).inv_mem hg x).mpr ((hspan x).mp hx))⟩,
-    fun ⟨hg, hginv⟩ x ↦ ⟨fun hx ↦ ?_, fun hx ↦ (hspan _).mp (hg x ((hspan x).mpr hx))⟩⟩
-  have h := (hspan _).mp (hginv _ ((hspan _).mpr hx))
-  rwa [Subgroup.coe_inv, ← LinearEquiv.mul_apply, inv_mul_cancel, LinearEquiv.coe_one,
-    id_eq] at h
+  rw [mem_localStabilizer_iff, mem_integralOrthogonalSubgroup_iff_mem_span]
+  refine (forall_apply_mem_iff_iff_mapsTo _ (LinearMap.range (L.localizationToCompletion p) :
+    Set (ℚ_[p] ⊗[ℚ] V))).trans ?_
+  rw [← hspan]
+  rfl
 
 /-- The local stabilizer of `L` is open in the local orthogonal group. -/
 theorem isOpen_localStabilizer :
@@ -243,14 +199,8 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
   have hglob : (∀ x, (g : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier) ↔
       Set.MapsTo (g : V ≃ₗ[ℚ] V).toLinearMap L.carrier L.carrier ∧
         Set.MapsTo ((g⁻¹ : orthogonalGroup L.norm) : V ≃ₗ[ℚ] V).toLinearMap L.carrier
-          L.carrier := by
-    refine ⟨fun h ↦ ⟨fun x hx ↦ (h x).mpr hx, fun x hx ↦ (h _).mp ?_⟩,
-      fun ⟨h, hinv⟩ x ↦ ⟨fun hx ↦ ?_, fun hx ↦ h hx⟩⟩
-    · rwa [LinearEquiv.coe_coe, Subgroup.coe_inv, ← LinearEquiv.mul_apply, mul_inv_cancel,
-        LinearEquiv.coe_one, id_eq]
-    · have := hinv hx
-      rwa [LinearEquiv.coe_coe, Subgroup.coe_inv, ← LinearEquiv.mul_apply, inv_mul_cancel,
-        LinearEquiv.coe_one, id_eq] at this
+          L.carrier :=
+    forall_apply_mem_iff_iff_mapsTo _ _
   rw [hglob, hint, hint]
   -- A rational number is an integer exactly when it is a `p`-adic integer at every prime.
   simp only [hloc, forall_and, forall_comm (α := Nat.Primes),
