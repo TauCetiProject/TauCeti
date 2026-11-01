@@ -27,6 +27,6 @@ theorem univ_val_map_eq_map_range {α : Type*} (g : ℕ → α) (n : ℕ) :
     Finset.univ.val.map (fun i : Fin n ↦ g i) = (Multiset.range n).map g := by
   rw [← Finset.range_val, ← Nat.Iio_eq_range, ← map_valEmbedding_univ, Finset.map_val,
     Multiset.map_map]
-  rfl
+  simp only [Function.comp_def, Fin.valEmbedding_apply]
 
 end Fin
