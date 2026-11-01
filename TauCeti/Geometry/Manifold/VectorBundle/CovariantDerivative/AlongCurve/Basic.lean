@@ -276,7 +276,7 @@ theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜
   let L : E ≃L[𝕜] E := (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt 𝕜 x hx
   have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W := by
     funext r
-    refine (congrFun (sectionCoord_const (F := E) (V := TangentSpace I) x x W) r).trans ?_
+    refine (sectionCoord_apply (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x r).trans ?_
     exact (congrFun (Trivialization.coe_continuousLinearEquivAt_eq (R := 𝕜) _ hx) (W r)).symm
   have hderiv : derivWithin (L ∘ W) s t = L (derivWithin W s t) := by
     simp only [derivWithin, L.comp_fderivWithin hs]

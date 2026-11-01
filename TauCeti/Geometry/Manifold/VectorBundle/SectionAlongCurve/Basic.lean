@@ -89,14 +89,6 @@ theorem sectionCoord_zero (x : M) :
   funext t
   exact map_zero _
 
-/-- Along a constant curve, the coordinate reading of a section is the fixed fibre map
-`V x → F` of the trivialization applied to the section. -/
-@[simp]
-theorem sectionCoord_const (x y : M) (W : 𝕜 → V x) :
-    sectionCoord (F := F) (fun _ : 𝕜 ↦ x) W y =
-      fun t ↦ (trivializationAt F V y).continuousLinearMapAt 𝕜 x (W t) :=
-  (rfl)
-
 /-- The coordinate reading of a reparametrized section is the composition of its reading with the
 reparametrizing function. -/
 @[simp]

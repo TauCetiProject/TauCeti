@@ -51,10 +51,13 @@ defined for all time.
 * `TauCeti.Manifold.curveVelocity_riemannianExp_add_smul` and
   `TauCeti.Manifold.curveVelocity_riemannianExp_smul`: velocities of affine and radial curves
   through the exponential map.
-* `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_add_smul`,
+* `TauCeti.Manifold.riemannianExp_smul_add_smul_eq_maximalGeodesic`,
+  `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_add_smul`,
   `TauCeti.Manifold.eventually_mem_geodesicInterval_add_smul` and
   `TauCeti.Manifold.acceleration_riemannianExp_smul_add_smul_eq_zero`: the radial variation
-  `exp_p (t • (v + u • w))` is smooth on the natural domain and consists of geodesics.
+  `exp_p (t • (v + u • w))` is smooth on the natural domain and consists of maximal geodesics.
+* `TauCeti.Manifold.variationField_riemannianExp_smul_add_smul`: the variation field of the
+  radial variation is `t ↦ d(exp_p)_{t v}(t w)`.
 * `TauCeti.Manifold.mfderiv_riemannianExp_zero`: the differential of the exponential map at `0`
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
@@ -290,6 +293,13 @@ section RadialVariation
 
 variable [T2Space M] {p : M} {v w : TangentSpace I p} {F : ℝ → ℝ → M}
 
+/-- Each radial curve `t ↦ exp_p (t • (v + u • w))` of the radial variation is the maximal
+geodesic with initial velocity `v + u • w`. -/
+theorem riemannianExp_smul_add_smul_eq_maximalGeodesic
+    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) (u : ℝ) :
+    F u = maximalGeodesic I M p (v + u • w) :=
+  funext fun t ↦ (hF u t).trans (riemannianExp_smul p (v + u • w) t)
+
 /-- The radial variation `(u, t) ↦ exp_p (t • (v + u • w))` is smooth at every parameter pair
 whose radial vector lies in the natural domain of the exponential map. -/
 theorem contMDiffAt_riemannianExp_smul_add_smul
@@ -324,9 +334,21 @@ theorem acceleration_riemannianExp_smul_add_smul_eq_zero
     (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {u t : ℝ}
     (ht : t ∈ geodesicInterval I M p (v + u • w)) :
     acceleration (leviCivitaConnection I M) (F u) t = 0 := by
-  rw [show F u = maximalGeodesic I M p (v + u • w) from
-    funext fun t ↦ (hF u t).trans (riemannianExp_smul p (v + u • w) t)]
+  rw [riemannianExp_smul_add_smul_eq_maximalGeodesic hF u]
   exact acceleration_maximalGeodesic_eq_zero ht
+
+/-- The variation field of the radial variation `(u, t) ↦ exp_p (t • (v + u • w))` at a time `t`
+of the central geodesic is `d(exp_p)_{t v}(t w)`. -/
+theorem variationField_riemannianExp_smul_add_smul
+    (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    variationField I F t =
+      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w) := by
+  have hcurve : (fun u ↦ F u t) = fun u ↦ riemannianExp I M p (t • v + u • (t • w)) :=
+    funext fun u ↦ by rw [hF, smul_add, smul_comm t u w]
+  have hu : t • v + (0 : ℝ) • (t • w) ∈ expDomain I M p := by
+    simpa using mem_geodesicInterval_iff_smul_mem_expDomain.mp ht
+  rw [variationField_apply, hcurve, curveVelocity_riemannianExp_add_smul hu, zero_smul, add_zero]
 
 end RadialVariation
 

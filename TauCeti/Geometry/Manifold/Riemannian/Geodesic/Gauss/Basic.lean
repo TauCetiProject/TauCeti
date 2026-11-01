@@ -85,8 +85,7 @@ private theorem inner_curveVelocity_radialVariation_self
     (ht : t ∈ geodesicInterval I M p (v + u • w)) :
     inner ℝ (curveVelocity I (F u) t) (curveVelocity I (F u) t) =
       inner ℝ (v + u • w) (v + u • w) := by
-  rw [show F u = maximalGeodesic I M p (v + u • w) from
-    funext fun t ↦ (hF u t).trans (riemannianExp_smul p (v + u • w) t)]
+  rw [riemannianExp_smul_add_smul_eq_maximalGeodesic hF u]
   exact inner_curveVelocity_maximalGeodesic_self ht
 
 /-- **Metric compatibility along the radial variation.**  At a parameter of the central geodesic,
@@ -214,15 +213,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     exact h
   have hQone : Q 1 0 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w := by
-    have hfun : (fun q : ℝ ↦ F q 1) =
-        fun q : ℝ ↦ riemannianExp I M p (v + q • w) := by
-      funext q
-      simp only [F, one_smul]
-    have h := curveVelocity_riemannianExp_add_smul (I := I) (M := M) (v := v) (w := w) (u := 0)
-      (by simpa using hv)
-    rw [zero_smul, add_zero] at h
-    dsimp only [Q]
-    rw [hfun]
+    have h := variationField_riemannianExp_smul_add_smul hF (mem_expDomain_iff.mp hv)
+    rw [one_smul, one_smul, variationField_apply] at h
     exact h
   rw [one_mul, sub_eq_zero, hPone, hQone] at hone
   have hbaseeq : F 0 1 = riemannianExp I M p v := by

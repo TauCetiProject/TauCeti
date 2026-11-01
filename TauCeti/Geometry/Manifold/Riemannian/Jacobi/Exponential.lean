@@ -63,19 +63,6 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- The variation field of the radial variation `(q, t) ↦ exp_p (t • (v + q • w))` at a time `t` of
-the central geodesic is `d(exp_p)_{t v}(t w)`. -/
-private theorem variationField_radialVariation {p : M} {v w : TangentSpace I p}
-    {F : ℝ → ℝ → M} (hF : ∀ q t : ℝ, F q t = riemannianExp I M p (t • (v + q • w))) {t : ℝ}
-    (ht : t ∈ geodesicInterval I M p v) :
-    variationField I F t =
-      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w) := by
-  have hcurve : (fun q ↦ F q t) = fun q ↦ riemannianExp I M p (t • v + q • (t • w)) :=
-    funext fun q ↦ by rw [hF, smul_add, smul_comm t q w]
-  have hu : t • v + (0 : ℝ) • (t • w) ∈ expDomain I M p := by
-    simpa using mem_geodesicInterval_iff_smul_mem_expDomain.mp ht
-  rw [variationField_apply, hcurve, curveVelocity_riemannianExp_add_smul hu, zero_smul, add_zero]
-
 /-- **The differential of the exponential map is a Jacobi field.** For `v w ∈ T_p M`, the field
 `t ↦ d(exp_p)_{t v}(t w)` is a Jacobi field along the radial geodesic `t ↦ exp_p (t • v)` on its
 maximal interval. -/
@@ -92,7 +79,7 @@ theorem isJacobiFieldOn_mfderiv_riemannianExp_smul (p : M) (v w : TangentSpace I
       acceleration_riemannianExp_smul_add_smul_eq_zero hF hq)
   have hF0 : F 0 = fun t ↦ riemannianExp I M p (t • v) := funext fun t ↦ by simp [F]
   rw [hF0] at h
-  exact h.congr fun t ht ↦ (variationField_radialVariation hF ht).symm
+  exact h.congr fun t ht ↦ (variationField_riemannianExp_smul_add_smul hF ht).symm
 
 /-- **The initial covariant derivative of the differential of the exponential map.** The Jacobi
 field `t ↦ d(exp_p)_{t v}(t w)` along `t ↦ exp_p (t • v)` has covariant derivative `w` at
@@ -111,7 +98,7 @@ theorem alongCurveWithin_mfderiv_riemannianExp_smul_zero (p : M) (v w : TangentS
   -- On the open maximal interval, the field is the variation field of the radial variation.
   rw [alongCurveWithin_of_mem_nhds _ _ _ hnhds, ← hF0,
     alongCurve_congr cov (F 0) _ (W := variationField I F) (Filter.mem_of_superset hnhds
-      fun t ht ↦ (variationField_radialVariation hF ht).symm)]
+      fun t ht ↦ (variationField_riemannianExp_smul_add_smul hF ht).symm)]
   -- The two mixed covariant derivatives of the variation agree at `(0, 0)`, and the transverse
   -- curve `q ↦ exp_p 0` is constant with initial radial velocities `v + q • w`.
   have hcomm := alongCurve_curveVelocity_comm cov
