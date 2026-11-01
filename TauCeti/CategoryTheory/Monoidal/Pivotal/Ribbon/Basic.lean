@@ -66,6 +66,29 @@ theorem leftTrace_pivotalOfBalanced {X : C} (f : X ⟶ X) :
   rw [leftTrace_eq_pivotalIsoApp, pivotalOfBalanced_pivotalIsoApp_inv, whiskerLeft_comp]
   simp only [Functor.id_obj, Category.assoc, coevaluation_comp_drinfeldIso_inv_assoc]
 
+/-- For the pivotal structure induced by a twist, inserting that twist in a left trace is
+the same as inserting the left mate of the dual object's twist in a right trace. This identity
+does not require ribbon compatibility. -/
+theorem leftTrace_twist_comp {X : C} (f : X ⟶ X) :
+    leftTrace (BalancedCategory.twist.hom.app X ≫ f) =
+      rightTrace (ExactPairing.leftMate (inferInstance : ExactPairing X Xᘁ)
+        (inferInstance : ExactPairing X Xᘁ)
+        (BalancedCategory.twist.hom.app (Xᘁ : C)) ≫ f) := by
+  rw [leftTrace_pivotalOfBalanced, rightTrace_pivotalOfBalanced, whiskerLeft_comp]
+  simp only [Functor.id_obj, Category.assoc]
+  rw [← whiskerLeft_comp_assoc, Iso.inv_hom_id_app]
+  rw [BalancedCategory.comp_inv_braiding_assoc, tensorHom_def', Category.assoc]
+  simp only [Functor.id_obj, whiskerLeft_id, Category.id_comp]
+  rw [← braiding_naturality_left_assoc f Xᘁ,
+    ← ExactPairing.coevaluation_comp_leftMate_assoc
+      (inferInstance : ExactPairing X Xᘁ) (inferInstance : ExactPairing X Xᘁ)]
+  simpa only [Functor.id_map, comp_whiskerRight, Category.assoc] using
+    congrArg (fun g => η_ X Xᘁ ≫
+      ExactPairing.leftMate (inferInstance : ExactPairing X Xᘁ)
+        (inferInstance : ExactPairing X Xᘁ) (BalancedCategory.twist.hom.app (Xᘁ : C)) ▷ Xᘁ ≫
+      g ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ)
+      (BalancedCategory.twist.hom.naturality f).symm
+
 /-- The pivotal structure of a ribbon category has equal left and right traces. -/
 theorem leftTrace_eq_rightTrace_pivotalOfBalanced [RibbonCategory C] {X : C} (f : X ⟶ X) :
     leftTrace f = rightTrace f := by
