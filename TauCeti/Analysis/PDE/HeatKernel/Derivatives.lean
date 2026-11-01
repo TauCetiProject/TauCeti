@@ -20,7 +20,9 @@ whose constants do not depend on the time, as needed for the Hölder estimates o
 
 * for all orders `j` in time and `m` in space,
   `‖∂ₜ^j D^m K_t(x)‖ ≤ C t^(-(n + m + 2j) / 2) exp(-‖x‖² / (8t))` for all `t > 0`;
-* equivalently for `j = 0`, `‖D^m K_t(x)‖ ≤ C t^(-m / 2) K_{2t}(x)`;
+* equivalently, `‖∂ₜ^j D^m K_t(x)‖ ≤ C t^(-(m + 2j) / 2) K_{2t}(x)`;
+* for time increments, `‖D^m K_{t'}(x) - D^m K_t(x)‖ ≤ C (t' - t) t^(-(m + 2) / 2) K_{4t}(x)`
+  for `0 < t ≤ t' ≤ 2t`;
 * `‖D^m K_t(x)‖ ‖x‖^α ≤ C t^((α - m) / 2) K_{4t}(x)` for `α ≥ 0`;
 * consequently `∫ ‖D^m K_t(x)‖ ‖x‖^α dx ≤ C t^((α - m) / 2)`, in particular
   `∫ ‖D^m K_t‖ ≤ C t^(-m / 2)`;
@@ -38,8 +40,11 @@ the constant function `1`.
   space-time derivatives.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_rpow_mul_exp`: the case of spatial
   derivatives.
-* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel`: the bound by
-  `C t^(-m / 2) K_{2t}(x)`.
+* `TauCeti.exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel`,
+  `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel`: the bounds by
+  `C t^(-(m + 2j) / 2) K_{2t}(x)`.
+* `TauCeti.differentiableAt_iteratedFDeriv_heatKernel`: `D^m K_t(x)` is differentiable in `t > 0`.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_sub_le`: the bound on time increments.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted bound by
   `C t^((α - m) / 2) K_{4t}(x)`.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
@@ -158,13 +163,15 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le_rpow_mul_exp (m : ℕ) :
       C * t ^ (-(finrank ℝ E + m : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) := by
   simpa using exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (E := E) 0 m
 
-/-- **Scale-invariant Gaussian bounds on the derivatives of the heat kernel**, against the heat
-kernel at the doubled time. For every order `m` there is a constant `C > 0`, independent of the
-time, such that `‖D^m K_t(x)‖ ≤ C t^(-m / 2) K_{2t}(x)` for all `t > 0` and all `x`. -/
-theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : ℕ) :
+/-- **Scale-invariant Gaussian bounds on the space-time derivatives of the heat kernel**, against
+the heat kernel at the doubled time. For all orders `j` in time and `m` in space there is a
+constant `C > 0`, independent of the time, such that
+`‖∂ₜ^j D^m K_t(x)‖ ≤ C t^(-(m + 2j) / 2) K_{2t}(x)` for all `t > 0` and all `x`. -/
+theorem exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (j m : ℕ) :
     ∃ C > 0, ∀ t, 0 < t → ∀ x : E,
-      ‖iteratedFDeriv ℝ m (heatKernel t) x‖ ≤ C * t ^ (-(m : ℝ) / 2) * heatKernel (2 * t) x := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_rpow_mul_exp (E := E) m
+      ‖iteratedDeriv j (fun s => iteratedFDeriv ℝ m (heatKernel s) x) t‖ ≤
+        C * t ^ (-(m + 2 * j : ℝ) / 2) * heatKernel (2 * t) x := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (E := E) j m
   refine ⟨max C 1 * (8 * π) ^ ((finrank ℝ E : ℝ) / 2), by positivity, fun t ht x => ?_⟩
   -- The Gaussian `exp(-‖x‖² / (8t))` is `(8πt)^(n/2) K_{2t}(x)`.
   have hG : exp (-‖x‖ ^ 2 / (8 * t)) =
@@ -173,19 +180,79 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : �
     have he : -‖x‖ ^ 2 / (4 * (2 * t)) = -‖x‖ ^ 2 / (8 * t) := by ring
     rw [heatKernel_apply, ← mul_assoc, hc, he, neg_div (2 : ℝ),
       rpow_neg (by positivity), mul_inv_cancel₀ (by positivity), one_mul]
-  have hexp : t ^ (-(finrank ℝ E + m : ℝ) / 2) * t ^ ((finrank ℝ E : ℝ) / 2) =
-      t ^ (-(m : ℝ) / 2) := by
+  have hexp : t ^ (-(finrank ℝ E + m + 2 * j : ℝ) / 2) * t ^ ((finrank ℝ E : ℝ) / 2) =
+      t ^ (-(m + 2 * j : ℝ) / 2) := by
     rw [← rpow_add ht]
     congr 1
     ring
-  calc ‖iteratedFDeriv ℝ m (heatKernel t) x‖
-      ≤ C * t ^ (-(finrank ℝ E + m : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) := hC t ht x
-    _ ≤ max C 1 * t ^ (-(finrank ℝ E + m : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) := by
+  calc ‖iteratedDeriv j (fun s => iteratedFDeriv ℝ m (heatKernel s) x) t‖
+      ≤ C * t ^ (-(finrank ℝ E + m + 2 * j : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) := hC t ht x
+    _ ≤ max C 1 * t ^ (-(finrank ℝ E + m + 2 * j : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) := by
         gcongr
         exact le_max_left C 1
     _ = _ := by
         rw [hG, mul_rpow (by positivity) ht.le, ← hexp]
         ring
+
+/-- **Scale-invariant Gaussian bounds on the derivatives of the heat kernel**, against the heat
+kernel at the doubled time. For every order `m` there is a constant `C > 0`, independent of the
+time, such that `‖D^m K_t(x)‖ ≤ C t^(-m / 2) K_{2t}(x)` for all `t > 0` and all `x`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : ℕ) :
+    ∃ C > 0, ∀ t, 0 < t → ∀ x : E,
+      ‖iteratedFDeriv ℝ m (heatKernel t) x‖ ≤ C * t ^ (-(m : ℝ) / 2) * heatKernel (2 * t) x := by
+  simpa using exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel
+    (E := E) 0 m
+
+/-- For `t > 0`, the derivative `D^m K_s(x)` is differentiable in the time `s` at `s = t`. -/
+theorem differentiableAt_iteratedFDeriv_heatKernel {t : ℝ} (ht : 0 < t) (m : ℕ) (x : E) :
+    DifferentiableAt ℝ (fun s => iteratedFDeriv ℝ m (heatKernel s : E → ℝ) x) t := by
+  have hΨ : Differentiable ℝ (iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ)) :=
+    (contDiff_heatKernel 1 (k := ⊤)).differentiable_iteratedFDeriv (WithTop.coe_lt_top _)
+  have hpow (a : ℝ) : DifferentiableAt ℝ (fun s : ℝ => s ^ a) t :=
+    differentiableAt_id.rpow_const (Or.inl ht.ne')
+  exact ((hpow _).smul ((hΨ _).comp t ((hpow _).smul_const x))).congr_of_eventuallyEq
+    ((eventually_gt_nhds ht).mono fun s hs => iteratedFDeriv_heatKernel_eq_rpow_smul hs m x)
+
+/-- **Time increments of the derivatives of the heat kernel.** For every order `m` there is a
+constant `C > 0`, independent of the times, such that
+`‖D^m K_{t'}(x) - D^m K_t(x)‖ ≤ C (t' - t) t^(-(m + 2) / 2) K_{4t}(x)` whenever
+`0 < t ≤ t' ≤ 2t`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_sub_le (m : ℕ) :
+    ∃ C > 0, ∀ t t', 0 < t → t ≤ t' → t' ≤ 2 * t → ∀ x : E,
+      ‖iteratedFDeriv ℝ m (heatKernel t') x - iteratedFDeriv ℝ m (heatKernel t) x‖ ≤
+        C * (t' - t) * t ^ (-(m + 2 : ℝ) / 2) * heatKernel (4 * t) x := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (E := E) 1 m
+  refine ⟨C * 2 ^ ((finrank ℝ E : ℝ) / 2), by positivity, fun t t' ht htt' ht't x => ?_⟩
+  have hbound : ∀ s ∈ Set.Icc t t',
+      ‖deriv (fun s => iteratedFDeriv ℝ m (heatKernel s : E → ℝ) x) s‖ ≤
+        C * 2 ^ ((finrank ℝ E : ℝ) / 2) * t ^ (-(m + 2 : ℝ) / 2) * heatKernel (4 * t) x := by
+    intro s hs
+    have hs₀ : 0 < s := ht.trans_le hs.1
+    have hpow : s ^ (-(m + 2 * 1 : ℝ) / 2) ≤ t ^ (-(m + 2 : ℝ) / 2) := by
+      rw [mul_one]
+      exact rpow_le_rpow_of_nonpos ht hs.1 (by linarith [m.cast_nonneg (α := ℝ)])
+    -- `K_{2s} ≤ (4t / 2s)^(n/2) K_{4t} ≤ 2^(n/2) K_{4t}`, as `t ≤ s ≤ 2t`.
+    have hK : heatKernel (2 * s) x ≤ 2 ^ ((finrank ℝ E : ℝ) / 2) * heatKernel (4 * t) x := by
+      refine (heatKernel_le_mul_heatKernel (s := 2 * s) (s' := 4 * t) (by positivity)
+        (by linarith [hs.2]) x).trans ?_
+      gcongr
+      · exact (heatKernel_pos (by positivity) x).le
+      · rw [div_le_iff₀ (by positivity)]
+        linarith [hs.1]
+    rw [← iteratedDeriv_one]
+    calc ‖iteratedDeriv 1 (fun s => iteratedFDeriv ℝ m (heatKernel s : E → ℝ) x) s‖
+        ≤ C * s ^ (-(m + 2 * 1 : ℝ) / 2) * heatKernel (2 * s) x := by
+          exact_mod_cast hC s hs₀ x
+      _ ≤ C * t ^ (-(m + 2 : ℝ) / 2) * (2 ^ ((finrank ℝ E : ℝ) / 2) * heatKernel (4 * t) x) := by
+          gcongr
+          exact (heatKernel_pos (by positivity) x).le
+      _ = _ := by ring
+  have := (convex_Icc t t').norm_image_sub_le_of_norm_deriv_le
+    (fun s (hs : s ∈ Set.Icc t t') => differentiableAt_iteratedFDeriv_heatKernel
+      (ht.trans_le hs.1) m x) hbound (Set.left_mem_Icc.2 htt') (Set.right_mem_Icc.2 htt')
+  rw [Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.2 htt')] at this
+  exact this.trans_eq (by ring)
 
 /-- **Scale-invariant weighted Gaussian bounds on the derivatives of the heat kernel.** For every
 order `m` and every `α ≥ 0` there is a constant `C > 0`, independent of the time, with
