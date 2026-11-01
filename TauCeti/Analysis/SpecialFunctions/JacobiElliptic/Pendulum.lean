@@ -17,7 +17,7 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-!
 # The nonlinear pendulum
 
-The angle `θ` of a pendulum swinging without friction obeys `θ″ = -ω² sin θ`, where `ω > 0` is
+The angle `θ` of a pendulum swinging without friction obeys `θ'' = -ω² sin θ`, where `ω > 0` is
 the frequency of its small oscillations. Released from rest at the angle `θ₀` with
 `|θ₀| < π`, its motion is given exactly by the Jacobi elliptic function `sn` (DLMF §22.19(i)):
 with the modulus `k = sin (θ₀ / 2)` and `K = K(k)`,
@@ -27,7 +27,7 @@ with the modulus `k = sin (θ₀ / 2)` and `K = K(k)`,
 This file defines this solution `pendulumAngle ω θ₀` and its period
 `pendulumPeriod ω θ₀ = 4 K(sin (θ₀ / 2)) / ω`, and proves:
 
-* `pendulumAngle ω θ₀` is `C²`, solves `θ″ = -ω² sin θ`, and has `θ(0) = θ₀` and `θ′(0) = 0`;
+* `pendulumAngle ω θ₀` is `C²`, solves `θ'' = -ω² sin θ`, and has `θ(0) = θ₀` and `θ′(0) = 0`;
 * it is the only solution of the first-order system `θ′ = ψ`, `ψ′ = -ω² sin θ` with these
   initial values;
 * for `θ₀ ≠ 0` its least positive period is `pendulumPeriod ω θ₀`;
@@ -49,7 +49,7 @@ open _root_.Real Filter Set Topology
 
 /-! ### The solution and its period -/
 
-/-- The angle at time `t` of the **nonlinear pendulum** `θ″ = -ω² sin θ` released from rest at the
+/-- The angle at time `t` of the **nonlinear pendulum** `θ'' = -ω² sin θ` released from rest at the
 angle `θ₀` (DLMF 22.19.2): `θ(t) = 2 arcsin (k sn(ωt + K, k))` with `k = sin (θ₀ / 2)` and
 `K = K(k)`. It is the solution for `|θ₀| < π`. -/
 def pendulumAngle (ω θ₀ t : ℝ) : ℝ :=
@@ -122,7 +122,7 @@ theorem deriv_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) :
       2 * sin (θ₀ / 2) * ω * jacobiCn (sin (θ₀ / 2)) (ω * t + legendreK (sin (θ₀ / 2))) :=
   funext fun t ↦ (hasDerivAt_pendulumAngle hθ₀ ω t).deriv
 
-/-- **The pendulum equation** `θ″ = -ω² sin θ`, in the form `HasDerivAt θ′ (-ω² sin θ(t)) t`. -/
+/-- **The pendulum equation** `θ'' = -ω² sin θ`, in the form `HasDerivAt θ′ (-ω² sin θ(t)) t`. -/
 theorem hasDerivAt_deriv_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω t : ℝ) :
     HasDerivAt (deriv (pendulumAngle ω θ₀)) (-ω ^ 2 * sin (pendulumAngle ω θ₀ t)) t := by
   have hk := sin_half_sq_lt_one hθ₀
