@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+public import TauCeti.Topology.VectorBundle.Coordinates
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -32,12 +33,22 @@ smoothness of inversion of continuous linear maps between Banach spaces. A const
 pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`).
 
-Over any nontrivially normed field, a fibrewise continuous linear map with finite-dimensional
-model source is `C^n` on total spaces exactly when it is a `C^n` hom-bundle section
-(`TauCeti.contMDiff_hom_bundle_iff`), the `C^n` counterpart of
+Over a complete nontrivially normed field, a fibrewise continuous linear map with
+finite-dimensional model source is `C^n` on total spaces exactly when it is a `C^n` hom-bundle
+section (`TauCeti.contMDiff_hom_bundle_iff`), the `C^n` counterpart of
 `TauCeti.continuous_hom_bundle_iff`. Fibrewise continuous linear equivalences forming a `C^n`
 hom-bundle section induce a `C^n` diffeomorphism of total spaces
-(`TauCeti.bundleDiffeomorph`), the counterpart of `TauCeti.bundleHomeomorph`.
+(`TauCeti.bundleDiffeomorph`), the counterpart of `TauCeti.bundleHomeomorph`. With
+finite-dimensional model source, a fibrewise continuous linear map is realized by a `C^n`
+diffeomorphism of total spaces exactly when it is a `C^n` hom-bundle section with invertible
+fibre maps (`TauCeti.exists_bundleDiffeomorph_iff`).
+
+For two vector bundle cores with `C^n` transition functions (`VectorBundleCore.IsContMDiff`), a
+section of the Hom bundle between them is `C^n` exactly when it is `C^n` in every pair of a source
+chart and a target chart, on their common domain, with chart expressions
+`VectorBundleCore.inChartCoordinates`
+(`VectorBundleCore.contMDiff_hom_bundle_iff_forall_contMDiffOn`). This is the `C^n` counterpart
+of `VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`.
 -/
 
 public section
@@ -329,6 +340,76 @@ theorem bundleDiffeomorph_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (p : TotalSpace F₂ E₂) : (bundleDiffeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
   (rfl)
 
+omit [CompleteSpace F₁] in
+/-- For a finite-dimensional model source, a fibrewise continuous linear map is realized by a
+`C^n` diffeomorphism of total spaces exactly when it is a `C^n` section of the Hom bundle and
+every fibre map is invertible. -/
+theorem exists_bundleDiffeomorph_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
+    [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB]
+    (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
+    (∃ Φ : TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂,
+        ⇑Φ = fun p ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ↔
+      ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+          (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x)) ∧
+        ∀ x, (ϕ x).IsInvertible := by
+  have := FiniteDimensional.complete 𝕜 F₁
+  constructor
+  · rintro ⟨Φ, hΦ⟩
+    refine ⟨(contMDiff_hom_bundle_iff ϕ).2 (hΦ ▸ Φ.contMDiff), fun x ↦ ?_⟩
+    -- A bijective fibre map is an isomorphism in finite dimension.
+    let := FiberBundle.t2Space F₁ E₁ x
+    let := FiberBundle.t2Space F₂ E₂ x
+    let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x
+    have hx : Function.Bijective (ϕ x) :=
+      (bijective_totalSpace_map_iff (ϕ := fun x ↦ ϕ x)).1 (hΦ ▸ Φ.bijective) x
+    exact ⟨(LinearEquiv.ofBijective (ϕ x).toLinearMap hx).toContinuousLinearEquiv, rfl⟩
+  · rintro ⟨hϕ, hinv⟩
+    choose e he using hinv
+    refine ⟨bundleDiffeomorph e ?_, ?_⟩
+    · convert hϕ using 3
+      exact he _
+    · funext p
+      exact congrArg (TotalSpace.mk' F₂ p.proj) (DFunLike.congr_fun (he p.proj) p.2)
+
 end TauCeti
 
 end BundleMap
+
+namespace VectorBundleCore
+
+variable {𝕜 B F G EB HB ι κ : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : WithTop ℕ∞} {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
+  [Z.IsContMDiff IB n] [W.IsContMDiff IB n]
+
+/-- On the common domain of a source chart and a target chart, a section of the Hom bundle
+between two cores is `C^n` exactly when its expression in those charts is. -/
+theorem contMDiffOn_hom_bundle_iff_inChartCoordinates {f : B → F →L[𝕜] G} (i : ι) (j : κ) :
+    ContMDiffOn IB (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x))
+        (Z.baseSet i ∩ W.baseSet j) ↔
+      ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n (fun x ↦ Z.inChartCoordinates W i j x (f x))
+        (Z.baseSet i ∩ W.baseSet j) := by
+  have : MemTrivializationAtlas (Z.localTriv i) := ⟨⟨i, rfl⟩⟩
+  have : MemTrivializationAtlas (W.localTriv j) := ⟨⟨j, rfl⟩⟩
+  -- Read the section in the Hom-bundle trivialization built from the two fixed charts.
+  let e := (Z.localTriv i).continuousLinearMap (RingHom.id 𝕜) (W.localTriv j)
+  exact e.contMDiffOn_section_baseSet_iff.trans (contMDiffOn_congr fun x hx ↦
+    (inChartCoordinates_eq_localTriv_comp hx.1 hx.2 (f x)).symm)
+
+/-- A section of the Hom bundle between two cores is `C^n` exactly when it is `C^n` in every pair
+of charts, on their common domain. -/
+theorem contMDiff_hom_bundle_iff_forall_contMDiffOn {f : B → F →L[𝕜] G} :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)) ↔
+      ∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n (fun x ↦ Z.inChartCoordinates W i j x (f x))
+        (Z.baseSet i ∩ W.baseSet j) := by
+  refine ⟨fun hf i j ↦ (contMDiffOn_hom_bundle_iff_inChartCoordinates i j).1 hf.contMDiffOn,
+    fun h x ↦ ?_⟩
+  have hU := (Z.isOpen_baseSet (Z.indexAt x)).inter (W.isOpen_baseSet (W.indexAt x))
+  exact ((contMDiffOn_hom_bundle_iff_inChartCoordinates _ _).2 (h _ _)).contMDiffAt
+    (hU.mem_nhds ⟨Z.mem_baseSet_at x, W.mem_baseSet_at x⟩)
+
+end VectorBundleCore
