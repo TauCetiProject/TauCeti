@@ -47,9 +47,7 @@ self-dual object that is its own mate cuts out a self-dual summand.
   duals and adjoint mates in a monoidal category.
 -/
 
--- The data are exposed so that the projection lemmas below are `rfl` lemmas, usable by `dsimp`
--- to rewrite duals occurring inside the types of morphisms.
-@[expose] public section
+public section
 
 namespace CategoryTheory.Idempotents.Karoubi
 
@@ -63,19 +61,33 @@ section ExactPairing
 
 variable {P Q : Karoubi C} (e : ExactPairing P.X Q.X)
 
+/-- Mate-sliding along the coevaluation: since the idempotent of `Q` is the right mate of the
+idempotent of `P`, applying either one after the coevaluation gives the same morphism. -/
+private theorem coevaluation_comp_whiskerLeft_p (h : Q.p = rightMate e e P.p) :
+    η_ P.X Q.X ≫ P.X ◁ Q.p = η_ P.X Q.X ≫ P.p ▷ Q.X := by
+  rw [h, coevaluation_comp_rightMate]
+
+/-- Mate-sliding along the evaluation: since the idempotent of `Q` is the right mate of the
+idempotent of `P`, applying either one before the evaluation gives the same morphism. -/
+private theorem whiskerRight_p_comp_evaluation (h : Q.p = rightMate e e P.p) :
+    Q.p ▷ P.X ≫ ε_ P.X Q.X = Q.X ◁ P.p ≫ ε_ P.X Q.X := by
+  rw [h, rightMate_comp_evaluation]
+
 /-- The idempotent of `P` cut out of the coevaluation is absorbed by the idempotent of `P ⊗ Q`,
 since its right mate is the idempotent of `Q`. -/
 private theorem coevaluation_comp_tensorHom (h : Q.p = rightMate e e P.p) :
     η_ P.X Q.X ≫ P.p ▷ Q.X ≫ (P.p ⊗ₘ Q.p) = η_ P.X Q.X ≫ P.p ▷ Q.X := by
-  rw [tensorHom_def', ← whisker_exchange_assoc, ← Category.assoc, h, coevaluation_comp_rightMate,
-    Category.assoc, ← comp_whiskerRight, ← comp_whiskerRight, P.idem, P.idem]
+  have hp (Z : C) : P.p ▷ Z ≫ P.p ▷ Z = P.p ▷ Z := by rw [← comp_whiskerRight, P.idem]
+  simp only [tensorHom_def', ← whisker_exchange_assoc,
+    reassoc_of% (coevaluation_comp_whiskerLeft_p e h), hp]
 
 /-- The idempotent of `P` cut out of the evaluation is absorbed by the idempotent of `Q ⊗ P`,
 since its right mate is the idempotent of `Q`. -/
 private theorem tensorHom_comp_evaluation (h : Q.p = rightMate e e P.p) :
     (Q.p ⊗ₘ P.p) ≫ Q.X ◁ P.p ≫ ε_ P.X Q.X = Q.X ◁ P.p ≫ ε_ P.X Q.X := by
-  rw [tensorHom_def', Category.assoc, ← whisker_exchange_assoc, h, rightMate_comp_evaluation,
-    ← whiskerLeft_comp_assoc, ← whiskerLeft_comp_assoc, P.idem, P.idem]
+  have hp (W : C) : W ◁ P.p ≫ W ◁ P.p = W ◁ P.p := by rw [← whiskerLeft_comp, P.idem]
+  simp only [tensorHom_def', Category.assoc, reassoc_of% hp, ← whisker_exchange_assoc,
+    whiskerRight_p_comp_evaluation e h]
 
 /-- An exact pairing of the underlying objects of `P` and `Q`, for which the idempotent of `Q` is
 the right adjoint mate of the idempotent of `P`, induces an exact pairing of `P` and `Q` in
@@ -88,47 +100,48 @@ def exactPairing (h : Q.p = rightMate e e P.p) : ExactPairing P Q where
   coevaluation_evaluation' := by
     ext
     dsimp
-    -- Absorb the idempotents of `Q ⊗ P ⊗ Q` into the evaluation, and move the idempotent of `P`
-    -- from the middle strand to the two strands of `Q` by mate-sliding. What remains is the
-    -- zigzag of `C` with the idempotent of `Q` at both of its ends.
-    have hr (Z : C) : Q.p ▷ Z ≫ Q.p ▷ Z = Q.p ▷ Z := by rw [← comp_whiskerRight, Q.idem]
-    have hl (W : C) : W ◁ Q.p ≫ W ◁ Q.p = W ◁ Q.p := by rw [← whiskerLeft_comp, Q.idem]
-    rw [Category.assoc, tensorHom_comp_tensorHom, Q.idem, tensorHom_comp_evaluation e h, h,
-      ← rightMate_comp_evaluation, ← coevaluation_comp_rightMate, ← h, Category.assoc,
-      ← rightUnitor_naturality_assoc, leftUnitor_inv_naturality,
-      ← coevaluation_evaluation_assoc P.X Q.X]
-    simp only [tensorHom_def, Category.assoc, comp_whiskerRight, whiskerLeft_comp,
-      ← associator_inv_naturality_left_assoc, associator_inv_naturality_right_assoc,
-      whisker_exchange_assoc, reassoc_of% hr, hl]
+    -- Absorb the idempotents of `Q ⊗ P ⊗ Q` into the evaluation, and slide the idempotent of `P`
+    -- along the coevaluation and the evaluation onto the strands of `Q`. Interchange then collects
+    -- the idempotents of `Q` at the two ends of the zigzag of `C`.
+    simp only [tensorHom_comp_tensorHom, Category.assoc, Q.idem, tensorHom_comp_evaluation e h]
+    rw [← coevaluation_comp_whiskerLeft_p e h, ← whiskerRight_p_comp_evaluation e h]
+    calc _ = (Q.p ≫ Q.p) ▷ 𝟙_ C ≫ (Q.X ◁ η_ P.X Q.X ≫ (α_ _ _ _).inv ≫ ε_ P.X Q.X ▷ Q.X) ≫
+          𝟙_ C ◁ (Q.p ≫ Q.p) := by
+          simp only [tensorHom_def, comp_whiskerRight, whiskerLeft_comp, Category.assoc,
+            ← associator_inv_naturality_left_assoc, associator_inv_naturality_right_assoc,
+            whisker_exchange_assoc]
+      _ = _ := by simp
   evaluation_coevaluation' := by
     ext
     dsimp
-    -- Absorb the idempotents of `P ⊗ Q ⊗ P` into the evaluation. What remains is the zigzag of
-    -- `C` with the idempotent of `P` at both of its ends.
-    have hr (Z : C) : P.p ▷ Z ≫ P.p ▷ Z = P.p ▷ Z := by rw [← comp_whiskerRight, P.idem]
-    have hl (W V : C) : W ◁ V ◁ P.p ≫ W ◁ V ◁ P.p = W ◁ V ◁ P.p := by
-      rw [← whiskerLeft_comp, ← whiskerLeft_comp, P.idem]
-    rw [Category.assoc, tensorHom_comp_tensorHom, P.idem, tensorHom_comp_evaluation e h,
-      Category.assoc, ← leftUnitor_naturality_assoc, rightUnitor_inv_naturality,
-      ← evaluation_coevaluation_assoc P.X Q.X]
-    simp only [tensorHom_def, Category.assoc, comp_whiskerRight, whiskerLeft_comp,
-      associator_naturality_left_assoc, associator_naturality_right_assoc, whisker_exchange,
-      whisker_exchange_assoc, reassoc_of% hr, reassoc_of% hl]
+    -- Absorb the idempotents of `P ⊗ Q ⊗ P` into the evaluation. Interchange then collects the
+    -- idempotents of `P` at the two ends of the zigzag of `C`.
+    simp only [tensorHom_comp_tensorHom, Category.assoc, P.idem, tensorHom_comp_evaluation e h]
+    calc _ = 𝟙_ C ◁ (P.p ≫ P.p) ≫ (η_ P.X Q.X ▷ P.X ≫ (α_ _ _ _).hom ≫ P.X ◁ ε_ P.X Q.X) ≫
+          (P.p ≫ P.p) ▷ 𝟙_ C := by
+          simp only [tensorHom_def, comp_whiskerRight, whiskerLeft_comp, Category.assoc,
+            associator_naturality_left_assoc, associator_naturality_right_assoc,
+            whisker_exchange, whisker_exchange_assoc]
+      _ = _ := by simp
 
 /-- The coevaluation of `Karoubi.exactPairing` is that of `C`, cut down by the idempotent of
 `P`. -/
 @[simp]
 theorem exactPairing_coevaluation_f (h : Q.p = rightMate e e P.p) :
     (@ExactPairing.coevaluation _ _ _ P Q (exactPairing e h)).f = η_ P.X Q.X ≫ P.p ▷ Q.X :=
-  rfl
+  (rfl)
 
 /-- The evaluation of `Karoubi.exactPairing` is that of `C`, cut down by the idempotent of `P`. -/
 @[simp]
 theorem exactPairing_evaluation_f (h : Q.p = rightMate e e P.p) :
     (@ExactPairing.evaluation _ _ _ P Q (exactPairing e h)).f = Q.X ◁ P.p ≫ ε_ P.X Q.X :=
-  rfl
+  (rfl)
 
 end ExactPairing
+
+-- The dual objects are exposed so that the projection lemmas below are `rfl` lemmas, usable by
+-- `dsimp` to rewrite duals occurring inside the types of morphisms.
+@[expose] section Duals
 
 /-- The right dual of a formal direct factor `(X, p)` is `(Xᘁ, pᘁ)`. -/
 instance instHasRightDual (P : Karoubi C) [HasRightDual P.X] : HasRightDual P where
@@ -169,6 +182,8 @@ instance instLeftRigidCategory [LeftRigidCategory C] : LeftRigidCategory (Karoub
 
 /-- The idempotent completion of a rigid monoidal category is rigid. -/
 instance instRigidCategory [RigidCategory C] : RigidCategory (Karoubi C) where
+
+end Duals
 
 /-- The right adjoint mate of a morphism of formal direct factors is the right adjoint mate of
 the underlying morphism. -/
