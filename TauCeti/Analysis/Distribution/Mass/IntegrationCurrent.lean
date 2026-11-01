@@ -98,6 +98,7 @@ theorem hasLocallyFiniteMass_integrationCurrent (o : Orientation ℝ E (Fin m)) 
 
 /-- **The mass of the integration current** of an open set `Ω` of an oriented inner product space
 is the volume of `Ω`; both may be infinite. -/
+@[simp]
 theorem mass_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finrank ℝ E = m)
     (Ω : Opens E) :
     mass (o.integrationCurrent Ω : 𝓓^{n}(Ω, E [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) = volume (Ω : Set E) := by
@@ -124,6 +125,7 @@ theorem mass_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finrank �
     _ ≤ _ := enorm_le_mass hω
 
 /-- **The local mass of the integration current** on an open set `U` is the volume of `Ω ∩ U`. -/
+@[simp]
 theorem localMass_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finrank ℝ E = m)
     (Ω : Opens E) {U : Set E} (hU : IsOpen U) :
     localMass (o.integrationCurrent Ω : 𝓓^{n}(Ω, E [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) U =
@@ -143,6 +145,7 @@ theorem localMass_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finra
   simp
 
 /-- **The mass measure of the integration current** is the volume measure on `Ω`. -/
+@[simp]
 theorem massMeasure_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finrank ℝ E = m)
     (Ω : Opens E) :
     massMeasure (o.integrationCurrent Ω : 𝓓^{n}(Ω, E [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) =
