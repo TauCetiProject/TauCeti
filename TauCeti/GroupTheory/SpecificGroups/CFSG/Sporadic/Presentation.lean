@@ -150,4 +150,10 @@ theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic
 theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic.mclPresentation :=
   (rfl)
 
+/-- The presentation selected for `J₂` is Stoytchev's transcribed presentation
+`TauCeti.Sporadic.j2Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
+  (rfl)
+
 end TauCeti
