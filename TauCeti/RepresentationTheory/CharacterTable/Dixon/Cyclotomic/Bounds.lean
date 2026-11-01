@@ -6,22 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.CoefficientBounds
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solver
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Prime
 
 /-!
 # An explicit prime threshold for cyclotomic reconstruction
 
 For an exact cyclotomic character-table certificate at the group exponent `e`, the coefficients
-of the central entry on a class `C` are bounded by `|C| * Cyclotomic.rootCoeffBound e`.
-Thus a Dixon prime larger than `2 * |G| * Cyclotomic.rootCoeffBound e` guarantees that the solver
-reconstructs a certified table. The threshold is computable from the group order and exponent,
-without inspecting the unknown character table.
+of the central entry on a class `C` are bounded by `|C| * Cyclotomic.rootCoeffBound e`, hence by
+`TauCeti.centralCoefficientBound G e`, which is `|G| * Cyclotomic.rootCoeffBound e`. The threshold
+is computable from the group order and exponent, without inspecting the unknown character table.
 
-The bound follows from the ordinary character's eigenvalues and the degree-free central bound
-in `Representation.coeff_natAbs_le_of_finrank_mul_complexEmbedding_eq_natCast_mul_char`.
-The existing solver's completeness theorem then applies to the balanced residue window.
-This supplies a sufficient size bound; it does not assert that the smaller threshold
-`2 * sqrt |G|` suffices for the power-basis coordinates.
+A prime congruent to `1` modulo the exponent and larger than twice this bound, called a strong
+Dixon prime, is a good Dixon prime, and such primes exist. Dixon's smaller threshold
+`2 * sqrt |G|` does not bound the power-basis coordinates of central characters.
 
 ## References
 
@@ -30,6 +28,53 @@ This supplies a sufficient size bound; it does not assert that the smaller thres
 -/
 
 public section
+
+namespace TauCeti
+
+/-- The bound `|G| * Cyclotomic.rootCoeffBound e` on every power-basis coefficient of every central
+character value of `G`. It is computable from the group order and the exponent. -/
+def centralCoefficientBound (G : Type*) [Fintype G] (e : ℕ) : ℕ :=
+  Fintype.card G * Cyclotomic.rootCoeffBound e
+
+/-- The defining product for the central coefficient bound. -/
+theorem centralCoefficientBound_def (G : Type*) [Fintype G] (e : ℕ) :
+    centralCoefficientBound G e = Fintype.card G * Cyclotomic.rootCoeffBound e := (rfl)
+
+/-- For a nonzero conductor the central coefficient bound is at least the group order. -/
+theorem card_le_centralCoefficientBound (G : Type*) [Fintype G] (e : ℕ) [NeZero e] :
+    Fintype.card G ≤ centralCoefficientBound G e :=
+  Nat.le_mul_of_pos_right _ Cyclotomic.one_le_rootCoeffBound
+
+variable {G : Type*} [Group G] [Fintype G]
+
+/-- A prime congruent to `1` modulo the exponent and beyond twice the central coefficient bound is
+a good Dixon prime: it exceeds both the group order and Dixon's threshold `2 * sqrt |G|`. -/
+theorem IsGoodDixonPrime.of_two_mul_centralCoefficientBound_lt {e p : ℕ}
+    (he : e = Monoid.exponent G) (hp : p.Prime) (hdvd : e ∣ p - 1)
+    (hlt : 2 * centralCoefficientBound G e < p) : IsGoodDixonPrime G p := by
+  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  have hcard : Nat.card G ≤ centralCoefficientBound G e := by
+    rw [Nat.card_eq_fintype_card]
+    exact card_le_centralCoefficientBound G e
+  have hsqrt := Nat.sqrt_le_self (Nat.card G)
+  refine ⟨hp, fun h ↦ ?_, he ▸ hdvd, by omega⟩
+  have := Nat.le_of_dvd Nat.card_pos h
+  omega
+
+/-- **Strong Dixon primes exist.** There is Dixon prime data whose prime exceeds twice the central
+coefficient bound, since there are arbitrarily large primes congruent to `1` modulo the
+exponent. -/
+theorem exists_strongDixonPrime {e : ℕ} (he : e = Monoid.exponent G) :
+    ∃ q : DixonPrimeData G, 2 * centralCoefficientBound G e < q.p := by
+  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  obtain ⟨p, hprime, hlt, hmod⟩ := Nat.exists_prime_gt_modEq_one (k := e)
+    (2 * centralCoefficientBound G e) (NeZero.ne e)
+  have hgood : IsGoodDixonPrime G p := .of_two_mul_centralCoefficientBound_lt he hprime
+    ((Nat.modEq_iff_dvd' hprime.one_lt.le).mp hmod.symm) hlt
+  obtain ⟨root, hroot⟩ := hgood.exists_isPrimitiveRoot
+  exact ⟨⟨p, root, hgood, hroot⟩, hlt⟩
+
+end TauCeti
 
 namespace TauCeti.ClassData.IsCyclotomicCharacterTableSpec
 
@@ -66,25 +111,3 @@ theorem central_coeff_natAbs_le
     Fintype.card_fin] using hc
 
 end TauCeti.ClassData.IsCyclotomicCharacterTableSpec
-
-namespace TauCeti.ClassData
-
-variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
-
-/-- A prime exceeding the explicit group-order and root-coefficient threshold suffices to
-reconstruct an exact cyclotomic character table, with no coefficient-bound hypothesis. -/
-theorem isSome_dixonCyclotomicCharacterTable_of_rootCoeffBound (d : ClassData G)
-    (e : ℕ) (he : e = Monoid.exponent G) (q : DixonPrimeData G)
-    (omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e))
-    (degree : Fin d.numClasses → ℕ)
-    (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
-    (hp : 2 * (Fintype.card G * Cyclotomic.rootCoeffBound e) < q.p) :
-    (d.dixonCyclotomicCharacterTable? e q).isSome = true := by
-  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
-  apply d.isSome_dixonCyclotomicCharacterTable_of_spec e he q omega table degree hspec
-  intro i k j
-  exact lt_of_le_of_lt (Nat.mul_le_mul_left 2
-    ((hspec.central_coeff_natAbs_le i k (he ▸ Monoid.pow_exponent_eq_one (d.rep k)) j).trans
-      (Nat.mul_le_mul_right _ (Finset.card_le_univ _)))) hp
-
-end TauCeti.ClassData
