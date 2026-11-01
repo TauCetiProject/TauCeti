@@ -13,15 +13,20 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 # Abel summation for norm-indexed summatory functions
 
 Mathlib's `sum_mul_eq_sub_sub_integral_mul` is Abel summation for a sequence indexed by the natural
-numbers.  Every counting argument of the arithmetic-Dirichlet-series roadmap instead sums a weight
-over a carrier indexed by ideals or by height-one primes, cut off inclusively by the absolute norm.
+numbers.  The counting arguments for ideal-indexed Dirichlet series instead sum a weight over a
+carrier indexed by ideals or by height-one primes, cut off inclusively by the absolute norm.
 This file supplies the bridge: the weight is regrouped into its norm fibres, Mathlib's identity is
 applied to the resulting sequence, and the answer is read back as an equation between
 `TauCeti.summatory` functions.
 
-The bridge is stated for a general Northcott index `N : ι → ℕ`, because Layer 6 uses it for both
-the ideal carrier and the prime carrier.  The integral runs over the half-open interval `Set.Ioc`,
-so each boundary term is counted exactly once, as the roadmap's conventions table demands.
+The bridge is stated for a general Northcott index `N : ι → ℕ`, so that it applies to both the
+ideal carrier and the prime carrier.  The integral runs over the half-open interval `Set.Ioc`,
+so each boundary term is counted exactly once.
+
+Mathlib's exact finite identity is consumed, not restated; only the norm-indexed bridges are added.
+The two prime identities below are the finite input to the transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`
+of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean`, which estimates the integrals
+appearing here.
 
 ## Main results
 
@@ -44,16 +49,9 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
   counting functions becomes a comparison of Dirichlet series uniform in `s`.
 * `TauCeti.primeTheta_eq_log_mul_primeCount_sub_integral` and
   `TauCeti.primeCount_eq_primeTheta_div_log_add_integral`: the two exact Abel identities relating
-  the roadmap's weighted prime counts,
+  the weighted and unweighted prime counts,
   `ϑ(x) = π(x) log x - ∫_2^x π(t)/t dt` and `π(x) = ϑ(x)/log x + ∫_2^x ϑ(t)/(t log²t) dt`.
   Both hold for every real cutoff; below `2` all three terms vanish.
-
-## Roadmap role
-
-This is Layer **6.1** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`: Mathlib's exact
-finite identity is consumed, not restated, and only the norm-indexed bridges are added.  The two
-prime identities are the finite input to Layer 6.2, which turns `ϑ(x) ∼ δx` into `π(x) ∼ δ Li(x)`
-by estimating the integrals appearing here.
 
 ## References
 

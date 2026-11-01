@@ -64,6 +64,15 @@ theorem restrictTotalDegree_mono : Monotone (restrictTotalDegree σ R) :=
   fun _ _ h p hp ↦
     (mem_restrictTotalDegree σ _ p).2 (((mem_restrictTotalDegree σ _ p).1 hp).trans h)
 
+/-- A polynomial of total degree at most `d` has zero coefficients at exponents of degree
+above `d`. -/
+theorem coeff_eq_zero_of_mem_restrictTotalDegree {d : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ restrictTotalDegree σ R d) {a : σ →₀ ℕ} (ha : d < a.degree) :
+    p.coeff a = 0 := by
+  apply coeff_eq_zero_of_totalDegree_lt
+  rw [← Finsupp.degree_apply]
+  exact ((mem_restrictTotalDegree σ d p).mp hp).trans_lt ha
+
 /-- A monomial whose exponent has degree at most `m` has total degree at most `m`. -/
 theorem monomial_mem_restrictTotalDegree {s : σ →₀ ℕ} {m : ℕ} (h : s.degree ≤ m) (r : R) :
     monomial s r ∈ restrictTotalDegree σ R m :=
