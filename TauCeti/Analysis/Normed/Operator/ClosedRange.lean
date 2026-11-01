@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.Complement
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Topology.MetricSpace.Sequences
 
 /-!
 # The a priori estimate of a closed-range operator
@@ -30,6 +32,8 @@ such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
 * `ContinuousLinearMap.exists_projection_norm_le`: the same estimate with the
   complement discharged, so that the only data left is a continuous projection with range the
   kernel.
+* `ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`: when the kernel is moreover
+  finite-dimensional, a bounded sequence whose image is Cauchy has a convergent subsequence.
 
 `TauCeti.Analysis.Fredholm.Proper` uses the estimate below to prove
 that a map with Fredholm derivative is proper near a point (Smale, *An infinite dimensional version
@@ -114,5 +118,41 @@ theorem exists_projection_norm_le (T : E →L[𝕜] F)
   obtain ⟨C, hC, hbound⟩ := T.exists_norm_le_mul_norm_add_norm_projectionL hclosed h
   exact ⟨(T.ker).projectionL X₁ h, C, hC, isIdempotentElem_projectionL h,
     range_projectionL h, hbound⟩
+
+open Filter Topology in
+/-- **A closed-range operator with finite-dimensional complemented kernel is proper on bounded
+sets.** If `x` is a bounded sequence and `T ∘ x` is Cauchy, then `x` has a convergent
+subsequence. In particular a Fredholm operator admits no bounded sequence `x` with `T (x n) → 0`
+whose terms stay a fixed distance apart. -/
+theorem tendsto_subseq_of_cauchySeq_comp [ProperSpace 𝕜] (T : E →L[𝕜] F)
+    (hclosed : IsClosed (T.range : Set F)) (hfinite : FiniteDimensional 𝕜 T.ker)
+    (hcompl : T.ker.ClosedComplemented) {x : ℕ → E} (hx : Bornology.IsBounded (Set.range x))
+    (hTx : CauchySeq (T ∘ x)) :
+    ∃ a : E, ∃ φ : ℕ → ℕ, StrictMono φ ∧ Tendsto (x ∘ φ) atTop (𝓝 a) := by
+  obtain ⟨P, C, hC, -, hPrange, hest⟩ := T.exists_projection_norm_le hclosed hcompl
+  have : ProperSpace T.ker := FiniteDimensional.proper 𝕜 T.ker
+  -- The components `P (x n)` lie in the finite-dimensional kernel, so a subsequence converges.
+  have hmem (n : ℕ) : P (x n) ∈ T.ker := hPrange ▸ ⟨x n, rfl⟩
+  obtain ⟨R, hR⟩ := hx.exists_norm_le
+  have hbdd : Bornology.IsBounded (Set.range fun n ↦ (⟨P (x n), hmem n⟩ : T.ker)) :=
+    isBounded_iff_forall_norm_le.2 ⟨‖P‖ * R, Set.forall_mem_range.2 fun n ↦
+      (P.le_opNorm (x n)).trans (by gcongr; exact hR _ (Set.mem_range_self n))⟩
+  obtain ⟨b, -, φ, hφ, hlim⟩ := tendsto_subseq_of_bounded hbdd (fun n ↦ Set.mem_range_self n)
+  have hPx : CauchySeq (P ∘ x ∘ φ) :=
+    ((continuous_subtype_val.tendsto b).comp hlim).cauchySeq
+  have hTxφ : CauchySeq (T ∘ x ∘ φ) := hTx.comp_tendsto hφ.tendsto_atTop
+  -- The a priori estimate makes `x` Cauchy along the subsequence where `T x` and `P x` are.
+  suffices h : CauchySeq (x ∘ φ) from
+    (cauchySeq_tendsto_of_complete h).imp fun a ha ↦ ⟨φ, hφ, ha⟩
+  refine Metric.cauchySeq_iff'.2 fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 (hTxφ.prodMk hPx) (ε / (C + 1)) (by positivity)
+  refine ⟨N, fun n hn ↦ ?_⟩
+  obtain ⟨h₁, h₂⟩ := max_lt_iff.1 ((Prod.dist_eq ..).symm.trans_lt (hN n hn))
+  simp only [Function.comp_apply, dist_eq_norm, ← map_sub] at h₁ h₂ ⊢
+  calc ‖x (φ n) - x (φ N)‖ ≤ C * ‖T (x (φ n) - x (φ N))‖ + ‖P (x (φ n) - x (φ N))‖ := hest _
+    _ < C * (ε / (C + 1)) + 1 * (ε / (C + 1)) := by
+      gcongr
+      simpa using h₂
+    _ = ε := by field_simp
 
 end ContinuousLinearMap
