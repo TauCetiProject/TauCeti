@@ -456,13 +456,11 @@ theorem logHeight_det_hasseDeriv_le {P : MvPolynomial σ K} (hP : P ≠ 0) {d : 
     exact pow_le_pow_right₀ one_le_two (sum_le_sum fun j _ ↦
       (monomial_le_degreeOf j (mem_support_iff.2 ha)).trans (hd j))
   have h := Matrix.logHeight_det_le (Matrix.of fun k l ↦ hasseDeriv (E k l) P) hP (d := d)
-    (fun k l j ↦ (degreeOf_hasseDeriv_le _ _ _).trans ((Nat.sub_le _ _).trans (hd j)))
+    (fun k l ↦ degreeOf_hasseDeriv_le_of_le hd (E k l))
     (C := 2 ^ (∑ j, d j)) (one_le_pow₀ one_le_two)
     (fun v _ k l a ↦ ⟨a + E k l, hcoeff v _ _⟩)
-    (fun v hv k l a ↦ ⟨a + E k l, by
-      rw [Matrix.of_apply, hasseDeriv_coeff, v.map_mul]
-      exact mul_le_of_le_one_left (v.nonneg _)
-        ((isNonarchimedean v hv).apply_natCast_le_one (by simp) v.map_one)⟩)
+    (fun v hv k l a ↦ ⟨a + E k l,
+      abv_coeff_hasseDeriv_le_of_isNonarchimedean (isNonarchimedean v hv) (E k l) a P⟩)
   rw [Real.log_pow, Nat.cast_sum, sum_mul] at h
   linarith
 
