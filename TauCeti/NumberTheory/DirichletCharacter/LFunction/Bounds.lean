@@ -42,13 +42,6 @@ private theorem sum_isBigO_one (hχ : χ ≠ 1) :
   refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
   simpa using χ.norm_sum_Icc_le_level hχ n
 
-/-- The partial-summation integral of a nonprincipal character converges absolutely whenever
-`Re(s) > 0`. -/
-theorem integrableOn_sum_mul_cpow (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
-    IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)))
-      (Set.Ioi 1) := by
-  exact TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _ (χ.norm_sum_Icc_le_level hχ) hs
-
 /-- Partial summation represents the continued L-function of a nonprincipal character on the
 whole half-plane `Re(s) > 0`. -/
 theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
