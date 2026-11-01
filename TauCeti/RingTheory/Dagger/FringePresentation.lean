@@ -54,7 +54,8 @@ radii are arbitrarily close to `1`.
 ## Main results
 
 * `TauCeti.Dagger.FringePresentation.exists_mem_fringeAlgebra`: `A` is the union of its fringe
-  algebras, which decrease with the radius (`fringeAlgebra_antitone`).
+  algebras, which decrease with the radius (`fringeAlgebra_antitone`), so every element of `A`
+  lies in the fringe algebras of all radii close enough to `1` (`eventually_mem_fringeAlgebra`).
 * `TauCeti.Dagger.FringePresentation.exists_stageMap_eq_zero`: the kernel of `A_ρ → A` is the
   union of the kernels of the transition maps to smaller stages.
 * `TauCeti.Dagger.FringePresentation.lift_ofStage` and
@@ -243,6 +244,11 @@ theorem fringeAlgebra_antitone : Antitone P.fringeAlgebra := by
   obtain ⟨x, rfl⟩ := P.mem_fringeAlgebra.mp ha
   exact P.mem_fringeAlgebra.mpr ⟨P.stageMap h x, P.ofStage_stageMap h x⟩
 
+/-- The radii `ρ ∈ (1, ρ₀]` of a fringe presentation form a nonempty set, so that statements
+holding for all radii close enough to `1` (`∀ᶠ ρ in atBot`) hold for some radius. -/
+instance : Nonempty (Set.Ioc (1 : ℝ) P.radius) :=
+  ⟨⟨P.radius, P.one_lt_radius, le_rfl⟩⟩
+
 /-- An overconvergent series is restricted at some radius in `(1, ρ₀]`. -/
 private theorem exists_isRestricted (f : washnitzerAlgebra (Fin P.n) K) :
     ∃ ρ : Set.Ioc (1 : ℝ) P.radius,
@@ -258,6 +264,11 @@ theorem exists_mem_fringeAlgebra (a : A) : ∃ ρ, a ∈ P.fringeAlgebra ρ := b
   refine ⟨ρ, P.mem_fringeAlgebra.mpr ⟨Ideal.Quotient.mk _ ⟨f, hρ⟩, ?_⟩⟩
   rw [ofStage_mk]
   exact congrArg P.proj (Subtype.ext (washnitzerAlgebra.coe_ofRestricted _ _ _))
+
+/-- Every element of `A` lies in the fringe algebras of all radii close enough to `1`. -/
+theorem eventually_mem_fringeAlgebra (a : A) : ∀ᶠ ρ in atBot, a ∈ P.fringeAlgebra ρ := by
+  obtain ⟨ρ, hρ⟩ := P.exists_mem_fringeAlgebra a
+  exact eventually_atBot.mpr ⟨ρ, fun _ h ↦ P.fringeAlgebra_antitone h hρ⟩
 
 /-- A series in the ideal of the relations lies in the ideal of the relations at every radius
 `ρ > 1` close enough to `1`: its finitely many coefficients with respect to the relations are
