@@ -155,9 +155,10 @@ theorem casimirScalar_root_highestRoot :
   have hρ := TauCeti.invForm_coroot (TauCeti.weylVector (rootSystem H) b) b.highestRoot
   rw [← TauCeti.rootSystem_coroot'_apply, b.coroot'_highestRoot_weylVector,
     b.invForm_root_highestRoot] at hρ
-  rw [TauCeti.casimirScalar_def, TauCeti.invForm_self_sub_invForm_self, add_right_comm,
-    add_sub_cancel_right, map_add, map_add, LinearMap.add_apply, LinearMap.add_apply,
-    b.invForm_root_highestRoot]
+  have hs := (TauCeti.invForm_isSymm (H := H)).eq ((rootSystem H).root b.highestRoot)
+    (TauCeti.weylVector (rootSystem H) b)
+  simp only [TauCeti.casimirScalar_def, map_add, LinearMap.add_apply, b.invForm_root_highestRoot,
+    hs]
   field_simp at hρ ⊢
   linear_combination -hρ
 
