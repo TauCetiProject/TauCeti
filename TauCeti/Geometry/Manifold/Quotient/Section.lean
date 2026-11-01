@@ -20,11 +20,12 @@ whose value at `q x` is `t x`. Every section of `V` arises in this way from exac
 section upstairs, its pullback (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`,
 `TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
 
-This file shows that the descended section is continuous, or `C^m` for `m ≤ n`, exactly when `t`
-is, read as a map `x ↦ (q x, t x)` into the total space of `V` or, equivalently, as a section of
-Mathlib's pullback bundle `q *ᵖ V`. The orbit projection is a surjective `C^n` local
-diffeomorphism (`TauCeti.isLocalDiffeomorph_quotientMk`), so regularity can be tested after
-composing with it. This extends the descent of invariant maps
+This file shows that the descended section is `C^m` for `m ≤ n` exactly when `t` is, read as a
+map `x ↦ (q x, t x)` into the total space of `V` or, equivalently, as a section of Mathlib's
+pullback bundle `q *ᵖ V`. The continuous analogue,
+`TauCeti.continuous_section_orbitRelQuotientRec_iff`, needs no manifold structure. The orbit
+projection is a surjective `C^n` local diffeomorphism (`TauCeti.isLocalDiffeomorph_quotientMk`),
+so regularity can be tested after composing with it. This extends the descent of invariant maps
 (`TauCeti.contMDiff_orbitRelQuotientLift_iff`) from maps into a fixed manifold to sections of a
 bundle over the quotient.
 
@@ -34,8 +35,6 @@ discontinuous group of biholomorphisms are the invariant holomorphic sections of
 
 ## Main results
 
-* `TauCeti.continuous_section_orbitRelQuotientRec_iff`: the descended section is continuous exactly
-  when the invariant section upstairs is.
 * `TauCeti.contMDiffAt_section_orbitRelQuotientRec_iff`,
   `TauCeti.contMDiff_section_orbitRelQuotientRec_iff`: the descended section is `C^m`, at the orbit
   of a point or globally, exactly when the invariant section upstairs is.
@@ -61,15 +60,6 @@ variable {G M : Type*} [Group G] [MulAction G M] [TopologicalSpace M]
   {F : Type*} {V : MulAction.orbitRel.Quotient G M → Type*}
   {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
   {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x}
-
-/-- The descent of an invariant section is continuous, as a map into the total space, exactly when
-the section upstairs is. -/
-theorem continuous_section_orbitRelQuotientRec_iff [TopologicalSpace (TotalSpace F V)] :
-    Continuous (fun q ↦ TotalSpace.mk' F q (MulAction.orbitRelQuotientRec t ht q)) ↔
-      Continuous fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x) := by
-  have hq : Topology.IsQuotientMap (Quotient.mk (MulAction.orbitRel G M)) := isQuotientMap_quot_mk
-  rw [hq.continuous_iff]
-  simp only [Function.comp_def, MulAction.orbitRelQuotientRec_mk]
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
