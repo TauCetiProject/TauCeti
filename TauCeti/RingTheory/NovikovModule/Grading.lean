@@ -18,8 +18,9 @@ degree of the reference lift. Consequently changing reference lifts preserves to
 and homogeneous Novikov scalars act by adding their degree.
 
 A supported bilinear kernel with a fixed degree shift extends to a product with that same
-shift on homogeneous completed combinations. Its coordinate matrix has the corresponding
-reference-degree shifts. These results apply to the supported kernel construction of
+shift on homogeneous completed combinations, and on a homogeneous first input of degree `k` the
+product only depends on the kernel at generators of degree `k`. Its coordinate matrix has the
+corresponding reference-degree shifts. These results apply to the supported kernel construction of
 `TauCeti.NovikovModule.kernelProduct`; they do not require discrete or injective periods.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
@@ -170,6 +171,22 @@ theorem kernelProduct_mem_gradeBy
   rw [hd p₁ p₂ p₀ (right_ne_zero_of_mul hp),
     ha p₁ (left_ne_zero_of_mul (left_ne_zero_of_mul hp)),
     hb p₂ (right_ne_zero_of_mul (left_ne_zero_of_mul hp))]
+
+omit [Add D] in
+/-- On a homogeneous first input of degree `k`, the product only depends on the kernel at
+generators of degree `k`. The two potential bounds may have different constants. -/
+theorem kernelProduct_congr_of_mem_gradeBy {C' : ℝ} {n' : S₁ → S₂ → S₀ → R}
+    (hn' : ∀ p₁ p₂ p₀, n' p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C')
+    (hfin' : ∀ p₁ p₂, n' p₁ p₂ ∈ NovikovModule R F₀) {k : D}
+    (h : ∀ p₁, d₁ p₁ = k → n p₁ = n' p₁) {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d₁ k) (b : NovikovModule R F₂) :
+    kernelProduct hn hfin a b = kernelProduct hn' hfin' a b := by
+  ext p₀
+  simp only [kernelProduct_apply_val]
+  refine finsum_congr fun q => ?_
+  by_cases hq : a.val q.1 = 0
+  · simp [hq]
+  · rw [h q.1 (mem_gradeBy_iff.1 ha q.1 hq)]
 
 end Kernel
 
