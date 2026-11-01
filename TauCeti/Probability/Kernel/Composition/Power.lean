@@ -8,10 +8,11 @@ module
 public import Mathlib.Probability.Kernel.Composition.CompMap
 
 /-!
-# Powers of finite and Markov kernels
+# Powers of s-finite, finite and Markov kernels
 
-Iterating a uniformly finite kernel remains uniformly finite. This permits taking finite
-transition masses, and thus nonnegative real transition matrices, for every iterate.
+Iterating an s-finite kernel remains s-finite; iterating a uniformly finite kernel remains
+uniformly finite. The latter permits taking finite transition masses, and thus nonnegative real
+transition matrices, for every iterate.
 Iterating a Markov kernel also preserves the probability normalization of every row.
 
 The powers of a deterministic kernel are the deterministic kernels of the iterates. Restricting
@@ -23,6 +24,15 @@ along paths of states.
 public section
 
 namespace ProbabilityTheory
+
+/-- Every natural power of an s-finite kernel is s-finite. -/
+instance IsSFiniteKernel.pow {α : Type*} [MeasurableSpace α] (κ : Kernel α α)
+    [IsSFiniteKernel κ] (n : ℕ) : IsSFiniteKernel (κ ^ n) := by
+  induction n with
+  | zero => exact inferInstanceAs (IsSFiniteKernel Kernel.id)
+  | succ n ih =>
+    -- Multiplication in the kernel monoid is composition.
+    exact inferInstanceAs (IsSFiniteKernel ((κ ^ n) ∘ₖ κ))
 
 /-- Every natural power of a finite kernel is finite. -/
 instance IsFiniteKernel.pow {α : Type*} [MeasurableSpace α] (κ : Kernel α α)

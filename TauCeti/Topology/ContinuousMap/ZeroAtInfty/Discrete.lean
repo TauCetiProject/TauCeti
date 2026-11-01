@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # The model space `C₀(I, E)` on a discrete index
@@ -35,6 +36,8 @@ This file develops the coordinate structure of `C₀(I, E)`:
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
 * `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
   map;
+* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
+  `evalCLM R i` of `C₀(I, R)` are weak-star null along the cofinite filter;
 * `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
   `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
@@ -441,6 +444,17 @@ theorem not_tendsto_single_cofinite [NormedAddCommGroup β] [DecidableEq I] [Inf
   have h1 := h.norm
   simp only [norm_single, norm_zero] at h1
   exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
+
+variable (R : Type*) [SeminormedCommRing R] in
+/-- The coordinate functionals of `C₀(I, R)` tend to zero in the weak-star topology along the
+cofinite filter. -/
+theorem tendsto_toWeakDual_evalCLM_cofinite :
+    Tendsto (fun i : I ↦ StrongDual.toWeakDual (evalCLM R i : StrongDual R C₀(I, R))) cofinite
+      (𝓝 0) :=
+  tendsto_iff_forall_eval_tendsto_topDualPairing.2 fun f ↦ by
+    have : Tendsto (fun i ↦ evalCLM R i f) cofinite (𝓝 0) := by simpa using f.tendsto_cofinite
+    -- `topDualPairing R _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
+    exact this
 
 section Ring
 
