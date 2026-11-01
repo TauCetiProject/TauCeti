@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Laurent
-public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
 # The derivative of Laurent polynomials
@@ -126,10 +125,12 @@ theorem derivative_mul (f g : R[T;T⁻¹]) :
     | add g₁ g₂ h₁ h₂ => simp only [mul_add, map_add, h₁, h₂]; abel
     | C_mul_T n b =>
       simp only [← single_eq_C_mul_T, AddMonoidAlgebra.single_mul_single, derivative_single]
-      rw [show m - 1 + n = m + n - 1 by ring, show m + (n - 1) = m + n - 1 by ring,
-        ← AddMonoidAlgebra.single_add, Int.cast_add, mul_add, mul_assoc a (m : R),
-        (Int.cast_commute m b).eq]
-      simp only [mul_assoc]
+      -- Both terms of the right side are monomials of degree `m + n - 1`.
+      rw [show m - 1 + n = m + n - 1 by abel, show m + (n - 1) = m + n - 1 by abel,
+        ← AddMonoidAlgebra.single_add]
+      -- Their coefficients add up to `a * b * (m + n)`, moving the integer cast `m` past `b`.
+      congr 1
+      simp only [Int.cast_add, mul_add, mul_assoc, (Int.cast_commute m b).eq]
 
 /-- The derivative of Laurent polynomials extends the derivative of polynomials along
 `Polynomial.toLaurent`. -/
@@ -142,8 +143,8 @@ theorem derivative_toLaurent (p : R[X]) :
     -- The exponent `n - 1` is truncated subtraction in `ℕ`, so `n = 0` is treated separately.
     rcases n with _ | n <;> simp
 
-/-- **The kernel of the derivative.** Without additive torsion, as in characteristic zero, a
-Laurent polynomial has derivative zero exactly when it is a constant. -/
+/-- **The kernel of the derivative.** Without additive torsion in `R`, a Laurent
+polynomial has derivative zero exactly when it is a constant. -/
 theorem derivative_eq_zero_iff_exists_C [IsAddTorsionFree R] {f : R[T;T⁻¹]} :
     derivative f = 0 ↔ ∃ c : R, C c = f := by
   refine ⟨fun h ↦ ⟨f.coeff 0, LaurentPolynomial.ext fun n ↦ ?_⟩, ?_⟩
