@@ -25,12 +25,14 @@ real values are measurable in their parameter.
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
-* `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
+* `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable;
+* `TauCeti.eventually_re_riemannZeta_neg`: `Re ζ(x) < 0` for real `x` close to `1` on the left.
 -/
 
 public section
 
-open Complex
+open Complex Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -60,5 +62,20 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
 @[fun_prop]
 theorem measurable_riemannZeta : Measurable riemannZeta :=
   measurable_of_continuousOn_compl_singleton 1 differentiableOn_riemannZeta.continuousOn
+
+/-- The real part of `riemannZeta` is negative at real points close to `1` on the left of its simple
+pole. -/
+theorem eventually_re_riemannZeta_neg : ∀ᶠ x : ℝ in 𝓝[<] 1, (riemannZeta x).re < 0 := by
+  have hmap : Tendsto (fun x : ℝ ↦ (x : ℂ)) (𝓝[<] 1) (𝓝[≠] 1) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · exact (continuous_ofReal.tendsto' 1 1 ofReal_one).mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with x hx
+      exact Set.mem_compl_singleton_iff.mpr (by exact_mod_cast ne_of_lt hx)
+  have hre : Tendsto (fun x : ℝ ↦ (((x : ℂ) - 1) * riemannZeta x).re) (𝓝[<] 1) (𝓝 1) := by
+    simpa only [Function.comp_def, one_re] using
+      (continuous_re.tendsto (1 : ℂ)).comp (riemannZeta_residue_one.comp hmap)
+  filter_upwards [hre.eventually (lt_mem_nhds zero_lt_one), self_mem_nhdsWithin] with x hx hx₁
+  rw [← ofReal_one, ← ofReal_sub, re_ofReal_mul] at hx
+  exact neg_of_mul_pos_right hx (by linarith [Set.mem_Iio.mp hx₁])
 
 end TauCeti

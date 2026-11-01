@@ -18,6 +18,8 @@ several: multiplying finitely many characters, and lifting a character to a mult
 * `MulChar.isQuadratic_prod`: a finite product of quadratic characters is quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel`: lifting a quadratic character to a multiple of
   its level leaves it quadratic.
+* `DirichletCharacter.isQuadratic_mul`: the product of two quadratic characters, at the least
+  common multiple of their levels, is quadratic.
 -/
 
 public section
@@ -60,5 +62,14 @@ theorem isQuadratic_changeLevel {R : Type*} [CommRing R]
   · rw [← ha.unit_spec, changeLevel_eq_cast_of_dvd]
     exact hχ _
   · exact Or.inl (MulChar.map_nonunit _ ha)
+
+/-- The product of two quadratic characters, at the least common multiple of their levels, is
+quadratic. -/
+theorem isQuadratic_mul {R : Type*} [CommRing R] [NoZeroDivisors R] [Nontrivial R]
+    {n m : ℕ} {χ : DirichletCharacter R n} {ψ : DirichletCharacter R m} (hχ : χ.IsQuadratic)
+    (hψ : ψ.IsQuadratic) : (χ.mul ψ).IsQuadratic := by
+  rw [mul, MulChar.isQuadratic_iff_sq_eq_one, mul_pow,
+    MulChar.isQuadratic_iff_sq_eq_one.mp (isQuadratic_changeLevel hχ _),
+    MulChar.isQuadratic_iff_sq_eq_one.mp (isQuadratic_changeLevel hψ _), one_mul]
 
 end DirichletCharacter

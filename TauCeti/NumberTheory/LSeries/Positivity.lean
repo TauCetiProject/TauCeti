@@ -35,6 +35,8 @@ abscissa of absolute convergence.
   at a positive index is positive, the value at a real point of summability is positive.
 * `TauCeti.LSeries.positive_of_exists_pos`: the same conclusion at every real point strictly to the
   right of the abscissa of absolute convergence.
+* `TauCeti.LSeries.apply_one_le_LSeries`: for nonnegative coefficients, the value at such a point
+  is at least the first coefficient.
 -/
 
 public section
@@ -81,5 +83,14 @@ theorem positive_of_exists_pos (ha : 0 ≤ a) (hpos : ∃ n ≠ 0, 0 < a n) {x :
     0 < LSeries a x :=
   positive_of_exists_pos_of_summable ha hpos <|
     LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa only [Complex.ofReal_re] using hx)
+
+/-- A Dirichlet series with nonnegative coefficients is at least its first coefficient at every
+real point strictly to the right of its abscissa of absolute convergence. -/
+theorem apply_one_le_LSeries (ha : 0 ≤ a) {x : ℝ} (hx : LSeries.abscissaOfAbsConv a < x) :
+    a 1 ≤ LSeries a x := by
+  have hsum : LSeriesSummable a x :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa only [Complex.ofReal_re] using hx)
+  have h := hsum.le_tsum 1 fun n _ ↦ _root_.LSeries.term_nonneg (ha n) x
+  rwa [_root_.LSeries.term_of_ne_zero one_ne_zero, Nat.cast_one, Complex.one_cpow, div_one] at h
 
 end TauCeti.LSeries
