@@ -14,8 +14,8 @@ public import TauCeti.ModelTheory.ModelExistence.Types
 A partial type `p`, a set of formulas with `n` bound positions and no free variables, is
 **isolated over a theory `T` in a fragment `A`** when some member `φ` of `A` with `n` bound
 positions is consistent with `T` and implies every formula of `p` modulo `T`: the theory `T`
-together with `∃̄ φ` is satisfiable, and `T` entails `∀̄ (φ → ψ)` for every `ψ ∈ p`, where `∃̄` and
-`∀̄` quantify the `n` bound positions.
+together with `φ.exs` is satisfiable, and `T` entails `(φ.imp ψ).alls` for every `ψ ∈ p`, where
+`exs` and `alls` quantify the `n` bound positions.
 
 Non-isolation is the hypothesis of the omitting types theorem, by which a satisfiable theory in a
 countable formation-closed fragment has a countable model omitting countably many partial types
@@ -66,8 +66,8 @@ variable {A B : L.Fragment} {T : L.Theoryω} {n : ℕ} {p q : Set (L.BoundedForm
 
 /-- A partial type `p` in `n` bound positions is **isolated over the theory `T` in the fragment
 `A`** when some member `φ` of `A` with `n` bound positions is consistent with `T`, in that `T`
-together with `∃̄ φ` is satisfiable, and implies every formula of `p` modulo `T`: `T` entails
-`∀̄ (φ → ψ)` for every `ψ ∈ p`. Here `∃̄` and `∀̄` quantify the `n` bound positions. -/
+together with `φ.exs` is satisfiable, and implies every formula of `p` modulo `T`: `T` entails
+`(φ.imp ψ).alls` for every `ψ ∈ p`. Here `exs` and `alls` quantify the `n` bound positions. -/
 def IsolatesIn (A : L.Fragment) (T : L.Theoryω) (p : Set (L.BoundedFormulaω Empty n)) : Prop :=
   ∃ φ : L.BoundedFormulaω Empty n, (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ∧
     (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T.Entails (φ.imp ψ).alls
@@ -94,7 +94,7 @@ theorem IsolatesIn.isSatisfiable (h : IsolatesIn A T p) : T.IsSatisfiable :=
   let ⟨_, _, hs, _⟩ := h
   hs.mono (Set.subset_insert _ _)
 
-/-- A structure satisfying `∃̄ φ` and every sentence `∀̄ (φ → ψ)` with `ψ ∈ p` realizes `p`: a
+/-- A structure satisfying `φ.exs` and every sentence `(φ.imp ψ).alls` with `ψ ∈ p` realizes `p`: a
 tuple satisfying `φ` satisfies all of `p`. -/
 private theorem not_omitsType_of_realize {M : Type w} [L.Structure M]
     {φ : L.BoundedFormulaω Empty n} (hφ : SentenceInf.Realize φ.exs M)
