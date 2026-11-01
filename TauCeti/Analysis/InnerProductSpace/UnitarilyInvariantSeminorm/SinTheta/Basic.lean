@@ -52,6 +52,9 @@ quadratic-form separation is `Submodule.mul_norm_starProjection_comp_starProject
   `TauCeti.UnitarilyInvariantSeminorm.mul_map_starProjection_comp_starProjection_le_map_sub_swap`:
   the perturbation `sin Θ` theorem `δ N(P_{Vᗮ} P_U) ≤ N(B - A)`, in both orientations of the
   interval/exterior separation.
+* `TauCeti.UnitarilyInvariantSeminorm.map_sylvester_starProjection_comp_starProjection_le`: on the
+  directed sine map, `N(B Y - Y A) ≤ N(B - A)`, which turns every Sylvester bound into a
+  perturbation `sin Θ` bound.
 
 ## References
 
@@ -106,7 +109,7 @@ theorem mul_map_starProjection_comp_le_map_sylvester_apply (N : UnitarilyInvaria
 /-- On the directed sine map `P_{Vᗮ} P_U` from an `A`-invariant subspace `U` towards a
 `B`-invariant subspace `V`, the Sylvester operator `Y ↦ B Y - Y A` is `P_{Vᗮ} (B - A) P_U`, so
 its unitarily invariant seminorm is at most `N(B - A)`. -/
-private theorem map_sylvester_starProjection_comp_starProjection_le
+theorem map_sylvester_starProjection_comp_starProjection_le
     (N : UnitarilyInvariantSeminorm 𝕜 E E) {A B : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
     (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U V : Submodule 𝕜 E} (hU : ∀ x ∈ U, A x ∈ U)
     (hV : ∀ x ∈ V, B x ∈ V) :

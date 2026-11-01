@@ -59,6 +59,15 @@ theorem norm_pow_succ_mul_le_pow_mul {R : Type*} [SeminormedRing R] (q w : R) (n
       _ ≤ ‖q‖ * (‖q‖ ^ n * ‖q * w‖) := by gcongr
       _ = ‖q‖ ^ (n + 1) * ‖q * w‖ := by ring
 
+/-- Without the normalisation `‖1‖ = 1`, powers are still bounded by `‖xⁿ‖ ≤ max ‖1‖ 1 * ‖x‖ⁿ`,
+including the power `x⁰ = 1`. -/
+theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
+    ‖x ^ n‖ ≤ max ‖(1 : R)‖ 1 * ‖x‖ ^ n := by
+  rcases n with _ | n
+  · simp
+  · exact (norm_pow_le' x n.succ_pos).trans
+      (le_mul_of_one_le_left (by positivity) (le_max_right _ _))
+
 end TauCeti
 
 end
