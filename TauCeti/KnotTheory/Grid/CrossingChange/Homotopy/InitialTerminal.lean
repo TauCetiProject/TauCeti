@@ -53,23 +53,6 @@ private noncomputable def secondCrossingSquares {x z : GridState n}
   F.elim (fun D => D.rectangle.toGridRectangle.coveredSquares)
     (fun D => D.hexagon.crossingCoveredSquares)
 
-private theorem initialTerminal_rows_cut {B T s t r : Fin n}
-    (hs : s ∈ Grid.cIco B T) (ht : t ∈ Grid.cIoo s T) :
-    ((r ∈ Grid.cIco B s ∨ r ∈ Grid.cIoo t T) ↔
-      r ∈ Grid.cIco B T ∧ r ∉ insert t (Grid.cIco s t)) ∧
-    ¬(r ∈ Grid.cIco B s ∧ r ∈ Grid.cIoo t T) := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-private theorem initialTerminal_rows_split {B T s t r : Fin n}
-    (ht : t ∈ Grid.cIco B T) (hst : t ∈ Grid.cIoo s T) :
-    ((r ∈ Grid.cIoo s T ∨ r ∈ Grid.cIco B t) ↔
-      r ∈ Grid.cIoo s t ∨ r ∈ Grid.cIco B T) ∧
-    ((r ∈ Grid.cIoo s T ∧ r ∈ Grid.cIco B t) ↔
-      r ∈ Grid.cIoo s t ∧ r ∈ Grid.cIco B T) := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
 section Geometry
 
 variable {x y z : GridState n}
@@ -130,7 +113,7 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
         have hrect := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
         have hQr := Q.mk_mem_toGridRectangle_coveredSquares_left_column r
         simp only [hQ, hP, hrect, C.column_ne_next, hQr, htop]
-        have := initialTerminal_rows_split (r := r) ht' hturn
+        have := Grid.cIoo_union_cIco_recut (r := r) ht' hturn
         grind only
       · by_cases hb : p.1 = b
         · obtain ⟨c, r⟩ := p
@@ -141,7 +124,7 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
           have hrect := P.mk_mem_toGridRectangle_coveredSquares_right_column r
           have hQr := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
           simp only [hQ, hP, hrect, C.column_ne_next.symm, hQr, htop]
-          have := initialTerminal_rows_cut (r := r) hs hturn
+          have := Grid.cIco_union_cIoo_cut (r := r) hs hturn
           grind only
         · simp only [hoff p ha hb, P.mem_coveredSquares_iff_of_ne ha hb, ha, hb,
             false_and, not_false_eq_true, and_true, or_false]
@@ -168,7 +151,7 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
         have hrect := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
         have hQr := Q.mk_mem_toGridRectangle_coveredSquares_left_column r
         simp only [hQ, hP, hrect, hQr, C.column_ne_next, htop]
-        have := initialTerminal_rows_cut (r := r) ht' hturn
+        have := Grid.cIco_union_cIoo_cut (r := r) ht' hturn
         grind only
       · by_cases hb : p.1 = b
         · obtain ⟨c, r⟩ := p
@@ -179,7 +162,7 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
           have hrect := P.mk_mem_toGridRectangle_coveredSquares_right_column r
           have hQr := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
           simp only [hQ, hP, hrect, hQr, C.column_ne_next.symm, htop]
-          have := initialTerminal_rows_split (r := r) hs hturn
+          have := Grid.cIoo_union_cIco_recut (r := r) hs hturn
           grind only
         · simp only [hoff p ha hb, P.mem_coveredSquares_iff_of_ne ha hb, ha, hb,
             false_and, not_false_eq_true, and_true, or_false]
