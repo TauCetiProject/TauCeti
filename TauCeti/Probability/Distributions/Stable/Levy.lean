@@ -44,10 +44,11 @@ private theorem stableCharacteristicExponent_one_half_one (u : ℝ) :
   have hre : (-2 * Complex.I * (u : ℂ)).re = 0 := by simp
   have him : (-2 * Complex.I * (u : ℂ)).im = -2 * u := by simp
   have hdiv : 2 * |u| / 2 = |u| := by ring
-  rw [stableCharacteristicExponent_of_ne_one_of_ne_zero (by norm_num) 1 hu,
-    htan, ← one_div (2 : ℝ), ← sqrt_eq_rpow, Complex.sqrt_eq_real_add_ite, hnorm, hre, him,
-    add_zero, sub_zero, hdiv]
-  simp only [one_mul]
+  rw [stableCharacteristicExponent_of_ne_one_of_ne_zero (by norm_num) 1 hu]
+  simp only [htan, one_mul]
+  rw [← one_div (2 : ℝ), ← sqrt_eq_rpow]
+  rw [Complex.sqrt_eq_real_add_ite]
+  simp only [hnorm, hre, him, add_zero, sub_zero, hdiv]
   rcases hu.lt_or_gt with hu | hu
   · rw [sign_of_neg hu, ite_eq_left (by linarith : 0 ≤ -2 * u)]
     push_cast

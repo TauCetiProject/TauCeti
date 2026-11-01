@@ -21,7 +21,7 @@ characteristic function of the law of `X`, so this is the standard route from a 
 function to a characteristic function.
 
 For almost surely nonnegative variables under a finite measure,
-`ProbabilityTheory.continuousOn_complexMGF_of_nonneg` gives continuity on the closed left
+`TauCeti.continuousOn_complexMGF_of_nonneg` gives continuity on the closed left
 half-plane. This also covers the imaginary-axis boundary when positive exponential moments
 do not exist.
 
@@ -66,7 +66,7 @@ public section
 open Complex Filter MeasureTheory ProbabilityTheory Set
 open scoped Topology
 
-namespace ProbabilityTheory
+namespace TauCeti
 
 /-- For an almost surely nonnegative random variable under a finite measure, the complex
 moment-generating function is continuous on the closed left half-plane, including its
@@ -85,10 +85,6 @@ theorem continuousOn_complexMGF_of_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ 
     exact Real.exp_le_one_iff.mpr (by simpa using mul_nonpos_of_nonpos_of_nonneg hz hω)
   · exact integrable_const 1
   · exact ae_of_all _ fun _ ↦ (by fun_prop : Continuous fun z : ℂ ↦ cexp (z * X _)).continuousOn
-
-end ProbabilityTheory
-
-namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω → ℝ}
 

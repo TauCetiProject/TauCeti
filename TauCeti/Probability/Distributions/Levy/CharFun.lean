@@ -68,7 +68,7 @@ private theorem complexMGF_levyMeasure_zero_one {z : ℂ} (hz : z.re ≤ 0) :
     exact (Complex.continuous_exp.continuousAt.comp
       (hsqrt.comp (by fun_prop)).neg).continuousWithinAt
   apply hEq.of_subset_closure
-    (continuousOn_complexMGF_of_nonneg measurable_id.aemeasurable
+    (TauCeti.continuousOn_complexMGF_of_nonneg measurable_id.aemeasurable
       ((ae_lt_levyMeasure 0 1).mono fun _ hx ↦ hx.le)) hcont (fun _ h ↦ h.le) ?_ hz
   simp only [mem_Iio, Complex.closure_setOfPred_re_lt]
   exact Subset.rfl
