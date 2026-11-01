@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.AlgebraicGeometry.AdicSpace.ResidueField.Basic
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.RingTheory.Valuation.AlgebraicExtension
+import TauCeti.RingTheory.Valuation.LinearIndependent
 
 /-!
 # Fibres of valuation spectra along finite ring maps
@@ -39,8 +40,6 @@ lift along the surjection `C → κ(Q)`.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.mem_range_comap_algebraMap_residueField_iff`: the points of `Spv A`
-  coming from `Spv κ(𝔭)` are exactly those with support `𝔭`.
 * `TauCeti.ValuationSpectrum.finite_preimage_comap_singleton`: for a finite `A`-algebra `B`, only
   finitely many points of `Spv B` lie over a given point of `Spv A`.
 * `TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le`: their number is at most the
@@ -61,24 +60,6 @@ public section
 namespace TauCeti
 
 namespace ValuationSpectrum
-
-section ResidueField
-
-variable {A : Type*} [CommRing A]
-
-/-- **The points of `Spv κ(𝔭)` inside `Spv A`.** A point `v` of `Spv A` is the pullback of a
-point of the valuation spectrum of the residue field `κ(𝔭)` exactly when its support is `𝔭`. -/
-theorem mem_range_comap_algebraMap_residueField_iff (p : Ideal A) [p.IsPrime] (v : Spv A) :
-    v ∈ Set.range (comap (algebraMap A p.ResidueField)) ↔ v.supp = p := by
-  constructor
-  · rintro ⟨w, rfl⟩
-    rw [supp_comap, Ideal.eq_bot_of_prime w.supp, ← RingHom.ker_eq_comap_bot,
-      Ideal.ker_algebraMap_residueField]
-  · rintro rfl
-    exact ⟨ofValuation (residueFieldValuation v), by
-      rw [comap_ofValuation, residueFieldValuation_comap_algebraMap, ofValuation_valuation]⟩
-
-end ResidueField
 
 section Field
 
@@ -212,8 +193,7 @@ private theorem exists_comap_includeRight_eq (v : Spv A) {w : Spv B}
         comap (algebraMap v.supp.ResidueField (v.supp.Fiber B)) W =
           ofValuation (residueFieldValuation v) := by
   have hq : v.supp = w.supp.comap (Algebra.ofId A B).toRingHom := by
-    rw [← hw, supp_comap]
-    rfl
+    rw [← hw, supp_comap, AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId]
   set f := Ideal.ResidueField.mapₐ v.supp w.supp (Algebra.ofId A B) hq
   set φ := Algebra.TensorProduct.lift f (IsScalarTower.toAlgHom A B w.supp.ResidueField)
     fun _ _ ↦ .all _ _

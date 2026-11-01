@@ -34,17 +34,17 @@ finite étale) morphism, surjectivity on adic spectra forces faithful flatness
 (`TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap`). Hence a finite étale morphism of
 Huber pairs over such a base is surjective on adic spectra exactly when it is faithfully flat.
 
-In the other direction, the fibres of a finite étale morphism are finite, with at most as many
-points over `x` as the rank of `B` at the support of `x`. Over any base, `Spa(B, B⁺)` sits inside
-`Spv B`, so this is the fibre bound for valuation spectra along finite flat ring maps
-(`TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le_rankAtStalk`).
-
 The content is the continuity of `w` given that of its pullback. Fix a pseudouniformiser `ϖ` of
 `A`. The integers of the pullback of `w` form an open subring of `A`, so the integral closure `C`
 of their image is open in `B` (`TauCeti.Huber.isOpen_integralClosure_map_algebraMap`) and `w ≤ 1`
 on it. Hence the translates of `ϖᴺ C` are neighbourhoods on which `w` is at most `w(ϖ)ᴺ`. It
 remains to see that the powers of `w(ϖ)` are cofinal at every `c ∈ B` with `w(c) ≠ 0`, which
 holds because `B` is integral over `A` (`Valuation.exists_pow_lt_of_isIntegral`).
+
+Separately, the fibres of a finite étale morphism are finite, with at most as many points over `x`
+as the rank of `B` at the support of `x`. Over any base, `Spa(B, B⁺)` sits inside `Spv B`, so this
+is the fibre bound for valuation spectra along finite flat ring maps
+(`TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le_rankAtStalk`).
 
 ## Main results
 
