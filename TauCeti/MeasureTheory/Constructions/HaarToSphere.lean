@@ -31,6 +31,8 @@ In the language of distributions the second formula says that the vector field `
 has divergence `d μ(ball 0 1) δ₀`; it is the flux computation behind the fundamental solution of
 the Laplacian.
 
+For any finite measure on the unit sphere, its embedding belongs to every `Lᵖ` space.
+
 ## Main declarations
 
 * `TauCeti.integral_volumeIoiPow`: integration against Mathlib's radial measure
@@ -61,6 +63,14 @@ namespace TauCeti
 
 open MeasureTheory Metric Set Filter Topology
 open scoped ENNReal
+
+/-- The unit-sphere embedding belongs to every `Lᵖ`, including `L∞`, for any finite measure. -/
+@[simp]
+theorem memLp_coe_unitSphere {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    [OpensMeasurableSpace E] [SecondCountableTopology E] (p : ℝ≥0∞)
+    (μ : Measure (sphere (0 : E) 1)) [IsFiniteMeasure μ] :
+    MemLp ((↑) : sphere (0 : E) 1 → E) p μ := by
+  exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure]

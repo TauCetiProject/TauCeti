@@ -103,7 +103,7 @@ theorem integral_coe_vonMisesFisherNaturalMeasure_mem_span (η : E) :
 theorem integral_inner_vonMisesFisherNaturalMeasure_eq_zero (η θ : E)
     (hθ : ⟪θ, η⟫ = 0) :
     ∫ x : sphere (0 : E) 1, ⟪θ, (x : E)⟫ ∂vonMisesFisherNaturalMeasure η = 0 := by
-  rw [integral_inner ((memLp_coe_vonMisesFisherNaturalMeasure η 1).integrable le_rfl)]
+  rw [integral_inner ((memLp_coe_unitSphere 1 (vonMisesFisherNaturalMeasure η)).integrable le_rfl)]
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
     (integral_coe_vonMisesFisherNaturalMeasure_mem_span η)
   rw [← hc, inner_smul_right, hθ, mul_zero]
@@ -119,7 +119,7 @@ theorem integral_coe_vonMisesFisherMeasure_eq_integral_inner_smul
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
       (integral_coe_vonMisesFisherNaturalMeasure_mem_span (κ • (m : E)))
     rw [integral_inner
-      ((memLp_coe_vonMisesFisherNaturalMeasure (κ • (m : E)) 1).integrable le_rfl),
+      ((memLp_coe_unitSphere 1 (vonMisesFisherNaturalMeasure (κ • (m : E)))).integrable le_rfl),
       ← hc]
     simp [smul_smul, real_inner_smul_right]
   · simp [vonMisesFisherMeasure_of_neg m (lt_of_not_ge hκ)]

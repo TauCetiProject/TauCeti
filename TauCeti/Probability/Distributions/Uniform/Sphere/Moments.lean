@@ -36,12 +36,6 @@ namespace TauCeti.Probability
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The unit-sphere embedding has every finite moment and is essentially bounded. -/
-@[simp]
-theorem memLp_coe_uniformSphereMeasure (p : ℝ≥0∞) :
-    MemLp ((↑) : sphere (0 : E) 1 → E) p (uniformSphereMeasure E) := by
-  exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
-
 variable [Nontrivial E]
 
 /-- The covariance of the embedded uniform sphere law is the inner product divided by the
@@ -75,7 +69,7 @@ theorem covariance_inner_uniformSphereMeasure (u v : E) :
       ⟪u, v⟫ / (finrank ℝ E : ℝ) := by
   have hLp : MemLp id 2 ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)) :=
     (memLp_map_measure_iff (by fun_prop) (by fun_prop)).2
-      (memLp_coe_uniformSphereMeasure 2)
+      (memLp_coe_unitSphere 2 (uniformSphereMeasure E))
   have h := congrArg (fun B ↦ B u v) (covarianceBilin_map_coe_uniformSphereMeasure (E := E))
   rw [covarianceBilin_apply_eq_cov hLp,
     covariance_map (by fun_prop) (by fun_prop) (by fun_prop)] at h
@@ -92,11 +86,11 @@ theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫ ∂uniformSphereMeasure E =
       ⟪u, v⟫ / (finrank ℝ E : ℝ) := by
   have hmean (w : E) : ∫ x : sphere (0 : E) 1, ⟪w, (x : E)⟫ ∂uniformSphereMeasure E = 0 := by
-    rw [integral_inner ((memLp_coe_uniformSphereMeasure 1).integrable le_rfl),
+    rw [integral_inner ((memLp_coe_unitSphere 1 (uniformSphereMeasure E)).integrable le_rfl),
       integral_coe_uniformSphereMeasure, inner_zero_right]
   have h := covariance_inner_uniformSphereMeasure u v
-  rwa [covariance_eq_sub ((memLp_coe_uniformSphereMeasure 2).const_inner u)
-    ((memLp_coe_uniformSphereMeasure 2).const_inner v), hmean u, hmean v,
+  rwa [covariance_eq_sub ((memLp_coe_unitSphere 2 (uniformSphereMeasure E)).const_inner u)
+    ((memLp_coe_unitSphere 2 (uniformSphereMeasure E)).const_inner v), hmean u, hmean v,
     mul_zero, sub_zero] at h
 
 /-- The variance of a linear observable of a uniform unit vector is its squared norm divided

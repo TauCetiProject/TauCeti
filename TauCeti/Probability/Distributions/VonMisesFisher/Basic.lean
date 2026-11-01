@@ -141,17 +141,11 @@ theorem measurable_vonMisesFisherMeasure :
   exact Measurable.ite (measurableSet_le measurable_const measurable_snd)
     (measurable_vonMisesFisherNaturalMeasure.comp (by fun_prop)) measurable_const
 
-/-- The embedded von Mises–Fisher law has every finite moment and is essentially bounded. -/
-@[simp]
-theorem memLp_coe_vonMisesFisherNaturalMeasure (η : E) (p : ℝ≥0∞) :
-    MemLp ((↑) : sphere (0 : E) 1 → E) p (vonMisesFisherNaturalMeasure η) := by
-  exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
-
 /-- Every linear observable of a natural-parameter sphere law has all finite moments. -/
 theorem memLp_inner_vonMisesFisherNaturalMeasure (η θ : E) (p : ℝ≥0∞) :
     MemLp (fun x : sphere (0 : E) 1 ↦ ⟪θ, (x : E)⟫_ℝ) p
       (vonMisesFisherNaturalMeasure η) :=
-  (memLp_coe_vonMisesFisherNaturalMeasure η p).const_inner θ
+  (memLp_coe_unitSphere p (vonMisesFisherNaturalMeasure η)).const_inner θ
 
 /-- The exact exponential-integrability domain of every linear observable is all of `ℝ`. -/
 @[simp]
