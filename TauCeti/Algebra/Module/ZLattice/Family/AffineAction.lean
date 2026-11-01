@@ -44,6 +44,8 @@ periods (`TauCeti.torusFamilyAffineMap_mk_eq_mk_iff`).
 
 * `TauCeti.torusFamilyAffineMap`: the affine map of the family defined by `g`.
 * `TauCeti.torusFamilyAffineMulAction`: the affine action of `Γ` on the family.
+* `TauCeti.torusFamilyAffineProjectionHom`: the projection of the family, as a map equivariant for
+  the affine action.
 
 ## Main results
 
@@ -213,6 +215,21 @@ def torusFamilyAffineMulAction :
     (x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
     letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
     g • x = torusFamilyAffineMap R P ρ hP b hb g x := (rfl)
+
+/-- The projection `[y, v] ↦ y` of a family of tori, as a map equivariant for the affine action of
+`Γ` on the family and the action of `Γ` on the base. -/
+def torusFamilyAffineProjectionHom :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    AddAction.orbitRel.Quotient Λ (Y × E) →[Γ] Y :=
+  letI := periodAddAction P
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  { toFun := torusFamilyProjection P
+    map_smul' g x := by simp }
+
+@[simp] theorem coe_torusFamilyAffineProjectionHom :
+    ⇑(torusFamilyAffineProjectionHom R hone hmul P ρ hP b hb hbone hbmul) =
+      torusFamilyProjection P := (rfl)
 
 /-! ### Topology of the affine action -/
 

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 public import TauCeti.Topology.Algebra.GroupAction.Quotient
-import TauCeti.Geometry.Manifold.Submersion
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Descending maps to quotient manifolds

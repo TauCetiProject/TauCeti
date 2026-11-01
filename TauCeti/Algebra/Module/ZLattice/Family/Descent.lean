@@ -28,13 +28,8 @@ manifold `Y`, a complex space `E`, `𝕜 = ℂ` and holomorphic data, `X/Γ → 
 submersion.
 
 Freeness of the action on `Y` is needed for `Y/Γ` to be a manifold. When `Γ` has fixed points on
-`Y`, the free locus of the base (`TauCeti.freeLocus`) is an open invariant submanifold on which
-`Γ` acts freely, and the statement applies to a family of tori over it.
-
-## Main definitions
-
-* `TauCeti.torusFamilyAffineProjectionHom`: the projection of the family of tori, as a map
-  equivariant for the affine action.
+`Y`, the free locus of the base (`TauCeti.freeLocus`) is open and invariant, but this file does
+not restrict the family to it.
 
 ## Main results
 
@@ -53,33 +48,6 @@ public section
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-variable {Y Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
-  {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
-  (hone : ∀ (y : Y) (v : E), R 1 y v = v)
-  (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (P : Y → Λ →ₗ[ℤ] E) (ρ : Representation ℤ Γ Λ)
-  (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
-  (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
-  (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
-  (hbmul : ∀ (g h : Γ) (y : Y),
-    b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
-
-/-- The projection `[y, v] ↦ y` of a family of tori, as a map equivariant for the affine action of
-`Γ` on the family and the action of `Γ` on the base. -/
-def torusFamilyAffineProjectionHom :
-    letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    AddAction.orbitRel.Quotient Λ (Y × E) →[Γ] Y :=
-  letI := periodAddAction P
-  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  { toFun := torusFamilyProjection P
-    map_smul' g x := by simp }
-
-@[simp] theorem coe_torusFamilyAffineProjectionHom :
-    ⇑(torusFamilyAffineProjectionHom R hone hmul P ρ hequiv b hb hbone hbmul) =
-      torusFamilyProjection P := (rfl)
 
 section Regularity
 
@@ -150,8 +118,9 @@ theorem isSubmersionOfComplement_torusFamilyAffineProjection_orbitRelQuotientMap
   have := isManifold_torusFamily P hinj hP
   have := contMDiffConstSMul_torusFamilyAffineMulAction P hinj hP R ρ hequiv b hb hone hmul hbone
     hbmul hR hbc
-  exact isSubmersionOfComplement_orbitRelQuotientMap
-    (isSubmersionOfComplement_torusFamilyProjection P hinj hP)
+  refine isSubmersionOfComplement_orbitRelQuotientMap ?_
+  rw [coe_torusFamilyAffineProjectionHom]
+  exact isSubmersionOfComplement_torusFamilyProjection P hinj hP
 
 end Regularity
 

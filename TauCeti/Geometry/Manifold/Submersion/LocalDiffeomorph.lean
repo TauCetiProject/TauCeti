@@ -8,7 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.Submersion
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.Submersion
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Composing submersions with local diffeomorphisms
@@ -88,11 +89,7 @@ theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt [IsManifold I n M']
     h.codChart_mem_maximalAtlas fun u hu => ?_
   · refine ⟨hxΦ, ?_⟩
     simpa [← hgΦ hxΦ] using h.mem_domChart_source
-  · refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
-    · exact (contMDiffOn_of_mem_maximalAtlas hψ).comp (Φ.contMDiffOn.mono inter_subset_left)
-        fun y hy => hy.2
-    · exact Φ.symm.contMDiffOn.comp ((contMDiffOn_symm_of_mem_maximalAtlas hψ).mono
-        inter_subset_left) fun y hy => hy.2
+  · exact Φ.trans_mem_maximalAtlas hψ
   · -- Reading `f ∘ g` through the pulled-back chart reinstates `Φ⁻¹`, which `g = Φ` cancels.
     simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.trans_target,
       mem_inter_iff, mem_preimage] at hu
@@ -156,11 +153,7 @@ theorem isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P]
     refine ⟨by rw [hkΘ hxΘ]; exact Θ.toPartialEquiv.map_source hxΘ, ?_⟩
     rw [hkΘ hxΘ]
     simpa [hkΘ hxΘ, Θ.toPartialEquiv.left_inv hxΘ] using h.mem_codChart_source
-  · refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
-    · exact (contMDiffOn_of_mem_maximalAtlas hχ).comp (Θ.symm.contMDiffOn.mono inter_subset_left)
-        fun y hy => hy.2
-    · exact Θ.contMDiffOn.comp ((contMDiffOn_symm_of_mem_maximalAtlas hχ).mono
-        inter_subset_left) fun y hy => hy.2
+  · exact Θ.symm.trans_mem_maximalAtlas hχ
   · -- On the shrunken chart `f` lands in the source of `Θ`, where `Θ⁻¹` cancels `k = Θ`.
     simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.restr_target,
       mem_inter_iff, mem_preimage] at hu
