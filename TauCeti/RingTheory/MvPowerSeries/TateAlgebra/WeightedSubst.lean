@@ -17,14 +17,14 @@ Let `R` be a complete ultrametric normed commutative ring. For a series `g` and 
 `h₁, …, h_k` of Gauss norm `‖hᵢ‖ ≤ rᵢ` in variables `Y`, the *weighted substitution*
 `f ↦ g · f(h)` is a continuous `R`-linear map from series in `X₁, …, X_k` restricted at
 polyradii `r` to series in `Y` (`TauCeti.MvPowerSeries.restrictedWeightedSubstCLM`). It is
-built from the analytic substitution `f ↦ f(h)` and multiplication by `g`. Such operators, for
-instance `f ↦ g · f(Xᵖ)` and its variants, are the basic examples of operators on spaces of
-analytic functions in nonarchimedean spectral theory, such as Dwork's operators and Hecke
-operators on overconvergent forms.
+built from the analytic substitution `f ↦ f(h)` and multiplication by `g`. Weighted
+substitutions such as `f ↦ g · f(Xᵖ)` are building blocks of the operators of nonarchimedean
+spectral theory: Dwork's operator and the `U_p` operator on overconvergent forms are obtained by
+composing them with Dwork's `ψ` or with a trace.
 
-At unit radius the coefficient isometry identifies the Tate algebra with the model space
-`C₀(σ →₀ ℕ, R)`, and the weighted substitution becomes an operator
-`TauCeti.MvPowerSeries.weightedSubstCLM` between model spaces. Its matrix has the entries
+At unit radius the coefficient isometry identifies the Tate algebras in `X` and in `Y` with the
+model spaces `C₀(Fin k →₀ ℕ, R)` and `C₀(τ →₀ ℕ, R)`, and the weighted substitution becomes an
+operator `TauCeti.MvPowerSeries.weightedSubstCLM` between them. Its matrix has the entries
 
 `aₑₜ = coeff e (g · h₁^t₁ ⋯ h_k^t_k)`
 
