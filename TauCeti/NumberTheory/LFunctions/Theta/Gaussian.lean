@@ -70,7 +70,7 @@ theorem archGaussian_unit_smul (u : (𝓞 K)ˣ) (y : realSpace K) (x : mixedSpac
   congr 3
   apply Finset.sum_congr rfl
   intro w _
-  rw [unitSMul_smul, map_mul, normAtPlace_apply, mul_pow, unitScale_apply]
+  rw [← congrFun (unitScale_sq_normAtPlace u x) w, unitScale_apply, unitScale_apply]
   ring
 
 open scoped Classical in
@@ -138,8 +138,10 @@ def archGaussianSchwartz (y : realSpace K) (hy : ∀ w, 0 < y w) : 𝓢(mixedSpa
 
 @[simp]
 theorem archGaussianSchwartz_apply (y : realSpace K) (hy : ∀ w, 0 < y w) (x : mixedSpace K) :
-    archGaussianSchwartz y hy x = archGaussian y x :=
-  (archGaussian_eq_gaussian y hy x).symm
+    archGaussianSchwartz y hy x = archGaussian y x := by
+  rw [archGaussianSchwartz, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+    Function.comp_apply, ContinuousLinearEquiv.trans_apply]
+  exact (archGaussian_eq_gaussian y hy x).symm
 
 /-- Absolute convergence of the archimedean Gaussian over a discrete lattice, without a
 full-rank assumption. -/

@@ -126,6 +126,7 @@ theorem mixedInner_self_eq_sum (x : mixedSpace K) :
     intro w _
     rw [normAtPlace_apply_of_isComplex (not_isReal_iff_isComplex.mp w.prop)]
     simp only [Complex.mul_conj, Complex.ofReal_re, Complex.sq_norm]
+    -- The subtype equivalence preserves the place; subtype eta identifies its complex coordinate.
     rfl
 
 open scoped Classical in
