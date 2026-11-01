@@ -27,11 +27,12 @@ Let `A → B` be an extension of discrete valuation rings whose ramification ind
 in `B`, so that a uniformizer `π` of `A` is `u ϖ ^ e` with `ϖ` a uniformizer of `B` and `u` a unit.
 Abhyankar's lemma says that adjoining an `n`-th root of `π`, for a multiple `n = e d` of `e`, gives
 an extension that is unramified over `A[π ^ (1 / n)]`. The local computation behind it is a
-factorization of the root extraction: if `x ^ (e d) = u ϖ ^ e`, then `y = x ^ d / ϖ` satisfies
-`y ^ e = u`, so the root extraction is the étale extension `B[y]/(y ^ e − u)` followed by the
-Kummer extension `x ^ d = ϖ y` of it.
+factorization of the root extraction once `ϖ` is inverted: if `x ^ (e d) = u ϖ ^ e`, then
+`y = x ^ d / ϖ` satisfies `y ^ e = u`, so after inverting `ϖ` the root extraction becomes the étale
+extension `B[y]/(y ^ e − u)` followed by the Kummer extension `x ^ d = ϖ y` of it. Before inverting
+`ϖ`, the element `x ^ d / ϖ` need not exist, and the two presentations differ.
 
-This file studies the ring
+This file studies the integral model given by the second presentation, the ring
 
   `D = (B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)`,
 
