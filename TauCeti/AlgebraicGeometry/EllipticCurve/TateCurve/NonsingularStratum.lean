@@ -32,16 +32,14 @@ On the nodal cubic the parametrisation `u ↦ (u / (1 - u)², u² / (1 - u)³)` 
 
 on the closed set `{u : ‖u‖ = ‖1 - u‖ = 1}`. This map is a contraction with constant `‖q‖`, because
 the differences between the Tate coordinates and the nodal parametrisation are `‖q‖`-Lipschitz on
-the unit circle (`norm_tateUniformizationX_sub_sub_le`, `norm_tateUniformizationY_sub_sub_le`).
+the unit circle (`norm_tateUniformizationX_sub_sub_le`, `norm_tateUniformizationY_sub_sub_le`
+from `TateCurve.Strata`).
 At the fixed point `x Y(u) = y X(u)`, so `(x, y)` and `(X(u), Y(u))` lie on a common line through
 the origin. Such a line meets `E_q(K)` in at most one point with first coordinate of norm one
 (`eq_and_eq_of_mul_eq_mul_of_equation` from `TateCurve.NodalReduction`), so the two points agree.
 
 ## Main results
 
-* `TauCeti.norm_tateUniformizationX_sub_sub_le`, `TauCeti.norm_tateUniformizationY_sub_sub_le`:
-  on the unit circle the differences between the Tate coordinates and the nodal parametrisation
-  are Lipschitz with constant `‖q‖`.
 * `TauCeti.exists_tateUniformizationX_eq_and_tateUniformizationY_eq`: every solution `(x, y)` of
   the Tate equation with `‖x‖ = 1` is `(X(u), Y(u))` for some `u` with `‖u‖ = ‖1 - u‖ = 1`.
 * `TauCeti.exists_tateUniformization_eq_some_iff_norm_eq_one`: an affine point of `E_q(K)` is the
@@ -60,40 +58,7 @@ namespace TauCeti
 
 open WeierstrassCurve.Affine
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
-
-/-! ### Lipschitz estimates for the Tate coordinates on the unit circle -/
-
-variable [CompleteSpace K]
-
-/-- **The first Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
-the unit circle, `u ↦ X(u) - u / (1 - u)²` is Lipschitz with constant `‖q‖`. -/
-theorem norm_tateUniformizationX_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (hu' : ‖(u' : K)‖ = 1) :
-    ‖(tateUniformizationX q u - u / (1 - u) ^ 2) -
-        (tateUniformizationX q u' - u' / (1 - u') ^ 2)‖ ≤ ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-  have e (a A B s a' A' B' : K) :
-      a + A + B - 2 * s - a - (a' + A' + B' - 2 * s - a') = (A - A') + (B - B') := by ring
-  rw [tateUniformizationX_eq_tsum_nat q hq u, tateUniformizationX_eq_tsum_nat q hq u', e]
-  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w / (1 - w) ^ 2)
-    (fun w ↦ w / (1 - w) ^ 2) (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le)
-    (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le) (summable_tateUniformizationX_nat _ hq)
-    (summable_tateUniformizationX_nat _ hq)
-
-/-- **The second Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
-the unit circle, `u ↦ Y(u) - u² / (1 - u)³` is Lipschitz with constant `‖q‖`. -/
-theorem norm_tateUniformizationY_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (hu' : ‖(u' : K)‖ = 1) :
-    ‖(tateUniformizationY q u - (u : K) ^ 2 / (1 - u) ^ 3) -
-        (tateUniformizationY q u' - (u' : K) ^ 2 / (1 - u') ^ 3)‖ ≤
-      ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-  have e (a A B s a' A' B' : K) :
-      a + A + B + s - a - (a' + A' + B' + s - a') = (A - A') + (B - B') := by ring
-  rw [tateUniformizationY_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u', e]
-  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
-    (fun w ↦ -w / (1 - w) ^ 3) (fun _ _ ↦ norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le)
-    (fun _ _ ↦ norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le)
-    (summable_tateUniformizationY_nat _ hq) (summable_tateUniformizationY_nat_neg _ hq)
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-! ### Solving for the parameter by a contraction -/
 
