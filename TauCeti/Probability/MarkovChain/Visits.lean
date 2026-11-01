@@ -72,6 +72,11 @@ open ProbabilityTheory TauCeti.Probability
 
 open scoped ENNReal
 
+/-- Summing the indicator of a set with value one counts its elements. -/
+private theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
+    ∑' b, s.indicator (fun _ => (1 : ℝ≥0∞)) b = s.encard := by
+  rw [← ENNReal.tsum_set_one, tsum_subtype _ fun _ => (1 : ℝ≥0∞)]
+
 namespace MeasureTheory.Measure
 
 variable {α : Type*}
@@ -158,8 +163,9 @@ theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top [IsFiniteMeasure ν] {y : α
     (hy : markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
     ∀ᵐ x ∂markovChainLaw ν κ,
       hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ → {n | x n = y}.Infinite := by
-  have hσ : ∀ k, Measurable (successiveVisit (fun n (x : ℕ → α) => x n) y k) := fun k =>
-    measurable_successiveVisit (fun n => measurable_pi_apply n) (measurableSet_singleton y) k
+  have hσ : ∀ k, MeasurableSet {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} :=
+    measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+      (measurableSet_singleton y)
   -- Each visit exists exactly on the event that `y` is reached, up to a null set.
   have hk : ∀ k, ∀ᵐ x ∂markovChainLaw ν κ, hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ →
       successiveVisit (fun n x => x n) y k x ≠ ⊤ := fun k => by
@@ -172,7 +178,7 @@ theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top [IsFiniteMeasure ν] {y : α
       exact ne_top_of_le_ne_top hx hle
     have heq := ae_eq_of_subset_of_measure_ge hsub
       (by rw [markovChainLaw_setOf_successiveVisit_ne_top ν κ y k, hy, one_pow, mul_one])
-      ((measurableSet_singleton ⊤).compl.preimage (hσ k)).nullMeasurableSet (measure_ne_top _ _)
+      (hσ k).nullMeasurableSet (measure_ne_top _ _)
     filter_upwards [heq] with x hx hH
     exact (iff_of_eq hx).2 hH
   filter_upwards [ae_all_iff.mpr hk] with x hx hH
@@ -200,14 +206,14 @@ theorem lintegral_encard_setOf_eq_markovChainLaw [IsFiniteMeasure ν] (y : α) :
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         (1 - markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤})⁻¹ := by
   have hσ : ∀ k, MeasurableSet {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} :=
-    fun k => (measurableSet_singleton ⊤).compl.preimage
-      (measurable_successiveVisit (fun n => measurable_pi_apply n) (measurableSet_singleton y) k)
+    measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+      (measurableSet_singleton y)
   -- The number of visits is the number of indices `k` whose visit exists.
   have hcount : ∀ x : ℕ → α, ({n | x n = y}.encard : ℝ≥0∞) =
       ∑' k, {x | successiveVisit (fun n x => x n) y k x ≠ ⊤}.indicator (fun _ => 1) x :=
     fun x => by
     rw [← encard_setOf_successiveVisit_ne_top (X := fun n (x : ℕ → α) => x n) (ω := x),
-      ← ENNReal.tsum_set_one, tsum_subtype _ fun _ => (1 : ℝ≥0∞)]
+      ← ENNReal.tsum_indicator_one]
     simp only [Set.indicator_apply, Set.mem_ofPred_eq]
   simp_rw [hcount]
   rw [lintegral_tsum fun k => (measurable_const.indicator (hσ k)).aemeasurable]
@@ -231,7 +237,7 @@ private theorem tsum_markovChainLaw_setOf_apply_eq [IsFiniteMeasure ν] (y : α)
   rw [← lintegral_tsum fun n => (measurable_const.indicator (hm n)).aemeasurable]
   congr 1
   funext x
-  rw [← ENNReal.tsum_set_one, tsum_subtype _ fun _ => (1 : ℝ≥0∞)]
+  rw [← ENNReal.tsum_indicator_one]
   exact tsum_congr fun n => by simp only [Set.indicator, Set.mem_ofPred_eq]
 
 end MeasureTheory.Measure

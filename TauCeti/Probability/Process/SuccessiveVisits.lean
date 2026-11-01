@@ -279,4 +279,10 @@ theorem measurable_successiveVisit (hX : ∀ n, Measurable (X n))
     exact (Filtration.const_apply n).symm ▸ hX n
   exact (h.isStoppingTime_successiveVisit ha k).measurable'
 
+/-- With measurable coordinates, the event that the visit indexed by `k` exists is measurable. -/
+theorem measurableSet_setOf_successiveVisit_ne_top (hX : ∀ n, Measurable (X n))
+    (ha : MeasurableSet ({a} : Set α)) (k : ℕ) :
+    MeasurableSet {ω | successiveVisit X a k ω ≠ ⊤} :=
+  (measurableSet_singleton ⊤).compl.preimage (measurable_successiveVisit hX ha k)
+
 end TauCeti.Probability
