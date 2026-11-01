@@ -97,7 +97,7 @@ theorem finsum_orbifoldDefect [Finite Γ.CuspOrbit] (hE : Γ.ellipticOrbits.Fini
   rw [hrestrict, finsum_eq_sum_of_fintype (f := fun _ : Γ.CuspOrbit => (1 : ℝ))]
   simp [add_comm, Nat.card_eq_fintype_card]
 
-variable [DiscreteTopology Γ] [DiscreteTopology Δ]
+variable [DiscreteTopology Γ]
 
 /-- A quotient map induced by inclusion preserves complementary defects after weighting by its local
 multiplicity. At cusps both complementary defects vanish; at interior points this is the
@@ -105,8 +105,10 @@ multiplication formula for the two effective stabilizer orders. No finite-index 
 needed for this local identity. -/
 theorem localMultiplicity_mul_one_sub_orbifoldDefect (h : Δ ≤ Γ)
     (x : Δ.CompactifiedQuotient) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     (localMultiplicity (compactifiedQuotientMap h) x : ℝ) *
         (1 - orbifoldDefect (compactifiedQuotientMap h x)) = 1 - orbifoldDefect x := by
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   cases x with
   | ofCusp C => simp
   | ofQuotient q =>
@@ -127,10 +129,12 @@ theorem localMultiplicity_mul_one_sub_orbifoldDefect (h : Δ ≤ Γ)
 the subgroup index. Only finiteness of the target's cusp and elliptic sets is needed. -/
 theorem finsum_localMultiplicity_mul_orbifoldDefect (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
     [Finite Γ.CuspOrbit] (hE : Γ.ellipticOrbits.Finite) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     (∑ᶠ x : Δ.CompactifiedQuotient,
       (localMultiplicity (compactifiedQuotientMap h) x : ℝ) *
         orbifoldDefect (compactifiedQuotientMap h x)) =
       (Δ.subgroupOf Γ).index * ∑ᶠ y : Γ.CompactifiedQuotient, orbifoldDefect y := by
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   apply finsum_localMultiplicity_mul_comp (compactifiedQuotientMap h) _
     (fiberMultiplicitySum_compactifiedQuotientMap h) (finite_support_orbifoldDefect hE)
   intro y

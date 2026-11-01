@@ -41,15 +41,17 @@ open scoped MatrixGroups
 
 namespace TauCeti.Fuchsian
 
-variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Δ] [DiscreteTopology Γ]
+variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
 
 /-- **The total ramification formula in orbifold defects.** Total ramification plus the
 source's defects equals the subgroup index times the target's defects. -/
 theorem ramificationDegree_add_finsum_orbifoldDefect (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
     (hΓ : Γ.IsCofinite) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     (ramificationDegree (compactifiedQuotientMap h) : ℝ) +
         ∑ᶠ x : Δ.CompactifiedQuotient, orbifoldDefect x =
       (Δ.subgroupOf Γ).index * ∑ᶠ y : Γ.CompactifiedQuotient, orbifoldDefect y := by
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   have hΔ : Δ.IsCofinite :=
     (isCofinite_iff_isCofinite_and_finiteIndex h).mpr ⟨hΓ, inferInstance⟩
   have := hΔ.compactSpace_compactifiedQuotient
@@ -83,11 +85,13 @@ of cofinite groups, `R + s_Δ + ∑(1 - 1/m_Δ) = [Γ : Δ] * (s_Γ + ∑(1 - 1/
 is the ramification degree of the induced map of compactified surfaces. -/
 theorem ramificationDegree_eq_index_mul_cusps_add_elliptic_sub (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
     (hΓ : Γ.IsCofinite) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     (ramificationDegree (compactifiedQuotientMap h) : ℝ) =
       (Δ.subgroupOf Γ).index * ((Nat.card Γ.CuspOrbit : ℝ) +
         ∑ᶠ q ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹)) -
       ((Nat.card Δ.CuspOrbit : ℝ) +
         ∑ᶠ q ∈ Δ.ellipticOrbits, (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹)) := by
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   have hΔ : Δ.IsCofinite :=
     (isCofinite_iff_isCofinite_and_finiteIndex h).mpr ⟨hΓ, inferInstance⟩
   have := hΔ.finite_cuspOrbit
