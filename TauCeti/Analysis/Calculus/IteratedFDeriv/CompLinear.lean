@@ -14,7 +14,10 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 Precomposing a function with a continuous linear map `g` multiplies the norm of its `i`-th
 iterated derivative by at most `‖g‖ ^ i`. This is the norm form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_right`; for a linear isometry equivalence the norm is
-preserved (`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right`).
+preserved (`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right`). Mathlib's formula for the
+iterated derivative of `f ∘ g` assumes `f` smooth everywhere; it holds at a point `x` as soon as
+`f` is smooth near `g x`, which is the form needed for functions defined only on an open set,
+such as coordinate expressions in a chart.
 
 For a function of one variable, postcomposition with a continuous linear map commutes with the
 iterated derivative `iteratedDeriv`. This is the one-variable form of Mathlib's
@@ -40,6 +43,20 @@ theorem norm_iteratedFDeriv_comp_right_le (g : G →L[𝕜] E) {f : E → F} (hf
   rw [g.iteratedFDeriv_comp_right hf x hi]
   exact ((iteratedFDeriv 𝕜 i f (g x)).norm_compContinuousLinearMap_le _).trans_eq
     (by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+
+/-- The iterated derivative of the composition with a continuous linear map `g` on the right is
+obtained by composing the iterated derivative with `g`, at every point `x` such that the function
+is `C^i` at `g x`. -/
+theorem iteratedFDeriv_comp_right_of_contDiffAt (g : G →L[𝕜] E) {f : E → F} {x : G}
+    (hf : ContDiffAt 𝕜 n f (g x)) {i : ℕ} (hi : i ≤ n) :
+    iteratedFDeriv 𝕜 i (f ∘ g) x =
+      (iteratedFDeriv 𝕜 i f (g x)).compContinuousLinearMap fun _ ↦ g := by
+  obtain ⟨u, hu, hfu⟩ := hf.contDiffOn hi (by simp)
+  obtain ⟨v, hvu, hv, hxv⟩ := mem_nhds_iff.1 hu
+  have hv' : IsOpen (g ⁻¹' v) := hv.preimage g.continuous
+  have h := g.iteratedFDerivWithin_comp_right (hfu.mono hvu) hv.uniqueDiffOn hv'.uniqueDiffOn
+    hxv le_rfl
+  rwa [iteratedFDerivWithin_of_isOpen i hv' hxv, iteratedFDerivWithin_of_isOpen i hv hxv] at h
 
 /-- Postcomposition with a continuous linear map `g` commutes with the `i`-th iterated derivative
 of a function of one variable that is `C^i` at the point. -/
