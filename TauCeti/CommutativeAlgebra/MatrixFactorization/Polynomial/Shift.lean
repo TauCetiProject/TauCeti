@@ -1,0 +1,144 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Cokernel
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Shift
+
+/-!
+# Parity shift of polynomial matrix factorizations
+
+For `i ≤ n`, the parity shift of the factorization with maps `X ^ i` and `X ^ (n - i)`
+is isomorphic to the factorization indexed by `n - i`. The comparison has components `1`
+and `-1`; it removes the signs introduced by parity shift, in every characteristic.
+Consequently the shift by one of this object in `HMF(R[X], X ^ n)` is represented by the
+complementary factorization, and its reduced cokernel is the cyclic module `A/(x ^ (n - i))`,
+where `A = R[X]/(X ^ n)`.
+
+These calculations identify the objects in the parity-shift/syzygy comparison: the alternating
+free resolution of `A/(x ^ i)` has the complementary cyclic module as its first syzygy.
+They require only a commutative coefficient ring, not a field or a regularity hypothesis.
+
+## References
+
+* D. Eisenbud, *Homological algebra on a complete intersection, with an application to group
+  representations*, Trans. Amer. Math. Soc. **260** (1980), Section 5.
+-/
+
+public section
+
+noncomputable section
+
+universe u
+
+namespace TauCeti.MatrixFactorization
+
+open CategoryTheory Polynomial
+
+variable (R : Type u) [CommRing R] {i n : ℕ}
+
+/-- Parity shift exchanges the exponents `i` and `n - i` of the polynomial factorization. -/
+def parityShiftPowerXOfLEIso (hi : i ≤ n) :
+    parityShift.obj (powerXOfLE R hi) ≅ powerXOfLE R (Nat.sub_le n i) :=
+  parityShiftRankOneIso (X ^ i : R[X]) (X ^ (n - i))
+      (by rw [← pow_add, Nat.add_sub_cancel' hi]) ≪≫
+    ObjectProperty.isoMk (P := isProjective R[X] (X ^ n))
+      (CurvedDuplex.isoMk (Iso.refl _) (Iso.refl _)
+        (by exact (Category.id_comp _).trans (Category.comp_id _).symm)
+        (by simp only [powerXOfLE_d₁, Nat.sub_sub_self hi, rankOne_d₁, Iso.refl_hom]
+            exact (Category.id_comp _).trans (Category.comp_id _).symm))
+
+/-- The even component of the comparison is the identity. -/
+@[simp]
+theorem parityShiftPowerXOfLEIso_hom_f₀ (hi : i ≤ n) :
+    (parityShiftPowerXOfLEIso R hi).hom.hom.f₀ = 𝟙 (FGModuleCat.of R[X] R[X]) := by
+  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+
+/-- The odd component of the comparison is minus the identity. -/
+@[simp]
+theorem parityShiftPowerXOfLEIso_hom_f₁ (hi : i ≤ n) :
+    (parityShiftPowerXOfLEIso R hi).hom.hom.f₁ = -𝟙 (FGModuleCat.of R[X] R[X]) := by
+  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+
+/-- The inverse comparison is the identity in even parity. -/
+@[simp]
+theorem parityShiftPowerXOfLEIso_inv_f₀ (hi : i ≤ n) :
+    (parityShiftPowerXOfLEIso R hi).inv.hom.f₀ = 𝟙 (FGModuleCat.of R[X] R[X]) := by
+  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+
+/-- The inverse comparison is minus the identity in odd parity. -/
+@[simp]
+theorem parityShiftPowerXOfLEIso_inv_f₁ (hi : i ≤ n) :
+    (parityShiftPowerXOfLEIso R hi).inv.hom.f₁ = -𝟙 (FGModuleCat.of R[X] R[X]) := by
+  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+
+/-- In the triangulated homotopy category, the shift by one of the polynomial factorization
+indexed by `i` is the factorization indexed by `n - i`. -/
+def shiftPowerXOfLEIso (hi : i ≤ n) :
+    ((nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
+      (powerXOfLE R hi))⟦(1 : ℤ)⟧ ≅
+        (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
+          (powerXOfLE R (Nat.sub_le n i)) :=
+  (HomotopyCategory.shiftFunctorOneIso R[X] (X ^ n)).app _ ≪≫
+    eqToIso (HomotopyCategory.parityShiftEquivalence_functor_obj_quotientFunctor_obj _) ≪≫
+    (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.mapIso
+      (parityShiftPowerXOfLEIso R hi)
+
+/-- Reduction modulo `X ^ n` of the shifted factorization has cyclic right-module cokernel
+`A/(x ^ (n - i))`, viewed as a left module through the commutativity isomorphism. -/
+def parityShiftPowerXOfLECokernelIso (hi : i ≤ n) :
+    ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X])) ⋙ cokernelFunctor).obj
+      (parityShift.obj (powerXOfLE R hi))).obj ≅
+        (ModuleCat.restrictScalars
+          (RingEquiv.toOpposite (AdjoinRoot (X ^ n : R[X]))).toRingHom).obj
+          (FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : R[X]) ^ (n - i))).obj :=
+  (forget₂ (FGModuleCat (AdjoinRoot (X ^ n : R[X])))
+      (ModuleCat (AdjoinRoot (X ^ n : R[X])))).mapIso
+    ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X])) ⋙ cokernelFunctor).mapIso
+      (parityShiftPowerXOfLEIso R hi)) ≪≫
+    powerXOfLECokernelIso R (Nat.sub_le n i)
+
+/-- On an odd-component representative, the shifted cyclic-cokernel comparison sends the
+scalar-extension counit image to its negative class. The minus sign comes from the odd
+component of `parityShiftPowerXOfLEIso`. -/
+theorem cokernelπ_comp_parityShiftPowerXOfLECokernelIso_hom_apply (hi : i ≤ n)
+    (a : ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+      (parityShift.obj (powerXOfLE R hi))).obj.X₁.obj) :
+    (parityShiftPowerXOfLECokernelIso R hi).hom
+      (cokernelπ ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+        (parityShift.obj (powerXOfLE R hi))) a) =
+      -Submodule.Quotient.mk (MulOpposite.op (Functor.OplaxMonoidal.η
+        (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) a)) := by
+  have hf :
+      ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
+        (parityShiftPowerXOfLEIso R hi).hom).hom.f₁.hom = -𝟙 _ := by
+    rw [← FGModuleCat.forget₂_map, baseChangeFunctor_map_f₁,
+      parityShiftPowerXOfLEIso_hom_f₁]
+    exact (Functor.map_neg
+      (forget₂ (FGModuleCat R[X]) (ModuleCat R[X]) ⋙
+        ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X])))).trans
+      (congrArg Neg.neg (CategoryTheory.Functor.map_id _ _))
+  have hnat := cokernelπ_naturality_apply
+    ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
+      (parityShiftPowerXOfLEIso R hi).hom) a
+  have h := congrArg ((powerXOfLECokernelIso R (Nat.sub_le n i)).hom) hnat
+  have ha :
+      ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
+        (parityShiftPowerXOfLEIso R hi).hom).hom.f₁.hom.hom a = -a :=
+    congrArg (fun f ↦ f.hom a) hf
+  have hneg := congrArg (fun b ↦ (powerXOfLECokernelIso R (Nat.sub_le n i)).hom
+    (cokernelπ ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+      (powerXOfLE R (Nat.sub_le n i))) b)) ha
+  -- The composite cokernel comparison has the underlying map appearing on the left of `h`.
+  refine h.trans (hneg.trans ?_)
+  exact (congrArg ((powerXOfLECokernelIso R (Nat.sub_le n i)).hom)
+      ((cokernelπ ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).obj
+        (powerXOfLE R (Nat.sub_le n i)))).hom.map_neg a)).trans
+    (((powerXOfLECokernelIso R (Nat.sub_le n i)).hom.hom.map_neg _).trans
+      (congrArg Neg.neg
+        (cokernelπ_comp_powerXOfLECokernelIso_hom_apply R (Nat.sub_le n i) a)))
+
+end TauCeti.MatrixFactorization

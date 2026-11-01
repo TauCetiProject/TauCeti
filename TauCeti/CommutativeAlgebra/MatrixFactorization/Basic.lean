@@ -235,6 +235,43 @@ Its components are finite free, with no regularity assumption on `S` or `w`. -/
 @[simp] theorem rankOne_X₁ (a b : S) (h : a * b = w) :
     (rankOne a b h).obj.X₁ = FGModuleCat.of S S := rfl
 
+/-- The parity shift of `S --a--> S --b--> S` is isomorphic to
+`S --b--> S --a--> S`. The comparison is the identity in even parity and minus the
+identity in odd parity, removing the two minus signs in the shifted differential. -/
+noncomputable def parityShiftRankOneIso (a b : S) (h : a * b = w) :
+    parityShift.obj (rankOne a b h) ≅ rankOne b a (by rw [mul_comm, h]) :=
+  ObjectProperty.isoMk (P := isProjective S w) (CurvedDuplex.isoMk
+    (X := (parityShift.obj (rankOne a b h)).obj)
+    (Y := (rankOne b a (by rw [mul_comm, h])).obj)
+    (Iso.refl _)
+    { hom := -𝟙 _
+      inv := -𝟙 _
+      hom_inv_id := (Preadditive.neg_comp_neg _ _).trans (Category.id_comp _)
+      inv_hom_id := (Preadditive.neg_comp_neg _ _).trans (Category.id_comp _) }
+    (by
+      exact (Category.id_comp _).trans
+        ((Preadditive.neg_comp_neg _ _).trans (Category.comp_id _)).symm)
+    (by
+      exact (Preadditive.neg_comp _ _).trans
+        ((congrArg Neg.neg (Category.id_comp _)).trans
+          ((congrArg Neg.neg (Category.comp_id _)).symm))))
+
+@[simp]
+theorem parityShiftRankOneIso_hom_f₀ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).hom.hom.f₀ = 𝟙 (FGModuleCat.of S S) := (rfl)
+
+@[simp]
+theorem parityShiftRankOneIso_hom_f₁ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).hom.hom.f₁ = -𝟙 (FGModuleCat.of S S) := (rfl)
+
+@[simp]
+theorem parityShiftRankOneIso_inv_f₀ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).inv.hom.f₀ = 𝟙 (FGModuleCat.of S S) := (rfl)
+
+@[simp]
+theorem parityShiftRankOneIso_inv_f₁ (a b : S) (h : a * b = w) :
+    (parityShiftRankOneIso a b h).inv.hom.f₁ = -𝟙 (FGModuleCat.of S S) := (rfl)
+
 /-! ### Homotopies -/
 
 /-- The ideal of morphisms of finite-projective matrix factorizations that are null-homotopic
