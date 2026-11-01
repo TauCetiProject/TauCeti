@@ -74,15 +74,14 @@ noncomputable def directLimitIsColimit : IsColimit (directLimitCocone G f) where
   desc s := _root_.GrpCat.ofHom <|
     DirectLimit.Monoid.lift G f (fun i => (s.ι.app i).hom) fun i j hij x =>
       ConcreteCategory.congr_hom (s.w (homOfLE hij)) x
-  -- `DirectLimit.Monoid.lift` evaluates `DirectLimit.lift` on the classes `⟦⟨i, x⟩⟧`, which are the
-  -- values of the legs `DirectLimit.Monoid.of G f i`, so both laws hold componentwise by definition
-  -- (`DirectLimit.Monoid.lift_comp_of`).
   fac s i := by
     ext x
-    rfl
+    exact DirectLimit.Monoid.lift_of _ _ i x
   uniq s m hm := by
     ext1
-    exact DirectLimit.Monoid.hom_ext fun i => congr(($(hm i)).hom)
+    exact DirectLimit.Monoid.hom_ext fun i => congr(($(hm i)).hom).trans
+      (DirectLimit.Monoid.lift_comp_of (G := G) (f := f) (P := s.pt)
+        (fun j => (s.ι.app j).hom) _ i).symm
 
 end GrpCat
 

@@ -368,24 +368,31 @@ variable (K) in
 def ideleCoeffOf (E : Ω) : Additive (IdeleGroup (𝓞 E) E) →+ IdeleCoeff K :=
   (DirectLimit.Monoid.of (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K) E).toAdditive
 
+/-- An idele of `E` is the class of the pair `⟨E, a⟩` in the direct limit. -/
+private theorem ideleCoeffOf_ofMul (E : Ω) (a : IdeleGroup (𝓞 E) E) :
+    ideleCoeffOf K E (.ofMul a) = .ofMul
+      (⟦⟨E, a⟩⟧ : DirectLimit (fun E : Ω ↦ IdeleGroup (𝓞 E) E) (ideleTransition K)) :=
+  congrArg Additive.ofMul <|
+    DirectLimit.Monoid.of_apply (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) E a
+
 /-- An idele of `E` and its extension to `E'` are the same idele of `Kˢ`. -/
 @[simp]
 theorem ideleCoeffOf_ideleTransition {E E' : Ω} (h : E ≤ E') (a : IdeleGroup (𝓞 E) E) :
     ideleCoeffOf K E' (.ofMul (ideleTransition K E E' h a)) = ideleCoeffOf K E (.ofMul a) :=
-  congrArg Additive.ofMul
-    (DirectLimit.mk_apply (F := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) E E' a h)
+  congrArg Additive.ofMul <|
+    DirectLimit.Monoid.of_f (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K) h a
 
 /-- **Every idele of `Kˢ` is an idele of a finite Galois subextension.** -/
 theorem exists_ideleCoeffOf_eq (x : IdeleCoeff K) :
     ∃ (E : Ω) (a : IdeleGroup (𝓞 E) E), ideleCoeffOf K E (.ofMul a) = x := by
   obtain ⟨E, a, ha⟩ := DirectLimit.exists_eq_mk (ideleTransition K) (Additive.toMul x)
-  exact ⟨E, a, congrArg Additive.ofMul ha.symm⟩
+  exact ⟨E, a, (ideleCoeffOf_ofMul E a).trans (congrArg Additive.ofMul ha.symm)⟩
 
 /-- An idele of `E` vanishes in the ideles of `Kˢ` exactly when its extension to some larger
 finite Galois subextension is trivial. -/
 theorem ideleCoeffOf_eq_zero_iff {E : Ω} {a : IdeleGroup (𝓞 E) E} :
     ideleCoeffOf K E (.ofMul a) = 0 ↔ ∃ (E' : Ω) (h : E ≤ E'), ideleTransition K E E' h a = 1 :=
-  Additive.toMul.injective.eq_iff.symm.trans
+  (ideleCoeffOf_ofMul E a).symm ▸ Additive.toMul.injective.eq_iff.symm.trans
     (DirectLimit.exists_eq_one (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K)
       ⟨E, a⟩)
 
@@ -419,17 +426,20 @@ theorem IdeleCoeff.lift_ideleCoeffOf {M : Type*} [AddCommMonoid M]
     (φ : ∀ E : Ω, Additive (IdeleGroup (𝓞 E) E) →+ M) (hφ) (E : Ω)
     (a : Additive (IdeleGroup (𝓞 E) E)) :
     IdeleCoeff.lift K φ hφ (ideleCoeffOf K E a) = φ E a := by
-  -- A bare `rfl` would make this a `dsimp` lemma, which needs the carrier definitions exposed.
   unfold IdeleCoeff.lift
-  rfl
+  exact DirectLimit.Monoid.lift_of (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K)
+    (P := Multiplicative M) _ _ E a.toMul
 
 /-- **The Galois action on the ideles of `Kˢ`**: `g ∈ G_K` acts on the ideles of `E` through its
 restriction to `Gal(E/K)`. -/
 @[simp]
 theorem smul_ideleCoeffOf (g : AbsoluteGaloisGroup K) (E : Ω) (a : IdeleGroup (𝓞 E) E) :
     g • ideleCoeffOf K E (.ofMul a) = ideleCoeffOf K E
-      (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction K E (g.restrictNormal E)) a)) :=
-  (rfl)
+      (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction K E (g.restrictNormal E)) a)) := by
+  rw [ideleCoeffOf_ofMul, ideleCoeffOf_ofMul]
+  -- The action on the class `⟦⟨E, a⟩⟧` is the action on its representative
+  -- (`DirectLimit.smul_def`).
+  rfl
 
 /-- The subgroup of `G_K` fixing `E` fixes the ideles of `E`. -/
 theorem smul_ideleCoeffOf_of_mem_fixingSubgroup {g : AbsoluteGaloisGroup K} {E : Ω}

@@ -17,20 +17,24 @@ with monoid homomorphisms as transition maps, and of a directed system of `A`-al
 
 Mathlib equips `DirectLimit G f` with its monoid and group structures and bundles the canonical
 maps from the components as linear maps and ring homomorphisms. Here they are bundled as monoid
-homomorphisms `DirectLimit.Monoid.of G f i : G i →* DirectLimit G f`, with the universal property
-`DirectLimit.Monoid.lift`. Every element of the direct limit comes from some component, and the
-index set is directed, so every finite subset of the direct limit lies in the image of a single
-component (`DirectLimit.Monoid.exists_subset_range_of`). This is how properties defined by finitely
+homomorphisms `TauCeti.DirectLimit.Monoid.of G f i : G i →* DirectLimit G f`, with the universal
+property `TauCeti.DirectLimit.Monoid.lift`. The canonical map, its universal property, their
+compatibility lemmas and `TauCeti.DirectLimit.Monoid.hom_ext` follow Mathlib's
+`DirectLimit.Ring.of`, `DirectLimit.Ring.lift` and `DirectLimit.Ring.hom_ext` in
+`Mathlib/Algebra/Colimit/DirectLimit.lean`, with monoid homomorphisms in place of ring
+homomorphisms. Every element of the direct limit comes from some component, and the index set is
+directed, so every finite subset of the direct limit lies in the image of a single component
+(`TauCeti.DirectLimit.Monoid.exists_subset_range_of`). This is how properties defined by finitely
 many elements at a time pass to direct limits.
 
 ## Main declarations
 
-* `DirectLimit.Monoid.of`: the canonical map from a component, as a monoid homomorphism.
-* `DirectLimit.Monoid.lift`: the universal property of the direct limit of monoids.
-* `DirectLimit.Monoid.hom_ext`: monoid homomorphisms out of the direct limit agree when they agree
-  on every component.
-* `DirectLimit.Monoid.exists_subset_range_of`: every finite subset of the direct limit lies in the
-  image of a single component.
+* `TauCeti.DirectLimit.Monoid.of`: the canonical map from a component, as a monoid homomorphism.
+* `TauCeti.DirectLimit.Monoid.lift`: the universal property of the direct limit of monoids.
+* `TauCeti.DirectLimit.Monoid.hom_ext`: monoid homomorphisms out of the direct limit agree when
+  they agree on every component.
+* `TauCeti.DirectLimit.Monoid.exists_subset_range_of`: every finite subset of the direct limit lies
+  in the image of a single component.
 * `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
   compatible with the transition maps. This is the algebra version of
   `Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring.lean`.
@@ -38,7 +42,11 @@ many elements at a time pass to direct limits.
 
 public section
 
+namespace TauCeti
+
 namespace DirectLimit.Monoid
+
+open _root_.DirectLimit
 
 variable {ι : Type*} [Preorder ι] {G : ι → Type*} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
   {f : ∀ _ _ h, T h} [∀ i j (h : i ≤ j), FunLike (T h) (G i) (G j)] [DirectedSystem G (f · · ·)]
@@ -47,7 +55,6 @@ variable {ι : Type*} [Preorder ι] {G : ι → Type*} {T : ∀ ⦃i j : ι⦄, 
 
 variable (G f) in
 /-- The canonical map from a component to the direct limit, as a monoid homomorphism. -/
-@[expose]
 def of (i : ι) : G i →* DirectLimit G f where
   toFun x := ⟦⟨i, x⟩⟧
   map_one' := (one_def i).symm
@@ -65,7 +72,6 @@ variable (G f) in
 /-- The universal property of the direct limit of monoids: monoid homomorphisms from the components
 which are compatible with the transition maps induce a monoid homomorphism out of the direct
 limit. -/
-@[expose]
 def lift (g : ∀ i, G i →* P) (Hg : ∀ i j hij x, g j (f i j hij x) = g i x) :
     DirectLimit G f →* P where
   toFun := _root_.DirectLimit.lift _ (g · ·) fun i j h x ↦ (Hg i j h x).symm
@@ -103,8 +109,6 @@ theorem exists_subset_range_of (s : Finset (DirectLimit G f)) :
     exact Set.mem_iUnion.2 ⟨i, x, rfl⟩
 
 end DirectLimit.Monoid
-
-namespace TauCeti
 
 namespace DirectLimit.Algebra
 
