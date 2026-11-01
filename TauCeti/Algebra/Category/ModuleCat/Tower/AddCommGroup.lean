@@ -130,11 +130,12 @@ theorem toModuleFunctor_obj (n : ℕ) :
 theorem transition_toModuleFunctor_apply (n : ℕ) (x : A.toModuleFunctor.obj (op (n + 1))) :
     A.toModuleFunctor.transition n x = A.map n x := by
   simp only [ModuleTower.transition_def, toModuleFunctor, Functor.ofOpSequence_map_homOfLE_succ]
+  -- `ModuleCat.ofHom` of `(A.map n).toIntLinearMap` has underlying function `A.map n`
   rfl
 
 /-- The transitions of the tower of `ℤ`-modules are surjective exactly when those of the tower
 are. -/
-theorem surjective_transition_toModuleFunctor_iff {n : ℕ} :
+theorem transition_toModuleFunctor_surjective_iff {n : ℕ} :
     Function.Surjective (A.toModuleFunctor.transition n) ↔ Function.Surjective (A.map n) :=
   forall_congr' fun y ↦ exists_congr fun x ↦ by
     rw [transition_toModuleFunctor_apply]
@@ -167,6 +168,7 @@ theorem shift_productEquiv (a : ∀ n, A.obj n) :
 theorem productEquiv_mem_lim {a : ∀ n, A.obj n} :
     A.productEquiv a ∈ A.toModuleFunctor.lim ↔ a ∈ A.lim := by
   rw [ModuleTower.mem_lim, mem_lim]
+  -- the terms of the tower of `ℤ`-modules are the groups `Aₙ`, and `productEquiv` is the identity
   exact forall_congr' fun n ↦ by rw [transition_toModuleFunctor_apply]; rfl
 
 /-- A family lies in the image of the shift map of the tower of `ℤ`-modules if and only if it lies
@@ -233,7 +235,7 @@ theorem subsingleton_limOne_of_surjective (h : ∀ n, Function.Surjective (A.map
     Subsingleton A.limOne :=
   A.limOneComparison.toEquiv.subsingleton_congr.2 <|
     A.toModuleFunctor.subsingleton_limOne_of_surjective fun n ↦
-      A.surjective_transition_toModuleFunctor_iff.2 (h n)
+      A.transition_toModuleFunctor_surjective_iff.2 (h n)
 
 end Basic
 
@@ -249,6 +251,7 @@ def mapOfLE {n k : ℕ} (h : n ≤ k) : A.obj k →+ A.obj n :=
 theorem mapOfLE_refl (n : ℕ) : A.mapOfLE (le_refl n) = AddMonoidHom.id _ := by
   ext x
   simp only [mapOfLE, ModuleTower.transitionOfLE_refl]
+  -- `LinearMap.id.toAddMonoidHom` is the identity of `Aₙ`
   rfl
 
 @[simp]
@@ -277,13 +280,14 @@ theorem isMittagLeffler_iff_ranges : A.IsMittagLeffler ↔
   refine A.toModuleFunctor.isMittagLeffler_iff_ranges.trans <| forall_congr' fun n ↦
     exists_congr fun m ↦ exists_congr fun hnm ↦ forall_congr' fun k ↦ forall_congr' fun hmk ↦ ?_
   rw [← Submodule.toAddSubgroup_inj, LinearMap.range_toAddSubgroup, LinearMap.range_toAddSubgroup]
+  -- `mapOfLE` is `transitionOfLE` of the tower of `ℤ`-modules, whose terms are the groups `Aₙ`
   rfl
 
 /-- **Towers with surjective transitions are Mittag-Leffler.** -/
 theorem isMittagLeffler_of_surjective (h : ∀ n, Function.Surjective (A.map n)) :
     A.IsMittagLeffler :=
   A.toModuleFunctor.isMittagLeffler_of_surjective fun n ↦
-    A.surjective_transition_toModuleFunctor_iff.2 (h n)
+    A.transition_toModuleFunctor_surjective_iff.2 (h n)
 
 /-- **Towers of finite groups are Mittag-Leffler.** -/
 theorem isMittagLeffler_of_finite [∀ n, Finite (A.obj n)] : A.IsMittagLeffler :=
@@ -354,6 +358,28 @@ theorem Hom.toNatTrans_app_apply (f : Hom A B) (n : ℕ) (x : A.toModuleFunctor.
     (f.toNatTrans.app (op n)).hom x = f.app n x :=
   (rfl)
 
+/-- The identity morphism of a tower is the identity of the tower of `ℤ`-modules. -/
+@[simp]
+theorem Hom.toNatTrans_id (A : Tower.{u}) : (Hom.id A).toNatTrans = 𝟙 A.toModuleFunctor := by
+  ext ⟨n⟩ x
+  -- both components are the identity of `Aₙ`
+  rfl
+
+/-- `Hom.toNatTrans` respects composition of morphisms of towers. -/
+@[simp]
+theorem Hom.toNatTrans_comp (g : Hom B C) (f : Hom A B) :
+    (g.comp f).toNatTrans = f.toNatTrans ≫ g.toNatTrans := by
+  ext ⟨n⟩ x
+  -- both components are `g.app n ∘ f.app n`
+  rfl
+
+/-- The zero morphism of towers is the zero morphism of towers of `ℤ`-modules. -/
+@[simp]
+theorem Hom.toNatTrans_zero (A B : Tower.{u}) : (Hom.zero A B).toNatTrans = 0 := by
+  ext ⟨n⟩ x
+  -- both components are the zero map `Aₙ → Bₙ`
+  rfl
+
 /-- The underlying function of a component of `Hom.toNatTrans f` is that of `f`. -/
 theorem Hom.coe_toNatTrans_app (f : Hom A B) (n : ℕ) :
     ⇑(f.toNatTrans.app (op n)).hom = f.app n :=
@@ -361,14 +387,14 @@ theorem Hom.coe_toNatTrans_app (f : Hom A B) (n : ℕ) :
 
 /-- A levelwise injective morphism of towers gives a levelwise injective morphism of towers of
 `ℤ`-modules. -/
-theorem Hom.injective_toNatTrans_app (f : Hom A B) (hf : ∀ n, Function.Injective (f.app n))
+theorem Hom.toNatTrans_app_injective (f : Hom A B) (hf : ∀ n, Function.Injective (f.app n))
     (n : ℕ) : Function.Injective (f.toNatTrans.app (op n)).hom := by
   rw [Hom.coe_toNatTrans_app]
   exact hf n
 
 /-- A levelwise surjective morphism of towers gives a levelwise surjective morphism of towers of
 `ℤ`-modules. -/
-theorem Hom.surjective_toNatTrans_app (f : Hom A B) (hf : ∀ n, Function.Surjective (f.app n))
+theorem Hom.toNatTrans_app_surjective (f : Hom A B) (hf : ∀ n, Function.Surjective (f.app n))
     (n : ℕ) : Function.Surjective (f.toNatTrans.app (op n)).hom := by
   rw [Hom.coe_toNatTrans_app]
   exact hf n
@@ -413,8 +439,8 @@ theorem Hom.onProduct_zero (A B : Tower.{u}) : (Hom.zero A B).onProduct = 0 :=
 theorem productMap_toNatTrans_productEquiv (f : Hom A B) (a : ∀ n, A.obj n) :
     ModuleTower.productMap f.toNatTrans (A.productEquiv a) = B.productEquiv (f.onProduct a) := by
   ext n
-  rw [ModuleTower.productMap_apply, Hom.toNatTrans_app_apply]
-  rfl
+  rw [ModuleTower.productMap_apply, Hom.toNatTrans_app_apply, productEquiv_apply,
+    productEquiv_apply, Hom.onProduct_apply]
 
 /-- The product map of a morphism of towers commutes with the shift maps. -/
 theorem Hom.shift_onProduct (f : Hom A B) (a : ∀ n, A.obj n) :
@@ -495,7 +521,7 @@ theorem Hom.limOneMap_comp (g : Hom B C) (f : Hom A B) :
 @[simp]
 theorem Hom.limOneMap_zero (A B : Tower.{u}) : (Hom.zero A B).limOneMap = 0 := by
   ext x
-  exact (QuotientAddGroup.mk_zero _).trans rfl
+  simp
 
 end Hom
 
@@ -507,8 +533,9 @@ variable {A B C : Tower.{u}} (f : Hom A B) (g : Hom B C)
 
 /-- `lim A → lim B` is injective when every `Aₙ → Bₙ` is. -/
 theorem limMap_injective (hf : ∀ n, Function.Injective (f.app n)) :
-    Function.Injective f.limMap := fun _ _ hab ↦
-  Subtype.ext <| funext fun n ↦ hf n congr(($hab : ∀ n, B.obj n) n)
+    Function.Injective f.limMap := fun a b hab ↦
+  A.limComparison.injective <| ModuleTower.limMap_injective (f.toNatTrans_app_injective hf) <| by
+    rw [← limComparison_limMap, ← limComparison_limMap, hab]
 
 /-- Exactness of `lim A → lim B → lim C` for a levelwise exact sequence `0 → A → B → C`. -/
 theorem exact_limMap (hf : ∀ n, Function.Injective (f.app n))
@@ -519,7 +546,7 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app n))
     (g₂₃ := (ModuleTower.limMap g.toNatTrans).toAddMonoidHom)
     (AddMonoidHom.ext fun a ↦ (limComparison_limMap f a).symm)
     (AddMonoidHom.ext fun a ↦ (limComparison_limMap g a).symm)).1
-    (ModuleTower.exact_limMap (f.injective_toNatTrans_app hf)
+    (ModuleTower.exact_limMap (f.toNatTrans_app_injective hf)
       (f.exact_toNatTrans_app g hfg))
 
 /-- Exactness of `lim¹ A → lim¹ B → lim¹ C` for a levelwise exact sequence `A → B → C → 0`. -/
@@ -532,14 +559,20 @@ theorem exact_limOneMap (hfg : ∀ n, Function.Exact (f.app n) (g.app n))
     (AddMonoidHom.ext fun x ↦ (limOneComparison_limOneMap f x).symm)
     (AddMonoidHom.ext fun x ↦ (limOneComparison_limOneMap g x).symm)).1
     (ModuleTower.exact_limOneMap (f.exact_toNatTrans_app g hfg)
-      (g.surjective_toNatTrans_app hg))
+      (g.toNatTrans_app_surjective hg))
 
 /-- `lim¹ B → lim¹ C` is surjective when every `Bₙ → Cₙ` is. -/
 theorem limOneMap_surjective (hg : ∀ n, Function.Surjective (g.app n)) :
     Function.Surjective g.limOneMap := by
-  rintro ⟨c⟩
-  obtain ⟨b, hb⟩ := Function.Surjective.piMap hg c
-  exact ⟨QuotientAddGroup.mk b, congrArg QuotientAddGroup.mk hb⟩
+  have : ⇑g.limOneMap = C.limOneComparison.symm ∘ ModuleTower.limOneMap g.toNatTrans ∘
+      B.limOneComparison := by
+    ext x
+    rw [Function.comp_apply, Function.comp_apply, ← limOneComparison_limOneMap,
+      AddEquiv.symm_apply_apply]
+  rw [this]
+  exact C.limOneComparison.symm.surjective.comp <|
+    (ModuleTower.limOneMap_surjective (g.toNatTrans_app_surjective hg)).comp
+      B.limOneComparison.surjective
 
 variable (hf : ∀ n, Function.Injective (f.app n)) (hfg : ∀ n, Function.Exact (f.app n) (g.app n))
   (hg : ∀ n, Function.Surjective (g.app n))
@@ -550,8 +583,8 @@ compatible family `c` to the class of any family `a` of `A` with `f(a) = δ(b)` 
 of `c`; see `connecting_apply`. -/
 def connecting : C.lim →+ A.limOne :=
   A.limOneComparison.symm.toAddMonoidHom.comp <|
-    (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.injective_toNatTrans_app hf)
-      (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg)).toAddMonoidHom.comp
+    (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
+      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg)).toAddMonoidHom.comp
       C.limComparison.toAddMonoidHom
 
 /-- The comparisons of `lim` and `lim¹` carry the connecting map to the connecting map of the
@@ -559,8 +592,8 @@ towers of `ℤ`-modules. -/
 @[simp]
 theorem limOneComparison_connecting (c : C.lim) :
     A.limOneComparison (connecting f g hf hfg hg c) =
-      ModuleTower.connecting f.toNatTrans g.toNatTrans (f.injective_toNatTrans_app hf)
-        (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg) (C.limComparison c) :=
+      ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
+        (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg) (C.limComparison c) :=
   A.limOneComparison.apply_symm_apply _
 
 /-- **The connecting map of the six-term sequence.** If `b` lifts the compatible family `c` of
@@ -570,8 +603,8 @@ theorem connecting_apply (c : C.lim) (b : ∀ n, B.obj n) (hb : g.onProduct b = 
     connecting f g hf hfg hg c = QuotientAddGroup.mk a :=
   A.limOneComparison.injective <| by
     rw [limOneComparison_connecting, limOneComparison_mk]
-    refine ModuleTower.connecting_apply _ _ (f.injective_toNatTrans_app hf)
-      (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg) _ (B.productEquiv b) ?_
+    refine ModuleTower.connecting_apply _ _ (f.toNatTrans_app_injective hf)
+      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg) _ (B.productEquiv b) ?_
       (A.productEquiv a) ?_
     · rw [productMap_toNatTrans_productEquiv, hb, coe_limComparison_apply]
     · rw [productMap_toNatTrans_productEquiv, ha, shift_productEquiv]
@@ -580,23 +613,23 @@ theorem connecting_apply (c : C.lim) (b : ∀ n, B.obj n) (hb : g.onProduct b = 
 theorem exact_limMap_connecting : Function.Exact g.limMap (connecting f g hf hfg hg) :=
   (Function.Exact.iff_of_ladder_addEquiv B.limComparison C.limComparison A.limOneComparison
     (g₁₂ := (ModuleTower.limMap g.toNatTrans).toAddMonoidHom)
-    (g₂₃ := (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.injective_toNatTrans_app hf)
-      (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg)).toAddMonoidHom)
+    (g₂₃ := (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
+      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg)).toAddMonoidHom)
     (AddMonoidHom.ext fun a ↦ (limComparison_limMap g a).symm)
     (AddMonoidHom.ext fun c ↦ (limOneComparison_connecting f g hf hfg hg c).symm)).1
-    (ModuleTower.exact_limMap_connecting _ _ (f.injective_toNatTrans_app hf)
-      (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg))
+    (ModuleTower.exact_limMap_connecting _ _ (f.toNatTrans_app_injective hf)
+      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg))
 
 /-- Exactness of `lim C → lim¹ A → lim¹ B`. -/
 theorem exact_connecting_limOneMap : Function.Exact (connecting f g hf hfg hg) f.limOneMap :=
   (Function.Exact.iff_of_ladder_addEquiv C.limComparison A.limOneComparison B.limOneComparison
-    (g₁₂ := (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.injective_toNatTrans_app hf)
-      (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg)).toAddMonoidHom)
+    (g₁₂ := (ModuleTower.connecting f.toNatTrans g.toNatTrans (f.toNatTrans_app_injective hf)
+      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg)).toAddMonoidHom)
     (g₂₃ := (ModuleTower.limOneMap f.toNatTrans).toAddMonoidHom)
     (AddMonoidHom.ext fun c ↦ (limOneComparison_connecting f g hf hfg hg c).symm)
     (AddMonoidHom.ext fun x ↦ (limOneComparison_limOneMap f x).symm)).1
-    (ModuleTower.exact_connecting_limOneMap _ _ (f.injective_toNatTrans_app hf)
-      (f.exact_toNatTrans_app g hfg) (g.surjective_toNatTrans_app hg))
+    (ModuleTower.exact_connecting_limOneMap _ _ (f.toNatTrans_app_injective hf)
+      (f.exact_toNatTrans_app g hfg) (g.toNatTrans_app_surjective hg))
 
 end Exact
 
@@ -616,27 +649,16 @@ theorem mulTower_map_apply (p : ℤ) (n : ℕ) (x : ℤ) : (mulTower p).map n x 
 
 /-- The multiplication-by-`p` tower of abelian groups is isomorphic to the tower of `ℤ`-modules
 `ModuleTower.multiplicationTower p`, by the identity in each degree. -/
-def mulTowerIso (p : ℤ) : (mulTower p).toModuleFunctor ≅ ModuleTower.multiplicationTower p where
-  hom := NatTrans.ofOpSequence (fun _ ↦ ModuleCat.ofHom (AddMonoidHom.id ℤ).toIntLinearMap)
-    fun n ↦ by
-      ext
-      simp only [Tower.toModuleFunctor, ModuleTower.multiplicationTower,
-        Functor.ofOpSequence_map_homOfLE_succ]
-      -- both sides compute `1 * p`
-      rfl
-  inv := NatTrans.ofOpSequence (fun _ ↦ ModuleCat.ofHom (AddMonoidHom.id ℤ).toIntLinearMap)
-    fun n ↦ by
-      ext
-      simp only [Tower.toModuleFunctor, ModuleTower.multiplicationTower,
-        Functor.ofOpSequence_map_homOfLE_succ]
-      -- both sides compute `1 * p`
-      rfl
-  hom_inv_id := by
-    ext
-    rfl
-  inv_hom_id := by
-    ext
-    rfl
+def mulTowerIso (p : ℤ) : (mulTower p).toModuleFunctor ≅ ModuleTower.multiplicationTower p :=
+  -- both towers have the terms `ℤ`, so the identity is natural once checked on transitions
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦
+    (NatTrans.ofOpSequence (F := (mulTower p).toModuleFunctor)
+      (G := ModuleTower.multiplicationTower p) (fun _ ↦ 𝟙 _) fun n ↦ by
+        ext
+        simp only [Tower.toModuleFunctor, ModuleTower.multiplicationTower,
+          Functor.ofOpSequence_map_homOfLE_succ]
+        -- both sides compute `1 * p`
+        rfl).naturality f
 
 /-- The multiplication-by-`p` tower has vanishing limit for every integer `p` that is not a
 unit. -/
@@ -645,11 +667,8 @@ theorem lim_mulTower_eq_bot {p : ℤ} (hp : ¬IsUnit p) : (mulTower p).lim = ⊥
     rw [ModuleTower.lim_multiplicationTower_eq_bot hp]
     infer_instance
   -- `lim` of the isomorphic tower of `ℤ`-modules vanishes
-  have hinj : Function.Injective (ModuleTower.limMap (mulTowerIso p).hom) :=
-    Function.LeftInverse.injective (g := ModuleTower.limMap (mulTowerIso p).inv) fun x ↦ by
-      rw [← LinearMap.comp_apply, ← ModuleTower.limMap_comp, Iso.hom_inv_id,
-        ModuleTower.limMap_id, LinearMap.id_apply]
-  have := (hinj.comp (mulTower p).limComparison.injective).subsingleton
+  have := ((ModuleTower.limEquivOfIso (mulTowerIso p)).injective.comp
+    (mulTower p).limComparison.injective).subsingleton
   exact AddSubgroup.eq_bot_of_subsingleton _
 
 variable (p : ℕ) [Fact p.Prime]
@@ -658,16 +677,7 @@ variable (p : ℕ) [Fact p.Prime]
 by the `p`-adic summation map `(aₙ) ↦ ∑ₙ pⁿ aₙ` (`limOneMulTowerEquiv_mk`). -/
 def limOneMulTowerEquiv : (mulTower p).limOne ≃+ ℤ_[p] ⧸ (Int.castAddHom ℤ_[p]).range :=
   (mulTower p).limOneComparison.trans <|
-    AddEquiv.trans
-      { toFun := ModuleTower.limOneMap (mulTowerIso p).hom
-        invFun := ModuleTower.limOneMap (mulTowerIso p).inv
-        left_inv x := by
-          rw [← LinearMap.comp_apply, ← ModuleTower.limOneMap_comp, Iso.hom_inv_id,
-            ModuleTower.limOneMap_id, LinearMap.id_apply]
-        right_inv x := by
-          rw [← LinearMap.comp_apply, ← ModuleTower.limOneMap_comp, Iso.inv_hom_id,
-            ModuleTower.limOneMap_id, LinearMap.id_apply]
-        map_add' := map_add _ }
+    (ModuleTower.limOneEquivOfIso (mulTowerIso p)).toAddEquiv.trans
       (ModuleTower.limOneMultiplicationTowerEquiv p)
 
 /-- `limOneMulTowerEquiv` sends the class in `lim¹` of a family `(aₙ)` to the class in
@@ -677,7 +687,8 @@ theorem limOneMulTowerEquiv_mk (a : ℕ → ℤ) :
     limOneMulTowerEquiv p (QuotientAddGroup.mk a) =
       QuotientAddGroup.mk (∑' n, (p : ℤ_[p]) ^ n * (a n : ℤ_[p])) := by
   simp only [limOneMulTowerEquiv, AddEquiv.trans_apply, Tower.limOneComparison_mk,
-    AddEquiv.coe_mk, Equiv.coe_fn_mk, ModuleTower.limOneMap_mk,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    ModuleTower.limOneEquivOfIso_apply, ModuleTower.limOneMap_mk,
     ModuleTower.limOneMultiplicationTowerEquiv_mk, ModuleTower.padicSum_apply,
     ModuleTower.multiplicationTowerProductEquiv_apply, ModuleTower.productMap_apply]
   -- the components of `mulTowerIso p` and of `productEquiv` are identities
