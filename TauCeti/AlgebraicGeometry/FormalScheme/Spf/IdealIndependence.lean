@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.StructureSheaf
-public import TauCeti.RingTheory.AdicCompletion.Topology
 
 /-!
 # Independence of the formal spectrum from the ideal of definition
@@ -68,12 +67,6 @@ namespace TauCeti.FormalScheme.Spf
 
 variable {A : Type u} [CommRing A] [TopologicalSpace A] {I J K L : Ideal A}
 
-/-- If `I` and `K` are ideals of definition, some power `I ^ (n + 1)` lies in `K`. -/
-private theorem exists_pow_succ_le (hI : IsAdic I) (hK : IsAdic K) :
-    ∃ n : ℕ, I ^ (n + 1) ≤ K := by
-  obtain ⟨n, hn⟩ := ((hK.isAdic_iff_isOpen_and_exists_pow_le).mp hI).2
-  exact ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans hn⟩
-
 variable [IsTopologicalRing A]
 
 /-- For ideals of definition `I` and `K`, the projection `O_{Spf A} → O_K` from the structure
@@ -82,8 +75,8 @@ sheaf built from `I` to the structure sheaf of the thickening `Spec (A ⧸ K)`: 
 (`toQuotientSheaf_eq`). It is the sheaf map of the closed immersion `Spec (A ⧸ K) → Spf A`. -/
 noncomputable def toQuotientSheaf (hI : IsAdic I) (hK : IsAdic K) :
     structureSheaf hI ⟶ quotientSheaf hK :=
-  quotientProjection hI (exists_pow_succ_le hI hK).choose ≫
-    quotientTransition _ hK (exists_pow_succ_le hI hK).choose_spec
+  quotientProjection hI (hI.exists_pow_succ_le hK).choose ≫
+    quotientTransition _ hK (hI.exists_pow_succ_le hK).choose_spec
 
 /-- The two-step composites `O_{Spf A} → O_{I ^ (n + 1)} → O_K` agree for all admissible `n`. -/
 private theorem quotientProjection_comp_quotientTransition_eq (hI : IsAdic I) (hK : IsAdic K)
@@ -112,7 +105,7 @@ theorem toQuotientSheaf_pow_succ (hI : IsAdic I) (n : ℕ) :
 theorem toQuotientSheaf_comp_quotientTransition (hI : IsAdic I) (hK : IsAdic K) (hL : IsAdic L)
     (hKL : K ≤ L) :
     toQuotientSheaf hI hK ≫ quotientTransition hK hL hKL = toQuotientSheaf hI hL := by
-  obtain ⟨n, hn⟩ := exists_pow_succ_le hI hK
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le hK
   rw [toQuotientSheaf_eq hI hK hn, toQuotientSheaf_eq hI hL (hn.trans hKL), Category.assoc,
     quotientTransition_comp]
 
@@ -135,7 +128,7 @@ theorem globalSectionsIso_inv_comp_toQuotientSheaf [IsAdicComplete I A] (hI : Is
     (hK : IsAdic K) :
     (globalSectionsIso hI).inv ≫ (toQuotientSheaf hI hK).hom.app (op ⊤) =
       CommRingCat.ofHom (Ideal.Quotient.mk K) ≫ (quotientSheafGlobalSectionsIso hK).inv := by
-  obtain ⟨n, hn⟩ := exists_pow_succ_le hI hK
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le hK
   rw [toQuotientSheaf_eq hI hK hn, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
     globalSectionsIso_inv_comp_quotientProjection_assoc,
     quotientSheafGlobalSectionsIso_inv_comp_quotientTransition, ← Category.assoc,
@@ -151,7 +144,7 @@ private noncomputable def structureSheafHom (hI : IsAdic I) (hJ : IsAdic J) :
 private theorem structureSheafHom_comp_toQuotientSheaf (hI : IsAdic I) (hJ : IsAdic J)
     (hK : IsAdic K) :
     structureSheafHom hI hJ ≫ toQuotientSheaf hJ hK = toQuotientSheaf hI hK := by
-  obtain ⟨n, hn⟩ := exists_pow_succ_le hJ hK
+  obtain ⟨n, hn⟩ := hJ.exists_pow_succ_le hK
   exact (structureSheaf.lift_toQuotientSheaf hJ hK (fun _ ↦ toQuotientSheaf hI _)
     (fun _ ↦ toQuotientSheaf_comp_quotientTransition _ _ _ _) hn).trans
     (toQuotientSheaf_comp_quotientTransition _ _ _ _)
