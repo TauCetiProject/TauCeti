@@ -40,7 +40,8 @@ group nor any restriction on the characteristic is needed.
 * `TauCeti.norm_tateUniformizationX_sub_le`, `TauCeti.norm_tateUniformizationY_sub_le`: the
   Tate coordinates are the nodal parametrisation up to `max (‖q‖ ‖u‖) (‖q‖ / ‖u‖)`.
 * `TauCeti.norm_tateUniformizationX_of_norm_one_sub_lt_one`: `‖X(u)‖ = ‖1 - u‖⁻²` near `u = 1`.
-* `TauCeti.norm_tateUniformizationX_eq_one`: `‖X(u)‖ = 1` when `‖u‖ = ‖1 - u‖ = 1`.
+* `TauCeti.norm_tateUniformizationX_eq_one`, `TauCeti.norm_tateUniformizationY_eq_one`:
+  `‖X(u)‖ = ‖Y(u)‖ = 1` when `‖u‖ = ‖1 - u‖ = 1`.
 * `TauCeti.norm_tateUniformizationX_add_tateUniformizationY`: `‖X(u) + Y(u)‖ = 1` when
   `‖u‖ = ‖1 - u‖ = 1`.
 * `TauCeti.norm_tateUniformizationX_le_max`, `TauCeti.norm_tateUniformizationY_le_max`: both
@@ -170,13 +171,6 @@ theorem norm_tateUniformizationX_of_norm_one_sub_lt_one (q u : Kˣ) (hq : ‖(q 
       (one_le_inv₀ (by positivity)).mpr (pow_le_one₀ hd.le h.le)
     _ = _ := hmain.symm
 
-/-- **Points with nonsingular reduction: the second coordinate is integral.** -/
-theorem norm_tateUniformizationY_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationY q u‖ ≤ 1 :=
-  IsUltrametricDist.norm_le_of_norm_sub_le
-    (by rw [norm_div, norm_pow, norm_pow, hu, h, one_pow, one_pow, div_one])
-    ((norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu).trans hq.le)
-
 /-- **Points with nonsingular reduction have a unit first coordinate.** If `‖u‖ = ‖1 - u‖ = 1`,
 then `‖X(u)‖ = 1`. -/
 theorem norm_tateUniformizationX_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
@@ -186,6 +180,17 @@ theorem norm_tateUniformizationX_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
   refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
   rw [norm_sub_rev, hmain]
   exact (norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu).trans_lt hq
+
+/-- **Points with nonsingular reduction have a unit second coordinate.** If `‖u‖ = ‖1 - u‖ = 1`,
+then `‖Y(u)‖ = 1`. -/
+theorem norm_tateUniformizationY_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationY q u‖ = 1 := by
+  have hmain : ‖(u : K) ^ 2 / (1 - u) ^ 3‖ = 1 := by
+    rw [norm_div, norm_pow, norm_pow, hu, h, one_pow, one_pow, div_one]
+  rw [← hmain]
+  refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
+  rw [norm_sub_rev, hmain]
+  exact (norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu).trans_lt hq
 
 /-- **Points with nonsingular reduction avoid the node.** If `‖u‖ = ‖1 - u‖ = 1`, then
 `‖X(u) + Y(u)‖ = 1`, so the coordinates do not both lie in the maximal ideal. -/
