@@ -58,6 +58,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   Sobolev inequality.
 * `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/2* + 1/n = 1/2` of `W^{1,2}`
   read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`).
+* `TauCeti.natCast_div_toReal_eq_div_toReal_sub_one`: the general relation `1/p⋆ + 1/n = 1/p`
+  in the form `n / p⋆ = n / p - 1` of dilation exponents.
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
@@ -249,6 +251,23 @@ theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞
 /-- A Sobolev exponent `2*` with `1/2* + 1/n = 1/2` exists only in positive dimension `n`. -/
 theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) : n ≠ 0 :=
   Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <| ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+
+/-- The exponent relation `1/p⋆ + 1/n = 1/p` of the Sobolev embedding in dimension `n`,
+multiplied by `n` and read in `ℝ`: `n / p⋆ = n / p - 1`. These are the dilation exponents of the
+critical `L^{p⋆}` norm of a function and of the `Lᵖ` norm of its gradient. As for
+`TauCeti.toReal_inv_add_inv_eq_inv`, no finiteness hypothesis on `p⋆` is needed. -/
+theorem natCast_div_toReal_eq_div_toReal_sub_one {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) :
+    (n : ℝ) / pstar.toReal = n / p.toReal - 1 := by
+  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+  have hpinv : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp1).ne'
+  have hsinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top hpinv (hexp ▸ le_self_add)
+  have hninv : (n : ℝ≥0∞)⁻¹ ≠ ∞ := ne_top_of_le_ne_top hpinv (hexp ▸ le_add_self)
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Nat.cast_ne_zero.1 (ENNReal.inv_ne_top.1 hninv))
+  have h := congrArg ENNReal.toReal hexp
+  rw [ENNReal.toReal_add hsinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
+    ENNReal.toReal_natCast, ENNReal.toReal_inv] at h
+  rw [div_eq_mul_inv, div_eq_mul_inv, ← h, mul_add, mul_inv_cancel₀ hn]
+  ring
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`
