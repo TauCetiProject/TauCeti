@@ -23,7 +23,8 @@ equation
 
 at every `z` off the support `[a - 2√v, a + 2√v]`. For the standard law `semicircleReal 0 1` this
 is `m² + z m + 1 = 0`. In the upper half-plane `m(z)` is the unique root with positive imaginary
-part, since the other root `1 / (v m(z))` has negative imaginary part. This is the self-consistent
+part: for `v > 0` the other root `1 / (v m(z))` has negative imaginary part, and for zero variance
+the equation is linear, with `m(z) = 1 / (a - z)` its only root. This is the self-consistent
 equation that the resolvent method for Wigner matrices identifies in the limit; the sign of the
 imaginary part selects the root without a pointwise choice of complex square root. The quadratic
 is written as `v * (m * m) + (z - a) * m + 1`, the shape used by Mathlib's `discrim` API.
