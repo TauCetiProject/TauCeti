@@ -107,8 +107,6 @@ together with `MeasureTheory.integral_comp_abs`.
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 2, "Regularized incomplete beta", for which
-  these are the prerequisites, and Layer 3, **Student's t**, which needs the second integral.
 * [NIST Digital Library of Mathematical Functions, §5.12](https://dlmf.nist.gov/5.12).
 -/
 

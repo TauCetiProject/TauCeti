@@ -18,8 +18,8 @@ public import TauCeti.CategoryTheory.Shift.CommShift
 The mapping cocone `mappingCocone φ` of a morphism `φ : K ⟶ L` of cochain complexes is
 `(mappingCone φ)⟦-1⟧`, and its projections `mappingCocone.fst φ : mappingCocone φ ⟶ K` and
 `mappingCocone.snd φ` are built from those of the mapping cone. This file records the components
-of these projections and their naturality with respect to the shifted mapping cone map induced by
-a commutative square.
+of these projections, the differential of the second projection, and their naturality
+with respect to the shifted mapping cone map induced by a commutative square.
 
 For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of cochain complexes in an abelian category,
 the first map lifts to the mapping cocone of the second, and this lift `X₁ ⟶ mappingCocone S.g`
@@ -85,13 +85,33 @@ lemma shiftFunctor_map_mappingCone_map_comp_fst {K₁ L₁ K₂ L₂ : CochainCo
 
 /-- The components of the second projection of the mapping cocone are those of the second
 projection of the mapping cone. -/
-lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p : ℤ) :
-    (snd φ).v p (p + -1) rfl = (mappingCone.snd φ).v (p + -1) (p + -1) (add_zero _) := by
+lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + -1 = q) :
+    (snd φ).v p q hpq = (mappingCone.snd φ).v (p + -1) q (by omega) := by
+  subst hpq
   -- `snd φ` is a left shift of `mappingCone.snd φ`, but its source `mappingCocone φ` is
   -- `(mappingCone φ)⟦-1⟧` only up to unfolding, so it is restated before `leftShift_v` applies.
   change ((mappingCone.snd φ).leftShift (-1) (-1) (zero_add _)).v p (p + -1) rfl = _
   rw [Cochain.leftShift_v _ (-1) (-1) _ p (p + -1) rfl (p + -1) (add_zero _)]
   simp [Int.negOnePow_even 2 ⟨1, rfl⟩]
+
+/-- The second projection of the native shifted cone has differential `-f a - d b`. -/
+lemma d_snd_v {K L : CochainComplex C ℤ} (f : K ⟶ L) (p : ℤ) :
+    (mappingCocone f).d p (p + 1) ≫ (snd f).v (p + 1) p (by omega) =
+      -(fst f).f p ≫ f.f p -
+        (snd f).v p (p + -1) rfl ≫ L.d (p + -1) p := by
+  rw [snd_v, snd_v, fst_f]
+  -- Restate the native cocone as the shifted cone so its differential formula applies.
+  change ((mappingCone f)⟦(-1 : ℤ)⟧).d p (p + 1) ≫ _ = _
+  simp only [shiftFunctor_obj_d', Int.negOnePow_neg, Int.negOnePow_one,
+    Units.neg_smul, one_smul, Preadditive.neg_comp]
+  have hcomp (i : ℤ) (hi : i = p) :
+      (mappingCone f).d (p + -1) i ≫ (mappingCone.snd f).v i p (by omega) =
+        (mappingCone f).d (p + -1) p ≫ (mappingCone.snd f).v p p (add_zero p) := by
+    subst hi
+    rfl
+  rw [hcomp _ (by omega), mappingCone.d_snd_v f (p + -1) p (by omega)]
+  simp only [neg_add, sub_eq_add_neg]
+  rfl
 
 /-- The second projection of the mapping cocone is natural in commutative squares. -/
 @[reassoc]

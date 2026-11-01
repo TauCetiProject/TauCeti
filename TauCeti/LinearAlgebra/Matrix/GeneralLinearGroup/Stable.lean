@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Colimit.DirectLimit
+public import TauCeti.Algebra.Colimit.DirectLimit
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
 /-!
@@ -159,20 +159,18 @@ namespace StableGeneralLinearGroup
 
 variable (A) in
 /-- The canonical homomorphism from `GL (Fin n) A` to the stable general linear group. -/
-def of (n : ℕ) : GL (Fin n) A →* StableGeneralLinearGroup A where
-  toFun u := ⟦⟨n, u⟩⟧
-  map_one' := (DirectLimit.one_def (f := fun _ _ h ↦ stabilizeGL A h) n).symm
-  map_mul' u v := (DirectLimit.mul_def (f := fun _ _ h ↦ stabilizeGL A h) n u v).symm
+def of (n : ℕ) : GL (Fin n) A →* StableGeneralLinearGroup A :=
+  DirectLimit.Monoid.of _ (fun _ _ h ↦ stabilizeGL A h) n
 
 /-- The canonical homomorphism sends `u` to its class in the direct limit. -/
 private theorem of_apply (n : ℕ) (u : GL (Fin n) A) : of A n u = ⟦⟨n, u⟩⟧ :=
-  rfl
+  DirectLimit.Monoid.of_apply (G := fun n : ℕ ↦ GL (Fin n) A) (f := fun _ _ h ↦ stabilizeGL A h) n u
 
 /-- The canonical homomorphisms are compatible with stabilization. -/
 @[simp]
 theorem of_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) :
-    of A n (stabilizeGL A h u) = of A m u := by
-  rw [of_apply, of_apply, DirectLimit.mk_apply]
+    of A n (stabilizeGL A h u) = of A m u :=
+  DirectLimit.Monoid.of_f (G := fun n : ℕ ↦ GL (Fin n) A) (f := fun _ _ h ↦ stabilizeGL A h) h u
 
 /-- The canonical homomorphisms are compatible with stabilization. -/
 theorem of_comp_stabilizeGL {m n : ℕ} (h : m ≤ n) : (of A n).comp (stabilizeGL A h) = of A m :=
@@ -201,27 +199,23 @@ theorem exists_of₂ (x y : StableGeneralLinearGroup A) :
 `GL (Fin n) A`. -/
 @[ext]
 theorem hom_ext {G : Type*} [Monoid G] {f g : StableGeneralLinearGroup A →* G}
-    (h : ∀ n, f.comp (of A n) = g.comp (of A n)) : f = g := by
-  ext x
-  obtain ⟨n, u, rfl⟩ := exists_of x
-  exact DFunLike.congr_fun (h n) u
+    (h : ∀ n, f.comp (of A n) = g.comp (of A n)) : f = g :=
+  DirectLimit.Monoid.hom_ext h
 
 /-- The **universal property of `GL_∞(A)`**: a family of homomorphisms out of the groups
 `GL (Fin n) A` which is compatible with stabilization induces a homomorphism out of the stable
 general linear group. -/
 def lift {G : Type*} [Monoid G] (f : ∀ n, GL (Fin n) A →* G)
     (hf : ∀ m n (h : m ≤ n) u, f n (stabilizeGL A h u) = f m u) :
-    StableGeneralLinearGroup A →* G where
-  toFun := DirectLimit.lift _ (fun n ↦ f n) fun m n h u ↦ (hf m n h u).symm
-  map_one' := DirectLimit.lift_one _ _
-  map_mul' := DirectLimit.lift_mul _ _
+    StableGeneralLinearGroup A →* G :=
+  DirectLimit.Monoid.lift _ (fun _ _ h ↦ stabilizeGL A h) f hf
 
 /-- The homomorphism induced by a compatible family restricts to the family. -/
 @[simp]
 theorem lift_of {G : Type*} [Monoid G] (f : ∀ n, GL (Fin n) A →* G)
     (hf : ∀ m n (h : m ≤ n) u, f n (stabilizeGL A h u) = f m u) (n : ℕ) (u : GL (Fin n) A) :
     lift f hf (of A n u) = f n u :=
-  (rfl)
+  DirectLimit.Monoid.lift_of f hf n u
 
 /-! ## The stable elementary subgroup -/
 
@@ -392,7 +386,7 @@ its value under the family. -/
 theorem lift_mk {G : Type*} [CommGroup G] (f : ∀ n, GL (Fin n) A →* G)
     (hf : ∀ m n (h : m ≤ n) u, f n (stabilizeGL A h u) = f m u) (n : ℕ) (u : GL (Fin n) A) :
     lift f hf (mk A n u) = f n u :=
-  (rfl)
+  (Abelianization.lift_apply_of _ _).trans (StableGeneralLinearGroup.lift_of f hf n u)
 
 end AlgebraicK1
 
