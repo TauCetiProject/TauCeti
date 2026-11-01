@@ -17,9 +17,12 @@ agrees with the coupling on every rectangle `A i × B`, retaining the entire tar
 that cell, rather than just the masses of a chosen target partition.
 
 The construction transports the restricted source on each cell to the second marginal of the
-coupling restricted to that cell, then glues the maps. This is the measure-theoretic step in
-approximating couplings by graph plans: increasingly fine source partitions retain increasingly
-more information about the original coupling. No topology is needed for this step.
+coupling restricted to that cell, then glues the maps. The gluing step,
+`TauCeti.IsCoupling.exists_measurePreserving_restrict`, applies to any disjoint measurable pieces
+covering the coupling and any disjoint source sets of matching masses. This is the
+measure-theoretic step in approximating couplings by graph plans: increasingly fine source
+partitions retain increasingly more information about the original coupling. No topology is
+needed for this step.
 
 ## References
 
@@ -39,6 +42,51 @@ variable {X Y ι : Type*} [MeasurableSpace X] [StandardBorelSpace X]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
   [IsFiniteMeasure μ] [NullSingletonClass μ]
 
+/-- Let `π` be concentrated on a union of disjoint measurable pieces `S i`, and let `Z i` be
+disjoint measurable source sets with `μ (Z i) = π (S i)`. Then one transport map sends `μ`
+restricted to each `Z i` to the second marginal of `π` restricted to `S i`, and the sets `Z i`
+exhaust `μ`. -/
+theorem exists_measurePreserving_restrict (hπ : IsCoupling π μ ν) {S : ι → Set (X × Y)}
+    (hSm : ∀ i, MeasurableSet (S i)) (hSd : Pairwise (Disjoint on S))
+    (hScov : ∀ᵐ z ∂π, z ∈ ⋃ i, S i) {Z : ι → Set X} (hZm : ∀ i, MeasurableSet (Z i))
+    (hZd : Pairwise (Disjoint on Z)) (hZμ : ∀ i, μ (Z i) = π (S i)) :
+    ∃ T : X → Y, MeasurePreserving T μ ν ∧
+      (∀ i, MeasurePreserving T (μ.restrict (Z i)) (π.restrict (S i)).snd) ∧
+      μ (⋃ i, Z i)ᶜ = 0 := by
+  have hπS : π.restrict (⋃ i, S i) = π := Measure.restrict_eq_self_of_ae_mem hScov
+  have hZcov : μ (⋃ i, Z i)ᶜ = 0 := by
+    have hS : π (⋃ i, S i) = π univ := by
+      conv_rhs => rw [← hπS, Measure.restrict_apply_univ]
+    have h : μ (⋃ i, Z i) = μ univ := by
+      rw [measure_iUnion hZd hZm, tsum_congr hZμ, ← measure_iUnion hSd hSm, hS,
+        hπ.measure_univ_left]
+    rw [measure_compl (MeasurableSet.iUnion hZm) (measure_ne_top _ _), h, tsub_self]
+  -- The null remainder of the source becomes one more cell, carrying the zero law.
+  let A : Option ι → Set X := fun o ↦ o.elim (⋃ i, Z i)ᶜ Z
+  let ν' : Option ι → Measure Y := extend some (fun i ↦ (π.restrict (S i)).snd) 0
+  have hAm (o : Option ι) : MeasurableSet (A o) := by
+    cases o
+    exacts [(MeasurableSet.iUnion hZm).compl, hZm _]
+  have hAd : Pairwise (Disjoint on A) := by
+    rintro (_ | i) (_ | j) hij
+    · exact absurd rfl hij
+    · exact disjoint_compl_left_iff_subset.2 (subset_iUnion Z j)
+    · exact (disjoint_compl_left_iff_subset.2 (subset_iUnion Z i)).symm
+    · exact hZd fun h ↦ hij (congrArg some h)
+  have hAu : ⋃ o, A o = univ := by
+    rw [iUnion_option]
+    exact compl_union_self _
+  have hmass (o : Option ι) : μ (A o) = ν' o univ := by
+    cases o
+    · simpa [A, ν', extend_apply'] using hZcov
+    · simp [A, ν', (Option.some_injective ι).extend_apply, hZμ, Measure.snd_univ]
+  obtain ⟨T, hT, hTA⟩ := μ.exists_measurePreserving_sum_of_nullSingleton hAm hAd hAu ν' hmass
+  have hsum : Measure.sum ν' = ν := by
+    rw [Measure.sum_extend_zero (Option.some_injective ι), ← Measure.snd_sum,
+      ← Measure.restrict_iUnion hSd hSm, hπS, hπ.snd_eq]
+  refine ⟨T, hsum ▸ hT, fun i ↦ ?_, hZcov⟩
+  simpa [A, ν', (Option.some_injective ι).extend_apply] using hTA (some i)
+
 /-- A coupling with atomless source has a graph-plan realization on every countable measurable
 source partition. The map preserves the full target law and the mass of every rectangle whose
 source side is a partition cell. Zero-mass cells are allowed. -/
@@ -47,23 +95,13 @@ theorem exists_measurePreserving_graphPlan_prod_eq (hπ : IsCoupling π μ ν)
     (hAd : Pairwise (Disjoint on A)) (hAu : (⋃ i, A i) = univ) :
     ∃ T : X → Y, MeasurePreserving T μ ν ∧
       ∀ i B, MeasurableSet B → graphPlan T μ (A i ×ˢ B) = π (A i ×ˢ B) := by
-  let ρ : ι → Measure (X × Y) := fun i ↦ π.restrict (A i ×ˢ univ)
-  have hmass (i : ι) : μ (A i) = (ρ i).snd univ := by
-    rw [Measure.snd_univ, Measure.restrict_apply MeasurableSet.univ, univ_inter]
-    exact (hπ.measure_prod_univ (hAm i)).symm
-  have hdm : ∀ i, MeasurableSet (A i ×ˢ (univ : Set Y)) :=
-    fun i ↦ (hAm i).prod MeasurableSet.univ
-  have hdd : Pairwise (Disjoint on fun i ↦ A i ×ˢ (univ : Set Y)) :=
-    fun i j hij ↦ disjoint_prod.mpr (Or.inl (hAd hij))
   have hdu : (⋃ i, A i ×ˢ (univ : Set Y)) = univ := by
-    ext z
-    simpa using Set.ext_iff.mp hAu z.1
-  have hsum : Measure.sum (fun i ↦ (ρ i).snd) = ν := by
-    rw [← Measure.snd_sum, ← Measure.restrict_iUnion hdd hdm, hdu,
-      Measure.restrict_univ, hπ.snd_eq]
-  obtain ⟨T, hT, hcell⟩ := μ.exists_measurePreserving_sum_of_nullSingleton
-    hAm hAd hAu (fun i ↦ (ρ i).snd) hmass
-  refine ⟨T, hsum ▸ hT, fun i B hB ↦ ?_⟩
+    rw [← iUnion_prod_const, hAu, univ_prod_univ]
+  obtain ⟨T, hT, hcell, -⟩ := hπ.exists_measurePreserving_restrict
+    (fun i ↦ (hAm i).prod MeasurableSet.univ)
+    (fun i j hij ↦ disjoint_prod.mpr (Or.inl (hAd hij))) (by simp [hdu]) hAm hAd
+    fun i ↦ (hπ.measure_prod_univ (hAm i)).symm
+  refine ⟨T, hT, fun i B hB ↦ ?_⟩
   rw [graphPlan_prod hT.aemeasurable (hAm i) hB, inter_comm,
     ← Measure.restrict_apply (hT.measurable hB), (hcell i).measure_preimage hB.nullMeasurableSet,
     Measure.snd_apply hB, Measure.restrict_apply (measurable_snd hB)]
