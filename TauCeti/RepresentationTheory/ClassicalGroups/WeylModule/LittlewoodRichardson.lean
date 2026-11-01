@@ -111,6 +111,41 @@ open scoped DirectSum
 
 variable (n : ℕ)
 
+variable {n} in
+/-- The common step of the decompositions below: the tensor product of two rational representations
+on Weyl modules is equivalent to a finite direct sum of rational representations on Weyl modules as
+soon as, on the diagonal torus, the product of the two characters is the sum of the characters of
+the summands. -/
+private theorem nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
+    {a b : YoungDiagram} {ι : Type*} [Fintype ι] {c : ι → YoungDiagram}
+    {ρ : Representation ℂ (GL (Fin n) ℂ) (weylModuleOfShape ℂ n a).toSubmodule}
+    {σ : Representation ℂ (GL (Fin n) ℂ) (weylModuleOfShape ℂ n b).toSubmodule}
+    {τ : ∀ i, Representation ℂ (GL (Fin n) ℂ) (weylModuleOfShape ℂ n (c i)).toSubmodule}
+    (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ) (hτ : ∀ i, IsRationalRep (τ i))
+    (h : letI : AddCommGroup (weylModuleOfShape ℂ n a).toSubmodule := inferInstance
+      letI : AddCommGroup (weylModuleOfShape ℂ n b).toSubmodule := inferInstance
+      letI (i : ι) : AddCommGroup (weylModuleOfShape ℂ n (c i)).toSubmodule := inferInstance
+      ∀ t : Fin n → ℂˣ, ρ.character (diagGL t) * σ.character (diagGL t) =
+        ∑ i, (τ i).character (diagGL t)) :
+    Nonempty (Representation.Equiv (ρ.tprod σ) (Representation.directSum τ)) := by
+  -- Instance search does not find the additive groups of the summands under the binder of the
+  -- direct sum, through the tensor power they are submodules of, so they are supplied here.
+  let _ (i : ι) : AddCommGroup (weylModuleOfShape ℂ n (c i)).toSubmodule := inferInstance
+  -- Nor does it find the additive group of the tensor product: its additive monoid is built from
+  -- those of the two submodules, which unification cannot recognize as coming from additive
+  -- groups. The two agree up to instance unfolding, so the group is given explicitly.
+  let _ : AddCommGroup (TensorProduct ℂ (weylModuleOfShape ℂ n a).toSubmodule
+      (weylModuleOfShape ℂ n b).toSubmodule) :=
+    TensorProduct.addCommGroup (R := ℂ) (M := (weylModuleOfShape ℂ n a).toSubmodule)
+      (N := (weylModuleOfShape ℂ n b).toSubmodule)
+  refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq (hρ.tprod hσ)
+    (IsRationalRep.directSum hτ) fun t => ?_
+  -- `Representation.char_tensor` is stated for the additive group of the tensor product given
+  -- above, which `rw` does not match syntactically, so it is applied up to unfolding.
+  refine (congrFun (Representation.char_tensor (V := (weylModuleOfShape ℂ n a).toSubmodule)
+    (W := (weylModuleOfShape ℂ n b).toSubmodule) ρ σ) (diagGL t)).trans ?_
+  rw [Pi.mul_apply, Representation.char_directSum, h]
+
 open scoped Classical in
 /-- **The Littlewood–Richardson rule for `GL n ℂ`.** The tensor product of the Weyl modules of
 two Young diagrams `λ` and `μ` is equivalent to the direct sum of the Weyl modules `𝕊^ν(ℂⁿ)`, one
@@ -124,37 +159,15 @@ theorem nonempty_equiv_tprod_weylRepOfShape (lam μ : YoungDiagram) :
           {T : BoundedSSYT n μ // T.1.IsYamanouchi lam ∧
             ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i} =>
         weylRepOfShape ℂ n (ofPartition p.1))) := by
-  -- Instance search does not find the additive groups of the summands under the binder of the
-  -- direct sum, through the tensor power they are submodules of, so they are supplied here.
-  let _ (p : Σ ν : (lam.card + μ.card).Partition,
-      {T : BoundedSSYT n μ // T.1.IsYamanouchi lam ∧
-        ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i}) :
-      AddCommGroup (weylModuleOfShape ℂ n (ofPartition p.1)).toSubmodule :=
-    inferInstance
-  -- Nor does it find the additive group of the tensor product: its additive monoid is built from
-  -- those of the two submodules, which unification cannot recognize as coming from additive
-  -- groups. The two agree up to instance unfolding, so the group is given explicitly.
-  let _ : AddCommGroup (TensorProduct ℂ (weylModuleOfShape ℂ n lam).toSubmodule
-      (weylModuleOfShape ℂ n μ).toSubmodule) :=
-    TensorProduct.addCommGroup (R := ℂ) (M := (weylModuleOfShape ℂ n lam).toSubmodule)
-      (N := (weylModuleOfShape ℂ n μ).toSubmodule)
-  refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
-    ((isPolynomialRep_weylRepOfShape n lam).tprod
-      (isPolynomialRep_weylRepOfShape n μ)).isRationalRep
-    (IsRationalRep.directSum fun p =>
-      (isPolynomialRep_weylRepOfShape n (ofPartition p.1)).isRationalRep)
-    fun t => ?_
+  refine nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
+    (isPolynomialRep_weylRepOfShape n lam).isRationalRep
+    (isPolynomialRep_weylRepOfShape n μ).isRationalRep ?_ fun t => ?_
+  · exact fun p => (isPolynomialRep_weylRepOfShape n (ofPartition p.1)).isRationalRep
   -- Both characters are sums of Schur polynomials: on the left by the Littlewood–Richardson rule
   -- for the product `s_λ s_μ`, on the right one summand per tableau.
-  -- `Representation.char_tensor` is stated for the additive group of the tensor product given
-  -- above, which `rw` does not match syntactically, so it is applied up to unfolding.
-  refine (congrFun (Representation.char_tensor (V := (weylModuleOfShape ℂ n lam).toSubmodule)
-    (W := (weylModuleOfShape ℂ n μ).toSubmodule) (weylRepOfShape ℂ n lam)
-    (weylRepOfShape ℂ n μ)) (diagGL t)).trans ?_
-  rw [Pi.mul_apply, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
+  rw [char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
     char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, ← eval_mul,
-    diagramSchurPoly_mul_diagramSchurPoly, map_sum, Representation.char_directSum,
-    Fintype.sum_sigma]
+    diagramSchurPoly_mul_diagramSchurPoly, map_sum, Fintype.sum_sigma]
   refine sum_congr rfl fun ν _ => ?_
   simp only [map_nsmul, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, sum_const,
     card_univ, Fintype.card_subtype]
@@ -177,44 +190,18 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
             ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i} =>
         rationalWeylRep ℂ n ((weightOfShape n (ofPartition p.1.1)).shift
           (l.detShift + m.detShift)))) := by
-  -- The additive groups are supplied as in `TauCeti.nonempty_equiv_tprod_weylRepOfShape`.
-  let _ (p : Σ ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
-        (ofPartition ν).colLen 0 ≤ n},
-      {T : BoundedSSYT n m.detShiftShape // T.1.IsYamanouchi l.detShiftShape ∧
-        ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i}) :
-      AddCommGroup (weylModuleOfShape ℂ n
-        ((weightOfShape n (ofPartition p.1.1)).shift (l.detShift + m.detShift)).detShiftShape
-        ).toSubmodule :=
-    inferInstance
-  let _ : AddCommGroup (TensorProduct ℂ (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule
-      (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) :=
-    TensorProduct.addCommGroup (R := ℂ) (M := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
-      (N := (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule)
-  refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
-    ((isRationalRep_rationalWeylRep n l).tprod (isRationalRep_rationalWeylRep n m))
-    (IsRationalRep.directSum fun p => isRationalRep_rationalWeylRep n _) fun t => ?_
-  -- As in the polynomial form, `Representation.char_tensor` is stated for the additive group of
-  -- the tensor product given above, which `rw` does not match syntactically, so it is applied up
-  -- to unfolding.
-  refine (congrFun (Representation.char_tensor
-    (V := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
-    (W := (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) (rationalWeylRep ℂ n l)
-    (rationalWeylRep ℂ n m)) (diagGL t)).trans ?_
+  refine nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
+    (isRationalRep_rationalWeylRep n l) (isRationalRep_rationalWeylRep n m) ?_ fun t => ?_
+  · exact fun p => isRationalRep_rationalWeylRep n _
   -- The character of `V_λ ⊗ V_μ` on the torus is `(∏ᵢ tᵢ) ^ (a + b) · (s_{λ₀} s_{μ₀})(t)`: the two
   -- determinant twists combine into one.
-  rw [Pi.mul_apply, char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly,
+  rw [char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly,
     char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly, mul_mul_mul_comm, ← eval_mul,
     ← Units.val_mul, ← zpow_add]
-  -- Expand `s_{λ₀} s_{μ₀}` by the Littlewood–Richardson rule for Schur polynomials, and the
-  -- character of the direct sum as a sum over partitions and then over tableaux.
-  rw [diagramSchurPoly_mul_diagramSchurPoly, map_sum, mul_sum, Representation.char_directSum,
-    Fintype.sum_sigma]
-  -- Split the sum over partitions according to whether they have at most `n` rows.
-  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n]
-  -- The partitions with more than `n` rows contribute nothing: their Schur polynomials vanish.
-  rw [Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ n} => _) fun ν => by
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero, map_zero, mul_zero],
-    add_zero]
+  -- Expand `s_{λ₀} s_{μ₀}` by the Littlewood–Richardson rule for Schur polynomials, over the
+  -- partitions with at most `n` rows, and the sum of characters over partitions and then tableaux.
+  rw [diagramSchurPoly_mul_diagramSchurPoly, sum_nsmul_diagramSchurPoly_eq_sum_colLen_le, map_sum,
+    mul_sum, Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ν => ?_
   simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.2, sum_const, card_univ,
     Fintype.card_subtype, map_nsmul, mul_smul_comm]
@@ -229,37 +216,16 @@ theorem nonempty_equiv_tprod_weylRepOfShape_lrTableau (lam μ : YoungDiagram) :
       (Representation.directSum fun p : Σ ν : {ν : (lam.card + μ.card).Partition //
             (ofPartition ν).colLen 0 ≤ n}, LRTableau lam (ofPartition ν.1) μ =>
         weylRepOfShape ℂ n (ofPartition p.1.1))) := by
-  -- The additive groups are supplied as in `TauCeti.nonempty_equiv_tprod_weylRepOfShape`.
-  let _ (p : Σ ν : {ν : (lam.card + μ.card).Partition // (ofPartition ν).colLen 0 ≤ n},
-      LRTableau lam (ofPartition ν.1) μ) :
-      AddCommGroup (weylModuleOfShape ℂ n (ofPartition p.1.1)).toSubmodule :=
-    inferInstance
-  let _ : AddCommGroup (TensorProduct ℂ (weylModuleOfShape ℂ n lam).toSubmodule
-      (weylModuleOfShape ℂ n μ).toSubmodule) :=
-    TensorProduct.addCommGroup (R := ℂ) (M := (weylModuleOfShape ℂ n lam).toSubmodule)
-      (N := (weylModuleOfShape ℂ n μ).toSubmodule)
   let _ (ν : (lam.card + μ.card).Partition) : Fintype (LRTableau lam (ofPartition ν) μ) :=
     Fintype.ofFinite _
-  refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
-    ((isPolynomialRep_weylRepOfShape n lam).tprod
-      (isPolynomialRep_weylRepOfShape n μ)).isRationalRep
-    (IsRationalRep.directSum fun p =>
-      (isPolynomialRep_weylRepOfShape n (ofPartition p.1.1)).isRationalRep)
-    fun t => ?_
-  -- As in `TauCeti.nonempty_equiv_tprod_weylRepOfShape`, `Representation.char_tensor` is applied
-  -- up to unfolding of the additive group of the tensor product.
-  refine (congrFun (Representation.char_tensor (V := (weylModuleOfShape ℂ n lam).toSubmodule)
-    (W := (weylModuleOfShape ℂ n μ).toSubmodule) (weylRepOfShape ℂ n lam)
-    (weylRepOfShape ℂ n μ)) (diagGL t)).trans ?_
-  rw [Pi.mul_apply, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
+  refine nonempty_equiv_tprod_directSum_of_forall_character_diagGL_eq
+    (isPolynomialRep_weylRepOfShape n lam).isRationalRep
+    (isPolynomialRep_weylRepOfShape n μ).isRationalRep ?_ fun t => ?_
+  · exact fun p => (isPolynomialRep_weylRepOfShape n (ofPartition p.1.1)).isRationalRep
+  rw [char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
     char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, ← eval_mul,
-    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau, map_sum,
-    Representation.char_directSum, Fintype.sum_sigma]
-  -- The partitions with more than `n` rows contribute nothing: their Schur polynomials vanish.
-  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n,
-    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ n} => _) fun ν => by
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero, map_zero],
-    add_zero]
+    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
+    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le, map_sum, Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ν => ?_
   simp only [map_nsmul, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, sum_const,
     card_univ, Nat.card_eq_fintype_card]
@@ -317,22 +283,8 @@ theorem isotypicMultiplicity_tensorProduct_glIrreducible {lam μ ν : YoungDiagr
         glIrreducible n fun i ↦ (μ.rowLen i : ℂ))
       (glIrreducible n fun i ↦ (ν.rowLen i : ℂ)) = Nat.card (LRTableau lam ν μ) := by
   classical
-  -- The row-length vector of a Young diagram is a dominant weight, so its carrier is irreducible.
-  have hdom (κ : YoungDiagram) : IsGlDominantIntegral fun i : Fin n ↦ (κ.rowLen i : ℂ) :=
-    isGlDominantIntegral_iff.mpr fun i j hij ↦
-      ⟨κ.rowLen i - κ.rowLen j, by rw [Nat.cast_sub (κ.rowLen_anti _ _ (by omega))]⟩
-  have hirr (κ : YoungDiagram) := isIrreducible_glIrreducible (K := ℂ) (hdom κ)
-  -- The carrier of `ν` is the carrier of another diagram `κ` with at most `n` rows only if
-  -- `κ = ν`: the two highest weights agree, and they determine the diagrams.
-  have hiff (κ : YoungDiagram) (hκ : κ.colLen 0 ≤ n) :
-      Nonempty ((glIrreducible n fun i ↦ (ν.rowLen i : ℂ)) ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
-        glIrreducible n fun i ↦ (κ.rowLen i : ℂ)) ↔ κ = ν := by
-    rw [nonempty_lieModuleEquiv_glIrreducible_iff (hdom ν) (hdom κ)]
-    refine ⟨fun hw ↦ ?_, fun h ↦ h ▸ rfl⟩
-    have hweight : weightOfShape n κ = weightOfShape n ν := Subtype.ext <| funext fun i ↦ by
-      rw [weightOfShape_apply, weightOfShape_apply]
-      exact_mod_cast (congrFun hw i).symm
-    rw [← shape_weightOfShape hκ, ← shape_weightOfShape hν, hweight]
+  have hirr (κ : YoungDiagram) :=
+    isIrreducible_glIrreducible (K := ℂ) (isGlDominantIntegral_rowLen (n := n) κ)
   let _ (ν' : (lam.card + μ.card).Partition) : Fintype (LRTableau lam (ofPartition ν') μ) :=
     Fintype.ofFinite _
   -- Pass to the direct sum decomposition, where each summand `L(ν')` contributes `1` if `ν' = ν`
@@ -352,7 +304,8 @@ theorem isotypicMultiplicity_tensorProduct_glIrreducible {lam μ ν : YoungDiagr
     have := hirr ν
     have := hirr (ofPartition ν'.1)
     rw [LieModule.isotypicMultiplicity_def, TauCeti.LieModule.finrank_lieModuleHom]
-    exact if_congr (hiff _ ν'.2) rfl rfl
+    exact if_congr ((nonempty_lieModuleEquiv_glIrreducible_rowLen_iff hν ν'.2).trans eq_comm)
+      rfl rfl
   simp only [hterm, sum_const, card_univ, ← Nat.card_eq_fintype_card, smul_eq_mul, mul_ite,
     mul_one, mul_zero]
   by_cases hcard : ν.card = lam.card + μ.card
