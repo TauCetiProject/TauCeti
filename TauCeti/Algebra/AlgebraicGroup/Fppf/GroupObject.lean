@@ -58,8 +58,6 @@ noncomputable def groupFunctorGrp {C : Type u} [Category.{v} C]
           naturality := by
             intro X Y f
             ext p
-            -- The functor-category tensor map acts componentwise on the two entries.
-            change (F.map f) p.1 * (F.map f) p.2 = (F.map f) (p.1 * p.2)
             exact ((F.map f).hom.map_mul p.1 p.2).symm }
       one_mul := by
         ext X p
@@ -75,8 +73,6 @@ noncomputable def groupFunctorGrp {C : Type u} [Category.{v} C]
           naturality := by
             intro X Y f
             ext x
-            -- Naturality is the inverse-preservation law of the component homomorphism.
-            change ((F.map f) x)⁻¹ = (F.map f) x⁻¹
             exact ((F.map f).hom.map_inv x).symm }
       left_inv := by
         ext X p
@@ -93,15 +89,10 @@ noncomputable def groupFunctorGrpMap {C : Type u} [Category.{v} C]
     (one_f := by
       dsimp [groupFunctorGrp]
       ext X p
-      -- Evaluating at the tensor unit reduces the group-object law to preservation of `1`.
-      change (α.app X) 1 = 1
       exact (α.app X).hom.map_one)
     (mul_f := by
       dsimp [groupFunctorGrp]
       ext X p
-      -- The group-object multiplication is pointwise multiplication in every value group.
-      change (α.app X) ((p.1 : F.obj X) * (p.2 : F.obj X)) =
-        (α.app X) (p.1 : F.obj X) * (α.app X) (p.2 : F.obj X)
       exact (α.app X).hom.map_mul p.1 p.2)
 
 /-- A natural isomorphism of group-valued functors induces an isomorphism of their associated
@@ -211,16 +202,12 @@ noncomputable def pointsFppfGroupObjectIso (H : _root_.CommHopfAlgCat.{u} R) :
     ((forget GrpCat.{u}) ⋙ CategoryTheory.uliftFunctor.{u + 1, u})).obj
       (HopfAlgebra.pointsFppfSheaf H)
   let e : (pointsPresheafGrp H).X ≅ F.obj := by
-    -- Unfold `sheafCompose.obj` and the carrier of `pointsPresheafGrp`: both sides are the
-    -- universe lift of the underlying group-valued points presheaf.
-    change _ ≅ (HopfAlgebra.pointsFppfSheaf H).obj ⋙
-      (forget GrpCat.{u}) ⋙ CategoryTheory.uliftFunctor.{u + 1, u}
+    rw [pointsPresheafGrp_X_eq,
+      pointsGroupPresheaf_ulift_forget_eq_pointsPresheaf_ulift]
+    dsimp [F, sheafCompose]
     rw [HopfAlgebra.pointsFppfSheaf_obj]
     exact Iso.refl _
-  -- The carrier of `mapGrp.obj` is definitionally the image of the original carrier; Mathlib's
-  -- `mapGrp` API does not provide a separate comparison isomorphism for this wrapper.
-  change (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).obj
-    (pointsPresheafGrp H).X ≅ F
+  rw [pointsFppfGroupObject_X_eq]
   exact (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).mapIso e ≪≫
     (sheafificationIso F).symm
 

@@ -67,7 +67,7 @@ private theorem quotientGrpObjInclusion_range_map
         (grpObjPointsMulEquiv H X).toMonoidHom =
       quotientPointsSubgroup H I X.unop := by
   -- Expose the range definition locally without adding a duplicate public API theorem.
-  change _ = (quotientPointsHom H I X.unop).hom.range
+  unfold quotientPointsSubgroup
   rw [MonoidHom.map_range]
   have hcomp :
       (grpObjPointsMulEquiv H X).toMonoidHom.comp

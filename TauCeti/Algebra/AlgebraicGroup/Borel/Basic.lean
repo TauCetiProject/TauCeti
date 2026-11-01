@@ -306,17 +306,6 @@ theorem comapOfIso (hI : IsBorel k L.obj I) (e : H ≅ L) :
       (I.comapOfSurjective (FiniteTypeCommHopfAlgCat.toBialgHom e.hom)
         (ConcreteCategory.bijective_of_isIso e.hom).2) := by
   refine ⟨inferInstance, ?_⟩
-  -- After supplying algebraic closedness, `IsBorel` is definitionally the minimal quotient
-  -- property below; the private predicate has no separate propositional transport lemma.
-  change Minimal
-    (fun J : HopfIdeal (AlgebraicClosure k)
-        (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj ↦
-      borelQuotientProperty (AlgebraicClosure k)
-        (FiniteTypeCommHopfAlgCat.quotient
-          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) J))
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k)
-      (I.comapOfSurjective (FiniteTypeCommHopfAlgCat.toBialgHom e.hom)
-        (ConcreteCategory.bijective_of_isIso e.hom).2))
   exact minimal_borelQuotientProperty_comapOfIso hI.2 e
 
 open FiniteTypeCommHopfAlgCat in

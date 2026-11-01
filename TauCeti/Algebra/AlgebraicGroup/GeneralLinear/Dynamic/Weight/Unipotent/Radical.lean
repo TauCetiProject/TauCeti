@@ -112,15 +112,8 @@ where the canonical weight-unipotent ideal is defined. -/
   let e : weightParabolicFiniteTypeCoordinateHopfAlgebra k w ≅ H :=
     ObjectProperty.isoMk _
       (eqToIso (weightParabolicFiniteTypeCoordinateHopfAlgebra_obj k w))
-  -- The finite-type package is opaque across modules, so align its explicit object isomorphism
-  -- with the pullback displayed in the theorem statement.
-  change
-    (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-      (weightParabolicFiniteTypeCoordinateHopfAlgebra k w)).comapOfSurjective
-        (FiniteTypeCommHopfAlgCat.toBialgHom e.symm.hom)
-        (ConcreteCategory.bijective_of_isIso e.symm.hom).2 = I
-  rw [FiniteTypeCommHopfAlgCat.comapOfSurjective_unipotentRadicalDefiningIdeal e.symm]
-  exact hRaw
+  exact
+    (FiniteTypeCommHopfAlgCat.comapOfSurjective_unipotentRadicalDefiningIdeal e.symm).trans hRaw
 
 end
 

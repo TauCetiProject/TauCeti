@@ -53,12 +53,9 @@ theorem rightTranslationHomeomorph_kernelPoint
     rightTranslationHomeomorph h (AlgHom.kernelPoint g.ofConv) =
       AlgHom.kernelPoint (g * h).ofConv := by
   rw [rightTranslationHomeomorph_apply]
-  -- `Spec (CommRingCat.of H)` has `PrimeSpectrum H` as its reducible carrier; expose that carrier
-  -- and the algebra-hom composition before applying the kernel-point API.
-  change PrimeSpectrum.comap
-      ((rightTranslationAlgEquiv h).toAlgHom : H →+* H)
-        (AlgHom.kernelPoint g.ofConv) = _
-  rw [AlgHom.comap_kernelPoint, rightTranslationAlgEquiv_toAlgHom]
+  rw [AlgEquiv.toRingEquiv_toRingHom, ← AlgEquiv.toAlgHom_toRingHom,
+    AlgHom.comap_kernelPoint]
+  rw [rightTranslationAlgEquiv_toAlgHom]
   congr 1
   exact congrArg WithConv.ofConv (toConv_comp_rightTranslationAlgHom g h)
 
@@ -98,10 +95,6 @@ theorem connectedComponentIdempotent_kernelPoint_eq_augmentationPoint
       PrimeSpectrum.connectedComponentIdempotent (Bialgebra.augmentationPoint k H) := by
   let p : PrimeSpectrum H := AlgHom.kernelPoint g.ofConv
   let e : PrimeSpectrum H := Bialgebra.augmentationPoint k H
-  -- `Spec (CommRingCat.of H)` has `PrimeSpectrum H` as its reducible carrier.
-  change PrimeSpectrum.connectedComponentIdempotent p =
-    PrimeSpectrum.connectedComponentIdempotent e
-  change p ∈ connectedComponent e at hg
   apply (PrimeSpectrum.eq_connectedComponentIdempotent_iff
     (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent p) e).mpr
   rw [PrimeSpectrum.basicOpen_connectedComponentIdempotent]
@@ -127,14 +120,13 @@ private theorem connectedComponentIdeal_kernelPoint_eq_augmentationPoint
   let p : PrimeSpectrum H := AlgHom.kernelPoint g.ofConv
   let e : PrimeSpectrum H := Bialgebra.augmentationPoint k H
   have h := connectedComponentIdempotent_kernelPoint_eq_augmentationPoint g hg
-  -- Reduce the two `Spec` point abbreviations once, then use the named idempotent equality.
-  change PrimeSpectrum.connectedComponentIdempotent p =
-    PrimeSpectrum.connectedComponentIdempotent e at h
-  change PrimeSpectrum.connectedComponentIdeal p = PrimeSpectrum.connectedComponentIdeal e
-  apply Ideal.ext
-  intro x
-  rw [PrimeSpectrum.mem_connectedComponentIdeal_iff,
-    PrimeSpectrum.mem_connectedComponentIdeal_iff, h]
+  have hp : PrimeSpectrum.connectedComponentIdeal p =
+      PrimeSpectrum.connectedComponentIdeal e := by
+    apply Ideal.ext
+    intro x
+    rw [PrimeSpectrum.mem_connectedComponentIdeal_iff,
+      PrimeSpectrum.mem_connectedComponentIdeal_iff, h]
+  simpa only [p, e] using hp
 
 /-- The inverse coordinate-algebra automorphism of translation by an identity-component point
 fixes the idempotent selecting the identity component. -/
@@ -198,18 +190,9 @@ theorem map_rightTranslationAlgEquiv_connectedComponentIdeal_eq_self
   let p : PrimeSpectrum H := AlgHom.kernelPoint g.ofConv
   let e : PrimeSpectrum H := Bialgebra.augmentationPoint k H
   let I : Ideal H := PrimeSpectrum.connectedComponentIdeal e
-  -- Reduce the algebra-equivalence and `Spec` wrappers once; the proof below stays in the generic
-  -- ring-equivalence and prime-spectrum API.
-  change Ideal.map φ I = I
   have he : PrimeSpectrum.comap (φ : H →+* H) e = p := by
-    change PrimeSpectrum.comap
-        ((rightTranslationAlgEquiv g).toRingEquiv : H →+* H)
-          (Bialgebra.augmentationPoint k H) =
-      AlgHom.kernelPoint g.ofConv
     exact comap_rightTranslationAlgEquiv_augmentationPoint g
   have hp : PrimeSpectrum.connectedComponentIdeal p = I := by
-    change PrimeSpectrum.connectedComponentIdeal (AlgHom.kernelPoint g.ofConv) =
-      PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H)
     exact connectedComponentIdeal_kernelPoint_eq_augmentationPoint g hg
   have hsymm : Ideal.map φ.symm I = I := by
     calc

@@ -124,8 +124,6 @@ private theorem identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot
       (k := k) (H := H ⧸ (derivedDefiningIdeal (R := k) H).toIdeal) = ⊥ := by
   let A := _root_.CommHopfAlgCat.of k H
   let D := quotient A (derivedDefiningIdeal H)
-  -- Identify the raw quotient in the goal with the categorical quotient's carrier.
-  change HopfAlgebra.identityComponentHopfIdeal (k := k) (H := D) = ⊥
   let J := HopfAlgebra.identityComponentHopfIdeal (k := k) (H := D)
   let q := (mkQuotient A (derivedDefiningIdeal H)).hom
   let f := commutatorToDerivedAlgHom (k := k) H
@@ -156,8 +154,6 @@ theorem connectedSpace_derived
     ConnectedSpace (PrimeSpectrum (H ⧸ (derivedDefiningIdeal (R := k) H).toIdeal)) := by
   let A := _root_.CommHopfAlgCat.of k H
   let D := quotient A (derivedDefiningIdeal H)
-  -- Identify the raw quotient in the goal with the categorical quotient's carrier.
-  change ConnectedSpace (PrimeSpectrum D)
   exact HopfAlgebra.identityComponentHopfIdeal_eq_bot_iff_connectedSpace.mp
     (identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot H)
 

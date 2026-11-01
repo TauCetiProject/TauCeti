@@ -110,11 +110,8 @@ theorem stabilizer_cocharacterLattice_isOpen (T : MultiplicativeTypeCommHopfAlgC
           LinearMap.id := by
       apply LinearMap.ext_on hs
       rintro _ ⟨i, rfl⟩
-      change σ⁻¹ • s i = s i
       exact inv_smul_eq_iff.mpr (MulAction.mem_stabilizer_iff.mp (hσ i)).symm
     have hx : σ⁻¹ • x = x := by
-      change Representation.ofMulDistribMulAction (Field.absoluteGaloisGroup k)
-        (CommHopfAlgCat.geometricCharacterGroup T.obj.obj) σ⁻¹ x = x
       exact LinearMap.congr_fun hlinear x
     rw [hx]
   · dsimp only [U]

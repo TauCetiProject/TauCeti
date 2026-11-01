@@ -191,7 +191,7 @@ theorem groupAlgebraInvariantsTensorEquiv_comul (x : B) :
     groupAlgebraInvariantsTensorEquiv rho (Coalgebra.comul (R := k) x) =
       groupAlgebraInvariantsComul rho x := by
   -- The instance's comultiplication is the composite defining `descendedComul`.
-  change groupAlgebraInvariantsTensorEquiv rho (descendedComul rho x) = _
+  rw [show Coalgebra.comul (R := k) x = descendedComul rho x from rfl]
   simp [descendedComul]
 
 /-- The invariant coordinate Hopf algebra is cocommutative. -/
@@ -221,9 +221,7 @@ private theorem descendedAntipode_left :
         (groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B ∘ₗ
           Coalgebra.comul = Algebra.linearMap k B ∘ₗ Coalgebra.counit := by
   -- Expose the instance's comultiplication so the existing descent lemma applies.
-  change LinearMap.mul' k B ∘ₗ
-    (groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B ∘ₗ
-      (descendedComul rho).toLinearMap = Algebra.linearMap k B ∘ₗ Coalgebra.counit
+  rw [show Coalgebra.comul (R := k) = (descendedComul rho).toLinearMap from rfl]
   have h (t : B ⊗[k] B) :
       (LinearMap.mul' k B
         ((groupAlgebraInvariantsAntipode rho).toLinearMap.rTensor B t) : A) =
@@ -246,9 +244,7 @@ private theorem descendedAntipode_right :
         (groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B ∘ₗ
           Coalgebra.comul = Algebra.linearMap k B ∘ₗ Coalgebra.counit := by
   -- Expose the instance's comultiplication so the existing descent lemma applies.
-  change LinearMap.mul' k B ∘ₗ
-    (groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B ∘ₗ
-      (descendedComul rho).toLinearMap = Algebra.linearMap k B ∘ₗ Coalgebra.counit
+  rw [show Coalgebra.comul (R := k) = (descendedComul rho).toLinearMap from rfl]
   have h (t : B ⊗[k] B) :
       (LinearMap.mul' k B
         ((groupAlgebraInvariantsAntipode rho).toLinearMap.lTensor B t) : A) =

@@ -91,7 +91,7 @@ private theorem map_tensorSquare_comul_apply
   | tmul x y =>
       rw [Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.lift_tmul]
       -- The convolution wrappers reduce to the two restrictions of `f` only after application.
-      change f (q x ⊗ₜ[k] q y) = f (q x ⊗ₜ[k] 1) * f (1 ⊗ₜ[k] q y)
+      dsimp only [AlgHom.comp_apply]
       rw [← map_mul]
       congr 1
       simp
@@ -140,7 +140,6 @@ private theorem map_tensorSquare_quotient_comul_connectedComponentIdempotent_eq_
     rw [map_tensorSquare_comul_apply q f e]
     exact heval
   -- Expose the local quotient and tensor-square abbreviations to return the public expression.
-  change F (Coalgebra.comul (R := k) e) = 1
   exact ha_eq_one
 
 private theorem comul_one_sub_connectedComponentIdempotent_mem
@@ -164,17 +163,16 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
     rw [map_sub, Bialgebra.comul_one, map_sub, map_one]
     -- The ring-hom coercion of `F` blocks rewriting by the named equality until application is
     -- exposed.
-    change 1 - F (Coalgebra.comul (R := k) e) = 0
-    rw [ha_eq_one, sub_self]
+    have hcomul : F.toRingHom (Coalgebra.comul (R := k) e) = 1 := ha_eq_one
+    rw [hcomul, sub_self]
   have hker_eq : RingHom.ker F.toRingHom =
       Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
         Ideal.rightTensorIdeal (R := k) (A := H) I := by
     have hqker : RingHom.ker q = I := by
       -- Unfold the local quotient-map abbreviation for Mathlib's kernel theorem.
-      change RingHom.ker (Ideal.Quotient.mkₐ k I) = I
       exact Ideal.Quotient.mkₐ_ker k I
     -- Unfold the local tensor-square map abbreviation before tensor-product exactness rewrites it.
-    change RingHom.ker (Algebra.TensorProduct.map q q) = _
+    dsimp only [F]
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
       AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q hq hq
   rwa [hker_eq] at hker
@@ -198,12 +196,9 @@ theorem comul_mem_connectedComponentIdeal_augmentationPoint
   let z : PrimeSpectrum H := Bialgebra.augmentationPoint k H
   let I := PrimeSpectrum.connectedComponentIdeal z
   -- Expose the local component ideal so its principal-generator characterization can rewrite.
-  change x ∈ I at hx
-  change Coalgebra.comul (R := k) x ∈
-    Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
-      Ideal.rightTensorIdeal (R := k) (A := H) I
-  rw [PrimeSpectrum.mem_connectedComponentIdeal_iff] at hx
-  obtain ⟨a, rfl⟩ := hx
+  have hx' : x ∈ PrimeSpectrum.connectedComponentIdeal z := hx
+  rw [PrimeSpectrum.mem_connectedComponentIdeal_iff] at hx'
+  obtain ⟨a, rfl⟩ := hx'
   rw [Bialgebra.comul_mul]
   exact Ideal.mul_mem_left _ _
     (comul_one_sub_connectedComponentIdempotent_mem (k := k) (H := H))

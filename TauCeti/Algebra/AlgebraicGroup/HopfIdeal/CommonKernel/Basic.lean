@@ -102,10 +102,8 @@ theorem comapOfSurjective_commonKernelHopfIdeal {H' : _root_.CommHopfAlgCat.{v} 
       commonKernelHopfIdeal (fun i ↦ g ≫ f i) := by
   apply le_antisymm
   · refine (le_commonKernelHopfIdeal_iff _ _).2 fun i x hx ↦ ?_
-    -- Expose the composite Hopf morphism application beneath the kernel's ring-hom coercions.
-    change (f i).hom (g.hom x) = 0
-    exact RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i
-      (HopfIdeal.mem_comapOfSurjective.mp hx))
+    simpa using
+      commonKernelHopfIdeal_toIdeal_le_ker f i (HopfIdeal.mem_comapOfSurjective.mp hx)
   · intro x hx
     apply HopfIdeal.mem_comapOfSurjective.mpr
     have hle : (commonKernelHopfIdeal (fun i ↦ g ≫ f i)).map g.hom ≤

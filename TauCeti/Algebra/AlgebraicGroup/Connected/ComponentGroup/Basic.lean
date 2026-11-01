@@ -174,7 +174,6 @@ theorem mem_identityComponentPointsSubgroup_iff
       rationalKernelPoint H g ∈ connectedComponent (rationalKernelPoint H 1) := by
   rw [← range_identityComponentPointsHom H (CommAlgCat.of k k)]
   -- The range is stored as a monoid-hom range, while the existing point criterion uses `Set.range`.
-  change g ∈ Set.range (identityComponentPointsHom H (CommAlgCat.of k k)) ↔ _
   rw [rationalKernelPoint_one]
   exact mem_range_identityComponentPointsHom_iff H g
 
@@ -198,8 +197,6 @@ private theorem mem_connectedComponent_rationalKernelPoint_iff
     rw [himage, TauCeti.HopfAlgebra.rightTranslationHomeomorph_kernelPoint,
       TauCeti.HopfAlgebra.rightTranslationHomeomorph_kernelPoint, mul_inv_cancel] at hmem
     -- Translation simplifies the identity to `ofConv 1`; restore the bundled point spelling.
-    change rationalKernelPoint H (h * g⁻¹) ∈
-      connectedComponent (rationalKernelPoint H 1) at hmem
     exact (mem_identityComponentPointsSubgroup_iff H (h * g⁻¹)).mpr hmem
   · intro hh
     have hh' := (mem_identityComponentPointsSubgroup_iff H (h * g⁻¹)).mp hh
@@ -287,15 +284,12 @@ private theorem componentGroupPointsToConnectedComponents_injective
   obtain ⟨h, rfl⟩ := CommHopfAlgCat.pointwiseQuotientMk_surjective H.obj
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
     (isNormal_identityComponentHopfIdeal H) (CommAlgCat.of k k) y
-  -- Surjectivity exposes the raw quotient map; refold the component-group projection wrapper.
-  change componentGroupPointsToConnectedComponents H (componentGroupPointsMk H g) =
-    componentGroupPointsToConnectedComponents H (componentGroupPointsMk H h) at hxy
+  rw [← componentGroupPointsMk] at hxy
   rw [componentGroupPointsToConnectedComponents_mk,
     componentGroupPointsToConnectedComponents_mk,
     connectedComponents_rationalKernelPoint_eq_iff] at hxy
   -- Refold the same wrapper in the equality of quotient classes.
-  change componentGroupPointsMk H g = componentGroupPointsMk H h
-  rw [componentGroupPointsMk, CommHopfAlgCat.pointwiseQuotientMk_apply,
+  rw [CommHopfAlgCat.pointwiseQuotientMk_apply,
     CommHopfAlgCat.pointwiseQuotientMk_apply,
     QuotientGroup.mk'_eq_mk']
   exact ⟨g⁻¹ * h, hxy, by group⟩

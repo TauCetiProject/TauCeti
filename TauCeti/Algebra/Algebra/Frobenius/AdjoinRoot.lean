@@ -81,11 +81,6 @@ theorem _root_.AdjoinRoot.lastCoeff_eq_repr (hg : g.Monic) (hd : 0 < g.natDegree
     (a : AdjoinRoot g) :
     AdjoinRoot.lastCoeff hg a =
       (AdjoinRoot.powerBasis' hg).basis.repr a ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩ := by
-  -- `(powerBasis' hg).basis` is `powerBasisAux' hg` by definition, but Mathlib states no lemma for
-  -- it (`PowerBasis` disables the `basis` projection for `@[simps]`); `lastCoeff` unfolds to the
-  -- `coeff` of `modByMonicHom`, the form used by `powerBasisAux'_repr_apply_to_fun`.
-  change (AdjoinRoot.modByMonicHom hg a).coeff (g.natDegree - 1) =
-    (AdjoinRoot.powerBasisAux' hg).repr a ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩
   exact (AdjoinRoot.powerBasisAux'_repr_apply_to_fun hg a
     ⟨g.natDegree - 1, Nat.sub_one_lt_of_lt hd⟩).symm
 

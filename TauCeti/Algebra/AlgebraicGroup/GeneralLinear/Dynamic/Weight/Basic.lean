@@ -111,13 +111,8 @@ theorem pointsMulEquiv_conjugate_weightCocharacter_apply (w : Fin N → ℤ)
           LaurentPolynomial A) = LaurentPolynomial.T (-w j) := by
     rw [← zpow_neg, LaurentPolynomial.genericUnit_zpow_val]
   rw [LaurentPolynomial.genericUnit_zpow_val]
-  -- Normalize the pointwise inverse of the diagonal function and the scalar-extension map;
-  -- neither wrapper has an application lemma at this expression.
-  change LaurentPolynomial.T (w i) *
-      LaurentPolynomial.C ((pointsMulEquiv N g : Matrix (Fin N) (Fin N) A) i j) *
-        (((LaurentPolynomial.genericUnit A ^ w j)⁻¹ : (LaurentPolynomial A)ˣ) :
-          LaurentPolynomial A) = _
   rw [hinv, LaurentPolynomial.T_mul, LaurentPolynomial.mul_T_assoc, ← sub_eq_add_neg]
+  simp [LaurentPolynomial.algebraMap_apply]
 
 /-- The polynomial matrix obtained by removing the forbidden negative-weight entries and
 replacing a nonnegative weight difference by the corresponding power of `X`. -/
@@ -231,15 +226,10 @@ theorem mem_parabolic_weightCocharacter_iff (w : Fin N → ℤ)
     rw [pointsMulEquiv_ofPolyPoint,
       pointsMulEquiv_conjugate_weightCocharacter_apply] at hentry
     simp only [Matrix.GeneralLinearGroup.map_apply] at hentry
-    -- Normalize the scalar-restriction map in this one matrix entry to the polynomial
-    -- inclusion; there is no application lemma for the wrapper.
-    change Polynomial.toLaurent
-        ((pointsMulEquiv N F : Matrix (Fin N) (Fin N) (Polynomial A)) i j) =
-      LaurentPolynomial.C
-          ((pointsMulEquiv N g : Matrix (Fin N) (Fin N) A) i j) *
-        LaurentPolynomial.T (w i - w j) at hentry
+    have hentry' : Polynomial.toLaurent
+        ((pointsMulEquiv N F : Matrix (Fin N) (Fin N) (Polynomial A)) i j) = _ := hentry
     have hcoeff := congrArg
-      (fun q : LaurentPolynomial A ↦ q.coeff (w i - w j)) hentry
+      (fun q : LaurentPolynomial A ↦ q.coeff (w i - w j)) hentry'
     have hleft :
         (Polynomial.toLaurent
           ((pointsMulEquiv N F : Matrix (Fin N) (Fin N) (Polynomial A)) i j)).coeff
@@ -326,14 +316,8 @@ theorem mem_levi_weightCocharacter_iff (w : Fin N → ℤ)
     rw [pointsMulEquiv_conjugate_weightCocharacter_apply,
       Cocharacter.constPoint_apply, ← AlgHom.mapValue_apply, pointsMulEquiv_mapValue,
       Matrix.GeneralLinearGroup.map_apply]
-    -- Normalize the scalar-extension map in the constant matrix entry.
-    change LaurentPolynomial.C
-        ((pointsMulEquiv N g : Matrix (Fin N) (Fin N) A) i j) *
-          LaurentPolynomial.T (w i - w j) =
-      LaurentPolynomial.C
-        ((pointsMulEquiv N g : Matrix (Fin N) (Fin N) A) i j)
     by_cases hij : w i = w j
-    · rw [hij, sub_self, LaurentPolynomial.T_zero, mul_one]
+    · simp [hij, LaurentPolynomial.algebraMap_apply]
     · rw [h i j hij]
       simp
 

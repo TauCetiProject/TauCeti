@@ -93,7 +93,7 @@ theorem quotientPointsHom_quotientNormalConjugation_apply
         (z' ≫ j) * (g' ≫ i) * (z' ≫ j)⁻¹ := by
     -- Unfold the exposed quotient action to categorical normal conjugation so its
     -- pointwise action lemma applies to the chosen quotient inclusions.
-    change (GrpObj.Action.normalConjugation i j).act z' g' ≫ i = _
+    unfold quotientNormalConjugation
     rw [GrpObj.Action.normalConjugation_act, Category.assoc]
     exact TauCeti.lift_normalConjugation_comp i (z' ≫ j) g'
   have hpoints := congrArg (grpObjPointsMulEquiv H (op A)) hact

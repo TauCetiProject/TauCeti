@@ -76,9 +76,7 @@ private theorem dualMatrix_mul_neg {C : Type*} [CommRing C] {n : ℕ}
     (X : Matrix (Fin n) (Fin n) C) : dualMatrix X * dualMatrix (-X) = 1 := by
   apply Matrix.ext
   intro i j
-  -- Expose matrix multiplication so the two dual-number components can be computed separately.
-  change (∑ x, dualMatrix X i x * dualMatrix (-X) x j) =
-    (1 : Matrix (Fin n) (Fin n) (DualNumber C)) i j
+  rw [Matrix.mul_apply]
   apply TrivSqZeroExt.ext
   · simp only [dualMatrix, fst_sum, fst_mul, fst_add, fst_inl, fst_inr, add_zero]
     classical simp [Matrix.one_apply]
@@ -124,13 +122,7 @@ noncomputable def tangentMatrix :
       (coordinateRingMap R n (MvPolynomial.X (i, j)))))
   map_add' d e := by
     ext i j
-    -- Expose the pointwise definition of `tangentMatrix` to use additivity of the derivation.
-    change Bialgebra.CounitAlgebra.algEquivSelf R (H (R := R) n) B
-        (d (coordinateHopfAlgebraAlgEquiv R n
-            (coordinateRingMap R n (MvPolynomial.X (i, j)))) +
-          e (coordinateHopfAlgebraAlgEquiv R n
-            (coordinateRingMap R n (MvPolynomial.X (i, j))))) = _
-    rw [map_add]
+    simp only [Derivation.add_apply, map_add]
     rfl
   map_smul' b d := by
     ext i j
@@ -143,10 +135,7 @@ theorem tangentMatrix_apply (d : Derivation R (H (R := R) n)
       (d (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j))))) :=
   by
-    -- Expose the `toFun` field of the public linear map to state its computation rule.
-    change Bialgebra.CounitAlgebra.algEquivSelf R (H (R := R) n) B
-      (d (coordinateHopfAlgebraAlgEquiv R n
-        (coordinateRingMap R n (MvPolynomial.X (i, j))))) = _
+    unfold tangentMatrix
     rfl
 
 /-- Extending coefficients of a general-linear tangent vector maps its matrix entrywise. -/
@@ -186,15 +175,7 @@ private theorem tangentPoint_matrix_fst (d : Derivation R (H (R := R) n)
   rw [dualNumberReduction_def, pointsMulEquiv_mapValue] at h
   have hij := congrArg (fun g : Matrix.GeneralLinearGroup (Fin n)
       (Bialgebra.CounitAlgebra R (H (R := R) n) B) ↦ g i j) h
-  -- Expose how reduction and the point equivalence act on matrix entries before using `map_one`.
-  change fst ((pointsMulEquiv (R := R) n q.val) i j) =
-    (pointsMulEquiv (R := R) n (1 : WithConv (H (R := R) n →ₐ[R]
-      Bialgebra.CounitAlgebra R (H (R := R) n) B))) i j at hij
   rw [map_one] at hij
-  -- Identify the mapped identity with the identity matrix entry.
-  change fst ((pointsMulEquiv (R := R) n q.val) i j) =
-    (1 : Matrix.GeneralLinearGroup (Fin n)
-      (Bialgebra.CounitAlgebra R (H (R := R) n) B)) i j
   exact hij
 
 /-- A dual-number matrix whose classical part is the identity has determinant with first-order
@@ -315,9 +296,6 @@ private theorem tangentMatrix_surjective :
   rw [derivationMulEquivTangentKer_symm_apply]
   rw [← pointToGeneralLinear_apply (R := R) n q i j]
   rw [← pointsMulEquiv_apply]
-  -- Expose the second dual-number component represented by the tangent point.
-  change Bialgebra.CounitAlgebra.algEquivSelf R (H (R := R) n) B
-      (snd ((pointsMulEquiv (R := R) n q) i j)) = X i j
   -- Unfold the chosen point through the inverse of the point equivalence.
   rw [show pointsMulEquiv (R := R) n q = g from MulEquiv.apply_symm_apply _ g]
   rw [dualMatrixGeneralLinear_apply]
@@ -338,8 +316,6 @@ theorem tangentLinearEquivMatrix_apply (d : Derivation R (H (R := R) n)
     (Bialgebra.CounitAlgebra R (H (R := R) n) B)) :
     tangentLinearEquivMatrix n d = tangentMatrix n d :=
   by
-    -- `LinearEquiv.ofBijective` retains the original map as its forward function.
-    change tangentMatrix n d = _
     rfl
 
 /-- The tangent-matrix equivalence identifies the convolution Lie bracket with the matrix
@@ -378,9 +354,6 @@ noncomputable def tangentLieEquivMatrix :
 theorem tangentLieEquivMatrix_apply (d : Derivation R (H (R := R) n)
     (Bialgebra.CounitAlgebra R (H (R := R) n) B)) :
     tangentLieEquivMatrix n d = tangentMatrix n d := by
-  -- Expose the `toFun` field of the Lie equivalence once; its public computation rule is this
-  -- theorem itself.
-  change tangentMatrix n d = tangentMatrix n d
   rfl
 
 section InvariantDerivation

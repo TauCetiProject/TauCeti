@@ -621,12 +621,7 @@ theorem hom_weightTorusCoordinateMap_reindex (τ : Equiv.Perm κ) (wt : Fin N �
   split_ifs with hij
   · rw [MonoidAlgebra.mapDomainBialgHom_single]
     congr 1
-    -- The bundled character maps reduce to their `Finsupp` representatives only by definitional
-    -- equality; the named relabelling lemma applies after exposing that layer.
-    change Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt i ∘ τ)) =
-      SplitTorus.characterRelabel τ⁻¹
-        (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt i)))
-    rw [SplitTorus.characterRelabel_ofAdd]
+    rw [MulEquiv.coe_toMonoidHom, SplitTorus.characterRelabel_ofAdd]
     congr 1
     ext k
     simp [Finsupp.equivMapDomain_apply, Equiv.Perm.inv_def]
@@ -702,13 +697,8 @@ private theorem rankOneCharacterBialgEquiv_single :
   rw [rankOneCharacterBialgEquiv]
   apply (AlgEquiv.symm_apply_eq
     (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toAlgEquiv).mpr
-  -- `simp` does not unfold `domCongrBialgEquiv`, so expose its underlying `domCongr`.
-  change MonoidAlgebra.domCongr R R
-      (AddEquiv.toMultiplicative (Finsupp.uniqueAddEquiv (ULift.up ())))
-        (MonoidAlgebra.single
-          (Multiplicative.ofAdd (Finsupp.single (ULift.up ()) 1)) 1) =
-    (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toAlgEquiv (LaurentPolynomial.T 1)
-  simpa using
+  simpa [MonoidAlgebra.domCongrBialgEquiv, BialgEquiv.ofAlgEquiv,
+    MonoidAlgebra.domCongr_single] using
     (AddMonoidAlgebra.toMultiplicativeBialgEquiv_single (R := R) (A := R) (M := ℤ) 1 1).symm
 
 private theorem mapPointsFunctor_weightCocharacterCoordinateMap_app (w : Fin N → ℤ)
@@ -752,10 +742,6 @@ theorem mapDomain_weightCocharacter (w : Fin N → ℤ)
     (f : WithConv (LaurentPolynomial R →ₐ[R] A)) :
     BialgHom.mapDomain (weightCocharacter (R := R) w) f =
       weightCocharacterPoints w f := by
-  -- `mapDomain` and the points functor are definitionally the same precomposition here; there is
-  -- no bridge lemma for the bundled coordinate morphism.
-  change (CommHopfAlgCat.Hom.mapPointsFunctor
-      (weightCocharacterCoordinateMap (R := R) w)).app (CommAlgCat.of R A) f = _
   exact mapPointsFunctor_weightCocharacterCoordinateMap_app w (CommAlgCat.of R A) f
 
 end WeightCocharacter

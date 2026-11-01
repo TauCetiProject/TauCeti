@@ -169,10 +169,6 @@ theorem weightLeviCoordinateMap_comp_weightLeviDiagonalCoordinateIso_hom
         (weightLeviDefiningHopfIdeal R w) ≫
       (weightLeviDiagonalCoordinateIso R w hw).hom =
         diagonalTorusCoordinateMap (R := R) (N := N) := by
-  -- Expose the isomorphism's defining morphism inside its characteristic API theorem.
-  change CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-      (weightLeviDefiningHopfIdeal R w) ≫
-    weightLeviDiagonalCoordinateMap R w = _
   exact weightLeviCoordinateMap_comp_weightLeviDiagonalCoordinateMap R w
 
 end

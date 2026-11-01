@@ -122,12 +122,9 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
   -- Finally reflect vanishing through the injective first tensor-factor map.
   have hinj : Function.Injective
       (Algebra.TensorProduct.map f.toAlgHom (AlgHom.id k (K ⧸ I.toIdeal))) := by
-    -- Flatness preserves injectivity of linear maps. Expose the underlying linear map;
-    -- its coercion is definitionally the same function as the algebra homomorphism.
-    change Function.Injective
-      (Algebra.TensorProduct.map f.toAlgHom (AlgHom.id k (K ⧸ I.toIdeal))).toLinearMap
-    rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
-    exact Module.Flat.rTensor_preserves_injective_linearMap f.toAlgHom.toLinearMap hf
+    simpa only [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+      TensorProduct.AlgebraTensorModule.map_eq, LinearMap.rTensor, AlgHom.toLinearMap_id] using
+      Module.Flat.rTensor_preserves_injective_linearMap f.toAlgHom.toLinearMap hf
   apply hinj
   calc
     Algebra.TensorProduct.map f.toAlgHom (AlgHom.id k (K ⧸ I.toIdeal))

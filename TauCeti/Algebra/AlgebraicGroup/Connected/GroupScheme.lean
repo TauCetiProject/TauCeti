@@ -92,9 +92,6 @@ noncomputable def identityComponentPrimeSpectrumHomeomorph
       (connectedComponent (Bialgebra.augmentationPoint k H) : Set (PrimeSpectrum H)) := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   let _ : LocallyConnectedSpace (PrimeSpectrum H) := inferInstance
-  -- Expose the finite-type and Hopf-algebra quotient wrappers at their common carrier.
-  change PrimeSpectrum
-      (H ⧸ (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal) ≃ₜ _
   exact (PrimeSpectrum.quotientHomeomorphZeroLocus
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal).trans
       (Homeomorph.setCongr (by
@@ -111,9 +108,6 @@ theorem identityComponentPrimeSpectrumHomeomorph_apply_coe
       PrimeSpectrum.comap
         (toBialgHom (identityComponentCoordinateMap H)).toAlgHom.toRingHom x := by
   simp only [identityComponentPrimeSpectrumHomeomorph]
-  change (PrimeSpectrum.quotientHomeomorphZeroLocus
-    (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal x :
-      PrimeSpectrum H) = _
   exact PrimeSpectrum.quotientHomeomorphZeroLocus_apply_coe _ x
 
 /-- The spectrum of the identity-component coordinate algebra is connected. -/

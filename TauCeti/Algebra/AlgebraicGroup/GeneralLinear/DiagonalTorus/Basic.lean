@@ -339,59 +339,40 @@ private lemma groupSchemePointsMulEquiv_comp_diagonalTorus
             (SplitTorus.characterGroup (ULift.{u} (Fin N))) p)) := by
   let q := DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
     (SplitTorus.characterGroup (ULift.{u} (Fin N))) p
-  have hmap : AlgebraicGeometry.Spec.mapMulEquiv
-      ((CommHopfAlgCat.Hom.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := R) (N := N))).app (CommAlgCat.of R A) q) =
-      AlgebraicGeometry.Spec.mapMulEquiv q ≫
-        ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap (R := R) (N := N)).op).hom.hom :=
-    CommHopfAlgCat.mapMulEquiv_mapDomain (CommAlgCat.of R A)
-      (diagonalTorusCoordinateMap (R := R) (N := N)).hom q
-  rw [mapPointsFunctor_diagonalTorusCoordinateMap_app] at hmap
-  apply Over.OverMorphism.ext
-  rw [groupSchemePointMulEquiv_apply_left, Over.comp_left]
-  unfold diagonalTorus
-  -- Taking the underlying morphism of schemes distributes over composition definitionally, but
-  -- `Grp (Over _)` has no rewrite lemma stating it, so the distribution is made explicit here.
-  rw [show ((eqToHom (DiagonalizableGroup.groupScheme_def R
-        (SplitTorus.characterGroup (ULift.{u} (Fin N)))) ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap (R := R) (N := N)).op ≫
-        eqToHom (groupScheme_def R N).symm)).hom.hom.left =
-      (eqToHom (DiagonalizableGroup.groupScheme_def R
-        (SplitTorus.characterGroup (ULift.{u} (Fin N))))).hom.hom.left ≫
-        ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-          (diagonalTorusCoordinateMap (R := R) (N := N)).op).hom.hom.left ≫
-        (eqToHom (groupScheme_def R N).symm).hom.hom.left from rfl]
-  rw [DiagonalizableGroup.eqToHom_hom_hom_left, DiagonalizableGroup.eqToHom_hom_hom_left]
-  change p.left ≫ eqToHom (DiagonalizableGroup.groupScheme_X_left R
-      (SplitTorus.characterGroup (ULift.{u} (Fin N)))) ≫
-      ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-        (diagonalTorusCoordinateMap (R := R) (N := N)).op).hom.hom.left ≫
-      eqToHom (groupScheme_X_left R N).symm =
-    (AlgebraicGeometry.Spec.mapMulEquiv (diagonalTorusPoints q)).left ≫
-      eqToHom (groupScheme_X_left R N).symm
-  rw [← Category.assoc p.left,
-    DiagonalizableGroup.groupSchemePointsMulEquiv_apply_left_comp]
-  -- The source of the composite is displayed through its over-category wrapper after the
-  -- preceding transport; restate the two spectrum maps at their definitionally equal schemes.
-  change Spec.map (CommRingCat.ofHom q.ofConv.toRingHom) ≫
-      Spec.map (CommRingCat.ofHom
-        (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom.toRingHom) ≫
-      eqToHom (groupScheme_X_left R N).symm =
-    Spec.map (CommRingCat.ofHom (diagonalTorusPoints q).ofConv.toRingHom) ≫
-      eqToHom (groupScheme_X_left R N).symm
-  have hmapLeft :
-      (AlgebraicGeometry.Spec.mapMulEquiv (diagonalTorusPoints q)).left =
-        (AlgebraicGeometry.Spec.mapMulEquiv q).left ≫
-          ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-            (diagonalTorusCoordinateMap (R := R) (N := N)).op).hom.hom.left :=
-    congrArg Over.Hom.left hmap
-  change Spec.map (CommRingCat.ofHom (diagonalTorusPoints q).ofConv.toRingHom) =
-    Spec.map (CommRingCat.ofHom q.ofConv.toRingHom) ≫
-      Spec.map (CommRingCat.ofHom
-        (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom.toRingHom) at hmapLeft
-  rw [← Category.assoc, ← hmapLeft]
+  let eT := (DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
+    (SplitTorus.characterGroup (ULift.{u} (Fin N)))).symm
+  have hTorus :
+      DiagonalizableGroup.groupScheme R (SplitTorus.characterGroup (ULift.{u} (Fin N))) =
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
+          (Opposite.op
+            ((DiagonalizableGroup.coordinateRing R
+              (SplitTorus.characterGroup (ULift.{u} (Fin N)))).obj)) :=
+    DiagonalizableGroup.groupScheme_def R
+      (SplitTorus.characterGroup (ULift.{u} (Fin N)))
+  have hnat := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := R) (A := A) (H := coordinateHopfAlgebra R N)
+    (G := groupScheme R N)
+    (H' := DiagonalizableGroup.groupScheme R
+      (SplitTorus.characterGroup (ULift.{u} (Fin N))))
+    (groupScheme_def R N) hTorus
+    (eG := groupSchemePointMulEquiv N A) (eH' := eT)
+    (eG_apply_left := by
+      intro f
+      simpa only [hopfSpec_obj_X_left] using groupSchemePointMulEquiv_apply_left N A f)
+    (eH'_apply_left := by
+      intro f
+      simpa only [hopfSpec_obj_X_left] using
+        DiagonalizableGroup.groupSchemePointsMulEquiv_symm_apply_left
+          (R := R) (A := A)
+          (SplitTorus.characterGroup (ULift.{u} (Fin N))) f)
+    (diagonalTorusCoordinateMap (R := R) (N := N)) q
+  have hq : eT q = p := by
+    simpa only [eT, q] using
+      (DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
+        (SplitTorus.characterGroup (ULift.{u} (Fin N)))).symm_apply_apply p
+  rw [diagonalTorus_def]
+  rw [mapPointsFunctor_diagonalTorusCoordinateMap_app] at hnat
+  simpa only [hq] using hnat
 
 /-- **The diagonal torus on scheme-valued points**: composing an `A`-point of the split torus
 with the diagonal torus morphism gives the diagonal invertible matrix whose diagonal entries are

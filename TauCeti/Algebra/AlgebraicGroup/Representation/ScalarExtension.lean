@@ -82,15 +82,7 @@ noncomputable def pointNatIso (g : WithConv (H →ₐ[R] A)) :
   NatIso.ofComponents (pointIso R H A g) (fun {M N} f ↦ by
     -- Reduce the private component constructor directly so its formulas are stated only by the
     -- public component theorems below.
-    change
-      (ComoduleCat.scalarExtensionFunctor R H A).map f ≫
-          eqToHom (ComoduleCat.scalarExtensionFunctor_obj R H A N) ≫
-            (Comodule.pointsAction N g).toModuleIsoₛ.hom ≫
-              eqToHom (ComoduleCat.scalarExtensionFunctor_obj R H A N).symm =
-        eqToHom (ComoduleCat.scalarExtensionFunctor_obj R H A M) ≫
-            (Comodule.pointsAction M g).toModuleIsoₛ.hom ≫
-              eqToHom (ComoduleCat.scalarExtensionFunctor_obj R H A M).symm ≫
-                (ComoduleCat.scalarExtensionFunctor R H A).map f
+    dsimp only [pointIso, Iso.trans, eqToIso]
     rw [ComoduleCat.scalarExtensionFunctor_map]
     simp only [Category.assoc]
     rw [cancel_epi]
@@ -133,9 +125,6 @@ noncomputable def pointNatIsoHom :
     apply Iso.ext
     apply NatTrans.ext
     funext M
-    -- Extensionality exposes a component of `Aut`; reduction identifies that component
-    -- with the natural isomorphism supplied as `pointNatIsoHom.toFun`.
-    change (pointNatIso R H A 1).hom.app M = 𝟙 _
     rw [pointNatIso_hom_app]
     simp
   map_mul' g h := by
@@ -143,10 +132,7 @@ noncomputable def pointNatIsoHom :
     apply Iso.ext
     apply NatTrans.ext
     funext M
-    -- Multiplication in `Aut` is reverse isomorphism composition, so reducing the bundled
-    -- homomorphism turns this component into the following explicitly ordered composite.
-    change (pointNatIso R H A (g * h)).hom.app M =
-      (pointNatIso R H A h).hom.app M ≫ (pointNatIso R H A g).hom.app M
+    simp only [Aut.mul_asIso, Iso.trans_hom, NatTrans.comp_app]
     rw [pointNatIso_hom_app, pointNatIso_hom_app, pointNatIso_hom_app]
     simp only [Category.assoc]
     rw [cancel_epi]

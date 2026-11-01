@@ -75,10 +75,6 @@ private theorem ker_projection_eq_augmentation
       I.comap (FiniteTypeCommHopfAlgCat.toBialgHom f) := by
     ext x
     rw [HopfIdeal.mem_ker, HopfIdeal.mem_comap]
-    -- Unfold the categorical composite just enough to expose the underlying quotient map;
-    -- `mkQuotient_eq_zero_iff` is stated for this concrete map rather than its wrappers.
-    change (FiniteTypeCommHopfAlgCat.mkQuotient P I).hom.hom
-        (FiniteTypeCommHopfAlgCat.toBialgHom f x) = 0 ↔ _
     exact FiniteTypeCommHopfAlgCat.mkQuotient_eq_zero_iff P I _
   have hnormal : (HopfIdeal.ker g.hom).IsNormal := by
     rw [hker]

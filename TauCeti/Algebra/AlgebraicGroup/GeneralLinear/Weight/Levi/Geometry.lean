@@ -175,10 +175,7 @@ private theorem weightLeviPolynomialToQuotient_determinant_isUnit (w : Fin N →
         map_zero, Matrix.map_apply]
       simpa only [Ideal.Quotient.mkₐ_eq_mk, genericMatrix_apply] using
         (weightLeviQuotient_mk_genericMatrix_apply_of_ne R w hij).symm
-  -- `AlgHom.map_det` exposes `mapMatrix`, whereas the pointwise matrix map is the stable form
-  -- used by `hmatrix`.
-  change IsUnit (Matrix.det ((weightLeviPolynomialGenericMatrix R w).map
-    (weightLeviPolynomialToQuotient R w)))
+  rw [AlgHom.mapMatrix_apply]
   rw [hmatrix]
   simpa only [← AlgHom.mapMatrix_apply, ← AlgHom.map_det] using
     (isUnit_det_genericMatrix R N).map
@@ -208,14 +205,7 @@ private theorem weightLeviQuotientToCoordinateRing_comp_coordinateRingToQuotient
   apply MvPolynomial.algHom_ext
   intro ij
   simp only [AlgHom.comp_apply, AlgHom.id_apply]
-  -- Localization extensionality inserts the canonical algebra map; expose it as the scalar-tower
-  -- algebra hom before applying the computation theorem.
-  change weightLeviQuotientToCoordinateRing R w
-      (weightLeviCoordinateRingToQuotient R w
-        (IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
-          (WeightLeviCoordinateRing R w) (MvPolynomial.X ij))) =
-    IsScalarTower.toAlgHom R (MvPolynomial (WeightLeviIndex w) R)
-      (WeightLeviCoordinateRing R w) (MvPolynomial.X ij)
+  dsimp only [Algebra.algHom]
   rw [weightLeviCoordinateRingToQuotient_coordinateRingMap,
     weightLeviPolynomialToQuotient, MvPolynomial.aeval_X,
     weightLeviQuotientToCoordinateRing_mk_genericMatrix_apply,

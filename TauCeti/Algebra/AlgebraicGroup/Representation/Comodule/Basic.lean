@@ -112,9 +112,6 @@ theorem ext
   funext A
   apply (cancel_mono
     (eqToHom (GeneralLinear.scalarExtensionAutomorphismsFunctor_obj (V := V) A))).1
-  -- Once the opaque functor-object transport is cancelled, the concrete-action wrapper unfolds
-  -- definitionally to the remaining natural-transformation component.
-  change Theta.action A = Psi.action A
   apply GrpCat.ext
   intro x
   exact h A x

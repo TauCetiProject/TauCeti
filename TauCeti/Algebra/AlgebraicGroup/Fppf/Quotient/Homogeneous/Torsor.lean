@@ -54,10 +54,6 @@ private theorem homogeneousQuotientTorsorProjection_app
     (↾fun g : ULift.{u + 1, u} (HopfAlgebra.points (R := R) (H := H) A.unop.unop) =>
       homogeneousQuotientPresheafMk H I A g.down) := by
   ext g
-  -- At each object, the carrier identification is the identity on lifted points;
-  -- reduce its transport before using the projection's public application formula.
-  change (homogeneousQuotientPresheafProjection H I).app A (ULift.up g.down) =
-    homogeneousQuotientPresheafMk H I A g.down
   exact homogeneousQuotientPresheafProjection_app_apply H I A g.down
 
 /-- The coset projection has kernel pair `G × N`, even for a nonnormal subgroup. -/

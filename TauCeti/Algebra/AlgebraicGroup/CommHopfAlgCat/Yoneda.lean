@@ -327,13 +327,15 @@ noncomputable def grpObjPointsMulEquiv (H : _root_.CommHopfAlgCat.{u} R)
     apply WithConv.ofConv_injective
     -- Exposing the hom type also exposes the group-object multiplication induced by the Hopf
     -- comultiplication.
-    change (CartesianMonoidalCategory.lift f g ≫ μ).unop.hom =
-      (toConv f.unop.hom * toConv g.unop.hom).ofConv
-    apply AlgHom.ext
-    intro h
-    simp only [unop_comp, CommAlgCat.hom_comp, CommAlgCat.lift_unop_hom,
-      AlgHom.comp_apply, AlgHom.convMul_apply]
-    exact congrArg _ (Bialgebra.comulAlgHom_apply R H h)
+    have hmul :
+        (CartesianMonoidalCategory.lift f g ≫ μ).unop.hom =
+          (toConv f.unop.hom * toConv g.unop.hom).ofConv := by
+      apply AlgHom.ext
+      intro h
+      simp only [unop_comp, CommAlgCat.hom_comp, CommAlgCat.lift_unop_hom,
+        AlgHom.comp_apply, AlgHom.convMul_apply]
+      congr 1
+    exact hmul
 
 /-- The group-object point equivalence regards a categorical point as the convolution wrapper of
 its underlying algebra morphism. -/
@@ -377,11 +379,9 @@ theorem grpObjPointsMulEquiv_symm_apply (H : _root_.CommHopfAlgCat.{u} R)
     (X : (CommAlgCat.{u} R)ᵒᵖ) (p : HopfAlgebra.points (R := R) (H := H) X.unop) :
     (grpObjPointsMulEquiv H X).symm p =
       (opEquiv X (CommHopfAlgCat.grpObj H)).symm (CommAlgCat.ofHom p.ofConv) := by
-  -- The inverse of the composite carrier equivalence reduces definitionally to the composite
-  -- of the inverse opposite-hom equivalence and `pointsHomEquiv.symm`.
-  change (opEquiv X (CommHopfAlgCat.grpObj H)).symm ((HopfAlgebra.pointsHomEquiv H X.unop).symm
-    p) = _
-  rw [HopfAlgebra.pointsHomEquiv_symm_apply]
+  apply (grpObjPointsMulEquiv H X).injective
+  rw [MulEquiv.apply_symm_apply, grpObjPointsMulEquiv_apply]
+  rfl
 
 /-- Under the group-object point equivalences, composition with the morphism represented by `f`
 is precomposition of algebra-valued points with `f`. -/
@@ -393,9 +393,8 @@ theorem grpObjPointsMulEquiv_comp_grpObjMap {H K : _root_.CommHopfAlgCat.{u} R} 
   apply WithConv.ofConv_injective
   -- The public application rules expose both categorical points as their underlying algebra
   -- morphisms before the functorial action is computed.
-  change (q ≫ CommHopfAlgCat.Hom.grpObjMap f).unop.hom =
-    ((CommHopfAlgCat.Hom.mapPointsFunctor f).app X.unop (toConv q.unop.hom)).ofConv
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
+  rw [grpObjPointsMulEquiv_apply]
   rw [unop_comp, CommHopfAlgCat.Hom.grpObjMap_unop, CommAlgCat.hom_comp]
   rfl
 
@@ -627,8 +626,7 @@ private theorem isRepresentable_unopUnop_comp_iff_isCorepresentable
           -- As above, this conversion unfolds only `Equiv.trans` and the forward application
           -- of `opEquiv`. The composite-functor map stays visible for the explicit variance
           -- rewrite rather than being discharged by definitional equality.
-          change e.homEquiv ((f ≫ g).unop) =
-            (unopUnop (CommAlgCat.{u} R) ⋙ F).map f.op (e.homEquiv g.unop)
+          simp only [Equiv.trans_apply, opEquiv, Equiv.coe_fn_mk]
           rw [unop_comp, e.homEquiv_comp, Functor.comp_map, unopUnop_map,
             Quiver.Hom.unop_op] }
     exact r.isRepresentable
@@ -689,10 +687,6 @@ variable {R : Type u} [CommRing R]
 category. -/
 instance pointsPresheaf_isRepresentable (H : _root_.CommHopfAlgCat.{u} R) :
     (pointsPresheaf H).IsRepresentable := by
-  -- Unfolding the two presheaf abbreviations exposes the registered representability of the
-  -- underlying points functor after precomposition by the double-opposite equivalence.
-  change (unopUnop (CommAlgCat.{u} R) ⋙
-    (pointsFunctor (R := R) (H := H) ⋙ forget GrpCat.{u})).IsRepresentable
   exact CommHopfAlgCat.pointsFunctorForget_unopUnop_isRepresentable H
 
 end HopfAlgebra

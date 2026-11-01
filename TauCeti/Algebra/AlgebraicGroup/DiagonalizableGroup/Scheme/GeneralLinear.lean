@@ -126,10 +126,7 @@ theorem pointToGeneralLinear_comp_diagonalCoordinateMap (b : Module.Basis (Fin n
   classical
   ext i j
   rw [GeneralLinear.pointToGeneralLinear_apply, ofConv_toConv, AlgHom.comp_apply]
-  -- Normalize point evaluation to expose the generic coordinate on which
-  -- `diagonalCoordinateMap_X` rewrites.
-  change q.ofConv (diagonalCoordinateMap b wt _) = _
-  rw [diagonalCoordinateMap_X]
+  rw [BialgHom.coe_toAlgHom, diagonalCoordinateMap_X]
   rcases eq_or_ne i j with rfl | hij
   · simp
   · simp [Matrix.diagonal_apply_ne _ hij]

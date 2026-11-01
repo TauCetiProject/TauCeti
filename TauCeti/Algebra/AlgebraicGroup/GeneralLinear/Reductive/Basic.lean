@@ -75,9 +75,6 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
       rw [← finiteTypeCoordinateHopfAlgebra_obj]
       exact (finiteTypeCoordinateHopfAlgebra k n).property⟩
   let _ : IsReduced H := by
-    -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
-    -- definitionally the coordinate algebra on which smoothness supplies reducedness.
-    change IsReduced (coordinateHopfAlgebra k n)
     exact isReduced_of_smooth k _
   let _ : Comodule k (coordinateHopfAlgebra k n) (Fin n → k) := standardComodule k n
   have hcr : Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k n) (Fin n → k) := by

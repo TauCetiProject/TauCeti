@@ -388,21 +388,13 @@ private noncomputable instance isIso_mapPointsFunctor_weightParabolicSemidirectP
   apply (ConcreteCategory.isIso_iff_bijective _).2
   constructor
   · intro x y hxy
-    -- Unpack the value-algebra object so the exposed carrier of `pointsFunctor.obj` reduces to
-    -- the `HopfAlgebra.points` type used by the pointwise equivalence.
-    change HopfAlgebra.points
-      (R := R) (H := weightParabolicSemidirectProductCoordinateHopfAlgebra R w)
-        (CommAlgCat.of R A) at x y
+    dsimp only [HopfAlgebra.pointsFunctor] at x y
     apply (weightParabolicSemidirectProductPointsMulEquiv R w (CommAlgCat.of R A)).injective
     rw [weightParabolicSemidirectProductPointsMulEquiv_apply,
       weightParabolicSemidirectProductPointsMulEquiv_apply]
     exact hxy
   · intro y
-    -- Normalize the target carrier for the same reason before using surjectivity of the
-    -- pointwise equivalence.
-    change HopfAlgebra.points
-      (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
-        (CommAlgCat.of R A) at y
+    dsimp only [HopfAlgebra.pointsFunctor] at y
     obtain ⟨x, rfl⟩ :=
       (weightParabolicSemidirectProductPointsMulEquiv R w (CommAlgCat.of R A)).surjective y
     exact ⟨x, (weightParabolicSemidirectProductPointsMulEquiv_apply

@@ -76,9 +76,7 @@ theorem map_lieSubalgebra_weightParabolicDefiningHopfIdeal (w : Fin N → ℤ) :
   rw [LieSubalgebra.mem_map]
   constructor
   · rintro ⟨d, hd, rfl⟩
-    -- The associative-to-Lie construction retains exactly the subalgebra's carrier.
-    change (tangentLieEquivMatrix N d).BlockTriangular (OrderDual.toDual ∘ w)
-    rw [tangentLieEquivMatrix_apply]
+    rw [LieEquiv.coe_toLieHom, tangentLieEquivMatrix_apply]
     exact (mem_lieSubalgebra_weightParabolicDefiningHopfIdeal_iff w d).mp hd
   · intro hX
     refine ⟨(tangentLieEquivMatrix (R := R) (B := B) N).symm X, ?_,

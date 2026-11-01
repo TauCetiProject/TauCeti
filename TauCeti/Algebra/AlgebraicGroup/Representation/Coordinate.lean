@@ -171,9 +171,6 @@ theorem coordinateBialgHom_corestrict (f : H →ₐc[R] K) (b : Basis (Fin n) R 
       (CoassocSimps.lid_comp_map (b.coord i) f.toLinearMap)
       (coact (R := R) (C := H) (M := M) (b j))
     rw [TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id]
-    -- `lid_comp_map` states naturality for the underlying linear map; expose that coercion on
-    -- the right-hand side after tensor-map composition has been normalized.
-    change _ = f.toLinearMap _
     exact h
   exact DFunLike.congr_fun hAlg z
 

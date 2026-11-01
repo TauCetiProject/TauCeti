@@ -105,16 +105,8 @@ private theorem tangentScalarExtensionEquiv_adjointComodule_endOfPoint
       (1 ⊗ₜ[k] v)
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
       LinearMap.rTensor_tmul] at hn
-    -- Fold the composite algebra map as `gA.ofConv`; `WithConv` preserves its value.
-    change LinearMap.rTensor V phi.toLinearMap
-        (Comodule.endOfPoint V g₀.ofConv (1 ⊗ₜ[k] v)) =
-      Comodule.endOfPoint V gA.ofConv
-        (LinearMap.rTensor V phi.toLinearMap (1 ⊗ₜ[k] v)) at hn
+    rw [← show gA.ofConv = phi.comp g₀.ofConv from rfl] at hn
     rw [hg] at hn
-    -- After naturality, the local aliases `H` and `V` give this tensor-map expression.
-    change Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := A)
-        (LinearMap.rTensor V phi.toLinearMap
-          (Comodule.endOfPoint V g₀.ofConv (1 ⊗ₜ[k] v))) = _ at hm
     rw [hn] at hm
     simpa only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, map_one] using hm
   induction x using TensorProduct.inductionOn with

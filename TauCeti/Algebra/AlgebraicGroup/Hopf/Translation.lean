@@ -81,8 +81,7 @@ theorem toConv_comp_rightTranslationAlgHom (f g : WithConv (H →ₐ[k] k)) :
   apply WithConv.ofConv_injective
   ext x
   -- Composition must be exposed at application level before the translation formula rewrites.
-  change f.ofConv (rightTranslationAlgHom g x) = (f * g).ofConv x
-  rw [rightTranslationAlgHom_apply, AlgHom.convMul_apply]
+  rw [AlgHom.comp_apply, rightTranslationAlgHom_apply, AlgHom.convMul_apply]
   induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add y z hy hz => simp [hy, hz]
   | tmul y z => simp [Algebra.smul_def, mul_comm]
@@ -107,10 +106,8 @@ private theorem rightTranslationLinearEquiv_toLinearMap
   rw [rightTranslationLinearEquiv]
   -- Composition of the three linear equivalences is intentionally reduced to application here;
   -- the public comparison theorem below prevents consumers from relying on this representation.
-  change TensorProduct.lid k H
-      (Comodule.pointsAction H g ((TensorProduct.lid k H).symm x)) =
-    rightTranslationAlgHom g x
-  rw [TensorProduct.lid_symm_apply]
+  simp only [LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+    TensorProduct.lid_symm_apply, AlgHom.toLinearMap_apply]
   have haction : Comodule.pointsAction H g (1 ⊗ₜ[k] x) =
       Comodule.endOfPoint H g.ofConv (1 ⊗ₜ[k] x) :=
     DFunLike.congr_fun (Comodule.pointsAction_toLinearMap H g) (1 ⊗ₜ[k] x)
@@ -149,9 +146,9 @@ private theorem rightTranslationAlgEquiv_toLinearEquiv
     (rightTranslationAlgEquiv g).toLinearEquiv = rightTranslationLinearEquiv g := by
   ext x
   -- Both bundled equivalences have the algebra hom's function as their reducible carrier.
-  change rightTranslationAlgEquiv g x = rightTranslationLinearEquiv g x
-  rw [show rightTranslationAlgEquiv g x = (rightTranslationAlgEquiv g).toAlgHom x from rfl,
-    rightTranslationAlgEquiv_toAlgHom]
+  have h : (rightTranslationAlgEquiv g).toLinearEquiv x =
+      (rightTranslationAlgEquiv g).toAlgHom x := rfl
+  rw [h, rightTranslationAlgEquiv_toAlgHom]
   exact (LinearMap.congr_fun (rightTranslationLinearEquiv_toLinearMap g) x).symm
 
 private theorem rightTranslationLinearEquiv_one :

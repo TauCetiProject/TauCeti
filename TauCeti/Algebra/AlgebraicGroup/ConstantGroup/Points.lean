@@ -122,12 +122,12 @@ theorem pointHom_coordinateBialgHom
   apply congrArg toConv
   have hx : (pointsMulEquiv k F x).ofConv = eval k F x :=
     congrArg ofConv (pointsMulEquiv_apply (k := k) F x)
-  -- Normalize the `MulEquiv` coercion so that the pointwise equality `hx` can rewrite.
-  change (pointsMulEquiv k F x).ofConv.comp (coordinateBialgHom k F G q).toAlgHom =
-    eval k G (q x)
-  rw [hx]
-  simpa only [coordinateBialgHom_toAlgHom] using
-    eval_comp_coordinateMap k F G q x
+  calc
+    _ = (eval k F x).comp (coordinateBialgHom k F G q).toAlgHom := by
+      congr 1
+    _ = eval k G (q x) := by
+      simpa only [coordinateBialgHom_toAlgHom] using
+        eval_comp_coordinateMap k F G q x
 
 /-- Pointwise, the morphism on points induced by a finite-group homomorphism is that
 homomorphism. -/

@@ -147,10 +147,10 @@ noncomputable def leviGroupExtensionSplitting :
     rw [leviGroupExtension_rightHom_apply]
     apply Subtype.ext
     rw [coe_limitToLevi_apply]
-    -- Normalize the monoid-hom coercion before comparing the two subtype witnesses.
-    change limit A l (leviToParabolic A l z) = z
-    have hinc : leviToParabolic A l z =
-        (⟨z, levi_le_parabolic z.2⟩ : parabolic A l) := Subtype.ext rfl
+    have hinc : (leviToParabolic A l).toFun z =
+        (⟨z, levi_le_parabolic z.2⟩ : parabolic A l) := by
+      apply Subtype.ext
+      rfl
     rw [hinc]
     exact limit_of_mem_levi z.2
 

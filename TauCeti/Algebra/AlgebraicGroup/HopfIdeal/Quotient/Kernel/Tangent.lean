@@ -73,10 +73,7 @@ private theorem counitCoefficientEquiv_apply
       Bialgebra.CounitAlgebra.algEquivSelf R K B b := by
   -- `counitCoefficientEquiv` is a composition through `B`; unfolding it is the only way to expose
   -- the inverse pair because the private definition has no equation lemma.
-  change Bialgebra.CounitAlgebra.algEquivSelf R H B
-      ((Bialgebra.CounitAlgebra.algEquivSelf R H B).symm
-        (Bialgebra.CounitAlgebra.algEquivSelf R K B b)) =
-    Bialgebra.CounitAlgebra.algEquivSelf R K B b
+  dsimp [counitCoefficientEquiv]
   exact (Bialgebra.CounitAlgebra.algEquivSelf R H B).apply_symm_apply _
 
 /-- The differential value is precomposition, with the coefficient copy made explicit. -/

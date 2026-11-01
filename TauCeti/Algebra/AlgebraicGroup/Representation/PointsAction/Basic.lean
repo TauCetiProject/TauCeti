@@ -81,11 +81,8 @@ variable (V) in
 @[simp]
 lemma pointsAction_toLinearMap (g : WithConv (H →ₐ[R] A)) :
     (pointsAction V g : A ⊗[R] V →ₗ[A] A ⊗[R] V) = endOfPoint V g.ofConv := by
-  -- `pointsAction` has no equation lemma to rewrite with; `change` spells out its
-  -- definitional unfolding once, explicitly.
-  change ((LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[R] V))
-    ((pointsRepresentation V).asGroupHom g) : A ⊗[R] V →ₗ[A] A ⊗[R] V) = _
-  rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+  simp only [pointsAction, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
     Representation.asGroupHom_apply, pointsRepresentation_apply]
 
 universe u v w x y
@@ -110,11 +107,7 @@ variable {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R H M]
 theorem basePointsRepresentation_apply (g : WithConv (H →ₐ[R] R)) (m : M) :
     basePointsRepresentation (H := H) M g m =
       TensorProduct.lid R M (endOfPoint M g.ofConv (1 ⊗ₜ[R] m)) := by
-  -- Unpack the `conjRingEquiv` transport to apply its characteristic evaluation lemma.
-  change (TensorProduct.lid R M).conj
-    (pointsRepresentation (R := R) (H := H) (A := R) M g) m = _
-  rw [LinearEquiv.conj_apply_apply, pointsRepresentation_apply]
-  simp
+  simp [basePointsRepresentation, pointsRepresentation_apply]
 
 /-- Every subcomodule is stable under the action of base-valued points. -/
 theorem basePointsRepresentation_mem (N : Subcomodule R H M)
@@ -359,11 +352,7 @@ theorem pointsAction_corestrict_obj (φ : H₁ →ₐc[R] H₂)
     (M : FGComoduleCat.{u, v, y} R H₁) (g : WithConv (H₂ →ₐ[R] A)) :
     pointsAction ((FGComoduleCat.corestrict φ.toCoalgHom).obj M) g =
       pointsAction M (BialgHom.mapDomain φ g) := by
-  -- The bundled object's comodule instance is definitionally `Corestrict`; expose that
-  -- identification once here so downstream proofs can rewrite by a named theorem.
-  change (letI : Comodule R H₂ M := Corestrict φ.toCoalgHom
-    pointsAction M g) = pointsAction M (BialgHom.mapDomain φ g)
-  exact pointsAction_corestrict φ g
+  exact pointsAction_corestrict (V := (M : Type y)) φ g
 
 /-- Simp-normal form of `pointsAction_corestrict_obj`, with the precomposed point written
 after normalization by `BialgHom.mapDomain_apply`. -/

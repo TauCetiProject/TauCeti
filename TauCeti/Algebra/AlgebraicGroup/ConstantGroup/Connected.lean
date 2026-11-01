@@ -97,9 +97,6 @@ theorem point_comp_eq_one_of_connected
   apply ofConv_injective
   ext x
   simp only [BialgHom.comp_toAlgHom, AlgHom.comp_apply, AlgHom.convOne_apply]
-  -- Mathlib has no application lemma for the bialgebra unit; unfold that value explicitly.
-  change p (algebraMap k H (Coalgebra.counit x)) =
-    algebraMap k A (Coalgebra.counit x)
   exact p.commutes _
 
 end

@@ -245,21 +245,8 @@ theorem pointsFppfHomEquiv_apply_fppfQuotientProjection
     Functor.Monoidal.ofChosenFiniteProducts _
   let _ : (sheafToPresheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
     Functor.Monoidal.ofChosenFiniteProducts _
-  -- Unfold the two `HomEquiv` wrappers and `fppfQuotientProjection` to expose the same
-  -- `mapGrp` adjunction on both sides; the resulting statement is precisely unit naturality.
-  change
-    ((sheafificationAdjunction
-      (CommAlgCat.fppfTopology R) (Type (u + 1))).mapGrp).homEquiv _ _
-        ((presheafToSheaf
-          (CommAlgCat.fppfTopology R) (Type (u + 1))).mapGrp.map
-            (pointwiseQuotientPresheafGrpProjection H I hI)) =
-      pointwiseQuotientPresheafGrpProjection H I hI ≫
-        ((sheafificationAdjunction
-          (CommAlgCat.fppfTopology R) (Type (u + 1))).mapGrp).homEquiv
-            (pointwiseQuotientPresheafGrp H I hI)
-            ((presheafToSheaf
-              (CommAlgCat.fppfTopology R) (Type (u + 1))).mapGrp.obj
-                (pointwiseQuotientPresheafGrp H I hI)) (𝟙 _)
+  unfold pointsFppfHomEquiv fppfQuotientHomEquiv fppfQuotientProjection
+    fppfQuotientSheaf pointsFppfGroupObject fppfGroupObjectToPresheaf
   rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
   simpa using (((sheafificationAdjunction
     (CommAlgCat.fppfTopology R) (Type (u + 1))).mapGrp).unit.naturality

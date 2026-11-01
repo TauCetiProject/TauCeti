@@ -115,8 +115,7 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
       simpa only [MonoidHom.comp_apply, BialgHom.mapDomain_apply, ofConv_toConv] using
         congrArg ofConv (DFunLike.congr_fun h₂ a).symm
     rw [hpa, AlgHom.comp_apply]
-    -- `p` is the structure map of the `Q`-algebra `G`
-    change (φ a).ofConv (algebraMap Q G (Algebra.projectiveNorm Q b)) = _
+    rw [show (p.hom.toAlgHom : Q → G) = algebraMap Q G from rfl]
     rw [← Algebra.projectiveNorm_baseChange_tmul, ← Algebra.projectiveNorm_eq_of_algEquiv e,
       Algebra.projectiveNorm_eq_norm, (isAGenerator_iff.mp hφ₁).norm_eq, map_prod, he]
     refine Finset.prod_congr rfl fun a₁ _ ↦ ?_

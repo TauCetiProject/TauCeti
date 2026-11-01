@@ -101,11 +101,6 @@ theorem mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one
     have hone := map_one (CommHopfAlgCat.quotientPointsHom
       (coordinateHopfAlgebra R N) (weightLeviDefiningHopfIdeal R w)
       (CommAlgCat.of R A)).hom
-    -- The representing isomorphism hides the Levi subtype; expose its ambient point so the
-    -- quotient-point injectivity calculation can use the dynamic limit equation.
-    change (Cocharacter.limitToLevi A (weightCocharacter (R := R) w) p :
-      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
-        (CommAlgCat.of R A)) = _
     calc
       _ = Cocharacter.limit A
           (weightCocharacter (R := R) w) p :=

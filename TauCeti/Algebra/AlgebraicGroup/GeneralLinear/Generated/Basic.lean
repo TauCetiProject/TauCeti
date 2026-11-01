@@ -98,12 +98,6 @@ theorem isClosedImmersion_generatedGroupSchemeι_iff :
     IsClosedImmersion (generatedGroupSchemeι n f).hom.hom.left ↔
       IsClosedImmersion
         (hopfIdealInclusion R n (CommHopfAlgCat.commonKernelHopfIdeal f)).hom.hom.left := by
-  -- The two source objects are propositionally identified by `generatedGroupScheme_def`, so the
-  -- underlying morphisms have different dependent types and cannot be related by an equality
-  -- rewrite. Reducing the inserted `eqToHom` transport makes the two properties definitionally
-  -- equal.
-  change IsClosedImmersion
-      (hopfIdealInclusion R n (CommHopfAlgCat.commonKernelHopfIdeal f)).hom.hom.left ↔ _
   rfl
 
 /-- The generated subgroup scheme is a closed subgroup scheme of `GLₙ`. -/
@@ -131,12 +125,6 @@ theorem isClosedImmersion_generatorToGeneratedGroupScheme_iff (i : ι) :
     IsClosedImmersion (generatorToGeneratedGroupScheme n f i).hom.hom.left ↔
       IsClosedImmersion ((hopfSpec (CommRingCat.of R)).map
         (CommHopfAlgCat.commonKernelLift f i).op).hom.hom.left := by
-  -- The target objects are propositionally identified by `generatedGroupScheme_def`, so the
-  -- underlying morphisms have different dependent types and cannot be related by an equality
-  -- rewrite. Reducing the inserted `eqToHom` transport makes the two properties definitionally
-  -- equal.
-  change IsClosedImmersion ((hopfSpec (CommRingCat.of R)).map
-      (CommHopfAlgCat.commonKernelLift f i).op).hom.hom.left ↔ _
   rfl
 
 /-- Factoring the `i`th generator through the generated subgroup scheme and then including into

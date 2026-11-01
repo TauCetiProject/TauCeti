@@ -194,11 +194,9 @@ theorem baseChangeHopfIdeal_comapOfIso (J : HopfIdeal k L) (e : H ≅ L) :
           baseChangeMap (K := K) (mkQuotient L J) := by
     -- `baseChangeMap` is the map field of the `baseChangeFunctor` abbreviation. Unfolding
     -- that wrapper here exposes both composites in the form required by `Functor.map_comp`.
-    change (baseChangeFunctor (K := K)).map (mkQuotient H
-          (J.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2)) ≫
-        (baseChangeFunctor (K := K)).map qIso.hom =
-      (baseChangeFunctor (K := K)).map e.hom ≫
-        (baseChangeFunctor (K := K)).map (mkQuotient L J)
+    dsimp only [qIsoK]
+    rw [Functor.mapIso_hom]
+    repeat rw [← baseChangeFunctor_map]
     rw [← Functor.map_comp, ← Functor.map_comp]
     exact congrArg (fun f ↦ (baseChangeFunctor (K := K)).map f)
       (mkQuotient_comp_quotientIsoOfIso_hom e J)

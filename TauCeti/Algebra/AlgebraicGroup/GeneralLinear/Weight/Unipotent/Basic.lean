@@ -151,12 +151,6 @@ private theorem comul_sub_one_apply_mem (w : Fin N → ℤ) {i j : Fin N}
     Ideal.span (weightUnipotentRelationSet R w)
   let q : coordinateHopfAlgebra R N →ₐ[R] (coordinateHopfAlgebra R N ⧸ J) :=
     Ideal.Quotient.mkₐ R J
-  -- Fold the repeated defining span to `J`; this is only the local abbreviation above.
-  change Coalgebra.comul (R := R)
-      ((genericMatrix R N) i j -
-        (1 : Matrix (Fin N) (Fin N) (coordinateHopfAlgebra R N)) i j) ∈
-    Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N) J ⊔
-      Ideal.rightTensorIdeal (R := R) (A := coordinateHopfAlgebra R N) J
   have hker :
       RingHom.ker (Algebra.TensorProduct.map q q) =
         Ideal.leftTensorIdeal (R := R) (B := coordinateHopfAlgebra R N) J ⊔
@@ -240,10 +234,6 @@ private theorem antipode_sub_one_apply_mem (w : Fin N → ℤ) {i j : Fin N}
     simp only [Xq, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
     exact (isUnit_det_genericMatrix R N).map q
   let _ : Invertible Xq := Matrix.invertibleOfIsUnitDet Xq hdetXq
-  -- Fold the repeated defining span to `J`; this is only the local abbreviation above.
-  change HopfAlgebra.antipode R
-      ((genericMatrix R N) i j -
-        (1 : Matrix (Fin N) (Fin N) (coordinateHopfAlgebra R N)) i j) ∈ J
   apply (Ideal.Quotient.eq_zero_iff_mem).mp
   rw [map_sub, genericMatrix_apply, coordinateHopfAlgebra_antipode_X]
   have hinv := inverse_apply_eq_one_apply_of_weight_le w Xq hXq hij

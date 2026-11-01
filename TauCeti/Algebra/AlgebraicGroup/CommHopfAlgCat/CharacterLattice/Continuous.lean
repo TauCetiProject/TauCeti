@@ -65,11 +65,6 @@ instance instDiscreteTopologyGeometricCharacterGroup :
 private theorem stabilizer_algebraicClosure_isOpen (a : AlgebraicClosure k) :
     IsOpen (MulAction.stabilizer (Field.absoluteGaloisGroup k) a :
       Set (Field.absoluteGaloisGroup k)) := by
-  -- The wrapper's derived topology is definitionally the Krull topology, but Mathlib exposes no
-  -- propositional bridge lemma, so isolate that conversion here.
-  change @IsOpen (AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k)
-    (krullTopology k (AlgebraicClosure k))
-    (MulAction.stabilizer (AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k) a : Set _)
   exact stabilizer_isOpen_of_isIntegral a
 
 private theorem stabilizer_scalarExtension_isOpen {A : Type v} [Semiring A] [Algebra k A]
@@ -84,12 +79,9 @@ private theorem stabilizer_scalarExtension_isOpen {A : Type v} [Semiring A] [Alg
         ?_ (stabilizer_algebraicClosure_isOpen a)
       intro σ hσ
       rw [MulAction.mem_stabilizer_iff] at hσ ⊢
-      -- Expose the algebra equivalence behind the opaque absolute-Galois wrapper only here.
-      change (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) • a = a at hσ
-      rw [AlgEquiv.smul_def] at hσ
-      change (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) • (a ⊗ₜ[k] x) =
-        a ⊗ₜ[k] x
-      rw [ScalarAut.smul_tmul, hσ]
+      calc
+        σ • (a ⊗ₜ[k] x) = (σ • a) ⊗ₜ[k] x := ScalarAut.smul_tmul σ a x
+        _ = a ⊗ₜ[k] x := congrArg (fun b => b ⊗ₜ[k] x) hσ
   | add x y hx hy =>
       apply Subgroup.isOpen_mono
         (H₁ := MulAction.stabilizer (Field.absoluteGaloisGroup k) x ⊓
@@ -114,8 +106,6 @@ theorem stabilizer_groupLike_isOpen {A : Type v} [Semiring A] [Bialgebra k A]
   rw [MulAction.mem_stabilizer_iff] at hσ ⊢
   apply _root_.GroupLike.val_injective
   rw [val_smul]
-  -- `val_smul` exposes the algebra equivalence underlying the opaque Galois wrapper.
-  change (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ) • x.val = x.val at hσ
   exact hσ
 
 /-- The absolute-Galois action on scalar-extended group-like elements is continuous whenever

@@ -251,15 +251,9 @@ theorem coordinateHopfAlgebraBaseChangeBialgEquiv_symm_coordinateRingMap
           (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p))) =
       1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p) := by
   apply (coordinateHopfAlgebraBaseChangeBialgEquiv R K n).symm_apply_eq.mpr
-  -- `symm_apply_eq` exposes the forward map through its `MulEquiv` projection, whereas the
-  -- characteristic lemma below uses the coerced `BialgEquiv`; these maps are definitionally equal.
-  change coordinateHopfAlgebraAlgEquiv K n
-      (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p)) =
-    coordinateHopfAlgebraBaseChangeBialgEquiv R K n
-      (1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p))
-  simpa only [one_smul] using
-    (coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap R K n
-      (1 : K) p).symm
+  convert (coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap R K n
+    (1 : K) p).symm using 1
+  simp only [one_smul]
 
 /-- Base change carries each bundled generic matrix entry to the corresponding entry over the
 new base. -/

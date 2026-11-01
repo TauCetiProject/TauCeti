@@ -64,9 +64,6 @@ noncomputable def kernelHopfIdeal (f : H ⟶ K) : HopfIdeal R K :=
 /-- `kernelHopfIdeal` is the extension of the augmentation ideal along the morphism. -/
 theorem kernelHopfIdeal_def (f : H ⟶ K) :
     kernelHopfIdeal f = (HopfIdeal.augmentation R H).map f.hom := by
-  -- `kernelHopfIdeal` has no equation lemma to rewrite with; `change` spells out its
-  -- definitional unfolding once, explicitly.
-  change (HopfIdeal.augmentation R H).map f.hom = _
   rfl
 
 /-- The scheme-theoretic kernel of a morphism of affine groups is normal. -/
@@ -81,10 +78,7 @@ ideal. -/
 theorem kernelHopfIdeal_toIdeal (f : H ⟶ K) :
     (kernelHopfIdeal f).toIdeal =
       Ideal.map (f.hom : ↥H →+* ↥K) (HopfIdeal.augmentation R H).toIdeal := by
-  -- `kernelHopfIdeal` has no equation lemma to rewrite with; `change` spells out its
-  -- definitional unfolding to a `HopfIdeal.map` application.
-  change ((HopfIdeal.augmentation R H).map f.hom).toIdeal = _
-  rw [HopfIdeal.map_toIdeal]
+  rw [kernelHopfIdeal, HopfIdeal.map_toIdeal]
 
 /-- The kernel Hopf ideal contains the image of every counit-vanishing element. -/
 theorem mem_kernelHopfIdeal_of_mem_augmentation (f : H ⟶ K) {x : H}

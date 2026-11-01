@@ -152,12 +152,9 @@ theorem map_augmentation_frobeniusBialgHom_eq_hopfIdeal :
   rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal, HopfIdeal.map_toIdeal,
     TauCeti.SymmetricAlgebra.augmentation_toIdeal_eq_span_singleton_ι_one, Ideal.map_span,
     Set.image_singleton]
-  -- `Ideal.map_span` exposes the ring-hom coercion; the bialgebra-hom form lets its generator
-  -- computation lemma apply directly.
-  change z ∈ Ideal.span
-      {(AdditiveGroup.frobeniusBialgHom R p) (ι R R 1 : SymmetricAlgebra R R)} ↔
-    z ∈ (hopfIdeal (R := R) p).toIdeal
-  rw [AdditiveGroup.frobeniusBialgHom_ι_one, hopfIdeal_toIdeal]
+  rw [show ((AdditiveGroup.frobeniusBialgHom R p : _ →+* _)
+      (ι R R 1)) = AdditiveGroup.frobeniusBialgHom R p (ι R R 1) from rfl,
+    AdditiveGroup.frobeniusBialgHom_ι_one, hopfIdeal_toIdeal]
 
 /-- **The coordinate Hopf algebra of `αₚ`**, the quotient `R[x] / (xᵖ)`. It carries a Hopf
 algebra structure through the bridge instances of `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic`. -/

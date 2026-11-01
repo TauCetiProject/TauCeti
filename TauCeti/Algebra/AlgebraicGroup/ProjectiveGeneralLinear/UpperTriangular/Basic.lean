@@ -173,9 +173,6 @@ theorem conjugationMap_comp_rootSubgroupCoordinateMap (hij : i < j) :
       rootSubgroupCoordinateMap k hij := by
   apply CommHopfAlgCat.mkQuotient_hom_ext (H :=
     ProjectiveGeneralLinear.coordinateHopfAlgebra n k) (I := definingHopfIdeal k n)
-  -- Quotient extensionality produces mkQuotient; name it coordinateMap so the factorization
-  -- lemmas match without unfolding the maps being compared.
-  change coordinateMap k n ≫ _ = coordinateMap k n ≫ _
   rw [coordinateMap_comp_conjugationMap_assoc, restriction_def, Category.assoc,
     GeneralLinear.UpperTriangular.coordinateMap_comp_rootSubgroupCoordinateMap,
     coordinateMap_comp_rootSubgroupCoordinateMap,

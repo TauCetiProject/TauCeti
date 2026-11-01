@@ -89,10 +89,7 @@ theorem augmentation_eq_bot_of_isFaithful_of_coact_eq_tmul_one
   have hcounit_z : Coalgebra.counit (R := R) z = 0 :=
     (CoalgHomClass.counit_comp_apply (coordinateBialgHom (H := H) b) z).symm.trans hcounit
   rw [HopfIdeal.mem_bot]
-  -- The unit bialgebra morphism is the algebra structure map; expose its value after the
-  -- coordinate factorization has reduced the goal to a scalar.
-  change algebraMap R H (Coalgebra.counit (R := R) z) = 0
-  rw [hcounit_z, map_zero]
+  rw [Bialgebra.counitBialgHom_apply, hcounit_z, map_zero]
 
 /-- A closed subgroup acting trivially through a faithful finite free representation is the
 identity subgroup: its defining Hopf ideal is the augmentation ideal of the ambient group. -/

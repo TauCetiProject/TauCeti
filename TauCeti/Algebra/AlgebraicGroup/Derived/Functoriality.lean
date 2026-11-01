@@ -181,10 +181,6 @@ noncomputable def derivedQuotientNatTrans :
     eqToHom (derivedFunctor_obj H).symm
   naturality {H K} f := by
     rw [derivedFunctor_map]
-    -- The naturality field retains the identity- and derived-functor object wrappers; expose
-    -- their quotient-coordinate shape so the established commuting square applies.
-    change f ≫ mkQuotient K (derivedDefiningIdeal (R := R) K) =
-      mkQuotient H (derivedDefiningIdeal (R := R) H) ≫ derivedMap f
     exact (mkQuotient_comp_derivedMap f).symm
 
 /-- The component of the derived quotient natural transformation is the coordinate quotient

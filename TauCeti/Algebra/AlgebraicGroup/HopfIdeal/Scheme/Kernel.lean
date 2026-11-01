@@ -75,9 +75,6 @@ noncomputable def kernelSpecι (f : H ⟶ K) :
 /-- `kernelSpecι` is the quotient inclusion at the kernel Hopf ideal. -/
 theorem kernelSpecι_def (f : H ⟶ K) :
     kernelSpecι f = quotientSpecι K (kernelHopfIdeal f) := by
-  -- `kernelSpecι` has no equation lemma to rewrite with; `change` spells out its
-  -- definitional unfolding once, explicitly.
-  change quotientSpecι K (kernelHopfIdeal f) = _
   rfl
 
 /-- The scheme-level triangle: the composite of the kernel inclusion with the induced

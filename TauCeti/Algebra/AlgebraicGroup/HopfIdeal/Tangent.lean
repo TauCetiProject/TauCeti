@@ -158,10 +158,7 @@ private lemma coefficientLinearEquiv_apply (I : HopfIdeal R H)
       Bialgebra.CounitAlgebra.algEquivSelf R H B b := by
   -- The composition is definitionally `old copy → B → new copy`; the public inverse law of the
   -- second equivalence is the stable way to discharge the synonym transport.
-  change Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B
-      ((Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B).symm
-        (Bialgebra.CounitAlgebra.algEquivSelf R H B b)) =
-    Bialgebra.CounitAlgebra.algEquivSelf R H B b
+  dsimp [coefficientLinearEquiv]
   exact (Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B).apply_symm_apply _
 
 /-- The coefficient identification intertwines the scalar actions through the quotient map. -/
@@ -225,10 +222,6 @@ private lemma descendDerivation_mk (I : HopfIdeal R H)
     Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B
         (descendDerivation I d hd (Ideal.Quotient.mkₐ R I.toIdeal x)) =
       Bialgebra.CounitAlgebra.algEquivSelf R H B (d x) := by
-  -- As above, this is the quotient-lift computation hidden behind `Derivation.mk'`.
-  change Bialgebra.CounitAlgebra.algEquivSelf R (H ⧸ I.toIdeal) B
-      (coefficientLinearEquiv I (d x)) =
-    Bialgebra.CounitAlgebra.algEquivSelf R H B (d x)
   exact coefficientLinearEquiv_apply I (d x)
 
 /-- A tangent derivation belongs to the Lie algebra of the closed subgroup defined by `I`

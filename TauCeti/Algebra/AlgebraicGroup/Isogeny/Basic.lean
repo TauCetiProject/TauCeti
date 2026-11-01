@@ -248,13 +248,11 @@ theorem isCentralIsogeny_of_bijective (f : H ⟶ K) (hf : Function.Bijective f.h
 -- These lemmas isolate the definitional identification of `unitBialgHom` with `algebraMap`.
 private lemma unitBialgHom_finite (K : _root_.CommHopfAlgCat.{u} R) [Module.Finite R K] :
     (Bialgebra.unitBialgHom R K).toAlgHom.Finite := by
-  change (algebraMap R K).Finite
   exact RingHom.finite_algebraMap.mpr inferInstance
 
 private lemma unitBialgHom_faithfullyFlat (K : _root_.CommHopfAlgCat.{u} R)
     [Module.FaithfullyFlat R K] :
     (Bialgebra.unitBialgHom R K).toAlgHom.toRingHom.FaithfullyFlat := by
-  change (algebraMap R K).FaithfullyFlat
   exact RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance
 
 /-- The structure morphism from a finite faithfully flat commutative affine group scheme to the

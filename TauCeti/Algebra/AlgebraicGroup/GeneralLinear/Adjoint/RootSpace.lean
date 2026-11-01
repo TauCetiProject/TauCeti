@@ -70,13 +70,8 @@ def matrixUnitWeight (i j : Fin n) :
 theorem toAdd_matrixUnitWeight_apply (i j : Fin n) (a : ULift.{u} (Fin n)) :
     Multiplicative.toAdd (matrixUnitWeight i j) a =
       (if a = ULift.up i then 1 else 0) - (if a = ULift.up j then 1 else 0) := by
-  -- `Multiplicative` is a type synonym, so expose the underlying finitely supported function
-  -- before applying the `Finsupp.single` evaluation API.
-  change
-    ((Finsupp.single (ULift.up i) (1 : ℤ) - Finsupp.single (ULift.up j) 1) :
-      ULift.{u} (Fin n) →₀ ℤ) a = _
   classical
-  simp [Finsupp.single_apply, eq_comm]
+  simp [matrixUnitWeight, Finsupp.single_apply, eq_comm]
 
 /-- The diagonal character `e_i - e_i` is trivial. -/
 @[simp]

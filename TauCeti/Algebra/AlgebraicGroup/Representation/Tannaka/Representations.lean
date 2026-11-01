@@ -243,12 +243,10 @@ theorem pointsFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply
     eqToHom (pointRepresentationTensorAutFunctor_obj k H B)
         ((pointsFunctorIsoPointRepresentationTensorAutFunctor k H).hom.app B x) =
       pointRepresentationTensorIsoEquiv k H B x.down := by
-  -- Evaluate the composite isomorphism directly: its source functor is definitionally
-  -- the universe-lifted point type, so rewriting inside its application loses that typing.
-  change eqToHom (pointRepresentationTensorAutFunctor_obj k H B)
-    ((tensorAutFunctorIsoPointRepresentationTensorAutFunctor k H).hom.app B
-      ((pointsFunctorIsoTensorAutFunctor k H).hom.app B x)) = _
-  rw [tensorAutFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply,
+  rw [pointsFunctorIsoPointRepresentationTensorAutFunctor, Iso.trans_hom, NatTrans.comp_app]
+  erw [GrpCat.comp_apply]
+  rw [
+    tensorAutFunctorIsoPointRepresentationTensorAutFunctor_hom_app_apply,
     pointsFunctorIsoTensorAutFunctor_hom_app_apply, pointRepresentationTensorIsoEquiv_apply]
 
 /-- The inverse natural comparison reconstructs the point of a tensor automorphism. -/

@@ -130,21 +130,9 @@ theorem pointMulEquiv_mapDomain_coordinateInl
         (A.pointMulEquiv (op L))) (BialgHom.mapDomain A.coordinateInl.hom g) =
       SemidirectProduct.inl
         ((CommHopfAlgCat.grpObjPointsMulEquiv H (op L)).symm g) := by
-  let _ := A.semidirectProductGrpObj
-  -- Expose application of the composite equivalence; its intermediate object is definitionally
-  -- the carrier of `A.semidirectProduct`, whose group-object implementation is intentionally
-  -- hidden by the categorical semidirect-product API.
-  change (A.pointMulEquiv (op L))
-    ((CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-      (BialgHom.mapDomain A.coordinateInl.hom g)) = _
-  have hcat :
-      (CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-          (BialgHom.mapDomain A.coordinateInl.hom g) =
-        (CommHopfAlgCat.grpObjPointsMulEquiv H (op L)).symm g ≫ A.inl.hom.hom := by
-    rw [grpObjPointsMulEquiv_symm_mapDomain]
-    rw [A.grpObjMap_coordinateInl]
-    rfl
-  rw [hcat, A.pointMulEquiv_comp_inl]
+  have hcat := grpObjPointsMulEquiv_symm_mapDomain A.coordinateInl L g
+  rw [A.grpObjMap_coordinateInl] at hcat
+  exact (congrArg _ hcat).trans (A.pointMulEquiv_comp_inl _)
 
 /-- Under the point equivalence for a semidirect product, precomposition with `coordinateInr`
 is the ordinary inclusion of the acting factor. -/
@@ -156,19 +144,9 @@ theorem pointMulEquiv_mapDomain_coordinateInr
         (A.pointMulEquiv (op L))) (BialgHom.mapDomain A.coordinateInr.hom g) =
       SemidirectProduct.inr
         ((CommHopfAlgCat.grpObjPointsMulEquiv K (op L)).symm g) := by
-  let _ := A.semidirectProductGrpObj
-  -- As above, expose application of the composite across the hidden group-object carrier.
-  change (A.pointMulEquiv (op L))
-    ((CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-      (BialgHom.mapDomain A.coordinateInr.hom g)) = _
-  have hcat :
-      (CommHopfAlgCat.grpObjPointsMulEquiv A.coordinateHopfAlgebra (op L)).symm
-          (BialgHom.mapDomain A.coordinateInr.hom g) =
-        (CommHopfAlgCat.grpObjPointsMulEquiv K (op L)).symm g ≫ A.inr.hom.hom := by
-    rw [grpObjPointsMulEquiv_symm_mapDomain]
-    rw [A.grpObjMap_coordinateInr]
-    rfl
-  rw [hcat, A.pointMulEquiv_comp_inr]
+  have hcat := grpObjPointsMulEquiv_symm_mapDomain A.coordinateInr L g
+  rw [A.grpObjMap_coordinateInr] at hcat
+  exact (congrArg _ hcat).trans (A.pointMulEquiv_comp_inr _)
 
 end
 

@@ -82,19 +82,13 @@ private noncomputable def typeAGraphPointsNatIso :
       apply MonoidHom.ext
       intro f
       rw [GrpCat.comp_apply, GrpCat.comp_apply]
-      -- `pointsFunctor_obj` presents both categorical point objects by the same `WithConv`
-      -- type; rewriting cannot cross those presentation equalities inside the composites.
-      change typeAGraphPointsMulEquiv r B (HopfAlgebra.mapPoints φ f) =
-        HopfAlgebra.mapPoints φ (typeAGraphPointsMulEquiv r A f)
       apply (pointsMulEquiv (R := ℤ) (A := B) (r + 1)).injective
       simp only [HopfAlgebra.mapPoints]
+      rw [MulEquiv.toGrpIso_hom]
+      simp only [GrpCat.hom_ofHom, MulEquiv.coe_toMonoidHom]
       rw [pointsMulEquiv_typeAGraphPointsMulEquiv]
-      -- Expose `mapPoints` as postcomposition by `φ`; its public naturality theorem is
-      -- stated for `AlgHom.mapValue`, while the points functor retains the wrapper.
-      change TauCeti.typeAGraphAutomorphism r B
-          (pointsMulEquiv (r + 1) (AlgHom.mapValue φ.hom f)) =
-        pointsMulEquiv (r + 1)
-          (AlgHom.mapValue φ.hom (typeAGraphPointsMulEquiv r A f))
+      rw [MulEquiv.toGrpIso_hom]
+      simp only [GrpCat.hom_ofHom, MulEquiv.coe_toMonoidHom]
       rw [pointsMulEquiv_mapValue, pointsMulEquiv_mapValue,
         pointsMulEquiv_typeAGraphPointsMulEquiv, TauCeti.map_typeAGraphAutomorphism])
 
@@ -113,23 +107,11 @@ theorem pointsMulEquiv_mapPointsFunctor_typeAGraphCoordinateIso
     pointsMulEquiv (r + 1)
         ((CommHopfAlgCat.Hom.mapPointsFunctor (typeAGraphCoordinateIso r).hom).app A f) =
       TauCeti.typeAGraphAutomorphism r A (pointsMulEquiv (r + 1) f) := by
-  have hmap := (CommHopfAlgCat.pointsFunctor (R := ℤ)).map_preimage
-    (typeAGraphPointsNatIso r).hom
-  have happ := congrArg (fun α => α.app A f) hmap
-  have hcoordinate : (typeAGraphCoordinateIso r).hom.op =
-      (CommHopfAlgCat.pointsFunctor (R := ℤ)).preimage
-        (typeAGraphPointsNatIso r).hom := rfl
-  -- `CommHopfAlgCat.Hom.mapPointsFunctor` is the same Yoneda map under the opposite-category
-  -- and `WithConv`
-  -- presentations; no rewrite lemma exposes both wrappers simultaneously.
-  change pointsMulEquiv (r + 1)
-      (((CommHopfAlgCat.pointsFunctor (R := ℤ)).map
-        (typeAGraphCoordinateIso r).hom.op).app A f) = _
-  rw [hcoordinate, happ]
-  -- Evaluating the component of `typeAGraphPointsNatIso` reduces to its underlying point
-  -- equivalence only after the `eqToIso` presentation transports cancel.
-  change pointsMulEquiv (r + 1) (typeAGraphPointsMulEquiv r A f) = _
-  exact pointsMulEquiv_typeAGraphPointsMulEquiv r A f
+  have happ := congrArg (fun α => α.app A f)
+    ((CommHopfAlgCat.pointsFunctor (R := ℤ)).map_preimage
+      (typeAGraphPointsNatIso r).hom)
+  rw [← pointsMulEquiv_typeAGraphPointsMulEquiv r A f]
+  congr 1
 
 /-- Explicit precomposition form of the action of `typeAGraphCoordinateIso`. -/
 theorem pointsMulEquiv_comp_typeAGraphCoordinateIso

@@ -81,9 +81,7 @@ theorem liftEquiv_groupAlgebraInvariants_injective
   let f := (groupAlgebraInvariants rho).val
   have h := liftBaseChange_injective_of_invariant (ρ := ρ) (f := f.toLinearMap)
     Subtype.val_injective (fun σ a x ↦ by
-      -- Expand the local representation and inclusion to apply the action's scalar law.
-      change groupAlgebraAction rho σ (a • x.val) = σ a • x.val
-      rw [groupAlgebraAction_smul,
+      simp [ρ, f, groupAlgebraAction_smul,
         (mem_groupAlgebraInvariants_iff rho x).mp x.property σ])
   have heq : (AlgHom.liftEquiv k L _ _ f).toLinearMap =
       f.toLinearMap.liftBaseChange L := by

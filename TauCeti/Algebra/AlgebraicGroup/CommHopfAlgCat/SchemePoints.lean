@@ -159,13 +159,8 @@ private theorem schemePointsAlgΓEquiv_symm_apply
   rw [schemePointsAlgΓEquiv, Equiv.symm_trans_apply, Equiv.symm_trans_apply,
     Equiv.symm_trans_apply,
     HopfAlgebra.pointsHomEquiv_symm_apply]
-  -- The remaining `Equiv.cast` transports the relative-spectrum presentation, while
-  -- `opEquiv` reverses the bundled algebra morphism. These wrappers are definitionally the
-  -- displayed adjunction hom-equivalence application; there is no morphism-level rewrite for
-  -- the cast through the three composed equivalences.
-  change ((algΓAlgSpecAdjunction (CommRingCat.of R)).homEquiv T
-      (Opposite.op (CommAlgCat.of R H))) (CommAlgCat.ofHom p.ofConv).op = _
-  rw [Adjunction.homEquiv_unit]
+  simp [Equiv.cast, opEquiv, Adjunction.homEquiv_unit]
+  rfl
 
 private theorem mapMulEquiv_eq_algSpec_map
     (H : Type u) [CommRing H] [Bialgebra R H]

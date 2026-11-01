@@ -208,21 +208,17 @@ private lemma liftQuotientPointHom_apply (H : _root_.CommHopfAlgCat.{v} R)
       liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
   apply quotientPointsHom_injective H I A
   have hg : g.1 ∈ (quotientPointsHom H I A).hom.range := by
-    have hgp := g.property
-    -- `g.property` is stated through the `Subtype` predicate of the subgroup coercion; `change`
-    -- puts it back in the `∈ quotientPointsSubgroup …` form the membership lemmas expect.
-    change g.1 ∈ quotientPointsSubgroup H I A at hgp
-    exact hgp
+    exact g.property
   -- `liftQuotientPointHom` is the `toMonoidHom` of the inverse equivalence returned by
   -- `MonoidHom.ofInjective`; this coercion exposes the underlying inverse application so the
   -- standard `apply_ofInjective_symm` lemma can rewrite it.
-  change (quotientPointsHom H I A).hom
+  exact (show (quotientPointsHom H I A).hom
       (((MonoidHom.ofInjective (f := (quotientPointsHom H I A).hom)
         (quotientPointsHom_injective H I A)).symm) ⟨g.1, hg⟩) =
     (quotientPointsHom H I A).hom
       (liftQuotientPoint H I A g
-        ((mem_quotientPointsSubgroup_iff H I A g).mp g.property))
-  rw [MonoidHom.apply_ofInjective_symm, quotientPointsHom_liftQuotientPoint]
+        ((mem_quotientPointsSubgroup_iff H I A g).mp g.property)) from by
+      rw [MonoidHom.apply_ofInjective_symm, quotientPointsHom_liftQuotientPoint])
 
 /-- The component isomorphism between quotient points and the cut-out subgroup. -/
 @[expose] noncomputable def quotientPointsSubgroupIso (H : _root_.CommHopfAlgCat.{v} R)

@@ -103,17 +103,7 @@ theorem tensorAutFunctor_map_transport_apply {A B : CommAlgCat.{u} R} (φ : A �
         ((tensorAutFunctor R H).map φ (eqToHom (tensorAutFunctor_obj R H A).symm η)) =
       tensorAutMapValue R H A B φ.hom η := by
   rw [tensorAutFunctor_map]
-  -- The map lemma exposes a composite between propositionally identified group objects. To
-  -- evaluate it at `η`, state the full chain of object transports explicitly; the two inverse
-  -- pairs then cancel before the bundled base-change homomorphism's application lemma applies.
-  change
-    (eqToHom (tensorAutFunctor_obj R H A).symm ≫
-      eqToHom (tensorAutFunctor_obj R H A) ≫
-      GrpCat.ofHom (tensorAutMapValueHom R H A B φ.hom) ≫
-      eqToHom (tensorAutFunctor_obj R H B).symm ≫
-      eqToHom (tensorAutFunctor_obj R H B)) η = _
-  simp only [eqToHom_trans, eqToHom_refl, Category.comp_id]
-  rw [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp]
+  simp only [ConcreteCategory.comp_apply]
   exact tensorAutMapValueHom_apply R H A B φ.hom η
 
 end Functor
@@ -144,19 +134,13 @@ noncomputable def pointsFunctorIsoTensorAutFunctor :
     (fun {A B} φ ↦ by
       apply (cancel_mono (eqToHom (tensorAutFunctor_obj k H B))).mp
       refine GrpCat.hom_ext (MonoidHom.ext fun x ↦ ?_)
-      -- Both sides of the naturality square are, once evaluated, plain group-element
-      -- equations. Reaching them by rewriting is not possible: the two composites are
-      -- wrapped in the composite functor `pointsFunctor ⋙ uliftFunctor`, the universe lift's
-      -- conjugation by `MulEquiv.ulift`, and `MulEquiv.toGrpIso`, none of which has a
-      -- rewriting lemma for an application. All three reduce definitionally, so `change`
-      -- states the evaluated square once, explicitly, and the two named lemmas finish.
-      change fgPointTensorIsoEquiv k H B (AlgHom.mapValue φ.hom x.down) =
-        eqToHom (tensorAutFunctor_obj k H B)
-          ((tensorAutFunctor k H).map φ
-            (eqToHom (tensorAutFunctor_obj k H A).symm
-              (fgPointTensorIsoEquiv k H A x.down)))
-      rw [tensorAutFunctor_map_transport_apply]
-      exact fgPointTensorIsoEquiv_mapValue k H φ x.down)
+      convert fgPointTensorIsoEquiv_mapValue k H φ x.down using 1
+      · rfl
+      · simp only [ConcreteCategory.comp_apply, Iso.trans_hom,
+          eqToIso.hom, MulEquiv.toGrpIso]
+        rw [tensorAutFunctor_map_transport_apply]
+        rfl
+      )
 
 /-- The natural Tannakian isomorphism sends a point to its tensor action. Not a `simp` lemma:
 the argument's type is the composite functor's value, which `simp` rewrites, so the left-hand
@@ -166,12 +150,7 @@ theorem pointsFunctorIsoTensorAutFunctor_hom_app_apply (A : CommAlgCat.{u} k)
     eqToHom (tensorAutFunctor_obj k H A)
         ((pointsFunctorIsoTensorAutFunctor k H).hom.app A x) =
       fgPointTensorIso k H A x.down := by
-  -- As in the naturality proof above, the component is hidden behind `NatIso.ofComponents`
-  -- and `MulEquiv.toGrpIso`; both reduce definitionally to the underlying multiplicative
-  -- equivalence, which `change` names so its application lemmas apply. The closing `rfl`
-  -- discharges `MulEquiv.ulift x = x.down`.
-  change (MulEquiv.ulift.trans (fgPointTensorIsoEquiv k H A)) x = _
-  rw [MulEquiv.trans_apply, fgPointTensorIsoEquiv_apply]
+  convert fgPointTensorIsoEquiv_apply k H A x.down using 1
   rfl
 
 /-- The inverse of the natural Tannakian isomorphism reconstructs the point of a tensor

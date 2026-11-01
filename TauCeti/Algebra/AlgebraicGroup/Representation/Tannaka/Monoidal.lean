@@ -263,20 +263,8 @@ theorem scalarExtensionComponent_tensor
   rw [SemimoduleCat.hom_tensorHom] at hlin
   -- Finally evaluate the linear-map equality on a pure tensor.
   have happ := LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
-  -- No carrier-level rewrite theorem unfolds these two categorical applications, so display
-  -- their underlying linear maps before evaluating `TensorProduct.map`.
-  change scalarExtensionComponent R H A η (M ⊗ N : FGComoduleCat R H)
-      (d.hom (x ⊗ₜ[A] y)) =
-    d.hom (TensorProduct.map (scalarExtensionComponent R H A η M)
-      (scalarExtensionComponent R H A η N) (x ⊗ₜ[A] y)) at happ
-  rw [TensorProduct.map_tmul] at happ
-  change scalarExtensionComponent R H A η (M ⊗ N : FGComoduleCat R H)
-      ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-        (x ⊗ₜ[A] y)) =
-    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-      (scalarExtensionComponent R H A η M x ⊗ₜ[A]
-        scalarExtensionComponent R H A η N y) at happ
-  exact happ
+  convert happ using 1
+  · rfl
 
 -- Conjugating by an object transport turns the identity into the identity. Stated for a
 -- variable object so that the transport can be substituted away.
@@ -545,12 +533,8 @@ theorem ofLinearEquiv_pointsAction_tensorUnit_eq_one
     LinearMap.GeneralLinearGroup.ofLinearEquiv
         (Comodule.pointsAction (𝟙_ (FGComoduleCat R H)) g) = 1 := by
   apply Units.ext
-  -- `Units.ext` still hides the values of `ofLinearEquiv` and `1` behind unit and equivalence
-  -- wrappers, so expose their definitionally equal underlying linear maps before rewriting.
-  change (Comodule.pointsAction (𝟙_ (FGComoduleCat R H)) g :
-    A ⊗[R] (𝟙_ (FGComoduleCat R H)) →ₗ[A] A ⊗[R] (𝟙_ (FGComoduleCat R H))) =
-      LinearMap.id
-  rw [Comodule.pointsAction_toLinearMap, Comodule.endOfPoint_trivial]
+  simp [LinearMap.GeneralLinearGroup.ofLinearEquiv, Comodule.pointsAction_toLinearMap]
+  rfl
 
 /-- The scalar-extension tensorator intertwines the tensor product of two point actions with the
 point action on the tensor product comodule. -/

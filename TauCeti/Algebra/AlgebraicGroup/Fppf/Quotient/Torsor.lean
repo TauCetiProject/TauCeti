@@ -81,35 +81,26 @@ private theorem isPullback_pointwiseQuotientMk
   rw [CategoryTheory.Limits.Types.isPullback_iff]
   refine ⟨?_, ?_, ?_⟩
   · ext p
-    -- `Types.isPullback_iff` exposes bundled concrete maps. There is no rewrite lemma from
-    -- those wrappers to their functions, so reduce that wrapper before using the quotient API.
-    change pointwiseQuotientMk H I hI A p.1 =
-      pointwiseQuotientMk H I hI A (p.1 * quotientPointsHom H I A p.2)
+    simp only [TypeCat.Fun.toFun_apply, types_comp_apply, TypeCat.ofHom_apply]
     have hn : pointwiseQuotientMk H I hI A (quotientPointsHom H I A p.2) = 1 :=
       (pointwiseQuotientMk_eq_one_iff H I hI A _).2
         (quotientPointsHom_mem_quotientPointsSubgroup H I A p.2)
     rw [map_mul, hn, mul_one]
   · rintro ⟨g, n⟩ ⟨g', n'⟩ ⟨hg, hgn⟩
-    -- As above, reduce the bundled concrete maps to the functions whose injectivity we use.
-    change g = g' at hg
-    -- Reduce the second bundled map separately to expose the pointwise group action.
-    change g * quotientPointsHom H I A n =
-      g' * quotientPointsHom H I A n' at hgn
+    simp only [TypeCat.ofHom_apply] at hg hgn
     subst g'
     apply Prod.ext
     · rfl
     apply quotientPointsHom_injective H I A
     exact mul_left_cancel hgn
   · intro g g' hgg'
-    -- Reduce the bundled quotient map; its stable public formula is `pointwiseQuotientMk_apply`.
-    change pointwiseQuotientMk H I hI A g = pointwiseQuotientMk H I hI A g' at hgg'
+    simp only [TypeCat.ofHom_apply] at hgg'
     have hmem : g⁻¹ * g' ∈ quotientPointsSubgroup H I A := by
       rw [pointwiseQuotientMk_apply, pointwiseQuotientMk_apply] at hgg'
       exact QuotientGroup.eq.mp hgg'
     obtain ⟨n, hn⟩ := hmem
     refine ⟨⟨g, n⟩, rfl, ?_⟩
-    -- Reduce the bundled action map so that the subgroup-membership witness `hn` applies.
-    change g * quotientPointsHom H I A n = g'
+    simp only [TypeCat.ofHom_apply]
     rw [hn]
     simp
 
@@ -335,14 +326,9 @@ theorem sheafify_pointwiseQuotientTorsorFst
   let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
   -- Unfold the product and carrier comparison isomorphisms so that the stable monoidal
   -- comparison lemmas below apply; there is no lemma for their packaged composite.
-  change ((pointsFppfGroupObjectCarrierIso H).inv ⊗ₘ
-        (pointsFppfGroupObjectCarrierIso (quotient H I)).inv) ≫
-      (CartesianMonoidalCategory.prodComparisonIso F
-        (pointsPresheafGrp H).X (pointsPresheafGrp (quotient H I)).X).inv ≫
-      F.map (CartesianMonoidalCategory.fst
-        (pointsPresheafGrp H).X (pointsPresheafGrp (quotient H I)).X) ≫
-      (pointsFppfGroupObjectCarrierIso H).hom =
-    CartesianMonoidalCategory.fst _ _
+  rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
+    Iso.symm_hom, Iso.symm_hom, ← pointsFppfGroupObjectCarrierIso_hom]
+  simp only [Category.assoc]
   rw [← Functor.Monoidal.μ_of_cartesianMonoidalCategory,
     Functor.Monoidal.μ_fst_assoc, CartesianMonoidalCategory.tensorHom_fst_assoc,
     Iso.inv_hom_id, Category.comp_id]
@@ -360,34 +346,18 @@ theorem sheafify_pointwiseQuotientTorsorAction
   let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
   let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
   let _ : IsMonHom (pointsFppfGroupObjectCarrierIso H).hom := by
-    -- The carrier isomorphism is obtained by forgetting a group-object isomorphism, so its
-    -- monoid-hom instance is exposed only after reducing to that underlying morphism.
-    change IsMonHom (pointsFppfGroupObjectMapIso H).hom.hom.hom
-    infer_instance
+    exact (inferInstance : IsMonHom (pointsFppfGroupObjectMapIso H).hom.hom.hom)
   -- Expose the two action definitions; the subsequent group-object lemmas reason about their
   -- multiplication composites, not the named wrappers themselves.
-  change (fppfQuotientTorsorProductIso H I).hom ≫
-        F.map (CartesianMonoidalCategory.fst _ _ *
-          (CartesianMonoidalCategory.snd _ _ ≫
-            (quotientSubgroupPointsPresheafGrpInclusion H I).hom.hom)) ≫
-        (pointsFppfGroupObjectCarrierIso H).hom =
-      CartesianMonoidalCategory.fst _ _ *
-        (CartesianMonoidalCategory.snd _ _ ≫
-          (quotientSubgroupPointsFppfGrpInclusion H I).hom.hom)
+  rw [fppfQuotientTorsorAction_def, pointwiseQuotientTorsorAction,
+    ← pointsFppfGroupObjectCarrierIso_hom]
   rw [Functor.map_mul, MonObj.mul_comp, MonObj.comp_mul]
   congr 1
   · exact sheafify_pointwiseQuotientTorsorFst H I
   · -- Unfold the product comparison and sheafified subgroup inclusion to expose the
     -- second projection; no public lemma identifies this entire composite at once.
-    change ((pointsFppfGroupObjectCarrierIso H).inv ⊗ₘ
-          (pointsFppfGroupObjectCarrierIso (quotient H I)).inv) ≫
-        (CartesianMonoidalCategory.prodComparisonIso F
-          (pointsPresheafGrp H).X (pointsPresheafGrp (quotient H I)).X).inv ≫
-        F.map (CartesianMonoidalCategory.snd _ _ ≫
-          (quotientSubgroupPointsPresheafGrpInclusion H I).hom.hom) ≫
-        (pointsFppfGroupObjectCarrierIso H).hom =
-      CartesianMonoidalCategory.snd _ _ ≫
-        (quotientSubgroupPointsFppfGrpInclusion H I).hom.hom
+    rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
+      Iso.symm_hom, Iso.symm_hom]
     rw [← Functor.Monoidal.μ_of_cartesianMonoidalCategory, Functor.map_comp]
     simp only [Category.assoc]
     rw [Functor.Monoidal.μ_snd_assoc,

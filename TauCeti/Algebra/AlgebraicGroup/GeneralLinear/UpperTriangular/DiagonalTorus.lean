@@ -73,12 +73,7 @@ noncomputable def diagonalTorusCoordinateMap :
   CommHopfAlgCat.liftQuotient (definingHopfIdeal R n)
     (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n))
     (definingHopfIdeal_toIdeal_le_ker R n _ fun i j hji ↦ by
-      -- The hypothesis displays the morphism through its algebra-hom coercion; restate it in the
-      -- `BialgHom` form used by the coordinate computation lemma.
-      change (GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n)).hom
-        (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
-          (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) = 0
-      simpa only [(ne_of_gt hji : i ≠ j), ↓reduceIte] using
+      simpa only [BialgHom.coe_toAlgHom, (ne_of_gt hji : i ≠ j), ↓reduceIte] using
         GeneralLinear.diagonalTorusCoordinateMap_X (R := R) (N := n) i j)
 
 /-- Precomposing the factored diagonal-torus coordinate morphism with the upper-triangular
