@@ -110,7 +110,7 @@ example : ¬ Epi ((toAlmost (classical ℤ)).map
       Submodule.Quotient.mk 0 := Subsingleton.elim _ _
   rw [Submodule.Quotient.eq, sub_zero] at h1
   obtain ⟨x, hx⟩ := h1
-  have hx' : 2 * x = 1 := hx
+  rw [LinearMap.mulLeft_apply] at hx
   omega
 
 /-! ### Exact functors -/
