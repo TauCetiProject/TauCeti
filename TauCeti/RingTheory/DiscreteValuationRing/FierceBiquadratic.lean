@@ -55,6 +55,8 @@ reduction, and is a discrete valuation ring by
 * `TauCeti.FierceBiquadratic.RingY t s`: the ring `A[y] = A[Y] ⧸ (Y ^ 2 + t Y - s)`.
 * `TauCeti.FierceBiquadratic.RingYZ t s u`: the ring `B = A[y][Z] ⧸ (Z ^ 2 + t Z - u)`.
 * `TauCeti.FierceBiquadratic.y`, `TauCeti.FierceBiquadratic.z`: its generators.
+* `TauCeti.FierceBiquadratic.lift`: the `A`-algebra homomorphism out of `B` determined by roots
+  of the two defining quadratics.
 * `TauCeti.FierceBiquadratic.translateEquiv`: the translation automorphism `y ↦ y + a`,
   `z ↦ z + b` of `B`, for `a (a + t) = 0` and `b (b + t) = 0`.
 
@@ -173,6 +175,27 @@ theorem algHom_ext {C : Type*} [Semiring C] [Algebra A C] {f g : RingYZ t s u �
     (hy : f (y t s u) = g (y t s u)) (hz : f (z t s u) = g (z t s u)) : f = g :=
   AlgHom.ext_of_adjoin_eq_top (adjoin_y_z t s u) (by rintro _ (rfl | rfl) <;> assumption)
 
+/-- The `A`-algebra homomorphism `B → C` with `y ↦ y'` and `z ↦ z'`, for a root `y'` of
+`Y ^ 2 + t Y - s` and a root `z'` of `Z ^ 2 + t Z - u` in a commutative `A`-algebra `C`. It is
+unique by `algHom_ext`. -/
+noncomputable def lift {C : Type*} [CommRing C] [Algebra A C] (y' z' : C)
+    (hy : y' ^ 2 + algebraMap A C t * y' = algebraMap A C s)
+    (hz : z' ^ 2 + algebraMap A C t * z' = algebraMap A C u) : RingYZ t s u →ₐ[A] C :=
+  AdjoinRoot.liftAlgHom _
+    (AdjoinRoot.liftAlgHom (quadratic t s) (Algebra.ofId A C) y' (by simpa [sub_eq_zero] using hy))
+    z' (by simpa [sub_eq_zero] using hz)
+
+@[simp]
+theorem lift_y {C : Type*} [CommRing C] [Algebra A C] (y' z' : C) (hy hz) :
+    lift t s u y' z' hy hz (y t s u) = y' := by
+  -- `y` is the image of the root of `A[y]`, and `algebraMap A[y] B` is `AdjoinRoot.of` by `rfl`.
+  exact (AdjoinRoot.liftAlgHom_of _ _ _ _ _).trans (AdjoinRoot.liftAlgHom_root _ _ _ _)
+
+@[simp]
+theorem lift_z {C : Type*} [CommRing C] [Algebra A C] (y' z' : C) (hy hz) :
+    lift t s u y' z' hy hz (z t s u) = z' :=
+  AdjoinRoot.liftAlgHom_root _ _ _ _
+
 /-- `B` is free of rank `4` over `A`. -/
 theorem finrank_ringYZ [Nontrivial A] : Module.finrank A (RingYZ t s u) = 4 := by
   have : Nontrivial (RingY t s) := (AdjoinRoot.nontrivial_iff_of_monic (monic_quadratic t s)).mpr
@@ -223,35 +246,30 @@ theorem exists_sq_sub_algebraMap_mem_span (x : RingYZ t s u) :
     Algebra.adjoin_le (Set.insert_subset_iff.mpr ⟨hy, Set.singleton_subset_iff.mpr hz⟩)
   exact this ((adjoin_y_z t s u).symm ▸ Algebra.mem_top)
 
-/-- The `A`-algebra homomorphism `A[y] → B` with `y ↦ y + a`, when `a (a + t) = 0`. -/
-private noncomputable def translateY (a : A) (ha : a * (a + t) = 0) :
-    RingY t s →ₐ[A] RingYZ t s u :=
-  AdjoinRoot.liftAlgHom (quadratic t s) (Algebra.ofId A _) (y t s u + algebraMap A _ a) (by
-    have ha' : algebraMap A (RingYZ t s u) a * (algebraMap A _ a + algebraMap A _ t) = 0 := by
-      rw [← map_add, ← map_mul, ha, map_zero]
-    simp only [eval₂_quadratic, RingHom.coe_coe, Algebra.ofId_apply]
-    linear_combination y_sq_add_mul_y t s u + ha' +
-      TauCeti.add_self_eq_zero_of_charTwo A (y t s u * algebraMap A _ a))
+/-- In characteristic two, if `x` is a root of `X ^ 2 + t X - r` and `a (a + t) = 0`, then
+`x + a` is again a root. -/
+private theorem add_algebraMap_sq_add_mul {x : RingYZ t s u} {r a : A}
+    (hx : x ^ 2 + algebraMap A _ t * x = algebraMap A _ r) (ha : a * (a + t) = 0) :
+    (x + algebraMap A _ a) ^ 2 + algebraMap A _ t * (x + algebraMap A _ a) = algebraMap A _ r := by
+  have ha' : algebraMap A (RingYZ t s u) a * (algebraMap A _ a + algebraMap A _ t) = 0 := by
+    rw [← map_add, ← map_mul, ha, map_zero]
+  linear_combination hx + ha' + TauCeti.add_self_eq_zero_of_charTwo A (x * algebraMap A _ a)
 
 /-- In characteristic two, `y ↦ y + a`, `z ↦ z + b` defines an `A`-algebra endomorphism of `B`
 when `a (a + t) = 0` and `b (b + t) = 0`, that is when `y + a` and `z + b` are again roots. -/
 private noncomputable def translate (a b : A) (ha : a * (a + t) = 0) (hb : b * (b + t) = 0) :
     RingYZ t s u →ₐ[A] RingYZ t s u :=
-  AdjoinRoot.liftAlgHom _ (translateY t s u a ha) (z t s u + algebraMap A _ b) (by
-    have hb' : algebraMap A (RingYZ t s u) b * (algebraMap A _ b + algebraMap A _ t) = 0 := by
-      rw [← map_add, ← map_mul, hb, map_zero]
-    simp only [eval₂_quadratic, RingHom.coe_coe, AlgHom.commutes]
-    linear_combination z_sq_add_mul_z t s u + hb' +
-      TauCeti.add_self_eq_zero_of_charTwo A (z t s u * algebraMap A _ b))
+  lift t s u (y t s u + algebraMap A _ a) (z t s u + algebraMap A _ b)
+    (add_algebraMap_sq_add_mul t s u (y_sq_add_mul_y t s u) ha)
+    (add_algebraMap_sq_add_mul t s u (z_sq_add_mul_z t s u) hb)
 
 private theorem translate_y (a b : A) (ha hb) :
-    translate t s u a b ha hb (y t s u) = y t s u + algebraMap A _ a := by
-  -- `y` is the image of the root of `A[y]`, and `algebraMap A[y] B` is `AdjoinRoot.of` by `rfl`.
-  exact (AdjoinRoot.liftAlgHom_of _ _ _ _ _).trans (AdjoinRoot.liftAlgHom_root _ _ _ _)
+    translate t s u a b ha hb (y t s u) = y t s u + algebraMap A _ a :=
+  lift_y ..
 
 private theorem translate_z (a b : A) (ha hb) :
     translate t s u a b ha hb (z t s u) = z t s u + algebraMap A _ b :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
+  lift_z ..
 
 /-- The `A`-algebra automorphism `y ↦ y + a`, `z ↦ z + b` of `B`, when `a (a + t) = 0` and
 `b (b + t) = 0`. In characteristic two it is an involution. Taking `a, b ∈ {0, t}` gives the four
