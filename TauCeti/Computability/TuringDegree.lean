@@ -183,7 +183,7 @@ variable {f g h : ℕ →. ℕ}
 run the reduction of `f` or of `g` at `n.div2` according to the parity of `n`. -/
 theorem turingJoin_turingReducible (hf : f ≤ᵀ h) (hg : g ≤ᵀ h) : f.turingJoin g ≤ᵀ h := by
   have hd := Primrec.nat_iff.1 Primrec.nat_div2
-  exact RecursiveIn.iff_nat.2 <| Nat.RecursiveIn.cond Computable.nat_bodd
+  exact RecursiveIn.iff_nat.2 <| Nat.RecursiveIn.cond Computable.nat_bodd.computableIn
     (((RecursiveIn.iff_nat.1 hg).comp_primrec hd).map_primrec
       (Primrec.nat_iff.1 Primrec.nat_double_succ))
     (((RecursiveIn.iff_nat.1 hf).comp_primrec hd).map_primrec
