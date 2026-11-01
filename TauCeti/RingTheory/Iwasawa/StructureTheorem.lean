@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import TauCeti.Algebra.Module.Torsion.Localization
 import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
+import TauCeti.RingTheory.Ideal.Quotient.Pi
 import TauCeti.RingTheory.Iwasawa.ReflexiveHull
 import TauCeti.RingTheory.Iwasawa.TorsionSplitting
 import TauCeti.RingTheory.Localization.Module
@@ -100,33 +101,6 @@ theorem exists_bijective_localizedModule_map_pi_quotient_pow [IsDomain A] [IsNoe
   exact ⟨ι, inferInstance, e, h,
     (IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective _ _).mp hh⟩
 
-/-- A prime in the support of `∏ᵢ A ⧸ 𝔭 ^ nᵢ` contains `𝔭`. -/
-private theorem le_of_mem_support_pi_quotient_pow {ι : Type*} [Finite ι] {𝔭 : Ideal A}
-    {n : ι → ℕ} {𝔮 : PrimeSpectrum A} (h : 𝔮 ∈ Module.support A (∀ i, A ⧸ 𝔭 ^ n i)) :
-    𝔭 ≤ 𝔮.asIdeal := by
-  have := Fintype.ofFinite ι
-  rw [Module.mem_support_iff_of_finite, Module.annihilator_pi, ← Finset.inf_univ_eq_iInf,
-    𝔮.isPrime.inf_le'] at h
-  obtain ⟨i, -, hi⟩ := h
-  rw [Ideal.annihilator_quotient] at hi
-  exact Ideal.IsPrime.le_of_pow_le hi
-
-/-- Dropping the factors with exponent zero from `∏ᵢ A ⧸ Iᵢ ^ nᵢ` is bijective, as those factors
-are `A ⧸ A = 0`. -/
-private theorem bijective_pi_restrict_quotient_pow {ι : Type*} (I : ι → Ideal A) (n : ι → ℕ) :
-    Function.Bijective (LinearMap.pi fun y : {i // n i ≠ 0} ↦ LinearMap.proj y.1 :
-      (∀ i, A ⧸ I i ^ n i) →ₗ[A] ∀ y : {i // n i ≠ 0}, A ⧸ I y ^ n y) := by
-  classical
-  refine ⟨fun x x' hxx' ↦ funext fun i ↦ ?_, fun y ↦ ?_⟩
-  · by_cases hi : n i = 0
-    · have : Subsingleton (A ⧸ I i ^ n i) := by
-        rw [Ideal.Quotient.subsingleton_iff]
-        simp [hi]
-      exact Subsingleton.elim _ _
-    · exact congr_fun hxx' ⟨i, hi⟩
-  · refine ⟨fun i ↦ if hi : n i = 0 then 0 else y ⟨i, hi⟩, funext fun i ↦ ?_⟩
-    simp only [LinearMap.pi_apply, LinearMap.proj_apply, i.2, ↓reduceDIte]
-
 /-- **The structure theorem for torsion modules.** Over a noetherian integrally closed domain `A`, a
 finitely generated torsion module `M` admits a pseudo-isomorphism `M → ∏ᵢ A ⧸ 𝔭ᵢ ^ nᵢ` onto a
 finite product, with each `𝔭ᵢ` a prime of height one and each `nᵢ` positive.
@@ -151,8 +125,8 @@ theorem exists_isPseudoIsomorphism_pi_quotient_pow [IsDomain A] [IsNoetherianRin
   have hsupp (𝔭 : P) (𝔮 : PrimeSpectrum A) (h𝔮 : 𝔮.asIdeal.height ≤ 1)
       (hmem : 𝔮 ∈ Module.support A (E 𝔭)) : 𝔭.1 = 𝔮 := by
     have : 𝔭.1.asIdeal.FiniteHeight := ⟨.inr (by simp [hP 𝔭])⟩
-    exact PrimeSpectrum.ext (Ideal.eq_of_le_of_height_le _ (le_of_mem_support_pi_quotient_pow hmem)
-      (h𝔮.trans (hP 𝔭).ge))
+    exact PrimeSpectrum.ext (Ideal.eq_of_le_of_height_le _
+      (Module.le_of_mem_support_pi_quotient_pow hmem) (h𝔮.trans (hP 𝔭).ge))
   -- The sum of the local maps is a pseudo-isomorphism `∏_𝔭 E 𝔭 → M`.
   let H : (∀ 𝔭, E 𝔭) →ₗ[A] M := ∑ 𝔭, h 𝔭 ∘ₗ LinearMap.proj 𝔭
   have hH : IsPseudoIsomorphism H := by
@@ -189,7 +163,7 @@ theorem exists_isPseudoIsomorphism_pi_quotient_pow [IsDomain A] [IsNoetherianRin
   exact ⟨κ, inferInstance, fun y ↦ y.1.1.1, fun y ↦ n y.1.1 y.1.2, fun y ↦ ⟨hP y.1.1, y.2⟩,
     (LinearMap.pi fun y : κ ↦ LinearMap.proj y.1) ∘ₗ
       (LinearEquiv.piCurry A fun 𝔭 i ↦ A ⧸ 𝔭.1.asIdeal ^ n 𝔭 i).symm.toLinearMap ∘ₗ f,
-    (IsPseudoIsomorphism.of_bijective (bijective_pi_restrict_quotient_pow _ _)).comp
+    (IsPseudoIsomorphism.of_bijective (TauCeti.Ideal.Quotient.bijective_pi_restrict_pow _ _)).comp
       ((IsPseudoIsomorphism.of_bijective (LinearEquiv.bijective _)).comp hf)⟩
 
 /-- **The structure theorem over a regular local ring of dimension at most two.** Let `A` be a
