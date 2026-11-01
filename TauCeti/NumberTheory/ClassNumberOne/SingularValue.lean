@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.ExponentialBounds
 public import Mathlib.Analysis.Real.Pi.Bounds
+public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Bounds
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.JInvariant
 
 /-!
@@ -23,7 +24,8 @@ The argument is a rigorous enclosure of the `q`-expansion of `j` at `i∞`, with
 Write `q = e^{2π i τ}` and `A = |q| = e^{-2π Im τ}`. The twelfth power of the Siegel function
 `g₀ = g_{(0, 1/2)}` is `x = 4096 q ∏_{n ≥ 1} (1 + qⁿ)²⁴`
 (`siegelFunction_zero_half_pow_twelve`), and the product is within `A / (1 - 2A)` of `1`, so
-`|x| = 4096 A (1 + O(A))`. Weber's cubic `(x + 16)³ = j x`
+`|x| = 4096 A (1 + O(A))` (`norm_siegelFunction_zero_half_pow_twelve_le`,
+`le_norm_siegelFunction_zero_half_pow_twelve`). Weber's cubic `(x + 16)³ = j x`
 (`siegelFunction_zero_half_pow_twelve_add_sixteen_pow_three`) and `j = v³` give
 `|x + 16|³ = |v|³ |x|`. For `Im τ = √n / 2` with `n ≥ 3` this pins down `A = e^{-π √n}` to within
 a few percent:
@@ -59,51 +61,7 @@ open scoped Real
 
 namespace TauCeti.ModularForm
 
-/-! ### The twelfth power of `g₀` near `i∞` -/
-
-/-- Near `i∞` the product `∏_{n ≥ 1} (1 + qⁿ)` is within `α / (1 - 2α)` of `1` when
-`|q| ≤ α < 1/2`. -/
-private theorem norm_tprod_one_add_pow_sub_one_le_of_le {q : ℂ} {α : ℝ} (hα : 2 * α < 1)
-    (hq : ‖q‖ ≤ α) : ‖∏' n : ℕ, (1 + q ^ (n + 1)) - 1‖ ≤ α / (1 - 2 * α) :=
-  (TauCeti.norm_tprod_one_add_pow_sub_one_le (by linarith)).trans
-    (by gcongr; linarith [norm_nonneg q])
-
-/-- With `A = |q|`, `|g₀(τ)¹²| = 4096 A |∏_{n ≥ 1} (1 + qⁿ)|²⁴`. -/
-private theorem norm_siegelFunction_zero_half_pow_twelve (τ : ℍ) :
-    ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ = 4096 * ‖cexp (2 * π * I * τ)‖ *
-      ‖∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))‖ ^ 24 := by
-  rw [siegelFunction_zero_half_pow_twelve τ.im_pos, norm_mul, norm_mul, norm_pow]
-  norm_num
-
-/-- An upper bound for `|g₀(τ)¹²|` when `|q| ≤ α < 1/2`. -/
-private theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℍ} {α U : ℝ} (hα : 2 * α < 1)
-    (hq : ‖cexp (2 * π * I * τ)‖ ≤ α) (hU : (1 + α / (1 - 2 * α)) ^ 24 ≤ U) :
-    ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * ‖cexp (2 * π * I * τ)‖ * U := by
-  have h := norm_tprod_one_add_pow_sub_one_le_of_le hα hq
-  have hR : ‖∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))‖ ≤ 1 + α / (1 - 2 * α) := by
-    have := norm_le_norm_add_norm_sub' (∏' n : ℕ, (1 + cexp (2 * π * I * (τ : ℂ)) ^ (n + 1))) 1
-    rw [norm_one] at this
-    linarith
-  rw [norm_siegelFunction_zero_half_pow_twelve]
-  gcongr
-  exact (pow_le_pow_left₀ (norm_nonneg _) hR 24).trans hU
-
-/-- A lower bound for `|g₀(τ)¹²|` when `|q| ≤ α < 1/3`. -/
-private theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℍ} {α L : ℝ} (hα : 3 * α < 1)
-    (hq : ‖cexp (2 * π * I * τ)‖ ≤ α) (hL : L ≤ (1 - α / (1 - 2 * α)) ^ 24) :
-    4096 * ‖cexp (2 * π * I * τ)‖ * L ≤ ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ := by
-  have hα₀ : 0 ≤ α := (norm_nonneg _).trans hq
-  have h := norm_tprod_one_add_pow_sub_one_le_of_le (by linarith) hq
-  have hε : 0 ≤ 1 - α / (1 - 2 * α) := by
-    rw [sub_nonneg, div_le_one (by linarith)]
-    linarith
-  have hR : 1 - α / (1 - 2 * α) ≤ ‖∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))‖ := by
-    have := norm_sub_norm_le (1 : ℂ) (∏' n : ℕ, (1 + cexp (2 * π * I * (τ : ℂ)) ^ (n + 1)))
-    rw [norm_one, norm_sub_rev] at this
-    linarith
-  rw [norm_siegelFunction_zero_half_pow_twelve]
-  gcongr
-  exact hL.trans (pow_le_pow_left₀ hε hR 24)
+/-! ### Weber's cubic in norms -/
 
 /-- If `j(τ) = v³`, then Weber's cubic gives `|g₀¹² + 16|³ = |v|³ |g₀¹²|`. -/
 private theorem norm_siegelFunction_zero_half_pow_twelve_add_sixteen_pow_three {τ : ℍ} {v : ℂ}
@@ -121,8 +79,14 @@ private theorem false_of_norm_le {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α α
     (hq : ‖cexp (2 * π * I * τ)‖ ≤ α) (hα' : 2 * α' < 1) (hq' : ‖cexp (2 * π * I * τ)‖ ≤ α')
     (hU : (1 + α' / (1 - 2 * α')) ^ 24 ≤ U) (hT : 4096 * α * U ≤ 16)
     (hcert : ‖v‖ ^ 3 * (4096 * α * U) < (16 - 4096 * α * U) ^ 3) : False := by
-  have hx := norm_siegelFunction_zero_half_pow_twelve_le hα' hq' hU
+  set A := ‖cexp (2 * π * I * τ)‖
+  have hA : 0 ≤ A := norm_nonneg _
   have hU₀ : 0 ≤ U := (by positivity : (0 : ℝ) ≤ (1 + α' / (1 - 2 * α')) ^ 24).trans hU
+  have hQ₀ : 0 ≤ A / (1 - 2 * A) := div_nonneg hA (by linarith)
+  have hQ := div_le_div₀ (hA.trans hq') hq' (by linarith) (by linarith : 1 - 2 * α' ≤ 1 - 2 * A)
+  have hP : (1 + A / (1 - 2 * A)) ^ 24 ≤ U := le_trans (by gcongr) hU
+  have hx : ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * A * U :=
+    (norm_siegelFunction_zero_half_pow_twelve_le τ.im_pos (by linarith)).trans (by gcongr)
   set t := ‖siegelFunction ![0, 1 / 2] τ ^ 12‖
   have ht : t ≤ 4096 * α * U := hx.trans (by gcongr)
   -- `16 - t ≤ |x + 16|`.
@@ -138,25 +102,6 @@ private theorem false_of_norm_le {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α α
   have h₃ : ‖v‖ ^ 3 * t ≤ ‖v‖ ^ 3 * (4096 * α * U) := by gcongr
   linarith
 
-/-- On `a ≤ t ≤ b` with `0 ≤ a`, the concave function `V t - (16 + t)³` is positive if it is
-positive at both ends. -/
-private theorem lt_mul_of_le_of_le {V a b t : ℝ} (ha₀ : 0 ≤ a) (ha : a ≤ t) (hb : t ≤ b)
-    (hVa : (16 + a) ^ 3 < V * a) (hVb : (16 + b) ^ 3 < V * b) : (16 + t) ^ 3 < V * t := by
-  rcases ha.eq_or_lt with rfl | ha'
-  · exact hVa
-  have key : (b - a) * (V * t - (16 + t) ^ 3) = (b - t) * (V * a - (16 + a) ^ 3) +
-      (t - a) * (V * b - (16 + b) ^ 3) + (t - a) * (b - t) * (b - a) * (48 + a + b + t) := by
-    ring
-  have h₁ : 0 ≤ (b - t) * (V * a - (16 + a) ^ 3) := mul_nonneg (by linarith) (by linarith)
-  have h₂ : 0 < (t - a) * (V * b - (16 + b) ^ 3) := mul_pos (by linarith) (by linarith)
-  have h₃ : 0 ≤ (t - a) * (b - t) * (b - a) * (48 + a + b + t) := by
-    have : 0 ≤ (t - a) * (b - t) * (b - a) := by
-      apply mul_nonneg (mul_nonneg _ _) <;> linarith
-    exact mul_nonneg this (by linarith)
-  have h₄ : 0 < (b - a) * (V * t - (16 + t) ^ 3) := by linarith
-  have := pos_of_mul_pos_right h₄ (by linarith)
-  linarith
-
 /-- If `j(τ) = v³` and `β ≤ |q| ≤ α`, where `|v|³ t > (16 + t)³` at both ends of the resulting
 interval `[4096 β L, 4096 α U]` for `|g₀¹²|`, there is no such `τ`. -/
 private theorem false_of_le_norm {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α β L U : ℝ}
@@ -164,13 +109,32 @@ private theorem false_of_le_norm {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α β
     (hβ₀ : 0 ≤ β) (hU : (1 + α / (1 - 2 * α)) ^ 24 ≤ U) (hL : L ≤ (1 - α / (1 - 2 * α)) ^ 24)
     (hL₀ : 0 ≤ L) (hcerta : (16 + 4096 * β * L) ^ 3 < ‖v‖ ^ 3 * (4096 * β * L))
     (hcertb : (16 + 4096 * α * U) ^ 3 < ‖v‖ ^ 3 * (4096 * α * U)) : False := by
+  set A := ‖cexp (2 * π * I * τ)‖
+  have hA : 0 ≤ A := norm_nonneg _
   have hU₀ : 0 ≤ U := (by positivity : (0 : ℝ) ≤ (1 + α / (1 - 2 * α)) ^ 24).trans hU
-  have hlo := le_norm_siegelFunction_zero_half_pow_twelve hα hq hL
-  have hhi := norm_siegelFunction_zero_half_pow_twelve_le (by linarith) hq hU
+  have hε : 0 ≤ 1 - α / (1 - 2 * α) := by
+    rw [sub_nonneg, div_le_one (by linarith)]
+    linarith
+  have hα₀ : 0 ≤ α := hA.trans hq
+  have hQ₀ : 0 ≤ A / (1 - 2 * A) := div_nonneg hA (by linarith)
+  have hQ := div_le_div₀ hα₀ hq (by linarith) (by linarith : 1 - 2 * α ≤ 1 - 2 * A)
+  have hP : (1 + A / (1 - 2 * A)) ^ 24 ≤ U := le_trans (by gcongr) hU
+  have hP' : L ≤ (1 - A / (1 - 2 * A)) ^ 24 := hL.trans (by gcongr)
+  have hlo := le_norm_siegelFunction_zero_half_pow_twelve τ.im_pos (by linarith)
+  have hhi := norm_siegelFunction_zero_half_pow_twelve_le τ.im_pos (by linarith)
   set t := ‖siegelFunction ![0, 1 / 2] τ ^ 12‖
   have ha : 4096 * β * L ≤ t := le_trans (by gcongr) hlo
   have hb : t ≤ 4096 * α * U := hhi.trans (by gcongr)
-  have hlt := lt_mul_of_le_of_le (by positivity) ha hb hcerta hcertb
+  -- The convex function `(16 + t)³ - |v|³ t` is negative at both ends of `[4096 β L, 4096 α U]`.
+  have hf : ConvexOn ℝ (Set.Ici 0) fun t : ℝ ↦ (16 + t) ^ 3 - ‖v‖ ^ 3 * t :=
+    (((convexOn_pow 3).translate_right 16).subset
+      (fun t (ht : t ∈ Set.Ici 0) ↦ show (0 : ℝ) ≤ 16 + t by linarith [Set.mem_Ici.1 ht])
+      (convex_Ici 0)).sub ((LinearMap.mul ℝ ℝ (‖v‖ ^ 3)).concaveOn (convex_Ici 0))
+  have hmax := hf.le_max_of_mem_Icc (by positivity : (0 : ℝ) ≤ 4096 * β * L)
+    (by positivity : (0 : ℝ) ≤ 4096 * α * U) ⟨ha, hb⟩
+  have hlt : (16 + t) ^ 3 < ‖v‖ ^ 3 * t := by
+    rw [le_max_iff] at hmax
+    rcases hmax with h | h <;> linarith
   -- `|x + 16| ≤ 16 + t`.
   have hup : ‖siegelFunction ![0, 1 / 2] τ ^ 12 + 16‖ ≤ 16 + t := by
     refine (norm_add_le _ _).trans ?_
@@ -233,12 +197,6 @@ private theorem norm_exp_two_pi_I_eq {τ : ℍ} {n : ℕ} (hτ : τ.im = √n / 
   rw [TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul, UpperHalfPlane.coe_im, hτ]
   ring_nf
 
-/-- `|q| ≤ e^{-π √m}` when `Im τ = √n / 2` and `m ≤ n`. -/
-private theorem norm_exp_two_pi_I_le {τ : ℍ} {n m : ℕ} (hτ : τ.im = √n / 2) (h : m ≤ n) :
-    ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(π * √m)) := by
-  rw [norm_exp_two_pi_I_eq hτ, Real.exp_le_exp, neg_le_neg_iff]
-  gcongr
-
 /-- `e^{-π √m} ≤ |q|` when `Im τ = √n / 2` and `n ≤ m`. -/
 private theorem le_norm_exp_two_pi_I {τ : ℍ} {n m : ℕ} (hτ : τ.im = √n / 2) (h : n ≤ m) :
     Real.exp (-(π * √m)) ≤ ‖cexp (2 * π * I * τ)‖ := by
@@ -248,7 +206,9 @@ private theorem le_norm_exp_two_pi_I {τ : ℍ} {n m : ℕ} (hτ : τ.im = √n 
 /-- For `Im τ ≥ √3 / 2`, `|q| ≤ 0.00434`. -/
 private theorem norm_exp_two_pi_I_le_of_three_le {τ : ℍ} {n : ℕ} (hτ : τ.im = √n / 2)
     (hn : 3 ≤ n) : ‖cexp (2 * π * I * τ)‖ ≤ 0.00434 :=
-  (norm_exp_two_pi_I_le hτ hn).trans <| exp_neg_pi_mul_sqrt_le (s := 1.73205) (c := 0.4413) 5
+  ((UpperHalfPlane.norm_exp_two_pi_I_mul_le (t := √3 / 2)
+      (by rw [UpperHalfPlane.coe_im, hτ]; gcongr; exact_mod_cast hn)).trans_eq
+    (by ring_nf)).trans <| exp_neg_pi_mul_sqrt_le (s := 1.73205) (c := 0.4413) 5
     (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (by norm_num [Finset.sum_range_succ, Nat.factorial])
 
@@ -258,7 +218,9 @@ private theorem le_of_j_eq_pow_three {τ : ℍ} {n m m' : ℕ} {v : ℂ} (hτ : 
     (hα₀ : α ≤ 0.002)
     (hcert : ‖v‖ ^ 3 * (4096 * α * 1.05) < (16 - 4096 * α * 1.05) ^ 3) : n ≤ m := by
   by_contra! h
-  have hq := (norm_exp_two_pi_I_le hτ (by omega : m' ≤ n)).trans hα
+  have hq := ((UpperHalfPlane.norm_exp_two_pi_I_mul_le (t := √m' / 2)
+      (by rw [UpperHalfPlane.coe_im, hτ]; gcongr; exact_mod_cast (by omega : m' ≤ n))).trans_eq
+    (by ring_nf)).trans hα
   exact false_of_norm_le hj hq (α' := 0.002) (by norm_num) (hq.trans hα₀) (by norm_num)
     (by linarith) hcert
 
