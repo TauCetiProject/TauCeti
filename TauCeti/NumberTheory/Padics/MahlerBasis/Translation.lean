@@ -48,7 +48,7 @@ theorem hasSum_mahlerEquiv_comp_add (f : C(ℤ_[p], E)) (z : ℤ_[p]) (n : ℕ) 
   have hcoeff (k : ℕ) :
       (fwdDiff 1)^[k] ((TauCeti.fwdDiffCLM E)^[n] f) 0 =
         mahlerEquiv E f (n + k) :=
-    TauCeti.mahlerEquiv_iterate_fwdDiffCLM E f n k
+    f.mahlerEquiv_iterate_fwdDiffCLM n k
   have h := (ContinuousMap.evalCLM ℤ_[p] z).hasSum
     (hasSum_mahler ((TauCeti.fwdDiffCLM E)^[n] f))
   have hval :
@@ -59,7 +59,7 @@ theorem hasSum_mahlerEquiv_comp_add (f : C(ℤ_[p], E)) (z : ℤ_[p]) (n : ℕ) 
   rw [hval]
   simp only [ContinuousMap.evalCLM_apply, mahlerTerm_apply] at h
   simp_rw [hcoeff] at h
-  simpa only [TauCeti.coe_iterate_fwdDiffCLM] using h
+  simpa only [ContinuousMap.coe_iterate_fwdDiffCLM] using h
 
 /-- Translation by `z` acts on Mahler coefficients by a binomial-weighted tail sum. -/
 theorem mahlerEquiv_comp_add (f : C(ℤ_[p], E)) (z : ℤ_[p]) (n : ℕ) :
