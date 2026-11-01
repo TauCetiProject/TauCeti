@@ -58,10 +58,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   a group isomorphism induces an equivalence of orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
   uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`).
-* `TauCeti.MulAction.orbitRelQuotientDLift`: a dependent map `s x : V (Quotient.mk _ x)` whose
-  values at `g • x` and `x` agree descends to the orbit space, uniquely
-  (`TauCeti.MulAction.eq_orbitRelQuotientDLift_iff`), and every dependent map on the orbit space
-  is the descent of its pullback (`TauCeti.MulAction.orbitRelQuotientDLift_apply_mk`).
+* `TauCeti.MulAction.orbitRelQuotientRec`: a `G`-invariant section of the pullback of a family
+  `V` over the orbit space descends to a section of `V`, uniquely
+  (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
+  pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
 * `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
   functorially, and descent is natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
@@ -814,55 +814,54 @@ theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
 
 end Lift
 
-section DLift
+section Rec
 
 variable {V : MulAction.orbitRel.Quotient G X → Sort*}
 
-/-- **Descent of an invariant dependent map to the orbit space.** A family
-`s x : V (Quotient.mk _ x)` over the orbit projection whose values at `g • x` and at `x` agree,
-for all `g : G` and `x : X`, descends to a dependent map on the orbit space. The orbits of `g • x`
-and `x` are equal but not definitionally so, hence the values are compared by heterogeneous
-equality. This extends `TauCeti.MulAction.orbitRelQuotientLift` to dependent families. -/
-def MulAction.orbitRelQuotientDLift (s : ∀ x, V (Quotient.mk (MulAction.orbitRel G X) x))
-    (hs : ∀ (g : G) (x : X), s (g • x) ≍ s x) : ∀ q, V q :=
-  fun q ↦ Quotient.hrecOn q s <| by
+/-- **Descent of an invariant section to the orbit space.** Let `t` assign to each `x : X` an
+element of the fibre `V` over the orbit of `x`, that is, let `t` be a section of the pullback of
+`V` along the orbit projection. If `t` is invariant under `G`, in the sense that `t (g • x)` and
+`t x` agree as elements of the fibres over the equal orbits of `g • x` and `x` (a heterogeneous
+equality), then `t` descends to a section of `V` over the orbit space. -/
+def MulAction.orbitRelQuotientRec (t : ∀ x : X, V (Quotient.mk (MulAction.orbitRel G X) x))
+    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (q : MulAction.orbitRel.Quotient G X) : V q :=
+  Quotient.hrecOn q t <| by
     rintro _ x ⟨g, rfl⟩
-    exact hs g x
+    exact ht g x
 
-variable {s : ∀ x, V (Quotient.mk (MulAction.orbitRel G X) x)}
-  {hs : ∀ (g : G) (x : X), s (g • x) ≍ s x}
+variable {t : ∀ x : X, V (Quotient.mk (MulAction.orbitRel G X) x)}
+  {ht : ∀ (g : G) (x : X), t (g • x) ≍ t x}
 
-/-- The dependent descent of `s` sends the orbit of `x` to `s x`. -/
+/-- The descent of `t` takes the value `t x` at the orbit of `x`. -/
 @[simp]
-theorem MulAction.orbitRelQuotientDLift_mk (x : X) :
-    MulAction.orbitRelQuotientDLift s hs (Quotient.mk (MulAction.orbitRel G X) x) = s x :=
+theorem MulAction.orbitRelQuotientRec_mk (x : X) :
+    MulAction.orbitRelQuotientRec t ht (Quotient.mk (MulAction.orbitRel G X) x) = t x :=
   (rfl)
 
-/-- **Uniqueness of the dependent descent**: a dependent map on the orbit space is the descent of
-`s` exactly when it sends the orbit of every `x` to `s x`. -/
-theorem MulAction.eq_orbitRelQuotientDLift_iff {φ : ∀ q, V q} :
-    φ = MulAction.orbitRelQuotientDLift s hs ↔
-      ∀ x, φ (Quotient.mk (MulAction.orbitRel G X) x) = s x := by
-  refine ⟨fun h x ↦ h ▸ MulAction.orbitRelQuotientDLift_mk x, fun h ↦ funext fun q ↦ ?_⟩
+/-- **Uniqueness of the descent of a section**: a section over the orbit space is the descent of
+`t` exactly when its value at the orbit of every `x` is `t x`. -/
+theorem MulAction.eq_orbitRelQuotientRec_iff {s : ∀ q : MulAction.orbitRel.Quotient G X, V q} :
+    s = MulAction.orbitRelQuotientRec t ht ↔
+      ∀ x, s (Quotient.mk (MulAction.orbitRel G X) x) = t x := by
+  refine ⟨fun h x ↦ h ▸ MulAction.orbitRelQuotientRec_mk x, fun h ↦ funext fun q ↦ ?_⟩
   induction q using Quotient.inductionOn with
   | h x => exact h x
 
-/-- A dependent map on the orbit space, pulled back along the orbit projection, takes the same
-value at `g • x` and at `x`. -/
-theorem MulAction.apply_mk_smul_heq (φ : ∀ q, V q) (g : G) (x : X) :
-    φ (Quotient.mk (MulAction.orbitRel G X) (g • x)) ≍
-      φ (Quotient.mk (MulAction.orbitRel G X) x) :=
-  congr_arg_heq φ (Quotient.sound ⟨g, rfl⟩)
+/-- The pullback of a section `s` over the orbit space along the orbit projection is invariant
+under `G`. -/
+theorem MulAction.apply_mk_smul_heq (s : ∀ q : MulAction.orbitRel.Quotient G X, V q) (g : G)
+    (x : X) :
+    s (Quotient.mk (MulAction.orbitRel G X) (g • x)) ≍ s (Quotient.mk (MulAction.orbitRel G X) x) :=
+  congr_arg_heq s (Quotient.sound ⟨g, rfl⟩)
 
-/-- Every dependent map on the orbit space is the descent of its pullback along the orbit
-projection. -/
+/-- A section over the orbit space is the descent of its pullback along the orbit projection. -/
 @[simp]
-theorem MulAction.orbitRelQuotientDLift_apply_mk (φ : ∀ q, V q) :
-    MulAction.orbitRelQuotientDLift (fun x ↦ φ (Quotient.mk (MulAction.orbitRel G X) x))
-      (MulAction.apply_mk_smul_heq φ) = φ :=
-  (MulAction.eq_orbitRelQuotientDLift_iff.2 fun _ ↦ rfl).symm
+theorem MulAction.orbitRelQuotientRec_apply_mk (s : ∀ q : MulAction.orbitRel.Quotient G X, V q) :
+    MulAction.orbitRelQuotientRec (fun x ↦ s (Quotient.mk (MulAction.orbitRel G X) x))
+      (MulAction.apply_mk_smul_heq s) = s :=
+  (MulAction.eq_orbitRelQuotientRec_iff.2 fun _ ↦ rfl).symm
 
-end DLift
+end Rec
 
 end TauCeti
 
