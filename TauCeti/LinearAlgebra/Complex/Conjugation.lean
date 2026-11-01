@@ -433,12 +433,14 @@ theorem I_smul_one_tmul_add_I_tmul (v w : W) :
   simp
 
 /-- The real part of `c • u` is `re c • realPart W u - im c • imaginaryPart W u`. -/
+@[simp]
 theorem realPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
     realPart W (c • u) = c.re • realPart W u - c.im • imaginaryPart W u := by
   obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
   simp [TensorProduct.smul_tmul', sub_eq_add_neg]
 
 /-- The imaginary part of `c • u` is `re c • imaginaryPart W u + im c • realPart W u`. -/
+@[simp]
 theorem imaginaryPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
     imaginaryPart W (c • u) = c.re • imaginaryPart W u + c.im • realPart W u := by
   obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u

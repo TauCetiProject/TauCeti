@@ -212,11 +212,11 @@ theorem complexMlieBracket_const_smul_left (c : ℂ)
   have hre : (fun y ↦ realPart (TangentSpace I y) ((c • Z) y)) =
       c.re • (fun y ↦ realPart (TangentSpace I y) (Z y)) +
         (-c.im) • fun y ↦ imaginaryPart (TangentSpace I y) (Z y) :=
-    funext fun y ↦ by simp [realPart_smul, sub_eq_add_neg]
+    funext fun y ↦ by simp [sub_eq_add_neg]
   have him : (fun y ↦ imaginaryPart (TangentSpace I y) ((c • Z) y)) =
       c.re • (fun y ↦ imaginaryPart (TangentSpace I y) (Z y)) +
         c.im • fun y ↦ realPart (TangentSpace I y) (Z y) :=
-    funext fun y ↦ by simp [imaginaryPart_smul]
+    funext fun y ↦ by simp
   simp only [complexMlieBracket, hre, him,
     mlieBracket_add_left hZre.smul_const_section hZim.smul_const_section,
     mlieBracket_add_left hZim.smul_const_section hZre.smul_const_section,
