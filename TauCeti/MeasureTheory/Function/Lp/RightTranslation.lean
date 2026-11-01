@@ -227,9 +227,7 @@ variable {μ p 𝕜}
 theorem rightTranslation_apply (g : G) (f : Lp E p μ) :
     rightTranslation μ p 𝕜 g f =
       modularInversion μ p 𝕜 (leftTranslation μ p 𝕜 g (modularInversion μ p 𝕜 f)) := by
-  rw [rightTranslation, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-    LinearIsometryEquiv.coe_mul, LinearIsometryEquiv.coe_mul, LinearIsometryEquiv.coe_inv,
-    modularInversion_symm, Function.comp_apply, Function.comp_apply]
+  simp [rightTranslation, MulAut.conj_apply]
 
 /-- The right translate `R_g f` is almost everywhere the function
 `x ↦ c(g⁻¹)^(1/p) • f (x * g)`. -/
