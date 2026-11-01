@@ -34,7 +34,7 @@ representatives `a = (a b; 0 d)` of `Γ \ ℳₙ`. The values at `a∞ = ∞` ar
 pair `(a, d)`, so they sum to `σ_{w+1}(|n|) P(1, 0)`
 (`TauCeti.TraceFormulaMatrixModule.boundaryEval_comp_upperTriangularSymbol`). The values at
 `a0 = (aS)∞` are the values at `∞` along the representatives `aS`. The functional
-`M ↦ P(v_{M∞}) ∣ adj M` is invariant under left multiplication by `SL(2, ℤ)`, and `Tₙ^∞ S` is the
+`M ↦ (P ∣ adj M)(v_{M∞})` is invariant under left multiplication by `SL(2, ℤ)`, and `Tₙ^∞ S` is the
 formal sum of another set of representatives of `Γ \ ℳₙ`, so these sum to
 `σ_{w+1}(|n|) (P ∣ S)(1, 0) = σ_{w+1}(|n|) P(0, 1)`. No count of the cusps `b/d` is needed.
 
@@ -129,9 +129,8 @@ private theorem infinityEval_smul (hn : n ≠ 0) (hw : Even w) (g : SL(2, ℤ))
     (A : TraceFormulaMatrix n) :
     infinityEval (R := R) (w := w) hn (g • A) = infinityEval hn A := by
   ext P
-  rw [infinityEval, infinityEval, LinearMap.comp_apply, LinearMap.comp_apply, toGL_smul, mul_smul,
-    FixedDetMatrices.smul_coe, map_mul, Module.End.mul_apply, binaryFormAdjugateRep_coe,
-    evalCusp_mapGL_smul hw]
+  simp only [infinityEval, LinearMap.comp_apply, toGL_smul, mul_smul, FixedDetMatrices.smul_coe,
+    map_mul, Module.End.mul_apply, binaryFormAdjugateRep_coe, evalCusp_mapGL_smul hw]
 
 /-- On an upper-triangular representative `(a b; 0 d)`, `infinityEval` is `P ↦ dʷ P(1, 0)`. -/
 private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix n)
@@ -146,9 +145,9 @@ private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix 
       ((A.1 1 1 : ℤ) : R) • ![1, 0] := by
     ext i
     fin_cases i <;> simp [Matrix.adjugate_fin_two, Matrix.mulVec, dotProduct, hc]
-  rw [infinityEval, LinearMap.comp_apply, hinf, evalCusp_infty, binaryFormAdjugateRep_apply,
-    coe_binaryFormRep_apply, eval_linearSubst, hv,
-    ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul, LinearMap.smul_apply, evalCusp_infty]
+  simp only [infinityEval, LinearMap.comp_apply, hinf, evalCusp_infty, binaryFormAdjugateRep_apply,
+    coe_binaryFormRep_apply, eval_linearSubst, hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul,
+    LinearMap.smul_apply]
 
 /-- The linear extension of `infinityEval` to `R[ℳₙ]`. -/
 private noncomputable def infinityEvalAction (hn : n ≠ 0) (hw : Even w) :
@@ -176,30 +175,12 @@ private theorem infinityEvalAction_eq_zero_of_mem (hn : n ≠ 0) (hw : Even w)
     (fun g ↦ LinearMap.ext (infinityEvalAction_ofMulAction hn hw g)) ζ,
     (Coinvariants.mk_eq_zero _).2 hζ, map_zero]
 
-/-- The sum of `dʷ` over the upper-triangular representatives `(a b; 0 d)` of `Γ \ ℳₙ` is
-`σ_{w+1}(|n|)`: each factor pair `(a, d)` of `|n|` carries `|d|` representatives. -/
-private theorem sum_reps_pow (hn : n ≠ 0) (hw : Even w) :
-    ∑ A : FixedDetMatrices.reps n, ((A.1.1 1 1 : ℤ) : R) ^ w =
-      (ArithmeticFunction.sigma (w + 1) n.natAbs : R) := by
-  have hsign : (n.sign : R) ^ w = 1 := by
-    rw [← Int.cast_pow, ← hw.pow_abs, Int.abs_sign_of_ne_zero hn, one_pow, Int.cast_one]
-  rw [← (FixedDetMatrices.repsEquiv hn).symm.sum_comp, Fintype.sum_sigma]
-  simp only [FixedDetMatrices.coe_repsEquiv_symm_apply, Matrix.of_apply, Matrix.cons_val',
-    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Int.cast_mul,
-    Int.cast_natCast, mul_pow, hsign, one_mul, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, nsmul_eq_mul]
-  rw [Finset.sum_coe_sort n.natAbs.divisorsAntidiagonal
-      (fun p ↦ ((p.2 : ℕ) : R) * ((p.2 : ℕ) : R) ^ w),
-    Nat.sum_divisorsAntidiagonal' (fun _ d ↦ ((d : ℕ) : R) * (d : R) ^ w),
-    ArithmeticFunction.sigma_apply]
-  push_cast
-  exact Finset.sum_congr rfl fun d _ ↦ by ring
-
 /-- `infinityEvalAction` sends `Tₙ^∞` to `σ_{w+1}(|n|)` times the value at `∞`. -/
 private theorem infinityEvalAction_upperTriangularSum (hn : n ≠ 0) (hw : Even w) :
     infinityEvalAction (w := w) hn hw (upperTriangularSum R n) =
       (ArithmeticFunction.sigma (w + 1) n.natAbs : R) • evalCusp R w ∞ := by
-  rw [upperTriangularSum_eq_sum_reps, map_sum, ← sum_reps_pow hn hw, Finset.sum_smul]
+  rw [upperTriangularSum_eq_sum_reps, map_sum, ← FixedDetMatrices.sum_reps_pow hn hw,
+    Finset.sum_smul]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
   rw [infinityEvalAction, linearLift_single, one_smul, infinityEval_of_mem_reps hn A.1 A.2]
 
@@ -211,9 +192,8 @@ private theorem evalCusp_toGL_smul_zero (hn : n ≠ 0) (A : TraceFormulaMatrix n
       infinityEval hn (traceFormulaMatrixRight S⁻¹ A) ∘ₗ
         binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) := by
   ext P
-  rw [infinityEval, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    toGL_traceFormulaMatrixRight, inv_inv, mul_smul, mapGL_S_smul_infty,
-    val_traceFormulaMatrixRight, inv_inv, map_mul, Module.End.mul_apply,
+  simp only [infinityEval, LinearMap.comp_apply, toGL_traceFormulaMatrixRight, inv_inv, mul_smul,
+    mapGL_S_smul_infty, val_traceFormulaMatrixRight, map_mul, Module.End.mul_apply,
     binaryFormAdjugateRep_coe, binaryFormSLRep_binaryFormRep]
 
 /-- The values at the cusps `a0` sum to `σ_{w+1}(|n|)` times the value at `0`. -/

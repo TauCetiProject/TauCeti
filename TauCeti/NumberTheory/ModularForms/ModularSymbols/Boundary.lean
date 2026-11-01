@@ -189,9 +189,9 @@ theorem evalCusp_mapGL_smul (hw : Even w) (g : SL(2, ℤ)) (α : OnePoint ℚ)
     have h2 := congrArg (Int.castRingHom R).mapMatrix h1
     rw [map_mul, map_one, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply] at h2
     exact h2
-  rw [smul_smul, ← map_mul, evalCusp_mapGL_smul_infty hw, evalCusp_mapGL_smul_infty hw,
-    binaryFormSLRep_apply, coe_binaryFormRep_apply, eval_linearSubst,
-    Matrix.SpecialLinearGroup.coe_mul, hcol, Matrix.mulVec_mulVec, hinv, Matrix.one_mulVec]
+  simp only [smul_smul, ← map_mul, evalCusp_mapGL_smul_infty hw, binaryFormSLRep_apply,
+    coe_binaryFormRep_apply, eval_linearSubst, Matrix.SpecialLinearGroup.coe_mul, hcol,
+    Matrix.mulVec_mulVec, hinv, Matrix.one_mulVec]
 
 /-! ### The functional on modular symbols -/
 
@@ -223,9 +223,8 @@ private theorem lift_divisorEval_comp_symbolRep (hw : Even w) (g : SL(2, ℤ)) :
     TensorProduct.lift (divisorEval R w ∘ₗ (degreeZero R).subtype) ∘ₗ symbolRep R w g =
       TensorProduct.lift (divisorEval R w ∘ₗ (degreeZero R).subtype) := by
   refine TensorProduct.ext' fun D P ↦ ?_
-  rw [LinearMap.comp_apply, symbolRep_tmul, TensorProduct.lift.tmul, TensorProduct.lift.tmul,
-    LinearMap.comp_apply, LinearMap.comp_apply, Submodule.coe_subtype, coe_degreeZeroRep_apply,
-    divisorEval_divisorRep hw]
+  simp only [LinearMap.comp_apply, symbolRep_tmul, TensorProduct.lift.tmul, Submodule.coe_subtype,
+    coe_degreeZeroRep_apply, divisorEval_divisorRep hw]
 
 variable (Γ : Subgroup SL(2, ℤ))
 
@@ -251,18 +250,14 @@ noncomputable def boundaryEval (hw : Even w) : ModularSymbols R Γ w →ₗ[R] R
 theorem boundaryEval_mk (hw : Even w) (D : degreeZero R) (P : homogeneousSubmodule (Fin 2) R w) :
     boundaryEval Γ hw (Coinvariants.mk _ (D ⊗ₜ[R] P)) =
       Finsupp.linearCombination R (fun α ↦ evalCusp R w α P) (MonoidAlgebra.coeff D.1) := by
-  rw [boundaryEval, Coinvariants.lift_mk, TensorProduct.lift.tmul, LinearMap.comp_apply,
-    Submodule.coe_subtype, divisorEval, LinearMap.comp_apply, Finsupp.linearCombination_apply,
-    Finsupp.linearCombination_apply]
-  simp [Finsupp.sum, LinearMap.sum_apply]
+  simp [boundaryEval, divisorEval, Finsupp.linearCombination_apply, Finsupp.sum,
+    LinearMap.sum_apply]
 
 /-- The functional `boundaryEval` sends `{α, β} ⊗ P` to `P(v_α) - P(v_β)`. -/
 theorem boundaryEval_symbol (hw : Even w) (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     boundaryEval Γ hw (symbol Γ α β P) = evalCusp R w α P - evalCusp R w β P := by
-  rw [symbol_apply, boundaryEval_mk, MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_single,
-    MonoidAlgebra.coeff_single, map_sub, Finsupp.linearCombination_single,
-    Finsupp.linearCombination_single, one_smul, one_smul]
+  simp [symbol_apply, Finsupp.linearCombination_single]
 
 /-- On the symbols `{α, β} ⊗ P`, as a linear map in `P`, the functional `boundaryEval` is
 `evalCusp α - evalCusp β`. -/
