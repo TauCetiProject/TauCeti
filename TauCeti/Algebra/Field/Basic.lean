@@ -16,7 +16,10 @@ These identities use the field's total inverse, so they hold also at zero and on
 ring, a nonzero `a` is separated from its inverse unless it is a square root of `1`:
 `a - a⁻¹` vanishes exactly when `a ^ 2 = 1` (`TauCeti.sub_inv_eq_zero_iff`). Two square roots
 `x`, `u` of `-1` in a division ring are conjugate by the unit `1 - u * x` unless `u = -x`, that is
-unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`).
+unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational functions
+`x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
+relations `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube` and
+`TauCeti.div_one_sub_sq_add_neg_div_one_sub_cube`.
 -/
 
 public section
@@ -69,6 +72,24 @@ theorem inv_sq_div_one_sub_inv_cube_eq_neg_sub (x : K) :
   by_cases h : x = 1
   · simp [h]
   · field_simp
+    ring
+
+/-- The rational functions `x / (1 - x)²` and `x² / (1 - x)³` add up to `x / (1 - x)³`, including
+at one. -/
+theorem div_one_sub_sq_add_sq_div_one_sub_cube (x : K) :
+    x / (1 - x) ^ 2 + x ^ 2 / (1 - x) ^ 3 = x / (1 - x) ^ 3 := by
+  by_cases h : x = 1
+  · simp [h]
+  · field_simp [sub_ne_zero.mpr (Ne.symm h)]
+    ring
+
+/-- The rational functions `x / (1 - x)²` and `-x / (1 - x)³` add up to `-(x² / (1 - x)³)`,
+including at one. -/
+theorem div_one_sub_sq_add_neg_div_one_sub_cube (x : K) :
+    x / (1 - x) ^ 2 + -x / (1 - x) ^ 3 = -(x ^ 2 / (1 - x) ^ 3) := by
+  by_cases h : x = 1
+  · simp [h]
+  · field_simp [sub_ne_zero.mpr (Ne.symm h)]
     ring
 
 end TauCeti
