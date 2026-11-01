@@ -8,6 +8,8 @@ module
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Energy
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
+import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Partition.Finpartition
@@ -17,8 +19,9 @@ import TauCeti.Order.Partition.Finpartition
 
 Let `S` be a pair-color system with a finite palette on a finite vertex type `V`, and let
 `P₀` be a partition of the vertices. For `ε > 0`, `P₀` has a refinement `P` with a number of
-parts bounded independently of `S` and of `|V|` such that the ordered pairs `(A, B)` of distinct
-parts of `P` that are not `ε`-regular for `S` cover at most `ε |V|²` ordered pairs of vertices
+parts bounded independently of `S` and of `|V|`, all of its parts having at most `ε |V| + 1`
+vertices, such that the ordered pairs `(A, B)` of distinct parts of `P` that are not `ε`-regular
+for `S` cover at most `ε |V|²` ordered pairs of vertices
 (`TauCeti.PairColorSystem.exists_refinement_sum_irregularPairs_le`). Regularity is
 coordinatewise, `TauCeti.PairColorSystem.IsRegularPair`: every color is controlled at once, and
 colors need not be symmetric. For the two-color system of a simple graph, where regular pairs of
@@ -26,17 +29,20 @@ disjoint sets are uniform at every larger parameter
 (`TauCeti.PairColorSystem.IsRegularPair.isUniform`), it gives a
 size-weighted form of Szemerédi's regularity lemma without equitability.
 
-The proof is the energy increment argument for `TauCeti.PairColorSystem.energy`. If the irregular
-pairs of `P` cover more than `ε |V|²` pairs, choose for each of them a color and a witness
-rectangle `X ×ˢ Y` with `ε |A| ≤ |X|`, `ε |B| ≤ |Y|` and color density more than `ε` away from
-that of `A ×ˢ B`. Cutting all parts along all the witnesses (`Finpartition.atomise`) gives a
-refinement with at most `#P.parts * 4 ^ #P.parts ^ 2` parts, over which every witness is a union
-of parts, so its energy exceeds that of `P` by more than `ε⁵`
+Diagonal pairs `(A, A)` are not tested for regularity, and the lemma says nothing about them.
+Since every part has at most `ε |V| + 1` vertices, the diagonal blocks together contain at most
+`∑ A, #A (#A - 1) ≤ ε |V| ∑ A, #A = ε |V|²` ordered distinct pairs.
+
+The proof first cuts `P₀` along an equipartition into `⌈1 / ε⌉` parts, which makes the parts
+small; refining further keeps them small. It then runs the energy increment argument for
+`TauCeti.PairColorSystem.energy`. If the irregular pairs of `P` cover more than `ε |V|²` pairs,
+choose for each of them a color and a witness rectangle `X ×ˢ Y` with `ε |A| ≤ |X|`,
+`ε |B| ≤ |Y|` and color density more than `ε` away from that of `A ×ˢ B`. Cutting all parts
+along all the witnesses (`Finpartition.atomise`) gives a refinement with at most
+`#P.parts * 4 ^ #P.parts ^ 2` parts, over which every witness is a union of parts, so its energy
+exceeds that of `P` by more than `ε⁵`
 (`TauCeti.PairColorSystem.exists_refinement_energy_add_lt`). The energy lies in `[0, 1]`, so
 `⌈1 / ε⁵⌉` rounds suffice.
-
-Diagonal pairs `(A, A)` are not tested; they carry a small share of the pairs once the parts are
-small.
 
 ## Main definitions
 
@@ -66,16 +72,32 @@ open Finset Finpartition
 
 namespace TauCeti
 
-/-- The bound on the number of parts in the regularity lemma for pair-color systems. Each round of
-the energy increment multiplies a number `m` of parts by at most `4 ^ m ^ 2`, and `⌈1 / ε⁵⌉`
-rounds suffice. -/
+/-- The bound on the number of parts in the regularity lemma for pair-color systems, starting
+from `m` parts. Cutting along an equipartition into `⌈1 / ε⌉` parts gives at most `m ⌈1 / ε⌉`
+parts, each round of the energy increment multiplies a number `m'` of parts by at most
+`4 ^ m' ^ 2`, and `⌈1 / ε⁵⌉` rounds suffice. -/
 noncomputable def pairColorRegularityBound (ε : ℝ) (m : ℕ) : ℕ :=
-  (fun m ↦ m * 4 ^ m ^ 2)^[⌈1 / ε ^ 5⌉₊] m
+  (fun m ↦ m * 4 ^ m ^ 2)^[⌈1 / ε ^ 5⌉₊] (m * ⌈1 / ε⌉₊)
 
 /-- Unfolding lemma for `TauCeti.pairColorRegularityBound`. -/
 theorem pairColorRegularityBound_def (ε : ℝ) (m : ℕ) :
-    pairColorRegularityBound ε m = (fun m ↦ m * 4 ^ m ^ 2)^[⌈1 / ε ^ 5⌉₊] m :=
+    pairColorRegularityBound ε m = (fun m ↦ m * 4 ^ m ^ 2)^[⌈1 / ε ^ 5⌉₊] (m * ⌈1 / ε⌉₊) :=
   (rfl)
+
+/-- The growth of the number of parts in one round of the energy increment is monotone. -/
+private theorem monotone_mul_four_pow_sq : Monotone fun m : ℕ ↦ m * 4 ^ m ^ 2 := fun a b hab ↦
+  Nat.mul_le_mul hab (Nat.pow_le_pow_right (by norm_num) (Nat.pow_le_pow_left hab 2))
+
+/-- A finite set has a partition into at most `k` parts, each with at most `#s / k + 1` elements:
+an equipartition into `k` parts when `k ≤ #s`, and the partition into singletons otherwise. -/
+private theorem exists_card_parts_le_card_le {α : Type*} [DecidableEq α] (s : Finset α) {k : ℕ}
+    (hk : k ≠ 0) : ∃ E : Finpartition s, #E.parts ≤ k ∧ ∀ A ∈ E.parts, #A ≤ #s / k + 1 := by
+  obtain hks | hsk := le_or_gt k #s
+  · obtain ⟨E, hE, hcard⟩ := exists_equipartition_card_eq s hk hks
+    exact ⟨E, hcard.le, fun A hA ↦ hcard ▸ hE.card_part_le_average_add_one hA⟩
+  · refine ⟨⊥, ((card_bot s).trans_lt hsk).le, fun A hA ↦ ?_⟩
+    obtain ⟨a, -, rfl⟩ := mem_bot_iff.1 hA
+    simp
 
 namespace PairColorSystem
 
@@ -199,8 +221,6 @@ private theorem exists_le_sum_irregularPairs_le_or_energy_add_le
       #P.parts ≤ (fun m ↦ m * 4 ^ m ^ 2)^[k] #P₀.parts ∧
       (∑ AB ∈ S.irregularPairs ε P, (#AB.1 * #AB.2 : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 2 ∨
         S.energy P₀ + k * ε ^ 5 ≤ S.energy P) := by
-  have hmono : Monotone fun m : ℕ ↦ m * 4 ^ m ^ 2 := fun a b hab ↦
-    Nat.mul_le_mul hab (Nat.pow_le_pow_right (by norm_num) (Nat.pow_le_pow_left hab 2))
   induction k with
   | zero => exact ⟨P₀, le_rfl, by simp, Or.inr (by simp)⟩
   | succ k ih =>
@@ -213,32 +233,54 @@ private theorem exists_le_sum_irregularPairs_le_or_energy_add_le
     obtain ⟨Q, hQ, hQcard, hQenergy⟩ := S.exists_refinement_energy_add_lt P hε (not_le.1 hgood)
     refine ⟨Q, hQ.trans hP, ?_, Or.inr ?_⟩
     · rw [Function.iterate_succ_apply']
-      exact hQcard.trans (hmono hcard)
+      exact hQcard.trans (monotone_mul_four_pow_sq hcard)
     · push_cast
       linarith [hP'.resolve_left hgood]
 
 omit [Fintype κ] in
 /-- **Regularity lemma for pair-color systems**, refining form. For `ε > 0`, every partition
 `P₀` of the vertices is refined by a partition `P` with at most
-`pairColorRegularityBound ε #P₀.parts` parts such that the ordered pairs `(A, B)` of distinct
-parts of `P` that are not `ε`-regular for `S` cover at most `ε |V|²` ordered pairs of
-vertices. The bound depends only on `ε` and `#P₀.parts`. -/
+`pairColorRegularityBound ε #P₀.parts` parts, each with at most `ε |V| + 1` vertices, such that
+the ordered pairs `(A, B)` of distinct parts of `P` that are not `ε`-regular for `S` cover at most
+`ε |V|²` ordered pairs of vertices. The bound depends only on `ε` and `#P₀.parts`. Diagonal pairs
+`(A, A)` are not tested for regularity; the bound on the parts makes their blocks contain at most
+`ε |V|²` ordered distinct pairs in total. -/
 theorem exists_refinement_sum_irregularPairs_le [Finite κ] (P₀ : Finpartition (univ : Finset V))
     (hε : 0 < ε) :
     ∃ P : Finpartition (univ : Finset V), P ≤ P₀ ∧
       #P.parts ≤ pairColorRegularityBound ε #P₀.parts ∧
+      (∀ A ∈ P.parts, (#A : ℝ) ≤ ε * Fintype.card V + 1) ∧
       ∑ AB ∈ S.irregularPairs ε P, (#AB.1 * #AB.2 : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 2 := by
   have := Fintype.ofFinite κ
-  obtain ⟨P, hP, hcard, hgood | henergy⟩ :=
-    S.exists_le_sum_irregularPairs_le_or_energy_add_le P₀ hε ⌈1 / ε ^ 5⌉₊
-  · exact ⟨P, hP, hcard, hgood⟩
-  refine ⟨P, hP, hcard, ?_⟩
+  -- Cut `P₀` along an equipartition into `⌈1 / ε⌉` parts, then run the energy increment.
+  set k := ⌈1 / ε⌉₊
+  have hk₀ : 0 < k := Nat.ceil_pos.2 (by positivity)
+  have hk : (1 : ℝ) ≤ ε * k := (div_le_iff₀' hε).1 (Nat.le_ceil _)
+  obtain ⟨E, hEcard, hEsize⟩ := exists_card_parts_le_card_le (univ : Finset V) hk₀.ne'
+  obtain ⟨P, hP, hcard, hP'⟩ :=
+    S.exists_le_sum_irregularPairs_le_or_energy_add_le (P₀ ⊓ E) hε ⌈1 / ε ^ 5⌉₊
+  refine ⟨P, hP.trans inf_le_left, ?_, fun A hA ↦ ?_, ?_⟩
+  · rw [pairColorRegularityBound_def]
+    exact hcard.trans (monotone_mul_four_pow_sq.iterate _
+      ((card_parts_inf_le_mul P₀ E).trans (Nat.mul_le_mul_left _ hEcard)))
+  · -- Each part lies in a part of `E`, which has at most `|V| / k + 1 ≤ ε |V| + 1` vertices.
+    obtain ⟨C, hC, hAC⟩ := (hP.trans inf_le_right) hA
+    have hdiv : ((Fintype.card V / k : ℕ) : ℝ) ≤ ε * Fintype.card V := by
+      calc ((Fintype.card V / k : ℕ) : ℝ) ≤ (Fintype.card V : ℝ) / k := Nat.cast_div_le
+        _ ≤ ε * Fintype.card V := by
+          rw [div_le_iff₀ (Nat.cast_pos.2 hk₀)]
+          nlinarith [Nat.cast_nonneg (α := ℝ) (Fintype.card V)]
+    have hC' := Nat.cast_le (α := ℝ) |>.2 ((card_le_card hAC).trans (hEsize C hC))
+    rw [card_univ, Nat.cast_add, Nat.cast_one] at hC'
+    linarith
+  obtain hgood | henergy := hP'
+  · exact hgood
   -- Otherwise one more increment would push the energy above its upper bound `1`.
   by_contra! hbad
   obtain ⟨Q, -, -, hQ⟩ := S.exists_refinement_energy_add_lt P hε hbad
   have hN : 1 ≤ (⌈1 / ε ^ 5⌉₊ : ℝ) * ε ^ 5 :=
     (div_le_iff₀ (by positivity)).1 (Nat.le_ceil (1 / ε ^ 5))
-  linarith [S.energy_nonneg P₀, S.energy_le_one Q, pow_pos hε 5]
+  linarith [S.energy_nonneg (P₀ ⊓ E), S.energy_le_one Q, pow_pos hε 5]
 
 end PairColorSystem
 
