@@ -113,6 +113,12 @@ theorem expPointAt_one : expPointAt d hd (1 : R) = WithConv.toConv (expPoint d h
   ext h
   rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply, Derivation.taylorExpAt_one]
 
+/-- Evaluating the polynomial exponential curve at one recovers the exponential point. -/
+theorem aeval_one_comp_expPointPolynomial :
+    (aeval (1 : R)).comp (expPointPolynomial d hd) = expPoint d hd := by
+  apply WithConv.toConv_injective
+  simpa only [expPointAt_def] using expPointAt_one d hd
+
 /-- The polynomial flow of an invariant vector field is translation by its
 exponential curve. -/
 theorem taylorExpAt_leftInvariantDerivation_apply (t : R) (h : H) :
@@ -211,6 +217,15 @@ theorem expPointAt_add {B : Type*} [CommRing B] [Algebra R B] (r s : B) :
   ext h
   rw [← eval_expPointAddPolynomial, expPointAddPolynomial_eq_expPointMulPolynomial,
     eval_expPointMulPolynomial]
+
+/-- Evaluation of the polynomial exponential coordinate map respects addition in every
+commutative value algebra. -/
+theorem aeval_comp_expPointPolynomial_add {B : Type*} [CommRing B] [Algebra R B]
+    (r s : B) :
+    WithConv.toConv ((aeval (r + s)).comp (expPointPolynomial d hd)) =
+      WithConv.toConv ((aeval r).comp (expPointPolynomial d hd)) *
+        WithConv.toConv ((aeval s).comp (expPointPolynomial d hd)) := by
+  simpa only [expPointAt_def] using expPointAt_add d hd r s
 
 /-- The exponential curve as a one-parameter homomorphism on any value algebra. -/
 noncomputable def expPointHom (B : Type*) [CommRing B] [Algebra R B] :

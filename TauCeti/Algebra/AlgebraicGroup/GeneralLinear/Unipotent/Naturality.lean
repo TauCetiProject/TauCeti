@@ -5,7 +5,7 @@ Authors: pi
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.OneParameter.Exponential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Uniqueness
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Tangent
 
 /-!
@@ -94,12 +94,11 @@ theorem tangentMatrix_derivationComp_eq_log
       nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
     apply eq_nilpotentOneParameterCoordinateMap_log n _ ?_ g hg ?_
     · intro s t
-      simpa only [Bialgebra.expPointAt_def, BialgHom.mapDomain_apply,
-        ofConv_toConv, AlgHom.comp_assoc, map_mul] using
-        congrArg (BialgHom.mapDomain f) (Bialgebra.expPointAt_add d hd s t)
-    · simpa only [Bialgebra.expPointAt_def, BialgHom.mapDomain_apply,
-        ofConv_toConv, AlgHom.comp_assoc] using
-        (congrArg (BialgHom.mapDomain f) (Bialgebra.expPointAt_one d hd)).trans h
+      simpa only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_assoc, map_mul] using
+        congrArg (BialgHom.mapDomain f)
+          (Bialgebra.aeval_comp_expPointPolynomial_add d hd s t)
+    · simpa only [BialgHom.mapDomain_apply, ofConv_toConv, ← AlgHom.comp_assoc,
+        Bialgebra.aeval_one_comp_expPointPolynomial] using h
   ext i j
   rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply]
   have hc := congrArg (fun p : coordinateHopfAlgebra R n →ₐ[R] R[X] ↦

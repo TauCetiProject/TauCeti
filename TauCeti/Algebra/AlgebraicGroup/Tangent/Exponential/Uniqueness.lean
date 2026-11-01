@@ -18,7 +18,7 @@ coordinate algebra, without choosing a faithful matrix representation.
 
 Together with the matrix comparison for invariant-vector-field exponentials, uniqueness
 identifies polynomial exponential curves constructed in different faithful realizations.
-It applies to all affine groups over a rational domain, without finite-type or smoothness
+It applies to all affine monoids over a rational domain, without finite-type or smoothness
 hypotheses, provided the indicated invariant derivations are locally nilpotent.
 
 ## References
@@ -32,7 +32,7 @@ public section
 open Polynomial WithConv TauCeti.Bialgebra
 
 variable {R H : Type*} [CommRing R] [IsDomain R]
-  [CommRing H] [HopfAlgebra R H] [Algebra ℚ H]
+  [CommRing H] [_root_.Bialgebra R H] [Algebra ℚ H]
 
 namespace AlgHom
 
@@ -50,9 +50,8 @@ theorem eq_expPointPolynomial_of_aeval_one_comp_eq
     ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
   have : CharZero R := Algebra.charZero_of_charZero ℚ R
   apply γ.eq_of_aeval_one_comp_eq _ hγ
-    (fun s t ↦ by simpa only [expPointAt_def] using expPointAt_add d hd s t)
-  apply toConv_injective
-  simpa only [expPointAt_def] using (congrArg toConv h).trans (expPointAt_one d hd).symm
+    (aeval_comp_expPointPolynomial_add d hd)
+  exact h.trans (aeval_one_comp_expPointPolynomial d hd).symm
 
 end AlgHom
 
@@ -67,9 +66,8 @@ theorem eq_of_expPoint_eq
     (h : expPoint d hd = expPoint e he) : d = e := by
   have hcurve : expPointPolynomial d hd = expPointPolynomial e he := by
     apply AlgHom.eq_expPointPolynomial_of_aeval_one_comp_eq _
-      (fun s t ↦ by simpa only [expPointAt_def] using expPointAt_add d hd s t) e he
-    apply toConv_injective
-    simpa only [expPointAt_def] using (expPointAt_one d hd).trans (congrArg toConv h)
+      (aeval_comp_expPointPolynomial_add d hd) e he
+    exact (aeval_one_comp_expPointPolynomial d hd).trans h
   apply Derivation.ext
   intro x
   apply (CounitAlgebra.algEquivSelf R H R).injective
