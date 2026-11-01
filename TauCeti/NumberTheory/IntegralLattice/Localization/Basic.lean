@@ -243,12 +243,12 @@ theorem mem_range_localizationToCompletion_iff (x : ℚ_[p] ⊗[ℚ] V) :
   · let b := (e.extendOfIsLattice ℚ).baseChange ℚ_[p]
     -- The `p`-adic integral coordinates of `x` are those of a vector of `L_p`.
     refine ⟨(e.baseChange ℤ_[p]).repr.symm (Finsupp.ofSupportFinite
-      (fun i ↦ (⟨b.repr x i, (PadicInt.mem_subring_iff p).mpr (h i)⟩ : ℤ_[p]))
+      (fun i ↦ Padic.lift (b.repr x i) (h i))
       ((b.repr x).support.finite_toSet.subset fun i hi ↦
-        Finsupp.mem_support_iff.mpr fun h0 ↦ hi (Subtype.ext h0))), b.repr.injective ?_⟩
+        Finsupp.mem_support_iff.mpr fun h0 ↦ hi (PadicInt.ext h0))), b.repr.injective ?_⟩
     ext i
-    rw [repr_localizationToCompletion, LinearEquiv.apply_symm_apply]
-    rfl
+    rw [repr_localizationToCompletion, LinearEquiv.apply_symm_apply, Finsupp.ofSupportFinite_coe,
+      PadicInt.coe_lift]
 
 end Coordinates
 

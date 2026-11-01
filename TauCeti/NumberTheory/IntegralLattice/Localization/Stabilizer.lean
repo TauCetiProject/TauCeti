@@ -132,7 +132,10 @@ theorem localStabilizer_eq_integralOrthogonalSubgroup {ι : Type*} [Fintype ι] 
   refine (Equiv.forall_apply_mem_iff_iff_mapsTo (g : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).toEquiv
     _ (LinearMap.range (L.localizationToCompletion p) : Set (ℚ_[p] ⊗[ℚ] V))).trans ?_
   rw [← hspan]
-  rfl
+  simp only [Set.MapsTo, LinearEquiv.coe_toEquiv, LinearEquiv.coe_toEquiv_symm, EquivLike.coe_coe,
+    SetLike.mem_coe, Subgroup.coe_inv, LinearEquiv.coe_inv]
+  -- The two sides now differ only in binder annotations.
+  exact Iff.rfl
 
 /-- The local stabilizer of `L` is open in the local orthogonal group. -/
 theorem isOpen_localStabilizer :
@@ -192,8 +195,10 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
   have hglob : (∀ x, (g : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier) ↔
       Set.MapsTo (g : V ≃ₗ[ℚ] V).toLinearMap L.carrier L.carrier ∧
         Set.MapsTo ((g⁻¹ : orthogonalGroup L.norm) : V ≃ₗ[ℚ] V).toLinearMap L.carrier
-          L.carrier :=
-    Equiv.forall_apply_mem_iff_iff_mapsTo (g : V ≃ₗ[ℚ] V).toEquiv _ _
+          L.carrier := by
+    simpa only [LinearEquiv.coe_toEquiv, LinearEquiv.coe_toEquiv_symm, EquivLike.coe_coe,
+      LinearEquiv.coe_coe, SetLike.mem_coe, Subgroup.coe_inv, LinearEquiv.coe_inv] using
+      Equiv.forall_apply_mem_iff_iff_mapsTo (g : V ≃ₗ[ℚ] V).toEquiv L.carrier L.carrier
   rw [hglob, hint, hint]
   -- A rational number is an integer exactly when it is a `p`-adic integer at every prime.
   simp only [hloc, forall_and, forall_comm (α := Nat.Primes),
