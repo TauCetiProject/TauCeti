@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.Generator.Basic
 public import TauCeti.Analysis.Semigroups.GrowthBound
 public import TauCeti.Analysis.Semigroups.Generator.Uniqueness
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -100,7 +101,8 @@ theorem ofBounded_realOperator_continuousOn_Ici (A : X →L[ℝ] X) :
 theorem ofBounded_hasGrowthBound (A : X →L[ℝ] X) : (ofBounded A).HasGrowthBound ‖A‖ 1 := by
   refine hasGrowthBound_of_bound le_rfl (fun t ht => ?_)
   rw [one_mul, ofBounded_realOperator_of_nonneg A ht]
-  simpa only [Real.norm_of_nonneg ht] using A.norm_exp_smul_le t
+  simpa only [Real.norm_of_nonneg ht] using
+    TauCeti.norm_exp_smul_le ContinuousLinearMap.norm_id_le A t
 
 /-- The difference quotient `(exp (t • A) x - x)/t` tends to `A x` as `t → 0⁺`: the strong
 derivative of `ofBounded A` at time `0` is `A`. -/

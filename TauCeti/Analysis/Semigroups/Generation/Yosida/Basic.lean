@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 public import TauCeti.Analysis.Semigroups.Dissipative.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
-import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Yosida approximations

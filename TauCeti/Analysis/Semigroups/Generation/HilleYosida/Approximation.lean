@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Generation.Yosida.Basic
-import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Bounded approximations for the Hille--Yosida theorem
