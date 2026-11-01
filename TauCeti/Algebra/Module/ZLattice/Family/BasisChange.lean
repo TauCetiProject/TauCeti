@@ -76,12 +76,8 @@ theorem realCoordChange_periodBasis_equivFun (y : Y) (v : E) :
   have h : (b.realCoordChange c).toLinearMap ∘ₗ (periodBasis P b hinj y).equivFun.toLinearMap =
       (periodBasis P c hinj y).equivFun.toLinearMap := by
     refine (periodBasis P b hinj y).ext fun i ↦ ?_
-    have hb : (periodBasis P b hinj y).equivFun (P y (b i)) = fun k ↦ (b.repr (b i) k : ℝ) :=
-      funext fun k ↦ by simp
-    have hc : (periodBasis P c hinj y).equivFun (P y (b i)) = fun j ↦ (c.repr (b i) j : ℝ) :=
-      funext fun j ↦ by simp
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      periodBasis_apply, hb, hc, Basis.realCoordChange_intCast]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, periodBasis_apply,
+      periodBasis_equivFun_period, Basis.realCoordChange_intCast]
   exact LinearMap.congr_fun h v
 
 end Coordinates

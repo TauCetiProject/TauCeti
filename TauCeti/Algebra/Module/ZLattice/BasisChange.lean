@@ -105,8 +105,8 @@ theorem realCoordChange_refl (b : Basis ι ℤ Λ) :
 theorem realCoordChange_trans (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (d : Basis η ℤ Λ) :
     (realCoordChange b c).trans (realCoordChange c d) = realCoordChange b d := by
   ext x : 1
-  rw [LinearEquiv.trans_apply, realCoordChange_apply, realCoordChange_apply,
-    realCoordChange_apply, Matrix.mulVec_mulVec, ← Matrix.map_mul, toMatrix_mul_toMatrix]
+  simp only [LinearEquiv.trans_apply, realCoordChange_apply, Matrix.mulVec_mulVec,
+    ← Matrix.map_mul, toMatrix_mul_toMatrix]
 
 /-- Successive real coordinate changes compose, applied to a point. Together with
 `Module.Basis.realCoordChange_refl`, this collapses round trips `b → c → b`. -/
@@ -120,8 +120,8 @@ theorem realCoordChange_realCoordChange (b : Basis ι ℤ Λ) (c : Basis κ ℤ 
 theorem realCoordChange_symm (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
     (realCoordChange b c).symm = realCoordChange c b := by
   ext x : 1
-  rw [LinearEquiv.symm_apply_eq, realCoordChange_realCoordChange, realCoordChange_refl,
-    LinearEquiv.refl_apply]
+  rw [LinearEquiv.symm_apply_eq]
+  simp
 
 /-- The real coordinate change carries the standard lattice `ℤ^ι` into `ℤ^κ`. -/
 private theorem realCoordChange_mem_span_basisFun (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ)
@@ -141,6 +141,11 @@ theorem map_realCoordChange_span_basisFun (b : Basis ι ℤ Λ) (c : Basis κ �
 
 variable {n : ℕ∞ω}
 
+/-- The real coordinate change is smooth. -/
+theorem contDiff_realCoordChange (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
+    ContDiff ℝ n (realCoordChange b c) :=
+  (realCoordChange b c).toContinuousLinearEquiv.contDiff
+
 /-- The `C^n` diffeomorphism of standard tori `ℝ^ι/ℤ^ι ≃ ℝ^κ/ℤ^κ` induced by the real coordinate
 change `Module.Basis.realCoordChange b c`, for the quotient manifold structures on the orbit spaces
 of translation by the standard lattices. As a map it is the additive equivalence
@@ -153,15 +158,12 @@ noncomputable def torusCoordChange (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
       (AddAction.orbitRel.Quotient (span ℤ (range (Pi.basisFun ℝ κ))) (κ → ℝ)) n :=
   (span ℤ (range (Pi.basisFun ℝ ι))).orbitRelQuotientDiffeomorph _
     ((realCoordChange b c).restrictScalars ℤ) (map_realCoordChange_span_basisFun b c)
-    -- Restricting scalars to `ℤ` does not change the underlying continuous linear maps.
+    -- Restricting scalars to `ℤ` does not change the underlying maps.
+    (contDiff_realCoordChange b c)
     (by
-      rw [funext fun x ↦ (realCoordChange b c).restrictScalars_apply (R := ℤ) x,
-        ← LinearEquiv.coe_toContinuousLinearEquiv']
-      exact ContinuousLinearEquiv.contDiff _)
-    (by
-      rw [funext fun x ↦ (realCoordChange b c).restrictScalars_symm_apply (R := ℤ) x,
-        ← LinearEquiv.coe_toContinuousLinearEquiv_symm']
-      exact ContinuousLinearEquiv.contDiff _)
+      have h := contDiff_realCoordChange (n := n) c b
+      rw [← realCoordChange_symm] at h
+      exact h)
 
 /-- As a map, the diffeomorphism of standard tori is the additive equivalence
 `Submodule.orbitRelQuotientCongr` induced by the real coordinate change. -/
@@ -208,7 +210,7 @@ theorem torusCoordChange_trans (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (d : 
 theorem torusCoordChange_symm (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) :
     (torusCoordChange b c (n := n)).symm = torusCoordChange c b := by
   ext z
-  rw [← Diffeomorph.toEquiv_coe_symm, Equiv.symm_apply_eq, Diffeomorph.coe_toEquiv,
-    torusCoordChange_torusCoordChange, torusCoordChange_refl, Diffeomorph.coe_refl, id_eq]
+  rw [← Diffeomorph.toEquiv_coe_symm, Equiv.symm_apply_eq]
+  simp
 
 end Module.Basis
