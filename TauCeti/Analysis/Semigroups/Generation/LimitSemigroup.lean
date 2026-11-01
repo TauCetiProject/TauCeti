@@ -131,7 +131,7 @@ theorem yosidaLimit_zero (A : X →ₗ.[ℝ] X) (x : X) : yosidaLimit A 0 x = x 
 pointwise, for a bounded operator `B`. -/
 private theorem exp_add_smul_apply (B : X →L[ℝ] X) (s t : ℝ) (x : X) :
     exp ((s + t) • B) x = exp (s • B) (exp (t • B) x) := by
-  exact DFunLike.congr_fun (TauCeti.exp_add_smul B s t) x
+  exact DFunLike.congr_fun (ContinuousLinearMap.exp_add_smul B s t) x
 
 /-! ## Shared limit-semigroup scaffolding -/
 

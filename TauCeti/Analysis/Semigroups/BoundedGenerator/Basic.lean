@@ -58,7 +58,7 @@ def ofBounded (A : X →L[ℝ] X) : StronglyContinuousSemigroup X where
   map_zero' := by
     rw [NNReal.coe_zero, zero_smul, exp_zero, ContinuousLinearMap.one_def]
   map_add' s t := by
-    rw [NNReal.coe_add, TauCeti.exp_add_smul]
+    rw [NNReal.coe_add, ContinuousLinearMap.exp_add_smul]
   continuousAt_zero' x :=
     (((differentiable_exp_smul_const ℝ A).continuous.comp NNReal.continuous_coe).clm_apply
       continuous_const).continuousAt
@@ -100,7 +100,7 @@ theorem ofBounded_realOperator_continuousOn_Ici (A : X →L[ℝ] X) :
 theorem ofBounded_hasGrowthBound (A : X →L[ℝ] X) : (ofBounded A).HasGrowthBound ‖A‖ 1 := by
   refine hasGrowthBound_of_bound le_rfl (fun t ht => ?_)
   rw [one_mul, ofBounded_realOperator_of_nonneg A ht]
-  simpa only [abs_of_nonneg ht] using TauCeti.norm_exp_smul_le A t
+  simpa only [Real.norm_of_nonneg ht] using A.norm_exp_smul_le t
 
 /-- The difference quotient `(exp (t • A) x - x)/t` tends to `A x` as `t → 0⁺`: the strong
 derivative of `ofBounded A` at time `0` is `A`. -/

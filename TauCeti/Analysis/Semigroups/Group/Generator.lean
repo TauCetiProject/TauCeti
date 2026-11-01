@@ -309,7 +309,7 @@ def ofBounded (A : X →L[ℝ] X) : StronglyContinuousGroup X where
   toFun t := exp (t • A)
   map_zero' := by rw [zero_smul, exp_zero, ContinuousLinearMap.one_def]
   map_add' s t := by
-    rw [TauCeti.exp_add_smul]
+    rw [ContinuousLinearMap.exp_add_smul]
   continuousAt_zero' x :=
     (((differentiable_exp_smul_const ℝ A).continuous).clm_apply continuous_const).continuousAt
 
@@ -347,7 +347,7 @@ theorem ofBounded_generator (A : X →L[ℝ] X) :
 theorem ofBounded_hasGrowthBound (A : X →L[ℝ] X) : (ofBounded A).HasGrowthBound ‖A‖ 1 := by
   refine hasGrowthBound_of_bound le_rfl fun t => ?_
   rw [one_mul, ofBounded_apply]
-  exact TauCeti.norm_exp_smul_le A t
+  simpa only [Real.norm_eq_abs] using A.norm_exp_smul_le t
 
 /-- A C₀-group whose generator is the bounded operator `A`, defined on all of `X`, is the
 operator exponential `t ↦ exp (t • A)`. -/

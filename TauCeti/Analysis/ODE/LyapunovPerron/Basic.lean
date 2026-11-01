@@ -331,7 +331,7 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
     HasDerivAt (lyapunovPerronIntegral A P g) (A (lyapunovPerronIntegral A P g t) + g t) t := by
   have hexp_apply (u s : ℝ) (v : X) :
       exp (u • A) (exp (s • A) v) = exp ((u + s) • A) v := by
-    rw [TauCeti.exp_add_smul, comp_apply]
+    rw [ContinuousLinearMap.exp_add_smul, comp_apply]
   -- After pulling `exp (u A)` out of both integrals, the integrands no longer depend on `u`.
   set hp : ℝ → X := fun s ↦ exp ((-s) • A) (P (g s)) with hp_def
   set hq : ℝ → X := fun s ↦ exp ((-s) • A) (g s - P (g s)) with hq_def
@@ -422,8 +422,8 @@ theorem eq_zero_of_norm_exp_smul_apply_le
       rw [← mul_apply_eq_comp P, ((hAP.symm.smul_right t).exp_right).eq, mul_apply_eq_comp,
         hv, map_zero]
     have hback : exp ((-t) • A) (exp (t • A) v - P (exp (t • A) v)) = v := by
-      rw [hPexp, sub_zero, ← comp_apply, ← TauCeti.exp_add_smul, neg_add_cancel, zero_smul,
-        exp_zero, one_apply_eq_self]
+      rw [hPexp, sub_zero, ← comp_apply, ← ContinuousLinearMap.exp_add_smul, neg_add_cancel,
+        zero_smul, exp_zero, one_apply_eq_self]
     calc ‖v‖ = ‖exp ((-t) • A) (exp (t • A) v - P (exp (t • A) v))‖ := by rw [hback]
       _ ≤ K * Real.exp (α * -t) * ‖exp (t • A) v‖ := hu (-t) (neg_nonpos.2 ht) _
       _ ≤ K * Real.exp (α * -t) * C := by gcongr; exact hC t ht
