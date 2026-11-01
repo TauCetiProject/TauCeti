@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.SiegelsLemma
 public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 public import TauCeti.RingTheory.MvPolynomial.Box
 public import TauCeti.RingTheory.MvPolynomial.WeightedIndex
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Roth's auxiliary polynomial
@@ -190,9 +191,7 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
   refine ⟨P, hP0, hPdeg, ?_, fun m ↦ ?_⟩
   · -- A jet of order `d ≤ r` and weight `< t` is, up to the factor `b ^ R`, the equation `d`.
     refine ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero
-      (fun i ↦ MvPolynomial.degreeOf_le_iff.mpr fun m hm ↦
-        MvPolynomial.degreeOf_le_iff.mp (hPdeg i) m (support_map_subset _ _ hm))
-      fun d hdr hdt ↦ ?_
+      (fun i ↦ (MvPolynomial.degreeOf_map_le _ _ i).trans (hPdeg i)) fun d hdr hdt ↦ ?_
     have hdrow : ⇑d ∈ rows := mem_filter.mpr ⟨hbox.mpr hdr, hdt.le⟩
     -- `(a d μ : K)` is `e d μ` by `hae`.
     have hrow : ∑ μ, e ⟨d, hdrow⟩ μ * (x μ : K) = 0 :=
