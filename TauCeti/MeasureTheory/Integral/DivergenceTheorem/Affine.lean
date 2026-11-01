@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+public import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # The divergence theorem on affine parallelepipeds
@@ -27,15 +28,15 @@ the signed determinant times the divergence of `F`:
 `∑ j, ∂ⱼ H j (u) = det L • ∑ i, ∂ᵢ F i (A u)`,
 
 whenever every `F i` is differentiable at `A u`, because the coefficient of `∂ₖ F i` is
-`det L • ∑ j, (L⁻¹)ⱼᵢ Lₖⱼ = det L • δₖᵢ`. Unlike the absolute value in the change of variables
-formula, the determinant here is signed.
+`det L • ∑ j, (L⁻¹)ⱼᵢ Lₖⱼ = det L • δₖᵢ` (`ContinuousLinearEquiv.sum_cofactor_comp_apply_single`).
+Unlike the absolute value in the change of variables formula, the determinant here is signed.
 
 Applying Mathlib's divergence theorem on the unit cube,
 `MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable'`, to `H` gives the divergence
 theorem on the parallelepiped `A '' [0, 1]^ι`, with the boundary integrals of `H` over the faces
-of the unit cube on one side. As in Mathlib, only continuity on the closed parallelepiped and
-differentiability at the interior points off a countable set are assumed; no continuity of the
-derivative is needed.
+of the unit cube on one side. As in Mathlib, only continuity on the closed parallelepiped,
+differentiability at the interior points off a countable set and integrability of the divergence
+are assumed; no continuity of the derivative is needed.
 
 ## Main declarations
 
@@ -63,8 +64,8 @@ variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E] [No
 
 /-- The cofactor pullback of a flux field `F` along the affine map `u ↦ p + L u`:
 `H j u = det L • ∑ i, (L⁻¹)ⱼᵢ • F i (p + L u)`, where `(L⁻¹)ⱼᵢ = L.symm (Pi.single i 1) j`.
-Its divergence is `det L` times the divergence of `F` at `p + L u`
-(`ContinuousLinearEquiv.sum_fderiv_affineFluxPullback`). -/
+When every `F i` is differentiable at `p + L u`, its divergence at `u` is `det L` times the
+divergence of `F` at `p + L u` (`ContinuousLinearEquiv.sum_fderiv_affineFluxPullback`). -/
 noncomputable def affineFluxPullback (L : (ι → ℝ) ≃L[ℝ] (ι → ℝ)) (p : ι → ℝ)
     (F : ι → (ι → ℝ) → E) (j : ι) (u : ι → ℝ) : E :=
   LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ) • ∑ i, L.symm (Pi.single i 1) j • F i (p + L u)
@@ -102,30 +103,10 @@ theorem hasFDerivAt_affineFluxPullback {F' : ι → (ι → ℝ) →L[ℝ] E} {u
         ∑ i, L.symm (Pi.single i 1) j • (F' i).comp (L : (ι → ℝ) →L[ℝ] ι → ℝ)) u := by
   have hA : HasFDerivAt (fun u ↦ p + L u) (L : (ι → ℝ) →L[ℝ] ι → ℝ) u :=
     (L : (ι → ℝ) →L[ℝ] ι → ℝ).hasFDerivAt.const_add p
-  rw [show L.affineFluxPullback p F j = fun u ↦ LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ) •
-      ∑ i, L.symm (Pi.single i 1) j • F i (p + L u) from funext (L.affineFluxPullback_apply p F j)]
+  unfold affineFluxPullback
   exact (HasFDerivAt.fun_sum fun i _ ↦
     ((hF i).comp u hA).const_smul (L.symm (Pi.single i 1) j)).const_smul
       (LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ))
-
-/-- The cofactor identity behind `ContinuousLinearEquiv.sum_fderiv_affineFluxPullback`: the
-trace of the derivative of the cofactor pullback is `det L` times the trace of the derivative of
-the field, as `∑ j, (L⁻¹)ⱼᵢ • L (Pi.single j 1) = L (L⁻¹ (Pi.single i 1)) = Pi.single i 1`. -/
-private theorem sum_cofactor_comp_apply_single (F' : ι → (ι → ℝ) →L[ℝ] E) :
-    ∑ j, (LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ) •
-        ∑ i, L.symm (Pi.single i 1) j • (F' i).comp (L : (ι → ℝ) →L[ℝ] ι → ℝ))
-          (Pi.single j 1) =
-      LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ) • ∑ i, F' i (Pi.single i 1) := by
-  simp only [_root_.smul_apply, _root_.sum_apply, ContinuousLinearMap.comp_apply]
-  rw [← Finset.smul_sum, Finset.sum_comm]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  -- Pull the coefficients through the linear map `F' i ∘ L`, then expand `L⁻¹ (Pi.single i 1)`
-  -- in the standard basis.
-  calc ∑ j, L.symm (Pi.single i 1) j • F' i (L (Pi.single j 1))
-      _ = F' i (L (∑ j, L.symm (Pi.single i 1) j • Pi.single j 1)) := by
-        simp only [map_sum, map_smul, ContinuousLinearMap.map_smul]
-      _ = F' i (Pi.single i 1) := by rw [← pi_eq_sum_univ', apply_symm_apply]
 
 /-- **The divergence of the cofactor pullback.** If every component of the field `F` is
 differentiable at `p + L u`, then the divergence of the cofactor pullback at `u` is `det L` times
