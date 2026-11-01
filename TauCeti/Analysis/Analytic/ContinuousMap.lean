@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ContinuousMap
+public import TauCeti.Analysis.Calculus.ContinuousMap.Basic
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.ODE.GlobalSolution
 public import TauCeti.Analysis.ODE.SmoothParameter
 
@@ -19,7 +20,7 @@ propagates the result to every time, at every finite order: for a fixed initial 
 of times where the solution is smooth is both open and closed.
 
 The mechanism is a change of variables that turns the initial condition into a *parameter* of a
-new equation, so that `ODE.exists_contDiffOn_picard_solution_of_contDiff` applies. Writing a
+new equation, so that `ODE.exists_contDiffOn_picard_solution` applies. Writing a
 solution through `x` as `t ↦ x + u (t / ε)`, the curve `u` solves
 
 `u' s = ε • v (x + u s)`, `u 0 = 0`
@@ -104,8 +105,9 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
       (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (((a, (0 : ℝ))), y) = 0 :=
     .of_forall fun y ↦ zero_smul ℝ _
   obtain ⟨γ, U, hU, hp₀U, hγU, -, hprop⟩ :=
-    exists_contDiffOn_picard_solution_of_contDiff
-      (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (a, (0 : ℝ)) (0 : E) hf hzero
+    exists_contDiffOn_picard_solution
+      (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (a, (0 : ℝ)) (0 : E)
+      isOpen_univ (mem_univ _) hf.contDiffOn hzero
   have hγ : ContDiffAt ℝ (n + 1) γ (a, 0) := hγU.contDiffAt (hU.mem_nhds hp₀U)
   have hsmooth : ContDiffAt ℝ (n + 1)
       (fun p : E × ℝ ↦ p.1 + γ p ⟨1, by norm_num⟩) (a, 0) := by
@@ -114,7 +116,7 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
     exact contDiffAt_fst.add (by simpa [Function.comp_def] using this)
   refine hsmooth.congr_of_eventuallyEq ?_
   filter_upwards [hU.mem_nhds hp₀U] with p hpU
-  have hp := hprop p hpU
+  have hp := (hprop p hpU).2
   obtain ⟨hpicard, -, hright⟩ := hp
   -- The rescaled solution starts at `p.1` and moves with speed `p.2 • v`.
   have hbase : γ p ⟨0, by norm_num⟩ = 0 := by simpa using hpicard ⟨0, by norm_num⟩

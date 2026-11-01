@@ -53,7 +53,7 @@ connected Lie subgroup.
 
 Existence is proved in finite dimension, where a smooth germ has a globally Lipschitz smooth
 representative, so that the parameterized Picard theorem
-`ODE.exists_contDiffOn_picard_solution_of_contDiff` applies. The solution through `(x₀, y₀)` is
+`ODE.exists_contDiffOn_picard_solution` applies. The solution through `(x₀, y₀)` is
 built along rays: for a small parameter `z`, the ordinary differential equation
 `b' = f (x₀ + t • z, b) z` with `b 0 = y₀` is solved on `[0, 1]`, smoothly in `z`, and
 `u (x₀ + z) = b 1`. Translating the state by a variable initial value makes the Picard solution
@@ -464,8 +464,9 @@ private theorem exists_rayFamily_of_initial [CompleteSpace E] [CompleteSpace F] 
     dsimp only [G]
     fun_prop
   obtain ⟨γ, U, hU, hbaseU, hγ, hγ0, hprop⟩ :=
-    ODE.exists_contDiffOn_picard_solution_of_contDiff
-    G ((0 : E), y₀) (x₀, 0) hG (.of_forall fun q ↦ by simp [G])
+    ODE.exists_contDiffOn_picard_solution
+      G ((0 : E), y₀) (x₀, 0) isOpen_univ (mem_univ _) hG.contDiffOn
+      (.of_forall fun q ↦ by simp [G])
   obtain ⟨r, hr, hP⟩ := Metric.eventually_nhds_iff_ball.1 (hU.mem_nhds hbaseU)
   let c : E × F → ℝ → E × F := fun q t ↦
     let z := γ q (projIcc 0 1 zero_le_one t)
@@ -483,7 +484,7 @@ private theorem exists_rayFamily_of_initial [CompleteSpace E] [CompleteSpace F] 
   · simp [c, hγ0]
   · exact ((γ q).continuous.comp continuous_projIcc).fst.prodMk
       (continuous_const.add ((γ q).continuous.comp continuous_projIcc).snd)
-  obtain ⟨hpicard, hinterior, hright⟩ := hprop q (hP q hq)
+  obtain ⟨-, hpicard, hinterior, hright⟩ := hprop q (hP q hq)
   have hc0 : c q 0 = (x₀, q.2) := by
     have := hpicard ⟨0, left_mem_Icc.2 zero_le_one⟩
     simp only [intervalIntegral.integral_same, add_zero] at this
