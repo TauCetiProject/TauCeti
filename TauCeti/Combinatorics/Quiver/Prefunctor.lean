@@ -7,15 +7,18 @@ module
 
 public import Mathlib.Combinatorics.Quiver.Cast
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import Mathlib.Combinatorics.Quiver.Subquiver
 
 /-!
-# Prefunctors on paths and on vertices
+# Prefunctors on paths, on vertices and on total arrows
 
 Elementary facts about a prefunctor `φ : Q ⥤q R` which `Prefunctor.mapPath` and `Prefunctor.comp`
 leave unrecorded: pushing a path along `φ` preserves its length and maps its vertices along
 `φ.obj`, a prefunctor with a two-sided inverse is bijective on vertices, a pair of composable
 one-sided inverse pairs composes to a one-sided inverse pair, and a prefunctor that undoes another
-on vertices and arrows also undoes it on paths.
+on vertices and arrows also undoes it on paths. It also records the map `Prefunctor.mapTotal` that
+a prefunctor induces on the total spaces of arrows `Quiver.Total`, used to state that a functor
+between categories with topologies on their arrows is continuous.
 
 ## Main results
 
@@ -27,6 +30,7 @@ on vertices and arrows also undoes it on paths.
   one-sided inverse pair.
 * `Prefunctor.cast_mapPath_mapPath`: a prefunctor that undoes another on vertices and arrows
   undoes it on paths.
+* `Prefunctor.mapTotal`: the map induced by a prefunctor on total spaces of arrows.
 
 ## References
 
@@ -98,5 +102,25 @@ theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
         subst ha hb hc
         rfl
       rw [Prefunctor.mapPath_cons, Prefunctor.mapPath_cons, cast_cons _ _ _ (hobj b), ih, hmap]
+
+/-- The map on total spaces of arrows induced by a prefunctor, sending `f : a ⟶ b` to
+`φ.map f : φ.obj a ⟶ φ.obj b`. -/
+@[expose] def _root_.Prefunctor.mapTotal (φ : Q ⥤q R) (f : Quiver.Total Q) : Quiver.Total R :=
+  ⟨φ.obj f.left, φ.obj f.right, φ.map f.hom⟩
+
+/-- The source of the image of a total arrow is the image of its source. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_left (φ : Q ⥤q R) (f : Quiver.Total Q) :
+    (φ.mapTotal f).left = φ.obj f.left := (rfl)
+
+/-- The target of the image of a total arrow is the image of its target. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_right (φ : Q ⥤q R) (f : Quiver.Total Q) :
+    (φ.mapTotal f).right = φ.obj f.right := (rfl)
+
+/-- The arrow underlying the image of a total arrow is the image of its arrow. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_hom (φ : Q ⥤q R) (f : Quiver.Total Q) :
+    (φ.mapTotal f).hom = φ.map f.hom := (rfl)
 
 end TauCeti
