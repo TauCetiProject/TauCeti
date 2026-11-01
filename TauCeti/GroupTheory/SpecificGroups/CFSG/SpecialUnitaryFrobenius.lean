@@ -49,6 +49,8 @@ description of the special linear matrices with coordinates in it from
 
 ## Main results
 
+* `TauCeti.ValidLieTypeIndex.coe_iterateFrobenius_galoisField`: the `q`-power Frobenius of the
+  field with `q²` elements is `x ↦ x ^ q`.
 * `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff`: the finite fixed
   points are the isometries of determinant one of the form of Gram matrix `Q`.
 * `TauCeti.ValidLieTypeIndex.specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup`: the
@@ -97,6 +99,14 @@ theorem galoisFieldTwistedFrobenius_apply (r : ℕ)
             d.characteristic d.fieldExponent) g) :=
   (rfl)
 
+/-- The `q`-power Frobenius of the field with `q²` elements, which the graph-twisted Frobenius
+applies entrywise, is `x ↦ x ^ q`. -/
+@[simp]
+theorem coe_iterateFrobenius_galoisField :
+    ⇑(iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
+      d.fieldExponent) = (· ^ d.fieldOrder) :=
+  funext fun x ↦ by rw [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow]
+
 /-- **The fixed points of the graph-twisted Frobenius are special unitary matrices.** A matrix
 `g` of `SL_{r+1}(𝔽_{q²})` is fixed exactly when `(g ^ (q))ᵀ * Q * g = Q`, with `Q` the signed
 reversal matrix: `g` preserves the sesquilinear form of Gram matrix `Q` relative to `x ↦ x ^ q`.
@@ -113,14 +123,11 @@ theorem mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff (r : ℕ)
         (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
           Matrix (Fin (r + 1)) (Fin (r + 1))
             (GaloisField d.characteristic (d.fieldExponent * 2))) := by
-  have hσ : ⇑(iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
-      d.characteristic d.fieldExponent) = (· ^ d.fieldOrder) :=
-    funext fun x ↦ by rw [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow]
   rw [mem_fixedSubgroup, galoisFieldTwistedFrobenius_apply,
     ← SpecialLinearGroup.toGL_injective.eq_iff, SpecialLinearGroup.toGL_typeAGraphAutomorphism,
     typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq,
     SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.coe_GL_coe_matrix,
-    SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, hσ]
+    SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, coe_iterateFrobenius_galoisField]
 
 /-! ### Descent to the closure -/
 

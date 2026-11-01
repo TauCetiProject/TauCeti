@@ -44,6 +44,9 @@ group on the isotropic points of projective space.
   isotropic `v`.
 * `Matrix.det_unitaryTransvection`: an isotropic transvection has determinant one.
 * `Matrix.unitaryTransvection_smul`: rescaling the vector, `τ_{c v,a} = τ_{v, a c σ(c)}`.
+* `Matrix.comp_mulVec`: `σ(g x) = σ(g) σ(x)` coordinatewise.
+* `Matrix.apply_comp_dotProduct_mulVec`: for an involution `σ` and `σ(Q)ᵀ = ε Q`, the form is
+  `ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)`.
 * `Matrix.mul_unitaryTransvection`: the conjugation law `g τ_{v,a} = τ_{g v,a} g` for `g`
   preserving `B`.
 * `Matrix.transpose_map_unitaryTransvection_mul_mul_self`: an isotropic transvection with
@@ -124,7 +127,7 @@ theorem unitaryTransvection_smul (c a : R) :
 
 omit [DecidableEq n] in
 /-- Applying `σ` to the coordinates of `g x` is applying `σ(g)` to those of `x`. -/
-private theorem comp_mulVec (σ : R →+* R) (g : Matrix n n R) (x : n → R) :
+theorem comp_mulVec (σ : R →+* R) (g : Matrix n n R) (x : n → R) :
     σ ∘ (g *ᵥ x) = g.map σ *ᵥ (σ ∘ x) :=
   funext (RingHom.map_mulVec σ g x)
 
@@ -136,6 +139,16 @@ theorem comp_mulVec_dotProduct_mulVec_mulVec {g : Matrix n n R} (hg : (g.map σ)
     (σ ∘ (g *ᵥ x)) ⬝ᵥ (Q *ᵥ (g *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
   rw [comp_mulVec, ← vecMul_transpose, mulVec_mulVec, dotProduct_mulVec, vecMul_vecMul,
     ← Matrix.mul_assoc, hg, ← dotProduct_mulVec]
+
+omit [DecidableEq n] in
+/-- **An `ε`-Hermitian form.** If `σ` is an involution and the Gram matrix satisfies
+`σ(Q)ᵀ = ε Q`, then `σ(B(x, y)) = ε B(y, x)`. -/
+theorem apply_comp_dotProduct_mulVec (hσ : Function.Involutive σ) {ε : R}
+    (hQ : (Q.map σ)ᵀ = ε • Q) (x y : n → R) :
+    σ ((σ ∘ x) ⬝ᵥ (Q *ᵥ y)) = ε * ((σ ∘ y) ⬝ᵥ (Q *ᵥ x)) := by
+  rw [RingHom.map_dotProduct, comp_mulVec, ← Function.comp_assoc, hσ.comp_self, Function.id_comp,
+    dotProduct_mulVec, ← mulVec_transpose, hQ, smul_mulVec, smul_dotProduct, smul_eq_mul,
+    dotProduct_comm]
 
 /-- **The conjugation law.** A matrix `g` preserving the form, `σ(g)ᵀ Q g = Q`, carries the
 transvection `τ_{v,a}` to `τ_{g v,a}`: `g τ_{v,a} = τ_{g v,a} g`. -/
