@@ -15,7 +15,6 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 public import TauCeti.Topology.Sheaves.Leray
 import Mathlib.Algebra.Category.Grp.Zero
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
-import TauCeti.AlgebraicGeometry.Morphisms.Affine
 
 /-!
 # Čech cohomology of quasi-coherent sheaves for affine covers

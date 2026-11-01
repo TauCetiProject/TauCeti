@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicGeometry.Cohomology.Cech.Linear
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
-public import TauCeti.AlgebraicGeometry.Morphisms.Affine
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
 /-!
