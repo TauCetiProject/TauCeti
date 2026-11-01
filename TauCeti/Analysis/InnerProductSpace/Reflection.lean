@@ -38,6 +38,16 @@ they span: reflecting in the hyperplane orthogonal to `a` and then in the one or
 sends `a` to `b` and fixes every vector orthogonal to both. Moving the second normal from `a` to
 `a + b` connects this rotation to the identity by an analytic path of linear isometries
 (`TauCeti.exists_contDiff_path_apply_eq`).
+
+More generally, every linear isometry of determinant `1` of a finite-dimensional real inner product
+space is the time-one map of an analytic path of linear isometries starting at the identity
+(`LinearIsometryEquiv.exists_contDiff_path_of_det_eq_one`). By the Cartan–Dieudonné theorem
+(`LinearIsometryEquiv.reflections_generate_dim`) such an isometry is a product of hyperplane
+reflections, an even number of them nontrivial, since each hyperplane reflection has determinant
+`-1` (`TauCeti.linearEquiv_det_reflection_orthogonal_singleton`). The product of the reflections in
+the hyperplanes orthogonal to unit vectors `a` and `b` is joined to the identity by moving the
+normal of the reflection applied second from `a` to `b` along the segment between them, which
+avoids `0` unless `b = -a`; the remaining reflections are absorbed by conjugation.
 -/
 
 public section
@@ -196,6 +206,13 @@ theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : �
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
     mul_pos hx hy]
 
+/-- Reflection in the hyperplane orthogonal to a nonzero vector has determinant `-1`. -/
+theorem linearEquiv_det_reflection_orthogonal_singleton [FiniteDimensional ℝ F] {v : F}
+    (hv : v ≠ 0) : (LinearEquiv.det (ℝ ∙ v)ᗮ.reflection.toLinearEquiv : ℝ) = -1 := by
+  rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
+    finrank_span_singleton hv]
+  simp
+
 /-- In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of
 determinant `1`. For nonzero `v`, take the product of the reflections in the hyperplanes
 orthogonal to `v` and to a nonzero vector orthogonal to `v`. -/
@@ -204,18 +221,14 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
   by_cases hv : v = 0
   · exact ⟨LinearIsometryEquiv.refl ℝ F, by simp, by simp [hv]⟩
-  have hdet (w : F) (hw : w ≠ 0) :
-      (LinearEquiv.det (ℝ ∙ w)ᗮ.reflection.toLinearEquiv : ℝ) = -1 := by
-    rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
-      finrank_span_singleton hw]
-    simp
   obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := (ℝ ∙ v)ᗮ) fun h ↦ by
     have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ v)
     rw [h, finrank_bot, finrank_span_singleton hv] at this
     omega
   refine ⟨(ℝ ∙ v)ᗮ.reflection.trans (ℝ ∙ w)ᗮ.reflection, ?_, ?_⟩
   · rw [LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
-      hdet _ hw0, hdet _ hv]
+      linearEquiv_det_reflection_orthogonal_singleton hw0,
+      linearEquiv_det_reflection_orthogonal_singleton hv]
     norm_num
   · rw [LinearIsometryEquiv.trans_apply, Submodule.reflection_orthogonalComplement_singleton_eq_neg,
       map_neg, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
@@ -379,3 +392,145 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
     simp
 
 end TauCeti
+
+namespace LinearIsometryEquiv
+
+open scoped RealInnerProductSpace ContDiff
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- `e` is the time-one map of an analytic path of linear isometries starting at the identity. -/
+private def IsJoinedToOne (e : F ≃ₗᵢ[ℝ] F) : Prop :=
+  ∃ R : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ ω (fun p : ℝ × F => R p.1 p.2) ∧ (∀ x, R 0 x = x) ∧
+    ∀ x, R 1 x = e x
+
+/-- The identity is joined to itself by the constant path. -/
+private theorem isJoinedToOne_one : IsJoinedToOne (1 : F ≃ₗᵢ[ℝ] F) :=
+  ⟨fun _ => 1, by simpa using contDiff_snd, fun _ => rfl, fun _ => rfl⟩
+
+/-- Paths from the identity multiply pointwise. -/
+private theorem IsJoinedToOne.mul {e f : F ≃ₗᵢ[ℝ] F} (he : IsJoinedToOne e)
+    (hf : IsJoinedToOne f) : IsJoinedToOne (e * f) := by
+  obtain ⟨R, hR, hR₀, hR₁⟩ := he
+  obtain ⟨S, hS, hS₀, hS₁⟩ := hf
+  refine ⟨fun t => R t * S t, ?_, fun x => ?_, fun x => ?_⟩
+  · simp only [coe_mul, Function.comp_apply]
+    exact hR.comp (contDiff_fst.prodMk hS)
+  · simp [hR₀, hS₀]
+  · simp [hR₁, hS₁]
+
+/-- A path from the identity can be conjugated by any linear isometry. -/
+private theorem IsJoinedToOne.conj {e : F ≃ₗᵢ[ℝ] F} (he : IsJoinedToOne e) (g : F ≃ₗᵢ[ℝ] F) :
+    IsJoinedToOne (g * e * g⁻¹) := by
+  obtain ⟨R, hR, hR₀, hR₁⟩ := he
+  refine ⟨fun t => g * R t * g⁻¹, ?_, fun x => ?_, fun x => ?_⟩
+  · simp only [coe_mul, coe_inv, Function.comp_apply]
+    exact g.toContinuousLinearEquiv.contDiff.comp
+      (hR.comp (contDiff_fst.prodMk (g.symm.toContinuousLinearEquiv.contDiff.comp contDiff_snd)))
+  · simp [hR₀]
+  · simp [hR₁]
+
+/-- The product of the reflections in the hyperplanes orthogonal to two unit vectors `a` and `b`
+is joined to the identity, by moving the normal of the second reflection from `a` to `b` along the
+segment between them. That segment avoids `0` unless `b = -a`, when the product is the
+identity. -/
+private theorem isJoinedToOne_reflection_mul_reflection_of_norm_eq_one {a b : F} (ha : ‖a‖ = 1)
+    (hb : ‖b‖ = 1) : IsJoinedToOne ((ℝ ∙ b)ᗮ.reflection * (ℝ ∙ a)ᗮ.reflection) := by
+  by_cases hab : b = -a
+  · have hspan : (ℝ ∙ b) = ℝ ∙ a := by
+      rw [hab, ← neg_one_smul ℝ a, Submodule.span_singleton_smul_eq isUnit_one.neg]
+    simp only [hspan, Submodule.reflection_mul_reflection]
+    exact isJoinedToOne_one
+  set c : ℝ → F := fun t => (1 - t) • a + t • b
+  have hc (t : ℝ) : c t ≠ 0 := by
+    intro h
+    -- Then `t • b = (t - 1) • a`, so `|t| = |t - 1|`, which forces `t = 1 / 2` and `b = -a`.
+    have h' : t • b = (t - 1) • a := by
+      simp only [c] at h
+      linear_combination (norm := module) h
+    have hn := congrArg norm h'
+    rw [norm_smul, norm_smul, ha, hb, Real.norm_eq_abs, Real.norm_eq_abs] at hn
+    have ht : t = 1 / 2 := by
+      rcases abs_eq_abs.mp (by simpa using hn) with h | h <;> linarith
+    subst ht
+    exact hab (by linear_combination (norm := module) (2 : ℝ) • h')
+  refine ⟨fun t => (ℝ ∙ c t)ᗮ.reflection * (ℝ ∙ a)ᗮ.reflection, ?_, fun x => ?_, fun x => ?_⟩
+  · have hy : ContDiff ℝ ω fun p : ℝ × F => (ℝ ∙ a)ᗮ.reflection p.2 :=
+      (ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd
+    have hcd : ContDiff ℝ ω fun p : ℝ × F => c p.1 :=
+      ((contDiff_const.sub contDiff_fst).smul contDiff_const).add
+        (contDiff_fst.smul contDiff_const)
+    have hR : (fun p : ℝ × F => ((ℝ ∙ c p.1)ᗮ.reflection * (ℝ ∙ a)ᗮ.reflection) p.2) = fun p =>
+        (ℝ ∙ a)ᗮ.reflection p.2 - (2 * (⟪c p.1, (ℝ ∙ a)ᗮ.reflection p.2⟫ / ‖c p.1‖ ^ 2)) •
+          c p.1 :=
+      funext fun p => by
+        rw [coe_mul, Function.comp_apply, TauCeti.reflection_orthogonal_singleton_apply_div_norm_sq]
+    rw [hR]
+    exact hy.sub ((contDiff_const.mul ((hcd.inner ℝ hy).div ((contDiff_norm_sq ℝ).comp hcd)
+      fun p => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc p.1)))).smul hcd)
+  · simp [c]
+  · simp [c]
+
+/-- The product of the reflections in the hyperplanes orthogonal to two nonzero vectors is joined
+to the identity. -/
+private theorem isJoinedToOne_reflection_mul_reflection {u w : F} (hu : u ≠ 0) (hw : w ≠ 0) :
+    IsJoinedToOne ((ℝ ∙ u)ᗮ.reflection * (ℝ ∙ w)ᗮ.reflection) := by
+  -- Both reflections only depend on the lines spanned by `u` and `w`, so normalize them.
+  have hspan {v : F} (hv : v ≠ 0) : ∃ a, ‖a‖ = 1 ∧ (ℝ ∙ v) = ℝ ∙ a :=
+    ⟨‖v‖⁻¹ • v, norm_smul_inv_norm hv,
+      (Submodule.span_singleton_smul_eq (inv_ne_zero (norm_ne_zero_iff.2 hv)).isUnit v).symm⟩
+  obtain ⟨a, ha, hua⟩ := hspan hu
+  obtain ⟨b, hb, hwb⟩ := hspan hw
+  simp only [hua, hwb]
+  exact isJoinedToOne_reflection_mul_reflection_of_norm_eq_one hb ha
+
+/-- A product of hyperplane reflections of determinant `1` is joined to the identity, and one of
+determinant `-1` is joined to the identity after multiplying by any further hyperplane
+reflection. -/
+private theorem isJoinedToOne_list_prod [FiniteDimensional ℝ F] (l : List F) :
+    ((LinearEquiv.det (l.map fun v => (ℝ ∙ v)ᗮ.reflection).prod.toLinearEquiv : ℝ) = 1 →
+        IsJoinedToOne (l.map fun v => (ℝ ∙ v)ᗮ.reflection).prod) ∧
+      ((LinearEquiv.det (l.map fun v => (ℝ ∙ v)ᗮ.reflection).prod.toLinearEquiv : ℝ) = -1 →
+        ∀ a : F, a ≠ 0 →
+          IsJoinedToOne ((l.map fun v => (ℝ ∙ v)ᗮ.reflection).prod * (ℝ ∙ a)ᗮ.reflection)) := by
+  induction l with
+  | nil =>
+    refine ⟨fun _ => isJoinedToOne_one, fun h => ?_⟩
+    rw [List.map_nil, List.prod_nil, one_def, toLinearEquiv_refl, LinearEquiv.det_refl] at h
+    norm_num at h
+  | cons v l ih =>
+    rw [List.map_cons, List.prod_cons]
+    set φ := (l.map fun v => (ℝ ∙ v)ᗮ.reflection).prod
+    set g := (ℝ ∙ v)ᗮ.reflection
+    by_cases hv : v = 0
+    · have hg : g = 1 := by
+        ext x
+        simp only [g]
+        rw [TauCeti.reflection_orthogonal_singleton_apply_div_norm_sq, hv]
+        simp
+      simpa [hg] using ih
+    have hdet : (LinearEquiv.det (g * φ).toLinearEquiv : ℝ) =
+        -LinearEquiv.det φ.toLinearEquiv := by
+      rw [mul_def, toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
+        TauCeti.linearEquiv_det_reflection_orthogonal_singleton hv, neg_one_mul]
+    rw [hdet]
+    refine ⟨fun h => ?_, fun h a ha => ?_⟩
+    · -- `g * φ` is the conjugate of `φ * g` by `g`.
+      have := (ih.2 (by linarith) v hv).conj g
+      rwa [show g * (φ * g) * g⁻¹ = g * φ by group] at this
+    · -- `g * φ * r_a` is the conjugate of `φ` by `g`, times `g * r_a`.
+      have := ((ih.1 (by linarith)).conj g).mul (isJoinedToOne_reflection_mul_reflection hv ha)
+      rwa [show g * φ * g⁻¹ * (g * (ℝ ∙ a)ᗮ.reflection) = g * φ * (ℝ ∙ a)ᗮ.reflection by group]
+        at this
+
+/-- **Linear isometries of determinant `1` are joined to the identity.** A linear isometry of a
+finite-dimensional real inner product space of determinant `1` is the time-one map of an analytic
+path of linear isometries starting at the identity. -/
+theorem exists_contDiff_path_of_det_eq_one [FiniteDimensional ℝ F] (e : F ≃ₗᵢ[ℝ] F)
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = 1) :
+    ∃ R : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ ω (fun p : ℝ × F => R p.1 p.2) ∧ (∀ x, R 0 x = x) ∧
+      ∀ x, R 1 x = e x := by
+  obtain ⟨l, -, rfl⟩ := e.reflections_generate_dim
+  exact (isJoinedToOne_list_prod l).1 he
+
+end LinearIsometryEquiv
