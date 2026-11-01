@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.RingTheory.FormalGroup.AddInv
-public import TauCeti.RingTheory.FormalGroup.Hom
 public import TauCeti.RingTheory.MvPowerSeries.Evaluation
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -48,9 +47,8 @@ which mention no topology on `R` either.
 * `FormalGroup.TopNilpotentPoint.hasSum_val_neg`: `-x` is the sum of the convergent series
   `∑ cₙ xⁿ`, where `i(X) = ∑ cₙ Xⁿ` is the formal inverse.
 * `FormalGroup.TopNilpotentPoint.map_id`, `FormalGroup.TopNilpotentPoint.map_comp`: functoriality.
-* `FormalGroup.substPointHom_X`, `FormalGroup.substPointHom_comp`,
-  `TauCeti.FormalGroupHom.applyPoint_substPointHom`: functoriality of power-series points along
-  substitutions, compatibly with homomorphisms of formal group laws.
+* `FormalGroup.substPointHom_X`, `FormalGroup.substPointHom_comp`: functoriality of power-series
+  points along substitutions.
 
 ## Implementation notes
 
@@ -342,19 +340,3 @@ theorem substPointHom_comp {a : σ → MvPowerSeries τ R} {b : τ → MvPowerSe
 end Subst
 
 end FormalGroup
-
-namespace TauCeti.FormalGroupHom
-
-open FormalGroup
-
-variable {R : Type*} [CommRing R] {F G : FormalGroup R} {σ τ : Type*}
-
-/-- Applying a homomorphism of formal group laws to points commutes with substitution. -/
-theorem applyPoint_substPointHom (f : FormalGroupHom F G) {a : σ → MvPowerSeries τ R}
-    (ha : HasSubst a) (x : F.Point σ) :
-    f.applyPoint (F.substPointHom ha x) = G.substPointHom ha (f.applyPoint x) :=
-  Subtype.ext <| by
-    rw [applyPoint_val, val_substPointHom, val_substPointHom, applyPoint_val]
-    exact (subst_powerSeriesSubst ha x.prop f.toPowerSeries).symm
-
-end TauCeti.FormalGroupHom

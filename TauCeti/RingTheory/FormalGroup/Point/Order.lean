@@ -153,8 +153,8 @@ theorem le_order_val_sub_val_sub {N : ℕ} (hN : N ≠ 0) {x y : G.Point σ}
   convert this using 2
   ring
 
-/-- On points whose difference in `G` vanishes to order `N ≥ 1`, the degree-`N` part of the
-difference in `G` is the degree-`N` part of the ordinary difference. -/
+/-- If `y` has no constant term and the difference `x - y` in `G` vanishes to order `N ≥ 1`, the
+degree-`N` part of the difference in `G` is the degree-`N` part of the ordinary difference. -/
 theorem homogeneousComponent_val_sub {N : ℕ} (hN : N ≠ 0) {x y : G.Point σ}
     (hy : constantCoeff y.val = 0) (h : (N : ℕ∞) ≤ (x - y).val.order) :
     homogeneousComponent N (x - y).val = homogeneousComponent N (x.val - y.val) := by
