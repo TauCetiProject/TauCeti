@@ -197,10 +197,10 @@ private theorem exists_homotopic_monomial (g : C(Circle × Circle, Circle)) :
       Circle.exp (G (v + c)) = Circle.exp (G v) := by
     rw [hG', hG', cover_add, hc, mul_one]
   -- Translating by a period changes the lift by an integer multiple of `2π`.
-  obtain ⟨m, hm⟩ := Circle.exists_int_forall_eq_add_of_exp_eq G.continuous
-    (τ := fun v ↦ v + (2 * π, 0)) (by fun_prop) (hper _ (by simp))
-  obtain ⟨n, hn⟩ := Circle.exists_int_forall_eq_add_of_exp_eq G.continuous
-    (τ := fun v ↦ v + (0, 2 * π)) (by fun_prop) (hper _ (by simp))
+  obtain ⟨m, hm⟩ := Circle.exists_int_forall_eq_add_of_exp_eq
+    (G := fun v ↦ G (v + (2 * π, 0))) (by fun_prop) G.continuous (hper _ (by simp))
+  obtain ⟨n, hn⟩ := Circle.exists_int_forall_eq_add_of_exp_eq
+    (G := fun v ↦ G (v + (0, 2 * π))) (by fun_prop) G.continuous (hper _ (by simp))
   exact ⟨m, n, homotopic_monomial_of_lift G.continuous hG' hm hn⟩
 
 /-- The monomial `(a, b) ↦ a ^ m * b ^ n`, restricted to the `(p, q)` curve on the torus, is a loop

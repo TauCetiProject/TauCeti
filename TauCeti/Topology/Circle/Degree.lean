@@ -50,9 +50,8 @@ which the Maslov index of a loop of totally real subspaces is defined.
 * `Circle.degree_congr`: loops agreeing pointwise have the same degree.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
-* `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, a continuous lift whose
-  exponential is invariant under a continuous self-map changes under it by a constant integer
-  multiple of `2π`.
+* `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
+  the same map through `Circle.exp` differ by a constant integer multiple of `2π`.
 -/
 
 public section
@@ -74,16 +73,14 @@ theorem exists_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A] [Preconn
     (fun a a' ↦ by simp [exp_sub, h]) a a₀
   linarith
 
-/-- On a preconnected space, a continuous real function whose exponential is invariant under a
-continuous self-map `τ` changes under `τ` by a constant integer multiple of `2π`. -/
+/-- **Lifts through `exp` are unique up to a full turn.** On a preconnected space, two continuous
+real functions with the same exponential differ by a constant integer multiple of `2π`. -/
 theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
-    [PreconnectedSpace A] {G : A → ℝ} (hG : Continuous G) {τ : A → A}
-    (hτ : Continuous τ) (h : ∀ a, exp (G (τ a)) = exp (G a)) :
-    ∃ m : ℤ, ∀ a, G (τ a) = G a + m * (2 * π) := by
+    [PreconnectedSpace A] {G G' : A → ℝ} (hG : Continuous G) (hG' : Continuous G')
+    (h : ∀ a, exp (G a) = exp (G' a)) : ∃ m : ℤ, ∀ a, G a = G' a + m * (2 * π) := by
   rcases isEmpty_or_nonempty A with hA | ⟨⟨a₀⟩⟩
   · exact ⟨0, isEmptyElim⟩
-  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_exp_eq (hG.comp hτ) hG h
-  replace hc : ∀ a, G (τ a) = G a + c := hc
+  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_exp_eq hG hG' h
   have hexp : exp c = 1 := by
     have := h a₀
     rwa [hc a₀, exp_add, mul_eq_left] at this
