@@ -66,8 +66,6 @@ their images are nonzero submodules of irreducible modules. So `M ≃ D ≃ N`.
   acts as `x` acts on a highest weight vector `v : M` gives a linear equivalence `M ≃ N` carrying
   `v` to `w` and the action of `x` to that of `φ x`; it is unique
   (`TauCeti.eq_twistedEquivOfIsHighestWeightVector`).
-* `LinearMap.ext_on_of_lieSpan_eq_top`: a linear map carrying the action of each `x` to that of
-  `φ x` is determined on a set generating its source as a Lie module.
 
 ## References
 
@@ -104,28 +102,6 @@ private theorem mem_diagonalComapInr {n : N} :
   by simp only [diagonalComapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
 
 end Diagonal
-
-/-! ### Linear maps intertwining two Lie actions -/
-
-/-- **A linear map intertwining two Lie actions is determined on a generating set.** Let `φ` be any
-map `L → L'`. Two linear maps `f g : M →ₗ[R] N` that both carry the action of every `x : L` on `M`
-to the action of `φ x` on `N`, and that agree on a set generating `M` as a Lie module, are equal.
-
-For `φ = id` this is extensionality of Lie module morphisms on a generating set; for an
-automorphism `φ` of `L` it applies to the linear maps from `M` to the twist of `N` by `φ`. -/
-theorem _root_.LinearMap.ext_on_of_lieSpan_eq_top {R L L' M N : Type*} [CommRing R] [LieRing L]
-    [LieRing L'] [AddCommGroup M] [Module R M] [LieRingModule L M] [AddCommGroup N] [Module R N]
-    [LieRingModule L' N] {s : Set M} (hs : LieSubmodule.lieSpan R L s = ⊤) (φ : L → L')
-    {f g : M →ₗ[R] N} (hf : ∀ x m, f ⁅x, m⁆ = ⁅φ x, f m⁆) (hg : ∀ x m, g ⁅x, m⁆ = ⁅φ x, g m⁆)
-    (h : Set.EqOn f g s) : f = g := by
-  -- The locus where `f` and `g` agree is a Lie submodule, and it contains the generating set.
-  let P : LieSubmodule R L M :=
-    { LinearMap.eqLocus f g with
-      lie_mem := fun {x m} hm => by
-        simp only [Submodule.mem_carrier, SetLike.mem_coe, LinearMap.mem_eqLocus] at hm ⊢
-        rw [hf, hg, hm] }
-  have hle : (⊤ : LieSubmodule R L M) ≤ P := hs ▸ LieSubmodule.lieSpan_le.mpr h
-  exact LinearMap.ext fun m => LinearMap.mem_eqLocus.mp (hle (LieSubmodule.mem_top m))
 
 /-! ### The twist of a module by a surjective endomorphism
 
