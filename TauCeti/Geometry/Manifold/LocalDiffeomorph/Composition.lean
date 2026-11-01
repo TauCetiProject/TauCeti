@@ -160,8 +160,8 @@ linear isometry of `E`. -/
 theorem _root_.IsLocalDiffeomorph.comp_linearIsometryEquiv {e : E → M}
     (d : IsLocalDiffeomorph 𝓘(𝕜, E) I n e) (R : E ≃ₗᵢ[𝕜] E) :
     IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ R) := fun v ↦ by
-  have hR := (R.toContinuousLinearEquiv.toDiffeomorphOfContDiff n).isLocalDiffeomorph v
-  simp only [ContinuousLinearEquiv.coe_toDiffeomorphOfContDiff,
+  have hR := (R.toContinuousLinearEquiv.toContDiffDiffeomorph n).isLocalDiffeomorph v
+  simp only [ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hR
   exact hR.comp (hg := d (R v))
 

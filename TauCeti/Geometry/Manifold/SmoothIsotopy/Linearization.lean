@@ -93,7 +93,7 @@ private theorem isSmoothEmbedding_linearizationMotion_of_ne_zero (hf : ContDiff 
   let dilate : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)
   -- Dilation by `t⁻¹` of the target, as a `C^n` diffeomorphism.
   let shrink : F ≃ₘ^n⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ F :=
-    (ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)⁻¹ : F ≃L[ℝ] F).toDiffeomorphOfContDiff n
+    (ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)⁻¹ : F ≃L[ℝ] F).toContDiffDiffeomorph n
   have h : (fun x => linearizationMotion f (t, x)) = shrink ∘ f ∘ dilate := by
     funext x
     simp [linearizationMotion_of_ne_zero hf hf0 ht, shrink, dilate,
