@@ -18,7 +18,7 @@ operator on almost-everywhere measurable real-valued functions. It preserves one
 multiplication, is positive and monotone, and its powers are composition with the corresponding
 iterates of `T`.
 
-On `L∞`, `linftyOne` supplies the constant-one element for an arbitrary measure, while Mathlib's
+On `L∞`, the class `1` is the constant-one element for an arbitrary measure, while Mathlib's
 heterogeneous Hölder action supplies pointwise multiplication. Mathlib's existing composition
 isometry preserves these operations. Its positivity, monotonicity, and fixed-point
 characterization hold on general `Lᵖ` and are supplied by `TauCeti.Probability.Ergodic.FixedSpace`.
@@ -132,13 +132,12 @@ theorem koopmanMarkov_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ �
 /-- Composition by a measure-preserving map preserves the constant-one element of `L∞`. -/
 @[simp]
 theorem compMeasurePreservingLInfty_one (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    Lp.compMeasurePreserving T hT linftyOne = linftyOne := by
+    Lp.compMeasurePreserving T hT (1 : Lp ℝ ∞ μ) = 1 := by
   apply Lp.ext
-  have honeT := hT.quasiMeasurePreserving.tendsto_ae
-    (coeFn_linftyOne (Ω := Ω) (μ := μ))
-  filter_upwards [Lp.coeFn_compMeasurePreserving linftyOne hT, honeT,
-    coeFn_linftyOne (Ω := Ω) (μ := μ)] with ω hop honeT hone
-  rw [hop, Function.comp_apply, honeT, hone]
+  have honeT := hT.quasiMeasurePreserving.tendsto_ae (Lp.coeFn_one (E := ℝ) (μ := μ))
+  filter_upwards [Lp.coeFn_compMeasurePreserving (1 : Lp ℝ ∞ μ) hT, honeT,
+    Lp.coeFn_one (E := ℝ) (μ := μ)] with ω hop honeT hone
+  rw [hop, Function.comp_apply, honeT, hone, Pi.one_apply, Pi.one_apply]
 
 /-- Composition by a measure-preserving map preserves pointwise products in `L∞`. -/
 theorem compMeasurePreservingLInfty_mul (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
