@@ -21,8 +21,9 @@ It is comparable to the absolute affine logarithmic height by
 These comparisons allow affine height bounds to be used in multiplicative-group
 packing arguments, where inversion invariance and a triangle inequality are needed.
 The statements allow zero coordinates; their restriction to tuples of units gives
-the usual height on an algebraic torus. Algebraicity is required for the comparisons
+the usual height on an algebraic torus. Algebraicity is required for the upper comparison
 and product bound, since the absolute heights have junk values on transcendental data.
+The lower comparison holds for every tuple.
 
 ## References
 
@@ -130,14 +131,19 @@ theorem scalarSumHeight_mul_le (x y : ι → F)
   exact div_le_div_of_nonneg_right
     (Finset.sum_le_sum fun i _ ↦ logHeight₁_mul_le _ _) (Nat.cast_nonneg _)
 
-/-- The absolute affine height of an algebraic tuple is at most its scalar-sum height. -/
-theorem absoluteLogHeightAff_le_scalarSumHeight {n : ℕ} (x : Fin n → F)
-    (hx : ∀ i, IsAlgebraic ℚ (x i)) :
+/-- The absolute affine height of any tuple is at most its scalar-sum height. -/
+theorem absoluteLogHeightAff_le_scalarSumHeight {n : ℕ} (x : Fin n → F) :
     absoluteLogHeightAff x ≤ scalarSumHeight x := by
-  obtain ⟨K, f, y, rfl⟩ := exists_numberField_comp hx
-  rw [absoluteLogHeightAff_comp, scalarSumHeight_comp,
-    absoluteLogHeightAff_eq_logHeightAff_div, scalarSumHeight_eq_div]
-  exact div_le_div_of_nonneg_right (logHeightAff_le_sum_logHeight₁ y) (Nat.cast_nonneg _)
+  by_cases hx : ∀ i, IsAlgebraic ℚ (x i)
+  · obtain ⟨K, f, y, rfl⟩ := exists_numberField_comp hx
+    rw [absoluteLogHeightAff_comp, scalarSumHeight_comp,
+      absoluteLogHeightAff_eq_logHeightAff_div, scalarSumHeight_eq_div]
+    exact div_le_div_of_nonneg_right (logHeightAff_le_sum_logHeight₁ y) (Nat.cast_nonneg _)
+  · obtain ⟨i, hi⟩ := not_forall.mp hx
+    have h : ¬ IsIntegral ℚ ((Fin.cons 1 x : Fin (n + 1) → F) i.succ) := by
+      simpa using fun h : IsIntegral ℚ (x i) ↦ hi h.isAlgebraic
+    rw [absoluteLogHeightAff_def, absoluteProjectiveTupleHeight_of_not_isIntegral h, Real.log_one]
+    exact scalarSumHeight_nonneg x
 
 /-- The scalar-sum height of an algebraic `n`-tuple is at most `n` times its absolute
   affine logarithmic height. -/
