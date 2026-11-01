@@ -360,6 +360,12 @@ theorem isContactForm_innerProductContactForm : (innerProductContactForm V).IsCo
   -- The zero tangent vector is by definition the zero of `V × V × ℝ`.
   exact Prod.ext h₁ (Prod.ext h₂ hv)
 
+/-- The standard contact form vanishes nowhere. -/
+theorem innerProductContactForm_apply_ne_zero (x : V × V × ℝ) :
+    (innerProductContactForm V).1 x ≠ 0 := fun h ↦
+  let ⟨_, hv⟩ := (isContactForm_innerProductContactForm V).exists_ne_zero x
+  hv (by simp [h])
+
 /-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the standard contact form is `dz - Σᵢ pᵢ dqᵢ`. -/
 theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}
     (x : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
@@ -433,15 +439,7 @@ structure: it pulls the standard contact form `α` back to `-α`. -/
 theorem mpullback_innerProductContactForm_neg :
     mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) (fun x : V × V × ℝ ↦ (x.1, -x.2.1, -x.2.2))
       (innerProductContactForm V).1 = (-innerProductContactForm V).1 := by
-  let L : (V × V × ℝ) →L[ℝ] V × V × ℝ :=
-    (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
-      (-(ContinuousLinearMap.snd ℝ V (V × ℝ)))
-  exact mpullback_innerProductContactForm_linear_eq V L (by funext x; simp [L, Prod.ext_iff]) _
-    fun x w ↦ by
-      rw [SmoothForm.neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
-        innerProductContactForm_apply]
-      obtain ⟨a, b, c⟩ := w
-      simp [L, neg_add_eq_sub]
+  simpa [← Prod.neg_mk] using mpullback_innerProductContactForm_smul V (-1)
 
 end InnerProductSpace
 
