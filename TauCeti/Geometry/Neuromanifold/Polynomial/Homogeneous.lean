@@ -162,7 +162,8 @@ theorem polynomialHomogeneousCoefficientMap_eq_iff (P : J → MvPolynomial (W �
 
 /-- Over an infinite integral domain, the realization fibre of a model with homogeneous input
 polynomials over the evaluation of `q` is the homogeneous coefficient fibre over `q`. -/
-theorem fiber_polynomialRealization_tupleEvaluation (P : J → MvPolynomial (W ⊕ X) K)
+theorem fiber_polynomialRealization_tupleEvaluation_of_isHomogeneous
+    (P : J → MvPolynomial (W ⊕ X) K)
     (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) (q : J → homogeneousSubmodule X K d) :
     fiber (polynomialRealization P) (tupleEvaluation J (homogeneousSubmodule X K d) q) =
       polynomialHomogeneousCoefficientMap P hP ⁻¹' {q} :=

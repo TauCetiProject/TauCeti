@@ -44,7 +44,7 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   bounded-degree polynomials.
 * `MvPolynomial.tupleEvaluation`, `MvPolynomial.tupleEvaluation_injective`: evaluation of tuples
   of polynomials from a submodule as vector-valued functions is linear, and injective over an
-  infinite integral domain; `MvPolynomial.boundedEvaluation` is its bounded-degree case.
+  infinite integral domain, for instance for the polynomials of bounded total degree.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_eq_extendByZero`: including a submodule of
   polynomials supported on a set of exponents of degree at most `e` among the polynomials of total
   degree at most `e` extends the coefficients by zero.
@@ -188,31 +188,6 @@ defines. -/
     (h : S ≤ T) (v : J → S) :
     tupleEvaluation J T (Submodule.inclusion h ∘ v) = tupleEvaluation J S v := (rfl)
 
-variable (σ R J) in
-/-- Evaluation of a tuple of bounded-degree polynomials as a vector-valued function on points.
-It is linear in the tuple. -/
-noncomputable def boundedEvaluation (d : ℕ) :
-    (J → restrictTotalDegree σ R d) →ₗ[R] (σ → R) → J → R :=
-  tupleEvaluation J (restrictTotalDegree σ R d)
-
-/-- Coordinate evaluation of a tuple of bounded-degree polynomials. -/
-@[simp] theorem boundedEvaluation_apply {d : ℕ} (v : J → restrictTotalDegree σ R d)
-    (x : σ → R) (j : J) :
-    boundedEvaluation σ R J d v x j = eval x (v j : MvPolynomial σ R) := (rfl)
-
-/-- Over an infinite integral domain, bounded-degree polynomial tuples are determined by the
-functions they define: the evaluation map is faithful. -/
-theorem boundedEvaluation_injective {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
-    (d : ℕ) : Function.Injective (boundedEvaluation σ R J d) :=
-  tupleEvaluation_injective _
-
-/-- Raising the degree bound from `d` to `d'` does not change the function defined by a tuple of
-bounded-degree polynomials. -/
-@[simp] theorem boundedEvaluation_inclusion_comp {d d' : ℕ} (h : d ≤ d')
-    (v : J → restrictTotalDegree σ R d) :
-    boundedEvaluation σ R J d' (Submodule.inclusion (restrictTotalDegree_mono σ R h) ∘ v) =
-      boundedEvaluation σ R J d v := (rfl)
-
 /-- Let `p` be a submodule of the polynomials of total degree at most `e` whose members have zero
 coefficients at the exponents outside `Q`, all exponents in `Q` having degree at most `e`.
 Including a tuple from `p` among the polynomials of total degree at most `e` extends its
@@ -251,13 +226,9 @@ theorem boundedCoefficientEquiv_inclusion_comp [Finite σ] {d d' : ℕ} (h : d �
           (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ d')
             fun _ hs => hs.trans h))
         (boundedCoefficientEquiv σ R J d v) := by
-  have h0 (x : MvPolynomial σ R) (hx : x ∈ restrictTotalDegree σ R d) (s : σ →₀ ℕ)
-      (hs : ¬s.degree ≤ d) : x.coeff s = 0 := by
-    refine coeff_eq_zero_of_totalDegree_lt ?_
-    rw [← Finsupp.degree_apply]
-    exact ((mem_restrictTotalDegree σ d x).1 hx).trans_lt (not_le.1 hs)
   rw [boundedCoefficientEquiv_inclusion_comp_eq_extendByZero _ (Q := fun s => s.degree ≤ d)
-    (fun _ hs => hs.trans h) h0 v]
+    (fun _ hs => hs.trans h)
+    (fun _ hx _ hs => coeff_eq_zero_of_mem_restrictTotalDegree hx (not_le.1 hs)) v]
   congr 1
   ext i
   exact (boundedCoefficientEquiv_apply v i).symm
