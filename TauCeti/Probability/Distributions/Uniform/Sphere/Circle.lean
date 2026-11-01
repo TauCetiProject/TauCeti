@@ -75,19 +75,21 @@ theorem map_homeomorphCircle'_haarAddCircle :
 theorem map_circleSphereHomeomorph_haarAddCircle :
     haarAddCircle.map circleSphereHomeomorph = uniformSphereMeasure (EuclideanSpace ℝ (Fin 2)) := by
   let h : AddCircle (2 * π) ≃ₜ sphere (0 : ℂ) 1 := AddCircle.homeomorphCircle'
-  let g : sphere (0 : ℂ) 1 → sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 :=
-    fun x ↦ ⟨Complex.orthonormalBasisOneI.repr x,
-      mem_sphere_zero_iff_norm.mpr
-        ((Complex.orthonormalBasisOneI.repr.norm_map x).trans (mem_sphere_zero_iff_norm.mp x.2))⟩
+  let g : sphere (0 : ℂ) 1 ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 :=
+    EuclideanSpace.sphereHomeomorphCircle.symm
   have hfun : (circleSphereHomeomorph : AddCircle (2 * π) →
       sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) = g ∘ h := by
     funext t
     apply Subtype.ext
-    exact coe_circleSphereHomeomorph t
-  rw [hfun, ← Measure.map_map (by fun_prop) h.measurable]
+    exact (coe_circleSphereHomeomorph t).trans
+      (EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply (h t)).symm
+  rw [hfun, ← Measure.map_map g.measurable h.measurable]
   have hh : haarAddCircle.map h = uniformSphereMeasure ℂ := map_homeomorphCircle'_haarAddCircle
   rw [hh]
-  exact Complex.orthonormalBasisOneI.repr.map_uniformSphereMeasure
+  convert Complex.orthonormalBasisOneI.repr.map_uniformSphereMeasure using 1
+  congr 1
+  funext x
+  exact Subtype.ext (EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply x)
 
 end TauCeti.Probability
 
