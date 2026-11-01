@@ -382,8 +382,9 @@ residue field `κ`, the following are equivalent:
 4. the global dimension of `R` is its Krull dimension;
 5. the projective dimension of `κ` is `dim_κ 𝔪 / 𝔪²`.
 
-Conditions 4 and 5 are the equalities `gl dim R = dim R = dim_κ 𝔪 / 𝔪²` that hold for a
-regular local ring; they are equivalent to regularity because `R` has finite Krull dimension. -/
+Conditions 4 and 5 are the equalities `gl dim R = dim R` and `pd κ = dim_κ 𝔪 / 𝔪²` of 00OC,
+which hold for a regular local ring; they are equivalent to regularity because `R` has finite
+Krull dimension. -/
 @[stacks 00OC]
 theorem isRegularLocalRing_tfae {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
     [Small.{v} R] :
