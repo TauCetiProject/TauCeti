@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.Grid.CrossingChange.Transpose
 public import TauCeti.KnotTheory.Grid.TorusLink.FullTwist
 public import TauCeti.KnotTheory.Grid.TorusLink.Move
 

@@ -5,144 +5,129 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Move.Unknot
+public import TauCeti.KnotTheory.Grid.Move.Components
+public import TauCeti.KnotTheory.Grid.Stabilization.Transpose
 
 /-!
-# The diagonal reflection of grid links
+# Transposition on grid links
 
-The diagonal reflection `GridDiagram.transpose` exchanges the rows and the columns of a grid
-diagram. It carries a cyclic permutation of the rows to a cyclic permutation of the columns and
-back, exchanges row and column commutations (`GridDiagram.isCommutation_transpose`), and carries
-stabilizations to stabilizations (`GridDiagram.isStabilization_transpose`). So it carries grid
-moves to grid moves and descends to an involution `GridLink.transpose` of grid links. It fixes the
-unknot and preserves the number of components.
+Diagonal reflection exchanges row and column moves and preserves stabilizations.
+It therefore descends to an involution on grid links, not merely on their presenting
+diagrams. No identification of a link with its transpose is imposed.
 
-Read as a planar diagram whose vertical segments cross over the horizontal ones, the reflection of
-a grid diagram presents the reverse of its link: reflecting the plane in the diagonal and changing
-every crossing compose to a rotation of space, and the orientation conventions of vertical and
-horizontal segments are exchanged. As with the other classical readings of grid diagrams, this
-is motivation only and is not formalized here.
-
-## Main definitions
-
-* `TauCeti.GridLink.transpose`: the diagonal reflection of grid links.
-
-## Main results
-
-* `TauCeti.GridDiagram.movesTo_transpose_iff`: the reflection preserves the grid move relation.
-* `TauCeti.GridLink.transpose_toGridLink`: the reflection of the grid link of a diagram is the
-  grid link of the reflected diagram.
-* `TauCeti.GridLink.transpose_transpose`: the reflection is an involution.
-* `TauCeti.GridLink.transpose_unknot`, `TauCeti.GridLink.componentCount_transpose`: it fixes the
-  unknot and preserves the number of components.
-
-## References
-
-* P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical Surveys
-  and Monographs 208, 2015, Chapter 3: grid diagrams, their symmetries, and grid moves.
+The grid move conventions follow Ozsváth--Stipsicz--Szabó,
+*Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 public section
 
 namespace TauCeti
 
+namespace GridDiagram
+
+/-- Diagonal reflection sends an elementary grid move to an elementary grid move. -/
+theorem IsMove.transpose {A B : Σ n, GridDiagram n} (h : IsMove A B) :
+    IsMove ⟨A.1, A.2.transpose⟩ ⟨B.1, B.2.transpose⟩ := by
+  cases h with
+  | cyclicRows h =>
+    apply IsMove.cyclicColumns
+    simpa only [relabelRows_transpose] using h.imp
+      (congrArg GridDiagram.transpose) (congrArg GridDiagram.transpose)
+  | cyclicColumns h =>
+    apply IsMove.cyclicRows
+    simpa only [relabelColumns_transpose] using h.imp
+      (congrArg GridDiagram.transpose) (congrArg GridDiagram.transpose)
+  | commutation h => exact .commutation ((isCommutation_transpose _ _).mpr h)
+  | stabilization h => exact .stabilization ((isStabilization_transpose _ _).mpr h)
+  | destabilization h => exact .destabilization ((isDestabilization_transpose _ _).mpr h)
+
+/-- Diagonal reflection transports a sequence of grid moves. -/
+theorem MovesTo.transpose {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m}
+    (h : MovesTo G G') : MovesTo G.transpose G'.transpose := by
+  exact MovesTo.induction_on
+    (motive := fun A B ↦ MovesTo A.2.transpose B.2.transpose) h
+    (fun h ↦ h.transpose.movesTo) (fun _ ↦ .refl _)
+    (fun _ ih ↦ ih.symm) (fun _ _ ih ih' ↦ ih.trans ih')
+
+/-- Two transposed diagrams are move-equivalent exactly when the original diagrams are. -/
+@[simp]
+theorem movesTo_transpose {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m} :
+    MovesTo G.transpose G'.transpose ↔ MovesTo G G' :=
+  ⟨fun h ↦ by simpa only [transpose_transpose] using h.transpose, MovesTo.transpose⟩
+
+end GridDiagram
+
 namespace GridLink
 
-/-- Reflecting a cyclic permutation of the rows gives a cyclic permutation of the columns. -/
-private theorem toGridLink_transpose_relabelRows {n : ℕ} (G : GridDiagram n) :
+private theorem transpose_cyclicRows_toGridLink_eq {n : ℕ} (G : GridDiagram n) :
     G.transpose.toGridLink = (G.relabelRows (finRotate n)).transpose.toGridLink := by
-  rw [GridDiagram.relabelRows_transpose, ← GridDiagram.cyclicColumns_toGridLink_eq]
+  rw [GridDiagram.relabelRows_transpose]
+  exact G.transpose.cyclicColumns_toGridLink_eq
 
-/-- Reflecting a cyclic permutation of the columns gives a cyclic permutation of the rows. -/
-private theorem toGridLink_transpose_relabelColumns {n : ℕ} (G : GridDiagram n) :
+private theorem transpose_cyclicColumns_toGridLink_eq {n : ℕ} (G : GridDiagram n) :
     G.transpose.toGridLink = (G.relabelColumns (finRotate n)).transpose.toGridLink := by
-  rw [GridDiagram.relabelColumns_transpose, ← GridDiagram.cyclicRows_toGridLink_eq]
+  rw [GridDiagram.relabelColumns_transpose]
+  exact G.transpose.cyclicRows_toGridLink_eq
 
-/-- Reflecting a commutation gives a commutation. -/
-private theorem toGridLink_transpose_of_isCommutation {n : ℕ} {G G' : GridDiagram n}
+private theorem transpose_commutation_toGridLink_eq {n : ℕ} {G G' : GridDiagram n}
     (h : G.IsCommutation G') : G.transpose.toGridLink = G'.transpose.toGridLink :=
   ((GridDiagram.isCommutation_transpose _ _).mpr h).toGridLink_eq
 
-/-- Reflecting a stabilization gives a stabilization. -/
-private theorem toGridLink_transpose_of_isStabilization {n : ℕ} {G : GridDiagram n}
+private theorem transpose_stabilization_toGridLink_eq {n : ℕ} {G : GridDiagram n}
     {G' : GridDiagram (n + 1)} (h : G.IsStabilization G') :
     G.transpose.toGridLink = G'.transpose.toGridLink :=
   ((GridDiagram.isStabilization_transpose _ _).mpr h).toGridLink_eq
 
-/-- The diagonal reflection of grid links: the grid link of the diagonal reflection of any
-presenting diagram (`GridLink.transpose_toGridLink`). It is well defined because the reflection
-exchanges cyclic permutations of rows and of columns, exchanges row and column commutations, and
-carries stabilizations to stabilizations. -/
+/-- Diagonal reflection of a grid link, defined independently of a presenting diagram. -/
 def transpose : GridLink → GridLink :=
-  lift (fun _ G => G.transpose.toGridLink) toGridLink_transpose_relabelRows
-    toGridLink_transpose_relabelColumns toGridLink_transpose_of_isCommutation
-    toGridLink_transpose_of_isStabilization
+  GridLink.lift (fun _ G ↦ G.transpose.toGridLink)
+    transpose_cyclicRows_toGridLink_eq transpose_cyclicColumns_toGridLink_eq
+    transpose_commutation_toGridLink_eq transpose_stabilization_toGridLink_eq
 
-/-- The reflection of the grid link of a diagram is the grid link of the reflected diagram. -/
+/-- Transposition of a link presented by a diagram is presented by the transposed diagram. -/
 @[simp]
 theorem transpose_toGridLink {n : ℕ} (G : GridDiagram n) :
     G.toGridLink.transpose = G.transpose.toGridLink :=
-  lift_toGridLink _ toGridLink_transpose_relabelRows toGridLink_transpose_relabelColumns
-    toGridLink_transpose_of_isCommutation toGridLink_transpose_of_isStabilization G
+  lift_toGridLink _ transpose_cyclicRows_toGridLink_eq transpose_cyclicColumns_toGridLink_eq
+    transpose_commutation_toGridLink_eq transpose_stabilization_toGridLink_eq G
 
-/-- The diagonal reflection of grid links is an involution. -/
+/-- Diagonal reflection is involutive on grid links. -/
 @[simp]
-theorem transpose_transpose (L : GridLink) : L.transpose.transpose = L :=
-  ind (motive := fun L => L.transpose.transpose = L)
-    (fun G => by rw [transpose_toGridLink, transpose_toGridLink, GridDiagram.transpose_transpose]) L
+theorem transpose_transpose (L : GridLink) : L.transpose.transpose = L := by
+  induction L using GridLink.ind with
+  | h G => simp
 
-/-- The diagonal reflection of grid links is an involution. -/
-theorem transpose_involutive : Function.Involutive transpose :=
-  transpose_transpose
-
-/-- The diagonal reflection of grid links is injective. -/
-theorem transpose_injective : Function.Injective transpose :=
-  transpose_involutive.injective
-
-/-- Two grid links have equal reflections exactly when they are equal. -/
+/-- Diagonal reflection preserves the number of link components. -/
 @[simp]
-theorem transpose_inj {L L' : GridLink} : L.transpose = L'.transpose ↔ L = L' :=
-  transpose_injective.eq_iff
+theorem componentCount_transpose (L : GridLink) :
+    L.transpose.componentCount = L.componentCount := by
+  induction L using GridLink.ind with
+  | h G => simp [GridDiagram.componentCount_transpose]
 
-/-- The standard `2 × 2` unknot grid is symmetric under the diagonal reflection. -/
-private theorem transpose_unknot_zero :
-    (GridDiagram.unknot 0).transpose = GridDiagram.unknot 0 := by
-  refine GridDiagram.ext (GridState.ext fun c => ?_) (GridState.ext fun c => ?_)
-  · rw [GridDiagram.transpose_O, GridState.transpose_apply, Equiv.symm_apply_eq,
-      GridDiagram.unknot_O_toPerm, Equiv.Perm.one_apply, Equiv.Perm.one_apply]
-  · rw [GridDiagram.transpose_X, GridState.transpose_apply, Equiv.symm_apply_eq,
-      GridDiagram.unknot_X_toPerm]
-    fin_cases c <;> decide
-
-/-- The diagonal reflection fixes the unknot. -/
-@[simp]
-theorem transpose_unknot : unknot.transpose = unknot := by
-  rw [← GridDiagram.toGridLink_unknot 0, transpose_toGridLink, transpose_unknot_zero]
-
-/-- The diagonal reflection preserves the number of components of a grid link. -/
-@[simp]
-theorem componentCount_transpose (L : GridLink) : L.transpose.componentCount = L.componentCount :=
-  ind (motive := fun L => L.transpose.componentCount = L.componentCount)
-    (fun G => by
-      rw [transpose_toGridLink, componentCount_toGridLink, componentCount_toGridLink,
-        GridDiagram.componentCount_transpose]) L
-
-/-- The diagonal reflection of a grid link is a knot exactly when the grid link is. -/
+/-- A transposed grid link is a knot exactly when the original link is. -/
 @[simp]
 theorem isKnot_transpose {L : GridLink} : L.transpose.IsKnot ↔ L.IsKnot := by
-  rw [isKnot_def, isKnot_def, componentCount_transpose]
+  simp only [isKnot_def, componentCount_transpose]
+
+/-- Transposition as an equivalence of grid links. -/
+def transposeEquiv : GridLink ≃ GridLink :=
+  Function.Involutive.toPerm transpose transpose_transpose
+
+/-- The transposition equivalence acts by diagonal reflection. -/
+@[simp]
+theorem transposeEquiv_apply (L : GridLink) : transposeEquiv L = L.transpose :=
+  (rfl)
+
+/-- The inverse transposition equivalence also acts by diagonal reflection. -/
+@[simp]
+theorem transposeEquiv_symm_apply (L : GridLink) : transposeEquiv.symm L = L.transpose :=
+  (rfl)
+
+/-- Equality of transposes is equality of grid links. -/
+@[simp]
+theorem transpose_inj {L L' : GridLink} : L.transpose = L'.transpose ↔ L = L' :=
+  transposeEquiv.injective.eq_iff
 
 end GridLink
-
-namespace GridDiagram
-
-/-- The diagonal reflection preserves the grid move relation. -/
-@[simp]
-theorem movesTo_transpose_iff {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m} :
-    G.transpose.MovesTo G'.transpose ↔ G.MovesTo G' := by
-  rw [← toGridLink_eq_iff_movesTo, ← toGridLink_eq_iff_movesTo, ← GridLink.transpose_toGridLink,
-    ← GridLink.transpose_toGridLink, GridLink.transpose_inj]
-
-end GridDiagram
 
 end TauCeti

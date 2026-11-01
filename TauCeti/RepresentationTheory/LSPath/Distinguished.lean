@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LSPath.CentralShift
+public import Mathlib.Data.List.ChainOfFn
+public import TauCeti.RepresentationTheory.LSPath.Basic
+public import TauCeti.RepresentationTheory.LSPath.Central.Shift
 
 /-!
 # Distinguished presentations of paths with velocities in a Weyl orbit
@@ -54,6 +56,9 @@ same minimum height.
 * `TauCeti.PLPath.IsDistinguished.eq_singleton_of_zero_mem`,
   `TauCeti.PLPath.HasDistinguished.eq_straight_zero`: if `0 ∈ S`, the only distinguished
   presentation is `[(1, 0)]`, and a path with one is the constant path.
+* `TauCeti.LSPath.isDistinguished_timed`: for dominant `λ` and a realization `f` injective on
+  the Weyl orbit `W λ`, the presentation of an LS path by its directions and breaks is
+  distinguished for the realized orbit.
 * `TauCeti.PLPath.distinguished_ofSegments`: the distinguished presentation of the path presented
   by a distinguished `p` is `p`.
 * `TauCeti.PLPath.shiftDistinguished_ofSegments`: the central shift may be computed on any
@@ -86,9 +91,10 @@ variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
 variable (S p) in
 /-- A timed presentation `p` is *distinguished* for a set `S` of velocities if it has duration
 `1`, runs along each of its segments `(d, v)` at a constant velocity `d⁻¹ • v` lying in `S`, and
-changes velocity at each break. For `S = W λ`, the parametrization of a Lakshmibai–Seshadri path
-of shape `λ` by its directions and breaks is distinguished. The converse fails, because no LS chain
-condition is imposed. -/
+changes velocity at each break. For `S = W λ` with `λ` dominant, the parametrization of a
+Lakshmibai–Seshadri path of shape `λ` by its directions and breaks is distinguished
+(`TauCeti.LSPath.isDistinguished_timed`). The converse fails, because no LS chain condition is
+imposed. -/
 structure IsDistinguished : Prop where
   /-- Every duration is positive. -/
   isTimed : IsTimed p
@@ -311,3 +317,33 @@ theorem minHeight_shiftDistinguished {f : Module.Dual 𝕜 V} {χ : V} (hχ : f 
   rw [shiftDistinguished, minHeight_ofSegments_shiftTimed hχ, ofSegments_distinguished h]
 
 end TauCeti.PLPath
+
+namespace TauCeti.LSPath
+
+open RootPairing
+
+variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N] {P : RootPairing ι ℤ M N}
+  {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} (π : LSPath P b lam)
+  (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
+  [Module 𝕜 V] (f : M →+ V)
+
+/-- **The presentation of an LS path is distinguished.** For dominant `λ` and a realization `f`
+injective on the Weyl orbit `W λ`, the presentation by directions and breaks has duration `1`,
+velocities `f (τ_j λ)` in the realized orbit, and different velocities on adjacent segments, since
+distinct directions are distinct cosets of the stabilizer of `λ`. -/
+theorem isDistinguished_timed (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam)) :
+    PLPath.IsDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (π.timed 𝕜 f) := by
+  refine ⟨π.isTimed_timed 𝕜 f, π.duration_timed 𝕜 f,
+    fun _ hy ↦ π.inv_smul_mem_range_of_mem_timed 𝕜 f hy, ?_⟩
+  have hslope (j : Fin (π.length + 1)) :
+      ((π.duration j : 𝕜))⁻¹ • ((π.duration j : 𝕜) • f ((π.dir j).1 • lam)) =
+        f ((π.dir j).1 • lam) :=
+    inv_smul_smul₀ (Rat.cast_ne_zero.mpr (π.duration_pos j).ne') _
+  simp only [timed_def, List.map_ofFn, Function.comp_def, hslope, List.isChain_ofFn]
+  intro i hi heq
+  have hj := eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir ⟨i, by omega⟩).2
+    (π.dir ⟨i + 1, hi⟩).2 (hf ⟨_, rfl⟩ ⟨_, rfl⟩ heq)
+  exact π.dir_succ_ne ⟨i, by omega⟩ (Subtype.ext hj.symm)
+
+end TauCeti.LSPath

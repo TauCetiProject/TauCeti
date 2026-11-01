@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Data.Setoid.Basic
 
 /-!
 # Closure properties of analytic sets
@@ -13,9 +14,10 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 Mathlib's analytic sets (`MeasureTheory.AnalyticSet`) are closed under countable unions and
 intersections, continuous images and continuous preimages from Polish spaces. This file adds the
 finite and relational closure properties used to manipulate analytic relations and analytic
-equivalence relations: binary intersections and unions, intersections with Borel sets, products,
-off-diagonals, projections, and images and preimages of an analytic set under an analytic
-relation `R : SetRel α β`. In a Hausdorff space the last of these show that the saturation
+equivalence relations: binary intersections and unions, intersections with Borel sets, products
+and their images under jointly continuous binary maps, continuous preimages taken inside an
+analytic set, off-diagonals, projections, and images and preimages of an analytic set under an
+analytic relation `R : SetRel α β`. In a Hausdorff space the last of these show that the saturation
 `Quotient.mk E ⁻¹' (Quotient.mk E '' A)` of an analytic set `A` under an equivalence relation `E`
 with analytic graph is analytic, and so is the neighbourhood
 `{x | ∃ y ∈ A, (x, y) ∈ G ∨ (y, x) ∈ G}` of `A` under an analytic relation `G`, which is
@@ -37,13 +39,19 @@ Borel, hence analytic.
   set is analytic.
 * `MeasureTheory.AnalyticSet.prod`, `MeasureTheory.AnalyticSet.offDiag`: products of analytic
   sets, and off-diagonals of analytic sets in a Hausdorff space, are analytic.
+* `MeasureTheory.AnalyticSet.image2`: the image of a product of analytic sets under a jointly
+  continuous binary map is analytic.
+* `MeasureTheory.AnalyticSet.inter_preimage`: within an analytic set, the preimage of an analytic
+  subset of a Hausdorff space under a continuous map is analytic.
 * `MeasureTheory.AnalyticSet.relImage`, `MeasureTheory.AnalyticSet.relPreimage`: the image and
   preimage of an analytic set under an analytic relation are analytic.
 * `MeasureTheory.AnalyticSet.relImage_measurableSet`,
   `MeasureTheory.AnalyticSet.relPreimage_measurableSet`: the image and preimage of a Borel set
   under an analytic relation are analytic, with no separation axiom.
-* `MeasureTheory.AnalyticSet.preimage_image_quotientMk`: the saturation of an analytic set under an
-  equivalence relation with analytic graph is analytic.
+* `MeasureTheory.AnalyticSet.preimage_image_quotientMk`,
+  `MeasureTheory.AnalyticSet.preimage_image_quotientMk_measurableSet`: the saturation of an analytic
+  set (in a Hausdorff space) or of a Borel set under an equivalence relation with analytic graph is
+  analytic.
 
 ## References
 
@@ -91,6 +99,21 @@ protected theorem AnalyticSet.prod {s : Set α} {t : Set β} (hs : AnalyticSet s
   obtain ⟨δ, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 ht
   rw [← range_prodMap]
   exact analyticSet_range_of_polishSpace (hf.prodMap hg)
+
+/-- The image of a product of analytic sets under a jointly continuous binary map is analytic. -/
+protected theorem AnalyticSet.image2 {γ : Type*} [TopologicalSpace γ] {f : α → β → γ}
+    (hf : Continuous (Function.uncurry f)) {s : Set α} {t : Set β} (hs : AnalyticSet s)
+    (ht : AnalyticSet t) : AnalyticSet (image2 f s t) := by
+  rw [← image_uncurry_prod]
+  exact (hs.prod ht).image_of_continuous hf
+
+/-- The points of an analytic set at which a continuous map into a Hausdorff space takes values
+in an analytic set form an analytic set. -/
+theorem AnalyticSet.inter_preimage [T2Space β] {s : Set α} (hs : AnalyticSet s) {f : α → β}
+    (hf : Continuous f) {t : Set β} (ht : AnalyticSet t) : AnalyticSet (s ∩ f ⁻¹' t) := by
+  obtain ⟨γ, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
+  rw [← image_preimage_eq_range_inter, ← preimage_comp]
+  exact (ht.preimage (hf.comp hg)).image_of_continuous hg
 
 /-- The set of pairs of distinct points of an analytic set in a Hausdorff space is analytic. -/
 protected theorem AnalyticSet.offDiag [T2Space α] {s : Set α} (hs : AnalyticSet s) :
@@ -160,11 +183,15 @@ Hausdorff space, is analytic. -/
 theorem AnalyticSet.preimage_image_quotientMk [T2Space α] {E : Setoid α}
     (hE : AnalyticSet {p : α × α | E p.1 p.2}) {s : Set α} (hs : AnalyticSet s) :
     AnalyticSet (Quotient.mk E ⁻¹' (Quotient.mk E '' s)) := by
-  have : Quotient.mk E ⁻¹' (Quotient.mk E '' s) = SetRel.preimage {p : α × α | E p.1 p.2} s := by
-    ext x
-    simp only [mem_preimage, mem_image, Quotient.eq, SetRel.mem_preimage, mem_ofPred_eq]
-    exact exists_congr fun y ↦ and_congr_right fun _ ↦ ⟨E.symm, E.symm⟩
-  rw [this]
+  rw [E.preimage_image_quotientMk_eq_relPreimage]
   exact hE.relPreimage hs
+
+/-- The saturation of a Borel set under an equivalence relation with analytic graph is analytic,
+with no separation axiom. -/
+theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α] [BorelSpace α]
+    {E : Setoid α} (hE : AnalyticSet {p : α × α | E p.1 p.2}) {s : Set α} (hs : MeasurableSet s) :
+    AnalyticSet (Quotient.mk E ⁻¹' (Quotient.mk E '' s)) := by
+  rw [E.preimage_image_quotientMk_eq_relPreimage]
+  exact hE.relPreimage_measurableSet hs
 
 end MeasureTheory
