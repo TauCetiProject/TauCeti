@@ -31,7 +31,7 @@ of their coefficients. This is the rational-function input to descent of functio
 
 ## Main results
 
-* `TauCeti.RatFunc.mapRingEquiv_algebraMap_ratFunc`: a coefficient map fixing `F` fixes `F(X)`.
+* `RatFunc.mapRingEquiv_algebraMap_ratFunc`: a coefficient map fixing `F` fixes `F(X)`.
 * `TauCeti.RatFunc.mem_range_of_forall_mapRingEquiv_eq` and
   `TauCeti.RatFunc.forall_mapRingEquiv_eq_iff_mem_range`: a rational function is fixed by the
   coefficient maps of `S` exactly when it comes from `F(X)`.
@@ -52,6 +52,32 @@ public section
 open Polynomial
 open scoped nonZeroDivisors
 
+namespace RatFunc
+
+open TauCeti.RatFunc
+
+variable {F K : Type*} [Field F] [Field K] [Algebra F K] [Algebra (RatFunc F) (RatFunc K)]
+  [IsScalarTower F (RatFunc F) (RatFunc K)]
+
+/-- A coefficient automorphism of `K(X)` whose automorphism `σ` of `K` fixes the image of `F`
+fixes the image of `F(X)`, for any `F`-algebra map `F(X) → K(X)` sending `X` to `X`. -/
+theorem mapRingEquiv_algebraMap_ratFunc
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
+    {σ : K ≃+* K} (hσ : ∀ c : F, σ (algebraMap F K c) = algebraMap F K c) (w : RatFunc F) :
+    mapRingEquiv σ (algebraMap (RatFunc F) (RatFunc K) w) =
+      algebraMap (RatFunc F) (RatFunc K) w := by
+  have h : (mapRingEquiv σ : RatFunc K →+* RatFunc K).comp
+      (algebraMap (RatFunc F) (RatFunc K)) = algebraMap (RatFunc F) (RatFunc K) := by
+    refine IsFractionRing.ringHom_ext (A := F[X]) fun p ↦ ?_
+    have hp : (p.map (algebraMap F K)).map (σ : K →+* K) = p.map (algebraMap F K) := by
+      ext n
+      simp [hσ]
+    rw [RingHom.comp_apply, RingHom.coe_coe, TauCeti.algebraMap_ratFunc_algebraMap_polynomial hX,
+      mapRingEquiv_algebraMap, hp]
+  exact congr($h w)
+
+end RatFunc
+
 namespace TauCeti.RatFunc
 
 open _root_.RatFunc
@@ -68,23 +94,6 @@ private theorem exists_map_eq_of_forall_map_eq {S : Set (K ≃+* K)}
     hS _ fun σ hσ ↦ by simpa using congr(Polynomial.coeff $(hp σ hσ) n)
 
 variable [Algebra (RatFunc F) (RatFunc K)] [IsScalarTower F (RatFunc F) (RatFunc K)]
-
-/-- A coefficient automorphism of `K(X)` whose automorphism `σ` of `K` fixes the image of `F`
-fixes the image of `F(X)`, for any `F`-algebra map `F(X) → K(X)` sending `X` to `X`. -/
-theorem mapRingEquiv_algebraMap_ratFunc
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
-    {σ : K ≃+* K} (hσ : ∀ c : F, σ (algebraMap F K c) = algebraMap F K c) (w : RatFunc F) :
-    mapRingEquiv σ (algebraMap (RatFunc F) (RatFunc K) w) =
-      algebraMap (RatFunc F) (RatFunc K) w := by
-  have h : (mapRingEquiv σ : RatFunc K →+* RatFunc K).comp
-      (algebraMap (RatFunc F) (RatFunc K)) = algebraMap (RatFunc F) (RatFunc K) := by
-    refine IsFractionRing.ringHom_ext (A := F[X]) fun p ↦ ?_
-    have hp : (p.map (algebraMap F K)).map (σ : K →+* K) = p.map (algebraMap F K) := by
-      ext n
-      simp [hσ]
-    rw [RingHom.comp_apply, RingHom.coe_coe, algebraMap_ratFunc_algebraMap_polynomial hX,
-      mapRingEquiv_algebraMap, hp]
-  exact congr($h w)
 
 /-- **Descent of a rational function along a set of automorphisms.** Let `S` be a set of
 automorphisms of `K` whose common fixed points are the image of `F`. A rational function over `K`
