@@ -28,7 +28,7 @@ path in `D` (for `n ≥ 2`).
 The same connectivity then holds for any map `j : B → Y` that is weakly equivalent to the
 inclusion `D ↪ C`: given weak homotopy equivalences `f : D → B` and `g : C → Y` with
 `g ∘ (D ↪ C) = j ∘ f`, every point of `Y` is joined by a path to a point of the image of `j`
-(`TauCeti.exists_joined_of_isEmpty_cell_of_comp_eq`), and `j` induces a surjection
+for `n ≥ 1` (`TauCeti.exists_joined_of_isEmpty_cell_of_comp_eq`), and `j` induces a surjection
 `π_k(B, b) → π_k(Y, j b)` for `k < n` and an injection for `k + 1 < n`, at every base point
 `b ∈ B` (`TauCeti.surjective_homotopyGroupMap_of_isEmpty_cell_of_comp_eq`,
 `TauCeti.injective_homotopyGroupMap_of_isEmpty_cell_of_comp_eq`). The typical case is the

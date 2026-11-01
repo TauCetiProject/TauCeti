@@ -176,7 +176,7 @@ theorem of_precomp (hf : f.IsWeakHomotopyEquivalence)
     exact ⟨f x, hx⟩
   bijective n y := by
     obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
-    exact (TauCeti.bijective_map_iff_of_path g γ).1
+    exact (g.bijective_map_iff_of_path γ).1
       ((Function.Bijective.of_comp_iff _ (hf.bijective n x)).1
         (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.bijective n x))
 
@@ -312,7 +312,7 @@ theorem forall_surjective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
   refine ⟨fun h x ↦ (hf.surjective_map_iff_of_comp_eq hg hi N x).1 (h (f x)), fun h y ↦ ?_⟩
   -- Move the base point along a path from a point of the image of `f`.
   obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
-  exact (TauCeti.surjective_map_iff_of_path j γ).1
+  exact (j.surjective_map_iff_of_path γ).1
     ((hf.surjective_map_iff_of_comp_eq hg hi N x).2 (h x))
 
 /-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, `j` induces
@@ -325,7 +325,7 @@ theorem forall_injective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
   refine ⟨fun h x ↦ (hf.injective_map_iff_of_comp_eq hg hi N x).1 (h (f x)), fun h y ↦ ?_⟩
   -- Move the base point along a path from a point of the image of `f`.
   obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
-  exact (TauCeti.injective_map_iff_of_path j γ).1
+  exact (j.injective_map_iff_of_path γ).1
     ((hf.injective_map_iff_of_comp_eq hg hi N x).2 (h x))
 
 end Square
@@ -349,7 +349,7 @@ theorem isWeakHomotopyEquivalence_iff_forall_bijective [PathConnectedSpace X] (x
     refine ⟨p 0, Quotient.exact (?_ : ZerothHomotopy.mk (f (p 0)) = ZerothHomotopy.mk y)⟩
     rw [← φY.apply_symm_apply (ZerothHomotopy.mk y), ← ha, HomotopyGroup.map_mk,
       homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
-  · exact (TauCeti.bijective_map_iff_of_path f (PathConnectedSpace.somePath x x')).1 (h n)
+  · exact (f.bijective_map_iff_of_path (PathConnectedSpace.somePath x x')).1 (h n)
 
 /-- **A homotopy equivalence is a weak homotopy equivalence.** -/
 theorem HomotopyEquiv.isWeakHomotopyEquivalence (e : X ≃ₕ Y) :

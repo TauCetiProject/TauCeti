@@ -49,8 +49,9 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
   `TauCeti.homotopyGroupEquivOfPath_congr` and `TauCeti.homotopyGroupEquivOfPath_symm`, and
   its naturality `TauCeti.map_homotopyGroupEquivOfPath` in the space. In particular whether a map
   induces bijections on homotopy groups does not depend on the base point within a path component
-  (`TauCeti.bijective_map_iff_of_path`), and neither does whether it induces surjections or
-  injections (`TauCeti.surjective_map_iff_of_path`, `TauCeti.injective_map_iff_of_path`).
+  (`ContinuousMap.bijective_map_iff_of_path`), and neither does whether it induces surjections
+  or injections (`ContinuousMap.surjective_map_iff_of_path`,
+  `ContinuousMap.injective_map_iff_of_path`).
 * `TauCeti.homotopyGroupMulEquivOfPath`: **a path from `x` to `y` induces a group isomorphism
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
@@ -435,8 +436,8 @@ theorem map_homotopyGroupEquivOfPath {Y : Type*} [TopologicalSpace Y] (F : C(X, 
 omit [Fintype N] in
 /-- Whether a continuous map induces a bijection on homotopy groups does not depend on the base
 point within a path component. -/
-theorem bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F : C(X, Y))
-    (γ : Path x y) :
+theorem _root_.ContinuousMap.bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y]
+    (F : C(X, Y)) (γ : Path x y) :
     Function.Bijective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
       Function.Bijective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
   have : Fintype N := Fintype.ofFinite N
@@ -449,8 +450,8 @@ theorem bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F
 omit [Fintype N] in
 /-- Whether a continuous map induces a surjection on homotopy groups does not depend on the base
 point within a path component. -/
-theorem surjective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F : C(X, Y))
-    (γ : Path x y) :
+theorem _root_.ContinuousMap.surjective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y]
+    (F : C(X, Y)) (γ : Path x y) :
     Function.Surjective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
       Function.Surjective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
   have : Fintype N := Fintype.ofFinite N
@@ -462,8 +463,8 @@ theorem surjective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (
 omit [Fintype N] in
 /-- Whether a continuous map induces an injection on homotopy groups does not depend on the base
 point within a path component. -/
-theorem injective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F : C(X, Y))
-    (γ : Path x y) :
+theorem _root_.ContinuousMap.injective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y]
+    (F : C(X, Y)) (γ : Path x y) :
     Function.Injective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
       Function.Injective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
   have : Fintype N := Fintype.ofFinite N
