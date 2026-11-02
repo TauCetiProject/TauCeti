@@ -44,6 +44,8 @@ algebra are `|G|`.
 * `Representation.linearIndependent_of_linearIndependent_mk`: if `Sym M` is flat over its
   invariants, homogeneous lifts of a basis of the coinvariant algebra are linearly independent
   over the invariants, hence a basis.
+* `Representation.exists_basis_quotient_mk_eq_of_flat`: so `Sym M` has a homogeneous basis over
+  its invariants lifting a basis of the coinvariant algebra.
 * `Representation.free_symmetricAlgebra_of_flat`,
   `Representation.finrank_symmetricAlgebraInvariants_eq_finrank_quotient`: then `Sym M` is free
   over its invariants, of rank the dimension of the coinvariant algebra.
@@ -173,9 +175,7 @@ theorem linearIndependent_of_linearIndependent_mk
     set ε : SymmetricAlgebra k M →ₐ[k] k := SymmetricAlgebra.algebraMapInv
     have hε : ∀ a : A, (a : SymmetricAlgebra k M) - algebraMap k _ (ε a) ∈
         ρ.symmetricAlgebraHilbertIdeal := fun a ↦
-      ρ.mem_symmetricAlgebraHilbertIdeal_of_mem (sub_mem a.2 (Subalgebra.algebraMap_mem _ _)) <| by
-        rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker]
-        simp [ε]
+      ρ.sub_algebraMap_algebraMapInv_mem_symmetricAlgebraHilbertIdeal a.2
     have hc : ∀ i, ε (x i) = 0 := by
       refine Fintype.linearIndependent_iff.1 hli (fun i ↦ ε (x i)) ?_
       have hx : ∑ i, (x i : SymmetricAlgebra k M) * b i = 0 := by
@@ -212,13 +212,16 @@ theorem linearIndependent_of_linearIndependent_mk
   intro x hx
   exact (smul_eq_zero.1 (hr0 x hx)).resolve_left hr
 
-/-- `Sym M` has a basis over its invariants `A` indexed by a basis of the coinvariant algebra,
-when it is flat over `A`. -/
-private theorem exists_basis_of_flat
+/-- **Compatible bases.** If `Sym M` is flat over the invariants `A` of a finite group acting on a
+finite-dimensional space `M`, it has an `A`-basis `b` of homogeneous elements whose images form a
+`k`-basis `v` of the coinvariant algebra `Sym M ⧸ A₊ · Sym M`. -/
+theorem exists_basis_quotient_mk_eq_of_flat
     [Module.Flat ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M)] :
-    ∃ t : Set (SymmetricAlgebra k M ⧸ ρ.symmetricAlgebraHilbertIdeal),
-      Nonempty (Module.Basis t ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M)) ∧
-        Nonempty (Module.Basis t k (SymmetricAlgebra k M ⧸ ρ.symmetricAlgebraHilbertIdeal)) := by
+    ∃ (t : Set (SymmetricAlgebra k M ⧸ ρ.symmetricAlgebraHilbertIdeal))
+      (b : Module.Basis t ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M))
+      (v : Module.Basis t k (SymmetricAlgebra k M ⧸ ρ.symmetricAlgebraHilbertIdeal)),
+      (∀ i, ∃ n, b i ∈ homogeneousSubmodule k M n) ∧
+        ∀ i, Ideal.Quotient.mk ρ.symmetricAlgebraHilbertIdeal (b i) = v i := by
   obtain ⟨t, hts, htspan, htli⟩ := exists_linearIndependent k
     {y : SymmetricAlgebra k M ⧸ ρ.symmetricAlgebraHilbertIdeal |
       ∃ n, ∃ p ∈ homogeneousSubmodule k M n,
@@ -237,16 +240,17 @@ private theorem exists_basis_of_flat
   have hspan : Submodule.span k
       (Set.range (Ideal.Quotient.mkₐ k ρ.symmetricAlgebraHilbertIdeal ∘ b)) = ⊤ := by
     rwa [hmk, Subtype.range_coe]
-  exact ⟨t, ⟨.mk (ρ.linearIndependent_of_linearIndependent_mk b (fun y ↦ ⟨_, hb y⟩) hli hspan)
-    (ρ.span_range_eq_top_of_span_range_mk_eq_top b (fun y ↦ ⟨_, hb y⟩) hspan).ge⟩,
-    ⟨.mk htli (by rw [Subtype.range_coe, htspan])⟩⟩
+  refine ⟨t, .mk (ρ.linearIndependent_of_linearIndependent_mk b (fun y ↦ ⟨_, hb y⟩) hli hspan)
+    (ρ.span_range_eq_top_of_span_range_mk_eq_top b (fun y ↦ ⟨_, hb y⟩) hspan).ge,
+    .mk htli (by rw [Subtype.range_coe, htspan]), fun y ↦ ⟨_, by simpa using hb y⟩,
+    fun y ↦ by simpa using hbt y⟩
 
 /-- If `Sym M` is flat over the invariants `A` of a finite group acting on a finite-dimensional
 space `M`, then it is a free `A`-module. -/
 theorem free_symmetricAlgebra_of_flat
     [Module.Flat ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M)] :
     Module.Free ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M) :=
-  have ⟨_, ⟨b⟩, _⟩ := ρ.exists_basis_of_flat
+  have ⟨_, b, _⟩ := ρ.exists_basis_quotient_mk_eq_of_flat
   .of_basis b
 
 /-- If `Sym M` is flat over the invariants `A` of a finite group acting on a finite-dimensional
@@ -256,7 +260,7 @@ theorem finrank_symmetricAlgebraInvariants_eq_finrank_quotient
     [Module.Flat ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M)] :
     Module.finrank ρ.symmetricAlgebraInvariants (SymmetricAlgebra k M) =
       Module.finrank k (SymmetricAlgebra k M ⧸ ρ.symmetricAlgebraHilbertIdeal) := by
-  obtain ⟨_, ⟨b⟩, ⟨v⟩⟩ := ρ.exists_basis_of_flat
+  obtain ⟨_, b, v, -⟩ := ρ.exists_basis_quotient_mk_eq_of_flat
   rw [Module.finrank_eq_nat_card_basis b, Module.finrank_eq_nat_card_basis v]
 
 /-- **The coinvariant algebra has dimension `|G|`.** If a finite group `G` acts faithfully on a
