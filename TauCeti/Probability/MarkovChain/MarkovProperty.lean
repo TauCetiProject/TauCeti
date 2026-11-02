@@ -36,7 +36,12 @@ This file proves it in the following forms.
   to that event (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`).
 * One step ahead, as an identity of probabilities: for an event `B` of the history up to time `n`,
   `ℙ(B ∩ {X (n + 1) ∈ C}) = ∫_B κ (X n) C`
-  (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ`).
+  (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ`). For any process, the
+  prefix-law side of the Markov recursion evaluates to the same kind of integral on a rectangle
+  (`TauCeti.Probability.prefixLaw_compProd_apply_prod`).
+* As a consequence, a measurable function `f` of a chain whose transition laws depend on the
+  current state only through its value under `f` is again a chain
+  (`MeasureTheory.Measure.markovChainLaw_map_comp`).
 
 The proof restricts the path law to an event of the history and identifies the law of the future
 path on it by the uniqueness theorem `MeasureTheory.Measure.eq_markovChainLaw`: the prefix
@@ -265,5 +270,59 @@ theorem _root_.ProbabilityTheory.HasLaw.prefix_processShift_markovChainLaw [IsFi
     (measurable_shift_iterate n)).aemeasurable).comp h
 
 end Process
+
+end TauCeti.Probability
+
+namespace TauCeti.Probability
+
+variable {S γ : Type*} [MeasurableSpace S] [MeasurableSpace γ]
+
+/-- The joint law of a prefix `(X 0, …, X n)` of a process and one further `κ`-step from its last
+coordinate, evaluated on a rectangle `A ×ˢ C`: it is the integral of `κ (X n) C` over the event
+`{(X 0, …, X n) ∈ A}`. -/
+theorem prefixLaw_compProd_apply_prod {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsFiniteMeasure P] {X : ℕ → Ω → γ} (hX : ∀ n, Measurable (X n)) (κ : Kernel γ γ)
+    [IsMarkovKernel κ] (n : ℕ) {A : Set (Fin (n + 1) → γ)} (hA : MeasurableSet A) {C : Set γ}
+    (hC : MeasurableSet C) :
+    (prefixLaw P X (n + 1) ⊗ₘ κ.comap (fun w : Fin (n + 1) → γ => w (Fin.last n))
+        (measurable_pi_apply (Fin.last n))) (A ×ˢ C) =
+      ∫⁻ ω in (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A, κ (X n ω) C ∂P := by
+  have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
+  rw [Measure.compProd_apply_prod hA hC, prefixLaw_def, blockLaw_def]
+  simp only [Kernel.comap_apply]
+  rw [setLIntegral_map (f := fun w : Fin (n + 1) → γ => κ (w (Fin.last n)) C) hA
+    ((κ.measurable_coe hC).comp (measurable_pi_apply _)) hpre]
+  simp
+
+/-- **A function of a Markov chain.** If `f` is measurable and the law of `f` under each transition
+`η s` is `κ (f s)`, so that the next value of `f` depends on the current state only through
+`f s`, then the image under `f` of the chain of `η` started from `ν` is the chain of `κ` started
+from `ν.map f`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S) [IsFiniteMeasure ν]
+    (η : Kernel S S) [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ}
+    (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) :
+    (markovChainLaw ν η).map (fun ω n => f (ω n)) = markovChainLaw (ν.map f) κ := by
+  set P := markovChainLaw ν η
+  have hX : ∀ n, Measurable fun ω : ℕ → S => f (ω n) := fun n => hf.comp (measurable_pi_apply n)
+  refine ((hasLaw_markovChainLaw_iff (ν.map f) κ (X := fun n (ω : ℕ → S) => f (ω n))
+    fun n => (hX n).aemeasurable).2 ⟨?_, fun n => ?_⟩).map_eq
+  · rw [← markovChainLaw_map_eval_zero ν η, Measure.map_map hf (measurable_pi_apply 0)]
+    rfl
+  refine Measure.ext_prod fun {A C} hA hC => ?_
+  have hpre : Measurable fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1) :=
+    measurable_pi_iff.2 fun i => hX i
+  have hB : MeasurableSet[Filtration.piLE n]
+      ((fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A) := by
+    rw [Filtration.piLE_eq_comap_prefix]
+    exact ⟨(fun (w : Fin (n + 1) → S) i => f (w i)) ⁻¹' A,
+      hA.preimage (measurable_pi_iff.2 fun i => hf.comp (measurable_pi_apply i)), rfl⟩
+  rw [prefixLaw_compProd_apply_prod hX κ n hA hC, Measure.map_apply (hpre.prodMk (hX _))
+    (hA.prod hC)]
+  have hfib : (fun (ω : ℕ → S) => ((fun i : Fin (n + 1) => f (ω i.1)), f (ω (n + 1)))) ⁻¹'
+      (A ×ˢ C) = (fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A ∩
+        (fun ω : ℕ → S => ω (n + 1)) ⁻¹' (f ⁻¹' C) := rfl
+  rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ ν η n hB (hf hC)]
+  refine lintegral_congr fun ω => ?_
+  rw [← Measure.map_apply hf hC, h]
 
 end TauCeti.Probability

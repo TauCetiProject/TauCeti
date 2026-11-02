@@ -45,8 +45,6 @@ assumed on the state space; the meeting events only need a measurable diagonal
 
 ## Main statements
 
-* `MeasureTheory.Measure.markovChainLaw_map_comp`: a function of a chain whose transition laws
-  depend only on the current value of the function is again a chain.
 * `MeasureTheory.Measure.markovChainLaw_map_fst_of_isCoupling`,
   `MeasureTheory.Measure.markovChainLaw_map_snd_of_isCoupling`: each coordinate of a Markovian
   coupling is a chain.
@@ -141,54 +139,6 @@ namespace MeasureTheory.Measure
 
 open TauCeti TauCeti.Probability
 
-variable {S γ : Type*} [MeasurableSpace S] [MeasurableSpace γ]
-
-/-- The joint law of a prefix of a process and one further `κ`-step, evaluated on a rectangle. -/
-private theorem prefixLaw_compProd_apply_prod {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsFiniteMeasure P] {X : ℕ → Ω → γ} (hX : ∀ n, Measurable (X n)) (κ : Kernel γ γ)
-    [IsMarkovKernel κ] (n : ℕ) {A : Set (Fin (n + 1) → γ)} (hA : MeasurableSet A) {C : Set γ}
-    (hC : MeasurableSet C) :
-    (prefixLaw P X (n + 1) ⊗ₘ κ.comap (fun w : Fin (n + 1) → γ => w (Fin.last n))
-        (measurable_pi_apply (Fin.last n))) (A ×ˢ C) =
-      ∫⁻ ω in (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A, κ (X n ω) C ∂P := by
-  have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
-  rw [Measure.compProd_apply_prod hA hC, prefixLaw_def, blockLaw_def]
-  simp only [Kernel.comap_apply]
-  rw [setLIntegral_map (f := fun w : Fin (n + 1) → γ => κ (w (Fin.last n)) C) hA
-    ((κ.measurable_coe hC).comp (measurable_pi_apply _)) hpre]
-  simp
-
-/-- **A function of a Markov chain.** If `f` is measurable and the law of `f` under each transition
-`η s` is `κ (f s)`, so that the next value of `f` depends on the current state only through
-`f s`, then the image under `f` of the chain of `η` started from `ν` is the chain of `κ` started
-from `ν.map f`. -/
-theorem markovChainLaw_map_comp (ν : Measure S) [IsFiniteMeasure ν] (η : Kernel S S)
-    [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ} (hf : Measurable f)
-    (h : ∀ s, (η s).map f = κ (f s)) :
-    (markovChainLaw ν η).map (fun ω n => f (ω n)) = markovChainLaw (ν.map f) κ := by
-  set P := markovChainLaw ν η
-  have hX : ∀ n, Measurable fun ω : ℕ → S => f (ω n) := fun n => hf.comp (measurable_pi_apply n)
-  refine ((hasLaw_markovChainLaw_iff (ν.map f) κ (X := fun n (ω : ℕ → S) => f (ω n))
-    fun n => (hX n).aemeasurable).2 ⟨?_, fun n => ?_⟩).map_eq
-  · rw [← markovChainLaw_map_eval_zero ν η, Measure.map_map hf (measurable_pi_apply 0)]
-    rfl
-  refine Measure.ext_prod fun {A C} hA hC => ?_
-  have hpre : Measurable fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1) :=
-    measurable_pi_iff.2 fun i => hX i
-  have hB : MeasurableSet[Filtration.piLE n]
-      ((fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A) := by
-    rw [Filtration.piLE_eq_comap_prefix]
-    exact ⟨(fun (w : Fin (n + 1) → S) i => f (w i)) ⁻¹' A,
-      hA.preimage (measurable_pi_iff.2 fun i => hf.comp (measurable_pi_apply i)), rfl⟩
-  rw [prefixLaw_compProd_apply_prod hX κ n hA hC, Measure.map_apply (hpre.prodMk (hX _))
-    (hA.prod hC)]
-  have hfib : (fun (ω : ℕ → S) => ((fun i : Fin (n + 1) => f (ω i.1)), f (ω (n + 1)))) ⁻¹'
-      (A ×ˢ C) = (fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A ∩
-        (fun ω : ℕ → S => ω (n + 1)) ⁻¹' (f ⁻¹' C) := rfl
-  rw [hfib, markovChainLaw_inter_preimage_eval_succ ν η n hB (hf hC)]
-  refine lintegral_congr fun ω => ?_
-  rw [← Measure.map_apply hf hC, h]
-
 variable {α : Type*} [MeasurableSpace α] {β : Type*} [MeasurableSpace β]
   {κ : Kernel α α} {κ' : Kernel β β} {η : Kernel (α × β) (α × β)} [IsMarkovKernel η]
 
@@ -252,8 +202,8 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
       rwa [← spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)]
     · rintro ⟨⟨hb, hm⟩, hc⟩
       refine ⟨⟨hb, ?_⟩, hm⟩
-      rwa [show Z (n + 1) ω = (ω (n + 1)).2 from
-        spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)]
+      rwa [← spliceAtMeeting_of_exists
+        (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)] at hc
   have hout : (B ∩ Z (n + 1) ⁻¹' C) \ M =
       (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
     ext ω
@@ -266,7 +216,7 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
     · rintro ⟨⟨hb, hm⟩, hc⟩
       have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
       refine ⟨⟨hb, ?_⟩, hm⟩
-      rwa [show Z (n + 1) ω = (ω (n + 1)).1 from spliceAtMeeting_succ_of_forall_ne hne]
+      rwa [← spliceAtMeeting_succ_of_forall_ne hne] at hc
   rw [prefixLaw_compProd_apply_prod hZ κ n hA hC, Measure.map_apply
     ((measurable_pi_iff.2 fun i => hZ i.1).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
