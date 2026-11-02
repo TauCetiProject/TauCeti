@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
+public import TauCeti.SetTheory.Descriptive.BorelReducibility
 public import TauCeti.SetTheory.Descriptive.InvariantSeparation
 import Mathlib.Topology.Compactness.Lindelof
 
@@ -30,8 +30,7 @@ it suffices that open sets are measurable.
 * `Setoid.countablySeparated_quotient_of_isClosed`: the quotient of a closed equivalence relation
   on a Polish space is countably separated.
 
-Combining this with `Setoid.isSmooth_iff_countablySeparated` and `Setoid.isSmooth_iff` from
-`TauCeti.SetTheory.Descriptive.BorelReducibility` gives a measurable Cantor-valued classifier.
+* `Setoid.isSmooth_of_isClosed`: a closed equivalence relation on a Polish space is smooth.
 
 ## References
 
@@ -89,6 +88,12 @@ theorem countablySeparated_quotient_of_isClosed (E : Setoid X)
   have hxC := hUC p (mem_image_of_mem _ hxp)
   have hyC := (hab (C p) (mem_image_of_mem C hp)).1 hxC
   exact (disjoint_left.1 (hVC p)) (mem_image_of_mem _ hyp) hyC
+
+/-- A closed equivalence relation on a Polish space is smooth: its classes admit a measurable
+classification by Cantor space. -/
+theorem isSmooth_of_isClosed (E : Setoid X)
+    (hE : IsClosed {p : X × X | E p.1 p.2}) : E.IsSmooth :=
+  isSmooth_iff_countablySeparated.mpr (E.countablySeparated_quotient_of_isClosed hE)
 
 end
 

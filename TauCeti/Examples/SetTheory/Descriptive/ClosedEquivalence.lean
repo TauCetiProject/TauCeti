@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.SetTheory.Descriptive.ClosedEquivalence
-import TauCeti.SetTheory.Descriptive.BorelReducibility
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!
@@ -27,8 +26,7 @@ example {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X]
 /-- Equality of absolute values on the reals admits a measurable classification by Cantor
 space. -/
 example : ∃ f : ℝ → (ℕ → Bool), Measurable f ∧ ∀ x y, f x = f y ↔ |x| = |y| := by
-  let := (Setoid.ker (abs : ℝ → ℝ)).countablySeparated_quotient_of_isClosed
-    (isClosed_eq (continuous_abs.comp continuous_fst) (continuous_abs.comp continuous_snd))
-  obtain ⟨f, hf, hE⟩ := Setoid.isSmooth_iff.mp
-    ((Setoid.isSmooth_iff_countablySeparated (E := Setoid.ker (abs : ℝ → ℝ))).mpr inferInstance)
+  obtain ⟨f, hf, hE⟩ := Setoid.isSmooth_iff.mp <|
+    (Setoid.ker (abs : ℝ → ℝ)).isSmooth_of_isClosed
+      (isClosed_eq (continuous_abs.comp continuous_fst) (continuous_abs.comp continuous_snd))
   exact ⟨f, hf, fun x y => (hE x y).symm⟩
