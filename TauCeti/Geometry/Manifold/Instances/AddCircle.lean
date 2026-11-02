@@ -623,13 +623,14 @@ theorem hasMFDerivAt_prodMap_coe (z : ℝ × ℝ) :
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
       (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z
       (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
-  -- The derivatives `id ∘ fst` and `id ∘ snd` of the two factors pair to the identity of `ℝ × ℝ`.
-  have hid : ((ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)).prod
-      ((ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) =
-        ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
-    rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.id_comp, ContinuousLinearMap.fst_prod_snd]
-  exact (((hasMFDerivAt_coe p z.1).comp z hasFDerivAt_fst.hasMFDerivAt).prodMk
-    ((hasMFDerivAt_coe q z.2).comp z hasFDerivAt_snd.hasMFDerivAt)).congr_mfderiv hid
+  -- The product of the identity derivatives of the two factors is the identity of `ℝ × ℝ`.
+  have hid : (ContinuousLinearMap.id ℝ ℝ).prodMap (ContinuousLinearMap.id ℝ ℝ) =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+    ext <;> simp
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  refine ((hasMFDerivAt_coe p z.1).prodMap (hasMFDerivAt_coe q z.2)).congr_mfderiv ?_
+  rw [mfderiv_coe, mfderiv_coe]
+  exact hid
 
 /-- The derivative of the quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is the identity of
 `ℝ × ℝ`. -/
