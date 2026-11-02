@@ -166,6 +166,11 @@ lemma leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor_μₗ_hom_app
     letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
     letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
     (μₗ χ.discreteCentralCharacterQuotientEquivalence.functor c M).hom x = x :=
+  -- By definition the functor is `(discreteQuotientEquivalence _).functor ⋙ ιOfLE _`, whose
+  -- lineators (`Functor.LaxLeftLinear.comp_μₗ`) are those of the first factor followed by the
+  -- identity lineators of `ιOfLE` (`ObjectProperty.ιOfLE_μₗ`). Simp cannot rewrite through the
+  -- private body of this structure, so the quotient-level formula closes the goal up to that
+  -- unfolding.
   leftLinearDiscreteQuotientEquivalenceFunctor_μₗ_hom_apply
     (closedCentralIdeal (RingHom.ker χ)).asIdeal _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
     c M x
@@ -181,6 +186,11 @@ lemma leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor_δₗ_hom_app
     letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
     letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
     (δₗ χ.discreteCentralCharacterQuotientEquivalence.functor c M).hom x = x :=
+  -- By definition the functor is `(discreteQuotientEquivalence _).functor ⋙ ιOfLE _`, whose
+  -- lineators (`Functor.OplaxLeftLinear.comp_δₗ`) are those of the first factor followed by the
+  -- identity lineators of `ιOfLE` (`ObjectProperty.ιOfLE_δₗ`). Simp cannot rewrite through the
+  -- private body of this structure, so the quotient-level formula closes the goal up to that
+  -- unfolding.
   leftLinearDiscreteQuotientEquivalenceFunctor_δₗ_hom_apply
     (closedCentralIdeal (RingHom.ker χ)).asIdeal _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
     c M x

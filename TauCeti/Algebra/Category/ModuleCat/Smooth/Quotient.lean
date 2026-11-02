@@ -382,6 +382,11 @@ lemma leftLinearDiscreteQuotientEquivalenceFunctor_μₗ_hom_apply (c : Discrete
     letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
     letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
     (μₗ (discreteQuotientEquivalence.{v} I).functor c M).hom x = x :=
+  -- By definition the functor is `lift` of `ι ⋙ ModuleCat.restrictScalars (Ideal.Quotient.mk I)`,
+  -- and its structure is `ObjectProperty.laxLeftLinearLift` of the composite of `ι` (identity
+  -- lineators, `ObjectProperty.ι_μₗ`) with `RingHom.leftLinearRestrictScalars`. Simp cannot
+  -- rewrite with `ObjectProperty.lift_μₗ_hom` through the private body of this structure, so
+  -- the ring-level formula closes the goal up to that unfolding.
   (Ideal.Quotient.mk I).leftLinearRestrictScalars_μₗ_apply (a := a) (b := a.quotientRingAut I hI)
     (fun h x => (a.quotientRingAut_apply_mk I hI h x).symm) c M.obj x
 
@@ -393,6 +398,11 @@ lemma leftLinearDiscreteQuotientEquivalenceFunctor_δₗ_hom_apply (c : Discrete
     letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
     letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
     (δₗ (discreteQuotientEquivalence.{v} I).functor c M).hom x = x :=
+  -- By definition the functor is `lift` of `ι ⋙ ModuleCat.restrictScalars (Ideal.Quotient.mk I)`,
+  -- and its structure is `ObjectProperty.oplaxLeftLinearLift` of the composite of `ι` (identity
+  -- lineators, `ObjectProperty.ι_δₗ`) with `RingHom.leftLinearRestrictScalars`. Simp cannot
+  -- rewrite with `ObjectProperty.lift_δₗ_hom` through the private body of this structure, so
+  -- the ring-level formula closes the goal up to that unfolding.
   (Ideal.Quotient.mk I).leftLinearRestrictScalars_δₗ_apply (a := a) (b := a.quotientRingAut I hI)
     (fun h x => (a.quotientRingAut_apply_mk I hI h x).symm) c M.obj x
 
