@@ -23,7 +23,9 @@ The constructions compared are `AlgHom.hopfDual` and
 
 public section
 
-namespace TauCeti.UniversalEnvelopingAlgebra
+namespace UniversalEnvelopingAlgebra
+
+open TauCeti.UniversalEnvelopingAlgebra
 
 variable (R L V : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
   [AddCommGroup V] [Module R V] [LieRingModule L V] [LieModule R L V]
@@ -47,4 +49,4 @@ theorem representation_dual_apply (u : _root_.UniversalEnvelopingAlgebra R L)
       φ (representation R L V (HopfAlgebra.antipode R u) v) := by
   rw [representation_dual, AlgHom.hopfDual_apply]
 
-end TauCeti.UniversalEnvelopingAlgebra
+end UniversalEnvelopingAlgebra

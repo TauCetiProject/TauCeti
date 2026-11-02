@@ -61,7 +61,9 @@ theorem hopfDual_kostantForm_apply_mem_dualLattice
 
 end AlgHom
 
-namespace TauCeti.UniversalEnvelopingAlgebra
+namespace UniversalEnvelopingAlgebra
+
+open TauCeti.UniversalEnvelopingAlgebra
 
 variable {L V ι κ : Type*} [LieRing L] [LieAlgebra ℚ L]
   [AddCommGroup V] [Module ℚ V] [LieRingModule L V] [LieModule ℚ L V]
@@ -77,4 +79,4 @@ theorem representation_dual_apply_mem_dualLattice (e : ι → L) (h : κ → L)
   rw [representation_dual]
   exact (representation ℚ L V).hopfDual_kostantForm_apply_mem_dualLattice e h N hN u hu hφ
 
-end TauCeti.UniversalEnvelopingAlgebra
+end UniversalEnvelopingAlgebra
