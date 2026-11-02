@@ -94,7 +94,7 @@ lemma nonempty_compStruct (hx : X.IsTerminalVertex x) {x₀ x₁ : X _⦋0⦌} (
     · exact e₁₂.src_eq.trans e₀₁.tgt_eq.symm
     · exact e₀₂.src_eq.trans e₀₁.src_eq.symm
   obtain ⟨σ, hσ⟩ := hx hf.desc (by
-    rw [hf.ι_desc, Equiv.apply_symm_apply, show (Fin.last 1 : Fin 2) = 1 from rfl,
+    rw [hf.ι_desc, Equiv.apply_symm_apply, show (Fin.last 1 : Fin 2) = 1 by simp,
       ← SimplexCategory.δ_zero_eq_const]
     exact e₁₂.tgt_eq)
   have h (j : Fin 3) : X.δ j (yonedaEquiv σ) = v j := by
@@ -102,8 +102,8 @@ lemma nonempty_compStruct (hx : X.IsTerminalVertex x) {x₀ x₁ : X _⦋0⦌} (
       Equiv.apply_symm_apply]
   exact ⟨Edge.CompStruct.mk (yonedaEquiv σ) (h 2) (h 0) (h 1)⟩
 
-/-- Every edge between terminal vertices is invertible, with inverse any edge in the opposite
-direction. Thus terminal vertices are unique up to equivalence. -/
+/-- Every edge between terminal vertices is invertible. Thus terminal vertices are unique up to
+equivalence. -/
 lemma nonempty_invStruct (hx : X.IsTerminalVertex x) {x' : X _⦋0⦌}
     (hx' : X.IsTerminalVertex x') (e : X.Edge x x') : Nonempty e.InvStruct := by
   obtain ⟨e'⟩ := hx.nonempty_edge x'
@@ -149,7 +149,7 @@ theorem isTerminalVertex_iff_of_isStrictSegal [X.IsStrictSegal] (x : X _⦋0⦌)
     · exact e.src_eq.symm
   | 1 =>
     -- The boundary of a triangle consists of three edges with matching endpoints.
-    rw [show (Fin.last 1 : Fin 2) = 1 from rfl, ← SimplexCategory.δ_zero_eq_const] at hσ₀
+    rw [show (Fin.last 1 : Fin 2) = 1 by simp, ← SimplexCategory.δ_zero_eq_const] at hσ₀
     have h₀₁ := congrArg yonedaEquiv ((boundary.IsCompatible.of_hom σ₀).δ_pred_comp 0 1)
     have h₀₂ := congrArg yonedaEquiv ((boundary.IsCompatible.of_hom σ₀).δ_pred_comp 0 2)
     have h₁₂ := congrArg yonedaEquiv ((boundary.IsCompatible.of_hom σ₀).δ_pred_comp 1 2)

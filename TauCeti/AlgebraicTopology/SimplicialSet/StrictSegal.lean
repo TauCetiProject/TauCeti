@@ -19,7 +19,8 @@ A simplicial operator fixes a simplex as soon as it fixes every edge of its spin
 dimension at least two is determined by its first and last faces, which together contain its
 spine. Every map from the boundary `∂Δ[n]` with `n ≥ 3` extends to `Δ[n]`: fill the inner horn
 `Λ[n, 1]` and observe that the missing face is forced by the others. In dimensions one and two
-this fails, as the boundary of an edge or a triangle prescribes no composite.
+this fails in general: two vertices need not be joined by an edge, and the third edge of the
+boundary of a triangle need not be the composite of the other two.
 
 ## Main results
 
