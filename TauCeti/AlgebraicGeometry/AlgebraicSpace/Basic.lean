@@ -134,6 +134,18 @@ theorem surjective_snd (ha : EtaleAtlas a) {T : Scheme.{u}} (g : yoneda.obj T �
     Surjective (ha.relativelyRepresentable.snd g) :=
   ha.surjective.property_snd g
 
+/-- A morphism from a scheme that is representable by schemes, with étale and surjective base
+changes along every morphism from a scheme, is an étale atlas. -/
+theorem of_snd (hr : yoneda.relativelyRepresentable a)
+    (he : ∀ ⦃T : Scheme.{u}⦄ (g : yoneda.obj T ⟶ F), Etale (hr.snd g))
+    (hs : ∀ ⦃T : Scheme.{u}⦄ (g : yoneda.obj T ⟶ F), Surjective (hr.snd g)) :
+    EtaleAtlas a :=
+  -- Instance search does not derive `RespectsIso` for étale morphisms from their stability
+  -- under base change.
+  have : MorphismProperty.RespectsIso @Etale.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  ⟨MorphismProperty.relative_of_snd hr he, MorphismProperty.relative_of_snd hr hs⟩
+
 /-- Composing an étale atlas with an isomorphism of presheaves gives an étale atlas. -/
 theorem comp_iso (ha : EtaleAtlas a) {G : SchemePresheaf.{u}} (e : F ≅ G) :
     EtaleAtlas (a ≫ e.hom) :=
