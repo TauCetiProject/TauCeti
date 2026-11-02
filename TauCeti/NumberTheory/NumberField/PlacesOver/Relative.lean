@@ -48,9 +48,8 @@ theorem relativeAbsValue_apply (w : FinitePlace F) (x : F) :
 @[simp]
 theorem relativeAbsValue_pow_localDegree (w : FinitePlace F) (x : F) :
     w.relativeAbsValue K x ^ w.localDegree K = w x := by
-  rw [relativeAbsValue_apply, ← Real.rpow_natCast,
-    ← Real.rpow_mul (apply_nonneg _ _), inv_mul_cancel₀, Real.rpow_one]
-  exact_mod_cast w.localDegree_pos.ne'
+  rw [relativeAbsValue_apply]
+  exact Real.rpow_inv_natCast_pow (apply_nonneg _ _) w.localDegree_pos.ne'
 
 /-- Taking the local-degree root preserves the equivalence class of a finite place. -/
 theorem isEquiv_relativeAbsValue (w : FinitePlace F) :
