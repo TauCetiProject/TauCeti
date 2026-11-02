@@ -40,17 +40,19 @@ square).
 * `OnePoint.crossRatio a b c d`: the image of `d` under the Möbius transformation carrying `a`,
   `b`, `c` to `0`, `1`, `∞`.
 * `OnePoint.crossRatioEquiv`: the orbits of `PGL(2, K)` on ordered quadruples of pairwise distinct
-  points are in bijection with `OnePoint K ∖ {0, 1, ∞}`.
+  points are in bijection with `OnePoint K ∖ {0, 1, ∞}`; its inverse sends `z` to the orbit of
+  `OnePoint.zeroOneInftyEmbedding z`, the quadruple `(0, 1, ∞, z)`.
 
 ## Main results
 
 * `OnePoint.crossRatio_eq_smul`: the defining property of the cross ratio.
 * `OnePoint.crossRatio_smul`, `OnePoint.crossRatio_gl_smul`, `OnePoint.crossRatio_psl_smul`:
   invariance under Möbius transformations.
-* `OnePoint.bijective_crossRatio`: for pairwise distinct `a`, `b`, `c`, the map
+* `OnePoint.crossRatio_bijective`: for pairwise distinct `a`, `b`, `c`, the map
   `d ↦ crossRatio a b c d` is a bijection of the projective line.
 * `OnePoint.crossRatio_eq_zero_iff`, `OnePoint.crossRatio_eq_one_iff`,
-  `OnePoint.crossRatio_eq_infty_iff`: where the cross ratio takes the values `0`, `1`, `∞`.
+  `OnePoint.crossRatio_eq_infty_iff`: where the cross ratio takes the values `0`, `1`, `∞`, and
+  `OnePoint.crossRatio_fourth_eq_first` and its two companions: its values at `a`, `b`, `c`.
 * `OnePoint.crossRatio_coe`, `OnePoint.crossRatio_coe_coe_coe_infty`,
   `OnePoint.crossRatio_coe_coe_infty_coe`: formulas in affine coordinates.
 * `OnePoint.crossRatio_swap_first_second` and its five companions: the action of the
@@ -78,22 +80,6 @@ open Matrix
 
 variable {K : Type*} [Field K] [DecidableEq K]
 
-/-- Three pairwise distinct points of the projective line are carried to `0`, `1`, `∞` by some
-element of `PGL(2, K)`: the inverse of the transformation carrying `0`, `1`, `∞` to them. -/
-private theorem exists_smul_eq_zero_one_infty {a b c : OnePoint K} (h : a ≠ b ∧ a ≠ c ∧ b ≠ c) :
-    ∃ g : PGL(2, K), g • a = (0 : K) ∧ g • b = (1 : K) ∧ g • c = ∞ := by
-  obtain ⟨g, h0, h1, hinf⟩ := (existsUnique_pgl_smul_zero_one_infty_eq h.1 h.2.1 h.2.2).exists
-  exact ⟨g⁻¹, by rw [← h0, inv_smul_smul], by rw [← h1, inv_smul_smul],
-    by rw [← hinf, inv_smul_smul]⟩
-
-/-- Points carried to `0`, `1`, `∞` by a Möbius transformation are pairwise distinct. -/
-private theorem pairwise_ne_of_smul_eq {a b c : OnePoint K} {g : PGL(2, K)}
-    (ha : g • a = (0 : K)) (hb : g • b = (1 : K)) (hc : g • c = ∞) : a ≠ b ∧ a ≠ c ∧ b ≠ c := by
-  refine ⟨?_, ?_, ?_⟩ <;> rintro rfl
-  · simp [ha] at hb
-  · simp [ha] at hc
-  · simp [hb] at hc
-
 /-- The **cross ratio** of four points of the projective line `OnePoint K`: the image of `d` under
 the unique Möbius transformation carrying `a`, `b`, `c` to `0`, `1`, `∞`
 (`OnePoint.crossRatio_eq_smul`), so that `crossRatio 0 1 ∞ z = z`. For finite points it is
@@ -101,17 +87,18 @@ the unique Möbius transformation carrying `a`, `b`, `c` to `0`, `1`, `∞`
 pairwise distinct, it is `∞` by convention. -/
 noncomputable def crossRatio (a b c d : OnePoint K) : OnePoint K :=
   open scoped Classical in
-  if h : a ≠ b ∧ a ≠ c ∧ b ≠ c then (exists_smul_eq_zero_one_infty h).choose • d else ∞
+  if h : a ≠ b ∧ a ≠ c ∧ b ≠ c then (exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2).choose • d
+  else ∞
 
 /-- **The defining property of the cross ratio.** If a Möbius transformation `g` carries `a`, `b`,
 `c` to `0`, `1`, `∞`, then the cross ratio `crossRatio a b c d` is `g • d`. -/
 theorem crossRatio_eq_smul {a b c : OnePoint K} (d : OnePoint K) {g : PGL(2, K)}
     (ha : g • a = (0 : K)) (hb : g • b = (1 : K)) (hc : g • c = ∞) :
     crossRatio a b c d = g • d := by
-  have h := pairwise_ne_of_smul_eq ha hb hc
+  have h := pairwise_ne_of_smul_eq_zero_one_infty ha hb hc
   rw [crossRatio, dite_eq_left h]
-  obtain ⟨ha', hb', hc'⟩ := (exists_smul_eq_zero_one_infty h).choose_spec
-  generalize (exists_smul_eq_zero_one_infty h).choose = k at ha' hb' hc' ⊢
+  obtain ⟨ha', hb', hc'⟩ := (exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2).choose_spec
+  generalize (exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2).choose = k at ha' hb' hc' ⊢
   -- Both inverses carry `0`, `1`, `∞` to `a`, `b`, `c`, so they agree by sharp transitivity.
   have key := (existsUnique_pgl_smul_zero_one_infty_eq h.1 h.2.1 h.2.2).unique
     (y₁ := k⁻¹) (y₂ := g⁻¹)
@@ -143,7 +130,7 @@ theorem crossRatio_zero_one_infty (d : OnePoint K) :
 theorem crossRatio_smul (g : PGL(2, K)) (a b c d : OnePoint K) :
     crossRatio (g • a) (g • b) (g • c) (g • d) = crossRatio a b c d := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
-  · obtain ⟨k, ha, hb, hc⟩ := exists_smul_eq_zero_one_infty h
+  · obtain ⟨k, ha, hb, hc⟩ := exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2
     rw [crossRatio_eq_smul d ha hb hc, crossRatio_eq_smul (g := k * g⁻¹) (g • d)
       (by rwa [mul_smul, inv_smul_smul]) (by rwa [mul_smul, inv_smul_smul])
       (by rwa [mul_smul, inv_smul_smul]), mul_smul, inv_smul_smul]
@@ -165,9 +152,9 @@ theorem crossRatio_psl_smul (g : PSL(2, K)) (a b c d : OnePoint K) :
 
 /-- For pairwise distinct `a`, `b`, `c`, the cross ratio `d ↦ crossRatio a b c d` is a bijection
 of the projective line: it is a Möbius transformation. -/
-theorem bijective_crossRatio {a b c : OnePoint K} (h : a ≠ b ∧ a ≠ c ∧ b ≠ c) :
+theorem crossRatio_bijective {a b c : OnePoint K} (h : a ≠ b ∧ a ≠ c ∧ b ≠ c) :
     Function.Bijective (crossRatio a b c) := by
-  obtain ⟨g, ha, hb, hc⟩ := exists_smul_eq_zero_one_infty h
+  obtain ⟨g, ha, hb, hc⟩ := exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2
   have heq : crossRatio a b c = (g • ·) := funext fun d ↦ crossRatio_eq_smul d ha hb hc
   rw [heq]
   exact MulAction.bijective g
@@ -177,7 +164,7 @@ and `d = a`. -/
 theorem crossRatio_eq_zero_iff {a b c d : OnePoint K} :
     crossRatio a b c d = (0 : K) ↔ (a ≠ b ∧ a ≠ c ∧ b ≠ c) ∧ d = a := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
-  · obtain ⟨g, ha, hb, hc⟩ := exists_smul_eq_zero_one_infty h
+  · obtain ⟨g, ha, hb, hc⟩ := exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2
     rw [crossRatio_eq_smul d ha hb hc, ← ha, smul_left_cancel_iff]
     exact ⟨fun hd ↦ ⟨h, hd⟩, And.right⟩
   · simp [crossRatio_of_not_pairwise_ne d h, h]
@@ -187,7 +174,7 @@ and `d = b`. -/
 theorem crossRatio_eq_one_iff {a b c d : OnePoint K} :
     crossRatio a b c d = (1 : K) ↔ (a ≠ b ∧ a ≠ c ∧ b ≠ c) ∧ d = b := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
-  · obtain ⟨g, ha, hb, hc⟩ := exists_smul_eq_zero_one_infty h
+  · obtain ⟨g, ha, hb, hc⟩ := exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2
     rw [crossRatio_eq_smul d ha hb hc, ← hb, smul_left_cancel_iff]
     exact ⟨fun hd ↦ ⟨h, hd⟩, And.right⟩
   · simp [crossRatio_of_not_pairwise_ne d h, h]
@@ -197,10 +184,27 @@ distinct or `d = c`. -/
 theorem crossRatio_eq_infty_iff {a b c d : OnePoint K} :
     crossRatio a b c d = ∞ ↔ ¬(a ≠ b ∧ a ≠ c ∧ b ≠ c) ∨ d = c := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
-  · obtain ⟨g, ha, hb, hc⟩ := exists_smul_eq_zero_one_infty h
+  · obtain ⟨g, ha, hb, hc⟩ := exists_pgl_smul_eq_zero_one_infty h.1 h.2.1 h.2.2
     rw [crossRatio_eq_smul d ha hb hc, ← hc, smul_left_cancel_iff]
     simp [h]
   · simp [crossRatio_of_not_pairwise_ne d h, h]
+
+/-- The cross ratio at the first point is `0`. -/
+@[simp]
+theorem crossRatio_fourth_eq_first {a b c : OnePoint K} (hab : a ≠ b) (hac : a ≠ c)
+    (hbc : b ≠ c) : crossRatio a b c a = (0 : K) :=
+  crossRatio_eq_zero_iff.mpr ⟨⟨hab, hac, hbc⟩, rfl⟩
+
+/-- The cross ratio at the second point is `1`. -/
+@[simp]
+theorem crossRatio_fourth_eq_second {a b c : OnePoint K} (hab : a ≠ b) (hac : a ≠ c)
+    (hbc : b ≠ c) : crossRatio a b c b = (1 : K) :=
+  crossRatio_eq_one_iff.mpr ⟨⟨hab, hac, hbc⟩, rfl⟩
+
+/-- The cross ratio at the third point is `∞`. -/
+@[simp]
+theorem crossRatio_fourth_eq_third (a b c : OnePoint K) : crossRatio a b c c = ∞ :=
+  crossRatio_eq_infty_iff.mpr (.inr rfl)
 
 /-! ### Formulas in affine coordinates -/
 
@@ -292,7 +296,7 @@ private theorem exists_smul_eq_of_crossRatio_eq_coe {a b c d : OnePoint K} {t : 
     by_contra hn
     rw [crossRatio_of_not_pairwise_ne d hn] at h
     exact infty_ne_coe t h
-  obtain ⟨g, ha, hb, hc⟩ := exists_smul_eq_zero_one_infty hne
+  obtain ⟨g, ha, hb, hc⟩ := exists_pgl_smul_eq_zero_one_infty hne.1 hne.2.1 hne.2.2
   exact ⟨g, ha, hb, hc, (crossRatio_eq_smul d ha hb hc).symm.trans h⟩
 
 /-- Exchanging the first two points replaces the cross ratio `t` by `1 - t`. -/
@@ -379,8 +383,10 @@ theorem crossRatio_eq_crossRatio_iff (x y : Fin 4 ↪ OnePoint K) :
     crossRatio (x 0) (x 1) (x 2) (x 3) = crossRatio (y 0) (y 1) (y 2) (y 3) ↔
       ∃ g : PGL(2, K), g • x = y := by
   refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by simp [← hg, Function.Embedding.smul_apply]⟩
-  obtain ⟨g, hx0, hx1, hx2⟩ := exists_smul_eq_zero_one_infty (pairwise_ne_of_embedding x)
-  obtain ⟨k, hy0, hy1, hy2⟩ := exists_smul_eq_zero_one_infty (pairwise_ne_of_embedding y)
+  have hx := pairwise_ne_of_embedding x
+  obtain ⟨g, hx0, hx1, hx2⟩ := exists_pgl_smul_eq_zero_one_infty hx.1 hx.2.1 hx.2.2
+  have hy := pairwise_ne_of_embedding y
+  obtain ⟨k, hy0, hy1, hy2⟩ := exists_pgl_smul_eq_zero_one_infty hy.1 hy.2.1 hy.2.2
   rw [crossRatio_eq_smul _ hx0 hx1 hx2, crossRatio_eq_smul _ hy0 hy1 hy2] at h
   -- Both quadruples are carried to `0`, `1`, `∞` and their common cross ratio.
   refine ⟨k⁻¹ * g, Function.Embedding.ext fun i ↦ ?_⟩
@@ -426,7 +432,7 @@ theorem crossRatio_eq_crossRatio_iff_psl [IsAlgClosed K] (x y : Fin 4 ↪ OnePoi
   crossRatio_eq_crossRatio_iff_psl_of_factor GeneralLinearGroup.exists_toGL_mul_scalar_eq x y
 
 /-- The ordered quadruple `0`, `1`, `∞`, `z` for a point `z` other than `0`, `1`, `∞`. -/
-private def zeroOneInftyEmbedding
+def zeroOneInftyEmbedding
     (z : ({((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞}ᶜ : Set (OnePoint K))) :
     Fin 4 ↪ OnePoint K :=
   ⟨![((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞, z], by
@@ -434,6 +440,14 @@ private def zeroOneInftyEmbedding
     simp only [Set.mem_compl_iff, Set.mem_insert_iff, Set.mem_singleton_iff, not_or] at hz
     intro i j hij
     fin_cases i <;> fin_cases j <;> simp_all [eq_comm]⟩
+
+omit [DecidableEq K] in
+/-- The entries of the quadruple `(0, 1, ∞, z)`. -/
+@[simp]
+theorem zeroOneInftyEmbedding_apply
+    (z : ({((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞}ᶜ : Set (OnePoint K))) (i : Fin 4) :
+    zeroOneInftyEmbedding z i = ![((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞, z] i :=
+  (rfl)
 
 /-- **The moduli space of four ordered distinct points on the projective line.** The cross ratio
 identifies the orbits of `PGL(2, K)` on ordered quadruples of pairwise distinct points of
@@ -457,6 +471,13 @@ noncomputable def crossRatioEquiv :
 theorem coe_crossRatioEquiv_mk (x : Fin 4 ↪ OnePoint K) :
     (crossRatioEquiv (Quotient.mk'' x : MulAction.orbitRel.Quotient PGL(2, K) _) : OnePoint K) =
       crossRatio (x 0) (x 1) (x 2) (x 3) :=
+  (rfl)
+
+/-- A point other than `0`, `1`, `∞` corresponds to the orbit of the quadruple `(0, 1, ∞, z)`. -/
+@[simp]
+theorem crossRatioEquiv_symm_apply
+    (z : ({((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞}ᶜ : Set (OnePoint K))) :
+    (crossRatioEquiv (K := K)).symm z = Quotient.mk'' (zeroOneInftyEmbedding z) :=
   (rfl)
 
 end OnePoint
