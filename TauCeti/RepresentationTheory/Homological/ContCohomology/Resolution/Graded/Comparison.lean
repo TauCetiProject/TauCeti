@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.GradedContraction
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 
 /-!
 # The comparison of a graded representation with the total coinduced resolution
@@ -184,7 +184,9 @@ theorem gradedComparison_ι_apply (x : X.V) :
   classical
   rw [c.gradedComparison_apply_of_mem (n := 0) (c.ι.hom x).2, gradedResolutionAugmentation_apply,
     ← c.ι_comp_comparison_f_zero, comp_apply]
-  rfl
+  -- The degree-zero object of `gradedCochainComplex` is the subtype `ℳ 0`, so the element
+  -- rebuilt from `(c.ι.hom x).1` is `c.ι.hom x` by subtype eta.
+  exact congrArg _ (congrArg (c.comparison.f 0).hom (Subtype.eta _ _))
 
 /-- **The comparison commutes with the differentials**, provided `d` kills the piece `ℳ (-1)`,
 so that it does not carry the discarded negative degrees into degree zero. This holds in
