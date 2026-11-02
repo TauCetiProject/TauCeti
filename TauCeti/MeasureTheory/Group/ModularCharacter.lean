@@ -412,7 +412,8 @@ theorem absolutelyContinuous_inv_of_regular : μ ≪ μ.inv := by
     .of_forall fun x => ENNReal.coe_ne_zero.2 (modularCharacterFun_pos x).ne'
 
 /-- Inversion preserves null sets of a regular Haar measure. -/
-@[simp]
+-- Use inversion’s measure-class formula before simplifying the inverse image.
+@[simp↓]
 theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := by
   rw [← inv_apply]
   exact ⟨fun h => absolutelyContinuous_inv_of_regular μ h,
