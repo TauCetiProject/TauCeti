@@ -144,8 +144,7 @@ theorem kernelProduct_sub_negOnePow_smul_kernelProduct
     Submodule.smul_mem _ _ (hfin' q.2 q.1)
   rw [kernelProduct_eq_kernelMap_tensor hn hfin hN (fun q => hfin q.1 q.2),
     ← kernelMap_tensor_eq_negOnePow_smul_kernelProduct hn' hfin' hN' hN'fin ha hb]
-  exact kernelMap_sub_kernelMap_of_kernelComp hN _ hN' hN'fin hk hkfin hδ₀ hδ₀fin hD hDfin
-    hcomm _
+  exact kernelMap_sub_kernelMap hN _ hN' hN'fin hk hkfin hD hDfin hδ₀ hδ₀fin hcomm _
 
 variable [DecidableEq S₁] [DecidableEq S₂] {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R} {E₁ E₂ : ℝ}
   (hδ₁ : ∀ p q, δ₁ p q ≠ 0 → F₁ q ≤ F₁ p + E₁) (hδ₁fin : ∀ p, δ₁ p ∈ NovikovModule R F₁)

@@ -137,6 +137,11 @@ theorem IsModular.dvd (h : B.IsModular a) (x y : M) : a ∣ B x y := by
   obtain ⟨C, rfl, -⟩ := h
   exact ⟨C x y, by simp⟩
 
+/-- Multiplying an `a`-modular form by `r` multiplies its modularity factor by `r`. -/
+theorem IsModular.smul (h : B.IsModular a) (r : R) : (r • B).IsModular (r * a) := by
+  obtain ⟨C, rfl, hC⟩ := h
+  exact ⟨C, (smul_smul r a C).symm, hC⟩
+
 /-- Modularity only depends on `a` up to a unit. -/
 theorem IsModular.of_associated (h : B.IsModular a) {b : R} (hab : Associated a b) :
     B.IsModular b := by

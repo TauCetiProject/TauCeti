@@ -113,6 +113,13 @@ lemma _root_.RootPairing.mem_wallIndices {x : M} {i : b.support} :
     i ∈ P.wallIndices b x ↔ P.coroot' i x = 0 :=
   Iff.rfl
 
+/-- A nonzero scalar multiple of a weight lies on exactly the same simple walls. -/
+@[simp]
+lemma _root_.RootPairing.wallIndices_smul [NoZeroDivisors R] {c : R} (hc : c ≠ 0) (x : M) :
+    P.wallIndices b (c • x) = P.wallIndices b x := by
+  ext i
+  simp [map_smul, hc]
+
 /-- Adding a weight `χ` killed by the simple coroots, such as a central weight, does not change
 the walls through a weight. -/
 lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
