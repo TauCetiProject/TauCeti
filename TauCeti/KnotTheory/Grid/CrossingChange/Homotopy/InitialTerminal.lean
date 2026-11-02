@@ -134,7 +134,7 @@ private theorem initialTerminal_square_match
     have hd := hD r
     have he := hE r
     simp only [Finset.mem_union, Finset.mem_inter, hH]
-    by_cases hc : c = cut <;> by_cases hr : c = recut <;> grind only
+    by_cases hcc : c = cut <;> by_cases hcr : c = recut <;> grind only
 
 /-- The two cyclic turn orders give a hexagon composite with the same square multiplicities. -/
 private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
@@ -220,7 +220,7 @@ private theorem initialTerminal_mem_composite {x z : GridState n}
       mem_crossingChangeHexagonRectangleDecompositions,
       mem_crossingChangeRectangleHexagonDecompositions,
       mem_crossingChangeCommutationHexagons, mem_unblockedRectangles,
-      firstCrossingSquares, secondCrossingSquares, Sum.elim_inl, Sum.elim_inr] at *
+      firstCrossingSquares, secondCrossingSquares, Sum.elim_inl, Sum.elim_inr] at hempty hX ⊢
     exact ⟨⟨hempty.1, hX.1⟩, hempty.2, hX.2⟩
 
 variable (R : Type*) [CommSemiring R]
