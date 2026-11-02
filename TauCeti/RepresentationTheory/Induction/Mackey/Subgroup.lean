@@ -193,7 +193,7 @@ theorem coe_mackeySubgroupSelfEquiv_apply (hs : s ∈ H)
   (rfl)
 
 /-- For a representative in `H`, the canonical Mackey-subgroup inclusion covers all of `H`. -/
-theorem mackeySelfSubtype_surjective (hs : s ∈ H) :
+theorem mackeySubgroup_subgroupOf_subtype_surjective (hs : s ∈ H) :
     Function.Surjective ((mackeySubgroup s H H).subgroupOf H).subtype := by
   intro h
   obtain ⟨y, hy⟩ := (mackeySubgroupSelfEquiv hs).surjective h

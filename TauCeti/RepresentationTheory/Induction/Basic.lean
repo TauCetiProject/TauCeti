@@ -25,11 +25,19 @@ on the groups or on the representations.
 
 public section
 
-open CategoryTheory
+open CategoryTheory Representation
 
-universe u v w w'
+universe u v w w' t
 
 namespace Rep
+
+/-- Induction–restriction reciprocity evaluates a morphism on the tensor generator at `1`. -/
+theorem indResHomEquiv_hom_apply {k : Type u} {G : Type v} {H : Type w}
+    [CommRing k] [Group G] [Group H] (φ : G →* H)
+    (A : Rep.{max t w u} k G) (B : Rep.{max t w u} k H)
+    (f : ind φ A ⟶ B) (a : A) :
+    (indResHomEquiv.{t, u, v, w} φ A B f).hom a = f.hom (IndV.mk φ A.ρ 1 a) :=
+  rfl
 
 /-- **Induction of intertwiners is additive**: for any homomorphism of groups `φ : G →* H`,
 `Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g`. -/

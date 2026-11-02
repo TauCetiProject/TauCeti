@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.Mackey.Hom
-import TauCeti.RepresentationTheory.Induction.Adjunction
 import TauCeti.CategoryTheory.Linear.FullyFaithful
+import TauCeti.RepresentationTheory.Coinduced
 import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
@@ -60,7 +60,7 @@ private theorem mackeySelfTwistIso_hom_hom_apply (hs : s ∈ H) (B : Rep.{u} k H
 noncomputable def mackeyHomSelfLinearEquiv (hs : s ∈ H) (A B : Rep.{u} k H) :
     (Rep.res ((mackeySubgroup s H H).subgroupOf H).subtype A ⟶
       Rep.res (mackeyToH s H H) B) ≃ₗ[k] (A ⟶ B) := by
-  letI := Rep.full_res (k := k) _ (mackeySelfSubtype_surjective hs)
+  letI := Rep.full_res (k := k) _ (mackeySubgroup_subgroupOf_subtype_surjective hs)
   exact (Linear.homCongr k (Iso.refl _) (mackeySelfTwistIso hs B)).trans
     ((Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype).homLinearEquiv k A B).symm
 
@@ -70,7 +70,7 @@ theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : Rep.{u} k H)
     (f : Rep.res ((mackeySubgroup s H H).subgroupOf H).subtype A ⟶
       Rep.res (mackeyToH s H H) B) (a : A) :
     (mackeyHomSelfLinearEquiv hs A B f).hom a = B.ρ ⟨s, hs⟩ (f.hom a) := by
-  let := Rep.full_res (k := k) _ (mackeySelfSubtype_surjective hs)
+  let := Rep.full_res (k := k) _ (mackeySubgroup_subgroupOf_subtype_surjective hs)
   have h := Functor.map_homLinearEquiv_symm_apply k
     (Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype)
     (f ≫ (mackeySelfTwistIso hs B).hom)
