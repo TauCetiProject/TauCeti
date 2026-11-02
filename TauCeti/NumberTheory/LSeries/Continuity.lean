@@ -22,17 +22,17 @@ boundary line of that half-plane, which is exactly the situation in the Wiener--
 
 ## Main results
 
-* `TauCeti.LSeries.continuousOn_LSeries`: `LSeries a` is continuous on the closed half-plane
+* `LSeriesSummable.continuousOn_LSeries`: `LSeries a` is continuous on the closed half-plane
   `{z | s.re ≤ z.re}` whenever `LSeriesSummable a s`.
-* `TauCeti.LSeries.continuous_LSeries_vertical`: `fun t : ℝ ↦ LSeries a (s + t * I)` is continuous
-  whenever `LSeriesSummable a s`.
-* `TauCeti.LSeries.tendsto_LSeries_nhdsGT`: the real one-sided limit of `LSeries a` at a real
-  point of summability is the value there.
+* `LSeriesSummable.continuous_LSeries_vertical`: `fun t : ℝ ↦ LSeries a (s + t * I)` is
+  continuous whenever `LSeriesSummable a s`.
+* `LSeriesSummable.tendsto_LSeries_nhdsGE`: at a real point of summability `σ`, the values of
+  `LSeries a` along the real half-line `[σ, ∞)` tend to its value at `σ`.
 -/
 
 public section
 
-namespace TauCeti.LSeries
+namespace LSeriesSummable
 
 open Complex Filter Topology
 
@@ -44,19 +44,19 @@ variable {a : ℕ → ℂ} {s : ℂ}
 theorem continuousOn_LSeries (hs : LSeriesSummable a s) :
     ContinuousOn (LSeries a) {z : ℂ | s.re ≤ z.re} :=
   continuousOn_tsum
-    (fun n z _ ↦ (_root_.LSeries.hasDerivAt_term a n z).continuousAt.continuousWithinAt)
-    (summable_norm_iff.mpr hs) (fun n _ hz ↦ _root_.LSeries.norm_term_le_of_re_le_re a hz n)
+    (fun n z _ ↦ (LSeries.hasDerivAt_term a n z).continuousAt.continuousWithinAt)
+    (summable_norm_iff.mpr hs) (fun n _ hz ↦ LSeries.norm_term_le_of_re_le_re a hz n)
 
 /-- A Dirichlet series summable at `s` is continuous along the vertical line through `s`. -/
 theorem continuous_LSeries_vertical (hs : LSeriesSummable a s) :
     Continuous fun t : ℝ ↦ LSeries a (s + t * I) :=
-  (continuousOn_LSeries hs).comp_continuous (by fun_prop) fun t ↦ by simp
+  hs.continuousOn_LSeries.comp_continuous (by fun_prop) fun t ↦ by simp
 
-/-- Approaching a real point of summability from the right along the real axis, the values of a
-Dirichlet series converge to its value there. -/
-theorem tendsto_LSeries_nhdsGT {σ : ℝ} (hs : LSeriesSummable a σ) :
-    Tendsto (fun τ : ℝ ↦ LSeries a τ) (𝓝[>] σ) (𝓝 (LSeries a σ)) :=
-  (continuousOn_LSeries hs σ (by simp)).tendsto.comp <|
-    continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun τ hτ ↦ by simpa using hτ.le
+/-- Approaching a real point of summability `σ` along the real half-line `[σ, ∞)`, the values of
+a Dirichlet series converge to its value at `σ`. -/
+theorem tendsto_LSeries_nhdsGE {σ : ℝ} (hs : LSeriesSummable a σ) :
+    Tendsto (fun τ : ℝ ↦ LSeries a τ) (𝓝[≥] σ) (𝓝 (LSeries a σ)) :=
+  (hs.continuousOn_LSeries σ (by simp)).tendsto.comp <|
+    continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun τ hτ ↦ by simpa using hτ
 
-end TauCeti.LSeries
+end LSeriesSummable

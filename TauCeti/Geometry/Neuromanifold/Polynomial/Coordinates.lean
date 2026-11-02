@@ -16,7 +16,7 @@ functions again: `polynomialCoefficientTransform` constructs these parameter pol
 In particular, an arbitrary linear coordinate equivalence (for example, the coordinate map of
 a different basis) gives the same realization after evaluation in the new coordinates.
 
-`boundedEvaluation_comp_polynomialCoefficientTransform` is the commuting equation for this new
+`tupleEvaluation_comp_polynomialCoefficientTransform` is the commuting equation for this new
 presentation. Its evaluation is faithful over an infinite integral domain, so the image and
 fibre comparisons in `TauCeti.Geometry.Neuromanifold.Basic` apply without any new assumptions
 on the parameters. Only linear coordinate changes are considered; an arbitrary encoding need
@@ -102,10 +102,10 @@ theorem polynomialCoefficientTransform_boundedCoefficientEquiv
 
 /-- Evaluating in any linearly equivalent coordinates recovers the original realization.
 Thus a change of basis changes the coefficient presentation, not the realized functions. -/
-theorem boundedEvaluation_comp_polynomialCoefficientTransform
+theorem tupleEvaluation_comp_polynomialCoefficientTransform
     (P : J → MvPolynomial (W ⊕ X) K)
     (e : (J → restrictTotalDegree X K (polynomialInputDegree P)) ≃ₗ[K] (I → K)) :
-    ((boundedEvaluation X K J _).comp e.symm.toLinearMap) ∘
+    ((tupleEvaluation J (restrictTotalDegree X K _)).comp e.symm.toLinearMap) ∘
         (fun w i => eval w (polynomialCoefficientTransform P e.toLinearMap i)) =
       polynomialRealization P := by
   have h (w : W → K) :
@@ -114,6 +114,6 @@ theorem boundedEvaluation_comp_polynomialCoefficientTransform
     ext i
     exact eval_polynomialCoefficientTransform P e.toLinearMap w i
   simpa only [Function.comp_def, LinearMap.comp_apply, h, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply] using boundedEvaluation_comp_polynomialCoefficientMap P
+    LinearEquiv.symm_apply_apply] using tupleEvaluation_comp_polynomialCoefficientMap P
 
 end TauCeti.Neuromanifold
