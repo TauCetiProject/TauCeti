@@ -409,9 +409,10 @@ lemma koszulBraidingHom_hexagon_reverse (X Y Z : CochainComplex C ℤ) :
     koszulBraiding, koszulBraidingInv, Category.assoc] using
     koszulBraidingHom_hexagon_forward C Z X Y
 
-/-- Cochain complexes in `C` form a braided monoidal category, with the Koszul braiding
-`x ⊗ y ↦ (-1)^{|x| * |y|} y ⊗ x` on the degreewise summands of Mathlib's totalized tensor
-product. -/
+/-- Cochain complexes in `C` form a braided monoidal category under the Koszul braiding: on the
+summand `X^p ⊗ Y^q` of Mathlib's totalized tensor product it is `(-1)^(p * q)` times the
+coefficient braiding of `X^p` and `Y^q`. For complexes of modules, whose coefficient braiding is
+the tensor flip, this is `x ⊗ y ↦ (-1)^{|x| * |y|} y ⊗ x`. -/
 noncomputable instance koszulBraidedCategory :
     BraidedCategory (CochainComplex C ℤ) where
   braiding X Y := koszulBraiding C X Y
@@ -494,7 +495,7 @@ complexes. -/
 @[simp]
 lemma koszulBraiding_inv (X Y : CochainComplex C ℤ) :
     (koszulBraiding C X Y).inv = koszulBraidingHom C Y X := by
-  change (letI := reverseBraiding C; koszulBraidingHom C Y X) = _
+  dsimp only [koszulBraiding, koszulBraidingInv]
   rw [SymmetricCategory.reverseBraiding_eq]
 
 /-- Composing the Koszul braiding with the braiding of the swapped factors is the identity. -/
