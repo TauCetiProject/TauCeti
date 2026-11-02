@@ -346,10 +346,11 @@ theorem starAlgHom_ext {B : Type*} [NonUnitalCStarAlgebra B]
   NonUnitalStarAlgHom.ext fun x => induction_on x (isClosed_eq (map_continuous φ)
     (map_continuous ψ)) fun f => congr($h f)
 
-/-- Continuous linear operators on the full crossed product are determined by their values on
+/-- Continuous linear maps out of the full crossed product are determined by their values on
 the twisted convolution algebra. -/
 @[ext]
-theorem continuousLinearMap_ext {S T : FullCrossedProduct α μ →L[ℂ] FullCrossedProduct α μ}
+theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
+    [Module ℂ E] {S T : FullCrossedProduct α μ →L[ℂ] E}
     (h : ∀ f, S (of α μ f) = T (of α μ f)) : S = T :=
   ContinuousLinearMap.ext fun x => induction_on x (isClosed_eq S.continuous T.continuous) h
 

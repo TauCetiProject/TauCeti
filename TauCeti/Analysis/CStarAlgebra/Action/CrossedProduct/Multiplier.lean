@@ -30,7 +30,8 @@ makes them left centralizers of multipliers of `A ⋊_α G`. This gives
 The two maps are covariant, `i_G(r) i_A(a) = i_A(α r a) i_G(r)`, and the group map is strictly
 continuous: for every `x` in the crossed product, both `r ↦ i_G(r) x` and `r ↦ x i_G(r)` are norm
 continuous. Under the extension `π ⋊ U` of the integrated form of a covariant representation
-`(π, U)`, the left actions of `i_A(a)` and `i_G(r)` become `π(a)` and `U_r`.
+`(π, U)`, the left actions of `i_A(a)` and `i_G(r)` become left multiplication by `π(a)` and
+`U_r`, and their right actions become right multiplication by them.
 
 No unit, separability, σ-finiteness or nondegeneracy is assumed.
 
@@ -48,8 +49,10 @@ No unit, separability, σ-finiteness or nondegeneracy is assumed.
   `TauCeti.CStarAction.FullCrossedProduct.continuous_groupMultiplier_snd_apply`: strict continuity
   of the group map.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedFull_coefficientMultiplier_fst` and
-  `TauCeti.CStarAction.CovariantRepresentation.integratedFull_groupMultiplier_fst`: the extended
-  integrated forms turn the canonical multipliers into the given covariant pair.
+  `TauCeti.CStarAction.CovariantRepresentation.integratedFull_groupMultiplier_fst`, with their
+  right-action counterparts `integratedFull_coefficientMultiplier_snd` and
+  `integratedFull_groupMultiplier_snd`: the extended integrated forms turn the canonical
+  multipliers into the given covariant pair.
 
 ## References
 
@@ -62,7 +65,7 @@ public section
 noncomputable section
 
 open MeasureTheory UniformSpace Filter Topology
-open scoped MultiplierAlgebra
+open scoped MultiplierAlgebra CStarAlgebra
 
 namespace TauCeti.CStarAction
 
@@ -92,6 +95,32 @@ private theorem extendCLM_of (T : ConvolutionAlgebra α μ →ₗ[ℂ] Convoluti
   rw [← coe_toFull_eq_of, ← coe_toFull_eq_of, extendCLM]
   exact (ContinuousLinearMap.completion_apply_coe _ _).trans (by simp [-coe_toFull_eq_of])
 
+/-- Extended operators are adjoint for the pairing `(x, y) ↦ x⋆ * y` as soon as their integrated
+forms are adjoint on the twisted convolution algebra. -/
+private theorem star_extendCLM_mul {T T' : ConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ}
+    {C C' : ℝ} {hT : ∀ f, fullSeminorm α μ (T f) ≤ C * fullSeminorm α μ f}
+    {hT' : ∀ f, fullSeminorm α μ (T' f) ≤ C' * fullSeminorm α μ f}
+    (h : ∀ f g (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+      [CompleteSpace H] (P : CovariantRepresentation α H),
+        P.integratedStarAlgHom μ (star (T' f) * g) = P.integratedStarAlgHom μ (star f * T g))
+    (x y : FullCrossedProduct α μ) :
+    star (extendCLM T' C' hT' x) * y = star x * extendCLM T C hT y := by
+  induction x using induction_on with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih f =>
+    induction y using induction_on with
+    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+    | ih g =>
+      rw [extendCLM_of, extendCLM_of]
+      simp only [← map_star (of α μ), ← map_mul (of α μ)]
+      exact of_eq_of_iff.2 (h f g)
+
+/-- A multiplier of the full crossed product is determined by its left action on the twisted
+convolution algebra. -/
+private theorem multiplier_ext {m n : 𝓜(ℂ, FullCrossedProduct α μ)}
+    (h : ∀ f, m.fst (of α μ f) = n.fst (of α μ f)) : m = n :=
+  DoubleCentralizer.ext_fst fun x => congr($(continuousLinearMap_ext h) x)
+
 /-! ### The coefficient map -/
 
 /-- Left multiplication by a coefficient, extended to the full crossed product. -/
@@ -105,18 +134,8 @@ private theorem coefficientCLM_of (a : A) (f : ConvolutionAlgebra α μ) :
 
 /-- The adjoint of left multiplication by `a⋆` is left multiplication by `a`. -/
 private theorem star_coefficientCLM_mul (a : A) (x y : FullCrossedProduct α μ) :
-    star (coefficientCLM (star a) x) * y = star x * coefficientCLM a y := by
-  induction x using induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih f =>
-    induction y using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih g =>
-      rw [coefficientCLM_of, coefficientCLM_of]
-      simp only [← map_star (of α μ), ← map_mul (of α μ)]
-      rw [of_eq_of_iff]
-      intro H _ _ _ P
-      simp [map_star, mul_assoc]
+    star (coefficientCLM (star a) x) * y = star x * coefficientCLM a y :=
+  star_extendCLM_mul (fun f g H _ _ _ P => by simp [map_star, mul_assoc]) x y
 
 variable (α μ) in
 /-- The canonical coefficient map `i_A` of `A` into the multiplier algebra of the full crossed
@@ -124,22 +143,10 @@ product. The multiplier `i_A(a)` acts on the left of the twisted convolution alg
 `(i_A(a) f)(s) = a * f(s)`. -/
 def coefficientMultiplier : A →⋆ₙₐ[ℂ] 𝓜(ℂ, FullCrossedProduct α μ) where
   toFun a := .ofAdjoint (coefficientCLM a) (coefficientCLM (star a)) (star_coefficientCLM_mul a)
-  map_smul' c a := DoubleCentralizer.ext_fst fun x => by
-    simp only [DoubleCentralizer.smul_fst, DoubleCentralizer.ofAdjoint_fst, MonoidHom.id_apply]
-    exact congr($(continuousLinearMap_ext (S := coefficientCLM (c • a)) (T := c • coefficientCLM a)
-      fun f => by simp [coefficientCLM_of]) x)
-  map_zero' := DoubleCentralizer.ext_fst fun x => by
-    simp only [DoubleCentralizer.ofAdjoint_fst, DoubleCentralizer.zero_fst]
-    exact congr($(continuousLinearMap_ext (S := coefficientCLM 0) (T := 0)
-      fun f => by simp [coefficientCLM_of]) x)
-  map_add' a b := DoubleCentralizer.ext_fst fun x => by
-    simp only [DoubleCentralizer.add_fst, DoubleCentralizer.ofAdjoint_fst]
-    exact congr($(continuousLinearMap_ext (S := coefficientCLM (a + b))
-      (T := coefficientCLM a + coefficientCLM b) fun f => by simp [coefficientCLM_of]) x)
-  map_mul' a b := DoubleCentralizer.ext_fst fun x => by
-    simp only [DoubleCentralizer.mul_fst, DoubleCentralizer.ofAdjoint_fst]
-    exact congr($(continuousLinearMap_ext (S := coefficientCLM (a * b))
-      (T := coefficientCLM a * coefficientCLM b) fun f => by simp [coefficientCLM_of]) x)
+  map_smul' c a := multiplier_ext fun f => by simp [coefficientCLM_of]
+  map_zero' := multiplier_ext fun f => by simp [coefficientCLM_of]
+  map_add' a b := multiplier_ext fun f => by simp [coefficientCLM_of]
+  map_mul' a b := multiplier_ext fun f => by simp [coefficientCLM_of]
   map_star' a := DoubleCentralizer.ext_fst fun x => by
     simp only [DoubleCentralizer.star_ofAdjoint, DoubleCentralizer.ofAdjoint_fst]
 
@@ -147,12 +154,24 @@ private theorem coefficientMultiplier_fst (a : A) :
     (coefficientMultiplier α μ a).fst = coefficientCLM a :=
   DoubleCentralizer.ofAdjoint_fst
 
+private theorem coefficientMultiplier_snd_apply (a : A) (x : FullCrossedProduct α μ) :
+    (coefficientMultiplier α μ a).snd x = star (coefficientCLM (star a) (star x)) :=
+  DoubleCentralizer.ofAdjoint_snd_apply x
+
 /-- The canonical coefficient multiplier `i_A(a)` multiplies an element of the twisted
 convolution algebra pointwise on the left by `a`. -/
 @[simp]
 theorem coefficientMultiplier_fst_of (a : A) (f : ConvolutionAlgebra α μ) :
     (coefficientMultiplier α μ a).fst (of α μ f) = of α μ (coefficientMul a f) := by
   rw [coefficientMultiplier_fst, coefficientCLM_of]
+
+/-- The right action of the canonical coefficient multiplier `i_A(a)` on the twisted convolution
+algebra is the adjoint of left multiplication by `a⋆`. -/
+@[simp]
+theorem coefficientMultiplier_snd_of (a : A) (f : ConvolutionAlgebra α μ) :
+    (coefficientMultiplier α μ a).snd (of α μ f) =
+      star (of α μ (coefficientMul (star a) (star f))) := by
+  rw [coefficientMultiplier_snd_apply, ← map_star (of α μ), coefficientCLM_of]
 
 /-! ### The group map -/
 
@@ -180,21 +199,13 @@ private theorem norm_translateCLM_apply (r : G) (x : FullCrossedProduct α μ) :
 
 /-- The adjoint of translation by `r⁻¹` is translation by `r`. -/
 private theorem star_translateCLM_mul (r : G) (x y : FullCrossedProduct α μ) :
-    star (translateCLM r⁻¹ x) * y = star x * translateCLM r y := by
-  induction x using induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih f =>
-    induction y using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih g =>
-      rw [translateCLM_of, translateCLM_of]
-      simp only [← map_star (of α μ), ← map_mul (of α μ)]
-      rw [of_eq_of_iff]
-      intro H _ _ _ P
-      simp only [map_mul, map_star, CovariantRepresentation.integratedStarAlgHom_apply,
-        ofConv_translateLIE, CovariantRepresentation.integratedOperator_translate, star_mul,
-        mul_assoc]
-      rw [ContinuousLinearMap.star_eq_adjoint (P.group r⁻¹), P.isUnitary.adjoint_eq_inv, inv_inv]
+    star (translateCLM r⁻¹ x) * y = star x * translateCLM r y :=
+  star_extendCLM_mul (fun f g H _ _ _ P => by
+    simp only [map_mul, map_star, CovariantRepresentation.integratedStarAlgHom_apply,
+      LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, ofConv_translateLIE,
+      CovariantRepresentation.integratedOperator_translate, star_mul, mul_assoc]
+    rw [ContinuousLinearMap.star_eq_adjoint (P.group r⁻¹), P.isUnitary.adjoint_eq_inv, inv_inv])
+    x y
 
 /-- The multiplier with left centralizer the extended translation by `r`. -/
 private def groupMultiplierAux (r : G) : 𝓜(ℂ, FullCrossedProduct α μ) :=
@@ -234,17 +245,21 @@ theorem groupMultiplier_fst_of (r : G) (f : ConvolutionAlgebra α μ) :
       of α μ (translateLIE r f) := by
   rw [groupMultiplier_fst, translateCLM_of]
 
+/-- The right action of the canonical group multiplier `i_G(r)` on the twisted convolution
+algebra is the adjoint of twisted left translation by `r⁻¹`. -/
+@[simp]
+theorem groupMultiplier_snd_of (r : G) (f : ConvolutionAlgebra α μ) :
+    (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)).snd (of α μ f) =
+      star (of α μ (translateLIE r⁻¹ (star f))) := by
+  rw [groupMultiplier_snd_apply, ← map_star (of α μ), translateCLM_of]
+
 /-- The canonical coefficient and group maps are covariant:
 `i_G(r) i_A(a) = i_A(α r a) i_G(r)`. -/
 theorem groupMultiplier_mul_coefficientMultiplier (r : G) (a : A) :
     (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)) * coefficientMultiplier α μ a =
-      coefficientMultiplier α μ (α r a) * groupMultiplier α μ r := by
-  refine DoubleCentralizer.ext_fst fun x => ?_
-  simp only [DoubleCentralizer.mul_fst, groupMultiplier_fst]
-  exact congr($(continuousLinearMap_ext
-    (S := translateCLM r * (coefficientMultiplier α μ a).fst)
-    (T := (coefficientMultiplier α μ (α r a)).fst * translateCLM r)
-    fun f => by simp [translateCLM_of, translateLIE_coefficientMul]) x)
+      coefficientMultiplier α μ (α r a) * groupMultiplier α μ r :=
+  multiplier_ext fun f => by
+    simp [groupMultiplier_fst, translateCLM_of, translateLIE_coefficientMul]
 
 /-- The canonical group map is strictly continuous on the left: `r ↦ i_G(r) x` is norm
 continuous for every `x` in the full crossed product. -/
@@ -282,10 +297,6 @@ open FullCrossedProduct
 variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] (P : CovariantRepresentation α H)
 
-private theorem continuous_integratedFull : Continuous (P.integratedFull μ) :=
-  AddMonoidHomClass.continuous_of_bound _ 1 fun x => by
-    simpa using NonUnitalStarAlgHom.norm_apply_le (P.integratedFull μ) x
-
 /-- The extended integrated form turns the canonical coefficient multiplier `i_A(a)` into the
 coefficient representation: `(π ⋊ U)(i_A(a) x) = π(a) (π ⋊ U)(x)`. -/
 @[simp]
@@ -294,8 +305,9 @@ theorem integratedFull_coefficientMultiplier_fst (a : A) (x : FullCrossedProduct
       P.coefficient a * P.integratedFull μ x := by
   induction x using induction_on with
   | hp =>
-    exact isClosed_eq ((continuous_integratedFull P).comp (ContinuousLinearMap.continuous _))
-      (continuous_const.mul (continuous_integratedFull P))
+    exact isClosed_eq
+      ((map_continuous (P.integratedFull μ)).comp (ContinuousLinearMap.continuous _))
+      (continuous_const.mul (map_continuous _))
   | ih f => simp
 
 /-- The extended integrated form turns the canonical group multiplier `i_G(r)` into the group
@@ -306,9 +318,36 @@ theorem integratedFull_groupMultiplier_fst (r : G) (x : FullCrossedProduct α μ
       P.group r * P.integratedFull μ x := by
   induction x using induction_on with
   | hp =>
-    exact isClosed_eq ((continuous_integratedFull P).comp (ContinuousLinearMap.continuous _))
-      (continuous_const.mul (continuous_integratedFull P))
+    exact isClosed_eq
+      ((map_continuous (P.integratedFull μ)).comp (ContinuousLinearMap.continuous _))
+      (continuous_const.mul (map_continuous _))
   | ih f => simp
+
+/-- The extended integrated form turns the right action of the canonical coefficient multiplier
+`i_A(a)` into right multiplication by the coefficient representation:
+`(π ⋊ U)(x i_A(a)) = (π ⋊ U)(x) π(a)`. -/
+@[simp]
+theorem integratedFull_coefficientMultiplier_snd (a : A) (x : FullCrossedProduct α μ) :
+    P.integratedFull μ ((coefficientMultiplier α μ a).snd x) =
+      P.integratedFull μ x * P.coefficient a := by
+  have h : (coefficientMultiplier α μ a).snd x =
+      star ((coefficientMultiplier α μ (star a)).fst (star x)) := by
+    rw [coefficientMultiplier_snd_apply, coefficientMultiplier_fst]
+  rw [h, map_star, integratedFull_coefficientMultiplier_fst, star_mul, map_star, star_star,
+    map_star, star_star]
+
+/-- The extended integrated form turns the right action of the canonical group multiplier
+`i_G(r)` into right multiplication by the group representation:
+`(π ⋊ U)(x i_G(r)) = (π ⋊ U)(x) U_r`. -/
+@[simp]
+theorem integratedFull_groupMultiplier_snd (r : G) (x : FullCrossedProduct α μ) :
+    P.integratedFull μ ((groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)).snd x) =
+      P.integratedFull μ x * P.group r := by
+  have h : (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)).snd x =
+      star ((groupMultiplier α μ r⁻¹ : 𝓜(ℂ, FullCrossedProduct α μ)).fst (star x)) := by
+    rw [groupMultiplier_snd_apply, groupMultiplier_fst]
+  rw [h, map_star, integratedFull_groupMultiplier_fst, star_mul, map_star, star_star,
+    ContinuousLinearMap.star_eq_adjoint (P.group r⁻¹), P.isUnitary.adjoint_eq_inv, inv_inv]
 
 end CovariantRepresentation
 
