@@ -89,7 +89,7 @@ variable {R A T B : Type u} [CommRing R] [CommRing A] [CommRing T] [CommRing B] 
 /-- An isomorphism `a : T ⊗[R] A ≃ₐ[T] B` identifies the base change of `Spec A ⟶ Spec R` along
 `Spec T ⟶ Spec R` with `Spec B ⟶ Spec T`, as schemes over `Spec T`. The underlying isomorphism
 of schemes is Mathlib's `pullbackSpecIso` followed by `Spec.map` of `a.symm`. -/
-@[expose] noncomputable def Over.pullbackSndSpecIsoOfAlgEquiv (a : T ⊗[R] A ≃ₐ[T] B) :
+noncomputable def Over.pullbackSndSpecIsoOfAlgEquiv (a : T ⊗[R] A ≃ₐ[T] B) :
     Over.mk (pullback.snd (Spec.algebraMap R A) (Spec.algebraMap R T)) ≅
       Over.mk (Spec.algebraMap T B) :=
   Over.isoMk (pullbackSymmetry _ _ ≪≫ pullbackSpecIso R T A ≪≫
@@ -107,7 +107,7 @@ then `pullbackSpecIso`, then `Spec.map` of `a.symm`. -/
 theorem Over.pullbackSndSpecIsoOfAlgEquiv_hom_left (a : T ⊗[R] A ≃ₐ[T] B) :
     (Over.pullbackSndSpecIsoOfAlgEquiv a).hom.left =
       (pullbackSymmetry _ _).hom ≫ (pullbackSpecIso R T A).hom ≫
-        Spec.map (CommRingCat.ofHom (a.symm : B →+* T ⊗[R] A)) :=
+        Spec.map (CommRingCat.ofHom (a.symm : B →+* T ⊗[R] A)) := by
   rfl
 
 /-- The inverse of `Over.pullbackSndSpecIsoOfAlgEquiv a`, followed by the projection to `Spec A`,
