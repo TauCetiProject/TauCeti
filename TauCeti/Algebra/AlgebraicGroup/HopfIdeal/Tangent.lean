@@ -311,7 +311,7 @@ theorem lieSubalgebra_augmentation :
   have hx := hd (x - algebraMap R H (Coalgebra.counit (R := R) x)) (by
     rw [mem_toIdeal, mem_augmentation]
     simp)
-  simpa only [map_sub, d.map_algebraMap, sub_zero, Derivation.zero_apply] using hx
+  simpa only [map_sub, d.map_algebraMap, sub_zero, _root_.zero_apply] using hx
 
 /-- The tangent Lie algebra cut out by a join of Hopf ideals consists of the derivations
 belonging to both tangent Lie algebras. -/

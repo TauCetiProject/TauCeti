@@ -65,7 +65,8 @@ theorem torusMap_apply (M : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
 self-maps. -/
 theorem torusMap_torusMap (M N : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
     M.torusMap (N.torusMap q) = (M * N).torusMap q := by
-  simp only [torusMap, Matrix.mul_apply, Fin.sum_univ_two, mul_zpow, ← zpow_mul', zpow_add]
+  simp only [torusMap, Matrix.mul_apply, Fin.sum_univ_two, mul_zpow, ← _root_.zpow_mul',
+    _root_.zpow_add]
   exact Prod.ext (mul_mul_mul_comm _ _ _ _) (mul_mul_mul_comm _ _ _ _)
 
 /-- The identity matrix induces the identity of the torus. -/

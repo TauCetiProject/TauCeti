@@ -67,7 +67,7 @@ theorem _root_.LieAlgebra.SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad
   obtain ⟨n, hn⟩ := hh
   refine ⟨n, LinearMap.ext fun s ↦ ?_⟩
   apply LieAlgebra.SemiDirectSum.inl_injective ψ
-  simpa only [← Module.End.pow_apply, hn, LinearMap.zero_apply, map_zero] using
+  simpa only [← pow_apply_eq_iterate, hn, LinearMap.zero_apply, map_zero] using
     hcomm.iterate_right n s
 
 variable {L : Type*} [LieRing L] [LieAlgebra R L]

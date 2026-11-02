@@ -72,7 +72,8 @@ private theorem jacobson_bot_option {σ : Type*} :
   have hy : (y : MvPowerSeries (Option σ) K) = monomial (Finsupp.single none 1) b⁻¹ := by
     simp [y, coe_X, X_def, ← Algebra.smul_def, ← map_smul]
   classical
-  have hu := (isUnit_washnitzerAlgebra_iff _).mp (Ideal.mem_jacobson_bot.mp hf y)
+  have hu := (isUnit_washnitzerAlgebra_iff _).mp
+    (Ring.mem_jacobson_iff.mp ((Ideal.jacobson_bot (R := W (Option σ))) ▸ hf) y)
   -- The constant coefficient of `1 + f * y` is `1`, and its coefficient at `t + single none 1` is
   -- `b * b⁻¹ = 1`.
   have h0 : constantCoeff ((f * y + 1 : W (Option σ)) : MvPowerSeries (Option σ) K) = 1 := by

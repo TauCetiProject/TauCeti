@@ -151,7 +151,8 @@ theorem mem_symplecticLieAlgebra_iff (A : Matrix (l ⊕ l) (l ⊕ l) R) :
     mul_zero, zero_mul, mul_one, one_mul, mul_neg, neg_mul, add_zero, zero_add,
     fromBlocks_inj, neg_inj, neg_neg]
   simp only [← Matrix.ext_iff, transpose_apply, toBlocks₁₁, toBlocks₁₂,
-    toBlocks₂₁, toBlocks₂₂, neg_apply, Matrix.of_apply, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+    toBlocks₂₁, toBlocks₂₂, Matrix.neg_apply, Matrix.of_apply, fromBlocks_apply₁₁,
+      fromBlocks_apply₁₂,
     fromBlocks_apply₂₁, fromBlocks_apply₂₂]
   grind
 

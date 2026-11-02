@@ -186,7 +186,7 @@ noncomputable def eichlerTransvection (hu : L.integralNorm u = 0) (w : L.evenOrt
     · intro x hx
       refine ⟨ambientTransvection hu (-w) x, ambientTransvection_mem_carrier hu (-w) hx, ?_⟩
       rw [LinearEquiv.coe_toLinearMap, LinearEquiv.restrictScalars_apply, ambientTransvection_neg,
-        ← LinearEquiv.mul_apply, mul_inv_cancel, LinearEquiv.coe_one, id_eq]
+        ← mul_apply_eq_comp, mul_inv_cancel, FunLike.coe_one_eq_id, id_eq]
 
 private theorem eichlerTransvection_apply_eq (hu : L.integralNorm u = 0)
     (w : L.evenOrthogonal u) (x : V) :
