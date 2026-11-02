@@ -87,6 +87,18 @@ lemma wedgeNorm_self (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v :
     ω.wedgeNorm J v v = 0 := by
   simp [wedgeNorm_def, sq]
 
+/-- The wedge of the zero vector with any vector has norm zero. -/
+@[simp]
+lemma wedgeNorm_zero_left (ω : SymplecticForm V) (J : AlmostComplexStructure V) (w : V) :
+    ω.wedgeNorm J 0 w = 0 := by
+  simp [wedgeNorm_def]
+
+/-- The wedge of any vector with the zero vector has norm zero. -/
+@[simp]
+lemma wedgeNorm_zero_right (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v : V) :
+    ω.wedgeNorm J v 0 = 0 := by
+  simp [wedgeNorm_def]
+
 /-- The wedge norm is symmetric for a `J`-invariant form, whose associated metric is
 symmetric. -/
 lemma Invariant.wedgeNorm_comm (hinv : ω.Invariant J) (v w : V) :

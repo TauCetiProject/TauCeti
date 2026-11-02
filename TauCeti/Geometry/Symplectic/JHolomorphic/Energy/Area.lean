@@ -110,6 +110,20 @@ lemma stdComplexLineArea_def
         (ω.wedgeNorm J (du x stdComplexLineReal) (du x stdComplexLineImag)) ∂μ :=
   (rfl)
 
+/-- The zero differential field has zero metric area. -/
+@[simp]
+lemma stdComplexLineArea_zero (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (μ : Measure X) :
+    ω.stdComplexLineArea J (0 : X → ((ℝ × ℝ) →ₗ[ℝ] V)) μ = 0 := by
+  simp [stdComplexLineArea_def]
+
+/-- Metric area for the zero source measure is zero. -/
+@[simp]
+lemma stdComplexLineArea_zero_measure (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (du : X → ((ℝ × ℝ) →ₗ[ℝ] V)) :
+    ω.stdComplexLineArea J du (0 : Measure X) = 0 := by
+  simp [stdComplexLineArea_def]
+
 /-- Metric area depends only on the differential field almost everywhere. -/
 lemma stdComplexLineArea_congr_ae (h : du =ᵐ[μ] dv) :
     ω.stdComplexLineArea J du μ = ω.stdComplexLineArea J dv μ := by
