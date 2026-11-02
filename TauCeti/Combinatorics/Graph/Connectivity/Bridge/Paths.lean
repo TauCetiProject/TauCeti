@@ -119,20 +119,6 @@ theorem IsPath.toBridgeForest {p : G.Walk x y} (hp : p.IsPath)
 
 end Walk
 
-/-- Two vertices of one bridge component admit a path wholly inside that component and
-traversing no bridge of the ambient graph. -/
-theorem BridgeComponent.exists_path {C : G.BridgeComponent} (hx : x ∈ V(C.1))
-    (hy : y ∈ V(C.1)) : ∃ p : G.Walk x y, p.IsPath ∧
-      (∀ e ∈ p.edges, ¬ G.IsBridge e) ∧ ∀ a ∈ p.support, a ∈ V(C.1) := by
-  obtain ⟨p, hp⟩ := (C.2.connected.reachable hx hy).exists_isPath
-  let hle : C.1 ≤ G := C.2.le.trans deleteEdges_le
-  refine ⟨p.mapLe hle, hp.mapLe hle, ?_, ?_⟩
-  · intro e he
-    rw [Walk.edges_mapLe_eq_edges] at he
-    have := C.2.le.edgeSet_mono (p.edges_subset_edgeSet he)
-    simpa using this.2
-  · simpa only [Walk.support_mapLe_eq_support] using p.support_subset_vertexSet hx
-
 open Classical in
 /-- A bridge-forest path lifts between arbitrary vertices of its end components. The lift
 retains its bridges in order, and all its vertices belong to components on the given path. -/
@@ -196,7 +182,8 @@ theorem filter_edges_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPa
   (hq.exists_lift_bridgeForest hx hy).choose_spec.2.1
 
 /-- The lift stays in the union of the components on the forest path. -/
-theorem mem_support_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
+theorem exists_mem_support_of_mem_support_liftBridgeForest
+    (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
     (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) {a : α}
     (ha : a ∈ (q.liftBridgeForest hq hx hy).support) :
     ∃ E ∈ q.support, a ∈ V(E.1) :=

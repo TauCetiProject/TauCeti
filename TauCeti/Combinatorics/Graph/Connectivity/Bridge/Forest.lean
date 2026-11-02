@@ -104,6 +104,20 @@ theorem BridgeComponent.reachable {C : G.BridgeComponent} (hx : x ∈ V(C.1)) (h
     (G.deleteEdges G.bridgeSet).Reachable x y :=
   (C.2.connected.reachable hx hy).mono C.2.le
 
+/-- Two vertices of one bridge component admit a path wholly inside that component and
+traversing no bridge of the ambient graph. -/
+theorem BridgeComponent.exists_path {C : G.BridgeComponent} (hx : x ∈ V(C.1))
+    (hy : y ∈ V(C.1)) : ∃ p : G.Walk x y, p.IsPath ∧
+      (∀ e ∈ p.edges, ¬ G.IsBridge e) ∧ ∀ a ∈ p.support, a ∈ V(C.1) := by
+  obtain ⟨p, hp⟩ := (C.2.connected.reachable hx hy).exists_isPath
+  let hle : C.1 ≤ G := C.2.le.trans deleteEdges_le
+  refine ⟨p.mapLe hle, hp.mapLe hle, ?_, ?_⟩
+  · intro e he
+    rw [Walk.edges_mapLe_eq_edges] at he
+    have := C.2.le.edgeSet_mono (p.edges_subset_edgeSet he)
+    simpa using this.2
+  · simpa only [Walk.support_mapLe_eq_support] using p.support_subset_vertexSet hx
+
 /-- Every bridge component is the bridge component of some actual vertex. -/
 theorem BridgeComponent.exists_bridgeComponentOf_eq (C : G.BridgeComponent) :
     ∃ x, ∃ hx : x ∈ V(G), G.bridgeComponentOf x hx = C := by
