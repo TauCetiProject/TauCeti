@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.Submersion
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.LinearAlgebra.Basis.RangeSpan
@@ -32,12 +33,18 @@ No Hausdorff or second-countability hypothesis is used, and the models may have 
 corners. For the projection of a fibre bundle the kernel distribution is its vertical
 distribution.
 
+Over `ℝ` or `ℂ`, on a `C^(m+1)` source manifold, the trivializations of these frames make the
+kernels a `C^m` vector bundle with model fibre `Fin (dim E - dim E'') → 𝕜`, the vertical bundle
+of `f` (`Manifold.IsSubmersion.contMDiffVectorBundle_ker_mfderiv`).
+
 ## Main results
 
 * `Manifold.IsSubmersionAtOfComplement.isDistributionFrameOn_ker_mfderiv`: the
   submersion-coordinate frame of the kernel distribution.
 * `Manifold.IsSubmersion.isContMDiffDistribution_ker_mfderiv`: the kernel distribution of a
   `C^n` submersion is a `C^m` distribution of rank `dim E - dim E''` when `m + 1 ≤ n`.
+* `Manifold.IsSubmersion.contMDiffVectorBundle_ker_mfderiv`: the kernels of the derivative of a
+  `C^n` submersion form a `C^m` vector bundle of rank `dim E - dim E''` when `m + 1 ≤ n`.
 
 ## References
 
@@ -142,5 +149,20 @@ theorem IsSubmersion.isContMDiffDistribution_ker_mfderiv [FiniteDimensional 𝕜
     rw [h.equiv.toLinearEquiv.finrank_eq, Module.finrank_prod, Nat.add_sub_cancel_left]
   exact ⟨h.domChart.source, h.domChart.open_source, h.mem_domChart_source, _,
     h.isDistributionFrameOn_ker_mfderiv ((Module.finBasis 𝕜 _).reindex (finCongr hrank)) hmn⟩
+
+/-- **The kernel bundle of a submersion.** For a `C^n` submersion `f : M → N` between manifolds
+modelled on finite-dimensional real or complex spaces `E` and `E''`, with `m + 1 ≤ n`, the kernels
+`ker (mfderiv f x)` form a `C^m` vector bundle of rank `dim E - dim E''`, the vertical bundle of
+`f`. Its total space carries the subspace topology of the tangent bundle and its trivializations
+are those of the `C^m` local frames of the kernel distribution, among them the
+submersion-coordinate frames. -/
+theorem IsSubmersion.contMDiffVectorBundle_ker_mfderiv [IsRCLikeNormedField 𝕜]
+    [FiniteDimensional 𝕜 E] [CompleteSpace E] [FiniteDimensional 𝕜 E''] [IsManifold I 1 M]
+    [IsManifold I (m + 1) M] (hf : IsSubmersion I J n f) (hmn : m + 1 ≤ n) :
+    letI := (hf.isContMDiffDistribution_ker_mfderiv hmn).fiberBundle
+    letI := (hf.isContMDiffDistribution_ker_mfderiv hmn).vectorBundle
+    ContMDiffVectorBundle m (Fin (finrank 𝕜 E - finrank 𝕜 E'') → 𝕜)
+      (fun x ↦ (mfderiv I J f x).ker) I :=
+  (hf.isContMDiffDistribution_ker_mfderiv hmn).contMDiffVectorBundle
 
 end Manifold

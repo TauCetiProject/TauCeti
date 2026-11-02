@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import Mathlib.Topology.Compactness.LocallyFinite
 public import Mathlib.Topology.Maps.Proper.Basic
-public import TauCeti.Topology.LocallyFinite
+public import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Locally finite singular chains and Borel–Moore homology
