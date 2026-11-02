@@ -8,7 +8,8 @@ module
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import TauCeti.LinearAlgebra.End.Exp
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Rat
+import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Tactic.FieldSimp
 
 /-!
