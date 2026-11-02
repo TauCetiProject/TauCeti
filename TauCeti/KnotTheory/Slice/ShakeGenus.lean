@@ -277,6 +277,12 @@ private def reparam (S : ZeroShakeSurface K) (g : Circle ≃ₜ Circle) (hg : �
     exact (ContinuousMap.HomotopyEquiv.bijective_singularHomologyMap ℤ 1
       g.symm.toHomotopyEquiv).2
 
+/-- The reparametrized solid torus sends `(w, z)` to `Ψ (w, g z)`. -/
+private theorem solidTorus_reparam_apply (S : ZeroShakeSurface K) (g : Circle ≃ₜ Circle)
+    (hg : ⇑K' = K ∘ g) (w : closedBall (0 : ℂ) 1) (z : Circle) :
+    (S.reparam g hg).solidTorus (w, z) = S.solidTorus (w, g z) :=
+  (rfl)
+
 /-- Reparametrizing a `0`-shake surface keeps its genus: the surface and the copies are
 unchanged. -/
 private theorem genus_reparam (S : ZeroShakeSurface K) (g : Circle ≃ₜ Circle)
@@ -310,9 +316,10 @@ the point `(w, z)` goes to `Ψ (w, z')`, where `K z' = K' z`. -/
 theorem solidTorus_congrRange_apply (S : ZeroShakeSurface K) (h : range K = range K')
     (w : closedBall (0 : ℂ) 1) {z z' : Circle} (hz : K z' = K' z) :
     (S.congrRange h).solidTorus (w, z) = S.solidTorus (w, z') := by
-  refine congrArg S.solidTorus (Prod.ext rfl (K.isEmbedding.injective ?_))
-  change K (K.isEmbedding.toHomeomorph.symm _) = K z'
-  rw [← K.isEmbedding.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply, hz]
+  rw [congrRange, solidTorus_reparam_apply]
+  refine congrArg (fun z ↦ S.solidTorus (w, z)) (K.isEmbedding.injective ?_)
+  rw [Homeomorph.trans_apply, Homeomorph.trans_apply, ← K.isEmbedding.toHomeomorph_apply_coe,
+    Homeomorph.apply_symm_apply, hz]
   -- `Homeomorph.setCongr` does not change the underlying point.
   exact K'.isEmbedding.toHomeomorph_apply_coe z
 
