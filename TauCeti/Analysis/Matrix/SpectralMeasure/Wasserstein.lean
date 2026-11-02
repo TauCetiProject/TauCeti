@@ -80,10 +80,11 @@ theorem isCoupling_spectralCoupling :
 
 /-- Integrating a nonnegative cost against the sorted spectral coupling averages the cost
 of the corresponding eigenvalue pairs. -/
-theorem lintegral_spectralCoupling {f : ℝ × ℝ → ℝ≥0∞} (hf : Measurable f) :
+theorem lintegral_spectralCoupling {f : ℝ × ℝ → ℝ≥0∞} :
     ∫⁻ z, f z ∂(spectralCoupling A B hA hB : Measure (ℝ × ℝ)) =
       (Fintype.card n : ℝ≥0∞)⁻¹ * ∑ i, f (hA.eigenvalues₀ i, hB.eigenvalues₀ i) := by
-  rw [spectralCoupling_def, lintegral_empiricalMeasureOfFintype hf, Fintype.card_fin]
+  rw [spectralCoupling_def, empiricalMeasureOfFintype_toMeasure]
+  simp [lintegral_finsetSum_measure, Finset.mul_sum]
 
 /-- The quadratic transport cost of the sorted spectral coupling is the mean squared
 sorted eigenvalue displacement. -/
@@ -91,7 +92,7 @@ theorem lintegral_edist_sq_spectralCoupling :
     ∫⁻ z, edist z.1 z.2 ^ 2 ∂(spectralCoupling A B hA hB : Measure (ℝ × ℝ)) =
       ENNReal.ofReal ((Fintype.card n : ℝ)⁻¹ *
         ∑ i, (hA.eigenvalues₀ i - hB.eigenvalues₀ i) ^ 2) := by
-  rw [lintegral_spectralCoupling A B hA hB (by fun_prop)]
+  rw [lintegral_spectralCoupling A B hA hB]
   simp only [edist_dist, Real.dist_eq, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
   rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_inv_of_pos (by positivity),
     ENNReal.ofReal_natCast, ENNReal.ofReal_sum_of_nonneg (fun _ _ ↦ sq_nonneg _)]
