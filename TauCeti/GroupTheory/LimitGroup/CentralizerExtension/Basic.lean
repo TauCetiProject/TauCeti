@@ -24,14 +24,14 @@ of `ℤⁿ`, which commute with each other and with every element of `C_G(u)`; a
 extension `⟨G, t | [c, t] = 1, c ∈ C_G(u)⟩`.
 
 Iterated extensions of centralizers are the basic examples of fully residually free groups: over a
-nonabelian CSA group `G` with the big powers property and `u` not a proper power, the retractions
-`t ↦ u ^ k` of `G(u, ℤ)` onto `G` discriminate it by `G` (see Kharlampovich–Myasnikov,
-*Implicit function theorem over free groups*, §2.5). This file sets up the construction for
-arbitrary `u` and `n`, its universal property and these retractions, and compares it with `G` for
-`n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension for `n = 1`. The
-construction always uses the full centralizer and imposes no condition on `u` or `n`;
-`IsAdmissibleCentralizerStep u n` records the conditions imposed on a step of an iterated extension
-of centralizers. The extension depends only on the centralizer: if `C_G(u) = C_G(v)` then
+nonabelian CSA group `G` with the big powers property and `u ≠ 1`, the retractions `t ↦ u ^ k` of
+`G(u, ℤ)` onto `G` discriminate it by `G` (`CentralizerExt.isDiscriminatedBy`; see
+Kharlampovich–Myasnikov, *Implicit function theorem over free groups*, §2.5). This file sets up
+the construction for arbitrary `u` and `n`, its universal property and these retractions, and
+compares it with `G` for `n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension
+for `n = 1`. The construction always uses the full centralizer and imposes no condition on `u` or
+`n`; `IsAdmissibleCentralizerStep u n` records the conditions imposed on a step of an iterated
+extension of centralizers. The extension depends only on the centralizer: if `C_G(u) = C_G(v)` then
 `G(u, ℤⁿ) ≃* G(v, ℤⁿ)` over `G` (`CentralizerExt.congr`). In particular, when `u = r ^ d` has the
 same centralizer as a root `r` that is not a proper power, as in a residually free group, the
 extension at `u` is an admissible extension at `r` for `n > 0`, and its retractions are among those
@@ -128,6 +128,17 @@ def of : G →* CentralizerExt u n :=
 def t (i : Fin n) : CentralizerExt u n :=
   Monoid.PushoutI.of (φ := centralizerExtMap u n) true (1, Pi.mulSingle i (.ofAdd 1))
 
+/-- The inclusion of `G` is the inclusion of the first factor of the amalgam. -/
+theorem of_def :
+    (of : G →* CentralizerExt u n) = Monoid.PushoutI.of (φ := centralizerExtMap u n) false :=
+  (rfl)
+
+/-- The new letter `tᵢ` is the image of the `i`-th standard generator of the second factor. -/
+theorem t_def (i : Fin n) :
+    (t i : CentralizerExt u n) =
+      Monoid.PushoutI.of (φ := centralizerExtMap u n) true (1, Pi.mulSingle i (.ofAdd 1)) :=
+  (rfl)
+
 /-- `G` embeds in `G(u, ℤⁿ)`. -/
 theorem of_injective : Function.Injective (of : G →* CentralizerExt u n) :=
   Monoid.PushoutI.of_injective (centralizerExtMap_injective u n) false
@@ -136,7 +147,7 @@ theorem of_injective : Function.Injective (of : G →* CentralizerExt u n) :=
   of_injective.eq_iff
 
 /-- An element of `C_G(u)` is also the image of `(c, 1)` from the second factor. -/
-private theorem of_true_inl (c : centralizer {u}) :
+theorem of_true_inl (c : centralizer {u}) :
     Monoid.PushoutI.of (φ := centralizerExtMap u n) true (c, 1) = of (c : G) := by
   have h₁ := of_apply_eq_base (centralizerExtMap u n) true c
   have h₂ := of_apply_eq_base (centralizerExtMap u n) false c
