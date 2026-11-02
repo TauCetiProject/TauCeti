@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.Y
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.FractionalBound
 import Mathlib.Order.Int.LeastGreatest
-import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Data.NNRat.CommonDenominator
 import TauCeti.RingTheory.Huber.Adic
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
@@ -51,6 +51,9 @@ on which the adic Fargues–Fontaine curve `𝒴 / φ^ℤ` is built.
 
 ## Main results
 
+* `TauCeti.FarguesFontaine.isRadiusLowerBound_iff_mem_fracPowLE`,
+  `TauCeti.FarguesFontaine.isRadiusUpperBound_iff_mem_fracPowGE` : the radius bounds are the
+  fractional valuation bounds `|[ϖ]| ≤ |p| ^ q` and `|[ϖ]| ≥ |p| ^ q`.
 * `TauCeti.FarguesFontaine.isRadiusLowerBound_iff_of_eq_div` : the lower bound may be read off
   any fraction representing `q`; likewise for the upper bound.
 * `TauCeti.FarguesFontaine.isRadiusLowerBound_comap_frobenius_iff` : Frobenius multiplies the
@@ -110,16 +113,23 @@ def IsRadiusUpperBound (ϖ : R) (q : ℚ≥0) (v : Spv (WittVector p R)) : Prop 
 
 variable {p} {ϖ : R}
 
+/-- The lower radius bound `q ≤ κ(v)` is the fractional valuation bound `|[ϖ]| ≤ |p| ^ q`. -/
+theorem isRadiusLowerBound_iff_mem_fracPowLE (q : ℚ≥0) (v : Spv (WittVector p R)) :
+    IsRadiusLowerBound p ϖ q v ↔ v ∈ fracPowLE (teichmuller p ϖ) (p : WittVector p R) q := by
+  rw [IsRadiusLowerBound, fracPowLE_def, Set.mem_ofPred_eq]
+
+/-- The upper radius bound `κ(v) ≤ q` is the fractional valuation bound `|[ϖ]| ≥ |p| ^ q`. -/
+theorem isRadiusUpperBound_iff_mem_fracPowGE (q : ℚ≥0) (v : Spv (WittVector p R)) :
+    IsRadiusUpperBound p ϖ q v ↔ v ∈ fracPowGE (teichmuller p ϖ) (p : WittVector p R) q := by
+  rw [IsRadiusUpperBound, fracPowGE_def, Set.mem_ofPred_eq]
+
 /-- **The lower radius bound from any fraction**: if `q = a / b` with `b ≠ 0`, then
 `q ≤ κ(v)` exactly when `v([ϖ]) ^ b ≤ v(p) ^ a`. -/
 theorem isRadiusLowerBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0) (hq : q = a / b)
     (v : Spv (WittVector p R)) :
     IsRadiusLowerBound p ϖ q v ↔
       v.toValuativeRel.vle (teichmuller p ϖ ^ b) ((p : WittVector p R) ^ a) := by
-  rw [IsRadiusLowerBound, ← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow, map_pow,
-    map_pow]
-  exact pow_le_pow_iff_of_mul_eq zero_le zero_le hb q.den_ne_zero (mul_comm _ _)
-    (NNRat.num_mul_eq_of_eq_div hb hq)
+  rw [isRadiusLowerBound_iff_mem_fracPowLE, mem_fracPowLE_iff hb hq]
 
 /-- **The upper radius bound from any fraction**: if `q = a / b` with `b ≠ 0`, then
 `κ(v) ≤ q` exactly when `v(p) ^ a ≤ v([ϖ]) ^ b`. -/
@@ -127,10 +137,7 @@ theorem isRadiusUpperBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0
     (v : Spv (WittVector p R)) :
     IsRadiusUpperBound p ϖ q v ↔
       v.toValuativeRel.vle ((p : WittVector p R) ^ a) (teichmuller p ϖ ^ b) := by
-  rw [IsRadiusUpperBound, ← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow, map_pow,
-    map_pow]
-  exact pow_le_pow_iff_of_mul_eq zero_le zero_le hb q.den_ne_zero
-    (NNRat.num_mul_eq_of_eq_div hb hq) (mul_comm _ _)
+  rw [isRadiusUpperBound_iff_mem_fracPowGE, mem_fracPowGE_iff hb hq]
 
 /-- A point that is not a lower bound `q ≤ κ(v)` satisfies the upper bound `κ(v) ≤ q`, since the
 value group is linearly ordered. -/
@@ -169,26 +176,16 @@ then `q' ≤ κ(v)`, since `v(p) ≤ 1`. -/
 theorem IsRadiusLowerBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
     (hv : v ∈ spa (⊤ : Subring (WittVector p R))) (h : IsRadiusLowerBound p ϖ q v)
     (hq : q' ≤ q) : IsRadiusLowerBound p ϖ q' v := by
-  obtain ⟨h₁, h₂⟩ := NNRat.eq_div_den_mul_den q q'
-  have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
-  rw [isRadiusLowerBound_iff_of_eq_div hb h₁] at h
-  rw [isRadiusLowerBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow]
-  rw [← valuation_le_iff, map_pow, map_pow] at h
-  exact h.trans (pow_le_pow_of_le_one zero_le
-    (valuation_le_one_of_mem_spa hv (Subring.mem_top _)) (NNRat.le_def.mp hq))
+  rw [isRadiusLowerBound_iff_mem_fracPowLE] at h ⊢
+  exact mem_fracPowLE_of_le (((mem_spa_iff _ v).mp hv).2 _ (Subring.mem_top _)) hq h
 
 /-- **Upper radius bounds are closed upwards** on `Spa(𝕎 R, 𝕎 R)`: if `κ(v) ≤ q` and `q ≤ q'`
 then `κ(v) ≤ q'`, since `v(p) ≤ 1`. -/
 theorem IsRadiusUpperBound.of_le {q q' : ℚ≥0} {v : Spv (WittVector p R)}
     (hv : v ∈ spa (⊤ : Subring (WittVector p R))) (h : IsRadiusUpperBound p ϖ q v)
     (hq : q ≤ q') : IsRadiusUpperBound p ϖ q' v := by
-  obtain ⟨h₁, h₂⟩ := NNRat.eq_div_den_mul_den q q'
-  have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
-  rw [isRadiusUpperBound_iff_of_eq_div hb h₁] at h
-  rw [isRadiusUpperBound_iff_of_eq_div hb h₂, ← valuation_le_iff, map_pow, map_pow]
-  rw [← valuation_le_iff, map_pow, map_pow] at h
-  exact (pow_le_pow_of_le_one zero_le
-    (valuation_le_one_of_mem_spa hv (Subring.mem_top _)) (NNRat.le_def.mp hq)).trans h
+  rw [isRadiusUpperBound_iff_mem_fracPowGE] at h ⊢
+  exact mem_fracPowGE_of_le (((mem_spa_iff _ v).mp hv).2 _ (Subring.mem_top _)) hq h
 
 variable (p) in
 /-- At a point of `𝒴`, the valuation of `p` is nonzero and strictly below `1`: `p` lies off the
