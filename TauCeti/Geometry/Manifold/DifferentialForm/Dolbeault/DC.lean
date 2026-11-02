@@ -13,8 +13,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifo
 We use the normalization `dᶜ = i (∂bar - ∂)`, hence `ddᶜ = 2i ∂∂bar` on a complex
 manifold. The operator is complex linear on the existing smooth-form carrier. It commutes
 with conjugation, so preserves real forms, and is natural under smooth pseudoholomorphic
-pullback. Its definition and naturality work for almost complex structures; the square-zero
-and anticommutation identities below use the complex-manifold Dolbeault identities.
+pullback. Its definition and naturality work for almost complex structures. The square-zero
+and anticommutation identities assume `d = ∂ + ∂bar` in two consecutive degrees, and
+specialize to complex manifolds using the complex-manifold Dolbeault identities.
 
 These formulas fix the sign and factor used in potentials for fundamental forms and in
 Kähler commutator identities. No metric or compactness assumption is involved.
@@ -94,6 +95,42 @@ theorem mpullback_dC (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' 
 
 end Pullback
 
+section DelAddDelBar
+
+variable {J}
+  (hd : ∀ φ : SmoothForm I M F k, mextDerivₗ I k φ = J.del φ + J.delBar φ)
+  (hd' : ∀ φ : SmoothForm I M F (k + 1), mextDerivₗ I (k + 1) φ = J.del φ + J.delBar φ)
+include hd hd'
+
+/-- If `d = ∂ + ∂bar` in degrees `k` and `k+1`, then `ddᶜ = 2i ∂∂bar` on `k`-forms. -/
+theorem mextDerivₗ_dC_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    mextDerivₗ I (k + 1) (J.dC φ) = (2 * Complex.I) • J.del (J.delBar φ) := by
+  rw [dC_apply, SmoothForm.mextDerivₗ_smul, map_sub, hd', hd']
+  simp only [delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar hd hd',
+    del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar hd hd',
+    delBar_del_of_mextDerivₗ_eq_del_add_delBar hd hd', add_zero, zero_add]
+  module
+
+/-- If `d = ∂ + ∂bar` in degrees `k` and `k+1`, then `dᶜd = -ddᶜ` on `k`-forms. -/
+theorem dC_mextDerivₗ_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.dC (mextDerivₗ I k φ) = -mextDerivₗ I (k + 1) (J.dC φ) := by
+  rw [mextDerivₗ_dC_of_mextDerivₗ_eq_del_add_delBar hd hd', dC_apply, hd, map_add, map_add]
+  simp only [delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar hd hd',
+    del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar hd hd',
+    delBar_del_of_mextDerivₗ_eq_del_add_delBar hd hd', add_zero, zero_add]
+  module
+
+/-- If `d = ∂ + ∂bar` in degrees `k` and `k+1`, then `(dᶜ)² = 0` on `k`-forms. -/
+theorem dC_dC_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.dC (J.dC φ) = 0 := by
+  rw [dC_apply, dC_apply, map_smul, map_smul, map_sub, map_sub]
+  simp only [delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar hd hd',
+    del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar hd hd',
+    delBar_del_of_mextDerivₗ_eq_del_add_delBar hd hd', sub_zero, zero_sub]
+  simp
+
+end DelAddDelBar
+
 end SmoothAlmostComplexStructure
 
 section ComplexManifold
@@ -108,37 +145,25 @@ open SmoothAlmostComplexStructure
 theorem SmoothAlmostComplexStructure.mextDerivₗ_dC_ofComplexManifold
     (φ : SmoothForm 𝓘(ℝ, V) N F k) :
     mextDerivₗ 𝓘(ℝ, V) (k + 1) ((ofComplexManifold V N).dC φ) =
-      (2 * Complex.I) • (ofComplexManifold V N).del ((ofComplexManifold V N).delBar φ) := by
-  rw [dC_apply, SmoothForm.mextDerivₗ_smul, map_sub,
-    mextDerivₗ_eq_del_add_delBar_ofComplexManifold,
-    mextDerivₗ_eq_del_add_delBar_ofComplexManifold]
-  simp only [delBar_delBar_ofComplexManifold, del_del_ofComplexManifold, add_zero, zero_add]
-  have h := del_delBar_add_delBar_del_ofComplexManifold φ
-  rw [eq_neg_of_add_eq_zero_left h]
-  module
+      (2 * Complex.I) • (ofComplexManifold V N).del ((ofComplexManifold V N).delBar φ) :=
+  mextDerivₗ_dC_of_mextDerivₗ_eq_del_add_delBar mextDerivₗ_eq_del_add_delBar_ofComplexManifold
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 /-- On a complex manifold, `dᶜd = -ddᶜ` in every degree. -/
 theorem SmoothAlmostComplexStructure.dC_mextDerivₗ_ofComplexManifold
     (φ : SmoothForm 𝓘(ℝ, V) N F k) :
     (ofComplexManifold V N).dC (mextDerivₗ 𝓘(ℝ, V) k φ) =
-      -mextDerivₗ 𝓘(ℝ, V) (k + 1) ((ofComplexManifold V N).dC φ) := by
-  rw [mextDerivₗ_dC_ofComplexManifold, dC_apply,
-    mextDerivₗ_eq_del_add_delBar_ofComplexManifold, map_add, map_add]
-  simp only [delBar_delBar_ofComplexManifold, del_del_ofComplexManifold, add_zero, zero_add]
-  have h := del_delBar_add_delBar_del_ofComplexManifold φ
-  rw [eq_neg_of_add_eq_zero_right h]
-  module
+      -mextDerivₗ 𝓘(ℝ, V) (k + 1) ((ofComplexManifold V N).dC φ) :=
+  dC_mextDerivₗ_of_mextDerivₗ_eq_del_add_delBar mextDerivₗ_eq_del_add_delBar_ofComplexManifold
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 /-- On a complex manifold, `(dᶜ)² = 0` in every degree. -/
 @[simp]
 theorem SmoothAlmostComplexStructure.dC_dC_ofComplexManifold
     (φ : SmoothForm 𝓘(ℝ, V) N F k) :
-    (ofComplexManifold V N).dC ((ofComplexManifold V N).dC φ) = 0 := by
-  rw [dC_apply, dC_apply, map_smul, map_smul, map_sub, map_sub]
-  simp only [delBar_delBar_ofComplexManifold, del_del_ofComplexManifold, sub_zero, zero_sub]
-  have h := del_delBar_add_delBar_del_ofComplexManifold φ
-  rw [eq_neg_of_add_eq_zero_right h]
-  simp
+    (ofComplexManifold V N).dC ((ofComplexManifold V N).dC φ) = 0 :=
+  dC_dC_of_mextDerivₗ_eq_del_add_delBar mextDerivₗ_eq_del_add_delBar_ofComplexManifold
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
 end ComplexManifold
 
