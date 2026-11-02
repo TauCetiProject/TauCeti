@@ -75,14 +75,9 @@ theorem finrank_quotient_fixedSubmodule_conj (h g : G) :
 /-- An element and its inverse have the same fixed space, so the inverse of a pseudoreflection is
 a pseudoreflection. -/
 @[simp]
-theorem fixedSubmodule_inv (g : G) : (ρ g⁻¹).fixedSubmodule = (ρ g).fixedSubmodule := by
-  ext v
-  simp only [LinearMap.mem_fixedSubmodule_iff]
-  refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
-  · calc ρ g v = ρ g (ρ g⁻¹ v) := by rw [hv]
-      _ = v := ρ.self_inv_apply g v
-  · calc ρ g⁻¹ v = ρ g⁻¹ (ρ g v) := by rw [hv]
-      _ = v := ρ.inv_self_apply g v
+theorem fixedSubmodule_inv (g : G) : (ρ g⁻¹).fixedSubmodule = (ρ g).fixedSubmodule :=
+  -- The inverse of the linear equivalence `ρ g` is `ρ g⁻¹` by definition.
+  (LinearMap.GeneralLinearGroup.generalLinearEquiv K V (ρ.asGroupHom g)).fixedSubmodule_symm_eq
 
 /-- In finite dimension, the fixed space of `g` is the whole space exactly when `g` acts
 trivially. -/

@@ -186,8 +186,7 @@ private theorem constantCoeff_X_pow_mul_inv {g : G} {R : Polynomial K}
   have hle := Submodule.finrank_le (ρ g).fixedSubmodule
   have hker := finrank_fixedSubmodule_eq_iff_mem_ker ρ (g := g)
   by_cases hg : g ∈ ρ.ker
-  · rw [ite_eq_left hg, hker.2 hg, Nat.sub_self, pow_zero, one_mul, eq_one_of_mem_ker ρ hg hR,
-      map_one, PowerSeries.constantCoeff_inv, map_one, inv_one]
+  · simp [hg, hker.2 hg, eq_one_of_mem_ker ρ hg hR]
   · rw [ite_eq_right hg, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
       PowerSeries.coeff_X_pow_mul', ite_eq_right]
     have := hker.not.2 hg
@@ -204,15 +203,12 @@ private theorem coeff_one_X_pow_mul_inv {g : G} {R : Polynomial K}
   have hq := Submodule.finrank_quotient_add_finrank (ρ g).fixedSubmodule
   have hker := finrank_fixedSubmodule_eq_iff_mem_ker ρ (g := g)
   by_cases hps : finrank K (M ⧸ (ρ g).fixedSubmodule) = 1
-  · rw [ite_eq_left hps, show finrank K M - finrank K (ρ g).fixedSubmodule = 0 + 1 by omega,
-      pow_one, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_zero_eq_constantCoeff_apply,
-      PowerSeries.constantCoeff_inv, PowerSeries.constantCoeff_polynomial_aeval, map_sub, map_one,
-      PowerSeries.constantCoeff_X, sub_zero, eq_one_sub_det_mul_X ρ hps hR]
-    simp
+  · rw [show finrank K M - finrank K (ρ g).fixedSubmodule = 0 + 1 by omega,
+      eq_one_sub_det_mul_X ρ hps hR]
+    simp [hps, PowerSeries.coeff_succ_X_mul]
   · rw [ite_eq_right hps]
     by_cases hg : g ∈ ρ.ker
-    · rw [hker.2 hg, Nat.sub_self, pow_zero, one_mul, eq_one_of_mem_ker ρ hg hR, map_one, inv_one,
-        PowerSeries.coeff_one, ite_eq_right one_ne_zero]
+    · simp [hker.2 hg, eq_one_of_mem_ker ρ hg hR]
     · rw [PowerSeries.coeff_X_pow_mul', ite_eq_right]
       have := hker.not.2 hg
       omega

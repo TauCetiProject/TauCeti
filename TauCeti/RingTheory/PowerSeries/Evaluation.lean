@@ -85,8 +85,8 @@ evaluating it at the constant coefficient of `f`. -/
 @[simp]
 theorem constantCoeff_polynomial_aeval (f : A⟦X⟧) (p : Polynomial A) :
     constantCoeff (Polynomial.aeval f p) = p.eval (constantCoeff f) := by
-  rw [Polynomial.aeval_def, Polynomial.hom_eval₂, algebraMap_eq, constantCoeff_comp_C]
-  rfl
+  rw [Polynomial.aeval_def, Polynomial.hom_eval₂, algebraMap_eq, constantCoeff_comp_C,
+    Polynomial.eval₂_id]
 
 end AlgHom
 
