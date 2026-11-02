@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Triangulable.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Compact
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.EulerCharacteristic
 
 /-!
@@ -33,15 +34,30 @@ noncomputable section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- A compact triangulable space has finite CW type. The triangulation may be any weak
-simplicial realization in the universe of the space; its finiteness follows from compactness. -/
+simplicial realization, in any universe; its finiteness follows from compactness. -/
 theorem IsTriangulable.finiteCWType {X : Type u} [TopologicalSpace X] [CompactSpace X]
-    (h : IsTriangulable.{u} X) : FiniteCWType X := by
+    (h : IsTriangulable.{v} X) : FiniteCWType X := by
+  classical
   obtain ⟨ι, K, ⟨e⟩⟩ := (isTriangulable_iff X).mp h
   have := e.symm.compactSpace
   have : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
-  exact e.symm.finiteCWType
+  let := Fintype.ofFinite ι
+  -- Relabel the finite vertex set into the universe of the space.
+  let f : ι ≃ ULift.{u} (Fin (Fintype.card ι)) :=
+    (Fintype.equivFin ι).trans Equiv.ulift.symm
+  let L : AbstractSimplicialComplex (ULift.{u} (Fin (Fintype.card ι))) :=
+    { K.toPreAbstractSimplicialComplex.map f with
+      singleton_mem := fun v => PreAbstractSimplicialComplex.mem_map_iff.mpr
+        ⟨{f.symm v}, K.singleton_mem _, by simp⟩ }
+  let r := K.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
+    (L := L) f.toEmbedding rfl rfl le_rfl
+  have hr : {y : AbstractSimplicialComplex.Realization L |
+      y.1.support ∈ L.toPreAbstractSimplicialComplex} = Set.univ :=
+    Set.eq_univ_of_forall (AbstractSimplicialComplex.support_mem L)
+  exact (e.symm.trans (r.trans
+    ((Homeomorph.setCongr hr).trans (Homeomorph.Set.univ _)))).finiteCWType
 
 end TauCeti
