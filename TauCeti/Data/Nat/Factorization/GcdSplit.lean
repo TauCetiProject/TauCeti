@@ -18,14 +18,17 @@ two exponents:
 
 `TauCeti.Nat.gcd_pow_mul_pow_mul` is that statement for an arbitrary such splitting, and
 `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min` is its canonical instance, where the splitting is
-the one `Nat.ordProj` and `Nat.ordCompl` perform. `TauCeti.Nat.gcd_ordCompl_lt` draws the
+the one `Nat.ordProj` and `Nat.ordCompl` perform. The canonical form is stated for every `p`: when
+`p` is not prime, both factorization exponents are zero and both complements are the numbers
+themselves, so it holds trivially. `TauCeti.Nat.gcd_ordCompl_lt` draws the
 consequence that lets an induction on the gcd terminate: when `p` divides both arguments,
 passing to the `p`-free parts strictly shrinks the gcd.
 
 ## Main results
 
 * `TauCeti.Nat.gcd_pow_mul_pow_mul`: the gcd splits at a prime, for an explicit splitting.
-* `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min`: the same for the `ordProj`/`ordCompl` splitting.
+* `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min`: the same for the `ordProj`/`ordCompl` splitting,
+  for any `p` (trivially when `p` is not prime).
 * `TauCeti.Nat.gcd_ordCompl_lt`: removing the `p`-part strictly shrinks the gcd.
 * `Nat.coprime_iff_coprime_ordCompl`: coprimality to `n` splits into a condition at `p`
   and coprimality to the `p`-free part of `n`.
@@ -55,12 +58,14 @@ theorem gcd_pow_mul_pow_mul {p a b m' n' : ℕ} (hp : p.Prime) (hm' : ¬p ∣ m'
   rw [hpa_m'.mul_gcd, Nat.Coprime.gcd_mul_right_cancel_right _ hpa_n'.symm,
     Nat.Coprime.gcd_mul_left_cancel_right _ hm'_pb.symm, hgcd_pp, mul_comm]
 
-/-- **The gcd splits at a prime, canonically**:
+/-- **The gcd splits at a prime, canonically**: for nonzero `m` and `n` and any `p`,
 
-`gcd m n = gcd (ordCompl[p] m) (ordCompl[p] n) · p ^ min (v_p m) (v_p n)`
+`gcd m n = gcd (ordCompl[p] m) (ordCompl[p] n) · p ^ min (m.factorization p) (n.factorization p)`.
 
-for nonzero `m` and `n` — the gcd of the `p`-free parts, times `p` to the smaller of the two
-`p`-adic valuations. -/
+For a prime `p` the exponents are the `p`-adic valuations and the complements the `p`-free parts,
+so this is the gcd of the `p`-free parts times `p` to the smaller valuation. For `p` not prime
+both exponents are zero and the complements are `m` and `n` themselves, so the identity is
+trivial. -/
 theorem gcd_eq_gcd_ordCompl_mul_pow_min {p m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) :
     Nat.gcd m n = Nat.gcd (ordCompl[p] m) (ordCompl[p] n) *
