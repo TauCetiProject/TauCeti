@@ -62,37 +62,6 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 attribute [local instance] starModule_of_trivialStar
 
-section Algebraic
-
-/-- On even elements reversal is Clifford conjugation, so the conditions of
-`TauCeti.Lie.forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff` are the intrinsic quadratic
-conditions. -/
-private theorem mem_even_and_star_eq_neg_and_commutator_mem_iff {R M : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
-    (x ∈ even Q ∧ star x = -x ∧
-        ∀ y ∈ LinearMap.range (ι Q), x * y - y * x ∈ LinearMap.range (ι Q)) ↔
-      x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q) := by
-  refine and_congr_right fun he ↦ and_congr ?_
-    ⟨fun h v ↦ h _ ⟨v, rfl⟩, fun h ↦ by rintro _ ⟨v, rfl⟩; exact h v⟩
-  rw [reverse_eq_star_of_mem_even ⟨x, he⟩]
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [Invertible (2 : K)] (Q : QuadraticForm K V)
-
-attribute [local instance 100] LieRing.ofAssociativeRing in
-/-- Over the zero space the quadratic conditions force `x = 0`. -/
-private theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subsingleton V]
-    (hQ : Q.Nondegenerate) (x : CliffordAlgebra Q) :
-    (x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q)) ↔
-      x = 0 := by
-  refine ⟨fun hx ↦ ?_, by rintro rfl; simp⟩
-  have hxq : x ∈ quadraticLieSubalgebra Q :=
-    (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι Q
-      hQ).mpr (by simpa only [Ring.lie_def] using hx)
-  rwa [quadraticLieSubalgebra_eq_bot, LieSubalgebra.mem_bot] at hxq
-
-end Algebraic
-
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- An exponential line in a real Clifford algebra stays in its Spin group exactly when its
