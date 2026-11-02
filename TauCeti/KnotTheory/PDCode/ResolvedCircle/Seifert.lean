@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Basic
-import Mathlib.Algebra.Ring.NegOnePow
+import Mathlib.Algebra.Ring.Parity
 
 /-!
 # Seifert circles of an oriented PD-code
@@ -314,19 +314,16 @@ This identity does not require planarity. -/
 theorem even_seifertCircleCount_sub_crossingCount_add_componentCount :
     Even ((D.stateLoopCount D.seifertState : ℤ) - n + D.componentCount) := by
   classical
-  let C := Fintype.card {h : Fin (4 * n) // D.orientation h = true}
-  have hs : sign D.seifertPermOutgoing =
-      ((C : ℤ) - orbitCount D.seifertPermOutgoing).negOnePow := by
-    rw [sign_eq_neg_one_pow_card_sub_orbitCount, ← zpow_natCast, ← Int.negOnePow_def,
-      Nat.cast_sub (by simpa using D.seifertPermOutgoing.orbitCount_le_card)]
-  have hc : sign D.componentPermOutgoing =
-      ((C : ℤ) - orbitCount D.componentPermOutgoing).negOnePow := by
-    rw [sign_eq_neg_one_pow_card_sub_orbitCount, ← zpow_natCast, ← Int.negOnePow_def,
-      Nat.cast_sub (by simpa using D.componentPermOutgoing.orbitCount_le_card)]
-  have h := D.sign_seifertPermOutgoing
-  rw [hs, hc, ← zpow_natCast, ← Int.negOnePow_def, ← Int.negOnePow_add,
-    Int.negOnePow_eq_iff, Int.even_iff] at h
-  rw [D.orbitCount_seifertPermOutgoing, D.orbitCount_componentPermOutgoing] at h
+  have hsign : sign D.seifertPermOutgoing *
+      ((-1 : ℤˣ) ^ n * sign D.componentPermOutgoing) = 1 := by
+    rw [← D.sign_seifertPermOutgoing]
+    exact Int.units_mul_self _
+  simp only [sign_eq_neg_one_pow_card_sub_orbitCount, ← pow_add] at hsign
+  obtain ⟨k, hk⟩ := (neg_one_pow_eq_one_iff_even (R := ℤˣ) (by decide)).mp hsign
+  have hs := D.seifertPermOutgoing.orbitCount_le_card
+  have hc := D.componentPermOutgoing.orbitCount_le_card
+  simp only [Nat.card_eq_fintype_card] at hs hc
+  simp only [D.orbitCount_seifertPermOutgoing, D.orbitCount_componentPermOutgoing] at hk hs hc
   have hcircles := D.toPDCode.card_resolvedCircle D.seifertState
   rw [Fintype.card_sum, Fintype.card_fin] at hcircles
   rw [Int.even_iff, PDCode.componentCount_eq]
