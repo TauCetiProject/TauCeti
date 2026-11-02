@@ -147,12 +147,12 @@ some power of `f`, the exponential series `∑ (fⁱ x) / i!` is a finite sum at
 it defines an `R`-linear automorphism of `M` whose inverse is the exponential series of `-f`. -/
 noncomputable def locallyNilpotentExp : M ≃ₗ[R] M :=
   LinearEquiv.ofLinearMap (expLinearMap f hf)
-    (expLinearMap (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf))
+    (expLinearMap (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf))
     (LinearMap.ext fun x ↦
-      expFun_expFun_of_eq_neg (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf)
+      expFun_expFun_of_eq_neg (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf)
         (neg_neg f).symm hf x)
     (LinearMap.ext fun x ↦
-      expFun_expFun_of_eq_neg f hf rfl ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf) x)
+      expFun_expFun_of_eq_neg f hf rfl (by simpa only [neg_pow_apply_eq_zero_iff] using hf) x)
 
 /-- **The exponential as a truncated series.** At a vector killed by `f ^ k`, the exponential of
 `f` is its exponential series truncated at length `k`. -/
@@ -174,14 +174,14 @@ theorem locallyNilpotentExp_apply_eq_exp_restrict {V : Submodule ℚ M}
 exponential of `f` is the exponential series of `-f` truncated at length `k`. -/
 theorem locallyNilpotentExp_symm_apply_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
     (locallyNilpotentExp f hf).symm x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • ((-f) ^ i) x :=
-  expFun_eq_sum (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf)
+  expFun_eq_sum (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf)
     ((neg_pow_apply_eq_zero_iff f k x).2 hk)
 
 /-- **The inverse of the exponential is the exponential of `-f`.** -/
 @[simp]
 theorem locallyNilpotentExp_symm :
     (locallyNilpotentExp f hf).symm =
-      locallyNilpotentExp (-f) ((forall_exists_neg_pow_apply_eq_zero_iff f).2 hf) := by
+      locallyNilpotentExp (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf) := by
   ext x
   obtain ⟨k, hk⟩ := hf x
   rw [locallyNilpotentExp_symm_apply_eq_sum f hf hk,

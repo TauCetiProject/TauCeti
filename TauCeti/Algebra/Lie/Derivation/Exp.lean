@@ -38,8 +38,6 @@ locally nilpotent, but no single power of it is known to vanish.
 
 ## Main results
 
-* `LieDerivation.pow_toLinearMap_apply_lie`: the Leibniz rule for the powers of the endomorphism
-  underlying a Lie derivation.
 * `LieDerivation.locallyNilpotentExp_apply_eq_sum`: the exponential at an element killed by
   `D ^ k` is the exponential series truncated at length `k`.
 * `LieDerivation.locallyNilpotentExp_symm`: the inverse is the exponential of `-D`.
@@ -61,16 +59,6 @@ namespace LieDerivation
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (D : LieDerivation R L L)
 
-/-- **The Leibniz rule for powers of a Lie derivation.** Mathlib's
-`LieDerivation.iterate_apply_lie`, restated for the powers of the underlying endomorphism of `D`,
-in which the exponential series is written. -/
-theorem pow_toLinearMap_apply_lie (n : ℕ) (x y : L) :
-    (D.toLinearMap ^ n) ⁅x, y⁆ =
-      ∑ ij ∈ antidiagonal n,
-        n.choose ij.1 • ⁅(D.toLinearMap ^ ij.1) x, (D.toLinearMap ^ ij.2) y⁆ := by
-  rw [_root_.pow_apply_eq_iterate, coeFn_coe, D.iterate_apply_lie]
-  simp only [← coeFn_coe, ← _root_.pow_apply_eq_iterate]
-
 variable [Module ℚ L] (hD : ∀ x, ∃ n, (D.toLinearMap ^ n) x = 0)
 
 /-- The exponential of a locally nilpotent derivation preserves the bracket. -/
@@ -78,6 +66,11 @@ private theorem locallyNilpotentExp_lie (x y : L) :
     Module.End.locallyNilpotentExp D.toLinearMap hD ⁅x, y⁆ =
       ⁅Module.End.locallyNilpotentExp D.toLinearMap hD x,
         Module.End.locallyNilpotentExp D.toLinearMap hD y⁆ := by
+  -- Mathlib's Leibniz rule `LieDerivation.iterate_apply_lie`, for the powers of `D.toLinearMap`
+  -- in which the exponential series is written.
+  have hleib (n : ℕ) : (D.toLinearMap ^ n) ⁅x, y⁆ = ∑ ij ∈ antidiagonal n,
+      n.choose ij.1 • ⁅(D.toLinearMap ^ ij.1) x, (D.toLinearMap ^ ij.2) y⁆ := by
+    simp only [_root_.pow_apply_eq_iterate, coeFn_coe, D.iterate_apply_lie]
   obtain ⟨k, hx⟩ := hD x
   obtain ⟨l, hy⟩ := hD y
   set N := max k l
@@ -90,7 +83,7 @@ private theorem locallyNilpotentExp_lie (x y : L) :
     · rw [hxN i h, zero_lie]
     · rw [hyN j h, lie_zero]
   have hxy : (D.toLinearMap ^ (N + N)) ⁅x, y⁆ = 0 := by
-    rw [pow_toLinearMap_apply_lie]
+    rw [hleib]
     refine sum_eq_zero fun ij hij ↦ ?_
     rw [mem_antidiagonal] at hij
     rw [hvan ij.1 ij.2 (by omega), smul_zero]
@@ -103,7 +96,7 @@ private theorem locallyNilpotentExp_lie (x y : L) :
       ⁅(D.toLinearMap ^ p.1) x, (D.toLinearMap ^ p.2) y⁆)
     (fun i j h ↦ by rw [hvan i j h, smul_zero])]
   refine sum_congr rfl fun n _ ↦ ?_
-  rw [pow_toLinearMap_apply_lie, smul_sum]
+  rw [hleib, smul_sum]
   refine sum_congr rfl fun p hp ↦ ?_
   rw [mem_antidiagonal] at hp
   subst hp
