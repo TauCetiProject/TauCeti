@@ -141,12 +141,19 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
           Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
             Submodule.span ℝ
               (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
   obtain ⟨e, hye, he, hes, hS⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top
     one_ne_zero (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
   exact ⟨e, hye, he, hes, isSliceChart_iff.1 hS⟩
 
 /-- **The tangent space of a transverse intersection.** If the unstable set of a Morse critical
@@ -162,12 +169,19 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
         Flow.stableSet (negativeGradientFlow f hf) q) y) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
   exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top one_ne_zero
     (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 /-- **The intersection has dimension the index difference.** If the unstable set of a Morse
 critical point `p` and the stable set of a Morse critical point `q` meet transversally at `y`,

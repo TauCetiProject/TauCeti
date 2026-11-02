@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Algebra.Group.Units.Hom
+import Mathlib.Algebra.Group.Commute.Units
 
 /-!
-# Iterated Frobenius on units
+# Frobenius on units
 
-Let `A` be a commutative semiring of exponential characteristic `p`. The `p ^ n`-power Frobenius
+Let `A` be a commutative semiring of exponential characteristic `p`. Frobenius is a local
+homomorphism, since `a` is a unit as soon as `a ^ p` is. The `p ^ n`-power Frobenius
 `iterateFrobenius A p n` is a ring homomorphism, so it acts on the units of `A` through
 `Units.map`, and that action is the `p ^ n`-th power map. This file records that, pointwise and
 coordinatewise along a family, because the coordinatewise form is what a split torus of a
@@ -22,6 +24,7 @@ Nothing here is about the fixed locus of the Frobenius; for the subring and subf
 
 ## Main results
 
+* `TauCeti.isLocalHom_frobenius`: Frobenius is a local homomorphism.
 * `TauCeti.map_iterateFrobenius_unit_eq_pow`: `Units.map (iterateFrobenius A p n) u = u ^ p ^ n`.
 * `TauCeti.map_iterateFrobenius_units_eq_pow`: the same coordinatewise along a family of units.
 -/
@@ -31,6 +34,10 @@ public section
 namespace TauCeti
 
 variable (A : Type*) [CommSemiring A] (p n : ℕ) [ExpChar A p]
+
+/-- Frobenius is a local homomorphism: `a` is a unit as soon as `a ^ p` is. -/
+instance isLocalHom_frobenius : IsLocalHom (frobenius A p) :=
+  ⟨fun _ ha ↦ (isUnit_pow_iff (expChar_pos A p).ne').1 ha⟩
 
 /-- The `p ^ n`-power Frobenius acts on a unit as the `p ^ n`-th power map. -/
 @[simp]

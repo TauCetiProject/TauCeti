@@ -55,17 +55,6 @@ complex numbers, exactly as the underlying argument principle is.
 * `TauCeti.argumentPrinciple_windingNumber_of_analyticOnNhd` — the holomorphic case, with the orders
   read off by `analyticOrderNatAt`.
 
-## Coordination with upstream Mathlib
-
-Per the *Coordination with upstream Mathlib* section of `ConformalMapping/README.md`, layer L0
-overlaps [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the
-in-progress human-curated Riemann-mapping-theorem effort, which proves an argument principle
-internally as a private lemma
-(`circleIntegral_logDeriv_eq_finsum_analyticOrderNatAdd`). **This file is therefore a temporary
-shim**: once the corresponding Mathlib lemmas land, these statements should be backed by them — or
-deleted and their consumers refactored — rather than maintained as an independent re-proof. What
-Tau Ceti adds at L0 is named, discoverable API, not first proof.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 4 §5.
@@ -101,7 +90,7 @@ theorem argumentPrinciple_windingNumber {ord : ℂ → ℤ} (hU : IsOpen U)
     (hoff : ∀ z ∈ U, z ∉ S → AnalyticAt ℂ f z ∧ f z ≠ 0)
     (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s)
     (hord : ∀ s ∈ S, s ∈ U → meromorphicOrderAt f s = (ord s : WithTop ℤ))
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ [[a, b]], γ t ∉ (↑S : Set ℂ)) (hnull : Contour.IsNullHomologous γ a b U) :
     Contour.windingNumber (f ∘ γ) a b 0
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (ord z : ℂ) := by
@@ -126,7 +115,7 @@ is the pole-free specialisation of `TauCeti.argumentPrinciple_windingNumber`, wi
 off by `analyticOrderNatAt` instead of supplied by the caller. -/
 theorem argumentPrinciple_windingNumber_of_analyticOnNhd (hU : IsOpen U) (hf : AnalyticOnNhd ℂ f U)
     (hzeros : ∀ z ∈ U, f z = 0 → z ∈ S)
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ [[a, b]], f (γ t) ≠ 0) (hnull : Contour.IsNullHomologous γ a b U) :
     Contour.windingNumber (f ∘ γ) a b 0
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ) := by

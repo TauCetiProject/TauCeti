@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.Standard
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent
-public import TauCeti.QuantumGroups.UqSl2.LadderModule
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
 import Mathlib.Tactic
 import TauCeti.Data.Nat.Choose.Cast
@@ -478,14 +478,14 @@ private theorem lower_raise_apply (v : ClassicalLadder K m) (i : Fin (m + 1)) :
 /-- The relation `⁅E, F⁆ = H` of the specialized matrices. -/
 theorem lie_raise_lower : ⁅raise K m, lower K m⁆ = diag K m := by
   refine LinearMap.ext fun v => funext fun i => ?_
-  rw [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply, sub_apply,
+  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, sub_apply,
     raise_lower_apply, lower_raise_apply, diag_apply]
   ring
 
 /-- The relation `⁅H, E⁆ = 2 E` of the specialized matrices. -/
 theorem lie_diag_raise : ⁅diag K m, raise K m⁆ = (2 : K) • raise K m := by
   refine LinearMap.ext fun v => funext fun i => ?_
-  rw [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
     LinearMap.smul_apply, sub_apply, smul_apply, diag_apply, raise_apply, raise_apply]
   split_ifs with h
   · rw [diag_apply]
@@ -496,7 +496,7 @@ theorem lie_diag_raise : ⁅diag K m, raise K m⁆ = (2 : K) • raise K m := by
 /-- The relation `⁅H, F⁆ = -2 F` of the specialized matrices. -/
 theorem lie_diag_lower : ⁅diag K m, lower K m⁆ = -((2 : K) • lower K m) := by
   refine LinearMap.ext fun v => funext fun i => ?_
-  rw [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
     LinearMap.neg_apply, LinearMap.smul_apply, sub_apply, neg_apply, smul_apply,
     diag_apply, lower_apply, lower_apply]
   split_ifs with h

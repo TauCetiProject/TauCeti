@@ -20,9 +20,10 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 This file records a zero-value rule for differentiating the pointwise application of a varying
 continuous linear map. At a zero of the vector-valued argument, the variation of the operator
 contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
-records the derivative of the application of a varying continuous linear map to a fixed vector,
-the product rule for a varying bilinear map applied to two varying vectors, and the fact that
-the derivative of a field of symmetric bilinear maps takes symmetric values. Finally, a family of
+records the derivative of the application of a varying continuous linear map to a fixed vector
+(or of a varying bilinear map to two fixed vectors), the product rule for a varying bilinear map
+applied to two varying vectors, and the fact that the derivative of a field of symmetric bilinear
+maps takes symmetric values. Finally, a family of
 continuous linear maps out of a finite-dimensional space is differentiable, or has a given
 derivative in a scalar variable, within a set or at a point, exactly when each of its evaluations
 does; this is how derivatives of families of linear and bilinear maps are tested on vectors.
@@ -32,7 +33,7 @@ does; this is how derivatives of families of linear and bilinear maps are tested
 * `HasFDerivWithinAt.clm_apply_of_eq_zero`: the derivative of `y ↦ c y (u y)` at a zero of
   `u`, assuming only continuity of `c`.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
-  `Dc(w) v`.
+  `Dc(w) v`; `TauCeti.fderiv_clm_apply_const_apply₂` is the form for fields of bilinear maps.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
 * `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
   near a point takes symmetric values there.
@@ -87,6 +88,14 @@ theorem fderiv_clm_apply_const_apply {c : E → F →L[𝕜] F'} {x : E} (hc : D
   rw [fderiv_clm_apply hc (differentiableAt_const v)]
   simp
 
+/-- Differentiating `y ↦ c y v w` for a field `c` of bilinear maps and fixed vectors `v` and `w`
+in the direction `u` gives the derivative of `c` in the direction `u`, applied to `v` and `w`. -/
+theorem fderiv_clm_apply_const_apply₂ {c : E → F →L[𝕜] F' →L[𝕜] G} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (v : F) (w : F') (u : E) :
+    fderiv 𝕜 (fun y ↦ c y v w) x u = fderiv 𝕜 c x u v w := by
+  rw [fderiv_clm_apply_const_apply (hc.clm_apply (differentiableAt_const v)),
+    fderiv_clm_apply_const_apply hc]
+
 /-- The derivative of `y ↦ c y (A y) (B y)` for a field `c` of bilinear maps: the product rule. -/
 theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F} {B : E → G} {x : E}
     (hc : DifferentiableAt 𝕜 c x) (hA : DifferentiableAt 𝕜 A x) (hB : DifferentiableAt 𝕜 B x)
@@ -105,11 +114,8 @@ theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
     fderiv 𝕜 c x u v w = fderiv 𝕜 c x u w v := by
   by_cases hd : DifferentiableAt 𝕜 c x
   · -- Both sides are derivatives of functions of `y` which agree near `x`.
-    have happ (a b : F) : fderiv 𝕜 (fun y ↦ c y a b) x u = fderiv 𝕜 c x u a b := by
-      rw [fderiv_clm_apply_const_apply (hd.clm_apply (differentiableAt_const a)),
-        fderiv_clm_apply_const_apply hd]
     have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
-    rw [← happ, ← happ, heq.fderiv_eq]
+    rw [← fderiv_clm_apply_const_apply₂ hd, ← fderiv_clm_apply_const_apply₂ hd, heq.fderiv_eq]
   · simp [fderiv_zero_of_not_differentiableAt hd]
 
 /-- A family of continuous linear maps out of a finite-dimensional space is differentiable within

@@ -9,7 +9,9 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 public import Mathlib.RepresentationTheory.Basic
 
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.ExteriorAlgebra.End
+import Mathlib.Algebra.Central.End
 
 /-!
 # The Spin-group representation on the exterior model
@@ -38,6 +40,8 @@ one-dimensional, the odd block is zero and the even action is again onto.
   `CliffordAlgebra.coe_spinGroupToEven_apply`.
 * `TauCeti.spinAction_surjective` identifies the Fock action as onto the full endomorphism algebra
   when the first isotropic summand is finite free.
+* `TauCeti.exists_spinAction_eq_algebraMap_of_mem_center`: under the same hypothesis, the Fock
+  action sends central Clifford elements to scalars.
 
 ## References
 
@@ -116,5 +120,17 @@ theorem spinAction_surjective {Q : QuadraticForm K V} (P : SpinPolarizationData 
     apply LinearMap.ext
     intro s
     exact spinAction_ι_contract P y s
+
+/-- **The Fock action sends central Clifford elements to scalars** when the first isotropic summand
+is finite free: a central element `x` of the Clifford algebra acts on `⋀·W` as multiplication by
+some `a : K`. This applies in particular to the volume element in odd dimension. -/
+theorem exists_spinAction_eq_algebraMap_of_mem_center {Q : QuadraticForm K V}
+    (P : SpinPolarizationData Q) [Module.Free K P.W] [Module.Finite K P.W] {x : CliffordAlgebra Q}
+    (hx : x ∈ Subalgebra.center K (CliffordAlgebra Q)) :
+    ∃ a : K, spinAction Q P x = algebraMap K (Module.End K (ExteriorAlgebra K P.W)) a :=
+  -- The Fock action is onto, so it maps the centre into the centre of `Module.End K (⋀·W)`,
+  -- which consists of the scalars.
+  (Algebra.IsCentral.mem_center_iff K).1
+    (Subalgebra.map_center_le_center (spinAction_surjective P) ⟨x, hx, rfl⟩)
 
 end TauCeti

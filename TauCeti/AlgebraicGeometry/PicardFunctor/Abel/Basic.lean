@@ -71,8 +71,7 @@ private lemma relativePicardPresheaf_map_abelClass {T T' : (Over S)ᵒᵖ} (φ :
   have hD := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2).isEffectiveCartier
   have hD' := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
     ((relativeEffectiveCartierSubfunctor f).toFunctor.map φ D).2).isEffectiveCartier
-  rw [abelClass, abelClass, relativePicardPresheaf_map_mk, ← LineBundleClass.pullbackHom_apply,
-    map_inv, LineBundleClass.pullbackHom_apply,
+  rw [abelClass, abelClass, relativePicardPresheaf_map_mk, LineBundleClass.pullback_inv,
     Scheme.IdealSheafData.IsEffectiveCartier.pullback_mk_toInvertibleSheaf hD hD']
   -- Both sides are the class of the ideal sheaf of the pulled-back divisor; they differ only in
   -- the proof that this divisor is effective Cartier.
@@ -98,7 +97,7 @@ def abelMap : (relativeEffectiveCartierSubfunctor f).toFunctor ⋙ uliftFunctor.
 lemma abelMap_app_apply {T : (Over S)ᵒᵖ}
     (D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierSubfunctor f).obj T))
+      (X := ULift.{u + 1} ((relativeEffectiveCartierSubfunctor f).obj T))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelMap f).app T) (ULift.up D) =
       (QuotientGroup.mk (LineBundleClass.mk ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
         D.2).isEffectiveCartier.toInvertibleSheaf)⁻¹ : (relativePicardPresheaf f).obj T) :=

@@ -368,6 +368,13 @@ lemma base_smul_globalSections
     r • x = baseRingToGlobalSections R X r • x :=
   rfl
 
+/-- The base ring acts on global sections through the structure presheaf at the top open. -/
+lemma base_smul_globalSections_eq_baseRingToStructurePresheaf_smul
+    (M : X.Modules) (r : R) (x : Γ(M, ⊤)) :
+    r • x = (X.baseRingToStructurePresheaf R).app (op ⊤) r • x := by
+  rw [Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.ofHom_apply,
+    base_smul_globalSections]
+
 end AlgebraicGeometry.Scheme.Modules
 
 end Base

@@ -24,6 +24,7 @@ a sum `∑ X^ν' g_ν'(X^p)` over the exponents `ν'` with `ν' i < p` is the co
 * `MvPowerSeries.prod_pow_nsmul`: the weight of `p • μ` at `r` is the weight of `μ` at `r ^ p`.
 * `MvPowerSeries.isRestricted_expand_iff`: `f(X^p)` is restricted at `r` exactly when `f` is
   restricted at `r ^ p`.
+* `MvPowerSeries.IsRestricted.coeff_nsmul_add`: restrictedness of an expansion component.
 * `MvPowerSeries.coeff_sum_monomial_mul_expand`: the coefficients of `∑ X^ν g_ν(X^p)`.
 -/
 
@@ -65,6 +66,25 @@ theorem isRestricted_expand_iff {R : Type*} [NormedCommRing R] {r t : σ → ℝ
   · exact absurd (by simpa [hα0] using mem_of_mem_nhds hU) hα
   · obtain ⟨μ, -, rfl⟩ := support_expand_subset p hp f (a := α) hα0
     exact ⟨μ, hα, rfl⟩
+
+/-- Extracting the coefficients in an arithmetic progression of exponents preserves
+restrictedness, with the polyradii raised to the common step. -/
+theorem IsRestricted.coeff_nsmul_add {R : Type*} [NormedRing R] {r t : σ → ℝ}
+    [∀ i, Fact (0 < r i)] {p : ℕ} {f : MvPowerSeries σ R} (hf : IsRestricted r f)
+    (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) (ν : σ →₀ ℕ) :
+    IsRestricted t (fun μ ↦ coeff (p • μ + ν) f : MvPowerSeries σ R) := by
+  have hi : Function.Injective fun μ : σ →₀ ℕ ↦ p • μ + ν :=
+    (add_left_injective ν).comp (nsmul_right_injective hp)
+  have hpos : 0 < ν.prod (r · ^ ·) := Finset.prod_pos fun i _ ↦ pow_pos Fact.out _
+  have h := (hf.comp hi.tendsto_cofinite).const_mul (ν.prod (r · ^ ·))⁻¹
+  rw [mul_zero] at h
+  refine h.congr fun μ ↦ ?_
+  have hc : coeff μ (fun μ ↦ coeff (p • μ + ν) f : MvPowerSeries σ R) =
+      coeff (p • μ + ν) f := coeff_apply _ μ
+  rw [hc, Function.comp_apply,
+    Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
+    prod_pow_nsmul p ht]
+  field_simp [hpos.ne']
 
 /-- The coefficient at `p • μ + ν` of a sum `∑ X^ν' g_ν'(X^p)` over the exponents `ν'` with
 `ν' i < p` is the coefficient at `μ` of `g_ν`. -/

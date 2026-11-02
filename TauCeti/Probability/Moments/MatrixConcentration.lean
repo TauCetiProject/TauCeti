@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues
+public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 public import TauCeti.Probability.Moments.Chebyshev
@@ -23,7 +23,7 @@ Suppose every squared entrywise deviation is integrable with
 
 On a probability space, every deterministic consequence of entrywise `η`-closeness therefore holds
 with probability at least `1 - card m * card n * v / η²`. For square matrices over `ℝ` or `ℂ` the
-entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues` turns this into
+entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues.Basic` turns this into
 simultaneous high-probability control of every sorted eigenvalue, up to the dimension factor
 `card n`. For rectangular matrices over `ℝ` or `ℂ` the entrywise-to-operator comparison of
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm` bounds the operator norm of the Euclidean action of
@@ -102,9 +102,9 @@ theorem measure_exists_lt_norm_sub_le [Norm E] [Sub E]
           ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
 
 omit [Fintype m] [Fintype n] in
-/-- The event that some entry of a random matrix deviates from a fixed matrix by more than `η` is
-measurable when every entry is measurable. -/
-theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Finite m] [Finite n]
+/-- For countable row and column index types, the event that some entry of a random matrix deviates
+from a fixed matrix by more than `η` is measurable when every entry is measurable. -/
+theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Countable m] [Countable n]
     [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub E]
     (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
     MeasurableSet {ω | ∃ k l, η < ‖S ω k l - A k l‖} := by

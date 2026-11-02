@@ -7,9 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+public import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-
-import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 
 /-!
 # Determinant-indexed projective matrix modules
@@ -21,7 +20,9 @@ on representatives provide the descent to the projective group. These are the in
 group-ring calculations in the Popa--Zagier construction of the trace formula.
 
 Inverse right multiplication is written as a left action. Its representative formula is
-`A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`.
+`A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`; in `GL(2, ℚ)`, through
+`FixedDetMatrices.toGL`, it is right multiplication by `g⁻¹`
+(`TauCeti.toGL_traceFormulaMatrixRight`).
 
 The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ)ᵐᵒᵖ` and of
 `ConjAct PSL(2, ℤ)`. With `open scoped RightActions`, `x <• g`, that is `MulOpposite.op g • x`,
@@ -40,7 +41,9 @@ Elements of the group ring `k[ℳₙ]` are given by weights on integral matrices
 the coefficient `w A + w (-A)` (`TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`), a bound `B`
 on the entries of the determinant-`n` matrices of nonzero weight making the support finite.
 Its right coset sums are the sums of `w` over the matrices in the coset
-(`TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`).
+(`TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`). Conversely, a
+sign-invariant function `f` of determinant-`n` matrices extends linearly to `k[ℳₙ]`
+(`TauCeti.TraceFormulaMatrixModule.linearLift`), sending `∑ c_M M` to `∑ c_M f M`.
 
 ## References
 
@@ -157,6 +160,16 @@ public def traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
 theorem val_traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     (traceFormulaMatrixRight g A).1 =
       A.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := (rfl)
+
+/-- For `n ≠ 0`, inverse right multiplication becomes right multiplication by the image of `g⁻¹`
+in `GL(2, ℚ)`. -/
+theorem toGL_traceFormulaMatrixRight (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    FixedDetMatrices.toGL hn (traceFormulaMatrixRight g A) =
+      FixedDetMatrices.toGL hn A * Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹ := by
+  ext : 1
+  rw [Units.val_mul, FixedDetMatrices.coe_toGL, FixedDetMatrices.coe_toGL,
+    Matrix.SpecialLinearGroup.mapGL_coe_matrix, val_traceFormulaMatrixRight]
+  exact Matrix.map_mul (f := Int.castRingHom ℚ)
 
 /-- Left multiplication makes `ℳₙ` an `SL(2, ℤ)`-set. -/
 instance (n : ℤ) : SMul SL(2, ℤ) (TraceFormulaMatrixModule n) where
@@ -622,6 +635,38 @@ theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
     (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
   simp [ofWeight, Finsupp.ofSupportFinite_coe]
 
+/-- An element given by a weight is the sum of the weighted projective classes over any finite
+set containing every determinant-`n` matrix of nonzero weight. The weights of the two
+representatives of a projective class add, with no factor of two. -/
+theorem ofWeight_eq_sum (hn : n ≠ 0)
+    (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (s : Finset (TraceFormulaMatrix n)) (hs : ∀ A, w A.1 ≠ 0 → A ∈ s) :
+    ofWeight n w B hw = ∑ A ∈ s, single (mk A) (w A.1) := by
+  classical
+  apply MonoidAlgebra.coeff_injective
+  ext y
+  induction y using TraceFormulaMatrixModule.induction with | h C => ?_
+  have hC : C ≠ -C := fun h ↦ hn <| by
+    have h₀ : C.1 = 0 := by
+      have h₁ : C.1 = -C.1 := congrArg Subtype.val h
+      rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
+      exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
+    rw [← C.2, h₀]
+    simp
+  rw [coeff_ofWeight_mk, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
+    Finset.sum_eq_add C (-C) hC]
+  · simp
+  · intro A _ hA
+    have : ¬(A = C ∨ A = -C) := by tauto
+    simpa [Finsupp.single_apply, mk_eq_iff] using fun h ↦ (this h).elim
+  · intro hCs
+    by_contra h
+    exact hCs (hs C (by simpa using h))
+  · intro hCs
+    by_contra h
+    exact hCs (hs (-C) (by simpa using h))
+
 /-- **The right coset sums of an element given by a weight**: for `n ≠ 0`, the sum of the
 coefficients of `ofWeight n w B hw` over the right coset `x Γ` is the sum of `w` over the
 determinant-`n` matrices whose class lies in `x Γ`. Each class `±A` contributes `w A + w (-A)`, so
@@ -637,28 +682,9 @@ theorem mapDomain_orbitRel_mk_coeff_ofWeight (hn : n ≠ 0)
   set F := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n B).toFinset
   have hF (A : TraceFormulaMatrix n) (h : w A.1 ≠ 0) : A ∈ F := by
     simpa [F] using hw A h
-  -- the element is the sum of the matrices of `F`, each with its weight
   have hcoeff : (ofWeight n w B hw).coeff = ∑ A ∈ F, Finsupp.single (mk A) (w A.1) := by
-    ext y
-    induction y using TraceFormulaMatrixModule.induction with | h C => ?_
-    have hC : C ≠ -C := fun h ↦ hn <| by
-      have h₀ : C.1 = 0 := by
-        have h₁ : C.1 = -C.1 := congrArg Subtype.val h
-        rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
-        exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
-      rw [← C.2, h₀]
-      simp
-    rw [coeff_ofWeight_mk, Finsupp.finsetSum_apply, Finset.sum_eq_add C (-C) hC]
-    · simp
-    · intro A _ hA
-      have : ¬(A = C ∨ A = -C) := by tauto
-      simpa [Finsupp.single_apply, mk_eq_iff] using fun h ↦ (this h).elim
-    · intro hCF
-      by_contra h
-      exact hCF (hF C (by simpa using h))
-    · intro hCF
-      by_contra h
-      exact hCF (hF (-C) (by simpa using h))
+    rw [ofWeight_eq_sum hn w B hw F hF, MonoidAlgebra.coeff_sum]
+    rfl
   have hq (y : TraceFormulaMatrixModule n) :
       (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n)) y = ⟦x⟧) ↔
         y ∈ orbit PSL(2, ℤ)ᵐᵒᵖ x :=
@@ -669,6 +695,24 @@ theorem mapDomain_orbitRel_mk_coeff_ofWeight (hn : n ≠ 0)
   refine (finsum_mem_eq_sum_of_subset _ (fun A hA ↦ ?_) fun A hA ↦ ?_).symm
   · exact Finset.mem_filter.mpr ⟨hF A hA.2, hA.1⟩
   · exact (Finset.mem_filter.mp hA).2
+
+/-! ### Linear extension of sign-invariant functions -/
+
+variable {M : Type*} [AddCommMonoid M] [Module k M]
+
+/-- The linear extension `∑ c_M M ↦ ∑ c_M f M` to `k[ℳₙ]` of a function `f` of determinant-`n`
+matrices that takes the same value on `A` and `-A`. -/
+noncomputable def linearLift (f : TraceFormulaMatrix n → M) (hf : ∀ A, f (-A) = f A) :
+    k[TraceFormulaMatrixModule n] →ₗ[k] M :=
+  Finsupp.linearCombination k
+      (Quotient.lift f fun A B h ↦ by rcases h with rfl | rfl <;> simp only [hf]) ∘ₗ
+    (MonoidAlgebra.coeffLinearEquiv k).toLinearMap
+
+/-- A basis element `c • [A]` is sent to `c • f A`. -/
+@[simp]
+theorem linearLift_single (f : TraceFormulaMatrix n → M) (hf : ∀ A, f (-A) = f A)
+    (A : TraceFormulaMatrix n) (c : k) : linearLift f hf (single (mk A) c) = c • f A := by
+  simp [linearLift, mk]
 
 end TraceFormulaMatrixModule
 

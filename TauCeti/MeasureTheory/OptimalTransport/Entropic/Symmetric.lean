@@ -109,7 +109,7 @@ theorem exists_isCoupling_entropicGibbsFactor_self (hc : Measurable c) (hcB : �
   have hπeq : π = (μ.prod μ).withDensity fun z ↦
       ENNReal.ofReal (entropicGibbsFactor c ε f f z) :=
     (hπ.entropicDualValue_eq_toReal_lintegral_add_mul_klDiv_iff hc.aemeasurable hε hfi hfi hexp
-      (hopt ▸ entropicTransportCost_ne_top_of_forall_le hcB ε)).1 (hopt ▸ hfval)
+      (hopt ▸ entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε)).1 (hopt ▸ hfval)
   refine ⟨f, C, hf, hfC, hπeq ▸ hπ, hfval, ?_⟩
   rw [← hfval, hπ.entropicDualValue_eq_of_eq_withDensity hπeq hexp,
     kantorovichDualValue_def, two_mul]

@@ -11,7 +11,8 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 # Exact pairings in rigid monoidal categories
 
 This file records evaluation and coevaluation formulas for the self-pairing of the unit, for
-transported exact pairings, and for the adjunction associated to an exact pairing. It also
+transported exact pairings, and for the adjunction associated to an exact pairing, and registers
+the resulting adjoints of tensoring with a dualizable object as instances. It also
 computes the loop obtained by closing up a tensor product `f ⊗ₘ g` of endomorphisms with the
 tensor product pairings: in string diagrams, the loop of `f` sits inside the loop of `g`.
 
@@ -29,7 +30,14 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   `TauCeti.ExactPairing.coevaluation_tensorHom_whiskerRight_evaluation`: closing up `f ⊗ₘ g`
   with the tensor product pairings nests the loop of one factor inside the loop of the other;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
-  and counit of the adjunction associated to an exact pairing.
+  and counit of the adjunction associated to an exact pairing;
+* `TauCeti.isRightAdjoint_tensorLeft`, `TauCeti.isLeftAdjoint_tensorLeft`,
+  `TauCeti.isLeftAdjoint_tensorRight` and `TauCeti.isRightAdjoint_tensorRight`: tensoring with an
+  object having a right (resp. left) dual is a right (resp. left) adjoint on the left and a left
+  (resp. right) adjoint on the right, so in a rigid category tensoring on either side preserves all
+  limits and colimits;
+* `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
+  correspond to morphisms `𝟙_ C ⟶ Y`.
 -/
 
 public section
@@ -164,5 +172,58 @@ theorem tensorLeftAdjunction_unit_app (Z : C) :
 theorem tensorLeftAdjunction_counit_app (Z : C) :
     (tensorLeftAdjunction D Y).counit.app Z = (α_ Y D Z).inv ≫ ε_ D Y ▷ Z ≫ (λ_ Z).hom := by
   simp [tensorLeftAdjunction, tensorLeftHomEquiv]
+
+section Adjoint
+
+variable (X : C)
+
+/-- Tensoring on the left with an object having a right dual is a right adjoint, with left
+adjoint given by tensoring on the left with the dual. -/
+instance isRightAdjoint_tensorLeft [HasRightDual X] : (tensorLeft X).IsRightAdjoint :=
+  (tensorLeftAdjunction X Xᘁ).isRightAdjoint
+
+/-- Tensoring on the left with an object having a left dual is a left adjoint, with right adjoint
+given by tensoring on the left with the dual. -/
+instance isLeftAdjoint_tensorLeft [HasLeftDual X] : (tensorLeft X).IsLeftAdjoint :=
+  (tensorLeftAdjunction (ᘁX) X).isLeftAdjoint
+
+/-- Tensoring on the right with an object having a right dual is a left adjoint, with right
+adjoint given by tensoring on the right with the dual. -/
+instance isLeftAdjoint_tensorRight [HasRightDual X] : (tensorRight X).IsLeftAdjoint :=
+  (tensorRightAdjunction X Xᘁ).isLeftAdjoint
+
+/-- Tensoring on the right with an object having a left dual is a right adjoint, with left
+adjoint given by tensoring on the right with the dual. -/
+instance isRightAdjoint_tensorRight [HasLeftDual X] : (tensorRight X).IsRightAdjoint :=
+  (tensorRightAdjunction (ᘁX) X).isRightAdjoint
+
+end Adjoint
+
+namespace ExactPairing
+
+variable (X Y : C) [ExactPairing X Y]
+
+/-- For an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C` correspond to morphisms
+`𝟙_ C ⟶ Y`: a functional `φ` on `X` goes to the coevaluation followed by `φ`, and a morphism
+`s : 𝟙_ C ⟶ Y` goes to evaluation against `s`. It is Mathlib's
+`CategoryTheory.tensorRightHomEquiv` with both outer objects the unit, up to the unitors. -/
+def homUnitEquiv : (X ⟶ 𝟙_ C) ≃ (𝟙_ C ⟶ Y) :=
+  ((λ_ X).homCongr (Iso.refl _)).symm.trans
+    ((tensorRightHomEquiv (𝟙_ C) X Y (𝟙_ C)).trans ((Iso.refl _).homCongr (λ_ Y)))
+
+/-- The morphism `𝟙_ C ⟶ Y` of a functional `φ : X ⟶ 𝟙_ C` applies `φ` after the
+coevaluation. -/
+@[simp]
+theorem homUnitEquiv_apply (φ : X ⟶ 𝟙_ C) :
+    homUnitEquiv X Y φ = η_ X Y ≫ φ ▷ Y ≫ (λ_ Y).hom := by
+  simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
+
+/-- The functional `X ⟶ 𝟙_ C` of a morphism `s : 𝟙_ C ⟶ Y` is evaluation against `s`. -/
+@[simp]
+theorem homUnitEquiv_symm_apply (s : 𝟙_ C ⟶ Y) :
+    (homUnitEquiv X Y).symm s = (λ_ X).inv ≫ s ▷ X ≫ ε_ X Y := by
+  simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
+
+end ExactPairing
 
 end TauCeti

@@ -362,6 +362,13 @@ lemma sheafHomOfLE_ι {D E : SchemeWeilDivisor X} (h : D ≤ E) :
     sheafHomOfLE h ≫ sheafι E = sheafι D :=
   TauCeti.SheafOfModules.Submodule.homOfLE_ι (submodule_mono h)
 
+/-- The inclusion of divisor sheaves attached to `D ≤ E` is a monomorphism. -/
+instance {D E : SchemeWeilDivisor X} (h : D ≤ E) : Mono (sheafHomOfLE h) := by
+  have : Mono (sheafHomOfLE h ≫ sheafι E) := by
+    rw [sheafHomOfLE_ι]
+    infer_instance
+  exact mono_of_mono (sheafHomOfLE h) (sheafι E)
+
 /-- The inclusion attached to `le_refl D` is the identity of `𝒪_X(D)`. -/
 @[simp]
 lemma sheafHomOfLE_refl (D : SchemeWeilDivisor X) : sheafHomOfLE (le_refl D) = 𝟙 (sheaf D) := by

@@ -18,7 +18,8 @@ restricted module has the same cycles, boundaries and cohomology: the cohomology
 `H(M)` as an `R`-module (`TauCeti.IsDGRightModule.restrictScalarsCohomologyEquiv`). Under this
 identification, the action of `H(A)` on `H(f^* M)` is the action of `H(B)` on `H(M)` restricted
 along the induced map `H(f) : H(A) → H(B)`
-(`TauCeti.IsDGRightModule.restrictScalarsCohomologyEquiv_cohomologyAction`).
+(`TauCeti.IsDGRightModule.restrictScalarsCohomologyEquiv_cohomologyAction`). The identification
+preserves degrees (`TauCeti.IsDGRightModule.map_restrictScalarsCohomologyEquiv_cohomologyGrading`).
 
 This is the form in which a change of coefficients by a DG algebra morphism, such as the twist of a
 DG local system by a rank-one local system, is read off on cohomology.
@@ -27,6 +28,8 @@ DG local system by a rank-one local system, is read off on cohomology.
 
 * `TauCeti.IsDGRightModule.restrictScalarsCohomologyEquiv`: the identification
   `H(f^* M) ≃ₗ[R] H(M)`.
+* `TauCeti.IsDGRightModule.restrictScalarsCohomologyGradingEquiv`: its restriction
+  `H^p(f^* M) ≃ₗ[R] H^p(M)` to a single degree.
 
 ## Main results
 
@@ -35,6 +38,8 @@ DG local system by a rank-one local system, is read off on cohomology.
   `f^* M` are those of `M`.
 * `TauCeti.IsDGRightModule.restrictScalarsCohomologyEquiv_cohomologyAction`: the identification
   intertwines the action of a class `c` of `H(A)` with the action of `H(f) c`.
+* `TauCeti.IsDGRightModule.map_restrictScalarsCohomologyEquiv_cohomologyGrading`: the
+  identification carries `H^p(f^* M)` onto `H^p(M)`.
 
 ## References
 
@@ -137,6 +142,48 @@ theorem restrictScalarsCohomologyEquiv_cohomologyAction (c : hA.Cohomology)
     refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
     -- Cycles of the algebra act on module cycles through `Module.compHom` along the inclusion.
     simp [MulAction.compHom_smul_def]
+
+/-- The identification `H(f^* M) ≃ H(M)` preserves degrees: a class of the restricted module has
+degree `p` exactly when its image does. -/
+@[simp]
+theorem restrictScalarsCohomologyEquiv_mem_cohomologyGrading_iff {p : ℤ}
+    {x : (hM.restrictScalars f).Cohomology} :
+    hM.restrictScalarsCohomologyEquiv f x ∈ hM.cohomologyGrading p ↔
+      x ∈ (hM.restrictScalars f).cohomologyGrading p := by
+  rw [mem_cohomologyGrading, mem_cohomologyGrading]
+  constructor
+  · rintro ⟨z, hz, hzx⟩
+    refine ⟨⟨⟨z.1⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.2⟩, ?_, ?_⟩
+    · rwa [mem_restrictScalarsGrading_iff, DGRightModule.RestrictScalars.linearEquiv_apply]
+    · rw [← restrictScalarsCohomologyEquiv_symm_mk, hzx, LinearEquiv.symm_apply_apply]
+  · rintro ⟨z, hz, rfl⟩
+    rw [mem_restrictScalarsGrading_iff, DGRightModule.RestrictScalars.linearEquiv_apply] at hz
+    exact ⟨_, hz, (restrictScalarsCohomologyEquiv_mk f hM z).symm⟩
+
+/-- The identification `H(f^* M) ≃ H(M)` carries `H^p(f^* M)` onto `H^p(M)`. -/
+@[simp]
+theorem map_restrictScalarsCohomologyEquiv_cohomologyGrading (p : ℤ) :
+    ((hM.restrictScalars f).cohomologyGrading p).map
+        (hM.restrictScalarsCohomologyEquiv f).toLinearMap =
+      hM.cohomologyGrading p := by
+  ext x
+  rw [Submodule.mem_map_equiv, ← restrictScalarsCohomologyEquiv_mem_cohomologyGrading_iff,
+    LinearEquiv.apply_symm_apply]
+
+/-- **Restriction of scalars does not change module cohomology in a single degree**: the
+identification `H(f^* M) ≃ H(M)` restricts to `H^p(f^* M) ≃ H^p(M)`. -/
+noncomputable def restrictScalarsCohomologyGradingEquiv (p : ℤ) :
+    (hM.restrictScalars f).cohomologyGrading p ≃ₗ[R] hM.cohomologyGrading p :=
+  (hM.restrictScalarsCohomologyEquiv f).ofSubmodules _ _
+    (hM.map_restrictScalarsCohomologyEquiv_cohomologyGrading f p)
+
+/-- The identification `H^p(f^* M) ≃ H^p(M)` is the restriction of `H(f^* M) ≃ H(M)`. -/
+@[simp]
+theorem coe_restrictScalarsCohomologyGradingEquiv_apply (p : ℤ)
+    (x : (hM.restrictScalars f).cohomologyGrading p) :
+    (hM.restrictScalarsCohomologyGradingEquiv f p x : hM.Cohomology) =
+      hM.restrictScalarsCohomologyEquiv f x :=
+  (rfl)
 
 end IsDGRightModule
 

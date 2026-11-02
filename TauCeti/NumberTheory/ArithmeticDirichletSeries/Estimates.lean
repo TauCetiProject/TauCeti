@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Convergence
+public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 public import Mathlib.NumberTheory.NumberField.Ideal.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
@@ -18,7 +19,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 Mathlib's `NumberField.Ideal.tendsto_norm_le_div_atTop₀` says that the number of nonzero integral
 ideals of `𝓞 K` of absolute norm at most `x` is asymptotic to `ρ x`, with `ρ` the positive residue
 of the Dedekind zeta function.  This file turns that single asymptotic into the *two-sided* linear
-bounds that every later estimate of the roadmap counts against, and then spends them on the exact
+bounds that later ideal-counting estimates are measured against, and then spends them on the exact
 abscissa of absolute convergence of the trivial ideal weight.
 
 Both directions are needed.  Convergence uses the upper bound alone: it makes the partial sums of
@@ -51,6 +52,9 @@ of a convergent series of nonnegative terms must become arbitrarily small.
 * `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
+* `TauCeti.analyticOnNhd_LSeries_of_bounded`: the L-series of a uniformly bounded weight is
+  holomorphic on `Re s > 1`, and `TauCeti.analyticOnNhd_LSeries_of_unitary` is its unitary
+  specialization.
 * `TauCeti.idealAbscissaOfAbsConv_lt_re_of_bounded`: the same hypothesis places the ideal-indexed
   abscissa of absolute convergence strictly below every `Re s > 1`.
 
@@ -59,8 +63,8 @@ of a convergent series of nonnegative terms must become arbitrarily small.
 The counting function is Mathlib's own
 `Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x}`, written out rather
 than abbreviated, so that the bounds apply to `NumberField.Ideal.tendsto_norm_le_div_atTop₀`
-without a translation lemma.  The inclusive real cutoff is the one fixed by the conventions table
-of the roadmap.
+without a translation lemma.  The cutoff `N(I) ≤ x` is real and inclusive, matching the
+summatory functions of `TauCeti/NumberTheory/ArithmeticDirichletSeries/AbelSummation.lean`.
 
 `TauCeti.NumberTheory.EffectiveBounds.IdealCount` proves the *effective* bound
 `#{I ≠ 0 | N(I) ≤ x} ≤ x² 2^[K:ℚ]`, with an explicit constant but the wrong exponent; it cannot
@@ -93,7 +97,7 @@ variable (K : Type*) [Field K] [NumberField K]
 /-- The nonzero integral ideals of absolute norm at most a real cutoff form a finite set. -/
 theorem finite_setOf_absNorm_real_le (x : ℝ) :
     {I : (Ideal (𝓞 K))⁰ | (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x}.Finite :=
-  (Ideal.finite_setOfPred_absNorm_le₀ ⌊x⌋₊).subset fun _ hI ↦ Nat.le_floor hI
+  (Ring.HasFiniteQuotients.finite_absNorm_le₀ ⌊x⌋₊).subset fun _ hI ↦ Nat.le_floor hI
 
 /-- The number of nonzero integral ideals of bounded absolute norm is monotone in the cutoff. -/
 theorem card_absNorm_real_le_mono {x y : ℝ} (h : x ≤ y) :
@@ -510,6 +514,25 @@ theorem summable_idealTerm_of_unitary_of_one_lt_re {K : Type*} [Field K] [Number
   refine summable_idealTerm_of_bounded_of_one_lt_re (C := 1) (fun I ↦ ?_) hs
   rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
   exact χ.norm_le_one _
+
+/-- **The L-series of a uniformly bounded weight is holomorphic on `Re s > 1`**, the half-plane
+on which it converges absolutely by `summable_idealTerm_of_bounded_of_one_lt_re`. -/
+theorem analyticOnNhd_LSeries_of_bounded {K : Type*} [Field K] [NumberField K]
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) :
+    AnalyticOnNhd ℂ (LSeries (normCoeff K f)) {s | 1 < s.re} :=
+  (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦
+    (LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
+      LSeriesSummable_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re hf
+        (by simpa using hy))).trans_lt (mod_cast hs)
+
+/-- **The L-series of a unitary weight is holomorphic on `Re s > 1`.** The specialization of
+`analyticOnNhd_LSeries_of_bounded` at `C = 1`, through `TauCeti.UnitaryIdealWeight.norm_le_one`. -/
+theorem analyticOnNhd_LSeries_of_unitary {K : Type*} [Field K] [NumberField K]
+    (χ : UnitaryIdealWeight K) :
+    AnalyticOnNhd ℂ (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re} :=
+  analyticOnNhd_LSeries_of_bounded (C := 1) fun I ↦ by
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
+    exact χ.norm_le_one _
 
 /-- **A uniformly bounded weight has ideal-indexed abscissa below every `Re s > 1`.** This is the
 form in which `summable_idealTerm_of_bounded_of_one_lt_re` feeds results stated strictly to the

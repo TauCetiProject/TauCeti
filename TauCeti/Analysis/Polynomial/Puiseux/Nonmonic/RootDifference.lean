@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Nonmonic
+public import TauCeti.Analysis.Analytic.Laurent.Global
 
 /-!
 # Constructing nonmonic Puiseux root differences
@@ -17,7 +18,8 @@ Laurent power-times-unit differences. The branches and their pole-removed extens
 constructed from coefficient hypotheses, and the difference forms use those same labels.
 No splitting, root labelling, or constancy of contact orders is assumed.
 
-The Laurent exponent of each difference is locally independent of the other parameters.
+Each difference has one integer Laurent exponent and one analytic nowhere-zero unit on the
+whole product, including the exceptional hyperplane.
 Negative exponents allow poles, and positive exponents allow collisions on the exceptional
 hyperplane. Fibers on that hyperplane may drop degree or be nullified. No condition on the
 constant coefficient is needed: an individual root may vanish identically even though each
@@ -44,11 +46,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {u v : E × ℂ → ℂ}
 
 /-- Construct a complete distinct nonmonic Puiseux splitting, analytic extensions after
-pole removal, and Laurent unit forms for every pairwise root difference near each point of
-the exceptional hyperplane. The leading coefficient and discriminant need their prescribed
+pole removal, and global Laurent unit forms for every pairwise root difference.
+Each difference has a single exponent and a unit analytic and nowhere zero on the full product.
+The leading coefficient and discriminant need their prescribed
 power-times-unit forms only off the hyperplane. Any positive substitution power divisible
 by the factorial of the punctured-fiber degree is allowed. The difference exponents are
-fixed on a neighborhood of the chosen parameter point; degree zero and one are included. -/
+independent of the parameter throughout the base; degree zero and one are included. -/
 theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     (hU : IsOpen U) (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
     (hdvd : d.factorial ∣ n)
@@ -67,10 +70,10 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
       (∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
         Injective (fun i ↦ r i b) ∧
         F (b.1, b.2 ^ n) = C ((F (b.1, b.2 ^ n)).coeff d) * ∏ i, (X - C (r i b))) ∧
-      ∀ x ∈ U, ∀ i j : Fin d, i ≠ j → ∃ e : ℤ, ∃ w : E × ℂ → ℂ,
-        AnalyticAt ℂ w (x, 0) ∧ w (x, 0) ≠ 0 ∧
-          ∀ᶠ b in 𝓝 (x, (0 : ℂ)), w b ≠ 0 ∧
-            (b.2 ≠ 0 → r i b - r j b = b.2 ^ e * w b) := by
+      ∀ i j : Fin d, i ≠ j → ∃ e : ℤ, ∃ w : E × ℂ → ℂ,
+        AnalyticOnNhd ℂ w (U ×ˢ ball 0 R') ∧
+          (∀ b ∈ U ×ˢ ball 0 R', w b ≠ 0) ∧
+          ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), r i b - r j b = b.2 ^ e * w b := by
   have hdiscr0 : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).discr ≠ 0 := by
     intro b hb
     rw [hdiscr b hb]
@@ -82,7 +85,11 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
       hn hR hdeg hu (fun b hb ↦ hu0 b ⟨hb.1, hb.2.1⟩) hlead hg
       (fun b hb ↦ (hr b hb).2)
   refine ⟨r, g, hra, hg, hr, ?_⟩
-  intro x hx i j hij
+  intro i j hij
+  have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
+  refine TauCeti.exists_analyticOnNhd_eq_zpow_mul hU hUc isOpen_ball (mem_ball_self hR')
+    ((hra i).sub (hra j)) (fun b hb ↦ sub_ne_zero.mpr ((hr b hb).1.ne hij)) ?_
+  intro x hx
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hq : AnalyticOnNhd ℂ q (U ×ˢ ball 0 R') := fun _ _ ↦
     analyticAt_fst.prod (analyticAt_snd.pow n)
@@ -110,7 +117,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
       (F (q b)).discr = b.2 ^ (n * c) * v (q b) := by
     filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
     simpa only [q, ← pow_mul] using hdiscr _ (hqmem ⟨hb.1, hb.2, hb0⟩)
-  simpa only [sub_zero] using TauCeti.exists_root_sub_eq_zpow_mul_unit
+  obtain ⟨e, w, hw, hw0, heq⟩ := TauCeti.exists_root_sub_eq_zpow_mul_unit
     (fun k ↦ hsa k _ hx') ((hv.comp hq hqfull) _ hx')
     (by simpa only [comp_apply, q, zero_pow hn] using hv0 _ hxR)
     ((hu.comp hq hqfull) _ hx')
@@ -118,5 +125,6 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     (by simpa only [sub_zero, comp_apply] using hl)
     (by simpa only [sub_zero, comp_apply] using hD)
     (hscale'.mono fun b hb hb0 ↦ ⟨hb hb0 i, hb hb0 j⟩) hij
+  exact ⟨e, w, hw, hw0, heq.mono fun b hb hb0 ↦ by simpa only [sub_zero] using hb.2 hb0⟩
 
 end TauCeti.Polynomial

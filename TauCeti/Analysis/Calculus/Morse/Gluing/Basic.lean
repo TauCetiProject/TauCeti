@@ -197,7 +197,8 @@ the entrance face `‖x‖ = ε` over the closed ball of radius `r₀ * ε` of t
 contracting factor, with `g` and `k` Lipschitz with constants `Kg` and `Kk`. If `r₀ ≤ 1` and
 `Kk * Kg * r₀ ^ 2 < 1`, then the points `z` of the first disc with `‖z.snd‖ ≤ r₀ * ε` whose passage
 through the box lies on the second disc are exactly the points `(g (r • w r), r • w r)` for
-`0 < r ≤ r₀`, where `w` is Lipschitz on `[0, r₀]`, has norm `ε` there, and starts at `w 0 = k 0`.
+`0 < r ≤ r₀`, where `w` is Lipschitz on `[0, r₀]`, has norm `ε` there, starts at `w 0 = k 0`,
+and satisfies the matching equation `k (r • g (r • w r)) = w r` throughout that interval.
 
 So these orbits form one continuous family, indexed by the gluing parameter `r = ‖z.snd‖ / ε`. By
 `TauCeti.splitPassage_toLp_smul`, the exit point of the orbit with parameter `r` is
@@ -212,12 +213,14 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     (hε : 0 < ε) (hr₀ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
     ∃ w : ℝ → Eᵤ, LipschitzOnWith (Kk * ((1 + Kg) * ε) / (1 - Kk * Kg * r₀ ^ 2)).toNNReal w
         (Icc 0 r₀) ∧ w 0 = k 0 ∧ (∀ r ∈ Icc 0 r₀, ‖w r‖ = ε) ∧
+      (∀ r ∈ Icc 0 r₀, k (r • g (r • w r)) = w r) ∧
       {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g z.snd ∧
           (splitPassage ε z).snd = k (splitPassage ε z).fst} =
         (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀ := by
   rcases lt_or_ge r₀ 0 with hr₀0 | hr₀0
   · -- With a negative radius both sides are empty.
     refine ⟨fun _ ↦ k 0, by rw [Icc_eq_empty hr₀0.not_ge]; exact lipschitzOnWith_empty _ _, rfl,
+      fun r hr ↦ absurd (hr.1.trans hr.2) hr₀0.not_ge,
       fun r hr ↦ absurd (hr.1.trans hr.2) hr₀0.not_ge, ?_⟩
     rw [Ioc_eq_empty hr₀0.not_gt, image_empty, eq_empty_iff_forall_notMem]
     rintro z ⟨-, hz, -⟩
@@ -236,7 +239,8 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
   have hwnorm (r : ℝ) (hr : r ∈ Icc 0 r₀) : ‖w r‖ = ε := by
     rw [← (hw r hr).2]
     exact norm_gluing_eq hgε hkε hr (mem_closedBall_zero_iff.1 (hw r hr).1)
-  refine ⟨w, lipschitzOnWith_gluing_fixedPt hg hgε hk hkε hr₀ hK hw, ?_, hwnorm, ?_⟩
+  refine ⟨w, lipschitzOnWith_gluing_fixedPt hg hgε hk hkε hr₀ hK hw, ?_, hwnorm,
+    fun r hr ↦ (hw r hr).2, ?_⟩
   · have h := (hw 0 (left_mem_Icc.2 hr₀0)).2
     simp only [zero_smul] at h
     exact h.symm

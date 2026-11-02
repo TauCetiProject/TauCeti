@@ -6,19 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Cast
+public import Mathlib.Combinatorics.Quiver.Path.Vertices
 
 /-!
 # Prefunctors on paths and on vertices
 
 Elementary facts about a prefunctor `φ : Q ⥤q R` which `Prefunctor.mapPath` and `Prefunctor.comp`
-leave unrecorded: pushing a path along `φ` preserves its length, a prefunctor with a two-sided
-inverse is bijective on vertices, a pair of composable one-sided inverse pairs composes to a
-one-sided inverse pair, and a prefunctor that undoes another on vertices and arrows also undoes
-it on paths.
+leave unrecorded: pushing a path along `φ` preserves its length and maps its vertices along
+`φ.obj`, a prefunctor with a two-sided inverse is bijective on vertices, a pair of composable
+one-sided inverse pairs composes to a one-sided inverse pair, and a prefunctor that undoes another
+on vertices and arrows also undoes it on paths.
 
 ## Main results
 
 * `Prefunctor.length_mapPath`: pushing a path along a prefunctor preserves its length.
+* `Prefunctor.vertices_mapPath`: the vertices of the pushed path are the images of the vertices of
+  the original path.
 * `Prefunctor.obj_bijective_of_comp_eq_id`: mutually inverse prefunctors are bijective on vertices.
 * `Prefunctor.comp_comp_comp_eq_id`: composing two one-sided inverse pairs of prefunctors gives a
   one-sided inverse pair.
@@ -53,6 +56,14 @@ theorem _root_.Prefunctor.length_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.P
   | nil => rfl
   | cons p e ih => rw [Prefunctor.mapPath_cons, Quiver.Path.length_cons, ih,
       Quiver.Path.length_cons]
+
+/-- The vertices of a path pushed along a prefunctor are the images of its vertices, in order. -/
+@[simp]
+theorem _root_.Prefunctor.vertices_mapPath (φ : Q ⥤q R) {a b : Q} (p : Quiver.Path a b) :
+    (φ.mapPath p).vertices = p.vertices.map φ.obj := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
 
 /-- **Mutually inverse prefunctors are bijective on vertices.** -/
 theorem _root_.Prefunctor.obj_bijective_of_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q)

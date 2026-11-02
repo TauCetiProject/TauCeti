@@ -25,6 +25,8 @@ found for the two directions (`TauCeti.exists_strongDual_neg_pos_ne_zero`).
   only at their common vertex.
 * `TauCeti.zero_notMem_segment_of_affineSegment_inter_eq`: two segments from `z` meeting only at
   `z` point in directions not on a common ray.
+* `Set.EqOn.image_Icc_eq_segment`: a map of the line that is affine on `[a, b]` sends it onto the
+  segment between the images of the endpoints.
 -/
 
 public section
@@ -75,5 +77,13 @@ theorem zero_notMem_segment_of_affineSegment_inter_eq {a b z : P} (ha : a ≠ z)
     · linarith
     · exact ha (vsub_eq_zero_iff_eq.1 he)
   · exact hb (vsub_eq_zero_iff_eq.1 hm)
+
+/-- A map of the line that agrees with an affine map on `[a, b]` sends `[a, b]` onto the segment
+between the images of its endpoints. -/
+theorem _root_.Set.EqOn.image_Icc_eq_segment {g : k → V} {A : k →ᵃ[k] V} {a b : k}
+    (hA : Set.EqOn g A (Set.Icc a b)) (hab : a ≤ b) :
+    g '' Set.Icc a b = segment k (g a) (g b) := by
+  rw [hA.image_eq, ← segment_eq_Icc hab, hA ⟨le_rfl, hab⟩, hA ⟨hab, le_rfl⟩]
+  exact image_segment k A _ _
 
 end TauCeti

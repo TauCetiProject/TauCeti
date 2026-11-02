@@ -110,6 +110,8 @@ or simple.
 * `TauCeti.GraphTwistedIndex.steinberg_eq_graphAut_comp_frobenius` and
   `TauCeti.GraphTwistedIndex.steinberg_eq_frobenius_comp_graphAut`: the Steinberg endomorphism is
   the composite of the two factors, in either order.
+* `TauCeti.GraphTwistedIndex.iterate_steinberg_twistOrder`: the `t`-th iterate of the Steinberg
+  endomorphism is the `t`-th iterate of the Frobenius, for `t` the twist order of the index.
 * `TauCeti.GraphTwistedIndex.steinberg_eq_frobenius` and
   `TauCeti.GraphTwistedIndex.graphAut_eq_one_of_twistOrder_eq_one`: on an untwisted index the
   Steinberg endomorphism is the Frobenius and the graph factor is trivial.
@@ -1105,6 +1107,23 @@ commuting. -/
 theorem steinberg_eq_frobenius_comp_graphAut (d : GraphTwistedIndex) :
     d.steinberg = d.frobenius.comp d.graphAut.toMonoidHom := by
   rw [steinberg_eq_graphAut_comp_frobenius, graphAut_comp_frobenius]
+
+/-- **The twist-order iterate of the Steinberg endomorphism is that iterate of the Frobenius**:
+`F ^ t = Frob_q ^ t`, for `t` the twist order of the index. The graph automorphism commutes with
+the Frobenius and its `t`-th power is trivial, so it drops out of the iterate. On the nine untwisted
+families `t = 1`, and on the four graph-twisted ones this iterate raises every matrix entry to the
+power `q ^ t`. -/
+theorem iterate_steinberg_twistOrder (d : GraphTwistedIndex) :
+    (⇑d.steinberg)^[d.twistOrder] = (⇑d.frobenius)^[d.twistOrder] := by
+  have hcomm : Function.Commute ⇑d.graphAut ⇑d.frobenius := fun g =>
+    DFunLike.congr_fun d.graphAut_comp_frobenius g
+  -- The order relation is read through `MulAut.toPerm`, whose powers are iterates.
+  have hid : (⇑d.graphAut)^[d.twistOrder] = id := by
+    have h := congrArg (fun e : Equiv.Perm d.AmbientGroup => ⇑e)
+      (congrArg (MulAut.toPerm d.AmbientGroup) d.graphAut_pow_twistOrder)
+    rwa [map_pow, map_one, Equiv.Perm.coe_pow, Equiv.Perm.coe_one] at h
+  rw [steinberg_eq_graphAut_comp_frobenius, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom,
+    hcomm.comp_iterate, hid, Function.id_comp]
 
 /-- The fixed subgroup of the Steinberg endomorphism of an ordinary or graph-twisted index. -/
 abbrev FixedPoints (d : GraphTwistedIndex) : Type := ↥(fixedSubgroup d.steinberg)

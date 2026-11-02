@@ -40,21 +40,32 @@ theorem segmentAverage_eq_integral_Icc (w : ℝ → ℝ) (g : E → F) (x : E) :
   rw [segmentAverage, intervalIntegral.integral_of_le zero_le_one,
     ← integral_Icc_eq_integral_Ioc]
 
-/-- A weighted segment average is `C^n` in its displacement when the integrand is `C^n` and the
-weight is interval integrable. -/
-theorem ContDiff.contDiff_segmentAverage {n : ℕ∞} {w : ℝ → ℝ} {g : E → F}
+/-- Weighted segment averages of a jointly `C^n` family are jointly `C^n` in the parameter and
+the displacement. -/
+theorem ContDiff.contDiff_segmentAverage_param
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : ℕ∞} {w : ℝ → ℝ} {g : P × E → F}
     (hg : ContDiff ℝ n g) (hw : IntervalIntegrable w volume 0 1) (x : E) :
-    ContDiff ℝ n (segmentAverage w g x) := by
+    ContDiff ℝ n (fun p : P × E ↦ segmentAverage w (fun y ↦ g (p.1, y)) x p.2) := by
   have hwi : IntegrableOn w (Set.Icc (0 : ℝ) 1) :=
     (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).mp hw
   rw [← contDiffOn_univ]
   refine (TauCeti.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp hwi)
     continuous_subtype_val isOpen_univ
-    ((hg.comp (by fun_prop : ContDiff ℝ n (fun p : E × ℝ ↦ x + p.2 • p.1))).contDiffOn)
+    ((hg.comp (by fun_prop :
+      ContDiff ℝ n (fun p : (P × E) × ℝ ↦ (p.1.1, x + p.2 • p.1.2)))).contDiffOn)
     isOpen_univ (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_
   rw [segmentAverage, TauCeti.intervalIntegral_eq_integral_unitInterval]
   rfl
+
+/-- A weighted segment average is `C^n` in its displacement when the integrand is `C^n` and the
+weight is interval integrable. -/
+theorem ContDiff.contDiff_segmentAverage {n : ℕ∞} {w : ℝ → ℝ} {g : E → F}
+    (hg : ContDiff ℝ n g) (hw : IntervalIntegrable w volume 0 1) (x : E) :
+    ContDiff ℝ n (segmentAverage w g x) := by
+  exact ((hg.comp contDiff_snd).contDiff_segmentAverage_param hw x).comp
+    (contDiff_const.prodMk contDiff_id : ContDiff ℝ n (fun v : E ↦ ((0 : E), v)))
 
 /-- A continuous linear map commutes with a weighted segment average. -/
 theorem ContinuousLinearMap.segmentAverage_apply

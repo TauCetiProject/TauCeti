@@ -83,15 +83,16 @@ theorem hasDerivAt_christoffelFirstKind_family (hg : ContDiffAt ℝ 2 (Function.
     (hg.eventually (by simp)).mono fun _ hp ↦ hp.differentiableAt two_ne_zero
   -- Near `t`, the Christoffel symbols of `g_s` are built from spatial derivatives of `F` and `G`.
   have hslice : (fun s ↦ christoffelFirstKind (g s) x u v) =ᶠ[𝓝 t]
-      fun s ↦ (2⁻¹ : ℝ) • (spatialFDeriv F x s u v + spatialFDeriv F x s v u -
-        spatialFDeriv G x s) := by
+      fun s ↦ (2⁻¹ : ℝ) •
+        (spatialFDeriv (𝕜 := ℝ) F x s u v + spatialFDeriv (𝕜 := ℝ) F x s v u -
+        spatialFDeriv (𝕜 := ℝ) G x s) := by
     filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hdiff] with s hs
     rw [id_eq] at hs
     have hGs : DifferentiableAt ℝ G (s, x) :=
       (hs.clm_apply (differentiableAt_const u)).clm_apply (differentiableAt_const v)
     have hgs : DifferentiableAt ℝ (g s) x := by
       simpa [F, Function.uncurry_apply_pair] using
-        (hasFDerivAt_timeSlice (F := F) hs).differentiableAt
+        (hasFDerivAt_timeSlice (𝕜 := ℝ) (F := F) hs).differentiableAt
     rw [christoffelFirstKind_eq_of_differentiableAt hgs, ← fderiv_timeSlice (F := F) hs,
       ← fderiv_timeSlice (F := G) hGs]
     simp only [F, G, Function.uncurry_apply_pair]

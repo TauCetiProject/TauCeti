@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -211,5 +211,38 @@ theorem IsConstantCurvatureTensor.curvatureTensor_eq
   exact Bundle.RiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
     g.toRiemannianMetric (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
     (by simpa only [IsConstantCurvatureTensor] using h) x w u v
+
+/-- If the installed fibre metric is `g`, the curvature tensor of the Levi-Civita connection is
+that of `g` installed explicitly. This transports curvature along an equality of fibre metrics,
+such as `Bundle.ContMDiffRiemannianMetric.rescale_one`, which cannot be rewritten inside the
+instance-dependent arguments. -/
+theorem curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) =
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
+
+/-- If the installed fibre metric is `g`, then `g` has constant-curvature tensor `κ` exactly when
+the Levi-Civita connection satisfies the constant-curvature equation for the installed inner
+product. This transports the predicate along an equality of fibre metrics, such as
+`Bundle.ContMDiffRiemannianMetric.toRiemannianMetric_ofLE`. -/
+theorem isConstantCurvatureTensor_iff_of_riemannianBundle_eq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (κ : ℝ) :
+    g.IsConstantCurvatureTensor κ ↔
+      ∀ (x : M) (w u v : TangentSpace I x),
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
+          κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
 
 end Bundle.ContMDiffRiemannianMetric

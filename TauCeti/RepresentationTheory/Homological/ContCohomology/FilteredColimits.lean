@@ -55,6 +55,8 @@ filtered colimits of smooth discrete representations.
   from some stage.
 * `TauCeti.ContinuousCohomology.exists_coeffMap_eq_zero_of_isColimit`: a class at some stage that
   vanishes in the colimit vanishes at a deeper stage.
+* `TauCeti.ContinuousCohomology.exists_coeffMap_eq_coeffMap_of_isColimit`: two classes with the
+  same image in the colimit agree at a common deeper stage.
 * `TauCeti.ContinuousCohomology.isColimitMapCoconeOfIsColimitForget`: the image of the cocone under
   `Hⁿ(G, -)` is a colimit in `TopModuleCat k`.
 * `TauCeti.ContinuousCohomology.continuousCohomology_preservesFilteredColimits`: `Hⁿ(G, -)`
@@ -103,13 +105,13 @@ private theorem resolutionMap_map_comp_apply {i j l : J} (f : i ⟶ j) (g : j �
       (resolutionMap (ContinuousMonoidHom.id G) (X.map (f ≫ g)).hom m).hom y :=
   resolutionMap_id_apply_of_comp_eq _ _ (congrArg (·.hom) (X.map_comp f g).symm) m y
 
-variable [CompactSpace G] [IsFiltered J]
+variable [CompactSpace G]
   (hc : IsColimit ((smoothDiscreteι k G ⋙ forget (TopRep k G)).mapCocone c))
 include hc
 
 /-- **Descent of resolution elements.** Every element of the coinduced resolution
 `C(G, C(G, …, colim_j X_j))` comes from some stage of the diagram. -/
-private theorem exists_resolutionMap_eq :
+private theorem exists_resolutionMap_eq [IsFiltered J] :
     ∀ (m : ℕ) (x : (TopRep.resolutionX c.pt.obj m).V),
       ∃ (j : J) (y : (TopRep.resolutionX (X.obj j).obj m).V),
         (resolutionMap (ContinuousMonoidHom.id G) (c.ι.app j).hom m).hom y = x
@@ -137,7 +139,7 @@ private theorem exists_resolutionMap_eq :
 /-- **Vanishing descends through the colimit.** An element of the coinduced resolution
 `C(G, C(G, …, X_j))` whose image in `C(G, C(G, …, colim_j X_j))` vanishes already vanishes at some
 deeper stage of the diagram. -/
-private theorem exists_resolutionMap_eq_zero :
+private theorem exists_resolutionMap_eq_zero [IsFilteredOrEmpty J] :
     ∀ (m : ℕ) {j : J} (y : (TopRep.resolutionX (X.obj j).obj m).V),
       (resolutionMap (ContinuousMonoidHom.id G) (c.ι.app j).hom m).hom y = 0 →
         ∃ (l : J) (f : j ⟶ l), (resolutionMap (ContinuousMonoidHom.id G) (X.map f).hom m).hom y = 0
@@ -169,7 +171,7 @@ private theorem exists_resolutionMap_eq_zero :
 
 /-- **Descent of homogeneous cochains.** Every homogeneous cochain with values in the colimit is
 the image of a homogeneous cochain at some stage of the diagram. -/
-private theorem exists_cochainsMap_f_eq (n : ℕ)
+private theorem exists_cochainsMap_f_eq [IsFiltered J] (n : ℕ)
     (x : (TopRep.homogeneousCochains c.pt.obj).X n) :
     ∃ (j : J) (y : (TopRep.homogeneousCochains (X.obj j).obj).X n),
       (cochainsMap (ContinuousMonoidHom.id G) (c.ι.app j).hom).f n y = x := by
@@ -204,7 +206,7 @@ private theorem exists_cochainsMap_f_eq (n : ℕ)
 
 /-- A homogeneous cochain at some stage whose image in the colimit vanishes already vanishes at
 some deeper stage of the diagram. -/
-private theorem exists_cochainsMap_f_eq_zero (n : ℕ) {j : J}
+private theorem exists_cochainsMap_f_eq_zero [IsFilteredOrEmpty J] (n : ℕ) {j : J}
     (y : (TopRep.homogeneousCochains (X.obj j).obj).X n)
     (hy : (cochainsMap (ContinuousMonoidHom.id G) (c.ι.app j).hom).f n y = 0) :
     ∃ (l : J) (f : j ⟶ l), (cochainsMap (ContinuousMonoidHom.id G) (X.map f).hom).f n y = 0 := by
@@ -237,7 +239,7 @@ private theorem coeffMap_map_comp_apply {i j l : J} (f : i ⟶ j) (g : j ⟶ l) 
   rw [← ConcreteCategory.comp_apply, ← coeffMap_comp,
     ← ObjectProperty.FullSubcategory.comp_hom, ← X.map_comp]
 
-variable [CompactSpace G] [IsFiltered J]
+variable [CompactSpace G]
   (hc : IsColimit ((smoothDiscreteι k G ⋙ forget (TopRep k G)).mapCocone c))
 include hc
 
@@ -245,7 +247,8 @@ include hc
 discrete representations whose cocone `c` is a colimit on underlying sets, every class of
 `Hⁿ(G, c.pt)` is the image of a class of `Hⁿ(G, X_j)` for some stage `j`. A representing cocycle
 is itself the image of a cocycle at some stage, with no coboundary subtracted. -/
-theorem exists_coeffMap_eq_of_isColimit {n : ℕ} (x : continuousCohomology n c.pt.obj) :
+theorem exists_coeffMap_eq_of_isColimit [IsFiltered J] {n : ℕ}
+    (x : continuousCohomology n c.pt.obj) :
     ∃ (j : J) (y : continuousCohomology n (X.obj j).obj),
       (coeffMap (c.ι.app j).hom n).hom y = x := by
   set K := TopRep.homogeneousCochains c.pt.obj
@@ -275,10 +278,12 @@ theorem exists_coeffMap_eq_of_isColimit {n : ℕ} (x : continuousCohomology n c.
 
 /-- **Vanishing descends.** For a compact group `G` and a filtered diagram of smooth discrete
 representations whose cocone `c` is a colimit on underlying sets, a class of `Hⁿ(G, X_j)` whose
-image in `Hⁿ(G, c.pt)` vanishes already vanishes in `Hⁿ(G, X_l)` for some stage `l` under `j`. -/
-theorem exists_coeffMap_eq_zero_of_isColimit {n : ℕ} {j : J}
+image in `Hⁿ(G, c.pt)` vanishes already vanishes in `Hⁿ(G, X_l)` for some stage `l` under `j`.
+No separate nonemptiness assumption on the index category is needed, since `j` is given. -/
+theorem exists_coeffMap_eq_zero_of_isColimit [IsFilteredOrEmpty J] {n : ℕ} {j : J}
     (y : continuousCohomology n (X.obj j).obj) (hy : (coeffMap (c.ι.app j).hom n).hom y = 0) :
     ∃ (l : J) (f : j ⟶ l), (coeffMap (X.map f).hom n).hom y = 0 := by
+  have : IsFiltered J := { nonempty := ⟨j⟩ }
   set K := TopRep.homogeneousCochains c.pt.obj
   obtain ⟨z, rfl⟩ := (X.obj j).obj.homogeneousCochains.homologyπ_surjective n y
   obtain ⟨m, hm⟩ : ∃ m, (ComplexShape.up ℕ).prev n = m := ⟨_, rfl⟩
@@ -324,10 +329,12 @@ theorem exists_coeffMap_eq_zero_of_isColimit {n : ℕ} {j : J}
   exact h.trans (hf.symm.trans
     (cochainsMap_id_apply_of_comp_eq _ _ (congrArg (·.hom) (X.map_comp a f).symm) n _))
 
-/-- Two classes at two stages with the same image in `Hⁿ(G, c.pt)` agree at a common deeper
-stage. -/
-private theorem exists_coeffMap_eq_coeffMap_of_isColimit {n : ℕ} {i j : J}
-    (yi : continuousCohomology n (X.obj i).obj) (yj : continuousCohomology n (X.obj j).obj)
+/-- **Equality descends.** For a compact group `G` and a filtered diagram of smooth discrete
+representations whose cocone `c` is a colimit on underlying sets, two classes at two stages with
+the same image in `Hⁿ(G, c.pt)` agree at a common deeper stage. -/
+theorem exists_coeffMap_eq_coeffMap_of_isColimit [IsFilteredOrEmpty J] {n : ℕ}
+    {i j : J} (yi : continuousCohomology n (X.obj i).obj)
+    (yj : continuousCohomology n (X.obj j).obj)
     (h : (coeffMap (c.ι.app i).hom n).hom yi = (coeffMap (c.ι.app j).hom n).hom yj) :
     ∃ (l : J) (f : i ⟶ l) (g : j ⟶ l),
       (coeffMap (X.map f).hom n).hom yi = (coeffMap (X.map g).hom n).hom yj := by
@@ -343,7 +350,7 @@ private theorem exists_coeffMap_eq_coeffMap_of_isColimit {n : ℕ} {i j : J}
     coeffMap_map_comp_apply (X := X) b f] at hf
   exact hf
 
-variable (n : ℕ) [UnivLE.{w', u}] [UnivLE.{w, u}]
+variable (n : ℕ) [IsFiltered J] [UnivLE.{w', u}] [UnivLE.{w, u}]
 
 /-- **Continuous cohomology of a compact group commutes with filtered colimits of smooth discrete
 coefficients.** For a compact group `G` and a filtered diagram of smooth discrete representations

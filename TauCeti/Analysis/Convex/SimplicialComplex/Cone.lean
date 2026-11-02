@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
+public import TauCeti.Analysis.Convex.SimplicialComplex.Restrict
 import Mathlib.Analysis.Convex.Between
 import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Intrinsic
@@ -49,6 +50,10 @@ triangulations.
 * `Geometry.SimplicialComplex.space_cone`: `|pK| = {p} ∪ convexJoin {p} |K|`.
 * `Geometry.SimplicialComplex.le_cone` and `mem_cone_faces_iff_of_notMem`: the faces of the cone
   not containing the apex are exactly the faces of `K`.
+* `Geometry.SimplicialComplex.restrict_cone`: the cone has the same restriction as `K` to any set
+  avoiding the apex.
+* `Geometry.SimplicialComplex.erase_mem_faces_of_mem_convexHull`: a point of `|K|` carried by a
+  face of the cone is carried by the opposite face of `K`.
 * `Geometry.SimplicialComplex.space_cone_of_space_eq_intrinsicFrontier`: coning a triangulation
   of the intrinsic frontier of a compact convex set to an intrinsic interior point triangulates
   the whole set.
@@ -248,10 +253,31 @@ theorem mem_cone_faces_iff_of_notMem (hs : p ∉ s) : s ∈ (K.cone p h).faces �
 theorem le_cone : K ≤ K.cone p h := fun _ hs =>
   (mem_cone_faces_iff_of_notMem h (h.notMem_of_mem_faces hs)).2 hs
 
+/-- Coning to an apex outside `B` does not change the faces with all vertices in `B`: the cone
+retains the restriction of `K` to `B`, for instance a prescribed triangulation of a face of a
+convex body whose boundary is coned to an interior point. -/
+theorem restrict_cone {B : Set E} (hpB : p ∉ B) : (K.cone p h).restrict B = K.restrict B := by
+  ext s
+  simp only [mem_restrict_faces]
+  exact ⟨fun ⟨hs, hsB⟩ => ⟨(mem_cone_faces_iff_of_notMem h fun hp => hpB (hsB hp)).1 hs, hsB⟩,
+    fun ⟨hs, hsB⟩ => ⟨le_cone h hs, hsB⟩⟩
+
 /-- Adjoining the apex to a face of `K` gives a face of the cone. -/
 theorem insert_mem_cone_faces (hs : s ∈ K.faces) : insert p s ∈ (K.cone p h).faces := by
   rw [mem_cone_faces, erase_insert (h.notMem_of_mem_faces hs)]
   exact ⟨insert_nonempty _ _, .inr hs⟩
+
+/-- A point of `|K|` in the convex hull of a face `s` of the cone lies in the convex hull of the
+face `s.erase p` of `K` opposite the apex. -/
+theorem erase_mem_faces_of_mem_convexHull (hs : s ∈ (K.cone p h).faces)
+    (hx : x ∈ convexHull 𝕜 (s : Set E)) (hxK : x ∈ K.space) :
+    s.erase p ∈ K.faces ∧ x ∈ convexHull 𝕜 (s.erase p : Set E) := by
+  have hxs : x ∈ convexHull 𝕜 (insert p (s.erase p : Set E)) :=
+    convexHull_mono (by exact_mod_cast insert_erase_subset p s) hx
+  have hx' := h.mem_convexHull_of_mem_convexHull_insert hs.2 hxs hxK
+  rcases hs.2 with he | he
+  · simp [he] at hx'
+  · exact ⟨he, hx'⟩
 
 /-- The vertices of the cone are the apex together with the vertices of `K`. -/
 @[simp]

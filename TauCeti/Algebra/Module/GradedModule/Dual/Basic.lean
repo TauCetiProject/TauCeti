@@ -16,11 +16,12 @@ has degree `p` when it is supported on the original degree `-p` piece, and restr
 that degree with the linear dual of `G.piece (-p)`. Consequently, evaluation can be nonzero only on
 degrees summing to zero.
 
-The homogeneous pieces exhaust the dual as soon as the grading has only finitely many nonzero
-pieces, and no projectivity is needed for that. Finite generation of the module is one source of
-the hypothesis, through `InternalGrading.finite_piece_ne_bot`, and the dual grading inherits it
-through `InternalGrading.finite_dualPiece_ne_bot`. Tensor-duality comparisons use the
-finite-projectivity hypotheses needed to identify duals of tensor products.
+The homogeneous pieces exhaust the dual as soon as only finitely many dual pieces are nonzero,
+and no projectivity is needed for that. This holds whenever the original grading has finitely many
+nonzero pieces, through `InternalGrading.finite_dualPiece_ne_bot`; finite generation of the module
+is one source of this stronger hypothesis, through `InternalGrading.finite_piece_ne_bot`.
+Tensor-duality comparisons use the finite-projectivity hypotheses needed to identify duals of
+tensor products.
 
 The construction follows the graded-dual convention used for DG and `A∞` objects in B. Keller,
 *Introduction to A-infinity algebras and modules*, Sections 3 and 7.
@@ -30,8 +31,8 @@ The construction follows the graded-dual convention used for DG and `A∞` objec
 * `InternalGrading.dualPiece`: the degree-`p` submodule of the linear dual.
 * `InternalGrading.dualPieceEquiv`: the identification of that submodule with the linear dual of the
   original degree-`-p` piece, by restriction.
-* `InternalGrading.dual`: the internal grading of the linear dual of a module whose grading has
-  finitely many nonzero pieces.
+* `InternalGrading.dual`: the internal grading of the linear dual when only finitely many dual
+  pieces are nonzero.
 
 ## Main results
 
@@ -170,21 +171,28 @@ theorem finite_dualPiece_ne_bot (G : InternalGrading R M) (hG : {p | G.piece p �
     ⟨-p, fun h ↦ hp (G.dualPiece_eq_bot_of_piece_eq_bot h), neg_neg p⟩
 
 private theorem iSup_dualPiece_eq_top (G : InternalGrading R M)
-    (hG : {p | G.piece p ≠ ⊥}.Finite) : ⨆ p, G.dualPiece p = ⊤ := by
+    (hD : {p | G.dualPiece p ≠ ⊥}.Finite) : ⨆ p, G.dualPiece p = ⊤ := by
   classical
   refine top_unique fun φ _ ↦ ?_
-  have hφ : ∑ p ∈ hG.toFinset,
-      LinearMap.comp φ ((G.piece p).subtype ∘ₗ projection G p) = φ := by
-    refine LinearMap.ext fun x ↦ ?_
-    simp only [LinearMap.sum_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-      projection_apply]
-    rw [← map_sum, G.sum_decompose_toFinset hG x]
+  let φp (p : ℤ) : G.dualPiece p :=
+    (G.dualPieceEquiv p).symm (φ ∘ₗ (G.piece (-p)).subtype)
+  have hφ : ∑ p ∈ hD.toFinset, (φp p : Module.Dual R M) = φ := by
+    apply G.linearMap_ext
+    intro q x hx
+    simp only [LinearMap.sum_apply]
+    rw [Finset.sum_eq_single (-q)]
+    · simp only [φp, dualPieceEquiv_symm_apply, LinearMap.comp_apply,
+        Submodule.subtype_apply]
+      rw [neg_neg, DirectSum.decompose_of_mem_same G.piece hx]
+    · intro p _ hp
+      exact G.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero (φp p).2 hx (by omega)
+    · intro hq
+      have hbot : G.dualPiece (-q) = ⊥ := by simpa using hq
+      have hzero : (φp (-q) : Module.Dual R M) = 0 := by
+        simpa only [hbot, Submodule.mem_bot] using (φp (-q)).2
+      rw [hzero, LinearMap.zero_apply]
   rw [← hφ]
-  refine Submodule.sum_mem _ fun p _ ↦ le_iSup (fun q ↦ G.dualPiece q) (-p) ?_
-  rw [mem_dualPiece_iff]
-  intro q x hx hq
-  simp only [LinearMap.comp_apply, Submodule.subtype_apply, projection_apply]
-  rw [DirectSum.decompose_of_mem_ne G.piece hx (by simpa using hq), map_zero]
+  exact Submodule.sum_mem _ fun p _ ↦ le_iSup G.dualPiece p (φp p).2
 
 /-- The direct sum of dual pieces embeds in the full linear dual without a finiteness hypothesis. -/
 private theorem coeLinearMap_dualPiece_injective (G : InternalGrading R M) :
@@ -217,12 +225,11 @@ theorem iSupIndep_dualPiece (G : InternalGrading R M) :
     iSupIndep G.dualPiece :=
   iSupIndep_of_dfinsupp_lsum_injective _ (coeLinearMap_dualPiece_injective G)
 
-/-- The internal grading on the linear dual of a module whose grading has only finitely many
-nonzero pieces.
+/-- The internal grading on the linear dual when only finitely many dual pieces are nonzero.
 
 The degree is reversed: a functional of degree `p` is supported on the original degree `-p`
 piece. -/
-noncomputable def dual (G : InternalGrading R M) (hG : {p | G.piece p ≠ ⊥}.Finite) :
+noncomputable def dual (G : InternalGrading R M) (hD : {p | G.dualPiece p ≠ ⊥}.Finite) :
     InternalGrading R (Module.Dual R M) where
   piece := G.dualPiece
   isInternal := by
@@ -232,24 +239,24 @@ noncomputable def dual (G : InternalGrading R M) (hG : {p | G.piece p ≠ ⊥}.F
     · exact coeLinearMap_dualPiece_injective G
     · have hsurj : Function.Surjective (DirectSum.coeLinearMap G.dualPiece) := by
         rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap,
-          G.iSup_dualPiece_eq_top hG]
+          G.iSup_dualPiece_eq_top hD]
       exact hsurj
 
 /-- The degree-`p` piece of the dual grading is `dualPiece G p`. -/
 @[simp]
-theorem dual_piece (G : InternalGrading R M) (hG : {p | G.piece p ≠ ⊥}.Finite) (p : ℤ) :
-    (G.dual hG).piece p = G.dualPiece p :=
+theorem dual_piece (G : InternalGrading R M) (hD : {p | G.dualPiece p ≠ ⊥}.Finite) (p : ℤ) :
+    (G.dual hD).piece p = G.dualPiece p :=
   (rfl)
 
 /-- On the degree-`q` piece a functional agrees with its own degree-`-q` homogeneous component for
 the dual grading: all the other components vanish there. -/
 theorem dual_decompose_apply_of_mem_piece (G : InternalGrading R M)
-    (hG : {p | G.piece p ≠ ⊥}.Finite) (φ : Module.Dual R M) {q : ℤ} {x : M}
+    (hD : {p | G.dualPiece p ≠ ⊥}.Finite) (φ : Module.Dual R M) {q : ℤ} {x : M}
     (hx : x ∈ G.piece q) :
-    ((DirectSum.decompose (G.dual hG).piece φ (-q) : (G.dual hG).piece (-q)) :
+    ((DirectSum.decompose (G.dual hD).piece φ (-q) : (G.dual hD).piece (-q)) :
       Module.Dual R M) x = φ x := by
   symm
-  exact (G.dual hG).map_eq_map_decompose (LinearMap.applyₗ x).toAddMonoidHom
+  exact (G.dual hD).map_eq_map_decompose (LinearMap.applyₗ x).toAddMonoidHom
     (fun p ψ hψ hp ↦ dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero G
       (by simpa only [dual_piece] using hψ) hx (by omega)) φ
 
@@ -257,12 +264,12 @@ theorem dual_decompose_apply_of_mem_piece (G : InternalGrading R M)
 original degree-`-p` homogeneous component. -/
 @[simp]
 theorem dual_decompose_apply (G : InternalGrading R M)
-    (hG : {p | G.piece p ≠ ⊥}.Finite) (φ : Module.Dual R M) (p : ℤ) (x : M) :
-    ((DirectSum.decompose (G.dual hG).piece φ p : (G.dual hG).piece p) :
+    (hD : {p | G.dualPiece p ≠ ⊥}.Finite) (φ : Module.Dual R M) (p : ℤ) (x : M) :
+    ((DirectSum.decompose (G.dual hD).piece φ p : (G.dual hD).piece p) :
       Module.Dual R M) x = φ (DirectSum.decompose G.piece x (-p) : M) := by
   rw [dualPiece_apply_eq_apply_decompose G
-    (by exact (DirectSum.decompose (G.dual hG).piece φ p).2)]
-  have h := dual_decompose_apply_of_mem_piece G hG φ
+    (by exact (DirectSum.decompose (G.dual hD).piece φ p).2)]
+  have h := dual_decompose_apply_of_mem_piece G hD φ
     (DirectSum.decompose G.piece x (-p)).2
   have hp : - -p = p := by omega
   rw [hp] at h

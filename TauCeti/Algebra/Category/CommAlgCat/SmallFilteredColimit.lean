@@ -19,8 +19,9 @@ import Mathlib.RingTheory.Finiteness.Small
 
 An essentially small algebra-valued diagram has a colimit algebra with canonical stage maps and
 a descent map for each cocone. When the indexing category is also filtered, every element of the
-colimit comes from some stage, and algebra maps into a target in any universe are determined
-stagewise. A compatible family of stage maps into a target in any universe descends to the colimit
+colimit comes from some stage, every finite family comes from a common stage, and algebra maps
+into a target in any universe are determined stagewise. A compatible family of stage maps into a
+target in any universe descends to the colimit
 algebra. These interfaces are shared by the henselization and strict-henselization
 constructions.
 -/
@@ -114,6 +115,21 @@ theorem exists_stage_eq [IsFiltered Index] (element : algebra functor) :
   have _ : PreservesColimitsOfShape Index (forget (CommAlgCat.{u} Base)) :=
     preservesColimitsOfShape_of_equiv equivalence.symm _
   exact Concrete.colimit_exists_rep functor element
+
+/-- Finitely many elements of a filtered colimit of algebras come from one stage. -/
+theorem exists_stage_family [IsFiltered Index] {ι : Type*} [Finite ι]
+    (elements : ι → algebra functor) :
+    ∃ (object : Index) (values : ι → functor.obj object),
+      ∀ i, stage functor object (values i) = elements i := by
+  classical
+  choose objects values hvalues using fun i ↦ exists_stage_eq functor (elements i)
+  cases nonempty_fintype ι
+  let objects' := Finset.univ.image objects
+  have hmem (i : ι) : objects i ∈ objects' :=
+    Finset.mem_image_of_mem objects (Finset.mem_univ i)
+  refine ⟨IsFiltered.sup objects' ∅,
+    fun i ↦ functor.map (IsFiltered.toSup objects' ∅ (hmem i)) (values i), fun i ↦ ?_⟩
+  rw [stage_map_apply, hvalues]
 
 /-- For a filtered diagram, algebra maps out of the colimit into a target in any universe agree
 when they agree on each stage. -/

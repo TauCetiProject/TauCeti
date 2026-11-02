@@ -35,15 +35,8 @@ theorem strictMonoOn_cdf_hyperexponentialMeasure
     (hr : ∀ i, 0 < p.weights i → 0 < r i) :
     StrictMonoOn (cdf (hyperexponentialMeasure p r)) (Ici 0) := by
   let _ := isProbabilityMeasure_hyperexponentialMeasure hr
-  intro a ha b _ hab
-  rw [← Measure.measure_Ioc_pos_iff_cdf_lt]
-  have hsupport : (a + b) / 2 ∈ (hyperexponentialMeasure p r).support := by
-    rw [support_hyperexponentialMeasure hr]
-    simp only [mem_Ici] at ha ⊢
-    linarith
-  exact ((Measure.mem_support_iff_forall _).mp hsupport (Ioo a b)
-    (Ioo_mem_nhds (by linarith) (by linarith))).trans_le
-      (measure_mono Ioo_subset_Ioc_self)
+  exact Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Ici
+    (by rw [support_hyperexponentialMeasure hr])
 
 /-- The cdf is positive exactly at positive cutoffs. -/
 @[simp]
@@ -61,10 +54,7 @@ theorem cdf_hyperexponentialMeasure_pos_iff
 /-- Every finite cutoff leaves positive upper-tail probability. -/
 theorem cdf_hyperexponentialMeasure_lt_one
     (hr : ∀ i, 0 < p.weights i → 0 < r i) (x : ℝ) :
-    cdf (hyperexponentialMeasure p r) x < 1 := by
-  have hlt := strictMonoOn_cdf_hyperexponentialMeasure hr
-    (a := max x 0) (b := max x 0 + 1) (le_max_right _ _)
-    (add_nonneg (le_max_right _ _) zero_le_one) (by linarith)
-  exact ((monotone_cdf _ (le_max_left x 0)).trans_lt hlt).trans_le (cdf_le_one _ _)
+    cdf (hyperexponentialMeasure p r) x < 1 :=
+  Measure.cdf_lt_one_of_strictMonoOn_Ici _ (strictMonoOn_cdf_hyperexponentialMeasure hr) x
 
 end TauCeti.Probability

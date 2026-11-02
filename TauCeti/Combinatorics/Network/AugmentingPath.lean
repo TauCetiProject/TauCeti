@@ -36,7 +36,8 @@ starts from it.
 
 ## Main definitions
 
-* `TauCeti.BoundedFlow.IsMaximum`: a bounded `s`–`t` assignment of largest value.
+* `TauCeti.BoundedFlow.IsMaximum` and `TauCeti.BoundedFlow.IsMinimum`: bounded `s`–`t`
+  assignments of largest and smallest value, exchanged by terminal swap.
 * `TauCeti.Flow.IsMaximum`: an ordinary `s`–`t` flow of largest value.
 * `TauCeti.Flow.AugmentsTo`: one augmentation step, along an augmenting walk by its bottleneck.
 
@@ -89,7 +90,25 @@ theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
 theorem isMaximum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMaximum :=
   isMaximum_iff.2 fun g ↦ (val_eq_zero_of_eq hst g).trans_le (val_eq_zero_of_eq hst f).ge
 
+/-- A bounded terminal assignment is minimum when no other feasible assignment has smaller
+terminal value. No sign condition is imposed on that value. -/
+def IsMinimum (f : BoundedFlow lo hi s t) : Prop :=
+  IsMinOn val Set.univ f
+
+theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
+    f.IsMinimum ↔ ∀ g : BoundedFlow lo hi s t, f.val ≤ g.val :=
+  isMinOn_univ_iff
+
+/-- When the terminals coincide, every bounded assignment is minimum. -/
+theorem isMinimum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMinimum :=
+  isMinimum_iff.2 fun g ↦ (val_eq_zero_of_eq hst f).trans_le (val_eq_zero_of_eq hst g).ge
+
 end Preorder
+
+/-- All minimum bounded terminal assignments have the same value. -/
+theorem IsMinimum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
+    {f g : BoundedFlow lo hi s t} (hf : f.IsMinimum) (hg : g.IsMinimum) : f.val = g.val :=
+  le_antisymm (isMinimum_iff.1 hf g) (isMinimum_iff.1 hg f)
 
 /-- All maximum bounded `s`–`t` assignments have the same value. -/
 theorem IsMaximum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
@@ -99,6 +118,27 @@ theorem IsMaximum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
 section PartialOrder
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {lo hi : Assignment Q K} {s t : V}
+
+/-- Exchanging the terminals exchanges minimum and maximum assignments. -/
+@[simp]
+theorem isMaximum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMaximum ↔ f.IsMinimum := by
+  rw [isMaximum_iff, isMinimum_iff]
+  constructor
+  · intro h g
+    simpa using h g.swap
+  · intro h g
+    simpa using neg_le_neg (h g.swap)
+
+/-- Exchanging the terminals exchanges maximum and minimum assignments. -/
+@[simp]
+theorem isMinimum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMinimum ↔ f.IsMaximum := by
+  rw [← isMaximum_swap, swap_swap]
+
+/-- A bounded terminal assignment attaining a lower cut bound is minimum. -/
+theorem isMinimum_of_val_eq_neg_cutBound_compl [DecidableEq V]
+    (f : BoundedFlow lo hi s t) {S : Finset V} (hs : s ∈ S) (ht : t ∉ S)
+    (h : f.val = -cutBound lo hi Sᶜ) : f.IsMinimum :=
+  isMinimum_iff.2 fun g ↦ h ▸ g.neg_cutBound_compl_le_val hs ht
 
 /-- A bounded `s`–`t` assignment whose value equals the cut bound of a vertex set containing `s`
 but not `t` is maximum. -/
@@ -173,6 +213,20 @@ theorem IsMaximum.exists_val_eq_cutBound [DecidableEq V] (hst : s ≠ t)
     {f : BoundedFlow lo hi s t} (hf : f.IsMaximum) :
     ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = cutBound lo hi S :=
   ((f.tfae_isMaximum hst).out 1 3).1 hf
+
+/-- A bounded terminal assignment is minimum exactly when its residual network has no positive
+path from the sink to the source. -/
+theorem isMinimum_iff_not_positiveReachable (hst : s ≠ t) (f : BoundedFlow lo hi s t) :
+    f.IsMinimum ↔ ¬PositiveReachable (residualCapacity lo hi f.toFun) t s := by
+  rw [← isMaximum_swap, isMaximum_iff_not_positiveReachable hst.symm, swap_toFun]
+
+/-- A minimum bounded terminal assignment attains a lower cut bound. -/
+theorem IsMinimum.exists_val_eq_neg_cutBound_compl [DecidableEq V] (hst : s ≠ t)
+    {f : BoundedFlow lo hi s t} (hf : f.IsMinimum) :
+    ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = -cutBound lo hi Sᶜ := by
+  obtain ⟨T, ht, hs, hT⟩ := ((isMaximum_swap f).2 hf).exists_val_eq_cutBound hst.symm
+  refine ⟨Tᶜ, by simpa using hs, by simpa using ht, ?_⟩
+  rw [compl_compl, ← neg_neg f.val, ← val_swap, hT]
 
 end LinearOrder
 

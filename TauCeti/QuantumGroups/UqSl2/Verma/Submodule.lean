@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.QuantumGroups.UqSl2.LadderModule
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 public import TauCeti.QuantumGroups.UqSl2.Verma.Basic
 
 import Mathlib.Tactic

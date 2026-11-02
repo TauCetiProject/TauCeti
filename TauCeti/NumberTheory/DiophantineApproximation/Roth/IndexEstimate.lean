@@ -282,7 +282,7 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
     have hsmul : (fun j ↦ m * r j.castSucc) = m • (r ∘ Fin.castSucc) := by
       ext j
       simp
-    rw [hsmul, weightedIndex_smul_weight hm0.ne', ← weightedIndex_rename (Fin.castSucc_injective _),
+    rw [hsmul, weightedIndex_smul_weight m, ← weightedIndex_rename (Fin.castSucc_injective _),
       hW, ENNReal.div_le_iff (by simpa using hm0.ne') (ENNReal.natCast_ne_top m)] at hWind
     exact hWind
   -- Upper bound for the Hasse Wronskian of the `gₖ`, by the one-variable case.
@@ -309,7 +309,7 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
     linarith)
   have hWg_le :
       weightedIndex r β (Wg.toMvPolynomial (Fin.last (n + 1))) ≤ ENNReal.ofReal σ * m := by
-    rw [weightedIndex_smul_weight hm0.ne',
+    rw [weightedIndex_smul_weight m,
       ENNReal.div_le_iff (by simpa using hm0.ne') (ENNReal.natCast_ne_top m)] at hWgind
     exact hWgind
   -- Combine the two bounds.

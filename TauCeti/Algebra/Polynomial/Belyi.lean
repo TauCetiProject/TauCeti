@@ -8,8 +8,10 @@ module
 public import TauCeti.Algebra.Polynomial.CriticalValues
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Data.Rat.AbcTriple
+import TauCeti.FieldTheory.Minpoly.BelyiReduction
 
 /-!
 # Belyi polynomials and the three-point step of Belyi's theorem
@@ -29,8 +31,15 @@ points into `{0, 1}` without creating critical values outside `{0, 1}`. Inductin
 the set gives polynomial Belyification over `ℚ`: every finite set of rational numbers is carried
 into `{0, 1}` by a nonconstant polynomial with rational coefficients whose critical values, in
 every field of characteristic zero, lie in `{0, 1}`. Being a polynomial, it also fixes `∞`.
-This is the step of Belyi's theorem that follows the reduction of algebraic branch values to
-rational ones.
+
+Preceding it by Belyi's degree reduction (`TauCeti.exists_polynomial_aeval_mem_range`), which
+carries a finite set of algebraic numbers into `ℚ` by a polynomial over `ℚ` with rational
+critical values, gives polynomial Belyification of algebraic numbers: every finite set of
+elements algebraic over `ℚ`, such as a finite subset of `AlgebraicClosure ℚ`, is carried into
+`{0, 1}` by a nonconstant polynomial over `ℚ` with all its critical values in `{0, 1}`. In terms
+of the projective line, every finite `S ⊆ ℙ¹(AlgebraicClosure ℚ)` containing `∞` is sent into
+`{0, 1, ∞}` by a polynomial `q ∈ ℚ[X]`, with `q⁻¹(∞) = {∞}` and every branch value of `q` in
+`{0, 1, ∞}`.
 
 ## Main declarations
 
@@ -44,13 +53,15 @@ rational ones.
   `{0, 1}`.
 * `TauCeti.exists_polynomial_eval_mem_criticalValues_subset`: polynomial Belyification of a
   finite set of rational numbers.
+* `TauCeti.exists_polynomial_aeval_mem_criticalValues_subset`: polynomial Belyification of a
+  finite set of algebraic numbers.
 
 ## References
 
 * G. V. Belyi, *On Galois extensions of a maximal cyclotomic field*, Izv. Akad. Nauk SSSR
   Ser. Mat. 43 (1979), 267–276.
 * Bernhard Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004),
-  253–265, Lemma 3.6.
+  253–265, Lemmas 3.5 and 3.6.
 * Ernesto Girondo and Gabino González-Diez, *Introduction to Compact Riemann Surfaces and
   Dessins d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University
   Press, 2012, §3.1.
@@ -295,6 +306,46 @@ theorem exists_polynomial_eval_mem_criticalValues_subset (S : Finset ℚ) :
     exact Nat.mul_pos hq hf
   · rw [eval_comp]
     exact hqT _ (Finset.mem_image_of_mem _ hs)
+
+/-- **Polynomial Belyification of algebraic numbers.** Every finite set `S` of elements algebraic
+over `ℚ` in a field `K`, such as a finite subset of `AlgebraicClosure ℚ`, is carried into
+`{0, 1}` by a nonconstant polynomial `q` with rational coefficients whose critical values, in
+every field of characteristic zero, lie in `{0, 1}`. -/
+theorem exists_polynomial_aeval_mem_criticalValues_subset {K : Type*} [Field K] [Algebra ℚ K]
+    {S : Finset K} (hS : ∀ s ∈ S, IsIntegral ℚ s) :
+    ∃ q : ℚ[X], 0 < q.natDegree ∧ (∀ s ∈ S, aeval s q ∈ ({0, 1} : Set K)) ∧
+      ∀ (L : Type u) [Field L] [Algebra ℚ L], q.criticalValues L ⊆ {0, 1} := by
+  -- Belyi's degree reduction carries `S` and the critical values of `p` into `ℚ`.
+  obtain ⟨p, hp', hpS, hpcrit⟩ := exists_polynomial_aeval_mem_range.{u} hS
+  -- The rational values of `p` on `S` and the rational critical values of `p` form a finite
+  -- set `T`, since the latter are among the critical values of `p` in `AlgebraicClosure ℚ`.
+  have hT₁ : (algebraMap ℚ K ⁻¹' ((fun s ↦ aeval s p) '' S)).Finite :=
+    (S.finite_toSet.image _).preimage (algebraMap ℚ K).injective.injOn
+  have hT₂ :
+      (algebraMap ℚ (AlgebraicClosure ℚ) ⁻¹' p.criticalValues (AlgebraicClosure ℚ)).Finite :=
+    (criticalValues_finite p).preimage (algebraMap ℚ _).injective.injOn
+  -- Polynomial Belyification over `ℚ` carries `T` into `{0, 1}`.
+  obtain ⟨q, hq, hqT, hqcrit⟩ :=
+    exists_polynomial_eval_mem_criticalValues_subset.{u} (hT₁.toFinset ∪ hT₂.toFinset)
+  refine ⟨q.comp p, ?_, fun s hs ↦ ?_, fun L _ _ ↦ ?_⟩
+  · rw [natDegree_comp]
+    exact Nat.mul_pos hq (Nat.pos_of_ne_zero (derivative_ne_zero.mp hp'))
+  · obtain ⟨c, hc⟩ := hpS s hs
+    rw [aeval_comp, ← hc, aeval_algebraMap_apply_eq_algebraMap_eval]
+    obtain h | h : q.eval c = 0 ∨ q.eval c = 1 :=
+      hqT c (Finset.mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨s, hs, hc.symm⟩))
+    all_goals simp [h]
+  refine (criticalValues_comp_subset q p).trans (Set.union_subset ?_ (hqcrit L))
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨x, hx, rfl⟩ := mem_criticalValues.mp hy
+  obtain ⟨c, hc⟩ := hpcrit L x (aeval_eq_zero_of_mem_rootSet hx)
+  -- A critical value `c ∈ ℚ` of `p` in `L` is one in `AlgebraicClosure ℚ`, so lies in `T`.
+  have hcT : c ∈ hT₁.toFinset ∪ hT₂.toFinset := Finset.mem_union_right _
+    ((Set.Finite.mem_toFinset _).2 (algebraMap_mem_criticalValues_of_isAlgClosed
+      (hc ▸ aeval_mem_criticalValues hx)))
+  simp only [← hc, aeval_algebraMap_apply_eq_algebraMap_eval]
+  obtain h | h : q.eval c = 0 ∨ q.eval c = 1 := hqT c hcT
+  all_goals simp [h]
 
 end Rat
 

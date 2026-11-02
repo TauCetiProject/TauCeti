@@ -56,8 +56,7 @@ namespace LocalTrivializations
 def tensorProduct (tM : LocalTrivializations.{u, v₁, u₁} M)
     (tN : LocalTrivializations.{u, v₁, u₁} N) :
     LocalTrivializations.{u, v₁, u₁} (SheafOfModules.tensorProduct R M N) := by
-  let r : CategoryTheory.GrothendieckTopology.CoversTop.CommonRefinement.{u₁, v₁, u₁, u₁}
-      J tM.X tN.X :=
+  let r :=
     CategoryTheory.GrothendieckTopology.CoversTop.commonRefinement tM.coversTop tN.coversTop
   exact
     { I := r.I

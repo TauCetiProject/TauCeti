@@ -43,6 +43,7 @@ algebras, as in Kedlaya's Lemma 4.9 for the interval rings of the Fargues–Font
 * `MvPowerSeries.hasSum_restrictedEval₂`: `f(a)` is the sum of the monomial values `φ(fₜ) aᵗ`.
 * `MvPowerSeries.restrictedEval₂_monomial`, `MvPowerSeries.restrictedEval₂_algebraMap` and
   `MvPowerSeries.restrictedEval₂_X`: the values on monomials, constants and variables.
+* `MvPowerSeries.restrictedEval₂_polynomial`: on polynomials, evaluation is `MvPolynomial.eval₂`.
 * `MvPowerSeries.norm_restrictedEval₂_le`: evaluation does not increase the Gauss norm.
 * `MvPowerSeries.eq_restrictedEval₂`: a continuous ring homomorphism out of `R{X/c}` is determined
   by its values on constants and variables.
@@ -147,6 +148,20 @@ theorem restrictedEval₂_algebraMap (r : R) :
 theorem restrictedEval₂_X (i : Fin k) :
     restrictedEval₂ φ a hφ ha ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ = a i :=
   weightedEval_X φ a i
+
+/-- **Evaluation extends polynomial evaluation**: the value of a polynomial `p` at `a` is
+`MvPolynomial.eval₂ φ a p`. -/
+@[simp]
+theorem restrictedEval₂_polynomial (p : MvPolynomial (Fin k) R) :
+    restrictedEval₂ φ a hφ ha ⟨(p : MvPowerSeries (Fin k) R), p.isRestricted c⟩ =
+      MvPolynomial.eval₂ φ a p := by
+  rw [← TauCeti.MvPowerSeries.polynomialToRestricted_apply, ← MvPolynomial.coe_eval₂Hom]
+  refine DFunLike.congr_fun (MvPolynomial.ringHom_ext
+    (f := (restrictedEval₂ φ a hφ ha).comp
+      (TauCeti.MvPowerSeries.polynomialToRestricted c).toRingHom)
+    (fun b ↦ ?_) fun i ↦ ?_) p
+  · simp [← MvPolynomial.algebraMap_eq, restrictedEval₂_algebraMap]
+  · simp [restrictedEval₂_X]
 
 variable [∀ i, Fact (0 < c i)]
 

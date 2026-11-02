@@ -22,9 +22,11 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 Mathlib's `Matrix.transvection i j c = 1 + c Eᵢⱼ` is the elementary matrix adding `c` times the
 `j`-th coordinate to the `i`-th one. For `i ≠ j` it is invertible, and Mathlib packages it as
-`Matrix.SpecialLinearGroup.transvection`, together with its zero, addition and inverse laws; this
-file views it in `GL n A` along `Matrix.SpecialLinearGroup.toGL` as `TauCeti.transvectionUnit` and
-packages the resulting one-parameter subgroup as `TauCeti.transvectionHom`.
+`Matrix.SpecialLinearGroup.transvection`, together with its zero, addition and inverse laws. This
+file packages the invertible matrix `1 + c Eᵢⱼ` in `GL n A` as `TauCeti.transvectionUnit`, over a
+possibly noncommutative ring `A`, where its inverse is `1 - c Eᵢⱼ`, and packages the resulting
+one-parameter subgroup as `TauCeti.transvectionHom`. Over a commutative ring the transvection is
+Mathlib's one viewed along `Matrix.SpecialLinearGroup.toGL`.
 
 Writing `xᵢⱼ(c)` for the transvection, the relations are
 
@@ -52,9 +54,9 @@ elementary matrices against the diagonal torus.
 
 ## Main definitions
 
-* `TauCeti.transvectionUnit`: a transvection at a pair of distinct indices, as an element of
-  `GL n A`, namely `Matrix.SpecialLinearGroup.transvection` along
-  `Matrix.SpecialLinearGroup.toGL`.
+* `TauCeti.transvectionUnit`: a transvection `1 + c Eᵢⱼ` at a pair of distinct indices, as an
+  element of `GL n A` over a ring `A`; over a commutative ring it is
+  `Matrix.SpecialLinearGroup.transvection` along `Matrix.SpecialLinearGroup.toGL`.
 * `TauCeti.transvectionHom`: the resulting homomorphism from the additive group of `A`.
 * `TauCeti.commutingTransvectionPairHom`: the product of two commuting transvection
   homomorphisms, with a shared parameter.
@@ -62,14 +64,16 @@ elementary matrices against the diagonal torus.
 
 ## Main results
 
-* `TauCeti.toGL_transvection_eq_transvectionUnit`: the defining equality relating the
-  special-linear and general-linear transvection APIs.
+* `TauCeti.toGL_transvection_eq_transvectionUnit`: over a commutative ring,
+  `TauCeti.transvectionUnit` is Mathlib's special-linear transvection viewed in `GL n A`.
 * `TauCeti.transvectionUnit_mem_of_adjacent`: a subgroup containing the adjacent transvections
   in both orientations contains every transvection.
 * `TauCeti.commute_transvectionUnit`: transvections at index pairs that do not chain commute.
 * `TauCeti.commutatorElement_transvectionUnit` and
   `TauCeti.commutatorElement_transvectionUnit_reverse`: the commutators of two chaining
   transvections in either orientation.
+* `Equiv.reindexGL_transvectionUnit`: relabelling the indices sends a transvection to the
+  transvection at the relabelled pair of indices.
 * `TauCeti.det_transvectionUnit` and `TauCeti.transvectionUnit_injective`: a transvection has
   determinant `1`, and distinct parameters give distinct transvections.
 * `TauCeti.diagGL_mul_transvectionUnit_mul_inv`: conjugation by an invertible diagonal matrix.
@@ -129,76 +133,70 @@ theorem diagonal_mul_transvection_mul_diagonal {v w : n → A} (hvw : ∀ a, v a
 
 end Products
 
-variable [CommRing A]
-
 /-! ## Transvections as invertible matrices -/
 
-section Unit
+section Ring
 
-variable [Fintype n]
+variable [Fintype n] [Ring A]
 
-/-- A transvection at a pair of distinct indices, as an element of `GL n A`: Mathlib's
-`Matrix.SpecialLinearGroup.transvection` viewed along `Matrix.SpecialLinearGroup.toGL`. It is the
-value at `c` of the root subgroup homomorphism attached to the root `εᵢ - εⱼ` of the diagonal
+/-- A transvection `1 + c Eᵢⱼ` at a pair of distinct indices, as an element of `GL n A` over a
+possibly noncommutative ring; its inverse is `1 - c Eᵢⱼ`. It is the value at `c` of the root
+subgroup homomorphism `TauCeti.transvectionHom` attached to the root `εᵢ - εⱼ` of the diagonal
 torus. -/
-def transvectionUnit (hij : i ≠ j) (c : A) : GL n A :=
-  SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij c)
+def transvectionUnit (hij : i ≠ j) (c : A) : GL n A where
+  val := 1 + single i j c
+  inv := 1 + single i j (-c)
+  val_inv := by simp [add_mul, mul_add, hij.symm, add_assoc, ← single_add]
+  inv_val := by simp [add_mul, mul_add, hij.symm, add_assoc, ← single_add]
 
-/-- The matrix underlying `TauCeti.transvectionUnit` is the transvection itself. -/
-@[simp]
-theorem coe_transvectionUnit (hij : i ≠ j) (c : A) :
-    (transvectionUnit hij c : Matrix n n A) = transvection i j c :=
+/-- The matrix underlying `TauCeti.transvectionUnit` is `1 + c Eᵢⱼ`. This is the `simp` normal
+form over a noncommutative ring; it has low priority so that over a commutative ring the
+higher-priority `TauCeti.coe_transvectionUnit` fires first and rewrites to Mathlib's
+`Matrix.transvection`, the form its transvection lemmas expect. -/
+@[simp low]
+theorem coe_transvectionUnit_eq_one_add_single (hij : i ≠ j) (c : A) :
+    (transvectionUnit hij c : Matrix n n A) = 1 + single i j c :=
   (rfl)
-
-/-- Viewing a special-linear transvection in the general linear group gives
-`TauCeti.transvectionUnit`. -/
-theorem toGL_transvection_eq_transvectionUnit (hij : i ≠ j) (c : A) :
-    SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij c) =
-      transvectionUnit hij c := by
-  apply GeneralLinearGroup.ext
-  intro p q
-  rw [SpecialLinearGroup.coe_GL_coe_matrix, coe_transvectionUnit]
-  rfl
 
 /-- The transvection of parameter zero is the identity. -/
 @[simp]
-theorem transvectionUnit_zero (hij : i ≠ j) : transvectionUnit hij (0 : A) = 1 := by
-  rw [transvectionUnit, SpecialLinearGroup.transvection_coeff_zero, map_one]
+theorem transvectionUnit_zero (hij : i ≠ j) : transvectionUnit hij (0 : A) = 1 :=
+  Units.ext (by simp [coe_transvectionUnit_eq_one_add_single])
 
 /-- The parameter of a transvection is additive: the root subgroup is one-parameter. -/
 @[simp]
 theorem transvectionUnit_add (hij : i ≠ j) (c d : A) :
-    transvectionUnit hij (c + d) = transvectionUnit hij c * transvectionUnit hij d := by
-  simp only [transvectionUnit, SpecialLinearGroup.transvection_add, map_mul]
+    transvectionUnit hij (c + d) = transvectionUnit hij c * transvectionUnit hij d :=
+  Units.ext (by
+    simp [coe_transvectionUnit_eq_one_add_single, add_mul, mul_add, hij.symm, single_add,
+      add_assoc])
 
 /-- The inverse of a transvection negates its parameter. -/
 @[simp]
 theorem transvectionUnit_inv (hij : i ≠ j) (c : A) :
-    (transvectionUnit hij c)⁻¹ = transvectionUnit hij (-c) := by
-  simp only [transvectionUnit, ← map_inv, SpecialLinearGroup.transvection_inv]
-
-/-- A transvection has determinant one, so the root subgroup lands in `SLₙ`. -/
-@[simp]
-theorem det_transvectionUnit (hij : i ≠ j) (c : A) :
-    Matrix.GeneralLinearGroup.det (transvectionUnit hij c) = 1 :=
-  SpecialLinearGroup.coeToGL_det _
+    (transvectionUnit hij c)⁻¹ = transvectionUnit hij (-c) :=
+  Units.ext (rfl)
 
 /-- The transvections at a fixed pair of distinct indices form a one-parameter subgroup of
 `GL n A`, isomorphic to the additive group of `A`. This is the root subgroup of `εᵢ - εⱼ`. -/
-def transvectionHom (hij : i ≠ j) : Multiplicative A →* GL n A :=
-  (SpecialLinearGroup.toGL (n := n) (R := A)).comp (SpecialLinearGroup.transvectionHom hij)
+def transvectionHom (hij : i ≠ j) : Multiplicative A →* GL n A where
+  toFun c := transvectionUnit hij c.toAdd
+  map_one' := transvectionUnit_zero hij
+  map_mul' c d := transvectionUnit_add hij c.toAdd d.toAdd
 
 /-- The value of the root subgroup homomorphism is the transvection of the parameter. -/
 @[simp]
 theorem transvectionHom_apply (hij : i ≠ j) (c : Multiplicative A) :
     transvectionHom hij c = transvectionUnit hij (Multiplicative.toAdd c) :=
-  by simp [transvectionHom, transvectionUnit]
+  (rfl)
 
 /-- Distinct parameters give distinct transvections: the parameter is the `(i, j)` entry. So the
 root subgroup is a copy of the additive group of `A` inside `GL n A`, not a quotient of it. -/
 theorem transvectionUnit_injective (hij : i ≠ j) :
-    Function.Injective fun c : A => transvectionUnit hij c :=
-  SpecialLinearGroup.toGL_injective.comp (SpecialLinearGroup.transvection_injective hij)
+    Function.Injective fun c : A => transvectionUnit hij c := by
+  intro c d h
+  simpa [coe_transvectionUnit_eq_one_add_single, hij] using
+    congrArg (fun u : GL n A => (u : Matrix n n A) i j) h
 
 /-- The bundled root subgroup homomorphism is injective. -/
 theorem transvectionHom_injective (hij : i ≠ j) :
@@ -211,8 +209,9 @@ theorem transvectionHom_injective (hij : i ≠ j) :
 /-- Transvections at index pairs that do not chain commute in `GL n A`. -/
 theorem commute_transvectionUnit (hij : i ≠ j) (hkl : k ≠ l) (hjk : j ≠ k) (hli : l ≠ i)
     (c d : A) : Commute (transvectionUnit hij c) (transvectionUnit hkl d) :=
-  (Matrix.SpecialLinearGroup.commute_transvection hij hkl hjk hli c d).map
-    Matrix.SpecialLinearGroup.toGL
+  Units.ext (by
+    simp [coe_transvectionUnit_eq_one_add_single, add_mul, mul_add, hjk, hli]
+    abel)
 
 /-- Two pointwise commuting transvection homomorphisms, evaluated at a shared parameter after a
 chosen endomorphism in the second component. This packages the standard construction of a
@@ -237,19 +236,21 @@ theorem transvectionUnit_mul_transvectionUnit_eq_mul_mul
     (hij : i ≠ j) (hjl : j ≠ l) (hil : i ≠ l)
     (c d : A) :
     transvectionUnit hij c * transvectionUnit hjl d =
-      transvectionUnit hjl d * transvectionUnit hij c * transvectionUnit hil (c * d) := by
-  simp only [transvectionUnit, ← map_mul]
-  exact congrArg SpecialLinearGroup.toGL
-    (Matrix.SpecialLinearGroup.transvection_mul_transvection_eq_mul_mul hij hjl hil c d)
+      transvectionUnit hjl d * transvectionUnit hij c * transvectionUnit hil (c * d) :=
+  Units.ext (by
+    simp [coe_transvectionUnit_eq_one_add_single, add_mul, mul_add, hij.symm, hil.symm]
+    abel)
 
 /-- **The Chevalley commutator relation of type `A`.** The commutator of the root subgroup elements
 `xᵢⱼ(c)` and `xⱼₗ(d)`, for distinct `i`, `j` and `l`, is `xᵢₗ(cd)`: the root `εᵢ - εₗ` is the sum
 of `εᵢ - εⱼ` and `εⱼ - εₗ`, and the structure constant is `1`. -/
 theorem commutatorElement_transvectionUnit (hij : i ≠ j) (hjl : j ≠ l) (hil : i ≠ l) (c d : A) :
     ⁅transvectionUnit hij c, transvectionUnit hjl d⁆ = transvectionUnit hil (c * d) := by
-  simp only [transvectionUnit, ← map_commutatorElement]
-  exact congrArg SpecialLinearGroup.toGL
-    (Matrix.SpecialLinearGroup.commutatorElement_transvection hij hjl hil c d)
+  ext : 1
+  simp only [commutatorElement_def, Units.val_mul, transvectionUnit_inv,
+    coe_transvectionUnit_eq_one_add_single, ← single_neg]
+  simp [add_mul, mul_add, hij.symm, hjl.symm, hil.symm]
+  abel
 
 /-- The reverse-orientation form of the type-`A` Chevalley commutator relation:
 `[xᵢⱼ(c), xₖᵢ(d)] = xₖⱼ(-(dc))`. -/
@@ -287,6 +288,35 @@ theorem commute_transvectionUnit_transvectionWeylElement (hij : i ≠ j) (hkl : 
   have hneg : Commute (transvectionUnit hkl c) (transvectionUnit hij.symm (-1 : A)) :=
     commute_transvectionUnit hkl hij.symm hlj hik c (-1)
   exact (hpos.mul_right hneg).mul_right hpos
+
+end Ring
+
+variable [CommRing A]
+
+section Unit
+
+variable [Fintype n]
+
+/-- Over a commutative ring, the matrix underlying `TauCeti.transvectionUnit` is Mathlib's
+transvection. -/
+@[simp]
+theorem coe_transvectionUnit (hij : i ≠ j) (c : A) :
+    (transvectionUnit hij c : Matrix n n A) = transvection i j c :=
+  (rfl)
+
+/-- Viewing a special-linear transvection in the general linear group gives
+`TauCeti.transvectionUnit`. -/
+theorem toGL_transvection_eq_transvectionUnit (hij : i ≠ j) (c : A) :
+    SpecialLinearGroup.toGL (SpecialLinearGroup.transvection hij c) =
+      transvectionUnit hij c :=
+  Units.ext (rfl)
+
+/-- A transvection has determinant one, so the root subgroup lands in `SLₙ`. -/
+@[simp]
+theorem det_transvectionUnit (hij : i ≠ j) (c : A) :
+    Matrix.GeneralLinearGroup.det (transvectionUnit hij c) = 1 := by
+  rw [← toGL_transvection_eq_transvectionUnit]
+  exact SpecialLinearGroup.coeToGL_det _
 
 private theorem coe_transvectionWeylElement_apply (hij : i ≠ j) (a b : n) :
     ((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) a b =
@@ -594,3 +624,20 @@ theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N �
 end Torus
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti
+
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {A : Type*} [Ring A]
+  {i j : n}
+
+/-- Relabelling the indices sends an elementary matrix to the elementary matrix with the same
+parameter at the relabelled pair of indices. -/
+theorem reindexGL_transvectionUnit (e : n ≃ m) (hij : i ≠ j) (a : A) :
+    e.reindexGL A (transvectionUnit hij a) = transvectionUnit (e.injective.ne hij) a := by
+  ext : 1
+  simp [coe_transvectionUnit_eq_one_add_single, submatrix_add, submatrix_single_equiv,
+    submatrix_one_equiv]
+
+end Equiv

@@ -12,9 +12,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 Mathlib provides `ContDiffAt.pow` for natural powers and `ContDiffAt.inv` for the inverse of a
 nonvanishing function, but no lemma for an integral power. This file supplies the missing
-combination: an integral power of `f` is as smooth as `f` is, either away from a zero of `f` or
-for a nonnegative exponent. The hypothesis is the one carried by Mathlib's
-`DifferentiableAt.zpow`.
+combination for functions valued in a normed division algebra `𝕜'` over `𝕜`: an integral power of
+`f` is as smooth as `f` is, either away from a zero of `f` or for a nonnegative exponent. The
+hypothesis is the one carried by Mathlib's `DifferentiableAt.zpow`.
 
 ## Main results
 
@@ -27,34 +27,39 @@ for a nonnegative exponent. The hypothesis is the one carried by Mathlib's
 public section
 
 variable {𝕜 E 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] {f : E → 𝕜'} {s : Set E} {x : E} {m : ℤ}
+  [NormedDivisionRing 𝕜'] [NormedAlgebra 𝕜 𝕜'] {f : E → 𝕜'} {s : Set E} {x : E} {m : ℤ}
   {n : WithTop ℕ∞}
 
 /-- An integral power of a `C^n` function is `C^n` within a set at a point where the function does
 not vanish, and also, whatever the value there, for a nonnegative exponent. -/
+@[fun_prop]
 theorem ContDiffWithinAt.zpow (hf : ContDiffWithinAt 𝕜 n f s x) (h : f x ≠ 0 ∨ 0 ≤ m) :
     ContDiffWithinAt 𝕜 n (fun z ↦ f z ^ m) s x := by
   obtain ⟨i, rfl | rfl⟩ := m.eq_nat_or_neg
-  · simpa [zpow_natCast] using hf.pow i
-  · rcases eq_or_ne i 0 with rfl | hi
-    · simpa using (contDiffWithinAt_const : ContDiffWithinAt 𝕜 n (fun _ : E ↦ (1 : 𝕜')) s x)
-    · have hx : f x ≠ 0 := h.resolve_right fun hm ↦ hi (by omega)
-      simpa [zpow_neg, zpow_natCast, Pi.inv_def] using (hf.pow i).inv (pow_ne_zero _ hx)
+  · simpa using hf.pow i
+  rcases h with hx | hi
+  · simpa [Ring.inverse_eq_inv, Function.comp_def] using (contDiffAt_ringInverse 𝕜
+      (Units.mk0 _ (pow_ne_zero i hx))).comp_contDiffWithinAt x (hf.pow i)
+  · obtain rfl : i = 0 := by omega
+    simp [contDiffWithinAt_const]
 
 /-- An integral power of a `C^n` function is `C^n` at a point where the function does not vanish,
 and also, whatever the value there, for a nonnegative exponent. -/
+@[fun_prop]
 theorem ContDiffAt.zpow (hf : ContDiffAt 𝕜 n f x) (h : f x ≠ 0 ∨ 0 ≤ m) :
     ContDiffAt 𝕜 n (fun z ↦ f z ^ m) x :=
   hf.contDiffWithinAt.zpow h
 
 /-- An integral power of a `C^n` function is `C^n` on a set where the function does not vanish,
 and also, whatever its values there, for a nonnegative exponent. -/
+@[fun_prop]
 theorem ContDiffOn.zpow (hf : ContDiffOn 𝕜 n f s) (h : (∀ z ∈ s, f z ≠ 0) ∨ 0 ≤ m) :
     ContDiffOn 𝕜 n (fun z ↦ f z ^ m) s :=
   fun z hz ↦ (hf z hz).zpow (h.imp_left fun h ↦ h z hz)
 
 /-- An integral power of a `C^n` function is `C^n` if the function does not vanish, and also,
 whatever its values, for a nonnegative exponent. -/
+@[fun_prop]
 theorem ContDiff.zpow (hf : ContDiff 𝕜 n f) (h : (∀ z, f z ≠ 0) ∨ 0 ≤ m) :
     ContDiff 𝕜 n (fun z ↦ f z ^ m) :=
   contDiff_iff_contDiffAt.2 fun z ↦ hf.contDiffAt.zpow (h.imp_left fun h ↦ h z)

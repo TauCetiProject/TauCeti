@@ -17,7 +17,9 @@ import Mathlib.Tactic.NoncommRing
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
 linear equivalence with the exterior algebra, and the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another.
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another. Rescaling the
+factors of a product of vectors pulls the scalars out in front
+(`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
 public section
@@ -49,6 +51,14 @@ instance faithfulSMul (Q : QuadraticForm R M) [Invertible (2 : R)] :
     FaithfulSMul R (CliffordAlgebra Q) :=
   (faithfulSMul_iff_algebraMap_injective R (CliffordAlgebra Q)).2 (algebraMap_injective Q)
 
+/-- **`2` is nonzero in a Clifford algebra** over a nontrivial coefficient ring in which `2` is
+invertible, because the scalars are a faithful copy of `R`. As an instance this makes `two_ne_zero`
+and the rest of Mathlib's `NeZero (2 : _)` API available inside the Clifford algebra. -/
+instance neZeroTwo (Q : QuadraticForm R M) [Nontrivial R] [Invertible (2 : R)] :
+    NeZero (2 : CliffordAlgebra Q) :=
+  ⟨fun h ↦ Invertible.ne_zero (2 : R) (algebraMap_injective Q
+    (((map_ofNat (algebraMap R (CliffordAlgebra Q)) 2).trans h).trans (map_zero _).symm))⟩
+
 /-- Moving a vector `m` past `ι Q v` replaces it by `r • v - m`, where `r * Q v` is the polar
 pairing. This description is unchanged when `Q` is replaced by `-Q`. -/
 theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R}
@@ -57,6 +67,15 @@ theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R
   rw [map_sub, map_smul, sub_mul, smul_mul_assoc, ι_sq_scalar, Algebra.smul_def,
     ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
     ← ι_mul_ι_add_swap, add_sub_cancel_right]
+
+/-- Rescaling every factor of a product of vectors collects the product of the scalars in front
+of the product. -/
+theorem prod_map_ι_smul (Q : QuadraticForm R M) (c : M → R) (l : List M) :
+    ((l.map fun v ↦ c v • v).map (ι Q)).prod = (l.map c).prod • (l.map (ι Q)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    simp only [List.map_cons, List.prod_cons, map_smul, ih, smul_mul_smul_comm]
 
 private theorem two_smul_contractLeft_associated [Invertible (2 : R)]
     (Q : QuadraticForm R M) (v : M) (x : CliffordAlgebra Q) :

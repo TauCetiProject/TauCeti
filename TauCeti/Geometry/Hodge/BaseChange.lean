@@ -71,7 +71,8 @@ The tower is available in two presentations. The structure map `rationalToComple
 witness `isBaseChange_rationalToComplexMap` describe `Vℂ` as the complex scalar extension of `Vℚ`;
 that is what a construction needs when it extends a `ℚ`-linear datum to a `ℂ`-linear one and is
 therefore determined by its values on rational vectors. The equivalence
-`rationalToComplexLinearEquiv` is needed instead when a construction manipulates the concrete
+`rationalToComplexLinearEquiv` is the canonical `IsBaseChange.equiv` of this witness, used when a
+construction manipulates the concrete
 tensor product `ℂ ⊗[ℚ] Vℚ` as data, as the complexification of a rational subspace does. On purely
 rational vectors the two agree, by `rationalToComplexLinearEquiv_one_tmul`.
 
@@ -122,21 +123,6 @@ theorem integralMapToComplex_ratTensorMap {U U' : Type*} [AddCommGroup U] [Modul
     rw [integralMapToComplex_apply_ι, ratTensorMap_apply, ratTensorMap_apply,
       LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul]
 
-/-- The canonical tower equivalence from an abstract rational base change to an abstract complex
-base change of the same integral module. -/
-noncomputable def rationalToComplexLinearEquiv (hℚ : IsBaseChange ℚ ιℚ)
-    (hℂ : IsBaseChange ℂ ιℂ) : ℂ ⊗[ℚ] Vℚ ≃ₗ[ℂ] Vℂ :=
-  (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl ℂ ℂ) hℚ.equiv.symm).trans
-    ((TensorProduct.AlgebraTensorModule.cancelBaseChange ℤ ℚ ℂ ℂ Vℤ).trans hℂ.equiv)
-
-/-- The tower equivalence carries an integral vector through the rationalification to the same
-integral vector in the complexification. -/
-@[simp]
-theorem rationalToComplexLinearEquiv_one_tmul_ι (hℚ : IsBaseChange ℚ ιℚ)
-    (hℂ : IsBaseChange ℂ ιℂ) (x : Vℤ) :
-    rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] ιℚ x) = ιℂ x := by
-  simp [rationalToComplexLinearEquiv]
-
 noncomputable section RationalComplexMap
 
 /-- The `ℚ`-module structure on an abstract complexification, obtained by restricting its
@@ -145,7 +131,8 @@ the rational-to-complex structure map is `ℚ`-linear, and has low priority so t
 its `Algebra`-derived `ℚ`-module structure. -/
 local instance (priority := low) moduleRatOfComplex : Module ℚ Vℂ :=
   Module.restrictScalars ℚ ℂ Vℂ
-local instance : IsScalarTower ℚ ℂ Vℂ := IsScalarTower.restrictScalars ℚ ℂ Vℂ
+local instance ratComplexScalarTower : IsScalarTower ℚ ℂ Vℂ :=
+  IsScalarTower.restrictScalars ℚ ℂ Vℂ
 local instance : IsScalarTower ℤ ℚ ℂ where
   smul_assoc z q w := by
     norm_num [Algebra.smul_def, smul_eq_mul]
@@ -190,15 +177,26 @@ theorem isBaseChange_rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ)
   apply IsBaseChange.of_comp hℚ
   simpa only [rationalToComplexMap_restrictScalars_comp] using hℂ
 
+/-- The canonical equivalence from the complex base change of an abstract rationalification
+to the abstract complexification of the same integral module. -/
+noncomputable def rationalToComplexLinearEquiv (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) : ℂ ⊗[ℚ] Vℚ ≃ₗ[ℂ] Vℂ :=
+  (isBaseChange_rationalToComplexMap hℚ hℂ).equiv
+
 /-- On a purely rational vector the tower equivalence agrees with the rational-to-complex
 structure map. -/
 theorem rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (x : Vℚ) :
     rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] x) = rationalToComplexMap hℚ ιℂ x := by
-  have h := eq_rationalToComplexMap_of_restrictScalars_comp_eq hℚ ιℂ
-    ((rationalToComplexLinearEquiv hℚ hℂ).toLinearMap.restrictScalars ℚ ∘ₗ
-      TensorProduct.mk ℚ ℂ Vℚ 1) (by ext y; simp)
-  exact LinearMap.congr_fun h x
+  simp [rationalToComplexLinearEquiv, IsBaseChange.equiv_tmul]
+
+/-- The tower equivalence carries an integral vector through the rationalification to the same
+integral vector in the complexification. -/
+@[simp]
+theorem rationalToComplexLinearEquiv_one_tmul_ι (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (x : Vℤ) :
+    rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] ιℚ x) = ιℂ x := by
+  rw [rationalToComplexLinearEquiv_one_tmul, rationalToComplexMap_apply_ι]
 
 end RationalComplexMap
 
@@ -402,13 +400,42 @@ theorem rationalMapToComplex_id (hℚ : IsBaseChange ℚ ιℚ)
   ext x
   simp [rationalMapToComplex]
 
+attribute [local instance low] moduleRatOfComplex
+attribute [local instance] ratComplexScalarTower
+
+/-- Complexification of rational linear maps, bundled as a rational linear map. -/
+noncomputable def rationalMapToComplexHom (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ) :
+    (Vℚ →ₗ[ℚ] V'ℚ) →ₗ[ℚ] (Vℂ →ₗ[ℂ] V'ℂ) :=
+  (isBaseChange_rationalToComplexMap hℚ hℂ).linearMapLeftRightHom
+    (rationalToComplexMap h'ℚ ι'ℂ)
+
+/-- The bundled complexification sends a rational vector to the image of that vector. -/
+@[simp]
+theorem rationalMapToComplexHom_rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ) (f : Vℚ →ₗ[ℚ] V'ℚ) (x : Vℚ) :
+    rationalMapToComplexHom (ι'ℂ := ι'ℂ) hℚ hℂ h'ℚ f (rationalToComplexMap hℚ ιℂ x) =
+      rationalToComplexMap h'ℚ ι'ℂ (f x) :=
+  IsBaseChange.linearMapLeftRightHom_comp_apply _ _ _ _
+
+/-- The generic base-change hom agrees with the Hodge-facing complexification map. -/
+theorem rationalMapToComplexHom_apply (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+    (f : Vℚ →ₗ[ℚ] V'ℚ) :
+    rationalMapToComplexHom (ι'ℂ := ι'ℂ) hℚ hℂ h'ℚ f = rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
+  apply (isBaseChange_rationalToComplexMap hℚ hℂ).algHom_ext
+  intro x
+  rw [rationalMapToComplex_rationalToComplexMap]
+  exact rationalMapToComplexHom_rationalToComplexMap hℚ hℂ h'ℚ f x
+
 /-- Complexification sends the zero rational map to the zero complex map. -/
 @[simp]
 theorem rationalMapToComplex_zero (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) :
     rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (0 : Vℚ →ₗ[ℚ] V'ℚ) = 0 := by
-  simp [rationalMapToComplex]
+  rw [← rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ]
+  exact map_zero _
 
 /-- Complexification preserves addition of rational linear maps. -/
 @[simp]
@@ -418,30 +445,16 @@ theorem rationalMapToComplex_add (hℚ : IsBaseChange ℚ ιℚ)
     rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (f + g) =
       rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f +
         rationalMapToComplex hℚ hℂ h'ℚ h'ℂ g := by
-  simp [rationalMapToComplex, LinearMap.comp_add, LinearMap.add_comp]
-
-/-- Complexification of rational linear maps, bundled as a homomorphism of additive groups. -/
-noncomputable def rationalMapToComplexAddHom (hℚ : IsBaseChange ℚ ιℚ)
-    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ) (h'ℂ : IsBaseChange ℂ ι'ℂ) :
-    (Vℚ →ₗ[ℚ] V'ℚ) →+ (Vℂ →ₗ[ℂ] V'ℂ) where
-  toFun := rationalMapToComplex hℚ hℂ h'ℚ h'ℂ
-  map_zero' := rationalMapToComplex_zero hℚ hℂ h'ℚ h'ℂ
-  map_add' := rationalMapToComplex_add hℚ hℂ h'ℚ h'ℂ
-
-@[simp]
-theorem rationalMapToComplexAddHom_apply (hℚ : IsBaseChange ℚ ιℚ)
-    (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
-    (f : Vℚ →ₗ[ℚ] V'ℚ) :
-    rationalMapToComplexAddHom hℚ hℂ h'ℚ h'ℂ f = rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f :=
-  (rfl)
+  simp only [← rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ, map_add]
 
 /-- Complexification preserves negation of rational linear maps. -/
 @[simp]
 theorem rationalMapToComplex_neg (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
-    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (-f) = -rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f :=
-  map_neg (rationalMapToComplexAddHom hℚ hℂ h'ℚ h'ℂ) f
+    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (-f) = -rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
+  simpa only [rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ] using
+    map_neg (rationalMapToComplexHom (ι'ℂ := ι'ℂ) hℚ hℂ h'ℚ) f
 
 /-- Complexification preserves subtraction of rational linear maps. -/
 @[simp]
@@ -449,24 +462,27 @@ theorem rationalMapToComplex_sub (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (f g : Vℚ →ₗ[ℚ] V'ℚ) :
     rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (f - g) =
-      rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f - rationalMapToComplex hℚ hℂ h'ℚ h'ℂ g :=
-  map_sub (rationalMapToComplexAddHom hℚ hℂ h'ℚ h'ℂ) f g
+      rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f - rationalMapToComplex hℚ hℂ h'ℚ h'ℂ g := by
+  simpa only [rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ] using
+    map_sub (rationalMapToComplexHom (ι'ℂ := ι'ℂ) hℚ hℂ h'ℚ) f g
 
 /-- Complexification preserves natural-number multiples of rational linear maps. -/
 @[simp]
 theorem rationalMapToComplex_nsmul (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (k : ℕ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
-    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (k • f) = k • rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f :=
-  map_nsmul (rationalMapToComplexAddHom hℚ hℂ h'ℚ h'ℂ) k f
+    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (k • f) = k • rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
+  simpa only [rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ] using
+    map_nsmul (rationalMapToComplexHom (ι'ℂ := ι'ℂ) hℚ hℂ h'ℚ) k f
 
 /-- Complexification preserves integer multiples of rational linear maps. -/
 @[simp]
 theorem rationalMapToComplex_zsmul (hℚ : IsBaseChange ℚ ιℚ)
     (hℂ : IsBaseChange ℂ ιℂ) (h'ℚ : IsBaseChange ℚ ι'ℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (k : ℤ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
-    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (k • f) = k • rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f :=
-  map_zsmul (rationalMapToComplexAddHom hℚ hℂ h'ℚ h'ℂ) k f
+    rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (k • f) = k • rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
+  simpa only [rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ] using
+    map_zsmul (rationalMapToComplexHom (ι'ℂ := ι'ℂ) hℚ hℂ h'ℚ) k f
 
 /-- Complexification preserves rational multiples of rational linear maps, the rational scalar
 acting on the complexification through `ℚ → ℂ`. -/
@@ -476,15 +492,8 @@ theorem rationalMapToComplex_smul (hℚ : IsBaseChange ℚ ιℚ)
     (h'ℂ : IsBaseChange ℂ ι'ℂ) (q : ℚ) (f : Vℚ →ₗ[ℚ] V'ℚ) :
     rationalMapToComplex hℚ hℂ h'ℚ h'ℂ (q • f) =
       (q : ℂ) • rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
-  refine LinearMap.ext fun x ↦ ?_
-  obtain ⟨t, rfl⟩ := (rationalToComplexLinearEquiv hℚ hℂ).surjective x
-  induction t using TensorProduct.inductionOn with
-  | tmul z y =>
-      rw [rationalMapToComplex_rationalToComplexLinearEquiv_tmul, LinearMap.smul_apply,
-        LinearMap.smul_apply, rationalMapToComplex_rationalToComplexLinearEquiv_tmul,
-        ← TensorProduct.smul_tmul, Rat.smul_def, ← map_smul,
-        TensorProduct.smul_tmul', smul_eq_mul]
-  | add x y hx hy => simp only [map_add, hx, hy]
+  simp only [← rationalMapToComplexHom_apply hℚ hℂ h'ℚ h'ℂ, map_smul]
+  exact (algebraMap_smul ℂ q _).symm
 
 /-- **The complexification of a rational map commutes with lattice conjugation.** The abstract
 base-change interface makes this a statement about arbitrary complex models, not only about the

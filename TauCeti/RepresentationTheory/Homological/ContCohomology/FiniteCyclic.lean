@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 import TauCeti.Data.Nat.Carry
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # Cohomology of finite cyclic groups with topological coefficients
@@ -131,28 +132,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
 variable [DiscreteTopology G] [ContinuousSMul G M]
   (g : G) (hg : ∀ x : G, x ∈ Subgroup.zpowers g)
 
-private noncomputable def finEquivCyclic : Fin (orderOf g) ≃ G where
-  toFun i := g ^ (i : ℕ)
-  invFun x := ⟨cyclicLog g hg x, cyclicLog_lt g hg x⟩
-  left_inv i := Fin.ext (by simp only [cyclicLog_pow, Nat.mod_eq_of_lt i.2])
-  right_inv := pow_cyclicLog g hg
-
-include hg in
-omit [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-private theorem sum_range_pow_smul (m : M) :
-    ∑ i ∈ Finset.range (orderOf g), g ^ i • m = groupNorm G M m := by
-  rw [groupNorm_apply, ← Fin.sum_univ_eq_sum_range]
-  exact (finEquivCyclic g hg).sum_comp (fun x ↦ x • m)
-
-include hg in
-omit [DiscreteTopology G] [ContinuousSMul G M] in
-private theorem sum_range_cocycle (f : Z2 G M) :
-    ∑ i ∈ Finset.range (orderOf g), (f : G × G → M) (g ^ i, g) =
-      (sumCocycle g f : M) := by
-  rw [← Fin.sum_univ_eq_sum_range, sumCocycle_val]
-  exact (finEquivCyclic g hg).sum_comp (fun x ↦ (f : G × G → M) (x, g))
-
 private noncomputable def carryCocycle (a : H0 G M) : Z2 G M :=
   ⟨fun p ↦ if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a.1 else 0,
     mem_Z2_iff.mpr ⟨continuous_of_discreteTopology, by
@@ -231,8 +210,8 @@ private theorem cyclicPrimitive_mul (f : Z2 G M) (b : M)
     have htotal :
         ∑ i ∈ Finset.range (orderOf g),
             (g ^ i • b - (f : G × G → M) (g ^ i, g)) = 0 := by
-      rw [Finset.sum_sub_distrib, sum_range_pow_smul g hg,
-        sum_range_cocycle g hg, hb, sub_self]
+      rw [Finset.sum_sub_distrib, ← groupNorm_eq_sum_range g hg, hb, sumCocycle_val,
+        sum_range_orderOf_eq_sum g hg (fun x ↦ (f : G × G → M) (x, g)), sub_self]
     rw [← hkn] at htotal
     rw [Finset.sum_range_succ] at htotal
     dsimp only [k] at htotal ⊢
@@ -250,32 +229,7 @@ private theorem cyclicPrimitive_mul (f : Z2 G M) (b : M)
           (f : G × G → M) (x, g) := by abel
 
 include hg in
-omit [TopologicalSpace G] [DiscreteTopology G] [Fintype G] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- A `2`-cocycle that vanishes whenever its second argument is a cyclic generator vanishes
-identically. -/
-private theorem cocycle_eq_zero_of_eq_zero_on_generator [Finite G] (q : G × G → M)
-    (hq : IsCocycle₂ q) (hqg : ∀ x : G, q (x, g) = 0) (x y : G) : q (x, y) = 0 := by
-  let _ := Fintype.ofFinite G
-  have hqpow : ∀ (n : ℕ) (x : G), q (x, g ^ n) = 0 := by
-    intro n
-    induction n with
-    | zero =>
-        intro x
-        rw [pow_zero]
-        have h11 : q (1, 1) = 0 := by
-          rw [← map_one_fst_of_isCocycle₂ hq g]
-          exact hqg 1
-        rw [map_one_snd_of_isCocycle₂ hq x, h11, smul_zero]
-    | succ n ih =>
-        intro x
-        have h := hq x (g ^ n) g
-        rw [hqg, ih, hqg, zero_add, smul_zero, zero_add] at h
-        simpa only [pow_succ] using h.symm
-  rw [← pow_cyclicLog g hg y]
-  exact hqpow (cyclicLog g hg y) x
-
-include hg in
+omit [ContinuousSMul G M] in
 private theorem mem_B2_of_cyclicZ2Map_eq_zero (f : Z2 G M)
     (hfzero : cyclicZ2Map g f = 0) : (f : G × G → M) ∈ B2 G M := by
   have hsum : sumCocycle g f ∈ (groupNorm G M).range.addSubgroupOf (H0 G M) := by
@@ -299,19 +253,13 @@ private theorem mem_B2_of_cyclicZ2Map_eq_zero (f : Z2 G M)
       rw [hlog, Finset.sum_range_zero, add_zero]
     rw [hc1, hone] at h
     simpa using h
-  let dc : Z2 G M :=
-    ⟨d1 G M c, B2_le_Z2 G M (mem_B2_iff.mpr ⟨c, continuous_of_discreteTopology, rfl⟩)⟩
-  let q : G × G → M := ((f - dc : Z2 G M) : G × G → M)
-  have hq : IsCocycle₂ q := (mem_Z2_iff.mp (f - dc).property).2
-  have hqp (p : G × G) : q p = (f : G × G → M) p - d1 G M c p := rfl
-  have hqg (x : G) : q (x, g) = 0 := by
-    rw [hqp, d1_apply, hcg, hrec]
-    abel
-  rw [mem_B2_iff']
-  refine ⟨c, continuous_of_discreteTopology, fun x y ↦ ?_⟩
-  have hzero := cocycle_eq_zero_of_eq_zero_on_generator g hg q hq hqg x y
-  rw [hqp, d1_apply] at hzero
-  exact (sub_eq_zero.mp hzero).symm
+  rw [mem_B2_iff]
+  refine ⟨c, continuous_of_discreteTopology, ?_⟩
+  apply isCocycle₂_ext_of_forall_mem_zpowers g hg
+    (d2_apply_eq_zero_iff.mp (d2_comp_d1_apply c)) hfg
+  intro x
+  rw [d1_apply, hcg, hrec]
+  abel
 
 omit [ContinuousSMul G M] in
 private theorem sumCocycle_carryCocycle (a : H0 G M) (hn : 1 < orderOf g) :
@@ -348,7 +296,7 @@ private theorem cyclicH2Map_surjective : Function.Surjective (cyclicH2Map g :
         symm
         rw [QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf]
         refine ⟨(a : M), ?_⟩
-        rw [← sum_range_pow_smul g hg, hn]
+        rw [groupNorm_eq_sum_range g hg, hn]
         simp
       · have hn' : 1 < orderOf g := by
           have := orderOf_pos g

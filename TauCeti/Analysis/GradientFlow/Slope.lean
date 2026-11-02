@@ -37,6 +37,8 @@ off the effective domain carries no meaning.
 
 ## Main results
 
+* `Isometry.descendingSlope_comp`: an isometry preserves the slope where its range contains a
+  neighbourhood, in particular when restricting an energy to an open subset.
 * `TauCeti.descendingSlope_le_of_eventually_le`: an upper bound for the slope from a local bound
   on the decrease of `φ`.
 * `TauCeti.le_descendingSlope_of_tendsto`: a lower bound for the slope from the rates of decrease
@@ -80,6 +82,18 @@ def descendingSlope (φ : X → EReal) (x : X) : ℝ≥0∞ :=
 theorem descendingSlope_def (φ : X → EReal) (x : X) :
     descendingSlope φ x = limsup (fun y ↦ (φ x - φ y).toENNReal / edist x y) (𝓝[≠] x) :=
   (rfl)
+
+/-- Pulling an energy back along an isometry preserves its descending slope at a point where the
+range of the isometry contains a neighbourhood. In particular, restricting an energy to an open
+subset leaves the descending slope unchanged there. -/
+theorem _root_.Isometry.descendingSlope_comp {Y : Type*} [EMetricSpace Y] {f : X → Y}
+    (hf : Isometry f) (φ : Y → EReal) (x : X) (hx : range f ∈ 𝓝 (f x)) :
+    descendingSlope (φ ∘ f) x = descendingSlope φ (f x) := by
+  have hmap := hf.isEmbedding.map_nhdsWithin_eq ({x}ᶜ) x
+  rw [image_compl_eq_range_sdiff_image hf.injective, image_singleton, sdiff_eq,
+    nhdsWithin_inter_of_mem (nhdsWithin_le_nhds hx)] at hmap
+  rw [descendingSlope_def, descendingSlope_def, ← hmap, ← limsup_comp]
+  simp only [Function.comp_def, hf.edist_eq]
 
 /-- For a real-valued function, the positive part in the descending slope is
 `ENNReal.ofReal (f x - f y)`. -/

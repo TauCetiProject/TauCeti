@@ -574,7 +574,7 @@ if the lower-right entry of `W` is `1` modulo `N / Q` and `W * W = Q • γ` wit
 `χ = χ_Q · χ_{N/Q}` split along `N = Q · (N / Q)` takes the value `χ_Q(-1) χ_{N/Q}(Q)⁻¹` on the
 diamond label of `γ`. -/
 theorem IsAtkinLehnerMatrix.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq {G : Type*}
-    [CommGroup G] (hQ : Q ≠ 0) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    [DivisionCommMonoid G] (hQ : Q ≠ 0) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
     (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* G) (φ : (ZMod (N / Q))ˣ →* G)
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
     (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))

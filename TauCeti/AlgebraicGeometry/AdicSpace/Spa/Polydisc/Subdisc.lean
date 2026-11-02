@@ -178,6 +178,15 @@ section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
 
+/-- A disc `D(a, |c|)` of nonzero radius is cut out by its defining inequality
+`v(T - a) ≤ v(c)` alone: the nonvanishing condition `v(c) ≠ 0` is automatic. -/
+theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : c ≠ 0) :
+    closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
+  ext v
+  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp, ← map_zero C,
+    closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff]
+  exact fun _ ↦ hc
+
 /-- **Nested discs**: `D(a, |c|) ⊆ D(b, |d|)` whenever `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`. -/
 theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ ‖d‖)
     (hcd : ‖c‖ ≤ ‖d‖) : closedSubdisc a c ⊆ closedSubdisc b d := by

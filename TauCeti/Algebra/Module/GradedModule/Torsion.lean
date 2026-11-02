@@ -23,7 +23,7 @@ Suppose `M` is internally integer graded over a domain `k`, is torsion-free over
 multiplication by `X` strictly lowers degree. Then its `k[X]`-torsion submodule is precisely its
 `X`-power torsion submodule, even for elements with several homogeneous components. This torsion
 submodule is homogeneous, so it and its quotient inherit gradings through
-`InternalGrading.submodule` and `InternalGrading.quotient`, after restricting scalars to `k`.
+`InternalGrading.submodule` and `InternalGrading.quotient`, as gradings by `k`-submodules.
 Over a field, finite generation gives a single power of `X` annihilating the entire torsion
 submodule; the ambient module need not be torsion.
 
@@ -79,8 +79,8 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     exact ⟨⟨X ^ n, pow_mem X_mem_nonZeroDivisors n⟩, hx⟩
 
 /-- The torsion submodule of a graded polynomial module is homogeneous if `X` strictly lowers
-degree and the module is torsion-free over its coefficient domain. In particular its scalar
-restriction is a valid input to the existing submodule and quotient grading constructors. -/
+degree and the module is torsion-free over its coefficient domain. In particular it is a valid
+input to the existing submodule and quotient grading constructors. -/
 theorem isHomogeneous_torsion (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     DirectSum.SetLike.IsHomogeneous G.piece (Submodule.torsion k[X] M) := by
@@ -200,11 +200,11 @@ variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   (G : InternalGrading k M) {d : ℕ} (hd : d ≠ 0)
   (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
 
--- Scalar restriction preserves membership, so the standard constructors suffice.
-example : InternalGrading k ((Submodule.torsion k[X] M).restrictScalars k) :=
+-- The standard constructors accept the `k[X]`-submodule directly.
+example : InternalGrading k (Submodule.torsion k[X] M) :=
   G.submodule _ (G.isHomogeneous_torsion hd hX)
 
-example : InternalGrading k (M ⧸ (Submodule.torsion k[X] M).restrictScalars k) :=
+example : InternalGrading k (M ⧸ Submodule.torsion k[X] M) :=
   G.quotient _ (G.isHomogeneous_torsion hd hX)
 
 end InducedGradings
@@ -255,28 +255,18 @@ private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
       Nat.cast_ofNat, Nat.cast_one, one_mul, sub_eq_add_neg] using
       H.X_pow_smul_mem_piece (d := 1)
         (fun _ _ hx ↦ Polynomial.X_smul_mem_negDegreeGrading_piece hx) 2 hx
-  have hI : DirectSum.SetLike.IsHomogeneous H.piece (I.restrictScalars k) := by
-    intro p y hy
-    rw [Submodule.restrictScalars_mem] at hy ⊢
+  have hI : DirectSum.SetLike.IsHomogeneous H.piece I := by
     have hr := hf.isHomogeneous_range
-    rw [_root_.LinearMap.range_toSpanSingleton] at hr
-    exact hr p hy
-  -- Transport the standard quotient grading along the scalar-restriction equivalence.
-  let e := Submodule.Quotient.restrictScalarsEquiv k I
-  let G := (H.quotient (I.restrictScalars k) hI).map e
+    rwa [_root_.LinearMap.range_toSpanSingleton] at hr
+  let G := H.quotient I hI
   have hmem (p : ℤ) (x : k[X]) (hx : x ∈ H.piece p) :
-      (Submodule.Quotient.mk x : k[X] ⧸ I) ∈ G.piece p := by
-    rw [InternalGrading.mem_map_piece_iff, Submodule.Quotient.restrictScalarsEquiv_symm_mk]
-    exact H.mk_mem_quotient_piece _ hI hx
+      (Submodule.Quotient.mk x : k[X] ⧸ I) ∈ G.piece p :=
+    H.mk_mem_quotient_piece _ hI hx
   have hX : ∀ ⦃p : ℤ⦄ ⦃x : k[X] ⧸ I⦄,
       x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - 1) := by
     intro p x hx
-    rw [InternalGrading.mem_map_piece_iff, InternalGrading.mem_quotient_piece_iff] at hx
-    obtain ⟨y, hy, hxy⟩ := hx
-    have heq : (Submodule.Quotient.mk y : k[X] ⧸ I) = x := by
-      simpa only [e, Submodule.Quotient.restrictScalarsEquiv_mk,
-        LinearEquiv.apply_symm_apply] using congrArg e hxy
-    rw [← heq, ← Submodule.Quotient.mk_smul]
+    obtain ⟨y, hy, rfl⟩ := (H.mem_quotient_piece_iff I hI).1 hx
+    rw [← Submodule.Quotient.mk_smul]
     exact hmem _ _ (Polynomial.X_smul_mem_negDegreeGrading_piece hy)
   -- The two classes survive in distinct degrees, and multiplication by X² is zero.
   refine ⟨G, hX, hmem 0 1 ?_, hmem (-1) X ?_, ?_, ?_, ?_,

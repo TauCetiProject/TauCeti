@@ -36,6 +36,10 @@ carrier Steinberg map agrees with the independently defined pinned scheme-point 
   `TauCeti.TypeALieIndex.specialLinearSteinberg`: the standard matrix maps.
 * `TauCeti.TypeALieIndex.specialLinearGraphAut_ofA` and
   `TauCeti.TypeALieIndex.specialLinearGraphAut_ofTwistedA`: the graph-factor branch equations.
+* `TauCeti.TypeALieIndex.specialLinearSteinberg_ofA`: on `A_r(q)` the standard Steinberg map is the
+  entrywise `q`-power Frobenius.
+* `TauCeti.TypeALieIndex.specialLinearSteinberg_ofTwistedA`: on `²A_r(q)` it is signed reverse
+  inverse transpose after the entrywise `q`-power Frobenius.
 * `TauCeti.TypeALieIndex.pinnedSimpleRootSubgroup`, `TauCeti.TypeALieIndex.pinnedFrobenius`,
   `TauCeti.TypeALieIndex.pinnedGraphAut`, and `TauCeti.TypeALieIndex.pinnedSteinberg`: the pinning
   and Steinberg data on the pinned scheme points.
@@ -123,6 +127,32 @@ Frobenius. -/
 noncomputable def specialLinearSteinberg (d : TypeALieIndex) :
     d.StandardGroup →* d.StandardGroup :=
   d.specialLinearGraphAut.toMonoidHom.comp d.specialLinearFrobenius
+
+/-- **On `A_r(q)` the standard matrix Steinberg map is the entrywise `q`-power Frobenius**: the
+graph factor of the standard Steinberg map is trivial on the untwisted family. -/
+theorem specialLinearSteinberg_ofA (rank : ℕ) (q : PrimePower)
+    (hvalid : (LieTypeIndex.A rank q).Valid) :
+    (ofA rank q hvalid).specialLinearSteinberg =
+      Matrix.SpecialLinearGroup.map (n := Fin ((ofA rank q hvalid).1.rank + 1))
+        (iterateFrobenius (ofA rank q hvalid).1.Closure (ofA rank q hvalid).1.characteristic
+          (ofA rank q hvalid).1.fieldExponent) := by
+  unfold specialLinearSteinberg specialLinearFrobenius
+  rw [specialLinearGraphAut_ofA]
+  rfl
+
+/-- **On `²A_r(q)` the standard matrix Steinberg map is signed reverse inverse transpose after the
+entrywise `q`-power Frobenius.** -/
+theorem specialLinearSteinberg_ofTwistedA (rank : ℕ) (q : PrimePower)
+    (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
+    (ofTwistedA rank q hvalid).specialLinearSteinberg =
+      (Matrix.SpecialLinearGroup.typeAGraphAutomorphism (ofTwistedA rank q hvalid).1.rank
+          (ofTwistedA rank q hvalid).1.Closure : _ →* _).comp
+        (Matrix.SpecialLinearGroup.map (n := Fin ((ofTwistedA rank q hvalid).1.rank + 1))
+          (iterateFrobenius (ofTwistedA rank q hvalid).1.Closure
+            (ofTwistedA rank q hvalid).1.characteristic
+            (ofTwistedA rank q hvalid).1.fieldExponent)) := by
+  unfold specialLinearSteinberg specialLinearFrobenius
+  rw [specialLinearGraphAut_ofTwistedA, MulEquiv.toMonoidHom_eq_coe]
 
 /-- The positive simple-root subgroup of the pinned special linear group scheme. -/
 noncomputable def pinnedSimpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank) :

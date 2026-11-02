@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Hamiltonian vector fields on symplectic vector spaces
@@ -21,8 +22,12 @@ The characteristic contraction equation determines the field uniquely. Its linea
 is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
-Along a family of Hamiltonians whose derivatives vary continuously, the Hamiltonian vector
-fields vary continuously.
+For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
+the bilinear form `g = ω(·, J ·)`
+(`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`).
+
+Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
+family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
 
 The Poisson bracket `{F, G} = ω(X_F, X_G)` of two Hamiltonians is the symplectic pairing of their
 Hamiltonian vector fields. With the contraction convention it is `dF(X_G) = -dG(X_F)`; it is
@@ -43,6 +48,12 @@ The derivative is totalized as usual: at a nondifferentiability point this field
 noncomputable def hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) : V :=
   ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x)
 
+/-- The Hamiltonian vector field is inverse contraction applied to the derivative. -/
+theorem hamiltonianVectorField_def (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField H x =
+      ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x) :=
+  (rfl)
+
 /-- Contraction of the Hamiltonian field is the derivative of the Hamiltonian. -/
 @[simp]
 theorem apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x v : V) :
@@ -61,11 +72,28 @@ theorem eq_hamiltonianVectorField_iff (ω : SymplecticForm V) (H : V → ℝ) (x
     ext v
     exact (h v).trans (ω.apply_hamiltonianVectorField H x v).symm
 
+/-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
+@[simp]
+theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField (fun y ↦ c * H y) x = c • ω.hamiltonianVectorField H x := by
+  have h : (fun y ↦ c * H y) = c • H := by
+    ext
+    simp
+  rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
+    map_smul]
+
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
     fderiv ℝ H x (ω.hamiltonianVectorField H x) = 0 := by
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
+
+/-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
+bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
+theorem Invariant.associatedBilinForm_hamiltonianVectorField {ω : SymplecticForm V}
+    {J : AlmostComplexStructure V} (hJ : ω.Invariant J) (H : V → ℝ) (x w : V) :
+    ω.associatedBilinForm J (J (ω.hamiltonianVectorField H x)) w = fderiv ℝ H x w := by
+  rw [associatedBilinForm_apply, (ω.invariant_iff J).mp hJ, apply_hamiltonianVectorField]
 
 /-- A `C^(n+1)` Hamiltonian has a `C^n` Hamiltonian vector field. -/
 theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
@@ -106,6 +134,17 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
 
+/-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
+`X_{aF + bG} = a X_F + b X_G`. -/
+theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
+    {x : V} (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) (a b : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ a * F y + b * G y) x =
+      a • ω.hamiltonianVectorField F x + b • ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
+  simp [map_add, map_smul]
+
 section Continuity
 
 variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}
@@ -125,6 +164,25 @@ theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
   ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp h
 
 end Continuity
+
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
+space, the Hamiltonian vector fields `X_{K z}` evaluated along a map continuous on `U` vary
+continuously on `U`. -/
+theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {u : W → V} {U : Set W}
+    (hU : IsOpen U) (hu : ContinuousOn u U)
+    (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
+    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U := by
+  have hmem {z : W} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (Set.univ : Set V) := ⟨hz, Set.mem_univ _⟩
+  have hD : ContinuousOn (fun z ↦ fderiv ℝ (Function.uncurry K) (z, u z)) U :=
+    (hK.continuousOn_fderiv_of_isOpen (hU.prod isOpen_univ) le_rfl).comp
+      (continuousOn_id.prodMk hu) fun _ hz ↦ hmem hz
+  -- The target derivative of `K` along `u` is a restriction of its joint derivative.
+  exact ω.continuousOn_hamiltonianVectorField_comp <|
+    (hD.clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ W V))).congr
+      fun _ hz ↦ fderiv_slice_right (f := Function.uncurry K) <|
+        (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
+          ((hU.prod isOpen_univ).mem_nhds (hmem hz))
 
 section PoissonBracket
 
@@ -167,6 +225,18 @@ theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → �
 theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
   simp [poissonBracket_def]
+
+/-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/
+@[simp]
+theorem poissonBracket_const_mul_left (ω : SymplecticForm V) (c : ℝ) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket (fun y ↦ c * F y) G x = c * ω.poissonBracket F G x := by
+  simp [poissonBracket_def, map_smul]
+
+/-- The Poisson bracket is homogeneous in its second argument: `{F, c G} = c {F, G}`. -/
+@[simp]
+theorem poissonBracket_const_mul_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
+    (x : V) : ω.poissonBracket F (fun y ↦ c * G y) x = c * ω.poissonBracket F G x := by
+  simp [poissonBracket_def, map_smul]
 
 end PoissonBracket
 

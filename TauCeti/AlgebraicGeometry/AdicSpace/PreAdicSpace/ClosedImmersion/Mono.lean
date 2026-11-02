@@ -74,7 +74,7 @@ theorem stalkMap_presentationLimitPreAdicSpaceQuotientComap_surjective
   have hbase := coe_presentationLimitPreAdicSpaceQuotientComap_base S P hP J hsheaf
   have hemb := isClosedEmbedding_presentationLimitPreAdicSpaceQuotientComap_base S P hP J hsheaf
   rw [presentationLimitPreAdicSpaceQuotientComap_def] at hbase hemb ⊢
-  set f := presentationLimitPreAdicSpaceComap (P := P) (Ideal.Quotient.mk J) _ _ _ _ _ hP _ hsheaf
+  set f := presentationLimitPreAdicSpaceComap (P := P) (Ideal.Quotient.mk J) _ _ _ _ hP _ hsheaf
   intro t
   obtain ⟨p', hp', hxp', b, rfl⟩ := exists_presentationLimitRationalGerm_eq
     (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem x t
@@ -104,6 +104,11 @@ theorem stalkMap_presentationLimitPreAdicSpaceQuotientComap_surjective
     rw [← SetLike.mem_coe, ← hVp']
     exact hpV ((hmem w).mp hw)
   have hx : x ∈ spaBasicOpen (S.quotient J).plus q.num q.den := (hmem x).mpr hxp
+  have hqp : rationalSubset (S.quotient J).plus q.num q.den ⊆
+      comap (Ideal.Quotient.mk J) ⁻¹' rationalSubset S.plus p.num p.den := fun w hw ↦ by
+    have h := mem_spaBasicOpen.mp ((hmem ⟨w, rationalSubset_subset_spa _ _ _ hw⟩).mp
+      (mem_spaBasicOpen.mpr hw))
+    rwa [hbase, Pair.Hom.spaComap_val, Pair.Hom.toRingHom_quotientHom] at h
   -- the germ of `b` is the germ of its restriction to `R(q)`, which lifts to `A⟨p⟩`, and the
   -- stalk map carries the germ of the lift to the germ of its image in `(A ⧸ J)⟨q⟩`
   obtain ⟨a, ha⟩ := Presentation.mapHom_quotientMk_surjective J p q rfl rfl
@@ -112,9 +117,11 @@ theorem stalkMap_presentationLimitPreAdicSpaceQuotientComap_surjective
   refine ⟨(presentationLimitRationalGerm S.isRingOfIntegralElements.isPowerBounded_of_mem p hp _
     hxp).hom a, ?_⟩
   rw [← presentationLimitRationalGerm_res _ p' q hp' hq hsub x hx]
-  exact (congrArg (fun k ↦ k.hom a)
-    (presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpaceComap _ _ _ _ _ _ _
-      _ hsheaf p hp q hq rfl rfl x hxp hx)).trans
+  have hg := presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpaceComap _ _ _
+    _ _ _ _ hsheaf p hp q hq hqp x hxp hx
+  rw [Presentation.mapHomOfSubset_eq_mapHom _ _ _ _ _ p q hqp rfl
+    fun _ ht ↦ Finset.mem_image_of_mem _ ht] at hg
+  exact (congrArg (fun k ↦ k.hom a) hg).trans
     (congrArg (presentationLimitRationalGerm
       (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem q hq x hx).hom ha)
 

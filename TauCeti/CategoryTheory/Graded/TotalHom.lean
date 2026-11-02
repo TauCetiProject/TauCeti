@@ -26,6 +26,9 @@ structure on a many-object quiver be stated as structure on a single graded modu
 many-object analogue of an algebra over the product of copies of the ground ring indexed by the
 objects.
 
+The total module, its grading, the inclusion and projection maps, and their Koszul-twist
+compatibilities work over any ring. The multilinear operations use commutative scalars.
+
 The inclusion and projection of a single hom module are `homInclusion` and `homProjection`.
 They are `DirectSum.lof` and `DirectSum.component`; `homInclusion` is defined with classical
 decidable equality on objects, so that no decidability assumption on the objects enters the
@@ -45,9 +48,12 @@ statements that use it.
 
 * `TauCeti.GradedLinearQuiver.mem_totalGrading_piece_iff`: an element of the total module has
   degree `n` exactly when each of its components has.
-* `TauCeti.GradedLinearQuiver.totalHom_induction` and
-  `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, and on
-  its elements of a given degree, from the hom modules.
+* `TauCeti.GradedLinearQuiver.totalHom_induction`,
+  `TauCeti.GradedLinearQuiver.totalHom_induction_homProjection` and
+  `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, on the
+  components of a single element, and on the elements of a given degree, from the hom modules.
+* `TauCeti.GradedLinearQuiver.totalHom_linearMap_ext`: linear maps out of the total module agree
+  when they agree on every hom module.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
 * `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem_of_mem_totalGrading_piece`: on elements of
@@ -74,7 +80,9 @@ namespace TauCeti.GradedLinearQuiver
 
 universe u u' v v' w
 
-variable (R : Type w) [CommRing R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
+section Ring
+
+variable (R : Type w) [Ring R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
 
 /-- The **total module of morphisms** of a graded linear quiver: the external direct sum of the
 hom modules of all ordered pairs of objects. -/
@@ -151,6 +159,26 @@ theorem totalHom_induction {P : TotalHom R C → Prop} (zero : P 0)
     have h := homInclusion a.1 a.2 f
     rwa [homInclusion_eq_lof, DirectSum.lof_eq_of] at h
 
+/-- **Componentwise induction on the total module of morphisms**: a property closed under sums
+holds on an element once it holds on the inclusion of each of its components. -/
+theorem totalHom_induction_homProjection {P : TotalHom R C → Prop} (zero : P 0)
+    (add : ∀ x y, P x → P y → P (x + y)) (x : TotalHom R C)
+    (homInclusion : ∀ X Y : C, P (homInclusion X Y (homProjection X Y x))) : P x := by
+  classical
+  rw [← DirectSum.sum_support_of x]
+  refine Finset.sum_induction _ P add zero fun a _ ↦ ?_
+  have h := homInclusion a.1 a.2
+  rwa [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of] at h
+
+/-- Two linear maps out of the total module of morphisms are equal when they agree on every hom
+module. -/
+theorem totalHom_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
+    {f g : TotalHom R C →ₗ[R] M}
+    (h : ∀ (X Y : C) (a : homModule (R := R) X Y),
+      f (homInclusion X Y a) = g (homInclusion X Y a)) :
+    f = g :=
+  LinearMap.ext fun x ↦ totalHom_induction (by simp) (fun x y hx hy ↦ by simp [hx, hy]) h x
+
 /-- An element of the image of the morphisms `X ⟶ Y` is the inclusion of its component there. -/
 theorem homInclusion_homProjection_of_mem_range {X Y : C} {x : TotalHom R C}
     (hx : x ∈ LinearMap.range (homInclusion (R := R) X Y)) :
@@ -213,7 +241,7 @@ twist. -/
 theorem koszulTwist_homInclusion (q : ℤ) (X Y : C) (f : homModule (R := R) X Y) :
     (totalGrading R C).koszulTwist q (homInclusion X Y f) =
       homInclusion X Y ((grading (R := R) X Y).koszulTwist q f) := by
-  simpa using LinearMap.congr_fun ((isHomogeneous_homInclusion X Y).koszulTwist_comp q) f
+  simpa using (isHomogeneous_homInclusion X Y).koszulTwist_apply q f
 
 /-- The Koszul twist of the total module of morphisms preserves each hom module. -/
 theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C}
@@ -222,6 +250,12 @@ theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C
   obtain ⟨f, rfl⟩ := hu
   rw [koszulTwist_homInclusion]
   exact LinearMap.mem_range_self _ _
+
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
 multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`
@@ -270,6 +304,38 @@ structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] 
   eq_zero_of_ne (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (i j : Fin n)
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
+
+/-- Restrict a multilinear map to a composable string and project its value to the Hom module
+between the images of the endpoints. No path-compatibility hypothesis is needed for projection. -/
+noncomputable def _root_.MultilinearMap.restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (φ : C → C') (X : Fin (n + 1) → C) :
+    MultilinearMap R
+      (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
+      (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
+  (homProjection _ _).compMultilinearMap
+    (f.compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+
+theorem _root_.MultilinearMap.restrictToPath_apply {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C'))
+    (φ : C → C') (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    f.restrictToPath φ X x = homProjection (φ (X 0)) (φ (X (Fin.last n)))
+      (f fun i ↦ homInclusion _ _ (x i)) := (rfl)
+
+/-- Including a path restriction recovers the original total-module evaluation. -/
+@[simp]
+theorem IsPathCompatible.homInclusion_restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    homInclusion (φ (X 0)) (φ (X (Fin.last n))) (f.restrictToPath φ X x) =
+      f (fun i ↦ homInclusion _ _ (x i)) := by
+  rw [MultilinearMap.restrictToPath_apply]
+  exact homInclusion_homProjection_of_mem_range (hf.mem_range_homInclusion X x)
 
 /-- A string of morphisms in which the target of each morphism is the source of the one before it
 comes from a string of objects. -/
@@ -379,5 +445,7 @@ theorem IsPathCompatible.compLinearMap_koszulTwist {C' : Type u'}
   eq_zero_of_ne s t x i j hij hne := by
     simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
       hf.eq_zero_of_ne s t (fun k ↦ (grading (R := R) _ _).koszulTwist (q k) (x k)) i j hij hne
+
+end CommRing
 
 end TauCeti.GradedLinearQuiver

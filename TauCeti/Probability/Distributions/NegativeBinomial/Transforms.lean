@@ -29,8 +29,8 @@ the positive-shape domain bounded by a pole. The statements respect the totaliza
   domain for positive shape.
 * `mgf_id_map_cast_negativeBinomialMeasure`, `cgf_id_map_cast_negativeBinomialMeasure`, and
   `charFun_map_cast_negativeBinomialMeasure` compute the three standard transforms.
-* `integral_id_map_cast_negativeBinomialMeasure` and
-  `variance_id_map_cast_negativeBinomialMeasure` compute the first two moments.
+* `integral_id_map_cast_negativeBinomialMeasure`, `integral_sq_map_cast_negativeBinomialMeasure`
+  and `variance_id_map_cast_negativeBinomialMeasure` compute the first two moments.
 
 The transform formulas follow the generalized binomial series. See N. L. Johnson, A. W. Kemp,
 and S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley, 2005, Chapter 5.
@@ -41,7 +41,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Real Set
-open scoped Topology
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -93,7 +93,9 @@ theorem cgf_id_map_cast_negativeBinomialMeasure
       log (Real.rpow (p / (1 - (1 - p) * exp t)) r) := by
   rw [cgf, mgf_id_map_cast_negativeBinomialMeasure hr hp hp1 ht]
 
-private lemma zero_mem_interior_integrableExpSet {r p : ℝ}
+/-- Zero lies in the interior of the exponential-integrability domain of the real cast of a
+positive-shape negative-binomial law, so all its natural moments are finite. -/
+theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {r p : ℝ}
     (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
     0 ∈ interior (integrableExpSet id
       ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ))) := by
@@ -101,6 +103,17 @@ private lemma zero_mem_interior_integrableExpSet {r p : ℝ}
     (isOpen_lt (by fun_prop : Continuous fun t : ℝ ↦ (1 - p) * exp t)
       continuous_const).interior_eq]
   simpa using hp
+
+/-- The real cast of a valid negative-binomial law has finite moments of every order. This
+includes the shape-zero boundary. -/
+theorem memLp_id_map_cast_negativeBinomialMeasure {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p)
+    (hp1 : p ≤ 1) (q : ℝ≥0) :
+    MemLp id q ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
+    exact memLp_dirac enorm_lt_top
+  · exact memLp_of_mem_interior_integrableExpSet
+      (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1) q
 
 private lemma cgf_eventuallyEq {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
     cgf id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =ᶠ[𝓝 0]
@@ -145,7 +158,7 @@ private theorem integral_id_map_cast_negativeBinomialMeasure_of_pos
     ∫ x, x ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       r * (1 - p) / p := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hzero := zero_mem_interior_integrableExpSet hr hp hp1
+  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1
   calc
     ∫ x, x ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
         deriv (cgf id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ))) 0 := by
@@ -174,7 +187,7 @@ private theorem variance_id_map_cast_negativeBinomialMeasure_of_pos
     variance id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       r * (1 - p) / p ^ 2 := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hzero := zero_mem_interior_integrableExpSet hr hp hp1
+  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1
   calc
     variance id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
         iteratedDeriv 2
@@ -210,6 +223,23 @@ theorem variance_id_map_cast_negativeBinomialMeasure
   · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
     norm_num
   · exact variance_id_map_cast_negativeBinomialMeasure_of_pos hr hp hp1
+
+/-- The second raw moment of the real cast of a valid negative-binomial law is
+`r(1 - p)(1 + r(1 - p)) / p ^ 2`. This includes the shape-zero boundary. -/
+theorem integral_sq_map_cast_negativeBinomialMeasure
+    {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p) (hp1 : p ≤ 1) :
+    ∫ x, x ^ 2 ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
+      r * (1 - p) * (1 + r * (1 - p)) / p ^ 2 := by
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
+    norm_num
+  let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
+  have hvar := variance_id_map_cast_negativeBinomialMeasure hr.le hp hp1
+  rw [variance_eq_sub (memLp_id_map_cast_negativeBinomialMeasure hr.le hp hp1 2)] at hvar
+  simp only [Pi.pow_apply, id_eq,
+    integral_id_map_cast_negativeBinomialMeasure hr.le hp hp1] at hvar
+  rw [sub_eq_iff_eq_add.1 hvar]
+  field_simp
 
 /-- The characteristic function of the real cast of a valid negative-binomial law. -/
 theorem charFun_map_cast_negativeBinomialMeasure

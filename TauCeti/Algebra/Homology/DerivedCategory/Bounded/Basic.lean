@@ -51,6 +51,11 @@ noncomputable def singleFunctors (A : Type u) [Category.{v} A] [Abelian A]
     (singleFunctors A).functor n = singleFunctor A n :=
   rfl
 
+/-- The bounded single functors are additive, as the derived single functors are. -/
+instance (n : ℤ) : (singleFunctor A n).Additive where
+  map_add {_ _ f g} :=
+    ObjectProperty.hom_ext _ ((DerivedCategory.singleFunctor A n).map_add (f := f) (g := g))
+
 end DerivedCategory.Bounded
 
 variable {A : Type u} [Category.{v} A] [Abelian A] [HasDerivedCategory.{w} A]

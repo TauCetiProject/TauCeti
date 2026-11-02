@@ -13,7 +13,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
 Mathlib's `WeierstrassCurve.IsCharNeTwoNF` asserts `a₁ = a₃ = 0` and its
 `WeierstrassCurve.IsShortNF` asserts `a₁ = a₂ = a₃ = 0`, and its `NormalForms` file proves a
-great deal from those hypotheses. This file collects four things it does not record.
+great deal from those hypotheses. This file collects further normal-form identities and transport
+results.
 
 **Transport.** Both conditions are preserved by `map` and `baseChange` — the coefficients of
 `W.map f` are the images of `W`'s, so a vanishing coefficient stays vanishing.
@@ -26,6 +27,10 @@ change of variables carrying one short equation to another is a pure scaling
 `(x, y) ↦ (u²x, u³y)`: its `r`, `s` and `t` vanish, so it acts on the coefficients by
 `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`. This is the only freedom left in a short equation, and it is what a
 canonical short equation has to normalise away.
+
+**Split quadratic part.** If `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the
+equation factors as `(y - α x) (y - β x) = x³ + a₆`. This identity holds over any commutative
+ring, with arbitrary `a₆`, and does not require the roots to be distinct.
 
 **Elementary consequences.** Facts that follow from `a₁ = a₃ = 0` alone, by unfolding `negY`, with
 no further machinery. `y_eq_zero_of_order_two` is the current example: negation is `(x, y) ↦
@@ -51,6 +56,8 @@ re-established by hand at every such crossing.
 * `WeierstrassCurve.variableChange_a₄_of_isShortNF` and
   `WeierstrassCurve.variableChange_a₆_of_isShortNF`: it acts on the coefficients by
   `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`.
+* `WeierstrassCurve.Affine.equation_iff_mul`: factor the equation when the quadratic part
+  splits and `a₃ = a₄ = 0`.
 * `WeierstrassCurve.y_eq_zero_of_order_two`: in a characteristic-≠-2 normal form, an affine
   point killed by `2` has `y = 0`.
 * `TauCeti.toCharNeTwoNF_a₂`, `TauCeti.toCharNeTwoNF_a₄`, and `TauCeti.toCharNeTwoNF_a₆`:
@@ -144,6 +151,15 @@ lemma variableChange_a₆_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular 
   ring
 
 end ShortNF
+
+/-- With `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the Weierstrass equation reads
+`(y - α x) (y - β x) = x³ + a₆`. The constant coefficient is arbitrary and the roots may
+coincide. -/
+theorem Affine.equation_iff_mul (W : Affine R) {α β : R} (h₁ : W.a₁ = -(α + β))
+    (h₂ : W.a₂ = -(α * β)) (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0) (x y : R) :
+    W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ := by
+  rw [equation_iff, h₁, h₂, h₃, h₄]
+  constructor <;> intro h <;> linear_combination h
 
 /-- **In characteristic-≠-2 normal form, a two-torsion point has `y = 0`.** Negation is
 `(x, y) ↦ (x, -y)`, so a point equal to its own negative has `2y = 0`; cancelling `2` finishes it.

@@ -22,7 +22,7 @@ corresponding automorphism of the Tate algebra, so the statement follows from th
 case `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit`.
 
 Separating `Y` writes a series in `W = K⟨X, Y⟩†` as `g = ∑ₘ gₘ Yᵐ` with coefficients `gₘ` in the
-variables `σ`. At unit radius this is `TauCeti.Huber.restrictedOptionEquiv`, and `g` is
+variables `σ`. At unit radius this is `MvPowerSeries.restrictedOptionEquiv`, and `g` is
 `Y`-distinguished of degree `s` when this series over the Tate algebra in `σ` is
 `TauCeti.PowerSeries.IsDistinguished` of degree `s` at radius `1` with a unit coefficient `g_s`.
 
@@ -34,6 +34,9 @@ This file proves that unequal radii work. For every `g` as above there are radii
 `1 < ρ ≤ r`, as close to `1` as desired, such that `g` is restricted at `r` and
 `∑ₘ gₘ Yᵐ` is distinguished of degree `s` at radius `r` over the series restricted at `ρ`, with
 `g_s` a unit there.
+
+In one variable, distinguishedness of a fixed degree at unit radius persists to a radius
+strictly greater than one, over any ultrametric normed commutative ring.
 
 ## Main definitions
 
@@ -47,6 +50,8 @@ This file proves that unequal radii work. For every `g` as above there are radii
 * `TauCeti.Dagger.washnitzerAlgebra.exists_triangularEquiv_isDistinguished_isUnit`: over a
   complete nonarchimedean field, a triangular automorphism makes every nonzero overconvergent
   series distinguished in `Y`, with a unit coefficient in the distinguished degree.
+* `TauCeti.Dagger.exists_isDistinguished_of_isDistinguished_one`: radius selection preserving a
+  one-variable distinguished degree.
 * `TauCeti.Dagger.exists_isDistinguished_isUnit_of_isDistinguished_one`: radius selection for a
   `Y`-distinguished overconvergent series.
 
@@ -132,10 +137,10 @@ theorem exists_triangularEquiv_isDistinguished_isUnit {K : Type*} [NormedField K
     [IsUltrametricDist K] [CompleteSpace K] [Finite σ] (f : washnitzerAlgebra (Option σ) K)
     (hf : f ≠ 0) :
     ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (s : ℕ),
-      PowerSeries.IsDistinguished 1 s (Huber.restrictedOptionEquiv
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv
         (toTate (Option σ) K (triangularEquiv α hα f)) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
-      IsUnit (PowerSeries.coeff s (Huber.restrictedOptionEquiv
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
         (toTate (Option σ) K (triangularEquiv α hα f)) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
   have hf' : toTate (Option σ) K f ≠ 0 := fun h ↦ hf (toTate_injective (h.trans (map_zero _).symm))
@@ -146,6 +151,52 @@ theorem exists_triangularEquiv_isDistinguished_isUnit {K : Type*} [NormedField K
 end washnitzerAlgebra
 
 variable {K : Type*}
+
+section Radius
+
+open TauCeti.PowerSeries
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+/-- A one-variable overconvergent series distinguished at radius one remains distinguished of
+the same degree at some radius greater than one, within any prescribed upper bound. -/
+theorem exists_isDistinguished_of_isDistinguished_one
+    {f : washnitzerAlgebra Unit R} {s : ℕ}
+    (hf : IsDistinguished 1 s (f : PowerSeries R)) {ρ₀ : ℝ} (hρ₀ : 1 < ρ₀) :
+    ∃ ρ > (1 : ℝ), ρ ≤ ρ₀ ∧ PowerSeries.IsRestricted ρ (f : PowerSeries R) ∧
+      IsDistinguished ρ s (f : PowerSeries R) := by
+  -- The strict bound on the tail persists at a radius greater than one.
+  obtain ⟨ρ₁, hρ₁, hfρ₁, htail⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt f.2
+    (S := {u | s < u ()}) (fun u hu ↦ by
+      rw [← PowerSeries.coeff_def (rfl : u () = u ())]
+      simpa [← hf.norm_coeff_mul_pow_eq] using hf.norm_coeff_mul_pow_lt _ hu)
+  let ρ := min ρ₁ ρ₀
+  have hρ : 1 < ρ := lt_min hρ₁ hρ₀
+  have hρ0 : 0 ≤ ρ := zero_le_one.trans hρ.le
+  have hfr : PowerSeries.IsRestricted ρ (f : PowerSeries R) :=
+    MvPowerSeries.isRestricted_of_le hfρ₁ (fun _ ↦ hρ0) (fun _ ↦ min_le_left _ _)
+  have hlt (m : ℕ) (hm : s < m) :
+      ‖PowerSeries.coeff m (f : PowerSeries R)‖ * ρ ^ m <
+        ‖PowerSeries.coeff s (f : PowerSeries R)‖ * ρ ^ s := by
+    have ht := htail (Finsupp.single () m) (by simpa using hm)
+    rw [Finsupp.degree_single, PowerSeries.coeff_coeToMvPowerSeries] at ht
+    exact (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hρ0 (min_le_left _ _) m)
+      (norm_nonneg _)).trans_lt (ht.trans_le
+        (le_mul_of_one_le_right (norm_nonneg _) (one_le_pow₀ hρ.le)))
+  -- Earlier coefficients remain dominated because the radius has increased.
+  have hle (m : ℕ) : ‖PowerSeries.coeff m (f : PowerSeries R)‖ * ρ ^ m ≤
+      ‖PowerSeries.coeff s (f : PowerSeries R)‖ * ρ ^ s := by
+    rcases le_or_gt m s with hm | hm
+    · have hc := PowerSeries.le_gaussNorm norm 1 (f : PowerSeries R) hf.hasGaussNorm m
+      rw [← hf.norm_coeff_mul_pow_eq] at hc
+      simp only [one_pow, mul_one] at hc
+      exact mul_le_mul hc (pow_le_pow_right₀ hρ.le hm) (by positivity) (norm_nonneg _)
+    · exact (hlt m hm).le
+  have heq := gaussNorm_eq_of_forall_le hle
+  exact ⟨ρ, hρ, min_le_right _ _, hfr,
+    ⟨heq.symm, fun m hm ↦ heq ▸ hlt m hm⟩⟩
+
+end Radius
 
 section Field
 
@@ -159,18 +210,18 @@ most `N`, and the coefficients in `Y`-degrees above `s`, as well as the nonconst
 `Y`-degree `s`, have norm less than `N`. -/
 private theorem norm_coeff_le_of_isDistinguished_one {g : washnitzerAlgebra (Option σ) K}
     {s : ℕ} (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))) :
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))) :
     0 < ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖ ∧
       (∀ u, ‖coeff u (g : MvPowerSeries (Option σ) K)‖ ≤
         ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖) ∧
       ∀ u, s < u none ∨ u none = s ∧ u.some ≠ 0 → ‖coeff u (g : MvPowerSeries (Option σ) K)‖ <
         ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖ := by
-  set Gt := (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)
+  set Gt := (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)
   have hGt (m : ℕ) (t : σ →₀ ℕ) : coeff t (↑(PowerSeries.coeff m Gt) : MvPowerSeries σ K) =
       coeff (t.optionElim m) (g : MvPowerSeries (Option σ) K) := by
-    rw [Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft,
+    rw [coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft,
       washnitzerAlgebra.coe_toTate]
   have hone (t : σ →₀ ℕ) : t.prod (fun _ n ↦ (1 : ℝ) ^ n) = 1 := by
     rw [Finsupp.prod_pow_eq_pow_degree, one_pow]
@@ -207,9 +258,9 @@ This is the radius selection behind Weierstrass division by `g` inside the Monsk
 algebra. A single common radius `ρ = r > 1` does not suffice in general. -/
 theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlgebra (Option σ) K}
     {s : ℕ} (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)))
     {ρ₀ : ℝ} (hρ₀ : 1 < ρ₀) :
     ∃ (ρ : ℝ) (_ : Fact (0 < ρ)) (r : ℝ), 1 < ρ ∧ ρ ≤ r ∧ r ≤ ρ₀ ∧
       IsRestricted (fun _ ↦ r) (g : MvPowerSeries (Option σ) K) ∧
@@ -240,7 +291,7 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
   have hgρ : IsRestricted (fun _ ↦ ρ) (g : MvPowerSeries (Option σ) K) :=
     isRestricted_of_le hgρ₁ (fun _ ↦ hρ0.le) fun _ ↦ hρr.trans (min_le_left _ _)
   let G : PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)) :=
-    PowerSeries.mk fun m ↦ ⟨_, Huber.isRestricted_coeff_optionEquivLeft hρ0 hgρ m⟩
+    PowerSeries.mk fun m ↦ ⟨_, isRestricted_coeff_optionEquivLeft hρ0 hgρ m⟩
   have hG (m : ℕ) : (↑(PowerSeries.coeff m G) : MvPowerSeries σ K) =
       PowerSeries.coeff m (optionEquivLeft σ K (g : MvPowerSeries (Option σ) K)) := by
     simp [G]

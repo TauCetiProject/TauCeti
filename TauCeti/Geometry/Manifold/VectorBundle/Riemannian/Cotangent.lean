@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue
-public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Euler
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import Mathlib.Analysis.Calculus.Deriv.Mul

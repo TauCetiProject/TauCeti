@@ -359,7 +359,7 @@ section GeometricNaturality
 
 variable {K} (k : Type*) [CommSemiring k] [Algebra K k]
 variable {H H₁ : Type*} [CommSemiring H] [CommSemiring H₁]
-variable {R : Type*} [CommRing R] [Algebra k R]
+variable {R : Type*} [CommSemiring R] [Algebra k R]
 
 section Bialgebra
 
@@ -373,10 +373,9 @@ theorem _root_.BialgHom.tensorProductMap_comp_geometricFrobeniusBialgHom (ψ : H
         (geometricFrobeniusBialgHom K k H) =
       (geometricFrobeniusBialgHom K k H₁).comp
         (_root_.Bialgebra.TensorProduct.map (BialgHom.id k k) ψ) := by
-  ext x
-  induction x with
-  | tmul s h => simp
-  | add x y hx hy => simp_all [map_add]
+  apply BialgHom.coe_toAlgHom_injective
+  ext h
+  simp
 
 /-- The map on points induced by the base change of a bialgebra morphism `ψ` over `K` commutes
 with the maps on points induced by the geometric Frobenius. -/

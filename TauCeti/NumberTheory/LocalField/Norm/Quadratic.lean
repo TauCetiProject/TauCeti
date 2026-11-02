@@ -146,12 +146,8 @@ theorem exists_norm_eq_iff_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪
   constructor
   · rintro ⟨z, rfl⟩
     -- A norm of valuation zero is the norm of a unit `w` of `𝒪[L]`.
-    obtain ⟨w, rfl⟩ : ∃ w : 𝒪[L], (w : L) = z :=
-      ⟨⟨z, (Valuation.mem_integer_iff _ _).mpr (valuation_norm_eq_one_iff.mp hb).le⟩, rfl⟩
-    rw [← coe_norm_integerRing] at hb ⊢
-    have hunit : IsUnit (Algebra.norm 𝒪[K] w) :=
-      (Valuation.Integers.isUnit_iff_valuation_eq_one
-        (Valuation.integer.integers (valuation K))).mpr hb
+    obtain ⟨w, rfl, hunit⟩ := exists_integerRing_eq_and_isUnit_norm hb
+    rw [← coe_norm_integerRing]
     rw [B.norm_eq_of_apply_zero_eq_one hB w] at hunit ⊢
     obtain ⟨u, t, h | h⟩ := exists_eq_of_isUnit_normForm T N hunit
     exacts [⟨u, t, Or.inl (by exact_mod_cast h)⟩, ⟨u, t, Or.inr (by exact_mod_cast h)⟩]

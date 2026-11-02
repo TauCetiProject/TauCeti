@@ -18,6 +18,11 @@ power has the discrete topology and continuity of the induced action is availabl
 
 * `TauCeti.smoothTensorInductionFunctor`: tensor induction on smooth discrete coefficients.
 
+## Main results
+
+* `TauCeti.smoothTensorInductionFunctor_map_hom_hom_apply`: smooth tensor induction of a morphism
+  acts factorwise.
+
 ## References
 
 * L. Evens, "A generalization of the transfer map in the cohomology of groups",
@@ -27,6 +32,7 @@ power has the discrete topology and continuity of the induced action is availabl
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 universe u v w
 
@@ -67,5 +73,17 @@ theorem smoothTensorInductionFunctor_map {A B : SmoothDiscreteTopRep.{u, v, w} R
       (toSmoothDiscrete R G).map
         ((DiscreteRep.tensorInductionFunctor U hU s).map ((ofSmoothDiscrete R U).map f)) :=
   rfl
+
+/-- Smooth tensor induction of a morphism applies its underlying linear map in every coset
+factor.
+
+This is not a simp lemma: `smoothTensorInductionFunctor_map` rewrites its left-hand side. -/
+theorem smoothTensorInductionFunctor_map_hom_hom_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
+    (f : A ⟶ B) (x : ⨂[R] _ : G ⧸ U, A.obj.V) :
+    ((smoothTensorInductionFunctor R G U hU s).map f).hom.hom x =
+      PiTensorProduct.map (fun _ ↦ f.hom.hom.toLinearMap) x :=
+  -- The dictionary functors around discrete tensor induction keep the underlying maps.
+  LinearMap.congr_fun (Representation.IntertwiningMap.tensorInduced_toLinearMap
+    ((ofSmoothDiscrete R U).map f) s) x
 
 end TauCeti

@@ -15,12 +15,20 @@ annihilator of its inverse image. This is the extension-of-functionals statement
 when a Hom cocycle space is computed using an embedding into an injective module.
 
 Equivalently, every functional on `V` vanishing on the inverse image of `S` is the
-pullback of a functional on the quotient `W ⧸ S`.
+pullback of a functional on the quotient `W ⧸ S`. Conversely, over any commutative ring, a
+functional factoring through a quotient `V ⧸ U` annihilates `U`
+(`Submodule.comp_mkQ_mem_dualAnnihilator`).
 -/
 
 public section
 
 namespace Submodule
+
+/-- A functional factoring through the quotient `V ⧸ U` annihilates `U`. -/
+theorem comp_mkQ_mem_dualAnnihilator {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    (U : Submodule R V) (ψ : Module.Dual R (V ⧸ U)) : ψ ∘ₗ U.mkQ ∈ U.dualAnnihilator :=
+  (mem_dualAnnihilator _).mpr fun w hw ↦ by
+    rw [LinearMap.comp_apply, mkQ_apply, (Quotient.mk_eq_zero U).mpr hw, map_zero]
 
 variable {k V W : Type*} [Field k] [AddCommGroup V] [Module k V]
   [AddCommGroup W] [Module k W]

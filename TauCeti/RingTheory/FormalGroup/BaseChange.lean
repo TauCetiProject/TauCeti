@@ -18,8 +18,11 @@ group laws.
 ## Main results
 
 * `FormalGroup.map_id` and `FormalGroup.map_comp`: base change is functorial.
+* `FormalGroup.map_injective`: base change along an injective homomorphism is injective.
 * `FormalGroup.isComm_map`: base change preserves commutativity.
 * `FormalGroup.map_𝔾ₐ` and `FormalGroup.map_𝔾ₘ`: the standard laws are stable under base change.
+* `FormalGroup.subst_map_toPowerSeries_map`: a power series additive along `F` stays additive along
+  `F` after base change.
 -/
 
 public section
@@ -29,6 +32,16 @@ open MvPowerSeries
 namespace FormalGroup
 
 variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+
+/-- Base change along an injective coefficient homomorphism is injective. -/
+theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (fun F : FormalGroup R ↦ F.map f) := by
+  intro F G h
+  apply FormalGroup.ext
+  ext1 d
+  apply hf
+  simpa only [map_toPowerSeries, coeff_map] using
+    congrArg (fun K ↦ coeff d K.toPowerSeries) h
 
 /-- Base-changing a formal group law along the identity homomorphism changes nothing. -/
 @[simp]
@@ -68,5 +81,16 @@ theorem map_𝔾ₐ (f : R →+* S) : (𝔾ₐ (R := R)).map f = 𝔾ₐ := by
 theorem map_𝔾ₘ (f : R →+* S) : (𝔾ₘ (R := R)).map f = 𝔾ₘ := by
   ext
   simp [FormalGroup.𝔾ₘ]
+
+/-- A power series additive along `F` stays additive along `F` after base change. -/
+theorem subst_map_toPowerSeries_map (F : FormalGroup R) (f : R →+* S) {g : PowerSeries R}
+    (hg : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
+    PowerSeries.subst (F.map f).toPowerSeries (g.map f) =
+      PowerSeries.subst (X 0) (g.map f) + PowerSeries.subst (X 1) (g.map f) := by
+  have := congrArg (MvPowerSeries.map f) hg
+  rwa [map_add, PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
+    PowerSeries.map_subst (.X 0), PowerSeries.map_subst (.X 1), map_X, map_X,
+    ← map_toPowerSeries] at this
 
 end FormalGroup

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Smooth nondegenerate metrics on a manifold
@@ -129,6 +131,14 @@ def tangentBilinFormInCoordinates (a x : M)
     (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) : E →L[ℝ] E →L[ℝ] ℝ :=
   ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
     (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x ϕ
+
+/-- The tangent bilinear-form coordinate map is the canonical coordinate map for hom bundles. -/
+theorem tangentBilinFormInCoordinates_def (a x : M)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
+    tangentBilinFormInCoordinates a x ϕ =
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) (E →L[ℝ] ℝ)
+        (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x ϕ := by
+  rfl
 
 /-- On the base set of the trivialization at `a`, a tangent bilinear form read in that
 trivialization pairs two vectors of the model space as the form pairs the tangent vectors with
@@ -267,6 +277,11 @@ bundle at `x₀`. It is meaningful on the chart target `(extChartAt I x₀).targ
 def chartMetric (x₀ : M) (z : E) : E →L[ℝ] E →L[ℝ] ℝ :=
   g.inCoordinates x₀ ((extChartAt I x₀).symm z)
 
+/-- The chart metric is the tangent coordinate metric composed with the inverse base chart. -/
+theorem chartMetric_def (x₀ : M) (z : E) :
+    g.chartMetric x₀ z = g.inCoordinates x₀ ((extChartAt I x₀).symm z) := by
+  rfl
+
 /-- At a point `z` of the chart target, the chart metric pairs two vectors of the model space as
 `g` pairs the tangent vectors at `(extChartAt I x₀).symm z` with these coordinates. -/
 theorem chartMetric_apply {z : E} (hz : z ∈ (extChartAt I x₀).target) (u w : E) :
@@ -284,6 +299,18 @@ theorem chartMetric_extChartAt_apply (hy : y ∈ (extChartAt I x₀).source) (u 
         ((trivializationAt E (TangentSpace I) x₀).symm y w) := by
   rw [chartMetric, (extChartAt I x₀).left_inv hy]
   exact g.inCoordinates_apply x₀ (by simpa using hy) u w
+
+/-- At the chart image of a point `y` of the chart domain, the chart metric pairs two vectors of a
+basis `b` of the model space as `g` pairs the corresponding vectors at `y` of the coordinate frame
+of `b`. -/
+theorem chartMetric_extChartAt_apply_basis {ι : Type*} (b : Module.Basis ι ℝ E)
+    (hy : y ∈ (extChartAt I x₀).source) (i j : ι) :
+    g.chartMetric x₀ (extChartAt I x₀ y) (b i) (b j) =
+      g y ((trivializationAt E (TangentSpace I) x₀).localFrame b i y)
+        ((trivializationAt E (TangentSpace I) x₀).localFrame b j y) := by
+  have hbase : y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hy
+  simp only [g.chartMetric_extChartAt_apply hy, ← symmL_basis_eq_localFrame b hbase,
+    Trivialization.symmL_apply _ hbase]
 
 /-- The chart metric is symmetric at every point of the chart target. -/
 theorem isSymm_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :

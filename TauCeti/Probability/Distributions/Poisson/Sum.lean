@@ -20,6 +20,9 @@ Poisson total or allocating a total among categories.
 Aggregation over the fibres of a finite category map preserves independence and adds rates
 over those fibres, including empty fibres. This also permits aggregation inside Poisson
 mixtures, such as the negative-multinomial family.
+
+Convolution of two finite products adds the rates coordinatewise, preserving independence
+between coordinates. This identity also applies inside mixtures of Poisson product laws.
 -/
 
 public section
@@ -32,6 +35,26 @@ open scoped NNReal
 namespace TauCeti.Probability
 
 variable {ι : Type*}
+
+/-- Convolution of independent Poisson count vectors adds their rates coordinatewise.
+Empty coordinate types and zero rates are included. -/
+@[simp]
+theorem pi_poissonMeasure_conv_pi_poissonMeasure [Fintype ι] (r s : ι → ℝ≥0) :
+    (Measure.pi fun i => poissonMeasure (r i)) ∗
+        (Measure.pi fun i => poissonMeasure (s i)) =
+      Measure.pi fun i => poissonMeasure (r i + s i) := by
+  have hpair := measurePreserving_arrowProdEquivProdArrow ℕ ℕ ι
+    (fun i => poissonMeasure (r i)) (fun i => poissonMeasure (s i))
+  rw [Measure.conv, ← hpair.map_eq, Measure.map_map (by fun_prop) hpair.measurable]
+  have hsum : (fun z : ι → ℕ × ℕ =>
+      (MeasurableEquiv.arrowProdEquivProdArrow ℕ ℕ ι z).1 +
+        (MeasurableEquiv.arrowProdEquivProdArrow ℕ ℕ ι z).2) =
+      (fun z i => (z i).1 + (z i).2) := by
+    funext z i
+    simp [MeasurableEquiv.arrowProdEquivProdArrow, Equiv.arrowProdEquivProdArrow]
+  rw [Function.comp_def, hsum,
+    Measure.pi_map_pi (f := fun _ (z : ℕ × ℕ) => z.1 + z.2) (fun _ => (by fun_prop))]
+  exact congrArg Measure.pi (funext fun i => poissonMeasure_conv_poissonMeasure (r i) (s i))
 
 /-- The sum of a finite independent family of Poisson variables is Poisson with rate equal
 to the sum of the rates. Only the variables indexed by `s` need carry a Poisson law.

@@ -16,7 +16,9 @@ import Mathlib.Tactic
 At a generic parameter, a nonzero highest-weight vector in a finite-dimensional module has a
 finite nonzero lowering string.  Commuting `E` past the first vanishing power of `F` forces its
 weight to be `ε q^m` for a sign `ε`.  This is the numerical step in the classification of
-finite-dimensional simple modules by the signed ladder modules.
+finite-dimensional simple modules by the signed ladder modules.  Conversely, the lowering string
+of a highest-weight vector of weight `ε q^m` in a finite-dimensional module stops after `m + 1`
+steps, so such a vector generates a copy of the signed ladder module `L_m^ε`.
 
 The calculation follows A. Virelizier, *Quantum groups*, Section 2.4.
 -/
@@ -35,17 +37,9 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
     (hv0 : v ≠ 0) (hev : e q • v = 0) :
     ∃ (m : ℕ) (ε : ℤˣ), μ = ε * q ^ m ∧
       f q ^ (m + 1) • v = 0 ∧ f q ^ m • v ≠ 0 := by
-  classical
-  have hex : ∃ n : ℕ, f q ^ n • v = 0 := exists_f_pow_smul_eq_zero hq v
-  let N := Nat.find hex
-  have hN : f q ^ N • v = 0 := Nat.find_spec hex
-  have hNpos : 0 < N := by
-    by_contra! h
-    exact hv0 (by simpa [Nat.eq_zero_of_le_zero h] using hN)
-  let m := N - 1
-  have hNm : N = m + 1 := by omega
-  have hFm : f q ^ m • v ≠ 0 := by
-    exact Nat.find_min hex (by omega)
+  obtain ⟨m, hFm, hFm1⟩ :=
+    exists_pow_smul_ne_zero_and_smul_eq_zero hv0 (exists_f_pow_smul_eq_zero hq v)
+  have hN : f q ^ (m + 1) • v = 0 := by rwa [pow_succ', mul_smul]
   have hμ := weight_ne_zero hv hv0
   have hkInv : kInv q • v = μ⁻¹ • v := by
     have hk : μ • (kInv q • v) = v := by
@@ -61,8 +55,8 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
   have hcomm : (quantumInteger q (m + 1) * (q - q⁻¹)⁻¹ * (q⁻¹ ^ m * μ - q ^ m * μ⁻¹)) •
       f q ^ m • v = 0 := by
     have hf (c : ℂ) (w : V) : f q ^ m • c • w = c • f q ^ m • w := smul_comm _ _ _
-    have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero N)
-    simp only [hNm, mul_smul, hNm ▸ hN, hev, smul_zero, add_smul, zero_add, smul_assoc,
+    have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (m + 1))
+    simp only [mul_smul, hN, hev, smul_zero, add_smul, zero_add, smul_assoc,
       sub_smul, mem_weightSpace_iff.mp hv, hkInv, Nat.add_sub_cancel, Nat.cast_add,
       Nat.cast_one, smul_sub, hf] at h
     generalize f q ^ m • v = w at h ⊢
@@ -76,7 +70,43 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
     linear_combination
       (μ * q ^ m) * hcoefficient - μ ^ 2 * hqm + (q ^ m) ^ 2 * mul_inv_cancel₀ hμ
   rcases eq_or_eq_neg_of_sq_eq_sq μ (q ^ m) hsq with hpos | hneg
-  · exact ⟨m, 1, by simpa using hpos, hNm ▸ hN, hFm⟩
-  · exact ⟨m, -1, by simpa using hneg, hNm ▸ hN, hFm⟩
+  · exact ⟨m, 1, by simpa using hpos, hN, hFm⟩
+  · exact ⟨m, -1, by simpa using hneg, hN, hFm⟩
+
+/-- In a finite-dimensional module at a generic parameter, the lowering string of a
+highest-weight vector of weight `ε q^m` vanishes after `m + 1` steps. -/
+theorem f_pow_succ_smul_eq_zero_of_highest_weight_vector [FiniteDimensional ℂ V]
+    (hq : IsGenericQuantumParameter q) {m : ℕ} {ε : ℤˣ} {v : V}
+    (hv : v ∈ weightSpace q V (ε * q ^ m)) (hev : e q • v = 0) : f q ^ (m + 1) • v = 0 := by
+  have hq0 := hq.ne_zero
+  have hsign (η : ℤˣ) : ((η : ℤ) : ℂ) ^ 2 = 1 := by
+    rcases Int.units_eq_one_or η with rfl | rfl <;> norm_num
+  have hεinv : ((ε : ℤ) : ℂ)⁻¹ = ε := by
+    rcases Int.units_eq_one_or ε with rfl | rfl <;> norm_num
+  -- `E` kills `F^(m+1) v`: in the commutator formula the `K`, `K⁻¹` term cancels on `v`.
+  have he : e q • f q ^ (m + 1) • v = 0 := by
+    have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (m + 1))
+    simp only [mul_smul, hev, smul_zero, add_smul, zero_add, smul_assoc, sub_smul,
+      mem_weightSpace_iff.mp hv, kInv_smul_of_mem_weightSpace hv, Nat.add_sub_cancel,
+      smul_sub, smul_comm (f q ^ m) (_ : ℂ)] at h
+    rw [h]
+    generalize f q ^ m • v = w
+    match_scalars
+    simp only [inv_pow, mul_inv, hεinv]
+    field_simp
+    ring
+  -- A nonzero `F^(m+1) v` would be a highest-weight vector of weight `ε q^(-m-2)`; squaring the
+  -- weights would give `q^(2m) = q^(2r + 4m + 4)`, which a generic parameter forbids.
+  by_contra hu
+  obtain ⟨r, η, hμ, -, -⟩ :=
+    exists_eq_sign_mul_pow_of_highest_weight_vector hq (f_pow_smul_mem_weightSpace hv (m + 1))
+      hu he
+  have hsq : q ^ (2 * m) = q ^ (2 * r + 4 * m + 4) := by
+    have := congrArg (· ^ 2) hμ
+    simp only [mul_pow, hsign, one_mul, inv_pow] at this
+    field_simp at this
+    linear_combination this
+  have := hq.pow_injective hsq
+  omega
 
 end TauCeti.UqSl2

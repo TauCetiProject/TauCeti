@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
-# Restricting partial diffeomorphisms to open subsets
+# Partial diffeomorphisms and open subsets
 
 Mathlib's `OpenPartialHomeomorph.restrOpen` shrinks the source of an open partial homeomorphism
 to its intersection with an open set. This file provides the same operation for Mathlib's
@@ -16,9 +17,17 @@ to its intersection with an open set. This file provides the same operation for 
 domains are subsets of the original ones. It is used to make charts small, for example to make
 finitely many charts centred at distinct points pairwise disjoint.
 
+The file also records that the inclusion of an open subset, with the charts Mathlib restricts to
+it, is a local diffeomorphism. Structures defined through charts, such as orientations, can then
+be compared on an open subset and on the ambient manifold. An open subset equal to the whole
+manifold is diffeomorphic to it through its inclusion.
+
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
+* `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
+  diffeomorphism.
 -/
 
 public section
@@ -76,3 +85,57 @@ theorem coe_restrOpen_symm (hs : IsOpen s) :
   (rfl)
 
 end PartialDiffeomorph
+
+namespace Diffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- An open subset `U` of `M` equal to `⊤` is `C^n` diffeomorphic to `M` through its inclusion. -/
+def ofTop (U : TopologicalSpace.Opens M) (hU : U = ⊤) : U ≃ₘ^n⟮I, I⟯ M where
+  toFun := Subtype.val
+  invFun x := ⟨x, hU.symm ▸ trivial⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  contMDiff_toFun := contMDiff_subtype_val
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp contMDiff_id
+
+/-- The diffeomorphism `Diffeomorph.ofTop` is the inclusion. -/
+@[simp]
+theorem ofTop_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : U) :
+    ofTop (I := I) (n := n) U hU x = x :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.ofTop` sends a point to itself, viewed in `U`. -/
+@[simp]
+theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : M) :
+    ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
+  (rfl)
+
+end Diffeomorph
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The inclusion of an open subset `U` of `M`, charted by the restrictions of the charts of `M`,
+is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
+    IsLocalDiffeomorph I I n (Subtype.val : U → M) := fun x ↦ by
+  let e := U.openPartialHomeomorphSubtypeCoe ⟨x⟩
+  let Φ : PartialDiffeomorph I I U M n :=
+    { e.toPartialEquiv with
+      open_source := e.open_source
+      open_target := e.open_target
+      contMDiffOn_toFun := contMDiff_subtype_val.contMDiffOn
+      contMDiffOn_invFun := fun y hy ↦ by
+        refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 ?_
+        exact contMDiffWithinAt_id.congr (fun z hz ↦ e.right_inv hz) (e.right_inv hy) }
+  exact Φ.isLocalDiffeomorphAt I I n (mem_univ x)
+
+end TauCeti

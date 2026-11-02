@@ -91,22 +91,6 @@ namespace PDCode
 
 variable {n : ℕ}
 
-/-- A local smoothing never joins a slot to the opposite slot: the two arcs of a smoothing cut
-across the two local strands instead of following them, which is what distinguishes a smoothing
-from `TauCeti.PDCode.crossingTurn`. -/
-theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
-    slotSmoothing b slot ≠ oppositeCrossingSlot slot := by
-  have key : ∀ (c : Bool) (t : Fin 4), (slotSmoothing c t).val ≠ (t + 2).val := by
-    intro c
-    cases c <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
-  intro h
-  exact key b slot (by rw [h, oppositeCrossingSlot_apply])
-
-/-- The two local smoothings at a crossing are distinct. -/
-theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
-  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
-    decide
-
 /-- Smooth every crossing of a PD-code, using at crossing `i` the local smoothing
 `slotSmoothing (b i)`. This is the smoothing counterpart of `TauCeti.PDCode.crossingTurn`, which
 instead follows a local strand through a crossing. -/
@@ -321,7 +305,7 @@ theorem isPerfectMatching_smoothingTurn (D : PDCode n) (b : Fin n → Bool) :
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
   rw [smoothingTurn_crossing, crossing_apply, D.halfEdge.apply_eq_iff_eq,
     (crossingSlotEquiv n).apply_eq_iff_eq, Prod.mk.injEq] at hh
-  exact slotSmoothing_ne _ slot hh.2
+  exact (isPerfectMatching_slotSmoothing _).apply_ne slot hh.2
 
 /-- The directed traversal orbits of a smoothed diagram come in pairs, as the halving in
 `TauCeti.PDCode.stateLoopCount` presumes: smoothed traversal is a product of two perfect
@@ -414,6 +398,13 @@ that choice. -/
     stateWeight (Fin.snoc (α := fun _ ↦ Bool) s c) a =
       stateWeight s a * bif c then a else a⁻¹ := by
   simp [stateWeight_def, Fin.prod_univ_castSucc]
+
+/-- Extending a state by a choice at an inserted crossing `i` multiplies its weight by the weight
+of that choice. -/
+@[simp] theorem stateWeight_insertNth (i : Fin (n + 1)) (c : Bool) (s : Fin n → Bool) (a : Rˣ) :
+    stateWeight (Fin.insertNth (α := fun _ ↦ Bool) i c s) a =
+      (bif c then a else a⁻¹) * stateWeight s a := by
+  simp [stateWeight_def, Fin.prod_univ_succAbove _ i]
 
 end StateWeight
 

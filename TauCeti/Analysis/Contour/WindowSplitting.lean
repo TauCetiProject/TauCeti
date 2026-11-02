@@ -40,8 +40,8 @@ consumers add the per-side fundamental-theorem evaluation and the limit of the e
 ## Provenance
 
 Migrated from `perCrossing_window_splitting` of `LocalCutoffs.lean` in the AINTLIB
-`LeanModularForms` development, restated for a raw curve with the analytic inputs (one-sided
-derivative limits, eventual differentiability, continuity on the window) as hypotheses in place
+`LeanModularForms` development, restated for a raw curve with the analytic inputs (non-zero
+one-sided derivative limits, continuity on the window) as hypotheses in place
 of the bundled `ClosedPwC1Immersion`, and the integrability hypothesis quantified over the
 window rather than `[0, 1]`. See N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers
 and a generalized Residue Theorem*, arXiv:1808.00997, §3.
@@ -73,9 +73,7 @@ private theorem exists_monotone_leave_radius {γ : ℝ → ℂ} {s : ℂ} {t₀ 
     {L_R L_L : ℂ} (hr_pos : 0 < r) (h_at : γ t₀ = s)
     (hγ_cont : ContinuousOn γ (Icc (t₀ - r) (t₀ + r))) (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
     (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
-    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
-    (h_diff_R : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t)
-    (h_diff_L : ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t) :
+    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L)) :
     ∃ ρ > 0, ρ ≤ r ∧
       StrictMonoOn (fun t => ‖γ t - s‖) (Icc t₀ (t₀ + ρ)) ∧
       StrictAntiOn (fun t => ‖γ t - s‖) (Icc (t₀ - ρ) t₀) ∧
@@ -84,9 +82,9 @@ private theorem exists_monotone_leave_radius {γ : ℝ → ℂ} {s : ℂ} {t₀ 
   have hγ_at : ContinuousAt γ t₀ :=
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
   obtain ⟨r_R, hr_R_pos, hmono_raw⟩ :=
-    exists_strictMonoOn_norm_sub_right h_at hL_R h_tendsto_R hγ_at h_diff_R
+    exists_strictMonoOn_norm_sub_right h_at hL_R h_tendsto_R hγ_at.continuousWithinAt
   obtain ⟨r_L, hr_L_pos, hanti_raw⟩ :=
-    exists_strictAntiOn_norm_sub_left h_at hL_L h_tendsto_L hγ_at h_diff_L
+    exists_strictAntiOn_norm_sub_left h_at hL_L h_tendsto_L hγ_at.continuousWithinAt
   set ρ : ℝ := min r (min r_R r_L) with _
   have hρ_pos : 0 < ρ := lt_min hr_pos (lt_min hr_R_pos hr_L_pos)
   have hρ_R : ρ ≤ r_R := (min_le_right _ _).trans (min_le_left _ _)
@@ -212,8 +210,6 @@ theorem exists_exit_times_truncated_integral_split {γ : ℝ → ℂ} {s : ℂ} 
     (hγ_cont : ContinuousOn γ (Icc l u)) (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
     (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
     (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
-    (h_diff_R : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t)
-    (h_diff_L : ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t)
     (h_unique : ∀ t ∈ Icc l u, γ t = s → t = t₀) (g : ℂ → ℂ)
     (h_int : ∀ ε : ℝ, 0 < ε → ∀ a b : ℝ, l ≤ a → a ≤ b → b ≤ u →
       IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
@@ -242,7 +238,6 @@ theorem exists_exit_times_truncated_integral_split {γ : ℝ → ℂ} {s : ℂ} 
     hγ_cont.mono (Icc_subset_Icc hlr hru)
   obtain ⟨ρ, hρ_pos, hρ_le_r, hmono, hanti, h_leave_R, h_leave_L⟩ :=
     exists_monotone_leave_radius hr_pos h_at hγ_cont' hL_R hL_L h_tendsto_R h_tendsto_L
-      h_diff_R h_diff_L
   have hγ_cont_R : ContinuousOn γ (Icc t₀ (t₀ + ρ)) :=
     hγ_cont.mono (Icc_subset_Icc hlt.le (by linarith [hρ_le_r, hru]))
   have hγ_cont_L : ContinuousOn γ (Icc (t₀ - ρ) t₀) :=

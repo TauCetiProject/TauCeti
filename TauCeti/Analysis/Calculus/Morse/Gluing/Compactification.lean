@@ -75,7 +75,7 @@ private theorem exists_splitGluingPairs_parametrization [CompleteSpace Eᵤ]
       ContinuousOn F (Icc 0 r₀) ∧ F '' Ioc 0 r₀ = splitGluingPairs ε r₀ g k ∧
       F 0 = (WithLp.toLp 2 (g 0, 0), WithLp.toLp 2 (0, k 0)) ∧
       ∀ r ∈ Icc 0 r₀, ‖(F r).1.snd‖ / ε = r := by
-  obtain ⟨w, hw, hw₀, hwnorm, himage⟩ :=
+  obtain ⟨w, hw, hw₀, hwnorm, -, himage⟩ :=
     exists_setOf_mem_splitPassage_source_graph_eq_image hg hgε hk hkε hε hr₀₁ hK
   -- Pair the entrance parametrization with its exit formula; both remain continuous at zero.
   let v : ℝ → Eᵤ := fun r ↦ r • w r

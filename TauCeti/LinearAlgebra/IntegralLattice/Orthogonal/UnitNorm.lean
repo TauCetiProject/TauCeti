@@ -102,6 +102,20 @@ theorem spanSingletonIsometry_symm_apply_tmul (hx : x ≠ 0) (q : ℚ) :
   apply (L.spanSingletonIsometry x hx).injective
   simp
 
+/-- If the nonzero norm of `x` divides every pairing with `x`, then `L` is the orthogonal sum
+of `ℤ x` and its orthogonal complement, so its determinant is the norm of `x` times the
+determinant of that complement. -/
+theorem determinant_eq_integralForm_mul_determinant_orthogonal
+    (hxx : L.integralForm x x ≠ 0)
+    (hdvd : ∀ y, L.integralForm x x ∣ L.integralForm x y) :
+    L.determinant = L.integralForm x x * (ofIntegralForm _
+      (L.isSymm_integralForm.restrict (L.integralForm.orthogonal (ℤ ∙ x)))).determinant := by
+  have hST := L.integralForm.isCompl_span_singleton_orthogonal_of_dvd
+    (mem_nonZeroDivisors_of_ne_zero hxx) hdvd
+  rw [← (L.orthogonalSumIsometryOfIsCompl _ _ hST le_rfl).determinant_eq, determinant_orthogonalSum,
+    ← (L.spanSingletonIsometry x fun h ↦ by simp [h] at hxx).determinant_eq,
+    determinant_ofGramMatrix, Matrix.det_unique, Matrix.of_apply]
+
 private theorem ne_zero_of_isUnit_norm (hx : IsUnit (L.integralForm x x)) : x ≠ 0 := by
   intro h
   simp [h] at hx

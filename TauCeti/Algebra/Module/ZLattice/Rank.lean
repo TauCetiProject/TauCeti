@@ -23,6 +23,12 @@ discrete from their rank and real span, without a separate compactness argument.
 
 - `TauCeti.discreteTopology_iff_finrank_eq_finrank_span`: discreteness of a finitely generated
   integer submodule is equivalent to equality of its integer rank and its real span's dimension.
+- `setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology` and
+  `setFinrank_real_eq_finrank_int`: in finite dimension, a set of vectors of a discrete integer
+  submodule has the same real and integer rank, and the real rank of the submodule itself is its
+  integer rank. These two statements and their names follow Kevin H. Wilson's successive-minima
+  proposal for Mathlib, `Mathlib/Algebra/Module/ZLattice/Basic.lean` at revision `8423d1c` of
+  <https://github.com/khwilson/mathlib4>.
 
 Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span (L := L)).mpr hr` to obtain
 discreteness from a rank equality `hr`.
@@ -91,3 +97,18 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
       he' e.symm.injective
 
 end TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  (L : Submodule ℤ E) [DiscreteTopology L]
+
+/-- A set of vectors of a discrete integer submodule has the same rank over `ℝ` as over `ℤ`. -/
+theorem setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology {s : Set E}
+    (hs : s ⊆ L) : Set.finrank ℝ s = Set.finrank ℤ s :=
+  Real.finrank_eq_int_finrank_of_discrete <|
+    ‹DiscreteTopology L›.of_subset (Submodule.span_le.mpr hs)
+
+/-- The real rank of a discrete integer submodule is its integer rank. -/
+@[simp]
+theorem setFinrank_real_eq_finrank_int : Set.finrank ℝ (L : Set E) = Module.finrank ℤ L := by
+  rw [setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology L le_rfl, Set.finrank,
+    Submodule.span_eq]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.Deriv
 public import TauCeti.Analysis.Convex.Differentiability
+public import Mathlib.Analysis.Normed.Affine.Isometry
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.MeasureTheory.Measure.OpenPos
@@ -39,7 +40,9 @@ everywhere hypothesis.
 
 As elsewhere, a convex function `f : E → EReal` is one with convex real epigraph
 `{(x, r) | f x ≤ r}` that never takes the value `⊥`, and its derivative is that of the real
-representative `x ↦ (f x).toReal`.
+representative `x ↦ (f x).toReal`. On an affine subspace, both the derivatives and the reference
+measure are taken intrinsically: translate its direction space onto the affine subspace, then
+use the derivatives of the translated restrictions and the image of an additive Haar measure.
 
 ## Main statements
 
@@ -47,10 +50,13 @@ representative `x ↦ (f x).toReal`.
   functions finite and continuous on a connected open set `Ω` that have a common derivative on a
   dense subset of `Ω` differ by a constant on `Ω`;
 * `IsOpen.exists_eq_add_of_fderiv_ae_eq` — in finite dimension, convex functions finite on a
-  connected open set `Ω` whose derivatives agree `μ`-almost everywhere, for a measure `μ` with
-  respect to which Lebesgue measure on `Ω` is absolutely continuous, differ by a constant on `Ω`;
+  connected open set `Ω` whose derivatives agree `μ`-almost everywhere on `Ω`, for a measure `μ`
+  with respect to which Lebesgue measure on `Ω` is absolutely continuous, differ by a constant
+  on `Ω`;
 * `IsOpen.exists_eq_add_of_gradient_ae_eq` — the same statement for gradients on a
-  finite-dimensional real inner product space.
+  finite-dimensional real inner product space;
+* `AffineSubspace.exists_eq_add_of_fderiv_ae_eq` — the relative version on an affine subspace,
+  using derivatives along its direction and intrinsic affine Haar measure.
 
 ## References
 
@@ -70,18 +76,6 @@ open scoped Topology Gradient
 section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {u v : E → EReal} {Ω : Set E}
-
-/-- The restriction of a convex function to the line `t ↦ y + t • h` is convex on the set of
-parameters where it is finite. -/
-private theorem convexOn_toReal_comp_line (hu : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hbot : ∀ x, u x ≠ ⊥) (y h : E) :
-    ConvexOn ℝ {t : ℝ | u (y + t • h) ≠ ⊤} fun t => (u (y + t • h)).toReal := by
-  have hline : (AffineMap.lineMap y (y + h) : ℝ → E) = fun t => y + t • h := by
-    funext t
-    rw [AffineMap.lineMap_apply_module', add_sub_cancel_left, add_comm]
-  have := (convexOn_toReal hu hbot).comp_affineMap (AffineMap.lineMap y (y + h))
-  rw [hline] at this
-  exact this
 
 /-- **The cross-slope inequality.** Let `u` and `v` be convex functions, finite and continuous on
 an open set `Ω`, and suppose every point of `Ω` is a limit of points at which `u` and `v` have a
@@ -135,9 +129,17 @@ private theorem slope_le_slope_of_subset_closure (hu : Convex ℝ {p : E × ℝ 
     HasFDerivAt.comp_hasDerivAt (l := fun x => (u x).toReal) b hfu hline
   have hdv : HasDerivAt (fun t => (v (z - b • h + t • h)).toReal) (f' h) b :=
     HasFDerivAt.comp_hasDerivAt (l := fun x => (v x).toReal) b hfv hline
-  exact ((convexOn_toReal_comp_line hu hubot _ h).slope_le_of_hasDerivAt (huΩ _ hza)
-    (huΩ _ hzb) hab hdu).trans ((convexOn_toReal_comp_line hv hvbot _ h).le_slope_of_hasDerivAt
-      (hvΩ _ hzb) (hvΩ _ hzc) hbc hdv)
+  have hlineMap : (AffineMap.lineMap (z - b • h) (z - b • h + h) : ℝ → E) =
+      fun t => z - b • h + t • h := by
+    ext t
+    simp [AffineMap.lineMap_apply_module', add_comm]
+  have hφ := (convexOn_toReal hu hubot).comp_affineMap
+    (AffineMap.lineMap (z - b • h) (z - b • h + h))
+  have hψ := (convexOn_toReal hv hvbot).comp_affineMap
+    (AffineMap.lineMap (z - b • h) (z - b • h + h))
+  rw [hlineMap] at hφ hψ
+  exact (hφ.slope_le_of_hasDerivAt (huΩ _ hza) (huΩ _ hzb) hab hdu).trans
+    (hψ.le_slope_of_hasDerivAt (hvΩ _ hzb) (hvΩ _ hzc) hbc hdv)
 
 /-- **Convex functions with the same derivative on a dense set differ by a constant.** Let
 `u v : E → EReal` be convex functions (convex real epigraph, never `⊥`) on a real normed space,
@@ -171,10 +173,11 @@ theorem _root_.IsOpen.exists_eq_add_of_subset_closure_hasFDerivAt_eq (hΩ : IsOp
       have := (convex_ball x r).affine_preimage (AffineMap.lineMap x y)
       rwa [hline] at this
     have hIΩ {t : ℝ} (ht : t ∈ I) : x + t • (y - x) ∈ Ω := hball ht
-    have hφ := (convexOn_toReal_comp_line hu hubot x (y - x)).subset
-      (fun t ht => huΩ _ (hIΩ ht)) hIc
-    have hψ := (convexOn_toReal_comp_line hv hvbot x (y - x)).subset
-      (fun t ht => hvΩ _ (hIΩ ht)) hIc
+    have hφ := (convexOn_toReal hu hubot).comp_affineMap (AffineMap.lineMap x y)
+    have hψ := (convexOn_toReal hv hvbot).comp_affineMap (AffineMap.lineMap x y)
+    rw [hline] at hφ hψ
+    have hφ := hφ.subset (fun t ht => huΩ _ (hIΩ ht)) hIc
+    have hψ := hψ.subset (fun t ht => hvΩ _ (hIΩ ht)) hIc
     have hmid {a b c : ℝ} (ha : a ∈ I) (hc : c ∈ I) (hab : a < b) (hbc : b < c) : b ∈ I :=
       hIc.ordConnected.out ha hc ⟨hab.le, hbc.le⟩
     have key := sub_eq_sub_of_slope_le hIo hφ hψ
@@ -206,14 +209,15 @@ theorem _root_.IsOpen.exists_eq_add_of_subset_closure_hasFDerivAt_eq (hΩ : IsOp
 real normed space, finite on a connected open set `Ω`. Let `ρ` be an additive Haar measure and `μ`
 a measure such that the restriction of `ρ` to `Ω` is absolutely continuous with respect to `μ`, as
 when `μ` restricted to `Ω` is equivalent to Lebesgue measure on `Ω`. If the derivatives of the real
-representatives of `u` and `v` agree `μ`-almost everywhere, then `u = v + c` on `Ω` for some real
-constant `c`. -/
+representatives of `u` and `v` agree `μ`-almost everywhere on `Ω`, then `u = v + c` on `Ω` for a
+real constant `c`. -/
 theorem _root_.IsOpen.exists_eq_add_of_fderiv_ae_eq [FiniteDimensional ℝ E] [MeasurableSpace E]
     [BorelSpace E] {ρ μ : Measure E} [ρ.IsAddHaarMeasure] (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hu : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hubot : ∀ x, u x ≠ ⊥)
     (hv : Convex ℝ {p : E × ℝ | v p.1 ≤ p.2}) (hvbot : ∀ x, v x ≠ ⊥)
     (huΩ : ∀ x ∈ Ω, u x ≠ ⊤) (hvΩ : ∀ x ∈ Ω, v x ≠ ⊤) (hμ : ρ.restrict Ω ≪ μ)
-    (h : fderiv ℝ (fun x => (u x).toReal) =ᵐ[μ] fderiv ℝ (fun x => (v x).toReal)) :
+    (h : fderiv ℝ (fun x => (u x).toReal) =ᵐ[μ.restrict Ω]
+      fderiv ℝ (fun x => (v x).toReal)) :
     ∃ c : ℝ, Ω.EqOn u fun x => v x + c := by
   refine hΩ.exists_eq_add_of_subset_closure_hasFDerivAt_eq hΩc hu hubot hv hvbot huΩ hvΩ
     ((convexOn_toReal hu hubot).continuousOn_interior.mono (hΩ.subset_interior_iff.2 huΩ))
@@ -226,8 +230,8 @@ theorem _root_.IsOpen.exists_eq_add_of_fderiv_ae_eq [FiniteDimensional ℝ E] [M
     filter_upwards [ae_restrict_mem hΩ.measurableSet,
       ae_restrict_of_ae (ae_eventually_ne_top_and_differentiableAt_toReal (μ := ρ) hu hubot),
       ae_restrict_of_ae (ae_eventually_ne_top_and_differentiableAt_toReal (μ := ρ) hv hvbot),
-      hμ.ae_le h] with y hy hdu hdv hyeq
-    exact ⟨_, (hdu (huΩ y hy)).2.hasFDerivAt, hyeq ▸ (hdv (hvΩ y hy)).2.hasFDerivAt⟩
+      hμ.ae_le (ae_imp_of_ae_restrict h)] with y hy hdu hdv hyeq
+    exact ⟨_, (hdu (huΩ y hy)).2.hasFDerivAt, hyeq hy ▸ (hdv (hvΩ y hy)).2.hasFDerivAt⟩
   rw [mem_closure_iff_nhds]
   intro t ht
   obtain ⟨s, hst, hso, hxs⟩ := mem_nhds_iff.1 ht
@@ -237,6 +241,54 @@ theorem _root_.IsOpen.exists_eq_add_of_fderiv_ae_eq [FiniteDimensional ℝ E] [M
   exact ⟨y, hst hy.1, hyD⟩
 
 end Normed
+
+/-- **Uniqueness of convex potentials on an affine subspace.** On a connected open subset `Ω`
+of an affine subspace `S` with finite-dimensional direction, two functions on `S` that are convex
+in translated coordinates, never take the value `⊥` and are finite on `Ω` differ by a real constant
+if their derivatives along `S` agree `μ`-almost everywhere on `Ω`. The intrinsic affine Haar
+measure restricted to `Ω` must be absolutely continuous with respect to `μ`.
+
+The affine Haar measure is the image of `ρ` under `w ↦ w +ᵥ p`. The derivatives are those of the
+translated restrictions on `S.direction`, evaluated at `x -ᵥ p`. Taking `S` to be the affine span
+of a domain gives the relative-interior version. -/
+theorem _root_.AffineSubspace.exists_eq_add_of_fderiv_ae_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (S : AffineSubspace ℝ E) [Nonempty S] [FiniteDimensional ℝ S.direction]
+    (p : S) {u v : S → EReal} {Ω : Set S} {ρ : Measure S.direction} {μ : Measure S}
+    [ρ.IsAddHaarMeasure] (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+    (hu : Convex ℝ {q : S.direction × ℝ | u (q.1 +ᵥ p) ≤ q.2}) (hubot : ∀ x, u x ≠ ⊥)
+    (hv : Convex ℝ {q : S.direction × ℝ | v (q.1 +ᵥ p) ≤ q.2}) (hvbot : ∀ x, v x ≠ ⊥)
+    (huΩ : ∀ x ∈ Ω, u x ≠ ⊤) (hvΩ : ∀ x ∈ Ω, v x ≠ ⊤)
+    (hμ : (ρ.map (fun w : S.direction => w +ᵥ p)).restrict Ω ≪ μ)
+    (h : (fun x : S => fderiv ℝ (fun w : S.direction => (u (w +ᵥ p : S)).toReal)
+        (x -ᵥ p)) =ᵐ[μ.restrict Ω]
+      (fun x : S => fderiv ℝ (fun w : S.direction => (v (w +ᵥ p : S)).toReal) (x -ᵥ p))) :
+    ∃ c : ℝ, Ω.EqOn u (fun x => v x + c) := by
+  let e := (AffineIsometryEquiv.vaddConst ℝ p).toHomeomorph.toMeasurableEquiv
+  -- Read both measures in the direction space through the same affine chart.
+  have hρ : (ρ.map e).restrict Ω ≪ μ := by
+    simpa only [e, Homeomorph.toMeasurableEquiv_coe, AffineIsometryEquiv.coe_toHomeomorph,
+      AffineIsometryEquiv.coe_vaddConst] using hμ
+  have hρ' := hρ.map e.symm.measurable
+  rw [e.restrict_map, MeasurableEquiv.map_symm_map] at hρ'
+  have h' : fderiv ℝ (fun w : S.direction => (u (w +ᵥ p : S)).toReal) =ᵐ[
+      (μ.map e.symm).restrict (e ⁻¹' Ω)]
+      fderiv ℝ (fun w : S.direction => (v (w +ᵥ p : S)).toReal) := by
+    rw [e.symm.restrict_map]
+    simp only [MeasurableEquiv.symm_preimage_preimage]
+    apply e.symm.measurableEmbedding.ae_map_iff.2
+    filter_upwards [h] with x hx
+    simpa only [e, Homeomorph.toMeasurableEquiv_symm_coe,
+      AffineIsometryEquiv.coe_symm_toHomeomorph, AffineIsometryEquiv.coe_vaddConst_symm]
+      using hx
+  have hopen : IsOpen (e ⁻¹' Ω) := hΩ.preimage (AffineIsometryEquiv.vaddConst ℝ p).continuous
+  obtain ⟨c, hc⟩ := hopen.exists_eq_add_of_fderiv_ae_eq
+    ((AffineIsometryEquiv.vaddConst ℝ p).toHomeomorph.isPreconnected_preimage.2 hΩc)
+    hu (fun w => hubot _) hv (fun w => hvbot _)
+    (fun w hw => huΩ _ hw) (fun w hw => hvΩ _ hw) hρ' h'
+  refine ⟨c, fun x hx => ?_⟩
+  have hx' : e.symm x ∈ e ⁻¹' Ω := by simpa using hx
+  simpa [e] using hc hx'
 
 section InnerProduct
 
@@ -248,14 +300,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 functions (convex real epigraph, never `⊥`) on a finite-dimensional real inner product space,
 finite on a connected open set `Ω`, and let `μ` be a measure with respect to which Lebesgue measure
 on `Ω` (any additive Haar measure `ρ` restricted to `Ω`) is absolutely continuous. If the gradients
-of the real representatives of `u` and `v` agree `μ`-almost everywhere, then `u = v + c` on `Ω` for
-some real constant `c`. In particular a Brenier map `∇ u` determines its convex potential `u` up to
-an additive constant on such a set. -/
+of the real representatives of `u` and `v` agree `μ`-almost everywhere on `Ω`, then `u = v + c` on
+`Ω` for some real constant `c`. In particular a Brenier map `∇ u` determines its convex potential
+`u` up to an additive constant on such a set. -/
 theorem _root_.IsOpen.exists_eq_add_of_gradient_ae_eq (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
     (hu : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hubot : ∀ x, u x ≠ ⊥)
     (hv : Convex ℝ {p : E × ℝ | v p.1 ≤ p.2}) (hvbot : ∀ x, v x ≠ ⊥)
     (huΩ : ∀ x ∈ Ω, u x ≠ ⊤) (hvΩ : ∀ x ∈ Ω, v x ≠ ⊤) (hμ : ρ.restrict Ω ≪ μ)
-    (h : (∇ fun x => (u x).toReal) =ᵐ[μ] ∇ fun x => (v x).toReal) :
+    (h : (∇ fun x => (u x).toReal) =ᵐ[μ.restrict Ω] ∇ fun x => (v x).toReal) :
     ∃ c : ℝ, Ω.EqOn u fun x => v x + c :=
   hΩ.exists_eq_add_of_fderiv_ae_eq hΩc hu hubot hv hvbot huΩ hvΩ hμ <| h.mono fun _ hx =>
     (InnerProductSpace.toDual ℝ E).symm.injective hx
