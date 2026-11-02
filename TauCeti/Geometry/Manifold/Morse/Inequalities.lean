@@ -30,9 +30,9 @@ finite-dimensional in every degree.
 
 The proof is Milnor's. Across a single critical level the sublevel pair has the relative homology
 of a finite CW pair with one `i`-cell for each critical point of index `i`
-(`TauCeti.IsMorse.exists_relCWComplex_sublevel_deformation`), where the three statements are the
-Morse inequalities for CW pairs. Across a band without critical points the relative homology
-vanishes, by the deformation retraction of `M_b` onto `M_a`
+(`TauCeti.IsMorse.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair`), where the
+three statements are the Morse inequalities for CW pairs. Across a band without critical points
+the relative homology vanishes, by the deformation retraction of `M_b` onto `M_a`
 (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
 A band is cut at the critical values it contains into finitely many such pieces, and the long exact
 sequence of the triple `M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are
@@ -163,8 +163,8 @@ private theorem IsMorse.exists_morseInequalities_level (hf : IsMorse I f) {c δ 
   have hcompact' : IsCompact (f ⁻¹' Icc (c - δ') (c + δ')) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
-  obtain ⟨ε, hε, hεδ', C, _, _, hC, hcell, r, -, ⟨G⟩⟩ :=
-    hf.exists_relCWComplex_sublevel_deformation hδ' hcompact'
+  obtain ⟨ε, hε, hεδ', C, _, _, hC, hcell, hiso⟩ :=
+    hf.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair hδ' hcompact'
   have hsubε : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} :=
     fun x hx ↦ hsub ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩
   refine ⟨ε, hε, hεδ'.trans hδ'δ, hsubε, fun n ↦ ?_⟩
@@ -182,18 +182,16 @@ private theorem IsMorse.exists_morseInequalities_level (hf : IsMorse I f) {c δ 
     · rintro ⟨⟨hx, h₁, h₂⟩, hi⟩
       exact ⟨⟨hx, hsubε ⟨hx, h₁.le, h₂⟩⟩, hi⟩
   -- The relative homology of the sublevel pair is that of the CW pair `(C, {f ≤ c - ε})`.
-  have hiso (i : ℕ) := TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel
-    (X := TopCat.of M) base_subset_complex hC r G V i
   have hrank (i : ℕ) : finrank k ((complexBasePair C).singularHomology V i : ModuleCat k) =
       finrank k ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology V i :
         ModuleCat k) := by
     rw [complexBasePair_eq_ofInclusion]
-    exact (@asIso _ _ _ _ _ (hiso i)).toLinearEquiv.finrank_eq
+    exact (@asIso _ _ _ _ _ (hiso V i)).toLinearEquiv.finrank_eq
   have hfinite (i : ℕ) : _root_.Finite (cell C i) := FiniteType.finite_cell i
   refine ⟨?_, ?_, ?_, fun hn ↦ ?_⟩
   · have h := finite_singularHomology_complexBasePair C V n
     rw [complexBasePair_eq_ofInclusion] at h
-    exact Module.Finite.equiv (@asIso _ _ _ _ _ (hiso n)).toLinearEquiv
+    exact Module.Finite.equiv (@asIso _ _ _ _ _ (hiso V n)).toLinearEquiv
   · rw [← hrank, ← hcount]
     exact finrank_singularHomology_complexBasePair_le C V n
   · have h := sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le C V
