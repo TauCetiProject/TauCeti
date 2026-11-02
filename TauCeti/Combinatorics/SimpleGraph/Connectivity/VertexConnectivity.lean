@@ -60,6 +60,8 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 
 * `SimpleGraph.isVertexReachable_one`, `SimpleGraph.isVertexConnected_one`: the threshold `1` is
   reachability, respectively connectedness on at least two vertices.
+* `SimpleGraph.Iso.isVertexReachable_iff`, `SimpleGraph.Iso.isVertexConnected_iff`: vertex
+  reachability and connectivity are invariant under graph isomorphism.
 * `SimpleGraph.isVertexConnected_iff`: `G` is `k`-vertex-connected exactly when it has at least
   `k + 1` vertices and stays preconnected after deleting fewer than `k` vertices.
 * `SimpleGraph.isVertexReachable_of_pairwise_internallyDisjoint`: `k` walks pairwise sharing no
@@ -164,6 +166,25 @@ theorem IsVertexReachable.reachable (hk : k ≠ 0) (h : G.IsVertexReachable k u 
 theorem Adj.isVertexReachable (h : G.Adj u v) : G.IsVertexReachable k u v :=
   isVertexReachable_iff_exists_walk.2 fun _ _ hu hv ↦ ⟨h.toWalk, by simp [hu, hv]⟩
 
+namespace Iso
+
+/-- Vertex reachability is invariant under graph isomorphism. -/
+theorem isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) (u v : V) :
+    H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v := by
+  rw [isVertexReachable_iff_exists_walk, isVertexReachable_iff_exists_walk]
+  constructor
+  · intro h s hs hu hv
+    obtain ⟨p, hp⟩ := h (s := e.symm ⁻¹' s) (by
+      rwa [Set.encard_preimage_of_bijective e.symm.bijective]) (by simpa) (by simpa)
+    let q : G.Walk u v := (p.map e.symm.toHom).copy (by simp) (by simp)
+    exact ⟨q, by simpa [q] using hp⟩
+  · intro h s hs hu hv
+    obtain ⟨p, hp⟩ := h (s := e ⁻¹' s) (by
+      rwa [Set.encard_preimage_of_bijective e.bijective]) (by simpa) (by simpa)
+    exact ⟨p.map e.toHom, by simpa using hp⟩
+
+end Iso
+
 /-- **Weak duality for vertex reachability.** If there are `n` walks from `u` to `v` pairwise
 sharing no vertex other than `u` and `v`, then `u` and `v` are `n`-vertex-reachable. No finiteness
 assumption on `V` is needed. -/
@@ -205,6 +226,16 @@ theorem IsVertexConnected.add_one_le_card (h : G.IsVertexConnected k) : k + 1 �
 theorem IsVertexConnected.isVertexReachable (h : G.IsVertexConnected k) (u v : V) :
     G.IsVertexReachable k u v :=
   h.2 u v
+
+namespace Iso
+
+/-- Vertex connectivity is invariant under graph isomorphism. -/
+theorem isVertexConnected_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.IsVertexConnected k ↔ G.IsVertexConnected k := by
+  rw [isVertexConnected_def, isVertexConnected_def, ENat.card_congr e.toEquiv]
+  simp only [e.isVertexReachable_iff, e.surjective.forall]
+
+end Iso
 
 theorem IsVertexConnected.nonempty (h : G.IsVertexConnected k) : Nonempty V :=
   (ENat.one_le_card_iff_nonempty V).1 (le_add_self.trans h.1)

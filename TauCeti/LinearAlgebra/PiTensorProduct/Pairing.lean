@@ -122,8 +122,8 @@ theorem slotHomotopy_map₂_map (f : M₀ →ₗ[R] N₀ →ₗ[R] P₀) (g : M'
     {e h : Module.End R N₀} {e' h' : Module.End R P₀}
     (he : ∀ m n, e' (f (g m) n) = f (g m) (e n)) (hh : ∀ m n, h' (f (g m) n) = f (g m) (h n))
     (x : ⨂[R] _ : ι, M') (w : ⨂[R] _ : ι, N₀) :
-    slotHomotopy ι e' h' (map₂ (fun _ ↦ f) (map (fun _ ↦ g) x) w) =
-      map₂ (fun _ ↦ f) (map (fun _ ↦ g) x) (slotHomotopy ι e h w) := by
+    slotHomotopy ι (fun _ ↦ e') (fun _ ↦ h') (map₂ (fun _ ↦ f) (map (fun _ ↦ g) x) w) =
+      map₂ (fun _ ↦ f) (map (fun _ ↦ g) x) (slotHomotopy ι (fun _ ↦ e) (fun _ ↦ h) w) := by
   induction x using PiTensorProduct.induction_on with
   | smul_tprod r x =>
     simp only [map_smul, LinearMap.smul_apply, map_tprod, map₂_tprod]
