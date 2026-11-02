@@ -18,8 +18,8 @@ Every `C^n` diffeomorphism `φ` of the circle `AddCircle T`, `n ≠ 0`, has a `C
 orientation-preserving case) or `F (x + T) = F x - T` and `F' < 0` (the orientation-reversing
 case). A continuous lift exists by `AddCircle.exists_continuous_lift`, and it is `C^n` by
 `AddCircle.contDiff_of_comp_coe_eq`. A lift `G` of `φ⁻¹` satisfies `G ∘ F = id + c`
-(`AddCircle.exists_lift_symm_comp_eq_add`), so `G' (F x) F' x = 1` and `F'` never vanishes, while
-the lift of a homeomorphism is monotone of degree one or antitone of degree `-1`
+(`Homeomorph.exists_addCircle_lift_symm_comp_eq_add`), so `G' (F x) F' x = 1` and `F'` never
+vanishes, while the lift of a homeomorphism is monotone of degree one or antitone of degree `-1`
 (`AddCircle.strictMono_or_strictAnti_of_lift`).
 
 ## Main declarations
@@ -52,7 +52,7 @@ theorem deriv_pos_or_deriv_neg_of_lift {φ : AddCircle T ≃ₘ^n⟮𝓘(ℝ), �
     ((∀ x, F (x + T) = F x + T) ∧ ∀ x, 0 < deriv F x) ∨
       ((∀ x, F (x + T) = F x - T) ∧ ∀ x, deriv F x < 0) := by
   have hFs : ContDiff ℝ n F := contDiff_of_comp_coe_eq (funext hφ) hF φ.contMDiff
-  obtain ⟨G, c, hG, hψ, hc⟩ := exists_lift_symm_comp_eq_add φ.toHomeomorph hF hφ
+  obtain ⟨G, c, hG, hψ, hc⟩ := φ.toHomeomorph.exists_addCircle_lift_symm_comp_eq_add hF hφ
   have hGs : ContDiff ℝ n G := contDiff_of_comp_coe_eq (funext hψ) hG φ.symm.contMDiff
   -- `G ∘ F` is a translation, so `G' (F x) * F' x = 1`
   have hne (x : ℝ) : deriv F x ≠ 0 := fun h ↦ by
