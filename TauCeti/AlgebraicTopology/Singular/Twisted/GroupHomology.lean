@@ -464,6 +464,17 @@ section LongExactSequence
 
 variable [ContractibleSpace E]
 
+/-- A comparison map from the bar resolution to the singular chains of `E`. It is stated between
+`Rep.barComplex` and `singularChainsRep` rather than the complexes of the two resolutions, which
+agree with them only up to unfolding, so that composites with it can be rewritten. -/
+private def barToSingularChains :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    Rep.barComplex k G ⟶ singularChainsRep k E G :=
+  haveI := hG.toContinuousConstSMul
+  haveI := hG.isCancelSMul
+  ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) (singularChainsResolution k E G)
+
 variable (A) in
 /-- The chain map from the inhomogeneous chains of `A` to the chains of `B` twisted by the
 associated local system inducing `(twistedHomologyIsoGroupHomology k A n).inv`: the identification
@@ -471,14 +482,13 @@ of the inhomogeneous chains with `(A ⊗ bar)_G`, followed by a comparison map f
 resolution to the singular chains of `E`, and the identification of `(A ⊗ C(E; k))_G` with the
 twisted chains. -/
 private def chainsToTwisted :
-    (groupHomology.chainsFunctor k G).obj A ⟶
+    groupHomology.inhomogeneousChains A ⟶
       twistedChainComplex.{u, u, u} (hG.associatedLocalSystem k A) :=
   haveI := hG.toContinuousConstSMul
   haveI := hG.isCancelSMul
   letI := Classical.decEq G
   (groupHomology.inhomogeneousChainsIso A).hom ≫
-    (((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map
-      (ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) (singularChainsResolution k E G)) ≫
+    (((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map (barToSingularChains hG k) ≫
     (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom
 
 variable (A) in
@@ -498,7 +508,7 @@ private lemma twistedHomologyIsoGroupHomology_inv_eq_homologyMap (n : ℕ) :
     (congrArg (HomologicalComplex.homologyMap · n) (Category.assoc _ _ _))
 
 private lemma chainsToTwisted_naturality (f : A ⟶ A') :
-    (groupHomology.chainsFunctor k G).map f ≫ chainsToTwisted hG k A' =
+    groupHomology.chainsMap (MonoidHom.id G) f ≫ chainsToTwisted hG k A' =
       chainsToTwisted hG k A ≫
         twistedChainComplexCoefficientMap.{u, u, u} (hG.associatedLocalSystemMap k f) := by
   have := hG.toContinuousConstSMul
@@ -506,13 +516,9 @@ private lemma chainsToTwisted_naturality (f : A ⟶ A') :
   let := Classical.decEq G
   -- Each of the three factors is natural in the coefficients: the inhomogeneous chain
   -- identification, the comparison map tensored with `A`, and the twisted chain identification.
-  exact (TauCeti.groupHomology.inhomogeneousChainsIso_hom_naturality_assoc f _).trans <|
-    (congrArg (_ ≫ ·) <|
-      ((NatTrans.mapHomologicalComplex ((Rep.coinvariantsTensor k G).map f) _).naturality_assoc
-        _ _).symm.trans
-      (congrArg (_ ≫ ·)
-        (hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality k f))).trans
-    ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _))).symm
+  simp only [chainsToTwisted, Category.assoc]
+  rw [TauCeti.groupHomology.inhomogeneousChainsIso_hom_naturality_assoc,
+    ← NatTrans.naturality_assoc, coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality]
 
 variable {X : ShortComplex (Rep.{u} k G)} (hX : X.ShortExact)
 
@@ -559,10 +565,9 @@ of the short exact sequence of associated local systems to Mathlib's connecting 
 theorem twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom (n m : ℕ) (h : m + 1 = n) :
     (hG.shortExact_associatedLocalSystem k hX).twistedHomologyδ n m h ≫
         (hG.twistedHomologyIsoGroupHomology k X.X₁ m).hom =
-      (hG.twistedHomologyIsoGroupHomology k X.X₃ n).hom ≫ groupHomology.δ hX n m h :=
-  (Iso.inv_comp_eq _).1 <| (Category.assoc _ _ _).symm.trans
-    ((Iso.comp_inv_eq _).1
-      (hG.groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv k hX n m h)).symm
+      (hG.twistedHomologyIsoGroupHomology k X.X₃ n).hom ≫ groupHomology.δ hX n m h := by
+  rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv,
+    groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv]
 
 end LongExactSequence
 

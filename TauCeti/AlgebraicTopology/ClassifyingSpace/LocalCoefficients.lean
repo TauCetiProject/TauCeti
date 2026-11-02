@@ -80,7 +80,8 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
   `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: the isomorphism is
   natural in the coefficients.
 * `TauCeti.shortExact_map_classifyingSpaceLocalSystemFunctor`,
-  `TauCeti.twistedHomologyδ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_hom`: the
+  `TauCeti.twistedHomologyδ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_hom`,
+  `TauCeti.groupHomology_δ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_inv`: the
   isomorphism carries the coefficient connecting map of homology with local coefficients to the
   connecting map of group homology.
 * `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left`,
@@ -194,7 +195,7 @@ abbrev classifyingSpaceLocalSystemFunctor :
 -- Instance search does not find the general instance at this quotient covering map, whose
 -- spaces are bundled with `TopCat.of`, so it is supplied directly.
 instance : (classifyingSpaceLocalSystemFunctor k G).Additive :=
-  IsQuotientCoveringMap.instAdditiveRepLocalCoefficientSystemAssociatedLocalSystemFunctor _ k
+  IsQuotientCoveringMap.additive_associatedLocalSystemFunctor _ k
 
 variable {X : ShortComplex (Rep.{u} k G)}
 
@@ -220,6 +221,22 @@ theorem twistedHomologyδ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_h
       (classifyingSpaceTwistedHomologyIsoGroupHomology k X.X₃ n).hom ≫
         groupHomology.δ hX n m h :=
   IsQuotientCoveringMap.twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k hX n m h
+
+/-- **The homology of the classifying space with local coefficients respects the long exact
+sequences**, inverse form: for a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations
+of `G`, the inverses of the identifications `Hₙ(BG; Xᵢ) ≅ Hₙ(G, Xᵢ)` carry Mathlib's connecting
+map `groupHomology.δ` to the coefficient connecting map of the short exact sequence of associated
+local systems. -/
+@[reassoc]
+theorem groupHomology_δ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_inv
+    (hX : X.ShortExact) (n m : ℕ) (h : m + 1 = n) :
+    groupHomology.δ hX n m h ≫ (classifyingSpaceTwistedHomologyIsoGroupHomology k X.X₁ m).inv =
+      (classifyingSpaceTwistedHomologyIsoGroupHomology k X.X₃ n).inv ≫
+        (shortExact_map_classifyingSpaceLocalSystemFunctor hX).twistedHomologyδ n m h :=
+  IsQuotientCoveringMap.groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k hX n m h
