@@ -104,6 +104,11 @@ boundary component is null-homologous in it, which is not formalized here.
 * `TauCeti.zeroShakeGenus_congr_range`, `TauCeti.zeroShakeGenus_rotate`,
   `TauCeti.zeroShakeGenus_reverse`, `TauCeti.zeroShakeGenus_congr_linearIsometryEquiv`: the
   `0`-shake genus depends only on the image of the knot, up to linear isometries.
+* `TauCeti.ZeroShakeSurface.solidTorus_congrRange_apply`,
+  `TauCeti.ZeroShakeSurface.coe_solidTorus_mapLinearIsometryEquiv`,
+  `TauCeti.IsSmoothSliceDisc.solidTorus_toZeroShakeSurface` and the companion `carrier_`,
+  `range_toFun_` and `parallels_` lemmas: the transported and constructed `0`-shake surfaces in
+  terms of their inputs.
 * `TauCeti.IsSmoothSliceDisc.genus_toZeroShakeSurface`: a slice disc has genus `0`.
 * `TauCeti.IsSmoothlySlice.zeroShakeGenus_eq_zero`, `TauCeti.zeroShakeGenus_unknot`: a smoothly
   slice knot with a `0`-framed solid torus neighbourhood, in particular the unknot, has `0`-shake
@@ -289,6 +294,34 @@ def congrRange (S : ZeroShakeSurface K) (h : range K = range K') : ZeroShakeSurf
       -- `Homeomorph.setCongr` does not change the underlying point.
       exact (K'.isEmbedding.toHomeomorph_apply_coe z).symm
 
+/-- Transporting a `0`-shake surface to a knot with the same image keeps the surface. -/
+theorem carrier_congrRange (S : ZeroShakeSurface K) (h : range K = range K') :
+    (S.congrRange h).carrier = S.carrier :=
+  (rfl)
+
+/-- Transporting a `0`-shake surface to a knot with the same image keeps its embedded image. -/
+@[simp]
+theorem range_toFun_congrRange (S : ZeroShakeSurface K) (h : range K = range K') :
+    range (S.congrRange h).toFun = range S.toFun :=
+  (rfl)
+
+/-- Transporting a `0`-shake surface to a knot with the same image reparametrizes its solid torus:
+the point `(w, z)` goes to `Ψ (w, z')`, where `K z' = K' z`. -/
+theorem solidTorus_congrRange_apply (S : ZeroShakeSurface K) (h : range K = range K')
+    (w : closedBall (0 : ℂ) 1) {z z' : Circle} (hz : K z' = K' z) :
+    (S.congrRange h).solidTorus (w, z) = S.solidTorus (w, z') := by
+  refine congrArg S.solidTorus (Prod.ext rfl (K.isEmbedding.injective ?_))
+  change K (K.isEmbedding.toHomeomorph.symm _) = K z'
+  rw [← K.isEmbedding.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply, hz]
+  -- `Homeomorph.setCongr` does not change the underlying point.
+  exact K'.isEmbedding.toHomeomorph_apply_coe z
+
+/-- Transporting a `0`-shake surface to a knot with the same image keeps its parallel copies. -/
+@[simp]
+theorem parallels_congrRange (S : ZeroShakeSurface K) (h : range K = range K') :
+    (S.congrRange h).parallels = S.parallels :=
+  (rfl)
+
 /-- Transporting a `0`-shake surface to a knot with the same image keeps its genus. -/
 @[simp]
 theorem genus_congrRange (S : ZeroShakeSurface K) (h : range K = range K') :
@@ -335,6 +368,38 @@ def mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
   solidTorus_boundaryMap x := by simpa using congrArg e (S.solidTorus_boundaryMap x)
   range_boundaryMap := S.range_boundaryMap
   map_ker_eq_top := S.map_ker_eq_top
+
+/-- Transporting a `0`-shake surface along a linear isometry of the ambient spaces keeps the
+surface. -/
+theorem carrier_mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    (S.mapLinearIsometryEquiv e hK').carrier = S.carrier :=
+  (rfl)
+
+/-- Transporting a `0`-shake surface along a linear isometry `e` composes its embedding with `e`,
+so its embedded image is the image under `e`. -/
+@[simp]
+theorem range_toFun_mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    range (S.mapLinearIsometryEquiv e hK').toFun =
+      e.toLinearIsometry.unitClosedBallMap '' range S.toFun :=
+  (range_comp e.toLinearIsometry.unitClosedBallMap S.toFun)
+
+/-- Transporting a `0`-shake surface along a linear isometry `e` composes its solid torus with
+`e`. -/
+@[simp]
+theorem coe_solidTorus_mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z))
+    (p : SolidTorus) : ((S.mapLinearIsometryEquiv e hK').solidTorus p : F) = e (S.solidTorus p) :=
+  e.coe_unitSphereIsometryEquiv_apply _
+
+/-- Transporting a `0`-shake surface along a linear isometry of the ambient spaces keeps its
+parallel copies. -/
+@[simp]
+theorem parallels_mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    (S.mapLinearIsometryEquiv e hK').parallels = S.parallels :=
+  (rfl)
 
 /-- Transporting a `0`-shake surface along a linear isometry of the ambient spaces keeps its
 genus. -/
@@ -456,6 +521,29 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     -- The projection of the boundary circle to the core circle is a homeomorphism.
     exact (ContinuousMap.HomotopyEquiv.bijective_singularHomologyMap ℤ 1
       circleHomeomorphBoundaryClosedBall.symm.toHomotopyEquiv).2
+
+/-- A smooth slice disc, as a `0`-shake surface, is carried by the closed unit disc. -/
+theorem IsSmoothSliceDisc.carrier_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
+    (hΨ : IsSolidTorusNeighborhood K Ψ)
+    (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
+    (h.toZeroShakeSurface hΨ hl).carrier = closedBall (0 : ℂ) 1 :=
+  (rfl)
+
+/-- A smooth slice disc, as a `0`-shake surface, is embedded by the slice disc. -/
+@[simp]
+theorem IsSmoothSliceDisc.range_toFun_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
+    (hΨ : IsSolidTorusNeighborhood K Ψ)
+    (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
+    range (h.toZeroShakeSurface hΨ hl).toFun = range Φ :=
+  (rfl)
+
+/-- A smooth slice disc, as a `0`-shake surface, has the given solid torus neighbourhood. -/
+@[simp]
+theorem IsSmoothSliceDisc.solidTorus_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
+    (hΨ : IsSolidTorusNeighborhood K Ψ)
+    (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
+    (h.toZeroShakeSurface hΨ hl).solidTorus = Ψ :=
+  (rfl)
 
 /-- A smooth slice disc, as a `0`-shake surface, is bounded by the single copy at the centre. -/
 @[simp]
