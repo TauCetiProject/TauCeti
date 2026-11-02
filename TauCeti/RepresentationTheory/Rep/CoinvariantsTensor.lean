@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
+public import TauCeti.RepresentationTheory.Rep.Ihom
 
 /-!
 # Change of groups on tensor coinvariants, and maps out of tensor coinvariants
@@ -25,7 +26,11 @@ any monoid. For a representation `A` of a group, a morphism of representations `
 turn the same as a morphism `X ⟶ Homₖ(A, N)` into the internal hom
 (`Rep.MonoidalClosed.linearHomEquiv`). The composite `k`-linear equivalence is
 `Rep.coinvariantsTensorHomLinearEquiv`; it sends `f` to `x ↦ (a ↦ f ⟦a ⊗ x⟧)` and is natural in
-`X`.
+all three variables: in `X`, in `N` (postcomposition with a linear map corresponds to the induced
+map of internal homs) and, contravariantly, in `A` (precomposition with the map induced by
+`f : A ⟶ A'` corresponds to Mathlib's `MonoidalClosed.pre f`). It also commutes with change of
+group, with precomposition by the compatible coefficient map on the internal-hom side
+(`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`).
 
 ## Main definitions
 
@@ -40,6 +45,9 @@ turn the same as a morphism `X ⟶ Homₖ(A, N)` into the internal hom
 * `MonoidHom.coinvariantsTensorMap_naturality`: naturality in the representations.
 * `Rep.coinvariantsTensorHomLinearEquiv_comp`: naturality of
   `Rep.coinvariantsTensorHomLinearEquiv` in the representation.
+* `Rep.coinvariantsTensorHomLinearEquiv_comp_ofHom`,
+  `Rep.coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp`: its naturality in the
+  module and in the coefficient representation.
 
 ## References
 
@@ -115,6 +123,14 @@ open MonoidalCategory
 section Monoid
 
 variable {k G : Type u} [CommRing k] [Monoid G] (N : Type u) [AddCommGroup N] [Module k N]
+
+/-- The tensor-coinvariants functor acts on tensor classes through the second factor. -/
+-- Not a simp lemma: simplification unfolds `coinvariantsTensorMk` on the left-hand side first.
+theorem coinvariantsTensor_obj_map_coinvariantsTensorMk (A : Rep.{u} k G)
+    {X Y : Rep.{u} k G} (f : X ⟶ Y) (a : A) (x : X) :
+    (((coinvariantsTensor k G).obj A).map f).hom (coinvariantsTensorMk A X a x) =
+      coinvariantsTensorMk A Y a (f.hom x) :=
+  (rfl)
 
 /-- **Maps out of coinvariants are invariant maps**: the bijection of the adjunction
 `Rep.coinvariantsAdjunction` between `k`-linear maps `X_G ⟶ N` and morphisms of representations
@@ -198,6 +214,70 @@ theorem coinvariantsTensorHomLinearEquiv_comp {X X' : Rep.{u} k G} (g : X ⟶ X'
       g ≫ (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ f)
   rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_left]
 
+/-- **The correspondence is natural in the module**: postcomposing a map out of `(A ⊗ X)_G` with a
+linear map `g : N →ₗ[k] N'` corresponds to postcomposing with the map `Homₖ(A, N) ⟶ Homₖ(A, N')`
+induced by `g`. -/
+theorem coinvariantsTensorHomLinearEquiv_comp_ofHom {N' : Type u} [AddCommGroup N']
+    [Module k N'] {X : Rep.{u} k G} (f : ((coinvariantsTensor k G).obj A).obj X ⟶ ModuleCat.of k N)
+    (g : N →ₗ[k] N') :
+    coinvariantsTensorHomLinearEquiv A N' X (f ≫ ModuleCat.ofHom g) =
+      coinvariantsTensorHomLinearEquiv A N X f ≫
+        (Rep.ihom A).map ((trivialFunctor k G).map (ModuleCat.ofHom g)) := by
+  -- This is the naturality of the hom-equivalences of the coinvariants and internal-hom
+  -- adjunctions in their second variable; `Rep.ihom A` is the right adjoint of `A ⊗ -`.
+  change (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _
+    (f ≫ ModuleCat.ofHom g)) =
+      (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ f) ≫
+        (ihom A).map ((trivialFunctor k G).map (ModuleCat.ofHom g))
+  rw [Adjunction.homEquiv_naturality_right, Adjunction.homEquiv_naturality_right]
+
+/-- **The correspondence is natural in the coefficient representation**: precomposing a map out
+of `(A' ⊗ X)_G` with the map `(A ⊗ X)_G ⟶ (A' ⊗ X)_G` induced by `f : A ⟶ A'` corresponds to
+postcomposing with the map `Homₖ(A', N) ⟶ Homₖ(A, N)` given by precomposition with `f`. -/
+theorem coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp {A' : Rep.{u} k G}
+    {X : Rep.{u} k G} (f : A ⟶ A')
+    (φ : ((coinvariantsTensor k G).obj A').obj X ⟶ ModuleCat.of k N) :
+    coinvariantsTensorHomLinearEquiv A N X (((coinvariantsTensor k G).map f).app X ≫ φ) =
+      coinvariantsTensorHomLinearEquiv A' N X φ ≫
+        (MonoidalClosed.pre f).app (Rep.trivial k G N) := by
+  -- `(- ⊗ X)_G` sends `f` to the map of coinvariants induced by `f ▷ X`, so this is the
+  -- naturality of the coinvariants adjunction in its first variable followed by the description
+  -- of `MonoidalClosed.pre` on curried maps.
+  change (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _
+    ((coinvariantsFunctor k G).map (f ▷ X) ≫ φ)) =
+      (ihom.adjunction A').homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ φ) ≫
+        (MonoidalClosed.pre f).app (Rep.trivial k G N)
+  rw [Adjunction.homEquiv_naturality_left]
+  exact (MonoidalClosed.curry_pre_app f _).symm
+
 end Group
 
 end Rep
+
+namespace MonoidHom
+
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
+  {A : Rep.{u} k G} {B : Rep.{u} k H} (f : G →* H) (φ : A ⟶ res f B)
+  (N : Type u) [AddCommGroup N] [Module k N]
+
+/-- The tensor-coinvariant adjunction commutes with change of group: precomposition with the map
+on tensor classes becomes precomposition with the map of representations and with `φ`. -/
+theorem coinvariantsTensorHomLinearEquiv_naturality {X : Rep.{u} k G} {Y : Rep.{u} k H}
+    (v : X ⟶ res f Y)
+    (ℓ : ((coinvariantsTensor k H).obj B).obj Y ⟶ ModuleCat.of k N) :
+    coinvariantsTensorHomLinearEquiv A N X (f.coinvariantsTensorMap φ v ≫ ℓ) =
+      v ≫ (resFunctor f).map (coinvariantsTensorHomLinearEquiv B N Y ℓ) ≫
+        f.ihomTrivialPrecomp N φ := by
+  refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ ?_
+  apply LinearMap.ext
+  intro a
+  -- Term-mode composition keeps the internal-hom carriers bundled while applying their
+  -- pointwise API; tactic rewriting would require unfolding these carriers.
+  exact (coinvariantsTensorHomLinearEquiv_apply_hom_apply_apply
+    (f.coinvariantsTensorMap φ v ≫ ℓ) x a).trans <|
+    (congrArg ℓ (f.coinvariantsTensorMap_mk φ v a x)).trans <|
+      ((f.ihomTrivialPrecomp_hom_apply N φ
+        ((coinvariantsTensorHomLinearEquiv B N Y ℓ).hom (v.hom x)) a).trans
+          (coinvariantsTensorHomLinearEquiv_apply_hom_apply_apply ℓ (v.hom x) (φ.hom a))).symm
+
+end MonoidHom

@@ -43,6 +43,8 @@ are dense, so continuous linear maps out of `V((t))` are determined by their val
 and a linear map to a discrete module is continuous exactly when it vanishes on some lattice.
 The associated additive uniformity is complete for every coefficient module: Cauchy filters
 stabilize all coefficients below each exponent bound.
+Applying a linear map to every coefficient gives `LinearMap.hahnModuleMap`, a continuous map
+preserving every lattice; these maps respect identities, composition, and monomials.
 
 ## Main definitions
 
@@ -597,6 +599,67 @@ end TauCeti.HahnModule
 namespace LinearMap
 
 open _root_.HahnModule TauCeti.HahnModule Topology
+
+section Map
+
+variable {R V W U : Type*} [Ring R] [AddCommGroup V] [Module R V]
+  [AddCommGroup W] [Module R W] [AddCommGroup U] [Module R U]
+
+/-- Applying a linear map to each coefficient of a module-valued Laurent series, continuously
+for the lattice topologies. -/
+noncomputable def hahnModuleMap (u : V →ₗ[R] W) : HahnModule ℤ R V →L[R] HahnModule ℤ R W := by
+  let f : HahnModule ℤ R V →ₗ[R] HahnModule ℤ R W :=
+    { toFun := fun x ↦ of R (((of R).symm x).map u)
+      map_add' := fun x y ↦ by
+        apply (of R).symm.injective
+        ext n
+        simp [map_coeff]
+      map_smul' := fun c x ↦ by
+        apply (of R).symm.injective
+        ext n
+        simp [map_coeff] }
+  refine ⟨f, continuous_of_continuousAt_zero f ?_⟩
+  rw [ContinuousAt, map_zero]
+  refine ((hasBasis_nhds_zero_lattice R V).tendsto_iff
+    (hasBasis_nhds_zero_lattice R W)).mpr fun a _ ↦
+      ⟨a, trivial, fun x hx ↦ (mem_lattice_iff R W).mpr fun n hn ↦ by
+        simp [f, map_coeff, (mem_lattice_iff R V).mp hx n hn]⟩
+
+/-- The coefficientwise map agrees with `HahnSeries.map` through `HahnModule.of`. -/
+theorem hahnModuleMap_apply (u : V →ₗ[R] W) (f : HahnModule ℤ R V) :
+    u.hahnModuleMap f = of R (((of R).symm f).map u) :=
+  (rfl)
+
+/-- Coefficientwise linear maps preserve every lattice. -/
+theorem hahnModuleMap_mem_lattice (u : V →ₗ[R] W) {a : ℤ} {f : HahnModule ℤ R V}
+    (hf : f ∈ lattice R V a) : u.hahnModuleMap f ∈ lattice R W a :=
+  (mem_lattice_iff R W).mpr fun n hn ↦ by
+    simp [hahnModuleMap_apply, map_coeff, (mem_lattice_iff R V).mp hf n hn]
+
+/-- The coefficients of `hahnModuleMap u f` are the images under `u` of the coefficients of `f`. -/
+@[simp]
+theorem coeff_hahnModuleMap (u : V →ₗ[R] W) (f : HahnModule ℤ R V) (n : ℤ) :
+    ((of R).symm (u.hahnModuleMap f)).coeff n = u (((of R).symm f).coeff n) :=
+  (rfl)
+
+@[simp]
+theorem hahnModuleMap_single (u : V →ₗ[R] W) (n : ℤ) (v : V) :
+    u.hahnModuleMap (of R (HahnSeries.single n v)) = of R (HahnSeries.single n (u v)) := by
+  rw [hahnModuleMap_apply, Equiv.symm_apply_apply]
+  exact congrArg (of R) (HahnSeries.map_single u.toAddMonoidHom.toZeroHom)
+
+@[simp]
+theorem hahnModuleMap_id : (LinearMap.id : V →ₗ[R] V).hahnModuleMap = .id R _ := by
+  ext f n : 3
+  simp
+
+@[simp]
+theorem hahnModuleMap_comp (v : W →ₗ[R] U) (u : V →ₗ[R] W) :
+    (v.comp u).hahnModuleMap = v.hahnModuleMap.comp u.hahnModuleMap := by
+  ext f n : 3
+  simp
+
+end Map
 
 variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
 

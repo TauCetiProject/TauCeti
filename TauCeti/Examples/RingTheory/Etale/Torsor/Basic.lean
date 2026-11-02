@@ -10,10 +10,13 @@ import TauCeti.RingTheory.Etale.Torsor.Basic
 /-!
 # Tests for finite étale torsors
 
-A finite Galois extension is a torsor under its Galois group, and a field with a faithful action
-of a finite group is a torsor over its fixed field. Over the zero ring the zero algebra is a
-torsor under every finite group, which then does not act faithfully. Over a field the zero
-algebra has a bijective Galois map but is not a torsor, because it is not faithfully flat.
+A finite Galois extension is a torsor under its Galois group, and so is its base change along
+any commutative algebra. A field with a faithful action of a finite group is a torsor over its
+fixed field. Over the zero ring the zero algebra is a torsor under every finite group, which then
+does not act faithfully. Over a field the zero algebra has a bijective Galois map but is not a
+torsor, because it is not faithfully flat. For a tower of finite Galois extensions `K ⊆ M ⊆ L`,
+the comparison of torsors along a surjection of groups recovers `L` as a torsor over `M` under the
+kernel of restriction `Gal(L/K) → Gal(M/K)`.
 -/
 
 namespace TauCeti.Algebra
@@ -36,6 +39,33 @@ example (G L : Type*) [Group G] [Finite G] [Field L] [MulSemiringAction G L] [Fa
     IsFiniteEtaleTorsor G (FixedPoints.subfield G L) L :=
   IsFiniteEtaleTorsor.iff_isGaloisGroup.mpr inferInstance
 
+section BaseChange
+
+open scoped _root_.TensorProduct
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
+
+variable (K L R : Type*) [Field K] [Field L] [Algebra K L] [IsGalois K L] [FiniteDimensional K L]
+  [CommRing R] [Algebra K R]
+
+/-- The base change of a finite Galois extension `L / K` along a commutative `K`-algebra `R` is a
+torsor under `Gal(L / K)` over `R`, of rank `[L : K]` at every prime. -/
+example (p : PrimeSpectrum R) :
+    Module.rankAtStalk (R := R) (R ⊗[K] L) p = Module.finrank K L := by
+  rw [IsFiniteEtaleTorsor.rankAtStalk_eq_card (G := Gal(L/K)),
+    IsGaloisGroup.card_eq_finrank Gal(L/K) K L]
+
+/-- Taking invariants commutes with base change of a finite Galois extension: the
+`Gal(L / K)`-invariants of `R ⊗[K] L` are `R`. -/
+example : Algebra.IsInvariant R (R ⊗[K] L) Gal(L/K) :=
+  inferInstance
+
+/-- Over a nonzero `R`, `Gal(L / K)` acts faithfully on `R ⊗[K] L`, as a Galois group over `R`. -/
+example [Nontrivial R] : IsGaloisGroup Gal(L/K) R (R ⊗[K] L) :=
+  inferInstance
+
+end BaseChange
+
 /-- *test_zero_ring*: over the zero ring the zero algebra is a torsor under every finite group,
 and a nontrivial group does not act faithfully on it. -/
 example (G A B : Type*) [Group G] [Finite G] [Nontrivial G] [CommRing A] [CommRing B]
@@ -55,5 +85,17 @@ example (G K B : Type*) [Group G] [Finite G] [Field K] [CommRing B] [Algebra K B
   refine ⟨⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun f ↦ ⟨0, Subsingleton.elim _ _⟩⟩, fun h ↦ ?_⟩
   obtain ⟨hB, -⟩ := (IsFiniteEtaleTorsor.iff_field K).mp h
   exact not_nontrivial B hB
+
+/-- In a tower `K ⊆ M ⊆ L` of finite Galois extensions of `K`, `L` is a torsor over `M` under the
+kernel of the restriction map `Gal(L/K) → Gal(M/K)`, which acts `M`-linearly by
+`smulCommClass_ker`. -/
+example (K M L : Type*) [Field K] [Field M] [Field L] [Algebra K M] [Algebra K L] [Algebra M L]
+    [IsScalarTower K M L] [IsGalois K M] [FiniteDimensional K M] [IsGalois K L]
+    [FiniteDimensional K L] :
+    haveI := smulCommClass_ker (π := AlgEquiv.restrictNormalHom (F := K) (K₁ := L) M)
+      fun g m ↦ (AlgEquiv.restrictNormal_commutes g M m).symm
+    IsFiniteEtaleTorsor (AlgEquiv.restrictNormalHom (F := K) (K₁ := L) M).ker M L :=
+  IsFiniteEtaleTorsor.of_surjective (A := K) (AlgEquiv.restrictNormalHom_surjective L)
+    fun g m ↦ (AlgEquiv.restrictNormal_commutes g M m).symm
 
 end TauCeti.Algebra

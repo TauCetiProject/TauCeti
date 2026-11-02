@@ -42,7 +42,8 @@ Borel sets extracts a Cantor antichain from such a set. Since a measurable embed
 sets to Borel sets, Cantor antichains and thinness transport along a measurable embedding
 `g : X → Y` of Polish spaces that pulls an equivalence relation `F` on `Y` back to `E`, with no
 Borel hypothesis on `A`, `E` or `F`. This is how antichains built in one Polish space, for
-example a space of codes, are carried to another.
+example a space of codes, are carried to another. Perfect antichains transport along any
+homeomorphism pulling `F` back to `E`, with no hypothesis on the spaces.
 
 ## Main definitions
 
@@ -66,6 +67,8 @@ example a space of codes, are carried to another.
   antichains.
 * `Setoid.hasCantorAntichainOn_image_iff`, `Setoid.isThinOn_image_iff`: transport along
   measurable embeddings of Polish spaces.
+* `Setoid.hasPerfectAntichainOn_image_homeomorph_iff`: transport of perfect antichains along
+  homeomorphisms of arbitrary topological spaces.
 
 ## References
 
@@ -305,5 +308,24 @@ theorem isThinOn_image_iff {Y : Type*} [TopologicalSpace Y] [PolishSpace X] [Mea
     F.IsThinOn (g '' A) ↔ E.IsThinOn A := by
   rw [isThinOn_iff_not_hasCantorAntichainOn, isThinOn_iff_not_hasCantorAntichainOn,
     hasCantorAntichainOn_image_iff hg hrel A]
+
+/-- **Transport of perfect antichains along a homeomorphism.** If a homeomorphism `g : X ≃ₜ Y`
+pulls `F` back to `E`, then `g '' A` carries a perfect antichain for `F` exactly when `A` carries
+one for `E`. No Polish or Borel hypothesis is made. -/
+theorem hasPerfectAntichainOn_image_homeomorph_iff {Y : Type*} [TopologicalSpace Y]
+    {F : Setoid Y} (g : X ≃ₜ Y) (hrel : ∀ x y, F (g x) (g y) ↔ E x y) (A : Set X) :
+    F.HasPerfectAntichainOn (g '' A) ↔ E.HasPerfectAntichainOn A := by
+  constructor
+  · rintro ⟨P, hP, hne, hPA, hF⟩
+    refine ⟨g.symm '' P, g.symm.perfect_image.2 hP, hne.image _, ?_, ?_⟩
+    · rintro _ ⟨y, hy, rfl⟩
+      obtain ⟨x, hx, rfl⟩ := hPA hy
+      simpa using hx
+    · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+      rw [hF x hx y hy (by simpa [← hrel] using hxy)]
+  · rintro ⟨P, hP, hne, hPA, hE⟩
+    refine ⟨g '' P, g.perfect_image.2 hP, hne.image _, image_mono hPA, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+    rw [hE x hx y hy ((hrel x y).1 hxy)]
 
 end Setoid

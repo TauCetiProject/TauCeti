@@ -15,10 +15,15 @@ For families of two-sided ideals `I j ≤ J j` of an `R₁`-algebra `A`, the quo
 `A ⧸ I j → A ⧸ J j` assemble into an `R₁`-algebra map `∏ j, A ⧸ I j → ∏ j, A ⧸ J j`, which is
 surjective. This is the product version of Mathlib's `Ideal.Quotient.factorₐ`.
 
+For ideals `I i` of a commutative ring and exponents `n i`, the factors of `∏ i, A ⧸ I i ^ n i`
+with `n i = 0` are zero, so restricting to the factors with `n i ≠ 0` is a linear bijection.
+
 ## Main declarations
 
 * `TauCeti.Ideal.Quotient.piFactorₐ`: the componentwise quotient map.
 * `TauCeti.Ideal.Quotient.piFactorₐ_surjective`: it is surjective.
+* `TauCeti.Ideal.Quotient.bijective_pi_restrict_pow`: dropping the factors `A ⧸ I ^ 0 = 0` from
+  `∏ i, A ⧸ I i ^ n i` is a linear bijection.
 -/
 
 public section
@@ -45,6 +50,28 @@ theorem piFactorₐ_surjective (hle : ∀ j, I j ≤ J j) :
     Function.Surjective (piFactorₐ R₁ hle) :=
   -- `piFactorₐ R₁ hle` is definitionally `Pi.map` of the factor maps, as in `piFactorₐ_apply`.
   Function.Surjective.piMap fun j ↦ Ideal.Quotient.factor_surjective (hle j)
+
+end Ideal.Quotient
+
+namespace Ideal.Quotient
+
+variable {A : Type*} [CommRing A]
+
+/-- Dropping the factors with exponent zero from `∏ᵢ A ⧸ Iᵢ ^ nᵢ` is bijective, as those factors
+are `A ⧸ A = 0`. -/
+theorem bijective_pi_restrict_pow {ι : Type*} (I : ι → Ideal A) (n : ι → ℕ) :
+    Function.Bijective (LinearMap.pi fun y : {i // n i ≠ 0} ↦ LinearMap.proj y.1 :
+      (∀ i, A ⧸ I i ^ n i) →ₗ[A] ∀ y : {i // n i ≠ 0}, A ⧸ I y ^ n y) := by
+  classical
+  refine ⟨fun x x' hxx' ↦ funext fun i ↦ ?_, fun y ↦ ?_⟩
+  · by_cases hi : n i = 0
+    · have : Subsingleton (A ⧸ I i ^ n i) := by
+        rw [Ideal.Quotient.subsingleton_iff]
+        simp [hi]
+      exact Subsingleton.elim _ _
+    · exact congr_fun hxx' ⟨i, hi⟩
+  · refine ⟨fun i ↦ if hi : n i = 0 then 0 else y ⟨i, hi⟩, funext fun i ↦ ?_⟩
+    simp only [LinearMap.pi_apply, LinearMap.proj_apply, i.2, ↓reduceDIte]
 
 end Ideal.Quotient
 
