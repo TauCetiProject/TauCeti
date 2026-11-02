@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.ENNReal.BigOperators
 public import Mathlib.Basic.ENNReal.Inv
 public import Mathlib.RingTheory.MvPolynomial.Ideal
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Data.Finsupp.ENNReal
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # The index of a polynomial along linear forms
@@ -28,8 +28,9 @@ substitution `MvPolynomial.substForm M i₀` puts the form `M h (X h)` in place 
 fixes the other variables; its inverse is `MvPolynomial.substFormInv M i₀`. In the new
 coordinates every form is a variable, the ideal becomes a monomial ideal, and the index is the
 least value of `∑ h, n (h, i₀ h) / d h` over the monomials `n` of `substFormInv M i₀ P`. This
-gives the index the behaviour of an order of vanishing: it is attained, it is infinite only at
-`0`, it is at least the smaller index of two summands, and it is additive on products.
+gives the index the behaviour of an order of vanishing: it is attained, with positive degrees it
+is infinite only at `0`, it is at least the smaller index of two summands, and it is additive on
+products, by `MvPolynomial.iInf_support_weight_mul`.
 
 ## Main definitions
 
@@ -40,8 +41,6 @@ gives the index the behaviour of an order of vanishing: it is attained, it is in
 
 ## Main results
 
-* `MvPolynomial.iInf_support_weight_mul`: without zero divisors, the least weight of a monomial
-  of a product is the sum of the least weights for the factors.
 * `MvPolynomial.formIdeal_eq_map_substForm`: the ideal along the forms is the image of a monomial
   ideal under `substForm`.
 * `MvPolynomial.mem_formIdeal_iff`, `MvPolynomial.formIndex_eq_iInf`: the ideal and the index in
@@ -64,72 +63,7 @@ namespace MvPolynomial
 open Finset
 open scoped ENNReal
 
-variable {σ R K κ ι : Type*}
-
-section SupportWeight
-
-variable [CommSemiring R] [NoZeroDivisors R]
-
-/-- Over a semiring without zero divisors, the least weight of a monomial in the support of a
-product is the sum of the least weights in the supports of the factors. The weights take values
-in `ℝ≥0∞`, so zero and infinite weights are allowed, and the infimum over the empty support of
-`0` is `⊤`. -/
-theorem iInf_support_weight_mul (w : σ → ℝ≥0∞) (P Q : MvPolynomial σ R) :
-    ⨅ n ∈ (P * Q).support, n.weight w =
-      (⨅ n ∈ P.support, n.weight w) + ⨅ n ∈ Q.support, n.weight w := by
-  classical
-  refine le_antisymm ?_ (le_iInf₂ fun n hn ↦ ?_)
-  · by_cases hP : P = 0
-    · simp [hP]
-    by_cases hQ : Q = 0
-    · simp [hQ]
-    obtain ⟨d, hd, hdmin⟩ :=
-      P.support.exists_min_image (fun n ↦ n.weight w) (support_nonempty.mpr hP)
-    obtain ⟨e, he, hemin⟩ :=
-      Q.support.exists_min_image (fun n ↦ n.weight w) (support_nonempty.mpr hQ)
-    rw [le_antisymm (iInf₂_le d hd) (le_iInf₂ hdmin), le_antisymm (iInf₂_le e he) (le_iInf₂ hemin)]
-    by_cases hp : d.weight w = ⊤
-    · simp [hp]
-    by_cases hq : e.weight w = ⊤
-    · simp [hq]
-    -- The product of the lowest weighted homogeneous components of `P` and `Q` is nonzero, and
-    -- it is the weighted homogeneous component of `P * Q` of weight `d.weight w + e.weight w`.
-    set P₀ := weightedHomogeneousComponent w (d.weight w) P
-    set Q₀ := weightedHomogeneousComponent w (e.weight w) Q
-    have hP₀ : P₀.coeff d ≠ 0 := by
-      simpa [P₀, coeff_weightedHomogeneousComponent] using hd
-    have hQ₀ : Q₀.coeff e ≠ 0 := by
-      simpa [Q₀, coeff_weightedHomogeneousComponent] using he
-    obtain ⟨g, hg⟩ := ne_zero_iff.mp
-      (mul_ne_zero (ne_zero_iff.mpr ⟨d, hP₀⟩) (ne_zero_iff.mpr ⟨e, hQ₀⟩))
-    have hwg : g.weight w = d.weight w + e.weight w :=
-      ((weightedHomogeneousComponent_isWeightedHomogeneous _ _).mul
-        (weightedHomogeneousComponent_isWeightedHomogeneous _ _)) hg
-    have hcoeff : (P₀ * Q₀).coeff g = (P * Q).coeff g := by
-      rw [coeff_mul, coeff_mul]
-      refine Finset.sum_congr rfl fun x hx ↦ ?_
-      simp only [P₀, Q₀, coeff_weightedHomogeneousComponent]
-      by_cases h0 : P.coeff x.1 * Q.coeff x.2 = 0
-      · split_ifs <;> simp [h0]
-      have h₁ : d.weight w ≤ x.1.weight w := hdmin _ (mem_support_iff.mpr (left_ne_zero_of_mul h0))
-      have h₂ : e.weight w ≤ x.2.weight w :=
-        hemin _ (mem_support_iff.mpr (right_ne_zero_of_mul h0))
-      have hsum : x.1.weight w + x.2.weight w = d.weight w + e.weight w := by
-        rw [← map_add, Finset.mem_antidiagonal.mp hx, hwg]
-      have e₁ : x.1.weight w = d.weight w :=
-        (ENNReal.le_of_add_le_add_right hq (hsum ▸ add_le_add le_rfl h₂)).antisymm h₁
-      have e₂ : x.2.weight w = e.weight w :=
-        (ENNReal.le_of_add_le_add_left hp (hsum ▸ add_le_add h₁ le_rfl)).antisymm h₂
-      simp [e₁, e₂]
-    rw [← hwg]
-    exact iInf₂_le g (mem_support_iff.mpr (hcoeff ▸ hg))
-  · rw [mem_support_iff, coeff_mul] at hn
-    obtain ⟨x, hx, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hn
-    rw [← Finset.mem_antidiagonal.mp hx, map_add]
-    exact add_le_add (iInf₂_le _ (mem_support_iff.mpr (left_ne_zero_of_mul hne)))
-      (iInf₂_le _ (mem_support_iff.mpr (right_ne_zero_of_mul hne)))
-
-end SupportWeight
+variable {R K κ ι : Type*}
 
 section Substitution
 
@@ -153,6 +87,14 @@ theorem substForm_X_self (h : κ) :
 theorem substForm_X_of_ne {h : κ} {i : ι} (hi : i ≠ i₀ h) :
     substForm M i₀ (X (h, i)) = X (h, i) := by
   simp [substForm, hi]
+
+/-- A map fixing the variables `X (h, i)` with `i ≠ i₀ h` fixes the part of the form
+`M h (X h)` off the coordinate `i₀ h`. -/
+private theorem sum_erase_C_mul_map_X {f : MvPolynomial (κ × ι) R →ₐ[R] MvPolynomial (κ × ι) R}
+    {h : κ} (hf : ∀ i ≠ i₀ h, f (X (h, i)) = X (h, i)) :
+    ∑ i ∈ univ.erase (i₀ h), C (M h i) * f (X (h, i)) =
+      ∑ i ∈ univ.erase (i₀ h), C (M h i) * X (h, i) :=
+  Finset.sum_congr rfl fun i hi ↦ by rw [hf i (Finset.ne_of_mem_erase hi)]
 
 end CommSemiring
 
@@ -183,13 +125,11 @@ theorem substForm_substFormInv (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
   ext ⟨h, i⟩ : 1
   by_cases hi : i = i₀ h
   · subst hi
-    have hS : ∑ i ∈ univ.erase (i₀ h), C (M h i) * substForm M i₀ (X (h, i)) =
-        ∑ i ∈ univ.erase (i₀ h), C (M h i) * X (h, i) :=
-      Finset.sum_congr rfl fun i hi ↦ by rw [substForm_X_of_ne (Finset.ne_of_mem_erase hi)]
     simp only [AlgHom.comp_apply, substFormInv_X_self, map_mul, map_sub, map_sum, algHom_C,
-      algebraMap_eq, substForm_X_self, AlgHom.id_apply]
-    rw [hS, ← Finset.add_sum_erase _ _ (mem_univ (i₀ h)), add_sub_cancel_right, ← mul_assoc,
-      ← C_mul, inv_mul_cancel₀ (hM h), C_1, one_mul]
+      algebraMap_eq, substForm_X_self, AlgHom.id_apply,
+      sum_erase_C_mul_map_X fun i hi ↦ substForm_X_of_ne hi]
+    rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h))]
+    simp [← mul_assoc, ← C_mul, hM h]
   · simp [substFormInv_X_of_ne hi, substForm_X_of_ne hi]
 
 /-- `substFormInv M i₀` undoes `substForm M i₀`. -/
@@ -200,13 +140,10 @@ theorem substFormInv_substForm (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
   ext ⟨h, i⟩ : 1
   by_cases hi : i = i₀ h
   · subst hi
-    have hS : ∑ i ∈ univ.erase (i₀ h), C (M h i) * substFormInv M i₀ (X (h, i)) =
-        ∑ i ∈ univ.erase (i₀ h), C (M h i) * X (h, i) :=
-      Finset.sum_congr rfl fun i hi ↦ by rw [substFormInv_X_of_ne (Finset.ne_of_mem_erase hi)]
-    simp only [AlgHom.comp_apply, substForm_X_self, map_sum, map_mul, algHom_C, algebraMap_eq,
-      AlgHom.id_apply]
-    rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h)), substFormInv_X_self, hS, ← mul_assoc,
-      ← C_mul, mul_inv_cancel₀ (hM h), C_1, one_mul, sub_add_cancel]
+    rw [AlgHom.comp_apply, substForm_X_self, ← Finset.add_sum_erase _ _ (mem_univ (i₀ h))]
+    simp only [map_add, map_sum, map_mul, algHom_C, algebraMap_eq, substFormInv_X_self,
+      AlgHom.id_apply, sum_erase_C_mul_map_X fun i hi ↦ substFormInv_X_of_ne hi]
+    simp [← mul_assoc, ← C_mul, hM h]
   · simp [substFormInv_X_of_ne hi, substForm_X_of_ne hi]
 
 end Substitution
@@ -393,15 +330,7 @@ theorem formIndex_mul (hM : ∀ h, M h ≠ 0) (P Q : MvPolynomial (κ × ι) K) 
     formIndex d M (P * Q) = formIndex d M P + formIndex d M Q := by
   classical
   choose i₀ hi₀ using fun h ↦ Function.ne_iff.mp (hM h)
-  -- The cost `∑ h, n (h, i₀ h) / d h` of a monomial is its weight for the weights `(d h)⁻¹` on the
-  -- coordinates `(h, i₀ h)` and `0` elsewhere.
-  have hw (n : κ × ι →₀ ℕ) : ∑ h, (n (h, i₀ h) : ℝ≥0∞) / d h =
-      n.weight fun p ↦ if p.2 = i₀ p.1 then (d p.1 : ℝ≥0∞)⁻¹ else 0 := by
-    rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp), Fintype.sum_prod_type]
-    refine Finset.sum_congr rfl fun h _ ↦ ?_
-    rw [Fintype.sum_eq_single (i₀ h) fun i hi ↦ by simp [hi]]
-    simp [div_eq_mul_inv]
-  simp only [formIndex_eq_iInf hi₀, map_mul, hw]
+  simp only [formIndex_eq_iInf hi₀, map_mul, ← Finsupp.weight_ite_inv_natCast_eq_sum_div]
   exact iInf_support_weight_mul _ _ _
 
 end Field

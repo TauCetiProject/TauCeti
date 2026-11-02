@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.ENNReal.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
@@ -45,6 +46,10 @@ homogeneity in block `b`: a polynomial that does not vanish at a point with zero
 degree zero in block `b`, and the blocks of degree zero can be replaced simultaneously by
 arbitrary vectors without changing the value.
 
+Over a semiring without zero divisors, the lowest weighted homogeneous components of two
+polynomials multiply to a nonzero component of their product. So, for weights in `ℝ≥0∞`, the
+least weight of a monomial of a product is the sum of the least weights for the factors.
+
 ## Main results
 
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_mem`, `MvPolynomial.IsWeightedHomogeneous.aeval_mem`:
@@ -69,6 +74,8 @@ arbitrary vectors without changing the value.
   depends on the coordinates of weight zero.
 * `MvPolynomial.eval₂_congr_of_block_isWeightedHomogeneous_zero`: the block form, replacing all
   blocks of degree zero simultaneously preserves the value.
+* `MvPolynomial.iInf_support_weight_mul`: without zero divisors, the least `ℝ≥0∞`-weight of a
+  monomial of a product is the sum of the least weights for the factors.
 
 ## References
 
@@ -285,6 +292,73 @@ theorem eval₂_congr_of_block_isWeightedHomogeneous_zero {S ι κ : Type*} [Com
     eval₂ f g₁ F = eval₂ f g₂ F :=
   MvPolynomial.eval₂_congr _ _ _ fun {p} {_} hi hc ↦ h p fun hp ↦ by
     simpa using (hF p.1 hp).apply_eq_zero_of_coeff_ne_zero hc (Finsupp.mem_support_iff.mp hi)
+
+section SupportWeight
+
+open scoped ENNReal
+
+variable [NoZeroDivisors R]
+
+/-- Over a semiring without zero divisors, the least weight of a monomial in the support of a
+product is the sum of the least weights in the supports of the factors. The weights take values
+in `ℝ≥0∞`, so zero and infinite weights are allowed, and the infimum over the empty support of
+`0` is `⊤`. -/
+theorem iInf_support_weight_mul (w : σ → ℝ≥0∞) (P Q : MvPolynomial σ R) :
+    ⨅ n ∈ (P * Q).support, n.weight w =
+      (⨅ n ∈ P.support, n.weight w) + ⨅ n ∈ Q.support, n.weight w := by
+  classical
+  refine le_antisymm ?_ (le_iInf₂ fun n hn ↦ ?_)
+  · by_cases hP : P = 0
+    · simp [hP]
+    by_cases hQ : Q = 0
+    · simp [hQ]
+    obtain ⟨d, hd, hdmin⟩ :=
+      P.support.exists_min_image (fun n ↦ n.weight w) (support_nonempty.mpr hP)
+    obtain ⟨e, he, hemin⟩ :=
+      Q.support.exists_min_image (fun n ↦ n.weight w) (support_nonempty.mpr hQ)
+    rw [le_antisymm (iInf₂_le d hd) (le_iInf₂ hdmin), le_antisymm (iInf₂_le e he) (le_iInf₂ hemin)]
+    by_cases hp : d.weight w = ⊤
+    · simp [hp]
+    by_cases hq : e.weight w = ⊤
+    · simp [hq]
+    -- The product of the lowest weighted homogeneous components of `P` and `Q` is nonzero, and
+    -- it is the weighted homogeneous component of `P * Q` of weight `d.weight w + e.weight w`.
+    set P₀ := weightedHomogeneousComponent w (d.weight w) P
+    set Q₀ := weightedHomogeneousComponent w (e.weight w) Q
+    have hP₀ : P₀.coeff d ≠ 0 := by
+      simpa [P₀, coeff_weightedHomogeneousComponent] using hd
+    have hQ₀ : Q₀.coeff e ≠ 0 := by
+      simpa [Q₀, coeff_weightedHomogeneousComponent] using he
+    obtain ⟨g, hg⟩ := ne_zero_iff.mp
+      (mul_ne_zero (ne_zero_iff.mpr ⟨d, hP₀⟩) (ne_zero_iff.mpr ⟨e, hQ₀⟩))
+    have hwg : g.weight w = d.weight w + e.weight w :=
+      ((weightedHomogeneousComponent_isWeightedHomogeneous _ _).mul
+        (weightedHomogeneousComponent_isWeightedHomogeneous _ _)) hg
+    have hcoeff : (P₀ * Q₀).coeff g = (P * Q).coeff g := by
+      rw [coeff_mul, coeff_mul]
+      refine Finset.sum_congr rfl fun x hx ↦ ?_
+      simp only [P₀, Q₀, coeff_weightedHomogeneousComponent]
+      by_cases h0 : P.coeff x.1 * Q.coeff x.2 = 0
+      · split_ifs <;> simp [h0]
+      have h₁ : d.weight w ≤ x.1.weight w := hdmin _ (mem_support_iff.mpr (left_ne_zero_of_mul h0))
+      have h₂ : e.weight w ≤ x.2.weight w :=
+        hemin _ (mem_support_iff.mpr (right_ne_zero_of_mul h0))
+      have hsum : x.1.weight w + x.2.weight w = d.weight w + e.weight w := by
+        rw [← map_add, Finset.mem_antidiagonal.mp hx, hwg]
+      have e₁ : x.1.weight w = d.weight w :=
+        (ENNReal.le_of_add_le_add_right hq (hsum ▸ add_le_add le_rfl h₂)).antisymm h₁
+      have e₂ : x.2.weight w = e.weight w :=
+        (ENNReal.le_of_add_le_add_left hp (hsum ▸ add_le_add h₁ le_rfl)).antisymm h₂
+      simp [e₁, e₂]
+    rw [← hwg]
+    exact iInf₂_le g (mem_support_iff.mpr (hcoeff ▸ hg))
+  · rw [mem_support_iff, coeff_mul] at hn
+    obtain ⟨x, hx, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hn
+    rw [← Finset.mem_antidiagonal.mp hx, map_add]
+    exact add_le_add (iInf₂_le _ (mem_support_iff.mpr (left_ne_zero_of_mul hne)))
+      (iInf₂_le _ (mem_support_iff.mpr (right_ne_zero_of_mul hne)))
+
+end SupportWeight
 
 end CommSemiring
 
