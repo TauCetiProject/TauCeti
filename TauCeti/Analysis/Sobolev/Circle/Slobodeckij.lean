@@ -56,6 +56,8 @@ those at which `H^s` consists of continuous functions.
   at most the squared `H⁰` norm plus a constant times the energy.
 * `TauCeti.CircleSobolev.exists_inclusion_eq_iff_slobodeckijEnergy_ne_top`: for `0 < s < 1`, an
   element of `H⁰` lies in `H^s` exactly when its energy is finite.
+* `TauCeti.CircleSobolev.slobodeckijEnergy_eq_lintegral_lintegral`: the energy is the double
+  integral `∫∫ ‖g y - g x‖² / ‖y - x‖ ^ (1 + 2 s) dy dx` of any measurable representative `g`.
 * `TauCeti.CircleSobolev.exists_toLpₗᵢ_inclusion_eq_comp_of_lipschitzWith`: for `0 < s < 1` and
   `f` Lipschitz, `f ∘ u` lies in `H^s` for every `u ∈ H^s`, with energy at most `K²` times that
   of `u`.
@@ -393,6 +395,49 @@ theorem exists_inclusion_eq_iff_slobodeckijEnergy_ne_top (hs0 : 0 < s) (hs1 : s 
       rw [two_mul, weight_add]
       ring
     exact ⟨b, CircleSobolev.ext (by rw [coeff_inclusion, hb])⟩
+
+/-! ### The energy as a double integral -/
+
+/-- The squared `H⁰` distance between `a` and its rotation by `h` is the integral of
+`‖g (x + h) - g x‖²`, for any representative `g` of the `L²` function of `a`. -/
+theorem enorm_rotate_sub_sq {a : CircleSobolev 0 ℂ} {g : AddCircle T → ℂ}
+    (hg : toLpₗᵢ T a =ᵐ[haarAddCircle] g) (h : AddCircle T) :
+    ‖rotate h a - a‖ₑ ^ 2 = ∫⁻ x, ‖g (x + h) - g x‖ₑ ^ 2 ∂haarAddCircle := by
+  have htr : ⇑(toLpₗᵢ T a) ∘ (· + h) =ᵐ[haarAddCircle] g ∘ (· + h) :=
+    (measurePreserving_add_right haarAddCircle h).quasiMeasurePreserving.ae_eq_comp hg
+  have hae : ⇑(toLpₗᵢ T (rotate h a - a)) =ᵐ[haarAddCircle] fun x ↦ g (x + h) - g x := by
+    rw [map_sub]
+    filter_upwards [Lp.coeFn_sub (toLpₗᵢ T (rotate h a)) (toLpₗᵢ T a), toLpₗᵢ_rotate h a, htr,
+      hg] with x h₁ h₂ h₃ h₄
+    simp only [Function.comp_apply] at h₂ h₃
+    rw [h₁, Pi.sub_apply, h₂, h₃, h₄]
+  have h2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
+    ((Lp.aestronglyMeasurable _).congr hae)
+  simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, ENNReal.rpow_two] at h2
+  rw [← (toLpₗᵢ T).enorm_map, Lp.enorm_def, eLpNorm_congr_ae hae, h2]
+
+/-- The energy of order `s` of `a ∈ H⁰` is the double integral
+`∫∫ ‖g y - g x‖² / ‖y - x‖ ^ (1 + 2 s) dy dx`, for any measurable representative `g` of the `L²`
+function of `a`. -/
+theorem slobodeckijEnergy_eq_lintegral_lintegral {a : CircleSobolev 0 ℂ}
+    {g : AddCircle T → ℂ} (hgm : Measurable g) (hg : toLpₗᵢ T a =ᵐ[haarAddCircle] g) (s : ℝ) :
+    slobodeckijEnergy T s a = ∫⁻ x, ∫⁻ y, ‖g y - g x‖ₑ ^ 2 *
+      ENNReal.ofReal (‖y - x‖ ^ (1 + 2 * s))⁻¹ ∂volume ∂haarAddCircle := by
+  calc slobodeckijEnergy T s a
+      = ∫⁻ h, ∫⁻ x, ‖g (x + h) - g x‖ₑ ^ 2 * ENNReal.ofReal (‖h‖ ^ (1 + 2 * s))⁻¹
+          ∂haarAddCircle ∂volume := by
+        rw [slobodeckijEnergy_def]
+        refine lintegral_congr fun h ↦ ?_
+        rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, ← enorm_rotate_sub_sq T hg h,
+          div_eq_mul_inv, ENNReal.ofReal_mul (sq_nonneg _), ← ofReal_norm,
+          ENNReal.ofReal_pow (norm_nonneg _)]
+    _ = ∫⁻ x, ∫⁻ h, ‖g (x + h) - g x‖ₑ ^ 2 * ENNReal.ofReal (‖h‖ ^ (1 + 2 * s))⁻¹
+          ∂volume ∂haarAddCircle :=
+        (lintegral_lintegral_swap (Measurable.aemeasurable (by fun_prop))).symm
+    _ = _ := lintegral_congr fun x ↦ by
+        have h := lintegral_add_left_eq_self (μ := volume)
+          (fun y ↦ ‖g y - g x‖ₑ ^ 2 * ENNReal.ofReal (‖y - x‖ ^ (1 + 2 * s))⁻¹) x
+        simpa only [add_sub_cancel_left] using h
 
 /-! ### Lipschitz maps -/
 

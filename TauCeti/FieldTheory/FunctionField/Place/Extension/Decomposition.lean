@@ -65,6 +65,8 @@ proved here.
   an intermediate field is the index of its fixing subgroup in the decomposition group.
 * `TauCeti.Place.isSplitCompletely_iff_forall_decompositionSubgroup_le`: complete splitting in
   an intermediate field is detected by all upstairs decomposition groups.
+* `TauCeti.Place.eq_one_of_smul_eq_self_of_ramificationIdx_eq_one_of_relativeDegree_eq_one`: in a
+  finite extension, Galois or not, an automorphism fixing a place with `e = f = 1` is the identity.
 
 ## References
 
@@ -154,6 +156,8 @@ theorem decompositionSubgroup_decompositionField_eq_top (P : Place k F') :
   simp only [Subgroup.mem_top, iff_true, MulAction.mem_stabilizer_iff]
   rw [← restrictScalars_smul (decompositionField F P) τ P]
   exact restrictScalars_smul_eq_self F P τ
+
+section IsGalois
 
 variable [IsGalois F F']
 
@@ -368,6 +372,34 @@ theorem isSplitCompletely_iff_forall_decompositionSubgroup_le
   · obtain ⟨Q, rfl⟩ := restrict_surjective_of_finiteDimensional
       (hF.finite_extension (E := E)) (hF.finite_extension (E := F')) R
     exact (hlocal Q).mpr (h Q (by simpa only [restrict_restrict] using hR))
+
+end IsGalois
+
+variable {F} in
+/-- **An automorphism fixing an unramified place of relative degree one is the identity.** Let
+`F' / F` be a finite extension, not necessarily Galois, and `P` a place of `F' / k` with
+`e(P ∣ P ∩ F) = f(P ∣ P ∩ F) = 1`. Then the only automorphism of `F'` over `F` fixing `P` is the
+identity. -/
+theorem eq_one_of_smul_eq_self_of_ramificationIdx_eq_one_of_relativeDegree_eq_one
+    {σ : F' ≃ₐ[F] F'} {P : Place k F'}
+    (hσ : σ • P = P) (he : ramificationIdx F P = 1) (hf : relativeDegree k F P = 1) : σ = 1 := by
+  -- Over the field `E` fixed by `σ`, `F'` is Galois and `σ` lies in the decomposition group of `P`.
+  let E := IntermediateField.fixedField (Subgroup.zpowers σ)
+  let τ : F' ≃ₐ[E] F' := σ.toFixedFieldAlgEquiv
+  have hτσ : τ.restrictScalars F = σ := AlgEquiv.restrictScalars_toFixedFieldAlgEquiv σ
+  have hτ : τ ∈ P.integers.decompositionSubgroup E := by
+    rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff,
+      ← restrictScalars_smul, hτσ, hσ]
+  -- Over `E`, the place `P` is still unramified of relative degree one.
+  have he' : ramificationIdx E P = 1 :=
+    ((ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict (k₁ := k) (F₁ := E) P).mp he).1
+  have hf' : relativeDegree k E P = 1 :=
+    ((relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict (k₁ := k) (F₁ := E) P).mp hf).1
+  have hcard := card_decompositionSubgroup E P
+  rw [he', hf', mul_one, Nat.card_eq_one_iff_unique] at hcard
+  have hτ1 : τ = 1 := congrArg Subtype.val (hcard.1.elim ⟨τ, hτ⟩ 1)
+  ext x
+  rw [← hτσ, AlgEquiv.restrictScalars_apply, hτ1, AlgEquiv.one_apply, AlgEquiv.one_apply]
 
 end Place
 

@@ -5,15 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
 
+import Mathlib.Algebra.Category.ModuleCat.Descent
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequence
 import Mathlib.RingTheory.Flat.CategoryTheory
 import Mathlib.RingTheory.Flat.Tensor
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 import TauCeti.CategoryTheory.Abelian.LeftDerived
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
@@ -57,6 +62,12 @@ and `Tor₁(X₃, M)` vanishes with `Tor₁(X₂, M)` when `X₁ ⊗ M → X₂ 
 union of submodules `Nᵢ` with `Torₙ₊₁(X ⧸ Nᵢ, M) = 0`
 (`ModuleCat.isZero_Tor_succ_quotient_iSup`), since an element of `N ⊗ P` already comes from a
 finitely generated submodule of `N`.
+
+`Tor` vanishing is invariant under flat base change: for a flat ring homomorphism `f : A →+* B`,
+a `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when
+`Torₙ^B(M, B ⊗[A] N)` does (`ModuleCat.isZero_Tor_restrictScalars_iff`). Extension of scalars
+along `f` carries a projective resolution of `N` to one of `B ⊗[A] N`, and
+`M ⊗[B] (B ⊗[A] -) ≅ M ⊗[A] -` (`ModuleCat.extendScalarsCompTensorLeftIso`).
 
 ## References
 
@@ -344,5 +355,52 @@ theorem isZero_Tor_prod {X Y : ModuleCat.{u} A} (M : ModuleCat.{u} A) {n : ℕ}
     (shortComplexOfCompEqZero (LinearMap.inl A X Y) (LinearMap.snd A X Y)
       (LinearMap.snd_comp_inl _ _ _))
     Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective).isZero_Tor_X₂ M hX hY
+
+end ModuleCat
+
+/-! ### Flat base change -/
+
+namespace ModuleCat
+
+open CategoryTheory Limits MonoidalCategory
+
+universe u
+
+variable {A B : Type u} [CommRing A] [CommRing B] (f : A →+* B)
+
+/-- **Flat base change for the vanishing of `Tor`.** For a flat ring homomorphism `f : A →+* B`, a
+`B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when `Torₙ^B(M, B ⊗[A] N)`
+vanishes. -/
+theorem isZero_Tor_restrictScalars_iff (hf : f.Flat) (M : ModuleCat.{u} B) (N : ModuleCat.{u} A)
+    (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) n).obj ((restrictScalars f).obj M)).obj N) ↔
+      IsZero (((Tor (ModuleCat.{u} B) n).obj M).obj ((extendScalars f).obj N)) := by
+  -- Flatness makes extension of scalars exact, and as a left adjoint of the exact restriction of
+  -- scalars it preserves projectives, so it carries projective resolutions to projective
+  -- resolutions.
+  have := preservesFiniteLimits_extendScalars_of_flat hf
+  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, u, u} f) :=
+    (extendRestrictScalarsAdj.{u, u, u} f).leftAdjoint_preservesColimits
+  have : PreservesFiniteColimits (extendScalars.{u, u, u} f) :=
+    PreservesColimitsOfSize.preservesFiniteColimits _
+  have : (extendScalars.{u, u, u} f).PreservesProjectiveObjects :=
+    Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms
+      (extendRestrictScalarsAdj.{u, u, u} f)
+  let Q := projectiveResolution N
+  let Q' := (extendScalars.{u, u, u} f).mapProjectiveResolution Q
+  rw [isZero_Tor_iff Q, isZero_Tor_iff Q', ← HomologicalComplex.exactAt_iff_isZero_homology,
+    ← HomologicalComplex.exactAt_iff_isZero_homology]
+  -- Restricting scalars in `M ⊗[B] (B ⊗[A] Q)` gives `M ⊗[A] Q`, and restriction of scalars is
+  -- exact and faithful, so it neither creates nor destroys exactness.
+  let e : ((restrictScalars.{u} f).mapHomologicalComplex _).obj (tensorResolution Q' M) ≅
+      tensorResolution Q ((restrictScalars f).obj M) :=
+    HomologicalComplex.Hom.isoOfComponents
+      (fun k ↦ (extendScalarsCompTensorLeftIso f M).app (Q.complex.X k))
+      fun i j _ ↦ ((extendScalarsCompTensorLeftIso f M).hom.naturality (Q.complex.d i j)).symm
+  have hR : (((restrictScalars.{u} f).mapHomologicalComplex _).obj
+      (tensorResolution Q' M)).ExactAt n ↔ (tensorResolution Q' M).ExactAt n :=
+    ((tensorResolution Q' M).sc n).exact_map_iff_of_faithful (restrictScalars.{u} f)
+  rw [← hR]
+  exact ⟨fun h ↦ h.of_iso e.symm, fun h ↦ h.of_iso e⟩
 
 end ModuleCat

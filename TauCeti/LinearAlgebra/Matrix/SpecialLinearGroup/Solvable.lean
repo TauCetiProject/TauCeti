@@ -29,32 +29,23 @@ open scoped MatrixGroups
 
 namespace TauCeti.Matrix.SpecialLinearGroup
 
-universe u
-
 /-- The special linear group `SL₂(F)` is not solvable if `F` contains a nonzero element whose
 square is not one. -/
-theorem not_isSolvable_fin_two (F : Type u) [Field F]
+theorem not_isSolvable_fin_two (F : Type*) [Field F]
     (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1) : ¬ Group.IsSolvable SL(2, F) := by
   obtain ⟨a, ha0, ha1⟩ := hF
-  let _ : Group.IsPerfect SL(2, F) := ⟨Matrix.SL2.commutator_eq_top ha0 ha1⟩
-  have h01 : (0 : Fin 2) ≠ 1 := by decide
-  let t : SL(2, F) := Matrix.SpecialLinearGroup.transvection h01 1
-  have ht : t ≠ 1 := by
-    intro ht
-    have hentry := congrArg
-      (fun s : SL(2, F) ↦ (s : Matrix (Fin 2) (Fin 2) F) 0 1) ht
-    simp [t, Matrix.SpecialLinearGroup.transvection_coe, Matrix.single] at hentry
-  let _ : Nontrivial SL(2, F) := ⟨t, 1, ht⟩
-  exact Group.IsPerfect.not_isSolvable SL(2, F)
+  have : Group.IsPerfect SL(2, F) := ⟨Matrix.SL2.commutator_eq_top ha0 ha1⟩
+  -- The transvection with off-diagonal entry `1` witnesses that `SL₂(F)` is nontrivial.
+  have : Nontrivial SL(2, F) := ⟨Matrix.SpecialLinearGroup.transvection zero_ne_one 1, 1,
+    fun h ↦ by simpa [Matrix.SpecialLinearGroup.transvection_coe] using congr($h.1 0 1)⟩
+  exact Group.IsPerfect.not_isSolvable _
 
 /-- The special linear group `SL₂` over an infinite field is not solvable. -/
-theorem not_isSolvable_fin_two_of_infinite (F : Type u) [Field F] [Infinite F] :
+theorem not_isSolvable_fin_two_of_infinite (F : Type*) [Field F] [Infinite F] :
     ¬ Group.IsSolvable SL(2, F) := by
-  apply not_isSolvable_fin_two F
   classical
   obtain ⟨a, ha⟩ := Infinite.exists_notMem_finset ({0, 1, -1} : Finset F)
-  have ha' : a ≠ 0 ∧ a ≠ 1 ∧ a ≠ -1 := by
-    simpa only [Finset.mem_insert, Finset.mem_singleton, not_or] using ha
-  exact ⟨a, ha'.1, sq_ne_one_iff.mpr ha'.2⟩
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at ha
+  exact not_isSolvable_fin_two F ⟨a, ha.1, sq_ne_one_iff.mpr ha.2⟩
 
 end TauCeti.Matrix.SpecialLinearGroup

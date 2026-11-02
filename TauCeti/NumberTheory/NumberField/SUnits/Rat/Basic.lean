@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.EffectiveBounds.Regulator
 public import TauCeti.NumberTheory.Height.SInteger
-public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+public import TauCeti.NumberTheory.NumberField.Global.Places.Rat
 public import TauCeti.NumberTheory.NumberField.SUnits.Regulator
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.FundamentalSystem
@@ -33,7 +33,6 @@ by the finite place `v`: its archimedean local factor is `1`.
 
 ## Main results
 
-* `Rat.HeightOneSpectrum.finitePlace_mk_natGenerator`: `|p_v|_v = p_v⁻¹`.
 * `Rat.HeightOneSpectrum.mulHeight₁_inv_natGenerator_eq_max_finitePlace` and
   `Rat.HeightOneSpectrum.mulHeight₁_inv_natGenerator`: the height of `1 / p_v` is its local factor
   at `v`, which is `p_v`.
@@ -57,19 +56,6 @@ open IsDedekindDomain NumberField Rat.HeightOneSpectrum
 namespace Rat.HeightOneSpectrum
 
 variable (v : HeightOneSpectrum (𝓞 ℚ))
-
-/-- The absolute value of the rational prime of `v` at the finite place `v` is its inverse. -/
-theorem finitePlace_mk_natGenerator :
-    FinitePlace.mk v (natGenerator v) = ((natGenerator v : ℕ) : ℝ)⁻¹ := by
-  rw [FinitePlace.mk_apply, FinitePlace.norm_embedding', valuation_natGenerator,
-    WithZeroMulInt.toNNReal_neg_apply _ WithZero.exp_ne_zero, WithZero.log_exp]
-  simp
-
-/-- The absolute value of the inverse of the rational prime of `v` at the finite place `v` is
-the prime. -/
-theorem finitePlace_mk_inv_natGenerator :
-    FinitePlace.mk v ((natGenerator v : ℚ)⁻¹) = natGenerator v := by
-  rw [map_inv₀, finitePlace_mk_natGenerator, inv_inv]
 
 /-- The height of the inverse of the rational prime `p` of `v` is carried by the finite place `v`:
 `1 / p` is a `{v}`-integer whose archimedean local factor is `1`, so its height is its local factor

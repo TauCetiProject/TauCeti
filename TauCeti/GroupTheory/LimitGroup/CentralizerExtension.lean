@@ -31,7 +31,11 @@ arbitrary `u` and `n`, its universal property and these retractions, and compare
 `n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension for `n = 1`. The
 construction always uses the full centralizer and imposes no condition on `u` or `n`;
 `IsAdmissibleCentralizerStep u n` records the conditions imposed on a step of an iterated extension
-of centralizers.
+of centralizers. The extension depends only on the centralizer: if `C_G(u) = C_G(v)` then
+`G(u, ℤⁿ) ≃* G(v, ℤⁿ)` over `G` (`CentralizerExt.congr`). In particular, when `u = r ^ d` has the
+same centralizer as a root `r` that is not a proper power, as in a residually free group, the
+extension at `u` is an admissible extension at `r` for `n > 0`, and its retractions are among those
+of the extension at `r`.
 
 The amalgam is Mathlib's `Monoid.PushoutI` over the `Bool`-indexed family `CentralizerExtFactor`,
 so its normal form theory (`Monoid.PushoutI.NormalWord`) applies directly.
@@ -44,6 +48,8 @@ so its normal form theory (`Monoid.PushoutI.NormalWord`) applies directly.
 * `TauCeti.LimitGroup.CentralizerExt.lift`, `TauCeti.LimitGroup.CentralizerExt.homEquiv`: the
   universal property.
 * `TauCeti.LimitGroup.CentralizerExt.retraction k`: the retraction `tᵢ ↦ u ^ kᵢ` onto `G`.
+* `TauCeti.LimitGroup.CentralizerExt.congr`: extensions of equal centralizers are isomorphic
+  over `G`.
 * `TauCeti.LimitGroup.IsAdmissibleCentralizerStep u n`: `u` is not a proper power and `0 < n`.
 
 ## Main results
@@ -241,6 +247,53 @@ def retraction (k : Fin n → ℤ) : CentralizerExt u n →* G :=
 @[simp] theorem retraction_comp_of (k : Fin n → ℤ) :
     (retraction k).comp (of : G →* CentralizerExt u n) = .id G :=
   lift_comp_of _ _ _ _
+
+/-- The homomorphism `G(u, ℤⁿ) →* G(v, ℤⁿ)` fixing `G` and the new letters, for
+`C_G(u) = C_G(v)`. -/
+private def congrHom {v : G} (h : centralizer {u} = centralizer {v}) :
+    CentralizerExt u n →* CentralizerExt v n :=
+  lift of t commute_t_t fun _ hc i => commute_of_t (h ▸ hc) i
+
+private theorem congrHom_of {v : G} (h : centralizer {u} = centralizer {v}) (g : G) :
+    congrHom (n := n) h (of g) = of g :=
+  lift_of _ _ _ _ g
+
+private theorem congrHom_t {v : G} (h : centralizer {u} = centralizer {v}) (i : Fin n) :
+    congrHom h (t i) = t i :=
+  lift_t _ _ _ _ i
+
+/-- Extensions of equal centralizers are isomorphic over `G`: if `C_G(u) = C_G(v)`, then
+`G(u, ℤⁿ) ≃* G(v, ℤⁿ)`, fixing `G` and the new letters. -/
+def congr {v : G} (h : centralizer {u} = centralizer {v}) :
+    CentralizerExt u n ≃* CentralizerExt v n :=
+  (congrHom h).toMulEquiv (congrHom h.symm)
+    (hom_ext (by ext; simp [congrHom_of]) (by simp [congrHom_t]))
+    (hom_ext (by ext; simp [congrHom_of]) (by simp [congrHom_t]))
+
+@[simp] theorem congr_of {v : G} (h : centralizer {u} = centralizer {v}) (g : G) :
+    congr (n := n) h (of g) = of g :=
+  congrHom_of h g
+
+@[simp] theorem congr_t {v : G} (h : centralizer {u} = centralizer {v}) (i : Fin n) :
+    congr h (t i) = t i :=
+  congrHom_t h i
+
+@[simp] theorem congr_symm {v : G} (h : centralizer {u} = centralizer {v}) :
+    (congr (n := n) h).symm = congr h.symm := (rfl)
+
+/-- If `u = r ^ d` and `C_G(u) = C_G(r)`, the retraction `tᵢ ↦ u ^ kᵢ` of `G(u, ℤⁿ)` factors
+through `congr` as the retraction `tᵢ ↦ r ^ (d * kᵢ)` of `G(r, ℤⁿ)`. -/
+theorem retraction_comp_congr {r : G} {d : ℕ} (hd : r ^ d = u)
+    (h : centralizer {u} = centralizer {r}) (k : Fin n → ℤ) :
+    (retraction (fun i => d * k i)).comp (congr h).toMonoidHom = retraction k := by
+  subst hd
+  exact hom_ext (by ext; simp) fun i => by simp [zpow_mul]
+
+/-- Pointwise form of `retraction_comp_congr`. -/
+@[simp] theorem retraction_congr {r : G} {d : ℕ} (hd : r ^ d = u)
+    (h : centralizer {u} = centralizer {r}) (k : Fin n → ℤ) (x : CentralizerExt u n) :
+    retraction (fun i => d * k i) (congr h x) = retraction k x :=
+  DFunLike.congr_fun (retraction_comp_congr hd h k) x
 
 /-- Extending a centralizer by `ℤ⁰` does not change the group: `G(u, ℤ⁰) ≃* G`. -/
 def zeroEquiv : CentralizerExt u 0 ≃* G :=
