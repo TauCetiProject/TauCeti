@@ -338,13 +338,12 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
   let i := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.i)
   let p := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.r)
   have hip : i ≫ p = 𝟙 _ := by
-    ext : 1
-    all_goals
-      dsimp only [i, p, ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
-        ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₂, ShortComplex.mapNatTrans_τ₃]
-      rw [← NatTrans.comp_app, ← CategoryTheory.Functor.map_comp, r.retract,
-        CategoryTheory.Functor.map_id]
-      exact NatTrans.id_app _ _
+    ext : 1 <;>
+      simp only [i, p, ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
+        ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₂, ShortComplex.mapNatTrans_τ₃,
+        ← NatTrans.comp_app, ← Functor.map_comp, r.retract, Functor.map_id, NatTrans.id_app,
+        ShortComplex.id_τ₁, ShortComplex.id_τ₂, ShortComplex.id_τ₃,
+        ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃]
   -- The coefficient sequence is a retract of the short exact free coefficient sequence.
   have hfree := hS.map_coinvariantsTensor_free P
   exact (TauCeti.IsKernelCokernelPair.of_retract

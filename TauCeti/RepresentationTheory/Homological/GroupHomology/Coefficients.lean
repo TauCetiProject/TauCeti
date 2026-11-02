@@ -96,7 +96,8 @@ theorem groupHomology_δ_comp_groupHomologyIso_hom (i j : ℕ) (hij : j + 1 = i)
     groupHomology.δ hS i j hij ≫ (groupHomologyIso S.X₁ j P).hom =
       (groupHomologyIso S.X₃ i P).hom ≫
         (P.complex.shortExact_map_coinvariantsTensorFunctor hS).δ i j hij := by
-  let β := ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) P
+  let β : Rep.barComplex k G ⟶ P.complex :=
+    ProjectiveResolution.lift (𝟙 _) (Rep.barResolution k G) P
   have hβ := (ProjectiveResolution.lift_commutes_zero (𝟙 _) (Rep.barResolution k G) P).trans
     (Category.comp_id _)
   let ψ (A : Rep.{u} k G) : groupHomology.inhomogeneousChains A ⟶
@@ -107,8 +108,6 @@ theorem groupHomology_δ_comp_groupHomologyIso_hom (i j : ℕ) (hij : j + 1 = i)
       groupHomology.chainsMap (MonoidHom.id G) f ≫ ψ B =
         ψ A ≫ (P.complex.coinvariantsTensorFunctor).map f := by
     dsimp only [ψ]
-    -- Present the bar resolution's complex explicitly for rewriting the naturality square.
-    change Rep.barComplex k G ⟶ P.complex at β
     rw [← Category.assoc, TauCeti.groupHomology.inhomogeneousChainsIso_hom_naturality,
       Category.assoc]
     rw [← (NatTrans.mapHomologicalComplex ((coinvariantsTensor k G).map f) _).naturality β,
