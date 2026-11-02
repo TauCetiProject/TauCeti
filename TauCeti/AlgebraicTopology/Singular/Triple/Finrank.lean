@@ -124,12 +124,15 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq
       finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) := by
   -- Multiply the identity, which carries the signs `(-1) ^ i`, by `(-1) ^ n`.
   have hsign (i : ℕ) (hi : i ≤ n) : (-1 : ℤ) ^ (n - i) = (-1) ^ n * (-1) ^ i := by
-    rw [← pow_add, ← Nat.sub_add_cancel hi, add_assoc, ← two_mul, pow_add, pow_mul]
-    simp
-  rw [Finset.sum_congr rfl fun i hi ↦ by rw [hsign i (Finset.mem_range_succ_iff.1 hi), mul_assoc],
-    ← Finset.mul_sum, T.sum_range_neg_one_pow_mul_finrank_eq V n, ← mul_assoc, ← pow_add,
-    ← two_mul, pow_mul]
-  simp
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hi
+    simp [pow_add, mul_right_comm, ← mul_pow]
+  calc _ = (-1) ^ n * ((-1) ^ n *
+        finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) : ℤ) := by
+        rw [← T.sum_range_neg_one_pow_mul_finrank_eq V n, Finset.mul_sum]
+        refine Finset.sum_congr rfl fun i hi ↦ ?_
+        rw [hsign i (Finset.mem_range_succ_iff.1 hi), mul_assoc]
+    -- The sign `(-1) ^ n` now appears squared.
+    _ = _ := by rw [← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
 
 /-- **Subadditivity of the alternating sums along a triple.** If the relative homology of `(A, B)`
 and of `(X, A)` is finite-dimensional in every degree, then `Sₙ(X, B) ≤ Sₙ(A, B) + Sₙ(X, A)`,

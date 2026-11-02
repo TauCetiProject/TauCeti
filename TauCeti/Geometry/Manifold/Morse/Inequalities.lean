@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
+public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 
 /-!
 # The Morse inequalities
@@ -31,7 +32,8 @@ The proof is Milnor's. Across a single critical level the sublevel pair has the 
 of a finite CW pair with one `i`-cell for each critical point of index `i`
 (`TauCeti.IsMorse.exists_relCWComplex_sublevel_deformation`), where the three statements are the
 Morse inequalities for CW pairs. Across a band without critical points the relative homology
-vanishes, by the deformation retraction of `M_b` onto `M_a` (`TauCeti.exists_sublevelDeformation`).
+vanishes, by the deformation retraction of `M_b` onto `M_a`
+(`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
 A band is cut at the critical values it contains into finitely many such pieces, and the long exact
 sequence of the triple `M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are
 subadditive (`TauCeti.TopTriple.finrank_singularHomology_totalPair_le` and
@@ -131,33 +133,13 @@ private def MorseInequalities (a b : ℝ) (hab : a ≤ b) : Prop :=
       finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * bandCount I f a b i)
 
 omit [Module.Finite k V] in
-/-- **Across a band without critical points the relative homology vanishes.** -/
-private theorem isZero_singularHomology_sublevelPair (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
-    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hcrit : ∀ x ∈ criticalPoints I f, f x ∉ Icc a b) (n : ℕ) :
-    IsZero ((sublevelPair f hab).singularHomology V n) := by
-  obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevelDeformation hfs hab hcompact fun x hax hxb hx ↦
-    hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hax, hxb⟩
-  have e : sublevelInclusion f a b hab = .inclusion (sublevel_mono f hab) := by ext; simp
-  rw [e] at G
-  -- The identity of the pair is homotopic to the retraction, which factors through `{f ≤ a}`.
-  refine TopPair.isZero_singularHomology_of_homotopy (f := TopPair.ofInclusionMap
-      (X := TopCat.of M) (sublevel_mono f hab) (sublevel_mono f hab)
-      ((ContinuousMap.inclusion (sublevel_mono f hab)).comp r) fun x _ ↦ (r x).2)
-    ?_ (TopCat.ofHom r) (by ext x; exact (TopPair.ofInclusionMap_fst_apply
-      (hst := sublevel_mono f hab) (hst' := sublevel_mono f hab) _ _ x).symm) V n
-  rw [← TopPair.ofInclusionMap_id]
-  refine TopPair.ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
-  have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
-  rw [h]
-  exact hx
-
-omit [Module.Finite k V] in
 /-- The Morse inequalities hold trivially across a compact band without critical points. -/
 private theorem morseInequalities_of_forall_notMem (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (hcrit : ∀ x ∈ criticalPoints I f, f x ∉ Icc a b) :
     MorseInequalities I f V a b hab := by
-  have hzero (n : ℕ) := isZero_singularHomology_sublevelPair V hf.contMDiff hab hcompact hcrit n
+  have hzero (n : ℕ) := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff hab
+    hcompact (fun x hax hxb hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hax, hxb⟩)
+    V n
   have hfin (n : ℕ) : Module.Finite k ((sublevelPair f hab).singularHomology V n : ModuleCat k) :=
     have := (ModuleCat.isZero_iff_subsingleton.1 (hzero n))
     inferInstance
