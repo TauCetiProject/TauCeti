@@ -97,6 +97,9 @@ maps from a fixed commutative ring into completions.
 * `UniformSpace.Completion.mapAlgEquiv_symm` and
   `UniformSpace.Completion.continuous_mapAlgEquiv_symm`: its inverse is the algebra isomorphism
   induced by the inverse, and is continuous.
+* `UniformSpace.Completion.mapAlgEquiv_refl` and `UniformSpace.Completion.mapAlgEquiv_trans`:
+  the lift to completions is functorial; `UniformSpace.Completion.toRingEquiv_mapAlgEquiv`
+  identifies its underlying ring isomorphism with `UniformSpace.Completion.mapRingEquiv`.
 * `UniformSpace.Completion.coe_completeRingEquivSelf` and
   `UniformSpace.Completion.coe_completeRingEquivSelf_symm`: the isomorphism is
   `UniformCompletion.completeEquivSelf` and its inverse is the coercion into the completion.
@@ -181,25 +184,32 @@ variable {R : Type*} [CommSemiring R]
 
 /-- An `R`-algebra isomorphism `α ≃ₐ[R] β` between topological rings, continuous in both
 directions, lifts to an `R`-algebra isomorphism between their completions. Its underlying ring
-isomorphism is `UniformSpace.Completion.mapRingEquiv`. -/
+isomorphism is `UniformSpace.Completion.mapRingEquiv` (`toRingEquiv_mapAlgEquiv`). -/
 noncomputable def mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Completion α ≃ₐ[R] Completion β :=
   .ofRingEquiv (f := mapRingEquiv f.toRingEquiv (by rwa [AlgEquiv.coe_toRingEquiv])
       (by rwa [AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv])) fun r ↦ by
-    rw [mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv, algebraMap_def, algebraMap_def,
-      map_coe (uniformContinuous_addMonoidHom_of_continuous hf), f.commutes]
+    simp [mapRingEquiv_apply, algebraMap_def,
+      map_coe (uniformContinuous_addMonoidHom_of_continuous hf)]
+
+/-- The ring isomorphism underlying `mapAlgEquiv f` is `UniformSpace.Completion.mapRingEquiv`. -/
+@[simp]
+theorem toRingEquiv_mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    (mapAlgEquiv f hf hf').toRingEquiv = mapRingEquiv f.toRingEquiv
+      (by rwa [AlgEquiv.coe_toRingEquiv])
+      (by rwa [AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv]) :=
+  (rfl)
 
 /-- The algebra isomorphism of completions induced by `f` is `UniformSpace.Completion.map f`. -/
 theorem mapAlgEquiv_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
-    (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x := by
-  rw [mapAlgEquiv, AlgEquiv.ofRingEquiv_apply, mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
+    (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x :=
+  mapRingEquiv_apply f.toRingEquiv hf hf' x
 
 /-- The inverse of the algebra isomorphism of completions induced by `f` is
 `UniformSpace.Completion.map f.symm`. -/
 theorem mapAlgEquiv_symm_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
-    (y : Completion β) : (mapAlgEquiv f hf hf').symm y = Completion.map f.symm y := by
-  rw [mapAlgEquiv, AlgEquiv.ofRingEquiv_symm_apply, mapRingEquiv_symm_apply,
-    AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv]
+    (y : Completion β) : (mapAlgEquiv f hf hf').symm y = Completion.map f.symm y :=
+  mapRingEquiv_symm_apply f.toRingEquiv hf hf' y
 
 /-- The inverse of the algebra isomorphism of completions induced by `f` is the one induced by
 `f.symm`. -/
@@ -227,6 +237,26 @@ isomorphism is continuous. -/
 theorem continuous_mapAlgEquiv_symm (f : α ≃ₐ[R] β) (hf : Continuous f)
     (hf' : Continuous f.symm) : Continuous (mapAlgEquiv f hf hf').symm :=
   continuous_map.congr fun y ↦ (mapAlgEquiv_symm_apply f hf hf' y).symm
+
+/-- The identity algebra isomorphism lifts to the identity of the completion. -/
+@[simp]
+theorem mapAlgEquiv_refl :
+    mapAlgEquiv (AlgEquiv.refl : α ≃ₐ[R] α) continuous_id continuous_id = AlgEquiv.refl :=
+  AlgEquiv.ext fun x ↦ congrFun map_id x
+
+variable {γ : Type*} [Ring γ] [UniformSpace γ] [IsTopologicalRing γ] [IsUniformAddGroup γ]
+  [Algebra R γ] [UniformContinuousConstSMul R γ]
+
+/-- Lifting algebra isomorphisms to completions respects composition. -/
+theorem mapAlgEquiv_trans (f : α ≃ₐ[R] β) (g : β ≃ₐ[R] γ) (hf : Continuous f)
+    (hf' : Continuous f.symm) (hg : Continuous g) (hg' : Continuous g.symm) :
+    mapAlgEquiv (f.trans g) ((hg.comp hf).congr fun a ↦ (f.trans_apply g a).symm)
+        ((hf'.comp hg').congr fun c ↦ (f.symm_trans_apply g c).symm) =
+      (mapAlgEquiv f hf hf').trans (mapAlgEquiv g hg hg') :=
+  AlgEquiv.ext <| congrFun <| ext (continuous_mapAlgEquiv _ _ _)
+    ((continuous_mapAlgEquiv g hg hg').comp (continuous_mapAlgEquiv f hf hf')) fun a ↦ by
+      rw [mapAlgEquiv_coe, AlgEquiv.trans_apply, AlgEquiv.trans_apply, mapAlgEquiv_coe,
+        mapAlgEquiv_coe]
 
 end MapAlgEquiv
 

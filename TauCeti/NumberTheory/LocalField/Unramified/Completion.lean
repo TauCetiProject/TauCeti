@@ -155,17 +155,8 @@ continuous `E`-algebra automorphism of the completion `Breve E` (`galAction_coe`
 def galAction : Gal(Unramified E/E) →* (Breve E ≃ₐ[E] Breve E) where
   toFun τ := Completion.mapAlgEquiv τ τ.continuous_of_valuativeExtension
     τ.symm.continuous_of_valuativeExtension
-  map_one' := AlgEquiv.ext fun x ↦ by
-    rw [AlgEquiv.one_apply]
-    refine Completion.induction_on x
-      (isClosed_eq (Completion.continuous_mapAlgEquiv _ _ _) continuous_id) fun a ↦ ?_
-    rw [Completion.mapAlgEquiv_coe, AlgEquiv.one_apply]
-  map_mul' τ τ' := AlgEquiv.ext fun x ↦ by
-    rw [AlgEquiv.mul_apply]
-    refine Completion.induction_on x (isClosed_eq (Completion.continuous_mapAlgEquiv _ _ _)
-      ((Completion.continuous_mapAlgEquiv _ _ _).comp
-        (Completion.continuous_mapAlgEquiv _ _ _))) fun a ↦ ?_
-    simp only [Completion.mapAlgEquiv_coe, AlgEquiv.mul_apply]
+  map_one' := Completion.mapAlgEquiv_refl
+  map_mul' τ τ' := Completion.mapAlgEquiv_trans τ' τ _ _ _ _
 
 /-- The action of `τ` on `Breve E` is the extension of `τ` to the completion. -/
 theorem galAction_apply (τ : Gal(Unramified E/E)) :
@@ -185,10 +176,17 @@ theorem continuous_galAction (τ : Gal(Unramified E/E)) : Continuous (galAction 
   rw [galAction_apply]
   exact Completion.continuous_mapAlgEquiv _ _ _
 
-/-- The inverse of the action of `τ` on `Breve E` is the action of `τ⁻¹`. -/
-@[simp]
+/-- The inverse of the action of `τ` on `Breve E` is the action of `τ⁻¹`. This is not a simp
+lemma: its right side `galAction τ⁻¹` is rewritten by `map_inv` to `(galAction τ)⁻¹`, which
+simp leaves stuck, whereas `galAction_symm_coe` evaluates `(galAction τ).symm` on `E^{ur}`. -/
 theorem galAction_symm (τ : Gal(Unramified E/E)) : (galAction τ).symm = galAction τ⁻¹ := by
   rw [map_inv, AlgEquiv.aut_inv]
+
+/-- The inverse of the action of a Galois automorphism `τ` on `Breve E` extends `τ⁻¹`. -/
+@[simp]
+theorem galAction_symm_coe (τ : Gal(Unramified E/E)) (x : Unramified E) :
+    (galAction τ).symm (x : Breve E) = (τ.symm x : Breve E) := by
+  rw [galAction_symm, galAction_coe, AlgEquiv.aut_inv]
 
 /-- **Uniqueness of the extension.** A continuous map `Breve E → Breve E` which agrees with a Galois
 automorphism `τ` on `E^{ur}` is the action of `τ`. -/
@@ -230,8 +228,8 @@ theorem continuous_frobenius : Continuous (frobenius E) :=
 `E^{ur}`. -/
 @[simp]
 theorem frobenius_symm_coe (x : Unramified E) :
-    (frobenius E).symm (x : Breve E) = ((unramifiedFrobenius E).symm x : Breve E) := by
-  rw [frobenius_eq_galAction, galAction_symm, galAction_coe, AlgEquiv.aut_inv]
+    (frobenius E).symm (x : Breve E) = ((unramifiedFrobenius E).symm x : Breve E) :=
+  galAction_symm_coe _ x
 
 /-- **The equation of Frobenius on `Breve E`.** Frobenius raises every root `ζ ∈ E^{ur}` of
 `X^{q^n} − X`, for `n ≠ 0`, to the `q`-th power, where `q` is the cardinality of the residue
