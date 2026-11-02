@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.ProjectiveLine.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Naturality
-import TauCeti.Algebra.Polynomial.Laurent.Power
-import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.ProjectiveOrbit
 
 /-!
 # Power-twisted scaling has the same projective orbits
@@ -42,34 +40,6 @@ namespace TauCeti.MultiplicativeGroup
 universe u
 
 variable (R : Type u) [CommRing R]
-
-/-- Restriction along a positive power morphism of the multiplicative group preserves
-projective orbit images over any commutative base ring, including their nonclosed points. -/
-@[simp]
-theorem range_projectiveOrbitMap_corestrict_power
-    {M : Type u} [AddCommMonoid M] [Module R M] [Comodule R R[T;T⁻¹] M]
-    [Module.Finite R M] [Module.Projective R M]
-    {n : ℕ} (hn : 0 < n) (m : M) (hm : Module.IsUnimodular R m) :
-    (letI : Comodule R R[T;T⁻¹] M := Corestrict
-        (AddMonoidAlgebra.mapDomainBialgHom R (AddMonoidHom.mulRight (n : ℤ))).toCoalgHom
-     Set.range (projectiveOrbitMap (H := R[T;T⁻¹]) m hm)) =
-      Set.range (projectiveOrbitMap (H := R[T;T⁻¹]) m hm) := by
-  have hinj : Function.Injective (AddMonoidAlgebra.mapDomainRingHom R
-      (AddMonoidHom.mulRight (n : ℤ))) :=
-    AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ (by exact_mod_cast hn.ne'))
-  have hsurj := (LaurentPolynomial.isIntegral_mapDomain_mulRight R hn).comap_surjective hinj
-  rw [BialgHom.projectiveOrbitMap_corestrict]
-  have hcomp : ⇑(Spec.map (CommRingCat.ofHom
-        (AddMonoidAlgebra.mapDomainBialgHom R
-          (AddMonoidHom.mulRight (n : ℤ))).toAlgHom.toRingHom) ≫
-        projectiveOrbitMap (H := R[T;T⁻¹]) m hm) =
-      (projectiveOrbitMap (H := R[T;T⁻¹]) m hm) ∘ PrimeSpectrum.comap
-        (AddMonoidAlgebra.mapDomainRingHom R (AddMonoidHom.mulRight (n : ℤ))) := by
-    funext x
-    rw [Scheme.Hom.comp_apply, Spec.map_apply]
-    rfl
-  rw [hcomp]
-  exact hsurj.range_comp _
 
 attribute [local instance] scalingComodule
 
