@@ -337,10 +337,6 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
     G.toSimpleGraph.Reachable u v ↔ G.Reachable u v := by
   refine ⟨?_, fun h ↦ h.toSimpleGraph_reachable⟩
   rintro ⟨p⟩
-  induction p with
-  | nil => exact Reachable.refl (Subtype.property _)
-  | cons huv _ ih =>
-      obtain ⟨-, e, he⟩ := huv
-      exact he.reachable.trans ih
+  exact p.liftToGraph.reachable u.property
 
 end Graph
