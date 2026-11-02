@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
 public import TauCeti.MeasureTheory.Measure.Glue
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The Riemannian volume measure
@@ -43,6 +44,14 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   chart preimage of an open coordinate set.
 * `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
   least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
+* `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
+  function supported in the chart preimage of an open coordinate set, and
+  `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset` and
+  `TauCeti.mul_integral_le_integral_riemannianVolume_of_support_subset`, the resulting bounds on
+  Riemannian integrals by pointwise bounds in coordinates.
+* `TauCeti.map_addHaar_eq_chartVolumeDensity_inv_smul_volume`: in coordinates which are
+  orthonormal for the metric at the chart centre, the coordinate measure is the volume of
+  Euclidean space divided by the chart density at the centre.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
 -/
 
@@ -171,6 +180,101 @@ theorem setLIntegral_comp_extChartAt_symm_le_mul_lintegral (α : M) {Ω : Set E}
           setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt]
     _ ≤ ENNReal.ofReal m⁻¹ * ∫⁻ x, φ x ∂riemannianVolume I M :=
         mul_le_mul_of_nonneg_left (setLIntegral_le_lintegral _ _) bot_le
+
+/-- **Integration in coordinates of a function supported in a chart**: if `φ` vanishes outside
+the chart preimage of an open set `Ω` of the chart target, its integral over `M` is the integral
+over `Ω` of `φ` read in the chart times the chart density. -/
+theorem lintegral_riemannianVolume_eq_of_support_subset (α : M) {Ω : Set E} (hΩ : IsOpen Ω)
+    (hΩt : Ω ⊆ (extChartAt I α).target) {φ : M → ℝ≥0∞}
+    (hφ : Function.support φ ⊆ (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω) :
+    ∫⁻ x, φ x ∂riemannianVolume I M =
+      ∫⁻ y in Ω, ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
+        φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  rw [← setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt,
+    setLIntegral_eq_of_support_subset hφ]
+
+/-- **Upper bounds in coordinates for Riemannian integrals**: if a nonnegative integrable `f`
+vanishes outside the chart preimage of an open set `Ω` of the chart target, and on `Ω` the
+density times `f` read in the chart is at most `c k` for a nonnegative integrable `k`, then
+`∫ f dV ≤ c ∫ k`. -/
+theorem integral_riemannianVolume_le_mul_integral_of_support_subset (α : M) {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {f : M → ℝ} (hf0 : 0 ≤ f)
+    (hfi : Integrable f (riemannianVolume I M))
+    (hf : Function.support f ⊆ (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω)
+    {k : E → ℝ} (hk0 : 0 ≤ k) (hki : Integrable k (Module.finBasis ℝ E).addHaar) {c : ℝ}
+    (hc : 0 ≤ c) (hfk : ∀ y ∈ Ω,
+      chartVolumeDensity (I := I) α ((extChartAt I α).symm y) * f ((extChartAt I α).symm y) ≤
+        c * k y) :
+    ∫ x, f x ∂riemannianVolume I M ≤ c * ∫ y, k y ∂(Module.finBasis ℝ E).addHaar := by
+  rw [← ENNReal.ofReal_le_ofReal_iff (mul_nonneg hc (integral_nonneg hk0)),
+    ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0), ← integral_const_mul,
+    ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
+      (ae_of_all _ fun y ↦ mul_nonneg hc (hk0 y)),
+    lintegral_riemannianVolume_eq_of_support_subset α hΩ hΩt fun x hx ↦
+      hf fun h ↦ hx (by simp [h])]
+  refine (setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_).trans (setLIntegral_le_lintegral _ _)
+  rw [← ENNReal.ofReal_mul (chartVolumeDensity_nonneg _ _)]
+  exact ENNReal.ofReal_le_ofReal (hfk y hy)
+
+/-- **Lower bounds in coordinates for Riemannian integrals**: if a nonnegative integrable `f`
+vanishes outside the chart preimage of an open set `Ω` of the chart target, and on `Ω` the
+density times `f` read in the chart is at least `c k` for a nonnegative integrable `k` vanishing
+outside `Ω`, then `c ∫ k ≤ ∫ f dV`. -/
+theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {f : M → ℝ} (hf0 : 0 ≤ f)
+    (hfi : Integrable f (riemannianVolume I M))
+    (hf : Function.support f ⊆ (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω)
+    {k : E → ℝ} (hk0 : 0 ≤ k) (hki : Integrable k (Module.finBasis ℝ E).addHaar)
+    (hk : Function.support k ⊆ Ω) {c : ℝ} (hc : 0 ≤ c) (hfk : ∀ y ∈ Ω,
+      c * k y ≤
+        chartVolumeDensity (I := I) α ((extChartAt I α).symm y) * f ((extChartAt I α).symm y)) :
+    c * ∫ y, k y ∂(Module.finBasis ℝ E).addHaar ≤ ∫ x, f x ∂riemannianVolume I M := by
+  rw [← ENNReal.ofReal_le_ofReal_iff (integral_nonneg hf0),
+    ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0), ← integral_const_mul,
+    ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
+      (ae_of_all _ fun y ↦ mul_nonneg hc (hk0 y)),
+    lintegral_riemannianVolume_eq_of_support_subset α hΩ hΩt fun x hx ↦
+      hf fun h ↦ hx (by simp [h]),
+    ← setLIntegral_eq_of_support_subset (s := Ω) fun y hy ↦ hk fun h ↦ hy (by simp [h])]
+  refine setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_
+  rw [← ENNReal.ofReal_mul (chartVolumeDensity_nonneg _ _)]
+  exact ENNReal.ofReal_le_ofReal (hfk y hy)
+
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+open Riemannian.Tensor InnerProductSpace in
+/-- **Orthonormal coordinates at the chart centre.** Let `L` carry the metric at `α`, read through
+the tangent chart at `α`, to the inner product of a Euclidean space `F`. Then `L` carries the
+coordinate measure to the volume of `F` divided by the chart density at `α`. -/
+theorem map_addHaar_eq_chartVolumeDensity_inv_smul_volume {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (α : M)
+    (L : E ≃L[ℝ] F)
+    (hL : ∀ v w : E, ⟪L v, L w⟫_ℝ = ⟪(trivializationAt E (TangentSpace I) α).symmL ℝ α v,
+      (trivializationAt E (TangentSpace I) α).symmL ℝ α w⟫_ℝ) :
+    Measure.map L (Module.finBasis ℝ E).addHaar =
+      (chartVolumeDensity (I := I) α α)⁻¹.toNNReal • volume := by
+  set b := Module.finBasis ℝ E
+  set b' := b.map L.toLinearEquiv
+  set o := (stdOrthonormalBasis ℝ F).reindex (finCongr L.toLinearEquiv.finrank_eq.symm)
+  set d := o.toBasis.det b'
+  -- The chart Gram matrix at `α` is the Gram matrix of `b'`, whose determinant is the square of
+  -- the determinant of `b'` in an orthonormal basis.
+  have hgram : chartGramMatrix (I := I) α α = Matrix.gram ℝ b' := by
+    ext i j
+    simp only [chartGramMatrix_apply, chartLocalFrame_eq_symmL, Matrix.gram_apply, b',
+      Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv, hL, b]
+  have hρ : chartVolumeDensity (I := I) α α = |d| := by
+    rw [chartVolumeDensity_def, hgram, Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul,
+      Matrix.det_conjTranspose]
+    simp only [RCLike.star_def, conj_trivial, d, Module.Basis.det_apply]
+    rw [← sq, Real.sqrt_sq_eq_abs]
+    congr 2
+  have hd : d ≠ 0 := (o.toBasis.isUnit_det b').ne_zero
+  rw [Module.Basis.map_addHaar, Module.Basis.addHaar_eq_iff, Measure.smul_apply, ENNReal.smul_def,
+    smul_eq_mul, Module.Basis.coe_parallelepiped, ← o.addHaar_eq_volume,
+    Measure.addHaar_parallelepiped, hρ, ← ENNReal.ofReal_coe_nnreal,
+    Real.coe_toNNReal _ (by positivity), ← ENNReal.ofReal_mul (by positivity),
+    inv_mul_cancel₀ (abs_ne_zero.2 hd), ENNReal.ofReal_one]
 
 end Coordinates
 
