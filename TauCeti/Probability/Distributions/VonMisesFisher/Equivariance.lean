@@ -7,17 +7,14 @@ module
 
 public import TauCeti.Probability.Distributions.VonMisesFisher.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 
 /-!
 # Orthogonal equivariance of von Mises–Fisher laws
 
 A linear isometric equivalence transports a von Mises–Fisher law by transporting its natural
 parameter, or its unit direction while keeping the concentration fixed. Consequently its
-embedded mean transforms as a vector. Reflection in the parameter's span shows that the mean
-lies in that span, and every perpendicular linear observable has mean zero. In the
-direction/concentration parametrization the vector mean is the mean projection times the unit
-direction. These identities reduce vector mean calculations to a single scalar projection.
+embedded mean transforms as a vector. The corresponding `HasLaw` statements transport
+random points between the unit spheres of the two ambient spaces.
 
 The transport argument uses `LinearIsometryEquiv.map_uniformSphereMeasure` and
 `MeasureTheory.Measure.map_withDensity_eq_withDensity`.
@@ -75,7 +72,7 @@ theorem map_vonMisesFisherMeasure (f : E ≃ₗᵢ[ℝ] F) (m : sphere (0 : E) 1
 
 /-- The embedded mean transforms by the same linear isometric equivalence as the natural
 parameter. -/
-theorem integral_coe_vonMisesFisherNaturalMeasure (f : E ≃ₗᵢ[ℝ] F) (η : E) :
+theorem integral_coe_vonMisesFisherNaturalMeasure_comm (f : E ≃ₗᵢ[ℝ] F) (η : E) :
     (∫ y : sphere (0 : F) 1, (y : F) ∂vonMisesFisherNaturalMeasure (f η)) =
       f (∫ x : sphere (0 : E) 1, (x : E) ∂vonMisesFisherNaturalMeasure η) := by
   rw [← f.map_vonMisesFisherNaturalMeasure,
@@ -84,48 +81,6 @@ theorem integral_coe_vonMisesFisherNaturalMeasure (f : E ≃ₗᵢ[ℝ] F) (η :
   exact f.toLinearIsometry.integral_comp_comm _
 
 end LinearIsometryEquiv
-
-namespace TauCeti.Probability
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- The embedded mean lies in the span of the natural parameter. In particular, the mean is
-zero at zero natural parameter. -/
-theorem integral_coe_vonMisesFisherNaturalMeasure_mem_span (η : E) :
-    (∫ x : sphere (0 : E) 1, (x : E) ∂vonMisesFisherNaturalMeasure η) ∈ ℝ ∙ η := by
-  have hfix := Submodule.reflection_mem_subspace_eq_self
-    (Submodule.mem_span_singleton_self (R := ℝ) η)
-  have h := (Submodule.reflection (ℝ ∙ η)).integral_coe_vonMisesFisherNaturalMeasure η
-  rw [hfix] at h
-  exact (Submodule.reflection_eq_self_iff _).mp h.symm
-
-/-- Every linear observable perpendicular to the natural parameter has mean zero. -/
-theorem integral_inner_vonMisesFisherNaturalMeasure_eq_zero (η θ : E)
-    (hθ : ⟪θ, η⟫ = 0) :
-    ∫ x : sphere (0 : E) 1, ⟪θ, (x : E)⟫ ∂vonMisesFisherNaturalMeasure η = 0 := by
-  rw [integral_inner ((memLp_coe_unitSphere 1 (vonMisesFisherNaturalMeasure η)).integrable le_rfl)]
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-    (integral_coe_vonMisesFisherNaturalMeasure_mem_span η)
-  rw [← hc, inner_smul_right, hθ, mul_zero]
-
-/-- The vector mean is the mean projection onto the unit direction times that direction.
-The formula also holds for the zero measure at negative concentration. -/
-theorem integral_coe_vonMisesFisherMeasure_eq_integral_inner_smul
-    (m : sphere (0 : E) 1) (κ : ℝ) :
-    (∫ x : sphere (0 : E) 1, (x : E) ∂vonMisesFisherMeasure m κ) =
-      (∫ x : sphere (0 : E) 1, ⟪(m : E), (x : E)⟫ ∂vonMisesFisherMeasure m κ) • (m : E) := by
-  by_cases hκ : 0 ≤ κ
-  · rw [vonMisesFisherMeasure_of_nonneg m hκ]
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-      (integral_coe_vonMisesFisherNaturalMeasure_mem_span (κ • (m : E)))
-    rw [integral_inner
-      ((memLp_coe_unitSphere 1 (vonMisesFisherNaturalMeasure (κ • (m : E)))).integrable le_rfl),
-      ← hc]
-    simp [smul_smul, real_inner_smul_right]
-  · simp [vonMisesFisherMeasure_of_neg m (lt_of_not_ge hκ)]
-
-end TauCeti.Probability
 
 namespace ProbabilityTheory
 

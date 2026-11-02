@@ -17,7 +17,6 @@ map.
 
 * `memLp_comp_of_bound` — if `f` is measurable, `g` is a.e. measurable, and `f ∘ g` is a.e. bounded,
   then `fun ω => f (g ω)` is in `Lᵖ` for every exponent.
-* `memLp_coe_unitSphere` — the unit-sphere embedding is in every `Lᵖ` for any finite measure.
 
 Credit for the reused material goes to Mathlib's `MemLp.of_bound`.
 -/
@@ -26,16 +25,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric
-open scoped ENNReal
-
-/-- The unit-sphere embedding belongs to every `Lᵖ`, including `L∞`, for any finite measure. -/
-@[simp]
-theorem memLp_coe_unitSphere {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
-    [OpensMeasurableSpace E] [SecondCountableTopology E] (p : ℝ≥0∞)
-    (μ : Measure (sphere (0 : E) 1)) [IsFiniteMeasure μ] :
-    MemLp ((↑) : sphere (0 : E) 1 → E) p μ := by
-  exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
+open MeasureTheory
 
 variable {Ω α E : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace E]
   [NormedAddCommGroup E] [OpensMeasurableSpace E] [SecondCountableTopology E]

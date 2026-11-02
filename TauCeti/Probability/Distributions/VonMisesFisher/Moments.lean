@@ -18,7 +18,7 @@ its expectation vanishes, as for the uniform sphere law. The natural-parameter f
 uses `κ = ‖η‖` and direction `η / ‖η‖`.
 
 The mean is a Bochner integral of the sphere embedding, whose finite moments and essential
-boundedness follow from `TauCeti.memLp_coe_unitSphere` for any finite measure. The scalar
+boundedness are established by `memLp_coe_vonMisesFisherNaturalMeasure` in `Basic`. The scalar
 mean formula also applies to any real linear observable, which allows using the mean without
 first pushing the law into the ambient space.
 
@@ -101,8 +101,7 @@ theorem integral_coe_vonMisesFisherNaturalMeasure (hd : 2 ≤ Module.finrank ℝ
         besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ / ‖η‖) • η := by
   apply ext_inner_left ℝ
   intro θ
-  rw [← integral_inner
-      ((memLp_coe_unitSphere 1 (vonMisesFisherNaturalMeasure η)).integrable le_rfl),
+  rw [← integral_inner ((memLp_coe_vonMisesFisherNaturalMeasure η 1).integrable le_rfl),
     integral_inner_vonMisesFisherNaturalMeasure hd hη, real_inner_smul_right]
   ring
 
