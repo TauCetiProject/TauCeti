@@ -28,10 +28,10 @@ since its zeroth Fitting ideal is `I`.
 Over a ring with finitely many maximal ideals, a presentation `P₁ → P₀ → N → 0` by finite flat
 (for instance finite projective) modules of the same constant rank is quadratic: such modules
 are free (Mathlib's `Module.nonempty_basis_of_flat_of_finrank_eq`), and a choice of bases turns
-the presentation into a square matrix. This applies to `ℤ_p[G]` for a finite group `G`, a finite
-algebra over the local ring `ℤ_p`. Over a general ring it fails: for a non-principal ideal `I`
-of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentation of rank one, but `R ⧸ I` is not
-quadratically presented.
+the presentation into a square matrix. This applies to `ℤ_p[G]` for a finite abelian group `G`,
+a finite algebra over the local ring `ℤ_p`. Over a general ring it fails: for a non-principal
+ideal `I` of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentation of rank one, but
+`R ⧸ I` is not quadratically presented.
 
 ## Main definitions
 
