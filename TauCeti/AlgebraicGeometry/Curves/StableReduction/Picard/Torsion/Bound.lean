@@ -297,7 +297,7 @@ private lemma multiplicityDiagonal_mul_mul :
   have hL : (multiplicityDiagonal T ℓ * intersectionMod T ℓ * multiplicityDiagonal T ℓ) j k =
       edgeWeight T ℓ j k := by
     simp [multiplicityDiagonal, edgeWeight, diagonal_mul, mul_diagonal]
-  rw [hL, mul_apply]
+  rw [hL, Matrix.mul_apply]
   simp only [mul_diagonal, transpose_apply, edgeWeightDiagonal, incidence, of_apply]
   rw [sum_orientedEdge (fun a b ↦ ((if j = a then 1 else 0) - if j = b then 1 else 0) *
     -edgeWeight T ℓ a b * ((if k = a then 1 else 0) - if k = b then 1 else 0))]

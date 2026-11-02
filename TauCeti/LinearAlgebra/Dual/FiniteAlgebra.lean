@@ -50,7 +50,7 @@ theorem pairing_freeAlgebra_lift
       simp [Algebra.algebraMap_eq_smul_one, map_smul]
   | grade1 i => simpa only [FreeAlgebra.lift_ι_apply, unop_op] using h i v x
   | mul a b ha hb =>
-      simp only [map_mul, Module.End.mul_apply, ha, hb, unop_mul]
+      simp only [map_mul, mul_apply_eq_comp, ha, hb, unop_mul]
   | add a b ha hb =>
       simp only [map_add, LinearMap.add_apply, unop_add, ha, hb]
 

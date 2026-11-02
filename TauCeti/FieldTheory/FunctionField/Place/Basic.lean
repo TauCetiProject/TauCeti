@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 public import TauCeti.RingTheory.Valuation.IsTrivialOn
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Places of an algebraic function field
@@ -298,17 +299,14 @@ theorem linearIndependent_of_injective_ord {ι : Type*} {f : ι → F} (hf : ∀
 /-- **Normalizing a family of coefficients.** A finite family in `F` that does not vanish
 identically has a nonzero member by which the whole family can be divided without leaving `𝒪_P`;
 a member of least order at `P` is one. This is what turns a relation with coefficients in `F`
-into a relation with coefficients in `𝒪_P`, one of which is a unit. -/
+into a relation with coefficients in `𝒪_P`, one of which is a unit. This is the case
+`s = Finset.univ` of `ValuationSubring.exists_ne_zero_and_div_mem` for `𝒪_P`. -/
 theorem exists_ne_zero_forall_div_mem_integers {ι : Type*} [Finite ι] (c : ι → F) {i₁ : ι}
     (hi₁ : c i₁ ≠ 0) : ∃ i₀, c i₀ ≠ 0 ∧ ∀ i, c i / c i₀ ∈ P.integers := by
-  obtain ⟨i₀, hi₀, hmin⟩ :=
-    Set.exists_min_image {i | c i ≠ 0} (fun i ↦ P.ord (c i)) (Set.toFinite _) ⟨i₁, hi₁⟩
-  refine ⟨i₀, hi₀, fun i ↦ ?_⟩
-  rcases eq_or_ne (c i) 0 with h | h
-  · simp [h]
-  · rw [P.mem_integers_iff_ord_nonneg, P.ord_div h hi₀]
-    have := hmin i h
-    omega
+  have := Fintype.ofFinite ι
+  obtain ⟨i₀, -, hi₀, hdiv⟩ := P.integers.exists_ne_zero_and_div_mem (s := Finset.univ)
+    ⟨i₁, Finset.mem_univ _, hi₁⟩
+  exact ⟨i₀, hi₀, fun i ↦ hdiv i (Finset.mem_univ i)⟩
 
 section Constants
 

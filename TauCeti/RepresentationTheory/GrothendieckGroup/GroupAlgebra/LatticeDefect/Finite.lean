@@ -108,7 +108,7 @@ theorem latticeDefect_eq_zero_of_finite [Fact ℓ.Prime] (V : Type u) [AddCommGr
       Nat.card W = n → latticeDefect k G ℓ W = 0 from H _ V rfl
   intro n
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro W _ _ _ hn
     let f : W →+[G] W := SMulCommClass.toDistribMulActionHom G W (ℓ : ℤ)
     by_cases hf : Injective f

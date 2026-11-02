@@ -117,6 +117,17 @@ theorem iIsOrtho.toMatrix_eq_diagonal {R M ι : Type*} [CommSemiring R] [AddComm
   · simp [toMatrix_apply]
   · simp [toMatrix_apply, iIsOrtho_def.mp hb i j hij, hij]
 
+/-- Along an orthogonal basis, a basis vector pairs with `x` through the coordinate of `x`. -/
+theorem iIsOrtho.apply_basis_left {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M} (hb : B.iIsOrtho b)
+    (i : ι) (x : M) : B (b i) x = b.repr x i * B (b i) (b i) := by
+  classical
+  conv_lhs => rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply, Finsupp.sum,
+    map_sum]
+  simp_rw [map_smul, smul_eq_mul]
+  rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [iIsOrtho_def.mp hb i j hji.symm, mul_zero])
+    fun hi ↦ by rw [Finsupp.notMem_support_iff.mp hi, zero_mul]]
+
 /-- The Gram determinant in an orthogonal basis is the product of the self-pairings. -/
 theorem iIsOrtho.det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
     [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
