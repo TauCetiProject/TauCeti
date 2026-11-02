@@ -35,9 +35,12 @@ powers, `e m * e n = (m + n).choose m • e (m + n)`, again with no division by 
 * `Finset.sum_pow_of_pairwise_commute_of_mul_self_eq_zero`: the same formula as a sum over
   `s.powersetCard n`, for a family commuting pairwise everywhere.
 * `Finset.sum_noncommProd_powersetCard_succ_insert`: the recursion for `e (n + 1)` when an index
-  is added to `s`.
-* `Finset.sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero`:
-  `e m * e n = (m + n).choose m • e (m + n)`.
+  is added to `s`, and `Finset.sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute`, the
+  same recursion as sums over `powersetCard` for a family commuting pairwise everywhere.
+* `Finset.sum_noncommProd_powersetCard_mul_of_commute_of_mul_self_eq_zero`:
+  `e m * e n = (m + n).choose m • e (m + n)`, and
+  `Finset.sum_noncommProd_powersetCard_mul_of_pairwise_commute_of_mul_self_eq_zero`, the same
+  identity as sums over `powersetCard` for a family commuting pairwise everywhere.
 -/
 
 public section
@@ -51,10 +54,10 @@ namespace Finset
 variable {ι : Type*}
 
 /-- With `a ∉ s`, the sum of the products over the `n + 1`-element subsets of `insert a s` of a
-pairwise commuting family is the corresponding sum over `s` plus `x a` times the sum of the
-products over the `n`-element subsets of `s`. -/
-theorem sum_noncommProd_powersetCard_succ_insert [DecidableEq ι] {s : Finset ι} {a : ι}
-    (ha : a ∉ s) (x : ι → R) (hc : Pairwise (Commute on x)) (n : ℕ) :
+family commuting pairwise everywhere is the corresponding sum over `s` plus `x a` times the sum of
+the products over the `n`-element subsets of `s`. -/
+theorem sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute [DecidableEq ι]
+    {s : Finset ι} {a : ι} (ha : a ∉ s) (x : ι → R) (hc : Pairwise (Commute on x)) (n : ℕ) :
     ∑ t ∈ (insert a s).powersetCard (n + 1), t.noncommProd x (hc.set_pairwise _) =
       ∑ t ∈ s.powersetCard (n + 1), t.noncommProd x (hc.set_pairwise _) +
         x a * ∑ t ∈ s.powersetCard n, t.noncommProd x (hc.set_pairwise _) := by
@@ -83,8 +86,50 @@ theorem sum_pow_of_pairwise_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι 
     | zero => simp
     | succ n =>
       rw [sum_insert ha, hcomm.add_pow_succ_of_mul_self_eq_zero (hx a (mem_insert_self a s)),
-        sum_noncommProd_powersetCard_succ_insert ha x hc]
+        sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute ha x hc]
       simp only [ih hxs, mul_smul_comm, smul_smul, Nat.factorial_succ, smul_add]
+
+/-- Extending a family commuting pairwise on `s` by zero outside `s` gives a family commuting
+pairwise everywhere. -/
+private theorem pairwise_commute_indicator {s : Set ι} {x : ι → R}
+    (hc : s.Pairwise (Commute on x)) : Pairwise (Commute on s.indicator x) := fun i j hij ↦ by
+  by_cases hi : i ∈ s
+  · by_cases hj : j ∈ s
+    · simpa [Function.onFun, hi, hj] using hc hi hj hij
+    · simp [Function.onFun, hj]
+  · simp [Function.onFun, hi]
+
+/-- For `u ⊆ s` and a family commuting pairwise on `s`, the sum of the products over the
+`n`-element subsets of `u` is the corresponding sum for the family extended by zero outside `s`. -/
+private theorem sum_noncommProd_powersetCard_eq_indicator {s u : Finset ι} (hu : u ⊆ s)
+    (x : ι → R) (hc : (s : Set ι).Pairwise (Commute on x)) (n : ℕ) :
+    ∑ t : u.powersetCard n,
+        t.1.noncommProd x (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans hu))) =
+      ∑ t ∈ u.powersetCard n,
+        t.noncommProd ((s : Set ι).indicator x)
+          ((pairwise_commute_indicator hc).set_pairwise _) := by
+  rw [← sum_coe_sort (u.powersetCard n)]
+  exact sum_congr rfl fun (t : u.powersetCard n) _ ↦ noncommProd_congr rfl (fun i hi ↦
+    (Set.indicator_of_mem (mem_coe.2 ((mem_powersetCard.1 t.2).1.trans hu hi)) x).symm) _
+
+/-- With `a ∉ s`, the sum of the products over the `n + 1`-element subsets of `insert a s` of a
+family commuting pairwise on `insert a s` is the corresponding sum over `s` plus `x a` times the
+sum of the products over the `n`-element subsets of `s`. -/
+theorem sum_noncommProd_powersetCard_succ_insert [DecidableEq ι] {s : Finset ι} {a : ι}
+    (ha : a ∉ s) (x : ι → R) (hc : ((insert a s : Finset ι) : Set ι).Pairwise (Commute on x))
+    (n : ℕ) :
+    ∑ t : (insert a s).powersetCard (n + 1),
+        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) =
+      ∑ t : s.powersetCard (n + 1), t.1.noncommProd x
+          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans (subset_insert a s)))) +
+        x a * ∑ t : s.powersetCard n, t.1.noncommProd x
+          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans (subset_insert a s)))) := by
+  rw [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc,
+    sum_noncommProd_powersetCard_eq_indicator (subset_insert a s) x hc,
+    sum_noncommProd_powersetCard_eq_indicator (subset_insert a s) x hc,
+    ← Set.indicator_of_mem (mem_coe.2 (mem_insert_self a s)) x]
+  exact sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute ha _
+    (pairwise_commute_indicator hc) n
 
 /-- **Multinomial theorem for square-zero elements.** If the `x i` commute pairwise and square to
 zero on `s`, then `(∑ i ∈ s, x i) ^ n` is `n !` times the sum, over the `n`-element subsets `t` of
@@ -94,29 +139,17 @@ theorem sum_pow_of_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
     (∑ i ∈ s, x i) ^ n =
       n ! • ∑ t : s.powersetCard n,
         t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) := by
-  classical
-  -- Extending `x` by zero outside `s` gives a family commuting pairwise everywhere.
-  let y : ι → R := fun i ↦ if i ∈ s then x i else 0
-  have hys : ∀ i ∈ s, y i = x i := fun i hi ↦ by simp [y, hi]
-  have hyc : Pairwise (Commute on y) := fun i j hij ↦ by
-    by_cases hi : i ∈ s
-    · by_cases hj : j ∈ s
-      · simpa [Function.onFun, y, hi, hj] using hc hi hj hij
-      · simp [Function.onFun, y, hj]
-    · simp [Function.onFun, y, hi]
-  rw [sum_congr rfl fun i hi ↦ (hys i hi).symm,
-    sum_pow_of_pairwise_commute_of_mul_self_eq_zero s y hyc (fun i hi ↦ by rw [hys i hi, hx i hi]),
-    ← sum_coe_sort]
-  exact congrArg _ (sum_congr rfl fun t _ ↦
-    noncommProd_congr rfl (fun i hi ↦ hys i ((mem_powersetCard.1 t.2).1 hi)) _)
+  -- Extend `x` by zero outside `s`, to a family commuting pairwise everywhere.
+  have hxs (i : ι) (hi : i ∈ s) : (s : Set ι).indicator x i = x i := Set.indicator_of_mem hi x
+  rw [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc, ← sum_congr rfl hxs]
+  exact sum_pow_of_pairwise_commute_of_mul_self_eq_zero s _ (pairwise_commute_indicator hc)
+    (fun i hi ↦ by rw [hxs i hi, hx i hi]) n
 
-
-/-- **Multiplication of elementary symmetric sums of square-zero elements.** If the `x i` commute
-pairwise everywhere and square to zero on `s`, then the sums `e k` of the products over the
-`k`-element subsets of `s` satisfy `e m * e n = (m + n).choose m • e (m + n)`: they are the
-divided powers of `e 1 = ∑ i ∈ s, x i`, with no division by factorials. -/
-theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
-    (hc : Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0) (m n : ℕ) :
+/-- Multiplication of elementary symmetric sums of square-zero elements, for a family commuting
+pairwise everywhere: if the `x i` square to zero on `s`, then the sums `e k` of the products over
+the `k`-element subsets of `s` satisfy `e m * e n = (m + n).choose m • e (m + n)`. -/
+theorem sum_noncommProd_powersetCard_mul_of_pairwise_commute_of_mul_self_eq_zero (s : Finset ι)
+    (x : ι → R) (hc : Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0) (m n : ℕ) :
     (∑ t ∈ s.powersetCard m, t.noncommProd x (hc.set_pairwise _)) *
         ∑ t ∈ s.powersetCard n, t.noncommProd x (hc.set_pairwise _) =
       (m + n).choose m • ∑ t ∈ s.powersetCard (m + n), t.noncommProd x (hc.set_pairwise _) := by
@@ -144,7 +177,7 @@ theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x 
       | succ n =>
         -- Write the top degree as a successor, so that the recursion applies to each factor.
         rw [show m + 1 + (n + 1) = m + n + 1 + 1 by omega]
-        simp only [sum_noncommProd_powersetCard_succ_insert ha x hc]
+        simp only [sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute ha x hc]
         -- Name the elementary symmetric sums `e k` of the family over `s`.
         obtain ⟨e, he⟩ : ∃ e : ℕ → R, ∀ k,
             ∑ t ∈ s.powersetCard k, t.noncommProd x (hc.set_pairwise _) = e k :=
@@ -162,5 +195,22 @@ theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x 
           simp only [Nat.add_right_comm m 1 n, ← add_assoc, mul_smul_comm, add_smul]
         simp only [add_mul, mul_add, hsq, add_zero, ih]
         rw [add_assoc, hcross, show m + 1 + (n + 1) = m + n + 1 + 1 by omega, smul_add]
+
+/-- **Multiplication of elementary symmetric sums of square-zero elements.** If the `x i` commute
+pairwise and square to zero on `s`, then the sums `e k` of the products over the `k`-element subsets
+of `s` satisfy `e m * e n = (m + n).choose m • e (m + n)`: they are the divided powers of
+`e 1 = ∑ i ∈ s, x i`, with no division by factorials. -/
+theorem sum_noncommProd_powersetCard_mul_of_commute_of_mul_self_eq_zero (s : Finset ι)
+    (x : ι → R) (hc : (s : Set ι).Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0)
+    (m n : ℕ) :
+    (∑ t : s.powersetCard m,
+        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1))) *
+        ∑ t : s.powersetCard n,
+          t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) =
+      (m + n).choose m • ∑ t : s.powersetCard (m + n),
+        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) := by
+  simp only [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc]
+  exact sum_noncommProd_powersetCard_mul_of_pairwise_commute_of_mul_self_eq_zero s _
+    (pairwise_commute_indicator hc) (fun i hi ↦ by rw [Set.indicator_of_mem hi, hx i hi]) m n
 
 end Finset

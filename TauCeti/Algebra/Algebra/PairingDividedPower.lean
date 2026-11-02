@@ -125,7 +125,8 @@ theorem pairDividedPower_insert_succ [DecidableEq ι] (a : ι × ι → R) {P : 
     pairDividedPower hν a (insert p P) (k + 1) =
       pairDividedPower hν a P (k + 1) + a p • (ν p.1 * ν p.2) * pairDividedPower hν a P k := by
   simp only [pairDividedPower_def]
-  exact Finset.sum_noncommProd_powersetCard_succ_insert hp _ (pairwise_commute_smul_mul hν a) k
+  exact Finset.sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute hp _
+    (pairwise_commute_smul_mul hν a) k
 
 /-- Scaling the coefficients by `c` scales the `k`-th divided power by `c ^ k`. -/
 theorem pairDividedPower_smul (c : R) (a : ι × ι → R) (P : Finset (ι × ι)) (k : ℕ) :
@@ -168,7 +169,8 @@ division by factorials. -/
 theorem pairDividedPower_mul (a : ι × ι → R) (P : Finset (ι × ι)) (m n : ℕ) :
     pairDividedPower hν a P m * pairDividedPower hν a P n =
       (m + n).choose m • pairDividedPower hν a P (m + n) :=
-  Finset.sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero P _ (pairwise_commute_smul_mul hν a)
+  Finset.sum_noncommProd_powersetCard_mul_of_pairwise_commute_of_mul_self_eq_zero P _
+    (pairwise_commute_smul_mul hν a)
     (fun p _ ↦ smul_mul_mul_self_eq_zero hν hν₀ (a p) p.1 p.2) m n
 
 /-- Left multiplication by `ν i` kills the product over a set `t` of pairs as soon as `i` is an
