@@ -309,7 +309,7 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
   have hs : ‖s‖ = r * y i₀ := by simp [hs', hμ, y]
   set c := (starRingEnd ℂ) s
   have hnorm (j : n) : ‖c * z j‖ = ‖s‖ * y j := by simp [c, y]
-  set x : n → ℝ := fun j => ‖s‖ * y j - (c * z j).re
+  set x : n → ℝ := ‖s‖ • y - fun j => (c * z j).re
   have hx : 0 ≤ x := fun j => sub_nonneg.2 <| (Complex.re_le_norm _).trans_eq (hnorm j)
   have hcs : c * s = (‖s‖ ^ 2 : ℝ) := by simp [c, Complex.conj_mul']
   -- The `i₀`-th entry of `A` applied to `re (c z)` is `re (c s) = ‖s‖ ^ 2`.
@@ -317,9 +317,7 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
     rw [← Complex.ofReal_re (‖s‖ ^ 2), ← hcs]
     simp [s, mulVec, dotProduct, Finset.mul_sum, Complex.re_sum, mul_left_comm c]
   have hAx : (A *ᵥ x) i₀ = 0 := by
-    change (A *ᵥ (‖s‖ • y - fun j => (c * z j).re)) i₀ = 0
-    rw [mulVec_sub, mulVec_smul, hAy, Pi.sub_apply, hre, Pi.smul_apply, Pi.smul_apply,
-      smul_eq_mul, smul_eq_mul, hs]
+    simp only [x, mulVec_sub, mulVec_smul, hAy, Pi.sub_apply, hre, Pi.smul_apply, smul_eq_mul, hs]
     ring
   have hx₀ : x i₀ = 0 := by
     by_contra h
@@ -331,10 +329,10 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
   -- Now `μ ‖s‖ y i₀ = c (μ z i₀) = c s = ‖s‖ ^ 2 = r ‖s‖ y i₀`.
   have hne : ((‖s‖ * y i₀ : ℝ) : ℂ) ≠ 0 := by
     exact_mod_cast (mul_pos (hs ▸ mul_pos hr (norm_pos_iff.2 hi₀)) (norm_pos_iff.2 hi₀)).ne'
+  have hs'' : (‖s‖ : ℂ) = r * y i₀ := by exact_mod_cast hs
   refine mul_right_cancel₀ hne ?_
-  rw [← hcz, mul_left_comm, ← hs', hcs, hcz, hs]
-  push_cast
-  ring
+  push_cast at hcz hcs ⊢
+  linear_combination (-μ) * hcz - c * hs' + hcs + (‖s‖ : ℂ) * hs''
 
 /-- **Perron–Frobenius**: the eigenvalue `r` of an eigenvector with strictly positive entries of an
 entrywise nonnegative real square matrix is the spectral radius of the matrix, viewed as a complex
