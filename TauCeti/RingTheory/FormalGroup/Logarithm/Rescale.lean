@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.Rescale
--- Supplies the divisibility hypothesis of the integral logarithm.
-public import TauCeti.Algebra.Ring.Divisibility
 -- Proof-only: the derivative commutes with change of coefficients.
 import TauCeti.RingTheory.PowerSeries.Derivative
 
