@@ -108,13 +108,19 @@ variable {k : Type u} {G : Type v} [Field k] [Monoid G]
 
 /-- The diagonal action on the `n`-fold tensor power of a finite-dimensional representation.
 The zero-fold power is one-dimensional, including when the original representation is zero. -/
-noncomputable abbrev tensorPower (V : FDRep k G) (n : ℕ) : FDRep k G :=
+noncomputable def tensorPower (V : FDRep k G) (n : ℕ) : FDRep k G :=
   FDRep.of (Representation.tensorPower V.ρ n)
+
+/-- The bundled tensor power is the unbundled tensor-power action, bundled.
+Together with `FDRep.of_ρ'`, this recovers the action without unfolding `tensorPower`. -/
+theorem tensorPower_def (V : FDRep k G) (n : ℕ) :
+    V.tensorPower n = FDRep.of (Representation.tensorPower V.ρ n) :=
+  (rfl)
 
 /-- The character of the bundled tensor power is the corresponding power of the character. -/
 @[simp]
 theorem char_tensorPower (V : FDRep k G) (n : ℕ) (g : G) :
     (V.tensorPower n).character g = V.character g ^ n := by
-  rw [tensorPower, character_of, Representation.char_tensorPower, character_ρ]
+  rw [tensorPower_def, character_of, Representation.char_tensorPower, character_ρ]
 
 end FDRep
