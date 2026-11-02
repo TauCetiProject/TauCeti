@@ -101,9 +101,10 @@ theorem tensorPowAddIso_zero_right_hom (X : C) (m : ℕ) :
   | succ m ih =>
     rw [tensorPowAddIso_succ_hom, ih]
     simp only [MonoidalCategory.whiskerLeft_comp, MonoidalCategory.whiskerLeft_eqToHom]
-    simp [MonoidalCategory.whiskerLeft_rightUnitor]
-    -- Both casts are `eqToHom`s between the same two objects, which agree definitionally.
-    rfl
+    simp only [MonoidalCategory.whiskerLeft_rightUnitor, Category.assoc, Nat.zero_add,
+      eqToHom_iso_hom_naturality, Iso.hom_inv_id_assoc]
+    -- Both sides are an `eqToHom` cast followed by the right unitor of the same object.
+    congr 1
 
 /-- The inverse of the block decomposition with an empty second block is the inverse of the right
 unitor. -/
