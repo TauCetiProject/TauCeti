@@ -84,7 +84,8 @@ end coslice
 the maps `K ⋆ Δ[n] ⟶ C` extending `p` along the inclusion of `K` (`SSet.coslice.objEquiv`); in
 particular its vertices are the cocones `K ⋆ Δ[0] ⟶ C` under `p`. It is defined as the opposite of
 the slice `Cᵒᵖ_{/pᵒᵖ}`. -/
-abbrev coslice : SSet.{u} :=
+@[expose]
+def coslice : SSet.{u} :=
   (slice (opFunctor.map p)).op
 
 namespace coslice

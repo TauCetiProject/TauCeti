@@ -69,13 +69,12 @@ lemma map_comp_opIso_inv {m n : SimplexCategory} (f : m ⟶ n) :
   induction k using SimplexCategory.rec with | _ k
   induction m using SimplexCategory.rec with | _ m
   induction n using SimplexCategory.rec with | _ n
-  have hf (y : Fin (m + 1)) : (objEquiv.{u}.symm (SimplexCategory.rev.map f) : Δ[n] _⦋m⦌) y =
-      ((objEquiv.{u}.symm f : Δ[n] _⦋m⦌) y.rev).rev := (rfl)
   apply opObjEquiv.injective
   ext j
   simp only [TypeCat.Fun.toFun_apply, opFunctor_map, Equiv.apply_symm_apply, NatTrans.comp_app,
     ConcreteCategory.comp_apply, opIso_inv_app_hom_apply, opObjEquiv_opObjEquiv_symm_apply,
-    SimplexCategory.rev_obj, hom_app_apply, yonedaEquiv_map, hf, Fin.rev_rev]
+    SimplexCategory.rev_obj, hom_app_apply, yonedaEquiv_map]
+  rw [objEquiv_symm_apply, objEquiv_symm_apply, SimplexCategory.rev_map_apply, Fin.rev_rev]
 
 /-- Reversing the order of the vertices twice is the identity: the isomorphism `Δ[n]ᵒᵖ ≅ Δ[n]`
 is compatible with the involution `opFunctorCompOpFunctorIso : Xᵒᵖᵒᵖ ≅ X`. -/
@@ -124,8 +123,8 @@ lemma opIso_inv_comp_opFunctor_map_yonedaEquiv_symm {X : SSet.{u}} {n : SimplexC
     rw [← Category.id_comp (opIso.{u} ⦋n⦌).inv, yonedaEquiv_comp]
     ext j
     rw [opIso_inv_app_hom_apply, opObjEquiv_opObjEquiv_symm_apply]
-    have hj (i : Fin (n + 1)) : (yonedaEquiv (𝟙 Δ[n]) : Δ[n] _⦋n⦌) i = i := (rfl)
-    rw [hj, hj, Fin.rev_rev]
+    rw [← objEquiv_toOrderHom_apply, ← objEquiv_toOrderHom_apply, objEquiv_yonedaEquiv_id]
+    simp
   rw [opFunctor_map, h]
   simp
 
