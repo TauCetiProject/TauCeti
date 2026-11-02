@@ -103,7 +103,7 @@ protected theorem inductionOn {motive : QuaternionicProjectiveSpace n → Prop}
 
 /-- Two unit vectors define the same point of quaternionic projective space exactly when they
 differ by a unit quaternion acting on the right. -/
-@[simp]
+@[simp↓]
 theorem mk_eq_mk_iff (x y : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
     mk n x = mk n y ↔ ∃ q : sphere (0 : ℍ) 1, y <• q = x := by
   unfold mk QuaternionicProjectiveSpace

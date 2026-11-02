@@ -152,7 +152,7 @@ theorem hom_add {M N : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ N) :
   rfl
 
 /-- Taking the ambient morphism preserves scalar multiplication. -/
-@[simp]
+@[simp↓]
 theorem hom_smul {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) :
     (r • f).hom = r • f.hom :=
   rfl

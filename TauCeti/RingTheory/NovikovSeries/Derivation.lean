@@ -154,7 +154,7 @@ def nonnegDegreeDerivation : Derivation ℤ (nonnegSubring R N) (nonnegSubring R
     fun a b => Subtype.ext (by simp [Derivation.leibniz, smul_eq_mul])
 
 /-- The restricted degree derivation agrees with the degree derivation on Novikov series. -/
-@[simp]
+@[simp↓]
 theorem coe_nonnegDegreeDerivation (a : nonnegSubring R N) :
     (nonnegDegreeDerivation ℓ a : NovikovSeries R H N) = degreeDerivation ℓ a :=
   (rfl)

@@ -55,7 +55,7 @@ theorem atomMixture_apply {α : Type*} [MeasurableSpace α]
   simp [atomMixture, Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs]
 
 /-- The mass of an atom mixture at a singleton. -/
-@[simp]
+@[simp↓]
 theorem atomMixture_singleton {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) (w : unitInterval) :
     atomMixture μ c w {c} =
