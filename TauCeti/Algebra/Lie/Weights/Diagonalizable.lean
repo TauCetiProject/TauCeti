@@ -48,6 +48,8 @@ and trace formulas need no additional hypothesis on `M`.
   the dimension counts consume; the honest-weight-space refinement is below.
 * `TauCeti.eq_zero_of_forall_genWeightSpace`: a linear functional vanishing on every generalized
   weight space is zero.
+* `TauCeti.iSup_eigenspace_toEnd_coroot_eq_top`: the eigenspaces of a nonzero coroot span every
+  finite-dimensional module.
 * `TauCeti.isSemisimple_toEnd_coroot`: a coroot acts semisimply on a finite-dimensional module.
 * `TauCeti.isSemisimple_toEnd_cartan`: **every element of the Cartan subalgebra acts semisimply.**
 * `TauCeti.instIsTriangularizableCartan`: the split Cartan action is triangularizable on every
@@ -159,6 +161,14 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [FiniteDimensional K M]
 
+/-- The eigenspaces of a nonzero coroot span every finite-dimensional module. -/
+theorem iSup_eigenspace_toEnd_coroot_eq_top {α : Weight K H L} (hα : α.IsNonZero) :
+    ⨆ μ : K, (toEnd K H M (IsKilling.coroot α)).eigenspace μ = ⊤ := by
+  obtain ⟨h, e, f, ht, he, hf⟩ := IsKilling.exists_isSl2Triple_of_weight_isNonZero hα
+  have hsup := iSup_eigenspace_toEnd_eq_top (K := K) (M := M) ht
+  rw [ht.h_eq_coroot hα he hf] at hsup
+  exact hsup
+
 /-- **A coroot acts semisimply.** The coroot `α^∨` of a weight `α` of `L` acts on a
 finite-dimensional module by a semisimple endomorphism.
 
@@ -168,13 +178,19 @@ semisimple. The coroot of a zero weight is zero. -/
 theorem isSemisimple_toEnd_coroot (α : Weight K H L) :
     (toEnd K H M (IsKilling.coroot α)).IsSemisimple := by
   by_cases hα : α.IsNonZero
-  · obtain ⟨h, e, f, ht, he, hf⟩ := IsKilling.exists_isSl2Triple_of_weight_isNonZero hα
-    refine isSemisimple_of_iSup_eigenspace_eq_top ?_
-    have hsup := iSup_eigenspace_toEnd_eq_top (K := K) (M := M) ht
-    rw [ht.h_eq_coroot hα he hf] at hsup
-    exact hsup
+  · exact isSemisimple_of_iSup_eigenspace_eq_top (iSup_eigenspace_toEnd_coroot_eq_top hα)
   · rw [IsKilling.coroot_eq_zero_iff.2 (not_not.1 hα)]
     simp
+
+omit [CharZero K] [IsTriangularizable K H L] [FiniteDimensional K M] in
+private lemma commute_toEnd_cartan (y z : H) : Commute (toEnd K H M y) (toEnd K H M z) :=
+  LieModule.commute_toEnd_of_mem_center_left M
+    (by rw [(LieAlgebra.isLieAbelian_iff_center_eq_top K H).1 inferInstance]; trivial) z
+
+private lemma mem_span_coroot_cartan (x : H) :
+    x ∈ Submodule.span K (Set.range (IsKilling.rootSystem H).coroot) := by
+  rw [RootPairing.IsRootSystem.span_coroot_eq_top]
+  trivial
 
 /-- **The Cartan subalgebra acts semisimply.** Every element of a Cartan subalgebra of a
 Killing-semisimple Lie algebra split over the ground field acts on a finite-dimensional module
@@ -186,20 +202,14 @@ The coroots span the Cartan subalgebra (`RootPairing.IsRootSystem.span_coroot_eq
 give commute, and both a sum of commuting semisimple endomorphisms and a scalar multiple of one are
 again semisimple. -/
 theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
-  have hcomm : ∀ y z : H, Commute (toEnd K H M y) (toEnd K H M z) := fun y z ↦
-    LieModule.commute_toEnd_of_mem_center_left M
-      (by rw [(LieAlgebra.isLieAbelian_iff_center_eq_top K H).1 inferInstance]; trivial) z
-  have hx : x ∈ Submodule.span K (Set.range (IsKilling.rootSystem H).coroot) := by
-    rw [RootPairing.IsRootSystem.span_coroot_eq_top]
-    trivial
-  induction hx using Submodule.span_induction with
+  induction mem_span_coroot_cartan x using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨α, rfl⟩ := hy
     exact isSemisimple_toEnd_coroot α.1
   | zero => simp
   | add y z _ _ hy hz =>
     rw [map_add]
-    exact Module.End.IsSemisimple.add_of_commute (hcomm y z) hy hz
+    exact Module.End.IsSemisimple.add_of_commute (commute_toEnd_cartan y z) hy hz
   | smul c y _ hy =>
     rw [map_smul]
     exact hy.of_mem_adjoin_singleton
@@ -212,14 +222,10 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
     have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
       have hα : (α : Weight K H L).IsNonZero := by
         simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using α.2
-      obtain ⟨h, e, g, ht, he, hg⟩ := IsKilling.exists_isSl2Triple_of_weight_isNonZero hα
-      have hsup := iSup_eigenspace_toEnd_eq_top (K := K) (M := M) ht
-      rw [ht.h_eq_coroot hα he hg] at hsup
-      exact hsup
+      exact iSup_eigenspace_toEnd_coroot_eq_top hα
     have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
     have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
-      LieModule.commute_toEnd_of_mem_center_left M
-        (by rw [(LieAlgebra.isLieAbelian_iff_center_eq_top K H).1 inferInstance]; trivial) _
+      commute_toEnd_cartan _ _
     -- First decompose into simultaneous eigenspaces of the coroots.
     have hsim :=
       End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute
@@ -230,12 +236,9 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
     rw [← top_le_iff, ← hsim]
     refine iSup_le fun χ ↦ ?_
     -- Every Cartan element acts by a scalar on each simultaneous coroot eigenspace.
-    have hx : x ∈ Submodule.span K (Set.range (IsKilling.rootSystem H).coroot) := by
-      rw [RootPairing.IsRootSystem.span_coroot_eq_top]
-      trivial
     have hscalar : ∃ μ : K, ∀ m ∈ ⨅ α, (f α).eigenspace (χ α),
         toEnd K H M x m = μ • m := by
-      induction hx using Submodule.span_induction with
+      induction mem_span_coroot_cartan x using Submodule.span_induction with
       | mem y hy =>
         obtain ⟨α, rfl⟩ := hy
         exact ⟨χ α, fun m hm ↦
