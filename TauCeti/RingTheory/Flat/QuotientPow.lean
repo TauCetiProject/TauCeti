@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.RingTheory.Flat.Tensor
 import TauCeti.RingTheory.Ideal.ArtinRees
 import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
 # Flatness from bijections on infinitesimal quotients
@@ -35,44 +36,6 @@ the separation of finite modules by powers of all maximal ideals gives `z = 0`.
 public section
 
 open TensorProduct
-
-namespace TensorProduct
-
-variable {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M] [Module A M]
-
-/-- If `A → B ⧸ J` is surjective, then every element of `B ⊗[A] M` is of the form `1 ⊗ m` modulo
-`J (B ⊗[A] M)`. -/
-theorem exists_sub_one_tmul_mem_smul_top {J : Ideal B}
-    (hJ : Function.Surjective ((Ideal.Quotient.mk J).comp (algebraMap A B))) (x : B ⊗[A] M) :
-    ∃ m : M, x - 1 ⊗ₜ m ∈ (J • ⊤ : Submodule B (B ⊗[A] M)) := by
-  induction x with
-  | tmul b m =>
-    obtain ⟨a, ha⟩ := hJ (Ideal.Quotient.mk J b)
-    rw [RingHom.comp_apply, Ideal.Quotient.eq] at ha
-    refine ⟨a • m, ?_⟩
-    have : b ⊗ₜ[A] m - 1 ⊗ₜ (a • m) = (b - algebraMap A B a) • ((1 : B) ⊗ₜ[A] m) := by
-      rw [tmul_smul, ← algebraMap_smul B a]
-      simp only [smul_tmul', smul_eq_mul, mul_one, sub_tmul]
-    rw [this]
-    exact Submodule.smul_mem_smul (sub_mem_comm_iff.mp ha) Submodule.mem_top
-  | add x y hx hy =>
-    obtain ⟨m, hm⟩ := hx
-    obtain ⟨m', hm'⟩ := hy
-    refine ⟨m + m', ?_⟩
-    rw [tmul_add]
-    convert add_mem hm hm' using 1
-    abel
-
-/-- If `m ∈ J M` for an ideal `J` of `A`, then `1 ⊗ m ∈ (J B) (B ⊗[A] M)`. -/
-theorem one_tmul_mem_map_smul_top {J : Ideal A} {m : M} (hm : m ∈ (J • ⊤ : Submodule A M)) :
-    (1 : B) ⊗ₜ[A] m ∈ (J.map (algebraMap A B) • ⊤ : Submodule B (B ⊗[A] M)) := by
-  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
-  · rw [tmul_smul, ← algebraMap_smul B a]
-    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
-  · rw [tmul_add]
-    exact add_mem hx hy
-
-end TensorProduct
 
 namespace Module.Flat
 
