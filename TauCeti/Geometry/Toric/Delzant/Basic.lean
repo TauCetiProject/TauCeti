@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Convex.KreinMilman
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Algebra.Module.Primitive
-public import TauCeti.Analysis.Convex.Polyhedron
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
 /-!
 # Delzant polytopes
@@ -235,14 +234,15 @@ theorem isSmoothVertex_add_iff (x : StrongDual ℝ V) :
     IsSmoothVertex i u (fun j ↦ c j + y (i (u j))) (y + x) ↔ IsSmoothVertex i u c x := by
   rw [isSmoothVertex_def, isSmoothVertex_def, activeSet_add]
 
-theorem add_mem_extremePoints_facetPolyhedron_iff [Finite ι] (x : StrongDual ℝ V) :
+theorem add_mem_extremePoints_facetPolyhedron_iff (x : StrongDual ℝ V) :
     y + x ∈ (facetPolyhedron i u (fun j ↦ c j + y (i (u j)))).extremePoints ℝ ↔
       x ∈ (facetPolyhedron i u c).extremePoints ℝ := by
-  rw [mem_extremePoints_facetPolyhedron_iff, mem_extremePoints_facetPolyhedron_iff,
-    activeSet_add, facetPolyhedron_add, ← vadd_eq_add, vadd_mem_vadd_set_iff]
+  rw [facetPolyhedron_add, ← image_vadd]
+  simp only [mem_extremePoints, forall_mem_image, vadd_eq_add,
+    (add_right_injective y).mem_set_image, mem_openSegment_translate, add_right_inj]
 
 /-- Translating a facet presentation preserves the Delzant property. -/
-theorem isDelzant_add_iff [Finite ι] :
+theorem isDelzant_add_iff :
     IsDelzant i u (fun j ↦ c j + y (i (u j))) ↔ IsDelzant i u c := by
   constructor
   · intro h

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.Geometry.Toric.Algebraic.Lattice
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
 import Mathlib.Analysis.Convex.PathConnected
@@ -23,13 +24,15 @@ define the map of lattices
 
 and its real extension `β_ℝ : ℝ^ι → V`, `t ↦ ∑ j, t j • i (u j)`, which agree on integral
 vectors (`Fintype.linearCombination_intCast`). For a period `p`, the map `β_ℝ` descends to
-a homomorphism of tori
+a continuous homomorphism of quotient groups
 
-`π : (ℝ / pℤ)^ι → V / p i(N)` (`TauCeti.Toric.facetTorusHom i u p`).
+`π : (ℝ / pℤ)^ι → V / p i(N)` (`TauCeti.Toric.facetTorusHom i u p`,
+`TauCeti.Toric.continuous_facetTorusHom`).
 
-With the normalization `p = 2π` used for symplectic toric manifolds, the target is the torus
-whose Lie algebra is `V`, with integral cocharacters `N`, and `π` is the homomorphism of tori
-induced by `β`.
+For `p ≠ 0` and an integral lattice `i`, both quotients are tori. With the normalization
+`p = 2π` used for symplectic toric manifolds, the target is the torus whose Lie algebra is `V`,
+with integral cocharacters `N`, and `π` is the homomorphism of tori induced by `β`. For `p = 0`
+the quotients are the vector groups `ℝ^ι` and `V`, and `π` is `β_ℝ` itself.
 
 Suppose that `β` is surjective, which holds for the normals of a Delzant polytope
 (`TauCeti.Toric.IsDelzant.surjective_linearCombination`) since the normals at a vertex form a
@@ -44,26 +47,27 @@ lattice basis. Then the lattice sequence `0 → ker β → ℤ^ι → N → 0` i
   for some `n ∈ N`; writing `n = β k` and replacing `t` by `t - p k` gives a representative in
   `𝔫`. Hence the kernel is connected (`TauCeti.Toric.isConnected_ker_facetTorusHom`).
 
-So the kernel of `π` is the connected subtorus `N_Δ` with Lie algebra `𝔫` whose action on `ℂ^ι`
-is reduced in the Delzant construction. Without surjectivity of `β` the kernel of `π` can be
+So for `p ≠ 0` and an integral lattice, the kernel of `π` is the connected subtorus `N_Δ` with
+Lie algebra `𝔫` whose action on `ℂ^ι` is reduced in the Delzant construction; for `p = 0` it is
+the vector subgroup `𝔫` itself. Without surjectivity of `β` the kernel of `π` can be
 disconnected: the normal `2` in `ℤ` gives the map `θ ↦ 2θ` of circles, whose kernel has two
 points.
 
 ## Main definitions
 
 * `TauCeti.Toric.facetTorusHom i u p`: the homomorphism `(ℝ / pℤ)^ι → V / p i(N)`,
-  `[t] ↦ [∑ j, t j • i (u j)]`.
+  `[t] ↦ [∑ j, t j • i (u j)]`, a homomorphism of tori when `p ≠ 0`.
 
 ## Main results
 
 * `TauCeti.Toric.IsDelzant.surjective_linearCombination`: the normals of a Delzant polytope
   generate the lattice.
-* `TauCeti.Toric.coe_ker_facetTorusHom`: the kernel of the torus homomorphism is the image of the
-  kernel of `β_ℝ`.
+* `TauCeti.Toric.continuous_facetTorusHom`: the homomorphism `π` is continuous.
+* `TauCeti.Toric.coe_ker_facetTorusHom`: the kernel of `π` is the image of the kernel of `β_ℝ`.
 * `TauCeti.Toric.isConnected_ker_facetTorusHom`,
-  `TauCeti.Toric.IsDelzant.isConnected_ker_facetTorusHom`: the kernel torus is connected.
+  `TauCeti.Toric.IsDelzant.isConnected_ker_facetTorusHom`: the kernel of `π` is connected.
 * `TauCeti.Toric.surjective_facetTorusHom`, `TauCeti.Toric.IsDelzant.surjective_facetTorusHom`:
-  the torus homomorphism is surjective.
+  `π` is surjective.
 
 ## References
 
@@ -116,24 +120,36 @@ theorem finrank_ker_linearCombination_real_add_finrank (hi : Submodule.span ℝ 
 
 variable (i u) (p : ℝ)
 
-/-- The homomorphism of tori `(ℝ / pℤ)^ι → V / p i(N)` induced by the normals `u`,
-`[t] ↦ [∑ j, t j • i (u j)]`. -/
+/-- The homomorphism of quotient groups `(ℝ / pℤ)^ι → V / p i(N)` induced by the normals `u`,
+`[t] ↦ [∑ j, t j • i (u j)]`. For `p ≠ 0` and an integral lattice `i` it is a homomorphism of
+tori. -/
 def facetTorusHom : (ι → AddCircle p) →+ V ⧸ (p • i).range :=
   ∑ j, (QuotientAddGroup.map (AddSubgroup.zmultiples p) (p • i).range
       (LinearMap.toSpanSingleton ℝ V (i (u j))).toAddMonoidHom
       (AddSubgroup.zmultiples_le.2 ⟨u j, by simp⟩)).comp (Pi.evalAddMonoidHom _ j)
 
-/-- The torus homomorphism on classes of real vectors. -/
+/-- The homomorphism `facetTorusHom` on classes of real vectors. -/
 @[simp]
 theorem facetTorusHom_coe (t : ι → ℝ) :
     facetTorusHom i u p (fun j ↦ (t j : AddCircle p)) =
       ((Fintype.linearCombination ℝ (fun j ↦ i (u j)) t : V) : V ⧸ (p • i).range) := by
   simp [facetTorusHom, Fintype.linearCombination_apply, QuotientAddGroup.mk_sum]
 
+/-- The homomorphism `facetTorusHom` is continuous. -/
+theorem continuous_facetTorusHom [TopologicalSpace V] [IsTopologicalAddGroup V]
+    [ContinuousSMul ℝ V] : Continuous (facetTorusHom i u p) := by
+  simp only [facetTorusHom, AddMonoidHom.coe_finsetSum, Finset.sum_fn]
+  refine continuous_finsetSum _ fun j _ ↦ ?_
+  rw [AddMonoidHom.coe_comp]
+  refine Continuous.comp ?_ (continuous_apply j)
+  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff]
+  exact QuotientAddGroup.continuous_mk.comp (continuous_id.smul continuous_const)
+
 variable {i u p}
 
-/-- **The kernel torus.** If the normals generate the lattice, the kernel of the torus
-homomorphism `(ℝ / pℤ)^ι → V / p i(N)` is the image of the kernel `𝔫` of `β_ℝ`. -/
+/-- **The kernel torus.** If the normals generate the lattice, the kernel of the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is the image of the kernel `𝔫` of `β_ℝ`. For `p ≠ 0` this is a
+subtorus. -/
 theorem coe_ker_facetTorusHom (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
     ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) =
       (fun (t : ι → ℝ) j ↦ (t j : AddCircle p)) ''
@@ -158,7 +174,7 @@ theorem coe_ker_facetTorusHom (hu : Function.Surjective (Fintype.linearCombinati
     rw [SetLike.mem_coe, AddMonoidHom.mem_ker, facetTorusHom_coe, ht, QuotientAddGroup.mk_zero]
 
 /-- **The kernel torus is connected.** If the normals generate the lattice, the kernel of the
-torus homomorphism `(ℝ / pℤ)^ι → V / p i(N)` is connected. -/
+homomorphism `(ℝ / pℤ)^ι → V / p i(N)` is connected. -/
 theorem isConnected_ker_facetTorusHom
     (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
     IsConnected ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) := by
@@ -166,8 +182,8 @@ theorem isConnected_ker_facetTorusHom
   exact ((Submodule.convex _).isConnected ⟨0, Submodule.zero_mem _⟩).image _
     (continuous_pi fun j ↦ (AddCircle.continuous_mk' p).comp (continuous_apply j)).continuousOn
 
-/-- If the normals generate the lattice and the lattice spans `V`, the torus homomorphism is
-surjective. -/
+/-- If the normals generate the lattice and the lattice spans `V`, the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is surjective. -/
 theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
     (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
     Function.Surjective (facetTorusHom i u p) := by
@@ -199,12 +215,12 @@ theorem surjective_linearCombination :
   rintro _ ⟨j, rfl⟩
   exact ⟨j, (hb j).symm⟩
 
-/-- The kernel of the torus homomorphism of a Delzant polytope is connected. -/
+/-- The kernel of the homomorphism `facetTorusHom` of a Delzant polytope is connected. -/
 theorem isConnected_ker_facetTorusHom (p : ℝ) :
     IsConnected ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) :=
   Toric.isConnected_ker_facetTorusHom hΔ.surjective_linearCombination
 
-/-- The torus homomorphism of a Delzant polytope is surjective. -/
+/-- The homomorphism `facetTorusHom` of a Delzant polytope is surjective. -/
 theorem surjective_facetTorusHom (hi : IsIntegralLattice i) (p : ℝ) :
     Function.Surjective (facetTorusHom i u p) :=
   Toric.surjective_facetTorusHom hi.span_range_eq_top hΔ.surjective_linearCombination
