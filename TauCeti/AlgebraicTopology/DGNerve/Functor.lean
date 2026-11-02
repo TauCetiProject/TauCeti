@@ -90,6 +90,7 @@ theorem mapDGNerveSimplex_map {n m : ℕ} (x : Simplex R C n)
   by_cases h : #(S.image α) = #S ∧ S.image α ⊆ Ioo (α i) (α j)
   · rw [Simplex.mapCoh_eq_coh _ _ h, Simplex.mapCoh_eq_coh _ _ h,
       mapDGNerveSimplex_coh]
+    -- Unfold the simplex object map in the endpoint types of these coherences.
     rfl
   · rw [Simplex.mapCoh_eq_zero _ _ h, Simplex.mapCoh_eq_zero _ _ h]
     exact (F.dgMap d).map_zero
@@ -108,6 +109,7 @@ theorem comp_mapDGNerveSimplex {n : ℕ} (x : Simplex R C n) :
       G.mapDGNerveSimplex (F.mapDGNerveSimplex x) := by
   refine Simplex.ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_
   rw [mapDGNerveSimplex_coh, comp_dgMap, mapDGNerveSimplex_coh, mapDGNerveSimplex_coh]
+  -- The composite object map and the two simplex object maps agree definitionally.
   rfl
 
 /-- A DG functor sends the vertex of an object to the vertex of its image. -/
@@ -143,9 +145,8 @@ theorem mapDGNerve_app {Δ : SimplexCategoryᵒᵖ} (x : (dgNerve R C).obj Δ) :
 @[simp]
 theorem dgNerveEquiv_mapDGNerveSimplex (x : (dgNerve R C) _⦋0⦌) :
     dgNerveEquiv R D (F.mapDGNerveSimplex x) = F.obj (dgNerveEquiv R C x) := by
-  exact (dgNerveEquiv_apply R D (F.mapDGNerveSimplex x)).trans
-    ((F.mapDGNerveSimplex_obj x 0).trans
-      (congrArg F.obj (dgNerveEquiv_apply R C x).symm))
+  simp only [dgNerveEquiv_apply R D (F.mapDGNerveSimplex x), dgNerveEquiv_apply R C x,
+    F.mapDGNerveSimplex_obj x 0]
 
 /-- The dg nerve of the identity DG functor is the identity simplicial map. -/
 @[simp]
@@ -167,10 +168,7 @@ DG functors. In particular, the functor induced by the enhanced map is the usual
 theorem mapDGNerve_comp_fromHomotopyCategory :
     SSet.mapHomotopyCategory F.mapDGNerve ⋙ dgNerve.fromHomotopyCategory R D =
       dgNerve.fromHomotopyCategory R C ⋙ F.mapDGHomotopyCategory := by
-  have hv (x : (dgNerve R C) _⦋0⦌) :
-      dgNerveEquiv R D (F.mapDGNerve.app _ x) = F.obj (dgNerveEquiv R C x) := by
-    rw [mapDGNerve_app]
-    exact F.dgNerveEquiv_mapDGNerveSimplex x
+  -- First identify the object maps through the vertex comparison.
   have hobj (x : (dgNerve R C) _⦋0⦌) :
       (SSet.mapHomotopyCategory F.mapDGNerve ⋙ dgNerve.fromHomotopyCategory R D).obj
           (SSet.HomotopyCategory.mk x) =
@@ -179,7 +177,17 @@ theorem mapDGNerve_comp_fromHomotopyCategory :
     rw [Functor.comp_obj, SSet.mapHomotopyCategory_obj_mk,
       dgNerve.fromHomotopyCategory_obj_mk, Functor.comp_obj,
       dgNerve.fromHomotopyCategory_obj_mk, mapDGHomotopyCategory_obj_of]
-    exact congrArg (DGHomotopyCategory.of R) (hv x)
+    rw [mapDGNerve_app, dgNerveEquiv_mapDGNerveSimplex]
+  -- State endpoint identities before passing through truncation, so their dimensions
+  -- are explicit when rewriting the simplex object map.
+  have hmap (z : (dgNerve R C) _⦋0⦌) (X : C) (hz : Simplex.obj z 0 = X) :
+      Simplex.obj (F.mapDGNerve.app (Opposite.op ⦋0⦌) z) 0 = F.obj X := by
+    rw [mapDGNerve_app, F.mapDGNerveSimplex_obj z 0, hz]
+  have hfrom (z : (dgNerve R C) _⦋0⦌) (X : C) (hz : Simplex.obj z 0 = X) :
+      (dgNerve.fromHomotopyCategory R C).obj (SSet.HomotopyCategory.mk z) =
+        DGHomotopyCategory.of R X := by
+    rw [dgNerve.fromHomotopyCategory_obj_mk, dgNerveEquiv_apply, hz]
+  -- It remains to compare edge generators: both maps apply dgMap to their coherence.
   refine SSet.Truncated.HomotopyCategory.functor_ext (fun x ↦ hobj x) (fun x y e ↦ ?_)
   let e' : (dgNerve R C).Edge x y := SSet.Edge.ofTruncated e
   let c : dgCycles R (e'.edge.obj 0) (e'.edge.obj 1) :=
@@ -188,24 +196,15 @@ theorem mapDGNerve_comp_fromHomotopyCategory :
     congrArg (fun z : (dgNerve R C) _⦋0⦌ ↦ Simplex.obj z 0) e'.src_eq.symm
   have hy : Simplex.obj y 0 = e'.edge.obj 1 :=
     congrArg (fun z : (dgNerve R C) _⦋0⦌ ↦ Simplex.obj z 0) e'.tgt_eq.symm
-  have hx' : Simplex.obj (F.mapDGNerve.app _ x) 0 = F.obj (e'.edge.obj 0) := by
-    exact (dgNerveEquiv_apply R D _).symm.trans
-      ((hv x).trans
-        (congrArg F.obj ((dgNerveEquiv_apply R C x).trans hx)))
-  have hy' : Simplex.obj (F.mapDGNerve.app _ y) 0 = F.obj (e'.edge.obj 1) := by
-    exact (dgNerveEquiv_apply R D _).symm.trans
-      ((hv y).trans
-        (congrArg F.obj ((dgNerveEquiv_apply R C y).trans hy)))
+  have hx' := hmap x _ hx
+  have hy' := hmap y _ hy
   have hl := dgNerve.fromHomotopyCategory_map_homMk_heq R D (e'.map F.mapDGNerve)
     hx' hy' (F.dgMap 0 c.1) (F.dgMap_mem_dgCycles c.2) (by
       rw [SSet.Edge.map_edge, mapDGNerve_app]
       exact heq_of_eq (F.mapDGNerveSimplex_coh e'.edge 0 1 ∅ 0
         (by decide) (empty_subset _) (by simp)))
   have hr := F.mapDGHomotopyCategory.map_heq
-    ((dgNerve.fromHomotopyCategory_obj_mk R C x).trans
-      (congrArg (DGHomotopyCategory.of R) ((dgNerveEquiv_apply R C x).trans hx)))
-    ((dgNerve.fromHomotopyCategory_obj_mk R C y).trans
-      (congrArg (DGHomotopyCategory.of R) ((dgNerveEquiv_apply R C y).trans hy)))
+    (hfrom x _ hx) (hfrom y _ hy)
     (dgNerve.fromHomotopyCategory_map_homMk_heq R C e' hx hy c.1 c.2 HEq.rfl)
   rw [mapDGHomotopyCategory_map_homOf] at hr
   exact (conj_eqToHom_iff_heq' _ _ _ _).2 (hl.trans hr.symm)
