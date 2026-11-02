@@ -19,9 +19,8 @@ with as many relations as generators: a square matrix `φ` of size `m ≥ 1` and
 matrix.
 
 The zeroth Fitting ideal of a quadratically presented module is computed by a single
-determinant, `Fitt₀(N) = (det φ)`, so it is principal. Quadratically presented modules are those in
-which
-Dasgupta and Kakde state their Fitting-ideal comparisons over the coefficient orders of the
+determinant, `Fitt₀(N) = (det φ)`, so it is principal. Dasgupta and Kakde state their
+Fitting-ideal comparisons for quadratically presented modules over the coefficient orders of the
 Brumer–Stark conjecture. Base change preserves quadratic presentations, with the relation matrix
 mapped entrywise. A quotient `R ⧸ I` is quadratically presented exactly when `I` is principal,
 since its zeroth Fitting ideal is `I`.
@@ -42,8 +41,9 @@ quadratically presented.
 * `TauCeti.QuadraticPresentation.ofExact`: the quadratic presentation read off an exact sequence
   `P₁ → P₀ → N → 0` from bases of `P₀` and `P₁` of the same size.
 * `TauCeti.QuadraticPresentation.cokernel`, `TauCeti.QuadraticPresentation.quotientSpanSingleton`,
-  `TauCeti.QuadraticPresentation.ofSubsingleton`: the presentations of the cokernel of a square
-  matrix, of `R ⧸ (a)`, and of the zero module.
+  `TauCeti.QuadraticPresentation.ofSubsingleton`, `TauCeti.QuadraticPresentation.ofBasis`: the
+  presentations of the cokernel of a square matrix, of `R ⧸ (a)`, of the zero module, and of a
+  free module of positive finite rank with zero relation matrix.
 * `TauCeti.QuadraticPresentation.map`, `TauCeti.QuadraticPresentation.baseChange`: transport
   along a linear equivalence and base change along an algebra `R → S`.
 
@@ -140,6 +140,7 @@ def cokernelEquiv : ((Fin P.size → R) ⧸ LinearMap.range (Matrix.toLin' P.rel
   (Submodule.quotEquivOfEq _ _ P.range_rel_eq_ker).trans
     (P.gen.quotKerEquivOfSurjective P.gen_surjective)
 
+/-- The identification of the cokernel of `P.rel` with `N` sends the class of `v` to `P.gen v`. -/
 @[simp]
 theorem cokernelEquiv_mk (v : Fin P.size → R) :
     P.cokernelEquiv (Submodule.Quotient.mk v) = P.gen v :=
@@ -177,6 +178,17 @@ def ofSubsingleton [Subsingleton N] : QuadraticPresentation R N where
   gen_surjective _ := ⟨0, Subsingleton.elim _ _⟩
   range_rel_eq_ker := by rw [Matrix.toLin'_one, LinearMap.range_id, LinearMap.ker_zero]
 
+/-- The quadratic presentation `R^m →(0) R^m → N → 0` of a free module with a basis of positive
+size `m`. -/
+@[expose, simps]
+def ofBasis {m : ℕ} (hm : 0 < m) (b : Basis (Fin m) R N) : QuadraticPresentation R N where
+  size := m
+  size_pos := hm
+  rel := 0
+  gen := b.equivFun.symm.toLinearMap
+  gen_surjective := b.equivFun.symm.surjective
+  range_rel_eq_ker := by rw [map_zero, LinearMap.range_zero, LinearEquiv.ker]
+
 /-- The quadratic presentation `R →(a) R → R ⧸ (a) → 0` of size one. -/
 @[expose, simps]
 def quotientSpanSingleton (a : R) : QuadraticPresentation R (R ⧸ Ideal.span {a}) where
@@ -206,14 +218,6 @@ theorem det_quotientSpanSingleton_rel (a : R) : (quotientSpanSingleton a).rel.de
 
 variable {P₀ P₁ : Type*} [AddCommGroup P₀] [Module R P₀] [AddCommGroup P₁] [Module R P₁]
 
-/-- The matrix of `f` in the bases `b₁` and `b₀` is the standard-coordinate form of `f`. -/
-private theorem toLin'_toMatrix {m : ℕ} (b₁ : Basis (Fin m) R P₁) (b₀ : Basis (Fin m) R P₀)
-    (f : P₁ →ₗ[R] P₀) :
-    Matrix.toLin' (LinearMap.toMatrix b₁ b₀ f) =
-      b₀.equivFun.toLinearMap ∘ₗ f ∘ₗ b₁.equivFun.symm.toLinearMap := by
-  ext x i
-  simp [LinearMap.toMatrix_apply, Matrix.mulVec, dotProduct, Pi.single_apply]
-
 /-- The quadratic presentation read off an exact sequence `P₁ →f P₀ →π N → 0` from bases of `P₁`
 and `P₀` of the same positive size: the relation matrix is the matrix of `f` in these bases. -/
 @[expose, simps]
@@ -226,7 +230,10 @@ def ofExact {m : ℕ} (hm : 0 < m) (b₁ : Basis (Fin m) R P₁) (b₀ : Basis (
   gen := π ∘ₗ b₀.equivFun.symm.toLinearMap
   gen_surjective := hπ.comp b₀.equivFun.symm.surjective
   range_rel_eq_ker := by
-    rw [toLin'_toMatrix, LinearMap.range_comp,
+    rw [LinearMap.toMatrix, LinearEquiv.trans_apply, Matrix.toLin'_toMatrix',
+      show LinearEquiv.arrowCongr b₁.equivFun b₀.equivFun f =
+        b₀.equivFun.toLinearMap ∘ₗ f ∘ₗ b₁.equivFun.symm.toLinearMap from rfl,
+      LinearMap.range_comp,
       LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _), LinearMap.ker_comp,
       LinearMap.exact_iff.1 hf, Submodule.map_equiv_eq_comap_symm]
 
@@ -242,16 +249,32 @@ def baseChange : QuadraticPresentation S (S ⊗[R] N) :=
     (lTensor_exact S P.exact P.gen_surjective)
     (LinearMap.lTensor_surjective S P.gen_surjective)
 
+/-- The base change of a presentation has the same size. -/
 @[simp]
 theorem baseChange_size : (P.baseChange S).size = P.size :=
   rfl
 
+/-- The relation matrix of the base change is the original relation matrix mapped entrywise along
+`algebraMap R S`. -/
 @[simp]
 theorem baseChange_rel : (P.baseChange S).rel = P.rel.map (algebraMap R S) :=
   -- The relation matrix of `P.baseChange S` is by definition (`ofExact_rel`) the matrix of the
   -- base change of `toLin' P.rel` in the bases `1 ⊗ eᵢ`.
   (LinearMap.toMatrix_baseChange S (Matrix.toLin' P.rel) _ _).trans <| by
     rw [LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
+
+/-- The generator map of the base change sends `v` to `∑ᵢ vᵢ ⊗ xᵢ`, where the `xᵢ` are the
+original generators. This is not a simp lemma: `baseChange_size` rewrites the index type
+`Fin (P.baseChange S).size` in its left-hand side. -/
+theorem baseChange_gen_apply (v : Fin (P.baseChange S).size → S) :
+    (P.baseChange S).gen v = ∑ i : Fin P.size, v i ⊗ₜ P.gen (Pi.single i 1) := by
+  -- The generator map of `P.baseChange S` is by definition (`ofExact_gen`) the base change of
+  -- `P.gen` composed with the coordinates in the basis `1 ⊗ eᵢ`.
+  revert v
+  change ∀ v : Fin P.size → S, P.gen.baseChange S
+    ((Algebra.TensorProduct.basis S (Pi.basisFun R (Fin P.size))).equivFun.symm v) = _
+  intro v
+  simp [Basis.equivFun_symm_apply, TensorProduct.smul_tmul']
 
 end QuadraticPresentation
 
@@ -293,15 +316,17 @@ theorem of_exact {m : ℕ} (b₁ : Basis (Fin m) R P₁) (b₀ : Basis (Fin m) R
     exact of_subsingleton
   · exact (QuadraticPresentation.ofExact hm b₁ b₀ hf hπ).isQuadraticallyPresented
 
-/-- A finite free module is quadratically presented, with zero relation matrix. -/
+/-- A finite free module is quadratically presented: by the zero relation matrix of
+`QuadraticPresentation.ofBasis` in positive rank, and by `R →(1) R` in rank zero. -/
 theorem of_free [Module.Free R N] [Module.Finite R N] : IsQuadraticallyPresented R N := by
   cases subsingleton_or_nontrivial R
   · have := Module.subsingleton R N
     exact of_subsingleton
   let b := Module.finBasis R N
-  exact of_exact b b (f := 0) (π := LinearMap.id)
-    (LinearMap.exact_iff.2 (by rw [LinearMap.ker_id, LinearMap.range_zero]))
-    Function.surjective_id
+  rcases (finrank R N).eq_zero_or_pos with h | h
+  · have : Subsingleton N := (b.reindex (finCongr h)).equivFun.toEquiv.subsingleton
+    exact of_subsingleton
+  · exact (QuadraticPresentation.ofBasis h b).isQuadraticallyPresented
 
 end IsQuadraticallyPresented
 
