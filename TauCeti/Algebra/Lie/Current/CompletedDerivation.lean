@@ -129,7 +129,8 @@ theorem vectorFieldCompletedEnvelopingDerivation_single_one_envelopingι_single_
   simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
     vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul, map_zsmul]
 
-/-- Completed vector fields preserve every kernel of a current-order stage projection. -/
+/-- Completed vector fields of order at least one preserve every kernel of a current-order
+stage projection. -/
 theorem vectorFieldCompletedEnvelopingDerivation_mem_completedOrderLeftIdeal (h : R⸨X⸩)
     (hh : (1 : WithTop ℤ) ≤ h.orderTop) {n : ℕ} {x : Û}
     (hx : x ∈ completedOrderLeftIdeal Φ hΦ hΦs a n) :
