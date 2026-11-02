@@ -136,23 +136,6 @@ theorem heckeTrace_stabilizeInv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
           τ (braidHom R q (n + 1) b)) := by ring
     _ = _ := by rw [hneg, one_mul]
 
-/-- The normalized skein identity in an arbitrary braid context. No Markov or normalization
-hypotheses are needed for this identity; the inverse writhe factors determine its coefficients. -/
-theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
-    (↑l⁻¹ : R) * heckeTrace ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ τ C l -
-        (l : R) * heckeTrace ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ τ C l =
-      ((q : R) - ↑q⁻¹) * heckeTrace ⟨n, b * c⟩ τ C l := by
-  have h := τ.map_braidHom_skein b c i
-  simp only [heckeTrace_def, map_mul (ArtinGroup.exponentSum _),
-    map_inv (ArtinGroup.exponentSum _), BraidGroup.exponentSum_sigma,
-    toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, zpow_one, Units.val_mul]
-  let w := C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-    ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ c))
-  have hu : (l : R) * ↑l⁻¹ = 1 := l.mul_inv
-  linear_combination w * h + w *
-    (τ (braidHom R q (n + 1) (b * BraidGroup.sigma (n := n + 1) i * c)) -
-      τ (braidHom R q (n + 1) (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c))) * hu
-
 /-- **The skein relation attached to a linear relation between a generator and its inverse.** If
 `x • T i + y • (T i)⁻¹ + s • 1 = 0` in the Hecke algebra, then for a crossing `σ i` in any braid
 context the normalized traces of the positive crossing `L₊`, the negative crossing `L₋` and the
@@ -181,6 +164,21 @@ theorem _root_.LinearMap.heckeTrace_skein_of_eq_zero (τ : InfiniteTypeAHeckeAlg
       (braidHom R q (n + 1) b * T q i * braidHom R q (n + 1) c) * l.inv_mul +
     C ^ n * ((l ^ (p + r) : Rˣ) : R) * y * τ
       (braidHom R q (n + 1) b * ↑(unitT q i)⁻¹ * braidHom R q (n + 1) c) * l.mul_inv
+
+/-- The normalized skein identity in an arbitrary braid context. No Markov or normalization
+hypotheses are needed for this identity; the inverse writhe factors determine its coefficients. -/
+theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
+    (↑l⁻¹ : R) * heckeTrace ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ τ C l -
+        (l : R) * heckeTrace ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ τ C l =
+      ((q : R) - ↑q⁻¹) * heckeTrace ⟨n, b * c⟩ τ C l := by
+  have hrel : (1 : R) • T q i + (-1 : R) •
+      (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) +
+      (-((q : R) - ↑q⁻¹)) • (1 : InfiniteTypeAHeckeAlgebra R q) = 0 := by
+    simpa only [Algebra.smul_def, map_one, map_neg, one_mul, neg_mul, mul_one,
+      ← sub_eq_add_neg] using
+      (sub_eq_zero.mpr (T_sub_val_inv_unitT (R := R) (q := q) i))
+  have h := τ.heckeTrace_skein_of_eq_zero C l i hrel b c
+  simpa only [one_mul, neg_one_mul, neg_mul, ← sub_eq_add_neg, sub_eq_zero] using h
 
 end MarkovBraid
 
