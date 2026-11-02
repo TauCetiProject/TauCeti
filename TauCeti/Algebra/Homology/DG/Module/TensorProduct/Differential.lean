@@ -68,6 +68,20 @@ variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
   [SetLike.GradedSMul 𝒜 ℳN]
   {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
 
+omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] [IsScalarTower R A N] in
+/-- Maps out of the balanced tensor product agree once they agree on pure tensors with a
+homogeneous left factor. -/
+private theorem hom_ext_of_mem {P : Type*} [AddCommGroup P] [Module R P]
+    {φ ψ : BalancedTensorProduct R A M N →ₗ[R] P}
+    (h : ∀ {q : ℤ} {m : M}, m ∈ ℳ q → ∀ n : N, φ (tmul R A m n) = ψ (tmul R A m n)) :
+    φ = ψ := by
+  refine hom_ext fun m n ↦ ?_
+  have key : φ ∘ₗ (mk R A).flip n = ψ ∘ₗ (mk R A).flip n := by
+    refine (InternalGrading.ofDecomposition ℳ).linearMap_ext fun q x hx ↦ ?_
+    rw [InternalGrading.ofDecomposition_piece] at hx
+    simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using h hx n
+  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+
 private noncomputable def differentialBilinear :
     M →ₗ[R] N →ₗ[R] BalancedTensorProduct R A M N :=
   (mk R A).comp dM +
@@ -204,21 +218,12 @@ theorem leibnizDifferential_naturality (f : M →ₗ[R] M')
     (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' 0)
     (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
     leibnizDifferential hM' hN' ∘ₗ map f g hf hg = map f g hf hg ∘ₗ leibnizDifferential hM hN := by
-  apply hom_ext
-  intro m n
-  have key :
-      ((leibnizDifferential hM' hN' ∘ₗ map f g hf hg) ∘ₗ (mk R A).flip n :
-        M →ₗ[R] BalancedTensorProduct R A M' N') =
-      (map f g hf hg ∘ₗ leibnizDifferential hM hN) ∘ₗ (mk R A).flip n := by
-    apply (InternalGrading.ofDecomposition ℳ).linearMap_ext
-    intro q x hx
-    rw [InternalGrading.ofDecomposition_piece] at hx
-    have hfx : f x ∈ ℳ' q := by simpa only [add_zero] using hf₀.map_mem hx
-    simp only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply, map_tmul]
-    rw [leibnizDifferential_tmul_of_mem hM' hN' hfx, leibnizDifferential_tmul_of_mem hM hN hx,
-      map_add, map_smul, map_tmul, map_tmul]
-    simp only [← LinearMap.comp_apply, hfd, hgd]
-  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+  refine hom_ext_of_mem (ℳ := ℳ) fun {q x} hx n ↦ ?_
+  have hfx : f x ∈ ℳ' q := by simpa only [add_zero] using hf₀.map_mem hx
+  simp only [LinearMap.comp_apply, map_tmul]
+  rw [leibnizDifferential_tmul_of_mem hM' hN' hfx, leibnizDifferential_tmul_of_mem hM hN hx,
+    map_add, map_smul, map_tmul, map_tmul]
+  simp only [← LinearMap.comp_apply, hfd, hgd]
 
 /-- **Homotopies in the first factor.** If equivariant maps satisfy
 `f₁ = dM' ∘ k + k ∘ dM + f₂` for an equivariant map `k` of degree `-1`, and `g` commutes with the
@@ -231,24 +236,14 @@ theorem map_eq_leibnizDifferential_comp_map_add_map_comp_add
     (hfk : f₁ = dM' ∘ₗ k + k ∘ₗ dM + f₂) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
     map f₁ g hf₁ hg = leibnizDifferential hM' hN' ∘ₗ map k g hk hg +
       map k g hk hg ∘ₗ leibnizDifferential hM hN + map f₂ g hf₂ hg := by
-  apply hom_ext
-  intro m n
-  have key :
-      (map f₁ g hf₁ hg ∘ₗ (mk R A).flip n : M →ₗ[R] BalancedTensorProduct R A M' N') =
-      (leibnizDifferential hM' hN' ∘ₗ map k g hk hg +
-        map k g hk hg ∘ₗ leibnizDifferential hM hN + map f₂ g hf₂ hg) ∘ₗ (mk R A).flip n := by
-    apply (InternalGrading.ofDecomposition ℳ).linearMap_ext
-    intro q x hx
-    rw [InternalGrading.ofDecomposition_piece] at hx
-    simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.flip_apply, mk_apply,
-      map_tmul]
-    rw [leibnizDifferential_tmul_of_mem hM' hN' (hk₁.map_mem hx),
-      leibnizDifferential_tmul_of_mem hM hN hx, map_add, map_smul, map_tmul, map_tmul, hfk]
-    simp only [← LinearMap.comp_apply, hgd, LinearMap.add_apply, add_tmul,
-      Int.negOnePow_add, Int.negOnePow_neg, Int.negOnePow_one, mul_neg, mul_one, Units.val_neg,
-      Int.cast_neg, neg_smul]
-    abel
-  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+  refine hom_ext_of_mem (ℳ := ℳ) fun hx n ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.add_apply, map_tmul]
+  rw [leibnizDifferential_tmul_of_mem hM' hN' (hk₁.map_mem hx),
+    leibnizDifferential_tmul_of_mem hM hN hx, map_add, map_smul, map_tmul, map_tmul, hfk]
+  simp only [← LinearMap.comp_apply, hgd, LinearMap.add_apply, add_tmul,
+    Int.negOnePow_add, Int.negOnePow_neg, Int.negOnePow_one, mul_neg, mul_one, Units.val_neg,
+    Int.cast_neg, neg_smul]
+  abel
 
 end Map
 
@@ -327,39 +322,21 @@ end Naturality
 theorem lid_comp_differential (hA : IsDGAlgebra 𝒜 dA) (hN : IsDGLeftModule hA ℳN dN) :
     (lid R A N).toLinearMap ∘ₗ differential hA.isDGRightModule hN =
       dN ∘ₗ (lid R A N).toLinearMap := by
-  apply hom_ext
-  intro a n
-  have key :
-      (((lid R A N).toLinearMap ∘ₗ differential hA.isDGRightModule hN) ∘ₗ
-        (mk R A).flip n : A →ₗ[R] N) =
-      (dN ∘ₗ (lid R A N).toLinearMap) ∘ₗ (mk R A).flip n := by
-    apply (InternalGrading.ofDecomposition 𝒜).linearMap_ext
-    intro p x hx
-    rw [InternalGrading.ofDecomposition_piece] at hx
-    simp only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply, LinearEquiv.coe_coe]
-    rw [differential_tmul_of_mem hA.isDGRightModule hN hx, map_add, map_smul,
-      lid_tmul, lid_tmul, lid_tmul, hN.leibniz hx n,
-      negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
-  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key a
+  refine hom_ext_of_mem (ℳ := 𝒜) fun hx n ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [differential_tmul_of_mem hA.isDGRightModule hN hx, map_add, map_smul,
+    lid_tmul, lid_tmul, lid_tmul, hN.leibniz hx n,
+    negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
 
 /-- The right regular-module unit identification commutes with the tensor differential. -/
 @[simp]
 theorem rid_comp_differential (hA : IsDGAlgebra 𝒜 dA) (hM : IsDGRightModule hA ℳ dM) :
     (rid R A M).toLinearMap ∘ₗ differential hM hA.isDGLeftModule =
       dM ∘ₗ (rid R A M).toLinearMap := by
-  apply hom_ext
-  intro m a
-  have key :
-      (((rid R A M).toLinearMap ∘ₗ differential hM hA.isDGLeftModule) ∘ₗ
-        (mk R A).flip a : M →ₗ[R] M) =
-      (dM ∘ₗ (rid R A M).toLinearMap) ∘ₗ (mk R A).flip a := by
-    apply (InternalGrading.ofDecomposition ℳ).linearMap_ext
-    intro q x hx
-    rw [InternalGrading.ofDecomposition_piece] at hx
-    simp only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply, LinearEquiv.coe_coe]
-    rw [differential_tmul_of_mem hM hA.isDGLeftModule hx, map_add, map_smul,
-      rid_tmul, rid_tmul, rid_tmul, hM.leibniz hx a,
-      negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
-  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+  refine hom_ext_of_mem (ℳ := ℳ) fun hx a ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [differential_tmul_of_mem hM hA.isDGLeftModule hx, map_add, map_smul,
+    rid_tmul, rid_tmul, rid_tmul, hM.leibniz hx a,
+    negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
 
 end TauCeti.BalancedTensorProduct
