@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Category.TopCat.Fiber
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
-import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
+import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
 
 /-!
 # The boundary map of a Serre fibration
@@ -33,16 +33,17 @@ of the pair `(E, F)` lying over `γ`, and its face is the image of that relative
 boundary map of the pair.
 
 Cube lifts exist by the relative cube lifting property of Serre fibrations
-(`TauCeti.TopCat.exists_isCubeLift`), and the homotopy class of the face depends neither on the
-lift nor on the homotopy class of `γ`: given lifts `G₀`, `G₁` of homotopic loops `γ₀`, `γ₁`,
-a further relative cube lift of the homotopy, prescribed to be `G₀` and `G₁` on the two ends,
-restricts on its free face to a homotopy between the faces of `G₀` and `G₁`
-(`TopCat.Hom.IsCubeLift.homotopic_face`). This defines the boundary map
+(`TauCeti.TopCat.exists_isCubeLift`), and the homotopy class of the face is independent of the
+chosen lift and of the representative `γ` of its homotopy class: given lifts `G₀`, `G₁` of
+homotopic loops `γ₀`, `γ₁`, a further relative cube lift of the homotopy, prescribed to be `G₀`
+and `G₁` on the two ends, restricts on its free face to a homotopy between the faces of `G₀` and
+`G₁` (`TopCat.Hom.IsCubeLift.homotopic_face`). This defines the boundary map
 `TauCeti.TopCat.fibrationBoundary`, characterized by `∂[γ] = [face of G]` for every cube lift `G`
 of `γ` (`TauCeti.TopCat.fibrationBoundary_mk`).
 
 Concatenating two cube lifts along a direction of `I^N` gives a cube lift of the concatenated
-loop whose face is the concatenation of the faces (`TopCat.Hom.IsCubeLift.exists_transAt`), so
+loop whose face is the concatenation of the faces (`TopCat.Hom.IsCubeLift.exists_transAt`): as
+relative cubes of the pair `(E, F)`, this is `TauCeti.RelGenLoop.boundary_transAt`. Hence
 in positive dimensions `∂` is a group homomorphism (`TauCeti.TopCat.fibrationBoundaryHom`), for
 Mathlib's group structures `HomotopyGroup.mul_spec`. The boundary map is natural for maps of
 fibrations, that is, for commutative squares (`TauCeti.TopCat.fibrationBoundary_map`), and the
@@ -341,26 +342,6 @@ theorem homotopic_face [Finite N] (hp : TauCeti.TopCat.serreFibrations p)
     rw [hLι r t (.inr ht), boxData_eq hG₀ hG₁ (.inr (by simpa [ι] using ht))]
     exact ((coe_face_apply hG₀ t).trans (hG₀.apply_eq 0 t (.inr ht))).symm
 
-/-- Reading `I × I^N` as `I^(Option N)` commutes with changing a coordinate of `I^N`. -/
-private theorem piOptionEquivProdHomeomorph_symm_update [DecidableEq N] (s : I) (t : I^N) (j : N)
-    (a : I) :
-    (TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I).symm (s, Function.update t j a) =
-      Function.update ((TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I).symm (s, t))
-        (some j) a := by
-  funext k
-  cases k <;> simp [Function.update_apply]
-
-/-- Changing a coordinate of a boundary point of the cube keeps it on the boundary, provided the
-new value of that coordinate is `0` or `1` whenever the old one is. -/
-private theorem update_mem_boundary [DecidableEq N] {t : I^N} (ht : t ∈ Cube.boundary N) (j : N)
-    {a : I} (h₀ : t j = 0 → a = 0) (h₁ : t j = 1 → a = 1) :
-    Function.update t j a ∈ Cube.boundary N := by
-  obtain ⟨k, hk⟩ := ht
-  by_cases hkj : k = j
-  · subst hkj
-    exact ⟨k, by rcases hk with hk | hk <;> simp [hk, h₀, h₁]⟩
-  · exact ⟨k, by rwa [Function.update_of_ne hkj]⟩
-
 /-- **Concatenation of cube lifts.** Two cube lifts of `γ₁` and `γ₂`, run one after the other in
 the `j`-th direction of `I^N`, form a cube lift of the concatenation of `γ₁` and `γ₂` in that
 direction, whose face is the concatenation of the faces. -/
@@ -368,56 +349,36 @@ theorem exists_transAt [DecidableEq N] (j : N) {γ₁ γ₂ : Ω^ (Option N) B b
     {G₁ G₂ : C(I × (I^N), E)} (hG₁ : p.IsCubeLift e γ₁ G₁) (hG₂ : p.IsCubeLift e γ₂ G₂) :
     ∃ (G : C(I × (I^N), E)) (hG : p.IsCubeLift e (GenLoop.transAt (some j) γ₁ γ₂) G),
       hG.face = GenLoop.transAt j hG₁.face hG₂.face := by
-  set ι := TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I
-  -- The `j`-th coordinate, rescaled to run through each half of `I` at double speed.
-  let a₁ : I^N → I := fun t ↦ Set.projIcc 0 1 zero_le_one (2 * t j)
-  let a₂ : I^N → I := fun t ↦ Set.projIcc 0 1 zero_le_one (2 * t j - 1)
-  have ha₁ : ∀ t : I^N, (t j : ℝ) ≤ 1 / 2 → (a₁ t : ℝ) = 2 * t j := fun t h ↦ by
-    simp only [a₁]
-    rw [Set.projIcc_of_mem _ ⟨by linarith [(t j).2.1], by linarith⟩]
-  have ha₂ : ∀ t : I^N, 1 / 2 ≤ (t j : ℝ) → (a₂ t : ℝ) = 2 * t j - 1 := fun t h ↦ by
-    simp only [a₂]
-    rw [Set.projIcc_of_mem _ ⟨by linarith, by linarith [(t j).2.2]⟩]
-  have hj₁ : ∀ s (t : I^N), G₁ (s, Function.update t j 1) = e.1 := fun s t ↦
-    hG₁.apply_eq _ _ (.inr ⟨j, .inr (by simp)⟩)
-  have hj₂ : ∀ s (t : I^N), G₂ (s, Function.update t j 0) = e.1 := fun s t ↦
-    hG₂.apply_eq _ _ (.inr ⟨j, .inl (by simp)⟩)
-  let G : C(I × (I^N), E) :=
-    ⟨fun x ↦ if (x.2 j : ℝ) ≤ 1 / 2 then G₁ (x.1, Function.update x.2 j (a₁ x.2))
-      else G₂ (x.1, Function.update x.2 j (a₂ x.2)),
-      Continuous.if_le (by fun_prop) (by fun_prop) (by fun_prop) continuous_const fun x hx ↦ by
-        have h₁ : a₁ x.2 = 1 := Subtype.ext <| by rw [ha₁ _ hx.le, hx]; norm_num
-        have h₂ : a₂ x.2 = 0 := Subtype.ext <| by rw [ha₂ _ hx.ge, hx]; norm_num
-        rw [h₁, h₂, hj₁, hj₂]⟩
-  have hG_le : ∀ x : I × (I^N), (x.2 j : ℝ) ≤ 1 / 2 →
-      G x = G₁ (x.1, Function.update x.2 j (a₁ x.2)) := fun x h ↦ ite_eq_left h
-  have hG_lt : ∀ x : I × (I^N), 1 / 2 < (x.2 j : ℝ) →
-      G x = G₂ (x.1, Function.update x.2 j (a₂ x.2)) := fun x h ↦ ite_eq_right (not_le.2 h)
+  -- A cube lift is a relative cube of the based pair `(E, p⁻¹(b), e)`, with the same face; the
+  -- concatenation is that of relative cubes.
+  let X : TauCeti.BasedTopPair := ⟨TopPair.ofSubset (p ⁻¹' {b}), e⟩
+  have hR : ∀ {γ G}, p.IsCubeLift e γ G → G ∈ TauCeti.RelGenLoop N X := fun hG ↦
+    TauCeti.RelGenLoop.mem_iff.2 ⟨fun t ↦ ⟨⟨_, hG.apply_zero_mem t⟩, rfl⟩, hG.apply_eq⟩
+  have hface : ∀ {γ G} (hG : p.IsCubeLift e γ G),
+      TauCeti.RelGenLoop.boundary ⟨G, hR hG⟩ = hG.face := fun hG ↦
+    GenLoop.ext _ _ fun t ↦ (TauCeti.RelGenLoop.boundary_apply_eq_iff _ _ _).2 rfl
+  set Q := TauCeti.RelGenLoop.transAt j ⟨G₁, hR hG₁⟩ ⟨G₂, hR hG₂⟩
+  -- The ambient space of `X` is `E` only after unfolding `TopPair.ofSubset`, so `p` cannot be
+  -- rewritten along values of `Q`; name its underlying map as a map to `E` instead.
+  obtain ⟨G, hGQ⟩ : ∃ G : C(I × (I^N), E), G = Q.1 := ⟨_, rfl⟩
+  have hQ : ∀ s t, G (s, t) = if (t j : ℝ) ≤ 1 / 2
+      then G₁ (s, Function.update t j <| Set.projIcc 0 1 zero_le_one (2 * t j))
+      else G₂ (s, Function.update t j <| Set.projIcc 0 1 zero_le_one (2 * t j - 1)) := by
+    subst hGQ
+    exact TauCeti.RelGenLoop.transAt_apply j _ _
   have hG : p.IsCubeLift e (GenLoop.transAt (some j) γ₁ γ₂) G := by
-    refine ⟨fun ⟨s, t⟩ ↦ ?_, fun s t h ↦ ?_⟩
-    · have hj : ((ι.symm (s, t)) (some j) : ℝ) = t j := by simp [ι]
-      rcases le_or_gt (t j : ℝ) (1 / 2) with h | h
-      · rw [hG_le _ h, hG₁.map_apply, piOptionEquivProdHomeomorph_symm_update,
-          GenLoop.transAt_apply_of_le _ _ _ (hj.trans_le h) ((ha₁ t h).trans (by rw [hj]))]
-      · rw [hG_lt _ h, hG₂.map_apply, piOptionEquivProdHomeomorph_symm_update,
-          GenLoop.transAt_apply_of_lt _ _ _ (h.trans_eq hj.symm)
-            ((ha₂ t h.le).trans (by rw [hj]))]
-    · rcases le_or_gt (t j : ℝ) (1 / 2) with hj | hj
-      · rw [hG_le _ hj]
-        refine hG₁.apply_eq _ _ (h.imp_right fun ht ↦ update_mem_boundary ht j (fun h₀ ↦ ?_)
-          fun h₁ ↦ ?_)
-        · exact Subtype.ext <| by rw [ha₁ _ hj, show t j = 0 from h₀]; norm_num
-        · exact absurd hj (by rw [show t j = 1 from h₁]; norm_num)
-      · rw [hG_lt _ hj]
-        refine hG₂.apply_eq _ _ (h.imp_right fun ht ↦ update_mem_boundary ht j (fun h₀ ↦ ?_)
-          fun h₁ ↦ ?_)
-        · exact absurd hj (by rw [show t j = 0 from h₀]; norm_num)
-        · exact Subtype.ext <| by rw [ha₂ _ hj.le, show t j = 1 from h₁]; norm_num
-  refine ⟨G, hG, GenLoop.ext _ _ fun t ↦ Subtype.ext ?_⟩
-  rw [coe_face_apply]
-  rcases le_or_gt (t j : ℝ) (1 / 2) with h | h
-  · rw [hG_le _ h, GenLoop.transAt_apply_of_le _ _ _ h (ha₁ t h), coe_face_apply]
-  · rw [hG_lt _ h, GenLoop.transAt_apply_of_lt _ _ _ h (ha₂ t h.le), coe_face_apply]
+    refine ⟨fun ⟨s, t⟩ ↦ ?_, fun s t h ↦ by
+      subst hGQ
+      exact (TauCeti.RelGenLoop.mem_iff.1 Q.2).2 s t h⟩
+    rw [hQ, GenLoop.transAt, GenLoop.coe_copy]
+    simp only [TauCeti.piOptionEquivProdHomeomorph_symm_apply_some]
+    split_ifs
+    · rw [hG₁.map_apply, TauCeti.piOptionEquivProdHomeomorph_symm_update]
+    · rw [hG₂.map_apply, TauCeti.piOptionEquivProdHomeomorph_symm_update]
+  refine ⟨G, hG, ?_⟩
+  rw [← hface hG, ← hface hG₁, ← hface hG₂]
+  subst hGQ
+  exact TauCeti.RelGenLoop.boundary_transAt j _ _
 
 end TopCat.Hom.IsCubeLift
 
