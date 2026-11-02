@@ -37,8 +37,6 @@ invariance under a group action preserving `μ`.
 
 ## Main results
 
-* `MeasureTheory.addContent_congr_ae`: a content vanishing on null sets takes the same value at
-  sets that agree almost everywhere.
 * `MeasureTheory.AddContent.completion_apply`: the extension takes the value `m t` at a
   null-measurable set that agrees almost everywhere with a measurable set `t`.
 * `MeasureTheory.AddContent.completion_unique`, `MeasureTheory.AddContent.completion_eq`:
@@ -60,19 +58,7 @@ open scoped ENNReal Pointwise
 
 namespace MeasureTheory
 
-variable {α G : Type*} {C : Set (Set α)} {s t : Set α}
-
-/-- A content on a ring of sets which vanishes on the null sets of `C` takes the same value at
-two sets of `C` that agree almost everywhere. -/
-theorem addContent_congr_ae {F : Type*} [FunLike F (Set α) ℝ≥0∞] [OuterMeasureClass F α] {ν : F}
-    [AddCommMonoid G] {m : AddContent G C} (hC : IsSetRing C) (hm : ∀ u ∈ C, ν u = 0 → m u = 0)
-    (hs : s ∈ C) (ht : t ∈ C) (hst : s =ᵐ[ν] t) : m s = m t := by
-  -- Removing a null difference `u \ v` from `u` does not change the content.
-  have key {u v : Set α} (hu : u ∈ C) (hv : v ∈ C) (huv : ν (u \ v) = 0) : m u = m (u ∩ v) := by
-    conv_lhs => rw [← inter_union_sdiff u v]
-    rw [addContent_union hC (hC.inter_mem hu hv) (hC.sdiff_mem hu hv) disjoint_sdiff_inter.symm,
-      hm _ (hC.sdiff_mem hu hv) huv, add_zero]
-  rw [key hs ht (ae_eq_set.1 hst).1, key ht hs (ae_eq_set.1 hst).2, inter_comm]
+variable {α G : Type*} {s t : Set α}
 
 variable [MeasurableSpace α] {μ : Measure α}
 
