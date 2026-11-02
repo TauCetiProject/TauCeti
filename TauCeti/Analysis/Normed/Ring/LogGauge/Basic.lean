@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.RingTheory.Valuation.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The logarithmic gauge of a multiplicative pseudo-uniformiser
