@@ -42,7 +42,7 @@ variable {ι : Type v}
 
 -- The finite data used to enumerate graphs. Only the connected, nonempty presentations
 -- are retained, so every presentation denotes an actual connected dual graph.
-private abbrev Presentation (ι : Type v) (n m g : ℕ) :=
+private abbrev Presentation (ι : Type v) (n m g : ℕ) : Type v :=
   {d : (Fin m → Fin 2 → Fin n) × (Fin n → Fin (g + 1)) × (ι → Fin n) //
     Nonempty (Fin n) ∧ ∀ x y, Relation.ReflTransGen
       (fun x y ↦ ∃ e, (d.1 e 0 = x ∧ d.1 e 1 = y) ∨
