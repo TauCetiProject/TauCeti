@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Affinoid.ContractiveRenorming
 public import TauCeti.RingTheory.Affinoid.Pushout
 public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 
+import TauCeti.RingTheory.Affinoid.QuotientNorm
+
 /-!
 # Inverse images and intersections of affinoid subdomains
 
@@ -29,9 +31,11 @@ algebras: for any commutative square `χ ∘ φ = θ ∘ ψ` whose corner `D` is
 (`TauCeti.IsAffinoidSubdomainMap.preimage`). A map `γ : C → E` whose classical points lie over
 `U` gives a map `B → E` by the universal property of `U`, and the pushout combines the two. The
 pushout itself is the algebra `A⟨X, Y⟩ ⧸ (I, J)` of `TauCeti.AffinoidPushout`, for presentations
-`B = A⟨X⟩ ⧸ I` and `C = A⟨Y⟩ ⧸ J` extending `φ` and `ψ`. It is built from a complete ultrametric
-algebra norm on `A`; since every affinoid algebra carries one, induced from a Tate presentation,
-the two results below hold for every affinoid algebra `A` with no chosen norm.
+`B = A⟨X⟩ ⧸ I` and `C = A⟨Y⟩ ⧸ J` extending `φ` and `ψ`, and its universal property is
+`TauCeti.AffinoidPushout.existsUnique_algHom`. It is built from a complete ultrametric algebra norm
+on `A`; since every affinoid algebra carries one, the residue norm of a Tate presentation
+(`TauCeti.IsAffinoidAlgebra.residueNormedCommRing`), the two results below hold for every affinoid
+algebra `A` with no chosen norm.
 
 ## Main results
 
@@ -99,9 +103,17 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
   {A B C : Type u} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
   [CommRing B] [Algebra K B] [CommRing C] [Algebra K C]
 
+omit [IsUltrametricDist K] [CompleteSpace K] [CompleteSpace A] in
+/-- A presentation `β : A⟨X⟩ → B` extending `φ : A → B` identifies the image of `a : A` in
+`A⟨X⟩ ⧸ ker β` with `φ a`. -/
+private theorem quotientKerAlgEquivOfSurjective_algebraMap {φ : A →ₐ[K] B} {m : ℕ}
+    {β : IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) →ₐ[K] B} (hβ : Function.Surjective β)
+    (hβφ : ∀ a, β (algebraMap A _ a) = φ a) (a : A) :
+    Ideal.quotientKerAlgEquivOfSurjective hβ (algebraMap A _ a) = φ a := by
+  rw [← Ideal.Quotient.mk_algebraMap, Ideal.quotientKerAlgEquivOfSurjective_mk, hβφ]
+
 /-- The affinoid pushout `A⟨X, Y⟩ ⧸ (I, J)` of the presentations `B ≃ A⟨X⟩ ⧸ I` and
-`C ≃ A⟨Y⟩ ⧸ J` is a pushout of `B` and `C` over `A` for maps into every affinoid algebra, with no
-norm chosen on the target. -/
+`C ≃ A⟨Y⟩ ⧸ J` is a pushout of `B` and `C` over `A` for maps into every affinoid algebra. -/
 private theorem existsUnique_affinoidPushout (hA : IsAffinoidAlgebra K A) {φ : A →ₐ[K] B}
     {ψ : A →ₐ[K] C} {m n : ℕ}
     {β : IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) →ₐ[K] B} (hβ : Function.Surjective β)
@@ -117,32 +129,16 @@ private theorem existsUnique_affinoidPushout (hA : IsAffinoidAlgebra K A) {φ : 
           (Ideal.quotientKerAlgEquivOfSurjective hγ).symm.toAlgHom) = c := by
   let eB := Ideal.quotientKerAlgEquivOfSurjective hβ
   let eC := Ideal.quotientKerAlgEquivOfSurjective hγ
-  have hB (a : A) : eB (algebraMap A _ a) = φ a := by
-    rw [← Ideal.Quotient.mk_algebraMap, Ideal.quotientKerAlgEquivOfSurjective_mk, hβφ]
-  have hC (a : A) : eC (algebraMap A _ a) = ψ a := by
-    rw [← Ideal.Quotient.mk_algebraMap, Ideal.quotientKerAlgEquivOfSurjective_mk, hγψ]
-  -- Transport the problem to `E ≃ Tₖ ⧸ ker π`, which carries the residue Gauss norm.
-  obtain ⟨k, π, hπ⟩ := (isAffinoidAlgebra_iff K E).mp hE
-  let e := Ideal.quotientKerAlgEquivOfSurjective hπ
-  have hE' := isAffinoidAlgebra_tate.quotient (RingHom.ker π)
-  let b' := e.symm.toAlgHom.comp (b.comp eB.toAlgHom)
-  let c' := e.symm.toAlgHom.comp (c.comp eC.toAlgHom)
-  have hbc' (a : A) : b' (algebraMap A _ a) = c' (algebraMap A _ a) := by
-    have := AlgHom.congr_fun hbc a
-    simp only [AlgHom.comp_apply] at this
-    simp [b', c', hB, hC, this]
-  obtain ⟨δ, ⟨hδl, hδr⟩, huniq⟩ :=
-    AffinoidPushout.existsUnique_algHom (E := _ ⧸ RingHom.ker π) hA hE' b' c' hbc'
-  refine ⟨e.toAlgHom.comp δ, ⟨AlgHom.ext fun y ↦ ?_, AlgHom.ext fun z ↦ ?_⟩, fun δ' hδ' ↦ ?_⟩
-  · simpa [b'] using congr(e $(hδl (eB.symm y)))
-  · simpa [c'] using congr(e $(hδr (eC.symm z)))
-  · obtain ⟨hl, hr⟩ := hδ'
-    have : e.symm.toAlgHom.comp δ' = δ := huniq _ ⟨fun x ↦ ?_, fun y ↦ ?_⟩
-    · rw [← this]
-      ext
-      simp
-    · simp [b', eB, ← hl]
-    · simp [c', eC, ← hr]
+  obtain ⟨δ, ⟨hl, hr⟩, huniq⟩ := AffinoidPushout.existsUnique_algHom hA hE
+    (b.comp eB.toAlgHom) (c.comp eC.toAlgHom) fun a ↦ by
+      simpa [eB, eC, quotientKerAlgEquivOfSurjective_algebraMap hβ hβφ,
+        quotientKerAlgEquivOfSurjective_algebraMap hγ hγψ] using AlgHom.congr_fun hbc a
+  refine ⟨δ, ⟨AlgHom.ext fun y ↦ ?_, AlgHom.ext fun z ↦ ?_⟩,
+    fun δ' ⟨hl', hr'⟩ ↦ huniq δ' ⟨fun x ↦ ?_, fun y ↦ ?_⟩⟩
+  · simp [hl, eB]
+  · simp [hr, eC]
+  · simp [← hl', eB]
+  · simp [← hr', eC]
 
 /-- The inverse image of an affinoid subdomain, for an affinoid algebra `A` carrying a complete
 ultrametric algebra norm. -/
@@ -157,15 +153,8 @@ private theorem exists_preimage_of_normed (hA : IsAffinoidAlgebra K A) {φ : A �
     (fun hE b c hbc ↦ existsUnique_affinoidPushout hA hβ hβφ hγ hγψ hE b c hbc)⟩
   -- The square commutes: both composites are the structure map of the pushout as an `A`-algebra.
   refine AlgHom.ext fun a ↦ ?_
-  have hB : (Ideal.quotientKerAlgEquivOfSurjective hβ).symm (φ a) =
-      algebraMap A (_ ⧸ RingHom.ker β) a := by
-    rw [AlgEquiv.symm_apply_eq, ← Ideal.Quotient.mk_algebraMap,
-      Ideal.quotientKerAlgEquivOfSurjective_mk, hβφ]
-  have hC' : (Ideal.quotientKerAlgEquivOfSurjective hγ).symm (ψ a) =
-      algebraMap A (_ ⧸ RingHom.ker γ) a := by
-    rw [AlgEquiv.symm_apply_eq, ← Ideal.Quotient.mk_algebraMap,
-      Ideal.quotientKerAlgEquivOfSurjective_mk, hγψ]
-  simp [hB, hC']
+  simp [(AlgEquiv.symm_apply_eq _).mpr (quotientKerAlgEquivOfSurjective_algebraMap hβ hβφ a).symm,
+    (AlgEquiv.symm_apply_eq _).mpr (quotientKerAlgEquivOfSurjective_algebraMap hγ hγψ a).symm]
 
 end Normed
 
@@ -181,20 +170,11 @@ theorem exists_preimage (h : IsAffinoidSubdomainMap φ U) (hA : IsAffinoidAlgebr
     (hC : IsAffinoidAlgebra K C) (ψ : A →ₐ[K] C) :
     ∃ (D : Type u) (_ : CommRing D) (_ : Algebra K D) (θ : C →ₐ[K] D),
       IsAffinoidSubdomainMap θ (hC.maximalSpectrumComap ψ ⁻¹' U) := by
-  -- Give `A` the complete ultrametric algebra norm induced by a Tate presentation.
-  obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
-  let e := (Ideal.quotientKerAlgEquivOfSurjective hπ).symm
-  let _ : NormedCommRing A := NormedCommRing.induced A _ e e.injective
-  let _ : NormedAlgebra K A := NormedAlgebra.induced K A _ e
-  -- The induced norm is `‖a‖ = ‖e a‖` by construction.
-  have hn (a : A) : ‖a‖ = ‖e a‖ := rfl
-  have _ : IsUltrametricDist A :=
-    IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
-      rw [hn, hn, hn, map_add]
-      exact IsUltrametricDist.norm_add_le_max (e x) (e y)
-  let eI : A ≃ᵢ _ :=
-    { e.toEquiv with isometry_toFun := AddMonoidHomClass.isometry_of_norm e fun a ↦ (hn a).symm }
-  have _ : CompleteSpace A := eI.completeSpace_iff.mpr inferInstance
+  -- Give `A` the residue norm of a Tate presentation.
+  let _ := hA.residueNormedCommRing
+  let _ := hA.residueNormedAlgebra
+  have := hA.isUltrametricDist_residueNormedCommRing
+  have := hA.completeSpace_residueNormedCommRing
   exact exists_preimage_of_normed hA h hC ψ
 
 /-- **Intersections of affinoid subdomains.** If `φ : A → B` represents `U ⊆ Sp A` and
