@@ -43,6 +43,7 @@ absolute value is `2π` for either orientation of the circle.
 * `TauCeti.circleAngularForm`: the angular form `dθ` on `Circle`, its pullback along the
   inclusion.
 * `TauCeti.circleAngularClosedForm`: `dθ` as a smooth closed form.
+* `TauCeti.mextDeriv_circleAngularForm`: `dθ` is closed.
 * `TauCeti.pathIntegral_circleAngularForm_circleExp`: `∫_{exp (· i)} dθ = b − a` over `a..b`.
 * `TauCeti.circleAngularClosedForm_notMem_exactForms`: `dθ` is not exact.
 * `TauCeti.deRhamCohomology.mk_circleAngularClosedForm_ne_zero`: `[dθ] ≠ 0` in `H¹_dR(S¹)`.
@@ -114,6 +115,10 @@ theorem coe_circleAngularClosedForm :
     ((circleAngularClosedForm : SmoothForm (𝓡 1) Circle ℝ 1) : RoughForm (𝓡 1) Circle ℝ 1) =
       circleAngularForm :=
   (rfl)
+
+/-- The angular form is closed: `d(dθ) = 0`. -/
+theorem mextDeriv_circleAngularForm : mextDeriv circleAngularForm = 0 :=
+  (mem_closedForms (𝓡 1) _).mp circleAngularClosedForm.2
 
 /-- The angular form takes the value `1` on the velocity of the standard parametrization
 `t ↦ exp (t i)` of the circle. -/
