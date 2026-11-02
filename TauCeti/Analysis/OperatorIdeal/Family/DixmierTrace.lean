@@ -57,8 +57,8 @@ superadditivity `K_N(S) + K_N(T) ≤ K_(2N)(S + T)` of the Ky Fan sums of positi
 * `TauCeti.dixmierTrace_eq_zero_of_mem_traceClass`: `Tr_ω` vanishes on trace-class operators.
 * `TauCeti.dixmierTrace_eq_one_of_singularValue_eq`: approximation numbers `1 / (j + 1)` give
   Dixmier trace `1`.
-* `TauCeti.dixmierTrace_diagonalCLM_eq_one`: the diagonal operator on `ℓ²` with coefficients
-  `1 / (j + 1)` has Dixmier trace `1`.
+* `TauCeti.dixmierTrace_diagonalCLM_eq_one`: a diagonal operator on `ℓ²` whose coefficients have
+  modulus `1 / (j + 1)` has Dixmier trace `1`.
 
 ## References
 
@@ -281,17 +281,15 @@ theorem dixmierTrace_eq_one_of_singularValue_eq {T : E →L[𝕜] F}
     calc (harmonic (N + 1) : ℝ) ≤ 1 + Real.log (N + 2) := hH
       _ = _ := by rw [add_mul, one_mul, inv_mul_cancel₀ (hpos N).ne', add_comm]
 
-/-- **A Dixmier trace equal to `1`.** On `ℓ²(ℕ, 𝕜)`, the diagonal operator with coefficients
-`1 / (j + 1)` has Dixmier trace `1` for every generalized limit `ω`. -/
-theorem dixmierTrace_diagonalCLM_eq_one (d : ℓ^∞(ℕ, 𝕜)) (hd : ∀ j, d j = ((j : 𝕜) + 1)⁻¹) :
+/-- **A Dixmier trace equal to `1`.** On `ℓ²(ℕ, 𝕜)`, a diagonal operator whose coefficients have
+modulus `1 / (j + 1)` has Dixmier trace `1` for every generalized limit `ω`. -/
+theorem dixmierTrace_diagonalCLM_eq_one (d : ℓ^∞(ℕ, 𝕜)) (hd : ∀ j, ‖d j‖ = ((j : ℝ) + 1)⁻¹) :
     dixmierTrace ω (lp.diagonalCLM (p := 2) d) = 1 := by
-  have hnorm (j : ℕ) : ‖d j‖ = ((j : ℝ) + 1)⁻¹ := by
-    simpa [hd] using RCLike.norm_natCast (K := 𝕜) (j + 1)
   have hanti : Antitone fun j ↦ ‖d j‖ := fun i j hij ↦ by
-    simp only [hnorm]
+    simp only [hd]
     gcongr
   refine dixmierTrace_eq_one_of_singularValue_eq ω fun j ↦ ?_
   rw [lp.singularValue_diagonalCLM d hanti, ← NNReal.coe_inj]
-  simp [hnorm]
+  simp [hd]
 
 end TauCeti
