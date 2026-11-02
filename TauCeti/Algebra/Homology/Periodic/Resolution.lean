@@ -55,6 +55,9 @@ resolution of its cokernel (Eisenbud, Section 5).
   positive degrees when `Q` is acyclic, and its augmentation by a cokernel `ε` is exact in
   degree `0`.
 * `TauCeti.PeriodicComplex.projectiveResolution_π_f_zero`: the augmentation is `ε`.
+* `ChainComplex.hasPeriodicTail_iff`, `ChainComplex.HasPeriodicTail.of_iso_resolutionComplex`,
+  `ChainComplex.HasPeriodicTail.pos`, `ChainComplex.HasPeriodicTail.exists_iso`: constructing
+  and taking apart a periodic tail.
 * `ChainComplex.HasPeriodicTail.mono`, `ChainComplex.HasPeriodicTail.of_iso`: a periodic tail
   persists after longer preperiods and along isomorphisms.
 * `ChainComplex.HasPeriodicTail.nonempty_truncate_iterate_iso`: after its preperiod, a complex
@@ -396,6 +399,31 @@ def HasPeriodicTail (K : ChainComplex C ℕ) (n p : ℕ) : Prop :=
     Nonempty (truncate.obj^[p] K ≅ TauCeti.PeriodicComplex.resolutionComplex Q j)
 
 variable {K L : ChainComplex C ℕ} {n p q : ℕ}
+
+/-- Unfolds `ChainComplex.HasPeriodicTail`, which is not exposed outside this module. -/
+theorem hasPeriodicTail_iff : K.HasPeriodicTail n p ↔
+    0 < n ∧ ∃ (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) (j : ℤ),
+      Nonempty (truncate.obj^[p] K ≅ TauCeti.PeriodicComplex.resolutionComplex Q j) :=
+  Iff.rfl
+
+/-- A complex whose first `p` terms are followed by the unfolding of a periodic complex of
+positive period `n` has a periodic tail of period `n` after `p` terms. -/
+theorem HasPeriodicTail.of_iso_resolutionComplex (hn : 0 < n)
+    {Q : HomologicalComplex C (ComplexShape.up (ZMod n))} {j : ℤ}
+    (e : truncate.obj^[p] K ≅ TauCeti.PeriodicComplex.resolutionComplex Q j) :
+    K.HasPeriodicTail n p :=
+  ⟨hn, Q, j, ⟨e⟩⟩
+
+/-- The period of a periodic tail is positive. -/
+theorem HasPeriodicTail.pos (h : K.HasPeriodicTail n p) : 0 < n :=
+  h.1
+
+/-- After its preperiod, a complex with a periodic tail is the unfolding of a periodic
+complex. -/
+theorem HasPeriodicTail.exists_iso (h : K.HasPeriodicTail n p) :
+    ∃ (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) (j : ℤ),
+      Nonempty (truncate.obj^[p] K ≅ TauCeti.PeriodicComplex.resolutionComplex Q j) :=
+  h.2
 
 /-- The unfolding of a periodic complex in degrees at most `j` is periodic from the start. -/
 theorem _root_.TauCeti.PeriodicComplex.resolutionComplex_hasPeriodicTail [NeZero n]
