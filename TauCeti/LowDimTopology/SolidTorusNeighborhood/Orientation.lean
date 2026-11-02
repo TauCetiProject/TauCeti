@@ -155,13 +155,6 @@ section Existence
 open Function Set Topology ComplexConjugate
 open scoped Manifold RealInnerProductSpace
 
-/-- The vectors `(1, 0)`, `(i, 0)` and `(0, 1)` of `ℂ × ℝ` are linearly independent. -/
-private theorem linearIndependent_complexProdReal :
-    LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
-  refine Fintype.linearIndependent_iff.2 fun g hg i => ?_
-  simp [Fin.sum_univ_three, Prod.ext_iff, Complex.ext_iff] at hg
-  fin_cases i <;> simp [hg]
-
 /-- If the reading of `Φ` at its core point has an injective derivative `L` at the origin, then
 the volume form does not vanish on the outward normal `Φ (0, 1)` followed by the images under `L`
 of `(1, 0)`, `(i, 0)` and `(0, 1)`: the reading stays on the unit sphere, so `L` takes values in
@@ -182,8 +175,13 @@ private theorem volumeForm_ne_zero_of_hasFDerivAt {L : ℂ × ℝ →L[ℝ] E}
   -- The four vectors are linearly independent.
   have hli : LinearIndependent ℝ ![p, L (1, 0), L (I, 0), L (0, 1)] := by
     have h₃ : LinearIndependent ℝ ![L (1, 0), L (I, 0), L (0, 1)] := by
-      convert linearIndependent_complexProdReal.map' (L : ℂ × ℝ →ₗ[ℝ] E)
-        (LinearMap.ker_eq_bot.2 hLinj) using 1
+      -- `(1, 0)`, `(i, 0)`, `(0, 1)` is the basis `Complex.basisOneI × {1}` of `ℂ × ℝ`.
+      have hb : LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
+        convert (basisOneI.prod (Basis.singleton (Fin 1) ℝ)).linearIndependent.comp
+          _ finSumFinEquiv.symm.injective using 1
+        ext i : 1
+        fin_cases i <;> simp [finSumFinEquiv, Fin.addCases]
+      convert hb.map' (L : ℂ × ℝ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hLinj) using 1
       ext i
       fin_cases i <;> rfl
     refine h₃.finCons fun hp ↦ ?_

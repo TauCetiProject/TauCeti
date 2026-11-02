@@ -216,6 +216,14 @@ theorem SolidTorus.coe_conj_fst (q : SolidTorus) :
 theorem SolidTorus.conj_snd (q : SolidTorus) : (SolidTorus.conj q).2 = q.2 :=
   (rfl)
 
+@[simp]
+theorem SolidTorus.symm_conj : SolidTorus.conj.symm = SolidTorus.conj :=
+  (rfl)
+
+@[simp]
+theorem SolidTorus.conj_conj (q : SolidTorus) : SolidTorus.conj (SolidTorus.conj q) = q :=
+  SolidTorus.conj.symm_apply_apply q
+
 /-- The reading of `Φ ∘ SolidTorus.conj` at the core is the reading of `Φ` precomposed with
 `(u, t) ↦ (conj u, t)`. -/
 theorem SolidTorus.coreReading_comp_conj {F : Type*} [Zero F] (Φ : SolidTorus → F) (v : ℂ × ℝ) :
@@ -305,9 +313,9 @@ theorem comp_conj (h : IsSolidTorusNeighborhood f Φ) :
     ext <;> simp
   isOpen_image := by
     convert h.isOpen_image using 1
-    rw [image_comp, SolidTorus.conj.image_eq_preimage_symm]
+    rw [image_comp, SolidTorus.conj.image_eq_preimage_symm, SolidTorus.symm_conj]
     ext q
-    simp [SolidTorus.conj]
+    simp
 
 /-- In a Hausdorff ambient space, the frontier of the image of the open solid torus is the image
 of the boundary torus `{w | ‖w‖ = 1} × S¹`. This set is also the frontier of the exterior of the
