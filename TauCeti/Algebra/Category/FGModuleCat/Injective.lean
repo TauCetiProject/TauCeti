@@ -39,7 +39,8 @@ instance _root_.FGModuleCat.forget₂_preservesMonomorphisms :
     (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms where
   preserves {A B} f _ := by
     refine (ModuleCat.mono_iff_injective _).mpr <|
-      (injective_iff_map_eq_zero _).mpr fun (a : A) (ha : f.hom.hom a = 0) ↦ ?_
+      (injective_iff_map_eq_zero _).mpr fun a ha ↦ ?_
+    simp only [forget₂, HasForget₂.forget₂, ObjectProperty.ι_map] at ha
     -- Test `f` on the inclusion of the cyclic submodule `R ∙ a`, which is finitely generated.
     let i : FGModuleCat.of R (R ∙ a) ⟶ A := ObjectProperty.homMk (ModuleCat.ofHom (R ∙ a).subtype)
     have hi : i = 0 := (cancel_mono f).mp <| by
