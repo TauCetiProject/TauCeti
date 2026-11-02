@@ -52,10 +52,10 @@ vanish.
 
 * `TauCeti.AuslanderReitenTranspose.extOneToModule_homBoundary` and
   `TauCeti.AuslanderReitenTranspose.doubleDualToExtTwo_apply`: formulas for the two outer maps.
-* `TauCeti.AuslanderReitenTranspose.injective_extOneToModule`,
+* `TauCeti.AuslanderReitenTranspose.extOneToModule_injective`,
   `TauCeti.AuslanderReitenTranspose.exact_extOneToModule_opDualEval`,
   `TauCeti.AuslanderReitenTranspose.exact_opDualEval_doubleDualToExtTwo` and
-  `TauCeti.AuslanderReitenTranspose.surjective_doubleDualToExtTwo`: exactness of the
+  `TauCeti.AuslanderReitenTranspose.doubleDualToExtTwo_surjective`: exactness of the
   Auslander–Bridger sequence.
 * `TauCeti.opDualEval_injective_iff_ext_one_eq_zero`: `M` is torsionless if and only if
   `Ext¹(Tr M, A) = 0`.
@@ -269,7 +269,7 @@ theorem AuslanderReitenTranspose.extOneToModule_homBoundary (hexact : Function.E
   rw [extOneToModule_homBoundary', rangeDualToModule_apply, ← eq_rangeDualPreimage hx]
 
 /-- The first map of the Auslander–Bridger sequence is injective. -/
-theorem AuslanderReitenTranspose.injective_extOneToModule (hexact : Function.Exact p π) :
+theorem AuslanderReitenTranspose.extOneToModule_injective (hexact : Function.Exact p π) :
     Function.Injective (extOneToModule.{w} p π hexact) := by
   refine (injective_iff_map_eq_zero _).2 fun e he ↦ ?_
   obtain ⟨g, rfl⟩ :=
@@ -319,11 +319,11 @@ theorem AuslanderReitenTranspose.doubleDualToExtTwo_apply (hexact : Function.Exa
   (rfl)
 
 /-- The last map of the Auslander–Bridger sequence is surjective. -/
-theorem AuslanderReitenTranspose.surjective_doubleDualToExtTwo (hexact : Function.Exact p π)
+theorem AuslanderReitenTranspose.doubleDualToExtTwo_surjective (hexact : Function.Exact p π)
     (hπ : Function.Surjective π) :
     Function.Surjective (doubleDualToExtTwo.{w} p π hexact hπ) := fun e ↦ by
   obtain ⟨x, rfl⟩ :=
-    (bijective_precomp_extClass (AuslanderReitenTranspose.shortComplex_shortExact p) _ 0).2 e
+    (precomp_extClass_bijective (AuslanderReitenTranspose.shortComplex_shortExact p) _ 0).2 e
   obtain ⟨g, rfl⟩ :=
     homBoundary_surjective ℤ (AuslanderReitenTranspose.dualShortComplex_shortExact hexact hπ) _ x
   exact ⟨g.hom, AuslanderReitenTranspose.doubleDualToExtTwo_apply hexact hπ _⟩
@@ -337,7 +337,7 @@ theorem AuslanderReitenTranspose.exact_opDualEval_doubleDualToExtTwo
   have hrange := map_range_opDualEval A π
   rw [LinearMap.range_eq_top.2 hπ, Submodule.map_top] at hrange
   rw [Set.mem_range, ← LinearMap.mem_range, hrange, doubleDualToExtTwo_apply]
-  rw [(bijective_precomp_extClass (shortComplex_shortExact p) _ 0).1.eq_iff' (map_zero _),
+  rw [(precomp_extClass_bijective (shortComplex_shortExact p) _ 0).1.eq_iff' (map_zero _),
     ← LinearMap.mem_ker, ker_homBoundary]
   exact ⟨fun ⟨h, hh⟩ ↦ ⟨h.hom, congrArg ModuleCat.Hom.hom hh⟩,
     fun ⟨h, hh⟩ ↦ ⟨ModuleCat.ofHom h, ModuleCat.hom_ext hh⟩⟩
@@ -350,7 +350,7 @@ theorem opDualEval_injective_iff_ext_one_eq_zero (hexact : Function.Exact p π)
     Function.Injective (opDualEval A M) ↔
       ∀ e : Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 1,
         e = 0 := by
-  have hα := AuslanderReitenTranspose.injective_extOneToModule.{w} hexact
+  have hα := AuslanderReitenTranspose.extOneToModule_injective.{w} hexact
   have hex := AuslanderReitenTranspose.exact_extOneToModule_opDualEval.{w} hexact hπ
   refine ⟨fun hev e ↦ hα ?_, fun h ↦ (injective_iff_map_eq_zero _).2 fun m hm ↦ ?_⟩
   · rw [map_zero]
@@ -366,7 +366,7 @@ theorem opDualEval_surjective_iff_ext_two_eq_zero (hexact : Function.Exact p π)
     Function.Surjective (opDualEval A M) ↔
       ∀ e : Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 2,
         e = 0 := by
-  have hβ := AuslanderReitenTranspose.surjective_doubleDualToExtTwo.{w} hexact hπ
+  have hβ := AuslanderReitenTranspose.doubleDualToExtTwo_surjective.{w} hexact hπ
   have hex := AuslanderReitenTranspose.exact_opDualEval_doubleDualToExtTwo.{w} hexact hπ
   refine ⟨fun hev e ↦ ?_, fun h g ↦ (hex g).1 (h _)⟩
   obtain ⟨g, rfl⟩ := hβ e
