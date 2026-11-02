@@ -97,13 +97,6 @@ theorem map_sum_dirichletMeasure [DecidableEq ι] {a : ι → ℝ} (ha : ∀ i, 
   refine Measure.map_congr (.of_forall fun x ↦ ?_)
   exact congrArg ((∑ i ∈ s, x i) / ·) (Finset.sum_add_sum_compl s x).symm
 
-/-- For positive concentrations on at least two coordinates, the total concentration of all
-coordinates other than a given one is positive. -/
-theorem sum_filter_ne_pos [DecidableEq ι] [Nontrivial ι] {a : ι → ℝ}
-    (ha : ∀ i, 0 < a i) (i : ι) : 0 < ∑ j with j ≠ i, a j := by
-  obtain ⟨j, hj⟩ := exists_ne i
-  exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
-
 /-- Under a Dirichlet law with positive concentration parameters, a coordinate has the Beta law
 whose first parameter is that coordinate's concentration parameter and whose second parameter is
 the total of the remaining ones. -/

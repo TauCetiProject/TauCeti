@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Sum.Filter
 public import TauCeti.Probability.Distributions.Dirichlet.Marginal
 public import TauCeti.Probability.Moments.Covariance
 public import TauCeti.Geometry.Convex.ConvexSpace.NNReal
@@ -130,7 +131,8 @@ theorem integral_eval_dirichletMeasure (ha : ∀ i, 0 < a i) (i : ι) :
       Fintype.sum_subsingleton a i, div_self (ha i).ne']
     simp
   · rw [← integral_map (f := fun x : ℝ ↦ x) (by fun_prop) aestronglyMeasurable_id,
-      map_eval_dirichletMeasure ha i, integral_id_betaMeasure (ha i) (sum_filter_ne_pos ha i),
+      map_eval_dirichletMeasure ha i,
+      integral_id_betaMeasure (ha i) (Finset.sum_filter_ne_pos ha i),
       Finset.filter_ne',
       Finset.add_sum_erase _ a (Finset.mem_univ i)]
 

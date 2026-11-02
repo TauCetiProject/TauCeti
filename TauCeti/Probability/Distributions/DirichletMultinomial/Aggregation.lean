@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Sum.Filter
 public import TauCeti.Probability.Distributions.DirichletMultinomial.Basic
 public import TauCeti.Probability.Distributions.Dirichlet.Aggregation
 public import TauCeti.Probability.Distributions.Dirichlet.Marginal
@@ -109,7 +110,7 @@ theorem map_eval_dirichletMultinomialMeasure [DecidableEq ι] [Nontrivial ι]
     ae_extendWeights_dirichletMeasure ha (StdSimplex.single (Classical.arbitrary ι))
   rw [dirichletMultinomialMeasure_eq_bind n p hweights,
     Measure.map_bind hkernel.aemeasurable (.of_discrete),
-    betaBinomialMeasure_eq_bind (ha i) (sum_filter_ne_pos ha i),
+    betaBinomialMeasure_eq_bind (ha i) (Finset.sum_filter_ne_pos ha i),
     ← map_eval_dirichletMeasure ha i,
     Measure.bind_map (by fun_prop) (by fun_prop)]
   apply Measure.bind_congr_right
