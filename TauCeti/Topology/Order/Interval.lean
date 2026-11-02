@@ -12,6 +12,8 @@ import Mathlib.Topology.Order.Compact
 # Intervals in order topologies
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
+Each point of the open interval between two endpoints that avoids a closed set is interior to a
+closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
@@ -24,6 +26,9 @@ when the limit is finite.
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
+  outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
+  interior is disjoint from `s`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
@@ -50,6 +55,22 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
+is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
+theorem exists_Icc_subset_uIcc_disjoint {α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] [DenselyOrdered α] {a b t : α} {s : Set α}
+    (hs : IsClosed s) (ht : t ∈ Ioo (min a b) (max a b)) (hts : t ∉ s) :
+    ∃ c d : α, t ∈ Ioo c d ∧ Icc c d ⊆ uIcc a b ∧ Disjoint s (Ioo c d) := by
+  have hmem : Ioo (min a b) (max a b) \ s ∈ 𝓝 t := (isOpen_Ioo.sdiff hs).mem_nhds ⟨ht, hts⟩
+  obtain ⟨l, u, ⟨hlt, htu⟩, hsub⟩ :=
+    (mem_nhds_iff_exists_Ioo_subset' ⟨_, ht.1⟩ ⟨_, ht.2⟩).mp hmem
+  obtain ⟨c, hlc, hct⟩ := exists_between hlt
+  obtain ⟨d, htd, hdu⟩ := exists_between htu
+  have hcd : Icc c d ⊆ Ioo (min a b) (max a b) \ s :=
+    fun x hx => hsub ⟨hlc.trans_le hx.1, hx.2.trans_lt hdu⟩
+  refine ⟨c, d, ⟨hct, htd⟩, fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hcd hx).1),
+    disjoint_right.mpr fun x hx => (hcd (Ioo_subset_Icc_self hx)).2⟩
 
 /-- A nonempty compact subset `K` of an open interval `Ioo a b` lies in the interior `Ioo c d` of
 a closed interval `Icc c d ⊆ Ioo a b`. This is the interval form of `exists_compact_between`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.AbsolutelyContinuous
 
@@ -29,7 +29,7 @@ of a closed curve is `1`, so its winding number is an integer.
 
 * `TauCeti.Contour.exists_int_windingNumber_of_closed` — the generalized winding number of a closed
   curve is an integer.
-* `TauCeti.Contour.IsPiecewiseC1On.exists_int_windingNumber` — the same for a closed piecewise-`C¹`
+* `TauCeti.IsPiecewiseC1On.exists_int_windingNumber` — the same for a closed piecewise-`C¹`
   curve, whose regularity supplies the raw hypotheses on its own.
 
 ## Provenance
@@ -67,7 +67,7 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
 avoids `w`, the winding number about `w` is an integer. Piecewise-`C¹` regularity supplies the
 continuity, differentiability and integrability hypotheses of
 `exists_int_windingNumber_of_closed`. -/
-theorem IsPiecewiseC1On.exists_int_windingNumber {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
+theorem _root_.TauCeti.IsPiecewiseC1On.exists_int_windingNumber {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
     (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w) :
     ∃ n : ℤ, windingNumber γ a b w = n := by

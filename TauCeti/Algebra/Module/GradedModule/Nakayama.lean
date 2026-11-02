@@ -141,6 +141,24 @@ theorem subsingleton_of_positive_smul_top_eq_top (b : ℤ)
     have hx : x ∈ (⊥ : Submodule A M) := hbot.symm ▸ Submodule.mem_top
     simpa using hx
 
+/-- **Graded Nakayama below a degree.** In a bounded-below graded module, if every homogeneous
+piece below degree `e` lies in `A₊ M`, then all those pieces vanish. -/
+theorem piece_eq_bot_of_piece_le_positive_smul_top (b : ℤ) (hbelow : ∀ p < b, G.piece p = ⊥)
+    {e : ℤ} (h : ∀ p < e, G.piece p ≤ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M))
+    {p : ℤ} (hp : p < e) : G.piece p = ⊥ := by
+  induction hn : (p - b).toNat using Nat.strong_induction_on generalizing p with
+  | h n ih =>
+    by_cases hpb : p < b
+    · exact hbelow p hpb
+    refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
+    have hU := decompose_mem_of_mem_positive_smul_top 𝒜 (⊥ : Submodule A M) (p := p)
+      (fun q hq y hy ↦ by
+        have hq' : G.piece q = ⊥ := if hqb : q < b then hbelow q hqb else
+          ih (q - b).toNat (by omega) (hq.trans hp) rfl
+        rw [hq'] at hy
+        simpa using hy) (h p hp hx)
+    rwa [decompose_of_mem_same G.piece hx, Submodule.mem_bot] at hU
+
 /-- The positive-degree action `A₊ M` is a homogeneous submodule. -/
 theorem isHomogeneous_positive_smul_top :
     SetLike.IsHomogeneous G.piece ((⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) := by

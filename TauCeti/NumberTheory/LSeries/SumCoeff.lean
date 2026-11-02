@@ -37,6 +37,9 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
   the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
+* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound` and
+  `TauCeti.LSeries.norm_mul_integral_le_of_bound`: uniformly bounded partial sums give an
+  absolutely convergent integral and the explicit bound `C * ‖s‖ / s.re` on `Re(s) > 0`.
 * `TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO`: if instead the partial
   sums are `κ n + O(n ^ r)` with `0 ≤ r ≤ 1`, then `LSeries f s - κ / (s - 1)` continues
   holomorphically from `Re s > 1` to `Re s > r`. When `r < 1` this half-plane contains `s = 1`, so
@@ -110,6 +113,58 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
       (by linarith)).comp s differentiableAt_id.neg
   simp_rw [integral_Ioi_one_eq_mellin]
   exact (differentiableAt_id.mul hmellin).differentiableWithinAt
+
+private theorem ae_norm_sum_mul_cpow_le (f : ℕ → ℂ) {C : ℝ}
+    (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) (s : ℂ) :
+    ∀ᵐ (t : ℝ) ∂volume.restrict (Set.Ioi (1 : ℝ)),
+      ‖(∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1))‖ ≤
+        C * t ^ (-(s.re + 1)) := by
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
+  simp only [neg_re, add_re, one_re]
+  exact mul_le_mul_of_nonneg_right (hf _) (Real.rpow_nonneg (zero_lt_one.trans ht).le _)
+
+/-- Uniformly bounded partial sums give an absolutely convergent partial-summation integral
+on `Re(s) > 0`. -/
+theorem integrableOn_sum_mul_cpow_of_bound (f : ℕ → ℂ) {C : ℝ}
+    (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
+    IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
+      (Set.Ioi 1) := by
+  have hloc : LocallyIntegrableOn
+      (fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1)) * (∑ k ∈ Icc 1 ⌊t⌋₊, f k)) (Set.Ici 1) := by
+    refine locallyIntegrableOn_mul_sum_Icc f zero_le_one
+      (g := fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1))) ?_
+    refine ContinuousOn.locallyIntegrableOn (fun t ht ↦ ?_) measurableSet_Ici
+    exact (continuousAt_ofReal_cpow_const _ _
+      (.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
+  exact ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
+    zero_lt_one).const_mul C).mono'
+      (by simpa only [mul_comm] using
+        (hloc.mono_set Set.Ioi_subset_Ici_self).aestronglyMeasurable)
+      (ae_norm_sum_mul_cpow_le f hf s)
+
+/-- If partial sums are bounded by `C`, their partial-summation continuation has norm at most
+`C * ‖s‖ / s.re` on `Re(s) > 0`. -/
+theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
+    (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
+    ‖s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
+      (t : ℂ) ^ (-(s + 1))‖ ≤ C * ‖s‖ / s.re := by
+  have hbound : ‖∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
+      (t : ℂ) ^ (-(s + 1))‖ ≤ C / s.re := by
+    calc
+      _ ≤ ∫ t in Set.Ioi (1 : ℝ), C * t ^ (-(s.re + 1)) :=
+        norm_integral_le_of_norm_le
+          ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
+            zero_lt_one).const_mul C) (ae_norm_sum_mul_cpow_le f hf s)
+      _ = C / s.re := by
+        rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) zero_lt_one,
+          Real.one_rpow]
+        congr 1
+        ring
+  rw [norm_mul]
+  calc
+    _ ≤ ‖s‖ * (C / s.re) := mul_le_mul_of_nonneg_left hbound (norm_nonneg _)
+    _ = C * ‖s‖ / s.re := by ring
 
 /-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` with `0 ≤ r ≤ 1` and `LSeries f` converges absolutely on
