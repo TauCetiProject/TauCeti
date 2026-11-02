@@ -45,7 +45,8 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
     legendreEc (2 * √k / (1 + k)) =
       (2 * legendreEc k - (1 - k ^ 2) * legendreK k) / (1 + k) := by
   rcases hk₀.eq_or_lt with rfl | hk₀
-  · simp; ring
+  · simp only [sqrt_zero, mul_zero, zero_div, add_zero, legendreEc_zero, legendreK_zero]
+    ring
   have hp : 0 < 1 + k := by linarith
   have hm : 0 < 1 - k := by linarith
   have hk : k ^ 2 < 1 := by nlinarith
@@ -73,11 +74,13 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
   have hderiv := hleft.unique (hright.congr_of_eventuallyEq heq)
   rw [legendreK_two_mul_sqrt_div_one_add hk₀.le hk₁, hsq] at hderiv
   have hnonzero : 1 - k ^ 2 ≠ 0 := by linarith
-  field_simp at hderiv ⊢
-  rw [sq_sqrt hk₀.le] at hderiv
   simp only [id_eq] at hderiv
+  field_simp at hderiv ⊢
+  -- Clearing the modulus derivative denominators multiplies the desired identity by
+  -- k * (1 - k ^ 2), which is nonzero on the current domain 0 < k < 1.
   apply mul_left_cancel₀ (mul_ne_zero hk₀.ne' hnonzero)
-  linear_combination hderiv
+  linear_combination hderiv +
+    (2 * (1 - k ^ 2) * (legendreEc k - (1 - k) * legendreK k)) * (sq_sqrt hk₀.le)
 
 /-- **Landen's transformation** of the complete integral of the second kind, descending form:
 for `k² < 1`, with `k' = √(1 - k²)` and `k₁ = (1 - k') / (1 + k')`,
@@ -108,6 +111,8 @@ theorem legendreEc_eq_one_add_mul_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     · rw [h, legendreEc_neg]
   rw [harg] at hE
   field_simp at hE hK ⊢
+  -- The ascending identities at (1 - c) / (1 + c) have denominator 1 + c.
+  -- Multiply the target by this positive factor to combine the cleared identities.
   apply mul_left_cancel₀ hp.ne'
   linear_combination hE / 2 + c * hK
 
