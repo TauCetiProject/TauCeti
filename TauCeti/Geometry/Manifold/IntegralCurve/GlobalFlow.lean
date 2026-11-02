@@ -22,7 +22,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
 ## Main declarations
 
-* `TauCeti.globalFlow`: the flow of a complete `C¹` vector field.
+* `TauCeti.globalFlow`: the flow of a complete `C¹` vector field;
+  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band.
@@ -79,6 +80,11 @@ include hv hcomplete
 theorem globalFlow_apply (t : ℝ) (x : M) :
     globalFlow v hv hcomplete t x = maximalIntegralCurve v x t := by
   rw [globalFlow]
+
+/-- For a complete `C¹` vector field, the maximal flow `flowOf v` is the global flow. -/
+theorem flowOf_eq_globalFlow : flowOf v = globalFlow v hv hcomplete := by
+  funext t x
+  rw [flowOf_apply, globalFlow_apply]
 
 /-- The orbits of the flow are integral curves of the field. -/
 theorem isMIntegralCurve_globalFlow (x : M) :

@@ -308,19 +308,6 @@ theorem continuous_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
           Real.exp_log (one_pos.trans hc)]
       exact this ▸ isOpen_interior.preimage (hcont _)
 
-/-- The sublevel sets `{r ≤ c}` of the radial coordinate of a completion are compact. -/
-theorem isCompact_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (c : ℝ) :
-    IsCompact {x | liouvilleRadialCoordinate Z W x ≤ c} := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
-  rcases lt_or_ge c 1 with hc | hc
-  · have : {x | liouvilleRadialCoordinate Z W x ≤ c} = ∅ := eq_empty_of_forall_notMem
-      fun x hx ↦ (hc.trans_le (one_le_liouvilleRadialCoordinate Z W x)).not_ge hx
-    exact this ▸ isCompact_empty
-  · -- The preimage of `W` under `ψ_{-log c}` is its image under the inverse map `ψ_{log c}`.
-    rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc, funext (hψ _), ← ψ.image_eq_preimage_symm]
-    exact h.isCompact.image (ψ.continuous continuous_const continuous_id)
-
 /-- **The truncations of a completion are Liouville domains.** For `c ≥ 1`, the sublevel set
 `{r ≤ c}` of the radial coordinate of a completion of the Liouville domain `W`, which is the image
 of `W` under the Liouville flow for time `log c`, is a Liouville domain for the same form and
@@ -330,6 +317,16 @@ theorem isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCom
     IsLiouvilleDomain ω α {x | liouvilleRadialCoordinate Z W x ≤ c} := by
   rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc]
   exact h.preimage_flowOf hZ (h.isCompleteVectorField hZ) _
+
+/-- The sublevel sets `{r ≤ c}` of the radial coordinate of a completion are compact. -/
+theorem isCompact_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (c : ℝ) :
+    IsCompact {x | liouvilleRadialCoordinate Z W x ≤ c} := by
+  rcases lt_or_ge c 1 with hc | hc
+  · have : {x | liouvilleRadialCoordinate Z W x ≤ c} = ∅ := eq_empty_of_forall_notMem
+      fun x hx ↦ (hc.trans_le (one_le_liouvilleRadialCoordinate Z W x)).not_ge hx
+    exact this ▸ isCompact_empty
+  · exact (h.isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le hZ hc).isCompact
 
 /-- For `c > 1`, a Liouville domain lies in the interior of the truncation `{r ≤ c}` of its
 completion. -/
