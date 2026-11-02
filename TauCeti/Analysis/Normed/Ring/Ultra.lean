@@ -41,11 +41,7 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
   `TauCeti.norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le`,
   `TauCeti.norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le`: the maps `t ↦ t / (1 - t)²`,
   `t ↦ t² / (1 - t)³` and `t ↦ -t / (1 - t)³` are `1`-Lipschitz on the open unit ball of an
-  ultrametric field; `TauCeti.norm_sub_le_of_eq_mul_div` is the common estimate behind them, and
-  `TauCeti.norm_one_sub_cube_div_sub_one_sub_cube_div_le`: the map `v ↦ (1 - v)³ / v` is
-  `1`-Lipschitz on the unit circle.
-* `TauCeti.norm_tsum_sub_tsum_add_tsum_sub_tsum_le`: a series at `u` and a series at `u⁻¹` of
-  `1`-Lipschitz terms together depend on `u` in a `‖q‖`-Lipschitz way on the unit circle.
+  ultrametric field; `TauCeti.norm_sub_le_of_eq_mul_div` is the common estimate behind them.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
@@ -210,48 +206,6 @@ theorem norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le {t t' : K} (ht : �
   have h₃ : t ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht.le
   have h₄ : t' ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ht'.le
   apply_rules [neg_mem, add_mem, sub_mem, mul_mem, one_mem]
-
-/-- The map `v ↦ (1 - v)³ / v` is `1`-Lipschitz on the unit circle of an ultrametric field. -/
-theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 1) (hw : ‖w‖ = 1) :
-    ‖(1 - v) ^ 3 / v - (1 - w) ^ 3 / w‖ ≤ ‖v - w‖ := by
-  have h₀ : v ≠ 0 := norm_ne_zero_iff.mp (by rw [hv]; exact one_ne_zero)
-  have h₀' : w ≠ 0 := norm_ne_zero_iff.mp (by rw [hw]; exact one_ne_zero)
-  have e : (1 - v) ^ 3 / v - (1 - w) ^ 3 / w =
-      (w - v) * (1 - v * w - v * w - v * w + v * w * (v + w)) / (v * w) := by
-    field_simp
-    ring
-  have h₃ : v ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hv.le
-  have h₄ : w ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hw.le
-  have hP : 1 - v * w - v * w - v * w + v * w * (v + w) ∈ Subring.unitClosedBall K := by
-    apply_rules [add_mem, sub_mem, mul_mem, one_mem]
-  rw [e, norm_div, norm_mul, norm_mul, hv, hw, mul_one, div_one, norm_sub_rev]
-  exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp hP)
-
-omit [IsUltrametricDist K] in
-/-- A one-sided series `∑_{n ≥ 1} f(qⁿ u)` at `u` and one `∑_{n ≥ 1} g(qⁿ u⁻¹)` at `u⁻¹`, with
-values in an ultrametric group, together depend on `u` in a `‖q‖`-Lipschitz way on the unit
-circle when their terms are `1`-Lipschitz on the open unit ball and `‖q‖ < 1`. Only the values
-need to be ultrametric. -/
-theorem norm_tsum_sub_tsum_add_tsum_sub_tsum_le {E : Type*} [NormedAddCommGroup E]
-    [IsUltrametricDist E] {q u u' : K} (hq : ‖q‖ < 1) (hu : ‖u‖ = 1) (hu' : ‖u'‖ = 1)
-    (f g : K → E) (hf : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖)
-    (hg : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖g t - g t'‖ ≤ ‖t - t'‖)
-    (hfs : ∀ w : K, Summable fun n : ℕ ↦ f (q ^ (n + 1) * w))
-    (hgs : ∀ w : K, Summable fun n : ℕ ↦ g (q ^ (n + 1) * w)) :
-    ‖(∑' n : ℕ, f (q ^ (n + 1) * u) - ∑' n : ℕ, f (q ^ (n + 1) * u')) +
-        (∑' n : ℕ, g (q ^ (n + 1) * u⁻¹) - ∑' n : ℕ, g (q ^ (n + 1) * u'⁻¹))‖ ≤
-      ‖q‖ * ‖u - u'‖ := by
-  have hqw (w : K) (hw : ‖w‖ = 1) : ‖q * w‖ < 1 := by rwa [norm_mul, hw, mul_one]
-  have hinv : ‖q * (u⁻¹ - u'⁻¹)‖ = ‖q‖ * ‖u - u'‖ := by
-    have h₀ : u ≠ 0 := norm_ne_zero_iff.mp (by rw [hu]; exact one_ne_zero)
-    have h₀' : u' ≠ 0 := norm_ne_zero_iff.mp (by rw [hu']; exact one_ne_zero)
-    rw [norm_mul, ← dist_eq_norm, dist_inv_inv₀ h₀ h₀', hu, hu', mul_one, div_one, dist_eq_norm]
-  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-  · rw [← norm_mul]
-    exact norm_tsum_sub_tsum_le_norm_mul f hf hq.le (hqw _ hu) (hqw _ hu') (hfs _) (hfs _)
-  · rw [← hinv]
-    exact norm_tsum_sub_tsum_le_norm_mul g hg hq.le (hqw _ (by rw [norm_inv, hu, inv_one]))
-      (hqw _ (by rw [norm_inv, hu', inv_one])) (hgs _) (hgs _)
 
 end Field
 

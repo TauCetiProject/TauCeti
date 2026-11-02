@@ -44,6 +44,8 @@ the origin. Such a line meets `E_q(K)` in at most one point with first coordinat
   the Tate equation with `‖x‖ = 1` is `(X(u), Y(u))` for some `u` with `‖u‖ = ‖1 - u‖ = 1`.
 * `TauCeti.exists_tateUniformization_eq_some_iff_norm_eq_one`: an affine point of `E_q(K)` is the
   image of a parameter with `‖u‖ = ‖1 - u‖ = 1` exactly when its first coordinate has norm one.
+* `TauCeti.norm_one_sub_cube_div_sub_one_sub_cube_div_le`: the multiplier `v ↦ (1 - v)³ / v` of
+  the contraction is `1`-Lipschitz on the unit circle.
 
 ## References
 
@@ -104,6 +106,23 @@ private theorem norm_tateStep_sub_le (q u : Kˣ) (hq : ‖(q : K)‖ < 1) {c : K
   rw [tateStep, sub_sub_cancel_left, norm_neg, norm_mul, norm_div, norm_pow, hu, h, one_pow,
     div_one, one_mul]
   exact norm_tateErr_le q u hq hc hc' hu
+
+omit [CompleteSpace K] in
+/-- The map `v ↦ (1 - v)³ / v` is `1`-Lipschitz on the unit circle of an ultrametric field. -/
+theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 1) (hw : ‖w‖ = 1) :
+    ‖(1 - v) ^ 3 / v - (1 - w) ^ 3 / w‖ ≤ ‖v - w‖ := by
+  have h₀ : v ≠ 0 := norm_ne_zero_iff.mp (by rw [hv]; exact one_ne_zero)
+  have h₀' : w ≠ 0 := norm_ne_zero_iff.mp (by rw [hw]; exact one_ne_zero)
+  have e : (1 - v) ^ 3 / v - (1 - w) ^ 3 / w =
+      (w - v) * (1 - v * w - v * w - v * w + v * w * (v + w)) / (v * w) := by
+    field_simp
+    ring
+  have h₃ : v ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hv.le
+  have h₄ : w ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hw.le
+  have hP : 1 - v * w - v * w - v * w + v * w * (v + w) ∈ Subring.unitClosedBall K := by
+    apply_rules [add_mem, sub_mem, mul_mem, one_mem]
+  rw [e, norm_div, norm_mul, norm_mul, hv, hw, mul_one, div_one, norm_sub_rev]
+  exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp hP)
 
 /-- The contraction is `‖q‖`-Lipschitz on the stratum. -/
 private theorem norm_tateStep_sub_tateStep_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1) {c : K}
