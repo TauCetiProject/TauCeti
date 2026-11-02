@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import Mathlib.Topology.IsLocalHomeomorph
 
@@ -23,6 +23,11 @@ each fixed-label slice is an open bisection: source and target are local homeomo
 these topologies give the topological action presentations used for finite quotient charts,
 without imposing faithfulness or discarding ineffective isotropy. The basic topology, units,
 composition and source charts are also available for monoid actions.
+
+In these coordinates, the functor `CategoryTheory.ActionCategory.map φ f` induced by a map `f`
+equivariant along a homomorphism `φ` acts on total arrows as `Prod.map φ f`
+(`TauCeti.ActionGroupoid.mapTotal_map_eq`), so it is continuous, an embedding, or an open
+embedding on total arrows when `φ` and `f` both are.
 
 ## References
 
@@ -216,6 +221,46 @@ theorem isLocalHomeomorph_source :
 end Discrete
 
 end Monoid
+
+section Map
+
+variable {G X} {N Y : Type*} [Monoid G] [Monoid N] [MulAction G X] [MulAction N Y]
+  [TopologicalSpace G] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
+  (φ : G →* N) (f : X →ₑ[φ] Y)
+
+/-- In label-source coordinates, the functor induced by a map `f` equivariant along `φ` acts on
+total arrows as the product of `φ` and `f`. -/
+theorem mapTotal_map_eq : (map φ f).toPrefunctor.mapTotal =
+    (arrowHomeomorph N Y).symm ∘ Prod.map φ f ∘ arrowHomeomorph G X := by
+  funext ⟨_, _, g⟩
+  apply (arrowHomeomorph N Y).injective
+  simp [objEquiv]
+
+/-- The functor induced by a continuous equivariant map along a continuous homomorphism is
+continuous on total arrows. -/
+theorem continuous_mapTotal_map (hφ : Continuous φ) (hf : Continuous f) :
+    Continuous (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.continuous.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).continuous)
+
+/-- The functor induced by an equivariant embedding along an embedding of monoids is an embedding
+on total arrows. -/
+theorem isEmbedding_mapTotal_map (hφ : IsEmbedding φ) (hf : IsEmbedding f) :
+    IsEmbedding (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.isEmbedding.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).isEmbedding)
+
+/-- The functor induced by an equivariant open embedding along an open embedding of monoids is an
+open embedding on total arrows. -/
+theorem isOpenEmbedding_mapTotal_map (hφ : IsOpenEmbedding φ) (hf : IsOpenEmbedding f) :
+    IsOpenEmbedding (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.isOpenEmbedding.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).isOpenEmbedding)
+
+end Map
 
 section Group
 
