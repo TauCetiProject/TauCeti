@@ -163,6 +163,14 @@ variable (hF : ∀ M : ModuleCat.{u} V, S.IsAlmostZero M → IsZero (F.obj M))
 noncomputable def fac : toAlmost S ⋙ lift S F hF ≅ F :=
   Localization.fac F ((S.isoModSerre_isInvertedBy_iff F).mpr hF) (toAlmost S)
 
+/-- `lift S F hF` is a lifting of `F` along `toAlmost S`, with comparison isomorphism `fac`. Through
+this instance Mathlib's `Localization.liftNatTrans` and `Localization.liftNatIso` lift natural
+transformations between such functors, and `Localization.natTrans_ext` shows they are determined
+by their components at the objects `M^a`. -/
+noncomputable instance :
+    Localization.Lifting (toAlmost S) S.almostZero.isoModSerre F (lift S F hF) :=
+  ⟨fac S F hF⟩
+
 instance : PreservesFiniteLimits (lift S F hF) :=
   (ObjectProperty.SerreClassLocalization.preservesFiniteLimits_comp_iff (toAlmost S)
     S.almostZero _).mp (preservesFiniteLimits_of_natIso (fac S F hF).symm)
@@ -175,8 +183,6 @@ instance : PreservesFiniteColimits (lift S F hF) :=
 `lift S F hF`. -/
 noncomputable def liftUniq (G : Module S ⥤ D) (e : toAlmost S ⋙ G ≅ F) : G ≅ lift S F hF :=
   letI : Localization.Lifting (toAlmost S) S.almostZero.isoModSerre F G := ⟨e⟩
-  letI : Localization.Lifting (toAlmost S) S.almostZero.isoModSerre F (lift S F hF) :=
-    ⟨fac S F hF⟩
   Localization.liftNatIso (toAlmost S) S.almostZero.isoModSerre F F G _ (Iso.refl F)
 
 end lift
