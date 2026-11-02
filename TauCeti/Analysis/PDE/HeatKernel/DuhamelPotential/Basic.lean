@@ -379,10 +379,9 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   have hae := hC hf hfM ht
   rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
   rw [← norm_iteratedFDeriv_one, iteratedFDeriv_heatDuhamelPotential hf hfM ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le ht.le (hae.mono fun s hs hsI => hs hsI x)
-    ((intervalIntegrable_sub_rpow (by norm_num) 0 t).const_mul (C * M))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by norm_num), sqrt_eq_rpow]
-  norm_num
+  refine (norm_integral_le_of_ae_norm_le_sub_rpow (α := 1) (A := C * M) one_pos ht.le
+    (hae.mono fun s hs hsI => (hs hsI x).trans_eq (by norm_num))).trans_eq ?_
+  rw [sqrt_eq_rpow, sub_zero]
   ring
 
 /-- **The Hessian bound for the Duhamel potential.** For `α > 0` there is a constant `C`,
@@ -403,12 +402,10 @@ theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le {α : ℝ≥0} (h
   have hae := hC hf hfM hH ht
   rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
   rw [iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le ht.le (hae.mono fun s hs hsI => hs hsI x)
-    ((intervalIntegrable_sub_rpow (by linarith) 0 t).const_mul (C * H))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith), sub_zero]
-  have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
-  rw [h]
-  field_simp
+  refine (norm_integral_le_of_ae_norm_le_sub_rpow hα' ht.le
+    (hae.mono fun s hs hsI => hs hsI x)).trans_eq ?_
+  rw [sub_zero]
+  ring
 
 /-! ### The Hölder estimate of the Hessian -/
 
