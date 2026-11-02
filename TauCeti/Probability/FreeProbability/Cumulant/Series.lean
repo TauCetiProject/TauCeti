@@ -7,62 +7,69 @@ module
 
 public import TauCeti.Combinatorics.NoncrossingPartition.PowerSeries
 public import TauCeti.Probability.FreeProbability.Cumulant.Free
+public import TauCeti.RingTheory.PowerSeries.SubstInv
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
-# The moment series, the free cumulant series and the R-series of one variable
+# The moment series and the free cumulant series of one variable
 
-Let `φ : A → R` be a functional on a monoid `A` with values in a commutative ring, and let `x ∈ A`.
-This file packages the moments and free cumulants of `x` into formal power series:
+Let `φ : A → R` be a function on a monoid (in free probability, a linear functional on an
+algebra) and let `a ∈ A`. The *moment series* and the *free cumulant series* of `a` are the formal
+power series
 
-* the *moment series* `M(z) = ∑_{n ≥ 0} φ (x ^ n) z ^ n`, whose constant coefficient is `φ 1`;
-* the *free cumulant series* `C(z) = 1 + ∑_{n ≥ 1} κ_n(x, …, x) z ^ n`;
-* the *R-series* `R(z) = ∑_{n ≥ 0} κ_{n+1}(x, …, x) z ^ n`, so that `C(z) = 1 + z R(z)`.
+`M(z) = ∑_{n ≥ 0} φ (a ^ n) z ^ n` and `C(z) = 1 + ∑_{n ≥ 1} κ_n(a, …, a) z ^ n = 1 + z R(z)`,
 
-For a normalised functional, `φ 1 = 1`, the moment–cumulant formula over noncrossing partitions is
-equivalent to the functional equation
+where `R(z) = ∑_{n ≥ 0} κ_{n+1}(a, …, a) z ^ n` is the formal *R-series* of `a`, the formal
+counterpart of Voiculescu's R-transform. For a normalised `φ`, `φ 1 = 1`, they satisfy the
+functional equations
 
-`M(z) = C(z M(z)) = 1 + z M(z) R(z M(z))`,
+`M(z) = C(z M(z))` and `M(z) = 1 + z M(z) R(z M(z))`,
 
-proved coefficient by coefficient from the recurrence by the part containing the first position.
-Since `z M(z)` has constant coefficient `0` and linear coefficient `φ 1 = 1`, it has a
-compositional inverse, and the functional equation determines `C` from `M`: the free cumulant series
-is `M` composed with that inverse, and it is the only series `C'` with `M(z) = C'(z M(z))`.
+proved coefficientwise from the moment–cumulant formula, by the recurrence of noncrossing
+partitions by the part containing the first position. Conversely `C` is the only power series
+with `C(z M(z)) = M(z)`, and it is computed from `M` as `C = M ∘ (z M)⁻¹`, using Mathlib's
+compositional inverse `PowerSeries.substInvOfIsUnit` of `z M(z)`, whose linear coefficient is
+`φ 1 = 1`. These are formal identities: nothing is said about convergence or about the analytic
+R-transform of a measure.
 
-The R-series linearises free independence: for free elements `a`, `b` of a normalised functional,
-`R_{a+b} = R_a + R_b`, because free cumulants are additive on free families. Under the affine maps
-`x ↦ c • x` and `x ↦ x + c • 1` the R-series transforms by `R_{c • x}(z) = c R_x(c z)` and
-`R_{x + c • 1} = R_x + c`. These are the formal, coefficientwise forms of the R-transform of
-Voiculescu; no convergence or analytic inversion is asserted.
+The R-series behaves additively: it is additive on elements of freely independent subalgebras,
+adding a scalar `c` to `a` adds the constant `c` to it, and rescaling `a` by `c` rescales `M` and
+`C` by `c`, so that `R_{c a}(z) = c R_a(c z)`. For normalised functionals, the free cumulant series
+and the moment series determine each other.
 
 ## Main definitions
 
-* `TauCeti.momentSeries φ x` — the moment series `M(z)`.
-* `TauCeti.freeCumulantSeries φ x` — the free cumulant series `C(z)`.
-* `TauCeti.rSeries φ x` — the R-series `R(z)`.
+* `TauCeti.momentSeries φ a` — the moment series `M(z) = ∑_{n ≥ 0} φ (a ^ n) z ^ n`.
+* `TauCeti.freeCumulantSeries φ a` — the free cumulant series `C(z) = 1 + ∑_{n ≥ 1} κ_n z ^ n`.
+* `TauCeti.rSeries φ a` — the R-series `R(z) = ∑_{n ≥ 0} κ_{n+1} z ^ n`, with
+  `TauCeti.freeCumulantSeries_eq_one_add_X_mul_rSeries` stating `C(z) = 1 + z R(z)`.
 
 ## Main results
 
-* `TauCeti.freeCumulantSeries_subst_X_mul_momentSeries` — `C(z M(z)) = M(z)` for a normalised `φ`.
-* `TauCeti.momentSeries_eq_one_add_X_mul_momentSeries_mul_subst_rSeries` —
-  `M(z) = 1 + z M(z) R(z M(z))`.
-* `TauCeti.freeCumulantSeries_eq_subst_of_subst_eq_X` and
-  `TauCeti.eq_freeCumulantSeries_of_subst_eq` — `C` is `M` composed with the compositional inverse
-  of `z M(z)`, and it is the unique solution of the functional equation.
-* `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` — two normalised functionals give elements
-  the same moment series exactly when they give them the same free cumulant series.
+* `TauCeti.apply_pow_eq_sum_prod_coeff_freeCumulantSeries` — the moment–cumulant formula for a
+  single variable, `φ (a ^ n) = ∑_{π ∈ NC(n)} ∏_{B ∈ π} κ_{|B|}(a, …, a)`.
+* `TauCeti.freeCumulantSeries_subst_X_mul_momentSeries` — the functional equation
+  `C(z M(z)) = M(z)`, and `TauCeti.momentSeries_eq_one_add_X_mul_momentSeries_mul_rSeries_subst`
+  — its R-series form `M(z) = 1 + z M(z) R(z M(z))`.
+* `TauCeti.eq_freeCumulantSeries_of_subst_eq` and
+  `TauCeti.freeCumulantSeries_eq_subst_substInvOfIsUnit` — the free cumulant series is the only
+  solution of `C(z M(z)) = M(z)`, namely `C = M ∘ (z M)⁻¹`.
+* `TauCeti.freeCumulantSeries_congr` — equal moment series give equal free cumulant series, and
+  `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` — conversely for normalised functionals.
 * `TauCeti.IsFreelyIndependent.rSeries_sum` and `TauCeti.IsFreelyIndependent.rSeries_add` — the
   R-series is additive on elements of freely independent subalgebras, with the element versions
   `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
   `TauCeti.IsFreelyIndependentElements.rSeries_add`.
-* `TauCeti.rSeries_smul` and `TauCeti.rSeries_add_algebraMap` — the R-series under dilations and
-  translations by scalars.
+* `TauCeti.rSeries_add_algebraMap`, `TauCeti.momentSeries_smul`,
+  `TauCeti.freeCumulantSeries_smul` and `TauCeti.rSeries_smul` — shifts and dilations.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lecture 16 for the
-  functional equation and Lecture 12 for the additivity of the R-transform.
-* D. V. Voiculescu, *Addition of certain non-commuting random variables*, J. Funct. Anal. 66
-  (1986), 323–346.
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lecture 16 (the
+  functional relation between the moment series and the cumulant series of one variable) and
+  Lecture 12 (the R-transform and its additivity on free variables, Theorem 12.7).
+* D. Voiculescu, *Addition of certain noncommuting random variables*, J. Funct. Anal. 66 (1986),
+  323–346.
 -/
 
 public section
@@ -71,261 +78,228 @@ open Finset PowerSeries
 
 namespace TauCeti
 
-variable {R A A' : Type*}
+variable {R A : Type*}
 
-section Moment
+section MomentSeries
 
-variable [Semiring R] [Monoid A]
+variable [Semiring R] [Monoid A] (φ : A → R) (a : A)
 
-/-- The *moment series* `M(z) = ∑_{n ≥ 0} φ (x ^ n) z ^ n` of an element `x` for a functional `φ`.
-Its constant coefficient is `φ 1`, which is `1` for a normalised functional. -/
-def momentSeries (φ : A → R) (x : A) : R⟦X⟧ :=
-  mk fun n => φ (x ^ n)
+/-- The *moment series* `M(z) = ∑_{n ≥ 0} φ (a ^ n) z ^ n` of `a` with respect to `φ`. Its
+constant coefficient is `φ 1`, which is `1` for a normalised `φ`. -/
+def momentSeries : R⟦X⟧ :=
+  PowerSeries.mk fun n => φ (a ^ n)
 
 /-- The coefficients of the moment series are the moments. -/
 @[simp]
-theorem coeff_momentSeries (φ : A → R) (x : A) (n : ℕ) :
-    coeff n (momentSeries φ x) = φ (x ^ n) := by
+theorem coeff_momentSeries (n : ℕ) : coeff n (momentSeries φ a) = φ (a ^ n) := by
   rw [momentSeries, coeff_mk]
 
 /-- The constant coefficient of the moment series is `φ 1`. -/
 @[simp]
-theorem constantCoeff_momentSeries (φ : A → R) (x : A) :
-    constantCoeff (momentSeries φ x) = φ 1 := by
+theorem constantCoeff_momentSeries : constantCoeff (momentSeries φ a) = φ 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_momentSeries, pow_zero]
 
-end Moment
+end MomentSeries
 
-section Cumulant
+/-- Rescaling `a` by `c` rescales its moment series: `M_{c a}(z) = M_a(c z)`. -/
+theorem momentSeries_smul [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (c : R)
+    (a : A) : momentSeries φ (c • a) = rescale c (momentSeries φ a) := by
+  ext n
+  rw [coeff_momentSeries, coeff_rescale, coeff_momentSeries, smul_pow, map_smul, smul_eq_mul]
 
-variable [CommRing R] [Monoid A] [Monoid A'] (φ : A → R) (x : A)
+variable [CommRing R]
 
-/-- The *free cumulant series* `C(z) = 1 + ∑_{n ≥ 1} κ_n(x, …, x) z ^ n` of an element `x` for a
-functional `φ`, whose coefficient at `n ≥ 1` is the free cumulant of the constant word of length
-`n` with letter `x`. -/
+section Monoid
+
+variable [Monoid A] (φ : A → R) (a : A)
+
+/-- The *free cumulant series* `C(z) = 1 + ∑_{n ≥ 1} κ_n(a, …, a) z ^ n` of `a` with respect to
+`φ`, whose `n`-th coefficient is the free cumulant of the constant word of length `n`. -/
 def freeCumulantSeries : R⟦X⟧ :=
-  mk fun n => freeCumulant φ (fun _ => x) (univ : Finset (Fin n))
+  PowerSeries.mk fun n => freeCumulant φ (fun _ : Fin n => a) univ
 
-/-- The coefficients of the free cumulant series are the free cumulants of constant words. -/
+/-- The `n`-th coefficient of the free cumulant series is the free cumulant `κ_n(a, …, a)`. -/
 @[simp]
 theorem coeff_freeCumulantSeries (n : ℕ) :
-    coeff n (freeCumulantSeries φ x) = freeCumulant φ (fun _ => x) (univ : Finset (Fin n)) := by
+    coeff n (freeCumulantSeries φ a) = freeCumulant φ (fun _ : Fin n => a) univ := by
   rw [freeCumulantSeries, coeff_mk]
 
-/-- The free cumulant of the constant word with letter `x` along any finite set `s` of positions is
-the coefficient of the free cumulant series at `#s`. -/
+/-- The free cumulant of a constant word along any finite set `s` of positions in a linear order
+is the coefficient of the free cumulant series at `#s`. -/
 theorem freeCumulant_const_eq_coeff_freeCumulantSeries {α : Type*} [LinearOrder α]
-    (s : Finset α) :
-    freeCumulant φ (fun _ => x) s = coeff #s (freeCumulantSeries φ x) := by
-  -- Relabel `s` increasingly by `Fin #s`.
-  have h := freeCumulant_comp_of_strictMonoOn φ (s := (univ : Finset (Fin #s)))
-    ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _) fun _ => x
-  rw [s.image_orderEmbOfFin_univ rfl] at h
-  simpa [Function.comp_def] using h.symm
+    (s : Finset α) : freeCumulant φ (fun _ => a) s = coeff #s (freeCumulantSeries φ a) := by
+  have h := freeCumulant_comp_of_strictMonoOn (s := univ) φ
+    ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _) fun _ => a
+  simp only [image_orderEmbOfFin_univ, Function.comp_def] at h
+  rw [coeff_freeCumulantSeries, ← h]
 
 /-- The constant coefficient of the free cumulant series is `1`. -/
 @[simp]
-theorem constantCoeff_freeCumulantSeries : constantCoeff (freeCumulantSeries φ x) = 1 := by
+theorem constantCoeff_freeCumulantSeries : constantCoeff (freeCumulantSeries φ a) = 1 := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_freeCumulantSeries, univ_eq_empty,
     freeCumulant_empty]
 
-/-- The linear coefficient of the free cumulant series is the mean `φ x`. -/
-theorem coeff_one_freeCumulantSeries : coeff 1 (freeCumulantSeries φ x) = φ x := by
+/-- The linear coefficient of the free cumulant series is the mean `κ₁(a) = φ a`. -/
+theorem coeff_one_freeCumulantSeries : coeff 1 (freeCumulantSeries φ a) = φ a := by
   rw [coeff_freeCumulantSeries, univ_unique, freeCumulant_singleton]
 
-/-- The quadratic coefficient of the free cumulant series is the variance `φ (x ^ 2) - φ x ^ 2`. -/
+/-- The quadratic coefficient of the free cumulant series is the variance
+`κ₂(a, a) = φ (a ^ 2) - φ a ^ 2`. -/
 theorem coeff_two_freeCumulantSeries :
-    coeff 2 (freeCumulantSeries φ x) = φ (x ^ 2) - φ x ^ 2 := by
-  rw [coeff_freeCumulantSeries, freeCumulant_const_of_card_eq_two φ x (card_fin 2)]
+    coeff 2 (freeCumulantSeries φ a) = φ (a ^ 2) - φ a ^ 2 := by
+  rw [coeff_freeCumulantSeries, univ_fin2, freeCumulant_pair φ _ Fin.zero_lt_one, sq, sq]
 
-/-- The *R-series* `R(z) = ∑_{n ≥ 0} κ_{n+1}(x, …, x) z ^ n` of an element `x` for a functional
-`φ`: the free cumulant series with its constant term removed and divided by `z`. -/
+/-- The *R-series* `R(z) = ∑_{n ≥ 0} κ_{n+1}(a, …, a) z ^ n` of `a` with respect to `φ`, the
+formal R-transform, so that `C(z) = 1 + z R(z)`. -/
 def rSeries : R⟦X⟧ :=
-  mk fun n => freeCumulant φ (fun _ => x) (univ : Finset (Fin (n + 1)))
+  PowerSeries.mk fun n => freeCumulant φ (fun _ : Fin (n + 1) => a) univ
 
-/-- The coefficients of the R-series are the free cumulants of nonempty constant words. -/
+/-- The `n`-th coefficient of the R-series is the free cumulant `κ_{n+1}(a, …, a)`. -/
 @[simp]
 theorem coeff_rSeries (n : ℕ) :
-    coeff n (rSeries φ x) = freeCumulant φ (fun _ => x) (univ : Finset (Fin (n + 1))) := by
+    coeff n (rSeries φ a) = freeCumulant φ (fun _ : Fin (n + 1) => a) univ := by
   rw [rSeries, coeff_mk]
 
-/-- The coefficient of the free cumulant series at `n + 1` is the coefficient of the R-series at
-`n`. -/
-theorem coeff_succ_freeCumulantSeries (n : ℕ) :
-    coeff (n + 1) (freeCumulantSeries φ x) = coeff n (rSeries φ x) := by
-  rw [coeff_freeCumulantSeries, coeff_rSeries]
-
-/-- The constant coefficient of the R-series is the mean `φ x`. -/
+/-- The constant coefficient of the R-series is the mean `φ a`. -/
 @[simp]
-theorem constantCoeff_rSeries : constantCoeff (rSeries φ x) = φ x := by
-  rw [← coeff_zero_eq_constantCoeff_apply, ← coeff_succ_freeCumulantSeries, zero_add,
-    coeff_one_freeCumulantSeries]
+theorem constantCoeff_rSeries : constantCoeff (rSeries φ a) = φ a := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rSeries, Nat.zero_add, univ_unique,
+    freeCumulant_singleton]
 
 /-- The free cumulant series is `C(z) = 1 + z R(z)`. -/
 theorem freeCumulantSeries_eq_one_add_X_mul_rSeries :
-    freeCumulantSeries φ x = 1 + X * rSeries φ x := by
+    freeCumulantSeries φ a = 1 + X * rSeries φ a := by
   ext (_ | n)
   · simp
   · simp [coeff_succ_X_mul]
 
+/-- The coefficient of the free cumulant series at `n + 1` is the coefficient of the R-series at
+`n`. -/
+theorem coeff_succ_freeCumulantSeries (n : ℕ) :
+    coeff (n + 1) (freeCumulantSeries φ a) = coeff n (rSeries φ a) := by
+  rw [coeff_freeCumulantSeries, coeff_rSeries]
+
+/-- The free cumulant series depends only on the moment series: if `φ (a ^ n) = ψ (b ^ n)` for
+every `n`, then `a` and `b` have the same free cumulants. No normalisation is needed. -/
+theorem freeCumulantSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
+    (h : momentSeries φ a = momentSeries ψ b) :
+    freeCumulantSeries φ a = freeCumulantSeries ψ b := by
+  ext n
+  simp_rw [coeff_freeCumulantSeries, freeCumulant_eq_sum_mu_mul_partitionMoment,
+    partitionMoment_const, ← coeff_momentSeries, h]
+
+/-- The R-series depends only on the moment series. No normalisation is needed. -/
+theorem rSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
+    (h : momentSeries φ a = momentSeries ψ b) : rSeries φ a = rSeries ψ b := by
+  ext n
+  rw [← coeff_succ_freeCumulantSeries, ← coeff_succ_freeCumulantSeries,
+    freeCumulantSeries_congr φ a h]
+
 variable {φ}
 
-/-- *The moment–cumulant functional equation.* For a normalised functional, the moment series and
-the free cumulant series satisfy `C(z M(z)) = M(z)`. -/
-theorem freeCumulantSeries_subst_X_mul_momentSeries (hφ : φ 1 = 1) :
-    (freeCumulantSeries φ x).subst (X * momentSeries φ x) = momentSeries φ x := by
-  refine NoncrossingPartition.subst_X_mul_eq_of_forall_sum_prod_coeff_eq_coeff (α := ℕ)
-    (constantCoeff_freeCumulantSeries φ x) fun s => ?_
+/-- *The moment–cumulant formula for a single variable*: for a normalised `φ`, the moment
+`φ (a ^ #s)` is the sum over the noncrossing partitions `π` of a finite set `s` of positions of the
+products `∏_{B ∈ π} κ_{|B|}(a, …, a)` of the coefficients of the free cumulant series. -/
+theorem apply_pow_eq_sum_prod_coeff_freeCumulantSeries (hφ : φ 1 = 1) {α : Type*}
+    [LinearOrder α] (s : Finset α) :
+    φ (a ^ #s) =
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B (freeCumulantSeries φ a) := by
   obtain rfl | hs := s.eq_empty_or_nonempty
-  · rw [Fintype.sum_unique, Finpartition.parts_eq_empty_iff.2 rfl, prod_empty, card_empty,
-      coeff_momentSeries, pow_zero, hφ]
-  -- This is the moment–cumulant formula for the constant word with letter `x` along `s`.
-  rw [coeff_momentSeries, ← length_sort (· ≤ ·) (s := s), ← List.prod_replicate,
-    ← List.map_const', apply_prod_eq_sum_prod_freeCumulant φ _ hs]
-  simp_rw [freeCumulant_const_eq_coeff_freeCumulantSeries φ x]
+  · rw [card_empty, pow_zero, hφ, Fintype.sum_unique,
+      Finpartition.parts_eq_empty_iff.2 rfl, prod_empty]
+  simp_rw [← freeCumulant_const_eq_coeff_freeCumulantSeries]
+  rw [← apply_prod_eq_sum_prod_freeCumulant φ (fun _ => a) hs]
+  simp
 
-/-- *The functional equation of the R-series.* For a normalised functional,
+/-- *The moment–cumulant functional equation*: for a normalised `φ`, the moment series and the
+free cumulant series of `a` satisfy `C(z M(z)) = M(z)`. -/
+theorem freeCumulantSeries_subst_X_mul_momentSeries (hφ : φ 1 = 1) :
+    (freeCumulantSeries φ a).subst (X * momentSeries φ a) = momentSeries φ a :=
+  NoncrossingPartition.subst_eq_of_forall_sum_prod_coeff_eq (α := ℕ)
+    (constantCoeff_freeCumulantSeries φ a) fun s => by
+      rw [coeff_momentSeries, apply_pow_eq_sum_prod_coeff_freeCumulantSeries a hφ]
+
+/-- *The functional equation of the R-series*: for a normalised `φ`,
 `M(z) = 1 + z M(z) R(z M(z))`. -/
-theorem momentSeries_eq_one_add_X_mul_momentSeries_mul_subst_rSeries (hφ : φ 1 = 1) :
-    momentSeries φ x =
-      1 + X * momentSeries φ x * (rSeries φ x).subst (X * momentSeries φ x) := by
-  have h := freeCumulantSeries_subst_X_mul_momentSeries x hφ
-  rwa [freeCumulantSeries_eq_one_add_X_mul_rSeries,
-    ← coe_substAlgHom (HasSubst.X'.mul_left (g := momentSeries φ x)), map_add, map_mul, map_one,
-    substAlgHom_X, coe_substAlgHom, eq_comm] at h
+theorem momentSeries_eq_one_add_X_mul_momentSeries_mul_rSeries_subst (hφ : φ 1 = 1) :
+    momentSeries φ a =
+      1 + X * momentSeries φ a * (rSeries φ a).subst (X * momentSeries φ a) := by
+  have hM : HasSubst (X * momentSeries φ a) :=
+    .of_constantCoeff_zero' (by simp)
+  conv_lhs => rw [← freeCumulantSeries_subst_X_mul_momentSeries a hφ,
+    freeCumulantSeries_eq_one_add_X_mul_rSeries]
+  rw [subst_add hM, subst_mul hM, subst_one hM, subst_X hM]
 
-/-- For a normalised functional, the free cumulant series is the moment series composed with any
-right compositional inverse `Q` of `z M(z)`: if `(z M(z))(Q(w)) = w` then `C(w) = M(Q(w))`. -/
-theorem freeCumulantSeries_eq_subst_of_subst_eq_X (hφ : φ 1 = 1) {Q : R⟦X⟧} (hQ : HasSubst Q)
-    (hQM : (X * momentSeries φ x).subst Q = X) :
-    freeCumulantSeries φ x = (momentSeries φ x).subst Q := by
-  rw [← freeCumulantSeries_subst_X_mul_momentSeries x hφ,
-    subst_comp_subst_apply HasSubst.X'.mul_left hQ, hQM, X_subst]
+/-- For a normalised `φ`, the linear coefficient of `z M(z)` is the unit `φ 1 = 1`, so that
+`z M(z)` has a compositional inverse. -/
+theorem isUnit_coeff_one_X_mul_momentSeries (hφ : φ 1 = 1) :
+    IsUnit (coeff 1 (X * momentSeries φ a)) := by
+  rw [coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply, constantCoeff_momentSeries, hφ]
+  exact isUnit_one
 
-/-- For a normalised functional, the free cumulant series is the only series `C'` satisfying the
-functional equation `C'(z M(z)) = M(z)`. -/
-theorem eq_freeCumulantSeries_of_subst_eq (hφ : φ 1 = 1) {C' : R⟦X⟧}
-    (hC' : C'.subst (X * momentSeries φ x) = momentSeries φ x) :
-    C' = freeCumulantSeries φ x := by
-  -- Compose both sides of the functional equation with the inverse of `z M(z)`.
-  have h0 : constantCoeff (X * momentSeries φ x) = 0 := by simp
-  have h1 : IsUnit (coeff 1 (X * momentSeries φ x)) := by simp [coeff_succ_X_mul, hφ]
-  have key (D : R⟦X⟧) : PowerSeries.subst ((X * momentSeries φ x).substInvOfIsUnit h1)
-      (D.subst (X * momentSeries φ x)) = D := by
-    rw [subst_comp_subst_apply HasSubst.X'.mul_left (HasSubst.substInvOfIsUnit _ h1),
-      subst_substInvOfIsUnit_right _ h0 h1, X_subst]
-  rw [← key C', ← key (freeCumulantSeries φ x), hC',
-    freeCumulantSeries_subst_X_mul_momentSeries x hφ]
+/-- *Uniqueness of the free cumulant series*: for a normalised `φ`, every power series `C` with
+`C(z M(z)) = M(z)` is the free cumulant series. -/
+theorem eq_freeCumulantSeries_of_subst_eq (hφ : φ 1 = 1) {C : R⟦X⟧}
+    (h : C.subst (X * momentSeries φ a) = momentSeries φ a) : C = freeCumulantSeries φ a := by
+  have h0 : constantCoeff (X * momentSeries φ a) = 0 := by simp
+  have hu := isUnit_coeff_one_X_mul_momentSeries a hφ
+  rw [eq_subst_substInvOfIsUnit_of_subst_eq h0 hu h,
+    ← eq_subst_substInvOfIsUnit_of_subst_eq h0 hu
+      (freeCumulantSeries_subst_X_mul_momentSeries a hφ)]
 
-/-- The free cumulant series depends only on the moment series. No normalisation is needed: the
-free cumulants of constant words are Möbius combinations of products of moments. -/
-theorem freeCumulantSeries_eq_of_momentSeries_eq {ψ : A' → R} {y : A'}
-    (h : momentSeries φ x = momentSeries ψ y) :
-    freeCumulantSeries φ x = freeCumulantSeries ψ y := by
-  ext n
-  simp only [coeff_freeCumulantSeries, freeCumulant_eq_sum_mu_mul_partitionMoment,
-    partitionMoment_const, ← coeff_momentSeries, h]
+/-- For a normalised `φ`, the free cumulant series is the moment series composed with the
+compositional inverse of `z M(z)`: `C = M ∘ (z M)⁻¹`. -/
+theorem freeCumulantSeries_eq_subst_substInvOfIsUnit (hφ : φ 1 = 1) :
+    freeCumulantSeries φ a = (momentSeries φ a).subst
+      ((X * momentSeries φ a).substInvOfIsUnit (isUnit_coeff_one_X_mul_momentSeries a hφ)) :=
+  eq_subst_substInvOfIsUnit_of_subst_eq (by simp) _
+    (freeCumulantSeries_subst_X_mul_momentSeries a hφ)
 
 /-- For normalised functionals, two elements have the same moment series exactly when they have the
 same free cumulant series. -/
-theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {ψ : A' → R} {y : A'}
-    (hψ : ψ 1 = 1) :
-    freeCumulantSeries φ x = freeCumulantSeries ψ y ↔ momentSeries φ x = momentSeries ψ y := by
-  refine ⟨fun h => ?_, freeCumulantSeries_eq_of_momentSeries_eq x⟩
-  -- Both moment series are the noncrossing-partition sums of the common cumulant series.
+theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [Monoid B]
+    {ψ : B → R} {b : B} (hψ : ψ 1 = 1) :
+    freeCumulantSeries φ a = freeCumulantSeries ψ b ↔ momentSeries φ a = momentSeries ψ b := by
+  refine ⟨fun h => ?_, freeCumulantSeries_congr φ a⟩
+  -- Both moments are the noncrossing-partition sums of the common free cumulants.
   ext n
-  have hx := NoncrossingPartition.sum_prod_coeff_eq_coeff_of_subst_eq
-    (constantCoeff_freeCumulantSeries φ x) (freeCumulantSeries_subst_X_mul_momentSeries x hφ)
-    (univ : Finset (Fin n))
-  have hy := NoncrossingPartition.sum_prod_coeff_eq_coeff_of_subst_eq
-    (constantCoeff_freeCumulantSeries ψ y) (freeCumulantSeries_subst_X_mul_momentSeries y hψ)
-    (univ : Finset (Fin n))
-  rw [card_fin] at hx hy
-  rw [← hx, ← hy, h]
+  have ha := apply_pow_eq_sum_prod_coeff_freeCumulantSeries a hφ (univ : Finset (Fin n))
+  have hb := apply_pow_eq_sum_prod_coeff_freeCumulantSeries b hψ (univ : Finset (Fin n))
+  rw [card_univ, Fintype.card_fin] at ha hb
+  rw [coeff_momentSeries, coeff_momentSeries, ha, hb, h]
 
-/-- The R-series depends only on the moment series. -/
-theorem rSeries_eq_of_momentSeries_eq {ψ : A' → R} {y : A'}
-    (h : momentSeries φ x = momentSeries ψ y) : rSeries φ x = rSeries ψ y := by
+end Monoid
+
+section Algebra
+
+variable [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
+
+/-- Rescaling `a` by `c` rescales its free cumulant series: `C_{c a}(z) = C_a(c z)`, since
+`κ_n` is multilinear. -/
+theorem freeCumulantSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
+    freeCumulantSeries φ (c • a) = rescale c (freeCumulantSeries φ a) := by
   ext n
-  rw [← coeff_succ_freeCumulantSeries, ← coeff_succ_freeCumulantSeries,
-    freeCumulantSeries_eq_of_momentSeries_eq x h]
+  have h := (freeCumulantMultilinear (α := Fin n) φ).map_smul_univ (fun _ => c) fun _ => a
+  rw [freeCumulantMultilinear_apply, freeCumulantMultilinear_apply, prod_const, card_univ,
+    Fintype.card_fin, smul_eq_mul] at h
+  rw [coeff_freeCumulantSeries, coeff_rescale, coeff_freeCumulantSeries, h]
 
-end Cumulant
+/-- For a normalised `φ`, adding the scalar `c` to `a` adds the constant `c` to its R-series:
+`R_{a + c}(z) = R_a(z) + c`. Only the mean `κ₁` changes. -/
+theorem rSeries_add_algebraMap (hφ : φ 1 = 1) (a : A) (c : R) :
+    rSeries φ (a + algebraMap R A c) = rSeries φ a + PowerSeries.C c := by
+  ext (_ | n)
+  · simp [Algebra.algebraMap_eq_smul_one, hφ]
+  · rw [coeff_rSeries, map_add, coeff_rSeries, coeff_succ_C, add_zero]
+    exact freeCumulant_add_algebraMap φ (fun _ => a) hφ (fun _ => c)
+      (by rw [card_univ, Fintype.card_fin]; omega)
 
-section Linear
-
-variable [CommRing R] [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
-
-/-- *The R-series is additive on free families*: if each `x k` lies in the subalgebra `B k`, with
-`B` freely independent for a normalised `φ`, then `R_{∑ k ∈ T, x k} = ∑ k ∈ T, R_{x k}`. -/
-theorem IsFreelyIndependent.rSeries_sum {ι : Type*} {B : ι → Subalgebra R A}
-    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {T : Finset ι} {x : ι → A}
-    (hx : ∀ k ∈ T, x k ∈ B k) :
-    rSeries φ (∑ k ∈ T, x k) = ∑ k ∈ T, rSeries φ (x k) := by
-  ext n
-  rw [coeff_rSeries, map_sum, h.freeCumulant_sum hφ (fun k hk _ _ => hx k hk) univ_nonempty]
-  simp
-
-/-- *The R-series is additive on two free subalgebras*: if `x ∈ B i` and `y ∈ B j` for `i ≠ j`,
-with `B` freely independent for a normalised `φ`, then `R_{x + y} = R_x + R_y`. -/
-theorem IsFreelyIndependent.rSeries_add {ι : Type*} {B : ι → Subalgebra R A}
-    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {x y : A}
-    (hx : x ∈ B i) (hy : y ∈ B j) :
-    rSeries φ (x + y) = rSeries φ x + rSeries φ y := by
-  ext n
-  rw [coeff_rSeries, map_add, h.freeCumulant_add hφ hij (fun _ _ => hx) (fun _ _ => hy)
-    univ_nonempty, coeff_rSeries, coeff_rSeries]
-
-/-- *The R-series is additive on free elements*: if the elements `c k` are freely independent for
-a normalised `φ`, then `R_{∑ k ∈ T, c k} = ∑ k ∈ T, R_{c k}`. -/
-theorem IsFreelyIndependentElements.rSeries_sum {ι : Type*} {c : ι → A}
-    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) :
-    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) :=
-  (isFreelyIndependentElements_iff.1 h).rSeries_sum hφ fun k _ =>
-    Algebra.self_mem_adjoin_singleton R (c k)
-
-/-- *The R-series is additive on two free elements*: if `c i` and `c j`, for `i ≠ j`, belong to a
-freely independent family for a normalised `φ`, then `R_{c i + c j} = R_{c i} + R_{c j}`. -/
-theorem IsFreelyIndependentElements.rSeries_add {ι : Type*} {c : ι → A}
-    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) :
-    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) :=
-  (isFreelyIndependentElements_iff.1 h).rSeries_add hφ hij
-    (Algebra.self_mem_adjoin_singleton R (c i)) (Algebra.self_mem_adjoin_singleton R (c j))
-
-variable (φ) (x : A)
-
-/-- The moment series of `c • x` is the moment series of `x` rescaled by `c`. -/
-theorem momentSeries_smul (c : R) : momentSeries φ (c • x) = rescale c (momentSeries φ x) := by
-  ext n
-  rw [coeff_momentSeries, coeff_rescale, coeff_momentSeries, smul_pow, map_smul, smul_eq_mul]
-
-/-- The free cumulant series of `c • x` is the free cumulant series of `x` rescaled by `c`:
-`κ_n(c • x, …, c • x) = c ^ n κ_n(x, …, x)`. -/
-theorem freeCumulantSeries_smul (c : R) :
-    freeCumulantSeries φ (c • x) = rescale c (freeCumulantSeries φ x) := by
-  ext n
-  rw [coeff_freeCumulantSeries, coeff_rescale, coeff_freeCumulantSeries,
-    ← freeCumulantMultilinear_apply, ← freeCumulantMultilinear_apply,
-    (freeCumulantMultilinear φ).map_smul_univ (fun _ => c) fun _ => x, prod_const, card_fin,
-    smul_eq_mul]
-
-/-- The R-series of `c • x` is `R_{c • x}(z) = c R_x(c z)`. -/
-theorem rSeries_smul (c : R) : rSeries φ (c • x) = c • rescale c (rSeries φ x) := by
+/-- Rescaling `a` by `c` transforms its R-series by `R_{c a}(z) = c R_a(c z)`. -/
+theorem rSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
+    rSeries φ (c • a) = c • rescale c (rSeries φ a) := by
   ext n
   rw [← coeff_succ_freeCumulantSeries, freeCumulantSeries_smul, coeff_rescale,
     coeff_succ_freeCumulantSeries, coeff_smul, coeff_rescale, pow_succ', smul_eq_mul, mul_assoc]
-
-variable {φ}
-
-/-- For a normalised `φ`, translating by a scalar adds that scalar to the R-series,
-`R_{x + c • 1} = R_x + c`: the mean moves by `c` and the free cumulants of order at least two do
-not change. -/
-theorem rSeries_add_algebraMap (hφ : φ 1 = 1) (c : R) :
-    rSeries φ (x + algebraMap R A c) = rSeries φ x + PowerSeries.C c := by
-  ext (_ | n)
-  · simp [hφ, Algebra.algebraMap_eq_smul_one]
-  · rw [coeff_rSeries, freeCumulant_add_algebraMap φ (fun _ => x) hφ (fun _ => c) (by simp),
-      map_add, coeff_rSeries, coeff_succ_C, add_zero]
 
 /-- The R-series of `0` vanishes. -/
 @[simp]
@@ -338,8 +312,47 @@ theorem rSeries_zero : rSeries φ (0 : A) = 0 := by
 free cumulant is its mean. -/
 theorem rSeries_algebraMap (hφ : φ 1 = 1) (c : R) :
     rSeries φ (algebraMap R A c) = PowerSeries.C c := by
-  simpa using rSeries_add_algebraMap (φ := φ) 0 hφ c
+  simpa using rSeries_add_algebraMap hφ 0 c
 
-end Linear
+/-- *The R-series is additive on free families*: if each `a k` lies in the subalgebra `B k`, with
+`B` freely independent for a normalised `φ`, then `R_{∑ k ∈ T, a k} = ∑ k ∈ T, R_{a k}`. -/
+theorem IsFreelyIndependent.rSeries_sum {ι : Type*} {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {T : Finset ι} {a : ι → A}
+    (ha : ∀ k ∈ T, a k ∈ B k) :
+    rSeries φ (∑ k ∈ T, a k) = ∑ k ∈ T, rSeries φ (a k) := by
+  ext n
+  rw [coeff_rSeries, map_sum, h.freeCumulant_sum hφ (fun k hk _ _ => ha k hk) univ_nonempty]
+  simp
+
+/-- *The R-series is additive on two free subalgebras*: if `a ∈ B i` and `b ∈ B j` for `i ≠ j`,
+with `B` freely independent for a normalised `φ`, then `R_{a + b} = R_a + R_b`. -/
+theorem IsFreelyIndependent.rSeries_add {ι : Type*} {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {a b : A}
+    (ha : a ∈ B i) (hb : b ∈ B j) :
+    rSeries φ (a + b) = rSeries φ a + rSeries φ b := by
+  ext n
+  rw [coeff_rSeries, map_add, h.freeCumulant_add hφ hij (fun _ _ => ha) (fun _ _ => hb)
+    univ_nonempty, coeff_rSeries, coeff_rSeries]
+
+/-- *The R-series is additive on free elements*: if the elements `c k` are freely independent
+for a normalised `φ`, then `R_{∑ k ∈ T, c k} = ∑ k ∈ T, R_{c k}`. -/
+theorem IsFreelyIndependentElements.rSeries_sum {ι : Type*} {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) :
+    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) := by
+  ext n
+  rw [coeff_rSeries, map_sum]
+  simp_rw [coeff_rSeries]
+  exact h.freeCumulant_sum hφ T univ_nonempty
+
+/-- *The R-series is additive on two free elements*: if `c i` and `c j`, for `i ≠ j`, belong to a
+freely independent family for a normalised `φ`, then `R_{c i + c j} = R_{c i} + R_{c j}`. -/
+theorem IsFreelyIndependentElements.rSeries_add {ι : Type*} {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) :
+    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) := by
+  ext n
+  rw [coeff_rSeries, map_add, coeff_rSeries, coeff_rSeries]
+  exact h.freeCumulant_add hφ hij univ_nonempty
+
+end Algebra
 
 end TauCeti
