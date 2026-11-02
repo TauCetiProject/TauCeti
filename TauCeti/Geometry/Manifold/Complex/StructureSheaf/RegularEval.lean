@@ -40,6 +40,8 @@ so the nonunits of the regular subring form the kernel of its value homomorphism
 * `TauCeti.holomorphicStructureSheaf.regularEval_pullback`: pullback preserves the value.
 * `TauCeti.holomorphicStructureSheaf.isUnit_iff_regularEval_ne_zero`: the units of the regular
   subring are the germs with nonzero value.
+* `TauCeti.holomorphicStructureSheaf.nonunits_eq_ker_regularEval`: the nonunits of the regular
+  subring are the kernel of `regularEval`.
 
 ## References
 
@@ -96,6 +98,10 @@ theorem regularEval_mk_toMeromorphicGerms
       rangeToMeromorphicGermsEquiv a s :=
     Subtype.ext (coe_rangeToMeromorphicGermsEquiv a s).symm
   rw [h, regularEval_rangeToMeromorphicGermsEquiv]
+
+/-- Every complex number is the value of a regular germ. -/
+theorem regularEval_surjective : Surjective (regularEval a) :=
+  (eval_surjective 𝓘(ℂ) ℂ a).comp (rangeToMeromorphicGermsEquiv a).symm.surjective
 
 variable {a}
 
@@ -156,5 +162,12 @@ theorem isUnit_iff_regularEval_ne_zero (φ : (toMeromorphicGerms a).range) :
   obtain ⟨s, rfl⟩ := (rangeToMeromorphicGermsEquiv a).surjective φ
   rw [MulEquiv.isUnit_map (rangeToMeromorphicGermsEquiv a), isUnit_stalk_iff,
     regularEval_rangeToMeromorphicGermsEquiv]
+
+variable (a) in
+/-- The nonunits of the regular subring are exactly the kernel of its value homomorphism. -/
+theorem nonunits_eq_ker_regularEval :
+    nonunits (toMeromorphicGerms a).range = RingHom.ker (regularEval a) := by
+  ext φ
+  simp [mem_nonunits_iff]
 
 end TauCeti.holomorphicStructureSheaf
