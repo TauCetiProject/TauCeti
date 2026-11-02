@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+public import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Leading monomials for a monomial order
@@ -495,12 +496,13 @@ exponent of `P` minus its weighted homogeneous component of weight `d` has weigh
 below `d`. -/
 theorem weight_lt_of_mem_support_sub_weightedHomogeneousComponent [CommRing R]
     {a : ι → σ →₀ ℕ} {P : MvPolynomial ι R} {d : σ →₀ ℕ}
-    (hP : ∀ w ∈ P.support, Finsupp.weight a w ≼[m] d) {w : ι →₀ ℕ}
+    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ a w ≼[m] d) {w : ι →₀ ℕ}
     (hw : w ∈ (P - weightedHomogeneousComponent a d P).support) :
-    Finsupp.weight a w ≺[m] d := by
+    Finsupp.linearCombination ℕ a w ≺[m] d := by
   classical
-  rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent] at hw
-  by_cases hwd : Finsupp.weight a w = d
+  rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent,
+    Finsupp.weight_eq_linearCombination] at hw
+  by_cases hwd : Finsupp.linearCombination ℕ a w = d
   · simp [hwd] at hw
   · simp only [hwd, ↓reduceIte, sub_zero] at hw
     exact lt_of_le_of_ne (hP w (mem_support_iff.2 hw)) (m.toSyn.injective.ne hwd)

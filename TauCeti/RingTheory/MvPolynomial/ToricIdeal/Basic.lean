@@ -38,6 +38,8 @@ every commutative ring: such a family is selected over `ℤ` by noetherianity an
   `u ↦ ∑ i, u i • a i` lies in the toric ideal exactly when its coefficients sum to zero.
 * `TauCeti.monomial_sub_monomial_mem_toricIdeal_iff`: over a nontrivial ring,
   `X^u - X^v` lies in the toric ideal exactly when `A u = A v`.
+* `TauCeti.isWeightedHomogeneous_monomial_sub_monomial`: such a binomial is homogeneous of
+  weight `A u` for the grading by `u ↦ ∑ i, u i • a i`.
 * `TauCeti.toricIdeal_comp_of_injective`: the toric ideal does not depend on the
   ambient monoid.
 * `TauCeti.map_toricIdeal`: the toric ideal over `S` is the extension of the toric
@@ -179,6 +181,15 @@ theorem monomial_sub_monomial_mem_toricIdeal_iff [Nontrivial R] {a : ι → M} {
       Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v := by
   rw [mem_toricIdeal_iff, map_sub, aeval_single_monomial, aeval_single_monomial, sub_eq_zero]
   exact (single_left_injective one_ne_zero).eq_iff
+
+/-- A binomial `X^u - X^v` with `∑ i, u i • a i = ∑ i, v i • a i` is weighted homogeneous of
+weight `∑ i, u i • a i`. -/
+theorem isWeightedHomogeneous_monomial_sub_monomial {a : ι → M} {u v : ι →₀ ℕ}
+    (h : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v) :
+    IsWeightedHomogeneous a (monomial u (1 : R) - monomial v 1)
+      (Finsupp.linearCombination ℕ a u) :=
+  (isWeightedHomogeneous_monomial _ _ _ (Finsupp.weight_eq_linearCombination _ _)).sub
+    (isWeightedHomogeneous_monomial _ _ _ ((Finsupp.weight_eq_linearCombination _ _).trans h.symm))
 
 variable (R)
 

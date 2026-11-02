@@ -89,14 +89,10 @@ theorem weightedHomogeneousComponent_monomial_sub_monomial_sub {u v : ι →₀ 
       ∀ w ∈ (monomial u (1 : R) - monomial v 1 - Q).support,
         Finsupp.linearCombination ℕ a w ≼[m] Finsupp.linearCombination ℕ a u := by
   classical
-  have hβ : IsWeightedHomogeneous a (monomial u (1 : R) - monomial v 1)
-      (Finsupp.linearCombination ℕ a u) :=
-    (isWeightedHomogeneous_monomial _ _ _ (Finsupp.weight_eq_linearCombination _ _)).sub
-      (isWeightedHomogeneous_monomial _ _ _ ((Finsupp.weight_eq_linearCombination _ _).trans
-        huv.symm))
   refine ⟨?_, fun w hw ↦ ?_⟩
-  · rw [map_sub, hβ.weightedHomogeneousComponent_same, sub_eq_self,
-      weightedHomogeneousComponent_apply]
+  · rw [map_sub,
+      (isWeightedHomogeneous_monomial_sub_monomial huv).weightedHomogeneousComponent_same,
+      sub_eq_self, weightedHomogeneousComponent_apply]
     refine Finset.sum_eq_zero fun w hw ↦ ?_
     obtain ⟨hw, hwd⟩ := Finset.mem_filter.1 hw
     rw [Finsupp.weight_eq_linearCombination] at hwd
@@ -128,17 +124,14 @@ theorem exists_mem_span_support_lt
   let h : κ → MvPolynomial ι R := fun j ↦
     ∑ w ∈ (g j).support with A w + A (u j) = d, monomial w ((g j).coeff w)
   have hA (w) : Finsupp.weight a w = A w := Finsupp.weight_eq_linearCombination _ _
-  have hβ (j) : IsWeightedHomogeneous a (monomial (u j) (1 : R) - monomial (v j) 1)
-      (A (u j)) :=
-    (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
-      (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans (huv j).symm))
   have hcomp (j) : weightedHomogeneousComponent a d
       (g j * (monomial (u j) 1 - monomial (v j) 1)) =
         h j * (monomial (u j) 1 - monomial (v j) 1) := by
     conv_lhs => rw [(g j).as_sum]
     rw [Finset.sum_mul, map_sum, Finset.sum_mul, Finset.sum_filter]
     refine Finset.sum_congr rfl fun w _ ↦ ?_
-    have hw := (isWeightedHomogeneous_monomial a w ((g j).coeff w) (hA w)).mul (hβ j)
+    have hw := (isWeightedHomogeneous_monomial a w ((g j).coeff w) (hA w)).mul
+      (isWeightedHomogeneous_monomial_sub_monomial (R := R) (huv j))
     split_ifs with hwd
     · rw [← hwd]
       exact hw.weightedHomogeneousComponent_same
@@ -215,10 +208,7 @@ theorem exists_mem_span_degree_aeval_eq (hc : ∀ i, m.Monic (c i))
         intro w hw
         rw [← sub_add_sub_cancel P (weightedHomogeneousComponent (m.degree ∘ c) d P)] at hw
         rcases Finset.mem_union.1 (support_add hw) with hw | hw
-        · rw [← Finsupp.weight_eq_linearCombination]
-          refine weight_lt_of_mem_support_sub_weightedHomogeneousComponent (fun w hw ↦ ?_) hw
-          rw [Finsupp.weight_eq_linearCombination]
-          exact hP w hw
+        · exact weight_lt_of_mem_support_sub_weightedHomogeneousComponent hP hw
         · exact hlt w hw
       obtain ⟨G₂, hG₂, h⟩ := ih (P - G₁) hP'
       have haeval : aeval c (P - G₁) = aeval c P := by rw [map_sub, hJ G₁ hG₁, sub_zero]
