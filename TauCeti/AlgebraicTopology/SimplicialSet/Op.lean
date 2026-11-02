@@ -19,9 +19,6 @@ constructions on simplicial sets, such as joins and slices, along the opposite.
 
 ## Main results
 
-* `SSet.opFunctor_map_opFunctorCompOpFunctorIso_hom_app`,
-  `SSet.opFunctor_map_opFunctorCompOpFunctorIso_inv_app`: the involution `Xᵒᵖᵒᵖ ≅ X` commutes
-  with the opposite.
 * `SSet.stdSimplex.map_comp_opIso_inv`: the isomorphism `Δ[n]ᵒᵖ ≅ Δ[n]` is natural in `n`.
 * `SSet.stdSimplex.opFunctor_map_opIso_hom_comp_opIso_hom`,
   `SSet.stdSimplex.opIso_inv_comp_opFunctor_map_opIso_inv`: it is involutive.
@@ -43,18 +40,6 @@ namespace SSet
 faithful. -/
 instance : opFunctor.{u}.IsEquivalence :=
   opEquivalence.isEquivalence_functor
-
-/-- The two ways of identifying `Xᵒᵖᵒᵖᵒᵖ` with `Xᵒᵖ` through the involution agree: this is
-`CategoryTheory.Equivalence.counit_app_functor` for `SSet.opEquivalence`. -/
-lemma opFunctor_map_opFunctorCompOpFunctorIso_hom_app (X : SSet.{u}) :
-    opFunctor.map (opFunctorCompOpFunctorIso.hom.app X) = opFunctorCompOpFunctorIso.hom.app X.op :=
-  (opEquivalence.counit_app_functor X).symm
-
-/-- The two ways of identifying `Xᵒᵖ` with `Xᵒᵖᵒᵖᵒᵖ` through the involution agree: this is
-`CategoryTheory.Equivalence.unit_app_inverse` for `SSet.opEquivalence`. -/
-lemma opFunctor_map_opFunctorCompOpFunctorIso_inv_app (X : SSet.{u}) :
-    opFunctor.map (opFunctorCompOpFunctorIso.inv.app X) = opFunctorCompOpFunctorIso.inv.app X.op :=
-  (opEquivalence.unit_app_inverse X).symm
 
 namespace stdSimplex
 

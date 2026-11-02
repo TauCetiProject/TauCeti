@@ -139,8 +139,10 @@ private def opObjEquiv' {n : SimplexCategoryᵒᵖ} : (join K L).op.obj n ≃ (j
     simp only [Equiv.apply_symm_apply, JoinData.op_precomp, JoinData.op_op, JoinData.op_postcomp,
       JoinData.precomp_postcomp, JoinData.precomp_precomp, JoinData.postcomp_postcomp,
       stdSimplex.opIso_inv_comp_opFunctor_map_opIso_inv_assoc,
-      opFunctor_map_opFunctorCompOpFunctorIso_hom_app, Iso.inv_hom_id_app, JoinData.precomp_id,
-      Functor.id_obj, JoinData.postcomp_id]
+      Iso.inv_hom_id_app, JoinData.precomp_id, Functor.id_obj]
+    -- The remaining components are the triangle identity of `SSet.opEquivalence`.
+    exact (congr_arg₂ _ (opEquivalence.unit_inverse_comp L)
+      (opEquivalence.unit_inverse_comp K)).trans (JoinData.postcomp_id _)
 
 variable (K L) in
 /-- **The opposite of a join**: `(K ⋆ L)ᵒᵖ ≅ Lᵒᵖ ⋆ Kᵒᵖ`. A simplex of `(K ⋆ L)ᵒᵖ` is a simplex of
