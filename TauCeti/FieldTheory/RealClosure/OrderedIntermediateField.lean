@@ -121,6 +121,8 @@ omit [IsOrderedRing K] in
 theorem isPreordering (P : OrderedIntermediateField K L) : P.preordering.IsPreordering where
   mem_of_isSquare := by
     rintro x ⟨y, rfl⟩
+    -- Reduce the comap carrier and subtype multiplication to compare the square
+    -- in the ambient field rather than inside the intermediate-field wrapper.
     change y.val * y.val ∈ P.nonneg
     rcases P.mem_or_neg_mem y.val y.property with hy | hy
     · exact mul_mem hy hy
