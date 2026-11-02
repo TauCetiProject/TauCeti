@@ -45,6 +45,9 @@ with all of them without lying in the image of `B₂(2)`.
 
 ## Main results
 
+* `TauCeti.eq_and_eq_or_eq_or_eq_and_eq_of_forall_update_mul_eq`: when `2 ≠ 0`, if every sign
+  vector `Function.update 1 a (-1)` gives the same product of signs on two pairs of indices, the
+  four indices pair off.
 * `TauCeti.range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one`: over a field with
   `2 ≠ 0` and a point `(c, s)` of the unit circle with `c ≠ 0` and `s ≠ 0`, the image of the Brauer
   algebra `B₂(n)` is the commutant of the orthogonal group on `(Kⁿ)^{⊗2}`.
@@ -65,19 +68,54 @@ open Matrix
 
 namespace TauCeti
 
+/-- Let `2 ≠ 0` in `R`. If, for every `a`, the sign vector `Function.update 1 a (-1)` (the diagonal
+of `TauCeti.orthogonalDiagonalReflection R a`) gives the same product of signs on the two pairs of
+indices `(v 0, v 1)` and `(u 0, u 1)`, then the four indices pair off: the two pairs are both
+constant, or equal, or swapped. -/
+theorem eq_and_eq_or_eq_or_eq_and_eq_of_forall_update_mul_eq {R ι : Type*} [CommRing R]
+    [DecidableEq ι] (h2 : (2 : R) ≠ 0) {v u : Fin 2 → ι}
+    (h : ∀ a, Function.update (1 : ι → R) a (-1) (v 0) *
+        Function.update (1 : ι → R) a (-1) (v 1) =
+      Function.update (1 : ι → R) a (-1) (u 0) * Function.update (1 : ι → R) a (-1) (u 1)) :
+    (v 0 = v 1 ∧ u 0 = u 1) ∨ v = u ∨ (u 0 = v 1 ∧ u 1 = v 0) := by
+  have hne : (-1 : R) ≠ 1 := fun h ↦ h2 (by linear_combination -h)
+  -- A product of two signs is `-1` exactly when one of the two labels is `a`.
+  have key : ∀ a x y : ι, Function.update (1 : ι → R) a (-1) x *
+      Function.update (1 : ι → R) a (-1) y = -1 ↔ (x = a ↔ y ≠ a) := fun a x y ↦ by
+    simp only [Function.update_apply, Pi.one_apply]
+    split_ifs <;> simp_all [hne.symm]
+  rw [funext_iff, Fin.forall_fin_two]
+  by_cases hv : v 0 = v 1
+  · -- both signs of `v` agree, so those of `u` agree too: `u` is constant.
+    refine .inl ⟨hv, by_contra fun hu ↦ ?_⟩
+    have h' := h (u 0)
+    rw [hv, ((key _ _ _).mpr ⟨fun _ ↦ Ne.symm hu, fun _ ↦ rfl⟩)] at h'
+    have := (key (u 0) (v 1) (v 1)).mp h'
+    tauto
+  · -- each of `v 0` and `v 1` occurs exactly once in `u`.
+    have h₀ := (key _ _ _).mp ((h (v 0)).symm.trans ((key _ _ _).mpr ⟨fun _ ↦ Ne.symm hv,
+      fun _ ↦ rfl⟩))
+    have h₁ := (key _ _ _).mp ((h (v 1)).symm.trans ((key _ _ _).mpr ⟨fun h ↦ absurd h hv,
+      fun h ↦ absurd rfl h⟩))
+    by_cases hu : u 0 = v 0
+    · have hu1 : u 1 = v 1 := by_contra fun h ↦ hv (hu.symm.trans (h₁.mpr h))
+      exact .inr (.inl ⟨hu.symm, hu1.symm⟩)
+    · have hu1 : u 1 = v 0 := by_contra fun h ↦ hu (h₀.mpr h)
+      exact .inr (.inr ⟨h₁.mpr fun h ↦ hv (hu1.symm.trans h), hu1⟩)
+
 variable {K : Type*} [Field K]
 
 variable {n : ℕ} {M : Matrix (Fin 2 → Fin n) (Fin 2 → Fin n) K}
 
 /-- **Sign constraints.** A matrix commuting with the Kronecker squares of the diagonal reflections
 vanishes at every entry whose indices do not pair off. -/
-private theorem pattern_of_apply_ne_zero (h2 : (2 : K) ≠ 0)
+private theorem eq_and_eq_or_eq_or_eq_and_eq_of_apply_ne_zero (h2 : (2 : K) ≠ 0)
     (hM : ∀ g : Matrix.orthogonalGroup (Fin n) K,
       M * (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) =
         (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) * M)
     {v u : Fin 2 → Fin n} (hvu : M v u ≠ 0) :
     (v 0 = v 1 ∧ u 0 = u 1) ∨ v = u ∨ (u 0 = v 1 ∧ u 1 = v 0) := by
-  refine pattern_of_forall_update_mul_eq h2 fun a ↦ ?_
+  refine eq_and_eq_or_eq_or_eq_and_eq_of_forall_update_mul_eq h2 fun a ↦ ?_
   have h := congrFun (congrFun (hM (orthogonalDiagonalReflection K a)) v) u
   simp only [coe_orthogonalDiagonalReflection, kroneckerPower_diagonal, mul_diagonal,
     diagonal_mul, Fin.prod_univ_two] at h
@@ -139,7 +177,7 @@ private theorem exists_eq_add_smul_diagProj (h2 : (2 : K) ≠ 0) (hn : 2 ≤ n)
     BrauerDiagram.isConstantOnArcs_capCup_iff Fin.zero_ne_one, Fin.forall_fin_two, funext_iff]
   simp only [Equiv.swap_apply_left, Equiv.swap_apply_right, ne_eq]
   have hzero (h : ¬((v 0 = v 1 ∧ u 0 = u 1) ∨ v = u ∨ (u 0 = v 1 ∧ u 1 = v 0))) :
-      M v u = 0 := by_contra fun h' ↦ h (pattern_of_apply_ne_zero h2 hM h')
+      M v u = 0 := by_contra fun h' ↦ h (eq_and_eq_or_eq_or_eq_and_eq_of_apply_ne_zero h2 hM h')
   rw [funext_iff, Fin.forall_fin_two] at hzero
   by_cases hv : v 0 = v 1
   · by_cases hu : u 0 = u 1
