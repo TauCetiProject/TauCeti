@@ -323,15 +323,6 @@ private theorem exists_pos_factor_le (K : ℝ≥0) (a b : ℕ) {τ : ℝ≥0} (h
     push_cast [NNReal.coe_sub hδK.le, hδ']
     linarith
 
-omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F] in
-/-- The coarea Jacobian of a surjective linear map is positive. -/
-private theorem normDet_adjoint_pos {A : E →L[ℝ] F} (hA : Surjective A) :
-    0 < A.adjoint.normDet := by
-  refine lt_of_le_of_ne (LinearMap.normDet_nonneg _)
-    (Ne.symm fun h ↦ LinearMap.normDet_eq_zero_iff_ker_ne_bot.1 h ?_)
-  rw [← ContinuousLinearMap.orthogonal_range, LinearMap.range_eq_top.2 hA,
-    Submodule.top_orthogonal_eq_bot]
-
 /-- A measurable set `s` on which `f` is differentiable with surjective derivative splits into
 countably many disjoint measurable pieces, on each of which `f` is Lipschitz and the coarea formula
 holds up to the factor `τ²`. -/
@@ -382,7 +373,7 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
     · exact (hSd hij).mono inter_subset_left inter_subset_left
   · refine Subset.antisymm (iUnion_subset fun p ↦ inter_subset_left.trans inter_subset_left)
       fun x hx ↦ ?_
-    obtain ⟨j, hj⟩ := exists_mem_Ico_zpow (normDet_adjoint_pos (hsurj x hx)) hτ'
+    obtain ⟨j, hj⟩ := exists_mem_Ico_zpow (LinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx)) hτ'
     obtain ⟨n, hn⟩ := mem_iUnion.1 (ht_cover j ⟨hx, hj⟩)
     exact mem_iUnion.2 ⟨(j, n), ⟨hx, hj⟩, hn⟩
   · -- On a nonempty piece, `J A` and every `J f x` lie in the same interval `[τ ^ j, τ ^ (j + 1))`,
