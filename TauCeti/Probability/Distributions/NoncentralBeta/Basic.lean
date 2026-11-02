@@ -211,14 +211,14 @@ theorem noncentralBetaMeasure_eq_bind (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) 
   ext s hs
   rw [noncentralBetaMeasure_eq_sum ha hb, Measure.sum_apply _ hs,
     Measure.bind_apply hs (.of_discrete), lintegral_countable']
-  simp only [Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [_root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Set evaluation as an extended-real Poisson series; the formula holds for every set. -/
 theorem noncentralBetaMeasure_apply (ha : 0 ≤ a) (hb : 0 < b) (l : ℝ≥0) (s : Set ℝ) :
     noncentralBetaMeasure a b l s =
       ∑' j : ℕ, poissonMeasure (l / 2) {j} * noncentralBetaComponent (a + j) b s := by
   rw [noncentralBetaMeasure_eq_sum ha hb, Measure.sum_apply_of_countable]
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
 
 /-- Nonnegative integration against the noncentral Beta law can be performed component by
 component, without measurability, finiteness or integrability assumptions on the observable. -/
@@ -248,9 +248,9 @@ theorem noncentralBetaMeasure_zero_shape (hb : 0 < b) (l : ℝ≥0) :
       ENNReal.ofReal (exp (-(l : ℝ) / 2)) • Measure.dirac 0 +
         Measure.sum (fun j : ℕ ↦ poissonMeasure (l / 2) {j + 1} • betaMeasure (j + 1) b) := by
   ext s hs
-  rw [noncentralBetaMeasure_apply le_rfl hb, Measure.add_apply, Measure.sum_apply _ hs,
-    tsum_eq_zero_add' ENNReal.summable]
-  simp only [Measure.smul_apply, smul_eq_mul, CharP.cast_eq_zero, add_zero,
+  rw [noncentralBetaMeasure_apply le_rfl hb, _root_.add_apply, Measure.sum_apply _ hs,
+    tsum_eq_zero_add' CompleteLattice.summable]
+  simp only [_root_.smul_apply, smul_eq_mul, CharP.cast_eq_zero, add_zero,
     noncentralBetaComponent_zero, zero_add, Nat.cast_add, Nat.cast_one]
   congr 1
   · simp [poissonMeasure_singleton, NNReal.coe_div, neg_div]
@@ -261,12 +261,12 @@ theorem noncentralBetaMeasure_zero_shape (hb : 0 < b) (l : ℝ≥0) :
 @[simp]
 theorem noncentralBetaMeasure_zero_shape_singleton (hb : 0 < b) (l : ℝ≥0) :
     noncentralBetaMeasure 0 b l {0} = ENNReal.ofReal (exp (-(l : ℝ) / 2)) := by
-  rw [noncentralBetaMeasure_zero_shape hb, Measure.add_apply,
+  rw [noncentralBetaMeasure_zero_shape hb, _root_.add_apply,
     Measure.sum_apply _ (measurableSet_singleton 0)]
   have hzero (j : ℕ) : betaMeasure ((j : ℝ) + 1) b {0} = 0 :=
     (betaMeasure_eq_withDensity_ofReal _ b ▸ withDensity_absolutelyContinuous _ _)
       (measure_singleton 0)
-  simp [Measure.smul_apply, hzero]
+  simp [_root_.smul_apply, hzero]
 
 /-! ### Support and absolute continuity -/
 
@@ -313,7 +313,7 @@ atom, and it sits at zero. -/
 theorem noncentralBetaMeasure_singleton_of_ne_zero {x : ℝ} (hx : x ≠ 0) (a b : ℝ) (l : ℝ≥0) :
     noncentralBetaMeasure a b l {x} = 0 := by
   by_cases h : 0 ≤ a ∧ 0 < b
-  · rw [noncentralBetaMeasure_apply h.1 h.2, ENNReal.tsum_eq_zero]
+  · rw [noncentralBetaMeasure_apply h.1 h.2, tsum_eq_zero_iff]
     intro j
     rcases (add_nonneg h.1 j.cast_nonneg).eq_or_lt' with hj | hj
     · simp [hj, hx.symm]
@@ -365,7 +365,7 @@ theorem measurable_noncentralBetaMeasure :
       poissonMeasure (p.2.2 / 2) {j} • noncentralBetaComponent (p.1 + j) p.2.1 := by
     apply Measure.measurable_measure.2
     intro s hs
-    simp only [Measure.sum_apply _ hs, Measure.smul_apply, smul_eq_mul]
+    simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul]
     exact Measurable.tsum fun j ↦
       ((Measure.measurable_coe (measurableSet_singleton j)).comp
         (measurable_poissonMeasure.comp (measurable_snd.snd.div_const 2))).mul

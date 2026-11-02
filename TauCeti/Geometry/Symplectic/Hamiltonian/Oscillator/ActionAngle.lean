@@ -145,8 +145,8 @@ theorem stdSymplecticForm_fderiv_oscillatorActionAngle (hm : 0 < m) (hν : 0 < �
   have hr0 : √(2 * y.2) ≠ 0 := by positivity
   have hc0 : √(m * ν) ≠ 0 := by positivity
   rw [(hasFDerivAt_oscillatorActionAngle hm hν hI).fderiv]
-  simp only [stdSymplecticForm_apply, RCLike.inner_apply, RCLike.conj_to_real, prod_apply,
-    add_apply, smul_apply, coe_fst', coe_snd', smul_eq_mul]
+  simp only [stdSymplecticForm_apply, RCLike.inner_apply, RCLike.conj_to_real,
+    ContinuousLinearMap.prod_apply, add_apply, smul_apply, coe_fst', coe_snd', smul_eq_mul]
   field_simp
   linear_combination (u.1 * v.2 - u.2 * v.1) * √(2 * y.2) ^ 2 * Real.sin_sq_add_cos_sq y.1
 

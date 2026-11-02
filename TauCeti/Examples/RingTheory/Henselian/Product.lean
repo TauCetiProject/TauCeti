@@ -69,6 +69,7 @@ example : ¬ HenselianRing (Fin 2 → ℤ)
   intro h
   have hbad := (Ideal.henselianRing_pi_iff _).1 h 1
   simp only [show (1 : Fin 2) ≠ 0 by decide, ↓reduceIte] at hbad
-  have h5 : (5 : ℤ) ∈ Ideal.jacobson ⊥ := hbad.jac (Ideal.subset_span (by simp))
-  have hu := Ideal.mem_jacobson_bot.1 h5 1
+  have h5 : (5 : ℤ) ∈ Ring.jacobson ℤ :=
+    hbad.jac (Ideal.subset_span (by simp))
+  have hu := Ring.mem_jacobson_iff.1 h5 1
   norm_num [Int.isUnit_iff] at hu

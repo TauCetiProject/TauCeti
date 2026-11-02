@@ -201,7 +201,7 @@ private theorem projection_action_primitive_action (x y : U.toSubgroup) :
         ((trivialF2 U.toSubgroup).gradedResolutionRepresentation y
           (characterPrimitive U α hα)))) =
       Multiplicative.toAdd (α x) + Multiplicative.toAdd (α y) := by
-  rw [← Module.End.mul_apply, ← map_mul, characterPrimitive_projection_action,
+  rw [← mul_apply_eq_comp, ← map_mul, characterPrimitive_projection_action,
     AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
 
 open scoped Classical in

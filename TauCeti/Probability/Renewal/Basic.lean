@@ -160,7 +160,7 @@ lemma natCast_le_renewalCount_iff {t : ℝ≥0} {ω : Ω} {n : ℕ} :
       _ = ∑ k ∈ Finset.range n, if arrival T (k + 1) ω ≤ t then 1 else 0 :=
         Finset.sum_congr rfl fun k hk ↦
           (ite_eq_left <| (monotone_arrival T ω (Finset.mem_range.1 hk)).trans h).symm
-      _ ≤ renewalCount T t ω := ENNReal.sum_le_tsum _
+      _ ≤ renewalCount T t ω := sum_le_tsum _
 
 /-- The count at time `t` equals `n` exactly when `arrival T n ω ≤ t < arrival T (n + 1) ω`. -/
 lemma renewalCount_eq_natCast_iff {t : ℝ≥0} {ω : Ω} {n : ℕ} :
@@ -206,7 +206,7 @@ lemma exists_renewalCount_eq_natCast {t : ℝ≥0} {ω : Ω} (h : renewalCount T
 lemma monotone_renewalCount (ω : Ω) : Monotone fun t ↦ renewalCount T t ω := by
   intro s t hst
   simp only [renewalCount_def]
-  refine ENNReal.tsum_le_tsum fun n ↦ ?_
+  refine tsum_le_tsum fun n ↦ ?_
   by_cases h : arrival T (n + 1) ω ≤ s
   · simp [h, h.trans hst]
   · simp [h]

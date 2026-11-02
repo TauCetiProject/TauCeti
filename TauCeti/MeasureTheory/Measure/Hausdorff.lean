@@ -126,13 +126,13 @@ private theorem openContent_le_content (d : ℝ) {r r' : ℝ≥0∞} (hr : r' < 
           <| iInf_le_of_le (hst.trans (iUnion_mono fun n ↦ self_subset_thickening
             (NNReal.coe_pos.2 (hη0 n)) _)) <| iInf_le_of_le (fun n ↦ (hdiam n).trans (hηr n)) le_rfl
     _ ≤ ∑' n, ((⨆ _ : (t n).Nonempty, ediam (t n) ^ d) + ε' n) := by
-        refine ENNReal.tsum_le_tsum fun n ↦ iSup_le fun hne ↦ ?_
+        refine _root_.tsum_le_tsum fun n ↦ iSup_le fun hne ↦ ?_
         have hne' : (t n).Nonempty :=
           (thickening_nonempty_iff_of_pos (NNReal.coe_pos.2 (hη0 n))).1 hne
         rw [iSup_pos hne']
         exact hηd n _ ⟨ediam_mono (self_subset_thickening (NNReal.coe_pos.2 (hη0 n)) _),
           hdiam n⟩
-    _ = (∑' n, ⨆ _ : (t n).Nonempty, ediam (t n) ^ d) + ∑' n, (ε' n : ℝ≥0∞) := ENNReal.tsum_add
+    _ = (∑' n, ⨆ _ : (t n).Nonempty, ediam (t n) ^ d) + ∑' n, (ε' n : ℝ≥0∞) := _root_.tsum_add
     _ ≤ (∑' n, ⨆ _ : (t n).Nonempty, ediam (t n) ^ d) + ε := by gcongr
 
 /-- The open-cover content of the fibers of a map continuous on a compact set is upper
@@ -234,7 +234,7 @@ theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [Metr
             (ENNReal.ofReal_le_ofReal (by linarith [hrδ n i])))
           (Eventually.of_forall hA)
     _ ≤ liminf (fun n : ℕ => M + (n : ℝ≥0∞)⁻¹) atTop :=
-        liminf_le_liminf (Eventually.of_forall fun n => (ENNReal.tsum_le_tsum fun i =>
+        liminf_le_liminf (Eventually.of_forall fun n => (_root_.tsum_le_tsum fun i =>
           ENNReal.rpow_le_rpow (ediam_closedBall_le _ _) hd).trans (hsum n))
     _ = M := hlim.liminf_eq
 

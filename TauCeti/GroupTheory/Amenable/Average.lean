@@ -100,7 +100,7 @@ theorem abs_average_leftTranslation_sub_le [DecidableEq G] (g : G) (f : UCB G) :
   -- The two sums differ only on `g⁻¹F \ F` and `F \ g⁻¹F`, where `|f| ≤ ‖f‖`.
   have hbound (s : Finset G) : |∑ x ∈ s, (f : G →ᵇ ℝ) x| ≤ ‖f‖ * #s := by
     simpa [mul_comm] using abs_sum_le_card_nsmul fun x (_ : x ∈ s) => UCB.abs_apply_le_norm f x
-  rw [← sum_sdiff_sub_sum_sdiff, symmDiff_def, sup_eq_union,
+  rw [← sum_sdiff_sub_sum_sdiff, symmDiff_def,
     card_union_of_disjoint disjoint_sdiff_sdiff, Nat.cast_add, mul_add]
   exact (abs_sub _ _).trans (add_le_add (hbound _) (hbound _))
 

@@ -103,9 +103,6 @@ private theorem exists_restrict_eq_of_restrict_eq_zero (f : R) (G : Finset R)
         congr($(tilde.toOpen_res M _ _ (homOfLE hfg)) x)
       have h₂ : res[hfg] (f ^ k • σ) = f ^ k • res[hfg] σ := map_smul _ _ _
       rw [← h₁, ← hk, h₂, hσg, smul_zero]
-      -- The two zeros are those of the sections over `D(f g)`, with `D(f g)` read once as an open
-      -- subset of `Spec R` and once as an open subset of the prime spectrum; they agree by `rfl`.
-      rfl
     obtain ⟨⟨_, N, rfl⟩, hN⟩ := (IsLocalizedModule.eq_zero_iff (.powers (f * g))
       (tilde.toOpen M (basicOpen (f * g))).hom).mp hx
     exact ⟨N, IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq

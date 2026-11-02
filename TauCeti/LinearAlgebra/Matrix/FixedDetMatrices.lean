@@ -65,7 +65,7 @@ theorem exists_smul_mem_reps (hn : n ≠ 0) (A : FixedDetMatrix (Fin 2) ℤ n) :
 theorem smul_coe_apply {R : Type*} [CommRing R] {m : R} (g : SpecialLinearGroup (Fin 2) R)
     (A : FixedDetMatrix (Fin 2) R m) (i j : Fin 2) :
     (g • A).1 i j = g i 0 * A.1 0 j + g i 1 * A.1 1 j := by
-  rw [smul_coe, mul_apply, Fin.sum_univ_two]
+  rw [smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma unitriangular_of_smul_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, ℤ)}
     (hA : A ∈ reps n) (hgA : g • A ∈ reps n) : g 0 0 = 1 ∧ g 1 0 = 0 ∧ g 1 1 = 1 := by

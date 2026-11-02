@@ -921,7 +921,7 @@ private theorem ae_not_of_lt_of_cdf_eq {ν : Measure ℝ} [IsProbabilityMeasure 
       -- constant at the level `cdf ν y` throughout `(y, b)`.
       calc ν (Ioo y b) ≤ ν (⋃ n : ℕ, Ioc y (b - (b - y) / (n + 2))) := measure_mono hsub
         _ ≤ ∑' n : ℕ, ν (Ioc y (b - (b - y) / (n + 2))) := measure_iUnion_le _
-        _ = 0 := ENNReal.tsum_eq_zero.2 fun n ↦ by
+        _ = 0 := tsum_eq_zero_iff.2 fun n ↦ by
           have h1div : (1 : ℝ) / (n + 2) < 1 :=
             (div_lt_iff₀ (by positivity : (0 : ℝ) < n + 2)).2 (by
               have _h : (1 : ℝ) ≤ n + 1 := by

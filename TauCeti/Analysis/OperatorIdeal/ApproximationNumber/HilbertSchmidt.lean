@@ -100,7 +100,7 @@ sum of the squared approximation numbers: `E_b(T) ≤ ∑' n, aₙ(T)²`. No com
 theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtEnergy b ≤ ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 := by
   classical
-  rw [hilbertSchmidtEnergy_def, ENNReal.tsum_eq_iSup_sum]
+  rw [hilbertSchmidtEnergy_def, tsum_eq_iSup_sum]
   refine iSup_le fun s ↦ ?_
   -- The partial sum over `s` is the energy of the compression of `T` to the span of the `bᵢ`,
   -- `i ∈ s`, computed in the orthonormal basis formed by these `bᵢ`.
@@ -159,7 +159,7 @@ private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertB
   have hCE : ∑ n ∈ Finset.range k, (C.singularValue n : ℝ≥0∞) ^ 2 ≤
       T.hilbertSchmidtEnergy b := by
     set c := (stdOrthonormalBasis 𝕜 V).toHilbertBasis
-    calc _ ≤ ∑' n, (C.singularValue n : ℝ≥0∞) ^ 2 := ENNReal.sum_le_tsum _
+    calc _ ≤ ∑' n, (C.singularValue n : ℝ≥0∞) ^ 2 := sum_le_tsum _
       _ = C.hilbertSchmidtEnergy c :=
           tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional C c
       _ ≤ _ := T.hilbertSchmidtEnergy_compression_le V c b

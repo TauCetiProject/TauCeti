@@ -104,7 +104,7 @@ theorem lintegral_enorm_acDerivativeDensity_add_singularPart [SigmaFinite ν] (s
       (variationMeasure μ Ω u).singularPart ν s = variationMeasure μ Ω u s := by
   have h := congrArg (fun m : Measure Ω => m s)
     (withDensity_enorm_acDerivativeDensity_add_singularPart hu hfin ν)
-  simpa only [Measure.add_apply, withDensity_apply'] using h
+  simpa only [_root_.add_apply, withDensity_apply'] using h
 
 /-- The absolutely continuous derivative density is locally integrable even when the
 whole derivative has infinite variation. -/
@@ -176,7 +176,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   let η := ξ.withDensity (fun x => ‖τ x‖ₑ) +
     ω.withDensity (fun x => ‖polarDensity μ Ω u x‖ₑ)
   have : IsFiniteMeasureOnCompacts η := ⟨fun K hK => by
-    simp only [η, Measure.add_apply, withDensity_apply _ hK.measurableSet]
+    simp only [η, _root_.add_apply, withDensity_apply _ hK.measurableSet]
     exact ENNReal.add_lt_top.2
       ⟨hasFiniteIntegral_iff_enorm.1 (hτ.integrableOn_isCompact hK).2,
         hasFiniteIntegral_iff_enorm.1 (hσ.integrableOn_isCompact hK).2⟩⟩
@@ -231,7 +231,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
         linarith
       rw [heq, Measure.setLIntegral_rnDeriv hηρ]
       exact enorm_sub_le.trans (by
-        simpa only [η, Measure.add_apply, add_comm] using add_le_add
+        simpa only [η, _root_.add_apply, add_comm] using add_le_add
           (hbound ω (polarDensity μ Ω u)) (hbound ξ τ))
   -- The singular bound vanishes ν-a.e., while the density of ν in ρ is positive there.
   filter_upwards [hνρ.ae_le hle, Measure.rnDeriv_eq_zero_of_mutuallySingular hην hνρ,

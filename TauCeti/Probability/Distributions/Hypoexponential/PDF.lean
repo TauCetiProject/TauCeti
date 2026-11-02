@@ -183,10 +183,10 @@ private theorem withDensity_erlangMixturePDF (r : ι → ℝ) (c : (Σ _ : ℝ, 
       ∑ p ∈ poles r, ENNReal.ofReal (c p) • gammaMeasure p.2 p.1 := by
   ext s hs
   unfold erlangMixturePDF
-  rw [withDensity_apply _ hs, Measure.finsetSum_apply,
+  rw [withDensity_apply _ hs, _root_.sum_apply,
     lintegral_finsetSum _ fun p _ ↦ (measurable_gammaPDF _ _).const_mul _]
   refine sum_congr rfl fun p _ ↦ ?_
-  rw [lintegral_const_mul _ (measurable_gammaPDF _ _), Measure.smul_apply,
+  rw [lintegral_const_mul _ (measurable_gammaPDF _ _), _root_.smul_apply,
     gammaMeasure, withDensity_apply _ hs, smul_eq_mul]
 
 private theorem isFiniteMeasure_withDensity_erlangMixturePDF (hr : ∀ i, 0 < r i)
