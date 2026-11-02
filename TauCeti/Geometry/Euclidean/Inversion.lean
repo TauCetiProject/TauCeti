@@ -58,6 +58,8 @@ of one orientation class give an oriented atlas.
   products by `(R / dist x c) ^ 4`.
 * `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
   `⟪u, v⟫ / dist x c ^ 2`.
+* `LinearIsometryEquiv.map_inversion_zero`: a linear isometry equivalence commutes with inversion
+  in a sphere about `0`.
 * `EuclideanGeometry.det_fderiv_inversion_neg`: the derivative of an inversion has negative
   determinant.
 -/
@@ -95,6 +97,12 @@ inversion in the sphere of centre `f c` and radius `R`. -/
 theorem LinearIsometry.map_inversion (f : V →ₗᵢ[ℝ] V₂) (c : V) (R : ℝ) (x : V) :
     f (inversion c R x) = inversion (f c) R (f x) :=
   f.toAffineIsometry.map_inversion c R x
+
+/-- A linear isometry equivalence fixes `0`, so it commutes with the inversion in a sphere about
+`0`. -/
+theorem LinearIsometryEquiv.map_inversion_zero (f : V ≃ₗᵢ[ℝ] V₂) (R : ℝ) (x : V) :
+    f (inversion 0 R x) = inversion 0 R (f x) := by
+  simpa using f.toLinearIsometry.map_inversion 0 R x
 
 namespace EuclideanGeometry
 
