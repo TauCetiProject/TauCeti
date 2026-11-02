@@ -39,7 +39,7 @@ theorem twoByTwo_bigradedHatHomologyPiece_eq_bot {g : ℤ × ℤ} (hg : g ≠ (0
   rw [Submodule.mem_bot]
   obtain ⟨z, hz, rfl⟩ :=
     (twoByTwo.isKnot_of_two.toOddComponentGridDiagram.mem_bigradedHatHomologyPiece_iff R 0).mp hy
-  exact twoByTwo_simplyBlockedHomologyClass_eq_zero_of_bidegree_ne R z hg hz
+  exact twoByTwo_oneVariableSpecializationHomologyClass_eq_zero_of_bidegree_ne R z hg hz
 
 /-- All simply blocked homology of the standard two-by-two unknot has bidegree `(0, 0)`. -/
 theorem twoByTwo_bigradedHatHomologyPiece_zero_eq_top : P (0, 0) = ⊤ := by

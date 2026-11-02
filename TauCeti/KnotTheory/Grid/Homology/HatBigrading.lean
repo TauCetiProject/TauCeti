@@ -78,42 +78,9 @@ private theorem hatDifferential_homogeneous :
   rw [G.1.simplyBlockedChainEquiv_d]
   simpa only [sub_eq_add_neg] using G.simplyBlockedDifferential_mem_bigradedChainHatPiece hc
 
-private noncomputable def hatHomologyIso :
-    (C).homology () ≅ ModuleCat.of Poly ((d).homology (C).hom_d_comp_hom_d) :=
-  (C).homologyIsoSc' () () () rfl rfl ≪≫
-    ((C).sc' () () ()).moduleCatHomologyIso ≪≫
-      (Submodule.quotEquivOfEq _ _
-        ((d).range_moduleCatToCycles_eq_boundariesInKer (C).hom_d_comp_hom_d)).toModuleIso
-
-private theorem hatHomologyIso_inv_class (z : LinearMap.ker d) :
-    (hatHomologyIso G R i).inv ((d).homologyπ (C).hom_d_comp_hom_d z) =
-      G.1.oneVariableSpecializationHomologyClass R i z := by
-  let e := Submodule.quotEquivOfEq _ _
-    ((d).range_moduleCatToCycles_eq_boundariesInKer (C).hom_d_comp_hom_d)
-  have he : e.symm (Submodule.Quotient.mk z) = Submodule.Quotient.mk z := by
-    apply e.injective
-    simp only [LinearEquiv.apply_symm_apply, e, Submodule.quotEquivOfEq_mk]
-  rw [GridDiagram.oneVariableSpecializationHomologyClass_apply]
-  simp only [LinearMap.homologyπ_apply]
-  -- Separate the canonical categorical quotient from the change of its boundary submodule.
-  -- The latter is an isomorphism of bundled modules, whose inverse has a public equation.
-  change ((C).homologyIsoSc' () () () rfl rfl).inv
-      (((C).sc' () () ()).moduleCatHomologyIso.inv
-        (e.toModuleIso.inv (Submodule.Quotient.mk z))) = _
-  rw [LinearEquiv.toModuleIso_inv]
-  exact congrArg (fun x => ((C).homologyIsoSc' () () () rfl rfl).inv
-    (((C).sc' () () ()).moduleCatHomologyIso.inv x)) he
-
-private theorem hatHomologyIso_hom_class (z : LinearMap.ker d) :
-    (hatHomologyIso G R i).hom (G.1.oneVariableSpecializationHomologyClass R i z) =
-      (d).homologyπ (C).hom_d_comp_hom_d z := by
-  have h := congrArg (fun y => (hatHomologyIso G R i).hom y)
-    (hatHomologyIso_inv_class G R i z)
-  simpa using h.symm
-
 private noncomputable def hatHomologyEquiv :
     (d).homology (C).hom_d_comp_hom_d ≃ₗ[R] (Base).obj ((C).homology ()) :=
-  (hatHomologyIso G R i).symm.toLinearEquiv.restrictScalars R
+  (C).moduleCatHomologyIso.symm.toLinearEquiv.restrictScalars R
 
 /-- The internal `(O-Maslov, Alexander)` grading on the homology of a one-variable specialization.
 The coefficient action is explicitly restriction of its polynomial action. -/
@@ -146,10 +113,10 @@ theorem mem_bigradedHatHomologyPiece_iff {g : ℤ × ℤ} {y : (Base).obj ((C).h
   constructor
   · rintro ⟨z, hz, hzy⟩
     refine ⟨z, hz, ?_⟩
-    apply (hatHomologyIso G R i).toLinearEquiv.injective
-    exact (hatHomologyIso_hom_class G R i z).trans hzy
+    apply (C).moduleCatHomologyIso.toLinearEquiv.injective
+    exact ((C).moduleCatHomologyIso_hom_moduleCatKerHomologyClass z).trans hzy
   · rintro ⟨z, hz, rfl⟩
-    exact ⟨z, hz, (hatHomologyIso_hom_class G R i z).symm⟩
+    exact ⟨z, hz, ((C).moduleCatHomologyIso_hom_moduleCatKerHomologyClass z).symm⟩
 
 /-- A homogeneous cycle represents a class of the same bidegree. -/
 theorem oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece
@@ -183,7 +150,7 @@ theorem X_smul_mem_bigradedHatHomologyPiece (j : {c : Fin n // c ≠ i})
     InternalGrading.mem_map_piece_iff] at hy ⊢
   have he : (hatHomologyEquiv G R i).symm ((MvPolynomial.X j : Poly) • y) =
       (MvPolynomial.X j : Poly) • (hatHomologyEquiv G R i).symm y :=
-    (hatHomologyIso G R i).hom.hom.map_smul _ _
+    (C).moduleCatHomologyIso.hom.hom.map_smul _ _
   rw [he, sub_eq_add_neg]
   refine (hatComplexGrading G R i).smul_mem_homology_piece
     (hatDifferential_homogeneous G R i) (C).hom_d_comp_hom_d (fun g c hc => ?_) hy
