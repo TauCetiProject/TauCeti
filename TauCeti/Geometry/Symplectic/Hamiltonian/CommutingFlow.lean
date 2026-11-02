@@ -200,7 +200,7 @@ variable {ι : Type*} [Fintype ι] {F : M → ι → ℝ} (hF : ContMDiff I 𝓘
 omit [I.Boundaryless] [T2Space M] [BoundarylessManifold I M] in
 include hF in
 /-- The Hamiltonian vector fields of the components of a smooth family of functions are smooth. -/
-private theorem contMDiff_hamiltonianVectorField_apply (i : ι) :
+theorem contMDiff_hamiltonianVectorField_apply (i : ι) :
     ContMDiff I I.tangent (⊤ : ℕ∞)
       (fun y ↦ (⟨y, σ.hamiltonianVectorField (F · i) y⟩ : TangentBundle I M)) :=
   hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl
