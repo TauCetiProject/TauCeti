@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
+import Mathlib.Probability.Kernel.MeasurableLIntegral
 
 /-!
 # Conditional measures and the law of total probability
@@ -39,12 +40,16 @@ For any probability law, conditioning on a positive-mass measurable event has to
 distance twice the excluded mass. Conditioning on events whose masses tend to one therefore
 recovers the law.
 
+Conditioning a measurable family of finite measures on events with a measurable incidence set
+is measurable, including parameters where the conditioning event has zero mass.
+
 ## Main results
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
+* `Measurable.cond_of_finite` — measurability for varying measures and conditioning events
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -58,6 +63,22 @@ recovers the law.
 public section
 
 open MeasureTheory Set
+
+/-- Conditioning a measurable family of finite measures on measurably varying events gives a
+measurable family of measures. The event may have zero mass, in which case the conditional
+measure is zero. No uniform bound on the masses of the original measures is required. -/
+theorem Measurable.cond_of_finite {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : α → Measure β} (hμ : Measurable μ) (hfin : ∀ a, IsFiniteMeasure (μ a))
+    {s : α → Set β} (hs : MeasurableSet {p : α × β | p.2 ∈ s p.1}) :
+    Measurable fun a => ProbabilityTheory.cond (μ a) (s a) := by
+  let κ : ProbabilityTheory.Kernel α β := ⟨μ, hμ⟩
+  have hmass : Measurable fun a => μ a (s a) :=
+    ProbabilityTheory.Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ) hs hfin
+  refine Measure.measurable_of_measurable_coe _ fun t ht => ?_
+  simp only [ProbabilityTheory.cond_apply' ht]
+  exact hmass.inv.mul
+    (ProbabilityTheory.Kernel.measurable_kernel_prodMk_left_of_finite (κ := κ)
+      (hs.inter (measurable_snd ht)) hfin)
 
 namespace ProbabilityTheory
 
