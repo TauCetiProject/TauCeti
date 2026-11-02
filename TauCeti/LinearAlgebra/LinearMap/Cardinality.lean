@@ -5,21 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Isomorphisms
-public import Mathlib.LinearAlgebra.Quotient.Card
-public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.GroupTheory.Index
 
 /-!
 # Counting a module along the range and the kernel of a linear map
 
-For a linear map `f : M →ₗ[R] N` the first isomorphism theorem identifies `M ⧸ ker f` with
-`range f`, so the cardinality of `M` is the product of the cardinalities of the range and of the
-kernel. Both sides are `Nat.card`, which is `0` on an infinite type, so no finiteness hypothesis
-is needed: the statement also says that `M` is infinite exactly when the range or the kernel is.
+For a (semi)linear map `f : M →ₛₗ[τ₁₂] M₂` between additive groups, the fibres of `f` over its
+range are the cosets of the kernel, so the cardinality of `M` is the product of the cardinalities
+of the range and of the kernel. Both sides are `Nat.card`, which is `0` on an infinite type, so no
+finiteness hypothesis is needed: the statement also says that `M` is infinite exactly when the
+range or the kernel is.
 
-The second result records that the range of a linear map depends only on the map up to an
-isomorphism of arrows: two linear maps intertwined by linear equivalences on the source and on
-the target have ranges of the same cardinality.
+The second result compares the ranges of two semilinear maps `f` and `f'` with `e' ∘ f = f' ∘ e`,
+where `e` is surjective and `e'` is injective; for instance, linear maps intertwined by linear
+equivalences on the source and on the target. Then `e'` maps the range of `f` bijectively onto
+the range of `f'`, so the two ranges have the same cardinality.
 
 Both are the counting steps of an exact-sequence argument, where a term is compared with the
 image of the map leaving it and the image of the map entering it.
@@ -29,34 +30,39 @@ public section
 
 namespace LinearMap
 
-section
+variable {R R₂ R' R₂' M M₂ M' M₂' : Type*} [Semiring R] [Semiring R₂] [Semiring R']
+  [Semiring R₂'] {τ₁₂ : R →+* R₂} {τ₁₂' : R' →+* R₂'} [RingHomSurjective τ₁₂]
+  [RingHomSurjective τ₁₂']
 
-variable {R M N M' N' : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+section AddCommGroup
 
-/-- The cardinality of the source of a linear map is the product of the cardinalities of its
+variable [AddCommGroup M] [Module R M] [AddCommGroup M₂] [Module R₂ M₂]
+
+/-- The cardinality of the source of a semilinear map is the product of the cardinalities of its
 range and of its kernel. -/
-theorem card_eq_card_range_mul_card_ker (f : M →ₗ[R] N) :
+theorem card_eq_card_range_mul_card_ker (f : M →ₛₗ[τ₁₂] M₂) :
     Nat.card M = Nat.card (range f) * Nat.card (ker f) := by
-  rw [Submodule.card_eq_card_quotient_mul_card (ker f),
-    Nat.card_congr f.quotKerEquivRange.toEquiv, Nat.mul_comm]
+  have hker : (ker f : Set M) = f ⁻¹' {0} := Set.ext fun _ ↦ mem_ker
+  rw [← AddSubgroup.card_ker_mul_card_range f.toAddMonoidHom, mul_comm]
+  simp only [← SetLike.coe_sort_coe, coe_range, hker, AddMonoidHom.coe_range,
+    AddMonoidHom.coe_ker, toAddMonoidHom_coe]
 
-end
+end AddCommGroup
 
-section
+section AddCommMonoid
 
-variable {R M N M' N' : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N] [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+variable [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] [AddCommMonoid M']
+  [Module R' M'] [AddCommMonoid M₂'] [Module R₂' M₂']
 
-/-- Linear maps intertwined by linear equivalences on the source and on the target have ranges
-of the same cardinality. -/
-theorem card_range_eq_card_range_of_comp_eq (f : M →ₗ[R] N) (f' : M' →ₗ[R] N') (e : M ≃ₗ[R] M')
-    (e' : N ≃ₗ[R] N') (h : (e' : N →ₗ[R] N') ∘ₗ f = f' ∘ₗ (e : M →ₗ[R] M')) :
+/-- Two semilinear maps `f` and `f'` with `e' ∘ f = f' ∘ e`, where `e` is surjective and `e'` is
+injective, have ranges of the same cardinality. -/
+theorem card_range_eq_card_range_of_comp_eq (f : M →ₛₗ[τ₁₂] M₂) (f' : M' →ₛₗ[τ₁₂'] M₂')
+    {e : M → M'} {e' : M₂ → M₂'} (he : Function.Surjective e) (he' : Function.Injective e')
+    (h : e' ∘ f = f' ∘ e) :
     Nat.card (range f) = Nat.card (range f') := by
-  have hrange : range f' = Submodule.map (e' : N →ₗ[R] N') (range f) := by
-    rw [← range_comp, h, range_comp, range_eq_top.2 e.surjective, Submodule.map_top]
-  rw [hrange, Nat.card_congr (Submodule.equivMapOfInjective _ e'.injective _).toEquiv]
+  rw [← SetLike.coe_sort_coe, coe_range, ← SetLike.coe_sort_coe, coe_range,
+    ← he.range_comp f', ← h, Set.range_comp, Nat.card_image_of_injective he']
 
-end
+end AddCommMonoid
 
 end LinearMap
