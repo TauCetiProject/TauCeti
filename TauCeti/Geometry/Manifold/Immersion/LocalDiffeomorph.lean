@@ -264,7 +264,8 @@ theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImm
   have hinj : Function.Injective L :=
     (hg.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
   exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hd).toContinuousLinearEquiv,
-    ContinuousLinearMap.ext fun _ ↦ rfl⟩
+    ContinuousLinearMap.ext fun v ↦
+      LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq L hinj hd) v⟩
 
 end InverseFunctionTheorem
 
