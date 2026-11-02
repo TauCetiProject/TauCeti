@@ -161,20 +161,13 @@ variable (hA : IsAffinoidAlgebra K A)
 private theorem ofCompletedTensor_toCompletedTensor (x : AffinoidPushout I J) :
     ofCompletedTensor I J hA (toCompletedTensor (K := K) I J x) = x := by
   have := isClosed_pushoutIdeal I J hA
-  suffices h : ((ofCompletedTensor I J hA).comp (toCompletedTensor (K := K) I J)).comp
-      (Ideal.Quotient.mk _) = Ideal.Quotient.mk (pushoutIdeal I J) by
-    obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-    exact congr($h f)
-  refine isRestricted_subring_ringHom_ext_of_continuous
-    (((continuous_ofCompletedTensor I J hA).comp (continuous_toCompletedTensor I J)).comp
-      continuous_quot_mk) continuous_quot_mk (fun a ↦ ?_) (fun k ↦ ?_)
-  · rw [RingHom.comp_apply, RingHom.comp_apply, Ideal.Quotient.mk_algebraMap,
-      ← (inl I J).commutes a, toCompletedTensor_inl, ofCompletedTensor_inl]
-  · refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
-    · rw [RingHom.comp_apply, RingHom.comp_apply, ← restrictedRename_X (Fin.castAdd n) i,
-        ← inl_mk, toCompletedTensor_inl, ofCompletedTensor_inl]
-    · rw [RingHom.comp_apply, RingHom.comp_apply, ← restrictedRename_X (Fin.natAdd m) j,
-        ← inr_mk, toCompletedTensor_inr, ofCompletedTensor_inr]
+  suffices h : (ofCompletedTensor I J hA).comp (toCompletedTensor (K := K) I J) = RingHom.id _ from
+    congr($h x)
+  refine ringHom_ext_of_continuous
+    ((continuous_ofCompletedTensor I J hA).comp (continuous_toCompletedTensor I J)) continuous_id
+    (fun x ↦ ?_) (fun y ↦ ?_)
+  · simp [ofCompletedTensor_inl, toCompletedTensor_inl]
+  · simp [ofCompletedTensor_inr, toCompletedTensor_inr]
 
 private theorem toCompletedTensor_ofCompletedTensor (y : CompletedTensor A B C) :
     toCompletedTensor (K := K) I J (ofCompletedTensor I J hA y) = y := by

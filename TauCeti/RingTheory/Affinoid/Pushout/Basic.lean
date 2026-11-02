@@ -48,6 +48,9 @@ power-bounded and the universal property of restricted series over `A`,
 * `TauCeti.AffinoidPushout.isAffinoidAlgebra`: `A⟨X, Y⟩ ⧸ (I, J)` is affinoid.
 * `TauCeti.AffinoidPushout.continuous_inl`, `TauCeti.AffinoidPushout.continuous_inr`: the maps
   `inl` and `inr` are continuous for the quotient topologies.
+* `TauCeti.AffinoidPushout.ringHom_ext_of_continuous`: continuous ring homomorphisms out of the
+  pushout are determined by their compositions with `inl` and `inr`.
+* `TauCeti.AffinoidPushout.liftRingHom_unique`: `liftRingHom` is the unique such continuous map.
 * `TauCeti.AffinoidPushout.algHom_ext`: maps out of the pushout are determined by their
   compositions with `inl` and `inr`.
 * `TauCeti.AffinoidPushout.existsUnique_algHom`: the universal property of the pushout.
@@ -137,6 +140,21 @@ theorem isAffinoidAlgebra (hA : IsAffinoidAlgebra K A) :
   (hA.isRestricted_subring (τ := Fin (m + n))).quotient _
 
 /-! ### Continuous maps out of the affinoid pushout -/
+
+variable {I J} in
+/-- **Continuous ring homomorphisms out of the affinoid pushout are determined by `inl` and
+`inr`.** Two continuous ring homomorphisms `A⟨X, Y⟩ ⧸ (I, J) → T` into a Hausdorff ring which
+agree on the images of `A⟨X⟩ ⧸ I` and of `A⟨Y⟩ ⧸ J` are equal. -/
+theorem ringHom_ext_of_continuous {T : Type*} [Semiring T] [TopologicalSpace T] [T2Space T]
+    {δ₁ δ₂ : AffinoidPushout I J →+* T} (h₁ : Continuous δ₁) (h₂ : Continuous δ₂)
+    (hl : ∀ x, δ₁ (inl I J x) = δ₂ (inl I J x)) (hr : ∀ y, δ₁ (inr I J y) = δ₂ (inr I J y)) :
+    δ₁ = δ₂ := by
+  refine Ideal.Quotient.ringHom_ext (isRestricted_subring_ringHom_ext_of_continuous
+    (h₁.comp continuous_quot_mk) (h₂.comp continuous_quot_mk) (fun a ↦ ?_) (fun k ↦ ?_))
+  · simpa using hl (algebraMap A _ a)
+  · refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
+    · simpa using hl (Ideal.Quotient.mk I ⟨X i, isRestricted_X _ i⟩)
+    · simpa using hr (Ideal.Quotient.mk J ⟨X j, isRestricted_X _ j⟩)
 
 section RingHom
 
@@ -239,6 +257,14 @@ theorem liftRingHom_inr (y : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1)
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective y
   rw [inr_mk]
   exact congr($(liftRestricted_comp_rename_natAdd hβ hγ hβX hγX h) f)
+
+/-- `liftRingHom` is the unique continuous ring homomorphism out of the affinoid pushout which
+restricts to `β` along `inl` and to `γ` along `inr`. -/
+theorem liftRingHom_unique {δ : AffinoidPushout I J →+* S} (hδ : Continuous δ)
+    (hl : ∀ x, δ (inl I J x) = β x) (hr : ∀ y, δ (inr I J y) = γ y) :
+    δ = liftRingHom hβ hγ hβX hγX h :=
+  ringHom_ext_of_continuous hδ (continuous_liftRingHom hβ hγ hβX hγX h)
+    (fun x ↦ by rw [hl, liftRingHom_inl]) (fun y ↦ by rw [hr, liftRingHom_inr])
 
 end RingHom
 
