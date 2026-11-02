@@ -170,7 +170,7 @@ section Differential
 
 variable {𝕜 A M : Type*} [NormedField 𝕜] [NonUnitalNonAssocRing A] [Module 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-  [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousMul A]
+  [TopologicalSpace A] [ContinuousAdd A] [ContinuousMul A]
   [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
   (ι : Type*) [Fintype ι]
@@ -204,7 +204,7 @@ section Cocycles
 
 variable {𝕜 A M : Type*} [NormedField 𝕜] [NonUnitalRing A] [Module 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-  [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousMul A]
+  [TopologicalSpace A] [ContinuousAdd A] [ContinuousMul A]
   [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
   (ι : Type*) [Fintype ι]
@@ -238,7 +238,7 @@ end Cocycles
 section Cohomology
 
 variable {𝕜 A M : Type*} [NormedField 𝕜] [Ring A] [Algebra 𝕜 A]
-  [TopologicalSpace A] [IsTopologicalAddGroup A] [ContinuousMul A]
+  [TopologicalSpace A] [ContinuousAdd A] [ContinuousMul A]
   [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
   (ι : Type*) [Fintype ι] [DecidableEq ι]
