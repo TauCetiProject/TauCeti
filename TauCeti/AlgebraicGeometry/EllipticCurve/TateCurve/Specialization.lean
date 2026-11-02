@@ -137,10 +137,6 @@ theorem norm_tateCurveA₄_le (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₄ q hq
   rw [tateCurveA₆, ha₆, map_mul, evalIntSeries_X]
   exact norm_mul_evalIntSeries_of_isUnit q q hq hu
 
-/-- The sixth Tate coefficient has norm at most that of the parameter. -/
-theorem norm_tateCurveA₆_le (q : K) (hq : ‖q‖ < 1) : ‖tateCurveA₆ q hq‖ ≤ ‖q‖ :=
-  (norm_tateCurveA₆ q hq).le
-
 variable [NormOneClass K]
 
 /-- The invariant `c₄ = 1 + 240 s₃(q)` of the specialized Tate equation has norm one. -/
