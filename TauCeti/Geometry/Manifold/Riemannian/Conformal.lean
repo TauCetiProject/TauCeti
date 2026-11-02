@@ -183,15 +183,19 @@ theorem chartGramMatrix_rescale (α x : M) :
   simp only [smul_eq_mul]
 
 /-- In chart coordinates, the inverse Gram matrix of `f g` is `f⁻¹` times that of `g`. -/
-theorem chartInvGramMatrix_rescale (α x : M) (hx : x ∈ (chartAt H α).source) :
+theorem chartInvGramMatrix_rescale (α x : M) :
     chartInvGramMatrix (I := I) (toWithMetric (g.rescale f hf hf_pos) α)
         (toWithMetric (g.rescale f hf hf_pos) x) =
       (f x)⁻¹ • chartInvGramMatrix (I := I) (toWithMetric g α) (toWithMetric g x) := by
   rw [chartInvGramMatrix_def, chartInvGramMatrix_def, chartGramMatrix_rescale]
-  apply Matrix.inv_eq_left_inv
-  rw [smul_mul_smul_comm, inv_mul_cancel₀ (hf_pos x).ne', one_smul,
-    ← chartInvGramMatrix_def, chartInvGramMatrix_mul_chartGramMatrix]
-  exact (mem_chartAt_source_iff (toWithMetric g α) (toWithMetric g x)).2 hx
+  by_cases h : IsUnit (chartGramMatrix (I := I) (toWithMetric g α) (toWithMetric g x)).det
+  · apply Matrix.inv_eq_left_inv
+    rw [smul_mul_smul_comm, inv_mul_cancel₀ (hf_pos x).ne', one_smul,
+      Matrix.nonsing_inv_mul _ h]
+  · rw [Matrix.nonsing_inv_apply_not_isUnit _ ?_,
+      Matrix.nonsing_inv_apply_not_isUnit _ h, smul_zero]
+    rw [Matrix.det_smul, IsUnit.mul_iff]
+    exact fun hdet ↦ h hdet.2
 
 /-- **Volume density under conformal change.** In real dimension `n`, the volume density of the
 rescaled metric `f g` in any chart is `f ^ (n / 2)` times that of `g`. -/
