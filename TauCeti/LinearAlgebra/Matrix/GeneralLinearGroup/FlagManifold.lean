@@ -10,8 +10,10 @@ public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
+import Mathlib.Topology.Homeomorph.Quotient
 import TauCeti.Analysis.Matrix.LDL
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
 import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
@@ -33,19 +35,20 @@ The homeomorphism is induced by the inclusion `U(n) → GL n 𝕜` (`Unitary.toU
 equivariant for the left actions of `U(n)`. It rests on two facts.
 
 * **`U(n)` acts transitively on `GL n 𝕜 ⧸ B`:** every invertible matrix is `g = U b` with `U`
-  unitary and `b` upper triangular (`TauCeti.exists_mem_upperTriangularGroup_toUnits_mul_eq`).
+  unitary and `b` upper triangular
+  (`Matrix.GeneralLinearGroup.exists_mem_upperTriangularGroup_toUnits_mul_eq`).
   This is the `QR` factorization, or the Gram-Schmidt process applied to the columns of `g`. It is
   read off the `LDL` decomposition of the positive definite Gram matrix `gᴴ g`: if
   `L gᴴ g Lᴴ = D` with `L` lower triangular and `D` positive diagonal, then
   `U = g Lᴴ D^{-1/2}` is unitary and `U⁻¹ g = D^{1/2} (Lᴴ)⁻¹` is upper triangular.
 * **The stabilizer is `T`:** a unitary upper triangular matrix is diagonal
-  (`TauCeti.isDiag_of_mem_unitarySubgroup_of_mem_upperTriangularGroup`), since its inverse is both
-  its conjugate transpose, which is lower triangular, and upper triangular. This holds over any
-  commutative star ring.
+  (`TauCeti.mem_comap_toUnits_upperTriangularGroup_iff`, from
+  `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary`).
 
 The quotient `U(n) ⧸ T` is compact and `GL n 𝕜 ⧸ B` is Hausdorff because `B` is closed
-(`TauCeti.isClosed_upperTriangularGroup`), so the continuous bijection between them is a
-homeomorphism.
+(`TauCeti.isClosed_upperTriangularGroup`, from
+`TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular`), so the continuous
+bijection between them is a homeomorphism.
 
 ## Main definitions
 
@@ -56,10 +59,8 @@ homeomorphism.
 
 ## Main results
 
-* `TauCeti.exists_mem_upperTriangularGroup_toUnits_mul_eq`: every invertible matrix over `ℝ`
-  or `ℂ` is a unitary matrix times an upper triangular one.
-* `TauCeti.mem_comap_toUnits_upperTriangularGroup_iff`: a unitary matrix is upper triangular
-  exactly when it is diagonal.
+* `Matrix.GeneralLinearGroup.exists_mem_upperTriangularGroup_toUnits_mul_eq`: every invertible
+  matrix over `ℝ` or `ℂ` is a unitary matrix times an upper triangular one.
 * `TauCeti.comap_toUnits_upperTriangularGroup_eq_unitaryTorus`: over `ℂ`, the unitary upper
   triangular matrices are the maximal torus of `U(n)`.
 * `TauCeti.unitaryQuotientHomeomorph_smul` and `TauCeti.unitaryTorusQuotientHomeomorph_smul`:
@@ -82,41 +83,18 @@ open Matrix
 
 namespace TauCeti
 
-section CommRing
-
-variable {ι R : Type*} [Fintype ι] [LinearOrder ι] [CommRing R] [StarRing R]
-
-/-- **A unitary upper triangular matrix is diagonal.** Its inverse is its conjugate transpose,
-which is lower triangular, and is upper triangular as the inverse of an upper triangular
-matrix. -/
-theorem isDiag_of_mem_unitarySubgroup_of_mem_upperTriangularGroup {g : GL ι R}
-    (hK : g ∈ unitarySubgroup (GL ι R)) (hB : g ∈ upperTriangularGroup ι R) :
-    (g : Matrix ι ι R).IsDiag := by
-  have hinv := UpperTriangularGroup.mem_iff.1 (inv_mem hB)
-  rw [coe_inv_eq_star_of_mem_unitarySubgroup hK] at hinv
-  intro i j hij
-  rcases hij.lt_or_gt with hij | hij
-  · simpa using congrArg star (hinv hij)
-  · exact UpperTriangularGroup.mem_iff.1 hB hij
-
-/-- **A unitary matrix is upper triangular exactly when it is diagonal.** -/
-theorem mem_comap_toUnits_upperTriangularGroup_iff {U : unitaryGroup ι R} :
-    U ∈ (upperTriangularGroup ι R).comap Unitary.toUnits ↔ (U : Matrix ι ι R).IsDiag := by
-  rw [Subgroup.mem_comap, UpperTriangularGroup.mem_iff, Unitary.val_toUnits_apply]
-  refine ⟨fun h => ?_, fun h i j hij => h hij.ne'⟩
-  have hK : Unitary.toUnits U ∈ unitarySubgroup (GL ι R) :=
-    mem_unitary_units_iff.2 (by simp)
-  simpa using isDiag_of_mem_unitarySubgroup_of_mem_upperTriangularGroup hK
-    (by simpa [UpperTriangularGroup.mem_iff] using h)
-
-end CommRing
-
 /-- Over `ℂ`, **the unitary upper triangular matrices are the maximal torus** of `U(n)`: the
 diagonal unitary matrices. -/
 theorem comap_toUnits_upperTriangularGroup_eq_unitaryTorus (ι : Type*) [Fintype ι]
     [LinearOrder ι] : (upperTriangularGroup ι ℂ).comap Unitary.toUnits = unitaryTorus ι := by
   ext U
   rw [mem_comap_toUnits_upperTriangularGroup_iff, mem_unitaryTorus_iff]
+
+end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+open TauCeti
 
 section RCLike
 
@@ -163,37 +141,24 @@ theorem exists_mem_upperTriangularGroup_toUnits_mul_eq (g : GL ι 𝕜) :
     simpa only [Matrix.mul_assoc] using hP
   set U : unitaryGroup ι 𝕜 := ⟨_, hU⟩
   -- `(U⁻¹ g)⁻¹ = g⁻¹ U = P` is upper triangular
-  have hB : (Unitary.toUnits U)⁻¹ * g ∈ upperTriangularGroup ι 𝕜 := by
-    rw [← inv_mem_iff, _root_.mul_inv_rev, inv_inv, UpperTriangularGroup.mem_iff, Units.val_mul]
-    have hval : ((Unitary.toUnits U : GL ι 𝕜) : Matrix ι ι 𝕜) = g * P :=
-      Unitary.val_toUnits_apply U
-    rw [hval, ← Matrix.mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-      Matrix.one_mul]
+  have hPB : P.IsUpperTriangular := by
     refine BlockTriangular.mul (fun i j hij => ?_) (blockTriangular_diagonal c)
     have h0 : L j i = 0 := LDL.isLowerTriangular_lowerInv hS (OrderDual.toDual_lt_toDual.2 hij)
     rw [conjTranspose_apply, h0, star_zero]
+  have hinv : ((((Unitary.toUnits U)⁻¹ * g)⁻¹ : GL ι 𝕜) : Matrix ι ι 𝕜) = P := by
+    have hval : ((Unitary.toUnits U : GL ι 𝕜) : Matrix ι ι 𝕜) = g * P :=
+      Unitary.val_toUnits_apply U
+    simp [hval, ← Matrix.mul_assoc]
+  have hB : (Unitary.toUnits U)⁻¹ * g ∈ upperTriangularGroup ι 𝕜 := by
+    rw [← inv_mem_iff, UpperTriangularGroup.mem_iff, hinv]
+    exact hPB
   exact ⟨U, _, hB, mul_inv_cancel_left _ _⟩
 
 end RCLike
 
-section Topology
+end Matrix.GeneralLinearGroup
 
-variable (ι R : Type*) [Fintype ι] [LinearOrder ι] [CommRing R] [TopologicalSpace R] [T1Space R]
-
-/-- **The upper triangular subgroup of `GL ι R` is closed**: it is cut out by the vanishing of the
-entries below the diagonal. -/
-instance isClosed_upperTriangularGroup :
-    IsClosed (upperTriangularGroup ι R : Set (GL ι R)) := by
-  have h : (upperTriangularGroup ι R : Set (GL ι R)) =
-      Units.val ⁻¹' ⋂ (i : ι) (j : ι) (_ : j < i), {M : Matrix ι ι R | M i j = 0} := by
-    ext g
-    simp [UpperTriangularGroup.mem_iff, BlockTriangular]
-  rw [h]
-  refine IsClosed.preimage Units.continuous_val
-    (isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ => ?_)
-  exact isClosed_singleton.preimage (continuous_id.matrix_elem i j)
-
-end Topology
+namespace TauCeti
 
 section RCLike
 
@@ -227,7 +192,7 @@ private theorem unitaryQuotientMap_bijective :
     rw [QuotientGroup.eq, Subgroup.mem_comap]
     simpa using hxy
   · induction y using QuotientGroup.induction_on with | H g => ?_
-    obtain ⟨U, b, hb, rfl⟩ := exists_mem_upperTriangularGroup_toUnits_mul_eq g
+    obtain ⟨U, b, hb, rfl⟩ := g.exists_mem_upperTriangularGroup_toUnits_mul_eq
     refine ⟨U, ?_⟩
     rw [unitaryQuotientMap_mk, QuotientGroup.eq]
     simpa using hb
@@ -272,15 +237,8 @@ variable (ι : Type*) [Fintype ι] [LinearOrder ι]
 matrices: the inclusion `U(n) → GL n ℂ` induces a homeomorphism `U(n) ⧸ T ≃ₜ GL n ℂ ⧸ B`. -/
 def unitaryTorusQuotientHomeomorph :
     unitaryGroup ι ℂ ⧸ unitaryTorus ι ≃ₜ GL ι ℂ ⧸ upperTriangularGroup ι ℂ :=
-  Homeomorph.trans
-    { toEquiv :=
-        Subgroup.quotientEquivOfEq (comap_toUnits_upperTriangularGroup_eq_unitaryTorus ι).symm
-      continuous_toFun := continuous_id.quotient_map' fun _ _ h => by
-        rw [comap_toUnits_upperTriangularGroup_eq_unitaryTorus]
-        exact h
-      continuous_invFun := continuous_id.quotient_map' fun _ _ h => by
-        rw [comap_toUnits_upperTriangularGroup_eq_unitaryTorus] at h
-        exact h }
+  (Homeomorph.Quotient.congrRight fun _ _ => by
+    rw [comap_toUnits_upperTriangularGroup_eq_unitaryTorus]).trans
     (unitaryQuotientHomeomorph ι ℂ)
 
 @[simp]
