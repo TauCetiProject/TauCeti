@@ -40,13 +40,15 @@ variable {R K V : Type*} [CommRing R] [IsDomain R]
 variable [Field K] [Algebra R K] [IsFractionRing R K] [Module.IsTorsionFree R K]
 variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 
-/-- Surjectivity of Mathlib's canonical pairing `dualSubmoduleToDual` for a full lattice
-and a nondegenerate bilinear form. A linear form on the lattice extends to the fraction field,
-where nondegeneracy represents it by an ambient vector; no lattice basis is needed. -/
+/-- For a nondegenerate bilinear form `B` over the fraction field and a full lattice `N`, Mathlib's
+canonical pairing `B.dualSubmoduleToDual N` from the dual lattice to the dual of `N` is
+surjective. No lattice basis is needed. -/
 theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (N : Submodule R V) [N.IsLattice K] :
     Function.Surjective (B.dualSubmoduleToDual N) := by
+  -- A linear form on the lattice extends to the fraction field, where nondegeneracy represents it
+  -- by an ambient vector; that vector lies in the dual lattice and maps to the form.
   have := Module.Finite.of_isLattice (A := K) N
   have := Submodule.IsLattice.isLocalizedModule_subtype K N Submodule.IsLattice.span_eq_top
   intro f
