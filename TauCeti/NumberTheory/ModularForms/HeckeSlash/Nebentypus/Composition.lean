@@ -246,7 +246,7 @@ theorem twistedHeckeSlashSumCharEnd_mul_eq_sum_nsmul :
   ext f x
   have h := congrFun
     (twistedHeckeSlashSum_twistedHeckeSlashSum_eq_sum_nsmul k χ D₁ D₂ f f.2) x
-  simpa [Module.End.mul_apply] using h
+  simpa [mul_apply_eq_comp] using h
 
 end Assembly
 
@@ -375,7 +375,7 @@ theorem twistedHeckeSlashSumCharEnd_mul_of_doubleCoset_eq_mul
   ext f x
   have := congrFun (twistedHeckeSlashSum_twistedHeckeSlashSum_eq_twistedHeckeSlashSum k χ D₁ D₂
     a b hcover₁ hinj₁ hcover₂ hinj₂ D₃ hD₃ hinj₃ f f.2) x
-  simpa [Module.End.mul_apply] using this
+  simpa [mul_apply_eq_comp] using this
 
 include hcover₁ hinj₁ hcover₂ hinj₂ in
 /-- **A conditional anti-multiplicativity identity on basis elements.** When the product of the two

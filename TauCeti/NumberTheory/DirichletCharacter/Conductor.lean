@@ -22,6 +22,11 @@ public section
 
 namespace DirichletCharacter
 
+/-- A primitive character is principal exactly when its level is one. -/
+theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
+    {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
+  rw [eq_one_iff_conductor_eq_one, (isPrimitive_def _).mp hχ]
+
 /-! ### Injective changes of the coefficient ring -/
 
 /-- Factoring a Dirichlet character through a lower level is unchanged by an injective change of
