@@ -19,12 +19,7 @@ to one modulo the finite part and positive at the prescribed real places.
 At the trivial modulus this gives the classical splitting criterion for the Hilbert class
 field: a prime splits completely exactly when it is principal. In the narrow Hilbert class
 field the generator must instead be totally positive. These criteria are stated for arbitrary
-nonzero prime ideals, without requiring callers to bundle an ideal prime to a trivial finite
-modulus.
-
-The proofs use `rayClassArtinEquiv` and the prime decomposition laws for
-`rayClassArtinMap`, so the Frobenius convention is that of the existing arithmetic Artin map.
-No independent reciprocity map is constructed.
+nonzero prime ideals.
 
 ## Main results
 
