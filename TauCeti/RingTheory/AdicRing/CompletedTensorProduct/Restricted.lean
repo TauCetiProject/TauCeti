@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.AdicRing.CompletedTensorProduct
 public import TauCeti.RingTheory.Huber.Restricted.Adic
+public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 
 /-!
 # Base change of restricted power series along a completed tensor product
@@ -68,7 +69,7 @@ private noncomputable def ofRestricted :
     restrictedMvPowerSeriesCompletion m C →+*
       CompletedTensorProduct A (restrictedMvPowerSeriesCompletion m A) C :=
   weightedEvalHomCompletion isWeightFamily_one_weight (continuous_inr ..).continuousAt
-    (isWeightBounded_one_weight_of_isLinearTopology _ fun i ↦ inl A _ C
+    (isWeightBounded_of_isLinearTopology _ _ fun i ↦ inl A _ C
       ((weightedX _ isWeightFamily_one_weight i :
         weightedRestrictedSubring (fun _ : Fin m ↦ ({1} : Set A)) isWeightFamily_one_weight) :
           restrictedMvPowerSeriesCompletion m A))

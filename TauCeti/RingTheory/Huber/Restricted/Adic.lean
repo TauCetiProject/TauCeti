@@ -9,8 +9,6 @@ public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.Completion.Noetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
-public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 
@@ -27,12 +25,6 @@ noetherian. This supplies noetherian coordinate rings for affine formal spaces a
 quotients presenting topologically finite type adic algebras. No field, Tate, or
 completeness hypothesis on `A` is needed for the noetherianity theorem.
 
-Into a complete Hausdorff linearly topologised ring, such as an adic ring, the completed
-restricted-series algebra is free on its variables: a continuous ring homomorphism from `A`
-extends uniquely, for arbitrary values of the variables. Every element of a linearly
-topologised ring is power-bounded, so Wedhorn's universal property applies with no condition
-on the values.
-
 The argument uses the coefficient decomposition in
 `TauCeti.Huber.PairOfDefinition.weightedIdeal_one_pow` to identify the adic topology,
 and `Ideal.isNoetherianRing_of_isAdicComplete_of_denseRange` to pass from the dense
@@ -41,9 +33,8 @@ polynomial subring to the completion.
 ## References
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0,
-  §7.5.1, 7.5.3 and Proposition 7.5.4(ii).
-* T. Wedhorn, *Adic Spaces*, §5.6, for the weighted restricted-series construction, and
-  Proposition 5.50 for its universal property.
+  §7.5.1 and Proposition 7.5.4(ii).
+* T. Wedhorn, *Adic Spaces*, §5.6, for the weighted restricted-series construction.
 -/
 
 public section
@@ -123,30 +114,6 @@ theorem isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic
     (by simpa only [pow_one] using hJ.isOpen_pow 1) hdense
 
 end AdicTopology
-
-section LinearTopology
-
-variable {n : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-  {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
-  [IsLinearTopology B B] [CompleteSpace B] [T2Space B]
-
-/-- **The universal property of `A⟨X₁, …, Xₙ⟩` for linearly topologised targets.** A continuous
-ring homomorphism `φ : A → B` into a complete Hausdorff linearly topologised ring, such as an
-adic ring, extends to exactly one continuous ring homomorphism `A⟨X₁, …, Xₙ⟩ → B` sending each
-`Xᵢ` to a prescribed `bᵢ`, with no condition on the `bᵢ`. -/
-theorem existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology
-    {φ : A →+* B} (hφ : Continuous φ) (b : Fin n → B) :
-    ∃! ψ : restrictedMvPowerSeriesCompletion n A →+* B, Continuous ψ ∧
-      (∀ a, ψ (algebraMap A (restrictedMvPowerSeriesCompletion n A) a) = φ a) ∧
-      ∀ i, ψ ((weightedX _ isWeightFamily_one_weight i :
-        weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-          restrictedMvPowerSeriesCompletion n A) = b i := by
-  have := IsLinearTopology.nonarchimedeanRing B
-  simpa only [algebraMap_completion_weightedRestrictedSubring_apply] using
-    existsUnique_continuous_ringHom_completion_weightedRestrictedSubring isWeightFamily_one_weight
-      hφ.continuousAt (isWeightBounded_one_weight_of_isLinearTopology φ b)
-
-end LinearTopology
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] (n : ℕ)
 
