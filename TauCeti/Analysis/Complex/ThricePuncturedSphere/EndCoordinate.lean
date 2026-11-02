@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -384,19 +385,6 @@ theorem mem_truncation {R : ℝ} {w : ℂ} :
     w ∈ truncation R ↔ w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R :=
   Iff.rfl
 
-/-- For `x > 0`, the bound `-log x / (2π) ≤ R` on a longitudinal coordinate says
-`exp (-2πR) ≤ x`. -/
-private theorem neg_log_div_le_iff {x R : ℝ} (hx : 0 < x) :
-    -Real.log x / (2 * π) ≤ R ↔ Real.exp (-(2 * π * R)) ≤ x := by
-  rw [div_le_iff₀ (by positivity), ← Real.le_log_iff_exp_le hx]
-  constructor <;> intro h <;> linarith
-
-/-- For `x > 0`, the bound `log x / (2π) ≤ R` on a negated longitudinal coordinate says
-`x ≤ exp (2πR)`. -/
-private theorem neg_neg_log_div_le_iff {x R : ℝ} (hx : 0 < x) :
-    -(-Real.log x / (2 * π)) ≤ R ↔ x ≤ Real.exp (2 * π * R) := by
-  rw [neg_div, neg_neg, div_le_iff₀ (by positivity), ← Real.log_le_iff_le_exp hx, mul_comm R]
-
 /-- The truncation is cut out by norm inequalities: it is the closed annulus
 `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`
 removed. -/
@@ -412,17 +400,18 @@ theorem truncation_eq (R : ℝ) :
   have h₀ (hw : w ≠ 0) : zero.endSign * (zero.endCoord w).re ≤ R ↔
       Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ := by
     rw [endSign_zero, one_mul, re_endCoord, endCenter_zero, endScale_zero, sub_zero,
-      neg_log_div_le_iff (by simpa using hw), div_le_iff₀ two_pos]
+      Real.neg_log_div_le_iff (by simpa using hw) (by positivity), div_le_iff₀ two_pos]
     simp [mul_comm]
   have h₁ (hw : w ≠ 1) : one.endSign * (one.endCoord w).re ≤ R ↔
       Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ := by
     rw [endSign_one, one_mul, re_endCoord, endCenter_one, endScale_one,
-      neg_log_div_le_iff (by simpa [sub_eq_zero] using hw), div_le_iff₀ two_pos]
+      Real.neg_log_div_le_iff (by simpa [sub_eq_zero] using hw) (by positivity),
+      div_le_iff₀ two_pos]
     simp [mul_comm]
   have h₂ (hw : w ≠ 0) : inf.endSign * (inf.endCoord w).re ≤ R ↔
       ‖w‖ ≤ 2 * Real.exp (2 * π * R) := by
     rw [endSign_inf, neg_one_mul, re_endCoord, endCenter_inf, endScale_inf, sub_zero,
-      neg_neg_log_div_le_iff (by simpa using hw)]
+      neg_div, neg_neg, Real.log_div_le_iff (by simpa using hw) (by positivity)]
     simp only [norm_div, Complex.norm_ofNat]
     rw [div_le_iff₀ two_pos, mul_comm]
   constructor

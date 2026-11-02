@@ -181,16 +181,6 @@ private theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
     ContinuousLinearEquiv.symm_apply_apply, hL, pairOfPantsEndComponent_def]
   rfl
 
-/-- The coordinate direction `∂_s` of `ℝ × ℝ` is the complex number `1`. -/
-private theorem equivRealProdCLM_symm_stdComplexLineReal :
-    Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
-  apply Complex.ext <;> simp [stdComplexLineReal_eq]
-
-/-- The coordinate direction `∂_t` of `ℝ × ℝ` is the complex number `i`. -/
-private theorem equivRealProdCLM_symm_stdComplexLineImag :
-    Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
-  apply Complex.ext <;> simp [stdComplexLineImag_eq]
-
 variable [FiniteDimensional ℝ V]
 
 /-- **The curvature in the coordinates of an end.** On the end `q`, where `±s > 0`, the curvature
@@ -238,7 +228,7 @@ private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero (ω : Sympl
           Complex.equivRealProdCLM.symm.continuous.continuousAt)
     exact hc.eventually (gt_mem_nhds (h q))
   have hK : ∀ᶠ z' in 𝓝 z, ∀ y, pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') y = 0 :=
-    hev.mono fun z' hz' y ↦ pairOfPantsPerturbation_eq_zero_of_forall_lt hz' y
+    hev.mono fun z' hz' y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le (fun q ↦ (hz' q).le) y
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
     (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y])
     (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
@@ -730,7 +720,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
       ∫ z in C, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
     refine setIntegral_congr_fun hCm fun z hz => ?_
     have hK : pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) = fun _ => 0 :=
-      funext (pairOfPantsPerturbation_eq_zero_of_forall_lt (hcore hz))
+      funext (pairOfPantsPerturbation_eq_zero_of_forall_le fun q ↦ (hcore hz q).le)
     simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
       perturbedFDeriv_apply_stdComplexLineImag, hK]
   have hCR : ∫ z in C, ω.hamiltonianCurvature

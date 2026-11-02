@@ -38,7 +38,7 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
   computes them on the part `±s > 0` of the end.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends;
-  `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_lt` states this in end coordinates.
+  `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
 
 The angular coordinate `t` of an end is defined only modulo `1`, which is why the Hamiltonians are
 required to have period one: smoothness across the ray where the angular coordinate jumps is
@@ -103,9 +103,9 @@ theorem exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero {w : ℂ} {
   exact ⟨q, q.endCoord w, h₁, q.cylindricalEndLift_endCoord hw⟩
 
 /-- The perturbation vanishes at every point where the signed longitudinal coordinate of every
-end is less than `1`. -/
-theorem pairOfPantsPerturbation_eq_zero_of_forall_lt {w : ℂ}
-    (h : ∀ q : Puncture, q.endSign * (q.endCoord w).re < 1) (x : M) :
+end is at most `1`. -/
+theorem pairOfPantsPerturbation_eq_zero_of_forall_le {w : ℂ}
+    (h : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ 1) (x : M) :
     pairOfPantsPerturbation H w x = 0 := by
   rw [pairOfPantsPerturbation_def]
   refine Finset.sum_eq_zero fun q _ => ?_
