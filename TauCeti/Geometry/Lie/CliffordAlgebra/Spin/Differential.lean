@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Analysis.SpecialFunctions.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.StandardBivector
@@ -216,7 +217,7 @@ private theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_commutator (
   let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
     LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
   have hleft := hasDerivAt_ι_exp_mulVec n A v
-  have hright := TauCeti.Lie.hasDerivAt_exp_mul_const_mul_exp_neg
+  have hright := TauCeti.hasDerivAt_exp_mul_const_mul_exp_neg
     (x : CliffordAlgebra Q) (ι Q v)
   have hright' : HasDerivAt
       (fun t : ℝ ↦ ι Q (NormedSpace.exp (t • A) *ᵥ v))

@@ -144,6 +144,11 @@ theorem exteriorBoundaryInclusion_injective (h : IsSolidTorusNeighborhood f Φ) 
     Function.Injective h.exteriorBoundaryInclusion := fun _ _ hq ↦
   h.isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
 
+/-- The parametrization of the boundary torus of the exterior is an embedding. -/
+theorem isEmbedding_exteriorBoundaryInclusion (h : IsSolidTorusNeighborhood f Φ) :
+    IsEmbedding h.exteriorBoundaryInclusion :=
+  IsEmbedding.subtypeVal.of_comp_iff.1 h.isEmbedding_comp_boundaryInclusion
+
 variable [T2Space X]
 
 /-- The **open exterior** of a solid torus neighbourhood `Φ` in a Hausdorff space: the complement

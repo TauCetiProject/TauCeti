@@ -7,8 +7,10 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Bockstein
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.ChangeOfGroups
+public import TauCeti.RepresentationTheory.Rep.Trivial
 import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
@@ -48,6 +50,16 @@ trivial coefficients `M`
 (`IsQuotientCoveringMap.singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom`). No
 hypothesis on `φ` is needed.
 
+The identification also respects the long exact sequences in the coefficients. A short exact
+sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of `k`-modules is a short exact sequence of trivial
+representations, and for contractible `E` the isomorphisms `Hⁿ(B; Mᵢ) ≅ Hⁿ(G, Mᵢ)` carry the
+Bockstein homomorphism `Hⁿ(B; M₃) ⟶ Hⁿ⁺¹(B; M₁)` of singular cohomology to Mathlib's connecting
+map `groupCohomology.δ` of group cohomology
+(`IsQuotientCoveringMap.singularCohomologyBockstein_comp_singularCohomologyIsoGroupCohomology_hom`).
+The comparison of cochains is natural in the coefficients, so it is a morphism of short exact
+sequences of cochain complexes, and `groupCohomologyIso` intertwines the connecting maps
+(`TauCeti.Rep.δ_comp_groupCohomologyIso_inv`).
+
 This is the cohomological counterpart of `IsQuotientCoveringMap.singularHomologyIsoGroupHomology`.
 
 ## Main definitions
@@ -69,6 +81,9 @@ This is the cohomological counterpart of `IsQuotientCoveringMap.singularHomology
 * `singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom`,
   `IsQuotientCoveringMap.singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom`: the
   comparisons of cochains and of cohomology are natural in the covering and the group.
+* `IsQuotientCoveringMap.singularCohomologyBockstein_comp_singularCohomologyIsoGroupCohomology_hom`:
+  the comparison of cohomology carries the Bockstein homomorphism to the connecting map of group
+  cohomology.
 
 ## References
 
@@ -370,5 +385,51 @@ theorem singularCohomologyMap_comp_singularCohomologyIsoGroupCohomology_hom [Con
     (Category.assoc _ _ _).symm
 
 end ChangeOfGroups
+
+section LongExactSequence
+
+/-- **The comparison of singular cohomology with group cohomology respects the coefficient long
+exact sequences**: for the quotient covering map `p : E ⟶ B` of an action of `G` with contractible
+total space and a short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of `k`-modules, the isomorphisms
+`Hⁿ(B; Mᵢ) ≅ Hⁿ(G, Mᵢ)` carry the Bockstein homomorphism `Hⁿ(B; M₃) ⟶ Hᵐ(B; M₁)`, `n + 1 = m`,
+to Mathlib's connecting map `groupCohomology.δ` of the short exact sequence of trivial
+representations. -/
+@[reassoc]
+theorem singularCohomologyBockstein_comp_singularCohomologyIsoGroupCohomology_hom
+    [ContractibleSpace E] {S : ShortComplex (ModuleCat.{u} k)} (hS : S.ShortExact) (n m : ℕ)
+    (h : n + 1 = m := by lia) :
+    B.singularCohomologyBockstein (ModuleCat.of k k) k hS n m h ≫
+        (hG.singularCohomologyIsoGroupCohomology k S.X₁ m).hom =
+      (hG.singularCohomologyIsoGroupCohomology k S.X₃ n).hom ≫
+        groupCohomology.δ (Rep.shortExact_map_trivialFunctor hS) n m h := by
+  have := hG.toContinuousConstSMul
+  have := hG.isCancelSMul
+  -- The comparisons of cochains, natural in the coefficients, form a morphism from the short
+  -- exact sequence of singular cochain complexes of `B` with coefficients in `S` to that of the
+  -- complexes `Hom_G(C(E; k), Mᵢ)`. Its naturality for connecting maps is pasted with that of
+  -- `groupCohomologyIso` for the resolution by singular chains of `E`.
+  let ψ : B.singularCochainComplexCoefficientShortComplex (ModuleCat.of k k) k S ⟶
+      (S.map (Rep.trivialFunctor k G)).map ((singularChainsRep k E G).linearYonedaObjFunctor k) :=
+    { τ₁ := (hG.singularCochainComplexIsoLinearYonedaObj k S.X₁).hom
+      τ₂ := (hG.singularCochainComplexIsoLinearYonedaObj k S.X₂).hom
+      τ₃ := (hG.singularCochainComplexIsoLinearYonedaObj k S.X₃).hom
+      comm₁₂ := (hG.singularCochainComplexIsoLinearYonedaObj_hom_naturality k S.X₁ S.f.hom).symm
+      comm₂₃ := (hG.singularCochainComplexIsoLinearYonedaObj_hom_naturality k S.X₂ S.g.hom).symm }
+  have hcochains := HomologicalComplex.HomologySequence.δ_naturality ψ
+    (B.shortExact_singularCochainComplexCoefficientShortComplex (ModuleCat.of k k) k hS)
+    ((singularChainsResolution k E G).complex.shortExact_map_linearYonedaObjFunctor k
+      (Rep.shortExact_map_trivialFunctor hS)) n m h
+  rw [singularCohomologyIsoGroupCohomology_hom_eq, singularCohomologyIsoGroupCohomology_hom_eq,
+    TopCat.singularCohomologyBockstein_eq_δ (ModuleCat.of k k) k B hS n m h]
+  -- The squares are pasted in term mode, as in
+  -- `singularCohomologyIsoGroupCohomology_hom_naturality`: the complex of
+  -- `singularChainsResolution k E G` is `singularChainsRep k E G` only by unfolding.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hcochains).trans <|
+    (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (TauCeti.Rep.δ_comp_groupCohomologyIso_inv
+      (Rep.shortExact_map_trivialFunctor hS) (singularChainsResolution k E G) n m h)).trans
+    (Category.assoc _ _ _).symm
+
+end LongExactSequence
 
 end IsQuotientCoveringMap

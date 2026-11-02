@@ -157,7 +157,7 @@ theorem isUnit_mk_iff {I : O.nonzeroFractionalIdeals} :
       rw [map_mul, ← hu, hJ, Units.mul_inv]
     obtain ⟨x, hx⟩ := (mk_eq_one_iff O).mp hIJ
     have hx' : IsUnit (spanSingleton (nonZeroDivisors O.toSubalgebra) (x : K)) :=
-      isUnit_spanSingleton x.isUnit
+      x.isUnit.map _
     rw [hx, Submonoid.coe_mul] at hx'
     exact isUnit_of_mul_isUnit_left hx'
   · intro hI

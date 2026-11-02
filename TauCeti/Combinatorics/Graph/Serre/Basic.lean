@@ -20,6 +20,9 @@ graph groups, and labelled-graph arguments.
 The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
 unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
 
+For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
+and the darts in `S`.
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -292,6 +295,44 @@ instance Hom.toPrefunctor_mapReverse {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) :
   map_reverse' e := by
     apply Subtype.ext
     simp only [Hom.toPrefunctor_map_val, Γ.reverse_val, Δ.reverse_val, f.map_rev]
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- The subgraph of `Γ` with all vertices of `Γ` and the darts of a reversal-closed set `S`. The
+vertex type reduces to that of `Γ`, so vertices of `Γ` are vertices of the subgraph. -/
+abbrev restrict : SerreGraph.{u, v} where
+  V := Γ.V
+  E := S
+  src e := Γ.src e.1
+  rev e := ⟨Γ.rev e.1, hS e.1 e.2⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
+  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+
+@[simp] theorem restrict_src (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).src e = Γ.src e.1 := (rfl)
+
+@[simp] theorem restrict_rev_val (e : (Γ.restrict S hS).E) :
+    ((Γ.restrict S hS).rev e).1 = Γ.rev e.1 := (rfl)
+
+@[simp] theorem restrict_tgt (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).tgt e = Γ.tgt e.1 := (rfl)
+
+/-- The inclusion of a restriction into the ambient graph. -/
+@[expose] def restrictInclusion : (Γ.restrict S hS).Hom Γ where
+  mapV := id
+  mapE := Subtype.val
+  map_src _ := rfl
+  map_rev _ := rfl
+
+@[simp] theorem restrictInclusion_mapV (a : (Γ.restrict S hS).V) :
+    (Γ.restrictInclusion S hS).mapV a = a := (rfl)
+
+@[simp] theorem restrictInclusion_mapE (e : (Γ.restrict S hS).E) :
+    (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
+
+end Restrict
 
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where

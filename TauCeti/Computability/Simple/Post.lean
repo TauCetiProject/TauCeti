@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Computability.Simple.Basic
 public import Mathlib.Data.Set.Card
-import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Data.Set.Card
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -153,20 +153,8 @@ theorem ncard_postSimpleSet_inter_Iic_le (n : ℕ) :
         exact Finset.card_image_le.trans (Finset.card_range n).le
 
 /-- The complement of Post's set is infinite. -/
-theorem infinite_compl_postSimpleSet : postSimpleSetᶜ.Infinite := by
-  refine Set.infinite_of_not_bddAbove fun ⟨N, hN⟩ => ?_
-  -- every number above `N` lies in the set, which overfills the interval `[0, 2(N + 1)]`
-  have hsub : (Finset.Icc (N + 1) (2 * (N + 1)) : Set ℕ) ⊆
-      postSimpleSet ∩ Set.Iic (2 * (N + 1)) := by
-    intro x hx
-    rw [Finset.coe_Icc, Set.mem_Icc] at hx
-    refine ⟨by_contra fun hxA => ?_, hx.2⟩
-    have := hN hxA
-    omega
-  have := (Set.ncard_le_ncard hsub ((Set.finite_Iic _).inter_of_right _)).trans
-    (ncard_postSimpleSet_inter_Iic_le (N + 1))
-  rw [Set.ncard_coe_finset, Nat.card_Icc] at this
-  omega
+theorem infinite_compl_postSimpleSet : postSimpleSetᶜ.Infinite :=
+  Set.infinite_compl_of_ncard_inter_Iic_le ncard_postSimpleSet_inter_Iic_le
 
 /-- **Post's requirements are met**: Post's set meets the domain of every code whose domain is
 infinite. -/

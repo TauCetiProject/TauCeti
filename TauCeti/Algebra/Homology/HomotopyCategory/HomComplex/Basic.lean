@@ -14,8 +14,11 @@ Mathlib's `CochainComplex.HomComplex.Cochain.diff K` is the differential of a co
 read as a degree `1` cochain from `K` to itself, and `CochainComplex.HomComplex.δ` is the
 differential of the Hom complex.  This file records the elementary calculus relating the two:
 `δ` is composition with the differential cochains on either side, a morphism of cochain complexes
-commutes with them, and they square to zero.  It also reads off the components of the homotopy
-that Mathlib's `CochainComplex.HomComplex.Cochain.equivHomotopy` builds from a cochain.
+commutes with them, and they square to zero. It also reads off the components of the homotopy
+that Mathlib's `CochainComplex.HomComplex.Cochain.equivHomotopy` builds from a cochain, and records
+how the components of a cochain absorb the identifications `K.X p ≅ K.X p'` of
+`HomologicalComplex.XIsoOfEq` on the source side, complementing Mathlib's
+`CochainComplex.HomComplex.Cochain.v_comp_XIsoOfEq_hom` on the target side.
 
 These are general facts about Mathlib's Hom complex, independent of any particular use.
 
@@ -29,6 +32,8 @@ These are general facts about Mathlib's Hom complex, independent of any particul
 * `TauCeti.equivHomotopy_symm_hom`: the homotopy built by Mathlib's
   `CochainComplex.HomComplex.Cochain.equivHomotopy` from a cochain `z` of degree `-1` has the
   components of `z`.
+* `CochainComplex.HomComplex.Cochain.XIsoOfEq_hom_comp_v`: precomposing a component of a
+  cochain with an `XIsoOfEq` identification of its source.
 -/
 
 public section
@@ -84,3 +89,18 @@ theorem equivHomotopy_symm_hom {φ₁ φ₂ : F ⟶ G}
   dite_eq_left hpq
 
 end TauCeti
+
+namespace CochainComplex.HomComplex.Cochain
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {F G : CochainComplex C ℤ}
+
+/-- Precomposing a component of a cochain with an identification `K.X p₁ ≅ K.X p₂` along an
+equality `p₁ = p₂` gives the component at `p₁`. -/
+@[reassoc]
+lemma XIsoOfEq_hom_comp_v {n : ℤ} (z : Cochain F G n) {p₁ p₂ q : ℤ} (h : p₁ = p₂)
+    (hpq : p₂ + n = q) :
+    (F.XIsoOfEq h).hom ≫ z.v p₂ q hpq = z.v p₁ q (by rw [h, hpq]) := by
+  subst h
+  simp
+
+end CochainComplex.HomComplex.Cochain

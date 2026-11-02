@@ -37,11 +37,8 @@ and `1` at two distinct ideals of the same norm, is `TauCeti.normCoeff_ite_eq_ze
 rejection test that forbids weakening the nonnegativity hypothesis of the converse regrouping
 theorem to nonnegativity of the coefficients themselves.
 
-## Roadmap role
-
-This is the finite-norm-fibre part of Layer **1.1** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  The next layer step uses these coefficients
-to regroup an absolutely convergent series over nonzero ideals into a Mathlib `LSeries`.
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Regroup.lean` uses these coefficients to regroup an
+absolutely convergent series over nonzero ideals into a Mathlib `LSeries`.
 
 ## References
 
