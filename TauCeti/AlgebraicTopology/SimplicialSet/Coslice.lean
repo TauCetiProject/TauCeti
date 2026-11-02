@@ -107,25 +107,12 @@ private noncomputable def opEquiv :
 
 /-- Maps `X ⟶ C_{p/}` correspond to maps `Xᵒᵖ ⟶ Cᵒᵖ_{/pᵒᵖ}` by taking opposites, since the
 coslice is the opposite of this slice. -/
-private def opHomEquiv : (X ⟶ coslice p) ≃ (X.op ⟶ slice (opFunctor.map p)) where
-  toFun F := opFunctor.map F ≫ opFunctorCompOpFunctorIso.hom.app _
-  invFun G := opFunctorCompOpFunctorIso.inv.app X ≫ opFunctor.map G
-  left_inv F := by
-    dsimp only
-    have h := opFunctorCompOpFunctorIso.inv.naturality F
-    rw [Functor.id_map, Functor.comp_map] at h
-    rw [Functor.map_comp, opFunctor_map_opFunctorCompOpFunctorIso_hom_app, ← Category.assoc, ← h,
-      Category.assoc, Iso.inv_hom_id_app, Category.comp_id]
-  right_inv G := by
-    dsimp only
-    have h := opFunctorCompOpFunctorIso.hom.naturality G
-    rw [Functor.id_map, Functor.comp_map] at h
-    rw [Functor.map_comp, opFunctor_map_opFunctorCompOpFunctorIso_inv_app, Category.assoc, h,
-      Iso.inv_hom_id_app_assoc]
+private def opHomEquiv : (X ⟶ coslice p) ≃ (X.op ⟶ slice (opFunctor.map p)) :=
+  (opEquivalence.toAdjunction.homEquiv X (slice (opFunctor.map p))).symm
 
 private lemma opHomEquiv_comp (f : Y ⟶ X) (F : X ⟶ coslice p) :
-    opHomEquiv (f ≫ F) = opFunctor.map f ≫ opHomEquiv F := by
-  simp [opHomEquiv]
+    opHomEquiv (f ≫ F) = opFunctor.map f ≫ opHomEquiv F :=
+  opEquivalence.toAdjunction.homEquiv_naturality_left_symm f F
 
 /-- **The universal property of the coslice**: maps `X ⟶ C_{p/}` correspond to maps `K ⋆ X ⟶ C`
 extending `p`. -/
