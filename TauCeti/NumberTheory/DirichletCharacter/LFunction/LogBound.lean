@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.DirichletEulerProduct
 public import Mathlib.NumberTheory.Harmonic.Bounds
 
@@ -31,16 +32,6 @@ open Finset Filter Topology
 namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-
-private lemma sum_range_eq_zero_of_ne_one (hχ : χ ≠ 1) :
-    ∑ n ∈ range N, χ n = 0 := by
-  calc
-    _ = ∑ a : ZMod N, χ a := by
-      exact sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
-        (by simp) (fun a _ ↦ mem_range.mpr a.val_lt)
-        (fun n hn ↦ ZMod.val_natCast_of_lt (mem_range.mp hn))
-        (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
-    _ = 0 := χ.sum_eq_zero_of_ne_one hχ
 
 private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
     ‖∑ n ∈ range N, χ (k * N + n : ℕ) / ((k * N + n : ℕ) : ℂ)‖ ≤
