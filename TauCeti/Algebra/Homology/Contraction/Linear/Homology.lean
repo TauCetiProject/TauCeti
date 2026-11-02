@@ -273,53 +273,73 @@ noncomputable def homologyContraction :
     rw [LinearMap.comp_apply, G.homotopy_apply hhom hd x, homotopy_rangeSection,
       LinearMap.zero_apply]
 
+private theorem homologyContraction_incl : (G.homologyContraction hhom hd).incl = G.incl hhom hd :=
+  rfl
+
+private theorem homologyContraction_proj : (G.homologyContraction hhom hd).proj = G.proj hhom hd :=
+  rfl
+
+private theorem homologyContraction_homotopy :
+    (G.homologyContraction hhom hd).homotopy = G.homotopy hhom hd :=
+  rfl
+
+private theorem isHomogeneous_incl :
+    TauCeti.LinearMap.IsHomogeneous (G.incl hhom hd) (G.homology hhom hd).piece G.piece 0 :=
+  TauCeti.LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
+    rw [incl_apply]
+    exact (G.mem_ker_piece hhom).1 ((G.isHomogeneous_representative hhom hd).map_mem hy)
+
+private theorem isHomogeneous_proj :
+    TauCeti.LinearMap.IsHomogeneous (G.proj hhom hd) G.piece (G.homology hhom hd).piece 0 :=
+  TauCeti.LinearMap.isHomogeneous_def.2 fun _ x hx ↦ by
+    rw [proj_apply]
+    simpa only [add_zero] using (G.isHomogeneous_homologyπ hhom hd).map_mem
+      ((G.isHomogeneous_cycleProjection hhom).map_mem hx)
+
 /-- The inclusion of the homology contraction takes values in the cycles. -/
 theorem homologyContraction_incl_mem_ker (y : d.homology hd) :
-    (G.homologyContraction hhom hd).incl y ∈ LinearMap.ker d :=
-  (G.representative hhom hd y).2
+    (G.homologyContraction hhom hd).incl y ∈ LinearMap.ker d := by
+  rw [homologyContraction_incl, incl_apply]
+  exact (G.representative hhom hd y).2
 
 /-- The inclusion of the homology contraction chooses a cycle representing the given class. -/
 theorem homologyπ_homologyContraction_incl (y : d.homology hd) :
-    d.homologyπ hd ⟨_, G.homologyContraction_incl_mem_ker hhom hd y⟩ = y :=
-  G.homologyπ_representative hhom hd y
+    d.homologyπ hd ⟨_, G.homologyContraction_incl_mem_ker hhom hd y⟩ = y := by
+  simp only [homologyContraction_incl, incl_apply, Subtype.coe_eta]
+  exact G.homologyπ_representative hhom hd y
 
 /-- The projection of the homology contraction sends a cycle to its homology class. -/
 @[simp]
 theorem homologyContraction_proj_of_mem_ker {x : M} (hx : x ∈ LinearMap.ker d) :
     (G.homologyContraction hhom hd).proj x = d.homologyπ hd ⟨x, hx⟩ := by
-  rw [← G.cycleProjection_of_mem_ker hhom hx]
-  rfl
+  rw [homologyContraction_proj, proj_apply, G.cycleProjection_of_mem_ker hhom hx]
 
 /-- The inclusion of the homology contraction has degree zero. -/
 theorem isHomogeneous_homologyContraction_incl :
     TauCeti.LinearMap.IsHomogeneous (G.homologyContraction hhom hd).incl
-      (G.homology hhom hd).piece G.piece 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hy ↦
-    (G.mem_ker_piece hhom).1 ((G.isHomogeneous_representative hhom hd).map_mem hy)
+      (G.homology hhom hd).piece G.piece 0 := by
+  rw [homologyContraction_incl]
+  exact G.isHomogeneous_incl hhom hd
 
 /-- The projection of the homology contraction has degree zero. -/
 theorem isHomogeneous_homologyContraction_proj :
     TauCeti.LinearMap.IsHomogeneous (G.homologyContraction hhom hd).proj G.piece
-      (G.homology hhom hd).piece 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-    have h := (G.isHomogeneous_homologyπ hhom hd).map_mem
-      ((G.isHomogeneous_cycleProjection hhom).map_mem hx)
-    simp only [add_zero] at h ⊢
-    exact h
+      (G.homology hhom hd).piece 0 := by
+  rw [homologyContraction_proj]
+  exact G.isHomogeneous_proj hhom hd
 
 /-- The homotopy of the homology contraction has degree `-1`. -/
 theorem isHomogeneous_homologyContraction_homotopy :
     TauCeti.LinearMap.IsHomogeneous (G.homologyContraction hhom hd).homotopy G.piece G.piece
       (-1) :=
   TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    rw [homologyContraction_homotopy, homotopy_apply]
     refine (G.isHomogeneous_rangeSection hhom).map_mem ?_
     rw [rangeGrading, mem_submodule_piece, coe_residual]
     refine Submodule.sub_mem _ ?_ ?_
     · simpa only [add_zero, mem_ker_piece] using
         (G.isHomogeneous_cycleProjection hhom).map_mem hx
-    · have h := (G.isHomogeneous_homologyContraction_incl hhom hd).map_mem
-        ((G.isHomogeneous_homologyContraction_proj hhom hd).map_mem hx)
-      simp only [add_zero] at h
-      exact h
+    · simpa only [add_zero] using
+        (G.isHomogeneous_incl hhom hd).map_mem ((G.isHomogeneous_proj hhom hd).map_mem hx)
 
 end TauCeti.InternalGrading
