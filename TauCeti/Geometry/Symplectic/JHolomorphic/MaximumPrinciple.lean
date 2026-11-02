@@ -28,16 +28,16 @@ Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`. For such a curve the function
 `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu) = dα(∂ₛu, J ∂ₛu)`,
 
 where `dα(v, w) = Dα(v)(w) - Dα(w)(v)` is the exterior derivative of `α`
-(`TauCeti.laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg`). When `dα` tames `J`, that is
+(`TauCeti.JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg`). When `dα` tames `J`, that is
 `dα(v, J v) ≥ 0`, the function `ρ ∘ u` is subharmonic
-(`TauCeti.laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg`).
+(`TauCeti.JHolomorphic.laplacian_comp_nonneg_of_fderiv_comp_eq_neg`).
 
 The weak maximum principle then confines `J`-holomorphic curves: if the conditions above hold on
 the region `{ρ > R}`, a curve on a compact domain whose boundary is mapped into `{ρ ≤ R}` lies
-entirely in `{ρ ≤ R}` (`TauCeti.jHolomorphic_comp_le_of_comp_le_frontier`). Applied to large
+entirely in `{ρ ≤ R}` (`TauCeti.JHolomorphic.comp_le_of_comp_le_frontier`). Applied to large
 rectangles, the same holds for a strip `ℝ × [0, 1]` which maps its two boundary lines and its two
 ends `|ℜ z| ≥ T` into `{ρ ≤ R}`
-(`TauCeti.jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends`).
+(`TauCeti.JHolomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`).
 
 The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`, and cover
 only unperturbed `J`-holomorphic curves: `J` depends on the point of `V` but not on the point of
@@ -45,15 +45,18 @@ the domain, and the equation carries no Hamiltonian term. Floer strips with a do
 `J` or a Hamiltonian perturbation, and the passage from a manifold to local coordinates, are not
 treated here.
 
+The results live in the organisational namespace `TauCeti.JHolomorphic`: their names describe
+conclusions about `ρ ∘ u`, which only hold for curves solving the Cauchy--Riemann equation.
+
 ## Main results
 
-* `TauCeti.laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg`: `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu)` for a
+* `TauCeti.JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg`: `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu)` for a
   `J`-holomorphic curve when `dρ ∘ J = -α`.
-* `TauCeti.laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg`: if moreover `dα` tames `J`,
+* `TauCeti.JHolomorphic.laplacian_comp_nonneg_of_fderiv_comp_eq_neg`: if moreover `dα` tames `J`,
   then `ρ ∘ u` is subharmonic.
-* `TauCeti.jHolomorphic_comp_le_of_comp_le_frontier`: a `J`-holomorphic curve on a compact domain
+* `TauCeti.JHolomorphic.comp_le_of_comp_le_frontier`: a `J`-holomorphic curve on a compact domain
   with boundary in `{ρ ≤ R}` lies in `{ρ ≤ R}`.
-* `TauCeti.jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends`: the same for a strip
+* `TauCeti.JHolomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`: the same for a strip
   whose boundary lines and ends lie in `{ρ ≤ R}`.
 
 ## References
@@ -65,7 +68,7 @@ treated here.
 
 public section
 
-namespace TauCeti
+namespace TauCeti.JHolomorphic
 
 open InnerProductSpace Laplacian Filter Topology Complex Set
 
@@ -80,7 +83,7 @@ at `u z`. Then
 `Δ(ρ ∘ u)(z) = Dα(∂ₛu)(∂ₜu) - Dα(∂ₜu)(∂ₛu)`,
 
 the exterior derivative `dα` evaluated on `(∂ₛu, ∂ₜu)`. -/
-theorem laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
+theorem laplacian_comp_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
     (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
     (hρ : ContDiffAt ℝ 2 ρ (u z)) (hα : DifferentiableAt ℝ α (u z))
     (hJsq : ∀ᶠ x in 𝓝 (u z), ∀ v, J x (J x v) = -v)
@@ -134,16 +137,16 @@ theorem laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt �
   abel
 
 /-- **The radial coordinate is subharmonic along a `J`-holomorphic curve.** Under the hypotheses
-of `TauCeti.laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg`, if the exterior derivative
+of `TauCeti.JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg`, if the exterior derivative
 `dα` tames `J` at `u z`, that is `dα(v, J v) ≥ 0` for every `v`, then `Δ(ρ ∘ u)(z) ≥ 0`. -/
-theorem laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
+theorem laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
     (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
     (hρ : ContDiffAt ℝ 2 ρ (u z)) (hα : DifferentiableAt ℝ α (u z))
     (hJsq : ∀ᶠ x in 𝓝 (u z), ∀ v, J x (J x v) = -v)
     (hρJ : ∀ᶠ x in 𝓝 (u z), (fderiv ℝ ρ x).comp (J x) = -α x)
     (htame : ∀ v, 0 ≤ fderiv ℝ α (u z) v (J (u z) v) - fderiv ℝ α (u z) (J (u z) v) v) :
     0 ≤ Δ (ρ ∘ u) z := by
-  rw [laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg hu hCR hρ hα hJsq hρJ, hCR.self_of_nhds]
+  rw [laplacian_comp_eq_of_fderiv_comp_eq_neg hu hCR hρ hα hJsq hρJ, hCR.self_of_nhds]
   exact htame _
 
 /-- **The maximum principle for `J`-holomorphic curves in a cylindrical end.** Suppose that on
@@ -151,7 +154,7 @@ the region `{ρ > R}` the function `ρ` is `C²`, the one-form `α` is different
 square to `-1`, `dρ ∘ J = -α`, and `dα` tames `J`. Let `K ⊆ ℂ` be compact and `u` be `C²` and
 `J`-holomorphic on the interior of `K`, with `ρ ∘ u` continuous on `K`. If `u` maps the frontier
 of `K` into `{ρ ≤ R}`, then it maps all of `K` into `{ρ ≤ R}`. -/
-theorem jHolomorphic_comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
+theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
     (hf : ContinuousOn (ρ ∘ u) K) (hu : ∀ z ∈ interior K, ContDiffAt ℝ 2 u z)
     (hCR : ∀ z ∈ interior K, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
@@ -166,7 +169,7 @@ theorem jHolomorphic_comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : I
     (fun w hw ↦ hbdry w hw) hz
   · exact (hρ _ hRw).comp w (hu w hw)
   · have hnhds : ∀ᶠ x in 𝓝 (u w), R < ρ x := (hρ _ hRw).continuousAt.eventually (lt_mem_nhds hRw)
-    exact laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg (hu w hw)
+    exact laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu w hw)
       (eventually_of_mem (isOpen_interior.mem_nhds hw) hCR) (hρ _ hRw) (hα _ hRw)
       (hnhds.mono hJsq) (hnhds.mono hρJ) (htame _ hRw)
 
@@ -176,7 +179,7 @@ Let `u` be `C²` and `J`-holomorphic on the open strip `ℝ × (0, 1)`, with `ρ
 the closed strip `ℝ × [0, 1]`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into
 `{ρ ≤ R}`, and also the two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole
 strip into `{ρ ≤ R}`. -/
-theorem jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends {R T : ℝ}
+theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
     (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContDiffAt ℝ 2 u z)
     (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
@@ -192,7 +195,7 @@ theorem jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends {R T : �
   set S := max T |z.re|
   have hS : 0 ≤ S := (abs_nonneg _).trans (le_max_right _ _)
   have hsub : Icc (-S) S ×ℂ Icc 0 1 ⊆ univ ×ℂ Icc 0 1 := fun w hw ↦ ⟨mem_univ _, hw.2⟩
-  refine jHolomorphic_comp_le_of_comp_le_frontier (isCompact_Icc.reProdIm isCompact_Icc)
+  refine comp_le_of_comp_le_frontier (isCompact_Icc.reProdIm isCompact_Icc)
     (hf.mono hsub) (fun w hw ↦ ?_) (fun w hw ↦ ?_) hρ hα hJsq hρJ htame (fun w hw ↦ ?_)
     ⟨abs_le.mp (le_max_right _ _), hz₀, hz₁⟩
   · rw [interior_reProdIm, interior_Icc, interior_Icc] at hw
@@ -207,4 +210,4 @@ theorem jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends {R T : �
     · refine hends w ?_ hw₀ hw₁
       rcases hw with hw | hw <;> rw [hw] <;> simp [S, abs_of_nonneg hS]
 
-end TauCeti
+end TauCeti.JHolomorphic

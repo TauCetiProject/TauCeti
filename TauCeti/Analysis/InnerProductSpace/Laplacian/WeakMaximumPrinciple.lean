@@ -29,6 +29,8 @@ actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the
   `C²` and subharmonic at the interior points where it exceeds the bound.
 * `TauCeti.ge_of_laplacian_nonpos_ge_frontier`: the dual weak minimum principle for superharmonic
   functions (`Δ f ≤ 0`).
+* `TauCeti.ge_of_laplacian_nonpos_of_lt_ge_frontier`: the dual of the bound above a level, for
+  `f` only known to be `C²` and superharmonic at the interior points where it is below the bound.
 * `TauCeti.exists_mem_frontier_isMaxOn_of_laplacian_nonneg` /
   `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: on a nonempty compact set in a
   nontrivial finite-dimensional real inner product space, a subharmonic (resp. superharmonic)
@@ -154,6 +156,26 @@ theorem ge_of_laplacian_nonpos_ge_frontier {K : Set E} (hK : IsCompact K) {f : E
     (fun y hy => (hcd hy).neg)
     (fun y hy => by
       rw [congrFun laplacian_neg y, Pi.neg_apply]; linarith [hlap hy])
+    (fun y hy => neg_le_neg (hbdry hy)) hxK
+  simp only [Pi.neg_apply] at hle
+  linarith
+
+/-- **Weak minimum principle below a level.**
+
+The dual of `le_of_laplacian_nonneg_of_lt_le_frontier`: let `K` be compact and `f` continuous on
+`K`, with `m ≤ f` on `frontier K`. If `f` is `C²` and superharmonic (`Δ f ≤ 0`) at the interior
+points of `K` where `f < m`, then `m ≤ f` on all of `K`. -/
+theorem ge_of_laplacian_nonpos_of_lt_ge_frontier {K : Set E} (hK : IsCompact K) {f : E → ℝ}
+    {m : ℝ} (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → f x < m → ContDiffAt ℝ 2 f x)
+    (hlap : ∀ ⦃x⦄, x ∈ interior K → f x < m → Δ f x ≤ 0)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → m ≤ f x) :
+    ∀ ⦃x⦄, x ∈ K → m ≤ f x := by
+  intro x hxK
+  have hle := le_of_laplacian_nonneg_of_lt_le_frontier (f := -f) (m := -m) hK hcont.neg
+    (fun y hy hlt => (hcd hy (by simpa using hlt)).neg)
+    (fun y hy hlt => by
+      rw [congrFun laplacian_neg y, Pi.neg_apply]; linarith [hlap hy (by simpa using hlt)])
     (fun y hy => neg_le_neg (hbdry hy)) hxK
   simp only [Pi.neg_apply] at hle
   linarith
