@@ -54,12 +54,18 @@ instance resMonoidal : (res V f).Monoidal :=
   Functor.CoreMonoidal.toMonoidal
     { εIso := mkIso (Iso.refl _) fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm
       μIso _ _ := mkIso (Iso.refl _) fun _ ↦ (Category.comp_id _).trans (Category.id_comp _).symm
-      μIso_hom_natural_left _ _ := (Category.comp_id _).trans (Category.id_comp _).symm
-      μIso_hom_natural_right _ _ := (Category.comp_id _).trans (Category.id_comp _).symm
-      -- Each coherence axiom reduces to the corresponding identity in `V`. The `exact` restates
-      -- that identity with `X.V` in place of the definitionally equal `((res V f).obj X).V`:
-      -- `simp` cannot make that replacement itself, since the object whiskered by occurs in the
-      -- *type* of the surrounding composite.
+      -- Each naturality and coherence axiom reduces to the corresponding identity in `V`. The
+      -- `exact` restates that identity with `X.V` in place of the definitionally equal
+      -- `((res V f).obj X).V`: `simp` cannot make that replacement itself, since the object
+      -- whiskered by occurs in the *type* of the surrounding composite.
+      μIso_hom_natural_left {X Y} g Z := by
+        ext
+        simp only [comp_hom, whiskerRight_hom, res_map_hom]
+        exact (show g.hom ▷ Z.V ≫ 𝟙 (Y.V ⊗ Z.V) = 𝟙 (X.V ⊗ Z.V) ≫ g.hom ▷ Z.V by simp)
+      μIso_hom_natural_right {X Y} Z g := by
+        ext
+        simp only [comp_hom, whiskerLeft_hom, res_map_hom]
+        exact (show Z.V ◁ g.hom ≫ 𝟙 (Z.V ⊗ Y.V) = 𝟙 (Z.V ⊗ X.V) ≫ Z.V ◁ g.hom by simp)
       associativity X Y Z := by
         ext
         simp only [comp_hom, whiskerRight_hom, res_map_hom, associator_hom_hom, whiskerLeft_hom]
