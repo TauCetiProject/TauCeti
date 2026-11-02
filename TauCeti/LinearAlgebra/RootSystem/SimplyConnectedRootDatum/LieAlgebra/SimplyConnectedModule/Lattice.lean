@@ -49,6 +49,8 @@ weight basis is a closed subgroup scheme of `GLₙ`
 * `TauCeti.DynkinType.instIsLatticeScLattice`: it is a full lattice in `V_sc(t)`.
 * `TauCeti.DynkinType.mem_iSup_jointWeightSpace_of_mem_scLattice`: it lies in the span of the
   integral weight spaces.
+* `TauCeti.DynkinType.isNilpotent_representation_scModule_rootGenerator`: the numbered raising and
+  lowering generators act nilpotently on `V_sc(t)`.
 * `TauCeti.DynkinType.scWeightBasis` and `TauCeti.DynkinType.scWeight`: its numbered weight basis
   and the weights of the basis vectors.
 * `TauCeti.DynkinType.span_range_scWeight_eq_top`: those weights span `Fin t.rank → ℤ`.
@@ -152,6 +154,23 @@ theorem kostantForm_apply_mem_scLattice :
       representation ℚ (t.lieAlgebra ht) (t.scModule ht) u x ∈ (t.scLattice ht).toAddSubgroup :=
   fun _ hu _ hx => t.representation_mem_scLattice ht
     (by rwa [kostantForm_def, LieAlgebra.Basis.kostantForm_def]) hx
+
+/-- **The numbered raising and lowering generators act nilpotently on `V_sc(t)`**, in the shape the
+Kostant root subgroups, elementary groups and group schemes take this hypothesis: the generators
+`eᵢ` and `fᵢ` are root vectors of `±αᵢ`
+(`TauCeti.DynkinType.isNilpotent_toEnd_scModule_of_mem_rootSpace`). -/
+theorem isNilpotent_representation_scModule_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
+    IsNilpotent (representation ℚ (t.lieAlgebra ht) (t.scModule ht)
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (LieAlgebra.Basis.rootGenerator (t.lieBasis ht) i))) := by
+  have hne (j : Fin t.rank) : ⇑((t.lieBasis ht).baseSupp j) ≠ 0 := fun h =>
+    (t.lieBasis ht).linearIndependent_baseSupp.ne_zero j ((LinearMap.coe_zero_iff _).mp h)
+  rw [representation_ι]
+  rcases i with j | j
+  · exact t.isNilpotent_toEnd_scModule_of_mem_rootSpace ht (hne j)
+      (by rw [LieAlgebra.Basis.rootGenerator_inl]; exact lieBasis_e_mem_rootSpace _ j)
+  · exact t.isNilpotent_toEnd_scModule_of_mem_rootSpace ht (neg_ne_zero.mpr (hne j))
+      (by rw [LieAlgebra.Basis.rootGenerator_inr]; exact lieBasis_f_mem_rootSpace _ j)
 
 /-- The number of vectors of the weight basis of the full-weight lattice, that is, the number of
 index values of `TauCeti.UniversalEnvelopingAlgebra.kostantWeightBasis` for it. -/
