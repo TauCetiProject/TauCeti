@@ -39,6 +39,8 @@ equation at the substituted parameter rather than at `z`.
 
 * `WeierstrassCurve.formalW_wEquation`: **Silverman AEC IV.1.1(a), existence** — `w(z)`
   satisfies the displayed equation, as an identity of power series.
+* `WeierstrassCurve.Projective.equation_neg_one_iff_wEquation`: the projective Weierstrass
+  equation at `[q : -1 : v]` is the `w`-equation at the parameter `q`.
 * `WeierstrassCurve.equation_formalW_point`: over a commutative ring, the `w`-expansion
   gives the projective point `[z : -1 : w(z)]` on the Weierstrass equation.
 * `WeierstrassCurve.eq_formalW_of_wEquation`: **Silverman AEC IV.1.1(a), uniqueness** — any
@@ -560,17 +562,26 @@ section CommRing
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 
+/-- For `q` and `v` in a commutative `R`-algebra, the projective Weierstrass equation at
+`[q : -1 : v]` is equivalent to the `w`-equation
+`v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
+`wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
+affine Weierstrass equation over a field with `y ≠ 0`, where
+`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
+theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
+    [Algebra R S] (q v : S) :
+    (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by
+  rw [Projective.equation_iff, wEquationRHS_def]
+  simp only [Matrix.cons_val, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> linear_combination h
+
 /-- The `w`-expansion gives a point of the projective Weierstrass equation
 in the chart with second coordinate `-1`. -/
 theorem equation_formalW_point :
     (W.map (PowerSeries.C : R →+* PowerSeries R)).toProjective.Equation
-      ![PowerSeries.X, -1, formalW W] := by
-  have hw := formalW_wEquation W
-  simp only [wEquationRHS_powerSeries] at hw
-  simp only [Projective.equation_iff, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-    Matrix.tail_cons]
-  linear_combination hw
+      ![PowerSeries.X, -1, formalW W] :=
+  (W.toProjective.equation_neg_one_iff_wEquation PowerSeries.X (formalW W)).mpr
+    (formalW_wEquation W)
 
 /-- Substitution passes through the `w`-equation, carrying both the parameter and the unknown with
 it. Both sides are read in the target algebra, which is why `wEquationRHS` is stated for an

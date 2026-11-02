@@ -163,12 +163,9 @@ theorem subst_formalCoordinate_formalW (C : VariableChange R) (W : WeierstrassCu
   symm
   refine W.eq_subst_formalW_of_wEquation
     (C.formalCoordinate W).constantCoeff_toPowerSeries (by simp) ?_
-  rw [Projective.equation_iff] at hnormalized
-  simp only [wEquationRHS_powerSeries]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-    Matrix.tail_cons, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hnormalized
-  simp only [formalCoordinate_toPowerSeries, inverseDenom_def, N, d] at hnormalized ⊢
-  linear_combination hnormalized
+  simpa only [formalCoordinate_toPowerSeries, inverseDenom_def, N, d] using
+    (W.toProjective.equation_neg_one_iff_wEquation (N * d) (formalW (C • W) * d)).mp
+      hnormalized
 
 /-- The transition denominators multiply after substitution. This is the
 normalization factor for composing maps in the projective identity chart. -/
