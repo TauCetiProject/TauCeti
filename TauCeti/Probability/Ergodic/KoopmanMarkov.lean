@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 public import TauCeti.Probability.Ergodic.FixedSpace
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 
@@ -142,19 +142,18 @@ theorem compMeasurePreservingLInfty_one (T : Ω → Ω) (hT : MeasurePreserving 
 /-- Composition by a measure-preserving map preserves pointwise products in `L∞`. -/
 theorem compMeasurePreservingLInfty_mul (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     (f g : Lp ℝ ∞ μ) :
-    Lp.compMeasurePreservingₗᵢ ℝ T hT (f • g : Lp ℝ ∞ μ) =
-      Lp.compMeasurePreservingₗᵢ ℝ T hT f • Lp.compMeasurePreservingₗᵢ ℝ T hT g := by
+    Lp.compMeasurePreservingₗᵢ ℝ T hT (f * g) =
+      Lp.compMeasurePreservingₗᵢ ℝ T hT f * Lp.compMeasurePreservingₗᵢ ℝ T hT g := by
   rw [Lp.compMeasurePreservingₗᵢ_apply, Lp.compMeasurePreservingₗᵢ_apply,
     Lp.compMeasurePreservingₗᵢ_apply]
   apply Lp.ext
-  have hmulT := hT.quasiMeasurePreserving.tendsto_ae (Lp.coeFn_lpSMul (r := ∞) f g)
-  filter_upwards [Lp.coeFn_compMeasurePreserving (f • g : Lp ℝ ∞ μ) hT, hmulT,
-    Lp.coeFn_lpSMul (r := ∞) (Lp.compMeasurePreserving T hT f)
-      (Lp.compMeasurePreserving T hT g),
+  have hmulT := hT.quasiMeasurePreserving.tendsto_ae (Lp.coeFn_mul f g)
+  filter_upwards [Lp.coeFn_compMeasurePreserving (f * g) hT, hmulT,
+    Lp.coeFn_mul (Lp.compMeasurePreserving T hT f) (Lp.compMeasurePreserving T hT g),
     Lp.coeFn_compMeasurePreserving f hT, Lp.coeFn_compMeasurePreserving g hT]
     with ω hlhs hmul hrhs hf hg
   rw [hlhs, Function.comp_apply, hmul, hrhs]
-  simp only [Pi.smul_apply', hf, hg, Function.comp_apply]
+  simp only [Pi.mul_apply, hf, hg, Function.comp_apply]
 
 end Probability
 
