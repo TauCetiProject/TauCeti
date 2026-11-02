@@ -365,16 +365,20 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
   let ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³ := fun z =>
     { toLinearMap := Complex.reLm.smulRight (n₁ z) + Complex.imLm.smulRight (n₂ z)
       norm_map' := fun w => by
-        change ‖w.re • n₁ z + w.im • n₂ z‖ = ‖w‖
+        rw [LinearMap.add_apply, LinearMap.smulRight_apply, LinearMap.smulRight_apply,
+          Complex.reLm_coe, Complex.imLm_coe]
         rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
           ← real_inner_self_eq_norm_sq, inner_add_left, real_inner_smul_left, real_inner_smul_left,
           h₁, h₂] }
+  -- Evaluating `ψ z` at `w` gives its coordinates in the frame.
+  have hψ (z : Circle) (w : ℂ) : ψ z w = w.re • n₁ z + w.im • n₂ z := by
+    rw [LinearIsometry.coe_mk, LinearMap.add_apply, LinearMap.smulRight_apply,
+      LinearMap.smulRight_apply, Complex.reLm_coe, Complex.imLm_coe]
   refine ⟨ψ, ?_, fun z => ⟨fun w => ?_,
     fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
-  · change Continuous (fun q : SolidTorus => (q.1 : ℂ).re • n₁ q.2 + (q.1 : ℂ).im • n₂ q.2)
+  · simp only [hψ]
     fun_prop
-  · change w.re • n₁ z + w.im • n₂ z ∈ normalSubspace (𝓡 1) f z
-    rw [(hn z).2.2.2, h₁, h₂]
+  · rw [hψ, (hn z).2.2.2, h₁, h₂]
   · rw [(hn z).2.2.2] at hv
     simpa [ψ] using hv.symm
 
