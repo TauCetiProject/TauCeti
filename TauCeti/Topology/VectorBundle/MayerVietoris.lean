@@ -701,10 +701,8 @@ theorem existsUnique_singularCohomology_thomPairOver_iUnion
       TopPair.singularCohomologyMap
           (fiberThomPairOverMap F E (mem_iUnion₂_of_mem hi hb)) _ (v s) =
         TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ (u i) := by
-    simpa only [← TopPair.singularCohomologyMap_comp_apply,
-      fiberThomPairOverMap_comp_thomPairOverMap] using
-        congrArg (fun a ↦ TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ a)
-          (hv s i hi)
+    rw [← hv s i hi, ← TopPair.singularCohomologyMap_comp_apply,
+      fiberThomPairOverMap_comp_thomPairOverMap]
   have hdet (s : Finset ι)
       (z : (thomPairOver F E (⋃ i ∈ s, W i)).singularCohomology R k M (finrank ℝ F))
       (hz : ∀ i (hi : i ∈ s) b (hb : b ∈ W i), TopPair.singularCohomologyMap
@@ -724,20 +722,14 @@ theorem existsUnique_singularCohomology_thomPairOver_iUnion
   obtain ⟨x, hx, huniq⟩ := existsUnique_thomCover W R M hWo hWe v hcompat
   have hxi (i : ι) :
       TopPair.singularCohomologyMap (thomPairOverMap F E (subset_iUnion W i)) _ x = u i := by
-    have h := congrArg (fun a ↦ TopPair.singularCohomologyMap
-      (thomPairOverMap F E (Finset.subset_set_biUnion_of_mem (Finset.mem_singleton_self i)))
-        (finrank ℝ F) a) (hx {i})
-    rw [← TopPair.singularCohomologyMap_comp_apply,
-      thomPairOverMap_comp_thomPairOverMap] at h
-    exact h.trans (hv {i} i (Finset.mem_singleton_self i))
+    rw [← hv {i} i (Finset.mem_singleton_self i), ← hx {i},
+      ← TopPair.singularCohomologyMap_comp_apply, thomPairOverMap_comp_thomPairOverMap]
   refine ⟨x, hxi, fun y hy ↦ huniq y fun s ↦ hdet s _ ?_⟩
   intro i hi b hb
   rw [← TopPair.singularCohomologyMap_comp_apply,
     fiberThomPairOverMap_comp_thomPairOverMap]
-  have h := congrArg
-    (fun a ↦ TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ a) (hy i)
-  simpa only [← TopPair.singularCohomologyMap_comp_apply,
-    fiberThomPairOverMap_comp_thomPairOverMap] using h
+  rw [← hy i, ← TopPair.singularCohomologyMap_comp_apply,
+    fiberThomPairOverMap_comp_thomPairOverMap]
 
 end ArbitraryCover
 

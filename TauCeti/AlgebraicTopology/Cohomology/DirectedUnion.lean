@@ -65,8 +65,10 @@ theorem existsUnique_singularCohomology_of_directedUnion
         { app j := eqToHom (singularHomologyFunctor_obj (D.obj j) R n) ≫
             (D.obj j).singularKronecker k n (u j)
           naturality i j f := by
-            simp [singularHomologyFunctor_map, Category.assoc,
-              ← singularKronecker_naturality, hu f] } }
+            simp only [Functor.comp_map, singularHomologyFunctor_map, Category.assoc,
+              eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+              ← singularKronecker_naturality, Functor.const_obj_map, Functor.const_obj_obj]
+            rw [hu f, Category.comp_id] } }
   let φ := eqToIso (singularHomologyFunctor_obj c.pt R n)
   obtain ⟨x, hx⟩ := hbij.2 (φ.inv ≫ (hc n).desc s)
   have hxj (j : J) : TopPair.singularCohomologyMap (c.ι.app j) n x = u j := by
@@ -77,7 +79,8 @@ theorem existsUnique_singularCohomology_of_directedUnion
     rw [hx]
     have hfac := (hc n).fac s j
     apply (cancel_epi (eqToHom (singularHomologyFunctor_obj (D.obj j) R n))).1
-    simpa [s, φ, singularHomologyFunctor_map, Category.assoc] using hfac
+    simpa only [Functor.mapCocone_ι_app, singularHomologyFunctor_map, Category.assoc,
+      s, φ, eqToIso.inv, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] using hfac
   refine ⟨x, hxj, fun y hy ↦ hbij.1 ?_⟩
   apply (cancel_epi φ.hom).1
   refine (hc n).hom_ext fun j ↦ ?_
