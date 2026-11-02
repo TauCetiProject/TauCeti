@@ -178,7 +178,7 @@ theorem norm_le_norm_formDualEquiv (ξ : ⋀[ℝ]^k E) : ‖ξ‖ ≤ ‖formDua
 
 /-- **The mass of a simple `k`-vector is its volume**: as a functional on forms, `v₁ ∧ ⋯ ∧ vₖ` has
 norm `‖v₁ ∧ ⋯ ∧ vₖ‖`. -/
-@[simp]
+@[simp↓]
 theorem norm_formDualEquiv_ιMulti (v : Fin k → E) :
     ‖formDualEquiv ℝ E k (ιMulti ℝ k v)‖ = ‖ιMulti ℝ k v‖ := by
   refine le_antisymm ?_ (norm_le_norm_formDualEquiv _)

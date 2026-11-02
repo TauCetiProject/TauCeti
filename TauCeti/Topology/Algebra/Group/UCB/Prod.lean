@@ -172,7 +172,7 @@ theorem applyRight_apply (f : UCB (G × H)) (x : G) :
   (rfl)
 
 /-- `applyRight Λ` sends a function of the first variable alone to its multiple by `Λ 1`. -/
-@[simp]
+@[simp↓]
 theorem applyRight_compRightAlgHom_fst (f : UCB G) :
     applyRight Λ (compRightAlgHom (ContinuousMonoidHom.fst G H) f) = Λ 1 • f := by
   ext x

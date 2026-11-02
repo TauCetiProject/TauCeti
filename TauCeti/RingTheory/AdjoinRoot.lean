@@ -22,7 +22,7 @@ namespace TauCeti.AdjoinRoot
 variable {R : Type*} [CommRing R]
 
 /-- The root of `X² - d` in its `AdjoinRoot` model squares to the coefficient `d`. -/
-@[simp] theorem root_sq (d : R) :
+theorem root_sq (d : R) :
     (AdjoinRoot.root (X ^ 2 - C d)) ^ 2 = algebraMap R (AdjoinRoot (X ^ 2 - C d)) d := by
   rw [← sub_eq_zero, ← AdjoinRoot.eval₂_root, eval₂_sub, eval₂_C, eval₂_pow, eval₂_X,
     AdjoinRoot.algebraMap_eq]

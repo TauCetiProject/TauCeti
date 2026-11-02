@@ -106,7 +106,7 @@ theorem reductiveCommHopfAlgProperty.linearlyReductive
 characteristic zero is completely reducible, over the original field. -/
 theorem Comodule.isCompletelyReducible_of_reductive
     (hH : reductiveCommHopfAlgProperty k H)
-    {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M] :
+    {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M] :
     Comodule.IsCompletelyReducible k H M :=
   ((linearlyReductiveCommHopfAlgProperty_iff k H.obj).mp hH.linearlyReductive).isCompletelyReducible
 

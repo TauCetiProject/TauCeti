@@ -120,7 +120,7 @@ theorem wedgePairing_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (x y : 
   rw [← inner_hodgeStar_apply, inner_hodgeStar_hodgeStar]
 
 /-- The Hodge star preserves norms. -/
-@[simp]
+@[simp↓]
 theorem norm_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (x : ⋀[ℝ]^k V) :
     ‖o.hodgeStar hkl x‖ = ‖x‖ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
