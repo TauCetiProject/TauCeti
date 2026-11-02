@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Dual
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # Changing the inner product by the inverse square root
@@ -70,17 +69,6 @@ local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-namespace InnerProductSpace
-
-/-- The Riesz operator of the reference inner product is the identity. -/
-@[simp]
-theorem continuousLinearMapOfBilin_innerSL [CompleteSpace E] :
-    (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)♯ = 1 := by
-  ext v
-  exact ext_inner_right ℝ fun w ↦ by simp
-
-end InnerProductSpace
 
 namespace ContinuousLinearMap
 
@@ -169,12 +157,6 @@ theorem metricChangeTransport_apply_sqrt_apply (hH : IsStrictlyPositive h♯) (x
     h.metricChangeTransport (CFC.sqrt h♯ x) = x := by
   simpa only [mul_apply_eq_comp, one_apply_eq_self] using
     congr($(metricChangeTransport_mul_sqrt hH) x)
-
-/-- The inner product of two images under a positive operator's square root. -/
-theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : E →L[ℝ] E} (hT : 0 ≤ T) (u v : E) :
-    ⟪CFC.sqrt T u, CFC.sqrt T v⟫_ℝ = ⟪T u, v⟫_ℝ := by
-  rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
-    ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
 /-- The square root of a positive Riesz operator `H` of `h` is an isometry from `h` to the
 original inner product. -/

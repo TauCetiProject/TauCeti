@@ -18,11 +18,21 @@ inverse undoes `innerSL` on either side.
 
 * `InnerProductSpace.toDual_symm_innerSL`: `(toDual 𝕜 E).symm (innerSL 𝕜 w) = w`.
 * `InnerProductSpace.innerSL_toDual_symm`: `innerSL 𝕜 ((toDual 𝕜 E).symm q) = q`.
+* `InnerProductSpace.continuousLinearMapOfBilin_innerSL`: the Riesz operator of the real inner
+  product is the identity.
 -/
 
 public section
 
 namespace InnerProductSpace
+
+/-- The Riesz operator of the reference inner product is the identity. -/
+@[simp]
+theorem continuousLinearMapOfBilin_innerSL {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] :
+    continuousLinearMapOfBilin (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = 1 := by
+  ext v
+  exact ext_inner_right ℝ fun w ↦ by simp
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 
