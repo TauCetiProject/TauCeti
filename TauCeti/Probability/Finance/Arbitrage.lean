@@ -30,8 +30,8 @@ market with an equivalent martingale measure.
 Discounted martingale wealth is also determined by its terminal value: it is the conditional
 price `V_t = N_t E_Q[V_T / N_T | ℱ_t]` (`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), so two
 such strategies with the same terminal wealth have the same wealth at every earlier date, and in
-particular the same initial cost (`MeasureTheory.Martingale.ae_eq_of_ae_eq`). This is the law of
-one price.
+particular the same initial cost (`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`). This is the
+law of one price.
 
 For simple strategies the martingale property is proved rather than assumed. The gains
 `∫₀ᵗ a dX` of a simple strategy with bounded positions, each chosen at the start of its trading
@@ -46,8 +46,9 @@ with bounded stock positions has martingale discounted gains, and none is an arb
 * `TauCeti.Finance.IsArbitrage`: an arbitrage, given by its initial cost and terminal wealth.
 * `MeasureTheory.Supermartingale.not_isArbitrage`: no arbitrage when the wealth in units of a
   positive numeraire is a supermartingale under an equivalent measure.
-* `MeasureTheory.Martingale.ae_eq_mul_condExp_div`, `MeasureTheory.Martingale.ae_eq_of_ae_eq`:
-  the value process of discounted martingale wealth, and the law of one price.
+* `MeasureTheory.Martingale.ae_eq_mul_condExp_div`,
+  `MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`: the value process of discounted martingale
+  wealth, and the law of one price.
 * `TauCeti.Finance.IsSelfFinancing.not_isArbitrage`: no self-financing simple strategy is an
   arbitrage when the discounted stock is a martingale under an equivalent measure.
 
@@ -160,9 +161,9 @@ theorem Martingale.ae_eq_mul_condExp_div (hV : Martingale (V / N) ℱ Q) (hPQ : 
 martingale under a measure `Q` equivalent to `P`, and whose wealth agrees at a date `j`, have the
 same wealth at every earlier date `i` at which the numeraire does not vanish; in particular the
 same initial cost. -/
-theorem Martingale.ae_eq_of_ae_eq (hV : Martingale (V / N) ℱ Q) (hV' : Martingale (V' / N) ℱ Q)
-    (hPQ : P ≪ Q) (hQP : Q ≪ P) (hN : ∀ᵐ ω ∂P, N i ω ≠ 0) (hij : i ≤ j)
-    (hj : V j =ᵐ[P] V' j) : V i =ᵐ[P] V' i := by
+theorem Martingale.ae_eq_of_ae_eq_of_div (hV : Martingale (V / N) ℱ Q)
+    (hV' : Martingale (V' / N) ℱ Q) (hPQ : P ≪ Q) (hQP : Q ≪ P) (hN : ∀ᵐ ω ∂P, N i ω ≠ 0)
+    (hij : i ≤ j) (hj : V j =ᵐ[P] V' j) : V i =ᵐ[P] V' i := by
   have hcond : Q[V j / N j | ℱ i] =ᵐ[Q] Q[V' j / N j | ℱ i] := by
     refine condExp_congr_ae ?_
     filter_upwards [hQP.ae_le hj] with ω hω
