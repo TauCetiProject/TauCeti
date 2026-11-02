@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.TensorProduct.Pi
 For a finite family of finite flat algebras, a family of sections assigned to the factors is
 full on their product exactly when each component family is full. Geometrically this says
 that fullness on a finite disjoint union can be tested on each open-and-closed component.
-In particular, no cancellation of norm factors or reducedness of the base is needed.
 
 This componentwise criterion is used when a finite étale quotient is split and its fibres
 are studied separately. The algebras need not be globally free and the component families
@@ -71,9 +70,9 @@ private theorem isFullSetOfSections_pi_iff_of_free
       Algebra.norm_pi, Fintype.prod_sigma]
     simp_rw [(h _).norm_eq T, AlgHom.sectionBaseChange_comp_evalAlgHom]
 
-/-- Fullness of a family on a finite disjoint union is equivalent to fullness on each
-component. The sections of the product algebra are indexed by the disjoint union of the
-component index types and factor through the corresponding projections. -/
+/-- **Disjoint unions** (Katz–Mazur 1.8.4). Fullness of a family on a finite disjoint union
+is equivalent to fullness on each component. The sections of the product algebra are indexed by
+the disjoint union of the component index types and factor through the corresponding projections. -/
 theorem isFullSetOfSections_pi_iff [∀ k, Module.Finite A (B k)] [∀ k, Module.Flat A (B k)] :
     (IsFullSetOfSections fun p : Σ k, ι k ↦
       (s p.1 p.2).comp (Pi.evalAlgHom A B p.1)) ↔

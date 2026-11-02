@@ -66,6 +66,9 @@ sections be checked locally on `Spec A` and transported along changes of base.
 * `TauCeti.IsFullSetOfSections.baseChange`, `TauCeti.IsFullSetOfSections.of_baseChange` and
   `TauCeti.isFullSetOfSections_baseChange_iff`: full sets of sections are stable under arbitrary
   base change and descend along injective ring maps, in particular along faithfully flat ones.
+* `TauCeti.isFullSetOfSections_pi_iff` in `TauCeti/RingTheory/Norm/FullSetOfSections/Pi.lean`:
+  fullness on a finite disjoint union is equivalent to fullness on each component
+  (Katz–Mazur 1.8.4).
 
 In the remaining results, `B` is free of finite rank over `A`.
 
