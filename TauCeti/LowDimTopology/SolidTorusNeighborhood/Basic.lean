@@ -380,7 +380,8 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
     fun_prop
   · rw [hψ, (hn z).2.2.2, h₁, h₂]
   · rw [(hn z).2.2.2] at hv
-    simpa [ψ] using hv.symm
+    rw [hψ]
+    simpa using hv.symm
 
 /-- **Solid torus neighbourhoods of knots in `ℝ³`.** A `C²` embedded circle in `ℝ³` has a solid
 torus neighbourhood inside any neighbourhood of its image. -/
