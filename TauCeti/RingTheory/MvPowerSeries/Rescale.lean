@@ -62,6 +62,12 @@ theorem norm_prod_pow_smul_mul_prod (u : σ → R)
           rw [ih]
           ring
 
+/-- Multiplicative units `u i` with `‖u i‖ * s i = r i` scale norms in `R` by `r i / s i`, which is
+the scaling hypothesis of `norm_prod_pow_smul_mul_prod` for `E = R`. -/
+theorem norm_smul_mul_of_isNormMulUnit (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
+    (hrs : ∀ i, ‖u i‖ * s i = r i) (i : σ) (e : R) : ‖u i • e‖ * s i = ‖e‖ * r i := by
+  rw [smul_eq_mul, (hu i).norm_mul, mul_right_comm, hrs, mul_comm]
+
 end TauCeti.MvPowerSeries
 
 namespace MvPowerSeries
@@ -78,7 +84,7 @@ theorem norm_coeff_rescale_mul_prod (u : σ → R) (hu : ∀ i, IsNormMulUnit (u
       ‖coeff n f‖ * n.prod (r · ^ ·) := by
   rw [coeff_rescale]
   exact TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod (E := R) u
-    (fun i e ↦ by rw [smul_eq_mul, (hu i).norm_mul, mul_right_comm, hrs, mul_comm]) n _
+    (TauCeti.MvPowerSeries.norm_smul_mul_of_isNormMulUnit u hu hrs) n _
 
 /-- Rescaling by multiplicative units converts restrictedness at `r` into restrictedness at `s`
 when `‖u i‖ * s i = r i`. -/

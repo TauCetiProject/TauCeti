@@ -243,7 +243,7 @@ theorem ofAddSubgroup_subringLinearEquiv_restrictedRescaleEquiv [∀ i, Fact (0 
     IsRestrictedFamily.Gauss.ofAddSubgroup
         (IsRestrictedFamily.subringLinearEquiv (restrictedRescaleEquiv u hu hrs f)) =
       IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv u
-        (fun i e ↦ by rw [smul_eq_mul, (hu i).norm_mul, mul_right_comm, hrs, mul_comm])
+        (norm_smul_mul_of_isNormMulUnit (fun i ↦ (u i : R)) hu hrs)
         (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)) := by
   ext t
   simp
