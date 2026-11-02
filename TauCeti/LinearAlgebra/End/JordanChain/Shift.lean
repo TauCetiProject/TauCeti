@@ -62,7 +62,7 @@ theorem pow_chainShift_basis (b : Basis (Σ i, Fin (len i)) R M) (k : ℕ) (i : 
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, ih]
+    rw [pow_succ', mul_apply_eq_comp, ih]
     split_ifs with h₁ h₂ h₂
     · simp [add_assoc, h₂]
     · simp [add_assoc, h₂]

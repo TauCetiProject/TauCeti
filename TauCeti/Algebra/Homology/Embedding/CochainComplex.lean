@@ -24,8 +24,8 @@ a bounded complex.
 
 ## Main results
 
-* `HomologicalComplex.isZero_X_of_notMem_Icc`: the terms vanish outside the bounding interval.
-* `HomologicalComplex.isZero_homology_of_notMem_Icc`: the cohomology vanishes outside the
+* `CochainComplex.isZero_X_of_notMem_Icc`: the terms vanish outside the bounding interval.
+* `CochainComplex.isZero_homology_of_notMem_Icc`: the cohomology vanishes outside the
   bounding interval.
 -/
 
@@ -35,26 +35,22 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
-namespace HomologicalComplex
+namespace CochainComplex
 
 variable {A : Type u} [Category.{v} A] [HasZeroMorphisms A]
 
 /-- A strictly bounded cochain complex is zero outside any interval supplied by its bounds. -/
 theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.X n) := by
-  rw [Finset.mem_Icc] at hn
-  rcases lt_or_ge n a with h | h
-  · exact K.isZero_of_isStrictlyGE a n h
-  · exact K.isZero_of_isStrictlyLE b n (by omega)
+  obtain h | h : n < a ∨ b < n := by simp only [Finset.mem_Icc] at hn; omega
+  exacts [K.isZero_of_isStrictlyGE a n h, K.isZero_of_isStrictlyLE b n h]
 
 /-- The homology of a cochain complex is zero outside any interval supplied by its cohomological
 bounds. -/
 theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsGE a]
     [K.IsLE b] {n : ℤ} [K.HasHomology n] (hn : n ∉ Finset.Icc a b) :
     IsZero (K.homology n) := by
-  rw [Finset.mem_Icc] at hn
-  rcases lt_or_ge n a with h | h
-  · exact K.isZero_of_isGE a n h
-  · exact K.isZero_of_isLE b n (by omega)
+  obtain h | h : n < a ∨ b < n := by simp only [Finset.mem_Icc] at hn; omega
+  exacts [K.isZero_of_isGE a n h, K.isZero_of_isLE b n h]
 
-end HomologicalComplex
+end CochainComplex

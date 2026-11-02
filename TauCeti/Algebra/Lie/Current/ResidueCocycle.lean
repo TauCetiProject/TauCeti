@@ -271,6 +271,14 @@ theorem twoCochainOfBilinear_ofLoop [HasUniqueDiv R] (Φ : LinearMap.BilinForm R
         (_root_.LieAlgebra.LoopAlgebra.twoCochainOfBilinear R ℤ L Φ hΦ u v) := by
   simp
 
+/-- Rescaling the form rescales the residue cochain. -/
+theorem twoCochainOfBilinear_smul (r : R) (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm)
+    (hrΦ : (r • Φ).IsSymm) :
+    twoCochainOfBilinear R L (r • Φ) hrΦ = r • twoCochainOfBilinear R L Φ hΦ := by
+  refine Subtype.ext <| LinearMap.ext₂ fun u v ↦ ?_
+  simpa using map_smul (TrivialLieModule.equiv R (currentAlgebra R L) R).symm r
+    (residuePairing R L Φ u v)
+
 /-- The residue 2-cocycle with trivial coefficients attached to an invariant symmetric bilinear
 form on `L`. For `Φ = -κ` it is the cocycle `-κ(x, y) Res(f dg)` defining the affine central
 extension of level `κ`. -/
@@ -292,10 +300,8 @@ theorem twoCocycleOfBilinear_coe (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInv
 /-- Rescaling the form rescales the residue cocycle. -/
 theorem twoCocycleOfBilinear_smul (r : R) (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
     (hΦs : Φ.IsSymm) (hrΦ : (r • Φ).lieInvariant L) (hrΦs : (r • Φ).IsSymm) :
-    twoCocycleOfBilinear R L (r • Φ) hrΦ hrΦs = r • twoCocycleOfBilinear R L Φ hΦ hΦs := by
-  refine Subtype.ext <| Subtype.ext <| LinearMap.ext₂ fun u v ↦ ?_
-  simpa using map_smul (TrivialLieModule.equiv R (currentAlgebra R L) R).symm r
-    (residuePairing R L Φ u v)
+    twoCocycleOfBilinear R L (r • Φ) hrΦ hrΦs = r • twoCocycleOfBilinear R L Φ hΦ hΦs :=
+  Subtype.ext (twoCochainOfBilinear_smul R L r Φ hΦs hrΦs)
 
 section Coefficients
 

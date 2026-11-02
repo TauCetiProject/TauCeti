@@ -155,7 +155,7 @@ theorem representation_lie_of_mem_center {u : U} (hu : u ∈ Subalgebra.center R
     (Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x))
   rw [map_mul, map_mul, representation_ι] at h
   have h₁ := congrArg (fun g : Module.End R M ↦ g m) h
-  simpa only [Module.End.mul_apply, LieModule.toEnd_apply_apply] using h₁.symm
+  simpa only [mul_apply_eq_comp, LieModule.toEnd_apply_apply] using h₁.symm
 
 variable {R L}
 variable {B : Type w} [Ring B] [Algebra R B]
@@ -275,9 +275,9 @@ theorem ad_ι_pow_apply_ι (x y : L) (n : ℕ) :
   induction n generalizing y with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply,
+    rw [pow_succ, mul_apply_eq_comp, LieAlgebra.ad_apply,
       ← LieHom.map_lie (_root_.UniversalEnvelopingAlgebra.ι R), ih, pow_succ,
-      Module.End.mul_apply, LieAlgebra.ad_apply]
+      mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 end Center
 

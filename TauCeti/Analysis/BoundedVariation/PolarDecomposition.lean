@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
 /-!
@@ -46,6 +47,8 @@ against this representation gives `|Du|(U) ≤ ∫_U ‖σ_u‖ d|Du|`, hence `�
 * `TauCeti.polarDensity μ Ω u`: the polar density `σ_u : Ω → E` of `Du` with respect to `|Du|`.
 * `TauCeti.integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity`: the representation
   `∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`.
+* `TauCeti.integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity`: its directional form
+  `∫ ∂_v φ · u dμ = -∫ φ ⟪v, σ_u⟫ d|Du|` for scalar test functions.
 * `TauCeti.ae_norm_polarDensity_eq_one`: `‖σ_u‖ = 1` at `|Du|`-almost every point.
 * `TauCeti.locallyIntegrable_polarDensity`: `σ_u` is locally integrable with respect to `|Du|`.
 * `TauCeti.ae_eq_polarDensity`: a locally integrable vector field representing `Du` against `|Du|`
@@ -94,12 +97,12 @@ private theorem exists_le_one :
   -- A reference measure `ρ`, finite on compact sets, dominating `|Du|` and every `νᵢ`.
   set ρ : Measure Ω := lam + ∑ i, (ν₁ i + ν₂ i) with hρ
   have : IsFiniteMeasureOnCompacts ρ := ⟨fun K hK => by
-    simp only [hρ, Measure.coe_add, Measure.coe_finsetSum, Pi.add_apply, Finset.sum_apply]
+    simp only [hρ, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply]
     exact ENNReal.add_lt_top.2 ⟨hK.measure_lt_top, ENNReal.sum_lt_top.2 fun i _ =>
       ENNReal.add_lt_top.2 ⟨(h₁ i).lt_top_of_isCompact hK, (h₂ i).lt_top_of_isCompact hK⟩⟩⟩
   have hlam : lam ≪ ρ := Measure.AbsolutelyContinuous.rfl.add_right _
   have hac {i} {ν : Measure Ω} (hν : ν = ν₁ i ∨ ν = ν₂ i) : ν ≪ ρ := fun s hs => by
-    simp only [hρ, Measure.coe_add, Measure.coe_finsetSum, Pi.add_apply, Finset.sum_apply,
+    simp only [hρ, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply,
       add_eq_zero, Finset.sum_eq_zero_iff, Finset.mem_univ, true_implies] at hs
     rcases hν with rfl | rfl
     exacts [(hs.2 i).1, (hs.2 i).2]
@@ -275,6 +278,18 @@ theorem integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity (φ : 𝓓
     ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u :=
   (polarDensity_spec hu hfin).2 φ
+
+/-- **The directional derivative `⟪v, Du⟫ = ⟪v, σ_u⟫ |Du|`.** For `u` locally integrable on `Ω`
+with locally finite variation, `∫ ∂_v φ · u dμ = -∫ φ ⟪v, σ_u⟫ d|Du|` for every scalar test
+function `φ` on `Ω` and every vector `v`. -/
+theorem integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity (φ : 𝓓(Ω, ℝ)) (v : E) :
+    ∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ =
+      -∫ x, φ x * ⟪v, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u := by
+  -- Test the polar decomposition against the vector field `φ v`, whose divergence is `∂_v φ`.
+  have h := integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin
+    (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ)
+  rw [divergenceCLM_postcompCLM_toSpanSingleton] at h
+  simpa [lineDerivOp_apply, real_inner_smul_left] using h
 
 /-- The polar density of a function of locally finite variation has norm one at `|Du|`-almost
 every point. -/

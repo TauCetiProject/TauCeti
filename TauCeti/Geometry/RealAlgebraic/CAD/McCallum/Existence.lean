@@ -35,24 +35,27 @@ open MvPolynomial Set
 
 namespace TauCeti
 
-variable {n : ℕ} [∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ)]
+variable {n : ℕ} (polynomialGCD : ∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ))
+
 
 /-- **Recursive sign-invariant McCallum correctness.** If the McCallum projection of a
 squarefree basis of `F` is well-oriented, there is a sign-invariant CAD for `F` with analytic
 cells. Its base CAD is order-invariant for that projection. No restriction is imposed on
 nullification of the top-level basis, including over positive-dimensional base cells. -/
-theorem exists_isCAD_signInvariant_of_isMcCallumWellOriented_projection
-    {F : Finset (MvPolynomial (Fin (n + 1)) ℝ)}
+theorem exists_isCAD_signInvariant_of_isMcCallumWellOriented_projection :
+    letI := polynomialGCD; ∀ {F : Finset (MvPolynomial (Fin (n + 1)) ℝ)}
     {B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
-    (hB : (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B)
-    (hproj : IsMcCallumWellOriented n
-      ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B)) :
+    (_hB : (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B)
+    (_hproj : IsMcCallumWellOriented polynomialGCD n
+      ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B)),
     ∃ 𝒞, IsCAD (n + 1) 𝒞 ∧
       (∀ E ∈ 𝒞, ∃ d, IsAnalyticSubmanifold d E) ∧
       (∀ f ∈ F, ∀ E ∈ 𝒞, SignInvariant (fun x ↦ eval x f) E) ∧
       ∀ q ∈ (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B,
         ∀ C ∈ image Fin.tail '' 𝒞, ∀ x ∈ C, ∀ y ∈ C, q.orderAt x = q.orderAt y := by
-  obtain ⟨𝒟, h𝒟, ha, ho⟩ := exists_isCAD_orderAt_eq_of_isMcCallumWellOriented hproj
+  let := polynomialGCD
+  intro F B hB hproj
+  obtain ⟨𝒟, h𝒟, ha, ho⟩ := exists_isCAD_orderAt_eq_of_isMcCallumWellOriented polynomialGCD hproj
   obtain ⟨𝒞, h𝒞, htail, hc⟩ :=
     h𝒟.exists_isCAD_signInvariant_of_mcCallumProjection hB ha ho
   refine ⟨𝒞, h𝒞, fun E hE ↦ (hc E hE).1, fun f hf E hE ↦ ?_, ?_⟩

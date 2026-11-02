@@ -124,7 +124,7 @@ def derivationLieAlgebra : LieSubalgebra R (Module.End R A) where
   smul_mem' r _ hD x y := by
     simp only [LinearMap.smul_apply, hD x y, smul_add, smul_mul_assoc, mul_smul_comm]
   lie_mem' hD hE x y := by
-    simp only [Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply, hE x y, hD x y, map_add,
+    simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, hE x y, hD x y, map_add,
       hD _ y, hD x _, hE _ y, hE x _, sub_mul, mul_sub]
     abel
 
@@ -288,7 +288,7 @@ associative-algebra analogue of Mathlib's `LieDerivation.lie_der_ad_eq_ad_der`. 
 theorem lie_innerDerivation (D : derivationLieAlgebra R A) (z : A) :
     ⁅D, innerDerivation R z⁆ = innerDerivation R ((D : Module.End R A) z) := by
   ext a
-  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
     coe_innerDerivation, LieAlgebra.ad_apply, map_sub, derivationLieAlgebra.leibniz]
   abel
 
