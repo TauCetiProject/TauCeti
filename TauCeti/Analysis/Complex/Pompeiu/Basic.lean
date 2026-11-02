@@ -55,9 +55,9 @@ along each ray.
   `D = 2 \bar∂` of the Cauchy transform of a compactly supported `C¹` map `f` is `f`.
 * `HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_one`:
   `\bar∂ (∫ (w - z)⁻¹ • f z) = π f`.
-* `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero`,
-  `HasCompactSupport.differentiableOn_integral_sub_inv_smul_compl_tsupport` and
-  `TauCeti.differentiableOn_integral_sub_inv_smul_compl`: holomorphy where `f` vanishes.
+* `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero` and
+  `TauCeti.differentiableOn_integral_sub_inv_smul_compl`: holomorphy where `f` vanishes, in
+  particular off `tsupport f`.
 
 ## References
 
@@ -279,17 +279,10 @@ theorem _root_.HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_ze
     (hc.hasFDerivAt_integral_sub_inv_smul hf w).differentiableAt,
     hc.conjWirtingerDeriv_integral_sub_inv_smul_apply_one hf, hw, smul_zero]
 
-/-- The Cauchy transform of a compactly supported `C¹` map `f` is holomorphic off the support
-of `f`. -/
-theorem _root_.HasCompactSupport.differentiableOn_integral_sub_inv_smul_compl_tsupport
-    {f : ℂ → F} (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) :
-    DifferentiableOn ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) (tsupport f)ᶜ := fun _ hw ↦
-  (hc.differentiableAt_integral_sub_inv_smul_of_eq_zero hf
-    (image_eq_zero_of_notMem_tsupport hw)).differentiableWithinAt
-
 /-- The Cauchy transform of a `C¹` map `f` vanishing outside a compact set `k` is holomorphic on
-the complement of `k`. Applied to a family `g p` vanishing outside a common compact set `k`, this
-gives a region of holomorphy independent of the parameter `p`. -/
+the complement of `k`. For compactly supported `f`, taking `k = tsupport f` shows that the
+transform is holomorphic off the support of `f`. Applied to a family `g p` vanishing outside a
+common compact set `k`, this gives a region of holomorphy independent of the parameter `p`. -/
 theorem differentiableOn_integral_sub_inv_smul_compl {f : ℂ → F} {k : Set ℂ} (hk : IsCompact k)
     (hfk : ∀ x ∉ k, f x = 0) (hf : ContDiff ℝ 1 f) :
     DifferentiableOn ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) kᶜ := fun w hw ↦

@@ -96,21 +96,26 @@ private theorem integrable_sub_inv_smul_fderiv_uncurry (hs : IsOpen s) (hk : IsC
     filter_upwards [(hs.prod hk.isClosed.isOpen_compl).mem_nhds (mk_mem_prod hp hz)] with q hq
     exact hgs q.1 q.2 hq.1 hq.2
 
+/-- On `s ×ˢ univ`, the derivative of `g` in the parameter is the derivative of `↿g` restricted to
+`P × {0}`: `fderiv_slice_left` under the hypotheses of this section. -/
+private theorem fderiv_slice_eq_fderiv_uncurry_comp_inl (hs : IsOpen s)
+    (hg : ContDiffOn ℝ 1 ↿g (s ×ˢ univ)) {p : P} (hp : p ∈ s) (z : ℂ) :
+    fderiv ℝ (fun p ↦ g p z) p = (fderiv ℝ ↿g (p, z)).comp (ContinuousLinearMap.inl ℝ P ℂ) :=
+  fderiv_slice_left ((hg.differentiableOn one_ne_zero).differentiableAt
+    ((hs.prod isOpen_univ).mem_nhds (mk_mem_prod hp (mem_univ z))))
+
 /-- The derivative of `g` in the parameter, multiplied by the Cauchy kernel at `w`, is integrable
 in the space variable, for `p ∈ s`. -/
 private theorem integrable_sub_inv_smul_fderiv_slice (hs : IsOpen s) (hk : IsCompact k)
     (hgs : ∀ p x, p ∈ s → x ∉ k → g p x = 0) (hg : ContDiffOn ℝ 1 ↿g (s ×ˢ univ)) {p : P}
     (hp : p ∈ s) (w : ℂ) :
     Integrable fun z ↦ (w - z)⁻¹ • fderiv ℝ (fun p ↦ g p z) p := by
-  have hslice (z : ℂ) : fderiv ℝ (fun p ↦ g p z) p =
-      (fderiv ℝ ↿g (p, z)).comp (ContinuousLinearMap.inl ℝ P ℂ) :=
-    fderiv_slice_left ((hg.differentiableOn one_ne_zero).differentiableAt
-      ((hs.prod isOpen_univ).mem_nhds (mk_mem_prod hp (mem_univ z))))
   have h := ((ContinuousLinearMap.compL ℝ P (P × ℂ) F).flip
     (ContinuousLinearMap.inl ℝ P ℂ)).integrable_comp
       (integrable_sub_inv_smul_fderiv_uncurry hs hk hgs hg hp w)
   simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply,
-    ContinuousLinearMap.smul_comp, ← hslice] using h
+    ContinuousLinearMap.smul_comp,
+    ← fderiv_slice_eq_fderiv_uncurry_comp_inl hs hg hp] using h
 
 /-- **Parameter derivatives commute with the Cauchy transform.** Under the hypotheses of
 `TauCeti.contDiffOn_integral_sub_inv_smul_with_param` with `n = 1`, the derivative in `p ∈ s` of
@@ -135,11 +140,8 @@ theorem hasFDerivAt_integral_sub_inv_smul_with_param [CompleteSpace F] (hs : IsO
   have hL (t : ℂ) : ContinuousLinearMap.precompR (P × ℂ) (ContinuousLinearMap.lsmul ℝ ℂ)
       (w - t)⁻¹ (fderiv ℝ ↿g (p, t)) = (w - t)⁻¹ • fderiv ℝ ↿g (p, t) := by
     ext v <;> simp
-  have hslice (z : ℂ) : fderiv ℝ (fun p ↦ g p z) p =
-      (fderiv ℝ ↿g (p, z)).comp (ContinuousLinearMap.inl ℝ P ℂ) :=
-    fderiv_slice_left ((hg.differentiableOn one_ne_zero).differentiableAt
-      ((hs.prod isOpen_univ).mem_nhds (mk_mem_prod hp (mem_univ z))))
-  simp only [convolution_eq_swap, hL, ← hR, hslice, ContinuousLinearMap.smul_comp]
+  simp only [convolution_eq_swap, hL, ← hR, fderiv_slice_eq_fderiv_uncurry_comp_inl hs hg hp,
+    ContinuousLinearMap.smul_comp]
 
 end Parameter
 
