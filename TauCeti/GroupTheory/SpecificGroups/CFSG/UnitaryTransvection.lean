@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Finite.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SpecialUnitaryFrobenius
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 
@@ -18,9 +17,9 @@ reversal matrix `TauCeti.typeAGraphConjugator r K`. By
 `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff`, the fixed subgroup
 of the graph-twisted Frobenius `TauCeti.ValidLieTypeIndex.galoisFieldTwistedFrobenius` is the
 special unitary group `SU_{r+1}(q)` of the `σ`-sesquilinear form `B(x, y) = σ(x)ᵀ Q y`, which is
-`TauCeti.ValidLieTypeIndex.unitaryForm`. Since `Qᵀ = (-1) ^ r • Q`
-(`TauCeti.transpose_typeAGraphConjugator`) and the entries `0` and `±1` of `Q` are fixed by `σ`,
-this form satisfies `B(y, x) = (-1) ^ r σ(B(x, y))`.
+`TauCeti.ValidLieTypeIndex.unitaryForm`, defined with its basic properties in
+`CFSG/SpecialUnitaryFrobenius.lean`. It satisfies `B(y, x) = (-1) ^ r σ(B(x, y))`
+(`TauCeti.ValidLieTypeIndex.unitaryForm_swap`).
 
 For an isotropic vector `v`, `B(v, v) = 0`, and a scalar `a` with `a + (-1) ^ r σ(a) = 0`, the
 unitary transvection `τ_{v,a} : x ↦ x + a B(v, x) v` of `Matrix.unitaryTransvection` lies in
@@ -38,7 +37,6 @@ Generation of `SU_{r+1}(q)` by these subgroups is not proved here.
 
 ## Main definitions
 
-* `TauCeti.ValidLieTypeIndex.unitaryForm`: the form `B(x, y) = σ(x)ᵀ Q y` of `SU_{r+1}(q)`.
 * `TauCeti.ValidLieTypeIndex.unitaryTransvectionScalars`: the scalars `a` with
   `a + (-1) ^ r a ^ q = 0`.
 * `TauCeti.ValidLieTypeIndex.unitaryTransvectionHom`: the homomorphism `a ↦ τ_{v,a}` into
@@ -46,13 +44,6 @@ Generation of `SU_{r+1}(q)` by these subgroups is not proved here.
 
 ## Main results
 
-* `TauCeti.ValidLieTypeIndex.unitaryForm_apply`: the form is the dot product `σ(x) ⬝ᵥ (Q y)`.
-* `TauCeti.ValidLieTypeIndex.unitaryForm_smul_left`: semilinearity in the first argument,
-  `B(c x, y) = c ^ q B(x, y)`.
-* `TauCeti.ValidLieTypeIndex.unitaryForm_swap`: the form is `(-1) ^ r`-Hermitian.
-* `TauCeti.ValidLieTypeIndex.unitaryForm_mulVec_mulVec`: `SU_{r+1}(q)` preserves the form.
-* `TauCeti.ValidLieTypeIndex.unitaryForm_single_single`: the coordinate vectors off the middle
-  coordinate are isotropic.
 * `TauCeti.ValidLieTypeIndex.coe_unitaryTransvectionHom` and
   `TauCeti.ValidLieTypeIndex.coe_unitaryTransvectionHom_mulVec`: the matrix of `τ_{v,a}` and its
   action `x ↦ x + a B(v, x) v`.
@@ -80,116 +71,6 @@ open scoped Pointwise
 namespace TauCeti.ValidLieTypeIndex
 
 variable {d : ValidLieTypeIndex} {r : ℕ}
-
-/-- The `q`-power Frobenius of the field with `q²` elements is an involution, an instance of
-`TauCeti.FiniteField.iterateFrobenius_involutive`. -/
-private theorem involutive_iterateFrobenius_galoisField :
-    Function.Involutive (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
-      d.characteristic d.fieldExponent) :=
-  FiniteField.iterateFrobenius_involutive
-    (GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
-
-/-- The entries `0` and `±1` of the signed reversal matrix `Q` are fixed by `σ`. -/
-private theorem map_typeAGraphConjugator_galoisField :
-    (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _).map
-        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-          d.fieldExponent) =
-      (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  have hmap := congrArg Units.val (map_typeAGraphConjugator
-    (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-      d.fieldExponent) r)
-  rwa [Units.coe_map, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] at hmap
-
-/-- The `σ`-sesquilinear form of Gram matrix `Q` is `(-1) ^ r`-Hermitian: `σ(Q)ᵀ = (-1) ^ r • Q`. -/
-private theorem transpose_map_typeAGraphConjugator_galoisField :
-    ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _).map
-        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-          d.fieldExponent))ᵀ =
-      (-1 : GaloisField d.characteristic (d.fieldExponent * 2)) ^ r •
-        (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-          Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  rw [map_typeAGraphConjugator_galoisField, transpose_typeAGraphConjugator]
-
-/-! ### The unitary form -/
-
-variable (d r) in
-/-- **The form of the special unitary group** `SU_{r+1}(q)`: the sesquilinear form
-`B(x, y) = σ(x)ᵀ Q y` on `𝔽_{q²} ^ (r + 1)`, with `σ : x ↦ x ^ q` and `Q` the signed reversal
-matrix, as Mathlib's sesquilinear map `Matrix.toLinearMapₛₗ₂'` of Gram matrix `Q`. It is
-`σ`-semilinear in `x` and linear in `y`, and `B(y, x) = (-1) ^ r σ(B(x, y))`
-(`TauCeti.ValidLieTypeIndex.unitaryForm_swap`). -/
-def unitaryForm :
-    (Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2))
-      →ₛₗ[iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-        d.fieldExponent]
-      (Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2))
-        →ₗ[GaloisField d.characteristic (d.fieldExponent * 2)]
-        GaloisField d.characteristic (d.fieldExponent * 2) :=
-  toLinearMapₛₗ₂' (GaloisField d.characteristic (d.fieldExponent * 2))
-    (iterateFrobenius _ d.characteristic d.fieldExponent) (RingHom.id _)
-    (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-      Matrix (Fin (r + 1)) (Fin (r + 1)) (GaloisField d.characteristic (d.fieldExponent * 2)))
-
-/-- The form is the dot product `B(x, y) = σ(x) ⬝ᵥ (Q y)`. -/
-theorem unitaryForm_apply
-    (x y : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2)) :
-    unitaryForm d r x y =
-      (iterateFrobenius _ d.characteristic d.fieldExponent ∘ x) ⬝ᵥ
-        ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-          Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ y) := by
-  simp only [unitaryForm, toLinearMapₛₗ₂'_apply, dotProduct, mulVec, Finset.mul_sum,
-    Function.comp_apply, RingHom.id_apply, smul_eq_mul]
-  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-
-/-- **The form is `(-1) ^ r`-Hermitian**: `B(y, x) = (-1) ^ r B(x, y) ^ q`. -/
-theorem unitaryForm_swap (x y : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2)) :
-    unitaryForm d r y x = (-1) ^ r * unitaryForm d r x y ^ d.fieldOrder := by
-  have hσ := apply_comp_dotProduct_mulVec involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField x y
-  rw [← unitaryForm_apply, ← unitaryForm_apply, coe_iterateFrobenius_galoisField] at hσ
-  beta_reduce at hσ
-  rw [hσ, ← mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
-
-/-- An element `g` of `SU_{r+1}(q)` satisfies `σ(g)ᵀ Q g = Q`. -/
-private theorem transpose_map_mul_mul_self_of_mem
-    (g : fixedSubgroup (d.galoisFieldTwistedFrobenius r)) :
-    ((g : Matrix (Fin (r + 1)) (Fin (r + 1)) _).map
-        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-          d.fieldExponent))ᵀ *
-        (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-          Matrix (Fin (r + 1)) (Fin (r + 1)) _) * (g : Matrix (Fin (r + 1)) (Fin (r + 1)) _) =
-      (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  rw [coe_iterateFrobenius_galoisField, ← mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff]
-  exact g.2
-
-/-- **The special unitary group preserves its form**: `B(g x, g y) = B(x, y)` for every `g` in
-`SU_{r+1}(q)`. -/
-@[simp]
-theorem unitaryForm_mulVec_mulVec (g : fixedSubgroup (d.galoisFieldTwistedFrobenius r))
-    (x y : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2)) :
-    unitaryForm d r ((g : Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ x)
-        ((g : Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ y) =
-      unitaryForm d r x y := by
-  rw [unitaryForm_apply, unitaryForm_apply]
-  exact comp_mulVec_dotProduct_mulVec_mulVec (transpose_map_mul_mul_self_of_mem g) x y
-
-/-- The form is semilinear in its first argument: `B(c x, y) = c ^ q B(x, y)`. -/
-theorem unitaryForm_smul_left (c : GaloisField d.characteristic (d.fieldExponent * 2))
-    (x y : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2)) :
-    unitaryForm d r (c • x) y = c ^ d.fieldOrder * unitaryForm d r x y := by
-  rw [LinearMap.map_smulₛₗ₂, coe_iterateFrobenius_galoisField, smul_eq_mul]
-
-/-- **Isotropic coordinate vectors.** The coordinate vector `eᵢ` is isotropic for the form
-`B(x, y) = σ(x)ᵀ Q y` unless `i` is the middle coordinate `i = r - i`: the entry `Qᵢᵢ` vanishes off
-the anti-diagonal. -/
-theorem unitaryForm_single_single {i : Fin (r + 1)} (hi : i ≠ i.rev) :
-    unitaryForm d r (Pi.single i 1) (Pi.single i 1) = 0 := by
-  rw [unitaryForm, toLinearMapₛₗ₂'_single, typeAGraphConjugator_apply]
-  simp only [hi, ↓reduceIte]
 
 /-! ### The admissible scalars -/
 

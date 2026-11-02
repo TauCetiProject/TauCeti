@@ -25,6 +25,9 @@ is `Matrix.unitaryTransvection Q σ v a`. When `v` is isotropic, `B(v, v) = 0`, 
 one and `a ↦ τ_{v,a}` turns addition into multiplication. When moreover `σ` is an involution, the
 Gram matrix satisfies `σ(Q)ᵀ = ε Q`, so that `B` is `ε`-Hermitian, and `a + ε σ(a) = 0`, the
 transvection preserves `B`. A matrix `g` preserving `B` conjugates `τ_{v,a}` to `τ_{g v,a}`.
+That such a `g` preserves the values of `B`, and that `B` is then `ε`-Hermitian, are
+`Matrix.comp_mulVec_dotProduct_mulVec_mulVec` and `Matrix.apply_comp_dotProduct_mulVec` in
+`TauCeti/LinearAlgebra/Matrix/SesquilinearForm.lean`.
 
 For `σ` the involution `x ↦ x ^ q` of the field with `q²` elements and `B` Hermitian, these are
 the transvections of the finite special unitary group `SU_n(q)`. The transvections along a fixed
@@ -44,8 +47,6 @@ group on the isotropic points of projective space.
   isotropic `v`.
 * `Matrix.det_unitaryTransvection`: an isotropic transvection has determinant one.
 * `Matrix.unitaryTransvection_smul`: rescaling the vector, `τ_{c v,a} = τ_{v, a c σ(c)}`.
-* `Matrix.apply_comp_dotProduct_mulVec`: for an involution `σ` and `σ(Q)ᵀ = ε Q`, the form is
-  `ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)`.
 * `Matrix.mul_unitaryTransvection`: the conjugation law `g τ_{v,a} = τ_{g v,a} g` for `g`
   preserving `B`.
 * `Matrix.transpose_map_unitaryTransvection_mul_mul_self`: an isotropic transvection with
@@ -94,20 +95,16 @@ theorem toLin'_unitaryTransvection (a : R) :
   rw [toLin'_apply, unitaryTransvection_mulVec, LinearMap.transvection.apply,
     LinearMap.smul_apply, toBilin'_apply', smul_eq_mul]
 
-omit [DecidableEq n] in
-/-- The rank-one part of an isotropic transvection squares to zero. -/
-private theorem vecMulVec_mul_self (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) :
-    vecMulVec v ((σ ∘ v) ᵥ* Q) * vecMulVec v ((σ ∘ v) ᵥ* Q) = 0 := by
-  rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, hv, zero_smul, vecMulVec_zero]
-
 /-- **Transvections along an isotropic vector form a one-parameter group.** If `B(v, v) = 0`,
 then `τ_{v,a} τ_{v,b} = τ_{v,a+b}`. -/
 theorem unitaryTransvection_mul_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a b : R) :
     Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
       Q.unitaryTransvection σ v (a + b) := by
-  simp only [unitaryTransvection_def, Matrix.add_mul, Matrix.mul_add, Matrix.one_mul,
-    Matrix.mul_one, smul_mul_smul_comm, vecMulVec_mul_self hv, smul_zero, add_zero, add_smul]
-  abel
+  refine toLin'.injective ?_
+  rw [toLin'_mul, toLin'_unitaryTransvection, toLin'_unitaryTransvection,
+    LinearMap.transvection.comp_of_right_eq (by
+      rw [LinearMap.smul_apply, toBilin'_apply', hv, smul_zero]),
+    ← add_smul, toLin'_unitaryTransvection]
 
 /-- **An isotropic transvection has determinant one.** -/
 theorem det_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : R) :
@@ -123,25 +120,6 @@ theorem unitaryTransvection_smul (c a : R) :
   have hσv : σ ∘ (c • v) = σ c • (σ ∘ v) := funext fun i ↦ by simp
   rw [unitaryTransvection_def, unitaryTransvection_def, hσv, smul_vecMul, smul_vecMulVec,
     vecMulVec_smul, smul_smul, smul_smul, mul_assoc]
-
-omit [DecidableEq n] in
-/-- **A matrix preserving the form preserves its values.** If `σ(g)ᵀ Q g = Q`, then
-`B(g x, g y) = B(x, y)`. -/
-theorem comp_mulVec_dotProduct_mulVec_mulVec {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g = Q)
-    (x y : n → R) :
-    (σ ∘ (g *ᵥ x)) ⬝ᵥ (Q *ᵥ (g *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
-  rw [(funext (σ.map_mulVec g x) : σ ∘ (g *ᵥ x) = _), ← vecMul_transpose, mulVec_mulVec,
-    dotProduct_mulVec, vecMul_vecMul, ← Matrix.mul_assoc, hg, ← dotProduct_mulVec]
-
-omit [DecidableEq n] in
-/-- **An `ε`-Hermitian form.** If `σ` is an involution and the Gram matrix satisfies
-`σ(Q)ᵀ = ε Q`, then `σ(B(x, y)) = ε B(y, x)`. -/
-theorem apply_comp_dotProduct_mulVec (hσ : Function.Involutive σ) {ε : R}
-    (hQ : (Q.map σ)ᵀ = ε • Q) (x y : n → R) :
-    σ ((σ ∘ x) ⬝ᵥ (Q *ᵥ y)) = ε * ((σ ∘ y) ⬝ᵥ (Q *ᵥ x)) := by
-  rw [RingHom.map_dotProduct, (funext (σ.map_mulVec Q y) : σ ∘ (Q *ᵥ y) = _),
-    ← Function.comp_assoc, hσ.comp_self, Function.id_comp, dotProduct_mulVec, ← mulVec_transpose,
-    hQ, smul_mulVec, smul_dotProduct, smul_eq_mul, dotProduct_comm]
 
 /-- **The conjugation law.** A matrix `g` preserving the form, `σ(g)ᵀ Q g = Q`, carries the
 transvection `τ_{v,a}` to `τ_{g v,a}`: `g τ_{v,a} = τ_{g v,a} g`. -/
