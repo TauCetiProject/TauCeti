@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.GaloisDescent
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 
 /-!
 # Weil descent of algebraic Belyi pairs
@@ -50,7 +49,6 @@ its fields of definition.
 
 * `TauCeti.GaloisDescent.isAlgebraicBelyiPair_fixedField_iff`: the fixed field of a semilinear
   action fixing `t` is an algebraic Belyi pair over `K` exactly when `F` is one over `L`.
-* `TauCeti.GaloisDescent.finrank_ratFunc_fixedField`: and it has the same degree.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.algebraMap_descend_X`: the function `t` descends.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.constantCompositum_descend_eq_top` and
   `TauCeti.AlgebraicBelyiPair.DescentDatum.finrank_descend`: the descended pair base-changes back
@@ -84,28 +82,6 @@ variable {K L F : Type*} [Field K] [Field L] [Field F] [Algebra K L] [Algebra K 
   [IsScalarTower K L F] [Algebra (RatFunc L) F] [IsScalarTower L (RatFunc L) F]
   [FiniteDimensional K L] [IsGalois K L] {ρ : (L ≃ₐ[K] L) →* (F ≃ₐ[K] F)}
   [Algebra (RatFunc K) (fixedField ρ.range)] [IsScalarTower K (RatFunc K) (fixedField ρ.range)]
-
-/-- **The degree of a Belyi map descends.** Let `ρ` be a semilinear action of `Gal(L/K)` on a
-field `F` over `L(t)` with exact constant field `L`. If the variable of `K(t)` acts on the fixed
-field `F₀` of `ρ` as the variable of `L(t)` acts on `F`, then `[F₀ : K(t)] = [F : L(t)]`. -/
-theorem finrank_ratFunc_fixedField (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
-    (hL : IsIntegrallyClosedIn L F)
-    (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc K) _ RatFunc.X) =
-      algebraMap (RatFunc L) F RatFunc.X) :
-    Module.finrank (RatFunc K) (fixedField ρ.range) = Module.finrank (RatFunc L) F :=
-  (finrank_ratFunc_eq_of_constantCompositum_eq_top (isIntegrallyClosedIn_fixedField hρ hL)
-    (constantCompositum_fixedField_eq_top hρ) hX).symm
-
-/-- The fixed field of a semilinear action of `Gal(L/K)` on a function field finite over `L(t)`,
-with exact constant field `L`, is finite over `K(t)`, when the variable of `K(t)` acts on it as
-the variable of `L(t)` acts on `F`. -/
-theorem finiteDimensional_ratFunc_fixedField [FiniteDimensional (RatFunc L) F]
-    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
-    (hL : IsIntegrallyClosedIn L F)
-    (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc K) _ RatFunc.X) =
-      algebraMap (RatFunc L) F RatFunc.X) :
-    FiniteDimensional (RatFunc K) (fixedField ρ.range) :=
-  Module.finite_of_finrank_pos (finrank_ratFunc_fixedField hρ hL hX ▸ Module.finrank_pos)
 
 /-- **Belyi pairs descend along semilinear actions.** Let `ρ` be a semilinear action of
 `Gal(L/K)` on a field `F` finite over `L(t)`, for a finite Galois extension `L / K` of fields of
@@ -156,20 +132,11 @@ variable {X : AlgebraicBelyiPair L} [Algebra K X] [IsScalarTower K L X] (D : Des
 `σ` acts by the isomorphism `f_σ`, read as an automorphism of the underlying field. It acts on the
 constants `L` by `σ` (`TauCeti.AlgebraicBelyiPair.DescentDatum.semilinearAction_algebraMap`), and
 the cocycle condition makes it a group homomorphism. -/
-noncomputable def semilinearAction : (L ≃ₐ[K] L) →* (X ≃ₐ[K] X) where
-  toFun σ := AlgEquiv.ofRingEquiv
+noncomputable def semilinearAction : (L ≃ₐ[K] L) →* (X ≃ₐ[K] X) :=
+  MonoidHom.mk' (fun σ ↦ AlgEquiv.ofRingEquiv
     (f := (conjRingEquiv (σ : L ≃+* L) X).trans (D.iso σ).toRingEquiv) fun c ↦ by
-      simp [IsScalarTower.algebraMap_apply K L X, IsScalarTower.algebraMap_apply L (RatFunc L) X]
-  map_one' := by
-    refine AlgEquiv.ext fun x ↦ ?_
-    -- `f_1` is an idempotent bijection, by the cocycle condition at `(1, 1)`.
-    set g : X → X := fun y ↦ D.iso 1 (conjRingEquiv _ X y)
-    have hg : Function.Injective g :=
-      (D.iso 1).injective.comp (conjRingEquiv ((1 : L ≃ₐ[K] L) : L ≃+* L) X).injective
-    have h := D.iso_mul 1 1 x
-    rw [mul_one] at h
-    exact hg h.symm
-  map_mul' σ τ := AlgEquiv.ext fun x ↦ D.iso_mul σ τ x
+      simp [IsScalarTower.algebraMap_apply K L X, IsScalarTower.algebraMap_apply L (RatFunc L) X])
+    fun σ τ ↦ AlgEquiv.ext fun x ↦ D.iso_mul σ τ x
 
 theorem semilinearAction_apply (σ : L ≃ₐ[K] L) (x : X) :
     D.semilinearAction σ x = D.iso σ (conjRingEquiv _ X x) :=
@@ -245,6 +212,12 @@ theorem mem_range_algebraMap_descend_iff {x : X} :
     exact (mem_fixedField_iff _ _).mp y.2 _ ⟨σ, rfl⟩
   · rintro _ ⟨σ, rfl⟩
     exact h σ
+
+/-- The semilinear action of a descent datum fixes the function field of the descended pair. -/
+@[simp]
+theorem semilinearAction_algebraMap_descend (σ : L ≃ₐ[K] L) (y : D.descend) :
+    D.semilinearAction σ (algebraMap D.descend X y) = algebraMap D.descend X y :=
+  D.mem_range_algebraMap_descend_iff.mp ⟨y, rfl⟩ σ
 
 /-- **The Belyi function descends**: the Belyi function of the descended pair is that of `X`. -/
 @[simp]
