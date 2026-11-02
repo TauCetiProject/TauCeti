@@ -123,16 +123,9 @@ theorem mgf_sum_le_exp_of_hasSubexponentialMGF (h_indep : iIndepFun X μ) {s : F
     mgf (fun ω => ∑ i ∈ s, X i ω) μ t ≤
       exp ((s.card : ℝ) * K ^ 2 * t ^ 2) := by
   have hprod :
-      mgf (fun ω => ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
-    have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀
-        (fun i : s => (hX i.1 i.2).integrable.aestronglyMeasurable.aemeasurable)
-        Finset.univ (t := t)
-    rw [Finset.prod_coe_sort s (fun i => mgf (X i) μ t)] at h
-    rw [← h]
-    congr 1
-    ext ω
-    simp only [Finset.sum_apply]
-    exact (Finset.sum_coe_sort s (fun i => X i ω)).symm
+      mgf (fun ω => ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t :=
+    h_indep.mgf_sum_of_aemeasurable fun i hi =>
+      (hX i hi).integrable.aestronglyMeasurable.aemeasurable
   rw [hprod]
   calc
     ∏ i ∈ s, mgf (X i) μ t ≤ ∏ i ∈ s, exp (K ^ 2 * t ^ 2) := by

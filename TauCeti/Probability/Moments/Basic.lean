@@ -29,6 +29,9 @@ This file supplements Mathlib's basic moment-generating-function API.
   `MeasureTheory.Measure.conv`, the companion of `MeasureTheory.charFun_conv`.
 * `TauCeti.ae_sum_eq_zero_of_sum_integral_sq_eq_zero`: a finite sum of square-integrable random
   variables whose second moments sum to zero vanishes almost surely.
+* `ProbabilityTheory.iIndepFun.mgf_sum_of_aemeasurable`: the moment-generating function of a finite
+  sum of independent variables is the product of the factors, needing a.e. measurability only on
+  the summation set.
 * `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum_of_aemeasurable`: the exponential of a finite
   sum of independent a.e. measurable variables is integrable when each factor is.
 -/
@@ -109,6 +112,22 @@ namespace ProbabilityTheory.iIndepFun
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
   {ι : Type*} {X : ι → Ω → ℝ} {t : ℝ}
+
+omit [IsProbabilityMeasure μ] in
+/-- The moment-generating function of a finite sum of independent variables is the product of
+their moment-generating functions, where only the members indexed by the sum need be a.e.
+measurable. This weakens the measurability hypothesis of `ProbabilityTheory.iIndepFun.mgf_sum₀`. -/
+theorem mgf_sum_of_aemeasurable (h_indep : iIndepFun X μ) {s : Finset ι}
+    (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) :
+    mgf (fun ω => ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
+  have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀ (t := t)
+    (fun i : s => h_meas i i.2) Finset.univ
+  rw [Finset.prod_coe_sort s (fun i => mgf (X i) μ t)] at h
+  rw [← h]
+  congr 1
+  ext ω
+  simp only [Finset.sum_apply]
+  exact (Finset.sum_coe_sort s (fun i => X i ω)).symm
 
 /-- A finite sum of independent, almost-everywhere measurable variables with integrable
 exponentials has an integrable exponential. This weakens the measurability hypothesis of
