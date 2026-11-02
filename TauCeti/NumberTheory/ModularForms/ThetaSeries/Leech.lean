@@ -71,8 +71,10 @@ private theorem finrank_realModelSpace_leechLattice :
 /-- The real model of the Leech lattice has no vector of squared norm `2`. -/
 private theorem representationNumber_realModel_leechLattice_two :
     ZLattice.representationNumber (leechLattice.realModel isPosDef_leechLattice) 2 = 0 := by
-  simpa [representationNumber_def] using
-    leechLattice.representationNumber_realModel isPosDef_leechLattice 2
+  have h := leechLattice.representationNumber_realModel isPosDef_leechLattice 2
+  rw [Rat.cast_ofNat, representationNumber_def, vectorsOfNorm_two_leechLattice,
+    Set.ncard_empty] at h
+  exact h
 
 /-- **The theta series of the Leech lattice is `E₄³ - 720 Δ`.** -/
 theorem thetaSeries_realModel_leechLattice_eq_E₄_cube_sub_mul_discriminant (τ : ℍ) :
@@ -101,9 +103,9 @@ theorem representationNumber_leechLattice_two_mul {m : ℕ} (hm : m ≠ 0) :
       65520 / 691 * (σ 11 m - (qExpansion 1 ModularForm.discriminant).coeff m) := by
   have h := isEven_realModel_leechLattice.representationNumber_two_mul_of_finrank_eq_twenty_four
     isUnimodular_realModel_leechLattice finrank_realModelSpace_leechLattice hm
-  rw [representationNumber_realModel_leechLattice_two,
-    show (2 * m : ℝ) = ((2 * m : ℚ) : ℝ) by simp,
-    leechLattice.representationNumber_realModel isPosDef_leechLattice] at h
+  have hq := leechLattice.representationNumber_realModel isPosDef_leechLattice (2 * m)
+  rw [Rat.cast_mul, Rat.cast_ofNat, Rat.cast_natCast] at hq
+  rw [representationNumber_realModel_leechLattice_two, hq] at h
   rw [h]
   ring
 
