@@ -64,10 +64,14 @@ theorem exists_isFiniteFace_newtonPolygon_of_hasGaussNorm
 /-- A finite Newton face identifies the first and last active coefficients even at a
 convergence boundary. Only bounded weighted coefficients at the given radius are needed. -/
 theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
-    (hG : f.HasGaussNorm norm (b ^ σ)) (hf0 : f ≠ 0) {l u : ℕ}
+    (hG : f.HasGaussNorm norm (b ^ σ)) {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f := by
+  have hf0 : f ≠ 0 := by
+    intro hf
+    have hl := hface.left_ne_top
+    simp [hf, newtonPolygon_zero] at hl
   have he := f.isLowerConvexEnvelope_newtonPolygon
     (isAdmissible_iff_exists_supportingValue_ne_bot.mpr
       ⟨σ, (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv σ).mp hG⟩)
@@ -92,17 +96,17 @@ theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
 the finite Newton face has endpoints `l, u` exactly when these are the first and last active
 coefficients. -/
 theorem isFiniteFace_newtonPolygon_iff (hf : f.HasGaussNorm norm (b ^ τ))
-    (hf0 : f ≠ 0) (hστ : σ < τ) {l u : ℕ} :
+    (hστ : σ < τ) {l u : ℕ} :
     IsFiniteFace (f.newtonPolygon v) σ l u ↔
       TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f := by
   have hr := hf.isRestricted_rpow_of_lt hb hστ
   have hG := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hr
   have hactive {i j : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ i j) :=
-    isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hG hf0 hface
+    isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hG hface
   refine ⟨hactive, fun ⟨hl, hu⟩ => ?_⟩
   obtain ⟨l', u', hface⟩ :=
-    exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv hf hf0 hστ
+    exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv hf hl.ne_zero hστ
   obtain ⟨hl', hu'⟩ := hactive hface
   obtain rfl := hl.unique hl'
   obtain rfl := hu.unique hu'
@@ -118,7 +122,7 @@ theorem hasDerivWithinAt_supportingValue_newtonPolygon_toReal_left
       (-(l : ℝ)) (Iic σ) σ := by
   obtain ⟨i, j, hface⟩ :=
     exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv hf hl.ne_zero hστ
-  have hi := ((isFiniteFace_newtonPolygon_iff f v hb hv hf hl.ne_zero hστ).mp hface).1
+  have hi := ((isFiniteFace_newtonPolygon_iff f v hb hv hf hστ).mp hface).1
   obtain rfl := hl.unique hi
   exact hface.hasDerivWithinAt_supportingValue_toReal_left (f.isConvexSeq_newtonPolygon v)
 
@@ -132,7 +136,7 @@ theorem hasDerivWithinAt_supportingValue_newtonPolygon_toReal_right
       (-(u : ℝ)) (Ici σ) σ := by
   obtain ⟨i, j, hface⟩ :=
     exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv hf hu.ne_zero hστ
-  have hj := ((isFiniteFace_newtonPolygon_iff f v hb hv hf hu.ne_zero hστ).mp hface).2
+  have hj := ((isFiniteFace_newtonPolygon_iff f v hb hv hf hστ).mp hface).2
   obtain rfl := hu.unique hj
   exact hface.hasDerivWithinAt_supportingValue_toReal_right (f.isConvexSeq_newtonPolygon v)
 
@@ -143,18 +147,18 @@ theorem differentiableAt_supportingValue_newtonPolygon_toReal_iff
     (hl : TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f)
     (hu : TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f) :
     DifferentiableAt ℝ (fun s => (supportingValue (f.newtonPolygon v) s).toReal) σ ↔ l = u := by
-  have hface := (isFiniteFace_newtonPolygon_iff f v hb hv hf hl.ne_zero hστ).mpr ⟨hl, hu⟩
+  have hface := (isFiniteFace_newtonPolygon_iff f v hb hv hf hστ).mpr ⟨hl, hu⟩
   exact hface.differentiableAt_supportingValue_toReal_iff (f.isConvexSeq_newtonPolygon v)
 
 end PowerSeries
 
 namespace Polynomial
 
-/-- At every radius, the endpoints of a nonzero polynomial's Newton face are exactly the
+/-- At every radius, the endpoints of a polynomial's finite Newton face are exactly the
 first and last indices attaining its Gauss norm. -/
 theorem isFiniteFace_newtonPolygon_iff {K : Type*} [NormedDivisionRing K] (p : K[X])
     (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
-    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (hp : p ≠ 0) (σ : ℝ) {l u : ℕ} :
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (σ : ℝ) {l u : ℕ} :
     IsFiniteFace (p.newtonPolygon v) σ l u ↔
       TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l (p : PowerSeries K) ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u (p : PowerSeries K) := by
@@ -162,6 +166,6 @@ theorem isFiniteFace_newtonPolygon_iff {K : Type*} [NormedDivisionRing K] (p : K
   exact PowerSeries.isFiniteFace_newtonPolygon_iff (p : PowerSeries K) v hb hv
     (τ := σ + 1) (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
       (TauCeti.PowerSeries.isRestricted_polynomial p))
-    (by simpa using hp) (by linarith)
+    (by linarith)
 
 end Polynomial
