@@ -71,16 +71,6 @@ namespace TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K]
 
-/-- A `d`-th root of unity of `K⸨X⸩` is a constant: the image of a `d`-th root of unity of `K`.
-This holds because the constants are integrally closed in `K⸨X⸩`. -/
-theorem exists_rootsOfUnity_algebraMap_eq {d : ℕ+} {w : K⸨X⸩} (hw : w ^ (d : ℕ) = 1) :
-    ∃ η : rootsOfUnity d K, Algebra.algebraMap K K⸨X⸩ ((η : Kˣ) : K) = w := by
-  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp
-    (IsIntegral.of_pow (R := K) d.pos (hw ▸ isIntegral_one))
-  have hcd : c ^ (d : ℕ) = 1 :=
-    (Algebra.algebraMap K K⸨X⸩).injective (by rw [map_pow, hc, hw, map_one])
-  exact ⟨rootsOfUnity.mkOfPowEq c hcd, by rw [rootsOfUnity.coe_mkOfPowEq, hc]⟩
-
 namespace Level
 
 variable (K) (d : ℕ+)
