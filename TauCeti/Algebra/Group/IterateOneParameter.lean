@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Basic
+public import TauCeti.Logic.Function.Iterate
 
 /-!
 # Iterates of a self-map on one-parameter maps
@@ -71,25 +72,21 @@ theorem iterate_apply_pow {f : G → G} {x : A → G} {p : ℕ} (hf : ∀ t, f (
   rw [← (Function.Semiconj.iterate_right (f := x) (ga := (· ^ p)) (gb := f)
     (fun s ↦ (hf s).symm) n).eq, pow_iterate]
 
-private theorem iterate_two (f : G → G) : f^[2] = f ∘ f := by
-  rw [Function.iterate_succ, Function.iterate_one]
-
-private theorem iterate_two_eq {f g : G → G} (h : ∀ a, f (f a) = g a) : f^[2] = g :=
-  (iterate_two f).trans (funext h)
-
 /-- **The iterates of a square root of a self-map.** If `f ∘ f = g` then applying the `n`-th
 iterate of `f` twice is the `n`-th iterate of `g`. -/
 theorem iterate_iterate_apply {f g : G → G} (h : ∀ a, f (f a) = g a) (n : ℕ) (a : G) :
     f^[n] (f^[n] a) = g^[n] a := by
-  rw [← Function.iterate_add_apply, ← Nat.two_mul, Function.iterate_mul, iterate_two_eq h]
+  rw [← Function.iterate_add_apply, ← Nat.two_mul, Function.iterate_mul,
+    (iterate_two f).trans (funext h)]
 
 /-- **One further application of a square root of a self-map after an odd iterate.** If `f ∘ f = g`
 then `f` after `f^[2 * n + 1]` is `g^[n + 1]`, the odd exponent becoming the even one
 `2 * (n + 1)`. -/
 theorem apply_iterate_two_mul_add_one {f g : G → G} (h : ∀ a, f (f a) = g a) (n : ℕ) (a : G) :
     f (f^[2 * n + 1] a) = g^[n + 1] a := by
-  rw [← Function.iterate_succ_apply' f, show (2 * n + 1).succ = 2 * (n + 1) by omega,
-    Function.iterate_mul, iterate_two_eq h]
+  have hn : (2 * n + 1).succ = 2 * (n + 1) := by omega
+  rw [← Function.iterate_succ_apply' f, hn, Function.iterate_mul,
+    (iterate_two f).trans (funext h)]
 
 /-- **The odd iterates of a square root of a map that raises a parameter to its `p`-th power.** Let
 `f` carry the one-parameter map `x` to the one-parameter map `y`, raising the parameter to its

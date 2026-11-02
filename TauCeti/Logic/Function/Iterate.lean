@@ -8,7 +8,10 @@ module
 public import Mathlib.Logic.Function.Iterate
 
 /-!
-# Simulating the iterates of one function by another
+# Iterates of self-maps
+
+This file records `TauCeti.iterate_two`, which writes the second iterate `f^[2]` as `f ∘ f`, and a
+criterion for simulating the iterates of one function by another.
 
 Read `f : α → α` and `g : β → β` as the one-step transitions of two discrete-time systems and
 `Φ : α → β` as a translation of the states of the first into states of the second. Say that `g`
@@ -25,6 +28,7 @@ single steps have to be inspected, and the lengths of the stretches never have t
 
 * `TauCeti.exists_iterate_of_forall_exists_iterate`: a simulation of single steps is a simulation
   of iterates.
+* `TauCeti.iterate_two`: the second iterate of a self-map is its composite with itself.
 -/
 
 public section
@@ -42,5 +46,9 @@ theorem exists_iterate_of_forall_exists_iterate {α β : Type*} {f : α → α} 
     obtain ⟨m₁, h₁⟩ := h a
     obtain ⟨m₂, h₂⟩ := ih (f a)
     exact ⟨m₂ + m₁, by rw [Function.iterate_add_apply, h₁, h₂, Function.iterate_succ_apply]⟩
+
+/-- The second iterate of a self-map is its composite with itself. -/
+theorem iterate_two {α : Type*} (f : α → α) : f^[2] = f ∘ f := by
+  rw [Function.iterate_succ, Function.iterate_one]
 
 end TauCeti
