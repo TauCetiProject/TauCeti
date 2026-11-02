@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Convex.Intrinsic
-import TauCeti.Analysis.Normed.Affine.AddTorsorBases
+import TauCeti.Analysis.Normed.Affine.AddTorsor.Bases
 
 /-!
 # Open simplices

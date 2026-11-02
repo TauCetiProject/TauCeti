@@ -68,8 +68,11 @@ theorem AffineIndependent.exists_continuousAffineMap_apply_affineCombination
   choose g hg using fun i => exists_extension_norm_eq (vectorSpan ℝ (range p))
     (((c i).linear.domRestrict (vectorSpan ℝ (range p))).toContinuousLinearMap)
   let f : ι → E →ᴬ[ℝ] ℝ := fun i =>
-    ⟨(g i : E →ₗ[ℝ] ℝ).toAffineMap + AffineMap.const ℝ E (1 - g i (p i)),
-      ((g i).continuous.add continuous_const)⟩
+    (g i).toContinuousAffineMap + ContinuousAffineMap.const ℝ E (1 - g i (p i))
+  have hf_apply : ∀ i x, f i x = g i x + (1 - g i (p i)) := fun i x => by
+    rw [ContinuousAffineMap.add_apply, ContinuousLinearMap.coe_toContinuousAffineMap,
+      ContinuousAffineMap.coe_const, Function.const_apply]
+  have hcpi : ∀ i, c i (p i) = 1 := fun i => by simp [hcp]
   -- On the affine span of `p`, which contains every affine combination, `f i` agrees with `c i`.
   have hfc : ∀ i, ∀ x ∈ affineSpan ℝ (range p), f i x = c i x := fun i x hx => by
     have hv : x -ᵥ p i ∈ vectorSpan ℝ (range p) := by
@@ -77,8 +80,8 @@ theorem AffineIndependent.exists_continuousAffineMap_apply_affineCombination
       exact AffineSubspace.vsub_mem_direction hx (subset_affineSpan ℝ _ (mem_range_self i))
     have h : g i (x -ᵥ p i) = (c i).linear (x -ᵥ p i) := (hg i).1 ⟨x -ᵥ p i, hv⟩
     rw [AffineMap.linear_apply_vsub, vsub_eq_sub, vsub_eq_sub, map_sub] at h
-    change g i x + (1 - g i (p i)) = c i x
-    linarith [show c i (p i) = 1 by simp [hcp]]
+    rw [hf_apply]
+    linarith [hcpi i]
   have hf : ∀ w : ι → ℝ, ∑ j, w j = 1 → ∀ i, f i (Finset.univ.affineCombination ℝ p w) = w i :=
     fun w hw i => (hfc i _ (affineCombination_mem_affineSpan hw p)).trans (hc w hw i)
   have hfp : ∀ i j, f i (p j) = if i = j then 1 else 0 := fun i j =>
