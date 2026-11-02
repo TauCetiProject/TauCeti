@@ -33,7 +33,9 @@ Along a flat ring map `R → S` the base change `S ⊗[R] I` is the extended ide
 fibres of `I` and `I S` at a field-valued point of `S` have the same dimension
 (`Ideal.finrank_tensor_map_of_flat`). Without flatness, over a commutative `S`, the map
 `S ⊗[R] I → I S` is still surjective (`Ideal.liftBaseChange_idealMap_surjective`) and its kernel
-is killed by `I S` (`Ideal.isTorsionBySet_ker_liftBaseChange_idealMap`). For an idempotent ideal
+is killed by `I S` (`Ideal.isTorsionBySet_ker_liftBaseChange_idealMap`). For an `S`-module `M`
+which is flat over `R`, it follows that `I S ⊗[S] M → M` is injective, that is
+`Tor₁ˢ(S ⧸ I S, M) = 0` (`Module.Flat.map_subtype_rTensor_injective`). For an idempotent ideal
 `I`, `I S • (S ⊗[R] I) = S ⊗[R] I` (`Ideal.smul_top_baseChange_eq_top`), and it follows that
 `S ⊗[R] (I ⊗[R] I) ≅ I S ⊗[S] I S` (`Ideal.baseChangeTensorSelfEquiv`), which is how basic
 setups of almost mathematics base change (Gabber–Ramero, *Almost ring theory*, Remark 2.1.4(ii)).
@@ -237,6 +239,43 @@ theorem smul_top_baseChange_eq_top (hI : IsIdempotentElem I) :
   | add x y hx hy => exact add_mem hx hy
 
 end Ideal
+
+namespace Module
+
+open LinearMap
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- If an `S`-module `M` is flat over `R`, then `Tor₁ˢ(S ⧸ J S, M) = 0` for every ideal `J` of `R`:
+the map `J S ⊗[S] M → M` is injective. -/
+theorem Flat.map_subtype_rTensor_injective {S : Type*} [CommRing S] [Algebra R S] [Module S M]
+    [IsScalarTower R S M] [Flat R M] (J : Ideal R) :
+    Function.Injective ((J.map (algebraMap R S)).subtype.rTensor M) := by
+  rw [← lTensor_inj_iff_rTensor_inj]
+  -- `M ⊗[S] (S ⊗[R] J) → M ⊗[S] J S → M` is `M ⊗[R] J → M`, and `S ⊗[R] J → J S` is onto.
+  let ψ := (Algebra.idealMap S J).liftBaseChange S
+  let e := AlgebraTensorModule.cancelBaseChange R S S M J
+  have key (x : M ⊗[S] (S ⊗[R] J)) :
+      TensorProduct.rid S M ((J.map (algebraMap R S)).subtype.lTensor M (ψ.lTensor M x)) =
+        TensorProduct.rid R M (J.subtype.lTensor M (e x)) := by
+    induction x using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul m y =>
+      induction y using TensorProduct.inductionOn with
+      | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
+      | tmul s j =>
+        simpa [ψ, e, algebraMap_smul] using smul_comm s (j : R) m
+  have hinj : Function.Injective
+      (TensorProduct.rid S M ∘ (J.map (algebraMap R S)).subtype.lTensor M ∘ ψ.lTensor M) := by
+    have : (TensorProduct.rid S M ∘ (J.map (algebraMap R S)).subtype.lTensor M ∘ ψ.lTensor M) =
+        TensorProduct.rid R M ∘ J.subtype.lTensor M ∘ e := funext key
+    rw [this]
+    exact (TensorProduct.rid R M).injective.comp
+      ((Flat.lTensor_preserves_injective_linearMap _ J.injective_subtype).comp e.injective)
+  exact (Function.Injective.of_comp hinj).of_comp_right
+    (lTensor_surjective M (Ideal.liftBaseChange_idealMap_surjective S J))
+
+end Module
 
 namespace Ideal
 
