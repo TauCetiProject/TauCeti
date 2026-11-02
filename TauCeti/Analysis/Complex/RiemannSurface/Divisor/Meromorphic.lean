@@ -164,23 +164,10 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
         meromorphicOrderAt (fun y ↦ OnePoint.affineChart (F y)) x := by
   obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_notMem_constants D hD
   let f := divisorSections.toMeromorphic D s
-  have hne : ∃ x y, f x ≠ f y := by
-    by_contra! h
-    let x := Classical.arbitrary X
-    have heq : ⇑f = fun _ ↦ f x := funext fun y ↦ h y x
-    rcases eq_or_ne (f x) (∞ : OnePoint ℂ) with hx | hx
-    · exact f.coe_ne_infty (by simpa [hx] using heq)
-    · obtain ⟨c, hc⟩ := OnePoint.ne_infty_iff_exists.mp hx
-      apply hs
-      refine ⟨c, MeromorphicFunction.ext fun y ↦ ?_⟩
-      simpa only [Algebra.linearMap_apply, MeromorphicFunction.coe_algebraMap] using
-        ((h y x).trans hc.symm).symm
+  have hne := f.exists_apply_ne_of_notMem_range_algebraMap hs
   refine ⟨FiniteHolomorphicMap.ofMDifferentiable f.mdifferentiable hne, ?_⟩
-  have hp : f.finitePart = fun y ↦ OnePoint.affineChart (f y) :=
-    funext fun y ↦ MeromorphicFunction.finitePart_def f y
-  simp only [FiniteHolomorphicMap.coe_ofMDifferentiable]
-  rw [← hp]
-  exact fun x ↦ (MeromorphicFunction.order_apply x f) ▸
-    divisorSections.neg_le_order_toMeromorphic s x
+  simpa only [FiniteHolomorphicMap.coe_ofMDifferentiable,
+    ← MeromorphicFunction.finitePart_def, MeromorphicFunction.order_apply] using
+    divisorSections.neg_le_order_toMeromorphic s
 
 end TauCeti.RiemannSurface

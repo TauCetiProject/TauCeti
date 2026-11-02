@@ -503,6 +503,20 @@ theorem coe_algebraMap (c : ℂ) :
     ⇑(algebraMap ℂ (MeromorphicFunction X) c) = fun _ ↦ (c : OnePoint ℂ) :=
   sphereMap_const c
 
+/-- A meromorphic function outside the range of the constant functions takes two distinct
+values on the Riemann sphere. -/
+theorem exists_apply_ne_of_notMem_range_algebraMap
+    (hf : f ∉ Set.range (algebraMap ℂ (MeromorphicFunction X))) : ∃ x y, f x ≠ f y := by
+  by_contra! h
+  let x := Classical.arbitrary X
+  have heq : ⇑f = fun _ ↦ f x := funext fun y ↦ h y x
+  rcases eq_or_ne (f x) (∞ : OnePoint ℂ) with hx | hx
+  · exact f.coe_ne_infty (by simpa [hx] using heq)
+  · obtain ⟨c, hc⟩ := OnePoint.ne_infty_iff_exists.mp hx
+    apply hf
+    refine ⟨c, ext fun y ↦ ?_⟩
+    simpa only [coe_algebraMap] using ((h y x).trans hc.symm).symm
+
 @[simp]
 theorem finitePart_algebraMap (c : ℂ) :
     (algebraMap ℂ (MeromorphicFunction X) c).finitePart = fun _ ↦ c :=
