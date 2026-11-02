@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
@@ -25,7 +24,8 @@ kernel of the evaluation `ξ ↦ ξ_M(x)` of the fundamental vector fields at `x
 This file relates the two. On a `T₁` manifold the stabilizer is closed, hence an embedded Lie
 subgroup by the closed-subgroup theorem. The one-parameter subgroup `t ↦ exp (t ξ)` fixes `x`
 exactly when `ξ_M(x) = 0`: the curve `t ↦ exp (t ξ) • x` is an integral curve of `ξ_M` through
-`x`, which is the constant curve exactly when `ξ_M(x) = 0`, by uniqueness of integral curves.
+`x`, which is the constant curve exactly when `ξ_M(x) = 0`, by uniqueness of integral curves
+(`TauCeti.mulInvariantExp_smul_smul_eq_iff`).
 Consequently **the Lie algebra of `G_x` is `𝔤_x`**. Along an orbit, the isotropy algebras are
 conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are.
 
@@ -33,14 +33,12 @@ The action is **locally free** at `x` when `G_x` is discrete. Since `G_x` is an 
 subgroup modelled on its Lie algebra `𝔤_x`, this happens exactly when `𝔤_x = 0`, that is, when
 `ξ ↦ ξ_M(x)` is injective. In particular a free action has trivial isotropy algebras. Through
 `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff` this is what makes every point
-with discrete stabilizer a regular point of a moment map.
+with discrete stabilizer, at which the form is nondegenerate, a regular point of a moment map.
 
 ## Main results
 
 * `TauCeti.Lie.isEmbeddedLieSubgroup_stabilizer`: the stabilizer of a point of a `T₁` space under a
   continuous action of a Lie group is an embedded Lie subgroup.
-* `TauCeti.Lie.mulInvariantExp_smul_smul_eq_iff`: `exp (t ξ) • x = x` for every `t` exactly when
-  `ξ_M(x) = 0`.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer`: **the Lie algebra of `G_x` is the isotropy
   algebra `𝔤_x`**, transported to left-invariant derivations by evaluation at the identity.
 * `TauCeti.Lie.adjointContinuousLinearMap_mem_isotropy_smul_iff`: `Ad_g ξ ∈ 𝔤_{g • x}` exactly
@@ -54,6 +52,10 @@ with discrete stabilizer a regular point of a moment map.
   theorem and infinitesimal generators of actions).
 * J. E. Marsden and T. S. Ratiu, *Introduction to Mechanics and Symmetry*, second edition, §9.3
   (isotropy groups and their Lie algebras).
+* The identification of the Lie algebra of the stabilizer follows the formal precedent
+  `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation` for the coadjoint
+  representation, replacing its derivative computation along `Ad_{exp (t ξ)}` by uniqueness of
+  integral curves of fundamental vector fields.
 -/
 
 public section
@@ -73,42 +75,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
-
-section OneParameter
-
-variable [CompleteSpace E] [T2Space G]
-
-/-- **The one-parameter subgroups fixing a point.** For a `C²` action on a Hausdorff manifold
-without boundary, the one-parameter subgroup `t ↦ exp (t ξ)` fixes `x` exactly when the fundamental
-vector field `ξ_M` vanishes at `x`. The curve `t ↦ exp (t ξ) • x` is an integral curve of `ξ_M`
-through `x`; it is constant exactly when `ξ_M(x) = 0`, by uniqueness of integral curves. -/
-theorem mulInvariantExp_smul_smul_eq_iff [IsManifold I' 1 M] [T2Space M]
-    [BoundarylessManifold I' M] [ContMDiffSMul I I' 2 G M] {ξ : GroupLieAlgebra I G} {x : M} :
-    (∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) • x = x) ↔ fundamentalVectorField I' ξ x = 0 := by
-  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) one_le_two
-  have hcurve := isMIntegralCurve_mulInvariantExp_smul_smul (I' := I') ξ x
-  constructor
-  · -- If the integral curve is constant, its velocity `ξ_M(x)` at time `0` vanishes.
-    intro h
-    have hconst : (fun t : ℝ ↦ mulInvariantExp (I := I) (t • ξ) • x) = fun _ ↦ x := funext h
-    have hderiv := DFunLike.congr_fun (hcurve 0).mfderiv 1
-    rw [hconst, mfderiv_const] at hderiv
-    -- Both sides are evaluated at `1`: `smulRight 1 v` sends `1` to `1 • v` by definition, and the
-    -- zero map sends it to `0`. The rewriting lemmas do not fire through the tangent-space types.
-    have h1 : (1 : ℝ) • fundamentalVectorField I' ξ x = 0 := hderiv.symm
-    rwa [one_smul] at h1
-  · -- If `ξ_M(x) = 0`, the constant curve at `x` is an integral curve of `ξ_M` through `x` too.
-    intro h
-    have hconst : IsMIntegralCurve (fun _ : ℝ ↦ x) (fundamentalVectorField I' ξ) := by
-      intro t
-      rw [h, ContinuousLinearMap.smulRight_zero]
-      exact hasMFDerivAt_const x t
-    have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0)
-      (contMDiff_fundamentalVectorField (m := 1) (n := 2) (by norm_num) ξ) hcurve hconst
-      (by simp)
-    exact fun t ↦ congrFun heq t
-
-end OneParameter
 
 variable [FiniteDimensional ℝ E]
 
