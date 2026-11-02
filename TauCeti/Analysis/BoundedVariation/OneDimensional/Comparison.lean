@@ -113,9 +113,9 @@ theorem totalVariationOn_Ioo_eq_eVariationOn_rightLim
       (fun i => ENNReal.ofReal |f.rightLim (u (i + 1)) - f.rightLim (u i)|) n] at h
     simpa only [edist_dist, Real.dist_eq] using h
 
-/-- Classical and distributional variation agree on every open set, even for functions that
-are not integrable on the whole line. The measure on the right includes jump atoms and the
-singular continuous part of the derivative. -/
+/-- On every open set, distributional variation equals the variation of the classical
+derivative measure, even for functions that are not integrable on the whole line.
+The measure on the right includes jump atoms and the singular continuous part. -/
 theorem totalVariationOn_eq_variation_vectorMeasure
     (hf : BoundedVariationOn f univ) (Ω : Opens ℝ) :
     TauCeti.totalVariationOn volume Ω f = hf.vectorMeasure.variation Ω := by
@@ -145,27 +145,33 @@ theorem variationMeasure_eq_comap_variation_vectorMeasure
     (hf : BoundedVariationOn f univ) (Ω : Opens ℝ) :
     TauCeti.variationMeasure volume Ω f =
       hf.vectorMeasure.variation.comap ((↑) : Ω → ℝ) := by
-  have hemb := Ω.isOpen.isOpenEmbedding_subtypeVal
+  -- Fix the domain as `Ω`, rather than the subtype of its underlying set, for rewriting.
+  have hemb : Topology.IsOpenEmbedding ((↑) : Ω → ℝ) := Ω.isOpen.isOpenEmbedding_subtypeVal
   have := Measure.OuterRegular.comap' hf.vectorMeasure.variation hemb.continuous
     hemb.measurableEmbedding
   apply (TauCeti.eq_variationMeasure
     (hf.memLp_top.locallyIntegrable le_top |>.locallyIntegrableOn _)
     (fun K _ _ => ⟨⊤, subset_univ K, (hf.totalVariationOn_lt_top ⊤).ne⟩) ?_).symm
   intro U hU
-  -- The real-line and normed-space instances induce the same subtype measurable space.
-  erw [hemb.measurableEmbedding.comap_apply]
-  erw [image_preimage_eq_of_subset (f := ((↑) : Ω → ℝ)) (by simpa using hU)]
+  rw [hemb.measurableEmbedding.comap_apply]
+  rw [image_preimage_eq_of_subset (f := ((↑) : Ω → ℝ)) (by simpa using hU)]
   exact (hf.totalVariationOn_eq_variation_vectorMeasure U).symm
+
+/-- On any subset of an open domain, distributional variation is the variation of the
+classical derivative measure evaluated on its image in the real line. -/
+@[simp]
+theorem variationMeasure_apply (hf : BoundedVariationOn f univ)
+    (Ω : Opens ℝ) (s : Set Ω) :
+    TauCeti.variationMeasure volume Ω f s = hf.vectorMeasure.variation (Subtype.val '' s) := by
+  -- The embedding theorem is stated for the underlying set's subtype; specify `Ω` explicitly.
+  have hemb : Topology.IsOpenEmbedding ((↑) : Ω → ℝ) := Ω.isOpen.isOpenEmbedding_subtypeVal
+  rw [hf.variationMeasure_eq_comap_variation_vectorMeasure, hemb.measurableEmbedding.comap_apply]
 
 /-- The atom of distributional variation at a point is the absolute size of its jump.
 In particular changing only the value at the point creates no distributional atom. -/
-@[simp]
 theorem variationMeasure_singleton (hf : BoundedVariationOn f univ)
     (Ω : Opens ℝ) (x : Ω) :
     TauCeti.variationMeasure volume Ω f {x} = ‖f.rightLim x - f.leftLim x‖ₑ := by
-  rw [hf.variationMeasure_eq_comap_variation_vectorMeasure]
-  -- As above, identify the canonical real-line and normed-space subtype instances.
-  erw [Ω.isOpen.isOpenEmbedding_subtypeVal.measurableEmbedding.comap_apply]
-  simp only [image_singleton, hf.variation_vectorMeasure_singleton]
+  rw [hf.variationMeasure_apply, image_singleton, hf.variation_vectorMeasure_singleton]
 
 end BoundedVariationOn
