@@ -35,7 +35,11 @@ of a disjoint c.e. splitting of `B` have join of the same degree as `B`.
 
 ## References
 
-* R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987.
+* R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987, Chapter III.2.
+* T. Duve, [Mathlib PR #37062](https://github.com/leanprover-community/mathlib4/pull/37062),
+  *feat(Computability): Turing join and semilattice structure on Turing degrees*. The shape of
+  this API (left and right reductions to the join, and its least upper bound property) follows
+  the join of partial functions proposed there; here everything is stated for set oracles.
 -/
 
 public section
