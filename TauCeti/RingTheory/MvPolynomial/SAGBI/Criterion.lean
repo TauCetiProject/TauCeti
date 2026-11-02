@@ -32,13 +32,9 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
 
 ## Main results
 
-* `MonomialOrder.monic_aeval_monomial_one`, `MonomialOrder.degree_aeval_monomial_one`: the image
-  of `Y^w` under the substitution of a monic family is monic with leading exponent `A w`.
-* `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
-  exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `φ P` is the sum of the
-  coefficients of `P` at the `w` with `A w = e`, and `φ P` has leading exponent at most `e`.
-* `MonomialOrder.weightedHomogeneousComponent_mem_toricIdeal`: if moreover the coefficient of
-  `X^e` in `φ P` vanishes, then the part of `P` of weight `e` lies in the toric ideal.
+* `MonomialOrder.weightedHomogeneousComponent_mem_toricIdeal`: if all exponents `w` of `P` have
+  `A w ≼ e` and the coefficient of `X^e` in `φ P` vanishes, then the part of `P` of weight `e`
+  lies in the toric ideal.
 * `MonomialOrder.IsSAGBIBasis.exists_aeval_eq_aeval_sub`: if `c` is a SAGBI basis of `k[c]`, then
   every binomial `Y^u - Y^v` with `A u = A v` has a bounded zero subduction.
 * `MonomialOrder.exists_aeval_eq_of_mem_toricIdeal`: if the generating binomials have bounded zero
@@ -76,61 +72,7 @@ variable {σ ι : Type*} {m : MonomialOrder σ}
 
 section CommSemiring
 
-variable {R : Type*} [CommSemiring R] {c : ι → MvPolynomial σ R}
-
-/-- The image of the monomial `Y^w` under the substitution of a monic family is monic. -/
-theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
-    m.Monic (aeval c (monomial w (1 : R))) := by
-  rw [aeval_monomial, map_one, one_mul, Finsupp.prod]
-  exact Monic.prod fun i _ ↦ (hc i).pow
-
-variable [Nontrivial R]
-
-/-- The image of the monomial `Y^w` under the substitution of a monic family `c` has leading
-exponent `∑ i, w i • m.degree (c i)`. -/
-theorem degree_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
-    m.degree (aeval c (monomial w (1 : R))) =
-      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w := by
-  rw [aeval_monomial, map_one, one_mul, Finsupp.prod,
-    m.degree_prod_of_regular fun i _ ↦ by rw [(hc i).pow.leadingCoeff_eq_one]; exact isRegular_one,
-    Finsupp.linearCombination_apply, Finsupp.sum]
-  exact Finset.sum_congr rfl fun i _ ↦
-    m.degree_pow_of_pow_leadingCoeff_ne_zero (by simp [(hc i).leadingCoeff_eq_one])
-
-open scoped Classical in
-/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
-`P` satisfies `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of the
-coefficients of `P` at the exponents `w` with `A w = e`: the images of the other monomials of `P`
-have leading exponent below `e`. -/
-theorem coeff_aeval_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
-    {e : σ →₀ ℕ}
-    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
-    (aeval c P).coeff e = ∑ w ∈ P.support with
-      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w = e, P.coeff w := by
-  classical
-  conv_lhs => rw [P.as_sum]
-  rw [map_sum, coeff_sum, Finset.sum_filter]
-  refine Finset.sum_congr rfl fun w hw ↦ ?_
-  rw [show monomial w (P.coeff w) = P.coeff w • monomial w (1 : R) by
-    rw [smul_monomial, smul_eq_mul, mul_one], map_smul, coeff_smul, smul_eq_mul]
-  split_ifs with h
-  · rw [← h, ← degree_aeval_monomial_one hc, (monic_aeval_monomial_one hc w).coeff_degree, mul_one]
-  · rw [m.coeff_eq_zero_of_lt, mul_zero]
-    rw [degree_aeval_monomial_one hc]
-    exact lt_of_le_of_ne (hP w hw) fun h' ↦ h (m.toSyn.injective h')
-
-/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
-`P` satisfies `A w ≼ e`, then `aeval c P` has leading exponent at most `e`. -/
-theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
-    {e : σ →₀ ℕ}
-    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
-    m.degree (aeval c P) ≼[m] e := by
-  classical
-  refine m.degree_le_iff.2 fun d hd ↦ le_of_not_gt fun hlt ↦ ?_
-  rw [mem_support_iff, coeff_aeval_of_forall_le hc fun w hw ↦ (hP w hw).trans hlt.le] at hd
-  refine hd (Finset.sum_eq_zero fun w hw ↦ ?_)
-  rw [Finset.mem_filter] at hw
-  exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
+variable {R : Type*} [CommSemiring R] [Nontrivial R] {c : ι → MvPolynomial σ R}
 
 /-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
 `P` satisfies `A w ≼ δ` and the coefficient of `X^δ` in `aeval c P` vanishes, then the part of `P`
