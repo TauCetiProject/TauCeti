@@ -211,8 +211,14 @@ variable {N : ℝ}
 theorem pow_mul_neg_mul_rpow_neg_eq {s : ℝ} (hs : 0 < s) :
     s ^ n * -((s ^ n)⁻¹ * ((s ^ n)⁻¹) ^ (-N⁻¹)) = -s ^ ((n : ℝ) / N) := by
   have hsn : 0 < s ^ n := pow_pos hs n
-  rw [mul_neg, ← mul_assoc, mul_inv_cancel₀ hsn.ne', one_mul, Real.inv_rpow hsn.le,
-    Real.rpow_neg hsn.le, inv_inv, ← Real.rpow_natCast, ← Real.rpow_mul hs.le, div_eq_mul_inv]
+  -- `((sⁿ)⁻¹)^(-1/N) = (sⁿ)^(1/N)`.
+  have h₁ : ((s ^ n)⁻¹) ^ (-N⁻¹) = (s ^ n) ^ N⁻¹ := by
+    rw [Real.inv_rpow hsn.le, Real.rpow_neg hsn.le, inv_inv]
+  -- `(sⁿ)^(1/N) = s^(n/N)`.
+  have h₂ : (s ^ n) ^ N⁻¹ = s ^ ((n : ℝ) / N) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hs.le, div_eq_mul_inv]
+  rw [h₁, h₂]
+  field_simp
 
 /-- **The Rényi integrand satisfies the convexity half of McCann's condition.** For `0 < N` and
 `n ≤ N`, the function `φ(s) = sⁿ U(s⁻ⁿ) = -s^{n/N}` of `U(r) = -r · r^{-1/N}` is convex on

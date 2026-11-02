@@ -152,9 +152,8 @@ private theorem neg_coe_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
     -((ENNReal.ofReal a * x + ENNReal.ofReal b * y : ℝ≥0∞) : EReal) =
       (a : EReal) * -(x : EReal) + (b : EReal) * -(y : EReal) := by
   rw [EReal.coe_ennreal_add,
-    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _)),
-    EReal.coe_ennreal_mul, EReal.coe_ennreal_mul, EReal.coe_ennreal_ofReal,
-    EReal.coe_ennreal_ofReal, max_eq_left ha, max_eq_left hb, mul_neg, mul_neg, sub_eq_add_neg]
+    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _))]
+  simp [EReal.coe_ennreal_ofReal, ha, hb, sub_eq_add_neg]
 
 /-- In the flat case, the right side of the curvature-dimension inequality is the convex
 combination of the endpoint Rényi entropies. -/
@@ -240,9 +239,12 @@ private theorem le_rpow_of_ofReal_mul_le_measure_closedBall_rpow {c r : ℝ} (hr
   rw [Measure.addHaar_closedBall' _ _ hr.le,
     ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hN.le)] at h
   have h' := (ENNReal.mul_le_mul_iff_left h₀ hfin).1 h
-  rwa [ENNReal.ofReal_rpow_of_nonneg (by positivity) (inv_nonneg.2 hN.le),
-    ENNReal.ofReal_le_ofReal_iff (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hr.le,
-    ← div_eq_mul_inv] at h'
+  -- `ofReal (rⁿ)^(1/N) = ofReal (r^(n/N))`.
+  have hpow : ENNReal.ofReal (r ^ finrank ℝ E) ^ N⁻¹ =
+      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / N)) := by
+    rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (inv_nonneg.2 hN.le), ← Real.rpow_natCast,
+      ← Real.rpow_mul hr.le, div_eq_mul_inv]
+  rwa [hpow, ENNReal.ofReal_le_ofReal_iff (by positivity)] at h'
 
 /-- Under `CD(0, N)` with `N ≥ 1`, transporting the uniform law on the unit ball to the uniform law
 on the ball of radius `δ` gives `1 / 2 ≤ (1 / 2 + 3 δ / 2)^{n/N}`. At time `1 / 2` the law is
