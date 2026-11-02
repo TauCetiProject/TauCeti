@@ -30,8 +30,8 @@ The boosts preserve the unit sphere (`TauCeti.norm_sphereBoost`), form a one-par
 isometries (`LinearIsometry.sphereBoost_map`). In particular a boost toward `ι i`, for a
 linear isometry `ι : ℂ →ₗᵢ[ℝ] E`, preserves the great circle `ι` of the unit circle and acts on it
 by the boost of the unit circle toward `i`. Boosting far enough carries a compact set of the
-sphere avoiding `-v` into the open hemisphere around `v`
-(`IsCompact.eventually_forall_inner_sphereBoost_pos`).
+sphere avoiding `-v` into any open cap `⟪x, v⟫ > r` around `v` with `r < 1`
+(`IsCompact.eventually_forall_lt_inner_sphereBoost`).
 
 At the repelling fixed point `-v`, the boost of rapidity `a` stretches every tangent vector by
 `eᵃ` (`TauCeti.fderiv_sphereBoost_neg_self_apply`): it maps the line `-v + s w` through `-v` in a
@@ -49,8 +49,8 @@ through `-v` without moving the point.
 * `TauCeti.inner_sphereBoost`: the height formula `tanh σ ↦ tanh (σ + a)`.
 * `TauCeti.monotone_inner_sphereBoost`: the height of a boosted point is monotone in the rapidity.
 * `LinearIsometry.sphereBoost_map`: boosts commute with linear isometries.
-* `IsCompact.eventually_forall_inner_sphereBoost_pos`: large boosts carry a compact set
-  avoiding `-v` into the open hemisphere around `v`.
+* `IsCompact.eventually_forall_lt_inner_sphereBoost`: large boosts carry a compact set
+  avoiding `-v` into any open cap around `v`.
 * `TauCeti.fderiv_sphereBoost_neg_self_apply`: at `-v`, the boost of rapidity `a` multiplies
   tangent vectors by `eᵃ`.
 
@@ -209,25 +209,44 @@ theorem _root_.LinearIsometry.sphereBoost_map (ι : F →ₗᵢ[ℝ] E) (w : F) 
   simp only [sphereBoost_def, ι.inner_map_map, map_smul, map_add]
 
 /-- **Boosts attract toward `v`.** A compact subset of the unit sphere avoiding `-v` is carried
-into the open hemisphere `⟪x, v⟫ > 0` by every boost toward `v` of large enough rapidity. -/
-theorem _root_.IsCompact.eventually_forall_inner_sphereBoost_pos {C : Set E} (hC : IsCompact C)
-    {v : E} (hv : ‖v‖ = 1) (hC₁ : ∀ x ∈ C, ‖x‖ = 1) (hCv : -v ∉ C) :
-    ∀ᶠ a in Filter.atTop, ∀ x ∈ C, 0 < ⟪sphereBoost v a x, v⟫ := by
-  -- On `C` the height is bounded below by some `-1 + ε` with `ε > 0`.
+into the open cap `⟪x, v⟫ > r` around `v`, for any `r < 1`, by every boost toward `v` of large
+enough rapidity. -/
+theorem _root_.IsCompact.eventually_forall_lt_inner_sphereBoost {C : Set E} (hC : IsCompact C)
+    {v : E} (hv : ‖v‖ = 1) (hC₁ : ∀ x ∈ C, ‖x‖ = 1) (hCv : -v ∉ C) {r : ℝ} (hr : r < 1) :
+    ∀ᶠ a in Filter.atTop, ∀ x ∈ C, r < ⟪sphereBoost v a x, v⟫ := by
+  wlog hr₀ : 0 ≤ r generalizing r
+  · filter_upwards [this zero_lt_one le_rfl] with a ha x hx
+    exact (not_le.1 hr₀).trans (ha x hx)
+  -- On `C` the height is bounded below by some `b > -1`.
   obtain ⟨b, hb, hbC⟩ := hC.exists_forall_le' (a := -1) (f := fun x => ⟪x, v⟫)
     (continuous_id.inner continuous_const).continuousOn fun x hx =>
       (neg_one_le_real_inner_of_norm_eq_one (hC₁ x hx) hv).lt_of_ne fun h =>
         hCv (((inner_eq_neg_one_iff_of_norm_eq_one (hC₁ x hx) hv).1 h.symm) ▸ hx)
-  have hε : 0 < b + 1 := by linarith
-  filter_upwards [Filter.eventually_gt_atTop (-log (b + 1))] with a ha x hx
-  rw [inner_sphereBoost hv]
-  refine div_pos ?_ (cosh_add_sinh_mul_inner_pos hv (hC₁ x hx) a)
-  -- `sinh a + cosh a s ≥ (b + 1) cosh a - e⁻ᵃ > 0`, as `cosh a ≥ 1` and `e⁻ᵃ < b + 1`.
-  have hexp : exp (-a) < b + 1 := by
-    calc exp (-a) < exp (log (b + 1)) := exp_lt_exp.2 (by linarith)
-      _ = b + 1 := exp_log hε
-  have hcs := cosh_sub_sinh a
-  nlinarith [mul_le_mul_of_nonneg_left (hbC x hx) (cosh_pos a).le, one_le_cosh a]
+  have hε : 0 < (1 - r) * (b + 1) := mul_pos (by linarith) (by linarith)
+  filter_upwards [Filter.eventually_gt_atTop (log (4 / ((1 - r) * (b + 1)))),
+    Filter.eventually_ge_atTop 0] with a ha ha₀ x hx
+  rw [inner_sphereBoost hv, lt_div_iff₀ (cosh_add_sinh_mul_inner_pos hv (hC₁ x hx) a), cosh_eq,
+    sinh_eq]
+  have hs : b ≤ ⟪x, v⟫ := hbC x hx
+  have hs₁ : ⟪x, v⟫ ≤ 1 := real_inner_le_one_of_norm_eq_one (hC₁ x hx) hv
+  -- With `X = eᵃ` and `Y = e⁻ᵃ`, the claim is `(1 + r) (1 - s) Y < (1 - r) (1 + s) X`; the left
+  -- side is at most `4`, as `Y ≤ 1`, and the right side exceeds `4` by the choice of `a`.
+  have hX : 4 < (1 - r) * (b + 1) * exp a := by
+    have h := exp_lt_exp.2 ha
+    rw [exp_log (div_pos (by norm_num) hε), div_lt_iff₀ hε] at h
+    linarith
+  have hY : exp (-a) ≤ 1 := exp_le_one_iff.2 (by linarith)
+  have hY₀ : 0 < exp (-a) := exp_pos _
+  have hkey : (1 + r) * (1 - ⟪x, v⟫) * exp (-a) < (1 - r) * (1 + ⟪x, v⟫) * exp a := by
+    have h₁ : (1 + r) * (1 - ⟪x, v⟫) * exp (-a) ≤ 4 := by
+      have : (1 + r) * (1 - ⟪x, v⟫) ≤ 4 := by nlinarith
+      nlinarith
+    have h₂ : (1 - r) * (b + 1) * exp a ≤ (1 - r) * (1 + ⟪x, v⟫) * exp a := by
+      have := exp_pos a
+      have : 0 ≤ 1 - r := by linarith
+      nlinarith
+    linarith
+  nlinarith
 
 /-- A boost is differentiable at every point where its denominator does not vanish, in
 particular at every point of the unit sphere (`TauCeti.cosh_add_sinh_mul_inner_pos`). -/
