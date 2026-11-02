@@ -211,7 +211,10 @@ theorem mfderiv_mul_right_mulInvariantVectorField (g x : G) (X : GroupLieAlgebra
     exact (contMDiffAt_mul_left.mdifferentiableAt hreg).hasMFDerivAt.comp x
       ((C.mdifferentiable (by simp)) x).hasMFDerivAt
   rw [hD.mfderiv]
-  -- Evaluate the composite derivative one factor at a time.
+  -- Evaluate the composite derivative one factor at a time. The composite has codomain
+  -- `TangentSpace I (g * C x)` while the goal expects `TangentSpace I (x * g)`; these agree only
+  -- definitionally (both are `E`), so rewriting with `ContinuousLinearMap.comp_apply` fails its
+  -- type-correctness check and `change` is needed.
   change mfderiv I I (g * ·) (C x) (mfderiv I I C x (mulInvariantVectorField X x)) = _
   rw [mfderiv_conjugation_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hpt]
 
