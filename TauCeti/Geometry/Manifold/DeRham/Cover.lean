@@ -44,17 +44,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-private theorem manifoldLocallyPathConnectedSpace (I : ModelWithCorners ℝ E H) :
-    LocallyPathConnectedSpace M := by
-  let : LocallyPathConnectedSpace H := I.locallyPathConnectedSpace
-  exact ChartedSpace.locallyPathConnectedSpace H M
-
-private theorem manifoldPathConnectedSpace (I : ModelWithCorners ℝ E H) (x : M)
-    [PreconnectedSpace M] : PathConnectedSpace M := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
-  let : ConnectedSpace M := ⟨⟨x⟩⟩
-  exact PathConnectedSpace.of_locallyPathConnectedSpace
-
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
 /-- The connected covering of the basepoint component associated to the kernel of the periods.
@@ -67,14 +56,13 @@ abbrev PeriodCover (θ : SmoothForm I M ℝ 1) (x : M) :=
 theorem mpullback_mem_exactForms_subgroupQuotient_iff
     (θ : SmoothForm I M ℝ 1) (x : M) (K : Subgroup (FundamentalGroup M x))
     (hθ : θ ∈ closedForms I M 1) :
-    letI : LocallyPathConnectedSpace H := I.locallyPathConnectedSpace
-    letI : LocallyPathConnectedSpace M := ChartedSpace.locallyPathConnectedSpace H M
+    letI : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
     letI : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
     SmoothForm.mpullback (UniversalCover.subgroupQuotientProj x K)
       (UniversalCover.isLocalDiffeomorph_subgroupQuotientProj x K).contMDiff θ ∈
         exactForms I (UniversalCover.SubgroupQuotient x K) 1 ↔
       K ≤ (periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight.ker := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   let b := UniversalCover.SubgroupQuotient.basepoint x K
   rw [mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero
@@ -100,14 +88,7 @@ theorem mpullback_mem_exactForms_subgroupQuotient_iff
     rw [MonoidHom.mem_ker, AddMonoidHom.toMultiplicativeRight_apply_apply, ofAdd_eq_one]
     exact hz γ
   · intro hK γ
-    have hg := hK (show FundamentalGroup.mapOfEq
-      ⟨UniversalCover.subgroupQuotientProj x K,
-        UniversalCover.continuous_subgroupQuotientProj x K⟩
-      (UniversalCover.subgroupQuotientProj_basepoint x K) γ ∈
-        (FundamentalGroup.mapOfEq (x := b)
-          ⟨UniversalCover.subgroupQuotientProj x K,
-            UniversalCover.continuous_subgroupQuotientProj x K⟩
-          (UniversalCover.subgroupQuotientProj_basepoint x K)).range from ⟨γ, rfl⟩)
+    have hg := hK (MonoidHom.mem_range.2 ⟨γ, rfl⟩)
     simpa only [MonoidHom.mem_ker, AddMonoidHom.toMultiplicativeRight_apply_apply,
       ofAdd_eq_one] using hg
 
@@ -122,52 +103,52 @@ abbrev proj : PeriodCover θ x → M :=
 
 /-- The period-kernel projection is a covering map. -/
 theorem isCoveringMap_proj : IsCoveringMap (proj θ x) := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact UniversalCover.isCoveringMap_subgroupQuotientProj x _
 
 /-- The lifted atlas on the period cover. The period form determines the real model `I`,
 which instance search cannot recover from an arbitrary subgroup cover alone. -/
-noncomputable instance : ChartedSpace H (PeriodCover θ x) := by
-  let : LocallyPathConnectedSpace H := I.locallyPathConnectedSpace
-  let : LocallyPathConnectedSpace M := ChartedSpace.locallyPathConnectedSpace H M
-  let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  exact UniversalCover.instChartedSpaceSubgroupQuotient x _
+noncomputable instance : ChartedSpace H (PeriodCover θ x) :=
+  letI : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  letI : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  UniversalCover.instChartedSpaceSubgroupQuotient x _
 
 /-- The atlas pulled back from the base makes the period cover a smooth manifold. -/
 instance : IsManifold I ∞ (PeriodCover θ x) := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact inferInstanceAs (IsManifold I ∞ (UniversalCover.SubgroupQuotient x _))
 
 /-- Covering spaces of Hausdorff manifolds are Hausdorff. -/
 instance : T2Space (PeriodCover θ x) := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact inferInstanceAs (T2Space (UniversalCover.SubgroupQuotient x _))
 
 /-- The projection is a smooth local diffeomorphism for the lifted atlas. -/
 theorem isLocalDiffeomorph_proj : IsLocalDiffeomorph I I ∞ (proj θ x) := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact UniversalCover.isLocalDiffeomorph_subgroupQuotientProj x _
 
 /-- The period-kernel cover is regular over a path-connected base. -/
 theorem isRegular_proj [PreconnectedSpace M] : Deck.IsRegular (proj θ x) := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  let : PathConnectedSpace M := manifoldPathConnectedSpace I x
+  let : Nonempty M := ⟨x⟩
+  let : PathConnectedSpace M := I.pathConnectedSpace M
   exact (UniversalCover.isRegular_subgroupQuotientProj_iff_normal x _).2 inferInstance
 
 /-- Identify actual deck transformations with actual periods. The inverse in the final factor
 compensates for the universal-cover convention of prepending inverse loops. -/
 def deckEquiv [PreconnectedSpace M] :
     deck (proj θ x) ≃* (periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight.range :=
-by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
-  let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  let : PathConnectedSpace M := manifoldPathConnectedSpace I x
-  exact (UniversalCover.deckSubgroupQuotientProjEquivOfNormal x _).symm |>.trans
+  letI : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  letI : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  letI : Nonempty M := ⟨x⟩
+  letI : PathConnectedSpace M := I.pathConnectedSpace M
+  (UniversalCover.deckSubgroupQuotientProjEquivOfNormal x _).symm |>.trans
     (QuotientGroup.quotientKerEquivRange
       (periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight) |>.trans
     (MulEquiv.inv _)
@@ -176,17 +157,17 @@ by
 @[simp]
 theorem deckEquiv_deckSubgroupQuotientProjEquivOfNormal_mk
     [PreconnectedSpace M] (g : FundamentalGroup M x) :
-    letI : LocallyPathConnectedSpace H := I.locallyPathConnectedSpace
-    letI : LocallyPathConnectedSpace M := ChartedSpace.locallyPathConnectedSpace H M
+    letI : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
     letI : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-    letI : ConnectedSpace M := ⟨⟨x⟩⟩
-    letI : PathConnectedSpace M := PathConnectedSpace.of_locallyPathConnectedSpace
+    letI : Nonempty M := ⟨x⟩
+    letI : PathConnectedSpace M := I.pathConnectedSpace M
     deckEquiv θ x (UniversalCover.deckSubgroupQuotientProjEquivOfNormal x
       (periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight.ker (QuotientGroup.mk g)) =
       ((periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight.rangeRestrict g)⁻¹ := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  let : PathConnectedSpace M := manifoldPathConnectedSpace I x
+  let : Nonempty M := ⟨x⟩
+  let : PathConnectedSpace M := I.pathConnectedSpace M
   simp only [deckEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply,
     QuotientGroup.quotientKerEquivRange_apply_mk, MulEquiv.inv_apply]
   apply Subtype.ext
@@ -199,9 +180,10 @@ theorem deckEquiv_symm_period_apply [PreconnectedSpace M]
     ((deckEquiv θ x).symm
       ⟨(periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight g,
         ⟨g, rfl⟩⟩).1 (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  let : PathConnectedSpace M := manifoldPathConnectedSpace I x
+  let : Nonempty M := ⟨x⟩
+  let : PathConnectedSpace M := I.pathConnectedSpace M
   have hd : (deckEquiv θ x).symm
       ⟨(periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight g, ⟨g, rfl⟩⟩ =
       UniversalCover.deckSubgroupQuotientProjEquivOfNormal x
@@ -219,7 +201,7 @@ theorem deckEquiv_symm_period_apply [PreconnectedSpace M]
 theorem mpullback_mem_exactForms (hθ : θ ∈ closedForms I M 1) :
     SmoothForm.mpullback (proj θ x) (isLocalDiffeomorph_proj θ x).contMDiff θ ∈
       exactForms I (PeriodCover θ x) 1 := by
-  let : LocallyPathConnectedSpace M := manifoldLocallyPathConnectedSpace I
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact (mpullback_mem_exactForms_subgroupQuotient_iff θ x _ hθ).2 le_rfl
 
@@ -227,15 +209,8 @@ theorem mpullback_mem_exactForms (hθ : θ ∈ closedForms I M 1) :
 theorem exists_primitive (hθ : θ ∈ closedForms I M 1) :
     ∃ f : PeriodCover θ x → ℝ, ContMDiff I 𝓘(ℝ, ℝ) ∞ f ∧
       mextDeriv (RoughForm.ofFunction I f) = mpullback I I (proj θ x) θ := by
-  have hex := mpullback_mem_exactForms θ x hθ
-  rw [exactForms_succ, LinearMap.mem_range] at hex
-  obtain ⟨ψ, hψ⟩ := hex
-  have hs := ψ.isSmoothForm
-  rw [RoughForm.eq_ofFunction (ψ : RoughForm I (PeriodCover θ x) ℝ 0),
-    isSmoothForm_ofFunction_iff] at hs
-  refine ⟨fun y ↦ (ψ : RoughForm I (PeriodCover θ x) ℝ 0) y 0, hs, ?_⟩
-  rw [← RoughForm.eq_ofFunction]
-  simpa only [mextDerivₗ_apply, SmoothForm.coe_mpullback] using congrArg Subtype.val hψ
+  simpa only [SmoothForm.coe_mpullback] using
+    exists_contMDiff_mextDeriv_eq_of_mem_exactForms I (mpullback_mem_exactForms θ x hθ)
 
 end PeriodCover
 end TauCeti
