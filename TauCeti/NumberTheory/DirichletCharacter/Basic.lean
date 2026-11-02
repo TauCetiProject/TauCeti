@@ -49,6 +49,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
+* `DirichletCharacter.changeLevel_apply_unit`: on units, raising the level is composition with
+  the reduction map.
 * `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
   changing the level preserves the value at `-1`, hence parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
@@ -298,6 +300,15 @@ theorem changeLevel_trans_mul_toUnitHom {R : Type*} [CommMonoidWithZero R] {a b 
     (changeLevel (h₁.trans h) χ₁ * changeLevel (h₂.trans h) χ₂).toUnitHom =
       (changeLevel h₁ χ₁ * changeLevel h₂ χ₂).toUnitHom.comp (ZMod.unitsMap h) := by
   rw [changeLevel_trans χ₁ h₁ h, changeLevel_trans χ₂ h₂ h, ← map_mul, changeLevel_toUnitHom]
+
+/-- On units, the lift of a Dirichlet character to a multiple level is the character composed
+with the reduction `(ZMod n)ˣ → (ZMod d)ˣ`. -/
+@[simp]
+theorem changeLevel_apply_unit {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) (v : (ZMod n)ˣ) :
+    changeLevel h χ v = χ (ZMod.unitsMap h v) := by
+  rw [← MulChar.coe_toUnitHom, changeLevel_toUnitHom]
+  rfl
 
 /-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
 @[simp]

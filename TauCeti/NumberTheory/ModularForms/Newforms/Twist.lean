@@ -322,12 +322,8 @@ private theorem level_eq_and_coe_eq_primitiveTwist_primitiveTwist [NeZero M] {M'
     hM''L ?_ (S := ∅) fun p hp hpL _ ↦ ?_
   · rw [primitiveTwist_χ_comp_unitsMap g ψ' hTL hRL hM'L, primitiveTwist_χ_comp_unitsMap f ψ hRL hNL
       hML]
-    have hc {a b : ℕ} (h : a ∣ b) (χ : DirichletCharacter ℂ a) (v : (ZMod b)ˣ) :
-        χ.changeLevel h v = χ (unitsMap h v) := by
-      rw [← MulChar.coe_toUnitHom, DirichletCharacter.changeLevel_toUnitHom]
-      rfl
     ext u
-    simp [← ZMod.unitsMap_comp hM hM''L, ← ZMod.unitsMap_comp hM' hM''L, MulChar.coeToFun_mul, hc]
+    simp [← ZMod.unitsMap_comp hM hM''L, ← ZMod.unitsMap_comp hM' hM''L, MulChar.coeToFun_mul]
     ring
   · have hpM'' := hpL.coprime_dvd_right hM''L
     rw [qExpansion_coeff_primitiveTwist g ψ' hp (hpL.coprime_dvd_right hRL)
