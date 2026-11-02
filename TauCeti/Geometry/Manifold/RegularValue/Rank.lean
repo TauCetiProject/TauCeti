@@ -110,8 +110,10 @@ theorem finrank_ker_mfderiv_add_mfderivRank [FiniteDimensional 𝕜 E] :
   rw [mfderivRank_def, add_comm]
   exact LinearMap.finrank_range_add_finrank_ker (mfderiv I J f x).toLinearMap
 
-/-- A map has rank zero at `x` exactly when its derivative there vanishes. -/
-theorem mfderivRank_eq_zero_iff [FiniteDimensional 𝕜 E'] :
+/-- A map has rank zero at `x` exactly when its derivative there vanishes. The image of the
+derivative only needs to be finite-dimensional, as it is when the source or the target is. -/
+theorem mfderivRank_eq_zero_iff
+    [FiniteDimensional 𝕜 (LinearMap.range (mfderiv I J f x).toLinearMap)] :
     mfderivRank I J f x = 0 ↔ mfderiv I J f x = 0 := by
   rw [mfderivRank_def, Submodule.finrank_eq_zero, LinearMap.range_eq_bot]
   refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ LinearMap.congr_fun h v, fun h ↦ ?_⟩
