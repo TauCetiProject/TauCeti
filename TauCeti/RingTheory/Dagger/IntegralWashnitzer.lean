@@ -186,6 +186,22 @@ theorem coe_toWashnitzerAlgebra (f : intWashnitzerAlgebra σ R) :
     (toWashnitzerAlgebra σ R f : MvPowerSeries σ R) = f :=
   (rfl)
 
+/-- The inclusion into `R⟨X⟩†` sends an integral overconvergent series to itself. -/
+@[simp]
+theorem toWashnitzerAlgebra_mk (f : washnitzerAlgebra σ R)
+    (hf : (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R) :
+    toWashnitzerAlgebra σ R ⟨f, hf⟩ = f :=
+  Subtype.ext (coe_toWashnitzerAlgebra _)
+
+/-- The inclusion `R°⟨X⟩† → R⟨X⟩†` is injective. -/
+theorem toWashnitzerAlgebra_injective : Function.Injective (toWashnitzerAlgebra σ R) :=
+  fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)
+
+/-- An element of `R°⟨X⟩†` has Gauss norm at most one in `R⟨X⟩†`. -/
+theorem norm_toWashnitzerAlgebra_le_one (f : intWashnitzerAlgebra σ R) :
+    ‖toWashnitzerAlgebra σ R f‖ ≤ 1 :=
+  mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.2)
+
 /-- `R°⟨X⟩†` is an `R°`-algebra through the constant series. -/
 noncomputable instance : Algebra (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) :=
   RingHom.toAlgebra <| ((C : R →+* MvPowerSeries σ R).comp
