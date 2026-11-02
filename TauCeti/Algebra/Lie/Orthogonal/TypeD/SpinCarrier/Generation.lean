@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Generation
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
-import TauCeti.LinearAlgebra.Matrix.Cartan.TypeD
 
 /-!
 # Generation of the type-D spin carrier by root subgroups
@@ -19,10 +18,8 @@ commutative ring, the torus is already contained in the elementary subgroup gene
 root subgroups.
 
 The represented simple generators at each node form an `sl_2` triple by
-`TauCeti.TypeDSpinCarrier.isSl2Triple_rep_rootGenerator`, and every row of the type-`D` Cartan
-matrix has the explicit Bezout certificate `TauCeti.sum_cartanMatrixD_mul_typeDCartanBezout`, so
-every simple root is a primitive character of the weight torus. The generic Kostant
-coroot-generation theorem then makes the torus redundant in the pointwise generating family.
+`TauCeti.TypeDSpinCarrier.isSl2Triple_rep_rootGenerator`, so the generic Kostant
+coroot-generation theorem makes the torus redundant in the pointwise generating family.
 
 Applying the pointwise containment to the universal point of the torus, over the coordinate ring
 of the split torus itself, shows that the torus is also redundant scheme-theoretically: the
@@ -72,12 +69,6 @@ attribute [local instance high] Algebra.toModule
 
 variable (n : ℕ) (hn : 4 ≤ n)
 
-include hn in
-private theorem rootWeight_sum_mul_bezout (i : Fin n) :
-    ∑ j, TypeDStd.rootGeneratorWeight n (.inl i) j * typeDCartanBezout n i j = 1 := by
-  simpa only [TypeDStd.rootGeneratorWeight_inl] using
-    sum_cartanMatrixD_mul_typeDCartanBezout (by omega) i
-
 private theorem rootWeight_inr_eq_neg_inl (i : Fin n) :
     TypeDStd.rootGeneratorWeight n (.inr i) =
       -TypeDStd.rootGeneratorWeight n (.inl i) := by
@@ -101,8 +92,7 @@ theorem weightTorusSubgroup_le_elementarySubgroup (A : CommAlgCat.{v} ℤ) :
     (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n)
     (isCartanWeightVector_latticeBasis n hn) (TypeDStd.rootGeneratorWeight n)
     (TypeDStd.lie_serreH_serreRootGenerator n) Sum.inl Sum.inr
-    (isSl2Triple_rep_rootGenerator n hn) (rootWeight_inr_eq_neg_inl n)
-    (typeDCartanBezout n) (rootWeight_sum_mul_bezout n hn) A
+    (isSl2Triple_rep_rootGenerator n hn) (rootWeight_inr_eq_neg_inl n) A
 
 /-- Over every commutative ring, adjoining the type-`D` full-spin weight torus to all positive and
 negative numbered simple root subgroups does not enlarge their elementary subgroup. -/
@@ -122,8 +112,7 @@ theorem weightTorusSubsystemSubgroup_univ_eq_elementarySubgroup (A : CommAlgCat.
     (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n)
     (isCartanWeightVector_latticeBasis n hn) (TypeDStd.rootGeneratorWeight n)
     (TypeDStd.lie_serreH_serreRootGenerator n) Sum.inl Sum.inr
-    (isSl2Triple_rep_rootGenerator n hn) (rootWeight_inr_eq_neg_inl n)
-    (typeDCartanBezout n) (rootWeight_sum_mul_bezout n hn) A
+    (isSl2Triple_rep_rootGenerator n hn) (rootWeight_inr_eq_neg_inl n) A
 
 /-! ## Scheme-theoretic generation -/
 

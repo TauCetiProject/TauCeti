@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import TauCeti.Geometry.Manifold.Riemannian.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # Curvature and the Laplacian under constant rescaling of a metric
@@ -23,6 +24,11 @@ Scalar curvature is the metric trace of the Ricci tensor, and the trace for `c g
 the trace for `g`, so
 
 `Scal(c g) = c⁻¹ Scal(g)`.
+
+Sectional curvature is the quotient `⟪R(u, v) v, u⟫ / (|u|²|v|² - ⟪u, v⟫²)`, whose numerator
+scales by `c` and whose denominator scales by `c²`, so `K(c g) = c⁻¹ K(g)`. Hence `c g` has
+constant sectional curvature `k` exactly when `g` has constant sectional curvature `c k`; for
+example the round sphere of radius `r` has sectional curvature `1 / r²`.
 
 The gradient of a function is the dual of its differential through the metric, so
 `grad_{c g} f = c⁻¹ grad_g f`; since the Levi-Civita connections agree, the Laplace–Beltrami
@@ -46,6 +52,12 @@ differentiable fields; this determines the curvature tensor.
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
+* `Bundle.ContMDiffRiemannianMetric.sectionalCurvature_leviCivitaConnection_rescale_const`:
+  `K(c g) = c⁻¹ K(g)`.
+* `Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_const_iff` and its
+  sectional-curvature form
+  `hasConstantSectionalCurvature_leviCivitaConnection_rescale_const_iff`: `c g` has constant
+  curvature `k` exactly when `g` has constant curvature `c k`.
 * `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
   `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
   and `Δ_{c g} = c⁻¹ Δ_g`.
@@ -280,6 +292,63 @@ theorem scalarCurvature_rescale_const (x : M) :
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   rw [scalarCurvature_rescale_eq_sum g _ _ b, ricciTensor_leviCivitaConnection_rescale_const g hc x,
     scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
+
+/-- **Scaling of sectional curvature.** Multiplying a smooth metric by a positive constant `c`
+multiplies the sectional curvature of every pair of tangent vectors by `c⁻¹`. -/
+theorem sectionalCurvature_leviCivitaConnection_rescale_const (x : M) (u v : TangentSpace I x) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).sectionalCurvature
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) x u v) =
+    c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).sectionalCurvature
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) x u v) := by
+  -- The curvature tensor is unchanged, while the numerator `⟪R(u, v) v, u⟫` scales by `c` and the
+  -- Gram determinant by `c²`.
+  simp only [CovariantDerivative.sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
+    inner_riemannianBundle, rescale_inner,
+    curvatureTensor_leviCivitaConnection_rescale_const g hc x]
+  rw [show ∀ a b d : ℝ, c * a * (c * b) - (c * d) ^ 2 = c ^ 2 * (a * b - d ^ 2) by
+      intros; ring]
+  field_simp
+
+/-- Multiplying a smooth metric by a positive constant `c` turns sectional curvature `c * k` at a
+point into sectional curvature `k`. -/
+@[simp]
+theorem hasSectionalCurvatureAt_leviCivitaConnection_rescale_const_iff (x : M) (k : ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).HasSectionalCurvatureAt
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) x k) ↔
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).HasSectionalCurvatureAt
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) x (c * k)) := by
+  simp only [CovariantDerivative.hasSectionalCurvatureAt_iff,
+    sectionalCurvature_leviCivitaConnection_rescale_const g hc, inv_mul_eq_iff_eq_mul₀ hc.ne']
+
+/-- **Scaling of constant sectional curvature.** Multiplying a smooth metric by a positive
+constant `c` turns constant sectional curvature `c * k` into constant sectional curvature `k`. -/
+@[simp]
+theorem hasConstantSectionalCurvature_leviCivitaConnection_rescale_const_iff (k : ℝ) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).HasConstantSectionalCurvature
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) k) ↔
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).HasConstantSectionalCurvature
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) (c * k)) := by
+  simp only [CovariantDerivative.hasConstantSectionalCurvature_iff,
+    hasSectionalCurvatureAt_leviCivitaConnection_rescale_const_iff g hc]
+
+/-- Multiplying a smooth metric by a positive constant `c` turns the constant-curvature tensor
+with parameter `c * κ` into the one with parameter `κ`. -/
+@[simp]
+theorem isConstantCurvatureTensor_rescale_const_iff (κ : ℝ) :
+    (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).IsConstantCurvatureTensor κ ↔
+      g.IsConstantCurvatureTensor (c * κ) := by
+  simp only [isConstantCurvatureTensor_iff, inner_riemannianBundle, rescale_inner,
+    curvatureTensor_leviCivitaConnection_rescale_const g hc]
+  exact forall₄_congr fun x w u v ↦ Eq.congr_right (by module)
 
 end Curvature
 

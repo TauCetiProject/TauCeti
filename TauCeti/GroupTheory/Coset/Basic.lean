@@ -35,6 +35,9 @@ isomorphism of groups, and under translation:
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
+* `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
+  action on a type `α` and `V : Set α` mapped onto itself by `H`, the translates `q.out • V`
+  cover `⋃ g, g • V`, and they are pairwise disjoint when every `g ∉ H` moves `V` off itself.
 * `QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk` and
   `QuotientGroup.quotientRightRelEquivQuotientLeftRel_symm_mk`: the right-to-left-coset
   equivalence sends the right coset of `x` to the left coset of `x⁻¹`, and back.
@@ -234,5 +237,42 @@ theorem mk_mul_out_smul {K : Subgroup G} (a : G) (h : H) (k : H ⧸ K.subgroupOf
   -- `(h • k).out` and `h * k.out` differ by an element of `K.subgroupOf H`, i.e. of `K`.
   simpa [QuotientGroup.eq, Subgroup.mem_subgroupOf, mul_assoc] using
     QuotientGroup.eq.mp (mk_out_smul h k)
+
+section Action
+
+open scoped Pointwise
+
+variable {α : Type*} [MulAction G α] {V : Set α}
+
+/-- The translates of `V` by the chosen coset representatives cover `⋃ g, g • V`, when `H` maps
+`V` onto itself. -/
+@[to_additive /-- The translates of `V` by the chosen coset representatives cover
+`⋃ g, g +ᵥ V`, when `H` maps `V` onto itself. -/]
+theorem iUnion_out_smul_eq (hH : ∀ h ∈ H, h • V = V) :
+    ⋃ q : G ⧸ H, (q.out : G) • V = ⋃ g : G, g • V := by
+  refine Set.Subset.antisymm
+    (Set.iUnion_subset fun q => Set.subset_iUnion (fun g : G => g • V) _) ?_
+  refine Set.iUnion_subset fun g => ?_
+  obtain ⟨h, hh⟩ := mk_out_eq_mul H g
+  -- `g = out * h⁻¹`, and `h⁻¹` maps `V` onto itself.
+  have hg : g • V = ((g : G ⧸ H).out : G) • V := by
+    rw [hh, mul_smul, hH _ h.2]
+  exact hg ▸ Set.subset_iUnion (fun q : G ⧸ H => (q.out : G) • V) _
+
+/-- Translates of `V` by distinct chosen coset representatives are disjoint, when every `g ∉ H`
+moves `V` off itself. -/
+@[to_additive /-- Translates of `V` by distinct chosen coset representatives are disjoint, when
+every `g ∉ H` moves `V` off itself. -/]
+theorem pairwise_disjoint_out_smul (hdisj : ∀ g ∉ H, Disjoint (g • V) V) :
+    Pairwise (Function.onFun Disjoint fun q : G ⧸ H => (q.out : G) • V) := by
+  intro q q' hqq'
+  have hmem : ((q'.out : G))⁻¹ * q.out ∉ H := fun hm => by
+    have h := (QuotientGroup.eq (s := H) (a := q'.out) (b := q.out)).2 hm
+    rw [out_eq', out_eq'] at h
+    exact hqq' h.symm
+  have := (Set.disjoint_smul_set (a := (q'.out : G))).2 (hdisj _ hmem)
+  rwa [smul_smul, mul_inv_cancel_left] at this
+
+end Action
 
 end QuotientGroup

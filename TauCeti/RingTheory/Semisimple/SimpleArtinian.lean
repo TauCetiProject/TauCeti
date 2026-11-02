@@ -35,7 +35,7 @@ is exactly the input the Skolem-Noether theorem needs, in
 
 ## Main results
 
-* `TauCeti.IsIsotypicOfType.of_isSimpleRing`: over a simple Artinian ring, every module is isotypic
+* `IsIsotypicOfType.of_isSimpleRing`: over a simple Artinian ring, every module is isotypic
   of the type of any fixed simple module. This upgrades Mathlib's `IsSimpleRing.isIsotypic`, which
   compares simple submodules of a single module, to a comparison against a fixed simple module,
   which is what lets two different modules be compared with each other.
@@ -54,7 +54,7 @@ and can be cancelled.
 
 The two classification statements ask `R` to be finite-dimensional over `K` and do not also ask it
 to be Artinian: `IsArtinianRing.of_finite` derives that from finite-dimensionality, so callers never
-have to supply it. Only `TauCeti.IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
+have to supply it. Only `IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
 takes `IsArtinianRing R` as a hypothesis.
 
 Simplicity of `R` is not weakened to semisimplicity: over a semisimple ring with more than one block
@@ -72,8 +72,6 @@ public section
 open Module
 
 variable {R : Type*} [Ring R] [IsSimpleRing R]
-
-namespace TauCeti
 
 variable (R) in
 /-- Over a **simple Artinian** ring `R`, every `R`-module is isotypic of the type of any fixed
@@ -94,8 +92,6 @@ theorem IsIsotypicOfType.of_isSimpleRing [IsArtinianRing R] (S : Type*) [AddComm
   have : IsSimpleModule R J := IsSimpleModule.congr eS.symm
   exact ⟨(e.trans (IsSimpleRing.isIsotypic R R I J).some.symm).trans eS.symm⟩
 
-end TauCeti
-
 namespace IsSimpleRing
 
 variable (K : Type*) [Field K] [Algebra K R] [FiniteDimensional K R]
@@ -114,8 +110,8 @@ theorem nonempty_linearEquiv_of_finrank_eq (h : finrank K M = finrank K N) :
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M
   have : Module.Finite R N := Module.Finite.of_restrictScalars_finite K R N
   -- Both modules are powers `Sⁿ` and `Sᵐ` of the same minimal left ideal `S`.
-  obtain ⟨n, ⟨eM⟩⟩ := (TauCeti.IsIsotypicOfType.of_isSimpleRing R ↥S M).linearEquiv_fun
-  obtain ⟨m, ⟨eN⟩⟩ := (TauCeti.IsIsotypicOfType.of_isSimpleRing R ↥S N).linearEquiv_fun
+  obtain ⟨n, ⟨eM⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R ↥S M).linearEquiv_fun
+  obtain ⟨m, ⟨eN⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R ↥S N).linearEquiv_fun
   have : Nontrivial S := IsSimpleModule.nontrivial R S
   -- Comparing `K`-dimensions gives `n * finrank K S = m * finrank K S` with `finrank K S ≠ 0`.
   obtain rfl : n = m := by

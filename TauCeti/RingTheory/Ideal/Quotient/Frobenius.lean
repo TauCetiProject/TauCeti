@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Perfection
 public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -36,6 +37,8 @@ in which `ϖ` becomes a unit, this map is automatically injective.
   `frobeniusModPow`, as divisibility conditions.
 * `TauCeti.frobeniusModPow_injective`: `frobeniusModPow` is injective when `A` is integrally closed
   in an algebra in which `ϖ` is a unit.
+* `TauCeti.surjective_frobenius_modP_iff`: Frobenius on `ModP A p = A ⧸ p` is surjective exactly
+  when every element of `A` is a `p`-th power modulo `p`.
 
 ## References
 
@@ -137,5 +140,20 @@ theorem frobeniusModPow_injective {B : Type*} [CommRing B] [Algebra A B]
     Function.Injective (frobeniusModPow p h) :=
   (frobeniusModPow_injective_iff h).mpr fun _ ↦
     (IsIntegrallyClosedIn.pow_dvd_pow_iff (NeZero.ne p) hϖ).mp
+
+omit [Fact p.Prime] in
+variable (A) in
+/-- Frobenius on `ModP A p = A ⧸ p` is surjective exactly when every element of `A` is a `p`-th
+power modulo `p`. -/
+theorem surjective_frobenius_modP_iff [ExpChar (ModP A p) p] :
+    Function.Surjective (frobenius (ModP A p) p) ↔ ∀ x : A, ∃ y, (p : A) ∣ x - y ^ p := by
+  simp_rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq]
+  refine ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := h (Ideal.Quotient.mk _ x)
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+    exact ⟨y, by rw [← hy, frobenius_def, map_pow]⟩
+  · obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨y, hy⟩ := h x
+    exact ⟨Ideal.Quotient.mk _ y, by rw [frobenius_def, ← map_pow, hy]⟩
 
 end TauCeti

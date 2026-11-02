@@ -31,6 +31,8 @@ The zero module is Cohen–Macaulay by convention: its depth is `⊤` while its 
   ring is Cohen–Macaulay if and only if the dimension of its support is at most its depth.
 * `RingEquiv.isCohenMacaulay_self_iff`: being Cohen–Macaulay over itself is invariant under
   isomorphisms of Noetherian local rings.
+* `Module.isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective`: along a surjective homomorphism
+  of local rings `R → T`, `T` is Cohen–Macaulay over `R` exactly when it is over itself.
 * `IsLocalization.AtPrime.isCohenMacaulay_self_iff`: a localization of a Noetherian ring at a
   prime is Cohen–Macaulay over itself exactly when `Localization.AtPrime p` is.
 * `Module.isCohenMacaulay_quotSMulTop_iff`: for an `M`-regular element `x` of the maximal ideal,
@@ -123,6 +125,27 @@ theorem isCohenMacaulay_self_iff (e : R ≃+* S) :
     e.depth_self_eq, ringKrullDim_eq_of_ringEquiv e]
 
 end RingEquiv
+
+namespace Module
+
+variable {R : Type u} {T : Type v} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R]
+  [CommRing T] [IsLocalRing T] [Algebra R T]
+
+/-- Along a surjective homomorphism of local rings `R → T` with `R` Noetherian, `T` is
+Cohen–Macaulay as an `R`-module exactly when it is Cohen–Macaulay over itself. For instance, a
+quotient `R ⧸ I` that is Cohen–Macaulay as an `R`-module is a Cohen–Macaulay ring. -/
+theorem isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective
+    (hsurj : Function.Surjective (algebraMap R T)) :
+    IsCohenMacaulay R T ↔ IsCohenMacaulay T T := by
+  have : Module.Finite R T := .of_surjective (Algebra.linearMap R T) hsurj
+  have hann : annihilator R T = RingHom.ker (algebraMap R T) := by
+    rw [← comap_annihilator (R := T), annihilator_eq_bot.mpr inferInstance,
+      RingHom.ker_eq_comap_bot]
+  rw [isCohenMacaulay_iff, isCohenMacaulay_iff, depth_eq_depth_of_surjective hsurj,
+    supportDim_self_eq_ringKrullDim, supportDim_eq_ringKrullDim_quotient_annihilator, hann,
+    ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hsurj)]
+
+end Module
 
 namespace IsLocalization.AtPrime
 

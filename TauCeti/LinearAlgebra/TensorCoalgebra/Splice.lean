@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Graded.Insertion
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
 /-!
@@ -39,9 +40,13 @@ block.
 * `TauCeti.ReducedTensorWords.splice_two_succ_eq_splice_two_pred`: deleting an interior letter by
   collapsing it with either neighbour gives the same word.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
+* `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod_insertNth`: collapsing two consecutive
+  letters of a word.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
   splicing a block of the rest.
+* `TauCeti.ReducedTensorWords.splice_mem_filtration`: a block of `b` letters with `d` of them
+  collapsed to one letter has length at most `b + 1 - d`.
 
 ## References
 
@@ -261,6 +266,46 @@ theorem splice_two_succ_eq_splice_two_pred {n p : ℕ} (hp₀ : 0 < p) (hpn : p 
     | omega
     | exact congrArg x rfl
     | exact congrArg x (Fin.ext (by dsimp only; omega))
+
+/-- Collapsing the two letters at positions `p` and `p + 1` of a word of length `n + 2` into `e`
+gives the pure tensor of the remaining `n` letters with `e` inserted at position `p`. -/
+theorem splice_two_eq_of_tprod_insertNth {n : ℕ} (x : Fin (n + 2) → M) (p : Fin (n + 1)) (e : M) :
+    splice R x 0 (n + 2) p 2 e =
+      of R M ⟨n + 1, by omega⟩ (PiTensorProduct.tprod R
+        (Fin.insertNth p e fun i ↦ x (p.castSucc.succAbove (p.succAbove i)))) := by
+  rw [splice_eq_of_tprod R x e (a := 0) (b := n + 2) two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun ⟨j, hj⟩ ↦ ?_
+  rcases lt_trichotomy j p with h | rfl | h
+  · -- Before the collapsed block, the letters are those of `x`.
+    have h₁ : p.succAbove ⟨j, by omega⟩ = Fin.castSucc ⟨j, by omega⟩ :=
+      Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 h)
+    have h₂ : p.castSucc.succAbove (Fin.castSucc ⟨j, by omega⟩) = ⟨0 + j, by omega⟩ := by
+      rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simpa using h))]
+      exact Fin.ext (by simp)
+    rw [show (Fin.cast (by omega) ⟨j, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ from
+      Fin.ext (by simp [h₁]), Fin.insertNth_apply_succAbove, h₁, h₂]
+    simp only [h, dite_true]
+  · simp only [lt_irrefl, dite_false, dite_true]
+    rw [show (Fin.cast (by omega) ⟨(p : ℕ), hj⟩ : Fin (n + 1)) = p from Fin.ext (by simp),
+      Fin.insertNth_apply_same]
+  · -- After the collapsed block, the letters are those of `x`, shifted by one.
+    obtain ⟨j, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
+    have h₁ : p.succAbove ⟨j, by omega⟩ = Fin.succ ⟨j, by omega⟩ :=
+      Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega))
+    have h₂ : p.castSucc.succAbove (Fin.succ ⟨j, by omega⟩) = ⟨0 + (j + 1 + 2 - 1), by omega⟩ := by
+      rw [Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega))]
+      exact Fin.ext (by simp)
+    rw [show (Fin.cast (by omega) ⟨j + 1, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ from
+      Fin.ext (by simp [h₁]), Fin.insertNth_apply_succAbove, h₁, h₂]
+    simp only [show ¬ j + 1 < (p : ℕ) by omega, show j + 1 ≠ (p : ℕ) by omega, dite_false]
+
+/-- Splicing in the negative of a letter negates the spliced word. -/
+@[simp]
+theorem splice_neg (R : Type uR) {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
+    {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
+    splice R x a b p d (-e) = -splice R x a b p d e := by
+  rw [← neg_one_smul R e, splice_smul]
+  exact neg_one_smul R (splice R x a b p d e)
 
 /-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
 letter. -/
@@ -501,6 +546,30 @@ theorem letter_splice_self {n : ℕ} (x : Fin n → M) {a b : ℕ} (e : M) (hb :
     TensorPower.cast_tprod, TauCeti.TensorPower.oneEquiv_tprod]
   simp only [Function.comp_apply]
   rw [dite_eq_right (by simp), dite_eq_left (by simp)]
+
+/-! ### Tensor-length bounds -/
+
+/-- A block of `b` letters with a subblock of `d` letters collapsed to one letter has length at most
+`b + 1 - d`. -/
+theorem splice_mem_filtration {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
+    splice R x a b p d e ∈ filtration R M (b + 1 - d) := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · rw [splice_eq_of_tprod R x e h.1 h.2.1 h.2.2]
+    exact of_mem_filtration R M (k := ⟨b + 1 - d, by omega⟩) le_rfl _
+  · rw [splice_eq_zero R x e h]
+    exact zero_mem _
+
+/-- A summand of a Taylor expansion of a word of length at most `n + j`, by a map `F` vanishing on
+the words of length at most `j`, has length at most `n`: either its collapsed block has at most `j`
+letters and `F` kills it, or it collapses more than `j` letters to one. -/
+theorem splice_apply_subword_mem_filtration (F : ReducedTensorWords R M →ₗ[R] M) {j n : ℕ}
+    (hF : ∀ z ∈ filtration R M j, F z = 0) {m : ℕ} (y : Fin m → M) {b : ℕ} (hb : b ≤ n + j)
+    {l : ℕ} (x : Fin l → M) (a c p d : ℕ) :
+    splice R y a b p d (F (subword R x c d)) ∈ filtration R M n := by
+  by_cases hdj : d ≤ j
+  · rw [hF _ (subword_mem_filtration R M x c hdj), splice_zero]
+    exact zero_mem _
+  · exact filtration_monotone R M (by omega) (splice_mem_filtration R y a b p d _)
 
 end ReducedTensorWords
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.RingTheory.TensorProduct.Maps
 public import TauCeti.RingTheory.WeilRestriction.Basic
+import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
 
 /-!
 # Weil restriction of affine group schemes
@@ -32,7 +33,8 @@ convolution products on both sides (`WeilRestriction.pointsMulEquiv`):
 
 Every Hopf axiom is an equality of algebra maps out of `W`, which is checked on points by
 `WeilRestriction.hom_ext`, where it becomes a group law in `G(B ⊗[A] T)`. The isomorphism
-`pointsMulEquiv` is natural in `T` (`WeilRestriction.pointsMulEquiv_naturality`).
+`pointsMulEquiv` is natural in `T` (`WeilRestriction.pointsMulEquiv_naturality`). The same
+transport shows that the Weil restriction of a commutative group is commutative.
 
 ## Main declarations
 
@@ -46,6 +48,8 @@ Every Hopf axiom is an equality of algebra maps out of `W`, which is checked on 
   point, and the antipode inverts points.
 * `TauCeti.Algebra.WeilRestriction.pointsMulEquiv`: the monoid (for Hopf algebras, group)
   isomorphism `(Res_{B/A} G)(T) ≃* G(B ⊗[A] T)`.
+* `TauCeti.Algebra.WeilRestriction.instIsCocomm`: the Weil restriction of a cocommutative
+  bialgebra is cocommutative.
 
 ## References
 
@@ -220,6 +224,15 @@ theorem pointsMulEquiv_naturality {T' : Type*} [CommRing T'] [Algebra A T'] (h :
     rw [pointsMulEquiv_apply, ofConv_toConv, ofConv_toConv, homEquiv_comp, pointsMulEquiv_apply]
 
 end Points
+
+/-- **The Weil restriction of a commutative affine monoid scheme is commutative.** If `H` is
+cocommutative, then so is its Weil restriction: the points of `Res_{B/A} G` over `T` are the
+points of `G` over `B ⊗[A] T`, which commute. -/
+instance instIsCocomm [Coalgebra.IsCocomm B H] : Coalgebra.IsCocomm A (WeilRestriction A B H) := by
+  rw [← HopfAlgebra.commute_includeLeft_includeRight_iff_isCocomm]
+  let e := pointsMulEquiv A B H (WeilRestriction A B H ⊗[A] WeilRestriction A B H)
+  simpa using (Commute.all (e (toConv Algebra.TensorProduct.includeLeft))
+    (e (toConv Algebra.TensorProduct.includeRight))).map e.symm
 
 end Bialgebra
 

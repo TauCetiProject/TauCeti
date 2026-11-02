@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.GradedDimension
 public import TauCeti.Algebra.Module.ProjectiveCover.Multiplicity
+import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 import TauCeti.RingTheory.Idempotents.Hom
 
 /-!
@@ -45,16 +46,7 @@ theorem smulGradedDimension_eq_C_finrank_end_of_isProjectiveCover
     (hconc : ∀ p, p ≠ 0 → S.grading.piece p = ⊥)
     {f : (Ideal.span {e} : Ideal A) →ₗ[A] S} (hf : IsProjectiveCover f) :
     S.smulGradedDimension e = C (Module.finrank k (Module.End A S) : ℤ) := by
-  have htop : S.grading.piece 0 = ⊤ := by
-    apply top_unique
-    rw [← S.grading.isInternal.submodule_iSup_eq_top]
-    exact iSup_le fun p ↦ by
-      by_cases hp : p = 0
-      · subst p
-        exact le_rfl
-      · rw [hconc p hp]
-        exact bot_le
-  rw [S.smulGradedDimension_eq_C_of_concentrated e hconc, htop,
+  rw [S.smulGradedDimension_eq_C_of_concentrated e hconc, piece_eq_top_of_concentrated hconc,
     ← (he.spanSingletonHomEquivSMulTop (k := k)).finrank_eq,
     hf.finrank_linearMap_eq_finrank_end (LinearEquiv.refl A S)]
 

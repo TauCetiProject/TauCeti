@@ -11,6 +11,10 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 public import Mathlib.RingTheory.Polynomial.Eisenstein.IsIntegral
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 
+import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.NumberTheory.Basic
+import TauCeti.RingTheory.Polynomial.Distinguished
+
 /-!
 # The shifted prime-power cyclotomic polynomials
 
@@ -43,6 +47,11 @@ available in `O⟦T⟧`. When `p` is a prime element of a domain `R` (for instan
   every ideal containing `p`.
 * `Polynomial.irreducible_cyclotomic_prime_pow_comp_X_add_one`: over a domain in which `p` is
   prime, `ξ_n` is irreducible.
+* `Polynomial.sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub`: if `p ∣ t ^ p ^ k`, then
+  `ξ_{n+1}(t) ≡ p` modulo `p ^ 2` for every `n > k`.
+* `Polynomial.IsDistinguishedAt.sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub`: at a root
+  `t` of a polynomial `F` distinguished at `I` with `I ^ e ⊆ (p)`, `ξ_{n+1}(t) ≡ p` modulo `p ^ 2`
+  for `n > deg F * e`.
 
 ## References
 
@@ -150,4 +159,50 @@ theorem irreducible_cyclotomic_prime_pow_comp_X_add_one [IsDomain R] (hpR : Prim
       (monic_cyclotomic_comp_X_add_one _).isPrimitive
       (by simpa using Nat.totient_pos.2 (pow_pos hp.out.pos _))
 
+/-- **`ξ_{n+1}(t) ≡ p` modulo `p ^ 2` once `t ^ p ^ k` is divisible by `p` and `n > k`.**
+
+On a ring in which `p` lies in the Jacobson radical, this says that `ξ_{n+1}(t)` is `p` times a
+unit; this is how the cyclotomic factors act on a finite free quotient `O⟦T⟧ ⧸ (F)` of the Iwasawa
+algebra by a distinguished polynomial `F` (NSW Lemma 5.3.18). -/
+theorem sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub {t : R} {k n : ℕ}
+    (ht : (p : R) ∣ t ^ p ^ k) (hkn : k < n) :
+    (p : R) ^ 2 ∣ ((cyclotomic (p ^ (n + 1)) R).comp (X + 1)).eval t - p := by
+  have hk : (p : R) ∣ (1 + t) ^ p ^ k - 1 := by
+    obtain ⟨r, hr⟩ := exists_add_pow_prime_pow_eq hp.out 1 t k
+    have hring : 1 ^ p ^ k + t ^ p ^ k + p * 1 * t * r - 1 = t ^ p ^ k + p * (t * r) := by ring
+    rw [hr, hring]
+    exact dvd_add ht (dvd_mul_right _ _)
+  have hn : (p : R) ^ 2 ∣ (1 + t) ^ p ^ n - 1 := by
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_lt hkn
+    have h := dvd_sub_pow_of_dvd_sub hk (j + 1)
+    have hkj : k + (j + 1) = k + j + 1 := by omega
+    rw [one_pow, ← pow_mul, ← pow_add, hkj] at h
+    exact (pow_dvd_pow _ (by omega)).trans h
+  have hsum : ((cyclotomic (p ^ (n + 1)) R).comp (X + 1)).eval t - p =
+      ∑ i ∈ range p, (((1 + t) ^ p ^ n) ^ i - 1) := by
+    rw [cyclotomic_prime_pow_comp_X_add_one_eq_sum, ← coe_evalRingHom, map_sum]
+    simp [sum_sub_distrib, ← pow_mul, mul_comm]
+  rw [hsum]
+  exact dvd_sum fun i _ ↦ hn.trans (sub_one_dvd_pow_sub_one _ i)
+
 end Polynomial
+
+namespace Polynomial.IsDistinguishedAt
+
+variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ} [hp : Fact p.Prime]
+
+/-- If `F` is distinguished at `I` and `I ^ e ⊆ (p)`, then at every root `t` of `F` in an
+`O`-algebra, `ξ_{n+1}(t) = Φ_{p ^ (n + 1)}(1 + t)` is congruent to `p` modulo `p ^ 2` for every
+`n > deg F * e`. -/
+theorem sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub (hF : F.IsDistinguishedAt I)
+    (hI : I ^ e ≤ Ideal.span {(p : O)}) {S : Type*} [CommRing S] [Algebra O S] {t : S}
+    (ht : aeval t F = 0) {n : ℕ} (hn : F.natDegree * e < n) :
+    (p : S) ^ 2 ∣ aeval t ((cyclotomic (p ^ (n + 1)) O).comp (X + 1)) - p := by
+  have hdvd : (p : S) ∣ t ^ p ^ (F.natDegree * e) :=
+    (hF.natCast_dvd_pow_of_aeval_eq_zero hI ht).trans
+      (pow_dvd_pow _ (Nat.lt_pow_self hp.out.one_lt).le)
+  rw [aeval_def, eval₂_eq_eval_map, Polynomial.map_comp, map_cyclotomic, Polynomial.map_add,
+    map_X, Polynomial.map_one]
+  exact sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub p hdvd hn
+
+end Polynomial.IsDistinguishedAt

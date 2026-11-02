@@ -90,7 +90,7 @@ theorem argumentPrinciple_windingNumber {ord : ℂ → ℤ} (hU : IsOpen U)
     (hoff : ∀ z ∈ U, z ∉ S → AnalyticAt ℂ f z ∧ f z ≠ 0)
     (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s)
     (hord : ∀ s ∈ S, s ∈ U → meromorphicOrderAt f s = (ord s : WithTop ℤ))
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ [[a, b]], γ t ∉ (↑S : Set ℂ)) (hnull : Contour.IsNullHomologous γ a b U) :
     Contour.windingNumber (f ∘ γ) a b 0
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (ord z : ℂ) := by
@@ -115,7 +115,7 @@ is the pole-free specialisation of `TauCeti.argumentPrinciple_windingNumber`, wi
 off by `analyticOrderNatAt` instead of supplied by the caller. -/
 theorem argumentPrinciple_windingNumber_of_analyticOnNhd (hU : IsOpen U) (hf : AnalyticOnNhd ℂ f U)
     (hzeros : ∀ z ∈ U, f z = 0 → z ∈ S)
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ [[a, b]], f (γ t) ≠ 0) (hnull : Contour.IsNullHomologous γ a b U) :
     Contour.windingNumber (f ∘ γ) a b 0
       = ∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ) := by

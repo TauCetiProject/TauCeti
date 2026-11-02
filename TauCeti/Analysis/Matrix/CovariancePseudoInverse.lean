@@ -142,6 +142,18 @@ theorem covariancePseudoInverse_of_posDef {C : Matrix ι ι ℝ} (hC : C.PosDef)
   rw [covariancePseudoInverse_of_posSemidef hC.posSemidef, nonsing_inv_eq_ringInverse]
   exact cfc_ringInverse_id C hC.isUnit hC.isHermitian.isSelfAdjoint
 
+/-- On one coordinate, the pseudoinverse of a valid covariance agrees with the totalized
+ordinary inverse, including zero variance. -/
+theorem covariancePseudoInverse_eq_inv_of_unique [Unique ι] {C : Matrix ι ι ℝ}
+    (hC : C.PosSemidef) : C.covariancePseudoInverse = C⁻¹ := by
+  by_cases h0 : C default default = 0
+  · have hzero : C = 0 := by
+      ext i j
+      simpa only [Unique.eq_default i, Unique.eq_default j, Matrix.zero_apply] using h0
+    simp [hzero]
+  · exact covariancePseudoInverse_of_posDef (hC.posDef_iff_det_ne_zero.mpr
+      (by simpa only [det_unique] using h0))
+
 /-- Inverting the covariance pseudoinverse recovers every valid covariance. -/
 @[simp]
 theorem covariancePseudoInverse_covariancePseudoInverse {C : Matrix ι ι ℝ}
