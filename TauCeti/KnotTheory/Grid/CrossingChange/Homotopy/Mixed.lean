@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Recut
 import TauCeti.Data.Finset.Basic
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.MixedSideRecut
-import TauCeti.KnotTheory.Grid.Unblocked.OColumns
 
 /-!
 # Mixed-side pentagon pairs of a crossing change
