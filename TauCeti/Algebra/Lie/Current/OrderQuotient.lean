@@ -10,16 +10,16 @@ public import TauCeti.Algebra.Lie.Current.LeftIdeal
 /-!
 # Currents in congruence quotients
 
-The quotient `Q_N = U / I_N` of a level enveloping algebra is a left module. Its degree-one
-current subspace is exactly `L((t)) / a_N`: the current-generator map induces an injective
-linear map from this quotient when `N ≥ 0`. This is the first part of the PBW description
+The quotient `Q_N = U / I_N` of a level enveloping algebra is a left module. Over a field, its
+degree-one current subspace is exactly `L((t)) / a_N` when `N ≥ 0`: the current-generator map
+induces an injective linear map from this quotient. This is the first part of the PBW description
 of the congruence-induced module, and detects currents acting nontrivially on its cyclic vector.
 
-Over a characteristic-zero field at positive order, `I_N` is two-sided precisely when `L`
+Over any field at nonnegative order, `I_N` is two-sided precisely when `L`
 is abelian and the central term `a • Φ` vanishes. For a nonabelian coefficient Lie algebra
 over any field it is never two-sided, even at level zero. Thus these completion stages
 cannot be treated as quotient rings.
-The obstruction is already visible on a pair of modes of orders `N` and `-N`.
+The obstructions are visible on pairs of Laurent modes.
 
 The degree-one calculation uses the induced-module PBW theorem
 `TauCeti.UniversalEnvelopingAlgebra.ι_sub_algebraMap_mem_span_range_ι_sub_algebraMap_iff`.
@@ -49,8 +49,9 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 local notation "C" => currentAlgebra R L
 local notation "U" => CentralQuotient R (centralElement Φ hΦ hΦs) a
 
-/-- The current subspace of a congruence quotient, obtained by factoring the current-generator
-map through currents modulo the prescribed order submodule. -/
+/-- The linear map induced by the current generators on currents modulo the prescribed order
+submodule. Over a field and at nonnegative order, it identifies the source with the current
+subspace of the congruence quotient. -/
 def orderQuotientCurrent (N : ℤ) :
     C ⧸ orderSubmodule R L N →ₗ[R] U ⧸ orderLeftIdeal Φ hΦ hΦs a N :=
   (orderSubmodule R L N).liftQ
@@ -64,22 +65,6 @@ theorem orderQuotientCurrent_mk (N : ℤ) (u : C) :
     orderQuotientCurrent Φ hΦ hΦs a N (Submodule.Quotient.mk u) =
       Submodule.Quotient.mk (envelopingι Φ hΦ hΦs a u) :=
   (rfl)
-
-private theorem commute_envelopingι_of_isLieAbelian (hL : IsLieAbelian L)
-    (hform : a • Φ = 0) (u v : C) :
-    Commute (envelopingι Φ hΦ hΦs a u) (envelopingι Φ hΦ hΦs a v) := by
-  induction u using TensorProduct.inductionOn with
-  | add u u' hu hu' => simpa only [map_add] using hu.add_left hu'
-  | tmul f x =>
-    induction v using TensorProduct.inductionOn with
-    | add v v' hv hv' => simpa only [map_add] using hv.add_right hv'
-    | tmul g y =>
-      have hxy : a * Φ x y = 0 := by
-        simpa using congrArg (fun B : LinearMap.BilinForm R L ↦ B x y) hform
-      apply sub_eq_zero.mp
-      rw [envelopingι_mul_sub_mul]
-      simp [LieAlgebra.ExtendScalars.bracket_tmul, hL.trivial, residuePairing_tmul,
-        mul_left_comm a, hxy]
 
 /-- For an abelian coefficient Lie algebra with vanishing central term, every congruence
 ideal is two-sided. No restriction on the order or the characteristic is needed. -/
@@ -128,43 +113,51 @@ private theorem commutator_relations_of_isTwoSided {N : ℤ} (hN : 0 ≤ N)
     ⁅u, v⁆ (-(b * residuePairing K L Ψ u v))).mp (by simpa using hc)
   exact ⟨h.1, neg_eq_zero.mp h.2⟩
 
-/-- A two-sided congruence ideal at positive order forces the coefficient Lie algebra to
+/-- A two-sided congruence ideal at nonnegative order forces the coefficient Lie algebra to
 be abelian. The conclusion is independent of the central value and characteristic. -/
-theorem isLieAbelian_of_isTwoSided_orderLeftIdeal {N : ℤ} (hN : 0 < N)
+theorem isLieAbelian_of_isTwoSided_orderLeftIdeal {N : ℤ} (hN : 0 ≤ N)
     (hI : Ideal.IsTwoSided (orderLeftIdeal Ψ hΨ hΨs b N)) : IsLieAbelian L := by
   refine ⟨fun x y ↦ ?_⟩
   have hu : HahnSeries.single N (1 : K) ⊗ₜ[K] x ∈ orderSubmodule K L N :=
     tmul_mem_orderSubmodule K L N HahnSeries.orderTop_single_le x
-  have hc := (commutator_relations_of_isTwoSided Ψ hΨ hΨs b hN.le hI hu
-    (HahnSeries.single (-N) 1 ⊗ₜ[K] y)).1
-  simpa [LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single] using
-    coeff_eq_zero_of_mem_orderSubmodule K L hc hN
+  have hc := (commutator_relations_of_isTwoSided Ψ hΨ hΨs b hN hI hu
+    (HahnSeries.single (-N - 1) 1 ⊗ₜ[K] y)).1
+  have hsum : N + (-N - 1) = -1 := by omega
+  have hn : (-1 : ℤ) < N := by omega
+  simpa [LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single, hsum] using
+    coeff_eq_zero_of_mem_orderSubmodule K L hc hn
 
-/-- Two-sidedness also forces the level times the invariant form to vanish, in characteristic
-zero. This rules out two-sided congruence ideals for nonzero Heisenberg central terms. -/
-theorem smul_form_eq_zero_of_isTwoSided_orderLeftIdeal [CharZero K] {N : ℤ} (hN : 0 < N)
+/-- Two-sidedness also forces the level times the invariant form to vanish, in every
+characteristic. This rules out two-sided congruence ideals for nonzero Heisenberg central terms. -/
+theorem smul_form_eq_zero_of_isTwoSided_orderLeftIdeal {N : ℤ} (hN : 0 ≤ N)
     (hI : Ideal.IsTwoSided (orderLeftIdeal Ψ hΨ hΨs b N)) : b • Ψ = 0 := by
   ext x y
-  have hu : HahnSeries.single N (1 : K) ⊗ₜ[K] x ∈ orderSubmodule K L N :=
-    tmul_mem_orderSubmodule K L N HahnSeries.orderTop_single_le x
-  have hc := (commutator_relations_of_isTwoSided Ψ hΨ hΨs b hN.le hI hu
-    (HahnSeries.single (-N) 1 ⊗ₜ[K] y)).2
-  have hcast : (N : K) ≠ 0 := Int.cast_ne_zero.mpr (ne_of_gt hN)
-  simpa [residuePairing_tmul, LaurentSeries.residuePairing_single, zsmul_eq_mul,
-    mul_assoc, mul_left_comm, hcast] using hc
+  have hmode (n : ℤ) (hn : N ≤ n) : b * (-(n : K) * Ψ x y) = 0 := by
+    have hu : HahnSeries.single n (1 : K) ⊗ₜ[K] x ∈ orderSubmodule K L N :=
+      tmul_mem_orderSubmodule K L N
+        (le_trans (by exact_mod_cast hn) HahnSeries.orderTop_single_le) x
+    have hc := (commutator_relations_of_isTwoSided Ψ hΨ hΨs b hN hI hu
+      (HahnSeries.single (-n) 1 ⊗ₜ[K] y)).2
+    simpa [residuePairing_tmul, LaurentSeries.residuePairing_single, zsmul_eq_mul] using hc
+  -- Subtract consecutive mode relations to avoid dividing by a mode index.
+  have h₀ := hmode N le_rfl
+  have h₁ := hmode (N + 1) (by omega)
+  simp only [Int.cast_add, Int.cast_one] at h₁
+  simp only [LinearMap.smul_apply, LinearMap.zero_apply, smul_eq_mul]
+  linear_combination h₀ - h₁
 
-/-- **Exactly when a congruence ideal is two-sided.** At positive order in characteristic
-zero, this happens precisely for abelian currents with zero central commutator term. -/
+/-- **Exactly when a congruence ideal is two-sided.** At nonnegative order over a field,
+this happens precisely for abelian currents with zero central commutator term. -/
 @[simp]
-theorem isTwoSided_orderLeftIdeal_iff [CharZero K] {N : ℤ} (hN : 0 < N) :
+theorem isTwoSided_orderLeftIdeal_iff {N : ℤ} (hN : 0 ≤ N) :
     Ideal.IsTwoSided (orderLeftIdeal Ψ hΨ hΨs b N) ↔ IsLieAbelian L ∧ b • Ψ = 0 :=
   ⟨fun hI ↦ ⟨isLieAbelian_of_isTwoSided_orderLeftIdeal Ψ hΨ hΨs b hN hI,
     smul_form_eq_zero_of_isTwoSided_orderLeftIdeal Ψ hΨ hΨs b hN hI⟩,
     fun ⟨hL, hform⟩ ↦ isTwoSided_orderLeftIdeal Ψ hΨ hΨs b hL hform N⟩
 
-/-- For nonabelian coefficient Lie algebras, congruence quotients of positive order are
+/-- For nonabelian coefficient Lie algebras, congruence quotients of nonnegative order are
 module quotients rather than quotient rings, including at central value zero. -/
-theorem not_isTwoSided_orderLeftIdeal (hL : ¬ IsLieAbelian L) {N : ℤ} (hN : 0 < N) :
+theorem not_isTwoSided_orderLeftIdeal (hL : ¬ IsLieAbelian L) {N : ℤ} (hN : 0 ≤ N) :
     ¬ Ideal.IsTwoSided (orderLeftIdeal Ψ hΨ hΨs b N) :=
   fun hI ↦ hL (isLieAbelian_of_isTwoSided_orderLeftIdeal Ψ hΨ hΨs b hN hI)
 

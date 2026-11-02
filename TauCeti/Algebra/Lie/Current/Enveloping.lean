@@ -124,6 +124,24 @@ theorem envelopingι_mul_sub_mul (u v : C) :
   rw [envelopingι_apply, envelopingι_apply, ← h, bracket_ofTwoCocycle]
   simp
 
+/-- Current generators commute when the coefficient Lie algebra is abelian and the central
+commutator term vanishes. -/
+theorem commute_envelopingι_of_isLieAbelian (hL : IsLieAbelian L)
+    (hform : a • Φ = 0) (u v : C) :
+    Commute (envelopingι Φ hΦ hΦs a u) (envelopingι Φ hΦ hΦs a v) := by
+  induction u using TensorProduct.inductionOn with
+  | add u u' hu hu' => simpa only [map_add] using hu.add_left hu'
+  | tmul f x =>
+    induction v using TensorProduct.inductionOn with
+    | add v v' hv hv' => simpa only [map_add] using hv.add_right hv'
+    | tmul g y =>
+      have hxy : a * Φ x y = 0 := by
+        simpa using congrArg (fun B : LinearMap.BilinForm R L ↦ B x y) hform
+      apply sub_eq_zero.mp
+      rw [envelopingι_mul_sub_mul]
+      simp [LieAlgebra.ExtendScalars.bracket_tmul, hL.trivial, residuePairing_tmul,
+        mul_left_comm a, hxy]
+
 /-- The current generators generate `U(ĝ) / (ι K - a)` as an `R`-algebra. -/
 theorem adjoin_range_envelopingι : Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) = ⊤ := by
   rw [eq_top_iff]
