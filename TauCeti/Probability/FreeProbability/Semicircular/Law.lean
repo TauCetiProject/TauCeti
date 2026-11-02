@@ -51,7 +51,8 @@ semicircle law of variance `v` with respect to `φ` if and only if it is semicir
 theorem law_eq_semicircleReal_iff (ha : IsSelfAdjoint a) (v : ℝ≥0) :
     law φ a = semicircleReal 0 v ↔ IsSemicircular φ.toLinearMap a ((v : ℝ) : ℂ) := by
   rw [eq_comm, eq_law_iff_forall_integral_pow ha isCompact_Icc
-      (by simpa using semicircleReal_compl_Icc 0 v),
+      (by simpa only [zero_sub, zero_add, Set.ofPred_mem_eq] using
+        mem_ae_iff.1 (ae_mem_Icc_semicircleReal 0 v)),
     isSemicircular_iff_apply_pow]
   refine forall_congr' fun n => ?_
   obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n <;> simp [eq_comm]
@@ -70,6 +71,7 @@ theorem isSemicircular_integralPositiveLinearMap_semicircleReal (v : ℝ≥0) :
         (ContinuousMap.id ℝ)).realToRCLike ℂ) ((v : ℝ) : ℂ) :=
   (PositiveLinearMap.law_eq_semicircleReal_iff _ (ContinuousMap.isSelfAdjoint_realToRCLike ℂ) v).1
     (PositiveLinearMap.law_integralPositiveLinearMap_comap_restrict_id
-      (by simpa using semicircleReal_compl_Icc 0 v))
+      (by simpa only [zero_sub, zero_add, Set.ofPred_mem_eq] using
+        mem_ae_iff.1 (ae_mem_Icc_semicircleReal 0 v)))
 
 end TauCeti
