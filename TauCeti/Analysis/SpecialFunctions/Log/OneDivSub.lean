@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
+import TauCeti.Topology.Algebra.Order.Field
+
 /-!
 # The divergence of `log (1 / (s - a))` as `s` decreases to `a`
 
@@ -43,9 +45,7 @@ open Filter Topology
 driving the Dirichlet density asymptotics. -/
 theorem tendsto_log_one_div_sub_atTop (a : ℝ) :
     Tendsto (fun s : ℝ ↦ Real.log (1 / (s - a))) (𝓝[>] a) atTop := by
-  simp only [one_div]
-  exact tendsto_log_atTop.comp <| tendsto_inv_nhdsGT_zero.comp <| tendsto_nhdsWithin_iff.2
-    ⟨tendsto_sub_nhds_zero_iff.2 <| tendsto_id'.2 nhdsWithin_le_nhds,
-      eventually_nhdsWithin_of_forall fun _ ↦ by simp⟩
+  simpa only [one_div, pow_one, Function.comp_def] using
+    tendsto_log_atTop.comp (TauCeti.tendsto_inv_pow_sub_nhdsGT (a := a) one_ne_zero)
 
 end Real
