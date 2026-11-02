@@ -5,23 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor.Basic
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
-# Inverting the chiral Clifford symbol
+# Comparing the chiral Dirac symbol conventions
 
-Clifford multiplication by a nonisotropic vector identifies opposite chirality spaces. Its
-inverse is `c(v) / Q(v)`, with the opposite source and target. For the geometric convention
-`Q(v) = -‖v‖²` this is `-c(v) / ‖v‖²`. No irreducibility or rank-two assumption is needed.
-
-For finite-dimensional complex Clifford modules we also construct the operator-valued homotopy
+For finite-dimensional complex Clifford modules we construct the operator-valued homotopy
 `exp(π t i / 2) c(v)`. At `t = 0` this is the differential-symbol convention `c(v)`, and at
 `t = 1` it is the Fourier-symbol convention `i c(v)`. For `Q(v) = -‖v‖²`, every intermediate map
 is invertible off the zero section, with an explicit inverse between opposite chirality spaces.
-Thus changing the scalar convention preserves the chiral symbol class. This is pointwise symbol
-algebra, not a construction of a differential operator or its analytic index.
+This is the pointwise input for showing that the scalar convention does not change the chiral
+symbol class, not a construction of a differential operator or its analytic index.
+
+The inverse uses `CliffordAlgebra.halfSpinCliffordMulEquiv`: Clifford multiplication by a
+nonisotropic vector has inverse `c(v) / Q(v)`, or `-c(v) / ‖v‖²` for the negative metric
+convention. No irreducibility or rank-two assumption is needed.
 
 ## References
 
@@ -42,68 +41,10 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fact (finrank ℝ V = 4)] {Q : QuadraticForm ℝ V}
   (o : Orientation ℝ V (Fin 4))
 
-section Algebra
-
-variable {W : Type*} [AddCommGroup W] [Module ℂ W]
-  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
-
-/-- Clifford multiplication by a nonisotropic vector, as an equivalence between opposite
-chirality spaces. The inverse is Clifford multiplication divided by `Q v`. -/
-def halfSpinCliffordMulEquiv {v : V} (hv : Q v ≠ 0) :
-    eigenspace (ρ (chirality Q o)) ε ≃ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-ε) where
-  toLinearMap := halfSpinCliffordMul o ρ ε v
-  invFun χ := ⟨((Q v : ℂ)⁻¹) • ρ (ι Q v) χ, by
-    apply Submodule.smul_mem
-    simpa only [neg_neg] using map_ι_apply_mem_eigenspace_chirality_neg o χ.property v⟩
-  left_inv ψ := by
-    apply Subtype.ext
-    simp only [LinearMap.toFun_eq_coe, coe_halfSpinCliffordMul_apply_apply,
-      map_ι_apply_map_ι_apply, smul_smul]
-    rw [inv_mul_cancel₀ (by exact_mod_cast hv), one_smul]
-  right_inv χ := by
-    apply Subtype.ext
-    simp only [LinearMap.toFun_eq_coe, coe_halfSpinCliffordMul_apply_apply,
-      map_smul, map_ι_apply_map_ι_apply, smul_smul]
-    rw [inv_mul_cancel₀ (by exact_mod_cast hv), one_smul]
-
-/-- The chiral equivalence has the original Clifford multiplication as its forward map. -/
-@[simp]
-theorem halfSpinCliffordMulEquiv_toLinearMap {v : V} (hv : Q v ≠ 0) :
-    (halfSpinCliffordMulEquiv o ρ ε hv).toLinearMap = halfSpinCliffordMul o ρ ε v :=
-  (rfl)
-
-/-- The chiral equivalence acts by Clifford multiplication on the ambient module. -/
-@[simp]
-theorem coe_halfSpinCliffordMulEquiv_apply {v : V} (hv : Q v ≠ 0)
-    (ψ : eigenspace (ρ (chirality Q o)) ε) :
-    (halfSpinCliffordMulEquiv o ρ ε hv ψ : W) = ρ (ι Q v) ψ :=
-  coe_halfSpinCliffordMul_apply_apply o (ρ := ρ) ε v ψ
-
-/-- The inverse chiral symbol has opposite source and target and is `c(v) / Q(v)`. -/
-@[simp]
-theorem coe_halfSpinCliffordMulEquiv_symm_apply {v : V} (hv : Q v ≠ 0)
-    (χ : eigenspace (ρ (chirality Q o)) (-ε)) :
-    ((halfSpinCliffordMulEquiv o ρ ε hv).symm χ : W) =
-      (Q v : ℂ)⁻¹ • ρ (ι Q v) χ :=
-  (rfl)
-
-/-- With the negative metric convention, the inverse chiral symbol is `-c(v) / ‖v‖²`. -/
-theorem coe_halfSpinCliffordMulEquiv_symm_apply_of_neg_norm_sq
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {v : V} (hv : v ≠ 0)
-    (χ : eigenspace (ρ (chirality Q o)) (-ε)) :
-    ((halfSpinCliffordMulEquiv o ρ ε (v := v) (by simpa [hQ] using hv)).symm χ : W) =
-      -((‖v‖ : ℂ) ^ 2)⁻¹ • ρ (ι Q v) χ := by
-  simp [hQ]
-
-end Algebra
-
 section Topology
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
   [FiniteDimensional ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
-
-/-- The dimension hypothesis gives the vector space its finite-dimensional topology. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 /-- The chiral symbol homotopy from `c(v)` to `i c(v)`, in the operator-norm topology. -/
 def halfSpinSymbolHomotopy (t : ℝ) (v : V) :
@@ -136,20 +77,14 @@ theorem halfSpinSymbolHomotopy_one (v : V) :
 /-- The symbol homotopy is jointly continuous in its parameter and vector. -/
 theorem continuous_halfSpinSymbolHomotopy :
     Continuous (fun p : ℝ × V ↦ halfSpinSymbolHomotopy o ρ ε p.1 p.2) := by
-  have : ContinuousSMul ℝ (eigenspace (ρ (chirality Q o)) ε →L[ℂ]
-      eigenspace (ρ (chirality Q o)) (-ε)) := IsScalarTower.continuousSMul ℂ
-  let L : V →ₗ[ℝ] (eigenspace (ρ (chirality Q o)) ε →L[ℂ]
-      eigenspace (ρ (chirality Q o)) (-ε)) :=
-    { toFun := fun v ↦ (halfSpinCliffordMul o ρ ε v).toContinuousLinearMap
-      map_add' := fun v w ↦ by ext ψ; simp
-      map_smul' := fun r v ↦ by ext ψ; simp }
   exact (Complex.continuous_exp.comp
     ((Complex.continuous_ofReal.comp (continuous_const.mul continuous_fst)).mul
-      continuous_const)).smul (L.continuous_of_finiteDimensional.comp continuous_snd)
+      continuous_const)).smul
+        ((continuous_halfSpinCliffordMul_toContinuousLinearMap o ρ ε).comp continuous_snd)
 
 /-- The symbol homotopy remains zero on the zero section. -/
 @[simp]
-theorem halfSpinSymbolHomotopy_apply_zero (t : ℝ) :
+theorem halfSpinSymbolHomotopy_zero_right (t : ℝ) :
     halfSpinSymbolHomotopy o ρ ε t 0 = 0 := by
   ext ψ
   simp
@@ -162,13 +97,21 @@ def halfSpinSymbolHomotopyEquiv (t : ℝ) {v : V} (hv : Q v ≠ 0) :
       (Complex.exp (((Real.pi / 2 * t : ℝ) : ℂ) * Complex.I))
       (Complex.exp_ne_zero _))).toContinuousLinearEquiv
 
+/-- The equivalence acts by the phase-scaled Clifford multiplication on the ambient module. -/
+@[simp]
+theorem coe_halfSpinSymbolHomotopyEquiv_apply (t : ℝ) {v : V} (hv : Q v ≠ 0)
+    (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    (halfSpinSymbolHomotopyEquiv o ρ ε t hv ψ : W) =
+      Complex.exp (((Real.pi / 2 * t : ℝ) : ℂ) * Complex.I) • ρ (ι Q v) ψ := by
+  simp [halfSpinSymbolHomotopyEquiv]
+
 /-- The equivalence off the isotropic cone has the specified homotopy as its forward map. -/
 @[simp]
 theorem halfSpinSymbolHomotopyEquiv_toContinuousLinearMap (t : ℝ) {v : V} (hv : Q v ≠ 0) :
     (halfSpinSymbolHomotopyEquiv o ρ ε t hv).toContinuousLinearMap =
       halfSpinSymbolHomotopy o ρ ε t v := by
   ext ψ
-  rfl
+  simp
 
 /-- All intermediate symbols are invertible at every nonisotropic vector. -/
 theorem halfSpinSymbolHomotopy_bijective (t : ℝ) {v : V} (hv : Q v ≠ 0) :
@@ -199,9 +142,8 @@ theorem norm_halfSpinSymbolHomotopy_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (t : ℝ) (v : V)
     (ψ : eigenspace (ρ (chirality Q o)) ε) :
     ‖halfSpinSymbolHomotopy o ρ ε t v ψ‖ = ‖v‖ * ‖ψ‖ := by
-  rw [← Submodule.norm_coe, coe_halfSpinSymbolHomotopy_apply, norm_smul,
+  simp only [← Submodule.norm_coe, coe_halfSpinSymbolHomotopy_apply, norm_smul,
     Complex.norm_exp_ofReal_mul_I, one_mul, norm_map_ι_apply hQ hρ]
-  rfl
 
 end Hermitian
 
