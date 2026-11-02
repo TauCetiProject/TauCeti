@@ -31,9 +31,9 @@ to the quotient by ordinary unframed Markov equivalence. The unknot value is one
 
 ## Main results
 
-* `TauCeti.MarkovBraid.heckeTrace_strandIncl` and
+* `LinearMap.heckeTrace_strandIncl` and
   `TauCeti.MarkovBraid.heckeTrace_one_strand`: the split-unknot factor and unknot value.
-* `TauCeti.MarkovBraid.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
+* `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
 
 ## References
@@ -81,8 +81,8 @@ theorem heckeTrace_one (h₁ : τ 1 = 1) (C : R) (l : Rˣ) :
 
 /-- **Adding an uncrossed strand multiplies the normalized trace by `C`**: the closure gains a
 split unknot. -/
-theorem heckeTrace_strandIncl (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R) (C : R) (l : Rˣ)
-    (b : BraidGroup (n + 1)) :
+theorem _root_.LinearMap.heckeTrace_strandIncl (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
+    (C : R) (l : Rˣ) (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, strandIncl b⟩ τ C l = C * heckeTrace ⟨n, b⟩ τ C l := by
   rw [heckeTrace_def, heckeTrace_def, braidHom_strandIncl, exponentSum_strandIncl]
   ring
@@ -157,7 +157,7 @@ theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n
 `x • T i + y • (T i)⁻¹ + s • 1 = 0` in the Hecke algebra, then for a crossing `σ i` in any braid
 context the normalized traces of the positive crossing `L₊`, the negative crossing `L₋` and the
 smoothing `L₀` satisfy `x * l⁻¹ * F(L₊) + y * l * F(L₋) + s * F(L₀) = 0`. -/
-theorem heckeTrace_skein_of_eq_zero (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
+theorem _root_.LinearMap.heckeTrace_skein_of_eq_zero (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
     (C : R) (l : Rˣ) {x y s : R} (i : Fin n)
     (h : x • T q i + y • (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) + s • 1 = 0)
     (b c : BraidGroup (n + 1)) :

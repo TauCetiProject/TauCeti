@@ -62,7 +62,7 @@ theorem MarkovBraid.eq_heckeTrace_of_skein (hτ : IsMarkovTrace z τ)
     (fun n c i ↦ by simpa only [smul_eq_mul, inv_inv, one_mul] using
       heckeTrace_skein (τ := τ) C l 1 c i)
     (by simpa only [smul_eq_mul] using hι)
-    (fun n b ↦ by rw [smul_eq_mul, heckeTrace_strandIncl])
+    (fun n b ↦ by rw [smul_eq_mul, τ.heckeTrace_strandIncl])
     (by rw [h₁, heckeTrace_one_strand hτ.map_one])
 
 end TauCeti
