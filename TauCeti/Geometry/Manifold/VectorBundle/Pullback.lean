@@ -25,15 +25,17 @@ only be nonempty topological spaces, without an additive or vector-space structu
 The file also records the functoriality of Mathlib's pullback `f *ᵖ E` in `C^n` maps `f`, on its
 own carrier. The canonical map `Pullback.lift f` to the total space of `E` is `C^n`
 (`Bundle.Pullback.contMDiff_lift`), and a family of fibrewise maps inducing a `C^n` map of total
-spaces pulls back to one that does too (`Bundle.Pullback.contMDiff_fiberwise`). With
-`TauCeti.bundleDiffeomorph` and the fibre instances of `TauCeti.Topology.VectorBundle.Pullback`,
-the pullback `x ↦ e (f x)` of a `C^n` family `e` of fibrewise linear equivalences is therefore
-again a `C^n` bundle equivalence. The pullback along the identity is `C^n` diffeomorphic to `E`
+spaces pulls back along a `C^n` map to one that does too (`Bundle.Pullback.contMDiff_fiberwise`).
+When the model fibre is finite-dimensional over a complete field `𝕜`, `TauCeti.bundleDiffeomorph`
+and the fibre instances of `TauCeti.Topology.VectorBundle.Pullback` therefore make the pullback
+`x ↦ e (f x)` of a `C^n` family `e` of fibrewise linear equivalences again a `C^n` bundle
+equivalence. The pullback along the identity is `C^n` diffeomorphic to `E`
 (`Bundle.Pullback.idDiffeomorph`), and the pullback along a composite `g ∘ f` to the iterated
-pullback `f *ᵖ (g *ᵖ E)` (`Bundle.Pullback.compDiffeomorph`). Both comparisons are the identity
-on every fibre, so for vector bundles they are fibrewise linear, and over a complex model at
-`n = ∞` they are holomorphic bundle equivalences between holomorphic vector bundles, which
-Mathlib's `ContMDiffVectorBundle.pullback` makes `f *ᵖ E` when `E` is one.
+pullback `f *ᵖ (g *ᵖ E)` (`Bundle.Pullback.compDiffeomorph`), whatever the regularity of the
+maps pulled back along. Both comparisons are the identity on every fibre, so for vector bundles
+they are fibrewise linear, and over a complex model at `n = ∞` they are holomorphic bundle
+equivalences between holomorphic vector bundles, which Mathlib's `ContMDiffVectorBundle.pullback`
+makes `f *ᵖ E` when `E` is one.
 
 ## References
 
@@ -102,8 +104,8 @@ theorem contMDiff_lift (f : K) (hf : ContMDiff I' I n f) :
   fun p ↦ contMDiffAt_lift f (hf p.proj)
 
 /-- Pulling back is natural: if a family `φ` of fibrewise maps from `E` to `E'` induces a `C^n` map
-of total spaces, then so does the pulled-back family `x ↦ φ (f x)` from `f *ᵖ E` to `f *ᵖ E'`.
-The fibrewise maps need not be linear. -/
+of total spaces, then so does the family `x ↦ φ (f x)` pulled back along a `C^n` map `f`, from
+`f *ᵖ E` to `f *ᵖ E'`. The fibrewise maps need not be linear. -/
 theorem contMDiff_fiberwise {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
     {E' : B → Type*} [∀ x, Nonempty (E' x)] [∀ x, TopologicalSpace (E' x)]
     [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E'] (φ : ∀ b, E b → E' b)
@@ -142,41 +144,42 @@ theorem idDiffeomorph_symm_apply {m : WithTop ℕ∞} (p : TotalSpace F E) :
 
 variable {EM'' H'' B'' : Type*} [NormedAddCommGroup EM''] [NormedSpace 𝕜 EM'']
   [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 EM'' H''}
-  [TopologicalSpace B''] [ChartedSpace H'' B'']
+  [TopologicalSpace B''] [ChartedSpace H'' B''] {m : WithTop ℕ∞}
 
 variable (E) in
-/-- Pulling back along a composite is pulling back in two steps: for `C^n` maps
+/-- Pulling back along a composite is pulling back in two steps: for `C^m` maps
 `f : B'' → B'` and `g : B' → B`, the total spaces of `(g ∘ f) *ᵖ E` and `f *ᵖ (g *ᵖ E)` are
-`C^n` diffeomorphic by the identity on every fibre `E (g (f x))`. -/
-def compDiffeomorph (g : C^n⟮I', B'; I, B⟯) (f : C^n⟮I'', B''; I', B'⟯) :
+`C^n` diffeomorphic, for any `m` and `n`, by the identity on every fibre `E (g (f x))`. -/
+def compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) :
     TotalSpace F ((g.comp f : B'' → B) *ᵖ E) ≃ₘ^n⟮I''.prod 𝓘(𝕜, F), I''.prod 𝓘(𝕜, F)⟯
       TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) where
   toFun p := ⟨p.proj, p.2⟩
   invFun p := ⟨p.proj, p.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  contMDiff_toFun := (contMDiff_iff f f.contMDiff).2 ⟨contMDiff_proj _,
-    (contMDiff_iff g g.contMDiff).2 ⟨f.contMDiff.comp (contMDiff_proj _),
-      contMDiff_lift (g.comp f) (g.comp f).contMDiff⟩⟩
-  contMDiff_invFun := (contMDiff_iff (g.comp f) (g.comp f).contMDiff).2 ⟨contMDiff_proj _,
-    (contMDiff_lift g g.contMDiff).comp (contMDiff_lift f f.contMDiff)⟩
+  -- Both total spaces are charted at `p` by the trivialization of `E` at `g (f p.proj)`, so in
+  -- these coordinates the map is the identity, whatever the regularity of `f` and `g`.
+  contMDiff_toFun p := contMDiffAt_totalSpace.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_invFun p := contMDiffAt_totalSpace.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
 
 @[simp]
-theorem compDiffeomorph_apply (g : C^n⟮I', B'; I, B⟯) (f : C^n⟮I'', B''; I', B'⟯)
+theorem compDiffeomorph_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)
     (p : TotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
-    compDiffeomorph E g f p = ⟨p.proj, p.2⟩ :=
+    compDiffeomorph (n := n) E g f p = ⟨p.proj, p.2⟩ :=
   (rfl)
 
 @[simp]
-theorem compDiffeomorph_symm_apply (g : C^n⟮I', B'; I, B⟯) (f : C^n⟮I'', B''; I', B'⟯)
+theorem compDiffeomorph_symm_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)
     (p : TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
-    (compDiffeomorph E g f).symm p = ⟨p.proj, p.2⟩ :=
+    (compDiffeomorph (n := n) E g f).symm p = ⟨p.proj, p.2⟩ :=
   (rfl)
 
 /-- Under `compDiffeomorph`, the canonical map of the composite pullback is the composite of the
 canonical maps of the two steps. -/
-theorem lift_comp_compDiffeomorph (g : C^n⟮I', B'; I, B⟯) (f : C^n⟮I'', B''; I', B'⟯) :
-    Pullback.lift (F := F) (E := E) g ∘ Pullback.lift f ∘ compDiffeomorph E g f =
+theorem lift_comp_compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) :
+    Pullback.lift (F := F) (E := E) g ∘ Pullback.lift f ∘ compDiffeomorph (n := n) E g f =
       Pullback.lift (g.comp f) :=
   (rfl)
 
