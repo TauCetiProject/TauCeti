@@ -83,8 +83,7 @@ theorem mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff (U : Opens G) (a : G) (x : U
           mvfderiv_comp_apply_of_differentiableAt hd.differentiableAt
             ((contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero) v
       _ = 2 * inner ℝ ((x : G) - a) v := by
-          rw [show mvfderiv 𝓘(ℝ, G) (Subtype.val : U → G) x v = v from
-            Manifold.mvfderiv_subtype_val_apply x v, hd.fderiv]
+          rw [Manifold.mvfderiv_subtype_val_apply x v, hd.fderiv]
           simp [inner_sub_left]
   constructor
   · intro h
