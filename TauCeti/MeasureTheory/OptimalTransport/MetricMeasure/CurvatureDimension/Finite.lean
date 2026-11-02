@@ -145,6 +145,17 @@ theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) (
   · exact distortionTau_left_monotone (sub_nonneg.2 t.2.2) (sub_le_self _ t.2.1) hK
   · exact distortionTau_left_monotone t.2.1 t.2.2 hK
 
+/-- The negative of a nonnegative combination `a x + b y` in `ℝ≥0∞`, read in `EReal`, is the
+same combination of `-x` and `-y`. -/
+private theorem neg_coe_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
+    (hb : 0 ≤ b) (x y : ℝ≥0∞) :
+    -((ENNReal.ofReal a * x + ENNReal.ofReal b * y : ℝ≥0∞) : EReal) =
+      (a : EReal) * -(x : EReal) + (b : EReal) * -(y : EReal) := by
+  rw [EReal.coe_ennreal_add,
+    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _)),
+    EReal.coe_ennreal_mul, EReal.coe_ennreal_mul, EReal.coe_ennreal_ofReal,
+    EReal.coe_ennreal_ofReal, max_eq_left ha, max_eq_left hb, mul_neg, mul_neg, sub_eq_add_neg]
+
 /-- In the flat case, the right side of the curvature-dimension inequality is the convex
 combination of the endpoint Rényi entropies. -/
 private theorem neg_lintegral_distortionTau_zero {μ₀ μ₁ : ProbabilityMeasure X}
@@ -167,15 +178,17 @@ private theorem neg_lintegral_distortionTau_zero {μ₀ μ₁ : ProbabilityMeasu
     (hf _).comp (ContinuousMap.measurable_eval 0)
   have hf₁ : Measurable fun γ : C(I, X) ↦ (μ₁ : Measure X).rnDeriv M.reference (γ 1) ^ (-N'⁻¹) :=
     (hf _).comp (ContinuousMap.measurable_eval 1)
+  -- The integral against `η` splits into integrals against the endpoint laws.
+  have hint : ∫⁻ γ, ENNReal.ofReal (1 - t) * (μ₀ : Measure X).rnDeriv M.reference (γ 0) ^ (-N'⁻¹) +
+        ENNReal.ofReal t * (μ₁ : Measure X).rnDeriv M.reference (γ 1) ^ (-N'⁻¹) ∂η =
+      ENNReal.ofReal (1 - t) * ∫⁻ x, (μ₀ : Measure X).rnDeriv M.reference x ^ (-N'⁻¹) ∂μ₀ +
+        ENNReal.ofReal t * ∫⁻ x, (μ₁ : Measure X).rnDeriv M.reference x ^ (-N'⁻¹) ∂μ₁ := by
+    rw [lintegral_add_left (hf₀.const_mul _), lintegral_const_mul _ hf₀,
+      lintegral_const_mul _ hf₁, heval, heval, hη.timeMarginal_zero, hη.timeMarginal_one]
   simp only [distortionTau_zero_left]
-  rw [lintegral_add_left (hf₀.const_mul _), lintegral_const_mul _ hf₀, lintegral_const_mul _ hf₁,
-    heval, heval,
-    hη.timeMarginal_zero, hη.timeMarginal_one, renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₀,
-    renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₁, EReal.coe_ennreal_add,
-    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _)),
-    EReal.coe_ennreal_mul, EReal.coe_ennreal_mul, EReal.coe_ennreal_ofReal,
-    EReal.coe_ennreal_ofReal, max_eq_left (sub_nonneg.2 t.2.2), max_eq_left t.2.1, mul_neg,
-    mul_neg, sub_eq_add_neg]
+  rw [hint, renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₀,
+    renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₁]
+  exact neg_coe_ofReal_mul_add_ofReal_mul (sub_nonneg.2 t.2.2) t.2.1 _ _
 
 /-- **The flat curvature-dimension condition.** For `N > 0`, `CD(0, N)` holds exactly when the
 reference measure has full support and any two absolutely continuous laws with bounded support
@@ -212,6 +225,25 @@ private theorem exists_coe_eq_cond_closedBall {r : ℝ} (hr : 0 < r) :
   ⟨⟨_, cond_isProbabilityMeasure_of_finite (measure_closedBall_pos _ _ hr).ne'
     (M.finite_bounded _ isBounded_closedBall).ne⟩, rfl⟩
 
+/-- Since `m(B_r)^{1/N} = r^{n/N} m(B_1)^{1/N}` for an additive Haar measure `m` on a space of
+dimension `n`, the bound `c m(B_1)^{1/N} ≤ m(B_r)^{1/N}` gives `c ≤ r^{n/N}`. -/
+private theorem le_rpow_of_ofReal_mul_le_measure_closedBall_rpow {c r : ℝ} (hr : 0 < r)
+    (hN : 0 < N)
+    (h : ENNReal.ofReal c * M.reference (closedBall 0 1) ^ N⁻¹ ≤
+      M.reference (closedBall 0 r) ^ N⁻¹) :
+    c ≤ r ^ ((finrank ℝ E : ℝ) / N) := by
+  have h₀ : M.reference (closedBall 0 1) ^ N⁻¹ ≠ 0 :=
+    (ENNReal.rpow_pos (measure_closedBall_pos _ _ one_pos)
+      (M.finite_bounded _ isBounded_closedBall).ne).ne'
+  have hfin : M.reference (closedBall 0 1) ^ N⁻¹ ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) (M.finite_bounded _ isBounded_closedBall).ne
+  rw [Measure.addHaar_closedBall' _ _ hr.le,
+    ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hN.le)] at h
+  have h' := (ENNReal.mul_le_mul_iff_left h₀ hfin).1 h
+  rwa [ENNReal.ofReal_rpow_of_nonneg (by positivity) (inv_nonneg.2 hN.le),
+    ENNReal.ofReal_le_ofReal_iff (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hr.le,
+    ← div_eq_mul_inv] at h'
+
 /-- Under `CD(0, N)` with `N ≥ 1`, transporting the uniform law on the unit ball to the uniform law
 on the ball of radius `δ` gives `1 / 2 ≤ (1 / 2 + 3 δ / 2)^{n/N}`. At time `1 / 2` the law is
 carried by the ball of radius `1 / 2 + 3 δ / 2`, which bounds its Rényi entropy below, while the
@@ -243,16 +275,9 @@ private theorem half_le_rpow_of_curvatureDimension_zero (h : M.CurvatureDimensio
   have ht : (t : ℝ) = 1 / 2 := rfl
   -- At time `1 / 2` almost every path is within `1 / 2 + 3 δ / 2` of `0`.
   have hcarr_t : η.timeMarginal t (closedBall (0 : E) (1 / 2 + 3 / 2 * δ))ᶜ = 0 := by
-    have h0 : ∀ᵐ γ ∂η, γ 0 ∈ closedBall (0 : E) 1 :=
-      (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 (hη.timeMarginal_zero ▸ hcarr hμ₀)
-    have h1 : ∀ᵐ γ ∂η, γ 1 ∈ closedBall (0 : E) δ :=
-      (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 (hη.timeMarginal_one ▸ hcarr hμ₁)
-    refine mem_ae_iff.1 ((Measure.ae_timeMarginal_iff measurableSet_closedBall).2 ?_)
-    filter_upwards [hη.ae_mem_geodesicPaths, h0, h1] with γ hγ hγ₀ hγ₁
-    rw [mem_closedBall] at hγ₀ hγ₁
-    have hγt := mem_geodesicPaths_iff.1 hγ t 1
-    rw [ht, Icc.coe_one, show |(1 / 2 : ℝ) - 1| = 1 / 2 by norm_num] at hγt
-    linarith [dist_triangle (γ t) (γ 1) 0, dist_triangle (γ 0) 0 (γ 1), dist_comm (0 : E) (γ 1)]
+    have h := mem_ae_iff.1 (ae_timeMarginal_mem_closedBall hη.ae_mem_geodesicPaths
+      (hη.timeMarginal_zero ▸ hcarr hμ₀) (hη.timeMarginal_one ▸ hcarr hμ₁) t)
+    rwa [ht, show (1 - 1 / 2 : ℝ) * (1 + δ) + δ = 1 / 2 + 3 / 2 * δ by ring] at h
   have hmass : η.timeMarginal t univ = 1 := by
     simp [Measure.timeMarginal_apply η t MeasurableSet.univ]
   have hlow := neg_rpow_mul_rpow_le_renyiEntropy (m := M.reference) hN hcarr_t
@@ -267,21 +292,10 @@ private theorem half_le_rpow_of_curvatureDimension_zero (h : M.CurvatureDimensio
     exact mul_nonneg hhalf (EReal.coe_ennreal_nonneg _)
   have hcoe : ((1 / 2 : ℝ) : EReal) = ((ENNReal.ofReal (1 / 2) : ℝ≥0∞) : EReal) := by
     rw [EReal.coe_ennreal_ofReal, max_eq_left (by norm_num : (0 : ℝ) ≤ 1 / 2)]
-  have hc₀ : M.reference (closedBall 0 1) ^ N⁻¹ ≠ 0 :=
-    (ENNReal.rpow_pos (measure_closedBall_pos _ _ one_pos)
-      (M.finite_bounded _ isBounded_closedBall).ne).ne'
-  have hc : M.reference (closedBall 0 1) ^ N⁻¹ ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN₀.le) (M.finite_bounded _ isBounded_closedBall).ne
-  -- Compare `m(B_r)^{1/N} = r^{n/N} m(B_1)^{1/N}` with half of `m(B_1)^{1/N}`.
   have key := hlow.trans (hup.trans (add_le_of_nonpos_right hdrop))
   rw [mul_neg, hcoe, ← EReal.coe_ennreal_mul, EReal.neg_le_neg_iff,
-    EReal.coe_ennreal_le_coe_ennreal_iff, Measure.addHaar_closedBall' _ _ hr.le,
-    ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hN₀.le)] at key
-  have key' := (ENNReal.mul_le_mul_iff_left hc₀ hc).1 key
-  rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (inv_nonneg.2 hN₀.le),
-    ENNReal.ofReal_le_ofReal_iff (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hr.le,
-    ← div_eq_mul_inv] at key'
-  exact key'
+    EReal.coe_ennreal_le_coe_ennreal_iff] at key
+  exact le_rpow_of_ofReal_mul_le_measure_closedBall_rpow hr hN₀ key
 
 /-- **`CD(0, N)` forces `N ≥ n` for Haar measure.** If an additive Haar reference measure on a
 real normed space of finite dimension `n` satisfies `CD(0, N)` with `N ≥ 1`, then `N ≥ n`. -/
