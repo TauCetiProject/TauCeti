@@ -307,7 +307,7 @@ itself. -/
     ((DFunLike.congr_fun (hasMFDerivAt_unique (hexp.comp 0 hray) hgeo) (1 : ℝ)).trans hv)
 
 /-- The radial curve `s ↦ exp_p (s • v)` leaves `p` with velocity `v`. -/
-theorem curveVelocity_riemannianExp_smul_zero [T2Space M] (p : M) (v : TangentSpace I p) :
+@[simp] theorem curveVelocity_riemannianExp_smul_zero [T2Space M] (p : M) (v : TangentSpace I p) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (s • v)) 0 = v := by
   rw [curveVelocity_riemannianExp_smul (by simp)]
   -- `mfderiv_congr_point` moves the base point of the differential from `0 • v` to `0`

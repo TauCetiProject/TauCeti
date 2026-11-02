@@ -126,7 +126,7 @@ private theorem alongCurve_variationField_radialFamily_zero (p : M) (v w : Tange
       (by simpa using ((hasDerivAt_id (0 : ℝ)).smul_const w).const_add v))
 
 /-- **The initial covariant derivative of `t ↦ d(exp_p)_{t v} (t w)` is `w`.** -/
-theorem alongCurveWithin_mfderiv_riemannianExp_zero (p : M) (v w : TangentSpace I p) :
+@[simp] theorem alongCurveWithin_mfderiv_riemannianExp_zero (p : M) (v w : TangentSpace I p) :
     alongCurveWithin (leviCivitaConnection I M) (fun t : ℝ ↦ riemannianExp I M p (t • v))
       (fun t ↦ mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w))
       (geodesicInterval I M p v) 0 = w := by
