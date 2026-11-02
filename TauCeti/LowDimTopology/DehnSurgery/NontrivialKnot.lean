@@ -168,6 +168,7 @@ theorem HasPropertyR.isEmpty_homeomorph
 /-- **The unknot does not have Property P.** The `1`-surgery on the unknot is the lens space
 `L(1; 1, 1)` (`TauCeti.unknotLensSpaceDehnFilling`), which is simply connected
 (`TauCeti.LensSpace.simplyConnectedSpace_iff`). -/
+@[simp]
 theorem not_hasPropertyP_unknot : ¬ HasPropertyP unknot := by
   intro hP
   have : SimplyConnectedSpace (LensSpace 1 (1 : Fin 2 → (ZMod 1)ˣ)) :=
@@ -175,16 +176,14 @@ theorem not_hasPropertyP_unknot : ¬ HasPropertyP unknot := by
   refine hP.not_simplyConnectedSpace
     (unknotLensSpaceDehnFilling 1 1 (q := 1) (s := 1) (t := 0) (by norm_num)
       (Subsingleton.elim _ _)) ?_ this
-  -- The slope has value `1 / 1`, while the meridian has value `∞`.
-  intro hs
-  have hv := congrArg isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.slopeEquiv hs
-  rw [Equiv.apply_symm_apply, FramedBoundaryTorus.slopeEquiv_apply,
-    FramedBoundaryTorus.value_meridian, slopeValue_of_snd_ne_zero one_ne_zero] at hv
-  exact OnePoint.coe_ne_infty _ hv
+  -- The slope has the finite value `1 / 1`, so it is not the meridian.
+  rw [slopeValue_of_snd_ne_zero one_ne_zero]
+  exact FramedBoundaryTorus.slopeEquiv_symm_coe_ne_meridian _ _
 
 /-- **The unknot does not have Property R.** Its `0`-surgery is `S¹ × S²`
 (`TauCeti.unknotZeroDehnFilling`), since the framing of its standard solid torus neighbourhood is
 the preferred framing (`TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus`). -/
+@[simp]
 theorem not_hasPropertyR_unknot
     (h₁ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 1).obj
       (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1))))

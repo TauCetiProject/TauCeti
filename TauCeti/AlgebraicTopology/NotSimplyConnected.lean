@@ -58,8 +58,12 @@ theorem simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup {X : Type*
       PathConnectedSpace X ∧ ∀ x : X, Subsingleton (FundamentalGroup X x) := by
   refine ⟨fun _ => ⟨inferInstance, fun _ => inferInstance⟩, fun ⟨_, h⟩ => ?_⟩
   refine simply_connected_iff_loops_nullhomotopic.2 ⟨inferInstance, fun x γ => ?_⟩
-  exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).1 (congrArg CategoryTheory.End.asHom
-    ((h x).elim (FundamentalGroup.fromPath ⟦γ⟧) (FundamentalGroup.fromPath ⟦Path.refl x⟧)))
+  -- `FundamentalGroup.toPath` undoes `FundamentalGroup.fromPath` by definition, so the two loop
+  -- classes agree in `Path.Homotopic.Quotient x x`.
+  have hγ : Path.Homotopic.Quotient.mk γ = .mk (Path.refl x) :=
+    congrArg FundamentalGroup.toPath ((h x).elim (FundamentalGroup.fromPath (.mk γ))
+      (FundamentalGroup.fromPath (.mk (Path.refl x))))
+  exact Path.Homotopic.Quotient.exact hγ
 
 /-- A **not simply connected** space is **not contractible**: a contractible space is simply
 connected. -/

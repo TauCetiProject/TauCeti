@@ -126,6 +126,7 @@ theorem not_simplyConnectedSpace (hk : 1 ≤ k) (hm : m ≠ 1) :
 
 /-- A lens space `L(m; ℓ₀, …, ℓₖ)` with `1 ≤ k` is simply connected exactly when its order `m` is
 `1`. -/
+@[simp]
 theorem simplyConnectedSpace_iff (hk : 1 ≤ k) : SimplyConnectedSpace (LensSpace m ℓ) ↔ m = 1 := by
   refine ⟨fun h ↦ by_contra fun hm ↦ not_simplyConnectedSpace m ℓ hk hm h, fun hm ↦ ?_⟩
   refine simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup.2
