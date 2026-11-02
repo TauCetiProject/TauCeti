@@ -149,15 +149,6 @@ theorem T_mul_self (i : Fin (n - 1)) : T q i * T q i = ((q : R) - ↑q⁻¹) •
   simpa only [map_mul, map_add, map_smul, map_one, mkAlgHom_ι] using
     mkAlgHom_rel (Rel.mul_self (q := q) i)
 
-/-- In the normalization `g_i = q T_i`, the quadratic relation is
-`g_i² = (q² - 1) g_i + q²`. -/
-theorem rescaled_T_mul_self (i : Fin (n - 1)) :
-    ((q : R) • T q i) * ((q : R) • T q i) =
-      ((q : R) ^ 2 - 1) • ((q : R) • T q i) + (q : R) ^ 2 • 1 := by
-  have hq : ((q : R) * q) * ((q : R) - ↑q⁻¹) = ((q : R) ^ 2 - 1) * q := by
-    simp [mul_sub, sub_mul, sq, mul_assoc]
-  simp only [smul_mul_smul, T_mul_self, smul_add, smul_smul, hq, sq]
-
 /-- The quadratic relation in factored form: each generator is annihilated by the polynomial with
 roots `q` and `-q⁻¹`. -/
 theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : Fin (n - 1)) :
