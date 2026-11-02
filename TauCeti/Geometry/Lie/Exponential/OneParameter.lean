@@ -33,6 +33,8 @@ abstract Lie-group exponential map.
 * `TauCeti.eq_of_forall_exp_smul_eq`: agreeing exponential lines have equal generators.
 * `TauCeti.mem_of_forall_exp_smul_mem`: a closed real subspace containing a whole exponential line
   contains its generator.
+* `TauCeti.forall_expUnit_smul_mem_range_iff_eq_zero`: an exponential line lies in the range of
+  a trivial group exactly when its generator vanishes.
 * `TauCeti.existsUnique_eq_expUnitHom`: a continuous one-parameter subgroup of `Rˣ` whose
   underlying curve is differentiable at `0` is `expUnitHom x` for a unique `x : R`.
 
@@ -163,6 +165,17 @@ theorem mem_of_forall_exp_smul_mem {S : Submodule ℝ R} (hS : IsClosed (S : Set
     simpa using hasDerivAt_exp_smul_const x (0 : ℝ)
   simpa using hderiv.hasFDerivAt.apply_mem_of_eventually_sub_mem hS
     (.of_forall fun t ↦ S.sub_mem (h t) (h 0)) 1
+
+/-- **An exponential line lies in the range of a trivial group exactly when it is constant.** For
+a homomorphism `f` from a trivial group into `Rˣ`, the line `t ↦ expUnit (t • x)` lies in the
+range of `f` exactly when `x = 0`. -/
+theorem forall_expUnit_smul_mem_range_iff_eq_zero {G : Type*} [Group G] [Subsingleton G]
+    (f : G →* Rˣ) (x : R) : (∀ t : ℝ, expUnit (t • x) ∈ f.range) ↔ x = 0 := by
+  refine ⟨fun h ↦ eq_of_forall_exp_smul_eq fun t ↦ ?_, by rintro rfl t; exact ⟨1, by simp⟩⟩
+  obtain ⟨s, hs⟩ := h t
+  rw [Subsingleton.elim s 1, map_one] at hs
+  simpa only [expUnit_coe, Units.val_one, smul_zero, NormedSpace.exp_zero] using
+    (congrArg Units.val hs).symm
 
 /-- **The differentiable one-parameter subgroups of `Rˣ` are exactly the exponentials.** A
 continuous one-parameter subgroup whose underlying curve is differentiable at `0` is
