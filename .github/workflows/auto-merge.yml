@@ -16,8 +16,10 @@ name: Auto-merge
 
 on:
   # A pushed head is immediately unsafe until it has current-head reviews.
+  # The ready-to-merge label wakes the gate after readiness reconciliation, including
+  # reconciliation after dispatched maintenance builds.
   pull_request_target:
-    types: [synchronize]
+    types: [synchronize, labeled]
   # Head is freshly green: re-check whether this PR is now mergeable.
   workflow_run:
     workflows: ["pr-build"]
@@ -63,7 +65,8 @@ jobs:
     # revocations must reach the same pinned policy as approvals.
     if: >-
       ${{ !cancelled() && (
-        github.event_name == 'pull_request_target'
+        (github.event_name == 'pull_request_target'
+          && (github.event.action != 'labeled' || github.event.label.name == 'ready-to-merge'))
         || (github.event_name == 'workflow_run'
           && github.event.workflow_run.conclusion == 'success'
           && github.event.workflow_run.event == 'pull_request_target'
