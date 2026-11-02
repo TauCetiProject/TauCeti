@@ -98,6 +98,12 @@ theorem baseChange_comp (g : L' →ₗ⁅R⁆ L'') :
   exact DFunLike.congr_fun (LinearMap.baseChange_comp (A := A) (f := (f : L →ₗ[R] L'))
     (g := (g : L' →ₗ[R] L''))) x
 
+/-- Scalar extension preserves an intertwining equation. -/
+theorem baseChange_intertwines {f : L →ₗ⁅R⁆ L} {g : L' →ₗ⁅R⁆ L'}
+    (u : L →ₗ⁅R⁆ L') (h : g.comp u = u.comp f) :
+    (g.baseChange A).comp (u.baseChange A) = (u.baseChange A).comp (f.baseChange A) := by
+  rw [← baseChange_comp, h, baseChange_comp]
+
 /-- Extension of scalars preserves surjectivity: the tensor product is right exact. -/
 theorem baseChange_surjective (hf : Function.Surjective f) :
     Function.Surjective (baseChange A f) :=
