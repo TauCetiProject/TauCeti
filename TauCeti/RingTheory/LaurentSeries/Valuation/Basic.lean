@@ -95,11 +95,11 @@ noncomputable def embReal : R⸨X⸩ →+* HahnSeries ℝ R :=
   embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
 
 omit [IsDomain R] in
-/-- `embReal R` is `HahnSeries.embDomain` along `ℤ → ℝ`, as an order embedding. This holds by
-unfolding `embReal` and the ring homomorphism `HahnSeries.embDomainRingHom`, whose underlying
-function is this `embDomain`. -/
+/-- `embReal R` is `HahnSeries.embDomain` along `ℤ → ℝ`, as an order embedding. -/
 theorem embReal_apply (f : R⸨X⸩) :
     embReal R f = embDomain ⟨⟨Int.castAddHom ℝ, Int.cast_injective⟩, Int.cast_le⟩ f :=
+  -- The ring homomorphism `HahnSeries.embDomainRingHom` has this `embDomain` as its underlying
+  -- function.
   embDomainRingHom_apply _ _ _ f
 
 omit [IsDomain R] in
