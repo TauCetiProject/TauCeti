@@ -133,8 +133,8 @@ theorem IsRegularRing.of_flat_of_isRegularRing_fiber [IsRegularRing R] [IsNoethe
   let e : Localization.AtPrime q.asIdeal ≃+* Localization.AtPrime Q ⧸
       (IsLocalRing.maximalIdeal (Localization.AtPrime P)).map
         (algebraMap (Localization.AtPrime P) (Localization.AtPrime Q)) :=
-    (Ideal.Fiber.localizationAtPrimeEquivQuotientMap P q.asIdeal).trans (Ideal.quotEquivOfEq (by
-      rw [← IsLocalization.AtPrime.map_eq_maximalIdeal P, Ideal.map_map,
+    (Ideal.Fiber.localizationAlgEquivQuotient P q.asIdeal).toRingEquiv.trans
+      (Ideal.quotEquivOfEq (by rw [← IsLocalization.AtPrime.map_eq_maximalIdeal P, Ideal.map_map,
         ← IsScalarTower.algebraMap_eq]))
   -- `e` reaches `Localization.AtPrime q.asIdeal` through Mathlib's `OreLocalization` instances;
   -- rebuilding it against the expected type selects the `CommRing` instances.
