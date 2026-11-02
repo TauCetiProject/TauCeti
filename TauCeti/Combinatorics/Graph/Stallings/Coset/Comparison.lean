@@ -52,30 +52,22 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
           f.graphHom.mapE e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph q := by
       refine ⟨f.graphHom.toPrefunctor.mapPath p,
         (f.graphHom.isReduced_mapPath_iff S.graph hfE p).mpr hp, ?_⟩
-      exact Eq.mpr (congrArg (fun l => f.graphHom.mapE e ∈ l)
-        (f.graphHom.darts_mapPath S.graph p)) (List.mem_map_of_mem he)
+      -- Substitution avoids `rw`'s transparency mismatch at the mapped path's endpoints.
+      exact (f.graphHom.darts_mapPath S.graph p).symm ▸ List.mem_map_of_mem he
     apply ((S.subgroup S.base).cosetGraph.graph.mem_coreDarts_iff _ _).mpr
-    -- Transport the loop endpoints explicitly along preservation of the base vertex.
-    exact Eq.mp (congrArg (fun b => ∃ q : (S.subgroup S.base).cosetGraph.graph.Path b b,
-      SerreGraph.Path.IsReduced (S.subgroup S.base).cosetGraph.graph q ∧
-        f.graphHom.mapE e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph q)
-      f.map_base) h
+    exact f.map_base ▸ h
   · intro he
     have h : ∃ p : (S.subgroup S.base).cosetGraph.graph.Path
         (f.graphHom.mapV S.base) (f.graphHom.mapV S.base),
         SerreGraph.Path.IsReduced (S.subgroup S.base).cosetGraph.graph p ∧
           e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph p := by
-      exact Eq.mpr (congrArg (fun b => ∃ p : (S.subgroup S.base).cosetGraph.graph.Path b b,
-        SerreGraph.Path.IsReduced (S.subgroup S.base).cosetGraph.graph p ∧
-          e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph p) f.map_base)
-        (((S.subgroup S.base).cosetGraph.graph.mem_coreDarts_iff _ e).mp he)
+      rw [f.map_base]
+      exact ((S.subgroup S.base).cosetGraph.graph.mem_coreDarts_iff _ e).mp he
     obtain ⟨p, hp, he⟩ := h
     have hg : (S.subgroup S.base).cosetGraph.read p ∈ S.subgroup S.base := by
       have hs := (congrArg (S.subgroup S.base).cosetGraph.subgroup f.map_base).trans
         (S.subgroup S.base).cosetGraph_subgroup
-      exact Eq.mp (congrArg (fun K : Subgroup (FreeGroup α) =>
-        (S.subgroup S.base).cosetGraph.read p ∈ K) hs)
-        ((S.subgroup S.base).cosetGraph.read_mem_subgroup p)
+      simpa only [hs] using (S.subgroup S.base).cosetGraph.read_mem_subgroup p
     -- The same accepted element has a reduced source loop. Its image is the target loop
     -- by foldedness, so every dart of the latter lies in the image.
     obtain ⟨q, hq, hread⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
@@ -84,7 +76,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
         ((f.graphHom.isReduced_mapPath_iff S.graph hfE q).mpr hq) hp
         ((f.read_mapPath q).trans hread)
     rw [← hmap] at he
-    have he' := Eq.mp (congrArg (fun l => e ∈ l) (f.graphHom.darts_mapPath S.graph q)) he
+    have he' := f.graphHom.darts_mapPath S.graph q ▸ he
     obtain ⟨d, _, hd⟩ := List.mem_map.mp he'
     exact ⟨d, hd⟩
 

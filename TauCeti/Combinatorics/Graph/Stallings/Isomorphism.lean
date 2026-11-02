@@ -59,6 +59,10 @@ def toHom (f : Iso S T) : S.Hom T where
   map_base := f.map_base
   map_label := f.map_label
 
+@[simp] theorem map_tgt (f : Iso S T) (e : S.graph.E) :
+    f.vertexEquiv (S.graph.tgt e) = T.graph.tgt (f.dartEquiv e) :=
+  (f.toHom.graphHom.map_tgt S.graph e).symm
+
 @[simp] theorem toHom_mapV (f : Iso S T) (v : S.graph.V) :
     f.toHom.graphHom.mapV v = f.vertexEquiv v := (rfl)
 
@@ -134,6 +138,13 @@ def trans (f : Iso R S) (g : Iso S T) : Iso R T where
   rw [Hom.comp_graphHom]
   apply SerreGraph.Hom.ext <;> funext x <;> simp [toHom, trans]
 
+@[simp] theorem refl_symm (S : StallingsGraph α) : (refl S).symm = refl S := by
+  ext <;> rfl
+
+@[simp] theorem symm_trans (f : Iso R S) (g : Iso S T) :
+    (f.trans g).symm = g.symm.trans f.symm := by
+  ext <;> rfl
+
 @[simp] theorem symm_symm (f : Iso S T) : f.symm.symm = f := by
   apply ext <;> rfl
 
@@ -142,6 +153,14 @@ def trans (f : Iso R S) (g : Iso S T) : Iso R T where
 
 @[simp] theorem symm_trans_self (f : Iso S T) : f.symm.trans f = refl T := by
   ext <;> simp
+
+@[simp] theorem toHom_comp_symm_toHom (f : Iso S T) :
+    f.toHom.comp f.symm.toHom = Hom.id T := by
+  simpa only [trans_toHom, refl_toHom] using congrArg toHom f.symm_trans_self
+
+@[simp] theorem symm_toHom_comp_toHom (f : Iso S T) :
+    f.symm.toHom.comp f.toHom = Hom.id S := by
+  simpa only [trans_toHom, refl_toHom] using congrArg toHom f.self_trans_symm
 
 @[simp] theorem refl_trans (f : Iso S T) : (refl S).trans f = f := by
   ext <;> simp
