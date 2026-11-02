@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.QTheta
 
 /-!
@@ -52,6 +53,7 @@ public section
 open Complex Matrix
 open UpperHalfPlane hiding I
 open scoped Real MatrixGroups
+open TauCeti.Matrix.SpecialLinearGroup
 
 namespace TauCeti.ModularForm
 
@@ -81,29 +83,6 @@ theorem siegelFunction_apply_neg_one_div (r : Fin 2 → ℝ) {τ : ℂ} (hτ : 0
   linear_combination (I * qTheta (cexp (2 * π * I * τ))
     (cexp (2 * π * I * (r 1 * τ + ((-r 0 : ℝ) : ℂ))))) * he
 
-private theorem vecMul_map_S (r : Fin 2 → ℝ) :
-    r ᵥ* (ModularGroup.S : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ) = ![r 1, -r 0] := by
-  ext i
-  fin_cases i <;> simp [ModularGroup.coe_S, vecMul, dotProduct, Fin.sum_univ_two]
-
-private theorem vecMul_map_T (r : Fin 2 → ℝ) :
-    r ᵥ* (ModularGroup.T : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ) =
-      ![r 0, r 0 + r 1] := by
-  ext i
-  fin_cases i <;> simp [ModularGroup.coe_T, vecMul, dotProduct, Fin.sum_univ_two]
-
-private theorem vecMul_map_mul (r : Fin 2 → ℝ) (g h : SL(2, ℤ)) :
-    r ᵥ* (↑(g * h) : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ) =
-      (r ᵥ* (g : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ)) ᵥ*
-        (h : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ) := by
-  rw [vecMul_vecMul, ← Matrix.map_mul, ← Matrix.SpecialLinearGroup.coe_mul]
-
-private theorem vecMul_map_inv_vecMul_map (r : Fin 2 → ℝ) (g : SL(2, ℤ)) :
-    (r ᵥ* (↑g⁻¹ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ)) ᵥ*
-      (g : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ) = r := by
-  rw [← vecMul_map_mul, inv_mul_cancel, Matrix.SpecialLinearGroup.coe_one,
-    Matrix.map_one _ (map_zero _) (map_one _), vecMul_one]
-
 /-- **The transformation of Siegel functions under `SL₂(ℤ)`.** For every `γ ∈ SL₂(ℤ)` there is a
 twelfth root of unity `ε` such that `g_r(γ τ) = ε g_{r γ}(τ)` for every `r ∈ ℝ²` and every `τ` in
 the upper half-plane, where `r γ` is the row vector `r` multiplied on the right by `γ`. -/
@@ -117,13 +96,13 @@ theorem exists_siegelFunction_smul_eq_mul (γ : SL(2, ℤ)) :
   | mem g hg =>
     rcases hg with rfl | rfl
     · refine ⟨-I, by rw [neg_pow, I_pow_eq_pow_mod]; norm_num, fun r τ ↦ ?_⟩
-      rw [vecMul_map_S, ← siegelFunction_apply_neg_one_div r τ.im_pos, modular_S_smul, coe_mk,
-        neg_div, one_div, inv_neg]
+      rw [vecMul_map_modularGroup_S, ← siegelFunction_apply_neg_one_div r τ.im_pos,
+        modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
     · refine ⟨cexp (π * I / 6), ?_, fun r τ ↦ ?_⟩
       · rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
           exp_two_pi_mul_I]
-      · rw [vecMul_map_T, ← siegelFunction_apply_add_one, modular_T_smul, coe_vadd, add_comm,
-          ofReal_one]
+      · rw [vecMul_map_modularGroup_T, ← siegelFunction_apply_add_one, modular_T_smul, coe_vadd,
+          add_comm, ofReal_one]
   | mul g h _ _ hg hh =>
     obtain ⟨ε, hε, hg⟩ := hg
     obtain ⟨ε', hε', hh⟩ := hh
