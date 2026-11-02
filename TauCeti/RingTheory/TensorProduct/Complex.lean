@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
-public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Zero divisors after complexifying a complex algebra over the reals
@@ -33,18 +33,11 @@ whose product is zero. The factors are `I ⊗ 1 - 1 ⊗ I` and `I ⊗ 1 + 1 ⊗ 
 theorem exists_ne_zero_mul_eq_zero_complex_tensorProduct (A : Type*) [Ring A]
     [Nontrivial A] [Algebra ℝ A] [Algebra ℂ A] [IsScalarTower ℝ ℂ A] :
     ∃ x y : ℂ ⊗[ℝ] A, x ≠ 0 ∧ y ≠ 0 ∧ x * y = 0 := by
-  -- Mathlib's `Algebra.TensorProduct.lift` and `Complex.conjAe` give multiplication maps
-  -- that detect the nonvanishing of the two factors.
-  let f : ℂ →ₐ[ℝ] A := IsScalarTower.toAlgHom ℝ ℂ A
-  let μ : ℂ ⊗[ℝ] A →ₐ[ℝ] A :=
-    Algebra.TensorProduct.lift f (AlgHom.id ℝ A) (fun x y ↦ by
-      simpa only [f, IsScalarTower.toAlgHom_apply, AlgHom.id_apply]
-        using Algebra.commute_algebraMap_left x y)
+  -- Tensor multiplication and Mathlib's `Complex.conjAe` detect the nonvanishing
+  -- of the two factors.
+  let μ : ℂ ⊗[ℝ] A →ₐ[ℝ] A := Algebra.TensorProduct.mulLeft.restrictScalars ℝ
   let ν : ℂ ⊗[ℝ] A →ₐ[ℝ] A :=
-    Algebra.TensorProduct.lift (f.comp Complex.conjAe.toAlgHom) (AlgHom.id ℝ A)
-      (fun x y ↦ by
-        simpa only [AlgHom.comp_apply, f, IsScalarTower.toAlgHom_apply, AlgHom.id_apply,
-          AlgEquiv.toAlgHom_apply] using Algebra.commute_algebraMap_left (Complex.conjAe x) y)
+    μ.comp (Algebra.TensorProduct.map Complex.conjAe.toAlgHom (AlgHom.id ℝ A))
   let a : ℂ ⊗[ℝ] A := Complex.I ⊗ₜ[ℝ] (1 : A)
   let b : ℂ ⊗[ℝ] A := (1 : ℂ) ⊗ₜ[ℝ] algebraMap ℂ A Complex.I
   have htwoI : (2 : A) * algebraMap ℂ A Complex.I ≠ 0 := by
@@ -53,13 +46,13 @@ theorem exists_ne_zero_mul_eq_zero_complex_tensorProduct (A : Type*) [Ring A]
   have hminus : a - b ≠ 0 := by
     intro h
     have : -algebraMap ℂ A Complex.I - algebraMap ℂ A Complex.I = 0 := by
-      simpa [ν, f, a, b, Complex.conjAe_coe] using congrArg ν h
+      simpa [ν, μ, a, b, Complex.conjAe_coe] using congrArg ν h
     apply htwoI
     simpa [two_mul, sub_eq_add_neg] using congrArg Neg.neg this
   have hplus : a + b ≠ 0 := by
     intro h
     have : algebraMap ℂ A Complex.I + algebraMap ℂ A Complex.I = 0 := by
-      simpa [μ, f, a, b] using congrArg μ h
+      simpa [μ, a, b] using congrArg μ h
     apply htwoI
     simpa [two_mul] using this
   refine ⟨a - b, a + b, hminus, hplus, ?_⟩
