@@ -97,6 +97,15 @@ theorem finiteProjectiveModulesExtendScalars_obj_obj
       ModuleCat.of S (BalancedExtension f P.obj) :=
   (rfl)
 
+@[simp]
+theorem finiteProjectiveModulesExtendScalars_map_hom
+    {P Q : (finiteProjectiveModules R).FullSubcategory} (g : P ⟶ Q) :
+    (f.finiteProjectiveModulesExtendScalars.map g).hom =
+      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≫
+        ModuleCat.ofHom (BalancedExtension.map f g.hom.hom) ≫
+          eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj Q).symm :=
+  (rfl)
+
 /-- Extension of scalars on finitely generated projective modules is conflation-exact: every
 conflation of finitely generated projective modules splits, and the additive functor preserves
 split short exact sequences. -/
