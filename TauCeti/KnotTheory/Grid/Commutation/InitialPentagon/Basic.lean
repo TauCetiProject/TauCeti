@@ -137,6 +137,14 @@ theorem turn_mem_cIco_bottom_top (P : GridInitialPentagonBetween a s x y) :
   rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def]
   exact P.turn_mem
 
+/-- A terminal-side pentagon followed by an initial-side pentagon at the same column shares
+its bottom row with that pentagon, regardless of their turn rows. -/
+theorem bottom_eq_bottom_of_pentagon {t : Fin n} {z : GridState n}
+    (Q : GridInitialPentagonBetween a s x y) (P : GridPentagonBetween a t z x) :
+    Q.bottom = P.bottom := by
+  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, Q.left_eq,
+    ← P.right_eq, P.map_right]
+
 /-- An initial-side pentagon spanning one cyclic row turns at its bottom row. -/
 theorem turn_eq_bottom_of_top_eq_finRotate_bottom (P : GridInitialPentagonBetween a s x y)
     (hthin : P.top = finRotate n P.bottom) : s = P.bottom := by

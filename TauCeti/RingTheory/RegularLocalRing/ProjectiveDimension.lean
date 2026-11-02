@@ -53,6 +53,11 @@ ring is a regular ring in Mathlib's sense.
   exactly when its residue field has finite projective dimension.
 * `TauCeti.isRegularLocalRing_iff_globalDimension_lt_top`: a Noetherian local ring is regular
   exactly when its global dimension is finite.
+* `TauCeti.isRegularLocalRing_tfae`: Serre's characterization of regular local rings by the
+  residue field, by the global dimension, and by the equalities
+  `gl dim R = dim R` and `pd κ = dim_κ 𝔪 / 𝔪²`.
+* `TauCeti.finrank_cotangentSpace_le_projectiveDimension_quotient_maximalIdeal`: the residue
+  field of a Noetherian local ring has projective dimension at least `dim_κ 𝔪 / 𝔪²`.
 * `TauCeti.isRegularRing_of_globalDimension_lt_top`: a Noetherian ring of finite global dimension
   is a regular ring.
 * `TauCeti.isRegularRing_of_isRegularLocalRing`: a regular local ring is a regular ring, so its
@@ -95,7 +100,7 @@ dimension, this bound makes the global dimension of `A` finite, so `A` is a regu
 ## References
 
 * [Stacks Project, Section 10.110](https://stacks.math.columbia.edu/tag/00O7), Rings of finite
-  global dimension: Proposition 10.110.1 (00O7), Proposition 10.110.5 (00OC),
+  global dimension: Proposition 10.110.1 (00O7), Lemma 10.110.3 (00OA), Proposition 10.110.5 (00OC),
   Lemma 10.110.6 (0AFS) and Lemma 10.110.8 (00OE).
 * [Stacks Project, Lemma 10.109.12](https://stacks.math.columbia.edu/tag/065T), reducing the
   global dimension to cyclic modules.
@@ -371,6 +376,50 @@ global dimension is then the Krull dimension
 theorem isRegularLocalRing_iff_globalDimension_lt_top {R : Type u} [CommRing R] [IsLocalRing R]
     [IsNoetherianRing R] [Small.{v} R] : IsRegularLocalRing R ↔ globalDimension.{v} R < ⊤ :=
   ⟨fun _ ↦ IsRegularLocalRing.globalDimension_lt_top, IsRegularLocalRing.of_globalDimension_lt_top⟩
+
+/-- **Serre's characterization of regular local rings.** For a Noetherian local ring `R` with
+residue field `κ`, the following are equivalent:
+1. `κ` has finite projective dimension;
+2. `R` has finite global dimension;
+3. `R` is a regular local ring;
+4. the global dimension of `R` is its Krull dimension;
+5. the projective dimension of `κ` is `dim_κ 𝔪 / 𝔪²`.
+
+Conditions 4 and 5 are the equalities `gl dim R = dim R` and `pd κ = dim_κ 𝔪 / 𝔪²` of 00OC,
+which hold for a regular local ring; they are equivalent to regularity because `R` has finite
+Krull dimension. -/
+@[stacks 00OC]
+theorem isRegularLocalRing_tfae {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+    [Small.{v} R] :
+    List.TFAE [projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) ≠ ⊤,
+      globalDimension.{v} R < ⊤, IsRegularLocalRing R,
+      globalDimension.{v} R = ringKrullDim R,
+      projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) =
+        Module.finrank (ResidueField R) (CotangentSpace R)] := by
+  tfae_have 1 ↔ 3 := isRegularLocalRing_iff_projectiveDimension_ne_top.symm
+  tfae_have 2 ↔ 3 := isRegularLocalRing_iff_globalDimension_lt_top.symm
+  tfae_have 3 → 4 := fun _ ↦ IsRegularLocalRing.globalDimension_eq_ringKrullDim
+  tfae_have 4 → 2 := fun h ↦ h ▸ ringKrullDim_lt_top
+  tfae_have 3 → 5 := fun h ↦ by
+    rw [IsRegularLocalRing.projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim,
+      (iff_finrank_cotangentSpace R).mp h]
+  tfae_have 5 → 1 := fun h ↦ by
+    rw [h, ← WithBot.coe_natCast, ne_eq, WithBot.coe_eq_top]
+    exact ENat.natCast_ne_top _
+  tfae_finish
+
+/-- **The residue field of a Noetherian local ring has projective dimension at least
+`dim_κ 𝔪 / 𝔪²`.** When this projective dimension is finite, the ring is regular and the two are
+equal (`TauCeti.isRegularLocalRing_tfae`). -/
+@[stacks 00OA]
+theorem finrank_cotangentSpace_le_projectiveDimension_quotient_maximalIdeal {R : Type u}
+    [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R] :
+    (Module.finrank (ResidueField R) (CotangentSpace R) : WithBot ℕ∞) ≤
+      projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) := by
+  by_cases h : projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) = ⊤
+  · exact h ▸ le_top
+  · have h15 := isRegularLocalRing_tfae.{v} (R := R) |>.out 1 5
+    rw [h15.mp h]
 
 /-- **A Noetherian ring of finite global dimension is a regular ring.** Its localizations at
 primes have global dimension at most that of the ring, so they are regular local rings. -/
