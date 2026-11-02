@@ -116,6 +116,18 @@ theorem equivProd_root (a : B.normTwoShell) :
     equivProd B (root B a) = (0, Finsupp.single a 1) := by
   simp [root]
 
+/-- Vanishing of the root component is equivalent to being the recovered Cartan vector. -/
+theorem equivProd_snd_eq_zero_iff (x : ShellLieAlgebra B) :
+    (equivProd B x).2 = 0 ↔ x = cartan B (equivProd B x).1 := by
+  constructor
+  · intro hx
+    apply (equivProd B).injective
+    rw [equivProd_cartan]
+    exact Prod.ext rfl hx
+  · intro hx
+    conv_lhs => rw [hx]
+    simp only [equivProd_cartan]
+
 /-- The integral basis of `ShellLieAlgebra B`: the Cartan vectors `H_(αᵢ)` of the coordinate
 vectors `αᵢ = Pi.single i 1`, followed by the root vectors `x_a`. -/
 noncomputable def basis : Basis (I ⊕ B.normTwoShell) ℤ (ShellLieAlgebra B) :=
@@ -238,6 +250,26 @@ theorem cartan_lie_root (h : I → ℤ) (b : B.normTwoShell) :
       simpa [← basis_inl, ← basis_inr, toBilin'_apply', basisBracket] using
         lie_basis_basis B (.inl i) (.inr b)
   simpa [toBilin'_apply'] using congr($key h)
+
+/-- The coefficient of a root in a Cartan bracket is its root pairing times its coefficient. -/
+@[simp]
+theorem equivProd_cartan_lie_snd (h : I → ℤ) (x : ShellLieAlgebra B)
+    (a : B.normTwoShell) :
+    (equivProd B ⁅cartan B h, x⁆).2 a =
+      (h ⬝ᵥ B *ᵥ (a : I → ℤ)) * (equivProd B x).2 a := by
+  let c : ShellLieAlgebra B →ₗ[ℤ] ℤ :=
+    (Finsupp.lapply a).comp ((LinearMap.snd ℤ _ _).comp (equivProd B).toLinearMap)
+  have key : c.comp (bracketBilin B (cartan B h)) =
+      (h ⬝ᵥ B *ᵥ (a : I → ℤ)) • c := by
+    apply (basis B).ext
+    intro k
+    rcases k with i | b
+    · simp [c, basis_inl, cartan_lie_cartan]
+    · by_cases hab : a = b
+      · subst b
+        simp [c, basis_inr, cartan_lie_root]
+      · simp [c, basis_inr, cartan_lie_root, hab]
+  exact congrArg (fun f : ShellLieAlgebra B →ₗ[ℤ] ℤ ↦ f x) key
 
 /-- The bracket `⁅x_a, H_k⁆ = -⟪k, a⟫ x_a`. -/
 @[simp]
