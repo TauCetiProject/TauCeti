@@ -145,26 +145,6 @@ private theorem exists_testFunction_fderiv_apply_eq_neg_norm {w : E → ℝ} (hw
     simp only [coe_mk, ψ, map_neg, map_smul, smul_eq_mul, hGapp, hρ1 hx, one_mul, ← hGnorm]
     field_simp [norm_ne_zero_iff.2 hGx]
 
-/-- The clamped function `max 0 (min w η)` differs from `η` times the indicator of `{w > 0}`
-by at most `η`, and only on the shell `{0 < w < η}`. -/
-private theorem abs_mul_indicator_sub_max_min_le {X : Type*} {w : X → ℝ} {η : ℝ} (hη : 0 ≤ η)
-    (x : X) :
-    |η * {x | 0 < w x}.indicator 1 x - max 0 (min (w x) η)| ≤
-      (w ⁻¹' Ioo 0 η).indicator (fun _ => η) x := by
-  by_cases hxS : x ∈ w ⁻¹' Ioo 0 η
-  · have h1 : 0 < w x := hxS.1
-    have h2 : w x < η := hxS.2
-    rw [indicator_of_mem hxS, indicator_of_mem (s := {x | 0 < w x}) h1, Pi.one_apply, mul_one,
-      min_eq_left h2.le, max_eq_right h1.le, abs_le]
-    constructor <;> linarith
-  · rw [indicator_of_notMem hxS]
-    rcases le_or_gt (w x) 0 with h | h
-    · rw [indicator_of_notMem (s := {x | 0 < w x}) h.not_gt, mul_zero,
-        max_eq_left ((min_le_left _ _).trans h), sub_zero, abs_zero]
-    · have hηx : η ≤ w x := le_of_not_gt fun h' => hxS ⟨h, h'⟩
-      rw [indicator_of_mem (s := {x | 0 < w x}) h, Pi.one_apply, mul_one, min_eq_right hηx,
-        max_eq_right hη, sub_self, abs_zero]
-
 /-- **The calibration estimate.** If a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on the
 shell `S = {0 < w < η}`, as `-∇w / ‖∇w‖` does, then
 `∫_S ‖Dw‖ ≤ η (∫_{w > 0} div ψ + ∫_S |div ψ|)`. -/

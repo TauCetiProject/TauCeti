@@ -20,7 +20,9 @@ clamped function agrees with `w` nearby, and off it the clamped function is loca
 has a local extremum.
 
 Clamped functions of this form are the standard test functions for integration by parts against
-the indicator of a superlevel set.
+the indicator of a superlevel set. The clamped function differs from `η` times the indicator of
+`{w > 0}` by at most `η`, and only on the band `{0 < w < η}`
+(`TauCeti.abs_mul_indicator_sub_max_min_le`), for any real function `w` on any type.
 -/
 
 public section
@@ -28,6 +30,26 @@ public section
 open Filter Set
 
 namespace TauCeti
+
+/-- The clamped function `max 0 (min w η)` differs from `η` times the indicator of `{w > 0}`
+by at most `η`, and only on the band `{0 < w < η}`. -/
+theorem abs_mul_indicator_sub_max_min_le {X : Type*} {w : X → ℝ} {η : ℝ} (hη : 0 ≤ η)
+    (x : X) :
+    |η * {x | 0 < w x}.indicator 1 x - max 0 (min (w x) η)| ≤
+      (w ⁻¹' Ioo 0 η).indicator (fun _ => η) x := by
+  by_cases hxS : x ∈ w ⁻¹' Ioo 0 η
+  · have h1 : 0 < w x := hxS.1
+    have h2 : w x < η := hxS.2
+    rw [indicator_of_mem hxS, indicator_of_mem (s := {x | 0 < w x}) h1, Pi.one_apply, mul_one,
+      min_eq_left h2.le, max_eq_right h1.le, abs_le]
+    constructor <;> linarith
+  · rw [indicator_of_notMem hxS]
+    rcases le_or_gt (w x) 0 with h | h
+    · rw [indicator_of_notMem (s := {x | 0 < w x}) h.not_gt, mul_zero,
+        max_eq_left ((min_le_left _ _).trans h), sub_zero, abs_zero]
+    · have hηx : η ≤ w x := le_of_not_gt fun h' => hxS ⟨h, h'⟩
+      rw [indicator_of_mem (s := {x | 0 < w x}) h, Pi.one_apply, mul_one, min_eq_right hηx,
+        max_eq_right hη, sub_self, abs_zero]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
