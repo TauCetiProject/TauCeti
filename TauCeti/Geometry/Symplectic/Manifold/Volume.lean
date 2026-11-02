@@ -96,7 +96,7 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
   have hσ (v w : TangentSpace I x) : σ.1 x ![v, w] = h.symplecticFormAt x v w := by
     rw [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
   have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.1 x) (m := n) b
-    (fun i j ↦ by rw [hσ, hb.apply_fst_fst]) (fun i j ↦ by rw [hσ, hb.apply_snd_snd])
+    (fun i j ↦ by rw [hσ, hb.apply_fst_fst])
     (fun i j ↦ by rw [hσ, hb.apply_fst_snd])
   have hb' : ⇑b ∘ (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).symm =
       fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by

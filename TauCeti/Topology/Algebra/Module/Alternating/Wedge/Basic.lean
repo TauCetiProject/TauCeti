@@ -654,9 +654,7 @@ theorem pairedWedge_apply_vecCons_of_forall [ContinuousAdd F₁] [ContinuousCons
       ext i
       refine Fin.cases rfl (fun j ↦ ?_) i
       simp only [Function.comp_apply, Matrix.cons_val_succ]
-      rw [show Fin.cast (Nat.add_comm 1 (l + 1)) j.succ =
-        (Fin.cast (Nat.add_comm (0 + 1) l) j).succ from Fin.ext (by simp),
-        Matrix.cons_val_succ]
+      rw [Fin.cast_succ_eq, Matrix.cons_val_succ]
     have hzero : pairedWedge (k := 0 + 1) μ hμ α (curryLeftTopological ψ u)
         (w ∘ Fin.cast (Nat.add_comm (0 + 1) l)) = 0 :=
       pairedWedge_apply_eq_zero_of_forall _ _ _ _ _ fun i ↦ hw _

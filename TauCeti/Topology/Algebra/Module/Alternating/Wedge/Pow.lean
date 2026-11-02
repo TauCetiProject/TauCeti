@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Wedge powers of real alternating forms
@@ -24,7 +25,7 @@ For a two-form `ω`, inserting a vector into a wedge power obeys the power rule
 (`ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`), which follows from the antiderivation
 rule of the interior product together with associativity and graded commutativity of the wedge. It
 computes the top power of `ω` on a standard family: if vectors `qᵢ, pᵢ` satisfy
-`ω(qᵢ, qⱼ) = ω(pᵢ, pⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ`, then `ω ^ m` takes the value `m!` on
+`ω(qᵢ, qⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ`, then `ω ^ m` takes the value `m!` on
 `(q₀, p₀, q₁, p₁, …)` (`ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`). Applied to a
 Darboux basis this is the classical normalization of the symplectic volume form `ωⁿ / n!`.
 
@@ -147,30 +148,11 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
 
 /-! ### The value on standard pairs -/
 
-omit [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] in
-/-- The family `(b (0, 0), b (0, 1), b (1, 0), b (1, 1), …)` of a doubly indexed family, listed
-through `finProdFinEquiv`, splits off its first pair. -/
-private theorem comp_finProdFinEquiv_symm_succ {m : ℕ} (b : Fin (m + 1) × Fin 2 → E) :
-    (fun r : Fin (2 * (m + 1)) ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r))) =
-      Matrix.vecCons (b (0, 0)) (Matrix.vecCons (b (0, 1))
-        (fun r : Fin (2 * m) ↦
-          (b ∘ Prod.map Fin.succ id) (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) r)))) := by
-  ext r
-  refine Fin.cases ?_ (fun r ↦ Fin.cases ?_ (fun r ↦ ?_) r) r
-  · congr 1
-    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat]
-  · congr 1
-    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat, Nat.mod_le]
-  · simp only [Matrix.cons_val_succ]
-    congr 1
-    ext <;> simp [Fin.coe_divNat, Fin.coe_modNat] <;> omega
-
 /-- **The value of the top power on standard pairs.** If vectors `qᵢ = b (i, 0)` and
-`pᵢ = b (i, 1)` satisfy `ω(qᵢ, qⱼ) = ω(pᵢ, pⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ`, then the `m`-th wedge
+`pᵢ = b (i, 1)` satisfy `ω(qᵢ, qⱼ) = 0` and `ω(qᵢ, pⱼ) = δᵢⱼ`, then the `m`-th wedge
 power of `ω` takes the value `m!` on `(q₀, p₀, q₁, p₁, …)`. -/
 theorem wedgePow_apply_finProdFinEquiv (ω : E [⋀^Fin 2]→L[ℝ] ℝ) {m : ℕ}
     (b : Fin m × Fin 2 → E) (h₀₀ : ∀ i j, ω ![b (i, 0), b (j, 0)] = 0)
-    (h₁₁ : ∀ i j, ω ![b (i, 1), b (j, 1)] = 0)
     (h₀₁ : ∀ i j, ω ![b (i, 0), b (j, 1)] = if i = j then 1 else 0) :
     wedgePow ω m (fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 m) r))) =
       m.factorial := by
@@ -179,8 +161,7 @@ theorem wedgePow_apply_finProdFinEquiv (ω : E [⋀^Fin 2]→L[ℝ] ℝ) {m : �
   | succ m ih =>
     rw [comp_finProdFinEquiv_symm_succ, wedgePow_succ_apply_vecCons,
       pairedWedge_apply_vecCons_of_forall, curryLeftTopological_apply_apply,
-      ih _ (fun i j ↦ h₀₀ _ _) (fun i j ↦ h₁₁ _ _)
-        (fun i j ↦ by simpa using h₀₁ i.succ j.succ)]
+      ih _ (fun i j ↦ h₀₀ _ _) (fun i j ↦ by simpa using h₀₁ i.succ j.succ)]
     · simp [h₀₁, Nat.factorial_succ]
     · intro r
       rw [curryLeftTopological_apply_apply]
