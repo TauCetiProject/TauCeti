@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.LevelCommute
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.LevelRaise.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Descent.LevelRaise.Commute
 public import TauCeti.NumberTheory.ModularForms.Newforms.SquarefreeDecomposition
+import Mathlib.RingTheory.Radical.NatInt
 
 /-!
 # The coefficient formula of the descent
@@ -291,7 +292,7 @@ with `χ` pulled back from `χ₀` modulo `N / p`, vanishing at every index copr
 arbitrary `L` coprime to `p` whose primes divide `N`, there is `F ∈ S_k(Γ₁(N / p), χ₀)` with
 `a_m(F) = a_{pm}(f)` at every `m` coprime to `L`: the descent of `f`, rescaled by
 `p / |family|`, by the coefficient formula of the descent and the coprime-filter descent.
-The proof replaces `L` by the product of its distinct prime factors. -/
+`L` need not be squarefree: coprimality to `L` depends only on the prime divisors of `L`. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_coeff_mul_of_coprime [NeZero N]
     (hp : p.Prime) (hpN : p ∣ N) {L : ℕ} (hLN : L.primeFactors ⊆ N.primeFactors)
     (hpL : Nat.Coprime p L) {χ : (ZMod N)ˣ →* ℂˣ} {χ₀ : (ZMod (N / p))ˣ →* ℂˣ}
@@ -300,23 +301,23 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_coeff_mul_of_coprime [N
     (hvan : ∀ n, Nat.Coprime n (p * L) → (qExpansion 1 f).coeff n = 0) :
     ∃ F : CuspForm ((Gamma1 (N / p)).map (mapGL ℝ)) k, F ∈ cuspFormCharSpace k χ₀ ∧
       ∀ m, Nat.Coprime m L → (qExpansion 1 F).coeff m = (qExpansion 1 f).coeff (p * m) := by
-  let L₀ := ∏ q ∈ L.primeFactors, q
-  have hL₀ : Squarefree L₀ :=
-    Finset.squarefree_prod_of_pairwise_isCoprime
-      (fun q hq r hr hqr ↦ Nat.coprime_iff_isRelPrime.mp
-        ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors hq)
-          (Nat.prime_of_mem_primeFactors hr)).mpr hqr))
-      (fun q hq ↦ (Nat.prime_of_mem_primeFactors hq).squarefree)
+  -- Replace `L` by its radical `L₀`: it is squarefree, has the same prime factors, and an
+  -- integer is coprime to `L₀` exactly when it is coprime to `L`.
+  set L₀ := UniqueFactorizationMonoid.radical L with hL₀def
+  have hL₀ : Squarefree L₀ := UniqueFactorizationMonoid.squarefree_radical
   have hL0 : L ≠ 0 := by
     intro h
     exact hp.ne_one (by simpa [h] using hpL)
   have hcop (n : ℕ) : Nat.Coprime n L₀ ↔ Nat.Coprime n L := by
     refine ⟨fun hn ↦ Nat.coprime_of_dvd fun q hq hqn hqL ↦ ?_,
-      fun hn ↦ hn.coprime_dvd_right L.prod_primeFactors_dvd⟩
-    have hqL₀ : q ∣ L₀ := Finset.dvd_prod_of_mem _ (Nat.mem_primeFactors.mpr ⟨hq, hqL, hL0⟩)
+      fun hn ↦ hn.coprime_dvd_right UniqueFactorizationMonoid.radical_dvd_self⟩
+    have hqL₀ : q ∣ L₀ := by
+      rw [hL₀def, Nat.radical_eq_prod_primeFactors]
+      exact Finset.dvd_prod_of_mem _ (Nat.mem_primeFactors.mpr ⟨hq, hqL, hL0⟩)
     exact hq.ne_one (Nat.eq_one_of_dvd_coprimes hn hqn hqL₀)
   have hLN₀ : L₀.primeFactors ⊆ N.primeFactors := by
-    exact (Nat.primeFactors_mono L.prod_primeFactors_dvd hL0).trans hLN
+    rw [hL₀def, Nat.primeFactors_radical]
+    exact hLN
   have hpL₀ := (hcop p).mpr hpL
   have hvan₀ : ∀ n, Nat.Coprime n (p * L₀) → (qExpansion 1 f).coeff n = 0 := by
     intro n hn
