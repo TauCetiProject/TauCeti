@@ -32,9 +32,9 @@ noncomputable section
 open HahnSeries TensorProduct TauCeti
 open scoped LaurentSeries PowerSeries
 
-namespace TauCeti.HahnModule
+namespace HahnModule
 
-open _root_.HahnModule
+open TauCeti.HahnModule
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V]
@@ -92,7 +92,7 @@ theorem coeff_subst {ι : Type*} [Fintype ι] (b : Module.Basis ι K V)
 
 /-- Substituting `X` is the identity on module-valued Laurent series. -/
 @[simp]
-theorem _root_.HahnModule.subst_X (x : HahnModule ℤ K V) :
+theorem subst_X (x : HahnModule ℤ K V) :
     subst PowerSeries.constantCoeff_X PowerSeries.X_ne_zero x = x := by
   have heq : subst (V := V) PowerSeries.constantCoeff_X PowerSeries.X_ne_zero = LinearMap.id :=
     linearMap_ext_smul_single_zero (R := K) fun f v ↦ by simp [subst_smul_single_zero]
@@ -101,7 +101,7 @@ theorem _root_.HahnModule.subst_X (x : HahnModule ℤ K V) :
 private theorem subst_eq_self_of_eq_X (h : φ = PowerSeries.X) (x : HahnModule ℤ K V) :
     subst hφ hφ₀ x = x := by
   subst φ
-  exact _root_.HahnModule.subst_X x
+  exact subst_X x
 
 /-- Substitution is semilinear for the substitution of scalar Laurent series. -/
 @[simp]
@@ -286,4 +286,4 @@ theorem residueDual_derivative_smul_subst_coordinate (φ : FormalCoordinate K)
 
 end Residue
 
-end TauCeti.HahnModule
+end HahnModule
