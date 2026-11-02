@@ -372,20 +372,6 @@ lemma toQuadraticForm'_smul_one (c : ℝ) (ξ : EuclideanSpace ℝ n) :
     (c • (1 : Matrix n n ℝ)).toQuadraticForm' ξ = c * ‖ξ‖ ^ 2 := by
   rw [toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul, toQuadraticForm'_one]
 
-/-- Matrix quadratic forms are additive in the coefficient matrix. -/
-@[simp]
-lemma toQuadraticForm'_add (A B : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    (A + B).toQuadraticForm' ξ = A.toQuadraticForm' ξ + B.toQuadraticForm' ξ := by
-  rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply,
-    Matrix.toQuadraticForm'_apply, add_mulVec, dotProduct_add]
-
-/-- Transposing the coefficient matrix does not change its quadratic form. -/
-@[simp]
-lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    Aᵀ.toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply,
-    Matrix.dotProduct_transpose_mulVec]
-
 /-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
 lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (c • (1 : Matrix n n ℝ)) η ξ = c * (η ⬝ᵥ ξ) := by
@@ -407,9 +393,8 @@ lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [coefficientSymmetricPart, toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul,
-    toQuadraticForm'_add, toQuadraticForm'_transpose]
-  ring
+  rw [coefficientSymmetricPart, toQuadraticForm'_smul, toQuadraticForm'_add_transpose, smul_smul,
+    one_div_mul_cancel two_ne_zero, one_smul]
 
 /-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
 bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by
@@ -479,7 +464,7 @@ lemma lower_bound_toQuadraticForm'_add {A B : Matrix n n ℝ} {lam : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (ξ : EuclideanSpace ℝ n) :
     lam * ‖ξ‖ ^ 2 ≤ (A + B).toQuadraticForm' ξ := by
-  rw [toQuadraticForm'_add]
+  rw [toQuadraticForm'_add, _root_.add_apply]
   exact (hA ξ).trans (le_add_of_nonneg_right (hB ξ))
 
 /-- Adding a coefficient with a one-sided quadratic lower bound lowers a quadratic lower
@@ -488,7 +473,7 @@ lemma lower_bound_toQuadraticForm'_add_of_lower_bound {A B : Matrix n n ℝ} {la
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hB : ∀ ξ : EuclideanSpace ℝ n, -(Mu * ‖ξ‖ ^ 2) ≤ B.toQuadraticForm' ξ)
     (ξ : EuclideanSpace ℝ n) : (lam - Mu) * ‖ξ‖ ^ 2 ≤ (A + B).toQuadraticForm' ξ := by
-  rw [toQuadraticForm'_add]
+  rw [toQuadraticForm'_add, _root_.add_apply]
   have hA_lower := hA ξ
   have hB_lower := hB ξ
   nlinarith
@@ -874,7 +859,8 @@ lemma UniformlyEllipticOn.smul_add_one_sub_smul (ha : UniformlyEllipticOn Ω a l
       · simp [hχΩ x hx]
     have hB := mul_le_mul_of_nonneg_left (hb.lower_bound (Set.mem_univ x) ξ)
       (sub_nonneg.2 (hχ x).2)
-    rw [toQuadraticForm'_add, toQuadraticForm'_smul, toQuadraticForm'_smul]
+    rw [toQuadraticForm'_add, _root_.add_apply, toQuadraticForm'_smul,
+      toQuadraticForm'_smul]
     simp only [_root_.smul_apply, smul_eq_mul]
     linarith
   · have hA : χ x * |η ⬝ᵥ (a x *ᵥ ξ)| ≤ χ x * (Lam * ‖η‖ * ‖ξ‖) := by
