@@ -13,13 +13,14 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # The Cayley chart on square roots of `-1` in a Banach algebra
 
-Let `j` be a square root of `-1` in a normed algebra `A` with summable geometric series, for
-instance a Banach algebra of endomorphisms or of endomorphism fields. The Cayley parametrization
-`cayleyParam j η = (1 + η)⁻¹ * j * (1 + η)` and the Cayley coordinate
+Let `j` be a square root of `-1` in a normed algebra `A` with summable geometric series in which
+`2` is a unit, for instance a real Banach algebra of endomorphisms or of endomorphism fields. The
+Cayley parametrization `cayleyParam j η = (1 + η)⁻¹ * j * (1 + η)` and the Cayley coordinate
 `cayleyCoord j J = (j - J) * (j + J)⁻¹` of `TauCeti.Algebra.Ring.CayleyChart` are mutually inverse
 between the `j`-antilinear `η` with `1 + η` invertible and the square roots `J` of `-1` with
 `j + J` invertible. This file shows that this is a chart of the space of square roots of `-1`
-around `j`, and that it is holomorphic.
+around `j`, and that its derivative intertwines left multiplication by `j` with left
+multiplication by the image point; over the reals this says that the chart is holomorphic.
 
 * Both maps are analytic on the open sets where their denominators are invertible, so the
   bijection is a homeomorphism and the transition maps between the charts at two square roots of
@@ -27,9 +28,10 @@ around `j`, and that it is holomorphic.
 * The derivative of `cayleyParam j` at `η` is `ζ ↦ (1 + η)⁻¹ * (j * ζ - ζ * J)`, where
   `J = cayleyParam j η`. It takes values in the tangent space `{X | X * J + J * X = 0}` of the
   square roots of `-1` at `J`, and at `η = 0` it is `ζ ↦ 2 * (j * ζ)` on the `j`-antilinear `ζ`.
-* **Holomorphy.** The space of `j`-antilinear elements is a complex vector space, with
-  multiplication by `i` given by `ζ ↦ j * ζ`, and the tangent space at `J` is one with
-  `X ↦ J * X`. The derivative intertwines them: it carries `j * ζ` to `J` times the image of `ζ`.
+* **Holomorphy.** Over any scalar field the derivative intertwines the left multiplication
+  operators `ζ ↦ j * ζ` and `X ↦ J * X`: it carries `j * ζ` to `J` times the image of `ζ`. For a
+  real normed algebra, these operators make the `j`-antilinear elements and the tangent space at
+  `J` complex vector spaces, with multiplication by `i`, and the derivative is complex linear.
 
 For endomorphism fields of a surface, `cayleyParam` is the formula by which Robbin and Salamon
 parametrize local holomorphic slices of the space of complex structures; the statements here are
@@ -46,8 +48,9 @@ the relevant fields live.
   parametrization, and `TauCeti.fderiv_cayleyParam_zero_apply`: its value `2 * (j * ζ)` at `0`.
 * `TauCeti.fderiv_cayleyParam_apply_mul_add_mul`: the derivative is tangent to the square roots of
   `-1`.
-* `TauCeti.fderiv_cayleyParam_apply_mul_left`: the derivative is complex linear for the complex
-  structures `ζ ↦ j * ζ` and `X ↦ cayleyParam j η * X`.
+* `TauCeti.fderiv_cayleyParam_apply_mul_left`: the derivative intertwines `ζ ↦ j * ζ` and
+  `X ↦ cayleyParam j η * X`; for a real normed algebra, it is complex linear for these complex
+  structures.
 
 ## References
 
@@ -70,8 +73,7 @@ variable {A : Type*} [NormedRing A] [HasSummableGeomSeries A] {j : A}
 
 /-- The Cayley parametrization is continuous where `1 + η` is invertible. -/
 lemma continuousOn_cayleyParam : ContinuousOn (cayleyParam j) {η : A | IsUnit (1 + η)} := by
-  rw [show cayleyParam j = fun η ↦ Ring.inverse (1 + η) * j * (1 + η) from
-    funext (cayleyParam_def j)]
+  rw [cayleyParam_eq_fun]
   rintro η ⟨u, hu⟩
   refine ContinuousAt.continuousWithinAt ?_
   have hinv : ContinuousAt (fun η : A ↦ Ring.inverse (1 + η)) η :=
@@ -80,7 +82,7 @@ lemma continuousOn_cayleyParam : ContinuousOn (cayleyParam j) {η : A | IsUnit (
 
 /-- The Cayley coordinate is continuous where `j + J` is invertible. -/
 lemma continuousOn_cayleyCoord : ContinuousOn (cayleyCoord j) {J : A | IsUnit (j + J)} := by
-  rw [show cayleyCoord j = fun J ↦ (j - J) * Ring.inverse (j + J) from funext (cayleyCoord_def j)]
+  rw [cayleyCoord_eq_fun]
   rintro J ⟨u, hu⟩
   refine ContinuousAt.continuousWithinAt ?_
   have hinv : ContinuousAt (fun J : A ↦ Ring.inverse (j + J)) J :=
@@ -95,16 +97,12 @@ invertible, with inverse `cayleyCoord j`. -/
 def cayleyHomeomorph (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     {η : A // η * j = -(j * η) ∧ IsUnit (1 + η)} ≃ₜ {J : A // J * J = -1 ∧ IsUnit (j + J)} where
   toEquiv := cayleyEquiv j h2 hj
-  continuous_toFun := by
-    refine continuous_induced_rng.2 ?_
-    rw [Equiv.toFun_as_coe, show Subtype.val ∘ cayleyEquiv j h2 hj = cayleyParam j ∘ Subtype.val
-      from funext (coe_cayleyEquiv_apply h2 hj)]
-    exact continuousOn_cayleyParam.comp_continuous continuous_subtype_val fun η ↦ η.2.2
-  continuous_invFun := by
-    refine continuous_induced_rng.2 ?_
-    rw [Equiv.invFun_as_coe, show Subtype.val ∘ (cayleyEquiv j h2 hj).symm =
-      cayleyCoord j ∘ Subtype.val from funext (coe_cayleyEquiv_symm_apply h2 hj)]
-    exact continuousOn_cayleyCoord.comp_continuous continuous_subtype_val fun J ↦ J.2.2
+  continuous_toFun := continuous_induced_rng.2 <|
+    (continuousOn_cayleyParam.comp_continuous continuous_subtype_val fun η ↦ η.2.2).congr
+      fun η ↦ (coe_cayleyEquiv_apply h2 hj η).symm
+  continuous_invFun := continuous_induced_rng.2 <|
+    (continuousOn_cayleyCoord.comp_continuous continuous_subtype_val fun J ↦ J.2.2).congr
+      fun J ↦ (coe_cayleyEquiv_symm_apply h2 hj J).symm
 
 /-- The underlying equivalence of `cayleyHomeomorph` is `cayleyEquiv`. -/
 @[simp]
@@ -134,8 +132,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {A : Type*} [NormedRing A
 
 /-- The Cayley parametrization is analytic at every `η` with `1 + η` invertible. -/
 theorem analyticAt_cayleyParam (hη : IsUnit (1 + η)) : AnalyticAt 𝕜 (cayleyParam j) η := by
-  rw [show cayleyParam j = fun η ↦ Ring.inverse (1 + η) * j * (1 + η) from
-    funext (cayleyParam_def j)]
+  rw [cayleyParam_eq_fun]
   obtain ⟨u, hu⟩ := hη
   have hinv : AnalyticAt 𝕜 (fun η : A ↦ Ring.inverse (1 + η)) η :=
     (hu ▸ analyticAt_inverse (𝕜 := 𝕜) u).comp (analyticAt_const.add analyticAt_id)
@@ -147,7 +144,7 @@ theorem analyticOnNhd_cayleyParam : AnalyticOnNhd 𝕜 (cayleyParam j) {η : A |
 
 /-- The Cayley coordinate is analytic at every `J` with `j + J` invertible. -/
 theorem analyticAt_cayleyCoord (hJ : IsUnit (j + J)) : AnalyticAt 𝕜 (cayleyCoord j) J := by
-  rw [show cayleyCoord j = fun J ↦ (j - J) * Ring.inverse (j + J) from funext (cayleyCoord_def j)]
+  rw [cayleyCoord_eq_fun]
   obtain ⟨u, hu⟩ := hJ
   have hinv : AnalyticAt 𝕜 (fun J : A ↦ Ring.inverse (j + J)) J :=
     (hu ▸ analyticAt_inverse (𝕜 := 𝕜) u).comp (analyticAt_const.add analyticAt_id)
@@ -181,9 +178,7 @@ theorem hasFDerivAt_cayleyParam (hη : IsUnit (1 + η)) :
     have := hasFDerivAt_ringInverse (𝕜 := 𝕜) u
     rw [hu] at this
     exact (this.comp η hadd).congr_fderiv (ContinuousLinearMap.comp_id _)
-  have e : cayleyParam j = (fun η : A ↦ Ring.inverse (1 + η) * j) * fun η ↦ 1 + η :=
-    funext fun η ↦ cayleyParam_def j η
-  rw [e]
+  rw [cayleyParam_eq_fun]
   refine ((hinv.mul_const' j).mul' hadd).congr_fderiv ?_
   ext ζ
   simp [← hu, mul_assoc, sub_eq_add_neg]
@@ -198,8 +193,8 @@ theorem fderiv_cayleyParam_apply (hη : IsUnit (1 + η)) (ζ : A) :
 /-- At `0` the derivative of `cayleyParam j` is `ζ ↦ 2 * (j * ζ)` on the `j`-antilinear `ζ`. -/
 theorem fderiv_cayleyParam_zero_apply {ζ : A} (hζ : ζ * j = -(j * ζ)) :
     fderiv 𝕜 (cayleyParam j) 0 ζ = 2 * (j * ζ) := by
-  rw [fderiv_cayleyParam_apply (by simp), cayleyParam_zero, hζ, add_zero, Ring.inverse_one,
-    one_mul, sub_neg_eq_add, two_mul]
+  rw [fderiv_cayleyParam_apply (by simp)]
+  simp [hζ, two_mul]
 
 /-- **The derivative is tangent to the square roots of `-1`.** For `j * j = -1` and `1 + η`
 invertible, every value `X` of the derivative of `cayleyParam j` at `η` anticommutes with
@@ -219,10 +214,11 @@ theorem fderiv_cayleyParam_apply_mul_add_mul (hj : j * j = -1) (hη : IsUnit (1 
     _ = 0 := by rw [hJJ, hj]; noncomm_ring
 
 /-- **Holomorphy of the Cayley parametrization.** For `1 + η` invertible, the derivative of
-`cayleyParam j` at `η` carries `j * ζ` to `cayleyParam j η` times the image of `ζ`. When
-`j * j = -1`, left multiplication by `j` and by `cayleyParam j η` are complex structures on the
-`j`-antilinear elements and on the tangent space at `cayleyParam j η`
-(`fderiv_cayleyParam_apply_mul_add_mul`), and this says that the derivative is complex linear. -/
+`cayleyParam j` at `η` carries `j * ζ` to `cayleyParam j η` times the image of `ζ`, that is, it
+intertwines left multiplication by `j` and by `cayleyParam j η`. When `𝕜 = ℝ` and `j * j = -1`,
+these left multiplications are complex structures on the `j`-antilinear elements and on the
+tangent space at `cayleyParam j η` (`fderiv_cayleyParam_apply_mul_add_mul`), and this says that
+the derivative is complex linear. -/
 theorem fderiv_cayleyParam_apply_mul_left (hη : IsUnit (1 + η)) (ζ : A) :
     fderiv 𝕜 (cayleyParam j) η (j * ζ) =
       cayleyParam j η * fderiv 𝕜 (cayleyParam j) η ζ := by
