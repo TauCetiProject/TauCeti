@@ -117,8 +117,7 @@ theorem cokernelπ_comp_parityShiftPowerXOfLECokernelIso_hom_apply (hi : i ≤ n
   have hf :
       ((baseChangeFunctor (AdjoinRoot.mk (X ^ n : R[X]))).map
         (parityShiftPowerXOfLEIso R hi).hom).hom.f₁.hom = -𝟙 _ := by
-    rw [← FGModuleCat.forget₂_map, baseChangeFunctor_map_f₁,
-      parityShiftPowerXOfLEIso_hom_f₁]
+    rw [baseChangeFunctor_map_f₁, parityShiftPowerXOfLEIso_hom_f₁]
     -- Explicit composition lets elaboration align the two indexed module carriers.
     exact (Functor.map_neg
       (forget₂ (FGModuleCat R[X]) (ModuleCat R[X]) ⋙
