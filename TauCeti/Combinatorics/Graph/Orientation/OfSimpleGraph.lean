@@ -33,18 +33,52 @@ namespace Graph.Orientation
 
 variable {V : Type u} {H : SimpleGraph V}
 
+/-- The dart determined by the ordered ends of an oriented edge of a simple graph. -/
+def dart (o : (Graph.ofSimpleGraph H).Orientation) (e : (Graph.ofSimpleGraph H).edgeSet) :
+    H.Dart :=
+  ⟨((o.tail e).1, (o.head e).1), by
+    have he := o.isLink e
+    simpa only [ofSimpleGraph_isLink, SimpleGraph.mem_edgeSet, he.1] using he.2⟩
+
+/-- The first endpoint of the dart is the chosen tail. -/
+@[simp]
+theorem dart_fst (o : (Graph.ofSimpleGraph H).Orientation)
+    (e : (Graph.ofSimpleGraph H).edgeSet) : (o.dart e).fst = (o.tail e).1 := by
+  rfl
+
+/-- The second endpoint of the dart is the chosen head. -/
+@[simp]
+theorem dart_snd (o : (Graph.ofSimpleGraph H).Orientation)
+    (e : (Graph.ofSimpleGraph H).edgeSet) : (o.dart e).snd = (o.head e).1 := by
+  rfl
+
+/-- The dart lies over the original edge. -/
+@[simp]
+theorem dart_edge (o : (Graph.ofSimpleGraph H).Orientation)
+    (e : (Graph.ofSimpleGraph H).edgeSet) : (o.dart e).edge = e.1 :=
+  (o.isLink e).1.symm
+
+private theorem tail_head_eq_or_eq_symm (o : (Graph.ofSimpleGraph H).Orientation) (d : H.Dart) :
+    (o.tail ⟨d.edge, d.edge_mem⟩).1 = d.fst ∧
+        (o.head ⟨d.edge, d.edge_mem⟩).1 = d.snd ∨
+      (o.tail ⟨d.edge, d.edge_mem⟩).1 = d.snd ∧
+        (o.head ⟨d.edge, d.edge_mem⟩).1 = d.fst :=
+  Sym2.eq_iff.mp (o.isLink ⟨d.edge, d.edge_mem⟩).1.symm
+
 /-- The dart orientation determined by the ordered ends of the edges of a simple graph. -/
 def toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation) :
     DoubledQuiver.Orientation H where
   carrier := {d | (o.tail ⟨d.edge, d.edge_mem⟩).1 = d.fst}
   symm_mem_iff_not_mem d := by
-    have h := o.isLink ⟨d.edge, d.edge_mem⟩
-    simp only [ofSimpleGraph_isLink, SimpleGraph.Dart.edge] at h
-    have hn := d.fst_ne_snd
-    simp only [Set.mem_ofPred_eq, SimpleGraph.Dart.symm]
-    have he := Sym2.eq_iff.mp h.1
-    simp only [SimpleGraph.Dart.edge] at *
-    grind
+    have he := o.tail_head_eq_or_eq_symm d
+    -- Reduce membership in the carrier being defined; its membership lemma is not available yet.
+    change (o.tail ⟨d.symm.edge, d.symm.edge_mem⟩).1 = d.symm.fst ↔
+      ¬ (o.tail ⟨d.edge, d.edge_mem⟩).1 = d.fst
+    have hedge : (⟨d.symm.edge, d.symm.edge_mem⟩ : (Graph.ofSimpleGraph H).edgeSet) =
+        ⟨d.edge, d.edge_mem⟩ := Subtype.ext (SimpleGraph.Dart.edge_symm d)
+    rw [hedge]
+    simp only [SimpleGraph.Dart.symm, Prod.fst_swap]
+    grind [d.fst_ne_snd]
 
 /-- A dart is selected exactly when its first endpoint is the chosen tail. -/
 @[simp]
@@ -56,12 +90,10 @@ theorem mem_toDartOrientation_iff (o : (Graph.ofSimpleGraph H).Orientation) (d :
 theorem head_eq_of_mem_toDartOrientation (o : (Graph.ofSimpleGraph H).Orientation)
     {d : H.Dart} (hd : d ∈ o.toDartOrientation) :
     (o.head ⟨d.edge, d.edge_mem⟩).1 = d.snd := by
-  have h := o.isLink ⟨d.edge, d.edge_mem⟩
   have ht := (o.mem_toDartOrientation_iff d).1 hd
-  simp only [ofSimpleGraph_isLink, SimpleGraph.Dart.edge] at h
-  have he := Sym2.eq_iff.mp h.1
-  simp only [SimpleGraph.Dart.edge] at *
-  grind [d.fst_ne_snd]
+  rcases o.tail_head_eq_or_eq_symm d with h | h
+  · exact h.2
+  · exact (d.fst_ne_snd (ht.symm.trans h.1)).elim
 
 /-- Two edge orientations inducing the same dart choices coincide. -/
 theorem toDartOrientation_injective :
@@ -69,17 +101,16 @@ theorem toDartOrientation_injective :
   intro o p h
   apply ext_of_tail
   intro e
-  let d : H.Dart := ⟨((o.tail e).1, (o.head e).1), by
-    have he := o.isLink e
-    simpa only [ofSimpleGraph_isLink, SimpleGraph.mem_edgeSet, he.1] using he.2⟩
+  let d := o.dart e
   have hed : (⟨d.edge, d.edge_mem⟩ : (Graph.ofSimpleGraph H).edgeSet) = e := by
     apply Subtype.ext
-    exact (o.isLink e).1.symm
+    exact o.dart_edge e
   have hd : d ∈ o.toDartOrientation := by
     rw [mem_toDartOrientation_iff, hed]
+    exact (o.dart_fst e).symm
   have hp := (p.mem_toDartOrientation_iff d).1 (h ▸ hd)
   apply Subtype.ext
-  simpa only [hed] using hp.symm
+  simpa only [hed] using (o.dart_fst e).symm.trans hp.symm
 
 /-- Construct an edge orientation by choosing the unique selected dart over each edge. -/
 noncomputable def ofDartOrientation (o : DoubledQuiver.Orientation H) :
@@ -100,14 +131,33 @@ noncomputable def ofDartOrientation (o : DoubledQuiver.Orientation H) :
       isLink := fun e ↦ ⟨(hex e).choose_spec.2.symm, e.2⟩ }
 
 /-- The ordered ends recovered from a dart orientation form one of its selected darts. -/
-theorem dart_mem_ofDartOrientation (o : DoubledQuiver.Orientation H)
+theorem dart_ofDartOrientation_mem (o : DoubledQuiver.Orientation H)
     (e : (Graph.ofSimpleGraph H).edgeSet) :
-    (⟨(((ofDartOrientation o).tail e).1, ((ofDartOrientation o).head e).1), by
-      have he := (ofDartOrientation o).isLink e
-      simpa only [ofSimpleGraph_isLink, SimpleGraph.mem_edgeSet, he.1] using he.2⟩ :
-      H.Dart) ∈ o := by
-  dsimp only [ofDartOrientation]
+    (ofDartOrientation o).dart e ∈ o := by
+  dsimp only [dart, ofDartOrientation]
   exact (Classical.choose_spec (p := fun d : H.Dart ↦ d ∈ o ∧ d.edge = e.1) _).1
+
+/-- Recovering an orientation sends a selected dart's edge back to that dart. -/
+@[simp]
+theorem dart_ofDartOrientation (o : DoubledQuiver.Orientation H) {d : H.Dart} (hd : d ∈ o) :
+    (ofDartOrientation o).dart ⟨d.edge, d.edge_mem⟩ = d := by
+  have hc := dart_ofDartOrientation_mem o ⟨d.edge, d.edge_mem⟩
+  obtain h | h := (SimpleGraph.dart_edge_eq_iff _ d).mp
+    ((ofDartOrientation o).dart_edge ⟨d.edge, d.edge_mem⟩)
+  · exact h
+  · exact ((o.symm_mem_iff_not_mem d).1 (h ▸ hc) hd).elim
+
+/-- The recovered tail of a selected dart's edge is its first endpoint. -/
+@[simp]
+theorem tail_ofDartOrientation (o : DoubledQuiver.Orientation H) {d : H.Dart} (hd : d ∈ o) :
+    ((ofDartOrientation o).tail ⟨d.edge, d.edge_mem⟩).1 = d.fst :=
+  congrArg (fun d : H.Dart ↦ d.fst) (dart_ofDartOrientation o hd)
+
+/-- The recovered head of a selected dart's edge is its second endpoint. -/
+@[simp]
+theorem head_ofDartOrientation (o : DoubledQuiver.Orientation H) {d : H.Dart} (hd : d ∈ o) :
+    ((ofDartOrientation o).head ⟨d.edge, d.edge_mem⟩).1 = d.snd :=
+  congrArg (fun d : H.Dart ↦ d.snd) (dart_ofDartOrientation o hd)
 
 /-- Recovering an edge orientation and then its dart choices returns the original orientation. -/
 @[simp]
@@ -116,12 +166,9 @@ theorem toDartOrientation_ofDartOrientation (o : DoubledQuiver.Orientation H) :
   apply DoubledQuiver.Orientation.ext
   intro d
   let e : (Graph.ofSimpleGraph H).edgeSet := ⟨d.edge, d.edge_mem⟩
-  let c : H.Dart := ⟨(((ofDartOrientation o).tail e).1,
-    ((ofDartOrientation o).head e).1), by
-      have he := (ofDartOrientation o).isLink e
-      simpa only [ofSimpleGraph_isLink, SimpleGraph.mem_edgeSet, he.1] using he.2⟩
-  have hc : c ∈ o := dart_mem_ofDartOrientation o e
-  have he : c.edge = d.edge := ((ofDartOrientation o).isLink e).1.symm
+  let c := (ofDartOrientation o).dart e
+  have hc : c ∈ o := dart_ofDartOrientation_mem o e
+  have he : c.edge = d.edge := (ofDartOrientation o).dart_edge e
   obtain h | h := (SimpleGraph.dart_edge_eq_iff c d).mp he
   · have ht : ((ofDartOrientation o).tail e).1 = d.fst := congrArg (fun d : H.Dart ↦ d.fst) h
     exact iff_of_true ht (h ▸ hc)
@@ -159,45 +206,71 @@ theorem ofDartOrientation_toDartOrientation (o : (Graph.ofSimpleGraph H).Orienta
 
 /-- The actual vertices of the multigraph and the vertices of its oriented quiver correspond. -/
 def orientedVertexEquiv (o : (Graph.ofSimpleGraph H).Orientation) :
-    (Graph.ofSimpleGraph H).vertexSet ≃ DoubledQuiver.OrientedQuiver H o.toDartOrientation where
-  toFun x := DoubledQuiver.OrientedQuiver.vertex H o.toDartOrientation x.1
-  invFun x := ⟨(DoubledQuiver.OrientedQuiver.vertexEquiv H o.toDartOrientation).symm x,
-    Set.mem_univ _⟩
-  left_inv x := Subtype.ext (DoubledQuiver.OrientedQuiver.vertexEquiv_symm_vertex H _ x.1)
-  right_inv x := by
-    simpa only [DoubledQuiver.OrientedQuiver.vertexEquiv_apply] using
-      (DoubledQuiver.OrientedQuiver.vertexEquiv H o.toDartOrientation).apply_symm_apply x
+    (Graph.ofSimpleGraph H).vertexSet ≃ DoubledQuiver.OrientedQuiver H o.toDartOrientation :=
+  (Equiv.Set.univ V).trans (DoubledQuiver.OrientedQuiver.vertexEquiv H o.toDartOrientation)
 
 /-- The vertex comparison sends an actual vertex to its oriented-quiver vertex. -/
 @[simp]
 theorem orientedVertexEquiv_apply (o : (Graph.ofSimpleGraph H).Orientation)
     (x : (Graph.ofSimpleGraph H).vertexSet) :
     o.orientedVertexEquiv x = DoubledQuiver.OrientedQuiver.vertex H o.toDartOrientation x.1 :=
-  (rfl)
+  DoubledQuiver.OrientedQuiver.vertexEquiv_apply H o.toDartOrientation x.1
+
+/-- The endpoints of an oriented simple-graph arrow are adjacent. -/
+theorem Hom.adj {o : (Graph.ofSimpleGraph H).Orientation}
+    {x y : (Graph.ofSimpleGraph H).vertexSet} (a : o.Hom x y) : H.Adj x.1 y.1 := by
+  rw [← SimpleGraph.mem_edgeSet, ← a.isLink.1]
+  exact a.isLink.2
+
+/-- The dart given by an oriented arrow's endpoints is selected. -/
+theorem Hom.dart_mem_toDartOrientation {o : (Graph.ofSimpleGraph H).Orientation}
+    {x y : (Graph.ofSimpleGraph H).vertexSet} (a : o.Hom x y) :
+    (⟨(x.1, y.1), a.adj⟩ : H.Dart) ∈ o.toDartOrientation := by
+  rw [mem_toDartOrientation_iff]
+  have he : (⟨s(x.1, y.1), (SimpleGraph.mem_edgeSet H).2 a.adj⟩ :
+      (Graph.ofSimpleGraph H).edgeSet) = a.edge := Subtype.ext a.isLink.1.symm
+  simpa only [SimpleGraph.Dart.edge, he] using congrArg Subtype.val a.tail_eq
 
 /-- The arrows in the two orientation interfaces correspond, preserving their ordered ends. -/
 def orientedHomEquiv (o : (Graph.ofSimpleGraph H).Orientation)
     (x y : (Graph.ofSimpleGraph H).vertexSet) :
-    o.Hom x y ≃ (o.orientedVertexEquiv x ⟶ o.orientedVertexEquiv y) := by
-  rw [orientedVertexEquiv_apply, orientedVertexEquiv_apply]
-  refine Equiv.trans ?_ (DoubledQuiver.OrientedQuiver.homEquiv H o.toDartOrientation x.1 y.1).symm
-  refine
-    { toFun := fun a ↦ ?_
+    o.Hom x y ≃ (o.orientedVertexEquiv x ⟶ o.orientedVertexEquiv y) :=
+  -- The imported vertex equivalence is opaque, so its application lemma supplies the endpoint cast.
+  (Equiv.trans
+    { toFun := fun a ↦ ⟨a.adj, a.dart_mem_toDartOrientation⟩
       invFun := fun a ↦ ⟨⟨s(x.1, y.1), (SimpleGraph.mem_edgeSet H).2 a.1⟩,
-        Subtype.ext ((o.mem_toDartOrientation_iff _).1 a.2),
-        Subtype.ext (o.head_eq_of_mem_toDartOrientation a.2)⟩
-      left_inv := fun a ↦ Hom.ext (Subtype.ext a.isLink.1.symm)
+        Subtype.ext ((o.mem_toDartOrientation_iff ⟨(x.1, y.1), a.1⟩).1 a.2),
+        Subtype.ext (o.head_eq_of_mem_toDartOrientation (d := ⟨(x.1, y.1), a.1⟩) a.2)⟩
+      left_inv := fun (a : o.Hom x y) ↦ Hom.ext (Subtype.ext a.isLink.1.symm)
       right_inv := fun _ ↦ Subsingleton.elim _ _ }
-  have ha : H.Adj x.1 y.1 := by
-    rw [← SimpleGraph.mem_edgeSet, ← a.isLink.1]
-    exact a.isLink.2
-  refine ⟨ha, ?_⟩
-  rw [mem_toDartOrientation_iff]
-  have he : (⟨s(x.1, y.1), (SimpleGraph.mem_edgeSet H).2 ha⟩ :
-      (Graph.ofSimpleGraph H).edgeSet) = a.edge := Subtype.ext a.isLink.1.symm
-  simpa only [SimpleGraph.Dart.edge, he] using congrArg Subtype.val a.tail_eq
+    (DoubledQuiver.OrientedQuiver.homEquiv H o.toDartOrientation x.1 y.1).symm).trans
+      (Equiv.cast (congrArg₂
+        (fun a b : DoubledQuiver.OrientedQuiver H o.toDartOrientation ↦ (a ⟶ b))
+        (o.orientedVertexEquiv_apply x).symm (o.orientedVertexEquiv_apply y).symm))
 
-/-- Regard an edge-labelled oriented walk as a walk of the selected-dart quiver. -/
+/-- The arrow comparison records adjacency and selection of the ordered endpoints. -/
+@[simp]
+theorem homEquiv_orientedHomEquiv (o : (Graph.ofSimpleGraph H).Orientation)
+    {x y : (Graph.ofSimpleGraph H).vertexSet} (a : o.Hom x y) :
+    DoubledQuiver.OrientedQuiver.homEquiv H o.toDartOrientation x.1 y.1
+      (Quiver.homOfEq (o.orientedHomEquiv x y a)
+        (o.orientedVertexEquiv_apply x) (o.orientedVertexEquiv_apply y)) =
+      ⟨a.adj, a.dart_mem_toDartOrientation⟩ :=
+  Subsingleton.elim _ _
+
+/-- The inverse arrow comparison recovers the edge of a selected dart. -/
+@[simp]
+theorem orientedHomEquiv_symm_arrow (o : (Graph.ofSimpleGraph H).Orientation)
+    (x y : (Graph.ofSimpleGraph H).vertexSet) (h : H.Adj x.1 y.1)
+    (ho : (⟨(x.1, y.1), h⟩ : H.Dart) ∈ o.toDartOrientation) :
+    ((o.orientedHomEquiv x y).symm
+      (Quiver.homOfEq (DoubledQuiver.OrientedQuiver.arrow H _ h ho)
+        (o.orientedVertexEquiv_apply x).symm (o.orientedVertexEquiv_apply y).symm)).edge =
+      ⟨s(x.1, y.1), (SimpleGraph.mem_edgeSet H).2 h⟩ := by
+  exact Subtype.ext (@Hom.isLink V (Sym2 V) (ofSimpleGraph H) o x y _).1
+
+/-- The prefunctor from the edge-labelled orientation quiver to the selected-dart quiver,
+given by the vertex and arrow equivalences. -/
 def toOrientedQuiver (o : (Graph.ofSimpleGraph H).Orientation) :
     @Prefunctor (Graph.ofSimpleGraph H).vertexSet ⟨o.Hom⟩
       (DoubledQuiver.OrientedQuiver H o.toDartOrientation) inferInstance :=
@@ -219,7 +292,8 @@ theorem toOrientedQuiver_map (o : (Graph.ofSimpleGraph H).Orientation)
       (o.toOrientedQuiver_obj x) (o.toOrientedQuiver_obj y) = o.orientedHomEquiv x y a :=
   (rfl)
 
-/-- Regard a selected-dart walk as an edge-labelled oriented walk. -/
+/-- The prefunctor from the selected-dart quiver to the edge-labelled orientation quiver,
+given by the inverse vertex and arrow equivalences. -/
 def fromOrientedQuiver (o : (Graph.ofSimpleGraph H).Orientation) :
     @Prefunctor (DoubledQuiver.OrientedQuiver H o.toDartOrientation) inferInstance
       (Graph.ofSimpleGraph H).vertexSet ⟨o.Hom⟩ :=
@@ -266,6 +340,13 @@ theorem toOrientedWalk_nil (o : (Graph.ofSimpleGraph H).Orientation)
     o.toOrientedWalk (ArrowWalk.nil x) = Quiver.Path.nil :=
   @Prefunctor.mapPath_nil _ ⟨o.Hom⟩ _ inferInstance o.toOrientedQuiver x
 
+/-- Walk transport preserves extension by an arrow. -/
+@[simp]
+theorem toOrientedWalk_cons (o : (Graph.ofSimpleGraph H).Orientation)
+    {x y z : (Graph.ofSimpleGraph H).vertexSet} (p : ArrowWalk o.Hom x y) (a : o.Hom y z) :
+    o.toOrientedWalk (p.cons a) = (o.toOrientedWalk p).cons (o.orientedHomEquiv y z a) :=
+  @Prefunctor.mapPath_cons _ ⟨o.Hom⟩ _ inferInstance o.toOrientedQuiver x y z p a
+
 /-- Walk transport preserves concatenation. -/
 @[simp]
 theorem toOrientedWalk_comp (o : (Graph.ofSimpleGraph H).Orientation)
@@ -280,6 +361,17 @@ theorem fromOrientedWalk_nil (o : (Graph.ofSimpleGraph H).Orientation)
     (x : DoubledQuiver.OrientedQuiver H o.toDartOrientation) :
     o.fromOrientedWalk (Quiver.Path.nil : Quiver.Path x x) = ArrowWalk.nil _ :=
   @Prefunctor.mapPath_nil _ inferInstance _ ⟨o.Hom⟩ o.fromOrientedQuiver x
+
+/-- Inverse walk transport preserves extension by an arrow after endpoint transport. -/
+@[simp]
+theorem fromOrientedWalk_cons (o : (Graph.ofSimpleGraph H).Orientation)
+    {x y z : DoubledQuiver.OrientedQuiver H o.toDartOrientation}
+    (p : Quiver.Path x y) (a : y ⟶ z) :
+    o.fromOrientedWalk (p.cons a) = (o.fromOrientedWalk p).cons
+      ((o.orientedHomEquiv _ _).symm
+        (Quiver.homOfEq a (o.orientedVertexEquiv.apply_symm_apply y).symm
+          (o.orientedVertexEquiv.apply_symm_apply z).symm)) :=
+  @Prefunctor.mapPath_cons _ inferInstance _ ⟨o.Hom⟩ o.fromOrientedQuiver x y z p a
 
 /-- Inverse walk transport preserves concatenation. -/
 @[simp]
