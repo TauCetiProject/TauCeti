@@ -64,15 +64,11 @@ theorem sigmaEquiv_slotSum (d : ∀ i j, Module.End R (M i j))
       exact (Function.apply_update (fun a ↦ PiTensorProduct.tprod R) _ _ _ _).symm
     rw [hu, PiTensorProduct.sigmaEquiv_tprod]
     congr 1
-    funext p
-    rcases p with ⟨a, b⟩
-    by_cases ha : a = i
-    · subst a
-      by_cases hb : b = j
-      · subst b
-        simp
-      · simp [hb]
-    · simp [ha]
+    have h := congrArg Sigma.uncurry
+      (Sigma.curry_update ⟨i, j⟩ (Sigma.uncurry m) (d i j (m i j))).symm
+    simp only [Sigma.uncurry_curry, Sigma.curry_uncurry] at h
+    unfold Sigma.uncurry at h
+    exact h
   exact LinearMap.congr_fun H z
 
 /-- The inverse regrouping intertwines the flattened slot sum with the iterated slot sum. -/
