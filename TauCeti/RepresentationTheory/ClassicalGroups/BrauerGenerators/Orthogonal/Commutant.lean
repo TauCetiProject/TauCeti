@@ -156,11 +156,9 @@ private theorem exists_eq_add_smul_diagProj (h2 : (2 : K) ≠ 0) (hn : 2 ≤ n)
   set a₁ : Fin n := ⟨1, by omega⟩
   have ha : a₀ ≠ a₁ := by simp [a₀, a₁, Fin.ext_iff]
   -- Every pair of distinct indices is the image of `(a₀, a₁)` under a permutation.
-  have htrans (c d : Fin n) (hcd : c ≠ d) : ∃ σ : Equiv.Perm (Fin n), σ a₀ = c ∧ σ a₁ = d := by
-    have hc' : c ≠ Equiv.swap a₀ c a₁ := fun h ↦
-      ha ((Equiv.swap a₀ c).injective ((Equiv.swap_apply_left a₀ c).trans h))
-    exact ⟨Equiv.swap (Equiv.swap a₀ c a₁) d * Equiv.swap a₀ c,
-      by simp [Equiv.swap_apply_of_ne_of_ne hc' hcd], by simp⟩
+  have htrans (c d : Fin n) (hcd : c ≠ d) : ∃ σ : Equiv.Perm (Fin n), σ a₀ = c ∧ σ a₁ = d :=
+    (exists_pair_perm_fixed (s := ∅) ha hcd (by simp) (by simp) (by simp) (by simp)).imp
+      fun _ h ↦ h.2
   have hmove (σ : Equiv.Perm (Fin n)) {v u w z : Fin 2 → Fin n} (hv : ∀ i, σ (w i) = v i)
       (hu : ∀ i, σ (z i) = u i) : M v u = M w z := by
     rw [← apply_comp_perm_eq hM σ w z, funext hv, funext hu]
