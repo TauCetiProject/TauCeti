@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.LinearAlgebra.Span.Defs
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Separating two vectors by a nondegenerate form
@@ -16,10 +16,10 @@ import Mathlib.Tactic.LinearCombination
 For a nondegenerate matrix `M` over a field, the linear forms `w ↦ v ⬝ᵥ M *ᵥ w` determine `v`.
 This file records the two-vector form of that statement: if `x` is not a multiple of `u`, then
 some `w` is orthogonal to `u` but not to `x`. Otherwise the form of `x` would vanish on the kernel
-of the form of `u`, making it a multiple of that form, and nondegeneracy would make `x` the same
-multiple of `u`. This complements Mathlib's `Matrix.Nondegenerate.exists_not_ortho_of_ne_zero`,
-the case `u = 0`, and is the basic tool for moving vectors by transvections in the classical
-groups.
+of the form of `u`, making it a multiple of that form by Mathlib's `mem_span_of_iInf_ker_le_ker`,
+and nondegeneracy would make `x` the same multiple of `u`. This complements Mathlib's
+`Matrix.Nondegenerate.exists_not_ortho_of_ne_zero`, the case `u = 0`, and is the basic tool for
+moving vectors by transvections in the classical groups.
 
 ## Main results
 
@@ -37,23 +37,21 @@ variable {m n K : Type*} [Fintype m] [Fintype n] [Field K] {M : Matrix m n K}
 a multiple of `u`. -/
 theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.Nondegenerate) {u x : m → K}
     (hx : x ∉ K ∙ u) : ∃ w, u ⬝ᵥ M *ᵥ w = 0 ∧ x ⬝ᵥ M *ᵥ w ≠ 0 := by
+  classical
   by_contra! h
   apply hx
-  by_cases hu : u = 0
-  · subst hu
-    rw [hM.eq_zero_of_ortho fun w ↦ h w (by simp)]
-    exact Submodule.zero_mem _
-  obtain ⟨w₀, hw₀⟩ := hM.exists_not_ortho_of_ne_zero hu
-  refine Submodule.mem_span_singleton.mpr
-    ⟨x ⬝ᵥ M *ᵥ w₀ / u ⬝ᵥ M *ᵥ w₀, (sub_eq_zero.mp ?_).symm⟩
+  -- The form of `x` vanishes on the kernel of the form of `u`, so it is a multiple of it.
+  let F : (m → K) →ₗ[K] (n → K) →ₗ[K] K := Matrix.toLinearMap₂' K M
+  have hker : ⨅ _ : Unit, LinearMap.ker (F u) ≤ LinearMap.ker (F x) := by
+    intro w hw
+    simp only [Submodule.mem_iInf, LinearMap.mem_ker, F, Matrix.toLinearMap₂'_apply'] at hw ⊢
+    exact h w (hw ())
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp <| by
+    simpa using mem_span_of_iInf_ker_le_ker hker
+  -- Nondegeneracy turns the equality of forms into `x = c • u`.
+  refine Submodule.mem_span_singleton.mpr ⟨c, (sub_eq_zero.mp ?_).symm⟩
   refine hM.eq_zero_of_ortho fun w ↦ ?_
-  -- Correct `w` along `w₀` into the kernel of the form of `u`, where the form of `x` vanishes.
-  have hw := h (w - (u ⬝ᵥ M *ᵥ w / u ⬝ᵥ M *ᵥ w₀) • w₀) (by
-    simp only [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul]
-    field_simp
-    ring)
-  simp only [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul,
-    sub_dotProduct, smul_dotProduct] at hw ⊢
-  linear_combination hw
+  simpa [F, Matrix.toLinearMap₂'_apply', sub_dotProduct, smul_dotProduct, sub_eq_zero,
+    eq_comm] using congr($hc w)
 
 end Matrix.Nondegenerate
