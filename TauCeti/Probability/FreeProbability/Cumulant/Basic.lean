@@ -78,6 +78,8 @@ traciality are never assumed. For `s = ∅` the cumulant
   the variance `φ (x ^ 2) - φ x ^ 2`.
 * `TauCeti.freeCumulant_eq_zero_of_apply_eq_one` — if `φ 1 = 1`, the free cumulant of a word of
   length at least two with a unit argument vanishes.
+* `TauCeti.sum_prod_freeCumulant_mul_eq_sum_erase_of_apply_eq_one` — a unit letter can be deleted
+  from the multiplicative moment–cumulant sum, weighted by a function of the number of parts.
 * `TauCeti.partitionMoment_const` — the block moment of a constant word `(x, …, x)` is the
   product of the moments `φ (x ^ #B)` over the parts `B`.
 * `TauCeti.partitionMoment_congr`, `TauCeti.partitionCumulant_congr` and
@@ -330,18 +332,20 @@ theorem freeCumulant_eq_of_forall_apply_prod_eq_sum_prod (f : Finset α → R)
   dsimp only
   rw [NoncrossingPartition.coe_top, Finpartition.parts_top hs.ne_empty, prod_singleton]
 
-/-- In the multiplicative moment–cumulant formula for `s`, the noncrossing partitions having `{i}`
-as a part contribute the formula for `s.erase i`, when `φ 1 = 1` and the letter at `i` is the
-unit. -/
-private theorem sum_filter_singleton_mem_parts_prod_freeCumulant (h1 : φ 1 = 1) {i : α}
-    (hai : a i = 1) (hi : i ∈ s) :
+/-- In the multiplicative moment–cumulant formula for `s`, weighted by a function `w` of the number
+of parts, the noncrossing partitions having `{i}` as a part contribute the formula for `s.erase i`
+with the weight shifted by one, when `φ 1 = 1` and the letter at `i` is the unit. -/
+private theorem sum_filter_singleton_mem_parts_prod_freeCumulant_mul (h1 : φ 1 = 1) {i : α}
+    (hai : a i = 1) (hi : i ∈ s) (w : ℕ → R) :
     ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
-      ∏ B ∈ π.1.parts, freeCumulant φ a B =
-        ∑ τ : NoncrossingPartition (s.erase i), ∏ B ∈ τ.1.parts, freeCumulant φ a B := by
+      (∏ B ∈ π.1.parts, freeCumulant φ a B) * w #π.1.parts =
+        ∑ τ : NoncrossingPartition (s.erase i),
+          (∏ B ∈ τ.1.parts, freeCumulant φ a B) * w (#τ.1.parts + 1) := by
   rw [sum_subtype _ fun π => by rw [mem_filter, and_iff_right (mem_univ π)]]
   refine Fintype.sum_equiv (NoncrossingPartition.singletonPartEquiv hi) _ _ fun π => ?_
   rw [NoncrossingPartition.parts_singletonPartEquiv_apply, ← mul_prod_erase _ _ π.2,
-    freeCumulant_singleton, hai, h1, one_mul]
+    freeCumulant_singleton, hai, h1, one_mul,
+    card_erase_add_one π.2]
 
 /-- In the multiplicative moment–cumulant formula for a set `s` of at least two positions, the
 noncrossing partitions not having `{i}` as a part contribute only `κ_s(a)`, provided every
@@ -384,13 +388,33 @@ theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i
   -- and `#s - 1`, whose cumulant vanishes by induction.
   have h : φ (((s.erase i).sort.map a).prod) = φ ((s.sort.map a).prod) := by
     rw [sort_erase, List.prod_map_erase_of_eq_one _ _ hai]
+  have hone := sum_filter_singleton_mem_parts_prod_freeCumulant_mul φ a h1 hai hi fun _ => 1
+  simp only [mul_one] at hone
   rw [apply_prod_eq_sum_prod_freeCumulant φ a hs',
     apply_prod_eq_sum_prod_freeCumulant φ a (hs'.mono (erase_subset i s)),
     ← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
-    sum_filter_singleton_mem_parts_prod_freeCumulant φ a h1 hai hi,
+    hone,
     sum_filter_singleton_notMem_parts_prod_freeCumulant φ a hi hs
       fun t ht hit hlt => ih _ (hn ▸ card_lt_card ht) hit hlt rfl] at h
   exact add_eq_left.1 h.symm
+
+/-- A unit letter can be deleted from the multiplicative moment–cumulant sum weighted by a function
+`w` of the number of parts: if `φ 1 = 1`, `i ∈ s` and `a i = 1`, then
+`∑_{π ∈ NC(s)} κ_π(a) w(#π) = ∑_{τ ∈ NC(s ∖ {i})} κ_τ(a) w(#τ + 1)`. -/
+theorem sum_prod_freeCumulant_mul_eq_sum_erase_of_apply_eq_one (h1 : φ 1 = 1) {i : α}
+    (hai : a i = 1) (hi : i ∈ s) (w : ℕ → R) :
+    ∑ π : NoncrossingPartition s, (∏ B ∈ π.1.parts, freeCumulant φ a B) * w #π.1.parts =
+      ∑ τ : NoncrossingPartition (s.erase i),
+        (∏ B ∈ τ.1.parts, freeCumulant φ a B) * w (#τ.1.parts + 1) := by
+  rw [← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
+    sum_filter_singleton_mem_parts_prod_freeCumulant_mul φ a h1 hai hi w, add_eq_left]
+  -- A partition in which `i` is not a part of its own has a cumulant of order at least two through
+  -- the unit letter, which vanishes.
+  refine sum_eq_zero fun π hπ => ?_
+  have hipart := π.1.mem_part_self.2 hi
+  have hne : π.1.part i ≠ {i} := fun he => (mem_filter.1 hπ).2 (he ▸ π.1.part_mem.2 hi)
+  rw [prod_eq_zero (π.1.part_mem.2 hi) (freeCumulant_eq_zero_of_apply_eq_one φ a h1 hai hipart
+    (one_lt_card_iff_nontrivial.2 ((nontrivial_iff_ne_singleton hipart).2 hne))), zero_mul]
 
 end Cumulant
 
