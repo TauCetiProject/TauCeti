@@ -336,7 +336,7 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
   -- energy `⊤`.
   by_cases hA : recessionConstant U = ⊤ ∧ μ {x | (H x).det = 0} ≠ 0
   · have hσ : (μ.map G).singularPart ρ ≠ 0 := fun h => hA.2 (by
-      rw [← singularPart_map_gradient_apply_univ ρ hf hbot hH hμ hμD, h, Measure.coe_zero,
+      rw [← singularPart_map_gradient_apply_univ ρ hf hbot hH hμ hμD, h, FunLike.coe_zero,
         Pi.zero_apply])
     rw [internalEnergy_eq_top_of_recessionConstant_eq_top hA.1 hσ,
       EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ top_ne_bot (.inr rfl)]
