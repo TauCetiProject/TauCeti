@@ -11,9 +11,10 @@ public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 # Composition of equivalences in a bicategory
 
 Mathlib provides adjoint equivalences `a ≌ b` in a bicategory together with the identity
-equivalence. We add their composite. The unit is assembled by whiskering the two units, and
-the counit is adjointified by `Bicategory.Equivalence.mkOfAdjointifyCounit`, so no triangle
-identity has to be checked by hand.
+equivalence. We add their composite `Bicategory.Equivalence.trans`, so that being equivalent is
+a transitive relation on the objects of a bicategory, and the `1`-morphisms underlying
+equivalences are closed under composition. The composite of `e : a ≌ b` and `e' : b ≌ c` has
+forward `1`-morphism `e.hom ≫ e'.hom` and inverse `e'.inv ≫ e.inv`, in the reverse order.
 -/
 
 public section
@@ -29,6 +30,8 @@ variable {B : Type u} [Bicategory.{w, v} B] {a b c : B}
 namespace Equivalence
 
 /-- The composite of two equivalences in a bicategory. -/
+-- The unit is assembled by whiskering the two units, and the counit is adjointified by
+-- `mkOfAdjointifyCounit`, so no triangle identity has to be checked by hand.
 def trans (e : a ≌ b) (e' : b ≌ c) : a ≌ c :=
   mkOfAdjointifyCounit
     (e.unit ≪≫ whiskerLeftIso e.hom ((λ_ e.inv).symm ≪≫ whiskerRightIso e'.unit e.inv ≪≫

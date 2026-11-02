@@ -38,7 +38,7 @@ two notions agree with equivalence of categories.
   closed under composition.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
-* `SSet.QCat.nerveMapIso`: a natural isomorphism of functors gives an invertible natural
+* `CategoryTheory.Iso.nerveMap`: a natural isomorphism of functors gives an invertible natural
   transformation between their nerves.
 * `SSet.QCat.isCategoricalEquivalence_homMk_nerveMap_iff`: a functor between categories is an
   equivalence exactly when its nerve is a categorical equivalence.
@@ -128,29 +128,41 @@ lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquival
 
 end IsCategoricalEquivalence
 
+end SSet.QCat
+
 /-! ### Nerves of categories -/
 
 section nerve
 
 variable {C D : Type u} [Category.{u} C] [Category.{u} D]
 
+namespace CategoryTheory.Iso
+
+open SSet
+
 /-- A natural isomorphism `F ≅ G` gives an invertible `2`-morphism between the nerves of `F`
 and `G` in the bicategory of quasicategories. -/
-noncomputable def nerveMapIso {F G : C ⥤ D} (α : F ≅ G) :
+noncomputable def nerveMap {F G : C ⥤ D} (α : F ≅ G) :
     (ObjectProperty.homMk (nerveMap F) :
       (⟨nerve C, inferInstance⟩ : QCat.{u}) ⟶ ⟨nerve D, inferInstance⟩) ≅
       ObjectProperty.homMk (nerveMap G) :=
-  let β : HomotopyCategory.mk (unitHomEquiv _ (Functor.natTransEquiv.symm (nerveMap F))) ≅
-      .mk (unitHomEquiv _ (Functor.natTransEquiv.symm (nerveMap G))) :=
+  let β : HomotopyCategory.mk
+      (unitHomEquiv _ (Functor.natTransEquiv.symm (CategoryTheory.nerveMap F))) ≅
+      .mk (unitHomEquiv _ (Functor.natTransEquiv.symm (CategoryTheory.nerveMap G))) :=
     eqToIso (congrArg HomotopyCategory.mk
-        (nerve.functorCategoryToIhom_app_nerveEquiv_symm F)).symm ≪≫
-      (mapHomotopyCategory (nerve.functorCategoryToIhom C D)).mapIso
-        (nerve.homotopyCategoryIso α) ≪≫
-      eqToIso (congrArg HomotopyCategory.mk (nerve.functorCategoryToIhom_app_nerveEquiv_symm G))
+        (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm F)).symm ≪≫
+      (mapHomotopyCategory (TauCeti.nerveFunctorCategoryToIhom C D)).mapIso
+        α.toNerveHomotopyCategory ≪≫
+      eqToIso (congrArg HomotopyCategory.mk
+        (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm G))
   { hom := .mk β.hom
     inv := .mk β.inv
     hom_inv_id := CatEnrichedOrdinary.Hom.ext _ _ β.hom_inv_id
     inv_hom_id := CatEnrichedOrdinary.Hom.ext _ _ β.inv_hom_id }
+
+end CategoryTheory.Iso
+
+namespace SSet.QCat
 
 /-- A functor between categories is an equivalence exactly when its nerve is a categorical
 equivalence of quasicategories. -/
@@ -158,7 +170,7 @@ lemma isCategoricalEquivalence_homMk_nerveMap_iff (F : C ⥤ D) :
     IsCategoricalEquivalence (X := ⟨nerve C, inferInstance⟩) (Y := ⟨nerve D, inferInstance⟩)
       (ObjectProperty.homMk (nerveMap F)) ↔ F.IsEquivalence := by
   refine ⟨fun h ↦ ?_, fun _ ↦ ⟨ObjectProperty.homMk (nerveMap F.inv),
-    ⟨nerveMapIso F.asEquivalence.unitIso⟩, ⟨nerveMapIso F.asEquivalence.counitIso⟩⟩⟩
+    ⟨F.asEquivalence.unitIso.nerveMap⟩, ⟨F.asEquivalence.counitIso.nerveMap⟩⟩⟩
   -- The counit `ho (N E) ≅ E` of the nerve adjunction is natural in `E`.
   let c (E : Type u) [Category.{u} E] :=
     Cat.equivOfIso (nerveFunctorCompHoFunctorIso.app (Cat.of E))
@@ -170,6 +182,6 @@ lemma isCategoricalEquivalence_homMk_nerveMap_iff (F : C ⥤ D) :
     (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (c C).counitIso F ≪≫
       F.leftUnitor)).isEquivalence_functor
 
-end nerve
-
 end SSet.QCat
+
+end nerve

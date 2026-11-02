@@ -60,6 +60,7 @@ private lemma ihomHoFunctor_obj_mk_map_homMk (φ : 𝟙_ SSet ⟶ (ihom A).obj B
 
 /-- On the vertex of `Fun(A, B)` classified by `φ`, the functor `ihomHoFunctor A B` takes the
 value `ho f`, where `f : A ⟶ B` corresponds to `φ`. -/
+@[simp]
 lemma ihomHoFunctor_obj_mk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) :
     (ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ)) =
       mapHomotopyCategory (MonoidalClosed.uncurry' φ) := by
