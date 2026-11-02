@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
 
+import TauCeti.LinearAlgebra.End.Basic
+
 /-!
 # The eigenspace projections of an involution
 
@@ -40,13 +42,6 @@ open TauCeti
 
 variable {k Y : Type*} [CommRing k] [Invertible (2 : k)] [AddCommGroup Y] [Module k Y]
   {g : Module.End k Y}
-
-omit [Invertible (2 : k)] in
-/-- `μ • g` squares to `1` for an involution `g` and `μ * μ = 1`. -/
-private theorem smul_mul_smul_self_eq_one (hg : Function.Involutive g) {μ : k}
-    (hμ : μ * μ = 1) : (μ • g) * (μ • g) = 1 := by
-  rw [smul_mul_smul_comm, hμ, one_smul]
-  exact LinearMap.ext hg
 
 /-- The projection `½ (1 + μ g)` of `Y` onto the `μ`-eigenspace of an involution `g`, for
 `μ * μ = 1`. -/
