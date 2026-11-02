@@ -65,6 +65,8 @@ biproduct give an `R`-linear equivalence `Hⁱ(X, ⨁ⱼ Mⱼ) ≃ₗ[R] ∀ j, 
 def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv (i : ℕ) :
     Cohomology (⨁ F) i ≃ₗ[R] ∀ j, Cohomology (F j) i := by
   classical
+  -- Mathlib's AddCommGrpCat biproduct-to-Pi isomorphism requires an index in Type.
+  -- Our index may inhabit any universe, so verify the component maps directly.
   exact LinearEquiv.ofLinearMap
     (LinearMap.pi fun j ↦ cohomologyMapBaseLinear R X (biproduct.π F j) i)
     (∑ j, (cohomologyMapBaseLinear R X (biproduct.ι F j) i).comp (LinearMap.proj j))
@@ -72,8 +74,6 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv (i : 
       -- A projection of the inclusion sum keeps exactly its matching summand.
       simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
         LinearMap.proj_apply, LinearMap.id_apply]
-      change cohomologyMapBaseLinear R X (biproduct.π F j) i
-        (∑ k, cohomologyMapBaseLinear R X (biproduct.ι F k) i (v k)) = v j
       rw [map_sum, Finset.sum_eq_single j]
       · rw [← LinearMap.comp_apply, ← cohomologyMapBaseLinear_comp,
           biproduct.ι_π_self, cohomologyMapBaseLinear_id, LinearMap.id_apply]
@@ -106,25 +106,26 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv_sym
     (cohomologyBiproductLinearEquiv R F i).symm v =
       ∑ j, cohomologyMapBaseLinear R X (biproduct.ι F j) i (v j) := by
   classical
-  change (∑ j, (cohomologyMapBaseLinear R X (biproduct.ι F j) i).comp
-    (LinearMap.proj j)) v = _
-  simp only [LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply]
+  simp only [cohomologyBiproductLinearEquiv, LinearEquiv.symm_ofLinearMap,
+    LinearEquiv.coe_ofLinearMap, LinearMap.sum_apply, LinearMap.comp_apply,
+    LinearMap.proj_apply]
 
 /-- **Dimension of the cohomology of a finite direct sum of copies of a sheaf.** Over a field
 `k`, `dim Hⁱ(X, ⨁_{I} M) = |I| · dim Hⁱ(X, M)` for every finite type `I`. No finiteness of
 `Hⁱ(X, M)` is needed: when it is infinite-dimensional and `I` is nonempty both sides are `0`.
 Applied to `M = 𝒪_X`, this computes the cohomology of the free sheaf `𝒪_X^I`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finrank_cohomology_biproduct_const (k : Type u)
-    [Field k] [X.Over (Spec (.of k))] (M : X.Modules) (I : Type u) [Fintype I]
+    [Field k] [X.Over (Spec (.of k))] (M : X.Modules) (I : Type*) [Fintype I]
     [HasBiproduct fun _ : I ↦ M] (i : ℕ) :
     finrank k (Cohomology (⨁ fun _ : I ↦ M) i) = Fintype.card I * finrank k (Cohomology M i) := by
-  rw [(cohomologyBiproductLinearEquiv k (fun _ : I ↦ M) i).finrank_eq, Module.finrank, rank_fun,
-    Cardinal.toNat_mul, Cardinal.toNat_natCast, Module.finrank]
+  rw [(cohomologyBiproductLinearEquiv k (fun _ : I ↦ M) i).finrank_eq, Module.finrank,
+    rank_fun_eq_lift_mul,
+    Cardinal.toNat_mul, Cardinal.toNat_natCast, Cardinal.toNat_lift, Module.finrank]
 
 /-- The truncated Euler characteristic of a finite direct sum of copies of a sheaf:
 `χ(X, ⨁_{I} M) = |I| · χ(X, M)`, with no finiteness hypothesis. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_biproduct_const (k : Type u)
-    [Field k] [X.Over (Spec (.of k))] (M : X.Modules) (I : Type u) [Fintype I]
+    [Field k] [X.Over (Spec (.of k))] (M : X.Modules) (I : Type*) [Fintype I]
     [HasBiproduct fun _ : I ↦ M] (n : ℕ) :
     eulerCharBelow k X (⨁ fun _ : I ↦ M) n = Fintype.card I * eulerCharBelow k X M n := by
   induction n with
