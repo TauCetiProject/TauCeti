@@ -30,8 +30,6 @@ public section
 
 namespace TauCeti.GridDiagram
 
-attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
-
 variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R] (i : Fin n)
 
 /-- Reflect grid states and rename the surviving variables, blocking the reflected `O`-marking. -/

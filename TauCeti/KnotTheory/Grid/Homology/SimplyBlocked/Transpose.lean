@@ -33,8 +33,6 @@ open CategoryTheory
 
 namespace TauCeti.GridDiagram.IsKnot
 
-attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
-
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
   (R : Type*) [CommRing R] [CharP R 2] (i : Fin n)
 
@@ -92,6 +90,10 @@ private theorem map_boundaries_simplyBlockedTransposeCyclesEquiv :
     (hG.simplyBlockedBoundaries R i).map
         (hG.simplyBlockedTransposeCyclesEquiv R i).toLinearMap =
       (G.isKnot_transpose.mpr hG).simplyBlockedBoundaries R (G.O i) := by
+  -- The boundary map is the differential with codomain restricted to cycles, and
+  -- `ofSubmodules` restricts the chain equivalence. After `Subtype.ext`, both underlying
+  -- chain maps are therefore definitionally the ones in `simplyBlockedTransposeChainEquiv_d`.
+  -- We work in cycles here, rather than the ambient ranges of `map_range_of_intertwine`.
   ext z
   constructor
   · rintro ⟨w, ⟨c, rfl⟩, rfl⟩
