@@ -175,11 +175,7 @@ theorem ker_serreLift_inf_iInf_eigenspace_ad_pairingIn (j : H.root) :
     rw [← LieSubmodule.toSubmodule_inj, ← hmap, LieSubmodule.bot_toSubmodule, Submodule.map_span,
       Set.image_singleton, Submodule.span_singleton_eq_bot]
     exact h0
-  rw [Submodule.eq_bot_iff]
-  rintro x ⟨hx, hxv⟩
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hxv
-  have : c • serreLift hS v = 0 := by simpa using hx
-  simp [(smul_eq_zero.1 this).resolve_right hne]
+  exact (Submodule.disjoint_span_singleton_of_notMem hne).eq_bot
 
 /-- **The Serre lift is injective on the weight space of zero**, since that weight space is the
 span of the Cartan generators, which the lift carries to the independent simple coroots. -/
@@ -190,16 +186,13 @@ theorem ker_serreLift_inf_iInf_eigenspace_ad_zero :
   have h0 : (0 : b.support → ℤ) ∉ AddSubsemigroup.closure (Set.range b.cartanMatrixᵀᵀ) := by
     rw [transpose_transpose]
     exact b.linearIndependent_cartanMatrix_row.zero_notMem_closure_range
-  rw [iInf_eigenspace_ad_serreH_zero_eq_span b.cartanMatrixᵀ K h0, Submodule.eq_bot_iff]
-  rintro x ⟨hx, hxH⟩
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun K).1 hxH
+  rw [iInf_eigenspace_ad_serreH_zero_eq_span b.cartanMatrixᵀ K h0]
   have hli : LinearIndependent K fun i : b.support ↦ (((rootSystem H).coroot i : H) : L) :=
     b.linearIndepOn_coroot.linearIndependent.map' H.toSubmodule.subtype
       (Submodule.ker_subtype _)
-  have hsum : ∑ i, c i • (((rootSystem H).coroot i : H) : L) = 0 := by
-    simpa only [SetLike.mem_coe, LinearMap.mem_ker, LieHom.coe_toLinearMap, map_sum, map_smul,
-      serreLift_serreH] using hx
-  simp [Fintype.linearIndependent_iff.1 hli c hsum]
+  refine (Submodule.range_ker_disjoint (v := serreH K b.cartanMatrixᵀ)
+    (f := (serreLift hS : Matrix.ToLieAlgebra K b.cartanMatrixᵀ →ₗ[K] L)) ?_).symm.eq_bot
+  simpa only [Function.comp_def, LieHom.coe_toLinearMap, serreLift_serreH] using hli
 
 include hspan in
 /-- **The kernel of the Serre lift lives on the weights that are neither zero nor a root.** The
