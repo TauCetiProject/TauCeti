@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialNerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
+public import TauCeti.AlgebraicTopology.SimplicialNerve.SimplicialThickening
 
 /-!
 # The simplicial thickening of a horn
@@ -59,50 +59,11 @@ open CategoryTheory EnrichedCategory MonoidalCategory Opposite Simplicial
 
 universe u
 
-namespace CategoryTheory.SimplicialThickening
-
-variable {J : Type u} [LinearOrder J] {i j : J}
-
-instance : Quiver.IsThin (Path i j) :=
-  fun _ _ ↦ ⟨fun _ _ ↦ InducedCategory.hom_ext (Subsingleton.elim _ _)⟩
-
-/-- The only path from an element to itself is the singleton. -/
-instance (a : J) : Subsingleton (Path a a) :=
-  ⟨fun p q ↦ Path.ext (Set.ext fun k ↦ by
-    constructor <;> intro h
-    · rw [le_antisymm (p.le_right k h) (p.left_le k h)]
-      exact q.left
-    · rw [le_antisymm (q.le_right k h) (q.left_le k h)]
-      exact p.left)⟩
-
-/-- The identity of an object `x` of the simplicial thickening is an isomorphism
-`𝟙_ SSet ≅ N(Path x x)`, since the only path from `x` to itself is `{x}`. -/
-instance isIso_eId (x : SimplicialThickening J) : IsIso (eId SSet x) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro n
-  rw [isIso_iff_bijective]
-  refine ⟨fun _ _ _ ↦ rfl, fun s ↦ ⟨PUnit.unit, ?_⟩⟩
-  obtain ⟨⟨d⟩⟩ := n
-  exact ComposableArrows.ext (C := Path x.as x.as) (fun _ ↦ Subsingleton.elim _ _)
-    (by subsingleton)
-
-end CategoryTheory.SimplicialThickening
-
 namespace TauCeti
 
-open SimplicialThickening (Path)
+open SimplicialThickening (Path chainMk chainMk_obj monotone_chain)
 
 variable {J : Type u} [LinearOrder J] {i j : J}
-
-/-- The chain of paths given by a monotone family of paths. -/
-private def chainMk {d : ℕ} (p : Fin (d + 1) → Path i j) (hp : Monotone fun t ↦ (p t).I) :
-    ComposableArrows (Path i j) d where
-  obj := p
-  map h := InducedCategory.homMk (homOfLE (hp (leOfHom h)))
-
-private lemma monotone_chain {d : ℕ} (x : ComposableArrows (Path i j) d) :
-    Monotone fun t ↦ (x.obj t).I :=
-  fun _ _ h ↦ (x.map (homOfLE h)).hom.le
 
 variable (i j) in
 /-- The simplicial subset of the mapping simplicial set `N(Path i j)` of the simplicial thickening
@@ -213,8 +174,8 @@ private noncomputable def objEquiv (d : ℕ) :
   invFun p := chainMk (fun t ↦ pathMk hi hj (p.1.obj t) (p.2 t = 1)) (monotone_pathMk hi hj p)
   left_inv x := by
     refine ComposableArrows.ext (fun t ↦ Path.ext (Set.ext fun k ↦ ?_)) (by subsingleton)
-    -- The objects of `chainMk` are the paths `pathMk`.
-    change k ∈ (pathMk hi hj _ _).I ↔ _
+    dsimp only
+    rw [chainMk_obj]
     simp only [pathMk, Set.mem_ofPred_eq, SSet.stdSimplex.objMk_apply]
     constructor
     · rintro (rfl | rfl | ⟨_, hk⟩ | ⟨rfl, hk⟩)
@@ -236,8 +197,9 @@ private noncomputable def objEquiv (d : ℕ) :
   right_inv p := by
     refine Prod.ext (ComposableArrows.ext (fun t ↦ Set.ext fun k ↦ ?_) (by subsingleton))
       (SSet.stdSimplex.ext _ _ fun t ↦ ?_)
-    · -- The objects of `chainMk` are the paths `pathMk`.
-      change k.1 ∈ (pathMk hi hj _ _).I ↔ _
+    · -- A vertex lies in `toCube c x` exactly when the paths of `x` pass through it.
+      change k.1 ∈ ((chainMk _ _).obj t).I ↔ _
+      rw [chainMk_obj]
       simp only [pathMk, Set.mem_ofPred_eq]
       constructor
       · rintro (h | h | ⟨_, hk⟩ | ⟨h, -⟩)
@@ -256,7 +218,7 @@ private noncomputable def objEquiv (d : ℕ) :
           · exact h
         · exact fun h ↦ Or.inr (Or.inr (Or.inr ⟨trivial, h⟩))
       rw [SSet.stdSimplex.objMk_apply, throughVertex_apply]
-      simp only [chainMk, this]
+      simp only [chainMk_obj, this]
       generalize p.2 t = a
       fin_cases a <;> simp
 
