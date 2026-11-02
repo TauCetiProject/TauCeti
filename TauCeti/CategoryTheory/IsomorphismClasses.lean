@@ -25,12 +25,23 @@ namespace CategoryTheory.Functor
 
 variable {C D : Type u} [Category.{v} C] [Category.{v} D]
 
+-- The representative formula records the defining computation of Mathlib's bundled `Quot.map`.
 /-- The map on isomorphism classes sends an object's class to the class of its image. -/
 @[simp]
 theorem isomorphismClasses_map_mk (F : C ⥤ D) (x : C) :
     @Eq (Quotient (isIsomorphicSetoid D))
       (isomorphismClasses.map F.toCatHom (Quotient.mk (isIsomorphicSetoid C) x))
       (Quotient.mk (isIsomorphicSetoid D) (F.obj x)) := (rfl)
+
+/-- The map on isomorphism classes commutes with the quotient projections. -/
+@[simp]
+theorem isomorphismClasses_map_comp_mk (F : C ⥤ D) :
+    (isomorphismClasses.map F.toCatHom :
+      Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D)) ∘
+        Quotient.mk (isIsomorphicSetoid C) =
+      Quotient.mk (isIsomorphicSetoid D) ∘ F.obj := by
+  funext x
+  exact F.isomorphismClasses_map_mk x
 
 /-- Naturally isomorphic functors induce the same map on isomorphism classes. -/
 theorem isomorphismClasses_map_eq_of_iso (F : C ⥤ D) {G : C ⥤ D} (e : F ≅ G) :

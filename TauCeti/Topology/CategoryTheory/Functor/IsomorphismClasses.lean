@@ -44,15 +44,16 @@ their quotient topologies. -/
 theorem continuous_isomorphismClasses_map (F : C ⥤ D) (hF : Continuous F.obj) :
     Continuous (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
-  -- The native functor uses `Quot.map`; specify the object carriers through its quotient API.
-  exact continuous_quot_map (X := C) (Y := D) (fun _ _ ⟨e⟩ => ⟨F.mapIso e⟩) hF
+  exact (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).continuous_iff.2
+    (F.isomorphismClasses_map_comp_mk.symm ▸ continuous_quotient_mk'.comp hF)
 
 /-- A functor whose object map is quotient induces a quotient map on isomorphism classes. -/
 theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F.obj) :
     IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
-  apply (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).of_comp_isQuotientMap
-  exact (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF
+  exact (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).of_comp_isQuotientMap
+    (F.isomorphismClasses_map_comp_mk.symm ▸
+      (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
 
 /-- A fully faithful functor with quotient object map identifies the spaces of isomorphism
 classes homeomorphically. For groupoids this is the coarse homeomorphism of the refinement. -/
@@ -63,12 +64,23 @@ def isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.Faithful]
     (X := Quotient (isIsomorphicSetoid C)) (Y := Quotient (isIsomorphicSetoid D))).2
     ⟨F.isQuotientMap_isomorphismClasses_map hF, F.isomorphismClasses_map_injective⟩ |>.homeomorph _
 
+-- The underlying function is preserved by `IsHomeomorph.homeomorph`.
+/-- The coarse homeomorphism has Mathlib's map on isomorphism classes as its underlying
+function. -/
+@[simp]
+theorem coe_isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.Faithful]
+    (hF : IsQuotientMap F.obj) :
+    ⇑(F.isomorphismClassesHomeomorph hF) =
+      (isomorphismClasses.map F.toCatHom :
+        Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D)) := (rfl)
+
 /-- The coarse homeomorphism sends the class of an object to the class of its image. -/
 @[simp]
 theorem isomorphismClassesHomeomorph_apply_mk (F : C ⥤ D) [F.Full] [F.Faithful]
     (hF : IsQuotientMap F.obj) (x : C) :
     F.isomorphismClassesHomeomorph hF (Quotient.mk _ x) =
-      Quotient.mk _ (F.obj x) := (rfl)
+      Quotient.mk _ (F.obj x) := by
+  simp only [coe_isomorphismClassesHomeomorph, isomorphismClasses_map_mk]
 
 /-- The inverse coarse homeomorphism takes the class of an image object back to its class. -/
 @[simp]
@@ -104,8 +116,7 @@ theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
     (hF : IsQuotientMap F.obj) (hG : IsQuotientMap G.obj) (e : F ≅ G) :
     F.isomorphismClassesHomeomorph hF = G.isomorphismClassesHomeomorph hG := by
   ext q
-  -- The underlying functions of these homeomorphisms are the native isomorphism-class maps.
-  exact congrArg (fun f : isomorphismClasses.obj (Cat.of C) ⟶
-    isomorphismClasses.obj (Cat.of D) => f q) (F.isomorphismClasses_map_eq_of_iso e)
+  simp only [coe_isomorphismClassesHomeomorph]
+  exact ConcreteCategory.congr_hom (F.isomorphismClasses_map_eq_of_iso e) q
 
 end CategoryTheory.Functor
