@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.StandardComodule
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix
 
 /-!
 # Root vectors and adjoint weights of the generated type-B spin subgroup
