@@ -87,10 +87,6 @@ section Scaling
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-private lemma measurableEmbedding_smul {a : ℝ} (ha : a ≠ 0) :
-    MeasurableEmbedding (fun x : E ↦ a • x) :=
-  (Homeomorph.smulOfNeZero a ha).measurableEmbedding
-
 omit [MeasurableSpace E] [BorelSpace E] in
 private lemma norm_fderiv_comp_smul {f : E → ℝ} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
@@ -100,7 +96,7 @@ private lemma integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ}
     {a : ℝ} (ha : a ≠ 0) :
     ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ.map (fun x ↦ a • x) =
       (a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := by
-  rw [(measurableEmbedding_smul ha).integral_map, ← integral_const_mul]
+  rw [(measurableEmbedding_const_smul₀ (α := E) ha).integral_map, ← integral_const_mul]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   simp only [norm_fderiv_comp_smul a, mul_pow, sq_abs]
   field_simp
@@ -109,7 +105,7 @@ private lemma integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ}
 measure satisfying it with constant `a ^ 2 * C`. -/
 theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareInequality μ C) {a : ℝ}
     (ha : a ≠ 0) : PoincareInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
-  have he := measurableEmbedding_smul (E := E) ha
+  have he := measurableEmbedding_const_smul₀ (α := E) ha
   intro f hf hfL hdf
   have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
   have hgL : MemLp (fun y ↦ f (a • y)) 2 μ := (he.memLp_map_measure_iff).1 hfL
@@ -133,7 +129,7 @@ private lemma entropy_map {α β : Type*} {mα : MeasurableSpace α} {mβ : Meas
 gives a measure satisfying it with constant `a ^ 2 * C`. -/
 theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolevInequality μ C)
     {a : ℝ} (ha : a ≠ 0) : LogSobolevInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
-  have he := measurableEmbedding_smul (E := E) ha
+  have he := measurableEmbedding_const_smul₀ (α := E) ha
   intro f hf hdf hf2 hf2log
   have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
   have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
