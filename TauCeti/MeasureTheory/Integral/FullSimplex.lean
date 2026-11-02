@@ -32,6 +32,8 @@ These are the scalar computations behind Stokes' theorem on the standard simplex
 
 ## Main results
 
+* `TauCeti.setIntegral_fullSimplex_eq_iterated`: the integral over `Δᵖ⁺¹` of a function continuous
+  on it, as an iterated integral along the `j`-th coordinate and then over `Δᵖ`.
 * `ContDiffOn.integral_fderivWithin_fullSimplex`: the integral over `Δᵖ⁺¹` of the `j`-th partial
   derivative of a `C¹` function is the difference of its integrals over the face `∑ xᵢ = 1` and
   the face `xⱼ = 0`, both read through the coordinates other than the `j`-th one.
@@ -51,7 +53,7 @@ omit [CompleteSpace F] in
 /-- **Slicing the standard simplex along a coordinate.** The integral over `Δᵖ⁺¹` of a function
 continuous on it is the iterated integral that first integrates along the `j`-th coordinate, over
 `0 ≤ t ≤ 1 - ∑ k, y k`, and then over the remaining coordinates `y` in the coordinate simplex. -/
-private theorem setIntegral_fullSimplex_eq_iterated {p : ℕ}
+theorem setIntegral_fullSimplex_eq_iterated {p : ℕ}
     {D : EuclideanSpace ℝ (Fin (p + 1)) → F} (hD : ContinuousOn D (fullSimplex (p + 1)))
     (j : Fin (p + 1)) :
     ∫ x in fullSimplex (p + 1), D x = ∫ y in coordinateSimplex (Fin p),
