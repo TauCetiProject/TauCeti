@@ -73,7 +73,7 @@ those of `A`, independently of the new coefficient semiring. -/
     (A.polynomial q).polynomial r = A.polynomial r := (rfl)
 
 /-- A specification already using these polynomial activations is unchanged. -/
-theorem polynomial_eq [Semiring K] (A : ConvolutionSpec K L)
+theorem polynomial_eq_self [Semiring K] (A : ConvolutionSpec K L)
     (q : Fin (L - 1) → Polynomial K) (hq : ∀ j t, A.activation j t = (q j).eval t) :
     A.polynomial q = A := by
   ext <;> simp [hq]
@@ -134,20 +134,20 @@ variable [Semiring K] [Semiring R]
 
 /-- Scalar transport commutes with every convolutional prefix, mapping each filter entry
 and the shared scalar bias. -/
-@[simp] theorem evalPrefix_polynomial_map (A : ConvolutionSpec K L)
-    (q : Fin (L - 1) → Polynomial K) (hq : ∀ j t, A.activation j t = (q j).eval t)
-    (φ : K →+* R) (p : A.Parameters) (x : Fin (A.width 0) → K) (i : Fin (L + 1))
-    (a : Fin (A.width i)) :
+@[simp] theorem evalPrefix_polynomial_map (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial K) (φ : K →+* R) (p : (A.polynomial q).Parameters)
+    (x : Fin (A.width 0) → K) (i : Fin (L + 1)) (a : Fin (A.width i)) :
     (A.polynomial (Polynomial.map φ ∘ q)).evalPrefix
-        (fun i => (φ ∘ (p i).1, φ (p i).2)) (φ ∘ x) i a = φ (A.evalPrefix p x i a) := by
-  dsimp only [polynomial]
+        (fun i => (φ ∘ (p i).1, φ (p i).2)) (φ ∘ x) i a =
+      φ ((A.polynomial q).evalPrefix p x i a) := by
+  dsimp only [polynomial] at p ⊢
   induction i using Fin.induction with
   | zero => simp
   | succ i ih =>
     rw [evalPrefix_succ, evalPrefix_succ]
     dsimp only [Function.comp_apply] at ih ⊢
     by_cases h : i.val + 1 < L
-    · rw [MLPSpec.layerActivation_of_lt _ _ h, MLPSpec.layerActivation_of_lt _ _ h, hq]
+    · rw [MLPSpec.layerActivation_of_lt _ _ h, MLPSpec.layerActivation_of_lt _ _ h]
       simp only [ih, ← map_mul, ← map_sum, ← map_add]
       simp only [Polynomial.eval_map_apply]
     · have hi : i.val + 1 = L := by omega
@@ -157,49 +157,52 @@ and the shared scalar bias. -/
 
 /-- Scalar transport commutes with convolutional realization on the complete affine
 parameter product: filters and the shared bias are both mapped. -/
-@[simp] theorem realize_polynomial_map (A : ConvolutionSpec K L)
-    (q : Fin (L - 1) → Polynomial K) (hq : ∀ j t, A.activation j t = (q j).eval t)
-    (φ : K →+* R) (p : A.Parameters) (x : Fin (A.width 0) → K) :
+@[simp] theorem realize_polynomial_map (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial K) (φ : K →+* R) (p : (A.polynomial q).Parameters)
+    (x : Fin (A.width 0) → K) :
     (A.polynomial (Polynomial.map φ ∘ q)).realize
-        (fun i => (φ ∘ (p i).1, φ (p i).2)) (φ ∘ x) = φ ∘ A.realize p x := by
-  dsimp only [polynomial]
+        (fun i => (φ ∘ (p i).1, φ (p i).2)) (φ ∘ x) =
+      φ ∘ (A.polynomial q).realize p x := by
+  dsimp only [polynomial] at p ⊢
   funext a
   rw [realize_def, realize_def]
-  exact A.evalPrefix_polynomial_map q hq φ p x (Fin.last L) a
+  exact A.evalPrefix_polynomial_map q φ p x (Fin.last L) a
 
 /-- Scalar transport commutes with bias-free convolutional realization on the filter-only
 parameter product. -/
-@[simp] theorem realizeWeights_polynomial_map (A : ConvolutionSpec K L)
-    (q : Fin (L - 1) → Polynomial K) (hq : ∀ j t, A.activation j t = (q j).eval t)
-    (φ : K →+* R) (w : A.Weights) (x : Fin (A.width 0) → K) :
+@[simp] theorem realizeWeights_polynomial_map (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial K) (φ : K →+* R) (w : (A.polynomial q).Weights)
+    (x : Fin (A.width 0) → K) :
     (A.polynomial (Polynomial.map φ ∘ q)).realizeWeights
-        (fun i => φ ∘ w i) (φ ∘ x) = φ ∘ A.realizeWeights w x := by
+        (fun i => φ ∘ w i) (φ ∘ x) = φ ∘ (A.polynomial q).realizeWeights w x := by
   have hz : (A.polynomial (Polynomial.map φ ∘ q)).zeroBias (fun i => φ ∘ w i) =
-      (fun i => (φ ∘ (A.zeroBias w i).1, φ (A.zeroBias w i).2)) := by
-    dsimp only [polynomial]
+      (fun i => (φ ∘ ((A.polynomial q).zeroBias w i).1,
+        φ ((A.polynomial q).zeroBias w i).2)) := by
+    dsimp only [polynomial] at w ⊢
     funext i
     simp
   rw [realizeWeights_def, realizeWeights_def, Function.comp_apply, Function.comp_apply, hz]
-  exact A.realize_polynomial_map q hq φ (A.zeroBias w) x
+  exact A.realize_polynomial_map q φ ((A.polynomial q).zeroBias w) x
 
 end Evaluation
 
 /-- Complexifying a real polynomial convolutional network recovers its real outputs on
 real filters, shared biases and inputs. -/
-theorem realize_polynomial_ofReal (A : ConvolutionSpec ℝ L)
-    (q : Fin (L - 1) → Polynomial ℝ) (hq : ∀ j t, A.activation j t = (q j).eval t)
-    (p : A.Parameters) (x : Fin (A.width 0) → ℝ) (a : Fin (A.width (Fin.last L))) :
+theorem realize_polynomial_ofReal (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial ℝ) (p : (A.polynomial q).Parameters)
+    (x : Fin (A.width 0) → ℝ) (a : Fin (A.width (Fin.last L))) :
     (A.polynomial (Polynomial.map Complex.ofRealHom ∘ q)).realize
         (fun i => ((fun j => ((p i).1 j : ℂ)), ((p i).2 : ℂ)))
-        (fun j => (x j : ℂ)) a = (A.realize p x a : ℂ) :=
-  congrFun (A.realize_polynomial_map q hq Complex.ofRealHom p x) a
+        (fun j => (x j : ℂ)) a = ((A.polynomial q).realize p x a : ℂ) :=
+  congrFun (A.realize_polynomial_map q Complex.ofRealHom p x) a
 
 /-- The real-to-complex evaluation equation also holds without any bias coordinates. -/
-theorem realizeWeights_polynomial_ofReal (A : ConvolutionSpec ℝ L)
-    (q : Fin (L - 1) → Polynomial ℝ) (hq : ∀ j t, A.activation j t = (q j).eval t)
-    (w : A.Weights) (x : Fin (A.width 0) → ℝ) (a : Fin (A.width (Fin.last L))) :
+theorem realizeWeights_polynomial_ofReal (A : ConvolutionSpec S L)
+    (q : Fin (L - 1) → Polynomial ℝ) (w : (A.polynomial q).Weights)
+    (x : Fin (A.width 0) → ℝ) (a : Fin (A.width (Fin.last L))) :
     (A.polynomial (Polynomial.map Complex.ofRealHom ∘ q)).realizeWeights
-        (fun i j => (w i j : ℂ)) (fun j => (x j : ℂ)) a = (A.realizeWeights w x a : ℂ) :=
-  congrFun (A.realizeWeights_polynomial_map q hq Complex.ofRealHom w x) a
+        (fun i j => (w i j : ℂ)) (fun j => (x j : ℂ)) a =
+      ((A.polynomial q).realizeWeights w x a : ℂ) :=
+  congrFun (A.realizeWeights_polynomial_map q Complex.ofRealHom w x) a
 
 end TauCeti.Neuromanifold.ConvolutionSpec
