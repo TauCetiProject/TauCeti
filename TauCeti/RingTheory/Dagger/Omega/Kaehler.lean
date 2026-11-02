@@ -33,10 +33,6 @@ namespace TauCeti.Dagger.Omega
 
 variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A]
 
-/-- Universally finite differentials vanish whenever algebraic differentials vanish. -/
-instance [Subsingleton Ω[A⁄R]] : Subsingleton (Omega R A) :=
-  (ofKaehler_surjective R A).subsingleton
-
 section Finite
 
 variable [Module.Finite A Ω[A⁄R]]
@@ -46,7 +42,8 @@ differentials are finite. -/
 theorem ofKaehler_injective : Function.Injective (ofKaehler R A) := by
   apply (injective_iff_map_eq_zero _).mpr
   intro x hx
-  exact (ofKaehler_eq_zero_iff.mp hx) (⊥ : Submodule A Ω[A⁄R]) inferInstance
+  simpa only [Submodule.mem_bot] using
+    (ofKaehler_eq_zero_iff.mp hx) (⊥ : Submodule A Ω[A⁄R]) inferInstance
 
 /-- Algebraic and universally finite differentials coincide when the algebraic differential
 module is finite, for example for an essentially finite-type algebra. -/

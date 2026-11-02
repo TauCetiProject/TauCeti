@@ -106,19 +106,15 @@ example (R : Type*) [CommRing R] :
 -- The differential of a nilpotent is not generally zero, in any characteristic.
 example (R : Type*) [CommRing R] [Nontrivial R] :
     Omega.d R R[ε] ε ≠ 0 := by
-  let : Algebra.FiniteType R R[ε] := ⟨⟨{ε}, by
-    rw [Finset.coe_singleton, eq_top_iff]
-    intro z _
-    rw [← TrivSqZeroExt.inl_fst_add_inr_snd_eq z, DualNumber.inr_eq_smul_eps]
-    exact add_mem
-      ((congrFun (TrivSqZeroExt.algebraMap_eq_inl R R) z.fst) ▸
-        (Algebra.adjoin R {ε}).algebraMap_mem z.fst)
-      (Subalgebra.smul_mem _ (Algebra.subset_adjoin (Set.mem_singleton ε)) z.snd)⟩⟩
+  have : Module.Finite R R[ε] := inferInstanceAs (Module.Finite R (R × R))
   let D : Derivation R R[ε] R[ε] :=
     { toLinearMap := (TrivSqZeroExt.inrHom R R).comp (TrivSqZeroExt.sndHom R R)
       map_one_eq_zero' := by simp
       leibniz' a b := by
         ext <;> simp [smul_eq_mul, TrivSqZeroExt.snd_mul, mul_comm] }
+  have hD_eps : D.liftKaehlerDifferential (KaehlerDifferential.D R R[ε] ε) = ε := by
+    rw [Derivation.liftKaehlerDifferential_comp_D]
+    rfl
   intro h
   have hD := congrArg D.liftKaehlerDifferential ((Omega.d_eq_zero_iff R R[ε] ε).mp h)
   have heps : (ε : R[ε]) ≠ 0 := by
@@ -126,6 +122,6 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
     have := congrArg TrivSqZeroExt.snd hzero
     simp at this
   apply heps
-  simpa [D] using hD
+  simpa only [hD_eps, map_zero] using hD
 
 end KaehlerComparison
