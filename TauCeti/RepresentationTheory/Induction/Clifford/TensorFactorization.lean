@@ -212,6 +212,9 @@ private theorem isProjectiveRep_homActionAux :
     have hsymm : (ρ (s * t)).symm x = (β s t : k) • (ρ t).symm ((ρ s).symm x) := by
       rw [LinearEquiv.symm_apply_eq, map_smul, ← h.isProjectiveRep.mul_apply]
       simp
+    -- Hom-action multiplication is composition of these linear maps by definition.
+    -- Expose their evaluations before using the projective inverse formula `hsymm`;
+    -- simplifying generic application lemmas here would expand composition repeatedly.
     change σ s (σ t (φ ((ρ t).symm ((ρ s).symm x)))) =
       (↑((β s t)⁻¹) : k) • σ (s * t) (φ ((ρ (s * t)).symm x))
     simp [hsymm, smul_smul, ← _root_.mul_apply_eq_comp, ← map_mul,

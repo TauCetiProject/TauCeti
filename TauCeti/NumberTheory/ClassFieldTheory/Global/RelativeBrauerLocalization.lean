@@ -175,6 +175,8 @@ private def unitsToInfiniteDecompositionUnits :
   Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
     (Units.map (algebraMap L w.Completion : L →* _)).toAdditive.toIntLinearMap
     fun d a ↦ Additive.toMul.injective <| Units.ext <| by
+      -- Removing `Additive` and unit wrappers leaves the two field-valued maps.
+      -- State that equality explicitly so the public completion comparison applies.
       change algebraMap L w.Completion ((d : L ≃ₐ[K] L) ((Additive.toMul a : Lˣ) : L)) =
         (decompositionHom v w d) (algebraMap L w.Completion ((Additive.toMul a : Lˣ) : L))
       simpa only [InfinitePlace.Completion.algebraMap_apply] using

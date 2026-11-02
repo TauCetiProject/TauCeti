@@ -110,6 +110,8 @@ noncomputable def singularChainComplexInclIso :
             (incl_comp_singularChainComplexFunctor_eq C R).symm X))
     (fun f ↦ by
       dsimp only [Iso.trans, eqToIso, asIso]
+      -- The component isomorphisms were assembled using transports. Their homs
+      -- reduce to the comparison map, whose public naturality law proves this square.
       change _ ≫ (singularChainComplexInclComparison C R).app _ =
         (singularChainComplexInclComparison C R).app _ ≫ _
       exact (singularChainComplexInclComparison C R).naturality f)
@@ -152,6 +154,8 @@ lemma singularHomologyInclIso_hom (n : ℕ) :
         (HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n) ≫
       eqToHom (incl_comp_singularHomologyFunctor_eq C R n).symm := by
   rw [singularHomologyInclIso.eq_def]
+  -- Whiskering the composite isomorphism has this hom by definition; expose it
+  -- before rewriting by the chain-complex comparison's public hom formula.
   change Functor.whiskerRight (singularChainComplexInclIso C R).hom _ ≫ _ = _
   rw [singularChainComplexInclIso_hom]
   rfl

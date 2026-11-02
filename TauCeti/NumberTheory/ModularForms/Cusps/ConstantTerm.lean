@@ -234,6 +234,8 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     rw [_root_.mul_inv_rev, ConjAct.toConjAct_mul, mul_smul]
     exact hΓ
   rw [hΓneg]
+  -- The translate wrapper coerces to this slash action. Expose it so the public
+  -- `qExpansion_smul` lemma applies without unfolding the cusp-function construction.
   change qExpansion Γγ.strictWidthInfty
     ((-1 : ℂ) ^ k • (⇑f ∣[k] mapGL ℝ γ)) = _
   exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero

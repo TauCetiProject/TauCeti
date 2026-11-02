@@ -13,9 +13,9 @@ import Mathlib.Algebra.Group.Commute.Units
 /-!
 # Units in monoids
 
-This file lifts units in the range of a local monoid homomorphism to units of its source, and
-relates squares in a monoid to squares in its group of units. It also rewrites integer
-powers of products of units as monomials with consecutive natural exponents. These identities
+This file lifts units in the range of a local monoid homomorphism to units of its source.
+It also rewrites integer powers of products of units as monomials with consecutive natural
+exponents. These identities
 let bilateral sums over integer powers split into two sums over natural numbers, without
 requiring a zero in the ambient monoid.
 

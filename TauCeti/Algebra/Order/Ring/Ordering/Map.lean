@@ -47,6 +47,8 @@ theorem mem_map_iff_mem_of_ker_subset {f : A →+* B} {P : Subsemiring A}
     (P.comap f).supportIdeal (hP.comap f.toAddMonoidHom) =
       Ideal.comap f (P.supportIdeal hP) := by
   ext x
+  -- Support-ideal membership is membership of both signs. Unwrap the two comaps
+  -- so that `map_neg` sees the ring-hom application rather than an ideal membership.
   change (f x ∈ P ∧ f (-x) ∈ P) ↔ (f x ∈ P ∧ -f x ∈ P)
   rw [map_neg]
 
@@ -102,6 +104,8 @@ theorem IsOrdering.strictMono_iff_nonneg_iff_mem_comap [LinearOrder K] [IsOrdere
     (dec := Classical.decPred _)
   have : IsOrderedRing L := IsOrderedRing.ofSubsemiring hP.isPreordering.isPointed
   have hnonneg (x : L) : 0 ≤ x ↔ x ∈ P := by
+    -- This locally constructed order uses cone membership of the difference as `≤`.
+    -- Expose that relation so `sub_zero` can identify its nonnegative cone.
     change x - 0 ∈ P ↔ x ∈ P
     rw [sub_zero]
   refine ⟨fun hf x ↦ ?_, fun h ↦ ?_⟩
@@ -122,6 +126,7 @@ theorem IsOrdering.strictMono_comap (hP : P.IsOrdering) (f : K →+* L) :
   have : IsOrderedRing K := IsOrderedRing.ofSubsemiring (hP.comap f).isPreordering.isPointed
   apply (hP.strictMono_iff_nonneg_iff_mem_comap f).mpr
   intro x
+  -- The pulled-back order likewise defines nonnegativity by membership of `x - 0`.
   change x - 0 ∈ P.comap f ↔ x ∈ P.comap f
   rw [sub_zero]
 

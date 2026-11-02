@@ -138,6 +138,7 @@ theorem exists_linearOrder (hP : P.IsPreordering) :
   let := LinearOrder.ofAddSubmonoid hQ.isPreordering.isPointed hQ.isSpanning
   have : IsOrderedRing K := IsOrderedRing.ofSubsemiring hQ.isPreordering.isPointed
   refine ⟨inferInstance, inferInstance, fun x hx => ?_⟩
+  -- The order just constructed defines `a ≤ b` by `b - a ∈ Q`; expose it before `sub_zero`.
   change x - 0 ∈ Q
   simpa only [sub_zero] using hPQ hx
 

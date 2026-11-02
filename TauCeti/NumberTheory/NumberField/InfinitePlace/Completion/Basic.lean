@@ -55,6 +55,8 @@ instance {R : Type*} [CommSemiring R] [Algebra R K] (w : InfinitePlace K) :
   apply IsScalarTower.of_algebraMap_eq
   intro r
   apply (Completion.equivCompletion w).injective
+  -- The comparison equivalence has `toCompletion` as its underlying function.
+  -- Expose these values so the public algebra-map comparison lemmas can rewrite them.
   change (algebraMap R w.Completion r).toCompletion =
     (algebraMap K w.Completion (algebraMap R K r)).toCompletion
   simp only [Completion.algebraMap_toCompletion, AbsoluteValue.Completion.algebraMap_def,

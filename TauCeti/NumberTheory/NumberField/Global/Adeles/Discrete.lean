@@ -82,6 +82,8 @@ instance discreteTopology_principalSubgroup :
   · obtain rfl : x = 0 := (AdeleRing.algebraMap_injective (𝓞 K) K).eq_iff.mp <| by
       simpa using congrArg Subtype.val h
     exact ⟨fun w ↦ by
+      -- The diagonal adele's coordinate is definitionally this field algebra map;
+      -- expose that coordinate so simplification can use `map_zero` and `norm_zero`.
       change ‖(algebraMap K w.Completion) 0‖ < 1
       simp,
       (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) 0).mpr ⟨0, map_zero _⟩⟩

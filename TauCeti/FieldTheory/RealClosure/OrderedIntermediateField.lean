@@ -161,6 +161,8 @@ omit [IsOrderedRing K] in
 theorem nonneg_iff (P : OrderedIntermediateField K L) (x : P.toIntermediateField) :
     letI := P.linearOrder
     0 ≤ x ↔ x.val ∈ P.nonneg := by
+  -- `P.linearOrder` is built from the preordering, with `a ≤ b` defined by `b - a`.
+  -- Expose that membership before applying the public `mem_preordering` comparison.
   change x - 0 ∈ P.preordering ↔ x.val ∈ P.nonneg
   rw [sub_zero, P.mem_preordering]
 

@@ -229,6 +229,8 @@ def gradedSymmetricAlgebraDegreeOneIso :
     (fun F ↦ ObjectProperty.isoMk _ (eqToIso (degree_obj_gradedSymmetricAlgebra_obj F 1) ≪≫
       (SheafOfModules.symmetricPowerOneIso X.sheaf).app F.obj))
     (fun {F G} φ ↦ ObjectProperty.hom_ext _ (by
+      -- Naturality is now an equality of underlying module morphisms. Display the
+      -- degree-one transport so `degree_map_gradedSymmetricAlgebra_map_hom` matches.
       change ((degree 1).map ((gradedSymmetricAlgebra X).map φ)).hom ≫
           (eqToHom (degree_obj_gradedSymmetricAlgebra_obj G 1) ≫
             (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app G.obj) =

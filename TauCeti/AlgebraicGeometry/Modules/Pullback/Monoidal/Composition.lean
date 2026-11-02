@@ -143,6 +143,8 @@ theorem pullback_comp_η :
       (pullbackComp f g).hom.app (𝟙_ (QuasicoherentSheaf Z)) ≫ η (pullback (f ≫ g)) := by
   rw [CategoryTheory.Functor.OplaxMonoidal.comp_η]
   apply ObjectProperty.hom_ext
+  -- After full-subcategory extensionality, compose the underlying module maps.
+  -- The public `_hom` lemmas below rewrite there, rather than through the wrappers.
   change ((pullback f).map (η (pullback g))).hom ≫ (η (pullback f)).hom =
     ((pullbackComp f g).hom.app (𝟙_ (QuasicoherentSheaf Z))).hom ≫
       (η (pullback (f ≫ g))).hom
@@ -161,6 +163,8 @@ theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
   -- Restrict the module equation back using the public full-subcategory comparison laws.
   rw [CategoryTheory.Functor.OplaxMonoidal.comp_δ]
   apply ObjectProperty.hom_ext
+  -- Expose composition and tensoring in `X.Modules` after removing the subcategory
+  -- wrappers; the following comparison lemmas are stated for these module maps.
   change (((pullback f).map (δ (pullback g) E F)).hom ≫
       (δ (pullback f) ((pullback g).obj E) ((pullback g).obj F)).hom) ≫
       (MonoidalCategoryStruct.tensorHom (C := X.Modules)
