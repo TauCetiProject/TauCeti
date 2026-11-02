@@ -225,7 +225,7 @@ private theorem hasStrictFDerivAt_extChartAt_hamiltonianFlowAction (x : M) :
     rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.id_apply, ← h1 q.1, ← h2 q.2,
       ← map_add, Prod.mk_add_mk, add_zero, zero_add]
   rw [← hB'eq]
-  exact hBc.hasStrictFDerivAt (by simp)
+  exact hBc.hasStrictFDerivAt hBd (by simp)
 
 /-- Near a regular point `x` of a family of `n` Poisson-commuting functions on a `2n`-dimensional
 manifold, every point of the common level of `x` is `φ_v(x)` for a small vector `v`. In a chart,
