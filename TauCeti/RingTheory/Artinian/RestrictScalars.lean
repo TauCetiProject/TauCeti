@@ -16,9 +16,9 @@ Artinian `ℚ`-module but not an Artinian `ℤ`-module. It survives when `S → 
 (`isArtinian_of_surjective_algebraMap`), and more generally when `S` only surjects onto `B ⧸ I`
 for an ideal `I` killing the module: then every `S`-submodule is a `B`-submodule.
 
-For a finite module over an Artinian ring and a nilpotent ideal `I`, filtering by the submodules
-`I ^ j • M` reduces to that case. So a finite module over an Artinian local ring `B` stays Artinian
-over every ring `S` mapping onto the residue field of `B`. This is the input for fibre products of
+For an Artinian module and a nilpotent ideal `I`, filtering by the submodules `I ^ j • M` reduces
+to that case. So a finite module over an Artinian local ring `B` stays Artinian over every ring `S`
+mapping onto the residue field of `B`. This is the input for fibre products of
 Artinian local rings with a common residue field: such a fibre product is a subring of a product
 of Artinian rings onto whose residue field it maps, hence is Artinian.
 
@@ -26,9 +26,8 @@ of Artinian rings onto whose residue field it maps, hence is Artinian.
 
 * `TauCeti.isArtinian_of_surjective_algebraMap_quotient`: if `I` kills the Artinian `B`-module `M`
   and `S → B ⧸ I` is surjective, then `M` is an Artinian `S`-module.
-* `TauCeti.isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient`: if `B` is an Artinian
-  ring, `M` is a finite `B`-module, `I` is nilpotent and `S → B ⧸ I` is surjective, then `M` is an
-  Artinian `S`-module.
+* `TauCeti.isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient`: if `M` is an Artinian
+  `B`-module, `I` is nilpotent and `S → B ⧸ I` is surjective, then `M` is an Artinian `S`-module.
 -/
 
 public section
@@ -56,7 +55,7 @@ theorem isArtinian_of_surjective_algebraMap_quotient {I : Ideal B}
 
 /-- One step of the `I`-adic filtration: if `N' ≤ N` are `B`-submodules with `I • N ≤ N'`, and `N'`
 is an Artinian `S`-module, then so is `N`. -/
-private theorem isArtinian_of_le_of_smul_le [IsArtinianRing B] [Module.Finite B M] {I : Ideal B}
+private theorem isArtinian_of_le_of_smul_le [IsArtinian B M] {I : Ideal B}
     (hI : Function.Surjective ((Ideal.Quotient.mk I).comp (algebraMap S B)))
     {N' N : Submodule B M} (hle : N' ≤ N) (hIN : I • N ≤ N') [IsArtinian S N'] :
     IsArtinian S N := by
@@ -71,11 +70,11 @@ private theorem isArtinian_of_le_of_smul_le [IsArtinianRing B] [Module.Finite B 
   rw [LinearMap.range_restrictScalars, LinearMap.ker_restrictScalars, Submodule.range_inclusion,
     Submodule.ker_mkQ]
 
-/-- If `B` is an Artinian ring, `I` a nilpotent ideal of `B` and `S → B ⧸ I` surjective, then every
-finite `B`-module is an Artinian `S`-module. In particular a finite module over an Artinian local
-ring is Artinian over every ring mapping onto the residue field. -/
-theorem isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient [IsArtinianRing B]
-    [Module.Finite B M] {I : Ideal B} (hnil : IsNilpotent I)
+/-- If `I` is a nilpotent ideal of `B` and `S → B ⧸ I` is surjective, then every Artinian
+`B`-module is an Artinian `S`-module. In particular a finite module over an Artinian local ring is
+Artinian over every ring mapping onto the residue field. -/
+theorem isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient [IsArtinian B M]
+    {I : Ideal B} (hnil : IsNilpotent I)
     (hI : Function.Surjective ((Ideal.Quotient.mk I).comp (algebraMap S B))) :
     IsArtinian S M := by
   obtain ⟨n, hn⟩ := hnil
@@ -84,8 +83,7 @@ theorem isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient [IsArtinianR
     induction i with
     | zero =>
       intro j hj
-      have : I ^ j = ⊥ := by
-        rw [show j = n + (j - n) by omega, pow_add, hn, Ideal.zero_eq_bot, Ideal.bot_mul]
+      have : I ^ j = ⊥ := by simpa using pow_eq_zero_of_le (by omega) hn
       rw [this, Submodule.bot_smul]
       infer_instance
     | succ i ih =>
