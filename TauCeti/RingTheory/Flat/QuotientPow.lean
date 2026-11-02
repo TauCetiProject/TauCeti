@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.TensorProduct.Finite
 import Mathlib.RingTheory.Flat.Tensor
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 import TauCeti.RingTheory.Ideal.KrullIntersection
 
 /-!
@@ -30,7 +31,8 @@ the proof below avoids completions and localizations.
 By Mathlib's ideal criterion it suffices that `B ⊗[A] J → B ⊗[A] A` is injective for every ideal
 `J` of `A`. Let `t` be in the kernel and fix a maximal ideal `𝔫` of `B`, with `𝔪 = 𝔫 ∩ A`.
 
-1. Since `B = A + 𝔪 ^ k B`, the element `t` is `1 ⊗ j` modulo `𝔪 ^ k (B ⊗[A] J)` for some `j ∈ J`.
+1. Since `B = A + 𝔪 ^ k B`, the element `t` is `1 ⊗ j` modulo `𝔪 ^ k (B ⊗[A] J)` for some `j ∈ J`
+   (`TensorProduct.exists_sub_one_tmul_mem_smul_top`).
    Its image in `B` then shows that `j` lies in `𝔪 ^ k B ∩ A = 𝔪 ^ k`.
 2. By the Artin–Rees lemma `𝔪 ^ k ∩ J ⊆ 𝔪 ^ (k - c) J`, so `t ∈ 𝔪 ^ (k - c) (B ⊗[A] J)` for every
    `k`.
@@ -52,30 +54,6 @@ namespace Module.Flat
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 
-/-- The first step of the proof: modulo `𝔪 ^ k (B ⊗[A] J)`, every element of `B ⊗[A] J` is of the
-form `1 ⊗ j`, as soon as every class of `B ⧸ 𝔪 ^ k B` comes from `A`. -/
-private theorem exists_tmul_sub_mem_smul_top {I : Ideal A}
-    (hI : ∀ b : B, ∃ a : A, b - algebraMap A B a ∈ I.map (algebraMap A B)) (J : Ideal A)
-    (t : B ⊗[A] J) : ∃ j : J, t - (1 : B) ⊗ₜ j ∈ (I • ⊤ : Submodule A (B ⊗[A] J)) := by
-  induction t using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    obtain ⟨j, hj⟩ := hx
-    obtain ⟨j', hj'⟩ := hy
-    exact ⟨j + j', by simpa [tmul_add, add_sub_add_comm] using add_mem hj hj'⟩
-  | tmul b j =>
-    obtain ⟨a, ha⟩ := hI b
-    refine ⟨a • j, ?_⟩
-    -- `b ⊗ j - 1 ⊗ a j = (b - a) ⊗ j`, the image of `b - a ∈ I • B` under `· ⊗ j`.
-    have hmem : b - algebraMap A B a ∈ (I • ⊤ : Submodule A B) := by
-      rwa [Ideal.smul_top_eq_map]
-    have key := Submodule.mem_map_of_mem (f := (TensorProduct.mk A B J).flip j) hmem
-    rw [Submodule.map_smul''] at key
-    have heq : ((TensorProduct.mk A B J).flip j) (b - algebraMap A B a) =
-        b ⊗ₜ j - (1 : B) ⊗ₜ (a • j) := by
-      simp [Algebra.algebraMap_eq_smul_one]
-    rw [heq] at key
-    exact Submodule.smul_mono le_rfl le_top key
-
 /-- Steps 1 and 2 of the proof: an element `t` of the kernel of `B ⊗[A] J → B` lies in
 `𝔫 ^ n (B ⊗[A] J)` for every maximal ideal `𝔫` of `B` and every `n`. -/
 private theorem mem_pow_smul_top_of_lTensor_eq_zero [IsNoetherianRing A]
@@ -96,7 +74,7 @@ private theorem mem_pow_smul_top_of_lTensor_eq_zero [IsNoetherianRing A]
     rw [← Ideal.Quotient.eq_zero_iff_mem]
     refine (injective_iff_map_eq_zero _).mp (h 𝔫 k).1 _ ?_
     rwa [Ideal.quotientMap_mk, Ideal.Quotient.eq_zero_iff_mem]
-  obtain ⟨j, hj⟩ := exists_tmul_sub_mem_smul_top hsurj J t
+  obtain ⟨j, hj⟩ := TensorProduct.exists_sub_one_tmul_mem_smul_top hsurj t
   -- The image of `1 ⊗ j` in `B` is that of `j`, which therefore lies in `𝔪 ^ k B`.
   have hjk : (j : A) ∈ 𝔪 ^ k := by
     refine hinj _ ?_
