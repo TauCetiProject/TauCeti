@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.GNS
 public import TauCeti.Analysis.CStarAlgebra.Action.GroundState.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # Ground states and the GNS Hamiltonian
@@ -50,27 +51,20 @@ theorem IsGroundState.inner_gnsHamiltonian_nonneg (hω : α.IsGroundState ω)
     (hf : ∀ t a, (ω : A →ₚ[ℂ] ℂ) (α t a) = (ω : A →ₚ[ℂ] ℂ) a)
     (ξ : (α.gnsHamiltonian hf).domain) :
     0 ≤ ⟪(ξ : (ω : A →ₚ[ℂ] ℂ).GNS), α.gnsHamiltonian hf ξ⟫_ℂ := by
-  have hT : ((α.gnsHamiltonian hf).domRestrict
-      (α.generator.domain.map (ω : A →ₚ[ℂ] ℂ).toGNS.toLinearMap)).IsClosable :=
-    (α.isSelfAdjoint_gnsHamiltonian hf).isClosed.isClosable.leIsClosable LinearPMap.domRestrict_le
   -- The quadratic form is nonnegative on the graph of the restriction of `H` to the core, hence on
   -- its closure, the graph of `H`.
-  have hgraph : ((α.gnsHamiltonian hf).graph : Set (ω.GNS × ω.GNS)) ⊆
-      {p | 0 ≤ ⟪p.1, p.2⟫_ℂ} := by
-    rw [← (α.gnsHamiltonian_hasCore hf).closure_eq, ← hT.graph_closure_eq_closure_graph,
-      Submodule.topologicalClosure_coe]
-    refine closure_minimal ?_ (isClosed_le continuous_const (continuous_fst.inner continuous_snd))
-    rintro ⟨_, _⟩ hp
-    obtain ⟨⟨_, hv⟩, h1, h2⟩ := (LinearPMap.mem_graph_iff _).mp hp
-    obtain ⟨a, ha, rfl⟩ := Submodule.mem_map.mp (Submodule.mem_inf.mp hv).1
-    simp only at h1 h2
-    subst h1 h2
-    change 0 ≤ ⟪ω.toGNS a, (α.gnsHamiltonian hf).domRestrict _ ⟨_, hv⟩⟫_ℂ
-    rw [LinearPMap.domRestrict_le.2 (x := ⟨_, hv⟩)
-      (y := ⟨_, α.toPreGNS_mem_gnsHamiltonian_domain hf ⟨a, ha⟩⟩) (by simp), toGNS_apply,
-      inner_toPreGNS_gnsHamiltonian_apply_toPreGNS]
-    simpa using hω.neg_I_mul_apply_star_mul_generator_nonneg ⟨a, ha⟩
-  exact hgraph ((α.gnsHamiltonian hf).mem_graph ξ)
+  refine (α.gnsHamiltonian_hasCore hf).graph_subset_of_isClosed (s := {p | 0 ≤ ⟪p.1, p.2⟫_ℂ})
+    (isClosed_le continuous_const (continuous_fst.inner continuous_snd)) ?_
+    ((α.gnsHamiltonian hf).mem_graph ξ)
+  rintro ⟨_, _⟩ hp
+  obtain ⟨⟨_, hv⟩, h1, h2⟩ := (LinearPMap.mem_graph_iff _).mp hp
+  obtain ⟨a, ha, rfl⟩ := Submodule.mem_map.mp (Submodule.mem_inf.mp hv).1
+  simp only at h1 h2
+  subst h1 h2
+  rw [Set.mem_ofPred_eq, LinearPMap.domRestrict_le.2 (x := ⟨_, hv⟩)
+    (y := ⟨_, α.toPreGNS_mem_gnsHamiltonian_domain hf ⟨a, ha⟩⟩) (by simp),
+    ContinuousLinearMap.coe_coe, toGNS_apply, inner_toPreGNS_gnsHamiltonian_apply_toPreGNS]
+  simpa using hω.neg_I_mul_apply_star_mul_generator_nonneg ⟨a, ha⟩
 
 /-- **Ground states are the invariant states with nonnegative GNS Hamiltonian.** A state `ω` is a
 ground state of `α` exactly when it is `α`-invariant and its GNS Hamiltonian `H` satisfies
