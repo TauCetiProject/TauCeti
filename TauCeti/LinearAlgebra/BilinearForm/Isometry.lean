@@ -13,8 +13,8 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Algebra.Group.Subgroup.Map
+public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
-public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
@@ -620,7 +620,7 @@ private theorem map_specialIsometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M'
   rw [Subgroup.map_equiv_eq_comap_symm, MonoidHom.comap_ker]
   congr 1
   ext g
-  simpa [LinearEquiv.autCongr_symm_apply] using LinearMap.det_conj (g : M' →ₗ[R] M') e.symm
+  simpa [LinearEquiv.autCongr_apply] using LinearMap.det_conj (g : M' →ₗ[R] M') e.symm
 
 /-- Transporting a bilinear form along a linear equivalence transports its determinant-one
 isometry group. -/

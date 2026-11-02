@@ -46,11 +46,11 @@ theorem Module.End.aeval_lie_right_of_lie_right {φ : Module.End R L}
   induction f using Polynomial.induction_on' with
   | add f g hf hg => simp only [map_add, LinearMap.add_apply, hf, hg, lie_add]
   | monomial n c =>
-    simp only [aeval_monomial, Module.End.mul_apply, Module.algebraMap_end_apply, lie_smul]
+    simp only [aeval_monomial, mul_apply_eq_comp, Module.algebraMap_end_apply, lie_smul]
     congr 1
     induction n generalizing y with
-    | zero => simp only [pow_zero, Module.End.one_apply]
-    | succ n ih => rw [pow_succ, Module.End.mul_apply, Module.End.mul_apply, h, ih]
+    | zero => simp only [pow_zero, one_apply_eq_self]
+    | succ n ih => rw [pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, h, ih]
 
 /-- The Lie ring of `L`, on its `R[X]`-module `Module.AEval' φ`. -/
 instance Module.AEval'.instLieRing (φ : Module.End R L) : LieRing (Module.AEval' φ) :=

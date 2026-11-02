@@ -193,12 +193,12 @@ theorem pow_rootVector {i : ι} {α μ : κ → ℤ} {m : V}
       have hpow : (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ (n + 1)) m =
           ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
             ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ n) m) := by
-        rw [pow_succ', Module.End.mul_apply]
+        rw [pow_succ', mul_apply_eq_comp]
       have hbrj := hbr j
       rw [LieRing.of_associative_ring_bracket] at hbrj
       have happ := congrArg (fun f : Module.End ℚ V =>
         f ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ n) m)) hbrj
-      simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply] at happ
+      simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply] at happ
       rw [ih j, map_smul, sub_eq_iff_eq_add, ← add_smul] at happ
       have hstep : (μ + (n + 1) • α) j = α j + (μ + n • α) j := by
         simp only [Pi.add_apply, Pi.smul_apply, succ_nsmul]
@@ -615,7 +615,7 @@ theorem kostantTorusPoints_mul_kostantRootSubgroupPoints
     kostantTorusPoints M b wt A s * kostantRootSubgroupPoints e h ρ M hM i hnil f =
       kostantRootSubgroupPoints e h ρ M hM i hnil g * kostantTorusPoints M b wt A s := by
   refine Units.ext (Module.Basis.ext (b.baseChange A) fun x => ?_)
-  simp only [Units.val_mul, Module.End.mul_apply, Module.Basis.baseChange_apply,
+  simp only [Units.val_mul, mul_apply_eq_comp, Module.Basis.baseChange_apply,
     kostantRootSubgroupPoints_tmul, kostantTorusPoints_tmul_basis, map_sum]
   refine Finset.sum_congr rfl fun n _ => ?_
   have hw : IsCartanWeightVector h ρ (wt x + n • α)
@@ -669,9 +669,9 @@ theorem kostantTorusPoints_mul_baseChange_kostantRootOperator
         ((kostantRootOperator e h ρ M hM i).baseChange A *
           (kostantTorusPoints M b wt A s).val) := by
   refine (b.baseChange A).ext fun x => ?_
-  rw [Module.End.mul_apply, Module.Basis.baseChange_apply,
+  rw [mul_apply_eq_comp, Module.Basis.baseChange_apply,
     kostantTorusPoints_baseChange_kostantRootOperator_tmul_basis e h ρ M hM b wt i hwt hα]
-  simp only [LinearMap.smul_apply, Module.End.mul_apply, kostantTorusPoints_tmul_basis,
+  simp only [LinearMap.smul_apply, mul_apply_eq_comp, kostantTorusPoints_tmul_basis,
     LinearMap.baseChange_tmul, smul_tmul', smul_eq_mul]
 
 include e hM in

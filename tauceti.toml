@@ -70,22 +70,22 @@ staging_order = ["tauchonki", "chris", "yael", "brett", "namespace", "github"]
 
 [services.fleet.machines.chris]
 enrollment_name = "chris-server"
-max_jobs = 2
+max_jobs = 3
 kinds = ["pr", "staging"]
 
 [services.fleet.machines.tauchonki]
 machine_id = "11e2756fc11042d798f759410573a935"
-max_jobs = 2
+max_jobs = 12
 kinds = ["pr", "staging"]
 
 [services.fleet.machines.yael]
 enrollment_name = "yael-server"
-max_jobs = 4
+max_jobs = 12
 kinds = ["pr", "staging"]
 
 [services.fleet.machines.brett]
 enrollment_name = "brett-server"
-max_jobs = 5
+max_jobs = 24
 kinds = ["pr", "staging"]
 
 [services.cache]

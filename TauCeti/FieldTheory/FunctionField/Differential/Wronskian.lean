@@ -89,7 +89,7 @@ theorem wronskian_eq_pow_mul_wronskian_derivativeOfSeparating {k F : Type*}
     D.wronskian f = D x ^ (n * (n - 1) / 2) * (derivativeOfSeparating hx).wronskian f := by
   have hder : D = D x • derivativeOfSeparating hx := by
     ext z
-    simpa only [Derivation.smul_apply, smul_eq_mul, mul_comm] using
+    simpa only [_root_.smul_apply, smul_eq_mul, mul_comm] using
       D.apply_eq_derivativeOfSeparating_smul hx z
   calc
     _ = (D x • derivativeOfSeparating hx).wronskian f :=
