@@ -296,6 +296,7 @@ theorem gammaTwo_eq_siegelFunction_half_half (τ : ℍ) :
     gammaTwo_mul_siegelFunction_half_half_pow_four]
 
 /-- **`γ₂` is a cube root of `j`**: `γ₂³ = j` on the upper half-plane. -/
+@[simp]
 theorem gammaTwo_pow_three (τ : ℍ) : gammaTwo τ ^ 3 = j τ := by
   have h₀ : (siegelFunction ![0, 1 / 2] τ ^ 4) ^ 3 ≠ 0 :=
     pow_ne_zero 3 (siegelFunction_pow_four_ne_zero τ).1
