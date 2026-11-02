@@ -311,34 +311,27 @@ variable (hD : D.IsPlanar) (hDt : (D.resolveCrossing c t).IsPlanar) (R : Type u)
   {j j' : ℤ} (hj : j' + (bif t then 0 else 1) = j)
 
 include hj in
-/-- Reindexing along the circles of a face carries the vertex `S` of the cube of the resolution in
-quantum degree `j'` onto the vertex over `S` of the cube of `D` in quantum degree `j`. -/
-private theorem map_reindex_range_resolutionCubeι (S : Finset (Fin n)) :
-    (LinearMap.range ((D.resolveCrossing c t).resolutionCubeι hDt R j' S).hom).map
-        (reindex R (fun _ ↦ R[ε]) (D.resolveCrossingCubeCircleEquiv c t S)).toLinearMap =
-      LinearMap.range (D.resolutionCubeι hD R j (resolveCrossingVertex c t S)).hom := by
-  rw [range_resolutionCubeι, range_resolutionCubeι,
-    Khovanov.map_reindex_circleQuantumGrading_piece, card_resolveCrossingVertex, ← hj]
-  congr 1
+/-- The vertex `S` of the cube of the resolution in quantum degree `j'` and the vertex over `S` of
+the cube of `D` in quantum degree `j` are pieces of the same degree. -/
+private theorem sub_card_resolveCrossingVertex (S : Finset (Fin n)) :
+    j' - #S = j - #(resolveCrossingVertex c t S) := by
+  rw [card_resolveCrossingVertex, ← hj]
   cases t <;> simp only [Bool.cond_true, Bool.cond_false] <;> push_cast <;> ring
 
 /-- The vertex `S` of the cube of the resolution, as the vertex over `S` of the cube of `D`. -/
 private def resolveCrossingCubeLinearEquiv (S : Finset (Fin n)) :
     ((D.resolveCrossing c t).resolutionCube hDt R j').obj S ≃ₗ[R]
       (D.resolutionCube hD R j).obj (resolveCrossingVertex c t S) :=
-  (LinearEquiv.ofInjective _
-    ((D.resolveCrossing c t).resolutionCubeι_injective hDt R j' S)).trans <|
-    ((reindex R (fun _ ↦ R[ε]) (D.resolveCrossingCubeCircleEquiv c t S)).ofSubmodules _ _
-      (D.map_reindex_range_resolutionCubeι c t hD hDt R hj S)).trans
-    (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j _)).symm
+  (D.resolveCrossing c t).resolutionCubeObjCongr hDt R j' hD
+    (D.resolveCrossingCubeCircleEquiv c t S) (sub_card_resolveCrossingVertex c t hj S)
 
 private theorem resolutionCubeι_resolveCrossingCubeLinearEquiv (S : Finset (Fin n))
     (x : ((D.resolveCrossing c t).resolutionCube hDt R j').obj S) :
     (D.resolutionCubeι hD R j (resolveCrossingVertex c t S)).hom
         (D.resolveCrossingCubeLinearEquiv c t hD hDt R hj S x) =
       reindex R (fun _ ↦ R[ε]) (D.resolveCrossingCubeCircleEquiv c t S)
-        (((D.resolveCrossing c t).resolutionCubeι hDt R j' S).hom x) := by
-  simp [resolveCrossingCubeLinearEquiv]
+        (((D.resolveCrossing c t).resolutionCubeι hDt R j' S).hom x) :=
+  (D.resolveCrossing c t).resolutionCubeι_resolutionCubeObjCongr hDt R j' hD _ _ x
 
 /-- The vertex identifications commute with the edge maps of the two cubes. -/
 private theorem resolveCrossingCubeLinearEquiv_naturality {S T : Finset (Fin n)} (h : S ⋖ T) :
@@ -348,20 +341,22 @@ private theorem resolveCrossingCubeLinearEquiv_naturality {S T : Finset (Fin n)}
         ((monotone_resolveCrossingVertex c t).functor ⋙ D.resolutionCube hD R j).map
           (homOfLE h.le) := by
   obtain ⟨a, haS, rfl⟩ := h.exists_finset_insert
-  have haT : a ∈ insert a S := mem_insert_self a S
   have h' := covBy_resolveCrossingVertex c t h
   have haS' : c.succAbove a ∉ resolveCrossingVertex c t S := by simpa using haS
   have haT' : c.succAbove a ∈ resolveCrossingVertex c t (insert a S) := by simp
+  have hst := cubeState_eq_of_covBy h' haS' haT'
+  have hc := cubeState_ne_of_notMem_of_mem haS' haT'
   -- Both composites land in the circle tensor of the target vertex of `D`, where the edge maps
   -- of the two cubes are saddle maps and the vertex identifications are reindexings.
   rw [Functor.comp_map, Subsingleton.elim ((monotone_resolveCrossingVertex c t).functor.map
       (homOfLE h.le)) (homOfLE h'.le), ← cancel_mono (D.resolutionCubeι hD R j _),
-    Category.assoc, Category.assoc,
-    D.resolutionCube_map_homOfLE_comp_resolutionCubeι_of_covBy hD R j h' haS' haT']
+    Category.assoc, Category.assoc, D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j haS'
+      (resolveCrossingVertex_insert c t S a).symm _ hst hc
+      (hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc)]
   ext x
   have e₀ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    ((D.resolveCrossing c t).resolutionCube_map_homOfLE_comp_resolutionCubeι_of_covBy hDt R j'
-      h haS haT)) x
+    ((D.resolveCrossing c t).resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hDt R j'
+      haS)) x
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply] at e₀
   simp only [LinearEquiv.toModuleIso_hom, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
     LinearMap.comp_apply, LinearEquiv.coe_coe]
