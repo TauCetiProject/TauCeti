@@ -25,7 +25,7 @@ on:
       - 'docbuild/**'
       - '.github/workflows/api-docs.yml'
   schedule:
-    - cron: "53 * * * *"   # Hourly (UTC); a run with nothing new to analyze takes a few minutes
+    - cron: "49 * * * *"   # Hourly (UTC); a run with nothing new to analyze takes a few minutes
   workflow_dispatch:
 
 permissions:
