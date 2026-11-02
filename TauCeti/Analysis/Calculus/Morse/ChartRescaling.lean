@@ -39,7 +39,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {T : E × F → E × F} {A : (E × F) →L[ℝ] E × F} {U : Set (E × F)}
 
-private theorem rescale_preserves_split_of_ne_zero (hT0 : T 0 = 0)
+private theorem rescale_neg_norm_fst_sq_add_norm_snd_sq_eq_of_ne_zero (hT0 : T 0 = 0)
     (hQ : ∀ y ∈ U, -‖(T y).1‖ ^ 2 + ‖(T y).2‖ ^ 2 = -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2)
     {s : ℝ} (hs : s ≠ 0) {y : E × F} (hy : s • y ∈ U) :
     -‖(derivativeRescale T A s y).1‖ ^ 2 + ‖(derivativeRescale T A s y).2‖ ^ 2 =
@@ -54,7 +54,7 @@ private theorem rescale_preserves_split_of_ne_zero (hT0 : T 0 = 0)
 /-- Rescaling a transition that fixes the origin and preserves the split squared norm preserves
 that expression even at scale zero. The input is required to stay in the original coordinate
 domain only along its segment to the origin. -/
-theorem _root_.HasFDerivAt.derivativeRescale_preserves_split
+theorem _root_.HasFDerivAt.derivativeRescale_neg_norm_fst_sq_add_norm_snd_sq_eq
     (hT : HasFDerivAt T A 0) (hT0 : T 0 = 0)
     (hQ : ∀ y ∈ U, -‖(T y).1‖ ^ 2 + ‖(T y).2‖ ^ 2 = -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2)
     {y : E × F} (hy : ∀ s ∈ Icc (0 : ℝ) 1, s • y ∈ U) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
@@ -76,8 +76,9 @@ theorem _root_.HasFDerivAt.derivativeRescale_preserves_split
     filter_upwards [self_mem_nhdsWithin,
       (eventually_lt_nhds (by norm_num : (0 : ℝ) < 1)).filter_mono nhdsWithin_le_nhds]
       with t ht ht1
-    exact (rescale_preserves_split_of_ne_zero hT0 hQ ht.ne' (hy t ⟨ht.le, ht1.le⟩)).symm
-  · exact rescale_preserves_split_of_ne_zero hT0 hQ hs0 (hy s hs)
+    exact (rescale_neg_norm_fst_sq_add_norm_snd_sq_eq_of_ne_zero hT0 hQ ht.ne'
+      (hy t ⟨ht.le, ht1.le⟩)).symm
+  · exact rescale_neg_norm_fst_sq_add_norm_snd_sq_eq_of_ne_zero hT0 hQ hs0 (hy s hs)
 
 /-- A single small disk admits the entire rescaling deformation of a split-quadratic coordinate
 transition to its derivative. Both the original disk and the controlled image ball lie in the
@@ -101,9 +102,8 @@ theorem _root_.HasFDerivAt.exists_small_disk_derivativeRescale
     hT.exists_derivativeRescale_closedBall_subset (hU.mem_nhds h0U) hV
   have hscale {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) {y : E × F}
       (hy : y ∈ Metric.closedBall 0 δ) : s • y ∈ Metric.closedBall 0 δ := by
-    simp only [Metric.mem_closedBall, dist_zero_right] at hy ⊢
-    rw [norm_smul, Real.norm_of_nonneg hs.1]
-    exact (mul_le_mul_of_nonneg_right hs.2 (norm_nonneg y)).trans (by simpa using hy)
+    exact (convex_closedBall (0 : E × F) δ).smul_mem_of_zero_mem
+      (Metric.mem_closedBall_self hδ.le) hy hs
   refine ⟨L, hL, hA, δ, hδ, hδU, hδV, ?_, fun s hs y hy ↦ ?_⟩
   · rintro ⟨s, y⟩ ⟨hs, hy⟩
     by_cases hs0 : s = 0
@@ -114,7 +114,7 @@ theorem _root_.HasFDerivAt.exists_small_disk_derivativeRescale
   · have hsnorm : ‖s‖ ≤ 1 := by simpa [Real.norm_of_nonneg hs.1] using hs.2
     have hynorm : ‖y‖ ≤ δ := by simpa [Metric.mem_closedBall, dist_zero_right] using hy
     have hbound := hb s hsnorm y hynorm
-    refine ⟨hbound, hδV ?_, hT.derivativeRescale_preserves_split hT0 hQ
+    refine ⟨hbound, hδV ?_, hT.derivativeRescale_neg_norm_fst_sq_add_norm_snd_sq_eq hT0 hQ
       (fun t ht ↦ hδU (hscale ht hy)) hs⟩
     simpa only [Metric.mem_closedBall, dist_zero_right] using
       hbound.trans (mul_le_mul_of_nonneg_left hynorm hL.le)
