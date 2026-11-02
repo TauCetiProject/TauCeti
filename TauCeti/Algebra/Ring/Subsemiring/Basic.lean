@@ -18,7 +18,7 @@ public section
 
 namespace Subsemiring
 
-variable {A B : Type*} [CommRing A] [CommRing B]
+variable {A B : Type*} [Ring A] [Ring B]
 
 /-- A subsemiring containing the kernel contains every lift of each image point. -/
 theorem mem_map_iff_mem_of_ker_subset {f : A →+* B} {P : Subsemiring A}

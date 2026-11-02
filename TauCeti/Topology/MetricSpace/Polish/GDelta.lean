@@ -45,51 +45,6 @@ neighbourhood filter is a Cauchy filter, whose limit in `s` must be the point it
 public section
 
 open Set Filter Topology Metric TopologicalSpace
-open scoped NNReal ENNReal
-
-namespace TauCeti
-
-variable {α ι : Type*}
-
-section Embedding
-
-variable [MetricSpace α] {U : ι → Set α}
-
-/-- The map `x ↦ (x, fun i ↦ (infEDist x (U i)ᶜ)⁻¹)` from `⋂ i, U i` into `α × (ι → ℝ≥0)`;
-it is a closed embedding when every `U i` is open. -/
-private noncomputable def gδEmbedding (U : ι → Set α) (x : ↥(⋂ i, U i)) : α × (ι → ℝ≥0) :=
-  (x.1, fun i ↦ (infEDist x.1 (U i)ᶜ)⁻¹.toNNReal)
-
-private theorem inv_infEDist_compl_ne_top (hU : ∀ i, IsOpen (U i)) (x : ↥(⋂ i, U i)) (i : ι) :
-    (infEDist x.1 (U i)ᶜ)⁻¹ ≠ ∞ := by
-  simpa [← mem_iff_infEDist_zero_of_closed (hU i).isClosed_compl] using mem_iInter.1 x.2 i
-
-private theorem continuous_gδEmbedding (hU : ∀ i, IsOpen (U i)) : Continuous (gδEmbedding U) :=
-  continuous_subtype_val.prodMk <| continuous_pi fun i ↦
-    ENNReal.continuousOn_toNNReal.comp_continuous (by fun_prop) (inv_infEDist_compl_ne_top hU · i)
-
-private theorem range_gδEmbedding (hU : ∀ i, IsOpen (U i)) :
-    range (gδEmbedding U) = {q | ∀ i, (infEDist q.1 (U i)ᶜ)⁻¹ = q.2 i} := by
-  ext q
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨x, rfl⟩ i
-    simp only [gδEmbedding, ENNReal.coe_toNNReal (inv_infEDist_compl_ne_top hU x i)]
-  · have hmem (i : ι) : q.1 ∈ U i := by
-      by_contra hq
-      simpa [infEDist_zero_of_mem (mem_compl hq)] using h i
-    exact ⟨⟨q.1, mem_iInter.2 hmem⟩, Prod.ext rfl <| funext fun i ↦ congr($(h i).toNNReal)⟩
-
-private theorem isClosedEmbedding_gδEmbedding (hU : ∀ i, IsOpen (U i)) :
-    IsClosedEmbedding (gδEmbedding U) where
-  toIsInducing := .of_comp (continuous_gδEmbedding hU) continuous_fst .subtypeVal
-  injective _ _ h := Subtype.ext congr(($h).1)
-  isClosed_range := by
-    rw [range_gδEmbedding hU, ofPred_forall]
-    exact isClosed_iInter fun i ↦ isClosed_eq (by fun_prop) (by fun_prop)
-
-end Embedding
-
-end TauCeti
 
 namespace TauCeti
 
