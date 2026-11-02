@@ -28,6 +28,8 @@ Lie-group exponential.
 ## Main results
 
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
+* `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
+  homomorphism preserves the Lie bracket.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
@@ -98,7 +100,9 @@ private theorem tangent_comp_monoidHom
     (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
     (mulInvariantVectorField X g)).symm
 
-private theorem groupLieAlgebraMap_toMonoidHom_map_lie
+/-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
+tangent Lie algebras. -/
+theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (X Y : GroupLieAlgebra I G) :
@@ -182,7 +186,7 @@ noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     { toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
       map_lie' := by
         intro X Y
-        exact groupLieAlgebraMap_toMonoidHom_map_lie φ X Y }
+        exact φ.groupLieAlgebraMap_lie X Y }
   (leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := I') (G := G') (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).symm.toLieHom.comp
     (tangentMap.comp
