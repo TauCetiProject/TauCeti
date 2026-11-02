@@ -104,10 +104,10 @@ theorem isClosedEmbedding_weakWhitneyJet :
       C^(n : ℕ∞ω)⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ →
         (m : {m : ℕ // m ≤ (n : ℕ∞ω)}) → C(E, E [×(m : ℕ)]→L[𝕜] F)) := by
   refine ⟨isEmbedding_weakWhitneyJet, isClosed_of_closure_subset fun g hg ↦ ?_⟩
-  let l := Filter.comap (Subtype.val : range (weakWhitneyJet (k := 𝕜)
+  let l := Filter.comap (Subtype.val : range (weakWhitneyJet (𝕜 := 𝕜)
     (E := E) (F := F) (n := (n : ℕ∞ω))) → _) (𝓝 g)
   have : l.NeBot := mem_closure_iff_comap_neBot.1 hg
-  let f := fun z : range (weakWhitneyJet (k := 𝕜) (E := E) (F := F) (n := (n : ℕ∞ω))) ↦
+  let f := fun z : range (weakWhitneyJet (𝕜 := 𝕜) (E := E) (F := F) (n := (n : ℕ∞ω))) ↦
     Classical.choose z.property
   have hf : (fun z ↦ weakWhitneyJet (f z)) = Subtype.val :=
     funext fun z ↦ Classical.choose_spec z.property
