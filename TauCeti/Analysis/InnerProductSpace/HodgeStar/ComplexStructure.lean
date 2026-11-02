@@ -27,7 +27,7 @@ two-vector, `⋆F = ±F`, satisfies `‖u ⌟ F‖² = (‖F‖² / 2) ‖u‖²
 orthonormal coframe a self-dual form is `a (e¹² + e³⁴) + b (e¹³ - e²⁴) + c (e¹⁴ + e²³)`, with
 `‖F‖² = 2 (a² + b² + c²)` and `A² = -(a² + b² + c²)`. The argument is coordinate free: for a
 unit vector `s`, the pointwise energy identity `⟪s ∧ a, F + ⋆F⟫ = ‖a‖² + vol (F ∧ F) / 2` with
-`a = s ⌟ F` (`Orientation.inner_ιMulti_ιInv_contractLeft_add_hodgeStar`) reduces, for
+`a = s ⌟ F` (`Orientation.inner_ιMulti_twoVectorContraction_add_hodgeStar`) reduces, for
 `⋆F = ±F`, to `‖a‖² = ‖F‖² / 2`.
 
 Conversely, a `J` with `g(u, v) = ω(u, J v)` is orthogonal and `F` is its Kähler two-vector,
@@ -38,11 +38,6 @@ for the symplectic orientation, a `J` with `g(u, v) = ω(u, J v)` exists if and 
 and `‖F‖ = √2` (`TauCeti.exists_almostComplexStructure_inner_eq_iff_of_pos`). This is the
 pointwise statement of the characterization of the metrics compatible with a symplectic form on
 a four-manifold.
-
-## Main definitions
-
-* `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
-  `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
 
 ## Main results
 
@@ -68,49 +63,12 @@ public section
 
 noncomputable section
 
-open Module exteriorPower CliffordAlgebra
+open Module exteriorPower
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
 namespace TauCeti
-
-/-- The **skew endomorphism of a two-vector** `F ∈ ⋀² V`: the contraction `u ↦ u ⌟ F` of `F` by
-the functional `⟪u, ·⟫`, read as a vector of `V` with `ExteriorAlgebra.ιInv`. It is the operator
-`A` with `⟪A u, w⟫ = ω(u, w)` for the two-form `ω(u, w) = ⟪F, u ∧ w⟫` that `F` represents
-(`TauCeti.inner_twoVectorContraction_apply`). -/
-def twoVectorContraction (F : ⋀[ℝ]^2 V) : V →ₗ[ℝ] V where
-  toFun u := ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V))
-  map_add' u v := by simp
-  map_smul' c u := by simp
-
-omit [FiniteDimensional ℝ V] in
-theorem twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u : V) :
-    twoVectorContraction F u =
-      ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)) :=
-  (rfl)
-
-/-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. -/
-@[simp]
-theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
-    ⟪twoVectorContraction F u, w⟫ = ⟪F, ιMulti ℝ 2 ![u, w]⟫ := by
-  rw [real_inner_comm _ F, inner_ιMulti_two_eq_inner_ιInv_contractLeft, real_inner_comm,
-    twoVectorContraction_apply]
-
-/-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
-theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
-    ⟪twoVectorContraction F u, u⟫ = 0 := by
-  rw [inner_twoVectorContraction_apply,
-    (ιMulti ℝ 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl (by decide), inner_zero_right]
-
-/-- **The contraction by a two-vector is skew-adjoint**: `⟪u ⌟ F, w⟫ = -⟪u, w ⌟ F⟫`. -/
-theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
-    ⟪twoVectorContraction F u, w⟫ = -⟪u, twoVectorContraction F w⟫ := by
-  have h := inner_twoVectorContraction_apply_self F (u + w)
-  rw [map_add, inner_add_left, inner_add_right, inner_add_right,
-    inner_twoVectorContraction_apply_self, inner_twoVectorContraction_apply_self] at h
-  rw [real_inner_comm _ u]
-  linarith
 
 /-! ### Almost complex structures represented by a two-vector -/
 
@@ -184,8 +142,8 @@ variable [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4)) (hkl : 2 + 2
 private theorem norm_twoVectorContraction_apply_sq_of_norm_eq_one
     (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) {s : V} (hs : ‖s‖ = 1) :
     ‖twoVectorContraction F s‖ ^ 2 = ‖F‖ ^ 2 / 2 := by
-  have h := o.inner_ιMulti_ιInv_contractLeft_add_hodgeStar hkl hs F
-  rw [← twoVectorContraction_apply, ← o.inner_hodgeStar_apply hkl] at h
+  have h := o.inner_ιMulti_twoVectorContraction_add_hodgeStar hkl hs F
+  rw [← o.inner_hodgeStar_apply hkl] at h
   have h₁ : ⟪ιMulti ℝ 2 ![s, twoVectorContraction F s], F⟫ =
       ‖twoVectorContraction F s‖ ^ 2 := by
     rw [real_inner_comm, ← inner_twoVectorContraction_apply, real_inner_self_eq_norm_sq]
