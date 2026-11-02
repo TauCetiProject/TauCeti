@@ -29,6 +29,7 @@ approximation numbers.
 * `IsCompactOperator.adjoint`: the Hilbert-space adjoint of a compact operator is compact.
 * `ContinuousLinearMap.isCompactOperator_adjoint_iff`: `T†` is compact exactly when `T` is.
 * `IsCompactOperator.star`: on a Hilbert space, `star T` is compact when `T` is.
+* `ContinuousLinearMap.isCompactOperator_star_iff`: `star T` is compact exactly when `T` is.
 * `IsCompactOperator.conjStarAlgEquiv`: conjugating by a unitary preserves compactness.
 -/
 
@@ -95,5 +96,11 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 theorem isCompactOperator_adjoint_iff {T : E →L[𝕜] F} :
     IsCompactOperator (T†) ↔ IsCompactOperator T :=
   ⟨fun h ↦ by simpa using h.adjoint, IsCompactOperator.adjoint⟩
+
+/-- On a Hilbert space, an operator is compact exactly when its star, its adjoint, is. -/
+@[simp]
+theorem isCompactOperator_star_iff {T : E →L[𝕜] E} :
+    IsCompactOperator ⇑(star T) ↔ IsCompactOperator T := by
+  rw [star_eq_adjoint, isCompactOperator_adjoint_iff]
 
 end ContinuousLinearMap

@@ -170,6 +170,12 @@ private theorem isCompactOperator_rep_mul_half_star_sub_self (π : A →⋆ₙ�
   rw [mul_smul_comm, FunLike.coe_smul]
   exact h.smul _
 
+/-- The real part `(F + F*) / 2` is `F` plus half the skew difference `F* - F`. -/
+private theorem realPart_eq_add_half_star_sub (F : H →L[ℂ] H) :
+    (ℜ F : H →L[ℂ] H) = F + (2 : ℝ)⁻¹ • (star F - F) := by
+  rw [realPart_apply_coe]
+  module
+
 /-- **Self-adjoint replacement.** Let `F` be a bounded operator whose skew part is compact
 relative to `π`, i.e. `(F - F*) π(a)` is compact for every `a`. If `[F, π(a)]` and
 `(F² - 1) π(a)` are compact for every `a`, then the real part `ℜ F = (F + F*) / 2` is the operator
@@ -182,12 +188,12 @@ def ofRealPart (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
   operator := ℜ F
   isSelfAdjoint_operator := (ℜ F).2
   isCompactOperator_commutator a := by
-    rw [realPart_apply_coe, show (2 : ℝ)⁻¹ • (F + star F) = F + (2 : ℝ)⁻¹ • (star F - F) by module]
+    rw [realPart_eq_add_half_star_sub]
     exact isCompactOperator_add_commutator π hc
       (isCompactOperator_half_star_sub_self_mul π hskew)
       (isCompactOperator_rep_mul_half_star_sub_self π hskew) a
   isCompactOperator_mul_self_sub_one_mul a := by
-    rw [realPart_apply_coe, show (2 : ℝ)⁻¹ • (F + star F) = F + (2 : ℝ)⁻¹ • (star F - F) by module]
+    rw [realPart_eq_add_half_star_sub]
     exact isCompactOperator_add_mul_self_sub_one_mul π hc hs
       (isCompactOperator_half_star_sub_self_mul π hskew) a
 
@@ -260,6 +266,25 @@ theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (M.conj U).conj U.symm = M :=
     simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
   · simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
 
+/-- Transporting along the inverse unitary and then along `U` recovers the original module. -/
+@[simp]
+theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (M.conj U.symm).conj U = M := by
+  simpa using (M.conj_conj_symm U.symm)
+
+/-- Transporting along the identity unitary does nothing. -/
+@[simp]
+theorem conj_refl : M.conj (LinearIsometryEquiv.refl ℂ H) = M := by
+  ext1
+  · ext1 a
+    simp
+  · simp
+
+/-- Transporting along `U` and then along `V` is transporting along their composite. -/
+theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ H'']
+    [CompleteSpace H''] (U : H ≃ₗᵢ[ℂ] H') (V : H' ≃ₗᵢ[ℂ] H'') :
+    (M.conj U).conj V = M.conj (U.trans V) :=
+  (rfl)
+
 end Conj
 
 /-- On a finite-dimensional Hilbert space every operator is compact, so every
@@ -316,8 +341,7 @@ def ofRealPart (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
   grading_mul_grading := hγγ
   commute_grading_rep := hγπ
   grading_mul_operator := by
-    rw [FredholmModule.ofRealPart_operator, realPart_apply_coe, mul_smul_comm, smul_mul_assoc,
-      mul_add, add_mul, hγF, grading_mul_star hγ hγF, ← neg_add, smul_neg]
+    simp [realPart_apply_coe, mul_add, add_mul, hγF, grading_mul_star hγ hγF, add_comm]
 
 @[simp]
 theorem ofRealPart_toFredholmModule (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
@@ -387,6 +411,25 @@ theorem conj_conj_symm (U : H ≃ₗᵢ[ℂ] H') : (M.conj U).conj U.symm = M :=
   · simp
   · simp
   · simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
+
+/-- Transporting along the inverse unitary and then along `U` recovers the original module. -/
+@[simp]
+theorem conj_symm_conj (U : H' ≃ₗᵢ[ℂ] H) : (M.conj U.symm).conj U = M := by
+  simpa using (M.conj_conj_symm U.symm)
+
+/-- Transporting along the identity unitary does nothing. -/
+@[simp]
+theorem conj_refl : M.conj (LinearIsometryEquiv.refl ℂ H) = M := by
+  ext1
+  · simp
+  · simp
+  · simp
+
+/-- Transporting along `U` and then along `V` is transporting along their composite. -/
+theorem conj_trans {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace ℂ H'']
+    [CompleteSpace H''] (U : H ≃ₗᵢ[ℂ] H') (V : H' ≃ₗᵢ[ℂ] H'') :
+    (M.conj U).conj V = M.conj (U.trans V) :=
+  (rfl)
 
 end Conj
 
