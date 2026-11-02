@@ -90,27 +90,30 @@ end TauCeti
 
 namespace Module.Basis
 
-variable {ι M : Type*} [AddCommGroup M]
+variable {ι M : Type*} [AddCommGroup M] [Module ℤ M]
 
-/-- A vector of an integral basis is primitive. -/
+/-- A vector of an integral basis is primitive. The `ℤ`-module structure of the basis may be any
+one: all of them agree with the canonical structure, through which primitivity is defined. -/
 theorem isPrimitive (b : Module.Basis ι ℤ M) (j : ι) : TauCeti.IsPrimitive (b j) :=
-  TauCeti.isPrimitive_def.2 ⟨b.coord j, by simp⟩
+  TauCeti.isPrimitive_def.2 ⟨(b.coord j).toAddMonoidHom.toIntLinearMap, by simp⟩
 
 end Module.Basis
 
 namespace LinearEquiv
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
 
-/-- Primitivity transports along an integer-linear equivalence. -/
+/-- Primitivity transports along an integer-linear equivalence. The `ℤ`-module structures may be
+any: primitivity is defined through the canonical structures, and only the additive map of `φ` is
+used. -/
 @[simp]
 theorem isPrimitive_iff (φ : M ≃ₗ[ℤ] N) {v : M} :
     TauCeti.IsPrimitive (φ v) ↔ TauCeti.IsPrimitive v := by
   constructor
   · rintro ⟨g, hg⟩
-    exact ⟨g.comp (φ : M →ₗ[ℤ] N), by simpa using hg⟩
+    exact ⟨g.comp (φ : M →+ N).toIntLinearMap, by simpa using hg⟩
   · rintro ⟨f, hf⟩
-    exact ⟨f.comp (φ.symm : N →ₗ[ℤ] M), by simpa using hf⟩
+    exact ⟨f.comp (φ.symm : N →+ M).toIntLinearMap, by simpa using hf⟩
 
 end LinearEquiv
 
