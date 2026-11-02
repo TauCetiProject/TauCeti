@@ -124,7 +124,7 @@ noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
         change A.ρ (rightCosetFactor (S := S) ((s : G) * g))
           (x (Quotient.mk'' ((s : G) * g))) =
             A.ρ s (A.ρ (rightCosetFactor (S := S) g) (x (Quotient.mk'' g)))
-        rw [rightCoset_mk_mul, rightCosetFactor_mul, ← Module.End.mul_apply, ← map_mul]⟩
+        rw [rightCoset_mk_mul, rightCosetFactor_mul, ← mul_apply_eq_comp, ← map_mul]⟩
   left_inv f := by
     ext g
     have h := f.2 (rightCosetFactor (S := S) g)

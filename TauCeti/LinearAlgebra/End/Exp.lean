@@ -95,7 +95,7 @@ private theorem toRatLinearMap_apply (v : M) : f.toAddMonoidHom.toRatLinearMap v
 /-- Viewing `f` as a `ℚ`-linear map does not change its powers. -/
 private theorem toRatLinearMap_pow_apply (n : ℕ) (v : M) :
     (f.toAddMonoidHom.toRatLinearMap ^ n) v = (f ^ n) v := by
-  rw [Module.End.pow_apply, Module.End.pow_apply, AddMonoidHom.coe_toRatLinearMap,
+  rw [_root_.pow_apply_eq_iterate, _root_.pow_apply_eq_iterate, AddMonoidHom.coe_toRatLinearMap,
     LinearMap.toAddMonoidHom_coe]
 
 /-- On an `f`-stable `ℚ`-subspace `V` on which `f` is nilpotent, the exponential series of `f` at
@@ -121,7 +121,8 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
   obtain ⟨n, hn⟩ := hf x
   set V := LinearMap.ker (f.toAddMonoidHom.toRatLinearMap ^ n)
   have hV : ∀ v ∈ V, f.toAddMonoidHom.toRatLinearMap v ∈ V := fun v hv ↦ by
-    rw [LinearMap.mem_ker, ← Module.End.mul_apply, ← pow_succ, pow_succ', Module.End.mul_apply,
+    rw [LinearMap.mem_ker, ← _root_.mul_apply_eq_comp, ← pow_succ, pow_succ',
+      _root_.mul_apply_eq_comp,
       LinearMap.mem_ker.1 hv, map_zero]
   have hV' : ∀ v ∈ V, (-f).toAddMonoidHom.toRatLinearMap v ∈ V := fun v hv ↦ V.neg_mem (hV v hv)
   have hneg : (-f).toAddMonoidHom.toRatLinearMap.restrict hV' =
@@ -138,8 +139,8 @@ private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
     rw [hneg, neg_pow (R := Module.End ℚ V), hnil, mul_zero]
   have hx : x ∈ V := by rwa [LinearMap.mem_ker, toRatLinearMap_pow_apply]
   rw [← coe_exp_restrict_apply f hf hV hnil ⟨x, hx⟩, ← coe_exp_restrict_apply (-f) hg hV' hnil',
-    hneg, ← Module.End.mul_apply, IsNilpotent.exp_neg_mul_exp_self ⟨n, hnil⟩,
-    Module.End.one_apply]
+    hneg, ← _root_.mul_apply_eq_comp, IsNilpotent.exp_neg_mul_exp_self ⟨n, hnil⟩,
+    _root_.one_apply_eq_self]
 
 /-- **The exponential of a locally nilpotent endomorphism.** If every vector of `M` is killed by
 some power of `f`, the exponential series `∑ (fⁱ x) / i!` is a finite sum at every vector `x`, and
@@ -193,7 +194,7 @@ theorem map_locallyNilpotentExp {S N F : Type*} [Semiring S] [AddCommGroup N] [M
     (hf' : ∀ y, ∃ n, (f' ^ n) y = 0) (g : F) (hg : Function.Semiconj g f f') (x : M) :
     g (locallyNilpotentExp f hf x) = locallyNilpotentExp f' hf' (g x) := by
   have hpow (i : ℕ) : (f' ^ i) (g x) = g ((f ^ i) x) := by
-    rw [Module.End.pow_apply, Module.End.pow_apply]
+    rw [_root_.pow_apply_eq_iterate, _root_.pow_apply_eq_iterate]
     exact (hg.iterate_right i x).symm
   obtain ⟨k, hk⟩ := hf x
   rw [locallyNilpotentExp_apply_eq_sum f hf hk,

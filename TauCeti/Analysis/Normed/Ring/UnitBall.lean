@@ -175,7 +175,8 @@ normed ring with `‖1‖ = 1`, convergent geometric series and an ultrametric n
 `x` of norm less than one makes `x * y + 1` a unit of the unit ball for each `y` in it. -/
 theorem unitBallIdeal_le_jacobson_bot : unitBallIdeal R ≤ Ideal.jacobson ⊥ := by
   intro x hx
-  refine Ideal.mem_jacobson_bot.mpr fun y ↦ isUnit_unitClosedBall_of_norm_sub_one_lt ?_
+  rw [Ideal.jacobson_bot]
+  refine Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_unitClosedBall_of_norm_sub_one_lt ?_
   rw [mem_unitBallIdeal] at hx
   simpa using (norm_mul_le (x : R) y).trans_lt
     ((mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.2)).trans_lt hx)
@@ -185,7 +186,8 @@ is a local homomorphism: an element of the unit ball whose reduction is a unit i
 of the unit ball. -/
 instance isLocalHom_quotientMk_unitBallIdeal :
     IsLocalHom (Ideal.Quotient.mk (unitBallIdeal R)) :=
-  isLocalHom_of_le_jacobson_bot _ (unitBallIdeal_le_jacobson_bot R)
+  _root_.isLocalHom_of_le_jacobson (by
+    simpa only [Ideal.jacobson_bot] using unitBallIdeal_le_jacobson_bot R)
 
 end Jacobson
 

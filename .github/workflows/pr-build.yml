@@ -1206,16 +1206,31 @@ jobs:
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
 
+      # Installation tokens issued before compilation can expire during a full build.
+      # Mint fresh read and status credentials only after candidate execution has ended.
+      - name: Refresh CI reporting credentials after the build
+        id: report-ci-api
+        if: always()
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        with:
+          owner: ${{ github.repository_owner }}
+          repository: ${{ github.event.repository.name }}
+          workflow-token: ${{ github.token }}
+          read-app-id: ${{ secrets.CI_READ_APP_ID }}
+          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.CI_STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+
       - name: Report build and bump-guard statuses to the PR head commit
         id: report
         if: always()
         env:
           CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
           CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
-          GH_TOKEN: ${{ steps.ci-api.outputs.status-token }}
-          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
-          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
-          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
+          GH_TOKEN: ${{ steps.report-ci-api.outputs.status-token || steps.ci-api.outputs.status-token }}
+          GH_READ_TOKEN: ${{ steps.report-ci-api.outputs.read-token || steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.report-ci-api.outputs.read-role || steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.report-ci-api.outputs.status-role || steps.ci-api.outputs.status-role }}
           RAW_HEAD: ${{ steps.pr.outputs.sha }}
           CAPTURED_BASE: ${{ steps.pr.outputs.base_sha }}
           CANDIDATE_MODE: ${{ env.IS_BATCH == 'true' && 'frozen-candidate' || 'pr-integration' }}

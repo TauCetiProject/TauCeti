@@ -212,7 +212,7 @@ theorem expAd_apply_eq_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x) :
   have hnegRight : -(LinearMap.mulRight K x) = LinearMap.mulRight K (-x) := by
     ext a
     simp
-  rw [Module.End.mul_apply, hnegRight, hx.neg.exp_mulRight_apply, hx.exp_mulLeft_apply]
+  rw [mul_apply_eq_comp, hnegRight, hx.neg.exp_mulRight_apply, hx.exp_mulLeft_apply]
   exact (mul_assoc _ _ _).symm
 
 end Conjugation

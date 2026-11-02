@@ -111,8 +111,8 @@ private theorem coeff_taylorPolynomial (a : A) (n : ℕ) :
   · rfl
   · rw [mem_range, not_lt] at h
     have hfind : (D.toLinearMap ^ Nat.find (hD a)) a = 0 := by
-      simpa [Module.End.pow_apply] using Nat.find_spec (hD a)
-    rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hfind, smul_zero]
+      simpa [pow_apply_eq_iterate] using Nat.find_spec (hD a)
+    rw [← coeFn_coe, ← pow_apply_eq_iterate, Module.End.pow_map_zero_of_le h hfind, smul_zero]
 
 /-- The **Taylor expansion** `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally nilpotent derivation `D`, an
 algebra homomorphism into `A[X]`. Its evaluation at `X = 1` is the Taylor exponential. -/
@@ -154,8 +154,8 @@ theorem support_taylorExpPolynomial_subset_range {a : A} {n : ℕ} (hn : D^[n] a
   rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
   rw [mem_range]
   by_contra! h
-  have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [Module.End.pow_apply] using hn
-  rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hn',
+  have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [pow_apply_eq_iterate] using hn
+  rw [← coeFn_coe, ← pow_apply_eq_iterate, Module.End.pow_map_zero_of_le h hn',
     smul_zero] at hi
   exact hi rfl
 
@@ -192,11 +192,11 @@ the Taylor exponential of `D` is `Module.End.locallyNilpotentExp` of the linear 
 `D`, which is locally nilpotent since its powers are the iterates of `D`. -/
 theorem taylorExp_apply_eq_locallyNilpotentExp (a : A) :
     taylorExp D hD a = Module.End.locallyNilpotentExp D.toLinearMap
-      (fun b ↦ (hD b).imp fun _ hn ↦ by rwa [Module.End.pow_apply, coeFn_coe]) a := by
+      (fun b ↦ (hD b).imp fun _ hn ↦ by rwa [_root_.pow_apply_eq_iterate, coeFn_coe]) a := by
   obtain ⟨n, hn⟩ := hD a
   rw [taylorExp_apply_eq_sum D hD hn, Module.End.locallyNilpotentExp_apply_eq_sum _ _ (k := n)
-    (by rwa [Module.End.pow_apply, coeFn_coe])]
-  simp only [Module.End.pow_apply, coeFn_coe]
+    (by rwa [_root_.pow_apply_eq_iterate, coeFn_coe])]
+  simp only [_root_.pow_apply_eq_iterate, coeFn_coe]
 
 /-- **Constants of the derivation are fixed by its Taylor exponential**: if `D` kills `a`, then
 the Taylor exponential of `D` fixes `a`. -/

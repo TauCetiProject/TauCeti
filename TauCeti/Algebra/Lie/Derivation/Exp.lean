@@ -68,8 +68,8 @@ theorem pow_toLinearMap_apply_lie (n : ℕ) (x y : L) :
     (D.toLinearMap ^ n) ⁅x, y⁆ =
       ∑ ij ∈ antidiagonal n,
         n.choose ij.1 • ⁅(D.toLinearMap ^ ij.1) x, (D.toLinearMap ^ ij.2) y⁆ := by
-  rw [Module.End.pow_apply, coeFn_coe, D.iterate_apply_lie]
-  simp only [← coeFn_coe, ← Module.End.pow_apply]
+  rw [_root_.pow_apply_eq_iterate, coeFn_coe, D.iterate_apply_lie]
+  simp only [← coeFn_coe, ← _root_.pow_apply_eq_iterate]
 
 variable [Module ℚ L] (hD : ∀ x, ∃ n, (D.toLinearMap ^ n) x = 0)
 

@@ -423,7 +423,7 @@ every `f ∈ K°⟨X⟩†`, the series `1 + π f` is a unit. -/
 theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
     f ∈ Ideal.jacobson ⊥ ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ < 1 := by
   classical
-  rw [Ideal.mem_jacobson_bot]
+  rw [Ideal.jacobson_bot, Ring.mem_jacobson_iff]
   constructor
   · intro h t
     by_contra! ht

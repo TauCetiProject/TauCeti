@@ -281,8 +281,8 @@ theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
     (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v : V) :
     ρ (ι Q v) ψ ∈ eigenspace (ρ (chirality Q o)) (-ε) := by
   rw [mem_eigenspace_iff] at hψ ⊢
-  rw [← Module.End.mul_apply, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
-    LinearMap.neg_apply, Module.End.mul_apply, hψ, map_smul, neg_smul]
+  rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
+    LinearMap.neg_apply, mul_apply_eq_comp, hψ, map_smul, neg_smul]
 
 variable (ρ) in
 omit hQ in

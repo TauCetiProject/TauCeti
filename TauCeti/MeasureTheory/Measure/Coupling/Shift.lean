@@ -70,8 +70,8 @@ theorem shiftCoupling_apply (S : Set (κ × κ)) :
     shiftCoupling ν ν' k₀ S =
       ∑ k, min (ν {k}) (ν' {k}) * S.indicator 1 (k, k) +
         ∑ k, (ν {k} - ν' {k}) * S.indicator 1 (k, k₀) := by
-  simp only [shiftCoupling, Measure.coe_add, Pi.add_apply, Measure.finsetSum_apply,
-    Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ MeasurableSet.of_discrete]
+  simp only [shiftCoupling, FunLike.coe_add, Pi.add_apply, _root_.sum_apply,
+    _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ MeasurableSet.of_discrete]
 
 /-- **The shift coupling puts at most the transferred mass off the diagonal.**  The matched mass
 sits on the diagonal by construction, and the excess of an atom `k` leaves the diagonal only when

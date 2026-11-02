@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -29,7 +30,9 @@ compactly supported `C¹` maps `u : ℂ → F` into a complex Banach space.
   Cauchy integral of `u` over the boundary circle) vanishes.
 * The Cauchy transform `w ↦ (2π)⁻¹ ∫ (w - z)⁻¹ • f z` of a compactly supported `C¹` map `f` is
   differentiable, its derivative is the Cauchy transform of the derivative of `f`, and
-  `D` of it is `f`.
+  `D` of it is `f`. With the conjugate Wirtinger derivative, `\bar∂_w ∫ (w - z)⁻¹ • f z = π f w`,
+  so the transform is complex differentiable at every point where `f` vanishes, and holomorphic
+  off the support of `f`.
 
 So the Cauchy transform inverts `D = 2 \bar∂` on both sides on compactly supported `C¹` maps. This
 representation is the starting point of the elliptic estimates for the Cauchy–Riemann operator:
@@ -50,6 +53,11 @@ along each ray.
   supported `C¹` map is differentiable, with derivative the transform of the derivative.
 * `HasCompactSupport.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul`:
   `D = 2 \bar∂` of the Cauchy transform of a compactly supported `C¹` map `f` is `f`.
+* `HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_one`:
+  `\bar∂ (∫ (w - z)⁻¹ • f z) = π f`.
+* `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero` and
+  `TauCeti.differentiableOn_integral_sub_inv_smul_compl`: holomorphy where `f` vanishes, in
+  particular off `tsupport f`.
 
 ## References
 
@@ -246,5 +254,39 @@ theorem
       hf w]
   congr 2 with z
   rw [smul_add, smul_comm I]
+
+/-- **The Cauchy transform solves `\bar∂ u = f`.** For a compactly supported `C¹` map `f`, the
+conjugate Wirtinger derivative of `w ↦ ∫ (w - z)⁻¹ • f z` is `π • f`, so the Cauchy transform
+`π⁻¹ ∫ (w - z)⁻¹ • f z` satisfies `\bar∂ u = f`. -/
+theorem _root_.HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_one {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
+    conjWirtingerDeriv (fun w ↦ ∫ z, (w - z)⁻¹ • f z) w 1 = (π : ℂ) • f w := by
+  have hT := hc.hasFDerivAt_integral_sub_inv_smul hf w
+  have h := hc.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul hf w
+  have hT' : HasFDerivAt (fun w ↦ (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z)
+      ((2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • fderiv ℝ f z) w := hT.const_smul _
+  rw [hT'.fderiv] at h
+  rw [conjWirtingerDeriv_apply, hT.fderiv, smul_eq_mul, mul_one, ← h]
+  simp only [FunLike.coe_smul, Pi.smul_apply]
+  match_scalars <;> field_simp
+
+/-- The Cauchy transform of a compactly supported `C¹` map `f` is complex differentiable at every
+point where `f` vanishes. -/
+theorem _root_.HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) {w : ℂ} (hw : f w = 0) :
+    DifferentiableAt ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) w := by
+  rw [differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
+    (hc.hasFDerivAt_integral_sub_inv_smul hf w).differentiableAt,
+    hc.conjWirtingerDeriv_integral_sub_inv_smul_apply_one hf, hw, smul_zero]
+
+/-- The Cauchy transform of a `C¹` map `f` vanishing outside a compact set `k` is holomorphic on
+the complement of `k`. For compactly supported `f`, taking `k = tsupport f` shows that the
+transform is holomorphic off the support of `f`. Applied to a family `g p` vanishing outside a
+common compact set `k`, this gives a region of holomorphy independent of the parameter `p`. -/
+theorem differentiableOn_integral_sub_inv_smul_compl {f : ℂ → F} {k : Set ℂ} (hk : IsCompact k)
+    (hfk : ∀ x ∉ k, f x = 0) (hf : ContDiff ℝ 1 f) :
+    DifferentiableOn ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) kᶜ := fun w hw ↦
+  ((HasCompactSupport.intro hk hfk).differentiableAt_integral_sub_inv_smul_of_eq_zero hf
+    (hfk w hw)).differentiableWithinAt
 
 end TauCeti
