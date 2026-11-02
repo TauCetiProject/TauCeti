@@ -33,23 +33,27 @@ namespace TauCeti
 
 /-- Orthogonal projections onto spans of finite measurable families are measurable,
 including at parameters where the family is linearly dependent. -/
-theorem measurable_starProjection_span {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
-    [Finite ι] {v : ι → X → E} (hv : ∀ i, Measurable (v i))
+theorem measurable_starProjection_span {ι : Type*} [Finite ι]
+    {v : ι → X → E} (hv : ∀ i, Measurable (v i))
     {U : X → Submodule 𝕜 E} [∀ x, (U x).HasOrthogonalProjection]
     (hU : ∀ x, Submodule.span 𝕜 (range fun i ↦ v i x) = U x) :
     Measurable fun x ↦ (U x).starProjection := by
   classical
   let := Fintype.ofFinite ι
+  let e := (Fintype.equivFin ι).symm
+  have hspan (x : X) : Submodule.span 𝕜 (range fun i ↦ v (e i) x) = U x := by
+    rw [← hU x]
+    exact congrArg (Submodule.span 𝕜) (e.surjective.range_comp (fun i ↦ v i x))
   have hformula (x : X) :=
-    starProjection_eq_sum_rankOne_gramSchmidtNormed (fun i ↦ v i x) (hU x)
+    starProjection_eq_sum_rankOne_gramSchmidtNormed (fun i ↦ v (e i) x) (hspan x)
   simp only [hformula]
-  have hc : Continuous fun w : ι → E ↦ ∑ i, rankOne 𝕜 (w i) (w i) :=
+  have hc : Continuous fun w : Fin (Fintype.card ι) → E ↦ ∑ i, rankOne 𝕜 (w i) (w i) :=
     continuous_finsetSum _ fun i _ ↦ by
       simp only [rankOne_def]
       exact ((ContinuousLinearMap.smulRightL 𝕜 E E).continuous.comp
         ((innerSL 𝕜).continuous.comp (continuous_apply i))).clm_apply (continuous_apply i)
   exact hc.measurable.comp (measurable_pi_iff.mpr fun i ↦
-    Measurable.gramSchmidtNormed (𝕜 := 𝕜) hv i)
+    Measurable.gramSchmidtNormed (𝕜 := 𝕜) (fun j ↦ hv (e j)) i)
 
 end TauCeti
 
