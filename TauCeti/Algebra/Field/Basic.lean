@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Field.Basic
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -64,15 +65,6 @@ theorem inv_sq_div_one_sub_inv_cube (x : K) :
   · field_simp [hx, sub_ne_zero.mpr h, sub_ne_zero.mpr (Ne.symm h)]
     ring
 
-/-- The inverted cubic-denominator expression splits into two rational summands. -/
-theorem inv_sq_div_one_sub_inv_cube_eq_neg_sub (x : K) :
-    (x⁻¹) ^ 2 / (1 - x⁻¹) ^ 3 = -(x ^ 2 / (1 - x) ^ 3) - x / (1 - x) ^ 2 := by
-  rw [inv_sq_div_one_sub_inv_cube]
-  by_cases h : x = 1
-  · simp [h]
-  · field_simp
-    ring
-
 /-- The rational functions `x / (1 - x)²` and `x² / (1 - x)³` add up to `x / (1 - x)³`, including
 at one. -/
 theorem div_one_sub_sq_add_sq_div_one_sub_cube (x : K) :
@@ -81,6 +73,12 @@ theorem div_one_sub_sq_add_sq_div_one_sub_cube (x : K) :
   · simp [h]
   · field_simp [sub_ne_zero.mpr (Ne.symm h)]
     ring
+
+/-- The inverted cubic-denominator expression splits into two rational summands. -/
+theorem inv_sq_div_one_sub_inv_cube_eq_neg_sub (x : K) :
+    (x⁻¹) ^ 2 / (1 - x⁻¹) ^ 3 = -(x ^ 2 / (1 - x) ^ 3) - x / (1 - x) ^ 2 := by
+  rw [inv_sq_div_one_sub_inv_cube]
+  linear_combination div_one_sub_sq_add_sq_div_one_sub_cube x
 
 end TauCeti
 

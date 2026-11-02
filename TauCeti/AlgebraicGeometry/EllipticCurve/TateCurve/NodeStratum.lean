@@ -168,13 +168,6 @@ private theorem summable_tateTerms (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) 
     simp only [Function.comp_apply, zpow_neg, zpow_natCast]
     rw [← inv_sq_div_one_sub_inv_cube, mul_inv, inv_inv]
 
-omit [IsUltrametricDist K] [CompleteSpace K] in
-/-- The terms of index `-1` of `X` and `Y` combine: `t / (1 - t)² - t / (1 - t)³ = -t² / (1 - t)³`.
--/
-private theorem div_one_sub_sq_add_neg_div_one_sub_cube (t : K) :
-    t / (1 - t) ^ 2 + -t / (1 - t) ^ 3 = -(t ^ 2 / (1 - t) ^ 3) := by
-  linear_combination div_one_sub_sq_add_sq_div_one_sub_cube t
-
 omit [IsUltrametricDist K] in
 /-- **The series of the error near the node.** The terms of positive index of `X + Y` combine
 into `t / (1 - t)³` at `t = qⁿu`, and those of negative index into `-t² / (1 - t)³` at
@@ -185,11 +178,12 @@ private theorem tateNodeErr_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ) :
         ∑' n : ℕ, -(((q : K) ^ (n + 1) * (u : K)⁻¹) ^ 2 /
           (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 3) - divisorSumAt 1 (q : K) := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := summable_tateTerms q hq u
+  have hneg (t : K) : -(t ^ 2 / (1 - t) ^ 3) = t / (1 - t) ^ 2 + -t / (1 - t) ^ 3 := by
+    linear_combination -div_one_sub_sq_add_sq_div_one_sub_cube t
   rw [tateNodeErr, tateUniformizationX_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u,
     ← div_one_sub_sq_add_sq_div_one_sub_cube,
     tsum_congr fun n ↦ (div_one_sub_sq_add_sq_div_one_sub_cube ((q : K) ^ (n + 1) * u)).symm,
-    tsum_congr fun n ↦
-      (div_one_sub_sq_add_neg_div_one_sub_cube ((q : K) ^ (n + 1) * (u : K)⁻¹)).symm,
+    tsum_congr fun n ↦ hneg ((q : K) ^ (n + 1) * (u : K)⁻¹),
     h₁.tsum_add h₂, h₃.tsum_add h₄]
   ring
 
@@ -201,7 +195,8 @@ private theorem summable_tateNodeErr (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
       (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 3)) := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := summable_tateTerms q hq u
   exact ⟨(h₁.add h₂).congr fun n ↦ div_one_sub_sq_add_sq_div_one_sub_cube _,
-    (h₃.add h₄).congr fun n ↦ div_one_sub_sq_add_neg_div_one_sub_cube _⟩
+    (h₃.add h₄).congr fun n ↦ by
+      linear_combination div_one_sub_sq_add_sq_div_one_sub_cube ((q : K) ^ (n + 1) * (u : K)⁻¹)⟩
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- The terms of negative index are small: `‖qⁿ⁺¹ u⁻¹‖ ≤ ‖q‖ / ‖u‖`. -/
