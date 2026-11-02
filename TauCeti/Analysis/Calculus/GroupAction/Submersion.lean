@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 public import TauCeti.RepresentationTheory.Continuous.RightInverse
 import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 
@@ -20,8 +21,8 @@ are labelled boundary defining functions, their inequalities and zero sets becom
 inequalities and zero sets of the same labelled components of `q`.
 
 Only invariance near the origin is required. Thus the construction can be applied after
-linearizing a smooth finite action in a Bochner chart. It supplies local straightening, not
-global compatible collars, and retains all group elements, including ineffective ones.
+linearizing a smooth finite action in a Bochner chart. The construction retains all group
+elements, including ineffective ones.
 
 The construction averages a right inverse `s` of `q` and applies the inverse function theorem
 to `y ↦ y + s (r y - q y)`.
@@ -69,18 +70,19 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
   let : Fintype G := Fintype.ofFinite G
   let : Invertible (Fintype.card G : 𝕜) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-  have hqi (g : G) : q.comp (ρ g) = q := by
-    have hd' : HasFDerivAt r q ((ρ g) 0) := by simpa only [map_zero] using hd
-    have hdg := hd'.comp (0 : E) (ρ g).hasFDerivAt
-    exact hdg.unique (hd.congr_of_eventuallyEq (hinv g))
+  have hqi (g : G) : q.comp (ρ g) = q :=
+    hd.comp_eq_of_eventuallyEq (ρ g).hasFDerivAt (map_zero _) (hinv g)
   obtain ⟨s, hqs, hsfix⟩ := ρ.exists_fixed_rightInverse q hq hqi
   let f : E → E := fun y ↦ y + s (r y - q y)
   have hf : ContDiffOn 𝕜 n f U :=
     contDiffOn_id.add (s.contDiff.comp_contDiffOn (hr.sub q.contDiff.contDiffOn))
   have hf0 : f 0 = 0 := by simp [f, hr0]
   have hdf : HasFDerivAt f (ContinuousLinearMap.id 𝕜 E) 0 := by
-    simpa [f, Function.comp_def, Pi.add_def, id_eq] using (hasFDerivAt_id (𝕜 := 𝕜) (0 : E)).add
-      (s.hasFDerivAt.comp (0 : E) (hd.sub q.hasFDerivAt))
+    have h : HasFDerivAt f
+        (ContinuousLinearMap.id 𝕜 E + s.comp (q - q)) 0 :=
+      (hasFDerivAt_id (𝕜 := 𝕜) (0 : E)).add
+        (s.hasFDerivAt.comp (0 : E) (hd.sub q.hasFDerivAt))
+    simpa only [sub_self, ContinuousLinearMap.comp_zero, add_zero] using h
   have hqf (y : E) : q (f y) = r y := by
     have h := DFunLike.congr_fun hqs (r y - q y)
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at h
@@ -97,8 +99,7 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
   -- Use the existing invariant restriction for the action underlying the representation.
   let : MulAction G E := MulAction.compHom E ρ.toRepresentation
   have hsmul (g : G) (y : E) : g • y = ρ g y := by
-    simp [MulAction.compHom_smul_def, Module.End.smul_def, ContRepresentation.toRepresentation,
-      ContRepresentation.toMonoidHom_apply]
+    simp only [MulAction.compHom_smul_def, Module.End.smul_def, toRepresentation_apply]
   let : ContinuousConstSMul G E := ⟨fun g ↦ by
     simpa only [hsmul] using (ρ g).continuous⟩
   have hfeq (g : G) {y : E} (hy : y ∈ Θ.source) : f (ρ g y) = ρ g (f y) := by
@@ -134,14 +135,7 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
   · intro z hz
     rw [← hqf (e.symm z), ← he, e.right_inv hz]
   · intro g z hz
-    have hy := e.map_target hz
-    have hg := hequiv g hy
-    have hz' : ρ g z ∈ e.target := by
-      rw [← e.right_inv hz, ← hg.2]
-      exact e.map_source hg.1
-    refine ⟨hz', ?_⟩
-    calc
-      e.symm (ρ g z) = e.symm (e (ρ g (e.symm z))) := by rw [hg.2, e.right_inv hz]
-      _ = ρ g (e.symm z) := e.left_inv hg.1
+    simpa only [hsmul] using e.symm_map_smul_of_map_smul
+      (fun g y hy ↦ by simpa only [hsmul] using hequiv g hy) g z hz
 
 end ContRepresentation
