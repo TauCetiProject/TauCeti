@@ -120,8 +120,7 @@ def jRatFuncEquiv :
 @[simp]
 theorem jRatFuncEquiv_algebraMap (p : ℂ[X]) :
     jRatFuncEquiv (algebraMap ℂ[X] (RatFunc ℂ) p) = aeval jMeromorphicFunction p := by
-  rw [jRatFuncEquiv, AlgEquiv.trans_apply, ratFuncEquiv_algebraMap, AlgEquiv.coe_ofBijective,
-    ← aeval_algHom_apply, comapₐ_apply, jMeromorphicFunction]
+  simp [jRatFuncEquiv, ← aeval_algHom_apply, jMeromorphicFunction]
 
 /-- The isomorphism `jRatFuncEquiv` sends the variable `X` to `j`. -/
 @[simp]
@@ -184,6 +183,28 @@ private theorem closure_le_coeffSubfield (K : Subfield ℂ) :
   rintro _ ⟨c, hc, rfl⟩
   exact (algebraMap_mem_coeffSubfield _).mpr hc
 
+/-- The Laurent expansion at the cusp of a polynomial in a meromorphic function `F` is the
+polynomial evaluated at the expansion of `F`. -/
+private theorem laurentQExpansion_aeval
+    (F : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient) (p : ℂ[X]) :
+    laurentQExpansion cuspDatumInfty (aeval F p) =
+      p.eval₂ HahnSeries.C (laurentQExpansion cuspDatumInfty F) := by
+  rw [← aeval_algHom_apply, aeval_def]
+  congr 1
+  exact RingHom.ext fun c ↦ LaurentSeries.algebraMap_apply ℂ c
+
+/-- The Laurent expansion at the cusp of a polynomial over `K` in `j` is the image of the polynomial
+evaluated at a series `ℓ` over `K` expanding `j`. -/
+private theorem laurentQExpansion_aeval_map {K : Subfield ℂ} {ℓ : LaurentSeries K}
+    (hℓ : HahnSeries.mapRingHom K.subtype ℓ =
+      laurentQExpansion cuspDatumInfty jMeromorphicFunction) (r : K[X]) :
+    laurentQExpansion cuspDatumInfty (aeval jMeromorphicFunction (r.map K.subtype)) =
+      HahnSeries.mapRingHom K.subtype (r.eval₂ HahnSeries.C ℓ) := by
+  rw [laurentQExpansion_aeval, ← hℓ, eval₂_map, hom_eval₂]
+  congr 1
+  ext c : 1
+  simpa [HahnSeries.mapRingHom_apply] using (HahnSeries.map_C (Γ := ℤ) c K.subtype).symm
+
 /-- **Descent of the rational expression in `j`.** A meromorphic function with coefficients in
 `K` satisfies `F Q(j) = P(j)` for polynomials `P, Q` over `K` with `Q ≠ 0`. -/
 private theorem exists_mul_aeval_eq_aeval_of_mem_coeffSubfield {K : Subfield ℂ}
@@ -201,27 +222,18 @@ private theorem exists_mul_aeval_eq_aeval_of_mem_coeffSubfield {K : Subfield ℂ
     rw [AlgEquiv.apply_symm_apply] at h
     exact (congrArg (· * _) h).trans
       (div_mul_cancel₀ _ (aeval_jMeromorphicFunction_ne_zero (RatFunc.denom_ne_zero _)))
-  have hC : algebraMap ℂ (LaurentSeries ℂ) = HahnSeries.C :=
-    RingHom.ext fun c ↦ LaurentSeries.algebraMap_apply ℂ c
   -- expand at the cusp, where the series of `F` and of `j` have coefficients in `K`
   have hL : HahnSeries.mapRingHom (algebraMap K ℂ) φ * (jRatFuncEquiv.symm F).denom.eval₂
       HahnSeries.C (HahnSeries.mapRingHom (algebraMap K ℂ) ℓ) = (jRatFuncEquiv.symm F).num.eval₂
       HahnSeries.C (HahnSeries.mapRingHom (algebraMap K ℂ) ℓ) := by
     have hK : algebraMap K ℂ = K.subtype := RingHom.ext (Algebra.algebraMap_ofSubsemiring_apply K)
-    rw [hK, hφ, hℓ, ← hC, ← aeval_def, ← aeval_def, aeval_algHom_apply, aeval_algHom_apply,
-      ← map_mul, hFr]
+    simpa [hK, hφ, hℓ, laurentQExpansion_aeval] using
+      congrArg (laurentQExpansion cuspDatumInfty) hFr
   obtain ⟨p, q, hq, hpq⟩ :=
     HahnSeries.exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom (RatFunc.denom_ne_zero _) hL
   -- map the relation over `K` back to the expansions over `ℂ`
-  have hK (r : K[X]) : HahnSeries.mapRingHom K.subtype (r.eval₂ HahnSeries.C ℓ) =
-      laurentQExpansion cuspDatumInfty (aeval jMeromorphicFunction (r.map K.subtype)) := by
-    rw [hom_eval₂, ← aeval_algHom_apply, ← hℓ, aeval_def, hC, eval₂_map]
-    congr 1
-    ext c : 1
-    rw [RingHom.comp_apply, RingHom.comp_apply, HahnSeries.mapRingHom_apply]
-    exact HahnSeries.map_C c K.subtype
   refine ⟨p, q, hq, laurentQExpansion_injective cuspDatumInfty ?_⟩
-  rw [map_mul, ← hφ, ← hK, ← hK, ← map_mul, hpq]
+  simp only [map_mul, ← hφ, laurentQExpansion_aeval_map hℓ, ← hpq]
 
 /-- **The functions with coefficients in `K` are the rational functions of `j` over `K`.** A
 meromorphic function on `X(1)` has all the Laurent coefficients of its expansion at the cusp in a

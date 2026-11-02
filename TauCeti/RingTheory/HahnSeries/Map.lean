@@ -191,8 +191,8 @@ theorem map_smul_mapRingHom_algebraMap {K L : Type*} [CommSemiring K] [CommSemir
     [Algebra K L] (f : L →ₗ[K] K) (c : L) (x : K⟦Γ⟧) :
     (c • mapRingHom (algebraMap K L) x).map f = f c • x := by
   ext g
-  rw [map_coeff, coeff_smul, coeff_mapRingHom, smul_eq_mul, mul_comm, ← Algebra.smul_def,
-    map_smul, coeff_smul, smul_eq_mul, smul_eq_mul, mul_comm]
+  simp only [map_coeff, coeff_smul, coeff_mapRingHom]
+  simpa [Algebra.smul_def, mul_comm] using f.map_smul (x.coeff g) c
 
 variable {K L : Type*} [Field K] [CommRing L] [Algebra K L]
 
@@ -218,7 +218,7 @@ theorem exists_mul_eval₂_C_eq_eval₂_C_of_mapRingHom {φ ℓ : K⟦Γ⟧} {P 
     rw [eval₂_eq_sum_range, Finset.mul_sum, map_sum]
     simp only [lin, eval₂_finsetSum, eval₂_monomial, Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [mul_left_comm, ← map_pow, ← map_mul, C_mul_eq_smul, mul_left_comm, C_mul_eq_smul]
+    rw [← map_pow, mul_left_comm, ← map_mul, C_mul_eq_smul, C_mul_eq_smul, mul_smul_comm]
     exact map_smul_mapRingHom_algebraMap f _ _
   refine ⟨lin P, lin Q, fun h0 ↦ ?_, ?_⟩
   · have := Polynomial.ext_iff.mp h0 Q.natDegree
