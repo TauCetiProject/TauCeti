@@ -204,20 +204,6 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
   exact Module.Ray.ne_neg_self _
     (h.symm.trans ((isOrientationReversingAt_iff_of_coe_eq o o' f x e he).mp hrev))
 
-/-- The identity map preserves every manifold orientation. -/
-@[simp] theorem isOrientationPreservingAt_id [IsManifold I 1 M]
-    (o : Manifold.Orientation I M ι) (x : M) :
-    IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x := by
-  refine ⟨ContinuousLinearEquiv.refl ℝ _, ?_, ?_⟩
-  · rw [ContinuousLinearEquiv.coe_refl, mfderiv_id]
-  · /- The continuous and plain linear equivalence wrappers share this definitional equality,
-      which lets the orientation map use its identity lemma. -/
-    have h_refl :
-        (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
-          LinearEquiv.refl ℝ (TangentSpace I x) := rfl
-    rw [h_refl, _root_.Orientation.map_refl]
-    simp only [Equiv.refl_apply, id_eq]
-
 /-- A self-map fixing `x` whose derivative at `x` is the identity preserves every manifold
 orientation at `x`. -/
 theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M]
@@ -225,8 +211,8 @@ theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M
     (hd : mfderiv I I f x = ContinuousLinearMap.id ℝ (TangentSpace I x)) :
     IsOrientationPreservingAt o o f x := by
   refine ⟨ContinuousLinearEquiv.refl ℝ _, hd.symm, ?_⟩
-  -- The same definitional equality of the linear equivalence wrappers as in
-  -- `isOrientationPreservingAt_id`.
+  -- The continuous and plain linear equivalence wrappers share this definitional equality,
+  -- which lets the orientation map use its identity lemma.
   have h_refl :
       (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
         LinearEquiv.refl ℝ (TangentSpace I x) := rfl
@@ -238,6 +224,12 @@ theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M
     subst hy
     rw [h_refl, _root_.Orientation.map_refl, Equiv.refl_apply]
   exact key _ hx
+
+/-- The identity map preserves every manifold orientation. -/
+@[simp] theorem isOrientationPreservingAt_id [IsManifold I 1 M]
+    (o : Manifold.Orientation I M ι) (x : M) :
+    IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x :=
+  isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o rfl mfderiv_id
 
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]

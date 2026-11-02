@@ -61,6 +61,12 @@ theorem compRadialContraction_apply (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (
     f.compRadialContraction hn hκ x = f (radialContraction 0 κ x) := by
   rw [coe_compRadialContraction, Function.comp_apply]
 
+/-- Precomposing with a radial contraction does not enlarge the image of an embedding. -/
+theorem range_compRadialContraction_subset (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ} (hκ : 0 ≤ κ) : range (f.compRadialContraction hn hκ) ⊆ range f := by
+  rw [coe_compRadialContraction]
+  exact range_comp_subset_range _ _
+
 /-- A smooth embedding into `E` followed by the radial contraction about `c` with parameter
 `κ ≥ 0`, preserving any regularity `n ≤ ∞`. -/
 def transRadialContraction (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)

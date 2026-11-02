@@ -87,8 +87,8 @@ private theorem exists_diffeotopy_eqOn_compRadialContraction [T2Space M] [Finite
       (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
         ∀ i, EqOn (Φ.final ∘ f i) ((f i).compRadialContraction le_rfl (hκ i)) A := by
   cases nonempty_fintype ι
-  have hshrink (i : ι) : range ((f i).compRadialContraction le_rfl (hκ i)) ⊆ range (f i) := by
-    simpa using range_comp_subset_range _ _
+  have hshrink (i : ι) : range ((f i).compRadialContraction le_rfl (hκ i)) ⊆ range (f i) :=
+    (f i).range_compRadialContraction_subset le_rfl (hκ i)
   obtain ⟨Φ, K, hK, hKf, hΦK, hΦ⟩ :=
     exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ (hfd.set_pairwise _)
       (a := fun i ↦ f i) (b := fun i ↦ (f i).compRadialContraction le_rfl (hκ i))
@@ -153,8 +153,8 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
   have hf'g (i : ι) : range (shrink (f' i) i) ⊆ range (g i) := by
     rintro _ ⟨y, rfl⟩
     simpa [shrink] using hr i y
-  have hgg (i : ι) : range (shrink (g i) i) ⊆ range (g i) := by
-    simpa [shrink] using range_comp_subset_range _ _
+  have hgg (i : ι) : range (shrink (g i) i) ⊆ range (g i) :=
+    (g i).range_compRadialContraction_subset le_rfl (hκ i)
   obtain ⟨L, KL, hKL, hKLU, hLK, hL⟩ :=
     exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ (hgd.set_pairwise _)
       (a := fun i ↦ shrink (f' i) i) (b := fun i ↦ shrink (g i) i)
