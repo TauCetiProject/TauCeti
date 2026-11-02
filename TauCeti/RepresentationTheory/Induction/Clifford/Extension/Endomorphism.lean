@@ -53,21 +53,8 @@ endomorphisms of the crossed-product multiplicity module. The source representat
 must have semisimple isotypic restriction; the coefficient field need not split it. -/
 noncomputable def cliffordMultiplicityEndAlgEquiv :
     End W ≃ₐ[k] End ((C).obj W) :=
-  AlgEquiv.ofBijective ((C).mapEndAlgHom k W) <| by
-    constructor
-    · intro f g h
-      apply End.ext
-      apply (cliffordMultiplicityHomEquiv A s hs hW).injective
-      rw [cliffordMultiplicityHomEquiv_apply, cliffordMultiplicityHomEquiv_apply]
-      have he := congrArg End.asHom h
-      rw [(C).mapEndAlgHom_asHom k W f, (C).mapEndAlgHom_asHom k W g] at he
-      exact he
-    · intro g
-      obtain ⟨f, hf⟩ := (cliffordMultiplicityHomEquiv A s hs hW).surjective g.asHom
-      refine ⟨End.of f, End.ext ?_⟩
-      rw [cliffordMultiplicityHomEquiv_apply] at hf
-      rw [(C).mapEndAlgHom_asHom k W (End.of f)]
-      exact hf
+  AlgEquiv.ofBijective ((C).mapEndAlgHom k W)
+    ((C).mapEndAlgHom_bijective k W (cliffordMultiplicityFunctor_map_bijective A s hs hW))
 
 /-- The forward algebra equivalence is the multiplicity functor on endomorphisms. -/
 @[simp]
