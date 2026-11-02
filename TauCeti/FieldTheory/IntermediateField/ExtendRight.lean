@@ -47,8 +47,9 @@ image from `F`.** This decides an inclusion pointwise, with no `comap`. -/
 -- rewrites that one's left-hand side and `simpNF` rejects the pair. The simple-extension form
 -- is the one worth reaching automatically, so it keeps the attribute and this is used by name.
 theorem extendRight_le_iff {F : IntermediateField K L} {E : IntermediateField K M} :
-    F.extendRight M ≤ E ↔ ∀ x ∈ F, algebraMap L M x ∈ E :=
-  IntermediateField.map_le_iff_le_comap
+    F.extendRight M ≤ E ↔ ∀ x ∈ F, algebraMap L M x ∈ E := by
+  rw [extendRight_eq_map]
+  exact IntermediateField.map_le_iff_le_comap
 
 /-- **The universal property of the copy of an adjoin**: the copy of `K⟮s⟯` inside `M` lies in an
 intermediate field exactly when that field contains the image of every element of `s`. -/
