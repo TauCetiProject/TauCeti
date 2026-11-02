@@ -115,15 +115,22 @@ theorem exists_newform_qExpansion_coeff_prime_eq_twist [NeZero M] [NeZero L] (f 
 
 /-! ### The primitive twist -/
 
+omit [NeZero N] in
+private theorem dvd_mul_mul_self (N M : ℕ) : N ∣ N * M * M :=
+  Dvd.intro (M * M) (mul_assoc N M M).symm
+
+omit [NeZero N] in
+private theorem dvd_mul_mul_self' (N M : ℕ) : M ∣ N * M * M :=
+  Dvd.intro_left (N * M) rfl
+
 /-- The level `N * M * M` is a common multiple of `N * M` and `M * M`, at which the primitive
 associate of `f ⊗ ψ` is chosen. -/
 private theorem exists_primitiveTwist [NeZero M] (f : Newform N k) (ψ : DirichletCharacter ℂ M) :
     ∃ (R : ℕ) (_ : NeZero R) (hR : R ∣ N * M * M) (g : Newform R k),
-      g.χ.comp (unitsMap hR) = f.χ.comp (unitsMap (Dvd.intro (M * M) (mul_assoc N M M).symm)) *
-        (ψ.toUnitHom.comp (unitsMap (Dvd.intro_left (N * M) rfl))) ^ 2 ∧
+      g.χ.comp (unitsMap hR) = f.χ.comp (unitsMap (dvd_mul_mul_self N M)) *
+        (ψ.toUnitHom.comp (unitsMap (dvd_mul_mul_self' N M))) ^ 2 ∧
       ∀ p : ℕ, p.Prime → p.Coprime (N * M * M) →
         (qExpansion 1 g.toCuspForm).coeff p = ψ p * (qExpansion 1 f.toCuspForm).coeff p :=
-  haveI : NeZero (N * M * M) := ⟨by simp [NeZero.ne N, NeZero.ne M]⟩
   f.exists_newform_qExpansion_coeff_prime_eq_twist ψ (dvd_mul_right _ _)
     (Dvd.intro_left N (mul_assoc N M M).symm)
 
@@ -157,8 +164,8 @@ noncomputable def primitiveTwist [NeZero M] (f : Newform N k) (ψ : DirichletCha
 private theorem primitiveTwist_χ_comp_unitsMap_mul_mul [NeZero M] (f : Newform N k)
     (ψ : DirichletCharacter ℂ M) :
     (f.primitiveTwist ψ).χ.comp (unitsMap (f.primitiveTwistLevel_dvd_mul_mul ψ)) =
-      f.χ.comp (unitsMap (Dvd.intro (M * M) (mul_assoc N M M).symm)) *
-        (ψ.toUnitHom.comp (unitsMap (Dvd.intro_left (N * M) rfl))) ^ 2 :=
+      f.χ.comp (unitsMap (dvd_mul_mul_self N M)) *
+        (ψ.toUnitHom.comp (unitsMap (dvd_mul_mul_self' N M))) ^ 2 :=
   (f.exists_primitiveTwist ψ).choose_spec.choose_spec.choose_spec.choose_spec.1
 
 /-- **The coefficients of the primitive twist at the good primes**: `a_p(f ⊗ ψ) = ψ(p) a_p(f)` at
@@ -196,7 +203,6 @@ theorem level_eq_primitiveTwistLevel_and_coe_eq_primitiveTwist [NeZero M] {R L :
   set L' := Nat.lcm L (N * M * M)
   have hL : L ∣ L' := Nat.dvd_lcm_left _ _
   have hL₀ : N * M * M ∣ L' := Nat.dvd_lcm_right _ _
-  have : NeZero (N * M * M) := ⟨by simp [NeZero.ne N, NeZero.ne M]⟩
   have : NeZero L' := ⟨Nat.lcm_ne_zero (NeZero.ne L) (NeZero.ne _)⟩
   have hR' := hR.trans hL
   have hT' := (f.primitiveTwistLevel_dvd_mul_mul ψ).trans hL₀
@@ -234,7 +240,6 @@ theorem primitiveTwist_χ_comp_unitsMap [NeZero M] {L : ℕ} [NeZero L] (f : New
       f.χ.comp (unitsMap hNL) * (ψ.toUnitHom.comp (unitsMap hML)) ^ 2 := by
   -- both sides agree at `L' = lcm L (N * M * M)`, and `(ZMod L')ˣ → (ZMod L)ˣ` is onto
   have hL' : L ∣ Nat.lcm L (N * M * M) := Nat.dvd_lcm_left _ _
-  have : NeZero (N * M * M) := ⟨by simp [NeZero.ne N, NeZero.ne M]⟩
   have : NeZero (Nat.lcm L (N * M * M)) := ⟨Nat.lcm_ne_zero (NeZero.ne L) (NeZero.ne _)⟩
   refine (MonoidHom.cancel_right (ZMod.unitsMap_surjective hL')).mp ?_
   rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp, twist_χ_comp_unitsMap,
@@ -244,14 +249,13 @@ theorem primitiveTwist_χ_comp_unitsMap [NeZero M] {L : ℕ} [NeZero L] (f : New
 private theorem level_eq_and_coe_eq_primitiveTwist_one [NeZero M] (f : Newform N k) :
     N = f.primitiveTwistLevel (1 : DirichletCharacter ℂ M) ∧
       ⇑f.toCuspForm = ⇑(f.primitiveTwist (1 : DirichletCharacter ℂ M)).toCuspForm := by
-  have : NeZero (N * M * M) := ⟨by simp [NeZero.ne N, NeZero.ne M]⟩
   refine f.level_eq_primitiveTwistLevel_and_coe_eq_primitiveTwist 1 f
-    (Dvd.intro (M * M) (mul_assoc N M M).symm) (Dvd.intro (M * M) (mul_assoc N M M).symm)
-    (Dvd.intro_left (N * M) rfl) ?_ (S := ∅) fun p _ hpL _ ↦ ?_
+    (dvd_mul_mul_self N M) (dvd_mul_mul_self N M)
+    (dvd_mul_mul_self' N M) ?_ (S := ∅) fun p _ hpL _ ↦ ?_
   · ext u
     simp
   · rw [MulChar.one_apply ((ZMod.isUnit_iff_coprime p M).mpr
-      (hpL.coprime_dvd_right (Dvd.intro_left (N * M) rfl))), one_mul]
+      (hpL.coprime_dvd_right (dvd_mul_mul_self' N M))), one_mul]
 
 /-- **Twisting by a trivial character** does not change the level of a newform. -/
 @[simp]
@@ -273,8 +277,8 @@ private theorem level_eq_and_coe_eq_primitiveTwist_changeLevel [NeZero M] {M' : 
   set L := N * M' * M'
   have : NeZero L := ⟨by simp [L, NeZero.ne N, NeZero.ne M']⟩
   have hRL := (f.primitiveTwistLevel_dvd_mul_mul ψ).trans (mul_dvd_mul (mul_dvd_mul_left N h) h)
-  have hNL : N ∣ L := Dvd.intro (M' * M') (mul_assoc N M' M').symm
-  have hML : M' ∣ L := Dvd.intro_left (N * M') rfl
+  have hNL : N ∣ L := dvd_mul_mul_self N M'
+  have hML : M' ∣ L := dvd_mul_mul_self' N M'
   refine f.level_eq_primitiveTwistLevel_and_coe_eq_primitiveTwist (ψ.changeLevel h)
     (f.primitiveTwist ψ) hRL hNL hML ?_ (S := ∅) fun p hp hpL _ ↦ ?_
   · rw [primitiveTwist_χ_comp_unitsMap f ψ hRL hNL (h.trans hML),

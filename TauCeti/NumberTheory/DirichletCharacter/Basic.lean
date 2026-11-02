@@ -307,8 +307,8 @@ with the reduction `(ZMod n)ˣ → (ZMod d)ˣ`. -/
 theorem changeLevel_apply_unit {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) (v : (ZMod n)ˣ) :
     changeLevel h χ v = χ (ZMod.unitsMap h v) := by
-  rw [← MulChar.coe_toUnitHom, changeLevel_toUnitHom]
-  rfl
+  rw [← MulChar.coe_toUnitHom, changeLevel_toUnitHom, MonoidHom.comp_apply,
+    MulChar.coe_toUnitHom]
 
 /-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
 @[simp]
