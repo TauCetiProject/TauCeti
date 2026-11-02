@@ -125,27 +125,14 @@ theorem ker_ofLazardRing : RingHom.ker ofLazardRing =
     rw [SetLike.mem_coe, RingHom.mem_ker, ← PowerSeries.coeff_map, FormalGroup.map_nsmulSeries,
       map_ofLazardRing, nsmulSeries_two_formalGroup, map_zero]
 
-/-- `MvPolynomial.map ofLazardRing` carries the universal strict coordinate over `L[b₁, b₂, …]` to
-the universal strict coordinate over `MO[b₁, b₂, …]`. -/
-@[simp]
-theorem map_map_ofLazardRing_universalStrictCoordinate :
-    FormalCoordinate.map (map ofLazardRing) LazardRing.universalStrictCoordinate =
-      universalStrictCoordinate := by
-  have h := map_universalStrictCoordinate (RingHom.id (MvPolynomial ℕ+ ExponentTwoLazardRing))
-  rw [FormalCoordinate.map_id, MonoidHom.id_apply] at h
-  rw [LazardRing.map_universalStrictCoordinate, h]
-  congr 1
-  funext i
-  simp
-
 /-- **`ofLazardRing` is compatible with the right units**: changing the coordinate of a law of
 exponent two by a strict coordinate gives the same law in `(L, L[b₁, b₂, …])` and in
 `(MO, MO[b₁, b₂, …])`. -/
 theorem map_ofLazardRing_comp_rightUnit :
     (map ofLazardRing).comp LazardRing.rightUnit = rightUnit.comp ofLazardRing :=
   LazardRing.hom_ext <| by
-    rw [LazardRing.map_comp_rightUnit, map_map_ofLazardRing_universalStrictCoordinate, map_comp_C,
-      ← FormalGroup.map_comp, ← FormalGroup.map_comp, map_ofLazardRing, map_rightUnit]
+    rw [LazardRing.map_comp_rightUnit, FormalCoordinate.map_map_universalStrictCoordinate,
+      map_comp_C, ← FormalGroup.map_comp, ← FormalGroup.map_comp, map_ofLazardRing, map_rightUnit]
 
 /-- `MvPolynomial.map ofLazardRing` agrees with `ofLazardRing` on the image of the right unit. -/
 @[simp]
