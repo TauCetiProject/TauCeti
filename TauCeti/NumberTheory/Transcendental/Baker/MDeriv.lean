@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Data.Matrix.Mul
 public import TauCeti.Analysis.Complex.PartialDeriv
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Mixed partial derivatives of entire functions on `ℂⁿ`
@@ -210,6 +211,7 @@ theorem mDeriv_mDeriv {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) 
   listDeriv_listDeriv hf _ σ τ
 
 /-- The mixed partial derivative of multi-order `eᵢ` is `∂ᵢ`. -/
+@[simp]
 theorem mDeriv_single_one (f : (Fin n → ℂ) → ℂ) (i : Fin n) :
     mDeriv (Pi.single i 1) f = partialDeriv i f := by
   rw [mDeriv_eq_listDeriv, listDeriv_single_one (List.nodup_finRange n)]
@@ -221,6 +223,7 @@ theorem mDeriv_add {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (
   listDeriv_add hf hg _ σ
 
 /-- `D^σ` commutes with multiplication by a constant. -/
+@[simp]
 theorem mDeriv_const_mul {f : (Fin n → ℂ) → ℂ} (c : ℂ) (σ : Fin n → ℕ) :
     mDeriv σ (fun z ↦ c * f z) = fun z ↦ c * mDeriv σ f z :=
   listDeriv_const_mul c _ σ
