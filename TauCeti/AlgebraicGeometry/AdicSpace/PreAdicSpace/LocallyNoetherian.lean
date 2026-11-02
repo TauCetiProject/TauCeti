@@ -286,7 +286,7 @@ basis of its topology. -/
 theorem isLocallyNoetherian_iff_isBasis_noetherianAffinoidOpens :
     X.IsLocallyNoetherian ↔ Opens.IsBasis X.obj.noetherianAffinoidOpens := by
   refine ⟨IsLocallyNoetherian.isBasis_noetherianAffinoidOpens, fun h x ↦ ?_⟩
-  obtain ⟨U, hU, hxU, -⟩ := Opens.isBasis_iff_nbhd.mp h (show x ∈ (⊤ : Opens X.obj) from trivial)
+  obtain ⟨U, hU, hxU, -⟩ := Opens.isBasis_iff_nbhd.mp h (U := ⊤) (x := x) trivial
   exact ⟨U, hU, hxU⟩
 
 /-- **Open subspaces of locally noetherian adic spaces are locally noetherian**: the source of an
