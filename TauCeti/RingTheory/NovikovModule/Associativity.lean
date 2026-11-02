@@ -208,8 +208,7 @@ theorem kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct
     rw [kernelComp_apply]
   rw [kernelProduct_kernelProduct_left hn hfin hn' hfin' hN hNfin,
     kernelProduct_kernelProduct_right hm hmfin hm' hmfin' hM hMfin]
-  exact kernelMap_sub_kernelMap_eq_of_kernelComp hN hNfin hM hMfin hk hkfin hδ₀ hδ₀fin hD hDfin
-    hassoc _
+  exact kernelMap_sub_kernelMap hN hNfin hM hMfin hk hkfin hD hDfin hδ₀ hδ₀fin hassoc _
 
 /-- **Associativity up to homotopy, with the Koszul signs.** Let `δ₁`, `δ₂`, `δ₃` be kernels on
 the three input generators and `d₁`, `d₂` degree functions on the first two, and let

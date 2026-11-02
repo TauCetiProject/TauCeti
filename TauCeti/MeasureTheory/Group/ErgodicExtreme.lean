@@ -199,7 +199,7 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
   -- an exactly invariant `t` of intermediate mass would write `μ` as a proper combination of
   -- the invariant measures `c • μ[|t]` and `c • μ[|tᶜ]` of mass `c`; countability of `G` reduces
   -- almost invariant events to exactly invariant ones
-  refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun t htm htinv => ?_
+  refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t htm htinv => ?_
   have hmem {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (fun x => g • x) ⁻¹' u = u)
       (hu0 : μ u ≠ 0) : c • μ[|u] ∈ invariantMeasuresOfMeasureUnivEq G X c := by
     have := SMulInvariantMeasure.restrict (G := G) (μ := μ) hum huinv

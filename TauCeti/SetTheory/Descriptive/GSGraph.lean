@@ -36,7 +36,9 @@ Consequently, for dense `S`:
 * `exists_not_baireMeasurableSet_colorClass`: a coloring of `gSGraph S` by countably many colors
   has a color class without the Baire property, so `orientedGS S` has no countable Borel
   coloring (`not_hasCountableBorelColoring_orientedGS`) and `gSGraph S` has no measurable
-  coloring by `ℕ`;
+  coloring by `ℕ`; and no relation `G` receiving a measurable map that sends the oriented edges
+  of `orientedGS S` to pairs of `G` has a countable Borel coloring
+  (`not_hasCountableBorelColoring_of_orientedGS_hom`);
 * `isMeagre_setOf_comp_of_forall_gSGraph_adj`: if a measurable map `φ` sends the edges of
   `gSGraph S` to inequivalent pairs of an equivalence relation `E` with measurable classes, then
   every section `{b | E (φ a) (φ b)}` of the pulled-back relation is meagre.
@@ -362,6 +364,15 @@ theorem not_hasCountableBorelColoring_orientedGS (hS : DenseWords S) :
   obtain ⟨n, hn⟩ := exists_not_baireMeasurableSet_colorClass hS c'
   -- The color class `c'.colorClass n` is `{x | c x = n}`, which is the preimage `c ⁻¹' {n}`.
   exact hn (hc (measurableSet_singleton n)).baireMeasurableSet
+
+/-- If every word extends to a word of `S` and a measurable map of Cantor space sends every
+oriented edge of `orientedGS S` to a pair of `G`, then `G` has no countable Borel coloring. This
+is the exclusivity half of the G₀ dichotomy. -/
+theorem not_hasCountableBorelColoring_of_orientedGS_hom {X : Type*} [MeasurableSpace X]
+    {G : SetRel X X} (hS : DenseWords S) {φ : (ℕ → Bool) → X} (hφ : Measurable φ)
+    (hφG : ∀ ⦃y z⦄, (y, z) ∈ orientedGS S → (φ y, φ z) ∈ G) :
+    ¬ G.HasCountableBorelColoring := fun h ↦
+  not_hasCountableBorelColoring_orientedGS hS ((h.preimage hφ).mono fun _ hp ↦ hφG hp)
 
 /-- If `S` is dense, then `gSGraph S` has no measurable coloring by `ℕ`. -/
 theorem not_exists_measurable_coloring_gSGraph (hS : DenseWords S) :

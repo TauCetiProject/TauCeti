@@ -182,7 +182,7 @@ theorem kernelProduct_sub_negOnePow_smul_kernelProduct
       Submodule.smul_mem _ ((d₁ q.1 * d₂ q.2).negOnePow : R) (hfin' q.2 q.1)
   rw [kernelProduct_eq_kernelMap_tensor hn hfin hN (fun q => hfin q.1 q.2),
     negOnePow_smul_kernelProduct_eq_kernelMap_tensor hn' hfin' hS hSfin ha hb]
-  exact kernelMap_sub_kernelMap_eq_of_kernelComp hN _ hS hSfin hk hkfin hδ₀ hδ₀fin hD hDfin hcomm _
+  exact kernelMap_sub_kernelMap hN _ hS hSfin hk hkfin hD hDfin hδ₀ hδ₀fin hcomm _
 
 /-- **Graded commutativity up to homotopy, with the Koszul signs.** Let `δ₁`, `δ₂` be kernels
 on the two input generators and let `D = δ₁ ⊗ 1 + (-1)^(d₁) ⊗ δ₂` be the tensor differential. If
