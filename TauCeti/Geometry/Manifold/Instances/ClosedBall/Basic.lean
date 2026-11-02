@@ -60,6 +60,8 @@ isometry, hence analytic, so the ball is an analytic manifold.
   diffeomorphism of closed unit balls.
 * `Diffeomorph.restrictUnitClosedBall`: a diffeomorphism of `E` mapping the closed unit ball onto
   itself restricts to a diffeomorphism of the closed unit ball.
+* `Equiv.restrictUnitSphere`: a bijection of the closed unit ball preserving the unit sphere
+  restricts to a bijection of the unit sphere.
 
 ## References
 
@@ -539,6 +541,56 @@ theorem _root_.Diffeomorph.coe_restrictUnitClosedBall_symm_apply (y : closedBall
   (rfl)
 
 end Diffeomorph
+
+/-! ### Bijections of the closed ball preserving the unit sphere -/
+
+section RestrictUnitSphere
+
+variable {V : Type*} [SeminormedAddCommGroup V] (D : closedBall (0 : V) 1 ≃ closedBall (0 : V) 1)
+  (hD : ∀ x, ‖(D x : V)‖ = 1 ↔ ‖(x : V)‖ = 1)
+include hD
+
+/-- If a bijection of the closed unit ball preserves the unit sphere, so does its inverse. -/
+theorem _root_.Equiv.norm_symm_apply_eq_one_iff (x : closedBall (0 : V) 1) :
+    ‖(D.symm x : V)‖ = 1 ↔ ‖(x : V)‖ = 1 := by
+  rw [← hD, D.apply_symm_apply]
+
+/-- A bijection of the closed unit ball which preserves the unit sphere restricts to a bijection of
+the unit sphere. -/
+def _root_.Equiv.restrictUnitSphere : sphere (0 : V) 1 ≃ sphere (0 : V) 1 where
+  toFun z := ⟨D (inclusion sphere_subset_closedBall z),
+    mem_sphere_zero_iff_norm.2 ((hD _).2 (norm_eq_of_mem_sphere z))⟩
+  invFun z := ⟨D.symm (inclusion sphere_subset_closedBall z),
+    mem_sphere_zero_iff_norm.2 ((D.norm_symm_apply_eq_one_iff hD _).2 (norm_eq_of_mem_sphere z))⟩
+  left_inv z := Subtype.ext <| by simp
+  right_inv z := Subtype.ext <| by simp
+
+@[simp]
+theorem _root_.Equiv.coe_restrictUnitSphere_apply (z : sphere (0 : V) 1) :
+    (D.restrictUnitSphere hD z : V) = D (inclusion sphere_subset_closedBall z) :=
+  (rfl)
+
+@[simp]
+theorem _root_.Equiv.coe_restrictUnitSphere_symm_apply (z : sphere (0 : V) 1) :
+    ((D.restrictUnitSphere hD).symm z : V) = D.symm (inclusion sphere_subset_closedBall z) :=
+  (rfl)
+
+/-- The inverse of `D` on the unit sphere, read in the closed unit ball. -/
+theorem _root_.Equiv.inclusion_restrictUnitSphere_symm_apply (z : sphere (0 : V) 1) :
+    inclusion sphere_subset_closedBall ((D.restrictUnitSphere hD).symm z) =
+      D.symm (inclusion sphere_subset_closedBall z) :=
+  Subtype.ext (D.coe_restrictUnitSphere_symm_apply hD z)
+
+/-- If `D` is `σ` on the unit sphere, then `σ` undoes the restriction of the inverse of `D`. -/
+theorem _root_.Equiv.apply_restrictUnitSphere_symm {σ : sphere (0 : V) 1 → sphere (0 : V) 1}
+    (hσ : ∀ z, D (inclusion sphere_subset_closedBall z) = inclusion sphere_subset_closedBall (σ z))
+    (z : sphere (0 : V) 1) :
+    σ ((D.restrictUnitSphere hD).symm z) = z := by
+  have h := hσ ((D.restrictUnitSphere hD).symm z)
+  rw [D.inclusion_restrictUnitSphere_symm_apply hD, D.apply_symm_apply] at h
+  exact Subtype.ext (congrArg Subtype.val h).symm
+
+end RestrictUnitSphere
 
 /-! ### Smooth embeddings of closed balls induced by linear isometries -/
 

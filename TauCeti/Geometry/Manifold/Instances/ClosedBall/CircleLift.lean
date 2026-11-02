@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Topology.Instances.AddCircle.Lift
 
@@ -271,16 +272,6 @@ private theorem exists_fderiv_circleLiftMap_exp {r : ℝ} (hr : 0 < r) (x : ℝ)
       ring
   exact ((hD _).hasFDerivAt.comp_hasDerivAt r hγ).unique h₂
 
-omit hper hF hpos in
-/-- A vector `v` in polar coordinates at a point `r * u` with `u ≠ 0`, `r ≠ 0`: its components
-along the radial direction `u` and the angular direction `r * u * I`. -/
-private theorem eq_re_mul_add_im_div_mul {u : ℂ} (hu : u ≠ 0) {r : ℝ} (hr : r ≠ 0) (v : ℂ) :
-    v = ((v / u).re : ℂ) * u + (((v / u).im / r : ℝ) : ℂ) * (r * u * I) := by
-  have hr' : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 hr
-  conv_lhs => rw [← div_mul_cancel₀ v hu, ← re_add_im (v / u)]
-  push_cast
-  field_simp
-
 /-- The derivative of the plane map is injective at every point: in the polar coordinates
 `r * exp (x * I)`, the radial direction goes to a vector with a nonzero radial component, and the
 angular direction goes to a positive multiple of the angular direction at the image point. -/
@@ -379,13 +370,13 @@ theorem circleLiftDiffeomorph_mul_exp_of_le {r : ℝ} (hr : 2 / 3 ≤ r) (x : �
 
 /-- The diffeomorphism preserves the norm. -/
 @[simp]
-theorem norm_circleLiftDiffeomorph (z : ℂ) : ‖circleLiftDiffeomorph hper hF hpos z‖ = ‖z‖ :=
-  norm_circleLiftMap z
+theorem norm_circleLiftDiffeomorph (z : ℂ) : ‖circleLiftDiffeomorph hper hF hpos z‖ = ‖z‖ := by
+  rw [circleLiftDiffeomorph_apply, norm_circleLiftMap]
 
 /-- The diffeomorphism is the identity on the closed disc of radius `1 / 3`. -/
 theorem circleLiftDiffeomorph_of_norm_le {z : ℂ} (hz : ‖z‖ ≤ 1 / 3) :
-    circleLiftDiffeomorph hper hF hpos z = z :=
-  circleLiftMap_of_norm_le hz
+    circleLiftDiffeomorph hper hF hpos z = z := by
+  rw [circleLiftDiffeomorph_apply, circleLiftMap_of_norm_le hz]
 
 /-- The inverse diffeomorphism preserves the norm. -/
 @[simp]

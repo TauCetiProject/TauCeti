@@ -62,35 +62,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-! ### Reparametrization by the boundary values of a disc map -/
 
-/-- The inverse of a self-map `D` of the closed unit disc which preserves the boundary circle, read
-on the circle. -/
-private def circleSymm (D : closedBall (0 : ℂ) 1 ≃ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1) (z : Circle) : Circle :=
-  ⟨D.symm (Set.inclusion sphere_subset_closedBall z), mem_sphere_zero_iff_norm.2 <| by
-    rw [← hD, D.apply_symm_apply]
-    exact norm_eq_of_mem_sphere z⟩
-
-private theorem symm_inclusion (D : closedBall (0 : ℂ) 1 ≃ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1) (z : Circle) :
-    D.symm (Set.inclusion sphere_subset_closedBall z) =
-      Set.inclusion sphere_subset_closedBall (circleSymm D hD z) :=
-  (rfl)
-
-private theorem norm_symm_eq_one_iff (D : closedBall (0 : ℂ) 1 ≃ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1) (x : closedBall (0 : ℂ) 1) :
-    ‖(D.symm x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1 := by
-  rw [← hD, D.apply_symm_apply]
-
-/-- If `D` is `σ` on the boundary circle, then `σ` undoes the inverse of `D` read on the circle. -/
-private theorem apply_circleSymm (D : closedBall (0 : ℂ) 1 ≃ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1)
-    (hσ : ∀ z : Circle, D (Set.inclusion sphere_subset_closedBall z) =
-      Set.inclusion sphere_subset_closedBall (σ z)) (z : Circle) :
-    σ (circleSymm D hD z) = z := by
-  have h := hσ (circleSymm D hD z)
-  rw [← symm_inclusion D hD, D.apply_symm_apply] at h
-  exact Subtype.ext (congrArg Subtype.val h).symm
-
 /-- **Smooth sliceness is invariant under reparametrization by a disc diffeomorphism.** If a
 diffeomorphism `D` of the closed unit disc preserves the boundary circle and is `σ` there, then
 `K ∘ σ` is smoothly slice exactly when `K` is. -/
@@ -103,9 +74,10 @@ theorem isSmoothlySlice_congr_diffeomorph
     IsSmoothlySlice K' ↔ IsSmoothlySlice K := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨Φ, hΦ⟩ := h.elim
-    exact (hΦ.comp_diffeomorph D.symm (norm_symm_eq_one_iff D.toEquiv hD)
-      (symm_inclusion D.toEquiv hD) fun z ↦ by
-        rw [hK', apply_circleSymm D.toEquiv hD hσ]).isSmoothlySlice
+    refine (hΦ.comp_diffeomorph D.symm (D.toEquiv.norm_symm_apply_eq_one_iff hD)
+      (fun z ↦ (D.toEquiv.inclusion_restrictUnitSphere_symm_apply hD z).symm)
+      fun z ↦ ?_).isSmoothlySlice
+    exact ((hK' _).trans (congrArg K (D.toEquiv.apply_restrictUnitSphere_symm hD hσ z))).symm
   · obtain ⟨Φ, hΦ⟩ := h.elim
     exact (hΦ.comp_diffeomorph D hD hσ hK').isSmoothlySlice
 
@@ -120,9 +92,10 @@ theorem isTopologicallySlice_congr_homeomorph (D : closedBall (0 : ℂ) 1 ≃ₜ
     IsTopologicallySlice K' ↔ IsTopologicallySlice K := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨Φ, hΦ⟩ := h.elim
-    exact (hΦ.comp_homeomorph D.symm (norm_symm_eq_one_iff D.toEquiv hD)
-      (symm_inclusion D.toEquiv hD) fun z ↦ by
-        rw [hK', apply_circleSymm D.toEquiv hD hσ]).isTopologicallySlice
+    refine (hΦ.comp_homeomorph D.symm (D.toEquiv.norm_symm_apply_eq_one_iff hD)
+      (fun z ↦ (D.toEquiv.inclusion_restrictUnitSphere_symm_apply hD z).symm)
+      fun z ↦ ?_).isTopologicallySlice
+    exact ((hK' _).trans (congrArg K (D.toEquiv.apply_restrictUnitSphere_symm hD hσ z))).symm
   · obtain ⟨Φ, hΦ⟩ := h.elim
     exact (hΦ.comp_homeomorph D hD hσ hK').isTopologicallySlice
 
