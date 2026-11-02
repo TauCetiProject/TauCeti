@@ -210,9 +210,7 @@ private theorem hasDerivAt_setIntegral_heatCauchyPotential_sub
     · -- Before `t`, the heat equation for the Cauchy potential of `f(s, ·)`.
       have h := (hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
         hs.2.1.aestronglyMeasurable (ae_of_all _ hs.2.2) (sub_pos.2 hst) x).comp_sub_const t s
-      have hslice : heatCauchyPotential (f s) (t - s) = heatKernel (t - s) ⋆ f s :=
-        funext fun y => heatCauchyPotential_eq_convolution _ (sub_pos.2 hst) y
-      rw [hslice] at h
+      rw [heatCauchyPotential_eq_convolution_fun _ (sub_pos.2 hst)] at h
       simpa [G, L, indicator_of_mem (mem_Iio.2 hst),
         ContinuousLinearMap.smulRight_one_eq_toSpanSingleton] using h.hasFDerivAt
     · -- After `t`, the integrand is the constant `f(s, x)` near `t`.
