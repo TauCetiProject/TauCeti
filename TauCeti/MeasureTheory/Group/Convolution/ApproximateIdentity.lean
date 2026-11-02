@@ -161,19 +161,31 @@ variable [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
+omit [MeasurableSpace G] [BorelSpace G] in
+/-- `x ↦ c(x) • f x⁻¹` is continuous for continuous `f`. -/
+private theorem continuous_modularCharacter_smul_comp_inv {f : G → 𝕜} (hf : Continuous f) :
+    Continuous fun x => (modularCharacter x : ℝ) • f x⁻¹ :=
+  (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hf.comp continuous_inv)
+
+omit [MeasurableSpace G] [BorelSpace G] in
+/-- `x ↦ c(x) • f x⁻¹` has compact support for compactly supported `f`. -/
+private theorem hasCompactSupport_modularCharacter_smul_comp_inv {f : G → 𝕜}
+    (hf : HasCompactSupport f) : HasCompactSupport fun x => (modularCharacter x : ℝ) • f x⁻¹ :=
+  (hf.comp_homeomorph (Homeomorph.inv G)).smul_left (f := fun x => (modularCharacter x : ℝ))
+
 /-- The modular inversion of the `L¹` class of a compactly supported continuous function `f` is the
 class of `x ↦ c(x) • f x⁻¹`. -/
-private theorem modularInversion_toL1 {f : G → 𝕜} (hfc : Continuous f) (hfs : HasCompactSupport f)
-    (hJc : Continuous fun x => (modularCharacter x : ℝ) • f x⁻¹)
-    (hJs : HasCompactSupport fun x => (modularCharacter x : ℝ) • f x⁻¹) :
+private theorem modularInversion_toL1 {f : G → 𝕜} (hfc : Continuous f) (hfs : HasCompactSupport f) :
     modularInversion μ 1 𝕜 ((hfc.integrable_of_hasCompactSupport (μ := μ) hfs).toL1 f) =
-      (hJc.integrable_of_hasCompactSupport hJs).toL1 _ := by
+      ((continuous_modularCharacter_smul_comp_inv hfc).integrable_of_hasCompactSupport
+        (hasCompactSupport_modularCharacter_smul_comp_inv hfs)).toL1 _ := by
   refine Lp.ext ?_
   filter_upwards [coeFn_modularInversion (𝕜 := 𝕜)
       ((hfc.integrable_of_hasCompactSupport (μ := μ) hfs).toL1 f),
     (quasiMeasurePreserving_inv_of_regular μ).ae
       (hfc.integrable_of_hasCompactSupport (μ := μ) hfs).coeFn_toL1,
-    (hJc.integrable_of_hasCompactSupport (μ := μ) hJs).coeFn_toL1] with x h₁ h₂ h₃
+    ((continuous_modularCharacter_smul_comp_inv hfc).integrable_of_hasCompactSupport (μ := μ)
+      (hasCompactSupport_modularCharacter_smul_comp_inv hfs)).coeFn_toL1] with x h₁ h₂ h₃
   rw [h₁, h₃, h₂]
   simp
 
@@ -186,20 +198,16 @@ private theorem modularInversion_convolutionL_toL1 {h k : G → 𝕜} (hhc : Con
       convolutionL μ 1 ENNReal.one_ne_top
         (modularInversion μ 1 𝕜 ((hkc.integrable_of_hasCompactSupport hks).toL1 k))
         (modularInversion μ 1 𝕜 ((hhc.integrable_of_hasCompactSupport hhs).toL1 h)) := by
-  have hc (f : G → 𝕜) (hf : Continuous f) :
-      Continuous fun x => (modularCharacter x : ℝ) • f x⁻¹ :=
-    (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hf.comp continuous_inv)
-  have hs (f : G → 𝕜) (hf : HasCompactSupport f) :
-      HasCompactSupport fun x => (modularCharacter x : ℝ) • f x⁻¹ :=
-    (hf.comp_homeomorph (Homeomorph.inv G)).smul_left (f := fun x => (modularCharacter x : ℝ))
-  rw [modularInversion_toL1 hkc hks (hc k hkc) (hs k hks),
-    modularInversion_toL1 hhc hhs (hc h hhc) (hs h hhs)]
+  rw [modularInversion_toL1 hkc hks, modularInversion_toL1 hhc hhs]
   refine Lp.ext ?_
   filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (convolutionL μ 1 ENNReal.one_ne_top
       ((hhc.integrable_of_hasCompactSupport (μ := μ) hhs).toL1 h)
       ((hkc.integrable_of_hasCompactSupport (μ := μ) hks).toL1 k)),
     (quasiMeasurePreserving_inv_of_regular μ).ae (convolutionL_toL1_ae_eq hhc hhs hkc hks),
-    convolutionL_toL1_ae_eq (μ := μ) (hc k hkc) (hs k hks) (hc h hhc) (hs h hhs)]
+    convolutionL_toL1_ae_eq (μ := μ) (continuous_modularCharacter_smul_comp_inv hkc)
+      (hasCompactSupport_modularCharacter_smul_comp_inv hks)
+      (continuous_modularCharacter_smul_comp_inv hhc)
+      (hasCompactSupport_modularCharacter_smul_comp_inv hhs)]
     with x h₁ h₂ h₃
   rw [h₁, h₃, h₂]
   -- Substitute `y ↦ x * y` on the right, using left invariance of `μ`.

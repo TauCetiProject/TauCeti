@@ -13,16 +13,18 @@ public import Mathlib.Topology.UrysohnsLemma
 /-!
 # `Lᵖ` functions on a locally compact space
 
-Let `μ` be a regular measure on a locally compact regular space `X` with its Borel σ-algebra, for
-instance a Haar measure on a locally compact group. This file proves that compactly supported
+Let `μ` be a regular measure on a weakly locally compact `R₁` space `X` with its Borel σ-algebra,
+for instance a Haar measure on a locally compact group. This file proves that compactly supported
 continuous functions are dense in `Lᵖ(X, μ)` for `p < ∞`.
 
-Mathlib's `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` assumes a normal space,
-which a locally compact group need not be. Here the indicator function of a measurable set `t` of
-finite measure is approximated directly: choose a compact closed `K ⊆ t` and an open `U ⊇ t` with
-`μ (U \ K)` small, and apply Urysohn's lemma for the compact set `K` inside the open set `U`, which
-holds in every locally compact regular space. Mathlib's `MeasureTheory.MemLp.induction_dense`
-extends the approximation from indicator functions to all of `Lᵖ`.
+Mathlib's `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` assumes `NormalSpace X`
+in addition to `R1Space X` and `WeaklyLocallyCompactSpace X`, and Mathlib provides no
+`NormalSpace` instance for locally compact groups. Here normality is not needed: the
+indicator function of a measurable set `t` of finite measure is approximated directly. Choose a
+compact closed `K ⊆ t` and an open `U ⊇ t` with `μ (U \ K)` small, and apply Urysohn's lemma for
+the compact set `K` inside the open set `U`, which holds in every locally compact regular space.
+Mathlib's `MeasureTheory.MemLp.induction_dense` extends the approximation from indicator
+functions to all of `Lᵖ`.
 
 ## Main results
 
@@ -48,14 +50,14 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
-variable {X E : Type*} [TopologicalSpace X] [LocallyCompactSpace X] [MeasurableSpace X]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure X} {p : ℝ≥0∞}
+variable {X E : Type*} [TopologicalSpace X] [R1Space X] [WeaklyLocallyCompactSpace X]
+  [MeasurableSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure X} {p : ℝ≥0∞}
 
 section Dense
 
-variable [RegularSpace X] [BorelSpace X] [μ.Regular]
+variable [BorelSpace X] [μ.Regular]
 
-/-- In a locally compact regular space, the indicator function of a measurable set of finite
+/-- In a weakly locally compact `R₁` space, the indicator function of a measurable set of finite
 measure with constant value `c` is approximated in `Lᵖ`, `p < ∞`, by compactly supported continuous
 functions. -/
 theorem exists_hasCompactSupport_eLpNorm_sub_indicator_le (hp : p ≠ ∞) (c : E) {t : Set X}
@@ -98,7 +100,7 @@ theorem exists_hasCompactSupport_eLpNorm_sub_indicator_le (hp : p ≠ ∞) (c : 
       _ = η := ENNReal.add_halves _
 
 /-- **Density of compactly supported continuous functions in `Lᵖ`** for a regular measure on a
-locally compact regular space, `p < ∞`. Unlike
+weakly locally compact `R₁` space, `p < ∞`. Unlike
 `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le`, no normality of the space is
 assumed. -/
 theorem MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace (hp : p ≠ ∞)
@@ -114,7 +116,7 @@ theorem MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace (hp
   exact ⟨g, hgs, hfg, hgc, hgc.memLp_of_hasCompactSupport hgs⟩
 
 /-- **Density of compactly supported continuous functions in `Lᵖ`** for a regular measure on a
-locally compact regular space, `p < ∞`: the classes of compactly supported continuous functions
+weakly locally compact `R₁` space, `p < ∞`: the classes of compactly supported continuous functions
 are dense in `Lp E p μ`. -/
 theorem Lp.dense_setOf_continuous_hasCompactSupport [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     Dense {u : Lp E p μ | ∃ f : X → E, Continuous f ∧ HasCompactSupport f ∧ u =ᵐ[μ] f} := by
