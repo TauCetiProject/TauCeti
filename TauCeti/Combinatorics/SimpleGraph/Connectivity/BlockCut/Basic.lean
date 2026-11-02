@@ -8,9 +8,6 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Block
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 
-import Mathlib.Data.Fintype.Powerset
-import Mathlib.Data.Fintype.Sum
-
 /-!
 # The block--cut incidence graph
 
@@ -37,10 +34,11 @@ namespace SimpleGraph
 
 variable {V : Type u} (G : SimpleGraph V)
 
-/-- The block vertices of the block--cut incidence graph of `G`. -/
+/-- The type of blocks of `G`; these form the block kind of vertex in `G.blockCutGraph`. -/
 abbrev BlockVertex := {B : Set V // G.IsBlock B}
 
-/-- The cut vertices of the block--cut incidence graph of `G`. -/
+/-- The type of cut vertices of `G`; these form the cut-vertex kind of vertex in
+`G.blockCutGraph`. -/
 abbrev CutVertex := {v : V // G.IsCutVertex v}
 
 /-- The vertices of the block--cut incidence graph, with blocks and cut vertices as its two
@@ -80,39 +78,11 @@ theorem blockCutGraph_adj_cutVertex_block (v : G.CutVertex) (B : G.BlockVertex) 
     G.blockCutGraph.Adj (.inr v) (.inl B) ↔ (v : V) ∈ (B : Set V) :=
   Iff.rfl
 
-/-- The block part of the canonical bipartition of the block--cut incidence graph. -/
-def blockCutBlocks : Set G.BlockCutVertex :=
-  range Sum.inl
-
-/-- The cut-vertex part of the canonical bipartition of the block--cut incidence graph. -/
-def blockCutCutVertices : Set G.BlockCutVertex :=
-  range Sum.inr
-
-@[simp]
-theorem mem_blockCutBlocks_iff (x : G.BlockCutVertex) :
-    x ∈ G.blockCutBlocks ↔ ∃ B, x = .inl B :=
-  by simp [blockCutBlocks, eq_comm]
-
-@[simp]
-theorem mem_blockCutCutVertices_iff (x : G.BlockCutVertex) :
-    x ∈ G.blockCutCutVertices ↔ ∃ v, x = .inr v :=
-  by simp [blockCutCutVertices, eq_comm]
-
-/-- The two kinds of block--cut vertices partition the whole vertex type. -/
-theorem blockCutBlocks_union_blockCutCutVertices :
-    G.blockCutBlocks ∪ G.blockCutCutVertices = univ :=
-  Set.range_inl_union_range_inr
-
-/-- The block and cut-vertex parts of the block--cut graph are disjoint. -/
-theorem disjoint_blockCutBlocks_blockCutCutVertices :
-    Disjoint G.blockCutBlocks G.blockCutCutVertices :=
-  Set.isCompl_range_inl_range_inr.disjoint
-
 /-- The displayed block and cut-vertex parts form a bipartition of the block--cut incidence
 graph. -/
 theorem blockCutGraph_isBipartiteWith :
-    G.blockCutGraph.IsBipartiteWith G.blockCutBlocks G.blockCutCutVertices where
-  disjoint := G.disjoint_blockCutBlocks_blockCutCutVertices
+    G.blockCutGraph.IsBipartiteWith (range Sum.inl) (range Sum.inr) where
+  disjoint := Set.isCompl_range_inl_range_inr.disjoint
   mem_of_adj := by
     rintro (B | v) (C | w) h
     · simp at h
@@ -156,6 +126,22 @@ def neighborSetBlockEquiv (B : G.BlockVertex) :
     · rfl
   right_inv v := rfl
 
+/-- Applying `neighborSetBlockEquiv` preserves the underlying block--cut vertex. -/
+@[simp]
+theorem neighborSetBlockEquiv_apply_coe (B : G.BlockVertex)
+    (x : G.blockCutGraph.neighborSet (.inl B)) :
+    Sum.inr ((G.neighborSetBlockEquiv B x) : G.CutVertex) = (x : G.BlockCutVertex) := by
+  rcases x with ⟨C | v, hx⟩
+  · simp at hx
+  · rfl
+
+/-- The inverse of `neighborSetBlockEquiv` includes a cut vertex into the block--cut graph. -/
+@[simp]
+theorem neighborSetBlockEquiv_symm_apply_coe (B : G.BlockVertex)
+    (v : {v : G.CutVertex // (v : V) ∈ (B : Set V)}) :
+    ((G.neighborSetBlockEquiv B).symm v : G.BlockCutVertex) = .inr v.1 := by
+  simp [neighborSetBlockEquiv]
+
 /-- The neighborhood of a cut vertex is canonically equivalent to the blocks containing that
 vertex. -/
 def neighborSetCutVertexEquiv (v : G.CutVertex) :
@@ -170,5 +156,21 @@ def neighborSetCutVertexEquiv (v : G.CutVertex) :
     · rfl
     · simp at hx
   right_inv B := rfl
+
+/-- Applying `neighborSetCutVertexEquiv` preserves the underlying block--cut vertex. -/
+@[simp]
+theorem neighborSetCutVertexEquiv_apply_coe (v : G.CutVertex)
+    (x : G.blockCutGraph.neighborSet (.inr v)) :
+    Sum.inl ((G.neighborSetCutVertexEquiv v x) : G.BlockVertex) = (x : G.BlockCutVertex) := by
+  rcases x with ⟨B | w, hx⟩
+  · rfl
+  · simp at hx
+
+/-- The inverse of `neighborSetCutVertexEquiv` includes a block into the block--cut graph. -/
+@[simp]
+theorem neighborSetCutVertexEquiv_symm_apply_coe (v : G.CutVertex)
+    (B : {B : G.BlockVertex // (v : V) ∈ (B : Set V)}) :
+    ((G.neighborSetCutVertexEquiv v).symm B : G.BlockCutVertex) = .inl B.1 := by
+  simp [neighborSetCutVertexEquiv]
 
 end SimpleGraph
