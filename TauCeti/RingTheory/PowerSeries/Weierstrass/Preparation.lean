@@ -71,8 +71,8 @@ degree `s`. This is the route to noetherianity of the Tate algebra.
   `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero` and, over a field,
   `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero`: the units of the ring of restricted
   series, for a multiplicative coefficient norm.
-* `TauCeti.PowerSeries.isUnit_iff_gaussNorm_sub_one_lt_one`: over a complete nonarchimedean
-  field, a restricted series with constant coefficient `1` is a unit exactly when
+* `TauCeti.PowerSeries.isUnit_iff_gaussNorm_sub_one_lt_one`: for a multiplicative coefficient
+  norm with `‖1‖ = 1`, a restricted series with constant coefficient `1` is a unit exactly when
   `‖U - 1‖_c < 1`.
 * `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul`: multiplying by such a unit leaves the
   distinguished degree unchanged.
@@ -400,6 +400,18 @@ theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] 
   rw [Subring.coe_mul, Subring.coe_one, mul_comm]
   exact hqr
 
+/-- **Units close to `1`.** Over a complete ultrametric normed commutative ring with
+multiplicative norm and `‖1‖ = 1`, and at a positive radius `c`, a restricted series with constant
+coefficient `1` is a unit of the ring of series restricted at `c` exactly when `‖U - 1‖_c < 1`. -/
+theorem isUnit_iff_gaussNorm_sub_one_lt_one [CompleteSpace R] [NormOneClass R] (hc : 0 < c)
+    (U : PowerSeries.IsRestricted.subring (R := R) c)
+    (h0 : _root_.PowerSeries.constantCoeff (U : PowerSeries R) = 1) :
+    IsUnit U ↔ ((U : PowerSeries R) - 1).gaussNorm norm c < 1 := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  rw [isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero hc,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply, h0, and_iff_left isUnit_one,
+    gaussNorm_sub_one_lt_one_iff hc U.2 h0]
+
 /-- **Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1). Over a complete
 ultrametric normed commutative ring with multiplicative norm, a restricted series `f`
 distinguished of degree `s` at a positive radius `c`, whose coefficient in degree `s` is a unit,
@@ -473,15 +485,6 @@ positive radius `c` exactly when it is distinguished of degree `0` at `c`. -/
     IsUnit x ↔ IsDistinguished c 0 (x : PowerSeries K) := by
   rw [isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero hc,
     and_iff_left_of_imp fun h ↦ h.coeff_ne_zero.isUnit]
-
-/-- **Units close to `1`.** Over a complete nonarchimedean field and at a positive radius `c`, a
-restricted series with constant coefficient `1` is a unit of the ring of series restricted at `c`
-exactly when `‖U - 1‖_c < 1`. -/
-theorem isUnit_iff_gaussNorm_sub_one_lt_one (hc : 0 < c)
-    (U : PowerSeries.IsRestricted.subring (R := K) c)
-    (h0 : _root_.PowerSeries.constantCoeff (U : PowerSeries K) = 1) :
-    IsUnit U ↔ ((U : PowerSeries K) - 1).gaussNorm norm c < 1 := by
-  rw [isUnit_iff_isDistinguished_zero hc, gaussNorm_sub_one_lt_one_iff hc U.2 h0]
 
 end Field
 
