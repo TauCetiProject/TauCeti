@@ -12,14 +12,15 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Length
 /-!
 # Length of the complementary-module quotient
 
-For an extension of discrete valuation rings with finite separable fraction fields, the
-complementary module `C` is the inverse of the different ideal `𝔡`. Multiplication by a
-generator of `𝔡` identifies `C/B` with `B/𝔡`. Its length over the lower valuation ring is
-therefore the different exponent times the full residue degree. In particular the residue
-degree includes its inseparable factor; no separability of residue fields is required.
+For a local integrally closed base domain `A` and a discrete valuation ring `B` upstairs,
+with finite separable fraction-field extension, the complementary module `C` is the inverse
+of the different ideal `𝔡`. Multiplication by a generator of `𝔡` identifies `C/B` with `B/𝔡`.
+For a local algebra map and finite residue extension, its length over `A` is therefore the
+different exponent times the full residue degree. In particular the residue degree includes
+its inseparable factor; no separability of residue fields is required.
 
-The quotient comparison only requires that the different be principal, and is proved for
-Dedekind domains before specializing to discrete valuation rings.
+The quotient comparison only requires that the different be principal, and is proved with
+`B` a Dedekind domain before specializing to a discrete valuation ring.
 
 ## References
 

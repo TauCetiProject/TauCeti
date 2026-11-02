@@ -21,6 +21,10 @@ decides when an ideal `I` with `I * Q = p · B` divides the different ideal of a
 Dedekind domains.
 The multiplicity lemmas express divisibility by powers of a prime and Dedekind's universal
 `e - 1` bound as bounds on the different exponent.
+For finite separable fraction-field extensions, the different is nonzero. When it is principal,
+membership in the trace dual is tested by multiplication by a generator, and division by that
+generator identifies `S` with its trace dual. This equivalence feeds the length computation of
+the complementary-module quotient.
 -/
 
 public section
