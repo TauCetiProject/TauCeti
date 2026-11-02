@@ -135,6 +135,16 @@ theorem not_isRegularPoint_iff_mfderivRank_lt [FiniteDimensional 𝕜 E'] :
 
 /-! ### Invariance under changes of coordinates -/
 
+/-- The rank of a linear map is unchanged by composing on the left with an injective map and on the
+right with a surjective one. -/
+private theorem finrank_range_comp_comp {R V V' W W' : Type*} [Ring R] [AddCommGroup V]
+    [Module R V] [AddCommGroup V'] [Module R V'] [AddCommGroup W] [Module R W] [AddCommGroup W']
+    [Module R W'] (A : W →ₗ[R] W') (L : V →ₗ[R] W) (B : V' →ₗ[R] V) (hA : Injective A)
+    (hB : Surjective B) :
+    finrank R (LinearMap.range (A ∘ₗ L ∘ₗ B)) = finrank R (LinearMap.range L) := by
+  rw [LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 hB)]
+  exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
+
 section Comp
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
@@ -146,18 +156,19 @@ derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`. -/
 theorem mfderivRank_comp_of_injective {g : N → P} (hg : MDifferentiableAt J K g (f x))
     (hf : MDifferentiableAt I J f x) (hinj : Injective (mfderiv J K g (f x))) :
     mfderivRank I K (g ∘ f) x = mfderivRank I J f x := by
-  rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.range_comp]
-  exact (Submodule.equivMapOfInjective _ hinj _).finrank_eq.symm
+  rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf, ContinuousLinearMap.toLinearMap_comp]
+  simpa using finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
+    surjective_id
 
 /-- **Composition on the right with a submersion preserves the rank.** If `h` has surjective
-derivative at `x`, then `f ∘ h` has the same rank at `x` as `f` at `h x`. -/
+derivative at `p`, then `f ∘ h` has the same rank at `p` as `f` at `h p`. -/
 theorem mfderivRank_comp_of_surjective {h : P → M} {p : P} (hf : MDifferentiableAt I J f (h p))
     (hh : MDifferentiableAt K I h p) (hsurj : Surjective (mfderiv K I h p)) :
     mfderivRank K J (f ∘ h) p = mfderivRank I J f (h p) := by
   rw [mfderivRank_def, mfderivRank_def, mfderiv_comp p hf hh, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 hsurj)]
-  rfl
+    Function.comp_apply]
+  simpa using finrank_range_comp_comp LinearMap.id (mfderiv I J f (h p)).toLinearMap _
+    injective_id hsurj
 
 /-- **Diffeomorphisms of the target preserve the rank.** For a diffeomorphism `h`, the maps
 `h ∘ f` and `f` have the same rank at every point. No differentiability of `f` is assumed. -/
@@ -174,8 +185,7 @@ has the same rank at `p` as `f` at `h p`. No differentiability of `f` is assumed
 theorem _root_.Diffeomorph.mfderivRank_comp_diffeomorph {n : ℕ∞ω} (h : P ≃ₘ^n⟮K, I⟯ M)
     (hn : n ≠ 0) (f : M → N) (p : P) :
     mfderivRank K J (f ∘ h) p = mfderivRank I J f (h p) := by
-  rw [mfderivRank_def, mfderivRank_def, h.range_mfderiv_comp_diffeomorph hn]
-  rfl
+  rw [mfderivRank_def, mfderivRank_def, h.range_mfderiv_comp_diffeomorph hn, Function.comp_apply]
 
 end Comp
 
@@ -203,9 +213,8 @@ theorem mfderivRank_eq_finrank_range_fderivWithin [IsManifold I 1 M] [IsManifold
       (A : TangentSpace J (f x) ≃ₗ[𝕜] E') (B : E ≃ₗ[𝕜] TangentSpace I x)
       (h : ∀ v, D v = A (L (B v))) :
       finrank 𝕜 (LinearMap.range D) = finrank 𝕜 (LinearMap.range L) := by
-    rw [show D = A.toLinearMap ∘ₗ L ∘ₗ B.toLinearMap from LinearMap.ext h, LinearMap.range_comp,
-      LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 B.surjective),
-      LinearEquiv.finrank_map_eq]
+    rw [show D = A.toLinearMap ∘ₗ L ∘ₗ B.toLinearMap from LinearMap.ext h]
+    exact finrank_range_comp_comp _ _ _ A.injective B.surjective
   refine (key (mfderiv I J f x).toLinearMap _ A.toLinearEquiv B.toLinearEquiv fun v ↦ ?_).symm
   simp only [ContinuousLinearMap.coe_coe]
   rw [← hA, ← hB]

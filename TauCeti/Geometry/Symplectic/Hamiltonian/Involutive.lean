@@ -189,10 +189,13 @@ theorem mfderivRank_eq_zero_iff_hamiltonianVectorField_eq_zero
 
 /-- **The rank bound for Poisson-commuting functions.** At a point where the functions `F_i`
 Poisson-commute, the rank of `F` is at most half the dimension of `M`: the Hamiltonian vectors
-`X_{F_i}(x)` span an isotropic subspace of that dimension. -/
-theorem two_mul_mfderivRank_le (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x)
-    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
+`X_{F_i}(x)` span an isotropic subspace of that dimension. Where `F` is not differentiable the
+rank is zero, so no differentiability of `F` is assumed. -/
+theorem two_mul_mfderivRank_le (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
     2 * mfderivRank I 𝓘(ℝ, ι → ℝ) F x ≤ finrank ℝ E := by
+  by_cases hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x
+  swap
+  · simp [mfderivRank_eq_zero_of_not_mdifferentiableAt hF]
   have hiso : (hσ.symplecticFormAt x).IsIsotropic
       (Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x)) := by
     rw [SymplecticForm.isIsotropic_span_iff]
@@ -205,7 +208,7 @@ regular point of a `2n`-dimensional manifold, then `k ≤ n`. -/
 theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
     (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
     2 * Fintype.card ι ≤ finrank ℝ E := by
-  have := hσ.two_mul_mfderivRank_le hreg.mdifferentiableAt hcomm
+  have := hσ.two_mul_mfderivRank_le hcomm
   rwa [isRegularPoint_iff_mfderivRank_eq.1 hreg, Module.finrank_fintype_fun_eq_card] at this
 
 /-- **The Lagrangian criterion for `ker dF_x`.** At a regular point of `F`
