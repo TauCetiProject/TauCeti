@@ -113,6 +113,9 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 7) (A : Type v) [CommRin
       weightTorusPoints A (E7.geckSimpleReflectionTorusPoint valid_E7 i A s) := by
   rw [E7.geckSimpleReflectionTorusPoint_def valid_E7 i A,
     E7.root_simpleIndex valid_E7 i]
+  -- The root-datum action uses Fintype/DecidableEq instances on Fin E7.rank, while the
+  -- carrier uses Fin 7. Normalize rank inside those instance arguments too, so both
+  -- reflection homomorphisms use the same instances; rewriting rank_E7 alone leaves them.
   dsimp (config := { instances := true }) only [rank]
   simp only [cartanMatrix_E7]
   have hpos (q : Fin 7) : rootWeight (.inl i) q = CM i q := by
@@ -121,21 +124,13 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 7) (A : Type v) [CommRin
   have hneg (q : Fin 7) : rootWeight (.inr i) q = -CM i q := by
     simpa only [rank_E7, cartanMatrix_E7] using
       E7.rootGeneratorWeight_inr (ht := valid_E7) i q
-  have h := kostantToralWeylPoint_conj_weightTorusPoints
+  have h := kostantToralWeylPoint_conj_weightTorusPoints_of_rootWeight
     (i := Sum.inl i) (j := Sum.inr i) (c := i)
     (α := fun j : Fin 7 ↦ CM i j)
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
     isNilpotent_rep_serreRootGenerator latticeBasis e7MinusculeWeight
-    (isSl2Triple_rep_serreRootGenerator i)
-    (fun q ↦ by rw [← hpos q]; exact lie_cartanGenerator_rootGenerator (.inl i) q)
-    (fun q ↦ by
-      calc
-        ⁅cartanGen q, rootGen (.inr i)⁆ =
-            ((rootWeight (.inr i) q : ℤ) : ℚ) • rootGen (.inr i) :=
-          lie_cartanGenerator_rootGenerator (.inr i) q
-        _ = -((CM i q : ℤ) : ℚ) • rootGen (.inr i) := by
-          rw [hneg q, Int.cast_neg]
-        _ = _ := neg_smul _ _)
+    (isSl2Triple_rep_serreRootGenerator i) rootWeight
+    lie_cartanGenerator_rootGenerator hpos hneg
     isCartanWeightVector_latticeBasis A s
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint,
