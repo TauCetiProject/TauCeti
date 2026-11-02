@@ -10,11 +10,9 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.LinearAlgebra.Dimension.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
-import TauCeti.Analysis.Convex.SimplyConnected
-import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Geometry.Manifold.Connected
 import TauCeti.Topology.Closure
+import TauCeti.Topology.OpenPartialHomeomorph.SimplyConnected
 
 /-!
 # Deleting a point from a manifold of dimension at least three
@@ -32,7 +30,9 @@ ball, because the sphere `Sⁿ⁻¹` is simply connected for `n ≥ 3`. The free
 `π₁(X \ {p}) ∗ π₁(B)` therefore maps isomorphically onto `π₁(X)` with trivial second factor.
 The abstract form of this argument only needs a neighbourhood `B` of a closed point `p` with
 `B` and `B \ {p}` simply connected, and a path-connected complement of `p`
-(`TauCeti.fundamentalGroup_map_subtypeVal_compl_singleton_bijective_of_mem_nhds`).
+(`TauCeti.fundamentalGroup_map_subtypeVal_compl_singleton_bijective_of_mem_nhds`). For a
+manifold, the preimage of a small ball under a chart is such a neighbourhood
+(`OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_sdiff_singleton`).
 
 In dimension two the statement fails, because a punctured disc is not simply connected: the
 torus minus a point has a free fundamental group of rank two, which maps onto `ℤ²` with nontrivial
@@ -44,12 +44,6 @@ kernel.
   closed point `p` with a simply connected neighbourhood `B` such that `B \ {p}` is simply
   connected, from a space whose complement of `p` is path connected, induces a bijection of
   fundamental groups.
-* `PartialHomeomorph.isSimplyConnected_image`: a partial homeomorphism carries simply connected
-  subsets of its source to simply connected sets.
-* `OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_sdiff_singleton`: in dimension greater
-  than two, every point in the source of a chart has such a neighbourhood, the preimage of a ball.
-  In dimension greater than one the punctured neighbourhood is still path connected
-  (`OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_isPathConnected_sdiff_singleton`).
 * `TauCeti.fundamentalGroup_map_subtypeVal_compl_singleton_bijective`: **deleting a point from a
   connected manifold of dimension at least three induces an isomorphism of fundamental groups.**
 * `TauCeti.simplyConnectedSpace_of_isSimplyConnected_compl_singleton`: a manifold of dimension at
@@ -103,59 +97,6 @@ theorem fundamentalGroup_map_subtypeVal_compl_singleton_bijective_of_mem_nhds {p
   exact FundamentalGroup.map_bijective_of_path _ (PathConnectedSpace.somePath _ x) hz
 
 end TauCeti
-
-section Chart
-
-/-- The image under a partial homeomorphism `φ` of a simply connected subset of the source of `φ`
-is simply connected. -/
-theorem PartialHomeomorph.isSimplyConnected_image {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (φ : PartialHomeomorph X Y) {S : Set X} (hS : S ⊆ φ.source)
-    (hSc : IsSimplyConnected S) : IsSimplyConnected (φ '' S) :=
-  have := hSc.simplyConnectedSpace
-  (φ.homeomorphOfImageSubsetSource hS rfl).symm.toHomotopyEquiv.simplyConnectedSpace
-
-variable {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A point `p` in the source of `φ` has a simply connected neighbourhood `φ.symm '' ball (φ p) r`,
-whose complement of `p` is the image of the punctured ball. -/
-private theorem OpenPartialHomeomorph.exists_ball_subset_target (φ : OpenPartialHomeomorph X E)
-    {p : X} (hp : p ∈ φ.source) :
-    ∃ r > 0, ball (φ p) r ⊆ φ.target ∧ φ.symm '' ball (φ p) r ∈ 𝓝 p ∧
-      IsSimplyConnected (φ.symm '' ball (φ p) r) ∧
-      φ.symm '' ball (φ p) r \ {p} = φ.symm '' (ball (φ p) r \ {φ p}) := by
-  obtain ⟨r, hr, hbt⟩ := Metric.isOpen_iff.1 φ.open_target (φ p) (φ.map_source hp)
-  refine ⟨r, hr, hbt, ?_,
-    φ.symm.isSimplyConnected_image hbt ((convex_ball _ r).isSimplyConnected ⟨_, mem_ball_self hr⟩),
-    ?_⟩
-  · simpa [φ.left_inv hp] using φ.symm.image_mem_nhds (φ.map_source hp) (ball_mem_nhds _ hr)
-  · rw [(φ.symm.injOn.mono hbt).image_sdiff_subset (singleton_subset_iff.2 (mem_ball_self hr)),
-      image_singleton, φ.left_inv hp]
-
-/-- If `E` is a real normed space of dimension greater than one, every point `p` in the source of
-a partial homeomorphism `φ : X → E` has a simply connected neighbourhood `B` with `B \ {p}` path
-connected: the preimage of a small open ball about `φ p`. -/
-theorem OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_isPathConnected_sdiff_singleton
-    (h : 1 < Module.rank ℝ E) (φ : OpenPartialHomeomorph X E) {p : X} (hp : p ∈ φ.source) :
-    ∃ B ∈ 𝓝 p, IsSimplyConnected B ∧ IsPathConnected (B \ {p}) := by
-  obtain ⟨r, hr, hbt, hB, hBsc, hsdiff⟩ := φ.exists_ball_subset_target hp
-  refine ⟨_, hB, hBsc, ?_⟩
-  rw [hsdiff]
-  exact (TauCeti.isPathConnected_ball_sdiff_singleton h _ hr).image'
-    (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
-
-/-- If `E` is a real normed space of dimension greater than two, every point `p` in the source of
-a partial homeomorphism `φ : X → E` has a neighbourhood `B` such that `B` and `B \ {p}` are simply
-connected: the preimage of a small open ball about `φ p`. -/
-theorem OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_sdiff_singleton
-    (h : 2 < Module.rank ℝ E) (φ : OpenPartialHomeomorph X E) {p : X} (hp : p ∈ φ.source) :
-    ∃ B ∈ 𝓝 p, IsSimplyConnected B ∧ IsSimplyConnected (B \ {p}) := by
-  obtain ⟨r, hr, hbt, hB, hBsc, hsdiff⟩ := φ.exists_ball_subset_target hp
-  refine ⟨_, hB, hBsc, ?_⟩
-  rw [hsdiff]
-  exact φ.symm.isSimplyConnected_image (sdiff_subset.trans hbt)
-    (TauCeti.isSimplyConnected_ball_sdiff_singleton h _ hr)
-
-end Chart
 
 namespace TauCeti
 
