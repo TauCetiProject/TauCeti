@@ -129,16 +129,13 @@ instance LocallyOfWeaklyFiniteType.containsIdentities :
   id_mem X := (locallyOfFiniteType_id X.property).locallyOfWeaklyFiniteType
 
 /-- **Being locally of weakly finite type is invariant under isomorphisms** of the source and of
-the target. -/
+the target: it is the inverse image of a chart-local property along the inclusion of adic spaces
+into pre-adic spaces. -/
 instance LocallyOfWeaklyFiniteType.respectsIso :
     MorphismProperty.RespectsIso (@LocallyOfWeaklyFiniteType.{u}) :=
-  MorphismProperty.RespectsIso.mk _
-    (fun e f hf ↦ (locallyOfWeaklyFiniteType_iff_chartLocally _).mpr <|
-      MorphismProperty.RespectsIso.precomp (chartLocally _) e.hom.hom f.hom
-        ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf))
-    (fun e f hf ↦ (locallyOfWeaklyFiniteType_iff_chartLocally _).mpr <|
-      MorphismProperty.RespectsIso.postcomp (chartLocally _) e.hom.hom f.hom
-        ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf))
+  MorphismProperty.RespectsIso.inverseImage
+    (chartLocally fun φ ↦ IsTopologicallyFiniteType φ.toRingHom)
+    (ObjectProperty.ι PreAdicSpace.isAdic)
 
 /-- **Affinoid morphisms**: for a morphism of Huber pairs `φ : (A, A⁺) → (B, B⁺)` with `B`
 complete and Hausdorff, between pairs whose adic spectra are adic spaces, the morphism
