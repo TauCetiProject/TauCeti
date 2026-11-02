@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
@@ -42,48 +43,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] {n : WithTop ℕ∞}
 
-/-- Pointwise application of a smooth family of continuous linear maps, linear in
-its vector-valued argument. -/
-def clmApplyLinearMap (A : C^n⟮I, M; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯) :
-    C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜] C^n⟮I, M; 𝓘(𝕜, G), G⟯ where
-  toFun f := ⟨fun x ↦ A x (f x), A.contMDiff.clm_apply f.contMDiff⟩
-  map_add' f g := by
-    apply ContMDiffMap.coe_injective
-    simp only [coeFn_mk, coe_add, Pi.add_apply]
-    funext x
-    exact map_add (A x) (f x) (g x)
-  map_smul' c f := by
-    apply ContMDiffMap.coe_injective
-    simp only [coeFn_mk, coe_smul, Pi.smul_apply, RingHom.id_apply]
-    funext x
-    exact map_smul (A x) c (f x)
-
-@[simp]
-theorem clmApplyLinearMap_apply
-    (A : C^n⟮I, M; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯)
-    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) :
-    clmApplyLinearMap A f x = A x (f x) := (rfl)
-
-/-- Multiplication by a smooth linear family does not enlarge closed support. -/
-theorem tsupport_clmApplyLinearMap_subset
-    (A : C^n⟮I, M; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯)
-    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    tsupport (clmApplyLinearMap A f) ⊆ tsupport f := by
-  apply closure_mono
-  exact Function.support_subset_iff'.mpr fun x hx ↦ by
-    simp [Function.notMem_support.mp hx]
-
-/-- An injective smooth linear family preserves exact closed supports. -/
-theorem tsupport_clmApplyLinearMap
-    (A : C^n⟮I, M; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯)
-    (hA : ∀ x, Function.Injective (A x)) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    tsupport (clmApplyLinearMap A f) = tsupport f := by
-  unfold tsupport
-  congr 1
-  ext x
-  simp only [Function.mem_support, clmApplyLinearMap_apply]
-  exact not_congr (map_eq_zero_iff (A x) (hA x))
-
 variable [IsManifold I n M]
 
 /-- The compact chart Leibniz estimate for a smooth linear multiplier. -/
@@ -106,7 +65,9 @@ theorem chartCkSeminorm_clmApplyLinearMap_le
   have h := norm_iteratedFDerivWithin_clm_apply hAc hfc
     (uniqueDiffOn_extChartAt_target x) z.property ((Nat.cast_le.mpr hm).trans hk)
   have hfun : (clmApplyLinearMap A f) ∘ (extChartAt I x).symm =
-      fun y ↦ (A ∘ (extChartAt I x).symm) y ((f ∘ (extChartAt I x).symm) y) := rfl
+      fun y ↦ (A ∘ (extChartAt I x).symm) y ((f ∘ (extChartAt I x).symm) y) := by
+    ext y
+    simp only [Function.comp_apply, clmApplyLinearMap_apply]
   rw [hfun]
   refine h.trans (le_trans (b := ∑ i ∈ Finset.range (m + 1),
     (m.choose i : ℝ) * (pA * pf)) (Finset.sum_le_sum fun i hi ↦ ?_) ?_)
