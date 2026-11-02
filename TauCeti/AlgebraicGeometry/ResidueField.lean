@@ -135,7 +135,8 @@ theorem Spec.residueField_hom_ext {R : CommRingCat.{u}} {p : Spec R} {K : CommRi
   -- The residue field is `p.asIdeal.ResidueField`, whose ring maps are determined on `R`.
   have h' := congr((Scheme.ΓSpecIso R).inv ≫ $h)
   ext1
-  refine @Ideal.ResidueField.ringHom_ext _ _ _ _ _ p.isPrime _ _ ?_
+  have := p.isPrime
+  refine Ideal.ResidueField.ringHom_ext (I := p.asIdeal) ?_
   ext a
   have e : (Scheme.Spec.residueFieldIso R p).inv (algebraMap R _ a) =
       (Spec R).Γevaluation p ((Scheme.ΓSpecIso R).inv a) :=

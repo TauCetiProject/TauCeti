@@ -72,6 +72,7 @@ variable {X : Scheme.{u}} {G : Type*} [Group G] (σ : G →* Aut X)
 @[instance_reducible]
 private def pointAction : MulAction G X where
   smul g x := (σ g).asIso.hom x
+  -- The `show`s unfold the `smul` field just defined, so that `simp` sees `σ` applied to `x`.
   one_smul x := show (σ 1).asIso.hom x = x by simp
   mul_smul g k x := show (σ (g * k)).asIso.hom x = (σ g).asIso.hom ((σ k).asIso.hom x) by simp
 
