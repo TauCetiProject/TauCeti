@@ -37,6 +37,8 @@ a matrix.
   `A (p, q)` curve.
 * `Matrix.GeneralLinearGroup.torusHomeomorph_swap`: the matrix exchanging the coordinates acts by
   exchanging the circle factors.
+* `TauCeti.exists_torusHomeomorph_eq_torusGluing`: the determinant-one gluing
+  `TauCeti.torusGluing p q s t` is induced by the matrix `[[p, -t], [q, s]]`.
 -/
 
 public section
@@ -135,3 +137,19 @@ theorem torusHomeomorph_swap :
 end GeneralLinearGroup
 
 end Matrix
+
+namespace TauCeti
+
+/-- The determinant-one gluing `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)` is the homeomorphism of the
+torus induced by the invertible matrix `[[p, -t], [q, s]]`. -/
+theorem exists_torusHomeomorph_eq_torusGluing (p q s t : ℤ) (h : s * p + t * q = 1) :
+    ∃ A : GL (Fin 2) ℤ, (A : Matrix (Fin 2) (Fin 2) ℤ) = !![p, -t; q, s] ∧
+      A.torusHomeomorph = torusGluing p q s t h := by
+  let M : Matrix.SpecialLinearGroup (Fin 2) ℤ :=
+    ⟨!![p, -t; q, s], by rw [Matrix.det_fin_two_of]; linear_combination h⟩
+  refine ⟨Matrix.SpecialLinearGroup.toGL M, rfl, Homeomorph.ext fun x ↦ ?_⟩
+  rw [Matrix.GeneralLinearGroup.torusHomeomorph_apply, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.SpecialLinearGroup.coe_mk, torusGluing_apply]
+  simp
+
+end TauCeti

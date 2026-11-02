@@ -16,10 +16,10 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 Give each part of size `k` of a noncrossing partition the weight `c_k`, the `k`-th coefficient of
 a formal power series `C(z) = 1 + ∑_{k ≥ 1} c_k z^k`, and let
 `m_n = ∑_{π ∈ NC(n)} ∏_{B ∈ π} c_{|B|}` be the total weight of the noncrossing partitions of `n`
-ordered positions. Then any series `M` satisfying the functional equation `M(z) = C(z M(z))` has
-`n`-th coefficient `m_n`, that is, `M(z) = ∑_{n ≥ 0} m_n z^n`. In free probability `c_k` is the
-`k`-th free cumulant of a variable and `m_n` its `n`-th moment, so this is the moment–cumulant
-relation between the moment series and the cumulant series `C(z) = 1 + z R(z)`.
+ordered positions. Then a series `M` satisfies the functional equation `M(z) = C(z M(z))` exactly
+when its `n`-th coefficient is `m_n`, that is, `M(z) = ∑_{n ≥ 0} m_n z^n`. In free probability
+`c_k` is the `k`-th free cumulant of a variable and `m_n` its `n`-th moment, so this is the
+moment–cumulant relation between the moment series and the cumulant series `C(z) = 1 + z R(z)`.
 
 The proof is coefficientwise, by the recurrence of noncrossing partitions by the part containing
 the first position (`TauCeti.NoncrossingPartition.sum_mul_prod_eq_sum_mul_sum`). If that part ends
@@ -36,6 +36,8 @@ has weight `f(0)`, the constant coefficient of `f(z M(z))`.
 * `TauCeti.NoncrossingPartition.sum_prod_coeff_eq_coeff_of_subst_eq` — if `C(0) = 1` and
   `M(z) = C(z M(z))`, then `∑_{π ∈ NC(s)} ∏_{B ∈ π} c_{|B|}` is the `|s|`-th coefficient of `M`,
   for every finite set `s` of positions in a linear order.
+* `TauCeti.NoncrossingPartition.subst_eq_of_forall_sum_prod_coeff_eq` — conversely, if `C(0) = 1`
+  and the coefficients of `M` are these total weights, then `M(z) = C(z M(z))`.
 
 ## References
 
@@ -132,5 +134,28 @@ theorem sum_prod_coeff_eq_coeff_of_subst_eq {C M : R⟦X⟧} (hC : constantCoeff
   rw [← h, firstPartSum]
   exact sum_congr rfl fun π _ =>
     π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C
+
+/-- *The moment–cumulant functional equation, from the coefficients.* Let `C` be a formal power
+series with constant coefficient `1`, and let `M` be a formal power series whose coefficient at
+`|s|` is the sum over the noncrossing partitions `π` of `s` of the products
+`∏_{B ∈ π} c_{|B|}`, for every finite set `s` of positions in an infinite linear order. Then
+`M(z) = C(z M(z))`. This is the converse of `sum_prod_coeff_eq_coeff_of_subst_eq`. -/
+theorem subst_eq_of_forall_sum_prod_coeff_eq [Infinite α] {C M : R⟦X⟧}
+    (hC : constantCoeff C = 1)
+    (hM : ∀ s : Finset α, ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B C = coeff #s M) :
+    C.subst (X * M) = M := by
+  ext n
+  obtain ⟨s, rfl⟩ := Infinite.exists_subset_card_eq α n
+  obtain rfl | hs := s.eq_empty_or_nonempty
+  · -- The constant coefficient of `C(z M(z))` is `C(0) = 1`, the weight of the empty partition.
+    have h0 : constantCoeff (C.subst (X * M)) = constantCoeff C :=
+      constantCoeff_subst_of_constantCoeff_zero (S := R) (by simp [← constantCoeff_eq]) C
+    rw [← hM, card_empty, coeff_zero_eq_constantCoeff_apply, h0, hC, Fintype.sum_unique,
+      parts_eq_empty, prod_empty]
+  have h := firstPartSum_eq_coeff_subst (C := C) (M := M) (fun u _ => hM u) s
+    (s.min' hs) (fun y hy => s.min'_le y hy) (fun _ => s.min'_mem hs) le_rfl C
+  rw [← h, ← hM, firstPartSum]
+  exact sum_congr rfl fun π _ =>
+    (π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C).symm
 
 end TauCeti.NoncrossingPartition
