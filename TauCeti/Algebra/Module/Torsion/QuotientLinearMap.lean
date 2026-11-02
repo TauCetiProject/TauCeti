@@ -58,9 +58,12 @@ def quotientLinearMapEquivTorsionBySet :
     simpa using (mem_torsionBySet_iff _ _).mp x.prop ⟨j, hj⟩
   left_inv f := LinearMap.ext fun y => by
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [f.apply_quotient_mk_eq_smul_apply_one]
-    exact J.liftQ_apply (LinearMap.toSpanSingleton R M (f 1)) r
-  right_inv x := Subtype.ext ((J.liftQ_apply _ (1 : R)).trans (one_smul R (x : M)))
+    rw [f.apply_quotient_mk_eq_smul_apply_one, ← Ideal.Quotient.mk_eq_mk, liftQ_apply,
+      LinearMap.toSpanSingleton_apply]
+  right_inv x := Subtype.ext <| by
+    dsimp only
+    rw [← map_one (Ideal.Quotient.mk J), ← Ideal.Quotient.mk_eq_mk, liftQ_apply,
+      LinearMap.toSpanSingleton_apply_one]
 
 @[simp]
 theorem coe_quotientLinearMapEquivTorsionBySet_apply (f : (R ⧸ J) →ₗ[R] M) :
@@ -69,7 +72,8 @@ theorem coe_quotientLinearMapEquivTorsionBySet_apply (f : (R ⧸ J) →ₗ[R] M)
 
 @[simp]
 theorem quotientLinearMapEquivTorsionBySet_symm_apply_mk (x : torsionBySet R M J) (r : R) :
-    (J.quotientLinearMapEquivTorsionBySet M).symm x (Ideal.Quotient.mk J r) = r • (x : M) :=
-  J.liftQ_apply _ r
+    (J.quotientLinearMapEquivTorsionBySet M).symm x (Ideal.Quotient.mk J r) = r • (x : M) := by
+  rw [quotientLinearMapEquivTorsionBySet, LinearEquiv.coe_symm_mk, ← Ideal.Quotient.mk_eq_mk,
+    liftQ_apply, LinearMap.toSpanSingleton_apply]
 
 end Ideal
