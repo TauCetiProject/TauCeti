@@ -312,13 +312,14 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
   set x : n → ℝ := fun j => ‖s‖ * y j - (c * z j).re
   have hx : 0 ≤ x := fun j => sub_nonneg.2 <| (Complex.re_le_norm _).trans_eq (hnorm j)
   have hcs : c * s = (‖s‖ ^ 2 : ℝ) := by simp [c, Complex.conj_mul']
+  -- The `i₀`-th entry of `A` applied to `re (c z)` is `re (c s) = ‖s‖ ^ 2`.
+  have hre : (A *ᵥ fun j => (c * z j).re) i₀ = ‖s‖ ^ 2 := by
+    rw [← Complex.ofReal_re (‖s‖ ^ 2), ← hcs]
+    simp [s, mulVec, dotProduct, Finset.mul_sum, Complex.re_sum, mul_left_comm c]
   have hAx : (A *ᵥ x) i₀ = 0 := by
-    have hre : (c * s).re = ∑ j, A i₀ j * (c * z j).re := by
-      simp [s, mulVec, dotProduct, Finset.mul_sum, Complex.re_sum, mul_left_comm c]
-    have hAy₀ := congrFun hAy i₀
-    simp only [mulVec, dotProduct, Pi.smul_apply, smul_eq_mul] at hAy₀ hre
-    simp only [mulVec, dotProduct, x, mul_sub, Finset.sum_sub_distrib, mul_left_comm (A i₀ _),
-      ← Finset.mul_sum, hAy₀, ← hre, hcs, Complex.ofReal_re, hs]
+    change (A *ᵥ (‖s‖ • y - fun j => (c * z j).re)) i₀ = 0
+    rw [mulVec_sub, mulVec_smul, hAy, Pi.sub_apply, hre, Pi.smul_apply, Pi.smul_apply,
+      smul_eq_mul, smul_eq_mul, hs]
     ring
   have hx₀ : x i₀ = 0 := by
     by_contra h

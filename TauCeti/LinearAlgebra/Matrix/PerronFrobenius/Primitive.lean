@@ -63,7 +63,9 @@ theorem IsPrimitive.eq_of_norm_eq_of_mulVec_eq_smul (hA : A.IsPrimitive) (hv : �
   obtain ⟨k, hk, hAk⟩ := hA.exists_pos_pow
   -- For `m ≥ k`, `μ ^ m` is an eigenvalue of modulus `r ^ m` of the strictly positive `A ^ m`.
   have hpow : ∀ m, k ≤ m → μ ^ m = (r : ℂ) ^ m := fun m hm => by
-    have hmap : (A ^ m).map (↑) = A.map ((↑) : ℝ → ℂ) ^ m := Matrix.map_pow A Complex.ofRealHom m
+    have hmap : (A ^ m).map (↑) = A.map ((↑) : ℝ → ℂ) ^ m := by
+      rw [← funext Complex.ofRealHom_eq_coe]
+      exact Matrix.map_pow A Complex.ofRealHom m
     exact_mod_cast Matrix.eq_of_norm_eq_of_mulVec_eq_smul
       (pow_apply_pos_of_le hA.nonneg hk hAk hm) hv (pow_mulVec_eq_pow_smul hAv m) hz
       (hmap ▸ pow_mulVec_eq_pow_smul hAz m) (by rw [norm_pow, hμ])
