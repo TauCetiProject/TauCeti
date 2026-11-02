@@ -56,9 +56,8 @@ theorem charFun_compoundPoissonMeasure_cond (ν : Measure E) [IsFiniteMeasure ν
   · have hzero : ν = 0 := Measure.measure_univ_eq_zero.mp hν
     simp [hzero]
   · let _ := cond_isProbabilityMeasure hν
-    have hexp : Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I)) ν := by
-      simpa only [← BoundedContinuousFunction.innerProbChar_apply] using
-        (BoundedContinuousFunction.innerProbChar t).integrable ν
+    have hexp : Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I)) ν :=
+      integrable_exp_inner_mul_I t
     have hmass : (ν univ).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr
       ⟨hν, measure_ne_top _ _⟩
     rw [charFun_compoundPoissonMeasure]
@@ -81,10 +80,8 @@ theorem compoundPoissonMeasure_add_intensity [CompleteSpace E]
   apply Measure.ext_of_charFun
   funext t
   have hint (ν : Measure E) [IsFiniteMeasure ν] :
-      Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I) - 1) ν := by
-    apply Integrable.sub _ (integrable_const _)
-    simpa only [← BoundedContinuousFunction.innerProbChar_apply] using
-      (BoundedContinuousFunction.innerProbChar t).integrable ν
+      Integrable (fun x ↦ Complex.exp (inner ℝ x t * Complex.I) - 1) ν :=
+    (integrable_exp_inner_mul_I t).sub (integrable_const _)
   simp only [charFun_conv, charFun_compoundPoissonMeasure_cond,
     integral_add_measure (hint ν₁) (hint ν₂), Complex.exp_add]
 
