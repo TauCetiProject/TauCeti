@@ -64,12 +64,22 @@ noncomputable def oscillatorTorusEmbedding (m ν I : ι → ℝ) (φ : ι → Ad
     ι → ℝ × ℝ :=
   fun i ↦ (periodic_oscillatorActionAngle (m i) (ν i) (I i)).lift (φ i)
 
+/-- The `i`-th coordinate of `oscillatorTorusEmbedding` at an angle `a` whose `i`-th entry is the
+class of `φ : ℝ` is the action–angle parametrization at `(φ, I i)`. This form applies to an
+arbitrary angle `a`; it is not a simp lemma because `φ` does not occur on the left-hand side. -/
+theorem oscillatorTorusEmbedding_apply_of_coe_eq {a : ι → AddCircle (2 * π)} {i : ι} {φ : ℝ}
+    (h : (φ : AddCircle (2 * π)) = a i) :
+    oscillatorTorusEmbedding m ν I a i = oscillatorActionAngle (m i) (ν i) (φ, I i) :=
+  show (periodic_oscillatorActionAngle (m i) (ν i) (I i)).lift (a i) = _ from
+    h ▸ (periodic_oscillatorActionAngle _ _ _).lift_coe φ
+
 /-- On angles lifted from `ι → ℝ`, `oscillatorTorusEmbedding` is the action–angle
 parametrization in each coordinate. -/
+@[simp]
 theorem oscillatorTorusEmbedding_coe (m ν I : ι → ℝ) (φ : ι → ℝ) :
     oscillatorTorusEmbedding m ν I (fun i ↦ (φ i : AddCircle (2 * π))) =
       fun i ↦ oscillatorActionAngle (m i) (ν i) (φ i, I i) :=
-  funext fun _ ↦ (periodic_oscillatorActionAngle _ _ _).lift_coe _
+  funext fun _ ↦ oscillatorTorusEmbedding_apply_of_coe_eq rfl
 
 /-- The action–angle parametrization of a torus of actions is continuous. -/
 theorem continuous_oscillatorTorusEmbedding (m ν I : ι → ℝ) :
@@ -89,7 +99,8 @@ theorem injective_oscillatorTorusEmbedding (hm : ∀ i, 0 < m i) (hν : ∀ i, 0
   obtain ⟨α, hα⟩ := QuotientAddGroup.mk_surjective (a i)
   obtain ⟨β, hβ⟩ := QuotientAddGroup.mk_surjective (b i)
   have hab := congrFun hab i
-  simp only [oscillatorTorusEmbedding, ← hα, ← hβ, Function.Periodic.lift_coe] at hab
+  rw [oscillatorTorusEmbedding_apply_of_coe_eq hα, oscillatorTorusEmbedding_apply_of_coe_eq hβ]
+    at hab
   have h := ((oscillatorActionAngle_eq_oscillatorActionAngle_iff (hm i) (hν i) (hI i) (hI i)).1
     hab).2
   rw [← sub_eq_zero, ← Real.Angle.coe_sub, Real.Angle.coe_eq_zero_iff] at h
@@ -106,7 +117,7 @@ theorem range_oscillatorTorusEmbedding (hm : ∀ i, 0 < m i) (hν : ∀ i, 0 < �
   constructor
   · rintro ⟨a, rfl⟩ i
     obtain ⟨φ, hφ⟩ := QuotientAddGroup.mk_surjective (a i)
-    simp only [oscillatorTorusEmbedding, ← hφ, Function.Periodic.lift_coe]
+    rw [oscillatorTorusEmbedding_apply_of_coe_eq hφ]
     exact oscillatorAction_oscillatorActionAngle (hm i) (hν i) (hI i)
   · intro hx
     refine ⟨fun i ↦ ((oscillatorAngle (m i) (ν i) (x i)).toReal : AddCircle (2 * π)), ?_⟩
