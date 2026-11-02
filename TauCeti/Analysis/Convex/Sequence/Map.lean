@@ -10,11 +10,13 @@ public import TauCeti.Analysis.Convex.Sequence.Envelope
 /-!
 # Changing the height scale of a convex sequence
 
-An ordered additive automorphism of the real heights preserves finite domains,
-convexity and the greatest-convex-minorant property. Consequently it commutes with
-the lower convex envelope, including the fallback on inadmissible sequences.
-Unit increments transform by the same automorphism. In particular these results
-allow a positive change of valuation scale without rebuilding the polygon.
+An ordered additive automorphism of the real heights preserves the
+lower-envelope universal property (`IsLowerConvexEnvelope.map`) and admissibility
+(`isAdmissible_map_iff`). It commutes with the total lower convex envelope
+(`lowerConvexEnvelope_map`), including the fallback on inadmissible sequences.
+The finite-edge, unit-increment and convexity transport lemmas are in
+`TauCeti.Analysis.Convex.Sequence.Basic`. These results allow a positive change
+of valuation scale without rebuilding the polygon.
 
 ## References
 

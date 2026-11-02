@@ -41,13 +41,16 @@ private noncomputable def normNormalizationIso {b b' : ℝ} (hb : 1 < b) (hb' : 
     map_add' := mul_add c
     map_le_map_iff' := mul_le_mul_iff_right₀ hc }
 
+private theorem coe_normNormalizationIso {b b' : ℝ} (hb : 1 < b) (hb' : 1 < b') :
+    ⇑(normNormalizationIso hb hb') = fun t => (Real.log b / Real.log b') * t := rfl
+
 end TauCeti
 
 namespace PowerSeries
 
 /-- An ordered additive change in coefficient values induces the same change in
 Newton heights, including the fallback for inadmissible coefficient sequences. -/
-theorem newtonPolygon_eq_map_values {R : Type*} [Ring R] (f : R⟦X⟧)
+theorem newtonPolygon_eq_map_of_forall_eq_map {R : Type*} [Ring R] (f : R⟦X⟧)
     (v w : AddValuation R (WithTop ℝ)) (e : ℝ ≃+o ℝ)
     (hvw : ∀ x, w x = WithTop.map e (v x)) :
     f.newtonPolygon w = fun n => WithTop.map e (f.newtonPolygon v n) := by
@@ -63,8 +66,9 @@ theorem newtonPolygon_eq_map_of_norm_eq_rpow {K : Type*} [NormedDivisionRing K]
     (hw : ∀ x ≠ 0, ‖x‖ = b' ^ (-(w x).untop₀)) :
     f.newtonPolygon w = fun n =>
       WithTop.map (fun t => (Real.log b / Real.log b') * t) (f.newtonPolygon v n) := by
-  exact f.newtonPolygon_eq_map_values v w (normNormalizationIso hb hb')
-    (v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
+  simpa only [coe_normNormalizationIso] using
+    f.newtonPolygon_eq_map_of_forall_eq_map v w (normNormalizationIso hb hb')
+      (by simpa only [coe_normNormalizationIso] using v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
 
 end PowerSeries
 
@@ -72,20 +76,20 @@ namespace Polynomial
 
 /-- An ordered additive change in coefficient values induces the same change in
 polynomial Newton heights. -/
-theorem newtonPolygon_eq_map_values {R : Type*} [Ring R] (f : R[X])
+theorem newtonPolygon_eq_map_of_forall_eq_map {R : Type*} [Ring R] (f : R[X])
     (v w : AddValuation R (WithTop ℝ)) (e : ℝ ≃+o ℝ)
     (hvw : ∀ x, w x = WithTop.map e (v x)) :
     f.newtonPolygon w = fun n => WithTop.map e (f.newtonPolygon v n) := by
   simpa only [newtonPolygon_coe] using
-    (f : PowerSeries R).newtonPolygon_eq_map_values v w e hvw
+    (f : PowerSeries R).newtonPolygon_eq_map_of_forall_eq_map v w e hvw
 
 /-- Changing the additive value scale maps every finite polynomial slope, with its
 multiplicity. No endpoint sentinel contributes a slope. -/
-theorem newtonSlopes_eq_map_values {R : Type*} [Ring R] (f : R[X])
+theorem newtonSlopes_eq_map_of_forall_eq_map {R : Type*} [Ring R] (f : R[X])
     (v w : AddValuation R (WithTop ℝ)) (e : ℝ ≃+o ℝ)
     (hvw : ∀ x, w x = WithTop.map e (v x)) :
     f.newtonSlopes w = (f.newtonSlopes v).map e := by
-  have hpoly := f.newtonPolygon_eq_map_values v w e hvw
+  have hpoly := f.newtonPolygon_eq_map_of_forall_eq_map v w e hvw
   exact newtonSlopes_eq_map (f := f) (v := v) Function.injective_id.injOn
     (by rw [hpoly, finiteEdges_map, Set.image_id])
     (fun n _ => by rw [hpoly, id, unitSlope_map])
@@ -111,7 +115,8 @@ theorem newtonSlopes_eq_map_of_norm_eq_rpow {K : Type*} [NormedDivisionRing K]
     (hw : ∀ x ≠ 0, ‖x‖ = b' ^ (-(w x).untop₀)) :
     f.newtonSlopes w = (f.newtonSlopes v).map
       (fun t => (Real.log b / Real.log b') * t) := by
-  exact f.newtonSlopes_eq_map_values v w (normNormalizationIso hb hb')
-    (v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
+  simpa only [coe_normNormalizationIso] using
+    f.newtonSlopes_eq_map_of_forall_eq_map v w (normNormalizationIso hb hb')
+      (by simpa only [coe_normNormalizationIso] using v.eq_map_of_norm_eq_rpow w hb hb' hv hw)
 
 end Polynomial
