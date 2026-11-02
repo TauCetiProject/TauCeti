@@ -9,7 +9,9 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.Topology.Algebra.ValuativeRel.Completion
 public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
+public import TauCeti.NumberTheory.LocalField.Unramified.ZHat
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
+public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
 # The completed maximal unramified extension `Breve E`
@@ -146,55 +148,42 @@ instance breveIsNontrivial : IsNontrivial (Breve E) :=
 
 variable {E}
 
-/-- A Galois automorphism of `E^{ur}` acts on the image of `E^{ur}` in its completion through its
-extension by continuity. -/
-private theorem map_coe_gal (τ : Gal(Unramified E/E)) (x : Unramified E) :
-    Completion.map τ (x : Breve E) = (τ x : Breve E) :=
-  Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous (f := τ.toAddMonoidHom)
-    τ.continuous_of_valuativeExtension) x
-
-/-- The extension of a Galois automorphism of `E^{ur}` to a ring automorphism of `Breve E`. -/
-private def galRingEquiv (τ : Gal(Unramified E/E)) : Breve E ≃+* Breve E :=
-  Completion.mapRingEquiv τ.toRingEquiv τ.continuous_of_valuativeExtension
-    (by simpa using τ.symm.continuous_of_valuativeExtension)
-
-private theorem galRingEquiv_coe (τ : Gal(Unramified E/E)) (x : Unramified E) :
-    galRingEquiv τ (x : Breve E) = (τ x : Breve E) := by
-  rw [galRingEquiv, Completion.mapRingEquiv_apply]
-  exact map_coe_gal τ x
-
-private theorem galRingEquiv_algebraMap (τ : Gal(Unramified E/E)) (a : E) :
-    galRingEquiv τ (algebraMap E (Breve E) a) = algebraMap E (Breve E) a := by
-  rw [Completion.algebraMap_def, galRingEquiv_coe, AlgEquiv.commutes]
-
-private theorem continuous_galRingEquiv (τ : Gal(Unramified E/E)) :
-    Continuous (galRingEquiv τ) := by
-  have h : ⇑(galRingEquiv τ) = Completion.map τ.toRingEquiv :=
-    funext (Completion.mapRingEquiv_apply _ _ _)
-  exact h ▸ Completion.continuous_map
-
 /-- **The action of `Gal(E^{ur}/E)` on `Breve E`.** Every automorphism `τ` of `E^{ur}/E` preserves
 the valuation, hence is uniformly continuous, and `galAction τ` is its unique extension to a
 continuous `E`-algebra automorphism of the completion `Breve E` (`galAction_coe`,
 `continuous_galAction`). -/
 def galAction : Gal(Unramified E/E) →* (Breve E ≃ₐ[E] Breve E) where
-  toFun τ := AlgEquiv.ofRingEquiv (galRingEquiv_algebraMap τ)
-  map_one' := DFunLike.coe_injective <| Completion.ext (continuous_galRingEquiv 1) continuous_id
-    fun x ↦ by simp [galRingEquiv_coe]
-  map_mul' τ τ' := DFunLike.coe_injective <| Completion.ext (continuous_galRingEquiv _)
-    ((continuous_galRingEquiv τ).comp (continuous_galRingEquiv τ')) fun x ↦ by
-      simp [galRingEquiv_coe]
+  toFun τ := Completion.mapAlgEquiv τ τ.continuous_of_valuativeExtension
+    τ.symm.continuous_of_valuativeExtension
+  map_one' := AlgEquiv.ext fun x ↦ by
+    rw [AlgEquiv.one_apply]
+    refine Completion.induction_on x
+      (isClosed_eq (Completion.continuous_mapAlgEquiv _ _ _) continuous_id) fun a ↦ ?_
+    rw [Completion.mapAlgEquiv_coe, AlgEquiv.one_apply]
+  map_mul' τ τ' := AlgEquiv.ext fun x ↦ by
+    rw [AlgEquiv.mul_apply]
+    refine Completion.induction_on x (isClosed_eq (Completion.continuous_mapAlgEquiv _ _ _)
+      ((Completion.continuous_mapAlgEquiv _ _ _).comp
+        (Completion.continuous_mapAlgEquiv _ _ _))) fun a ↦ ?_
+    simp only [Completion.mapAlgEquiv_coe, AlgEquiv.mul_apply]
+
+/-- The action of `τ` on `Breve E` is the extension of `τ` to the completion. -/
+theorem galAction_apply (τ : Gal(Unramified E/E)) :
+    galAction τ = Completion.mapAlgEquiv τ τ.continuous_of_valuativeExtension
+      τ.symm.continuous_of_valuativeExtension :=
+  (rfl)
 
 /-- The action of a Galois automorphism `τ` on `Breve E` extends `τ`. -/
 @[simp]
 theorem galAction_coe (τ : Gal(Unramified E/E)) (x : Unramified E) :
-    galAction τ (x : Breve E) = (τ x : Breve E) :=
-  galRingEquiv_coe τ x
+    galAction τ (x : Breve E) = (τ x : Breve E) := by
+  rw [galAction_apply, Completion.mapAlgEquiv_coe]
 
 /-- The action of a Galois automorphism on `Breve E` is continuous. -/
 @[fun_prop, continuity]
-theorem continuous_galAction (τ : Gal(Unramified E/E)) : Continuous (galAction τ) :=
-  continuous_galRingEquiv τ
+theorem continuous_galAction (τ : Gal(Unramified E/E)) : Continuous (galAction τ) := by
+  rw [galAction_apply]
+  exact Completion.continuous_mapAlgEquiv _ _ _
 
 /-- The inverse of the action of `τ` on `Breve E` is the action of `τ⁻¹`. -/
 @[simp]
@@ -263,10 +252,11 @@ theorem frobenius_symm_coe_pow_natCard_of_pow_natCard_pow_eq_self {ζ : Unramifi
   rw [← frobenius_coe_of_pow_natCard_pow_eq_self hn hζ, AlgEquiv.symm_apply_apply]
 
 variable (E) in
-/-- **Frobenius on `Breve E` is not the identity**, since the arithmetic Frobenius of `E^{ur}` is
-not and the Galois action on `Breve E` is faithful. -/
+/-- **Frobenius on `Breve E` is not the identity**, since the arithmetic Frobenius of `E^{ur}` has
+infinite order and the Galois action on `Breve E` is faithful. -/
 theorem frobenius_ne_one : frobenius E ≠ 1 := by
   rw [frobenius_eq_galAction, ← map_one galAction, galAction_injective.ne_iff]
-  exact maximalUnramifiedFrobenius_ne_one E (AlgebraicClosure E)
+  exact fun h ↦ not_isOfFinOrder_maximalUnramifiedFrobenius E (AlgebraicClosure E)
+    (h ▸ .one : IsOfFinOrder (unramifiedFrobenius E))
 
 end TauCeti.MaxUnramifiedCompletion

@@ -69,7 +69,6 @@ Frobenius corresponding to `1`.
 * `TauCeti.fixedField_zpowers_maximalUnramifiedFrobenius`,
   `TauCeti.topologicalClosure_zpowers_maximalUnramifiedFrobenius`: it is a topological generator
   of `Gal(K^{ur}/K)`.
-* `TauCeti.maximalUnramifiedFrobenius_ne_one`: Frobenius is not the identity.
 * `TauCeti.X_pow_sub_C_irreducible_unramifiedExtension`,
   `TauCeti.X_pow_sub_C_irreducible_maximalUnramifiedExtension`: a uniformizer `π` of `K` has no
   nontrivial root in `K^{ur}`: for every `m ≠ 0`, `X ^ m − π` is irreducible over each `K_f` when
@@ -533,21 +532,6 @@ theorem topologicalClosure_zpowers_maximalUnramifiedFrobenius :
     eq_bot_iff.2 ((fixedField_antitone H.le_topologicalClosure).trans
       fixedField_zpowers_maximalUnramifiedFrobenius.le)
   rw [← h, hbot, fixingSubgroup_bot]
-
-/-- **Frobenius is not the identity.** If it were, `K^{ur}` would be fixed by Frobenius and hence
-equal to `K`, while it contains the unramified extension of degree `2`. -/
-theorem maximalUnramifiedFrobenius_ne_one : maximalUnramifiedFrobenius K Ω ≠ 1 := by
-  intro h
-  have htop := fixedField_zpowers_maximalUnramifiedFrobenius (K := K) (Ω := Ω)
-  rw [h, Subgroup.zpowers_one_eq_bot, fixedField_bot] at htop
-  have h2 : unramifiedExtension K Ω 2 = ⊥ := le_bot_iff.1 fun x hx ↦ by
-    have hle := unramifiedExtension_le_maximalUnramifiedExtension K Ω 2
-    obtain ⟨c, hc⟩ :=
-      mem_bot.1 (htop ▸ mem_top (x := (⟨x, hle hx⟩ : maximalUnramifiedExtension K Ω)))
-    exact mem_bot.2 ⟨c, congrArg Subtype.val hc⟩
-  have hrank := finrank_unramifiedExtension (K := K) (Ω := Ω) two_ne_zero
-  rw [h2, IntermediateField.finrank_bot] at hrank
-  exact absurd hrank (by norm_num)
 
 variable {K Ω} in
 /-- **A uniformizer stays a uniformizer in `K_f`**, so it has no nontrivial root there: for a
