@@ -17,8 +17,9 @@ Let `X` be a space and `Hⁿ(X; ℤ)` its integral singular cohomology, with the
 `a₁ ⌣ ⋯ ⌣ a_r ∈ Hʳ(X; ℤ)` be their iterated cup product (`TopCat.integralCupProd`, nested to the
 right, and the unit class for `r = 0`); it is multilinear in the `aᵢ`. Since degree-one classes
 anticommute, an iterated product with a repeated factor has order at most two
-(`TopCat.integralCupProd_add_self_eq_zero`). The product itself need not vanish, since `Hʳ(X; ℤ)`
-can have `2`-torsion, and no division by two is made in cohomology.
+(`TopCat.integralCupProd_add_self_eq_zero`). Such a product in fact vanishes, since an integral
+degree-one class has square zero, but graded commutativity alone gives only this weaker statement.
+It suffices for the integer pairing below, and no division by two is made in cohomology.
 
 Now let `N` be a compact oriented `n`-manifold with a continuous map `f : N → X`, let `β` be a
 class of degree `q`, and let `r + q = n`. The **insertion form**
