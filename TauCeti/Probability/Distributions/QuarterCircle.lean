@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.Semicircle.LocationScale
+public import TauCeti.Probability.Distributions.Semicircle.Moments
 
 /-!
 # The quarter-circle law
@@ -40,16 +41,18 @@ namespace TauCeti.Probability
 /-- The quarter-circle law: the law of `|X|` for `X` a semicircle variable of variance one. -/
 def quarterCircle : Measure ℝ := (semicircleReal 0 1).map fun x ↦ |x|
 
+theorem quarterCircle_def : quarterCircle = (semicircleReal 0 1).map fun x ↦ |x| := (rfl)
+
 /-- The quarter-circle law is a probability measure. -/
 instance isProbabilityMeasure_quarterCircle : IsProbabilityMeasure quarterCircle :=
-  ⟨by rw [quarterCircle, Measure.map_apply (continuous_abs.measurable) MeasurableSet.univ]
+  ⟨by rw [quarterCircle_def, Measure.map_apply (continuous_abs.measurable) MeasurableSet.univ]
       simp⟩
 
 /-- The quarter-circle law has density `π⁻¹ √(4 - s²)` on the positive half-line. -/
 theorem quarterCircle_eq_withDensity :
     quarterCircle = volume.withDensity
       ((Ioi 0).indicator fun s : ℝ ↦ ENNReal.ofReal (Real.pi⁻¹ * Real.sqrt (4 - s ^ 2))) := by
-  rw [quarterCircle, semicircleReal_eq_withDensity 0 one_pos,
+  rw [quarterCircle_def, semicircleReal_eq_withDensity 0 one_pos,
     map_abs_withDensity (by fun_prop)]
   congr 1
   ext s
@@ -63,7 +66,7 @@ theorem quarterCircle_eq_withDensity :
 
 /-- The quarter-circle law is carried by `[0, 2]`. -/
 theorem ae_mem_Icc_quarterCircle : ∀ᵐ s ∂quarterCircle, s ∈ Icc (0 : ℝ) 2 := by
-  rw [quarterCircle]
+  rw [quarterCircle_def]
   refine (ae_map_iff (continuous_abs.measurable.aemeasurable) measurableSet_Icc).2 ?_
   filter_upwards [ae_mem_Icc_semicircleReal 0 1] with x hx
   simp only [NNReal.coe_one, Real.sqrt_one, mul_one, zero_sub, zero_add, mem_Icc] at hx
@@ -72,16 +75,14 @@ theorem ae_mem_Icc_quarterCircle : ∀ᵐ s ∂quarterCircle, s ∈ Icc (0 : ℝ
 /-- The even moments of the quarter-circle law are those of the variance-one semicircle law. -/
 theorem integral_pow_two_mul_quarterCircle (k : ℕ) :
     ∫ s, s ^ (2 * k) ∂quarterCircle = ∫ x, x ^ (2 * k) ∂semicircleReal 0 1 := by
-  rw [quarterCircle, integral_map continuous_abs.measurable.aemeasurable (by fun_prop)]
+  rw [quarterCircle_def, integral_map continuous_abs.measurable.aemeasurable (by fun_prop)]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦ (even_two_mul k).pow_abs x)
 
 /-- The second moment of the quarter-circle law is one. -/
+@[simp]
 theorem integral_sq_quarterCircle : ∫ s, s ^ 2 ∂quarterCircle = 1 := by
   have h := integral_pow_two_mul_quarterCircle 1
-  rw [mul_one] at h
-  rw [h]
-  have hv := variance_id_semicircleReal 0 1
-  rw [variance_eq_integral measurable_id.aemeasurable] at hv
-  simpa using hv
+  rw [integral_pow_two_mul_semicircleReal_zero] at h
+  simpa using h
 
 end TauCeti.Probability
