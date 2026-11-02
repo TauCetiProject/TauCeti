@@ -35,34 +35,46 @@ variable {R A B : Type*} [CommRing R]
   (D : derivationLieAlgebra R A) (i : A →ₙₐ[R] B) (hi : IsUniformInducing i)
   (hd : DenseRange i) (hD : UniformContinuous fun a ↦ i ((D : Module.End R A) a))
 
-/-- Extend a uniformly continuous derivation along a dense uniform-inducing algebra map to a
-complete Hausdorff algebra. -/
-def extend : derivationLieAlgebra R B := by
-  let f : B →L[R] B := ContinuousLinearMap.extend
+omit [SMulCommClass R B B] [IsScalarTower R B B] [ContinuousMul B] in
+private def extendCLM : B →L[R] B :=
+  ContinuousLinearMap.extend
     ⟨LinearMap.ofClass i ∘ₗ (D : Module.End R A), hD.continuous⟩
     ⟨LinearMap.ofClass i, hi.uniformContinuous.continuous⟩
-  have he (a : A) : f (i a) = i ((D : Module.End R A) a) :=
-    ContinuousLinearMap.extend_eq _ hd hi a
-  refine ⟨f.toLinearMap, mem_derivationLieAlgebra.mpr fun x y ↦ ?_⟩
-  simp only [ContinuousLinearMap.coe_coe]
-  induction x, y using hd.induction_on₂ with
-  | hp =>
-    exact isClosed_eq (f.continuous.comp continuous_mul)
-      (((f.continuous.comp continuous_fst).mul continuous_snd).add
-        (continuous_fst.mul (f.continuous.comp continuous_snd)))
-  | h a b => rw [← map_mul i a b, he]; simp only [he, leibniz, map_add, map_mul]
+
+include hd in
+omit [SMulCommClass R B B] [IsScalarTower R B B] [ContinuousMul B] in
+private theorem extendCLM_apply (a : A) :
+    extendCLM D i hi hD (i a) = i ((D : Module.End R A) a) :=
+  ContinuousLinearMap.extend_eq _ hd hi a
+
+/-- Extend a uniformly continuous derivation along a dense uniform-inducing algebra map to a
+complete Hausdorff algebra. -/
+def extend : derivationLieAlgebra R B :=
+  ⟨(extendCLM D i hi hD).toLinearMap, mem_derivationLieAlgebra.mpr fun x y ↦ by
+    simp only [ContinuousLinearMap.coe_coe]
+    induction x, y using hd.induction_on₂ with
+    | hp =>
+      exact isClosed_eq ((extendCLM D i hi hD).continuous.comp continuous_mul)
+        ((((extendCLM D i hi hD).continuous.comp continuous_fst).mul continuous_snd).add
+          (continuous_fst.mul ((extendCLM D i hi hD).continuous.comp continuous_snd)))
+    | h a b =>
+      rw [← map_mul i a b, extendCLM_apply D i hi hd hD]
+      simp only [extendCLM_apply D i hi hd hD, leibniz, map_add, map_mul]⟩
+
+private theorem coe_extend :
+    (extend D i hi hd hD : Module.End R B) = (extendCLM D i hi hD).toLinearMap := rfl
 
 /-- The extended derivation has the prescribed values on the original algebra. -/
 @[simp]
 theorem extend_apply (a : A) :
-    (extend D i hi hd hD : Module.End R B) (i a) = i ((D : Module.End R A) a) :=
-  ContinuousLinearMap.extend_eq _ hd hi a
+    (extend D i hi hd hD : Module.End R B) (i a) = i ((D : Module.End R A) a) := by
+  rw [coe_extend]
+  exact extendCLM_apply D i hi hd hD a
 
 /-- The extended derivation is continuous. -/
-theorem continuous_extend : Continuous (extend D i hi hd hD : Module.End R B) :=
-  (ContinuousLinearMap.extend
-    (⟨LinearMap.ofClass i ∘ₗ (D : Module.End R A), hD.continuous⟩ : A →L[R] B)
-    ⟨LinearMap.ofClass i, hi.uniformContinuous.continuous⟩).continuous
+theorem continuous_extend : Continuous (extend D i hi hd hD : Module.End R B) := by
+  rw [coe_extend]
+  exact (extendCLM D i hi hD).continuous
 
 /-- A continuous map extending the original derivation equals its extension. -/
 theorem eq_extend {f : B → B} (hf : Continuous f)
