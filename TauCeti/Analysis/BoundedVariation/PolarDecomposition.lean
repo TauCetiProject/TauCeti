@@ -446,38 +446,6 @@ theorem dist_integral_inner_polarDensity_le
   exact (norm_inner_le_norm (f x - g x) (polarDensity μ Ω u x)).trans
     (by simpa [hx, dist_eq_norm] using hε x)
 
-/-- Vector fields supported in a fixed compact set `K` whose derivatives are uniformly close have
-close divergence pairings `∫ div φ * u dμ` with a function `u` integrable on `K`. The constant is
-the norm of the trace times `∫_K |u| dμ`. -/
-theorem dist_integral_trace_fderiv_mul_le {K : Set E} (hK : IsCompact K)
-    (hu : IntegrableOn u K μ) {f g : E → E} (hf : ContDiff ℝ 1 f) (hg : ContDiff ℝ 1 g)
-    (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ}
-    (hε : ∀ x, dist (fderiv ℝ f x) (fderiv ℝ g x) ≤ ε) :
-    dist (∫ x, LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) * u x ∂μ)
-      (∫ x, LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) * u x ∂μ) ≤
-      ‖traceCLM ℝ E‖ * ε * ∫ x in K, ‖u x‖ ∂μ := by
-  have hdiv {h : E → E} (hh : ContDiff ℝ 1 h) :
-      Continuous fun x => LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) := by
-    simpa [Function.comp_def] using
-      (traceCLM ℝ E).continuous.comp (hh.continuous_fderiv one_ne_zero)
-  -- Both integrands vanish off `K`, where `u` is integrable.
-  have hvan {h : E → E} (hhK : tsupport h ⊆ K) (x : E) (hx : x ∉ K) :
-      LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) * u x = 0 := by
-    simp [image_eq_zero_of_notMem_tsupport fun h' => hx (hhK (tsupport_fderiv_subset ℝ h'))]
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (hvan hfK),
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (hvan hgK), dist_eq_norm,
-    ← integral_sub (hu.continuousOn_mul (hdiv hf).continuousOn hK)
-      (hu.continuousOn_mul (hdiv hg).continuousOn hK), ← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hu.norm.const_mul _) (Eventually.of_forall fun x => ?_)
-  have htr : LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) -
-      LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) =
-        traceCLM ℝ E (fderiv ℝ f x - fderiv ℝ g x) := by
-    simp [map_sub]
-  rw [← sub_mul, htr, norm_mul]
-  gcongr
-  exact ((traceCLM ℝ E).le_opNorm _).trans
-    (mul_le_mul_of_nonneg_left (by simpa [dist_eq_norm] using hε x) (norm_nonneg _))
-
 open Metric in
 /-- **Integration by parts against `C¹` vector fields.** For `u` locally integrable on `Ω` with
 locally finite variation, the polar decomposition `Du = σ_u |Du|` represents the distributional
