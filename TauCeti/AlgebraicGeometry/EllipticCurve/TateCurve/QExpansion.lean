@@ -98,7 +98,7 @@ private def tateGraded (k : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) where
   smul_mem' := by
     rintro n f ⟨F, hF⟩
     refine ⟨n • F, ?_⟩
-    rw [TauCeti.ModularForm.qExpansion_zsmul one_pos one_mem_strictPeriods_SL, hF, map_zsmul,
+    rw [ModularForm.qExpansion_zsmul one_pos one_mem_strictPeriods_SL, hF, map_zsmul,
       map_zsmul]
 
 private instance : SetLike.GradedMonoid tateGraded where
@@ -212,7 +212,7 @@ theorem _root_.ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq 
   set F' := F - a₀ • G
   have hF' : qExpansion 1 F' = (P - a₀ • tateCurve.specialize g).map (Int.castRingHom ℂ) := by
     rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
-      TauCeti.ModularForm.qExpansion_zsmul one_pos one_mem_strictPeriods_SL, hP, hG, map_sub,
+      ModularForm.qExpansion_zsmul one_pos one_mem_strictPeriods_SL, hP, hG, map_sub,
       map_zsmul]
   have hcusp : (qExpansion 1 F').coeff 0 = 0 := by
     rw [hF', coeff_map, coeff_zero_eq_constantCoeff_apply]
