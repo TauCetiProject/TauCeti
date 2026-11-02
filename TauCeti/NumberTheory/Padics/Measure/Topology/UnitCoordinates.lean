@@ -63,6 +63,25 @@ theorem isClosedEmbedding_unitCoordinates_weak :
   apply towerCoordinates_injective (FiniteQuotientTower.unitTower p)
   exact Subtype.ext (funext fun n ↦ Finsupp.ext fun a ↦ congrArg (fun c ↦ c n a) h)
 
+/-- A family of coefficient functions comes from an integral unit measure exactly when its
+finite-support forms belong to the unit tower's compatible families. -/
+theorem mem_range_unitCoordinates_iff
+    (c : ∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p]) :
+    c ∈ Set.range (fun μ : D(ℤ_[p]ˣ, ℤ_[p]) ↦ fun n a ↦
+      (towerCoordinates (FiniteQuotientTower.unitTower p) μ).val n a) ↔
+      (fun n ↦ Finsupp.equivFunOnFinite.symm (c n)) ∈
+        (FiniteQuotientTower.unitTower p).compatibleFamilies ℤ_[p] := by
+  constructor
+  · rintro ⟨μ, rfl⟩
+    simpa only [Finsupp.equivFunOnFinite_symm_coe] using
+      (towerCoordinates (FiniteQuotientTower.unitTower p) μ).property
+  · intro hc
+    obtain ⟨μ, hμ⟩ := towerCoordinates_surjective (FiniteQuotientTower.unitTower p)
+      ⟨fun n ↦ Finsupp.equivFunOnFinite.symm (c n), hc⟩
+    refine ⟨μ, funext fun n ↦ funext fun a ↦ ?_⟩
+    simpa only [Finsupp.coe_equivFunOnFinite_symm] using
+      congrArg (fun d ↦ d.val n a) hμ
+
 /-- The inverse of the integral unit-tower coordinate equivalence is continuous from the
 product topology on compatible coefficients to the weak topology on measures. -/
 theorem continuous_unitTowerCoordinatesEquiv_symm_weak :
