@@ -100,6 +100,32 @@ def shiftPowerXOfLEIso (hi : i ≤ n) :
     (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.mapIso
       (powerXOfLEReindexIso R hi)
 
+/-- The forward polynomial shift comparison is induced by the parity-shift comparison. -/
+@[simp]
+theorem shiftPowerXOfLEIso_hom (hi : i ≤ n) :
+    (shiftPowerXOfLEIso R hi).hom =
+      (HomotopyCategory.parityShiftCompQuotientFunctorIso R[X] (X ^ n)).inv.app
+          (powerXOfLE R hi) ≫
+        (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.map
+          (parityShiftPowerXOfLEIso R hi).hom := by
+  dsimp only [shiftPowerXOfLEIso, parityShiftPowerXOfLEIso, Iso.trans, Functor.mapIso]
+  rw [shiftRankOneIso_hom, Functor.map_comp]
+  -- Term-level associativity lets elaboration align the shifted indexed carriers.
+  exact Category.assoc _ _ _
+
+/-- The inverse polynomial shift comparison is induced by the inverse parity-shift comparison. -/
+@[simp]
+theorem shiftPowerXOfLEIso_inv (hi : i ≤ n) :
+    (shiftPowerXOfLEIso R hi).inv =
+      (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.map
+          (parityShiftPowerXOfLEIso R hi).inv ≫
+        (HomotopyCategory.parityShiftCompQuotientFunctorIso R[X] (X ^ n)).hom.app
+          (powerXOfLE R hi) := by
+  dsimp only [shiftPowerXOfLEIso, parityShiftPowerXOfLEIso, Iso.trans, Functor.mapIso]
+  rw [shiftRankOneIso_inv, Functor.map_comp]
+  -- Term-level associativity lets elaboration align the shifted indexed carriers.
+  exact (Category.assoc _ _ _).symm
+
 /-- Reduction modulo `X ^ n` of the shifted factorization has cyclic right-module cokernel
 `A/(x ^ (n - i))`, viewed as a left module through the commutativity isomorphism. -/
 def parityShiftPowerXOfLECokernelIso (hi : i ≤ n) :
