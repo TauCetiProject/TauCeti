@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
-import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Data.Set.Card
 
 /-!
