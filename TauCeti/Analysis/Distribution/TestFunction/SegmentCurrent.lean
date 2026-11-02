@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
+import TauCeti.Analysis.Convex.Topology
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Line
 
 /-!
 # The oriented segment current
@@ -42,7 +44,8 @@ polyhedral `1`-chains. Their mass is computed in
 
 * `Distribution.segmentCurrent p q`: the oriented segment current `[[p, q]]`.
 * `Distribution.segmentCurrent_apply`: it is the curve integral along `Path.segment p q`;
-  `Distribution.segmentCurrent_apply_eq_integral` writes it as an interval integral over `[0, 1]`.
+  `Distribution.segmentCurrent_apply_eq_intervalIntegral_lineMap` writes it as an interval
+  integral over `[0, 1]`.
 * `Distribution.norm_segmentCurrent_apply_le`: `|[[p, q]] ω| ≤ sup ‖ω‖ * ‖q - p‖`.
 * `Distribution.segmentCurrent_extDerivCLM`, `Distribution.segmentCurrent_comp_extDerivCLM`:
   `∂[[p, q]] = δ_q - δ_p`.
@@ -50,8 +53,8 @@ polyhedral `1`-chains. Their mass is computed in
   negates `[[p, q]]`, and `[[p, p]] = 0`.
 * `Distribution.segmentCurrent_monoCLM`: compatibility with restriction to an open subset.
 * `Distribution.dsupport_segmentCurrent_subset`: `[[p, q]]` is supported in the segment `[p, q]`.
-* `Distribution.segmentCurrent_apply_eq_intervalIntegral`: the interval current `[[a, b]]` on the
-  real line.
+* `Distribution.segmentCurrent_apply_eq_intervalIntegral_real`: the interval current `[[a, b]]` on
+  the real line.
 
 ## References
 
@@ -99,8 +102,8 @@ private def segmentIntegralCLM (p q : E) : (E →ᵇ E [⋀^Fin 1]→L[ℝ] ℝ)
 
 /-- The **oriented segment current** `[[p, q]]`: the `1`-current on `Ω` integrating a test
 `1`-form along the segment from `p` to `q`. It is the curve integral along `Path.segment p q`
-(`Distribution.segmentCurrent_apply`), that is
-`ω ↦ ∫ t in 0..1, ω (lineMap p q t) ![q - p]` (`Distribution.segmentCurrent_apply_eq_integral`).
+(`Distribution.segmentCurrent_apply`), that is `ω ↦ ∫ t in 0..1, ω (lineMap p q t) ![q - p]`
+(`Distribution.segmentCurrent_apply_eq_intervalIntegral_lineMap`).
 Its boundary is `δ_q - δ_p` (`Distribution.segmentCurrent_extDerivCLM`). -/
 def segmentCurrent (p q : E) : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ :=
   segmentIntegralCLM p q ∘L toBoundedContinuousFunctionCLM ℝ
@@ -115,7 +118,8 @@ theorem segmentCurrent_apply (p q : E) (ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ]
 
 /-- The segment current evaluated on a test `1`-form is the integral of the form along the
 affinely parametrized segment, applied to the direction `q - p`. -/
-theorem segmentCurrent_apply_eq_integral (p q : E) (ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ)) :
+theorem segmentCurrent_apply_eq_intervalIntegral_lineMap (p q : E)
+    (ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ)) :
     segmentCurrent p q ω = ∫ t in (0 : ℝ)..1, ω (lineMap p q t) ![q - p] := by
   rw [segmentCurrent_apply, curveIntegral_segment]
   simp only [ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, Matrix.vec_single_eq_const]
@@ -134,7 +138,7 @@ theorem segmentCurrent_self (p : E) :
     (segmentCurrent p p : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ) = 0 := by
   ext ω
   have h (x : E) : ω x ![0] = 0 := (ω x).map_coord_zero 0 rfl
-  simp [segmentCurrent_apply_eq_integral, h]
+  simp [segmentCurrent_apply_eq_intervalIntegral_lineMap, h]
 
 /-- **Orientation reversal**: exchanging the endpoints negates the segment current,
 `[[q, p]] = -[[p, q]]`. -/
@@ -146,6 +150,7 @@ theorem segmentCurrent_symm (p q : E) :
 
 /-- **The boundary of a segment current**: `∂[[p, q]] = δ_q - δ_p`. For every test `0`-form `g`,
 `[[p, q]] (d g) = g q - g p`. This holds for all endpoints, in particular when `p = q`. -/
+@[simp]
 theorem segmentCurrent_extDerivCLM (p q : E) (g : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ)) :
     segmentCurrent p q (extDerivCLM g) = g q ![] - g p ![] := by
   let ev := ContinuousAlternatingMap.apply ℝ E ℝ (![] : Fin 0 → E)
@@ -163,19 +168,20 @@ theorem segmentCurrent_extDerivCLM (p q : E) (g : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ
   have hcont : Continuous fun t : ℝ => extDerivCLM g (lineMap p q t) ![q - p] :=
     ((ContinuousAlternatingMap.apply ℝ E ℝ ![q - p]).continuous.comp
       (extDerivCLM g).continuous).comp lineMap_continuous
-  rw [segmentCurrent_apply_eq_integral,
+  rw [segmentCurrent_apply_eq_intervalIntegral_lineMap,
     intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => hd t) (hcont.intervalIntegrable 0 1)]
   simp [ev]
 
 /-- **The boundary of a segment current**, as an identity of continuous linear maps: `[[p, q]] ∘ d`
 is the difference of the degree-zero point currents at `q` and at `p`. -/
+@[simp]
 theorem segmentCurrent_comp_extDerivCLM (p q : E) :
     (segmentCurrent p q ∘L extDerivCLM : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ) =
       ContinuousAlternatingMap.apply ℝ E ℝ ![] ∘L
         (BoundedContinuousFunction.evalCLM ℝ q - BoundedContinuousFunction.evalCLM ℝ p) ∘L
           toBoundedContinuousFunctionCLM ℝ := by
   ext g
-  simp [segmentCurrent_extDerivCLM]
+  simp
 
 /-- The segment current is compatible with restriction: on a test form extended by zero from a
 smaller open set `Ω'`, the segment current on `Ω` is the segment current on `Ω'`. -/
@@ -183,34 +189,28 @@ smaller open set `Ω'`, the segment current on `Ω` is the segment current on `�
 theorem segmentCurrent_monoCLM (p q : E) (h : Ω' ≤ Ω) (ω : 𝓓^{n}(Ω', E [⋀^Fin 1]→L[ℝ] ℝ)) :
     segmentCurrent p q (monoCLM ℝ ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ)) =
       segmentCurrent p q ω := by
-  simp [segmentCurrent_apply_eq_integral, monoCLM_apply, h]
+  simp [segmentCurrent_apply_eq_intervalIntegral_lineMap, monoCLM_apply, h]
 
 /-- The segment current `[[p, q]]` is supported in the closed segment `[p, q]`. -/
 theorem dsupport_segmentCurrent_subset (p q : E) :
     dsupport (segmentCurrent p q : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ) ⊆ segment ℝ p q := by
   refine compl_subset_compl.1 fun y hy => ?_
   rw [mem_compl_iff, notMem_dsupport_iff]
-  have hc : IsCompact (segment ℝ p q) :=
-    segment_eq_image_lineMap ℝ p q ▸ isCompact_Icc.image lineMap_continuous
-  refine ⟨(segment ℝ p q)ᶜ, fun ω hω => ?_, hc.isClosed.isOpen_compl, hy⟩
-  rw [segmentCurrent_apply_eq_integral]
+  refine ⟨(segment ℝ p q)ᶜ, fun ω hω => ?_, (isCompact_segment ℝ p q).isClosed.isOpen_compl, hy⟩
+  rw [segmentCurrent_apply_eq_intervalIntegral_lineMap]
   refine intervalIntegral.integral_zero_ae (Filter.Eventually.of_forall fun t ht => ?_)
   rw [uIoc_of_le zero_le_one] at ht
-  have hmem : lineMap p q t ∈ segment ℝ p q :=
-    segment_eq_image_lineMap ℝ p q ▸ mem_image_of_mem _ (Ioc_subset_Icc_self ht)
-  simp [image_eq_zero_of_notMem_tsupport fun h => hω h hmem]
+  simp [image_eq_zero_of_notMem_tsupport fun h => hω h (lineMap_mem_segment ℝ p q
+    (Ioc_subset_Icc_self ht))]
 
 /-- **The interval current** on the real line: `[[a, b]] ω = ∫ t in a..b, ω t ![1]`, with the
 orientation of the oriented interval integral, for all `a` and `b`. -/
-theorem segmentCurrent_apply_eq_intervalIntegral {Ω : Opens ℝ} (a b : ℝ)
+theorem segmentCurrent_apply_eq_intervalIntegral_real {Ω : Opens ℝ} (a b : ℝ)
     (ω : 𝓓^{n}(Ω, ℝ [⋀^Fin 1]→L[ℝ] ℝ)) :
     segmentCurrent a b ω = ∫ t in a..b, ω t ![1] := by
-  have h (t : ℝ) : ω (lineMap a b t) ![b - a] = (b - a) * ω ((b - a) * t + a) ![1] := by
-    have hs := (ω (lineMap a b t)).vecCons_smul ![] (b - a) 1
-    rw [smul_eq_mul, mul_one, smul_eq_mul] at hs
-    rw [hs, lineMap_apply_module', smul_eq_mul, mul_comm t]
-  simp only [segmentCurrent_apply_eq_integral, h, intervalIntegral.integral_const_mul]
-  simpa using intervalIntegral.smul_integral_comp_mul_add (fun t => ω t ![1]) (b - a) a
-    (a := 0) (b := 1)
+  have h := TauCeti.curveIntegral_segment_line
+    (fun x => (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ (0 : Fin 1)).symm (ω x)) 0 1 a b
+  rw [show (0 : ℝ) + a • 1 = a by simp, show (0 : ℝ) + b • 1 = b by simp] at h
+  simpa [segmentCurrent_apply, Matrix.vec_single_eq_const] using h
 
 end Distribution

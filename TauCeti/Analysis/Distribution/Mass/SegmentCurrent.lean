@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Normal
 public import TauCeti.Analysis.Distribution.TestFunction.SegmentCurrent
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
@@ -29,7 +30,8 @@ part of the segment inside `Ω` is tested.
 ## Main declarations
 
 * `Distribution.mass_segmentCurrent_le`: `M([[p, q]]) ≤ ‖q - p‖`.
-* `Distribution.mass_segmentCurrent`: `M([[p, q]]) = ‖q - p‖` when `[p, q] ⊆ Ω`.
+* `Distribution.mass_segmentCurrent`: `M([[p, q]]) = ‖q - p‖` when `E` is finite-dimensional and
+  `[p, q] ⊆ Ω`.
 * `Distribution.mass_segmentCurrent_comp_extDerivCLM_le`: `M(∂[[p, q]]) ≤ 2`.
 * `Distribution.isNormal_segmentCurrent`: `[[p, q]]` is a normal current.
 
@@ -57,8 +59,8 @@ theorem mass_segmentCurrent_le (p q : E) :
   rw [← ofReal_norm, ← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal <| (norm_segmentCurrent_apply_le p q ω hω).trans_eq (one_mul _)
 
-/-- **The mass of a segment current is its length.** If the closed segment `[p, q]` lies in `Ω`,
-then `M([[p, q]]) = ‖q - p‖`. -/
+/-- **The mass of a segment current is its length.** When `E` is finite-dimensional and the closed
+segment `[p, q]` lies in `Ω`, `M([[p, q]]) = ‖q - p‖`. -/
 theorem mass_segmentCurrent [FiniteDimensional ℝ E] {p q : E} (h : segment ℝ p q ⊆ Ω) :
     mass (segmentCurrent p q : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ) = ‖q - p‖ₑ := by
   refine le_antisymm (mass_segmentCurrent_le p q) ?_
@@ -67,19 +69,18 @@ theorem mass_segmentCurrent [FiniteDimensional ℝ E] {p q : E} (h : segment ℝ
   -- Test against `χ • ℓ` for a cutoff `χ` equal to one near the segment and a norming
   -- functional `ℓ` of `q - p`.
   obtain ⟨ℓ, hℓ, hℓpq⟩ := exists_dual_vector ℝ (q - p) (norm_ne_zero_iff.2 hpq)
-  have hc : IsCompact (segment ℝ p q) :=
-    segment_eq_image_lineMap ℝ p q ▸ isCompact_Icc.image lineMap_continuous
-  obtain ⟨χ, hχ, hχ01⟩ := exists_eventually_eq_one (n := n) hc h
+  obtain ⟨χ, hχ, hχ01⟩ := exists_eventually_eq_one (n := n) (isCompact_segment ℝ p q) h
   let α : E [⋀^Fin 1]→L[ℝ] ℝ := ContinuousAlternatingMap.ofSubsingleton ℝ E ℝ 0 ℓ
   let ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ α) χ
   have hω (x : E) : ‖ω x‖ ≤ 1 := by
     simpa [ω, α, norm_smul, hℓ, abs_of_nonneg (hχ01 x).1] using (hχ01 x).2
   have hχγ (t : ℝ) (ht : t ∈ uIcc 0 1) : χ (lineMap p q t) = 1 := by
     rw [uIcc_of_le zero_le_one] at ht
-    exact hχ.self_of_nhdsSet _ (segment_eq_image_lineMap ℝ p q ▸ mem_image_of_mem _ ht)
+    exact hχ.self_of_nhdsSet _ (lineMap_mem_segment ℝ p q ht)
   have hval : segmentCurrent p q ω = ‖q - p‖ := by
-    rw [segmentCurrent_apply_eq_integral, intervalIntegral.integral_congr (g := fun _ => ‖q - p‖)
-      fun t ht => by simp [ω, α, hχγ t ht, hℓpq]]
+    rw [segmentCurrent_apply_eq_intervalIntegral_lineMap,
+      intervalIntegral.integral_congr (g := fun _ => ‖q - p‖)
+        fun t ht => by simp [ω, α, hχγ t ht, hℓpq]]
     simp
   have := enorm_le_mass (f := (segmentCurrent p q : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ)) hω
   rwa [hval, Real.enorm_of_nonneg (norm_nonneg _), ofReal_norm] at this
