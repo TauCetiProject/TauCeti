@@ -21,7 +21,9 @@ import Mathlib.Tactic.Ring
 Generic identities for sums indexed by `Finset.range` and `Finset.Ioo`. These are used by
 coderivation/Taylor expansions, which reindex a cut-and-collapse double sum over a triangle to a
 square and enlarge a vanishing-off-the-block range, and by divided-power exponential calculations,
-which reindex a sum over antidiagonals to a rectangle. Reindexing a sum over a finite subset of a
+which reindex a sum over antidiagonals to a rectangle. The same reindexing multiplies sums
+`∑_{i < k} eⁱ uᵢ` in a parameter with `eᵏ = 0` like truncated power series, as needed for
+`e`-adic expansions. Reindexing a sum over a finite subset of a
 linear order by the rank of each element turns the recurrences of Catalan-type enumerations, such
 as those of noncrossing partitions, into sums over `Finset.range`.
 
@@ -37,6 +39,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   `range K × range K` when the family vanishes off the triangle.
 * `sum_range_add_antidiagonal_of_support`: a sum over antidiagonals below `k + l` equals
   the rectangle `range k × range l` when the summand vanishes outside that rectangle.
+* `sum_range_pow_mul_mul_sum_range_pow_mul_of_pow_eq_zero`: the product of two sums truncated
+  at a vanishing power `eᵏ = 0` is the truncation of their Cauchy product.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
@@ -374,6 +378,38 @@ theorem sum_range_add_antidiagonal_of_support
     exact ⟨q, hq, rfl⟩
   · intro q _
     rfl
+
+/-- Multiplying two sums `∑_{i < k} eⁱ uᵢ` and `∑_{j < k} eʲ vⱼ` truncated at a power `eᵏ = 0`
+gives the truncation of their Cauchy product, since the terms of total degree at least `k`
+vanish. -/
+theorem sum_range_pow_mul_mul_sum_range_pow_mul_of_pow_eq_zero {R : Type*} [CommSemiring R]
+    {e : R} {k : ℕ} (he : e ^ k = 0) (u v : ℕ → R) :
+    (∑ i ∈ range k, e ^ i * u i) * ∑ j ∈ range k, e ^ j * v j =
+      ∑ n ∈ range k, e ^ n * ∑ ij ∈ antidiagonal n, u ij.1 * v ij.2 := by
+  classical
+  let f : ℕ × ℕ → R := fun ij ↦
+    if ij.1 < k ∧ ij.2 < k then e ^ (ij.1 + ij.2) * (u ij.1 * v ij.2) else 0
+  have hsq : ∑ i ∈ range k, ∑ j ∈ range k, e ^ i * u i * (e ^ j * v j) =
+      ∑ i ∈ range k, ∑ j ∈ range k, f (i, j) := by
+    refine sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ ?_
+    rw [mem_range] at hi hj
+    simp only [f, hi, hj, and_self, ↓reduceIte, pow_add]
+    ring
+  rw [sum_mul_sum, hsq, ← sum_range_add_antidiagonal_of_support k k f
+    (fun i j h ↦ ite_eq_right_iff.mpr fun hc ↦ absurd hc (by omega)), sum_range_add]
+  have hhigh : ∑ n ∈ range k, ∑ ij ∈ antidiagonal (k + n), f ij = 0 := by
+    refine sum_eq_zero fun n _ ↦ sum_eq_zero fun ij hij ↦ ?_
+    have he' : e ^ (ij.1 + ij.2) = 0 := by
+      rw [mem_antidiagonal.mp hij, pow_add, he, zero_mul]
+    simp [f, he']
+  rw [hhigh, add_zero]
+  refine sum_congr rfl fun n hn ↦ ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun ij hij ↦ ?_
+  rw [mem_range] at hn
+  rw [mem_antidiagonal] at hij
+  have hk : ij.1 < k ∧ ij.2 < k := by omega
+  simp only [f, hij, hk, and_self, ↓reduceIte]
 
 /-- Enlarging both ranges of a double sum that vanishes for `b ≤ p` or `b < d`. -/
 theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : ℕ} (hK : b ≤ K)

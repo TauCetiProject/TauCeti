@@ -251,7 +251,7 @@ noncomputable def cotangentLinearEquiv :
     ext a
     apply (Bialgebra.CounitAlgebra.algEquivSelf R A B).injective
     simp only [algEquivSelf_ofCotangentLinearMap_apply, LinearMap.add_apply,
-      Derivation.add_apply, map_add]
+      _root_.add_apply, map_add]
   map_smul' b f := by
     ext a
     apply (Bialgebra.CounitAlgebra.algEquivSelf R A B).injective
