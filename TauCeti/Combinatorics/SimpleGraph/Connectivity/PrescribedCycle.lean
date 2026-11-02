@@ -158,7 +158,7 @@ theorem mem_support_append_of_mem_support_append_append {u a b v : V} {W₁ : G.
 with a path `R` from `b` to `a` meeting them only at `a` and `b` into a cycle. -/
 theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G.Walk x b}
     {R : G.Walk b a} (hP : P.IsPath) (hQ : Q.IsPath) (hR : R.IsPath) (hab : a ≠ b)
-    (hxR : x ∉ R.support) (hPQ : ∀ v ∈ P.support, v ∈ Q.support → v = x)
+    (hPQ : ∀ v ∈ P.support, v ∈ Q.support → v = x)
     (hPR : ∀ v ∈ P.support, v ∈ R.support → v = a)
     (hQR : ∀ v ∈ Q.support, v ∈ R.support → v = b) :
     ((Q.append R).append P.reverse).IsCycle := by
@@ -172,7 +172,9 @@ theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G
     have hvP : v ∈ P.support := by simpa using List.mem_of_mem_tail hvq
     rcases (mem_support_append_iff _ _).1 (List.mem_of_mem_tail hvp) with hv | hv
     exacts [hvx (hPQ v hvP hv), hva (hPR v hvP hv)]
-  · have h₁ : Q.length ≠ 0 := fun h0 ↦ hxR (eq_of_length_eq_zero h0 ▸ R.start_mem_support)
+  · have hxR : x ∉ R.support := fun h ↦
+      hab ((hPR x P.start_mem_support h).symm.trans (hQR x Q.start_mem_support h))
+    have h₁ : Q.length ≠ 0 := fun h0 ↦ hxR (eq_of_length_eq_zero h0 ▸ R.start_mem_support)
     have h₂ : R.length ≠ 0 := fun h0 ↦ hab (eq_of_length_eq_zero h0).symm
     rw [length_append]
     omega
@@ -270,7 +272,7 @@ theorem IsCycle.exists_isCycle_forall_mem_support_insert [Finite V] [DecidableEq
       exact hAi v hvA hvij.1 hvij.2 hv
   -- Close up the fan paths to `u j` and `u i` with `R`.
   have hcyc := (hP i).isCycle_append_append_reverse (hP j) (hc'.isPath_append_of_append_append hA)
-    hab (fun hxR ↦ hxU (hRc x hxR)) (hdisj fun hij ↦ hab (hij ▸ rfl))
+    hab (hdisj fun hij ↦ hab (hij ▸ rfl))
     (fun v hvP hvR ↦ by_contra fun hv ↦ hint i v hvP hv (hRc v hvR))
     (fun v hvP hvR ↦ by_contra fun hv ↦ hint j v hvP hv (hRc v hvR))
   refine ⟨x, _, hcyc, start_mem_support _, fun v hv ↦ ?_⟩
