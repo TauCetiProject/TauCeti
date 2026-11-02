@@ -613,22 +613,6 @@ theorem combinatoriallyEquivalent_rotate (p : SimplePolygon R P) :
     CombinatoriallyEquivalent p p.rotate :=
   (IsElementaryMove.rotate p).combinatoriallyEquivalent
 
-/-- Simple polygons built from equal polygons are combinatorially equivalent, whatever the proofs
-of simplicity. -/
-theorem combinatoriallyEquivalent_mk_of_eq {n : ℕ} [NeZero n] {p q : Polygon P n} (h : p = q)
-    (hp : p.IsSimple R) (hq : q.IsSimple R) :
-    CombinatoriallyEquivalent (⟨n, p, hp⟩ : SimplePolygon R P) ⟨n, q, hq⟩ := by
-  subst h
-  rfl
-
-/-- A simple polygon is combinatorially equivalent to the simple polygon built from its cyclic
-relabelling. -/
-theorem combinatoriallyEquivalent_mk_of_rotate_eq {n : ℕ} [NeZero n] {p q : Polygon P n}
-    (h : p.rotate = q) (hp : p.IsSimple R) (hq : q.IsSimple R) :
-    CombinatoriallyEquivalent (⟨n, p, hp⟩ : SimplePolygon R P) ⟨n, q, hq⟩ := by
-  subst h
-  exact combinatoriallyEquivalent_rotate ⟨n, p, hp⟩
-
 /-- A simple polygon is combinatorially equivalent to the result of a Δ-move on it. -/
 theorem combinatoriallyEquivalent_deltaMove (p : SimplePolygon R P) (i : Fin p.numVertices)
     (c : P) (h : p.toPolygon.IsDeltaMove R i c) :

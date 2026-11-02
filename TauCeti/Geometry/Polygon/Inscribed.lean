@@ -7,12 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
-public import Mathlib.Analysis.Calculus.Deriv.MeanValue
-public import Mathlib.Analysis.Calculus.Deriv.Prod
-public import Mathlib.Analysis.Calculus.Deriv.Shift
-public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-public import Mathlib.Topology.UniformSpace.HeineCantor
+public import TauCeti.Analysis.Calculus.Deriv.DualStrictMono
 public import TauCeti.Analysis.Convex.CurveChord
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
@@ -82,8 +78,10 @@ collinear, and it keeps the mesh at most `h`. Refining the uniform parameters of
 the same polygon from both sides.
 
 Along an isotopy `Γ`, the three constants `δ`, `K` and `η` are chosen uniformly, by compactness of
-`[0, 1] × [0, 3T]`, for all the loops `s ↦ Γ (τ s) (s + c)` whose time `τ s ∈ [0, 1]` is periodic,
-moves slowly in `s`, and varies little overall. For two close times `t` and `t'`, with `h = T / n`,
+`[0, 1] × [0, 2T]`, for all the loops `s ↦ Γ (τ s) (s + c)` whose time `τ s ∈ [0, 1]` is periodic,
+moves slowly in `s`, and varies little overall: the windows come from
+`ContDiff.exists_strictMonoOn_dual_comp_uncurry` and the separation from
+`TauCeti.exists_pos_le_dist_apply_add_uncurry`. For two close times `t` and `t'`, with `h = T / n`,
 one such loop is the hybrid loop `α` whose time oscillates between `t` and `t'` with period `h`: it
 passes through the `n` vertices of the polygon inscribed in `Γ t`, and halfway between them
 through the points `Γ t' (k * h + h / 2)`. Refining in `α`, in the loop `α` started half a step
@@ -314,11 +312,10 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
     (hderiv : ∀ t ∈ Icc (0 : ℝ) 1, ∀ s, deriv (Γ t) s ≠ 0) :
     ∃ (δ η lam ρ : ℝ) (K : NNReal), 0 < δ ∧ 0 < η ∧ 0 < lam ∧ 0 < ρ ∧
       FineFamily Γ T δ η lam ρ K := by
-  -- The constants come from compactness of `Q = [0, 1] × [0, 3T]`: a bound `B` on the derivative
-  -- of `Γ`, a lower bound `m` for the derivative of the loops, a modulus `δ₁` of uniform
-  -- continuity of that derivative, and the least distance `η₀` between points of one loop whose
-  -- parameters are between `δ` and `T - δ` apart.
-  set Q : Set (ℝ × ℝ) := Icc 0 1 ×ˢ Icc 0 (3 * T) with hQ
+  -- The constants come from compactness of `Q = [0, 1] × [0, 2T]`: a bound `B` on the derivative
+  -- of `Γ`, uniform windows of width `δ₀` along which the loops increase, and the least distance
+  -- `η₀` between points of one loop whose parameters are between `δ` and `T - δ` apart.
+  set Q : Set (ℝ × ℝ) := Icc 0 1 ×ˢ Icc 0 (2 * T) with hQ
   have hQc : IsCompact Q := isCompact_Icc.prod isCompact_Icc
   have hQv : Convex ℝ Q := (convex_Icc _ _).prod (convex_Icc _ _)
   have hQ0 : ((0 : ℝ), (0 : ℝ)) ∈ Q := ⟨⟨le_rfl, zero_le_one⟩, ⟨le_rfl, by positivity⟩⟩
@@ -332,45 +329,16 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
       ‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂| := by
     have := hQv.norm_image_sub_le_of_norm_fderiv_le (fun x _ ↦ hdiff x) hB h₂ h₁
     simpa [Prod.norm_def, Real.norm_eq_abs] using this
-  -- The derivative `v (t, s)` of the loop `Γ t` at `s`.
-  set v : ℝ × ℝ → E := fun p ↦ fderiv ℝ (uncurry Γ) p ((0 : ℝ), (1 : ℝ)) with hv
-  have hvc : Continuous v := hfc.clm_apply continuous_const
-  have hvd (t s : ℝ) : HasDerivAt (Γ t) (v (t, s)) s := by
-    have h := (hdiff (t, s)).hasFDerivAt.comp_hasDerivAt s
-      (HasDerivAt.prodMk (hasDerivAt_const s t) (hasDerivAt_id s))
-    have e : (uncurry Γ ∘ Prod.mk t) = Γ t := by funext s; simp
-    rwa [e] at h
-  -- A lower bound `m > 0` for `‖v‖` on `Q`, and a modulus `δ₁` of uniform continuity of `v`.
-  obtain ⟨p₀, hp₀, hmin⟩ := hQc.exists_isMinOn ⟨_, hQ0⟩ hvc.norm.continuousOn
-  set m := ‖v p₀‖ with hm_def
-  have hm : 0 < m := norm_pos_iff.2 fun h0 ↦
-    hderiv _ hp₀.1 p₀.2 (by rw [(hvd p₀.1 p₀.2).deriv, Prod.mk.eta, h0])
-  obtain ⟨δ₁, hδ₁, huc⟩ := Metric.uniformContinuousOn_iff.1
-    (hQc.uniformContinuousOn_of_continuous hvc.continuousOn) (m / 4) (by positivity)
-  set δ := min (δ₁ / 4) (T / 3) with hδ_def
-  have hδ : 0 < δ := lt_min (by positivity) (by positivity)
-  have hδ₁' : δ ≤ δ₁ / 4 := min_le_left _ _
-  have hδT : δ ≤ T / 3 := min_le_right _ _
-  -- The separation `η₀` of points of one loop whose parameters are between `δ` and `T - δ` apart.
-  obtain ⟨η₀, hη₀, hsep⟩ : ∃ η₀ > 0, ∀ t ∈ Icc (0 : ℝ) 1, ∀ a ∈ Icc 0 (2 * T),
-      ∀ d ∈ Icc δ (T - δ), η₀ ≤ ‖Γ t (a + d) - Γ t a‖ := by
-    have hne : (Icc (0 : ℝ) 1 ×ˢ Icc 0 (2 * T) ×ˢ Icc δ (T - δ)).Nonempty :=
-      ⟨(0, 0, δ), ⟨le_rfl, zero_le_one⟩, ⟨le_rfl, by positivity⟩, le_rfl, by linarith⟩
-    have hcont : Continuous fun p : ℝ × ℝ × ℝ ↦ ‖Γ p.1 (p.2.1 + p.2.2) - Γ p.1 p.2.1‖ :=
-      ((hΓ.continuous.comp (continuous_fst.prodMk (continuous_snd.fst.add continuous_snd.snd))).sub
-        (hΓ.continuous.comp (continuous_fst.prodMk continuous_snd.fst))).norm
-    obtain ⟨p, hp, hpmin⟩ := (isCompact_Icc.prod (isCompact_Icc.prod isCompact_Icc)).exists_isMinOn
-      hne hcont.continuousOn
-    refine ⟨_, norm_pos_iff.2 (sub_ne_zero.2 fun heq ↦ ?_), fun t ht a ha d hd ↦
-      isMinOn_iff.1 hpmin (t, a, d) ⟨ht, ha, hd⟩⟩
-    exact TauCeti.apply_ne_apply_add (hinj p.1 hp.1) (by linarith [hp.2.2.1])
-      (by linarith [hp.2.2.2]) heq.symm
-  set lam := min 1 (m / (2 * (B + 1))) with hlam_def
-  have hlam : 0 < lam := lt_min one_pos (by positivity)
+  obtain ⟨δ₀, hδ₀, lam₀, hlam₀, hmono⟩ :=
+    hΓ.exists_strictMonoOn_dual_comp_uncurry hderiv 0 (2 * T)
+  set δ := δ₀ / 3 with hδ_def
+  have hδ : 0 < δ := by positivity
+  obtain ⟨η₀, hη₀, hsep⟩ := TauCeti.exists_pos_le_dist_apply_add_uncurry hΓ.continuous
+    isCompact_Icc hinj (isCompact_Icc (a := 0) (b := 2 * T)) hδ
+  set lam := min 1 lam₀ with hlam_def
+  have hlam : 0 < lam := lt_min one_pos hlam₀
   have hlam1 : lam ≤ 1 := min_le_left _ _
-  have hBlam : B * lam ≤ m / 2 := by
-    have h₁ : lam * (2 * (B + 1)) ≤ m := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-    nlinarith
+  have hlam₀' : lam ≤ lam₀ := min_le_right _ _
   set ρ := η₀ / (2 * (B + 1)) with hρ_def
   have hBρ : B * ρ ≤ η₀ / 2 := by
     have h₁ : ρ * (2 * (B + 1)) = η₀ := by rw [hρ_def]; field_simp
@@ -380,62 +348,22 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
   intro α τ c h hα hc hτ hτI hlip hvar hhδ hη
   have hτ1 (x y : ℝ) : |τ x - τ y| ≤ |x - y| :=
     (hlip x y).trans (mul_le_of_le_one_left (abs_nonneg _) hlam1)
-  have memQ {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (u : ℝ) (hu₀ : 0 ≤ u) (hu₁ : u ≤ 3 * T) :
+  have memQ {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (u : ℝ) (hu₀ : 0 ≤ u) (hu₁ : u ≤ 2 * T) :
       (t, u) ∈ Q :=
     ⟨ht, hu₀, hu₁⟩
   refine ⟨fun s ↦ ?_, hhδ, fun a ha ↦ ?_, ?_, fun a ha d hd ↦ ?_, hη⟩
   · rw [hα, hα, hτ s, show s + T + c = s + c + T by ring, hper _ (hτI s)]
-  · -- Along `φ`, the dual vector of `v (τ a, a + c)`, the loop increases on `[a, a + 3δ]`.
-    have hp₁ : (τ a, a + c) ∈ Q := memQ (hτI a) _ (by linarith [ha.1, hc.1])
-      (by linarith [ha.2, hc.2])
-    obtain ⟨φ, hφ, hφv⟩ := exists_dual_vector'' ℝ (v (τ a, a + c))
-    simp only [RCLike.ofReal_real_eq_id, id_eq] at hφv
-    have hφle (w : E) : |φ w| ≤ ‖w‖ := by
-      simpa [Real.norm_eq_abs] using
-        (φ.le_opNorm w).trans (mul_le_of_le_one_left (norm_nonneg _) hφ)
-    have hnear {y u : ℝ} (hy : y ∈ Icc a (a + 3 * δ)) (hu : u ∈ Icc a (a + 3 * δ)) :
-        3 * m / 4 ≤ φ (v (τ y, u + c)) := by
-      have hq : (τ y, u + c) ∈ Q := memQ (hτI y) _ (by linarith [hu.1, ha.1, hc.1])
-        (by linarith [hu.2, ha.2, hc.2])
-      have hd : dist (τ y, u + c) (τ a, a + c) < δ₁ := by
-        simp only [Prod.dist_eq, Real.dist_eq, add_sub_add_right_eq_sub]
-        have h₁ := hτ1 y a
-        have h₂ : |y - a| ≤ 3 * δ := abs_le.2 ⟨by linarith [hy.1], by linarith [hy.2]⟩
-        have h₃ : |u - a| ≤ 3 * δ := abs_le.2 ⟨by linarith [hu.1], by linarith [hu.2]⟩
-        exact max_lt (by linarith) (by linarith)
-      have h₁ := huc _ hq _ hp₁ hd
-      rw [dist_eq_norm] at h₁
-      have h₂ : m ≤ ‖v (τ a, a + c)‖ := isMinOn_iff.1 hmin _ hp₁
-      have h₃ := hφle (v (τ y, u + c) - v (τ a, a + c))
-      rw [map_sub, hφv] at h₃
-      linarith [neg_abs_le (φ (v (τ y, u + c)) - ‖v (τ a, a + c)‖)]
+  · -- The window `[a, a + 3δ]` of `α` is the window `[a + c, a + c + 3δ]` of `u ↦ Γ (τ' u) u`,
+    -- with the time `τ' u = τ (u - c)`.
+    obtain ⟨φ, hφ⟩ := hmono (fun u ↦ τ (u - c)) (fun u ↦ hτI _)
+      (fun x y ↦ (hlip _ _).trans (by
+        rw [show x - c - (y - c) = x - y by ring]
+        exact mul_le_mul_of_nonneg_right hlam₀' (abs_nonneg _)))
+      (a + c) ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
     refine ⟨φ, fun x hx y hy hxy ↦ ?_⟩
-    -- Moving the loop parameter from `x` to `y` at the fixed time `τ y` gains at least `3m/4`
-    -- per unit, while changing the time from `τ x` to `τ y` costs at most `B lam ≤ m/2` per unit.
-    have hg : 3 * m / 4 * (y - x) ≤ φ (Γ (τ y) (y + c)) - φ (Γ (τ y) (x + c)) := by
-      have hderg (u : ℝ) : HasDerivAt (fun u ↦ φ (Γ (τ y) (u + c))) (φ (v (τ y, u + c))) u :=
-        φ.hasFDerivAt.comp_hasDerivAt u ((hvd (τ y) (u + c)).comp_add_const u c)
-      refine (convex_Icc x y).mul_sub_le_image_sub_of_le_deriv
-        (fun u _ ↦ (hderg u).continuousAt.continuousWithinAt)
-        (fun u _ ↦ (hderg u).differentiableAt.differentiableWithinAt) (fun u hu ↦ ?_)
-        x (left_mem_Icc.2 hxy.le) y (right_mem_Icc.2 hxy.le) hxy.le
-      rw [interior_Icc] at hu
-      rw [(hderg u).deriv]
-      exact hnear hy ⟨by linarith [hx.1, hu.1], by linarith [hy.2, hu.2]⟩
-    have htime : |φ (Γ (τ y) (x + c)) - φ (Γ (τ x) (x + c))| ≤ m / 2 * (y - x) := by
-      rw [← map_sub]
-      refine (hφle _).trans ((hlipΓ (memQ (hτI y) (x + c) (by linarith [hx.1, ha.1, hc.1])
-        (by linarith [hx.2, ha.2, hc.2])) (memQ (hτI x) (x + c) (by linarith [hx.1, ha.1, hc.1])
-        (by linarith [hx.2, ha.2, hc.2]))).trans ?_)
-      rw [sub_self, abs_zero, max_eq_left (abs_nonneg _)]
-      have h₁ : |τ y - τ x| ≤ lam * (y - x) := by
-        simpa [abs_of_pos (sub_pos.2 hxy)] using hlip y x
-      calc B * |τ y - τ x| ≤ B * (lam * (y - x)) := by gcongr
-        _ = B * lam * (y - x) := by ring
-        _ ≤ m / 2 * (y - x) := by gcongr
-    dsimp only
-    rw [hα, hα]
-    nlinarith [abs_le.1 htime, sub_pos.2 hxy]
+    have h := hφ (a := x + c) (b := y + c) ⟨by linarith [hx.1], by linarith [hx.2]⟩
+      ⟨by linarith [hy.1], by linarith [hy.2]⟩ (by linarith)
+    simpa only [add_sub_cancel_right, ← hα] using h
   · refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
     rw [dist_eq_norm, hα, hα, Real.dist_eq]
     refine (hlipΓ (memQ (hτI x) (x + c) (by linarith [hx.1, hc.1]) (by linarith [hx.2, hc.2]))
@@ -446,6 +374,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
     rw [dist_eq_norm, hα, hα]
     have h₁ := hsep (τ (a + d)) (hτI _) (a + c) ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
       d hd
+    rw [dist_eq_norm] at h₁
     have h₂ := hlipΓ (memQ (hτI (a + d)) (a + c) (by linarith [ha.1, hc.1])
       (by linarith [ha.2, hc.2])) (memQ (hτI a) (a + c) (by linarith [ha.1, hc.1])
       (by linarith [ha.2, hc.2]))
@@ -862,8 +791,7 @@ end Refinement
 
 section Isotopy
 
-open TauCeti.SimplePolygon (combinatoriallyEquivalent_mk_of_eq
-  combinatoriallyEquivalent_mk_of_rotate_eq)
+open TauCeti.SimplePolygon (CombinatoriallyEquivalent combinatoriallyEquivalent_rotate)
 
 /-- The time `s ↦ t + (t' - t) (1 - cos (2π s / h)) / 2`, oscillating between `t` and `t'` with
 period `h`: it is `t` at the multiples of `h` and `t'` halfway between them. -/
@@ -982,16 +910,22 @@ private theorem FineFamily.combinatoriallyEquivalent_inscribed {Γ : ℝ → ℝ
       simp only [← hh_def, hτ_def, cosTime_natCast_mul_add_half t t' hh.ne']
   have e₇ : (inscribed (Γ t') T (2 * n)).rotate = inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n) :=
     by rw [rotate_inscribed hFβ.periodic, h2n]
-  exact (combinatoriallyEquivalent_mk_of_eq e₁ hp (hFα.isSimple_inscribed hT le_rfl)).trans <|
+  exact (show CombinatoriallyEquivalent ⟨n, _, hp⟩ ⟨n, _, hFα.isSimple_inscribed hT le_rfl⟩ by
+      simp only [e₁]; rfl).trans <|
     (hFα.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _
       (hFα.isSimple_inscribed hT h2nh)).trans <|
-    (combinatoriallyEquivalent_mk_of_rotate_eq e₃ _ (hFα₂.isSimple_inscribed hT h2nh)).trans <|
+    (show CombinatoriallyEquivalent ⟨2 * n, _, hFα.isSimple_inscribed hT h2nh⟩
+      ⟨2 * n, _, hFα₂.isSimple_inscribed hT h2nh⟩ by
+      simp only [← e₃]; exact combinatoriallyEquivalent_rotate _).trans <|
     (hFα₂.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _
       (hFα₂.isSimple_inscribed hT le_rfl)).trans <|
-    (combinatoriallyEquivalent_mk_of_eq e₅ _ (hFβ₂.isSimple_inscribed hT le_rfl)).trans <|
+    (show CombinatoriallyEquivalent ⟨n, _, hFα₂.isSimple_inscribed hT le_rfl⟩
+      ⟨n, _, hFβ₂.isSimple_inscribed hT le_rfl⟩ by simp only [e₅]; rfl).trans <|
     (hFβ₂.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _
       (hFβ₂.isSimple_inscribed hT h2nh)).trans <|
-    (combinatoriallyEquivalent_mk_of_rotate_eq e₇ (hFβ.isSimple_inscribed hT h2nh) _).symm.trans <|
+    (show CombinatoriallyEquivalent ⟨2 * n, _, hFβ.isSimple_inscribed hT h2nh⟩
+      ⟨2 * n, _, hFβ₂.isSimple_inscribed hT h2nh⟩ by
+      simp only [← e₇]; exact combinatoriallyEquivalent_rotate _).symm.trans <|
     hFβ.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ hp'
 
 /-- **Fine inscribed polygons are invariant under isotopy.** Let `Γ : ℝ → ℝ → E` be a family of
@@ -1038,7 +972,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
       TauCeti.SimplePolygon.CombinatoriallyEquivalent ⟨n, inscribed (Γ 0) T n, hsn⟩
         ⟨n, inscribed (Γ ((i : ℝ) / (M + 1))) T n, hsimple _ (hmem hi)⟩ := by
     induction i with
-    | zero => exact combinatoriallyEquivalent_mk_of_eq (by rw [Nat.cast_zero, zero_div]) _ _
+    | zero => simp only [Nat.cast_zero, zero_div]; rfl
     | succ i ih =>
       refine (ih (by omega)).trans (hF.combinatoriallyEquivalent_inscribed hT hnδ hnη
         (hmem (by omega)) (hmem hi) ?_ ?_ _ _)
@@ -1050,8 +984,10 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
         exact this.le
   have hF₁ := hF.fineMesh_const (t := 1) (c := 0) (fun s ↦ by rw [add_zero]) ⟨zero_le_one, le_rfl⟩
     ⟨le_rfl, hT.le⟩ (hfine le_rfl).1 (hfine le_rfl).2
-  exact (key (M + 1) le_rfl).trans <| (combinatoriallyEquivalent_mk_of_eq
-    (by rw [Nat.cast_add_one, div_self hM₀.ne']) _ (hsimple 1 ⟨zero_le_one, le_rfl⟩)).trans <|
+  exact (key (M + 1) le_rfl).trans <|
+    (show CombinatoriallyEquivalent ⟨n, _, hsimple _ (hmem le_rfl)⟩
+      ⟨n, _, hsimple 1 ⟨zero_le_one, le_rfl⟩⟩ by
+      simp only [Nat.cast_add_one, div_self hM₀.ne']; rfl).trans <|
     hF₁.combinatoriallyEquivalent_inscribed hT (hN n hn) (hN m hm) _ hsm
 
 end Isotopy
