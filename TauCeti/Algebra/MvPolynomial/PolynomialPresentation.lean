@@ -35,11 +35,12 @@ lemma aeval_id_comp_rename_aeval_id {R S : Type*} [CommSemiring R] [CommSemiring
 
 /-- The difference of the two canonical polynomial face maps has image exactly the
 augmentation kernel. The algebra and coefficient ring may lie in independent universes. -/
-theorem exact_aeval_sub_rename {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] :
+theorem exact_aeval_sub_rename {R S : Type*} [CommRing R] [CommSemiring S] [Algebra R S] :
     Function.Exact
       ((aeval (R := R) (id : MvPolynomial S R → MvPolynomial S R)).toLinearMap -
         (rename (R := R) (aeval (R := R) (id : S → S))).toLinearMap)
       (aeval (R := R) (id : S → S)).toLinearMap := by
+  let : AddCommGroup S := Module.addCommMonoidToAddCommGroup R
   apply LinearMap.exact_of_comp_of_mem_range
   · apply LinearMap.ext
     intro p
