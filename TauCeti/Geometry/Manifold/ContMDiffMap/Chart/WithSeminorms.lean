@@ -40,32 +40,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M]
 
-/-- Continuity into the weak Whitney topology for a vector target can be tested on the
-supremum-norm restrictions of every chart derivative to every compact coordinate set. -/
-theorem continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv
-    {P : Type*} [TopologicalSpace P] {g : P → C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
-    Continuous g ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n)
-      (K : TopologicalSpace.Compacts (extChartAt I x).target),
-      Continuous (fun p ↦ (chartIteratedFDeriv (g p) x m hm).restrict (K : Set _)) := by
-  constructor
-  · intro h x m hm K
-    exact ((ContinuousMap.continuous_restrict (K : Set _)).comp
-      (continuous_chartIteratedFDeriv x m hm)).comp h
-  · intro h
-    apply continuous_manifoldWeakWhitney_iff.mpr
-    intro x y m hm K hK V hV
-    rw [chartJetSet_self_target x y m hm K V]
-    let K' : TopologicalSpace.Compacts (extChartAt I x).target := ⟨K, hK⟩
-    have hopen := (ContinuousMap.isOpen_setOfPred_mapsTo
-      (isCompact_univ : IsCompact (univ : Set K')) hV).preimage (h x m hm K')
-    convert hopen using 1
-    ext p
-    constructor
-    · intro hp z _
-      exact hp z.2
-    · intro hp z hz
-      exact hp (mem_univ (⟨z, hz⟩ : K'))
-
 /-- All compact chart derivative seminorms, indexed by a chart center, an admissible derivative
 order, and a compact subset of the extended chart target. -/
 noncomputable def chartSeminormFamily :
@@ -87,49 +61,21 @@ theorem withSeminorms_manifoldWeakWhitney :
     WithSeminorms (chartSeminormFamily (I := I) (M := M) (F := F) (n := n)) := by
   let J := Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target
   let V (i : J) := C(i.2.2, E [×i.2.1.1]→L[𝕜] F)
-  let jet : C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜] (∀ i : J, V i) :=
-    LinearMap.pi fun i ↦
-      (ContinuousMap.compCLM 𝕜 (E [×i.2.1.1]→L[𝕜] F)
-        (ContinuousMap.subtypeVal (i.2.2 : Set (extChartAt I i.1).target))).toLinearMap ∘ₗ
-          chartIteratedFDerivLinearMap i.1 i.2.1.1 i.2.1.2
-  have hjet (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (i : J) :
-      jet f i = (chartIteratedFDeriv f i.1 i.2.1.1 i.2.1.2).restrict (i.2.2 : Set _) := by
-    exact congrArg
-      (fun A : C((extChartAt I i.1).target, E [×i.2.1.1]→L[𝕜] F) ↦
-        A.restrict (i.2.2 : Set _))
-      (chartIteratedFDerivLinearMap_apply i.1 i.2.1.1 i.2.1.2 f)
-  have hc : Continuous jet := by
-    apply continuous_pi
-    intro i
-    exact ((ContinuousMap.continuous_restrict (i.2.2 : Set (extChartAt I i.1).target)).comp
-      (continuous_chartIteratedFDeriv (I := I) (F := F) i.1 i.2.1.1 i.2.1.2)).congr
-        (fun f ↦ (hjet f i).symm)
-  have hi : IsInducing jet := by
-    constructor
-    apply le_antisymm
-    · exact hc.le_induced
-    · rw [← continuous_id_iff_le]
-      let _ : TopologicalSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯ := TopologicalSpace.induced jet inferInstance
-      apply continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv.mpr
-      intro x m hm K
-      have h := (continuous_apply (⟨x, ⟨m, hm⟩, K⟩ : J)).comp
-        (continuous_induced_dom : Continuous jet)
-      simpa only [Function.comp_def, hjet, id_eq] using h
   let e : J ≃ (Σ _ : J, Unit) := (Equiv.sigmaUnique _ _).symm
-  have hp := hi.withSeminorms
+  have hp := (isInducing_compactChartJet (I := I) (M := M) (F := F) (n := n)).withSeminorms
     ((withSeminorms_pi fun i : J ↦ norm_withSeminorms 𝕜 (V i)).congr_equiv e)
   convert hp using 1
   ext i f
   exact (chartDerivativeSeminorm_apply i.1 i.2.2 i.2.1.1 i.2.1.2 f).trans
-    (congrArg norm (hjet f i).symm)
+    (congrArg norm (compactChartJet_apply f i).symm)
 
 /-- Addition and negation are continuous for the vector-valued weak Whitney topology. -/
 theorem isTopologicalAddGroup_manifoldWeakWhitney :
     IsTopologicalAddGroup C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
   withSeminorms_manifoldWeakWhitney.isTopologicalAddGroup
 
-/-- Vector-valued weak Whitney map spaces are polynormable. Over `ℝ`, the native polynormable
-space instances consequently supply local convexity and continuous scalar multiplication. -/
+/-- Vector-valued weak Whitney map spaces are polynormable, so scalar multiplication is
+continuous over every coefficient field; over `ℝ` they are also locally convex. -/
 theorem polynormableSpace_manifoldWeakWhitney :
     PolynormableSpace 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
   withSeminorms_manifoldWeakWhitney.toPolynormableSpace
