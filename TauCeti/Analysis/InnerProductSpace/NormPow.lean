@@ -105,6 +105,22 @@ theorem norm_fderiv_log_norm_of_ne {x : E} (hx : x ≠ 0) :
   simp [(hasFDerivAt_log_norm_of_ne hx).fderiv, norm_smul, innerSL_apply_norm]
   field_simp
 
+/-- The norm of the gradient of the radial function `w(log ‖z‖) - log ‖z‖` at a point `y ≠ 0` where
+`w` is differentiable at `s = log ‖y‖` is `|w'(s) - 1| / ‖y‖`. -/
+theorem norm_gradient_comp_log_norm_sub_log_norm [CompleteSpace E] {w : ℝ → ℝ} {y : E}
+    (hy : y ≠ 0) (hw : DifferentiableAt ℝ w (Real.log ‖y‖)) :
+    ‖∇ (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) y‖ = |deriv w (Real.log ‖y‖) - 1| * ‖y‖⁻¹ := by
+  have hd : HasFDerivAt ((fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖)
+      ((deriv w (Real.log ‖y‖) - 1) • fderiv ℝ (fun z : E ↦ Real.log ‖z‖) y) y :=
+    (hw.hasDerivAt.sub (hasDerivAt_id _)).comp_hasFDerivAt y
+      (hasFDerivAt_log_norm_of_ne hy).differentiableAt.hasFDerivAt
+  -- The function is the composition `ψ ∘ log ‖·‖` with `ψ s = w s - s`, the form matched by the
+  -- chain rule.
+  rw [show (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) =
+      (fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖ from rfl,
+    norm_gradient_eq_norm_fderiv, hd.fderiv, norm_smul, norm_fderiv_log_norm_of_ne hy,
+    Real.norm_eq_abs]
+
 /-- For a smooth `w` and every `c`, there is a smooth function on `E` equal to the radial function
 `w(log ‖z‖) - log ‖z‖` where `‖z‖ > e^c`. The radial function itself is singular at the origin; it
 is cut off below `log ‖z‖ = c - 1`. -/
@@ -440,22 +456,6 @@ theorem laplacian_log_norm_of_ne {x : E} (hx : x ≠ 0) :
   simp [fderiv_norm_sq_apply, RCLike.norm_nsmul ℝ, innerSL_apply_norm]
   field_simp
   ring
-
-/-- The norm of the gradient of the radial function `w(log ‖z‖) - log ‖z‖` at a point `y ≠ 0` where
-`w` is differentiable at `s = log ‖y‖` is `|w'(s) - 1| / ‖y‖`. -/
-theorem norm_gradient_comp_log_norm_sub_log_norm {w : ℝ → ℝ} {y : E} (hy : y ≠ 0)
-    (hw : DifferentiableAt ℝ w (Real.log ‖y‖)) :
-    ‖∇ (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) y‖ = |deriv w (Real.log ‖y‖) - 1| * ‖y‖⁻¹ := by
-  have hd : HasFDerivAt ((fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖)
-      ((deriv w (Real.log ‖y‖) - 1) • fderiv ℝ (fun z : E ↦ Real.log ‖z‖) y) y :=
-    (hw.hasDerivAt.sub (hasDerivAt_id _)).comp_hasFDerivAt y
-      (hasFDerivAt_log_norm_of_ne hy).differentiableAt.hasFDerivAt
-  -- The function is the composition `ψ ∘ log ‖·‖` with `ψ s = w s - s`, the form matched by the
-  -- chain rule.
-  rw [show (fun z : E ↦ w (Real.log ‖z‖) - Real.log ‖z‖) =
-      (fun s ↦ w s - s) ∘ fun z : E ↦ Real.log ‖z‖ from rfl,
-    norm_gradient_eq_norm_fderiv, hd.fderiv, norm_smul, norm_fderiv_log_norm_of_ne hy,
-    Real.norm_eq_abs]
 
 /-- The Laplacian of the radial function `w(log ‖z‖) - log ‖z‖` on a real inner product space of
 dimension `N`, at a point `y ≠ 0` with `s = log ‖y‖` where `w` is `C²`, is
