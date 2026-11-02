@@ -29,11 +29,19 @@ The three basic modules have bases of `H`-weight vectors, so their formal charac
 * the adjoint module `sl (Fin (r + 1)) K` has the simple coroots, of weight `0`, and the signed
   matrix units `Eᵢⱼ` with `i ≠ j`, of weight `εᵢ - εⱼ`, the roots.
 
+These characters sum over the basis vectors, so they hold over every field. Distinct basis
+vectors can however have equal weights in positive characteristic, and then the multiplicities add:
+for `sl₂` (`r = 1`) with `2 = 0` one has `ε₀ = ε₁`.
+
 For `sl₃` (`r = 2`) this gives the classical weight diagrams in terms of the fundamental weights,
-indexed from zero as `ω₀, ω₁`. The standard module, classically `V(ω₀)`, has the triangle of
-weights `ω₀, ω₁ - ω₀, -ω₁`; its dual, classically `V(ω₁)`, has their negatives; and the adjoint
-module, classically `V(ω₀ + ω₁)`, has the hexagon of the six roots `±(2ω₀ - ω₁)`, `±(2ω₁ - ω₀)`,
-`±(ω₀ + ω₁)` together with the weight `0`, of multiplicity `2` once `2 ≠ 0`.
+indexed from zero as `ω₀, ω₁`. The standard module has the triangle of weights
+`ω₀, ω₁ - ω₀, -ω₁`, and its dual has their negatives. The adjoint module has the six roots
+`±(2ω₀ - ω₁)`, `±(2ω₁ - ω₀)`, `±(ω₀ + ω₁)` together with the weight `0`, of multiplicity `2` once
+`2 ≠ 0`. The six roots are distinct, forming a hexagon, exactly when `2 ≠ 0` and `3 ≠ 0`: if
+`2 = 0` each root equals its negative, and if `3 = 0` they collapse to `±(ω₀ + ω₁)`. In
+characteristic zero these three modules are the irreducible modules classically denoted `V(ω₀)`,
+`V(ω₁)` and `V(ω₀ + ω₁)`; if `3 = 0` the adjoint module is reducible, as it contains the scalar
+matrices.
 
 ## Main definitions
 
@@ -251,7 +259,8 @@ section Characters
 variable (r : ℕ) (K : Type*) [Field K]
 
 /-- **The formal character of the standard module** of `sl (Fin (r + 1)) K`: its weights are the
-coordinate weights `εₖ`, each with multiplicity one. -/
+coordinate weights `εₖ`, one for each basis vector `eₖ`. In positive characteristic distinct `εₖ`
+can coincide (for `r = 1` and `2 = 0`), and then their multiplicities add. -/
 theorem formalCharacter_specialLinear_pi :
     formalCharacter K (specialLinearDiagonalCartan r K) (Fin (r + 1) → K) =
       ∑ k, AddMonoidAlgebra.single (specialLinearEpsilon r K k) (1 : ℤ) := by
@@ -271,7 +280,9 @@ private theorem lie_specialLinearDiagonalCartan_dualBasis (h : specialLinearDiag
   exact lie_specialLinearDiagonalCartan_proj h k
 
 /-- **The formal character of the dual standard module** of `sl (Fin (r + 1)) K`: its weights are
-the negated coordinate weights `-εₖ`, each with multiplicity one. -/
+the negated coordinate weights `-εₖ`, one for each coordinate functional. In positive
+characteristic distinct `-εₖ` can coincide (for `r = 1` and `2 = 0`), and then their multiplicities
+add. -/
 theorem formalCharacter_specialLinear_dual :
     formalCharacter K (specialLinearDiagonalCartan r K) (Dual K (Fin (r + 1) → K)) =
       ∑ k, AddMonoidAlgebra.single (-specialLinearEpsilon r K k) (1 : ℤ) := by
@@ -344,9 +355,11 @@ end Characters
 
 /-! ### The weight diagrams of `sl₃`
 
-For `r = 2` the two fundamental weights are written `ω₀` and `ω₁` (zero-based). The standard
-module, its dual and the adjoint module are the irreducible modules classically denoted `V(ω₀)`,
-`V(ω₁)` and `V(ω₀ + ω₁)`; the statements below compute their characters and supports directly.
+For `r = 2` the two fundamental weights are written `ω₀` and `ω₁` (zero-based). In
+characteristic zero the standard module, its dual and the adjoint module are the irreducible
+modules classically denoted `V(ω₀)`, `V(ω₁)` and `V(ω₀ + ω₁)`; the statements below compute their
+characters and supports directly, over any field. In characteristic `2` or `3` some of the six
+roots coincide, as explained in the module docstring.
 -/
 
 section SlThree
@@ -439,10 +452,11 @@ private theorem specialLinearEpsilon_two_two_sub_zero :
       -(specialLinearFundamentalWeight 2 K 0 + specialLinearFundamentalWeight 2 K 1) := by
   rw [← specialLinearEpsilon_two_zero_sub_two, neg_sub]
 
-/-- **The character of the adjoint module of `sl₃`**, classically `V(ω₀ + ω₁)`: the weight `0` with
-multiplicity two, from the two simple coroots, and the hexagon of the six roots `±α₀, ±α₁` and
-`±(α₀ + α₁)`, each with multiplicity one, where `α₀ = 2ω₀ - ω₁` and `α₁ = 2ω₁ - ω₀` are the simple
-roots and `α₀ + α₁ = ω₀ + ω₁` is the highest root. -/
+/-- **The character of the adjoint module of `sl₃`**, in characteristic zero `V(ω₀ + ω₁)`: the
+weight `0` twice, from the two simple coroots, and the six roots `±α₀, ±α₁` and `±(α₀ + α₁)` once
+each, where `α₀ = 2ω₀ - ω₁` and `α₁ = 2ω₁ - ω₀` are the simple roots and `α₀ + α₁ = ω₀ + ω₁` is the
+highest root. When `2 ≠ 0` and `3 ≠ 0` the six roots are distinct and form a hexagon; otherwise
+some coincide and their multiplicities add. -/
 theorem formalCharacter_slThree_adjoint :
     formalCharacter K (specialLinearDiagonalCartan 2 K) (sl (Fin 3) K) =
       2 • AddMonoidAlgebra.single 0 (1 : ℤ) +
@@ -502,8 +516,10 @@ theorem coe_support_formalCharacter_slThree_dual :
     Set.mem_insert_iff, Set.mem_singleton_iff]
   simp only [eq_comm]
 
-/-- **The weight diagram of the adjoint module of `sl₃`**: the hexagon of the six
-roots `±(2ω₀ - ω₁), ±(2ω₁ - ω₀), ±(ω₀ + ω₁)` together with its centre `0`. -/
+/-- **The weight diagram of the adjoint module of `sl₃`**: the six roots
+`±(2ω₀ - ω₁), ±(2ω₁ - ω₀), ±(ω₀ + ω₁)` together with `0`. When `2 ≠ 0` and `3 ≠ 0` these are
+seven distinct points, the hexagon of roots and its centre; in characteristic `2` or `3` some roots
+coincide. -/
 theorem coe_support_formalCharacter_slThree_adjoint :
     ((formalCharacter K (specialLinearDiagonalCartan 2 K) (sl (Fin 3) K)).coeff.support :
       Set (Dual K (specialLinearDiagonalCartan 2 K))) =
