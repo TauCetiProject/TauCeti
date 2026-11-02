@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.PolynomialCurve
 public import TauCeti.RingTheory.Derivation.Flow
 import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Algebra.Polynomial.Bivariate
@@ -106,6 +107,38 @@ theorem expPointAt_zero {B : Type*} [CommRing B] [Algebra R B] :
   ext h
   simp [expPointAt_apply, ← Polynomial.coeff_zero_eq_aeval_zero',
     coeff_expPointPolynomial]
+
+/-- Evaluating the polynomial exponential curve at zero recovers the identity point. -/
+@[simp]
+theorem aeval_zero_comp_expPointPolynomial :
+    (aeval (0 : R)).comp (expPointPolynomial d hd) = _root_.Bialgebra.counitAlgHom R H := by
+  ext h
+  rw [AlgHom.comp_apply, ← Polynomial.coeff_zero_eq_aeval_zero']
+  simp [coeff_expPointPolynomial]
+
+/-- The velocity at zero of the intrinsic exponential curve is its tangent vector. -/
+@[simp]
+theorem curveVelocity_expPointPolynomial
+    {hzero : (aeval (0 : R)).comp (expPointPolynomial d hd) =
+      _root_.Bialgebra.counitAlgHom R H} :
+    curveVelocity (expPointPolynomial d hd) hzero = d := by
+  ext h
+  apply (CounitAlgebra.algEquivSelf R H R).injective
+  rw [algEquivSelf_curveVelocity_apply, coeff_one_expPointPolynomial]
+
+/-- After a bialgebra morphism, the velocity of an intrinsic exponential curve is the
+image of its tangent vector under the differential. -/
+@[simp]
+theorem curveVelocity_expPointPolynomial_comp {K : Type*} [CommRing K]
+    [_root_.Bialgebra R K] (f : K →ₐc[R] H)
+    {hzero : (aeval (0 : R)).comp ((expPointPolynomial d hd).comp f.toAlgHom) =
+      _root_.Bialgebra.counitAlgHom R K} :
+    curveVelocity ((expPointPolynomial d hd).comp f.toAlgHom) hzero =
+      derivationComp f d := by
+  ext h
+  apply (CounitAlgebra.algEquivSelf R K R).injective
+  rw [algEquivSelf_curveVelocity_apply, AlgHom.comp_apply,
+    coeff_one_expPointPolynomial, algEquivSelf_derivationComp_apply]
 
 /-- At parameter one, the curve recovers the invariant-vector-field exponential. -/
 theorem expPointAt_one : expPointAt d hd (1 : R) = WithConv.toConv (expPoint d hd) := by

@@ -68,10 +68,8 @@ theorem eq_of_expPoint_eq
     apply AlgHom.eq_expPointPolynomial_of_aeval_one_comp_eq _
       (aeval_comp_expPointPolynomial_add d hd) e he
     exact (aeval_one_comp_expPointPolynomial d hd).trans h
-  apply Derivation.ext
-  intro x
-  apply (CounitAlgebra.algEquivSelf R H R).injective
-  simpa only [coeff_one_expPointPolynomial] using
-    congrArg (fun f : H →ₐ[R] R[X] ↦ (f x).coeff 1) hcurve
+  rw [← curveVelocity_expPointPolynomial d hd
+    (hzero := aeval_zero_comp_expPointPolynomial d hd)]
+  simp only [hcurve, curveVelocity_expPointPolynomial]
 
 end Derivation

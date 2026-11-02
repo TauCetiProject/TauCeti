@@ -54,21 +54,17 @@ theorem tangentMatrix_derivationComp_eq_log
     (h : BialgHom.mapDomain f (toConv (Bialgebra.expPoint d hd)) =
       generalLinearToPoint n g) :
     tangentMatrix n (derivationComp f d) = IsNilpotent.log (g : Matrix (Fin n) (Fin n) R) := by
-  have hcurve : (Bialgebra.expPointPolynomial d hd).comp f.toAlgHom =
-      nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
-    apply eq_nilpotentOneParameterCoordinateMap_log n _ ?_ g hg ?_
-    · intro s t
-      simpa only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_assoc, map_mul] using
-        congrArg (BialgHom.mapDomain f)
-          (Bialgebra.aeval_comp_expPointPolynomial_add d hd s t)
-    · simpa only [BialgHom.mapDomain_apply, ofConv_toConv, ← AlgHom.comp_assoc,
-        Bialgebra.aeval_one_comp_expPointPolynomial] using h
-  ext i j
-  rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply]
-  have hc := congrArg (fun p : coordinateHopfAlgebra R n →ₐ[R] R[X] ↦
-    (p (genericMatrix R n i j)).coeff 1) hcurve
-  simpa only [AlgHom.comp_apply, Bialgebra.coeff_one_expPointPolynomial,
-    genericMatrix_apply, nilpotentOneParameterCoordinateMap_apply_X,
-    Matrix.coeff_one_exp_X_smul_C_mapMatrix (IsNilpotent.isNilpotent_log hg)] using hc
+  have hzero : (aeval (0 : R)).comp ((Bialgebra.expPointPolynomial d hd).comp f.toAlgHom) =
+      _root_.Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n) := by
+    rw [← AlgHom.comp_assoc, Bialgebra.aeval_zero_comp_expPointPolynomial]
+    exact f.counitAlgHom_comp
+  rw [← Bialgebra.curveVelocity_expPointPolynomial_comp d hd f (hzero := hzero)]
+  apply tangentMatrix_curveVelocity_eq_log n _ ?_ hzero g hg ?_
+  · intro s t
+    simpa only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_assoc, map_mul] using
+      congrArg (BialgHom.mapDomain f)
+        (Bialgebra.aeval_comp_expPointPolynomial_add d hd s t)
+  · simpa only [BialgHom.mapDomain_apply, ofConv_toConv, ← AlgHom.comp_assoc,
+      Bialgebra.aeval_one_comp_expPointPolynomial] using h
 
 end TauCeti.GeneralLinear
