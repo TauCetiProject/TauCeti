@@ -41,6 +41,8 @@ by passing to a finite quotient by an open normal subgroup contained in the give
   compact group has finite index.
 * `OpenSubgroup.compactSpace_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group is compact.
+* `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
+  continuous homomorphism has finite index.
 * `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: a proper open subgroup of a compact group
   lies in a maximal open subgroup.
 -/
@@ -65,6 +67,17 @@ instance OpenSubgroup.compactSpace_toSubgroup {G : Type*} [Group G] [Topological
     [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     CompactSpace U.toSubgroup :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
+
+/-- **The preimage of an open subgroup of finite index has finite index.** Mathlib's instance
+for `Subgroup.comap` does not fire on `OpenSubgroup.comap` directly, since instance search does not
+unfold it. -/
+@[to_additive /-- **The preimage of an open additive subgroup of finite index has finite index.**
+Mathlib's instance for `AddSubgroup.comap` does not fire on `OpenAddSubgroup.comap` directly, since
+instance search does not unfold it. -/]
+instance OpenSubgroup.finiteIndex_comap {G N : Type*} [Group G] [TopologicalSpace G] [Group N]
+    [TopologicalSpace N] (U : OpenSubgroup N) [U.toSubgroup.FiniteIndex] (f : G →* N)
+    (hf : Continuous f) : (U.comap f hf).toSubgroup.FiniteIndex :=
+  inferInstanceAs (U.toSubgroup.comap f).FiniteIndex
 
 section MaximalOpenSubgroup
 

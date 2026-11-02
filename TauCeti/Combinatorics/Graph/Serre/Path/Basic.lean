@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.FreeMonoid.Basic
+public import Mathlib.Combinatorics.Quiver.Path.Decomposition
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 
 /-!
@@ -16,7 +17,9 @@ A path in the quiver of a Serre graph is reduced when no consecutive darts cance
 condition retains the distinction between a loop and its reversed dart, and between parallel
 edges. It is the local normal-form condition used for graph path groups and Stallings graphs.
 The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
-its decomposition and mapping lemmas support subgraph and based-core constructions.
+its decomposition and mapping lemmas support subgraph and based-core constructions. The paths of
+a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, and a path leaving a
+vertex set crosses its boundary along one of its darts.
 -/
 
 public section
@@ -51,6 +54,13 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   induction p with
   | nil => simp
   | cons p e ih => simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
+
+/-- A path traverses as many darts as its length. -/
+@[simp] theorem Path.length_darts {a b : Γ.V} (p : Γ.Path a b) :
+    (Path.darts Γ p).length = p.length := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
 
 /-- A traversed dart separates a path into a prefix, that dart, and a suffix. -/
 theorem Path.exists_eq_cons_comp_of_mem_darts {a b : Γ.V} (p : Γ.Path a b)
@@ -157,6 +167,77 @@ private theorem isReduced_pair_comp {a b c d : Γ.V}
         isReduced_pair_comp]
       simp only [reverse_val, Γ.rev_rev, Path.isReduced_cons_cons]
       exact (and_congr (ne_comm : Γ.rev f.1 ≠ e.1 ↔ e.1 ≠ Γ.rev f.1) ih).trans and_comm
+
+/-- A suffix of a reduced concatenation is reduced. -/
+theorem Path.IsReduced.of_comp_right {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
+    (hp : Path.IsReduced Γ (p.comp q)) : Path.IsReduced Γ q := by
+  rw [← Path.isReduced_reverse, Quiver.Path.reverse_comp] at hp
+  exact (Path.isReduced_reverse Γ q).mp (hp.of_comp_left Γ)
+
+/-- Paths in a set of darts that preserves a vertex set `R` start in `R` exactly when they end
+in `R`. -/
+theorem Path.mem_iff_mem_of_forall_mem_darts {S : Set Γ.E} {R : Set Γ.V}
+    (hS : ∀ e ∈ S, Γ.rev e ∈ S) (hR : ∀ e ∈ S, Γ.src e ∈ R → Γ.tgt e ∈ R)
+    {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ S) : a ∈ R ↔ b ∈ R := by
+  induction p with
+  | nil => rfl
+  | cons p e ih =>
+    obtain ⟨e, rfl, rfl⟩ := e
+    have he : e ∈ S := hp e (by simp)
+    rw [ih fun f hf => hp f (by simp [hf])]
+    exact ⟨hR e he, fun h => by simpa using hR _ (hS e he) (by simpa using h)⟩
+
+/-- A path from a vertex set `R` to its complement has a dart from `R` to its complement. -/
+theorem Path.exists_boundary_dart {a b : Γ.V} (p : Γ.Path a b) (R : Set Γ.V)
+    (ha : a ∈ R) (hb : b ∉ R) : ∃ e ∈ Path.darts Γ p, Γ.src e ∈ R ∧ Γ.tgt e ∉ R := by
+  obtain ⟨u, hu, v, hv, e, p₁, p₂, rfl⟩ :=
+    Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem p R ha hb
+  exact ⟨e.1, by simp, by rwa [e.2.1], by rwa [e.2.2]⟩
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- A path all of whose darts lie in `S` lifts through the inclusion of the restriction. -/
+theorem exists_restrict_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ S) :
+    ∃ q : (Γ.restrict S hS).Path a b,
+      (Γ.restrictInclusion S hS).toPrefunctor.mapPath q = p := by
+  induction p with
+  | nil => exact ⟨.nil, rfl⟩
+  | @cons b c p e ih =>
+    obtain ⟨q, hq⟩ := ih fun f hf => hp f (by simp [hf])
+    refine ⟨q.cons ⟨⟨e.1, hp e.1 (by simp)⟩, e.2⟩, ?_⟩
+    subst hq
+    rfl
+
+/-- The darts of a path in the restriction lie in `S`. -/
+theorem mem_of_mem_darts_mapPath {a b : (Γ.restrict S hS).V}
+    (q : (Γ.restrict S hS).Path a b) {e : Γ.E}
+    (he : e ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q)) : e ∈ S := by
+  rw [Hom.darts_mapPath] at he
+  obtain ⟨f, -, rfl⟩ := List.mem_map.mp he
+  exact f.2
+
+/-- A path in the restriction is reduced exactly when it is reduced in the ambient graph. -/
+@[simp] theorem isReduced_restrictInclusion_mapPath_iff {a b : (Γ.restrict S hS).V}
+    (q : (Γ.restrict S hS).Path a b) :
+    Path.IsReduced Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath q) ↔
+      Path.IsReduced (Γ.restrict S hS) q :=
+  Hom.isReduced_mapPath_iff _ (Γ.restrictInclusion S hS) Subtype.val_injective q
+
+/-- The restriction is preconnected exactly when any two vertices are joined by a path of `Γ`
+whose darts lie in `S`. -/
+theorem preconnected_restrict_iff : (Γ.restrict S hS).Preconnected ↔
+    ∀ a b : Γ.V, ∃ p : Γ.Path a b, ∀ e ∈ Path.darts Γ p, e ∈ S := by
+  rw [preconnected_iff]
+  refine ⟨fun h a b => ?_, fun h a b => ?_⟩
+  · obtain ⟨q⟩ := h a b
+    exact ⟨_, fun e he => Γ.mem_of_mem_darts_mapPath S hS q he⟩
+  · obtain ⟨p, hp⟩ := h a b
+    exact ⟨(Γ.exists_restrict_path S hS p hp).choose⟩
+
+end Restrict
 
 /-- Traversing a rose petal and then its reverse is a backtrack. -/
 theorem rose_not_isReduced_backtrack {α : Type*} (a : α) :

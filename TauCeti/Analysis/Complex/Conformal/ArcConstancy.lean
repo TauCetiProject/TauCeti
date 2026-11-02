@@ -35,20 +35,17 @@ The point of the statement is its contrapositive: a function that is *not* the c
 disc is not the constant `a` on any boundary arc, so — for an injective map, which is constant
 nowhere — every boundary fibre has empty interior in the circle.
 
-## What this does and does not supply towards L5
+## Role in Carathéodory's boundary correspondence
 
-This is a prerequisite for layer **L5** of the conformal-mapping roadmap, not that layer's
-boundary-injectivity step. Carathéodory's proof that the extension of a Riemann map of a Jordan
-domain is injective on `frontier` argues by contradiction in two halves: two identified boundary
-points cut the circle into two arcs, and the Jordan-curve geometry of the image forces the
-extension to be constant on one of them; that constancy is then impossible. Only the second half
-is proved here. Producing the constant arc from an identification of two boundary points is a
-Jordan-curve argument about the image, and is **not** proved here, nor is the singleton
-cluster-set property that produces the continuous extension in the first place —
-`Conformal/ClusterSet.lean` records both as still missing, which is why
-`TauCeti.injOn_closure_of_injOn_frontier` there carries boundary injectivity as a hypothesis. So no
-boundary-injectivity claim is discharged by this file; what it adds is the analytic
-non-degeneracy input that the two-arc route would consume.
+This is an input to, not a proof of, boundary injectivity in Carathéodory's theorem. Carathéodory's
+proof that the extension of a Riemann map of a Jordan domain is injective on `frontier` argues by
+contradiction in two halves: two identified boundary points cut the circle into two arcs, and the
+Jordan-curve geometry of the image forces the extension to be constant on one of them; that
+constancy is then impossible. Only the second half is proved here. Producing the constant arc from
+an identification of two boundary points is a Jordan-curve argument about the image, and is **not**
+proved here, nor is the singleton cluster-set property that produces the continuous extension in
+the first place. So no boundary-injectivity claim is discharged by this file; what it adds is the
+analytic non-degeneracy input that the two-arc route consumes.
 
 `Conformal/Jordan/Approach.lean` proves boundary injectivity by a different route (Janiszewski
 and preconnected approach regions) and does not consume this file.
@@ -63,9 +60,9 @@ and preconnected approach regions) and does not consume this file.
   `TauCeti.interior_setOf_eq_eq_empty_of_not_eqOn_const_ball` — the contrapositive, for a function
   that is not that constant on the disc, in the two forms.
 * `TauCeti.not_eqOn_const_inter_sphere_of_injOn` and
-  `TauCeti.interior_setOf_eq_eq_empty_of_injOn` — the roadmap-facing corollaries for a conformal
-  map, which is constant on no boundary arc and each of whose boundary fibres therefore has empty
-  interior in the circle.
+  `TauCeti.interior_setOf_eq_eq_empty_of_injOn` — the corollaries for a conformal map, which
+  is constant on no boundary arc and each of whose boundary fibres therefore has empty interior in
+  the circle.
 
 ## References
 
@@ -255,10 +252,10 @@ private lemma not_eqOn_const_ball_of_injOn (hr : 0 < r) (hinj : InjOn f (ball c 
 `ball c r` and continuous up to a nonempty boundary arc `V ∩ sphere c r`, it takes no value
 constantly on that arc.
 
-This is the roadmap-facing corollary of
-`TauCeti.not_eqOn_const_inter_sphere_of_not_eqOn_const_ball`, an injective map being constant
-nowhere. It is the boundary non-degeneracy that layer L5 of the conformal-mapping roadmap needs;
-see the module docstring for what still separates it from boundary injectivity. -/
+This is the corollary of `TauCeti.not_eqOn_const_inter_sphere_of_not_eqOn_const_ball` for a
+conformal map, an injective map being constant nowhere. It is the boundary non-degeneracy that
+Carathéodory's boundary correspondence needs; see the module docstring for what separates it from
+boundary injectivity. -/
 theorem not_eqOn_const_inter_sphere_of_injOn (hr : 0 < r) (hV : IsOpen V)
     (hcont : ContinuousOn f (V ∩ closedBall c r)) (hdiff : DifferentiableOn ℂ f (ball c r))
     (hinj : InjOn f (ball c r)) (hne : (V ∩ sphere c r).Nonempty) (a : ℂ) :
@@ -270,8 +267,8 @@ theorem not_eqOn_const_inter_sphere_of_injOn (hr : 0 < r) (hV : IsOpen V)
 `ball c r` and continuous on the closed disc, the set of boundary points at which `f` takes a fixed
 value has empty interior in the circle.
 
-This is the roadmap-facing corollary of
-`TauCeti.interior_setOf_eq_eq_empty_of_not_eqOn_const_ball`. -/
+This is the corollary of `TauCeti.interior_setOf_eq_eq_empty_of_not_eqOn_const_ball` for a
+conformal map. -/
 theorem interior_setOf_eq_eq_empty_of_injOn (hr : 0 < r) (hcont : ContinuousOn f (closedBall c r))
     (hdiff : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r)) (a : ℂ) :
     interior {z : sphere c r | f (z : ℂ) = a} = ∅ :=

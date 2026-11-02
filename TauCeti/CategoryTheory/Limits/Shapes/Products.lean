@@ -14,7 +14,14 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Order.SuccPred.Int
 
 /-!
-# Split maps between coproducts, and cokernels of maps between coproducts
+# Split maps between (co)products, and cokernels of maps between coproducts
+
+## Products of split epimorphisms are split
+
+A product `Limits.Pi.map p : ∏ᶜ f ⟶ ∏ᶜ g` of split epimorphisms `p b : f b ⟶ g b`, indexed by a
+type of any size, is a split epimorphism, with section the product of the sections
+(`TauCeti.isSplitEpi_piMap`). Unlike `CategoryTheory.Limits.Pi.map_epi`, this needs no finiteness
+and no biproducts; it is how products of skyscraper presheaves are shown to be flasque.
 
 ## Reindexing a coproduct along an injection is split
 
@@ -71,6 +78,13 @@ arbitrary type has a coproduct as soon as only finitely many of its objects are 
 (`TauCeti.hasCoproduct_of_finite_setOf_not_isZero`): the coproduct of the nonzero objects is a
 coproduct of the whole family. This is how a bounded complex has coproducts over the infinitely
 many degrees in a residue class, as used by its periodic compression.
+
+## Coproducts with a single non-initial summand
+
+If every summand of a coproduct other than the one indexed by `i` is an initial object, the
+inclusion of the summand `i` is an isomorphism (`Cofan.IsColimit.isIso_inj_of_isInitial`). This
+computes a Day convolution of symmetric sequences with a symmetric sequence concentrated in level
+zero, whose wedge decomposition has a single summand that is not the point.
 -/
 
 public section
@@ -80,6 +94,18 @@ open CategoryTheory Limits
 universe w
 
 namespace TauCeti
+
+section PiMap
+
+variable {C : Type*} [Category* C] {β : Type*} {f g : β → C} [HasProduct f] [HasProduct g]
+
+/-- A product of split epimorphisms is a split epimorphism, with section the product of the
+sections. -/
+instance isSplitEpi_piMap (p : ∀ b, f b ⟶ g b) [∀ b, IsSplitEpi (p b)] :
+    IsSplitEpi (Limits.Pi.map p) :=
+  IsSplitEpi.mk' { section_ := Limits.Pi.map fun b ↦ section_ (p b), id := by ext; simp }
+
+end PiMap
 
 section Reindex
 
@@ -304,3 +330,19 @@ theorem hasCoproduct_of_finite_setOf_not_isZero {J : Type*} (f : J → C)
 end FiniteSupport
 
 end TauCeti
+
+namespace CategoryTheory.Limits.Cofan.IsColimit
+
+/-- If every summand of a coproduct other than the one indexed by `i` is initial, then the
+inclusion of the summand `i` is an isomorphism. -/
+lemma isIso_inj_of_isInitial {C : Type*} [Category* C] {ι : Type*} {X : ι → C} {c : Cofan X}
+    (hc : IsColimit c) (i : ι) (h : ∀ j, j ≠ i → IsInitial (X j)) : IsIso (c.inj i) := by
+  classical
+  refine ⟨desc hc fun j ↦ if hj : j = i then eqToHom (by rw [hj]) else (h j hj).to _,
+    by simp [fac], hom_ext hc _ _ fun j ↦ ?_⟩
+  by_cases hj : j = i
+  · subst hj
+    simp [fac_assoc]
+  · exact (h j hj).hom_ext _ _
+
+end CategoryTheory.Limits.Cofan.IsColimit
