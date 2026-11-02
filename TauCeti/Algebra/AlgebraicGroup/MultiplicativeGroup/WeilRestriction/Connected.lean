@@ -78,8 +78,8 @@ private noncomputable def pathPolynomial (p : K[X]) : K[X] :=
 private theorem eval₂_pathPolynomial {S : Type*} [CommRing S] (κ : K →+* S) (p : K[X]) (s : S) :
     (pathPolynomial p).eval₂ κ s =
       MvPolynomial.eval ![s - 1, s] ((p.map κ).homogenize p.natDegree) := by
-  rw [homogenize_map, MvPolynomial.eval_map, pathPolynomial, ← coe_eval₂RingHom,
-    MvPolynomial.map_aeval, MvPolynomial.coe_eval₂Hom]
+  simp only [pathPolynomial, homogenize_map, MvPolynomial.eval_map, MvPolynomial.aeval_def,
+    ← coe_eval₂RingHom, MvPolynomial.eval₂_comp_left]
   congr 1
   · ext a
     simp
@@ -92,9 +92,10 @@ private theorem dvd_eval₂_pathPolynomial {S : Type*} [CommRing S] (κ : K →+
     1 - s + s * u ∣ (pathPolynomial p).eval₂ κ s := by
   have h := sub_mul_dvd_eval_homogenize (p := p.map κ) (by rwa [IsRoot, eval_map])
     natDegree_map_le ![s - 1, s]
-  rw [eval₂_pathPolynomial]
-  rwa [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero,
-    show s - 1 - u * s = -(1 - s + s * u) by ring, neg_dvd] at h
+  rw [eval₂_pathPolynomial, ← neg_dvd]
+  convert h using 1
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  ring
 
 private theorem eval_one_pathPolynomial (p : K[X]) : (pathPolynomial p).eval 1 = p.coeff 0 := by
   rw [← eval₂_id, eval₂_pathPolynomial, Polynomial.map_id]
@@ -210,6 +211,13 @@ private theorem exists_eval₂_eq_zero_of_unit {K : Type u} [Field K] [Algebra k
   rw [aeval_def, Polynomial.hom_eval₂, hc, map_zero] at this
   simpa [v] using this
 
+/-- Base change along `k → K` sends the identity point to the identity point. -/
+private theorem liftEquiv_one {A : Type*} [Semiring A] [Bialgebra k A] {K : Type*} [Field K]
+    [Algebra k K] :
+    AlgHom.liftEquiv k K A K (1 : WithConv (A →ₐ[k] K)).ofConv =
+      (1 : WithConv (K ⊗[k] A →ₐ[K] K)).ofConv := by
+  rw [← AlgHom.baseChangePointsMulEquiv_apply_ofConv, map_one]
+
 /-- Every point of `Res_{B/k} 𝔾ₘ` with values in an algebraically closed field `K` is joined to
 the identity by a point with values in a domain. Consequently right translation by it fixes every
 idempotent of `K ⊗[k] O(Res_{B/k} 𝔾ₘ)`. -/
@@ -249,8 +257,7 @@ private theorem rightTranslationAlgHom_eq_self {K : Type u} [Field K] [Algebra k
   refine HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g
     (toConv (AlgHom.liftEquiv k K _ _ x)) (evalAway _ 1 hρ1) (evalAway _ 0 hρ0) ?_ ?_
   · simp [hΨ, h₁, f]
-  · rw [AlgHom.mapValue_apply, ofConv_toConv, hΨ, h₀,
-      ← AlgHom.baseChangePointsMulEquiv_apply_ofConv, toConv_ofConv, map_one]
+  · simp [hΨ, h₀, liftEquiv_one]
 
 /-- **The Weil restriction of `𝔾ₘ` is geometrically connected.** For a finite-dimensional
 commutative algebra `B` over a field `k`, the coordinate Hopf algebra
