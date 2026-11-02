@@ -22,6 +22,8 @@ inequality then controls the sum.
   Hoeffding's lemma for an arbitrary interval;
 * `TauCeti.Probability.measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences` — the
   one-sided Azuma-Hoeffding inequality with interval bounds;
+* `TauCeti.Probability.measureReal_sum_range_ge_le_of_bounded_martingale_differences` — the
+  one-sided Azuma-Hoeffding inequality for increments with `|Y i| ≤ b i`;
 * `TauCeti.Probability.measureReal_abs_sum_range_ge_le_of_mem_Icc_martingale_differences` — its
   two-sided interval-bounded form;
 * `TauCeti.Probability.measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences` — the

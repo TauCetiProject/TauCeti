@@ -24,7 +24,8 @@ namespace TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
-/-- The tail event for an absolute value is the union of the upper and lower tails. -/
+/-- The measure of the event `ε ≤ |f|` is at most the sum of the measures of the upper tail
+`ε ≤ f` and the lower tail `ε ≤ -f`. -/
 theorem measureReal_le_abs_le_add {f : Ω → ℝ} {ε : ℝ} :
     μ.real {ω | ε ≤ |f ω|} ≤
       μ.real {ω | ε ≤ f ω} + μ.real {ω | ε ≤ -f ω} := by
