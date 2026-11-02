@@ -97,14 +97,6 @@ It is the quotient of the rational normalizer by the rational centralizer
 def weylGroup : Subgroup (MulAut X) :=
   (normalizerCharacterHom π hπ).range
 
-theorem mem_weylGroup {w : MulAut X} :
-    w ∈ weylGroup π hπ ↔ ∃ g : normalizerPoints π hπ, normalizerCharacterHom π hπ g = w :=
-  MonoidHom.mem_range
-
-theorem normalizerCharacterHom_mem_weylGroup (g : normalizerPoints π hπ) :
-    normalizerCharacterHom π hπ g ∈ weylGroup π hπ :=
-  ⟨g, rfl⟩
-
 /-- **The kernel of the normalizer action on characters is the rational centralizer** of the
 diagonalizable subgroup scheme. -/
 theorem ker_normalizerCharacterHom :
