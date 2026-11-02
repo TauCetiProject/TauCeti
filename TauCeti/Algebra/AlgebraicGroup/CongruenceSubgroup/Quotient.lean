@@ -172,29 +172,54 @@ theorem ker_congruenceCotangentHom (hIJ : I * I ≤ J) :
     ZeroMemClass.coe_zero, Ideal.Quotient.eq_zero_iff_mem]
 
 variable (k H) in
-/-- The point `ε + f` of `G(R ⧸ J)` attached to a linear map `f : ker ε / (ker ε)² → I / J`; it is
-an algebra map because products of two elements of `I / J` vanish when `I * I ≤ J`. -/
+/-- The derivation `h ↦ f (cotangentMap h)` of `H` into `I / J`, where `H` acts on `R ⧸ J`
+through the counit (`Bialgebra.CounitAlgebra`). -/
+private noncomputable def cotangentDerivation
+    (f : CotangentSpace k H →ₗ[k] I.map (Ideal.Quotient.mk J)) :
+    Derivation k H
+      ((I.map (Ideal.Quotient.mk J)).comap (CounitAlgebra.algEquivSelf k H (R ⧸ J))) :=
+  Derivation.mk'
+    { toFun h := ⟨(CounitAlgebra.algEquivSelf k H (R ⧸ J)).symm (f (cotangentMap k H h)), by
+        rw [Ideal.mem_comap, AlgEquiv.apply_symm_apply]
+        exact (f _).2⟩
+      map_add' a b := by ext; simp [-CounitAlgebra.algEquivSelf_symm_apply]
+      map_smul' c a := by ext; simp [-CounitAlgebra.algEquivSelf_symm_apply] }
+    fun a b ↦ by
+      ext
+      apply (CounitAlgebra.algEquivSelf k H (R ⧸ J)).injective
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, Submodule.coe_add, Submodule.coe_smul_of_tower,
+        map_add, CounitAlgebra.algEquivSelf_smul, AlgEquiv.apply_symm_apply, cotangentMap_mul,
+        map_smul]
+      simp only [Algebra.smul_def]
+
+private theorem algEquivSelf_cotangentDerivation_apply
+    (f : CotangentSpace k H →ₗ[k] I.map (Ideal.Quotient.mk J)) (h : H) :
+    CounitAlgebra.algEquivSelf k H (R ⧸ J) (cotangentDerivation k H f h) =
+      f (cotangentMap k H h) :=
+  AlgEquiv.apply_symm_apply _ _
+
+variable (k H) in
+/-- The point `ε + f` of `G(R ⧸ J)` attached to a linear map `f : ker ε / (ker ε)² → I / J`: the
+square-zero lift of `cotangentDerivation f`, since products of two elements of `I / J` vanish when
+`I * I ≤ J`. -/
 private noncomputable def cotangentPoint (hIJ : I * I ≤ J)
     (f : CotangentSpace k H →ₗ[k] I.map (Ideal.Quotient.mk J)) : H →ₐ[k] R ⧸ J :=
-  AlgHom.ofLinearMap
-    ((Algebra.linearMap k (R ⧸ J)).comp (counit (R := k)) +
-      ((I.map (Ideal.Quotient.mk J)).subtype.restrictScalars k).comp (f.comp (cotangentMap k H)))
-    (by simp)
-    fun a b ↦ by
-      have hzero : ∀ u v : I.map (Ideal.Quotient.mk J), (u : R ⧸ J) * v = 0 := fun u v ↦ by
-        have huv := Ideal.map_mono (f := Ideal.Quotient.mk J) hIJ
-          (Ideal.map_mul (Ideal.Quotient.mk J) I I ▸ Ideal.mul_mem_mul u.2 v.2)
-        rwa [Ideal.map_quotient_self, Ideal.mem_bot] at huv
-      simp only [LinearMap.add_apply, LinearMap.comp_apply, Algebra.linearMap_apply,
-        LinearMap.restrictScalars_apply, Submodule.subtype_apply, cotangentMap_mul, map_add,
-        map_smul, _root_.Bialgebra.counit_mul, map_mul,
-        Algebra.smul_def]
-      linear_combination -(hzero (f (cotangentMap k H a)) (f (cotangentMap k H b)))
+  (CounitAlgebra.algEquivSelf k H (R ⧸ J)).toAlgHom.comp <|
+    liftOfDerivationToSquareZero _ (by
+      refine eq_bot_iff.2 <| (pow_two _).trans_le <| Ideal.mul_le.2 fun u hu v hv ↦ ?_
+      have huv := Ideal.map_mono (f := Ideal.Quotient.mk J) hIJ
+        (Ideal.map_mul (Ideal.Quotient.mk J) I I ▸
+          Ideal.mul_mem_mul (Ideal.mem_comap.1 hu) (Ideal.mem_comap.1 hv))
+      rw [Ideal.map_quotient_self, Ideal.mem_bot, ← map_mul] at huv
+      rw [Ideal.mem_bot, ← map_eq_zero_iff _ (CounitAlgebra.algEquivSelf k H (R ⧸ J)).injective]
+      exact huv) (cotangentDerivation k H f)
 
 private theorem cotangentPoint_apply (hIJ : I * I ≤ J)
     (f : CotangentSpace k H →ₗ[k] I.map (Ideal.Quotient.mk J)) (h : H) :
     cotangentPoint k H hIJ f h = algebraMap k (R ⧸ J) (counit h) + f (cotangentMap k H h) := by
-  simp [cotangentPoint]
+  rw [cotangentPoint, AlgHom.comp_apply, liftOfDerivationToSquareZero_apply, AlgEquiv.coe_toAlgHom,
+    map_add, add_comm, algEquivSelf_cotangentDerivation_apply, CounitAlgebra.algebraMap_apply]
+  exact congrArg (· + _) (CounitAlgebra.algEquivSelf_apply k H (R ⧸ J) _)
 
 /-- **Every graded piece is attained.** If `J ≤ I`, `I * I ≤ J` and every point of `G(R ⧸ J)` lifts
 to `G(R)`, then every linear map `ker ε / (ker ε)² → I / J` comes from a point of `G(R)_I`: lift
