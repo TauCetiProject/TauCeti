@@ -83,50 +83,40 @@ namespace ApproximatesLinearOn
 /-! ### Straightening a map along a right inverse of its linear approximation -/
 
 /-- The map `x ↦ x + M (f x - L x)` is approximated on `s` by the identity up to `δ ‖M‖`. -/
-private theorem norm_straighten_sub_sub_le (hf : ApproximatesLinearOn f L s δ) {x y : E}
-    (hx : x ∈ s) (hy : y ∈ s) :
-    ‖x + M (f x - L x) - (y + M (f y - L y)) - (x - y)‖ ≤ δ * ‖M‖₊ * ‖x - y‖ := by
-  have hxy : x + M (f x - L x) - (y + M (f y - L y)) - (x - y) = M (f x - f y - L (x - y)) := by
-    simp only [map_sub]
-    abel
-  rw [hxy]
-  calc ‖M (f x - f y - L (x - y))‖ ≤ ‖M‖ * ‖f x - f y - L (x - y)‖ := M.le_opNorm _
-    _ ≤ ‖M‖ * (δ * ‖x - y‖) := by gcongr; exact hf x hx y hy
-    _ = _ := by rw [coe_nnnorm]; ring
+private theorem approximatesLinearOn_straighten (hf : ApproximatesLinearOn f L s δ) :
+    ApproximatesLinearOn (fun x ↦ x + M (f x - L x))
+      (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) s (δ * ‖M‖₊) := by
+  refine LipschitzOnWith.approximatesLinearOn ?_
+  have h : (fun x ↦ x + M (f x - L x)) - ⇑(ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) =
+      M ∘ (f - ⇑L) := by
+    ext x
+    simp
+  rw [h, mul_comm]
+  exact M.lipschitzWith.comp_lipschitzOnWith hf.lipschitzOnWith
 
 /-- The map `x ↦ x + M (f x - L x)` is `(1 + δ ‖M‖)`-Lipschitz on `s`. -/
 private theorem lipschitzOnWith_straighten (hf : ApproximatesLinearOn f L s δ) :
     LipschitzOnWith (1 + δ * ‖M‖₊) (fun x ↦ x + M (f x - L x)) s := by
-  refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
-  rw [dist_eq_norm, dist_eq_norm, NNReal.coe_add, NNReal.coe_one, add_mul, one_mul]
-  calc ‖x + M (f x - L x) - (y + M (f y - L y))‖
-      = ‖(x - y) + (x + M (f x - L x) - (y + M (f y - L y)) - (x - y))‖ := by abel_nf
-    _ ≤ ‖x - y‖ + ‖x + M (f x - L x) - (y + M (f y - L y)) - (x - y)‖ := norm_add_le _ _
-    _ ≤ ‖x - y‖ + δ * ‖M‖₊ * ‖x - y‖ := by gcongr; exact norm_straighten_sub_sub_le hf hx hy
+  refine lipschitzOnWith_iff_restrict.2
+    ((approximatesLinearOn_straighten hf).lipschitzWith.weaken ?_)
+  gcongr
+  rw [ContinuousLinearEquiv.coe_refl, ← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
+  exact ContinuousLinearMap.norm_id_le
 
-/-- The map `x ↦ x + M (f x - L x)` expands distances on `s` by at least the factor
-`1 - δ ‖M‖`. -/
-private theorem mul_norm_sub_le_norm_straighten_sub (hf : ApproximatesLinearOn f L s δ) {x y : E}
-    (hx : x ∈ s) (hy : y ∈ s) :
-    (1 - δ * ‖M‖₊) * ‖x - y‖ ≤ ‖x + M (f x - L x) - (y + M (f y - L y))‖ := by
-  have h₁ : ‖x - y‖ ≤ ‖x + M (f x - L x) - (y + M (f y - L y))‖ +
-      ‖x + M (f x - L x) - (y + M (f y - L y)) - (x - y)‖ := by
-    calc ‖x - y‖ = ‖(x + M (f x - L x) - (y + M (f y - L y))) -
-          (x + M (f x - L x) - (y + M (f y - L y)) - (x - y))‖ := by abel_nf
-      _ ≤ _ := norm_sub_le _ _
-  have h₂ := norm_straighten_sub_sub_le (M := M) hf hx hy
-  push_cast at h₂ ⊢
-  linarith
+/-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` expands distances on `s` by at least the
+factor `1 - δ ‖M‖`. -/
+private theorem antilipschitzWith_straighten (hf : ApproximatesLinearOn f L s δ)
+    (hδ : δ * ‖M‖₊ < 1) :
+    AntilipschitzWith (1 - δ * ‖M‖₊)⁻¹ (s.domRestrict fun x ↦ x + M (f x - L x)) := by
+  -- The identity has norm `1` unless `E` is trivial.
+  cases subsingleton_or_nontrivial E
+  · exact AntilipschitzWith.of_subsingleton
+  simpa using (approximatesLinearOn_straighten hf).antilipschitzWith (Or.inr (by simpa using hδ))
 
 /-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` is injective on `s`. -/
 private theorem injOn_straighten (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) :
-    InjOn (fun x ↦ x + M (f x - L x)) s := fun x hx y hy hxy ↦ by
-  have hpos : (0 : ℝ) < 1 - δ * ‖M‖₊ := by
-    have : (δ : ℝ) * ‖M‖₊ < 1 := by exact_mod_cast hδ
-    linarith
-  have h := mul_norm_sub_le_norm_straighten_sub (M := M) hf hx hy
-  rw [show x + M (f x - L x) = y + M (f y - L y) from hxy, sub_self, norm_zero] at h
-  exact sub_eq_zero.1 (norm_le_zero_iff.1 (nonpos_of_mul_nonpos_right h hpos))
+    InjOn (fun x ↦ x + M (f x - L x)) s :=
+  injOn_iff_injective.2 (antilipschitzWith_straighten hf hδ).injective
 
 /-- The map `x ↦ x + M (f x - L x)` sends the fibre `s ∩ f ⁻¹' {y}` onto the fibre of the linear
 map `L` through its image. -/
@@ -150,19 +140,12 @@ private theorem euclideanHausdorffMeasure_le_image_straighten
     (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) {t : Set E} (ht : t ⊆ s) (d : ℕ) :
     μHE[d] t ≤ ((1 - δ * ‖M‖₊)⁻¹ ^ d : ℝ≥0) * μHE[d] ((fun x ↦ x + M (f x - L x)) '' t) := by
   set h : E → E := fun x ↦ x + M (f x - L x)
-  have hpos : (0 : ℝ) < 1 - δ * ‖M‖₊ := by
-    have : (δ : ℝ) * ‖M‖₊ < 1 := by exact_mod_cast hδ
-    linarith
   -- The inverse `g` of `h` on `s` is `(1 - δ ‖M‖)⁻¹`-Lipschitz on `h '' s`.
   set g := invFunOn h s
   have hg (x : E) (hx : x ∈ s) : g (h x) = x := (injOn_straighten hf hδ).leftInvOn_invFunOn hx
-  have hlip : LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g (h '' s) := by
-    refine LipschitzOnWith.of_dist_le_mul ?_
-    rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-    rw [hg x hx, hg y hy, dist_eq_norm, dist_eq_norm, NNReal.coe_inv,
-      NNReal.coe_sub hδ.le, NNReal.coe_one, NNReal.coe_mul, inv_mul_eq_div,
-      le_div_iff₀ hpos, mul_comm]
-    exact mul_norm_sub_le_norm_straighten_sub hf hx hy
+  have hlip : LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g (h '' s) :=
+    lipschitzOnWith_iff_restrict.2 ((antilipschitzWith_straighten hf hδ).to_rightInvOn'
+      (surjOn_image h s).mapsTo_invFunOn (surjOn_image h s).rightInvOn_invFunOn)
   have himage : t = g '' (h '' t) := by
     rw [image_image]
     exact ((image_congr fun x hx ↦ hg x (ht hx)).trans (image_id' t)).symm
