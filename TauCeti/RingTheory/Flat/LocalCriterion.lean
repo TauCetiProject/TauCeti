@@ -394,9 +394,9 @@ theorem RingHom.Flat.of_comp_of_map_maximalIdeal_eq {R S T : Type*} [CommRing R]
   rw [IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top]
   exact (Ideal.map_mono hg.le).trans (map_maximalIdeal_le f)
 
-namespace Module
-
 open IsLocalRing RingTheory.Sequence Pointwise
+
+namespace Module
 
 universe u v
 
