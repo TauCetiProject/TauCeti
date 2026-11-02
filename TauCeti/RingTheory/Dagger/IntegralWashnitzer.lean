@@ -454,8 +454,8 @@ theorem mem_span_algebraMap_iff_norm_le {a : Subring.unitClosedBall K}
       toWashnitzerAlgebra_injective ?_⟩
   · rw [norm_mul, washnitzerAlgebra.norm_algebraMap, norm_inv]
     exact inv_mul_le_one_of_le₀ hf (norm_nonneg _)
-  · rw [map_mul, toWashnitzerAlgebra_mk, toWashnitzerAlgebra_algebraMap, mul_comm, ← mul_assoc,
-      ← map_mul, mul_inv_cancel₀ ha, map_one, one_mul]
+  · refine Subtype.ext ?_
+    simp [MvPowerSeries.algebraMap_apply, mul_right_comm _ (f : MvPowerSeries σ K), ← map_mul, ha]
 
 end intWashnitzerAlgebra
 

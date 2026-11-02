@@ -43,6 +43,8 @@ with two changes.
 
 * `TauCeti.Dagger.intWashnitzerAlgebra.isNoetherianRing`: `K°⟨X⟩†` is noetherian for finitely many
   variables when `K°` is noetherian, for instance when `K°` is a discrete valuation ring.
+* `TauCeti.Dagger.intWashnitzerAlgebra.isNoetherianRing_of_norm_eq_zpow`: the same for a complete
+  discretely valued field, whose nonzero norms are the integer powers of `‖π‖`.
 * `TauCeti.Dagger.intWashnitzerAlgebra.isNoetherianRing_unitClosedBall`: conversely, `K°` is
   noetherian when some `K°⟨X⟩†` is.
 * `TauCeti.Dagger.intWashnitzerAlgebra.isNoetherianRing_iff`: `K°⟨X⟩†` is noetherian iff `K°` is.
@@ -274,6 +276,15 @@ instance isNoetherianRing [Finite σ] [IsNoetherianRing (Subring.unitClosedBall 
     (fun {_} _ h _ ↦
       have := h
       isNoetherianRing_option) σ
+
+/-- **Discretely valued fields.** Over a complete field `K` whose nonzero norms are the integer
+powers of `‖π‖` for some `0 < ‖π‖ < 1`, the integral Monsky–Washnitzer algebra `K°⟨X⟩†` in
+finitely many variables is noetherian, since `K°` is then a principal ideal ring. -/
+theorem isNoetherianRing_of_norm_eq_zpow [Finite σ] {π : K} (hπ0 : 0 < ‖π‖) (hπ1 : ‖π‖ < 1)
+    (hdisc : ∀ x : K, x ≠ 0 → ∃ k : ℤ, ‖x‖ = ‖π‖ ^ k) :
+    IsNoetherianRing (intWashnitzerAlgebra σ K) :=
+  have := isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow hπ0 hπ1 hdisc
+  inferInstance
 
 /-- For finitely many variables, `K°⟨X⟩†` is noetherian exactly when `K°` is. -/
 theorem isNoetherianRing_iff [Finite σ] :
