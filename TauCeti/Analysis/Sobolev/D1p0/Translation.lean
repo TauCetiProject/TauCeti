@@ -45,37 +45,20 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 theorem translateLp_mem_d1p0Submodule (h : E) {u : Lp E p (mu.restrict (⊤ : Opens E))}
     (hu : u ∈ (d1p0Submodule mu ⊤ p : Set _)) :
     (mu.restrict (⊤ : Opens E)).translateLp p h u ∈
-      (d1p0Submodule mu ⊤ p : Set _) := by
-  rw [coe_d1p0Submodule] at hu
-  refine closure_minimal ?_ ((d1p0Submodule mu ⊤ p).isClosed.preimage
-    ((mu.restrict (⊤ : Opens E)).translateLp p h).continuous) hu
-  rintro _ ⟨phi, rfl⟩
-  simp only [Set.mem_preimage]
-  rw [← gradientTestFunctionLp_translateTestFunction, coe_d1p0Submodule]
-  exact subset_closure (mem_range_self _)
+      (d1p0Submodule mu ⊤ p : Set _) :=
+  mapsTo_d1p0Submodule ((mu.restrict (⊤ : Opens E)).translateLp p h).continuous
+    (fun phi ↦ ⟨_, (gradientTestFunctionLp_translateTestFunction h phi).symm⟩) hu
 
 namespace D1p0
 
 variable (mu p) in
 /-- Translation `u ↦ u(· + h)` on the whole-space homogeneous Sobolev completion, as a
 linear isometric equivalence. Its inverse is translation by `-h`. -/
-def translate (h : E) : D1p0 mu ⊤ p ≃ₗᵢ[ℝ] D1p0 mu ⊤ p where
-  toFun u := ⟨(mu.restrict (⊤ : Opens E)).translateLp p h u,
-    translateLp_mem_d1p0Submodule h u.property⟩
-  invFun u := ⟨(mu.restrict (⊤ : Opens E)).translateLp p (-h) u,
-    translateLp_mem_d1p0Submodule (-h) u.property⟩
-  left_inv u := Subtype.ext <| by
-    simpa only [Measure.translateLp_symm] using
-      ((mu.restrict (⊤ : Opens E)).translateLp p h).symm_apply_apply
-        (u : Lp E p (mu.restrict (⊤ : Opens E)))
-  right_inv u := Subtype.ext <| by
-    simpa only [Measure.translateLp_symm] using
-      ((mu.restrict (⊤ : Opens E)).translateLp p h).apply_symm_apply
-        (u : Lp E p (mu.restrict (⊤ : Opens E)))
-  map_add' u v := Subtype.ext (map_add _ _ _)
-  map_smul' c u := Subtype.ext (map_smul _ _ _)
-  norm_map' u := ((mu.restrict (⊤ : Opens E)).translateLp p h).norm_map
-    (u : Lp E p (mu.restrict (⊤ : Opens E)))
+def translate (h : E) : D1p0 mu ⊤ p ≃ₗᵢ[ℝ] D1p0 mu ⊤ p :=
+  ofLpEquiv ((mu.restrict (⊤ : Opens E)).translateLp p h)
+    (fun _ ↦ translateLp_mem_d1p0Submodule h) <| by
+      rw [Measure.translateLp_symm]
+      exact fun _ ↦ translateLp_mem_d1p0Submodule (-h)
 
 /- These rules run before simplification of the subtype carrier: otherwise the coercion of
 `⊤ : Opens E` in the gradient's measure is simplified before the translation is recognized. -/

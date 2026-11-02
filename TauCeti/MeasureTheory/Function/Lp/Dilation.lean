@@ -31,6 +31,8 @@ whole-space homogeneous Sobolev spaces, whose elements are recorded by their `L�
 
 ## Main declarations
 
+* `TauCeti.rpow_smul_rpow_smul_of_add_eq_zero`: the factors `r ^ a` and `r ^ b` cancel when
+  `a + b = 0`, as they do for the normalized dilations below.
 * `TauCeti.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
 * `TauCeti.eLpNorm_comp_continuousLinearEquiv`: `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 * `TauCeti.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity for the `Lᵖ`
@@ -38,7 +40,8 @@ whole-space homogeneous Sobolev spaces, whose elements are recorded by their `L�
 * `MeasureTheory.Measure.dilateLp`: the normalized dilation as a linear isometric equivalence of
   `Lᵖ`, with `MeasureTheory.Measure.coeFn_dilateLp` (its almost everywhere formula) and the action
   laws `MeasureTheory.Measure.dilateLp_one`, `MeasureTheory.Measure.dilateLp_mul` and
-  `MeasureTheory.Measure.dilateLp_symm`.
+  `MeasureTheory.Measure.dilateLp_symm`. `MeasureTheory.Measure.dilateLp_congr` identifies
+  dilations by equal factors given with different positivity proofs.
 -/
 
 public section
@@ -51,6 +54,12 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
   {G : Type*} [TopologicalSpace G] [ContinuousENorm G]
+
+/-- Scalar multiplication by the powers `r ^ a` and `r ^ b` of `r > 0` cancels when
+`a + b = 0`. -/
+theorem rpow_smul_rpow_smul_of_add_eq_zero {M : Type*} [MulAction ℝ M] {r a b : ℝ} (hr : 0 < r)
+    (h : a + b = 0) (x : M) : r ^ a • r ^ b • x = x := by
+  rw [smul_smul, ← Real.rpow_add hr, h, Real.rpow_zero, one_smul]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`, where
 `n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`, which is `0` at
@@ -131,10 +140,9 @@ noncomputable def dilateLp (hr : 0 < r) : Lp F p μ ≃ₗᵢ[ℝ] Lp F p μ whe
       simp only [Lp.norm_def, eLpNorm_congr_ae (coeFn_compInvSmulLp hr f),
         eLpNorm_comp_inv_smul μ _ hr, ENNReal.toReal_mul,
         ENNReal.toReal_ofReal (Real.rpow_nonneg hr.le _)]
-    have hc : r ^ (-((finrank ℝ E : ℝ) / p.toReal)) * r ^ ((finrank ℝ E : ℝ) / p.toReal) = 1 := by
-      rw [← Real.rpow_add hr, neg_add_cancel, Real.rpow_zero]
     simp only [LinearEquiv.trans_apply, LinearEquiv.smulOfNeZero_apply, norm_smul, hnorm,
-      Real.norm_of_nonneg (Real.rpow_nonneg hr.le _), ← mul_assoc, hc, one_mul]
+      Real.norm_of_nonneg (Real.rpow_nonneg hr.le _)]
+    exact rpow_smul_rpow_smul_of_add_eq_zero hr (neg_add_cancel _) ‖f‖
 
 private theorem dilateLp_eq_smul (hr : 0 < r) (f : Lp F p μ) :
     dilateLp μ p hr f = r ^ (-((finrank ℝ E : ℝ) / p.toReal)) • compInvSmulLp μ p hr f :=
@@ -178,14 +186,18 @@ theorem dilateLp_one (f : Lp F p μ) : dilateLp μ p one_pos f = f := by
   filter_upwards [coeFn_dilateLp one_pos f] with x hx
   rw [hx, Real.one_rpow, inv_one, one_smul, one_smul]
 
+/-- Dilations by equal factors are equal, whatever the proofs that the factors are positive. -/
+theorem dilateLp_congr (hr : 0 < r) (hs : 0 < s) (h : r = s) :
+    dilateLp (F := F) μ p hr = dilateLp μ p hs := by
+  subst h
+  rfl
+
 /-- The inverse of dilation by `r` is dilation by `r⁻¹`. -/
 @[simp]
 theorem dilateLp_symm (hr : 0 < r) :
     (dilateLp (F := F) μ p hr).symm = dilateLp μ p (inv_pos.2 hr) :=
   LinearIsometryEquiv.ext fun f => (LinearIsometryEquiv.symm_apply_eq _).2 <| by
-    have h1 : ∀ {t : ℝ} (ht : 0 < t), t = 1 → dilateLp μ p ht f = f := by
-      rintro _ _ rfl
-      exact dilateLp_one f
-    rw [← LinearIsometryEquiv.trans_apply, ← dilateLp_mul, h1 _ (mul_inv_cancel₀ hr.ne')]
+    rw [← LinearIsometryEquiv.trans_apply, ← dilateLp_mul,
+      dilateLp_congr _ one_pos (mul_inv_cancel₀ hr.ne'), dilateLp_one]
 
 end MeasureTheory.Measure

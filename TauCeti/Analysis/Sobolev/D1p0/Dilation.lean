@@ -54,22 +54,16 @@ private theorem gradientTestFunctionLp_smul_dilateTestFunction (hr : 0 < r)
         (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) •
           dilateTestFunction (Ω := ⊤) hr.ne' (mapsTo_univ _ _) phi) =
       (mu.restrict (⊤ : Opens E)).dilateLp p hr (gradientTestFunctionLp p phi) := by
-  have hexp : 1 - (finrank ℝ E : ℝ) / p.toReal + ((finrank ℝ E : ℝ) / p.toReal - 1) = 0 := by
-    ring
-  rw [gradientTestFunctionLp_smul, gradientTestFunctionLp_dilateTestFunction, smul_smul,
-    ← Real.rpow_add hr, hexp, Real.rpow_zero, one_smul]
+  rw [gradientTestFunctionLp_smul, gradientTestFunctionLp_dilateTestFunction,
+    rpow_smul_rpow_smul_of_add_eq_zero hr]
+  ring
 
 /-- Dilation preserves the closed subspace of whole-space test-function gradients. -/
 theorem dilateLp_mem_d1p0Submodule (hr : 0 < r) {u : Lp E p (mu.restrict (⊤ : Opens E))}
     (hu : u ∈ (d1p0Submodule mu ⊤ p : Set _)) :
-    (mu.restrict (⊤ : Opens E)).dilateLp p hr u ∈ (d1p0Submodule mu ⊤ p : Set _) := by
-  rw [coe_d1p0Submodule] at hu
-  refine closure_minimal ?_ ((d1p0Submodule mu ⊤ p).isClosed.preimage
-    ((mu.restrict (⊤ : Opens E)).dilateLp p hr).continuous) hu
-  rintro _ ⟨phi, rfl⟩
-  simp only [Set.mem_preimage]
-  rw [← gradientTestFunctionLp_smul_dilateTestFunction, coe_d1p0Submodule]
-  exact subset_closure (mem_range_self _)
+    (mu.restrict (⊤ : Opens E)).dilateLp p hr u ∈ (d1p0Submodule mu ⊤ p : Set _) :=
+  mapsTo_d1p0Submodule ((mu.restrict (⊤ : Opens E)).dilateLp p hr).continuous
+    (fun phi ↦ ⟨_, (gradientTestFunctionLp_smul_dilateTestFunction hr phi).symm⟩) hu
 
 namespace D1p0
 
@@ -77,23 +71,11 @@ variable (mu p) in
 /-- Dilation `u ↦ r ^ (1 - n / p) • u (r⁻¹ • ·)` on the whole-space homogeneous Sobolev
 completion, for `r > 0`, as a linear isometric equivalence. It acts on the recorded gradient by
 the isometric `Lᵖ` dilation, and its inverse is dilation by `r⁻¹`. -/
-def dilate (hr : 0 < r) : D1p0 mu ⊤ p ≃ₗᵢ[ℝ] D1p0 mu ⊤ p where
-  toFun u := ⟨(mu.restrict (⊤ : Opens E)).dilateLp p hr u,
-    dilateLp_mem_d1p0Submodule hr u.property⟩
-  invFun u := ⟨(mu.restrict (⊤ : Opens E)).dilateLp p (inv_pos.2 hr) u,
-    dilateLp_mem_d1p0Submodule (inv_pos.2 hr) u.property⟩
-  left_inv u := Subtype.ext <| by
-    simpa only [Measure.dilateLp_symm] using
-      ((mu.restrict (⊤ : Opens E)).dilateLp p hr).symm_apply_apply
-        (u : Lp E p (mu.restrict (⊤ : Opens E)))
-  right_inv u := Subtype.ext <| by
-    simpa only [Measure.dilateLp_symm] using
-      ((mu.restrict (⊤ : Opens E)).dilateLp p hr).apply_symm_apply
-        (u : Lp E p (mu.restrict (⊤ : Opens E)))
-  map_add' u v := Subtype.ext (map_add _ _ _)
-  map_smul' c u := Subtype.ext (map_smul _ _ _)
-  norm_map' u := ((mu.restrict (⊤ : Opens E)).dilateLp p hr).norm_map
-    (u : Lp E p (mu.restrict (⊤ : Opens E)))
+def dilate (hr : 0 < r) : D1p0 mu ⊤ p ≃ₗᵢ[ℝ] D1p0 mu ⊤ p :=
+  ofLpEquiv ((mu.restrict (⊤ : Opens E)).dilateLp p hr)
+    (fun _ ↦ dilateLp_mem_d1p0Submodule hr) <| by
+      rw [Measure.dilateLp_symm]
+      exact fun _ ↦ dilateLp_mem_d1p0Submodule (inv_pos.2 hr)
 
 /- These rules run before simplification of the subtype carrier: otherwise the coercion of
 `⊤ : Opens E` in the gradient's measure is simplified before the dilation is recognized. -/
@@ -148,13 +130,11 @@ theorem sobolevEmbeddingL_dilate {pstar : ENNReal} (hpstar : pstar ≠ ∞)
     (isClosed_eq ((sobolevEmbeddingL hexp).continuous.comp (dilate mu p hr).continuous)
       (((mu.restrict (⊤ : Opens E)).dilateLp pstar hr).continuous.comp
         (sobolevEmbeddingL hexp).continuous)) fun phi ↦ ?_
-  have hsum : 1 - (finrank ℝ E : ℝ) / p.toReal + (finrank ℝ E : ℝ) / pstar.toReal = 0 := by
-    rw [div_toReal_eq_div_toReal_sub_one hexp]
-    ring
   rw [dilate_ofTestFunctionₗ, sobolevEmbeddingL_ofTestFunctionₗ hpstar hexp,
     sobolevEmbeddingL_ofTestFunctionₗ hpstar hexp, testFunctionLp_smul,
-    testFunctionLp_dilateTestFunction, smul_smul, ← Real.rpow_add hr, hsum, Real.rpow_zero,
-    one_smul]
+    testFunctionLp_dilateTestFunction, rpow_smul_rpow_smul_of_add_eq_zero hr]
+  rw [div_toReal_eq_div_toReal_sub_one hexp]
+  ring
 
 end D1p0
 

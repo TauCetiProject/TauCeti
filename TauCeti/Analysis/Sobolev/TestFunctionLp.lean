@@ -388,8 +388,8 @@ theorem testFunctionLp_dilateTestFunction (hr : 0 < r) (phi : 𝓓((⊤ : Opens 
     Lp.coeFn_smul (r ^ ((Module.finrank ℝ E : ℝ) / q.toReal))
       ((mu.restrict (⊤ : Opens E)).dilateLp q hr (testFunctionLp (mu := mu) q phi)),
     (memLp_testFunction (mu := mu) q phi).coeFn_dilateLp_toLp hr] with x hx hs hd
-  rw [hx, hs, Pi.smul_apply, testFunctionLp, hd, smul_smul, ← Real.rpow_add hr, add_neg_cancel,
-    Real.rpow_zero, one_smul]
+  rw [hx, hs, Pi.smul_apply, testFunctionLp, hd,
+    rpow_smul_rpow_smul_of_add_eq_zero hr (add_neg_cancel _)]
   exact dilateTestFunction_apply _ _ phi x
 
 end Dilation
