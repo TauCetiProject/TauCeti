@@ -39,6 +39,7 @@ function field, containing exactly the constants in `K`. For the principal congr
 * `Subgroup.CompactifiedQuotient.laurentQExpansion`: the Laurent `q`-expansion at a cusp datum, as a
   `ℂ`-algebra homomorphism.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_injective`: the `q`-expansion principle.
+* `Subgroup.CompactifiedQuotient.laurentQExpansion_aeval`: the expansion of a polynomial in `F`.
 * `Subgroup.CompactifiedQuotient.orderTop_laurentQExpansion`: the order at the cusp.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_coeff_zero_eq_finitePart`: the value at the cusp.
 * `Subgroup.CompactifiedQuotient.hasSum_laurentQExpansion`: convergence near the cusp.
@@ -135,6 +136,16 @@ theorem laurentQExpansion_apply (F : MeromorphicFunction Γ.CompactifiedQuotient
 determined by its Laurent `q`-expansion at any cusp. -/
 theorem laurentQExpansion_injective : Injective (laurentQExpansion D) :=
   (laurentQExpansion D).toRingHom.injective
+
+/-- The Laurent `q`-expansion at `D` of a polynomial in `F` is the polynomial evaluated at the
+expansion of `F`, with constants embedded by `HahnSeries.C`. -/
+theorem laurentQExpansion_aeval (F : MeromorphicFunction Γ.CompactifiedQuotient)
+    (p : Polynomial ℂ) :
+    laurentQExpansion D (Polynomial.aeval F p) =
+      p.eval₂ HahnSeries.C (laurentQExpansion D F) := by
+  rw [← Polynomial.aeval_algHom_apply, Polynomial.aeval_def]
+  congr 1
+  exact RingHom.ext fun c ↦ LaurentSeries.algebraMap_apply ℂ c
 
 /-- **The order at a cusp.** The order of the Laurent `q`-expansion of `F` at `D` is the order of
 `F` at the cusp of `D`. -/

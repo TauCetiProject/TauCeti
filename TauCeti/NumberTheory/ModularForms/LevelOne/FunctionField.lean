@@ -183,16 +183,6 @@ private theorem closure_le_coeffSubfield (K : Subfield ℂ) :
   rintro _ ⟨c, hc, rfl⟩
   exact (algebraMap_mem_coeffSubfield _).mpr hc
 
-/-- The Laurent expansion at the cusp of a polynomial in a meromorphic function `F` is the
-polynomial evaluated at the expansion of `F`. -/
-private theorem laurentQExpansion_aeval
-    (F : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient) (p : ℂ[X]) :
-    laurentQExpansion cuspDatumInfty (aeval F p) =
-      p.eval₂ HahnSeries.C (laurentQExpansion cuspDatumInfty F) := by
-  rw [← aeval_algHom_apply, aeval_def]
-  congr 1
-  exact RingHom.ext fun c ↦ LaurentSeries.algebraMap_apply ℂ c
-
 /-- The Laurent expansion at the cusp of a polynomial over `K` in `j` is the image of the polynomial
 evaluated at a series `ℓ` over `K` expanding `j`. -/
 private theorem laurentQExpansion_aeval_map {K : Subfield ℂ} {ℓ : LaurentSeries K}
