@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
-public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
 
 /-!
 # The signature of the level-one modular curve
