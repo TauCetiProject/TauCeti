@@ -28,14 +28,17 @@ right action is `dualAction L`. Dual bimodules are the coefficient modules in th
 amenability, where derivations into duals of Banach bimodules are required to be inner, and in
 the bounded Hochschild cohomology `Hⁿ(A, E*)`.
 
-This file proves the bimodule laws of the dual actions, the norm bound
-`‖dualAction M a‖ ≤ ‖M a‖` (an equality over `ℝ` or `ℂ`), the weak-star continuity of each dual
-action in the dual variable, and two naturality statements: adjoints of bounded module maps are
-module maps for the dual actions, and the canonical map of `E` into its bidual `E**` is a bimodule
-map when `E**` carries the dual actions of `E*`. Since `dualAction M a` is the adjoint of `M a`
-(`ContinuousLinearMap.dualAction_apply`), the correspondence between invariant subspaces and their
-annihilators in `TauCeti.Analysis.Normed.Module.Dual.Invariant` identifies the closed submodules of
-`E` with the weak-star closed submodules of `E*`.
+This file proves the bimodule laws of the dual actions, the weak-star continuity of each dual
+action in the dual variable, and that adjoints of bounded module maps are module maps for the dual
+actions. Since `dualAction M a` is the adjoint `precomp 𝕜 (M a)` of `M a`
+(`ContinuousLinearMap.dualAction_apply`), the adjoint API applies directly after rewriting:
+`ContinuousLinearMap.norm_precomp_le` gives the bound `‖dualAction M a‖ ≤ ‖M a‖`,
+`ContinuousLinearMap.norm_precomp` gives equality over `ℝ` or `ℂ`, and
+`ContinuousLinearMap.precomp_precomp_inclusionInDoubleDual` shows that the canonical map of `E` into
+its bidual `E**` is a bimodule map when `E**` carries the dual actions of `E*`. Likewise, the
+correspondence between invariant subspaces and their annihilators in
+`TauCeti.Analysis.Normed.Module.Dual.Invariant` identifies the closed submodules of `E` with the
+weak-star closed submodules of `E*`.
 
 ## Main definitions
 
@@ -44,19 +47,16 @@ annihilators in `TauCeti.Analysis.Normed.Module.Dual.Invariant` identifies the c
 
 ## Main results
 
+* `ContinuousLinearMap.dualAction_apply`: the dual action of `a` is the adjoint of the action of
+  `a`.
 * `ContinuousLinearMap.dualAction_mul_apply_of_right`,
   `ContinuousLinearMap.dualAction_mul_apply_of_left`,
   `ContinuousLinearMap.dualAction_apply_dualAction_apply_comm`: the dual actions of a bounded
   bimodule satisfy the bimodule laws.
-* `ContinuousLinearMap.norm_dualAction_apply_le`, `ContinuousLinearMap.norm_dualAction_apply`:
-  the dual action of `a` has norm at most, and over `ℝ` or `ℂ` exactly, the norm of the action
-  of `a`.
 * `ContinuousLinearMap.continuous_toWeakDual_dualAction`: each dual action is weak-star
   continuous in the dual variable.
 * `ContinuousLinearMap.precomp_dualAction_apply`: the adjoint of a module map intertwines the
   dual actions.
-* `ContinuousLinearMap.dualAction_dualAction_inclusionInDoubleDual`: the canonical map into the
-  bidual intertwines an action with its second dual action.
 
 ## References
 
@@ -124,18 +124,6 @@ theorem dualAction_apply_dualAction_apply_comm {L R : A →L[𝕜] E →L[𝕜] 
   ext x
   simp [hLR]
 
-/-- The dual action of `a` is bounded by the action of `a`. -/
-theorem norm_dualAction_apply_le (M : A →L[𝕜] E →L[𝕜] E) (a : A) :
-    ‖dualAction M a‖ ≤ ‖M a‖ := by
-  rw [dualAction_apply]
-  exact norm_precomp_le (M a)
-
-/-- Over `ℝ` or `ℂ`, the dual action of `a` has the same norm as the action of `a`. -/
-@[simp]
-theorem norm_dualAction_apply [IsRCLikeNormedField 𝕜] (M : A →L[𝕜] E →L[𝕜] E) (a : A) :
-    ‖dualAction M a‖ = ‖M a‖ := by
-  rw [dualAction_apply, norm_precomp]
-
 /-- Each dual action is continuous for the weak-star topology in the dual variable. -/
 theorem continuous_toWeakDual_dualAction (M : A →L[𝕜] E →L[𝕜] E) (a : A) :
     Continuous fun φ : WeakDual 𝕜 E ↦
@@ -149,16 +137,5 @@ theorem precomp_dualAction_apply {M : A →L[𝕜] E →L[𝕜] E} {N : A →L[�
     precomp 𝕜 T (dualAction N a ψ) = dualAction M a (precomp 𝕜 T ψ) := by
   ext x
   simp [hT]
-
-/-- The canonical map of `E` into its bidual intertwines an action `M` with the second dual
-action `dualAction (dualAction M)`. For a bimodule with actions `L` and `R`, the left and right
-actions of the bidual are `dualAction (dualAction L)` and `dualAction (dualAction R)`, so the
-canonical map is a bimodule map. -/
-@[simp]
-theorem dualAction_dualAction_inclusionInDoubleDual (M : A →L[𝕜] E →L[𝕜] E) (a : A) (x : E) :
-    dualAction (dualAction M) a (NormedSpace.inclusionInDoubleDual 𝕜 E x) =
-      NormedSpace.inclusionInDoubleDual 𝕜 E (M a x) := by
-  ext φ
-  simp
 
 end ContinuousLinearMap
