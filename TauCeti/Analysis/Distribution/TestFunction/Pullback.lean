@@ -46,7 +46,8 @@ used to push forward currents whose support is compact, see
   mass.
 * `TestFunction.cutoffPullbackCLM`: the pullback with a cutoff `ω ↦ χ Φ^* ω`, as a continuous
   linear map, with its values `TestFunction.cutoffPullbackCLM_apply`.
-* `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` where `χ = 1`.
+* `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
+  near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
 
 ## Implementation notes
@@ -327,7 +328,8 @@ section CutoffPullback
 
 A test function `χ` on `Ω` localizes the pullback: `χ Φ^* ω` is supported in the compact set
 `tsupport χ` whatever `Φ` does, so no properness of `Φ` is needed. Precomposing a current on `Ω`
-whose support lies where `χ = 1` with this map gives its pushforward along `Φ`. -/
+with this map gives its pushforward along `Φ` when `χ = 1` on a neighborhood of the current's
+support. -/
 
 /-- A cutoff pullback of a smooth form is smooth. -/
 private theorem contDiff_smul_pullbackFun (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) (χ : 𝓓(Ω, ℝ))
