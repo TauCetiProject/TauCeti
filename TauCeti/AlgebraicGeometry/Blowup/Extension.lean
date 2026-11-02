@@ -13,10 +13,10 @@ import TauCeti.AlgebraicGeometry.IdealSheaf.Extension
 /-!
 # Extending blowups from open subschemes
 
-Let `j : X ⟶ Y` be a quasi-compact open immersion. The schematic closure in `Y` of a
-centre on `X` defines a blowup whose base change to `X` is the original blowup, including
-its full scheme structure. If the original centre avoids the inverse image of an open
-`U ⊆ Y`, the extended blowup is an isomorphism over `U`.
+Let `j : X ⟶ Y` be any open immersion into a locally Noetherian scheme. The schematic
+closure in `Y` of a centre on `X` defines a blowup whose base change to `X` is the original
+blowup, including its full scheme structure. If the original centre avoids the inverse image
+of an open `U ⊆ Y`, the extended blowup is an isomorphism over `U`.
 
 On a locally Noetherian scheme the extended centre is of finite type, so the extended
 blowup is proper. Thus an admissible blowup on an open subscheme extends to a proper
@@ -43,10 +43,9 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X Y : Scheme.{u}} (I : X.IdealSheafData) (j : X ⟶ Y)
-    [IsOpenImmersion j] [QuasiCompact j]
+variable {X Y : Scheme.{u}} (I : X.IdealSheafData) (j : X ⟶ Y) [IsOpenImmersion j]
 
-/-- A blowup on a quasi-compact open of a locally Noetherian scheme extends to a proper
+/-- A blowup on any open subscheme of a locally Noetherian scheme extends to a proper
 blowup of the ambient scheme. If its centre avoids the inverse image of `U`, the extended
 centre avoids `U` and the extension is an isomorphism over `U`. The cartesian square identifies
 its restriction with the given
