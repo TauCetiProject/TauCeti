@@ -18,7 +18,7 @@ class `g ∈ Hʳ(F, F ∖ {0}; R, M)`. A linear trivialization `e` whose base se
 identifies the fibre pair `(E_b, E_b ∖ {0})` with `(F, F ∖ {0})`, and so reads `g` as a class of
 the fibre pair. Two trivializations read `g` as classes differing by the sign of the determinant
 of their coordinate change at `b`
-(`Bundle.Trivialization.singularCohomologyMap_fiberPairIso_hom_eq_sign_det_smul`), and this sign
+(`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`), and this sign
 is `+1` exactly when they read the orientation `o b` as the same orientation of `F`. So the class
 read off along any trivialization carrying `o b` to `ω`, or the negative of the class read off
 along one carrying `o b` to `-ω`, is a class of the fibre pair that depends only on `o b`.
@@ -80,11 +80,12 @@ private def orientedFiberClass (ω : Orientation ℝ F ι)
     (x : Orientation ℝ (E b) ι) :
     (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularCohomology R' K M'
       (finrank ℝ F) :=
-  if e.mapOrientation ι hb x = ω then TopPair.singularCohomologyMap (e.fiberPairIso ℝ hb).hom _ g
-  else -TopPair.singularCohomologyMap (e.fiberPairIso ℝ hb).hom _ g
+  if e.mapOrientation ι hb x = ω then
+    TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g
+  else -TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g
 
 /-- The oriented fibre class does not depend on the trivialization: by
-`Bundle.Trivialization.singularCohomologyMap_fiberPairIso_hom_eq_sign_det_smul`, changing the
+`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`, changing the
 trivialization multiplies the unsigned class by the sign of the determinant of the coordinate
 change, which is also the sign relating the two readings of `x`. -/
 private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (ω : Orientation ℝ F ι)
@@ -98,7 +99,7 @@ private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (�
     (LinearEquiv.isUnit_det' _).ne_zero
   have hω := Orientation.eq_or_eq_neg (e.mapOrientation ι hb x) ω hι
   unfold orientedFiberClass
-  rw [e.singularCohomologyMap_fiberPairIso_hom_eq_sign_det_smul e' hb hb', hx]
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', hx]
   rcases hdet.lt_or_gt with hneg | hpos
   · -- An orientation-reversing coordinate change negates both the class and the reading of `x`.
     have hsign : SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = -1 := sign_neg hneg
@@ -125,11 +126,13 @@ theorem exists_singularCohomology_thomPair_fiber [CompactSpace B]
       (∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
         e.mapOrientation ι hb (o b) = ω →
           TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
-            TopPair.singularCohomologyMap (e.fiberPairIso ℝ hb).hom _ g) ∧
+            TopPair.singularCohomologyMap
+              (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g) ∧
       ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
         e.mapOrientation ι hb (o b) = -ω →
           TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
-            -TopPair.singularCohomologyMap (e.fiberPairIso ℝ hb).hom _ g := by
+            -TopPair.singularCohomologyMap
+              (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g := by
   classical
   let e (c : B) := trivializationAt F E c
   have hc (c : B) : c ∈ (e c).baseSet := mem_baseSet_trivializationAt F E c
@@ -196,7 +199,8 @@ theorem exists_isThomClass [CompactSpace B] (hι : Fintype.card ι = finrank ℝ
   have hb := mem_baseSet_trivializationAt F E b
   -- The pull-back along an isomorphism of pairs of a generator generates.
   let φ := (TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
-    (finrank ℝ F)).mapIso ((trivializationAt F E b).fiberPairIso ℝ hb).op
+    (finrank ℝ F)).mapIso
+      ((trivializationAt F E b).continuousLinearEquivAt ℝ b hb).complZeroPairIso.op
   have hgen : Submodule.span K {φ.toLinearEquiv g} = ⊤ :=
     φ.toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
   rcases Orientation.eq_or_eq_neg ((trivializationAt F E b).mapOrientation ι hb (o b)) ω hι
