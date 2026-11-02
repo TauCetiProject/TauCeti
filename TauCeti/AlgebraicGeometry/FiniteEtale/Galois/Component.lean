@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
@@ -94,16 +95,9 @@ theorem nonempty_fiber_iso_of_mem_connectedComponent {x : Spec (.of Ω) ⟶ S}
     ⟨connectedComponent (x default), isClosed_connectedComponent⟩
   have hker {Ω'' : Type u} [Field Ω''] (z : Spec (.of Ω'') ⟶ S)
       (hz : z default ∈ connectedComponent (x default)) : I.subschemeι.ker ≤ z.ker := by
-    have : QuasiCompact z := ⟨fun _ _ _ ↦ Set.subsingleton_of_subsingleton.isCompact⟩
     rw [Scheme.IdealSheafData.ker_subschemeι]
-    refine (Scheme.IdealSheafData.vanishingIdeal_antimono (S := z.ker.support) ?_).trans ?_
-    · rw [← SetLike.coe_subset_coe, Scheme.Hom.support_ker, Set.range_unique]
-      exact isClosed_connectedComponent.closure_subset_iff.mpr (Set.singleton_subset_iff.mpr hz)
-    · -- The kernel of a morphism out of the reduced scheme `Spec Ω''` is radical.
-      rw [Scheme.IdealSheafData.vanishingIdeal_support]
-      rintro U a ⟨n, hn⟩
-      rw [Scheme.Hom.ker_apply, RingHom.mem_ker, map_pow] at hn
-      exact (Scheme.Hom.ker_apply z U).ge (IsReduced.eq_zero _ ⟨n, hn⟩)
+    exact Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset z
+      (by rwa [Set.range_unique, Set.singleton_subset_iff])
   let x' := IsClosedImmersion.lift _ x (hker x mem_connectedComponent)
   have : ConnectedSpace I.subscheme := by
     refine connectedSpace_iff_univ.mpr ⟨⟨x' default, trivial⟩,
