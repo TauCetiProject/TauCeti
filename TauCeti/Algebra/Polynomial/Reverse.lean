@@ -297,6 +297,13 @@ theorem reverse_X_sub_C_pow [CommRing R] (a : R) (n : ℕ) :
     fun p hp ↦ Multiset.eq_of_mem_replicate hp ▸ monic_X_sub_C a
   rwa [Multiset.prod_replicate, Multiset.map_replicate, h, Multiset.prod_replicate] at h'
 
+/-- The reverse of `(X - 1) ^ n` is `(1 - X) ^ n`. This is the form `reverse_X_sub_C_pow` takes
+after `C 1` simplifies to `1`, as in `LinearMap.charpoly_one`. -/
+@[simp]
+theorem reverse_X_sub_one_pow [CommRing R] (n : ℕ) :
+    ((X - 1 : R[X]) ^ n).reverse = (1 - X) ^ n := by
+  simpa using reverse_X_sub_C_pow (1 : R) n
+
 /-- Over a nontrivial ring, the polynomial `1 - X` is nonzero. -/
 theorem one_sub_X_ne_zero [Ring R] [Nontrivial R] : (1 - X : R[X]) ≠ 0 :=
   fun h ↦ by simpa using congrArg (eval 0) h

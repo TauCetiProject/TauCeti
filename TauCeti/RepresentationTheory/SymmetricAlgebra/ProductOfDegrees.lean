@@ -189,11 +189,8 @@ omit [Fintype G] in
 private theorem eq_one_of_mem_ker {g : G} (hg : g ∈ ρ.ker) {R : Polynomial K}
     (hR : (ρ g).charpoly.reverse = (1 - Polynomial.X) ^ finrank K (ρ g).fixedSubmodule * R) :
     R = 1 := by
-  have hrev : ((Polynomial.X - 1 : Polynomial K) ^ finrank K M).reverse =
-      (1 - Polynomial.X) ^ finrank K M := by
-    simpa using Polynomial.reverse_X_sub_C_pow (1 : K) (finrank K M)
   rw [(finrank_fixedSubmodule_eq_iff_mem_ker ρ).2 hg, MonoidHom.mem_ker.1 hg,
-    LinearMap.charpoly_one, hrev] at hR
+    LinearMap.charpoly_one, Polynomial.reverse_X_sub_one_pow] at hR
   exact (mul_left_cancel₀ (pow_ne_zero _ Polynomial.one_sub_X_ne_zero) ((mul_one _).trans hR)).symm
 
 omit [Fintype G] in
