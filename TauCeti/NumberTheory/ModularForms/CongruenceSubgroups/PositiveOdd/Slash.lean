@@ -36,9 +36,6 @@ Both parity hypotheses follow from the conclusions (the first for nonzero `f`): 
 
 ## Main statements
 
-* `TauCeti.ModularForm.SL_slash_neg`: `f ∣[k] (-A) = (-1)^k • f ∣[k] A` for `A ∈ SL(2, ℤ)`.
-* `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`: invariance under `A ∈ SL(2, ℤ)`
-  passes to every integer power of `A`.
 * `TauCeti.ModularForm.slash_eq_smul_of_mem_Gamma0_of_pos_odd`: the nebentypus law on `Γ₀(N)`
   from the matrices with positive lower-left and positive odd upper-left entries.
 * `TauCeti.ModularForm.slash_eq_self_of_mem_Gamma_of_pos_odd`: invariance under `Γ(N)` from
@@ -58,27 +55,6 @@ open scoped MatrixGroups ModularForm UpperHalfPlane
 namespace TauCeti.ModularForm
 
 variable {k : ℤ} {f : ℍ → ℂ}
-
-/-- Negating a matrix of `SL(2, ℤ)` multiplies its weight-`k` slash action by `(-1)^k`, the
-scalar by which the central element `-I` acts. -/
-@[simp]
-theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
-    f ∣[k] (-A) = (-1 : ℂ) ^ k • f ∣[k] A := by
-  -- `ModularForm.SL_slash` exposes the image of `-I` in `GL (Fin 2) ℝ` through `toGL ∘ map`,
-  -- which is `mapGL` unfolded.
-  have hGL : toGL (map (Int.castRingHom ℝ) (-1 : SL(2, ℤ))) = -1 := mapGL_neg_one
-  rw [← neg_one_mul, SlashAction.slash_mul, ModularForm.SL_slash f (-1), hGL,
-    _root_.ModularForm.slash_neg_one, ModularForm.SL_smul_slash]
-
-/-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
-`SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
-theorem SL_slash_zpow_eq_self_of_slash_eq {A : SL(2, ℤ)} (hA : f ∣[k] A = f) (j : ℤ) :
-    f ∣[k] (A ^ j) = f := by
-  have hGL : toGL (map (Int.castRingHom ℝ) (A ^ j)) = toGL (map (Int.castRingHom ℝ) A) ^ j :=
-    map_zpow (mapGL ℝ) A j
-  rw [ModularForm.SL_slash] at hA ⊢
-  rw [hGL]
-  exact slash_zpow_eq_self_of_slash_eq k f hA j
 
 /-- **The nebentypus law on `Γ₀(N)` from matrices with positive odd upper-left entry.** Let `χ`
 be a Dirichlet character modulo `N` with `χ(-1) = (-1)^k`, and let `f` be invariant under `T` in
