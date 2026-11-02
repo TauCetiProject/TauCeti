@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.GNS
 public import TauCeti.Analysis.CStarAlgebra.Action.GroundState.Basic
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
