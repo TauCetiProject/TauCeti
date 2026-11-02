@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
+import TauCeti.Algebra.BigOperators.Finset.LayerCake
 import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Diagonal
 
 /-!
@@ -65,6 +66,8 @@ of one form give the same `p`-mass.
 
 ## Main results
 
+* `TauCeti.conwaySloanePMass_def`, `TauCeti.conwaySloanePMass_zero`: the defining formula of the
+  `p`-mass, and its value on a unimodular diagonal form.
 * `TauCeti.conwaySloaneStdMass_mul_localDensity`: the standard `p`-mass of a unimodular Gram
   matrix is the inverse of its local density.
 * `TauCeti.conwaySloanePMass_mul_localDensity_diagonal`: `m_p · α_p = p^{(n + 1) ∑ kᵢ / 2}` for
@@ -168,43 +171,28 @@ noncomputable def conwaySloanePMass {ι : Type*} [Fintype ι] (u : ι → ℤ_[p
         ℝ)) *
     √(p : ℝ) ^ ∑ i, ∑ i', (k i' - k i)
 
-/-- The exponent identity behind the Conway–Sloane dictionary: twice the exponent
-`∑_{j < max k} binom(Nⱼ + 1, 2)`, `Nⱼ = #{i | j < kᵢ}`, of the local density of a diagonal Jordan
-form, plus the exponent `∑_{i, i'} (k_{i'} - kᵢ)⁺` of the cross terms, is `(n + 1) ∑ kᵢ`. -/
-private theorem two_mul_sum_choose_add_sum_sum_tsub {ι : Type*} [Fintype ι] (k : ι → ℕ) :
-    2 * ∑ j ∈ range (univ.sup k), (#{i | j < k i} + 1).choose 2 + ∑ i, ∑ i', (k i' - k i) =
-      (Fintype.card ι + 1) * ∑ i, k i := by
-  set K := univ.sup k
-  have hK (i : ι) : k i ≤ K := le_sup (mem_univ i)
-  have hcount (m : ℕ) (hm : m ≤ K) : #{j ∈ range K | j < m} = m := by
-    rw [show {j ∈ range K | j < m} = range m by ext j; simp; omega, card_range]
-  -- `∑ⱼ Nⱼ = ∑ᵢ kᵢ` and `∑ⱼ Nⱼ² = ∑_{i, i'} min kᵢ k_{i'}`, by counting the `j` below `kᵢ`
-  have h1 : ∑ j ∈ range K, #{i | j < k i} = ∑ i, k i := by
-    simp_rw [card_filter]
-    rw [sum_comm]
-    refine sum_congr rfl fun i _ => ?_
-    rw [← card_filter, hcount _ (hK i)]
-  have h2 : ∑ j ∈ range K, #{i | j < k i} * #{i | j < k i} = ∑ i, ∑ i', min (k i) (k i') := by
-    simp_rw [card_filter, sum_mul_sum]
-    rw [sum_comm]
-    refine sum_congr rfl fun i _ => ?_
-    rw [sum_comm]
-    refine sum_congr rfl fun i' _ => ?_
-    rw [← hcount _ (min_le_of_left_le (hK i)), card_filter]
-    refine sum_congr rfl fun j _ => ?_
-    split_ifs <;> omega
-  have hchoose (N : ℕ) : 2 * (N + 1).choose 2 = N * N + N := by
-    have h := Nat.add_one_mul_choose_eq N 1
-    rw [Nat.choose_one_right] at h
-    linarith
-  calc 2 * ∑ j ∈ range K, (#{i | j < k i} + 1).choose 2 + ∑ i, ∑ i', (k i' - k i)
-      = ∑ i, ∑ i', (min (k i) (k i') + (k i' - k i)) + ∑ i, k i := by
-        simp_rw [mul_sum, hchoose, sum_add_distrib, h1, h2]
-        ring
-    _ = (Fintype.card ι + 1) * ∑ i, k i := by
-        rw [sum_comm]
-        simp_rw [show ∀ i i', min (k i) (k i') + (k i' - k i) = k i' from fun i i' => by omega]
-        simp [sum_const, card_univ, add_mul, mul_sum, sum_add_distrib]
+/-- The defining formula of the Conway–Sloane `p`-mass, the product of the standard `p`-masses of
+the unimodular constituents and of the cross terms. The body of `TauCeti.conwaySloanePMass` is not
+exposed to importing modules, so this is how they evaluate it. -/
+theorem conwaySloanePMass_def {ι : Type*} [Fintype ι] (u : ι → ℤ_[p]ˣ) (k : ι → ℕ) :
+    conwaySloanePMass p u k =
+      (∏ j ∈ univ.image k,
+          (conwaySloaneStdMass p #{i | k i = j} (∏ i with k i = j, PadicInt.toZMod (u i : ℤ_[p])) :
+            ℝ)) *
+        √(p : ℝ) ^ ∑ i, ∑ i', (k i' - k i) := by
+  rw [conwaySloanePMass]
+
+/-- The `p`-mass of a unimodular diagonal form `diag(uᵢ)` is the standard `p`-mass of its rank
+and of the reduction of `∏ uᵢ` modulo `p`: it has a single constituent and no cross terms. -/
+@[simp]
+theorem conwaySloanePMass_zero {ι : Type*} [Fintype ι] (u : ι → ℤ_[p]ˣ) :
+    conwaySloanePMass p u 0 =
+      (conwaySloaneStdMass p (Fintype.card ι) (∏ i, PadicInt.toZMod (u i : ℤ_[p])) : ℝ) := by
+  rw [conwaySloanePMass_def]
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp
+  · have himage : univ.image (0 : ι → ℕ) = {0} := image_const univ_nonempty 0
+    simp [himage]
 
 /-- **The Conway–Sloane dictionary at an odd prime, for a diagonal Jordan form.** For `p` odd,
 units `uᵢ` of `ℤ_p` and exponents `kᵢ`, the `p`-mass and the local density of the diagonal Gram
@@ -229,8 +217,8 @@ theorem conwaySloanePMass_mul_localDensity_diagonal (hp : p ≠ 2) {ι : Type*} 
       ← Rat.cast_mul, h, Rat.cast_one]
   rw [prod_mul_distrib] at hblocks
   have hsq : √(p : ℝ) ^ 2 = p := Real.sq_sqrt (Nat.cast_nonneg p)
-  rw [localDensity_diagonal_unit_mul_pow hp, conwaySloanePMass,
-    ← two_mul_sum_choose_add_sum_sum_tsub k, pow_add, pow_mul, hsq]
+  rw [localDensity_diagonal_unit_mul_pow hp, conwaySloanePMass_def, ← card_univ,
+    ← two_mul_sum_range_choose_add_sum_sum_tsub univ k, pow_add, pow_mul, hsq]
   push_cast
   linear_combination ((p : ℝ) ^ (∑ j ∈ range (univ.sup k), (#{i | j < k i} + 1).choose 2 : ℕ) *
     √(p : ℝ) ^ (∑ i, ∑ i', (k i' - k i) : ℕ)) * hblocks

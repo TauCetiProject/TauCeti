@@ -173,13 +173,9 @@ theorem localDensity_toMatrix_of_iIsOrtho (hp : p ≠ 2) {ι : Type*} [Fintype �
   have hdiag : toMatrix b₀ B = diagonal fun i => (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i := by
     simpa only [hu] using hb₀.toMatrix_eq_diagonal
   set e := b₀.indexEquiv b
-  have hb : toMatrix (b.reindex e.symm) B = reindex e.symm e.symm (toMatrix b B) := by
-    ext i j
-    simp only [toMatrix_apply, Basis.reindex_apply, Equiv.symm_symm, reindex_apply,
-      submatrix_apply]
   have := b₀.invertibleToMatrix (b.reindex e.symm)
-  rw [← localDensity_reindex e.symm, ← hb, ← toMatrix_mul_basis_toMatrix b₀ _ B, hdiag,
-    localDensity_transpose_mul_mul (isUnit_det_of_invertible _)]
+  rw [← localDensity_reindex e.symm, ← toMatrix_reindex, ← toMatrix_mul_basis_toMatrix b₀ _ B,
+    hdiag, localDensity_transpose_mul_mul (isUnit_det_of_invertible _)]
   exact localDensity_diagonal_unit_mul_pow hp u k
 
 /-- **The valuation of the Gram determinant of a form with a diagonal Jordan basis.** Let `B` be a
@@ -193,17 +189,16 @@ theorem valuation_det_toMatrix_of_iIsOrtho {ι : Type*} [Fintype ι]
     (toMatrix b B).det.valuation = ∑ i, k i := by
   classical
   set e := b₀.indexEquiv b
-  have hb : (toMatrix (b.reindex e.symm) B).det = (toMatrix b B).det := by
-    rw [← det_submatrix_equiv_self e (toMatrix b B)]
-    congr 1
-    ext i j
-    simp [toMatrix_apply]
   have hU : IsUnit ((b₀.toMatrix (b.reindex e.symm)).det ^ 2 * ∏ i, (u i : ℤ_[p])) := by
     rw [← Basis.det_apply]
     exact ((b₀.isUnit_det _).pow 2).mul (IsUnit.prod_univ_iff.mpr fun i => (u i).isUnit)
-  rw [← hb, det_toMatrix_eq_det_sq_mul_det b₀, hb₀.det_toMatrix]
-  simp_rw [hu]
-  rw [prod_mul_distrib, prod_pow_eq_pow_sum, ← mul_assoc, mul_comm,
-    PadicInt.valuation_p_pow_mul _ _ hU.ne_zero, PadicInt.valuation_eq_zero_of_isUnit hU, add_zero]
+  -- the Gram determinant is `p ^ ∑ kᵢ` times a unit
+  have hdet : (toMatrix b B).det = (p : ℤ_[p]) ^ (∑ i, k i) *
+      ((b₀.toMatrix (b.reindex e.symm)).det ^ 2 * ∏ i, (u i : ℤ_[p])) := by
+    rw [← det_toMatrix_reindex b e.symm, det_toMatrix_eq_det_sq_mul_det b₀, hb₀.det_toMatrix]
+    simp_rw [hu, prod_mul_distrib, prod_pow_eq_pow_sum]
+    ring
+  rw [hdet, PadicInt.valuation_p_pow_mul _ _ hU.ne_zero, PadicInt.valuation_eq_zero_of_isUnit hU,
+    add_zero]
 
 end LinearMap.BilinForm
