@@ -65,8 +65,8 @@ the module to be finitely generated.
   basis of) neighbourhoods of zero in the target.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp`,
   `ContinuousLinearMap.IsCompletelyContinuous.comp_clm`: the ideal property over Tate scalars,
-  and `ContinuousLinearEquiv.isCompletelyContinuous_comp_iff`,
-  `ContinuousLinearEquiv.isCompletelyContinuous_comp_right_iff`: invariance under continuous
+  and `ContinuousLinearEquiv.comp_isCompletelyContinuous_iff`,
+  `ContinuousLinearEquiv.isCompletelyContinuous_comp_iff`: invariance under continuous
   linear equivalences, hence under equivalent norms.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp_of_bound`,
   `ContinuousLinearMap.IsCompletelyContinuous.comp_clm_of_bound`: composition on either side with
@@ -296,10 +296,7 @@ theorem _root_.Filter.HasBasis.isCompletelyContinuous_iff_forall_mapsTo {ι : So
     u.IsCompletelyContinuous ↔ ∀ i, p i →
       ∃ g : M →L[R] N, (g : M →ₗ[R] N).IsFiniteRank ∧ Set.MapsTo (u - g) M₀ (V i) := by
   rw [ContinuousLinearMap.isCompletelyContinuous_iff_forall_mapsTo hM₀ hbdd]
-  refine ⟨fun h i hi ↦ h _ (hV.mem_of_mem hi), fun h W hW ↦ ?_⟩
-  obtain ⟨i, hi, hiW⟩ := hV.mem_iff.mp hW
-  obtain ⟨g, hg, hug⟩ := h i hi
-  exact ⟨g, hg, hug.mono_right hiW⟩
+  exact hV.forall_iff fun _ _ hst ⟨g, hg, hug⟩ ↦ ⟨g, hg, hug.mono_right hst⟩
 
 omit [IsBoundedSMul R M] in
 /-- Over Tate scalars, postcomposing a completely continuous map with a continuous linear map
@@ -322,7 +319,7 @@ omit [IsBoundedSMul R M] in
 equivalence; in particular it does not depend on the choice of an equivalent norm on the
 target. -/
 @[simp]
-theorem _root_.ContinuousLinearEquiv.isCompletelyContinuous_comp_iff (e : N ≃L[R] P)
+theorem _root_.ContinuousLinearEquiv.comp_isCompletelyContinuous_iff (e : N ≃L[R] P)
     {u : M →L[R] N} :
     ((e : N →L[R] P).comp u).IsCompletelyContinuous ↔ u.IsCompletelyContinuous :=
   ⟨fun h ↦ by simpa [← comp_assoc] using h.clm_comp (e.symm : P →L[R] N), fun h ↦ h.clm_comp _⟩
@@ -332,7 +329,7 @@ omit [IsBoundedSMul R N] in
 equivalence; in particular it does not depend on the choice of an equivalent norm on the
 source. -/
 @[simp]
-theorem _root_.ContinuousLinearEquiv.isCompletelyContinuous_comp_right_iff (e : L ≃L[R] M)
+theorem _root_.ContinuousLinearEquiv.isCompletelyContinuous_comp_iff (e : L ≃L[R] M)
     {u : M →L[R] N} :
     (u.comp (e : L →L[R] M)).IsCompletelyContinuous ↔ u.IsCompletelyContinuous :=
   ⟨fun h ↦ by simpa [comp_assoc] using h.comp_clm (e.symm : M →L[R] L), fun h ↦ h.comp_clm _⟩
