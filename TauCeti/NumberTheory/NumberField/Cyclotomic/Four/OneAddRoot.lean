@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 import TauCeti.Algebra.GroupWithZero.Basic
 import Mathlib.Algebra.CharP.Lemmas
-import Mathlib.NumberTheory.SumTwoSquares
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
@@ -43,13 +42,23 @@ namespace IsPrimitiveRoot
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
   [HasEnoughRootsOfUnity (𝓞 K) 4] {ζ : K}
 
+omit [IsCyclotomicExtension {4} ℚ K] in
+private theorem symbol_one_add_pair (hζ : IsPrimitiveRoot ζ 4) (I : Ideal (𝓞 K))
+    (hu : IsUnit (Ideal.Quotient.mk I (1 - hζ.toInteger))) :
+    powerResidueSymbolIdeal I 4 (Ideal.Quotient.mk I (1 - hζ.toInteger)) ^ 3 *
+      powerResidueSymbolIdeal I 4 (Ideal.Quotient.mk I (1 + hζ.toInteger)) =
+        powerResidueSymbolIdeal I 4 (Ideal.Quotient.mk I hζ.toInteger) := by
+  have hpow := powerResidueSymbolIdeal_pow_eq_one (n := 4) hu
+  have hAB : 1 + hζ.toInteger = hζ.toInteger * (1 - hζ.toInteger) := by
+    linear_combination hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+  rw [hAB, map_mul, map_mul]
+  linear_combination powerResidueSymbolIdeal I 4 (Ideal.Quotient.mk I hζ.toInteger) * hpow
+
 private theorem symbol_one_add_split (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     (hq : q.Prime) (hq1 : q % 4 = 1) :
     powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4
       (Ideal.Quotient.mk _ (1 + hζ.toInteger)) = hζ.toInteger ^ ((q - 1) / 4) := by
-  have := Fact.mk hq
   -- Factor `q` into conjugate Gaussian integers, each of absolute norm `q`.
-  obtain ⟨x, y, hxy⟩ := Nat.Prime.sq_add_sq (by omega : q % 4 ≠ 3)
   let σ := (galEquivZMod 4 K).symm (-1)
   let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
   have hσ : galEquivZMod 4 K σ = -1 := MulEquiv.apply_symm_apply _ _
@@ -60,20 +69,9 @@ private theorem symbol_one_add_split (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
   have hτi : τ hζ.toInteger = -hζ.toInteger := by
     rw [hτ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one, pow_succ,
       hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one, neg_one_mul]
-  let β : 𝓞 K := x + y * hζ.toInteger
-  have hqβ : (q : 𝓞 K) = τ β * β := by
-    rw [← hxy, map_add, map_mul, map_natCast, map_natCast, hτi]
-    push_cast
-    linear_combination (y : 𝓞 K) ^ 2 * hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-  have hβ : β ≠ 0 := by
-    intro h
-    rw [h, mul_zero, Nat.cast_eq_zero] at hqβ
-    exact hq.ne_zero hqβ
-  have hN : absNorm (span {β}) = q := by
-    have hn := hζ.norm_intCast_add_intCast_mul_toInteger_of_four (x : ℤ) (y : ℤ)
-    simp only [Int.cast_natCast] at hn
-    rw [absNorm_span_singleton, hn]
-    exact_mod_cast hxy
+  obtain ⟨β, hβ, hqβ, hN⟩ := TauCeti.exists_natCast_eq_mul_of_mod_four_ne_three
+    (σ := (τ : 𝓞 K →+* 𝓞 K)) hτ hq (by omega : q % 4 ≠ 3)
+  simp only [RingEquiv.coe_toRingHom] at hqβ
   have hcop : IsCoprime (2 : 𝓞 K) β := by
     have h : IsCoprime (2 : ℤ) q := by
       exact_mod_cast (Nat.coprime_two_left.mpr (Nat.odd_iff.mpr (by omega : q % 2 = 1)))
@@ -92,8 +90,6 @@ private theorem symbol_one_add_split (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
   have hmap := map_powerResidueSymbolIdeal (n := 4) (span {β}) τ (1 - hζ.toInteger)
   have hτB : τ (1 - hζ.toInteger) = 1 + hζ.toInteger := by simp [hτi]
   rw [hτ _ hpow, hτB] at hmap
-  have hAB : 1 + hζ.toInteger = hζ.toInteger * (1 - hζ.toInteger) := by
-    linear_combination hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
   have hmapβ : (span {β}).map τ = span {τ β} := by
     rw [map_span, Set.image_singleton]
   rw [hqβ, ← span_singleton_mul_span_singleton,
@@ -103,9 +99,7 @@ private theorem symbol_one_add_split (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     (by rw [hN, show 4 = 2 ^ 2 from rfl, Nat.coprime_pow_right_iff (by decide),
       Nat.coprime_two_right, Nat.odd_iff]; omega)
     hζ.toInteger_isPrimitiveRoot.pow_eq_one]
-  conv_lhs => arg 2; rw [hAB, map_mul, map_mul]
-  linear_combination powerResidueSymbolIdeal (span {β}) 4
-    (Ideal.Quotient.mk _ hζ.toInteger) * hpow
+  exact symbol_one_add_pair hζ _ hu
 
 private theorem symbol_one_add_inert (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     (hq : q.Prime) (hq3 : q % 4 = 3) :
@@ -143,13 +137,8 @@ private theorem symbol_one_add_inert (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     have hm : (1 + i) * (-i) = 1 - i := by linear_combination -hi2
     exact mul_right_cancel₀ hn (h.trans (by simpa [mul_comm, sub_eq_add_neg] using hm.symm))
   have hE : (q ^ 2 - 1) / 4 = (q - 1) * ((q + 1) / 4) := by
-    obtain ⟨k, hk⟩ : ∃ k, q = 4 * k + 3 := ⟨q / 4, by omega⟩
-    subst q
-    rw [show (4 * k + 3) ^ 2 - 1 = 4 * ((4 * k + 2) * (k + 1)) by
-      exact Nat.sub_eq_of_eq_add (by ring),
-      Nat.mul_div_cancel_left _ (by decide),
-      show 4 * k + 3 - 1 = 4 * k + 2 by omega,
-      show (4 * k + 3 + 1) / 4 = k + 1 by omega]
+    rw [← Nat.one_pow 2, Nat.sq_sub_sq, Nat.one_pow, Nat.mul_comm (q + 1),
+      Nat.mul_div_assoc _ (by omega : 4 ∣ q + 1)]
   -- Raise the Frobenius identity to `(q + 1) / 4`, then uniquely lift the residue.
   rw [powerResidueSymbolIdeal_of_isMaximal]
   refine (powerResidueSymbol_eq_iff ?_ (by simpa only [map_add, map_one] using hn)
@@ -196,19 +185,15 @@ private theorem symbol_one_add_nat_prime (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     have := Nat.odd_iff.mp hodd
     omega) with hq1 | hq3
   · rw [symbol_one_add_split hζ hq hq1]
-    push_cast
-    simp only [Algebra.cast, hi]
+    simp only [map_pow, hi]
     rw [rationalExponent, Int.cast_natCast, ZMod.χ₄_nat_one_mod_four hq1, mul_one,
       ← zpow_natCast]
     congr 1
     omega
   · rw [symbol_one_add_inert hζ hq hq3]
-    push_cast
-    simp only [Algebra.cast, hi]
-    have hneg : -ζ = ζ⁻¹ := by
-      apply mul_right_cancel₀ (hζ.ne_zero (by decide))
-      rw [inv_mul_cancel₀ (hζ.ne_zero (by decide))]
-      linear_combination -hζ.sq_eq_neg_one
+    simp only [map_pow, map_neg, hi]
+    have hneg : -ζ = ζ⁻¹ := eq_inv_of_mul_eq_one_left (by
+      rw [neg_mul, ← pow_two, hζ.sq_eq_neg_one, neg_neg])
     rw [hneg, inv_pow, ← zpow_natCast, ← zpow_neg,
       rationalExponent, Int.cast_natCast, ZMod.χ₄_nat_three_mod_four hq3, mul_neg_one]
     congr 1
@@ -274,9 +259,7 @@ example : ((powerResidueSymbolIdeal (span {((-3 : ℤ) : 𝓞 K)}) 4
     (Ideal.Quotient.mk _ (1 + hζ.toInteger)) : 𝓞 K) : K) = -ζ := by
   rw [hζ.powerResidueSymbolIdeal_span_intCast_mk_one_add_toInteger (by decide)]
   norm_num
-  apply mul_right_cancel₀ (hζ.ne_zero (by decide))
-  rw [inv_mul_cancel₀ (hζ.ne_zero (by decide))]
-  linear_combination hζ.sq_eq_neg_one
+  exact inv_eq_of_mul_eq_one_left (by rw [neg_mul, ← pow_two, hζ.sq_eq_neg_one, neg_neg])
 
 example : ((powerResidueSymbolIdeal (span {((5 : ℤ) : 𝓞 K)}) 4
     (Ideal.Quotient.mk _ (1 + hζ.toInteger)) : 𝓞 K) : K) = ζ := by
