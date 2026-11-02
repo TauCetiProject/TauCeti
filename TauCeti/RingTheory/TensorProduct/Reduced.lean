@@ -16,7 +16,6 @@ import Mathlib.RingTheory.LocalProperties.Reduced
 import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.PolynomialAlgebra
 import TauCeti.RingTheory.FiniteType.Tensor.Product
-import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -69,7 +68,8 @@ theorem isReduced_tensorProduct_of_isReduced_of_isSeparable (k : Type*) [CommRin
     [Algebra.IsSeparable E F] (A : Type*) [CommRing A] [Algebra k A] [hE : IsReduced (E ⊗[k] A)] :
     IsReduced (F ⊗[k] A) := by
   -- `F ⊗[k] A = (E ⊗[k] A) ⊗[E] F`
-  let e := tensorProductEquivBaseChange k E F A
+  let e := (Algebra.TensorProduct.cancelBaseChange k E E F A).symm.trans
+    (Algebra.TensorProduct.comm E F (E ⊗[k] A))
   exact isReduced_of_injective e e.injective
 
 /-- Let `B` be a localization of the `k`-algebra `A`. If `A ⊗[k] L` is reduced, then so is
@@ -86,6 +86,8 @@ theorem isReduced_tensorProduct_of_isLocalization {k : Type*} [CommRing k] {A : 
     simp [RingHom.algebraMap_toAlgebra, φ]
   have := IsLocalization.tensorProduct_tensorProduct k L M B
     (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  -- `isReduced_localizationPreserves` needs both rings in one universe, so pass through the
+  -- `Localization` instance instead
   let e := IsLocalization.algEquiv (Algebra.algebraMapSubmonoid (A ⊗[k] L) M) (B ⊗[k] L)
     (Localization (Algebra.algebraMapSubmonoid (A ⊗[k] L) M))
   exact isReduced_of_injective e e.injective

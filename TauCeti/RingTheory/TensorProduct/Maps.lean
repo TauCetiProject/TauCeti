@@ -67,9 +67,6 @@ ones, so the public `LinearMap.baseChange` API applies.
   `s`, with its value `AlgHom.sectionBaseChange_sum_tmul` on sums of pure tensors, its
   naturality `AlgHom.sectionBaseChange_rTensor` in `T`, and its transitivity
   `AlgHom.sectionBaseChange_sectionBaseChange` along `A → A' → T`.
-* `TauCeti.tensorProductEquivBaseChange`: for a tower `k → K → L`, the identification
-  `L ⊗[k] A ≃ₐ[K] (K ⊗[k] A) ⊗[K] L` of `L ⊗[k] A` with the base change of `K ⊗[k] A` along
-  `K → L`.
 -/
 
 public section
@@ -328,26 +325,3 @@ theorem sectionBaseChange_sectionBaseChange {B : Type*} [CommSemiring B] [Algebr
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end AlgHom
-
-namespace TauCeti
-
-variable (k K L A : Type*) [CommSemiring k] [CommSemiring K] [CommSemiring L] [CommSemiring A]
-  [Algebra k K] [Algebra k L] [Algebra K L] [IsScalarTower k K L] [Algebra k A]
-
-/-- For a tower `k → K → L` and a `k`-algebra `A`, the tensor product `L ⊗[k] A` is the base change
-`(K ⊗[k] A) ⊗[K] L` of `K ⊗[k] A` along `K → L`. -/
-noncomputable def tensorProductEquivBaseChange : L ⊗[k] A ≃ₐ[K] (K ⊗[k] A) ⊗[K] L :=
-  (Algebra.TensorProduct.cancelBaseChange k K K L A).symm.trans
-    (Algebra.TensorProduct.comm K L (K ⊗[k] A))
-
-@[simp]
-theorem tensorProductEquivBaseChange_tmul (l : L) (a : A) :
-    tensorProductEquivBaseChange k K L A (l ⊗ₜ a) = (1 ⊗ₜ a) ⊗ₜ l := by
-  simp [tensorProductEquivBaseChange]
-
-@[simp]
-theorem tensorProductEquivBaseChange_symm_tmul (c : K) (a : A) (l : L) :
-    (tensorProductEquivBaseChange k K L A).symm ((c ⊗ₜ a) ⊗ₜ l) = (algebraMap K L c * l) ⊗ₜ a := by
-  simp [tensorProductEquivBaseChange, Algebra.smul_def]
-
-end TauCeti

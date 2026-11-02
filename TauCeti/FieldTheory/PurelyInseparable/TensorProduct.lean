@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.RingTheory.Unramified.Field
-import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # The tensor square of a purely inseparable extension
@@ -115,7 +114,8 @@ theorem isDomain_tensorProduct_of_isDomain_tensorProduct {k : Type*} [CommRing k
     [Algebra k L] [IsScalarTower k K L] (A : Type*) [CommRing A] [Algebra k A]
     [hK : IsDomain (K ⊗[k] A)] [IsReduced (L ⊗[k] A)] : IsDomain (L ⊗[k] A) := by
   -- `L ⊗[k] A = (K ⊗[k] A) ⊗[K] L`
-  let e := tensorProductEquivBaseChange k K L A
+  let e := (Algebra.TensorProduct.cancelBaseChange k K K L A).symm.trans
+    (Algebra.TensorProduct.comm K L (K ⊗[k] A))
   have : IsReduced ((K ⊗[k] A) ⊗[K] L) := isReduced_of_injective e.symm e.symm.injective
   have := isDomain_tensorProduct K L (K ⊗[k] A)
   exact e.toMulEquiv.isDomain
