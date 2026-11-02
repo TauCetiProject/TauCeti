@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Thom-pair vanishing over arbitrary bases
@@ -77,8 +78,8 @@ def thomPairFiniteTrivializingUnionCocone :
     Cocone (thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)) where
   pt := thomPair F E
   ι :=
-    { app s := thomPairOverMap F E (subset_univ _) ≫ (thomPairOverUnivIso F E).hom
-      naturality _ _ _ := by simp [thomPairFiniteTrivializingUnionDiagram] }
+    { app _ := thomPairOverMap F E (subset_univ _) ≫ (thomPairOverUnivIso F E).hom
+      naturality _ _ _ := thomPairOverMap_comp_thomPairOverMap_assoc F E _ _ _ }
 
 @[simp]
 theorem thomPairFiniteTrivializingUnionCocone_pt :
@@ -95,6 +96,21 @@ theorem thomPairFiniteTrivializingUnionCocone_ι_app (s : Finset B) :
     (thomPairFiniteTrivializingUnionDiagram_obj s)
     (thomPairFiniteTrivializingUnionCocone_pt (F := F) (E := E))).2 HEq.rfl
 
+/-- On ambient spaces, each finite-union cocone leg forgets the restriction to the union.
+Heterogeneous equality keeps the diagram and cocone bodies unexposed. -/
+theorem thomPairFiniteTrivializingUnionCocone_ι_app_fst (s : Finset B) :
+    HEq (⇑(TopPair.Hom.fst
+      ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s)))
+      (Subtype.val : (π F E ⁻¹' ⋃ b ∈ s, (trivializationAt F E b).baseSet) →
+        TotalSpace F E) := by
+  unfold thomPairFiniteTrivializingUnionCocone thomPairFiniteTrivializingUnionDiagram
+  apply heq_of_eq
+  funext p
+  -- Hom.fst preserves composition definitionally; erw also passes through the
+  -- ConcreteCategory coercion from a TopCat morphism to its underlying function.
+  erw [CategoryTheory.comp_apply, thomPairOverUnivIso_hom_fst_apply,
+    thomPairOverMap_fst_apply]
+
 /-- In every degree, the homology of the Thom pair is the filtered colimit of its homology
 over finite trivializing unions, for coefficients with exact filtered colimits. -/
 def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
@@ -103,38 +119,33 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
     IsColimit ((TopPair.singularHomologyFunctor R n).mapCocone
       (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))) := by
   classical
-  unfold thomPairFiniteTrivializingUnionCocone thomPairFiniteTrivializingUnionDiagram
-  let U (s : Finset B) : Set B := ⋃ b ∈ s, (trivializationAt F E b).baseSet
-  -- Compact images in the base are absorbed by one finite trivializing union.
-  have hK (K : Set (TotalSpace F E)) (hK : IsCompact K) :
-      ∃ s : Finset B, K ⊆ π F E ⁻¹' U s := by
-    obtain ⟨s, hs⟩ := (hK.image (FiberBundle.continuous_proj F E)).elim_finite_subcover
-      (fun b : B ↦ (trivializationAt F E b).baseSet)
-      (fun b ↦ (trivializationAt F E b).open_baseSet)
-      (fun b _ ↦ mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩)
-    exact ⟨s, fun p hp ↦ hs (mem_image_of_mem _ hp)⟩
-  -- Check absorption for both spaces of the pair, not just the total space.
-  -- Each cocone leg forgets the restriction to the finite union on the ambient space.
+  -- The characteristic HEq lemma identifies the abstract source and target of each leg
+  -- with the restriction subtype and total space, without exposing the diagram's body.
   have hfst (s : Finset B) :
-      (TopPair.Hom.fst (thomPairOverMap F E (subset_univ (U s)) ≫
-        (thomPairOverUnivIso F E).hom) : (π F E ⁻¹' U s) → TotalSpace F E) =
-        Subtype.val := by
-    funext p
-    erw [CategoryTheory.comp_apply, thomPairOverUnivIso_hom_fst_apply,
-      thomPairOverMap_fst_apply]
-  refine TopPair.isColimitMapCoconeSingularHomology R n _
+      (⇑(TopPair.Hom.fst
+        ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s)) :
+          (π F E ⁻¹' ⋃ b ∈ s, (trivializationAt F E b).baseSet) → TotalSpace F E) =
+        Subtype.val := eq_of_heq (thomPairFiniteTrivializingUnionCocone_ι_app_fst s)
+  -- Check compact absorption for both spaces of the pair, not just the total space.
+  refine TopPair.isColimitMapCoconeSingularHomology R n
+    (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))
     (fun s ↦ by
       rw [hfst s]
       exact Topology.IsEmbedding.subtypeVal)
+    (fun (K : Set (TotalSpace F E)) hcomp ↦ by
+      -- Identify the abstract apex's topology with the total-space topology.
+      have hcomp : IsCompact K := hcomp
+      obtain ⟨s, hs⟩ := IsCompact.exists_finset_subset_preimage_biUnion_baseSet
+        (F := F) (E := E) (K := K) hcomp
+      exact ⟨s, fun p hp ↦ ⟨⟨p, hs hp⟩,
+        congrFun (hfst s) _⟩⟩)
     (fun K hcomp ↦ by
-      obtain ⟨s, hs⟩ := hK K hcomp
-      exact ⟨s, fun p hp ↦ ⟨⟨p, hs hp⟩, congrFun (hfst s) _⟩⟩)
-    (fun K hcomp ↦ by
-      obtain ⟨s, hs⟩ := hK (Subtype.val '' K) (hcomp.image continuous_subtype_val)
+      obtain ⟨s, hs⟩ := IsCompact.exists_finset_subset_preimage_biUnion_baseSet
+        (F := F) (E := E) (hcomp.image continuous_subtype_val)
       exact ⟨s, fun p hp ↦ ⟨⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩, by
         apply Subtype.ext
         have h := TopPair.Hom.w_apply
-          (thomPairOverMap F E (subset_univ (U s)) ≫ (thomPairOverUnivIso F E).hom)
+          ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s)
           ⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩
         rw [hfst s] at h
         exact h⟩⟩)
