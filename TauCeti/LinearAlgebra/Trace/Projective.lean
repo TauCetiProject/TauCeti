@@ -89,10 +89,7 @@ theorem projectiveTrace_dualTensorHom (x : Dual R M ⊗[R] M) :
 @[simp]
 theorem projectiveTrace_smulRight (φ : Dual R M) (m : M) :
     projectiveTrace R M (φ.smulRight m) = φ m := by
-  have : φ.smulRight m = dualTensorHom R M M (φ ⊗ₜ m) := by
-    ext
-    simp
-  rw [this, projectiveTrace_dualTensorHom, contractLeft_apply]
+  rw [← dualTensorHom_tmul_eq_smulRight, projectiveTrace_dualTensorHom, contractLeft_apply]
 
 /-- **Cyclicity of the trace** across two finite projective modules:
 `tr_M (g ∘ f) = tr_N (f ∘ g)`. -/
