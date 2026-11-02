@@ -12,6 +12,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.TensorProduct.Nontrivial
+import TauCeti.Algebra.Polynomial.PowChar
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -78,49 +79,6 @@ universe u
 
 variable {k : Type u} [Field k] {p : ℕ} [hp : Fact p.Prime] [CharP k p] {a b : k}
 
-/-! ### Coefficient comparisons in `k[X]` and `k(X)` -/
-
-/-- The coefficient of `X ^ (p n)` in `∑ Pᵢⱼ ^ p a ^ i b ^ j` is `∑ (Pᵢⱼ)ₙ ^ p a ^ i b ^ j`. -/
-private theorem coeff_sum_pow_mul_C (P : ℕ → ℕ → k[X]) (n : ℕ) :
-    (∑ i ∈ range p, ∑ j ∈ range p, P i j ^ p * C (a ^ i * b ^ j)).coeff (p * n) =
-      ∑ i ∈ range p, ∑ j ∈ range p, (P i j).coeff n ^ p * a ^ i * b ^ j := by
-  simp only [finsetSum_coeff, coeff_mul_C, ← map_frobenius_expand, coeff_map,
-    coeff_expand_mul' hp.out.pos, frobenius_def, mul_assoc]
-
-/-- Expanding `(a + b X ^ p) ^ i` writes `∑ gᵢ ^ p (a + b X ^ p) ^ i` in the monomials
-`a ^ m b ^ j`, whose coefficient is `(binom(m + j, j) g_{m + j} X ^ j) ^ p` for `m + j < p`. -/
-private theorem sum_pow_mul_C_add_C_mul_X_pow (g : ℕ → k[X]) :
-    ∑ i ∈ range p, g i ^ p * (C a + C b * X ^ p) ^ i =
-      ∑ m ∈ range p, ∑ j ∈ range p, (if m + j < p then
-        ((m + j).choose j : k[X]) * g (m + j) * X ^ j else 0) ^ p * C (a ^ m * b ^ j) := by
-  have key : ∀ i ∈ range p, g i ^ p * (C a + C b * X ^ p) ^ i =
-      ∑ j ∈ range (i + 1), (((i - j + j).choose j : k[X]) * g (i - j + j) * X ^ j) ^ p *
-        C (a ^ (i - j) * b ^ j) := by
-    intro i _
-    rw [add_comm, add_pow, mul_sum]
-    refine sum_congr rfl fun j hj ↦ ?_
-    rw [Nat.sub_add_cancel (Nat.lt_succ_iff.mp (mem_range.mp hj))]
-    have hc : ((i.choose j : ℕ) : k[X]) ^ p = i.choose j := by
-      rw [← frobenius_def, map_natCast]
-    simp only [mul_pow, hc, map_mul, map_pow]
-    ring
-  rw [sum_congr rfl key]
-  simp only [ite_pow, zero_pow hp.out.ne_zero, ite_mul, zero_mul]
-  rw [sum_sigma', ← sum_product', ← sum_filter]
-  refine sum_nbij' (fun s ↦ (s.1 - s.2, s.2)) (fun q ↦ ⟨q.1 + q.2, q.2⟩) ?_ ?_ ?_ ?_ ?_
-  · simp only [mem_sigma, mem_range, mem_filter, mem_product]
-    omega
-  · simp only [mem_sigma, mem_range, mem_filter, mem_product]
-    omega
-  · rintro ⟨i, j⟩ h
-    simp only [mem_sigma, mem_range] at h
-    simp only [Sigma.mk.injEq, heq_eq_eq, and_true]
-    omega
-  · rintro ⟨m, j⟩ _
-    simp
-  · rintro ⟨i, j⟩ _
-    rfl
-
 /-! ### Consequences of `p`-independence -/
 
 section PIndependent
@@ -128,15 +86,6 @@ section PIndependent
 variable (hab : IsPIndependentPair p a b)
 
 include hab
-
-/-- `p`-independence of `a` and `b` over `k ^ p` gives `p`-independence over `k[X] ^ p`. -/
-private theorem eq_zero_of_sum_pow_mul_C_eq_zero
-    {P : ℕ → ℕ → k[X]} (h : ∑ i ∈ range p, ∑ j ∈ range p, P i j ^ p * C (a ^ i * b ^ j) = 0)
-    {i j : ℕ} (hi : i < p) (hj : j < p) : P i j = 0 := by
-  ext n
-  have hn := congrArg (coeff · (p * n)) h
-  simp only [coeff_sum_pow_mul_C, coeff_zero] at hn
-  exact hab.eq_zero (c := fun i j ↦ (P i j).coeff n) hn hi hj
 
 /-- **The key coefficient comparison.** If `∑_{i < p} gᵢ ^ p (a + b X ^ p) ^ i = e h ^ p` in `k[X]`
 with `e ∈ k` and `h ≠ 0`, then `gᵢ = 0` for `0 < i < p`. Comparing the coefficients of
@@ -157,8 +106,7 @@ private theorem eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq
   -- The coefficient of `X ^ (p deg h)` expresses `e` in the monomials `a ^ m b ^ j`.
   have he : ∑ m ∈ range p, ∑ j ∈ range p, ε m j ^ p * (a ^ m * b ^ j) = e := by
     have hc := congrArg (coeff · (p * h.natDegree)) H
-    rw [coeff_sum_pow_mul_C, coeff_C_mul, ← map_frobenius_expand, coeff_map,
-      coeff_expand_mul' hp.out.pos, frobenius_def] at hc
+    simp only [finsetSum_coeff, coeff_mul_C, coeff_pow_char_mul, coeff_C_mul] at hc
     rw [eq_comm, ← mul_div_cancel_right₀ e (pow_ne_zero p hη), ← hc, sum_div]
     refine sum_congr rfl fun m _ ↦ ?_
     rw [sum_div]
@@ -167,7 +115,7 @@ private theorem eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq
     ring
   -- Hence every coefficient `Q m j` is the constant multiple `ε m j` of `h`.
   have hQh : ∀ m < p, ∀ j < p, Q m j = C (ε m j) * h := by
-    refine fun m hm j hj ↦ sub_eq_zero.mp <| eq_zero_of_sum_pow_mul_C_eq_zero hab
+    refine fun m hm j hj ↦ sub_eq_zero.mp <| hab.eq_zero_of_sum_pow_mul_C_eq_zero
       (P := fun m j ↦ Q m j - C (ε m j) * h) ?_ hm hj
     simp only [sub_pow_char, sub_mul, sum_sub_distrib, sub_eq_zero]
     rw [H, ← he, map_sum, sum_mul]

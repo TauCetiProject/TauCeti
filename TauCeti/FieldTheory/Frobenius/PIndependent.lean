@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.LinearAlgebra.Span.Basic
+import TauCeti.Algebra.Polynomial.PowChar
 
 /-!
 # `p`-independent pairs
@@ -24,6 +26,8 @@ of `p`-th powers; for instance, independent indeterminates `a` and `b` over `�
 * `TauCeti.IsPIndependentPair`: `a` and `b` are `p`-independent.
 * `TauCeti.isPIndependentPair_iff_linearIndependent`: `p`-independence is linear independence of
   the monomials `a ^ i * b ^ j` over the field range of Frobenius.
+* `TauCeti.IsPIndependentPair.eq_zero_of_sum_pow_mul_C_eq_zero`: a `p`-independent pair stays
+  `p`-independent over the `p`-th powers of `k[X]`.
 * `TauCeti.notMem_span_pair_of_pow_eq`: `α ∉ k + k β` for `p`-th roots `α` of `a` and `β` of `b`
   in an extension of `k`.
 
@@ -82,6 +86,18 @@ theorem IsPIndependentPair.eq_zero (hab : IsPIndependentPair p a b) {c : ℕ →
     (h : ∑ i ∈ range p, ∑ j ∈ range p, c i j ^ p * a ^ i * b ^ j = 0) {i j : ℕ} (hi : i < p)
     (hj : j < p) : c i j = 0 :=
   hab c h i hi j hj
+
+open Polynomial in
+/-- `p`-independence of `a` and `b` over `k ^ p` gives `p`-independence over `k[X] ^ p`: a
+vanishing combination `∑ Pᵢⱼ ^ p a ^ i b ^ j` with polynomial `Pᵢⱼ` has `Pᵢⱼ = 0` for `i, j < p`. -/
+theorem IsPIndependentPair.eq_zero_of_sum_pow_mul_C_eq_zero [ExpChar k p]
+    (hab : IsPIndependentPair p a b) {P : ℕ → ℕ → k[X]}
+    (h : ∑ i ∈ range p, ∑ j ∈ range p, P i j ^ p * C (a ^ i * b ^ j) = 0) {i j : ℕ} (hi : i < p)
+    (hj : j < p) : P i j = 0 := by
+  ext n
+  have hn := congrArg (coeff · (p * n)) h
+  simp only [finsetSum_coeff, coeff_mul_C, coeff_pow_char_mul, coeff_zero] at hn
+  exact hab.eq_zero (c := fun i j ↦ (P i j).coeff n) (by simpa only [mul_assoc] using hn) hi hj
 
 /-- `α ∉ k + k β` when `α` and `β` are `p`-th roots of a `p`-independent pair `a, b`. -/
 theorem notMem_span_pair_of_pow_eq [hp : Fact p.Prime] [CharP k p]
