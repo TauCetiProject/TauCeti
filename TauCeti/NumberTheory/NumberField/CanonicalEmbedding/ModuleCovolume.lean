@@ -38,6 +38,9 @@ localization or a basis.
 
 * `Submodule.covolume_mixedImage_of_pseudoBasis`: if `Λ = ⊕ i, J i • b i` for a `K`-basis `b` and
   nonzero ideals `J i`, its covolume is `|N (det b)| · ∏ i, N (J i)` times `covol (𝓞 K) ^ card ι`.
+* `Submodule.isGreatest_apply_det_of_pseudoBasis`: for `Λ = ⊕ i, J i • b i`, the largest value
+  of a finite place `v` on the determinants of `card ι` vectors of `Λ` is
+  `v (det b) · ∏ i, N 𝔭 ^ (-mᵢ)`, `mᵢ` the multiplicity of the prime `𝔭` of `v` in `J i`.
 * `Submodule.exists_isGreatest_apply_det`: the values of a finite place on the determinants of
   `card ι` vectors of `Λ` have a largest element.
 * `Submodule.covolume_mixedImage`: the display above.
@@ -48,10 +51,11 @@ localization or a basis.
 ## Implementation notes
 
 The proof goes through a pseudo-basis `Λ = ⊕ i, J i • b i` (`Submodule.exists_pseudoBasis`), which
-appears only in the proof. The coefficient lattices `J i` have the `ℤ`-bases of Mathlib's
-`fractionalIdealLatticeBasis`, of covolume `N (J i) · covol (𝓞 K)`, and the change of variables
-`z ↦ ∑ i, z i • b i` is `mixedSpace K`-linear, so its real determinant is one algebra norm,
-`Algebra.norm ℝ (det b)`, by `LinearMap.det_restrictScalars`; no place is looked at separately.
+appears in the intermediate results but not in the main statement. The coefficient lattices `J i`
+have the `ℤ`-bases of Mathlib's `fractionalIdealLatticeBasis`, of covolume `N (J i) · covol (𝓞 K)`,
+and the change of variables `z ↦ ∑ i, z i • b i` is `mixedSpace K`-linear, so its real determinant
+is one algebra norm, `Algebra.norm ℝ (det b)`, by `LinearMap.det_restrictScalars`; no place is
+looked at separately.
 At a finite place `v` with prime `𝔭`, the largest value on the determinants is
 `v (det b) · ∏ i, N 𝔭 ^ (-mᵢ)`, `mᵢ` the multiplicity of `𝔭` in `J i`: an upper bound by the
 ultrametric inequality on the Leibniz expansion, attained by the vectors `aᵢ • b i` with `aᵢ ∈ J i`
@@ -181,10 +185,11 @@ theorem covolume_mixedImage_of_pseudoBasis [DecidableEq ι] {Λ : Submodule (�
   simp_rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (ZLattice.covolume_pos _ volume).le]
   simp [U, FractionalIdeal.coeIdeal_absNorm, Finset.prod_mul_distrib, mul_assoc]
 
-/-- At a finite place `v` with prime `𝔭`, the values of `v` on the determinants of `card ι`
-vectors of `Λ = ⊕ i, J i • b i` have the largest element `v (det b) · ∏ i, N 𝔭 ^ (-mᵢ)`, where
-`mᵢ` is the multiplicity of `𝔭` in `J i`. -/
-private theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
+/-- **The largest local determinant of a pseudo-basis module.** At a finite place `v` with prime
+`𝔭`, the values of `v` on the determinants of `card ι` vectors of `Λ = ⊕ i, J i • b i` have the
+largest element `v (det b) · ∏ i, N 𝔭 ^ (-mᵢ)`, where `mᵢ` is the multiplicity of `𝔭` in
+`J i`. -/
+theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
     {Λ : Submodule (𝓞 K) (ι → K)} (b : Basis ι K (ι → K)) {J : ι → Ideal (𝓞 K)}
     (hJ : ∀ i, J i ≠ ⊥)
     (hΛ : ∀ x, x ∈ Λ ↔ ∀ i, b.repr x i ∈ IsLocalization.coeSubmodule K (J i))

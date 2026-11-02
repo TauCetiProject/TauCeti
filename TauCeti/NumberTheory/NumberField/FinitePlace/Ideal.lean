@@ -10,16 +10,16 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 /-!
 # The largest value of a finite place on an ideal
 
-Let `I` be an ideal of the ring of integers of a number field `K`, `v` a finite place of `K` with
-prime `𝔭`, and `m` the multiplicity of `𝔭` in `I`. The largest value of `v` on `I` is
-`N 𝔭 ^ (-m)`: every element of `I` lies in `𝔭 ^ m`, and, when `I ≠ ⊥`, some element of `I` does
-not lie in `𝔭 ^ (m + 1)`. This is the ideal form of Mathlib's
+Let `I` be a nonzero ideal of the ring of integers of a number field `K`, `v` a finite place of
+`K` with prime `𝔭`, and `m` the multiplicity of `𝔭` in `I`. The largest value of `v` on `I` is
+`N 𝔭 ^ (-m)`: every element of `I` lies in `𝔭 ^ m`, and some element of `I` does not lie in
+`𝔭 ^ (m + 1)`; the upper bound holds for every ideal. This is the ideal form of Mathlib's
 `NumberField.FinitePlace.apply_mul_absNorm_pow_eq_one`, which is the case of a principal ideal.
 
 Together with Mathlib's `NumberField.FinitePlace.finprod_finitePlace_pow_multiplicity`, it reads the
-norm of an ideal place by place: the product over the finite places of the largest values on `I`
-is `(N I)⁻¹`. For the coefficient ideals of a pseudo-basis of an `𝓞 K`-lattice, this turns the
-index of the lattice into a product of local factors.
+norm of a nonzero ideal place by place: for `I ≠ ⊥`, the product over the finite places of the
+largest values on `I` is `(N I)⁻¹`. For the coefficient ideals of a pseudo-basis of an
+`𝓞 K`-lattice, this turns the index of the lattice into a product of local factors.
 
 ## Main results
 
