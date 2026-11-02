@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
+import TauCeti.Geometry.Euclidean.Inversion
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.ContMDiff.Sum
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Order.Filter.Basic
 
 /-!
@@ -34,6 +35,13 @@ its germ at the centre, and only up to a homeomorphism or diffeomorphism of the 
   `‖w‖ > ε⁻¹`, for there `φ (e₁ (inversion 0 1 w)) = e₁' (inversion 0 1 w)` is glued to `e₂ w`.
   When `φ` is a diffeomorphism and the balls are local diffeomorphisms, it is a diffeomorphism
   (`TauCeti.ConnectedSum.congrLeftDiffeomorph`).
+* **Rotating both balls.** For a linear isometry `R` of `E`,
+  `TauCeti.ConnectedSum.compLinearIsometryEquivHomeomorph` and
+  `TauCeti.ConnectedSum.compLinearIsometryEquivDiffeomorph` identify the connected sum along `e₁`
+  and `e₂` with the connected sum along `e₁ ∘ R` and `e₂ ∘ R`, by the identity on each punctured
+  summand: `R` fixes the centre and commutes with the inversion, so the same points are glued. A
+  reflection of `E` thus exchanges the two orientation classes of pairs of balls without changing
+  the connected sum.
 
 Combining the two, `TauCeti.ConnectedSum.nonempty_diffeomorph_of_eventuallyEq` shows that
 diffeomorphisms `φ : M ≃ₘ M'` and `ψ : N ≃ₘ N'` with `φ ∘ e₁ = e₁'` and `ψ ∘ e₂ = e₂'` near `0`
@@ -52,6 +60,9 @@ The homeomorphism `TauCeti.ConnectedSum.congrLeftHomeomorph` needs the image of 
 * `TauCeti.ConnectedSum.congrLeftHomeomorph`, `TauCeti.ConnectedSum.congrLeftDiffeomorph`: the
   connected sum along a first ball moved by a homeomorphism or diffeomorphism of the first summand,
   up to its germ at the centre.
+* `TauCeti.ConnectedSum.compLinearIsometryEquivHomeomorph`,
+  `TauCeti.ConnectedSum.compLinearIsometryEquivDiffeomorph`: the connected sum along both balls
+  precomposed with a linear isometry of `E`.
 
 ## Main results
 
@@ -469,5 +480,173 @@ theorem nonempty_diffeomorph_of_eventuallyEq [ProperSpace E] [T2Space N] [T2Spac
   exact ⟨(congrLeftDiffeomorph h₁ h₁' h₂ d₁ d₁' d₂ φ hφ).trans <|
     (commDiffeomorph h₁' h₂ d₁' d₂).trans <|
     (congrLeftDiffeomorph h₂ h₂' h₁' d₂ d₂' d₁' ψ hψ).trans (commDiffeomorph h₂' h₁' d₂' d₁')⟩
+
+/-! ### Rotating both balls -/
+
+section LinearIsometry
+
+variable (R : E ≃ₗᵢ[ℝ] E)
+
+/-- Precomposing a ball with a linear isometry of `E` keeps its centre, so it keeps the punctured
+summand. -/
+@[simp]
+theorem puncture_comp_linearIsometryEquiv (e : E → M) : puncture (e ∘ R) = puncture e := by
+  ext x
+  simp
+
+variable {e₁ : E → M} {e₂ : E → N}
+
+/-- Points of the punctured summands are glued as soon as they are the images of a nonzero vector
+and of its inversion. -/
+private theorem inl_eq_inr_of_eq {x : puncture e₁} {y : puncture e₂} (v : E) (hv : v ≠ 0)
+    (hx : e₁ v = x) (hy : e₂ (inversion 0 1 v) = y) : inl e₁ e₂ x = inr e₁ e₂ y := by
+  have hx' : x = ⟨e₁ v, hx ▸ x.2⟩ := Subtype.ext hx.symm
+  have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.2⟩ := Subtype.ext hy.symm
+  rw [hx', hy']
+  exact inl_eq_inr v hv _ _
+
+variable (e₁ e₂)
+
+/-- **Rotating both balls of a connected sum.** For a linear isometry `R` of `E`, the connected sum
+along `e₁ ∘ R` and `e₂ ∘ R` is homeomorphic to the connected sum along `e₁` and `e₂`, by the
+identity on each punctured summand: `R` commutes with the inversion in the unit sphere, so the same
+points are glued. -/
+def compLinearIsometryEquivHomeomorph :
+    ConnectedSum e₁ e₂ ≃ₜ ConnectedSum (e₁ ∘ R) (e₂ ∘ R) where
+  toFun := lift
+    (inl (e₁ ∘ R) (e₂ ∘ R) ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).ge)
+    (inr (e₁ ∘ R) (e₂ ∘ R) ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).ge)
+    fun v hv _ _ ↦ inl_eq_inr_of_eq (R.symm v) (by simpa using hv) (by simp)
+      (by simp [LinearIsometryEquiv.map_inversion_zero])
+  invFun := lift (inl e₁ e₂ ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).le)
+    (inr e₁ e₂ ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).le)
+    fun v hv _ _ ↦ inl_eq_inr_of_eq (R v) (by simpa using hv) (by simp)
+      (by simp [LinearIsometryEquiv.map_inversion_zero])
+  left_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p <;> simp
+  right_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective (e₁ ∘ R) (e₂ ∘ R) p <;> simp
+  continuous_toFun := continuous_lift _ _ _
+    ((continuous_inl _ _).comp (continuous_inclusion _))
+    ((continuous_inr _ _).comp (continuous_inclusion _))
+  continuous_invFun := continuous_lift _ _ _
+    ((continuous_inl _ _).comp (continuous_inclusion _))
+    ((continuous_inr _ _).comp (continuous_inclusion _))
+
+@[simp]
+theorem compLinearIsometryEquivHomeomorph_inl (x : puncture e₁) :
+    compLinearIsometryEquivHomeomorph R e₁ e₂ (inl e₁ e₂ x) =
+      inl (e₁ ∘ R) (e₂ ∘ R) ⟨x, by simp⟩ :=
+  lift_inl _ _ _ x
+
+@[simp]
+theorem compLinearIsometryEquivHomeomorph_inr (y : puncture e₂) :
+    compLinearIsometryEquivHomeomorph R e₁ e₂ (inr e₁ e₂ y) =
+      inr (e₁ ∘ R) (e₂ ∘ R) ⟨y, by simp⟩ :=
+  lift_inr _ _ _ y
+
+@[simp]
+theorem compLinearIsometryEquivHomeomorph_symm_inl (x : puncture (e₁ ∘ R)) :
+    (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inl (e₁ ∘ R) (e₂ ∘ R) x) =
+      inl e₁ e₂ ⟨x, by simpa using x.2⟩ :=
+  lift_inl _ _ _ x
+
+@[simp]
+theorem compLinearIsometryEquivHomeomorph_symm_inr (y : puncture (e₂ ∘ R)) :
+    (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inr (e₁ ∘ R) (e₂ ∘ R) y) =
+      inr e₁ e₂ ⟨y, by simpa using y.2⟩ :=
+  lift_inr _ _ _ y
+
+/-- Read on the disjoint union of the punctured summands, the rotation of the balls is the identity
+of each punctured summand. -/
+theorem compLinearIsometryEquivHomeomorph_comp_mk :
+    compLinearIsometryEquivHomeomorph R e₁ e₂ ∘ mk e₁ e₂ = mk (e₁ ∘ R) (e₂ ∘ R) ∘
+      Sum.map (Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).ge)
+        (Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).ge) := by
+  ext (x | y) <;> simp
+
+/-- Read on the disjoint union of the punctured summands, the inverse of the rotation of the balls
+is the identity of each punctured summand. -/
+theorem compLinearIsometryEquivHomeomorph_symm_comp_mk :
+    (compLinearIsometryEquivHomeomorph R e₁ e₂).symm ∘ mk (e₁ ∘ R) (e₂ ∘ R) = mk e₁ e₂ ∘
+      Sum.map (Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).le)
+        (Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).le) := by
+  ext (x | y) <;> simp
+
+section Smooth
+
+variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞}
+  [ChartedSpace H M] [ChartedSpace H N] [IsManifold I n M] [IsManifold I n N]
+  {e₁ e₂} (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+  (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂)
+
+include h₁ h₂ d₁ d₂ in
+/-- Read on the punctured summands, both directions of the rotation of the balls are inclusions
+of open subsets, so they are `C^n` for the charts of the connected sums. -/
+private theorem contMDiff_compLinearIsometryEquivHomeomorph :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+      (h₂.comp_linearIsometryEquiv R)
+    ContMDiff I I n (compLinearIsometryEquivHomeomorph R e₁ e₂) ∧
+      ContMDiff I I n (compLinearIsometryEquivHomeomorph R e₁ e₂).symm := by
+  let h₁' := h₁.comp_linearIsometryEquiv R
+  let h₂' := h₂.comp_linearIsometryEquiv R
+  let d₁' := d₁.comp_linearIsometryEquiv R
+  let d₂' := d₂.comp_linearIsometryEquiv R
+  let := chartedSpace (H := H) h₁ h₂
+  let := chartedSpace (H := H) h₁' h₂'
+  have := isManifold h₁ h₂ d₁ d₂
+  have := isManifold h₁' h₂' d₁' d₂'
+  have hmk := isLocalDiffeomorph_mk h₁ h₂ d₁ d₂
+  have hmk' := isLocalDiffeomorph_mk h₁' h₂' d₁' d₂'
+  constructor
+  · rw [← hmk.contMDiff_comp_iff (mk_surjective e₁ e₂) le_rfl,
+      compLinearIsometryEquivHomeomorph_comp_mk]
+    exact hmk'.contMDiff.comp ((contMDiff_inclusion _).sumMap (contMDiff_inclusion _))
+  · rw [← hmk'.contMDiff_comp_iff (mk_surjective (e₁ ∘ R) (e₂ ∘ R)) le_rfl,
+      compLinearIsometryEquivHomeomorph_symm_comp_mk]
+    exact hmk.contMDiff.comp ((contMDiff_inclusion _).sumMap (contMDiff_inclusion _))
+
+/-- **Rotating both balls of a connected sum of manifolds.** For balls which are `C^n` local
+diffeomorphisms, the homeomorphism `TauCeti.ConnectedSum.compLinearIsometryEquivHomeomorph` is a
+`C^n` diffeomorphism for the charts of the connected sums. -/
+def compLinearIsometryEquivDiffeomorph :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+      (h₂.comp_linearIsometryEquiv R)
+    ConnectedSum e₁ e₂ ≃ₘ^n⟮I, I⟯ ConnectedSum (e₁ ∘ R) (e₂ ∘ R) :=
+  letI := chartedSpace (H := H) h₁ h₂
+  letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+    (h₂.comp_linearIsometryEquiv R)
+  { toEquiv := (compLinearIsometryEquivHomeomorph R e₁ e₂).toEquiv
+    contMDiff_toFun := (contMDiff_compLinearIsometryEquivHomeomorph R h₁ h₂ d₁ d₂).1
+    contMDiff_invFun := (contMDiff_compLinearIsometryEquivHomeomorph R h₁ h₂ d₁ d₂).2 }
+
+@[simp]
+theorem coe_compLinearIsometryEquivDiffeomorph :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+      (h₂.comp_linearIsometryEquiv R)
+    ⇑(compLinearIsometryEquivDiffeomorph R h₁ h₂ d₁ d₂) =
+      compLinearIsometryEquivHomeomorph R e₁ e₂ :=
+  (rfl)
+
+@[simp]
+theorem toHomeomorph_compLinearIsometryEquivDiffeomorph :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R) (h₂.comp_linearIsometryEquiv R)
+    (compLinearIsometryEquivDiffeomorph R h₁ h₂ d₁ d₂).toHomeomorph =
+      compLinearIsometryEquivHomeomorph R e₁ e₂ :=
+  (rfl)
+
+@[simp]
+theorem coe_compLinearIsometryEquivDiffeomorph_symm :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R) (h₂.comp_linearIsometryEquiv R)
+    ⇑(compLinearIsometryEquivDiffeomorph R h₁ h₂ d₁ d₂).symm =
+      (compLinearIsometryEquivHomeomorph R e₁ e₂).symm :=
+  (rfl)
+
+end Smooth
+
+end LinearIsometry
 
 end TauCeti.ConnectedSum
