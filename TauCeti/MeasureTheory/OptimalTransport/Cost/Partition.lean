@@ -101,9 +101,11 @@ theorem transportCost_le_sum_of_partition {ι : Type*} [Fintype ι] {A : ι → 
   set β : ι → Measure Y := fun i ↦ t i • ν.restrict (B i)
   set β' : ι → Measure Y := fun i ↦ (1 - t i) • ν.restrict (B i)
   have hμ : μ = ∑ i, α i + ∑ i, α' i :=
-    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict hAm hAd hAu hs1 μ
+    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict (hAm · |>.nullMeasurableSet)
+      hAd.aedisjoint (by rw [hAu]) hs1
   have hν : ν = ∑ i, β i + ∑ i, β' i :=
-    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict hBm hBd hBu ht1 ν
+    Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict (hBm · |>.nullMeasurableSet)
+      hBd.aedisjoint (by rw [hBu]) ht1
   have hα_univ (i : ι) : α i univ = m i := by
     simp only [α, _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
       smul_eq_mul, hsμ]
