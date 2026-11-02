@@ -44,8 +44,6 @@ are conjugate.
 
 * `TauCeti.centralizerAdHom`: `ad x` as an endomorphism of the adjoint representation restricted
   to a closed subgroup of `C_G(x)`.
-* `TauCeti.differential_corestrict_adjointComodule`: the differentiated restricted adjoint
-  representation is the bracket.
 * `TauCeti.differential_centralizerAdHom_eigenspace`: the same on an eigenspace of `ad x`.
 * `IsSl2Triple.range_differential_flip_eigenspace_two_eq_top`: the orbit differential of `e` for
   the action of `C_G(h)` on `𝔤(2)` is onto.
@@ -88,19 +86,6 @@ private theorem corestrictCoact_adjointComodule_eq
   -- The quotient bialgebra map is `Ideal.Quotient.mkₐ` with its coalgebra structure recorded.
   congr 2
 
-/-- **The restricted adjoint representation differentiates to the bracket.** A tangent vector `d`
-of the closed subgroup cut out by `J` acts on `𝔤` by the bracket with its image in `𝔤` under the
-differential of the inclusion. -/
-theorem differential_corestrict_adjointComodule
-    (d : Derivation k (H ⧸ J.toIdeal) (Bialgebra.CounitAlgebra k (H ⧸ J.toIdeal) k))
-    (y : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-    letI := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
-      (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
-    Comodule.differential (R := k) (H := H ⧸ J.toIdeal) d y =
-      ⁅(Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm (J.quotientLieHom d), y⁆ := by
-  rw [Comodule.differential_corestrict, Derivation.differential_adjointComodule,
-    HopfIdeal.quotientLieHom_apply]
-
 variable {J} (x : Module.Dual k (Bialgebra.CotangentSpace k H))
 
 /-- **`ad x` is equivariant for the centralizer of `x`.** On the adjoint representation restricted
@@ -137,12 +122,8 @@ noncomputable def centralizerAdHom (hJ : centralizerHopfIdeal H x ≤ J) :
       -- The base change of `ad x` is the bracket with `1 ⊗ x`.
       have had (z : (H ⧸ J.toIdeal) ⊗[k] Module.Dual k (Bialgebra.CotangentSpace k H)) :
           (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x).baseChange
-            (H ⧸ J.toIdeal) z = ⁅(1 : H ⧸ J.toIdeal) ⊗ₜ[k] x, z⁆ := by
-        induction z using TensorProduct.inductionOn with
-        | tmul a y => simp
-        | add z w hz hw =>
-          rw [map_add, hz, hw]
-          exact (lie_add ((1 : H ⧸ J.toIdeal) ⊗ₜ[k] x) z w).symm
+            (H ⧸ J.toIdeal) z = ⁅(1 : H ⧸ J.toIdeal) ⊗ₜ[k] x, z⁆ :=
+        (LinearMap.congr_fun (LieModule.toEnd_baseChange k (H ⧸ J.toIdeal) _ _ x) z).symm
       rw [hy, ← LinearMap.baseChange_eq_lTensor, had]
       exact (congrArg (⁅·, _⁆) hfix).symm.trans
         (Derivation.endOfPoint_adjointComodule_bracket _ g _ _).symm }

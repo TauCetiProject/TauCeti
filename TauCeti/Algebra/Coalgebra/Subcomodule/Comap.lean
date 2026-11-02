@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
@@ -230,25 +231,18 @@ variable {V : Type*} [AddCommGroup V] [Module R V] [Comodule R C V]
 
 namespace Hom
 
-/-- The comodule endomorphism `f - μ`, whose kernel is the `μ`-eigenspace of `f`. -/
-private def subSMulId (f : Hom R C V V) (μ : R) : Hom R C V V where
-  toLinearMap := f.toLinearMap - μ • LinearMap.id
-  map_coact := by
-    rw [← LinearMap.rTensor_def, LinearMap.rTensor_sub, LinearMap.rTensor_smul,
-      LinearMap.rTensor_id, LinearMap.sub_comp, LinearMap.rTensor_def, f.map_coact,
-      LinearMap.smul_comp, LinearMap.comp_sub, LinearMap.comp_smul, LinearMap.id_comp,
-      LinearMap.comp_id]
-
-/-- An eigenspace of a comodule endomorphism, over a flat coalgebra, is a subcomodule. -/
+/-- An eigenspace of a comodule endomorphism, over a flat coalgebra, is a subcomodule: the
+kernel of the comodule endomorphism `f - μ`. -/
 def eigenspace (f : Hom R C V V) (μ : R) : Subcomodule R C V :=
-  ker (subSMulId f μ)
+  ker (f + (-μ) • Hom.id R C V)
 
 /-- The underlying submodule of an eigenspace subcomodule is the eigenspace of the underlying
 linear map. -/
 @[simp]
 theorem eigenspace_toSubmodule (f : Hom R C V V) (μ : R) :
     (f.eigenspace μ).toSubmodule = Module.End.eigenspace f.toLinearMap μ := by
-  rw [eigenspace, ker_toSubmodule, Module.End.eigenspace_def, Module.End.one_eq_id]
+  rw [eigenspace, ker_toSubmodule, add_toLinearMap, smul_toLinearMap, neg_smul,
+    ← sub_eq_add_neg, Module.End.eigenspace_def]
   rfl
 
 /-- Membership in an eigenspace subcomodule. -/
