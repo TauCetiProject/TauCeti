@@ -33,28 +33,6 @@ namespace Valuation
 variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
   {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
 
-/-- A valuation with full characteristic group is continuous if its open unit ball is a
-neighbourhood of zero. -/
-theorem HasFullCharacteristicGroup.isContinuous {v : Valuation R Γ₀}
-    (hv : HasFullCharacteristicGroup v) (hU : {a : R | v a < 1} ∈ 𝓝 0) :
-    v.IsContinuous := by
-  refine (isContinuous_iff_forall_ne_zero v).mpr fun b hb ↦
-    isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
-  obtain ⟨t, ht, htle⟩ := hv.exists_inv_le (zero_lt_iff.mpr
-    (fun h ↦ hb (v.restrict_eq_zero_iff.mp h)))
-  have ht0 : v t ≠ 0 := fun h ↦ ht (v.restrict_eq_zero_iff.mpr h)
-  have hbound : (v t)⁻¹ ≤ v b := by
-    have := MonoidWithZeroHom.ValueGroup₀.embedding_strictMono.monotone htle
-    simpa using this
-  have hcont : Continuous fun y : R ↦ (y - x) * t := by fun_prop
-  filter_upwards [hcont.continuousAt.preimage_mem_nhds (by simpa using hU)] with y hy
-  have hy' : v (y - x) < (v t)⁻¹ := by
-    have : v (y - x) * v t < (v t)⁻¹ * v t := by simpa [map_mul, ht0] using hy
-    exact lt_of_mul_lt_mul_right this zero_le
-  calc v y = v ((y - x) + x) := by rw [sub_add_cancel]
-    _ ≤ max (v (y - x)) (v x) := v.map_add _ _
-    _ < v b := max_lt (hy'.trans_le hbound) hx
-
 /-- Restriction to the characteristic subgroup makes a valuation continuous whenever its
 open unit ball is a neighbourhood of zero. The unit ideal selects the characteristic subgroup
 in the horizontal restriction construction. -/
