@@ -19,7 +19,7 @@ homogeneity, by the left counit identity. These results retain the integral coef
 no torsion-freeness or division is required.
 
 The pushout map associated to a composable pair of graded classifying maps is graded as well.
-Thus evaluating the coproduct recovers composition on graded points, not just ungraded points.
+Thus a graded map out of the tensor square composed with the coproduct is graded.
 
 ## References
 
@@ -69,8 +69,7 @@ theorem coproduct_mem_coordinateTensorGrading {n : ℕ} {x : MvPolynomial ℕ+ L
     PowerSeries.coeff_map, coeff_succ_universalStrictCoordinate] at h
   simpa using h
 
-/-- The coproduct preserves and reflects homogeneity. Reflection follows by applying the
-left counit to the first coordinate of a composable pair. -/
+/-- The coproduct preserves and reflects homogeneity. -/
 @[simp]
 theorem coproduct_mem_coordinateTensorGrading_iff {n : ℕ} {x : MvPolynomial ℕ+ LazardRing} :
     coproduct x ∈ coordinateTensorGrading n ↔ x ∈ coordinateGrading n := by

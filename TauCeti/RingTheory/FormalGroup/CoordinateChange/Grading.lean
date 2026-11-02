@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # The grading of the strict coordinate-change ring
@@ -26,7 +25,8 @@ isomorphism. The mapping criterion characterizes it independently of that presen
 The ring of composable pairs carries the analogous grading, with both families of coordinate
 variables in degree `2i`. Its mapping criterion tests the first factor and the variables of
 the second coordinate. This supplies the graded coefficient rings for strict formal-group
-isomorphisms and their composition; gradedness of the structure maps is proved separately.
+isomorphisms and their composition. The counit is graded here; the coproduct is graded in
+`CoordinateChange.Coproduct`. Gradedness of the right unit and conjugation is not asserted.
 
 ## References
 
@@ -67,11 +67,8 @@ private theorem mem_coordinateGrading_iff {n : ℕ} {x : MvPolynomial ℕ+ Lazar
 
 private theorem coordinatePolynomialEquiv_apply (p : MvPolynomial (ℕ+ ⊕ ℕ+) ℤ) :
     coordinatePolynomialEquiv p = aeval (Sum.elim X (fun j ↦ C (generator j))) p := by
-  have he : coordinatePolynomialEquiv.toAlgHom =
-      aeval (Sum.elim X (fun j ↦ C (generator j))) := by
-    ext i
-    simp [coordinatePolynomialEquiv_X]
-  exact DFunLike.congr_fun he p
+  simpa only [Function.comp_def, AlgEquiv.coe_toAlgHom, coordinatePolynomialEquiv_X] using
+    DFunLike.congr_fun (aeval_unique coordinatePolynomialEquiv.toAlgHom) p
 
 /-- A homogeneous element is a weighted homogeneous polynomial in the coordinate variables
 `bᵢ` and the included Lazard generators `xᵢ`, both of degree `2i`. -/
@@ -82,30 +79,15 @@ theorem mem_coordinateGrading_iff_aeval {n : ℕ} {x : MvPolynomial ℕ+ LazardR
       aeval (Sum.elim X (fun j ↦ C (generator j))) p = x := by
   simp only [mem_coordinateGrading_iff, coordinatePolynomialEquiv_apply]
 
-attribute [local instance] MvPolynomial.weightedGradedAlgebra
-
 /-- Multiplication in the coordinate-change ring adds homological degrees. -/
-instance : SetLike.GradedMonoid coordinateGrading where
-  one_mem := Submodule.mem_map.mpr ⟨1, SetLike.GradedOne.one_mem, map_one coordinatePolynomialEquiv⟩
-  mul_mem _ _ _ _ ha hb := by
-    obtain ⟨a, ha', rfl⟩ := mem_coordinateGrading_iff.mp ha
-    obtain ⟨b, hb', rfl⟩ := mem_coordinateGrading_iff.mp hb
-    exact mem_coordinateGrading_iff.mpr
-      ⟨a * b, ha'.mul hb', map_mul coordinatePolynomialEquiv _ _⟩
+instance : SetLike.GradedMonoid coordinateGrading := by
+  unfold coordinateGrading
+  exact WeightedHomogeneousSubmodule.gradedMonoid_map _ coordinatePolynomialEquiv
 
 /-- The coordinate-change ring is the direct sum of its combined homogeneous pieces. -/
 theorem isInternal_coordinateGrading : DirectSum.IsInternal coordinateGrading := by
-  let W := weightedHomogeneousSubmodule ℤ
-    (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))
-  have hW := DirectSum.Decomposition.isInternal W
-  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-  · exact coordinatePolynomialEquiv.toLinearMap.iSupIndep_map
-      coordinatePolynomialEquiv.injective hW.submodule_iSupIndep
-  · have h : (⨆ n, (W n).map coordinatePolynomialEquiv.toLinearMap) = ⊤ := by
-      rw [← Submodule.map_iSup, hW.submodule_iSup_eq_top, Submodule.map_top,
-        LinearMap.range_eq_top]
-      exact coordinatePolynomialEquiv.surjective
-    exact h
+  unfold coordinateGrading
+  exact WeightedHomogeneousSubmodule.isInternal_map _ coordinatePolynomialEquiv
 
 /-- The combined grading is an algebra grading over the integers. -/
 instance : GradedAlgebra coordinateGrading := isInternal_coordinateGrading.gradedAlgebra
@@ -123,9 +105,7 @@ theorem C_mem_coordinateGrading {n : ℕ} {x : LazardRing} (hx : x ∈ grading n
   have hp := mvPolynomialEquiv_mem_grading_iff.mp hx
   refine mem_coordinateGrading_iff.mpr ⟨rename Sum.inr p, ?_, ?_⟩
   · rw [rename_eq_aeval]
-    exact hp.aeval_mem (𝒜 := weightedHomogeneousSubmodule ℤ
-      (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ))))
-      fun i ↦ isWeightedHomogeneous_X _ _ (Sum.inr i)
+    exact hp.aeval fun i ↦ isWeightedHomogeneous_X _ _ (Sum.inr i)
   · have he : coordinatePolynomialEquiv.toAlgHom.comp (rename Sum.inr) =
         (IsScalarTower.toAlgHom ℤ LazardRing (MvPolynomial ℕ+ LazardRing)).comp
           mvPolynomialEquiv.toAlgHom := by
@@ -146,17 +126,14 @@ theorem coordinateGrading_map_mem_iff {A σ ι : Type*} [CommRing A] [SetLike σ
     fun i ↦ h (X_mem_coordinateGrading i)⟩, ?_⟩
   rintro ⟨hC, hX⟩ n x hx
   obtain ⟨p, hp, rfl⟩ := mem_coordinateGrading_iff.mp hx
-  have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
-  have hpe : p.IsWeightedHomogeneous (e ∘ Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
-      (fun i : ℕ+ ↦ 2 * (i : ℕ))) (e n) := fun d hd ↦ by
-    simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
-  have hp' := hpe.aeval_mem (𝒜 := 𝒜) (g := fun i ↦
-    f (Sum.elim X (fun j ↦ C (generator j)) i)) fun i ↦ by
-      cases i with
-      | inl i => exact hX i
-      | inr i => exact hC (generator_mem_grading i)
-  rw [coordinatePolynomialEquiv_apply]
-  exact (comp_aeval_apply (Sum.elim X (fun j ↦ C (generator j))) f.toIntAlgHom p).symm ▸ hp'
+  apply (WeightedHomogeneousSubmodule.map_mem_iff _ 𝒜 e
+    (f.comp coordinatePolynomialEquiv.toRingHom)).mpr ?_ hp
+  intro i
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, coordinatePolynomialEquiv_X]
+  cases i with
+  | inl i => exact hX i
+  | inr i => exact hC (generator_mem_grading i)
 
 /-- The counit preserves the combined homological grading. -/
 theorem counit_mem_grading {n : ℕ} {x : MvPolynomial ℕ+ LazardRing}
@@ -242,47 +219,33 @@ private theorem coordinateTensorPolynomialEquiv_X (i : ℕ+ ⊕ (ℕ+ ⊕ ℕ+))
   rcases i with i | (i | i) <;>
     simp [coordinateTensorPolynomialEquiv, mapAlgEquiv_apply, coordinatePolynomialEquiv_X]
 
+private abbrev coordinateTensorWeight : ℕ+ ⊕ (ℕ+ ⊕ ℕ+) → ℕ :=
+  Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
+    (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))
+
 /-- The combined homological grading on the ring of composable strict coordinate changes
 `Γ ⊗_L Γ = L[b₁,b₂,…][b₁',b₂',…]`. Both families of coordinate variables have degree `2i`,
 and the coefficient ring retains its Lazard grading. -/
 def coordinateTensorGrading (n : ℕ) :
     Submodule ℤ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)) :=
-  (weightedHomogeneousSubmodule ℤ
-    (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
-      (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))) n).map
+  (weightedHomogeneousSubmodule ℤ coordinateTensorWeight n).map
     coordinateTensorPolynomialEquiv.toLinearMap
 
 private theorem mem_coordinateTensorGrading_iff {n : ℕ}
     {x : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)} :
     x ∈ coordinateTensorGrading n ↔ ∃ p : MvPolynomial (ℕ+ ⊕ (ℕ+ ⊕ ℕ+)) ℤ,
-      p.IsWeightedHomogeneous (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
-        (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))) n ∧
+      p.IsWeightedHomogeneous coordinateTensorWeight n ∧
       coordinateTensorPolynomialEquiv p = x := Iff.rfl
 
 /-- Multiplication adds homological degrees in the ring of composable pairs. -/
-instance : SetLike.GradedMonoid coordinateTensorGrading where
-  one_mem := Submodule.mem_map.mpr
-    ⟨1, SetLike.GradedOne.one_mem, map_one coordinateTensorPolynomialEquiv⟩
-  mul_mem _ _ _ _ ha hb := by
-    obtain ⟨a, ha', rfl⟩ := mem_coordinateTensorGrading_iff.mp ha
-    obtain ⟨b, hb', rfl⟩ := mem_coordinateTensorGrading_iff.mp hb
-    exact mem_coordinateTensorGrading_iff.mpr
-      ⟨a * b, ha'.mul hb', map_mul coordinateTensorPolynomialEquiv _ _⟩
+instance : SetLike.GradedMonoid coordinateTensorGrading := by
+  unfold coordinateTensorGrading
+  exact WeightedHomogeneousSubmodule.gradedMonoid_map _ coordinateTensorPolynomialEquiv
 
 /-- The ring of composable pairs is the direct sum of its homogeneous pieces. -/
 theorem isInternal_coordinateTensorGrading : DirectSum.IsInternal coordinateTensorGrading := by
-  let W := weightedHomogeneousSubmodule ℤ
-    (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
-      (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ))))
-  have hW := DirectSum.Decomposition.isInternal W
-  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-  · exact coordinateTensorPolynomialEquiv.toLinearMap.iSupIndep_map
-      coordinateTensorPolynomialEquiv.injective hW.submodule_iSupIndep
-  · have h : (⨆ n, (W n).map coordinateTensorPolynomialEquiv.toLinearMap) = ⊤ := by
-      rw [← Submodule.map_iSup, hW.submodule_iSup_eq_top, Submodule.map_top,
-        LinearMap.range_eq_top]
-      exact coordinateTensorPolynomialEquiv.surjective
-    exact h
+  unfold coordinateTensorGrading
+  exact WeightedHomogeneousSubmodule.isInternal_map _ coordinateTensorPolynomialEquiv
 
 /-- The combined homological grading makes the ring of composable pairs a graded algebra. -/
 instance : GradedAlgebra coordinateTensorGrading :=
@@ -301,10 +264,7 @@ theorem C_mem_coordinateTensorGrading {n : ℕ} {x : MvPolynomial ℕ+ LazardRin
   obtain ⟨p, hp, rfl⟩ := mem_coordinateGrading_iff.mp hx
   refine mem_coordinateTensorGrading_iff.mpr ⟨rename Sum.inr p, ?_, ?_⟩
   · rw [rename_eq_aeval]
-    exact hp.aeval_mem (𝒜 := weightedHomogeneousSubmodule ℤ
-      (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
-        (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))))
-      fun i ↦ isWeightedHomogeneous_X _ _ (Sum.inr i)
+    exact hp.aeval fun i ↦ isWeightedHomogeneous_X _ _ (Sum.inr i)
   · have he : coordinateTensorPolynomialEquiv.toAlgHom.comp (rename Sum.inr) =
         (IsScalarTower.toAlgHom ℤ (MvPolynomial ℕ+ LazardRing)
           (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing))).comp
@@ -317,12 +277,10 @@ private theorem coordinateTensorPolynomialEquiv_apply
     (p : MvPolynomial (ℕ+ ⊕ (ℕ+ ⊕ ℕ+)) ℤ) :
     coordinateTensorPolynomialEquiv p = aeval
       (Sum.elim X (Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (generator j))))) p := by
-  have he : coordinateTensorPolynomialEquiv.toAlgHom = aeval
-      (Sum.elim X (Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (generator j))))) := by
-    ext i
-    simp [coordinateTensorPolynomialEquiv_X]
-  exact DFunLike.congr_fun he p
+  simpa only [Function.comp_def, AlgEquiv.coe_toAlgHom, coordinateTensorPolynomialEquiv_X] using
+    DFunLike.congr_fun (aeval_unique coordinateTensorPolynomialEquiv.toAlgHom) p
 
+-- The public statement spells out the weights because `coordinateTensorWeight` is private.
 /-- A homogeneous element of the ring of composable pairs is a weighted homogeneous polynomial
 in the two families of coordinate variables and the Lazard generators, all of degree `2i`. -/
 theorem mem_coordinateTensorGrading_iff_aeval {n : ℕ}
@@ -345,19 +303,15 @@ theorem coordinateTensorGrading_map_mem_iff {A σ ι : Type*} [CommRing A] [SetL
     fun i ↦ h (X_mem_coordinateTensorGrading i)⟩, ?_⟩
   rintro ⟨hC, hX⟩ n x hx
   obtain ⟨p, hp, rfl⟩ := mem_coordinateTensorGrading_iff.mp hx
-  have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
-  have hpe : p.IsWeightedHomogeneous (e ∘ Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
-      (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))) (e n) := fun d hd ↦ by
-    simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
-  have hp' := hpe.aeval_mem (𝒜 := 𝒜) (g := fun i ↦ f (Sum.elim X
-      (Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (generator j)))) i)) fun i ↦ by
-    rcases i with i | i
-    · exact hX i
-    · rcases i with i | i
-      · exact hC (X_mem_coordinateGrading i)
-      · exact hC (C_mem_coordinateGrading (generator_mem_grading i))
-  rw [coordinateTensorPolynomialEquiv_apply]
-  exact (comp_aeval_apply _ f.toIntAlgHom p).symm ▸ hp'
+  apply (WeightedHomogeneousSubmodule.map_mem_iff _ 𝒜 e
+    (f.comp coordinateTensorPolynomialEquiv.toRingHom)).mpr ?_ hp
+  intro i
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, coordinateTensorPolynomialEquiv_X]
+  rcases i with i | (i | i)
+  · exact hX i
+  · exact hC (X_mem_coordinateGrading i)
+  · exact hC (C_mem_coordinateGrading (generator_mem_grading i))
 
 /-- Inclusion of the first factor preserves and reflects homogeneity. -/
 @[simp]
