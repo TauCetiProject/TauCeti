@@ -267,11 +267,8 @@ theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [
     rw [map_mul, Module.End.mul_apply, hg, hg', map_mul, Module.End.mul_apply]
   | inv g _ hg =>
     intro v
-    calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := by
-          rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one, Module.End.one_apply]
-      _ = σ g⁻¹ (f v) := by
-          rw [← hg, ← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one,
-            Module.End.one_apply]
+    calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
+      _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
 
 end Representation
 

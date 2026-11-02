@@ -181,8 +181,8 @@ theorem standardRepresentation_swap_symmetricGroupThreeAlpha :
 theorem standardRepresentation_swap_symmetricGroupThreeBeta :
     standardRepresentation k (Fin 3) (Equiv.swap 0 1) (symmetricGroupThreeBeta hω) =
       symmetricGroupThreeAlpha hω := by
-  rw [← standardRepresentation_swap_symmetricGroupThreeAlpha hω, ← Module.End.mul_apply,
-    ← map_mul, Equiv.swap_mul_self, map_one, Module.End.one_apply]
+  simpa using (standardRepresentation k (Fin 3)).inv_self_apply (Equiv.swap 0 1)
+    (symmetricGroupThreeAlpha hω)
 
 /-- The vectors `α` and `β` are linearly independent. -/
 private theorem linearIndependent_symmetricGroupThreeAlpha_beta :
@@ -733,6 +733,7 @@ theorem symmetricGroupThreeSymCubeEquiv_apply_zero_zero_beta (h2 : (2 : k) ≠ 0
   exact symmetricPower_symmetricGroupThreeBasis_ofFn hω fun i => by fin_cases i <;> rfl
 
 /-- The inverse of `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` sends `α³` to `(1/2, 1/2, 0)`. -/
+@[simp]
 theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha (h2 : (2 : k) ≠ 0) :
     (symmetricGroupThreeSymCubeEquiv hω h2).symm
         (⨂ₛ[k] _ : Fin 3, symmetricGroupThreeAlpha hω) = (2⁻¹, 2⁻¹, 0) := by
@@ -740,6 +741,7 @@ theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha (h2 : (2 : k) ≠ 0) :
     ← symmetricGroupThreeSymCubeEquiv_apply hω h2, Representation.Equiv.symm_apply_apply]
 
 /-- The inverse of `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` sends `β³` to `(1/2, -1/2, 0)`. -/
+@[simp]
 theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_beta (h2 : (2 : k) ≠ 0) :
     (symmetricGroupThreeSymCubeEquiv hω h2).symm
         (⨂ₛ[k] _ : Fin 3, symmetricGroupThreeBeta hω) = (2⁻¹, -2⁻¹, 0) := by
@@ -783,12 +785,16 @@ theorem trace_symmetricPower_two_standardRepresentation (g : Equiv.Perm (Fin 3))
   rw [Representation.char_prod, Representation.char_trivial, finrank_self, Nat.cast_one] at h
   exact h.symm
 
-include hω in
-/-- **`χ_{Sym² V₃}(1) = 3`.** -/
+/-- **`χ_{Sym² V₃}(1) = 3`**, over every field: `Sym² V₃` has dimension `3`. -/
 theorem trace_symmetricPower_two_standardRepresentation_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 2 1) = 3 := by
-  rw [trace_symmetricPower_two_standardRepresentation hω, character_standardRepresentation_one]
-  norm_num
+  -- The trace of the identity is stated for an additive group, so it is applied up to the
+  -- definitional agreement of the two additive monoid structures, as explained above.
+  rw [map_one]
+  refine (LinearMap.trace_one k
+    (Sym[k]^2 (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule)).trans ?_
+  rw [SymmetricPower.finrank_eq, finrank_augmentationSubrepresentation]
+  simp [Nat.multichoose_eq]
 
 include hω in
 /-- **`χ_{Sym² V₃}(σ) = 1`** for the transposition `σ = (0 1)`. -/
@@ -821,13 +827,16 @@ theorem trace_symmetricPower_three_standardRepresentation (h2 : (2 : k) ≠ 0)
     coe_signLinearCharacter_apply, ← add_assoc] at h
   exact h.symm
 
-include hω in
-/-- **`χ_{Sym³ V₃}(1) = 4`.** -/
-theorem trace_symmetricPower_three_standardRepresentation_one (h2 : (2 : k) ≠ 0) :
+/-- **`χ_{Sym³ V₃}(1) = 4`**, over every field: `Sym³ V₃` has dimension `4`. -/
+theorem trace_symmetricPower_three_standardRepresentation_one :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 1) = 4 := by
-  rw [trace_symmetricPower_three_standardRepresentation hω h2,
-    character_standardRepresentation_one, Equiv.Perm.sign_one]
-  norm_num
+  -- The trace of the identity is stated for an additive group, so it is applied up to the
+  -- definitional agreement of the two additive monoid structures, as explained above.
+  rw [map_one]
+  refine (LinearMap.trace_one k
+    (Sym[k]^3 (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule)).trans ?_
+  rw [SymmetricPower.finrank_eq, finrank_augmentationSubrepresentation]
+  simp [Nat.multichoose_eq]
 
 include hω in
 /-- **`χ_{Sym³ V₃}(σ) = 0`** for the transposition `σ = (0 1)`. -/
