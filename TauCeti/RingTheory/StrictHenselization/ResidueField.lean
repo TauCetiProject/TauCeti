@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.StrictHenselization.Local
 public import TauCeti.FieldTheory.IsSepClosed
-import Mathlib.RingTheory.Etale.StandardEtale
 import TauCeti.RingTheory.StrictHenselization.Etale
 
 /-!
@@ -30,8 +29,6 @@ it is a henselian local ring (`henselianLocalRing`) with separably closed residu
 
 ## Main results
 
-* `TauCeti.StrictHenselization.exists_toTarget_eq_of_aeval_eq_zero`: a simple root in `Ω` of a
-  monic polynomial over `R` is in the image of `toTarget`.
 * `TauCeti.StrictHenselization.toTarget_surjective`: for `Ω` separable algebraic over the residue
   field of a local ring `R`, the map `toTarget` is surjective.
 * `TauCeti.StrictHenselization.residueFieldEquiv`: the residue field of `algebra R Ω` is `Ω`.
@@ -50,23 +47,6 @@ open IsLocalRing Polynomial
 universe u
 
 namespace TauCeti.StrictHenselization
-
-section Root
-
-variable {R Ω : Type u} [CommRing R] [CommRing Ω] [Algebra R Ω]
-
-/-- A simple root `ω ∈ Ω` of a monic polynomial `f` over `R` is the image under `toTarget` of an
-element of the colimit of pointed étale neighbourhoods. -/
-theorem exists_toTarget_eq_of_aeval_eq_zero {f : R[X]} (hf : f.Monic) {ω : Ω}
-    (hω : aeval ω f = 0) (hunit : IsUnit (aeval ω (derivative f))) :
-    ∃ x : algebra R Ω, toTarget R Ω x = ω := by
-  let P : StandardEtalePair R :=
-    { f := f, monic_f := hf, g := derivative f, cond := ⟨1, 0, 1, by simp⟩ }
-  have hP : P.HasMap ω := ⟨hω, hunit⟩
-  obtain ⟨g, hg⟩ := (toTarget_comp_bijective R Ω P.Ring).2 (P.lift ω hP)
-  exact ⟨g P.X, by rw [← AlgHom.comp_apply, hg, StandardEtalePair.lift_X]⟩
-
-end Root
 
 section ResidueField
 
@@ -106,8 +86,15 @@ noncomputable def residueFieldEquiv : ResidueField (algebra R Ω) ≃ₐ[R] Ω :
 /-- `residueFieldEquiv` sends the residue of `x` to `toTarget x`. -/
 @[simp]
 theorem residueFieldEquiv_residue (x : algebra R Ω) :
-    residueFieldEquiv R Ω (residue (algebra R Ω) x) = toTarget R Ω x :=
-  (rfl)
+    residueFieldEquiv R Ω (residue (algebra R Ω) x) = toTarget R Ω x := by
+  have h : maximalIdeal (algebra R Ω) = RingHom.ker (toTarget R Ω) :=
+    (ker_toTarget_eq_maximalIdeal R Ω).symm
+  -- `ResidueField` is by definition the quotient by the maximal ideal, with `residue` its
+  -- quotient map (`residue_def`). Rewriting with `residue_def` would change the type of the
+  -- argument, so state the unfolded form directly.
+  change Ideal.quotientKerAlgEquivOfSurjective (toTarget_surjective R Ω)
+    (Ideal.quotientEquivAlgOfEq R h (Ideal.Quotient.mk _ x)) = _
+  rw [Ideal.quotientEquivAlgOfEq_mk, Ideal.quotientKerAlgEquivOfSurjective_mk]
 
 /-- The inverse of `residueFieldEquiv` sends `toTarget x` to the residue of `x`. -/
 @[simp]

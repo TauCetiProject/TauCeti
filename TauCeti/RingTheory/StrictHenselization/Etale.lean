@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.StrictHenselization.Local
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+import Mathlib.RingTheory.Etale.StandardEtale
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -20,6 +21,10 @@ Let `algebra R Ω` be the colimit of the pointed étale neighbourhoods of `(R, �
 holds for every essentially finite type unramified `A`, because the kernel of `toTarget` lies in
 the Jacobson radical of the colimit (`toTarget_comp_injective`).
 
+Applied to the standard étale algebra `R[X]_{f'} ⧸ (f)` of a monic polynomial `f` over `R`, this
+says that a simple root `ω ∈ Ω` of `f` is a value of `toTarget`: the point `X ↦ ω` lifts, so `ω`
+is the image of `X` (`exists_toTarget_eq_of_aeval_eq_zero`).
+
 For a local ring `R` and a separable closure `Ω` of its residue field, this is the statement of
 Stacks, Tag 04GT, with `S = R`, about the strict henselization. In the form given there
 (`existsUnique_algHom_of_etale`), a point of `A` is a prime `𝔮` of `A` with an `R`-embedding
@@ -31,6 +36,8 @@ Stacks, Tag 04GT, with `S = R`, about the strict henselization. In the form give
   unramified algebra to the colimit are determined by their composites with `toTarget`.
 * `TauCeti.StrictHenselization.toTarget_comp_bijective`: for an étale algebra, composition with
   `toTarget` is bijective.
+* `TauCeti.StrictHenselization.exists_toTarget_eq_of_aeval_eq_zero`: a simple root in `Ω` of a
+  monic polynomial over `R` is in the image of `toTarget`.
 * `TauCeti.StrictHenselization.existsUnique_algHom_of_etale`: the form of Stacks, Tag 04GT, for
   a field `Ω`.
 
@@ -91,6 +98,25 @@ theorem toTarget_comp_bijective (A : Type w) [CommRing A] [Algebra R A] [Algebra
   simp
 
 end Pointed
+
+section Root
+
+open Polynomial
+
+variable {R Ω : Type u} [CommRing R] [CommRing Ω] [Algebra R Ω]
+
+/-- A simple root `ω ∈ Ω` of a monic polynomial `f` over `R` is the image under `toTarget` of an
+element of the colimit of pointed étale neighbourhoods. -/
+theorem exists_toTarget_eq_of_aeval_eq_zero {f : R[X]} (hf : f.Monic) {ω : Ω}
+    (hω : aeval ω f = 0) (hunit : IsUnit (aeval ω (derivative f))) :
+    ∃ x : algebra R Ω, toTarget R Ω x = ω := by
+  let P : StandardEtalePair R :=
+    { f := f, monic_f := hf, g := derivative f, cond := ⟨1, 0, 1, by simp⟩ }
+  have hP : P.HasMap ω := ⟨hω, hunit⟩
+  obtain ⟨g, hg⟩ := (toTarget_comp_bijective R Ω P.Ring).2 (P.lift ω hP)
+  exact ⟨g P.X, by rw [← AlgHom.comp_apply, hg, StandardEtalePair.lift_X]⟩
+
+end Root
 
 section Field
 
