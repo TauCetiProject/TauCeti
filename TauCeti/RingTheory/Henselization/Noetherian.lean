@@ -11,6 +11,7 @@ import TauCeti.RingTheory.AdicCompletion.Flat
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Etale.Weakly
 import TauCeti.RingTheory.Flat.Jacobson
+import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.Henselization.Henselian
 import TauCeti.RingTheory.Henselization.IndEtale
 
@@ -81,10 +82,7 @@ instance faithfullyFlat_adicCompletion [IsNoetherianRing R] :
 instance isNoetherianRing [IsNoetherianRing R] : IsNoetherianRing (algebra I) := by
   have : IsNoetherianRing (AdicCompletion (extended I) (algebra I)) :=
     isNoetherianRing_of_ringEquiv _ (completionEquiv I).toRingEquiv
-  exact Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-    (A := AdicCompletion (extended I) (algebra I)) <| isNoetherian_of_linearEquiv
-      (Algebra.TensorProduct.rid (algebra I) (AdicCompletion (extended I) (algebra I))
-        (AdicCompletion (extended I) (algebra I))).toLinearEquiv.symm
+  exact .of_faithfullyFlat (AdicCompletion (extended I) (algebra I))
 
 /-- When `I` lies in the Jacobson radical of `R`, the henselization of `(R, I)` is Noetherian
 exactly when `R` is. This applies to a local ring and its maximal ideal. -/
@@ -93,8 +91,6 @@ theorem isNoetherianRing_iff_of_le_jacobson (hI : I ≤ (⊥ : Ideal R).jacobson
     IsNoetherianRing (algebra I) ↔ IsNoetherianRing R := by
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   have := faithfullyFlat_of_le_jacobson I hI
-  exact Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-    (A := algebra I) <| isNoetherian_of_linearEquiv
-      (Algebra.TensorProduct.rid R (algebra I) (algebra I)).toLinearEquiv.symm
+  exact .of_faithfullyFlat (algebra I)
 
 end TauCeti.Henselization
