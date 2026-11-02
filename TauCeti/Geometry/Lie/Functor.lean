@@ -261,16 +261,11 @@ theorem lieMap_comp
   have hψD : e'' (lieMap ψ (lieMap φ D)) =
       mfderiv I' I'' ψ 1 (e' (lieMap φ D)) :=
     leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap _ _
-  have hchain := DFunLike.congr_fun (MonoidHom.groupLieAlgebraMap_comp ψ.toMonoidHom
-    φ.toMonoidHom (ψ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
-    (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt) (e D)
-  rw [ContinuousLinearMap.comp_apply, groupLieAlgebraMap_toMonoidHom_apply,
-    groupLieAlgebraMap_toMonoidHom_apply, MonoidHom.groupLieAlgebraMap_apply,
-    MonoidHom.coe_comp] at hchain
   have hchain' : mfderiv I I'' (ψ.comp φ) 1 (e D) =
       mfderiv I' I'' ψ 1 (mfderiv I I' φ 1 (e D)) := by
     rw [ContMDiffMonoidMorphism.coe_comp]
-    exact hchain
+    exact mfderiv_comp_apply_of_eq 1 (ψ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
+      (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt (map_one φ) (e D)
   have hright : mfderiv I' I'' ψ 1 (mfderiv I I' φ 1 (e D)) =
       e'' (lieMap ψ (lieMap φ D)) := by
     rw [← hφD, ← hψD]
