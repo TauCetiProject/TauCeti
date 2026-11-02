@@ -457,7 +457,7 @@ private theorem endChart_mem_puncturedPlane {q : Puncture} {ζ : ℝ × ℝ}
 omit [FiniteDimensional ℝ V] in
 /-- **The boundary term in end coordinates.** On the end `q`, for `T ≥ 2`, the two-form
 `dχ ∧ α`, transported to the coordinates of the end with its Jacobian, is
-`-±β'(±s - T) (H_q(t, ũ) + ½ ω(ũ, ∂_t ũ))` for `ũ = u ∘ φ_q`. -/
+`-±β'(±s - T) (H_q(t, u_q) + ½ ω(u_q, ∂_t u_q))` for `u_q = u ∘ φ_q`. -/
 private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hu : ContDiffOn ℝ 2 u puncturedPlane) {T : ℝ} (hT : 2 ≤ T) {q : Puncture} {ζ : ℝ × ℝ}
     (hζ : 0 < q.endSign * ζ.1) :
@@ -493,7 +493,7 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, 
     have h₁ := congrArg (· v) hcomp
     rw [hloc.fderiv_eq, ((hg.hasFDerivAt.comp ζ (hasFDerivAt_fst)).fderiv)] at h₁
     simpa [mul_comm] using h₁.symm
-  -- The pulled-back one-form `α ∘ dφ` on `∂_t` is `K` in end coordinates plus `½ ω(ũ, ∂_t ũ)`.
+  -- The pulled-back one-form `α ∘ dφ` on `∂_t` is `K` in end coordinates plus `½ ω(u_q, ∂_t u_q)`.
   have hdu (e : ℝ × ℝ) : fderiv ℝ u (endChart q ζ) e =
       e.1 • fderiv ℝ u (endChart q ζ) stdComplexLineReal +
         e.2 • fderiv ℝ u (endChart q ζ) stdComplexLineImag := by
@@ -520,8 +520,8 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, 
   · rw [smoothTransition.deriv_of_neg (by linarith)]
     ring
 
-/-- On the end `q`, the integral over one period of `H_q(t, ũ) + ½ ω(ũ, ∂_t ũ)` is the action of
-the loop `t ↦ ũ(s, t)`, for `ũ = u ∘ φ_q`. -/
+/-- On the end `q`, the integral over one period of `H_q(t, u_q) + ½ ω(u_q, ∂_t u_q)` is the
+action of the loop `t ↦ u_q(s, t)`, for `u_q = u ∘ φ_q`. -/
 private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     (hu : ContDiffOn ℝ 2 u puncturedPlane) {q : Puncture} {s : ℝ} (hs : 0 < q.endSign * s) :
@@ -529,14 +529,14 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
         1 / 2 * ω (u (endChart q (s, t))) (fderiv ℝ (u ∘ endChart q) (s, t) stdComplexLineImag)) =
       ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))) := by
   set x : ℝ → V := fun t ↦ u (endChart q (s, t))
-  have hũ (t : ℝ) : ContDiffAt ℝ 2 (u ∘ endChart q) (s, t) :=
+  have huq (t : ℝ) : ContDiffAt ℝ 2 (u ∘ endChart q) (s, t) :=
     (hu.contDiffAt (isOpen_puncturedPlane.mem_nhds
       (endChart_mem_puncturedPlane (ζ := (s, t)) hs))).comp (s, t)
       (contDiff_endChart q).contDiffAt
   have hline (t : ℝ) : HasDerivAt (fun t : ℝ ↦ (s, t)) stdComplexLineImag t := by
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
   have hderiv (t : ℝ) : deriv x t = fderiv ℝ (u ∘ endChart q) (s, t) stdComplexLineImag :=
-    (((hũ t).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt t (hline t)).deriv
+    (((huq t).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt t (hline t)).deriv
   have hper : Periodic x 1 := fun t ↦ by
     have h := q.periodic_cylindricalEndLift s t
     simp only [x, endChart_apply, Complex.equivRealProdCLM_symm_apply]
@@ -547,11 +547,11 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     exact congrArg (deriv · t) (funext hper)
   -- The integrand is continuous and periodic, so its integral over any period is the same.
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦
-    ((hũ t).continuousAt).comp (continuous_const.prodMk continuous_id).continuousAt
+    ((huq t).continuousAt).comp (continuous_const.prodMk continuous_id).continuousAt
   have hdxc : Continuous (deriv x) := by
     refine continuous_iff_continuousAt.2 fun t ↦ ?_
     simp only [funext hderiv]
-    exact (((hũ t).fderiv_right (m := 1) (by norm_num)).continuousAt.comp
+    exact (((huq t).fderiv_right (m := 1) (by norm_num)).continuousAt.comp
       (continuous_const.prodMk continuous_id).continuousAt).clm_apply continuousAt_const
   have hHc : Continuous fun t ↦ H q t (x t) :=
     (hHs q).continuous.comp (continuous_id.prodMk hxc)
