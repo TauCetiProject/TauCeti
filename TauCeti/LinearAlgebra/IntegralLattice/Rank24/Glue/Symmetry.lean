@@ -113,7 +113,7 @@ variable (T : DynkinType) (hT : T.IsSimplyLaced) (vT : T.Valid)
 
 /-- For equal ADE components, the indicated symmetries of a pattern act on its glued lattice
 by permuting the components. This is the actual lattice action, not just an action on words. -/
-noncomputable def gluedLatticeSymmetries :
+noncomputable def gluedLatticeIsometryHom :
     p.symmetries →* IntegralLattice.Isometry
       (DynkinType.gluedLattice (fun _ : Fin p.length ↦ T) (fun _ ↦ hT) (fun _ ↦ vT)
         (AddSubgroup.closure (p.decodedWords (fun _ ↦ T) (fun _ ↦ hT))) h)
@@ -138,9 +138,9 @@ noncomputable def gluedLatticeSymmetries :
 
 /-- The action of a pattern symmetry sends component `k` to component `g k`. -/
 @[simp]
-theorem gluedLatticeSymmetries_apply (g : p.symmetries)
+theorem gluedLatticeIsometryHom_apply (g : p.symmetries)
     (x : Fin p.length → Fin T.rank → ℚ) (k : Fin p.length) :
-    p.gluedLatticeSymmetries T hT vT h g x (g.val k) = x k :=
+    p.gluedLatticeIsometryHom T hT vT h g x (g.val k) = x k :=
   p.gluedLatticeIsometry_apply _ _ _ h g.property x k
 
 end Constant
