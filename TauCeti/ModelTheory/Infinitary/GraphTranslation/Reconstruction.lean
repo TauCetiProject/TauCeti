@@ -14,14 +14,14 @@ public import TauCeti.ModelTheory.Infinitary.Satisfiability
 A structure of the graph language `L.graphLanguage` interprets the graph relation `G_f` of each
 function symbol `f` of `L` by an arbitrary relation. The **graph axioms** of a set `F` of function
 symbols say that for `f ∈ F` this relation is the graph of a function: totality
-`∀ x̄ ∃ y, G_f(x̄, y)` (`graphTotality`) and functionality
-`∀ x̄ y z, G_f(x̄, y) → G_f(x̄, z) → y = z` (`graphFunctionality`). For a countable `F` they form
+`∀ xs ∃ y, G_f(xs, y)` (`graphTotality`) and functionality
+`∀ xs y z, G_f(xs, y) → G_f(xs, z) → y = z` (`graphFunctionality`). For a countable `F` they form
 one `L_{ω₁ω}` sentence `graphAxioms F hF`, the countable conjunction over `F`, and they hold in the
 graph expansion of every `L`-structure.
 
 Conversely, a nonempty structure of the graph language is read back as an `L`-structure
 `reconstructStructure L M` on the same carrier: relation symbols of `L` are the base relations, and
-`f(x̄)` is a `y` with `G_f(x̄, y)` when there is one (and an arbitrary element otherwise). When the
+`f(xs)` is a `y` with `G_f(xs, y)` when there is one (and an arbitrary element otherwise). When the
 graph relations of the function symbols of a formula `φ` are graphs of functions, the translation
 `φ.relationalize` holds in the graph structure exactly when `φ` holds in the reconstruction
 (`BoundedFormulaInf.realize_relationalize_reconstructStructure`). The graph expansion of an
