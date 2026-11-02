@@ -10,13 +10,15 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 /-!
 # Two-vector quadratic-form identities in real or complex inner-product spaces
 
-Three elementary lemmas useful for block-operator perturbation estimates:
+Four elementary lemmas useful for block-operator perturbation estimates and planar motions:
 
 * `LinearMap.IsSymmetric.re_inner_map_symm`: the real mixed coefficients agree for symmetric maps;
 * `LinearMap.re_inner_smul_add_smul_map`: expand the real quadratic form of a two-vector
   real-linear combination;
 * `TauCeti.norm_smul_add_smul_sq`: the Pythagorean norm formula for a two-vector
-  real-linear combination when the real part of the mixed inner product vanishes.
+  real-linear combination when the real part of the mixed inner product vanishes;
+* `TauCeti.norm_smul_add_smul_eq_one_of_sq_add_sq`: its unit-circle case, `‖γ y + σ z‖ = 1` for
+  orthonormal `y, z` and `γ² + σ² = 1`.
 
 No finite-dimensionality, spectral-gap, or eigenvector assumptions are needed. The results
 are used by the per-eigenvector double-angle estimates in `DoubleAngle.Vector`.
@@ -63,5 +65,15 @@ theorem norm_smul_add_smul_sq {y z : E} (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) (�
     ‖(γ : 𝕜) • y + (σ : 𝕜) • z‖ ^ 2 = γ ^ 2 * ‖y‖ ^ 2 + σ ^ 2 * ‖z‖ ^ 2 := by
   rw [norm_add_sq (𝕜 := 𝕜)]
   simp [inner_smul_left, inner_smul_right, hyz, norm_smul, mul_pow, sq_abs]
+
+/-- For unit vectors `y, z` orthogonal with respect to the real part of the inner product, the
+real linear combination `γ y + σ z` with `γ² + σ² = 1` is a unit vector; this is
+`norm_smul_add_smul_sq` read on the unit circle. -/
+theorem norm_smul_add_smul_eq_one_of_sq_add_sq {y z : E} (hy : ‖y‖ = 1) (hz : ‖z‖ = 1)
+    (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) {γ σ : ℝ} (hγσ : γ ^ 2 + σ ^ 2 = 1) :
+    ‖(γ : 𝕜) • y + (σ : 𝕜) • z‖ = 1 := by
+  have h := norm_smul_add_smul_sq hyz γ σ
+  rw [hy, hz, one_pow, mul_one, mul_one, hγσ] at h
+  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
 
 end TauCeti
