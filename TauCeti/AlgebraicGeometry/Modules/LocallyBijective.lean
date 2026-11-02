@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # Locally bijective maps into quasi-coherent modules on affine opens
@@ -21,17 +22,15 @@ for `M` (`Scheme.Modules.isLocalizedModule_basicOpenRestrict`).
 
 The input on the side of `U` is that a covering sieve of an affine open `U` contains the basic
 opens `D(f)` for a family of functions `f` generating the unit ideal of `Γ(X, U)`
-(`AlgebraicGeometry.IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top`); bijectivity then follows
-by clearing denominators, as in Hartshorne, Lemma II.5.3.
+(`AlgebraicGeometry.IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top`, in
+`TauCeti.AlgebraicGeometry.AffineScheme`); bijectivity then follows by clearing denominators, as in
+Hartshorne, Lemma II.5.3.
 
 This computes the sections over affine opens of sheaves obtained by sheafifying a sectionwise
 construction on a quasi-coherent module, such as its symmetric powers.
 
 ## Main declarations
 
-* `AlgebraicGeometry.IsAffineOpen.span_setOf_basicOpen_mem_sieve_eq_top`: the basic opens of an
-  affine open `U` lying in a covering sieve of `U` are defined by functions generating the unit
-  ideal;
 * `AlgebraicGeometry.IsAffineOpen.bijective_app_of_isLocalizedModule`: a locally bijective morphism
   from a presheaf of modules whose restrictions to basic opens are localizations into a
   quasi-coherent module is bijective on sections over affine opens.
@@ -50,17 +49,6 @@ universe u
 namespace AlgebraicGeometry.IsAffineOpen
 
 variable {X : Scheme.{u}} {U : X.Opens}
-
-/-- The basic opens of an affine open `U` that lie in a covering sieve of `U` (for the Zariski
-topology) are defined by functions generating the unit ideal of `Γ(X, U)`. -/
-theorem span_setOf_basicOpen_mem_sieve_eq_top (hU : IsAffineOpen U) {S : Sieve U}
-    (hS : S ∈ Opens.grothendieckTopology X U) :
-    Ideal.span {f : Γ(X, U) | S (homOfLE (X.basicOpen_le f))} = ⊤ := by
-  rw [← hU.iSup_basicOpen_eq_self_iff]
-  refine le_antisymm (iSup_le fun f ↦ X.basicOpen_le f.1) fun x hx ↦ ?_
-  obtain ⟨V, i, hi, hxV⟩ := hS x hx
-  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hx
-  exact Opens.mem_iSup.2 ⟨⟨f, S.downward_closed hi (homOfLE hfV)⟩, hxf⟩
 
 variable {P : PresheafOfModulesOfCommRing.{u} X.presheaf} {M : X.Modules}
 
@@ -98,6 +86,9 @@ theorem bijective_app_of_isLocalizedModule (hU : IsAffineOpen U) [M.IsQuasicoher
     let i : X.basicOpen f ⟶ U := homOfLE (X.basicOpen_le f)
     -- `φ (a|_{D(f)}) = f ^ k • φ b = (f ^ k • s)|_{D(f)}`, so `φ a - f ^ k • s` vanishes on `D(f)`.
     have key : M.presheaf.map i.op (φ.app (op U) a - f ^ k • s) = 0 := by
+      -- `rw` cannot rewrite here (the motive mixes `M.presheaf` with `M.val` and the sections of
+      -- `toPresheaf`), so each step is a term: naturality of `φ`, `hak`, linearity of `φ`, `hb`
+      -- and linearity of the restriction of `M`.
       refine (map_sub _ _ _).trans (sub_eq_zero.2 ?_)
       refine (PresheafOfModules.naturality_apply φ i.op a).symm.trans ?_
       refine (congrArg (φ.app (op (X.basicOpen f))) hak.symm).trans ?_

@@ -33,7 +33,9 @@ components of the graded ring of sections over `U` of the graded symmetric algeb
 * `AlgebraicGeometry.Scheme.Modules.bijective_symmetricPower_unit_app`: the sheafification unit
   `Symⁿ_{Γ(X, U)} Γ(M, U) → Γ(Symⁿ M, U)` is bijective for quasi-coherent `M` and affine `U`;
 * `AlgebraicGeometry.Scheme.Modules.symmetricPowerSectionsIso`: the resulting isomorphism of
-  `Γ(X, U)`-modules, characterized by `symmetricPowerSectionsIso_hom_apply`.
+  `Γ(X, U)`-modules, characterized by `symmetricPowerSectionsIso_hom_apply`; it is natural in `M`
+  (`symmetricPowerSectionsIso_hom_naturality`) and compatible with restriction to smaller affine
+  opens (`symmetricPowerSectionsIso_hom_restrict`).
 
 ## References
 
@@ -63,15 +65,18 @@ theorem bijective_symmetricPower_unit_app (hU : IsAffineOpen U) (n : ℕ) :
   let S : X.Modules := (PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj P
   have : S.IsQuasicoherent := (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
     (SheafOfModules.symmetricPowerIso n M) inferInstance
-  -- The unit is `toSheafify` on underlying presheaves of abelian groups.
   let η : P ⟶ S.val :=
     (PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app P
   have : Presheaf.IsLocallyInjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf (X.presheaf ⋙ forget₂ CommRingCat RingCat)).map η) :=
-    Presheaf.isLocallyInjective_toSheafify' (J := Opens.grothendieckTopology X) P.presheaf
+    (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
+      (𝟙 X.ringCatSheaf.obj) P).symm ▸
+      Presheaf.isLocallyInjective_toSheafify' (J := Opens.grothendieckTopology X) P.presheaf
   have : Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf (X.presheaf ⋙ forget₂ CommRingCat RingCat)).map η) :=
-    Presheaf.isLocallySurjective_toSheafify' (J := Opens.grothendieckTopology X) P.presheaf
+    (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
+      (𝟙 X.ringCatSheaf.obj) P).symm ▸
+      Presheaf.isLocallySurjective_toSheafify' (J := Opens.grothendieckTopology X) P.presheaf
   exact hU.bijective_app_of_isLocalizedModule (M := S) η fun f ↦
     M.isLocalizedModule_symmetricPower_map_basicOpen hU f n
 
@@ -84,11 +89,9 @@ def symmetricPowerSectionsIso (hU : IsAffineOpen U) (n : ℕ) :
   (LinearEquiv.ofBijective
     (PresheafOfModules.Hom.app' (R := X.presheaf)
       ((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
-        ((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val) ≫
-      (SheafOfModules.symmetricPowerIso n M).inv.val) (op U)).hom
-    ((ConcreteCategory.bijective_of_isIso
-      ((SheafOfModules.evaluation _ (op U)).map (SheafOfModules.symmetricPowerIso n M).inv)).comp
-        (M.bijective_symmetricPower_unit_app hU n))).toModuleIso
+        ((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val)) (op U)).hom
+    (M.bijective_symmetricPower_unit_app hU n)).toModuleIso ≪≫
+  (sectionsFunctor U).mapIso (SheafOfModules.symmetricPowerIso n M).symm
 
 /-- The isomorphism `symmetricPowerSectionsIso` is the sheafification unit of the sectionwise
 symmetric power, followed by the defining identification `SheafOfModules.symmetricPowerIso` of the
@@ -101,6 +104,40 @@ lemma symmetricPowerSectionsIso_hom_apply (hU : IsAffineOpen U) (n : ℕ)
         (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
           ((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val)).app
             (op U) x) :=
+  -- The hom of the composite isomorphism is the sheafification unit at `U` (the underlying map
+  -- of `LinearEquiv.ofBijective`) followed by the component at `U` of `symmetricPowerIso.inv`.
   (rfl)
+
+/-- `symmetricPowerSectionsIso` is natural in the quasi-coherent module: for `φ : M ⟶ N`, it
+intertwines `Symⁿ` of the map of sections of `φ` over `U` with the map of sections of `Symⁿ φ`. -/
+@[reassoc]
+lemma symmetricPowerSectionsIso_hom_naturality {N : X.Modules} [N.IsQuasicoherent] (φ : M ⟶ N)
+    (hU : IsAffineOpen U) (n : ℕ) :
+    ModuleCat.symmetricPower.map ((sectionsFunctor U).map φ) n ≫
+        (N.symmetricPowerSectionsIso hU n).hom =
+      (M.symmetricPowerSectionsIso hU n).hom ≫
+        (sectionsFunctor U).map ((SheafOfModules.symmetricPower X.sheaf n).map φ) := by
+  ext x
+  -- after `symmetricPowerSectionsIso_hom_apply`, this is naturality of the sheafification unit
+  exact (SheafOfModules.symmetricPower_map_val_app_unit n φ (op U) x).symm
+
+/-- `symmetricPowerSectionsIso` is compatible with restriction to a smaller affine open `V ≤ U`:
+the restriction of the image of `x` is the image of the restriction of `x` in the sectionwise
+symmetric power, which is `Symⁿ` of the restriction map of `M`
+(`PresheafOfModulesOfCommRing.coe_symmetricPower_obj_map_apply`). -/
+lemma symmetricPowerSectionsIso_hom_restrict (hU : IsAffineOpen U) {V : X.Opens}
+    (hV : IsAffineOpen V) (i : V ⟶ U) (n : ℕ)
+    (x : (PresheafOfModulesOfCommRing.obj (R := X.presheaf) M.val (op U)).symmetricPower n) :
+    ((SheafOfModules.symmetricPower X.sheaf n).obj M).val.map i.op
+        ((M.symmetricPowerSectionsIso hU n).hom x) =
+      (M.symmetricPowerSectionsIso hV n).hom
+        (((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val).map i.op
+          x) :=
+  -- naturality of `symmetricPowerIso.inv`, then of the sheafification unit
+  Eq.trans
+    (PresheafOfModules.naturality_apply (SheafOfModules.symmetricPowerIso n M).inv.val i.op _).symm
+    (congrArg _ (PresheafOfModules.naturality_apply
+      ((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
+        ((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val)) i.op x).symm)
 
 end AlgebraicGeometry.Scheme.Modules
