@@ -42,8 +42,8 @@ It is proved in two steps.
   `(q₀, 0)`, so Witt's extension theorem
   (`TauCeti.SymplecticForm.exists_isSymplectomorphism_extend`) extends it to a linear
   symplectomorphism `A` from `(E × N, ω₀(q₀, 0))` to `(E × N, ω₁(q₀, 0))`. It fixes the zero
-  section pointwise, and `A^* ω₁` agrees with `ω₀` at `(q₀, 0)` and along the zero section, so the
-  relative Moser step applies to `ω₀` and `A^* ω₁`.
+  section pointwise, so `A^* ω₁` agrees with `ω₀` as a full form at `(q₀, 0)` and has the same
+  pullback to the zero section as `ω₀`; hence the relative Moser step applies to `ω₀` and `A^* ω₁`.
 
 As in `TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq`, forms are Mathlib's
 continuous alternating maps with its exterior derivative `extDeriv`, the pullback of `ω` along `ψ`

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Flow.Variational
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 -- Private: compactly supported `C¹` maps are Lipschitz; used only inside the proof.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
@@ -60,62 +60,18 @@ private theorem exists_contDiff_hasCompactSupport_eq {X : ℝ → E → E} {T : 
       HasCompactSupport (fun p : ℝ × E ↦ Y p.1 p.2) ∧
       (∀ y, (∀ t ∈ T, X t y = 0) → ∀ t, Y t y = 0) ∧ IsOpen O ∧
       Icc 0 1 ×ˢ {x₀} ⊆ O ∧ O ⊆ T ×ˢ U ∧ ∀ q ∈ O, Y q.1 q.2 = X q.1 q.2 := by
-  -- Some closed thickening `[-ε, 1 + ε]` of `[0, 1]` still lies in `T`.
-  obtain ⟨ε, hε, hεT⟩ := isCompact_Icc.exists_cthickening_subset_open hT hTI
-  rw [show Icc (0 : ℝ) 1 = closedBall (1 / 2) (1 / 2) by rw [Real.closedBall_eq_Icc]; norm_num,
-    cthickening_closedBall hε.le (by norm_num), add_comm] at hεT
-  obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.1 hU x₀ hx₀
-  let b₁ : ContDiffBump (1 / 2 : ℝ) := ⟨1 / 2 + ε / 2, 1 / 2 + ε, by positivity, by linarith⟩
-  let b₂ : ContDiffBump x₀ := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
-  have hb₁T : tsupport b₁ ⊆ T := by rw [b₁.tsupport_eq]; exact hεT
-  have hb₁r : b₁.rIn = 1 / 2 + ε / 2 := rfl
-  have hb₂r : b₂.rIn = ρ / 4 := rfl
-  have hb₂R : b₂.rOut = ρ / 2 := rfl
-  have hb₂U : tsupport b₂ ⊆ U := by
-    rw [b₂.tsupport_eq, hb₂R]
-    exact (closedBall_subset_ball (by linarith)).trans hρU
-  refine ⟨fun t x ↦ (b₁ t * b₂ x) • X t x, ball (1 / 2 : ℝ) (1 / 2 + ε / 2) ×ˢ ball x₀ (ρ / 4),
-    ?_, ?_, fun y hy t ↦ ?_, isOpen_ball.prod isOpen_ball, ?_, ?_, ?_⟩
-  · -- Inside `T × U` the cut-off field is a product of `C^r` maps, outside it vanishes nearby.
-    refine contDiff_iff_contDiffAt.2 fun p ↦ ?_
-    by_cases hp : p ∈ T ×ˢ U
-    · exact ((b₁.contDiff.comp contDiff_fst).mul (b₂.contDiff.comp contDiff_snd)).contDiffAt.smul
-        (hX.contDiffAt ((hT.prod hU).mem_nhds hp))
-    · refine contDiffAt_const (c := (0 : E)).congr_of_eventuallyEq ?_
-      rw [mem_prod, not_and_or] at hp
-      rcases hp with hp | hp
-      · filter_upwards [continuous_fst.continuousAt.eventually
-          (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hp (hb₁T h))] with q hq
-        simp [hq]
-      · filter_upwards [continuous_snd.continuousAt.eventually
-          (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hp (hb₂U h))] with q hq
-        simp [hq]
-  · refine HasCompactSupport.intro
-      ((isCompact_closedBall (1 / 2 : ℝ) (1 / 2 + ε)).prod (isCompact_closedBall x₀ (ρ / 2)))
-      fun p hp ↦ ?_
-    rw [mem_prod, not_and_or] at hp
-    rcases hp with hp | hp
-    · have : b₁ p.1 = 0 := image_eq_zero_of_notMem_tsupport (by rw [b₁.tsupport_eq]; exact hp)
-      simp [this]
-    · have : b₂ p.2 = 0 :=
-        image_eq_zero_of_notMem_tsupport (by rw [b₂.tsupport_eq, hb₂R]; exact hp)
-      simp [this]
-  · by_cases ht : t ∈ T
-    · simp [hy t ht]
-    · have : b₁ t = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ ht (hb₁T h)
-      simp [this]
-  · rintro ⟨t, x⟩ ⟨ht, hx⟩
-    rw [mem_singleton_iff] at hx
-    refine mk_mem_prod ?_ (hx ▸ mem_ball_self (by positivity))
-    rw [mem_ball, Real.dist_eq, abs_lt]
-    constructor <;> linarith [ht.1, ht.2]
-  · exact prod_mono (ball_subset_closedBall.trans ((closedBall_subset_closedBall
-      (by linarith)).trans hεT)) ((ball_subset_ball (by linarith)).trans hρU)
-  · rintro q ⟨hq₁, hq₂⟩
-    rw [← hb₁r] at hq₁
-    rw [← hb₂r] at hq₂
-    simp [b₁.one_of_mem_closedBall (ball_subset_closedBall hq₁),
-      b₂.one_of_mem_closedBall (ball_subset_closedBall hq₂)]
+  -- Cut the joint field off near the compact set `[0, 1] × {x₀}` of the open set `T × U`.
+  obtain ⟨g, hg, hgc, hgTU, hgX, hgeq⟩ :=
+    hX.exists_contDiff_eventuallyEq_on_isCompact (isCompact_Icc.prod isCompact_singleton)
+      (hT.prod hU) (prod_mono hTI (singleton_subset_iff.2 hx₀))
+  refine ⟨fun t x ↦ g (t, x), interior {q | g q = X q.1 q.2} ∩ T ×ˢ U, hg, hgc,
+    fun y hy t ↦ ?_, isOpen_interior.inter (hT.prod hU),
+    fun q hq ↦ ⟨mem_interior_iff_mem_nhds.2 (hgeq q hq),
+      prod_mono hTI (singleton_subset_iff.2 hx₀) hq⟩,
+    inter_subset_right, fun q hq ↦ interior_subset hq.1⟩
+  -- Off `T × U` the cut-off field vanishes; on it, it vanishes wherever the field does.
+  by_contra h
+  exact hgX h (hy t (hgTU (subset_tsupport _ h)).1)
 
 /-- **The local flow of a time-dependent field near a rest point.** Let `X` be a time-dependent
 vector field on a finite-dimensional space, jointly `C^r` (`r ≥ 1`) on `T × U` for an open set of
