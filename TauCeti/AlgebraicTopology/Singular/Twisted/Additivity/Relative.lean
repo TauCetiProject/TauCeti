@@ -44,6 +44,20 @@ namespace TopPair
 variable {R : Type u} [Ring R] {ι : Type v} (P : ι → TopPair.{v})
   (L : TauCeti.LocalCoefficientSystem.{u, v, max v w} R (sigma P).fst)
 
+/-- The subspace chain map of a coproduct inclusion is the absolute coproduct leg,
+precomposed with the restriction-pullback coefficient comparison. -/
+lemma twistedSubspaceChainComplexMap_sigmaι (i : ι) :
+    twistedSubspaceChainComplexMap (sigmaι P i) L =
+      (TauCeti.LocalCoefficientSystem.twistedChainComplexCoefficientIso
+          (subspaceSystemPullbackIso (sigmaι P i) L)).hom ≫
+        TauCeti.LocalCoefficientSystem.twistedChainComplexMap
+          (TopCat.sigmaι (fun i ↦ (P i).snd) i) ((sigma P).subspaceSystem L) := by
+  -- The subspace of `sigma P` and the subspace component of `sigmaι P i` are defined
+  -- by the same sigma carrier and inclusion as the absolute coproduct.
+  erw [TauCeti.LocalCoefficientSystem.twistedChainComplexCoefficientIso_hom,
+    twistedSubspaceChainComplexMap_def]
+  rfl
+
 /-- The twisted chains of the subspaces in a disjoint union of pairs form a coproduct.
 The legs include the canonical restriction-pullback comparison. -/
 def isColimitCofanTwistedSubspaceChainComplex :
@@ -62,14 +76,7 @@ def isColimitCofanTwistedSubspaceChainComplex :
     (isColimitCofanTwistedChainComplex (fun i ↦ (P i).snd)
       ((sigma P).subspaceSystem L))).ofIsoColimit (Cocone.ext (Iso.refl _) ?_)
   intro i
-  -- The coproduct cofan writes the subspace as a sigma type, while the pair API writes
-  -- `(sigma P).snd`. `erw` identifies these carriers after reducing the cofan combinators.
-  dsimp [e]
-  erw [Category.comp_id, ← Iso.app_hom, Discrete.natIso_app,
-    TauCeti.LocalCoefficientSystem.twistedChainComplexCoefficientIso_hom,
-    twistedSubspaceChainComplexMap_def]
-  -- The subspace component of the bundled pair inclusion is the same sigma inclusion.
-  rfl
+  exact (Category.comp_id _).trans (twistedSubspaceChainComplexMap_sigmaι P L i.as).symm
 
 /-- Relative twisted singular chains of a disjoint union of pairs are the coproduct of the
 relative twisted chains of the summands, with their restricted coefficient systems. -/
