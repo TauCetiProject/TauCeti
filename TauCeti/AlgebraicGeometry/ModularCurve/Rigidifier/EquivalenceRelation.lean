@@ -156,9 +156,12 @@ theorem doubleComp_comp_baseChangeFunctorHom {X : EllObj B}
       f ≫ V.baseChangeFunctorHom (D.rep V) :=
   R.homEquiv.injective (by
     rw [homEquiv_comp_baseChangeFunctorHom, homEquiv_comp_baseChangeFunctorHom,
-      doubleRepresentableBy_homEquiv_doubleComp]
-    -- whiskering keeps the `𝒫`-structure and projects the pair of `δ`-structures
-    exact whiskerLeft_app_apply)
+      doubleRepresentableBy_homEquiv_doubleComp, whiskerLeft_app_apply]
+    -- whiskering keeps the `𝒫`-structure and projects the pair of `δ`-structures; the left side
+    -- applies it to a literal tuple, which `rw` cannot match, so it is computed componentwise
+    exact Prod.ext (Functor.Monoidal.whiskerLeft_app_apply_fst _ _)
+      ((Functor.Monoidal.whiskerLeft_app_apply_snd _ _).trans
+        ((Functor.Monoidal.fst_app_apply _).trans (Functor.Monoidal.fst_app_apply _).symm)))
 
 /-- The composition of two composable triples has the last pair of the second triple. -/
 @[reassoc]
@@ -170,10 +173,14 @@ theorem doubleComp_comp_doubleSnd {X : EllObj B} {f g : X ⟶ V.baseChangeFuncto
   have hp := congrArg Prod.fst (congrArg R.homEquiv h)
   rw [homEquiv_comp_doubleSnd, homEquiv_comp_baseChangeFunctorHom,
     Functor.Monoidal.whiskerLeft_app_apply_fst, Functor.Monoidal.whiskerLeft_app_apply_fst] at hp
-  rw [homEquiv_comp_doubleSnd, homEquiv_comp_doubleSnd, doubleRepresentableBy_homEquiv_doubleComp]
+  rw [homEquiv_comp_doubleSnd, homEquiv_comp_doubleSnd, doubleRepresentableBy_homEquiv_doubleComp,
+    whiskerLeft_app_apply]
   -- whiskering keeps the `𝒫`-structure, where `hp` applies, and projects the pair of
-  -- `δ`-structures, where both sides are the last `δ`-structure of `g`
-  exact Prod.ext hp rfl
+  -- `δ`-structures, where both sides are the last `δ`-structure of `g`; as above, the left side
+  -- is computed componentwise
+  exact Prod.ext ((Functor.Monoidal.whiskerLeft_app_apply_fst _ _).trans hp)
+    ((Functor.Monoidal.whiskerLeft_app_apply_snd _ _).trans
+      ((Functor.Monoidal.snd_app_apply _).trans (Functor.Monoidal.snd_app_apply _).symm))
 
 /-! ### The equivalence relation on the scheme of one rigidification -/
 
