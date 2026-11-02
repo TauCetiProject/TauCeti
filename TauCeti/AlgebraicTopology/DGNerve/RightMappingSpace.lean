@@ -162,10 +162,6 @@ private theorem twist_eq_neg (r : ℕ) :
   rw [twist_succ, mul_assoc, ← Int.negOnePow_add, ← mul_neg, ← Int.negOnePow_succ,
     Int.negOnePow_even _ ⟨r + 1, by push_cast; ring⟩, mul_one]
 
-private theorem notMem_of_subset_Ioi {n : ℕ} {i : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S ⊆ Ioi i) : i ∉ S :=
-  fun h ↦ lt_irrefl i (mem_Ioi.1 (hS h))
-
 /-- The alternating sum over the faces of `insert i S`, for `S` above `i`, of values `v` that are
 twisted last-column values `G`: the face omitting `i` contributes the term through the first
 vertex of `S`, and the other faces the terms omitting a vertex of `S`. -/
@@ -176,7 +172,7 @@ private theorem sum_faces_insert {n : ℕ} {M : Type*} [AddCommGroup M]
     ∑ j ∈ insert i S, (#{s ∈ insert i S | s < j} : ℤ).negOnePow • v ((insert i S).erase j) =
       twist #S • (∑ t ∈ S, (#{s ∈ S | t ≤ s} : ℤ).negOnePow • G i (S.erase t) -
         if h : S.Nonempty then (#S : ℤ).negOnePow • G (S.min' h) (S.erase (S.min' h)) else 0) := by
-  have hi : i ∉ S := notMem_of_subset_Ioi hS
+  have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   have h₀ : {s ∈ insert i S | s < i} = ∅ :=
     filter_eq_empty_iff.2 fun s hs ↦ by
       rcases mem_insert.1 hs with rfl | hs
@@ -204,32 +200,25 @@ private theorem sum_faces_insert {n : ℕ} {M : Type*} [AddCommGroup M]
     sub_eq_add_neg, hr, smul_smul, ← Units.neg_smul, ← twist_eq_neg]
 
 private theorem map_castSucc_subset_Ioo {n : ℕ} {i : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S ⊆ Ioi i) : S.map Fin.castSuccEmb ⊆ Ioo i.castSucc (Fin.last (n + 1)) := by
-  intro s hs
-  obtain ⟨t, ht, rfl⟩ := mem_map.1 hs
-  exact mem_Ioo.2 ⟨Fin.castSucc_lt_castSucc_iff.2 (mem_Ioi.1 (hS ht)), Fin.castSucc_lt_last t⟩
+    (hS : S ⊆ Ioi i) : S.map Fin.castSuccEmb ⊆ Ioo i.castSucc (Fin.last (n + 1)) :=
+  Fin.map_castSuccEmb_Ioi i ▸ map_subset_map.2 hS
 
 private theorem subset_Ioo_of_map_castSucc {n : ℕ} {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (hS : S.map Fin.castSuccEmb ⊆ Ioo i.castSucc j.castSucc) : S ⊆ Ioo i j := fun s hs ↦ by
-  simpa [Fin.castSucc_lt_castSucc_iff] using hS (mem_map_of_mem Fin.castSuccEmb hs)
+    (hS : S.map Fin.castSuccEmb ⊆ Ioo i.castSucc j.castSucc) : S ⊆ Ioo i j := by
+  rwa [← Fin.map_castSuccEmb_Ioo, map_subset_map] at hS
 
 private theorem subset_Ioi_of_map_castSucc {n : ℕ} {i : Fin (n + 1)} {j : Fin (n + 2)}
-    {S : Finset (Fin (n + 1))} (hS : S.map Fin.castSuccEmb ⊆ Ioo i.castSucc j) : S ⊆ Ioi i :=
-  fun _ hs ↦ mem_Ioi.2 (Fin.castSucc_lt_castSucc_iff.1 (mem_Ioo.1 (hS (mem_map_of_mem _ hs))).1)
+    {S : Finset (Fin (n + 1))} (hS : S.map Fin.castSuccEmb ⊆ Ioo i.castSucc j) : S ⊆ Ioi i := by
+  rw [← map_subset_map (f := Fin.castSuccEmb), Fin.map_castSuccEmb_Ioi]
+  exact hS.trans (Ioo_subset_Ioo_right (Fin.le_last j))
 
 /-- A set of vertices of `[n + 1]` strictly below a vertex consists of images of vertices of
 `[n]`. -/
 private theorem exists_map_castSucc_eq {n : ℕ} {S : Finset (Fin (n + 2))} {i j : Fin (n + 2)}
     (hS : S ⊆ Ioo i j) : ∃ S₀ : Finset (Fin (n + 1)), S₀.map Fin.castSuccEmb = S := by
-  refine ⟨S.preimage Fin.castSucc (Fin.castSucc_injective _).injOn, ?_⟩
-  ext s
-  simp only [mem_map, mem_preimage, Fin.castSuccEmb_apply]
-  constructor
-  · rintro ⟨s₀, hs₀, rfl⟩
-    exact hs₀
-  · intro hs
-    obtain ⟨s₀, rfl⟩ := Fin.exists_castSucc_eq.2 (Fin.ne_last_of_lt (mem_Ioo.1 (hS hs)).2)
-    exact ⟨s₀, hs, rfl⟩
+  obtain ⟨S₀, -, h⟩ := subset_map_iff.1 (hS.trans (Ioo_subset_Iio_self.trans
+    ((Iio_subset_Iio (Fin.le_last j)).trans (Fin.Iio_last_eq_map (n := n + 1)).le)))
+  exact ⟨S₀, h.symm⟩
 
 variable {n : ℕ} {obj : Fin (n + 2) → C} {X Y : C}
   (hX : ∀ i : Fin (n + 1), obj i.castSucc = X) (hY : obj (Fin.last (n + 1)) = Y)
@@ -435,12 +424,6 @@ private theorem boundary_eq_zero_of_ne_last {f : Coherences R obj} (hf : IsConst
     · rw [hf.1 _ _ _ _ _ _ _ htj ⟨s, hs⟩, zero_dgComp, smul_zero, sub_zero, smul_zero]
     · rw [hf.1 _ _ _ _ _ _ _ hj ⟨s, hs⟩, dgComp_zero, smul_zero, sub_zero, smul_zero]
 
-/-- A nonempty set of vertices is a vertex `i` together with a set of vertices above `i`. -/
-private theorem exists_insert_eq {J : Finset (Fin (n + 1))} (hJ : J.Nonempty) :
-    ∃ i S, S ⊆ Ioi i ∧ insert i S = J :=
-  ⟨J.min' hJ, J.erase (J.min' hJ), fun _ hs ↦ mem_Ioi.2 (lt_of_le_of_ne
-    (min'_le _ _ (mem_of_mem_erase hs)) (ne_of_mem_erase hs).symm), insert_erase (min'_mem J hJ)⟩
-
 /-- The values of the simplex chain map attached to last-column coherences: the value on a
 nonempty `J` is the twisted coherence from the first vertex of `J` through the others to the last
 vertex. -/
@@ -449,17 +432,10 @@ private noncomputable def chainVal (f : Coherences R obj) (J : Finset (Fin (n + 
   if h : J.Nonempty then twist (#J - 1) • lastCol hX hY f (J.min' h) (J.erase (J.min' h)) d
   else 0
 
-private theorem min'_insert_of_subset_Ioi {a : Fin (n + 1)} {T : Finset (Fin (n + 1))}
-    (hT : T ⊆ Ioi a) : (insert a T).min' (insert_nonempty a T) = a :=
-  le_antisymm (min'_le _ _ (mem_insert_self a T)) (le_min' _ _ _ fun y hy ↦ by
-    rcases mem_insert.1 hy with rfl | hy
-    · exact le_rfl
-    · exact (mem_Ioi.1 (hT hy)).le)
-
 private theorem chainVal_insert (f : Coherences R obj) {a : Fin (n + 1)}
     {T : Finset (Fin (n + 1))} (hT : T ⊆ Ioi a) (d : ℤ) :
     chainVal hX hY f (insert a T) d = twist #T • lastCol hX hY f a T d := by
-  have ha : a ∉ T := notMem_of_subset_Ioi hT
+  have ha : a ∉ T := fun h ↦ notMem_Ioi_self (hT h)
   rw [chainVal, dite_eq_left (insert_nonempty a T)]
   simp only [min'_insert_of_subset_Ioi hT, erase_insert ha, card_insert_of_notMem ha,
     Nat.add_sub_cancel]
@@ -471,8 +447,8 @@ private theorem chainVal_eq_zero_of_ne (f : Coherences R obj) {J : Finset (Fin (
     {d : ℤ} (h : d + #J ≠ 1) : chainVal hX hY f J d = 0 := by
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · exact chainVal_empty hX hY f d
-  · obtain ⟨i, S, hS, rfl⟩ := exists_insert_eq hJ
-    have hi : i ∉ S := notMem_of_subset_Ioi hS
+  · obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+    have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
     rw [chainVal_insert hX hY f hS, lastCol_eq_zero hX hY f (by
       rw [card_insert_of_notMem hi] at h; push_cast at h; omega), smul_zero]
 
@@ -507,8 +483,8 @@ private noncomputable def toChainMap (σ : Simplex R C (n + 1))
     change dgDifferential R d (chainVal hX hY σ.coh J d) = _
     rcases J.eq_empty_or_nonempty with rfl | hJ
     · simp [chainVal_empty]
-    obtain ⟨i, S, hS, rfl⟩ := exists_insert_eq hJ
-    have hi : i ∉ S := notMem_of_subset_Ioi hS
+    obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+    have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
     by_cases hd : d + #S = 0
     · have hd' : d + #(S.map Fin.castSuccEmb) = 0 := by rwa [card_map]
       rw [sum_faces_chainVal hX hY σ.coh hσ hS (Fin.castSucc_lt_last i).le
@@ -621,8 +597,8 @@ private theorem chainVal_psiCoh (g : (dgHomComplex R X Y).SimplexChainMap n)
     chainVal psiObj_castSucc psiObj_last (psiCoh g) J d = g.val J d := by
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · rw [chainVal_empty, g.val_empty']
-  obtain ⟨i, S, hS, rfl⟩ := exists_insert_eq hJ
-  have hi : i ∉ S := notMem_of_subset_Ioi hS
+  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   rw [chainVal_insert _ _ _ hS]
   by_cases hd : d + #S = 0
   · rw [← lastCol_eq psiObj_castSucc psiObj_last _ hS rfl (Fin.castSucc_lt_last i).le
@@ -672,6 +648,10 @@ private noncomputable def ofChainMap (g : (dgHomComplex R X Y).SimplexChainMap n
       · rw [psiCoh_of_ne_last_of_nonempty g hij hS hd hj (nonempty_iff_ne_empty.2 hS₀), map_zero,
           boundary_eq_zero_of_ne_last psiObj_castSucc (isConstInit_psiCoh g) hij hS hd hj]
 
+private theorem ofChainMap_coh (g : (dgHomComplex R X Y).SimplexChainMap n) :
+    (ofChainMap g).coh = psiCoh g :=
+  rfl
+
 /-- A simplex whose restriction to the first `n + 1` vertices is constant is recovered from its
 simplex chain map. -/
 private theorem ofChainMap_toChainMap (σ : Simplex R C (n + 1))
@@ -701,7 +681,7 @@ private theorem ofChainMap_toChainMap (σ : Simplex R C (n + 1))
   · by_cases hS₀ : S = ∅
     · subst hS₀
       exact (psiCoh_of_ne_last_empty_heq _ hij hS hd hj).trans (hσ.2 _ _ _ _ _ _ hj).symm
-    · rw [show (ofChainMap (toChainMap σ hX hY hσ)).coh i j S d hij hS hd = 0 from
+    · rw [ofChainMap_coh,
         psiCoh_of_ne_last_of_nonempty _ hij hS hd hj (nonempty_iff_ne_empty.2 hS₀),
         hσ.1 _ _ _ _ _ _ _ hj (nonempty_iff_ne_empty.2 hS₀)]
       exact zero_heq_zero (hobj i) (hobj j)
@@ -718,8 +698,8 @@ private theorem chainVal_map {m : ℕ} (σ : Simplex R C (n + 1))
   rw [CochainComplex.SimplexChainMap.map_val, toChainMap_val]
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · rw [chainVal_empty, image_empty, chainVal_empty, ite_self]
-  obtain ⟨i, S, hS, rfl⟩ := exists_insert_eq hJ
-  have hi : i ∉ S := notMem_of_subset_Ioi hS
+  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   rw [chainVal_insert hX' hY' _ hS]
   by_cases hd : d + #S = 0
   swap
@@ -935,6 +915,21 @@ noncomputable def rightMappingSpaceIso (X Y : C) :
         (SimplexCategory.joinVertex.map f.unop).toOrderHom
         (SimplexCategory.joinVertex_map_castSucc f.unop)
         (SimplexCategory.joinVertex_map_last f.unop) _ _ J d
+
+/-- The isomorphism `rightMappingSpaceIso` sends an `n`-simplex to its simplex chain map
+`rightMappingSpaceEquiv`. -/
+theorem rightMappingSpaceIso_hom_app_apply (X Y : C) (Δ : SimplexCategoryᵒᵖ)
+    (s : ((dgNerve R C).rightMappingSpace ((dgNerveEquiv R C).symm X)
+      ((dgNerveEquiv R C).symm Y) : SSet).obj Δ) :
+    (rightMappingSpaceIso X Y).hom.app Δ s = ULift.up (rightMappingSpaceEquiv X Y Δ.unop.len s) :=
+  (rfl)
+
+/-- The inverse of `rightMappingSpaceIso` sends a simplex chain map to its `n`-simplex under
+`rightMappingSpaceEquiv`. -/
+theorem rightMappingSpaceIso_inv_app_apply (X Y : C) (Δ : SimplexCategoryᵒᵖ)
+    (g : (SSet.uliftFunctor.{u, v}.obj (dgHomComplex R X Y).simplexChainMaps).obj Δ) :
+    (rightMappingSpaceIso X Y).inv.app Δ g = (rightMappingSpaceEquiv X Y Δ.unop.len).symm g.down :=
+  (rfl)
 
 end dgNerve
 

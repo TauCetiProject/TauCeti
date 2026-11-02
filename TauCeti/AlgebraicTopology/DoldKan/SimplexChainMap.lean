@@ -174,13 +174,8 @@ noncomputable def map (g : K.SimplexChainMap n) (α : Fin (m + 1) →o Fin (n + 
       refine sum_congr rfl fun j hj ↦ ?_
       rw [ite_eq_left (hsub j hj)]
       have himage : (J.erase j).image α = (J.image α).erase (α j) := by
-        ext z
-        simp only [mem_image, mem_erase]
-        constructor
-        · rintro ⟨w, ⟨hwj, hw⟩, rfl⟩
-          exact ⟨fun h ↦ hwj (hinj hw hj h), w, hw, rfl⟩
-        · rintro ⟨hz, w, hw, rfl⟩
-          exact ⟨w, ⟨fun h ↦ hz (h ▸ rfl), hw⟩, rfl⟩
+        simpa only [sdiff_singleton_eq_erase, image_singleton] using
+          image_sdiff_of_injOn hinj (singleton_subset_iff.mpr hj)
       have hcount : #{s ∈ J.image α | s < α j} = #{s ∈ J | s < j} := by
         rw [filter_image, card_image_of_injOn (hinj.mono (coe_subset.2 (filter_subset _ _)))]
         congr 1
