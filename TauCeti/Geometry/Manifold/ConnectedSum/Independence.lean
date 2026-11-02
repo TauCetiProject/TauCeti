@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ConnectedSum.Congr
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Orientation
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.Orientation.Inversion
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # The connected sum does not depend on its balls
@@ -131,27 +131,19 @@ theorem nonempty_diffeomorph_of_isOrientationReversingAt [Nontrivial E] {e₁ e�
   · exact nonempty_diffeomorph_of_isOrientationPreservingAt h₁ h₂ h₁' h₂' d₁ d₂ d₁' d₂' o' o'
       oM (-oN) hf₁ hf₁' hf₂ hf₂'
   -- The second pair of balls induces the opposite orientation of `E`: rotate it by a reflection.
-  obtain ⟨ρ, hρ⟩ := exists_linearIsometryEquiv_isOrientationReversingAt o
-  have hρ₀ : ρ 0 = 0 := map_zero ρ
-  have hg₁ : o.IsOrientationPreservingAt oM (e₁' ∘ ρ) 0 := by
-    refine IsOrientationReversingAt.comp ?_ (hρ 0)
-    rw [hρ₀, ← isOrientationPreservingAt_neg_left]
-    exact hf₁'
-  have hg₂ : o.IsOrientationPreservingAt (-oN) (e₂' ∘ ρ) 0 := by
-    refine IsOrientationReversingAt.comp ?_ (hρ 0)
-    rw [hρ₀, ← isOrientationPreservingAt_neg_left]
-    exact hf₂'
+  obtain ⟨R, hR⟩ := exists_det_neg (F := E)
+  have h₁R := h₁'.comp_linearIsometryEquiv R
+  have h₂R := h₂'.comp_linearIsometryEquiv R
+  have hg₁ : o.IsOrientationPreservingAt oM (e₁' ∘ R) 0 :=
+    isOrientationPreservingAt_comp_of_det_neg (by simpa using hf₁') hR
+  have hg₂ : o.IsOrientationPreservingAt (-oN) (e₂' ∘ R) 0 :=
+    isOrientationPreservingAt_comp_of_det_neg (by simpa using hf₂') hR
   let := chartedSpace (H := E) h₁ h₂
   let := chartedSpace (H := E) h₁' h₂'
-  let := chartedSpace (H := E)
-    (h₁'.comp ρ.toHomeomorph.isOpenEmbedding : IsOpenEmbedding (e₁' ∘ ρ))
-    (h₂'.comp ρ.toHomeomorph.isOpenEmbedding : IsOpenEmbedding (e₂' ∘ ρ))
-  obtain ⟨φ⟩ := nonempty_diffeomorph_of_isOrientationPreservingAt h₁ h₂
-    (h₁'.comp ρ.toHomeomorph.isOpenEmbedding : IsOpenEmbedding (e₁' ∘ ρ))
-    (h₂'.comp ρ.toHomeomorph.isOpenEmbedding : IsOpenEmbedding (e₂' ∘ ρ)) d₁ d₂
-    (fun v ↦ (ρ.toContinuousLinearEquiv.toDiffeomorph.isLocalDiffeomorph v).comp (hg := d₁' _))
-    (fun v ↦ (ρ.toContinuousLinearEquiv.toDiffeomorph.isLocalDiffeomorph v).comp (hg := d₂' _))
+  let := chartedSpace (H := E) h₁R h₂R
+  obtain ⟨φ⟩ := nonempty_diffeomorph_of_isOrientationPreservingAt h₁ h₂ h₁R h₂R d₁ d₂
+    (d₁'.comp_linearIsometryEquiv R) (d₂'.comp_linearIsometryEquiv R)
     o o oM (-oN) hf₁ hg₁ hf₂ hg₂
-  exact ⟨φ.trans (compLinearIsometryEquivDiffeomorph ρ h₁' h₂' d₁' d₂')⟩
+  exact ⟨φ.trans (compLinearIsometryEquivDiffeomorph R h₁' h₂' d₁' d₂').symm⟩
 
 end TauCeti.ConnectedSum
