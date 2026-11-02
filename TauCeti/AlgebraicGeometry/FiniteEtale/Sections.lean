@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.Etale.Finiteness
+import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Sections of a finite étale cover of the punctured spectrum are finite
@@ -55,17 +56,6 @@ open CategoryTheory Limits AlgebraicGeometry IsLocalRing
 universe u
 
 namespace TauCeti.IsLocalRing
-
-/-- The algebra structure on `B_z` over `A_z` given by `Localization.awayMap` is compatible with
-the maps from `A`. -/
-private theorem isScalarTower_awayMap {A : Type*} [CommRing A] (B : Type*) [CommRing B]
-    [Algebra A B] (z : A) :
-    letI := (Localization.awayMap (algebraMap A B) z).toAlgebra
-    IsScalarTower A (Localization.Away z) (Localization.Away (algebraMap A B z)) :=
-  letI := (Localization.awayMap (algebraMap A B) z).toAlgebra
-  .of_algebraMap_eq fun a ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, IsLocalization.Away.map, IsLocalization.map_eq]
-    exact IsScalarTower.algebraMap_apply A B _ a
 
 variable {A : Type u} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 
@@ -129,7 +119,7 @@ theorem isTorsionFree_sections_puncturedSpectrum (hdepth : 2 ≤ depth (ModuleCa
     rcases eq_or_ne z 0 with rfl | hz0
     · exact ⟨1, by simp⟩
     let := (Localization.awayMap (algebraMap A R) z).toAlgebra
-    have := isScalarTower_awayMap R z
+    have := Localization.isScalarTower_awayMap R z
     have : Algebra.Etale (Localization.Away z) (Localization.Away (algebraMap A R z)) :=
       (finite_etale_awayMap_puncturedSpectrum hdepth V hz).2
     have hreg : IsSMulRegular (Localization.Away (algebraMap A R z))
@@ -191,8 +181,8 @@ theorem finite_sections_puncturedSpectrum [IsIntegrallyClosed A]
   let R := Γ(V.obj.left, ⊤)
   let := (Localization.awayMap (algebraMap A R) x).toAlgebra
   let := (Localization.awayMap (algebraMap A R) y).toAlgebra
-  have := isScalarTower_awayMap R x
-  have := isScalarTower_awayMap R y
+  have := Localization.isScalarTower_awayMap R x
+  have := Localization.isScalarTower_awayMap R y
   have hx := finite_etale_awayMap_puncturedSpectrum hdepth V (hmem x (by simp))
   have : Module.Finite (Localization.Away x) (Localization.Away (algebraMap A R x)) := hx.1
   have : Algebra.Etale (Localization.Away x) (Localization.Away (algebraMap A R x)) := hx.2

@@ -16,8 +16,10 @@ import TauCeti.RingTheory.Ideal.Operations
 This file produces regular sequences on a module `M` from local information.
 
 If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M` for all `n` and `j`.
-For `M = R`, this says that the localizations `R_a` and `R_b` intersect in `R` inside the total ring
-of fractions.
+For `M = R`, an element of the total ring of fractions of `R` which lies in `R` after multiplication
+by a power of `a`, and also after multiplication by a power of `b`, already lies in `R`. When `a`
+and `b` are non-zero-divisors, this says that `R_a` and `R_b` intersect in `R` inside the total
+ring of fractions.
 
 If `f₁, …, f_r` is weakly `M`-regular, every relation `∑ fᵢ mᵢ = 0` with `mᵢ ∈ M` has all its
 coefficients in `(f₁, …, f_r) M`. Dividing the last element out first,
@@ -138,7 +140,8 @@ variable {R : Type u} [CommRing R] {K : Type v} [CommRing K] [Algebra R K] [IsFr
 
 /-- If `a, b` is a weakly `R`-regular sequence, an element of the total ring of fractions of `R`
 which lies in `R` after multiplication by a power of `a`, and also after multiplication by a power
-of `b`, already lies in `R`: the localizations `R_a` and `R_b` intersect in `R`. -/
+of `b`, already lies in `R`. When `b` is also a non-zero-divisor, this says that the localizations
+`R_a` and `R_b` intersect in `R` inside the total ring of fractions. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem {a b : R}
     (h : IsWeaklyRegular R [a, b]) {z : K} {n j : ℕ}
     (ha : algebraMap R K (a ^ n) * z ∈ (algebraMap R K).range)

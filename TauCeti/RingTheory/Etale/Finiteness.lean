@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.LinearAlgebra.BilinearForm.DualLattice
 import TauCeti.RingTheory.Etale.Discriminant
+import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Trace.Regular
 
 /-!
@@ -22,11 +23,12 @@ torsion-free `A`-algebra whose generic fibre `K ⊗[A] R` is étale over `K`. Th
 multiplication by a power of `y`.
 
 The proof bounds `R` inside a trace-dual lattice. The trace of an element of `R` is integral
-over `A` after multiplication by a power of `x`, and also by a power of `y`, so it lies in `A`
-because `A` is integrally closed and `A_x ∩ A_y = A`. Hence the image of `R` in the generic fibre
-lies in its own dual for the trace form, which is nondegenerate because the generic fibre is
-étale. Choosing a basis of the generic fibre inside `R`, the image of `R` lies in the span of the
-dual basis, a finite `A`-module.
+over `A` after multiplication by a power of `x`, and also by a power of `y`, so it lies in `A`:
+`A` is integrally closed, and an element of `K` which lies in `A` after multiplication by a power
+of `x`, and also by a power of `y`, lies in `A` by weak regularity. Hence the image of `R` in the
+generic fibre lies in its own dual for the trace form, which is nondegenerate because the generic
+fibre is étale. Choosing a basis of the generic fibre inside `R`, the image of `R` lies in the
+span of the dual basis, a finite `A`-module.
 
 The situation arises for the ring of sections of a finite étale cover `V` of the punctured
 spectrum `U` of a Noetherian normal local domain of depth at least two (Stacks, Lemma 58.20.3
@@ -39,7 +41,7 @@ sections over the preimage of the affine open `D(z) ⊆ U`, which is finite éta
   above.
 * `TauCeti.Algebra.finite_of_isWeaklyRegular_of_isLocalization`: its form for localizations: if
   `R_x` is finite étale over `A_x` and `R_y` is finite over `A_y`, then `R` is finite over `A`.
-  The hypotheses are supplied by `TauCeti.Algebra.exists_isIntegral_pow_smul_of_isLocalization`
+  The hypotheses are supplied by `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`
   and `TauCeti.Algebra.etale_tensorProduct_of_isLocalization`.
 
 ## References
@@ -112,20 +114,6 @@ variable {x : A} (Ax Rx : Type*) [CommRing Ax] [CommRing Rx] [Algebra A Ax] [Alg
   [Algebra A Rx] [Algebra R Rx] [IsScalarTower A Ax Rx] [IsScalarTower A R Rx]
   [IsLocalization.Away x Ax] [IsLocalization.Away (algebraMap A R x) Rx]
 
-/-- If `x` is regular on `R` and the localization `R_x` is finite over `A_x`, every element of `R`
-becomes integral over `A` after multiplication by a power of `x`. -/
-theorem exists_isIntegral_pow_smul_of_isLocalization [Module.Finite Ax Rx]
-    (hx : IsSMulRegular R x) (r : R) : ∃ n : ℕ, IsIntegral A (x ^ n • r) := by
-  obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
-    (.powers x) (Rₘ := Ax) (algebraMap R Rx r) (Algebra.IsIntegral.isIntegral _)
-  refine ⟨n, (isIntegral_algHom_iff (IsScalarTower.toAlgHom A R Rx) ?_).1 ?_⟩
-  · -- `R → R_x` is injective as `x` is regular on `R`.
-    refine IsLocalization.injective Rx (M := .powers (algebraMap A R x)) (Submonoid.powers_le.2 ?_)
-    rw [mem_nonZeroDivisors_iff_right]
-    intro r hr
-    exact hx (by simpa [Algebra.smul_def, mul_comm] using hr)
-  · simpa [Submonoid.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply A R Rx] using hn
-
 /-- If `x` is nonzero and `R_x` is étale over `A_x`, the generic fibre of `R` is étale over the
 fraction field `K` of `A`, being the generic fibre of `R_x`. -/
 theorem etale_tensorProduct_of_isLocalization [Algebra.Etale Ax Rx] (hx : x ≠ 0) :
@@ -162,11 +150,11 @@ theorem finite_of_isWeaklyRegular_of_isLocalization [IsNoetherianRing A] [IsInte
       x • (1 : A) = x • 0))
   have := etale_tensorProduct_of_isLocalization (R := R) (FractionRing A) Ax Rx hx0
   refine finite_of_isWeaklyRegular_of_isIntegral_pow_smul (FractionRing A) hxy
-    (exists_isIntegral_pow_smul_of_isLocalization Ax Rx (hreg hx0)) fun r ↦ ?_
+    (TauCeti.exists_isIntegral_pow_smul_of_isLocalization Ax Rx (hreg hx0)) fun r ↦ ?_
   -- A weakly regular sequence may end in `0` (when `x` is a unit), and then `R_y = 0`.
   rcases eq_or_ne y 0 with rfl | hy0
   · exact ⟨1, by simpa using isIntegral_zero⟩
-  · exact exists_isIntegral_pow_smul_of_isLocalization Ay Ry (hreg hy0) r
+  · exact TauCeti.exists_isIntegral_pow_smul_of_isLocalization Ay Ry (hreg hy0) r
 
 end Localization
 
