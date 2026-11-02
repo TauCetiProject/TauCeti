@@ -43,9 +43,21 @@ public section
 
 open _root_.AlgebraicGeometry CategoryTheory Opposite
 
-namespace TauCeti.AlgebraicGeometry
-
 universe u
+
+namespace AlgebraicGeometry.Spec
+
+/-- The inverse affine equivalence has underlying morphism given by `Spec.map`. -/
+@[simp]
+theorem homEquivAlgHom_symm_apply_val {R A B : Type u}
+    [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] (φ : A →ₐ[R] B) :
+    (homEquivAlgHom.symm φ).val = Spec.map (CommRingCat.ofHom φ.toRingHom) :=
+  -- The inverse equivalence forgets the algebra structure and applies `Spec.map` definitionally.
+  (rfl)
+
+end AlgebraicGeometry.Spec
+
+namespace TauCeti.AlgebraicGeometry
 
 variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
 

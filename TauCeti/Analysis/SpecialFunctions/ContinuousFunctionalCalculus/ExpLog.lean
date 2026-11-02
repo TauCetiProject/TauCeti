@@ -26,7 +26,8 @@ continuity of `CFC.log` identifies it with `CFC.log` on the strictly positive el
 `CFC.log` is `C^n` on the strictly positive elements for every `n : ℕ∞ω`, including the analytic
 case `n = ω`: near each strictly positive element it agrees on them with a function that is
 analytic on a whole neighbourhood in `A`. The real powers `a ^ s = exp (s • log a)` and the square
-root inherit this smoothness.
+root inherit this smoothness. The same identity and the continuity of `CFC.log` make the real
+powers jointly continuous in the base and the exponent.
 
 The hypothesis on the derivative holds for matrices; see
 `TauCeti/Analysis/Matrix/Exponential/Log.lean`.
@@ -36,6 +37,8 @@ The hypothesis on the derivative holds for matrices; see
 * `CFC.log_mul_of_commute`: `log (a * b) = log a + log b` for commuting strictly positive `a`
   and `b`.
 * `CFC.rpow_eq_exp_smul_log`: `a ^ s = exp (s • log a)` for strictly positive `a`.
+* `CFC.continuousOn_rpow_prod`: `(a, s) ↦ a ^ s` is jointly continuous on the strictly positive
+  elements.
 * `CFC.contDiffWithinAt_log_exp`: if `expFDeriv 𝕂 a` is invertible at a self-adjoint `a`, then
   `CFC.log` is `C^n` at `exp a` within the strictly positive elements, for every `n`.
 * `CFC.contDiffOn_log`, `CFC.contDiffOn_rpow`, `CFC.contDiffOn_sqrt`: if `expFDeriv 𝕂 a` is
@@ -92,6 +95,29 @@ theorem log_mul_of_commute {a b : A} (hab : Commute a b)
   exact log_exp _ (IsSelfAdjoint.log.add IsSelfAdjoint.log)
 
 end LogMul
+
+section Continuity
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+  [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [ContinuousStar A] [PartialOrder A]
+  [StarOrderedRing A] [NonnegSpectrumClass ℝ A]
+
+/-- **Real powers are jointly continuous** in the base and the exponent: `(a, s) ↦ a ^ s` is
+continuous on the pairs whose base is strictly positive. For a fixed exponent this is
+`CFC.continuousOn_rpow`. -/
+theorem continuousOn_rpow_prod :
+    ContinuousOn (fun p : A × ℝ ↦ p.1 ^ p.2) ({a : A | IsStrictlyPositive a} ×ˢ Set.univ) := by
+  have hexp : Continuous (exp : A → A) :=
+    continuous_iff_continuousAt.2 fun x ↦ (exp_analytic (𝕂 := ℝ) x).continuousAt
+  have hlog₀ : ContinuousOn (log : A → A) {a : A | IsStrictlyPositive a} :=
+    continuousOn_log.mono fun _ ha ↦ ⟨ha.isSelfAdjoint, ha.isUnit⟩
+  have hlog : ContinuousOn (fun p : A × ℝ ↦ log p.1)
+      ({a : A | IsStrictlyPositive a} ×ˢ Set.univ) :=
+    hlog₀.comp continuousOn_fst fun _ hp ↦ hp.1
+  exact (hexp.comp_continuousOn (continuousOn_snd.smul hlog)).congr fun p hp ↦
+    rpow_eq_exp_smul_log p.1 p.2 hp.1
+
+end Continuity
 
 section Smooth
 

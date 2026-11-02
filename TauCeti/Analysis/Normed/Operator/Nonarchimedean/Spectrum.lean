@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Spectrum
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 
 /-!
@@ -111,9 +111,8 @@ Fredholm series is not a unit of `R`. -/
 theorem IsRowCompact.inv_mem_spectrum_iff {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
     {r : Rˣ} :
     ((r⁻¹ : Rˣ) : R) ∈ spectrum R u ↔ ¬IsUnit (u.matrixCoeff.charPowerSeries.evalAt (r : R)) := by
-  rw [← spectrum.smul_mem_smul_iff (r := r)]
-  simp only [Units.smul_def, smul_eq_mul, Units.mul_inv]
-  rw [spectrum.mem_iff, map_one, hu.isUnit_one_sub_smul_iff]
+  simpa only [hu.charPowerSeries_eq_charPowerSeries_matrixCoeff] using
+    (isPrCompact_iff_isRowCompact.2 hu).inv_mem_spectrum_iff (a := r)
 
 end Ring
 
@@ -127,8 +126,8 @@ only if `μ⁻¹` is a zero of the Fredholm series `det (1 - T u)`. -/
 theorem IsRowCompact.mem_spectrum_iff_evalAt_inv_eq_zero {u : C₀(I, K) →L[K] C₀(I, K)}
     (hu : u.IsRowCompact) {μ : K} (hμ : μ ≠ 0) :
     μ ∈ spectrum K u ↔ u.matrixCoeff.charPowerSeries.evalAt μ⁻¹ = 0 := by
-  simpa [Units.val_inv_eq_inv_val] using
-    hu.inv_mem_spectrum_iff (r := Units.mk0 μ⁻¹ (inv_ne_zero hμ))
+  simpa only [hu.charPowerSeries_eq_charPowerSeries_matrixCoeff] using
+    (isPrCompact_iff_isRowCompact.2 hu).mem_spectrum_iff_evalAt_inv_eq_zero hμ
 
 /-- **The zeros of the Fredholm series.** For a row-compact endomorphism `u` of `C₀(I, K)`, the
 zeros of the Fredholm series `det (1 - T u)` are exactly the inverses of the nonzero elements of
@@ -136,10 +135,8 @@ the spectrum of `u`. Since `det (1 - 0 u) = 1`, no zero is `0`. -/
 theorem IsRowCompact.evalAt_charPowerSeries_eq_zero_iff {u : C₀(I, K) →L[K] C₀(I, K)}
     (hu : u.IsRowCompact) {a : K} :
     u.matrixCoeff.charPowerSeries.evalAt a = 0 ↔ a ≠ 0 ∧ a⁻¹ ∈ spectrum K u := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp [PowerSeries.evalAt_at_zero, Matrix.constantCoeff_charPowerSeries]
-  · rw [hu.mem_spectrum_iff_evalAt_inv_eq_zero (inv_ne_zero ha), inv_inv]
-    exact ⟨fun h ↦ ⟨ha, h⟩, And.right⟩
+  simpa only [hu.charPowerSeries_eq_charPowerSeries_matrixCoeff] using
+    (isPrCompact_iff_isRowCompact.2 hu).evalAt_charPowerSeries_eq_zero_iff
 
 end Field
 

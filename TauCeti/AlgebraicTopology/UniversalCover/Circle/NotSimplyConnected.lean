@@ -19,10 +19,8 @@ contractible, and it is not homotopy equivalent (in particular, not homeomorphic
 connected space; in particular the circle is not homotopy equivalent to the real line nor to any
 real normed space.
 
-These are the standard topological consequences of `π₁(S¹) ≅ ℤ`, and they realise the
-universal-covers roadmap Stage 4 "applications" (`TauCetiRoadmap/UniversalCovers/README.md`),
-extending the circle computation (item 12, `π₁(S¹) ≅ ℤ`) to the classical fact that the
-circle and the line are topologically distinct.
+These are the standard topological consequences of `π₁(S¹) ≅ ℤ`, extending the circle
+computation to the classical fact that the circle and the line are topologically distinct.
 
 The nontriviality and infinitude of the fundamental group are transported from
 `Multiplicative ℤ` along the circle equivalence. Non-simple-connectivity then follows because

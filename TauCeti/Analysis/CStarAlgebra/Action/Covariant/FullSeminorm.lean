@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Regular
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 
@@ -34,6 +35,14 @@ supremum is a submultiplicative, star-invariant seminorm satisfying the C⋆-ide
 `‖f⋆ * f‖ᵤ = ‖f‖ᵤ * ‖f‖ᵤ`. If `A` has a faithful representation `ρ` on a Hilbert space
 `H : Type v`, the integrated regular representation induced by `ρ` is injective, so the full
 seminorm is a norm.
+
+The canonical left coefficient multiplier has bound `‖a‖` for the full seminorm, and twisted
+left translation preserves it and has continuous orbits. Under an integrated covariant
+representation these multipliers become `π(a) (π ⋊ U)(f)` and `U_r (π ⋊ U)(f)`, as expressed by
+`CovariantRepresentation.integratedOperator_smul` and
+`CovariantRepresentation.integratedOperator_translate`. These bounds allow the canonical left
+multipliers to extend to the crossed-product completion, without a faithful coefficient
+representation.
 
 ## Main definitions
 
@@ -65,7 +74,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory Filter Topology
 
 namespace TauCeti.CStarAction
 
@@ -178,6 +187,37 @@ theorem fullSeminorm_eq_zero_iff [μ.InnerRegularCompactLTTop] {H : Type v} [Nor
   rw [ofConv_zero, map_zero, ← CovariantRepresentation.integratedStarAlgHom_apply,
     ← norm_le_zero_iff, ← hf]
   exact norm_integratedStarAlgHom_le_fullSeminorm (CovariantRepresentation.regular α ρ μ) f
+
+/-- The canonical coefficient multiplier has bound `‖a‖` for the full C⋆-seminorm. -/
+theorem fullSeminorm_coefficientMul_le (a : A) (f : ConvolutionAlgebra α μ) :
+    fullSeminorm α μ (coefficientMul a f) ≤ ‖a‖ * fullSeminorm α μ f := by
+  refine (fullSeminorm_le_iff (mul_nonneg (norm_nonneg _) (apply_nonneg _ _))).2
+    fun H _ _ _ P => ?_
+  rw [CovariantRepresentation.integratedStarAlgHom_apply, ofConv_coefficientMul,
+    P.integratedOperator_smul, ← P.integratedStarAlgHom_apply]
+  exact (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le _ _)
+    (norm_integratedStarAlgHom_le_fullSeminorm P f) (norm_nonneg _) (norm_nonneg _))
+
+/-- Twisted left translation preserves the full C⋆-seminorm. -/
+@[simp]
+theorem fullSeminorm_translateLIE (r : G) (f : ConvolutionAlgebra α μ) :
+    fullSeminorm α μ (translateLIE r f) = fullSeminorm α μ f := by
+  have h (t : G) (g : ConvolutionAlgebra α μ) :
+      fullSeminorm α μ (translateLIE t g) ≤ fullSeminorm α μ g := by
+    refine (fullSeminorm_le_iff (apply_nonneg _ _)).2 fun H _ _ _ P => ?_
+    rw [CovariantRepresentation.integratedStarAlgHom_apply, ofConv_translateLIE,
+      P.integratedOperator_translate,
+      CStarRing.norm_mem_unitary_mul _ (P.isUnitary.mem_unitary t),
+      ← P.integratedStarAlgHom_apply]
+    exact norm_integratedStarAlgHom_le_fullSeminorm P g
+  exact le_antisymm (h r f) (by simpa using h r⁻¹ (translateLIE r f))
+
+/-- The group orbits are also continuous for the full C⋆-seminorm. This is the dense-algebra
+continuity estimate needed for strict continuity of the canonical group multipliers. -/
+theorem tendsto_fullSeminorm_translateLIE_sub (f : ConvolutionAlgebra α μ) (r : G) :
+    Tendsto (fun t => fullSeminorm α μ (translateLIE t f - translateLIE r f)) (𝓝 r) (𝓝 0) := by
+  exact squeeze_zero (fun _ => apply_nonneg _ _) (fun _ => fullSeminorm_le_norm _)
+    (tendsto_iff_norm_sub_tendsto_zero.1 ((continuous_translateLIE f).tendsto r))
 
 end ConvolutionAlgebra
 
