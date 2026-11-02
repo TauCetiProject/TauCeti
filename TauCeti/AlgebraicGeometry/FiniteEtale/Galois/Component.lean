@@ -20,15 +20,16 @@ An open and closed subset `U` of `S` is a finite étale `S`-scheme, whose geomet
 a point if `x` lies in `U` and is empty otherwise. Hence no étale path joins a point of `U` to a
 point outside `U`. Conversely, if `x` and `y` both factor through a connected `S`-scheme `T`, an
 étale path in `T` is carried to an étale path in `S` by base change along `T ⟶ S`. Applying this to
-the connected component of `x` when it is open shows that geometric points of the same connected
-component are joined by an étale path.
+the connected component of `x`, with its reduced induced scheme structure, shows that geometric
+points of the same connected component are joined by an étale path. When that component is open,
+this characterises the geometric points joined to `x` by an étale path.
 
 ## Main results
 
 * `TauCeti.FiniteEtaleScheme.isEmpty_fiber_iso_of_isClopen`: geometric points separated by an open
   and closed subset of the base are not joined by an étale path.
 * `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso_of_mem_connectedComponent`: geometric points of the
-  same connected component are joined by an étale path when that component is open.
+  same connected component are joined by an étale path.
 * `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen`: if the
   connected component of `x` is open, a geometric point is joined to `x` by an étale path if and
   only if it lies in that component.
@@ -84,20 +85,34 @@ theorem nonempty_fiber_comp_iso {T : Scheme.{u}} [ConnectedSpace T] (f : T ⟶ S
       pullbackCompFiberIso f y
 
 /-- Geometric points `x` and `y` of the same connected component of the base are joined by an
-étale path, provided that component is open: both factor through the connected component, as an
-open subscheme. -/
+étale path: both factor through the connected component with its reduced induced scheme structure,
+since `Spec Ω` and `Spec Ω'` are reduced. -/
 theorem nonempty_fiber_iso_of_mem_connectedComponent {x : Spec (.of Ω) ⟶ S}
-    {y : Spec (.of Ω') ⟶ S} (hC : IsOpen (connectedComponent (x default)))
-    (hy : y default ∈ connectedComponent (x default)) : Nonempty (fiber x ≅ fiber y) := by
-  let C : S.Opens := ⟨_, hC⟩
-  have : ConnectedSpace C := isConnected_iff_connectedSpace.mp isConnected_connectedComponent
-  have hrange {Ω'' : Type u} [Field Ω''] (z : Spec (.of Ω'') ⟶ S) (hz : z default ∈ C) :
-      Set.range z ⊆ Set.range C.ι := by
-    rwa [Set.range_unique, Set.singleton_subset_iff, Scheme.Opens.range_ι]
-  have := nonempty_fiber_comp_iso C.ι
-    (IsOpenImmersion.lift C.ι x (hrange x mem_connectedComponent))
-    (IsOpenImmersion.lift C.ι y (hrange y hy))
-  rwa [IsOpenImmersion.lift_fac, IsOpenImmersion.lift_fac] at this
+    {y : Spec (.of Ω') ⟶ S} (hy : y default ∈ connectedComponent (x default)) :
+    Nonempty (fiber x ≅ fiber y) := by
+  let I := Scheme.IdealSheafData.vanishingIdeal
+    ⟨connectedComponent (x default), isClosed_connectedComponent⟩
+  have hker {Ω'' : Type u} [Field Ω''] (z : Spec (.of Ω'') ⟶ S)
+      (hz : z default ∈ connectedComponent (x default)) : I.subschemeι.ker ≤ z.ker := by
+    have : QuasiCompact z := ⟨fun _ _ _ ↦ Set.subsingleton_of_subsingleton.isCompact⟩
+    rw [Scheme.IdealSheafData.ker_subschemeι]
+    refine (Scheme.IdealSheafData.vanishingIdeal_antimono (S := z.ker.support) ?_).trans ?_
+    · rw [← SetLike.coe_subset_coe, Scheme.Hom.support_ker, Set.range_unique]
+      exact isClosed_connectedComponent.closure_subset_iff.mpr (Set.singleton_subset_iff.mpr hz)
+    · -- The kernel of a morphism out of the reduced scheme `Spec Ω''` is radical.
+      rw [Scheme.IdealSheafData.vanishingIdeal_support]
+      rintro U a ⟨n, hn⟩
+      rw [Scheme.Hom.ker_apply, RingHom.mem_ker, map_pow] at hn
+      exact (Scheme.Hom.ker_apply z U).ge (IsReduced.eq_zero _ ⟨n, hn⟩)
+  let x' := IsClosedImmersion.lift _ x (hker x mem_connectedComponent)
+  have : ConnectedSpace I.subscheme := by
+    refine connectedSpace_iff_univ.mpr ⟨⟨x' default, trivial⟩,
+      I.subschemeι.isClosedEmbedding.isInducing.isPreconnected_image.mp ?_⟩
+    rw [Set.image_univ, Scheme.IdealSheafData.range_subschemeι,
+      Scheme.IdealSheafData.coe_support_vanishingIdeal]
+    exact isPreconnected_connectedComponent
+  have := nonempty_fiber_comp_iso I.subschemeι x' (IsClosedImmersion.lift _ y (hker y hy))
+  rwa [IsClosedImmersion.lift_fac, IsClosedImmersion.lift_fac] at this
 
 /-- If the connected component of `x` is open, a geometric point `y` is joined to `x` by an étale
 path if and only if it lies in that component. -/
@@ -106,7 +121,7 @@ theorem nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen {x : Spec (.of �
     Nonempty (fiber x ≅ fiber y) ↔ y default ∈ connectedComponent (x default) :=
   ⟨fun ⟨e⟩ ↦ by_contra fun hy ↦ (isEmpty_fiber_iso_of_isClopen ⟨isClosed_connectedComponent, hC⟩
       mem_connectedComponent hy).false e,
-    nonempty_fiber_iso_of_mem_connectedComponent hC⟩
+    nonempty_fiber_iso_of_mem_connectedComponent⟩
 
 /-- Over a locally connected base, for instance a locally Noetherian one, two geometric points are
 joined by an étale path if and only if they lie in the same connected component. In particular,
