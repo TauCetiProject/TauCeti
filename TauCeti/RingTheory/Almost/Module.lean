@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Images
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
 public import Mathlib.CategoryTheory.Localization.Linear
 public import TauCeti.RingTheory.Almost.Firm
-public import TauCeti.RingTheory.Almost.SerreClass
 
 /-!
 # The category of almost modules
