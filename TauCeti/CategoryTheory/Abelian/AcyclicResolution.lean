@@ -1,0 +1,566 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
+public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import TauCeti.Algebra.Homology.Homotopy
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
+
+/-!
+# Right derived functors from acyclic resolutions
+
+Let `F : C ⥤ D` be an additive functor between abelian categories, where `C` has enough
+injectives. Mathlib defines the right derived functors `RⁿF` through injective resolutions. This
+file shows that they may be computed from resolutions by objects of a class `P` adapted to `F`, in
+the following sense:
+
+* every injective object lies in `P`, and `P` is closed under isomorphisms;
+* in a short exact sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` with `A` and `B` in `P`, also `C` lies in `P`;
+* `F` sends such a short exact sequence to a short exact sequence.
+
+For instance, flasque sheaves form such a class for the global sections functor. If
+`0 ⟶ X ⟶ K⁰ ⟶ K¹ ⟶ ⋯` is a resolution of `X` by objects of `P`, given as a quasi-isomorphism
+`ι : X[0] ⟶ K`, then `F` applied to a comparison map `K ⟶ I` to an injective resolution of `X` is
+a quasi-isomorphism (`CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`), so
+`RⁿF(X) ≅ Hⁿ(F(K))` (`CategoryTheory.Functor.rightDerivedObjIsoOfResolution`).
+
+The proof has three steps.
+
+* `F` sends acyclic complexes `0 ⟶ Q⁰ ⟶ Q¹ ⟶ ⋯` with terms in `P` to acyclic complexes
+  (`HomologicalComplex.Acyclic.map_of_shortExact`): the cycles `Zⁿ` lie in `P` by induction,
+  using the short exact sequences `0 ⟶ Zⁿ ⟶ Qⁿ ⟶ Zⁿ⁺¹ ⟶ 0`, and `F` keeps these exact.
+* A comparison map `φ : K ⟶ I` exists (`CategoryTheory.InjectiveResolution.descOfQuasiIso`, which
+  only uses the exactness of `K` and the injectivity of the terms of `I`) and is unique up to
+  homotopy (`CategoryTheory.InjectiveResolution.homotopyOfQuasiIso`).
+* Adding to `I` a contractible complex `T` of injective objects with a morphism `χ : K ⟶ T` which
+  is a monomorphism in positive degrees, the map `(χ, φ) : K ⟶ T ⊞ I` becomes a degreewise
+  monomorphism and stays a quasi-isomorphism. Its cokernel `Q` is acyclic with terms in `P`, so
+  `F` keeps the short exact sequence of complexes `0 ⟶ K ⟶ T ⊞ I ⟶ Q ⟶ 0` exact and sends `Q`
+  to an acyclic complex. Hence `F(χ, φ)` is a quasi-isomorphism, and so is `F(φ)`, since `F(T)`
+  is contractible.
+
+## Main definitions and results
+
+* `CochainComplex.exact_f_zero_of_quasiIsoAt`, `CochainComplex.mono_f_zero_of_quasiIsoAt`,
+  `CochainComplex.exact_succ_of_quasiIsoAt`: the exactness of a resolution `ι : X[0] ⟶ K`.
+* `CategoryTheory.InjectiveResolution.descOfQuasiIso f I ι`: a morphism `f : Z ⟶ Y` lifts to a
+  morphism of complexes from any resolution of `Z` to an injective resolution `I` of `Y`.
+* `CategoryTheory.InjectiveResolution.homotopyOfQuasiIso`: two such lifts are homotopic.
+* `HomologicalComplex.Acyclic.map_of_shortExact`: `F` preserves the acyclicity of complexes with
+  terms in `P`.
+* `CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`: `F` applied to a comparison map
+  from a `P`-resolution to an injective resolution is a quasi-isomorphism.
+* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution`: the isomorphism `RⁿF(X) ≅ Hⁿ(F(K))`
+  for a `P`-resolution `K` of `X`, and
+  `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap`, its
+  characterization through any injective resolution.
+
+## References
+
+* The Stacks Project, Derived Categories, Lemma 13.15.6 (tag 05T8) and Lemma 13.16.7
+  (tag 015E).
+* M. Kashiwara, P. Schapira, *Categories and Sheaves*, Grundlehren 332, Springer, 2006,
+  Definition 13.3.4 and Corollary 13.3.8, where such classes are called `F`-injective.
+* The construction of `descOfQuasiIso` and `homotopyOfQuasiIso` follows Mathlib's
+  `CategoryTheory.InjectiveResolution.desc` and `CategoryTheory.InjectiveResolution.descHomotopy`,
+  whose source is required to be an injective resolution.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits HomologicalComplex
+
+universe v₁ v₂ u₁ u₂
+
+namespace CochainComplex
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {K : CochainComplex C ℕ} {X : C}
+  (ι : (single₀ C).obj X ⟶ K)
+
+private lemma exact_and_mono_f_zero_of_quasiIsoAt [QuasiIsoAt ι 0] :
+    (ShortComplex.mk (ι.f 0) (K.d 0 1)
+      (HomologicalComplex.single_f_d ι 1)).Exact ∧ Mono (ι.f 0) :=
+  (ShortComplex.quasiIso_iff_of_zeros ((shortComplexFunctor' C (ComplexShape.up ℕ) 0 0 1).map ι)
+    (single_obj_d (ComplexShape.up ℕ) 0 X 0 0) (single_obj_d (ComplexShape.up ℕ) 0 X 0 1)
+    (K.shape _ _ (by simp))).mp ((quasiIsoAt₀_iff ι).mp inferInstance)
+
+/-- A quasi-isomorphism `ι : X[0] ⟶ K` in degree `0` makes `X ⟶ K⁰ ⟶ K¹` exact. -/
+lemma exact_f_zero_of_quasiIsoAt [QuasiIsoAt ι 0] :
+    (ShortComplex.mk (ι.f 0) (K.d 0 1) (HomologicalComplex.single_f_d ι 1)).Exact :=
+  (exact_and_mono_f_zero_of_quasiIsoAt ι).1
+
+/-- A quasi-isomorphism `ι : X[0] ⟶ K` in degree `0` embeds `X` into `K⁰`. -/
+instance mono_f_zero_of_quasiIsoAt [QuasiIsoAt ι 0] : Mono (ι.f 0) :=
+  (exact_and_mono_f_zero_of_quasiIsoAt ι).2
+
+/-- A morphism `ι : X[0] ⟶ K` which is a quasi-isomorphism in a positive degree makes `K` exact
+there. -/
+lemma exactAt_succ_of_quasiIsoAt (n : ℕ) [QuasiIsoAt ι (n + 1)] : K.ExactAt (n + 1) := by
+  rw [← quasiIsoAt_iff_exactAt ι (n + 1) (exactAt_succ_single_obj _ _)]
+  infer_instance
+
+/-- A morphism `ι : X[0] ⟶ K` which is a quasi-isomorphism in degree `n + 1` makes
+`Kⁿ ⟶ Kⁿ⁺¹ ⟶ Kⁿ⁺²` exact. -/
+lemma exact_succ_of_quasiIsoAt (n : ℕ) [QuasiIsoAt ι (n + 1)] :
+    (ShortComplex.mk _ _ (K.d_comp_d n (n + 1) (n + 2))).Exact :=
+  (HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (by simp)
+    (by simp only [CochainComplex.next]; rfl)).1 (exactAt_succ_of_quasiIsoAt ι n)
+
+end CochainComplex
+
+namespace CategoryTheory
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
+
+namespace InjectiveResolution
+
+open CochainComplex
+
+section Desc
+
+variable {Y Z : C} {K : CochainComplex C ℕ} (f : Z ⟶ Y) (I : InjectiveResolution Y)
+  (ι : (single₀ C).obj Z ⟶ K) [QuasiIso ι]
+
+/-- The degree `0` component of `descOfQuasiIso`. -/
+private def descOfQuasiIsoFZero : K.X 0 ⟶ I.cocomplex.X 0 :=
+  Injective.factorThru (((single₀ C).map f).f 0 ≫ I.ι.f 0) (ι.f 0)
+
+private lemma ι_f_zero_descOfQuasiIsoFZero :
+    ι.f 0 ≫ descOfQuasiIsoFZero f I ι = ((single₀ C).map f).f 0 ≫ I.ι.f 0 :=
+  Injective.comp_factorThru _ _
+
+/-- The degree `1` component of `descOfQuasiIso`. -/
+private def descOfQuasiIsoFOne : K.X 1 ⟶ I.cocomplex.X 1 :=
+  (exact_f_zero_of_quasiIsoAt ι).descToInjective
+    (descOfQuasiIsoFZero f I ι ≫ I.cocomplex.d 0 1)
+    (by rw [reassoc_of% (ι_f_zero_descOfQuasiIsoFZero f I ι), I.ι_f_zero_comp_complex_d,
+      comp_zero])
+
+private lemma d_descOfQuasiIsoFOne :
+    K.d 0 1 ≫ descOfQuasiIsoFOne f I ι = descOfQuasiIsoFZero f I ι ≫ I.cocomplex.d 0 1 :=
+  (exact_f_zero_of_quasiIsoAt ι).comp_descToInjective _ _
+
+/-- **Lifting to an injective resolution.** A morphism `f : Z ⟶ Y` lifts to a morphism of
+complexes from any resolution `ι : Z[0] ⟶ K` of `Z` to an injective resolution `I` of `Y`
+(`CategoryTheory.InjectiveResolution.ι_comp_descOfQuasiIso`). The terms of `K` need not be
+injective. -/
+def descOfQuasiIso : K ⟶ I.cocomplex :=
+  mkHom _ _ (descOfQuasiIsoFZero f I ι) (descOfQuasiIsoFOne f I ι)
+    (d_descOfQuasiIsoFOne f I ι).symm fun n ⟨_, g', w⟩ ↦
+      ⟨(exact_succ_of_quasiIsoAt ι n).descToInjective (g' ≫ I.cocomplex.d (n + 1) (n + 2))
+          (by simp [← reassoc_of% w]),
+        ((exact_succ_of_quasiIsoAt ι n).comp_descToInjective _ _).symm⟩
+
+/-- The lift `descOfQuasiIso f I ι` is compatible with `f` and the two resolutions. -/
+@[reassoc (attr := simp)]
+lemma ι_comp_descOfQuasiIso : ι ≫ descOfQuasiIso f I ι = (single₀ C).map f ≫ I.ι := by
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
+  rcases n with _ | n
+  · simpa [descOfQuasiIso] using ι_f_zero_descOfQuasiIsoFZero f I ι
+  · exact (isZero_single_obj_X _ _ _ _ (by simp)).eq_of_src _ _
+
+end Desc
+
+section Homotopy
+
+variable {Y : C} {K : CochainComplex C ℕ} {I : InjectiveResolution Y} {Z : C}
+  (ι : (single₀ C).obj Z ⟶ K) [QuasiIso ι]
+
+/-- The degree `0` component of `homotopyZeroOfQuasiIso`. -/
+private def homotopyZeroOfQuasiIsoZero (g : K ⟶ I.cocomplex) (hg : ι ≫ g = 0) :
+    K.X 1 ⟶ I.cocomplex.X 0 :=
+  (exact_f_zero_of_quasiIsoAt ι).descToInjective (g.f 0) congr($(hg).f 0)
+
+private lemma d_homotopyZeroOfQuasiIsoZero (g : K ⟶ I.cocomplex) (hg : ι ≫ g = 0) :
+    K.d 0 1 ≫ homotopyZeroOfQuasiIsoZero ι g hg = g.f 0 :=
+  (exact_f_zero_of_quasiIsoAt ι).comp_descToInjective _ _
+
+/-- A morphism from a resolution of `Z` to an injective resolution, which vanishes on `Z`, is
+homotopic to zero. -/
+private def homotopyZeroOfQuasiIso (g : K ⟶ I.cocomplex) (hg : ι ≫ g = 0) : Homotopy g 0 :=
+  Homotopy.mkCoinductive _ (homotopyZeroOfQuasiIsoZero ι g hg)
+    (d_homotopyZeroOfQuasiIsoZero ι g hg).symm
+    ((exact_succ_of_quasiIsoAt ι 0).descToInjective
+      (g.f 1 - homotopyZeroOfQuasiIsoZero ι g hg ≫ I.cocomplex.d 0 1)
+      (by
+        dsimp
+        rw [Preadditive.comp_sub, ← Category.assoc, d_homotopyZeroOfQuasiIsoZero,
+          ← g.comm, sub_self]))
+    (by
+      rw [(exact_succ_of_quasiIsoAt ι 0).comp_descToInjective]
+      abel)
+    fun n ⟨h, h', w⟩ ↦
+      ⟨(exact_succ_of_quasiIsoAt ι (n + 1)).descToInjective
+          (g.f (n + 2) - h' ≫ I.cocomplex.d (n + 1) (n + 2))
+          (by
+            dsimp
+            rw [Preadditive.comp_sub, ← g.comm, w, Preadditive.add_comp, Category.assoc,
+              Category.assoc, HomologicalComplex.d_comp_d, comp_zero, zero_add, sub_self]),
+        by
+          rw [(exact_succ_of_quasiIsoAt ι (n + 1)).comp_descToInjective]
+          abel⟩
+
+/-- **Lifts to an injective resolution are unique up to homotopy.** Two morphisms from a
+resolution `ι : Z[0] ⟶ K` of `Z` to an injective resolution which agree on `Z` are homotopic. -/
+def homotopyOfQuasiIso (g h : K ⟶ I.cocomplex) (hgh : ι ≫ g = ι ≫ h) : Homotopy g h :=
+  Homotopy.equivSubZero.symm
+    (homotopyZeroOfQuasiIso ι (g - h) (by rw [Preadditive.comp_sub, hgh, sub_self]))
+
+end Homotopy
+
+end InjectiveResolution
+
+end CategoryTheory
+
+namespace HomologicalComplex.Acyclic
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
+  (F : C ⥤ D) [F.Additive] (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
+  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
+  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
+
+variable {Q : CochainComplex C ℕ}
+
+/-- The sequence `Zⁿ ⟶ Qⁿ ⟶ Zⁿ⁺¹` of the cycles of `Q`, which is
+`HomologicalComplex.cyclesShortComplex` spelled out so that its terms can be computed. -/
+private abbrev cyclesSequence (Q : CochainComplex C ℕ) (n : ℕ) : ShortComplex C :=
+  ShortComplex.mk (Q.iCycles n) (Q.toCycles n (n + 1)) (Q.iCycles_toCycles n (n + 1))
+
+private lemma cyclesSequence_shortExact (n : ℕ) (hQ : Q.ExactAt (n + 1)) :
+    (cyclesSequence Q n).ShortExact := by
+  rw [cyclesSequence, ← cyclesShortComplex_def]
+  exact Q.cyclesShortComplex_shortExact n (n + 1) (by simp) hQ
+
+/-- In an acyclic complex the differential `Q⁰ ⟶ Z¹` onto the cycles in degree `1` is an
+isomorphism. -/
+private lemma isIso_toCycles_zero (hQ : Q.Acyclic) : IsIso (Q.toCycles 0 1) :=
+  (cyclesSequence_shortExact 0 (hQ 1)).isIso_g_iff.2
+    (((Q.exactAt_iff_isZero_homology 0).1 (hQ 0)).of_iso (Q.isoHomologyπ₀))
+
+include hP in
+private lemma prop_cycles_succ (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) (n : ℕ) :
+    P (Q.cycles (n + 1)) := by
+  induction n with
+  | zero =>
+    have := isIso_toCycles_zero hQ
+    exact P.prop_of_iso (asIso (Q.toCycles 0 1)) (hQP 0)
+  | succ n ih => exact hP _ (cyclesSequence_shortExact (n + 1) (hQ _)) ih (hQP _)
+
+include hP hF in
+private lemma shortExact_map_cyclesSequence (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) (n : ℕ) :
+    ((cyclesSequence Q (n + 1)).map F).ShortExact :=
+  hF _ (cyclesSequence_shortExact (n + 1) (hQ _)) (prop_cycles_succ P hP hQ hQP n) (hQP _)
+
+include hP hF in
+private lemma epi_map_toCycles (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) (n : ℕ) :
+    Epi (F.map (Q.toCycles n (n + 1))) := by
+  rcases n with _ | n
+  · have := isIso_toCycles_zero hQ
+    infer_instance
+  · exact (shortExact_map_cyclesSequence F P hP hF hQ hQP n).epi_g
+
+include hP hF in
+/-- **`F` preserves acyclicity of complexes in an adapted class.** Let `P` be a class of objects
+closed under isomorphisms and under cokernels of monomorphisms, on whose short exact sequences
+`F` is exact. Then `F` sends every acyclic complex `0 ⟶ Q⁰ ⟶ Q¹ ⟶ ⋯` with terms in `P` to an
+acyclic complex. -/
+theorem map_of_shortExact (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) :
+    ((F.mapHomologicalComplex _).obj Q).Acyclic := by
+  have hmono (n : ℕ) : Mono (F.map (Q.iCycles (n + 1))) :=
+    (shortExact_map_cyclesSequence F P hP hF hQ hQP n).mono_f
+  rintro (_ | n)
+  · -- in degree `0`, `F(Q⁰ ⟶ Q¹)` is the composite of `F(Q⁰ ≅ Z¹)` and `F(Z¹ ⟶ Q¹)`
+    rw [HomologicalComplex.exactAt_iff' _ 0 0 1 (by simp) (by simp),
+      ShortComplex.exact_iff_mono _ (by simp)]
+    have := isIso_toCycles_zero hQ
+    have h : F.map (Q.d 0 1) = F.map (Q.toCycles 0 1) ≫ F.map (Q.iCycles 1) := by
+      rw [← F.map_comp, toCycles_i]
+    dsimp
+    rw [h]
+    infer_instance
+  · -- in degree `n + 1`, compare with `F(Zⁿ⁺¹) ⟶ F(Qⁿ⁺¹) ⟶ F(Zⁿ⁺²)`
+    rw [HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (by simp)
+      (by simp only [CochainComplex.next]; rfl)]
+    have := epi_map_toCycles F P hP hF hQ hQP n
+    have := hmono (n + 1)
+    let S₃ := ShortComplex.mk (F.map (Q.d n (n + 1))) (F.map (Q.toCycles (n + 1) (n + 2)))
+      (by rw [← F.map_comp, d_toCycles, F.map_zero])
+    let φ : S₃ ⟶ (cyclesSequence Q (n + 1)).map F :=
+      { τ₁ := F.map (Q.toCycles n (n + 1)), τ₂ := 𝟙 _, τ₃ := 𝟙 _
+        comm₁₂ := by simp [S₃, ← F.map_comp]
+        comm₂₃ := by simp [S₃] }
+    let φ' : S₃ ⟶ ((shortComplexFunctor' C _ n (n + 1) (n + 2)).obj Q).map F :=
+      { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := F.map (Q.iCycles (n + 2))
+        comm₁₂ := by simp [S₃]
+        comm₂₃ := by simp [S₃, ← F.map_comp] }
+    have : Epi φ.τ₁ := inferInstanceAs (Epi (F.map (Q.toCycles n (n + 1))))
+    have : IsIso φ.τ₂ := inferInstanceAs (IsIso (𝟙 _))
+    have : Mono φ.τ₃ := inferInstanceAs (Mono (𝟙 _))
+    have : Epi φ'.τ₁ := inferInstanceAs (Epi (𝟙 _))
+    have : IsIso φ'.τ₂ := inferInstanceAs (IsIso (𝟙 _))
+    have : Mono φ'.τ₃ := inferInstanceAs (Mono (F.map (Q.iCycles (n + 1 + 1))))
+    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ').1
+      ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2
+        (shortExact_map_cyclesSequence F P hP hF hQ hQP n).exact)
+
+end HomologicalComplex.Acyclic
+
+namespace CategoryTheory.InjectiveResolution
+
+open CochainComplex
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
+
+/-! ### A contractible complex of injective objects receiving a resolution
+
+For a complex `K`, let `Eⁿ` be an injective object containing `Kⁿ` for `n ≥ 1`, and `E⁰ = 0`.
+The complex `T` with `Tⁿ = Eⁿ⁺¹ ⊞ Eⁿ` and differential `(a, b) ↦ (0, a)` is contractible, and
+`k ↦ (dk, k)` is a morphism `K ⟶ T` which is a monomorphism in every positive degree. -/
+
+/-- The identity of `A ⊞ B` is `(a, b) ↦ (b, 0) ↦ (0, b)` plus `(a, b) ↦ (0, a) ↦ (a, 0)`, the
+homotopy relation of `embeddingComplex K` in positive degrees. -/
+private lemma biprod_fst_inr_snd_inl_add {A B E : C} :
+    (biprod.fst : A ⊞ B ⟶ A) ≫ (biprod.inr : A ⟶ E ⊞ A) ≫ biprod.snd ≫ biprod.inl +
+      biprod.snd ≫ biprod.inr = 𝟙 _ := by
+  simp [biprod.total]
+
+section Embedding
+
+variable [EnoughInjectives C] (K : CochainComplex C ℕ)
+
+open ZeroObject in
+/-- The object `Eⁿ`: zero in degree `0`, and an injective object containing `Kⁿ` in degree
+`n ≥ 1`. -/
+private def embeddingTerm : ℕ → C
+  | 0 => 0
+  | n + 1 => Injective.under (K.X (n + 1))
+
+private instance (n : ℕ) : Injective (embeddingTerm K n) := by
+  cases n <;> dsimp [embeddingTerm] <;> infer_instance
+
+/-- The contractible complex `T`, with `Tⁿ = Eⁿ⁺¹ ⊞ Eⁿ` and differential `(a, b) ↦ (0, a)`. It is
+reducible so that its terms are seen as biproducts. -/
+private abbrev embeddingComplex : CochainComplex C ℕ where
+  X n := embeddingTerm K (n + 1) ⊞ embeddingTerm K n
+  d i j := if h : i + 1 = j then
+      (biprod.fst ≫ biprod.inr : _ ⟶ embeddingTerm K (i + 1 + 1) ⊞ embeddingTerm K (i + 1)) ≫
+        eqToHom (by subst h; rfl)
+    else 0
+  shape _ _ hij := by simp_all
+  d_comp_d' i j k hij hjk := by
+    obtain rfl : i + 1 = j := hij
+    obtain rfl : i + 1 + 1 = k := hjk
+    simp
+
+private instance (n : ℕ) : Injective ((embeddingComplex K).X n) := by
+  dsimp [embeddingComplex]
+  infer_instance
+
+private lemma embeddingComplex_d (n : ℕ) :
+    (embeddingComplex K).d n (n + 1) = biprod.fst ≫ biprod.inr := by
+  simp
+
+/-- The components `(a, b) ↦ (b, 0)` of the contracting homotopy of `embeddingComplex K`. -/
+private def embeddingComplexHomotopyHom (i j : ℕ) (hij : (ComplexShape.up ℕ).Rel j i) :
+    (embeddingComplex K).X i ⟶ (embeddingComplex K).X j :=
+  eqToHom (congrArg (embeddingComplex K).X hij.symm) ≫ biprod.snd ≫ biprod.inl
+
+/-- The complex `embeddingComplex K` is contractible. -/
+private def embeddingComplexHomotopy : Homotopy (𝟙 (embeddingComplex K)) 0 :=
+  (Homotopy.ofEq (by
+    refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
+    rcases n with _ | n
+    · rw [Homotopy.nullHomotopicMap'_f_of_not_rel_right (show (ComplexShape.up ℕ).Rel 0 1 by simp)
+        (by simp)]
+      refine biprod.hom_ext _ _ ?_ ?_
+      · simp [embeddingComplexHomotopyHom]
+      · exact (isZero_zero C).eq_of_tgt _ _
+    · rw [Homotopy.nullHomotopicMap'_f (show (ComplexShape.up ℕ).Rel n (n + 1) by simp)
+        (show (ComplexShape.up ℕ).Rel (n + 1) (n + 1 + 1) by simp)]
+      rw [embeddingComplex_d, embeddingComplex_d]
+      simp only [embeddingComplexHomotopyHom, eqToHom_refl, Category.id_comp, Category.assoc,
+        biprod.inl_fst_assoc, HomologicalComplex.id_f]
+      exact (biprod_fst_inr_snd_inl_add (A := embeddingTerm K (n + 1 + 1))).symm)).trans
+    (Homotopy.nullHomotopy' (embeddingComplexHomotopyHom K))
+
+/-- The monomorphism `Kⁿ ⟶ Eⁿ` for `n ≥ 1`, which is zero for `n = 0`. -/
+private def toEmbeddingTerm : ∀ n, K.X n ⟶ embeddingTerm K n
+  | 0 => 0
+  | n + 1 => Injective.ι (K.X (n + 1))
+
+/-- The morphism `k ↦ (dk, k)` from `K` to `embeddingComplex K`. -/
+private def toEmbeddingComplex : K ⟶ embeddingComplex K where
+  f n := biprod.lift (K.d n (n + 1) ≫ toEmbeddingTerm K (n + 1)) (toEmbeddingTerm K n)
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    rw [embeddingComplex_d]
+    apply biprod.hom_ext <;>
+      simp only [Category.assoc, biprod.lift_fst, biprod.lift_snd, biprod.inr_fst,
+        biprod.inr_snd, comp_zero, Category.comp_id, K.d_comp_d_assoc, zero_comp]
+
+private instance (n : ℕ) : Mono (toEmbeddingTerm K (n + 1)) :=
+  Injective.ι_mono _
+
+private instance (n : ℕ) : Mono ((toEmbeddingComplex K).f (n + 1)) := by
+  have : Mono ((toEmbeddingComplex K).f (n + 1) ≫ biprod.snd) := by
+    rw [show (toEmbeddingComplex K).f (n + 1) ≫ biprod.snd = toEmbeddingTerm K (n + 1) from
+      biprod.lift_snd _ _]
+    infer_instance
+  exact mono_of_mono _ biprod.snd
+
+private lemma toEmbeddingComplex_f_zero_fst :
+    (toEmbeddingComplex K).f 0 ≫ biprod.fst = K.d 0 1 ≫ toEmbeddingTerm K 1 :=
+  biprod.lift_fst _ _
+
+/-- The complex `F(embeddingComplex K)` is acyclic, since `embeddingComplex K` is contractible. -/
+private lemma acyclic_map_embeddingComplex (F : C ⥤ D) [F.Additive] :
+    ((F.mapHomologicalComplex _).obj (embeddingComplex K)).Acyclic :=
+  Homotopy.acyclic ((Homotopy.ofEq ((F.mapHomologicalComplex _).map_id _).symm).trans
+    (((F.mapHomotopy (embeddingComplexHomotopy K))).trans
+      (Homotopy.ofEq ((F.mapHomologicalComplex _).map_zero _ _))))
+
+end Embedding
+
+section Comparison
+
+variable [EnoughInjectives C] (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
+  [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
+  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
+  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
+  {X : C} {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) [QuasiIso ι]
+  (hK : ∀ n, P (K.X n))
+
+/-- The morphism `(χ, φ) : K ⟶ T ⊞ I` is a monomorphism, where `χ : K ⟶ T` is
+`toEmbeddingComplex K` and `φ : K ⟶ I` is compatible with `ι` and an injective resolution `I`. -/
+private lemma mono_lift_toEmbeddingComplex {I : InjectiveResolution X} (φ : K ⟶ I.cocomplex)
+    (hφ : ι ≫ φ = I.ι) : Mono (biprod.lift (toEmbeddingComplex K) φ) := by
+  refine HomologicalComplex.mono_of_mono_f _ fun n ↦ ?_
+  rcases n with _ | n
+  · -- in degree `0`, the kernel of `K⁰ ⟶ T⁰` is `X`, on which `φ` is the monomorphism `X ⟶ I⁰`
+    refine Preadditive.mono_of_cancel_zero _ fun {W} g hg ↦ ?_
+    have h₁ : g ≫ (toEmbeddingComplex K).f 0 = 0 := by
+      simpa using hg =≫ (biprod.fst : embeddingComplex K ⊞ I.cocomplex ⟶ _).f 0
+    have h₂ : g ≫ φ.f 0 = 0 := by
+      simpa using hg =≫ (biprod.snd : embeddingComplex K ⊞ I.cocomplex ⟶ _).f 0
+    have h₃ : g ≫ K.d 0 1 = 0 := by
+      rw [← cancel_mono (toEmbeddingTerm K 1), Category.assoc, ← toEmbeddingComplex_f_zero_fst,
+        ← Category.assoc, h₁, zero_comp, zero_comp]
+    have hS := exact_f_zero_of_quasiIsoAt ι
+    rw [← hS.lift_f g h₃] at h₂ ⊢
+    have : hS.lift g h₃ ≫ I.ι.f 0 = 0 := by
+      rw [← h₂, Category.assoc, ← HomologicalComplex.comp_f, hφ]
+    rw [(cancel_mono (I.ι.f 0)).1 (this.trans (zero_comp).symm), zero_comp]
+  · have : Mono ((biprod.lift (toEmbeddingComplex K) φ).f (n + 1) ≫
+        (biprod.fst : embeddingComplex K ⊞ I.cocomplex ⟶ _).f (n + 1)) := by
+      rw [← HomologicalComplex.comp_f, biprod.lift_fst]
+      infer_instance
+    exact mono_of_mono _ ((biprod.fst : embeddingComplex K ⊞ I.cocomplex ⟶ _).f (n + 1))
+
+include hinj hP hF hK in
+/-- **Resolutions in an adapted class compute right derived functors.** Let `P` be a class of
+objects containing the injective objects, closed under isomorphisms and under cokernels of
+monomorphisms, on whose short exact sequences `F` is exact. If `ι : X[0] ⟶ K` is a resolution of
+`X` by objects of `P` and `φ : K ⟶ I` is compatible with `ι` and an injective resolution `I` of
+`X`, then `F(φ) : F(K) ⟶ F(I)` is a quasi-isomorphism. -/
+theorem quasiIso_map_of_comp_eq (I : InjectiveResolution X) (φ : K ⟶ I.cocomplex)
+    (hφ : ι ≫ φ = I.ι) : QuasiIso ((F.mapHomologicalComplex _).map φ) := by
+  -- `φ` factors as `K ⟶ T ⊞ I ⟶ I` through the degreewise monomorphism `ψ = (χ, φ)`
+  let T := embeddingComplex K
+  let ψ : K ⟶ T ⊞ I.cocomplex := biprod.lift (toEmbeddingComplex K) φ
+  have hψ : ψ ≫ biprod.snd = φ := biprod.lift_snd _ _
+  have : Mono ψ := mono_lift_toEmbeddingComplex ι φ hφ
+  have hsplit := ShortComplex.Splitting.ofHasBinaryBiproduct T I.cocomplex
+  have : QuasiIso (biprod.snd : T ⊞ I.cocomplex ⟶ I.cocomplex) :=
+    hsplit.shortExact.quasiIso_g_iff.2 (Homotopy.acyclic (embeddingComplexHomotopy K))
+  have : QuasiIso φ := by
+    have : QuasiIso (ι ≫ φ) := by rw [hφ]; infer_instance
+    exact quasiIso_of_comp_left ι φ
+  have : QuasiIso ψ := by
+    have : QuasiIso (ψ ≫ biprod.snd) := by rw [hψ]; infer_instance
+    exact quasiIso_of_comp_right ψ biprod.snd
+  -- the cokernel `Q` of `ψ` is acyclic with terms in `P`, so `F` keeps `0 ⟶ K ⟶ T ⊞ I ⟶ Q ⟶ 0`
+  -- short exact and `F(Q)` acyclic
+  let S := ShortComplex.mk ψ (cokernel.π ψ) (cokernel.condition ψ)
+  have hS : S.ShortExact := ShortComplex.ShortExact.mk'
+    (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel ψ)) inferInstance inferInstance
+  have hSn := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
+  have hX₂ (n : ℕ) : P (S.X₂.X n) :=
+    hinj _ (Injective.of_iso (HomologicalComplex.biprodXIso T I.cocomplex n).symm inferInstance)
+  have hFS : (S.map (F.mapHomologicalComplex _)).ShortExact :=
+    HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
+      hF _ (hSn n) (hK n) (hX₂ n)
+  have : QuasiIso ((F.mapHomologicalComplex _).map ψ) :=
+    hFS.quasiIso_f_iff.2 (HomologicalComplex.Acyclic.map_of_shortExact F P hP hF
+      (hS.quasiIso_f_iff.1 inferInstance) fun n ↦ hP _ (hSn n) (hK n) (hX₂ n))
+  -- `F(T ⊞ I) ⟶ F(I)` is a quasi-isomorphism, as `F(T)` is acyclic
+  have : QuasiIso ((F.mapHomologicalComplex _).map (biprod.snd : T ⊞ I.cocomplex ⟶ _)) :=
+    (hsplit.map (F.mapHomologicalComplex _)).shortExact.quasiIso_g_iff.2
+      (acyclic_map_embeddingComplex K F)
+  rw [← hψ, Functor.map_comp]
+  infer_instance
+
+end Comparison
+
+end CategoryTheory.InjectiveResolution
+
+namespace CategoryTheory.Functor
+
+open CochainComplex
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
+  [EnoughInjectives C] (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
+  [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
+  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
+  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
+  {X : C} {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) [QuasiIso ι]
+  (hK : ∀ n, P (K.X n))
+
+include hinj hP hF hK in
+/-- **Right derived functors from adapted resolutions.** For a resolution `ι : X[0] ⟶ K` of `X`
+by objects of a class `P` adapted to `F` (see
+`CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`), `RⁿF(X) ≅ Hⁿ(F(K))`. It is
+induced by `F` applied to the comparison map from `K` to any injective resolution of `X`
+(`CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap`). -/
+noncomputable def rightDerivedObjIsoOfResolution (n : ℕ) :
+    (F.rightDerived n).obj X ≅
+      (HomologicalComplex.homologyFunctor D _ n).obj ((F.mapHomologicalComplex _).obj K) :=
+  have := InjectiveResolution.quasiIso_map_of_comp_eq F P hinj hP hF ι hK (injectiveResolution X)
+    (InjectiveResolution.descOfQuasiIso (𝟙 X) (injectiveResolution X) ι) (by simp)
+  have : IsIso ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map
+      (InjectiveResolution.descOfQuasiIso (𝟙 X) (injectiveResolution X) ι)) :=
+    inferInstanceAs (IsIso (homologyMap ((F.mapHomologicalComplex _).map
+      (InjectiveResolution.descOfQuasiIso (𝟙 X) (injectiveResolution X) ι)) n))
+  (injectiveResolution X).isoRightDerivedObj F n ≪≫
+    (asIso ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map
+      (InjectiveResolution.descOfQuasiIso (𝟙 X) (injectiveResolution X) ι))).symm
+
+/-- The isomorphism `rightDerivedObjIsoOfResolution` is compatible with the identification of
+`RⁿF(X)` through any injective resolution `I` of `X` and any comparison map `φ : K ⟶ I`. -/
+@[reassoc]
+lemma rightDerivedObjIsoOfResolution_hom_comp_homologyMap (n : ℕ) (I : InjectiveResolution X)
+    (φ : K ⟶ I.cocomplex) (hφ : ι ≫ φ = I.ι) :
+    (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK n).hom ≫
+      (F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map φ =
+        (I.isoRightDerivedObj F n).hom := by
+  let φ₀ := InjectiveResolution.descOfQuasiIso (𝟙 X) (injectiveResolution X) ι
+  let e := InjectiveResolution.desc (𝟙 X) I (injectiveResolution X)
+  -- `φ` and `φ₀ ≫ e` are two comparison maps `K ⟶ I`, hence homotopic
+  have h₁ : (F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map φ =
+      (F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map (φ₀ ≫ e) :=
+    (F.mapHomotopy (InjectiveResolution.homotopyOfQuasiIso ι φ (φ₀ ≫ e)
+      (by simp [φ₀, e, hφ]))).homologyMap_eq n
+  have h₂ := InjectiveResolution.isoRightDerivedObj_hom_naturality (𝟙 X) (injectiveResolution X) I
+    e (InjectiveResolution.desc_commutes_zero _ _ _) F n
+  rw [Functor.map_id, Category.id_comp] at h₂
+  rw [h₁, h₂, rightDerivedObjIsoOfResolution, Iso.trans_hom, Iso.symm_hom, asIso_inv,
+    Functor.map_comp, Category.assoc, IsIso.inv_hom_id_assoc]
+
+end CategoryTheory.Functor
