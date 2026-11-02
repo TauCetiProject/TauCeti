@@ -17,7 +17,9 @@ recovers `A`. No second graph-core predicate is needed.
 A closed graph contains the limit of a domain-valued net whenever the vectors
 and their images both converge along a nontrivial filter. Dually, a closed set
 containing the graph of the restriction of a partial map to a core contains its
-whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`.
+whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. Conversely, a submodule of the
+domain of a closed partial map is a core once the closure of the graph of the restriction
+contains the whole graph, `LinearPMap.HasCore.of_graph_subset_closure`.
 
 ## Provenance
 
@@ -71,5 +73,17 @@ theorem HasCore.graph_subset_of_isClosed {A : E →ₗ.[R] F} {S : Submodule R E
   · rw [← hT.graph_closure_eq_closure_graph, Submodule.topologicalClosure_coe]
     exact closure_minimal h hs
   · rwa [closure_def' hT]
+
+/-- A submodule `S` of the domain of a closed partial map `A` is a core for `A` as soon as the graph
+of `A` lies in the closure of the graph of the restriction of `A` to `S`. -/
+theorem HasCore.of_graph_subset_closure {A : E →ₗ.[R] F} (hA : A.IsClosed) {S : Submodule R E}
+    (hS : S ≤ A.domain)
+    (h : (A.graph : Set (E × F)) ⊆ _root_.closure ((A.domRestrict S).graph : Set (E × F))) :
+    A.HasCore S := by
+  have hT : (A.domRestrict S).IsClosable := hA.isClosable.leIsClosable domRestrict_le
+  refine ⟨hS, eq_of_eq_graph ?_⟩
+  rw [← hT.graph_closure_eq_closure_graph]
+  refine le_antisymm (Submodule.topologicalClosure_minimal _ (le_graph_of_le domRestrict_le) hA) ?_
+  rwa [← SetLike.coe_subset_coe, Submodule.topologicalClosure_coe]
 
 end LinearPMap

@@ -14,6 +14,7 @@ import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.Analysis.CStarAlgebra.Action.Generator.Resolvent
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 import TauCeti.LinearAlgebra.LinearPMap.Basic
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # The GNS covariant representation of an invariant positive functional
@@ -285,26 +286,17 @@ theorem gnsHamiltonian_hasCore :
   have hS : S ≤ H.domain := by
     rintro _ ⟨a, ha, rfl⟩
     simpa using α.toPreGNS_mem_gnsHamiltonian_domain hf ⟨a, ha⟩
-  have hclosed : H.IsClosed := (α.isSelfAdjoint_gnsHamiltonian hf).isClosed
-  have hT : (H.domRestrict S).IsClosable :=
-    hclosed.isClosable.leIsClosable LinearPMap.domRestrict_le
-  refine ⟨hS, le_antisymm (LinearPMap.le_of_le_graph ?_) (LinearPMap.le_of_le_graph ?_)⟩
-  · -- The closure of the restriction lies in the closed graph of `H`.
-    rw [← hT.graph_closure_eq_closure_graph]
-    exact Submodule.topologicalClosure_minimal _
-      (LinearPMap.le_graph_of_le LinearPMap.domRestrict_le) hclosed
-  · -- Each point of the graph of `H` is a limit of points of the graph of the restriction.
-    intro p hp
-    obtain ⟨ξ, h1, h2⟩ := H.mem_graph_iff.mp hp
-    rw [← hT.graph_closure_eq_closure_graph, ← SetLike.mem_coe, Submodule.topologicalClosure_coe,
-      ← Prod.mk.eta (p := p), ← h1, ← h2]
-    obtain ⟨b, hb, hHb⟩ := α.exists_tendsto_gnsHamiltonian hf ξ
-    refine mem_closure_of_tendsto (hb.prodMk_nhds hHb) (Eventually.of_forall fun n => ?_)
-    have hmem : (f.toPreGNS (b n) : f.GNS) ∈ (H.domRestrict S).domain :=
-      ⟨Submodule.mem_map.mpr ⟨b n, (b n).2, by simp⟩,
-        α.toPreGNS_mem_gnsHamiltonian_domain hf (b n)⟩
-    exact (H.domRestrict S).mem_graph_iff.mpr
-      ⟨⟨_, hmem⟩, rfl, LinearPMap.domRestrict_apply rfl⟩
+  -- Each point of the graph of `H` is a limit of points of the graph of the restriction.
+  refine .of_graph_subset_closure (α.isSelfAdjoint_gnsHamiltonian hf).isClosed hS ?_
+  intro p hp
+  obtain ⟨ξ, rfl⟩ := H.mem_graph_iff'.mp hp
+  obtain ⟨b, hb, hHb⟩ := α.exists_tendsto_gnsHamiltonian hf ξ
+  refine mem_closure_of_tendsto (hb.prodMk_nhds hHb) (Eventually.of_forall fun n => ?_)
+  have hmem : (f.toPreGNS (b n) : f.GNS) ∈ (H.domRestrict S).domain :=
+    ⟨Submodule.mem_map.mpr ⟨b n, (b n).2, by simp⟩,
+      α.toPreGNS_mem_gnsHamiltonian_domain hf (b n)⟩
+  exact (H.domRestrict S).mem_graph_iff.mpr
+    ⟨⟨_, hmem⟩, rfl, LinearPMap.domRestrict_apply rfl⟩
 
 end Hamiltonian
 

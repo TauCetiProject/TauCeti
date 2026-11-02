@@ -44,7 +44,7 @@ open scoped ComplexOrder InnerProductSpace
 namespace TauCeti.CStarAction
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  (α : CStarAction (Multiplicative ℝ) A) {ω : A →P[ℂ] ℂ}
+  {α : CStarAction (Multiplicative ℝ) A} {ω : A →P[ℂ] ℂ}
 
 /-- **The GNS Hamiltonian of a ground state is nonnegative**: `0 ≤ ⟪ξ, H ξ⟫` on its domain. -/
 theorem IsGroundState.inner_gnsHamiltonian_nonneg (hω : α.IsGroundState ω)
@@ -75,7 +75,7 @@ theorem isGroundState_iff_exists_inner_gnsHamiltonian_nonneg :
         ∀ ξ : (α.gnsHamiltonian hf).domain,
           0 ≤ ⟪(ξ : (ω : A →ₚ[ℂ] ℂ).GNS), α.gnsHamiltonian hf ξ⟫_ℂ := by
   refine ⟨fun hω => ⟨hω.norm_eq_one, fun t a => by simpa using hω.apply_action t a,
-    hω.inner_gnsHamiltonian_nonneg α _⟩, fun ⟨hnorm, hf, h⟩ =>
+    hω.inner_gnsHamiltonian_nonneg _⟩, fun ⟨hnorm, hf, h⟩ =>
     isGroundState_iff_neg_I_mul_apply_star_mul_generator_nonneg.mpr ⟨hnorm, fun a => ?_⟩⟩
   have ha := h ⟨_, α.toPreGNS_mem_gnsHamiltonian_domain hf a⟩
   rwa [inner_toPreGNS_gnsHamiltonian_apply_toPreGNS] at ha
