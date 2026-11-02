@@ -17,11 +17,9 @@ is pseudocoherent over `S` exactly when it is pseudocoherent over `R`, degree by
 typical case is a quotient `S = R ⧸ I` for which `R ⧸ I` is pseudocoherent over `R`, such as the
 quotient by a non-zero-divisor; then pseudocoherence of an `R ⧸ I`-module can be tested over `R`.
 
-Both directions are proved by induction on the degree, comparing a surjection `π : Sᵏ → N` of
-`S`-modules with the short exact sequence `0 → ker π → Sᵏ → N → 0` of `R`-modules and applying the
-two-out-of-three properties. Pushing pseudocoherence down to `R` in degree `m` uses that `S` is
-`m`-pseudocoherent over `R`; pulling it up to `S` in degree `m` only uses that `S` is
-`(m - 1)`-pseudocoherent over `R`, so in degree `0` nothing is asked of `S`.
+The two directions need different hypotheses on `S`. Pseudocoherence in degree `m` descends from
+`S` to `R` when `S` is `m`-pseudocoherent over `R`, and ascends from `R` to `S` already when `S` is
+`(m - 1)`-pseudocoherent over `R`; in degree `0` the ascent asks nothing of `S`.
 
 The hypotheses on `S` cannot be dropped in either direction. For a field `k` and
 `S = k[y₁, y₂, …]` acting on `N = k` through `yᵢ ↦ 0`, the module `N` is finitely presented over
@@ -58,13 +56,15 @@ variable {R : Type*} {S : Type u} {N : Type*} [Ring R] [Ring S] [Module R S] [Is
 
 namespace IsPseudoCoherentOver
 
-/-! ### From `S` to `R`
+/- Both directions are proved by induction on the degree, comparing a surjection `π : Sᵏ → K` of
+`S`-modules with the short exact sequence `0 → ker π → Sᵏ → K → 0` of `R`-modules and applying the
+two-out-of-three properties. The inductions run over modules in the universe of `S`, where the
+kernels of such surjections live. -/
 
-The inductions on the degree run over modules in the universe of `S`, where the kernels of
-surjections from `Sᵏ` live. -/
+/-! ### From `S` to `R` -/
 
-/-- Pushing pseudocoherence down to `R`, in a finite degree, for modules in the universe of `S`:
-for a surjection `π : Sᵏ → K` of `S`-modules, `K` is the cokernel of `ker π → Sᵏ` over `R`. -/
+/-- Finite-degree descent for modules in the universe of `S`: if `S` is `n`-pseudocoherent over
+`R`, then every `n`-pseudocoherent `S`-module `K : Type u` is `n`-pseudocoherent over `R`. -/
 private theorem trans_nat : ∀ (n : ℕ) {K : Type u} [AddCommGroup K] [Module R K] [Module S K]
     [IsScalarTower R S K], IsPseudoCoherentOver R S n → IsPseudoCoherentOver S K n →
       IsPseudoCoherentOver R K n
@@ -74,6 +74,7 @@ private theorem trans_nat : ∀ (n : ℕ) {K : Type u} [AddCommGroup K] [Module 
     zero_iff.mpr (.trans S K)
   | n + 1, K, _, _, _, _, hS, h => by
     rw [Nat.cast_succ] at hS h ⊢
+    -- For a surjection `π : Sᵏ → K` of `S`-modules, `K` is the cokernel of `ker π → Sᵏ` over `R`.
     obtain ⟨k, π, hπ, hK⟩ := succ_iff.mp h
     have hK' : IsPseudoCoherentOver R (ker π) n := trans_nat n (hS.mono le_self_add) hK
     exact cokernel (f := (ker π).subtype.restrictScalars R) (g := π.restrictScalars R)
@@ -98,9 +99,9 @@ theorem trans (hS : IsPseudoCoherentOver R S m) (h : IsPseudoCoherentOver S N m)
 
 /-! ### From `R` to `S` -/
 
-/-- Pulling pseudocoherence up to `S`, in a positive finite degree, for modules in the universe
-of `S`: for a surjection `π : Sᵏ → K` of `S`-modules, `ker π` is the kernel of a surjection over
-`R`, and it is pseudocoherent over `S` by induction. -/
+/-- Positive finite-degree ascent for modules in the universe of `S`: if `S` is `n`-pseudocoherent
+over `R`, then every `S`-module `K : Type u` that is `(n + 1)`-pseudocoherent over `R` is
+`(n + 1)`-pseudocoherent over `S`. -/
 private theorem of_restrictScalars_nat : ∀ (n : ℕ) {K : Type u} [AddCommGroup K] [Module R K]
     [Module S K] [IsScalarTower R S K], IsPseudoCoherentOver R S n →
       IsPseudoCoherentOver R K (n + 1 : ℕ) → IsPseudoCoherentOver S K (n + 1 : ℕ)
@@ -109,6 +110,8 @@ private theorem of_restrictScalars_nat : ∀ (n : ℕ) {K : Type u} [AddCommGrou
     have : Module.Finite S K := .of_restrictScalars_finite R S K
     obtain ⟨k, π, hπ⟩ := Module.Finite.exists_fin' S K
     rw [Nat.cast_succ] at h ⊢
+    -- For a surjection `π : Sᵏ → K` of `S`-modules, `ker π` is the kernel of a surjection over `R`,
+    -- and it is pseudocoherent over `S` by induction.
     have hK : IsPseudoCoherentOver R (ker π) n :=
       kernel (f := (ker π).subtype.restrictScalars R) (g := π.restrictScalars R)
         Subtype.val_injective (exact_subtype_ker_map π) hπ (pi fun _ ↦ hS) h
