@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
-public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Baire sets and compact hulls
@@ -17,8 +16,8 @@ measurable. It is contained in the Borel σ-algebra, but the two need not coinci
 countability assumptions. This notion is different from having the Baire property (agreement
 with an open set modulo a meagre set).
 
-For an outer regular measure finite on compact sets on a locally compact Hausdorff space,
-every compact set has a compact Baire-measurable superset of the same measure, inside any
+For an outer regular measure on a locally compact Hausdorff space, every compact set of
+finite measure has a compact Baire-measurable superset of the same measure, inside any
 prescribed open neighbourhood. The hull is a countable intersection of level sets of compactly
 supported continuous functions. This supplies compact Baire approximations for comparing Borel
 and Baire measure theory, in particular for Haar measures on groups without second countability.
@@ -66,17 +65,17 @@ theorem _root_.Continuous.measurable_baire {f : X → Y} (hf : Continuous f) :
   exact (g.comp ⟨f, hf⟩).measurable_baire
 
 /-- A compact set admits a compact Baire-measurable hull inside any open neighbourhood,
-with null excess for any outer regular measure finite on compact sets. No σ-finiteness or
-countability assumption on the space is needed. -/
+with null excess for any outer regular measure for which the compact set has finite measure.
+No σ-finiteness or countability assumption on the space is needed. -/
 theorem _root_.IsCompact.exists_baire_hull [T2Space X] [LocallyCompactSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.OuterRegular]
-    [IsFiniteMeasureOnCompacts μ] {K U : Set X} (hK : IsCompact K) (hU : IsOpen U)
+    {K U : Set X} (hK : IsCompact K) (hμK : μ K ≠ ⊤) (hU : IsOpen U)
     (hKU : K ⊆ U) :
     ∃ B : Set X, K ⊆ B ∧ B ⊆ U ∧ IsCompact B ∧ MeasurableSet[baire X] B ∧
       μ (B \ K) = 0 := by
   -- Approximate from outside at errors tending to zero, then insert continuous cutoffs.
   have hopen (n : ℕ) := hK.measurableSet.exists_isOpen_sdiff_lt
-    (μ := μ) hK.measure_lt_top.ne
+    (μ := μ) hμK
     (ε := ENNReal.ofReal (1 / ((n : ℝ) + 1))) (by positivity)
   choose V hKV hV hVfin hVerr using hopen
   have hcut (n : ℕ) := exists_continuous_one_zero_of_isCompact hK
