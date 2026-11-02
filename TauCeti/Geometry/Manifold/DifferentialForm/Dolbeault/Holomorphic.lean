@@ -66,17 +66,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [NormedAddCommGroup F] [NormedSpace ℂ F] (J : SmoothAlmostComplexStructure I M)
 
-/-- The exterior derivative of a smooth function, regarded as a `0`-form, evaluated on a tangent
-vector, is the derivative of the function applied to that vector. -/
-private theorem mextDerivₗ_zero_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
-    (mextDerivₗ I 0 f).1 x ![v] = mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  calc (mextDerivₗ I 0 f).1 x ![v]
-      = mextDeriv (RoughForm.ofFunction I fun y ↦ f.1 y 0) x ![v] := by
-        rw [mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
-    _ = mvfderiv I (fun y ↦ f.1 y 0) x v := by
-        rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-          Matrix.cons_val_zero]
-
 /-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
 theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
     (J.del f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v -
@@ -99,20 +88,13 @@ theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I 
   rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
     mextDerivₗ_zero_apply]
 
-/-- A one-form at a point vanishes exactly when it vanishes on every tangent vector. -/
-private theorem eq_zero_iff_forall_apply {V : Type*} [AddCommGroup V] [Module ℝ V]
-    [TopologicalSpace V] (α : V [⋀^Fin 1]→L[ℝ] F) : α = 0 ↔ ∀ v, α ![v] = 0 := by
-  refine ⟨fun h v ↦ by simp [h], fun h ↦ ?_⟩
-  ext w
-  obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, by ext i; fin_cases i; rfl⟩
-  exact h v
-
 /-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
 for `J`: `df(J v) = i df(v)`. -/
 theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
     (J.delBar f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
       Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  refine (eq_zero_iff_forall_apply _).trans (forall_congr' fun v ↦ ?_)
+  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
+    (forall_congr' fun v ↦ ?_)
   rw [delBar_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
   constructor <;> intro h
   · rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
@@ -124,7 +106,8 @@ theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
 theorem del_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
     (J.del f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
       -Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
-  refine (eq_zero_iff_forall_apply _).trans (forall_congr' fun v ↦ ?_)
+  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
+    (forall_congr' fun v ↦ ?_)
   rw [del_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
   constructor <;> intro h
   · rw [sub_eq_zero.1 h, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, _root_.neg_neg]
@@ -203,11 +186,8 @@ def kerDelBarZeroEquiv :
       simpa only [RoughForm.ofFunction_apply] using g.contMDiff.mdifferentiable (by simp)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  left_inv φ := by
-    refine Subtype.ext <| Subtype.ext <| funext fun x ↦ ?_
-    ext v
-    rw [Subsingleton.elim v 0]
-    exact RoughForm.ofFunction_apply _ x 0
+  left_inv φ := Subtype.ext <| Subtype.ext
+    (RoughForm.eq_ofFunction (I := 𝓘(ℝ, E)) (F := F) φ.1.1).symm
   right_inv g := ContMDiffMap.ext fun x ↦ RoughForm.ofFunction_apply (I := 𝓘(ℝ, E)) (f := ⇑g) x 0
 
 variable {E M F}
