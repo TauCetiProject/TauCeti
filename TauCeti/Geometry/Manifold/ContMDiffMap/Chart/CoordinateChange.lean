@@ -44,6 +44,41 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M]
 
+/-- On a chart overlap, a coordinate derivative can be computed after changing coordinates
+and restricting the derivative domain to the overlap. -/
+theorem chartIteratedFDeriv_eq_iteratedFDerivWithin_coordChange
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x y : M) (m : ℕ) (hm : m ≤ n)
+    (z : (extChartAt I x).target)
+    (hz : (extChartAt I x).symm z ∈ (extChartAt I y).source) :
+    chartIteratedFDeriv f x m hm z =
+      iteratedFDerivWithin 𝕜 m
+        ((f ∘ (extChartAt I y).symm) ∘ ((extChartAt I x).symm ≫ extChartAt I y))
+        ((extChartAt I x).symm ≫ extChartAt I y).source z := by
+  let τ := (extChartAt I x).symm ≫ extChartAt I y
+  have hτs : τ.source = (extChartAt I x).target ∩
+      (extChartAt I x).symm ⁻¹' (extChartAt I y).source := by
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
+  -- The overlap is a relative neighborhood, so restricting to it preserves derivatives.
+  have hmem : (extChartAt I x).symm ⁻¹' (extChartAt I y).source ∈
+      𝓝[(extChartAt I x).target] (z : E) :=
+    (continuousOn_extChartAt_symm (I := I) x (z : E) z.2).preimage_mem_nhdsWithin
+      ((isOpen_extChartAt_source y).mem_nhds hz)
+  have hset : iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt I x).symm) τ.source z =
+      iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt I x).symm)
+        (extChartAt I x).target z := by
+    rw [hτs]
+    exact iteratedFDerivWithin_inter' hmem
+  have heq : (f ∘ (extChartAt I y).symm) ∘ τ =ᶠ[𝓝[τ.source] (z : E)]
+      f ∘ (extChartAt I x).symm := by
+    filter_upwards [self_mem_nhdsWithin] with w hw
+    rw [hτs, mem_inter_iff] at hw
+    exact congrArg f ((extChartAt I y).left_inv hw.2)
+  have heqz : ((f ∘ (extChartAt I y).symm) ∘ τ) z =
+      (f ∘ (extChartAt I x).symm) z :=
+    congrArg f ((extChartAt I y).left_inv hz)
+  rw [chartIteratedFDeriv_self_target_apply, ← hset]
+  exact (heq.iteratedFDerivWithin_eq heqz m).symm
+
 private theorem exists_chartDerivativeSeminorm_le_coordChange
     (x y : M) (K : TopologicalSpace.Compacts (extChartAt I x).target)
     (L : TopologicalSpace.Compacts (extChartAt I y).target)
@@ -88,27 +123,7 @@ private theorem exists_chartDerivativeSeminorm_le_coordChange
     simpa only [τ, PartialEquiv.coe_trans, Function.comp_apply] using hb)
   refine (chartDerivativeSeminorm_le_iff x K k hk f (mul_nonneg (by positivity) hδ)).mpr
     fun z hz ↦ ?_
-  -- Restricting the chart target to this overlap does not change derivatives at its points.
-  have hmem : (extChartAt I x).symm ⁻¹' (extChartAt I y).source ∈
-      𝓝[(extChartAt I x).target] (z : E) :=
-    (continuousOn_extChartAt_symm (I := I) x (z : E) z.2).preimage_mem_nhdsWithin
-      ((isOpen_extChartAt_source y).mem_nhds (hoverlap z hz))
-  have hset : iteratedFDerivWithin 𝕜 k (f ∘ (extChartAt I x).symm) τ.source z =
-      iteratedFDerivWithin 𝕜 k (f ∘ (extChartAt I x).symm)
-        (extChartAt I x).target z := by
-    rw [hτs]
-    exact iteratedFDerivWithin_inter' hmem
-  have heq : (fun w ↦ (ContinuousLinearMap.id 𝕜 F)
-      ((f ∘ (extChartAt I y).symm) (τ w))) =ᶠ[𝓝[τ.source] (z : E)]
-      f ∘ (extChartAt I x).symm := by
-    filter_upwards [self_mem_nhdsWithin] with w hw
-    rw [hτs, mem_inter_iff] at hw
-    exact congrArg f ((extChartAt I y).left_inv hw.2)
-  have heqz : (ContinuousLinearMap.id 𝕜 F) ((f ∘ (extChartAt I y).symm) (τ z)) =
-      (f ∘ (extChartAt I x).symm) z :=
-    congrArg f ((extChartAt I y).left_inv (hoverlap z hz))
-  rw [chartIteratedFDeriv_self_target_apply, ← hset,
-    ← heq.iteratedFDerivWithin_eq heqz]
+  rw [chartIteratedFDeriv_eq_iteratedFDerivWithin_coordChange f x y k hk z (hoverlap z hz)]
   exact (hbound z ⟨z, hz, rfl⟩).trans (by gcongr; exact (le_abs_self C).trans (by linarith))
 
 /-- On a compact chart overlap, changing coordinates bounds the `C^k` seminorm by a
