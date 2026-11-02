@@ -225,6 +225,12 @@ theorem torsionInclusion_torsionMulBy :
   apply torsion_hom_ext G
   simp [GrpObj.comp_zpow]
 
+/-- The inclusion `G[m] ⟶ G[mn]` is killed by `m`, as a point of `G[mn]`. -/
+@[simp]
+theorem torsionInclusion_zpow : torsionInclusion G m n ^ m = 1 := by
+  apply torsion_hom_ext G
+  simp [GrpObj.zpow_comp]
+
 /-- The torsion transition is the base change of multiplication by `m` on `G`. -/
 theorem isPullback_torsionMulBy :
     IsPullback (torsionι G (m * n)) (torsionMulBy G m n)
@@ -422,7 +428,7 @@ theorem torsionBaseChangeIso_hom_hom_hom_comp_torsionMap (f : G ⟶ H) {T : Sche
 /-! ### The `n`-torsion as a kernel in `CommGrp (Over S)` -/
 
 /-- The `n`-torsion of `G`, as a commutative group object of `Over S`. -/
-private noncomputable abbrev torsionCommGrp (n : ℤ) : CommGrp (Over S) :=
+noncomputable abbrev torsionCommGrp (n : ℤ) : CommGrp (Over S) :=
   { X := (torsion G n).X }
 
 /-- The `n`-torsion of `G` as a kernel fork of multiplication by `n` in the preadditive category
