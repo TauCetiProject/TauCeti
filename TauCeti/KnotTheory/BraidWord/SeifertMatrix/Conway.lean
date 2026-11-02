@@ -146,6 +146,7 @@ theorem seifertConwayDeterminant_seifertMatrix_insert_eq_zero (h : ¬∃ x ∈ u
 end Moves
 
 /-- Markov stabilization keeps the Seifert determinant. -/
+@[simp]
 theorem seifertConwayDeterminant_seifertMatrix_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
     (w.stabilize ε).seifertMatrix.seifertConwayDeterminant =
       w.seifertMatrix.seifertConwayDeterminant := by

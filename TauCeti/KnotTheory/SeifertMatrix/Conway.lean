@@ -77,6 +77,12 @@ theorem map_eval₂_seifertConwayMatrix {S : Type*} [CommRing S]
   simp only [map_apply, seifertConwayMatrix_apply, map_sub, map_mul, eval₂_T, eval₂_C,
     sub_apply, smul_apply, smul_eq_mul, transpose_apply, zpow_one, zpow_neg_one]
 
+/-- Doubling Laurent exponents sends `T k` to `T (2 * k)`. -/
+private theorem mapDomainRingHom_nsmul_two_T (k : ℤ) :
+    AddMonoidAlgebra.mapDomainRingHom R (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T k) = T (2 * k) := by
+  rw [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single]
+  rfl
+
 /-- Doubling Laurent exponents in the Alexander matrix and multiplying by `s⁻¹` gives
 `s V - s⁻¹ Vᵀ`. -/
 private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι ι R) :
@@ -86,16 +92,12 @@ private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι �
   ext i j : 2
   simp only [seifertConwayMatrix_apply, smul_apply, smul_eq_mul, map_apply,
     TauCeti.KnotTheory.alexanderMatrix_apply, map_sub, map_mul]
-  have hT (k : ℤ) : AddMonoidAlgebra.mapDomainRingHom R
-      (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T k) = T (2 * k) := by
-    rw [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single]
-    rfl
   have hC (a : R) : AddMonoidAlgebra.mapDomainRingHom R
       (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (C a) = C a := by
     rw [← single_eq_C, AddMonoidAlgebra.mapDomainRingHom_apply,
       AddMonoidAlgebra.mapDomain_single]
     rfl
-  rw [hT, hC, hC, mul_sub, ← mul_assoc, ← T_add]
+  rw [mapDomainRingHom_nsmul_two_T, hC, hC, mul_sub, ← mul_assoc, ← T_add]
   norm_num
 
 /-- Signed inversion transposes the half-power Seifert matrix. -/
@@ -105,12 +107,14 @@ private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι �
   simp [seifertConwayMatrix_apply, sub_eq_add_neg, add_comm]
 
 /-- Transposing a matrix transposes its half-power Seifert matrix. -/
+@[simp]
 theorem seifertConwayMatrix_transpose (V : Matrix ι ι R) :
     Vᵀ.seifertConwayMatrix = V.seifertConwayMatrixᵀ := by
   ext i j : 2
   simp
 
 /-- The half-power Seifert matrix of a block diagonal matrix is block diagonal. -/
+@[simp]
 theorem seifertConwayMatrix_fromBlocks_zero {κ : Type*} (V : Matrix ι ι R) (W : Matrix κ κ R) :
     (fromBlocks V 0 0 W).seifertConwayMatrix =
       fromBlocks V.seifertConwayMatrix 0 0 W.seifertConwayMatrix := by
@@ -127,6 +131,15 @@ noncomputable def seifertConwayDeterminant (V : Matrix ι ι R) : R[T;T⁻¹] :=
 theorem seifertConwayDeterminant_def (V : Matrix ι ι R) :
     V.seifertConwayDeterminant = V.seifertConwayMatrix.det :=
   (rfl)
+
+/-- In every matrix size, the Seifert determinant is `s^(-|ι|)` times the determinant of the
+Alexander matrix with its Laurent exponents doubled. -/
+private theorem seifertConwayDeterminant_eq_T_mul_map_det_alexanderMatrix (V : Matrix ι ι R) :
+    V.seifertConwayDeterminant = T (-(Fintype.card ι : ℤ)) *
+      AddMonoidAlgebra.mapDomainRingHom R (nsmulAddMonoidHom 2 : ℤ →+ ℤ)
+        (TauCeti.KnotTheory.alexanderMatrix V).det := by
+  rw [seifertConwayDeterminant_def, seifertConwayMatrix_eq_smul_map_alexanderMatrix, det_smul,
+    ← RingHom.mapMatrix_apply, ← RingHom.map_det, T_pow, mul_neg_one]
 
 /-- Evaluation of the Seifert determinant at a unit parameter is the determinant of
 `s V - s⁻¹ Vᵀ`. -/
@@ -216,7 +229,8 @@ theorem seifertConwayDeterminant_transpose (V : Matrix ι ι R) :
     seifertConwayDeterminant_def]
 
 /-- **The Seifert determinant is multiplicative along a block diagonal**, as for the Seifert
-matrix of a surface with two components. -/
+matrix of the split union of two surfaces separated by an embedded sphere. -/
+@[simp]
 theorem seifertConwayDeterminant_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
     (V : Matrix ι ι R) (W : Matrix κ κ R) :
     (fromBlocks V 0 0 W).seifertConwayDeterminant =
@@ -237,19 +251,13 @@ renormalization by the size of the matrix. -/
 theorem seifertConwayDeterminant_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
     (TauCeti.KnotTheory.enlargeColumn V ξ).seifertConwayDeterminant =
       V.seifertConwayDeterminant := by
-  have hT : AddMonoidAlgebra.mapDomainRingHom R (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T 1) = T 2 := by
-    simp only [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single,
-      nsmulAddMonoidHom_apply, nsmul_eq_mul, Nat.cast_ofNat, mul_one]
-  rw [seifertConwayDeterminant_def, seifertConwayDeterminant_def,
-    seifertConwayMatrix_eq_smul_map_alexanderMatrix,
-    seifertConwayMatrix_eq_smul_map_alexanderMatrix, det_smul, det_smul,
-    ← RingHom.mapMatrix_apply, ← RingHom.map_det, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-    TauCeti.KnotTheory.det_alexanderMatrix_enlargeColumn, map_mul, hT,
-    Fintype.card_sum, Fintype.card_fin, pow_add, ← mul_assoc, mul_assoc _ (_ ^ 2)]
-  have h : (T (-1) : R[T;T⁻¹]) ^ 2 * T 2 = 1 := by
-    rw [T_pow, ← T_add]
-    norm_num
-  rw [h, mul_one]
+  rw [seifertConwayDeterminant_eq_T_mul_map_det_alexanderMatrix,
+    seifertConwayDeterminant_eq_T_mul_map_det_alexanderMatrix,
+    TauCeti.KnotTheory.det_alexanderMatrix_enlargeColumn, map_mul, mapDomainRingHom_nsmul_two_T,
+    ← mul_assoc, ← T_add]
+  congr 2
+  push_cast [Fintype.card_sum, Fintype.card_fin]
+  ring
 
 /-- **The Seifert determinant is unchanged by a row enlargement**, the transpose of a column
 enlargement. -/

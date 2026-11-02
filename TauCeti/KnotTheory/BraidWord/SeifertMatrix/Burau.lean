@@ -46,6 +46,9 @@ invariance. The skein relation is
 its level with another letter; otherwise the letter closes up no loop, so the two sides of the
 relation are equal and the smoothed word has an unused level.
 
+The proof of Markov invariance follows the conjugation-by-rotation and stabilization argument of
+`TauCeti.IsMarkovMove.tristramLevineSignature_eq` in `TauCeti.KnotTheory.Markov.TristramLevine`.
+
 ## Main results
 
 * `TauCeti.BraidWord.eval₂_seifertConwayDeterminant_seifertMatrix_eq_normalizedBurauAlexander`:
