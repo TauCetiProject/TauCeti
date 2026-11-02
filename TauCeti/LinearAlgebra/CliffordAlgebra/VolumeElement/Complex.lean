@@ -48,6 +48,8 @@ the positive orientation and `-1` for the negative one.
   `ω_ℂ = i ^ (ℓ + 1) (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ)) c(e₂ℓ₊₁)`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`, and
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
+* `CliffordAlgebra.map_complexVolume`: the complexification of an isometry of quadratic forms that
+  also preserves the norms carries `Γ` to `Γ` for the transported orientation.
 * `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
@@ -148,6 +150,23 @@ theorem complexVolume_positiveOrientation [Fact (finrank ℝ V = 0)] :
   rw [complexVolume_eq _ ((stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out))
     (Basis.orientation_isEmpty _) fun i ↦ i.elim0]
   simp
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
+  [Fact (finrank ℝ V' = n)] {Q' : QuadraticForm ℝ V'}
+
+/-- **Naturality of `Γ`**: the complexification of an isometric equivalence `e` of the quadratic
+forms that also preserves the norms carries `Γ` for `o` to `Γ` for the transported orientation.
+In particular an orientation-preserving isometry of `V` fixing `Q` fixes `Γ`, while an
+orientation-reversing one negates it (`CliffordAlgebra.complexVolume_neg_orientation`). -/
+theorem map_complexVolume (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v‖) :
+    map (e.toIsometry.baseChange ℂ) (complexVolume Q o) =
+      complexVolume Q' (o.map (Fin n) e.toLinearEquiv) := by
+  rw [complexVolume_def, complexVolume_def, map_smul, ← QuadraticMap.Isometry.ofBaseChangeAux_map,
+    map_volumeElement o e he]
+
+end Naturality
 
 /-- The grade involution multiplies `Γ` by `(-1) ^ n`. -/
 @[simp]

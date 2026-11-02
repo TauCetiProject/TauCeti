@@ -18,12 +18,19 @@ measurability of maps into its domain.
 
 ## Main results
 
+* `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
 -/
 
 public section
 
 open MeasureTheory Topology
+
+/-- The Borel σ-algebra of the domain of an inducing map is the pullback of the Borel σ-algebra
+of its codomain. -/
+theorem Topology.IsInducing.comap_borel {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
+    {f : α → β} (hf : IsInducing f) : (borel β).comap f = borel α := by
+  rw [← borel_comap, hf.eq_induced]
 
 /-- For an inducing map `f` between Borel spaces, a map `g` into the domain of `f` is measurable
 exactly when `f ∘ g` is. -/
@@ -32,6 +39,5 @@ theorem Topology.IsInducing.measurable_comp_iff {α β γ : Type*} [TopologicalS
     [MeasurableSpace γ] {f : α → β} (hf : IsInducing f) {g : γ → α} :
     Measurable (f ∘ g) ↔ Measurable g := by
   have hα : ‹MeasurableSpace α› = MeasurableSpace.comap f ‹MeasurableSpace β› := by
-    rw [BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.eq_induced,
-      borel_comap]
+    rw [BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
   rw [measurable_iff_comap_le, measurable_iff_comap_le, hα, MeasurableSpace.comap_comp]
