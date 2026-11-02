@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
@@ -44,9 +43,6 @@ degree-one component of a polynomial in finitely many variables as the linear fo
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
 `(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
-Over an infinite domain, scaling by every scalar detects homogeneity itself:
-`MvPolynomial.isHomogeneous_iff_forall_eval_smul` says that `p` is homogeneous of degree `n`
-exactly when `eval (a • x) p = a ^ n • eval x p` for all `a` and `x`.
 -/
 
 public section
@@ -357,45 +353,6 @@ theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
           omega
         rw [Polynomial.coeff_eq_zero_of_natDegree_lt hlt, zero_mul]
         exact isHomogeneous_zero σ R _
-
-section Infinite
-
-variable [IsDomain R] [Infinite R]
-
-/-- Over an infinite domain, a polynomial is homogeneous of degree `n` exactly when scaling the
-point by `a` scales its value by `a ^ n`. The reverse implication needs infinitely many scalars:
-over a finite field with `q` elements, `X ^ q - X` vanishes everywhere without being
-homogeneous. -/
-theorem isHomogeneous_iff_forall_eval_smul {p : MvPolynomial σ R} {n : ℕ} :
-    p.IsHomogeneous n ↔ ∀ (a : R) (x : σ → R), eval (a • x) p = a ^ n • eval x p := by
-  refine ⟨fun hp a x => hp.eval_smul x a, fun h => ?_⟩
-  -- Every homogeneous component of degree `m ≠ n` vanishes at every point `x`, since the value
-  -- at `a • x` is a polynomial in `a` whose coefficients are the values of the components.
-  have hcomp : ∀ m ≠ n, homogeneousComponent m p = 0 := by
-    intro m hm
-    refine MvPolynomial.funext fun x => ?_
-    have hQ : ∑ k ∈ Finset.range (p.totalDegree + 1),
-        Polynomial.monomial k (eval x (homogeneousComponent k p)) =
-          Polynomial.monomial n (eval x p) := Polynomial.funext fun a => by
-      rw [Polynomial.eval_monomial, mul_comm, ← smul_eq_mul, ← h, Polynomial.eval_finsetSum]
-      conv_rhs => rw [← sum_homogeneousComponent p, map_sum]
-      refine Finset.sum_congr rfl fun k _ => ?_
-      rw [Polynomial.eval_monomial, (homogeneousComponent_isHomogeneous k p).eval_smul,
-        smul_eq_mul, mul_comm]
-    have hcoeff := Polynomial.ext_iff.mp hQ m
-    simp only [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finset.sum_ite_eq',
-      Finset.mem_range, ite_eq_right hm.symm] at hcoeff
-    split_ifs at hcoeff with hle
-    · simpa using hcoeff
-    · simp [homogeneousComponent_eq_zero m p (by omega)]
-  have hp : p = homogeneousComponent n p := by
-    conv_lhs => rw [← sum_homogeneousComponent p]
-    refine Finset.sum_eq_single n (fun m _ hm => hcomp m hm) fun hn => ?_
-    exact homogeneousComponent_eq_zero n p (by simpa [Nat.lt_succ_iff] using hn)
-  rw [hp]
-  exact homogeneousComponent_isHomogeneous n p
-
-end Infinite
 
 end CommRing
 

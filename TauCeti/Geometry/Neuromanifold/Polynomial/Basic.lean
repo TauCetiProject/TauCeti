@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Algebra.MvPolynomial.Sum
 public import TauCeti.RingTheory.MvPolynomial.DegreePadding
-import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
 
 /-!
 # Polynomial realization maps and input coefficients
