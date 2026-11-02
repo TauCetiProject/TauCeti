@@ -151,7 +151,8 @@ theorem eventually_seamPath_floor_eq (t₀ : ℝ) :
     ∀ᶠ t in 𝓝 t₀, seamPath hσ hJ₀ ⌊t⌋ t = seamPath hσ hJ₀ ⌊t₀⌋ t := by
   have h₀ := Int.floor_le t₀
   have h₁ := Int.lt_floor_add_one t₀
-  filter_upwards [Ioo_mem_nhds (show (⌊t₀⌋ : ℝ) - 1 / 3 < t₀ by linarith) h₁] with t ht
+  have hlo : (⌊t₀⌋ : ℝ) - 1 / 3 < t₀ := by linarith
+  filter_upwards [Ioo_mem_nhds hlo h₁] with t ht
   rcases le_or_gt (⌊t₀⌋ : ℝ) t with hk | hk
   · rw [Int.floor_eq_iff.2 ⟨hk, ht.2⟩]
   · have hfl : ⌊t⌋ = ⌊t₀⌋ - 1 :=
