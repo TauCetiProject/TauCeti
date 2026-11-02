@@ -427,5 +427,15 @@ theorem mpullback_eq_flat (f : E → E') (ω : RoughForm 𝓘(ℝ, E') E' F k) :
   -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
   rfl
 
+/-- The chain rule for precomposition by a map of normed spaces: the pullback along `u ∘ L`, for a
+map `L` with derivative `A` at `y`, is the pullback along `u` at `L y` precomposed with `A`. -/
+theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A : E'' →L[ℝ] E'}
+    {y : E''} (hL : HasFDerivAt L A y) (hu : MDifferentiableAt 𝓘(ℝ, E') I u (L y))
+    (ω : RoughForm I M F k) :
+    mpullback 𝓘(ℝ, E'') I (u ∘ L) ω y =
+      (mpullback 𝓘(ℝ, E') I u ω (L y)).compContinuousLinearMap A := by
+  rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
+  exact congrArg _ hL.fderiv
+
 end FixedCoefficients
 end TauCeti
