@@ -44,8 +44,8 @@ laws after the coordinate maps themselves have been evaluated on quotients. Fina
 `Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an orbit map along a tower: for `K ≤ H` and an
 element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, the sum of
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
-`Subgroup.finite_image_mk_of_le` passes finiteness of the image of a set in `G ⧸ K` to a finer
-quotient `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
+`Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
+`G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 -/
 
 public section
@@ -195,19 +195,26 @@ section FiniteImage
 
 variable {G : Type*} [Group G]
 
-/-- Finiteness of a coarse coset image passes to a finer quotient if coarse congruence on the set
-already implies fine congruence: for `L ≤ K` and a set `s` with finite image in `G ⧸ K`, if any
-two elements of `s` congruent modulo `K` are congruent modulo `L`, then `s` has finite image in
-`G ⧸ L`. No normality is needed. -/
-theorem finite_image_mk_of_le {K L : Subgroup G} (hLK : L ≤ K) {s : Set G}
+/-- Finiteness of a coset image passes to another quotient if congruence on the set modulo the
+first subgroup implies congruence modulo the second: for a set `s` with finite image in `G ⧸ K`,
+if any two elements of `s` congruent modulo `K` are congruent modulo `L`, then `s` has finite
+image in `G ⧸ L`. No normality and no containment between `K` and `L` is needed. -/
+theorem finite_image_mk_of_inv_mul_mem {K L : Subgroup G} {s : Set G}
     (hfin : (((↑) : G → G ⧸ K) '' s).Finite)
     (hcong : ∀ x ∈ s, ∀ y ∈ s, x⁻¹ * y ∈ K → x⁻¹ * y ∈ L) :
     (((↑) : G → G ⧸ L) '' s).Finite := by
-  refine Set.Finite.of_finite_image (f := quotientMapOfLE hLK) ?_ ?_
-  · simpa only [Set.image_image, quotientMapOfLE_apply_mk] using hfin
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ h
-    simp only [quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
-    exact hcong x hx y hy h
+  classical
+  -- Send a coarse class to the fine class of a chosen representative from `s`.
+  let f : G ⧸ K → G ⧸ L := fun q ↦
+    if h : ∃ x ∈ s, (x : G ⧸ K) = q then ((h.choose : G) : G ⧸ L) else ((1 : G) : G ⧸ L)
+  refine (hfin.image f).subset ?_
+  rintro _ ⟨x, hx, rfl⟩
+  refine ⟨(x : G ⧸ K), ⟨x, hx, rfl⟩, ?_⟩
+  have h : ∃ y ∈ s, (y : G ⧸ K) = x := ⟨x, hx, rfl⟩
+  obtain ⟨hy, hyx⟩ := h.choose_spec
+  have hf : f (x : G ⧸ K) = ((h.choose : G) : G ⧸ L) := by simp only [f, h, ↓reduceDIte]
+  rw [hf]
+  exact QuotientGroup.eq.mpr (hcong _ hy x hx (QuotientGroup.eq.mp hyx))
 
 end FiniteImage
 
