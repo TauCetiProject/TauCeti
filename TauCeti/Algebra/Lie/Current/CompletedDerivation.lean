@@ -50,6 +50,8 @@ local notation "i" => toCompletedEnveloping Φ hΦ hΦs a
 private abbrev completionUniformSpace : UniformSpace U := UniformSpace.comap i inferInstance
 attribute [local instance] completionUniformSpace
 
+private instance : IsUniformAddGroup U := IsUniformAddGroup.comap i
+
 private theorem uniformInducing_toCompleted : IsUniformInducing i :=
   isUniformInducing_iff_uniformSpace.mpr rfl
 
@@ -61,21 +63,18 @@ private theorem uniformContinuous_vectorField {h : R⸨X⸩} (hh : (1 : WithTop 
   refine (hs.tendsto_iff hb).mpr fun n _ ↦ ⟨n, trivial, fun p hp ↦ ?_⟩
   have hp' : p.2 - p.1 ∈ orderLeftIdeal Φ hΦ hΦs a n := by
     simpa only [Set.mem_preimage, Set.mem_ofPred_eq, SetLike.mem_coe, ← map_sub,
-      coe_toCompletedEnveloping, mem_completedOrderLeftIdeal, ModuleTower.limπ_apply,
-      ModuleTower.coe_toLimQuotients_apply, ModuleTower.quotientsπ_eq_zero_iff] using hp
-  simpa only [Set.mem_ofPred_eq, SetLike.mem_coe, ← map_sub, coe_toCompletedEnveloping,
-    mem_completedOrderLeftIdeal, ModuleTower.limπ_apply, ModuleTower.coe_toLimQuotients_apply,
-    ModuleTower.quotientsπ_eq_zero_iff] using
+      toCompletedEnveloping_mem_completedOrderLeftIdeal_iff] using hp
+  simpa only [Set.mem_ofPred_eq, SetLike.mem_coe, ← map_sub,
+    toCompletedEnveloping_mem_completedOrderLeftIdeal_iff] using
       vectorFieldEnvelopingDerivation_mem_orderLeftIdeal Φ hΦ hΦs a hh hp'
 
 /-- The continuous extension of `h d/dt` to the completed level enveloping algebra, for a
 vector field preserving the maximal ideal of the power-series ring. -/
 def vectorFieldCompletedEnvelopingDerivation (h : R⸨X⸩) (hh : (1 : WithTop ℤ) ≤ h.orderTop) :
     derivationLieAlgebra R Û :=
-  derivationLieAlgebra.extend (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h) i
+  derivationLieAlgebra.extend (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h) (i).toNonUnitalAlgHom
     (uniformInducing_toCompleted Φ hΦ hΦs a)
-    (by simpa only [coe_toCompletedEnveloping] using
-      (ModuleTower.denseRange_toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a)))
+    (denseRange_toCompletedEnveloping Φ hΦ hΦs a)
     (uniformContinuous_vectorField Φ hΦ hΦs a hh)
 
 /-- The completed vector field extends the vector field on the uncompleted enveloping algebra.
@@ -86,12 +85,8 @@ theorem vectorFieldCompletedEnvelopingDerivation_toLimQuotients (h : R⸨X⸩)
     (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a h hh : Module.End R Û)
         (ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) b) =
       i ((vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R U) b) := by
-  simpa only [vectorFieldCompletedEnvelopingDerivation, coe_toCompletedEnveloping] using
-    derivationLieAlgebra.extend_apply (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h) i
-      (uniformInducing_toCompleted Φ hΦ hΦs a)
-      (by simpa only [coe_toCompletedEnveloping] using
-        (ModuleTower.denseRange_toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a)))
-      (uniformContinuous_vectorField Φ hΦ hΦs a hh) b
+  rw [← coe_toCompletedEnveloping]
+  exact derivationLieAlgebra.extend_apply ..
 
 /-- Completed vector fields are continuous for the current-order topology. -/
 theorem continuous_vectorFieldCompletedEnvelopingDerivation (h : R⸨X⸩)
@@ -126,25 +121,19 @@ theorem vectorFieldCompletedEnvelopingDerivation_mem_completedOrderLeftIdeal (h 
       completedOrderLeftIdeal Φ hΦ hΦs a n := by
   let D := (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a h hh : Module.End R Û)
   have hc : Continuous D := continuous_vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a h hh
-  have hset : (completedOrderLeftIdeal Φ hΦ hΦs a n : Set Û) =
-      (LinearMap.ker ((orderQuotientTower Φ hΦ hΦs a).limπ n) : Set Û) :=
-    Set.ext fun _ ↦ mem_completedOrderLeftIdeal
-  have ho : IsOpen (completedOrderLeftIdeal Φ hΦ hΦs a n : Set Û) :=
-    hset ▸ (orderQuotientTower Φ hΦ hΦs a).isOpen_ker_limπ n
-  have hd := ModuleTower.denseRange_toLimQuotients _
-    (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a)
+  have hd := denseRange_toCompletedEnveloping Φ hΦ hΦs a
   by_contra hbad
   obtain ⟨b, hb, hDb⟩ := hd.exists_mem_open
-    (ho.inter ((isClosed_completedOrderLeftIdeal Φ hΦ hΦs a n).isOpen_compl.preimage hc))
+    ((isOpen_completedOrderLeftIdeal Φ hΦ hΦs a n).inter
+      ((isClosed_completedOrderLeftIdeal Φ hΦ hΦs a n).isOpen_compl.preimage hc))
     ⟨x, hx, hbad⟩
   have hb' : b ∈ orderLeftIdeal Φ hΦ hΦs a n := by
-    simpa only [SetLike.mem_coe, mem_completedOrderLeftIdeal, ModuleTower.limπ_apply,
-      ModuleTower.coe_toLimQuotients_apply, ModuleTower.quotientsπ_eq_zero_iff] using hb
+    exact toCompletedEnveloping_mem_completedOrderLeftIdeal_iff.mp hb
   apply hDb
-  simpa only [D, SetLike.mem_coe, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
-    coe_toCompletedEnveloping, mem_completedOrderLeftIdeal, ModuleTower.limπ_apply,
-    ModuleTower.coe_toLimQuotients_apply, ModuleTower.quotientsπ_eq_zero_iff] using
-    vectorFieldEnvelopingDerivation_mem_orderLeftIdeal Φ hΦ hΦs a hh hb'
+  simpa only [D, SetLike.mem_coe, coe_toCompletedEnveloping,
+    vectorFieldCompletedEnvelopingDerivation_toLimQuotients] using
+    (toCompletedEnveloping_mem_completedOrderLeftIdeal_iff.mpr
+      (vectorFieldEnvelopingDerivation_mem_orderLeftIdeal Φ hΦ hΦs a hh hb'))
 
 end TauCeti.CurrentAlgebra
 
