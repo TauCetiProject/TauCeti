@@ -38,9 +38,10 @@ and `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`).
 The vertical tangent space at a point `p` of the total space, the kernel of the derivative of the
 projection, is the image of the derivative at the identity of the orbit map `g ↦ p • g`
 (`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_smul_one`), and this derivative is
-injective (`TauCeti.PrincipalBundle.injective_mfderiv_smul`). So the vertical tangent vectors at `p`
+injective (`TauCeti.PrincipalBundle.mfderiv_smul_injective`). So the vertical tangent vectors at `p`
 correspond bijectively to the tangent vectors of `G` at the identity, and the vertical tangent space
-has the dimension of `G` (`TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`). These statements
+has the same `Module.finrank` as the model space of `G`, which is its dimension when that model
+space is finite-dimensional (`TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`). These statements
 need `C^n` multiplication on `G` and a `C^n` fibre bundle for some `n ≠ 0`.
 
 ## Main results
@@ -54,9 +55,9 @@ need `C^n` multiplication on `G` and a `C^n` fibre bundle for some `n ≠ 0`.
   determines a `C^n` equivariant trivialization with `C^n` inverse.
 * `TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_smul`: the kernel of the derivative of
   the projection at `p • g₀` is the image of the derivative at `g₀` of the orbit map of `p`.
-* `TauCeti.PrincipalBundle.injective_mfderiv_smul`: the orbit maps have injective derivative.
-* `TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`: the vertical tangent space has the dimension
-  of the model space of `G`.
+* `TauCeti.PrincipalBundle.mfderiv_smul_injective`: the orbit maps have injective derivative.
+* `TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`: the vertical tangent space has the same
+  `Module.finrank` as the model space of `G`.
 
 ## References
 
@@ -323,8 +324,10 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
       mfderiv_const] at h₁
     have h₂ := mfderiv_comp_apply_of_eq (f := fun x ↦ (proj x, s x)) x₀ hF
       (hproj.prodMk hsD) (by rw [hproj₀]) w
-    rw [((hasMFDerivAt_id x₀).congr_of_eventuallyEq_abuse hFid).mfderiv,
-      mfderiv_prodMk hproj hsD] at h₂
+    rw [hFid.mfderiv_eq, mfderiv_id, ContinuousLinearMap.comp_id, mfderiv_prodMk hproj hsD] at h₂
+    -- `tangentSpaceCast` identifies the tangent spaces at the equal points `x₀` and
+    -- `F (proj x₀, s x₀)`, and is the identity on vectors.
+    change w = _ at h₂
     -- The two expressions differ only in the base component, which vanishes for vertical `w`.
     have h₃ : (ContinuousLinearMap.prod 0 (mfderiv (IB.prod IG) IG s x₀)) w =
         ((mfderiv (IB.prod IG) IB proj x₀).prod (mfderiv (IB.prod IG) IG s x₀)) w :=
@@ -335,7 +338,7 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
 variable (IB IG) in
 /-- **The orbit maps of a principal bundle have injective derivative.** For a point `p` of the
 fibre over `b`, the derivative at every `g₀` of the orbit map `g ↦ p • g` is injective. -/
-theorem injective_mfderiv_smul (hn : n ≠ 0) (p : P b) (g₀ : G) :
+theorem mfderiv_smul_injective (hn : n ≠ 0) (p : P b) (g₀ : G) :
     Function.Injective (mfderiv IG (IB.prod IG)
       (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀) := by
   obtain ⟨-, L, hL, -⟩ := mfderiv_smul_aux (IB := IB) (IG := IG) hn p g₀
@@ -373,8 +376,9 @@ theorem ker_mfderiv_proj_eq_range_mfderiv_smul_one (hn : n ≠ 0) (p : P b) :
 
 variable (IB IG) in
 /-- **The vertical tangent space has the dimension of the structure group.** At every point of the
-total space, the kernel of the derivative of the projection has the same finite rank as the model
-space of `G`. -/
+total space, the kernel of the derivative of the projection has the same `Module.finrank` as the
+model space `EG` of `G`. When `EG` is finite-dimensional this is the dimension of `G`; otherwise
+both sides are `0`. -/
 theorem finrank_ker_mfderiv_proj (hn : n ≠ 0) (x : ManifoldTotalSpace G P) :
     Module.finrank 𝕜 (mfderiv (IB.prod IG) IB
       (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj) x).ker =
@@ -383,6 +387,6 @@ theorem finrank_ker_mfderiv_proj (hn : n ≠ 0) (x : ManifoldTotalSpace G P) :
   rw [ker_mfderiv_proj_eq_range_mfderiv_smul_one G IB IG hn p]
   -- Elaborated before unifying with the goal, whose tangent-space instances are indexed by the
   -- equal point `p` rather than `p • 1`.
-  exact (LinearMap.finrank_range_of_inj (R := 𝕜) (injective_mfderiv_smul IB IG hn p (1 : G)) :)
+  exact (LinearMap.finrank_range_of_inj (R := 𝕜) (mfderiv_smul_injective IB IG hn p (1 : G)) :)
 
 end TauCeti.PrincipalBundle
