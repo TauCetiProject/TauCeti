@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.MeasureTheory.Function.CurveAction.Polygonal
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
 import TauCeti.Analysis.Green.Polygonal.Fan
-import TauCeti.GroupTheory.Perm.Cycle.Sum
+import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 
 /-!
 # Polygons and balanced families of segments as contour cycles
@@ -81,11 +81,8 @@ private theorem polygonFun_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Icc (0 
   have ht : ((i : ℕ) : ℝ) + s ∈ Icc (0 + ((i : ℕ) : ℝ) * 1) (0 + ((i : ℕ) + 1) * 1) := by
     simp only [zero_add, mul_one, mem_Icc]
     exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
-  rw [polygonFun, polygonalInterpolation_eq_of_mem_Icc _ one_pos i.isLt ht, Polygon.edgePath,
-    AffineMap.lineMap_apply_module', finRotate_apply, vertexSeq, vertexSeq, Nat.cast_succ,
-    Fin.cast_val_eq_self]
-  simp only [zero_add, mul_one, div_one, add_sub_cancel_left]
-  rw [add_comm]
+  rw [polygonFun, polygonalInterpolation_eq_of_mem_Icc _ one_pos i.isLt ht]
+  simp [Polygon.edgePath, AffineMap.lineMap_apply_module', vertexSeq, add_comm]
 
 /-- The polygonal curve starts at vertex `0`. -/
 private theorem polygonFun_zero : polygonFun poly 0 = poly 0 := by
@@ -305,11 +302,13 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     (trace_sum_subset _ _).trans (iUnion₂_subset fun q _ ↦ ?_), fun z hz ↦ ?_, fun hf ↦ ?_⟩
   · rw [Polygon.trace_contourCycle]
     exact hbd _
-  · rw [map_sum, ← Finset.sum_coe_sort E, ← Equiv.Perm.sum_quotient_sameCycle_sum_iterate σ]
+  · rw [map_sum, ← Finset.sum_coe_sort E, ← Equiv.Perm.sum_quotient_sameCycle_sum_range σ]
+    simp only [Equiv.Perm.coe_pow]
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     rw [Polygon.windingNumber_contourCycle _ fun h ↦ hz (hbd _ h), ← Fin.sum_univ_eq_sum_range]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hedge]
-  · rw [map_sum, ← Finset.sum_coe_sort E, ← Equiv.Perm.sum_quotient_sameCycle_sum_iterate σ]
+  · rw [map_sum, ← Finset.sum_coe_sort E, ← Equiv.Perm.sum_quotient_sameCycle_sum_range σ]
+    simp only [Equiv.Perm.coe_pow]
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     rw [Polygon.integral_contourCycle _ (hf.mono (hbd _)), ← Fin.sum_univ_eq_sum_range]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hedge, hPsucc, hP]
