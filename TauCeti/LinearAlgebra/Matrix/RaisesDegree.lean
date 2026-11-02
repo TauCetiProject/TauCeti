@@ -23,7 +23,7 @@ group written in a weight basis. Suppose the basis indices carry weights `wt : �
 `X i` shifts weights by exactly `α i`, that the weights `α i` occurring in a list `l` are distinct
 and of positive degree for an additive `degree : G →+ ℤ`, and that `c • X i = 0` forces `c = 0`.
 Then the ordered product `∏_{i ∈ l} x i (u i)` determines every parameter `u i`
-(`Matrix.list_prod_map_inj_of_raisesDegree`). The proof compares the two products modulo the
+(`TauCeti.Matrix.list_prod_map_inj_of_raisesDegree`). The proof compares the two products modulo the
 matrices raising the degree by more than the smallest degree at which the parameters differ;
 at that degree the product is the sum of its linear terms `u i • X i`, which are independent
 because they shift weights differently. No commutator formula is used.
@@ -34,8 +34,8 @@ because they shift weights differently. No commutator formula is used.
 * `Matrix.RaisesDegree.mul`: degrees add under multiplication.
 * `Matrix.RaisesDegree.of_shift`: a matrix shifting weights by `a` raises their degree by
   `degree a`.
-* `Matrix.list_prod_map_inj_of_raisesDegree`: an ordered product of graded unipotent families
-  determines its parameters.
+* `TauCeti.Matrix.list_prod_map_inj_of_raisesDegree`: an ordered product of graded unipotent
+  families determines its parameters.
 
 ## References
 
@@ -100,6 +100,12 @@ theorem RaisesDegree.sub (hX : RaisesDegree deg d X) (hY : RaisesDegree deg d Y)
     RaisesDegree deg d (X - Y) := by
   rw [sub_eq_add_neg]
   exact hX.add hY.neg
+
+/-- A matrix differing from the identity by a matrix that raises the degree by at least `0`
+raises the degree by at least `0` itself. -/
+theorem RaisesDegree.of_sub_one [DecidableEq η] (hY : RaisesDegree deg 0 (Y - 1)) :
+    RaisesDegree deg 0 Y := by
+  simpa using hY.add (raisesDegree_one deg le_rfl)
 
 /-- Matrices raising the degree by at least `d` are closed under left scalar multiplication. -/
 theorem RaisesDegree.smul (hX : RaisesDegree deg d X) (c : A) : RaisesDegree deg d (c • X) :=
@@ -169,8 +175,8 @@ private theorem raisesDegree_list_prod_sub_one (u : ι → A) :
     have hjpos := hpos j List.mem_cons_self
     simp only [List.mem_cons, forall_eq_or_imp] at hpos hX hx
     have hP := ih hpos.2 hX.2 hx.2
-    have hP0 : RaisesDegree (degree ∘ wt) 0 ((l.map fun i ↦ x i (u i)).prod) := by
-      simpa using (hP.mono zero_le_one).add (raisesDegree_one (degree ∘ wt) le_rfl)
+    have hP0 : RaisesDegree (degree ∘ wt) 0 ((l.map fun i ↦ x i (u i)).prod) :=
+      (hP.mono zero_le_one).of_sub_one
     rw [List.map_cons, List.prod_cons]
     have h : x j (u j) * (l.map fun i ↦ x i (u i)).prod - 1 =
         (x j (u j) - 1) * (l.map fun i ↦ x i (u i)).prod +
@@ -225,8 +231,7 @@ private theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
         List.map_cons, List.prod_cons]
       have h : x j (u j) * P - x j (u j) * Q - S =
           x j (u j) * (P - Q - S) + (x j (u j) - 1) * S := by noncomm_ring
-      have hxj0 : RaisesDegree (degree ∘ wt) 0 (x j (u j)) := by
-        simpa using (hj.mono hjpos.le).add (raisesDegree_one (degree ∘ wt) le_rfl)
+      have hxj0 : RaisesDegree (degree ∘ wt) 0 (x j (u j)) := (hj.mono hjpos.le).of_sub_one
       have hxP := hxj0.mul ih
       rw [zero_add] at hxP
       rw [h]
@@ -249,7 +254,13 @@ private theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
 
 end OrderedProduct
 
-variable [Fintype η] [DecidableEq η] [Ring A]
+end Matrix
+
+namespace TauCeti.Matrix
+
+open _root_.Matrix
+
+variable {η A : Type*} [Fintype η] [DecidableEq η] [Ring A]
 variable {ι G : Type*} [AddCommGroup G]
 
 /-- **An ordered product of graded unipotent families determines its parameters.**
@@ -311,4 +322,4 @@ theorem list_prod_map_inj_of_raisesDegree (wt : η → G) (degree : G →+ ℤ) 
   · intro hi'
     simp [hi.1, n] at hi'
 
-end Matrix
+end TauCeti.Matrix

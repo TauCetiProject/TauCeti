@@ -24,12 +24,12 @@ every parameter `u_i`, provided that each root operator `X_i` stays faithful aft
 
 For the positive roots of a Chevalley datum, listed in any fixed order, this is the uniqueness half
 of the normal form `∏_{α > 0} x_α(u_α)` of the unipotent radical. Over a field the faithfulness
-hypothesis says that every root operator survives reduction to the field; it cannot be dropped,
-since a root operator vanishing on `A ⊗[ℤ] M` makes its root subgroup trivial there.
+hypothesis says that every root operator survives reduction to the field; it is what lets the
+linear term `u_i X_i` of a product detect the parameter `u_i`.
 
 The proof writes each root-subgroup element in the weight basis as `1 + t X_i` plus divided powers
 of `X_i` shifting weights by multiples `n α_i` with `n ≥ 2`, and applies the matrix uniqueness
-theorem `Matrix.list_prod_map_inj_of_raisesDegree`. It uses no commutator relations.
+theorem `TauCeti.Matrix.list_prod_map_inj_of_raisesDegree`. It uses no commutator relations.
 
 ## Main declarations
 
@@ -156,18 +156,17 @@ theorem list_prod_map_kostantRootSubgroupParam_inj [Finite η] (A : Type v) [Com
     rw [huv i hi])⟩
   have hmat := congrArg φ huv
   rw [hφ, hφ] at hmat
-  refine (Matrix.list_prod_map_inj_of_raisesDegree wt degree α
+  refine (TauCeti.Matrix.list_prod_map_inj_of_raisesDegree wt degree α
     (fun i t ↦ (kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd t)) :
         Matrix η η A)) X hl hdeg ?_ ?_ ?_).mp hmat
-  · -- Each root operator shifts weights by its root.
+  · -- Each root operator is the first divided power, so it shifts weights by its root.
     intro i hi r s hrs
-    by_contra hne
-    apply hrs
-    simp only [X, Matrix.map_apply, LinearMap.toMatrix_apply]
-    rw [repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt
-      (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i (hα i hi) (hwt s)) hne,
-      Int.cast_zero]
+    have hrs' : LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) r s ≠ 0 :=
+      fun h0 ↦ hrs (by simp [X, h0])
+    rw [kostantRootOperator_def] at hrs'
+    simpa using
+      eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero e h ρ M hM hwt (hα i hi) 1 hrs'
   · exact fun i hi t ↦ raisesDegree_kostantRootSubgroupMatrix_sub e h ρ M hM hnil hwt (hα i hi)
       (hdeg i hi) t
   · -- Faithfulness of the base-changed root operator is faithfulness of its matrix.
