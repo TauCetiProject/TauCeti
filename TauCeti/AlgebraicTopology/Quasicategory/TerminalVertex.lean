@@ -75,8 +75,7 @@ lemma nonempty_edge (hx : X.IsTerminalVertex x) (y : X _⦋0⦌) : Nonempty (X.E
       X.map_id, id_apply]
     rfl)
   have h (j : Fin 2) : X.δ j (yonedaEquiv σ) = v j := by
-    rw [← stdSimplex.yonedaEquiv_δ_comp, ← boundary.ι_ι_assoc, ← hσ, hf.ι_desc,
-      Equiv.apply_symm_apply]
+    rw [← (boundary.eq_ι_comp_iff _ _).1 hσ, hf.ι_desc, Equiv.apply_symm_apply]
   exact ⟨Edge.mk (yonedaEquiv σ) (h 1) (h 0)⟩
 
 /-- Every triangle whose last vertex is terminal is filled by a `2`-simplex. In particular, any
@@ -98,8 +97,7 @@ lemma nonempty_compStruct (hx : X.IsTerminalVertex x) {x₀ x₁ : X _⦋0⦌} (
       ← SimplexCategory.δ_zero_eq_const]
     exact e₁₂.tgt_eq)
   have h (j : Fin 3) : X.δ j (yonedaEquiv σ) = v j := by
-    rw [← stdSimplex.yonedaEquiv_δ_comp, ← boundary.ι_ι_assoc, ← hσ, hf.ι_desc,
-      Equiv.apply_symm_apply]
+    rw [← (boundary.eq_ι_comp_iff _ _).1 hσ, hf.ι_desc, Equiv.apply_symm_apply]
   exact ⟨Edge.CompStruct.mk (yonedaEquiv σ) (h 2) (h 0) (h 1)⟩
 
 /-- Every edge between terminal vertices is invertible. Thus terminal vertices are unique up to
@@ -142,8 +140,8 @@ theorem isTerminalVertex_iff_of_isStrictSegal [X.IsStrictSegal] (x : X _⦋0⦌)
     -- The boundary of an edge consists of its two vertices.
     rw [Fin.last_zero, SimplexCategory.const_eq_id, op_id, X.map_id, id_apply] at hσ₀
     obtain ⟨e⟩ := h₁ (yonedaEquiv (boundary.ι 1 ≫ σ₀))
-    refine ⟨yonedaEquiv.symm e.edge, boundary.hom_ext fun j ↦ yonedaEquiv.injective ?_⟩
-    rw [boundary.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.apply_symm_apply]
+    refine ⟨yonedaEquiv.symm e.edge, (boundary.eq_ι_comp_iff _ _).2 fun j ↦ ?_⟩
+    rw [Equiv.apply_symm_apply]
     fin_cases j
     · exact hσ₀.trans e.tgt_eq.symm
     · exact e.src_eq.symm
@@ -157,8 +155,8 @@ theorem isTerminalVertex_iff_of_isStrictSegal [X.IsStrictSegal] (x : X _⦋0⦌)
     obtain ⟨c⟩ := h₂ (Edge.mk (yonedaEquiv (boundary.ι 2 ≫ σ₀)) rfl rfl)
       (Edge.mk (yonedaEquiv (boundary.ι 0 ≫ σ₀)) h₀₂ hσ₀)
       (Edge.mk (yonedaEquiv (boundary.ι 1 ≫ σ₀)) h₁₂ (h₀₁.symm.trans hσ₀))
-    refine ⟨yonedaEquiv.symm c.simplex, boundary.hom_ext fun j ↦ yonedaEquiv.injective ?_⟩
-    rw [boundary.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.apply_symm_apply]
+    refine ⟨yonedaEquiv.symm c.simplex, (boundary.eq_ι_comp_iff _ _).2 fun j ↦ ?_⟩
+    rw [Equiv.apply_symm_apply]
     fin_cases j
     · exact c.d₀.symm
     · exact c.d₁.symm

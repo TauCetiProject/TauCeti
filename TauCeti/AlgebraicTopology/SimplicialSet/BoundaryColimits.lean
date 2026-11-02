@@ -26,6 +26,8 @@ This is the analogue for boundaries of Mathlib's description of horns in
 * `SSet.boundary.IsCompatible.desc`: the map `∂Δ[n + 1] ⟶ X` glued from a compatible family of
   faces, characterised by `SSet.boundary.IsCompatible.ι_desc`.
 * `SSet.boundary.IsCompatible.of_hom`: the faces of a map `∂Δ[n + 1] ⟶ X` are compatible.
+* `SSet.boundary.eq_ι_comp_iff`: a map `∂Δ[n + 1] ⟶ X` is the restriction of a simplex `σ`
+  exactly when its faces are the faces of `σ`.
 -/
 
 public section
@@ -150,6 +152,15 @@ lemma ι_desc (hf : boundary.IsCompatible f) (j : Fin (n + 2)) :
   hf.exists_desc.choose_spec j
 
 end IsCompatible
+
+/-- A map `σ₀ : ∂Δ[n + 1] ⟶ X` is the restriction of `σ : Δ[n + 1] ⟶ X` exactly when every face
+of the simplex `σ` is the corresponding face of `σ₀`. -/
+lemma eq_ι_comp_iff (σ₀ : (∂Δ[n + 1] : SSet) ⟶ X) (σ : Δ[n + 1] ⟶ X) :
+    σ₀ = ∂Δ[n + 1].ι ≫ σ ↔ ∀ j, yonedaEquiv (ι j ≫ σ₀) = X.δ j (yonedaEquiv σ) := by
+  refine ⟨?_, fun h ↦ hom_ext fun j ↦ yonedaEquiv.injective ?_⟩
+  · rintro rfl j
+    rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp]
+  · rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp, h]
 
 end boundary
 
