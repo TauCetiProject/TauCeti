@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Counting.Classes
 public import TauCeti.ModelTheory.Scott.NatPredicate
 
@@ -21,7 +22,7 @@ carrier, or on any `Fin n` with `n ≠ 1`. Thus counting only models on `ℕ` wo
 models, not merely a countable contribution. In particular, a vacuous bound on ranks of its
 models on `ℕ` cannot rule out continuum many finite models.
 
-The language is the existing `TauCeti.natPredicateLanguage`; no second vocabulary is introduced.
+The models are `TauCeti.natPredicateLanguage`-structures built from `TauCeti.natPredicateStructure`.
 The cardinality assertion uses Mathlib's finitary sentences `FirstOrder.Language.Sentence.cardGe`.
 -/
 
@@ -81,6 +82,7 @@ private theorem eval_code (z : ℕ → Bool) (i : ℕ) (x : Fin 1 → Fin 1) :
     (code z).eval (atom (NatPredicateRel.pred i) x) = z i := by
   let := natPredicateStructure {i | z i = true}
   simp only [code]
+  -- `erw` unfolds the structure hidden by `code`'s `letI` to match this local instance.
   erw [Equiv.eval_encodeVia]
   simp [relMap_natPredicateStructure]
 
@@ -157,11 +159,8 @@ theorem hasPerfectlyManyCountableModels_oneElementSentence :
     HasPerfectlyManyCountableModels oneElementSentence :=
   .of_fin hasPerfectAntichainOn_oneElementSentence_fin_one
 
-local instance (n : ℕ) : Countable (natPredicateLanguage.Relations n) :=
-  Function.Injective.countable (f := Sigma.mk n) sigma_mk_injective
-
 /-- There are continuum many isomorphism classes already on the one-element tier. -/
-theorem mk_quotient_oneElementSentence_fin_one :
+theorem mk_quotient_isoSetoidOn_fin_one_oneElementSentence :
     #(Quotient (isoSetoidOn (Fin 1) oneElementSentence)) = 𝔠 := by
   exact (mk_quotient_isoSetoidOn_le_continuum (Fin 1) oneElementSentence).antisymm
     hasCantorAntichainOn_oneElementSentence_fin_one.continuum_le_mk_quotient_comap
