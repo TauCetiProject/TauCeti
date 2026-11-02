@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Normed.Operator.ClosedRange
+import TauCeti.Analysis.Sobolev.GraphStep.Density
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -23,7 +26,8 @@ because `A` has a limit `A⁺` with `A⁺ v = 0`, then the trajectory operator
 is not Fredholm. Together with `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`, this shows
 that for a `C¹` family of symmetric operators on a finite-dimensional inner product space with
 limits `A±` and derivative tending to zero, `D_A` is Fredholm exactly when both limits are
-injective, that is, invertible.
+injective, that is, invertible (`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`, in
+`TauCeti.Analysis.ODE.EnergyEstimate.Fredholm`).
 
 The proof constructs an escaping approximate kernel. Fix a smooth bump `ψ` supported in
 `(-1, 1)`, and put `uₙ(s) = (n + 1)^(-1/2) ψ((s - cₙ) / (n + 1)) v` up to a normalizing constant,
@@ -39,9 +43,6 @@ convergent subsequence (`ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`).
 * `TauCeti.WeakDerivStep.not_isFredholm_trajectoryOperator_of_tendsto_atTop` and
   `TauCeti.WeakDerivStep.not_isFredholm_trajectoryOperator_of_tendsto_atBot`: if `A(s) v → 0` at
   `+∞` or at `-∞` for some `v ≠ 0`, then `D_A` is not Fredholm.
-* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: for a `C¹` family of symmetric
-  operators on a finite-dimensional inner product space with limits `A±` and derivative tending
-  to zero, `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
 
 ## References
 
@@ -370,41 +371,5 @@ theorem not_isFredholm_trajectoryOperator_of_tendsto_atBot {v : F} (hv : v ≠ 0
     linarith [neg_abs_le (S n), haS n]
   · rw [hrefl] at hs ⊢
     exact le_abs_sub_of_abs_sub_lt ha hmn hs
-
-/-- **The trajectory operator is Fredholm exactly when its limits are invertible.** Let `A` be a
-`C¹` family of symmetric operators on a finite-dimensional real inner product space with limits
-`A±` at `±∞` and derivative tending to zero at both ends. Then `u ↦ u' + A u` from
-`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and only if `A⁻` and `A⁺` are injective. The
-coefficient of the operator is any `L∞` class `AL` of `A`. -/
-theorem isFredholm_trajectoryOperator_iff {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {A : ℝ → E →L[ℝ] E} (hA : ContDiff ℝ 1 A)
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E}
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    (trajectoryOperator (p := 2) AL).IsFredholm ↔
-      Function.Injective Aminus ∧ Function.Injective Aplus := by
-  refine ⟨fun hF ↦ ⟨(injective_iff_map_eq_zero Aminus).2 fun v hv ↦ ?_,
-    (injective_iff_map_eq_zero Aplus).2 fun v hv ↦ ?_⟩, fun ⟨hm, hp⟩ ↦ ?_⟩
-  · by_contra hv0
-    exact not_isFredholm_trajectoryOperator_of_tendsto_atBot hv0
-      (by simpa [hv, Function.comp_def] using
-        ((ContinuousLinearMap.apply ℝ E v).continuous.tendsto _).comp hbot) AL hAL hF
-  · by_contra hv0
-    exact not_isFredholm_trajectoryOperator_of_tendsto_atTop hv0
-      (by simpa [hv, Function.comp_def] using
-        ((ContinuousLinearMap.apply ℝ E v).continuous.tendsto _).comp htop) AL hAL hF
-  -- Injective operators on a finite-dimensional space are bounded below.
-  obtain ⟨Km, -, hKm⟩ := (Aminus : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 hm
-  obtain ⟨Kp, -, hKp⟩ := (Aplus : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 hp
-  have hbound {B : E →L[ℝ] E} {K : NNReal} (hK : AntilipschitzWith K (B : E →ₗ[ℝ] E))
-      (hle : (K : ℝ) ≤ max (Km : ℝ) Kp) (v : E) : (max (Km : ℝ) Kp + 1)⁻¹ * ‖v‖ ≤ ‖B v‖ := by
-    rw [inv_mul_le_iff₀ (by positivity)]
-    calc ‖v‖ ≤ K * ‖B v‖ := ZeroHomClass.bound_of_antilipschitz (B : E →ₗ[ℝ] E) hK v
-      _ ≤ (max (Km : ℝ) Kp + 1) * ‖B v‖ := by gcongr; linarith
-  exact isFredholm_trajectoryOperator hA hsym (by positivity)
-    (hbound hKm (le_max_left (Km : ℝ) Kp)) (hbound hKp (le_max_right (Km : ℝ) Kp)) hbot htop
-    hdbot hdtop AL hAL
 
 end TauCeti.WeakDerivStep
