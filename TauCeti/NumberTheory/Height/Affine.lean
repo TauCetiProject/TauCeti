@@ -31,7 +31,8 @@ analogue of `Height.mulHeight₁` and agrees with it on a one-element tuple
 The affine height is deliberately not invariant under scaling
 (`Height.exists_mulHeightAff_smul_ne`). What it gains is domination: for finite index types, it
 bounds the projective height of the tuple and the height of every coordinate, and it can only
-drop under re-indexing.
+drop under re-indexing. In the other direction, it is bounded above by the product of the
+scalar heights of the coordinates.
 
 ## Main definitions
 
@@ -48,6 +49,8 @@ drop under re-indexing.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
   affine height dominates the projective height of the tuple and the height of each coordinate.
   The second fails for `Height.mulHeight`.
+* `Height.mulHeightAff_le_prod_mulHeight₁`: for finite `ι`, the affine height is at most
+  `∏ i, mulHeight₁ (x i)`; `Height.logHeightAff_le_sum_logHeight₁` is its logarithmic form.
 * `Height.mulHeightAff_comp_le`, `Height.mulHeightAff_comp_equiv`: monotonicity under
   re-indexing between finite index types, and equality for a bijection between arbitrary ones.
 * `Height.mulHeight_cons_one`: for `x : Fin n → K`, prepending the coordinate `1` with

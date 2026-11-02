@@ -157,7 +157,7 @@ theorem scalarSumHeight_le_mul_absoluteLogHeightAff {n : ℕ} (x : Fin n → F)
   simpa using Finset.sum_le_sum (s := Finset.univ)
     (fun i _ ↦ logHeight₁_le_logHeightAff y i)
 
-/-! The two comparison constants are sharp already on rational two-tuples. -/
+/-! The upper comparison constant is sharp already on rational two-tuples. -/
 
 example : scalarSumHeight (![(2 : ℚ), 2]) = 2 * Real.log 2 := by
   have h2 : absLogHeight₁ (2 : ℚ) = Real.log 2 := absLogHeight₁_natCast 2
