@@ -45,12 +45,11 @@ instance mono_tensorHom (f : X ⟶ X') (g : Y ⟶ Y') [Mono f] [Mono g] :
   infer_instance
 
 /-- Smashing on the left with a pointed simplicial set preserves monomorphisms. -/
-instance (X : PointedSSet.{u}) : (tensorLeft X).PreservesMonomorphisms where
-  preserves f _ := by
-    simpa using (inferInstance : Mono (𝟙 X ⊗ₘ f))
+instance (X : PointedSSet.{u}) : (tensorLeft X).PreservesMonomorphisms :=
+  TauCeti.tensorLeft_preservesMonomorphisms (fun f g ↦ mono_tensorHom f g) X
 
 /-- Smashing on the right with a pointed simplicial set preserves monomorphisms. -/
 instance (X : PointedSSet.{u}) : (tensorRight X).PreservesMonomorphisms :=
-  Functor.PreservesMonomorphisms.of_iso (BraidedCategory.tensorLeftIsoTensorRight X)
+  TauCeti.tensorRight_preservesMonomorphisms (fun f g ↦ mono_tensorHom f g) X
 
 end TauCeti.PointedSSet

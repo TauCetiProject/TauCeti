@@ -50,18 +50,19 @@ end smash
 /-- Smash products of monomorphisms of pointed types are monomorphisms. -/
 instance mono_tensorHom (f : X ⟶ X') (g : Y ⟶ Y') [Mono f] [Mono g] :
     Mono (f ⊗ₘ g) := by
+  -- The forgetful functor is a right adjoint, so it preserves the monos whose
+  -- underlying injectivity is used below.
   let := typeToPointedForgetAdjunction.{u}.isRightAdjoint
   exact ConcreteCategory.mono_of_injective _ (smash.map_injective f g
     (injective_of_mono ((forget Pointed).map f))
     (injective_of_mono ((forget Pointed).map g)))
 
 /-- Smashing on the left with a pointed type preserves monomorphisms. -/
-instance (X : Pointed.{u}) : (tensorLeft X).PreservesMonomorphisms where
-  preserves f _ := by
-    simpa using (inferInstance : Mono (𝟙 X ⊗ₘ f))
+instance (X : Pointed.{u}) : (tensorLeft X).PreservesMonomorphisms :=
+  TauCeti.tensorLeft_preservesMonomorphisms (fun f g ↦ mono_tensorHom f g) X
 
 /-- Smashing on the right with a pointed type preserves monomorphisms. -/
 instance (X : Pointed.{u}) : (tensorRight X).PreservesMonomorphisms :=
-  Functor.PreservesMonomorphisms.of_iso (BraidedCategory.tensorLeftIsoTensorRight X)
+  TauCeti.tensorRight_preservesMonomorphisms (fun f g ↦ mono_tensorHom f g) X
 
 end Pointed
