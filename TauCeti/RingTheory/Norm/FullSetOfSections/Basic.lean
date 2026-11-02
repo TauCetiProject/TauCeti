@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.RingTheory.NormTrace.BaseChange
 public import TauCeti.RingTheory.NormTrace.Pi
-public import TauCeti.RingTheory.NormTrace.Prod
 public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -82,8 +81,6 @@ In the remaining results, `B` is free of finite rank over `A`.
   has exactly `rank B` members.
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
   of the constant scheme `⨆_{i ∈ ι} Spec A`, form a full set of sections.
-* `TauCeti.IsFullSetOfSections.prod`: full sets of sections of `B₁` and `B₂` together form one of
-  `B₁ × B₂` (Katz–Mazur 1.8.4).
 * `TauCeti.IsFullSetOfSections.tensorProduct`: full sets of sections `s₁` of `B₁` and `s₂` of
   `B₂` give the full set of sections `x ⊗ y ↦ s₁ᵢ(x) s₂ⱼ(y)` of `B₁ ⊗[A] B₂`, the coordinate ring
   of the fibre product `Spec B₁ ×_{Spec A} Spec B₂`.
@@ -428,23 +425,6 @@ theorem isFullSetOfSections_evalAlgHom :
   induction f using TensorProduct.inductionOn with
   | tmul t y => simp [Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [map_add, Pi.add_apply, hx, hy]
-
-/-- **Disjoint unions** (Katz–Mazur 1.8.4). If `s₁` and `s₂` are full sets of sections of `B₁`
-and `B₂`, then their composites with the two projections together form a full set of sections of
-`B₁ × B₂`. -/
-theorem IsFullSetOfSections.prod {B₁ B₂ : Type*} [CommRing B₁] [Algebra A B₁] [CommRing B₂]
-    [Algebra A B₂] [Module.Free A B₁] [Module.Finite A B₁] [Module.Free A B₂]
-    [Module.Finite A B₂] {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] {s₁ : ι₁ → B₁ →ₐ[A] A}
-    {s₂ : ι₂ → B₂ →ₐ[A] A} (h₁ : IsFullSetOfSections s₁) (h₂ : IsFullSetOfSections s₂) :
-    IsFullSetOfSections (Sum.elim (fun i ↦ (s₁ i).comp (AlgHom.fst A B₁ B₂))
-      fun i ↦ (s₂ i).comp (AlgHom.snd A B₁ B₂)) := by
-  intro T _ _ _ f
-  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.prodRight A T T B₁ B₂),
-    Algebra.norm_prod, h₁.norm_eq, h₂.norm_eq, Fintype.prod_sum_type]
-  congr 1 <;> refine Finset.prod_congr rfl fun i _ ↦ ?_ <;>
-  induction f using TensorProduct.inductionOn with
-  | tmul t y => simp
-  | add x y hx hy => simp only [map_add, Prod.fst_add, Prod.snd_add, hx, hy]
 
 section TensorProduct
 
