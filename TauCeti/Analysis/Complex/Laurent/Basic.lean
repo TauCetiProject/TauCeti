@@ -95,10 +95,15 @@ theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}
   rw [circleIntegral.integral_add (hf.sub_zpow_smul (-n - 1) hc)
     (hg.sub_zpow_smul (-n - 1) hc), smul_add]
 
-/-- The Cauchy estimate for any integer Laurent coefficient, including negative degrees. -/
-theorem norm_circleLaurentCoeff_le {f : ℂ → E} {c : ℂ} {R M : ℝ} (hR : 0 < R)
+/-- The Cauchy estimate for any integer Laurent coefficient, including negative degrees
+and the degenerate circle of radius zero. -/
+theorem norm_circleLaurentCoeff_le {f : ℂ → E} {c : ℂ} {R M : ℝ} (hR : 0 ≤ R)
     (hf : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (n : ℤ) :
     ‖circleLaurentCoeff f c R n‖ ≤ M * R ^ (-n) := by
+  rcases hR.eq_or_lt with (rfl | hR)
+  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero,
+      norm_zero]
+    exact mul_nonneg ((norm_nonneg _).trans (hf c (by simp))) (zpow_nonneg le_rfl _)
   have hp : R * R ^ (-n - 1) = R ^ (-n) := by
     calc
       R * R ^ (-n - 1) = R ^ (1 : ℤ) * R ^ (-n - 1) := by rw [zpow_one]
@@ -137,7 +142,7 @@ theorem circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable
 variable [CompleteSpace E]
 
 /-- A Laurent monomial has precisely its prescribed coefficient, in every integer degree. -/
-@[simp] theorem circleLaurentCoeff_zpow_smul (a : E) (c : ℂ) {R : ℝ} (hR : 0 < R)
+@[simp] theorem circleLaurentCoeff_sub_zpow_smul (a : E) (c : ℂ) {R : ℝ} (hR : 0 < R)
     (m n : ℤ) :
     circleLaurentCoeff (fun z => (z - c) ^ m • a) c R n = if n = m then a else 0 := by
   have heq : (∮ z in C(c, R), (z - c) ^ (-n - 1) • (z - c) ^ m • a) =
