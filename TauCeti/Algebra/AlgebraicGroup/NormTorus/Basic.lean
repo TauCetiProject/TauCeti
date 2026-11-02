@@ -17,8 +17,11 @@ Let `k'` be a commutative `k`-algebra that is free of finite rank `d` as a `k`-m
 the Weil restriction `Res_{k'/k} 𝔾ₘ` over a commutative `k`-algebra `R` are the units of
 `k' ⊗[k] R` (`TauCeti.Algebra.WeilRestriction.multiplicativeGroupPoints`). The norm of the free
 `R`-algebra `R ⊗[k] k'` of rank `d` gives a homomorphism `Nm : (k' ⊗[k] R)ˣ →* Rˣ`, natural in `R`:
-this is the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ` on points, and its kernel is the group of points
-of the norm-one torus `R^1_{k'/k} 𝔾ₘ`. For `ℂ/ℝ` on real points it is `z ↦ z * conj z`.
+this is the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ` on points. Its kernel is the group of points of
+the norm kernel `R_{k'/k}^1 𝔾ₘ`; when `k'/k` is a finite separable field extension (more generally,
+`k'` is finite étale over `k`) this is the norm-one torus, but in general it need not be a torus:
+for `k' = k[ε]/(ε²)` over a field `k` of characteristic zero it contains a copy `a ↦ 1 + aε` of
+the additive group `𝔾ₐ`. For `ℂ/ℝ` on real points the norm is `z ↦ z * conj z`.
 
 This file defines the norm on points and its kernel, computes the norm on the diagonal
 `Rˣ → (k' ⊗[k] R)ˣ` and on the units of `k'`, and proves its naturality in `R`. By the Yoneda
@@ -31,7 +34,8 @@ along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ
 
 * `TauCeti.NormTorus.norm k k' R`: the norm `(k' ⊗[k] R)ˣ →* Rˣ`, the algebra norm of
   `R ⊗[k] k'` over `R` after commuting the tensor factors.
-* `TauCeti.NormTorus.normOne k k' R`: its kernel, the points of the norm-one torus over `R`.
+* `TauCeti.NormTorus.normOne k k' R`: its kernel, the points over `R` of the norm kernel, which is
+  the norm-one torus when `k'/k` is finite separable.
 * `TauCeti.NormTorus.normHom k k'`: the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`, as a `k`-algebra map
   of coordinate algebras.
 * `TauCeti.NormTorus.diagonalRootsOfUnity k k' R n`: the image of `μ_n(R)` in `μ_n(k' ⊗[k] R)`.
@@ -44,7 +48,7 @@ along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ
 * `TauCeti.NormTorus.norm_eq_normUnits`: on `k`-points, the norm is the norm of `k'` over `k`.
 * `TauCeti.NormTorus.norm_unitsMap_lTensor`: the norm is natural in the coefficient algebra `R`.
 * `TauCeti.NormTorus.norm_self`: for the trivial extension `k' = k` the norm is the identity, so
-  the norm-one torus is trivial (`TauCeti.NormTorus.normOne_self`).
+  the norm kernel is trivial (`TauCeti.NormTorus.normOne_self`).
 * `TauCeti.NormTorus.pointsMulEquiv_comp_normHom`: on points, `normHom` induces `norm`.
 
 ## References
@@ -156,8 +160,10 @@ section NormOne
 
 variable (k k' R)
 
-/-- **The points of the norm-one torus.** The kernel of the norm `(k' ⊗[k] R)ˣ →* Rˣ`: the group
-of points over `R` of the norm-one torus `R^1_{k'/k} 𝔾ₘ`. -/
+/-- **The points of the norm kernel.** The kernel of the norm `(k' ⊗[k] R)ˣ →* Rˣ`: the group of
+points over `R` of the kernel `R_{k'/k}^1 𝔾ₘ` of the norm morphism. When `k'/k` is a finite
+separable field extension (or `k'` is finite étale over `k`) this is the norm-one torus; in general
+it need not be a torus. -/
 noncomputable def normOne : Subgroup (k' ⊗[k] R)ˣ :=
   (norm k k' R).ker
 
@@ -176,7 +182,7 @@ theorem unitsMap_lTensor_mem_normOne [Module.Free k k'] [Module.Finite k k'] {R'
   rw [mem_normOne] at hu ⊢
   rw [norm_unitsMap_lTensor, hu, map_one]
 
-/-- For `k'` free of rank `d` over `k`, a unit `r` of `R` lies in the norm-one torus through the
+/-- For `k'` free of rank `d` over `k`, a unit `r` of `R` lies in the norm kernel through the
 diagonal `r ↦ 1 ⊗ r` exactly when `r ^ d = 1`. -/
 theorem unitsMap_includeRight_mem_normOne_iff [Module.Free k k'] {r : Rˣ} :
     Units.map (Algebra.TensorProduct.includeRight : R →ₐ[k] k' ⊗[k] R) r ∈ normOne k k' R ↔
@@ -184,7 +190,7 @@ theorem unitsMap_includeRight_mem_normOne_iff [Module.Free k k'] {r : Rˣ} :
   rw [mem_normOne, norm_unitsMap_includeRight]
 
 variable (k R) in
-/-- For the trivial extension `k' = k` the norm-one torus is trivial. -/
+/-- For the trivial extension `k' = k` the norm kernel is trivial. -/
 @[simp]
 theorem normOne_self : normOne k k R = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).2 fun u hu ↦ ?_
@@ -207,6 +213,14 @@ noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k
 
 variable {k k'}
 
+/-- The point `g ∘ laurentEval u` of `𝔾ₘ` is the image of the unit `u` under `g`. -/
+private theorem pointsMulEquiv_comp_laurentEval {A B : Type*} [CommRing A] [Algebra k A]
+    [CommRing B] [Algebra k B] (g : A →ₐ[k] B) (u : Aˣ) :
+    MultiplicativeGroup.pointsMulEquiv (toConv (g.comp (laurentEval (R := k) u))) =
+      Units.map (g : A →* B) u := by
+  rw [MultiplicativeGroup.pointsMulEquiv_apply, ofConv_toConv, comp_laurentEval,
+    laurentEvalEquiv_symm_laurentEval]
+
 /-- **The norm morphism on points.** For a point `f` of `Res_{k'/k} 𝔾ₘ` over a commutative
 `k`-algebra `R`, the point `f ∘ normHom` of `𝔾ₘ` is the norm of the unit of `k' ⊗[k] R`
 attached to `f`. -/
@@ -216,9 +230,8 @@ theorem pointsMulEquiv_comp_normHom
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
   -- `f` is the image of the universal point under `f`, so this is the naturality of the norm
   have hf : f = toConv (f.ofConv.comp (AlgHom.id k _)) := by rw [AlgHom.comp_id, toConv_ofConv]
-  rw [MultiplicativeGroup.pointsMulEquiv_apply, ofConv_toConv, normHom,
-    laurentEvalEquiv_symm_comp, ← laurentEvalEquiv_apply, Equiv.symm_apply_apply,
-    ← norm_unitsMap_lTensor, ← Algebra.WeilRestriction.multiplicativeGroupPoints_naturality, ← hf]
+  rw [normHom, pointsMulEquiv_comp_laurentEval, ← norm_unitsMap_lTensor,
+    ← Algebra.WeilRestriction.multiplicativeGroupPoints_naturality, ← hf]
 
 end NormHom
 
