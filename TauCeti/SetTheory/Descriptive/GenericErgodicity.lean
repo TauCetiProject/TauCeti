@@ -26,9 +26,9 @@ ergodicity and its main consequence.
   of `ℚ` in `ℝ`) form a generically ergodic equivalence relation.
 * **Non-smoothness.** On a nonempty Baire space, an equivalence relation with meagre classes for
   which the preimages of the measurable sets of the quotient σ-algebra are meagre or comeagre has a
-  quotient that is not countably separated: no countable family of invariant Borel sets separates
-  its classes. Countably many such sets are simultaneously constant on one comeagre set, which
-  then lies in a single class, while classes are meagre.
+  quotient that is not countably separated: no countable family of invariant measurable sets
+  separates its classes. Countably many such sets are simultaneously constant on one comeagre
+  set, which then lies in a single class, while classes are meagre.
 
 ## Main results
 
@@ -36,9 +36,9 @@ ergodicity and its main consequence.
   relation of a countable group acting topologically transitively by homeomorphisms.
 * `QuotientGroup.isMeagre_or_mem_residual_of_leftRel_invariant`: generic ergodicity of the
   relation of lying in the same left coset of a countable dense subgroup.
-* `Setoid.not_countablySeparated_quotient_of_isMeagre_or_mem_residual`: a generically ergodic
-  equivalence relation with meagre classes on a nonempty Baire space has a quotient that is not
-  countably separated.
+* `Setoid.not_countablySeparated_quotient_of_isMeagre_or_mem_residual`: an equivalence relation
+  with meagre classes on a nonempty Baire space, for which the preimage of every measurable set of
+  the quotient σ-algebra is meagre or comeagre, has a quotient that is not countably separated.
 
 ## References
 
