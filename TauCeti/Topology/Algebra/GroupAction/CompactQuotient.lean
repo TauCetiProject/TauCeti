@@ -37,10 +37,10 @@ namespace IsCompact
 
 /-- A compact set meeting every orbit makes the orbit quotient compact. No continuity of the
 action is required: the orbit projection is continuous for the quotient topology. -/
-@[to_additive compactSpace_addOrbitRelQuotient
+@[to_additive
   /-- A compact set meeting every additive orbit makes the orbit quotient compact. No continuity
   of the action is required: the orbit projection is continuous for the quotient topology. -/]
-theorem compactSpace_orbitRelQuotient {K : Set X} (hK : IsCompact K)
+theorem compactSpace_mulAction_orbitRel_quotient {K : Set X} (hK : IsCompact K)
     (hcover : ∀ x : X, ∃ g : G, g • x ∈ K) : CompactSpace (MulAction.orbitRel.Quotient G X) := by
   have himage : Quotient.mk (MulAction.orbitRel G X) '' K = univ := by
     apply eq_univ_of_forall
@@ -57,11 +57,11 @@ namespace TauCeti
 /-- For an action by homeomorphisms on a weakly locally compact space, the orbit quotient is
 compact exactly when a compact set meets every orbit. The set is not required to meet each orbit
 uniquely. -/
-@[to_additive compactSpace_addOrbitRelQuotient_iff
+@[to_additive
   /-- For an additive action by homeomorphisms on a weakly locally compact space, the orbit quotient
   is compact exactly when a compact set meets every orbit. The set is not required to meet each
   orbit uniquely. -/]
-theorem compactSpace_orbitRelQuotient_iff [ContinuousConstSMul G X]
+theorem compactSpace_mulAction_orbitRel_quotient_iff [ContinuousConstSMul G X]
     [WeaklyLocallyCompactSpace X] :
     CompactSpace (MulAction.orbitRel.Quotient G X) ↔
       ∃ K : Set X, IsCompact K ∧ ∀ x : X, ∃ g : G, g • x ∈ K := by
@@ -77,6 +77,6 @@ theorem compactSpace_orbitRelQuotient_iff [ContinuousConstSMul G X]
     obtain ⟨g, hg⟩ := MulAction.orbitRel_apply.mp (Quotient.exact hyx)
     exact ⟨g, by simpa only [hg] using hy⟩
   · rintro ⟨K, hK, hcover⟩
-    exact hK.compactSpace_orbitRelQuotient hcover
+    exact hK.compactSpace_mulAction_orbitRel_quotient hcover
 
 end TauCeti
