@@ -104,18 +104,21 @@ theorem eulerChar_forgetFG_eq_sum_finrank (K : CochainComplex (FGModuleCat.{v} R
 
 end Ring
 
-variable {R : Type u} [Ring R] [IsNoetherianRing R] (K : CochainComplex (FGModuleCat.{v} R) ℤ)
+variable {R : Type u} [Ring R] [IsNoetherianRing R]
 
 /-- Forgetting an `FGModuleCat` complex before taking homology does not change homology finrank. -/
 @[simp]
-theorem finrank_homology_forget (n : ℤ) :
+theorem finrank_homology_forget {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (FGModuleCat.{v} R) c) (i : ι) :
     Module.finrank R
-      ((((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj
-        K).homology n) =
-      Module.finrank R (K.homology n) :=
-  ((K.sc n).mapHomologyIso
+      ((((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj
+        K).homology i) =
+      Module.finrank R (K.homology i) :=
+  ((K.sc i).mapHomologyIso
     (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R))).toLinearEquiv.finrank_eq.trans
-    (FGModuleCat.finrank_forget₂_obj (K.homology n))
+    (FGModuleCat.finrank_forget₂_obj (K.homology i))
+
+variable (K : CochainComplex (FGModuleCat.{v} R) ℤ)
 
 /-- Mathlib's `finsum` homology Euler characteristic of a bounded complex of finitely generated
 modules is the honest finite sum of the finranks of its homology objects.  The homology on the
