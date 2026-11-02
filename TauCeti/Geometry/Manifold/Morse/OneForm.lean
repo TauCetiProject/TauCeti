@@ -215,7 +215,7 @@ theorem IsMorseOneForm.mpullback (hα : IsMorseOneForm α) (hπ : IsLocalDiffeom
 
 /-- **Morse one-forms descend along surjective local diffeomorphisms.** For a surjective smooth
 local diffeomorphism `π`, a one-form is Morse exactly when its pullback along `π` is. -/
-theorem _root_.IsLocalDiffeomorph.isMorseOneForm_mpullback_iff [FiniteDimensional ℝ E] [T2Space M]
+theorem _root_.IsLocalDiffeomorph.isMorseOneForm_mpullback_iff
     (hπ : IsLocalDiffeomorph I I ∞ π) (hsurj : Function.Surjective π) :
     IsMorseOneForm (TauCeti.mpullback I I π α) ↔ IsMorseOneForm α := by
   refine ⟨fun h ↦ ?_, fun hα ↦ hα.mpullback hπ⟩
@@ -227,14 +227,35 @@ theorem _root_.IsLocalDiffeomorph.isMorseOneForm_mpullback_iff [FiniteDimensiona
       ((isSmoothBundleForm_def 1 α).mpr (hsmooth.contMDiff.of_le (by simp))),
       h.mextDeriv_eq_zero, mpullback_zero]
   refine ⟨hsmooth, hclosed, fun y hy ↦ ?_⟩
-  -- Any local primitive `f` of `α` near `y = π x` lifts to a local primitive of the pullback,
+  -- For a local primitive `g` of the pullback near `x` and a local inverse `s` of `π`, `g ∘ s` is
+  -- a local primitive of `α` near `y = π x`. It lifts back to a local primitive of the pullback,
   -- which is nondegenerate at `x` because the pullback is Morse.
   obtain ⟨x, rfl⟩ := hsurj y
-  obtain ⟨f, -, U, hxU, hf⟩ := exists_contMDiff_isPrimitiveOn le_top hsmooth hclosed (π x)
-  refine ⟨f, U, hxU, hf, ((hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)).1 ?_⟩
+  have hx : TauCeti.mpullback I I π α x = 0 := ((hπ x).mpullback_apply_eq_zero_iff (by simp)).2 hy
+  obtain ⟨g, V, hxV, hg, -⟩ := h.exists_nondegenerate_primitive x hx
+  set s := (hπ x).localInverse
+  have hsx : s (π x) = x := (hπ x).localInverse_left_inv (hπ x).localInverse_mem_target
+  have hs (z : M) (hz : z ∈ s.source) : MDifferentiableAt I I s z :=
+    ((hπ x).contMDiffOn_localInverse.contMDiffAt
+      ((hπ x).localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
+  have hgs (z : M) (hz : s z ∈ V) : MDifferentiableAt I 𝓘(ℝ) g (s z) :=
+    (hg.mdifferentiableOn _ hz).mdifferentiableAt (hg.isOpen.mem_nhds hz)
+  have hf : IsPrimitiveOn α (g ∘ s) (s.source ∩ s ⁻¹' V) := by
+    refine ⟨(hπ x).contMDiffOn_localInverse.continuousOn.isOpen_inter_preimage
+      (hπ x).localInverse_open_source hg.isOpen,
+      fun z hz ↦ ((hgs z hz.2).comp z (hs z hz.1)).mdifferentiableWithinAt,
+      fun z ⟨hzs, hzV⟩ ↦ ?_⟩
+    have hid : π ∘ s =ᶠ[𝓝 z] id := eventuallyEq_of_mem
+      ((hπ x).localInverse_open_source.mem_nhds hzs) (hπ x).localInverse_eqOn_right
+    rw [← mpullback_mextDeriv_ofFunction_apply (hs z hzs) (hgs z hzV), ← mpullback_id α,
+      ← hid.mpullback_eq, mpullback_comp_at (hs z hzs) (hπ.mdifferentiable (by simp) _)]
+    ext v
+    rw [mpullback_apply, mpullback_apply, hg.mextDeriv_eq (s z) hzV]
+  have hxU : π x ∈ s.source ∩ s ⁻¹' V :=
+    ⟨(hπ x).localInverse_mem_source, by rwa [mem_preimage, hsx]⟩
+  refine ⟨g ∘ s, _, hxU, hf, ((hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)).1 ?_⟩
   exact h.isManifoldNondegenerateCriticalPoint
-    (hf.mpullback (hπ.contMDiff.mdifferentiable (by simp))) hxU
-    (((hπ x).mpullback_apply_eq_zero_iff (by simp)).2 hy)
+    (hf.mpullback (hπ.contMDiff.mdifferentiable (by simp))) hxU hx
 
 /-- **A lifted potential is Morse.** If `π` is a smooth local diffeomorphism, `α` is a Morse
 one-form and `g` is a smooth function with `dg = π^* α`, then `g` is a Morse function. -/
