@@ -49,11 +49,15 @@ node, that is, into a symmetry of the finite Dynkin diagram.
 ## Main definitions
 
 * `RootPairing.Base.affineCartanMatrix`: the untwisted affine Cartan matrix.
+* `RootPairing.Base.affineSimpleRootIndex`: the root index of the affine simple root at a node,
+  `αᵢ` at a simple node and `-θ` at the affine node.
 * `RootPairing.Base.affineMarks`: the marks, the coefficients of the null-root relation.
 * `RootPairing.Base.specialNodes`: the special nodes, those with mark `1`.
 
 ## Main results
 
+* `RootPairing.Base.affineCartanMatrix_apply`: the affine Cartan matrix is the matrix of Cartan
+  integers of the affine simple roots.
 * `RootPairing.Base.submatrix_affineCartanMatrix_some`: deleting the affine node recovers the
   finite Cartan matrix.
 * `RootPairing.Base.affineCartanMatrix_apply_same`,
@@ -168,6 +172,20 @@ theorem affineMarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsI
 
 /-! ### The affine Cartan matrix -/
 
+/-- The root index of the **affine simple root** at a node of the affine Dynkin diagram: the simple
+root `αᵢ` at a simple node `i`, and the negative `α₀ = -θ` of the highest root at the affine
+node. -/
+noncomputable def affineSimpleRootIndex : Option b.support → ι
+  | none => P.reflectionPerm b.highestRoot b.highestRoot
+  | some i => i
+
+@[simp]
+theorem affineSimpleRootIndex_none :
+    b.affineSimpleRootIndex none = P.reflectionPerm b.highestRoot b.highestRoot := (rfl)
+
+@[simp]
+theorem affineSimpleRootIndex_some (i : b.support) : b.affineSimpleRootIndex (some i) = i := (rfl)
+
 variable [P.IsCrystallographic]
 
 /-- **The untwisted affine Cartan matrix** of a base `b`: the matrix `(⟨αₖ, αₗ^∨⟩)` of the simple
@@ -210,6 +228,13 @@ theorem affineCartanMatrix_apply_same (k : Option b.support) : b.affineCartanMat
   cases k with
   | none => rfl
   | some i => simp
+
+/-- **The affine Cartan matrix is the matrix of Cartan integers `⟨αₖ, αₗ^∨⟩` of the affine simple
+roots**, with `α₀ = -θ` at the affine node. -/
+theorem affineCartanMatrix_apply (k l : Option b.support) :
+    b.affineCartanMatrix k l =
+      P.pairingIn ℤ (b.affineSimpleRootIndex k) (b.affineSimpleRootIndex l) := by
+  rcases k with _ | i <;> rcases l with _ | j <;> simp [affineCartanMatrix]
 
 section IsDomain
 
