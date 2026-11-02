@@ -10,7 +10,6 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
