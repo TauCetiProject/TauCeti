@@ -276,9 +276,8 @@ theorem Flat.of_subtype_rTensor_injective [IsNoetherianRing R] {S : Type*} [Comm
     rw [← rTensor_comp_apply, hcomp]
   -- Krull's intersection theorem for the finite `S`-module `M ⊗[R] J`, which `S` acts on through
   -- the left factor; it receives `t` through the symmetry of the tensor product.
-  have hcomm (n : ℕ) : TensorProduct.comm R J M t ∈ (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) := by
-    have := Submodule.mem_map_of_mem (f := (TensorProduct.comm R J M).toLinearMap) (hmem n)
-    rwa [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range] at this
+  have hcomm (n : ℕ) : TensorProduct.comm R J M t ∈ (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) :=
+    Submodule.smul_top_le_comap_smul_top _ (TensorProduct.comm R J M).toLinearMap (hmem n)
   set IS := I.map (algebraMap R S)
   have hle (n : ℕ) : (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) ≤
       (IS ^ n • (⊤ : Submodule S (M ⊗[R] J))).restrictScalars R := by

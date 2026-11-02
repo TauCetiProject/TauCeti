@@ -126,10 +126,9 @@ theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Subm
       (I • ⊤ : Submodule R (J ⊗[R] M)) := by
   rintro _ ⟨u, rfl⟩
   -- Transport the left-hand statement along the symmetry of the tensor product.
-  have h := mem_map_of_mem (f := ((TensorProduct.comm R J M).symm : M ⊗[R] J →ₗ[R] J ⊗[R] M))
-    (LinearMap.range_lTensor_inclusion_smul_le I J ⟨TensorProduct.comm R _ M u, rfl⟩)
-  rwa [map_smul'', map_top, LinearEquiv.range, LinearMap.lTensor_comm, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply] at h
+  rw [← (TensorProduct.comm R M _).apply_symm_apply u, LinearMap.rTensor_comm]
+  exact smul_top_le_comap_smul_top I (TensorProduct.comm R M J).toLinearMap
+    (LinearMap.range_lTensor_inclusion_smul_le I J ⟨_, rfl⟩)
 
 end Inclusion
 
