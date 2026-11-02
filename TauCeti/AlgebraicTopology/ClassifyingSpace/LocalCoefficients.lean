@@ -202,7 +202,7 @@ variable {X : ShortComplex (Rep.{u} k G)}
 associated local coefficient systems on Milnor's classifying space. -/
 theorem shortExact_map_classifyingSpaceLocalSystemFunctor (hX : X.ShortExact) :
     (X.map (classifyingSpaceLocalSystemFunctor k G)).ShortExact :=
-  IsQuotientCoveringMap.shortExact_map_associatedLocalSystemFunctor
+  IsQuotientCoveringMap.shortExact_associatedLocalSystem
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k hX

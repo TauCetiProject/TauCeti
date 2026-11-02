@@ -51,8 +51,6 @@ covering of the torus `E / L` by `E`.
   fibres.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
-* `IsQuotientCoveringMap.fiberEquivGroup_smul`: the identification of a fibre with the group is
-  equivariant.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
@@ -228,17 +226,6 @@ theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap 
     (s : Set E) : q '' (g • s) = q '' s := by
   rw [← Set.image_smul, Set.image_image]
   simp_rw [hq.map_smul]
-
-/-- The identification `IsQuotientCoveringMap.fiberEquivGroup e` of a fibre with the group is
-equivariant: it carries the translate `g • e'` to `g * h`, where `h` corresponds to `e'`. -/
-@[simp]
-theorem _root_.IsQuotientCoveringMap.fiberEquivGroup_smul (hq : IsQuotientCoveringMap q G)
-    {x : X} (e : q ⁻¹' {x}) (g : G) (e' : q ⁻¹' {x}) :
-    letI := hq.mulActionFiber x
-    hq.fiberEquivGroup e (g • e') = g * hq.fiberEquivGroup e e' := by
-  let := hq.mulActionFiber x
-  rw [IsQuotientCoveringMap.fiberEquivGroup_eq_iff, IsQuotientCoveringMap.coe_mulActionFiber_smul,
-    mul_smul, IsQuotientCoveringMap.fiberEquivGroup_smul_self]
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and

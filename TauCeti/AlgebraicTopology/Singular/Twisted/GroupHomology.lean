@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering
+public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
 public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
@@ -47,7 +47,7 @@ and the induced map on twisted homology corresponds to Mathlib's map
 
 The identification also respects the coefficient long exact sequences. A short exact sequence
 `0 ⟶ A₁ ⟶ A₂ ⟶ A₃ ⟶ 0` of representations gives a short exact sequence of associated local
-systems (`IsQuotientCoveringMap.shortExact_map_associatedLocalSystemFunctor`), whose connecting map
+systems (`IsQuotientCoveringMap.shortExact_associatedLocalSystem`), whose connecting map
 `Hₙ(B; A₃) ⟶ Hₘ(B; A₁)`, `m + 1 = n`, in twisted homology corresponds to Mathlib's connecting map
 `groupHomology.δ`
 (`IsQuotientCoveringMap.twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom`).
@@ -525,7 +525,7 @@ sequence of associated local systems. -/
 theorem groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv (n m : ℕ) (h : m + 1 = n) :
     groupHomology.δ hX n m h ≫ (hG.twistedHomologyIsoGroupHomology k X.X₁ m).inv =
       (hG.twistedHomologyIsoGroupHomology k X.X₃ n).inv ≫
-        (hG.shortExact_map_associatedLocalSystemFunctor k hX).twistedHomologyδ n m h := by
+        (hG.shortExact_associatedLocalSystem k hX).twistedHomologyδ n m h := by
   rw [twistedHomologyIsoGroupHomology_inv_eq_homologyMap,
     twistedHomologyIsoGroupHomology_inv_eq_homologyMap,
     ShortComplex.ShortExact.twistedHomologyδ_eq_δ]
@@ -547,7 +547,7 @@ theorem groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv (n m : ℕ) (h
         exact (chainsToTwisted_naturality hG k X.g).symm }
   exact HomologicalComplex.HomologySequence.δ_naturality ψ
     (groupHomology.map_chainsFunctor_shortExact hX)
-    ((hG.shortExact_map_associatedLocalSystemFunctor k hX).map_of_exact _) n m h
+    ((hG.shortExact_associatedLocalSystem k hX).map_of_exact _) n m h
 
 /-- **The identification of twisted homology with group homology respects the long exact
 sequences**: for the quotient covering map `p : E ⟶ B` of an action of `G` with contractible total
@@ -557,7 +557,7 @@ of the short exact sequence of associated local systems to Mathlib's connecting 
 `groupHomology.δ`. -/
 @[reassoc]
 theorem twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom (n m : ℕ) (h : m + 1 = n) :
-    (hG.shortExact_map_associatedLocalSystemFunctor k hX).twistedHomologyδ n m h ≫
+    (hG.shortExact_associatedLocalSystem k hX).twistedHomologyδ n m h ≫
         (hG.twistedHomologyIsoGroupHomology k X.X₁ m).hom =
       (hG.twistedHomologyIsoGroupHomology k X.X₃ n).hom ≫ groupHomology.δ hX n m h :=
   (Iso.inv_comp_eq _).1 <| (Category.assoc _ _ _).symm.trans

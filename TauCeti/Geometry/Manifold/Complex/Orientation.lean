@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.RestrictScalars
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Analysis.Calculus.TangentCone.Chart
@@ -46,6 +47,15 @@ orientation is natural: it is the pullback of the canonical orientation of the t
 local biholomorphism. Applied to the inclusion of an open subset, this says that the canonical
 orientation restricts to open submanifolds.
 
+The product `M × M'` of complex manifolds modelled on `𝓘(ℂ, E)` and `𝓘(ℂ, E')` is modelled on
+`𝓘(ℂ, E).prod 𝓘(ℂ, E')` rather than on `𝓘(ℂ, E × E')`, so its orientation is the ordered product
+`Manifold.Orientation.prod` of the canonical orientations of the factors, `M` before `M'`. This
+product orientation is the canonical one: the derivative of every product `Prod.map e e'` of
+holomorphic charts carries it to the canonical real orientation of `E × E'`
+(`TauCeti.map_orientationAt_prod_complexManifoldOrientation`), and this property of the preferred
+product charts characterizes it (`TauCeti.eq_prod_complexManifoldOrientation_iff`). The linear
+input is `TauCeti.prod_complexOrientation`.
+
 ## Main declarations
 
 * `TauCeti.orientationPreservingOn_iff_det_fderiv_ne_zero`: a holomorphic map preserves the real
@@ -65,6 +75,10 @@ orientation restricts to open submanifolds.
 * `TauCeti.complexManifoldOrientation_opens_eq_pullback`: the canonical orientation of an open
   subset is the restriction of the canonical orientation of the ambient manifold, that is, its
   pullback along the inclusion.
+* `TauCeti.map_orientationAt_prod_complexManifoldOrientation`: products of holomorphic charts carry
+  the product of canonical orientations to the canonical orientation of the product model.
+* `TauCeti.eq_prod_complexManifoldOrientation_iff`: this property of the preferred product charts
+  characterizes the product of canonical orientations.
 
 ## Implementation notes
 
@@ -328,5 +342,93 @@ theorem complexManifoldOrientation_opens_eq_pullback {U : TopologicalSpace.Opens
     (hι : Fintype.card (Fin (2 * finrank ℂ E)) = finrank ℝ E) :
     complexManifoldOrientation E U = (complexManifoldOrientation E M).pullback hf' hdf hι :=
   isLocalDiffeomorph_subtype_val.complexManifoldOrientation_eq_pullback 1 hf' hdf hι
+
+/-! ### Products -/
+
+section Prod
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace E' M'] [IsManifold 𝓘(ℂ, E') 1 M']
+
+/-- The derivative at `x` of a product `Prod.map e e'` of charts of the maximal holomorphic atlases,
+represented by a real continuous linear equivalence `L`, carries the ordered product of the
+canonical orientations of `M` and `M'` to the canonical real orientation of the product model
+`E × E'`. -/
+theorem map_orientationAt_prod_complexManifoldOrientation (n : ℕ∞ω) [NeZero n]
+    {e : OpenPartialHomeomorph M E} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) n M)
+    {e' : OpenPartialHomeomorph M' E'} (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℂ, E') n M')
+    {x : M × M'} (hx : x.1 ∈ e.source) (hx' : x.2 ∈ e'.source)
+    (L : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, E')) x ≃L[ℝ] E × E')
+    (hL : (L : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, E')) x →L[ℝ] E × E') =
+      mfderiv (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (Prod.map e e') x) :
+    Orientation.map _ L.toLinearEquiv
+        (((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M')).orientationAt
+          x) =
+      Orientation.reindex ℝ (E × E') (finCongr (by rw [finrank_prod]; ring))
+        (complexOrientation (E × E')) := by
+  have hn : (1 : ℕ∞ω) ≤ n := ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n)
+  have he₁ := IsManifold.maximalAtlas_subset_of_le hn he
+  have he₁' := IsManifold.maximalAtlas_subset_of_le hn he'
+  obtain ⟨L₁, hL₁, h₁⟩ := exists_map_orientationAt_complexManifoldOrientation he₁ hx
+  obtain ⟨L₂, hL₂, h₂⟩ := exists_map_orientationAt_complexManifoldOrientation he₁' hx'
+  -- The derivative of `Prod.map e e'` is the product of the derivatives of `e` and `e'`.
+  have hLeq : L = L₁.prodCongr L₂ := by
+    refine ContinuousLinearEquiv.coe_injective ?_
+    rw [hL, mfderiv_prodMap (mdifferentiableAt_of_mem_maximalAtlas
+        (IsManifold.maximalAtlas_subset_restrictScalars ℝ he₁) hx)
+      (mdifferentiableAt_of_mem_maximalAtlas
+        (IsManifold.maximalAtlas_subset_restrictScalars ℝ he₁') hx'), ← hL₁, ← hL₂]
+    exact (ContinuousLinearEquiv.coe_prodCongr L₁ L₂).symm
+  have key : Orientation.map _ (L₁.prodCongr L₂).toLinearEquiv
+      (((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M')).orientationAt
+        x) = Orientation.reindex ℝ (E × E') (finCongr (by rw [finrank_prod]; ring))
+          (complexOrientation (E × E')) := by
+    -- `ContinuousLinearEquiv.prodCongr` is built from `LinearEquiv.prodCongr`.
+    have hprod : (L₁.prodCongr L₂).toLinearEquiv =
+        L₁.toLinearEquiv.prodCongr L₂.toLinearEquiv := rfl
+    rw [Manifold.Orientation.orientationAt_prod, hprod, Orientation.map_prod, h₁, h₂]
+    exact prod_complexOrientation
+  rw [hLeq]
+  exact key
+
+/-- A manifold orientation of a product of complex manifolds is the ordered product of their
+canonical orientations exactly when, at every point `x`, the derivative of the preferred product
+chart `Prod.map (chartAt E x.1) (chartAt E' x.2)` carries it to the canonical real orientation of
+the product model `E × E'`. -/
+theorem eq_prod_complexManifoldOrientation_iff
+    (o : Manifold.Orientation (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (M × M')
+      (Fin (2 * finrank ℂ E + 2 * finrank ℂ E'))) :
+    o = (complexManifoldOrientation E M).prod (complexManifoldOrientation E' M') ↔
+      ∀ x : M × M', ∃ L : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, E')) x ≃L[ℝ] E × E',
+        (L : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, E')) x →L[ℝ] E × E') =
+          mfderiv (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (𝓘(ℝ, E).prod 𝓘(ℝ, E'))
+            (Prod.map (chartAt E x.1) (chartAt E' x.2)) x ∧
+        Orientation.map _ L.toLinearEquiv (o.orientationAt x) =
+          Orientation.reindex ℝ (E × E') (finCongr (by rw [finrank_prod]; ring))
+            (complexOrientation (E × E')) := by
+  have hmem (x : M × M') :=
+    map_orientationAt_prod_complexManifoldOrientation 1 (IsManifold.chart_mem_maximalAtlas x.1)
+      (IsManifold.chart_mem_maximalAtlas x.2) (mem_chart_source E x.1) (mem_chart_source E' x.2)
+  constructor
+  · rintro rfl x
+    obtain ⟨L₁, hL₁, -⟩ := (eq_complexManifoldOrientation_iff (complexManifoldOrientation E M)).1
+      rfl x.1
+    obtain ⟨L₂, hL₂, -⟩ :=
+      (eq_complexManifoldOrientation_iff (complexManifoldOrientation E' M')).1 rfl x.2
+    let L : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, E')) x ≃L[ℝ] E × E' := L₁.prodCongr L₂
+    have hL : (L : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, E')) x →L[ℝ] E × E') =
+          mfderiv (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (𝓘(ℝ, E).prod 𝓘(ℝ, E'))
+            (Prod.map (chartAt E x.1) (chartAt E' x.2)) x := by
+      rw [mfderiv_prodMap (mdifferentiableAt_atlas (chart_mem_atlas E x.1)
+          (mem_chart_source E x.1)) (mdifferentiableAt_atlas (chart_mem_atlas E' x.2)
+          (mem_chart_source E' x.2)), ← hL₁, ← hL₂]
+      exact ContinuousLinearEquiv.coe_prodCongr L₁ L₂
+    exact ⟨L, hL, hmem x L hL⟩
+  · intro h
+    ext x
+    obtain ⟨L, hL, hmap⟩ := h x
+    exact (Orientation.map _ L.toLinearEquiv).injective (hmap.trans (hmem x L hL).symm)
+
+end Prod
 
 end TauCeti
