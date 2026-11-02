@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Polynomial.Degree.Lemmas
 import Mathlib.Algebra.Polynomial.Derivative
-import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
 # Derivations vanish on algebraic elements in characteristic zero
