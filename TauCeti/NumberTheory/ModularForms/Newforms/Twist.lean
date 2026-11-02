@@ -385,6 +385,7 @@ theorem primitiveTwistLevel_primitiveTwist_inv [NeZero M] (f : Newform N k)
 
 /-- **Twisting back**: the primitive twist by `ψ⁻¹` of the primitive twist of `f` by `ψ` is `f`.
 -/
+@[simp high]
 theorem coe_primitiveTwist_primitiveTwist_inv [NeZero M] (f : Newform N k)
     (ψ : DirichletCharacter ℂ M) :
     ⇑((f.primitiveTwist ψ).primitiveTwist ψ⁻¹).toCuspForm = ⇑f.toCuspForm := by
