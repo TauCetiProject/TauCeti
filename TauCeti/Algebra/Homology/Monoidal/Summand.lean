@@ -28,6 +28,8 @@ evaluation on pure tensors, `HomologicalComplex.ι_tensorHom_apply`, is specific
 ## Main results
 
 * `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
+* `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
+  of morphisms vanishes when either factor does.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
@@ -70,6 +72,25 @@ lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ �
       (f₁.f i₁ ⊗ₘ f₂.f i₂) ≫ ιTensorObj L₁ L₂ i₁ i₂ j h := by
   refine (ι_mapBifunctorMap _ _ _ _ _ _ _ _).trans ?_
   simp [tensorHom_def]
+
+/-- The tensor product of homological complexes of the zero morphism with any morphism is zero. -/
+@[simp]
+lemma zero_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₂ : K₂ ⟶ L₂)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
+    tensorHom (0 : K₁ ⟶ L₁) f₂ = 0 := by
+  ext j : 1
+  refine mapBifunctor.hom_ext fun i₁ i₂ h ↦ ?_
+  rw [ι_mapBifunctorMap, zero_f, Functor.map_zero, NatTrans.app_zero, zero_comp, zero_f,
+    comp_zero]
+
+/-- The tensor product of homological complexes of any morphism with the zero morphism is zero. -/
+@[simp]
+lemma tensorHom_zero {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
+    tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 := by
+  ext j : 1
+  refine mapBifunctor.hom_ext fun i₁ i₂ h ↦ ?_
+  rw [ι_mapBifunctorMap, zero_f, Functor.map_zero, zero_comp, comp_zero, zero_f, comp_zero]
 
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
