@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.Projection
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
-public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Trans
-public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.Deriv.EqLine
+import TauCeti.Geometry.Manifold.SmoothEmbedding.EqLine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 
 /-!
@@ -69,67 +69,6 @@ open Function Module Set Topology Filter Manifold
 open scoped Manifold ContDiff
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- An injective `C^n` immersion of the line, `1 ≤ n`, which is an affine line outside a compact
-set, is a smooth embedding: it is proper, so
-`Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap` applies. -/
-private theorem isSmoothEmbedding_of_eq_line {n : ℕ∞ω} (hn : 1 ≤ n) {f : ℝ → V}
-    (hf : ContDiff ℝ n f) (hinj : Injective f) {f' : ℝ → V} (hder : ∀ s, HasDerivAt f (f' s) s)
-    (hf' : ∀ s, f' s ≠ 0) {p e : V} (he : e ≠ 0) {R : ℝ}
-    (hline : ∀ s, R ≤ |s| → f s = p + s • e) :
-    IsSmoothEmbedding 𝓘(ℝ) 𝓘(ℝ, V) n f := by
-  refine (isImmersion_iff_forall_isImmersionAt.2 fun s => ?_).isSmoothEmbedding_of_isProperMap
-    hinj ?_
-  · refine (hf.contDiffOn.isImmersionAt_iff_injective_fderiv isOpen_univ (mem_univ s) hn).2 ?_
-    rw [(hder s).hasFDerivAt.fderiv]
-    intro a b hab
-    exact smul_left_injective ℝ (hf' s) (by simpa using hab)
-  · rw [isProperMap_iff_isCompact_preimage]
-    refine ⟨hf.continuous, fun K hK => ?_⟩
-    obtain ⟨C, hC⟩ := hK.isBounded.exists_norm_le
-    refine Metric.isCompact_of_isClosed_isBounded (hK.isClosed.preimage hf.continuous) ?_
-    rw [Metric.isBounded_iff_subset_closedBall 0]
-    refine ⟨max R ((C + ‖p‖) / ‖e‖), fun s hs => ?_⟩
-    rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs]
-    by_contra! hlt
-    have hfs : ‖p + s • e‖ ≤ C := hline s ((le_max_left _ _).trans hlt.le) ▸ hC _ hs
-    have hse : ‖s • e‖ ≤ ‖p + s • e‖ + ‖p‖ := by
-      simpa using norm_sub_le (p + s • e) p
-    rw [norm_smul, Real.norm_eq_abs] at hse
-    have := (div_lt_iff₀ (norm_pos_iff.2 he)).1 ((le_max_right _ _).trans_lt hlt)
-    linarith
-
-omit [FiniteDimensional ℝ V] in
-/-- A map which is the affine line `s ↦ p + s • e` for `|s| ≥ R` has velocity `e` for `|s| > R`. -/
-private theorem hasDerivAt_of_eq_line {f : ℝ → V} {p e : V} {R : ℝ}
-    (hline : ∀ s, R ≤ |s| → f s = p + s • e) {s : ℝ} (hs : R < |s|) : HasDerivAt f e s := by
-  have hl : HasDerivAt (fun s : ℝ => p + s • e) e s := by
-    simpa using ((hasDerivAt_id s).smul_const e).const_add p
-  refine hl.congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_lt continuous_const continuous_abs).mem_nhds hs] with x hx
-  exact hline x hx.le
-
-omit [FiniteDimensional ℝ V] in
-/-- Moving an arc by multiples of a direction `d` on none of its secant lines keeps it injective:
-`s ↦ γ s - ψ (γ s - p) • d` is injective for every linear form `ψ`. -/
-private theorem injective_sub_smul {γ : ℝ → V} {p d : V}
-    (hsec : ∀ s s' (c : ℝ), γ s - γ s' = c • d → s = s') (ψ : V →L[ℝ] ℝ) :
-    Injective fun s => γ s - ψ (γ s - p) • d := by
-  intro s s' h
-  dsimp only at h
-  refine hsec s s' (ψ (γ s - p) - ψ (γ s' - p)) ?_
-  calc γ s - γ s' = (γ s - ψ (γ s - p) • d) - (γ s' - ψ (γ s' - p) • d) +
-        (ψ (γ s - p) - ψ (γ s' - p)) • d := by
-        rw [sub_smul]
-        abel
-    _ = _ := by rw [h, sub_self, zero_add]
-
-omit [FiniteDimensional ℝ V] in
-/-- The velocity of the arc `s ↦ γ s - ψ (γ s - p) • d` moved by multiples of `d`. -/
-private theorem hasDerivAt_sub_smul {γ : ℝ → V} {γ' : V} {s : ℝ} (hγ : HasDerivAt γ γ' s)
-    (p d : V) (ψ : V →L[ℝ] ℝ) :
-    HasDerivAt (fun s => γ s - ψ (γ s - p) • d) (γ' - ψ γ' • d) s :=
-  hγ.sub ((ψ.hasFDerivAt.comp_hasDerivAt s (hγ.sub_const p)).smul_const d)
 
 /-- **The projection motion.** If `d` is on no secant line and no tangent line of the arc `γ`, then
 `u ↦ γ - u • φ (γ - p) • d` is a smooth isotopy from `γ` to its projection `g` along `d` onto the
