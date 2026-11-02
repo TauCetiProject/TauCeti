@@ -252,15 +252,7 @@ theorem brauerCohomologyEquiv_symm_unitsContinuousH2Congr
   rw [AddEquiv.symm_apply_eq, brauerCohomologyEquiv_uliftEquiv, ofMul_toMul,
     AddEquiv.apply_symm_apply]
 
-/-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
-does not find this within its default budget, so it is assembled here from the Krull topology
-being Hausdorff, as in `TauCeti.Algebra.CrossedProduct.Comparison`. -/
-local instance locallyCompactSpace_absoluteGaloisGroup_uliftBaseChange {F : Type*} [Field F] :
-    LocallyCompactSpace (AbsoluteGaloisGroup F) :=
-  have : R1Space (AbsoluteGaloisGroup F) := @T2Space.r1Space _ _ krullTopology_t2
-  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup F) :=
-    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
-  WeaklyLocallyCompactSpace.locallyCompactSpace
+attribute [local instance] locallyCompactSpace_absoluteGaloisGroup
 
 variable [Invertible (2 : K)] [Invertible (2 : ULift.{w} K)]
 
@@ -271,7 +263,7 @@ variable [Invertible (2 : K)] [Invertible (2 : ULift.{w} K)]
 @[simp]
 theorem brauer2EquivH2_twoTorsionUliftEquiv (x : BrauerGroup.twoTorsion K) :
     brauer2EquivH2 (ULift.{w} K)
-        (Additive.ofMul (BrauerGroup.twoTorsionUliftEquiv.{u, w} x)) =
+        (Additive.ofMul (BrauerGroup.twoTorsionUliftEquiv.{u, w} K x)) =
       trivialF2Map2Equiv (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr
         (brauer2EquivH2 K (Additive.ofMul x)) := by
   apply h2MuToUnits_injective (ULift.{w} K)
@@ -289,7 +281,7 @@ theorem brauer2EquivH2_symm_trivialF2Map2Equiv
         (trivialF2Map2Equiv (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr
           y) =
       Additive.ofMul
-        (BrauerGroup.twoTorsionUliftEquiv.{u, w} ((brauer2EquivH2 K).symm y).toMul) := by
+        (BrauerGroup.twoTorsionUliftEquiv.{u, w} K ((brauer2EquivH2 K).symm y).toMul) := by
   rw [AddEquiv.symm_apply_eq, brauer2EquivH2_twoTorsionUliftEquiv, ofMul_toMul,
     AddEquiv.apply_symm_apply]
 

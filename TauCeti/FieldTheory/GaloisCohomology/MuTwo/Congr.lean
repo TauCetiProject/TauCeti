@@ -49,23 +49,8 @@ namespace RingEquiv
 
 universe u v
 
-attribute [local instance] TopRep.distribMulAction
-
-/-- The trivial `𝔽₂` coefficients are a discrete module. -/
-local instance continuousSMul_trivialF2_muTwoCongr (G : Type*) [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] :
-    ContinuousSMul G (trivialF2 G).V :=
-  (isSmoothDiscrete_trivialF2 G).continuousSMul
-
-/-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
-does not find this within its default budget, so it is assembled here from the Krull topology
-being Hausdorff, as in `TauCeti.FieldTheory.GaloisCohomology.Congr`. -/
-local instance locallyCompactSpace_absoluteGaloisGroup_muTwoCongr {F : Type*} [Field F] :
-    LocallyCompactSpace (AbsoluteGaloisGroup F) :=
-  have : R1Space (AbsoluteGaloisGroup F) := @T2Space.r1Space _ _ krullTopology_t2
-  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup F) :=
-    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
-  WeaklyLocallyCompactSpace.locallyCompactSpace
+attribute [local instance] TopRep.distribMulAction continuousSMul_trivialF2_mapDegreeTwo
+  locallyCompactSpace_absoluteGaloisGroup
 
 section Field
 
@@ -73,30 +58,17 @@ variable (K : Type u) [Field K] [Invertible (2 : K)]
 
 /-- The coefficient map `𝔽₂ ≃ μ₂ ⊆ (Kˢ)ˣ` underlying `TauCeti.h2MuToUnits K`. -/
 private def mu2ToUnits : (trivialF2 (AbsoluteGaloisGroup K)).V →+ UnitsCoeff K :=
-  (kummerCoeffIncl K 2).comp (kummerCoeffEquiv K).symm.toAddMonoidHom
+  (kummerCoeffIncl K 2).comp (trivialF2ToMu2 K).toAddMonoidHom
 
 private theorem mu2ToUnits_apply (m : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    mu2ToUnits K m = kummerCoeffIncl K 2 ((kummerCoeffEquiv K).symm m) :=
+    mu2ToUnits K m = kummerCoeffIncl K 2 (trivialF2ToMu2 K m) :=
   (rfl)
 
 private theorem mu2ToUnits_smul (g : AbsoluteGaloisGroup K)
     (m : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    mu2ToUnits K (ContinuousMonoidHom.id _ g • m) = g • mu2ToUnits K m := by
-  simp only [ContinuousMonoidHom.coe_id, id_eq, TopRep.distribMulAction_smul,
-    trivialF2_ρ_apply_apply, mu2ToUnits_apply]
-  rw [← kummerCoeffIncl_equivariant, mu2_smul_eq_self]
-
-/-- The coefficient map sends `0` to `1` and the nontrivial element of `𝔽₂` to `-1`. -/
-private theorem toMul_mu2ToUnits (m : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    ((mu2ToUnits K m).toMul : SeparableClosure K) =
-      if trivialF2Equiv (AbsoluteGaloisGroup K) m = 0 then 1 else -1 := by
-  rw [mu2ToUnits_apply, kummerCoeffEquiv_symm_apply, toMul_kummerCoeffIncl]
-  generalize trivialF2Equiv (AbsoluteGaloisGroup K) m = z
-  rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) z with rfl | rfl
-  · simp
-  · rw [← mu2EquivZMod2_apply_mu2NegOne (K := K), AddEquiv.symm_apply_apply, toMul_mu2NegOne,
-      mu2EquivZMod2_apply_mu2NegOne, ite_eq_right_of_eq_false _ _ (eq_false one_ne_zero),
-      Units.val_neg, Units.val_one]
+    mu2ToUnits K (ContinuousMonoidHom.id _ g • m) = g • mu2ToUnits K m :=
+  (congrArg (kummerCoeffIncl K 2) (map_smul (trivialF2ToMu2 K) g m)).trans
+    (kummerCoeffIncl_equivariant K 2 g _)
 
 /-- On the discrete model of the trivial `𝔽₂` coefficients, `TauCeti.h2MuToUnits K` is the
 compatible-pair map of the identity of `G_K` and the coefficient map `𝔽₂ ≃ μ₂ ⊆ (Kˢ)ˣ`. -/
@@ -112,14 +84,18 @@ private theorem h2MuToUnits_eqToHom
       ofDiscreteModulePair (ContinuousMonoidHom.id (AbsoluteGaloisGroup K) :
           AbsoluteGaloisGroup K →* AbsoluteGaloisGroup K)
         (mu2ToUnits K).toIntLinearMap (mu2ToUnits_smul K) := by
+    rw [← Category.assoc, eqToHom_comp_kummerCoeffIsoTrivialF2_inv]
     refine (ofDiscreteModulePair_eq_of_hom_apply _ (mu2ToUnits K).toIntLinearMap
       (mu2ToUnits_smul K) _ fun m ↦ ?_).symm
     -- `TopRep.res` along the identity unfolds to the source object, but not reducibly, so
     -- `TopRep.comp_apply` does not match the composite; `change` exposes it.
-    change kummerCoeffToUnits K 2 ((kummerCoeffIsoTrivialF2 K).inv
-      (eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) m)) = mu2ToUnits K m
-    rw [eqToHom_ofDiscreteModule_trivialF2_apply, kummerCoeffIsoTrivialF2_inv_apply,
-      kummerCoeffToUnits_hom_apply, mu2ToUnits_apply]
+    change kummerCoeffToUnits K 2 (ofDiscreteModuleMap
+      (trivialF2ToMu2 K).toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul (trivialF2ToMu2 K) g m)
+        m) = mu2ToUnits K m
+    -- The equivariance argument does not typecheck at reducible transparency, so `rw` cannot
+    -- rewrite with `ofDiscreteModuleMap_hom_apply`; the two value rules are composed as terms.
+    exact (congrArg (kummerCoeffToUnits K 2) (ofDiscreteModuleMap_hom_apply _ _ m)).trans
+      (kummerCoeffToUnits_hom_apply K 2 _)
   rw [continuousCohomologyMap2_eq_map, ← ConcreteCategory.comp_apply, h2MuToUnits_def,
     h2KummerToUnits_def, ← TauCeti.ContinuousCohomology.coeffMap_eqToHom
       (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)),
@@ -157,7 +133,8 @@ theorem h2MuToUnits_trivialF2Map2Equiv (e : K ≃+* L)
   congr 2
   refine AddMonoidHom.ext fun m ↦ Additive.toMul.injective (Units.ext ?_)
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply,
-    unitsCoeffCongr_apply, toMul_mu2ToUnits, AddEquiv.apply_symm_apply]
+    unitsCoeffCongr_apply, mu2ToUnits_apply, toMul_kummerCoeffIncl_trivialF2ToMu2,
+    AddEquiv.apply_symm_apply]
   split_ifs <;> simp
 
 end RingEquiv

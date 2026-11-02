@@ -34,9 +34,13 @@ along `φ` and the identity of `𝔽₂`, read through the identification
 
 ## Main results
 
+* `TauCeti.trivialF2_map_smul`: every map of trivial `𝔽₂` carriers is equivariant along every
+  map of the groups.
 * `TauCeti.trivialF2Map2Equiv_eqToHom`: on the discrete model it is
   `TauCeti.ContCohomology.continuousCohomologyMap2` along `φ` and the identity of `𝔽₂`.
 * `TauCeti.trivialF2Map2Equiv_symm`: its inverse is the transport along `φ.symm`.
+* `TauCeti.trivialF2Map2Equiv_trans`: transport along a composite is the composite of the
+  transports, with the three groups in independent universes.
 * `TauCeti.trivialF2Map2Equiv_apply`: in a single universe it is `TauCeti.trivialF2Map`.
 
 ## References
@@ -51,7 +55,7 @@ namespace TauCeti
 
 open CategoryTheory ContCohomology
 
-universe u v
+universe u v w
 
 attribute [local instance] TopRep.distribMulAction
 
@@ -75,6 +79,13 @@ private theorem modelEquiv_apply {G : Type u} [Group G] [TopologicalSpace G]
       (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom y :=
   (rfl)
 
+/-- Every map between the carriers of two trivial `𝔽₂` objects is equivariant along every map
+of the groups, both actions being trivial. -/
+theorem trivialF2_map_smul {G : Type u} [Group G] {H : Type v} [Group H] (φ : H → G)
+    (f : (trivialF2 G).V → (trivialF2 H).V) (h : H) (m : (trivialF2 G).V) :
+    f (φ h • m) = h • f m := by
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
   {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [LocallyCompactSpace H]
 
@@ -85,8 +96,7 @@ identity of `𝔽₂` (`TauCeti.trivialF2Map2Equiv_eqToHom`), and in a single un
 def trivialF2Map2Equiv (φ : H ≃ₜ* G) :
     continuousCohomology 2 (trivialF2 G) ≃+ continuousCohomology 2 (trivialF2 H) :=
   (modelEquiv G).symm.trans ((continuousCohomologyMap2Equiv G (trivialF2 G).V H (trivialF2 H).V φ
-    ((trivialF2Equiv G).trans (trivialF2Equiv H).symm)
-    (fun _ _ ↦ by simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply])).trans
+    ((trivialF2Equiv G).trans (trivialF2Equiv H).symm) (trivialF2_map_smul _ _)).trans
     (modelEquiv H))
 
 /-- **The transport on the discrete model of the coefficients**: read on a class of the discrete
@@ -99,7 +109,7 @@ theorem trivialF2Map2Equiv_eqToHom (φ : H ≃ₜ* G)
       (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 H))).hom
         (continuousCohomologyMap2 G (trivialF2 G).V H (trivialF2 H).V φ
           ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-          (fun _ _ ↦ by simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]) y) := by
+          (trivialF2_map_smul _ _) y) := by
   rw [← modelEquiv_apply, trivialF2Map2Equiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.trans_apply, continuousCohomologyMap2Equiv_apply, modelEquiv_apply]
 
@@ -107,11 +117,38 @@ theorem trivialF2Map2Equiv_eqToHom (φ : H ≃ₜ* G)
 @[simp]
 theorem trivialF2Map2Equiv_symm (φ : H ≃ₜ* G) :
     (trivialF2Map2Equiv φ).symm = trivialF2Map2Equiv φ.symm := by
+  -- The inverse of the coefficient identification is the identification in the other direction.
+  have he : ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).symm =
+      (trivialF2Equiv H).trans (trivialF2Equiv G).symm :=
+    AddEquiv.ext fun m ↦ by
+      rw [AddEquiv.symm_trans_apply, AddEquiv.symm_symm, AddEquiv.trans_apply]
   ext x
   simp only [trivialF2Map2Equiv, AddEquiv.symm_trans_apply, AddEquiv.trans_apply,
     AddEquiv.symm_symm, continuousCohomologyMap2Equiv_symm_apply,
-    continuousCohomologyMap2Equiv_apply]
-  congr 2
+    continuousCohomologyMap2Equiv_apply, he]
+
+/-- **Transport along a composite is the composite of the transports**, with the three groups in
+independent universes. -/
+theorem trivialF2Map2Equiv_trans {P : Type w} [Group P] [TopologicalSpace P]
+    [IsTopologicalGroup P] [LocallyCompactSpace P] (ψ : P ≃ₜ* H) (φ : H ≃ₜ* G) :
+    trivialF2Map2Equiv (ψ.trans φ) = (trivialF2Map2Equiv φ).trans (trivialF2Map2Equiv ψ) := by
+  have hcomp := continuousCohomologyMap2_comp G (trivialF2 G).V H (trivialF2 H).V φ
+    ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+    (trivialF2_map_smul _ _) P (trivialF2 P).V ψ
+    ((trivialF2Equiv H).trans (trivialF2Equiv P).symm).toAddMonoidHom
+    (trivialF2_map_smul _ _)
+  -- The composite coefficient map is the identification of the outer two carriers.
+  have hcoeff : ((trivialF2Equiv H).trans (trivialF2Equiv P).symm).toAddMonoidHom.comp
+      ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom =
+        ((trivialF2Equiv G).trans (trivialF2Equiv P).symm).toAddMonoidHom :=
+    AddMonoidHom.ext fun m ↦ by simp
+  have hgrp : (φ : H →ₜ* G).comp (ψ : P →ₜ* H) = ((ψ.trans φ : P ≃ₜ* G) : P →ₜ* G) :=
+    ContinuousMonoidHom.ext fun _ ↦ by simp
+  simp only [hcoeff, hgrp] at hcomp
+  ext x
+  obtain ⟨y, rfl⟩ := (modelEquiv G).surjective x
+  rw [modelEquiv_apply, AddEquiv.trans_apply, trivialF2Map2Equiv_eqToHom,
+    trivialF2Map2Equiv_eqToHom, trivialF2Map2Equiv_eqToHom, ← AddMonoidHom.comp_apply, ← hcomp]
 
 section SameUniverse
 
@@ -129,7 +166,7 @@ theorem trivialF2Map2Equiv_apply (φ : H ≃ₜ* G) (x : continuousCohomology 2 
     eqToHom_comp_trivialF2Map (φ : H →ₜ* G) (ofDiscreteModule_trivialF2 G)
       (ofDiscreteModule_trivialF2 H)
       ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
-      (fun _ _ ↦ by simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply])
+      (trivialF2_map_smul _ _)
       (fun m ↦ by simp [eqToHom_ofDiscreteModule_trivialF2_apply])]
 
 end SameUniverse

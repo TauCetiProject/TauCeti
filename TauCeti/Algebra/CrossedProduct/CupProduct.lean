@@ -83,38 +83,6 @@ local instance : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
 
 variable [Invertible (2 : K)]
 
-variable (K) in
-/-- The inverse of the coefficient dictionary `μ₂ ≃ 𝔽₂`, as a `G_K`-equivariant map. -/
-private def trivialF2ToMu2 :
-    (trivialF2 (AbsoluteGaloisGroup K)).V →+[AbsoluteGaloisGroup K] KummerCoeff K 2 :=
-  { (kummerCoeffEquiv K).symm.toAddMonoidHom with
-    map_smul' := fun g b ↦ by
-      simp only [AddMonoidHom.toFun_eq_coe, AddEquiv.coe_toAddMonoidHom, MonoidHom.id_apply,
-        mu2_smul_eq_self, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply] }
-
-/-- `trivialF2ToMu2` is the inverse coefficient dictionary. -/
-private theorem trivialF2ToMu2_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    trivialF2ToMu2 K b = (kummerCoeffEquiv K).symm b :=
-  (rfl)
-
-/-- The inverse of `kummerCoeffIsoTrivialF2`, read on the discrete module `𝔽₂`, is the coefficient
-map of `trivialF2ToMu2`. -/
-private theorem eqToHom_comp_kummerCoeffIsoTrivialF2_inv :
-    eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) ≫
-        (kummerCoeffIsoTrivialF2 K).inv =
-      ofDiscreteModuleMap (trivialF2ToMu2 K).toAddMonoidHom.toIntLinearMap
-        fun g m ↦ map_smul (trivialF2ToMu2 K) g m := by
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun (b : (trivialF2 (AbsoluteGaloisGroup K)).V) ↦ ?_)
-  -- The goal is the composite read at a carrier, which no rewrite reaches: `TopRep.comp_apply` is
-  -- stated at the carrier of a `TopRep` object, and the carrier of `ofDiscreteModule` is not
-  -- syntactically the module. `change` exposes the composite, as in
-  -- `TauCeti.kummerCoeffIsoTrivialF2_inv_apply`; the remaining goal is
-  -- `ofDiscreteModuleMap_hom_apply`, stated at the unfolded carrier.
-  change (kummerCoeffIsoTrivialF2 K).inv
-    (eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) b) = _
-  rw [eqToHom_ofDiscreteModule_trivialF2_apply, kummerCoeffIsoTrivialF2_inv_apply]
-  rfl
-
 /-- On an explicit class of `H²(G_K, 𝔽₂)`, `h2MuToUnits K` is the explicit coefficient map along
 `𝔽₂ ≃ μ₂ ⊆ (Kˢ)ˣ`. -/
 private theorem h2MuToUnits_explicitH2
@@ -134,17 +102,6 @@ private theorem h2MuToUnits_explicitH2
   -- the two sides apply the same composite of coefficient maps, once as a composite morphism and
   -- once as two successive applications
   rfl
-
-/-- The element `0` of `𝔽₂` goes to `1` in `(Kˢ)ˣ`, and the element `1` goes to `-1`. -/
-private theorem toMul_kummerCoeffIncl_trivialF2ToMu2 (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    (kummerCoeffIncl K 2 (trivialF2ToMu2 K b)).toMul =
-      if trivialF2Equiv (AbsoluteGaloisGroup K) b = 0 then 1 else -1 := by
-  rw [toMul_kummerCoeffIncl, trivialF2ToMu2_apply, kummerCoeffEquiv_symm_apply]
-  generalize trivialF2Equiv (AbsoluteGaloisGroup K) b = v
-  rcases (by decide : ∀ v : ZMod 2, v = 0 ∨ v = 1) v with rfl | rfl
-  · rw [map_zero, toMul_zero, OneMemClass.coe_one, ite_eq_left_iff.2 fun h ↦ (h rfl).elim]
-  · rw [← mu2EquivZMod2_apply_mu2NegOne (K := K), AddEquiv.symm_apply_apply, toMul_mu2NegOne,
-      mu2EquivZMod2_apply_mu2NegOne, ite_eq_right_of_eq_false _ _ (eq_false one_ne_zero)]
 
 open scoped Classical in
 /-- **The image of `(a) ∪ (b)` in `H²(G_K, (Kˢ)ˣ)` on an explicit cocycle.** If `α² = a` and

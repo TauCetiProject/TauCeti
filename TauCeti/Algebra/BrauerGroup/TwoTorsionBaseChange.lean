@@ -60,8 +60,6 @@ theorem twoTorsionBaseChange_comp :
 
 section ULift
 
-variable {K}
-
 /-- **The `2`-torsion of the Brauer group of a universe lift.** The restriction of
 `TauCeti.BrauerGroup.uliftEquiv`, scalar extension from `K` to `ULift K`, to the `2`-torsion
 subgroups. -/
@@ -78,7 +76,7 @@ noncomputable def twoTorsionUliftEquiv : twoTorsion K ≃* twoTorsion (ULift.{w}
 /-- Coercing the restricted identification to the Brauer group gives `uliftEquiv`. -/
 @[simp]
 theorem coe_twoTorsionUliftEquiv (x : twoTorsion K) :
-    ((twoTorsionUliftEquiv.{u, w} x : twoTorsion (ULift.{w} K)) : BrauerGroup (ULift.{w} K)) =
+    ((twoTorsionUliftEquiv.{u, w} K x : twoTorsion (ULift.{w} K)) : BrauerGroup (ULift.{w} K)) =
       uliftEquiv.{u, w} K x :=
   (rfl)
 
@@ -86,7 +84,7 @@ theorem coe_twoTorsionUliftEquiv (x : twoTorsion K) :
 `uliftEquiv`. -/
 @[simp]
 theorem coe_twoTorsionUliftEquiv_symm (y : twoTorsion (ULift.{w} K)) :
-    (((twoTorsionUliftEquiv.{u, w} (K := K)).symm y : twoTorsion K) : BrauerGroup K) =
+    (((twoTorsionUliftEquiv.{u, w} K).symm y : twoTorsion K) : BrauerGroup K) =
       (uliftEquiv.{u, w} K).symm y :=
   (rfl)
 
