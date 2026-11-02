@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RingTheory.Flat.ProjectiveDimension
 
 /-!
@@ -83,12 +84,6 @@ section
 
 variable (M : Type u) [AddCommGroup M] [Module R M]
 
-/-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
-sign: `r ⊗ m = 1 ⊗ r • m`. -/
-private theorem tmul_eq_one_tmul_smul {B : Subring R} {r : R} (hr : r ∈ B) (m : M) :
-    r ⊗ₜ[B] m = (1 : R) ⊗ₜ (r • m) := by
-  simpa [Subring.smul_def] using smul_tmul (⟨r, hr⟩ : B) (1 : R) m
-
 /-- For subrings `A ≤ B` of `R`, the map `R ⊗[A] M → R ⊗[B] M`, `r ⊗ m ↦ r ⊗ m`. -/
 private noncomputable def tensorSubringMap {A B : Subring R} (h : A ≤ B) :
     R ⊗[A] M →ₗ[R] R ⊗[B] M :=
@@ -144,7 +139,7 @@ private theorem leg_one_tmul_smul (htop : ∀ r, ∃ n, r ∈ S n)
     (s : Cocone (tensorSubringFunctor M hS)) (r : R) (m : M) :
     leg s 0 ((1 : R) ⊗ₜ (r • m)) = r • leg s 0 ((1 : R) ⊗ₜ m) := by
   obtain ⟨k, hk⟩ := htop r
-  rw [← leg_one_tmul s k, ← leg_one_tmul s k, ← tmul_eq_one_tmul_smul M hk,
+  rw [← leg_one_tmul s k, ← leg_one_tmul s k, ← tmul_eq_one_tmul_smul_of_mem hk,
     tmul_eq_smul_one_tmul, map_smul]
 
 /-- When the subrings `S n` exhaust `R`, the module `M` is the colimit of the base changes
