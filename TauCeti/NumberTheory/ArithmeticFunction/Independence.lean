@@ -53,9 +53,10 @@ Ported from AINTLIB's `LeanModularForms` project
 `projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/Newforms/MainLemmaProof.lean`
 (`eq_prime_powers_of_eq_primes_of_rec`, `support_eq_empty_of_pairwise_distinct_rec`). That project
 works over a bare `ℕ → ℂ` with its own multiplicativity predicate; here the statements are over
-Mathlib's `ArithmeticFunction.IsMultiplicative` and an arbitrary commutative ring (the recurrence
-itself and its propagation to prime powers over any non-unital non-associative ring), with the
-independence results asking only that it have no zero divisors.
+Mathlib's `ArithmeticFunction.IsMultiplicative`. The recurrence and its propagation to prime
+powers need only a zero, a multiplication and a subtraction; the equality criterion needs a
+commutative monoid with zero carrying a subtraction; and the independence results hold over any
+commutative ring without zero divisors.
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005], Theorem 5.8.2.
 * [T. Miyake, *Modular forms*][miyake1989], Theorem 4.6.12.
@@ -65,9 +66,9 @@ public section
 
 namespace ArithmeticFunction
 
-section NonUnitalNonAssocRing
+section Recurrence
 
-variable {R : Type*} [NonUnitalNonAssocRing R]
+variable {R : Type*} [Zero R] [Mul R] [Sub R]
 
 /-- **A common prime-power recurrence**: `f (p ^ (r + 2)) = f p * f (p ^ (r + 1)) - w p * f (p ^ r)`
 at every prime `p`, with the weight `w` a function of the prime alone. For Hecke eigensystems
@@ -89,19 +90,22 @@ theorem eq_on_prime_pow_of_eq_on_primes_of_rec {f g : ArithmeticFunction R} {w :
   | one => rw [pow_one, hp p hprime]
   | more r ih₀ ih₁ => rw [hfr p hprime r, hgr p hprime r, hp p hprime, ih₀, ih₁]
 
-end NonUnitalNonAssocRing
+end Recurrence
 
 namespace IsMultiplicative
 
-variable {R : Type*} [CommRing R]
+section CommMonoidWithZero
+
+variable {R : Type*} [CommMonoidWithZero R] [Sub R]
 
 /-- **Two multiplicative functions with a common recurrence are equal iff they agree at the
-primes.** `ArithmeticFunction.IsMultiplicative.eq_iff_eq_on_prime_powers` reduces equality to the
-prime powers, and `eq_on_prime_pow_of_eq_on_primes_of_rec` supplies those. -/
+primes.** Compare `ArithmeticFunction.IsMultiplicative.eq_iff_eq_on_prime_powers`, which needs
+agreement at every prime power. -/
 theorem eq_iff_eq_on_primes_of_rec {f g : ArithmeticFunction R} {w : ℕ → R}
     (hf : f.IsMultiplicative) (hg : g.IsMultiplicative)
     (hfr : HasPrimePowerRec f w) (hgr : HasPrimePowerRec g w) :
     f = g ↔ ∀ p : ℕ, p.Prime → f p = g p :=
+  -- equality reduces to the prime powers, where the recurrence propagates agreement upward
   ⟨fun h _ _ ↦ h ▸ rfl, fun hp ↦ (eq_iff_eq_on_prime_powers f hf g hg).2 fun _p a hprime ↦
     eq_on_prime_pow_of_eq_on_primes_of_rec (hf.1.trans hg.1.symm) hfr hgr hp hprime a⟩
 
@@ -115,18 +119,25 @@ theorem exists_prime_ne_of_ne_of_rec {f g : ArithmeticFunction R} {w : ℕ → R
   by_contra! hcon
   exact hne ((eq_iff_eq_on_primes_of_rec hf hg hfr hgr).2 hcon)
 
-/-- **Multiplying a vanishing relation by the value at a prime keeps it vanishing.** If
-`∑ᵢ cᵢ · Gᵢ n = 0` for every `n ≥ 1` then `∑ᵢ cᵢ · Gᵢ p · Gᵢ n = 0` for every `n`: splitting
-`n = p ^ a · m` with `p ∤ m`, the shared recurrence rewrites `Gᵢ p · Gᵢ (p ^ a)` as
-`Gᵢ (p ^ (a+1)) + w p · Gᵢ (p ^ (a-1))`, and both resulting sums are instances of the original
-relation. **This is the step that needs the weight to be shared by every `i`** — otherwise `w p`
-could not be pulled out of the sum. -/
+end CommMonoidWithZero
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- **Multiplying a vanishing relation by the value at a prime keeps it vanishing.** If the `Gᵢ`
+are multiplicative and share the recurrence with weight `w`, and `∑ᵢ cᵢ · Gᵢ n = 0` for every
+`n ≥ 1`, then `∑ᵢ cᵢ · Gᵢ p · Gᵢ n = 0` for every prime `p` and every `n`. The weight must be
+the same for every `i`. -/
 theorem sum_mul_prime_eq_zero {ι : Type*} {w : ℕ → R} {s : Finset ι}
     {G : ι → ArithmeticFunction R} (hmul : ∀ i ∈ s, (G i).IsMultiplicative)
     (hrec : ∀ i ∈ s, HasPrimePowerRec (G i) w) {c : ι → R}
     (hrel : ∀ n : ℕ, 1 ≤ n → ∑ i ∈ s, c i * G i n = 0)
     {p : ℕ} (hp : p.Prime) (n : ℕ) :
     ∑ i ∈ s, c i * (G i p * G i n) = 0 := by
+  -- Split `n = p ^ a · m` with `p ∤ m`. The shared recurrence rewrites `Gᵢ p · Gᵢ (p ^ (r + 1))`
+  -- as `Gᵢ (p ^ (r + 2)) + w p · Gᵢ (p ^ r)`, and both resulting sums are instances of the
+  -- original relation; the weight being shared is what lets `w p` leave the sum.
   rcases eq_or_ne n 0 with rfl | hn0
   · simp
   -- split off the `p`-part once and for all, keeping the cofactor opaque
@@ -147,25 +158,25 @@ theorem sum_mul_prime_eq_zero {ι : Type*} {w : ℕ → R} {s : Finset ι}
         c i * G i (p ^ (r + 2) * m) + w p * (c i * G i (p ^ r * m)) := fun i hi ↦ by
       rw [hpow i hi, hpow i hi, hpow i hi, hrec i hi p hp r]
       ring
-    rw [Finset.sum_congr rfl hstep, Finset.sum_add_distrib, ← Finset.mul_sum,
-      hrel _ (Nat.one_le_iff_ne_zero.2 (by positivity)),
-      hrel _ (Nat.one_le_iff_ne_zero.2 (by positivity)), mul_zero, add_zero]
+    rw [Finset.sum_congr rfl hstep, Finset.sum_add_distrib, ← Finset.mul_sum]
+    simp [hrel (p ^ (r + 2) * m) (Nat.one_le_iff_ne_zero.2 (by positivity)),
+      hrel (p ^ r * m) (Nat.one_le_iff_ne_zero.2 (by positivity))]
 
 /-- **Distinct multiplicative functions with a common prime-power recurrence are independent.**
 If `∑ᵢ cᵢ · Gᵢ n = 0` for every `n ≥ 1`, where the `Gᵢ` are pairwise distinct, multiplicative and
 share the recurrence, then every `cᵢ` vanishes.
 
-The textbook elimination argument (Diamond–Shurman Theorem 5.8.2, Miyake Theorem 4.6.12), by
-induction on `s`. For `s = insert r t`: given `j ∈ t`, pick by `exists_prime_ne_of_ne_of_rec` a
-prime `p` where `G j` and `G r` differ; then `cᵢ' := cᵢ · (Gᵢ p − G r p)` satisfies the same
-vanishing relation by `sum_mul_prime_eq_zero`, and `c' r = 0`, so it is a relation over `t`, and
-the induction hypothesis gives `c' j = 0`, hence `c j = 0`. With every coefficient on `t`
-vanishing, the relation at `n = 1` reads `c r = 0`. -/
+See Diamond–Shurman Theorem 5.8.2 and Miyake Theorem 4.6.12. -/
 theorem eq_zero_of_sum_mul_eq_zero {ι : Type*} [NoZeroDivisors R] {w : ℕ → R}
     {s : Finset ι} {G : ι → ArithmeticFunction R} (hmul : ∀ i ∈ s, (G i).IsMultiplicative)
     (hrec : ∀ i ∈ s, HasPrimePowerRec (G i) w) (hdist : Set.InjOn G s) {c : ι → R}
     (hrel : ∀ n : ℕ, 1 ≤ n → ∑ i ∈ s, c i * G i n = 0) :
     ∀ i ∈ s, c i = 0 := by
+  -- The textbook elimination argument, by induction on `s`. For `s = insert r t` and `j ∈ t`,
+  -- pick a prime `p` where `G j` and `G r` differ; then `cᵢ' := cᵢ · (Gᵢ p − G r p)` satisfies
+  -- the same vanishing relation and `c' r = 0`, so it is a relation over `t`, and the induction
+  -- hypothesis gives `c' j = 0`, hence `c j = 0`. With every coefficient on `t` vanishing, the
+  -- relation at `n = 1` reads `c r = 0`.
   classical
   induction s using Finset.induction_on generalizing c with
   | empty => simp
@@ -183,8 +194,8 @@ theorem eq_zero_of_sum_mul_eq_zero {ι : Type*} [NoZeroDivisors R] {w : ℕ → 
             ∑ i ∈ insert r t, c i * (G i p * G i n) - G r p * ∑ i ∈ insert r t, c i * G i n := by
           rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
           exact Finset.sum_congr rfl fun i _ ↦ by ring
-        rwa [sum_mul_prime_eq_zero hmul hrec hrel hp n, hrel n hn, mul_zero, sub_zero,
-          Finset.sum_insert hr, sub_self, mul_zero, zero_mul, zero_add] at h
+        rw [sum_mul_prime_eq_zero hmul hrec hrel hp n, hrel n hn, Finset.sum_insert hr] at h
+        simpa using h
       have := ih (fun i hi ↦ hmul i (Finset.mem_insert_of_mem hi))
         (fun i hi ↦ hrec i (Finset.mem_insert_of_mem hi))
         (hdist.mono (by simp)) hrel' j hj
@@ -193,8 +204,8 @@ theorem eq_zero_of_sum_mul_eq_zero {ι : Type*} [NoZeroDivisors R] {w : ℕ → 
     intro i hi
     rcases Finset.mem_insert.1 hi with rfl | hi
     · have h1 := hrel 1 le_rfl
-      rwa [Finset.sum_insert hr, Finset.sum_eq_zero fun j hj ↦ by rw [ht j hj, zero_mul],
-        add_zero, hmulr.map_one, mul_one] at h1
+      rw [Finset.sum_insert hr, Finset.sum_eq_zero fun j hj ↦ by rw [ht j hj, zero_mul]] at h1
+      simpa [hmulr.map_one] using h1
     · exact ht i hi
 
 /-- **Distinct multiplicative functions with a common prime-power recurrence are linearly
@@ -219,6 +230,8 @@ theorem linearIndependent_of_rec {ι : Type*} [NoZeroDivisors R] {w : ℕ → R}
   refine linearIndependent_iff'.2 fun t g hg ↦
     eq_zero_of_sum_mul_eq_zero (fun i _ ↦ hmul i) (fun i _ ↦ hrec i) hdist.injOn fun n _ ↦ ?_
   rw [← happly t g n, hg, _root_.zero_apply]
+
+end CommRing
 
 end IsMultiplicative
 
