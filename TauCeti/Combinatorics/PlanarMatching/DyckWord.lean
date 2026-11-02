@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.Enumerative.DyckWord
 public import TauCeti.Combinatorics.NoncrossingPartition.PerfectMatching
 public import TauCeti.Combinatorics.PlanarMatching.Basic
+import TauCeti.Data.List.OfFn
 
 /-!
 # Planar matchings as Dyck words
@@ -37,8 +38,6 @@ cyclic boundary of a diagram, which points are the left feet of their arcs.
 
 * `TauCeti.PlanarMatching.dyckStep_injective`: a planar matching is determined by the points at
   which its arcs open.
-* `TauCeti.PlanarMatching.count_take_ofFn_dyckStep`: the number of `U`s (resp. `D`s) among the
-  first `j` letters counts the arcs opening (resp. closing) before `j`.
 * `TauCeti.PlanarMatching.card_planarMatching`: there are `catalan n` planar matchings of `2 * n`
   points.
 * `TauCeti.PlanarMatching.toList_toDyckWord_nested`: the fully nested matching is the word
@@ -85,40 +84,6 @@ theorem dyckStep_eq_D_iff {x : PlanarMatching k} {a : Fin k} :
   · simp [h.not_gt]
   · simp [(not_lt.mp h).lt_of_ne (x.1.apply_ne a)]
 
-/-- The number of occurrences of a step among the first `j` letters of the Dyck word of a planar
-matching is the number of points before `j` carrying that step. -/
-theorem count_take_ofFn_dyckStep (x : PlanarMatching k) (s : DyckStep) (j : ℕ) :
-    ((List.ofFn x.dyckStep).take j).count s = #{a : Fin k | (a : ℕ) < j ∧ x.dyckStep a = s} := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    have hsplit : #{a : Fin k | (a : ℕ) < j + 1 ∧ x.dyckStep a = s} =
-        #{a : Fin k | (a : ℕ) < j ∧ x.dyckStep a = s} +
-          #{a : Fin k | (a : ℕ) = j ∧ x.dyckStep a = s} := by
-      rw [← card_union_of_disjoint (disjoint_filter.mpr fun a _ h h' => by omega)]
-      congr 1
-      ext a
-      simp only [mem_union, mem_filter, mem_univ, true_and]
-      constructor
-      · rintro ⟨h1, h2⟩
-        rcases Nat.lt_succ_iff_lt_or_eq.mp h1 with h1 | h1
-        · exact .inl ⟨h1, h2⟩
-        · exact .inr ⟨h1, h2⟩
-      · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩) <;> exact ⟨by omega, h2⟩
-    rw [List.take_add_one, List.count_append, ih, hsplit, List.getElem?_ofFn]
-    congr 1
-    by_cases hj : j < k
-    · have hfilt : ({a : Fin k | (a : ℕ) = j ∧ x.dyckStep a = s} : Finset (Fin k)) =
-          ({⟨j, hj⟩} : Finset (Fin k)).filter (x.dyckStep · = s) := by
-        ext a
-        simp [Fin.ext_iff]
-      rw [hfilt, filter_singleton]
-      split_ifs with hs <;> simp [hs]
-    · rw [card_eq_zero.mpr (filter_eq_empty_iff.mpr ?_)]
-      · simp [hj]
-      · rintro a - ⟨rfl, -⟩
-        exact hj a.isLt
-
 /-- In every prefix, the arcs closing before `j` inject into the arcs opening before `j`, by
 sending a closing point to its partner. -/
 private theorem card_closing_le_card_opening (x : PlanarMatching k) (j : ℕ) :
@@ -146,9 +111,9 @@ def toDyckWord (x : PlanarMatching k) : DyckWord where
   toList := List.ofFn x.dyckStep
   count_U_eq_count_D := by
     rw [← List.take_length (l := List.ofFn x.dyckStep), List.length_ofFn,
-      count_take_ofFn_dyckStep, count_take_ofFn_dyckStep, card_closing_eq_card_opening]
+      List.count_take_ofFn, List.count_take_ofFn, card_closing_eq_card_opening]
   count_D_le_count_U j := by
-    rw [count_take_ofFn_dyckStep, count_take_ofFn_dyckStep]
+    rw [List.count_take_ofFn, List.count_take_ofFn]
     exact card_closing_le_card_opening x j
 
 /-- The letters of the Dyck word of a planar matching are its Dyck steps. -/
@@ -169,35 +134,23 @@ theorem semilength_toDyckWord {n : ℕ} (x : PlanarMatching (2 * n)) :
   have := x.two_mul_semilength_toDyckWord
   omega
 
-/-- **A planar matching is determined by the points at which its arcs open.** -/
-theorem dyckStep_injective : Function.Injective (dyckStep (k := k)) := by
-  intro x y hxy
-  have h : ∀ a, a < x.1.val a ↔ a < y.1.val a := fun a => by
-    rw [← dyckStep_eq_U_iff, ← dyckStep_eq_U_iff, hxy]
-  -- Every arc of `x` is an arc of `y`, by strong induction on the length of the arc.
-  suffices H : ∀ d (a : Fin k), a < x.1.val a → (x.1.val a : ℕ) - a = d →
-      y.1.val a = x.1.val a by
-    refine PlanarMatching.ext fun a => ?_
-    rcases lt_or_gt_of_ne (x.1.apply_ne a) with ha | ha
-    · have hb : x.1.val a < x.1.val (x.1.val a) := by rwa [x.1.apply_apply]
-      rw [eq_comm, y.1.apply_eq_comm, H _ _ hb rfl, x.1.apply_apply]
-    · exact (H _ a ha rfl).symm
-  intro d
-  induction d using Nat.strong_induction_on with
-  | _ d ih =>
-  intro a ha hd
-  -- Inside the arc `{a, x a}` the two matchings agree, by the induction hypothesis.
-  have hin : ∀ c, a < c → c < x.1.val a → y.1.val c = x.1.val c := by
-    intro c hac hcb
-    have hc := x.val_apply_mem_Ioo hac hcb
-    rw [Set.mem_Ioo, Fin.lt_def, Fin.lt_def] at hc
-    rw [Fin.lt_def] at hac hcb
-    rcases lt_or_gt_of_ne (x.1.apply_ne c) with h' | h'
-    · have hc' : x.1.val c < x.1.val (x.1.val c) := by rwa [x.1.apply_apply]
-      have := ih ((c : ℕ) - x.1.val c) (by rw [Fin.lt_def] at h'; omega) _ hc'
-        (by rw [x.1.apply_apply])
-      rw [← y.1.apply_eq_comm, this, x.1.apply_apply]
-    · exact ih _ (by rw [Fin.lt_def] at h'; omega) c h' rfl
+/-- Two planar matchings agree at a point `c` once they agree at whichever of `c` and its partner
+opens the arc between them. -/
+private theorem apply_eq_of_forall_opening {x y : PlanarMatching k} {c : Fin k}
+    (h : ∀ b, (b = c ∨ b = x.1.val c) → b < x.1.val b → y.1.val b = x.1.val b) :
+    y.1.val c = x.1.val c := by
+  rcases lt_or_gt_of_ne (x.1.apply_ne c) with hc | hc
+  · -- The arc closes at `c`, so it opens at `x c`, where the two matchings agree.
+    have := h _ (.inr rfl) (by rwa [x.1.apply_apply])
+    rwa [x.1.apply_apply, y.1.apply_eq_comm] at this
+  · exact h c (.inl rfl) hc
+
+/-- If two planar matchings open arcs at the same points and agree strictly inside the arc
+`{a, x a}` of `x`, then they agree at `a`: otherwise the arcs of `y` at `a` and at `x a` would
+interleave. -/
+private theorem apply_eq_of_eqOn_Ioo {x y : PlanarMatching k}
+    (h : ∀ a, a < x.1.val a ↔ a < y.1.val a) {a : Fin k} (ha : a < x.1.val a)
+    (hin : ∀ c, a < c → c < x.1.val a → y.1.val c = x.1.val c) : y.1.val a = x.1.val a := by
   -- A point inside the arc is not matched by `y` to an endpoint of the arc.
   have hout : ∀ c, a < c → c < x.1.val a → ∀ e, y.1.val e = c → a < e ∧ e < x.1.val a := by
     intro c hac hcb e he
@@ -220,6 +173,31 @@ theorem dyckStep_injective : Function.Injective (dyckStep (k := k)) := by
     · exact absurd (hout _ h' hb (x.1.val a) rfl).2 (lt_irrefl _)
   exact Equiv.Perm.isNoncrossingMatching_iff.mp y.2 hyb (by rwa [y.1.apply_apply])
     (by rwa [y.1.apply_apply])
+
+/-- **A planar matching is determined by the points at which its arcs open.** -/
+theorem dyckStep_injective : Function.Injective (dyckStep (k := k)) := by
+  intro x y hxy
+  have h : ∀ a, a < x.1.val a ↔ a < y.1.val a := fun a => by
+    rw [← dyckStep_eq_U_iff, ← dyckStep_eq_U_iff, hxy]
+  -- Every arc of `x` is an arc of `y`, by strong induction on the length of the arc.
+  have H : ∀ d (a : Fin k), a < x.1.val a → (x.1.val a : ℕ) - a = d →
+      y.1.val a = x.1.val a := by
+    intro d
+    induction d using Nat.strong_induction_on with
+    | _ d ih =>
+    intro a ha hd
+    -- Inside the arc `{a, x a}` the two matchings agree, by the induction hypothesis: the arcs
+    -- there are nested in `{a, x a}`, hence shorter.
+    refine apply_eq_of_eqOn_Ioo h ha fun c hac hcb =>
+      apply_eq_of_forall_opening fun b hb hb' => ih _ ?_ b hb' rfl
+    have hc := x.val_apply_mem_Ioo hac hcb
+    rw [Set.mem_Ioo, Fin.lt_def, Fin.lt_def] at hc
+    rw [Fin.lt_def] at hac hcb hb'
+    rcases hb with rfl | rfl
+    · omega
+    · rw [x.1.apply_apply] at hb' ⊢
+      omega
+  exact PlanarMatching.ext fun a => (apply_eq_of_forall_opening fun b _ hb => H _ b hb rfl).symm
 
 /-- **The Dyck word of a planar matching determines it.** -/
 theorem toDyckWord_injective : Function.Injective (toDyckWord (k := k)) := fun _ _ h =>
@@ -268,9 +246,10 @@ theorem toList_toDyckWord_nested (n : ℕ) :
   have h : ∀ a : Fin (n + n), (nested n).dyckStep a = if (a : ℕ) < n then U else D := by
     intro a
     simp only [dyckStep, nested_val, Fin.revPerm_apply, Fin.lt_def, Fin.val_rev]
-    congr 1
-    exact propext (by omega)
-  rw [toList_toDyckWord, show (nested n).dyckStep = _ from funext h, List.ofFn_add]
+    split_ifs <;> first | rfl | omega
+  have hfun : (nested n).dyckStep = fun a : Fin (n + n) => if (a : ℕ) < n then U else D :=
+    funext h
+  rw [toList_toDyckWord, hfun, List.ofFn_add]
   simp [List.ofFn_const]
 
 end TauCeti.PlanarMatching

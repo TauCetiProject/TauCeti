@@ -84,14 +84,8 @@ theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=
 /-- **Arcs are nested.** If the point `b` lies strictly inside the arc `{a, x a}`, with `a < x a`,
 then so does its partner `x b`: an arc starting inside another arc ends inside it. -/
 theorem val_apply_mem_Ioo (x : PlanarMatching k) {a b : Fin k} (hab : a < b)
-    (hb : b < x.1.val a) : x.1.val b ∈ Set.Ioo a (x.1.val a) := by
-  have hx := Perm.isNoncrossingMatching_iff.mp x.2
-  refine ⟨?_, (not_lt.mp (hx hab hb)).lt_of_ne fun h => hab.ne' (x.1.val.injective h)⟩
-  by_contra! h
-  rcases h.lt_or_eq with h | h
-  · -- The arc `{x b, b}` would interleave `{a, x a}` from the left.
-    exact hx h (by rwa [x.1.apply_apply]) (by rwa [x.1.apply_apply])
-  · exact hb.ne (by rw [← h, x.1.apply_apply])
+    (hb : b < x.1.val a) : x.1.val b ∈ Set.Ioo a (x.1.val a) :=
+  x.2.apply_mem_Ioo x.1.2.involutive hab hb
 
 /-- **The innermost cup lemma.** A planar matching of at least one point joins some point `a` to
 the next point `a + 1`. Equivalently, its diagram has an arc enclosing no other boundary point. -/
