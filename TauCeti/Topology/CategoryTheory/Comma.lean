@@ -13,8 +13,8 @@ public import Mathlib.Topology.Maps.Proper.Basic
 # Weak fiber products of topological groupoids
 
 Let `L : A ⥤ T` and `R : B ⥤ T` be functors between categories whose objects and total arrows
-(`Quiver.Total`) carry topologies, as for topological groupoids. For groupoids `A` and `B`, the
-comma category `CategoryTheory.Comma L R` is their weak fiber product: its objects are the
+(`Quiver.Total`) carry topologies, as for topological groupoids. For groupoids `A`, `B` and `T`,
+the comma category `CategoryTheory.Comma L R` is their weak fiber product: its objects are the
 triples `(a, h, b)` with `h : L a ⟶ R b`, and its arrows are the pairs of arrows of `A` and `B`
 forming commuting squares with these structure arrows.
 
@@ -31,15 +31,16 @@ hypothesis on `T`. With these topologies:
 * when `A` is a groupoid, the arrows are homeomorphic to the fiber product of the objects with the
   total arrows of `A` and `B` over the objects of `A` and `B`
   (`CategoryTheory.Comma.totalHomeomorph`), provided `L` and `R` are continuous on total arrows
-  and composition in `T` and inversion in `A` are continuous;
+  and the target maps of `A` and `B`, composition in `T` and inversion in `A` are continuous;
 * consequently the source is a local homeomorphism when the sources of `A` and `B` are
   (`CategoryTheory.Comma.isLocalHomeomorph_source`), and so is the target when `A` and `B` are
   groupoids with continuous inversion (`CategoryTheory.Comma.isLocalHomeomorph_target`);
 * the source-target map is proper when those of `A` and `B` are and the arrows of `T` are
   Hausdorff (`CategoryTheory.Comma.isProperMap_source_target`).
 
-So the weak fiber product of two proper étale groupoids over a topological category with
-continuous composition and Hausdorff arrows is again proper étale, without any transversality
+So the weak fiber product of two proper étale groupoids with continuous inversion over a
+topological groupoid with continuous composition and Hausdorff arrows, along functors that are
+continuous on total arrows, is again proper étale, without any transversality
 hypothesis: transversality only enters when the object and arrow spaces are required to be
 manifolds. Every arrow of the factors is retained, including isotropy acting trivially.
 
@@ -215,7 +216,7 @@ theorem continuous_comp
     funext p
     simp [eqToHom_right]
 
-/-- Inversion in the weak fiber product of two groupoids is continuous when it is in both
+/-- Inversion in the comma category of two groupoids is continuous when it is in both
 factors. -/
 theorem continuous_inverse [IsGroupoid A] [IsGroupoid B]
     (hA : Continuous fun f : Quiver.Total A ↦ (⟨f.right, f.left, inv f.hom⟩ : Quiver.Total A))
@@ -307,6 +308,66 @@ theorem coe_totalHomeomorph [IsGroupoid A]
       (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
     ⇑(totalHomeomorph htA htB hinv hL hR hcomp) = totalEquiv := (rfl)
 
+/-- The inverse of `CategoryTheory.Comma.totalHomeomorph` is the inverse of
+`CategoryTheory.Comma.totalEquiv`. -/
+@[simp]
+theorem coe_totalHomeomorph_symm [IsGroupoid A]
+    (htA : Continuous (Quiver.Total.right : Quiver.Total A → A))
+    (htB : Continuous (Quiver.Total.right : Quiver.Total B → B))
+    (hinv : Continuous fun f : Quiver.Total A ↦ (⟨f.right, f.left, inv f.hom⟩ : Quiver.Total A))
+    (hL : Continuous fun f : Quiver.Total A ↦ (⟨_, _, L.map f.hom⟩ : Quiver.Total T))
+    (hR : Continuous fun f : Quiver.Total B ↦ (⟨_, _, R.map f.hom⟩ : Quiver.Total T))
+    (hcomp : Continuous fun p : {p : Quiver.Total T × Quiver.Total T // p.1.right = p.2.left} ↦
+      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total T)) :
+    ⇑(totalHomeomorph htA htB hinv hL hR hcomp).symm = totalEquiv.symm := (rfl)
+
+/-- Given local inverses `eA` and `eB` of the sources of `A` and `B`, the points of the fiber
+product of the objects of a comma category with the total arrows of `A` and `B` whose components
+lie in the sources of `eA` and `eB` are homeomorphic, by projection to the object, to the objects
+whose left and right objects lie in the targets of `eA` and `eB`. -/
+private def fstHomeomorph (eA : OpenPartialHomeomorph (Quiver.Total A) A)
+    (eB : OpenPartialHomeomorph (Quiver.Total B) B) (hA : Quiver.Total.left = ⇑eA)
+    (hB : Quiver.Total.left = ⇑eB) :
+    {q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
+        p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} |
+      q.1.2.1 ∈ eA.source ∧ q.1.2.2 ∈ eB.source} ≃ₜ
+      {X : Comma L R | X.left ∈ eA.target ∧ X.right ∈ eB.target} :=
+  -- The local inverses are sections of the sources, and the source of a component of a point
+  -- of the fiber product is the corresponding part of its object.
+  have hsymA {x : A} (hx : x ∈ eA.target) : (eA.symm x).left = x :=
+    (congrFun hA _).trans (eA.right_inv hx)
+  have hsymB {x : B} (hx : x ∈ eB.target) : (eB.symm x).left = x :=
+    (congrFun hB _).trans (eB.right_inv hx)
+  have hleftA (q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
+      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.1.1.left = eA q.1.2.1 :=
+    q.2.1.symm.trans (congrFun hA _)
+  have hleftB (q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
+      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.1.1.right = eB q.1.2.2 :=
+    q.2.2.symm.trans (congrFun hB _)
+  { toFun q := ⟨q.1.1.1, by
+      rw [Set.mem_ofPred_eq, hleftA q.1, hleftB q.1]
+      exact ⟨eA.map_source q.2.1, eB.map_source q.2.2⟩⟩
+    invFun X := ⟨⟨(X.1, eA.symm X.1.left, eB.symm X.1.right), hsymA X.2.1, hsymB X.2.2⟩,
+      eA.map_target X.2.1, eB.map_target X.2.2⟩
+    left_inv q := by
+      obtain ⟨⟨⟨X, a, b⟩, hpa, hpb⟩, hqa, hqb⟩ := q
+      have hla : eA.symm X.left = a := by
+        rw [hleftA ⟨⟨X, a, b⟩, hpa, hpb⟩]
+        exact eA.left_inv hqa
+      have hlb : eB.symm X.right = b := by
+        rw [hleftB ⟨⟨X, a, b⟩, hpa, hpb⟩]
+        exact eB.left_inv hqb
+      simp [hla, hlb]
+    right_inv X := rfl
+    continuous_toFun := by fun_prop
+    continuous_invFun := by
+      refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
+      refine continuous_subtype_val.prodMk (.prodMk ?_ ?_)
+      · exact eA.continuousOn_symm.comp_continuous (continuous_left.comp continuous_subtype_val)
+          fun X ↦ X.2.1
+      · exact eB.continuousOn_symm.comp_continuous
+          (continuous_right.comp continuous_subtype_val) fun X ↦ X.2.2 }
+
 /-- The projection from the fiber product of the objects of a comma category with the total
 arrows of `A` and `B` to the objects is a local homeomorphism when the sources of `A` and `B`
 are: near a point, it is inverted by the local inverses of the two source maps. -/
@@ -319,54 +380,19 @@ private theorem isLocalHomeomorph_fst
   intro p
   obtain ⟨eA, haA, hA⟩ := hsA p.1.2.1
   obtain ⟨eB, hbB, hB⟩ := hsB p.1.2.2
-  set U := {q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
+  -- Near `p`, the projection is `fstHomeomorph` followed by the inclusion of an open set.
+  have hUo : IsOpen {q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
       p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} | q.1.2.1 ∈ eA.source ∧
-        q.1.2.2 ∈ eB.source}
-  have hUo : IsOpen U :=
+        q.1.2.2 ∈ eB.source} :=
     (eA.open_source.preimage (continuous_fst.comp (continuous_snd.comp
       continuous_subtype_val))).inter
       (eB.open_source.preimage (continuous_snd.comp (continuous_snd.comp continuous_subtype_val)))
-  set V := {X : Comma L R | X.left ∈ eA.target ∧ X.right ∈ eB.target}
-  have hVo : IsOpen V :=
+  have hVo : IsOpen {X : Comma L R | X.left ∈ eA.target ∧ X.right ∈ eB.target} :=
     (eA.open_target.preimage continuous_left).inter (eB.open_target.preimage continuous_right)
-  have hsymA {x : A} (hx : x ∈ eA.target) : (eA.symm x).left = x :=
-    (congrFun hA _).trans (eA.right_inv hx)
-  have hsymB {x : B} (hx : x ∈ eB.target) : (eB.symm x).left = x :=
-    (congrFun hB _).trans (eB.right_inv hx)
-  have hleftA (q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
-      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.1.1.left = eA q.1.2.1 :=
-    q.2.1.symm.trans (congrFun hA _)
-  have hleftB (q : {p : Comma L R × Quiver.Total A × Quiver.Total B //
-      p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) : q.1.1.right = eB q.1.2.2 :=
-    q.2.2.symm.trans (congrFun hB _)
-  let h : U ≃ₜ V :=
-    { toFun q := ⟨q.1.1.1, by
-        rw [Set.mem_ofPred_eq, hleftA q.1, hleftB q.1]
-        exact ⟨eA.map_source q.2.1, eB.map_source q.2.2⟩⟩
-      invFun X := ⟨⟨(X.1, eA.symm X.1.left, eB.symm X.1.right), hsymA X.2.1, hsymB X.2.2⟩,
-        eA.map_target X.2.1, eB.map_target X.2.2⟩
-      left_inv q := by
-        obtain ⟨⟨⟨X, a, b⟩, hpa, hpb⟩, hqa, hqb⟩ := q
-        have hla : eA.symm X.left = a := by
-          rw [hleftA ⟨⟨X, a, b⟩, hpa, hpb⟩]
-          exact eA.left_inv hqa
-        have hlb : eB.symm X.right = b := by
-          rw [hleftB ⟨⟨X, a, b⟩, hpa, hpb⟩]
-          exact eB.left_inv hqb
-        simp [hla, hlb]
-      right_inv X := rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by
-        refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-        refine continuous_subtype_val.prodMk (.prodMk ?_ ?_)
-        · exact eA.continuousOn_symm.comp_continuous (continuous_left.comp continuous_subtype_val)
-            fun X ↦ X.2.1
-        · exact eB.continuousOn_symm.comp_continuous
-            (continuous_right.comp continuous_subtype_val) fun X ↦ X.2.2 }
-  refine ⟨U, hUo.mem_nhds ⟨haA, hbB⟩, ?_⟩
-  exact hVo.isOpenEmbedding_subtypeVal.comp h.isOpenEmbedding
+  exact ⟨_, hUo.mem_nhds ⟨haA, hbB⟩,
+    hVo.isOpenEmbedding_subtypeVal.comp (fstHomeomorph eA eB hA hB).isOpenEmbedding⟩
 
-/-- The source of the weak fiber product of a groupoid `A` and a category `B` is a local
+/-- The source of the comma category of a groupoid `A` and a category `B` is a local
 homeomorphism when the sources of `A` and `B` are, provided the target of `B`, inversion in `A`,
 the functors `L` and `R` on total arrows and composition in `T` are continuous. -/
 theorem isLocalHomeomorph_source [IsGroupoid A]
@@ -386,7 +412,7 @@ theorem isLocalHomeomorph_source [IsGroupoid A]
   funext f
   simp
 
-/-- The target of the weak fiber product of two groupoids is a local homeomorphism when their
+/-- The target of the comma category of two groupoids is a local homeomorphism when their
 sources are, provided inversion in `A` and `B`, the functors `L` and `R` on total arrows and
 composition in `T` are continuous. -/
 theorem isLocalHomeomorph_target [IsGroupoid A] [IsGroupoid B]

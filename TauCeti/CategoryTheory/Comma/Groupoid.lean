@@ -15,15 +15,16 @@ public import Mathlib.Combinatorics.Quiver.Subquiver
 For functors `L : A ⥤ T` and `R : B ⥤ T`, an object of `CategoryTheory.Comma L R` is a triple
 `(a, h, b)` with `h : L a ⟶ R b`, and an arrow is a pair of arrows of `A` and `B` making the
 evident square commute. When `A` and `B` are groupoids, so is `Comma L R`
-(`CategoryTheory.Comma.isGroupoid`): it is the weak (iso-comma) fiber product of `L` and `R`.
+(`CategoryTheory.Comma.isGroupoid`); when `T` is a groupoid as well, every structure arrow is
+invertible and `Comma L R` is the weak (iso-comma) fiber product of `L` and `R`.
 
 When only `A` is a groupoid, an arrow of `Comma L R` is freely and uniquely determined by its
 source `X` and its two components, an arrow of `A` out of `X.left` and an arrow of `B` out of
 `X.right`: the structure arrow of the target is forced by commutativity of the square.
 `CategoryTheory.Comma.totalEquiv` records this as an equivalence between the total arrows of
 `Comma L R` and the fiber product of the objects of `Comma L R` with the total arrows of `A` and
-`B` over the objects of `A` and `B`. This is the description of the arrows of a weak fiber product
-of groupoids used to topologize it.
+`B` over the objects of `A` and `B`. Over a groupoid `T`, this is the description of the arrows of
+a weak fiber product of groupoids used to topologize it.
 
 ## References
 
@@ -41,14 +42,14 @@ theorem isIso_of_isIso_left_of_isIso_right {X Y : Comma L R} (f : X ⟶ Y) [IsIs
     [IsIso f.right] : IsIso f :=
   (isoMk (asIso f.left) (asIso f.right) f.w).isIso_hom
 
-/-- The comma category of two functors out of groupoids is a groupoid: it is their weak fiber
-product. -/
+/-- The comma category of two functors out of groupoids is a groupoid. When the common target is
+a groupoid too, it is their weak fiber product. -/
 instance isGroupoid [IsGroupoid A] [IsGroupoid B] : IsGroupoid (Comma L R) where
   all_isIso f := isIso_of_isIso_left_of_isIso_right f
 
 /-- Arrows of a comma category with the same source and equal targets are heterogeneously equal
 as soon as their components are. -/
-private theorem heq_of_left_right {X Y Y' : Comma L R} (h : Y = Y') {f : X ⟶ Y} {g : X ⟶ Y'}
+theorem hom_heq_ext {X Y Y' : Comma L R} (h : Y = Y') {f : X ⟶ Y} {g : X ⟶ Y'}
     (hl : f.left ≍ g.left) (hr : f.right ≍ g.right) : f ≍ g := by
   subst h
   exact heq_of_eq (hom_ext _ _ (eq_of_heq hl) (eq_of_heq hr))
@@ -71,10 +72,8 @@ noncomputable def totalEquiv [IsGroupoid A] :
   left_inv := by
     rintro ⟨X, ⟨l, r, h⟩, ⟨α, β, w⟩⟩
     dsimp only at α β w
-    obtain rfl : h = L.map (inv α) ≫ X.hom ≫ R.map β := by
-      rw [← w, ← Category.assoc, ← Functor.map_comp, IsIso.inv_hom_id, Functor.map_id,
-        Category.id_comp]
-    refine Quiver.Total.ext rfl (by simp) (heq_of_left_right ?_ (by simp) (by simp))
+    obtain rfl : h = L.map (inv α) ≫ X.hom ≫ R.map β := by simp [← w]
+    refine Quiver.Total.ext rfl (by simp) (hom_heq_ext ?_ (by simp) (by simp))
     simp
   right_inv := by
     rintro ⟨⟨X, ⟨a, a', α⟩, ⟨b, b', β⟩⟩, ha, hb⟩
@@ -97,6 +96,7 @@ theorem totalEquiv_symm_apply_left [IsGroupoid A]
 
 /-- The target of the arrow with prescribed source and components. Its structure arrow is the
 composite `L α⁻¹ ≫ X.hom ≫ R β` forced by commutativity of the square. -/
+@[simp]
 theorem totalEquiv_symm_apply_right [IsGroupoid A]
     (p : {p : Comma L R × Quiver.Total A × Quiver.Total B //
       p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) :
