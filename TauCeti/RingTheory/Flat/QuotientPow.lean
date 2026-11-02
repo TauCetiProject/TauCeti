@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RingHom.Flat
-import Mathlib.RingTheory.Filtration
 import Mathlib.RingTheory.Flat.Tensor
+import TauCeti.RingTheory.Ideal.ArtinRees
 import TauCeti.RingTheory.Ideal.KrullIntersection
 
 /-!
@@ -63,25 +63,21 @@ theorem exists_sub_one_tmul_mem_smul_top {J : Ideal B}
     convert add_mem hm hm' using 1
     abel
 
+/-- If `m ∈ J M` for an ideal `J` of `A`, then `1 ⊗ m ∈ (J B) (B ⊗[A] M)`. -/
+theorem one_tmul_mem_map_smul_top {J : Ideal A} {m : M} (hm : m ∈ (J • ⊤ : Submodule A M)) :
+    (1 : B) ⊗ₜ[A] m ∈ (J.map (algebraMap A B) • ⊤ : Submodule B (B ⊗[A] M)) := by
+  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
+  · rw [tmul_smul, ← algebraMap_smul B a]
+    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
+  · rw [tmul_add]
+    exact add_mem hx hy
+
 end TensorProduct
 
 namespace Module.Flat
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
   [IsNoetherianRing A] [IsNoetherianRing B]
-
-omit [IsNoetherianRing B] in
-/-- Artin–Rees for an ideal `I` of `A`: there is `c` such that `I ∩ 𝔪^(j + c) ⊆ 𝔪ʲ I` for all
-`j`. -/
-private theorem exists_mem_pow_smul_top_of_mem_pow_add (m I : Ideal A) :
-    ∃ c : ℕ, ∀ (j : ℕ) (i : I), (i : A) ∈ m ^ (j + c) → i ∈ (m ^ j • ⊤ : Submodule A I) := by
-  obtain ⟨c, hc⟩ := Ideal.exists_pow_inf_eq_pow_smul m I
-  refine ⟨c, fun j i him ↦ ?_⟩
-  rw [Submodule.mem_smul_top_iff]
-  have hmem : (i : A) ∈ m ^ (j + c) • (⊤ : Submodule A A) ⊓ I :=
-    ⟨by simpa [Ideal.smul_eq_mul] using him, i.2⟩
-  rw [hc (j + c) (Nat.le_add_left c j), Nat.add_sub_cancel] at hmem
-  exact IsConcreteLE.le_iff.mp (smul_mono_right _ inf_le_right) hmem
 
 /-- **Flatness from bijections on infinitesimal quotients.** If, for every maximal ideal `𝔫` of
 `B` with contraction `𝔪` to `A`, the maps `A ⧸ 𝔪ᵏ → B ⧸ 𝔪ᵏ B` are bijective for all `k`, then
@@ -110,7 +106,7 @@ theorem of_bijective_quotientMap_pow
   intro n hn j _
   set m := n.comap (algebraMap A B)
   have hmn : m.map (algebraMap A B) ≤ n := Ideal.map_comap_le
-  obtain ⟨c, hc⟩ := exists_mem_pow_smul_top_of_mem_pow_add m I
+  obtain ⟨c, hc⟩ := TauCeti.ArtinRees.exists_controlled_lift m I
   set J := (m ^ (j + c)).map (algebraMap A B) with hJdef
   have hJ : J ≤ n ^ j := by
     rw [hJdef, Ideal.map_pow]
@@ -135,17 +131,15 @@ theorem of_bijective_quotientMap_pow
     rw [Ideal.quotientMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem]
     exact hiJ
   -- Artin–Rees puts `i` into `𝔪ʲ I`.
-  have hiI := hc j i him
+  obtain ⟨i', hiI, hi'⟩ := hc LinearMap.id Function.surjective_id j i
+    (by simpa [Ideal.smul_eq_mul] using him)
+  rw [LinearMap.id_apply] at hi'
+  rw [hi'] at hiI
   -- Hence `1 ⊗ i ∈ 𝔫ʲ (B ⊗[A] I)`.
   have h1i : (1 : B) ⊗ₜ[A] i ∈ (n ^ j • ⊤ : Submodule B (B ⊗[A] I)) := by
-    refine Submodule.smul_induction_on hiI (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
-    · rw [tmul_smul, ← algebraMap_smul B a]
-      refine Submodule.smul_mem_smul ?_ Submodule.mem_top
-      exact Ideal.pow_right_mono hmn j (by
-        rw [← Ideal.map_pow]
-        exact Ideal.mem_map_of_mem _ ha)
-    · rw [tmul_add]
-      exact add_mem hx hy
+    refine Submodule.smul_mono_left ?_ (one_tmul_mem_map_smul_top hiI)
+    rw [Ideal.map_pow]
+    exact Ideal.pow_right_mono hmn j
   have := add_mem (Submodule.smul_mono_left hJ hi) h1i
   rwa [sub_add_cancel] at this
 
