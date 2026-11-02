@@ -13,13 +13,12 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 For an equivalence relation `E` on a measurable space `X`, a singleton `{⟦x⟧}` of `Quotient E` is
 measurable for Mathlib's quotient σ-algebra exactly when its preimage, the class of `x`, is
 measurable in `X`. So if every class of `E` is measurable, the quotient has measurable singletons,
-and if there are moreover countably many classes, every subset of the quotient is measurable.
+and if there are moreover countably many classes, Mathlib's instance
+`MeasurableSingletonClass.toDiscreteMeasurableSpace` makes every subset of the quotient measurable.
 
 ## Main results
 
 * `Setoid.measurableSingletonClass_quotient`: measurable classes give measurable singletons.
-* `Setoid.discreteMeasurableSpace_quotient`: countably many measurable classes give a discrete
-  quotient σ-algebra.
 -/
 
 public section
@@ -40,12 +39,5 @@ theorem measurableSingletonClass_quotient (hE : ∀ x, MeasurableSet {y | E x y}
     exact ⟨fun h => E.symm (Quotient.exact h), fun h => Quotient.sound (E.symm h)⟩
   rw [this]
   exact hE x
-
-/-- If `E` has countably many classes, each measurable, then every subset of `Quotient E` is
-measurable for the quotient σ-algebra. -/
-theorem discreteMeasurableSpace_quotient [Countable (Quotient E)]
-    (hE : ∀ x, MeasurableSet {y | E x y}) : DiscreteMeasurableSpace (Quotient E) :=
-  have := measurableSingletonClass_quotient hE
-  inferInstance
 
 end Setoid
