@@ -32,30 +32,6 @@ public section
 
 open scoped TensorProduct
 
-namespace Submodule
-
-open TauCeti
-
-variable {k C M : Type*} [Field k]
-  [AddCommGroup C] [Module k C] [Coalgebra k C]
-  [AddCommGroup M] [Module k M] [Comodule k C M]
-
-/-- A subspace stable under every contraction of the coaction is a subcomodule. -/
-theorem coact_mem_range_of_forall_coactComponent_mem (W : Submodule k M)
-    (hW : ∀ (f : Module.Dual k C) {m : M}, m ∈ W →
-      Comodule.coactComponent (R := k) (C := C) f m ∈ W)
-    {m : M} (hm : m ∈ W) :
-    Comodule.coact (R := k) (C := C) m ∈
-      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[k] C)) := by
-  rw [W.coact_mem_range_iff_forall_matrixCoefficient_eq_zero]
-  intro ψ
-  apply (Module.forall_dual_apply_eq_zero_iff k _).mp
-  intro f
-  rw [LinearMap.apply_matrixCoefficient, LinearMap.comp_apply, W.mkQ_apply,
-    (Submodule.Quotient.mk_eq_zero W).mpr (hW f hm), map_zero]
-
-end Submodule
-
 namespace TauCeti.Comodule
 
 variable {k C M : Type*} [Field k]
