@@ -142,13 +142,8 @@ theorem fracPowLE_zero : fracPowLE f g 0 = {v | v.toValuativeRel.vle f 1} := by
 theorem fracPowGE_zero : fracPowGE f g 0 = {v | v.toValuativeRel.vle 1 f} := by
   simpa using fracPowGE_natCast f g 0
 
-/-- A positive power of `x` lies in the support of `v` exactly when `x` does. -/
-private theorem vle_pow_zero_iff (v : Spv A) (x : A) {n : ℕ} (hn : n ≠ 0) :
-    v.toValuativeRel.vle (x ^ n) 0 ↔ v.toValuativeRel.vle x 0 := by
-  rw [← mem_supp_iff, ← mem_supp_iff]
-  exact Ideal.IsPrime.pow_mem_iff_mem inferInstance n (Nat.pos_of_ne_zero hn)
-
-/-- For `g = 0` and a positive exponent, `|f| ≤ |0| ^ q` is the support `{v(f) = 0}` of `f`. -/
+/-- For `g = 0` and a positive exponent, `|f| ≤ |0| ^ q` is the vanishing locus `{v(f) = 0}` of
+`f`, i.e. the points whose support contains `f`. -/
 theorem fracPowLE_zero_right (hq : q ≠ 0) :
     fracPowLE f 0 q = {v | v.toValuativeRel.vle f 0} := by
   ext v
@@ -163,11 +158,14 @@ theorem fracPowGE_zero_right (hq : q ≠ 0) : fracPowGE f 0 q = Set.univ := by
 
 variable {f g}
 
-/-- If `g` is a unit, then `f` is off the support at every point of `{|f| ≥ |g| ^ q}`. -/
-theorem not_vle_zero_of_mem_fracPowGE (hg : IsUnit g) {v : Spv A} (hv : v ∈ fracPowGE f g q) :
-    ¬ v.toValuativeRel.vle f 0 := fun hf ↦
-  @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel _ (hg.pow q.num)
-    (v.toValuativeRel.vle_trans hv ((vle_pow_zero_iff v f q.den_ne_zero).mpr hf))
+/-- If `g` is off the support of `v` and `v ∈ {|f| ≥ |g| ^ q}`, then `f` is off the support of
+`v` too. -/
+theorem not_vle_zero_of_mem_fracPowGE {v : Spv A} (hg : ¬ v.toValuativeRel.vle g 0)
+    (hv : v ∈ fracPowGE f g q) : ¬ v.toValuativeRel.vle f 0 := fun hf ↦ by
+  rw [← mem_supp_iff] at hg
+  refine hg (Ideal.IsPrime.mem_of_pow_mem inferInstance q.num ?_)
+  rw [mem_supp_iff]
+  exact v.toValuativeRel.vle_trans hv ((vle_pow_zero_iff v f q.den_ne_zero).mpr hf)
 
 /-! ### Pullback -/
 
@@ -211,18 +209,13 @@ theorem mem_fracPowGE_of_le {q' : ℚ≥0} {v : Spv A} (hg : v.toValuativeRel.vl
 
 /-! ### The power and product rules -/
 
-/-- The fraction `(n * q.num) / q.den` represents `n * q`. -/
-private theorem natCast_mul_eq_div (n : ℕ) (q : ℚ≥0) :
-    (n : ℚ≥0) * q = ((n * q.num : ℕ) : ℚ≥0) / (q.den : ℚ≥0) := by
-  rw [Nat.cast_mul, mul_div_assoc, NNRat.num_div_den]
-
 /-- **The power rule for upper bounds**: for `n ≠ 0`, `|f ^ n| ≤ |g| ^ (n q)` exactly when
 `|f| ≤ |g| ^ q`. -/
 theorem fracPowLE_pow (f g : A) (q : ℚ≥0) {n : ℕ} (hn : n ≠ 0) :
     fracPowLE (f ^ n) g (n * q) = fracPowLE f g q := by
   ext v
-  rw [mem_fracPowLE_iff q.den_ne_zero (natCast_mul_eq_div n q), fracPowLE_def, Set.mem_ofPred_eq,
-    pow_right_comm, pow_mul', ← valuation_le_iff, ← valuation_le_iff,
+  rw [mem_fracPowLE_iff q.den_ne_zero (NNRat.natCast_mul_eq_div n q), fracPowLE_def,
+    Set.mem_ofPred_eq, pow_right_comm, pow_mul', ← valuation_le_iff, ← valuation_le_iff,
     map_pow v.valuation (f ^ q.den), map_pow v.valuation (g ^ q.num)]
   exact pow_le_pow_iff_left₀ zero_le zero_le hn
 
@@ -231,16 +224,10 @@ theorem fracPowLE_pow (f g : A) (q : ℚ≥0) {n : ℕ} (hn : n ≠ 0) :
 theorem fracPowGE_pow (f g : A) (q : ℚ≥0) {n : ℕ} (hn : n ≠ 0) :
     fracPowGE (f ^ n) g (n * q) = fracPowGE f g q := by
   ext v
-  rw [mem_fracPowGE_iff q.den_ne_zero (natCast_mul_eq_div n q), fracPowGE_def, Set.mem_ofPred_eq,
-    pow_right_comm, pow_mul', ← valuation_le_iff, ← valuation_le_iff,
+  rw [mem_fracPowGE_iff q.den_ne_zero (NNRat.natCast_mul_eq_div n q), fracPowGE_def,
+    Set.mem_ofPred_eq, pow_right_comm, pow_mul', ← valuation_le_iff, ← valuation_le_iff,
     map_pow v.valuation (f ^ q.den), map_pow v.valuation (g ^ q.num)]
   exact pow_le_pow_iff_left₀ zero_le zero_le hn
-
-/-- The common-denominator fraction of `q + q'`. -/
-private theorem add_eq_div_den_mul_den (q q' : ℚ≥0) :
-    q + q' = ((q.num * q'.den + q'.num * q.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) := by
-  obtain ⟨h₁, h₂⟩ := NNRat.eq_div_den_mul_den q q'
-  rw [Nat.cast_add, add_div, ← h₁, ← h₂]
 
 /-- **The product rule for upper bounds**: `|f| ≤ |g| ^ q` and `|f'| ≤ |g| ^ q'` imply
 `|f f'| ≤ |g| ^ (q + q')`. -/
@@ -251,8 +238,8 @@ theorem fracPowLE_inter_fracPowLE_subset (f f' g : A) (q q' : ℚ≥0) :
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [mem_fracPowLE_iff hb h₁, ← valuation_le_iff] at hv
   rw [mem_fracPowLE_iff hb h₂, ← valuation_le_iff] at hv'
-  rw [mem_fracPowLE_iff hb (add_eq_div_den_mul_den q q'), ← valuation_le_iff, mul_pow, pow_add,
-    map_mul, map_mul]
+  rw [mem_fracPowLE_iff hb (NNRat.add_eq_div_den_mul_den q q'), ← valuation_le_iff, mul_pow,
+    pow_add, map_mul, map_mul]
   exact mul_le_mul' hv hv'
 
 /-- **The product rule for lower bounds**: `|f| ≥ |g| ^ q` and `|f'| ≥ |g| ^ q'` imply
@@ -264,8 +251,8 @@ theorem fracPowGE_inter_fracPowGE_subset (f f' g : A) (q q' : ℚ≥0) :
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [mem_fracPowGE_iff hb h₁, ← valuation_le_iff] at hv
   rw [mem_fracPowGE_iff hb h₂, ← valuation_le_iff] at hv'
-  rw [mem_fracPowGE_iff hb (add_eq_div_den_mul_den q q'), ← valuation_le_iff, mul_pow, pow_add,
-    map_mul, map_mul]
+  rw [mem_fracPowGE_iff hb (NNRat.add_eq_div_den_mul_den q q'), ← valuation_le_iff, mul_pow,
+    pow_add, map_mul, map_mul]
   exact mul_le_mul' hv hv'
 
 end TauCeti.ValuationSpectrum

@@ -16,8 +16,8 @@ of `TauCeti.ValuationSpectrum.fracPowLE` and `TauCeti.ValuationSpectrum.fracPowG
 subsets when `g` is a unit: writing `q = a / b` in lowest terms,
 
 ```text
-{|f| ≤ |g| ^ q} ∩ Spa(A, A⁺) = R(f ^ b, g ^ a / g ^ a),
-{|f| ≥ |g| ^ q} ∩ Spa(A, A⁺) = R(g ^ a, f ^ b / f ^ b).
+{|f| ≤ |g| ^ q} ∩ Spa(A, A⁺) = R({f ^ b, g ^ a} / g ^ a),
+{|f| ≥ |g| ^ q} ∩ Spa(A, A⁺) = R({g ^ a, f ^ b} / f ^ b).
 ```
 
 This is the shape of the Hasse domains `{|Ha| ≥ |p| ^ ε}` and of the discs `{|T| ≤ |ϖ| ^ q}`.
@@ -56,8 +56,8 @@ namespace TauCeti.ValuationSpectrum
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- **Fractional upper bounds by a unit are rational**: if `g` is a unit, then on `Spa(A, A⁺)` the
-locus `{|f| ≤ |g| ^ q}` is the rational subset `R(f ^ b, g ^ a / g ^ a)` for `q = a / b` in lowest
-terms. -/
+locus `{|f| ≤ |g| ^ q}` is the rational subset `R({f ^ b, g ^ a} / g ^ a)` for `q = a / b` in
+lowest terms. -/
 theorem fracPowLE_inter_spa [DecidableEq A] (Aplus : Subring A) (f : A) {g : A} (hg : IsUnit g)
     (q : ℚ≥0) :
     fracPowLE f g q ∩ spa Aplus = rationalSubset Aplus {f ^ q.den, g ^ q.num} (g ^ q.num) := by
@@ -70,8 +70,8 @@ theorem fracPowLE_inter_spa [DecidableEq A] (Aplus : Subring A) (f : A) {g : A} 
   exact and_comm
 
 /-- **Fractional lower bounds by a unit are rational**: if `g` is a unit, then on `Spa(A, A⁺)` the
-locus `{|f| ≥ |g| ^ q}` is the rational subset `R(g ^ a, f ^ b / f ^ b)` for `q = a / b` in lowest
-terms. -/
+locus `{|f| ≥ |g| ^ q}` is the rational subset `R({g ^ a, f ^ b} / f ^ b)` for `q = a / b` in
+lowest terms. -/
 theorem fracPowGE_inter_spa [DecidableEq A] (Aplus : Subring A) (f : A) {g : A} (hg : IsUnit g)
     (q : ℚ≥0) :
     fracPowGE f g q ∩ spa Aplus = rationalSubset Aplus {g ^ q.num, f ^ q.den} (f ^ q.den) := by
@@ -84,15 +84,6 @@ theorem fracPowGE_inter_spa [DecidableEq A] (Aplus : Subring A) (f : A) {g : A} 
   exact ⟨fun ⟨hv, hspa⟩ ↦ ⟨hspa, hv, fun h ↦ hg' v (v.toValuativeRel.vle_trans hv h)⟩,
     fun ⟨hspa, hv, _⟩ ↦ ⟨hv, hspa⟩⟩
 
-/-- A unit `u` of `A` with `u, u⁻¹ ∈ A⁺` has valuation `1` at every point of `Spa(A, A⁺)`. -/
-private theorem valuation_units_eq_one {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus)
-    (u : Aˣ) (hu : (u : A) ∈ Aplus) (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) :
-    v.valuation (u : A) = 1 := by
-  refine le_antisymm (valuation_le_one_of_mem_spa hv hu) ?_
-  calc (1 : _) = v.valuation (u : A) * v.valuation ((u⁻¹ : Aˣ) : A) := by
-        rw [← map_mul, Units.mul_inv, map_one]
-    _ ≤ v.valuation (u : A) := mul_le_of_le_one_right zero_le (valuation_le_one_of_mem_spa hv hu')
-
 variable {Aplus : Subring A} {v : Spv A} {f g c : A} {q : ℚ≥0} {a b : ℕ}
 
 /-- If `c ^ b = g ^ a u` for a unit `u` with `u, u⁻¹ ∈ A⁺`, then `v(c) ^ b = v(g) ^ a` at every
@@ -100,7 +91,7 @@ point of `Spa(A, A⁺)`. -/
 private theorem valuation_pow_eq_of_pow_eq (hv : v ∈ spa Aplus) (u : Aˣ) (hu : (u : A) ∈ Aplus)
     (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) (hc : c ^ b = g ^ a * u) :
     v.valuation (c ^ b) = v.valuation (g ^ a) := by
-  rw [hc, map_mul, valuation_units_eq_one hv u hu hu', mul_one]
+  rw [hc, map_mul, valuation_units_eq_one_of_mem_spa hv u hu hu', mul_one]
 
 /-- **A realised threshold turns a fractional upper bound into an ordinary one**: if
 `c ^ b = g ^ a u` for a unit `u` with `u, u⁻¹ ∈ A⁺` and `q = a / b` with `b ≠ 0`, then a point `v`
@@ -131,7 +122,7 @@ theorem fracPowLE_mul_left_inter_spa (u : Aˣ) (hu : (u : A) ∈ Aplus)
   simp only [Set.mem_inter_iff, fracPowLE_def, Set.mem_ofPred_eq, and_congr_left_iff]
   intro hv
   rw [← valuation_le_iff, ← valuation_le_iff, mul_pow, map_mul, map_pow v.valuation (u : A),
-    valuation_units_eq_one hv u hu hu', one_pow, one_mul]
+    valuation_units_eq_one_of_mem_spa hv u hu hu', one_pow, one_mul]
 
 /-- **Fractional lower bounds are invariant under units of `A⁺`**: if `u, u⁻¹ ∈ A⁺`, then on
 `Spa(A, A⁺)` the loci `{|u f| ≥ |g| ^ q}` and `{|f| ≥ |g| ^ q}` agree. -/
@@ -142,7 +133,7 @@ theorem fracPowGE_mul_left_inter_spa (u : Aˣ) (hu : (u : A) ∈ Aplus)
   simp only [Set.mem_inter_iff, fracPowGE_def, Set.mem_ofPred_eq, and_congr_left_iff]
   intro hv
   rw [← valuation_le_iff, ← valuation_le_iff, mul_pow, map_mul, map_pow v.valuation (u : A),
-    valuation_units_eq_one hv u hu hu', one_pow, one_mul]
+    valuation_units_eq_one_of_mem_spa hv u hu hu', one_pow, one_mul]
 
 end TauCeti.ValuationSpectrum
 

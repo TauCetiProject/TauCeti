@@ -26,8 +26,10 @@ q ≤ κ(v)   :⇔   v([ϖ]) ^ b ≤ v(p) ^ a,
 ```
 
 are taken as definitions (`IsRadiusLowerBound`, `IsRadiusUpperBound`), and are independent of
-the chosen fraction. With the breakpoint `c = (p + 1) / 2`, which satisfies `1 < c < p`, the
-Frobenius windows are, for every integer `n`,
+the chosen fraction. They are the fractional valuation bounds `|[ϖ]| ≤ |p| ^ q` and
+`|[ϖ]| ≥ |p| ^ q` (`TauCeti.ValuationSpectrum.fracPowLE`, `TauCeti.ValuationSpectrum.fracPowGE`).
+With the breakpoint `c = (p + 1) / 2`, which satisfies `1 < c < p`, the Frobenius windows are, for
+every integer `n`,
 
 ```text
 U_n = {v ∈ 𝒴 : p ^ n ≤ κ(v) ≤ c p ^ n},
@@ -99,29 +101,30 @@ variable (p : ℕ) [Fact p.Prime] {R : Type*} [CommRing R]
 
 /-! ### Radius bounds -/
 
-/-- **The lower radius bound `q ≤ κ(v)`** at a point `v` of `Spv (𝕎 R)`: writing `q = a / b` in
-lowest terms, `v([ϖ]) ^ b ≤ v(p) ^ a`. Here `κ(v)` stands for the ratio `log v([ϖ]) / log v(p)`,
-which is not formed; `isRadiusLowerBound_iff_of_eq_div` reads the bound off any fraction. -/
+/-- **The lower radius bound `q ≤ κ(v)`** at a point `v` of `Spv (𝕎 R)`: the fractional
+valuation bound `|[ϖ]| ≤ |p| ^ q`, that is, writing `q = a / b` in lowest terms,
+`v([ϖ]) ^ b ≤ v(p) ^ a`. Here `κ(v)` stands for the ratio `log v([ϖ]) / log v(p)`, which is not
+formed; `isRadiusLowerBound_iff_of_eq_div` reads the bound off any fraction. -/
 def IsRadiusLowerBound (ϖ : R) (q : ℚ≥0) (v : Spv (WittVector p R)) : Prop :=
-  v.toValuativeRel.vle (teichmuller p ϖ ^ q.den) ((p : WittVector p R) ^ q.num)
+  v ∈ fracPowLE (teichmuller p ϖ) (p : WittVector p R) q
 
-/-- **The upper radius bound `κ(v) ≤ q`** at a point `v` of `Spv (𝕎 R)`: writing `q = a / b` in
-lowest terms, `v(p) ^ a ≤ v([ϖ]) ^ b`. `isRadiusUpperBound_iff_of_eq_div` reads the bound off any
-fraction. -/
+/-- **The upper radius bound `κ(v) ≤ q`** at a point `v` of `Spv (𝕎 R)`: the fractional
+valuation bound `|[ϖ]| ≥ |p| ^ q`, that is, writing `q = a / b` in lowest terms,
+`v(p) ^ a ≤ v([ϖ]) ^ b`. `isRadiusUpperBound_iff_of_eq_div` reads the bound off any fraction. -/
 def IsRadiusUpperBound (ϖ : R) (q : ℚ≥0) (v : Spv (WittVector p R)) : Prop :=
-  v.toValuativeRel.vle ((p : WittVector p R) ^ q.num) (teichmuller p ϖ ^ q.den)
+  v ∈ fracPowGE (teichmuller p ϖ) (p : WittVector p R) q
 
 variable {p} {ϖ : R}
 
 /-- The lower radius bound `q ≤ κ(v)` is the fractional valuation bound `|[ϖ]| ≤ |p| ^ q`. -/
 theorem isRadiusLowerBound_iff_mem_fracPowLE (q : ℚ≥0) (v : Spv (WittVector p R)) :
-    IsRadiusLowerBound p ϖ q v ↔ v ∈ fracPowLE (teichmuller p ϖ) (p : WittVector p R) q := by
-  rw [IsRadiusLowerBound, fracPowLE_def, Set.mem_ofPred_eq]
+    IsRadiusLowerBound p ϖ q v ↔ v ∈ fracPowLE (teichmuller p ϖ) (p : WittVector p R) q :=
+  Iff.rfl
 
 /-- The upper radius bound `κ(v) ≤ q` is the fractional valuation bound `|[ϖ]| ≥ |p| ^ q`. -/
 theorem isRadiusUpperBound_iff_mem_fracPowGE (q : ℚ≥0) (v : Spv (WittVector p R)) :
-    IsRadiusUpperBound p ϖ q v ↔ v ∈ fracPowGE (teichmuller p ϖ) (p : WittVector p R) q := by
-  rw [IsRadiusUpperBound, fracPowGE_def, Set.mem_ofPred_eq]
+    IsRadiusUpperBound p ϖ q v ↔ v ∈ fracPowGE (teichmuller p ϖ) (p : WittVector p R) q :=
+  Iff.rfl
 
 /-- **The lower radius bound from any fraction**: if `q = a / b` with `b ≠ 0`, then
 `q ≤ κ(v)` exactly when `v([ϖ]) ^ b ≤ v(p) ^ a`. -/
@@ -143,8 +146,8 @@ theorem isRadiusUpperBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0
 value group is linearly ordered. -/
 theorem isRadiusUpperBound_of_not_isRadiusLowerBound {q : ℚ≥0} {v : Spv (WittVector p R)}
     (h : ¬ IsRadiusLowerBound p ϖ q v) : IsRadiusUpperBound p ϖ q v := by
-  rw [IsRadiusLowerBound, ← valuation_le_iff, not_le] at h
-  rw [IsRadiusUpperBound, ← valuation_le_iff]
+  rw [IsRadiusLowerBound, fracPowLE_def, Set.mem_ofPred_eq, ← valuation_le_iff, not_le] at h
+  rw [IsRadiusUpperBound, fracPowGE_def, Set.mem_ofPred_eq, ← valuation_le_iff]
   exact h.le
 
 section CharP
@@ -155,7 +158,8 @@ variable [CharP R p]
 `q / p ≤ κ(v)`. -/
 theorem isRadiusLowerBound_comap_frobenius_iff (q : ℚ≥0) (v : Spv (WittVector p R)) :
     IsRadiusLowerBound p ϖ q (comap frobenius v) ↔ IsRadiusLowerBound p ϖ (q / p) v := by
-  rw [IsRadiusLowerBound, comap_frobenius_teichmuller_pow_vle_natCast_pow_iff,
+  rw [IsRadiusLowerBound, fracPowLE_def, Set.mem_ofPred_eq,
+    comap_frobenius_teichmuller_pow_vle_natCast_pow_iff,
     isRadiusLowerBound_iff_of_eq_div (mul_ne_zero (Fact.out : p.Prime).ne_zero q.den_ne_zero)]
   rw [Nat.cast_mul, mul_comm, ← div_div, NNRat.num_div_den]
 
@@ -163,7 +167,8 @@ theorem isRadiusLowerBound_comap_frobenius_iff (q : ℚ≥0) (v : Spv (WittVecto
 `κ(v) ≤ q / p`. -/
 theorem isRadiusUpperBound_comap_frobenius_iff (q : ℚ≥0) (v : Spv (WittVector p R)) :
     IsRadiusUpperBound p ϖ q (comap frobenius v) ↔ IsRadiusUpperBound p ϖ (q / p) v := by
-  rw [IsRadiusUpperBound, comap_frobenius_natCast_pow_vle_teichmuller_pow_iff,
+  rw [IsRadiusUpperBound, fracPowGE_def, Set.mem_ofPred_eq,
+    comap_frobenius_natCast_pow_vle_teichmuller_pow_iff,
     isRadiusUpperBound_iff_of_eq_div (mul_ne_zero (Fact.out : p.Prime).ne_zero q.den_ne_zero)]
   rw [Nat.cast_mul, mul_comm, ← div_div, NNRat.num_div_den]
 
@@ -324,14 +329,14 @@ private theorem setOf_isRadiusLowerBound_isRadiusUpperBound_eq [DecidableEq (Wit
           (teichmuller p ϖ ^ q'.den) := by
   have hsupp {v : Spv (WittVector p R)} {x : WittVector p R} {k : ℕ} (hk : k ≠ 0) :
       ¬ v.toValuativeRel.vle (x ^ k) 0 ↔ x ∉ v.supp := by
-    rw [← mem_supp_iff, Ideal.IsPrime.pow_mem_iff_mem inferInstance k (Nat.pos_of_ne_zero hk)]
+    rw [vle_pow_zero_iff v x hk, mem_supp_iff]
   ext v
   have h₁ := v.toValuativeRel.vle_refl ((p : WittVector p R) ^ q.num)
   have h₂ := v.toValuativeRel.vle_refl (teichmuller p ϖ ^ q'.den)
   simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, mem_rationalSubset_iff, mem_spaY_iff,
     Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq,
     hsupp (NNRat.num_ne_zero.mpr hq), hsupp q'.den_ne_zero, IsRadiusLowerBound,
-    IsRadiusUpperBound]
+    IsRadiusUpperBound, fracPowLE_def, fracPowGE_def]
   tauto
 
 /-- The set `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}`, for `q ≠ 0`, is a rational subset of
