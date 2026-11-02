@@ -203,24 +203,17 @@ section Torus
 
 variable [Fintype κ] [DecidableEq κ]
 
-/-- **Chevalley's identity** `n_α(u) = h_α(u) n_α(1)`: Steinberg's element is the coroot value
-at `u` times the Weyl representative. -/
-theorem kostantWeylParam_eq_kostantCoordinateCocharacter_mul (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
-    kostantWeylParam e h ρ M hM hi hj A u =
-      kostantCoordinateCocharacter M b wt A c u * kostantWeylGL e h ρ M hM hi hj A := by
-  rw [kostantWeylParam_def]
-  exact kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
-    e h ρ M hM b wt hwt hT hi hj hα hαneg A u
-
 /-- **Quotients of Steinberg's elements are coroot values**: `n_α(u) n_α(v)⁻¹ = h_α(u v⁻¹)`.
 At `v = 1` this is Steinberg's definition `h_α(u) = n_α(u) n_α(1)⁻¹` of the coroot value, read
 on the weight torus. -/
 theorem kostantWeylParam_mul_inv_kostantWeylParam (A : CommAlgCat.{w} ℤ) (u v : Aˣ) :
     kostantWeylParam e h ρ M hM hi hj A u * (kostantWeylParam e h ρ M hM hi hj A v)⁻¹ =
       kostantCoordinateCocharacter M b wt A c (u * v⁻¹) := by
-  rw [kostantWeylParam_eq_kostantCoordinateCocharacter_mul e h ρ M hM hi hj b wt hwt hT hα hαneg,
-    kostantWeylParam_eq_kostantCoordinateCocharacter_mul e h ρ M hM hi hj b wt hwt hT hα hαneg,
-    map_mul, map_inv]
+  rw [kostantWeylParam_def, kostantWeylParam_def,
+    kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+      e h ρ M hM b wt hwt hT hi hj hα hαneg,
+    kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+      e h ρ M hM b wt hwt hT hi hj hα hαneg, map_mul, map_inv]
   group
 
 /-- **Products of Steinberg's elements are coroot values**: `n_α(u) n_α(v) = h_α(-u v⁻¹)`. -/
@@ -248,7 +241,9 @@ theorem kostantWeylParam_conj_kostantTorusPoints (A : CommAlgCat.{w} ℤ) (u : A
   -- Conjugation by `h_α(u) n_α(1)` is conjugation by `n_α(1)`, then by `h_α(u)`.
   have hsplit : ∀ d n g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M),
       d * n * g * (d * n)⁻¹ = d * (n * g * n⁻¹) * d⁻¹ := fun _ _ _ => by group
-  rw [kostantWeylParam_eq_kostantCoordinateCocharacter_mul e h ρ M hM hi hj b wt hwt hT hα hαneg,
+  rw [kostantWeylParam_def,
+    kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+      e h ρ M hM b wt hwt hT hi hj hα hαneg,
     kostantCoordinateCocharacter_apply, hsplit,
     kostantWeylGL_conj_kostantTorusPoints e h ρ M hM hi hj hT hα hαneg b wt hwt s, ← map_inv,
     ← map_mul, ← map_mul, mul_inv_cancel_comm]
@@ -287,7 +282,9 @@ theorem kostantWeylParam_conj_kostantRootSubgroupParam_e (A : CommAlgCat.{w} ℤ
   -- Conjugation by `h_α(u) n_α(1)` is conjugation by `n_α(1)`, then by `h_α(u)`.
   have hsplit : ∀ d n g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M),
       d * n * g * (d * n)⁻¹ = d * (n * g * n⁻¹) * d⁻¹ := fun _ _ _ => by group
-  rw [kostantWeylParam_eq_kostantCoordinateCocharacter_mul e h ρ M hM hi hj b wt hwt hT hα hαneg,
+  rw [kostantWeylParam_def,
+    kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+      e h ρ M hM b wt hwt hT hi hj hα hαneg,
     hsplit, kostantWeylGL_conj_kostantRootSubgroupParam_e e h ρ M hM hi hj hT,
     kostantCoordinateCocharacter_apply,
     kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hαneg' hj,
