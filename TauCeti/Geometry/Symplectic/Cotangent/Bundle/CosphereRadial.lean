@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Normalize
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
 
@@ -82,34 +83,24 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
-/-- `norm_smul` for covectors of the Riemannian fibre norm. Instance search does not find
-`NormSMulClass` for these covectors, so it is supplied from the `NormedSpace` instance. -/
-private theorem norm_smul_covector (c : ℝ) {y : N} (p : TangentSpace J y →L[ℝ] ℝ) :
-    ‖c • p‖ = ‖c‖ * ‖p‖ :=
-  (NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace J y →L[ℝ] ℝ)).norm_smul c p
-
-/-- The covector of norm one on the ray of a covector `q`. -/
+/-- The covector of norm one on the ray of a covector `q` (`NormedSpace.normalize` on fibres). -/
 private def normalize (q : CotangentBundle J N) : CotangentBundle J N :=
-  TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (‖q.2‖⁻¹ • q.2)
+  TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (NormedSpace.normalize q.2)
 
 /-- The normalization of a covector other than zero has norm one. -/
 private theorem norm_snd_normalize {q : CotangentBundle J N} (hq : q.2 ≠ 0) :
     ‖(normalize q).2‖ = 1 :=
-  (norm_smul_covector ‖q.2‖⁻¹ q.2).trans <| by
-    have hpos : 0 < ‖q.2‖ := (norm_pos_iff (a := q.2)).2 hq
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos hpos, inv_mul_cancel₀ hpos.ne']
+  NormedSpace.norm_normalize (V := TangentSpace J q.proj →L[ℝ] ℝ) hq
 
 /-- Normalization only depends on the ray of a covector. -/
 private theorem normalize_mk_smul (q : CotangentBundle J N) {c : ℝ} (hc : 0 < c) :
     normalize (TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (c • q.2)) = normalize q := by
-  dsimp only [normalize]
-  rw [norm_smul_covector, Real.norm_of_nonneg hc.le, smul_smul, mul_inv_rev, mul_assoc,
-    inv_mul_cancel₀ hc.ne', mul_one]
+  simp only [normalize, NormedSpace.normalize_smul_of_pos hc]
 
 /-- A covector of norm one is its own normalization. -/
 private theorem normalize_of_norm_eq_one {q : CotangentBundle J N} (hq : ‖q.2‖ = 1) :
     normalize q = q := by
-  rw [normalize, hq, inv_one, one_smul]
+  rw [normalize, NormedSpace.normalize_eq_self_of_norm_eq_one hq]
 
 end Normalize
 
@@ -130,7 +121,7 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
 linear on fibres. -/
 private theorem normalize_cotangent_normalize (h : M ≃ₘ⟮I, J⟯ N) {q : CotangentBundle I M}
     (hq : q.2 ≠ 0) : normalize (h.cotangent (normalize q)) = normalize (h.cotangent q) := by
-  rw [normalize.eq_1 q, cotangent_mk_smul,
+  rw [normalize.eq_1 q, NormedSpace.normalize, cotangent_mk_smul,
     normalize_mk_smul (h.cotangent q) (c := ‖q.2‖⁻¹) (inv_pos.2 ((norm_pos_iff (a := q.2)).2 hq))]
 
 /-- The cotangent lift of a covector of norm one, normalized to norm one. -/
@@ -227,8 +218,7 @@ theorem cosphereRadial_refl :
     (Diffeomorph.refl I M ∞).cosphereRadial =
       Diffeomorph.refl 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (cosphereBundle I M) ∞ :=
   Diffeomorph.ext fun z ↦ Subtype.ext <| by
-    rw [coe_cosphereRadial_eq_normalize, cotangent_refl, Diffeomorph.coe_refl,
-      Diffeomorph.coe_refl, id, id, normalize_of_norm_eq_one z.2]
+    simpa [coe_cosphereRadial_eq_normalize] using normalize_of_norm_eq_one z.2
 
 /-- Radial identification is functorial: along a composite it is the composite of the radial
 identifications. -/
@@ -241,11 +231,10 @@ theorem cosphereRadial_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ
     (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
     (h.trans g).cosphereRadial = h.cosphereRadial.trans g.cosphereRadial :=
   Diffeomorph.ext fun z ↦ Subtype.ext <| by
-    rw [Diffeomorph.coe_trans, Function.comp_apply, coe_cosphereRadial_eq_normalize,
-      coe_cosphereRadial_eq_normalize, coe_cosphereRadial_eq_normalize,
-      normalize_cotangent_normalize _
-        ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2)),
-      cotangent_trans, Diffeomorph.coe_trans, Function.comp_apply]
+    simp only [Diffeomorph.coe_trans, Function.comp_apply, coe_cosphereRadial_eq_normalize]
+    rw [normalize_cotangent_normalize _
+      ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2))]
+    simp
 
 section CotangentCoe
 
