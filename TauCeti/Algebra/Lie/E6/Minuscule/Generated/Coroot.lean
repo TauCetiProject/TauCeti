@@ -128,6 +128,8 @@ theorem generatedSerreLift_serreH_eq_derivationComp_generatedCorootCocharacter (
 
 /-- The differential of a coordinate cocharacter of the generated weight torus is its
 numbered Cartan vector. -/
+-- Rewrite before `derivationCompLieHom_apply` unfolds the differential.
+@[simp↓]
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : Fin 6) :
     derivationCompLieHom
         ((generatedWeightTorusCoordinateMap R).hom.cocharacter
@@ -137,6 +139,8 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : 
     generatedCorootCocharacter_def, derivationCompLieHom_apply]
 
 /-- A coordinate tangent basis vector of the weight torus maps to its Cartan vector. -/
+-- Rewrite before `derivationCompLieHom_apply` unfolds the differential.
+@[simp↓]
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis (i : Fin 6) :
     derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom
         (SplitTorus.tangentBasis (R := R) (B := R) i) = generatedCartanVector R i := by
