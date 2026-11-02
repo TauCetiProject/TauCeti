@@ -95,10 +95,15 @@ variable {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddComm
 /-- The map `k` with its values near the kernel of `π` replaced by those of `l`: the convex
 combination of `k x` and `l x` with weight the cutoff `spliceCutoff` at scale `δ` along `π`. It is
 `l` where `|π x| ≤ δ` and `k` where `2 δ ≤ |π x|`. -/
-@[expose] def spliceAlong (π : X →L[ℝ] ℝ) (k l : X → Y) (δ : ℝ) (x : X) : Y :=
+def spliceAlong (π : X →L[ℝ] ℝ) (k l : X → Y) (δ : ℝ) (x : X) : Y :=
   k x + spliceCutoff (δ⁻¹ * π x) • (l x - k x)
 
 variable {π : X →L[ℝ] ℝ} {k l : X → Y} {δ : ℝ} {x : X}
+
+/-- The value of the spliced map at a point. -/
+theorem spliceAlong_apply :
+    spliceAlong π k l δ x = k x + spliceCutoff (δ⁻¹ * π x) • (l x - k x) := by
+  rw [spliceAlong]
 
 /-- Where `2 δ ≤ |π x|`, the spliced map is `k`. -/
 theorem spliceAlong_of_le_abs (hδ : 0 < δ) (hx : 2 * δ ≤ |π x|) : spliceAlong π k l δ x = k x := by

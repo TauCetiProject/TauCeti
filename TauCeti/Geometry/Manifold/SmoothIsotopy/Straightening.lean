@@ -96,17 +96,9 @@ private theorem contDiffOn_splice {k l : ℝ → E} {T : Set ℝ}
   -- Jointly in `(s, t)`, the splice is a splice along the second coordinate.
   have hk' := hk.comp contDiffOn_snd fun (p : ℝ × ℝ) (hp : p ∈ univ ×ˢ T) => hp.2
   have hl' := hl.comp contDiffOn_snd fun (p : ℝ × ℝ) (hp : p ∈ univ ×ˢ T) => hp.2
-  exact contDiffOn_spliceAlong hk' (hk'.add (contDiffOn_fst.smul (hl'.sub hk')))
-    (ContinuousLinearMap.snd ℝ ℝ ℝ) δ
-
-/-- The norm of `toSpanSingleton ℝ x - toSpanSingleton ℝ y` is `‖x - y‖`. -/
-private theorem norm_toSpanSingleton_sub (x y : E) :
-    ‖ContinuousLinearMap.toSpanSingleton ℝ x - ContinuousLinearMap.toSpanSingleton ℝ y‖ =
-      ‖x - y‖ := by
-  rw [← ContinuousLinearMap.norm_toSpanSingleton (𝕜 := ℝ) (x - y)]
-  congr 1
-  ext
-  simp
+  refine (contDiffOn_spliceAlong hk' (hk'.add (contDiffOn_fst.smul (hl'.sub hk')))
+    (ContinuousLinearMap.snd ℝ ℝ ℝ) δ).congr fun p _ => ?_
+  simp [splice, spliceAlong_apply]
 
 /-- **The velocity of a spliced curve.** If the velocities `k'` and `l'` of `k` and `l` at `t` are
 within `ε` of `v`, `‖l t - k t‖ ≤ 2 ε |t|`, and `B` bounds the derivative of the cutoff, then at
@@ -129,7 +121,10 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
     exact (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans hlk
   obtain ⟨h', hh', hh'v⟩ := exists_hasFDerivAt_spliceAlong_sub_le hδ
     ContinuousLinearMap.norm_id_le hB hk.hasFDerivAt hls.hasFDerivAt
-    ((norm_toSpanSingleton_sub _ _).trans_le hk') ((norm_toSpanSingleton_sub _ _).trans_le hls')
+    (by simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
+        LinearIsometryEquiv.norm_map] using hk')
+    (by simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
+        LinearIsometryEquiv.norm_map] using hls')
     (A := ContinuousLinearMap.toSpanSingleton ℝ v) hlks
   replace hh' : HasFDerivAt (splice k l δ s) h' t := hh'
   refine ⟨hh'.differentiableAt, ?_⟩
@@ -193,8 +188,12 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
       (A := ContinuousLinearMap.toSpanSingleton ℝ v)
       (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
       (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
-      (fun x hx => ((norm_toSpanSingleton_sub _ _).trans_lt (hk₁ x (hlt x hx).1)).le)
-      (fun x hx => ((norm_toSpanSingleton_sub _ _).trans_lt (hl₁ x (hlt x hx).2.1)).le)
+      (fun x hx => by
+        simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
+          LinearIsometryEquiv.norm_map] using (hk₁ x (hlt x hx).1).le)
+      (fun x hx => by
+        simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
+          LinearIsometryEquiv.norm_map] using (hl₁ x (hlt x hx).2.1).le)
       ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
     simpa [Real.norm_eq_abs] using h
   refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩
