@@ -74,17 +74,6 @@ private def pullbackEndomorphism (h : M ≃ₘ⟮I, I'⟯ N) (J : SmoothAlmostCo
     (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x :=
   (mfderiv I I' h x).inverse ∘L J.toEndomorphism (h x) ∘L mfderiv I I' h x
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
-/-- The inverse tangent lift sends `(h x, w)` to `(x, (dh_x)⁻¹ w)`. -/
-private theorem tangent_symm_mk (h : M ≃ₘ⟮I, I'⟯ N) (x : M) (w : TangentSpace I' (h x)) :
-    h.tangent.symm (TotalSpace.mk' E' (h x) w) =
-      TotalSpace.mk' E x ((mfderiv I I' h x).inverse w) := by
-  refine h.tangent.toEquiv.symm_apply_eq.2 ?_
-  rw [Diffeomorph.coe_toEquiv, Diffeomorph.coe_tangent]
-  -- `tangentMap` sends `(x, v)` to `(h x, dh_x v)`.
-  exact congrArg (TotalSpace.mk' E' (h x))
-    ((h.isInvertible_mfderiv (by simp)).self_apply_inverse w).symm
-
 private theorem contMDiff_pullbackEndomorphism (h : M ≃ₘ⟮I, I'⟯ N)
     (J : SmoothAlmostComplexStructure I' N) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
@@ -97,7 +86,7 @@ private theorem contMDiff_pullbackEndomorphism (h : M ≃ₘ⟮I, I'⟯ N)
     J.toEndomorphism.contMDiff
   refine (h.tangent.symm.contMDiff.comp (hJ.comp h.tangent.contMDiff)).congr fun p ↦ ?_
   simp only [Function.comp_apply, Diffeomorph.coe_tangent]
-  exact (tangent_symm_mk h p.proj _).symm
+  exact (h.tangent_symm_mk p.proj _).symm
 
 /-- The pullback `h^* J` of a smooth almost complex structure `J` on `N` along a smooth
 diffeomorphism `h : M → N`: at `x` it is `(dh_x)⁻¹ ∘ J_(h x) ∘ dh_x`. -/
