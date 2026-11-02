@@ -32,7 +32,7 @@ identity.
 * `TauCeti.tensorPowAddIso` and `TauCeti.tensorPowAddIso_assoc`: the block decomposition
   isomorphisms and their associativity;
 * `TauCeti.tensorPowSuccIso`: appending a factor on the right, with its compatibilities
-  `TauCeti.tensorPowSuccIso_hom_whiskerRight` and
+  `TauCeti.tensorPowSuccIso_hom_whiskerRight_tensorPowAddIso_hom` and
   `TauCeti.tensorPowAddIso_hom_whiskerRight_tensorPowSuccIso_hom`.
 -/
 
@@ -70,6 +70,7 @@ def tensorPowAddIso (X : C) : (m n : ℕ) → tensorPow X m ⊗ tensorPow X n �
   | m + 1, n => α_ X (tensorPow X m) (tensorPow X n) ≪≫ whiskerLeftIso X (tensorPowAddIso X m n)
 
 /-- The block decomposition with an empty first block is the left unitor. -/
+@[simp]
 theorem tensorPowAddIso_zero (X : C) (n : ℕ) : tensorPowAddIso X 0 n = λ_ (tensorPow X n) :=
   (rfl)
 
@@ -125,6 +126,7 @@ theorem tensorPowAddIso_assoc (X : C) (a b c : ℕ) :
           (α_ X (tensorPow X a ⊗ tensorPow X b) (tensorPow X c)).hom ≫
           X ◁ ((tensorPowAddIso X a b).hom ▷ tensorPow X c ≫
             (tensorPowAddIso X (b + a) c).hom) := by
+          -- `b + (a + 1)` is definitionally `b + a + 1`, the index of the recursive step.
           rw [show (tensorPowAddIso X (b + (a + 1)) c).hom = _ from
             tensorPowAddIso_succ_hom X (b + a) c, tensorPowAddIso_succ_hom]
           monoidal
@@ -165,7 +167,7 @@ theorem tensorPowSuccIso_hom (X : C) (n : ℕ) :
 /-- Appending a factor to the first of two blocks and then joining them is joining the factor to
 the second block. -/
 @[reassoc]
-theorem tensorPowSuccIso_hom_whiskerRight (X : C) (m n : ℕ) :
+theorem tensorPowSuccIso_hom_whiskerRight_tensorPowAddIso_hom (X : C) (m n : ℕ) :
     (tensorPowSuccIso X m).hom ▷ tensorPow X n ≫ (tensorPowAddIso X (m + 1) n).hom =
       (α_ (tensorPow X m) X (tensorPow X n)).hom ≫ (tensorPowAddIso X m (n + 1)).hom ≫
         eqToHom (congrArg (tensorPow X) (by omega)) := by
@@ -201,6 +203,7 @@ def tensorPowMap {X Y : C} (f : X ⟶ Y) : (n : ℕ) → tensorPow X n ⟶ tenso
   | n + 1 => f ⊗ₘ tensorPowMap f n
 
 /-- The zeroth tensor power of a morphism is the identity of the unit. -/
+@[simp]
 theorem tensorPowMap_zero {X Y : C} (f : X ⟶ Y) : tensorPowMap f 0 = 𝟙 (𝟙_ C) :=
   (rfl)
 
@@ -251,6 +254,8 @@ theorem tensorPowAddIso_hom_naturality {X Y : C} (f : X ⟶ Y) (m n : ℕ) :
   induction m with
   | zero => simp [tensorPowAddIso_zero, tensorPowMap_zero]
   | succ m ih =>
+    -- `n + (m + 1)` is definitionally `n + m + 1`, so `tensorPowMap_succ` applies up to `rfl`;
+    -- rewriting the exponent instead would change the type of `tensorPowMap f`.
     rw [tensorPowAddIso_succ_hom, tensorPowAddIso_succ_hom, tensorPowMap_succ,
       show tensorPowMap f (n + (m + 1)) = f ⊗ₘ tensorPowMap f (n + m) from rfl,
       associator_naturality_assoc, tensorHom_def f, tensorHom_def f, Category.assoc,

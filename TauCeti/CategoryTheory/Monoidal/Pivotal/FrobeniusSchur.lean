@@ -31,8 +31,10 @@ time `n + 1` times is rotating the whole of `V^⊗(n+1)` past the unit, which is
 
 In a `k`-linear pivotal category the operator is `k`-linear, and the `n`-th *Frobenius–Schur
 indicator* of `V`, for a positive integer `n`, is its trace
-`TauCeti.frobeniusSchurIndicator k V n = tr (E_V^{(n)}) ∈ k`. It is invariant under isomorphism,
-and `ν_1(V)` is the rank of `𝟙_ C ⟶ V` when that module is finite and free.
+`TauCeti.frobeniusSchurIndicator k V n = tr (E_V^{(n)}) ∈ k`. This is the Ng–Schauenburg indicator
+when `𝟙_ C ⟶ V^⊗n` is finite and free over `k` (for example over a field, with finite-dimensional
+hom spaces); otherwise it is `0`, by the convention of `LinearMap.trace`. It is invariant under
+isomorphism, and `ν_1(V)` is the rank of `𝟙_ C ⟶ V` when that module is finite and free.
 
 ## Main declarations
 
@@ -195,7 +197,7 @@ private theorem blockRotate_succ (j b : ℕ) (f : 𝟙_ C ⟶ tensorPow V (b + j
   have h := pivotalRotate_comp_whiskerLeft (pivotalRotate f ≫ (tensorPowAddIso V j b).inv ▷ V ≫
     (α_ _ _ _).hom) (tensorPowSuccIso V b).hom
   simp only [Category.assoc] at h
-  rw [h, Category.assoc, tensorPowSuccIso_hom_whiskerRight_assoc]
+  rw [h, Category.assoc, tensorPowSuccIso_hom_whiskerRight_tensorPowAddIso_hom_assoc]
   simp
 
 /-- The `j`-th iterate of `E_V^{(N+1)}` rotates the first block of length `j`. -/
@@ -268,7 +270,11 @@ theorem frobeniusSchurEnd_pow_eq_one (n : ℕ) : frobeniusSchurEnd k V n ^ (n + 
     iterate_frobeniusSchurRotate_eq_id, id]
 
 /-- The `n`-th *Frobenius–Schur indicator* `ν_n(V)` of an object `V` of a `k`-linear pivotal
-category, for a positive integer `n`: the trace of the operator `E_V^{(n)}` on `𝟙_ C ⟶ V^⊗n`. -/
+category, for a positive integer `n`: the trace of the operator `E_V^{(n)}` on `𝟙_ C ⟶ V^⊗n`.
+
+This is the Ng–Schauenburg indicator when `𝟙_ C ⟶ V^⊗n` is finite and free over `k` (for example
+when `k` is a field and the hom spaces are finite-dimensional). Otherwise it is `0`, by the
+convention of `LinearMap.trace`. -/
 noncomputable def frobeniusSchurIndicator (n : ℕ+) : k :=
   LinearMap.trace k _ (frobeniusSchurEnd k V n.natPred)
 
@@ -285,6 +291,8 @@ theorem frobeniusSchurIndicator_one [Module.Free k (𝟙_ C ⟶ V)] [Module.Fini
   have : Module.Free k (𝟙_ C ⟶ tensorPow V 1) := Module.Free.of_equiv e.symm
   have : Module.Finite k (𝟙_ C ⟶ tensorPow V 1) := Module.Finite.equiv e.symm
   have h1 : frobeniusSchurEnd k V 0 = 1 := by simpa using frobeniusSchurEnd_pow_eq_one k V 0
+  -- `(1 : ℕ+)` is `⟨1, _⟩`, which is `Nat.succPNat 0` by definition; restating it this way puts
+  -- the indicator in the form of `frobeniusSchurIndicator_succPNat`.
   rw [show (1 : ℕ+) = Nat.succPNat 0 from rfl, frobeniusSchurIndicator_succPNat, h1,
     LinearMap.trace_one, e.finrank_eq]
 
