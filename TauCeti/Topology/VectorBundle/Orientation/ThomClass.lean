@@ -77,48 +77,6 @@ variable {B : Type w} [TopologicalSpace B] [CompactSpace B] {F : Type w} [Normed
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {n : ℕ} (o : VectorBundleOrientation F E (Fin (n + 1))) (hF : finrank ℝ F = n + 1)
 
-omit [CompactSpace B] in
-/-- The generators of `Hⁿ⁺¹(E_b, E_b ∖ {0}; ℤ)` selected by `o b` read in two linear
-trivializations agree. -/
-private theorem fiberGenerator_eq (e e' : Trivialization F (π F E)) [e.IsLinear ℝ]
-    [e'.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
-    TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom (n + 1)
-        ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) =
-      TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom
-        (n + 1) ((e'.mapOrientation (Fin (n + 1)) hb' (o b)).localCohomologyClass hF) := by
-  rw [Trivialization.mapOrientation_eq_map_continuousLinearEquivAt,
-    Trivialization.mapOrientation_eq_map_continuousLinearEquivAt]
-  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq _ _ _ hF
-
-omit [VectorBundle ℝ F E] in
-/-- `TauCeti.exists_singularCohomology_thomPair_fiber_of_compactSpace`, in a degree `d` equal to
-`finrank ℝ F`. -/
-private theorem exists_singularCohomology_thomPair_fiber [FiniteDimensional ℝ F] {d : ℕ}
-    (hd : finrank ℝ F = d)
-    (g : ∀ b, (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularCohomology
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d)
-    (hg : ∀ c, ∃ W : Set B, IsOpen W ∧ c ∈ W ∧
-      (∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W ⊆ e.baseSet) ∧
-      ∃ u : (thomPairOver F E W).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
-        (ModuleCat.of ℤ (ULift.{w} ℤ)) d, ∀ b (hb : b ∈ W),
-        TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ u = g b) :
-    ∃ x : (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
-        (ModuleCat.of ℤ (ULift.{w} ℤ)) d,
-      ∀ b, TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ x = g b := by
-  subst hd
-  exact exists_singularCohomology_thomPair_fiber_of_compactSpace g hg
-
-/-- `TauCeti.singularCohomology_thomPair_ext_of_compactSpace`, in a degree `d` equal to
-`finrank ℝ F`. -/
-private theorem singularCohomology_thomPair_ext [FiniteDimensional ℝ F] {d : ℕ}
-    (hd : finrank ℝ F = d)
-    {u v : (thomPair F E).singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) d}
-    (h : ∀ b, TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
-      TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ v) : u = v := by
-  subst hd
-  exact singularCohomology_thomPair_ext_of_compactSpace h
-
 /-- A class of `Hⁿ⁺¹(E, E₀; ℤ)` restricting on every fibre to the generator selected by the fibre
 orientation, read in the trivialization at that point. -/
 private theorem exists_thomClass :
@@ -130,7 +88,9 @@ private theorem exists_thomClass :
           (((trivializationAt F E b).mapOrientation (Fin (n + 1))
             (FiberBundle.mem_baseSet_trivializationAt' b) (o b)).localCohomologyClass hF) := by
   have := FiniteDimensional.of_finrank_eq_succ hF
-  refine exists_singularCohomology_thomPair_fiber hF _ fun c ↦ ?_
+  refine (hF ▸ exists_singularCohomology_thomPair_fiber_of_compactSpace (F := F) (E := E)
+    (R' := ModuleCat.of ℤ (ULift.{w} ℤ)) (K := ℤ) (M' := ModuleCat.of ℤ (ULift.{w} ℤ))) _
+    fun c ↦ ?_
   -- Near `c` the fibre orientations read in the trivialization `e` at `c` are a single
   -- orientation `ω` of `F`; pull back the generator it selects along `e`.
   let e := trivializationAt F E c
@@ -142,8 +102,8 @@ private theorem exists_thomClass :
     ⟨e, inferInstance, inter_subset_right⟩, u, fun b hb ↦ ?_⟩
   have hω : e.mapOrientation (Fin (n + 1)) hb.2 (o b) = e.mapOrientation (Fin (n + 1)) hc (o c) :=
     ht b hb.1 hb.2
-  rw [hu b hb, ← hω]
-  exact fiberGenerator_eq o hF _ _ _ _
+  rw [hu b hb, ← hω, Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
 
 /-- **The integral Thom class of an oriented vector bundle.** For an orientation `o` of a real
 vector bundle `E` over a compact base, with model fibre `F` of dimension `n + 1`, this is the class
@@ -166,7 +126,9 @@ theorem singularCohomologyMap_fiberThomPairMap_thomClass (e : Trivialization F (
     TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClass hF) =
       TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
         (n + 1) ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) :=
-  ((exists_thomClass o hF).choose_spec b).trans (fiberGenerator_eq o hF _ _ _ _)
+  ((exists_thomClass o hF).choose_spec b).trans <| by
+    rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
+    exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
 
 /-- **Uniqueness of the Thom class.** A class of `Hⁿ⁺¹(E, E₀; ℤ)` is the Thom class of the oriented
 bundle exactly when it restricts on every fibre to the generator selected by the fibre
@@ -180,7 +142,9 @@ theorem eq_thomClass_iff
           (n + 1) ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) := by
   have := FiniteDimensional.of_finrank_eq_succ hF
   refine ⟨fun h e _ b hb ↦ h ▸ o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb,
-    fun h ↦ singularCohomology_thomPair_ext hF fun b ↦ ?_⟩
+    fun h ↦ (hF ▸ fun u v ↦ singularCohomology_thomPair_ext_of_compactSpace (F := F) (E := E)
+      (R' := ModuleCat.of ℤ (ULift.{w} ℤ)) (K := ℤ) (M' := ModuleCat.of ℤ (ULift.{w} ℤ)) (u := u)
+      (v := v)) u _ fun b ↦ ?_⟩
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
   rw [h _ b hb, o.singularCohomologyMap_fiberThomPairMap_thomClass hF _ hb]
 

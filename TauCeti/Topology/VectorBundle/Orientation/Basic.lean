@@ -113,15 +113,6 @@ theorem mapOrientation_eq_map_coordChangeL (e e' : Trivialization F (π F E)) [e
       _ = _ := by rw [LinearEquiv.self_trans_symm, LinearEquiv.refl_trans]
   simp only [mapOrientation_apply, ← Orientation.map_trans, hcomp]
 
-/-- In a vector bundle, reading a fibre orientation in a linear trivialization is transporting it
-along the continuous linear equivalence `E b ≃L[ℝ] F` given by the trivialization. -/
-theorem mapOrientation_eq_map_continuousLinearEquivAt [∀ b, TopologicalSpace (E b)]
-    [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
-    (o : Orientation ℝ (E b) ι) :
-    e.mapOrientation ι hb o =
-      Orientation.map ι (e.continuousLinearEquivAt ℝ b hb).toLinearEquiv o :=
-  (rfl)
-
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]
   [FiniteDimensional ℝ F]
 
