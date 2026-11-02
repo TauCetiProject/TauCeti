@@ -298,28 +298,28 @@ section OfCholesky
 
 variable {L : Matrix (Fin p) (Fin p) ℝ}
 
-private theorem partialCorrelationOfCholesky_sq (hdiag : ∀ i, 0 < L i i)
+private theorem partialCorrelationOfCholesky_sq (hdiag : ∀ i, L i i ≠ 0)
     (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) {i j : Fin p} (hji : j < i) :
     L.partialCorrelationOfCholesky ⟨(i, j), hji⟩ ^ 2 =
       L i j ^ 2 / (1 - ∑ k ∈ Finset.Iio j, L i k ^ 2) := by
   rw [Matrix.partialCorrelationOfCholesky_apply, div_pow,
-    Real.sq_sqrt (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le).le]
+    Real.sq_sqrt (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i) hji.le).le]
 
-/-- The partial correlations of a factor with positive diagonal and unit-length rows lie in
+/-- The partial correlations of a factor with nonzero diagonal and unit-length rows lie in
 the open cube. -/
-theorem abs_partialCorrelationOfCholesky_lt_one (hdiag : ∀ i, 0 < L i i)
+theorem abs_partialCorrelationOfCholesky_lt_one (hdiag : ∀ i, L i i ≠ 0)
     (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) (ij : strictLowerTriangle p) :
     |L.partialCorrelationOfCholesky ij| < 1 := by
   obtain ⟨⟨i, j⟩, hji⟩ := ij
   rw [← sq_lt_one_iff_abs_lt_one, partialCorrelationOfCholesky_sq hdiag hrow hji,
-    div_lt_one (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le)]
+    div_lt_one (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i) hji.le)]
   have := Finset.sq_add_sq_le_one_sub_sum_Iio_sq (hrow i) hji
-  have := pow_pos (hdiag i) 2
+  have := sq_pos_of_ne_zero (hdiag i)
   linarith
 
 /-- The residual products of the recovered partial correlations telescope to the residual
 `1 - ∑ k < j, L i k ^ 2` of row `i`. -/
-private theorem prod_one_sub_sq_partialCorrelationOfCholesky (hdiag : ∀ i, 0 < L i i)
+private theorem prod_one_sub_sq_partialCorrelationOfCholesky (hdiag : ∀ i, L i i ≠ 0)
     (hrow : ∀ i, ∑ j, L i j ^ 2 = 1) (i j : Fin p) (hji : j ≤ i) :
     ∏ k ∈ Finset.Iio j, (1 - partialCorrelationRow L.partialCorrelationOfCholesky i k ^ 2) =
       1 - ∑ k ∈ Finset.Iio j, L i k ^ 2 := by
@@ -335,7 +335,7 @@ private theorem prod_one_sub_sq_partialCorrelationOfCholesky (hdiag : ∀ i, 0 <
     rw [hfilter, ih k hkj hki.le]
     simp only [partialCorrelationRow, hki, ↓reduceDIte]
     rw [partialCorrelationOfCholesky_sq hdiag hrow hki,
-      div_mul_cancel₀ _ (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hki.le).ne']
+      div_mul_cancel₀ _ (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i) hki.le).ne']
 
 /-- A lower-triangular matrix with positive diagonal and unit-length rows is the triangular
 factor of its recovered partial correlations. -/
@@ -348,8 +348,8 @@ theorem partialCorrelationCholesky_partialCorrelationOfCholesky (hL : L.IsLowerT
         Real.sqrt (1 - partialCorrelationRow L.partialCorrelationOfCholesky i k ^ 2)) =
         Real.sqrt (1 - ∑ k ∈ Finset.Iio j, L i k ^ 2) := by
     rw [← Real.sqrt_prod _ fun k _ ↦ (sub_pos.2 (row_sq_lt_one
-      (abs_partialCorrelationOfCholesky_lt_one hdiag hrow) i k)).le,
-      prod_one_sub_sq_partialCorrelationOfCholesky hdiag hrow i j hji]
+      (abs_partialCorrelationOfCholesky_lt_one (fun i ↦ (hdiag i).ne') hrow) i k)).le,
+      prod_one_sub_sq_partialCorrelationOfCholesky (fun i ↦ (hdiag i).ne') hrow i j hji]
   ext i j
   rcases lt_trichotomy j i with hji | rfl | hij
   · simp only [partialCorrelationCholesky, hji, ↓reduceIte]
@@ -373,7 +373,8 @@ theorem partialCorrelationOfCholesky_partialCorrelationCholesky {z : strictLower
     (hz : ∀ ij, |z ij| < 1) : (partialCorrelationCholesky z).partialCorrelationOfCholesky = z := by
   have hdiag := partialCorrelationCholesky_diag_pos hz
   have hrow := sum_sq_partialCorrelationCholesky fun ij ↦ (hz ij).le
-  exact injOn_partialCorrelationCholesky (abs_partialCorrelationOfCholesky_lt_one hdiag hrow) hz
+  exact injOn_partialCorrelationCholesky
+    (abs_partialCorrelationOfCholesky_lt_one (fun i ↦ (hdiag i).ne') hrow) hz
     (partialCorrelationCholesky_partialCorrelationOfCholesky
       (isLowerTriangular_partialCorrelationCholesky z) hdiag hrow)
 

@@ -397,7 +397,7 @@ theorem abs_partialCorrelationOfCholesky_cholesky_lt_one {x : strictLowerTriangl
     (hx : x ∈ posDefCorrelationRegion p) (ij : strictLowerTriangle p) :
     |Matrix.partialCorrelationOfCholesky
       (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 ij| < 1 :=
-  abs_partialCorrelationOfCholesky_lt_one (cholesky _).2.2
+  abs_partialCorrelationOfCholesky_lt_one (fun i ↦ ((cholesky _).2.2 i).ne')
     (sum_sq_cholesky_correlationMatrix hx) ij
 
 /-- The partial correlations of the Cholesky factor of a positive-definite correlation matrix
