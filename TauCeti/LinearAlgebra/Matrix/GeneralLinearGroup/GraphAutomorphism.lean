@@ -163,15 +163,15 @@ theorem transpose_typeAGraphConjugator (r : ℕ) :
     (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ =
       (-1 : A) ^ r • (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) := by
   ext i j
-  rw [transpose_apply, Matrix.smul_apply, typeAGraphConjugator_apply, typeAGraphConjugator_apply,
-    smul_eq_mul]
   by_cases h : j = i.rev
   · subst h
-    have hi : (i : ℕ) ≤ r := Nat.lt_succ_iff.mp i.isLt
-    rw [ite_eq_left (Fin.rev_rev i).symm, ite_eq_left rfl, Fin.val_rev, ← pow_add,
-      show r + 1 - (i + 1) = r - i by omega, show r + i = (r - i) + 2 * i by omega, pow_add,
-      pow_mul, neg_one_sq, one_pow, mul_one]
-  · rw [ite_eq_right fun h' ↦ h (by rw [h', Fin.rev_rev]), ite_eq_right h, mul_zero]
+    -- The signs `(-1) ^ (r - i)` and `(-1) ^ (r + i)` agree, as the exponents have equal parity.
+    simp only [transpose_apply, Matrix.smul_apply, typeAGraphConjugator_apply, Fin.rev_rev,
+      ite_true, smul_eq_mul, ← pow_add, Fin.val_rev]
+    rw [neg_one_pow_eq_pow_mod_two, neg_one_pow_eq_pow_mod_two (n := r + i)]
+    grind
+  · have h' : i ≠ j.rev := by rintro rfl; simp at h
+    simp [h, h']
 
 end Ring
 

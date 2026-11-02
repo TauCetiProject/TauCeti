@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
-public import Mathlib.Algebra.Group.Commute.Defs
 public import Mathlib.LinearAlgebra.Matrix.Dual
 public import Mathlib.LinearAlgebra.Transvection.Basic
 
@@ -44,6 +43,14 @@ axioms of an Iwasawa structure (`MulAction.IwasawaStructure`) for the action of 
 group on its isotropic points, the action from which the simplicity of the projective special
 unitary groups is deduced.
 
+For `σ = id` and the standard alternating Gram matrix `TauCeti.JFin`, `τ_{v,a}` is the symplectic
+transvection `TauCeti.GLSymplecticFin.symplecticTransvection`
+(`TauCeti.GLSymplecticFin.coe_symplecticTransvection_eq_unitaryTransvection`). That construction in
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transvection`, together with the Iwasawa
+structure of `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Iwasawa`, served as the
+model for this file; the basic laws of symplectic transvections are derived from the general ones
+proved here.
+
 ## Main definitions
 
 * `Matrix.unitaryTransvection Q σ v a`: the matrix `1 + a v (vᵀ ^ σ Q)` of `τ_{v,a}`.
@@ -61,6 +68,9 @@ unitary groups is deduced.
   transvection `τ_{v,a}` along an isotropic vector is a special isometry.
 * `Matrix.exists_coe_eq_unitaryTransvection_iff`: for a nondegenerate `ε`-Hermitian `Q`, the
   transvection `τ_{v,a}` along an isotropic point is an isometry exactly when `a + ε σ(a) = 0`.
+* `Matrix.mul_unitaryTransvection_mul_of_mul_eq_one`,
+  `Matrix.coe_mul_unitaryTransvection_mul_coe_inv`: a form-preserving `g` conjugates `τ_{v,a}` to
+  `τ_{g v,a}`.
 * `Matrix.unitaryTransvectionSubgroup_smul`: `T(g • p) = g T(p) g⁻¹`.
 
 ## References
@@ -83,9 +93,10 @@ variable [CommRing K] (Q : Matrix n n K) (σ : K →+* K)
 
 /-- **The unitary transvection** `τ_{v,a} : x ↦ x + a h(v, x) v` along `v`, for the sesquilinear
 form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. Its matrix is `1 + a v (vᵀ ^ σ Q)`. It has determinant one
-when `v` is isotropic (`Matrix.det_unitaryTransvection`), and is then an isometry of an
-`ε`-Hermitian form exactly when `a + ε σ(a) = 0`
-(`Matrix.transpose_map_unitaryTransvection_mul_mul`). -/
+when `v` is isotropic (`Matrix.det_unitaryTransvection`). For an involution `σ` and an
+`ε`-Hermitian `Q` it is then an isometry when `a + ε σ(a) = 0`
+(`Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection`), and, if moreover `Q` is
+nondegenerate and `v ≠ 0`, only then (`Matrix.exists_coe_eq_unitaryTransvection_iff`). -/
 def unitaryTransvection (v : n → K) (a : K) : Matrix n n K :=
   1 + a • vecMulVec v ((σ ∘ v) ᵥ* Q)
 
@@ -124,11 +135,8 @@ theorem unitaryTransvection_zero_left (a : K) : Q.unitaryTransvection σ 0 a = 1
 /-- Rescaling the vector by `c` rescales the parameter by `c σ(c)`: `τ_{c v,a} = τ_{v,a c σ(c)}`. -/
 theorem unitaryTransvection_smul (c : K) (v : n → K) (a : K) :
     Q.unitaryTransvection σ (c • v) a = Q.unitaryTransvection σ v (a * c * σ c) := by
-  have h : σ ∘ (c • v) = σ c • (σ ∘ v) := by
-    ext i
-    simp
-  rw [unitaryTransvection, unitaryTransvection, h, smul_vecMul, vecMulVec_smul, smul_vecMulVec,
-    smul_smul, smul_smul, mul_right_comm a (σ c) c]
+  rw [unitaryTransvection, unitaryTransvection, RingHom.comp_smul, smul_vecMul, vecMulVec_smul,
+    smul_vecMulVec, smul_smul, smul_smul, mul_right_comm a (σ c) c]
 
 omit [DecidableEq n] in
 /-- The rank-one part `v (vᵀ ^ σ Q)` of a transvection along an isotropic vector squares to zero. -/
@@ -148,33 +156,36 @@ theorem unitaryTransvection_mul_unitaryTransvection {v : n → K}
   abel
 
 /-- **A transvection along an isotropic vector has determinant one.** -/
+@[simp]
 theorem det_unitaryTransvection {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : K) :
     (Q.unitaryTransvection σ v a).det = 1 := by
   rw [unitaryTransvection, ← smul_vecMulVec, vecMulVec_eq Unit,
     det_one_add_replicateCol_mul_replicateRow, dotProduct_smul, ← dotProduct_mulVec, hv,
     smul_zero, add_zero]
 
-/-- **An isometry conjugates `τ_{v,a}` to `τ_{g v,a}`.** -/
-theorem coe_mul_unitaryTransvection_mul_coe_inv {g : SpecialLinearGroup n K}
-    (hg : g ∈ Q.specialIsometryGroup σ) (v : n → K) (a : K) :
-    (g : Matrix n n K) * Q.unitaryTransvection σ v a * ((g⁻¹ : SpecialLinearGroup n K) :
-      Matrix n n K) = Q.unitaryTransvection σ ((g : Matrix n n K) *ᵥ v) a := by
-  set M := (g : Matrix n n K)
-  set M' := ((g⁻¹ : SpecialLinearGroup n K) : Matrix n n K)
-  have hMM' : M * M' = 1 := by
-    rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
+/-- **A form-preserving matrix conjugates `τ_{v,a}` to `τ_{M v,a}`**: if `(M ^ σ)ᵀ Q M = Q` and
+`M M' = 1`, then `M τ_{v,a} M' = τ_{M v,a}`. -/
+theorem mul_unitaryTransvection_mul_of_mul_eq_one {M M' : Matrix n n K} (hMM' : M * M' = 1)
+    (hM : (M.map σ)ᵀ * Q * M = Q) (v : n → K) (a : K) :
+    M * Q.unitaryTransvection σ v a * M' = Q.unitaryTransvection σ (M *ᵥ v) a := by
   -- The isometry equation `(M ^ σ)ᵀ Q M = Q` gives `(M ^ σ)ᵀ Q = Q M'`.
   have hQM : (M.map σ)ᵀ * Q = Q * M' := by
     calc (M.map σ)ᵀ * Q = (M.map σ)ᵀ * Q * (M * M') := by rw [hMM', Matrix.mul_one]
       _ = (M.map σ)ᵀ * Q * M * M' := by simp only [Matrix.mul_assoc]
-      _ = Q * M' := by rw [(mem_specialIsometryGroup_iff).mp hg]
+      _ = Q * M' := by rw [hM]
   have hrow : (σ ∘ (M *ᵥ v)) ᵥ* Q = ((σ ∘ v) ᵥ* Q) ᵥ* M' := by
-    have hx : σ ∘ (M *ᵥ v) = (σ ∘ v) ᵥ* (M.map σ)ᵀ := by
-      ext i
-      rw [Function.comp_apply, RingHom.map_mulVec, vecMul_transpose]
-    rw [hx, vecMul_vecMul, hQM, vecMul_vecMul]
+    rw [comp_mulVec_eq_vecMul_transpose_map, vecMul_vecMul, hQM, vecMul_vecMul]
   rw [unitaryTransvection, unitaryTransvection, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one,
     hMM', Matrix.mul_smul, Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul, hrow]
+
+/-- **An isometry conjugates `τ_{v,a}` to `τ_{g v,a}`.** -/
+theorem coe_mul_unitaryTransvection_mul_coe_inv {g : SpecialLinearGroup n K}
+    (hg : g ∈ Q.specialIsometryGroup σ) (v : n → K) (a : K) :
+    (g : Matrix n n K) * Q.unitaryTransvection σ v a * ((g⁻¹ : SpecialLinearGroup n K) :
+      Matrix n n K) = Q.unitaryTransvection σ ((g : Matrix n n K) *ᵥ v) a :=
+  mul_unitaryTransvection_mul_of_mul_eq_one
+    (by rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one])
+    ((mem_specialIsometryGroup_iff).mp hg) v a
 
 /-- **The isometry defect of a unitary transvection.** If `σ` is an involution, `Q` is
 `ε`-Hermitian and `v` is isotropic, then
@@ -310,9 +321,8 @@ theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
     (smul_ne_zero_iff_ne (g : SpecialLinearGroup n K)).mpr (p : ℙ K (n → K)).rep_nonzero
   have hgp : ((g • p : Q.isotropicPoints σ) : ℙ K (n → K)) =
       Projectivization.mk K ((g : SpecialLinearGroup n K) • v) hgv := by
-    rw [SubMulAction.val_smul]
-    conv_lhs => rw [← (p : ℙ K (n → K)).mk_rep]
-    rfl
+    rw [SubMulAction.val_smul, Subgroup.smul_def,
+      ← Projectivization.smul_mk _ (p : ℙ K (n → K)).rep_nonzero, Projectivization.mk_rep]
   have hconj : ∀ h : Q.specialIsometryGroup σ, ∀ (u : n → K) (a : K),
       ((h : SpecialLinearGroup n K) : Matrix n n K) * Q.unitaryTransvection σ u a *
         ((h⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) =

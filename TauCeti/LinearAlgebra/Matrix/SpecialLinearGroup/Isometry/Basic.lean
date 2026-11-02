@@ -43,6 +43,9 @@ sub-`MulAction` `Matrix.isotropicPoints Q σ`, the natural permutation domain of
 
 * `Matrix.mem_specialIsometryGroup_iff`: the defining matrix equation.
 * `Matrix.comp_mulVec_dotProduct_mulVec_mulVec`: an element of the group preserves the form.
+* `RingHom.comp_smul`, `Matrix.comp_mulVec_eq_vecMul_transpose_map`: applying `σ` entrywise to
+  `c • v` and to `M *ᵥ x`.
+* `Matrix.mem_isotropicPoints_iff`: a point is isotropic when its chosen representative is.
 * `Matrix.mk_mem_isotropicPoints_iff`: the point of a nonzero vector is isotropic exactly when the
   vector is.
 
@@ -55,13 +58,39 @@ public section
 
 open scoped LinearAlgebra.Projectivization
 
+namespace RingHom
+
+variable {R S ι : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+
+/-- A ring homomorphism applied entrywise to `c • v` gives `f c • (f ∘ v)`. -/
+theorem comp_smul (f : R →+* S) (c : R) (v : ι → R) : f ∘ (c • v) = f c • (f ∘ v) :=
+  funext fun _ ↦ map_mul f _ _
+
+end RingHom
+
 namespace Matrix
 
 variable {n K : Type*} [Fintype n] [DecidableEq n]
 
 section CommRing
 
-variable [CommRing K] (Q : Matrix n n K) (σ : K →+* K)
+variable [CommRing K]
+
+omit [DecidableEq n] in
+/-- Applying `σ` to the entries of `M *ᵥ x` gives the row vector `(σ ∘ x) ᵥ* (M ^ σ)ᵀ`. -/
+theorem comp_mulVec_eq_vecMul_transpose_map (M : Matrix n n K) (σ : K →+* K) (x : n → K) :
+    σ ∘ (M *ᵥ x) = (σ ∘ x) ᵥ* (M.map σ)ᵀ := by
+  ext i
+  rw [Function.comp_apply, RingHom.map_mulVec, vecMul_transpose]
+
+variable (Q : Matrix n n K) (σ : K →+* K)
+
+omit [DecidableEq n] in
+/-- The isometry equation of a product: `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`. -/
+private theorem transpose_map_mul_mul_mul (M N : Matrix n n K) :
+    ((M * N).map σ)ᵀ * Q * (M * N) = (N.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * N := by
+  rw [Matrix.map_mul, transpose_mul]
+  simp only [Matrix.mul_assoc]
 
 /-- **The special isometry group of a sesquilinear Gram matrix**: the matrices `g` of determinant
 one with `(g ^ σ)ᵀ * Q * g = Q`, that is, the special linear transformations preserving the
@@ -73,25 +102,14 @@ def specialIsometryGroup : Subgroup (SpecialLinearGroup n K) where
     simp [Matrix.map_one σ σ.map_zero σ.map_one]
   mul_mem' {g g'} hg hg' := by
     simp only [Set.mem_ofPred_eq, SpecialLinearGroup.coe_mul] at hg hg' ⊢
-    set M := (g : Matrix n n K)
-    set M' := (g' : Matrix n n K)
-    calc ((M * M').map σ)ᵀ * Q * (M * M') = (M'.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * M' := by
-          rw [Matrix.map_mul, transpose_mul]
-          simp only [Matrix.mul_assoc]
-      _ = Q := by rw [hg, hg']
+    rw [transpose_map_mul_mul_mul, hg, hg']
   inv_mem' {g} hg := by
     simp only [Set.mem_ofPred_eq] at hg ⊢
-    set M := (g : Matrix n n K)
-    set M' := ((g⁻¹ : SpecialLinearGroup n K) : Matrix n n K)
-    have hMM' : M * M' = 1 := by
-      rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
-    calc (M'.map σ)ᵀ * Q * M' = (M'.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * M' := by rw [hg]
-      _ = ((M * M').map σ)ᵀ * Q * (M * M') := by
-        rw [Matrix.map_mul, transpose_mul]
-        simp only [Matrix.mul_assoc]
-      _ = Q := by
-        rw [hMM', Matrix.map_one σ σ.map_zero σ.map_one, transpose_one, Matrix.one_mul,
-          Matrix.mul_one]
+    have h := transpose_map_mul_mul_mul Q σ (g : Matrix n n K)
+      ((g⁻¹ : SpecialLinearGroup n K) : Matrix n n K)
+    rw [hg, ← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one,
+      Matrix.map_one σ σ.map_zero σ.map_one, transpose_one, Matrix.one_mul, Matrix.mul_one] at h
+    exact h.symm
 
 variable {Q σ}
 
@@ -106,60 +124,63 @@ theorem comp_mulVec_dotProduct_mulVec_mulVec {g : SpecialLinearGroup n K}
     (hg : g ∈ Q.specialIsometryGroup σ) (x y : n → K) :
     (σ ∘ ((g : Matrix n n K) *ᵥ x)) ⬝ᵥ (Q *ᵥ ((g : Matrix n n K) *ᵥ y)) =
       (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
-  have hx : σ ∘ ((g : Matrix n n K) *ᵥ x) = (σ ∘ x) ᵥ* ((g : Matrix n n K).map σ)ᵀ := by
-    ext i
-    rw [Function.comp_apply, RingHom.map_mulVec, vecMul_transpose]
-  rw [hx, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, (mem_specialIsometryGroup_iff).mp hg]
+  rw [comp_mulVec_eq_vecMul_transpose_map, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec,
+    (mem_specialIsometryGroup_iff).mp hg]
 
-end CommRing
-
-section Field
-
-variable [Field K] (Q : Matrix n n K) (σ : K →+* K)
+variable (Q σ)
 
 omit [DecidableEq n] in
 /-- Along a line the form scales by `σ c * c`: `h(c v, c v) = σ c * c * h(v, v)`. -/
 theorem comp_smul_dotProduct_mulVec_smul (c : K) (v : n → K) :
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  have h : σ ∘ (c • v) = σ c • (σ ∘ v) := by
-    ext i
-    simp
-  rw [h, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul, mul_assoc]
+  rw [RingHom.comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul,
+    mul_assoc]
 
+end CommRing
+
+section Field
+
+variable [Field K] {Q : Matrix n n K} {σ : K →+* K}
+
+omit [DecidableEq n] in
+/-- Isotropy of a projective point does not depend on the representative. -/
+private theorem comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff {v : n → K} (hv : v ≠ 0) :
+    (σ ∘ (Projectivization.mk K v hv).rep) ⬝ᵥ (Q *ᵥ (Projectivization.mk K v hv).rep) = 0 ↔
+      (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0 := by
+  obtain ⟨a, ha⟩ := Projectivization.exists_smul_eq_mk_rep K v hv
+  rw [← ha, Units.smul_def, comp_smul_dotProduct_mulVec_smul]
+  have hσa : σ (a : K) ≠ 0 := (map_ne_zero σ).mpr a.ne_zero
+  simp [hσa, a.ne_zero]
+
+variable (Q σ) in
 /-- **The isotropic points of projective space**: the points `[v]` with `h(v, v) = 0`, as a
 sub-`MulAction` of the special isometry group. Whether `[v]` is isotropic does not depend on the
 representative `v` (`Matrix.mk_mem_isotropicPoints_iff`). -/
 def isotropicPoints : SubMulAction (Q.specialIsometryGroup σ) (ℙ K (n → K)) where
   carrier := {p | (σ ∘ p.rep) ⬝ᵥ (Q *ᵥ p.rep) = 0}
   smul_mem' g p hp := by
-    obtain ⟨a, ha⟩ := Projectivization.exists_smul_eq_mk_rep K
-      ((g : SpecialLinearGroup n K) • p.rep)
-      ((smul_ne_zero_iff_ne (g : SpecialLinearGroup n K)).mpr p.rep_nonzero)
-    have hgp : g • p = Projectivization.mk K ((g : SpecialLinearGroup n K) • p.rep)
-        ((smul_ne_zero_iff_ne (g : SpecialLinearGroup n K)).mpr p.rep_nonzero) := by
-      conv_lhs => rw [← p.mk_rep]
-      rfl
-    simp only [Set.mem_ofPred_eq] at hp ⊢
-    rw [hgp, ← ha, Units.smul_def, comp_smul_dotProduct_mulVec_smul, SpecialLinearGroup.smul_def,
-      smul_eq_mulVec, comp_mulVec_dotProduct_mulVec_mulVec g.2, hp, mul_zero]
+    induction p using Projectivization.ind with | h v hv => ?_
+    simp only [Set.mem_ofPred_eq, comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff] at hp ⊢
+    rw [Subgroup.smul_def, Projectivization.smul_mk,
+      comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff, SpecialLinearGroup.smul_def, smul_eq_mulVec,
+      comp_mulVec_dotProduct_mulVec_mulVec g.2, hp]
 
-variable {Q σ}
+/-- A point lies in `isotropicPoints` exactly when its chosen representative is isotropic. -/
+theorem mem_isotropicPoints_iff {p : ℙ K (n → K)} :
+    p ∈ Q.isotropicPoints σ ↔ (σ ∘ p.rep) ⬝ᵥ (Q *ᵥ p.rep) = 0 :=
+  Iff.rfl
 
 /-- **Isotropy of a point is isotropy of any representative**: `[v]` is isotropic exactly when
 `h(v, v) = 0`. -/
 @[simp]
 theorem mk_mem_isotropicPoints_iff {v : n → K} (hv : v ≠ 0) :
     Projectivization.mk K v hv ∈ Q.isotropicPoints σ ↔ (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0 := by
-  obtain ⟨a, ha⟩ := Projectivization.exists_smul_eq_mk_rep K v hv
-  change (σ ∘ (Projectivization.mk K v hv).rep) ⬝ᵥ (Q *ᵥ (Projectivization.mk K v hv).rep) = 0 ↔ _
-  rw [← ha, Units.smul_def, comp_smul_dotProduct_mulVec_smul]
-  have hσa : σ (a : K) ≠ 0 := (map_ne_zero σ).mpr a.ne_zero
-  simp [hσa, a.ne_zero]
+  rw [mem_isotropicPoints_iff, comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff]
 
 /-- The representative of an isotropic point is an isotropic vector. -/
 theorem comp_rep_dotProduct_mulVec_rep (p : Q.isotropicPoints σ) :
     (σ ∘ (p : ℙ K (n → K)).rep) ⬝ᵥ (Q *ᵥ (p : ℙ K (n → K)).rep) = 0 :=
-  p.2
+  mem_isotropicPoints_iff.mp p.2
 
 end Field
 
