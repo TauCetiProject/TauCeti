@@ -89,10 +89,7 @@ private theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subs
   have hxq : x ∈ quadraticLieSubalgebra Q :=
     (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι Q
       hQ).mpr (by simpa only [Ring.lie_def] using hx)
-  have hle : (quadraticLieSubalgebra Q).toSubmodule ≤ ⊥ :=
-    quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b ↦ by
-      simp [Subsingleton.elim a 0, Subsingleton.elim b 0]
-  exact (Submodule.mem_bot K).mp (hle hxq)
+  rwa [quadraticLieSubalgebra_eq_bot, LieSubalgebra.mem_bot] at hxq
 
 end Algebraic
 
