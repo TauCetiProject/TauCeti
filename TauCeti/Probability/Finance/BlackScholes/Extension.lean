@@ -259,8 +259,8 @@ theorem continuous_callValue (hσ : 0 < σ) (hK : 0 < K) :
       filter_upwards [prod_mem_prod (Ioi_mem_nhds hs) self_mem_nhdsWithin] with p hp
       exact (callValue_of_pos hp.1 hp.2).symm
   · -- In the interior, the extended call is locally the closed form.
-    refine ((contDiffAt_fst (n := (0 : ℕ∞))).callPrice contDiffAt_snd
-      hs.ne' hK.ne' hσ.ne' hτ (r := r)).continuousAt.congr ?_
+    refine (continuousAt_fst.callPrice continuousAt_snd
+      hs.ne' hK.ne' hσ.ne' hτ (r := r)).congr ?_
     filter_upwards [(isOpen_Ioi.prod isOpen_Ioi).mem_nhds (mk_mem_prod hs hτ)] with p hp
     exact (callValue_of_pos hp.1 hp.2).symm
 
