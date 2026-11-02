@@ -333,8 +333,8 @@ theorem integratedFull_coefficientMultiplier_snd (a : A) (x : FullCrossedProduct
   have h : (coefficientMultiplier α μ a).snd x =
       star ((coefficientMultiplier α μ (star a)).fst (star x)) := by
     rw [coefficientMultiplier_snd_apply, coefficientMultiplier_fst]
-  rw [h, map_star, integratedFull_coefficientMultiplier_fst, star_mul, map_star, star_star,
-    map_star, star_star]
+  rw [h, map_star, integratedFull_coefficientMultiplier_fst]
+  simp [star_mul, map_star (P.integratedFull μ), map_star P.coefficient]
 
 /-- The extended integrated form turns the right action of the canonical group multiplier
 `i_G(r)` into right multiplication by the group representation:
@@ -346,8 +346,9 @@ theorem integratedFull_groupMultiplier_snd (r : G) (x : FullCrossedProduct α μ
   have h : (groupMultiplier α μ r : 𝓜(ℂ, FullCrossedProduct α μ)).snd x =
       star ((groupMultiplier α μ r⁻¹ : 𝓜(ℂ, FullCrossedProduct α μ)).fst (star x)) := by
     rw [groupMultiplier_snd_apply, groupMultiplier_fst]
-  rw [h, map_star, integratedFull_groupMultiplier_fst, star_mul, map_star, star_star,
-    ContinuousLinearMap.star_eq_adjoint (P.group r⁻¹), P.isUnitary.adjoint_eq_inv, inv_inv]
+  rw [h, map_star, integratedFull_groupMultiplier_fst]
+  simp [star_mul, map_star (P.integratedFull μ), ContinuousLinearMap.star_eq_adjoint (P.group r⁻¹),
+    P.isUnitary.adjoint_eq_inv]
 
 end CovariantRepresentation
 
