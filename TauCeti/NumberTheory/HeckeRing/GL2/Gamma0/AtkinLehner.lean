@@ -652,7 +652,7 @@ Dividing an integral witness of `x` by the gcd `d` of its four entries leaves a 
 `diag(d, d)` is central, so it splits off by
 `HeckeAntiInvolution.bar_mem_doubleCoset_self_mul_of_mem_centralizer`. Nothing is asked of
 `H`, so the same reduction serves the levels `Γ₀(N)` and `Γ₁(N)`. -/
-theorem bar_mem_doubleCoset_of_forall_primitive [NeZero N] {H : Subgroup (GL (Fin 2) ℚ)}
+theorem bar_mem_doubleCoset_of_forall_primitive {H : Subgroup (GL (Fin 2) ℚ)}
     (ι : HeckeAntiInvolution (Delta0 N) H)
     (hscalar : ∀ d : ℕ, 0 < d → ∀ hs : natDiagGL 2 (fun _ ↦ d) ∈ Delta0 N,
       ι.bar _ hs = natDiagGL 2 (fun _ ↦ d))
