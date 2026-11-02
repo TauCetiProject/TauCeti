@@ -186,9 +186,9 @@ noncomputable def mapAutFiber (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spec 
     refine ((pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).continuous_conjAut.comp
       (continuous_mapAut_whiskeringLeft (pullback f) (fiber x))).congr fun σ ↦ ?_
     ext1
-    rw [Function.comp_apply, Iso.conjAut_apply, Functor.mapAut_apply_asIso,
-      ← Functor.isoWhiskerLeft.eq_1]
-    simp only [mapFiberIso]
+    rw [Function.comp_apply, Iso.conjAut_apply, Functor.mapAut_apply_asIso]
+    ext X : 3
+    simp [mapFiberIso, -pullbackCompFiberIso_hom_app, -pullbackCompFiberIso_inv_app]
 
 /-- The loop `mapAutFiber f h σ` is the image of the loop `σ` under `f`. -/
 @[simp]

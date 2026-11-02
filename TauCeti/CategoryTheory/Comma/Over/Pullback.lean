@@ -35,6 +35,20 @@ variable {C : Type u} [Category.{v} C]
 
 attribute [local instance] hasPullback_of_right_iso
 
+/-- Rewriting the right-hand map `g'` of a pullback to an equal map `g` transports the first
+projection along the resulting `eqToHom`. -/
+private theorem eqToHom_comp_pullback_fst {X Y Z : C} (f : X ⟶ Z) {g g' : Y ⟶ Z} (e : g' = g)
+    [HasPullback f g] [HasPullback f g'] (e' : Limits.pullback f g' = Limits.pullback f g) :
+    eqToHom e' ≫ pullback.fst f g = pullback.fst f g' := by
+  subst e; simp
+
+/-- Rewriting the right-hand map `g'` of a pullback to an equal map `g` transports the second
+projection along the resulting `eqToHom`. -/
+private theorem eqToHom_comp_pullback_snd {X Y Z : C} (f : X ⟶ Z) {g g' : Y ⟶ Z} (e : g' = g)
+    [HasPullback f g] [HasPullback f g'] (e' : Limits.pullback f g' = Limits.pullback f g) :
+    eqToHom e' ≫ pullback.snd f g = pullback.snd f g' := by
+  subst e; simp
+
 /-- Base change along `f : X ⟶ Y` of the identification `pullbackId` of base change along the
 identity is the composition isomorphism `pullbackComp f (𝟙 Y)`, up to the equality
 `f ≫ 𝟙 Y = f`. -/
@@ -43,19 +57,11 @@ theorem pullbackComp_id_inv_app_comp_eqToHom {X Y : C} (f : X ⟶ Y) [HasPullbac
     (A : Over Y) :
     (pullbackComp f (𝟙 Y)).inv.app A ≫ eqToHom (by simp) =
       (pullback f).map (pullbackId.hom.app A) := by
-  have eq_fst {f' : X ⟶ Y} (h : f' = f) [HasPullback A.hom f']
-      (h' : Limits.pullback A.hom f' = Limits.pullback A.hom f) :
-      eqToHom h' ≫ pullback.fst A.hom f = pullback.fst A.hom f' := by
-    subst h; simp
-  have eq_snd {f' : X ⟶ Y} (h : f' = f) [HasPullback A.hom f']
-      (h' : Limits.pullback A.hom f' = Limits.pullback A.hom f) :
-      eqToHom h' ≫ pullback.snd A.hom f = pullback.snd A.hom f' := by
-    subst h; simp
   -- The identity is checked on the two projections out of `A ×_Y X`.
   ext1
   apply pullback.hom_ext
-  · simp [pullbackComp, pullbackId, eq_fst (Category.comp_id f)]
-  · simp [pullbackComp, pullbackId, eq_snd (Category.comp_id f)]
+  · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.comp_id f)]
+  · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.comp_id f)]
 
 /-- The two ways of identifying base change along `f ≫ g ≫ h` with the composite of the base
 changes along `h`, `g` and `f` agree, up to the equality `f ≫ g ≫ h = (f ≫ g) ≫ h`. -/
@@ -65,19 +71,11 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom {W X Y Z : C} (f : W ⟶ X) (g : 
     (pullbackComp f (g ≫ h)).inv.app A ≫ eqToHom (by simp) =
       (pullback f).map ((pullbackComp g h).hom.app A) ≫
         (pullbackComp f g).inv.app ((pullback h).obj A) ≫ (pullbackComp (f ≫ g) h).inv.app A := by
-  have eq_fst {k : W ⟶ Z} (e : k = (f ≫ g) ≫ h) [HasPullback A.hom k]
-      (e' : Limits.pullback A.hom k = Limits.pullback A.hom ((f ≫ g) ≫ h)) :
-      eqToHom e' ≫ pullback.fst A.hom ((f ≫ g) ≫ h) = pullback.fst A.hom k := by
-    subst e; simp
-  have eq_snd {k : W ⟶ Z} (e : k = (f ≫ g) ≫ h) [HasPullback A.hom k]
-      (e' : Limits.pullback A.hom k = Limits.pullback A.hom ((f ≫ g) ≫ h)) :
-      eqToHom e' ≫ pullback.snd A.hom ((f ≫ g) ≫ h) = pullback.snd A.hom k := by
-    subst e; simp
   -- As above, the identity is checked on the two projections out of `A ×_Z W`.
   ext1
   apply pullback.hom_ext
-  · simp [pullbackComp, eq_fst (Category.assoc f g h).symm]
-  · simp [pullbackComp, eq_snd (Category.assoc f g h).symm]
+  · simp [pullbackComp, eqToHom_comp_pullback_fst A.hom (Category.assoc f g h).symm]
+  · simp [pullbackComp, eqToHom_comp_pullback_snd A.hom (Category.assoc f g h).symm]
 
 end Over
 
