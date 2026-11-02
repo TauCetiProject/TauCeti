@@ -133,6 +133,6 @@ theorem legendreEc_one_div_sqrt_two :
   rw [hc] at h
   have hK := legendreK_pos (k := 1 / √2) (by rw [hsq]; norm_num)
   field_simp [hK.ne']
-  nlinarith
+  linear_combination 4 * h
 
 end TauCeti.Real
