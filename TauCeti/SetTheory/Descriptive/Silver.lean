@@ -79,6 +79,15 @@ the ambient space and for any finer relation `R`.
   (Apache-2.0), checkpoint `518a366cba97b1ae8c4dc64a297a396939bc3e0b`. There it is stated for one
   fixed set of words and a complete separable metric target space; here it is stated for every
   dense set of words and any topological space with its Borel σ-algebra.
+* The forms of the theorem follow `gandy_harrington_for_relation`, `silver_core_polish` and
+  `silverBurgessDichotomy` in `InfinitaryLogic/Conditional/GandyHarrington.lean`, and
+  `silver_countable_or_cantorAntichain` in `InfinitaryLogic/Conditional/SilverAntichain.lean`, of
+  `cameronfreer/infinitary-logic` (Apache-2.0), checkpoint
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`. There the Polish form assumes a complete separable
+  metric space, the cardinality form is the Prop-valued definition `SilverBurgessDichotomy`, and
+  the relative form refines the topology to make the Borel set clopen. Here the Polish form
+  assumes `PolishSpace`, the cardinality form is stated directly, and the relative form transports
+  a measurable embedding of Cantor space by `hasCantorAntichainOn_image_iff`.
 -/
 
 public section
@@ -163,8 +172,9 @@ theorem countable_or_hasCantorAntichainOn_of_measurableSet [TopologicalSpace X] 
   have hg := (MeasurableEmbedding.subtype_coe hA).comp hf
   have hid : (R.comap ((↑) ∘ f)).HasCantorAntichainOn univ :=
     hasCantorAntichainOn_iff.2 ⟨id, continuous_id, fun _ => trivial,
-      fun a b hab h => hfF a b hab (hRF _ _ h)⟩
-  exact ((hasCantorAntichainOn_image_iff (F := R) hg (fun _ _ => Iff.rfl) univ).2 hid).mono <| by
+      fun a b hab h => hfF a b hab (hRF _ _ ((comap_rel _ _ _ _).1 h))⟩
+  exact ((hasCantorAntichainOn_image_iff (F := R) hg (fun _ _ => (comap_rel _ _ _ _).symm)
+    univ).2 hid).mono <| by
     rintro _ ⟨a, -, rfl⟩
     exact (f a).2
 

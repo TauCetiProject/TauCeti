@@ -26,8 +26,10 @@ variable {X : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [B
 
 -- Equality on an uncountable Polish space: the Cantor antichain is a continuous injection.
 example (hX : ¬ Countable X) : ∃ f : (ℕ → Bool) → X, Continuous f ∧ Function.Injective f := by
-  have hinj : Function.Injective (Quotient.mk (⊥ : Setoid X)) := fun _ _ h => Quotient.exact h
-  obtain h | h := Setoid.silver_dichotomy ⊥ (measurableSet_diagonal (α := X))
+  have hinj : Function.Injective (Quotient.mk (⊥ : Setoid X)) := fun _ _ h =>
+    by simpa only [Setoid.bot_def] using Quotient.exact h
+  obtain h | h := Setoid.silver_dichotomy ⊥
+    (by simpa only [Setoid.bot_def, diagonal] using measurableSet_diagonal (α := X))
   · exact absurd hinj.countable hX
   · obtain ⟨f, hf, -, hf_inj, -⟩ := h.exists_injective
     exact ⟨f, hf, hf_inj⟩
@@ -36,9 +38,13 @@ example (hX : ¬ Countable X) : ∃ f : (ℕ → Bool) → X, Continuous f ∧ F
 -- Cantor space inside `A`.
 example {A : Set X} (hA : MeasurableSet A) (hunc : ¬ A.Countable) :
     ∃ f : (ℕ → Bool) → X, range f ⊆ A ∧ Continuous f ∧ Function.Injective f := by
-  have hinj : Function.Injective (Quotient.mk (⊥ : Setoid A)) := fun _ _ h => Quotient.exact h
+  have hinj : Function.Injective (Quotient.mk (⊥ : Setoid A)) := fun _ _ h =>
+    by simpa only [Setoid.bot_def] using Quotient.exact h
   obtain h | h := Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hA ⊥ ⊥
-    (fun x y h => Subtype.ext h) (measurableSet_diagonal (α := A))
+    (fun x y h => by
+      simp only [Setoid.bot_def] at h ⊢
+      exact Subtype.ext h)
+    (by simpa only [Setoid.bot_def, diagonal] using measurableSet_diagonal (α := A))
   · exact absurd (countable_coe_iff.1 hinj.countable) hunc
   · obtain ⟨f, hf, hfA, hf_inj, -⟩ := h.exists_injective
     exact ⟨f, hfA, hf, hf_inj⟩
