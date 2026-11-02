@@ -29,8 +29,8 @@ Only the second measure needs to be s-finite.
   seminorm of its section seminorms.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
-* `TauCeti.ae_memLp_two_prod_left` — for a square integrable measurable function on a product,
-  almost every section is square integrable.
+* `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
+  `Lᵖ(ν)`.
 -/
 
 public section
@@ -196,12 +196,27 @@ theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [C
   simp_rw [hsec, mul_comm _ (eLpNorm g p ν)]
   rw [eLpNorm_const_mul_ennreal hf.enorm.aestronglyMeasurable, eLpNorm_enorm _ hf, mul_comm]
 
-/-- For a square integrable measurable `F` on a product, almost every section `w ↦ F (a, w)` is
-square integrable. -/
-theorem ae_memLp_two_prod_left [SFinite μ] [SFinite ν] {F : α × β → ℝ} (hF : Measurable F)
-    (hL : MemLp F 2 (μ.prod ν)) : ∀ᵐ a ∂μ, MemLp (fun w => F (a, w)) 2 ν := by
-  filter_upwards [hL.integrable_sq.prod_right_ae] with a ha
-  exact (memLp_two_iff_integrable_sq
-    (hF.comp measurable_prodMk_left).aestronglyMeasurable).2 ha
-
 end TauCeti
+
+/-- If `f ∈ Lᵖ(μ ⊗ ν)` then almost every section `y ↦ f (x, y)` is in `Lᵖ(ν)`. -/
+theorem MeasureTheory.MemLp.ae_memLp_prod_right [SFinite ν] {f : α × β → ε}
+    (hf : MemLp f p (μ.prod ν)) : ∀ᵐ x ∂μ, MemLp (fun y ↦ f (x, y)) p ν := by
+  have h : eLpNorm (fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν) p μ < ∞ := by
+    rw [← TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm hf.aestronglyMeasurable]
+    exact hf
+  set g : α → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν with hg
+  have hgm : AEMeasurable g μ := hf.aestronglyMeasurable.eLpNorm_prod_right.aemeasurable
+  suffices ∀ᵐ x ∂μ, g x < ∞ from this.mono fun x hx ↦ hx
+  rcases eq_or_ne p 0 with rfl | hp0
+  · filter_upwards [hf.aestronglyMeasurable.prodMk_left] with x hx
+    simp [hg, eLpNorm_exponent_zero hx]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · filter_upwards [enorm_ae_le_eLpNormEssSup g μ] with x hx
+    exact (enorm_eq_self (g x) ▸ hx).trans_lt (eLpNormEssSup_le_eLpNorm_top.trans_lt h)
+  · rw [eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
+      hf.aestronglyMeasurable.eLpNorm_prod_right] at h
+    have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+    filter_upwards [ae_lt_top' (hgm.pow_const p.toReal) (by simpa using h.ne)] with x hx
+    by_contra hxt
+    rw [not_lt, top_le_iff] at hxt
+    simp [hxt, ENNReal.top_rpow_of_pos hr] at hx

@@ -53,7 +53,7 @@ theorem evariance_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace 
     {F : α × β → ℝ} (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  rw [evariance_prod_eq hF hL]
+  rw [evariance_prod_eq hL]
   gcongr
   exact evariance_integral_prod_le hF hL
 
@@ -76,6 +76,8 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
     rw [evariance, hc default]
     simp [h0]
   | n + 1, α, _, μ, _, f, hf, hL => by
+    -- Split off coordinate `0`: `e` identifies `∀ i, α i` with
+    -- `α 0 × ∀ j, α (succAbove 0 j)`.
     set e := MeasurableEquiv.piFinSuccAbove α 0 with he
     have mp : MeasurePreserving e (Measure.pi μ)
         ((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) :=
@@ -93,25 +95,24 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
           ∫⁻ x, g x ∂Measure.pi μ := fun g =>
       mps.lintegral_comp_emb e.symm.measurableEmbedding g
     have hEv : evariance f (Measure.pi μ) =
-        evariance F ((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) := by
-      have hI : ∫ p, F p ∂((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) =
-          ∫ x, f x ∂Measure.pi μ := mps.integral_comp' f
-      rw [evariance, evariance, hI]
-      exact (hT fun x => ‖f x - ∫ x', f x' ∂Measure.pi μ‖ₑ ^ 2).symm
+        evariance F ((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) :=
+      (evariance_comp_measurePreserving mps e.symm.measurableEmbedding f).symm
     have hG : ∀ (j : Fin n) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)),
         evariance (fun y => F (a, Function.update w j y)) (μ (Fin.succAbove 0 j)) =
           G (Fin.succAbove 0 j) (e.symm (a, w)) := by
       intro j a w
       simp only [hGdef, hFdef, he, MeasurableEquiv.piFinSuccAbove_symm_apply,
-        Fin.insertNthEquiv, Equiv.coe_fn_mk, Fin.insertNth_update]
+        Fin.insertNthEquiv_apply, Fin.insertNth_update]
     have hG0 : ∀ (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)),
         G 0 (e.symm (a, w)) = evariance (fun a' => F (a', w)) (μ 0) := by
       intro a w
       simp only [hGdef, hFdef, he, MeasurableEquiv.piFinSuccAbove_symm_apply,
-        Fin.insertNthEquiv, Equiv.coe_fn_mk, Fin.update_insertNth]
-    have hslice := TauCeti.ae_memLp_two_prod_left hFm hFL
+        Fin.insertNthEquiv_apply, Fin.update_insertNth]
+    -- Step 1: `evariance_prod_le` splits off the first coordinate from the rest.
+    have hslice := hFL.ae_memLp_prod_right
     have hGp : ∀ j, Measurable fun p => G j (e.symm p) := fun j =>
       (hGm j).comp e.symm.measurable
+    -- Step 2: the induction hypothesis handles the remaining coordinates, slice by slice.
     have h1 : ∫⁻ a, evariance (fun w => F (a, w)) (Measure.pi fun j => μ (Fin.succAbove 0 j))
           ∂(μ 0) ≤ ∑ j : Fin n, ∫⁻ x, G (Fin.succAbove 0 j) x ∂Measure.pi μ := by
       calc _ ≤ ∫⁻ a, ∑ j : Fin n, ∫⁻ w, G (Fin.succAbove 0 j) (e.symm (a, w))
@@ -128,6 +129,7 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
               (Measurable.lintegral_prod_right' (hGp _)).aemeasurable
         _ = _ := Finset.sum_congr rfl fun j _ => by
             rw [← hT, lintegral_prod _ (hGp _).aemeasurable]
+    -- Step 3: the first-coordinate term is the `i = 0` summand.
     have h2 : ∫⁻ w, evariance (fun a => F (a, w)) (μ 0)
         ∂(Measure.pi fun j => μ (Fin.succAbove 0 j)) = ∫⁻ x, G 0 x ∂Measure.pi μ := by
       rw [← hT, lintegral_prod _ (hGp 0).aemeasurable]
@@ -163,10 +165,7 @@ theorem efronStein {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type 
       simp [Φ, MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply,
         Function.update_of_ne h]
   have hEv : evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) =
-      evariance f (Measure.pi μ) := by
-    rw [evariance, evariance, mp.integral_comp' f]
-    exact mp.lintegral_comp_emb Φ.measurableEmbedding
-      (fun x => ‖f x - ∫ x', f x' ∂Measure.pi μ‖ₑ ^ 2)
+      evariance f (Measure.pi μ) := evariance_comp_measurePreserving mp Φ.measurableEmbedding f
   have hterm : ∀ k : Fin (Fintype.card ι),
       ∫⁻ y, evariance (fun v => f (Φ (Function.update y k v))) (μ (e k))
           ∂Measure.pi (fun k => μ (e k)) =

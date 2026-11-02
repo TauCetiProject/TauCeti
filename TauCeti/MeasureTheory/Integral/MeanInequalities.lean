@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
-public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 
@@ -27,8 +26,6 @@ The statement is in `ℝ≥0∞`, so it needs no integrability hypotheses.
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
-* `TauCeti.sq_lintegral_enorm_le`: Jensen's inequality `(∫⁻ ‖u‖ₑ)² ≤ ∫⁻ ‖u‖ₑ²` on a probability
-  space.
 
 ## References
 
@@ -87,14 +84,5 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
         rw [ENNReal.rpow_add_of_nonneg _ _ (by positivity) (mul_nonneg hr0.le hb),
           ENNReal.rpow_add_of_nonneg _ _ (by positivity) (mul_nonneg hp0.le hc)]
         ring
-
-/-- Jensen's inequality in `ℝ≥0∞` form: on a probability space, the square of the integral of
-`‖u‖ₑ` is at most the integral of `‖u‖ₑ ^ 2`. -/
-theorem sq_lintegral_enorm_le {π : Measure β} [IsProbabilityMeasure π] {u : β → ℝ}
-    (hu : AEStronglyMeasurable u π) :
-    (∫⁻ w, ‖u w‖ₑ ∂π) ^ 2 ≤ ∫⁻ w, ‖u w‖ₑ ^ 2 ∂π := by
-  simpa [ENNReal.rpow_two] using
-    rpow_lintegral_le_measure_univ_rpow_mul (μ := π) (u := fun w => ‖u w‖ₑ) hu.enorm
-      (r := 2) one_le_two
 
 end TauCeti
