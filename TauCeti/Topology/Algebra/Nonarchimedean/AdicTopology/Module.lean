@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Maps.Strict.Basic
 public import Mathlib.RingTheory.Filtration
+public import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 
 /-!
 # Adic topologies on modules
@@ -42,14 +43,7 @@ theorem hasBasis_nhds_zero_adicModule (I : Ideal R) :
     (@nhds M (I.adicModuleTopology M) 0).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ (↑(I ^ n • (⊤ : Submodule R M)) : Set M)) := by
   let := I.adicTopology
-  let B := I.ringFilterBasis.moduleFilterBasis (I.adic_module_basis M)
-  refine ⟨fun {U} ↦ ?_⟩
-  rw [B.toAddGroupFilterBasis.nhds_zero_hasBasis.mem_iff]
-  constructor
-  · rintro ⟨_, ⟨n, rfl⟩, hn⟩
-    exact ⟨n, trivial, hn⟩
-  · rintro ⟨n, _, hn⟩
-    exact ⟨_, ⟨n, rfl⟩, hn⟩
+  exact (I.ringFilterBasis.submodulesBasisIsBasis (I.adic_module_basis M)).hasBasis_nhds_zero
 
 end Ideal
 
@@ -112,11 +106,7 @@ theorem isEmbedding_subtype_adicModuleTopology [IsNoetherianRing R] [Module.Fini
   rw [hk (n + k) (by omega), Nat.add_sub_cancel] at hmem
   have hle : I ^ n • (I ^ k • (⊤ : Submodule R M) ⊓ P) ≤ I ^ n • P :=
     smul_mono_right _ inf_le_right
-  have hmap : (I ^ n • (⊤ : Submodule R P)).map P.subtype = I ^ n • P := by
-    simp [Submodule.map_smul'']
-  rw [← hmap] at hle
-  obtain ⟨y, hy, hxy⟩ := hle hmem
-  exact (P.injective_subtype hxy) ▸ hy
+  exact (Submodule.mem_smul_top_iff (I := I ^ n) P x).mpr (hle hmem)
 
 end Submodule
 
