@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.AlgebraicGeometry.Stalk
 
 import TauCeti.Topology.KrullDimension.Basic
@@ -46,8 +47,9 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.subsingleton_of_genericPoint_notMem` and
   `TauCeti.AlgebraicGeometry.Scheme.subsingleton_preimage_of_genericPoint_notMem`: the sections
   over such an open, or over its preimage under any morphism, form the zero ring.
-* `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_preimage_eq_top`: the preimage under
-  `Spec 𝒪_{X,x} ⟶ X` of an open containing `x` is everything.
+* `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_preimage_eq_top` and
+  `TauCeti.AlgebraicGeometry.Scheme.fromSpecResidueField_preimage_eq_top`: the preimage under
+  `Spec 𝒪_{X,x} ⟶ X` or `Spec κ(x) ⟶ X` of an open containing `x` is everything.
 * `TauCeti.AlgebraicGeometry.Scheme.quasiCompact_fromSpecStalk_genericPoint`: the generic point
   `Spec k(X) ⟶ X` of an integral scheme is quasi-compact.
 * `TauCeti.AlgebraicGeometry.Scheme.isFractionRing_app_fromSpecStalk_genericPoint`: on an integral
@@ -137,6 +139,12 @@ theorem fromSpecStalk_preimage_eq_top {X : Scheme.{u}} {x : X} {U : X.Opens} (hx
   top_le_iff.mp fun y _ ↦ (IsLocalRing.specializes_closedPoint y).mem_open
     (X.fromSpecStalk x ⁻¹ᵁ U).isOpen
     ((Scheme.Hom.mem_preimage _).mpr (by rwa [Scheme.fromSpecStalk_closedPoint]))
+
+/-- The preimage under `Spec κ(x) ⟶ X` of an open containing `x` is all of `Spec κ(x)`. -/
+theorem fromSpecResidueField_preimage_eq_top {X : Scheme.{u}} {x : X} {U : X.Opens}
+    (hx : x ∈ U) : X.fromSpecResidueField x ⁻¹ᵁ U = ⊤ := by
+  rw [Scheme.fromSpecResidueField, Scheme.Hom.comp_preimage, fromSpecStalk_preimage_eq_top hx,
+    Scheme.Hom.preimage_top]
 
 open CategoryTheory in
 /-- For an open `U` containing `x`, the restriction from the global sections of `Spec 𝒪_{X,x}` to

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Algebra.Tilde
 public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
 /-!
 # The relative spectrum of the symmetric algebra of `M~`
@@ -119,6 +120,36 @@ lemma specSymmetricAlgebraOver_left :
 lemma specSymmetricAlgebraOver_hom :
     (specSymmetricAlgebraOver M).hom =
       Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R M))) :=
+  (rfl)
+
+variable {M} in
+/-- A linear equivalence `e : M ≃ N` of `R`-modules induces an isomorphism
+`Spec (Sym_R M) ≅ Spec (Sym_R N)` over `Spec R`: the spectrum of the inverse of the algebra
+equivalence `Sym_R M ≃ Sym_R N` induced by `e`. -/
+def specSymmetricAlgebraOverIso {N : ModuleCat.{u} R} (e : M ≃ₗ[R] N) :
+    specSymmetricAlgebraOver M ≅ specSymmetricAlgebraOver N :=
+  MorphismProperty.Over.isoMk
+    (Scheme.Spec.mapIso
+      (SymmetricAlgebra.mapEquiv R e).symm.toRingEquiv.toCommRingCatIso.op)
+    (by
+      -- The structure morphisms are `Spec` of the algebra maps, by `specSymmetricAlgebraOver_hom`;
+      -- the comma-category presentation of the goal hides them from `rw`.
+      change Spec.map
+            (CommRingCat.ofHom (SymmetricAlgebra.mapEquiv R e).symm.toRingEquiv.toRingHom) ≫
+          Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R N))) =
+        Spec.map (CommRingCat.ofHom (algebraMap R (SymmetricAlgebra R M)))
+      rw [← Spec.map_comp]
+      congr 1
+      ext r
+      exact (SymmetricAlgebra.mapEquiv R e).symm.commutes r)
+
+variable {M} in
+/-- The isomorphism `specSymmetricAlgebraOverIso e` is the spectrum of the inverse of the algebra
+equivalence of symmetric algebras induced by `e`. -/
+@[simp]
+lemma specSymmetricAlgebraOverIso_hom_left {N : ModuleCat.{u} R} (e : M ≃ₗ[R] N) :
+    (specSymmetricAlgebraOverIso e).hom.left =
+      Spec.map (CommRingCat.ofHom (SymmetricAlgebra.mapEquiv R e).symm.toRingEquiv.toRingHom) :=
   (rfl)
 
 /-- The relative spectrum `Spec_{Spec R} (Sym M~)`. -/
