@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
-public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Power coordinates at a polygonal corner
@@ -149,7 +149,7 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
     intro z hz
     have harg := abs_le.mp (abs_arg_le_of_sector hβ.1 hsector hrays z hz)
     have hπβ := mul_pos Real.pi_pos hβ.1
-    exact cpow_inv_cpow_of_sector hβ.1 ⟨by linarith [harg.1], by linarith [harg.2]⟩
+    exact cpow_inv_cpow_of_arg_mem_Ioc hβ.1 ⟨by linarith [harg.1], by linarith [harg.2]⟩
   have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz w hw hzw
     have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) :=
