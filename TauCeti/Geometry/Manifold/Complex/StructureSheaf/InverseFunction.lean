@@ -36,17 +36,14 @@ variable {f : ℂ → ℂ} {a : ℂ} (hf : AnalyticAt ℂ f a)
 
 /-- Pullback on holomorphic stalks is surjective exactly when the branch derivative is nonzero.
 Surjectivity of the residue-field map alone would not suffice. -/
-theorem surjective_stalkPullback_iff :
-    Function.Surjective (stalkPullback hf) ↔ deriv f a ≠ 0 := by
+theorem stalkPullback_surjective_iff :
+    Function.Surjective (stalkPullback (eventually_contMDiffAt_of_analyticAt hf)) ↔
+      deriv f a ≠ 0 := by
   constructor
   · intro hsurj
-    obtain ⟨c, hc⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt
-      (Filter.Eventually.of_forall (fun z : ℂ ↦
-        (contMDiff_id : ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω (id : ℂ → ℂ)).contMDiffAt (x := z)))
+    obtain ⟨c, hc⟩ := exists_toFilterGerm_eq_of_analyticAt (analyticAt_id (z := a))
     obtain ⟨t, ht⟩ := hsurj c
-    obtain ⟨u, hu, hut⟩ := exists_toFilterGerm_eq (f a) t
-    have hua : AnalyticAt ℂ u (f a) :=
-      (contMDiffAt_iff_contDiffAt.mp hu.self_of_nhds).analyticAt
+    obtain ⟨u, hua, hut⟩ := exists_toFilterGerm_eq_analyticAt (f a) t
     have hcomp := congrArg (toFilterGerm 𝓘(ℂ) ℂ a (𝓝 a) le_rfl) ht
     rw [toFilterGerm_stalkPullback, hut, hc, Germ.coe_compTendsto, Germ.coe_eq] at hcomp
     have hchain := hua.differentiableAt.hasDerivAt.comp a hf.differentiableAt.hasDerivAt
@@ -60,22 +57,19 @@ theorem surjective_stalkPullback_iff :
     have hg : AnalyticAt ℂ g (f a) := hf.analyticAt_localInverse hne
     have hgf : ∀ᶠ z in 𝓝 a, g (f z) = z :=
       hf.hasStrictDerivAt.eventually_left_inverse hne
-    obtain ⟨u, hu, hut⟩ := exists_toFilterGerm_eq a t
-    have hua : AnalyticAt ℂ u a :=
-      (contMDiffAt_iff_contDiffAt.mp hu.self_of_nhds).analyticAt
-    obtain ⟨v, hv⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt
-      ((hua.comp_of_eq hg hga).eventually_analyticAt.mono fun _ hz ↦
-        contMDiffAt_iff_contDiffAt.mpr hz.contDiffAt)
+    obtain ⟨u, hua, hut⟩ := exists_toFilterGerm_eq_analyticAt a t
+    obtain ⟨v, hv⟩ := exists_toFilterGerm_eq_of_analyticAt (hua.comp_of_eq hg hga)
     refine ⟨v, toFilterGerm_nhds_injective a ?_⟩
     rw [toFilterGerm_stalkPullback, hv, hut, Germ.coe_compTendsto, Germ.coe_eq]
     exact hgf.mono fun z hz ↦ congrArg u hz
 
 /-- A local analytic map induces an isomorphism of holomorphic stalks exactly when its
 derivative is nonzero. -/
-theorem bijective_stalkPullback_iff :
-    Function.Bijective (stalkPullback hf) ↔ deriv f a ≠ 0 := by
-  refine ⟨fun h ↦ (surjective_stalkPullback_iff hf).mp h.2, fun hne ↦ ⟨?_,
-    (surjective_stalkPullback_iff hf).mpr hne⟩⟩
+theorem stalkPullback_bijective_iff :
+    Function.Bijective (stalkPullback (eventually_contMDiffAt_of_analyticAt hf)) ↔
+      deriv f a ≠ 0 := by
+  refine ⟨fun h ↦ (stalkPullback_surjective_iff hf).mp h.2, fun hne ↦ ⟨?_,
+    (stalkPullback_surjective_iff hf).mpr hne⟩⟩
   intro t u htu
   obtain ⟨v, _, hvt⟩ := exists_toFilterGerm_eq (f a) t
   obtain ⟨w, _, hwu⟩ := exists_toFilterGerm_eq (f a) u
@@ -85,5 +79,18 @@ theorem bijective_stalkPullback_iff :
     Germ.coe_compTendsto, Germ.coe_compTendsto, Germ.coe_eq] at h
   rw [hvt, hwu, Germ.coe_eq, ← hf.hasStrictDerivAt.map_nhds_eq hne]
   exact h
+
+/-- The holomorphic-stalk isomorphism induced by an analytic map with nonzero derivative. -/
+def stalkPullbackEquiv (hf0 : deriv f a ≠ 0) :
+    (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk (f a) ≃+*
+      (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a :=
+  RingEquiv.ofBijective (stalkPullback (eventually_contMDiffAt_of_analyticAt hf))
+    ((stalkPullback_bijective_iff hf).mpr hf0)
+
+/-- The stalk isomorphism acts by pullback of holomorphic germs. -/
+@[simp]
+theorem stalkPullbackEquiv_apply (hf0 : deriv f a ≠ 0)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk (f a)) :
+    stalkPullbackEquiv hf hf0 s = stalkPullback (eventually_contMDiffAt_of_analyticAt hf) s := (rfl)
 
 end TauCeti.holomorphicStructureSheaf
