@@ -189,8 +189,8 @@ theorem isZero_singularHomology_of_isClosedEmbedding [SecondCountableTopology M]
   have hinjℝ (x : M) : Function.Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) :=
     ((hi x).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ fun v w hvw ↦
       hinj x (by rwa [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply])
-  obtain ⟨a, ha⟩ := (ae_isMorse_norm_sq_sub_comp Measure.addHaar (hi.restrictScalars ℝ)
-    hinjℝ).exists
+  have hiℝ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
+  obtain ⟨a, ha⟩ := (ae_isMorse_norm_sq_sub_comp Measure.addHaar hiℝ hinjℝ).exists
   exact ha.isZero_singularHomology_of_manifoldMorseIndex_le
     (isProperMap_norm_sq_sub_comp hclosed a) ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩
     (fun x hx ↦ manifoldMorseIndex_norm_sq_sub_comp_le ((hi x).of_le (by simp)) (hinj x)
