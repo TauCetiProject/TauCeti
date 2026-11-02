@@ -182,9 +182,9 @@ theorem contMDiff_seamFamily :
       (fun p : (ℝ × ℝ) × M ↦ 3 * (p.1.2 - ⌊p₀.1.2⌋) - 1) :=
     (ContDiff.contMDiff (by fun_prop : ContDiff ℝ ∞
       (fun q : ℝ × ℝ ↦ 3 * (q.2 - ⌊p₀.1.2⌋) - 1))).comp contMDiff_fst
-  have hpath := SmoothTwoForm.Compatible.contMDiff_cayleyPath
-    (compatible_seamStructure hσ hJ₀ ⌊p₀.1.2⌋) (compatible_seamStructure hσ hJ₀ (⌊p₀.1.2⌋ + 1))
-    contMDiff_snd hc
+  have hpath := (SmoothTwoForm.Compatible.contMDiff_cayleyPath
+    (compatible_seamStructure hσ hJ₀ ⌊p₀.1.2⌋)
+    (compatible_seamStructure hσ hJ₀ (⌊p₀.1.2⌋ + 1))).comp (hc.prodMk contMDiff_snd)
   refine (hpath p₀).congr_of_eventuallyEq ?_
   filter_upwards [(continuous_snd.comp continuous_fst).continuousAt.preimage_mem_nhds
     (eventually_seamPath_floor_eq hσ hJ₀ p₀.1.2)] with p hp

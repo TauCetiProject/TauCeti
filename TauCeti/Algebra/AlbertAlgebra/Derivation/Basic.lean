@@ -44,7 +44,9 @@ dimension `26` over a base satisfying `StrongRankCondition`
 ## Main results
 
 * `TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero`: the value of a derivation at
-  a diagonal idempotent has vanishing diagonal.
+  a diagonal idempotent has vanishing diagonal, and by
+  `TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_offDiag_self_eq_zero` no entry in the slot
+  opposite the idempotent.
 * `TauCeti.AlbertAlgebra.trace_derivation_apply_eq_zero`: **a derivation of `J` has values of trace
   `0`**, with `TauCeti.AlbertAlgebra.derivation_apply_mem_traceZero` its membership form.
 * `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule`: `Der J` acts faithfully on `J₀`;
@@ -111,6 +113,19 @@ theorem derivation_apply_diagIdempotent_diag_eq_zero (i : Fin 3) :
     linear_combination -hm
   · rw [Pi.single_eq_of_ne hmi, zero_mul, add_zero] at hm
     exact hm
+
+/-- **The value of a derivation at a diagonal idempotent lies in the two slots touching it**: `D Eᵢ`
+has no entry in the `i`-th slot, and no diagonal by
+`TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero`, so it lies in the slots
+`i + 1` and `i + 2`, the Peirce `½`-space of `Eᵢ`. -/
+@[simp]
+theorem derivation_apply_diagIdempotent_offDiag_self_eq_zero (i : Fin 3) :
+    ((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R i)).offDiag i = 0 := by
+  have h := derivationLieAlgebra.leibniz D (diagIdempotent R i) (diagIdempotent R i)
+  simp only [diagIdempotent_mul_diagIdempotent, ↓reduceIte] at h
+  rw [mul_comm ((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R i))] at h
+  simpa [diagIdempotent_mul_offDiag_self_eq_zero] using
+    congrArg (fun X : AlbertAlgebra R => X.offDiag i) h
 
 /-- A derivation kills the trace of a diagonal idempotent. -/
 theorem trace_derivation_apply_diagIdempotent (i : Fin 3) :

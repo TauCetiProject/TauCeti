@@ -5,356 +5,288 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 
 /-!
-# Smooth Cayley paths between compatible almost complex structures
+# Smooth Cayley paths of compatible almost complex structures
 
-Let `σ` be a two-form on a finite-dimensional manifold `M` and let `J₀`, `J₁` be smooth almost
-complex structures on `M` compatible with `σ`. At each point `x`, the linear Cayley path
-`TauCeti.SymplecticForm.Compatible.cayleyPath` joins `J₀ x` to `J₁ x` through
-`σ_x`-compatible complex structures: it is `J₀ (1 + C)(1 - C)⁻¹` for the cutoff-scaled Cayley
-coordinate `C = smoothTransition t • (-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹)`. This file assembles these
-pointwise paths into smooth almost complex structures on `M`,
+Let `σ` be a smooth two-form on a finite-dimensional manifold `M` and let `J₀`, `J₁` be smooth
+almost complex structures compatible with `σ`. At each point `x`, the compatible Cayley chart
+based at `J₀ x` identifies the `σ_x`-compatible complex structures on `T_x M` with a convex set
+containing `0`, and `TauCeti.SymplecticForm.Compatible.cayleyPath` joins `J₀ x` to `J₁ x` by
+scaling the Cayley coordinate of `J₁ x` with `smoothTransition t`. This file assembles these
+pointwise paths into the family of smooth almost complex structures
 
-`TauCeti.SmoothTwoForm.Compatible.cayleyPath hJ₀ hJ₁ t`,
+`J_t = TauCeti.SmoothTwoForm.Compatible.cayleyPath h₀ h₁ t`
 
-which are `σ`-compatible for every real `t`, equal to `J₀` for `t ≤ 0` and to `J₁` for `t ≥ 1`.
-The path is smooth jointly in the parameter and the point: for smooth maps `b : N → M` and
-`c : N → ℝ`, the endomorphism of `T_(b n) M` given by the path at time `c n` depends smoothly on
-`n` (`TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPath`). Thus it is a smooth family of
-compatible structures parametrized by `ℝ × M`, constant near both ends of `[0, 1]`, as needed to
-glue such paths end to end.
+on `M`, where `h₀ : σ.Compatible J₀` and `h₁ : σ.Compatible J₁`. Each `J_t` is compatible with
+`σ`, `J_t = J₀` for `t ≤ 0` and `J_t = J₁` for `t ≥ 1`, and the family is jointly smooth on
+`ℝ × M` as a section of the endomorphism bundle of the tangent bundle along `(t, x) ↦ x`. So the
+path is smooth across both endpoints and constant in `t` outside `(0, 1)`.
 
-Since the path is given by a rational formula in `J₀` and `J₁`, it is natural: pulling it back
-along a diffeomorphism gives the path between the pulled-back structures, for the pulled-back
-form (`TauCeti.SmoothTwoForm.Compatible.pullback_cayleyPath`).
+Smoothness is checked in the trivializations of the tangent bundle. The value of `J_t` at `x` is
+the rational expression `J₀ (1 + β C) (1 - β C)⁻¹` in `J₀ x` and `J₁ x`, where
+`C = -(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` is the Cayley coordinate of `J₁ x` and `β = smoothTransition t`.
+Reading a fibre endomorphism in a trivialization is conjugation by a continuous linear
+equivalence, an algebra isomorphism, so it commutes with this expression; and inversion is
+smooth at invertible operators. No compactness of `M` and no closedness of `σ` is used.
+
+Such collar-constant families are the input for extending prescribed almost complex structures
+across collars, for instance for building a structure on a mapping torus out of `J₀` and its
+pullback by the monodromy. Since the path is a rational expression in `J₀` and `J₁`, it depends
+only on the two endpoints and is natural: pulling it back along a diffeomorphism gives the path
+between the pulled-back structures, for the pulled-back form.
 
 ## Main definitions
 
-* `TauCeti.SmoothTwoForm.Compatible.cayleyPath hJ₀ hJ₁ t`: the smooth Cayley path from `J₀` to
-  `J₁` at time `t`.
+* `TauCeti.SmoothTwoForm.Compatible.cayleyPath h₀ h₁ t`: the smooth almost complex structure
+  that is the compatible Cayley path from `J₀` to `J₁` at time `t` at every point.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.Compatible.compatible_cayleyPath`: the path is compatible with `σ`.
+* `TauCeti.SmoothTwoForm.Compatible.almostComplexStructureAt_cayleyPath`: at each point, `J_t`
+  is the linear compatible Cayley path from `J₀ x` to `J₁ x`.
+* `TauCeti.SmoothTwoForm.Compatible.compatible_cayleyPath`: every `J_t` is compatible with `σ`.
 * `TauCeti.SmoothTwoForm.Compatible.cayleyPath_of_nonpos`,
-  `TauCeti.SmoothTwoForm.Compatible.cayleyPath_of_one_le`: it is constant outside `(0, 1)`.
-* `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPath`: joint smoothness in the time and the
-  point.
+  `TauCeti.SmoothTwoForm.Compatible.cayleyPath_of_one_le`: the path is `J₀` for `t ≤ 0` and `J₁`
+  for `1 ≤ t`.
+* `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPath`: the family is jointly smooth in
+  `(t, x)`.
+* `TauCeti.SmoothTwoForm.Compatible.cayleyPath_congr`: the path depends only on its endpoints.
 * `TauCeti.SmoothTwoForm.Compatible.pullback_cayleyPath`: naturality under diffeomorphisms.
 
 ## References
 
-* D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, third edition,
-  Section 2.5 (the Cayley chart on compatible complex structures).
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Section 2.2 (smooth families of compatible almost complex structures).
+* D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, third edition, Oxford
+  University Press, 2017, Sections 2.5 and 4.1 (the Cayley chart on compatible complex
+  structures, and the contractibility of the space of compatible almost complex structures on a
+  symplectic manifold).
 -/
 
-public noncomputable section
+public section
 
-open Bundle Set
-open scoped Manifold ContDiff Topology
+open Bundle Real
+open scoped Manifold
+
+noncomputable section
 
 namespace TauCeti
 
-/-- The Cayley interpolation formula `a (1 + C)(1 - C)⁻¹`, `C = s • (-(1 + a b)(1 - a b)⁻¹)`,
-in an arbitrary real algebra. -/
-private def cayleyFormula {R : Type*} [Ring R] [Algebra ℝ R] (a b : R) (s : ℝ) : R :=
-  a * (1 + s • -((1 + a * b) * Ring.inverse (1 - a * b))) *
-    Ring.inverse (1 - s • -((1 + a * b) * Ring.inverse (1 - a * b)))
-
-/-- Algebra isomorphisms commute with the Cayley interpolation formula. -/
-private theorem map_cayleyFormula {R S F : Type*} [Ring R] [Algebra ℝ R] [Ring S] [Algebra ℝ S]
-    [EquivLike F R S] [AlgEquivClass F ℝ R S] (f : F) (a b : R) (s : ℝ) :
-    f (cayleyFormula a b s) = cayleyFormula (f a) (f b) s := by
-  simp only [cayleyFormula, map_mul, map_add, map_one, map_neg, map_sub, map_smul,
-    map_ringInverse]
-
-/-- The Cayley interpolation formula is smooth at every point where both inverses it takes are
-of units. -/
-private theorem contDiffAt_cayleyFormula {R : Type*} [NormedRing R] [NormedAlgebra ℝ R]
-    [CompleteSpace R] {p : R × R × ℝ} (h₁ : IsUnit (1 - p.1 * p.2.1))
-    (h₂ : IsUnit (1 - p.2.2 • -((1 + p.1 * p.2.1) * Ring.inverse (1 - p.1 * p.2.1)))) :
-    ContDiffAt ℝ ∞ (fun q : R × R × ℝ ↦ cayleyFormula q.1 q.2.1 q.2.2) p := by
-  obtain ⟨u₁, hu₁⟩ := h₁
-  obtain ⟨u₂, hu₂⟩ := h₂
-  have hab : ContDiffAt ℝ ∞ (fun q : R × R × ℝ ↦ q.1 * q.2.1) p :=
-    contDiffAt_fst.mul contDiffAt_snd.fst
-  have hinv₁ : ContDiffAt ℝ ∞ (fun q : R × R × ℝ ↦ Ring.inverse (1 - q.1 * q.2.1)) p := by
-    have hi := contDiffAt_ringInverse (n := ∞) ℝ u₁
-    rw [hu₁] at hi
-    exact hi.comp p (contDiffAt_const.sub hab)
-  have hC : ContDiffAt ℝ ∞ (fun q : R × R × ℝ ↦
-      q.2.2 • -((1 + q.1 * q.2.1) * Ring.inverse (1 - q.1 * q.2.1))) p :=
-    contDiffAt_snd.snd.smul ((contDiffAt_const.add hab).mul hinv₁).neg
-  have hinv₂ : ContDiffAt ℝ ∞ (fun q : R × R × ℝ ↦
-      Ring.inverse (1 - q.2.2 • -((1 + q.1 * q.2.1) * Ring.inverse (1 - q.1 * q.2.1)))) p := by
-    have hi := contDiffAt_ringInverse (n := ∞) ℝ u₂
-    rw [hu₂] at hi
-    exact hi.comp p (contDiffAt_const.sub hC)
-  exact (contDiffAt_fst.mul (contDiffAt_const.add hC)).mul hinv₂
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω₀ : SymplecticForm V} {A₀ A₁ : AlmostComplexStructure V}
-
-/-- The linear Cayley path in operator-norm coordinates, as the Cayley interpolation formula. -/
-private theorem toContinuousLinearMap_cayleyPath_eq_cayleyFormula (h₀ : ω₀.Compatible A₀)
-    (h₁ : ω₀.Compatible A₁) (t : ℝ) :
-    LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
-      cayleyFormula (LinearMap.toContinuousLinearMap A₀.toLinearMap)
-        (LinearMap.toContinuousLinearMap A₁.toLinearMap) (Real.smoothTransition t) := by
-  rw [h₀.toContinuousLinearMap_cayleyPath, AlmostComplexStructure.toContinuousLinearMap_cayley,
-    cayleyFormula]
-
-/-- The two inverses taken by the Cayley interpolation formula between two `ω₀`-compatible
-structures, for a parameter in `[0, 1]`, are inverses of units. -/
-private theorem isUnit_cayleyFormula (h₀ : ω₀.Compatible A₀) (h₁ : ω₀.Compatible A₁) {s : ℝ}
-    (hs : s ∈ Icc (0 : ℝ) 1) :
-    IsUnit (1 - LinearMap.toContinuousLinearMap A₀.toLinearMap *
-        LinearMap.toContinuousLinearMap A₁.toLinearMap) ∧
-      IsUnit (1 - s • -((1 + LinearMap.toContinuousLinearMap A₀.toLinearMap *
-          LinearMap.toContinuousLinearMap A₁.toLinearMap) *
-        Ring.inverse (1 - LinearMap.toContinuousLinearMap A₀.toLinearMap *
-          LinearMap.toContinuousLinearMap A₁.toLinearMap))) := by
-  refine ⟨ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2 ?_, ?_⟩
-  · simpa only [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one,
-      ContinuousLinearMap.toLinearMap_mul, LinearMap.coe_toContinuousLinearMap] using
-      h₀.tames.isUnit_one_sub_mul h₁.tames
-  · rw [← AlmostComplexStructure.toContinuousLinearMap_cayley]
-    have hmem : (s • LinearMap.toContinuousLinearMap (A₀.cayley A₁)).toLinearMap ∈
-        ω₀.cayleyBall A₀ := SymplecticForm.compatibleCayleyBall_subset_cayleyBall (by
-      simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap] using
-        h₀.smul_cayley_mem_compatibleCayleyBall h₁ hs)
-    exact SymplecticForm.isUnit_one_sub_of_toLinearMap_mem_cayleyBall hmem
-
-variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W] [IsTopologicalAddGroup W]
-  [ContinuousSMul ℝ W] {ωW : SymplecticForm W} {B : AlmostComplexStructure W}
-
-/-- Conjugating a continuous endomorphism by a linear equivalence `e` is transporting the
-almost complex structure it represents along `e`. -/
-private theorem conjContinuousAlgEquiv_eq_toContinuousLinearMap_transport (e : W ≃L[ℝ] V)
-    {b : W →L[ℝ] W} (hb : b.toLinearMap = B.toLinearMap) :
-    e.conjContinuousAlgEquiv b =
-      LinearMap.toContinuousLinearMap (B.transport e.toLinearEquiv).toLinearMap := by
-  ext v
-  simp [← hb]
-
-/-- The Cayley interpolation formula between two `ωW`-compatible structures on `W` is the linear
-Cayley path between their transports along a linear equivalence `e` to a normed space,
-transported back along `e`. -/
-private theorem toLinearMap_cayleyFormula_eq_transport (e : W ≃L[ℝ] V)
-    {B₀ B₁ : AlmostComplexStructure W}
-    (h₀ : ωW.Compatible B₀) (h₁ : ωW.Compatible B₁) {b₀ b₁ : W →L[ℝ] W}
-    (hb₀ : b₀.toLinearMap = B₀.toLinearMap) (hb₁ : b₁.toLinearMap = B₁.toLinearMap) (t : ℝ) :
-    (cayleyFormula b₀ b₁ (Real.smoothTransition t)).toLinearMap =
-      (((h₀.transport e.toLinearEquiv).cayleyPath (h₁.transport e.toLinearEquiv) t).transport
-        e.symm.toLinearEquiv).toLinearMap := by
-  have hP := toContinuousLinearMap_cayleyPath_eq_cayleyFormula (h₀.transport e.toLinearEquiv)
-    (h₁.transport e.toLinearEquiv) t
-  rw [← conjContinuousAlgEquiv_eq_toContinuousLinearMap_transport e hb₀,
-    ← conjContinuousAlgEquiv_eq_toContinuousLinearMap_transport e hb₁,
-    ← map_cayleyFormula] at hP
-  ext v
-  have hv := congrArg (fun f : V →L[ℝ] V ↦ e.symm (f (e v))) hP
-  simp only [LinearMap.coe_toContinuousLinearMap',
-    ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-    ContinuousLinearEquiv.symm_apply_apply] at hv
-  simp [← hv]
-
-variable {E H M E' H' M' F G N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {IN : ModelWithCorners ℝ F G}
-  [TopologicalSpace N] [ChartedSpace G N]
+/-! ### The Cayley path of smooth compatible structures -/
 
 namespace SmoothTwoForm.Compatible
 
-variable {σ : SmoothTwoForm I M} {J₀ J₁ : SmoothAlmostComplexStructure I M}
-  (hJ₀ : σ.Compatible J₀) (hJ₁ : σ.Compatible J₁)
+open scoped ContDiff
 
-omit [FiniteDimensional ℝ E] in
-include hJ₀ hJ₁ in
-/-- At each point, the Cayley interpolation formula between the endomorphisms of `J₀` and `J₁`
-is the linear Cayley path for `σ_x`, read through any linear equivalence of `T_x M` with a
-normed space. -/
-private theorem toLinearMap_cayleyFormula_eq (x : M) {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [FiniteDimensional ℝ V] (e : TangentSpace I x ≃L[ℝ] V) (t : ℝ) :
-    (cayleyFormula (J₀.toEndomorphism x) (J₁.toEndomorphism x)
-        (Real.smoothTransition t)).toLinearMap =
-      ((((hJ₀.compatibleAt x).transport e.toLinearEquiv).cayleyPath
-        ((hJ₁.compatibleAt x).transport e.toLinearEquiv) t).transport
-          e.symm.toLinearEquiv).toLinearMap :=
-  toLinearMap_cayleyFormula_eq_transport e (hJ₀.compatibleAt x) (hJ₁.compatibleAt x)
-    (J₀.almostComplexStructureAt_toLinearMap x).symm
-    (J₁.almostComplexStructureAt_toLinearMap x).symm t
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {σ : SmoothTwoForm I M} {J₀ J₁ : SmoothAlmostComplexStructure I M}
+  (h₀ : σ.Compatible J₀) (h₁ : σ.Compatible J₁)
 
-/-- The trivialization of the tangent bundle at `x`, as a linear equivalence of `T_x M` with
-the model space. -/
-private def tangentChart (x : M) : TangentSpace I x ≃L[ℝ] E :=
-  (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt ℝ x
-    (mem_baseSet_trivializationAt E (TangentSpace I) x)
+/-- The pointwise compatible Cayley path at `x`, as a continuous endomorphism of `T_x M`. The
+tangent space `T_x M` is the model space `E`, which carries the norm required by the linear
+Cayley path; `TangentSpace I x` itself has no norm instance, so the path is formed on `E`. -/
+private def cayleyPathEnd (t : ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x :=
+  LinearMap.toContinuousLinearMap
+    (SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x)
+      t).toLinearMap
 
-include hJ₀ hJ₁ in
-/-- The Cayley interpolation formula between the endomorphism sections of `J₀` and `J₁`, along a
-smooth map `b` and with a smooth parameter `s` valued in `[0, 1]`, is smooth. -/
-private theorem contMDiffAt_cayleyFormula {b : N → M} {s : N → ℝ} {n₀ : N}
-    (hb : ContMDiffAt IN I ∞ b n₀) (hs : ContMDiffAt IN 𝓘(ℝ) ∞ s n₀)
-    (hs₀ : s n₀ ∈ Icc (0 : ℝ) 1) :
-    ContMDiffAt IN (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun n ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (b n)
-        (cayleyFormula (J₀.toEndomorphism (b n)) (J₁.toEndomorphism (b n)) (s n))) n₀ := by
+/-- The pointwise path is the Cayley path expression in the fibre values of `J₀` and `J₁`. -/
+private theorem cayleyPathEnd_eq (t : ℝ) (x : M) :
+    cayleyPathEnd h₀ h₁ t x =
+      cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x) :=
+  SymplecticForm.Compatible.toContinuousLinearMap_cayleyPath (V := E) (h₀.compatibleAt x)
+    (h₁.compatibleAt x) t (J₀.almostComplexStructureAt_toLinearMap x).symm
+    (J₁.almostComplexStructureAt_toLinearMap x).symm
+
+include h₁ in
+/-- The pointwise compatible Cayley paths at all points form a jointly smooth family of tangent
+endomorphisms over `ℝ × M`. -/
+private theorem contMDiff_cayleyPathEnd :
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 (cayleyPathEnd h₀ h₁ p.1 p.2)) := by
+  intro p₀
   rw [contMDiffAt_hom_bundle]
-  refine ⟨hb, ?_⟩
-  set e := trivializationAt E (TangentSpace I) (b n₀)
-  -- Near `n₀`, reading in the trivialization at `b n₀` is conjugation by an algebra isomorphism.
-  have hcoord : ∀ᶠ n in 𝓝 n₀, ∃ hn : b n ∈ e.baseSet,
-      ∀ ψ : TangentSpace I (b n) →L[ℝ] TangentSpace I (b n),
-        ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I)
-          (b n₀) (b n) (b n₀) (b n) ψ =
-            (e.continuousLinearEquivAt ℝ (b n) hn).conjContinuousAlgEquiv ψ := by
-    filter_upwards [hb.continuousAt.preimage_mem_nhds
-      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) (b n₀)))]
-      with n hn
-    exact ⟨hn, fun ψ ↦ ContinuousLinearMap.inCoordinates_eq hn hn⟩
-  have hA := ((contMDiffAt_hom_bundle _).1
-    ((J₀.toEndomorphism.contMDiff (b n₀)).comp n₀ hb)).2
-  have hB := ((contMDiffAt_hom_bundle _).1
-    ((J₁.toEndomorphism.contMDiff (b n₀)).comp n₀ hb)).2
-  obtain ⟨hn₀, hf₀⟩ := hcoord.self_of_nhds
-  -- At `n₀`, the coordinate expressions are the transports of `J₀` and `J₁` to the model, so the
-  -- inverses taken by the formula there are of units.
-  obtain ⟨hu₁, hu₂⟩ := isUnit_cayleyFormula
-    ((hJ₀.compatibleAt (b n₀)).transport (e.continuousLinearEquivAt ℝ (b n₀) hn₀).toLinearEquiv)
-    ((hJ₁.compatibleAt (b n₀)).transport (e.continuousLinearEquivAt ℝ (b n₀) hn₀).toLinearEquiv)
-    hs₀
-  rw [← conjContinuousAlgEquiv_eq_toContinuousLinearMap_transport _
-      (J₀.almostComplexStructureAt_toLinearMap (b n₀)).symm,
-    ← conjContinuousAlgEquiv_eq_toContinuousLinearMap_transport _
-      (J₁.almostComplexStructureAt_toLinearMap (b n₀)).symm, ← hf₀, ← hf₀] at hu₁ hu₂
-  -- The coordinate expressions of `J₀` and `J₁`.
-  let a : N → E →L[ℝ] E := fun n ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I)
-    E (TangentSpace I) (b n₀) (b n) (b n₀) (b n) (J₀.toEndomorphism (b n))
-  let c : N → E →L[ℝ] E := fun n ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I)
-    E (TangentSpace I) (b n₀) (b n) (b n₀) (b n) (J₁.toEndomorphism (b n))
-  have hsmooth : ContMDiffAt IN 𝓘(ℝ, E →L[ℝ] E) ∞
-      (fun n ↦ cayleyFormula (a n) (c n) (s n)) n₀ :=
-    (contDiffAt_cayleyFormula (p := (a n₀, c n₀, s n₀)) hu₁ hu₂).comp_contMDiffAt
-      (f := fun n ↦ (a n, c n, s n)) (x := n₀) (hA.prodMk_space (hB.prodMk_space hs))
-  refine hsmooth.congr_of_eventuallyEq ?_
-  filter_upwards [hcoord] with n ⟨hn, hf⟩
-  simp only [a, c, hf, map_cayleyFormula]
+  refine ⟨contMDiffAt_snd, ?_⟩
+  -- Read every fibre endomorphism in the tangent trivialization at `p₀.2`.
+  set x₀ := p₀.2
+  let e := trivializationAt E (TangentSpace I) x₀
+  let coord : (x : M) → (TangentSpace I x →L[ℝ] TangentSpace I x) → E →L[ℝ] E :=
+    fun x A ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x x₀ x A
+  -- On the base set, reading in coordinates is conjugation by an algebra isomorphism.
+  have hconj {x : M} (hx : x ∈ e.baseSet) (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
+      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A := by
+    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
+  have hJ (J : SmoothAlmostComplexStructure I M) :
+      ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E) ∞ (fun x ↦ coord x (J.toEndomorphism x)) x₀ :=
+    ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff x₀)).2
+  have hinner : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ, ℝ × (E →L[ℝ] E) × (E →L[ℝ] E)) ∞
+      (fun p : ℝ × M ↦ (smoothTransition p.1, coord p.2 (J₀.toEndomorphism p.2),
+        coord p.2 (J₁.toEndomorphism p.2))) p₀ :=
+    (smoothTransition.contDiff.contMDiff.comp contMDiff_fst).contMDiffAt.prodMk_space
+      (((hJ J₀).comp p₀ contMDiffAt_snd).prodMk_space ((hJ J₁).comp p₀ contMDiffAt_snd))
+  -- The two denominators are invertible at `p₀`, since conjugation preserves units.
+  let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
+  have hu₁ : IsUnit (1 - coord x₀ (J₀.toEndomorphism x₀) * coord x₀ (J₁.toEndomorphism x₀)) := by
+    rw [hconj hx₀, hconj hx₀, ← map_mul, ← map_one φ₀, ← map_sub]
+    exact (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
+      (h₀.compatibleAt x₀).tames (h₁.compatibleAt x₀).tames
+      (J₀.almostComplexStructureAt_toLinearMap x₀).symm
+      (J₁.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
+  have hu₂ : IsUnit (1 - smoothTransition p₀.1 • cayleyFormula (coord x₀ (J₀.toEndomorphism x₀))
+      (coord x₀ (J₁.toEndomorphism x₀))) := by
+    rw [hconj hx₀, hconj hx₀, ← map_cayleyFormula, ← map_smul, ← map_one φ₀, ← map_sub]
+    exact (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
+      (h₀.compatibleAt x₀) (h₁.compatibleAt x₀) p₀.1
+      (J₀.almostComplexStructureAt_toLinearMap x₀).symm
+      (J₁.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
+  -- Near `p₀`, the path in coordinates is the Cayley path expression of `J₀` and `J₁` in
+  -- coordinates, which is smooth.
+  refine ((contDiffAt_cayleyPathFormula hu₁ hu₂).comp_contMDiffAt (f := fun p : ℝ × M ↦
+    (smoothTransition p.1, coord p.2 (J₀.toEndomorphism p.2), coord p.2 (J₁.toEndomorphism p.2)))
+    hinner).congr_of_eventuallyEq ?_
+  filter_upwards [(e.open_baseSet.preimage continuous_snd).mem_nhds hx₀] with p hp
+  rw [Function.comp_apply, cayleyPathEnd_eq, hconj hp, hconj hp]
+  exact (hconj hp _).trans (map_cayleyPathFormula _ _ _ _)
 
-/-- The smooth Cayley path from `J₀` to `J₁` at time `t`: at each point `x` it is the linear
-Cayley path from `J₀ x` to `J₁ x` for the symplectic form `σ_x`
-(`TauCeti.SmoothTwoForm.Compatible.cayleyPath_almostComplexStructureAt`). -/
+/-- The compatible Cayley path from `J₀` to `J₁` at time `t`, as a smooth almost complex structure
+on `M`: at each point `x` it is the compatible Cayley path from `J₀ x` to `J₁ x` at time `t`,
+obtained by scaling the Cayley coordinate of `J₁ x` relative to `J₀ x` by `smoothTransition t`.
+It is `J₀` for `t ≤ 0` and `J₁` for `1 ≤ t`. -/
 def cayleyPath (t : ℝ) : SmoothAlmostComplexStructure I M where
-  toEndomorphism :=
-    ⟨fun x ↦ cayleyFormula (J₀.toEndomorphism x) (J₁.toEndomorphism x) (Real.smoothTransition t),
-      fun x ↦ contMDiffAt_cayleyFormula hJ₀ hJ₁ contMDiffAt_id contMDiffAt_const
-        (mem_Icc.2 ⟨Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩)⟩
+  toEndomorphism := ⟨cayleyPathEnd h₀ h₁ t,
+    (contMDiff_cayleyPathEnd h₀ h₁).comp (contMDiff_const.prodMk contMDiff_id)⟩
   square_neg x := by
     ext v
-    have h := toLinearMap_cayleyFormula_eq hJ₀ hJ₁ x (tangentChart (I := I) x) t
-    have hv (w : TangentSpace I x) := congrArg (fun f : Module.End ℝ (TangentSpace I x) ↦ f w) h
-    simp only [ContinuousLinearMap.coe_coe] at hv
-    -- The section evaluates at `x` to the Cayley interpolation formula, which is the linear
-    -- Cayley path read through the trivialization at `x`.
-    exact (congrArg _ (hv v)).trans ((hv _).trans (AlmostComplexStructure.apply_apply _ v))
+    -- The section's value at `x` is `cayleyPathEnd h₀ h₁ t x`, the continuous version of the
+    -- pointwise path `J`, an almost complex structure on `E = T_x M`. Evaluating
+    -- `LinearMap.toContinuousLinearMap J.toLinearMap` is evaluating `J` by definition, but
+    -- `simp` cannot rewrite it across `TangentSpace I x = E`, so `J (J v) = -v` closes the goal.
+    change cayleyPathEnd h₀ h₁ t x (cayleyPathEnd h₀ h₁ t x v) = -v
+    simp only [cayleyPathEnd]
+    exact AlmostComplexStructure.apply_apply _ v
 
-/-- The endomorphism of `T_x M` underlying the smooth Cayley path. -/
+/-- At each point, the path is the pointwise compatible Cayley path. -/
+-- This is not a `simp` lemma: its right-hand side is a structure on the model space `E`, so
+-- rewriting with it turns `TangentSpace I x` terms into `E` terms that later `simp` lemmas, such
+-- as `cayley_almostComplexStructureAt_cayleyPath`, no longer match.
+theorem almostComplexStructureAt_cayleyPath (t : ℝ) (x : M) :
+    (h₀.cayleyPath h₁ t).almostComplexStructureAt x =
+      SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x) t :=
+  AlmostComplexStructure.toLinearMap_injective <| by
+    rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+    -- The endomorphism of `cayleyPath` at `x` is `cayleyPathEnd` by definition.
+    change (cayleyPathEnd h₀ h₁ t x).toLinearMap = _
+    -- Unfolding it leaves `LinearMap.coe_toContinuousLinearMap` for the pointwise path, read
+    -- on `TangentSpace I x = E`.
+    rw [cayleyPathEnd]
+    exact LinearMap.coe_toContinuousLinearMap _
+
+/-- At each point, applying the path to a tangent vector applies the pointwise compatible Cayley
+path. -/
+-- This is not a `simp` lemma, for the same reason as `almostComplexStructureAt_cayleyPath`.
+theorem cayleyPath_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
+    h₀.cayleyPath h₁ t x v =
+      SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x) (h₁.compatibleAt x)
+        t v := by
+  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+    almostComplexStructureAt_cayleyPath]
+  rfl
+
+/-- A smooth almost complex structure agreeing with the pointwise path at every point is the
+path. -/
+private theorem cayleyPath_eq_of_forall {t : ℝ} {J : SmoothAlmostComplexStructure I M}
+    (h : ∀ x, SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x)
+      (h₁.compatibleAt x) t = J.almostComplexStructureAt x) :
+    h₀.cayleyPath h₁ t = J := by
+  ext x v
+  rw [← (h₀.cayleyPath h₁ t).almostComplexStructureAt_apply x v,
+    ← J.almostComplexStructureAt_apply x v, almostComplexStructureAt_cayleyPath, h x]
+
+/-- At every point, the Cayley coordinate of `J_t` relative to `J₀` is the Cayley coordinate of
+`J₁` scaled by `smoothTransition t`. Since compatible structures are determined by their Cayley
+coordinate, this characterizes the path. -/
+@[simp]
+theorem cayley_almostComplexStructureAt_cayleyPath (t : ℝ) (x : M) :
+    (J₀.almostComplexStructureAt x).cayley ((h₀.cayleyPath h₁ t).almostComplexStructureAt x) =
+      smoothTransition t •
+        (J₀.almostComplexStructureAt x).cayley (J₁.almostComplexStructureAt x) := by
+  rw [almostComplexStructureAt_cayleyPath]
+  exact SymplecticForm.Compatible.cayley_cayleyPath (V := E) (h₀.compatibleAt x)
+    (h₁.compatibleAt x) t
+
+/-- Every structure on the path is compatible with `σ`. -/
+theorem compatible_cayleyPath (t : ℝ) : σ.Compatible (h₀.cayleyPath h₁ t) :=
+  h₀.isNondegenerate.compatible_iff.2 fun x ↦ by
+    rw [almostComplexStructureAt_cayleyPath]
+    exact SymplecticForm.Compatible.compatible_cayleyPath (V := E) (h₀.compatibleAt x)
+      (h₁.compatibleAt x) t
+
+/-- The path agrees with `J₀` on the whole incoming collar `t ≤ 0`. -/
+@[simp]
+theorem cayleyPath_of_nonpos {t : ℝ} (ht : t ≤ 0) : h₀.cayleyPath h₁ t = J₀ :=
+  cayleyPath_eq_of_forall h₀ h₁ fun x ↦
+    SymplecticForm.Compatible.cayleyPath_of_nonpos (V := E) (h₀.compatibleAt x)
+      (h₁.compatibleAt x) ht
+
+/-- The path agrees with `J₁` on the whole outgoing collar `1 ≤ t`. -/
+@[simp]
+theorem cayleyPath_of_one_le {t : ℝ} (ht : 1 ≤ t) : h₀.cayleyPath h₁ t = J₁ :=
+  cayleyPath_eq_of_forall h₀ h₁ fun x ↦
+    SymplecticForm.Compatible.cayleyPath_of_one_le (V := E) (h₀.compatibleAt x)
+      (h₁.compatibleAt x) ht
+
+/-- The Cayley path from a compatible structure to itself is constant. -/
+@[simp]
+theorem cayleyPath_self (t : ℝ) : h₀.cayleyPath h₀ t = J₀ :=
+  cayleyPath_eq_of_forall h₀ h₀ fun x ↦
+    SymplecticForm.Compatible.cayleyPath_self (V := E) (h₀.compatibleAt x) t
+
+/-- The Cayley path is jointly smooth in time and space: `(t, x) ↦ J_t x` is a smooth section of
+the tangent endomorphism bundle along the projection `ℝ × M → M`. -/
+theorem contMDiff_cayleyPath :
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 ((h₀.cayleyPath h₁ p.1).toEndomorphism p.2)) :=
+  contMDiff_cayleyPathEnd h₀ h₁
+
+/-- The endomorphism of `T_x M` underlying the path is the Cayley path expression in the fibre
+values of `J₀` and `J₁`. -/
 private theorem cayleyPath_toEndomorphism (t : ℝ) (x : M) :
-    (hJ₀.cayleyPath hJ₁ t).toEndomorphism x =
-      cayleyFormula (J₀.toEndomorphism x) (J₁.toEndomorphism x) (Real.smoothTransition t) :=
-  (rfl)
+    (h₀.cayleyPath h₁ t).toEndomorphism x =
+      cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x) :=
+  cayleyPathEnd_eq h₀ h₁ t x
 
-/-- At each point `x`, the smooth Cayley path is the linear Cayley path for `σ_x`, read through
-any linear equivalence `e` of `T_x M` with a finite-dimensional normed space: it is the
-transport along `e⁻¹` of the linear Cayley path between the transports of `J₀ x` and `J₁ x`. -/
-theorem cayleyPath_almostComplexStructureAt (t : ℝ) (x : M) {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [FiniteDimensional ℝ V] (e : TangentSpace I x ≃L[ℝ] V) :
-    (hJ₀.cayleyPath hJ₁ t).almostComplexStructureAt x =
-      (((hJ₀.compatibleAt x).transport e.toLinearEquiv).cayleyPath
-        ((hJ₁.compatibleAt x).transport e.toLinearEquiv) t).transport e.symm.toLinearEquiv := by
-  ext v
-  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  exact congrArg (fun f : Module.End ℝ (TangentSpace I x) ↦ f v)
-    (toLinearMap_cayleyFormula_eq hJ₀ hJ₁ x e t)
-
-/-- The smooth Cayley path depends only on its endpoints, not on the form they are compatible
-with. -/
+/-- The Cayley path depends only on its endpoints, not on the form they are compatible with. -/
 theorem cayleyPath_congr {σ' : SmoothTwoForm I M} {J₀' J₁' : SmoothAlmostComplexStructure I M}
-    (hJ₀' : σ'.Compatible J₀') (hJ₁' : σ'.Compatible J₁') (h₀ : J₀ = J₀') (h₁ : J₁ = J₁')
-    (t : ℝ) : hJ₀.cayleyPath hJ₁ t = hJ₀'.cayleyPath hJ₁' t := by
-  subst h₀ h₁
+    (h₀' : σ'.Compatible J₀') (h₁' : σ'.Compatible J₁') (hJ₀ : J₀ = J₀') (hJ₁ : J₁ = J₁')
+    (t : ℝ) : h₀.cayleyPath h₁ t = h₀'.cayleyPath h₁' t := by
+  subst hJ₀ hJ₁
   apply SmoothAlmostComplexStructure.toEndomorphism_injective
   ext x : 1
   rw [cayleyPath_toEndomorphism, cayleyPath_toEndomorphism]
 
-/-- Every structure on the smooth Cayley path is compatible with `σ`. -/
-theorem compatible_cayleyPath (t : ℝ) : σ.Compatible (hJ₀.cayleyPath hJ₁ t) :=
-  hJ₀.isNondegenerate.compatible_iff.2 fun x ↦ by
-    have h := ((hJ₀.compatibleAt x).transport
-      (tangentChart (I := I) x).toLinearEquiv).compatible_cayleyPath
-      ((hJ₁.compatibleAt x).transport (tangentChart (I := I) x).toLinearEquiv) t
-      |>.transport (tangentChart (I := I) x).symm.toLinearEquiv
-    rwa [← cayleyPath_almostComplexStructureAt, ContinuousLinearEquiv.toLinearEquiv_symm,
-      SymplecticForm.transport_symm_transport] at h
-
-/-- The smooth Cayley path is `J₀` up to time zero. -/
-theorem cayleyPath_of_nonpos {t : ℝ} (ht : t ≤ 0) : hJ₀.cayleyPath hJ₁ t = J₀ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    cayleyPath_almostComplexStructureAt _ _ t x (tangentChart (I := I) x),
-    SymplecticForm.Compatible.cayleyPath_of_nonpos _ _ ht, ContinuousLinearEquiv.toLinearEquiv_symm,
-    AlmostComplexStructure.transport_symm_transport,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-
-/-- The smooth Cayley path is `J₁` from time one on. -/
-theorem cayleyPath_of_one_le {t : ℝ} (ht : 1 ≤ t) : hJ₀.cayleyPath hJ₁ t = J₁ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    cayleyPath_almostComplexStructureAt _ _ t x (tangentChart (I := I) x),
-    SymplecticForm.Compatible.cayleyPath_of_one_le _ _ ht, ContinuousLinearEquiv.toLinearEquiv_symm,
-    AlmostComplexStructure.transport_symm_transport,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-
-/-- The smooth Cayley path is jointly smooth in the time and the point: along smooth maps
-`b : N → M` and `c : N → ℝ`, its endomorphism of `T_(b n) M` at time `c n` depends smoothly
-on `n`. -/
-theorem contMDiff_cayleyPath {b : N → M} (hb : ContMDiff IN I ∞ b) {c : N → ℝ}
-    (hc : ContMDiff IN 𝓘(ℝ) ∞ c) :
-    ContMDiff IN (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun n ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (b n)
-        ((hJ₀.cayleyPath hJ₁ (c n)).toEndomorphism (b n))) := fun n ↦
-  contMDiffAt_cayleyFormula hJ₀ hJ₁ (hb n)
-    ((Real.smoothTransition.contDiff.contMDiff.comp hc) n)
-    (mem_Icc.2 ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩)
-
-end SmoothTwoForm.Compatible
-
-namespace SmoothTwoForm.Compatible
-
-variable {σ : SmoothTwoForm I' M'} {J₀ J₁ : SmoothAlmostComplexStructure I' M'}
-
-/-- Pulling the smooth Cayley path back along a diffeomorphism gives the smooth Cayley path
-between the pulled-back structures, for the pulled-back form. -/
-theorem pullback_cayleyPath (hJ₀ : σ.Compatible J₀) (hJ₁ : σ.Compatible J₁)
-    (h : M ≃ₘ⟮I, I'⟯ M') (t : ℝ) :
-    (hJ₀.cayleyPath hJ₁ t).pullback h = (hJ₀.pullback h).cayleyPath (hJ₁.pullback h) t := by
+/-- Pulling the Cayley path back along a diffeomorphism gives the Cayley path between the
+pulled-back structures, for the pulled-back form. -/
+theorem pullback_cayleyPath {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M'] {σ' : SmoothTwoForm I' M'}
+    {J₀' J₁' : SmoothAlmostComplexStructure I' M'} (h₀' : σ'.Compatible J₀')
+    (h₁' : σ'.Compatible J₁') (h : M ≃ₘ⟮I, I'⟯ M') (t : ℝ) :
+    (h₀'.cayleyPath h₁' t).pullback h = (h₀'.pullback h).cayleyPath (h₁'.pullback h) t := by
   apply SmoothAlmostComplexStructure.toEndomorphism_injective
   ext x : 1
-  -- Both sides are the Cayley interpolation formula, and pulling back is a conjugation.
+  -- Both sides are the Cayley path expression, and pulling back is a conjugation.
   rw [SmoothAlmostComplexStructure.pullback_toEndomorphism, cayleyPath_toEndomorphism,
-    cayleyPath_toEndomorphism, map_cayleyFormula,
+    cayleyPath_toEndomorphism, map_cayleyPathFormula,
     SmoothAlmostComplexStructure.pullback_toEndomorphism,
     SmoothAlmostComplexStructure.pullback_toEndomorphism]
 
