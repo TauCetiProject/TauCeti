@@ -245,10 +245,7 @@ private theorem contDiffOn_mpullbackWithin_cylinder {r : ℕ∞} [IsManifold I 1
     (contMDiffOn_cylinderChart (n := r + 1) x₀ hs) le_rfl
     (mapsTo_univ _ _) (hsu.prod uniqueDiffOn_Icc_zero_one).uniqueMDiffOn
   intro p hp
-  simpa only [RoughForm.inChartAt_modelSpace, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
-    PartialEquiv.refl_coe, preimage_id_eq, id_eq, modelWithCornersSelf_coe, range_id,
-    inter_univ] using
-    RoughForm.contDiffWithinAt_inChartAt _ (h p hp)
+  exact RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (h p hp)
 
 /-- At the chart point, the slice at time `t` of the flat pullback of `φ` is the pullback of `φ`
 along the slice inclusion `x ↦ (x, t)`. -/

@@ -124,6 +124,14 @@ section Monoid
 
 variable {k G : Type u} [CommRing k] [Monoid G] (N : Type u) [AddCommGroup N] [Module k N]
 
+/-- The tensor-coinvariants functor acts on tensor classes through the second factor. -/
+-- Not a simp lemma: simplification unfolds `coinvariantsTensorMk` on the left-hand side first.
+theorem coinvariantsTensor_obj_map_coinvariantsTensorMk (A : Rep.{u} k G)
+    {X Y : Rep.{u} k G} (f : X ⟶ Y) (a : A) (x : X) :
+    (((coinvariantsTensor k G).obj A).map f).hom (coinvariantsTensorMk A X a x) =
+      coinvariantsTensorMk A Y a (f.hom x) :=
+  (rfl)
+
 /-- **Maps out of coinvariants are invariant maps**: the bijection of the adjunction
 `Rep.coinvariantsAdjunction` between `k`-linear maps `X_G ⟶ N` and morphisms of representations
 `X ⟶ N` to the trivial representation is `k`-linear. -/
